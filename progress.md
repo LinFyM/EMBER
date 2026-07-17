@@ -129,7 +129,17 @@
   string mismatch between the new TOML and `phase0.toml`; its failure packet is
   retained. The string is corrected without changing the experiment, a
   cross-contract regression test now covers it, and nine focused tests plus all
-  50 repository tests pass. The recovered pilot has not yet launched.
+  50 repository tests pass. The recovered launch then exposed a second
+  implementation-layer issue before any rollout: LeRobot's lazy async wrapper
+  omits `set_attr` even though its underlying Gymnasium vector env implements
+  it. That 6.9KB failure packet is retained.
+- The prompt override now explicitly reaches the pinned lazy wrapper's
+  underlying `AsyncVectorEnv.set_attr` after `_ensure`; a faithful lazy-wrapper
+  regression test passes without changing upstream rollout semantics. The
+  launch wrapper also hard-rejects any preexisting compute PID or at least
+  1,000 MiB GPU allocation. It correctly rejected the active MemLLM PID on GPU
+  0, and all 51 repository tests pass. A fresh recovered pilot remains pending
+  on an empty GPU 4–7.
 
 ## Current phase
 

@@ -127,12 +127,28 @@ def resolve_prompt(
     raise SpecificationProbeError(f"unknown prompt condition: {condition}")
 
 
+def _set_vector_attr(env: Any, name: str, values: list[Any]) -> None:
+    target = env._env if isinstance(env, ResetAuditEnv) else env
+    setter = getattr(target, "set_attr", None)
+    if callable(setter):
+        setter(name, values)
+        return
+    ensure = getattr(target, "_ensure", None)
+    if callable(ensure):
+        ensure()
+    underlying = getattr(target, "_env", None)
+    setter = getattr(underlying, "set_attr", None)
+    if not callable(setter):
+        raise SpecificationProbeError("vector environment cannot override task_description")
+    setter(name, values)
+
+
 def apply_prompt_override(env: Any, prompt: str, *, batch_size: int) -> dict[str, Any]:
     """Change only the policy-visible description and prove task identity stayed fixed."""
 
     task_before = list(env.call("task"))
     prompt_before = list(env.call("task_description"))
-    env.set_attr("task_description", [prompt] * batch_size)
+    _set_vector_attr(env, "task_description", [prompt] * batch_size)
     task_after = list(env.call("task"))
     prompt_after = list(env.call("task_description"))
     valid = (

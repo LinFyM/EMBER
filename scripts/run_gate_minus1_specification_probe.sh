@@ -91,6 +91,18 @@ if $dry_run; then
   exit 0
 fi
 
+active_compute=$(
+  nvidia-smi -i "$gpu" --query-compute-apps=pid --format=csv,noheader,nounits 2>/dev/null |
+    sed '/^[[:space:]]*$/d'
+)
+[[ -z "$active_compute" ]] || die "GPU $gpu has active compute PID(s): ${active_compute//$'\n'/,}"
+memory_used=$(
+  nvidia-smi -i "$gpu" --query-gpu=memory.used --format=csv,noheader,nounits |
+    tr -d '[:space:]'
+)
+[[ "$memory_used" =~ ^[0-9]+$ ]] || die "cannot parse GPU $gpu memory usage"
+((memory_used < 1000)) || die "GPU $gpu already uses ${memory_used} MiB"
+
 [[ ! -e "$output_dir" ]] || die "refusing to reuse output directory: $output_dir"
 mkdir -p "$output_dir"
 

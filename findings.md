@@ -392,3 +392,22 @@
   test binding both role and Gate thresholds to the Phase 0 contract. No task,
   prompt arm, seed, init state, threshold, batch shape, or resource budget
   changed.
+- The recovered launch then reached model load and async-vector construction but
+  stopped before the first simulator reset: pinned LeRobot's
+  `_LazyAsyncVectorEnv` forwards `call/get_attr` but not the underlying
+  Gymnasium `set_attr`. The earlier sync-only unit probe therefore overstated
+  prompt-override compatibility. This is a verified runtime adapter defect, not
+  a prompt or benchmark result; the 6,867-byte failure/telemetry packet and
+  long-run `gate_minus1_specification_pilot_recovery_20260717_175010` remain
+  checksummed.
+- During that launch window GPU 0 had become occupied by a separate four-GPU
+  MemLLM job. The EMBER process failed and released without touching that job,
+  but the launch shell should have rejected the device instead of relying on a
+  human-readable telemetry line. The canonical wrapper now hard-fails before
+  output/model load when any compute PID exists or preexisting memory is at
+  least 1,000 MiB; a live negative test correctly rejected the occupied GPU.
+- The bounded async repair calls the pinned lazy wrapper's `_ensure`, then uses
+  the verified underlying Gymnasium `AsyncVectorEnv.set_attr`; it does not alter
+  reset, step, success, or policy evaluation semantics. A regression double
+  reproduces the missing-forwarder shape and now passes. The next run must use a
+  currently empty GPU 4–7 and a fresh artifact directory.

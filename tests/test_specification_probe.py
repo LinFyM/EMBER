@@ -42,6 +42,17 @@ class FakeVectorEnv:
         return {"pixels": []}, {}
 
 
+class FakeLazyAsyncVectorEnv:
+    def __init__(self) -> None:
+        self._env = FakeVectorEnv()
+
+    def _ensure(self) -> None:
+        return None
+
+    def call(self, name: str):
+        return self._env.call(name)
+
+
 class SpecificationProbeTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -89,6 +100,13 @@ class SpecificationProbeTest(unittest.TestCase):
 
         self.assertEqual(report["task_before"], ["TASK_A", "TASK_A"])
         self.assertEqual(report["task_after"], report["task_before"])
+        self.assertEqual(report["prompt_after"], ["neutral", "neutral"])
+        self.assertTrue(report["mechanically_valid"])
+
+    def test_prompt_override_reaches_lazy_async_underlying_vector_env(self) -> None:
+        env = ResetAuditEnv(FakeLazyAsyncVectorEnv())
+        report = apply_prompt_override(env, "neutral", batch_size=2)
+
         self.assertEqual(report["prompt_after"], ["neutral", "neutral"])
         self.assertTrue(report["mechanically_valid"])
 

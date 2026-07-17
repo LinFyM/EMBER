@@ -1,0 +1,145 @@
+schema_version = 1
+project = "EMBER"
+phase = "phase0_reproducible_substrate"
+
+[upstreams.lerobot]
+repo = "https://github.com/huggingface/lerobot.git"
+tag = "v0.6.0"
+commit = "30da8e687a6dfc617fcd94afc367ac7071c376ce"
+
+[upstreams.libero_official]
+repo = "https://github.com/Lifelong-Robot-Learning/LIBERO.git"
+commit = "8f1084e3132a39270c3a13ebe37270a43ece2a01"
+bddl_tree_sha = "8ac44efab7572ed2a050fc606dda1b3585348523"
+init_states_tree_sha = "135bba718a31923846e197e9e459d63670dddde1"
+scenes_assets_tree_sha = "81c6f610667545eb3990e5ca3edb19c3e5e7ee19"
+
+[upstreams.libero_runtime]
+repo = "https://github.com/huggingface/LIBERO.git"
+commit = "8561c60eea2fb93096146f240194649df73d8b1e"
+distribution = "hf-libero"
+version = "0.1.4"
+wheel_sha256 = "207f76e2f28bff30f78132223d8592fe8f64b1f8fd90ce7024948ada0d7e2c27"
+
+[upstreams.libero_task_map]
+path = "libero/libero/benchmark/libero_suite_task_map.py"
+git_blob_sha = "08144b4dd01d91fb0ca40e2c1d93ccaa85025fbc"
+task_order = "libero_90_zero_based"
+
+[environment]
+python = "3.12"
+torch = "2.11.0+cu128"
+torchvision = "0.26.0+cu128"
+transformers = "5.5.4"
+accelerate = "1.14.0"
+cmake = "3.31.6"
+hf_libero = "0.1.4"
+mujoco = "3.8.1"
+robosuite = "1.4.0"
+torchcodec = "0.11.1"
+numpy = "2.2.6"
+ziglang = "0.16.0"
+render_backend = "egl"
+
+[models.smolvla_base]
+repo_id = "lerobot/smolvla_base"
+revision = "c83c3163b8ca9b7e67c509fffd9121e66cb96205"
+weight_file = "model.safetensors"
+weight_sha256 = "7cd549ac2351fb069c0ddb3c34ad2d09cfc92b56a15dccdfc2e41467aaca01eb"
+weight_bytes = 906712520
+weight_license_status = "not_declared_in_model_card"
+role = "development_base"
+
+[models.smolvla_libero_smoke]
+repo_id = "lerobot/smolvla_libero"
+revision = "31d453f7edd78c839a8bbc39744a292686daf0de"
+weight_file = "model.safetensors"
+weight_sha256 = "9a9f6413e42c0f332fccbce9a0dc796af2790f82cf002f791cdbf7e01e1afca8"
+weight_bytes = 906712520
+weight_license_status = "not_declared_in_model_card"
+role = "official_mechanics_only_never_ember_shared_base"
+
+[models.smolvlm_constructor_dependency]
+repo_id = "HuggingFaceTB/SmolVLM2-500M-Video-Instruct"
+revision = "7b375e1b73b11138ff12fe22c8f2822d8fe03467"
+weight_file = "model.safetensors"
+weight_sha256 = "b9bfd456c9472c0acd5719d6e514c4b859891af205ee1a736552fd3497b8b0c3"
+weight_bytes = 2029990624
+role = "pinned_local_constructor_dependency"
+
+[datasets.libero_90]
+repo_id = "yifengzhu-hf/LIBERO-datasets"
+revision = "f13aa24a3da8c43c7225569f28c562979fa0e35a"
+subdir = "libero_90"
+task_count = 90
+file_count = 90
+total_bytes = 66658085995
+demos_per_task = 50
+hdf5_tag = "libero-v1"
+license = "CC-BY-4.0"
+hub_card_license_conflict = true
+license_authority = "original_libero_dataset_release"
+role = "canonical_demonstrations"
+
+[datasets.libero_assets]
+repo_id = "lerobot/libero-assets"
+revision = "0b3ea86be5fe169d0fd036ae63d1070ec09e90f6"
+snapshot_file_count = 586
+snapshot_bytes = 422320936
+hub_reported_used_storage_bytes = 492798408
+role = "simulator_assets"
+
+[datasets.official_smoke]
+repo_id = "lerobot/libero"
+revision = "a1aaacb7f6cd6ee5fb43120f673cebb0cfea7dd4"
+task_count = 40
+total_bytes = 1935573632
+role = "mechanics_only_not_libero_90_authority"
+
+[resources]
+max_concurrent_gpus = 4
+default_smoke_gpus = 1
+default_pilot_gpus = 2
+personal_storage_cap_bytes = 500000000000
+phase0_peak_growth_budget_bytes = 140000000000
+derived_cache_cap_bytes = 25000000000
+
+[splits]
+index_authority = "upstreams.libero_task_map"
+source = [0, 2, 6, 7, 9, 11, 14, 15, 18, 20, 22, 25, 26, 28, 29, 30, 31, 33, 35, 38, 39, 40, 41, 43, 44, 46, 47, 48, 50, 51, 52, 53, 55, 56, 57, 58, 60, 61, 62, 65, 66, 67, 68, 69, 71, 72, 73, 74, 76, 77, 78, 79, 81, 82, 83, 84, 85, 86, 87, 88]
+validation = [3, 5, 10, 12, 16, 19, 24, 32, 36, 42, 49, 59, 63, 75, 89]
+held_out = [1, 4, 8, 13, 17, 21, 23, 27, 34, 37, 45, 54, 64, 70, 80]
+
+[episode_authority]
+writer_spec = [0, 7]
+source_base_fit = [8, 27]
+oracle_support = [28, 39]
+functional_query = [40, 45]
+locked_source_report = [46, 49]
+
+[held_contract]
+writer_visible = ["language", "action_hidden_third_person_video", "modality_mask"]
+writer_forbidden = ["action", "proprioceptive_trajectory", "reward", "terminal_flag", "task_id", "filename", "hidden_normalization_statistics"]
+shared_frozen = ["shared_base", "writer", "encoders", "canonical_bank"]
+task_local_adaptive = ["bank_coordinates", "residual_adapter", "critic", "optimizer_state", "exploration_state"]
+
+[gate_minus_one.thresholds]
+full_vs_no_spec_success_pp = 20.0
+correct_vs_swapped_success_pp = 20.0
+counterfactual_correct_switch_fraction = 0.80
+
+[gate_zero.thresholds]
+median_success_gain_pp = 15.0
+median_query_action_loss_reduction_fraction = 0.20
+positive_task_fraction = 0.70
+median_action_kl_max = 0.02
+
+[gate_one.thresholds]
+functional_gain_retention_fraction = 0.90
+median_success_gap_pp_max = 5.0
+task_success_gap_within_10pp_fraction = 0.80
+
+[authorization]
+writer_center = "requires_gate_minus_one_gate_zero_gate_one_evidence"
+task_local_rl = "requires_writer_zero_interaction_utility"
+task_geometry = "requires_writer_center_to_rl_benefit"

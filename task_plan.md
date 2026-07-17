@@ -55,9 +55,13 @@ progress through the complete design only when predecessor evidence supports it.
 
 ## Current next actions
 
-1. Bootstrap and verify the server-side repository and toolchain.
-2. Pin a SmolVLA, LeRobot, and LIBERO compatibility set.
-3. Reproduce one official inference/evaluation path before custom changes.
-4. Build the data/task/split manifest and benchmark-validity probes.
-5. Design the smallest useful-update oracle pilot with explicit pass, diagnosis,
-   and recovery criteria.
+1. [x] Bootstrap a Python 3.12 environment from the locked project definition;
+   verify package consistency and the four-GPU/storage contracts.
+2. [x] Pin immutable LeRobot, LIBERO runtime/official, SmolVLA, SmolVLM,
+   LIBERO-90, and simulator-asset revisions and hashes.
+3. [ ] Reproduce one official one-episode LIBERO inference/evaluation path from
+   local verified snapshots before any custom policy changes.
+4. [ ] Build the data/task/BDDL/init-state/controller/normalization/split manifest
+   and implement the Gate -1 probes.
+5. [ ] Design the smallest useful-update oracle pilot with explicit pass,
+   diagnosis, and recovery criteria.

@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=71,<81"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ember-research"
+version = "0.1.0"
+description = "Reproducible experiment contracts and audit tools for EMBER"
+requires-python = "==3.12.*"
+dependencies = [
+  "accelerate==1.14.0",
+  "cmake==3.31.6",
+  "h5py==3.16.0",
+  "hf-libero==0.1.4; sys_platform == 'linux'",
+  "lerobot[evaluation,libero,smolvla] @ git+https://github.com/huggingface/lerobot.git@30da8e687a6dfc617fcd94afc367ac7071c376ce",
+  "mujoco==3.8.1; sys_platform == 'linux'",
+  "numpy==2.2.6",
+  "robosuite==1.4.0; sys_platform == 'linux'",
+  "torch==2.11.0; sys_platform == 'linux'",
+  "torchcodec==0.11.1; sys_platform == 'linux'",
+  "torchvision==0.26.0; sys_platform == 'linux'",
+  "transformers==5.5.4",
+  "ziglang==0.16.0; sys_platform == 'linux'",
+]
+
+[project.scripts]
+ember-verify-contract = "ember.contracts:main"
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu128", marker = "sys_platform == 'linux'" }]
+torchvision = [{ index = "pytorch-cu128", marker = "sys_platform == 'linux'" }]
+
+[tool.setuptools.packages.find]
+where = ["src"]

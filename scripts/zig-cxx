@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+PYTHON="${EMBER_PYTHON:-${ROOT}/.venv/bin/python}"
+
+exec "${PYTHON}" -m ziglang c++ -Wno-nullability-completeness "$@"

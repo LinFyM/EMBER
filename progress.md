@@ -60,6 +60,12 @@
   libraries, so it is not the selected backend. The contract and direct project
   dependency now pin PyAV 15.1.0; generated-video round-trip, timestamped
   LeRobot selection, and live artifact decode/throughput checks pass.
+- `configs/gate_minus1_identity.toml` now predeclares the first overlap-only
+  evaluation-identity diagnostic: exact reset/fixed-action comparisons across
+  repeated sync/async batches 1 and 2, a `1e-6` initial-action tolerance, a
+  batch ladder capped at the measured-safe 112, five-step policy trajectories,
+  and stop-before-policy rules for mechanical mismatches. The canonical probe
+  run remains pending.
 
 ## Current phase
 
@@ -81,6 +87,12 @@ LIBERO-90 manifest are the active critical path.
 - `src/ember/eval_artifacts.py` owns only post-run video validation, gallery
   generation, media hashes, and the safe `latest` symlink. It never changes
   evaluation metrics or simulator behavior.
+- `src/ember/identity_evidence.py` owns canonical tree hashing, numeric
+  difference summaries, and validation of the bounded overlap-only probe spec.
+  `src/ember/evaluation_identity.py` owns the staged mechanics/policy diagnostic
+  and atomic result/failure packets; `scripts/run_evaluation_identity_probe.sh`
+  is its only offline single-GPU entrypoint. These files observe upstream
+  semantics and do not replace or patch the evaluator.
 - `scripts/bootstrap_env.sh` remains a thin environment entrypoint and
   `scripts/zig-cxx` is only the pinned user-space compiler adapter.
   `scripts/run_phase0_eval.sh` is the one thin evaluation entrypoint over the

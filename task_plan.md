@@ -37,7 +37,7 @@ progress through the complete design only when predecessor evidence supports it.
 | Phase | Status | Required evidence |
 | --- | --- | --- |
 | Phase 0. Reproducible substrate | in progress | environment lock, revisions, hashes, known-path smoke test, VRAM/throughput/storage measurements |
-| Gate -1. Benchmark/spec validity | pending | task-factor audit, counterfactual/spec-swap/no-language/video controls |
+| Gate -1. Benchmark/spec validity | diagnostic recovery | task-factor audit, counterfactual/spec-swap/no-language/video controls |
 | Gate 0. Useful-update oracle | pending | independent query and closed-loop gain with drift/non-harm diagnostics |
 | Gate 1. Canonical representation | pending | functional preservation, conditioning, task-specificity, dimension/rank decision |
 | Stage 2. Writer center | pending | zero-interaction utility over retrieval, average, direct-conditioning, and DISC/HyPoGen-style baselines |
@@ -76,6 +76,14 @@ progress through the complete design only when predecessor evidence supports it.
    single task-5 failure is retained without tuning.
 6. [ ] Build the data/task/BDDL/init-state/controller/normalization/split manifest
    and implement Gate -1 probes, including batch-invariant seed/init-state,
-   reset-observation, initial-action, and short-rollout identity checks.
-7. [ ] Design the smallest useful-update oracle pilot with explicit pass,
+   reset-observation, initial-action, and short-rollout identity checks. The
+   strict mechanics layer is complete and has isolated sparse renderer-level
+   variation; action and short-rollout isolation remain open.
+7. [ ] Run the bounded evaluation-identity recovery on the same official-overlap
+   surface: first compare the frozen policy under one exactly repeated reset
+   observation across the predeclared batch ladder, then record matched actual
+   reset actions and five-step trajectories. Preserve the strict mechanics
+   failure and stop before changing evaluator semantics or observation
+   acceptance tolerances.
+8. [ ] Design the smallest useful-update oracle pilot with explicit pass,
    diagnosis, and recovery criteria.

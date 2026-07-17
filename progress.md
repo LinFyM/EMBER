@@ -64,16 +64,25 @@
   evaluation-identity diagnostic: exact reset/fixed-action comparisons across
   repeated sync/async batches 1 and 2, a `1e-6` initial-action tolerance, a
   batch ladder capped at the measured-safe 112, five-step policy trajectories,
-  and stop-before-policy rules for mechanical mismatches. The canonical probe
-  run remains pending.
+  and stop-before-policy rules for mechanical mismatches.
+- The frozen mechanics layer completed from clean commit `07baaca` and stopped
+  as predeclared before policy load. Seed/init-state/BDDL/controller/state and
+  outcome identity held, but sparse camera-render differences prevented strict
+  bitwise observation identity: all deltas were pixel-only, at most 1/255, and
+  at most 28/388,800 values in any leaf. Same-mode repeats also exhibited the
+  variation, localizing it to renderer-level nondeterminism rather than
+  sync/async or batch semantics alone. A checksummed failure packet records the
+  unresolved action and short-trajectory effects; no tolerance was relaxed.
 
 ## Current phase
 
 Phase 0, reproducible substrate, is in progress. The immutable contract, first
 official mechanics smoke, explicit PyAV decoder path, and useful single-GPU
 concurrency envelope are established. The ten-task spatial mechanics sweep is
-also complete. The batch-invariant evaluation-identity probe and canonical
-LIBERO-90 manifest are the active critical path.
+also complete. Gate -1 evaluation identity is in bounded diagnostic recovery:
+the strict mechanics layer has isolated sparse renderer variation, while the
+frozen-policy action and short-trajectory layers remain open. That recovery and
+the canonical LIBERO-90 manifest are the active critical path.
 
 ## Implementation ownership review
 
@@ -90,9 +99,10 @@ LIBERO-90 manifest are the active critical path.
 - `src/ember/identity_evidence.py` owns canonical tree hashing, numeric
   difference summaries, and validation of the bounded overlap-only probe spec.
   `src/ember/evaluation_identity.py` owns the staged mechanics/policy diagnostic
-  and atomic result/failure packets; `scripts/run_evaluation_identity_probe.sh`
-  is its only offline single-GPU entrypoint. These files observe upstream
-  semantics and do not replace or patch the evaluator.
+  and atomic result/runtime-error packets; the canonical stopped-Gate failure
+  packet is derived from its immutable result. The shell script is its only
+  offline single-GPU entrypoint. These files observe upstream semantics and do
+  not replace or patch the evaluator.
 - `scripts/bootstrap_env.sh` remains a thin environment entrypoint and
   `scripts/zig-cxx` is only the pinned user-space compiler adapter.
   `scripts/run_phase0_eval.sh` is the one thin evaluation entrypoint over the
@@ -114,13 +124,17 @@ LIBERO-90 manifest are the active critical path.
 
 ## Immediate handoff
 
-1. Add the minimal Gate -1 evaluation-identity probe that records explicit
-   seed, init-state index/hash, reset-observation digest, initial action, and a
-   short fixed/policy-action trajectory across sync/async and batch sizes.
-2. Download and audit canonical LIBERO-90, generate the full task/BDDL/init
+1. Continue the bounded Gate -1 identity recovery without reinterpreting the
+   mechanics failure: compare the frozen policy on one exactly repeated reset
+   observation across the predeclared batch ladder, then record matched actual
+   initial actions and five-step trajectories across sync/async batches 1 and 2.
+2. Stop for a recorded scientific decision before changing upstream evaluator
+   semantics, accepting nonzero RGB identity tolerance, or choosing among
+   deterministic-render workarounds.
+3. Download and audit canonical LIBERO-90, generate the full task/BDDL/init
    state/controller/normalization/split manifest, then complete the remaining
    Gate -1 probes.
-3. Predeclare and run the smallest closed-loop useful-update oracle only after
+4. Predeclare and run the smallest closed-loop useful-update oracle only after
    benchmark/specification probes are mechanically valid.
 
 ## Last verified handoff facts
@@ -131,6 +145,11 @@ LIBERO-90 manifest are the active critical path.
   execution must recalculate every launch for at most four GPUs.
 - A gate failure requires diagnosis and bounded recovery, not immediate
   abandonment and not post-hoc weakening of held-out constraints.
+- The canonical strict-identity evidence is
+  `.codex/longrun/gate_minus1_identity_mechanics_20260717_160231` plus
+  `$EMBER_OUTPUT_ROOT/gate_minus1/evaluation_identity_mechanics_20260717T160231Z`.
+  It stopped before policy load, used one GPU, and retains result, telemetry,
+  resource summary, failure packet, and checksums.
 - The latest completed visual review page is available locally at
   `$EMBER_OUTPUT_ROOT/phase0/latest/index.html`; historical run directories are
   retained until verified-regenerable, unpinned media becomes large or

@@ -226,3 +226,42 @@
   video for every task. A decoded first/last-frame review showed the ten
   expected spatial bowl layouts and non-empty robot trajectories. The canonical
   local review page is `$EMBER_OUTPUT_ROOT/phase0/latest/index.html`.
+
+## Gate -1 evaluation-identity mechanics diagnostic
+
+- The first frozen identity probe ran from clean commit `07baaca` on the
+  official-overlap `libero_spatial` task 0 only. It explicitly bound seeds 1000
+  and 1001 to init-state indices 0 and 1 and their canonical hashes, plus the
+  BDDL/init-state-file hashes, camera mapping, relative controller, reset
+  observation, and five dummy-action steps. Six predeclared conditions cover
+  sync/async batches 1 and 2 plus same-mode batch-1 repeats. No policy was
+  loaded after the mechanics stop condition fired.
+- Strict bitwise observation identity did not pass: only 1/7 reset comparisons
+  and 0/7 fixed-trajectory comparisons were exact. Every mismatched leaf was a
+  `uint8` camera image. The maximum absolute channel delta was 1, and the
+  largest leaf changed 28 of 388,800 values (0.0000720); the same sparse
+  variation also appeared between repeated runs of an unchanged mode and batch
+  size. All compared non-pixel state, reward, termination, and truncation leaves
+  were exact.
+- This evidence excludes seed, init-state selection/hash, BDDL authority,
+  camera-name mapping, controller, and simulated-state divergence as the source
+  of the initial mismatch. It instead classifies the strict Gate as a
+  benchmark/specification ambiguity with renderer-level implementation
+  nondeterminism. It does not yet establish the exact EGL/context cause or the
+  effect on initial actions and closed-loop trajectories, and it does not
+  authorize a nonzero pixel tolerance.
+- The canonical long-run record is
+  `.codex/longrun/gate_minus1_identity_mechanics_20260717_160231`; the retained
+  artifact is
+  `$EMBER_OUTPUT_ROOT/gate_minus1/evaluation_identity_mechanics_20260717T160231Z`.
+  Its result, failure packet, resource summary, telemetry, and checksum manifest
+  total 285,741 bytes. The probe took 35.83 seconds, peaked at 1,104 MiB GPU
+  memory and 25% sampled GPU utilization, and reached 4,191,292 KiB host RSS.
+  Low GPU occupancy is inherent to this minimal simulator-identity diagnostic;
+  duplicating conditions solely to fill memory would change the comparison.
+- The bounded next diagnostic keeps this strict failure intact. It will first
+  isolate policy batch numerics by repeating one identical reset observation
+  across batches 1, 2, 8, 32, 96, and 112, then compare actual initial actions
+  and five-step trajectories for the matched environment conditions. Changing
+  upstream evaluator semantics, accepting tolerant RGB identity, or selecting
+  a deterministic-render workaround requires a separate recorded decision.

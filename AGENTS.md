@@ -46,6 +46,12 @@ plan. Each expensive component needs evidence from its scientific predecessor.
   across all concurrent EMBER processes and agents.
 - Default to one GPU for smoke tests and one or two GPUs for pilots. Use three or
   four only when measured memory or throughput justifies it.
+- After a minimal correctness smoke establishes the real memory baseline, tune
+  useful batch size, environment/task parallelism, gradient accumulation, and
+  caching so that each allocated A100 normally uses about 70GB and retains about
+  10GB average headroom against OOM. This is a steady-state efficiency target,
+  not permission to allocate dummy tensors or sacrifice correctness and
+  reproducibility merely to fill memory.
 - Do not copy eight-GPU launch commands from `docs/expert_plan.md`. Recompute
   batch size, gradient accumulation, parallelism, GPU-hours, and wall-clock for
   the four-GPU ceiling.
@@ -119,6 +125,12 @@ exhausted, preserve the negative result and narrow the claim explicitly.
   source-only result.
 - Pin repository commits, dataset revisions, file hashes, environment versions,
   task manifests, normalization authority, seeds, and exact commands.
+- Optimize the full training and inference path for useful throughput. Reuse
+  canonical model loads, manifests, decoded or preprocessed observations,
+  cached features, and other scientifically equivalent intermediates whenever
+  safe; avoid duplicate downloads, repeated preprocessing, idle simulator/GPU
+  pipelines, and redundant computation, while recording cache provenance and
+  invalidation rules.
 - Use durable logs for long runs. Store temporary output under `.codex/tmp/` or
   ignored output directories; never commit datasets, checkpoints, credentials,
   private infrastructure, or raw copyrighted papers.

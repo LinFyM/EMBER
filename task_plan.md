@@ -1,0 +1,63 @@
+# EMBER Execution Plan
+
+## Goal
+
+Advance EMBER from a research design to a reproducible, four-GPU-compatible
+experimental program. Establish benchmark validity, useful-update existence,
+and canonical representation before authorizing Writer and RL complexity, then
+progress through the complete design only when predecessor evidence supports it.
+
+## Definition of success for the current goal
+
+- Reproducible environment, upstream revisions, dataset/task manifests, and
+  measured systems envelope under at most four A100 80GB GPUs.
+- Benchmark/specification validity evidence with causal hard-negative controls.
+- A useful-update oracle that improves independent closed-loop behavior.
+- A canonical update representation that preserves task-specific oracle utility.
+- Documented diagnosis and bounded recovery for every failed or ambiguous gate.
+- An evidence-based decision to proceed to Writer center training, redesign the
+  target, or narrow the claim.
+
+## Boundaries
+
+- No real robot, human-video transfer, cross-embodiment claim, or arbitrary web
+  video in the first study.
+- No held actions or shared held-task updates.
+- No more than four concurrent A100s for all EMBER work.
+- No full-system implementation before its scientific predecessors pass.
+- No datasets, checkpoints, secrets, or private infrastructure in Git.
+
+## Phases
+
+| Phase | Status | Required evidence |
+| --- | --- | --- |
+| Phase 0. Reproducible substrate | in progress | environment lock, revisions, hashes, known-path smoke test, VRAM/throughput/storage measurements |
+| Gate -1. Benchmark/spec validity | pending | task-factor audit, counterfactual/spec-swap/no-language/video controls |
+| Gate 0. Useful-update oracle | pending | independent query and closed-loop gain with drift/non-harm diagnostics |
+| Gate 1. Canonical representation | pending | functional preservation, conditioning, task-specificity, dimension/rank decision |
+| Stage 2. Writer center | pending | zero-interaction utility over retrieval, average, direct-conditioning, and DISC/HyPoGen-style baselines |
+| Stage 3. Center plus ordinary local RL | pending | matched-budget adaptation AUC/steps-to-threshold benefit |
+| Stage 4. Predicted soft geometry | pending | trained task metric beats unit/global metrics without final-performance ceiling |
+| Stage 5. Source-reward Writer outer loop | pending | source-trained reward update improves locked validation without zero-step collapse |
+| Stage 6. Optional shared base adapter | pending | incremental benefit without coordinate drift or interference |
+| Stage 7. Frozen held evaluation | pending | sealed primary comparison, full controls, resource and failure report |
+
+## Evidence policy
+
+- Use source data for fitting, validation for decisions, and held tasks once for
+  final reporting after the method and thresholds are frozen.
+- Treat task as the primary independent statistical unit.
+- Record exact commands, revisions, seeds, budgets, artifacts, and failed
+  attempts. Summarize durable evidence in `findings.md`; record current state and
+  handoff in `progress.md`.
+- A gate failure starts the recovery protocol in `AGENTS.md`. Do not silently
+  change the scientific contract to create a pass.
+
+## Current next actions
+
+1. Bootstrap and verify the server-side repository and toolchain.
+2. Pin a SmolVLA, LeRobot, and LIBERO compatibility set.
+3. Reproduce one official inference/evaluation path before custom changes.
+4. Build the data/task/split manifest and benchmark-validity probes.
+5. Design the smallest useful-update oracle pilot with explicit pass, diagnosis,
+   and recovery criteria.

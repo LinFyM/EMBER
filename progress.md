@@ -85,16 +85,30 @@
   then records reset digest, init-state identity, initial action values, and
   five-step policy trajectories for the same six matched environment
   conditions. These are localization diagnostics, not a tolerant Gate pass.
+- The canonical recovery completed and stopped its identical-observation batch
+  ladder at batch 2: all seven action dimensions changed beyond `1e-6`, with a
+  maximum absolute delta of 0.002254. Across the seven matched actual-environment
+  comparisons, maximum initial-action and five-step action deltas were 0.004378
+  and 0.009512. Five-step reward/done records remained exact, but actions and
+  subsequent robot state did not; Gate -1 remains failed/ambiguous.
+- The bounded mechanism probe then proved that the raw/preprocessed first
+  sample, the first `50 x 32` flow-matching noise sample, and a repeated
+  same-shape batch-1 forward are bitwise identical. With explicit matched noise,
+  changing only model batch shape from 1 to 2 still changed all seven action
+  dimensions (maximum 0.004668). The unresolved choice is now the evaluation
+  contract, not seed, init-state, preprocessing, or random-noise authority.
 
 ## Current phase
 
 Phase 0, reproducible substrate, is in progress. The immutable contract, first
 official mechanics smoke, explicit PyAV decoder path, and useful single-GPU
 concurrency envelope are established. The ten-task spatial mechanics sweep is
-also complete. Gate -1 evaluation identity is in bounded diagnostic recovery:
-the strict mechanics layer has isolated sparse renderer variation, while the
-frozen-policy action and short-trajectory layers remain open. That recovery and
-the canonical LIBERO-90 manifest are the active critical path.
+also complete. Gate -1 evaluation identity has completed its bounded mechanism
+diagnosis and now requires a scientific contract decision: fixed-batch
+statistical/functional reproducibility, a per-sample policy wrapper, or a
+deterministic-render/precision fork. No further evaluator mutation or Gate
+reinterpretation is authorized until that decision. The canonical LIBERO-90
+manifest remains an independent active path.
 
 ## Implementation ownership review
 
@@ -136,13 +150,13 @@ the canonical LIBERO-90 manifest are the active critical path.
 
 ## Immediate handoff
 
-1. Continue the bounded Gate -1 identity recovery without reinterpreting the
-   mechanics failure: compare the frozen policy on one exactly repeated reset
-   observation across the predeclared batch ladder, then record matched actual
-   initial actions and five-step trajectories across sync/async batches 1 and 2.
-2. Stop for a recorded scientific decision before changing upstream evaluator
-   semantics, accepting nonzero RGB identity tolerance, or choosing among
-   deterministic-render workarounds.
+1. Obtain and record the evaluation-contract decision. The recommended option
+   is a frozen async batch/mode with task-level repeated estimates and confidence
+   intervals plus a small batch-1 audit; alternatives are a slower per-sample
+   policy wrapper or a higher-risk deterministic-render/precision fork.
+2. After that decision, predeclare matched controls and thresholds on the
+   official-overlap/source surface. Preserve both strict identity failures and
+   do not use held results to choose the recovery.
 3. Download and audit canonical LIBERO-90, generate the full task/BDDL/init
    state/controller/normalization/split manifest, then complete the remaining
    Gate -1 probes.
@@ -162,6 +176,14 @@ the canonical LIBERO-90 manifest are the active critical path.
   `$EMBER_OUTPUT_ROOT/gate_minus1/evaluation_identity_mechanics_20260717T160231Z`.
   It stopped before policy load, used one GPU, and retains result, telemetry,
   resource summary, failure packet, and checksums.
+- The canonical policy and mechanism evidence is in the two corresponding
+  long-run records ending `161316` and `162212`, with checksummed external
+  artifacts ending `T161316Z` and `T162212Z`. The first proves action/trajectory
+  batch sensitivity; the second localizes it to model-forward batch shape.
+- Cleanup removed 15 verified-regenerable temporary files totaling 622,289
+  bytes: the preliminary mechanics smoke, recovered mechanism-launch residue,
+  copied local diagnostic source/cache, old smoke launch wrappers/contact sheet,
+  and pytest cache. Canonical outputs and all long-run state/logs were retained.
 - The latest completed visual review page is available locally at
   `$EMBER_OUTPUT_ROOT/phase0/latest/index.html`; historical run directories are
   retained until verified-regenerable, unpinned media becomes large or

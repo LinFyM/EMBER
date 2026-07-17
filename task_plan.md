@@ -37,7 +37,7 @@ progress through the complete design only when predecessor evidence supports it.
 | Phase | Status | Required evidence |
 | --- | --- | --- |
 | Phase 0. Reproducible substrate | in progress | environment lock, revisions, hashes, known-path smoke test, VRAM/throughput/storage measurements |
-| Gate -1. Benchmark/spec validity | diagnostic recovery | task-factor audit, counterfactual/spec-swap/no-language/video controls |
+| Gate -1. Benchmark/spec validity | recovery decision required | task-factor audit, counterfactual/spec-swap/no-language/video controls |
 | Gate 0. Useful-update oracle | pending | independent query and closed-loop gain with drift/non-harm diagnostics |
 | Gate 1. Canonical representation | pending | functional preservation, conditioning, task-specificity, dimension/rank decision |
 | Stage 2. Writer center | pending | zero-interaction utility over retrieval, average, direct-conditioning, and DISC/HyPoGen-style baselines |
@@ -77,13 +77,20 @@ progress through the complete design only when predecessor evidence supports it.
 6. [ ] Build the data/task/BDDL/init-state/controller/normalization/split manifest
    and implement Gate -1 probes, including batch-invariant seed/init-state,
    reset-observation, initial-action, and short-rollout identity checks. The
-   strict mechanics layer is complete and has isolated sparse renderer-level
-   variation; action and short-rollout isolation remain open.
-7. [ ] Run the bounded evaluation-identity recovery on the same official-overlap
+   identity checks are implemented and have isolated renderer and model-batch
+   effects; the full manifest and remaining specification probes remain open.
+7. [x] Run the bounded evaluation-identity recovery on the same official-overlap
    surface: first compare the frozen policy under one exactly repeated reset
    observation across the predeclared batch ladder, then record matched actual
    reset actions and five-step trajectories. Preserve the strict mechanics
    failure and stop before changing evaluator semantics or observation
-   acceptance tolerances.
-8. [ ] Design the smallest useful-update oracle pilot with explicit pass,
+   acceptance tolerances. The batch ladder stopped at batch 2 and the mechanism
+   probe localized the difference to batch-shape-dependent model forward
+   numerics, not input preprocessing or flow-matching noise.
+8. [ ] Select and freeze one evidence-backed evaluation recovery contract before
+   further Gate runs: fixed-batch statistical/functional reproducibility,
+   per-sample policy wrapping, or a deterministic-render/precision fork. Run
+   matched controls only after this decision; do not reinterpret the strict
+   identity failures as passes.
+9. [ ] Design the smallest useful-update oracle pilot with explicit pass,
    diagnosis, and recovery criteria.

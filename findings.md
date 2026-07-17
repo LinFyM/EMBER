@@ -265,3 +265,58 @@
   and five-step trajectories for the matched environment conditions. Changing
   upstream evaluator semantics, accepting tolerant RGB identity, or selecting
   a deterministic-render workaround requires a separate recorded decision.
+
+## Gate -1 policy batch and mechanism diagnosis
+
+- The frozen action-layer recovery ran from clean commit `0c60c20` without
+  relaxing the mechanics stop reason. For a byte-identical reset observation
+  and RNG seed 20260717, the first SmolVLA action differed between policy batch
+  1 and batch 2 in all seven dimensions: mean absolute delta 0.001014 and
+  maximum 0.002254, outside the predeclared `atol=rtol=1e-6`. The batch ladder
+  therefore stopped at 2 rather than spending compute on batches 8–112.
+- Across the seven matched sync/async, batch-1/batch-2, and same-mode-repeat
+  environment comparisons, no initial action was within tolerance. The maximum
+  initial-action delta was 0.004378 and the maximum delta over five policy steps
+  was 0.009512. The resulting observations diverged in both pixels and robot
+  state, although all seven five-step reward/termination/truncation records
+  remained exact. This short outcome agreement is not trajectory identity or
+  policy-quality evidence.
+- A follow-up mechanism probe used the same raw reset observation, explicitly
+  matched first-sample flow-matching noise, and the pinned preprocessing/model
+  path. The first sample was bitwise identical after raw replication,
+  observation preprocessing, environment preprocessing, and policy
+  preprocessing; the `50 x 32` noise sample was also bitwise identical. A
+  repeated batch-1 forward was bitwise identical, while batch 1 versus batch 2
+  still changed all seven action dimensions (mean absolute delta 0.001263,
+  maximum 0.004668). The cause is therefore localized to SmolVLA model-forward
+  numerics under a changed batch shape, not preprocessing, RNG/noise, or
+  same-shape repeat nondeterminism.
+- The pinned model contains 474 bfloat16 and 26 float32 parameter tensors; the
+  official path enables TF32 matmul and cuDNN benchmarking. These facts make
+  mixed-precision/kernel shape effects plausible, but the first responsible
+  attention or ten-step denoising operation has not been proven and should not
+  be guessed. Exact cross-shape equality is not an established property of this
+  inference stack.
+- Three scientifically distinct recoveries remain. The lowest semantic and
+  engineering risk is to freeze one async batch/mode for every compared method,
+  evaluate task-level repeated evidence with confidence intervals, and retain
+  a small batch-1 audit; this changes Gate -1 from cross-batch bitwise identity
+  to fixed-contract statistical/functional reproducibility without patching the
+  upstream evaluator. A per-environment batch-1 policy wrapper changes evaluator
+  semantics and sharply reduces throughput, while a deterministic-render or
+  precision fork changes inference semantics/resources and may still not yield
+  cross-shape equality. Selecting among them affects the paper contract and is
+  intentionally left for an explicit decision.
+- The canonical records are
+  `.codex/longrun/gate_minus1_identity_policy_recovery_20260717_161316` and
+  `.codex/longrun/gate_minus1_policy_batch_mechanism_recovery_20260717_162212`;
+  their checksummed artifacts are under
+  `$EMBER_OUTPUT_ROOT/gate_minus1/evaluation_identity_policy_recovery_20260717T161316Z`
+  and
+  `$EMBER_OUTPUT_ROOT/gate_minus1/policy_batch_mechanism_recovery_20260717T162212Z`.
+  They total 716,617 and 69,355 bytes. The policy recovery used 2,631 MiB peak
+  GPU memory and 76.10 seconds; the mechanism probe used 1,540 MiB and 18.90
+  seconds. A first mechanism launch failed before model load because the
+  one-off script skipped the existing LIBERO runtime binding; its long-run
+  traceback is retained and the unchanged script succeeded after that binding
+  was restored.

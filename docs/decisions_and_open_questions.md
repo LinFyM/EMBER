@@ -29,9 +29,16 @@ These are current design constraints, not experimentally validated conclusions.
 9. **The first study is same-embodiment and simulated.** Human internet video,
    cross-embodiment transfer, tactile feedback, and real-robot RL come only after
    the core mechanism survives falsification.
-10. **Known compute ceiling.** The available maximum is eight NVIDIA A100 80GB
-    GPUs. The plan must fit this ceiling and should not assume all eight GPUs are
-    continuously available for every exploratory run.
+10. **Active compute ceiling.** EMBER may use at most four NVIDIA A100 80GB GPUs
+    concurrently. Exploratory runs should normally use one or two; any three- or
+    four-GPU run requires a measured memory or throughput reason.
+11. **Development before scale confirmation.** Use SmolVLA plus LIBERO for the
+    first faithful benchmark, oracle, representation, and Writer gates. Scale a
+    surviving mechanism to OpenVLA-OFT rather than beginning with the 7B path.
+12. **Gate failure triggers bounded recovery.** A failed gate must be diagnosed
+    and explored on source/validation surfaces before stopping, without leaking
+    held data, weakening matched baselines, or changing the core claim after
+    seeing held results.
 
 ## Target complete design
 
@@ -105,8 +112,9 @@ the Writer is supervised, and whether RL experiments are computationally
 feasible.
 
 **Current default:** Use action-hidden videos generated from robot trajectories
-in the same simulator. Decide whether a fast control benchmark is needed as a
-mechanism sandbox before a VLA benchmark.
+in LIBERO. Use SmolVLA as the faithful development policy; Meta-World is only an
+optional unit-test environment for an estimator and cannot replace the VLA
+claim.
 
 ### P0.3 Base policy and adaptation target
 
@@ -125,8 +133,10 @@ policy. The plan must specify whether LoRA is placed in:
 **Why blocking:** Generating and adapting a full-VLA adapter may dominate memory
 and compute, while updating only an action head may weaken the multimodal claim.
 
-**Current default:** Start in the action expert/head, then expand only if the
-task specification cannot affect behavior sufficiently.
+**Current default:** Start with predeclared matrices in the SmolVLA action
+expert/head. If the mechanism survives, confirm it in the two 4096-to-4096
+residual-block linear layers of an OpenVLA-OFT L1 action head. Expand targets
+only through a recorded gate-recovery decision.
 
 ### P0.4 Writer supervision and meta-episode construction
 
@@ -198,6 +208,12 @@ Compare in increasing complexity:
 
 Do not implement level 5 before levels 1-4 establish value.
 
+Before evaluating level 4, train its task-conditioned geometry. The active
+default is a short differentiable source support/query inner loop in the
+low-dimensional bank-coordinate space using cached policy features. This gives
+the predicted preconditioner a direct meta-training signal before any
+source-reward outer refinement.
+
 ### P1.3 Static versus feedback-aware Writer
 
 A static Writer can learn from rewards across training tasks even if reward is
@@ -216,6 +232,7 @@ At minimum include:
 
 - base policy without adaptation;
 - direct language/video conditioning without generated parameters;
+- a capacity-matched language-only HyPoGen/DISC-style parameter generator;
 - supervised fine-tuning or behavioral cloning with matched source supervision;
 - random and nearest-task adapters;
 - standard task-specific LoRA RL with matched trainable parameter count;
@@ -239,15 +256,15 @@ Primary metrics should include:
 
 ### P1.6 Resource envelope
 
-The maximum available training cluster is **8 x NVIDIA A100 80GB**. The expert
-plan must choose models and data that fit this ceiling and estimate:
+The active maximum is **4 x NVIDIA A100 80GB**. Recalculate all recipes from the
+eight-GPU expert plan for this ceiling and estimate:
 
 - GPU type/count and training hours for the Writer and VLA;
 - simulator throughput and total environment steps;
 - storage for demonstrations, video features, and checkpoints;
 - expected number of tasks, trajectories, seeds, and ablations;
 - a low-cost falsification path and a publication-scale path;
-- whether each phase needs 1, 2, 4, or 8 GPUs and whether model/data parallelism
+- whether each phase needs 1, 2, 3, or 4 GPUs and whether model/data parallelism
   is actually necessary;
 - which encoders or features should be frozen/cached to reduce repeated cost.
 
@@ -265,6 +282,13 @@ not been fixed, so those assumptions must remain explicit.
 - long-horizon planning and external memory systems.
 
 ## Go/no-go gates
+
+Gate outcomes are evidence, not an instruction to give up after one run. Follow
+the recovery protocol in `AGENTS.md`: verify mechanics, classify the failure,
+try bounded source/validation remedies that preserve the scientific invariants,
+and rerun with matched controls. Stop or narrow the claim only after those
+remedies are exhausted or the underlying information/representation hypothesis
+is genuinely falsified.
 
 ### Gate A: direct-update value
 

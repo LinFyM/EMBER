@@ -52,15 +52,15 @@ task specification into a parameter-space prior that both:
 
 ## Current status
 
-This repository contains a research concept and an expert-review package. It
-does not yet contain an implementation or experimental results. Every novelty
-claim is provisional until the closest-work audit and the proposed ablations are
-completed.
+The independent expert review is complete and the project is entering staged
+execution. The repository does not yet contain an implementation or experimental
+results. Every novelty claim remains provisional until the proposed controls and
+matched-budget experiments are run.
 
-The available maximum compute is **8 x NVIDIA A100 80GB GPUs**. The remote
-expert is asked to judge the idea, identify flaws and improvements, choose a
-realistic model/data stack under this ceiling, and plan from decisive pilots to
-the complete EMBER design rather than stopping at a toy proof of concept.
+The active execution ceiling is **4 x NVIDIA A100 80GB GPUs**. The expert plan
+was originally written for an eight-GPU ceiling and is retained as research
+advice; `docs/execution_brief.md` records the four-GPU execution contract and the
+design corrections adopted before implementation.
 
 ## Repository map
 
@@ -75,11 +75,19 @@ the complete EMBER design rather than stopping at a toy proof of concept.
   settled design constraints, unresolved choices, and go/no-go gates.
 - [`docs/expert_review_brief.md`](docs/expert_review_brief.md): requested output
   from an independent remote expert.
+- [`docs/expert_plan.md`](docs/expert_plan.md): the independent expert's complete
+  conditional-go assessment and staged research plan.
+- [`docs/execution_brief.md`](docs/execution_brief.md): active execution
+  decisions, corrections to the plan, four-GPU constraints, and the first work
+  package.
 - [`docs/prior_work_memllm_lessons.md`](docs/prior_work_memllm_lessons.md):
   verified lessons from the preceding Writer research program, separated into
   reusable principles and mechanisms that must not be copied blindly.
 - [`AGENTS.md`](AGENTS.md): instructions for an AI coding or research agent
   entering the repository without conversation history.
+- [`task_plan.md`](task_plan.md), [`findings.md`](findings.md), and
+  [`progress.md`](progress.md): durable execution state for long-running and
+  multi-session work.
 
 ## Proposed scope boundary
 

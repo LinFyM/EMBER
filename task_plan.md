@@ -93,8 +93,10 @@ progress through the complete design only when predecessor evidence supports it.
    verb/object/receptacle/relation/order coverage audit. The first full audit
    stopped on a legacy producer-path basename check; canonical HDF5/task-map
    authority remained exact, so the bounded repair records that legacy field as
-   provenance while preserving canonical mismatch as fatal. A fresh recovery
-   run remains pending from the repaired clean commit.
+   provenance while preserving canonical mismatch as fatal. The fresh recovery
+   completed all 90 tasks from the repaired clean commit with checksums and
+   source-only normalization verified. What remains in this item is the finer
+   task-factor/split proof and the remaining Gate -1 probes, not data ingestion.
 7. [x] Run the bounded evaluation-identity recovery on the same official-overlap
    surface: first compare the frozen policy under one exactly repeated reset
    observation across the predeclared batch ladder, then record matched actual

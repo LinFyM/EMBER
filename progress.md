@@ -115,6 +115,19 @@
   and source-only normalization access. All 11 manifest tests and all 54
   repository tests pass; the failed long-run state remains untouched and the
   recovery must use a fresh artifact directory from a clean commit.
+- The fresh recovery completed from clean commit `d6cdac7` with main rc 0 and
+  checksum follow-up rc 0. In 12.45 seconds, eight CPU auditors and zero GPUs
+  validated 90 tasks, 4,500 demonstrations, 669,043 frames, and the exact
+  66,658,085,995-byte input. Peak host RSS was 864,788 KiB. The final
+  `pass_with_documented_notes` artifact is 1,307,643 bytes and its atomic local
+  `latest` report is ready for later review.
+- Source-only normalization contains 166,475 finite state/action rows from the
+  declared 60 tasks and episodes 8–27. Validation/held are 30/30 metadata-only,
+  held BDDL remains identity-hash-only, checksums pass, and serialized outputs
+  contain no local path, host identity, producer model path, or raw data. The
+  coarse validation scene/object/fixture/predicate presence sets are covered by
+  source, but the finer relation/order and at-least-two atomic coverage proof is
+  still open and Gate -1 is not passed.
 - `scripts/build_libero_manifest.sh` is now the sole manifest entrypoint. The
   implementation performs Hub LFS hash/byte validation, HDF5 schema and task
   mapping checks, BDDL/init-state authority capture, source-only episodes 8–27
@@ -186,8 +199,8 @@ reproducibility: the unchanged async evaluator uses one predeclared measured-saf
 batch/mode across every arm, task-level repetition and confidence intervals are
 primary, and batch-1 exactness is a small audit. The official-overlap
 specification pilot is complete and authorizes scaling only that diagnostic.
-The canonical LIBERO-90 manifest and remaining Gate -1 specification probes are
-now the active path.
+The canonical LIBERO-90 manifest is complete. Its finer task-factor/split proof
+and the remaining Gate -1 specification probes are now the active path.
 
 ## Implementation ownership review
 
@@ -254,10 +267,9 @@ now the active path.
 
 ## Immediate handoff
 
-1. Download and audit canonical LIBERO-90, generate the full task/BDDL/init
-   state/controller/normalization/split manifest with the implemented canonical
-   builder, inspect the quality report, then predeclare the next scaled Gate -1
-   specification surface.
+1. Use the completed canonical LIBERO-90 authority to produce the finer
+   verb/object/receptacle/relation/order factor table and at-least-two source
+   coverage audit without reading held executable labels or results.
 2. Scale only the prompt-path/specification diagnostic using matched fixed-batch
    controls and task-level uncertainty on legal official-overlap/source and
    validation surfaces. Preserve both strict identity failures and do not use
@@ -288,6 +300,8 @@ now the active path.
   and pytest cache. Canonical outputs and all long-run state/logs were retained.
 - The latest completed visual review page is available locally at
   `$EMBER_OUTPUT_ROOT/gate_minus1/specification/latest/index.html`; the earlier
-  Phase 0 gallery remains available under its own `latest` link. Historical run
-  directories are retained until verified-regenerable, unpinned media becomes
-  large or numerous enough for a recorded cleanup.
+  Phase 0 gallery remains available under its own `latest` link. The canonical
+  data/task audit is separately available at
+  `$EMBER_OUTPUT_ROOT/phase0/libero90_manifest/latest/index.html`. Historical
+  run directories are retained until verified-regenerable, unpinned media
+  becomes large or numerous enough for a recorded cleanup.

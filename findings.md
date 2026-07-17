@@ -396,11 +396,34 @@
   `legacy_env_bddl_basename_mismatch` note; canonical HDF5 basename mismatch
   remains fatal. The real task-14 audit now passes with the expected two legacy
   provenance notes and 2,087 permitted source-normalization rows.
+- The fresh recovery
+  (`libero90_canonical_manifest_recovery1_20260717_190939`) completed from clean
+  commit `d6cdac7` with main rc 0 and checksum follow-up rc 0. Eight CPU workers
+  audited all 90 tasks in 12.45 seconds at 783% aggregate CPU, zero GPUs, and
+  864,788 KiB peak host RSS. The canonical summary is 4,500 demonstrations,
+  669,043 frames, 60 source tasks, 15 validation tasks, 15 held tasks, and the
+  exact 66,658,085,995-byte HDF5 surface.
+- Source-only episodes 8–27 contributed 166,475 finite eight-dimensional state
+  rows and the same number of seven-dimensional action rows. Every source task
+  records exactly those 20 normalization episodes; all 30 validation/held tasks
+  are metadata-only with empty normalization indices, and held BDDL records
+  contain only filename, hash, and access policy. Episode lengths cover 4,500
+  demos, range from 58 to 373, have median 141, and sum to the recorded 669,043
+  frames.
+- The final quality status is `pass_with_documented_notes`, not an unqualified
+  pass: all 90 producer paths name the legacy `libero_100` suite, six have a
+  legacy basename difference, three non-held parsed BDDL instructions are
+  paraphrases of the task-map/HDF5 instruction, and the Hub card license field
+  conflicts with the recorded original-release license authority. None changes
+  canonical task identity, split, or numeric access, and each remains visible
+  in `quality_report.json`.
 - The generated report is a dependency-free, filterable local HTML page linked
   to checksummed manifest, normalization, and quality JSON. It has an atomic
   `latest` symlink and contains no dataset payload, raw model XML, local paths,
-  host identity, actions, or held labels. The complete canonical report remains
-  pending on the fresh recovery after the bounded legacy-provenance repair.
+  host identity, actions, or held labels. The canonical 1,307,643-byte artifact
+  is `$EMBER_OUTPUT_ROOT/phase0/libero90_manifest/recovery1_20260717T190800Z`,
+  and the durable review page is
+  `$EMBER_OUTPUT_ROOT/phase0/libero90_manifest/latest/index.html`.
 
 ## Gate -1 official-overlap specification pilot
 

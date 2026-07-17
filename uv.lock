@@ -431,6 +431,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "accelerate" },
+    { name = "av" },
     { name = "cmake" },
     { name = "h5py" },
     { name = "hf-libero", marker = "sys_platform == 'linux'" },
@@ -448,6 +449,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "accelerate", specifier = "==1.14.0" },
+    { name = "av", specifier = "==15.1.0" },
     { name = "cmake", specifier = "==3.31.6" },
     { name = "h5py", specifier = "==3.16.0" },
     { name = "hf-libero", marker = "sys_platform == 'linux'", specifier = "==0.1.4" },

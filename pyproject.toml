@@ -9,6 +9,7 @@ description = "Reproducible experiment contracts and audit tools for EMBER"
 requires-python = "==3.12.*"
 dependencies = [
   "accelerate==1.14.0",
+  "av==15.1.0",
   "cmake==3.31.6",
   "h5py==3.16.0",
   "hf-libero==0.1.4; sys_platform == 'linux'",

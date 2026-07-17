@@ -34,16 +34,22 @@
   evaluation entrypoint. It validates GPU/task/batch arguments, refuses rollout
   batches that LeRobot would partly discard, rechecks pinned runtime assets, and
   generates a safe post-run HTML/video gallery with an atomic `latest` link.
-- Direct TorchCodec import currently fails for lack of compatible shared FFmpeg
-  libraries. This is recorded as an open video-decoder reproducibility defect;
-  current gallery inspection uses the already locked `imageio-ffmpeg` binary.
+- A synchronous batch-8 calibration on task 0 completed with 7/8 successes in
+  119.131 evaluation seconds. Peak GPU memory was 6,003 MiB and active-window
+  average GPU utilization was only 5.60%; the 280-step failed seed exposes a
+  simulator/straggler bottleneck rather than a memory ceiling.
+- Direct TorchCodec import still fails for lack of compatible shared FFmpeg
+  libraries, so it is not the selected backend. The contract and direct project
+  dependency now pin PyAV 15.1.0; generated-video round-trip, timestamped
+  LeRobot selection, and live artifact decode/throughput checks pass.
 
 ## Current phase
 
 Phase 0, reproducible substrate, is in progress. The immutable contract and the
-first official mechanics smoke are established. Useful-batch throughput
-calibration, the ten-task spatial mechanics sweep, video-decoder closure, and
-the canonical LIBERO-90 manifest are the active critical path.
+first official mechanics smoke and synchronous batch-8 baseline are
+established. A matched asynchronous batch-8 probe, the ten-task spatial
+mechanics sweep, and the canonical LIBERO-90 manifest are the active critical
+path; the explicit PyAV decoder path is now closed.
 
 ## Implementation ownership review
 
@@ -78,16 +84,15 @@ the canonical LIBERO-90 manifest are the active critical path.
 
 ## Immediate handoff
 
-1. Use the clean canonical entrypoint to measure batch-size scaling on one free
-   GPU. Increase only useful vector-environment work, target about 70GB used with
-   about 10GB average headroom, and stop scaling where throughput ceases to
-   improve materially.
+1. Run batch 8 and seeds 1000–1007 with asynchronous vector environments as the
+   matched simulator-throughput diagnostic. Keep the same task, checkpoint,
+   episode budget, GPU, and gallery/telemetry surface.
 2. Run all ten `libero_spatial` task IDs through the validated official path,
    retaining aggregate/per-task metrics, resource telemetry, and the bounded
    review gallery.
-3. Pin a working video decoder path: either supply compatible shared FFmpeg for
-   TorchCodec or explicitly validate and lock PyAV, including a real frame
-   selection test and throughput measurement.
+3. Use the matched sync/async result to choose simulator concurrency; only then
+   increase useful batch size toward the 70GB/10GB-headroom target, stopping
+   when throughput ceases to improve materially.
 4. Download and audit canonical LIBERO-90, generate the full task/BDDL/init
    state/controller/normalization/split manifest, then implement Gate -1 probes.
 5. Predeclare and run the smallest closed-loop useful-update oracle only after

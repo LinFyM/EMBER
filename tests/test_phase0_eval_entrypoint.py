@@ -79,6 +79,30 @@ class Phase0EvalEntrypointTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("one physical GPU index", result.stderr)
 
+    def test_dry_run_can_select_async_vector_environments(self) -> None:
+        result = self._run(
+            "--gpu=5",
+            "--episodes=8",
+            "--batch-size=8",
+            "--async-envs=true",
+            "--output-dir=/tmp/ember-phase0-test-output",
+            "--dry-run",
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("--eval.use_async_envs=true", result.stdout)
+
+    def test_rejects_invalid_async_value(self) -> None:
+        result = self._run(
+            "--gpu=5",
+            "--async-envs=maybe",
+            "--output-dir=/tmp/ember-phase0-test-output",
+            "--dry-run",
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--async-envs", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

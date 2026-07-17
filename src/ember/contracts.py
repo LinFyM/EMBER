@@ -67,6 +67,18 @@ def _validate_resources(resources: Mapping[str, Any]) -> None:
         raise ContractError("Phase 0 growth budget must be smaller than the personal storage cap")
 
 
+def _validate_environment(environment: Mapping[str, Any]) -> None:
+    if environment.get("video_decode_backend") != "pyav":
+        raise ContractError(
+            "Phase 0 video decoder must remain the explicitly validated PyAV backend"
+        )
+    pyav_version = environment.get("pyav")
+    if not isinstance(pyav_version, str) or re.fullmatch(
+        r"[0-9]+\.[0-9]+\.[0-9]+", pyav_version
+    ) is None:
+        raise ContractError("Phase 0 PyAV video decoder version must be pinned")
+
+
 def _validate_splits(splits: Mapping[str, Sequence[int]]) -> None:
     selected: list[int] = []
     for name, expected_size in EXPECTED_SPLIT_SIZES.items():
@@ -153,6 +165,7 @@ def _validate_model_roles(models: Mapping[str, Mapping[str, Any]]) -> None:
 
 def validate_contract(contract: Mapping[str, Any]) -> None:
     _validate_revisions(contract)
+    _validate_environment(contract["environment"])
     _validate_resources(contract["resources"])
     _validate_splits(contract["splits"])
     _validate_episode_authority(contract["episode_authority"])
@@ -167,6 +180,7 @@ def contract_summary(contract: Mapping[str, Any]) -> dict[str, Any]:
         "lerobot_commit": contract["upstreams"]["lerobot"]["commit"],
         "smolvla_revision": contract["models"]["smolvla_base"]["revision"],
         "libero_runtime_commit": contract["upstreams"]["libero_runtime"]["commit"],
+        "video_decode_backend": contract["environment"]["video_decode_backend"],
         "task_map_git_blob": contract["upstreams"]["libero_task_map"]["git_blob_sha"],
         "split_sizes": {name: len(contract["splits"][name]) for name in EXPECTED_SPLIT_SIZES},
         "max_concurrent_gpus": contract["resources"]["max_concurrent_gpus"],

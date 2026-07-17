@@ -66,9 +66,10 @@ progress through the complete design only when predecessor evidence supports it.
    LIBERO-90, and simulator-asset revisions and hashes.
 3. [x] Reproduce one official one-episode LIBERO inference/evaluation path from
    local verified snapshots before any custom policy changes.
-4. [ ] Calibrate useful single-GPU vector-environment batching from the measured
-   batch-one baseline, then exercise all ten `libero_spatial` task IDs with the
-   validated offline entrypoint and retained resource/video artifacts.
+4. [ ] Calibrate useful single-GPU vector-environment concurrency and batching
+   from the measured batch-one and synchronous batch-eight baselines, then
+   exercise all ten `libero_spatial` task IDs with the validated offline
+   entrypoint and retained resource/video artifacts.
 5. [ ] Build the data/task/BDDL/init-state/controller/normalization/split manifest
    and implement the Gate -1 probes.
 6. [ ] Design the smallest useful-update oracle pilot with explicit pass,

@@ -145,7 +145,30 @@
   eight-dimensional authority.
 - `torchcodec==0.11.1` is import-discoverable but cannot load because this host
   currently has no compatible shared FFmpeg libraries. LeRobot would therefore
-  incorrectly select a broken default video backend by package presence alone.
-  The bundled `imageio-ffmpeg` binary can inspect/render current artifacts, but
-  a pinned working decoder backend remains required before video-backed data
-  loading is declared reproducible.
+  incorrectly select it by package presence alone. EMBER now explicitly pins
+  `av==15.1.0` and `video_decode_backend="pyav"`; a generated H.264 round-trip
+  test and LeRobot timestamp-selection test pass. TorchCodec is not selected
+  unless a later pinned shared-FFmpeg path beats this validated backend.
+
+## Phase 0 throughput calibration
+
+- The first matched load rung used the same task 0 with batch 8, episodes 8,
+  seeds 1000–1007, synchronous vector environments, and one A100. Seven of
+  eight episodes succeeded; by LeRobot's preserved batch order, seed 1002 was
+  the failure and ran all 280 steps, while successful videos contained 69–83
+  frames.
+- Evaluation time was 119.131 seconds, or 14.891 seconds per retained episode,
+  versus 19.168 seconds for the batch-one baseline. Peak GPU memory was 6,003
+  MiB, active-window mean memory was 3,476.6 MiB, active-window mean GPU
+  utilization was 5.60%, peak utilization was 61%, and maximum host RSS was
+  11,922,208 KiB. The complete metrics/telemetry/gallery/video surface was
+  524,142 bytes, so accumulated media remains far below cleanup pressure.
+- Batch 8 amortizes model inference, but synchronous simulator stepping and the
+  longest unfinished environment dominate the wall clock. Increasing only the
+  batch toward the 70GB memory target would waste simulator work; the next
+  matched diagnostic is batch 8 with asynchronous vector environments before
+  considering a larger batch.
+- PyAV decoded all 833 retained frames from the batch-8 videos in 0.123 seconds
+  (about 6.8k frames/s) and LeRobot selected four requested timestamps from the
+  280-frame failure video as `uint8 [4, 3, 360, 360]` in 0.289 seconds. Decoder
+  throughput is not the current evaluation bottleneck.

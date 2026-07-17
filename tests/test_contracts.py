@@ -81,6 +81,16 @@ class Phase0ContractTest(unittest.TestCase):
             assets["snapshot_bytes"], assets["hub_reported_used_storage_bytes"]
         )
 
+    def test_video_decoder_backend_is_explicit_and_loadable(self) -> None:
+        environment = self.contract["environment"]
+        self.assertEqual(environment["video_decode_backend"], "pyav")
+        self.assertEqual(environment["pyav"], "15.1.0")
+
+        changed = copy.deepcopy(self.contract)
+        changed["environment"]["video_decode_backend"] = "torchcodec"
+        with self.assertRaisesRegex(ContractError, "video decoder"):
+            validate_contract(changed)
+
 
 if __name__ == "__main__":
     unittest.main()

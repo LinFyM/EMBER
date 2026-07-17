@@ -69,6 +69,38 @@ class RuntimeEnvironmentRepairTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeEnvironmentError, "Refusing to overwrite"):
             repair_runtime_environment(self.site_packages)
 
+    def test_locked_pyav_backend_decodes_timestamped_frames(self) -> None:
+        import av
+        import numpy as np
+        import torch
+        from lerobot.datasets.video_utils import decode_video_frames
+
+        video_path = self.site_packages / "decoder-smoke.mp4"
+        with av.open(video_path, mode="w") as container:
+            stream = container.add_stream("libx264", rate=10)
+            stream.width = 16
+            stream.height = 16
+            stream.pix_fmt = "yuv420p"
+            for value in (0, 80, 160):
+                pixels = np.full((16, 16, 3), value, dtype=np.uint8)
+                frame = av.VideoFrame.from_ndarray(pixels, format="rgb24")
+                for packet in stream.encode(frame):
+                    container.mux(packet)
+            for packet in stream.encode():
+                container.mux(packet)
+
+        frames = decode_video_frames(
+            video_path,
+            timestamps=[0.0, 0.1, 0.2],
+            tolerance_s=0.051,
+            backend="pyav",
+            return_uint8=True,
+        )
+
+        self.assertEqual(tuple(frames.shape), (3, 3, 16, 16))
+        self.assertEqual(frames.dtype, torch.uint8)
+        self.assertLess(frames[0].float().mean(), frames[-1].float().mean())
+
 
 if __name__ == "__main__":
     unittest.main()

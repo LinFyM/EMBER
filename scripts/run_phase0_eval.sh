@@ -11,6 +11,7 @@ task_suite="libero_spatial"
 task_ids="[0]"
 episodes=1
 batch_size=1
+async_envs=false
 seed=1000
 output_dir=""
 dry_run=false
@@ -28,6 +29,7 @@ Optional:
   --task-ids=JSON_LIST     Task IDs within the suite (default: [0]).
   --episodes=N             Episodes per task (default: 1).
   --batch-size=N           Vector environments per task (default: 1).
+  --async-envs=BOOL        Run vector environments in subprocesses (default: false).
   --seed=N                 First rollout seed (default: 1000).
   --dry-run                Print the offline command without touching assets/GPU.
 EOF
@@ -49,6 +51,7 @@ while (($#)); do
     --task-ids=*) task_ids=${1#*=} ;;
     --episodes=*) episodes=${1#*=} ;;
     --batch-size=*) batch_size=${1#*=} ;;
+    --async-envs=*) async_envs=${1#*=} ;;
     --seed=*) seed=${1#*=} ;;
     --output-dir=*) output_dir=${1#*=} ;;
     --dry-run) dry_run=true ;;
@@ -63,6 +66,7 @@ done
 [[ "$task_ids" =~ ^\[[0-9]+(,[0-9]+)*\]$ ]] || die "--task-ids must be a compact JSON integer list"
 is_positive_integer "$episodes" || die "--episodes must be a positive integer"
 is_positive_integer "$batch_size" || die "--batch-size must be a positive integer"
+[[ "$async_envs" = true || "$async_envs" = false ]] || die "--async-envs must be true or false"
 [[ "$seed" =~ ^[0-9]+$ ]] || die "--seed must be a non-negative integer"
 ((episodes % batch_size == 0)) || die "--episodes must be divisible by --batch-size; LeRobot discards excess rollouts"
 [[ "$output_dir" = /* ]] || die "--output-dir must be an absolute path"
@@ -99,7 +103,7 @@ command=(
   '--env.camera_name_mapping={"agentview_image":"camera1","robot0_eye_in_hand_image":"camera2"}'
   "--eval.batch_size=$batch_size"
   "--eval.n_episodes=$episodes"
-  "--eval.use_async_envs=false"
+  "--eval.use_async_envs=$async_envs"
   "--eval.recording=false"
   "--seed=$seed"
   "--job_name=phase0_smolvla_$task_suite"

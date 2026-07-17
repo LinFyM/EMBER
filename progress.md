@@ -9,6 +9,9 @@
 - The expert plan was reviewed before implementation. The active corrections
   are recorded in `docs/execution_brief.md`.
 - The active compute ceiling is four A100 80GB GPUs.
+- A clean execution clone and user-home workspace entry have been verified on
+  the target GPU host. Git read/push authentication and the Codex CLI are
+  available; the scientific Python/simulator environment is not yet pinned.
 - No EMBER implementation, environment lock, dataset manifest, checkpoint, or
   experimental result exists yet.
 

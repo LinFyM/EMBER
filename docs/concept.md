@@ -1,5 +1,9 @@
 # EMBER Research Concept
 
+This document specifies the embodied instance. The broader motivation and the
+meaning of cross-distribution information-to-parameter transfer are defined in
+[`origin_and_general_thesis.md`](origin_and_general_thesis.md).
+
 ## 1. Motivation
 
 Action-labeled robot trajectories contain synchronized observations, robot
@@ -13,6 +17,11 @@ success probability is effectively zero. EMBER targets the gap between these two
 facts. It asks whether a meta-trained model can transform a task specification
 into a rough but executable parameter prior, after which interaction can correct
 the remaining details.
+
+This is a concrete test of the general Writer thesis: the input distribution
+(language/video) and the useful supervision distribution (robot actions and
+returns) differ, and the learned cross-task bridge is expressed as a parameter
+update rather than direct label prediction.
 
 The human-learning analogy is deliberately limited: watching an instructional
 video may provide the rough structure of a new movement, but physical practice

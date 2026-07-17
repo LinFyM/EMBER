@@ -7,6 +7,14 @@ training and deployment contract. This is evidence of a plausible contribution,
 not proof of priority. Concurrent, unpublished, or differently framed work may
 still overlap.
 
+This audit primarily covers the embodied instantiation. The broader thesis in
+[`origin_and_general_thesis.md`](origin_and_general_thesis.md)—translating an
+informative non-label input into a beneficial parameter update across tasks—has
+wider overlap with learned optimizers, amortized meta-learning, hypernetworks,
+model editing, and context-to-adapter generation. A successful EMBER result
+would establish one concrete instance, not priority over that entire general
+area.
+
 No individual ingredient should be presented as new. Demonstration-conditioned
 adaptation, hypernetwork-generated policies, low-dimensional policy spaces,
 LoRA generation, action-free video learning, and RL refinement all have prior

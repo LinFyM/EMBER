@@ -4,28 +4,69 @@
 
 These are current design constraints, not experimentally validated conclusions.
 
-1. **Standalone project.** EMBER is developed and evaluated as an independent
-   embodied-learning project.
-2. **Task specification is multimodal.** The Writer may consume language, video,
+1. **General thesis first.** The underlying research goal is a meta-learned
+   optimizer that translates informative, non-label inputs across task and
+   supervision distributions into beneficial parameter updates. EMBER is its
+   embodied test case, not the origin of the idea.
+2. **Standalone project.** EMBER is developed and evaluated as an independent
+   embodied-learning project. Prior-project lessons are evidence and process
+   guidance, not a code or architecture dependency.
+3. **Task specification is multimodal.** The Writer may consume language, video,
    or both. It must not depend on video being present in every episode.
-3. **Immediate utility is required.** The generated update should directly
+4. **Immediate utility is required.** The generated update should directly
    improve relevant task behavior, even if the gain is small.
-4. **Executable source-task supervision is allowed.** Early Writer training may
+5. **Executable source-task supervision is allowed.** Early Writer training may
    use action-labeled robot trajectories, teacher policies, and reward signals.
    Human or action-free video alone is not assumed to identify robot actions.
-5. **Reward shapes both local and shared learning, at different levels.** Inner
+6. **Reward shapes both local and shared learning, at different levels.** Inner
    RL initially updates task-local state. Across a meta-batch of source tasks,
    the outer objective may update the shared Writer and shared base policy.
-6. **Direct update and geometry are complementary.** The preferred target is an
+7. **Direct update and geometry are complementary.** The preferred target is an
    initial adapter center plus a soft adaptation region, not a choice between a
    point update and an inescapable hard subspace.
-7. **Held-out evaluation freezes shared modules.** Updating the shared Writer or
+8. **Held-out evaluation freezes shared modules.** Updating the shared Writer or
    base online is reserved for a separate continual-meta-learning study.
-8. **The first study is same-embodiment and simulated.** Human internet video,
+9. **The first study is same-embodiment and simulated.** Human internet video,
    cross-embodiment transfer, tactile feedback, and real-robot RL come only after
    the core mechanism survives falsification.
+10. **Known compute ceiling.** The available maximum is eight NVIDIA A100 80GB
+    GPUs. The plan must fit this ceiling and should not assume all eight GPUs are
+    continuously available for every exploratory run.
+
+## Target complete design
+
+The staged plan should ultimately implement and evaluate all of the following,
+unless an earlier gate falsifies the corresponding hypothesis:
+
+1. language-only, video-only, and combined task specifications;
+2. supervised Writer bootstrapping on source tasks with executable labels or
+   functional query supervision;
+3. an immediately useful generated adapter center;
+4. a task-conditioned soft adaptation geometry;
+5. reward-driven task-local refinement;
+6. an outer loop in which source-task outcomes improve the shared Writer and,
+   if justified, the shared base policy;
+7. held-out evaluation with shared modules frozen;
+8. matched-budget baselines, modality controls, and complete interaction curves.
+
+The minimum experiment is the first gate toward this end state, not the final
+scope of the requested expert plan.
 
 ## P0 decisions: resolve before implementation
+
+### P0.0 Scientific abstraction and terminology
+
+**Question:** Is the general claim best formalized as a meta-optimizer,
+amortized meta-learner, task-conditioned hypernetwork, learned update rule, or a
+more restricted concept?
+
+**Why blocking:** Calling the system a cross-distribution optimizer may imply
+universality that one embodied experiment cannot establish. The expert must
+state the necessary assumptions and the exact level of generalization tested.
+
+**Current default:** Describe the Writer operationally as an amortized,
+task-conditioned parameter-update generator; reserve the broader
+cross-distribution meta-optimizer claim for a clearly scoped thesis statement.
 
 ### P0.1 Exact scientific claim and task distribution
 
@@ -198,15 +239,20 @@ Primary metrics should include:
 
 ### P1.6 Resource envelope
 
-The expert plan must estimate:
+The maximum available training cluster is **8 x NVIDIA A100 80GB**. The expert
+plan must choose models and data that fit this ceiling and estimate:
 
 - GPU type/count and training hours for the Writer and VLA;
 - simulator throughput and total environment steps;
 - storage for demonstrations, video features, and checkpoints;
 - expected number of tasks, trajectories, seeds, and ablations;
-- a low-cost falsification path and a publication-scale path.
+- a low-cost falsification path and a publication-scale path;
+- whether each phase needs 1, 2, 4, or 8 GPUs and whether model/data parallelism
+  is actually necessary;
+- which encoders or features should be frozen/cached to reduce repeated cost.
 
-No compute budget has yet been fixed, so assumptions must be explicit.
+Storage capacity, real-robot access, and guaranteed wall-clock allocation have
+not been fixed, so those assumptions must remain explicit.
 
 ## P2 extensions: explicitly defer
 

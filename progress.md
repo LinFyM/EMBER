@@ -38,6 +38,17 @@
   119.131 evaluation seconds. Peak GPU memory was 6,003 MiB and active-window
   average GPU utilization was only 5.60%; the 280-step failed seed exposes a
   simulator/straggler bottleneck rather than a memory ceiling.
+- The matched asynchronous batch-8 run preserved all eight outcomes and reduced
+  evaluation time to 63.403 seconds (1.879x faster). Subsequent asynchronous
+  batches 32, 96, and 112 reached 0.2667, 0.3850, and 0.3958 episodes/s. Batch
+  112 peaked at 68,080 MiB with 13,076 MiB free and is the measured
+  resource-rich rung; batch 96 is the conservative shared-host rung.
+- Calibration also exposed a Gate -1 reproducibility ambiguity: fixed
+  seed/init-state prefixes were not outcome-identical across all batch sizes.
+  The first 32 outcomes differed twice between batches 32 and 96, and the first
+  96 differed ten times between batches 96 and 112. These runs remain
+  mechanics/throughput evidence only; a reset-observation/initial-action/short-
+  rollout probe is now required before scientific metric comparison.
 - Direct TorchCodec import still fails for lack of compatible shared FFmpeg
   libraries, so it is not the selected backend. The contract and direct project
   dependency now pin PyAV 15.1.0; generated-video round-trip, timestamped
@@ -45,11 +56,11 @@
 
 ## Current phase
 
-Phase 0, reproducible substrate, is in progress. The immutable contract and the
-first official mechanics smoke and synchronous batch-8 baseline are
-established. A matched asynchronous batch-8 probe, the ten-task spatial
-mechanics sweep, and the canonical LIBERO-90 manifest are the active critical
-path; the explicit PyAV decoder path is now closed.
+Phase 0, reproducible substrate, is in progress. The immutable contract, first
+official mechanics smoke, explicit PyAV decoder path, and useful single-GPU
+concurrency envelope are established. The ten-task spatial mechanics sweep,
+batch-invariant evaluation-identity probe, and canonical LIBERO-90 manifest are
+the active critical path.
 
 ## Implementation ownership review
 
@@ -84,18 +95,16 @@ path; the explicit PyAV decoder path is now closed.
 
 ## Immediate handoff
 
-1. Run batch 8 and seeds 1000–1007 with asynchronous vector environments as the
-   matched simulator-throughput diagnostic. Keep the same task, checkpoint,
-   episode budget, GPU, and gallery/telemetry surface.
-2. Run all ten `libero_spatial` task IDs through the validated official path,
+1. Run all ten `libero_spatial` task IDs through the validated official path,
    retaining aggregate/per-task metrics, resource telemetry, and the bounded
    review gallery.
-3. Use the matched sync/async result to choose simulator concurrency; only then
-   increase useful batch size toward the 70GB/10GB-headroom target, stopping
-   when throughput ceases to improve materially.
-4. Download and audit canonical LIBERO-90, generate the full task/BDDL/init
-   state/controller/normalization/split manifest, then implement Gate -1 probes.
-5. Predeclare and run the smallest closed-loop useful-update oracle only after
+2. Add the minimal Gate -1 evaluation-identity probe that records explicit
+   seed, init-state index/hash, reset-observation digest, initial action, and a
+   short fixed/policy-action trajectory across sync/async and batch sizes.
+3. Download and audit canonical LIBERO-90, generate the full task/BDDL/init
+   state/controller/normalization/split manifest, then complete the remaining
+   Gate -1 probes.
+4. Predeclare and run the smallest closed-loop useful-update oracle only after
    benchmark/specification probes are mechanically valid.
 
 ## Last verified handoff facts

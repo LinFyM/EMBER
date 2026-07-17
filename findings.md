@@ -63,9 +63,11 @@
 - Whether task oracles share a compact canonical functional representation.
 - Whether a predicted geometry transfers from offline support/query learning to
   sparse-reward local adaptation.
-- Useful-batch simulator throughput, memory scaling, and end-to-end iteration
-  cost under the four-GPU ceiling; batch one is now measured but intentionally
-  underutilizes the GPU.
+- Whether closed-loop evaluation identity can be made invariant to policy batch
+  size. The pinned upstream maps explicit per-environment seeds and fixed
+  init-state indices, but larger-batch calibration produced some different
+  outcomes for the same seed/index prefix; reset, first-action, and trajectory
+  probes must localize the divergence before scientific comparisons.
 
 ## Verified Phase 0 substrate facts
 
@@ -164,10 +166,37 @@
   11,922,208 KiB. The complete metrics/telemetry/gallery/video surface was
   524,142 bytes, so accumulated media remains far below cleanup pressure.
 - Batch 8 amortizes model inference, but synchronous simulator stepping and the
-  longest unfinished environment dominate the wall clock. Increasing only the
-  batch toward the 70GB memory target would waste simulator work; the next
-  matched diagnostic is batch 8 with asynchronous vector environments before
-  considering a larger batch.
+  longest unfinished environment dominate the wall clock. A matched
+  asynchronous batch-8 run preserved the exact eight-outcome vector while
+  reducing evaluation time from 119.131 to 63.403 seconds, a 1.879x speedup.
+  It used 6,167 MiB peak GPU memory, 5,009.2 MiB active-window mean memory,
+  11.71% active-window mean utilization, and 82.08 seconds total process time.
+  Asynchronous vector environments are therefore the selected high-throughput
+  path; synchronous mode remains the low-complexity diagnostic control.
+- Scaling the asynchronous one-batch run to 32 episodes produced 26 successes
+  in 120.004 evaluation seconds (0.2667 episodes/s), with 20,477 MiB peak and
+  16,295.7 MiB active-window mean GPU memory, 24.35% active-window mean GPU
+  utilization, and 138.72 seconds total process time. Scaling to 96 episodes
+  produced 78 successes in 249.347 seconds (0.3850 episodes/s), with 58,560 MiB
+  peak and 44,174.2 MiB active-window mean memory, 34.92% active-window mean
+  utilization, and 268.30 seconds total process time.
+- The final measured rung used 112 asynchronous environments and one A100. It
+  produced 84/112 successes in 282.943 evaluation seconds, or 0.3958 episodes/s:
+  2.8% faster than batch 96 despite a longer failure tail. Peak memory was
+  68,080 MiB, leaving 13,076 MiB reported free; active-window mean memory was
+  50,664.6 MiB, active-window mean utilization was 35.49%, peak utilization was
+  100%, and total process time was 302.21 seconds. Batch 112 is the measured
+  resource-rich single-GPU throughput limit; batch 96 is the conservative rung
+  when host CPU/RAM contention matters. Larger batches are not justified by the
+  marginal gain and would erode the requested OOM headroom.
+- These calibration success rates are mechanics/throughput observations, not
+  benchmark evidence. Source inspection confirms that LeRobot supplies seeds
+  `1000+i`, while `LiberoEnv` binds each sub-environment to init-state index
+  `i`; nevertheless, outcome prefixes differed at 2/32 positions between
+  batches 32 and 96 and at 10/96 positions between batches 96 and 112. The
+  current evidence does not yet distinguish batch-dependent policy numerics,
+  simulator sensitivity, or another implementation effect. Gate -1 must record
+  reset observations and initial actions before interpreting any return change.
 - PyAV decoded all 833 retained frames from the batch-8 videos in 0.123 seconds
   (about 6.8k frames/s) and LeRobot selected four requested timestamps from the
   280-frame failure video as `uint8 [4, 3, 360, 360]` in 0.289 seconds. Decoder

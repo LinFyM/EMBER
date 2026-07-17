@@ -66,11 +66,15 @@ progress through the complete design only when predecessor evidence supports it.
    LIBERO-90, and simulator-asset revisions and hashes.
 3. [x] Reproduce one official one-episode LIBERO inference/evaluation path from
    local verified snapshots before any custom policy changes.
-4. [ ] Calibrate useful single-GPU vector-environment concurrency and batching
-   from the measured batch-one and synchronous batch-eight baselines, then
-   exercise all ten `libero_spatial` task IDs with the validated offline
-   entrypoint and retained resource/video artifacts.
-5. [ ] Build the data/task/BDDL/init-state/controller/normalization/split manifest
-   and implement the Gate -1 probes.
-6. [ ] Design the smallest useful-update oracle pilot with explicit pass,
+4. [x] Calibrate useful single-GPU vector-environment concurrency and batching.
+   Matched batch-eight sync/async evaluation selected asynchronous environments;
+   measured batches 32, 96, and 112 established 112 as the resource-rich
+   throughput rung (68,080 MiB peak) and 96 as the conservative rung.
+5. [ ] Exercise all ten `libero_spatial` task IDs with the validated offline
+   entrypoint and retained resource/video artifacts. Treat this as a mechanics
+   sweep, not policy-quality evidence.
+6. [ ] Build the data/task/BDDL/init-state/controller/normalization/split manifest
+   and implement Gate -1 probes, including batch-invariant seed/init-state,
+   reset-observation, initial-action, and short-rollout identity checks.
+7. [ ] Design the smallest useful-update oracle pilot with explicit pass,
    diagnosis, and recovery criteria.

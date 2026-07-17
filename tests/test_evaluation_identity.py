@@ -18,6 +18,7 @@ from ember.evaluation_identity import (  # noqa: E402
     canonical_tree_summary,
     compare_trees,
     load_probe_spec,
+    policy_recovery_allowed,
 )
 
 
@@ -79,6 +80,36 @@ class EvaluationIdentityTest(unittest.TestCase):
             )
             with self.assertRaisesRegex(IdentityProbeError, "overlap"):
                 load_probe_spec(path)
+
+    def test_recovery_spec_authorizes_only_pixel_only_mechanics_failure(self) -> None:
+        strict_spec = load_probe_spec(ROOT / "configs" / "gate_minus1_identity.toml")
+        spec = load_probe_spec(ROOT / "configs" / "gate_minus1_identity_recovery.toml")
+        pixel_only = [
+            {
+                "reset_observation": {"mismatch_domains": ["pixels"]},
+                "fixed_trajectory": {"mismatch_domains": ["pixels"]},
+            }
+        ]
+        state_divergence = [
+            {
+                "reset_observation": {"mismatch_domains": ["pixels", "state"]},
+                "fixed_trajectory": {"mismatch_domains": ["pixels"]},
+            }
+        ]
+
+        self.assertTrue(
+            policy_recovery_allowed(spec, "reset_observation_mismatch", pixel_only)
+        )
+        self.assertFalse(
+            policy_recovery_allowed(spec, "reset_observation_mismatch", state_divergence)
+        )
+        self.assertFalse(policy_recovery_allowed(spec, None, pixel_only))
+        self.assertFalse(
+            policy_recovery_allowed(strict_spec, "reset_observation_mismatch", pixel_only)
+        )
+        strict_spec.pop("mechanics_failure_policy")
+        spec.pop("mechanics_failure_policy")
+        self.assertEqual(strict_spec, spec)
 
     def test_shell_entrypoint_dry_run_is_offline_and_single_gpu(self) -> None:
         environment = os.environ.copy()

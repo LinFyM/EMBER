@@ -13,7 +13,7 @@ action_rtol = 1.0e-6
 policy_batch_sizes = [1, 2, 8, 32, 96, 112]
 stop_on_reset_mismatch = true
 stop_on_fixed_trajectory_mismatch = true
-mechanics_failure_policy = "stop"
+mechanics_failure_policy = "diagnose_policy_if_pixel_only"
 stop_policy_batch_after_first_tolerance_mismatch = true
 
 [[env_conditions]]

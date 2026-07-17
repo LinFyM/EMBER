@@ -21,6 +21,7 @@ from ember.identity_evidence import (
     canonical_tree_summary,
     compare_trees,
     load_probe_spec,
+    policy_recovery_allowed,
 )
 
 
@@ -85,6 +86,19 @@ def _make_condition_env(spec: Mapping[str, Any], condition: Mapping[str, Any]) -
     return all_envs[spec["task_suite"]][spec["task_id"]]
 
 
+def _reset_condition(env: Any, condition: Mapping[str, Any], seeds: list[int]) -> tuple[Any, list[int], list[int]]:
+    batch_size = condition["batch_size"]
+    before = list(env.call("init_state_id"))
+    if before != list(range(batch_size)):
+        raise IdentityProbeError(f"Unexpected init-state IDs for {condition['name']}: {before}")
+    observation, _ = env.reset(seed=seeds)
+    after = list(env.call("init_state_id"))
+    expected_after = [index + batch_size for index in range(batch_size)]
+    if after != expected_after:
+        raise IdentityProbeError(f"Unexpected reset stride for {condition['name']}: {after}")
+    return observation, before, after
+
+
 def _capture_mechanics_condition(
     spec: Mapping[str, Any], condition: Mapping[str, Any], identity_rows: list[dict[str, Any]]
 ) -> tuple[dict[str, Any], dict[int, dict[str, Any]]]:
@@ -95,14 +109,7 @@ def _capture_mechanics_condition(
     env = _make_condition_env(spec, condition)
     runtime: dict[int, dict[str, Any]] = {}
     try:
-        before = list(env.call("init_state_id"))
-        if before != list(range(batch_size)):
-            raise IdentityProbeError(f"Unexpected initial init-state IDs for {condition['name']}: {before}")
-        reset_observation, _ = env.reset(seed=seeds)
-        after = list(env.call("init_state_id"))
-        expected_after = [index + batch_size for index in range(batch_size)]
-        if after != expected_after:
-            raise IdentityProbeError(f"Unexpected reset stride for {condition['name']}: {after}")
+        reset_observation, before, after = _reset_condition(env, condition, seeds)
         fixed_steps: list[Any] = []
         dummy = np.asarray(get_libero_dummy_action(), dtype=np.float32)
         for _ in range(spec["fixed_steps"]):
@@ -300,54 +307,84 @@ def _policy_batch_probe(
 
 
 def _capture_policy_condition(
-    spec: Mapping[str, Any], condition: Mapping[str, Any], runtime: tuple[Any, Any, Any, Any, Any], language: str
+    spec: Mapping[str, Any],
+    condition: Mapping[str, Any],
+    runtime: tuple[Any, Any, Any, Any, Any],
+    language: str,
+    identity_rows: list[dict[str, Any]],
 ) -> tuple[dict[str, Any], dict[int, dict[str, Any]]]:
     from lerobot.utils.random_utils import set_seed
 
     batch_size = condition["batch_size"]
     seeds = list(range(spec["seed_start"], spec["seed_start"] + batch_size))
     env = _make_condition_env(spec, condition)
-    policy = runtime[0]
     try:
-        observation, _ = env.reset(seed=seeds)
+        observation, before, after = _reset_condition(env, condition, seeds)
+        reset_observation = copy.deepcopy(observation)
         set_seed(spec["policy_rng_seed"])
-        policy.reset()
-        actions = []
-        observations = []
-        outcomes = []
-        for _ in range(spec["policy_steps"]):
-            action = _select_policy_action(runtime, observation, [language] * batch_size)
-            observation, reward, terminated, truncated, _ = env.step(action)
-            actions.append(np.array(action, copy=True))
-            observations.append(copy.deepcopy(observation))
-            outcomes.append(
-                {
-                    "reward": np.array(reward, copy=True),
-                    "terminated": np.array(terminated, copy=True),
-                    "truncated": np.array(truncated, copy=True),
-                }
-            )
+        runtime[0].reset()
+        actions, observations, outcomes = _run_policy_steps(
+            spec, runtime, env, observation, language, batch_size
+        )
         per_index = {}
         episodes = []
         for index in range(batch_size):
             episode = {
+                "reset_observation": _slice_batch(reset_observation, index, batch_size),
                 "actions": [_slice_batch(value, index, batch_size) for value in actions],
                 "observations": [_slice_batch(value, index, batch_size) for value in observations],
                 "outcomes": [_slice_batch(value, index, batch_size) for value in outcomes],
             }
             per_index[index] = episode
+            initial_action = episode["actions"][0]
             episodes.append(
                 {
-                    "logical_index": index,
-                    "seed": seeds[index],
+                    **identity_rows[index],
+                    "reset_observation": canonical_tree_summary(episode["reset_observation"]),
+                    "initial_action": canonical_tree_summary(initial_action),
+                    "initial_action_values": as_numpy(initial_action).tolist(),
                     "actions": canonical_tree_summary(episode["actions"]),
                     "observations": canonical_tree_summary(episode["observations"]),
                     "outcomes": canonical_tree_summary(episode["outcomes"]),
                 }
             )
-        return {"name": condition["name"], "episodes": episodes}, per_index
+        return {
+            "name": condition["name"],
+            "mode": condition["mode"],
+            "batch_size": batch_size,
+            "seeds": seeds,
+            "init_state_ids_before_reset": before,
+            "init_state_ids_after_reset": after,
+            "episodes": episodes,
+        }, per_index
     finally:
         env.close()
+
+
+def _run_policy_steps(
+    spec: Mapping[str, Any],
+    runtime: tuple[Any, Any, Any, Any, Any],
+    env: Any,
+    observation: Any,
+    language: str,
+    batch_size: int,
+) -> tuple[list[np.ndarray], list[Any], list[dict[str, np.ndarray]]]:
+    actions = []
+    observations = []
+    outcomes = []
+    for _ in range(spec["policy_steps"]):
+        action = _select_policy_action(runtime, observation, [language] * batch_size)
+        observation, reward, terminated, truncated, _ = env.step(action)
+        actions.append(np.array(action, copy=True))
+        observations.append(copy.deepcopy(observation))
+        outcomes.append(
+            {
+                "reward": np.array(reward, copy=True),
+                "terminated": np.array(terminated, copy=True),
+                "truncated": np.array(truncated, copy=True),
+            }
+        )
+    return actions, observations, outcomes
 
 
 def _policy_trajectory_comparisons(
@@ -363,6 +400,18 @@ def _policy_trajectory_comparisons(
                     "left": pair["left"],
                     "right": pair["right"],
                     "logical_index": index,
+                    "reset_observation": compare_trees(
+                        left["reset_observation"],
+                        right["reset_observation"],
+                        atol=spec["observation_atol"],
+                        rtol=spec["observation_rtol"],
+                    ),
+                    "initial_action": compare_trees(
+                        left["actions"][0],
+                        right["actions"][0],
+                        atol=spec["action_atol"],
+                        rtol=spec["action_rtol"],
+                    ),
                     "actions": compare_trees(
                         left["actions"], right["actions"],
                         atol=spec["action_atol"], rtol=spec["action_rtol"],
@@ -406,7 +455,11 @@ def _run_mechanics_layer(
 
 
 def _run_policy_layer(
-    spec: Mapping[str, Any], policy_path: Path, mechanics_runtime: Mapping[str, Any], language: str
+    spec: Mapping[str, Any],
+    policy_path: Path,
+    mechanics_runtime: Mapping[str, Any],
+    language: str,
+    identity_rows: list[dict[str, Any]],
 ) -> dict[str, Any]:
     policy_runtime = _load_policy(policy_path, spec)
     canonical = mechanics_runtime["sync_b1"][0]["reset"]
@@ -416,7 +469,9 @@ def _run_policy_layer(
     trajectory_reports = []
     trajectory_runtime = {}
     for condition in spec["env_conditions"]:
-        report, runtime = _capture_policy_condition(spec, condition, policy_runtime, language)
+        report, runtime = _capture_policy_condition(
+            spec, condition, policy_runtime, language, identity_rows
+        )
         trajectory_reports.append(report)
         trajectory_runtime[condition["name"]] = runtime
     return {
@@ -425,6 +480,37 @@ def _run_policy_layer(
         "trajectory_conditions": trajectory_reports,
         "trajectory_comparisons": _policy_trajectory_comparisons(spec, trajectory_runtime),
     }
+
+
+def _new_probe_result(
+    spec_path: Path,
+    policy_path: Path,
+    physical_gpu: int,
+    spec: Mapping[str, Any],
+    authority: Mapping[str, Any],
+) -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "status": "running",
+        "surface": spec["surface"],
+        "config_path": str(spec_path.resolve()),
+        "config_sha256": _sha256_file(spec_path),
+        "policy_path": str(policy_path.resolve()),
+        "physical_gpu": physical_gpu,
+        "spec": spec,
+        "authority": authority,
+        "mechanics": {},
+        "policy": {},
+        "started_unix": time.time(),
+    }
+
+
+def _finish_probe(result: dict[str, Any], result_path: Path, status: str) -> dict[str, Any]:
+    result["status"] = status
+    result["finished_unix"] = time.time()
+    result["wall_seconds"] = result["finished_unix"] - result["started_unix"]
+    _atomic_json(result_path, result)
+    return result
 
 
 def run_probe(
@@ -442,49 +528,28 @@ def run_probe(
     result_path = output_dir / "probe_result.json"
     if result_path.exists():
         raise IdentityProbeError(f"Refusing to overwrite completed probe: {result_path}")
-    started = time.time()
     maximum_env_batch = max(item["batch_size"] for item in spec["env_conditions"])
     authority, identity_rows = _prepare_authority(spec, maximum_env_batch)
-    result: dict[str, Any] = {
-        "schema_version": 1,
-        "status": "running",
-        "surface": spec["surface"],
-        "config_path": str(spec_path.resolve()),
-        "config_sha256": _sha256_file(spec_path),
-        "policy_path": str(policy_path.resolve()),
-        "physical_gpu": physical_gpu,
-        "spec": spec,
-        "authority": authority,
-        "mechanics": {},
-        "policy": {},
-        "started_unix": started,
-    }
+    result = _new_probe_result(spec_path, policy_path, physical_gpu, spec, authority)
     mechanics, mechanics_runtime, stop_reason = _run_mechanics_layer(spec, identity_rows)
     result["mechanics"] = mechanics
+    result["strict_mechanics_status"] = "failed" if stop_reason else "passed"
+    recovery_allowed = policy_recovery_allowed(spec, stop_reason, mechanics["comparisons"])
+    result["policy_recovery_allowed"] = recovery_allowed
     result["status"] = "stopped" if stop_reason else "mechanics_passed"
     result["stop_reason"] = stop_reason
     _atomic_json(result_path, result)
-    if stop_reason:
-        result["finished_unix"] = time.time()
-        result["wall_seconds"] = result["finished_unix"] - started
-        _atomic_json(result_path, result)
-        return result
+    if stop_reason and (mechanics_only or not recovery_allowed):
+        return _finish_probe(result, result_path, "stopped")
     if mechanics_only:
-        result["status"] = "mechanics_completed"
-        result["finished_unix"] = time.time()
-        result["wall_seconds"] = result["finished_unix"] - started
-        _atomic_json(result_path, result)
-        return result
+        return _finish_probe(result, result_path, "mechanics_completed")
 
     result["policy"] = _run_policy_layer(
-        spec, policy_path, mechanics_runtime, authority["task_language"]
+        spec, policy_path, mechanics_runtime, authority["task_language"], identity_rows
     )
-    result["status"] = "completed"
-    result["stop_reason"] = None
-    result["finished_unix"] = time.time()
-    result["wall_seconds"] = result["finished_unix"] - started
-    _atomic_json(result_path, result)
-    return result
+    result["stop_reason"] = stop_reason
+    status = "diagnostic_completed" if stop_reason else "completed"
+    return _finish_probe(result, result_path, status)
 
 
 def main() -> int:
@@ -525,7 +590,8 @@ def main() -> int:
             sort_keys=True,
         )
     )
-    return 0 if result["status"] in {"completed", "mechanics_completed", "stopped"} else 1
+    accepted = {"completed", "diagnostic_completed", "mechanics_completed", "stopped"}
+    return 0 if result["status"] in accepted else 1
 
 
 if __name__ == "__main__":

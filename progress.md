@@ -73,6 +73,18 @@
   variation, localizing it to renderer-level nondeterminism rather than
   sync/async or batch semantics alone. A checksummed failure packet records the
   unresolved action and short-trajectory effects; no tolerance was relaxed.
+- `configs/gate_minus1_identity_recovery.toml` is the predeclared action-layer
+  recovery spec. It is byte-for-byte equivalent in parsed experiment fields to
+  the strict spec except for one bounded state transition: a mechanics failure
+  may continue to policy diagnostics only when every mismatch domain is
+  `pixels`; any state/outcome/other mismatch still stops. The strict mechanics
+  status and original stop reason remain failed in the result.
+- The recovery first repeats the same frozen reset observation across policy
+  batches 1, 2, 8, 32, 96, and 112 with RNG seed 20260717 and action
+  `atol=rtol=1e-6`; the ladder stops at its first outside-tolerance action. It
+  then records reset digest, init-state identity, initial action values, and
+  five-step policy trajectories for the same six matched environment
+  conditions. These are localization diagnostics, not a tolerant Gate pass.
 
 ## Current phase
 

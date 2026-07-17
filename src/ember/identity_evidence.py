@@ -232,6 +232,28 @@ def _validate_probe_tolerances(spec: Mapping[str, Any]) -> None:
             raise IdentityProbeError(f"{key} must be non-negative")
 
 
+def _validate_probe_recovery(spec: Mapping[str, Any]) -> None:
+    allowed = {"stop", "diagnose_policy_if_pixel_only"}
+    if spec.get("mechanics_failure_policy") not in allowed:
+        raise IdentityProbeError("mechanics_failure_policy is not a bounded recovery mode")
+
+
+def policy_recovery_allowed(
+    spec: Mapping[str, Any], stop_reason: str | None, comparisons: list[dict[str, Any]]
+) -> bool:
+    """Authorize diagnostics after, without reclassifying, a pixel-only failure."""
+
+    if stop_reason is None or spec["mechanics_failure_policy"] != "diagnose_policy_if_pixel_only":
+        return False
+    domains = {
+        domain
+        for comparison in comparisons
+        for layer in ("reset_observation", "fixed_trajectory")
+        for domain in comparison[layer]["mismatch_domains"]
+    }
+    return domains == {"pixels"}
+
+
 def load_probe_spec(path: str | Path) -> dict[str, Any]:
     """Load and validate the bounded, overlap-only Gate -1 specification."""
 
@@ -241,4 +263,5 @@ def load_probe_spec(path: str | Path) -> dict[str, Any]:
     _validate_probe_batches(spec)
     _validate_probe_comparisons(spec)
     _validate_probe_tolerances(spec)
+    _validate_probe_recovery(spec)
     return spec

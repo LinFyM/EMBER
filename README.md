@@ -52,10 +52,10 @@ task specification into a parameter-space prior that both:
 
 ## Current status
 
-The independent expert review is complete and the project is entering staged
-execution. The repository does not yet contain an implementation or experimental
-results. Every novelty claim remains provisional until the proposed controls and
-matched-budget experiments are run.
+The independent expert review is complete and staged execution is active. The
+repository now contains a reproducible SmolVLA/LIBERO substrate and Gate -1
+diagnostics, but no Writer training is authorized. Every novelty claim remains
+provisional until the predecessor gates and matched-budget experiments pass.
 
 The active execution ceiling is **4 x NVIDIA A100 80GB GPUs**. The expert plan
 was originally written for an eight-GPU ceiling and is retained as research
@@ -80,6 +80,9 @@ design corrections adopted before implementation.
 - [`docs/execution_brief.md`](docs/execution_brief.md): active execution
   decisions, corrections to the plan, four-GPU constraints, and the first work
   package.
+- [`docs/benchmark_validity_report.md`](docs/benchmark_validity_report.md): the
+  current Gate -1 evidence, failed split-validity diagnosis, and recovery
+  decision that must precede Writer training.
 - [`docs/prior_work_memllm_lessons.md`](docs/prior_work_memllm_lessons.md):
   verified lessons from the preceding Writer research program, separated into
   reusable principles and mechanisms that must not be copied blindly.

@@ -501,3 +501,28 @@
   `INT`/`TERM` handlers for interruption, and exit with the saved rc. A shell
   smoke preserved rc 0, 7, and 124 for success, failure, and timeout while
   stopping the sampler in all three cases.
+
+## Gate -1 role-aware split validity
+
+- The coarse BDDL-category coverage was insufficient because objects can appear
+  as scene distractors without ever being task-relevant source supervision. A
+  conservative audit over only the permitted language specification therefore
+  counts role-specific verbs, moved objects, target relations, and target
+  receptacles at the task grain.
+- The current split has zero source tasks for `stack` (validation 16/63, held
+  17/64), moving `tomato_sauce` (validation 49/59, held 54), target relation
+  `under` (validation 42/89), target relation `front_of` (held 34), and target
+  receptacle `wine_rack` (held 27). It has only one source task for moving
+  `moka_pot` (source 38, validation 19), `wine_bottle` (source 26, held 27), and
+  `white_bowl` (source 43, validation 36, held 37).
+- These are exact task-specification matches, not held executable labels or
+  policy results. They are sufficient to falsify the predeclared requirement
+  that every validation/held atom occur in at least two source tasks. Gate -1
+  split validity therefore fails before any LIBERO-90 policy result, and Writer
+  training remains unauthorized.
+- The durable technical report is `docs/benchmark_validity_report.md`. The
+  recommended bounded recovery is a one-time specification-only split redesign
+  and permanent reseal before LIBERO-90 training/evaluation. Preserving the
+  current split instead requires narrowing the source-covered compositional
+  claim. Counting distractors, using held privileged labels, or changing factor
+  semantics after policy results is disallowed.

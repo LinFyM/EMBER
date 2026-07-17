@@ -128,6 +128,12 @@
   coarse validation scene/object/fixture/predicate presence sets are covered by
   source, but the finer relation/order and at-least-two atomic coverage proof is
   still open and Gate -1 is not passed.
+- A high-confidence language-only role audit now proves the current 60/15/15
+  split violates the at-least-two source-atom rule. Five atom roles have zero
+  source tasks (`stack`, moved `tomato_sauce`, `under`, `front_of`, and
+  `wine_rack`), while moved `moka_pot`, `wine_bottle`, and `white_bowl` have one
+  source task each. No LIBERO-90 policy result or held executable label was used.
+  `docs/benchmark_validity_report.md` records the evidence and recovery fork.
 - `scripts/build_libero_manifest.sh` is now the sole manifest entrypoint. The
   implementation performs Hub LFS hash/byte validation, HDF5 schema and task
   mapping checks, BDDL/init-state authority capture, source-only episodes 8–27
@@ -199,8 +205,10 @@ reproducibility: the unchanged async evaluator uses one predeclared measured-saf
 batch/mode across every arm, task-level repetition and confidence intervals are
 primary, and batch-1 exactness is a small audit. The official-overlap
 specification pilot is complete and authorizes scaling only that diagnostic.
-The canonical LIBERO-90 manifest is complete. Its finer task-factor/split proof
-and the remaining Gate -1 specification probes are now the active path.
+The canonical LIBERO-90 manifest is complete. Its role-aware audit has falsified
+the current split-validity condition, so an owner decision on one-time split
+resealing versus claim narrowing is now required before the remaining Gate -1
+specification probes are frozen.
 
 ## Implementation ownership review
 
@@ -267,9 +275,9 @@ and the remaining Gate -1 specification probes are now the active path.
 
 ## Immediate handoff
 
-1. Use the completed canonical LIBERO-90 authority to produce the finer
-   verb/object/receptacle/relation/order factor table and at-least-two source
-   coverage audit without reading held executable labels or results.
+1. Decide whether to authorize one specification-only split redesign before any
+   LIBERO-90 policy result, or preserve the split and narrow the claim. Do not
+   mutate task IDs until that material decision is recorded.
 2. Scale only the prompt-path/specification diagnostic using matched fixed-batch
    controls and task-level uncertainty on legal official-overlap/source and
    validation surfaces. Preserve both strict identity failures and do not use

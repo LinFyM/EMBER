@@ -97,6 +97,9 @@ progress through the complete design only when predecessor evidence supports it.
    completed all 90 tasks from the repaired clean commit with checksums and
    source-only normalization verified. What remains in this item is the finer
    task-factor/split proof and the remaining Gate -1 probes, not data ingestion.
+   A language-only role audit already finds eight decisive zero/one-source atom
+   violations, so the current split fails its at-least-two coverage condition
+   and awaits an owner decision before any split mutation.
 7. [x] Run the bounded evaluation-identity recovery on the same official-overlap
    surface: first compare the frozen policy under one exactly repeated reset
    observation across the predeclared batch ladder, then record matched actual

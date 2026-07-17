@@ -22,6 +22,7 @@ Before changing code, data, environments, or experiment state, read:
 9. `docs/decisions_and_open_questions.md`
 10. `docs/expert_plan.md`
 11. `docs/execution_brief.md`
+12. `docs/benchmark_validity_report.md`
 
 `docs/expert_plan.md` is preserved expert advice. Where its eight-GPU resource
 assumption or stage details conflict with the active execution contract,

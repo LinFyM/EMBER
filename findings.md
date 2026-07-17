@@ -201,3 +201,28 @@
   (about 6.8k frames/s) and LeRobot selected four requested timestamps from the
   280-frame failure video as `uint8 [4, 3, 360, 360]` in 0.289 seconds. Decoder
   throughput is not the current evaluation bottleneck.
+
+## Phase 0 ten-task mechanics sweep
+
+- One sequential process loaded the pinned overlap-trained checkpoint once and
+  exercised `libero_spatial` task IDs 0–9 with one synchronous environment,
+  seed 1000, init-state index 0, the official two-camera mapping, and the
+  relative controller. All ten task/BDDL/init-state paths completed without a
+  configuration, simulator, camera, normalization, or artifact error.
+- Nine of ten single episodes succeeded. Task 5, “pick up the black bowl on the
+  ramekin and place it on the plate,” returned zero reward and ran all 280
+  steps; the other task videos contained 81, 109, 96, 94, 124, 175, 122, 93,
+  and 120 frames. This one sample is retained as a mechanics observation only.
+  It does not justify policy-quality interpretation, task-specific tuning, or a
+  Gate decision because the checkpoint overlaps the evaluated suite.
+- Core evaluation time was 97.362 seconds for ten episodes and total process
+  wall time was 116.77 seconds. Peak GPU memory was 2,029 MiB, active-window
+  mean memory was 1,849.6 MiB, active-window mean GPU utilization was 8.38%,
+  peak utilization was 44%, and maximum host RSS was 6,084,464 KiB. Low GPU
+  occupancy is intentional for this one-episode-per-task compatibility sweep;
+  duplicating mechanics episodes solely to fill memory would add no evidence.
+- The retained artifact is 784,268 bytes and contains aggregate/per-task JSON,
+  resource telemetry, a hash manifest, an HTML gallery, and one valid H.264
+  video for every task. A decoded first/last-frame review showed the ten
+  expected spatial bowl layouts and non-empty robot trajectories. The canonical
+  local review page is `$EMBER_OUTPUT_ROOT/phase0/latest/index.html`.

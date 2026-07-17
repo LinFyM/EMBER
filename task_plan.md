@@ -70,9 +70,10 @@ progress through the complete design only when predecessor evidence supports it.
    Matched batch-eight sync/async evaluation selected asynchronous environments;
    measured batches 32, 96, and 112 established 112 as the resource-rich
    throughput rung (68,080 MiB peak) and 96 as the conservative rung.
-5. [ ] Exercise all ten `libero_spatial` task IDs with the validated offline
+5. [x] Exercise all ten `libero_spatial` task IDs with the validated offline
    entrypoint and retained resource/video artifacts. Treat this as a mechanics
-   sweep, not policy-quality evidence.
+   sweep, not policy-quality evidence. All ten paths and videos completed; the
+   single task-5 failure is retained without tuning.
 6. [ ] Build the data/task/BDDL/init-state/controller/normalization/split manifest
    and implement Gate -1 probes, including batch-invariant seed/init-state,
    reset-observation, initial-action, and short-rollout identity checks.

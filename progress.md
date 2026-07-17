@@ -49,6 +49,13 @@
   96 differed ten times between batches 96 and 112. These runs remain
   mechanics/throughput evidence only; a reset-observation/initial-action/short-
   rollout probe is now required before scientific metric comparison.
+- The official ten-task `libero_spatial` mechanics sweep completed from clean
+  commit `342b256` in one sequential process. Every task/BDDL/init-state/camera/
+  controller path and all ten videos completed; 9/10 single episodes succeeded,
+  while task 5 ran 280 steps and failed. The result is mechanics-only evidence
+  from an overlap-trained checkpoint, so no task-5 tuning or policy-quality
+  claim is authorized. Evaluation time was 97.362 seconds, wall time was 116.77
+  seconds, and peak GPU memory was 2,029 MiB.
 - Direct TorchCodec import still fails for lack of compatible shared FFmpeg
   libraries, so it is not the selected backend. The contract and direct project
   dependency now pin PyAV 15.1.0; generated-video round-trip, timestamped
@@ -58,9 +65,9 @@
 
 Phase 0, reproducible substrate, is in progress. The immutable contract, first
 official mechanics smoke, explicit PyAV decoder path, and useful single-GPU
-concurrency envelope are established. The ten-task spatial mechanics sweep,
-batch-invariant evaluation-identity probe, and canonical LIBERO-90 manifest are
-the active critical path.
+concurrency envelope are established. The ten-task spatial mechanics sweep is
+also complete. The batch-invariant evaluation-identity probe and canonical
+LIBERO-90 manifest are the active critical path.
 
 ## Implementation ownership review
 
@@ -95,16 +102,13 @@ the active critical path.
 
 ## Immediate handoff
 
-1. Run all ten `libero_spatial` task IDs through the validated official path,
-   retaining aggregate/per-task metrics, resource telemetry, and the bounded
-   review gallery.
-2. Add the minimal Gate -1 evaluation-identity probe that records explicit
+1. Add the minimal Gate -1 evaluation-identity probe that records explicit
    seed, init-state index/hash, reset-observation digest, initial action, and a
    short fixed/policy-action trajectory across sync/async and batch sizes.
-3. Download and audit canonical LIBERO-90, generate the full task/BDDL/init
+2. Download and audit canonical LIBERO-90, generate the full task/BDDL/init
    state/controller/normalization/split manifest, then complete the remaining
    Gate -1 probes.
-4. Predeclare and run the smallest closed-loop useful-update oracle only after
+3. Predeclare and run the smallest closed-loop useful-update oracle only after
    benchmark/specification probes are mechanically valid.
 
 ## Last verified handoff facts

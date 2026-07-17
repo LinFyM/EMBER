@@ -1,0 +1,63 @@
+schema_version = 1
+name = "gate_minus1_official_overlap_specification_pilot"
+surface = "official_overlap_mechanics_only"
+task_suite = "libero_spatial"
+task_ids = [0, 1]
+conditions = ["correct", "no_spec", "scene_only", "swapped"]
+scene_only_prompt = "pick up the black bowl and place it on the plate"
+batch_size = 8
+episodes_per_task = 8
+use_async_envs = true
+seed_start = 5100
+policy_rng_seed = 20260718
+bootstrap_seed = 20260719
+bootstrap_replicates = 10000
+max_videos_per_arm = 1
+
+[policy]
+role = "official_overlap_mechanics_only_never_ember_shared_base"
+task_exposure = "overlap_trained"
+
+[[hard_negative_pairs]]
+left = 0
+right = 1
+rationale = "same scene and destination; spatial source-bowl description differs"
+
+[gate_thresholds]
+full_vs_no_spec_success_pp = 20.0
+correct_vs_swapped_success_pp = 20.0
+counterfactual_correct_switch_fraction = 0.80
+
+[pilot_advancement]
+minimum_correct_successes_per_task = 1
+require_prompt_override_identity = true
+gate_decision_authorized = false
+
+[evaluation_contract]
+primary_unit = "task"
+same_batch_across_arms = true
+same_mode_across_arms = true
+same_seed_init_mapping_across_arms = true
+same_policy_rng_seed_across_arms = true
+cross_batch_pooling = false
+upstream_rollout_unchanged = true
+
+[resource_contract]
+gpu_count = 1
+expected_peak_vram_mib_lt = 8000
+coordinator_processes = 1
+simulator_worker_processes = 8
+maximum_total_processes = 9
+expected_wall_clock_minutes_lt = 20
+stop_conditions = ["mechanics_identity_failure", "correct_arm_zero_success_on_any_task", "error"]
+cleanup = "retain result, one video per arm, gallery, telemetry, and checksums; remove only failed empty residue"
+
+[interpretation]
+authorized_claim = "prompt-path and benchmark-specification diagnostic on an overlap-trained checkpoint"
+forbidden_claims = [
+  "LIBERO-90 Gate -1 pass",
+  "policy quality",
+  "Writer utility",
+  "video utility",
+  "same-init counterfactual goal switching",
+]

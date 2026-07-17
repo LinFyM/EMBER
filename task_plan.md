@@ -100,3 +100,7 @@ progress through the complete design only when predecessor evidence supports it.
    batch-1 exactness remains a small audit rather than the primary Gate.
 9. [ ] Design the smallest useful-update oracle pilot with explicit pass,
    diagnosis, and recovery criteria.
+10. [ ] Run the predeclared official-overlap specification pilot before scaling
+    Gate -1: `libero_spatial` tasks 0/1, one fixed async batch of eight per arm,
+    correct/no-spec/scene-only/swapped prompts, paired seeds/init states, one
+    video per arm, and no Gate decision from this overlap-trained surface.

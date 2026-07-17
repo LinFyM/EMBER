@@ -113,6 +113,20 @@
   none. Held BDDL semantics are not parsed. The probe also surfaced task-map /
   parsed-BDDL wording notes on non-held tasks 14, 84, and 85; task mapping and
   splits remain unchanged.
+- The next Gate -1 diagnostic is predeclared in
+  `configs/gate_minus1_specification_pilot.toml`. It uses the overlap-trained
+  official checkpoint only on `libero_spatial` tasks 0 and 1, with correct,
+  empty, scene-only, and within-pair swapped prompts. Every arm is one async
+  batch of eight with identical seeds, init-state indices, batch shape, mode,
+  and policy RNG seed. The pilot stops if either correct arm has zero successes;
+  it cannot authorize a Gate pass or any Writer/video/policy-quality claim.
+- The specification harness changes only each environment's policy-visible
+  `task_description` and proves the underlying task identity is unchanged. A
+  transparent reset-audit proxy records the exact first upstream reset seed and
+  init-state stride without replacing the upstream rollout. It writes paired
+  bootstrap diagnostics, one video per arm, a local HTML gallery, and checksums.
+  Eight focused tests and all 49 repository tests pass; the run is not yet
+  launched.
 
 ## Current phase
 
@@ -169,6 +183,13 @@ manifest and remaining Gate -1 specification probes are now the active path.
   Retire this builder only if a pinned upstream exporter reproduces the same
   source/held access separation, immutable hashes, normalization provenance,
   and local checksummed report; otherwise it remains the canonical owner.
+- `src/ember/specification_probe.py` owns only the prompt-path diagnostic and
+  reuses the existing pinned policy/runtime builders plus LeRobot's unchanged
+  evaluator and existing gallery owner. Its shell wrapper is the single launch
+  entrypoint. The 823-line source/test/wrapper addition has no fallback or
+  parallel evaluator; the module remains below the architecture review size
+  boundary, and its retirement trigger is completion of Gate -1 or an upstream
+  evaluator gaining an equivalently audited prompt-override hook.
 - Retirement triggers are explicit: remove the BDDL and robosuite repairs after
   a pinned dependency upgrade proves the upstream wheels no longer contain the
   duplicate metadata/shared-log defects; remove the local SmolVLA/LIBERO

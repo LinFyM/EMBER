@@ -18,7 +18,9 @@ from ember.specification_probe import (  # noqa: E402
     paired_gap_summary,
     resolve_prompt,
     validate_specification_spec,
+    _validate_contract_alignment,
 )
+from ember.contracts import load_contract  # noqa: E402
 
 
 class FakeVectorEnv:
@@ -54,6 +56,10 @@ class SpecificationProbeTest(unittest.TestCase):
         self.assertEqual(
             self.spec["conditions"], ["correct", "no_spec", "scene_only", "swapped"]
         )
+
+    def test_checkpoint_role_and_thresholds_match_phase0_contract(self) -> None:
+        contract = load_contract(ROOT / "configs" / "phase0.toml")
+        _validate_contract_alignment(self.spec, contract)
 
     def test_pair_map_must_be_involutive_and_cover_tasks(self) -> None:
         changed = copy.deepcopy(self.spec)

@@ -378,3 +378,17 @@
   `latest` symlink and contains no dataset payload, raw model XML, local paths,
   host identity, actions, or held labels. The complete canonical report remains
   pending until all 90 files have downloaded and passed the same audit.
+
+## Gate -1 official-overlap specification pilot
+
+- The first launch attempt stopped in 0.13 seconds before policy, simulator, or
+  GPU allocation because the pilot TOML's checkpoint role contained an extra
+  `overlap_` token and failed exact identity against `phase0.toml`. This is an
+  implementation/configuration failure, not benchmark evidence. Its long-run
+  record `gate_minus1_specification_pilot_20260717_174551` and 1.6KB checksummed
+  failure/telemetry packet are retained.
+- The bounded repair changes only that role string to the already locked
+  `official_mechanics_only_never_ember_shared_base` value and adds a regression
+  test binding both role and Gate thresholds to the Phase 0 contract. No task,
+  prompt arm, seed, init state, threshold, batch shape, or resource budget
+  changed.

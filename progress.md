@@ -125,8 +125,11 @@
   transparent reset-audit proxy records the exact first upstream reset seed and
   init-state stride without replacing the upstream rollout. It writes paired
   bootstrap diagnostics, one video per arm, a local HTML gallery, and checksums.
-  Eight focused tests and all 49 repository tests pass; the run is not yet
-  launched.
+  The first launch stopped before GPU allocation on an exact checkpoint-role
+  string mismatch between the new TOML and `phase0.toml`; its failure packet is
+  retained. The string is corrected without changing the experiment, a
+  cross-contract regression test now covers it, and nine focused tests plus all
+  50 repository tests pass. The recovered pilot has not yet launched.
 
 ## Current phase
 

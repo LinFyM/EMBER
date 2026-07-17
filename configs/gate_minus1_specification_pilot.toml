@@ -15,7 +15,7 @@ bootstrap_replicates = 10000
 max_videos_per_arm = 1
 
 [policy]
-role = "official_overlap_mechanics_only_never_ember_shared_base"
+role = "official_mechanics_only_never_ember_shared_base"
 task_exposure = "overlap_trained"
 
 [[hard_negative_pairs]]

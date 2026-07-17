@@ -97,11 +97,24 @@
   changing only model batch shape from 1 to 2 still changed all seven action
   dimensions (maximum 0.004668). The unresolved choice is now the evaluation
   contract, not seed, init-state, preprocessing, or random-noise authority.
-- The pinned LIBERO-90 download is active in the resumable zero-GPU long-run
+- The pinned LIBERO-90 download completed in the resumable zero-GPU long-run
   `libero90_canonical_download_20260717_163546`. It is restricted to the exact
   90 HDF5 files at revision `f13aa24a3da8c43c7225569f28c562979fa0e35a`, uses
-  up to eight network workers, retains partials for resume, and verifies the
-  declared 66,658,085,995-byte surface before completion.
+  up to eight network workers, returned main rc 0 at exactly 90 files and
+  66,658,085,995 bytes, and left no incomplete residue.
+- The first 8-worker canonical audit stopped after 12.01 seconds on task 14
+  before artifact generation: a legacy producer `env_args` basename differed
+  even though canonical HDF5,
+  task-map, and official BDDL names matched. A full metadata scan found six
+  finite legacy basename differences across four source, one validation, and
+  one held metadata record; all 90 canonical bindings and HDF5 instructions
+  matched.
+- The bounded fix treats only the legacy producer basename as a provenance
+  note, retains canonical HDF5 mismatch as fatal, and is covered in both
+  directions. A real task-14 audit passes with the two expected legacy notes
+  and source-only normalization access. All 11 manifest tests and all 54
+  repository tests pass; the failed long-run state remains untouched and the
+  recovery must use a fresh artifact directory from a clean commit.
 - `scripts/build_libero_manifest.sh` is now the sole manifest entrypoint. The
   implementation performs Hub LFS hash/byte validation, HDF5 schema and task
   mapping checks, BDDL/init-state authority capture, source-only episodes 8–27

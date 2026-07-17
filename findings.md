@@ -343,11 +343,11 @@
 ## Canonical LIBERO-90 authority probe
 
 - The pinned Hub tree contains exactly 90 `libero_90/*.hdf5` LFS objects and
-  66,658,085,995 bytes. A resumable, zero-GPU download is running under
+  66,658,085,995 bytes. The resumable, zero-GPU download completed under
   `.codex/longrun/libero90_canonical_download_20260717_163546` at immutable
-  revision `f13aa24a3da8c43c7225569f28c562979fa0e35a`; its launch contract projects
-  the personal storage surface below the 500GB cap and verifies file count and
-  total bytes on completion.
+  revision `f13aa24a3da8c43c7225569f28c562979fa0e35a`; its launch contract kept the
+  personal storage surface below the 500GB cap and verified file count and total
+  bytes on completion.
 - The retained manifest implementation validates each local file against the
   Hub LFS byte count and SHA256, checks all 50 contiguous demos, required HDF5
   dtypes/shapes, frame totals, task-map/BDDL basename, camera pair, OSC_POSE
@@ -380,11 +380,27 @@
   failure. The producer `env_args` also names legacy `libero_100` paths while
   canonical BDDL basenames match; this is retained as a non-blocking provenance
   note rather than copied as a local path.
+- The resumable download completed with long-run main rc 0 at exactly 90 HDF5
+  files and 66,658,085,995 bytes, with no remaining `.incomplete` files. The
+  first canonical full audit (`libero90_canonical_manifest_20260717_190204`)
+  stopped after 12.01 seconds at task 14 because the producer's legacy
+  `env_args.bddl_file` basename differed from the canonical name. It used zero
+  GPUs, peaked at 834,120 KiB host RSS, generated no output artifact, and retains
+  its traceback as a data-authority failure packet.
+- A metadata-only scan found six such legacy basename differences: four source,
+  one validation, and one held metadata record. In all 90 tasks, the canonical
+  HDF5 `bddl_file_name` matches the pinned task map and official BDDL filename,
+  and the HDF5 instruction matches the task map. Therefore the legacy producer
+  path is non-authoritative provenance, not a remapping source. The bounded
+  repair converts only this field to a visible
+  `legacy_env_bddl_basename_mismatch` note; canonical HDF5 basename mismatch
+  remains fatal. The real task-14 audit now passes with the expected two legacy
+  provenance notes and 2,087 permitted source-normalization rows.
 - The generated report is a dependency-free, filterable local HTML page linked
   to checksummed manifest, normalization, and quality JSON. It has an atomic
   `latest` symlink and contains no dataset payload, raw model XML, local paths,
   host identity, actions, or held labels. The complete canonical report remains
-  pending until all 90 files have downloaded and passed the same audit.
+  pending on the fresh recovery after the bounded legacy-provenance repair.
 
 ## Gate -1 official-overlap specification pilot
 

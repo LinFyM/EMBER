@@ -87,9 +87,14 @@ progress through the complete design only when predecessor evidence supports it.
    audit, and local filterable HTML report are implemented and tested; the
    factor summary now distinguishes task-name scene coverage from held semantic
    dimensions that are deliberately not evaluated under the access policy. The
-   pinned 66.66GB LIBERO-90 download and canonical 90-file run remain active,
-   followed by the remaining specification probes and the finer predeclared
-   verb/object/receptacle/relation/order coverage audit.
+   pinned 66.66GB LIBERO-90 download is complete at exactly 90 files and
+   66,658,085,995 bytes; the canonical 90-file audit remains active, followed by
+   the remaining specification probes and the finer predeclared
+   verb/object/receptacle/relation/order coverage audit. The first full audit
+   stopped on a legacy producer-path basename check; canonical HDF5/task-map
+   authority remained exact, so the bounded repair records that legacy field as
+   provenance while preserving canonical mismatch as fatal. A fresh recovery
+   run remains pending from the repaired clean commit.
 7. [x] Run the bounded evaluation-identity recovery on the same official-overlap
    surface: first compare the frozen policy under one exactly repeated reset
    observation across the predeclared batch ladder, then record matched actual

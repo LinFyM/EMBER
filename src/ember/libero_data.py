@@ -170,11 +170,19 @@ def _environment_metadata(
     if not isinstance(env_kwargs, dict):
         raise ManifestError(f"missing HDF5 environment kwargs: task {task_index}")
     env_bddl = str(env_args.get("bddl_file", env_kwargs.get("bddl_file_name", "")))
+    warnings = []
     if Path(env_bddl).name != bddl_basename:
-        raise ManifestError(f"legacy environment BDDL basename mismatch: task {task_index}")
+        warnings.append(
+            {
+                "code": "legacy_env_bddl_basename_mismatch",
+                "message": (
+                    "producer env_args uses a legacy BDDL basename while the canonical "
+                    "HDF5 authority matches"
+                ),
+            }
+        )
     legacy_suites = re.findall(r"libero_\d+", env_bddl)
     legacy_suite = legacy_suites[-1] if legacy_suites else "unspecified"
-    warnings = []
     if legacy_suite != "libero_90":
         warnings.append(
             {

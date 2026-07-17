@@ -230,6 +230,58 @@ class LiberoManifestTest(unittest.TestCase):
         self.assertEqual(result.record["controller"]["type"], "OSC_POSE")
         self.assertEqual(result.record["camera"]["names"], ["robot0_eye_in_hand", "agentview"])
 
+    def test_legacy_env_bddl_basename_mismatch_is_a_provenance_note(self) -> None:
+        task_name = "KITCHEN_SCENE1_test_task"
+        path = self.root / f"{task_name}_demo.hdf5"
+        _write_demo_file(path, task_name=task_name, language="test task")
+        with h5py.File(path, "r+") as handle:
+            env_args = json.loads(handle["data"].attrs["env_args"])
+            env_args["bddl_file"] = "legacy/bddl_files/libero_100/old_task_wording.bddl"
+            handle["data"].attrs.modify("env_args", json.dumps(env_args))
+
+        result = audit_demonstration_file(
+            path,
+            task_index=0,
+            task_name=task_name,
+            split="source",
+            language="test task",
+            bddl_basename=f"{task_name}.bddl",
+            expected_tag="libero-v1",
+            expected_demos=2,
+            expected_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+            expected_bytes=path.stat().st_size,
+            normalization_episodes=(),
+        )
+
+        warning_codes = {warning["code"] for warning in result.record["quality"]["warnings"]}
+        self.assertIn("legacy_env_bddl_basename_mismatch", warning_codes)
+        self.assertIn("legacy_env_bddl_suite", warning_codes)
+        self.assertEqual(result.record["quality"]["status"], "pass_with_note")
+
+    def test_canonical_hdf5_bddl_basename_mismatch_remains_fatal(self) -> None:
+        task_name = "KITCHEN_SCENE1_test_task"
+        path = self.root / f"{task_name}_demo.hdf5"
+        _write_demo_file(path, task_name=task_name, language="test task")
+        with h5py.File(path, "r+") as handle:
+            handle["data"].attrs.modify(
+                "bddl_file_name", "libero/libero/bddl_files/libero_90/wrong_task.bddl"
+            )
+
+        with self.assertRaisesRegex(ManifestError, "HDF5 BDDL basename mismatch"):
+            audit_demonstration_file(
+                path,
+                task_index=0,
+                task_name=task_name,
+                split="source",
+                language="test task",
+                bddl_basename=f"{task_name}.bddl",
+                expected_tag="libero-v1",
+                expected_demos=2,
+                expected_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+                expected_bytes=path.stat().st_size,
+                normalization_episodes=(),
+            )
+
     def test_normalization_access_is_rejected_outside_source(self) -> None:
         task_name = "KITCHEN_SCENE1_test_task"
         path = self.root / f"{task_name}_demo.hdf5"

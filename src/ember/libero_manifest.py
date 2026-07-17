@@ -201,6 +201,9 @@ def _aggregate_quality(
         for warning in task["quality"]["warnings"]:
             warning_tasks.setdefault(warning["code"], []).append(task["task_index"])
     interpretations = {
+        "legacy_env_bddl_basename_mismatch": (
+            "legacy producer provenance only; canonical HDF5 BDDL basename and task map match"
+        ),
         "legacy_env_bddl_suite": (
             "legacy producer provenance only; canonical filename and pinned BDDL authority match"
         ),

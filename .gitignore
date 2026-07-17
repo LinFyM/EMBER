@@ -1,0 +1,12 @@
+.DS_Store
+.codex/
+__pycache__/
+.pytest_cache/
+.venv/
+wandb/
+outputs/
+checkpoints/
+data/
+*.ckpt
+*.pt
+*.pth

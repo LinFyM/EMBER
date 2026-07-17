@@ -104,11 +104,11 @@ Phase 0, reproducible substrate, is in progress. The immutable contract, first
 official mechanics smoke, explicit PyAV decoder path, and useful single-GPU
 concurrency envelope are established. The ten-task spatial mechanics sweep is
 also complete. Gate -1 evaluation identity has completed its bounded mechanism
-diagnosis and now requires a scientific contract decision: fixed-batch
-statistical/functional reproducibility, a per-sample policy wrapper, or a
-deterministic-render/precision fork. No further evaluator mutation or Gate
-reinterpretation is authorized until that decision. The canonical LIBERO-90
-manifest remains an independent active path.
+diagnosis. The selected recovery is fixed-contract statistical/functional
+reproducibility: the unchanged async evaluator uses one predeclared measured-safe
+batch/mode across every arm, task-level repetition and confidence intervals are
+primary, and batch-1 exactness is a small audit. The canonical LIBERO-90
+manifest and remaining Gate -1 specification probes are now the active path.
 
 ## Implementation ownership review
 
@@ -150,17 +150,13 @@ manifest remains an independent active path.
 
 ## Immediate handoff
 
-1. Obtain and record the evaluation-contract decision. The recommended option
-   is a frozen async batch/mode with task-level repeated estimates and confidence
-   intervals plus a small batch-1 audit; alternatives are a slower per-sample
-   policy wrapper or a higher-risk deterministic-render/precision fork.
-2. After that decision, predeclare matched controls and thresholds on the
-   official-overlap/source surface. Preserve both strict identity failures and
-   do not use held results to choose the recovery.
-3. Download and audit canonical LIBERO-90, generate the full task/BDDL/init
+1. Download and audit canonical LIBERO-90, generate the full task/BDDL/init
    state/controller/normalization/split manifest, then complete the remaining
    Gate -1 probes.
-4. Predeclare and run the smallest closed-loop useful-update oracle only after
+2. Predeclare matched fixed-batch controls and uncertainty criteria on the
+   official-overlap/source surface. Preserve both strict identity failures and
+   do not use held results to choose thresholds or remedies.
+3. Predeclare and run the smallest closed-loop useful-update oracle only after
    benchmark/specification probes are mechanically valid.
 
 ## Last verified handoff facts

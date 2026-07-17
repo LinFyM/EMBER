@@ -320,3 +320,22 @@
   one-off script skipped the existing LIBERO runtime binding; its long-run
   traceback is retained and the unchanged script succeeded after that binding
   was restored.
+
+## Evaluation recovery decision
+
+- The selected recovery is fixed-contract statistical/functional
+  reproducibility. Primary scientific evaluation keeps the upstream evaluator
+  unchanged, uses asynchronous environments, and predeclares one measured-safe
+  batch size for the episode budget before reading results. Every compared arm
+  uses the same mode, batch, seeds, init-state mapping, hardware/math path, and
+  interaction budget; results from different batch shapes are not pooled as if
+  they came from the same policy realization.
+- Task is the primary independent unit. Gate decisions use repeated functional
+  estimates and confidence intervals rather than cross-batch bitwise equality.
+  A small batch-1/sync audit retains exact seed/init/action diagnostics, while
+  sparse one-level RGB differences and milliscale action deltas are recorded but
+  do not block progress unless a matched test shows material functional bias.
+- This decision favors efficient mechanism development while preserving the
+  core held-out and matched-control contract. It does not erase the strict
+  identity failures, lower a useful-update threshold, expose held information,
+  or authorize comparing methods evaluated with different batch semantics.

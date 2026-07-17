@@ -138,8 +138,22 @@
   regression test passes without changing upstream rollout semantics. The
   launch wrapper also hard-rejects any preexisting compute PID or at least
   1,000 MiB GPU allocation. It correctly rejected the active MemLLM PID on GPU
-  0, and all 51 repository tests pass. A fresh recovered pilot remains pending
-  on an empty GPU 4–7.
+  0, and all 51 repository tests pass.
+- The recovery2 scientific command then completed all 64 predeclared episodes
+  on an empty GPU 4. Correct was 6/8 on both tasks; no-spec was 0/8 on both;
+  scene-only was 2/8 then 0/8; swapped was 0/8 on both. Its 1,166,960-byte
+  canonical artifact contains valid result/eval JSON, telemetry, a local HTML
+  gallery, and eight checksum-verified videos. It is only an overlap-trained
+  prompt-path/specification scale candidate, not a LIBERO-90 Gate -1 pass or
+  evidence about Writer, video, policy quality, or same-init goal switching.
+- The evaluator printed completion and GNU `time` recorded exit 0. A subsequent
+  Bash 5.2.21 function-context error in the one-off outer telemetry `EXIT` trap
+  made the long-run wrapper record rc=1. That state remains untouched as a
+  wrapper failure packet. The canonical launcher was not the cause and is not
+  forked or patched. Future long-run templates explicitly capture the main rc,
+  perform normal-path telemetry cleanup with `INT`/`TERM` handlers, and return
+  the captured rc; shell smokes preserve 0/7/124 for success/failure/timeout and
+  leave no sampler process.
 
 ## Current phase
 
@@ -150,8 +164,10 @@ also complete. Gate -1 evaluation identity has completed its bounded mechanism
 diagnosis. The selected recovery is fixed-contract statistical/functional
 reproducibility: the unchanged async evaluator uses one predeclared measured-safe
 batch/mode across every arm, task-level repetition and confidence intervals are
-primary, and batch-1 exactness is a small audit. The canonical LIBERO-90
-manifest and remaining Gate -1 specification probes are now the active path.
+primary, and batch-1 exactness is a small audit. The official-overlap
+specification pilot is complete and authorizes scaling only that diagnostic.
+The canonical LIBERO-90 manifest and remaining Gate -1 specification probes are
+now the active path.
 
 ## Implementation ownership review
 
@@ -220,11 +236,12 @@ manifest and remaining Gate -1 specification probes are now the active path.
 
 1. Download and audit canonical LIBERO-90, generate the full task/BDDL/init
    state/controller/normalization/split manifest with the implemented canonical
-   builder, inspect the quality report, then complete the remaining Gate -1
-   probes.
-2. Predeclare matched fixed-batch controls and uncertainty criteria on the
-   official-overlap/source surface. Preserve both strict identity failures and
-   do not use held results to choose thresholds or remedies.
+   builder, inspect the quality report, then predeclare the next scaled Gate -1
+   specification surface.
+2. Scale only the prompt-path/specification diagnostic using matched fixed-batch
+   controls and task-level uncertainty on legal official-overlap/source and
+   validation surfaces. Preserve both strict identity failures and do not use
+   held results to choose thresholds or remedies.
 3. Predeclare and run the smallest closed-loop useful-update oracle only after
    benchmark/specification probes are mechanically valid.
 
@@ -250,6 +267,7 @@ manifest and remaining Gate -1 specification probes are now the active path.
   copied local diagnostic source/cache, old smoke launch wrappers/contact sheet,
   and pytest cache. Canonical outputs and all long-run state/logs were retained.
 - The latest completed visual review page is available locally at
-  `$EMBER_OUTPUT_ROOT/phase0/latest/index.html`; historical run directories are
-  retained until verified-regenerable, unpinned media becomes large or
-  numerous enough for a recorded cleanup.
+  `$EMBER_OUTPUT_ROOT/gate_minus1/specification/latest/index.html`; the earlier
+  Phase 0 gallery remains available under its own `latest` link. Historical run
+  directories are retained until verified-regenerable, unpinned media becomes
+  large or numerous enough for a recorded cleanup.

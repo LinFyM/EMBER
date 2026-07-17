@@ -55,6 +55,11 @@ progress through the complete design only when predecessor evidence supports it.
 - Record exact commands, revisions, seeds, budgets, artifacts, and failed
   attempts. Summarize durable evidence in `findings.md`; record current state and
   handoff in `progress.md`.
+- On this host, long-run telemetry wrappers must preserve the scientific
+  command return code explicitly and finalize samplers/artifacts in a normal
+  post-command path with `INT`/`TERM` handlers. Do not combine `set -e` with a
+  function-based `EXIT` trap: Bash 5.2.21 can turn successful canonical work
+  into a false outer failure during function-context unwinding.
 - A gate failure starts the recovery protocol in `AGENTS.md`. Do not silently
   change the scientific contract to create a pass.
 
@@ -100,7 +105,13 @@ progress through the complete design only when predecessor evidence supports it.
    batch-1 exactness remains a small audit rather than the primary Gate.
 9. [ ] Design the smallest useful-update oracle pilot with explicit pass,
    diagnosis, and recovery criteria.
-10. [ ] Run the predeclared official-overlap specification pilot before scaling
+10. [x] Run the predeclared official-overlap specification pilot before scaling
     Gate -1: `libero_spatial` tasks 0/1, one fixed async batch of eight per arm,
     correct/no-spec/scene-only/swapped prompts, paired seeds/init states, one
-    video per arm, and no Gate decision from this overlap-trained surface.
+    video per arm, and no Gate decision from this overlap-trained surface. The
+    scientific command completed all 64 episodes: correct was 6/8 on each task,
+    no-spec was 0/8 on each, scene-only was 2/8 then 0/8, and swapped was 0/8 on
+    each. This authorizes only a prompt-path/specification scale candidate on
+    the overlap-trained surface. The outer long-run state remains a retained
+    wrapper-failure packet because its one-off `EXIT` cleanup returned 1 after
+    the canonical command had exited 0 and written checksummed artifacts.

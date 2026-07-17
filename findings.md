@@ -409,5 +409,49 @@
 - The bounded async repair calls the pinned lazy wrapper's `_ensure`, then uses
   the verified underlying Gymnasium `AsyncVectorEnv.set_attr`; it does not alter
   reset, step, success, or policy evaluation semantics. A regression double
-  reproduces the missing-forwarder shape and now passes. The next run must use a
-  currently empty GPU 4–7 and a fresh artifact directory.
+  reproduces the missing-forwarder shape and now passes.
+- The fresh recovery2 scientific command completed all 64 predeclared episodes
+  on GPU 4. Correct prompts succeeded 6/8 on task 0 and 6/8 on task 1; no-spec
+  succeeded 0/8 and 0/8; scene-only succeeded 2/8 and 0/8; swapped succeeded
+  0/8 and 0/8. The paired task-level descriptive gaps were 75 percentage points
+  for correct versus no-spec, 62.5 for correct versus scene-only, and 75 for
+  correct versus swapped, with the predeclared bootstrap intervals retained in
+  `probe_result.json`. Both correct arms exceeded the predeclared nonzero
+  competence stop condition, so the result is a scale candidate rather than an
+  early stop.
+- This result authorizes only a prompt-path and benchmark-specification
+  diagnostic for an overlap-trained official checkpoint. It is not a
+  LIBERO-90 Gate -1 pass and says nothing about Writer utility, video utility,
+  general policy quality, or same-init counterfactual goal switching; the
+  environment goal stayed fixed while only the policy-visible prompt changed.
+- The canonical evidence is
+  `$EMBER_OUTPUT_ROOT/gate_minus1/specification/pilot_recovery2_20260717T180100Z`.
+  `checksums.sha256` verifies both result JSON files, the gallery manifest and
+  HTML, GPU telemetry, and all eight videos. The artifact is 1,166,960 bytes;
+  the videos decode at 80 fps, and a temporary first/last-frame contact sheet
+  visually confirmed consistent initial scenes and plausible rollout motion
+  before being deleted. The durable local review surface is the atomic
+  `$EMBER_OUTPUT_ROOT/gate_minus1/specification/latest/index.html` gallery.
+- Measured wall time was 5:41.57. The single A100 peaked at 6,167 MiB with at
+  least 74,988 MiB free; over telemetry samples with at least 1,000 MiB active,
+  mean memory was 4,950.59 MiB, mean GPU utilization 14.89%, and peak
+  utilization 100%. This deliberately small, one-batch-per-arm diagnostic was
+  simulator/episode bounded; allocating dummy memory or changing its fixed
+  batch after seeing results would not improve scientific throughput.
+- GNU `time` records `Exit status: 0` after the evaluator prints
+  `pilot_completed_scale_candidate`. Only afterward, the one-off outer
+  telemetry `EXIT` trap emitted `pop_var_context: head of shell_variables not a
+  function context`, causing the long-run shell to record rc=1. The long-run
+  state is intentionally not rewritten: it is a wrapper-failure packet whose
+  inner scientific command succeeded and whose complete post-run artifacts
+  checksum correctly.
+- The host's Bash 5.2.21 reproduces the exact signature with the documented
+  `errexit` plus function/evaluation minimal case; GNU Bash maintainers describe
+  this 5.2 function-context message as an `errexit` unwinding defect
+  (https://lists.gnu.org/archive/html/bug-bash/2024-02/msg00092.html). Because
+  the brittle construct lived only in the temporary long-run launch command,
+  the canonical repository launcher is unchanged. Future launch templates save
+  the main rc explicitly, finalize telemetry in the normal path, use only
+  `INT`/`TERM` handlers for interruption, and exit with the saved rc. A shell
+  smoke preserved rc 0, 7, and 124 for success, failure, and timeout while
+  stopping the sampler in all three cases.

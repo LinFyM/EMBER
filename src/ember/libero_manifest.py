@@ -154,6 +154,7 @@ def _factor_coverage(tasks: list[dict[str, Any]]) -> dict[str, Any]:
     }
     coverage: dict[str, Any] = {}
     for label, extractor in dimensions.items():
+        held_out_evaluable = label == "scenes"
         values_by_split = {
             split: sorted(
                 {value for task in tasks if task["split"] == split for value in extractor(task)}
@@ -166,12 +167,19 @@ def _factor_coverage(tasks: list[dict[str, Any]]) -> dict[str, Any]:
             "validation_absent_from_source": sorted(
                 set(values_by_split["validation"]) - source_values
             ),
-            "held_out_absent_from_source": sorted(
-                set(values_by_split["held_out"]) - source_values
+            "held_out_absent_from_source": (
+                sorted(set(values_by_split["held_out"]) - source_values)
+                if held_out_evaluable
+                else None
+            ),
+            "held_out_coverage_status": (
+                "evaluated_from_task_name_scene"
+                if held_out_evaluable
+                else "not_evaluated_due_to_access_policy"
             ),
             "held_out_semantics_access": (
                 "task-name scene only"
-                if label == "scenes"
+                if held_out_evaluable
                 else "not parsed; no held label access"
             ),
         }

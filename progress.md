@@ -113,6 +113,13 @@
   none. Held BDDL semantics are not parsed. The probe also surfaced task-map /
   parsed-BDDL wording notes on non-held tasks 14, 84, and 85; task mapping and
   splits remain unchanged.
+- The coarse factor summary no longer represents unread held semantics as an
+  empty uncovered set. Task-name scene coverage remains evaluated, while held
+  object/fixture/goal-predicate coverage is explicitly `null` and
+  `not_evaluated_due_to_access_policy`. A regression test fixes this leakage-safe
+  report contract; the finer atom-multiplicity and relation/order split audit
+  remains a distinct Gate -1 deliverable. All nine manifest tests and all 52
+  repository tests pass.
 - The next Gate -1 diagnostic is predeclared in
   `configs/gate_minus1_specification_pilot.toml`. It uses the overlap-trained
   official checkpoint only on `libero_spatial` tasks 0 and 1, with correct,

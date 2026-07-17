@@ -18,6 +18,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from ember.libero_manifest import (  # noqa: E402
     SCENE_RE,
     _bddl_authority,
+    _factor_coverage,
     ManifestError,
     audit_demonstration_file,
     compute_normalization,
@@ -164,6 +165,41 @@ class LiberoManifestTest(unittest.TestCase):
             set(record), {"filename", "sha256", "semantic_access_policy"}
         )
         self.assertEqual(record["semantic_access_policy"], "identity_only_not_parsed")
+
+    def test_factor_coverage_marks_unread_held_semantics_as_not_evaluated(self) -> None:
+        tasks = [
+            {
+                "scene": "KITCHEN_SCENE1",
+                "split": "source",
+                "bddl": {
+                    "object_categories": ["source_object"],
+                    "fixture_categories": ["source_fixture"],
+                    "goal_state": [["in", "source_object", "source_fixture"]],
+                },
+            },
+            {
+                "scene": "KITCHEN_SCENE2",
+                "split": "held_out",
+                "bddl": {"semantic_access_policy": "identity_only_not_parsed"},
+            },
+        ]
+
+        coverage = _factor_coverage(tasks)
+
+        self.assertEqual(
+            coverage["scenes"]["held_out_absent_from_source"],
+            ["KITCHEN_SCENE2"],
+        )
+        self.assertEqual(
+            coverage["scenes"]["held_out_coverage_status"],
+            "evaluated_from_task_name_scene",
+        )
+        for dimension in ("object_categories", "fixture_categories", "goal_predicates"):
+            self.assertIsNone(coverage[dimension]["held_out_absent_from_source"])
+            self.assertEqual(
+                coverage[dimension]["held_out_coverage_status"],
+                "not_evaluated_due_to_access_policy",
+            )
 
     def test_metadata_only_audit_never_returns_privileged_samples(self) -> None:
         task_name = "KITCHEN_SCENE1_test_task"

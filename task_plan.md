@@ -85,8 +85,11 @@ progress through the complete design only when predecessor evidence supports it.
    identity checks are implemented and have isolated renderer and model-batch
    effects. The leakage-safe manifest builder, source-only normalization, hash
    audit, and local filterable HTML report are implemented and tested; the
+   factor summary now distinguishes task-name scene coverage from held semantic
+   dimensions that are deliberately not evaluated under the access policy. The
    pinned 66.66GB LIBERO-90 download and canonical 90-file run remain active,
-   followed by the remaining specification probes.
+   followed by the remaining specification probes and the finer predeclared
+   verb/object/receptacle/relation/order coverage audit.
 7. [x] Run the bounded evaluation-identity recovery on the same official-overlap
    surface: first compare the frozen policy under one exactly repeated reset
    observation across the predeclared batch ladder, then record matched actual

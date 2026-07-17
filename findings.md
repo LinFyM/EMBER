@@ -366,6 +366,13 @@
   arrays. All three exposed the expected two cameras and `OSC_POSE` controller.
   Held BDDL files are hash-checked but not semantically parsed, so goal/object
   labels cannot enter the manifest or a later Writer path.
+- A read-only authority pass confirms that the coarse validation scene, object,
+  fixture, and goal-predicate sets represented in parsed BDDL are subsets of
+  the source sets. This is not yet the required atom-multiplicity or
+  verb/object/receptacle/relation/order split proof. Held semantic BDDL remains
+  unparsed: the manifest now serializes semantic held coverage as `null` with
+  `not_evaluated_due_to_access_policy`, rather than the misleading empty list.
+  Scene coverage remains independently evaluable from the task-name prefix.
 - Task-map and HDF5 instructions agree, but parsed BDDL wording differs on the
   non-held tasks 14, 84, and 85. These are semantic paraphrase/provenance notes,
   not filename or task-index mismatches: the manifest preserves both strings

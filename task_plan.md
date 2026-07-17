@@ -26,6 +26,11 @@ progress through the complete design only when predecessor evidence supports it.
 - No more than four concurrent A100s for all EMBER work.
 - No full-system implementation before its scientific predecessors pass.
 - No datasets, checkpoints, secrets, or private infrastructure in Git.
+- After correctness baselines, tune useful GPU work toward roughly 70GB per
+  allocated A100 with about 10GB average OOM headroom; do not count dummy
+  allocations as utilization.
+- Retain compact task videos and a `latest` gallery for review, while pruning
+  only verified-regenerable, unpinned old media when it accumulates.
 
 ## Phases
 
@@ -59,9 +64,12 @@ progress through the complete design only when predecessor evidence supports it.
    verify package consistency and the four-GPU/storage contracts.
 2. [x] Pin immutable LeRobot, LIBERO runtime/official, SmolVLA, SmolVLM,
    LIBERO-90, and simulator-asset revisions and hashes.
-3. [ ] Reproduce one official one-episode LIBERO inference/evaluation path from
+3. [x] Reproduce one official one-episode LIBERO inference/evaluation path from
    local verified snapshots before any custom policy changes.
-4. [ ] Build the data/task/BDDL/init-state/controller/normalization/split manifest
+4. [ ] Calibrate useful single-GPU vector-environment batching from the measured
+   batch-one baseline, then exercise all ten `libero_spatial` task IDs with the
+   validated offline entrypoint and retained resource/video artifacts.
+5. [ ] Build the data/task/BDDL/init-state/controller/normalization/split manifest
    and implement the Gate -1 probes.
-5. [ ] Design the smallest useful-update oracle pilot with explicit pass,
+6. [ ] Design the smallest useful-update oracle pilot with explicit pass,
    diagnosis, and recovery criteria.

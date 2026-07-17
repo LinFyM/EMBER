@@ -22,15 +22,28 @@
 - Immutable model, dataset, asset, task-map, and official semantic-tree hashes
   are recorded. The pinned SmolVLM constructor snapshot has been downloaded and
   its 2,029,990,624-byte weight file matches the declared SHA256.
-- No EMBER training or scientific evaluation has started. No GPU has been
-  allocated by the Phase 0 bootstrap work.
+- The official offline SmolVLA/LIBERO mechanics path now completes on
+  `libero_spatial` task 0 at seed 1000. The one-episode run succeeded, generated
+  a valid video/gallery, used 2,029 MiB peak GPU memory, and released its sole
+  GPU afterward. This overlap-trained checkpoint remains mechanics-only; no
+  EMBER training or scientific Gate evaluation has started.
+- The initial attempt's invalid `env.seed` field was diagnosed at the config
+  layer and removed; global `seed=1000` is the validated entrypoint. The failed
+  and recovered local long-run records are both retained.
+- `scripts/run_phase0_eval.sh` is the canonical single-process offline
+  evaluation entrypoint. It validates GPU/task/batch arguments, refuses rollout
+  batches that LeRobot would partly discard, rechecks pinned runtime assets, and
+  generates a safe post-run HTML/video gallery with an atomic `latest` link.
+- Direct TorchCodec import currently fails for lack of compatible shared FFmpeg
+  libraries. This is recorded as an open video-decoder reproducibility defect;
+  current gallery inspection uses the already locked `imageio-ffmpeg` binary.
 
 ## Current phase
 
-Phase 0, reproducible substrate, is in progress. The environment and immutable
-revision contract are established; the official one-episode SmolVLA/LIBERO
-mechanics reproduction and its resource measurements are the active critical
-path.
+Phase 0, reproducible substrate, is in progress. The immutable contract and the
+first official mechanics smoke are established. Useful-batch throughput
+calibration, the ten-task spatial mechanics sweep, video-decoder closure, and
+the canonical LIBERO-90 manifest are the active critical path.
 
 ## Implementation ownership review
 
@@ -41,30 +54,44 @@ path.
   policy behavior.
 - `src/ember/phase0_runtime.py` is the single owner of checked external-asset
   materialization: the offline SmolVLA view and LIBERO path/asset binding.
+- `src/ember/eval_artifacts.py` owns only post-run video validation, gallery
+  generation, media hashes, and the safe `latest` symlink. It never changes
+  evaluation metrics or simulator behavior.
 - `scripts/bootstrap_env.sh` remains a thin environment entrypoint and
-  `scripts/zig-cxx` is only the pinned user-space compiler adapter. Tests mirror
-  these three Python ownership surfaces; no legacy or parallel implementation
-  path was added.
+  `scripts/zig-cxx` is only the pinned user-space compiler adapter.
+  `scripts/run_phase0_eval.sh` is the one thin evaluation entrypoint over the
+  runtime and gallery owners. Tests mirror these ownership surfaces; the local
+  launch scripts used during diagnosis are ignored evidence, not parallel
+  retained implementations.
 - Retirement triggers are explicit: remove the BDDL and robosuite repairs after
   a pinned dependency upgrade proves the upstream wheels no longer contain the
   duplicate metadata/shared-log defects; remove the local SmolVLA/LIBERO
   bindings when pinned upstream APIs propagate constructor/tokenizer revisions
-  and asset revisions end-to-end. Git preserves the old evidence rather than
-  retaining superseded executable paths.
+  and asset revisions end-to-end; retire the local gallery owner only after a
+  selected durable experiment system preserves the same local-video hashes,
+  safe path checks, and bounded retention contract. Git preserves old evidence
+  rather than retaining superseded executable paths.
+- The architecture guard reports no hard violations, large functions, dense
+  directories, or parallel implementation families. Its sole review flag is
+  the four-file surface: one canonical eval shell entrypoint, one reusable
+  artifact owner, and their two focused test files.
 
 ## Immediate handoff
 
-1. Finish and hash-check the pinned official LIBERO smoke checkpoint, SmolVLA
-   base, and LIBERO assets. Use standard HTTP when Xet reconstruction fails.
-2. Materialize an offline runtime view that maps both SmolVLA's VLM constructor
-   and tokenizer to the pinned local SmolVLM snapshot.
-3. Create an isolated `LIBERO_CONFIG_PATH` pointing to pinned BDDL, init-state,
-   asset, and data roots; verify EGL on only the selected free GPU.
-4. Run the official one-episode `libero_spatial` mechanics smoke on one GPU and
-   record peak VRAM, wall time, simulator throughput, output size, and failure
-   evidence.
-5. Download and audit canonical LIBERO-90, generate the full manifest, then
-   implement Gate -1 probes and the smallest closed-loop useful-update oracle.
+1. Use the clean canonical entrypoint to measure batch-size scaling on one free
+   GPU. Increase only useful vector-environment work, target about 70GB used with
+   about 10GB average headroom, and stop scaling where throughput ceases to
+   improve materially.
+2. Run all ten `libero_spatial` task IDs through the validated official path,
+   retaining aggregate/per-task metrics, resource telemetry, and the bounded
+   review gallery.
+3. Pin a working video decoder path: either supply compatible shared FFmpeg for
+   TorchCodec or explicitly validate and lock PyAV, including a real frame
+   selection test and throughput measurement.
+4. Download and audit canonical LIBERO-90, generate the full task/BDDL/init
+   state/controller/normalization/split manifest, then implement Gate -1 probes.
+5. Predeclare and run the smallest closed-loop useful-update oracle only after
+   benchmark/specification probes are mechanically valid.
 
 ## Last verified handoff facts
 
@@ -74,3 +101,7 @@ path.
   execution must recalculate every launch for at most four GPUs.
 - A gate failure requires diagnosis and bounded recovery, not immediate
   abandonment and not post-hoc weakening of held-out constraints.
+- The latest completed visual review page is available locally at
+  `$EMBER_OUTPUT_ROOT/phase0/latest/index.html`; historical run directories are
+  retained until verified-regenerable, unpinned media becomes large or
+  numerous enough for a recorded cleanup.

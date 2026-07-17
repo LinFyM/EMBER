@@ -24,6 +24,13 @@
 ## Adopted execution decisions
 
 - Active compute cap: four A100 80GB GPUs, normally one or two for pilots.
+- After a minimal correctness baseline, useful batching, simulator concurrency,
+  and caching should target about 70GB used per allocated A100 with about 10GB
+  average headroom. Unused memory is not filled with dummy allocations.
+- Completed evaluations retain a compact local HTML/video gallery. Metrics,
+  manifests, failure packets, `latest`, and designated evidence are durable;
+  only verified-regenerable, unpinned older media is eligible for recorded
+  cleanup when visual artifacts accumulate.
 - SmolVLA plus LIBERO is the primary development surface. OpenVLA-OFT is scale
   confirmation after lower-cost gates survive.
 - Neutral-prompt parameter compilation is a co-primary mechanism test.
@@ -56,8 +63,9 @@
 - Whether task oracles share a compact canonical functional representation.
 - Whether a predicted geometry transfers from offline support/query learning to
   sparse-reward local adaptation.
-- Actual simulator throughput, GPU memory, storage footprint, and research
-  iteration cost under the four-GPU ceiling.
+- Useful-batch simulator throughput, memory scaling, and end-to-end iteration
+  cost under the four-GPU ceiling; batch one is now measured but intentionally
+  underutilizes the GPU.
 
 ## Verified Phase 0 substrate facts
 
@@ -109,3 +117,35 @@
   492,798,408 bytes because it is repository-level storage accounting, not the
   current snapshot payload. Storage budgets and completeness tests use the
   former; the latter is retained only as provenance.
+
+## Phase 0 official mechanics smoke
+
+- The first launch attempt failed before GPU allocation because LeRobot 0.6.0's
+  `LiberoEnv` does not accept `env.seed`. Removing only that invalid field and
+  retaining the global `seed=1000` fixed the configuration layer. The failed
+  command, traceback, and 0 MiB GPU telemetry remain in the local long-run
+  record; no scientific threshold or task surface changed.
+- The recovered offline run used the official overlap-trained mechanics-only
+  checkpoint on `libero_spatial` task 0, one episode, seed 1000, one synchronous
+  environment, and one A100. The task was “pick up the black bowl between the
+  plate and the ramekin and place it on the plate.” It succeeded 1/1 at roughly
+  step 78. This validates mechanics only and is not Gate -1 or policy-quality
+  evidence.
+- Core evaluation time was 19.168 seconds and total process wall time was 40.74
+  seconds, including imports, environment construction, and model load. Peak
+  GPU memory was 2,029 MiB; across the full sampled process window average GPU
+  utilization was 1.60%, maximum utilization was 21%, and maximum host RSS was
+  4,604,404 KiB. The retained metrics, telemetry, HTML, manifest, and 80-frame
+  H.264 video total 58,817 bytes.
+- The runtime LIBERO processor constructs an eight-dimensional state
+  `[eef_pos(3), axis_angle(3), gripper_qpos(2)]`, matching the checkpoint's
+  eight-dimensional normalization statistics. The checkpoint config's declared
+  six-dimensional state feature is stale metadata rather than the runtime
+  observation contract; manifests and later oracle code must use the verified
+  eight-dimensional authority.
+- `torchcodec==0.11.1` is import-discoverable but cannot load because this host
+  currently has no compatible shared FFmpeg libraries. LeRobot would therefore
+  incorrectly select a broken default video backend by package presence alone.
+  The bundled `imageio-ffmpeg` binary can inspect/render current artifacts, but
+  a pinned working decoder backend remains required before video-backed data
+  loading is declared reproducible.

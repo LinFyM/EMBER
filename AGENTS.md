@@ -134,6 +134,14 @@ exhausted, preserve the negative result and narrow the claim explicitly.
 - Use durable logs for long runs. Store temporary output under `.codex/tmp/` or
   ignored output directories; never commit datasets, checkpoints, credentials,
   private infrastructure, or raw copyrighted papers.
+- Make simulator and policy runs reviewable after execution with compact video
+  galleries or equivalent visual artifacts, but keep that surface bounded.
+  Preserve metrics, manifests, failure packets, the current `latest` gallery,
+  and explicitly designated evidence; after artifact-heavy phases, inventory
+  accumulated media and remove only verified-regenerable, unpinned older videos
+  when they become numerous or large. Record every such prune with paths,
+  hashes, reason, and bytes released, and never delete ambiguous scientific
+  evidence automatically.
 - Keep one canonical implementation path. Put unselected alternatives in
   `docs/decisions_and_open_questions.md` until evidence selects them.
 - Use isolated branches or worktrees for overlapping write-capable tasks. Never

@@ -25,6 +25,7 @@ dependencies = [
 ]
 
 [project.scripts]
+ember-build-libero-manifest = "ember.libero_manifest:main"
 ember-verify-contract = "ember.contracts:main"
 
 [[tool.uv.index]]

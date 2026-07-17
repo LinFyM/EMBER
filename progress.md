@@ -97,6 +97,22 @@
   changing only model batch shape from 1 to 2 still changed all seven action
   dimensions (maximum 0.004668). The unresolved choice is now the evaluation
   contract, not seed, init-state, preprocessing, or random-noise authority.
+- The pinned LIBERO-90 download is active in the resumable zero-GPU long-run
+  `libero90_canonical_download_20260717_163546`. It is restricted to the exact
+  90 HDF5 files at revision `f13aa24a3da8c43c7225569f28c562979fa0e35a`, uses
+  up to eight network workers, retains partials for resume, and verifies the
+  declared 66,658,085,995-byte surface before completion.
+- `scripts/build_libero_manifest.sh` is now the sole manifest entrypoint. The
+  implementation performs Hub LFS hash/byte validation, HDF5 schema and task
+  mapping checks, BDDL/init-state authority capture, source-only episodes 8–27
+  normalization, data-quality aggregation, checksums, and an atomic local HTML
+  `latest` report. Eight focused manifest tests and all 41 repository tests
+  pass; the wrapper dry-run, Python compilation, and shell syntax checks pass.
+- A live source/validation/held probe passed on tasks 0, 3, and 1. Only source
+  task 0 produced numeric normalization arrays; validation and held returned
+  none. Held BDDL semantics are not parsed. The probe also surfaced task-map /
+  parsed-BDDL wording notes on non-held tasks 14, 84, and 85; task mapping and
+  splits remain unchanged.
 
 ## Current phase
 
@@ -135,6 +151,24 @@ manifest and remaining Gate -1 specification probes are now the active path.
   runtime and gallery owners. Tests mirror these ownership surfaces; the local
   launch scripts used during diagnosis are ignored evidence, not parallel
   retained implementations.
+- `src/ember/libero_data.py` owns the only HDF5/LFS integrity and source-only
+  normalization implementation. `src/ember/libero_manifest.py` owns task/BDDL/
+  init-state authority and the single manifest orchestration path;
+  `src/ember/libero_report.py` owns only the dependency-free read-only HTML
+  projection. The shell wrapper is thin and no alternate downloader, converter,
+  or manifest format was added.
+- This manifest surface adds five active files and roughly 1.3k source/test/
+  wrapper lines, so the architecture guard requires an explicit rationale. The
+  size is driven by the current second-use boundary between leakage enforcement,
+  task authority, artifact rendering, and synthetic HDF5 contract tests. Core
+  retained modules are 337 and 504 lines. The 70-line audit function is one
+  file-open/access-policy transaction with schema and environment work already
+  delegated; the 90-line report function is a cohesive declarative HTML
+  template, and the long test helper materializes the complete synthetic HDF5
+  schema. There is no superseded path to retire.
+  Retire this builder only if a pinned upstream exporter reproduces the same
+  source/held access separation, immutable hashes, normalization provenance,
+  and local checksummed report; otherwise it remains the canonical owner.
 - Retirement triggers are explicit: remove the BDDL and robosuite repairs after
   a pinned dependency upgrade proves the upstream wheels no longer contain the
   duplicate metadata/shared-log defects; remove the local SmolVLA/LIBERO
@@ -151,8 +185,9 @@ manifest and remaining Gate -1 specification probes are now the active path.
 ## Immediate handoff
 
 1. Download and audit canonical LIBERO-90, generate the full task/BDDL/init
-   state/controller/normalization/split manifest, then complete the remaining
-   Gate -1 probes.
+   state/controller/normalization/split manifest with the implemented canonical
+   builder, inspect the quality report, then complete the remaining Gate -1
+   probes.
 2. Predeclare matched fixed-batch controls and uncertainty criteria on the
    official-overlap/source surface. Preserve both strict identity failures and
    do not use held results to choose thresholds or remedies.

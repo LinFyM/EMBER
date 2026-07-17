@@ -78,7 +78,10 @@ progress through the complete design only when predecessor evidence supports it.
    and implement Gate -1 probes, including batch-invariant seed/init-state,
    reset-observation, initial-action, and short-rollout identity checks. The
    identity checks are implemented and have isolated renderer and model-batch
-   effects; the full manifest and remaining specification probes remain open.
+   effects. The leakage-safe manifest builder, source-only normalization, hash
+   audit, and local filterable HTML report are implemented and tested; the
+   pinned 66.66GB LIBERO-90 download and canonical 90-file run remain active,
+   followed by the remaining specification probes.
 7. [x] Run the bounded evaluation-identity recovery on the same official-overlap
    surface: first compare the frozen policy under one exactly repeated reset
    observation across the predeclared batch ladder, then record matched actual

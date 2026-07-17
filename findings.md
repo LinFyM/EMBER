@@ -339,3 +339,42 @@
   core held-out and matched-control contract. It does not erase the strict
   identity failures, lower a useful-update threshold, expose held information,
   or authorize comparing methods evaluated with different batch semantics.
+
+## Canonical LIBERO-90 authority probe
+
+- The pinned Hub tree contains exactly 90 `libero_90/*.hdf5` LFS objects and
+  66,658,085,995 bytes. A resumable, zero-GPU download is running under
+  `.codex/longrun/libero90_canonical_download_20260717_163546` at immutable
+  revision `f13aa24a3da8c43c7225569f28c562979fa0e35a`; its launch contract projects
+  the personal storage surface below the 500GB cap and verifies file count and
+  total bytes on completion.
+- The retained manifest implementation validates each local file against the
+  Hub LFS byte count and SHA256, checks all 50 contiguous demos, required HDF5
+  dtypes/shapes, frame totals, task-map/BDDL basename, camera pair, OSC_POSE
+  controller, robot, and control frequency. It never reads or serializes the
+  producer `model_file` XML or its embedded private paths.
+- Numeric HDF5 values are permitted only for the 60 source tasks and episodes
+  8–27 (`source_base_fit`). The derived eight-dimensional runtime state is
+  `[ee_states(6), gripper_states(2)]`; the action is seven-dimensional. Mean,
+  population standard deviation, min/max, and q01/q10/q50/q90/q99 are written
+  to a separate normalization artifact. Validation and held HDF5 files receive
+  schema/metadata and raw-file integrity audits only; no decoded numeric values
+  are returned.
+- A live three-surface probe passed on downloaded files. Source task 0 yielded
+  1,525 normalization rows with state shape `[1525,8]` and action shape
+  `[1525,7]`; validation task 3 and held task 1 both returned no numeric sample
+  arrays. All three exposed the expected two cameras and `OSC_POSE` controller.
+  Held BDDL files are hash-checked but not semantically parsed, so goal/object
+  labels cannot enter the manifest or a later Writer path.
+- Task-map and HDF5 instructions agree, but parsed BDDL wording differs on the
+  non-held tasks 14, 84, and 85. These are semantic paraphrase/provenance notes,
+  not filename or task-index mismatches: the manifest preserves both strings
+  and does not remap tasks, alter the split, or treat the difference as a Gate
+  failure. The producer `env_args` also names legacy `libero_100` paths while
+  canonical BDDL basenames match; this is retained as a non-blocking provenance
+  note rather than copied as a local path.
+- The generated report is a dependency-free, filterable local HTML page linked
+  to checksummed manifest, normalization, and quality JSON. It has an atomic
+  `latest` symlink and contains no dataset payload, raw model XML, local paths,
+  host identity, actions, or held labels. The complete canonical report remains
+  pending until all 90 files have downloaded and passed the same audit.

@@ -76,13 +76,31 @@ Thresholds, splits, held access, and the shared-frozen contract cannot change.
 
 One GPU is used for smoke and batch calibration; two GPUs may run the two task
 oracles in parallel only after the measured launch contract. Calibration loads
-the model and optimizer once, streams the all-60-source base-fit surface with
-four persistent workers, and tests microbatches 8, 16, 32, and 64 in ascending
-order. Gradient accumulation keeps effective batch 64. Each candidate gets one
-warmup and two measured optimizer steps; timing includes data loading, while
-loss values and all policy outcomes are forbidden from the calibration result.
-Selection chooses the fastest measured candidate that retains at least 10 GiB
-free and stops larger candidates after the first OOM. Reusable raw HDF5
-streaming avoids a duplicate converted video dataset. Canonical reports include
-a bounded local gallery; regenerable duplicate media and rotating recovery
-checkpoints are cleaned only after hashes and retained evidence pass.
+the model once and streams the all-60-source base-fit surface with four
+persistent workers. Before every microbatch candidate it restores one identical
+trainable-state snapshot, resets the same global RNG, and constructs a new
+empty AdamW optimizer. An absolute optimizer-step/effective-batch-slot sampler
+keeps the 64 examples and fixed flow noise/time identical across accumulation
+partitions. The retained per-step row-key digests must match before selection.
+Each candidate gets one warmup and two measured optimizer steps; timing includes
+data loading, while loss values and all policy outcomes are forbidden from the
+result. Selection chooses the fastest candidate that retains at least 10 GiB
+free and stops larger candidates after the first OOM.
+
+The first resource run measured useful throughput and memory, but its candidates
+successively reused updated model/optimizer state and changed draws with the
+accumulation partition. Its artifact remains immutable diagnostic provenance;
+its former microbatch-64 selection is explicitly unauthorized. One predeclared
+matched recovery is required before a batch authority is frozen. Before the
+formal 10,000-step fit, a separate source-only mechanics probe must compare
+uninterrupted step 2 against step 1 checkpoint plus resume to step 2. Model,
+optimizer, scheduler, RNG, and next sampler batch must match exactly.
+Checkpoints use the pinned LeRobot safetensors state format inside an atomic
+directory rename, hash every retained file, keep only the latest two
+recoverable checkpoints, and retain step 10,000 as a candidate pending source-
+competence evaluation rather than calling it a successful source base.
+
+Reusable raw HDF5 streaming avoids a duplicate converted video dataset.
+Canonical reports include a bounded local gallery; regenerable duplicate media
+and rotating recovery checkpoints are cleaned only after hashes and retained
+evidence pass.

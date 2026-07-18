@@ -8,29 +8,32 @@ import json
 import time
 import tomllib
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 import torch
-from torch.utils.data import DataLoader
 
 from ember.eval_artifacts import update_latest_link
+from ember.gate_zero_base_runtime import (
+    build_base_optimizer,
+    capture_trainable_state,
+    gradient_accumulation_steps as _base_accumulation_steps,
+    make_base_loader,
+    optimizer_step as run_base_optimizer_step,
+    optimizer_state_summary,
+    restore_trainable_state,
+)
 from ember.gate_zero_contract import load_gate_zero_contract
 from ember.gate_zero_data import (
     GateZeroSurface,
     SourceHdf5Dataset,
-    TaskDemoFrameBatchSampler,
     load_surface_authorities,
 )
 from ember.gate_zero_runtime import (
-    batch_provenance_keys,
-    deterministic_flow_inputs,
     load_smolvla_policy,
     load_source_normalization,
     parameter_summary,
-    preprocess_smolvla_batch,
     set_global_seed,
     sha256_file,
-    smolvla_flow_loss,
 )
 
 
@@ -42,11 +45,10 @@ class GateZeroBatchCalibrationError(RuntimeError):
 
 
 def gradient_accumulation_steps(effective_batch_size: int, micro_batch_size: int) -> int:
-    if effective_batch_size <= 0 or micro_batch_size <= 0:
-        raise GateZeroBatchCalibrationError("batch sizes must be positive")
-    if effective_batch_size % micro_batch_size:
-        raise GateZeroBatchCalibrationError("microbatch must divide the effective batch")
-    return effective_batch_size // micro_batch_size
+    try:
+        return _base_accumulation_steps(effective_batch_size, micro_batch_size)
+    except ValueError as error:
+        raise GateZeroBatchCalibrationError(str(error)) from error
 
 
 def select_calibration_candidate(
@@ -85,86 +87,35 @@ def validate_output_destination(output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
 
-def _training_row_keys(
-    raw_batch: dict[str, Any],
-    *,
-    micro_batch_size: int,
-    optimizer_step: int,
-    accumulation_step: int,
-) -> list[str]:
-    return [
-        f"{key}/mb{micro_batch_size}/step{optimizer_step}/acc{accumulation_step}/slot{slot}"
-        for slot, key in enumerate(batch_provenance_keys(raw_batch))
-    ]
+def assert_matched_candidate_records(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Fail closed unless every completed candidate used the same effective batches."""
 
-
-def _make_loader(
-    dataset: SourceHdf5Dataset,
-    *,
-    micro_batch_size: int,
-    effective_batch_size: int,
-    optimizer_steps: int,
-    seed: int,
-    calibration: dict[str, Any],
-) -> DataLoader:
-    sampler = TaskDemoFrameBatchSampler(
-        dataset,
-        micro_batch_size=micro_batch_size,
-        optimizer_steps=optimizer_steps,
-        gradient_accumulation_steps=gradient_accumulation_steps(
-            effective_batch_size, micro_batch_size
-        ),
-        seed=seed,
-    )
-    return DataLoader(
-        dataset,
-        batch_sampler=sampler,
-        num_workers=calibration["num_workers"],
-        pin_memory=calibration["pin_memory"],
-        persistent_workers=calibration["persistent_workers"],
-        prefetch_factor=calibration["prefetch_factor"],
-    )
-
-
-def _optimizer_step(
-    iterator: Iterator[dict[str, Any]],
-    *,
-    policy: Any,
-    preprocessor: Any,
-    optimizer: torch.optim.Optimizer,
-    spec: dict[str, Any],
-    micro_batch_size: int,
-    optimizer_step: int,
-    accumulation_steps: int,
-) -> None:
-    optimizer.zero_grad(set_to_none=True)
-    for accumulation_step in range(accumulation_steps):
-        raw_batch = next(iterator)
-        keys = _training_row_keys(
-            raw_batch,
-            micro_batch_size=micro_batch_size,
-            optimizer_step=optimizer_step,
-            accumulation_step=accumulation_step,
-        )
-        batch = preprocess_smolvla_batch(
-            raw_batch, preprocessor, list(policy.config.image_features)
-        )
-        noise, flow_time = deterministic_flow_inputs(
-            keys,
-            action_shape=(spec["data"]["action_chunk_size"], policy.config.max_action_dim),
-            noise_seed=spec["base_fit"]["batch_calibration"]["calibration_seed"],
-            time_seed=spec["base_fit"]["batch_calibration"]["calibration_seed"] + 1,
-            device=torch.device("cuda"),
-        )
-        loss = smolvla_flow_loss(policy, batch, noise, flow_time)
-        (loss / accumulation_steps).backward()
-    grad_norm = torch.nn.utils.clip_grad_norm_(
-        [value for value in policy.parameters() if value.requires_grad],
-        spec["base_fit"]["gradient_clip_norm"],
-    )
-    if not torch.isfinite(grad_norm):
-        raise GateZeroBatchCalibrationError("non-finite calibration gradient")
-    optimizer.step()
+    completed = [record for record in records if record.get("status") == "completed"]
+    if not completed:
+        raise GateZeroBatchCalibrationError("no completed candidate to match")
+    reference = completed[0]
+    row_digests = reference.get("optimizer_step_row_keys_sha256")
+    fixed_flow_seed = reference.get("fixed_flow_seed")
+    if (
+        not isinstance(row_digests, list)
+        or not row_digests
+        or any(not isinstance(value, str) or len(value) != 64 for value in row_digests)
+    ):
+        raise GateZeroBatchCalibrationError("invalid effective-batch draw authority")
+    if not isinstance(fixed_flow_seed, int):
+        raise GateZeroBatchCalibrationError("invalid fixed flow-noise authority")
+    for record in completed:
+        if record.get("matched_initial_trainable_state") is not True:
+            raise GateZeroBatchCalibrationError("candidate initial trainable state was not restored")
+        if record.get("optimizer_step_row_keys_sha256") != row_digests:
+            raise GateZeroBatchCalibrationError("candidate effective-batch draws differ")
+        if record.get("fixed_flow_seed") != fixed_flow_seed:
+            raise GateZeroBatchCalibrationError("candidate fixed flow noise/time differs")
+    return {
+        "completed_candidate_count": len(completed),
+        "fixed_flow_seed": fixed_flow_seed,
+        "optimizer_step_row_keys_sha256": row_digests,
+    }
 
 
 def _run_candidate(
@@ -181,16 +132,21 @@ def _run_candidate(
     accumulation_steps = gradient_accumulation_steps(
         base_fit["effective_batch_size"], micro_batch_size
     )
-    loader = _make_loader(
+    loader = make_base_loader(
         dataset,
         micro_batch_size=micro_batch_size,
         effective_batch_size=base_fit["effective_batch_size"],
         optimizer_steps=calibration["technical_steps_per_candidate"],
-        seed=calibration["calibration_seed"] + micro_batch_size,
-        calibration=calibration,
+        start_optimizer_step=0,
+        sampler_seed=calibration["calibration_seed"],
+        num_workers=calibration["num_workers"],
+        prefetch_factor=calibration["prefetch_factor"],
+        persistent_workers=calibration["persistent_workers"],
+        pin_memory=calibration["pin_memory"],
     )
     iterator = iter(loader)
     measured_seconds: list[float] = []
+    optimizer_step_row_keys_sha256: list[str] = []
     minimum_free_memory_mib: int | None = None
     try:
         for optimizer_step in range(calibration["technical_steps_per_candidate"]):
@@ -198,16 +154,17 @@ def _run_candidate(
                 torch.cuda.synchronize()
                 torch.cuda.reset_peak_memory_stats()
             started = time.perf_counter()
-            _optimizer_step(
+            step_record = run_base_optimizer_step(
                 iterator,
                 policy=policy,
                 preprocessor=preprocessor,
                 optimizer=optimizer,
                 spec=spec,
-                micro_batch_size=micro_batch_size,
-                optimizer_step=optimizer_step,
+                optimizer_step_index=optimizer_step,
                 accumulation_steps=accumulation_steps,
+                fixed_flow_seed=calibration["calibration_seed"],
             )
+            optimizer_step_row_keys_sha256.append(step_record["row_keys_sha256"])
             torch.cuda.synchronize()
             elapsed = time.perf_counter() - started
             if optimizer_step >= calibration["warmup_optimizer_steps_per_candidate"]:
@@ -238,6 +195,10 @@ def _run_candidate(
         "torch_peak_reserved_mib": int(torch.cuda.max_memory_reserved() // MIB),
         "minimum_free_memory_mib": minimum_free_memory_mib,
         "headroom_pass": minimum_free_memory_mib >= calibration["minimum_free_memory_mib"],
+        "matched_initial_trainable_state": True,
+        "fixed_flow_seed": calibration["calibration_seed"],
+        "optimizer_step_row_keys_sha256": optimizer_step_row_keys_sha256,
+        "optimizer_state": optimizer_state_summary(optimizer),
     }
 
 
@@ -251,7 +212,7 @@ def _write_result(result: dict[str, Any], output_dir: Path, latest_link: Path) -
 
 def _prepare_runtime(
     args: argparse.Namespace, spec: dict[str, Any], phase0: dict[str, Any]
-) -> tuple[SourceHdf5Dataset, Any, Any, torch.optim.Optimizer]:
+) -> tuple[SourceHdf5Dataset, Any, Any]:
     if sha256_file(args.base_path / "model.safetensors") != spec["authority"]["model_weight_sha256"]:
         raise GateZeroBatchCalibrationError("base policy weight authority changed")
     authorities, demo_indices = load_surface_authorities(
@@ -278,15 +239,7 @@ def _prepare_runtime(
     from lerobot.policies.smolvla.processor_smolvla import make_smolvla_pre_post_processors
 
     preprocessor, _ = make_smolvla_pre_post_processors(policy.config, dataset_stats=stats)
-    set_global_seed(spec["base_fit"]["batch_calibration"]["calibration_seed"])
-    optimizer = torch.optim.AdamW(
-        [value for value in policy.parameters() if value.requires_grad],
-        lr=spec["base_fit"]["learning_rate"],
-        betas=tuple(spec["base_fit"]["betas"]),
-        eps=spec["base_fit"]["epsilon"],
-        weight_decay=spec["base_fit"]["weight_decay"],
-    )
-    return dataset, policy, preprocessor, optimizer
+    return dataset, policy, preprocessor
 
 
 def _initialize_tracking(spec: dict[str, Any], run_name: str) -> Any:
@@ -349,14 +302,19 @@ def _calibrate_candidates(
     *,
     policy: Any,
     preprocessor: Any,
-    optimizer: torch.optim.Optimizer,
     spec: dict[str, Any],
     trackio: Any,
 ) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
+    initial_trainable_state = capture_trainable_state(policy)
     for index, micro_batch_size in enumerate(
         spec["base_fit"]["batch_calibration"]["micro_batch_candidates"]
     ):
+        restore_trainable_state(policy, initial_trainable_state)
+        set_global_seed(spec["base_fit"]["batch_calibration"]["calibration_seed"])
+        optimizer = build_base_optimizer(
+            [value for value in policy.parameters() if value.requires_grad], spec
+        )
         torch.cuda.empty_cache()
         try:
             record = _run_candidate(
@@ -373,6 +331,7 @@ def _calibrate_candidates(
             record = _oom_record(spec, micro_batch_size, error)
         records.append(record)
         _log_candidate(trackio, record, step=index)
+        del optimizer
         if record["status"] != "completed":
             break
     return records
@@ -381,6 +340,7 @@ def _calibrate_candidates(
 def _build_result(
     spec: dict[str, Any], policy: Any, records: list[dict[str, Any]], *, started: float, run: str
 ) -> dict[str, Any]:
+    match_authority = assert_matched_candidate_records(records)
     selected = select_calibration_candidate(
         records,
         minimum_free_memory_mib=spec["base_fit"]["batch_calibration"][
@@ -401,6 +361,10 @@ def _build_result(
         "parameter_summary": parameter_summary(policy),
         "effective_batch_size": spec["base_fit"]["effective_batch_size"],
         "candidate_records": records,
+        "matched_initial_trainable_state": True,
+        "matched_effective_batch_draws": True,
+        "matched_flow_noise_and_time": True,
+        "matched_candidate_authority": match_authority,
         "selected": selected,
         "wall_seconds": time.perf_counter() - started,
         "tracking": {
@@ -417,14 +381,13 @@ def run_calibration(args: argparse.Namespace) -> dict[str, Any]:
     started = time.perf_counter()
     spec = load_gate_zero_contract(args.config, args.phase0_contract)
     phase0 = tomllib.loads(args.phase0_contract.read_text(encoding="utf-8"))
-    dataset, policy, preprocessor, optimizer = _prepare_runtime(args, spec, phase0)
+    dataset, policy, preprocessor = _prepare_runtime(args, spec, phase0)
     trackio = _initialize_tracking(spec, args.output_dir.name)
     try:
         records = _calibrate_candidates(
             dataset,
             policy=policy,
             preprocessor=preprocessor,
-            optimizer=optimizer,
             spec=spec,
             trackio=trackio,
         )

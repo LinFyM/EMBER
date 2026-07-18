@@ -330,11 +330,14 @@ class TaskDemoFrameBatchSampler:
         stop = self.start_optimizer_step + self.optimizer_steps
         for optimizer_step in range(self.start_optimizer_step, stop):
             for accumulation_step in range(self.gradient_accumulation_steps):
-                rng = np.random.default_rng(
-                    np.random.SeedSequence([self.seed, optimizer_step, accumulation_step])
-                )
                 batch = []
-                for _ in range(self.micro_batch_size):
+                for local_slot in range(self.micro_batch_size):
+                    effective_batch_slot = accumulation_step * self.micro_batch_size + local_slot
+                    rng = np.random.default_rng(
+                        np.random.SeedSequence(
+                            [self.seed, optimizer_step, effective_batch_slot]
+                        )
+                    )
                     task_id = self._tasks[int(rng.integers(len(self._tasks)))]
                     demos = sorted(self._nested[task_id])
                     demo_id = demos[int(rng.integers(len(demos)))]

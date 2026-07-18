@@ -146,9 +146,22 @@ def _validate_batch_calibration(spec: dict[str, Any]) -> None:
         "calibration candidate order",
     )
     _require_equal(
-        calibration["reuse_single_model_optimizer_process"],
+        calibration["reuse_single_model_process"],
         True,
-        "single-process calibration reuse",
+        "single-model-process calibration reuse",
+    )
+    for key in (
+        "restore_identical_trainable_state_before_each_candidate",
+        "new_empty_optimizer_before_each_candidate",
+        "reset_identical_global_rng_before_each_candidate",
+        "matched_effective_batch_draws_across_candidates",
+        "matched_fixed_flow_noise_and_time_across_candidates",
+    ):
+        _require_equal(calibration[key], True, f"matched calibration {key}")
+    _require_equal(
+        calibration["effective_batch_draw_algorithm"],
+        "absolute_optimizer_step_and_effective_batch_slot_v2",
+        "effective-batch draw algorithm",
     )
     _require_equal(
         calibration["include_data_loading_in_timing"], True, "calibration timing surface"
@@ -157,6 +170,84 @@ def _validate_batch_calibration(spec: dict[str, Any]) -> None:
     _require_equal(calibration["stop_on_first_oom"], True, "calibration OOM stop")
     if calibration["minimum_free_memory_mib"] < 10240:
         raise GateZeroContractError("calibration memory headroom weakened")
+    selection = calibration["selection_authority"]
+    _require_equal(selection["selected_micro_batch_size"], 64, "selected microbatch")
+    _require_equal(
+        selection["selected_gradient_accumulation_steps"], 1, "selected accumulation"
+    )
+    if (
+        not isinstance(selection["result_sha256"], str)
+        or len(selection["result_sha256"]) != 64
+        or any(character not in "0123456789abcdef" for character in selection["result_sha256"])
+    ):
+        raise GateZeroContractError("invalid calibration result SHA256")
+    _require_equal(
+        selection["scientific_outcome_metrics_recorded"], False, "calibration outcome ban"
+    )
+    if selection["status"] not in {
+        "superseded_pending_matched_recovery",
+        "frozen_matched_resource_authority",
+    }:
+        raise GateZeroContractError("unknown calibration selection authority state")
+    if selection["status"] == "superseded_pending_matched_recovery":
+        _require_equal(selection["authorized_for_training"], False, "training authorization")
+        _require_equal(selection["matched_initial_trainable_state"], False, "prior state match")
+        _require_equal(selection["matched_effective_batch_draws"], False, "prior draw match")
+    else:
+        _require_equal(selection["authorized_for_training"], True, "training authorization")
+        _require_equal(selection["matched_initial_trainable_state"], True, "state match")
+        _require_equal(selection["matched_effective_batch_draws"], True, "draw match")
+
+
+def _validate_base_checkpoint(spec: dict[str, Any]) -> None:
+    base_fit = spec["base_fit"]
+    checkpoint = base_fit["checkpoint"]
+    selection = base_fit["batch_calibration"]["selection_authority"]
+    _require_equal(checkpoint["world_size"], 1, "base-fit world size")
+    _require_equal(
+        base_fit["scheduler_implementation"],
+        "lerobot.optim.schedulers.CosineDecayWithWarmupSchedulerConfig",
+        "scheduler implementation",
+    )
+    _require_equal(checkpoint["num_workers"], 4, "base-fit worker count")
+    _require_equal(
+        checkpoint["checkpoint_every_steps"], base_fit["checkpoint_every_steps"], "checkpoint cadence"
+    )
+    _require_equal(
+        checkpoint["recoverable_checkpoints_to_keep"],
+        base_fit["recoverable_checkpoints_to_keep"],
+        "checkpoint retention",
+    )
+    _require_equal(
+        checkpoint["scientific_checkpoint_step"],
+        base_fit["scientific_checkpoint_step"],
+        "scientific checkpoint",
+    )
+    for key in (
+        "atomic_directory_rename",
+        "save_optimizer_scheduler_rng",
+        "hash_every_retained_file",
+        "resume_requires_identical_batch_topology",
+        "resume_requires_identical_contract_and_calibration_hashes",
+    ):
+        _require_equal(checkpoint[key], True, f"checkpoint {key}")
+    probe = base_fit["resume_probe"]
+    _require_equal(probe["uninterrupted_target_step"], 2, "resume probe target")
+    _require_equal(probe["interrupted_checkpoint_step"], 1, "resume probe checkpoint")
+    _require_equal(probe["micro_batch_size"], selection["selected_micro_batch_size"], "probe microbatch")
+    _require_equal(
+        probe["gradient_accumulation_steps"],
+        selection["selected_gradient_accumulation_steps"],
+        "probe accumulation",
+    )
+    for key in (
+        "exact_model_tensor_equality",
+        "exact_optimizer_scheduler_rng_equality",
+        "exact_next_sampler_batch_equality",
+        "cleanup_transient_full_checkpoints_after_verification",
+    ):
+        _require_equal(probe[key], True, f"resume probe {key}")
+    _require_equal(probe["scientific_outcome_metrics_recorded"], False, "resume outcome ban")
 
 
 def _validate_resources(spec: dict[str, Any], phase0: dict[str, Any]) -> None:
@@ -193,6 +284,7 @@ def load_gate_zero_contract(
     _validate_scientific_surface(spec, phase0)
     _validate_oracle(spec)
     _validate_batch_calibration(spec)
+    _validate_base_checkpoint(spec)
     _validate_thresholds(spec, phase0)
     _validate_resources(spec, phase0)
     if spec["recovery"]["threshold_changes_forbidden"] is not True:

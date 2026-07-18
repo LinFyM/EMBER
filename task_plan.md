@@ -191,13 +191,17 @@ progress through the complete design only when predecessor evidence supports it.
     are exactly zero, one step creates finite nonzero updates, and saved deltas
     reload bit-exactly. The independent shared-base one-step path also passes
     with finite loss, gradient, and optimizer update.
-15. [x] After exact functional-zero mechanics pass, calibrate source-base
+15. [ ] After exact functional-zero mechanics pass, calibrate source-base
     microbatch candidates `[8,16,32,64]` in one model-loading process for three
-    technical steps each. Microbatch 64 / accumulation 1 is fastest at 92.19
-    samples/s and retains 61,712 MiB free; preserve effective batch 64 rather
-    than inflating it merely to occupy memory.
+    technical steps each. The first run remains valid throughput/memory
+    diagnostics (microbatch 64 reached 92.19 samples/s with 61,712 MiB free),
+    but it cannot select a launch shape because candidates reused successively
+    updated model/optimizer state and accumulation-dependent draws. Run the one
+    predeclared matched recovery from identical trainable state, fresh AdamW,
+    and identical effective-batch/noise authorities; keep effective batch 64.
 16. [ ] Build and mechanically verify the single canonical source-base trainer,
     including scheduler, Trackio, atomic checkpoints, optimizer/scheduler/RNG
     and sampler-step resume, rotating two recovery checkpoints, one retained
     scientific checkpoint, and a hash-bound runtime/evaluator manifest. Only
-    then launch the 10,000-step all-60-source base fit at calibrated batch 64.
+    after item 15 is resealed and resume identity passes may the 10,000-step
+    all-60-source base fit launch.

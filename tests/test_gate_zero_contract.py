@@ -60,6 +60,31 @@ class GateZeroContractTest(unittest.TestCase):
         self.assertTrue(calibration["include_data_loading_in_timing"])
         self.assertTrue(calibration["outcome_metrics_forbidden"])
         self.assertTrue(calibration["stop_on_first_oom"])
+        authority = calibration["selection_authority"]
+        self.assertEqual(authority["status"], "superseded_pending_matched_recovery")
+        self.assertEqual(authority["selected_micro_batch_size"], 64)
+        self.assertEqual(authority["selected_gradient_accumulation_steps"], 1)
+        self.assertEqual(len(authority["result_sha256"]), 64)
+        self.assertFalse(authority["matched_initial_trainable_state"])
+        self.assertFalse(authority["matched_effective_batch_draws"])
+        self.assertFalse(authority["authorized_for_training"])
+
+    def test_base_checkpoint_and_resume_probe_are_fail_closed(self) -> None:
+        spec = load_gate_zero_contract(self.path, ROOT / "configs" / "phase0.toml")
+        checkpoint = spec["base_fit"]["checkpoint"]
+        probe = spec["base_fit"]["resume_probe"]
+
+        self.assertEqual(checkpoint["world_size"], 1)
+        self.assertEqual(checkpoint["checkpoint_every_steps"], 1000)
+        self.assertEqual(checkpoint["recoverable_checkpoints_to_keep"], 2)
+        self.assertTrue(checkpoint["atomic_directory_rename"])
+        self.assertTrue(checkpoint["save_optimizer_scheduler_rng"])
+        self.assertTrue(checkpoint["hash_every_retained_file"])
+        self.assertEqual(probe["uninterrupted_target_step"], 2)
+        self.assertEqual(probe["interrupted_checkpoint_step"], 1)
+        self.assertTrue(probe["exact_model_tensor_equality"])
+        self.assertTrue(probe["exact_optimizer_scheduler_rng_equality"])
+        self.assertTrue(probe["cleanup_transient_full_checkpoints_after_verification"])
 
     def test_loader_rejects_episode_overlap(self) -> None:
         text = self.path.read_text(encoding="utf-8").replace(

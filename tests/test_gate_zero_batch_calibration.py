@@ -11,6 +11,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from ember.gate_zero_batch_calibration import (  # noqa: E402
     GateZeroBatchCalibrationError,
+    assert_matched_candidate_records,
     gradient_accumulation_steps,
     select_calibration_candidate,
 )
@@ -70,6 +71,46 @@ class GateZeroBatchCalibrationTest(unittest.TestCase):
                     }
                 ],
                 minimum_free_memory_mib=10240,
+            )
+
+    def test_matched_candidate_check_requires_identical_effective_batches(self) -> None:
+        matched = [
+            {
+                "micro_batch_size": 8,
+                "status": "completed",
+                "matched_initial_trainable_state": True,
+                "fixed_flow_seed": 31,
+                "optimizer_step_row_keys_sha256": ["a" * 64, "b" * 64],
+            },
+            {
+                "micro_batch_size": 16,
+                "status": "completed",
+                "matched_initial_trainable_state": True,
+                "fixed_flow_seed": 31,
+                "optimizer_step_row_keys_sha256": ["a" * 64, "b" * 64],
+            },
+        ]
+
+        authority = assert_matched_candidate_records(matched)
+
+        self.assertEqual(authority["fixed_flow_seed"], 31)
+        self.assertEqual(authority["optimizer_step_row_keys_sha256"], ["a" * 64, "b" * 64])
+        matched[1]["optimizer_step_row_keys_sha256"][1] = "c" * 64
+        with self.assertRaisesRegex(GateZeroBatchCalibrationError, "effective-batch draws"):
+            assert_matched_candidate_records(matched)
+
+    def test_matched_candidate_check_rejects_unrestored_state(self) -> None:
+        with self.assertRaisesRegex(GateZeroBatchCalibrationError, "initial trainable state"):
+            assert_matched_candidate_records(
+                [
+                    {
+                        "micro_batch_size": 8,
+                        "status": "completed",
+                        "matched_initial_trainable_state": False,
+                        "fixed_flow_seed": 31,
+                        "optimizer_step_row_keys_sha256": ["a" * 64],
+                    }
+                ]
             )
 
     def test_shell_dry_run_has_one_canonical_offline_entrypoint(self) -> None:

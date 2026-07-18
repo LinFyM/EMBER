@@ -7,6 +7,8 @@ mechanics_amended_at_utc = "2026-07-18T07:34:00Z"
 mechanics_amendment = "replace_nonzero_peft_orthogonal_init_with_exact_zero_output_init"
 mechanics_amendment_prior_exposure = "one_fixed_task3_support_batch_mechanics_loss_no_multistep_training_query_report_or_rollout"
 mechanics_amendment_selection_basis = "restore_predeclared_functional_zero_contract_not_loss_direction_or_magnitude"
+batch_calibration_selected_at_utc = "2026-07-18T07:52:37Z"
+batch_calibration_recovery_predeclared_at_utc = "2026-07-18T08:03:00Z"
 
 [authority]
 phase0_contract_path = "configs/phase0.toml"
@@ -85,6 +87,7 @@ epsilon = 1e-8
 weight_decay = 1e-10
 gradient_clip_norm = 10.0
 scheduler = "linear_warmup_cosine_decay"
+scheduler_implementation = "lerobot.optim.schedulers.CosineDecayWithWarmupSchedulerConfig"
 warmup_steps = 1000
 decay_steps = 10000
 decay_learning_rate = 0.0000025
@@ -100,7 +103,13 @@ warmup_optimizer_steps_per_candidate = 1
 measured_optimizer_steps_per_candidate = 2
 calibration_seed = 2026071806
 candidate_order = "ascending_stop_after_first_oom"
-reuse_single_model_optimizer_process = true
+reuse_single_model_process = true
+restore_identical_trainable_state_before_each_candidate = true
+new_empty_optimizer_before_each_candidate = true
+reset_identical_global_rng_before_each_candidate = true
+effective_batch_draw_algorithm = "absolute_optimizer_step_and_effective_batch_slot_v2"
+matched_effective_batch_draws_across_candidates = true
+matched_fixed_flow_noise_and_time_across_candidates = true
 num_workers = 4
 prefetch_factor = 2
 persistent_workers = true
@@ -111,6 +120,46 @@ selection = "highest_measured_samples_per_second_with_headroom"
 gradient_accumulation_preserves_effective_batch = true
 outcome_metrics_forbidden = true
 stop_on_first_oom = true
+
+[base_fit.batch_calibration.selection_authority]
+status = "superseded_pending_matched_recovery"
+result_relative_path = "gate_zero/batch_calibration/source_base_20260718T075122Z/calibration_result.json"
+result_sha256 = "5c80e8bafb62ea744e2bd44b9461049053962911feb670c3ed55da4a2bf67aea"
+selected_micro_batch_size = 64
+selected_gradient_accumulation_steps = 1
+selected_samples_per_second = 92.19330594248564
+selected_minimum_free_memory_mib = 61712
+scientific_outcome_metrics_recorded = false
+matched_initial_trainable_state = false
+matched_effective_batch_draws = false
+authorized_for_training = false
+superseded_reason = "candidates_shared_updated_state_and_accumulation_partition_changed_draws"
+
+[base_fit.checkpoint]
+world_size = 1
+num_workers = 4
+checkpoint_every_steps = 1000
+recoverable_checkpoints_to_keep = 2
+scientific_checkpoint_step = 10000
+atomic_directory_rename = true
+save_optimizer_scheduler_rng = true
+hash_every_retained_file = true
+runtime_manifest_schema_version = 2
+recovery_policy_role = "source_base_training_recovery"
+scientific_policy_role = "source_base_candidate_pending_competence"
+resume_requires_identical_batch_topology = true
+resume_requires_identical_contract_and_calibration_hashes = true
+
+[base_fit.resume_probe]
+uninterrupted_target_step = 2
+interrupted_checkpoint_step = 1
+micro_batch_size = 64
+gradient_accumulation_steps = 1
+exact_model_tensor_equality = true
+exact_optimizer_scheduler_rng_equality = true
+exact_next_sampler_batch_equality = true
+cleanup_transient_full_checkpoints_after_verification = true
+scientific_outcome_metrics_recorded = false
 
 [base_competence]
 task_ids = [3, 4]

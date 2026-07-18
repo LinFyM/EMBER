@@ -276,13 +276,18 @@ def batch_provenance_keys(batch: dict[str, Any]) -> list[str]:
 def smolvla_flow_loss(
     model: Any,
     batch: dict[str, Any],
-    noise: torch.Tensor,
-    flow_time: torch.Tensor,
+    noise: torch.Tensor | None = None,
+    flow_time: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Evaluate the pinned bf16-autocast SmolVLA flow loss."""
 
     with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-        loss, _ = model.forward(batch, noise=noise, time=flow_time)
+        if noise is None and flow_time is None:
+            loss, _ = model.forward(batch)
+        elif noise is not None and flow_time is not None:
+            loss, _ = model.forward(batch, noise=noise, time=flow_time)
+        else:
+            raise GateZeroRuntimeError("noise and flow time must both be provided or omitted")
     if loss.ndim != 0 or not torch.isfinite(loss):
         raise GateZeroRuntimeError("non-finite or non-scalar SmolVLA loss")
     return loss

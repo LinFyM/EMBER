@@ -569,15 +569,12 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   `51b9405`: 99,880,992 trainable parameters, finite loss and gradient, 1,818
   MiB peak PyTorch reserved memory, 2,345 MiB peak sampled device memory, and
   rc 0 with GPU 4 released. It does not establish source competence.
-- The batch-calibration path is now predeclared and implemented before its first
-  run. It loads the all-source dataset, model, optimizer, normalization, and
-  Trackio process once; evaluates microbatches 8/16/32/64 at fixed effective
-  batch 64 using four persistent HDF5 workers; includes data loading in timing;
-  records no loss or policy outcome; and stops after the first OOM. One warmup
-  plus two measured optimizer steps per candidate makes optimizer allocation
-  and worker startup non-comparative. The fastest candidate retaining 10 GiB
-  free is selected deterministically. The shared model/preprocessor/loss owner
-  was extracted from the already validated probe rather than duplicated.
+- The batch-calibration path loads the all-source dataset, model, normalization,
+  and Trackio process once; evaluates microbatches 8/16/32/64 at effective batch
+  64 using four persistent HDF5 workers; includes data loading in timing; records
+  no loss or policy outcome; and stops after the first OOM. One warmup plus two
+  measured optimizer steps per candidate make worker startup non-comparative.
+  The shared model/preprocessor/loss owner is reused from validated mechanics.
 - Clean commit `394ef4a` completed the canonical calibration long-run
   `gate_zero_source_base_batch_calibration_20260718_075123`. All candidates
   passed headroom; measured throughput was 49.03, 76.25, 86.30, and 92.19
@@ -585,6 +582,23 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   accumulation 1, peaks at 19,441 MiB sampled device memory, and retains 61,712
   MiB free. The 71.44-second result and four-step Trackio series are checksummed,
   outcome-free, and the sole GPU was released.
+- A post-run matching audit showed that this first run successively reused the
+  updated model/optimizer and changed samples with accumulation partition. It
+  is retained as resource telemetry, but its selection authority is now
+  `superseded_pending_matched_recovery`; no base training is authorized from it.
+  The recovery was frozen before any source training: each candidate restores
+  the same trainable snapshot, resets global RNG, starts a new empty AdamW, and
+  uses absolute effective-batch slots plus matching fixed-noise row keys. The
+  result builder compares every per-step row digest and fails closed on drift.
+- The retained implementation keeps one optimization owner:
+  `gate_zero_base_runtime.py` supplies the loader, optimizer, pinned upstream
+  scheduler, and optimizer step to both calibration and the forthcoming single
+  base trainer. `gate_zero_checkpoint.py` separately owns hash-bound full-policy
+  runtime views; it is not a second trainer or evaluator. The architecture scan
+  has review-only signals from this current four-file source/test slice and one
+  cohesive 81-line measurement transaction, with no hard violation or parallel
+  execution path. These owners retire after Gate 0 only if pinned LeRobot gains
+  equivalent matched sampling and atomic provenance contracts.
 
 ## Immediate handoff
 
@@ -593,9 +607,10 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
 2. Preserve both same-state native-goal mechanics and the same-observation
    language-action path, then run action-hidden video content/temporal controls.
    Do not use held results to choose thresholds, task IDs, or remedies.
-3. Rerun exact-zero adapter mechanics from the amended clean contract, then use
-   one-process batch calibration and resumable shared-base fitting to establish
-   legal source competence before the task-local oracle or paired-goal behavior.
+3. Complete the single matched batch-calibration recovery, then verify exact
+   full-state checkpoint/resume identity before resumable shared-base fitting.
+   Establish legal source competence before task-local oracle or paired-goal
+   behavior claims.
 
 ## Last verified handoff facts
 

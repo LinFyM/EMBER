@@ -139,6 +139,34 @@ class GateZeroDataTest(unittest.TestCase):
                 counts[dataset.frame_index[index][1]] += 1
         self.assertLess(abs(counts[0] / sum(counts.values()) - 0.5), 0.03)
 
+    def test_effective_batch_draws_are_invariant_to_microbatch_partition(self) -> None:
+        dataset = SourceHdf5Dataset(
+            [self.authority], demo_indices=[0, 1], action_chunk_size=2, verify_sha256=False
+        )
+        batches_8 = list(
+            TaskDemoFrameBatchSampler(
+                dataset,
+                micro_batch_size=8,
+                optimizer_steps=1,
+                gradient_accumulation_steps=8,
+                seed=23,
+            )
+        )
+        batches_16 = list(
+            TaskDemoFrameBatchSampler(
+                dataset,
+                micro_batch_size=16,
+                optimizer_steps=1,
+                gradient_accumulation_steps=4,
+                seed=23,
+            )
+        )
+
+        self.assertEqual(
+            [index for batch in batches_8 for index in batch],
+            [index for batch in batches_16 for index in batch],
+        )
+
     def test_surface_factory_denies_report_without_selection_freeze(self) -> None:
         manifest = self.root / "manifest.json"
         manifest.write_text(

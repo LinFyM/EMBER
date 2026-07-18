@@ -449,6 +449,11 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     and its result-blind ladder is
     `configs/gate_zero_mature_lora_all_linear_stage_ladder.toml` (SHA256
     `f3b66cff59135f52e81ab9ef387230381662fad6797e5c63557f791bd015739f`).
+    Its one permitted live smoke passed: 117 resolved targets and 7,027,200
+    parameters, exact-zero physical initialization, finite one-step loss and
+    gradient, and 17.93/18.56GiB peak allocation/reservation. The first-row
+    digest exactly matches the primary trajectory and GPU 4 returned to 0MiB.
+    The two task-1k staged fits are therefore mechanically authorized.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

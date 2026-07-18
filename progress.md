@@ -1438,3 +1438,9 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   recovery and telemetry hashes. The same support/query rows, optimizer,
   augmentation, seed/noise and rollout identities are retained; only the exact
   target set and resulting parameter count change.
+- The single live recovery smoke passed on physical GPU 4: exact target/count,
+  exact-zero physical initialization, finite 64-sample loss/gradient, matched
+  primary step-1 row digest, 63.4 samples/s, and 17.93/18.56GiB peak Torch
+  allocation/reservation. It opened no query candidate or rollout surface and
+  left GPU 4 at 0MiB with no worker residue. The task-3/task-4 1k stage may now
+  launch on two independent GPUs under the frozen ladder.

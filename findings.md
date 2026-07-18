@@ -1451,3 +1451,11 @@
   and `f3b66cff59135f52e81ab9ef387230381662fad6797e5c63557f791bd015739f`;
   every sampler, noise, augmentation, evaluator and final rollout seed matches
   the primary, so target support is the only scientific change.
+- The conditional support is mechanically viable on one A100: PEFT resolved
+  exactly 117 targets and 7,027,200 trainable parameters, preserved exact-zero
+  physical initialization, and produced finite loss 0.45668 and gradient norm
+  0.13756 on one 64-row optimizer step. The row digest
+  `9a94f4376435fa94d3a96b25498e598f05790bb3b0ea067c15118d78de303605`
+  is identical to primary task 3 step 1, directly confirming matched sampling.
+  Peak Torch allocation/reservation was 17.93/18.56GiB and the GPU returned to
+  0MiB. No query candidate or rollout outcome was evaluated.

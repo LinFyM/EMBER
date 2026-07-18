@@ -372,8 +372,33 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     support/query rows, optimizer, LR, sampler and candidate steps; only
     rank/alpha/count become 16/16/742,656. Screening uses untouched init states
     32--39 and confirmation, only after selection, uses 40--47. A rank-16
-    screening failure authorizes no rank/support search. Gate 0, final target
-    sealing, confirmation, and Writer remain false.
+    screening failure authorizes no rank/support search under that immutable
+    small-recipe contract. Gate 0, final target sealing, confirmation, and
+    Writer remain false. Both rank-16 fits and the fresh init-32--39 screen are
+    now complete: task 3 and task 4 each improve from frozen-base 2/8 to own-LoRA
+    3/8, while fixed-query reductions are 5.76% and 3.27%. The median 12.5pp
+    gain and 4.52% query reduction fail the unchanged 15pp/20% criteria. This is
+    a mechanically valid negative for the 12-demo, 750-step acquisition recipe,
+    not for LoRA capacity or Gate 0.
+
+    The 2026-07-18 owner decision supersedes the old final-negative stop clause
+    because no known-positive SmolVLA task-local LoRA behavioral recipe had been
+    reproduced. The active bounded recovery is now
+    `configs/gate_zero_mature_lora_positive_control.toml` (SHA256
+    `882db40dca9ced15cf2b567f9fa57bf2c36c66e64654eef55c067d6485b4b259`):
+    tasks 3/4, support demos 0--39 drawn from the three legal source roles,
+    independent query demos
+    40--45, 20k steps, effective batch 64, the 37 SmolVLA default-like targets,
+    rank 32/alpha 16/dropout 0, Gaussian exact-physical-zero initialization,
+    SmolVLA AdamW warmup/cosine scheduling, compatible 90--100% random-resized
+    crops, fixed step-20k selection, and fresh source init states 40--47. Source
+    actions are legal for this oracle but remain hidden from Writer inputs;
+    validation/held numeric access is zero. A mechanics-valid primary failure
+    permits at most one predeclared all-action-expert-linear rank-32 compatibility
+    recovery with unchanged thresholds. Success seals this empirically proven
+    full LoRA contract for Writer and all matched arms; failure remains a bounded
+    LoRA-capacity diagnosis, not an automatic EMBER negative. Keep items 20 and
+    21 open until that closed-loop evidence exists.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import time
 from pathlib import Path
 from typing import Any
@@ -85,6 +86,24 @@ def select_drift_safe_candidate(
     if not safe:
         raise GateZeroOracleFitError("no drift-safe candidate")
     return min(safe, key=lambda value: (float(value["query_flow_mse"]), value["step"]))
+
+
+def select_fixed_final_candidate(
+    candidates: list[dict[str, Any]], *, final_step: int
+) -> dict[str, Any]:
+    """Select only the predeclared final step for a mature recipe control."""
+
+    if not isinstance(final_step, int) or isinstance(final_step, bool) or final_step <= 0:
+        raise GateZeroOracleFitError("invalid fixed final optimizer step")
+    matching = [candidate for candidate in candidates if candidate.get("step") == final_step]
+    if len(matching) != 1:
+        raise GateZeroOracleFitError("fixed final optimizer-step candidate is missing or duplicated")
+    selected = matching[0]
+    for key in ("query_flow_mse", "action_drift_proxy"):
+        value = selected.get(key)
+        if not isinstance(value, (int, float)) or not math.isfinite(float(value)) or value < 0:
+            raise GateZeroOracleFitError("fixed final candidate metrics are invalid")
+    return selected
 
 
 def _reference_evidence(reference: FixedQueryReference) -> dict[str, Any]:
@@ -214,7 +233,11 @@ def _restore_training(
     iterator = iter(loader)
     if recovery is not None:
         restored = load_recovery_artifact(
-            recovery, model=session.model, optimizer=session.optimizer, expected=expected
+            recovery,
+            model=session.model,
+            optimizer=session.optimizer,
+            scheduler=session.scheduler,
+            expected=expected,
         )
         if restored != start_step:
             raise GateZeroOracleFitError("recovery step changed while loading")
@@ -247,6 +270,7 @@ def _ensure_start_candidate(
             step=start_step,
             trainable_state=capture_trainable_state(session.model),
             optimizer=session.optimizer,
+            scheduler=session.scheduler,
             authorities=authorities,
         )
     candidates[start_step] = _evaluate_and_save_candidate(
@@ -276,6 +300,7 @@ def _log_progress(
             "fit/support_flow_loss": record["support_flow_loss"],
             "fit/gradient_norm": record["gradient_norm"],
             "fit/samples_per_second": record["samples_per_second"],
+            "fit/learning_rate": record["learning_rate"],
         },
         step=step,
     )
@@ -310,6 +335,7 @@ def _save_trained_candidate(
         step=step,
         trainable_state=capture_trainable_state(session.model),
         optimizer=session.optimizer,
+        scheduler=session.scheduler,
         authorities=authorities,
     )
     metrics = _evaluate_and_save_candidate(
@@ -352,6 +378,8 @@ def _train_to_budget(
             iterator,
             session=session,
             gradient_clip_norm=variant_spec["gradient_clip_norm"],
+            optimizer_step=step,
+            variant_spec=variant_spec,
         )
         if step == 1 or step % log_every == 0 or step in candidate_steps:
             _log_progress(tracker, args, spec, step, record)
@@ -373,7 +401,13 @@ def _build_result(
 ) -> dict[str, Any]:
     selection = spec["selection"]
     variant_spec = spec["fit"][args.variant]
-    if variant_spec.get("adaptation_kind") == "lora":
+    if spec.get("screening_stage") == "mature_positive_control":
+        capacity_role = "mature_recipe_task_local_lora_positive_control"
+        pilot_scope = (
+            "source_only_mature_lora_competence_control_"
+            "pending_fresh_closed_loop"
+        )
+    elif variant_spec.get("adaptation_kind") == "lora":
         capacity_role = "matched_target_support_audit_candidate"
         pilot_scope = (
             "source_only_gate_zero_target_support_audit_"
@@ -445,10 +479,17 @@ def _finalize_fit(
     steps = spec["fit"]["candidate_steps"]
     if sorted(candidates) != steps:
         raise GateZeroOracleFitError("completed fit lacks every predeclared candidate")
-    selected_metrics = select_drift_safe_candidate(
-        [candidates[step] for step in steps],
-        drift_proxy_max=spec["selection"]["drift_proxy_max"],
-    )
+    candidate_metrics = [candidates[step] for step in steps]
+    if spec["selection"]["candidate_rule"] == "fixed_final_optimizer_step":
+        selected_metrics = select_fixed_final_candidate(
+            candidate_metrics,
+            final_step=spec["selection"]["fixed_final_optimizer_step"],
+        )
+    else:
+        selected_metrics = select_drift_safe_candidate(
+            candidate_metrics,
+            drift_proxy_max=spec["selection"]["drift_proxy_max"],
+        )
     records = [
         candidate_evidence(args.output_dir / "candidates" / f"{step:06d}")
         for step in steps

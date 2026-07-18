@@ -233,6 +233,7 @@ def load_oracle_fit_spec(
     if name in {
         "smolvla_libero90_gate_zero_target_support_audit_v1",
         "smolvla_libero90_gate_zero_target_support_rank16_v1",
+        "smolvla_libero90_gate_zero_mature_lora_positive_control_v1",
     }:
         from ember.gate_zero_support.contract import (
             load_target_support_screen_spec,
@@ -271,6 +272,22 @@ def validate_oracle_fit_prerequisites(
     authority = spec["authority"]
     if _sha256(competence_result_path) != authority["source_competence_result_sha256"]:
         raise GateZeroOracleContractError("source competence result SHA256 changed")
+    if spec.get("name") == "smolvla_libero90_gate_zero_mature_lora_positive_control_v1":
+        competence_relative = Path(authority["source_competence_result_relative_path"])
+        if tuple(competence_result_path.parts[-len(competence_relative.parts) :]) != competence_relative.parts:
+            raise GateZeroOracleContractError("mature control output-root authority changed")
+        output_root = competence_result_path
+        for _ in competence_relative.parts:
+            output_root = output_root.parent
+        prior_path = output_root / authority["prior_rank16_screening_result_relative_path"]
+        if (
+            not prior_path.is_file()
+            or _sha256(prior_path) != authority["prior_rank16_screening_result_sha256"]
+        ):
+            raise GateZeroOracleContractError("rank-16 screening result authority changed")
+        prior = _load_json(prior_path, "rank-16 screening result")
+        if prior.get("status") != authority["prior_rank16_status"]:
+            raise GateZeroOracleContractError("rank-16 screening result status changed")
     competence = _load_json(competence_result_path, "source competence result")
     decision = competence.get("decision", {})
     if (

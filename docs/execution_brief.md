@@ -124,20 +124,42 @@ non-matched capability upper bound. If only such an upper bound succeeds, the
 target-layer/rank LoRA contract is too narrow and enters recovery before Writer;
 do not attribute that failure to Writer acquisition.
 
-The current last-two q/v rank-8 contract remains the frozen Gate 0 pilot only.
-Before any Writer target contract is sealed, run one predeclared,
-source/validation-only, held-zero-access support audit. Its minimum candidate
-set is: (a) the current last-two q/v pilot, (b) q/v in every action-expert
-layer, and (c) support close to [SmolVLA v0.6.0's default PEFT target
-set](https://github.com/huggingface/lerobot/blob/v0.6.0/src/lerobot/policies/smolvla/modeling_smolvla.py#L2816-L2833):
-all action-expert q/v projections plus `state_proj`, `action_in_proj`,
-`action_out_proj`, `action_time_mlp_in`, and `action_time_mlp_out`. Rank may be
-adjusted only within this bounded audit. Choose the smallest support that gives
-robust closed-loop oracle utility, then permanently seal exact target names,
-rank, alpha, dropout, and trainable parameter count. OpenVLA and
-[OpenVLA-OFT](https://github.com/moojink/openvla-oft/blob/main/vla-scripts/finetune.py)
-using rank 32 and `all-linear` are broad-support maturity references, not
-instructions to copy their contract mechanically.
+The last-two q/v rank-8 pilot and the subsequent default-like rank-16 run use 12
+support demonstrations, 750 optimizer steps, and a custom early-candidate
+schedule. They diagnose only that acquisition recipe. Regardless of outcome,
+they cannot alone establish a final LoRA, Gate 0, Writer, or EMBER negative, and
+the old rank-16 stop clause is superseded wherever a known-positive mature LoRA
+competence control is still missing. Support/query separation is an independence
+principle, not a fixed small-data or small-step budget.
+
+Before sealing Writer targets, run one bounded mature-recipe positive control.
+The executable predeclaration uses 40 source support demonstrations (episode
+roles `writer_spec`, `source_base_fit`, and `oracle_support`), six independent
+source query demonstrations, and fresh source closed-loop init states 40--47.
+Actions from source support may supervise this Gate 0 oracle but remain hidden
+from Writer inputs. Validation and held numeric access remain zero. The primary
+LoRA uses the 37 [SmolVLA v0.6.0 default-like PEFT targets](https://github.com/huggingface/lerobot/blob/v0.6.0/src/lerobot/policies/smolvla/modeling_smolvla.py#L2816-L2833),
+rank 32, alpha 16, dropout 0, Gaussian exact-physical-zero initialization,
+20k steps, effective batch 64, SmolVLA AdamW plus warmup/cosine scheduling,
+compatible 90--100% random-resized crops, and fixed-final-step selection.
+
+This provenance is deliberately qualified. SmolVLA's roughly 50-episode,
+batch-64, 20k-step successful recipe trains its action expert/projections and
+is not validated LoRA evidence; LeRobot's PEFT default targets/rank are an API
+anchor only. [OpenVLA](https://github.com/openvla/openvla/blob/main/vla-scripts/finetune.py)
+and [OpenVLA-OFT](https://github.com/moojink/openvla-oft/blob/main/vla-scripts/finetune.py)
+provide empirical rank-32, broad-support, long-training and augmentation anchors
+on another architecture, so only compatible principles transfer. A mechanically
+valid primary failure permits at most one predeclared all-action-expert-linear
+rank-32 compatibility recovery with the same recipe and unchanged thresholds.
+No unbounded literature sweep, layer/rank grid, split change, or held-driven
+choice is permitted.
+
+Once closed-loop utility is demonstrated, permanently seal that empirically
+successful support/rank/scale rather than shrinking it merely to simplify
+Writer generation. If neither bounded LoRA positive control succeeds, preserve
+the failure packet and escalate the LoRA-capacity decision before attributing
+failure to Writer acquisition.
 
 Every downstream Writer, zero-init ordinary-LoRA RL, average/retrieval,
 language-only direct generator, and matched control must use that identical

@@ -286,7 +286,7 @@ def decide_support_screening(
 ) -> dict[str, Any]:
     """Select a support only when every frozen screening test passes."""
 
-    if rank_stage not in {"rank8", "rank16"}:
+    if rank_stage not in {"rank8", "rank16", "mature_positive_control"}:
         raise GateZeroTargetSupportScreenError("invalid support-screening rank stage")
 
     by_key = _validate_screening_arms(
@@ -327,6 +327,9 @@ def decide_support_screening(
             "median_query_loss_reduction_fraction": statistics.median(reductions),
             "median_selection_drift_proxy": statistics.median(drifts),
         }
+        drift_is_diagnostic = bool(
+            thresholds.get("selection_drift_is_diagnostic_only", False)
+        )
         checks = {
             "median_success_gain": aggregate["median_success_gain_pp"]
             >= thresholds["median_success_gain_pp_min"],
@@ -338,7 +341,8 @@ def decide_support_screening(
                 "median_query_loss_reduction_fraction"
             ]
             >= thresholds["median_locked_action_loss_reduction_fraction_min"],
-            "selection_drift": aggregate["median_selection_drift_proxy"]
+            "selection_drift": drift_is_diagnostic
+            or aggregate["median_selection_drift_proxy"]
             <= thresholds["median_selection_drift_proxy_max"],
         }
         candidates.append(
@@ -355,7 +359,12 @@ def decide_support_screening(
         (candidate for candidate in candidates if candidate["screening_passed"]),
         key=lambda candidate: (candidate["trainable_parameters"], candidate["variant"]),
     )
-    if passing:
+    if passing and rank_stage == "mature_positive_control":
+        selected = passing[0]["variant"]
+        status = "mature_lora_positive_control_passed"
+        rank16_scope = None
+        rank16_authorized = False
+    elif passing:
         selected = passing[0]["variant"]
         status = f"{rank_stage}_support_selected_pending_confirmation"
         rank16_scope = None
@@ -372,21 +381,27 @@ def decide_support_screening(
         status = "rank8_support_screen_failed_rank16_authorized"
         rank16_scope = ranking[0]["variant"]
         rank16_authorized = True
-    else:
+    elif rank_stage == "rank16":
         selected = None
         status = "rank16_support_screen_failed"
         rank16_scope = None
         rank16_authorized = False
+    else:
+        selected = None
+        status = "mature_lora_positive_control_failed_bounded_recovery_required"
+        rank16_scope = None
+        rank16_authorized = False
+    mature_pass = rank_stage == "mature_positive_control" and selected is not None
     return {
         "status": status,
         "candidates": candidates,
         "selected_variant": selected,
-        "confirmation_authorized": selected is not None,
+        "confirmation_authorized": selected is not None and not mature_pass,
         "rank16_authorized": rank16_authorized,
         "rank16_scope": rank16_scope,
-        "gate_zero_authorized": False,
-        "writer_authorized": False,
-        "final_writer_target_contract_sealed": False,
+        "gate_zero_authorized": mature_pass,
+        "writer_authorized": mature_pass,
+        "final_writer_target_contract_sealed": mature_pass,
     }
 
 
@@ -492,8 +507,8 @@ def create_support_screening_grant(
         "validation_numeric_access": False,
         "held_numeric_access": False,
     }
-    if spec.get("screening_stage") == "rank16":
-        grant["screening_stage"] = "rank16"
+    if spec.get("screening_stage") in {"rank16", "mature_positive_control"}:
+        grant["screening_stage"] = spec["screening_stage"]
     grant_path.parent.mkdir(parents=True, exist_ok=False)
     atomic_json(grant_path, grant)
     (grant_path.parent / "checksums.sha256").write_text(
@@ -549,8 +564,8 @@ def validate_support_screening_grant(
         "validation_numeric_access": False,
         "held_numeric_access": False,
     }
-    if spec.get("screening_stage") == "rank16":
-        expected["screening_stage"] = "rank16"
+    if spec.get("screening_stage") in {"rank16", "mature_positive_control"}:
+        expected["screening_stage"] = spec["screening_stage"]
     for key, value in expected.items():
         if grant.get(key) != value:
             raise GateZeroTargetSupportScreenError(f"screening grant changed {key}")

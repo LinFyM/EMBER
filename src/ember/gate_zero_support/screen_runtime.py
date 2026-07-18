@@ -396,7 +396,7 @@ def _eval_info(arms: list[dict[str, Any]], decision: dict[str, Any]) -> dict[str
             "status": decision["status"],
             "episodes": sum(len(arm["successes"]) for arm in arms),
             "successes": sum(sum(arm["successes"]) for arm in arms),
-            "writer_authorized": False,
+            "writer_authorized": decision["writer_authorized"],
         },
         "per_task": [
             {
@@ -435,7 +435,8 @@ def _selected_support_freeze(
             for task_id in spec["task_ids"]
         },
         "selection_changes_after_freeze_forbidden": True,
-        "final_confirmation_required": True,
+        "final_confirmation_required": spec.get("screening_stage")
+        != "mature_positive_control",
     }
 
 
@@ -489,9 +490,11 @@ def _publish(
         "confirmation_authorized": decision["confirmation_authorized"],
         "locked_report_access_authorized": False,
         "selection_changes_after_screening_forbidden": True,
-        "gate_zero_authorized": False,
-        "writer_authorized": False,
-        "final_writer_target_contract_sealed": False,
+        "gate_zero_authorized": decision["gate_zero_authorized"],
+        "writer_authorized": decision["writer_authorized"],
+        "final_writer_target_contract_sealed": decision[
+            "final_writer_target_contract_sealed"
+        ],
         "validation_numeric_access": False,
         "held_numeric_access": False,
         "parallel": {

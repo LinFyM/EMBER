@@ -116,16 +116,37 @@ plan. Each expensive component needs evidence from its scientific predecessor.
   explicitly non-matched capability upper bounds. If only those upper bounds
   work, classify the fixed LoRA target/rank contract as too narrow before
   attributing failure to the Writer.
-- The current action-expert last-two-layer q/v rank-8 target set is a low-cost
-  Gate 0 pilot, not the final Writer support. Before sealing the Writer
-  contract, run one bounded source/validation-only support audit with held
-  numeric access fixed at zero. At minimum compare the pilot set, all
-  action-expert q/v projections, and support close to SmolVLA v0.6.0's default
-  PEFT targets (all action-expert q/v plus state/action/time projections).
-  Adjust rank only if needed by the same bounded audit, select the smallest
-  support with robust closed-loop oracle utility, then permanently seal exact
-  target names, rank, alpha, dropout, and parameter count before Writer
-  outcomes.
+- The last-two q/v rank-8 pilot and its rank-16 support recovery test only the
+  frozen 12-demo, 750-step custom acquisition recipe. Their outcomes cannot by
+  themselves establish a final LoRA, Gate 0, Writer, or EMBER negative. A
+  support/query partition is an independence rule, not a permanently small
+  support or optimization budget.
+- Before sealing the Writer contract or recording a final LoRA-capacity
+  negative, run one primary-source-anchored mature task-local LoRA positive
+  control. The bounded primary recipe uses only source-task action labels,
+  keeps an independent source query and fresh closed-loop surface, covers the
+  SmolVLA v0.6.0 default-like action support (all action-expert q/v plus
+  state/action/time projections), and imports only architecture-compatible
+  rank/capacity, duration, initialization, scheduling, and augmentation
+  principles from empirically successful OpenVLA/OpenVLA-OFT LoRA recipes.
+  SmolVLA's roughly 50-episode, batch-64, 20k-step recipe trains the action
+  expert/projections and is not LoRA evidence; the LeRobot PEFT defaults are an
+  implementation/API anchor, not published behavioral proof.
+- The mature primary is predeclared as 40 source support demonstrations, six
+  independent source query demonstrations, 20k steps, the 37 default-like
+  targets, rank 32/alpha 16/dropout 0, Gaussian exact-physical-zero LoRA,
+  SmolVLA AdamW warmup/cosine scheduling, compatible 90--100% random-resized
+  crops, fixed-final-step selection, and fresh init-state 40--47 closed-loop
+  evaluation. Source-side Gate 0 may use actions from episode roles 0--39;
+  those actions remain forbidden as Writer-visible inputs. Held and validation
+  numeric access remain zero. At most one predeclared all-action-expert-linear
+  rank-32 compatibility recovery is allowed after a mechanically valid primary
+  failure; no grid search or threshold reduction is allowed.
+- Permanently seal the empirically successful LoRA support/rank/scale rather
+  than shrinking back toward the smallest adapter merely to simplify Writer
+  generation. If the bounded positive controls show that no declared LoRA
+  space has behavioral capacity, preserve the failure packet and escalate the
+  scientific decision; do not blame Writer acquisition before it is tested.
 - After that seal, Writer, zero-init ordinary LoRA RL, average/retrieval,
   language-only HyPoGen/DISC-style direct generators, and every other matched
   arm must use exactly the same LoRA support and trainable-parameter budget. If

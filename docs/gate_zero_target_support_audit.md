@@ -39,12 +39,30 @@ overfit/drift failure without adding an optimizer search.
 4. Only if no rank-8 support passes the declared query plus screening contract,
    one rank-16 version of the best declared support is allowed. It uses fresh
    screening/confirmation init states and no other rank, layer, or optimizer
-   search. If that also fails, preserve the failure packet and return to the
-   owner decision point rather than weakening the claim.
+   search under this small-recipe audit.
+
+## Superseding mature-recipe requirement
+
+The owner decision on 2026-07-18 supersedes only the final-negative implication
+of step 4 above. The rank-8/rank-16 experiments remain immutable evidence about
+the 12-demo, 750-step acquisition recipe, but cannot establish a final LoRA,
+Gate 0, or EMBER negative because no known-positive task-local LoRA training
+recipe had yet been reproduced on SmolVLA behavior.
+
+Before a final negative or Writer-target seal, the one canonical fitter must run
+the hash-bound `configs/gate_zero_mature_lora_positive_control.toml`: 40 legal
+source support demonstrations, six independent source query demonstrations,
+20k optimizer steps, the 37 SmolVLA default-like targets, rank 32/alpha 16,
+fixed-final selection, and fresh source init states 40--47. Validation and held
+numeric access remain zero. Its sole conditional recovery is one broader
+all-action-expert-linear rank-32 variant after a mechanics-validated primary
+failure; thresholds, split, and held access cannot change. A success seals the
+same LoRA space for Writer and all matched downstream arms. A failure is still
+not an EMBER-wide negative without the bounded recovery and scientific
+classification.
 
 The six primary fits run through the existing recoverable oracle fitter and
 Trackio project `EMBER_gate0`; there is no second trainer. At most four
 independent jobs run concurrently. Selected states, compact metrics, decisions,
 one bounded video gallery, telemetry, and checksums are retained; completed
 recovery state and superseded regenerable media are removed after validation.
-

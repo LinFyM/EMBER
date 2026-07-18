@@ -19,6 +19,7 @@ CANDIDATE_MANIFEST = "candidate_manifest.json"
 TRAINABLE_STATE = "trainable_state.safetensors"
 RECOVERY_MANIFEST = "recovery_manifest.json"
 OPTIMIZER_STATE = "optimizer.pt"
+SCHEDULER_STATE = "scheduler.pt"
 RNG_STATE = "rng_state.safetensors"
 SELECTED_MANIFEST = "selected_manifest.json"
 
@@ -211,6 +212,7 @@ def save_recovery_artifact(
     step: int,
     trainable_state: dict[str, torch.Tensor],
     optimizer: torch.optim.Optimizer,
+    scheduler: Any | None = None,
     authorities: dict[str, Any],
 ) -> Path:
     """Publish a resumable candidate-bound state and atomically advance ``last``."""
@@ -228,18 +230,24 @@ def save_recovery_artifact(
         staging.mkdir(parents=False, exist_ok=False)
         state_path = staging / TRAINABLE_STATE
         optimizer_path = staging / OPTIMIZER_STATE
+        scheduler_path = staging / SCHEDULER_STATE
         rng_path = staging / RNG_STATE
         save_file(state, state_path)
         torch.save(optimizer.state_dict(), optimizer_path)
+        if scheduler is not None:
+            torch.save(scheduler.state_dict(), scheduler_path)
         from lerobot.utils.random_utils import serialize_rng_state
 
         save_file(serialize_rng_state(), rng_path)
+        state_paths = [state_path, optimizer_path, rng_path]
+        if scheduler is not None:
+            state_paths.append(scheduler_path)
         files = {
             path.name: {"bytes": path.stat().st_size, "sha256": sha256_file(path)}
-            for path in (state_path, optimizer_path, rng_path)
+            for path in state_paths
         }
         manifest = {
-            "schema_version": 1,
+            "schema_version": 2 if scheduler is not None else 1,
             "status": "resumable_oracle_candidate",
             "variant": variant,
             "task_id": task_id,
@@ -247,6 +255,7 @@ def save_recovery_artifact(
             "authorities": authorities,
             "trainable_parameters": sum(value.numel() for value in state.values()),
             "trainable_tensors": len(state),
+            "scheduler_state_saved": scheduler is not None,
             "files": files,
         }
         _atomic_json(staging / RECOVERY_MANIFEST, manifest)
@@ -279,9 +288,16 @@ def validate_recovery_artifact(
         manifest = json.loads((recovery_dir / RECOVERY_MANIFEST).read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
         raise GateZeroOracleArtifactError("recovery manifest is invalid") from error
-    if manifest.get("schema_version") != 1 or manifest.get("status") != "resumable_oracle_candidate":
+    schema_version = manifest.get("schema_version")
+    if schema_version not in {1, 2} or manifest.get("status") != "resumable_oracle_candidate":
         raise GateZeroOracleArtifactError("recovery manifest schema/status changed")
     expected_files = {RECOVERY_MANIFEST, TRAINABLE_STATE, OPTIMIZER_STATE, RNG_STATE}
+    if schema_version == 2:
+        if manifest.get("scheduler_state_saved") is not True:
+            raise GateZeroOracleArtifactError("recovery scheduler authority changed")
+        expected_files.add(SCHEDULER_STATE)
+    elif manifest.get("scheduler_state_saved") not in {None, False}:
+        raise GateZeroOracleArtifactError("legacy recovery scheduler authority changed")
     actual_files = {path.name for path in recovery_dir.iterdir() if path.is_file()}
     if actual_files != expected_files:
         raise GateZeroOracleArtifactError("recovery file set changed")
@@ -304,6 +320,7 @@ def load_recovery_artifact(
     *,
     model: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
+    scheduler: Any | None = None,
     expected: dict[str, Any] | None = None,
 ) -> int:
     """Restore trainable state, optimizer, and RNG after loader construction."""
@@ -316,11 +333,22 @@ def load_recovery_artifact(
             recovery_dir / OPTIMIZER_STATE, map_location="cpu", weights_only=True
         )
         optimizer.load_state_dict(optimizer_state)
+        if manifest["schema_version"] == 2:
+            if scheduler is None:
+                raise GateZeroOracleArtifactError("scheduler is required by recovery state")
+            scheduler_state = torch.load(
+                recovery_dir / SCHEDULER_STATE, map_location="cpu", weights_only=True
+            )
+            scheduler.load_state_dict(scheduler_state)
+        elif scheduler is not None:
+            raise GateZeroOracleArtifactError("scheduler recovery state is missing")
         from lerobot.utils.random_utils import deserialize_rng_state
 
         deserialize_rng_state(load_file(recovery_dir / RNG_STATE))
     except Exception as error:
-        raise GateZeroOracleArtifactError("recovery optimizer/RNG state cannot be restored") from error
+        raise GateZeroOracleArtifactError(
+            "recovery optimizer/scheduler/RNG state cannot be restored"
+        ) from error
     return int(manifest["step"])
 
 

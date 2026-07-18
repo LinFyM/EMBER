@@ -1314,3 +1314,71 @@
   support would then freeze before confirmation on 40--47; a failed screen
   authorizes no rank 32, alternate support, optimizer search, Gate 0, or Writer.
   Validation/held numeric access and locked-report reuse remain false.
+
+## Rank-16 screen is a small-recipe negative, not a LoRA-capacity negative
+
+- Both canonical fits completed rc 0 and pass all artifact checks under
+  `$EMBER_OUTPUT_ROOT/gate_zero/target_support_audit/fit/rank16_20260718T153934Z`.
+  Task 3 selected step 50 with 5.7618% independent-query reduction and drift
+  0.0192299; task 4 selected step 25 with 3.2726% reduction and drift 0.00798669.
+  The immutable fit grant SHA256 is
+  `e4761d2bdc5d02b843a947a87882583bfdfeecc72223f50c2cc1433919108041`.
+- Long-run `gate0_support_rank16_screen_20260718_155426` completed rc 0 with all
+  mechanics valid, eight checksum-valid source rollouts, and no locked-report,
+  validation, or held numeric access. On exact init states 32--39, task 3 and
+  task 4 each move from frozen-base 2/8 to own-LoRA 3/8. Median gain is 12.5pp,
+  positive count is 2/2, and median fixed-query reduction is 4.517%; the
+  unchanged 15pp and 20% checks fail. Result SHA256 is
+  `65b2abffcf8b2c7e8907c03f4e21cd8435da38b94afb9e8b41337a54bd323b00`.
+- This evidence rejects the frozen combination of 12 source support
+  demonstrations, 750 optimizer steps, the custom early-candidate selection,
+  and default-like rank-16 LoRA as sufficient Gate 0 acquisition. It does not
+  establish that task-local LoRA lacks behavioral capacity. The previous
+  contract's no-further-recovery/final-negative implication is preserved as
+  provenance but superseded because a known-positive mature SmolVLA LoRA
+  competence control was still absent. Gate 0, final Writer targets, and Writer
+  remain unauthorized.
+
+## Mature task-local LoRA positive control is primary-source anchored and bounded
+
+- LeRobot v0.6.0 revision
+  `30da8e687a6dfc617fcd94afc367ac7071c376ce` provides the exact SmolVLA
+  default PEFT target regex: all 16 action-expert q/v projections plus state,
+  action input/output, and action-time projections. This is an implementation
+  anchor only. The roughly 50-episode, batch-64, 20k-step SmolVLA recipe trains
+  the action expert/projections and therefore is not behavioral evidence for
+  LoRA.
+- OpenVLA revision `c8f03f48af692657d3060c19588038c7220e9af9` and OpenVLA-OFT
+  revision `e4287e94541f459edc4feabc4e181f537cd569a8` provide empirical
+  LIBERO anchors for rank-32 broad/all-linear LoRA, longer training, Gaussian
+  zero-delta initialization, and image augmentation. Their architecture differs,
+  so the control transfers capacity/duration/augmentation principles rather
+  than mechanically copying all-linear targets or their exact schedule.
+- The pre-outcome contract
+  `configs/gate_zero_mature_lora_positive_control.toml` declares one primary:
+  40 source support demonstrations (episode roles 0--7, 8--27, and 28--39), six
+  independent query demonstrations 40--45, 20k steps, effective batch 64, 37
+  default-like targets, rank 32/alpha 16/dropout 0, 1,485,312 trainable LoRA
+  parameters, Gaussian exact-physical-zero initialization, AdamW `1e-4`, 1k
+  warmup plus cosine decay, deterministic 90--100% random-resized crops, and
+  fixed final-step selection. Fresh source init states 40--47 are the only
+  closed-loop outcome surface. Source actions may supervise Gate 0 but remain
+  hidden from Writer inputs; validation and held numeric access remain zero.
+- The pass thresholds remain +15pp median closed-loop gain, 2/2 positive tasks,
+  and 20% median independent-query reduction. Drift is diagnostic for mature
+  task-specific competence rather than a reason to select an early checkpoint.
+  One mechanically valid primary failure allows only the predeclared
+  all-action-expert-linear rank-32 compatibility recovery. No split change,
+  threshold reduction, held access, or layer/rank grid is authorized. A primary
+  pass seals its exact LoRA space for Writer and every matched downstream arm;
+  a bounded failure is classified before any broader project conclusion.
+- The one live rank-32 mechanics smoke on physical GPU 4 resolved exactly 37
+  targets and 1,485,312 trainable parameters, passed exact-physical-zero
+  initialization, and completed one augmented 64-sample optimizer/scheduler
+  step with finite loss 0.44569 and gradient norm 0.10178. Initial/next warmup
+  learning rates were `9.9900e-8`/`1.9980e-7`; all 64 sampled source rows were
+  unique. Peak Torch allocation/reservation was 17.35/17.47GiB and the device
+  returned to 0MiB with no worker residue. No query, rollout, locked,
+  validation, or held outcome was evaluated. A CPU augmentation microbenchmark
+  took only 0.04--0.05s per 64-sample/two-camera batch, so the slower first live
+  step is warm-up rather than evidence for a new performance rewrite.

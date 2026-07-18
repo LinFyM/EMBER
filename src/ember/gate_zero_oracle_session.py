@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import contextlib
 import hashlib
+import math
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import torch
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 from ember.evaluation_identity import _load_policy
@@ -42,6 +44,7 @@ class OracleModelSession:
     model: Any
     preprocessor: Any
     optimizer: torch.optim.AdamW
+    scheduler: Any | None
     reference: FixedQueryReference
     trainable_summary: dict[str, Any]
     task_authorities: list[dict[str, Any]]
@@ -90,15 +93,96 @@ def build_oracle_optimizer(
     )
 
 
+def build_oracle_scheduler(
+    optimizer: torch.optim.Optimizer,
+    variant_spec: dict[str, Any],
+    *,
+    optimizer_steps: int,
+) -> Any | None:
+    """Build the optional SmolVLA-native warmup/cosine schedule."""
+
+    scheduler = variant_spec.get("scheduler")
+    if scheduler is None:
+        return None
+    if scheduler != "linear_warmup_cosine_decay" or optimizer_steps <= 0:
+        raise GateZeroOracleSessionError("oracle scheduler contract is invalid")
+    from lerobot.optim.schedulers import CosineDecayWithWarmupSchedulerConfig
+
+    config = CosineDecayWithWarmupSchedulerConfig(
+        num_warmup_steps=variant_spec["warmup_steps"],
+        num_decay_steps=variant_spec["decay_steps"],
+        peak_lr=variant_spec["learning_rate"],
+        decay_lr=variant_spec["decay_learning_rate"],
+    )
+    return config.build(optimizer, num_training_steps=optimizer_steps)
+
+
+def augment_support_images(
+    batch: dict[str, Any],
+    *,
+    row_keys: list[str],
+    optimizer_step: int,
+    seed: int,
+    scale_min: float,
+    scale_max: float,
+) -> dict[str, Any]:
+    """Apply deterministic per-row random-resized crops to training cameras."""
+
+    image_keys = sorted(key for key in batch if key.startswith("observation.images."))
+    if not image_keys or optimizer_step <= 0 or not row_keys:
+        raise GateZeroOracleSessionError("image augmentation authority is invalid")
+    reference = batch[image_keys[0]]
+    if reference.ndim != 4 or reference.shape[0] != len(row_keys):
+        raise GateZeroOracleSessionError("image augmentation batch identity changed")
+    if not (0 < scale_min <= scale_max <= 1.0):
+        raise GateZeroOracleSessionError("image augmentation scale is invalid")
+    batch_size, channels, height, width = reference.shape
+    if channels != 3 or height <= 1 or width <= 1:
+        raise GateZeroOracleSessionError("image augmentation shape is invalid")
+    for key in image_keys:
+        value = batch[key]
+        if value.shape != reference.shape or value.dtype != torch.uint8:
+            raise GateZeroOracleSessionError("training camera shape or dtype changed")
+    augmented = {key: [] for key in image_keys}
+    for index, row_key in enumerate(row_keys):
+        digest = hashlib.sha256(
+            f"{seed}\0{optimizer_step}\0{row_key}".encode("utf-8")
+        ).digest()
+        unit_scale = int.from_bytes(digest[:8], "little") / float(2**64 - 1)
+        scale = scale_min + (scale_max - scale_min) * unit_scale
+        crop_height = min(height, max(1, math.floor(height * math.sqrt(scale))))
+        crop_width = min(width, max(1, math.floor(width * math.sqrt(scale))))
+        top_slots = height - crop_height + 1
+        left_slots = width - crop_width + 1
+        top = int.from_bytes(digest[8:16], "little") % top_slots
+        left = int.from_bytes(digest[16:24], "little") % left_slots
+        cameras = torch.stack(
+            [batch[key][index, :, top : top + crop_height, left : left + crop_width] for key in image_keys]
+        ).to(dtype=torch.float32).div_(255.0)
+        cameras = F.interpolate(
+            cameras,
+            size=(height, width),
+            mode="bilinear",
+            align_corners=False,
+            antialias=True,
+        )
+        for camera_index, key in enumerate(image_keys):
+            augmented[key].append(cameras[camera_index])
+    for key in image_keys:
+        batch[key] = torch.stack(augmented[key])
+    return batch
+
+
 def _load_task_datasets(
     *,
+    spec: dict[str, Any],
     parent: dict[str, Any],
     phase0: dict[str, Any],
     manifest: Path,
     dataset_root: Path,
     task_id: int,
 ) -> tuple[SourceHdf5Dataset, SourceHdf5Dataset, list[dict[str, Any]]]:
-    support_authorities, support_demos = load_surface_authorities(
+    support_authorities, parent_support_demos = load_surface_authorities(
         parent,
         phase0,
         manifest_path=manifest,
@@ -106,7 +190,7 @@ def _load_task_datasets(
         surface=GateZeroSurface.SUPPORT,
         oracle_task_id=task_id,
     )
-    query_authorities, query_demos = load_surface_authorities(
+    query_authorities, parent_query_demos = load_surface_authorities(
         parent,
         phase0,
         manifest_path=manifest,
@@ -116,6 +200,17 @@ def _load_task_datasets(
     )
     if support_authorities != query_authorities:
         raise GateZeroOracleSessionError("support/query task authority differs")
+    support_bounds = spec["fit"]["support_episode_bounds"]
+    query_bounds = spec["selection"]["query_episode_bounds"]
+    support_demos = list(range(support_bounds[0], support_bounds[1] + 1))
+    query_demos = list(range(query_bounds[0], query_bounds[1] + 1))
+    if spec.get("screening_stage") != "mature_positive_control":
+        if support_demos != parent_support_demos or query_demos != parent_query_demos:
+            raise GateZeroOracleSessionError("legacy support/query data authority changed")
+    elif set(support_demos) & set(query_demos) or min(support_demos + query_demos) < 0 or max(
+        support_demos + query_demos
+    ) >= 50:
+        raise GateZeroOracleSessionError("mature support/query isolation changed")
     support = SourceHdf5Dataset(
         support_authorities,
         demo_indices=support_demos,
@@ -235,6 +330,7 @@ def open_oracle_model_session(
     variant_spec: dict[str, Any],
 ) -> OracleModelSession:
     support, query, task_authorities = _load_task_datasets(
+        spec=spec,
         parent=parent,
         phase0=phase0,
         manifest=manifest,
@@ -275,9 +371,22 @@ def open_oracle_model_session(
         )
         with base_context:
             reference = evaluator.capture_base_reference(model)
+        optimizer = build_oracle_optimizer(model, variant_spec)
+        scheduler = build_oracle_scheduler(
+            optimizer,
+            variant_spec,
+            optimizer_steps=spec["fit"]["optimizer_steps"],
+        )
         return OracleModelSession(
-            support, evaluator, model, preprocessor,
-            build_oracle_optimizer(model, variant_spec), reference, summary, task_authorities
+            support,
+            evaluator,
+            model,
+            preprocessor,
+            optimizer,
+            scheduler,
+            reference,
+            summary,
+            task_authorities,
         )
     except BaseException:
         if evaluator is not None:
@@ -333,10 +442,23 @@ def train_oracle_step(
     *,
     session: OracleModelSession,
     gradient_clip_norm: float,
+    optimizer_step: int,
+    variant_spec: dict[str, Any],
 ) -> dict[str, Any]:
     started = time.perf_counter()
     raw_batch = next(iterator)
     row_keys = batch_provenance_keys(raw_batch)
+    if variant_spec.get("augmentation") is not None:
+        if variant_spec["augmentation"] != "random_resized_crop":
+            raise GateZeroOracleSessionError("unknown oracle training augmentation")
+        raw_batch = augment_support_images(
+            raw_batch,
+            row_keys=row_keys,
+            optimizer_step=optimizer_step,
+            seed=variant_spec["augmentation_seed"],
+            scale_min=variant_spec["augmentation_scale_min"],
+            scale_max=variant_spec["augmentation_scale_max"],
+        )
     model = session.model
     owner = model.get_base_model() if hasattr(model, "get_base_model") else model
     batch = preprocess_smolvla_batch(
@@ -349,7 +471,10 @@ def train_oracle_step(
     gradient_norm = torch.nn.utils.clip_grad_norm_(trainable, gradient_clip_norm)
     if not torch.isfinite(gradient_norm):
         raise GateZeroOracleSessionError("oracle gradient norm is non-finite")
+    learning_rate = float(session.optimizer.param_groups[0]["lr"])
     session.optimizer.step()
+    if session.scheduler is not None:
+        session.scheduler.step()
     session.optimizer.zero_grad(set_to_none=True)
     torch.cuda.synchronize()
     wall_seconds = time.perf_counter() - started
@@ -364,4 +489,6 @@ def train_oracle_step(
         "row_keys_sha256": digest.hexdigest(),
         "sample_count": len(row_keys),
         "unique_source_rows": len(set(row_keys)),
+        "learning_rate": learning_rate,
+        "next_learning_rate": float(session.optimizer.param_groups[0]["lr"]),
     }

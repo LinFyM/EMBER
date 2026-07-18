@@ -1300,3 +1300,60 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   telemetry, atomic recovery state and checksums; successful completion removes
   only validated recovery state. No rollout, locked report, validation, held,
   Gate 0, final target, or Writer authority is available during fitting.
+
+### Rank-16 small-recipe completion and owner-corrected recovery
+
+- Fit long-runs `gate0_support_rank16_t3_20260718_154106` and
+  `gate0_support_rank16_t4_20260718_154106` completed main rc 0; screen long-run
+  `gate0_support_rank16_screen_20260718_155426` also completed main rc 0. All fit,
+  selected-state, screen, gallery, telemetry, and eight video checksums validate,
+  and all GPUs were released. The result is task 3/4 base 2/8 and own 3/8,
+  median gain 12.5pp, median query reduction 4.517%, and status
+  `rank16_support_screen_failed`.
+- The owner froze the correct interpretation before any final LoRA/Gate 0
+  negative: rank 8/rank 16 tested only 12 demos, 750 steps, and a custom
+  acquisition schedule. The old rank-16 config/result remain immutable, but its
+  clause forbidding a mature positive-control recovery is superseded. No result
+  is rerun or overwritten, no threshold is lowered, and Gate 0/Writer remain
+  false.
+
+### Mature LoRA positive-control implementation and prelaunch state
+
+- Added the strict, hash-bound
+  `configs/gate_zero_mature_lora_positive_control.toml` and one narrow contract
+  module. Its frozen prelaunch SHA256 is
+  `882db40dca9ced15cf2b567f9fa57bf2c36c66e64654eef55c067d6485b4b259`.
+  The existing `ember.gate_zero_oracle_fit` remains the only trainer;
+  the existing candidate/recovery artifact path now optionally saves scheduler
+  state, and the existing target-support screen handles the mature decision.
+  No second trainer, evaluator, launcher, bank, geometry, or future architecture
+  path was added.
+- The primary recipe is tasks 3/4, source support demos 0--39, query demos
+  40--45, 20k steps, effective/micro batch 64, 37 default-like targets, rank
+  32/alpha 16/dropout 0, 1,485,312 trainable parameters, Gaussian exact-zero
+  physical initialization, AdamW `1e-4`, 1k warmup/cosine decay, deterministic
+  90--100% crops, fixed step-20k selection, and fresh init 40--47 screening.
+  The source support union is explicitly checked against `writer_spec`,
+  `source_base_fit`, and `oracle_support`; those actions are legal only for the
+  source-side oracle and remain hidden from Writer input. Query, locked report,
+  validation, and held isolation remain fail-closed.
+- The primary may be followed by at most one all-action-expert-linear rank-32
+  compatibility recovery after a mechanics-validated failure. Passing the
+  unchanged query and closed-loop thresholds seals the same LoRA contract for
+  Writer, zero-init ordinary task-local RL, average/retrieval, and direct
+  generator baselines. Failure cannot be promoted directly to an EMBER negative.
+- Fresh verification passes 206/206 repository tests in 44.91 seconds, Python
+  compilation, every shell launcher's syntax check, and diff whitespace checks.
+  Tests cover strict source-role/data authority, fixed-final selection,
+  deterministic augmentation, scheduler-bound atomic resume, mature Gate 0/
+  Writer sealing arithmetic, and reuse of the two canonical launchers.
+- The single permitted live smoke passed on physical GPU 4: exactly 37 targets,
+  1,485,312 trainable parameters, exact-zero physical delta, one finite
+  augmented 64-sample optimizer/scheduler step, and 17.35/17.47GiB peak Torch
+  allocation/reservation. It evaluated no query or rollout outcome and left the
+  GPU at 0MiB with no workers. A CPU-only augmentation microbenchmark measured
+  0.04--0.05s/batch, disproving the initial suspicion that the per-row crop was
+  a material bottleneck; no unneeded rewrite was made. Existing 750-step broad
+  LoRA timings support the predeclared approximately five-hour fit estimate.
+  Next, commit/push a clean revision and launch the two independent task fits on
+  no more than two free GPUs with durable Trackio/long-run records.

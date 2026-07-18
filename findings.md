@@ -621,3 +621,41 @@
   shell expansion left `--output-dir` empty, the canonical launcher rejected it
   with rc 2 before runtime setup, data read, simulator creation, or GPU use. It
   is not scientific evidence and no output directory was created.
+
+## Gate -1 same-observation language-to-action diagnostic
+
+- The prior full-rollout prompt pilot held task IDs, seed/init mapping, batch
+  shape, mode, and policy RNG fixed, but each prompt arm performed a separate
+  simulator reset. Sparse one-level renderer variation meant a residual visual
+  confound remained even though the success gaps were large.
+- The follow-up freezes and reuses that exact pilot authority and its
+  checksummed result. For each of tasks 0/1 it performs one async batch-8 reset
+  at seeds 5100–5107, caches the resulting two-camera/state observation, and
+  feeds that same object to correct, no-spec, scene-only, and swapped prompts.
+  Policy RNG seed 20260718 and batch shape stay fixed; the policy queue is reset
+  before each condition. A second correct plan is a deterministic control.
+- Each condition uses one SmolVLA forward to generate the 50-step action chunk;
+  the probe retains the first 10 postprocessed actions rather than recomputing
+  the model ten times. A per-episode plan is called substantive only when its
+  maximum absolute delta reaches 0.01, more than four times the previously
+  observed 0.002254 cross-batch numerical artifact.
+- Correct-repeat plans are exactly equal across all 16 samples (maximum delta
+  zero). Correct versus swapped, no-spec, and scene-only plans are all
+  substantive for 16/16 samples. Their overall maximum absolute deltas are
+  0.452167, 0.342599, and 0.318189 respectively; even the smallest per-episode
+  maxima are 0.230196, 0.098777, and 0.159854. All 16 first actions in every
+  comparison also exceed 0.01.
+- Combined with the linked prior 6/8 and 6/8 correct-arm competence and 0/8
+  swapped arms, this demonstrates a same-observation language-to-action causal
+  path on an overlap-trained checkpoint and removes reset-render variation as
+  the explanation for prompt sensitivity. It still cannot show that behavior
+  switches to the correct counterfactual goal because the overlap suite's
+  native goal is unchanged. Gate -1 and Writer authorization remain false.
+- Canonical evidence is
+  `.codex/longrun/gate_minus1_language_action_20260718_052249` from clean commit
+  `2038129`, plus
+  `$EMBER_OUTPUT_ROOT/gate_minus1/specification/language_action_20260718T052249Z`.
+  The run completed with rc 0 in 41.72 seconds, peak host RSS 3,980,224 KiB,
+  Torch peak reserved memory 1,232 MiB on one A100, and a 268,038-byte
+  checksummed JSON/HTML artifact. The GPU was released and no new rollout video
+  was duplicated; the linked prior pilot gallery retains the matched videos.

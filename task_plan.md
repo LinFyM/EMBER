@@ -110,8 +110,10 @@ progress through the complete design only when predecessor evidence supports it.
    paired executable-goal surface on tasks 3/4: the MuJoCo state layout is
    identical, 8/8 shared initial states are neutral under both goals, and 16/16
    source demonstration terminal states pass only their originating goal. This
-   is evaluator mechanics, not policy behavior. What remains in this item is
-   policy-level same-init switching plus language/video causal controls.
+   is evaluator mechanics, not policy behavior. A subsequent cached-observation
+   probe isolates a stable language-to-action path on the overlap checkpoint.
+   What remains is correct paired-goal behavior with legal source competence
+   plus action-hidden video content/temporal controls.
 7. [x] Run the bounded evaluation-identity recovery on the same official-overlap
    surface: first compare the frozen policy under one exactly repeated reset
    observation across the predeclared batch ladder, then record matched actual
@@ -146,7 +148,14 @@ progress through the complete design only when predecessor evidence supports it.
     per direction were cross-evaluated with the unmodified pinned native
     evaluator; exact state identity and 16/16 bidirectional specificity pass.
     The 0.80 threshold is descriptive mechanics only and cannot pass Gate -1.
-12. [ ] Run the smallest policy-level same-observation/same-init language causal
-    probe on a competent legal surface, then the predeclared video content and
-    temporal controls. Keep executable-goal mechanics, policy causal behavior,
-    and later Writer/video utility as separate claims.
+12. [x] Run the smallest same-observation language-to-action causal-path probe.
+    On the fixed overlap batch-8 surface, each task is reset exactly once and
+    the cached observation/RNG feeds correct/no-spec/scene-only/swapped plus a
+    correct repeat. Repeat plans are exactly stable; all 16 samples in every
+    comparison exceed the predeclared 0.01 plan-delta scale. This excludes
+    repeated-reset rendering as the prompt-effect explanation but still does
+    not establish correct paired-goal switching.
+13. [ ] Run the predeclared action-hidden video content and temporal controls,
+    then obtain legal source-task policy competence before interpreting the
+    paired native-goal surface behaviorally. Keep this Gate -1 dependency
+    explicit when designing the Gate 0 oracle pilot.

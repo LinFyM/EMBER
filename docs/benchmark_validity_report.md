@@ -63,6 +63,34 @@ under an instruction switch. The canonical artifact and local HTML report are
 and its `source_same_init_goal_latest` link. They contain hashes and boolean
 matrices but no raw states, actions, model XML, or private paths.
 
+## Same-observation language-to-action path
+
+The prior overlap prompt pilot used matched seeds and init-state indices but
+reset each arm independently. Because Gate -1 identity work found sparse
+one-level renderer variation across resets, a cached-observation follow-up was
+required before attributing the full prompt effect solely to language.
+
+For each overlap task, the follow-up resets one async batch of eight once, then
+uses the exact cached two-camera/state observation, fixed batch shape, and fixed
+policy RNG for correct, no-spec, scene-only, swapped, and a correct repeat. It
+retains the first ten actions of each one-forward SmolVLA action chunk. The
+diagnostic threshold is a per-episode maximum absolute plan delta of 0.01,
+which is over four times the previously observed 0.002254 batch-shape artifact.
+
+Correct-repeat plans have zero delta for all 16 samples. Every correct-versus-
+swapped, correct-versus-no-spec, and correct-versus-scene-only sample exceeds
+0.01, including the first action. Overall maximum deltas are 0.452167, 0.342599,
+and 0.318189 respectively. This establishes a same-observation language-to-
+action causal path on the overlap-trained checkpoint and rules out repeated
+rendering as the prompt-effect explanation. Because the overlap environment
+goal remains fixed, it still does not establish correct counterfactual goal
+switching or a LIBERO-90 Gate -1 pass.
+
+The checksummed result and compact local report are
+`$EMBER_OUTPUT_ROOT/gate_minus1/specification/language_action_20260718T052249Z`
+and `language_action_latest/index.html`. The existing overlap gallery remains
+the video authority; this action-only diagnostic does not duplicate media.
+
 ## Permanent specification-only reseal
 
 ### Authority and role definitions
@@ -151,6 +179,7 @@ minimal failure packet rather than being rewritten after recovery.
 | LIBERO-90 role-factor table and split design | recovery mechanics pass | All 90 specifications parse, the permanent seal has zero role-coverage violations, and its deterministic regeneration/hash checks pass. This is not policy evidence. |
 | Fresh canonical manifest under resealed split | pass with documented upstream notes | Clean commit `23f3301` re-audited all 90 files, recomputed 183,555 source-only rows, kept all 30 validation/held tasks metadata-only, and recorded zero evaluation numeric access with valid checksums. |
 | Prompt-path specification pilot | scale candidate only | On overlap-trained `libero_spatial` tasks 0/1, correct is 6/8 and 6/8; no-spec is 0/8 and 0/8; scene-only is 2/8 and 0/8; swapped is 0/8 and 0/8. This is not a LIBERO-90 result. |
+| Same-observation language-to-action path | diagnostic pass | Exact correct repeats and 16/16 substantive action-plan contrasts remove repeated-reset rendering as the prompt-effect explanation. Goal correctness is not measured. |
 | Same-init paired executable goals | source evaluator mechanics pass; policy behavior pending | Tasks 3/4 have exact shared-state compatibility and 16/16 native-goal specificity. This does not show a policy follows the switched spec. |
 | Video content and temporal necessity | not measured | Wrong/same-scene/shuffled/reversed/first/last/scene-only video controls remain pending. |
 
@@ -173,18 +202,18 @@ ordered role records; it is not inferred from policy behavior.
 ## Limitations and next evidence
 
 - The split and data-access mechanics are valid under the declared role grammar
-  and fresh canonical manifest. This still does not establish that a policy has
-  learned the primitives or uses the specification causally.
+  and fresh canonical manifest. This still does not establish that a LIBERO-90
+  source policy has learned the primitives.
 - Language-derived roles cannot prove policy competence or causal use of task
-  information. Policy-level same-init switching and video content/temporal
-  controls remain required even though the native paired-goal surface is valid.
+  information. The overlap policy now has a same-observation language-action
+  path, but correct paired-goal behavior and video content/temporal controls
+  remain required even though the native paired-goal surface is valid.
 - The overlap specification pilot has two tasks and an overlap-trained policy;
   it cannot estimate LIBERO-90 validity, Writer utility, or video utility.
 - No LIBERO-90 policy success, oracle, Writer, or held reward result was read in
   selecting or validating the resealed task IDs.
 
-Next, hold a competent policy observation/physical state fixed and measure the
-predeclared language/spec action or behavior switch, then run the video
-content/temporal controls under the sealed split and fixed-batch evaluator
-contract. Gate 0 and Gate 1 remain downstream; Writer center training remains
-unauthorized.
+Next, run the action-hidden video content/temporal controls, then obtain legal
+source-task competence and evaluate correct behavior on the paired native-goal
+surface without changing its state or evaluator. Gate 0 and Gate 1 remain
+downstream; Writer center training remains unauthorized.

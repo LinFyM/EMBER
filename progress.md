@@ -255,6 +255,27 @@
   4.73 seconds, peaked at 2,748,868 KiB RSS, and retained a 21,482-byte
   checksummed JSON/HTML report with an atomic local review link.
 
+## Gate -1 same-observation language-action milestone
+
+- Commit `2038129` adds a frozen action-path config, one focused owner, a thin
+  offline single-GPU launcher, and four pure contract/comparison tests. The
+  repository passes 78 tests, contract validation, compilation, shell syntax,
+  diff checks, and secret/path scans. Architecture review finds no hard,
+  complexity, or function-size signal; the only flag is the 805-line current
+  source/test/launcher surface. It reuses the existing fixed-batch policy
+  forward and does not add another rollout evaluator or goal implementation.
+- Longrun `gate_minus1_language_action_20260718_052249` completed with main rc 0
+  from the clean pushed commit. For each overlap task, one batch-8 reset supplies
+  exactly the same cached observation to all prompt arms and the correct repeat.
+  Correct repeats are exact; correct versus swapped/no-spec/scene-only is
+  substantive for 16/16 samples in every comparison, including the first
+  action. The primary swapped maximum action delta is 0.452167.
+- The run took 41.72 seconds, peaked at 3,980,224 KiB host RSS, and reports
+  1,232 MiB Torch peak reserved memory on GPU 4. The 268,038-byte checksummed
+  JSON/HTML artifact has an atomic `language_action_latest` report; the GPU is
+  released. No video was duplicated because the frozen prior pilot supplies
+  matched rollout videos.
+
 ## Current phase
 
 Phase 0, reproducible substrate, is in progress. The immutable contract, first
@@ -270,10 +291,11 @@ The previous canonical LIBERO-90 manifest is complete as data-integrity
 evidence, and its role-aware audit falsified the original split. The authorized
 one-time specification-only recovery is now permanently sealed with no policy
 outcome input. The fresh canonical manifest and source-only normalization under
-the new IDs now pass. The source same-state native-goal surface also passes its
-mechanics contract, but Gate -1 is still in progress on policy-level same-init
-language switching and video causal probes. Writer training remains
-unauthorized.
+the new IDs now pass. The source same-state native-goal surface passes its
+mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
+same-observation language-to-action path. Gate -1 is still in progress on
+correct paired-goal behavior with legal source competence and on video causal
+probes. Writer training remains unauthorized.
 
 ## Implementation ownership review
 
@@ -337,6 +359,11 @@ unauthorized.
   CPU-only shell launcher are the sole active path; it does not load a policy,
   invent a goal heuristic, or expose validation/held numeric data. The module
   is retired after Gate -1 once its hashes and result summary are preserved.
+- `src/ember/language_action_probe.py` owns only one cached-reset observation
+  and matched prompt-conditioned action plans. It imports the existing pinned
+  policy builder/action postprocessor, links the prior competence artifact by
+  hash, and never steps a rollout or changes goal semantics. Its config and
+  launcher are the sole current path and retire with Gate -1 evidence.
 - Retirement triggers are explicit: remove the BDDL and robosuite repairs after
   a pinned dependency upgrade proves the upstream wheels no longer contain the
   duplicate metadata/shared-log defects; remove the local SmolVLA/LIBERO
@@ -354,12 +381,12 @@ unauthorized.
 
 1. Preserve the permanent reseal and fresh canonical manifest as the only active
    split/normalization path; do not reuse the rejected split's normalization.
-2. Preserve the source native-goal mechanics result, then run the remaining
-   policy-level same-init language and video causal controls under the frozen
-   fixed-batch evaluator contract. Do not use held results to choose thresholds,
-   task IDs, or remedies.
-3. Predeclare and run the smallest closed-loop useful-update oracle only after
-   the remaining benchmark/specification mechanics are valid.
+2. Preserve both same-state native-goal mechanics and the same-observation
+   language-action path, then run action-hidden video content/temporal controls.
+   Do not use held results to choose thresholds, task IDs, or remedies.
+3. Predeclare the smallest source-task closed-loop useful-update oracle so its
+   legal competence can later complete paired-goal behavior without weakening
+   the Gate -1 or Gate 0 contracts.
 
 ## Last verified handoff facts
 
@@ -403,3 +430,9 @@ unauthorized.
   `$EMBER_OUTPUT_ROOT/gate_minus1/specification/source_same_init_goal_20260718T050511Z`.
   The atomic `source_same_init_goal_latest/index.html` report is 21KB and needs
   no cleanup; it is mechanics-only and leaves the Gate/Writer decision false.
+- The same-observation language-action record is
+  `.codex/longrun/gate_minus1_language_action_20260718_052249` plus
+  `$EMBER_OUTPUT_ROOT/gate_minus1/specification/language_action_20260718T052249Z`.
+  Its atomic `language_action_latest/index.html` report is 268KB; correct repeat
+  is exact and all three prompt contrasts are substantive for 16/16 samples,
+  while correct paired-goal switching and the Gate/Writer decisions remain open.

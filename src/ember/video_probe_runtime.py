@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import subprocess
 import threading
 import time
@@ -20,6 +21,7 @@ from ember.specification_probe import sha256_file
 from ember.video_probe_core import (
     VideoInformationProbeError,
     derive_clip_condition,
+    temporal_moment_descriptor,
     uniform_frame_indices,
 )
 
@@ -245,6 +247,82 @@ def save_clip_cache(path: Path, clips: dict[str, Any]) -> None:
     )
 
 
+def load_cached_clips(
+    spec: dict[str, Any], cache_path: Path, prior_result_path: Path
+) -> dict[str, Any]:
+    """Validate and reuse the exact RGB cache from the preserved failed run."""
+
+    prior = spec["recovery"]["prior_evidence"]
+    if sha256_file(prior_result_path) != prior["probe_result_sha256"]:
+        raise VideoInformationProbeError("prior video result hash changed")
+    if sha256_file(cache_path) != prior["clip_cache_sha256"]:
+        raise VideoInformationProbeError("prior RGB clip cache hash changed")
+    result = json.loads(prior_result_path.read_text(encoding="utf-8"))
+    if result.get("status") != prior["status"]:
+        raise VideoInformationProbeError("prior video failure status changed")
+    if result.get("config_sha256") != spec["recovery"]["base_config_sha256"]:
+        raise VideoInformationProbeError("prior base video config authority changed")
+    if result.get("clip_cache", {}).get("sha256") != prior["clip_cache_sha256"]:
+        raise VideoInformationProbeError("prior result does not bind the RGB cache")
+    root = prior_result_path.parent
+    if sha256_file(root / "feature_cache.npz") != prior["feature_cache_sha256"]:
+        raise VideoInformationProbeError("prior failed feature cache hash changed")
+    if sha256_file(root / "gallery_manifest.json") != prior["gallery_manifest_sha256"]:
+        raise VideoInformationProbeError("prior gallery authority changed")
+    with np.load(cache_path, allow_pickle=False) as cached:
+        expected_keys = {
+            "ordered_clips",
+            "drop_last_20_clips",
+            "ordered_frame_indices",
+            "drop_last_20_frame_indices",
+            "task_ids",
+            "demo_indices",
+            "partitions",
+            "source_frame_counts",
+        }
+        if set(cached.files) != expected_keys:
+            raise VideoInformationProbeError("prior RGB clip cache schema changed")
+        values = {key: cached[key] for key in cached.files}
+    records = result["clip_cache"]["records"]
+    expected_clip_shape = (
+        96,
+        spec["frame_count"],
+        spec["input_height"],
+        spec["input_width"],
+        spec["input_channels"],
+    )
+    if values["ordered_clips"].shape != expected_clip_shape or values["ordered_clips"].dtype != np.uint8:
+        raise VideoInformationProbeError("prior ordered RGB cache shape changed")
+    if values["drop_last_20_clips"].shape != expected_clip_shape or len(records) != 96:
+        raise VideoInformationProbeError("prior drop-last RGB cache shape changed")
+    expected_rows = [
+        (row["task_id"], row["demo_index"], row["partition"], row["source_frame_count"])
+        for row in records
+    ]
+    cached_rows = list(
+        zip(
+            values["task_ids"].tolist(),
+            values["demo_indices"].tolist(),
+            values["partitions"].tolist(),
+            values["source_frame_counts"].tolist(),
+        )
+    )
+    if cached_rows != expected_rows:
+        raise VideoInformationProbeError("prior RGB cache row identity changed")
+    for index, row in enumerate(records):
+        if _array_sha256(values["ordered_clips"][index]) != row["ordered_clip_sha256"]:
+            raise VideoInformationProbeError("prior ordered RGB clip digest changed")
+        if _array_sha256(values["drop_last_20_clips"][index]) != row["drop_last_20_clip_sha256"]:
+            raise VideoInformationProbeError("prior drop-last RGB clip digest changed")
+    return {
+        "records": records,
+        "ordered_clips": values["ordered_clips"],
+        "drop_clips": values["drop_last_20_clips"],
+        "ordered_indices": values["ordered_frame_indices"],
+        "drop_indices": values["drop_last_20_frame_indices"],
+    }
+
+
 def _shuffle_seed(base_seed: int, task_id: int, demo_index: int) -> int:
     payload = f"{base_seed}:{task_id}:{demo_index}".encode("ascii")
     return int.from_bytes(hashlib.sha256(payload).digest()[:8], "big")
@@ -291,16 +369,18 @@ def _load_encoder(spec: dict[str, Any], model_path: Path) -> tuple[Any, ...]:
     model = AutoModelForImageTextToText.from_pretrained(
         model_path, local_files_only=True, dtype=torch.bfloat16
     ).eval().cuda()
-    messages = [
-        {
-            "role": "user",
-            "content": [
-                {"type": "video"},
-                {"type": "text", "text": spec["encoder"]["prompt"]},
-            ],
-        }
-    ]
-    prompt = processor.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
+    prompt = None
+    if spec["encoder"]["feature"] == "final_nonpadding_causal_context_hidden_state":
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "video"},
+                    {"type": "text", "text": spec["encoder"]["prompt"]},
+                ],
+            }
+        ]
+        prompt = processor.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
     return torch, processor, model, prompt
 
 
@@ -320,23 +400,43 @@ def _prepare_inputs(
         )
         for _ in videos
     ]
-    inputs = processor(
-        text=[prompt] * len(videos),
-        videos=[[video] for video in videos],
-        video_metadata=metadata,
-        return_tensors="pt",
-        padding=True,
-        device="cuda",
-    ).to("cuda")
-    if not bool(inputs.attention_mask.all()):
-        raise VideoInformationProbeError("fixed video batch unexpectedly contains text padding")
+    if spec["encoder"]["feature"] == "final_nonpadding_causal_context_hidden_state":
+        inputs = processor(
+            text=[prompt] * len(videos),
+            videos=[[video] for video in videos],
+            video_metadata=metadata,
+            return_tensors="pt",
+            padding=True,
+            device="cuda",
+        ).to("cuda")
+        if not bool(inputs.attention_mask.all()):
+            raise VideoInformationProbeError("fixed video batch unexpectedly contains text padding")
+    else:
+        inputs = processor.video_processor(
+            videos,
+            video_metadata=metadata,
+            return_tensors="pt",
+            device="cuda",
+        ).to("cuda")
     return inputs
 
 
-def _forward_batch(torch: Any, model: Any, inputs: Any) -> np.ndarray:
+def _forward_batch(
+    spec: dict[str, Any], torch: Any, model: Any, inputs: Any
+) -> np.ndarray:
     with torch.inference_mode():
-        hidden = model.model(**inputs, return_dict=True).last_hidden_state[:, -1, :]
-    batch = hidden.float().cpu().numpy()
+        if spec["encoder"]["feature"] == "final_nonpadding_causal_context_hidden_state":
+            hidden = model.model(**inputs, return_dict=True).last_hidden_state[:, -1, :]
+            batch = hidden.float().cpu().numpy()
+        else:
+            pixels = inputs.pixel_values
+            masks = inputs.pixel_attention_mask
+            batch_size, frame_count = pixels.shape[:2]
+            visual = model.model.get_image_features(
+                pixels, masks, return_dict=True
+            ).pooler_output
+            frames = visual.mean(dim=1).reshape(batch_size, frame_count, -1)
+            batch = temporal_moment_descriptor(frames.float().cpu().numpy())
     torch.cuda.synchronize()
     if not np.isfinite(batch).all():
         raise VideoInformationProbeError("frozen encoder produced a non-finite feature")
@@ -359,10 +459,10 @@ def encode_features(
         videos = [descriptor_clip(spec, clips, row) for row in rows]
         started = time.perf_counter()
         inputs = _prepare_inputs(spec, processor, prompt, videos)
-        batch = _forward_batch(torch, model, inputs)
+        batch = _forward_batch(spec, torch, model, inputs)
         batch_times.append(time.perf_counter() - started)
         if start == 0:
-            repeated = _forward_batch(torch, model, inputs)
+            repeated = _forward_batch(spec, torch, model, inputs)
             repeat_delta = float(np.max(np.abs(batch - repeated)))
             if repeat_delta > spec["encoder"]["same_batch_repeat_atol"]:
                 raise VideoInformationProbeError("same-batch frozen encoder repeat is unstable")

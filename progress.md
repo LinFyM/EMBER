@@ -357,6 +357,18 @@
   headroom, peaked at 3,857,596 KiB host RSS, and retained 58,908,493 bytes.
   The gallery is available at `video_information_latest/index.html`; the RGB
   and feature caches are intentionally retained for the bounded recovery.
+- Recovery implementation is now sealed at config SHA256
+  `bf19485beffbfa88657ea3acf793798277f0b3590f3d6c650ec3711d493e9d03`.
+  It validates the prior result/cache/gallery hashes, reuses the exact 96-clip
+  RGB cache, and symlinks the unchanged fourteen videos instead of duplicating
+  media. A two-clip technical smoke produced finite 4800-dimensional features
+  with exact repeat delta zero; it did not inspect a classification metric.
+  The full suite passes 87 tests, compilation, shell syntax, recovery dry-run,
+  and diff checks. Architecture review has no hard violation; its function-size
+  flags cover the single recovery overlay, immutable cache transaction, and
+  shared run orchestrator. This is one config-selected strategy under the same
+  CLI, not a parallel probe. It retires with the base video probe after Gate -1
+  evidence is preserved if the hypothesis is rejected.
 
 ## Current phase
 

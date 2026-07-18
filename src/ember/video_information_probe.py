@@ -22,9 +22,11 @@ from ember.video_probe_core import (
     decide_video_probe,
     derive_clip_condition,
     fit_frozen_linear_probe,
+    load_video_recovery_spec,
     load_video_spec,
     score_linear_probe,
     stratified_accuracy_interval,
+    temporal_moment_descriptor,
     uniform_frame_indices,
 )
 from ember.video_probe_runtime import (
@@ -34,6 +36,7 @@ from ember.video_probe_runtime import (
     extract_clips,
     feature_descriptors,
     load_authority,
+    load_cached_clips,
     save_clip_cache,
 )
 
@@ -188,9 +191,17 @@ def _encode_mp4(path: Path, clip: np.ndarray, *, fps: int = 4) -> None:
 
 
 def _build_gallery(
-    output_dir: Path, spec: dict[str, Any], clips: dict[str, Any], summary: dict[str, Any]
+    output_dir: Path,
+    spec: dict[str, Any],
+    clips: dict[str, Any],
+    summary: dict[str, Any],
+    reuse_root: Path | None,
 ) -> dict[str, Any]:
     cards, videos = [], []
+    if reuse_root is not None:
+        (output_dir / "videos").symlink_to(
+            os.path.relpath(reuse_root / "videos", output_dir), target_is_directory=True
+        )
     for task_id in spec["task_ids"]:
         index = next(
             i
@@ -202,7 +213,10 @@ def _build_gallery(
             clip = descriptor_clip(spec, clips, {**base, "condition": condition})
             relative = Path("videos") / f"task_{task_id}" / f"{condition}.mp4"
             path = output_dir / relative
-            _encode_mp4(path, clip)
+            if reuse_root is None:
+                _encode_mp4(path, clip)
+            elif sha256_file(reuse_root / relative) != sha256_file(path):
+                raise VideoInformationProbeError("reused gallery video digest changed")
             videos.append(
                 {
                     "task_id": task_id,
@@ -211,6 +225,7 @@ def _build_gallery(
                     "path": relative.as_posix(),
                     "bytes": path.stat().st_size,
                     "sha256": sha256_file(path),
+                    "reused_from_prior": reuse_root is not None,
                 }
             )
             cards.append(
@@ -227,6 +242,7 @@ def _build_gallery(
     gallery = {
         "schema_version": 1,
         "index_sha256": hashlib.sha256(document.encode()).hexdigest(),
+        "media_reused_from_prior": reuse_root is not None,
         "videos": videos,
     }
     _atomic_json(output_dir / "gallery_manifest.json", gallery)
@@ -274,12 +290,15 @@ def _build_result(
     summary: dict[str, Any],
     output_dir: Path,
     gallery: dict[str, Any],
-    config_path: Path,
+    active_config_path: Path,
+    base_config_path: Path,
+    clip_cache_info: dict[str, Any],
 ) -> dict[str, Any]:
-    return {
+    result = {
         "schema_version": 1,
         "status": summary["decision"]["status"],
-        "config_sha256": sha256_file(config_path),
+        "config_sha256": sha256_file(active_config_path),
+        "base_config_sha256": sha256_file(base_config_path),
         "spec": spec,
         "authority": authority,
         "input_contract": {
@@ -297,12 +316,7 @@ def _build_result(
             ],
             "source_only_label_use": spec["encoder"]["source_label_use"],
         },
-        "clip_cache": {
-            "path": "clip_cache.npz",
-            "sha256": sha256_file(output_dir / "clip_cache.npz"),
-            "record_count": len(clips["records"]),
-            "records": clips["records"],
-        },
+        "clip_cache": clip_cache_info,
         "feature_cache": {
             "path": "feature_cache.npz",
             "sha256": sha256_file(output_dir / "feature_cache.npz"),
@@ -317,6 +331,56 @@ def _build_result(
         },
         "claim_boundary": spec["claim_boundary"],
     }
+    if "recovery" in spec:
+        result["recovery_boundary"] = spec["recovery"]["claim_boundary"]
+    return result
+
+
+def _load_run_spec(
+    base_config_path: Path, recovery_config_path: Path | None
+) -> tuple[dict[str, Any], Path]:
+    if recovery_config_path is None:
+        return load_video_spec(base_config_path), base_config_path
+    return (
+        load_video_recovery_spec(recovery_config_path, base_config_path),
+        recovery_config_path,
+    )
+
+
+def _load_or_extract_clips(
+    spec: dict[str, Any],
+    pair: dict[str, Any],
+    dataset_root: Path,
+    output_dir: Path,
+    prior_result_path: Path | None,
+    input_clip_cache: Path | None,
+) -> tuple[dict[str, Any], dict[str, Any], Path | None]:
+    if "recovery" not in spec:
+        if prior_result_path is not None or input_clip_cache is not None:
+            raise VideoInformationProbeError("base probe cannot consume prior evidence")
+        clips = extract_clips(spec, pair, dataset_root)
+        cache_path = output_dir / "clip_cache.npz"
+        save_clip_cache(cache_path, clips)
+        info = {
+            "path": "clip_cache.npz",
+            "sha256": sha256_file(cache_path),
+            "record_count": len(clips["records"]),
+            "records": clips["records"],
+            "reused": False,
+        }
+        return clips, info, None
+    if prior_result_path is None or input_clip_cache is None:
+        raise VideoInformationProbeError("recovery requires its frozen prior result and RGB cache")
+    clips = load_cached_clips(spec, input_clip_cache, prior_result_path)
+    info = {
+        "path": None,
+        "sha256": spec["recovery"]["prior_evidence"]["clip_cache_sha256"],
+        "record_count": len(clips["records"]),
+        "records": clips["records"],
+        "reused": True,
+        "prior_result_sha256": spec["recovery"]["prior_evidence"]["probe_result_sha256"],
+    }
+    return clips, info, prior_result_path.parent
 
 
 def run_probe(
@@ -331,12 +395,15 @@ def run_probe(
     output_dir: Path,
     latest_link: Path | None,
     physical_gpu: int,
+    recovery_config_path: Path | None = None,
+    prior_result_path: Path | None = None,
+    input_clip_cache: Path | None = None,
 ) -> dict[str, Any]:
     if output_dir.exists():
         raise VideoInformationProbeError(f"refusing to reuse output directory: {output_dir}")
     output_dir.mkdir(parents=True)
     started = time.perf_counter()
-    spec = load_video_spec(config_path)
+    spec, active_config_path = _load_run_spec(config_path, recovery_config_path)
     pair, authority = load_authority(
         spec,
         source_pair_config=source_pair_config,
@@ -347,8 +414,14 @@ def run_probe(
         model_path=model_path,
     )
     extraction_started = time.perf_counter()
-    clips = extract_clips(spec, pair, dataset_root)
-    save_clip_cache(output_dir / "clip_cache.npz", clips)
+    clips, clip_cache_info, reuse_root = _load_or_extract_clips(
+        spec,
+        pair,
+        dataset_root,
+        output_dir,
+        prior_result_path,
+        input_clip_cache,
+    )
     extraction_seconds = time.perf_counter() - extraction_started
     descriptors = feature_descriptors(spec, clips)
     features, encoder_telemetry, gpu_telemetry = _encode_with_telemetry(
@@ -357,10 +430,10 @@ def run_probe(
     _save_feature_cache(output_dir / "feature_cache.npz", descriptors, features)
     summary, readout = _score_conditions(spec, descriptors, features)
     _atomic_json(output_dir / "readout_details.json", readout)
-    gallery = _build_gallery(output_dir, spec, clips, summary)
+    gallery = _build_gallery(output_dir, spec, clips, summary, reuse_root)
     telemetry = {
         "wall_seconds": time.perf_counter() - started,
-        "clip_extraction_and_cache_seconds": extraction_seconds,
+        "clip_extraction_or_reuse_seconds": extraction_seconds,
         "max_rss_kib": int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss),
         "encoder": encoder_telemetry,
         "gpu": gpu_telemetry,
@@ -368,7 +441,17 @@ def run_probe(
     }
     _atomic_json(output_dir / "resource_telemetry.json", telemetry)
     result = _build_result(
-        spec, authority, clips, descriptors, features, summary, output_dir, gallery, config_path
+        spec,
+        authority,
+        clips,
+        descriptors,
+        features,
+        summary,
+        output_dir,
+        gallery,
+        active_config_path,
+        config_path,
+        clip_cache_info,
     )
     _atomic_json(output_dir / "probe_result.json", result)
     _write_checksums(output_dir)
@@ -399,6 +482,9 @@ def main() -> int:
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--latest-link", type=Path)
     parser.add_argument("--physical-gpu", required=True, type=int)
+    parser.add_argument("--recovery-config", type=Path)
+    parser.add_argument("--prior-result", type=Path)
+    parser.add_argument("--input-clip-cache", type=Path)
     args = parser.parse_args()
     try:
         result = run_probe(
@@ -412,6 +498,13 @@ def main() -> int:
             output_dir=args.output_dir.resolve(),
             latest_link=args.latest_link.resolve() if args.latest_link else None,
             physical_gpu=args.physical_gpu,
+            recovery_config_path=(
+                args.recovery_config.resolve() if args.recovery_config else None
+            ),
+            prior_result_path=args.prior_result.resolve() if args.prior_result else None,
+            input_clip_cache=(
+                args.input_clip_cache.resolve() if args.input_clip_cache else None
+            ),
         )
     except Exception as error:
         args.output_dir.mkdir(parents=True, exist_ok=True)

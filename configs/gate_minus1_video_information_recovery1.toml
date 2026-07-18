@@ -1,0 +1,44 @@
+schema_version = 1
+surface = "libero90_source_action_hidden_video_representation_recovery1"
+recovery_class = "representation"
+base_config_sha256 = "de75a1970de831e4b0a16549a7d0219eaed334c0f14ce3a40965ffb127585474"
+thresholds_unchanged = true
+task_demo_split_unchanged = true
+conditions_unchanged = true
+readout_unchanged = true
+model_weights_unchanged = true
+batch_size_unchanged = true
+held_access_unchanged = true
+
+[prior_evidence]
+status = "source_video_information_not_established"
+probe_result_sha256 = "434522b29602e7bec085364c084176611dc5dbf5e4a1bec9b47be9f6795a5d6e"
+clip_cache_sha256 = "26c29bc69c2bd6ed633aef3ab3f9de3357ece1118c89bd17177cde2c316edfe8"
+feature_cache_sha256 = "8ee768482b82afad09035e6785435a258da7263a2a64176745e78a56d7ee3f83"
+gallery_manifest_sha256 = "53cb2cf6a021a7622915c9c7112e404293802c6c81d68d95ee15d89af8f38ad0"
+
+[representation]
+feature = "smolvlm_visual_connector_temporal_moments_v1"
+spatial_pool = "mean_over_64_visual_connector_tokens"
+per_frame_l2_normalization = true
+components = ["mean", "first", "last", "last_minus_first", "linear_time_slope"]
+time_coordinates = "linspace_minus_one_to_one"
+feature_dimension = 4800
+trainable_parameters = 0
+language_prompt_used = false
+
+[resources]
+reuse_rgb_clip_cache = true
+reuse_gallery_videos = true
+batch_size = 48
+gpu_count = 1
+expected_peak_gpu_reserved_gib = 50
+minimum_gpu_headroom_gib = 10
+expected_output_gib = 0.03
+timeout_seconds = 1800
+
+[claim_boundary]
+gate_decision_authorized = false
+writer_authorized = false
+authorized_change = "replace only the collapsed final causal-context token with fixed framewise visual-connector temporal moments"
+stop_condition = "retain the recovery result without threshold, task-pair, readout, or model-weight changes if any predeclared content or temporal criterion remains unmet"

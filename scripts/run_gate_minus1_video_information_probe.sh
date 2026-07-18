@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 CONFIG="$ROOT/configs/gate_minus1_video_information_probe.toml"
+RECOVERY_CONFIG="$ROOT/configs/gate_minus1_video_information_recovery1.toml"
 PAIR_CONFIG="$ROOT/configs/gate_minus1_same_init_goal_probe.toml"
 CONTRACT="$ROOT/configs/phase0.toml"
 SEAL="$ROOT/configs/libero90_split_reseal.json"
@@ -13,6 +14,7 @@ output_dir=""
 latest_link=""
 manifest=""
 dry_run=false
+recovery1=false
 
 usage() {
   cat <<'EOF'
@@ -25,6 +27,7 @@ Required:
 Optional:
   --manifest=ABS_PATH      Resealed canonical manifest (default: current latest).
   --latest-link=ABS_PATH   Atomic report link (default: video_information_latest).
+  --recovery1              Run the sole frozen same-cache representation recovery.
   --dry-run                Print the fully offline command without allocating a GPU.
 EOF
 }
@@ -40,6 +43,7 @@ while (($#)); do
     --output-dir=*) output_dir=${1#*=} ;;
     --manifest=*) manifest=${1#*=} ;;
     --latest-link=*) latest_link=${1#*=} ;;
+    --recovery1) recovery1=true ;;
     --dry-run) dry_run=true ;;
     -h|--help) usage; exit 0 ;;
     *) die "unknown argument: $1" ;;
@@ -67,7 +71,7 @@ fi
 : "${HF_HOME:?set HF_HOME or provide it in .env.local}"
 : "${LIBERO_CONFIG_PATH:?set LIBERO_CONFIG_PATH or provide it in .env.local}"
 [[ -x "$PYTHON" ]] || die "locked environment is missing; run scripts/bootstrap_env.sh"
-[[ -f "$CONFIG" && -f "$PAIR_CONFIG" && -f "$CONTRACT" && -f "$SEAL" ]] ||
+[[ -f "$CONFIG" && -f "$RECOVERY_CONFIG" && -f "$PAIR_CONFIG" && -f "$CONTRACT" && -f "$SEAL" ]] ||
   die "checked-in video probe authority is incomplete"
 
 if [[ -z "$manifest" ]]; then
@@ -105,6 +109,17 @@ command=(
   --latest-link "$latest_link"
   --physical-gpu "$gpu"
 )
+
+if $recovery1; then
+  prior_root="$EMBER_OUTPUT_ROOT/gate_minus1/specification/video_information_20260718T060241Z"
+  [[ -f "$prior_root/probe_result.json" && -f "$prior_root/clip_cache.npz" ]] ||
+    die "frozen recovery input is incomplete: $prior_root"
+  command+=(
+    --recovery-config "$RECOVERY_CONFIG"
+    --prior-result "$prior_root/probe_result.json"
+    --input-clip-cache "$prior_root/clip_cache.npz"
+  )
+fi
 
 if $dry_run; then
   printf 'CUDA_VISIBLE_DEVICES=%q HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 ' "$gpu"

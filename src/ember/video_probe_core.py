@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import copy
+import hashlib
 import tomllib
 from pathlib import Path
 from typing import Any
@@ -144,6 +146,72 @@ def load_video_spec(path: Path) -> dict[str, Any]:
     return spec
 
 
+def load_video_recovery_spec(path: Path, base_config_path: Path) -> dict[str, Any]:
+    """Load the sole bounded representation recovery over the frozen base spec."""
+
+    with path.open("rb") as handle:
+        recovery = tomllib.load(handle)
+    base_sha = hashlib.sha256(base_config_path.read_bytes()).hexdigest()
+    expected_flags = {
+        "schema_version": 1,
+        "surface": "libero90_source_action_hidden_video_representation_recovery1",
+        "recovery_class": "representation",
+        "base_config_sha256": base_sha,
+        "thresholds_unchanged": True,
+        "task_demo_split_unchanged": True,
+        "conditions_unchanged": True,
+        "readout_unchanged": True,
+        "model_weights_unchanged": True,
+        "batch_size_unchanged": True,
+        "held_access_unchanged": True,
+    }
+    if any(recovery.get(field) != value for field, value in expected_flags.items()):
+        raise VideoInformationProbeError("representation recovery invariants changed")
+    expected_prior = {
+        "status": "source_video_information_not_established",
+        "probe_result_sha256": "434522b29602e7bec085364c084176611dc5dbf5e4a1bec9b47be9f6795a5d6e",
+        "clip_cache_sha256": "26c29bc69c2bd6ed633aef3ab3f9de3357ece1118c89bd17177cde2c316edfe8",
+        "feature_cache_sha256": "8ee768482b82afad09035e6785435a258da7263a2a64176745e78a56d7ee3f83",
+        "gallery_manifest_sha256": "53cb2cf6a021a7622915c9c7112e404293802c6c81d68d95ee15d89af8f38ad0",
+    }
+    if recovery.get("prior_evidence") != expected_prior:
+        raise VideoInformationProbeError("prior failure authority changed")
+    expected_representation = {
+        "feature": "smolvlm_visual_connector_temporal_moments_v1",
+        "spatial_pool": "mean_over_64_visual_connector_tokens",
+        "per_frame_l2_normalization": True,
+        "components": ["mean", "first", "last", "last_minus_first", "linear_time_slope"],
+        "time_coordinates": "linspace_minus_one_to_one",
+        "feature_dimension": 4800,
+        "trainable_parameters": 0,
+        "language_prompt_used": False,
+    }
+    if recovery.get("representation") != expected_representation:
+        raise VideoInformationProbeError("temporal representation recovery changed")
+    resources = recovery.get("resources", {})
+    if resources != {
+        "reuse_rgb_clip_cache": True,
+        "reuse_gallery_videos": True,
+        "batch_size": 48,
+        "gpu_count": 1,
+        "expected_peak_gpu_reserved_gib": 50,
+        "minimum_gpu_headroom_gib": 10,
+        "expected_output_gib": 0.03,
+        "timeout_seconds": 1800,
+    }:
+        raise VideoInformationProbeError("representation recovery resources changed")
+    boundary = recovery.get("claim_boundary", {})
+    if boundary.get("gate_decision_authorized") is not False or boundary.get("writer_authorized") is not False:
+        raise VideoInformationProbeError("recovery cannot authorize Gate -1 or Writer")
+    spec = copy.deepcopy(load_video_spec(base_config_path))
+    spec["schema_version"] = 2
+    spec["surface"] = recovery["surface"]
+    spec["encoder"]["feature"] = recovery["representation"]["feature"]
+    spec["resources"]["expected_output_gib"] = resources["expected_output_gib"]
+    spec["recovery"] = recovery
+    return spec
+
+
 def uniform_frame_indices(
     total_frames: int,
     *,
@@ -212,6 +280,28 @@ def _normalize_rows(features: np.ndarray) -> np.ndarray:
     if not np.isfinite(norms).all() or np.any(norms <= 0):
         raise VideoInformationProbeError("feature row has invalid norm")
     return features / norms
+
+
+def temporal_moment_descriptor(frame_features: np.ndarray) -> np.ndarray:
+    """Build the fixed mean/endpoint/delta/slope descriptor from frame features."""
+
+    values = np.asarray(frame_features, dtype=np.float64)
+    if values.ndim != 3 or values.shape[1] < 2 or not np.isfinite(values).all():
+        raise VideoInformationProbeError("frame features must be finite [batch,time,feature]")
+    normalized = _normalize_rows(values.reshape(-1, values.shape[-1])).reshape(values.shape)
+    coordinates = np.linspace(-1.0, 1.0, values.shape[1], dtype=np.float64)
+    slope = np.sum(normalized * coordinates[None, :, None], axis=1) / np.sum(coordinates**2)
+    components = (
+        normalized.mean(axis=1),
+        normalized[:, 0],
+        normalized[:, -1],
+        normalized[:, -1] - normalized[:, 0],
+        slope,
+    )
+    descriptor = np.concatenate(components, axis=1)
+    if not np.isfinite(descriptor).all():
+        raise VideoInformationProbeError("temporal descriptor is non-finite")
+    return descriptor.astype(np.float32)
 
 
 def fit_frozen_linear_probe(

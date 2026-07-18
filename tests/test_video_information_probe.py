@@ -15,16 +15,20 @@ from ember.video_information_probe import (  # noqa: E402
     decide_video_probe,
     derive_clip_condition,
     fit_frozen_linear_probe,
+    load_video_recovery_spec,
     load_video_spec,
     score_linear_probe,
     stratified_accuracy_interval,
+    temporal_moment_descriptor,
     uniform_frame_indices,
 )
+from ember.video_probe_runtime import feature_descriptors  # noqa: E402
 
 
 class VideoInformationProbeTest(unittest.TestCase):
     def setUp(self) -> None:
         self.config_path = ROOT / "configs" / "gate_minus1_video_information_probe.toml"
+        self.recovery_path = ROOT / "configs" / "gate_minus1_video_information_recovery1.toml"
 
     def test_checked_in_protocol_is_source_only_and_frozen_before_outcomes(self) -> None:
         spec = load_video_spec(self.config_path)
@@ -39,6 +43,25 @@ class VideoInformationProbeTest(unittest.TestCase):
         self.assertFalse(spec["claim_boundary"]["gate_decision_authorized"])
         self.assertEqual(spec["resources"]["gpu_count"], 1)
         self.assertEqual(spec["resources"]["batch_size"], 48)
+
+    def test_recovery_changes_only_the_frozen_representation_and_output_budget(self) -> None:
+        base = load_video_spec(self.config_path)
+        recovery = load_video_recovery_spec(self.recovery_path, self.config_path)
+
+        self.assertEqual(recovery["schema_version"], 2)
+        self.assertEqual(
+            recovery["encoder"]["feature"],
+            "smolvlm_visual_connector_temporal_moments_v1",
+        )
+        self.assertEqual(recovery["task_ids"], base["task_ids"])
+        self.assertEqual(recovery["support_demo_indices"], base["support_demo_indices"])
+        self.assertEqual(recovery["query_demo_indices"], base["query_demo_indices"])
+        self.assertEqual(recovery["conditions"], base["conditions"])
+        self.assertEqual(recovery["thresholds"], base["thresholds"])
+        self.assertEqual(recovery["readout"], base["readout"])
+        self.assertEqual(recovery["resources"]["batch_size"], 48)
+        self.assertEqual(recovery["resources"]["expected_output_gib"], 0.03)
+        self.assertFalse(recovery["recovery"]["representation"]["language_prompt_used"])
 
     def test_uniform_sampler_excludes_terminal_and_freezes_drop_last_window(self) -> None:
         self.assertEqual(
@@ -94,6 +117,43 @@ class VideoInformationProbeTest(unittest.TestCase):
         self.assertEqual(result["predictions"].tolist(), [3, 4])
         self.assertEqual(result["balanced_accuracy"], 1.0)
         self.assertTrue(np.all(result["signed_margins"] > 0))
+
+    def test_temporal_moments_have_predeclared_reversal_and_static_behavior(self) -> None:
+        frames = np.array(
+            [[[1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [-1.0, 1.0]]],
+            dtype=np.float64,
+        )
+        ordered = temporal_moment_descriptor(frames).reshape(1, 5, 2)
+        reversed_value = temporal_moment_descriptor(frames[:, ::-1]).reshape(1, 5, 2)
+        static = temporal_moment_descriptor(np.repeat(frames[:, :1], 4, axis=1)).reshape(1, 5, 2)
+
+        np.testing.assert_allclose(reversed_value[:, 0], ordered[:, 0], atol=1e-7)
+        np.testing.assert_allclose(reversed_value[:, 1], ordered[:, 2], atol=1e-7)
+        np.testing.assert_allclose(reversed_value[:, 2], ordered[:, 1], atol=1e-7)
+        np.testing.assert_allclose(reversed_value[:, 3], -ordered[:, 3], atol=1e-7)
+        np.testing.assert_allclose(reversed_value[:, 4], -ordered[:, 4], atol=1e-7)
+        np.testing.assert_allclose(static[:, 3:], 0.0, atol=1e-7)
+
+    def test_feature_schedule_reuses_ordered_support_and_all_query_controls(self) -> None:
+        spec = load_video_spec(self.config_path)
+        records = [
+            {
+                "task_id": task,
+                "demo_index": demo,
+                "partition": "support" if demo < 24 else "query",
+            }
+            for task in (3, 4)
+            for demo in range(48)
+        ]
+        descriptors = feature_descriptors(spec, {"records": records})
+
+        self.assertEqual(len(descriptors), 384)
+        self.assertEqual(sum(row["partition"] == "support" for row in descriptors), 48)
+        self.assertEqual(sum(row["partition"] == "query" for row in descriptors), 336)
+        self.assertEqual(
+            {row["condition"] for row in descriptors if row["partition"] == "query"},
+            set(spec["conditions"]),
+        )
 
     def test_stratified_interval_is_deterministic_and_balanced(self) -> None:
         labels = np.array([3, 3, 3, 4, 4, 4])

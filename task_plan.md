@@ -496,6 +496,22 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     loss/gradient, 62.3 samples/s, and 17.86/18.93GiB peak allocation/reservation.
     It saves no candidate and opens no rollout/validation/held surface; GPU 4
     returns to 0MiB. The two task-1k staged fits are mechanically authorized.
+    Both task-1k fits complete rc 0 in 13:19/13:06 but fail the first frozen
+    continuation rule and stop permanently. Task 3/4 query reductions are
+    -5.221%/-19.788% (median -12.504%), with drift 0.06313/0.06903, while
+    support loss falls substantially. Candidate/recovery/telemetry hashes and
+    query identity validate; GPU 4/5 return to 0MiB and the 2.0GiB output is
+    retained. This mechanics-valid result shows that the current mature
+    task-local acquisition/data/optimization recipe fails to generalize even in
+    the non-matched action-expert space; it does not isolate LoRA capacity and
+    cannot be promoted to a LoRA, Gate 0, Writer, or EMBER negative. The frozen
+    contract now requires a Gate-recovery decision before any new recipe. Do
+    not resume to 2k or consume closed loop. Present the owner with the bounded
+    choice between one result-blind lower-LR/dense-early acquisition recovery
+    (upper bound first, then matched LoRA only if the upper bound becomes
+    positive) and recording the current task-local supervised acquisition
+    surface as insufficient and revising the Gate 0 evidence plan; no silent
+    third target/rank or hyperparameter grid is allowed.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

@@ -1508,3 +1508,18 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   validation, or held surface, and left GPU 4 at 0MiB with no worker residue.
   Tasks 3/4 may now launch only to the 1k staged boundary on two independent
   GPUs under the frozen capacity ladder.
+- Stage-1k long-runs `gate0_mature_action_expert_t3_stage1k_20260718_190809`
+  and `gate0_mature_action_expert_t4_stage1k_20260718_190809` complete main rc 0
+  in 13:19/13:06. Independent-query reductions are -5.221%/-19.788% (median
+  -12.504%), so both the per-task nonnegative condition and median >=2% rule
+  fail; the outputs are stopped permanently at 1k. Candidate/recovery states,
+  query/anchor identities and telemetry hashes validate. Support loss falls
+  while query and drift worsen, classifying this as a mechanics-valid
+  task-local acquisition/generalization failure. Telemetry SHA256 values are
+  `e8b5d4df1d0d67f684d5ce773f5677d421edb3a399fae12d0c705c82886f7da2`
+  and `d5907ccb9be8f398ce5edce3f940a45d98763790175703a2d28d168dff31a977`;
+  peak memory is 19,455/20,195MiB, GPUs return to 0MiB, and the retained output
+  is 2.0GiB. No 2k resume, rollout, validation, held, Gate 0, Writer, or target
+  seal is authorized. The next action is an owner Gate-recovery decision on a
+  single lower-LR/dense-early acquisition recovery versus revising the current
+  supervised Gate 0 evidence plan; no further target/rank or grid search runs.

@@ -1561,3 +1561,40 @@
   1.65898, and 62.3 samples/s; peak Torch allocation/reservation is
   17.86/18.93GiB. The smoke saves no query candidate, accesses no rollout,
   validation, or held surface, and releases GPU 4 to 0MiB.
+
+## Mature action-expert upper bound also fails independent query at 1k
+
+- Both non-matched task-local action-expert fits complete the predeclared 1k
+  boundary with rc 0 in 13:19/13:06. Task 3 query MSE changes from 0.518017 to
+  0.545061 (-5.221% reduction); task 4 changes from 0.488102 to 0.584688
+  (-19.788%). The median is -12.504%, and both tasks are negative, so the frozen
+  1k-to-2k rule fails. Neither output may resume to 2k or access the formal
+  closed-loop surface.
+- The failure is not mechanical. Candidate-manifest SHA256 values are
+  `10bc695a36e26a821b15ea20bc3d711b8939658f6e51526503d7e87380185d1c`
+  and `8390d3e3b8c83c825987aaec3bf45fbad464d7344f426dfe7ada63c848d42e8f`;
+  trainable-state values are
+  `429a85eb2aef99bcf63ccb503cd9368f8a07851756cfbda5bba1d89aad46f25d`
+  and `92d2287c435977c9028756dcefd192b4429c6ff81b4ba949d8d4b7b5cb42262f`;
+  recovery-manifest values are
+  `b57d898d6919ed417e27bcfbaad22aac9ab668694917a703071f5a2678ed9564`
+  and `7993186c94ad91aa70df45e3c0f2d0431ca810964591521dd27e423de384e7b2`.
+  Query/anchor identities are the same mature source rows, artifacts validate,
+  and both GPUs release cleanly.
+- Support learning moves in the opposite direction from query: task 3 logged
+  support loss falls from 0.4055 over the first 100 steps to 0.2835 over the
+  last 100; task 4 falls from 0.4508 to 0.3209. Drift reaches
+  0.06313/0.06903. Peak device memory is 19,455/20,195MiB and active-window
+  utilization is 89.68%/91.05%; the complete staged output occupies 2.0GiB.
+  This is a mechanics-valid task-local acquisition/generalization failure, not
+  evidence that the larger update implementation failed.
+- Because the same sufficient-data recipe fails even outside LoRA, these
+  outcomes do not support blaming LoRA target support or future Writer
+  generation. They exhaust the result-blind target/rank/capacity path and
+  require an explicit Gate-recovery decision. The lowest-cost discriminating
+  option is one predeclared lower-LR, dense-early checkpoint recovery on the
+  action-expert upper bound, followed by the same acquisition schedule on LoRA
+  only if that upper bound becomes positive. The alternative is to record this
+  supervised task-local acquisition surface as insufficient and revise the Gate
+  0 evidence plan. Either changes the current frozen recipe, so no further run
+  is launched silently.

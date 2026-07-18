@@ -1220,3 +1220,24 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   job owns GPUs 0--3 and is untouched. Personal usage is 294GiB of the 500GiB
   cap; `/data` has 2.9TiB free. Git is clean, all upstream checksums pass, the
   reset-only live probe passes, and the repository suite passes 193/193 tests.
+
+### Rank-8 screening recovery result
+
+- Long-run `gate0_support_rank8_screen_recovery1_20260718_151530` completed from
+  clean commit `6f3cf52` with main rc 0 in 187.79 seconds. All eight arms and 64
+  episodes are mechanically valid on init states 24--31/seeds 5500--5507. All
+  output, gallery, telemetry, and eight video checksums pass; `screening/latest`
+  resolves to the 1.7MB canonical output, and GPUs 4--7 returned to 0MiB.
+- Task-3 base/last-two/all-qv/official successes are 4/3/2/3 of 8; task-4 are
+  3/3/4/4. Candidate median success gains are -6.25pp, -6.25pp, and 0pp;
+  positive-task counts are 0/2, 1/2, and 1/2. Combined with frozen query
+  reductions 2.36%, 4.67%, and 4.79%, no rank-8 candidate passes. All three
+  satisfy only the drift check.
+- `support_screening_result.json` SHA256 is
+  `0df3acb8d3fd5f94507921298940281c7430eedc359869d3918a0f2c012c6efb`.
+  Its immutable status is `rank8_support_screen_failed_rank16_authorized` and
+  sole scope is `official_default_r8` -> rank 16. Confirmation, locked-report
+  access, Gate 0, final target support, Writer, validation, and held remain
+  unauthorized. Next, add one hash-bound rank-16 contract using the same
+  fitter/query rows/optimizer schedule and fresh init states 32--39; no other
+  search is scheduled.

@@ -1277,3 +1277,25 @@
   5500--5507 reach 24--31. Unit evidence rejects the former two-reset event
   sequence for this recovery surface. No threshold, state, fit, split, or
   scientific budget changed.
+
+## Rank-8 support breadth does not establish robust oracle utility
+
+- The corrected source-only screen completed 64 episodes with rc 0, exact
+  init-state transitions to 24--31, all eight mechanics checks true, eight
+  checksummed videos, and no validation/held or locked-report selection access.
+  Task 3 frozen base is 4/8; last-two, all-q/v, and official-default-like are
+  3/8, 2/8, and 3/8. Task 4 frozen base is 3/8; the same supports are 3/8,
+  4/8, and 4/8. Thus last-two has median closed-loop gain -6.25pp with 0/2
+  positive tasks, all-q/v -6.25pp with 1/2, and official-default-like 0pp with
+  1/2. All fail the unchanged +15pp median and 2/2-positive requirements.
+- Broader support improved independent fixed-query loss relative to last-two,
+  but did not transfer robustly to closed loop: the median reductions are
+  2.36%, 4.67%, and 4.79%, all far below 20%. Drift is the only aggregate check
+  passed by every candidate. This rules out treating a rank-8 breadth increase
+  alone as the bounded Gate 0 repair; it does not yet distinguish insufficient
+  rank from acquisition/metric-to-control mismatch.
+- The predeclared failure branch selects the best rank-8 query ranking,
+  `official_default_r8`, and authorizes only its rank-16 counterpart. No rank-8
+  target is selected, no final Writer target is sealed, and no further support,
+  optimizer, or rank search is legal. The rank-16 test remains a Gate 0
+  capacity diagnosis, not permission to simplify future Writer generation.

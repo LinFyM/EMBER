@@ -360,7 +360,14 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     batch (two warm-ups before the 24--31 rollout), with regression coverage
     for both the original 16--23 report and recovery surface. Run the untouched
     grant once in a fresh output directory; do not reinterpret or overwrite the
-    failed attempt.
+    failed attempt. Recovery run
+    `gate0_support_rank8_screen_recovery1_20260718_151530` is now complete rc 0
+    with all eight arms mechanically valid on exact init states 24--31. No
+    rank-8 support passes: last-two has task gains -12.5/0pp, all-expert q/v
+    -25/+12.5pp, and official-default-like -12.5/+12.5pp; their median query
+    reductions remain 2.36%/4.67%/4.79% versus 20%. The frozen decision
+    authorizes exactly one `official_default` rank-16 fit/screen and nothing
+    else. Gate 0, final target sealing, confirmation, and Writer remain false.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

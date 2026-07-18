@@ -1145,3 +1145,33 @@
   organization motivate structured layer/module embeddings, chunked generation,
   or type-specific heads. They do not justify a shared update bank, subspace,
   geometry, or any constraint on subsequent ordinary LoRA RL.
+
+## Gate 0 fit selection exposes support-to-query generalization failure
+
+- All four source-only fit commands completed rc 0 from clean commit
+  `96cd0f9`; every result, selected state, candidate record, and telemetry hash
+  validates. No locked-report, validation, or held numeric surface was opened.
+- Task 3's last-two q/v rank-8 LoRA reduced fixed query flow MSE by 3.27% at
+  step 250, but its action-drift proxy was 0.02646, above the frozen 0.02 cap.
+  Later candidates had larger drift and worse query loss, so the immutable
+  query-only rule selected exact step 0. Task 4 selected step 250: query flow
+  MSE fell only 1.12%, with drift 0.01995 just inside the cap; later candidates
+  again worsened query loss and increased drift.
+- The non-matched 99,880,992-parameter partial-update diagnostics both selected
+  step 0. Although support flow losses fell substantially, step-250 query loss
+  was already 54.46% worse on task 3 and 54.43% worse on task 4, then degraded
+  further. The larger trainable set therefore did not establish a capacity
+  upper bound under this acquisition schedule; it exposed support-to-query
+  overfitting/optimization instead.
+- These query results make the frozen two-task primary pass impossible without
+  changing selections: task 3's own adapter is the exact base and the decision
+  requires both tasks to have strictly positive closed-loop gain. That is not
+  permission to skip or reinterpret the locked report. The report remains
+  necessary to validate matched closed-loop mechanics, measure task 4, and
+  complete the predeclared failure packet before choosing one bounded recovery.
+- Current evidence does not isolate target support as the sole cause. The next
+  recovery decision must prioritize acquisition/generalization diagnostics
+  (learning rate, early budget/candidate resolution, support/query behavior)
+  alongside the already required bounded target-support audit. It must not
+  lower the drift/utility thresholds, use report outcomes for model selection,
+  or blame the future Writer.

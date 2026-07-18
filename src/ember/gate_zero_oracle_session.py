@@ -140,7 +140,7 @@ def _load_task_datasets(
     return support, query, evidence
 
 
-def _configure_variant(
+def configure_oracle_variant(
     policy: Any,
     *,
     parent: dict[str, Any],
@@ -210,7 +210,7 @@ def open_oracle_model_session(
             {"task_suite": "libero_90", "task_id": task_id},
         )
         policy, preprocessor = runtime[0], runtime[1]
-        model, summary = _configure_variant(
+        model, summary = configure_oracle_variant(
             policy,
             parent=parent,
             checkpoint=checkpoint,

@@ -302,7 +302,14 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     diagnostics, confidence intervals, and matched zero/base versus task-local
     LoRA controls. Record action-expert partial/full update or full fine-tuning
     only as non-matched capability upper bounds. If only an upper bound works,
-    trigger target/rank recovery rather than blaming Writer.
+    trigger target/rank recovery rather than blaming Writer. The four frozen
+    fit/select jobs are complete and checksummed. Task 3 LoRA selected exact
+    step 0 because its first improving query candidate exceeded the drift cap;
+    task 4 selected step 250 with only a 1.12% fixed-query reduction. Both
+    partial-update jobs selected step 0 because trained support improvement
+    reversed on independent query data. Keep this item open until the immutable
+    selection grant, matched locked offline/closed-loop report, failure
+    classification, and one bounded recovery decision are complete.
 21. [ ] Before freezing the Writer architecture, complete one bounded,
     predeclared source/validation-only target-support audit with held numeric
     access at zero. Compare at least current last-two q/v rank 8, all

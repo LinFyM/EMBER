@@ -930,3 +930,52 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   partial fit plus locked report verify the replacement; at that trigger,
   retire its executable launcher/module while preserving durable invariants and
   Git evidence. No bank/geometry or hypothetical Writer code path is reserved.
+
+## 2026-07-18 Gate 0 oracle fit closeout and locked-report preparation
+
+- Four independent long-runs filled GPUs 4--7 without touching the unrelated
+  GPU 0--3 jobs: `gate_zero_oracle_fit_lora_task3_20260718_131711`,
+  `gate_zero_oracle_fit_lora_task4_20260718_132013`,
+  `gate_zero_oracle_fit_partial_task3_20260718_132014`, and
+  `gate_zero_oracle_fit_partial_task4_20260718_132014`. All completed main rc 0
+  and released their GPUs. LoRA fit bodies took 1153.34/1151.11 seconds with
+  about 3.70GB peak Torch allocation; partial fits took 1468.24/1478.24 seconds
+  with about 18.27GB. The devices stayed compute-saturated during fitting;
+  fixed effective batch 64 and independent-job parallelism preserved the
+  scientific sample budget rather than inflating memory with dummy work.
+- Query-only selections are task 3 LoRA step 0, task 4 LoRA step 250, and both
+  partial upper bounds step 0. Task 3's step-250 LoRA query gain was 3.27% but
+  violated drift 0.02; task 4's selected gain was 1.12% at drift 0.01995. Both
+  partial fits sharply reduced support loss but worsened independent query loss
+  by more than 54% at step 250. Gate 0, Writer, and final Writer target support
+  remain false.
+- Full checksum validation passes for all four outputs. Completed recovery
+  directories and unselected bulky partial states were removed by the canonical
+  fitter; selected states, compact candidate metrics, LoRA candidates,
+  telemetry, and result provenance remain. The full oracle-fit tree is about
+  397MB, so no further evidence cleanup is warranted now.
+- The locked-report implementation was developed in isolated worktree/branch
+  `codex/gate-zero-locked-report` so the running launchers stayed on commit
+  `96cd0f9`. Its sole path first validates all four completed fit results and
+  selected hashes, atomically publishes an immutable selection-freeze grant,
+  then uses four fixed shards for base/own/swapped/non-matched-partial offline
+  and closed-loop arms. It enforces matching report rows, sample counts,
+  seeds/init states, base losses within functional tolerance, correct prompts,
+  and the two-reset transition to official init states 16--23. Trackio and one
+  video per arm provide bounded live/later visualization.
+- Architecture ownership is intentionally narrow: `gate_zero_oracle_report`
+  owns the irreversible grant and frozen decision arithmetic;
+  `gate_zero_oracle_report_runtime` owns the only live report evaluator;
+  `gate_zero_oracle_session` remains the shared variant-construction owner; and
+  one shell launcher owns GPU preflight, telemetry, cleanup, and torchrun. This
+  adds no alternate trainer or evaluator mode. The older one-step model probe
+  keeps its previously recorded removal trigger after the first locked report;
+  the new report path remains only while Gate 0 evidence is an active project
+  requirement. The architecture guard reports review signals (large but below
+  hard limits) and no hard violation; the cohesive exception is justified by
+  the irreversible data gate plus simulator/report lifecycle.
+- Synthetic grant/decision/shard/reset tests pass 5/5; the full repository suite
+  passes 181/181 with Python compilation and shell syntax checks. The report
+  surface is still unopened. After integrating this clean implementation,
+  create the grant exactly once, run the fixed four-card locked report, and only
+  then freeze the Gate 0 failure/recovery decision.

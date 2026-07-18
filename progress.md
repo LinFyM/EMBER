@@ -1404,3 +1404,28 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   `8629a7388a45980778640075551fc3e515645977cd50f96db556b20488441c95`.
   GPU 4/5 returned to 0MiB. Resume the same outputs from step 2000 to step 5000;
   expected wall time is about 38--45 minutes, with no final closed-loop access.
+- Stage-5k long-runs `gate0_mature_r32_t3_stage5k_20260718_171212` and
+  `gate0_mature_r32_t4_stage5k_20260718_171211` completed main rc 0 in
+  37:32/37:45 on clean commit `7ed1282`. Task 3/4 query reductions are
+  0.315%/-2.956% (median -1.321%); the 7.591pp median regression from 2k
+  violates the frozen continuation rule, so neither output may resume to 10k
+  or 20k. Candidate-manifest SHA256 values are
+  `3868717b3c31c88565df3d0006c6eadfb7609cc5d29a990fd975a39e1983ea8a` and
+  `7bbc34d47d358ba76cc94bc06693e8cfc7ac8e6692535e9efe2acd0f7cd7642d`;
+  recovery-manifest values are
+  `70d09c578e36679c9a79fccb8098ec9ee8dbeaa94c9007c00a1c45a9d7a3cd16` and
+  `b8caebcac4b817c92d31e785debdfcb58d0c43beeec727737987ae5200f1c32e`;
+  telemetry values are
+  `9822b4041712bbfa94db1b7090efb3f717467e23105bd3e254601219132649e0` and
+  `1ca56a87dfb2afd239743a665c756617eb287f1345bad694d9aff59324b86c37`.
+  Peak memory was 18,585/18,545MiB and active-window utilization averaged
+  91.79%/91.04%; GPU 4/5 returned to 0MiB with no worker residue. Final
+  init states 40--47, validation and held surfaces remain untouched.
+- A one-GPU structure-only probe then loaded the same frozen source checkpoint,
+  enumerated 112 action-expert linear modules and the five existing projection
+  targets, computed 7,027,200 rank-32 parameters, and released the GPU. Use this
+  exact 117-target set for the already-authorized
+  `all_action_expert_linear_r32_same_recipe` recovery. Before any fit outcome,
+  freeze its parent failure hashes and a matching staged ladder; run one finite
+  step/count/memory smoke, then tasks 3/4 to the 1k boundary only. No additional
+  rank/support search or final rollout is authorized at this point.

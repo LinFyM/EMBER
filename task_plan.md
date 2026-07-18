@@ -427,6 +427,22 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     exact-resume these same states to step 5k, then require median reduction at
     least 10%, every task at least 2%, and at most 1pp median regression before
     authorizing 10k.
+    Stage 5k completed mechanically rc 0 in 37:32/37:45, but the frozen
+    continuation rule failed and this trajectory is stopped. Task 3/4 query
+    reductions are 0.31%/-2.96% (median -1.32%), a 7.59pp median regression
+    from 2k; drift rose to 0.04563/0.04393 while mean support loss continued to
+    fall. Query/anchor identities stayed exact, all candidate/recovery hashes
+    validate, and validation/held/final rollout access remained zero. Classify
+    this as a mechanics-valid optimization/generalization overrun, not a LoRA,
+    Gate-0, or EMBER negative; never resume this primary trajectory to 10k or
+    20k. Activate only the already predeclared conditional compatibility
+    recovery: rank-32 LoRA over every action-expert q/k/v/o and gate/up/down
+    linear plus the five SmolVLA state/action/time projections (117 exact
+    targets, 7,027,200 parameters), with all data, optimizer, augmentation,
+    isolation, staged thresholds and final Gate thresholds otherwise unchanged.
+    This is the sole remaining target-support variant, not the sealed Writer
+    support, and it must first pass a one-step target/count/memory smoke and the
+    1k query boundary before any continuation or final rollout.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

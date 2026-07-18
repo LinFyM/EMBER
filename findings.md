@@ -1421,3 +1421,28 @@
   rollout, validation, or held surface was accessed. The exact same trajectories
   may therefore continue to 5k. This remains source-query trend evidence only,
   not a useful-update oracle or behavioral success claim.
+- Stage 5k is a clean negative continuation decision. Both jobs completed rc 0;
+  task 3 query MSE is 0.516400 versus 0.518030 at step 0 (0.315% reduction),
+  while task 4 is 0.502517 versus 0.488088 (-2.956% reduction). The median is
+  -1.321%, 7.591pp below stage 2k, so it fails every frozen 5k-to-10k condition:
+  median at least 10%, every task at least 2%, and median regression at most
+  1pp. No 10k/20k continuation is authorized.
+- Mechanics and data identity do not explain the failure: candidate, recovery,
+  optimizer, scheduler, RNG and telemetry artifacts validate; query and anchor
+  digests are unchanged at every stage; both jobs used the intended task-local
+  source rows and released GPU 4/5. Mean support loss nevertheless fell from
+  0.3946/0.4415 (steps 1--1k) to 0.3615/0.4075 (1k--2k) and 0.3306/0.3708
+  (2k--5k), while drift grew from 0.01676/0.01883 at 1k to
+  0.04563/0.04393 at 5k. The leading bounded diagnosis is task-support
+  over-specialization under a still-high long-horizon LR, with target-support
+  sufficiency not yet resolved; it is not evidence that mature LoRA lacks
+  behavioral capacity because no mature closed-loop surface was opened.
+- The existing contract already predeclared exactly one compatibility recovery
+  after a mechanics-valid primary failure. A live structure-only enumeration
+  of the frozen SmolVLA checkpoint found 112 action-expert linear modules
+  (q/k/v/o plus gate/up/down across 16 layers); retaining the five existing
+  state/action/time projections yields 117 exact rank-32 targets and 7,027,200
+  trainable LoRA parameters. This all-action-expert-linear recovery changes
+  target support only and keeps the mature data/optimizer/augmentation/Gate
+  contract. It is the final bounded support variant and cannot itself seal the
+  Writer contract before independent query and closed-loop evidence.

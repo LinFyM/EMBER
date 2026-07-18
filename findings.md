@@ -1700,3 +1700,26 @@
   positive-gain-on-both rule caused by task 3's frozen-base 8/8 ceiling. That
   redesign must use only legal source outcomes, preserve task 3 as a
   maintenance control, and be frozen before any new LoRA rollout outcome.
+
+## A paired maintenance/improvement design resolves the source ceiling before outcomes
+
+- Prior source competence makes the old positive-gain-on-both-tasks rule
+  unidentifiable: task 3 is already 8/8 while task 4 is 5/8. The replacement is
+  result-blind and uses a fresh paired source slice, init states 40--47 and
+  seeds 5800--5807. Task 3 now tests non-harm (paired net wins >=0); task 4 must
+  have at least two available failures and recover at least two net wins; the
+  two-task aggregate must recover at least two net wins. This preserves a
+  behavioral requirement without inventing success-count headroom.
+- The frozen contract SHA256 is
+  `ba3ee431cb093170bb3c58460db076c95227ee92a3f33d0efb1fdeb3fc2f132f`.
+  It also retains the already observed independent-query safeguards: every
+  task must reduce query flow MSE by at least 2%, and every task's action-drift
+  proxy must remain at most 0.02. An underpowered task-4 base slice has a
+  distinct `headroom_absent` outcome and cannot pass even if LoRA scores 8/8;
+  an actual failure with available headroom enters bounded Gate recovery.
+- This is still Gate-0 evidence only. A pass can establish functional utility
+  for the exact 37-target, rank-32/alpha-16/dropout-0, 1,485,312-parameter LoRA
+  contract and authorize direct Writer acquisition. It cannot support claims
+  about Writer/video utility, validation or held performance, RL, or the
+  overall EMBER hypothesis. No validation, held, or locked-report numeric
+  surface is used in either the grant or the paired rollout.

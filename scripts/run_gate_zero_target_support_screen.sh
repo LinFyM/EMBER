@@ -143,7 +143,9 @@ for variant in spec["variants"]:
 PY
 )
 for name in "${fit_names[@]}"; do
-  [[ -d "$fit_root/$name/selected" ]] || die "selected fit output is missing: $name"
+  # The freeze command validates the stage-specific immutable artifact. Mature
+  # staged runs expose candidates/001000; completed runs expose selected/.
+  [[ -d "$fit_root/$name" ]] || die "fit output is missing: $name"
 done
 if $reuse_freeze; then
   [[ -f "$grant" ]] || die "reused screening grant is missing"

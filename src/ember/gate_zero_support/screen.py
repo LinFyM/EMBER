@@ -272,30 +272,44 @@ def _decision_query_metrics(
     return (float(base) - float(query)) / float(base), float(drift)
 
 
-def decide_support_screening(
+def _headroom_decision(
     *,
+    rank_stage: str,
     arms: list[dict[str, Any]],
     grant: Mapping[str, Any],
     variants: list[str],
     task_ids: list[int],
     parameter_counts: Mapping[str, int],
     thresholds: Mapping[str, Any],
-    expected_init_state_indices: list[int],
-    expected_seeds: list[int],
-    rank_stage: str = "rank8",
-) -> dict[str, Any]:
-    """Select a support only when every frozen screening test passes."""
+) -> dict[str, Any] | None:
+    if rank_stage != "mature_lora_headroom_control":
+        return None
+    if variants != ["mature_official_default_r32_lr25e6_recovery"] or task_ids != [
+        3,
+        4,
+    ]:
+        raise GateZeroTargetSupportScreenError("invalid mature headroom scope")
+    from ember.gate_zero_support.mature_headroom import decide_mature_lora_headroom
 
-    if rank_stage not in {"rank8", "rank16", "mature_positive_control"}:
-        raise GateZeroTargetSupportScreenError("invalid support-screening rank stage")
-
-    by_key = _validate_screening_arms(
+    return decide_mature_lora_headroom(
         arms=arms,
-        variants=variants,
-        task_ids=task_ids,
-        expected_init_state_indices=expected_init_state_indices,
-        expected_seeds=expected_seeds,
+        grant=grant,
+        variant=variants[0],
+        parameter_count=parameter_counts[variants[0]],
+        thresholds=thresholds,
     )
+
+
+def _build_screening_candidates(
+    *,
+    by_key: Mapping[tuple[int, str], Mapping[str, Any]],
+    grant: Mapping[str, Any],
+    variants: list[str],
+    task_ids: list[int],
+    parameter_counts: Mapping[str, int],
+    thresholds: Mapping[str, Any],
+    episode_count: int,
+) -> list[dict[str, Any]]:
     candidates = []
     for variant in variants:
         gains = []
@@ -305,7 +319,7 @@ def decide_support_screening(
         for task_id in task_ids:
             base_successes = sum(by_key[(task_id, "frozen_base")]["successes"])
             own_successes = sum(by_key[(task_id, variant)]["successes"])
-            gain = 100.0 * (own_successes - base_successes) / len(expected_seeds)
+            gain = 100.0 * (own_successes - base_successes) / episode_count
             reduction, drift = _decision_query_metrics(
                 grant, variant=variant, task_id=task_id
             )
@@ -327,9 +341,6 @@ def decide_support_screening(
             "median_query_loss_reduction_fraction": statistics.median(reductions),
             "median_selection_drift_proxy": statistics.median(drifts),
         }
-        drift_is_diagnostic = bool(
-            thresholds.get("selection_drift_is_diagnostic_only", False)
-        )
         checks = {
             "median_success_gain": aggregate["median_success_gain_pp"]
             >= thresholds["median_success_gain_pp_min"],
@@ -341,7 +352,9 @@ def decide_support_screening(
                 "median_query_loss_reduction_fraction"
             ]
             >= thresholds["median_locked_action_loss_reduction_fraction_min"],
-            "selection_drift": drift_is_diagnostic
+            "selection_drift": thresholds.get(
+                "selection_drift_is_diagnostic_only", False
+            )
             or aggregate["median_selection_drift_proxy"]
             <= thresholds["median_selection_drift_proxy_max"],
         }
@@ -355,21 +368,30 @@ def decide_support_screening(
                 "screening_passed": all(checks.values()),
             }
         )
+    return candidates
+
+
+def _select_screening_status(
+    *,
+    candidates: list[dict[str, Any]],
+    grant: Mapping[str, Any],
+    variants: list[str],
+    rank_stage: str,
+) -> tuple[str | None, str, str | None, bool]:
     passing = sorted(
         (candidate for candidate in candidates if candidate["screening_passed"]),
         key=lambda candidate: (candidate["trainable_parameters"], candidate["variant"]),
     )
     if passing and rank_stage == "mature_positive_control":
-        selected = passing[0]["variant"]
-        status = "mature_lora_positive_control_passed"
-        rank16_scope = None
-        rank16_authorized = False
-    elif passing:
-        selected = passing[0]["variant"]
-        status = f"{rank_stage}_support_selected_pending_confirmation"
-        rank16_scope = None
-        rank16_authorized = False
-    elif rank_stage == "rank8":
+        return passing[0]["variant"], "mature_lora_positive_control_passed", None, False
+    if passing:
+        return (
+            passing[0]["variant"],
+            f"{rank_stage}_support_selected_pending_confirmation",
+            None,
+            False,
+        )
+    if rank_stage == "rank8":
         ranking = grant.get("query_ranking")
         if (
             not isinstance(ranking, list)
@@ -377,20 +399,61 @@ def decide_support_screening(
             or ranking[0].get("variant") not in variants
         ):
             raise GateZeroTargetSupportScreenError("grant query ranking is invalid")
-        selected = None
-        status = "rank8_support_screen_failed_rank16_authorized"
-        rank16_scope = ranking[0]["variant"]
-        rank16_authorized = True
-    elif rank_stage == "rank16":
-        selected = None
-        status = "rank16_support_screen_failed"
-        rank16_scope = None
-        rank16_authorized = False
-    else:
-        selected = None
-        status = "mature_lora_positive_control_failed_bounded_recovery_required"
-        rank16_scope = None
-        rank16_authorized = False
+        return None, "rank8_support_screen_failed_rank16_authorized", ranking[0]["variant"], True
+    if rank_stage == "rank16":
+        return None, "rank16_support_screen_failed", None, False
+    return None, "mature_lora_positive_control_failed_bounded_recovery_required", None, False
+
+
+def decide_support_screening(
+    *,
+    arms: list[dict[str, Any]],
+    grant: Mapping[str, Any],
+    variants: list[str],
+    task_ids: list[int],
+    parameter_counts: Mapping[str, int],
+    thresholds: Mapping[str, Any],
+    expected_init_state_indices: list[int],
+    expected_seeds: list[int],
+    rank_stage: str = "rank8",
+) -> dict[str, Any]:
+    """Select a support only when every frozen screening test passes."""
+
+    headroom = _headroom_decision(
+        rank_stage=rank_stage,
+        arms=arms,
+        grant=grant,
+        variants=variants,
+        task_ids=task_ids,
+        parameter_counts=parameter_counts,
+        thresholds=thresholds,
+    )
+    if headroom is not None:
+        return headroom
+    if rank_stage not in {"rank8", "rank16", "mature_positive_control"}:
+        raise GateZeroTargetSupportScreenError("invalid support-screening rank stage")
+    by_key = _validate_screening_arms(
+        arms=arms,
+        variants=variants,
+        task_ids=task_ids,
+        expected_init_state_indices=expected_init_state_indices,
+        expected_seeds=expected_seeds,
+    )
+    candidates = _build_screening_candidates(
+        by_key=by_key,
+        grant=grant,
+        variants=variants,
+        task_ids=task_ids,
+        parameter_counts=parameter_counts,
+        thresholds=thresholds,
+        episode_count=len(expected_seeds),
+    )
+    selected, status, rank16_scope, rank16_authorized = _select_screening_status(
+        candidates=candidates,
+        grant=grant,
+        variants=variants,
+        rank_stage=rank_stage,
+    )
     mature_pass = rank_stage == "mature_positive_control" and selected is not None
     return {
         "status": status,
@@ -414,6 +477,23 @@ def _collect_fit_evidence(
     competence_path: Path,
     fit_outputs: Mapping[tuple[str, int], Path],
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    if spec.get("screening_stage") == "mature_lora_headroom_control":
+        from ember.gate_zero_support.mature_headroom import (
+            collect_staged_fit_evidence,
+        )
+
+        evidence = collect_staged_fit_evidence(spec=spec, fit_outputs=fit_outputs)
+        ranking = rank_query_supports(
+            evidence=evidence,
+            variants=spec["variants"],
+            task_ids=spec["task_ids"],
+            parameter_counts={
+                variant: spec["fit"][variant]["expected_trainable_parameters"]
+                for variant in spec["variants"]
+            },
+            drift_proxy_max=spec["selection"]["drift_proxy_max"],
+        )
+        return evidence, ranking
     required = {
         (variant, task_id)
         for variant in spec["variants"]
@@ -507,7 +587,11 @@ def create_support_screening_grant(
         "validation_numeric_access": False,
         "held_numeric_access": False,
     }
-    if spec.get("screening_stage") in {"rank16", "mature_positive_control"}:
+    if spec.get("screening_stage") in {
+        "rank16",
+        "mature_positive_control",
+        "mature_lora_headroom_control",
+    }:
         grant["screening_stage"] = spec["screening_stage"]
     grant_path.parent.mkdir(parents=True, exist_ok=False)
     atomic_json(grant_path, grant)
@@ -564,7 +648,11 @@ def validate_support_screening_grant(
         "validation_numeric_access": False,
         "held_numeric_access": False,
     }
-    if spec.get("screening_stage") in {"rank16", "mature_positive_control"}:
+    if spec.get("screening_stage") in {
+        "rank16",
+        "mature_positive_control",
+        "mature_lora_headroom_control",
+    }:
         expected["screening_stage"] = spec["screening_stage"]
     for key, value in expected.items():
         if grant.get(key) != value:

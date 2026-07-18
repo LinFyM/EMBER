@@ -166,12 +166,24 @@ def _load_authorities(
 
 def _selected_state(
     *,
+    spec: Mapping[str, Any],
     variant: str,
     task_id: int,
     fit_root: Path,
     grant: Mapping[str, Any],
 ) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
-    selected_dir = fit_root / f"{variant}_task{task_id}" / "selected"
+    output = fit_root / f"{variant}_task{task_id}"
+    if spec.get("screening_stage") == "mature_lora_headroom_control":
+        from ember.gate_zero_support.mature_headroom import (
+            load_staged_candidate_state,
+        )
+
+        return load_staged_candidate_state(
+            output=output,
+            task_id=task_id,
+            grant=grant,
+        )
+    selected_dir = output / "selected"
     selected = validate_selected_artifact(
         selected_dir, expected={"variant": variant, "task_id": task_id}
     )
@@ -215,6 +227,7 @@ def _open_arm_runtime(
             variant_spec=spec["fit"][variant],
         )
         state, selected = _selected_state(
+            spec=spec,
             variant=variant,
             task_id=state_task,
             fit_root=arguments.fit_root,
@@ -436,7 +449,7 @@ def _selected_support_freeze(
         },
         "selection_changes_after_freeze_forbidden": True,
         "final_confirmation_required": spec.get("screening_stage")
-        != "mature_positive_control",
+        not in {"mature_positive_control", "mature_lora_headroom_control"},
     }
 
 

@@ -1601,3 +1601,29 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   1000, retained output is 92MiB, and GPU 4/5 return to 0MiB. The ladder is
   complete and must not resume to 2k. Next freeze a headroom-safe source-only
   closed-loop contract; Gate 0, final Writer support, and Writer remain false.
+
+### Headroom-safe matched-LoRA closed-loop contract frozen
+
+- Added `configs/gate_zero_mature_lora_headroom_screen.toml` at SHA256
+  `ba3ee431cb093170bb3c58460db076c95227ee92a3f33d0efb1fdeb3fc2f132f`
+  before any new LoRA closed-loop result. It binds both task step-1000
+  candidate/state/recovery/telemetry hashes, fixes source init states 40--47,
+  seeds 5800--5807, and predeclares the maintenance-task, improvement-task,
+  aggregate, query and drift rules plus the distinct no-headroom recovery.
+- The existing target-support grant/runtime/launcher remains the sole path.
+  It now loads grant-bound staged candidates directly, while the same strict
+  freeze validates upstream artifacts and source/validation/held authority.
+  A red-then-green launcher regression removed the obsolete assumption that
+  every valid fit must expose `selected/`; stage-specific candidate identity
+  remains fail-closed in the freeze validator. Direct state-load smoke resolves
+  74 tensors and exactly 1,485,312 parameters for each task with the frozen
+  state hashes.
+- Focused screening tests pass 37/37 and the full repository suite passes
+  225/225 after the internal architecture split. Python compilation, shell
+  syntax, shellcheck, diff checks and the canonical two-GPU dry-run pass.
+  Architecture guard is REVIEW with no hard violation: the new contract owner
+  is bounded and reuses the existing evaluator rather than adding a second
+  rollout path. Next commit/push this clean pre-outcome contract, run live
+  GPU/storage preflight, then evaluate exactly four source arms/32 episodes on
+  GPUs 4/5 with Trackio, one video per arm, gallery and checksums. Gate 0 and
+  Writer remain false until that result is mechanically validated.

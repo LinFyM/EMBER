@@ -617,4 +617,15 @@ def load_target_support_screen_spec(
             phase0_path=phase0_path,
             competence_path=competence_path,
         )
+    if name == "smolvla_libero90_gate_zero_mature_lora_headroom_screen_v1":
+        from ember.gate_zero_support.mature_headroom import (
+            load_mature_lora_headroom_spec,
+        )
+
+        return load_mature_lora_headroom_spec(
+            path,
+            gate_zero_path=gate_zero_path,
+            phase0_path=phase0_path,
+            competence_path=competence_path,
+        )
     raise GateZeroTargetSupportContractError("unknown target-support contract")

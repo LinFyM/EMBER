@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from ember.gate_zero_model_probe import (  # noqa: E402
     GateZeroModelProbeError,
     _batch_row_keys,
+    _require_functional_zero,
     parameter_summary,
     validate_output_destination,
 )
@@ -49,6 +50,19 @@ class GateZeroModelProbeTest(unittest.TestCase):
             _batch_row_keys(batch),
             ["task3/demo28/frame7", "task3/demo29/frame8"],
         )
+
+    def test_adapter_initialization_must_be_exactly_functional_zero(self) -> None:
+        zero = {"layer.weight": torch.zeros(2, 3)}
+        _require_functional_zero(zero, torch.tensor(1.5), torch.tensor(1.5))
+
+        with self.assertRaisesRegex(GateZeroModelProbeError, "physical delta"):
+            _require_functional_zero(
+                {"layer.weight": torch.tensor([[0.0, 1e-8]])},
+                torch.tensor(1.5),
+                torch.tensor(1.5),
+            )
+        with self.assertRaisesRegex(GateZeroModelProbeError, "fixed loss"):
+            _require_functional_zero(zero, torch.tensor(1.5), torch.tensor(1.5001))
 
 
 if __name__ == "__main__":

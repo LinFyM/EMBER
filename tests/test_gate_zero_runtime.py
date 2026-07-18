@@ -21,6 +21,7 @@ from ember.gate_zero_runtime import (  # noqa: E402
     deterministic_flow_inputs,
     inspect_lora_targets,
     load_source_normalization,
+    physical_lora_deltas,
 )
 
 
@@ -125,14 +126,39 @@ class GateZeroRuntimeTest(unittest.TestCase):
             rank=8,
             alpha=8,
             dropout=0.0,
-            init_lora_weights="orthogonal",
+            init_lora_weights=True,
             base_revision="c" * 40,
         )
 
         self.assertEqual(set(config.target_modules), set(targets))
-        self.assertEqual(config.init_lora_weights, "orthogonal")
+        self.assertIs(config.init_lora_weights, True)
         self.assertEqual(config.modules_to_save, [])
         self.assertEqual(config.revision, "c" * 40)
+
+        class TinyPolicy(torch.nn.Module):
+            def __init__(self) -> None:
+                super().__init__()
+                self.model = torch.nn.Module()
+                self.model.layer = torch.nn.Module()
+                self.model.layer.q_proj = torch.nn.Linear(4, 6, bias=False)
+                self.model.layer.v_proj = torch.nn.Linear(4, 2, bias=False)
+
+            def forward(self, value: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+                return self.model.layer.q_proj(value), self.model.layer.v_proj(value)
+
+        from peft import get_peft_model
+
+        torch.manual_seed(17)
+        base = TinyPolicy()
+        inputs = torch.randn(3, 4)
+        expected = tuple(value.detach().clone() for value in base(inputs))
+        adapted = get_peft_model(base, config)
+        actual = adapted(inputs)
+        deltas = physical_lora_deltas(adapted, targets)
+
+        self.assertTrue(all(torch.count_nonzero(value) == 0 for value in deltas.values()))
+        for expected_value, actual_value in zip(expected, actual, strict=True):
+            torch.testing.assert_close(expected_value, actual_value, rtol=0, atol=0)
 
 
 if __name__ == "__main__":

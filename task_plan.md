@@ -179,3 +179,18 @@ progress through the complete design only when predecessor evidence supports it.
     only 15/24 paired queries are jointly correct and the two 0.80 content
     thresholds remain unmet. Preserve both readers and stop reader selection;
     the remaining item is legal source competence and closed-loop behavior.
+14. [ ] Close Gate 0 model mechanics before multi-step training. The first
+    adapter invocation failed before forward/backward because preprocessing
+    correctly removed provenance that fixed-noise keying still needed; capture
+    row keys before preprocessing and retain that implementation packet. The
+    recovered probe then exposed that PEFT 0.19.1 `orthogonal` initialization is
+    not the contract's stated functional-zero update. Preserve that diagnostic,
+    amend only the initializer to nonzero-`A`/zero-`B`, require exact zero
+    physical delta and exact base-loss identity, and rerun from a clean commit.
+    The independent shared-base one-step path already passes with finite loss,
+    gradient, and optimizer update.
+15. [ ] After exact functional-zero mechanics pass, calibrate source-base
+    microbatch candidates `[8,16,32,64]` in one model-loading process for three
+    technical steps each. Select measured samples/second subject to at least
+    10 GiB free, preserve effective batch 64 through accumulation, then build
+    checkpoint/resume before launching the 10,000-step all-source base fit.

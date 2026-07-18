@@ -39,10 +39,20 @@ while closed-loop evidence independently uses official init-state indices
 
 ## Primary update and metrics
 
-The primary adapter is rank 8, alpha 8, dropout zero, with a functional-zero
-orthogonal initialization at the q/v projections of action-expert layers 14 and
-15. Those are the last action self-attention and VLM-to-expert cross-attention
+The primary adapter is rank 8, alpha 8, dropout zero, with nonzero seeded `A`
+and zero `B` at the q/v projections of action-expert layers 14 and 15. The
+physical update and fixed-batch loss must both be exactly unchanged at step
+zero. Those are the last action self-attention and VLM-to-expert cross-attention
 blocks. The four weight shapes imply exactly 40,320 trainable adapter scalars.
+
+The original checked-in value requested PEFT's `orthogonal` initializer while
+describing it as functional-zero. A pre-training mechanics probe showed that
+PEFT 0.19.1 instead produced nonzero physical deltas and changed one fixed
+support-batch loss by `8.08e-5`. Before any multi-step base/oracle training,
+query/report access, or rollout result, the contract was narrowly amended to
+PEFT's default nonzero-`A`/zero-`B` no-op initialization. The observed loss
+direction and magnitude played no role in this repair; the prior run and its
+provenance remain retained.
 
 Checkpoint selection minimizes task-wise fixed-noise flow MSE on episodes
 40--45 among candidates that satisfy the predeclared fixed-noise Gaussian mean-

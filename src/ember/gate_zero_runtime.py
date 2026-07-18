@@ -107,7 +107,7 @@ def build_lora_config(
     rank: int,
     alpha: int,
     dropout: float,
-    init_lora_weights: str,
+    init_lora_weights: bool | str,
     base_revision: str,
 ):
     """Build the one primary LoRA configuration pinned by the pilot contract."""

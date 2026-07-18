@@ -123,6 +123,19 @@ def _delta_summary(deltas: dict[str, torch.Tensor]) -> dict[str, dict[str, Any]]
     }
 
 
+def _require_functional_zero(
+    deltas: dict[str, torch.Tensor],
+    base_loss: torch.Tensor,
+    initial_loss: torch.Tensor,
+) -> None:
+    """Fail before training unless the adapter is an exact functional no-op."""
+
+    if not deltas or any(torch.count_nonzero(value).item() != 0 for value in deltas.values()):
+        raise GateZeroModelProbeError("adapter initialization has a nonzero physical delta")
+    if not torch.equal(base_loss, initial_loss):
+        raise GateZeroModelProbeError("adapter initialization changed the fixed loss")
+
+
 def _save_adapter_bundle(
     model: Any,
     base_policy: Any,
@@ -275,6 +288,7 @@ def run_probe(args: argparse.Namespace) -> dict[str, Any]:
         with model.disable_adapter():
             base_loss = _loss(model, batch, noise, flow_time).detach()
         initial_loss = _loss(model, batch, noise, flow_time)
+        _require_functional_zero(initial_delta, base_loss, initial_loss.detach())
         optimizer = torch.optim.AdamW(
             [value for value in model.parameters() if value.requires_grad],
             lr=spec["oracle"]["learning_rate"],
@@ -303,6 +317,7 @@ def run_probe(args: argparse.Namespace) -> dict[str, Any]:
                 "base_fixed_loss": float(base_loss),
                 "adapter_initial_fixed_loss": float(initial_loss.detach()),
                 "initial_loss_absolute_delta": float((initial_loss.detach() - base_loss).abs()),
+                "functional_zero_initialization": True,
                 "gradient_norm": float(grad_norm),
                 "initial_physical_deltas": _delta_summary(initial_delta),
                 "trained_physical_deltas": _delta_summary(trained_delta),

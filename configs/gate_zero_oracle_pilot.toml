@@ -3,6 +3,10 @@ name = "smolvla_libero90_useful_update_oracle_pilot_v1"
 status = "predeclared_before_source_policy_outcomes"
 predeclared_at_utc = "2026-07-18T06:58:18Z"
 claim_scope = "source_only_mechanism_pilot_not_writer_authorization"
+mechanics_amended_at_utc = "2026-07-18T07:34:00Z"
+mechanics_amendment = "replace_nonzero_peft_orthogonal_init_with_exact_zero_output_init"
+mechanics_amendment_prior_exposure = "one_fixed_task3_support_batch_mechanics_loss_no_multistep_training_query_report_or_rollout"
+mechanics_amendment_selection_basis = "restore_predeclared_functional_zero_contract_not_loss_direction_or_magnitude"
 
 [authority]
 phase0_contract_path = "configs/phase0.toml"
@@ -113,7 +117,10 @@ task_ids = [3, 4]
 rank = 8
 alpha = 8
 dropout = 0.0
-init_lora_weights = "orthogonal"
+init_lora_weights = true
+init_semantics = "peft_default_nonzero_A_zero_B_exact_zero_physical_update"
+initial_physical_delta_required_exact_zero = true
+initial_fixed_loss_required_exact_base = true
 modules_to_save = []
 target_modules = [
   "model.vlm_with_expert.lm_expert.layers.14.self_attn.q_proj",

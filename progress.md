@@ -544,6 +544,25 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   8D state, 50x7 action, padding-mask, and 48-token tensors. Live preflight
   selected one free device for the short EGL probe, released it afterward, and
   did not interfere with unrelated jobs.
+- Added local-only Trackio 0.30.1 logging under
+  `$EMBER_OUTPUT_ROOT/trackio`; model mechanics runs can be reviewed with
+  `trackio show --project EMBER_gate0`, without uploading runs or exposing host
+  paths through a remote service.
+- The first adapter model probe at clean commit `bb1a0bb` stopped before model
+  forward/backward on missing post-preprocessor provenance. Commit `51b9405`
+  moves fixed-noise row-key capture before preprocessing and adds the regression
+  test. Its recovery completed with exact target/count resolution, finite
+  gradient/update, checksums, and bit-exact adapter reload.
+- That recovery also showed PEFT `orthogonal` was not functional-zero. The
+  source contract is narrowly amended to the standard nonzero-`A`/zero-`B`
+  no-op initializer, with exact physical-delta and fixed-loss assertions. This
+  is a pre-training mechanics correction after one disclosed support batch, not
+  a threshold, split, target, rank, optimizer, or outcome-selected change; a
+  clean-commit recovery remains required before batch calibration.
+- The source-base one-step probe completed separately from clean commit
+  `51b9405`: 99,880,992 trainable parameters, finite loss and gradient, 1,818
+  MiB peak PyTorch reserved memory, 2,345 MiB peak sampled device memory, and
+  rc 0 with GPU 4 released. It does not establish source competence.
 
 ## Immediate handoff
 
@@ -552,9 +571,9 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
 2. Preserve both same-state native-goal mechanics and the same-observation
    language-action path, then run action-hidden video content/temporal controls.
    Do not use held results to choose thresholds, task IDs, or remedies.
-3. Predeclare the smallest source-task closed-loop useful-update oracle so its
-   legal competence can later complete paired-goal behavior without weakening
-   the Gate -1 or Gate 0 contracts.
+3. Rerun exact-zero adapter mechanics from the amended clean contract, then use
+   one-process batch calibration and resumable shared-base fitting to establish
+   legal source competence before the task-local oracle or paired-goal behavior.
 
 ## Last verified handoff facts
 

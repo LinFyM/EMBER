@@ -85,6 +85,17 @@ def _validate_oracle(spec: dict[str, Any]) -> None:
     _require_equal(oracle["rank"], 8, "primary oracle rank")
     _require_equal(oracle["alpha"], 8, "primary oracle alpha")
     _require_equal(oracle["dropout"], 0.0, "primary oracle dropout")
+    _require_equal(oracle["init_lora_weights"], True, "functional-zero LoRA initialization")
+    _require_equal(
+        oracle["initial_physical_delta_required_exact_zero"],
+        True,
+        "initial physical-delta requirement",
+    )
+    _require_equal(
+        oracle["initial_fixed_loss_required_exact_base"],
+        True,
+        "initial fixed-loss requirement",
+    )
     _require_equal(oracle["modules_to_save"], [], "modules_to_save")
     targets = oracle["target_modules"]
     expected_targets = [

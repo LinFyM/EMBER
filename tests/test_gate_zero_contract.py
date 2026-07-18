@@ -32,6 +32,7 @@ class GateZeroContractTest(unittest.TestCase):
 
         self.assertEqual(spec["oracle"]["rank"], 8)
         self.assertEqual(spec["oracle"]["alpha"], 8)
+        self.assertIs(spec["oracle"]["init_lora_weights"], True)
         self.assertEqual(spec["oracle"]["expected_trainable_parameters"], 40320)
         self.assertEqual(len(spec["oracle"]["target_modules"]), 4)
         self.assertTrue(all("lm_expert.layers." in name for name in spec["oracle"]["target_modules"]))

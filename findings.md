@@ -782,3 +782,28 @@
   The streaming path repeats the terminal action under the padding mask to
   match LeRobot dataset semantics and does not materialize a duplicate video
   dataset.
+- The first tracked adapter mechanics invocation failed before any policy
+  forward/backward because the SmolVLA preprocessor intentionally removes
+  complementary `task_id/demo_index/frame_index` fields before the fixed-noise
+  row key was constructed. Capturing those keys from the raw batch is the
+  narrow implementation fix; the failed long-run record ending `072633` is
+  retained and has no scientific outcome.
+- The recovered rank-8 probe resolved exactly the four declared targets and
+  40,320 trainable scalars, produced finite gradients and updates, and round-
+  tripped every physical delta bit-exactly. It also falsified one mechanics
+  assumption: PEFT 0.19.1 `orthogonal` initialization produced nonzero physical
+  delta norms up to `0.025996` and changed the fixed support-batch loss by
+  `8.08e-5`. This contradicts the predeclared functional-zero wording even
+  though it is small, so it is not accepted as the canonical initializer.
+- The unique repair, chosen from the stated no-op requirement rather than the
+  observed loss sign or magnitude, is PEFT's default seeded nonzero-`A` and
+  zero-`B` initialization. It is now contractually required to give exactly
+  zero physical deltas and exactly the frozen-base fixed loss. The amendment
+  occurred after only one fixed task-3 support mechanics batch and before any
+  multi-step training, query/report access, or rollout result; the prior
+  artifact remains provenance rather than being overwritten.
+- The shared-base one-step mechanics path independently trains 99,880,992
+  declared parameters with finite loss and gradient from the same task-3
+  support batch. It completed from clean commit `51b9405`, with outer/scientific
+  rc 0, 2,345 MiB peak sampled device memory, and full GPU release. This is
+  implementation evidence only, not base competence or Gate 0 evidence.

@@ -125,6 +125,40 @@ def _validate_thresholds(spec: dict[str, Any], phase0: dict[str, Any]) -> None:
         raise GateZeroContractError("SmolVLA pilot must not claim an exact policy likelihood")
 
 
+def _validate_batch_calibration(spec: dict[str, Any]) -> None:
+    base_fit = spec["base_fit"]
+    calibration = base_fit["batch_calibration"]
+    _require_equal(base_fit["effective_batch_size"], 64, "base effective batch")
+    _require_equal(
+        calibration["micro_batch_candidates"], [8, 16, 32, 64], "microbatch candidates"
+    )
+    _require_equal(
+        calibration["technical_steps_per_candidate"],
+        calibration["warmup_optimizer_steps_per_candidate"]
+        + calibration["measured_optimizer_steps_per_candidate"],
+        "calibration step partition",
+    )
+    if any(64 % value for value in calibration["micro_batch_candidates"]):
+        raise GateZeroContractError("each calibration microbatch must divide effective batch 64")
+    _require_equal(
+        calibration["candidate_order"],
+        "ascending_stop_after_first_oom",
+        "calibration candidate order",
+    )
+    _require_equal(
+        calibration["reuse_single_model_optimizer_process"],
+        True,
+        "single-process calibration reuse",
+    )
+    _require_equal(
+        calibration["include_data_loading_in_timing"], True, "calibration timing surface"
+    )
+    _require_equal(calibration["outcome_metrics_forbidden"], True, "outcome metric ban")
+    _require_equal(calibration["stop_on_first_oom"], True, "calibration OOM stop")
+    if calibration["minimum_free_memory_mib"] < 10240:
+        raise GateZeroContractError("calibration memory headroom weakened")
+
+
 def _validate_resources(spec: dict[str, Any], phase0: dict[str, Any]) -> None:
     resources = spec["resources"]
     _require_equal(resources["maximum_concurrent_gpus"], phase0["resources"]["max_concurrent_gpus"], "GPU ceiling")
@@ -158,6 +192,7 @@ def load_gate_zero_contract(
     _validate_episode_partitions(spec, phase0)
     _validate_scientific_surface(spec, phase0)
     _validate_oracle(spec)
+    _validate_batch_calibration(spec)
     _validate_thresholds(spec, phase0)
     _validate_resources(spec, phase0)
     if spec["recovery"]["threshold_changes_forbidden"] is not True:

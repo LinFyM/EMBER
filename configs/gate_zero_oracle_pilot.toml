@@ -96,10 +96,21 @@ scientific_checkpoint_step = 10000
 [base_fit.batch_calibration]
 micro_batch_candidates = [8, 16, 32, 64]
 technical_steps_per_candidate = 3
+warmup_optimizer_steps_per_candidate = 1
+measured_optimizer_steps_per_candidate = 2
+calibration_seed = 2026071806
+candidate_order = "ascending_stop_after_first_oom"
+reuse_single_model_optimizer_process = true
+num_workers = 4
+prefetch_factor = 2
+persistent_workers = true
+pin_memory = true
+include_data_loading_in_timing = true
 minimum_free_memory_mib = 10240
 selection = "highest_measured_samples_per_second_with_headroom"
 gradient_accumulation_preserves_effective_batch = true
 outcome_metrics_forbidden = true
+stop_on_first_oom = true
 
 [base_competence]
 task_ids = [3, 4]

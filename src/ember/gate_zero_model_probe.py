@@ -4,13 +4,11 @@ from __future__ import annotations
 
 import argparse
 import json
-import random
 import time
 import tomllib
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
@@ -23,27 +21,22 @@ from ember.gate_zero_data import (
     load_surface_authorities,
 )
 from ember.gate_zero_runtime import (
+    batch_provenance_keys as _batch_row_keys,
     build_lora_config,
-    configure_smolvla,
     deterministic_flow_inputs,
+    load_smolvla_policy as _load_policy,
     load_source_normalization,
+    parameter_summary,
     physical_lora_deltas,
+    preprocess_smolvla_batch as _preprocess,
+    set_global_seed as _set_seed,
     sha256_file,
+    smolvla_flow_loss as _loss,
 )
 
 
 class GateZeroModelProbeError(RuntimeError):
     """Raised when the model probe cannot preserve its pinned mechanics."""
-
-
-def parameter_summary(model: torch.nn.Module) -> dict[str, int]:
-    parameters = list(model.parameters())
-    trainable = [value for value in parameters if value.requires_grad]
-    return {
-        "total_parameters": sum(value.numel() for value in parameters),
-        "trainable_parameters": sum(value.numel() for value in trainable),
-        "trainable_tensors": len(trainable),
-    }
 
 
 def validate_output_destination(output_dir: Path) -> None:
@@ -52,63 +45,6 @@ def validate_output_destination(output_dir: Path) -> None:
     if (output_dir / "probe_result.json").exists():
         raise GateZeroModelProbeError("refusing to overwrite a completed probe")
     output_dir.mkdir(parents=True, exist_ok=True)
-
-
-def _set_seed(seed: int) -> None:
-    random.seed(seed)
-    np.random.seed(seed % (2**32))
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-
-
-def _load_policy(base_path: Path, vlm_path: Path, spec: dict[str, Any]):
-    from lerobot.configs import PreTrainedConfig
-    from lerobot.policies.factory import make_policy  # noqa: F401 - registers config choices
-    from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy
-
-    config = PreTrainedConfig.from_pretrained(base_path)
-    config = configure_smolvla(
-        config,
-        local_vlm_path=vlm_path,
-        device="cuda",
-        pretrained_path=base_path,
-        pretrained_revision=spec["authority"]["model_revision"],
-    )
-    return SmolVLAPolicy.from_pretrained(
-        base_path,
-        config=config,
-        local_files_only=True,
-        strict=True,
-    )
-
-
-def _preprocess(batch: dict[str, Any], preprocessor: Any, image_keys: list[str]) -> dict[str, Any]:
-    for key in image_keys:
-        if key in batch and batch[key].dtype == torch.uint8:
-            batch[key] = batch[key].to(dtype=torch.float32).div_(255.0)
-    return preprocessor(batch)
-
-
-def _batch_row_keys(batch: dict[str, Any]) -> list[str]:
-    return [
-        f"task{int(task)}/demo{int(demo)}/frame{int(frame)}"
-        for task, demo, frame in zip(
-            batch["task_id"], batch["demo_index"], batch["frame_index"], strict=True
-        )
-    ]
-
-
-def _loss(
-    model: Any,
-    batch: dict[str, Any],
-    noise: torch.Tensor,
-    flow_time: torch.Tensor,
-) -> torch.Tensor:
-    with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-        loss, _ = model.forward(batch, noise=noise, time=flow_time)
-    if loss.ndim != 0 or not torch.isfinite(loss):
-        raise GateZeroModelProbeError("non-finite or non-scalar mechanics loss")
-    return loss
 
 
 def _delta_summary(deltas: dict[str, torch.Tensor]) -> dict[str, dict[str, Any]]:

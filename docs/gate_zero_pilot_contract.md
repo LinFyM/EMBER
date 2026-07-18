@@ -75,9 +75,14 @@ add `action_out_proj` at rank 8 or raise the same four matrices to rank 16.
 Thresholds, splits, held access, and the shared-frozen contract cannot change.
 
 One GPU is used for smoke and batch calibration; two GPUs may run the two task
-oracles in parallel only after the measured launch contract. Technical batch
-selection chooses the fastest microbatch that retains at least 10 GiB free on
-an A100, while gradient accumulation preserves effective batch 64. Reusable raw
-HDF5 streaming avoids a duplicate converted video dataset. Canonical reports
-include a bounded local gallery; regenerable duplicate media and rotating
-recovery checkpoints are cleaned only after hashes and retained evidence pass.
+oracles in parallel only after the measured launch contract. Calibration loads
+the model and optimizer once, streams the all-60-source base-fit surface with
+four persistent workers, and tests microbatches 8, 16, 32, and 64 in ascending
+order. Gradient accumulation keeps effective batch 64. Each candidate gets one
+warmup and two measured optimizer steps; timing includes data loading, while
+loss values and all policy outcomes are forbidden from the calibration result.
+Selection chooses the fastest measured candidate that retains at least 10 GiB
+free and stops larger candidates after the first OOM. Reusable raw HDF5
+streaming avoids a duplicate converted video dataset. Canonical reports include
+a bounded local gallery; regenerable duplicate media and rotating recovery
+checkpoints are cleaned only after hashes and retained evidence pass.

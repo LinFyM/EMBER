@@ -5,15 +5,36 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import json
+import random
 from pathlib import Path
 from typing import Any, Sequence
 
+import numpy as np
 import torch
 from safetensors import safe_open
 
 
 class GateZeroRuntimeError(RuntimeError):
     """Raised when policy, normalization, or adapter runtime authority drifts."""
+
+
+def set_global_seed(seed: int) -> None:
+    """Seed the Python, NumPy, CPU, and visible CUDA generators."""
+
+    random.seed(seed)
+    np.random.seed(seed % (2**32))
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+
+def parameter_summary(model: torch.nn.Module) -> dict[str, int]:
+    parameters = list(model.parameters())
+    trainable = [value for value in parameters if value.requires_grad]
+    return {
+        "total_parameters": sum(value.numel() for value in parameters),
+        "trainable_parameters": sum(value.numel() for value in trainable),
+        "trainable_tensors": len(trainable),
+    }
 
 
 def sha256_file(path: Path) -> str:
@@ -205,6 +226,66 @@ def configure_smolvla(
         load_vlm_weights=True,
         compile_model=False,
     )
+
+
+def load_smolvla_policy(base_path: Path, vlm_path: Path, spec: dict[str, Any]) -> Any:
+    """Load the only pinned 8D-state SmolVLA policy used by Gate 0."""
+
+    from lerobot.configs import PreTrainedConfig
+    from lerobot.policies.factory import make_policy  # noqa: F401 - registers configs
+    from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy
+
+    config = PreTrainedConfig.from_pretrained(base_path)
+    config = configure_smolvla(
+        config,
+        local_vlm_path=vlm_path,
+        device="cuda",
+        pretrained_path=base_path,
+        pretrained_revision=spec["authority"]["model_revision"],
+    )
+    return SmolVLAPolicy.from_pretrained(
+        base_path,
+        config=config,
+        local_files_only=True,
+        strict=True,
+    )
+
+
+def preprocess_smolvla_batch(
+    batch: dict[str, Any], preprocessor: Any, image_keys: Sequence[str]
+) -> dict[str, Any]:
+    """Convert canonical uint8 cameras once, then apply the pinned processor."""
+
+    for key in image_keys:
+        if key in batch and batch[key].dtype == torch.uint8:
+            batch[key] = batch[key].to(dtype=torch.float32).div_(255.0)
+    return preprocessor(batch)
+
+
+def batch_provenance_keys(batch: dict[str, Any]) -> list[str]:
+    """Capture immutable task/demo/frame identity before preprocessing strips it."""
+
+    return [
+        f"task{int(task)}/demo{int(demo)}/frame{int(frame)}"
+        for task, demo, frame in zip(
+            batch["task_id"], batch["demo_index"], batch["frame_index"], strict=True
+        )
+    ]
+
+
+def smolvla_flow_loss(
+    model: Any,
+    batch: dict[str, Any],
+    noise: torch.Tensor,
+    flow_time: torch.Tensor,
+) -> torch.Tensor:
+    """Evaluate the pinned bf16-autocast SmolVLA flow loss."""
+
+    with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+        loss, _ = model.forward(batch, noise=noise, time=flow_time)
+    if loss.ndim != 0 or not torch.isfinite(loss):
+        raise GateZeroRuntimeError("non-finite or non-scalar SmolVLA loss")
+    return loss
 
 
 def physical_lora_deltas(peft_model: Any, targets: Sequence[str], *, adapter: str = "default") -> dict[str, torch.Tensor]:

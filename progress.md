@@ -569,6 +569,15 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   `51b9405`: 99,880,992 trainable parameters, finite loss and gradient, 1,818
   MiB peak PyTorch reserved memory, 2,345 MiB peak sampled device memory, and
   rc 0 with GPU 4 released. It does not establish source competence.
+- The batch-calibration path is now predeclared and implemented before its first
+  run. It loads the all-source dataset, model, optimizer, normalization, and
+  Trackio process once; evaluates microbatches 8/16/32/64 at fixed effective
+  batch 64 using four persistent HDF5 workers; includes data loading in timing;
+  records no loss or policy outcome; and stops after the first OOM. One warmup
+  plus two measured optimizer steps per candidate makes optimizer allocation
+  and worker startup non-comparative. The fastest candidate retaining 10 GiB
+  free is selected deterministically. The shared model/preprocessor/loss owner
+  was extracted from the already validated probe rather than duplicated.
 
 ## Immediate handoff
 

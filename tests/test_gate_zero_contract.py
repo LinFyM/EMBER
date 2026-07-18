@@ -46,6 +46,21 @@ class GateZeroContractTest(unittest.TestCase):
         self.assertEqual(spec["oracle"]["selection"]["episode_bounds"], [40, 45])
         self.assertEqual(spec["report"]["offline_episode_bounds"], [46, 49])
 
+    def test_batch_calibration_is_fixed_effective_batch_and_resource_only(self) -> None:
+        spec = load_gate_zero_contract(self.path, ROOT / "configs" / "phase0.toml")
+        calibration = spec["base_fit"]["batch_calibration"]
+
+        self.assertEqual(calibration["micro_batch_candidates"], [8, 16, 32, 64])
+        self.assertEqual(calibration["technical_steps_per_candidate"], 3)
+        self.assertEqual(calibration["warmup_optimizer_steps_per_candidate"], 1)
+        self.assertEqual(calibration["measured_optimizer_steps_per_candidate"], 2)
+        self.assertEqual(calibration["num_workers"], 4)
+        self.assertEqual(calibration["prefetch_factor"], 2)
+        self.assertTrue(calibration["persistent_workers"])
+        self.assertTrue(calibration["include_data_loading_in_timing"])
+        self.assertTrue(calibration["outcome_metrics_forbidden"])
+        self.assertTrue(calibration["stop_on_first_oom"])
+
     def test_loader_rejects_episode_overlap(self) -> None:
         text = self.path.read_text(encoding="utf-8").replace(
             "functional_query = [40, 45]", "functional_query = [39, 45]"

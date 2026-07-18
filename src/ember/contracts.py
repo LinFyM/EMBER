@@ -90,6 +90,35 @@ def _validate_splits(splits: Mapping[str, Sequence[int]]) -> None:
         raise ContractError("task split must be disjoint and cover exactly LIBERO-90 indices 0..89")
 
 
+def _validate_split_reseal(reseal: Mapping[str, Any]) -> None:
+    expected_strings = {
+        "status": "permanently_resealed_before_libero90_policy_outcomes",
+        "discovery_boundary": (
+            "old_split_invalidated_before_any_libero90_policy_training_or_evaluation"
+        ),
+        "record_path": "configs/libero90_split_reseal.json",
+        "factor_schema": "libero90_role_factors_v1",
+        "search_algorithm": "sha256_multistart_greedy_plus_steepest_swap_v1",
+    }
+    for field, expected in expected_strings.items():
+        if reseal.get(field) != expected:
+            raise ContractError(f"split_reseal.{field} differs from the permanent seal")
+    _require_sha(reseal.get("record_sha256"), "split reseal record", sha256=True)
+    _require_sha(
+        reseal.get("specification_surface_sha256"),
+        "split reseal specification surface",
+        sha256=True,
+    )
+    _require_sha(reseal.get("prior_split_git_commit"), "prior split Git commit")
+    if reseal.get("minimum_source_role_occurrences") != 2:
+        raise ContractError("split reseal source-role coverage threshold must remain two")
+    if reseal.get("search_seed") != 20_260_718:
+        raise ContractError("split reseal search seed must remain frozen")
+    if reseal.get("search_candidate_count") != 16_384:
+        raise ContractError("split reseal candidate count must remain frozen")
+    _validate_splits(reseal["prior_split"])
+
+
 def _expand_inclusive(bounds: Sequence[int], label: str) -> set[int]:
     if len(bounds) != 2 or not all(isinstance(value, int) for value in bounds):
         raise ContractError(f"episode authority {label} must be an inclusive [start, end] pair")
@@ -168,6 +197,7 @@ def validate_contract(contract: Mapping[str, Any]) -> None:
     _validate_environment(contract["environment"])
     _validate_resources(contract["resources"])
     _validate_splits(contract["splits"])
+    _validate_split_reseal(contract["split_reseal"])
     _validate_episode_authority(contract["episode_authority"])
     _validate_held_contract(contract["held_contract"])
     _validate_dataset_surface(contract["datasets"])
@@ -183,6 +213,8 @@ def contract_summary(contract: Mapping[str, Any]) -> dict[str, Any]:
         "video_decode_backend": contract["environment"]["video_decode_backend"],
         "task_map_git_blob": contract["upstreams"]["libero_task_map"]["git_blob_sha"],
         "split_sizes": {name: len(contract["splits"][name]) for name in EXPECTED_SPLIT_SIZES},
+        "split_reseal_status": contract["split_reseal"]["status"],
+        "split_reseal_record_sha256": contract["split_reseal"]["record_sha256"],
         "max_concurrent_gpus": contract["resources"]["max_concurrent_gpus"],
         "phase0_peak_growth_budget_bytes": contract["resources"]["phase0_peak_growth_budget_bytes"],
     }
@@ -194,6 +226,10 @@ def main() -> int:
     args = parser.parse_args()
     contract = load_contract(args.contract)
     validate_contract(contract)
+    from ember.libero_split_reseal import load_sealed_record
+
+    workspace = args.contract.resolve().parent.parent
+    load_sealed_record(workspace / contract["split_reseal"]["record_path"], contract)
     print(json.dumps(contract_summary(contract), indent=2, sort_keys=True))
     return 0
 

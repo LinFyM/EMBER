@@ -54,8 +54,12 @@ task specification into a parameter-space prior that both:
 
 The independent expert review is complete and staged execution is active. The
 repository now contains a reproducible SmolVLA/LIBERO substrate and Gate -1
-diagnostics, but no Writer training is authorized. Every novelty claim remains
-provisional until the predecessor gates and matched-budget experiments pass.
+diagnostics. The original invalid LIBERO-90 split has been preserved and
+replaced once by a permanently sealed specification-only 60/15/15 split before
+any LIBERO-90 policy outcome. A fresh data/normalization audit and the remaining
+causal controls are still required, so no Writer training is authorized. Every
+novelty claim remains provisional until the predecessor gates and matched-budget
+experiments pass.
 
 The active execution ceiling is **4 x NVIDIA A100 80GB GPUs**. The expert plan
 was originally written for an eight-GPU ceiling and is retained as research
@@ -81,8 +85,8 @@ design corrections adopted before implementation.
   decisions, corrections to the plan, four-GPU constraints, and the first work
   package.
 - [`docs/benchmark_validity_report.md`](docs/benchmark_validity_report.md): the
-  current Gate -1 evidence, failed split-validity diagnosis, and recovery
-  decision that must precede Writer training.
+  current Gate -1 evidence, preserved split-validity failure, permanent
+  specification-only reseal, and remaining evidence before Writer training.
 - [`docs/prior_work_memllm_lessons.md`](docs/prior_work_memllm_lessons.md):
   verified lessons from the preceding Writer research program, separated into
   reusable principles and mechanisms that must not be copied blindly.

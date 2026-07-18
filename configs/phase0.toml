@@ -108,6 +108,24 @@ derived_cache_cap_bytes = 25000000000
 
 [splits]
 index_authority = "upstreams.libero_task_map"
+source = [3, 4, 5, 6, 9, 10, 12, 15, 16, 17, 19, 20, 23, 24, 25, 26, 27, 30, 31, 32, 33, 34, 35, 37, 38, 39, 41, 42, 43, 44, 46, 47, 49, 50, 52, 53, 54, 57, 58, 62, 63, 64, 67, 68, 69, 71, 72, 73, 74, 75, 77, 78, 79, 80, 81, 82, 83, 84, 87, 89]
+validation = [2, 8, 11, 13, 21, 22, 28, 40, 51, 59, 60, 65, 70, 76, 86]
+held_out = [0, 1, 7, 14, 18, 29, 36, 45, 48, 55, 56, 61, 66, 85, 88]
+
+[split_reseal]
+status = "permanently_resealed_before_libero90_policy_outcomes"
+discovery_boundary = "old_split_invalidated_before_any_libero90_policy_training_or_evaluation"
+record_path = "configs/libero90_split_reseal.json"
+record_sha256 = "9f5bc62e15e2cb07887e97bc98630a3f527ac6b5e253f41c203cf37459568428"
+specification_surface_sha256 = "9ec40758b7b5c2a6c3c0aacb5e41c2a0bd30a21e702e9b0f1187c1adeeb8ea39"
+factor_schema = "libero90_role_factors_v1"
+minimum_source_role_occurrences = 2
+search_algorithm = "sha256_multistart_greedy_plus_steepest_swap_v1"
+search_seed = 20260718
+search_candidate_count = 16384
+prior_split_git_commit = "58974065fc6ce0b6bac26dd880c3cf1d29742c0f"
+
+[split_reseal.prior_split]
 source = [0, 2, 6, 7, 9, 11, 14, 15, 18, 20, 22, 25, 26, 28, 29, 30, 31, 33, 35, 38, 39, 40, 41, 43, 44, 46, 47, 48, 50, 51, 52, 53, 55, 56, 57, 58, 60, 61, 62, 65, 66, 67, 68, 69, 71, 72, 73, 74, 76, 77, 78, 79, 81, 82, 83, 84, 85, 86, 87, 88]
 validation = [3, 5, 10, 12, 16, 19, 24, 32, 36, 42, 49, 59, 63, 75, 89]
 held_out = [1, 4, 8, 13, 17, 21, 23, 27, 34, 37, 45, 54, 64, 70, 80]

@@ -1,37 +1,93 @@
 # EMBER Gate -1 Benchmark and Specification Validity Report
 
-Status: **recovery decision required; Gate -1 is not passed**  
-Evidence cutoff: 2026-07-17
+Status: **specification-only split permanently resealed; Gate -1 remains in progress**
+Evidence cutoff: 2026-07-18
 
 ## Technical summary
 
-The reproducible SmolVLA/LIBERO path and canonical LIBERO-90 data authority are
-mechanically valid, and a two-task overlap-trained pilot shows a large
-descriptive dependence on the policy-visible prompt. Those results are useful
+The reproducible SmolVLA/LIBERO path and pinned LIBERO-90 specification
+authority are mechanically valid. A two-task overlap-trained pilot also shows a
+large descriptive dependence on the policy-visible prompt. Those results are
 substrate evidence, not a LIBERO-90 Gate -1 pass.
 
-The current predeclared LIBERO-90 60/15/15 split fails its stronger validity
-contract before any LIBERO-90 policy result is read. A conservative,
-language-only role audit finds validation or held tasks whose task-relevant
-atoms have fewer than two source-task occurrences. Several have zero: `stack`,
-moving `tomato_sauce`, target relation `under`, target relation `front_of`, and
-target receptacle `wine_rack`. Moving `moka_pot`, `wine_bottle`, and
-`white_bowl` each has only one source task.
+The original predeclared 60/15/15 split failed its stronger source-atom
+coverage contract before any LIBERO-90 policy training or evaluation result was
+read. That failure is preserved below and in Git commit `5897406`. Under the
+owner-authorized one-time recovery, EMBER used only the pinned English task
+specifications and scene identities to build a strict role table for all 90
+tasks and deterministically search a replacement split. BDDL goals, actions,
+proprioception, rewards, terminal flags, normalization values, and policy
+outcomes were not inputs to the redesign.
 
-This is a benchmark/specification failure, not a Writer, representation, or
-optimization failure. Writer center training remains unauthorized. The next
-scientific decision is whether to reseal the split once using task
-specifications only, before any LIBERO-90 policy training/evaluation, or retain
-the split and explicitly abandon the source-covered compositional-held-out
-claim.
+The replacement is now permanently sealed in `configs/phase0.toml`; the full
+factor table, rejected prior split, search contract, diagnostics, and active
+task IDs are in `configs/libero90_split_reseal.json` with SHA256
+`9f5bc62e15e2cb07887e97bc98630a3f527ac6b5e253f41c203cf37459568428`.
+The reseal repairs a benchmark-design defect. It does not itself pass Gate -1,
+demonstrate policy competence, or authorize Writer center training.
 
-## The current split violates source-atom coverage
+## Permanent specification-only reseal
 
-The table reports task IDs at the task grain. `Source count` is the number of
-source task specifications in which the atom has the indicated task-relevant
-role; distractor presence in a scene or BDDL object list does not count as
-executable exposure. The predeclared requirement is at least two source tasks
-for every validation/held atom.
+### Authority and role definitions
+
+- Task ordering and text come from pinned task-map Git blob
+  `08144b4dd01d91fb0ca40e2c1d93ccaa85025fbc`; the canonical ordered
+  `task_index/scene/language` surface has SHA256
+  `9ec40758b7b5c2a6c3c0aacb5e41c2a0bd30a21e702e9b0f1187c1adeeb8ea39`.
+- The parser schema is `libero90_role_factors_v1`. It normalizes explicit
+  operations, moved grammatical patients, target receptacles, target
+  relations, source selectors, target selectors, actuated fixtures, and
+  actuated subregions. A scene distractor never counts as role exposure.
+- `put` and `place` normalize to `place`. Explicit language order determines
+  step order. `pick up … and place …` and `stack … and place them …` retain two
+  ordered steps. Full ordered compositions are reported separately from
+  primitive role atoms.
+- All 90 instructions parse exactly once. Unknown or ambiguous templates fail
+  closed; tests reparse every checked-in factor record exactly.
+
+### Frozen search contract and result
+
+The search algorithm is
+`sha256_multistart_greedy_plus_steepest_swap_v1`, seed `20260718`, with 16,384
+deterministic candidates. The hard requirement is that every primitive role
+used by validation or held tasks occurs task-relevantly in at least two source
+tasks. Subject to that constraint, the fixed lexicographic objective maximizes
+unseen full compositions, same-scene semantic hard negatives, and same-scene
+source controls, then balances scenes and operation count, then preserves old
+assignments where possible. Validation/held partitioning has its own frozen
+scene, difficulty, role-balance, and old-role-retention priorities.
+
+| Reseal diagnostic | Result |
+| --- | ---: |
+| Source / validation / held tasks | 60 / 15 / 15 |
+| Evaluation primitive roles | 41 |
+| Minimum source-task occurrences for every evaluation role | 2 |
+| Coverage violations | 0 |
+| Evaluation tasks with source-unseen full composition | 30 / 30 |
+| Evaluation tasks with a different same-scene source task | 30 / 30 |
+| Evaluation tasks with a role-sharing same-scene hard negative | 28 / 30 |
+| Two-operation tasks in source / validation / held | 29 / 7 / 8 |
+| Prior evaluation tasks retained anywhere in evaluation | 8 / 30 |
+| Prior exact validation/held assignments retained | 3 / 30 |
+
+The active IDs are:
+
+- Source: `3, 4, 5, 6, 9, 10, 12, 15, 16, 17, 19, 20, 23, 24, 25, 26,
+  27, 30, 31, 32, 33, 34, 35, 37, 38, 39, 41, 42, 43, 44, 46, 47, 49, 50,
+  52, 53, 54, 57, 58, 62, 63, 64, 67, 68, 69, 71, 72, 73, 74, 75, 77, 78,
+  79, 80, 81, 82, 83, 84, 87, 89`.
+- Validation: `2, 8, 11, 13, 21, 22, 28, 40, 51, 59, 60, 65, 70, 76, 86`.
+- Held: `0, 1, 7, 14, 18, 29, 36, 45, 48, 55, 56, 61, 66, 85, 88`.
+
+No threshold changed: Gate -1 retains 20 percentage points for full versus
+no-spec, 20 points for correct versus swapped, and 0.80 for counterfactual
+correct-switch fraction. Split selection is never reopened after policy
+results.
+
+## Rejected prior split and preserved failure evidence
+
+The following language-only checks rejected the old split. `Source tasks`
+counts task-relevant grammatical roles, not fixture or distractor presence.
 
 | Atom and role | Exact language evidence | Source tasks | Validation tasks | Held tasks | Result |
 | --- | --- | ---: | ---: | ---: | --- |
@@ -44,10 +100,9 @@ for every validation/held atom.
 | moved object `wine_bottle` | `wine bottle` | 26 | none | 27 | fail: 1 source |
 | moved object `white_bowl` | `white bowl` | 43 | 36 | 37 | fail: 1 source |
 
-An exact lookup table is used instead of a chart because the decision depends
-on categorical constraint violations and task identities, not a continuous
-trend. These eight checks are a high-confidence lower bound, not a claim that a
-complete role parser would find only eight failures.
+The complete strict parser reproduces these failures and finds additional
+selector-level constraints; the original table remains a high-confidence
+minimal failure packet rather than being rewritten after recovery.
 
 ## Evidence status by Gate -1 component
 
@@ -55,92 +110,44 @@ complete role parser would find only eight failures.
 | --- | --- | --- |
 | Official checkpoint mechanics | complete | All ten `libero_spatial` task/BDDL/init-state/camera/controller paths and videos execute; 9/10 one-episode successes are mechanics-only. |
 | Evaluation identity | diagnosed | Reset rendering has sparse one-level RGB nondeterminism; model actions are batch-shape sensitive. The fixed-batch statistical/functional contract is frozen, and cross-batch results are not pooled. |
-| Canonical LIBERO-90 authority | pass with documented notes | 90 tasks, 4,500 demos, 669,043 frames, exact 66,658,085,995 bytes, source-only normalization, checksums, and leakage checks pass. Legacy producer-path and wording notes remain visible. |
+| Prior canonical LIBERO-90 authority | complete but tied to rejected split | The 90-file audit validated data integrity and leakage boundaries, but its source-only normalization belongs to the rejected split and must not be reused under the reseal. |
+| LIBERO-90 role-factor table and split design | recovery mechanics pass | All 90 specifications parse, the permanent seal has zero role-coverage violations, and its deterministic regeneration/hash checks pass. This is not policy evidence. |
+| Fresh canonical manifest under resealed split | pending | Must recompute source-only normalization and confirm validation/held numeric access remains zero from a clean reseal commit. |
 | Prompt-path specification pilot | scale candidate only | On overlap-trained `libero_spatial` tasks 0/1, correct is 6/8 and 6/8; no-spec is 0/8 and 0/8; scene-only is 2/8 and 0/8; swapped is 0/8 and 0/8. This is not a LIBERO-90 result. |
-| LIBERO-90 split factor coverage | fail | The table above disproves the at-least-two source-atom condition for the current split. |
 | Same-init paired executable goals | not measured | Prompt swap kept the environment goal fixed; it cannot establish correct counterfactual goal switching. |
-| Video content and temporal necessity | not measured | Wrong/same-scene/shuffled/reversed/first/last/scene-only video controls remain pending after split repair. |
+| Video content and temporal necessity | not measured | Wrong/same-scene/shuffled/reversed/first/last/scene-only video controls remain pending. |
 
-## Scope, authority, and definitions
+## Method, robustness, and leakage boundary
 
-- The canonical task grain is one LIBERO-90 task ID. The fixed split is 60
-  source, 15 validation, and 15 reporting-only held tasks in
-  `configs/phase0.toml`.
-- The factor audit uses only the English language specification and scene
-  identity that the scientific contract already permits as held-task input. It
-  does not parse held BDDL goals or read held actions, proprioception, rewards,
-  terminal flags, filenames as model inputs, or normalization contributions.
-- An **atom** here is a role-specific primitive verb, moved object,
-  receptacle, or spatial relation. An ordered multi-step composition is reported
-  separately and is not required to have appeared as a source composition.
-- Source exposure means that the atom is task-relevant in a source instruction.
-  Merely appearing as a distractor object or fixture is not executable bridge
-  supervision.
-- Gate decisions use task as the independent unit. Episode-level counts in the
-  overlap pilot are descriptive and cannot supply a LIBERO-90 task-level
-  confidence interval.
+The task-map blob is parsed as a Python literal after verifying its Git-blob
+identity. The reseal program has no dataset, BDDL, simulator, model, reward, or
+normalization input. It serializes `numeric_or_privileged_fields_read: []` and
+only `task_index`, `scene`, and `language` as authority fields. Contract tests
+pin the record hash, parser schema, source-occurrence threshold, algorithm,
+seed, candidate count, prior split commit, active split, and unchanged Gate -1
+thresholds. The record regenerates byte-for-byte after the active contract is
+installed because the rejected split is preserved explicitly as `prior_split`.
 
-## Method and robustness checks
+The split audit uses task as the independent unit. Primitive exposure is a
+necessary source-supervision condition, not proof that a learned policy has
+mastered the primitive. Full-composition novelty is exact over the sealed
+ordered role records; it is not inferred from policy behavior.
 
-The data authority comes from the immutable dataset revision
-`f13aa24a3da8c43c7225569f28c562979fa0e35a`. The recovery audit at commit
-`d6cdac7` validates every LFS hash, HDF5 schema, task/BDDL/init-state binding,
-camera/controller field, and source-only normalization record. Its artifact is
-`$EMBER_OUTPUT_ROOT/phase0/libero90_manifest/latest`.
+## Limitations and next evidence
 
-The eight factor checks above are deterministic exact-prefix or exact-substring
-queries over the canonical `language` field. Exact task lists are included so a
-future complete parser can reproduce or refute each finding. The listed zero-
-and one-source violations survive reasonable normalization such as treating
-`right moka pot` as `moka_pot`; none can reach the required source count of two
-without changing task roles, counting distractors, adding source tasks, or
-changing the split.
-
-The prompt-path result is separately checksummed under
-`$EMBER_OUTPUT_ROOT/gate_minus1/specification/latest`. It uses an official
-overlap-trained checkpoint and therefore measures only whether the evaluator's
-policy-visible prompt path can affect behavior under one fixed batch contract.
-
-## Limitations and uncertainty
-
-- This is not yet a complete 90-task verb/object/receptacle/relation/order
-  annotation. The eight violations are sufficient to reject the current split
-  criterion, but a resealed split still needs a complete deterministic table and
-  tests for every instruction template.
-- Language-only atom extraction does not prove that a source policy has learned
-  the primitive. It is a necessary coverage check, not a sufficient competence
-  check.
-- The overlap specification pilot has two tasks and an overlap-trained policy.
-  It cannot estimate LIBERO-90 benchmark validity or Writer/video utility.
-- Same-init executable goal switching and video temporal/content controls remain
-  unmeasured. Gate -1 remains incomplete even after a split is resealed.
+- The split is specification-valid under the declared role grammar, but the
+  fresh canonical data manifest and new source-only normalization are not yet
+  regenerated at this evidence cutoff.
+- Language-derived roles cannot prove policy competence or causal use of task
+  information. Same-init executable-goal controls and video content/temporal
+  controls remain required.
+- The overlap specification pilot has two tasks and an overlap-trained policy;
+  it cannot estimate LIBERO-90 validity, Writer utility, or video utility.
 - No LIBERO-90 policy success, oracle, Writer, or held reward result was read in
-  selecting this diagnosis.
+  selecting or validating the resealed task IDs.
 
-## Recommended next step
-
-**Recommended: authorize one specification-only split redesign now.** Build a
-complete language-derived factor table, require every validation/held primitive
-atom to occur in at least two source tasks, preserve same-scene hard negatives
-where possible, then freeze task IDs, factor rules, thresholds, and seeds before
-any LIBERO-90 base/oracle/evaluation result. Record both the rejected split and
-the resealing rule; do not optimize the new split against policy outcomes.
-
-If the split must remain unchanged, narrow the paper contract to a mixed
-novel-atom/novel-composition benchmark. That removes the clean
-source-covered-atoms premise and requires reconsidering whether Gate 0/Writer
-training can identify the claimed transfer mechanism.
-
-Disallowed recoveries are counting distractor presence as executable exposure,
-parsing held privileged labels, redefining atoms after seeing policy results,
-or lowering the at-least-two threshold solely to retain the current split.
-
-## Further questions requiring owner decision
-
-1. May the current 60/15/15 split be replaced once, using only task
-   specifications and before any LIBERO-90 policy result, then permanently
-   resealed?
-2. If not, should the project explicitly narrow its first-paper claim to permit
-   genuinely unseen primitive atoms, accepting that this is a different and
-   less identifiable transfer question?
-
+Next, regenerate the leakage-safe canonical manifest under the resealed split,
+verify source-only normalization and zero validation/held numeric access, then
+continue the predeclared same-init specification and language/video causal
+controls. Gate 0 and Gate 1 remain downstream; Writer center training remains
+unauthorized.

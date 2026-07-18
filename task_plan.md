@@ -85,7 +85,7 @@ progress through the complete design only when predecessor evidence supports it.
    identity checks are implemented and have isolated renderer and model-batch
    effects. The leakage-safe manifest builder, source-only normalization, hash
    audit, and local filterable HTML report are implemented and tested; the
-   factor summary now distinguishes task-name scene coverage from held semantic
+   factor summary distinguishes task-name scene coverage from held semantic
    dimensions that are deliberately not evaluated under the access policy. The
    pinned 66.66GB LIBERO-90 download is complete at exactly 90 files and
    66,658,085,995 bytes; the canonical 90-file audit remains active, followed by
@@ -95,11 +95,16 @@ progress through the complete design only when predecessor evidence supports it.
    authority remained exact, so the bounded repair records that legacy field as
    provenance while preserving canonical mismatch as fatal. The fresh recovery
    completed all 90 tasks from the repaired clean commit with checksums and
-   source-only normalization verified. What remains in this item is the finer
-   task-factor/split proof and the remaining Gate -1 probes, not data ingestion.
-   A language-only role audit already finds eight decisive zero/one-source atom
-   violations, so the current split fails its at-least-two coverage condition
-   and awaits an owner decision before any split mutation.
+   source-only normalization verified. A language-only role audit then found
+   decisive zero/one-source atom violations in the original split before any
+   LIBERO-90 policy outcome. The authorized one-time recovery is complete: all
+   90 instructions parse under a fail-closed role grammar, the old split remains
+   frozen as provenance, and a deterministic seed-20260718 search permanently
+   sealed a replacement with 41 evaluation roles all covered by at least two
+   source tasks, 30/30 source-unseen full compositions, 30/30 same-scene source
+   controls, and 28/30 role-sharing same-scene hard negatives. The next step in
+   this item is a fresh canonical manifest/source-normalization audit under the
+   resealed IDs, followed by the same-init and language/video Gate -1 probes.
 7. [x] Run the bounded evaluation-identity recovery on the same official-overlap
    surface: first compare the frozen policy under one exactly repeated reset
    observation across the predeclared batch ladder, then record matched actual

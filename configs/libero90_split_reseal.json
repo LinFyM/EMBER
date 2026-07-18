@@ -1,0 +1,4311 @@
+{
+  "active_split": {
+    "held_out": [
+      0,
+      1,
+      7,
+      14,
+      18,
+      29,
+      36,
+      45,
+      48,
+      55,
+      56,
+      61,
+      66,
+      85,
+      88
+    ],
+    "source": [
+      3,
+      4,
+      5,
+      6,
+      9,
+      10,
+      12,
+      15,
+      16,
+      17,
+      19,
+      20,
+      23,
+      24,
+      25,
+      26,
+      27,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      37,
+      38,
+      39,
+      41,
+      42,
+      43,
+      44,
+      46,
+      47,
+      49,
+      50,
+      52,
+      53,
+      54,
+      57,
+      58,
+      62,
+      63,
+      64,
+      67,
+      68,
+      69,
+      71,
+      72,
+      73,
+      74,
+      75,
+      77,
+      78,
+      79,
+      80,
+      81,
+      82,
+      83,
+      84,
+      87,
+      89
+    ],
+    "validation": [
+      2,
+      8,
+      11,
+      13,
+      21,
+      22,
+      28,
+      40,
+      51,
+      59,
+      60,
+      65,
+      70,
+      76,
+      86
+    ]
+  },
+  "authority": {
+    "allowed_fields": [
+      "task_index",
+      "scene",
+      "language"
+    ],
+    "numeric_or_privileged_fields_read": [],
+    "specification_surface_sha256": "9ec40758b7b5c2a6c3c0aacb5e41c2a0bd30a21e702e9b0f1187c1adeeb8ea39",
+    "task_map_git_blob_sha": "08144b4dd01d91fb0ca40e2c1d93ccaa85025fbc"
+  },
+  "factor_contract": {
+    "minimum_source_role_occurrences": 2,
+    "role_definitions": {
+      "actuated_fixture": "fixture directly opened, closed, or toggled",
+      "actuated_selector": "task-relevant subregion of an actuated fixture",
+      "moved_object": "mobile grammatical patient, never a scene distractor",
+      "order_composition": "steps follow explicit conjunction order; pick-up/place and stack/group-place are two steps",
+      "source_selector": "locative that identifies which movable instance is acted on",
+      "target_receptacle": "grammatical destination entity or supporting object",
+      "target_relation": "normalized destination relation",
+      "target_selector": "task-relevant destination region or target-instance selector",
+      "verb": "normalized explicit operation; put/place collapse to place"
+    },
+    "schema": "libero90_role_factors_v1",
+    "task_count": 90,
+    "unknown_or_ambiguous_template_policy": "fail_closed"
+  },
+  "gate_minus_one_thresholds": {
+    "correct_vs_swapped_success_pp": 20.0,
+    "counterfactual_correct_switch_fraction": 0.8,
+    "full_vs_no_spec_success_pp": 20.0
+  },
+  "prior_split": {
+    "held_out": [
+      1,
+      4,
+      8,
+      13,
+      17,
+      21,
+      23,
+      27,
+      34,
+      37,
+      45,
+      54,
+      64,
+      70,
+      80
+    ],
+    "source": [
+      0,
+      2,
+      6,
+      7,
+      9,
+      11,
+      14,
+      15,
+      18,
+      20,
+      22,
+      25,
+      26,
+      28,
+      29,
+      30,
+      31,
+      33,
+      35,
+      38,
+      39,
+      40,
+      41,
+      43,
+      44,
+      46,
+      47,
+      48,
+      50,
+      51,
+      52,
+      53,
+      55,
+      56,
+      57,
+      58,
+      60,
+      61,
+      62,
+      65,
+      66,
+      67,
+      68,
+      69,
+      71,
+      72,
+      73,
+      74,
+      76,
+      77,
+      78,
+      79,
+      81,
+      82,
+      83,
+      84,
+      85,
+      86,
+      87,
+      88
+    ],
+    "validation": [
+      3,
+      5,
+      10,
+      12,
+      16,
+      19,
+      24,
+      32,
+      36,
+      42,
+      49,
+      59,
+      63,
+      75,
+      89
+    ]
+  },
+  "recovery_class": "benchmark_design_specification_coverage",
+  "schema_version": 1,
+  "search_contract": {
+    "algorithm": "sha256_multistart_greedy_plus_steepest_swap_v1",
+    "candidate_count": 16384,
+    "combined_objective_priority": [
+      "maximize_novel_full_composition_count",
+      "maximize_same_scene_hard_negative_count",
+      "maximize_same_scene_source_count",
+      "minimize_scene_distribution_penalty",
+      "minimize_difficulty_distribution_penalty",
+      "maximize_prior_evaluation_retention",
+      "lexicographically_smallest_task_ids"
+    ],
+    "partition_objective_priority": [
+      "maximize_scenes_represented_in_both_validation_and_held",
+      "minimize_validation_held_scene_imbalance",
+      "minimize_validation_held_difficulty_imbalance",
+      "minimize_validation_held_primitive_role_imbalance",
+      "maximize_prior_exact_role_retention",
+      "lexicographically_smallest_validation_task_ids"
+    ],
+    "seed": 20260718,
+    "split_sizes": {
+      "held_out": 15,
+      "source": 60,
+      "validation": 15
+    }
+  },
+  "selection_diagnostics": {
+    "audit": {
+      "coverage_violations": [],
+      "difficulty_counts": {
+        "held_out": {
+          "1": 7,
+          "2": 8
+        },
+        "source": {
+          "1": 31,
+          "2": 29
+        },
+        "validation": {
+          "1": 8,
+          "2": 7
+        }
+      },
+      "evaluation_role_count": 41,
+      "mechanics_valid": true,
+      "minimum_observed_source_count_for_evaluation_roles": 2,
+      "minimum_source_role_occurrences": 2,
+      "novel_full_composition_count": 30,
+      "novel_full_composition_task_indices": [
+        0,
+        1,
+        2,
+        7,
+        8,
+        11,
+        13,
+        14,
+        18,
+        21,
+        22,
+        28,
+        29,
+        36,
+        40,
+        45,
+        48,
+        51,
+        55,
+        56,
+        59,
+        60,
+        61,
+        65,
+        66,
+        70,
+        76,
+        85,
+        86,
+        88
+      ],
+      "same_scene_hard_negative_count": 28,
+      "same_scene_hard_negative_task_indices": [
+        0,
+        1,
+        2,
+        7,
+        8,
+        13,
+        14,
+        18,
+        21,
+        22,
+        29,
+        36,
+        40,
+        45,
+        48,
+        51,
+        55,
+        56,
+        59,
+        60,
+        61,
+        65,
+        66,
+        70,
+        76,
+        85,
+        86,
+        88
+      ],
+      "same_scene_source_count": 30,
+      "same_scene_source_task_indices": [
+        0,
+        1,
+        2,
+        7,
+        8,
+        11,
+        13,
+        14,
+        18,
+        21,
+        22,
+        28,
+        29,
+        36,
+        40,
+        45,
+        48,
+        51,
+        55,
+        56,
+        59,
+        60,
+        61,
+        65,
+        66,
+        70,
+        76,
+        85,
+        86,
+        88
+      ],
+      "scene_counts": {
+        "held_out": {
+          "KITCHEN_SCENE1": 1,
+          "KITCHEN_SCENE10": 2,
+          "KITCHEN_SCENE2": 1,
+          "KITCHEN_SCENE3": 1,
+          "KITCHEN_SCENE4": 0,
+          "KITCHEN_SCENE5": 1,
+          "KITCHEN_SCENE6": 0,
+          "KITCHEN_SCENE7": 1,
+          "KITCHEN_SCENE8": 0,
+          "KITCHEN_SCENE9": 1,
+          "LIVING_ROOM_SCENE1": 1,
+          "LIVING_ROOM_SCENE2": 0,
+          "LIVING_ROOM_SCENE3": 2,
+          "LIVING_ROOM_SCENE4": 1,
+          "LIVING_ROOM_SCENE5": 1,
+          "LIVING_ROOM_SCENE6": 0,
+          "STUDY_SCENE1": 0,
+          "STUDY_SCENE2": 0,
+          "STUDY_SCENE3": 1,
+          "STUDY_SCENE4": 1
+        },
+        "source": {
+          "KITCHEN_SCENE1": 3,
+          "KITCHEN_SCENE10": 3,
+          "KITCHEN_SCENE2": 4,
+          "KITCHEN_SCENE3": 2,
+          "KITCHEN_SCENE4": 5,
+          "KITCHEN_SCENE5": 3,
+          "KITCHEN_SCENE6": 2,
+          "KITCHEN_SCENE7": 2,
+          "KITCHEN_SCENE8": 2,
+          "KITCHEN_SCENE9": 4,
+          "LIVING_ROOM_SCENE1": 3,
+          "LIVING_ROOM_SCENE2": 4,
+          "LIVING_ROOM_SCENE3": 2,
+          "LIVING_ROOM_SCENE4": 3,
+          "LIVING_ROOM_SCENE5": 2,
+          "LIVING_ROOM_SCENE6": 3,
+          "STUDY_SCENE1": 3,
+          "STUDY_SCENE2": 4,
+          "STUDY_SCENE3": 4,
+          "STUDY_SCENE4": 2
+        },
+        "validation": {
+          "KITCHEN_SCENE1": 1,
+          "KITCHEN_SCENE10": 1,
+          "KITCHEN_SCENE2": 2,
+          "KITCHEN_SCENE3": 1,
+          "KITCHEN_SCENE4": 1,
+          "KITCHEN_SCENE5": 1,
+          "KITCHEN_SCENE6": 0,
+          "KITCHEN_SCENE7": 0,
+          "KITCHEN_SCENE8": 0,
+          "KITCHEN_SCENE9": 1,
+          "LIVING_ROOM_SCENE1": 0,
+          "LIVING_ROOM_SCENE2": 1,
+          "LIVING_ROOM_SCENE3": 1,
+          "LIVING_ROOM_SCENE4": 1,
+          "LIVING_ROOM_SCENE5": 1,
+          "LIVING_ROOM_SCENE6": 1,
+          "STUDY_SCENE1": 1,
+          "STUDY_SCENE2": 0,
+          "STUDY_SCENE3": 0,
+          "STUDY_SCENE4": 1
+        }
+      },
+      "structural_violations": []
+    },
+    "combined_objective": {
+      "difficulty_distribution_penalty": 1800,
+      "novel_full_composition_count": 30,
+      "prior_evaluation_retained_count": 8,
+      "same_scene_hard_negative_count": 28,
+      "same_scene_source_count": 30,
+      "scene_distribution_penalty": 79200
+    },
+    "partition_objective": {
+      "difficulty_imbalance_penalty": 2,
+      "primitive_role_imbalance_penalty": 26,
+      "prior_exact_role_retained_count": 3,
+      "scene_imbalance_penalty": 10,
+      "shared_evaluation_scene_count": 10
+    }
+  },
+  "status": "permanently_resealed_before_libero90_policy_outcomes",
+  "tasks": [
+    {
+      "composition_signature": "[{\"actuated_fixture\":\"cabinet_drawer\",\"actuated_selectors\":[\"top\"],\"group_size\":1,\"moved_objects\":[],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"close\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "close the top drawer of the cabinet",
+      "order_signature": "close",
+      "primitive_role_atoms": [
+        "actuated_fixture:cabinet_drawer",
+        "actuated_selector:top",
+        "verb:close"
+      ],
+      "scene": "KITCHEN_SCENE10",
+      "steps": [
+        {
+          "actuated_fixture": "cabinet_drawer",
+          "actuated_selectors": [
+            "top"
+          ],
+          "group_size": 1,
+          "moved_objects": [],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "close"
+        }
+      ],
+      "task_index": 0
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":\"cabinet_drawer\",\"actuated_selectors\":[\"top\"],\"group_size\":1,\"moved_objects\":[],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"close\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"black_bowl\"],\"source_selectors\":[],\"target_receptacle\":\"cabinet\",\"target_relation\":\"on_top_of\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "close the top drawer of the cabinet and put the black bowl on top of it",
+      "order_signature": "close>place",
+      "primitive_role_atoms": [
+        "actuated_fixture:cabinet_drawer",
+        "actuated_selector:top",
+        "moved_object:black_bowl",
+        "target_receptacle:cabinet",
+        "target_relation:on_top_of",
+        "verb:close",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE10",
+      "steps": [
+        {
+          "actuated_fixture": "cabinet_drawer",
+          "actuated_selectors": [
+            "top"
+          ],
+          "group_size": 1,
+          "moved_objects": [],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "close"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "black_bowl"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "cabinet",
+          "target_relation": "on_top_of",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 1
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"black_bowl\"],\"source_selectors\":[],\"target_receptacle\":\"cabinet_drawer\",\"target_relation\":\"in\",\"target_selectors\":[\"top\"],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the black bowl in the top drawer of the cabinet",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:black_bowl",
+        "target_receptacle:cabinet_drawer",
+        "target_relation:in",
+        "target_selector:top",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE10",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "black_bowl"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "cabinet_drawer",
+          "target_relation": "in",
+          "target_selectors": [
+            "top"
+          ],
+          "verb": "place"
+        }
+      ],
+      "task_index": 2
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"butter\"],\"source_selectors\":[\"back\"],\"target_receptacle\":\"cabinet_drawer\",\"target_relation\":\"in\",\"target_selectors\":[\"top\"],\"verb\":\"place\"},{\"actuated_fixture\":\"cabinet_drawer\",\"actuated_selectors\":[\"top\"],\"group_size\":1,\"moved_objects\":[],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"close\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the butter at the back in the top drawer of the cabinet and close it",
+      "order_signature": "place>close",
+      "primitive_role_atoms": [
+        "actuated_fixture:cabinet_drawer",
+        "actuated_selector:top",
+        "moved_object:butter",
+        "source_selector:back",
+        "target_receptacle:cabinet_drawer",
+        "target_relation:in",
+        "target_selector:top",
+        "verb:close",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE10",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "butter"
+          ],
+          "order": 0,
+          "source_selectors": [
+            "back"
+          ],
+          "target_receptacle": "cabinet_drawer",
+          "target_relation": "in",
+          "target_selectors": [
+            "top"
+          ],
+          "verb": "place"
+        },
+        {
+          "actuated_fixture": "cabinet_drawer",
+          "actuated_selectors": [
+            "top"
+          ],
+          "group_size": 1,
+          "moved_objects": [],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "close"
+        }
+      ],
+      "task_index": 3
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"butter\"],\"source_selectors\":[\"front\"],\"target_receptacle\":\"cabinet_drawer\",\"target_relation\":\"in\",\"target_selectors\":[\"top\"],\"verb\":\"place\"},{\"actuated_fixture\":\"cabinet_drawer\",\"actuated_selectors\":[\"top\"],\"group_size\":1,\"moved_objects\":[],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"close\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the butter at the front in the top drawer of the cabinet and close it",
+      "order_signature": "place>close",
+      "primitive_role_atoms": [
+        "actuated_fixture:cabinet_drawer",
+        "actuated_selector:top",
+        "moved_object:butter",
+        "source_selector:front",
+        "target_receptacle:cabinet_drawer",
+        "target_relation:in",
+        "target_selector:top",
+        "verb:close",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE10",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "butter"
+          ],
+          "order": 0,
+          "source_selectors": [
+            "front"
+          ],
+          "target_receptacle": "cabinet_drawer",
+          "target_relation": "in",
+          "target_selectors": [
+            "top"
+          ],
+          "verb": "place"
+        },
+        {
+          "actuated_fixture": "cabinet_drawer",
+          "actuated_selectors": [
+            "top"
+          ],
+          "group_size": 1,
+          "moved_objects": [],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "close"
+        }
+      ],
+      "task_index": 4
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"chocolate_pudding\"],\"source_selectors\":[],\"target_receptacle\":\"cabinet_drawer\",\"target_relation\":\"in\",\"target_selectors\":[\"top\"],\"verb\":\"place\"},{\"actuated_fixture\":\"cabinet_drawer\",\"actuated_selectors\":[\"top\"],\"group_size\":1,\"moved_objects\":[],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"close\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the chocolate pudding in the top drawer of the cabinet and close it",
+      "order_signature": "place>close",
+      "primitive_role_atoms": [
+        "actuated_fixture:cabinet_drawer",
+        "actuated_selector:top",
+        "moved_object:chocolate_pudding",
+        "target_receptacle:cabinet_drawer",
+        "target_relation:in",
+        "target_selector:top",
+        "verb:close",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE10",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "chocolate_pudding"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "cabinet_drawer",
+          "target_relation": "in",
+          "target_selectors": [
+            "top"
+          ],
+          "verb": "place"
+        },
+        {
+          "actuated_fixture": "cabinet_drawer",
+          "actuated_selectors": [
+            "top"
+          ],
+          "group_size": 1,
+          "moved_objects": [],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "close"
+        }
+      ],
+      "task_index": 5
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":\"cabinet_drawer\",\"actuated_selectors\":[\"bottom\"],\"group_size\":1,\"moved_objects\":[],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"open\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "open the bottom drawer of the cabinet",
+      "order_signature": "open",
+      "primitive_role_atoms": [
+        "actuated_fixture:cabinet_drawer",
+        "actuated_selector:bottom",
+        "verb:open"
+      ],
+      "scene": "KITCHEN_SCENE1",
+      "steps": [
+        {
+          "actuated_fixture": "cabinet_drawer",
+          "actuated_selectors": [
+            "bottom"
+          ],
+          "group_size": 1,
+          "moved_objects": [],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "open"
+        }
+      ],
+      "task_index": 6
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":\"cabinet_drawer\",\"actuated_selectors\":[\"top\"],\"group_size\":1,\"moved_objects\":[],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"open\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "open the top drawer of the cabinet",
+      "order_signature": "open",
+      "primitive_role_atoms": [
+        "actuated_fixture:cabinet_drawer",
+        "actuated_selector:top",
+        "verb:open"
+      ],
+      "scene": "KITCHEN_SCENE1",
+      "steps": [
+        {
+          "actuated_fixture": "cabinet_drawer",
+          "actuated_selectors": [
+            "top"
+          ],
+          "group_size": 1,
+          "moved_objects": [],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "open"
+        }
+      ],
+      "task_index": 7
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":\"cabinet_drawer\",\"actuated_selectors\":[\"top\"],\"group_size\":1,\"moved_objects\":[],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"open\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"bowl\"],\"source_selectors\":[],\"target_receptacle\":\"cabinet_drawer\",\"target_relation\":\"in\",\"target_selectors\":[\"top\"],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "open the top drawer of the cabinet and put the bowl in it",
+      "order_signature": "open>place",
+      "primitive_role_atoms": [
+        "actuated_fixture:cabinet_drawer",
+        "actuated_selector:top",
+        "moved_object:bowl",
+        "target_receptacle:cabinet_drawer",
+        "target_relation:in",
+        "target_selector:top",
+        "verb:open",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE1",
+      "steps": [
+        {
+          "actuated_fixture": "cabinet_drawer",
+          "actuated_selectors": [
+            "top"
+          ],
+          "group_size": 1,
+          "moved_objects": [],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "open"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "bowl"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "cabinet_drawer",
+          "target_relation": "in",
+          "target_selectors": [
+            "top"
+          ],
+          "verb": "place"
+        }
+      ],
+      "task_index": 8
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"black_bowl\"],\"source_selectors\":[],\"target_receptacle\":\"plate\",\"target_relation\":\"on\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the black bowl on the plate",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:black_bowl",
+        "target_receptacle:plate",
+        "target_relation:on",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE1",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "black_bowl"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "plate",
+          "target_relation": "on",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 9
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"black_bowl\"],\"source_selectors\":[],\"target_receptacle\":\"cabinet\",\"target_relation\":\"on_top_of\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the black bowl on top of the cabinet",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:black_bowl",
+        "target_receptacle:cabinet",
+        "target_relation:on_top_of",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE1",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "black_bowl"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "cabinet",
+          "target_relation": "on_top_of",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 10
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":\"cabinet_drawer\",\"actuated_selectors\":[\"top\"],\"group_size\":1,\"moved_objects\":[],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"open\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "open the top drawer of the cabinet",
+      "order_signature": "open",
+      "primitive_role_atoms": [
+        "actuated_fixture:cabinet_drawer",
+        "actuated_selector:top",
+        "verb:open"
+      ],
+      "scene": "KITCHEN_SCENE2",
+      "steps": [
+        {
+          "actuated_fixture": "cabinet_drawer",
+          "actuated_selectors": [
+            "top"
+          ],
+          "group_size": 1,
+          "moved_objects": [],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "open"
+        }
+      ],
+      "task_index": 11
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"black_bowl\"],\"source_selectors\":[\"back\"],\"target_receptacle\":\"plate\",\"target_relation\":\"on\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the black bowl at the back on the plate",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:black_bowl",
+        "source_selector:back",
+        "target_receptacle:plate",
+        "target_relation:on",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE2",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "black_bowl"
+          ],
+          "order": 0,
+          "source_selectors": [
+            "back"
+          ],
+          "target_receptacle": "plate",
+          "target_relation": "on",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 12
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"black_bowl\"],\"source_selectors\":[\"front\"],\"target_receptacle\":\"plate\",\"target_relation\":\"on\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the black bowl at the front on the plate",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:black_bowl",
+        "source_selector:front",
+        "target_receptacle:plate",
+        "target_relation:on",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE2",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "black_bowl"
+          ],
+          "order": 0,
+          "source_selectors": [
+            "front"
+          ],
+          "target_receptacle": "plate",
+          "target_relation": "on",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 13
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"black_bowl\"],\"source_selectors\":[\"middle\"],\"target_receptacle\":\"plate\",\"target_relation\":\"on\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the middle black bowl on the plate",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:black_bowl",
+        "source_selector:middle",
+        "target_receptacle:plate",
+        "target_relation:on",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE2",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "black_bowl"
+          ],
+          "order": 0,
+          "source_selectors": [
+            "middle"
+          ],
+          "target_receptacle": "plate",
+          "target_relation": "on",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 14
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"black_bowl\"],\"source_selectors\":[\"middle\"],\"target_receptacle\":\"cabinet\",\"target_relation\":\"on_top_of\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the middle black bowl on top of the cabinet",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:black_bowl",
+        "source_selector:middle",
+        "target_receptacle:cabinet",
+        "target_relation:on_top_of",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE2",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "black_bowl"
+          ],
+          "order": 0,
+          "source_selectors": [
+            "middle"
+          ],
+          "target_receptacle": "cabinet",
+          "target_relation": "on_top_of",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 15
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"black_bowl\"],\"source_selectors\":[\"front\"],\"target_receptacle\":\"black_bowl\",\"target_relation\":\"on\",\"target_selectors\":[\"middle\"],\"verb\":\"stack\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "stack the black bowl at the front on the black bowl in the middle",
+      "order_signature": "stack",
+      "primitive_role_atoms": [
+        "moved_object:black_bowl",
+        "source_selector:front",
+        "target_receptacle:black_bowl",
+        "target_relation:on",
+        "target_selector:middle",
+        "verb:stack"
+      ],
+      "scene": "KITCHEN_SCENE2",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "black_bowl"
+          ],
+          "order": 0,
+          "source_selectors": [
+            "front"
+          ],
+          "target_receptacle": "black_bowl",
+          "target_relation": "on",
+          "target_selectors": [
+            "middle"
+          ],
+          "verb": "stack"
+        }
+      ],
+      "task_index": 16
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"black_bowl\"],\"source_selectors\":[\"middle\"],\"target_receptacle\":\"black_bowl\",\"target_relation\":\"on\",\"target_selectors\":[\"back\"],\"verb\":\"stack\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "stack the middle black bowl on the back black bowl",
+      "order_signature": "stack",
+      "primitive_role_atoms": [
+        "moved_object:black_bowl",
+        "source_selector:middle",
+        "target_receptacle:black_bowl",
+        "target_relation:on",
+        "target_selector:back",
+        "verb:stack"
+      ],
+      "scene": "KITCHEN_SCENE2",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "black_bowl"
+          ],
+          "order": 0,
+          "source_selectors": [
+            "middle"
+          ],
+          "target_receptacle": "black_bowl",
+          "target_relation": "on",
+          "target_selectors": [
+            "back"
+          ],
+          "verb": "stack"
+        }
+      ],
+      "task_index": 17
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"frying_pan\"],\"source_selectors\":[],\"target_receptacle\":\"stove\",\"target_relation\":\"on\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the frying pan on the stove",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:frying_pan",
+        "target_receptacle:stove",
+        "target_relation:on",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE3",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "frying_pan"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "stove",
+          "target_relation": "on",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 18
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"moka_pot\"],\"source_selectors\":[],\"target_receptacle\":\"stove\",\"target_relation\":\"on\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the moka pot on the stove",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:moka_pot",
+        "target_receptacle:stove",
+        "target_relation:on",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE3",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "moka_pot"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "stove",
+          "target_relation": "on",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 19
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":\"stove\",\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"turn_on\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "turn on the stove",
+      "order_signature": "turn_on",
+      "primitive_role_atoms": [
+        "actuated_fixture:stove",
+        "verb:turn_on"
+      ],
+      "scene": "KITCHEN_SCENE3",
+      "steps": [
+        {
+          "actuated_fixture": "stove",
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "turn_on"
+        }
+      ],
+      "task_index": 20
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":\"stove\",\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"turn_on\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"frying_pan\"],\"source_selectors\":[],\"target_receptacle\":\"stove\",\"target_relation\":\"on\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "turn on the stove and put the frying pan on it",
+      "order_signature": "turn_on>place",
+      "primitive_role_atoms": [
+        "actuated_fixture:stove",
+        "moved_object:frying_pan",
+        "target_receptacle:stove",
+        "target_relation:on",
+        "verb:place",
+        "verb:turn_on"
+      ],
+      "scene": "KITCHEN_SCENE3",
+      "steps": [
+        {
+          "actuated_fixture": "stove",
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "turn_on"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "frying_pan"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "stove",
+          "target_relation": "on",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 21
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":\"cabinet_drawer\",\"actuated_selectors\":[\"bottom\"],\"group_size\":1,\"moved_objects\":[],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"close\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "close the bottom drawer of the cabinet",
+      "order_signature": "close",
+      "primitive_role_atoms": [
+        "actuated_fixture:cabinet_drawer",
+        "actuated_selector:bottom",
+        "verb:close"
+      ],
+      "scene": "KITCHEN_SCENE4",
+      "steps": [
+        {
+          "actuated_fixture": "cabinet_drawer",
+          "actuated_selectors": [
+            "bottom"
+          ],
+          "group_size": 1,
+          "moved_objects": [],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "close"
+        }
+      ],
+      "task_index": 22
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":\"cabinet_drawer\",\"actuated_selectors\":[\"bottom\"],\"group_size\":1,\"moved_objects\":[],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"close\"},{\"actuated_fixture\":\"cabinet_drawer\",\"actuated_selectors\":[\"top\"],\"group_size\":1,\"moved_objects\":[],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"open\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "close the bottom drawer of the cabinet and open the top drawer",
+      "order_signature": "close>open",
+      "primitive_role_atoms": [
+        "actuated_fixture:cabinet_drawer",
+        "actuated_selector:bottom",
+        "actuated_selector:top",
+        "verb:close",
+        "verb:open"
+      ],
+      "scene": "KITCHEN_SCENE4",
+      "steps": [
+        {
+          "actuated_fixture": "cabinet_drawer",
+          "actuated_selectors": [
+            "bottom"
+          ],
+          "group_size": 1,
+          "moved_objects": [],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "close"
+        },
+        {
+          "actuated_fixture": "cabinet_drawer",
+          "actuated_selectors": [
+            "top"
+          ],
+          "group_size": 1,
+          "moved_objects": [],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "open"
+        }
+      ],
+      "task_index": 23
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"black_bowl\"],\"source_selectors\":[],\"target_receptacle\":\"cabinet_drawer\",\"target_relation\":\"in\",\"target_selectors\":[\"bottom\"],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the black bowl in the bottom drawer of the cabinet",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:black_bowl",
+        "target_receptacle:cabinet_drawer",
+        "target_relation:in",
+        "target_selector:bottom",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE4",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "black_bowl"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "cabinet_drawer",
+          "target_relation": "in",
+          "target_selectors": [
+            "bottom"
+          ],
+          "verb": "place"
+        }
+      ],
+      "task_index": 24
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"black_bowl\"],\"source_selectors\":[],\"target_receptacle\":\"cabinet\",\"target_relation\":\"on_top_of\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the black bowl on top of the cabinet",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:black_bowl",
+        "target_receptacle:cabinet",
+        "target_relation:on_top_of",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE4",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "black_bowl"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "cabinet",
+          "target_relation": "on_top_of",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 25
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"wine_bottle\"],\"source_selectors\":[],\"target_receptacle\":\"cabinet_drawer\",\"target_relation\":\"in\",\"target_selectors\":[\"bottom\"],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the wine bottle in the bottom drawer of the cabinet",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:wine_bottle",
+        "target_receptacle:cabinet_drawer",
+        "target_relation:in",
+        "target_selector:bottom",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE4",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "wine_bottle"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "cabinet_drawer",
+          "target_relation": "in",
+          "target_selectors": [
+            "bottom"
+          ],
+          "verb": "place"
+        }
+      ],
+      "task_index": 26
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"wine_bottle\"],\"source_selectors\":[],\"target_receptacle\":\"wine_rack\",\"target_relation\":\"on\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the wine bottle on the wine rack",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:wine_bottle",
+        "target_receptacle:wine_rack",
+        "target_relation:on",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE4",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "wine_bottle"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "wine_rack",
+          "target_relation": "on",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 27
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":\"cabinet_drawer\",\"actuated_selectors\":[\"top\"],\"group_size\":1,\"moved_objects\":[],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"close\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "close the top drawer of the cabinet",
+      "order_signature": "close",
+      "primitive_role_atoms": [
+        "actuated_fixture:cabinet_drawer",
+        "actuated_selector:top",
+        "verb:close"
+      ],
+      "scene": "KITCHEN_SCENE5",
+      "steps": [
+        {
+          "actuated_fixture": "cabinet_drawer",
+          "actuated_selectors": [
+            "top"
+          ],
+          "group_size": 1,
+          "moved_objects": [],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "close"
+        }
+      ],
+      "task_index": 28
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"black_bowl\"],\"source_selectors\":[],\"target_receptacle\":\"cabinet_drawer\",\"target_relation\":\"in\",\"target_selectors\":[\"top\"],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the black bowl in the top drawer of the cabinet",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:black_bowl",
+        "target_receptacle:cabinet_drawer",
+        "target_relation:in",
+        "target_selector:top",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE5",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "black_bowl"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "cabinet_drawer",
+          "target_relation": "in",
+          "target_selectors": [
+            "top"
+          ],
+          "verb": "place"
+        }
+      ],
+      "task_index": 29
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"black_bowl\"],\"source_selectors\":[],\"target_receptacle\":\"plate\",\"target_relation\":\"on\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the black bowl on the plate",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:black_bowl",
+        "target_receptacle:plate",
+        "target_relation:on",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE5",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "black_bowl"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "plate",
+          "target_relation": "on",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 30
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"black_bowl\"],\"source_selectors\":[],\"target_receptacle\":\"cabinet\",\"target_relation\":\"on_top_of\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the black bowl on top of the cabinet",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:black_bowl",
+        "target_receptacle:cabinet",
+        "target_relation:on_top_of",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE5",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "black_bowl"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "cabinet",
+          "target_relation": "on_top_of",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 31
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"ketchup\"],\"source_selectors\":[],\"target_receptacle\":\"cabinet_drawer\",\"target_relation\":\"in\",\"target_selectors\":[\"top\"],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the ketchup in the top drawer of the cabinet",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:ketchup",
+        "target_receptacle:cabinet_drawer",
+        "target_relation:in",
+        "target_selector:top",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE5",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "ketchup"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "cabinet_drawer",
+          "target_relation": "in",
+          "target_selectors": [
+            "top"
+          ],
+          "verb": "place"
+        }
+      ],
+      "task_index": 32
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":\"microwave\",\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"close\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "close the microwave",
+      "order_signature": "close",
+      "primitive_role_atoms": [
+        "actuated_fixture:microwave",
+        "verb:close"
+      ],
+      "scene": "KITCHEN_SCENE6",
+      "steps": [
+        {
+          "actuated_fixture": "microwave",
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "close"
+        }
+      ],
+      "task_index": 33
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"yellow_white_mug\"],\"source_selectors\":[],\"target_receptacle\":\"white_mug\",\"target_relation\":\"front_of\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the yellow and white mug to the front of the white mug",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:yellow_white_mug",
+        "target_receptacle:white_mug",
+        "target_relation:front_of",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE6",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "yellow_white_mug"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "white_mug",
+          "target_relation": "front_of",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 34
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":\"microwave\",\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"open\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "open the microwave",
+      "order_signature": "open",
+      "primitive_role_atoms": [
+        "actuated_fixture:microwave",
+        "verb:open"
+      ],
+      "scene": "KITCHEN_SCENE7",
+      "steps": [
+        {
+          "actuated_fixture": "microwave",
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "open"
+        }
+      ],
+      "task_index": 35
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"white_bowl\"],\"source_selectors\":[],\"target_receptacle\":\"plate\",\"target_relation\":\"on\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the white bowl on the plate",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:white_bowl",
+        "target_receptacle:plate",
+        "target_relation:on",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE7",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "white_bowl"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "plate",
+          "target_relation": "on",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 36
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"white_bowl\"],\"source_selectors\":[],\"target_receptacle\":\"plate\",\"target_relation\":\"right_of\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the white bowl to the right of the plate",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:white_bowl",
+        "target_receptacle:plate",
+        "target_relation:right_of",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE7",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "white_bowl"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "plate",
+          "target_relation": "right_of",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 37
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"moka_pot\"],\"source_selectors\":[\"right\"],\"target_receptacle\":\"stove\",\"target_relation\":\"on\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the right moka pot on the stove",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:moka_pot",
+        "source_selector:right",
+        "target_receptacle:stove",
+        "target_relation:on",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE8",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "moka_pot"
+          ],
+          "order": 0,
+          "source_selectors": [
+            "right"
+          ],
+          "target_receptacle": "stove",
+          "target_relation": "on",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 38
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":\"stove\",\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"turn_off\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "turn off the stove",
+      "order_signature": "turn_off",
+      "primitive_role_atoms": [
+        "actuated_fixture:stove",
+        "verb:turn_off"
+      ],
+      "scene": "KITCHEN_SCENE8",
+      "steps": [
+        {
+          "actuated_fixture": "stove",
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "turn_off"
+        }
+      ],
+      "task_index": 39
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"frying_pan\"],\"source_selectors\":[],\"target_receptacle\":\"cabinet_shelf\",\"target_relation\":\"on\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the frying pan on the cabinet shelf",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:frying_pan",
+        "target_receptacle:cabinet_shelf",
+        "target_relation:on",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE9",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "frying_pan"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "cabinet_shelf",
+          "target_relation": "on",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 40
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"frying_pan\"],\"source_selectors\":[],\"target_receptacle\":\"cabinet\",\"target_relation\":\"on_top_of\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the frying pan on top of the cabinet",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:frying_pan",
+        "target_receptacle:cabinet",
+        "target_relation:on_top_of",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE9",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "frying_pan"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "cabinet",
+          "target_relation": "on_top_of",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 41
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"frying_pan\"],\"source_selectors\":[],\"target_receptacle\":\"cabinet_shelf\",\"target_relation\":\"under\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the frying pan under the cabinet shelf",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:frying_pan",
+        "target_receptacle:cabinet_shelf",
+        "target_relation:under",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE9",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "frying_pan"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "cabinet_shelf",
+          "target_relation": "under",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 42
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"white_bowl\"],\"source_selectors\":[],\"target_receptacle\":\"cabinet\",\"target_relation\":\"on_top_of\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the white bowl on top of the cabinet",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:white_bowl",
+        "target_receptacle:cabinet",
+        "target_relation:on_top_of",
+        "verb:place"
+      ],
+      "scene": "KITCHEN_SCENE9",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "white_bowl"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "cabinet",
+          "target_relation": "on_top_of",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 43
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":\"stove\",\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"turn_on\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "turn on the stove",
+      "order_signature": "turn_on",
+      "primitive_role_atoms": [
+        "actuated_fixture:stove",
+        "verb:turn_on"
+      ],
+      "scene": "KITCHEN_SCENE9",
+      "steps": [
+        {
+          "actuated_fixture": "stove",
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "turn_on"
+        }
+      ],
+      "task_index": 44
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":\"stove\",\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"turn_on\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"frying_pan\"],\"source_selectors\":[],\"target_receptacle\":\"stove\",\"target_relation\":\"on\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "turn on the stove and put the frying pan on it",
+      "order_signature": "turn_on>place",
+      "primitive_role_atoms": [
+        "actuated_fixture:stove",
+        "moved_object:frying_pan",
+        "target_receptacle:stove",
+        "target_relation:on",
+        "verb:place",
+        "verb:turn_on"
+      ],
+      "scene": "KITCHEN_SCENE9",
+      "steps": [
+        {
+          "actuated_fixture": "stove",
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "turn_on"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "frying_pan"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "stove",
+          "target_relation": "on",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 45
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"alphabet_soup\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"alphabet_soup\"],\"source_selectors\":[],\"target_receptacle\":\"basket\",\"target_relation\":\"in\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the alphabet soup and put it in the basket",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:alphabet_soup",
+        "target_receptacle:basket",
+        "target_relation:in",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE1",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "alphabet_soup"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "alphabet_soup"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "basket",
+          "target_relation": "in",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 46
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"cream_cheese_box\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"cream_cheese_box\"],\"source_selectors\":[],\"target_receptacle\":\"basket\",\"target_relation\":\"in\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the cream cheese box and put it in the basket",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:cream_cheese_box",
+        "target_receptacle:basket",
+        "target_relation:in",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE1",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "cream_cheese_box"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "cream_cheese_box"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "basket",
+          "target_relation": "in",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 47
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"ketchup\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"ketchup\"],\"source_selectors\":[],\"target_receptacle\":\"basket\",\"target_relation\":\"in\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the ketchup and put it in the basket",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:ketchup",
+        "target_receptacle:basket",
+        "target_relation:in",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE1",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "ketchup"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "ketchup"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "basket",
+          "target_relation": "in",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 48
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"tomato_sauce\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"tomato_sauce\"],\"source_selectors\":[],\"target_receptacle\":\"basket\",\"target_relation\":\"in\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the tomato sauce and put it in the basket",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:tomato_sauce",
+        "target_receptacle:basket",
+        "target_relation:in",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE1",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "tomato_sauce"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "tomato_sauce"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "basket",
+          "target_relation": "in",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 49
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"alphabet_soup\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"alphabet_soup\"],\"source_selectors\":[],\"target_receptacle\":\"basket\",\"target_relation\":\"in\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the alphabet soup and put it in the basket",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:alphabet_soup",
+        "target_receptacle:basket",
+        "target_relation:in",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE2",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "alphabet_soup"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "alphabet_soup"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "basket",
+          "target_relation": "in",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 50
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"butter\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"butter\"],\"source_selectors\":[],\"target_receptacle\":\"basket\",\"target_relation\":\"in\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the butter and put it in the basket",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:butter",
+        "target_receptacle:basket",
+        "target_relation:in",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE2",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "butter"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "butter"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "basket",
+          "target_relation": "in",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 51
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"milk\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"milk\"],\"source_selectors\":[],\"target_receptacle\":\"basket\",\"target_relation\":\"in\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the milk and put it in the basket",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:milk",
+        "target_receptacle:basket",
+        "target_relation:in",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE2",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "milk"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "milk"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "basket",
+          "target_relation": "in",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 52
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"orange_juice\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"orange_juice\"],\"source_selectors\":[],\"target_receptacle\":\"basket\",\"target_relation\":\"in\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the orange juice and put it in the basket",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:orange_juice",
+        "target_receptacle:basket",
+        "target_relation:in",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE2",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "orange_juice"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "orange_juice"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "basket",
+          "target_relation": "in",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 53
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"tomato_sauce\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"tomato_sauce\"],\"source_selectors\":[],\"target_receptacle\":\"basket\",\"target_relation\":\"in\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the tomato sauce and put it in the basket",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:tomato_sauce",
+        "target_receptacle:basket",
+        "target_relation:in",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE2",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "tomato_sauce"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "tomato_sauce"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "basket",
+          "target_relation": "in",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 54
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"alphabet_soup\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"alphabet_soup\"],\"source_selectors\":[],\"target_receptacle\":\"tray\",\"target_relation\":\"in\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the alphabet soup and put it in the tray",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:alphabet_soup",
+        "target_receptacle:tray",
+        "target_relation:in",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE3",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "alphabet_soup"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "alphabet_soup"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "tray",
+          "target_relation": "in",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 55
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"butter\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"butter\"],\"source_selectors\":[],\"target_receptacle\":\"tray\",\"target_relation\":\"in\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the butter and put it in the tray",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:butter",
+        "target_receptacle:tray",
+        "target_relation:in",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE3",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "butter"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "butter"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "tray",
+          "target_relation": "in",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 56
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"cream_cheese\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"cream_cheese\"],\"source_selectors\":[],\"target_receptacle\":\"tray\",\"target_relation\":\"in\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the cream cheese and put it in the tray",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:cream_cheese",
+        "target_receptacle:tray",
+        "target_relation:in",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE3",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "cream_cheese"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "cream_cheese"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "tray",
+          "target_relation": "in",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 57
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"ketchup\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"ketchup\"],\"source_selectors\":[],\"target_receptacle\":\"tray\",\"target_relation\":\"in\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the ketchup and put it in the tray",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:ketchup",
+        "target_receptacle:tray",
+        "target_relation:in",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE3",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "ketchup"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "ketchup"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "tray",
+          "target_relation": "in",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 58
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"tomato_sauce\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"tomato_sauce\"],\"source_selectors\":[],\"target_receptacle\":\"tray\",\"target_relation\":\"in\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the tomato sauce and put it in the tray",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:tomato_sauce",
+        "target_receptacle:tray",
+        "target_relation:in",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE3",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "tomato_sauce"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "tomato_sauce"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "tray",
+          "target_relation": "in",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 59
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"black_bowl\"],\"source_selectors\":[\"left\"],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"black_bowl\"],\"source_selectors\":[\"left\"],\"target_receptacle\":\"tray\",\"target_relation\":\"in\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the black bowl on the left and put it in the tray",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:black_bowl",
+        "source_selector:left",
+        "target_receptacle:tray",
+        "target_relation:in",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE4",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "black_bowl"
+          ],
+          "order": 0,
+          "source_selectors": [
+            "left"
+          ],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "black_bowl"
+          ],
+          "order": 1,
+          "source_selectors": [
+            "left"
+          ],
+          "target_receptacle": "tray",
+          "target_relation": "in",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 60
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"chocolate_pudding\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"chocolate_pudding\"],\"source_selectors\":[],\"target_receptacle\":\"tray\",\"target_relation\":\"in\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the chocolate pudding and put it in the tray",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:chocolate_pudding",
+        "target_receptacle:tray",
+        "target_relation:in",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE4",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "chocolate_pudding"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "chocolate_pudding"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "tray",
+          "target_relation": "in",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 61
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"salad_dressing\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"salad_dressing\"],\"source_selectors\":[],\"target_receptacle\":\"tray\",\"target_relation\":\"in\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the salad dressing and put it in the tray",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:salad_dressing",
+        "target_receptacle:tray",
+        "target_relation:in",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE4",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "salad_dressing"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "salad_dressing"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "tray",
+          "target_relation": "in",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 62
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"bowl\"],\"source_selectors\":[\"left\"],\"target_receptacle\":\"bowl\",\"target_relation\":\"on\",\"target_selectors\":[\"right\"],\"verb\":\"stack\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":2,\"moved_objects\":[\"bowl\"],\"source_selectors\":[],\"target_receptacle\":\"tray\",\"target_relation\":\"in\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "stack the left bowl on the right bowl and place them in the tray",
+      "order_signature": "stack>place",
+      "primitive_role_atoms": [
+        "moved_object:bowl",
+        "source_selector:left",
+        "target_receptacle:bowl",
+        "target_receptacle:tray",
+        "target_relation:in",
+        "target_relation:on",
+        "target_selector:right",
+        "verb:place",
+        "verb:stack"
+      ],
+      "scene": "LIVING_ROOM_SCENE4",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "bowl"
+          ],
+          "order": 0,
+          "source_selectors": [
+            "left"
+          ],
+          "target_receptacle": "bowl",
+          "target_relation": "on",
+          "target_selectors": [
+            "right"
+          ],
+          "verb": "stack"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 2,
+          "moved_objects": [
+            "bowl"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "tray",
+          "target_relation": "in",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 63
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"bowl\"],\"source_selectors\":[\"right\"],\"target_receptacle\":\"bowl\",\"target_relation\":\"on\",\"target_selectors\":[\"left\"],\"verb\":\"stack\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":2,\"moved_objects\":[\"bowl\"],\"source_selectors\":[],\"target_receptacle\":\"tray\",\"target_relation\":\"in\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "stack the right bowl on the left bowl and place them in the tray",
+      "order_signature": "stack>place",
+      "primitive_role_atoms": [
+        "moved_object:bowl",
+        "source_selector:right",
+        "target_receptacle:bowl",
+        "target_receptacle:tray",
+        "target_relation:in",
+        "target_relation:on",
+        "target_selector:left",
+        "verb:place",
+        "verb:stack"
+      ],
+      "scene": "LIVING_ROOM_SCENE4",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "bowl"
+          ],
+          "order": 0,
+          "source_selectors": [
+            "right"
+          ],
+          "target_receptacle": "bowl",
+          "target_relation": "on",
+          "target_selectors": [
+            "left"
+          ],
+          "verb": "stack"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 2,
+          "moved_objects": [
+            "bowl"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "tray",
+          "target_relation": "in",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 64
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"red_mug\"],\"source_selectors\":[],\"target_receptacle\":\"plate\",\"target_relation\":\"on\",\"target_selectors\":[\"left\"],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the red mug on the left plate",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:red_mug",
+        "target_receptacle:plate",
+        "target_relation:on",
+        "target_selector:left",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE5",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "red_mug"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "plate",
+          "target_relation": "on",
+          "target_selectors": [
+            "left"
+          ],
+          "verb": "place"
+        }
+      ],
+      "task_index": 65
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"red_mug\"],\"source_selectors\":[],\"target_receptacle\":\"plate\",\"target_relation\":\"on\",\"target_selectors\":[\"right\"],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the red mug on the right plate",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:red_mug",
+        "target_receptacle:plate",
+        "target_relation:on",
+        "target_selector:right",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE5",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "red_mug"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "plate",
+          "target_relation": "on",
+          "target_selectors": [
+            "right"
+          ],
+          "verb": "place"
+        }
+      ],
+      "task_index": 66
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"white_mug\"],\"source_selectors\":[],\"target_receptacle\":\"plate\",\"target_relation\":\"on\",\"target_selectors\":[\"left\"],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the white mug on the left plate",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:white_mug",
+        "target_receptacle:plate",
+        "target_relation:on",
+        "target_selector:left",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE5",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "white_mug"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "plate",
+          "target_relation": "on",
+          "target_selectors": [
+            "left"
+          ],
+          "verb": "place"
+        }
+      ],
+      "task_index": 67
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"yellow_white_mug\"],\"source_selectors\":[],\"target_receptacle\":\"plate\",\"target_relation\":\"on\",\"target_selectors\":[\"right\"],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the yellow and white mug on the right plate",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:yellow_white_mug",
+        "target_receptacle:plate",
+        "target_relation:on",
+        "target_selector:right",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE5",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "yellow_white_mug"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "plate",
+          "target_relation": "on",
+          "target_selectors": [
+            "right"
+          ],
+          "verb": "place"
+        }
+      ],
+      "task_index": 68
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"chocolate_pudding\"],\"source_selectors\":[],\"target_receptacle\":\"plate\",\"target_relation\":\"left_of\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the chocolate pudding to the left of the plate",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:chocolate_pudding",
+        "target_receptacle:plate",
+        "target_relation:left_of",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE6",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "chocolate_pudding"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "plate",
+          "target_relation": "left_of",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 69
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"chocolate_pudding\"],\"source_selectors\":[],\"target_receptacle\":\"plate\",\"target_relation\":\"right_of\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the chocolate pudding to the right of the plate",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:chocolate_pudding",
+        "target_receptacle:plate",
+        "target_relation:right_of",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE6",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "chocolate_pudding"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "plate",
+          "target_relation": "right_of",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 70
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"red_mug\"],\"source_selectors\":[],\"target_receptacle\":\"plate\",\"target_relation\":\"on\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the red mug on the plate",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:red_mug",
+        "target_receptacle:plate",
+        "target_relation:on",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE6",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "red_mug"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "plate",
+          "target_relation": "on",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 71
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"white_mug\"],\"source_selectors\":[],\"target_receptacle\":\"plate\",\"target_relation\":\"on\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 1,
+        "operation_count": 1
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "put the white mug on the plate",
+      "order_signature": "place",
+      "primitive_role_atoms": [
+        "moved_object:white_mug",
+        "target_receptacle:plate",
+        "target_relation:on",
+        "verb:place"
+      ],
+      "scene": "LIVING_ROOM_SCENE6",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "white_mug"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": "plate",
+          "target_relation": "on",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 72
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[],\"target_receptacle\":\"caddy\",\"target_relation\":\"in\",\"target_selectors\":[\"front_compartment\"],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the book and place it in the front compartment of the caddy",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:book",
+        "target_receptacle:caddy",
+        "target_relation:in",
+        "target_selector:front_compartment",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "STUDY_SCENE1",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "caddy",
+          "target_relation": "in",
+          "target_selectors": [
+            "front_compartment"
+          ],
+          "verb": "place"
+        }
+      ],
+      "task_index": 73
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[],\"target_receptacle\":\"caddy\",\"target_relation\":\"in\",\"target_selectors\":[\"left_compartment\"],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the book and place it in the left compartment of the caddy",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:book",
+        "target_receptacle:caddy",
+        "target_relation:in",
+        "target_selector:left_compartment",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "STUDY_SCENE1",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "caddy",
+          "target_relation": "in",
+          "target_selectors": [
+            "left_compartment"
+          ],
+          "verb": "place"
+        }
+      ],
+      "task_index": 74
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[],\"target_receptacle\":\"caddy\",\"target_relation\":\"in\",\"target_selectors\":[\"right_compartment\"],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the book and place it in the right compartment of the caddy",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:book",
+        "target_receptacle:caddy",
+        "target_relation:in",
+        "target_selector:right_compartment",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "STUDY_SCENE1",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "caddy",
+          "target_relation": "in",
+          "target_selectors": [
+            "right_compartment"
+          ],
+          "verb": "place"
+        }
+      ],
+      "task_index": 75
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"yellow_white_mug\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"yellow_white_mug\"],\"source_selectors\":[],\"target_receptacle\":\"caddy\",\"target_relation\":\"right_of\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the yellow and white mug and place it to the right of the caddy",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:yellow_white_mug",
+        "target_receptacle:caddy",
+        "target_relation:right_of",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "STUDY_SCENE1",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "yellow_white_mug"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "yellow_white_mug"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "caddy",
+          "target_relation": "right_of",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 76
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[],\"target_receptacle\":\"caddy\",\"target_relation\":\"in\",\"target_selectors\":[\"back_compartment\"],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the book and place it in the back compartment of the caddy",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:book",
+        "target_receptacle:caddy",
+        "target_relation:in",
+        "target_selector:back_compartment",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "STUDY_SCENE2",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "caddy",
+          "target_relation": "in",
+          "target_selectors": [
+            "back_compartment"
+          ],
+          "verb": "place"
+        }
+      ],
+      "task_index": 77
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[],\"target_receptacle\":\"caddy\",\"target_relation\":\"in\",\"target_selectors\":[\"front_compartment\"],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the book and place it in the front compartment of the caddy",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:book",
+        "target_receptacle:caddy",
+        "target_relation:in",
+        "target_selector:front_compartment",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "STUDY_SCENE2",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "caddy",
+          "target_relation": "in",
+          "target_selectors": [
+            "front_compartment"
+          ],
+          "verb": "place"
+        }
+      ],
+      "task_index": 78
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[],\"target_receptacle\":\"caddy\",\"target_relation\":\"in\",\"target_selectors\":[\"left_compartment\"],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the book and place it in the left compartment of the caddy",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:book",
+        "target_receptacle:caddy",
+        "target_relation:in",
+        "target_selector:left_compartment",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "STUDY_SCENE2",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "caddy",
+          "target_relation": "in",
+          "target_selectors": [
+            "left_compartment"
+          ],
+          "verb": "place"
+        }
+      ],
+      "task_index": 79
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[],\"target_receptacle\":\"caddy\",\"target_relation\":\"in\",\"target_selectors\":[\"right_compartment\"],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the book and place it in the right compartment of the caddy",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:book",
+        "target_receptacle:caddy",
+        "target_relation:in",
+        "target_selector:right_compartment",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "STUDY_SCENE2",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "caddy",
+          "target_relation": "in",
+          "target_selectors": [
+            "right_compartment"
+          ],
+          "verb": "place"
+        }
+      ],
+      "task_index": 80
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[],\"target_receptacle\":\"caddy\",\"target_relation\":\"in\",\"target_selectors\":[\"front_compartment\"],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the book and place it in the front compartment of the caddy",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:book",
+        "target_receptacle:caddy",
+        "target_relation:in",
+        "target_selector:front_compartment",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "STUDY_SCENE3",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "caddy",
+          "target_relation": "in",
+          "target_selectors": [
+            "front_compartment"
+          ],
+          "verb": "place"
+        }
+      ],
+      "task_index": 81
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[],\"target_receptacle\":\"caddy\",\"target_relation\":\"in\",\"target_selectors\":[\"left_compartment\"],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the book and place it in the left compartment of the caddy",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:book",
+        "target_receptacle:caddy",
+        "target_relation:in",
+        "target_selector:left_compartment",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "STUDY_SCENE3",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "caddy",
+          "target_relation": "in",
+          "target_selectors": [
+            "left_compartment"
+          ],
+          "verb": "place"
+        }
+      ],
+      "task_index": 82
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[],\"target_receptacle\":\"caddy\",\"target_relation\":\"in\",\"target_selectors\":[\"right_compartment\"],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the book and place it in the right compartment of the caddy",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:book",
+        "target_receptacle:caddy",
+        "target_relation:in",
+        "target_selector:right_compartment",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "STUDY_SCENE3",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "caddy",
+          "target_relation": "in",
+          "target_selectors": [
+            "right_compartment"
+          ],
+          "verb": "place"
+        }
+      ],
+      "task_index": 83
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"red_mug\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"red_mug\"],\"source_selectors\":[],\"target_receptacle\":\"caddy\",\"target_relation\":\"right_of\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the red mug and place it to the right of the caddy",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:red_mug",
+        "target_receptacle:caddy",
+        "target_relation:right_of",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "STUDY_SCENE3",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "red_mug"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "red_mug"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "caddy",
+          "target_relation": "right_of",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 84
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"white_mug\"],\"source_selectors\":[],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"white_mug\"],\"source_selectors\":[],\"target_receptacle\":\"caddy\",\"target_relation\":\"right_of\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the white mug and place it to the right of the caddy",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:white_mug",
+        "target_receptacle:caddy",
+        "target_relation:right_of",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "STUDY_SCENE3",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "white_mug"
+          ],
+          "order": 0,
+          "source_selectors": [],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "white_mug"
+          ],
+          "order": 1,
+          "source_selectors": [],
+          "target_receptacle": "caddy",
+          "target_relation": "right_of",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 85
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[\"middle\"],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[\"middle\"],\"target_receptacle\":\"cabinet_shelf\",\"target_relation\":\"on\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the book in the middle and place it on the cabinet shelf",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:book",
+        "source_selector:middle",
+        "target_receptacle:cabinet_shelf",
+        "target_relation:on",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "STUDY_SCENE4",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 0,
+          "source_selectors": [
+            "middle"
+          ],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 1,
+          "source_selectors": [
+            "middle"
+          ],
+          "target_receptacle": "cabinet_shelf",
+          "target_relation": "on",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 86
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[\"left\"],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[\"left\"],\"target_receptacle\":\"cabinet_shelf\",\"target_relation\":\"on_top_of\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the book on the left and place it on top of the shelf",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:book",
+        "source_selector:left",
+        "target_receptacle:cabinet_shelf",
+        "target_relation:on_top_of",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "STUDY_SCENE4",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 0,
+          "source_selectors": [
+            "left"
+          ],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 1,
+          "source_selectors": [
+            "left"
+          ],
+          "target_receptacle": "cabinet_shelf",
+          "target_relation": "on_top_of",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 87
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[\"right\"],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[\"right\"],\"target_receptacle\":\"cabinet_shelf\",\"target_relation\":\"on\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the book on the right and place it on the cabinet shelf",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:book",
+        "source_selector:right",
+        "target_receptacle:cabinet_shelf",
+        "target_relation:on",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "STUDY_SCENE4",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 0,
+          "source_selectors": [
+            "right"
+          ],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 1,
+          "source_selectors": [
+            "right"
+          ],
+          "target_receptacle": "cabinet_shelf",
+          "target_relation": "on",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 88
+    },
+    {
+      "composition_signature": "[{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[\"right\"],\"target_receptacle\":null,\"target_relation\":null,\"target_selectors\":[],\"verb\":\"pick_up\"},{\"actuated_fixture\":null,\"actuated_selectors\":[],\"group_size\":1,\"moved_objects\":[\"book\"],\"source_selectors\":[\"right\"],\"target_receptacle\":\"cabinet_shelf\",\"target_relation\":\"under\",\"target_selectors\":[],\"verb\":\"place\"}]",
+      "difficulty": {
+        "composition_depth": 2,
+        "operation_count": 2
+      },
+      "factor_schema": "libero90_role_factors_v1",
+      "language": "pick up the book on the right and place it under the cabinet shelf",
+      "order_signature": "pick_up>place",
+      "primitive_role_atoms": [
+        "moved_object:book",
+        "source_selector:right",
+        "target_receptacle:cabinet_shelf",
+        "target_relation:under",
+        "verb:pick_up",
+        "verb:place"
+      ],
+      "scene": "STUDY_SCENE4",
+      "steps": [
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 0,
+          "source_selectors": [
+            "right"
+          ],
+          "target_receptacle": null,
+          "target_relation": null,
+          "target_selectors": [],
+          "verb": "pick_up"
+        },
+        {
+          "actuated_fixture": null,
+          "actuated_selectors": [],
+          "group_size": 1,
+          "moved_objects": [
+            "book"
+          ],
+          "order": 1,
+          "source_selectors": [
+            "right"
+          ],
+          "target_receptacle": "cabinet_shelf",
+          "target_relation": "under",
+          "target_selectors": [],
+          "verb": "place"
+        }
+      ],
+      "task_index": 89
+    }
+  ]
+}

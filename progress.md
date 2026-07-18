@@ -193,6 +193,32 @@
   perform normal-path telemetry cleanup with `INT`/`TERM` handlers, and return
   the captured rc; shell smokes preserve 0/7/124 for success/failure/timeout and
   leave no sampler process.
+- Owner authorization resumed the same first-stage Goal and selected the
+  recommended one-time specification-only split recovery. The original split,
+  failure report, and commit provenance are preserved; no LIBERO-90 policy
+  outcome or held privileged surface was read.
+- New strict owners separate language-role parsing (`libero_task_factors.py`),
+  pure deterministic search/audit (`libero_split.py`), and the sole pinned
+  task-map reseal/verification CLI (`libero_split_reseal.py`). The checked-in
+  90-task record is `configs/libero90_split_reseal.json`; the active contract
+  pins its SHA256, specification hash, parser schema, coverage threshold,
+  algorithm, seed, candidate count, old split commit, and active IDs.
+- The deterministic full search completed in 20.39 seconds on one CPU core with
+  18,240 KiB peak RSS and no GPU. Its result has zero role-coverage violations,
+  minimum source exposure two across 41 evaluation roles, 30/30 unseen full
+  compositions, 30/30 same-scene source controls, and 28/30 role-sharing
+  same-scene hard negatives. A second regeneration from the modified active
+  contract matched the 144KB record byte-for-byte at SHA256 `9f5bc62e...8428`.
+- The canonical manifest now binds the sealed language factors by task
+  index/scene/instruction before data audit and will expose role atoms/order plus
+  split metrics in the dependency-free local HTML report. The previous
+  normalization is explicitly tied to the rejected split; a fresh clean-commit
+  manifest run is the next required canonical artifact.
+- Milestone verification passes all 68 repository tests, full contract/record
+  validation, Python compilation, shell syntax, rendered-report JavaScript
+  syntax, diff whitespace, and secret/path scans. Cleanup removed the verified
+  duplicate 144,387-byte temporary candidate plus five regenerable pytest-cache
+  files (150,794 bytes total); all long-run and canonical evidence was retained.
 
 ## Current phase
 
@@ -205,10 +231,13 @@ reproducibility: the unchanged async evaluator uses one predeclared measured-saf
 batch/mode across every arm, task-level repetition and confidence intervals are
 primary, and batch-1 exactness is a small audit. The official-overlap
 specification pilot is complete and authorizes scaling only that diagnostic.
-The canonical LIBERO-90 manifest is complete. Its role-aware audit has falsified
-the current split-validity condition, so an owner decision on one-time split
-resealing versus claim narrowing is now required before the remaining Gate -1
-specification probes are frozen.
+The previous canonical LIBERO-90 manifest is complete as data-integrity
+evidence, and its role-aware audit falsified the original split. The authorized
+one-time specification-only recovery is now permanently sealed with no policy
+outcome input. Gate -1 is still in progress: the fresh canonical manifest and
+source-only normalization under the new IDs must pass before the remaining
+same-init specification and language/video causal probes. Writer training
+remains unauthorized.
 
 ## Implementation ownership review
 
@@ -241,6 +270,13 @@ specification probes are frozen.
   `src/ember/libero_report.py` owns only the dependency-free read-only HTML
   projection. The shell wrapper is thin and no alternate downloader, converter,
   or manifest format was added.
+- `src/ember/libero_task_factors.py` owns the strict fail-closed language-role
+  grammar. `src/ember/libero_split.py` owns pure role-coverage audit and
+  deterministic split search. `src/ember/libero_split_reseal.py` is the only
+  pinned task-map record generator/verifier and does not read BDDL, dataset, or
+  policy surfaces. `configs/libero90_split_reseal.json` is generated evidence,
+  while `configs/phase0.toml` remains the active contract. These are distinct
+  current responsibilities, not parallel split implementations.
 - This manifest surface adds five active files and roughly 1.3k source/test/
   wrapper lines, so the architecture guard requires an explicit rationale. The
   size is driven by the current second-use boundary between leakage enforcement,
@@ -275,20 +311,24 @@ specification probes are frozen.
 
 ## Immediate handoff
 
-1. Decide whether to authorize one specification-only split redesign before any
-   LIBERO-90 policy result, or preserve the split and narrow the claim. Do not
-   mutate task IDs until that material decision is recorded.
-2. Scale only the prompt-path/specification diagnostic using matched fixed-batch
-   controls and task-level uncertainty on legal official-overlap/source and
-   validation surfaces. Preserve both strict identity failures and do not use
-   held results to choose thresholds or remedies.
+1. Commit the permanent reseal from a fully verified clean tree, then regenerate
+   the leakage-safe canonical LIBERO-90 manifest and source-only normalization
+   under the new source IDs. Confirm validation/held numeric access is still
+   exactly zero and publish the updated local HTML view.
+2. Continue the remaining same-init executable-goal and language/video causal
+   controls under the frozen fixed-batch evaluator contract. Do not use held
+   results to choose thresholds, task IDs, or remedies.
 3. Predeclare and run the smallest closed-loop useful-update oracle only after
-   benchmark/specification probes are mechanically valid.
+   the remaining benchmark/specification mechanics are valid.
 
 ## Last verified handoff facts
 
 - The repository now contains only lightweight environment/contract code and
   tests; external models, data, caches, and outputs remain outside Git.
+- The permanent split record is `configs/libero90_split_reseal.json` at SHA256
+  `9f5bc62e15e2cb07887e97bc98630a3f527ac6b5e253f41c203cf37459568428`.
+  It is specification-only, reproduces the old failure, validates the new split,
+  and does not constitute a Gate -1 or Writer authorization decision.
 - `docs/expert_plan.md` uses an obsolete eight-GPU planning envelope; active
   execution must recalculate every launch for at most four GPUs.
 - A gate failure requires diagnosis and bounded recovery, not immediate

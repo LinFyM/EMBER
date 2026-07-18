@@ -509,8 +509,8 @@
   conservative audit over only the permitted language specification therefore
   counts role-specific verbs, moved objects, target relations, and target
   receptacles at the task grain.
-- The current split has zero source tasks for `stack` (validation 16/63, held
-  17/64), moving `tomato_sauce` (validation 49/59, held 54), target relation
+- The rejected original split has zero source tasks for `stack` (validation
+  16/63, held 17/64), moving `tomato_sauce` (validation 49/59, held 54), target relation
   `under` (validation 42/89), target relation `front_of` (held 34), and target
   receptacle `wine_rack` (held 27). It has only one source task for moving
   `moka_pot` (source 38, validation 19), `wine_bottle` (source 26, held 27), and
@@ -518,11 +518,52 @@
 - These are exact task-specification matches, not held executable labels or
   policy results. They are sufficient to falsify the predeclared requirement
   that every validation/held atom occur in at least two source tasks. Gate -1
-  split validity therefore fails before any LIBERO-90 policy result, and Writer
-  training remains unauthorized.
+  original split validity therefore failed before any LIBERO-90 policy result;
+  this preserved failure motivated the permanent reseal below.
 - The durable technical report is `docs/benchmark_validity_report.md`. The
   recommended bounded recovery is a one-time specification-only split redesign
   and permanent reseal before LIBERO-90 training/evaluation. Preserving the
-  current split instead requires narrowing the source-covered compositional
-  claim. Counting distractors, using held privileged labels, or changing factor
-  semantics after policy results is disallowed.
+  original split instead would have required narrowing the source-covered
+  compositional claim. Counting distractors, using held privileged labels, or
+  changing factor semantics after policy results is disallowed.
+
+## Gate -1 one-time specification-only split reseal
+
+- Owner authorization selected the recommended bounded recovery before any
+  LIBERO-90 policy training/evaluation outcome. The rejected split and its
+  failure packet remain intact in `configs/libero90_split_reseal.json`,
+  `docs/benchmark_validity_report.md`, and Git commit `5897406`; recovery does
+  not relabel the original split as valid.
+- The pinned task-map Git blob is the sole redesign authority. Its 90 ordered
+  task names deterministically yield only `task_index`, scene identity, and
+  English instruction. The code has no BDDL, HDF5, simulator, model, reward, or
+  normalization input, and the sealed record declares an empty privileged-field
+  access list. The allowed specification surface hash is
+  `9ec40758b7b5c2a6c3c0aacb5e41c2a0bd30a21e702e9b0f1187c1adeeb8ea39`.
+- `libero90_role_factors_v1` parses all 90 instructions exactly once and fails
+  closed on unknown or ambiguous templates. It distinguishes verbs, moved
+  grammatical patients, destination receptacles/relations, source and target
+  selectors, actuated fixtures/subregions, and explicit operation order.
+  Distractor presence is never role exposure; `pick_up > place` and
+  `stack > place` remain ordered two-step compositions.
+- The frozen search is
+  `sha256_multistart_greedy_plus_steepest_swap_v1`, seed `20260718`, 16,384
+  candidates, and a hard minimum of two source-task occurrences for every
+  validation/held primitive role. Its predeclared priorities then maximize
+  source-unseen full compositions and same-scene controls before scene/difficulty
+  balance and prior-assignment retention.
+- The permanent result has 41 evaluation primitive roles, zero coverage
+  violations, and a minimum observed source count of two. All 30 evaluation
+  tasks have an exact source-unseen full composition and a different same-scene
+  source task; 28 also have a role-sharing same-scene hard negative. Two-step
+  counts are 29/60 source, 7/15 validation, and 8/15 held. These are benchmark
+  design mechanics, not policy competence or causal-use evidence.
+- The canonical reseal record is 144KB with SHA256
+  `9f5bc62e15e2cb07887e97bc98630a3f527ac6b5e253f41c203cf37459568428`.
+  It regenerates byte-for-byte after installing the new active split because
+  the old split is explicitly retained as `prior_split`. Gate -1 thresholds did
+  not change, and the active split is now permanent.
+- The previous canonical HDF5 audit remains valid as data-integrity evidence but
+  its source-only normalization belongs to the rejected split. A fresh
+  canonical manifest must recompute normalization under the resealed source IDs
+  and re-establish zero validation/held numeric access before downstream use.

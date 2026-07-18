@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from ember.libero_manifest import (  # noqa: E402
     SCENE_RE,
+    _attach_specification_factors,
     _bddl_authority,
     _factor_coverage,
     ManifestError,
@@ -26,6 +27,8 @@ from ember.libero_manifest import (  # noqa: E402
     render_report,
     write_artifacts,
 )
+from ember.contracts import load_contract  # noqa: E402
+from ember.libero_split_reseal import load_sealed_record  # noqa: E402
 
 
 def _write_demo_file(path: Path, *, task_name: str, language: str) -> None:
@@ -201,6 +204,38 @@ class LiberoManifestTest(unittest.TestCase):
                 "not_evaluated_due_to_access_policy",
             )
 
+    def test_sealed_language_factors_attach_without_held_bddl_access(self) -> None:
+        contract = load_contract(ROOT / "configs" / "phase0.toml")
+        record = load_sealed_record(
+            ROOT / contract["split_reseal"]["record_path"], contract
+        )
+        authorities = [
+            {
+                "task_index": task["task_index"],
+                "scene": task["scene"],
+                "language": task["language"],
+                "split": next(
+                    name
+                    for name in ("source", "validation", "held_out")
+                    if task["task_index"] in record["active_split"][name]
+                ),
+                "bddl": {"semantic_access_policy": "identity_only_not_parsed"},
+            }
+            for task in record["tasks"]
+        ]
+
+        _attach_specification_factors(authorities, record)
+
+        self.assertEqual(len(authorities), 90)
+        self.assertIn("primitive_role_atoms", authorities[0]["specification_factors"])
+        self.assertEqual(
+            authorities[0]["bddl"]["semantic_access_policy"],
+            "identity_only_not_parsed",
+        )
+        authorities[0]["language"] = "tampered allowed specification"
+        with self.assertRaisesRegex(ManifestError, "sealed specification"):
+            _attach_specification_factors(authorities, record)
+
     def test_metadata_only_audit_never_returns_privileged_samples(self) -> None:
         task_name = "KITCHEN_SCENE1_test_task"
         path = self.root / f"{task_name}_demo.hdf5"
@@ -342,6 +377,10 @@ class LiberoManifestTest(unittest.TestCase):
                     "split": "source",
                     "demonstrations": {"count": 50, "steps": 100},
                     "quality": {"status": "pass", "warning_count": 0},
+                    "specification_factors": {
+                        "order_signature": "place",
+                        "primitive_role_atoms": ["verb:place"],
+                    },
                 }
             ],
         }
@@ -349,6 +388,7 @@ class LiberoManifestTest(unittest.TestCase):
 
         self.assertIn("split-filter", html)
         self.assertIn("KITCHEN_SCENE1_test_task", html)
+        self.assertIn("verb:place", html)
         self.assertIn("manifest.json", html)
         self.assertNotIn(str(self.root), html)
 

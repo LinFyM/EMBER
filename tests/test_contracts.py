@@ -32,6 +32,17 @@ class Phase0ContractTest(unittest.TestCase):
         with self.assertRaisesRegex(ContractError, "task split"):
             validate_contract(changed)
 
+    def test_split_reseal_is_permanent_and_preserves_prior_split(self) -> None:
+        reseal = self.contract["split_reseal"]
+        self.assertEqual(reseal["minimum_source_role_occurrences"], 2)
+        self.assertEqual(reseal["search_seed"], 20_260_718)
+        self.assertNotEqual(reseal["prior_split"], self.contract["splits"])
+
+        changed = copy.deepcopy(self.contract)
+        changed["split_reseal"]["search_seed"] += 1
+        with self.assertRaisesRegex(ContractError, "seed"):
+            validate_contract(changed)
+
     def test_episode_authority_is_disjoint_and_complete(self) -> None:
         changed = copy.deepcopy(self.contract)
         changed["episode_authority"]["oracle_support"] = [27, 39]

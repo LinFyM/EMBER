@@ -28,6 +28,7 @@ from ember.libero_data import (
     sha256_file,
 )
 from ember.libero_report import render_report
+from ember.libero_split_reseal import load_sealed_record
 SCENE_RE = re.compile(r"^([A-Z]+(?:_[A-Z]+)*_SCENE\d+)_")
 
 
@@ -143,6 +144,31 @@ def load_task_authority(
             }
         )
     return records
+
+
+def _attach_specification_factors(
+    authorities: list[dict[str, Any]], reseal_record: dict[str, Any]
+) -> None:
+    """Bind language-only sealed factors without consulting BDDL goal semantics."""
+
+    sealed = {task["task_index"]: task for task in reseal_record["tasks"]}
+    if len(sealed) != len(authorities):
+        raise ManifestError("sealed specification factor table is incomplete")
+    for authority in authorities:
+        factor = sealed.get(authority["task_index"])
+        if factor is None or any(
+            factor[field] != authority[field] for field in ("scene", "language")
+        ):
+            raise ManifestError(
+                f"task {authority['task_index']} differs from the sealed specification surface"
+            )
+    for authority in authorities:
+        factor = sealed[authority["task_index"]]
+        authority["specification_factors"] = {
+            key: value
+            for key, value in factor.items()
+            if key not in {"task_index", "scene", "language"}
+        }
 
 
 def _factor_coverage(tasks: list[dict[str, Any]]) -> dict[str, Any]:
@@ -379,6 +405,7 @@ def _manifest_document(
     dataset: dict[str, Any],
     hub: dict[str, Any],
     tasks: list[dict[str, Any]],
+    reseal_record: dict[str, Any],
 ) -> dict[str, Any]:
     upstreams = contract["upstreams"]
     return {
@@ -415,6 +442,20 @@ def _manifest_document(
             for path, (dtype, tail) in REQUIRED_DATASETS.items()
         },
         "summary": _summary(tasks),
+        "split_reseal": {
+            "status": reseal_record["status"],
+            "record_sha256": contract["split_reseal"]["record_sha256"],
+            "specification_surface_sha256": reseal_record["authority"][
+                "specification_surface_sha256"
+            ],
+            "factor_schema": reseal_record["factor_contract"]["schema"],
+            "minimum_source_role_occurrences": reseal_record["factor_contract"][
+                "minimum_source_role_occurrences"
+            ],
+            "search_algorithm": reseal_record["search_contract"]["algorithm"],
+            "search_seed": reseal_record["search_contract"]["seed"],
+            "selection_diagnostics": reseal_record["selection_diagnostics"],
+        },
         "factor_coverage": _factor_coverage(tasks),
         "tasks": tasks,
     }
@@ -441,6 +482,10 @@ def build_manifest(
         expected_total_bytes=dataset["total_bytes"],
     )
     authorities = load_task_authority(contract=contract, libero_config_root=libero_config_root)
+    reseal_record = load_sealed_record(
+        workspace / contract["split_reseal"]["record_path"], contract
+    )
+    _attach_specification_factors(authorities, reseal_record)
     source_bounds = contract["episode_authority"]["source_base_fit"]
     jobs = _audit_jobs(
         authorities=authorities,
@@ -464,7 +509,12 @@ def build_manifest(
         "validation_or_held_numeric_values": 0,
     }
     manifest = _manifest_document(
-        workspace=workspace, contract=contract, dataset=dataset, hub=hub, tasks=tasks
+        workspace=workspace,
+        contract=contract,
+        dataset=dataset,
+        hub=hub,
+        tasks=tasks,
+        reseal_record=reseal_record,
     )
     quality_report = _aggregate_quality(
         tasks, access_counts=access_counts, contract=contract

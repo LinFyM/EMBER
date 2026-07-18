@@ -569,9 +569,10 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     hashes validate, GPU 4/5 release, and the full output is 92MiB. Stop this
     ladder at 1000; it authorizes only a separately frozen, headroom-safe
     source closed-loop contract. Do not resume to 2k or authorize Gate 0/Writer.
-    That source-only contract is now frozen before any new LoRA closed-loop
-    outcome in `gate_zero_mature_lora_headroom_screen.toml` (SHA256
-    `1adc78db42f0623336148453e76f0f956da972f275a91f143fe34ff10f46250b`).
+    A source-only ceiling-aware proposal is frozen before any new LoRA
+    closed-loop outcome in `gate_zero_mature_lora_headroom_screen.toml`
+    (SHA256 `8c7ae12b7c38a20479ca968b29a9045c8abb59a71dd28f0144fd2029ce075d5c`),
+    but it is pending owner decision and cannot create a screening grant.
     It binds both immutable step-1000 candidate/recovery/telemetry packets and
     uses paired fresh source init states 40--47 with seeds 5800--5807. Task 3
     is a maintenance control requiring nonnegative paired net wins; task 4 is
@@ -580,10 +581,13 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     two. Both query reductions must remain at least 2% and both drift proxies
     at most 0.02. If task 4 exposes fewer than two failures, classify headroom
     as absent and predeclare a source-task extension rather than lowering the
-    rule. Run exactly four arms/32 episodes on two GPUs, retain one video per
-    arm plus Trackio/gallery/checksums, then decide Gate 0 and Writer authority
-    strictly from this frozen contract. No validation, held, locked-report, or
-    step-2k access is authorized. The original SHA256 `ba3ee431...f132f`
+    rule. This is option A, not active authority. Owner must choose it versus
+    B) replace task 3 using base-competence-only selection of a non-ceiling
+    source task while retaining two-of-two positive success gain, or C) use a
+    predeclared fine-grained task-3 functional metric plus task-4 success.
+    Make that choice before any new outcome; do not launch or create a grant.
+    No validation, held, locked-report, or step-2k access is authorized. The
+    original SHA256 `ba3ee431...f132f`
     reached no episode because its last-warm-up seed was not stride-adjacent to
     the unchanged report seed 5800; retain that failure packet and use the
     corrected last warm-up seed 5792 without changing any scientific surface.

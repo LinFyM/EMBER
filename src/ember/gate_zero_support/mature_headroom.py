@@ -24,7 +24,7 @@ from ember.gate_zero_oracle_artifacts import (
 
 
 EXPECTED_NAME = "smolvla_libero90_gate_zero_mature_lora_headroom_screen_v1"
-EXPECTED_STATUS = "predeclared_after_lora_lr1000_query_pass_before_closed_loop_outcomes"
+EXPECTED_STATUS = "pending_owner_gate_design_decision_after_zero_outcome_mechanical_failure"
 EXPECTED_STAGE = "mature_lora_headroom_control"
 SELECTED_STEP = 1_000
 
@@ -190,6 +190,21 @@ def _validate_rollout_decision(raw: Mapping[str, Any]) -> None:
         "repair_changes_scientific_surface": False,
     }
     _require_equal(raw.get("mechanical_recovery", {}), expected_recovery, "mechanical recovery")
+    expected_owner_decision = {
+        "reason": (
+            "replacing the unreachable two-of-two positive-success Gate changes "
+            "the scientific completion standard and has multiple defensible designs"
+        ),
+        "options": [
+            "A: ceiling-aware task3 non-harm plus task4 success improvement",
+            "B: replace task3 using base-competence-only non-ceiling source selection and retain two-of-two positive success gain",
+            "C: task3 predeclared fine-grained functional metric plus task4 success improvement",
+        ],
+        "choice_must_precede_new_closed_loop_outcome": True,
+        "validation_numeric_access": False,
+        "held_numeric_access": False,
+    }
+    _require_equal(raw.get("owner_decision", {}), expected_owner_decision, "owner decision")
     expected_decision = {
         "maintenance_task_id": 3,
         "improvement_task_id": 4,
@@ -232,6 +247,8 @@ def load_mature_lora_headroom_spec(
         ("task_ids", [3, 4]),
         ("variants", [EXPECTED_VARIANT]),
         ("writer_authorized_before_closed_loop", False),
+        ("owner_decision_required", True),
+        ("screening_rollout_authorized", False),
     ):
         _require_equal(raw.get(key), expected, key)
 

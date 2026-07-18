@@ -13,6 +13,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from ember.gate_zero_support.contract import load_target_support_screen_spec  # noqa: E402
+from ember.gate_zero_support.screen import (  # noqa: E402
+    GateZeroTargetSupportScreenError,
+    create_support_screening_grant,
+)
 from ember.gate_zero_support.mature_headroom import (  # noqa: E402
     GateZeroMatureLoraHeadroomContractError,
     decide_mature_lora_headroom,
@@ -65,6 +69,23 @@ class GateZeroMatureLoraHeadroomTest(unittest.TestCase):
         self.assertEqual(spec["decision"]["minimum_each_query_reduction_fraction"], 0.02)
         self.assertFalse(spec["authority"]["validation_numeric_access"])
         self.assertFalse(spec["authority"]["held_numeric_access"])
+        self.assertTrue(spec["owner_decision_required"])
+        self.assertFalse(spec["screening_rollout_authorized"])
+
+    def test_pending_proposal_cannot_create_a_screening_grant(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            grant = Path(temporary) / "fresh" / "screening_grant.json"
+            with self.assertRaisesRegex(
+                GateZeroTargetSupportScreenError, "pending owner decision"
+            ):
+                create_support_screening_grant(
+                    config_path=self.config,
+                    parent_path=self.gate_zero,
+                    phase0_path=self.phase0,
+                    competence_path=self.competence,
+                    fit_outputs={},
+                    grant_path=grant,
+                )
 
     def test_warmup_seed_batches_end_immediately_before_report_seeds(self) -> None:
         rollout = self.load()["screening_rollout"]

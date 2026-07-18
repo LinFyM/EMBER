@@ -1,11 +1,13 @@
 schema_version = 1
 name = "smolvla_libero90_gate_zero_mature_lora_headroom_screen_v1"
-status = "predeclared_after_lora_lr1000_query_pass_before_closed_loop_outcomes"
+status = "pending_owner_gate_design_decision_after_zero_outcome_mechanical_failure"
 predeclared_at_utc = "2026-07-18T21:01:01Z"
 screening_stage = "mature_lora_headroom_control"
 task_ids = [3, 4]
 variants = ["mature_official_default_r32_lr25e6_recovery"]
 writer_authorized_before_closed_loop = false
+owner_decision_required = true
+screening_rollout_authorized = false
 
 [authority]
 gate_zero_contract_sha256 = "7bbda2723c72c60c6cfc39c10acaf23a05f4ea0af724c054792cd00c890cfd98"
@@ -69,6 +71,17 @@ old_warmup_seed_start = 5760
 corrected_last_warmup_seed_start = 5792
 report_seed_start_unchanged = 5800
 repair_changes_scientific_surface = false
+
+[owner_decision]
+reason = "replacing the unreachable two-of-two positive-success Gate changes the scientific completion standard and has multiple defensible designs"
+options = [
+  "A: ceiling-aware task3 non-harm plus task4 success improvement",
+  "B: replace task3 using base-competence-only non-ceiling source selection and retain two-of-two positive success gain",
+  "C: task3 predeclared fine-grained functional metric plus task4 success improvement",
+]
+choice_must_precede_new_closed_loop_outcome = true
+validation_numeric_access = false
+held_numeric_access = false
 
 [fit.mature_official_default_r32_lr25e6_recovery]
 adaptation_kind = "lora"

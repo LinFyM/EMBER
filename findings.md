@@ -1701,17 +1701,17 @@
   redesign must use only legal source outcomes, preserve task 3 as a
   maintenance control, and be frozen before any new LoRA rollout outcome.
 
-## A paired maintenance/improvement design resolves the source ceiling before outcomes
+## A paired maintenance/improvement design is a pending Gate proposal
 
 - Prior source competence makes the old positive-gain-on-both-tasks rule
-  unidentifiable: task 3 is already 8/8 while task 4 is 5/8. The replacement is
+  unidentifiable: task 3 is already 8/8 while task 4 is 5/8. Proposal A is
   result-blind and uses a fresh paired source slice, init states 40--47 and
   seeds 5800--5807. Task 3 now tests non-harm (paired net wins >=0); task 4 must
   have at least two available failures and recover at least two net wins; the
   two-task aggregate must recover at least two net wins. This preserves a
   behavioral requirement without inventing success-count headroom.
-- The frozen contract SHA256 is
-  `1adc78db42f0623336148453e76f0f956da972f275a91f143fe34ff10f46250b`.
+- The pending proposal SHA256 is
+  `8c7ae12b7c38a20479ca968b29a9045c8abb59a71dd28f0144fd2029ce075d5c`.
   It also retains the already observed independent-query safeguards: every
   task must reduce query flow MSE by at least 2%, and every task's action-drift
   proxy must remain at most 0.02. An underpowered task-4 base slice has a
@@ -1723,6 +1723,14 @@
   about Writer/video utility, validation or held performance, RL, or the
   overall EMBER hypothesis. No validation, held, or locked-report numeric
   surface is used in either the grant or the paired rollout.
+- This proposal is not active authority because changing the Gate changes the
+  paper's completion standard. Two other defensible, still outcome-free
+  designs remain: B) replace task 3 using only base competence to select a
+  non-ceiling source task and keep the original two-of-two positive-success
+  rule; C) keep task 3 but predeclare a finer-grained functional metric while
+  retaining task-4 success gain. The config is fail-closed with
+  `screening_rollout_authorized=false`; owner selection must precede any grant
+  or new closed-loop result.
 - The first launch under historical SHA256 `ba3ee431...f132f` failed before
   any episode or policy outcome: the evaluator defines `warmup_seed_start` as
   the *last* warm-up batch start, so 5760 could not immediately precede report

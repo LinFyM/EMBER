@@ -550,6 +550,13 @@ def create_support_screening_grant(
         competence_path=competence_path,
         prior_execution_path=config_path.with_name("gate_zero_oracle_execution.toml"),
     )
+    if (
+        spec.get("screening_stage") == "mature_lora_headroom_control"
+        and spec.get("screening_rollout_authorized") is not True
+    ):
+        raise GateZeroTargetSupportScreenError(
+            "mature LoRA headroom proposal is pending owner decision"
+        )
     if not grant_path.is_absolute() or grant_path.exists() or grant_path.parent.exists():
         raise GateZeroTargetSupportScreenError(
             "screening grant output must be a fresh absolute directory"

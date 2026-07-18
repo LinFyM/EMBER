@@ -1275,3 +1275,28 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   trainable parameters, and `configure_oracle_variant` verified every physical
   LoRA delta is exact zero. Peak Torch allocation/reservation was 902/928MiB;
   no demonstrations, rollout outcomes, validation, or held surface was opened.
+
+### Formal conditional rank-16 fit launch contract
+
+- Launch revision is clean commit `e3b2efa` on
+  `phase0/reproducible-substrate`. Two independent canonical fitter jobs write
+  fresh outputs below
+  `$EMBER_OUTPUT_ROOT/gate_zero/target_support_audit/fit/rank16_20260718T153934Z/official_default_r16_task{3,4}`
+  and bind contract SHA256 `c205b4ef...4048ad`, rank-8 result SHA256
+  `0df3acb8...12c6efb`, source-base manifest `ca0c83ab...51d4d00`, and source
+  competence result `c9697c4c...83cc`.
+- Each job uses the sole oracle fitter, one physical GPU (task 3 on GPU 4,
+  task 4 on GPU 5), 37 exact targets, rank/alpha 16, dropout 0, AdamW `1e-4`,
+  support demos 28--39, query demos 40--45, effective/micro batch 64, and the
+  frozen candidates through step 750. They share no trainable state; expected
+  peak is below 24GiB per job, wall time 10--15 minutes, combined output below
+  2GiB, and stop is step 750 or first failure. GPUs 6--7 remain available
+  because no additional legal fit exists and duplicating either task would
+  change neither evidence nor throughput.
+- Immediate preflight finds GPUs 4--7 empty while unrelated MEMLLM owns 0--3;
+  personal storage is 294GiB with 2.9TiB filesystem free. Git is clean, all
+  named authorities validate, exact-zero smoke passes, and 199/199 tests pass.
+  Both jobs retain Trackio metrics, compact selected/candidate states,
+  telemetry, atomic recovery state and checksums; successful completion removes
+  only validated recovery state. No rollout, locked report, validation, held,
+  Gate 0, final target, or Writer authority is available during fitting.

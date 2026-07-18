@@ -815,3 +815,15 @@
   support batch. It completed from clean commit `51b9405`, with outer/scientific
   rc 0, 2,345 MiB peak sampled device memory, and full GPU release. This is
   implementation evidence only, not base competence or Gate 0 evidence.
+- The one-load all-source batch calibration completed all four effective-batch-
+  64 candidates without OOM. Throughput rose monotonically: microbatches
+  8/16/32/64 achieved 49.03/76.25/86.30/92.19 samples/s, with accumulation
+  8/4/2/1. Microbatch 64 is selected by the frozen rule and still retains
+  61,712 MiB free; PyTorch peak allocated/reserved were 18,258/18,914 MiB and
+  sampled device peak was 19,441 MiB. Raising microbatch above 64 would change
+  the fixed effective batch and is not authorized merely to fill memory.
+- Calibration used one A100, one reused model/optimizer, four persistent HDF5
+  workers, and no recorded loss or policy outcome. It finished in 71.44 seconds
+  wall time with outer/scientific rc 0, peak sampled utilization 98%, complete
+  checksum/Trackio records, and GPU release. This selects a technical launch
+  shape only; it does not establish base competence or Gate 0 utility.

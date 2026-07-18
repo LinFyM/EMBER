@@ -578,6 +578,13 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   and worker startup non-comparative. The fastest candidate retaining 10 GiB
   free is selected deterministically. The shared model/preprocessor/loss owner
   was extracted from the already validated probe rather than duplicated.
+- Clean commit `394ef4a` completed the canonical calibration long-run
+  `gate_zero_source_base_batch_calibration_20260718_075123`. All candidates
+  passed headroom; measured throughput was 49.03, 76.25, 86.30, and 92.19
+  samples/s for microbatch 8, 16, 32, and 64. The selected microbatch 64 uses
+  accumulation 1, peaks at 19,441 MiB sampled device memory, and retains 61,712
+  MiB free. The 71.44-second result and four-step Trackio series are checksummed,
+  outcome-free, and the sole GPU was released.
 
 ## Immediate handoff
 

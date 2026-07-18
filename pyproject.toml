@@ -20,6 +20,7 @@ dependencies = [
   "robosuite==1.4.0; sys_platform == 'linux'",
   "torch==2.11.0; sys_platform == 'linux'",
   "torchcodec==0.11.1; sys_platform == 'linux'",
+  "trackio==0.30.1",
   "torchvision==0.26.0; sys_platform == 'linux'",
   "transformers==5.5.4",
   "ziglang==0.16.0; sys_platform == 'linux'",

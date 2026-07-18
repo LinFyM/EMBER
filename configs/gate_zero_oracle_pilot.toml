@@ -6,12 +6,15 @@ claim_scope = "source_only_mechanism_pilot_not_writer_authorization"
 
 [authority]
 phase0_contract_path = "configs/phase0.toml"
-phase0_contract_sha256 = "c7f772733af01e12ecd4cd5d5479f9054303ec1138337297cf21a08bb49be636"
+phase0_contract_sha256 = "ba9e89971e0f88074cc8de573c8e60b9093105638364a60207ff0d5aa8b7882a"
 split_seal_path = "configs/libero90_split_reseal.json"
 split_seal_sha256 = "9f5bc62e15e2cb07887e97bc98630a3f527ac6b5e253f41c203cf37459568428"
 canonical_manifest_sha256 = "2cde2e8ed05fc892309dce0009ca776c57c51158a313d836588a01c1f475e81b"
 source_normalization_sha256 = "55fb29932005589f8f24caf2e916f19b913c5273468fdc31bf295fa129a614a1"
+canonical_manifest_relative_path = "phase0/libero90_manifest/reseal1_20260718T044331Z/manifest.json"
+source_normalization_relative_path = "phase0/libero90_manifest/reseal1_20260718T044331Z/normalization_source_only.json"
 dataset_revision = "f13aa24a3da8c43c7225569f28c562979fa0e35a"
+dataset_relative_path = "LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a/libero_90"
 model_revision = "c83c3163b8ca9b7e67c509fffd9121e66cb96205"
 model_weight_sha256 = "7cd549ac2351fb069c0ddb3c34ad2d09cfc92b56a15dccdfc2e41467aaca01eb"
 lerobot_commit = "30da8e687a6dfc617fcd94afc367ac7071c376ce"
@@ -191,3 +194,13 @@ checkpoint_policy = "adapter_only_for_oracles_rotating_recoverable_full_base"
 visual_gallery = true
 retain_one_canonical_gallery = true
 cleanup_regenerable_media_after_hash_verification = true
+
+[tracking]
+backend = "trackio"
+version = "0.30.1"
+project = "EMBER_gate0"
+directory_environment_variable = "TRACKIO_DIR"
+log_every_optimizer_steps = 10
+log_system_metrics = true
+remote_sync = false
+dashboard_command = "trackio show --project EMBER_gate0"

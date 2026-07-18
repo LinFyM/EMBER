@@ -1494,3 +1494,9 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   bounded third use of the same fitter rather than a parallel path. After its
   Gate-recovery decision and evidence export, review whether the config mode
   still needs active rerun support before starting Writer implementation.
+- A launch-preflight review caught that the shared dataset loader originally
+  recognized only the LoRA mature-stage name for the 0--39 support / 40--45
+  query split. A red-then-green regression extends that same fail-closed mature
+  stage set to the non-matched capacity diagnostic; no split, row, dataset, or
+  loader implementation changed. The focused file and full 214-test suite pass
+  after the repair.

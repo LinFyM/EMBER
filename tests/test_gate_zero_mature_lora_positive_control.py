@@ -26,6 +26,7 @@ from ember.gate_zero_oracle_fit import (  # noqa: E402
     select_fixed_final_candidate,
 )
 from ember.gate_zero_oracle_session import (  # noqa: E402
+    MATURE_SUPPORT_QUERY_STAGES,
     augment_support_images,
     build_oracle_optimizer,
     build_oracle_scheduler,
@@ -112,6 +113,7 @@ class GateZeroMatureLoraPositiveControlTest(unittest.TestCase):
         self.assertFalse(upper["prior_lora_failure"]["continuation_to_step5000"])
         self.assertFalse(upper["authority"]["validation_numeric_access"])
         self.assertFalse(upper["authority"]["held_numeric_access"])
+        self.assertIn(upper["screening_stage"], MATURE_SUPPORT_QUERY_STAGES)
 
         with self.upper_bound_ladder.open("rb") as handle:
             ladder = tomllib.load(handle)

@@ -33,6 +33,11 @@ from ember.gate_zero_runtime import (
 )
 
 
+MATURE_SUPPORT_QUERY_STAGES = frozenset(
+    {"mature_positive_control", "mature_capacity_upper_bound"}
+)
+
+
 class GateZeroOracleSessionError(RuntimeError):
     """Raised when live oracle model/data/training mechanics drift."""
 
@@ -204,7 +209,7 @@ def _load_task_datasets(
     query_bounds = spec["selection"]["query_episode_bounds"]
     support_demos = list(range(support_bounds[0], support_bounds[1] + 1))
     query_demos = list(range(query_bounds[0], query_bounds[1] + 1))
-    if spec.get("screening_stage") != "mature_positive_control":
+    if spec.get("screening_stage") not in MATURE_SUPPORT_QUERY_STAGES:
         if support_demos != parent_support_demos or query_demos != parent_query_demos:
             raise GateZeroOracleSessionError("legacy support/query data authority changed")
     elif set(support_demos) & set(query_demos) or min(support_demos + query_demos) < 0 or max(

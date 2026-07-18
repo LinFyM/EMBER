@@ -1429,3 +1429,12 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   freeze its parent failure hashes and a matching staged ladder; run one finite
   step/count/memory smoke, then tasks 3/4 to the 1k boundary only. No additional
   rank/support search or final rollout is authorized at this point.
+- Added the strict recovery contract and reused the single canonical oracle
+  fitter/launcher. The fit contract SHA256 is
+  `82f5203ed86a25dac386bde68cb8a76efaba03c0f230fe2bd0249bb8d64fe15c`;
+  the result-blind ladder SHA256 is
+  `f3b66cff59135f52e81ab9ef387230381662fad6797e5c63557f791bd015739f`.
+  Loader checks bind the primary config/ladder and both task-5k candidate,
+  recovery and telemetry hashes. The same support/query rows, optimizer,
+  augmentation, seed/noise and rollout identities are retained; only the exact
+  target set and resulting parameter count change.

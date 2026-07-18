@@ -1,0 +1,47 @@
+schema_version = 1
+name = "smolvla_gate_zero_mature_lora_all_linear_stage_ladder_v1"
+status = "predeclared_before_conditional_step1000_query_outcomes"
+decided_at_utc = "2026-07-18T18:06:43Z"
+parent_fit_contract_sha256 = "82f5203ed86a25dac386bde68cb8a76efaba03c0f230fe2bd0249bb8d64fe15c"
+primary_fit_contract_sha256 = "882db40dca9ced15cf2b567f9fa57bf2c36c66e64654eef55c067d6485b4b259"
+primary_stage_contract_sha256 = "0db007a1e9403902b99e5b6f106f7556d087fe41c188742f94547c986bf6a9eb"
+only_target_support_differs_from_primary = true
+same_training_trajectory_required = true
+stage_steps = [1000, 2000, 5000, 10000, 20000]
+maximum_optimizer_steps = 20000
+first_segment_max_wall_minutes = 30
+final_closed_loop_access_before_final_freeze = false
+validation_numeric_access = false
+held_numeric_access = false
+
+[evidence]
+mechanics = ["candidate hash", "recovery hash", "optimizer", "scheduler", "RNG", "query row digest", "finite loss and gradient", "117 exact targets", "7027200 trainable parameters"]
+stage_metrics = ["independent source query flow-MSE reduction", "action-drift diagnostic", "support loss", "throughput", "memory", "wall-clock"]
+query_reduction_formula = "(step0_query_flow_mse - stage_query_flow_mse) / step0_query_flow_mse"
+development_rollout_used = false
+formal_fresh_closed_loop_init_states = [40, 41, 42, 43, 44, 45, 46, 47]
+
+[continuation.step1000_to_2000]
+minimum_median_query_reduction_fraction = 0.02
+minimum_each_task_query_reduction_fraction = 0.0
+
+[continuation.step2000_to_5000]
+minimum_median_query_reduction_fraction = 0.05
+minimum_each_task_query_reduction_fraction = 0.0
+maximum_median_regression_from_prior_fraction = 0.01
+
+[continuation.step5000_to_10000]
+minimum_median_query_reduction_fraction = 0.10
+minimum_each_task_query_reduction_fraction = 0.02
+maximum_median_regression_from_prior_fraction = 0.01
+
+[continuation.step10000_to_20000]
+minimum_median_query_reduction_fraction = 0.15
+minimum_each_task_query_reduction_fraction = 0.05
+maximum_median_regression_from_prior_fraction = 0.02
+
+[stop_and_diagnose]
+rule = "stop when the next continuation rule is not met; no further target/rank variant is available after this conditional recovery"
+mechanical_failure = "repair once and exact-resume from the last validated atomic candidate"
+scientific_failure = "preserve the negative evidence, run the predeclared non-matched action-expert capacity upper bound if still needed, and surface the Gate-recovery decision without changing thresholds"
+forbidden = ["restart from scratch when recovery is valid", "consume final closed-loop surface during staging", "held access", "threshold reduction", "another target/rank search", "unbounded hyperparameter search"]

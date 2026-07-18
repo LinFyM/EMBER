@@ -1446,3 +1446,8 @@
   target support only and keeps the mature data/optimizer/augmentation/Gate
   contract. It is the final bounded support variant and cannot itself seal the
   Writer contract before independent query and closed-loop evidence.
+  The recovery fit/stage contracts were frozen before any recovery training or
+  query outcome with SHA256 values `82f5203ed86a25dac386bde68cb8a76efaba03c0f230fe2bd0249bb8d64fe15c`
+  and `f3b66cff59135f52e81ab9ef387230381662fad6797e5c63557f791bd015739f`;
+  every sampler, noise, augmentation, evaluator and final rollout seed matches
+  the primary, so target support is the only scientific change.

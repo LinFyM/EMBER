@@ -443,6 +443,12 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     This is the sole remaining target-support variant, not the sealed Writer
     support, and it must first pass a one-step target/count/memory smoke and the
     1k query boundary before any continuation or final rollout.
+    The sealed fit contract is
+    `configs/gate_zero_mature_lora_all_linear_recovery.toml` (SHA256
+    `82f5203ed86a25dac386bde68cb8a76efaba03c0f230fe2bd0249bb8d64fe15c`)
+    and its result-blind ladder is
+    `configs/gate_zero_mature_lora_all_linear_stage_ladder.toml` (SHA256
+    `f3b66cff59135f52e81ab9ef387230381662fad6797e5c63557f791bd015739f`).
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

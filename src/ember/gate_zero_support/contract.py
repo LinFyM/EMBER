@@ -590,7 +590,10 @@ def load_target_support_screen_spec(
             prior_execution_path=prior_execution_path,
             rank8_audit_path=path.with_name("gate_zero_target_support_audit.toml"),
         )
-    if name == "smolvla_libero90_gate_zero_mature_lora_positive_control_v1":
+    if name in {
+        "smolvla_libero90_gate_zero_mature_lora_positive_control_v1",
+        "smolvla_libero90_gate_zero_mature_lora_all_linear_recovery_v1",
+    }:
         from ember.gate_zero_support.mature_contract import (
             load_mature_lora_positive_control_spec,
         )

@@ -4,6 +4,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -17,6 +18,7 @@ from ember.gate_zero_oracle_artifacts import (  # noqa: E402
     load_recovery_artifact,
     save_recovery_artifact,
 )
+from ember.gate_zero_oracle_contract import load_oracle_fit_spec  # noqa: E402
 from ember.gate_zero_oracle_fit import (  # noqa: E402
     GateZeroOracleFitError,
     resolve_training_target_step,
@@ -37,6 +39,9 @@ from ember.gate_zero_support.screen import decide_support_screening  # noqa: E40
 class GateZeroMatureLoraPositiveControlTest(unittest.TestCase):
     def setUp(self) -> None:
         self.config = ROOT / "configs" / "gate_zero_mature_lora_positive_control.toml"
+        self.recovery_config = (
+            ROOT / "configs" / "gate_zero_mature_lora_all_linear_recovery.toml"
+        )
         self.gate_zero = ROOT / "configs" / "gate_zero_oracle_pilot.toml"
         self.phase0 = ROOT / "configs" / "phase0.toml"
         self.competence = ROOT / "configs" / "gate_zero_source_competence.toml"
@@ -47,6 +52,121 @@ class GateZeroMatureLoraPositiveControlTest(unittest.TestCase):
             gate_zero_path=self.gate_zero,
             phase0_path=self.phase0,
             competence_path=self.competence,
+        )
+
+    def load_recovery(self):
+        return load_mature_lora_positive_control_spec(
+            self.recovery_config,
+            gate_zero_path=self.gate_zero,
+            phase0_path=self.phase0,
+            competence_path=self.competence,
+        )
+
+    def test_conditional_recovery_is_exact_all_action_expert_linear_same_recipe(self) -> None:
+        primary = self.load()
+        recovery = self.load_recovery()
+        variant_name = "all_action_expert_linear_r32_same_recipe"
+        variant = recovery["fit"][variant_name]
+        targets = set(variant["target_modules"])
+        expert = {
+            target
+            for target in targets
+            if target.startswith("model.vlm_with_expert.lm_expert.layers.")
+        }
+
+        self.assertEqual(recovery["variants"], [variant_name])
+        self.assertEqual(len(targets), 117)
+        self.assertEqual(len(expert), 112)
+        self.assertEqual(variant["expected_trainable_parameters"], 7_027_200)
+        for layer in range(16):
+            prefix = f"model.vlm_with_expert.lm_expert.layers.{layer}."
+            self.assertEqual(
+                {target.removeprefix(prefix) for target in expert if target.startswith(prefix)},
+                {
+                    "self_attn.q_proj",
+                    "self_attn.k_proj",
+                    "self_attn.v_proj",
+                    "self_attn.o_proj",
+                    "mlp.gate_proj",
+                    "mlp.up_proj",
+                    "mlp.down_proj",
+                },
+            )
+        primary_variant = primary["fit"]["mature_official_default_r32"]
+        for key in (
+            "rank",
+            "alpha",
+            "dropout",
+            "init_lora_weights",
+            "optimizer",
+            "learning_rate",
+            "betas",
+            "weight_decay",
+            "warmup_steps",
+            "decay_steps",
+            "augmentation",
+            "augmentation_scale_min",
+            "augmentation_scale_max",
+        ):
+            self.assertEqual(variant[key], primary_variant[key])
+        self.assertEqual(
+            recovery["authority"]["primary_mature_contract_sha256"],
+            "882db40dca9ced15cf2b567f9fa57bf2c36c66e64654eef55c067d6485b4b259",
+        )
+        self.assertFalse(recovery["primary_failure"]["continuation_to_step10000"])
+        self.assertTrue(recovery["bounded_recovery"]["no_further_target_or_rank_variants"])
+        self.assertFalse(recovery["authority"]["validation_numeric_access"])
+        self.assertFalse(recovery["authority"]["held_numeric_access"])
+
+    def test_conditional_recovery_target_or_parent_drift_fails_closed(self) -> None:
+        changed = self.recovery_config.read_text(encoding="utf-8").replace(
+            '  "model.vlm_with_expert.lm_expert.layers.0.self_attn.k_proj",\n', ""
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "recovery.toml"
+            path.write_text(changed, encoding="utf-8")
+            with self.assertRaises(GateZeroMatureControlContractError):
+                load_mature_lora_positive_control_spec(
+                    path,
+                    gate_zero_path=self.gate_zero,
+                    phase0_path=self.phase0,
+                    competence_path=self.competence,
+                )
+
+    def test_canonical_oracle_fit_dispatch_accepts_conditional_recovery(self) -> None:
+        spec = load_oracle_fit_spec(
+            self.recovery_config,
+            gate_zero_path=self.gate_zero,
+            phase0_path=self.phase0,
+            competence_path=self.competence,
+        )
+
+        self.assertEqual(
+            spec["variants"], ["all_action_expert_linear_r32_same_recipe"]
+        )
+
+    def test_conditional_recovery_ladder_keeps_primary_continuation_thresholds(self) -> None:
+        with (
+            ROOT / "configs" / "gate_zero_mature_lora_all_linear_stage_ladder.toml"
+        ).open("rb") as handle:
+            ladder = tomllib.load(handle)
+
+        self.assertEqual(
+            ladder["parent_fit_contract_sha256"],
+            "82f5203ed86a25dac386bde68cb8a76efaba03c0f230fe2bd0249bb8d64fe15c",
+        )
+        self.assertTrue(ladder["only_target_support_differs_from_primary"])
+        self.assertEqual(ladder["stage_steps"], [1_000, 2_000, 5_000, 10_000, 20_000])
+        self.assertEqual(
+            ladder["continuation"]["step5000_to_10000"],
+            {
+                "minimum_median_query_reduction_fraction": 0.10,
+                "minimum_each_task_query_reduction_fraction": 0.02,
+                "maximum_median_regression_from_prior_fraction": 0.01,
+            },
+        )
+        self.assertIn(
+            "another target/rank search", ladder["stop_and_diagnose"]["forbidden"]
         )
 
     def test_checked_in_contract_is_mature_recipe_not_small_acquisition_claim(self) -> None:

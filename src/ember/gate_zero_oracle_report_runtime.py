@@ -20,7 +20,7 @@ from safetensors.torch import load_file
 
 from ember.eval_artifacts import build_eval_gallery, update_latest_link
 from ember.evaluation_identity import _load_policy, _make_condition_env
-from ember.gate_zero_checkpoint import validate_source_base_checkpoint
+from ember.gate_zero_checkpoint import CHECKPOINT_MANIFEST, validate_source_base_checkpoint
 from ember.gate_zero_contract import load_gate_zero_contract
 from ember.gate_zero_data import (
     GateZeroSurface,
@@ -154,6 +154,12 @@ def _fit_outputs(arguments: argparse.Namespace) -> dict[tuple[str, int], Path]:
     }
 
 
+def checkpoint_manifest_path(checkpoint_dir: Path) -> Path:
+    """Resolve the manifest through the canonical checkpoint owner."""
+
+    return checkpoint_dir / CHECKPOINT_MANIFEST
+
+
 def _load_authorities(arguments: argparse.Namespace) -> tuple[dict[str, Any], ...]:
     spec = load_oracle_execution_spec(
         arguments.config,
@@ -178,7 +184,7 @@ def _load_authorities(arguments: argparse.Namespace) -> tuple[dict[str, Any], ..
     if (
         checkpoint.get("step") != expected["source_base_checkpoint_step"]
         or checkpoint.get("checkpoint_role") != expected["source_base_checkpoint_role"]
-        or sha256_file(arguments.source_base_checkpoint / "checkpoint_manifest.json")
+        or sha256_file(checkpoint_manifest_path(arguments.source_base_checkpoint))
         != expected["source_base_checkpoint_manifest_sha256"]
     ):
         raise GateZeroOracleReportRuntimeError("source-base checkpoint authority changed")

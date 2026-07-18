@@ -17,6 +17,7 @@ from ember.gate_zero_oracle_artifacts import (
     validate_selected_artifact,
     write_output_checksums,
 )
+from ember.gate_zero_checkpoint import CHECKPOINT_MANIFEST
 from ember.gate_zero_oracle_report import (
     assigned_report_arms,
     canonical_report_shards,
@@ -25,6 +26,7 @@ from ember.gate_zero_oracle_report import (
     validate_selection_freeze_grant,
 )
 from ember.gate_zero_oracle_report_runtime import (
+    checkpoint_manifest_path,
     report_state_authority,
     validate_report_reset_identity,
 )
@@ -226,6 +228,10 @@ class GateZeroOracleReportTest(unittest.TestCase):
         self.assertFalse(partial_only["gate_zero_pilot_passed"])
 
     def test_report_arm_state_mapping_and_two_reset_identity_are_exact(self) -> None:
+        self.assertEqual(
+            checkpoint_manifest_path(Path("/tmp/checkpoint")),
+            Path("/tmp/checkpoint") / CHECKPOINT_MANIFEST,
+        )
         self.assertEqual(report_state_authority(3, "frozen_base"), (None, None))
         self.assertEqual(report_state_authority(3, "own_adapter"), ("lora", 3))
         self.assertEqual(report_state_authority(3, "swapped_adapter"), ("lora", 4))

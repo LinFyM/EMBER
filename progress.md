@@ -979,3 +979,13 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   surface is still unopened. After integrating this clean implementation,
   create the grant exactly once, run the fixed four-card locked report, and only
   then freeze the Gate 0 failure/recovery decision.
+- The first report launch permanently created and validated the selection grant,
+  then all four ranks failed before model/data loading because the new runtime
+  hard-coded `checkpoint_manifest.json` instead of using the checkpoint
+  owner's canonical manifest constant. Long-run
+  `gate_zero_oracle_locked_report_20260718_135155` and its four compact failure
+  packets/telemetry are retained; no rollout or scientific report metric was
+  produced. One red regression, one narrow replacement with
+  `CHECKPOINT_MANIFEST`, and one real read-only authority preflight now pass.
+  Retry must reuse the immutable grant and write a fresh report directory; no
+  second selection-freeze artifact is permitted.

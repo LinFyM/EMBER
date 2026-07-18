@@ -340,6 +340,7 @@ def build_source_base_checkpoint_metadata(
             "total_num_workers": topology.total_data_workers,
             "global_slot_algorithm": topology.global_slot_algorithm,
             "flow_input_authority": topology.flow_input_authority,
+            "ddp_static_graph": topology.ddp_static_graph,
             "checkpoint_writer_rank": 0,
         },
         "authorities": {
@@ -437,7 +438,11 @@ def new_training_runtime(
         )
     if not 0 <= completed_step < target_step:
         raise GateZeroBaseTrainError("resume step must precede target step")
-    policy = wrap_distributed_model(base_policy, distributed_context)
+    policy = wrap_distributed_model(
+        base_policy,
+        distributed_context,
+        static_graph=topology.ddp_static_graph,
+    )
     loader = make_base_loader(
         dataset,
         micro_batch_size=topology.per_rank_micro_batch_size,

@@ -721,7 +721,7 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   is exact and all three prompt contrasts are substantive for 16/16 samples,
   while correct paired-goal switching and the Gate/Writer decisions remain open.
 
-## 2026-07-18 multi-GPU efficiency work in isolated branch
+## 2026-07-18 multi-GPU efficiency work
 
 - The original 10,000-step source-base fit completed from clean commit
   `8ff06f2` under long-run ID
@@ -751,9 +751,29 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   exact same-topology resume. The report refuses telemetry that differs from
   its run-finalized checksum. INT/TERM cleanup handlers stop telemetry samplers
   without reintroducing the prohibited Bash `EXIT` trap.
-- No GPU topology benchmark has run yet. Sequentially launch fixed world-size
-  1, 2, and 4 probes
-  under durable long-run records and live GPU/storage preflight. Freeze the
-  selection report/config before any later distributed formal fit. Then run
-  the source-only competence arms and follow the already frozen pass/recovery
-  decision; Gate -1, Gate 0, and Writer remain unauthorized.
+- Final topology selection remains pending. The first fixed probes and bounded
+  recovery are recorded below; repeat world sizes 1, 2, and 4 under one amended
+  contract before freezing the selection report/config. Then run the source-only
+  competence arms and follow the already frozen pass/recovery decision; Gate -1,
+  Gate 0, and Writer remain unauthorized.
+
+## 2026-07-18 topology-probe recovery
+
+- The first matched world-size 1/2 probes under contract `e334d4e8...` completed
+  with rc 0, exact resume, checksum-bound telemetry, and 93.353/170.822 global
+  samples/s. The world-size-4 run
+  `gate_zero_topology_probe_w4_20260718_111048` completed its fixed 30 steps and
+  valid schema-3 checkpoint but failed at the continuous-versus-resumed step-31
+  model hash. No policy outcome was recorded and no selection was made.
+- A four-GPU read-only checkpoint diagnostic then ran two independent fresh
+  resumes. Model, optimizer, scheduler, per-rank RNG, next batch, row keys,
+  flow inputs, and all 64 slots were exact, with zero differing tensors. This
+  excludes checkpoint/data/RNG recovery and isolates the continuous-versus-new
+  DDP reducer bucket lifecycle. The failure packet and telemetry are checksummed
+  under `$EMBER_OUTPUT_ROOT/gate_zero/topology_probe/world4_20260718T110600Z`;
+  the validated 1.32GB transient checkpoint was removed, leaving 96KB.
+- Tests now require the topology contract and both 2/4-rank DDP paths to use a
+  static graph. The single trainer binds this setting into schema-3 checkpoint
+  topology. Before resealing any selection, run the live four-rank resume check
+  and repeat all three matched throughput candidates under amended contract
+  SHA256 `84c5bcf7...`; the prior throughput numbers are diagnostic only.

@@ -41,6 +41,7 @@ class GateZeroDistributedTest(unittest.TestCase):
             self.assertEqual(topology.per_rank_micro_batch_size, expected_micro)
             self.assertEqual(topology.gradient_accumulation_steps, 1)
             self.assertEqual(topology.data_workers_per_rank, expected_workers)
+            self.assertTrue(topology.ddp_static_graph)
             self.assertEqual(
                 topology.per_rank_micro_batch_size
                 * topology.gradient_accumulation_steps
@@ -93,6 +94,10 @@ class GateZeroDistributedTest(unittest.TestCase):
         changed = copy.deepcopy(self.spec)
         changed["distributed"]["global_effective_batch_size"] = 128
         with self.assertRaisesRegex(GateZeroDistributedError, "global effective batch"):
+            validate_distributed_topology_spec(changed, self.gate_zero, self.phase0)
+        changed = copy.deepcopy(self.spec)
+        changed["distributed"]["ddp_static_graph"] = False
+        with self.assertRaisesRegex(GateZeroDistributedError, "static graph"):
             validate_distributed_topology_spec(changed, self.gate_zero, self.phase0)
 
     def test_pending_probe_allows_mechanics_but_blocks_formal_training(self) -> None:

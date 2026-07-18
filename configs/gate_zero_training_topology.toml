@@ -2,12 +2,13 @@ schema_version = 1
 name = "gate_zero_source_base_training_topology_v1"
 status = "predeclared_before_multigpu_probe_outcomes"
 predeclared_at_utc = "2026-07-18T09:18:00Z"
-last_mechanical_amendment_at_utc = "2026-07-18T10:40:51Z"
+last_mechanical_amendment_at_utc = "2026-07-18T11:18:00Z"
 amendment_scope = "engineering_throughput_only_no_scientific_budget_change"
 mechanical_amendments = [
   "compare actual global flow-input hashes rather than topology-dependent ambient RNG serialization",
   "hash shared model and source HDF5 authorities once per process before reuse across probe branches",
   "record exact initial model optimizer and scheduler state across topology candidates",
+  "freeze the known-static DDP graph so reducer bucket lifecycle is identical after resume",
 ]
 
 [authority]
@@ -24,6 +25,7 @@ allowed_world_sizes = [1, 2, 4]
 backend = "nccl"
 global_effective_batch_size = 64
 gradient_aggregation = "ddp_mean_equal_local_batch"
+ddp_static_graph = true
 global_slot_algorithm = "absolute_optimizer_step_accumulation_rank_local_slot_v1"
 flow_input_authority = "rank0_global_native_sample_then_contiguous_scatter_v1"
 rank_zero_checkpoint_only = true

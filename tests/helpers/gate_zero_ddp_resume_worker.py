@@ -101,12 +101,14 @@ def _metadata(world_size: int) -> dict:
     }
 
 
-def _new_runtime(context):
+def _new_runtime(context, topology):
     random.seed(700 + context.rank)
     np.random.seed(800 + context.rank)
     torch.manual_seed(900 + context.rank)
     policy = _Policy()
-    wrapped = wrap_distributed_model(policy, context)
+    wrapped = wrap_distributed_model(
+        policy, context, static_graph=topology.ddp_static_graph
+    )
     optimizer = torch.optim.AdamW(wrapped.parameters(), lr=1e-3)
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda step: 1.0 / (step + 1))
     return policy, wrapped, optimizer, scheduler
@@ -137,7 +139,10 @@ def main() -> int:
     context = initialize_distributed_context(spec, backend="gloo")
     topology = topology_for_world_size(spec, context.world_size)
     try:
-        reference_policy, reference_wrapped, reference_optimizer, reference_scheduler = _new_runtime(context)
+        reference_policy, reference_wrapped, reference_optimizer, reference_scheduler = _new_runtime(
+            context, topology
+        )
+        reference_static_graph = bool(reference_wrapped.static_graph)
         _step(reference_wrapped, reference_optimizer, reference_scheduler, context, topology)
         _step(reference_wrapped, reference_optimizer, reference_scheduler, context, topology)
         reference_state = {
@@ -148,7 +153,9 @@ def main() -> int:
         del reference_wrapped, reference_policy, reference_optimizer, reference_scheduler
         gc.collect()
 
-        interrupted_policy, interrupted_wrapped, interrupted_optimizer, interrupted_scheduler = _new_runtime(context)
+        interrupted_policy, interrupted_wrapped, interrupted_optimizer, interrupted_scheduler = _new_runtime(
+            context, topology
+        )
         _step(interrupted_wrapped, interrupted_optimizer, interrupted_scheduler, context, topology)
         rank_states = gather_rank_rng_states(context)
         primary_error = None
@@ -186,7 +193,10 @@ def main() -> int:
             scheduler=resumed_scheduler,
             expected=_metadata(context.world_size),
         )
-        resumed_wrapped = wrap_distributed_model(resumed_policy, context)
+        resumed_wrapped = wrap_distributed_model(
+            resumed_policy, context, static_graph=topology.ddp_static_graph
+        )
+        resumed_static_graph = bool(resumed_wrapped.static_graph)
         restore_source_base_checkpoint_rng(
             args.checkpoint, rank=context.rank, world_size=context.world_size
         )
@@ -209,6 +219,8 @@ def main() -> int:
                         "all_model_exact": all(item["model_exact"] for item in gathered),
                         "all_lr_exact": all(item["lr_exact"] for item in gathered),
                         "all_rng_exact": all(item["rng_exact"] for item in gathered),
+                        "reference_static_graph": reference_static_graph,
+                        "resumed_static_graph": resumed_static_graph,
                         "checkpoint_schema_version": manifest["schema_version"],
                         "checkpoint_world_size": manifest["topology"]["world_size"],
                         "distributed_rng_files": manifest["distributed_rng"]["files"],

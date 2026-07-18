@@ -53,7 +53,9 @@ def main() -> int:
         model = torch.nn.Linear(3, 2, bias=False)
         with torch.no_grad():
             model.weight.copy_(torch.tensor([[0.2, -0.1, 0.4], [-0.3, 0.5, 0.7]]))
-        ddp = wrap_distributed_model(model, context)
+        ddp = wrap_distributed_model(
+            model, context, static_graph=topology.ddp_static_graph
+        )
         optimizer = torch.optim.SGD(ddp.parameters(), lr=0.05)
         global_inputs = torch.arange(64 * 3, dtype=torch.float32).reshape(64, 3) / 100.0
         global_targets = torch.arange(64 * 2, dtype=torch.float32).reshape(64, 2) / 50.0
@@ -91,6 +93,7 @@ def main() -> int:
                 "flow_noise_exact": torch.equal(torch.cat(gathered_noise), reference_noise),
                 "flow_time_exact": torch.equal(torch.cat(gathered_time), reference_time),
                 "flow_input_sha256_exact": flow_input_sha256 == reference_sha256,
+                "ddp_static_graph": bool(ddp.static_graph),
                 "rank": int(os.environ["RANK"]),
             }
             args.output.write_text(json.dumps(output), encoding="utf-8")

@@ -60,6 +60,7 @@ class GateZeroDdpIntegrationTest(unittest.TestCase):
                 self.assertTrue(result["flow_noise_exact"])
                 self.assertTrue(result["flow_time_exact"])
                 self.assertTrue(result["flow_input_sha256_exact"])
+                self.assertTrue(result["ddp_static_graph"])
                 self.assertEqual(result["rank"], 0)
 
     def test_two_and_four_rank_same_topology_checkpoint_resume_is_exact(self) -> None:
@@ -97,6 +98,8 @@ class GateZeroDdpIntegrationTest(unittest.TestCase):
                 self.assertTrue(result["all_model_exact"])
                 self.assertTrue(result["all_lr_exact"])
                 self.assertTrue(result["all_rng_exact"])
+                self.assertTrue(result["reference_static_graph"])
+                self.assertTrue(result["resumed_static_graph"])
                 self.assertEqual(result["checkpoint_schema_version"], 3)
                 self.assertEqual(result["checkpoint_world_size"], world_size)
                 self.assertEqual(len(result["distributed_rng_files"]), world_size)

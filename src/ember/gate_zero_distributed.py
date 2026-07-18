@@ -30,6 +30,7 @@ class TrainingTopology:
     total_data_workers: int
     global_slot_algorithm: str
     flow_input_authority: str
+    ddp_static_graph: bool
 
     def as_manifest(self) -> dict[str, Any]:
         return asdict(self)
@@ -81,6 +82,7 @@ def topology_for_world_size(
         total_data_workers=distributed["total_data_workers"],
         global_slot_algorithm=distributed["global_slot_algorithm"],
         flow_input_authority=distributed["flow_input_authority"],
+        ddp_static_graph=distributed["ddp_static_graph"],
     )
     if (
         topology.per_rank_micro_batch_size
@@ -139,6 +141,7 @@ def _validate_distributed_settings(
         "ddp_mean_equal_local_batch",
         "gradient aggregation",
     )
+    _require_equal(distributed.get("ddp_static_graph"), True, "DDP static graph")
     for required in (
         "rank_zero_checkpoint_only",
         "save_every_rank_rng",
@@ -649,7 +652,10 @@ def unwrap_distributed_model(model: torch.nn.Module) -> torch.nn.Module:
 
 
 def wrap_distributed_model(
-    model: torch.nn.Module, context: DistributedContext
+    model: torch.nn.Module,
+    context: DistributedContext,
+    *,
+    static_graph: bool,
 ) -> torch.nn.Module:
     if context.world_size == 1:
         return model
@@ -659,6 +665,7 @@ def wrap_distributed_model(
         "broadcast_buffers": False,
         "find_unused_parameters": False,
         "gradient_as_bucket_view": True,
+        "static_graph": static_graph,
     }
     first_parameter = next(model.parameters(), None)
     if first_parameter is not None and first_parameter.is_cuda:

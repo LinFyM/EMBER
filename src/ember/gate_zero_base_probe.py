@@ -219,7 +219,15 @@ def run_resume_probe(
             context=context,
             resume_from=checkpoint_dir,
         )
-        assert_same_topology(topology.as_manifest(), checkpoint_evidence_value["topology"])
+        expected_topology = build_source_base_checkpoint_metadata(
+            spec,
+            config_path=args.config,
+            phase0_path=args.phase0_contract,
+            completed_step=checkpoint_step,
+            topology_config_path=args.topology_config,
+            topology=topology,
+        )["topology"]
+        assert_same_topology(expected_topology, checkpoint_evidence_value["topology"])
         comparison = _verify_probe_resume_and_cleanup(
             uninterrupted, resumed, checkpoint_dir, context
         )

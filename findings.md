@@ -942,3 +942,31 @@
   cross-owner state without reuse. Retire topology-probe/report launch surfaces
   after selection and evidence export, and retire the competence launcher after
   Gate 0 evidence freezes; retain invariant tests and the selected trainer path.
+
+## Four-rank resume failure diagnosed before topology selection
+
+- Under pre-amendment topology contract SHA256
+  `e334d4e8c8a3e6f904b0798177da3c82d2366c0dd80c13b7a4b1401643ecd68a`,
+  matched world-size 1 and 2 probes completed at 93.353 and 170.822 global
+  samples/s. Both had exact same-topology resume, complete global slots and
+  flow authority, valid telemetry/checksums, safe headroom, and cleaned their
+  transient checkpoints. These are retained engineering evidence but cannot
+  participate in the final selection after the execution contract changes.
+- The world-size-4 command completed all 30 fixed steps and atomically wrote a
+  valid schema-3 checkpoint, then failed closed because the continuous step-31
+  model hash differed from a newly constructed world-size-4 resume. It was not
+  an OOM, data, sampler, flow, optimizer, scheduler, or checkpoint-corruption
+  failure: two independent fresh resumes from that same checkpoint matched on
+  every state surface with zero differing tensors. The installed PyTorch DDP
+  implementation explicitly rebuilds gradient buckets after its first
+  iteration, so the continuous reducer and a fresh resumed reducer used
+  different bucket lifecycles; world size 4 exposed the resulting bitwise NCCL
+  reduction-layout difference.
+- The bounded mechanical repair declares the already fixed SmolVLA computation
+  graph as DDP `static_graph` and binds that choice into topology and checkpoint
+  manifests. It changes no data, sample, flow, model, optimizer, learning-rate,
+  or global-batch budget. The failed run remains a checksummed 96KB failure
+  packet plus telemetry and durable log; its validated 1.32GB transient
+  checkpoint was removed after the compact fresh-resume diagnostic froze.
+  Final topology selection now requires a live four-rank resume pass and fresh
+  matched 1/2/4 probes under the amended contract.

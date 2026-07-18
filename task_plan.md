@@ -228,7 +228,11 @@ progress through the complete design only when predecessor evidence supports it.
     total loader workers, and scheduler. Freeze the fastest safe topology only
     if it passes the predeclared speedup, efficiency, headroom, global-slot, and
     same-topology resume rules; otherwise use the four-GPU allowance for
-    independent arm/task/seed work rather than leaving useful devices idle.
+    independent arm/task/seed work rather than leaving useful devices idle. The
+    first world-size-4 attempt exposed and diagnosed a DDP bucket-lifecycle
+    resume mismatch before selection; after the bounded static-graph repair,
+    discard the old 1/2 throughput values from selection and rerun the complete
+    matched 1/2/4 set under one amended contract hash.
 19. [ ] Run the already frozen source-only tasks-3/4 competence comparison on
     the final 10k checkpoint, preferably four-way arm parallel after live GPU
     preflight. A correct-arm minimum pass authorizes only task-local oracle

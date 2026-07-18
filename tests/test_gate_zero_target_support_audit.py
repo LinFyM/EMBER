@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import tempfile
@@ -11,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from ember.gate_zero_oracle_session import resolve_lora_variant_spec  # noqa: E402
-from ember.gate_zero_target_support_contract import (  # noqa: E402
+from ember.gate_zero_support.contract import (  # noqa: E402
     GateZeroTargetSupportContractError,
     load_target_support_audit_spec,
 )
@@ -148,6 +149,7 @@ class GateZeroTargetSupportAuditContractTest(unittest.TestCase):
             check=False,
             capture_output=True,
             text=True,
+            env={**os.environ, "EMBER_PYTHON": sys.executable},
         )
 
         self.assertEqual(completed.returncode, 0, completed.stderr)

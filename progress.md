@@ -1072,7 +1072,7 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   compilation, all shell syntax checks, and diff whitespace checks. The
   architecture guard reports REVIEW with no hard violation: net active-source
   growth is 559 lines across seven changed and two new files. The new
-  `gate_zero_target_support_contract` has one cohesive owner--the irreversible
+  `gate_zero_support.contract` has one cohesive owner--the irreversible
   audit authority--and avoids mixing the superseded pilot contract with its
   bounded recovery. The fitter, session, artifacts, and launcher remain single
   shared paths. After the final LoRA support is sealed and its report exported,
@@ -1108,3 +1108,34 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   recovery state is removed after selected-state validation; compact candidates,
   selected state, Trackio metrics, telemetry, and checksums remain. A failed or
   partial output is never overwritten and receives a fresh recovery decision.
+
+### Target-support screening implementation ownership
+
+- The bounded audit now has one cohesive `ember.gate_zero_support` package:
+  `contract` owns the pre-outcome authority, `screen` owns six-fit validation,
+  the irreversible screening grant, and frozen decision arithmetic, while
+  `screen_runtime` owns only distributed model/rollout lifecycle. The shell
+  launcher owns live GPU conflict checks, four-rank topology, telemetry, and
+  cleanup. The existing oracle fitter remains the only trainer.
+- The screening runtime imports the already validated task-authority and
+  `_closed_loop_metrics` implementation from the canonical locked-report
+  runtime, including prompt override, two-reset init-state identity, upstream
+  evaluator, seed handling, and bounded video generation. It does not create a
+  second evaluator or read HDF5/report demos. Six fit states must hash-validate
+  before the one screening grant can authorize init states 24--31.
+- Architecture guard status is REVIEW with no hard violation. Relative to the
+  clean launch base, the isolated implementation adds five active files and
+  about 1.7k source/test/shell lines. This growth is confined to the current
+  irreversible Gate recovery, not a general experiment framework: grant/
+  decision code is pure and tested, runtime is thin orchestration over reused
+  mechanics, and the package removes two new modules from the crowded flat
+  `ember` namespace. After confirmation permanently seals or rejects the final
+  support, perform a retirement review before Writer work: preserve config,
+  hashes, reports, and decision tests, but remove the screening launcher/runtime
+  and fit-dispatch surface from active code once no canonical rerun depends on
+  them. No bank/geometry or hypothetical architecture path is reserved.
+- The isolated implementation passes 192/192 repository tests in 44.53
+  seconds, Python compilation, launcher shell syntax, and diff checks. Synthetic
+  tests cover six-state atomic grant publication, hash/missing-state failure,
+  query ranking, four-rank arm partitioning, smallest-passing-support selection,
+  bounded rank-16 authorization, state authority, and the single dry-run path.

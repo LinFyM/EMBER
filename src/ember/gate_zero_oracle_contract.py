@@ -231,7 +231,7 @@ def load_oracle_fit_spec(
             competence_path=competence_path,
         )
     if name == "smolvla_libero90_gate_zero_target_support_audit_v1":
-        from ember.gate_zero_target_support_contract import (
+        from ember.gate_zero_support.contract import (
             load_target_support_audit_spec,
         )
 

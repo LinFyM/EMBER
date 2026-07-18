@@ -217,9 +217,11 @@ progress through the complete design only when predecessor evidence supports it.
     frozen batch-64 contract, retain two rotating recovery checkpoints plus the
     final scientific candidate, then evaluate only the predeclared source tasks
     3/4 competence surface before any task-local oracle interpretation. The
-    single-GPU reference is currently running from clean commit `8ff06f2` and
-    must not be interrupted or rebound to new code; it remains the recovery and
-    efficiency reference, not evidence that one GPU is the long-term default.
+    single-GPU reference completed from clean commit `8ff06f2` with rc 0,
+    checksummed step-10000 final state, validated recovery steps 8000/9000,
+    Trackio completion, and released resources. It remains the recovery and
+    efficiency reference, not evidence that one GPU is the long-term default;
+    this item remains open until the frozen source competence surface runs.
 18. [ ] After item 17 commits its final hash, run the outcome-free fixed
     1/2/4-GPU topology probe sequentially on the same available device set.
     Preserve global effective batch 64, optimizer steps, sample/flow authority,

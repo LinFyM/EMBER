@@ -875,11 +875,18 @@
 
 ## Multi-GPU efficiency amendment frozen before topology outcomes
 
-- The clean 10k source-base run at commit `8ff06f2` remains untouched as the
-  one-GPU reference and recovery record. Its observed roughly 19.3GiB device
-  allocation shows ample headroom, but stability alone does not establish an
-  efficient long-term topology. No topology probe or source-policy outcome was
-  read when the 1/2/4-GPU engineering contract was written.
+- The clean 10k source-base run at commit `8ff06f2` completed untouched with
+  main rc 0 as the one-GPU reference and recovery record. Its final result SHA256
+  is `0db5485707711657ecaad2806019c0d28d3a2ec9b94973a5c4aa7b327dc2a1b2`;
+  the schema-2 step-10000 manifest SHA256 is
+  `ca0c83abd8d4b46cf59e8f0a01bd267f7f0e019d3e2bfea8c8baeb2e851d4d00`
+  with role `source_base_candidate_pending_competence`. The 7036.82-second run
+  averaged 96.31% GPU utilization while active, peaked at 19,311 MiB device
+  memory, retained validated recovery steps 8000/9000 plus final step 10000,
+  reached Trackio step 10000, and released the GPU. This is base acquisition
+  and systems evidence only; no rollout outcome has been read. Stability alone
+  does not establish an efficient long-term topology. No topology probe or
+  source-policy outcome was read when the 1/2/4-GPU contract was written.
 - The sole trainer now accepts world sizes 1, 2, or 4 through the same
   `torchrun` entrypoint. Every topology keeps global effective batch 64, one
   optimizer step per 64 unique absolute slots, the same total four loader

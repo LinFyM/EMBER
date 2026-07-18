@@ -723,18 +723,23 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
 
 ## 2026-07-18 multi-GPU efficiency work in isolated branch
 
-- The original 10,000-step source-base fit remains active from clean commit
+- The original 10,000-step source-base fit completed from clean commit
   `8ff06f2` under long-run ID
-  `gate_zero_source_base_fit_10k_20260718_090528`. It was not restarted,
-  interrupted, or exposed to the isolated implementation. A read-only snapshot
-  observed progress through step 9010 at about 92--93 samples/s, GPU utilization
-  near saturation, and roughly 19.3GiB allocated memory. Whole-tree validation
-  passed for the newly committed schema-2 step-9000 recovery checkpoint, and
-  rotation retains steps 8000/9000. This is mechanics/resource monitoring only;
-  loss is not interpreted as policy competence.
-- An isolated worktree on branch `codex/gate0-multigpu` contains the pre-outcome
-  1/2/4-GPU amendment. The main checkout remains clean at `8ff06f2`. The
-  amendment adds one canonical
+  `gate_zero_source_base_fit_10k_20260718_090528`, with main rc 0 and no restart
+  or exposure to later implementation changes. The checksummed result reports
+  10,000 steps and 7036.82 seconds; full-tree validation passes for retained
+  schema-2 recovery steps 8000/9000 and final step 10000. The final role is
+  `source_base_candidate_pending_competence`, result SHA256 is
+  `0db5485707711657ecaad2806019c0d28d3a2ec9b94973a5c4aa7b327dc2a1b2`,
+  and final manifest SHA256 is
+  `ca0c83abd8d4b46cf59e8f0a01bd267f7f0e019d3e2bfea8c8baeb2e851d4d00`.
+  Active telemetry averaged 96.31% GPU utilization, peaked at 19,311 MiB, and
+  Trackio reached step 10000 before GPU release. No loss value is interpreted
+  as policy competence.
+- The pre-outcome 1/2/4-GPU amendment was developed in the isolated
+  `codex/gate0-multigpu` branch, validated, pushed as `cc4ba36`, and integrated
+  only after the final reference hashes froze, as implementation commit
+  `39bfee9`. It adds one canonical
   torchrun/DDP trainer topology, deterministic global sharding, rank-0 flow
   generation/scatter, rank-aware atomic checkpoint/resume, fixed topology
   report generation, and source-arm parallel competence evaluation.
@@ -746,8 +751,8 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   exact same-topology resume. The report refuses telemetry that differs from
   its run-finalized checksum. INT/TERM cleanup handlers stop telemetry samplers
   without reintroducing the prohibited Bash `EXIT` trap.
-- No GPU topology benchmark has run yet. Wait for the clean 10k result and final
-  checkpoint hash, then sequentially launch fixed world-size 1, 2, and 4 probes
+- No GPU topology benchmark has run yet. Sequentially launch fixed world-size
+  1, 2, and 4 probes
   under durable long-run records and live GPU/storage preflight. Freeze the
   selection report/config before any later distributed formal fit. Then run
   the source-only competence arms and follow the already frozen pass/recovery

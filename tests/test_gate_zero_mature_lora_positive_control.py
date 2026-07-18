@@ -50,6 +50,12 @@ class GateZeroMatureLoraPositiveControlTest(unittest.TestCase):
         self.upper_bound_ladder = (
             ROOT / "configs" / "gate_zero_mature_action_expert_stage_ladder.toml"
         )
+        self.action_expert_lr_recovery_config = (
+            ROOT / "configs" / "gate_zero_mature_action_expert_lr_recovery.toml"
+        )
+        self.action_expert_lr_recovery_ladder = (
+            ROOT / "configs" / "gate_zero_mature_action_expert_lr_recovery_ladder.toml"
+        )
         self.gate_zero = ROOT / "configs" / "gate_zero_oracle_pilot.toml"
         self.phase0 = ROOT / "configs" / "phase0.toml"
         self.competence = ROOT / "configs" / "gate_zero_source_competence.toml"
@@ -77,6 +83,89 @@ class GateZeroMatureLoraPositiveControlTest(unittest.TestCase):
             phase0_path=self.phase0,
             competence_path=self.competence,
         )
+
+    def load_action_expert_lr_recovery(self):
+        return load_mature_lora_positive_control_spec(
+            self.action_expert_lr_recovery_config,
+            gate_zero_path=self.gate_zero,
+            phase0_path=self.phase0,
+            competence_path=self.competence,
+        )
+
+    def test_action_expert_lr_recovery_is_one_bounded_magnitude_test(self) -> None:
+        spec = self.load_action_expert_lr_recovery()
+        variant_name = "mature_action_expert_lr25e6_recovery"
+        variant = spec["fit"][variant_name]
+
+        self.assertEqual(spec["variants"], [variant_name])
+        self.assertEqual(spec["screening_stage"], "mature_capacity_lr_recovery")
+        self.assertIn(spec["screening_stage"], MATURE_SUPPORT_QUERY_STAGES)
+        self.assertEqual(variant["adaptation_kind"], "partial_update")
+        self.assertEqual(variant["expected_trainable_parameters"], 99_880_992)
+        self.assertEqual(variant["learning_rate"], 0.000025)
+        self.assertEqual(variant["warmup_steps"], 1_000)
+        self.assertEqual(variant["decay_learning_rate"], 0.000000625)
+        self.assertEqual(
+            spec["fit"]["candidate_steps"],
+            [0, 250, 500, 750, 1_000, 2_000, 5_000, 10_000, 20_000],
+        )
+        self.assertEqual(
+            spec["authority"]["task3_update_scale_probe_result_sha256"],
+            "763f2e79fa844054ca7317b1d1f277567778d86d07050074e3a2f29b38d78189",
+        )
+        self.assertEqual(
+            spec["authority"]["task4_update_scale_probe_result_sha256"],
+            "39618a1104d526c31f90813d85aed613e10237d3f88a1213de44482319aeb3e1",
+        )
+        self.assertFalse(spec["authority"]["validation_numeric_access"])
+        self.assertFalse(spec["authority"]["held_numeric_access"])
+        self.assertFalse(spec["writer_authorized_before_closed_loop"])
+
+        with self.action_expert_lr_recovery_ladder.open("rb") as handle:
+            ladder = tomllib.load(handle)
+        self.assertEqual(
+            ladder["parent_fit_contract_sha256"],
+            hashlib.sha256(self.action_expert_lr_recovery_config.read_bytes()).hexdigest(),
+        )
+        self.assertEqual(ladder["stage_steps"], [250, 500, 750, 1_000])
+        self.assertEqual(
+            ladder["continuation"]["step750_to_1000"],
+            {
+                "minimum_median_query_reduction_fraction": 0.01,
+                "minimum_each_task_query_reduction_fraction": 0.0,
+            },
+        )
+        self.assertEqual(
+            ladder["success_at_step1000"]["minimum_median_query_reduction_fraction"],
+            0.02,
+        )
+        self.assertTrue(ladder["success_at_step1000"]["authorizes_matched_lora_schedule"])
+        self.assertFalse(ladder["success_at_step1000"]["authorizes_gate_zero"])
+
+    def test_action_expert_lr_recovery_drift_fails_closed(self) -> None:
+        changed = self.action_expert_lr_recovery_config.read_text(encoding="utf-8").replace(
+            "learning_rate = 0.000025", "learning_rate = 0.00005"
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "lr-recovery.toml"
+            path.write_text(changed, encoding="utf-8")
+            with self.assertRaises(GateZeroMatureControlContractError):
+                load_mature_lora_positive_control_spec(
+                    path,
+                    gate_zero_path=self.gate_zero,
+                    phase0_path=self.phase0,
+                    competence_path=self.competence,
+                )
+
+    def test_canonical_oracle_fit_dispatch_accepts_action_expert_lr_recovery(self) -> None:
+        spec = load_oracle_fit_spec(
+            self.action_expert_lr_recovery_config,
+            gate_zero_path=self.gate_zero,
+            phase0_path=self.phase0,
+            competence_path=self.competence,
+        )
+
+        self.assertEqual(spec["variants"], ["mature_action_expert_lr25e6_recovery"])
 
     def test_mature_action_expert_upper_bound_is_non_matched_and_cannot_authorize_writer(self) -> None:
         primary = self.load()

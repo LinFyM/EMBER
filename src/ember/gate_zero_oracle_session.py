@@ -34,7 +34,11 @@ from ember.gate_zero_runtime import (
 
 
 MATURE_SUPPORT_QUERY_STAGES = frozenset(
-    {"mature_positive_control", "mature_capacity_upper_bound"}
+    {
+        "mature_positive_control",
+        "mature_capacity_upper_bound",
+        "mature_capacity_lr_recovery",
+    }
 )
 
 

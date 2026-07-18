@@ -1598,3 +1598,31 @@
   supervised task-local acquisition surface as insufficient and revise the Gate
   0 evidence plan. Either changes the current frozen recipe, so no further run
   is launched silently.
+
+## The action-expert direction is useful at smaller magnitude
+
+- A bounded post-hoc probe scales the saved step-1000 physical delta by
+  `[0, 0.1, 0.25, 0.5, 0.75, 1]` and reuses the exact independent source-query
+  evaluator. It is a diagnosis, not candidate selection: no training,
+  validation, held, formal closed-loop, Gate-0, or Writer authority is opened.
+  Both scale-0/scale-1 query and drift endpoints exactly reproduce the saved
+  candidates, and both artifact checksum sets pass.
+- At scale 0.25, task 3 improves 2.705% and task 4 improves 1.311%, for a 2.008%
+  median; at scale 0.5 task 3 remains +3.123% but task 4 becomes -1.251%.
+  Therefore the final training direction contains task-generalizing signal,
+  while its magnitude crosses task 4's useful range. The earlier failure is
+  narrowed from an undifferentiated data/acquisition failure to an optimization
+  magnitude overrun, although scaling a final delta is not the same operation
+  as retraining at a lower LR.
+- This makes one 0.25-scaled schedule the lowest-cost discriminating recovery:
+  keep every authority fixed and scale only peak/decay LR from
+  `1e-4/2.5e-6` to `2.5e-5/6.25e-7`. The checked-in contract and ladder forbid
+  an LR grid, closed-loop use of the non-matched arm, threshold changes, and
+  further target/rank search. A real step-1000 pass may authorize the same
+  schedule on LoRA only; it cannot itself pass Gate 0 or authorize Writer.
+- The source-base competence surface is already 8/8 for task 3 and 5/8 for task
+  4. Thus task 3 has no positive closed-loop success-count headroom; before a
+  final matched LoRA behavioral Gate, the source-only evaluation design must
+  preserve task 3 as a maintenance/spec control or predeclare another legal
+  source task with measurable headroom. This ceiling cannot be repaired by
+  lowering a success threshold after outcomes.

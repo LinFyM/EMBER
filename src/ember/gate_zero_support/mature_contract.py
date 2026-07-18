@@ -23,9 +23,14 @@ UPPER_BOUND_NAME = "smolvla_libero90_gate_zero_mature_action_expert_upper_bound_
 UPPER_BOUND_STATUS = (
     "predeclared_after_all_linear_stage2000_query_stop_before_action_expert_fit_outcomes"
 )
+LR_RECOVERY_NAME = "smolvla_libero90_gate_zero_mature_action_expert_lr_recovery_v1"
+LR_RECOVERY_STATUS = (
+    "predeclared_after_action_expert_scale_diagnostic_before_low_lr_fit_outcomes"
+)
 PRIMARY_VARIANT = "mature_official_default_r32"
 RECOVERY_VARIANT = "all_action_expert_linear_r32_same_recipe"
 UPPER_BOUND_VARIANT = "mature_action_expert_upper_bound"
+LR_RECOVERY_VARIANT = "mature_action_expert_lr25e6_recovery"
 EXPECTED_RANK16_RESULT_SHA256 = (
     "65b2abffcf8b2c7e8907c03f4e21cd8435da38b94afb9e8b41337a54bd323b00"
 )
@@ -109,6 +114,7 @@ def _validate_authority(
     competence_path: Path,
     recovery: bool,
     upper_bound: bool,
+    lr_recovery: bool,
 ) -> None:
     authority = raw.get("authority", {})
     _require_hash(authority, "gate_zero_contract_sha256", gate_zero_path, "Gate 0 contract")
@@ -138,7 +144,7 @@ def _validate_authority(
         "locked_report_numeric_reuse_for_selection",
     ):
         _require_equal(authority.get(key), False, key)
-    if recovery or upper_bound:
+    if recovery or upper_bound or lr_recovery:
         _require_hash(
             authority,
             "primary_mature_contract_sha256",
@@ -160,7 +166,7 @@ def _validate_authority(
                     raise GateZeroMatureControlContractError(
                         f"primary task-{task_id} {kind} authority is invalid"
                     )
-    if upper_bound:
+    if upper_bound or lr_recovery:
         _require_hash(
             authority,
             "all_linear_contract_sha256",
@@ -174,19 +180,50 @@ def _validate_authority(
             "all-linear stage contract",
         )
         _require_equal(authority.get("final_closed_loop_accessed"), False, "upper-bound rollout access")
+        if upper_bound:
+            for task_id in (3, 4):
+                for kind in ("candidate_manifest", "recovery_manifest", "telemetry"):
+                    value = authority.get(f"all_linear_task{task_id}_{kind}_sha256")
+                    if not isinstance(value, str) or len(value) != 64:
+                        raise GateZeroMatureControlContractError(
+                            f"all-linear task-{task_id} {kind} authority is invalid"
+                        )
+    if lr_recovery:
+        _require_hash(
+            authority,
+            "upper_bound_contract_sha256",
+            gate_zero_path.with_name("gate_zero_mature_action_expert_upper_bound.toml"),
+            "action-expert upper-bound contract",
+        )
+        _require_hash(
+            authority,
+            "upper_bound_stage_contract_sha256",
+            gate_zero_path.with_name("gate_zero_mature_action_expert_stage_ladder.toml"),
+            "action-expert upper-bound stage contract",
+        )
         for task_id in (3, 4):
-            for kind in ("candidate_manifest", "recovery_manifest", "telemetry"):
-                value = authority.get(f"all_linear_task{task_id}_{kind}_sha256")
+            for kind in (
+                "candidate_manifest",
+                "recovery_manifest",
+                "telemetry",
+            ):
+                value = authority.get(f"upper_bound_task{task_id}_{kind}_sha256")
                 if not isinstance(value, str) or len(value) != 64:
                     raise GateZeroMatureControlContractError(
-                        f"all-linear task-{task_id} {kind} authority is invalid"
+                        f"upper-bound task-{task_id} {kind} authority is invalid"
+                    )
+            for kind in ("result", "source"):
+                value = authority.get(f"task{task_id}_update_scale_probe_{kind}_sha256")
+                if not isinstance(value, str) or len(value) != 64:
+                    raise GateZeroMatureControlContractError(
+                        f"update-scale task-{task_id} {kind} authority is invalid"
                     )
 
 
 def _validate_provenance(
-    raw: dict[str, Any], *, recovery: bool, upper_bound: bool
+    raw: dict[str, Any], *, recovery: bool, upper_bound: bool, lr_recovery: bool
 ) -> None:
-    if upper_bound:
+    if upper_bound or lr_recovery:
         diagnostic = raw.get("diagnostic_contract", {})
         for key in (
             "matched_lora_gate_pass",
@@ -194,22 +231,41 @@ def _validate_provenance(
             "may_authorize_writer",
             "may_seal_writer_target_contract",
         ):
-            _require_equal(diagnostic.get(key), False, f"upper-bound {key}")
+            _require_equal(diagnostic.get(key), False, f"capacity diagnostic {key}")
         provenance = raw.get("recipe_provenance", {})
         _require_equal(
             provenance.get("lerobot_revision"), EXPECTED_LEROBOT_REVISION, "LeRobot revision"
         )
         _require_equal(provenance.get("lerobot_tag"), "v0.6.0", "LeRobot tag")
-        _require_equal(
-            provenance.get("same_mature_recipe_as_lora_controls"),
-            True,
-            "upper-bound mature recipe",
-        )
-        _require_equal(
-            provenance.get("only_trainable_state_class_differs"),
-            True,
-            "upper-bound isolated change",
-        )
+        if lr_recovery:
+            _require_equal(
+                provenance.get(
+                    "same_data_sampler_noise_augmentation_optimizer_and_seed_as_upper_bound"
+                ),
+                True,
+                "learning-rate recovery matched mechanics",
+            )
+            _require_equal(
+                provenance.get("only_learning_rate_schedule_magnitude_differs"),
+                True,
+                "learning-rate recovery isolated change",
+            )
+            _require_equal(
+                float(provenance.get("peak_and_decay_learning_rates_scaled_by")),
+                0.25,
+                "learning-rate recovery scale",
+            )
+        else:
+            _require_equal(
+                provenance.get("same_mature_recipe_as_lora_controls"),
+                True,
+                "upper-bound mature recipe",
+            )
+            _require_equal(
+                provenance.get("only_trainable_state_class_differs"),
+                True,
+                "upper-bound isolated change",
+            )
         return
     override = raw.get("owner_override", {})
     for key in (
@@ -241,7 +297,9 @@ def _validate_provenance(
             _require_equal(override.get(key), expected, f"recovery owner override {key}")
 
 
-def _validate_upper_bound_variant(variant: dict[str, Any]) -> None:
+def _validate_upper_bound_variant(
+    variant: dict[str, Any], *, lr_recovery: bool = False
+) -> None:
     """Keep the non-matched action-expert diagnostic unable to grant LoRA claims."""
 
     for key, expected in (
@@ -256,7 +314,7 @@ def _validate_upper_bound_variant(variant: dict[str, Any]) -> None:
         ("may_authorize_writer", False),
         ("may_seal_writer_target_contract", False),
         ("optimizer", "adamw"),
-        ("learning_rate", 0.0001),
+        ("learning_rate", 0.000025 if lr_recovery else 0.0001),
         ("betas", [0.9, 0.95]),
         ("epsilon", 1e-8),
         ("weight_decay", 1e-10),
@@ -264,13 +322,13 @@ def _validate_upper_bound_variant(variant: dict[str, Any]) -> None:
         ("scheduler", "linear_warmup_cosine_decay"),
         ("warmup_steps", 1_000),
         ("decay_steps", 20_000),
-        ("decay_learning_rate", 0.0000025),
+        ("decay_learning_rate", 0.000000625 if lr_recovery else 0.0000025),
         ("augmentation", "random_resized_crop"),
         ("augmentation_ratio", 1.0),
         ("augmentation_seed", 2026071832),
         ("seed", 2026071830),
     ):
-        _require_equal(variant.get(key), expected, f"upper-bound variant {key}")
+        _require_equal(variant.get(key), expected, f"capacity variant {key}")
     _require_equal(
         [float(variant.get("augmentation_scale_min")), float(variant.get("augmentation_scale_max"))],
         [0.9, 1.0],
@@ -286,9 +344,14 @@ def _validate_fit(
     expected_targets: list[str],
     expected_parameters: int,
     upper_bound: bool,
+    lr_recovery: bool,
 ) -> None:
     fit = raw.get("fit", {})
-    candidate_steps = list(range(0, 20_001, 1_000))
+    candidate_steps = (
+        [0, 250, 500, 750, 1_000, 2_000, 5_000, 10_000, 20_000]
+        if lr_recovery
+        else list(range(0, 20_001, 1_000))
+    )
     for key, expected in (
         ("support_episode_bounds", [0, 39]),
         ("support_episode_roles", ["writer_spec", "source_base_fit", "oracle_support"]),
@@ -323,8 +386,8 @@ def _validate_fit(
     if fit.get("num_workers", -1) < 0 or fit.get("prefetch_factor", 0) <= 0:
         raise GateZeroMatureControlContractError("mature loader resources are invalid")
     variant = fit.get(variant_name, {})
-    if upper_bound:
-        _validate_upper_bound_variant(variant)
+    if upper_bound or lr_recovery:
+        _validate_upper_bound_variant(variant, lr_recovery=lr_recovery)
         return
     for key, expected in (
         ("adaptation_kind", "lora"),
@@ -472,6 +535,73 @@ def _validate_upper_bound_boundary(raw: dict[str, Any]) -> None:
         _require_equal(failure.get(key), expected, f"upper-bound prior failure {key}")
 
 
+def _validate_lr_recovery_selection(raw: dict[str, Any]) -> None:
+    selection = raw.get("selection", {})
+    for key, expected in (
+        ("query_episode_bounds", [40, 45]),
+        ("candidate_rule", "fixed_final_optimizer_step"),
+        ("fixed_final_optimizer_step", 20_000),
+        ("selection_uses_locked_report", False),
+        ("step_zero_must_be_functional_base", True),
+        ("drift_role", "diagnostic_only_for_non_matched_action_expert_capacity"),
+    ):
+        _require_equal(selection.get(key), expected, f"LR recovery selection {key}")
+    rollout = raw.get("capacity_rollout", {})
+    for key, expected in (
+        ("role", "forbidden_for_this_optimization_diagnostic"),
+        ("access_authorized", False),
+        ("may_authorize_gate_zero", False),
+        ("may_authorize_writer", False),
+    ):
+        _require_equal(rollout.get(key), expected, f"LR recovery rollout {key}")
+    bounded = raw.get("bounded_recovery", {})
+    for key in (
+        "this_is_not_a_lora_target_or_rank_variant",
+        "no_further_lora_target_or_rank_variants",
+        "single_learning_rate_recovery_only",
+        "no_learning_rate_grid",
+        "upper_bound_must_pass_step1000_before_matched_lora_schedule",
+        "success_authorizes_only_matched_lora_schedule",
+        "failure_requires_gate_zero_data_or_acquisition_plan_revision",
+    ):
+        _require_equal(bounded.get(key), True, f"LR recovery boundary {key}")
+    _require_equal(
+        raw.get("screening_stage"),
+        "mature_capacity_lr_recovery",
+        "LR recovery stage",
+    )
+    _require_equal(
+        raw.get("writer_authorized_before_closed_loop"),
+        False,
+        "premature Writer authority",
+    )
+
+
+def _validate_lr_recovery_boundary(raw: dict[str, Any]) -> None:
+    failure = raw.get("prior_action_expert_failure", {})
+    for key, expected in (
+        ("stage_step", 1_000),
+        ("task3_query_reduction_fraction", -0.05220677659648454),
+        ("task4_query_reduction_fraction", -0.19788259189706617),
+        ("median_query_reduction_fraction", -0.12504468424677534),
+        ("continuation_to_step2000", False),
+        ("support_loss_improved_on_both_tasks", True),
+    ):
+        _require_equal(failure.get(key), expected, f"LR recovery prior failure {key}")
+    diagnostic = raw.get("update_scale_diagnostic", {})
+    for key, expected in (
+        ("diagnostic_only", True),
+        ("scaled_final_delta_is_not_lower_lr_training", True),
+        ("endpoint_identity_passed", True),
+        ("task3_scale025_query_reduction_fraction", 0.027049502954258852),
+        ("task4_scale025_query_reduction_fraction", 0.01311309319317943),
+        ("median_scale025_query_reduction_fraction", 0.02008129807371914),
+        ("task4_scale050_query_reduction_fraction", -0.012513598169400765),
+        ("selected_single_recovery_scale", 0.25),
+    ):
+        _require_equal(diagnostic.get(key), expected, f"update-scale diagnostic {key}")
+
+
 def load_mature_lora_positive_control_spec(
     path: Path,
     *,
@@ -491,6 +621,7 @@ def load_mature_lora_positive_control_spec(
     if name == EXPECTED_NAME:
         recovery = False
         upper_bound = False
+        lr_recovery = False
         status = EXPECTED_STATUS
         variant_name = PRIMARY_VARIANT
         expected_targets = mature_default_targets()
@@ -498,6 +629,7 @@ def load_mature_lora_positive_control_spec(
     elif name == RECOVERY_NAME:
         recovery = True
         upper_bound = False
+        lr_recovery = False
         status = RECOVERY_STATUS
         variant_name = RECOVERY_VARIANT
         expected_targets = mature_all_action_expert_linear_targets()
@@ -505,8 +637,17 @@ def load_mature_lora_positive_control_spec(
     elif name == UPPER_BOUND_NAME:
         recovery = False
         upper_bound = True
+        lr_recovery = False
         status = UPPER_BOUND_STATUS
         variant_name = UPPER_BOUND_VARIANT
+        expected_targets = []
+        expected_parameters = 99_880_992
+    elif name == LR_RECOVERY_NAME:
+        recovery = False
+        upper_bound = False
+        lr_recovery = True
+        status = LR_RECOVERY_STATUS
+        variant_name = LR_RECOVERY_VARIANT
         expected_targets = []
         expected_parameters = 99_880_992
     else:
@@ -521,6 +662,7 @@ def load_mature_lora_positive_control_spec(
         competence_path=competence_path,
         recovery=recovery,
         upper_bound=upper_bound,
+        lr_recovery=lr_recovery,
     )
     parent = load_gate_zero_contract(gate_zero_path, phase0_path)
     try:
@@ -529,7 +671,12 @@ def load_mature_lora_positive_control_spec(
     except (OSError, tomllib.TOMLDecodeError) as error:
         raise GateZeroMatureControlContractError("invalid Phase 0 authority") from error
     _require_equal(raw["task_ids"], parent["data"]["task_ids"], "parent task authority")
-    _validate_provenance(raw, recovery=recovery, upper_bound=upper_bound)
+    _validate_provenance(
+        raw,
+        recovery=recovery,
+        upper_bound=upper_bound,
+        lr_recovery=lr_recovery,
+    )
     _validate_fit(
         raw,
         phase0,
@@ -537,8 +684,12 @@ def load_mature_lora_positive_control_spec(
         expected_targets=expected_targets,
         expected_parameters=expected_parameters,
         upper_bound=upper_bound,
+        lr_recovery=lr_recovery,
     )
-    if upper_bound:
+    if lr_recovery:
+        _validate_lr_recovery_selection(raw)
+        _validate_lr_recovery_boundary(raw)
+    elif upper_bound:
         _validate_upper_bound_selection(raw)
         _validate_upper_bound_boundary(raw)
     else:

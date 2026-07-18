@@ -594,6 +594,7 @@ def load_target_support_screen_spec(
         "smolvla_libero90_gate_zero_mature_lora_positive_control_v1",
         "smolvla_libero90_gate_zero_mature_lora_all_linear_recovery_v1",
         "smolvla_libero90_gate_zero_mature_action_expert_upper_bound_v1",
+        "smolvla_libero90_gate_zero_mature_action_expert_lr_recovery_v1",
     }:
         from ember.gate_zero_support.mature_contract import (
             load_mature_lora_positive_control_spec,

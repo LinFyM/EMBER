@@ -1523,3 +1523,19 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   seal is authorized. The next action is an owner Gate-recovery decision on a
   single lower-LR/dense-early acquisition recovery versus revising the current
   supervised Gate 0 evidence plan; no further target/rank or grid search runs.
+- Source-query update-scale diagnostics
+  `gate0_action_expert_update_scale_t3_20260718_193359` and task 4 complete rc 0
+  in 83/81 seconds on GPUs 4/5 and release both devices. Scale 0.25 converts the
+  saved update to +2.705%/+1.311% query reduction (median +2.008%); scale 0.5
+  already makes task 4 negative. Scale-0/1 endpoint identity and all artifact
+  checksums pass; only 48KB is retained, including exact probe source SHA256
+  `f03738cc...bb7`. Trackio group `gate0_update_scale_diagnostic` provides the
+  live/later curve. No training or closed-loop/validation/held surface was used.
+- Added one strict optimization-only recovery contract and ladder at SHA256
+  `30e2c575...a3c7c` / `6947a9a8...ebc2c`. They reuse the canonical fitter and
+  preserve data, sampler/noise, augmentation, optimizer, seed, parameter
+  identity and 20k maximum budget, changing only peak/decay LR by 0.25. The
+  staged authority is 250 -> 500 -> 750 -> 1000 with exact resume and early
+  stopping. Focused contract tests pass 18/18; real prerequisite loading and
+  canonical launcher dry-run pass. The next launch is task 3/4 to step 250 on
+  two GPUs; no LR grid, action-expert rollout, or LoRA run is yet authorized.

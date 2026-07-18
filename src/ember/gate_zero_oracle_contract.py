@@ -16,6 +16,16 @@ class GateZeroOracleContractError(RuntimeError):
     """Raised when the additive oracle execution contract changes authority."""
 
 
+MATURE_CONTROL_NAMES = frozenset(
+    {
+        "smolvla_libero90_gate_zero_mature_lora_positive_control_v1",
+        "smolvla_libero90_gate_zero_mature_lora_all_linear_recovery_v1",
+        "smolvla_libero90_gate_zero_mature_action_expert_upper_bound_v1",
+        "smolvla_libero90_gate_zero_mature_action_expert_lr_recovery_v1",
+    }
+)
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -209,6 +219,105 @@ def _load_json(path: Path, label: str) -> dict[str, Any]:
     return value
 
 
+def _require_hashed_artifact(
+    output_root: Path,
+    authority: dict[str, Any],
+    *,
+    relative_key: str,
+    sha_key: str,
+    label: str,
+) -> Path:
+    artifact = output_root / Path(authority[relative_key])
+    if not artifact.is_file() or _sha256(artifact) != authority[sha_key]:
+        raise GateZeroOracleContractError(f"{label} authority changed")
+    return artifact
+
+
+def _validate_task_artifact_group(
+    output_root: Path,
+    authority: dict[str, Any],
+    *,
+    prefix: str,
+    label: str,
+) -> None:
+    for task_id in (3, 4):
+        for kind in ("candidate_manifest", "recovery_manifest", "telemetry"):
+            _require_hashed_artifact(
+                output_root,
+                authority,
+                relative_key=f"{prefix}_task{task_id}_{kind}_relative_path",
+                sha_key=f"{prefix}_task{task_id}_{kind}_sha256",
+                label=f"{label} task-{task_id} {kind}",
+            )
+
+
+def _validate_update_scale_probe(
+    output_root: Path, authority: dict[str, Any], *, task_id: int
+) -> None:
+    paths = {}
+    for kind in ("result", "source"):
+        paths[kind] = _require_hashed_artifact(
+            output_root,
+            authority,
+            relative_key=f"task{task_id}_update_scale_probe_{kind}_relative_path",
+            sha_key=f"task{task_id}_update_scale_probe_{kind}_sha256",
+            label=f"update-scale task-{task_id} {kind}",
+        )
+    probe = _load_json(paths["result"], f"update-scale task-{task_id} result")
+    scope = probe.get("scope", {})
+    if (
+        probe.get("status") != "source_query_update_scale_diagnostic_complete"
+        or probe.get("task_id") != task_id
+        or not all(probe.get("endpoint_checks", {}).values())
+        or scope.get("diagnostic_only") is not True
+        or scope.get("formal_closed_loop_accessed") is not False
+        or scope.get("validation_numeric_access") is not False
+        or scope.get("held_numeric_access") is not False
+    ):
+        raise GateZeroOracleContractError(
+            f"update-scale task-{task_id} result contract changed"
+        )
+
+
+def _validate_mature_prior_artifacts(
+    spec: dict[str, Any],
+    authority: dict[str, Any],
+    competence_result_path: Path,
+) -> None:
+    competence_relative = Path(authority["source_competence_result_relative_path"])
+    if tuple(competence_result_path.parts[-len(competence_relative.parts) :]) != competence_relative.parts:
+        raise GateZeroOracleContractError("mature control output-root authority changed")
+    output_root = competence_result_path
+    for _ in competence_relative.parts:
+        output_root = output_root.parent
+    prior = _require_hashed_artifact(
+        output_root,
+        authority,
+        relative_key="prior_rank16_screening_result_relative_path",
+        sha_key="prior_rank16_screening_result_sha256",
+        label="rank-16 screening result",
+    )
+    if _load_json(prior, "rank-16 screening result").get("status") != authority[
+        "prior_rank16_status"
+    ]:
+        raise GateZeroOracleContractError("rank-16 screening result status changed")
+    name = spec.get("name")
+    if name == "smolvla_libero90_gate_zero_mature_lora_all_linear_recovery_v1":
+        _validate_task_artifact_group(
+            output_root, authority, prefix="primary", label="primary"
+        )
+    elif name == "smolvla_libero90_gate_zero_mature_action_expert_upper_bound_v1":
+        _validate_task_artifact_group(
+            output_root, authority, prefix="all_linear", label="all-linear"
+        )
+    elif name == "smolvla_libero90_gate_zero_mature_action_expert_lr_recovery_v1":
+        _validate_task_artifact_group(
+            output_root, authority, prefix="upper_bound", label="upper-bound"
+        )
+        for task_id in (3, 4):
+            _validate_update_scale_probe(output_root, authority, task_id=task_id)
+
+
 def load_oracle_fit_spec(
     path: Path,
     *,
@@ -233,10 +342,7 @@ def load_oracle_fit_spec(
     if name in {
         "smolvla_libero90_gate_zero_target_support_audit_v1",
         "smolvla_libero90_gate_zero_target_support_rank16_v1",
-        "smolvla_libero90_gate_zero_mature_lora_positive_control_v1",
-        "smolvla_libero90_gate_zero_mature_lora_all_linear_recovery_v1",
-        "smolvla_libero90_gate_zero_mature_action_expert_upper_bound_v1",
-    }:
+    } | MATURE_CONTROL_NAMES:
         from ember.gate_zero_support.contract import (
             load_target_support_screen_spec,
         )
@@ -274,54 +380,8 @@ def validate_oracle_fit_prerequisites(
     authority = spec["authority"]
     if _sha256(competence_result_path) != authority["source_competence_result_sha256"]:
         raise GateZeroOracleContractError("source competence result SHA256 changed")
-    if spec.get("name") in {
-        "smolvla_libero90_gate_zero_mature_lora_positive_control_v1",
-        "smolvla_libero90_gate_zero_mature_lora_all_linear_recovery_v1",
-        "smolvla_libero90_gate_zero_mature_action_expert_upper_bound_v1",
-    }:
-        competence_relative = Path(authority["source_competence_result_relative_path"])
-        if tuple(competence_result_path.parts[-len(competence_relative.parts) :]) != competence_relative.parts:
-            raise GateZeroOracleContractError("mature control output-root authority changed")
-        output_root = competence_result_path
-        for _ in competence_relative.parts:
-            output_root = output_root.parent
-        prior_path = output_root / authority["prior_rank16_screening_result_relative_path"]
-        if (
-            not prior_path.is_file()
-            or _sha256(prior_path) != authority["prior_rank16_screening_result_sha256"]
-        ):
-            raise GateZeroOracleContractError("rank-16 screening result authority changed")
-        prior = _load_json(prior_path, "rank-16 screening result")
-        if prior.get("status") != authority["prior_rank16_status"]:
-            raise GateZeroOracleContractError("rank-16 screening result status changed")
-        if spec.get("name") == "smolvla_libero90_gate_zero_mature_lora_all_linear_recovery_v1":
-            for task_id in (3, 4):
-                for kind in ("candidate_manifest", "recovery_manifest", "telemetry"):
-                    relative_key = f"primary_task{task_id}_{kind}_relative_path"
-                    sha_key = f"primary_task{task_id}_{kind}_sha256"
-                    relative = Path(authority[relative_key])
-                    artifact = output_root / relative
-                    if (
-                        not artifact.is_file()
-                        or _sha256(artifact) != authority[sha_key]
-                    ):
-                        raise GateZeroOracleContractError(
-                            f"primary task-{task_id} {kind} authority changed"
-                        )
-        if spec.get("name") == "smolvla_libero90_gate_zero_mature_action_expert_upper_bound_v1":
-            for task_id in (3, 4):
-                for kind in ("candidate_manifest", "recovery_manifest", "telemetry"):
-                    relative_key = f"all_linear_task{task_id}_{kind}_relative_path"
-                    sha_key = f"all_linear_task{task_id}_{kind}_sha256"
-                    relative = Path(authority[relative_key])
-                    artifact = output_root / relative
-                    if (
-                        not artifact.is_file()
-                        or _sha256(artifact) != authority[sha_key]
-                    ):
-                        raise GateZeroOracleContractError(
-                            f"all-linear task-{task_id} {kind} authority changed"
-                        )
+    if spec.get("name") in MATURE_CONTROL_NAMES:
+        _validate_mature_prior_artifacts(spec, authority, competence_result_path)
     competence = _load_json(competence_result_path, "source competence result")
     decision = competence.get("decision", {})
     if (

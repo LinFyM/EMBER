@@ -512,6 +512,21 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     positive) and recording the current task-local supervised acquisition
     surface as insufficient and revising the Gate 0 evidence plan; no silent
     third target/rank or hyperparameter grid is allowed.
+    A post-hoc, source-query-only physical-update scale probe now resolves that
+    decision without new training or closed-loop access. Its scale-0 and
+    scale-1 endpoints exactly reproduce both saved candidates; at scale 0.25,
+    task 3/4 query reductions become +2.705%/+1.311% (median +2.008%), while
+    scale 0.5 already makes task 4 negative. This is diagnostic evidence that
+    the learned direction contains utility but the 1k update magnitude
+    overruns; interpolation is explicitly not equivalent to lower-LR training.
+    Freeze one final optimization-only recovery in
+    `gate_zero_mature_action_expert_lr_recovery.toml` (SHA256
+    `30e2c575...a3c7c`): same data, sampler/noise, augmentation, AdamW, seed and
+    99,880,992 parameters, but peak/decay LR scaled by 0.25 to
+    2.5e-5/6.25e-7. Run the same trajectory at 250/500/750/1000 boundaries
+    under ladder SHA256 `6947a9a8...ebc2c`; stop at the first failed rule. A
+    step-1000 pass authorizes only the identical schedule on LoRA, not Gate 0,
+    Writer, action-expert rollout, another LR trial, or a target/rank search.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

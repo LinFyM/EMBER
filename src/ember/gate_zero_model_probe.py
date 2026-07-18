@@ -232,8 +232,8 @@ def run_probe(args: argparse.Namespace) -> dict[str, Any]:
     from lerobot.policies.smolvla.processor_smolvla import make_smolvla_pre_post_processors
 
     preprocessor, postprocessor = make_smolvla_pre_post_processors(policy.config, dataset_stats=stats)
+    row_keys = _batch_row_keys(raw_batch)
     batch = _preprocess(raw_batch, preprocessor, list(policy.config.image_features))
-    row_keys = _batch_row_keys(batch)
     noise, flow_time = deterministic_flow_inputs(
         row_keys,
         action_shape=(spec["data"]["action_chunk_size"], policy.config.max_action_dim),

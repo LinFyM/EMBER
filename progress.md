@@ -232,6 +232,29 @@
   The new HTML view exposes split metrics, operation order, and role atoms; its
   embedded JavaScript passes a fresh syntax check.
 
+## Gate -1 source same-state goal mechanics milestone
+
+- Commit `25b1276` adds the sole source same-state goal-mechanics owner, frozen
+  config, thin CPU-only launcher, and six focused tests. The full repository
+  suite passes 74 tests, contract validation, compilation, shell syntax, diff
+  whitespace, and secret/path scans. The architecture guard has no hard or
+  function-size signals; its only review flag is the 774-line source/test/
+  launcher growth. The 534-line core has one current responsibility and reuses
+  native LIBERO BDDL evaluation plus the existing atomic `latest` owner, so no
+  parallel evaluator or compatibility path was introduced.
+- The first longrun invocation (`..._050456`) expanded an empty output variable;
+  the launcher rejected the non-absolute output with rc 2 before data or
+  simulator access. The corrected invocation preserved the same scientific
+  contract and completed as `gate_minus1_source_same_init_goal_20260718_050511`
+  with main rc 0 from the clean pushed commit.
+- Canonical task-3/task-4 mechanics are exact: shared model-layout hashes match;
+  all eight shared initial states have zero cross-environment state delta and
+  are unsuccessful under both native goals; all sixteen source terminal states
+  are successful only under their originating goal. The minimum bidirectional
+  fraction is 1.0 versus the frozen 0.80 threshold. The run used no GPU, took
+  4.73 seconds, peaked at 2,748,868 KiB RSS, and retained a 21,482-byte
+  checksummed JSON/HTML report with an atomic local review link.
+
 ## Current phase
 
 Phase 0, reproducible substrate, is in progress. The immutable contract, first
@@ -247,8 +270,9 @@ The previous canonical LIBERO-90 manifest is complete as data-integrity
 evidence, and its role-aware audit falsified the original split. The authorized
 one-time specification-only recovery is now permanently sealed with no policy
 outcome input. The fresh canonical manifest and source-only normalization under
-the new IDs now pass. Gate -1 is still in progress on the remaining same-init
-specification and language/video causal probes. Writer training remains
+the new IDs now pass. The source same-state native-goal surface also passes its
+mechanics contract, but Gate -1 is still in progress on policy-level same-init
+language switching and video causal probes. Writer training remains
 unauthorized.
 
 ## Implementation ownership review
@@ -308,6 +332,11 @@ unauthorized.
   parallel evaluator; the module remains below the architecture review size
   boundary, and its retirement trigger is completion of Gate -1 or an upstream
   evaluator gaining an equivalently audited prompt-override hook.
+- `src/ember/counterfactual_goal_probe.py` owns only source-task exact-state
+  cross-evaluation under two unmodified native BDDL goals. Its frozen config and
+  CPU-only shell launcher are the sole active path; it does not load a policy,
+  invent a goal heuristic, or expose validation/held numeric data. The module
+  is retired after Gate -1 once its hashes and result summary are preserved.
 - Retirement triggers are explicit: remove the BDDL and robosuite repairs after
   a pinned dependency upgrade proves the upstream wheels no longer contain the
   duplicate metadata/shared-log defects; remove the local SmolVLA/LIBERO
@@ -325,9 +354,10 @@ unauthorized.
 
 1. Preserve the permanent reseal and fresh canonical manifest as the only active
    split/normalization path; do not reuse the rejected split's normalization.
-2. Continue the remaining same-init executable-goal and language/video causal
-   controls under the frozen fixed-batch evaluator contract. Do not use held
-   results to choose thresholds, task IDs, or remedies.
+2. Preserve the source native-goal mechanics result, then run the remaining
+   policy-level same-init language and video causal controls under the frozen
+   fixed-batch evaluator contract. Do not use held results to choose thresholds,
+   task IDs, or remedies.
 3. Predeclare and run the smallest closed-loop useful-update oracle only after
    the remaining benchmark/specification mechanics are valid.
 
@@ -368,3 +398,8 @@ unauthorized.
   `$EMBER_OUTPUT_ROOT/phase0/libero90_manifest/latest/index.html`. Historical
   run directories are retained until verified-regenerable, unpinned media
   becomes large or numerous enough for a recorded cleanup.
+- The source paired-goal mechanics record is
+  `.codex/longrun/gate_minus1_source_same_init_goal_20260718_050511` plus
+  `$EMBER_OUTPUT_ROOT/gate_minus1/specification/source_same_init_goal_20260718T050511Z`.
+  The atomic `source_same_init_goal_latest/index.html` report is 21KB and needs
+  no cleanup; it is mechanics-only and leaves the Gate/Writer decision false.

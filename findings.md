@@ -581,3 +581,43 @@
   currently legal non-held BDDL parses at tasks 17 and 84 preserve wording
   differences while task-map/HDF5 instructions agree. Newly held BDDL semantics
   were not opened to reproduce prior wording notes.
+
+## Gate -1 source same-state executable-goal mechanics
+
+- The official-overlap `libero_spatial` suite cannot establish executable-goal
+  switching: all ten tasks have the same native success predicate,
+  `on(akita_black_bowl_1, plate_1)`, and differ only in initial spatial
+  specification. Its prior prompt-swap result therefore remains prompt-path
+  evidence and is not relabeled as a goal counterfactual.
+- The smallest legal paired-goal surface is resealed LIBERO-90 source tasks 3
+  and 4 in `KITCHEN_SCENE10`. Their declared object/fixture state schema is
+  identical, while the native goals differ only in the relevant butter:
+  task 3 requires `butter_2` in the top drawer and the drawer closed; task 4
+  requires `butter_1` with the same receptacle/closure predicate.
+- The checked-in probe freezes the seal and data hashes, task IDs, first eight
+  init states, first eight source demonstrations per task, final recorded-state
+  selector, exact flattened-MuJoCo-state identity, unmodified native BDDL
+  evaluator, and the existing 0.80 counterfactual threshold. It reads source
+  states only and serializes hashes and boolean goal matrices, not actions,
+  model XML, raw states, local paths, or any validation/held numeric surface.
+- Both environments produced the exact same model-layout hash. All 8 shared
+  task-3 initial states reproduced byte-identical post-injection state in both
+  evaluators with maximum absolute delta zero and no premature success. All 8
+  task-3 terminal states evaluated `[true, false]`, and all 8 task-4 terminal
+  states evaluated `[false, true]`; bidirectional specificity is therefore
+  16/16 and the minimum direction fraction is 1.0.
+- This is a mechanics pass for a feasible same-state executable-goal evaluator,
+  not evidence that a learned policy follows a same-init instruction switch.
+  It does not pass Gate -1, say anything about video utility, or authorize
+  Writer training. The next causal probe must hold the observation/state fixed
+  while measuring policy action or behavior under matched language conditions.
+- The canonical run is
+  `.codex/longrun/gate_minus1_source_same_init_goal_20260718_050511` from clean
+  commit `25b1276`; main rc is 0, wall time 4.73 seconds, peak RSS 2,748,868
+  KiB, and GPU count zero. The 21,482-byte checksummed JSON/HTML artifact is
+  `$EMBER_OUTPUT_ROOT/gate_minus1/specification/source_same_init_goal_20260718T050511Z`,
+  with the atomic review link `source_same_init_goal_latest/index.html`.
+- A preceding longrun ending `050456` is retained as a launch-argument failure:
+  shell expansion left `--output-dir` empty, the canonical launcher rejected it
+  with rc 2 before runtime setup, data read, simulator creation, or GPU use. It
+  is not scientific evidence and no output directory was created.

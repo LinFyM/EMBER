@@ -106,8 +106,12 @@ progress through the complete design only when predecessor evidence supports it.
    audit from clean commit `23f3301` now verifies the resealed IDs, 183,555
    source-only normalization rows, 30 metadata-only validation/held tasks, zero
    evaluation numeric access, full checksums, and a filterable role-aware HTML
-   view. What remains in this item is the same-init executable-goal and
-   language/video Gate -1 probes.
+   view. A source-only same-state native-BDDL probe now establishes an exact
+   paired executable-goal surface on tasks 3/4: the MuJoCo state layout is
+   identical, 8/8 shared initial states are neutral under both goals, and 16/16
+   source demonstration terminal states pass only their originating goal. This
+   is evaluator mechanics, not policy behavior. What remains in this item is
+   policy-level same-init switching plus language/video causal controls.
 7. [x] Run the bounded evaluation-identity recovery on the same official-overlap
    surface: first compare the frozen policy under one exactly repeated reset
    observation across the predeclared batch ladder, then record matched actual
@@ -136,3 +140,13 @@ progress through the complete design only when predecessor evidence supports it.
     the overlap-trained surface. The outer long-run state remains a retained
     wrapper-failure packet because its one-off `EXIT` cleanup returned 1 after
     the canonical command had exited 0 and written checksummed artifacts.
+11. [x] Establish a native paired-goal mechanics surface without held access.
+    Resealed source tasks 3/4 share one exact MuJoCo layout but have different
+    butter-object BDDL goals. Eight shared init states and eight terminal states
+    per direction were cross-evaluated with the unmodified pinned native
+    evaluator; exact state identity and 16/16 bidirectional specificity pass.
+    The 0.80 threshold is descriptive mechanics only and cannot pass Gate -1.
+12. [ ] Run the smallest policy-level same-observation/same-init language causal
+    probe on a competent legal surface, then the predeclared video content and
+    temporal controls. Keep executable-goal mechanics, policy causal behavior,
+    and later Writer/video utility as separate claims.

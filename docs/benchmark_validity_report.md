@@ -1,6 +1,6 @@
 # EMBER Gate -1 Benchmark and Specification Validity Report
 
-Status: **specification-only split permanently resealed; Gate -1 remains in progress**
+Status: **split resealed and source paired-goal mechanics valid; Gate -1 remains in progress**
 Evidence cutoff: 2026-07-18
 
 ## Technical summary
@@ -25,6 +25,43 @@ task IDs are in `configs/libero90_split_reseal.json` with SHA256
 `9f5bc62e15e2cb07887e97bc98630a3f527ac6b5e253f41c203cf37459568428`.
 The reseal repairs a benchmark-design defect. It does not itself pass Gate -1,
 demonstrate policy competence, or authorize Writer center training.
+
+A subsequent source-only mechanics probe establishes that a feasible same-state
+paired-goal surface can be executed with the pinned native evaluator. It keeps
+policy causal behavior separate: no result yet shows that a learned policy
+switches correctly when only the task specification changes.
+
+## Source same-state executable-goal mechanics
+
+The overlap-trained `libero_spatial` suite is unsuitable for this particular
+control because all ten tasks share one native success predicate. EMBER
+therefore selected the smallest predeclared legal alternative after the reseal:
+source tasks 3 and 4 share `KITCHEN_SCENE10`, an identical 77-dimensional
+MuJoCo state layout, and the same drawer target, but task 3 targets the back
+butter (`butter_2`) while task 4 targets the front butter (`butter_1`). No
+validation or held semantics or numeric values are used.
+
+The probe freezes the task/data/BDDL hashes, first eight task-3 init states,
+first eight source demonstrations per task, final-recorded-state selector,
+exact flattened-state identity, native `check_success`, and the unchanged 0.80
+counterfactual threshold. Results are:
+
+| Mechanics diagnostic | Result |
+| --- | ---: |
+| Native model-layout hashes equal | yes |
+| Shared init states exact after injection | 8 / 8 |
+| Shared init states neutral under both goals | 8 / 8 |
+| Task-3 terminal states pass task 3 only | 8 / 8 |
+| Task-4 terminal states pass task 4 only | 8 / 8 |
+| Minimum bidirectional specificity fraction | 1.00 |
+
+This passes only the paired-goal evaluator mechanics prerequisite. Demonstration
+terminal states certify that the two native predicates are executable and
+specific on exactly the same physical state; they do not show policy behavior
+under an instruction switch. The canonical artifact and local HTML report are
+`$EMBER_OUTPUT_ROOT/gate_minus1/specification/source_same_init_goal_20260718T050511Z`
+and its `source_same_init_goal_latest` link. They contain hashes and boolean
+matrices but no raw states, actions, model XML, or private paths.
 
 ## Permanent specification-only reseal
 
@@ -114,7 +151,7 @@ minimal failure packet rather than being rewritten after recovery.
 | LIBERO-90 role-factor table and split design | recovery mechanics pass | All 90 specifications parse, the permanent seal has zero role-coverage violations, and its deterministic regeneration/hash checks pass. This is not policy evidence. |
 | Fresh canonical manifest under resealed split | pass with documented upstream notes | Clean commit `23f3301` re-audited all 90 files, recomputed 183,555 source-only rows, kept all 30 validation/held tasks metadata-only, and recorded zero evaluation numeric access with valid checksums. |
 | Prompt-path specification pilot | scale candidate only | On overlap-trained `libero_spatial` tasks 0/1, correct is 6/8 and 6/8; no-spec is 0/8 and 0/8; scene-only is 2/8 and 0/8; swapped is 0/8 and 0/8. This is not a LIBERO-90 result. |
-| Same-init paired executable goals | not measured | Prompt swap kept the environment goal fixed; it cannot establish correct counterfactual goal switching. |
+| Same-init paired executable goals | source evaluator mechanics pass; policy behavior pending | Tasks 3/4 have exact shared-state compatibility and 16/16 native-goal specificity. This does not show a policy follows the switched spec. |
 | Video content and temporal necessity | not measured | Wrong/same-scene/shuffled/reversed/first/last/scene-only video controls remain pending. |
 
 ## Method, robustness, and leakage boundary
@@ -139,13 +176,15 @@ ordered role records; it is not inferred from policy behavior.
   and fresh canonical manifest. This still does not establish that a policy has
   learned the primitives or uses the specification causally.
 - Language-derived roles cannot prove policy competence or causal use of task
-  information. Same-init executable-goal controls and video content/temporal
-  controls remain required.
+  information. Policy-level same-init switching and video content/temporal
+  controls remain required even though the native paired-goal surface is valid.
 - The overlap specification pilot has two tasks and an overlap-trained policy;
   it cannot estimate LIBERO-90 validity, Writer utility, or video utility.
 - No LIBERO-90 policy success, oracle, Writer, or held reward result was read in
   selecting or validating the resealed task IDs.
 
-Next, continue the predeclared same-init specification and language/video
-causal controls under the sealed split and fixed-batch evaluator contract. Gate
-0 and Gate 1 remain downstream; Writer center training remains unauthorized.
+Next, hold a competent policy observation/physical state fixed and measure the
+predeclared language/spec action or behavior switch, then run the video
+content/temporal controls under the sealed split and fixed-batch evaluator
+contract. Gate 0 and Gate 1 remain downstream; Writer center training remains
+unauthorized.

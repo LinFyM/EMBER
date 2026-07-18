@@ -123,6 +123,15 @@ leaving its manifest/file-set hashes in the checksummed 48KB result. This
 authorizes the formal source-base fit only; it is not source competence, a Gate
 0 result, or Writer authorization.
 
+Because the subsequent logging-cadence repair changed a bound trainer source
+hash, the same probe was revalidated once from final executable commit
+`d71c9ce`. Every scientific state/data digest is unchanged and exact; only the
+checkpoint/result manifests differ because their implementation authority is
+new. The active result SHA256 is
+`fab1eb111b5b2edf32d9103a51ff0e4ec6783ead1a1d2a09c372ca4a6e3ceab1`.
+Post-run evidence-seal fields do not alter optimization, sampling, checkpoint,
+or access semantics and therefore do not trigger recursive revalidation.
+
 Reusable raw HDF5 streaming avoids a duplicate converted video dataset.
 Canonical reports include a bounded local gallery; regenerable duplicate media
 and rotating recovery checkpoints are cleaned only after hashes and retained

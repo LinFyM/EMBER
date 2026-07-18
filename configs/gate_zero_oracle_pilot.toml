@@ -12,6 +12,7 @@ batch_calibration_recovery_predeclared_at_utc = "2026-07-18T08:03:00Z"
 batch_calibration_matched_frozen_at_utc = "2026-07-18T08:19:00Z"
 precision_authority_amended_at_utc = "2026-07-18T08:19:00Z"
 resume_probe_completed_at_utc = "2026-07-18T08:48:19Z"
+resume_probe_implementation_revalidated_at_utc = "2026-07-18T09:01:11Z"
 
 [authority]
 phase0_contract_path = "configs/phase0.toml"
@@ -189,9 +190,9 @@ scientific_outcome_metrics_recorded = false
 
 [base_fit.resume_probe.authority]
 status = "exact_stochastic_resume_passed"
-result_relative_path = "gate_zero/resume_probe/source_base_resume_20260718T084500Z/resume_probe_result.json"
-result_sha256 = "bc7a17cd3ddb0b8c3f6daf5f529b0357ff65fa426c85d90d90b6592ecbe5d3ed"
-git_commit = "a4689b7cfcae6b0ca717ac50d6a887c400de8edf"
+result_relative_path = "gate_zero/resume_probe/source_base_resume_revalidation_20260718T085753Z/resume_probe_result.json"
+result_sha256 = "fab1eb111b5b2edf32d9103a51ff0e4ec6783ead1a1d2a09c372ca4a6e3ceab1"
+git_commit = "d71c9ce009ece9a2f56f9d1d7f7a8d5012408514"
 all_exact = true
 model_state_exact = true
 optimizer_state_exact = true
@@ -199,11 +200,22 @@ scheduler_state_exact = true
 rng_state_exact = true
 next_raw_batch_exact = true
 next_row_keys_exact = true
-transient_checkpoint_manifest_sha256 = "d06ad8907b6abf707fe30028fe74e5745ef3b29734e14816bf1b56dfdb5a528a"
+transient_checkpoint_manifest_sha256 = "21afdce35869dcaa5ec944d01e4f8c5db7472adb2d58330222399d5936cc79ff"
 transient_checkpoint_payload_bytes = 1319431002
 transient_full_checkpoint_cleaned = true
 scientific_outcome_metrics_recorded = false
 formal_base_fit_authorized = true
+gate_zero_authorized = false
+writer_authorized = false
+
+[base_fit.resume_probe.prior_authority]
+status = "exact_pass_superseded_by_implementation_hash_revalidation"
+result_relative_path = "gate_zero/resume_probe/source_base_resume_20260718T084500Z/resume_probe_result.json"
+result_sha256 = "bc7a17cd3ddb0b8c3f6daf5f529b0357ff65fa426c85d90d90b6592ecbe5d3ed"
+git_commit = "a4689b7cfcae6b0ca717ac50d6a887c400de8edf"
+superseded_reason = "trainer_logging_cadence_and_durable_progress_changed_bound_implementation_hashes"
+scientific_state_digests_changed = false
+scientific_outcome_metrics_recorded = false
 gate_zero_authorized = false
 writer_authorized = false
 

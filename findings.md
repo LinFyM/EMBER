@@ -863,3 +863,12 @@
   Peak device memory was 19,467 MiB, minimum free 61,687 MiB, main rc was zero,
   Trackio is complete, and GPU 4 was released. This authorizes only the formal
   source-base fit, not source competence, Gate 0, or Writer.
+- The durable logging repair changed the trainer file hash after that first
+  probe, so the implementation-binding rule required one revalidation before
+  formal launch. Clean commit `d71c9ce` again gives identical branch records;
+  all scientific state/data digests exactly equal both each other and the first
+  probe. The active result SHA256 is
+  `fab1eb111b5b2edf32d9103a51ff0e4ec6783ead1a1d2a09c372ca4a6e3ceab1`,
+  its checkpoint manifest is
+  `21afdce35869dcaa5ec944d01e4f8c5db7472adb2d58330222399d5936cc79ff`,
+  and the old exact pass remains provenance rather than execution authority.

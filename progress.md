@@ -649,6 +649,16 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   now logs/flushes step 1, each tenth step, and final/checkpoint boundaries to
   both Trackio and durable JSON lines. Sampling, optimization, checkpoints,
   thresholds, access surfaces, and the 10,000-step budget are unchanged.
+- Since that logging-only patch changed a manifest-bound trainer hash, clean
+  commit `d71c9ce` ran one exact revalidation as long-run
+  `gate_zero_source_base_resume_probe_revalidation_20260718_085806`. Main rc is
+  zero; all branch digests are unchanged and exact, Trackio has both pass rows
+  plus 155 system rows, peak memory is again 19,467 MiB, the validated transient
+  checkpoint is cleaned, and GPU 4 is released. The active checksummed result is
+  `gate_zero/resume_probe/source_base_resume_revalidation_20260718T085753Z` at
+  SHA256 `fab1eb111b5b2edf32d9103a51ff0e4ec6783ead1a1d2a09c372ca4a6e3ceab1`.
+  No executable source is changed after this revalidation; the remaining edits
+  only reseal evidence metadata and prose.
 
 ## Immediate handoff
 
@@ -657,10 +667,10 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
 2. Preserve both same-state native-goal mechanics and the same-observation
    language-action path, then run action-hidden video content/temporal controls.
    Do not use held results to choose thresholds, task IDs, or remedies.
-3. Run the clean single-GPU exact full-state checkpoint/resume probe through the
-   canonical trainer. Only an all-surface exact result may authorize resumable
-   shared-base fitting; establish legal source competence before task-local
-   oracle or paired-goal behavior claims.
+3. Launch and monitor the now-authorized canonical 10,000-step all-source fit,
+   then establish legal source competence before task-local oracle or paired-
+   goal behavior claims. Preserve two recovery checkpoints plus the final
+   scientific candidate and keep Gate/Writer authorization false meanwhile.
 
 ## Last verified handoff facts
 

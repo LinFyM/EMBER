@@ -203,11 +203,17 @@ progress through the complete design only when predecessor evidence supports it.
     samples/s with 61,750 MiB free. This freezes only the batch shape, keeps
     effective batch 64, and does not authorize the formal fit before resume
     identity passes.
-16. [ ] Build and mechanically verify the single canonical source-base trainer,
+16. [x] Build and mechanically verify the single canonical source-base trainer,
     including scheduler, Trackio, atomic checkpoints, optimizer/scheduler/RNG
     and sampler-step resume, rotating two recovery checkpoints, one retained
     scientific checkpoint, and a hash-bound runtime/evaluator manifest. Only
     after item 15 is resealed and resume identity passes may the 10,000-step
     all-60-source base fit launch. The canonical trainer/checkpoint path and CPU
-    regression suite are implemented; the remaining mechanics condition is the
-    clean single-GPU real-SmolVLA stochastic resume probe.
+    regression suite are implemented. The clean single-GPU real-SmolVLA probe
+    now matches full model, optimizer, scheduler, RNG, next raw batch, and next
+    row keys exactly across uninterrupted and checkpoint/resume branches; the
+    validated 1.32GB transient checkpoint is cleaned.
+17. [ ] Launch the now-authorized 10,000-step all-60-source base fit from the
+    frozen batch-64 contract, retain two rotating recovery checkpoints plus the
+    final scientific candidate, then evaluate only the predeclared source tasks
+    3/4 competence surface before any task-local oracle interpretation.

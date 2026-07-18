@@ -60,10 +60,9 @@ class GateZeroBaseTrainTest(unittest.TestCase):
         with self.assertRaisesRegex(GateZeroBaseTrainError, "rng_state_sha256"):
             assert_exact_resume_equivalence(authority, changed)
 
-    def test_formal_fit_remains_denied_while_resume_probe_is_allowed(self) -> None:
+    def test_frozen_resume_authority_allows_formal_fit(self) -> None:
         require_base_fit_authorization(self.spec, mode="resume-probe")
-        with self.assertRaisesRegex(GateZeroBaseTrainError, "formal base fit"):
-            require_base_fit_authorization(self.spec, mode="train")
+        require_base_fit_authorization(self.spec, mode="train")
 
     def test_checkpoint_metadata_binds_topology_and_contract_hashes(self) -> None:
         metadata = build_source_base_checkpoint_metadata(

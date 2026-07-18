@@ -114,6 +114,15 @@ atomic directory rename, hash every retained file, keep only the latest two
 recoverable checkpoints, and retain step 10,000 as a candidate pending source-
 competence evaluation rather than calling it a successful source base.
 
+The clean-commit probe from `a4689b7` passes every required surface under the
+actual stochastic forward: full model, mixed-dtype AdamW, upstream scheduler,
+global RNG, next full raw batch, and next row keys have identical SHA256 values
+after uninterrupted step 2 and step 1 checkpoint plus resume to step 2. The
+1,319,431,002-byte checkpoint passed whole-tree validation and was then removed,
+leaving its manifest/file-set hashes in the checksummed 48KB result. This
+authorizes the formal source-base fit only; it is not source competence, a Gate
+0 result, or Writer authorization.
+
 Reusable raw HDF5 streaming avoids a duplicate converted video dataset.
 Canonical reports include a bounded local gallery; regenerable duplicate media
 and rotating recovery checkpoints are cleaned only after hashes and retained

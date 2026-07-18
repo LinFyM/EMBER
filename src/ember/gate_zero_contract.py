@@ -200,7 +200,7 @@ def _validate_batch_calibration_selection(calibration: dict[str, Any]) -> None:
         _require_equal(selection["matched_effective_batch_draws"], False, "prior draw match")
     else:
         _require_equal(selection["authorized_as_batch_shape"], True, "batch-shape authorization")
-        _require_equal(selection["formal_base_fit_authorized"], False, "formal-fit authorization")
+        _require_equal(selection["formal_base_fit_authorized"], True, "formal-fit authorization")
         _require_equal(selection["matched_initial_trainable_state"], True, "state match")
         _require_equal(selection["matched_effective_batch_draws"], True, "draw match")
         _require_equal(selection["matched_flow_noise_and_time"], True, "flow-input match")
@@ -279,6 +279,34 @@ def _validate_base_checkpoint(spec: dict[str, Any]) -> None:
     ):
         _require_equal(probe[key], True, f"resume probe {key}")
     _require_equal(probe["scientific_outcome_metrics_recorded"], False, "resume outcome ban")
+    _validate_resume_authority(probe)
+
+
+def _validate_resume_authority(probe: dict[str, Any]) -> None:
+    authority = probe["authority"]
+    _require_equal(authority["status"], "exact_stochastic_resume_passed", "resume authority")
+    for key in (
+        "all_exact",
+        "model_state_exact",
+        "optimizer_state_exact",
+        "scheduler_state_exact",
+        "rng_state_exact",
+        "next_raw_batch_exact",
+        "next_row_keys_exact",
+        "transient_full_checkpoint_cleaned",
+        "formal_base_fit_authorized",
+    ):
+        _require_equal(authority[key], True, f"resume authority {key}")
+    for key in (
+        "scientific_outcome_metrics_recorded",
+        "gate_zero_authorized",
+        "writer_authorized",
+    ):
+        _require_equal(authority[key], False, f"resume authority {key}")
+    if len(authority["result_sha256"]) != 64 or len(
+        authority["transient_checkpoint_manifest_sha256"]
+    ) != 64:
+        raise GateZeroContractError("invalid resume authority SHA256")
 
 
 def _validate_resources(spec: dict[str, Any], phase0: dict[str, Any]) -> None:

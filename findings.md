@@ -848,3 +848,18 @@
   fp32. The precision label is corrected before any formal fit. This means the
   eventual full-state resume probe must compare these native mixed-dtype AdamW
   tensors exactly, rather than assuming or converting them to all-fp32 state.
+- The exact stochastic resume probe passes from clean commit `a4689b7`. The
+  uninterrupted two-step branch and the step-1 checkpoint/resume branch have
+  identical full-model, mixed-dtype AdamW, upstream scheduler, global RNG,
+  next-full-raw-batch, and next-row-key SHA256 values. Checkpoint saving itself
+  leaves RNG unchanged. This closes the resume-mechanics claim without fixed
+  flow inputs or policy outcomes.
+- Its atomic checkpoint contains 12 retained payload/manifest files totaling
+  1,319,431,002 bytes and has manifest SHA256
+  `d06ad8907b6abf707fe30028fe74e5745ef3b29734e14816bf1b56dfdb5a528a`.
+  Whole-tree validation passed before cleanup; the final checksummed result is
+  only 48KB at SHA256
+  `bc7a17cd3ddb0b8c3f6daf5f529b0357ff65fa426c85d90d90b6592ecbe5d3ed`.
+  Peak device memory was 19,467 MiB, minimum free 61,687 MiB, main rc was zero,
+  Trackio is complete, and GPU 4 was released. This authorizes only the formal
+  source-base fit, not source competence, Gate 0, or Writer.

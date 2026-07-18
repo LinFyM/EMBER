@@ -630,6 +630,19 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   payload/manifest tamper rejection, overwrite refusal, atomic `last`, and
   validated two-checkpoint rotation. Formal training authorization remains
   false; no source-base multistep run has started.
+- Clean commit `a4689b7` completed
+  `gate_zero_source_base_resume_probe_20260718_084514` with main rc 0 in 182.32
+  seconds. All seven recorded comparisons (completed step plus six exact state/
+  data surfaces) pass; the two branch records are identical. The canonical
+  result is `gate_zero/resume_probe/source_base_resume_20260718T084500Z` at
+  SHA256 `bc7a17cd3ddb0b8c3f6daf5f529b0357ff65fa426c85d90d90b6592ecbe5d3ed`.
+  Trackio contains both pass records and 156 system rows. Peak sampled device
+  memory was 19,467 MiB, the validated 1.32GB checkpoint was removed, the final
+  output is 48KB, and GPU 4 is released.
+- The resume evidence changes only `formal_base_fit_authorized` to true. Gate
+  -1, Gate 0, source competence, and Writer authorization remain open/false.
+  The next operation is the canonical 10,000-step all-source fit; no task-local
+  adapter or held surface may be accessed first.
 
 ## Immediate handoff
 

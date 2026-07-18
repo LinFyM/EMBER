@@ -69,7 +69,7 @@ class GateZeroContractTest(unittest.TestCase):
         self.assertTrue(authority["matched_effective_batch_draws"])
         self.assertTrue(authority["matched_flow_noise_and_time"])
         self.assertTrue(authority["authorized_as_batch_shape"])
-        self.assertFalse(authority["formal_base_fit_authorized"])
+        self.assertTrue(authority["formal_base_fit_authorized"])
         self.assertEqual(authority["parameter_dtype_elements_bfloat16"], 96607440)
         self.assertEqual(authority["parameter_dtype_elements_float32"], 3273552)
         self.assertFalse(calibration["prior_diagnostic"]["matched_effective_batch_draws"])
@@ -95,6 +95,11 @@ class GateZeroContractTest(unittest.TestCase):
         self.assertTrue(probe["checkpoint_save_must_preserve_rng"])
         self.assertTrue(probe["implementation_files_hash_bound"])
         self.assertTrue(probe["cleanup_transient_full_checkpoints_after_verification"])
+        self.assertEqual(probe["authority"]["status"], "exact_stochastic_resume_passed")
+        self.assertTrue(probe["authority"]["all_exact"])
+        self.assertTrue(probe["authority"]["formal_base_fit_authorized"])
+        self.assertFalse(probe["authority"]["gate_zero_authorized"])
+        self.assertFalse(probe["authority"]["writer_authorized"])
 
     def test_loader_rejects_episode_overlap(self) -> None:
         text = self.path.read_text(encoding="utf-8").replace(

@@ -119,11 +119,28 @@ does not improve query accuracy; source hashes, exact repeats, finite features,
 balanced rows, and video decoding pass. RGB information insufficiency remains a
 live alternative rather than a conclusion.
 
-One bounded recovery is frozen before rerun: reuse the exact RGB cache and all
-splits, controls, labels, readout, model weights, batch, metrics, and thresholds,
-while replacing only the final causal-context token with fixed per-frame visual
-connector temporal moments. A second failure is retained and diagnosed; it is
-not permission to lower standards or select a different task pair post hoc.
+The one bounded recovery reused the exact RGB cache and all splits, controls,
+labels, readout, model weights, batch, metrics, and thresholds, while replacing
+only the final causal-context token with fixed per-frame visual-connector
+temporal moments.
+
+| Recovery diagnostic | Result |
+| --- | ---: |
+| Ordered balanced accuracy (95% bootstrap) | 0.7917 [0.6667, 0.8958] |
+| Bidirectional query pairs both correct | 15 / 24 |
+| Same-scene wrong-video specificity | 0.7917 |
+| First-frame / static-median accuracy | 0.5208 / 0.5417 |
+| Last-frame accuracy | 0.4792 |
+| Reversed / shuffled accuracy | 0.4375 / 0.5625 |
+| Drop-last-20% accuracy | 0.6458 |
+
+The recovery repairs the temporal representation failure: ordered exceeds both
+static controls by at least 0.25 and the stronger reversed/shuffled control by
+0.2292. It nevertheless remains a predeclared content-gate failure because the
+ordered and wrong-video scores miss 0.80 and paired correctness is only 0.625;
+drop-last retention also misses 0.90. No threshold changed, and no new reader
+or task pair is selected after this result. Gate -1 and Writer authorization
+remain false.
 
 ## Permanent specification-only reseal
 
@@ -215,7 +232,7 @@ minimal failure packet rather than being rewritten after recovery.
 | Prompt-path specification pilot | scale candidate only | On overlap-trained `libero_spatial` tasks 0/1, correct is 6/8 and 6/8; no-spec is 0/8 and 0/8; scene-only is 2/8 and 0/8; swapped is 0/8 and 0/8. This is not a LIBERO-90 result. |
 | Same-observation language-to-action path | diagnostic pass | Exact correct repeats and 16/16 substantive action-plan contrasts remove repeated-reset rendering as the prompt-effect explanation. Goal correctness is not measured. |
 | Same-init paired executable goals | source evaluator mechanics pass; policy behavior pending | Tasks 3/4 have exact shared-state compatibility and 16/16 native-goal specificity. This does not show a policy follows the switched spec. |
-| Video content and temporal necessity | first representation failed; one bounded recovery pending | Ordered is 0.625 and reversed/shuffled/last are higher. Mechanics pass, but content/temporal criteria fail. The exact-cache framewise temporal representation recovery changes no task, threshold, weight, or held access. |
+| Video content and temporal necessity | bounded recovery complete; temporal criterion passes, content criterion fails | The fixed framewise reader raises ordered to 0.7917 and makes reversed/shuffled/static controls degrade, but ordered/wrong-video miss 0.80 and only 15/24 paired queries are jointly correct. No further reader selection is authorized. |
 
 ## Method, robustness, and leakage boundary
 
@@ -240,14 +257,15 @@ ordered role records; it is not inferred from policy behavior.
   source policy has learned the primitives.
 - Language-derived roles cannot prove policy competence or causal use of task
   information. The overlap policy now has a same-observation language-action
-  path, but correct paired-goal behavior and video content/temporal controls
-  remain required even though the native paired-goal surface is valid.
+  path, while the video recovery isolates temporal signal but not sufficiently
+  stable task content. Correct paired-goal behavior remains required even
+  though the native paired-goal surface is valid.
 - The overlap specification pilot has two tasks and an overlap-trained policy;
   it cannot estimate LIBERO-90 validity, Writer utility, or video utility.
 - No LIBERO-90 policy success, oracle, Writer, or held reward result was read in
   selecting or validating the resealed task IDs.
 
-Next, execute the frozen same-cache video representation recovery, then obtain legal
-source-task competence and evaluate correct behavior on the paired native-goal
-surface without changing its state or evaluator. Gate 0 and Gate 1 remain
-downstream; Writer center training remains unauthorized.
+Next, obtain legal source-task competence and evaluate correct behavior on the
+paired native-goal surface without changing its state or evaluator, using the
+same closed-loop surface to begin the predeclared Gate 0 useful-update oracle.
+Gate 1 remains downstream; Writer center training remains unauthorized.

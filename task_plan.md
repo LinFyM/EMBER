@@ -155,8 +155,8 @@ progress through the complete design only when predecessor evidence supports it.
     comparison exceed the predeclared 0.01 plan-delta scale. This excludes
     repeated-reset rendering as the prompt-effect explanation but still does
     not establish correct paired-goal switching.
-13. [ ] Run the predeclared action-hidden video content and temporal controls,
-    then obtain legal source-task policy competence before interpreting the
+13. [ ] Complete the predeclared action-hidden video content and temporal
+    controls, then obtain legal source-task policy competence before interpreting the
     paired native-goal surface behaviorally. Keep this Gate -1 dependency
     explicit when designing the Gate 0 oracle pilot. The source-only video
     protocol is now frozen before outcomes: same-scene tasks 3/4, support demos
@@ -169,3 +169,8 @@ progress through the complete design only when predecessor evidence supports it.
     representation recovery using the same RGB cache, task/demo split,
     readout, thresholds, and model weights: replace only the collapsed final
     causal-context token with fixed framewise visual-connector temporal moments.
+    That recovery is now complete: ordered and wrong-video specificity each
+    improve to 0.7917, and the temporal-order/static-control criteria pass, but
+    only 15/24 paired queries are jointly correct and the two 0.80 content
+    thresholds remain unmet. Preserve both readers and stop reader selection;
+    the remaining item is legal source competence and closed-loop behavior.

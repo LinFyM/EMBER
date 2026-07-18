@@ -369,6 +369,33 @@
   shared run orchestrator. This is one config-selected strategy under the same
   CLI, not a parallel probe. It retires with the base video probe after Gate -1
   evidence is preserved if the hypothesis is rejected.
+- The first recovery launch is retained as wrapper/publication failure packet
+  `gate_minus1_video_information_recovery1_20260718_062439`. Its model and
+  scoring work completed, but the CLI resolved the existing `latest` symlink to
+  its old target before the atomic publisher could replace it, so the outer
+  command correctly returned rc 1. No scientific result was promoted from that
+  run. Commit `eff4269` changes only that path handling from symlink-following
+  resolution to a lexical absolute path and adds a red-then-green CLI
+  regression test; shared atomic-link tests also pass.
+- The clean repaired commit produced canonical longrun
+  `gate_minus1_video_information_recovery1_20260718_062728` with main rc 0 and
+  artifact `video_information_recovery1_20260718T062713Z`. All six retained
+  artifact checksums pass; the 384x4800 float32 feature cache is finite and
+  pickle-free, all fourteen reused videos match their prior hashes and decode,
+  the relative media symlink and atomic `video_information_latest` link are
+  exact, validation/held numeric access is zero, and GPU 4 is released.
+- Recovery ordered accuracy is 0.7917 with bootstrap interval
+  [0.6667, 0.8958], wrong-video specificity is 0.7917, and paired correctness is
+  15/24. All remain below their fixed content thresholds. Ordered-minus-first,
+  ordered-minus-static, and temporal-order gaps are 0.2708, 0.25, and 0.2292,
+  so the temporal representation remedy works, while drop-last retention is
+  only 0.8158. Gate -1 and Writer authorization remain false; no further
+  post-outcome reader or pair selection will be performed.
+- The successful run took 28.77 seconds internally (29.71 seconds under GNU
+  time), processed 25.94 clips/s, reached 100% sampled utilization and 50,143
+  MiB peak device usage with 31,777 MiB headroom, and retained only 4,564,411
+  bytes by reusing the prior RGB cache and videos. Result SHA256 is
+  `f80d2b2b4c8ac1bb1b9dea5755178d1648fca381de52917708ec8fcc440bbde1`.
 
 ## Current phase
 
@@ -387,10 +414,11 @@ one-time specification-only recovery is now permanently sealed with no policy
 outcome input. The fresh canonical manifest and source-only normalization under
 the new IDs now pass. The source same-state native-goal surface passes its
 mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
-same-observation language-to-action path. Gate -1 is still in progress on
-correct paired-goal behavior with legal source competence. The first video
-causal probe is a preserved representation-level failure and its one bounded
-same-cache recovery is pending. Writer training remains unauthorized.
+    same-observation language-to-action path. The action-hidden video probe and
+    its only same-cache representation recovery are complete: temporal signal
+    is established on one source pair, but content thresholds still fail.
+    Gate -1 is therefore still in progress on correct paired-goal behavior with
+    legal source competence. Writer training remains unauthorized.
 
 ## Implementation ownership review
 

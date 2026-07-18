@@ -720,3 +720,34 @@
   connector features and use one fixed temporal-moment descriptor. This is the
   least invasive test of whether temporal detail was lost by causal-context
   pooling. It is not a Writer, learned temporal encoder, or threshold repair.
+
+### Fixed framewise recovery: temporal signal appears, content gate still fails
+
+- The single predeclared recovery reused the exact RGB cache at SHA256
+  `26c29bc69c2bd6ed633aef3ab3f9de3357ece1118c89bd17177cde2c316edfe8`
+  and changed only the frozen feature to per-frame visual-connector temporal
+  moments. The source tasks, 24/24 support/query rows, seven controls, ridge
+  readout, model weights, batch 48, metrics, and thresholds are unchanged.
+  Validation and held numeric access remain zero.
+- Ordered balanced accuracy improves from 0.625 to 0.7917 (95% bootstrap
+  [0.6667, 0.8958]), with symmetric 19/24 accuracy on each source task.
+  Wrong-video specificity is also 0.7917. Both miss the frozen 0.80 thresholds,
+  and only 15/24 demo-index pairs are jointly correct versus the 0.80 pair
+  requirement. Nine pair indices have at least one error, including one where
+  both task videos are wrong; errors are not a one-class collapse.
+- The temporal diagnosis changes materially without changing the decision
+  standard. Ordered exceeds first-frame by 0.2708, static median by 0.25, and
+  the better of reversed/shuffled by 0.2292; last/full is 0.6053. Thus the
+  frozen temporal-order criterion passes and the causal final-token collapse
+  is repaired. Drop-last-20% retains only 0.8158 of full accuracy, below 0.90,
+  so late trajectory evidence remains important on this pair.
+- Mechanics are valid: all listed checksums pass, the 384x4800 float32 cache
+  loads without pickle and is finite, exact repeated-batch delta is zero, and
+  all fourteen reused videos retain their hashes and decode as 16 frames at
+  128x128. The remaining failure is classified as source RGB
+  information/content acquisition on this fixed reader and pair, not an
+  implementation, leakage, temporal-pooling, or optimizer failure.
+- No second reader, new task pair, threshold change, or held inspection is
+  authorized after this outcome. The result establishes only a useful temporal
+  representation diagnostic on one resealed source pair; it does not pass
+  Gate -1, establish held-video sufficiency, or authorize Writer training.

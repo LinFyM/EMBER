@@ -834,3 +834,17 @@
   digests must compare equal before the fastest headroom-safe shape can become
   authority. No threshold, task surface, effective batch, or policy outcome is
   changed.
+- The matched recovery from clean commit `e3a653a` satisfies that repair. All
+  four candidates repeat the exact three row-key SHA256 values, share fixed
+  flow seed 2026071806, and start from the restored trainable snapshot plus a
+  fresh AdamW. Microbatches 8/16/32/64 measure 48.79/77.42/88.89/92.17
+  samples/s; microbatch 64 / accumulation 1 wins again, keeps 61,750 MiB free,
+  and has 19,403 MiB sampled peak device memory. Main/wrapper rc is zero,
+  checksums and `latest` pass, Trackio is present, and GPU 4 is fully released.
+  This freezes a resource shape only, not source competence, Gate 0, or Writer.
+- Optimizer inspection shows a mixed parameter/state reality hidden by the old
+  shorthand: 96,607,440 trainable values and both moment tensors are bf16;
+  3,273,552 values and both moments are fp32; 155 scalar step tensors are also
+  fp32. The precision label is corrected before any formal fit. This means the
+  eventual full-state resume probe must compare these native mixed-dtype AdamW
+  tensors exactly, rather than assuming or converting them to all-fp32 state.

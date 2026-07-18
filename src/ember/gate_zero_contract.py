@@ -170,6 +170,10 @@ def _validate_batch_calibration(spec: dict[str, Any]) -> None:
     _require_equal(calibration["stop_on_first_oom"], True, "calibration OOM stop")
     if calibration["minimum_free_memory_mib"] < 10240:
         raise GateZeroContractError("calibration memory headroom weakened")
+    _validate_batch_calibration_selection(calibration)
+
+
+def _validate_batch_calibration_selection(calibration: dict[str, Any]) -> None:
     selection = calibration["selection_authority"]
     _require_equal(selection["selected_micro_batch_size"], 64, "selected microbatch")
     _require_equal(
@@ -190,13 +194,28 @@ def _validate_batch_calibration(spec: dict[str, Any]) -> None:
     }:
         raise GateZeroContractError("unknown calibration selection authority state")
     if selection["status"] == "superseded_pending_matched_recovery":
-        _require_equal(selection["authorized_for_training"], False, "training authorization")
+        _require_equal(selection["authorized_as_batch_shape"], False, "batch-shape authorization")
+        _require_equal(selection["formal_base_fit_authorized"], False, "formal-fit authorization")
         _require_equal(selection["matched_initial_trainable_state"], False, "prior state match")
         _require_equal(selection["matched_effective_batch_draws"], False, "prior draw match")
     else:
-        _require_equal(selection["authorized_for_training"], True, "training authorization")
+        _require_equal(selection["authorized_as_batch_shape"], True, "batch-shape authorization")
+        _require_equal(selection["formal_base_fit_authorized"], False, "formal-fit authorization")
         _require_equal(selection["matched_initial_trainable_state"], True, "state match")
         _require_equal(selection["matched_effective_batch_draws"], True, "draw match")
+        _require_equal(selection["matched_flow_noise_and_time"], True, "flow-input match")
+        _require_equal(
+            selection["parameter_dtype_elements_bfloat16"], 96607440, "bf16 parameter count"
+        )
+        _require_equal(
+            selection["parameter_dtype_elements_float32"], 3273552, "fp32 parameter count"
+        )
+        _require_equal(
+            selection["adamw_moments_follow_parameter_dtype"], True, "AdamW state dtype"
+        )
+        prior = calibration["prior_diagnostic"]
+        _require_equal(prior["matched_initial_trainable_state"], False, "prior state mismatch")
+        _require_equal(prior["matched_effective_batch_draws"], False, "prior draw mismatch")
 
 
 def _validate_base_checkpoint(spec: dict[str, Any]) -> None:
@@ -208,6 +227,11 @@ def _validate_base_checkpoint(spec: dict[str, Any]) -> None:
         base_fit["scheduler_implementation"],
         "lerobot.optim.schedulers.CosineDecayWithWarmupSchedulerConfig",
         "scheduler implementation",
+    )
+    _require_equal(
+        base_fit["precision"],
+        "bfloat16_autocast_mixed_parameter_native_adamw_state",
+        "measured precision authority",
     )
     _require_equal(checkpoint["num_workers"], 4, "base-fit worker count")
     _require_equal(

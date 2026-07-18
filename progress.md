@@ -590,6 +590,20 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   the same trainable snapshot, resets global RNG, starts a new empty AdamW, and
   uses absolute effective-batch slots plus matching fixed-noise row keys. The
   result builder compares every per-step row digest and fails closed on drift.
+- Clean commit `e3a653a` completed long-run
+  `gate_zero_source_base_batch_calibration_matched_recovery_20260718_081737`
+  with main rc 0. The checksummed result is
+  `gate_zero/batch_calibration/source_base_matched_20260718T081723Z` at SHA256
+  `849b0ad2dc3ff8d2eb4088e570a50d331e8c86da1524515a4b46945722b40ead`.
+  All four candidates share all three row digests and fixed flow seed; the
+  frozen winner is microbatch 64 / accumulation 1 at 92.17 samples/s, 19,403
+  MiB sampled peak, and 61,750 MiB minimum free. The run recorded no outcome,
+  updated the atomic `latest`, and released GPU 4.
+- The same result measures mixed native AdamW state: 96,607,440 bf16 and
+  3,273,552 fp32 parameter elements, with both moments following parameter
+  dtype plus 155 fp32 step scalars. The contract precision label is amended
+  before formal source training. Batch shape is now authorized; formal base fit
+  remains false until the real stochastic checkpoint/resume identity probe.
 - The retained implementation keeps one optimization owner:
   `gate_zero_base_runtime.py` supplies the loader, optimizer, pinned upstream
   scheduler, and optimizer step to both calibration and the forthcoming single

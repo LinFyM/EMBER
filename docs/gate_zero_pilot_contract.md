@@ -90,15 +90,26 @@ free and stops larger candidates after the first OOM.
 The first resource run measured useful throughput and memory, but its candidates
 successively reused updated model/optimizer state and changed draws with the
 accumulation partition. Its artifact remains immutable diagnostic provenance;
-its former microbatch-64 selection is explicitly unauthorized. One predeclared
-matched recovery is required before a batch authority is frozen. Before the
-formal 10,000-step fit, a separate source-only mechanics probe must compare
-uninterrupted step 2 against step 1 checkpoint plus resume to step 2. Model,
-optimizer, scheduler, RNG, and next sampler batch must match exactly.
-Checkpoints use the pinned LeRobot safetensors state format inside an atomic
-directory rename, hash every retained file, keep only the latest two
-recoverable checkpoints, and retain step 10,000 as a candidate pending source-
-competence evaluation rather than calling it a successful source base.
+its former selection is explicitly superseded. The one predeclared matched
+recovery then completed from clean commit `e3a653a`: all four candidates share
+the same three effective-batch row digests and flow-input seed. Microbatch 64 /
+accumulation 1 remains fastest at 92.17 samples/s with 61,750 MiB free, so this
+shape is frozen as resource authority without recording loss or policy outcome.
+
+The recovery also measures rather than assumes optimizer precision. Of
+99,880,992 trainable scalars, 96,607,440 are bf16 and 3,273,552 are fp32; native
+AdamW first/second moments follow each parameter dtype, with only its 155 step
+scalars additionally fp32. The machine contract therefore names mixed-parameter
+native AdamW state rather than incorrectly claiming an all-fp32 optimizer.
+
+Batch-shape authority does not authorize the formal 10,000-step fit. A separate
+source-only mechanics probe must compare uninterrupted step 2 against step 1
+checkpoint plus resume to step 2. Model, optimizer, scheduler, RNG, and next
+sampler batch must match exactly. Checkpoints use the pinned LeRobot safetensors
+state format inside an atomic directory rename, hash every retained file, keep
+only the latest two recoverable checkpoints, and retain step 10,000 as a
+candidate pending source-competence evaluation rather than calling it a
+successful source base.
 
 Reusable raw HDF5 streaming avoids a duplicate converted video dataset.
 Canonical reports include a bounded local gallery; regenerable duplicate media

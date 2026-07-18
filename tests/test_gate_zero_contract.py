@@ -61,13 +61,18 @@ class GateZeroContractTest(unittest.TestCase):
         self.assertTrue(calibration["outcome_metrics_forbidden"])
         self.assertTrue(calibration["stop_on_first_oom"])
         authority = calibration["selection_authority"]
-        self.assertEqual(authority["status"], "superseded_pending_matched_recovery")
+        self.assertEqual(authority["status"], "frozen_matched_resource_authority")
         self.assertEqual(authority["selected_micro_batch_size"], 64)
         self.assertEqual(authority["selected_gradient_accumulation_steps"], 1)
         self.assertEqual(len(authority["result_sha256"]), 64)
-        self.assertFalse(authority["matched_initial_trainable_state"])
-        self.assertFalse(authority["matched_effective_batch_draws"])
-        self.assertFalse(authority["authorized_for_training"])
+        self.assertTrue(authority["matched_initial_trainable_state"])
+        self.assertTrue(authority["matched_effective_batch_draws"])
+        self.assertTrue(authority["matched_flow_noise_and_time"])
+        self.assertTrue(authority["authorized_as_batch_shape"])
+        self.assertFalse(authority["formal_base_fit_authorized"])
+        self.assertEqual(authority["parameter_dtype_elements_bfloat16"], 96607440)
+        self.assertEqual(authority["parameter_dtype_elements_float32"], 3273552)
+        self.assertFalse(calibration["prior_diagnostic"]["matched_effective_batch_draws"])
 
     def test_base_checkpoint_and_resume_probe_are_fail_closed(self) -> None:
         spec = load_gate_zero_contract(self.path, ROOT / "configs" / "phase0.toml")

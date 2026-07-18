@@ -81,6 +81,37 @@ def report_state_authority(task_id: int, condition: str) -> tuple[str | None, in
     raise GateZeroOracleReportRuntimeError("unknown report condition")
 
 
+def report_warmup_seed_batches(
+    *,
+    batch_size: int,
+    warmup_seed_start: int,
+    report_seed_start: int,
+    expected_report_init_states: Sequence[int],
+) -> list[list[int]]:
+    """Plan deterministic warm-up resets needed to reach a frozen init-state batch."""
+
+    expected_states = list(expected_report_init_states)
+    if batch_size <= 0 or not expected_states:
+        raise GateZeroOracleReportRuntimeError("report init-state batch is invalid")
+    if expected_states != list(
+        range(expected_states[0], expected_states[0] + batch_size)
+    ):
+        raise GateZeroOracleReportRuntimeError("report init-state batch is invalid")
+    target_start = expected_states[0]
+    if target_start % batch_size != 0:
+        raise GateZeroOracleReportRuntimeError("report init-state batch is not stride aligned")
+    warmup_count = target_start // batch_size - 1
+    if warmup_count < 1:
+        raise GateZeroOracleReportRuntimeError("report surface requires at least one warm-up reset")
+    if warmup_seed_start + batch_size != report_seed_start:
+        raise GateZeroOracleReportRuntimeError("last warm-up seeds must precede report seeds")
+    first_start = warmup_seed_start - (warmup_count - 1) * batch_size
+    return [
+        list(range(start, start + batch_size))
+        for start in range(first_start, report_seed_start, batch_size)
+    ]
+
+
 def validate_report_reset_identity(
     events: Sequence[Mapping[str, Any]],
     *,
@@ -89,20 +120,36 @@ def validate_report_reset_identity(
     report_seed_start: int,
     expected_report_init_states: Sequence[int],
 ) -> bool:
-    if len(events) != 2 or batch_size <= 0:
+    try:
+        warmup_batches = report_warmup_seed_batches(
+            batch_size=batch_size,
+            warmup_seed_start=warmup_seed_start,
+            report_seed_start=report_seed_start,
+            expected_report_init_states=expected_report_init_states,
+        )
+    except GateZeroOracleReportRuntimeError:
         return False
-    expected = [
-        {
-            "before": list(range(batch_size)),
-            "after": list(range(batch_size, 2 * batch_size)),
-            "seeds": list(range(warmup_seed_start, warmup_seed_start + batch_size)),
-        },
-        {
-            "before": list(range(batch_size, 2 * batch_size)),
-            "after": list(expected_report_init_states),
-            "seeds": list(range(report_seed_start, report_seed_start + batch_size)),
-        },
+    all_seed_batches = [
+        *warmup_batches,
+        list(range(report_seed_start, report_seed_start + batch_size)),
     ]
+    expected = []
+    for reset_index, seeds in enumerate(all_seed_batches):
+        expected.append(
+            {
+                "before": list(
+                    range(reset_index * batch_size, (reset_index + 1) * batch_size)
+                ),
+                "after": list(
+                    range(
+                        (reset_index + 1) * batch_size,
+                        (reset_index + 2) * batch_size,
+                    )
+                ),
+                "seeds": seeds,
+            }
+        )
+    expected[-1]["after"] = list(expected_report_init_states)
     return list(events) == expected
 
 
@@ -390,10 +437,14 @@ def _closed_loop_metrics(
     }
     try:
         override = apply_prompt_override(env, language, batch_size=batch_size)
-        warmup_seeds = list(
-            range(report["warmup_seed_start"], report["warmup_seed_start"] + batch_size)
+        warmup_seed_batches = report_warmup_seed_batches(
+            batch_size=batch_size,
+            warmup_seed_start=report["warmup_seed_start"],
+            report_seed_start=report["seed_start"],
+            expected_report_init_states=report["official_rollout_init_state_indices"],
         )
-        env.reset(seed=warmup_seeds)
+        for warmup_seeds in warmup_seed_batches:
+            env.reset(seed=warmup_seeds)
         metrics, elapsed = _run_upstream_eval(
             spec=evaluation_spec,
             runtime=runtime,

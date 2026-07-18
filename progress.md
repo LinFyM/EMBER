@@ -1171,3 +1171,28 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   project `EMBER_gate0`, one video per arm, telemetry, checksums, and a `latest`
   gallery provide live/later inspection. Stop on first mechanics/authority
   failure or after all 64 episodes; never overwrite the grant or partial output.
+
+### Rank-8 screening implementation failure and bounded recovery
+
+- `gate0_support_rank8_screen_20260718_150220` ran from clean commit `55a18a6`
+  on GPUs 4--7 and released all four devices. It finished 64 episodes in 186
+  seconds but exited 1 during decision publication because all eight arms were
+  mechanically invalid. The failed output, eight diagnostic videos, telemetry,
+  long-run state/log, and rank-0 failure packet are retained in place; no
+  scientific result, gallery `latest`, support choice, or downstream grant was
+  published.
+- Read-only diagnosis found one cause at the canonical reset boundary. The
+  imported locked-report evaluator always performed one warm-up plus the
+  rollout reset, which deterministically reaches init states 16--23. The
+  screening authority requires 24--31 and therefore needs two warm-ups plus the
+  rollout reset. Logged success totals (task 3 base/all-qv/last-two/official
+  4/3/2/4 of 8; task 4 4/3/4/4 of 8) are explicitly quarantined because they
+  came from the wrong surface and cannot influence ranking or rank escalation.
+- Following the infrastructure stop rule, one test-first narrow repair now
+  computes the warm-up sequence from the already frozen target batch. Existing
+  16--23 behavior and the new 24--31 three-event identity both pass focused
+  tests; a missing warm-up is rejected. A policy-free live async LIBERO reset
+  probe also observes exact transitions 0--7 -> 8--15 -> 16--23 -> 24--31 with
+  the derived seed batches and leaves no simulator process behind. The next
+  action is one fresh-output replay of the same immutable grant on the intended
+  24--31 surface, not a rerun or reinterpretation of the invalid outcomes.

@@ -1257,3 +1257,23 @@
   truthful failure packet; it cannot erase the query shortfall or authorize
   Writer. The immutable six-state grant keeps locked report, rank 16, final
   target sealing, Gate 0, validation/held, and Writer closed.
+
+## First rank-8 closed-loop screen hit the wrong init-state stride
+
+- Long-run `gate0_support_rank8_screen_20260718_150220` completed all eight
+  arms/64 episodes, then failed publication because every arm had
+  `mechanics_valid=false`. The failure is implementation/reset authority, not
+  a support outcome: the shared report helper had exactly one warm-up reset,
+  which reaches init states 16--23, while the frozen screening grant requires
+  24--31. The stdout success totals and videos therefore re-access the prior
+  source report init-state surface and are prohibited from support selection.
+  No decision/result/latest link was published; rank 16, Gate 0, final support,
+  Writer, validation, and held access remain unauthorized.
+- The minimal correction generalizes the existing single evaluator rather than
+  adding another path. It derives how many stride-8 resets are needed from the
+  frozen target IDs and assigns deterministic preceding warm-up seed batches.
+  The original report contract still plans one warm-up for 16--23; screening
+  plans two warm-ups (5484--5491 and 5492--5499) before evaluation seeds
+  5500--5507 reach 24--31. Unit evidence rejects the former two-reset event
+  sequence for this recovery surface. No threshold, state, fit, split, or
+  scientific budget changed.

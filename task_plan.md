@@ -351,7 +351,16 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     SHA256 `fd8e28a7f0b828e14ff7cfb794a047409b6e8e96562646b38aef232b65332992`
     freezes all six states and authorizes only the matched init-24--31
     closed-loop screen; locked report, rank 16, final support, Gate 0, and
-    Writer remain unauthorized until that result is classified.
+    Writer remain unauthorized until that result is classified. The first
+    four-rank attempt is retained as an implementation failure: the reused
+    locked-report helper performed only one warm-up reset, so all 64 episodes
+    actually used init states 16--23 and every arm correctly failed mechanics.
+    Its outcomes are quarantined from selection. A single narrow repair now
+    derives the exact deterministic warm-up reset count from the frozen target
+    batch (two warm-ups before the 24--31 rollout), with regression coverage
+    for both the original 16--23 report and recovery surface. Run the untouched
+    grant once in a fresh output directory; do not reinterpret or overwrite the
+    failed attempt.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

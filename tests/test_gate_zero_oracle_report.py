@@ -27,6 +27,7 @@ from ember.gate_zero_oracle_report import (
 )
 from ember.gate_zero_oracle_report_runtime import (
     checkpoint_manifest_path,
+    report_warmup_seed_batches,
     report_state_authority,
     validate_report_reset_identity,
 )
@@ -284,6 +285,52 @@ class GateZeroOracleReportTest(unittest.TestCase):
                 warmup_seed_start=5392,
                 report_seed_start=5400,
                 expected_report_init_states=list(range(16, 24)),
+            )
+        )
+
+    def test_recovery_surface_plans_enough_resets_for_init_states_24_to_31(self) -> None:
+        self.assertEqual(
+            report_warmup_seed_batches(
+                batch_size=8,
+                warmup_seed_start=5492,
+                report_seed_start=5500,
+                expected_report_init_states=list(range(24, 32)),
+            ),
+            [list(range(5484, 5492)), list(range(5492, 5500))],
+        )
+        events = [
+            {
+                "before": list(range(8)),
+                "after": list(range(8, 16)),
+                "seeds": list(range(5484, 5492)),
+            },
+            {
+                "before": list(range(8, 16)),
+                "after": list(range(16, 24)),
+                "seeds": list(range(5492, 5500)),
+            },
+            {
+                "before": list(range(16, 24)),
+                "after": list(range(24, 32)),
+                "seeds": list(range(5500, 5508)),
+            },
+        ]
+        self.assertTrue(
+            validate_report_reset_identity(
+                events,
+                batch_size=8,
+                warmup_seed_start=5492,
+                report_seed_start=5500,
+                expected_report_init_states=list(range(24, 32)),
+            )
+        )
+        self.assertFalse(
+            validate_report_reset_identity(
+                events[1:],
+                batch_size=8,
+                warmup_seed_start=5492,
+                report_seed_start=5500,
+                expected_report_init_states=list(range(24, 32)),
             )
         )
 

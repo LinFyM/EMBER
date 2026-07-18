@@ -1575,3 +1575,12 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   utilization is 89.44%/88.89%, GPU 4/5 return to 0MiB, and retained output is
   58MiB. Exact-resume the same output to step 500 next; no formal rollout,
   validation, held, Gate 0, or Writer authority was opened.
+- Step-500 long-runs `gate0_mature_lora_lr_recovery_t3_stage500_20260718_203639`
+  and its task-4 peer complete main rc 0 in 3:45/3:41 from the step-250 atomic
+  states. Query reductions improve to +3.388%/+2.611% (median +2.999%), above
+  the frozen 0.5%-median/nonnegative continuation rule; drift is
+  0.00572/0.00495. Candidate/recovery validation passes, peak memory is
+  18,585/18,545MiB, active-window utilization is 88.84%/90.14%, current
+  recovery pointers resolve to step 500, retained output is 69MiB, and both
+  GPUs return to 0MiB. Exact-resume to step 750 next; no rollout or non-source
+  surface has been accessed.

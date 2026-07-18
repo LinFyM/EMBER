@@ -1675,3 +1675,8 @@
   manifests hash to `871c5093...5fef`/`4a691249...8c92`, recovery manifests to
   `6e969071...1ec2`/`6662e1a0...bfe1`, and telemetry to
   `56bef9ce...a54`/`94ebc132...1d36`. Exact resume to 500 is authorized.
+- At step 500, task-3/task-4 query reductions increase to +3.388%/+2.611%
+  (median +2.999%) with drift 0.00572/0.00495. Candidate hashes are
+  `867d1be1...affc`/`643343e2...2a59`; recovery hashes are
+  `4092f457...ff56`/`676ff2af...f822`. The same data/query identities persist,
+  so the frozen step500-to-750 rule passes without a new trajectory or surface.

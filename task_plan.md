@@ -555,6 +555,10 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     18,485/18,545MiB, GPU 4/5 are released, and the output is only 58MiB.
     Exact-resume these same states to step 500; do not start a new trajectory
     or access closed loop.
+    Step 500 also completes rc 0 by exact resume in 3:45/3:41. Task 3/4 query
+    reductions rise to +3.388%/+2.611% (median +2.999%) with drift
+    0.00572/0.00495, passing the frozen 0.5%-median/nonnegative rule. Artifacts
+    validate and GPU 4/5 again release; exact-resume to step 750 next.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

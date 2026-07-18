@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 
@@ -17,6 +19,7 @@ from ember.video_information_probe import (  # noqa: E402
     fit_frozen_linear_probe,
     load_video_recovery_spec,
     load_video_spec,
+    main,
     score_linear_probe,
     stratified_accuracy_interval,
     temporal_moment_descriptor,
@@ -62,6 +65,54 @@ class VideoInformationProbeTest(unittest.TestCase):
         self.assertEqual(recovery["resources"]["batch_size"], 48)
         self.assertEqual(recovery["resources"]["expected_output_gib"], 0.03)
         self.assertFalse(recovery["recovery"]["representation"]["language_prompt_used"])
+
+    def test_cli_preserves_existing_latest_symlink_as_a_lexical_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            previous = root / "previous"
+            previous.mkdir()
+            latest = root / "latest"
+            latest.symlink_to(previous.name, target_is_directory=True)
+            output = root / "output"
+            arguments = [
+                "video_information_probe",
+                "--config",
+                str(root / "config.toml"),
+                "--source-pair-config",
+                str(root / "source.toml"),
+                "--contract",
+                str(root / "contract.toml"),
+                "--seal",
+                str(root / "seal.json"),
+                "--manifest",
+                str(root / "manifest.json"),
+                "--dataset-root",
+                str(root / "dataset"),
+                "--model-path",
+                str(root / "model"),
+                "--output-dir",
+                str(output),
+                "--latest-link",
+                str(latest),
+                "--physical-gpu",
+                "4",
+            ]
+            result = {
+                "output_dir": str(output),
+                "latest_link": str(latest),
+                "status": "test",
+                "artifact_bytes": 0,
+                "video_count": 0,
+                "wall_seconds": 0.0,
+            }
+
+            with patch.object(sys, "argv", arguments), patch(
+                "ember.video_information_probe.run_probe", return_value=result
+            ) as run:
+                self.assertEqual(main(), 0)
+
+            self.assertEqual(run.call_args.kwargs["latest_link"], latest.absolute())
+            self.assertNotEqual(run.call_args.kwargs["latest_link"], previous.resolve())
 
     def test_uniform_sampler_excludes_terminal_and_freezes_drop_last_window(self) -> None:
         self.assertEqual(

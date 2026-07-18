@@ -496,7 +496,7 @@ def main() -> int:
             dataset_root=args.dataset_root.resolve(),
             model_path=args.model_path.resolve(),
             output_dir=args.output_dir.resolve(),
-            latest_link=args.latest_link.resolve() if args.latest_link else None,
+            latest_link=args.latest_link.absolute() if args.latest_link else None,
             physical_gpu=args.physical_gpu,
             recovery_config_path=(
                 args.recovery_config.resolve() if args.recovery_config else None

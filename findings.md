@@ -1524,3 +1524,31 @@
   sufficient source supervision. It may diagnose whether the current problem
   is LoRA-space capacity or acquisition/data/optimization, but cannot itself
   pass the matched LoRA Gate, seal Writer support, or authorize Writer.
+
+## Final capacity discriminator isolates trainable-state class only
+
+- The bounded action-expert upper-bound contract was frozen before any of its
+  fit or query outcomes. Its config SHA256 is
+  `8fd7f3a5fac0bbfef6fb7281e48b7ef9df7e5b95a74e9446d1e4c8e8ed72327d`;
+  the result-blind stage-ladder SHA256 is
+  `69640a07e97915e9ac51ac31153d13f4df4e3154845afdb2a136def230f4bc98`.
+  Both bind the primary and all-linear contracts plus the two all-linear 2k
+  candidate/recovery/telemetry failure packets, so no new LoRA target/rank or
+  unbounded optimizer search is introduced after outcomes.
+- The diagnostic reuses the same 40 source support demonstrations, task/query
+  IDs, effective batch 64, absolute-step sampling, fixed query noise,
+  random-resized crops, AdamW `1e-4`, 1k warmup/cosine decay, 20k maximum, and
+  1k/2k/5k/10k/20k staged thresholds. The sole scientific difference is that
+  the already validated 99,880,992 action-expert/state/action/time projection
+  parameters are updated directly. This makes a positive result evidence for
+  task-local model capacity outside LoRA and a negative result evidence against
+  the current data/acquisition/optimization control; neither result can itself
+  pass the matched LoRA Gate or authorize Writer.
+- The existing oracle fitter, sampler, query evaluator, scheduler-bound atomic
+  recovery and launcher remain the single canonical path. The mature contract
+  loader gains one fail-closed config mode and runtime prerequisites verify the
+  exact all-linear artifact hashes. No alternate trainer, evaluator, rollout
+  path, bank, geometry, or future architecture reservation is added. Focused
+  contract tests pass 15/15, the full suite passes 214/214, and the real
+  prerequisite load validates the frozen source checkpoint at step 10k with
+  exactly 99,880,992 declared trainables.

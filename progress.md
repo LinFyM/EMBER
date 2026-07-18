@@ -1472,3 +1472,25 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   target/rank variant is legal. Next preserve this failure packet, then run only
   the predeclared non-matched task-local action-expert capacity upper bound and
   surface the bounded Gate-recovery decision.
+- Added the one final mature capacity-diagnostic config and its result-blind
+  exact-resume ladder before any new fit outcome. Config/ladders SHA256 values
+  are `8fd7f3a5fac0bbfef6fb7281e48b7ef9df7e5b95a74e9446d1e4c8e8ed72327d`
+  and `69640a07e97915e9ac51ac31153d13f4df4e3154845afdb2a136def230f4bc98`.
+  They bind both all-linear 2k failure packets, retain source/validation/held
+  isolation, and explicitly prohibit Gate 0, Writer, or target-seal authority
+  from the non-matched arm. The same canonical fitter now accepts the existing
+  99,880,992-parameter action-expert/projection update state with the mature
+  data, optimizer, augmentation and staged budget; no parallel implementation
+  was created. Focused tests pass 15/15, the full repository suite passes
+  214/214, Python compilation/shell syntax/diff checks pass, and a real
+  prerequisite validation resolves the frozen step-10k source checkpoint. The
+  canonical launch dry-run also resolves the exact upper-bound config and 1k
+  stop. Next run one live finite-step count/identity/resource smoke, then launch
+  only the 1k stage on two GPUs if it passes.
+- Architecture guard is REVIEW with no hard violation: net active source/test
+  growth is 272 lines, no module or entrypoint was added, the existing mature
+  contract owner remains below 600 lines, and the one already-over-600 support
+  dispatcher grew by a single declarative name. The capacity config is a
+  bounded third use of the same fitter rather than a parallel path. After its
+  Gate-recovery decision and evidence export, review whether the config mode
+  still needs active rerun support before starting Writer implementation.

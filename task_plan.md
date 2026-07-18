@@ -479,6 +479,18 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     task-local action-expert capacity upper bound needed to distinguish LoRA
     space from acquisition/data/optimization failure; surface the Gate-recovery
     decision afterward without changing thresholds or blaming Writer.
+    That final diagnostic is now predeclared in
+    `configs/gate_zero_mature_action_expert_upper_bound.toml` (SHA256
+    `8fd7f3a5fac0bbfef6fb7281e48b7ef9df7e5b95a74e9446d1e4c8e8ed72327d`)
+    with staged ladder SHA256
+    `69640a07e97915e9ac51ac31153d13f4df4e3154845afdb2a136def230f4bc98`.
+    It reuses the exact 40 support demos, independent query, effective batch,
+    sampler/noise, augmentation and optimizer schedule, but trains the existing
+    99,880,992 action-expert/projection parameters instead of LoRA. It is
+    explicitly non-matched and cannot pass Gate 0, seal Writer targets, or
+    authorize Writer. Run one exact-identity/count/finite-step smoke, then only
+    tasks 3/4 to the 1k query boundary; continue under the same frozen ladder
+    and never consume the formal closed-loop surface during staging.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

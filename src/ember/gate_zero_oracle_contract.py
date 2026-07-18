@@ -235,6 +235,7 @@ def load_oracle_fit_spec(
         "smolvla_libero90_gate_zero_target_support_rank16_v1",
         "smolvla_libero90_gate_zero_mature_lora_positive_control_v1",
         "smolvla_libero90_gate_zero_mature_lora_all_linear_recovery_v1",
+        "smolvla_libero90_gate_zero_mature_action_expert_upper_bound_v1",
     }:
         from ember.gate_zero_support.contract import (
             load_target_support_screen_spec,
@@ -276,6 +277,7 @@ def validate_oracle_fit_prerequisites(
     if spec.get("name") in {
         "smolvla_libero90_gate_zero_mature_lora_positive_control_v1",
         "smolvla_libero90_gate_zero_mature_lora_all_linear_recovery_v1",
+        "smolvla_libero90_gate_zero_mature_action_expert_upper_bound_v1",
     }:
         competence_relative = Path(authority["source_competence_result_relative_path"])
         if tuple(competence_result_path.parts[-len(competence_relative.parts) :]) != competence_relative.parts:
@@ -305,6 +307,20 @@ def validate_oracle_fit_prerequisites(
                     ):
                         raise GateZeroOracleContractError(
                             f"primary task-{task_id} {kind} authority changed"
+                        )
+        if spec.get("name") == "smolvla_libero90_gate_zero_mature_action_expert_upper_bound_v1":
+            for task_id in (3, 4):
+                for kind in ("candidate_manifest", "recovery_manifest", "telemetry"):
+                    relative_key = f"all_linear_task{task_id}_{kind}_relative_path"
+                    sha_key = f"all_linear_task{task_id}_{kind}_sha256"
+                    relative = Path(authority[relative_key])
+                    artifact = output_root / relative
+                    if (
+                        not artifact.is_file()
+                        or _sha256(artifact) != authority[sha_key]
+                    ):
+                        raise GateZeroOracleContractError(
+                            f"all-linear task-{task_id} {kind} authority changed"
                         )
     competence = _load_json(competence_result_path, "source competence result")
     decision = competence.get("decision", {})

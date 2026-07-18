@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import os
 import subprocess
 import sys
@@ -42,6 +43,12 @@ class GateZeroMatureLoraPositiveControlTest(unittest.TestCase):
         self.recovery_config = (
             ROOT / "configs" / "gate_zero_mature_lora_all_linear_recovery.toml"
         )
+        self.upper_bound_config = (
+            ROOT / "configs" / "gate_zero_mature_action_expert_upper_bound.toml"
+        )
+        self.upper_bound_ladder = (
+            ROOT / "configs" / "gate_zero_mature_action_expert_stage_ladder.toml"
+        )
         self.gate_zero = ROOT / "configs" / "gate_zero_oracle_pilot.toml"
         self.phase0 = ROOT / "configs" / "phase0.toml"
         self.competence = ROOT / "configs" / "gate_zero_source_competence.toml"
@@ -61,6 +68,93 @@ class GateZeroMatureLoraPositiveControlTest(unittest.TestCase):
             phase0_path=self.phase0,
             competence_path=self.competence,
         )
+
+    def load_upper_bound(self):
+        return load_mature_lora_positive_control_spec(
+            self.upper_bound_config,
+            gate_zero_path=self.gate_zero,
+            phase0_path=self.phase0,
+            competence_path=self.competence,
+        )
+
+    def test_mature_action_expert_upper_bound_is_non_matched_and_cannot_authorize_writer(self) -> None:
+        primary = self.load()
+        upper = self.load_upper_bound()
+        variant_name = "mature_action_expert_upper_bound"
+        variant = upper["fit"][variant_name]
+
+        self.assertEqual(upper["variants"], [variant_name])
+        self.assertEqual(variant["adaptation_kind"], "partial_update")
+        self.assertEqual(variant["expected_trainable_parameters"], 99_880_992)
+        self.assertFalse(variant["matched_baseline"])
+        self.assertFalse(variant["may_authorize_gate_zero"])
+        self.assertFalse(variant["may_authorize_writer"])
+        self.assertFalse(variant["may_seal_writer_target_contract"])
+        primary_variant = primary["fit"]["mature_official_default_r32"]
+        for key in (
+            "optimizer",
+            "learning_rate",
+            "betas",
+            "epsilon",
+            "weight_decay",
+            "gradient_clip_norm",
+            "scheduler",
+            "warmup_steps",
+            "decay_steps",
+            "decay_learning_rate",
+            "augmentation",
+            "augmentation_scale_min",
+            "augmentation_scale_max",
+            "augmentation_seed",
+            "seed",
+        ):
+            self.assertEqual(variant[key], primary_variant[key])
+        self.assertFalse(upper["prior_lora_failure"]["continuation_to_step5000"])
+        self.assertFalse(upper["authority"]["validation_numeric_access"])
+        self.assertFalse(upper["authority"]["held_numeric_access"])
+
+        with self.upper_bound_ladder.open("rb") as handle:
+            ladder = tomllib.load(handle)
+        self.assertEqual(
+            ladder["parent_fit_contract_sha256"],
+            hashlib.sha256(self.upper_bound_config.read_bytes()).hexdigest(),
+        )
+        self.assertTrue(ladder["non_matched_capacity_diagnostic_only"])
+        self.assertFalse(ladder["may_authorize_gate_zero"])
+        self.assertFalse(ladder["may_authorize_writer"])
+        self.assertEqual(
+            ladder["continuation"]["step2000_to_5000"],
+            {
+                "minimum_median_query_reduction_fraction": 0.05,
+                "minimum_each_task_query_reduction_fraction": 0.0,
+                "maximum_median_regression_from_prior_fraction": 0.01,
+            },
+        )
+
+    def test_mature_action_expert_upper_bound_authority_drift_fails_closed(self) -> None:
+        changed = self.upper_bound_config.read_text(encoding="utf-8").replace(
+            "may_authorize_writer = false", "may_authorize_writer = true"
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "upper.toml"
+            path.write_text(changed, encoding="utf-8")
+            with self.assertRaises(GateZeroMatureControlContractError):
+                load_mature_lora_positive_control_spec(
+                    path,
+                    gate_zero_path=self.gate_zero,
+                    phase0_path=self.phase0,
+                    competence_path=self.competence,
+                )
+
+    def test_canonical_oracle_fit_dispatch_accepts_mature_action_expert_upper_bound(self) -> None:
+        spec = load_oracle_fit_spec(
+            self.upper_bound_config,
+            gate_zero_path=self.gate_zero,
+            phase0_path=self.phase0,
+            competence_path=self.competence,
+        )
+
+        self.assertEqual(spec["variants"], ["mature_action_expert_upper_bound"])
 
     def test_conditional_recovery_is_exact_all_action_expert_linear_same_recipe(self) -> None:
         primary = self.load()

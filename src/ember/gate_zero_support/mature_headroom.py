@@ -166,7 +166,7 @@ def _validate_rollout_decision(raw: Mapping[str, Any]) -> None:
         "init_state_indices": list(range(40, 48)),
         "batch_size": 8,
         "seed_start": 5800,
-        "warmup_seed_start": 5760,
+        "warmup_seed_start": 5792,
         "policy_rng_seed": 2026071836,
         "conditions": ["frozen_base", EXPECTED_VARIANT],
         "maintenance_task_id": 3,
@@ -175,6 +175,21 @@ def _validate_rollout_decision(raw: Mapping[str, Any]) -> None:
         "selection_changes_after_access_forbidden": True,
     }
     _require_equal(raw.get("screening_rollout", {}), expected_rollout, "screening rollout")
+    expected_recovery = {
+        "failure_run_id": "gate0_mature_lora_headroom_screen_20260718_211501",
+        "failure_git_commit": "5681819b22aa93d634384cdd3760e004c0e1742a",
+        "failure_contract_sha256": "ba3ee431cb093170bb3c58460db076c95227ee92a3f33d0efb1fdeb3fc2f132f",
+        "failure_rank0_packet_sha256": "c6fc083a7c7a11c7cbcc55b9132bbf5f79b92ff57a0532fd48c280358445463c",
+        "failure_rank1_packet_sha256": "7ba077985e43bfa58daed16711c17fa43cee454174140b41e5474afd414d991e",
+        "failure_telemetry_sha256": "d2b56c2863e5ca5d72231018d3068c6859117c62175481c3ecbacd747e63d479",
+        "failure_message": "last warm-up seeds must precede report seeds",
+        "failed_before_any_episode": True,
+        "old_warmup_seed_start": 5760,
+        "corrected_last_warmup_seed_start": 5792,
+        "report_seed_start_unchanged": 5800,
+        "repair_changes_scientific_surface": False,
+    }
+    _require_equal(raw.get("mechanical_recovery", {}), expected_recovery, "mechanical recovery")
     expected_decision = {
         "maintenance_task_id": 3,
         "improvement_task_id": 4,

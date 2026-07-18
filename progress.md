@@ -1605,7 +1605,7 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
 ### Headroom-safe matched-LoRA closed-loop contract frozen
 
 - Added `configs/gate_zero_mature_lora_headroom_screen.toml` at SHA256
-  `ba3ee431cb093170bb3c58460db076c95227ee92a3f33d0efb1fdeb3fc2f132f`
+  `1adc78db42f0623336148453e76f0f956da972f275a91f143fe34ff10f46250b`
   before any new LoRA closed-loop result. It binds both task step-1000
   candidate/state/recovery/telemetry hashes, fixes source init states 40--47,
   seeds 5800--5807, and predeclares the maintenance-task, improvement-task,
@@ -1618,8 +1618,8 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   remains fail-closed in the freeze validator. Direct state-load smoke resolves
   74 tensors and exactly 1,485,312 parameters for each task with the frozen
   state hashes.
-- Focused screening tests pass 37/37 and the full repository suite passes
-  225/225 after the internal architecture split. Python compilation, shell
+- Focused screening tests pass 38/38 and the full repository suite passes
+  226/226 after the mechanical recovery regression. Python compilation, shell
   syntax, shellcheck, diff checks and the canonical two-GPU dry-run pass.
   Architecture guard is REVIEW with no hard violation: the new contract owner
   is bounded and reuses the existing evaluator rather than adding a second
@@ -1627,3 +1627,12 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   GPU/storage preflight, then evaluate exactly four source arms/32 episodes on
   GPUs 4/5 with Trackio, one video per arm, gallery and checksums. Gate 0 and
   Writer remain false until that result is mechanically validated.
+- The first launch `gate0_mature_lora_headroom_screen_20260718_211501` stopped
+  rc 1 before any episode on the evaluator's warm-up-seed adjacency check.
+  GPUs 4/5 released to 0MiB. Failure-packet SHA256 values are
+  `c6fc083a...463c`/`7ba07798...91e`, with telemetry `d2b56c28...479`.
+  A red-then-green regression fixes only the last warm-up batch start from
+  5760 to 5792 so it ends immediately before unchanged report seed 5800. The
+  old contract hash and clean commit `5681819` remain provenance; no rollout
+  result, threshold, task/init identity, LoRA state, validation, held, or
+  locked-report surface was consumed or changed.

@@ -1711,7 +1711,7 @@
   two-task aggregate must recover at least two net wins. This preserves a
   behavioral requirement without inventing success-count headroom.
 - The frozen contract SHA256 is
-  `ba3ee431cb093170bb3c58460db076c95227ee92a3f33d0efb1fdeb3fc2f132f`.
+  `1adc78db42f0623336148453e76f0f956da972f275a91f143fe34ff10f46250b`.
   It also retains the already observed independent-query safeguards: every
   task must reduce query flow MSE by at least 2%, and every task's action-drift
   proxy must remain at most 0.02. An underpowered task-4 base slice has a
@@ -1723,3 +1723,11 @@
   about Writer/video utility, validation or held performance, RL, or the
   overall EMBER hypothesis. No validation, held, or locked-report numeric
   surface is used in either the grant or the paired rollout.
+- The first launch under historical SHA256 `ba3ee431...f132f` failed before
+  any episode or policy outcome: the evaluator defines `warmup_seed_start` as
+  the *last* warm-up batch start, so 5760 could not immediately precede report
+  seed 5800 at batch size 8. The single mechanical repair changes only that
+  value to 5792 (yielding warm-up batches 5768--5775 through 5792--5799).
+  Report seeds, init states, policy RNG, LoRA states, thresholds and all data
+  surfaces are unchanged; both failure packets and telemetry remain bound in
+  the corrected contract.

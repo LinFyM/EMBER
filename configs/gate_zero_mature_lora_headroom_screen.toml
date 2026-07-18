@@ -56,6 +56,20 @@ aggregate_requirement = "at least two paired net wins across all 16 task episode
 failure_with_absent_task4_headroom = "predeclare a result-blind source-task extension; do not lower thresholds"
 failure_with_available_headroom = "record closed-loop Gate-0 failure and run bounded mechanism diagnosis"
 
+[mechanical_recovery]
+failure_run_id = "gate0_mature_lora_headroom_screen_20260718_211501"
+failure_git_commit = "5681819b22aa93d634384cdd3760e004c0e1742a"
+failure_contract_sha256 = "ba3ee431cb093170bb3c58460db076c95227ee92a3f33d0efb1fdeb3fc2f132f"
+failure_rank0_packet_sha256 = "c6fc083a7c7a11c7cbcc55b9132bbf5f79b92ff57a0532fd48c280358445463c"
+failure_rank1_packet_sha256 = "7ba077985e43bfa58daed16711c17fa43cee454174140b41e5474afd414d991e"
+failure_telemetry_sha256 = "d2b56c2863e5ca5d72231018d3068c6859117c62175481c3ecbacd747e63d479"
+failure_message = "last warm-up seeds must precede report seeds"
+failed_before_any_episode = true
+old_warmup_seed_start = 5760
+corrected_last_warmup_seed_start = 5792
+report_seed_start_unchanged = 5800
+repair_changes_scientific_surface = false
+
 [fit.mature_official_default_r32_lr25e6_recovery]
 adaptation_kind = "lora"
 support_scope = "smolvla_v0_6_default_like_action_support_mature_positive_control"
@@ -150,7 +164,7 @@ role = "paired_source_closed_loop_headroom_control"
 init_state_indices = [40, 41, 42, 43, 44, 45, 46, 47]
 batch_size = 8
 seed_start = 5800
-warmup_seed_start = 5760
+warmup_seed_start = 5792
 policy_rng_seed = 2026071836
 conditions = ["frozen_base", "mature_official_default_r32_lr25e6_recovery"]
 maintenance_task_id = 3

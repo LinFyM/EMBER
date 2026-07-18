@@ -571,7 +571,7 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     source closed-loop contract. Do not resume to 2k or authorize Gate 0/Writer.
     That source-only contract is now frozen before any new LoRA closed-loop
     outcome in `gate_zero_mature_lora_headroom_screen.toml` (SHA256
-    `ba3ee431cb093170bb3c58460db076c95227ee92a3f33d0efb1fdeb3fc2f132f`).
+    `1adc78db42f0623336148453e76f0f956da972f275a91f143fe34ff10f46250b`).
     It binds both immutable step-1000 candidate/recovery/telemetry packets and
     uses paired fresh source init states 40--47 with seeds 5800--5807. Task 3
     is a maintenance control requiring nonnegative paired net wins; task 4 is
@@ -583,7 +583,10 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     rule. Run exactly four arms/32 episodes on two GPUs, retain one video per
     arm plus Trackio/gallery/checksums, then decide Gate 0 and Writer authority
     strictly from this frozen contract. No validation, held, locked-report, or
-    step-2k access is authorized.
+    step-2k access is authorized. The original SHA256 `ba3ee431...f132f`
+    reached no episode because its last-warm-up seed was not stride-adjacent to
+    the unchanged report seed 5800; retain that failure packet and use the
+    corrected last warm-up seed 5792 without changing any scientific surface.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

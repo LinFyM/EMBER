@@ -17,6 +17,9 @@ from ember.gate_zero_support.mature_headroom import (  # noqa: E402
     GateZeroMatureLoraHeadroomContractError,
     decide_mature_lora_headroom,
 )
+from ember.gate_zero_oracle_report_runtime import (  # noqa: E402
+    report_warmup_seed_batches,
+)
 
 
 class GateZeroMatureLoraHeadroomTest(unittest.TestCase):
@@ -62,6 +65,17 @@ class GateZeroMatureLoraHeadroomTest(unittest.TestCase):
         self.assertEqual(spec["decision"]["minimum_each_query_reduction_fraction"], 0.02)
         self.assertFalse(spec["authority"]["validation_numeric_access"])
         self.assertFalse(spec["authority"]["held_numeric_access"])
+
+    def test_warmup_seed_batches_end_immediately_before_report_seeds(self) -> None:
+        rollout = self.load()["screening_rollout"]
+        batches = report_warmup_seed_batches(
+            batch_size=rollout["batch_size"],
+            warmup_seed_start=rollout["warmup_seed_start"],
+            report_seed_start=rollout["seed_start"],
+            expected_report_init_states=rollout["init_state_indices"],
+        )
+        self.assertEqual(batches[-1], list(range(5792, 5800)))
+        self.assertEqual(batches[0], list(range(5768, 5776)))
 
     def test_contract_drift_fails_closed(self) -> None:
         changed = self.config.read_text(encoding="utf-8").replace(

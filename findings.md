@@ -1411,3 +1411,13 @@
   reductions are nonnegative and the median exceeds the frozen 2% rule, so the
   same trajectories are authorized to resume to 2k. This is a positive query
   trend, not Gate 0 or closed-loop evidence.
+- Stage 2k also completed rc 0 for both tasks. From the same frozen step-0
+  query anchors, task 3 improves by 8.036% while task 4 improves by 4.504%; the
+  median is 6.270%. Relative to stage 1k, the median regresses by 0.587
+  percentage points, within the predeclared 1pp allowance. Task 4's individual
+  1.251pp decline is retained as a diagnostic warning, but the frozen rule is
+  aggregate and cannot be changed after seeing results. Candidate/recovery/
+  state/telemetry hashes all validate, GPU 4/5 were released, and no final
+  rollout, validation, or held surface was accessed. The exact same trajectories
+  may therefore continue to 5k. This remains source-query trend evidence only,
+  not a useful-update oracle or behavioral success claim.

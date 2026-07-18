@@ -417,6 +417,16 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     0.01676/0.01883. All candidate/recovery/telemetry hashes validate and no
     final rollout surface was opened. The frozen continuation rule passes;
     exact-resume the same states to step 2k next.
+    Stage 2k is now complete rc 0 in 12:59/12:44. Task 3/4 query reductions
+    from the unchanged step-0 anchors are 8.04%/4.50% (median 6.27%); both
+    remain positive. The median is 0.59 percentage points below stage 1k,
+    within the frozen at-most-1pp regression allowance, although task 4 alone
+    regressed by 1.25pp and remains a diagnostic signal. Candidate, recovery,
+    state and telemetry hashes validate; GPU 4/5 returned to 0MiB and no final
+    rollout surface was opened. The predeclared 2k-to-5k rule therefore passes:
+    exact-resume these same states to step 5k, then require median reduction at
+    least 10%, every task at least 2%, and at most 1pp median regression before
+    authorizing 10k.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

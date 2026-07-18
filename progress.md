@@ -1387,3 +1387,20 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   mean utilization is about 89.9%. GPU 4/5 returned to 0MiB. Resume the same
   outputs from step 1000 to the next stop at step 2000; do not open final
   closed-loop init states.
+- Stage-2k long-runs `gate0_mature_r32_t3_stage2k_20260718_165425` and
+  `gate0_mature_r32_t4_stage2k_20260718_165425` completed main rc 0 in
+  12:59/12:44. Task 3/4 query reductions are 8.036%/4.504% (median 6.270%).
+  The median change from 1k is -0.587pp, within the frozen 1pp limit; both task
+  reductions remain positive, so the 2k-to-5k continuation rule passes. Task
+  4's -1.251pp individual change is recorded rather than hidden or used to
+  rewrite the aggregate rule. Candidate-manifest SHA256 values are
+  `4f8b3536e0d028afad9aaa646d585d81829aa3ebe067495b5355f8171f8004e6` and
+  `adb91eae7afe134fbf8446003e3c981d5475633f89d2c9584bb4e18a12c4b31a`;
+  recovery-manifest SHA256 values are
+  `1317ea1f7f90a3cf04ea96897a13f6b46f2ca9b9bd73891d9f629c4c3aec5d6b` and
+  `0f189357f809e8d602adaff78865859168671cec39e1f00f8449b1a0cd247791`;
+  telemetry SHA256 values are
+  `a05400a7552bd9b77a96567239fd215ffc608db73e8d1021f5776aa998a15967` and
+  `8629a7388a45980778640075551fc3e515645977cd50f96db556b20488441c95`.
+  GPU 4/5 returned to 0MiB. Resume the same outputs from step 2000 to step 5000;
+  expected wall time is about 38--45 minutes, with no final closed-loop access.

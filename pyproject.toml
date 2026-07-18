@@ -28,6 +28,7 @@ dependencies = [
 ember-build-libero-manifest = "ember.libero_manifest:main"
 ember-probe-language-action = "ember.language_action_probe:main"
 ember-probe-same-init-goal = "ember.counterfactual_goal_probe:main"
+ember-probe-video-information = "ember.video_information_probe:main"
 ember-reseal-libero-split = "ember.libero_split_reseal:main"
 ember-verify-contract = "ember.contracts:main"
 

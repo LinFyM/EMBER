@@ -183,9 +183,10 @@ def assess_goal_switch(
     }
 
 
-def _manifest_authority(
+def validate_paired_source_authority(
     spec: dict[str, Any], manifest_path: Path, seal_path: Path, contract: dict[str, Any]
 ) -> tuple[dict[str, Any], dict[int, dict[str, Any]]]:
+    """Validate a frozen two-task source authority against the resealed manifest."""
     seal_sha = _sha256_file(seal_path)
     if seal_sha != spec["split_seal_sha256"]:
         raise CounterfactualGoalProbeError("split seal hash differs from the frozen probe")
@@ -452,7 +453,9 @@ def run_probe(
     threshold = contract["gate_minus_one"]["thresholds"]["counterfactual_correct_switch_fraction"]
     if spec["counterfactual_switch_threshold"] != threshold:
         raise CounterfactualGoalProbeError("probe threshold differs from the Phase 0 contract")
-    authority, _ = _manifest_authority(spec, manifest_path, seal_path, contract)
+    authority, _ = validate_paired_source_authority(
+        spec, manifest_path, seal_path, contract
+    )
     output_dir.mkdir(parents=True)
     initial_rows, terminal_rows, runtime = _runtime_probe(
         spec, dataset_root, libero_config_root

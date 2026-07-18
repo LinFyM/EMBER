@@ -158,4 +158,9 @@ progress through the complete design only when predecessor evidence supports it.
 13. [ ] Run the predeclared action-hidden video content and temporal controls,
     then obtain legal source-task policy competence before interpreting the
     paired native-goal surface behaviorally. Keep this Gate -1 dependency
-    explicit when designing the Gate 0 oracle pilot.
+    explicit when designing the Gate 0 oracle pilot. The source-only video
+    protocol is now frozen before outcomes: same-scene tasks 3/4, support demos
+    0--23, query demos 24--47, reserved demos 48--49, 16 third-person RGB
+    frames, one neutral frozen SmolVLM2 encoder, one fixed dual-ridge readout,
+    and ordered/reversed/shuffled/first/last/static-median/drop-last-20%
+    controls. Canonical execution and interpretation remain pending.

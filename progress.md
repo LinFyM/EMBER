@@ -276,6 +276,48 @@
   released. No video was duplicated because the frozen prior pilot supplies
   matched rollout videos.
 
+## Gate -1 action-hidden video prelaunch contract
+
+- Before reading any video-probe outcome, the checked-in contract freezes
+  resealed source tasks 3/4, support demonstrations 0--23, disjoint query
+  demonstrations 24--47, and unused rows 48--49. Each encoder input contains
+  only 16 uniformly sampled `agentview_rgb` frames with the final recorded
+  frame excluded and standardized 1 fps metadata. Task language, task ID,
+  action, proprioception, reward, terminal flags, original trajectory length,
+  filename, and normalization statistics are absent from the encoder input;
+  source task labels are used only to fit and score the declared readout.
+- One frozen pinned SmolVLM2-500M causal-context feature and a single balanced
+  dual-ridge readout with fixed lambda 1.0 are primary. Only ordered support
+  clips fit the readout. The same query clips then generate ordered, reversed,
+  deterministic shuffled, repeated first-frame, repeated last-frame, repeated
+  temporal-median, and independently resampled drop-last-20% controls. The
+  wrong-video control swaps the two same-scene source labels. Thresholds and
+  bootstrap seeds are fixed in
+  `configs/gate_minus1_video_information_probe.toml`; the bidirectional query
+  pairs are demo-index matched but are not claimed to share simulator state.
+  This two-task diagnostic
+  cannot pass Gate -1 or authorize Writer.
+- A non-scientific duplicated-clip systems sweep selected batch 48 on one A100:
+  device-side preprocessing plus inference measured 17.37 clips/s with 49,624
+  MiB peak reserved memory. Batch 64 was slower at 14.89 clips/s despite 65,924
+  MiB reserved; batch 32 reached 16.64 clips/s. The canonical path therefore
+  uses the throughput optimum rather than dummy allocation and retains at least
+  10 GiB measured total-device headroom.
+- The video surface has one CLI and launcher. `video_probe_core.py` owns the
+  fail-closed protocol/statistics, `video_probe_runtime.py` owns pinned
+  authority/RGB extraction/frozen encoding/GPU telemetry, and
+  `video_information_probe.py` owns orchestration, checksums, compact MP4/HTML,
+  and the atomic latest link. The architecture guard has no hard violation;
+  its review flag is the approximately 1.5k-line config/source/test/launcher
+  addition. No prior video-probe path is superseded. If the video hypothesis is
+  rejected, retire this entrypoint after its immutable failure packet and
+  report are preserved; if it survives, these caches become the sole upstream
+  video input owner for Writer acquisition.
+- Before formal launch, all 84 repository tests pass along with Python
+  compilation, shell syntax, launcher dry-run, diff whitespace, and the
+  architecture review. Canonical output is still pending and no scientific
+  metric has been read.
+
 ## Current phase
 
 Phase 0, reproducible substrate, is in progress. The immutable contract, first
@@ -294,8 +336,8 @@ outcome input. The fresh canonical manifest and source-only normalization under
 the new IDs now pass. The source same-state native-goal surface passes its
 mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
 same-observation language-to-action path. Gate -1 is still in progress on
-correct paired-goal behavior with legal source competence and on video causal
-probes. Writer training remains unauthorized.
+correct paired-goal behavior with legal source competence; the video causal
+protocol is frozen but not yet executed. Writer training remains unauthorized.
 
 ## Implementation ownership review
 
@@ -364,6 +406,11 @@ probes. Writer training remains unauthorized.
   policy builder/action postprocessor, links the prior competence artifact by
   hash, and never steps a rollout or changes goal semantics. Its config and
   launcher are the sole current path and retire with Gate -1 evidence.
+- The action-hidden video diagnostic has three non-overlapping owners described
+  in its prelaunch section: pure protocol/statistics, pinned data/model runtime,
+  and one canonical artifact/CLI path. The split resolves the architecture
+  guard's former >1,000-line single-file hard violation; no alternate encoder,
+  reader, launcher, or legacy compatibility path remains active.
 - Retirement triggers are explicit: remove the BDDL and robosuite repairs after
   a pinned dependency upgrade proves the upstream wheels no longer contain the
   duplicate metadata/shared-log defects; remove the local SmolVLA/LIBERO

@@ -659,3 +659,34 @@
   Torch peak reserved memory 1,232 MiB on one A100, and a 268,038-byte
   checksummed JSON/HTML artifact. The GPU was released and no new rollout video
   was duplicated; the linked prior pilot gallery retains the matched videos.
+
+## Gate -1 action-hidden video protocol frozen before outcomes
+
+- The canonical LIBERO-90 source HDF5 files already contain the pinned
+  third-person `obs/agentview_rgb` stream. State replay is unnecessary: the
+  probe can extract action-hidden RGB directly from the same hashed authority,
+  avoiding simulator drift and redundant rendering while never passing action,
+  proprioception, reward, or terminal fields to the encoder.
+- Resealed source tasks 3 and 4 are the smallest current same-scene content
+  pair: both show the same `KITCHEN_SCENE10` layout and drawer interaction, but
+  successful demonstrations move the back versus front butter. The support
+  and query demonstrations are disjoint, and first-frame/static/last-frame
+  controls explicitly test initial-scene and endpoint shortcuts.
+- The frozen information probe is deliberately weaker than Writer evidence.
+  It asks whether an RGB-only frozen representation plus a fixed source-trained
+  linear readout can recover the task on independent source videos, and whether
+  reversed or shuffled time degrades that readout. It neither generates policy
+  parameters nor demonstrates zero-interaction utility, held generalization,
+  or correct paired-goal behavior.
+- Predeclared point thresholds are 0.80 ordered balanced accuracy, 0.80
+  bidirectional query-pair correctness (without a same-init claim), 0.80
+  wrong-video specificity, 20-point ordered gaps over
+  first-frame and static-median controls, and a 10-point gap over both reversed
+  and shuffled videos. A last frame reaching 95% of full accuracy narrows the
+  interpretation to endpoint conditioning; drop-last-20% must retain 90% of
+  full accuracy. Confidence intervals use 10,000 source-stratified bootstrap
+  samples but do not replace the fixed point thresholds.
+- A technical duplicate-input sweep selected one-GPU batch 48 because it was
+  faster end-to-end than batches 32 and 64 while remaining far above the 10 GiB
+  headroom floor. These measurements select execution efficiency only and
+  contain no task-classification outcome.

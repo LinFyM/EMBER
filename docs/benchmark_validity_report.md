@@ -181,7 +181,7 @@ minimal failure packet rather than being rewritten after recovery.
 | Prompt-path specification pilot | scale candidate only | On overlap-trained `libero_spatial` tasks 0/1, correct is 6/8 and 6/8; no-spec is 0/8 and 0/8; scene-only is 2/8 and 0/8; swapped is 0/8 and 0/8. This is not a LIBERO-90 result. |
 | Same-observation language-to-action path | diagnostic pass | Exact correct repeats and 16/16 substantive action-plan contrasts remove repeated-reset rendering as the prompt-effect explanation. Goal correctness is not measured. |
 | Same-init paired executable goals | source evaluator mechanics pass; policy behavior pending | Tasks 3/4 have exact shared-state compatibility and 16/16 native-goal specificity. This does not show a policy follows the switched spec. |
-| Video content and temporal necessity | not measured | Wrong/same-scene/shuffled/reversed/first/last/scene-only video controls remain pending. |
+| Video content and temporal necessity | protocol frozen; canonical result pending | Source tasks 3/4, disjoint support/query demos, RGB-only frozen encoder/readout, wrong/same-scene/shuffled/reversed/first/last/static/drop-last controls, thresholds, and seeds are sealed before outcomes. This cannot itself pass Gate -1. |
 
 ## Method, robustness, and leakage boundary
 
@@ -213,7 +213,7 @@ ordered role records; it is not inferred from policy behavior.
 - No LIBERO-90 policy success, oracle, Writer, or held reward result was read in
   selecting or validating the resealed task IDs.
 
-Next, run the action-hidden video content/temporal controls, then obtain legal
+Next, execute the frozen action-hidden video content/temporal controls, then obtain legal
 source-task competence and evaluate correct behavior on the paired native-goal
 surface without changing its state or evaluator. Gate 0 and Gate 1 remain
 downstream; Writer center training remains unauthorized.

@@ -1002,3 +1002,39 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   aggregation packet, telemetry, and videos remain; run one fresh final report
   from the same immutable grant because per-episode arm arrays were not
   published before aggregation.
+
+## 2026-07-18 final Gate 0 locked report
+
+- Final long-run `gate_zero_oracle_locked_report_final_20260718_140322` reused
+  the sole immutable grant, completed all eight arms and 64 episodes with main
+  rc 0, and released GPUs 4--7. The result is
+  `$EMBER_OUTPUT_ROOT/gate_zero/oracle_report/locked_final_20260718T140322Z`
+  with result SHA256
+  `b7fcfc6227ba7fd6fc2e9ad21b2e55978b54d668476c9c520e216536739e9d91`;
+  `latest/index.html` exposes the bounded eight-video gallery and Trackio run
+  `locked_final_20260718T140322Z` remains under project `EMBER_gate0`.
+- All result/gallery/video/telemetry checksums pass. The four-card report body
+  took 199.17 seconds. Sampled peak memory was 21,932 MiB on rank 0 and about
+  4.3--4.6GiB on the other ranks; simulator-bound active utilization was lower
+  than training, but all four cards concurrently executed disjoint fixed
+  shards and no additional legal arm remained to fill memory. The complete
+  report/failure/grant tree is only 3.3MB, so no evidence cleanup is warranted.
+- Task 3 base/own/swapped/partial successes are 5/5/4/5 of eight; task 4 is
+  1/3/1/1. Task 4 own LoRA yields +25pp and 0.82% locked-flow reduction, while
+  task 3 own is the selected zero update. Aggregate median gain is 12.5pp,
+  positive-task fraction 0.5, median locked-flow reduction 0.00410, and median
+  selection drift 0.00998. Only the drift threshold passes; the own-minus-base
+  bootstrap 95% CI is [0, 37.5]pp.
+- The frozen decision is `gate_zero_pilot_failed` with failure class
+  `task_local_lora_oracle_utility_not_established`. Gate 0, Writer, validation,
+  held evaluation, and final Writer target sealing remain unauthorized. This is
+  not a reason to stop the long-term Goal: fit/query evidence localizes the next
+  bounded recovery to acquisition generalization plus target support, not
+  benchmark mechanics, resources, or Writer acquisition.
+- Active priority moves to one predeclared source/query-only audit combining a
+  bounded early-optimization remedy with last-two q/v, all action-expert q/v,
+  and near-official SmolVLA support. Rank changes only if that audit requires
+  them. Selection cannot read the locked report again; the matched closed-loop
+  recovery uses only the already reserved fresh recovery init states. Writer
+  remains blocked until a useful independent LoRA oracle is established and
+  the final support is permanently resealed.

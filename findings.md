@@ -1175,3 +1175,41 @@
   alongside the already required bounded target-support audit. It must not
   lower the drift/utility thresholds, use report outcomes for model selection,
   or blame the future Writer.
+
+## Frozen Gate 0 report finds one-task utility but fails the two-task claim
+
+- Immutable selection grant SHA256
+  `313ecf738b1a69ef2934c33e0681d3cef5f83506cc28925f06b8e9e16239bfad`
+  opened only the predeclared source report surface after all four selected
+  hashes froze. Final long-run
+  `gate_zero_oracle_locked_report_final_20260718_140322` completed main rc 0;
+  every HDF5 row, seed, init state 16--23, prompt override, reset transition,
+  selected state, result, video, gallery, and telemetry checksum validates.
+- Task 3 selected a physical zero update and behaves accordingly: frozen base,
+  own LoRA, and partial upper bound each succeed on the same 5/8 episodes. Its
+  locked flow reduction is effectively zero. The task-4 LoRA selected at step
+  250 raises success from 1/8 to 3/8 (+25pp) and lowers locked flow MSE by only
+  0.82%; the task-3 zero adapter and partial-zero state each remain at 1/8.
+- Across the two task-primary units, median success gain is 12.5pp versus the
+  frozen 15pp minimum, only 1/2 tasks is positive versus the required 2/2, and
+  median locked-flow reduction is 0.41% versus 20%. The paired own-minus-base
+  gap is 12.5pp with bootstrap 95% CI [0, 37.5]. Median selection drift 0.00998
+  passes the 0.02 aggregate cap, although task 4's locked-report action-drift
+  diagnostic is 0.02179. The result status is therefore
+  `gate_zero_pilot_failed`, failure class
+  `task_local_lora_oracle_utility_not_established`; Gate 0, Writer, and final
+  target support remain false.
+- The task-4 signal is useful evidence, not a pass: correct-task initialization
+  can improve closed-loop behavior, while applying that adapter to task 3
+  worsens locked flow by 2.80% and success from 5/8 to 4/8. But the two-task CI
+  includes zero and the effect is neither robust across tasks nor large in the
+  independent behavioral loss.
+- Both non-matched partial arms equal base because query-only selection rejected
+  every trained candidate. This run therefore cannot say that a larger update
+  lacks capacity; it says the current support-fit acquisition schedule failed
+  to generalize. The next bounded recovery should jointly stabilize early
+  acquisition and perform the owner-required support audit (last-two q/v, all
+  action-expert q/v, near-official SmolVLA support), choosing only on legal
+  source/query surfaces and evaluating on fresh reserved recovery init states.
+  Threshold reduction, locked-report reuse for selection, and Writer launch are
+  prohibited.

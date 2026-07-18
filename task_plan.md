@@ -309,7 +309,15 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     partial-update jobs selected step 0 because trained support improvement
     reversed on independent query data. Keep this item open until the immutable
     selection grant, matched locked offline/closed-loop report, failure
-    classification, and one bounded recovery decision are complete.
+    classification, and one bounded recovery decision are complete. The final
+    report now completes rc 0 with all mechanics valid but fails the frozen
+    Gate: median success gain 12.5pp, one of two positive tasks, and median
+    locked-flow reduction 0.41%. Task 4 improves 1/8 to 3/8 while task 3 remains
+    5/8 to 5/8 at its selected zero update; both partial selected states equal
+    base. Gate 0 and Writer stay unauthorized. Use the single bounded
+    acquisition/target-support audit in item 21 as recovery, then rerun matched
+    query and fresh recovery-init closed-loop controls without changing these
+    thresholds.
 21. [ ] Before freezing the Writer architecture, complete one bounded,
     predeclared source/validation-only target-support audit with held numeric
     access at zero. Compare at least current last-two q/v rank 8, all
@@ -325,6 +333,12 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     imitation is auxiliary only if predeclared. Use layer/module-aware,
     chunked/Perceiver-style or type-specific generation if wide support needs
     it; never shrink support merely because a flat generator is inconvenient.
+    This item is now the active Gate 0 recovery: predeclare acquisition
+    stabilization (lower learning-rate/denser early query candidates or an
+    equally bounded remedy) together with the three required support scopes;
+    choose only on legal source/query evidence, then use the already reserved
+    recovery init states for the closed-loop check. Do not reuse locked report
+    demos for selection.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

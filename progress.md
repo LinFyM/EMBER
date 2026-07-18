@@ -1456,3 +1456,19 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   4/5 returned to 0MiB. The next authorized action is exact-resume of these same
   outputs to step 2k. No final rollout, validation, held, Gate 0, final target,
   or Writer authority has been opened.
+- Recovery stage-2k long-runs
+  `gate0_mature_all_linear_t3_stage2k_20260718_183319` and
+  `gate0_mature_all_linear_t4_stage2k_20260718_183319` completed main rc 0 in
+  13:04/13:08. Task 3/4 query reductions reverse to -3.149%/-12.093% (median
+  -7.621%), 12.450pp below the 1k median. This fails every frozen 2k-to-5k
+  condition, so both recovery outputs are permanently stopped at 2k and no
+  formal closed-loop surface is opened. Candidate, trainable-state, recovery,
+  query/anchor and telemetry evidence validates; support loss falls while
+  drift rises, classifying the result as an optimization/generalization overrun
+  rather than an implementation failure. Telemetry SHA256 values are
+  `eb0171439c881e445e6e0e74cd242d7e9fd08163647956490579d979cb7f0897`
+  and `1c8acee4e1ff8737ed8f995cd09efaded43315ae18aac74a8ed4ad1d332871ac`;
+  peak memory is 19,099/19,379MiB and both GPUs returned to 0MiB. No additional
+  target/rank variant is legal. Next preserve this failure packet, then run only
+  the predeclared non-matched task-local action-expert capacity upper bound and
+  surface the bounded Gate-recovery decision.

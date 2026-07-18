@@ -1490,3 +1490,37 @@
   no final closed-loop, validation, or held surface was accessed. This evidence
   authorizes only exact-resume to the 2k query boundary, not Gate 0, Writer, or
   target-support sealing.
+
+## All-linear recovery overfits both independent queries by 2k
+
+- Both task trajectories completed the exact-resume step-2k segment with rc 0
+  in 13:04/13:08, then failed the frozen continuation rule. Task 3 query MSE
+  changes from 0.518030 at zero to 0.534345 (-3.149% reduction); task 4 changes
+  from 0.488088 to 0.547113 (-12.093%). Their median is -7.621%, versus +4.829%
+  at 1k, a 12.450 percentage-point regression. The result fails the required
+  median >=5%, each task >=0%, and prior-median regression <=1pp conditions;
+  neither trajectory may continue to 5k, 10k, or 20k.
+- Mechanics remain intact. Candidate-manifest SHA256 values are
+  `86baac172bb380fd29c92a0cd021991ed32fede3d2e185fc0c03a742f0e54006`
+  and `220f366324d29c57b1fac13436c52984be65d732f53810ce3b817d2ec1315222`;
+  trainable-state values are
+  `0ed133859bace1410c0d83368da16948e19a20400c8074116bedcce1ca059749`
+  and `77cfc9ed3f98d2bd3fa6ebe16773f7c3acc141cd83f24fcebff9e366f77a324b`;
+  recovery-manifest values are
+  `44ed9c9820a1138f905f46cb2e541c85d63d1a2d73a71c7961c6250c1736c901`
+  and `1bcd413d38a30b896aceecd5e64c4cef171fc29e017989f1f3f6e743473815b5`.
+  Query/anchor digests and sample counts remain identical to 1k, and both GPUs
+  released cleanly.
+- Logged support loss keeps improving from 0.3826/0.4263 over the first 1k
+  segment to 0.3109/0.3477 over the second, while action drift rises from
+  0.03858/0.02884 to 0.05816/0.06011 and independent query performance
+  reverses. This is a mechanics-valid optimization/generalization overrun, not
+  evidence that the trainer failed. It also cannot establish that LoRA lacks
+  behavioral capacity because the result-blind contract stops before the fixed
+  final candidate and no formal closed-loop surface was accessed.
+- The conditional all-linear route exhausts the predeclared target/rank
+  variants. The only remaining bounded discriminator already named before this
+  outcome is a non-matched task-local action-expert capacity upper bound under
+  sufficient source supervision. It may diagnose whether the current problem
+  is LoRA-space capacity or acquisition/data/optimization, but cannot itself
+  pass the matched LoRA Gate, seal Writer support, or authorize Writer.

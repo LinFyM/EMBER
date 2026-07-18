@@ -465,6 +465,20 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     devices were released. No final rollout, validation, or held surface was
     opened. Exact-resume these same states from step 1k to step 2k next, then
     apply only the frozen all-linear 2k-to-5k rule.
+    Stage 2k completed rc 0 in 13:04/13:08, but the recovery trajectory now
+    stops permanently. Task 3/4 query reductions reverse to -3.149%/-12.093%
+    (median -7.621%), a 12.450pp median regression from 1k. This fails all three
+    frozen 2k-to-5k conditions: median at least 5%, every task nonnegative, and
+    median regression at most 1pp. Candidate/recovery hashes and query identity
+    validate, support loss continues downward, and drift rises to
+    0.05816/0.06011, so the bounded classification is mechanics-valid
+    optimization/generalization overrun rather than implementation failure.
+    Never resume this recovery to 5k/10k/20k and do not consume its formal
+    closed-loop surface. No further target/rank variant is authorized. Preserve
+    both mature failures, then execute only the already predeclared non-matched
+    task-local action-expert capacity upper bound needed to distinguish LoRA
+    space from acquisition/data/optimization failure; surface the Gate-recovery
+    decision afterward without changing thresholds or blaming Writer.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

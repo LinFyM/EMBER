@@ -102,9 +102,12 @@ progress through the complete design only when predecessor evidence supports it.
    frozen as provenance, and a deterministic seed-20260718 search permanently
    sealed a replacement with 41 evaluation roles all covered by at least two
    source tasks, 30/30 source-unseen full compositions, 30/30 same-scene source
-   controls, and 28/30 role-sharing same-scene hard negatives. The next step in
-   this item is a fresh canonical manifest/source-normalization audit under the
-   resealed IDs, followed by the same-init and language/video Gate -1 probes.
+   controls, and 28/30 role-sharing same-scene hard negatives. A fresh canonical
+   audit from clean commit `23f3301` now verifies the resealed IDs, 183,555
+   source-only normalization rows, 30 metadata-only validation/held tasks, zero
+   evaluation numeric access, full checksums, and a filterable role-aware HTML
+   view. What remains in this item is the same-init executable-goal and
+   language/video Gate -1 probes.
 7. [x] Run the bounded evaluation-identity recovery on the same official-overlap
    surface: first compare the frozen policy under one exactly repeated reset
    observation across the predeclared batch ladder, then record matched actual

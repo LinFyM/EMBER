@@ -56,8 +56,9 @@ The independent expert review is complete and staged execution is active. The
 repository now contains a reproducible SmolVLA/LIBERO substrate and Gate -1
 diagnostics. The original invalid LIBERO-90 split has been preserved and
 replaced once by a permanently sealed specification-only 60/15/15 split before
-any LIBERO-90 policy outcome. A fresh data/normalization audit and the remaining
-causal controls are still required, so no Writer training is authorized. Every
+any LIBERO-90 policy outcome. The fresh data/normalization audit under that seal
+passes with zero validation/held numeric access; the remaining same-init and
+language/video causal controls are still required, so no Writer training is authorized. Every
 novelty claim remains provisional until the predecessor gates and matched-budget
 experiments pass.
 

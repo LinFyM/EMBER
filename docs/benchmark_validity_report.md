@@ -112,7 +112,7 @@ minimal failure packet rather than being rewritten after recovery.
 | Evaluation identity | diagnosed | Reset rendering has sparse one-level RGB nondeterminism; model actions are batch-shape sensitive. The fixed-batch statistical/functional contract is frozen, and cross-batch results are not pooled. |
 | Prior canonical LIBERO-90 authority | complete but tied to rejected split | The 90-file audit validated data integrity and leakage boundaries, but its source-only normalization belongs to the rejected split and must not be reused under the reseal. |
 | LIBERO-90 role-factor table and split design | recovery mechanics pass | All 90 specifications parse, the permanent seal has zero role-coverage violations, and its deterministic regeneration/hash checks pass. This is not policy evidence. |
-| Fresh canonical manifest under resealed split | pending | Must recompute source-only normalization and confirm validation/held numeric access remains zero from a clean reseal commit. |
+| Fresh canonical manifest under resealed split | pass with documented upstream notes | Clean commit `23f3301` re-audited all 90 files, recomputed 183,555 source-only rows, kept all 30 validation/held tasks metadata-only, and recorded zero evaluation numeric access with valid checksums. |
 | Prompt-path specification pilot | scale candidate only | On overlap-trained `libero_spatial` tasks 0/1, correct is 6/8 and 6/8; no-spec is 0/8 and 0/8; scene-only is 2/8 and 0/8; swapped is 0/8 and 0/8. This is not a LIBERO-90 result. |
 | Same-init paired executable goals | not measured | Prompt swap kept the environment goal fixed; it cannot establish correct counterfactual goal switching. |
 | Video content and temporal necessity | not measured | Wrong/same-scene/shuffled/reversed/first/last/scene-only video controls remain pending. |
@@ -135,9 +135,9 @@ ordered role records; it is not inferred from policy behavior.
 
 ## Limitations and next evidence
 
-- The split is specification-valid under the declared role grammar, but the
-  fresh canonical data manifest and new source-only normalization are not yet
-  regenerated at this evidence cutoff.
+- The split and data-access mechanics are valid under the declared role grammar
+  and fresh canonical manifest. This still does not establish that a policy has
+  learned the primitives or uses the specification causally.
 - Language-derived roles cannot prove policy competence or causal use of task
   information. Same-init executable-goal controls and video content/temporal
   controls remain required.
@@ -146,8 +146,6 @@ ordered role records; it is not inferred from policy behavior.
 - No LIBERO-90 policy success, oracle, Writer, or held reward result was read in
   selecting or validating the resealed task IDs.
 
-Next, regenerate the leakage-safe canonical manifest under the resealed split,
-verify source-only normalization and zero validation/held numeric access, then
-continue the predeclared same-init specification and language/video causal
-controls. Gate 0 and Gate 1 remain downstream; Writer center training remains
-unauthorized.
+Next, continue the predeclared same-init specification and language/video
+causal controls under the sealed split and fixed-batch evaluator contract. Gate
+0 and Gate 1 remain downstream; Writer center training remains unauthorized.

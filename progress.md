@@ -219,6 +219,18 @@
   syntax, diff whitespace, and secret/path scans. Cleanup removed the verified
   duplicate 144,387-byte temporary candidate plus five regenerable pytest-cache
   files (150,794 bytes total); all long-run and canonical evidence was retained.
+- Commit `23f3301` was pushed, leaving a clean tree for the formal resealed
+  manifest. Longrun `libero90_resealed_manifest_20260718_044358` completed with
+  main rc 0 in 12.34 seconds: eight CPU workers averaged 806% CPU, peaked at
+  840,572 KiB RSS, and used no GPU. The fresh 1,537,733-byte artifact is
+  `reseal1_20260718T044331Z`, and `latest` now points to it atomically.
+- All four artifact checksums and JSON parses pass. The manifest binds all 90
+  factors/splits to the permanent seal and clean generation commit; source
+  episodes 8–27 provide 183,555 finite normalization rows, validation/held are
+  exactly 30 metadata-only tasks, evaluation numeric access is zero, and held
+  BDDL remains identity-hash-only. Private-path/producer-path scanning is clean.
+  The new HTML view exposes split metrics, operation order, and role atoms; its
+  embedded JavaScript passes a fresh syntax check.
 
 ## Current phase
 
@@ -234,10 +246,10 @@ specification pilot is complete and authorizes scaling only that diagnostic.
 The previous canonical LIBERO-90 manifest is complete as data-integrity
 evidence, and its role-aware audit falsified the original split. The authorized
 one-time specification-only recovery is now permanently sealed with no policy
-outcome input. Gate -1 is still in progress: the fresh canonical manifest and
-source-only normalization under the new IDs must pass before the remaining
-same-init specification and language/video causal probes. Writer training
-remains unauthorized.
+outcome input. The fresh canonical manifest and source-only normalization under
+the new IDs now pass. Gate -1 is still in progress on the remaining same-init
+specification and language/video causal probes. Writer training remains
+unauthorized.
 
 ## Implementation ownership review
 
@@ -311,10 +323,8 @@ remains unauthorized.
 
 ## Immediate handoff
 
-1. Commit the permanent reseal from a fully verified clean tree, then regenerate
-   the leakage-safe canonical LIBERO-90 manifest and source-only normalization
-   under the new source IDs. Confirm validation/held numeric access is still
-   exactly zero and publish the updated local HTML view.
+1. Preserve the permanent reseal and fresh canonical manifest as the only active
+   split/normalization path; do not reuse the rejected split's normalization.
 2. Continue the remaining same-init executable-goal and language/video causal
    controls under the frozen fixed-batch evaluator contract. Do not use held
    results to choose thresholds, task IDs, or remedies.
@@ -329,6 +339,11 @@ remains unauthorized.
   `9f5bc62e15e2cb07887e97bc98630a3f527ac6b5e253f41c203cf37459568428`.
   It is specification-only, reproduces the old failure, validates the new split,
   and does not constitute a Gate -1 or Writer authorization decision.
+- The active canonical audit is longrun
+  `.codex/longrun/libero90_resealed_manifest_20260718_044358` plus
+  `$EMBER_OUTPUT_ROOT/phase0/libero90_manifest/reseal1_20260718T044331Z`.
+  Its local review page is the corresponding `latest/index.html`; the rejected
+  split's prior artifact is retained by its immutable directory, not deleted.
 - `docs/expert_plan.md` uses an obsolete eight-GPU planning envelope; active
   execution must recalculate every launch for at most four GPUs.
 - A gate failure requires diagnosis and bounded recovery, not immediate

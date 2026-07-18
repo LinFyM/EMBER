@@ -563,7 +563,21 @@
   It regenerates byte-for-byte after installing the new active split because
   the old split is explicitly retained as `prior_split`. Gate -1 thresholds did
   not change, and the active split is now permanent.
-- The previous canonical HDF5 audit remains valid as data-integrity evidence but
-  its source-only normalization belongs to the rejected split. A fresh
-  canonical manifest must recompute normalization under the resealed source IDs
-  and re-establish zero validation/held numeric access before downstream use.
+- The previous canonical HDF5 audit remains valid as historical data-integrity
+  evidence, but its normalization belongs to the rejected split. The fresh
+  clean-commit audit `libero90_resealed_manifest_20260718_044358` replaces that
+  active normalization: all 90 factor records and split labels match the seal;
+  source episodes 8–27 contribute 183,555 finite state/action rows; all 30
+  validation/held tasks remain metadata-only; evaluation numeric access is
+  exactly zero; and held BDDL stays identity-hash-only.
+- The fresh artifact at
+  `$EMBER_OUTPUT_ROOT/phase0/libero90_manifest/reseal1_20260718T044331Z`
+  is 1,537,733 bytes with four valid checksums, parseable JSON, no private paths
+  or producer model paths, and a dependency-free role-aware HTML view. It was
+  generated from clean commit `23f3301` in 12.34 seconds using eight CPU workers,
+  840,572 KiB peak RSS, and no GPU.
+- Quality remains `pass_with_documented_notes`: all 90 files carry the legacy
+  producer-suite note, six carry a legacy producer-basename note, and the two
+  currently legal non-held BDDL parses at tasks 17 and 84 preserve wording
+  differences while task-map/HDF5 instructions agree. Newly held BDDL semantics
+  were not opened to reproduce prior wording notes.

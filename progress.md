@@ -1139,3 +1139,35 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   tests cover six-state atomic grant publication, hash/missing-state failure,
   query ranking, four-rank arm partitioning, smallest-passing-support selection,
   bounded rank-16 authorization, state authority, and the single dry-run path.
+
+### Rank-8 fit completion and closed-loop screening launch contract
+
+- Wave-1 long-runs `gate0_support_last2_t3_20260718_143657`,
+  `gate0_support_last2_t4_20260718_143657`,
+  `gate0_support_allqv_t3_20260718_143657`, and
+  `gate0_support_allqv_t4_20260718_143657`; wave-2 runs
+  `gate0_support_official_t3_20260718_144758` and
+  `gate0_support_official_t4_20260718_144758` all completed main rc 0 and
+  released GPUs 4--7. Runtime was 507--625 seconds; last-two peak Torch
+  allocation was 3.70GiB and broad supports 17.23--17.36GiB. The complete fit
+  tree is only 53MB, so no evidence cleanup is warranted.
+- Every fit checksum and selected-state authority validates. The one screening
+  grant is
+  `$EMBER_OUTPUT_ROOT/gate_zero/target_support_audit/screening_freeze/rank8_20260718T150007Z/screening_grant.json`,
+  SHA256 `fd8e28a7f0b828e14ff7cfb794a047409b6e8e96562646b38aef232b65332992`.
+  It freezes six selected state/result/manifest hashes, records the exact query
+  ranking, authorizes only source rollout init states 24--31, and explicitly
+  leaves report access, rank 16, Gate 0, final target support, Writer,
+  validation, and held access false.
+- The next canonical command is the sole
+  `scripts/run_gate_zero_target_support_screen.sh` from clean screening code
+  revision `1722b9d`, with `--gpus=4,5,6,7`, the rank-8 fit root above,
+  `--reuse-screening-freeze`, and output
+  `$EMBER_OUTPUT_ROOT/gate_zero/target_support_audit/screening/rank8_20260718T150007Z`.
+  Four ranks evaluate eight disjoint arms/64 episodes: one frozen base and all
+  three supports per task, exact init states 24--31 and seeds 5500--5507. No
+  HDF5/query/report/validation/held data is opened. Expected peak is below
+  22GiB per rank, wall time 3--5 minutes, and storage below 1GiB. Trackio
+  project `EMBER_gate0`, one video per arm, telemetry, checksums, and a `latest`
+  gallery provide live/later inspection. Stop on first mechanics/authority
+  failure or after all 64 episodes; never overwrite the grant or partial output.

@@ -345,6 +345,13 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     remedy, screen on init states 24--31, and confirm only after support freeze
     on 32--39. Exactly one conditional rank-16 escalation is allowed only when
     no rank-8 support passes; no other layer/rank/optimizer search is scheduled.
+    All six rank-8 fits now complete with checksum-valid, drift-safe nonzero
+    selections. Median fixed-query reductions rank official-default-like 4.79%,
+    all-expert q/v 4.67%, and last-two q/v 2.36%. Immutable screening grant
+    SHA256 `fd8e28a7f0b828e14ff7cfb794a047409b6e8e96562646b38aef232b65332992`
+    freezes all six states and authorizes only the matched init-24--31
+    closed-loop screen; locked report, rank 16, final support, Gate 0, and
+    Writer remain unauthorized until that result is classified.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

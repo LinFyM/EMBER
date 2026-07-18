@@ -1235,3 +1235,25 @@
   best declared support is conditionally available only if every rank-8 scope
   fails the frozen screening contract. There is no other support/rank search,
   and Writer remains unauthorized until the matched confirmation passes.
+
+## Lower-LR rank-8 support fits generalize positively but remain below Gate scale
+
+- All six 750-step fits completed rc 0 with matched query identity and valid
+  checksums. Last-two q/v selects step 250 on both tasks and reduces fixed-query
+  flow loss by 2.89%/1.83% with drift 0.01445/0.00991. All action-expert q/v
+  selects steps 100/150 and reduces 5.80%/3.54% with drift
+  0.01747/0.01967. Official-default-like support selects step 100 on both and
+  reduces 6.07%/3.51% with drift 0.01871/0.01654.
+- The one lower-LR/dense-early repair fixes the previous task-3 zero-selection
+  problem: every support now yields a nonzero, drift-safe improvement on both
+  independent query tasks. Broad action support roughly doubles the median
+  reduction from 2.36% to 4.67--4.79%, while official-default-like exceeds
+  all-q/v by only 0.12 percentage points at 48,768 extra LoRA parameters. This
+  is evidence that last-two was not a sufficient final assumption, but it is
+  not yet evidence that the largest support is necessary.
+- All rank-8 median reductions remain far below the unchanged 20% Gate action-
+  loss criterion. The predeclared closed-loop screen is still required because
+  functional success can diverge from flow-loss magnitude and is needed for a
+  truthful failure packet; it cannot erase the query shortfall or authorize
+  Writer. The immutable six-state grant keeps locked report, rank 16, final
+  target sealing, Gate 0, validation/held, and Writer closed.

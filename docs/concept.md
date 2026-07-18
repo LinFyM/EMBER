@@ -1,217 +1,202 @@
 # EMBER Research Concept
 
-This document specifies the embodied instance. The broader motivation and the
-meaning of cross-distribution information-to-parameter transfer are defined in
-[`origin_and_general_thesis.md`](origin_and_general_thesis.md).
+This document specifies the active embodied instance. The broader motivation is
+defined in [`origin_and_general_thesis.md`](origin_and_general_thesis.md). The
+2026-07-18 owner correction supersedes historical proposals for a canonical
+bank, shared update subspace, soft geometry, residual escape, or mandatory
+canonical-representation Gate.
 
 ## 1. Motivation
 
 Action-labeled robot trajectories contain synchronized observations, robot
-states, actions, and often success labels. They are substantially more expensive
-to collect than language descriptions or action-free videos. Action-free data,
-however, is not directly executable: it lacks calibrated robot actions, contact
-forces, embodiment constraints, and reward information.
+states, actions, and often success labels. Language and action-hidden videos can
+describe a task but do not directly provide calibrated robot actions, contact
+dynamics, or reward. At the same time, sparse-reward RL may not improve a VLA
+whose initial success probability is effectively zero.
 
-At the same time, sparse-reward RL may fail to improve a VLA whose initial
-success probability is effectively zero. EMBER targets the gap between these two
-facts. It asks whether a meta-trained model can transform a task specification
-into a rough but executable parameter prior, after which interaction can correct
-the remaining details.
-
-This is a concrete test of the general Writer thesis: the input distribution
-(language/video) and the useful supervision distribution (robot actions and
-returns) differ, and the learned cross-task bridge is expressed as a parameter
-update rather than direct label prediction.
-
-The human-learning analogy is deliberately limited: watching an instructional
-video may provide the rough structure of a new movement, but physical practice
-and feedback are still needed to correct timing, force, and coordination.
+EMBER asks whether source-task executable supervision can train a Writer to
+transform language/action-hidden video into a rough but functional task-specific
+LoRA. The Writer's deployment output should cross the zero-competence barrier;
+ordinary interaction then refines that same LoRA. This is a concrete
+information-to-parameter test, not a claim that action-hidden video alone
+contains every robot-control detail.
 
 ## 2. Problem statement
 
-Let each task be denoted by \(T\), drawn from a meta-training task distribution
-\(p_{train}(T)\). A task has:
+For each task \(T\):
 
-- a specification \(x_T = (l_T, v_T)\), where either language \(l_T\), video
-  \(v_T\), or both may be present;
-- an environment with observations, actions, transitions, and reward;
-- source-task executable supervision during early training, such as robot
-  trajectories or a teacher policy;
-- query rollouts used to measure behavior after the Writer update and after
-  task-local adaptation.
+- \(x_T=(l_T,v_T)\) is legal language, action-hidden robot video, or both;
+- \(D_T^{support}\) and \(D_T^{query}\) are independent executable source
+  surfaces used only by training objectives;
+- \(E_T\) supplies rollouts and reward; and
+- \(\pi_\theta\) is a shared pretrained VLA base.
 
-The shared base VLA policy is \(\pi_\theta\). The shared Writer is
-\(H_\psi\). Task-local state is \(z_T\). A critic or value estimator is kept
-separate from the policy adapter unless an experiment justifies coupling them.
-
-At held-out evaluation, tasks are sampled from a separately defined
-\(p_{test}(T)\). Shared parameters \(\theta\) and \(\psi\) are frozen; only
-task-local state may adapt. Updating the global Writer or base policy on the
-held-out task is a different continual-meta-learning problem.
-
-## 3. Proposed parameterization
-
-### 3.1 Writer output
-
-The Writer consumes the task specification and optionally task-specific
-feedback history:
+The shared Writer \(H_\psi\) emits task-local LoRA parameters \(a_T^0\):
 
 \[
-(\Delta\theta_T^0, \mathcal{G}_T)
-= H_\psi(x_T, h_T).
+a_T^0 = H_\psi(x_T), \qquad
+J_T(\pi_{\theta,a_T^0}) > J_T(\pi_{\theta,0}).
 \]
 
-- \(\Delta\theta_T^0\) is an initial low-rank adapter center. Applying it must
-  improve the task policy before any new-task RL.
-- \(\mathcal{G}_T\) is a soft adaptation geometry: directions, gates, scales,
-  or a local metric that prioritizes how task-local RL should update the policy.
-- \(h_T\) may contain rollout summaries, rewards, or the current adapter. It is
-  empty in the static one-shot Writer and becomes necessary only if the Writer
-  must react differently to the current task's observed failures.
+The target matrices, rank, scaling, and parameter count are common and frozen
+before outcomes. The values of all task-local LoRA factors are task-specific.
+The shared base \(\theta\) remains frozen during direct Writer training, source
+reward/meta learning, and held evaluation.
 
-### 3.2 Recommended first geometry
+## 3. Exact adaptation parameterization
 
-The first tractable version should use a globally learned bank of low-rank
-adapter directions \(\{B_i\}_{i=1}^m\). The Writer predicts an initial center,
-task-specific gates \(g_{T,i}\), and per-direction scales. Task-local RL updates
-coefficients \(\alpha_{T,i}\):
+Let the predeclared target set be \(\mathcal{M}\). For every matrix
+\(W_m\in\mathcal{M}\), rank-\(r\) LoRA applies
 
 \[
-\Delta\theta_T
-= \Delta\theta_T^0
-+ \sum_{i=1}^{m} g_{T,i}\alpha_{T,i}B_i
-+ \rho_T.
+W'_m = W_m + s_m B_{T,m}A_{T,m}.
 \]
 
-The residual \(\rho_T\) is initially small and behaviorally constrained by a
-policy-KL or action-distribution trust region. Its constraint may be annealed so
-that an incorrect Writer geometry does not permanently trap the policy.
+The Writer emits every \(A_{T,m}\) and \(B_{T,m}\) required by this contract.
+"Complete task-specific LoRA" means complete within \(\mathcal{M}\), rank
+\(r\), and the fixed parameter budget; it does not mean modifying every base
+weight.
 
-This is an **affine soft adaptation region**, not a strict hard subspace. A
-single LoRA update is only a point. Conversely, allowing both factors of an
-ordinary LoRA adapter to change freely does not preserve a claimed task-specific
-subspace.
+After zero-step evaluation, ordinary task-local RL updates the same
+\(\{A_{T,m},B_{T,m}\}\) in place. The Writer emits no additional bank, basis,
+mask, gate, metric, radius, learning rate, preconditioner, or residual object.
 
-Generating a complete, task-specific bank of LoRA bases from scratch is a later
-variant. It should not be attempted before a shared basis bank with predicted
-coefficients and gates demonstrates value.
+Historical assistant/expert planning proposed a canonical bank that supplied a
+shared span, a task-conditioned geometry that scaled/preconditioned directions
+inside it, and a residual escape that could leave it. That was a second,
+narrower Writer-conditioned RL search space. It is outside the current project
+and long-term Goal; no implementation path should be reserved for it.
 
 ## 4. Training contract
 
-### 4.1 Phase A: supervised bootstrapping
+### 4.1 Gate 0: independent useful-update oracle
 
-Early training requires executable supervision on source tasks. Candidate
-signals include paired robot demonstrations, teacher-policy actions, query-set
-behavioral loss, or differentiable return estimates.
+Before amortization, independently fit one task-local LoRA per source task at
+the exact declared targets/rank. Use a support surface for optimization,
+independent query data for selection, and a locked closed-loop surface for the
+report. Record immediate gain, task specificity, drift/non-harm, confidence
+intervals, and resource cost.
 
-The preferred objective evaluates behavior after applying the generated update:
+This oracle establishes that useful updates exist and provides an upper bound
+and baseline. It does not show that Writer-visible information can predict them.
 
-\[
-\mathcal{L}_{boot}
-= \mathcal{L}_{action/query}
-  (\pi_{\theta + \Delta\theta_T^0}, D_T^{query}).
-\]
+### 4.2 Direct Writer cold-start
 
-Raw MSE to a teacher LoRA is not sufficient as the main objective because many
-parameter updates can implement equivalent policies. Teacher adapters may be
-used as auxiliary supervision, but the primary criterion should be behavioral
-or return-based.
-
-If the objective explicitly compares the Writer-on policy with the base policy,
-the base reference must be frozen or stop-gradient. Otherwise the shared base
-could degrade merely to make the Writer's relative gain appear larger.
-
-### 4.2 Phase B: task-local RL and outer meta-optimization
-
-For a sampled source task:
-
-1. encode the language/video specification;
-2. generate the initial adapter center and adaptation geometry;
-3. measure zero-interaction query performance;
-4. collect task rollouts;
-5. update only task-local coefficients and the constrained residual for \(K\)
-   inner-loop steps;
-6. evaluate the adapted policy on fresh query rollouts;
-7. update the shared Writer and, if selected, the shared base policy through an
-   outer objective across a meta-batch of tasks.
-
-A schematic objective is:
+For source tasks, the Writer sees only legal \(x_T\). Its generated LoRA is
+applied functionally to the frozen base and evaluated on independent executable
+query data:
 
 \[
-\max_{\theta,\psi}\ \mathbb{E}_{T}
-\left[
-\lambda_0 J_T(\theta + \Delta\theta_T^0)
-+ \lambda_K J_T(\theta + \Delta\theta_T^K)
-- \beta\,\Omega_T
-\right],
+\mathcal{L}_{writer}
+= \mathbb{E}_{T}\left[
+  \mathcal{L}_{action/flow/behavior}
+  (\pi_{\theta,H_\psi(x_T)},D_T^{query})
+\right].
 \]
 
-where the zero-step term teaches immediate usefulness, the post-adaptation term
-teaches improvability, and \(\Omega_T\) regularizes behavior change or geometry.
+Gradient through functional adapter application is the primary bridge signal.
+Raw factor MSE is prohibited as the primary objective because LoRA gauge and
+parameter non-identifiability need not align with behavior. Oracle physical
+delta/update imitation may be a predeclared auxiliary, never a substitute for
+independent functional utility.
 
-Jointly optimizing the Writer and base policy refers to this cross-task outer
-loop. The initial inner loop should not update shared \(\theta\) or shared
-\(\psi\) from a single task.
+Report language-only, video-only, language-plus-video, wrong-video,
+same-scene, shuffled/reversed, first/last/scene-only, task-ID, average,
+retrieval, direct-conditioning, standard task-specific LoRA, and
+capacity-matched DISC/HyPoGen-style parameter-generator baselines. Neutral-prompt
+parameter compilation and practical instruction prompting are co-primary
+settings.
 
-### 4.3 Phase C: held-out evaluation
+### 4.3 Ordinary task-local LoRA RL
 
-For every held-out task:
+Initialize \(a_T\leftarrow H_\psi(x_T)\), collect the predeclared reward
+budget, and run an ordinary LoRA optimizer over \(a_T\) only. Compare the full
+interaction curve against the same optimizer, parameter count, and budget from
+standard and other declared initializations. No Writer-predicted object may
+change the optimizer or constrain its search.
 
-1. freeze the shared base, Writer, basis bank, and critic training procedure;
-2. generate one task-local center and geometry from the task specification;
-3. measure zero-step performance;
-4. adapt only task-local state using the predeclared interaction budget;
-5. report the complete success-versus-interactions curve and final performance.
+Primary evidence includes zero-step success/return, success-versus-interaction
+AUC, steps/episodes to threshold, final performance, seed uncertainty,
+catastrophic drift, wall time, and peak memory.
 
-The evaluation must distinguish at least:
+### 4.4 Source-only reward or delayed outer learning
 
-- new states, viewpoints, or object instances within a known task;
-- new compositions of known skill primitives;
-- genuinely new task primitives;
-- new robot embodiments.
+For a source meta-batch:
 
-These are not interchangeable forms of "cross-distribution" generalization.
+1. generate each task's initial LoRA;
+2. adapt only that task-local LoRA from source reward;
+3. evaluate fresh source query return; and
+4. update \(\psi\) so future zero-step initializations and subsequent
+   adaptation improve.
 
-## 5. What bootstrapping means in EMBER
+The estimator may differentiate through the inner loop or use one predeclared
+stable alternative. In the default mainline, no shared base weight, shared
+adapter, or other shared policy state is trained. The model-side update is the
+task-local LoRA; the shared learning update is the Writer.
 
-Bootstrapping is the deployment-time Writer step that moves the base VLA from
-no useful behavior to minimum viable competence:
+Updating shared base weights/shared LoRA would be a separate justified matched
+ablation, not the default and not required for completion.
+
+### 4.5 Held-task evaluation
+
+Before held outcomes, freeze the base, Writer, encoders, target/rank contract,
+normalization authority, optimizer, budgets, thresholds, and all shared state.
+For each held task:
+
+1. generate a zero-step LoRA from legal language/action-hidden video;
+2. measure immediate utility;
+3. adapt only that task-local LoRA from the declared held reward budget; and
+4. report the complete curve and matched controls.
+
+Held actions, labels, proprioceptive trajectories, terminals, filenames, task
+IDs, and hidden normalization information are never Writer inputs or tuning
+surfaces.
+
+## 5. What bootstrapping means
+
+Bootstrapping is the deployment-time Writer step that moves the base VLA to
+minimum viable competence before target-task interaction:
 
 \[
-J_T(\theta + \Delta\theta_T^0) > J_T(\theta).
+J_T(\pi_{\theta,H_\psi(x_T)}) > J_T(\pi_{\theta,0}).
 \]
 
-The supervised source-task phase teaches the Writer to do this; it is not itself
-the deployment bootstrap. Subsequent reward-driven improvement is experience
-refinement.
-
-If the generated update does not directly improve held-out-task behavior and
-only acts as a regularizer for RL, the term "bootstrapping" is too strong and
-the project should be reframed as guidance or adaptation shaping.
+Source supervision teaches this transformation; it is not itself the held-task
+bootstrap. If the generated LoRA has no immediate functional utility and only
+changes later optimization, the bootstrapping claim fails.
 
 ## 6. Falsifiable hypotheses
 
-- **H1: Immediate utility.** The Writer update improves held-out-task action or
-  return metrics over the base policy, random adapters, and retrieved
-  nearest-task adapters before interaction.
-- **H2: Adaptation value.** Writer-predicted geometry improves interaction AUC,
-  stability, or episodes-to-threshold over Writer initialization followed by
-  unconstrained, matched-budget LoRA RL.
-- **H3: Meta-generalization.** H1 and H2 persist when shared modules are frozen
-  and tasks are held out according to a predeclared task split.
-- **H4: Multimodal value.** Video provides improvement beyond language-only
-  task identification, rather than merely leaking the task label.
+- **H1: Information validity.** Legal language/video contains task-relevant
+  information beyond scene/task-ID shortcuts.
+- **H2: Useful-update existence.** Independent task-local LoRA oracles improve
+  locked source behavior at the declared targets/rank.
+- **H3: Direct Writer utility.** Generated LoRA improves zero-interaction
+  behavior over base, average, retrieval, direct-conditioning, standard-LoRA,
+  and capacity-matched direct-generator controls.
+- **H4: Local-RL value.** Writer initialization improves matched-budget
+  ordinary LoRA RL AUC or time-to-threshold without hiding a final-performance
+  loss.
+- **H5: Source reward learning.** Source-only outer reward improves future
+  Writer initializations while the shared base remains frozen.
+- **H6: Frozen meta-generalization.** The declared gains persist on sealed held
+  compositions with all shared state frozen.
+- **H7: Multimodal value.** Action-hidden video contributes causally beyond
+  language/task-ID controls.
 
-Failure of H1 reduces the method to an RL guidance mechanism. Failure of H2
-removes the need for task-conditioned geometry. Failure of H3 invalidates a
-meta-generalization claim. Failure of H4 limits the motivation for video.
+Each failure localizes a different claim and triggers bounded recovery; none
+authorizes held leakage, threshold weakening, or substitution of direct
+conditioning for parameter-generation evidence.
 
-## 7. Non-goals for the first study
+## 7. Non-goals for the current project
 
-- Training a new foundation VLA from scratch.
-- Solving arbitrary internet-video-to-robot transfer immediately.
-- Claiming cross-embodiment generalization from a same-embodiment experiment.
-- Updating all global parameters online on one held-out task.
-- Treating parameter distance alone as evidence of behavioral safety.
-- Demonstrating only final success while omitting zero-step performance and
-  interaction curves.
+- Canonical banks, shared task-update subspaces, predicted RL geometry,
+  residual escape, or any second Writer-conditioned search object.
+- Shared-base/shared-LoRA source outer training in the default mainline.
+- A universal optimizer across arbitrary modalities or distributions.
+- Human-video or cross-embodiment transfer, arbitrary web video, or real-robot
+  RL in the first claim.
+- Training a foundation VLA from scratch.
+- Updating shared state on held tasks.
+- Treating parameter distance, factor MSE, healthy gradients, or final success
+  alone as proof of the mechanism.

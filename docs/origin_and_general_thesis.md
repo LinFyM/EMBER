@@ -1,5 +1,23 @@
 # Origin and General Research Thesis
 
+## Current owner authority and provenance
+
+The original EMBER core is language/action-hidden video to a Writer that emits
+an immediately useful task-specific adapter/LoRA, followed by ordinary
+task-local reward refinement and source-only learning of better future writes.
+The later canonical-bank, shared-subspace, task-conditioned-geometry, and
+residual-escape route was introduced by assistant/expert planning; it was not
+the owner's original mechanism. On 2026-07-18 the owner removed that route from
+the current project and long-term Goal. Historical expert documents may retain
+it as provenance, but active work must neither implement nor reserve it.
+
+That removed route had imposed a second search object on local RL: a bank
+defined a shared span, geometry scaled/preconditioned its coordinates, and a
+residual allowed escape. Current EMBER has no such Writer-predicted bank, basis,
+mask, metric, radius, or learning-rate object. Its only structural space is the
+predeclared target-layer/rank LoRA contract; Writer initializes all task-local
+LoRA parameters and ordinary RL updates those same parameters.
+
 ## 1. Original point of departure
 
 EMBER did not begin from the narrower question "how can a robot learn from a
@@ -55,14 +73,10 @@ the bridge signal. On a held-out task \(T \sim p_{test}(T)\), the Writer must
 produce a useful update from the allowed information input without receiving
 the held-out answer or action label as input.
 
-The stronger version also produces an update geometry \(\mathcal{G}_T\):
-
-\[
-(\Delta\theta_T^0, \mathcal{G}_T) = H_\psi(x_T),
-\]
-
-where \(\Delta\theta_T^0\) provides immediate utility and
-\(\mathcal{G}_T\) makes later task-local optimization faster or safer.
+In current EMBER, \(\Delta\theta_T\) is the complete task-specific LoRA within
+the common target-layer/rank contract. Subsequent ordinary local RL updates
+that same \(\Delta\theta_T\); the Writer does not emit a second search-space or
+preconditioning object.
 
 ## 3. What "cross-distribution" must mean precisely
 
@@ -133,9 +147,9 @@ separately from per-task adaptation cost.
 | Base model | pretrained VLA or visuomotor policy |
 | Missing direct target | executable robot action sequence, contact dynamics, and task reward |
 | Source-task bridge supervision | paired robot trajectories, teacher actions, query behavior, and environment rewards |
-| Writer output | immediately useful LoRA center plus soft adaptation geometry |
+| Writer output | complete immediately useful task-specific LoRA for the predeclared target matrices/rank |
 | Immediate utility | nonzero improvement in held-out-task action quality or success before new-task RL |
-| Later refinement | task-local RL using rollouts and rewards |
+| Later refinement | ordinary task-local RL updating the same LoRA parameters |
 | Meta-generalization test | shared Writer/base frozen; only task-local state adapts |
 
 The embodied domain is attractive because the information/supervision mismatch
@@ -151,8 +165,9 @@ The project has two nested questions:
 1. **General question:** can an amortized meta-optimizer translate an
    informative non-label input into a beneficial parameter update across a task
    distribution?
-2. **EMBER question:** can language/video task information bootstrap and shape
-   reinforcement-learning adaptation of a held-out VLA task?
+2. **EMBER question:** can language/video task information initialize a useful
+   task-specific LoRA, after which ordinary LoRA RL and source-only Writer
+   reward learning improve adaptation under a shared-frozen held contract?
 
 A successful embodied experiment supports one concrete instance of the general
 question. It does not prove a universal optimizer across arbitrary modalities
@@ -160,6 +175,11 @@ or distributions. Conversely, failure of one VLA parameterization does not by
 itself disprove the general thesis; the failure should be localized to
 information sufficiency, representation, acquisition, adaptation, or
 optimization.
+
+A possible future research program on unified multi-task learning and delayed
+feedback would require a fresh bottleneck and matched evidence before any
+shared structure is considered. It is not part of this Goal, a bank is not
+presumed even there, and this repository should not reserve architecture for it.
 
 ## 7. Questions for expert review
 

@@ -24,7 +24,7 @@ factor table, rejected prior split, search contract, diagnostics, and active
 task IDs are in `configs/libero90_split_reseal.json` with SHA256
 `9f5bc62e15e2cb07887e97bc98630a3f527ac6b5e253f41c203cf37459568428`.
 The reseal repairs a benchmark-design defect. It does not itself pass Gate -1,
-demonstrate policy competence, or authorize Writer center training.
+demonstrate policy competence, or authorize direct full-LoRA Writer training.
 
 A subsequent source-only mechanics probe establishes that a feasible same-state
 paired-goal surface can be executed with the pinned native evaluator. It keeps
@@ -268,4 +268,6 @@ ordered role records; it is not inferred from policy behavior.
 Next, obtain legal source-task competence and evaluate correct behavior on the
 paired native-goal surface without changing its state or evaluator, using the
 same closed-loop surface to begin the predeclared Gate 0 useful-update oracle.
-Gate 1 remains downstream; Writer center training remains unauthorized.
+Direct full-LoRA Writer training remains unauthorized until the Gate 0 oracle
+has independent-query and locked closed-loop evidence. Canonical-bank/geometry
+work is outside the current project rather than a downstream Gate.

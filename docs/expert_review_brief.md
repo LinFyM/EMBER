@@ -1,5 +1,12 @@
 # Remote Expert Review Brief
 
+> Historical request, not an active execution contract. The owner clarified on
+> 2026-07-18 that canonical banks/shared update subspaces, task-conditioned soft
+> geometry, and residual escape were later assistant/expert additions and are
+> outside the current EMBER project and long-term Goal. This brief is retained
+> to preserve what the expert was originally asked to evaluate; follow
+> `AGENTS.md` and `docs/execution_brief.md` for current authority.
+
 ## Your role
 
 Act as an independent expert in embodied AI, VLA systems, meta-learning,

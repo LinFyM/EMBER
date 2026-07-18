@@ -5,9 +5,15 @@
 - General thesis, embodied concept, novelty landscape, decisions, and prior
   Writer-program lessons are documented.
 - An independent expert completed `docs/expert_plan.md` with a conditional-go
-  recommendation and a full staged design.
-- The expert plan was reviewed before implementation. The active corrections
-  are recorded in `docs/execution_brief.md`.
+  recommendation and a full staged design; it is now historical provenance.
+- The owner rechecked the original design on 2026-07-18. The active contract is
+  direct language/action-hidden-video to complete task-specific LoRA, immediate
+  utility, ordinary task-local LoRA RL, source-only Writer reward/meta learning,
+  shared-frozen held evaluation, and conditional OpenVLA-OFT confirmation.
+  Canonical bank/shared subspace/soft geometry/residual escape was a later
+  assistant/expert addition and is outside the current project/Goal. The
+  corrected authority is recorded in `AGENTS.md` and
+  `docs/execution_brief.md`.
 - The active compute ceiling is four A100 80GB GPUs.
 - A clean execution clone and user-home workspace entry have been verified on
   the target GPU host. Work is isolated on
@@ -667,10 +673,11 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
 2. Preserve both same-state native-goal mechanics and the same-observation
    language-action path, then run action-hidden video content/temporal controls.
    Do not use held results to choose thresholds, task IDs, or remedies.
-3. Launch and monitor the now-authorized canonical 10,000-step all-source fit,
-   then establish legal source competence before task-local oracle or paired-
-   goal behavior claims. Preserve two recovery checkpoints plus the final
-   scientific candidate and keep Gate/Writer authorization false meanwhile.
+3. Preserve the completed single-GPU 10,000-step reference. Finish the clean
+   world-size-4 resume recovery and matched 1/2/4 topology selection, then run
+   the frozen source competence arms. Only a competence pass permits the
+   predeclared task-local Gate 0 oracle; direct Writer authorization remains
+   false until locked Gate 0 evidence exists.
 
 ## Last verified handoff facts
 
@@ -777,3 +784,57 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   topology. Before resealing any selection, run the live four-rank resume check
   and repeat all three matched throughput candidates under amended contract
   SHA256 `84c5bcf7...`; the prior throughput numbers are diagnostic only.
+
+## 2026-07-18 direct-Writer scope correction
+
+- Active contracts now remove mandatory Gate 1 and every planned
+  canonical-bank/shared-update-subspace/soft-geometry/residual-escape milestone.
+  The old route supplied a shared span, a coordinate preconditioner, and an
+  escape from that span; it was a second Writer-conditioned RL search space and
+  is not merely an optional later experiment.
+- The current structural space is only the frozen LoRA target-layer/rank
+  contract. Writer emits every task-specific LoRA factor in that space;
+  ordinary task-local RL updates those same factors in place with no predicted
+  bank, basis, mask, metric, radius, or learning-rate object.
+- During direct Writer and default source reward/meta-RL, the shared base stays
+  frozen. Inner learning updates task-local LoRA and the outer source objective
+  updates Writer parameters. Shared-base/shared-LoRA source outer training is a
+  future separate matched ablation, not the mainline or completion evidence.
+- Gate -1 and Gate 0 remain unchanged. Gate 0 independently establishes useful
+  task-local LoRA and upper-bound/baseline evidence; a positive locked result
+  leads directly to full-LoRA Writer acquisition with independent source-query
+  functional supervision. `docs/expert_plan.md` is deliberately unchanged as
+  historical advice.
+- The Goal service still stores the earlier objective text and exposes no
+  objective-edit operation. Keep that Goal active, do not create a replacement
+  or falsely complete Gate 1; interpret its mandatory Gate-1/geometry clauses
+  as narrowly superseded by the owner's dated authority and by the current
+  completion evidence in `AGENTS.md`/`task_plan.md`.
+
+## 2026-07-18 static world-size-4 RNG recovery
+
+- Live long-run `gate_zero_world4_static_resume_20260718_112741` showed that
+  DDP static graph fixed the prior continuous/resumed model mismatch. Model,
+  optimizer, scheduler, next batch, and row keys were exact; only the aggregate
+  per-rank RNG digest differed. Telemetry peaked at 12,162 MiB and retained
+  68,993 MiB free, excluding OOM.
+- Diagnostic long-run
+  `gate_zero_world4_static_rng_diagnostic_20260718_113544` completed rc 0 and
+  localized the sole difference to Python `random`; NumPy, CPU Torch, CUDA RNG,
+  flow inputs, loss, gradient, all model tensors, and state/data surfaces were
+  exact. The checkpoint exactly matched resumed pre-step RNG on every rank.
+- A regression first failed because a fresh runtime seeded only before one-time
+  setup. The unique fix reseeds fresh training RNG after model/DDP/loader/
+  authority setup, while resume restores checkpoint RNG at that same boundary.
+  The focused four-test slice is green. The 1.32GB diagnostic checkpoint was
+  whole-tree validated and removed; a checksummed 96KB failure packet remains.
+- No topology has been selected. After documentation/tests and a clean commit,
+  run one live four-rank exact-resume check; only then repeat world sizes 1/2/4
+  under the new contract SHA256
+  `04bf00a4326f62119b32ca22ef9836980d5743e61eb2f1366e85ae4feae25e9d`
+  and build the local topology report.
+- Verification passes all 165 tests, Python compilation, all shell syntax, and
+  diff whitespace checks. Three superseded temporary diagnostic scripts plus
+  two bytecode files (33,379 bytes) were removed after their compact result and
+  failure evidence froze; the small video-inspection images remain because they
+  are distinct visual diagnosis artifacts rather than duplicate run output.

@@ -27,7 +27,10 @@ from ember.gate_zero_distributed import (  # noqa: E402
     load_distributed_topology_spec,
     topology_for_world_size,
 )
-from ember.gate_zero_base_session import coordinate_training_file_authority  # noqa: E402
+from ember.gate_zero_base_session import (  # noqa: E402
+    coordinate_training_file_authority,
+    new_training_runtime,
+)
 
 
 class GateZeroBaseTrainTest(unittest.TestCase):
@@ -158,6 +161,65 @@ class GateZeroBaseTrainTest(unittest.TestCase):
             )
             validate.assert_not_called()
             broadcast.assert_called_once_with(worker, None)
+
+    def test_fresh_runtime_reseeds_after_distributed_and_loader_setup(self) -> None:
+        events: list[str] = []
+
+        class _Loader:
+            def __iter__(self):
+                events.append("iterator")
+                return iter([{}])
+
+        policy = torch.nn.Linear(1, 1)
+        optimizer = object()
+        scheduler = object()
+        args = mock.Mock(
+            manifest=Path("manifest.json"),
+            normalization=Path("normalization.json"),
+            dataset_root=Path("dataset"),
+            base_path=Path("base"),
+            vlm_path=Path("vlm"),
+        )
+        topology = topology_for_world_size(self.topology_spec, 4)
+        context = DistributedContext(0, 0, 4, "nccl", True)
+
+        with mock.patch(
+            "ember.gate_zero_base_session.set_global_seed",
+            side_effect=lambda seed: events.append(f"seed:{seed}"),
+        ) as seed, mock.patch(
+            "ember.gate_zero_base_session.coordinate_training_file_authority",
+            side_effect=lambda *args, **kwargs: events.append("authority") or False,
+        ), mock.patch(
+            "ember.gate_zero_base_session.load_base_training_components",
+            side_effect=lambda **kwargs: (object(), policy, object(), object()),
+        ), mock.patch(
+            "ember.gate_zero_base_session.build_base_optimizer",
+            return_value=optimizer,
+        ), mock.patch(
+            "ember.gate_zero_base_session.build_base_scheduler",
+            return_value=scheduler,
+        ), mock.patch(
+            "ember.gate_zero_base_session.wrap_distributed_model",
+            return_value=policy,
+        ), mock.patch(
+            "ember.gate_zero_base_session.make_base_loader",
+            return_value=_Loader(),
+        ):
+            runtime = new_training_runtime(
+                args,
+                self.spec,
+                {},
+                target_step=2,
+                topology=topology,
+                distributed_context=context,
+            )
+
+        self.assertEqual(runtime.completed_step, 0)
+        self.assertEqual(seed.call_count, 2)
+        self.assertEqual(events[0], f"seed:{self.spec['base_fit']['seed']}")
+        self.assertEqual(
+            events[-2:], ["iterator", f"seed:{self.spec['base_fit']['seed']}"]
+        )
 
     def test_shell_dry_run_exposes_one_canonical_resume_probe_entrypoint(self) -> None:
         completed = subprocess.run(

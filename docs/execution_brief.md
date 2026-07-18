@@ -2,199 +2,222 @@
 
 ## 1. Authority and objective
 
-This file converts the independent expert plan into the active execution
-contract. `docs/expert_plan.md` remains the full expert record. This brief
-overrides its eight-GPU resource assumption and resolves several implementation
-gaps identified before experiments begin.
+This file is the active research contract. `docs/expert_plan.md` remains an
+unchanged historical expert record; its eight-GPU assumption and its proposed
+canonical-bank/geometry route are not active authority. The owner reviewed the
+original design conversation on 2026-07-18 and superseded every current Goal or
+document clause that made a canonical representation Gate a Writer prerequisite.
+The legacy `task_geometry` field in the already hash-bound `configs/phase0.toml`
+is preserved as non-executable provenance so completed evidence is not
+retroactively rewritten; it has no scheduling or implementation authority.
 
-The active objective is to determine whether a task specification containing
-language and action-hidden video can be amortized into:
-
-1. a parameter update with positive zero-target-interaction utility; and
-2. a soft task-conditioned local geometry that improves matched-budget
-   reward-driven adaptation.
-
-The first claim is intentionally limited to held-out task compositions under
-one robot embodiment and one simulator dynamics family.
-
-## 2. Active terminology and contribution boundary
-
-The static Writer is an **amortized task-conditioned parameter-update
-generator**, implemented as a task-conditioned hypernetwork and adapter
-initializer. It is not called a general meta-optimizer. A later feedback-aware
-Writer may approach a learned update rule only if it repeatedly reads adaptation
-history or gradient/reward summaries and produces further updates.
-
-The broad information-to-parameter thesis is scientifically meaningful but not
-itself novel. The candidate contribution is the complete controlled contract:
+The current EMBER objective is to test this causal chain within one robot
+embodiment and simulator dynamics family:
 
 ```text
-language + action-hidden task video
-    -> immediately useful task-local adapter center
-    -> soft task-conditioned parameter geometry with residual escape
-    -> matched-budget task-local RL
-    -> source-only shared Writer refinement
+language + action-hidden robot video
+    -> direct Writer
+    -> complete task-specific LoRA initialization
+    -> immediate zero-interaction functional utility
+    -> ordinary matched-budget task-local LoRA RL in the same LoRA space
+    -> source-only reward/meta objective improves future Writer initializations
     -> shared-frozen held-task evaluation
 ```
 
-Language-only policy generation, action-free video learning, LoRA bases, and
-demonstration-plus-reward adaptation all have close prior work. Each component
-must earn its place through matched controls.
+The static Writer is an **amortized task-conditioned parameter-update
+generator**, or task-conditioned hypernetwork/adapter initializer. It is not a
+universal meta-optimizer.
+
+## 2. Exact parameter and adaptation contract
+
+The common structural search space is fixed before outcomes:
+
+- an enumerated set of target matrices;
+- LoRA rank and therefore parameter count;
+- initialization, scaling, precision, and application semantics; and
+- the optimizer and interaction budget used by ordinary task-local RL.
+
+For each task, the Writer emits all LoRA factors required by that contract. The
+generated LoRA is applied functionally to the frozen shared base and must improve
+independent task behavior before target-task interaction. Ordinary task-local RL
+then updates those same LoRA parameters in place from the Writer initialization.
+The Writer emits no second object that constrains RL.
+
+The removed assistant/expert route had a different purpose: a canonical bank
+supplied a shared basis/span, task-conditioned soft geometry scaled or
+preconditioned bank coordinates, and residual escape allowed optimization to
+leave that span. Together they imposed a second, narrower task-conditioned
+search space or preconditioner on local RL. Canonical banks, shared task-update
+subspaces, predicted bases, masks, metrics, radii, learning rates, soft geometry,
+and residual escape are all outside the current EMBER project and long-term
+Goal. Do not implement, benchmark, schedule, or reserve code paths for them.
+
+A future independent program could reconsider shared structure only after a new
+bottleneck and matched evidence justify it; no bank is presumed. Updating shared
+base weights or a shared LoRA during source outer RL would likewise be a
+separate matched ablation, not the default and not required for completion.
 
 ## 3. Model and benchmark path
 
 ### Development path
 
-- Policy: immutable revision of `lerobot/smolvla_base`.
-- Simulator: a pinned LIBERO revision with an audited LIBERO-90 task map, BDDL
-  files, init states, cameras, controller, and dataset manifest.
-- First targets: a small predeclared set of action-expert matrices enumerated
-  from the actual checkpoint, not guessed from documentation.
-- Purpose: environment reproduction, benchmark/specification validity, useful
-  update oracle, canonical representation, Writer acquisition, and geometry
-  mechanics under a one-to-four-GPU budget.
+- Policy: immutable `lerobot/smolvla_base` revision.
+- Simulator: pinned LIBERO with audited LIBERO-90 task map, language, BDDL/init
+  authority, cameras, controller, demonstrations, and source-only normalization.
+- First adaptation target: the predeclared SmolVLA action-expert matrices and
+  rank-8 LoRA contract already frozen for Gate 0.
+- Compute ceiling: at most four A100 80GB GPUs across all EMBER work.
+
+SmolVLA plus LIBERO is the formal mechanism-development surface, not a disposable
+toy. OpenVLA-OFT starts only after task information, useful-update existence,
+direct Writer zero-interaction utility, ordinary local RL, and the frozen-held
+contract survive at lower cost.
 
 ### Scale confirmation
 
-- Policy: `openvla/openvla-7b` with a pinned OpenVLA-OFT revision and a
-  source-only fine-tuning/data-statistics pipeline.
-- Initial targets: the two 4096-to-4096 residual-block linear layers in the OFT
-  L1 action head.
-- Start only after the mechanism passes the lower-cost gates and a four-GPU
-  memory/throughput pilot establishes a feasible recipe.
+The initial OpenVLA-OFT candidate targets are the two 4096-to-4096 residual
+linear layers in the L1 action head. Before launch, re-pin the active revision,
+recompute the four-GPU recipe, and run a measured memory/throughput pilot. The
+confirmation may not change the scientific contract merely to fit the larger
+model.
 
-SmolVLA is not a disposable toy: it is the primary scientific development
-surface. OpenVLA-OFT provides scale confirmation if justified by evidence.
+## 4. Information-flow experiment
 
-## 4. Corrected information-flow experiment
+The Writer input and online policy prompt are separate causal paths:
 
-The task specification and online policy prompt are two distinct causal paths.
-Evaluate both:
+1. **Parameter-compilation setting:** the Writer sees language/video and the
+   online policy receives a fixed neutral prompt.
+2. **Practical instruction setting:** the Writer and online policy both receive
+   the task instruction, with capacity- and inference-matched direct
+   conditioning controls.
 
-1. **Parameter-compilation setting:** the Writer sees language/video, then the
-   online policy receives a fixed neutral prompt. This is a co-primary mechanism
-   test of whether task information entered the generated parameters.
-2. **Practical setting:** both Writer and online policy receive the task
-   instruction. Compare against capacity- and inference-matched direct
-   conditioning.
+Required specification arms include language-only, video-only,
+language-plus-video, wrong same-scene video, shuffled/reversed video,
+first/last/scene-only video, task-ID, average adapter, nearest/retrieved adapter,
+direct conditioning, standard task-specific LoRA, and a capacity-matched
+HyPoGen/DISC-style direct parameter generator. The first claim uses successful
+same-embodiment robot video with actions hidden from the Writer; it does not
+claim human-video, cross-embodiment, real-robot, or cheaper-data transfer.
 
-Required controls include language-only, video-only, combined, wrong same-scene
-video, shuffled/reversed video, first/last frame, task-ID/scene-only, nearest
-adapter, average adapter, direct conditioning, and a language-only
-HyPoGen/DISC-style parameter generator.
+## 5. Training contract
 
-The first paper uses same-embodiment successful robot videos with actions hidden
-from the Writer. This tests information-to-supervision conversion; it does not
-establish that the videos were cheaper to collect or that human-video transfer
-works.
+### 5.1 Gate 0 independent task-local oracle
 
-## 5. Corrected geometry training path
+Fit each source-task oracle independently in the exact target-layer/rank
+contract. Select on an independent source query surface and report a locked
+closed-loop source surface. A positive oracle proves that useful updates exist
+and supplies an upper bound and strong baseline; it does not prove that
+language/video can acquire the update.
 
-The expert pseudocode emitted a geometry `p_T` during supervised Writer
-bootstrap but did not give it a gradient before the geometry evaluation stage.
-The active path is:
+### 5.2 Direct Writer acquisition
 
-1. train and validate the Writer center independently;
-2. freeze the center checkpoint for the first geometry comparison;
-3. on source tasks, unroll a short inner optimizer only in the low-dimensional
-   bank-coordinate state using cached policy features and support action loss;
-4. optimize predicted positive scales/gates on independent source query action
-   loss, KL, and non-harm objectives;
-5. compare the learned diagonal geometry with unit and fixed-global geometry;
-6. only after this offline mechanism works, refine center/geometry through
-   source-only reward outer learning and evaluate task-local RL curves.
+Split each source meta-episode into a Writer-visible specification and an
+independent executable query. Apply the generated LoRA functionally to the
+frozen base and differentiate query action, flow-matching, behavioral, or return
+loss through the adapter into the Writer. This independent functional loss is
+primary.
 
-Because the differentiable loop is confined to roughly 24--64 coordinates, it
-does not require second-order differentiation through the full VLA or simulator.
-If offline geometry does not transfer to reward adaptation, test one bounded
-source-reward estimator redesign before removing the geometry claim.
+Raw LoRA-factor MSE is prohibited as the primary objective because factor gauge
+and parameter non-identifiability can decouple it from behavior. Oracle physical
+delta or update imitation is allowed only as a predeclared auxiliary. Writer
+selection requires zero-interaction functional utility plus matched modality,
+negative, retrieval, average, direct-conditioning, standard-LoRA, and
+capacity-matched direct-generator comparisons.
+
+### 5.3 Ordinary task-local LoRA RL
+
+Start from the Writer-generated LoRA and update that same task-local LoRA under
+the frozen optimizer, interaction, parameter-count, and environment budgets.
+Compare against ordinary task-specific LoRA RL from its standard initialization
+and other declared initializers. Report the full success/return-versus-
+interaction curve, AUC, time-to-threshold, final performance, drift, variance,
+memory, and wall time. There is no Writer-predicted RL constraint object.
+
+### 5.4 Source-only reward or delayed outer learning
+
+During the default Writer reward/meta-RL stage:
+
+- the shared base policy remains frozen;
+- inner source adaptation updates task-local LoRA;
+- the source-only outer objective updates Writer parameters so future
+  zero-step LoRA initializations improve; and
+- gradients may pass through the inner adaptation or use one predeclared stable
+  estimator.
+
+No extra shared base adapter or shared policy parameter is trained in this
+mainline. The model-side learning required by the contract is the task-local
+LoRA update itself.
+
+### 5.5 Held-task evaluation
+
+Before reading held outcomes, permanently freeze the base checkpoint, Writer,
+encoders, target/rank contract, optimizer, budgets, thresholds, and all shared
+state. At held evaluation the Writer may produce the zero-step task-local LoRA
+from legal language/action-hidden video; only that predeclared task-local LoRA
+may subsequently adapt from held reward. Held actions, labels, proprioceptive
+trajectories, terminals, filenames, task IDs, and hidden normalization remain
+inaccessible.
 
 ## 6. Staged authorization
 
-### Phase 0: reproducible substrate
+1. **Phase 0:** reproduce the official path and freeze revisions, data/task
+   manifests, normalization authority, evaluator identity, GPU/storage envelope,
+   and reviewable artifacts.
+2. **Gate -1:** validate task/specification information with same-scene,
+   same-init where legal, language, video-content, and temporal controls.
+3. **Gate 0:** establish an independent useful task-local LoRA oracle and its
+   locked closed-loop gain.
+4. **Direct Writer:** acquire complete task-specific LoRA with independent-query
+   functional supervision and prove immediate utility.
+5. **Ordinary local RL:** run the matched task-local LoRA comparison from Writer
+   and standard initializations.
+6. **Source reward/meta learning:** improve Writer initializations while base
+   remains frozen and task-local LoRA is the only model-side adaptive state.
+7. **Frozen held evaluation:** execute the sealed comparison once shared choices
+   are frozen.
+8. **OpenVLA-OFT confirmation:** scale only a surviving mechanism.
 
-Produce an environment lock, exact revisions, dataset/file hashes, task-factor
-manifest, normalization authority, known-checkpoint smoke test, measured GPU
-memory, simulator throughput, and storage estimate. No scientific conclusion is
-allowed before this passes.
+There is no mandatory Gate 1 between Gate 0 and Writer, and no positive
+bank/geometry result is a completion criterion.
 
-### Gate -1: benchmark and specification validity
-
-Construct same-scene hard negatives and, where feasible, paired goals under the
-same initial state. Measure language/spec necessity, scene-only shortcuts,
-spec-swap behavior, and video temporal/content necessity. Treat the proposed
-60/15/15 split as unvalidated until its task-factor coverage is generated and
-reviewed.
-
-### Gate 0: useful-update oracle
-
-On a small predeclared source-task subset first, show that a task-specific
-low-rank update at the intended target matrices improves independent query loss
-and closed-loop success without excessive policy drift. Scale to the complete
-source set only after the pilot is positive and stable.
-
-### Gate 1: canonical representation
-
-Extract physical updates rather than matching arbitrary LoRA factors. Test
-whether a canonical bank preserves the oracle's functional gain, with dimension
-and rank selected on source/validation only. Report average-direction and
-task-specificity controls.
-
-### Stage 2 and later
-
-Writer center training is authorized only after Gates -1, 0, and 1 provide a
-learnable and identifiable target. Ordinary task-local RL follows positive
-zero-step utility. Predicted geometry follows a demonstrated center-to-RL
-benefit. Source-reward outer refinement and an optional tiny shared base adapter
-come last. Shared modules remain frozen on held tasks.
-
-## 7. Four-GPU execution rules
+## 7. Four-GPU efficiency and artifact rules
 
 - Never allocate more than four A100s across concurrent EMBER jobs.
-- Start smoke tests on one GPU and pilots on one or two.
-- Use gradient accumulation, frozen-feature caching, task parallelism, and
-  staggered jobs before increasing GPU count.
-- Every multi-GPU command records expected peak memory, process count, GPU IDs,
-  wall-clock, stop condition, and rollback/cleanup procedure.
-- Re-estimate the expert plan's GPU-hours and wall-clock from measured pilots;
-  its eight-GPU numbers are not an active schedule.
+- Smoke on one GPU, but select 1/2/4-GPU training topology from measured useful
+  throughput rather than treating one GPU as a permanent default.
+- After correctness, tune batch, accumulation, feature caching, simulator/task
+  parallelism, and I/O so an allocated A100 normally retains about 10GB average
+  headroom; do not allocate dummy tensors merely to fill memory.
+- Preserve global effective batch, sample/flow authority, optimizer steps, and
+  schedules when comparing topologies.
+- Every multi-GPU run records devices, process topology, expected/observed
+  memory, wall time, stop condition, resume, and cleanup.
+- Maintain Trackio and bounded local HTML/video galleries for real-time or later
+  inspection. Retain canonical evidence and `latest`; remove only validated,
+  regenerable, unpinned bulk artifacts with a recorded cleanup.
 
 ## 8. Gate recovery without scientific drift
 
-When a gate fails or is ambiguous, do not immediately abandon the project and
-do not hide the result. Produce a failure packet containing:
+A failure packet must identify the exact metric, confidence interval, mechanics,
+data/access authority, action/rollout diagnostics, likely layer, excluded
+causes, ranked bounded remedies, and cheapest discriminating follow-up. Allowed
+repairs include implementation/data fixes, one recorded target-layer/rank
+expansion, better direct-LoRA parameterization or temporal representation, a
+stable optimizer/RL estimator, and a smaller faithful model.
 
-- the exact failed metric and confidence interval;
-- mechanics and data-authority checks;
-- qualitative rollouts or action diagnostics;
-- classification of the likely failure layer;
-- a ranked list of bounded remedies;
-- the next cheapest discriminating experiment.
-
-Allowed remedies include correcting implementation defects, improving task
-counterfactuals, changing the predeclared target layer/rank once, increasing bank
-dimension or operator rank once, canonicalization/whitening changes, a stronger
-temporal video encoder, stable exploration or RL estimators, and falling back to
-a smaller faithful policy.
-
-Disallowed remedies include held-label access, shared held-task updates,
-post-hoc task/split replacement after reading held results, deleting strong
-baselines, unreported budget increases, or lowering pass criteria solely to
-manufacture success. A genuine negative result is recorded only after the
-bounded recovery path is exhausted.
+Do not use held labels or normalization, update shared state on held tasks,
+change the split after held outcomes, lower thresholds to manufacture a pass,
+delete strong baselines, hide extra budgets, or attribute direct-conditioning
+gain to generated parameters. A negative conclusion follows only after
+mechanical issues and reasonable bounded remedies are exhausted.
 
 ## 9. Immediate work package
 
-The next agent should not start a full training run. It should:
-
-1. inventory the host software/GPU/storage state without recording private
-   infrastructure in public files;
-2. create a reproducible environment and pin upstream revisions;
-3. reproduce one official SmolVLA/LIBERO inference or evaluation path;
-4. inventory and hash the exact LIBERO-90 demonstrations, BDDL, and init states;
-5. generate the task-factor table and audit the proposed source/validation/held
-   split before reading held outcomes;
-6. implement benchmark/specification probes and the smallest closed-loop
-   useful-update oracle pilot;
-7. update `task_plan.md`, `findings.md`, and `progress.md` with evidence and the
-   next gate decision.
+Finish the clean 1/2/4-GPU resume/throughput contract, then run the already
+frozen source competence surface. Complete the remaining Gate -1 causal evidence
+and the Gate 0 independent task-local oracle without reading validation/held
+numeric outcomes. If Gate 0 is positive, implement only the direct full-LoRA
+Writer path above; do not create a canonical-representation or geometry branch.
+Continuously update `task_plan.md`, `findings.md`, and `progress.md` and commit
+each reproducible milestone without weights, datasets, private host details, or
+large outputs in public Git.

@@ -28,6 +28,21 @@ Before changing code, data, environments, or experiment state, read:
 assumption or stage details conflict with the active execution contract,
 `docs/execution_brief.md` and this file take precedence.
 
+The owner corrected the research authority on 2026-07-18 after reviewing the
+original design conversation. Any current Goal text or historical document that
+makes a canonical bank, shared task-update subspace, soft geometry, residual
+escape path, or a mandatory Gate 1 a prerequisite is superseded. Those
+mechanisms were assistant/expert additions, are outside the current EMBER
+project and long-term Goal, and must not be implemented, trained, benchmarked,
+scheduled, or anticipated by reserved code paths. `docs/expert_plan.md` remains
+unchanged only as historical provenance.
+
+`configs/phase0.toml` is already hash-bound into completed mechanics/base
+evidence. Its legacy future-stage `task_geometry` string is preserved only to
+avoid rewriting provenance and is non-authoritative/non-executable. Do not use
+it to schedule work, and do not retroactively mutate sealed evidence merely to
+remove the string.
+
 ## Active objective
 
 Advance EMBER from a research proposal to a reproducible staged experiment.
@@ -35,8 +50,13 @@ Begin with a faithful SmolVLA plus LIBERO development path and establish:
 
 1. benchmark and task-specification validity;
 2. a useful task-specific update oracle;
-3. a stable canonical update representation;
-4. only then, amortized Writer acquisition and later RL components.
+3. direct Writer acquisition of complete task-specific LoRA tensors at the
+   predeclared target matrices, with immediate zero-interaction utility;
+4. matched-budget ordinary task-local LoRA RL from the Writer initialization;
+5. source-only reward/delayed outer learning that updates the Writer through
+   task-local LoRA adaptation while the shared base remains frozen; and
+6. shared-frozen held-task evaluation, followed by OpenVLA-OFT confirmation
+   only if the lower-cost mechanism survives.
 
 Do not implement the complete system merely because it appears in the expert
 plan. Each expensive component needs evidence from its scientific predecessor.
@@ -64,15 +84,23 @@ plan. Each expensive component needs evidence from its scientific predecessor.
 - Writer-visible held-task input may contain language and action-hidden video,
   but never held actions, proprioceptive trajectories, rewards, terminal flags,
   task IDs, filenames, or hidden normalization statistics.
-- Shared base, Writer, encoders, and bank are frozen during held-task
-  evaluation. Only predeclared task-local state may adapt from held rewards.
+- Shared base, Writer, encoders, and every other shared state are frozen during
+  held-task evaluation. Only predeclared task-local state may adapt from held
+  rewards.
 - Keep source, validation, and reporting-only held surfaces separate. Do not
   tune architecture, thresholds, seeds, or checkpoints after reading held
   results.
 - Immediate functional utility is required before claiming bootstrapping.
-- A task-conditioned geometry must beat unit or fixed-global geometry under a
-  matched center, optimizer, parameter count, interaction budget, and escape
-  path.
+- The Writer must emit the complete declared task-specific LoRA, not coefficients
+  in a shared task-update bank or subspace.
+- The only structural search space is the common predeclared LoRA contract:
+  selected target layers plus rank/parameter count. Ordinary task-local RL
+  updates those same LoRA parameters in place from the Writer initialization.
+  The Writer emits no second object that constrains RL.
+- Primary Writer supervision is independent source-query action,
+  flow-matching, behavioral, or return loss differentiated through the
+  functional adapter. Oracle-update or physical-delta imitation is auxiliary
+  only when predeclared; raw LoRA-factor MSE is never the primary objective.
 - Parameter distance and raw LoRA-factor MSE are diagnostic or auxiliary, not
   the primary scientific objective.
 - Keep EMBER independent from MemLLM code and Wiki/QA mechanisms. Reuse lessons,
@@ -91,9 +119,9 @@ failure casually. Before stopping:
 3. record the evidence in `findings.md` and the attempted remedy in
    `progress.md`;
 4. explore bounded remedies on source and validation surfaces, such as a
-   predeclared target-layer/rank expansion, bank dimension or canonicalization
-   change, better temporal video representation, stable RL estimator, or a
-   smaller faithful model;
+   predeclared target-layer/rank expansion, better functional adapter
+   parameterization, better temporal video representation, a stable RL
+   estimator, or a smaller faithful model;
 5. rerun the gate with matched controls and fresh evidence.
 
 Recovery must not violate the core thesis or evaluation contract. Do not expose
@@ -114,11 +142,28 @@ exhausted, preserve the negative result and narrow the claim explicitly.
   instruction.
 - Include a strong language-only HyPoGen/DISC-style parameter-generator
   baseline, not only task-ID, retrieval, or direct-conditioning controls.
-- Train the geometry before evaluating it: first use a differentiable
-  low-dimensional source support/query inner loop over bank coordinates, then
-  optionally refine the Writer with source-only reward outer learning.
-- Prefer a center over a canonical bank plus soft task-conditioned geometry and
-  a residual escape path. A hard inescapable subspace is not the default.
+- After Gate 0, train a direct Writer that emits all LoRA factors for the
+  declared target matrices. Differentiate independent source-query functional
+  loss through adapter application into the Writer.
+- After positive zero-interaction Writer utility, compare ordinary task-local
+  LoRA RL from the Writer initialization against matched standard-LoRA and
+  direct-generator baselines.
+- During direct Writer cold-start and source reward/meta-RL, the shared base is
+  frozen. Inner adaptation updates task-local LoRA; the source-only outer
+  objective updates Writer parameters, differentiating through the inner loop
+  or using a predeclared estimator. No shared base adapter or shared policy
+  parameter is trained in the default Writer stage.
+- Canonical banks, shared update subspaces, soft geometry, and residual escape
+  are out of scope. Historically, the bank supplied a shared basis/span,
+  geometry scaled or preconditioned its coordinates, and residual escape could
+  leave that span; together they imposed a second, narrower Writer-conditioned
+  RL search space. Their removal means current RL has no Writer-predicted bank,
+  basis, mask, metric, radius, or learning-rate object. A future separate
+  research program would need a newly demonstrated bottleneck and matched
+  evidence before considering any shared structure; a bank is not presumed and
+  this repository reserves no path for it. Updating shared base weights or a
+  shared LoRA during source outer RL is likewise a separate matched ablation,
+  not the default or a completion requirement.
 
 ## Experiment and systems practice
 
@@ -152,11 +197,18 @@ exhausted, preserve the negative result and narrow the claim explicitly.
 
 ## Current-goal completion evidence
 
-The first execution goal is complete only when the repository contains:
+The current long-term execution goal is complete only when the repository
+contains:
 
 - a reproducible four-GPU-compatible environment and data manifest;
 - a benchmark/specification validity report;
 - a closed-loop useful-update oracle report;
-- a canonical representation report with functional preservation metrics;
 - recorded recovery attempts for any failed or ambiguous gate; and
-- an evidence-based decision on whether Writer center training is authorized.
+- a direct full-LoRA Writer report with independent-query zero-interaction
+  utility and all required modality/negative/direct-generator baselines;
+- a matched-budget ordinary task-local LoRA RL report;
+- a source-only reward/delayed outer-learning report in which task-local LoRA
+  is the model-side adaptive state, Writer receives the outer update, and the
+  shared base stays frozen;
+- a shared-frozen held-task report under the permanently sealed contract; and
+- an evidence-based decision on whether OpenVLA-OFT confirmation is warranted.

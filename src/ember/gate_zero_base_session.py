@@ -464,6 +464,11 @@ def new_training_runtime(
             rank=distributed_context.rank,
             world_size=distributed_context.world_size,
         )
+    else:
+        # Training RNG begins after one-time model/DDP/loader/authority setup.
+        # First-in-process setup may consume ambient Python RNG; reseeding here
+        # gives fresh branches and same-topology resumes one explicit boundary.
+        set_global_seed(spec["base_fit"]["seed"])
     return TrainingRuntime(
         dataset=dataset,
         policy=policy,

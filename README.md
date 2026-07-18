@@ -9,12 +9,10 @@ improve downstream performance across a task distribution.
 
 In EMBER, the base model is a pretrained Vision-Language-Action (VLA) policy.
 Given a task specification containing language, an action-free demonstration
-video, or both, a task-conditioned Writer produces:
-
-1. an initial low-rank policy update that should improve the task before any
-   new-task reinforcement learning; and
-2. a soft, low-dimensional adaptation geometry that guides subsequent
-   reward-driven refinement.
+video, or both, a task-conditioned Writer produces the complete task-specific
+LoRA parameters allowed by a predeclared target-layer/rank contract. That LoRA
+should improve the task before any new-task reinforcement learning. Ordinary
+task-local LoRA RL then updates the same parameters in place.
 
 The intended role of the Writer is not to create an expert policy in one pass.
 It should move a base VLA from no useful task behavior to minimum viable
@@ -23,12 +21,10 @@ competence, so that sparse-reward interaction has a meaningful starting point.
 ```mermaid
 flowchart LR
     S["Task specification<br/>language / video / both"] --> W["Task-conditioned Writer"]
-    W --> C["Immediately useful<br/>adapter center"]
-    W --> G["Soft adaptation<br/>geometry"]
-    C --> P["Bootstrapped VLA policy"]
-    G --> P
+    W --> L["Complete task-specific<br/>LoRA initialization"]
+    L --> P["Bootstrapped VLA policy"]
     P --> E["Environment interaction<br/>rollouts and rewards"]
-    E --> R["Task-local RL refinement"]
+    E --> R["Ordinary task-local<br/>LoRA RL"]
     R --> P
     E -. "outer meta-training signal" .-> W
 ```
@@ -43,12 +39,18 @@ The general question is:
 > or ordinary training target?
 
 EMBER asks one concrete version: can a Writer convert a multimodal embodied
-task specification into a parameter-space prior that both:
+task specification into a task-specific LoRA initialization that both:
 
 - yields measurable zero-interaction improvement on a held-out task; and
 - makes subsequent VLA reinforcement-learning post-training more
-  sample-efficient and stable than standard LoRA initialization or a fixed
-  adaptation space?
+  sample-efficient and stable than standard LoRA initialization?
+
+The only shared structural search space is the declared LoRA target/rank. The
+Writer emits no bank, shared update subspace, basis, mask, metric, radius,
+learning-rate object, soft geometry, or residual escape. Those were later
+assistant/expert additions and are outside the current EMBER project and
+long-term Goal. The shared base remains frozen during direct Writer and default
+source reward/meta-RL experiments; model-side adaptation is task-local LoRA.
 
 ## Current status
 
@@ -57,15 +59,15 @@ repository now contains a reproducible SmolVLA/LIBERO substrate and Gate -1
 diagnostics. The original invalid LIBERO-90 split has been preserved and
 replaced once by a permanently sealed specification-only 60/15/15 split before
 any LIBERO-90 policy outcome. The fresh data/normalization audit under that seal
-passes with zero validation/held numeric access; the remaining same-init and
-language/video causal controls are still required, so no Writer training is authorized. Every
-novelty claim remains provisional until the predecessor gates and matched-budget
-experiments pass.
+passes with zero validation/held numeric access. Gate -1 causal controls, legal
+source competence, and Gate 0 remain incomplete, so direct Writer training is
+not yet authorized. Every novelty claim remains provisional until predecessor
+evidence and matched-budget experiments pass.
 
 The active execution ceiling is **4 x NVIDIA A100 80GB GPUs**. The expert plan
 was originally written for an eight-GPU ceiling and is retained as research
-advice; `docs/execution_brief.md` records the four-GPU execution contract and the
-design corrections adopted before implementation.
+advice; its mandatory canonical-bank/geometry route is also superseded.
+`docs/execution_brief.md` records the four-GPU direct-Writer execution contract.
 
 ## Repository map
 

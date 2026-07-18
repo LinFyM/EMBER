@@ -8,12 +8,22 @@
 - A static task-specification-to-adapter Writer is best described as an
   amortized task-conditioned parameter-update generator or hypernetwork.
 - The candidate novelty lies in the complete controlled combination, not in
-  language-conditioned weights, action-free video, LoRA, subspaces, or RL alone.
+  language-conditioned weights, action-free video, LoRA, or RL alone.
+- Owner authority on 2026-07-18 confirms that current EMBER is direct
+  language/action-hidden-video to complete task-specific LoRA, then ordinary
+  task-local LoRA RL and source-only Writer reward/meta learning. Mandatory
+  canonical bank/shared subspace/soft geometry/residual escape was a later
+  assistant/expert addition and is superseded.
+- The persistent Goal record cannot be text-edited by the available Goal API.
+  It remains active for continuity, while its mandatory Gate-1/geometry wording
+  is superseded by the dated owner contract; no fake Gate 1 result or replacement
+  Goal is scientifically valid.
 
 ## Adopted scientific lessons
 
-- Separate useful-update existence, representation, and amortized Writer
-  acquisition into different gates.
+- Separate useful-update existence from amortized Writer acquisition. Gate 0
+  proves the common target-layer/rank LoRA can contain useful updates; it does
+  not require or authorize a second canonical representation Gate.
 - Functional behavior and closed-loop return take priority over raw parameter or
   LoRA-factor distance.
 - Update diversity does not prove task specificity; average, retrieval,
@@ -36,10 +46,20 @@
 - Neutral-prompt parameter compilation is a co-primary mechanism test.
 - A language-only HyPoGen/DISC-style parameter generator is a required strong
   baseline.
-- The geometry receives a real training signal through a differentiable
-  low-dimensional source support/query loop before reward-based refinement.
-- The default adaptation representation is a canonical center and soft geometry
-  with residual escape, not an inescapable hard subspace.
+- Writer emits all factors for the full predeclared task-local LoRA space.
+  Independent source-query functional loss is primary; raw factor MSE is
+  diagnostic/auxiliary only.
+- Ordinary task-local RL updates the same generated LoRA in place. Writer emits
+  no bank, basis, mask, metric, radius, learning rate, or other search
+  constraint.
+- The shared base stays frozen during direct Writer and default source
+  reward/meta learning. Inner adaptation updates task-local LoRA and the outer
+  source objective updates Writer parameters.
+- Historically, the deleted bank supplied a shared span, geometry
+  scaled/preconditioned its coordinates, and residual escape could leave the
+  span. Their removal is a scope decision, not a pending experiment. Shared
+  base/shared LoRA source outer training is also a future separate matched
+  ablation, not current completion evidence.
 
 ## Verified design risks
 
@@ -50,19 +70,21 @@
   and normalization statistics can leak task identity.
 - The proposed LIBERO-90 task split remains a hypothesis until a task-factor and
   initialization audit is generated from pinned files.
-- A geometry emitted by the Writer is meaningless unless its training objective
-  and matched unit/global-metric comparisons are explicit.
-- Joint Writer/base optimization creates a moving parameter coordinate system;
-  shared base adaptation is optional and comes only after a frozen-base result.
+- A generated adapter can appear task-specific in parameter space while having
+  no matched functional utility; all Writer claims require behavioral controls.
+- Joint Writer/base optimization creates a moving parameter coordinate system.
+  The current mainline avoids it by freezing the base; any shared-base update
+  is a separate future ablation.
 
 ## Unknowns requiring evidence
 
 - Whether language leaves measurable incremental information for video on the
   selected task subset.
 - Whether the intended action-policy matrices admit useful, safe local updates.
-- Whether task oracles share a compact canonical functional representation.
-- Whether a predicted geometry transfers from offline support/query learning to
-  sparse-reward local adaptation.
+- Whether legal language/action-hidden video can acquire the useful full-LoRA
+  updates demonstrated by independent source oracles.
+- Whether Writer initialization improves ordinary matched-budget local LoRA RL
+  and whether source-only reward can improve future Writer initializations.
 - Whether closed-loop evaluation identity can be made invariant to policy batch
   size. The pinned upstream maps explicit per-environment seeds and fixed
   init-state indices, but larger-batch calibration produced some different
@@ -970,3 +992,41 @@
   checkpoint was removed after the compact fresh-resume diagnostic froze.
   Final topology selection now requires a live four-rank resume pass and fresh
   matched 1/2/4 probes under the amended contract.
+
+## Static-graph four-rank RNG-boundary diagnosis
+
+- The clean live static-graph resume run
+  `gate_zero_world4_static_resume_20260718_112741` used contract SHA256
+  `84c5bcf702dea4c322c282b45394c5d00bab15db3178386f17c6ffae698c0896`.
+  Static graph removed the prior model-state failure: completed step, every
+  model tensor, AdamW, scheduler, next raw batch, and next row keys were exact.
+  The run still failed closed at `rng_state_sha256`; peak memory was 12,162 MiB
+  with 68,993 MiB minimum free, so this was not OOM or resource pressure.
+- A four-GPU read-only diagnostic reused the validated schema-3 step-1
+  checkpoint and compared every serialized RNG component. Checkpoint RNG and
+  resumed-before-step RNG matched on all four ranks. After step 2, NumPy, CPU
+  Torch, and CUDA RNG were exact; only Python `random` differed. Flow tensors,
+  loss, gradient norm, model, optimizer, scheduler, and data authority remained
+  exact, with zero differing model tensors. The compact result SHA256 is
+  `9d0bf693891d7549bf40d586f9e89a12f622ad927994da0bbb9d1d4a6081bac7`.
+- The mechanism is a misplaced stochastic boundary: the fresh seed was set
+  before one-time model/DDP/loader/authority setup. The first fresh runtime
+  consumed Python RNG in that setup path, while a later checkpoint branch began
+  after the process-level setup and retained the seed state. This is ambient
+  setup contamination, not training/checkpoint divergence.
+- The bounded fix retains deterministic seeding before model construction and
+  reseeds a fresh training runtime only after DDP, loader iterator, authority,
+  and setup complete. A resume restores its checkpoint RNG at the same boundary.
+  A red-then-green regression asserts the ordering; no sample, flow, batch,
+  optimizer, model, or threshold contract changes. Live four-rank exact-resume
+  and fresh matched 1/2/4 probes remain required. The amended topology contract
+  was frozen before those outcomes at SHA256
+  `04bf00a4326f62119b32ca22ef9836980d5743e61eb2f1366e85ae4feae25e9d`.
+- The failed directory retains a checksummed 96KB failure packet and telemetry.
+  After whole-tree validation and the read-only diagnostic, its 1.32GB transient
+  checkpoint was removed. The failed long-run state remains unchanged.
+- The corrected research-scope and RNG-boundary milestone passes all 165
+  repository tests, Python compilation, shell syntax, and diff-whitespace
+  checks. A scope regression fixes the historical expert-plan SHA, rejects
+  active Gate-1/geometry milestones, and documents the sealed phase-0 legacy
+  field as non-executable provenance.

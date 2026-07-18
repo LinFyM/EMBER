@@ -9,7 +9,10 @@ frozen before any LIBERO-90 source policy training or policy outcome was read.
 The pilot asks whether a rank-8 task-local physical update exists at four
 predeclared SmolVLA action-expert matrices for resealed source tasks 3 and 4.
 It is a source-only mechanism test. A positive result permits Gate 0 expansion;
-it cannot pass Gate -1, pass Gate 1, or authorize Writer training by itself.
+it cannot pass Gate -1 or authorize direct Writer training by itself. There is
+no mandatory canonical-representation Gate after Gate 0; a positive, locked
+oracle result is the scientific predecessor for direct full-LoRA Writer
+acquisition.
 
 The shared source base uses all 60 resealed source tasks and only demonstrations
 8--27. Vision and the VLM are frozen; the action expert and state projection are

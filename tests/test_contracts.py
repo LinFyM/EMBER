@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import sys
 import unittest
 from pathlib import Path
@@ -101,6 +102,38 @@ class Phase0ContractTest(unittest.TestCase):
         changed["environment"]["video_decode_backend"] = "torchcodec"
         with self.assertRaisesRegex(ContractError, "video decoder"):
             validate_contract(changed)
+
+
+class ActiveResearchScopeTest(unittest.TestCase):
+    def test_historical_expert_plan_is_preserved(self) -> None:
+        digest = hashlib.sha256((ROOT / "docs" / "expert_plan.md").read_bytes()).hexdigest()
+        self.assertEqual(
+            digest,
+            "88f267cc4bfcd5dfdcddb1bc8c945c7191f093fac040292c907fa8676fd5a776",
+        )
+
+    def test_active_plan_has_no_bank_or_geometry_milestone(self) -> None:
+        plan = (ROOT / "task_plan.md").read_text(encoding="utf-8")
+        agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        brief = (ROOT / "docs" / "execution_brief.md").read_text(encoding="utf-8")
+
+        for stale in (
+            "| Gate 1. Canonical representation |",
+            "| Stage 4. Predicted soft geometry |",
+            "Train the geometry before evaluating it",
+            "## 5. Corrected geometry training path",
+        ):
+            self.assertNotIn(stale, plan + agents + brief)
+        self.assertIn("Writer emits no second object that constrains RL", brief)
+        self.assertIn("shared base policy remains frozen", brief)
+        self.assertIn("outside the current EMBER", agents)
+
+    def test_legacy_phase0_geometry_field_is_explicitly_non_authoritative(self) -> None:
+        phase0 = (ROOT / "configs" / "phase0.toml").read_text(encoding="utf-8")
+        agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+
+        self.assertIn('task_geometry = "requires_writer_center_to_rl_benefit"', phase0)
+        self.assertIn("non-authoritative/non-executable", agents)
 
 
 if __name__ == "__main__":

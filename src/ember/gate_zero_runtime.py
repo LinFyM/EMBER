@@ -1,4 +1,4 @@
-"""Pinned SmolVLA/PEFT runtime primitives for Gate 0 and Gate 1."""
+"""Pinned SmolVLA/PEFT runtime primitives for Gate 0 and direct Writer work."""
 
 from __future__ import annotations
 

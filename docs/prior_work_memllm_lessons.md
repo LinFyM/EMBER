@@ -12,6 +12,11 @@ The remote state summarized here was verified at
 on 2026-07-17. This document is a compact interpretation for EMBER, not a
 replacement for that repository's evidence ledger.
 
+Owner authority clarified on 2026-07-18 that shared banks/subspaces and
+task-conditioned RL geometry are not part of current EMBER. Any historical
+lesson below about shared coordinates is a warning against importing that
+mechanism, not a planned representation Gate or ablation.
+
 ## 1. What MemLLM was trying to demonstrate
 
 The durable MemLLM question was not a particular Wiki QA score. Its target
@@ -64,10 +69,11 @@ to the useful target direction and failed held functional gates.
 **Transfer to EMBER:** distinguish at least:
 
 1. whether a useful adapter exists;
-2. whether the selected LoRA/basis representation can express it;
-3. whether language/video can predict it;
-4. whether the predicted update remains useful on held-out tasks;
-5. whether RL can refine and accumulate it.
+2. whether the predeclared target-layer/rank LoRA contract can express it;
+3. whether language/video can directly generate the complete LoRA;
+4. whether the generated update remains useful on held-out tasks; and
+5. whether ordinary task-local LoRA RL and source-only Writer reward learning
+   refine it.
 
 An oracle pass at step 1 or exact parameter replay at step 2 does not validate
 the Writer.
@@ -111,9 +117,12 @@ matched and control updates, saturated a common norm cap, or preserved only a
 small fraction of native proposal energy. A numerically convenient basis was
 not necessarily a utility-preserving basis.
 
-**Transfer to EMBER:** compare direct task-specific LoRA, a fixed global basis,
-Writer-gated shared directions, and an oracle basis. Measure behavior after
-projection and allow a bounded residual escape path.
+**Transfer to EMBER:** do not make a shared coordinate a prerequisite or assume
+that compression preserves task distinctions. Current EMBER uses direct full
+task-specific LoRA only; it does not compare fixed/global bases, Writer-gated
+directions, geometry, or residual escape. If a future separate program proposes
+shared structure, it first needs a newly demonstrated bottleneck and matched
+functional evidence.
 
 ### 2.7 Common-mode harm can be larger than matched gain
 
@@ -149,13 +158,13 @@ changing the task to make optimization easier.
 A useful order is:
 
 ```text
-useful-update oracle
--> representation/replay gate
--> Writer acquisition gate
--> held immediate-utility gate
--> task-local adaptation gate
--> shared or long-horizon accumulation gate
--> full evaluation
+benchmark/specification validity
+-> useful task-local LoRA oracle
+-> direct full-LoRA Writer acquisition
+-> zero-interaction functional utility
+-> ordinary task-local LoRA RL
+-> source-only Writer reward/meta learning
+-> shared-frozen held evaluation
 ```
 
 Do not build downstream machinery before its predecessor passes. This saved
@@ -221,7 +230,9 @@ and optimization changes must be explicit.
 - backward-free behavior for the later task-local RL phase;
 - one specific teacher, PPO formulation, critic, or journal representation;
 - assumptions that language-model factual memory and continuous robot control
-  have the same optimal adapter geometry.
+  have the same optimal adapter structure;
+- canonical/shared banks, shared task-update subspaces, task-conditioned
+  geometry, residual escape, or any second Writer-predicted RL search object.
 
 EMBER inherits the **research question and experimental discipline**, not the
 old implementation.
@@ -231,15 +242,17 @@ old implementation.
 The remote expert should ensure the roadmap includes:
 
 1. a task-specific useful-update oracle before training the Writer;
-2. a representation gate showing the chosen LoRA target can express that
-   oracle behavior;
-3. a matched/shuffled/task-ID control gate for Writer acquisition;
-4. behavioral rather than raw parameter supervision as the primary objective;
-5. a separate test of immediate Writer gain and adaptation-geometry value;
-6. predeclared held tasks and no post-result hyperparameter rescue;
-7. a clear failure taxonomy: information insufficiency, representation,
+2. a predeclared target-layer/rank LoRA contract whose oracle utility is
+   measured directly;
+3. a direct Writer that emits the complete task-specific LoRA;
+4. matched/shuffled/task-ID and capacity-matched generator controls;
+5. independent-query functional supervision rather than raw factor MSE;
+6. separate tests of immediate Writer gain, ordinary local RL, and source-only
+   Writer reward/meta learning;
+7. predeclared held tasks and no post-result hyperparameter rescue;
+8. a clear failure taxonomy: information insufficiency, representation,
    acquisition, optimization, credit assignment, or adaptation;
-8. explicit separation of one-time meta-training compute and per-task
+9. explicit separation of one-time meta-training compute and per-task
    deployment interaction.
 
 These lessons should reduce repeated failure, not constrain the expert to the

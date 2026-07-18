@@ -16,31 +16,32 @@ would establish one concrete instance, not priority over that entire general
 area.
 
 No individual ingredient should be presented as new. Demonstration-conditioned
-adaptation, hypernetwork-generated policies, low-dimensional policy spaces,
-LoRA generation, action-free video learning, and RL refinement all have prior
-art.
+adaptation, hypernetwork-generated policies, LoRA generation, action-free video
+learning, and RL refinement all have prior art.
 
 The candidate contribution is their specific conjunction:
 
-> A language/video task specification conditions a Writer that produces both an
-> immediately useful low-rank adapter center and task-specific soft adaptation
-> geometry; task-local RL refines only local state; zero-step and post-adaptation
-> returns train the shared Writer/base across tasks; and shared modules are
-> frozen on held-out tasks.
+> A language/action-hidden-video task specification conditions a Writer that
+> produces a complete task-specific LoRA with immediate functional utility;
+> ordinary task-local LoRA RL refines those same parameters; source-only reward
+> improves future Writer initializations while the shared base stays frozen;
+> and all shared state remains frozen on held-out tasks.
+
+No novelty is claimed for a learned policy subspace or search geometry. The
+canonical-bank/shared-subspace/soft-geometry/residual route in historical plans
+is superseded and outside the current project.
 
 ## Closest work by mechanism
 
 | Work | Relevant overlap | Remaining difference from EMBER |
 | --- | --- | --- |
-| [DAML](https://arxiv.org/abs/1802.01557) | Meta-learns how a human demonstration video should induce robot-policy adaptation. | Learns an adaptation loss and gradient step rather than an immediately useful LoRA center plus reward-shaped task-local geometry. |
-| [Watch, Try, Learn](https://arxiv.org/abs/1906.03352) | Combines demonstration-conditioned meta-learning with sparse-reward trial and error. | Does not use a Writer to generate parameter updates and adaptation geometry for a VLA. |
-| [FLAP](https://arxiv.org/abs/2101.04750) | Learns a shared linear policy representation and predicts task-specific linear weights for instant adaptation. | No language/video VLA task specification or task-conditioned RL search geometry. |
-| [Hypernetworks in Meta-RL](https://proceedings.mlr.press/v205/beck23a.html) | Uses a hypernetwork to generate task-conditioned policy parameters in meta-RL. | Does not target multimodal VLA post-training with a separately measured zero-step adapter and local soft geometry. |
+| [DAML](https://arxiv.org/abs/1802.01557) | Meta-learns how a human demonstration video should induce robot-policy adaptation. | Learns an adaptation loss and gradient step rather than directly generating a complete LoRA whose zero-interaction utility is separately measured. |
+| [Watch, Try, Learn](https://arxiv.org/abs/1906.03352) | Combines demonstration-conditioned meta-learning with sparse-reward trial and error. | Does not use a multimodal Writer to generate a complete task-specific VLA LoRA before ordinary matched local RL. |
+| [FLAP](https://arxiv.org/abs/2101.04750) | Learns a shared linear policy representation and predicts task-specific linear weights for instant adaptation. | Uses a shared policy representation rather than the current direct full-LoRA Writer and action-hidden-video causal contract. |
+| [Hypernetworks in Meta-RL](https://proceedings.mlr.press/v205/beck23a.html) | Uses a hypernetwork to generate task-conditioned policy parameters in meta-RL. | Does not target action-hidden-video VLA post-training with separately measured zero-step LoRA utility and a shared-frozen held contract. |
 | [Hyper-GoalNet](https://openreview.net/forum?id=aWWRPyGMie) | Maps goal specifications to generated robot-policy weights. | Focuses on goal-to-policy generation rather than an initialization-and-refinement contract. |
-| [DISC / DeTaCH](https://arxiv.org/abs/2605.20856) | Generates task-specific visuomotor-policy parameters from a task description. | Does not use action-free task video to shape task-local reward-driven adaptation geometry. |
-| [Hypernetwork-Conditioned RL for Fixed-Wing Control](https://arxiv.org/abs/2604.03392) | A hypernetwork generates FiLM/LoRA parameters and the controller is trained with PPO. | Conditions on explicit actuator-fault parameters in fixed-wing robust control; no multimodal task specification, held-out task bootstrap objective, or local adaptation geometry. |
-| [Policy Subspaces](https://openreview.net/forum?id=4Muj-t_4o4) | Learns low-dimensional policy spaces for adaptation. | The space is not generated from language/video together with a directly useful task adapter center. |
-| [DSRL](https://arxiv.org/abs/2506.15799) | Restricts robot RL to a learned diffusion latent space. | The search space is a policy prior rather than a task-specification-conditioned parameter geometry. |
+| [DISC / DeTaCH](https://arxiv.org/abs/2605.20856) | Generates task-specific visuomotor-policy parameters from a task description. | The capacity-matched baseline must determine whether action-hidden video, zero-interaction utility, ordinary reward refinement, and the frozen-held contract add value. |
+| [Hypernetwork-Conditioned RL for Fixed-Wing Control](https://arxiv.org/abs/2604.03392) | A hypernetwork generates FiLM/LoRA parameters and the controller is trained with PPO. | Conditions on explicit actuator-fault parameters in fixed-wing control; no action-hidden multimodal task specification or composition-held VLA bootstrap contract. |
 | [DeGAML-LLM](https://openreview.net/forum?id=4yyi9TXbv7) | Generates distributions over task-conditioned LoRA adapter parameters. | Operates in NLP rather than embodied VLA control and does not establish the proposed video-to-bootstrap-to-local-RL contract. |
 
 ## Action-free video and latent-action context
@@ -57,7 +58,8 @@ The candidate contribution is their specific conjunction:
 These works support the premise that action-free video is useful, but they also
 raise the bar. EMBER must show value beyond video representation learning,
 latent-action pretraining, or direct video conditioning. Its distinctive object
-must be the task-local parameter prior and its reward-shaped refinement.
+must be the task-specific generated LoRA, its immediate utility, and its
+ordinary reward-driven refinement.
 
 ## VLA reinforcement-learning context
 
@@ -119,7 +121,6 @@ foundation-model scaling.
 
 - "The first method to learn robot skills from video."
 - "The first hypernetwork to generate a robot policy or LoRA."
-- "The first method to constrain RL to a low-dimensional policy space."
 - "A general optimizer for arbitrary cross-distribution learning."
 - "Human videos can replace executable robot supervision."
 - "Jointly updating the base and Writer on a held-out task proves
@@ -127,16 +128,20 @@ foundation-model scaling.
 
 ## Evidence required for a defensible contribution
 
-1. The generated center improves held-out-task performance before interaction.
-2. Predicted geometry beats matched-budget ordinary LoRA RL, a fixed global
-   subspace, random directions, and Writer initialization followed by
-   unconstrained LoRA RL.
-3. Gains appear in success-versus-interactions AUC, stability, or
+1. The generated complete LoRA improves held-out-task performance before
+   interaction over base, average, retrieval, direct-conditioning,
+   standard-LoRA, and capacity-matched direct-generator controls.
+2. Writer initialization improves matched-budget ordinary task-local LoRA RL
+   AUC or time-to-threshold without changing its optimizer/search contract.
+3. Source-only reward/meta learning improves future Writer initializations while
+   the shared base remains frozen.
+4. Gains appear in success-versus-interactions AUC, stability, or
    episodes-to-threshold, not only final success after a large budget.
-4. The shared Writer/base remain frozen on held-out tasks.
-5. Language-only, video-only, language-plus-video, and task-ID controls show
+5. The shared Writer/base remain frozen on held-out tasks and only task-local
+   LoRA adapts.
+6. Language-only, video-only, language-plus-video, and task-ID controls show
    what information the multimodal input actually contributes.
-6. The task split explicitly states which notion of distribution shift is being
+7. The task split explicitly states which notion of distribution shift is being
    tested.
 
 ## Evidence freshness

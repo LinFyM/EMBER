@@ -115,6 +115,12 @@ def require_base_fit_authorization(spec: dict[str, Any], *, mode: str) -> None:
         raise GateZeroBaseTrainError("formal base fit is not authorized before resume identity")
 
 
+def should_log_training_step(step: int, *, target_step: int, every: int) -> bool:
+    if step <= 0 or target_step < step or every <= 0:
+        raise GateZeroBaseTrainError("invalid training log cadence")
+    return step == 1 or step == target_step or step % every == 0
+
+
 def build_source_base_checkpoint_metadata(
     spec: dict[str, Any],
     *,
@@ -527,6 +533,98 @@ def run_resume_probe(args: argparse.Namespace) -> dict[str, Any]:
         raise
 
 
+def _log_training_progress(
+    trackio: Any,
+    runtime: _TrainingRuntime,
+    record: dict[str, Any],
+    spec: dict[str, Any],
+    *,
+    target_step: int,
+) -> None:
+    if not should_log_training_step(
+        runtime.completed_step,
+        target_step=target_step,
+        every=spec["tracking"]["log_every_optimizer_steps"],
+    ):
+        return
+    metrics = {
+        "base/loss": record["loss"],
+        "base/gradient_norm": record["gradient_norm"],
+        "base/learning_rate_used": record["learning_rate_used"],
+        "base/next_learning_rate": record["next_learning_rate"],
+        "base/samples_per_second": spec["base_fit"]["effective_batch_size"]
+        / record["wall_seconds"],
+    }
+    trackio.log(metrics, step=runtime.completed_step)
+    print(
+        json.dumps(
+            {
+                "event": "source_base_progress",
+                "completed_step": runtime.completed_step,
+                "target_step": target_step,
+                **metrics,
+            },
+            sort_keys=True,
+        ),
+        flush=True,
+    )
+
+
+def _commit_training_checkpoint(
+    runtime: _TrainingRuntime, args: argparse.Namespace, spec: dict[str, Any]
+) -> None:
+    checkpoint_dir = args.output_dir / "checkpoints" / f"{runtime.completed_step:06d}"
+    _save_runtime_checkpoint(runtime, args, spec, checkpoint_dir)
+    removed = rotate_source_base_recovery_checkpoints(
+        checkpoint_dir.parent,
+        keep=spec["base_fit"]["recoverable_checkpoints_to_keep"],
+    )
+    print(
+        json.dumps(
+            {
+                "event": "source_base_checkpoint_committed",
+                "completed_step": runtime.completed_step,
+                "removed_recovery_steps": removed,
+            },
+            sort_keys=True,
+        ),
+        flush=True,
+    )
+
+
+def _build_training_result(
+    args: argparse.Namespace,
+    spec: dict[str, Any],
+    *,
+    target_step: int,
+    started: float,
+) -> dict[str, Any]:
+    final_checkpoint = args.output_dir / "checkpoints" / f"{target_step:06d}"
+    return {
+        "schema_version": 1,
+        "status": "source_base_fit_completed_pending_competence",
+        "completed_steps": target_step,
+        "effective_batch_size": spec["base_fit"]["effective_batch_size"],
+        "source_policy_outcome_recorded": False,
+        "gate_zero_authorized": False,
+        "writer_authorized": False,
+        "authorities": build_source_base_checkpoint_metadata(
+            spec,
+            config_path=args.config,
+            phase0_path=args.phase0_contract,
+            completed_step=target_step,
+        )["authorities"],
+        "final_checkpoint": _checkpoint_evidence(final_checkpoint),
+        "wall_seconds": time.perf_counter() - started,
+        "tracking": {
+            "backend": "trackio",
+            "project": spec["tracking"]["project"],
+            "run": args.output_dir.name,
+            "dashboard_command": spec["tracking"]["dashboard_command"],
+        },
+    }
+
+
 def run_training(args: argparse.Namespace) -> dict[str, Any]:
     _validate_output(args, result_name="training_result.json")
     spec = load_gate_zero_contract(args.config, args.phase0_contract)
@@ -547,56 +645,16 @@ def run_training(args: argparse.Namespace) -> dict[str, Any]:
         )
         while runtime.completed_step < target_step:
             last_record = _run_one_step(runtime, spec)
-            trackio.log(
-                {
-                    "base/loss": last_record["loss"],
-                    "base/gradient_norm": last_record["gradient_norm"],
-                    "base/learning_rate_used": last_record["learning_rate_used"],
-                    "base/next_learning_rate": last_record["next_learning_rate"],
-                    "base/samples_per_second": spec["base_fit"]["effective_batch_size"]
-                    / last_record["wall_seconds"],
-                },
-                step=runtime.completed_step,
-            )
+            _log_training_progress(trackio, runtime, last_record, spec, target_step=target_step)
             checkpoint_due = (
                 runtime.completed_step % spec["base_fit"]["checkpoint_every_steps"] == 0
                 or runtime.completed_step == target_step
             )
             if checkpoint_due:
-                checkpoint_dir = (
-                    args.output_dir / "checkpoints" / f"{runtime.completed_step:06d}"
-                )
-                _save_runtime_checkpoint(runtime, args, spec, checkpoint_dir)
-                rotate_source_base_recovery_checkpoints(
-                    checkpoint_dir.parent,
-                    keep=spec["base_fit"]["recoverable_checkpoints_to_keep"],
-                )
+                _commit_training_checkpoint(runtime, args, spec)
         if last_record is None:
             raise GateZeroBaseTrainError("formal base fit performed no optimizer step")
-        final_checkpoint = args.output_dir / "checkpoints" / f"{target_step:06d}"
-        result = {
-            "schema_version": 1,
-            "status": "source_base_fit_completed_pending_competence",
-            "completed_steps": target_step,
-            "effective_batch_size": spec["base_fit"]["effective_batch_size"],
-            "source_policy_outcome_recorded": False,
-            "gate_zero_authorized": False,
-            "writer_authorized": False,
-            "authorities": build_source_base_checkpoint_metadata(
-                spec,
-                config_path=args.config,
-                phase0_path=args.phase0_contract,
-                completed_step=target_step,
-            )["authorities"],
-            "final_checkpoint": _checkpoint_evidence(final_checkpoint),
-            "wall_seconds": time.perf_counter() - started,
-            "tracking": {
-                "backend": "trackio",
-                "project": spec["tracking"]["project"],
-                "run": args.output_dir.name,
-                "dashboard_command": spec["tracking"]["dashboard_command"],
-            },
-        }
+        result = _build_training_result(args, spec, target_step=target_step, started=started)
         trackio.finish()
         _write_result(result, args, result_name="training_result.json")
         return result

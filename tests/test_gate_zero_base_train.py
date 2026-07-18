@@ -17,6 +17,7 @@ from ember.gate_zero_base_train import (  # noqa: E402
     build_source_base_checkpoint_metadata,
     canonical_state_sha256,
     require_base_fit_authorization,
+    should_log_training_step,
 )
 from ember.gate_zero_contract import load_gate_zero_contract  # noqa: E402
 
@@ -79,6 +80,15 @@ class GateZeroBaseTrainTest(unittest.TestCase):
         self.assertEqual(len(metadata["authorities"]["gate_zero_contract_sha256"]), 64)
         self.assertEqual(len(metadata["authorities"]["phase0_contract_sha256"]), 64)
         self.assertEqual(len(metadata["authorities"]["implementation_files_sha256"]), 6)
+
+    def test_training_logging_honors_frozen_cadence_and_boundaries(self) -> None:
+        selected = [
+            step
+            for step in range(1, 26)
+            if should_log_training_step(step, target_step=25, every=10)
+        ]
+
+        self.assertEqual(selected, [1, 10, 20, 25])
 
     def test_shell_dry_run_exposes_one_canonical_resume_probe_entrypoint(self) -> None:
         completed = subprocess.run(

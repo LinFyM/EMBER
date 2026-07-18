@@ -316,6 +316,7 @@ def _validate_resources(spec: dict[str, Any], phase0: dict[str, Any]) -> None:
         raise GateZeroContractError("Gate 0 resource headroom contract weakened")
     if resources["pilot_gpus"] > resources["maximum_concurrent_gpus"]:
         raise GateZeroContractError("Gate 0 pilot exceeds the GPU ceiling")
+    _require_equal(spec["tracking"]["log_every_optimizer_steps"], 10, "training log cadence")
 
 
 def load_gate_zero_contract(

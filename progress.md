@@ -614,7 +614,7 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   trainer, alternate sampler, or evaluator.
 - The trainer slice adds three active source/test/entrypoint files and about
   1.3k net source/test lines, so the architecture guard requires an explicit
-  rationale. The 624-line orchestrator is above the review signal but below the
+  rationale. The 695-line orchestrator is above the review signal but below the
   escalation boundary: its two modes deliberately share component loading,
   stochastic optimizer steps, checkpoint metadata, state hashing, Trackio, and
   result publication, while serialization remains in the separate 334-line
@@ -643,6 +643,12 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   -1, Gate 0, source competence, and Writer authorization remain open/false.
   The next operation is the canonical 10,000-step all-source fit; no task-local
   adapter or held surface may be accessed first.
+- Before launching that fit, a dry-run audit found the trainer wrote Trackio on
+  every step even though the frozen tracking contract says every 10 optimizer
+  steps, while stdout had no incremental progress. The unique mechanical fix
+  now logs/flushes step 1, each tenth step, and final/checkpoint boundaries to
+  both Trackio and durable JSON lines. Sampling, optimization, checkpoints,
+  thresholds, access surfaces, and the 10,000-step budget are unchanged.
 
 ## Immediate handoff
 

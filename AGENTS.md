@@ -116,6 +116,23 @@ plan. Each expensive component needs evidence from its scientific predecessor.
   explicitly non-matched capability upper bounds. If only those upper bounds
   work, classify the fixed LoRA target/rank contract as too narrow before
   attributing failure to the Writer.
+- The current action-expert last-two-layer q/v rank-8 target set is a low-cost
+  Gate 0 pilot, not the final Writer support. Before sealing the Writer
+  contract, run one bounded source/validation-only support audit with held
+  numeric access fixed at zero. At minimum compare the pilot set, all
+  action-expert q/v projections, and support close to SmolVLA v0.6.0's default
+  PEFT targets (all action-expert q/v plus state/action/time projections).
+  Adjust rank only if needed by the same bounded audit, select the smallest
+  support with robust closed-loop oracle utility, then permanently seal exact
+  target names, rank, alpha, dropout, and parameter count before Writer
+  outcomes.
+- After that seal, Writer, zero-init ordinary LoRA RL, average/retrieval,
+  language-only HyPoGen/DISC-style direct generators, and every other matched
+  arm must use exactly the same LoRA support and trainable-parameter budget. If
+  broad support is hard to generate, use layer/module-aware, chunked or
+  type-specific generation rather than silently shrinking targets; this is an
+  output-architecture remedy, not permission to add a bank, subspace, mask, or
+  later-RL constraint.
 - Keep EMBER independent from MemLLM code and Wiki/QA mechanisms. Reuse lessons,
   not implementation dependencies.
 

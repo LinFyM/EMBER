@@ -58,6 +58,12 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
 - The only common structural search space is the predeclared LoRA target layers
   and rank. Writer initializes all task-local LoRA parameters in that space;
   ordinary RL updates the same parameters without a second constraint object.
+- The frozen last-two action-expert q/v rank-8 contract is only the Gate 0
+  pilot. Before Writer acquisition, run one bounded source/validation-only
+  support audit across the pilot set, all action-expert q/v, and near-official
+  SmolVLA PEFT support; then permanently reseal exact targets, rank, alpha,
+  dropout, and parameter count. All Writer/RL/direct-generator arms share that
+  final contract exactly.
 - The shared base stays frozen throughout direct Writer training and the default
   source reward/meta-RL stage. Shared-base/shared-LoRA updates are future
   separate matched ablations, not this plan or its completion criteria.
@@ -297,12 +303,21 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     LoRA controls. Record action-expert partial/full update or full fine-tuning
     only as non-matched capability upper bounds. If only an upper bound works,
     trigger target/rank recovery rather than blaming Writer.
-21. [ ] Freeze the direct Writer meta-episode and architecture contract. Writer
-    sees language, action-hidden video, or both and emits every LoRA factor for
-    the same target-layer/rank space used by Gate 0. Primary supervision is
+21. [ ] Before freezing the Writer architecture, complete one bounded,
+    predeclared source/validation-only target-support audit with held numeric
+    access at zero. Compare at least current last-two q/v rank 8, all
+    action-expert q/v, and support close to the SmolVLA v0.6.0 default; adjust
+    rank only if needed, choose the smallest robust closed-loop oracle support,
+    and permanently reseal exact target names/rank/alpha/dropout/count. The
+    current Gate 0 pilot is not automatically the winner. Then freeze the
+    direct Writer meta-episode and architecture contract. Writer sees language,
+    action-hidden video, or both and emits every LoRA factor for that resealed
+    space. Primary supervision is
     independent source-query action/flow/behavioral loss through functional
     adapter application; factor MSE is prohibited as primary and oracle-delta
-    imitation is auxiliary only if predeclared.
+    imitation is auxiliary only if predeclared. Use layer/module-aware,
+    chunked/Perceiver-style or type-specific generation if wide support needs
+    it; never shrink support merely because a flat generator is inconvenient.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

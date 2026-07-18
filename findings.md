@@ -1123,3 +1123,25 @@
   not a Gate -1 pass, Gate 0 pass, Writer authorization, video-utility result,
   or validation/held evidence; the action-hidden-video content threshold miss
   remains preserved for Gate -1 interpretation.
+
+## Gate 0 pilot support is not the final Writer support
+
+- Owner authority now explicitly classifies the current last-two
+  action-expert q/v rank-8 LoRA as a low-cost Gate 0 pilot. Its 40,320
+  parameters can establish useful-update existence cheaply, but ease of
+  generation is not evidence that this is sufficient final Writer capacity.
+- SmolVLA v0.6.0's own default PEFT target regex spans q/v projections across
+  every action-expert layer and the state, action-input/output, and action-time
+  projections. OpenVLA and OpenVLA-OFT use rank-32 `all-linear` LoRA in their
+  official fine-tuning scripts. These are evidence that mature VLA PEFT support
+  is commonly broader than a last-layer probe, not mandates to copy one scope.
+- Before Writer acquisition, one bounded source/validation-only audit will
+  compare the current pilot, all action-expert q/v, and near-official SmolVLA
+  support, with rank adjustment only if needed. Selection is the minimum
+  support with robust closed-loop oracle utility; held numeric access stays
+  zero and exact targets/rank/alpha/dropout/count are then permanently resealed.
+- Wider direct generation is an architecture problem. SHINE's layer-aware
+  multi-state generation and Doc-to-LoRA's per-layer/Perceiver-style output
+  organization motivate structured layer/module embeddings, chunked generation,
+  or type-specific heads. They do not justify a shared update bank, subspace,
+  geometry, or any constraint on subsequent ordinary LoRA RL.

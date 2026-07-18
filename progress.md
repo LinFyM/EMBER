@@ -900,3 +900,33 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   Next implement the sole frozen Gate 0 oracle path and bounded LoRA capacity
   audit, then launch task 3/4 fits as independent GPU jobs with locked query and
   rollout reporting.
+
+## 2026-07-18 Writer target-support authority clarified
+
+- The owner has frozen the current last-two q/v rank-8 target set as a Gate 0
+  pilot only, not the final Writer contract. No healthy Gate 0 run is changed or
+  interrupted by this clarification.
+- Active planning now requires one bounded, predeclared source/validation-only
+  support audit before Writer target sealing. It must include the pilot set,
+  all action-expert q/v, and near-default SmolVLA v0.6.0 PEFT support, may adjust
+  rank only within the bounded audit, and then permanently reseals exact target
+  names, rank, alpha, dropout, and parameter count with held access still zero.
+- All Writer, zero-init ordinary RL, average/retrieval, language-only
+  HyPoGen/DISC-style generation, and other matched arms will use that same final
+  support. Broad-output difficulty will be addressed with structured
+  layer/module-aware generation rather than silently shrinking capacity or
+  reintroducing any bank/subspace/geometry path.
+- The single Gate 0 fit/select/checkpoint implementation is now under TDD. Its
+  contract and artifact tests pass 10/10; long-run launch remains pending full
+  repository verification and a clean commit.
+- Architecture ownership is explicit despite the necessarily broad scientific
+  surface: `gate_zero_oracle_contract` owns sealed authority checks,
+  `gate_zero_oracle_session` owns live model/data/optimizer lifetime,
+  `gate_zero_oracle_metrics` owns fixed query/drift evaluation,
+  `gate_zero_oracle_artifacts` owns atomic state publication, and
+  `gate_zero_oracle_fit` is the sole CLI orchestration path. The launcher adds
+  no second trainer. The older one-step `gate_zero_model_probe` remains only as
+  already-published mechanics provenance until the first completed LoRA and
+  partial fit plus locked report verify the replacement; at that trigger,
+  retire its executable launcher/module while preserving durable invariants and
+  Git evidence. No bank/geometry or hypothetical Writer code path is reserved.

@@ -70,8 +70,9 @@ separate matched ablation, not the default and not required for completion.
 - Policy: immutable `lerobot/smolvla_base` revision.
 - Simulator: pinned LIBERO with audited LIBERO-90 task map, language, BDDL/init
   authority, cameras, controller, demonstrations, and source-only normalization.
-- First adaptation target: the predeclared SmolVLA action-expert matrices and
-  rank-8 LoRA contract already frozen for Gate 0.
+- Gate 0 pilot target: the predeclared last-two action-expert q/v matrices and
+  rank-8 LoRA contract. This is a low-cost useful-update probe, not the final
+  Writer support.
 - Compute ceiling: at most four A100 80GB GPUs across all EMBER work.
 
 SmolVLA plus LIBERO is the formal mechanism-development surface, not a disposable
@@ -122,6 +123,33 @@ action-expert partial/full update or full fine-tuning may be recorded only as a
 non-matched capability upper bound. If only such an upper bound succeeds, the
 target-layer/rank LoRA contract is too narrow and enters recovery before Writer;
 do not attribute that failure to Writer acquisition.
+
+The current last-two q/v rank-8 contract remains the frozen Gate 0 pilot only.
+Before any Writer target contract is sealed, run one predeclared,
+source/validation-only, held-zero-access support audit. Its minimum candidate
+set is: (a) the current last-two q/v pilot, (b) q/v in every action-expert
+layer, and (c) support close to [SmolVLA v0.6.0's default PEFT target
+set](https://github.com/huggingface/lerobot/blob/v0.6.0/src/lerobot/policies/smolvla/modeling_smolvla.py#L2816-L2833):
+all action-expert q/v projections plus `state_proj`, `action_in_proj`,
+`action_out_proj`, `action_time_mlp_in`, and `action_time_mlp_out`. Rank may be
+adjusted only within this bounded audit. Choose the smallest support that gives
+robust closed-loop oracle utility, then permanently seal exact target names,
+rank, alpha, dropout, and trainable parameter count. OpenVLA and
+[OpenVLA-OFT](https://github.com/moojink/openvla-oft/blob/main/vla-scripts/finetune.py)
+using rank 32 and `all-linear` are broad-support maturity references, not
+instructions to copy their contract mechanically.
+
+Every downstream Writer, zero-init ordinary-LoRA RL, average/retrieval,
+language-only direct generator, and matched control must use that identical
+sealed support and parameter budget. If emitting a broad adapter is difficult,
+the bounded design options are structured layer/module embeddings, shared
+layer-aware decoders, chunked or per-module generation, memory/Perceiver
+queries, and type-specific heads. [SHINE](https://arxiv.org/abs/2602.06358)
+and [Doc-to-LoRA](https://arxiv.org/abs/2602.15902) are architecture references
+for scalable structured LoRA generation; their task domains or narrow target
+choices are not EMBER target templates. None of these options may create a
+canonical bank, shared update span, geometry, mask, radius, or later-RL search
+constraint.
 
 ### 5.2 Direct Writer acquisition
 

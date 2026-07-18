@@ -23,6 +23,8 @@ from ember.gate_zero_oracle_contract import load_oracle_execution_spec
 FIT_RESULT = "fit_selection_result.json"
 SELECTED_MANIFEST = "selected_manifest.json"
 TRAINABLE_STATE = "trainable_state.safetensors"
+BASE_FLOW_MATCH_RTOL = 1e-4
+BASE_FLOW_MATCH_ATOL = 1e-8
 
 
 class GateZeroOracleReportError(RuntimeError):
@@ -329,7 +331,12 @@ def _validate_task_matching(
         raise GateZeroOracleReportError("locked report sample counts differ across arms")
     base_values = [float(arm["base_offline_flow_mse"]) for arm in task_arms]
     if any(
-        not math.isclose(value, base_values[0], rel_tol=1e-7, abs_tol=1e-9)
+        not math.isclose(
+            value,
+            base_values[0],
+            rel_tol=BASE_FLOW_MATCH_RTOL,
+            abs_tol=BASE_FLOW_MATCH_ATOL,
+        )
         for value in base_values[1:]
     ):
         raise GateZeroOracleReportError("locked report base loss differs across arms")
@@ -434,6 +441,10 @@ def decide_gate_zero_report(
             "median_selection_drift_proxy": median_drift,
         },
         "threshold_checks": checks,
+        "mechanics_tolerances": {
+            "base_offline_flow_mse_rtol": BASE_FLOW_MATCH_RTOL,
+            "base_offline_flow_mse_atol": BASE_FLOW_MATCH_ATOL,
+        },
         "partial_upper_bound_is_non_matched_diagnostic": True,
     }
 

@@ -192,8 +192,10 @@ class GateZeroOracleReportTest(unittest.TestCase):
         return arms
 
     def test_gate_zero_decision_requires_primary_lora_not_partial_upper_bound(self) -> None:
+        passing_arms = self._arms(own_successes=4, partial_successes=6)
+        passing_arms[1]["base_offline_flow_mse"] = 1.00005
         passing = decide_gate_zero_report(
-            arms=self._arms(own_successes=4, partial_successes=6),
+            arms=passing_arms,
             selected_lora_drift={3: 0.01, 4: 0.015},
             thresholds={
                 "median_success_gain_pp_min": 15.0,
@@ -207,6 +209,20 @@ class GateZeroOracleReportTest(unittest.TestCase):
         self.assertEqual(passing["status"], "gate_zero_pilot_passed")
         self.assertTrue(passing["gate_zero_pilot_passed"])
         self.assertFalse(passing["writer_authorized"])
+
+        passing_arms[1]["base_offline_flow_mse"] = 1.001
+        with self.assertRaisesRegex(Exception, "base loss differs"):
+            decide_gate_zero_report(
+                arms=passing_arms,
+                selected_lora_drift={3: 0.01, 4: 0.015},
+                thresholds={
+                    "median_success_gain_pp_min": 15.0,
+                    "median_locked_action_loss_reduction_fraction_min": 0.20,
+                    "positive_task_fraction_min": 0.70,
+                    "median_selection_drift_proxy_max": 0.02,
+                    "two_task_positive_count_required": 2,
+                },
+            )
 
         partial_only = decide_gate_zero_report(
             arms=self._arms(own_successes=2, partial_successes=6),

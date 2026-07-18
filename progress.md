@@ -989,3 +989,16 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   `CHECKPOINT_MANIFEST`, and one real read-only authority preflight now pass.
   Retry must reuse the immutable grant and write a fresh report directory; no
   second selection-freeze artifact is permitted.
+- Recovery long-run
+  `gate_zero_oracle_locked_report_recovery1_20260718_135618` completed all eight
+  offline/closed-loop arms with mechanics valid and generated all eight videos,
+  then failed only during rank-0 aggregation because the first implementation
+  required cross-GPU/zero-PEFT base flow MSE to match at rtol `1e-7`. Observed
+  harmless relative variation was about `2e-5`--`4e-5`, far below the frozen
+  20% utility threshold; task 3's zero-LoRA own arm also matched base success
+  exactly. Per the owner stop rule, a red/green regression now fixes functional
+  matching at rtol `1e-4`, atol `1e-8`, while explicitly rejecting a `1e-3`
+  discrepancy. The tolerance is emitted in the final decision. The failed
+  aggregation packet, telemetry, and videos remain; run one fresh final report
+  from the same immutable grant because per-episode arm arrays were not
+  published before aggregation.

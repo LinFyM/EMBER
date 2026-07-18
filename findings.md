@@ -1405,3 +1405,9 @@
   and median reduction is at least 2%; failure stops for bounded diagnosis.
   This changes runtime cadence only, not targets, rank, support, augmentation,
   optimizer, maximum budget, or final Gate thresholds.
+- Stage 1k completed rc 0 for both tasks in 13:03. Against identical step-0
+  query rows, task 3 improves flow MSE by 7.959% with drift 0.01676 and task 4
+  by 5.754% with drift 0.01883; median improvement is 6.857%. Both task
+  reductions are nonnegative and the median exceeds the frozen 2% rule, so the
+  same trajectories are authorized to resume to 2k. This is a positive query
+  trend, not Gate 0 or closed-loop evidence.

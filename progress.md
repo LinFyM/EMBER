@@ -1379,3 +1379,11 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   cap. It evaluates only the independent source query/drift candidate; formal
   init states 40--47 remain untouched. Continue to 2k only if both task query
   reductions are nonnegative and the median is at least 2%.
+- Stage-1k long-runs `gate0_mature_r32_t3_stage1k_20260718_163856` and
+  `gate0_mature_r32_t4_stage1k_20260718_163856` completed main rc 0 in 13:03.
+  Task 3/4 query reductions are 7.96%/5.75% (median 6.86%), so the frozen
+  continuation rule passes. Candidate, trainable-state, recovery and telemetry
+  hashes validate; peak device memory is 18,585/18,545MiB and effective-window
+  mean utilization is about 89.9%. GPU 4/5 returned to 0MiB. Resume the same
+  outputs from step 1000 to the next stop at step 2000; do not open final
+  closed-loop init states.

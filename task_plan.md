@@ -412,6 +412,11 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     10 volatile steps; both outputs retain validated atomic step-0 candidate,
     optimizer, scheduler, RNG, and state hashes, so resume those outputs rather
     than restarting.
+    Stage 1k is now complete rc 0 in 13:03 per task. Task 3/4 independent-query
+    reductions are 7.96%/5.75% (median 6.86%), both positive, with drift
+    0.01676/0.01883. All candidate/recovery/telemetry hashes validate and no
+    final rollout surface was opened. The frozen continuation rule passes;
+    exact-resume the same states to step 2k next.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

@@ -6,8 +6,9 @@ Advance EMBER from a research design to a reproducible, four-GPU-compatible
 experimental program. Establish benchmark validity and useful-update existence,
 then train a direct Writer to emit the complete task-specific LoRA allowed by a
 common predeclared target-layer/rank contract. Demonstrate immediate utility,
-ordinary task-local LoRA RL, source-only Writer reward/meta learning, and a
-shared-frozen held evaluation before optional OpenVLA-OFT confirmation.
+ordinary task-local LoRA RL, source-only Writer reward/meta learning, a
+shared-frozen held evaluation, and OpenVLA-OFT scale confirmation after the
+mechanism survives.
 
 The 2026-07-18 owner correction supersedes the original Goal text wherever it
 made canonical representation or geometry mandatory. Canonical banks, shared
@@ -19,16 +20,27 @@ the current project and long-term Goal, not pending milestones.
 - Reproducible environment, upstream revisions, dataset/task manifests, and
   measured systems envelope under at most four A100 80GB GPUs.
 - Benchmark/specification validity evidence with causal hard-negative controls.
-- A useful-update oracle that improves independent closed-loop behavior.
+- A useful-update oracle that improves independent closed-loop behavior, plus a
+  bounded LoRA capacity audit against non-matched partial/full-update upper
+  bounds so an underspecified LoRA contract is not misdiagnosed as Writer
+  failure.
 - Documented diagnosis and bounded recovery for every failed or ambiguous gate.
 - A direct Writer whose complete generated LoRA improves independent
   zero-interaction behavior over all required matched baselines.
-- Matched-budget ordinary task-local LoRA RL from Writer and standard
-  initializations.
+- Matched-budget A/B/C ordinary task-local LoRA RL from zero-LoRA, cold-start
+  Writer, and source-reward-outer-trained Writer initializations, with J0, AUC,
+  time-to-threshold, J_K, and J_K-J0 reported under identical budgets.
 - Source-only reward/meta learning that improves Writer initializations while
   the shared base remains frozen and task-local LoRA is the model-side state.
 - A sealed held-task evaluation with base, Writer, and all shared state frozen.
-- An evidence-based OpenVLA-OFT confirmation or no-scale decision.
+- A reproducible OpenVLA-OFT scale confirmation of the surviving mechanism.
+
+No preparatory milestone completes this long-term Goal. In particular, code or
+environment completion, exact resume, throughput calibration, Gate -1, Gate 0,
+one successful run, or authorization to start Writer is insufficient. Positive
+completion requires the held-frozen Writer and A/B/C evidence above, causal
+language/video controls with predeclared seeds and confidence intervals, the
+cold-start versus reward-outer Writer comparison, and the scale confirmation.
 
 ## Boundaries
 
@@ -36,6 +48,9 @@ the current project and long-term Goal, not pending milestones.
   video in the first study.
 - No held actions or shared held-task updates.
 - No more than four concurrent A100s for all EMBER work.
+- LoRA is the only adaptation mechanism in the current project; do not add a
+  bottleneck adapter, IA3, prefix tuning, shared base adapter, shared LoRA, or a
+  parallel parameter-efficient path.
 - No full-system implementation before its scientific predecessors pass.
 - No canonical bank, shared task-update subspace, Writer-predicted basis/mask/
   metric/radius/learning-rate object, soft geometry, or residual escape in the
@@ -64,7 +79,7 @@ the current project and long-term Goal, not pending milestones.
 | Stage 2. Ordinary task-local LoRA RL | pending Writer utility | matched-budget adaptation AUC/steps-to-threshold from Writer versus standard initialization; no predicted search constraint |
 | Stage 3. Source-only Writer reward/meta learning | pending ordinary RL | outer reward improves future Writer initializations while shared base remains frozen |
 | Stage 4. Frozen held evaluation | pending complete freeze | sealed primary comparison, full controls, resources, uncertainty, and failure report |
-| Stage 5. OpenVLA-OFT confirmation | conditional | same mechanism survives a re-pinned four-GPU-compatible scale test |
+| Stage 5. OpenVLA-OFT confirmation | pending mechanism survival | same mechanism survives a re-pinned four-GPU-compatible scale test |
 
 ## Evidence policy
 
@@ -81,6 +96,12 @@ the current project and long-term Goal, not pending milestones.
   into a false outer failure during function-context unwinding.
 - A gate failure starts the recovery protocol in `AGENTS.md`. Do not silently
   change the scientific contract to create a pass.
+- Infrastructure work is timeboxed to one reproduction, one narrow repair, and
+  one verification unless it can change recoverability, sampled data,
+  closed-loop success, a Gate decision, matched fairness, or held isolation.
+  Ambient RNG digests, telemetry bytes, and bitwise identity are residual
+  diagnostics once checkpoint load/state/cursor and short-resume functional
+  behavior are operationally sufficient.
 
 ## Current next actions
 
@@ -241,31 +262,29 @@ the current project and long-term Goal, not pending milestones.
     Trackio completion, and released resources. It remains the recovery and
     efficiency reference, not evidence that one GPU is the long-term default;
     this item remains open until the frozen source competence surface runs.
-18. [ ] After item 17 commits its final hash, run the outcome-free fixed
-    1/2/4-GPU topology probe sequentially on the same available device set.
-    Preserve global effective batch 64, optimizer steps, sample/flow authority,
-    total loader workers, and scheduler. Freeze the fastest safe topology only
-    if it passes the predeclared speedup, efficiency, headroom, global-slot, and
-    same-topology resume rules; otherwise use the four-GPU allowance for
-    independent arm/task/seed work rather than leaving useful devices idle. The
-    first world-size-4 attempt exposed a DDP bucket-lifecycle resume mismatch;
-    static graph removed the model-state difference, after which a second live
-    check isolated a Python-only fresh-runtime RNG-boundary mismatch. Preserve
-    both failure packets. After the bounded post-setup reseed repair passes one
-    live four-rank exact-resume check, discard old throughput values from
-    selection and rerun the complete matched 1/2/4 set under one amended
-    contract hash. The post-diagnosis contract is SHA256
-    `04bf00a4326f62119b32ca22ef9836980d5743e61eb2f1366e85ae4feae25e9d`;
-    no throughput result under this hash has been read.
+18. [ ] Close infrastructure selection with at most one necessary short
+    four-GPU throughput/stability window, then stop topology benchmarking. The
+    clean world-size-4 recovery at commit `9a8a8f5` already returned rc 0 and
+    matched model, optimizer, scheduler, global step, data, and all recorded
+    resume surfaces under contract SHA256
+    `04bf00a4326f62119b32ca22ef9836980d5743e61eb2f1366e85ae4feae25e9d`.
+    This is operationally sufficient; no new RNG/identity surface may block
+    science. If the one short window has reasonable throughput and headroom,
+    use world-size 4 for fitting where beneficial; otherwise fill up to four
+    GPUs with independent arm/task/seed jobs through canonical entries. Do not
+    rerun a full 1/2/4 scaling curve merely to beautify engineering evidence.
 19. [ ] Run the already frozen source-only tasks-3/4 competence comparison on
     the final 10k checkpoint, preferably four-way arm parallel after live GPU
     preflight. A correct-arm minimum pass authorizes only task-local oracle
     fitting; a failure triggers the one bounded identical-contract extension to
     20k. Neither branch passes Gate -1, Gate 0, or authorizes Writer.
-20. [ ] Complete the Gate 0 task-local rank-8 LoRA oracle on the frozen source
-    support/query/locked-report split. Require independent query selection,
-    locked closed-loop gain, non-harm/drift diagnostics, confidence intervals,
-    and matched base/standard-LoRA controls before authorizing Writer work.
+20. [ ] Complete the Gate 0 task-local rank-8 LoRA oracle and LoRA capacity
+    audit on the frozen source support/query/locked-report split. Require
+    independent query selection, locked closed-loop gain, non-harm/drift
+    diagnostics, confidence intervals, and matched zero/base versus task-local
+    LoRA controls. Record action-expert partial/full update or full fine-tuning
+    only as non-matched capability upper bounds. If only an upper bound works,
+    trigger target/rank recovery rather than blaming Writer.
 21. [ ] Freeze the direct Writer meta-episode and architecture contract. Writer
     sees language, action-hidden video, or both and emits every LoRA factor for
     the same target-layer/rank space used by Gate 0. Primary supervision is
@@ -277,16 +296,25 @@ the current project and long-term Goal, not pending milestones.
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,
     direct conditioning, ordinary task-specific LoRA, and capacity-matched
     DISC/HyPoGen-style generation. Freeze all choices before held outcomes.
-23. [ ] Run matched-budget ordinary task-local LoRA RL by updating the same
-    generated LoRA parameters in place. Compare Writer initialization with
-    standard and declared baseline initializations; report complete interaction
-    curves, AUC, time-to-threshold, final success, drift, variance, resources,
-    and failures. Writer emits no RL constraint object.
+23. [ ] Run the fixed causal arms: A) zero-LoRA initialization plus ordinary
+    RL; B) cold-start Writer LoRA initialization plus identical RL; and C)
+    reward-outer-trained Writer LoRA initialization plus identical RL. Update
+    the same LoRA parameters in place under identical target layers/rank/count,
+    algorithm, hyperparameters, seeds, reward, and interaction budget. Include
+    average/retrieval/language-only direct-generator baselines; report J0, AUC,
+    time-to-threshold, J_K, J_K-J0, uncertainty, resources, and failures. Add a
+    matched-initial-performance or equivalent control before claiming a better
+    learning process rather than only a better starting point. Writer emits no
+    RL constraint object.
 24. [ ] Run source-only reward/delayed outer learning with the shared base
     frozen. Inner adaptation updates task-local LoRA; the outer objective updates
     Writer parameters through a predeclared differentiable path or estimator.
     Shared base/shared LoRA training is not part of the mainline.
 25. [ ] Permanently freeze base, Writer, encoders, all shared state, target/rank,
     optimizer, budgets, thresholds, and baselines before held evaluation. Only
-    predeclared task-local LoRA may adapt from held reward. Decide on
-    OpenVLA-OFT confirmation only after this mechanism survives.
+    predeclared task-local LoRA may adapt from held reward. Require Writer-start
+    to beat zero/base, average, retrieval, and the capacity-matched language-only
+    direct LoRA generator with predeclared seeds, confidence intervals, causal
+    controls, isolation audit, and reproducible rerun.
+26. [ ] After the mechanism survives, re-pin and execute the four-GPU-compatible
+    OpenVLA-OFT scale confirmation without changing the causal or held contract.

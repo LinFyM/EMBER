@@ -135,6 +135,21 @@ class ActiveResearchScopeTest(unittest.TestCase):
         self.assertIn('task_geometry = "requires_writer_center_to_rl_benefit"', phase0)
         self.assertIn("non-authoritative/non-executable", agents)
 
+    def test_active_contract_fixes_lora_causal_arms_and_engineering_stop_rule(self) -> None:
+        agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        plan = (ROOT / "task_plan.md").read_text(encoding="utf-8")
+        brief = (ROOT / "docs" / "execution_brief.md").read_text(encoding="utf-8")
+        active = agents + plan + brief
+
+        self.assertIn("LoRA is the only adaptation mechanism", active)
+        self.assertIn("LoRA capacity audit", active)
+        self.assertIn("zero-LoRA initialization plus ordinary RL", active)
+        self.assertIn("cold-start Writer LoRA initialization plus identical RL", active)
+        self.assertIn("reward-outer-trained Writer LoRA initialization plus identical RL", active)
+        self.assertIn("matched-initial-performance", active)
+        self.assertIn("one reproduction, one narrow repair, and one verification", active)
+        self.assertIn("OpenVLA-OFT scale confirmation", active)
+
 
 if __name__ == "__main__":
     unittest.main()

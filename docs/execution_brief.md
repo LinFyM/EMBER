@@ -24,9 +24,9 @@ language + action-hidden robot video
     -> shared-frozen held-task evaluation
 ```
 
-The static Writer is an **amortized task-conditioned parameter-update
-generator**, or task-conditioned hypernetwork/adapter initializer. It is not a
-universal meta-optimizer.
+The static Writer is a **task-conditioned hypernetwork and complete-LoRA
+initializer**. It is not a universal meta-optimizer and does not predict an
+update direction or constrain the later ordinary RL search.
 
 ## 2. Exact parameter and adaptation contract
 
@@ -36,6 +36,12 @@ The common structural search space is fixed before outcomes:
 - LoRA rank and therefore parameter count;
 - initialization, scaling, precision, and application semantics; and
 - the optimizer and interaction budget used by ordinary task-local RL.
+
+LoRA is the only adaptation mechanism in the current EMBER project. Do not add
+bottleneck adapters, IA3, prefix tuning, a shared base adapter/shared LoRA, or
+another parallel parameter-efficient state. Although LoRA is low-rank relative
+to full fine-tuning, jointly trainable A/B factors are not a fixed shared linear
+span of the removed bank kind.
 
 For each task, the Writer emits all LoRA factors required by that contract. The
 generated LoRA is applied functionally to the frozen shared base and must improve
@@ -107,7 +113,15 @@ Fit each source-task oracle independently in the exact target-layer/rank
 contract. Select on an independent source query surface and report a locked
 closed-loop source surface. A positive oracle proves that useful updates exist
 and supplies an upper bound and strong baseline; it does not prove that
-language/video can acquire the update.
+language/video can acquire the update, and its parameters are not the sole
+teacher that Writer must imitate.
+
+Gate 0 includes a bounded LoRA capacity audit: compare zero/base with the
+independently trained task-local LoRA under the matched contract. An
+action-expert partial/full update or full fine-tuning may be recorded only as a
+non-matched capability upper bound. If only such an upper bound succeeds, the
+target-layer/rank LoRA contract is too narrow and enters recovery before Writer;
+do not attribute that failure to Writer acquisition.
 
 ### 5.2 Direct Writer acquisition
 
@@ -126,12 +140,17 @@ capacity-matched direct-generator comparisons.
 
 ### 5.3 Ordinary task-local LoRA RL
 
-Start from the Writer-generated LoRA and update that same task-local LoRA under
-the frozen optimizer, interaction, parameter-count, and environment budgets.
-Compare against ordinary task-specific LoRA RL from its standard initialization
-and other declared initializers. Report the full success/return-versus-
-interaction curve, AUC, time-to-threshold, final performance, drift, variance,
-memory, and wall time. There is no Writer-predicted RL constraint object.
+Run three core causal arms: A) zero-LoRA initialization plus ordinary RL; B)
+cold-start Writer LoRA initialization plus identical RL; and C)
+reward-outer-trained Writer LoRA initialization plus identical RL. Update the
+same task-local LoRA under identical target layers/rank/count, RL algorithm,
+hyperparameters, seeds, reward, interaction budget, and environment budget;
+also retain average, retrieval, language-only direct-generator, and other
+declared baselines. Report J0, the full success/return curve, AUC,
+time-to-threshold, J_K, J_K-J0, drift, uncertainty, memory, and wall time. A
+claim about improved learning dynamics rather than a better initial policy also
+requires a matched-initial-performance or equivalent control. There is no
+Writer-predicted RL constraint object.
 
 ### 5.4 Source-only reward or delayed outer learning
 
@@ -180,11 +199,22 @@ inaccessible.
 There is no mandatory Gate 1 between Gate 0 and Writer, and no positive
 bank/geometry result is a completion criterion.
 
+These stages form one long-term Goal. Environment/code completion, exact
+resume, throughput selection, Gate -1, Gate 0, a single training run, or merely
+authorizing Writer cannot complete it. Positive completion requires the frozen
+held Writer and strong-baseline result, matched A/B/C RL evidence, cold-start
+versus source-reward-outer-trained Writer evidence, causal language/video
+controls with predeclared seeds/confidence intervals and reproducible reruns,
+and OpenVLA-OFT scale confirmation.
+
 ## 7. Four-GPU efficiency and artifact rules
 
 - Never allocate more than four A100s across concurrent EMBER jobs.
-- Smoke on one GPU, but select 1/2/4-GPU training topology from measured useful
-  throughput rather than treating one GPU as a permanent default.
+- Smoke on one GPU, then use at most one necessary four-GPU short
+  throughput/stability window after the current clean world-size-4 recovery.
+  Do not rerun a full 1/2/4 scaling curve solely to polish systems evidence;
+  when one DDP job scales poorly, occupy useful devices with independent
+  arm/task/seed jobs instead.
 - After correctness, tune batch, accumulation, feature caching, simulator/task
   parallelism, and I/O so an allocated A100 normally retains about 10GB average
   headroom; do not allocate dummy tensors merely to fill memory.
@@ -195,6 +225,14 @@ bank/geometry result is a completion criterion.
 - Maintain Trackio and bounded local HTML/video galleries for real-time or later
   inspection. Retain canonical evidence and `latest`; remove only validated,
   regenerable, unpinned bulk artifacts with a recorded cleanup.
+- Exact-resume, bitwise/RNG digests, telemetry checksums, and log-byte identity
+  are infrastructure diagnostics, not research Gates. Operational sufficiency
+  means a loadable checkpoint with correct model, optimizer, scheduler, global
+  step/data cursor and a short non-crashing resume whose loss or functional
+  behavior is within a predeclared tolerance. For non-scientific anomalies use
+  one reproduction, one narrow repair, and one verification, then proceed
+  unless recoverability, sampled data, closed-loop success, a Gate decision,
+  matched fairness, or held isolation can change.
 
 ## 8. Gate recovery without scientific drift
 
@@ -213,11 +251,13 @@ mechanical issues and reasonable bounded remedies are exhausted.
 
 ## 9. Immediate work package
 
-Finish the clean 1/2/4-GPU resume/throughput contract, then run the already
-frozen source competence surface. Complete the remaining Gate -1 causal evidence
-and the Gate 0 independent task-local oracle without reading validation/held
-numeric outcomes. If Gate 0 is positive, implement only the direct full-LoRA
-Writer path above; do not create a canonical-representation or geometry branch.
+The clean world-size-4 resume result is the final bounded resume verification.
+Run at most one necessary short four-GPU throughput/stability window, then run
+the already frozen source competence surface. Complete the remaining Gate -1
+causal evidence and Gate 0 independent task-local oracle plus LoRA capacity
+audit without reading validation/held numeric outcomes. If Gate 0 is positive,
+implement only the direct full-LoRA Writer path above; do not create a
+canonical-representation or geometry branch.
 Continuously update `task_plan.md`, `findings.md`, and `progress.md` and commit
 each reproducible milestone without weights, datasets, private host details, or
 large outputs in public Git.

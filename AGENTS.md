@@ -45,8 +45,9 @@ remove the string.
 
 ## Active objective
 
-Advance EMBER from a research proposal to a reproducible staged experiment.
-Begin with a faithful SmolVLA plus LIBERO development path and establish:
+Advance EMBER from a research proposal through the complete corrected research
+program. Begin with a faithful SmolVLA plus LIBERO development path and
+establish:
 
 1. benchmark and task-specification validity;
 2. a useful task-specific update oracle;
@@ -55,8 +56,11 @@ Begin with a faithful SmolVLA plus LIBERO development path and establish:
 4. matched-budget ordinary task-local LoRA RL from the Writer initialization;
 5. source-only reward/delayed outer learning that updates the Writer through
    task-local LoRA adaptation while the shared base remains frozen; and
-6. shared-frozen held-task evaluation, followed by OpenVLA-OFT confirmation
-   only if the lower-cost mechanism survives.
+6. shared-frozen held-task evaluation; and
+7. OpenVLA-OFT scale confirmation after the lower-cost mechanism survives.
+
+Phase 0, exact resume, throughput work, Gate -1, Gate 0, one training run, or
+authorization of a later stage cannot by itself complete the long-term Goal.
 
 Do not implement the complete system merely because it appears in the expert
 plan. Each expensive component needs evidence from its scientific predecessor.
@@ -91,6 +95,9 @@ plan. Each expensive component needs evidence from its scientific predecessor.
   tune architecture, thresholds, seeds, or checkpoints after reading held
   results.
 - Immediate functional utility is required before claiming bootstrapping.
+- LoRA is the only adaptation mechanism in the current project. Do not add a
+  bottleneck adapter, IA3, prefix tuning, shared base adapter, shared LoRA, or
+  another parameter-efficient state alongside it.
 - The Writer must emit the complete declared task-specific LoRA, not coefficients
   in a shared task-update bank or subspace.
 - The only structural search space is the common predeclared LoRA contract:
@@ -103,6 +110,12 @@ plan. Each expensive component needs evidence from its scientific predecessor.
   only when predeclared; raw LoRA-factor MSE is never the primary objective.
 - Parameter distance and raw LoRA-factor MSE are diagnostic or auxiliary, not
   the primary scientific objective.
+- Gate 0 must include a bounded LoRA capacity audit on source/validation:
+  zero/base versus independently trained task-local LoRA is the matched test;
+  action-expert partial/full updates or full fine-tuning may appear only as
+  explicitly non-matched capability upper bounds. If only those upper bounds
+  work, classify the fixed LoRA target/rank contract as too narrow before
+  attributing failure to the Writer.
 - Keep EMBER independent from MemLLM code and Wiki/QA mechanisms. Reuse lessons,
   not implementation dependencies.
 
@@ -135,8 +148,9 @@ exhausted, preserve the negative result and narrow the claim explicitly.
 - Use SmolVLA as the development and mechanism-validation policy. Scale a
   surviving result to OpenVLA-OFT as confirmation rather than starting with the
   7B path.
-- Treat language/video-to-center as a task-conditioned hypernetwork or
-  amortized adapter initializer, not a universal meta-optimizer.
+- Treat language/video-to-complete-LoRA as a task-conditioned hypernetwork or
+  amortized LoRA initializer, not a universal meta-optimizer, learned update
+  direction, or learned optimizer.
 - Make neutral-prompt parameter compilation a co-primary mechanism test; also
   report the practical setting where the online policy receives the task
   instruction.
@@ -148,6 +162,14 @@ exhausted, preserve the negative result and narrow the claim explicitly.
 - After positive zero-interaction Writer utility, compare ordinary task-local
   LoRA RL from the Writer initialization against matched standard-LoRA and
   direct-generator baselines.
+- The core RL causal arms are: zero-LoRA initialization plus ordinary RL;
+  cold-start Writer LoRA initialization plus identical RL; and
+  reward-outer-trained Writer LoRA initialization plus identical RL. Hold LoRA
+  targets/rank/count, RL algorithm and hyperparameters, seeds, reward, and
+  interaction budget fixed. Report zero-step utility, learning-curve AUC,
+  time-to-threshold, matched-budget final success, and final-minus-initial gain.
+  A claim about the learning process beyond a better starting point also needs
+  a matched-initial-performance or equivalent control.
 - During direct Writer cold-start and source reward/meta-RL, the shared base is
   frozen. Inner adaptation updates task-local LoRA; the source-only outer
   objective updates Writer parameters, differentiating through the inner loop
@@ -171,6 +193,15 @@ exhausted, preserve the negative result and narrow the claim explicitly.
   source-only result.
 - Pin repository commits, dataset revisions, file hashes, environment versions,
   task manifests, normalization authority, seeds, and exact commands.
+- Treat exact-resume, RNG digests, and telemetry binding as infrastructure, not
+  scientific Gates. Operational sufficiency is a loadable checkpoint with
+  correct model/optimizer/scheduler/global-step/data-cursor state and a short
+  non-crashing resume whose loss or functional behavior stays within a
+  predeclared tolerance. For non-scientific anomalies, default to one
+  reproduction, one narrow repair, and one verification; then move on unless
+  the issue can change recoverability, sampled data, closed-loop success, a
+  Gate decision, matched fairness, or the held boundary. Do not add identity
+  surfaces merely to make engineering evidence cosmetically exact.
 - Optimize the full training and inference path for useful throughput. Reuse
   canonical model loads, manifests, decoded or preprocessed observations,
   cached features, and other scientifically equivalent intermediates whenever
@@ -211,4 +242,15 @@ contains:
   is the model-side adaptive state, Writer receives the outer update, and the
   shared base stays frozen;
 - a shared-frozen held-task report under the permanently sealed contract; and
-- an evidence-based decision on whether OpenVLA-OFT confirmation is warranted.
+- a predeclared-seed, confidence-interval, causal-control, and reproducible
+  OpenVLA-OFT scale confirmation of the surviving mechanism.
+
+Positive completion additionally requires held-frozen evidence that Writer
+initialization beats zero/base, average, retrieval, and a capacity-matched
+language-only HyPoGen/DISC-style direct LoRA generator; matched A/B/C ordinary
+RL evidence for zero-step utility and adaptation efficiency/final behavior; and
+a cold-start versus source-reward-outer-trained Writer comparison showing that
+delayed reward improves the generated initialization. If bounded recovery
+instead falsifies a core hypothesis or requires changing the paper claim,
+preserve the negative evidence and escalate the decision rather than marking
+the Goal complete.

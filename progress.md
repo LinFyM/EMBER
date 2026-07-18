@@ -805,11 +805,12 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   leads directly to full-LoRA Writer acquisition with independent source-query
   functional supervision. `docs/expert_plan.md` is deliberately unchanged as
   historical advice.
-- The Goal service still stores the earlier objective text and exposes no
-  objective-edit operation. Keep that Goal active, do not create a replacement
-  or falsely complete Gate 1; interpret its mandatory Gate-1/geometry clauses
-  as narrowly superseded by the owner's dated authority and by the current
-  completion evidence in `AGENTS.md`/`task_plan.md`.
+- The owner deleted the obsolete Goal. The Goal service now stores a new active,
+  unbudgeted full-lifecycle EMBER objective spanning base/spec validity, Gate 0,
+  direct Writer, A/B/C task-local LoRA RL, source reward/meta outer learning,
+  frozen-held evaluation, and OpenVLA-OFT confirmation. It explicitly excludes
+  Gate 1/bank/geometry and forbids completion at an infrastructure or early-Gate
+  milestone.
 
 ## 2026-07-18 static world-size-4 RNG recovery
 
@@ -838,3 +839,36 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   two bytecode files (33,379 bytes) were removed after their compact result and
   failure evidence froze; the small video-inspection images remain because they
   are distinct visual diagnosis artifacts rather than duplicate run output.
+
+## 2026-07-18 bounded world-size-4 closeout and science-priority reset
+
+- Clean long-run `gate_zero_world4_rng_boundary_resume_20260718_120328` from
+  commit `9a8a8f5` completed with main rc 0 under topology contract SHA256
+  `04bf00a4326f62119b32ca22ef9836980d5743e61eb2f1366e85ae4feae25e9d`.
+  Its result SHA256 is
+  `e996dd9f5290bbb8302c1a051d81783a3353ad433d15530742ae436f6ef60a12`.
+  Completed step, model, optimizer, scheduler, aggregate RNG, next raw batch,
+  and next row keys all match; more importantly, the schema-3 checkpoint loaded,
+  restored world size 4, and reproduced the declared training/data state.
+- The run used GPUs 4--7 only, peaked at 12,162 MiB per sampled device, retained
+  at least 68,993 MiB free, completed in 93.19 seconds of measured probe time,
+  released all four GPUs, and removed the validated 1,319,495,706-byte transient
+  checkpoint. Checksummed result/telemetry and Trackio provenance remain in a
+  100KB canonical output; no EMBER process remains.
+- Owner stop rule closes exact-resume work here. Ambient RNG, bitwise, telemetry,
+  and extra identity surfaces are no longer research blockers once checkpoint
+  load/state/cursor and short-resume functional behavior are operationally
+  sufficient. Non-scientific anomalies receive one reproduction, one narrow
+  repair, and one verification unless they can affect recoverability, sampled
+  data, closed-loop success, a Gate decision, matched fairness, or held
+  isolation.
+- The previously planned full matched 1/2/4 rerun is superseded. Run at most one
+  necessary short world-size-4 throughput/stability window, then proceed to the
+  frozen source tasks-3/4 competence arms, remaining Gate -1 evidence, and Gate
+  0 LoRA oracle/capacity audit. Use four-way arm/task/seed parallelism if a
+  single DDP job does not scale well; do not leave safe available GPUs idle.
+- Active contracts now fix LoRA as the only adaptation mechanism, the Gate 0
+  capacity audit, direct complete-LoRA Writer supervision, the A/B/C ordinary-RL
+  causal arms and metrics, frozen-base source outer learning, frozen-held
+  isolation, positive long-term completion evidence, and OpenVLA-OFT scale
+  confirmation. Historical `docs/expert_plan.md` remains unchanged provenance.

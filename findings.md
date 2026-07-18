@@ -1030,3 +1030,62 @@
   checks. A scope regression fixes the historical expert-plan SHA, rejects
   active Gate-1/geometry milestones, and documents the sealed phase-0 legacy
   field as non-executable provenance.
+
+## Full-lifecycle direct-LoRA causal contract
+
+- The current project uses LoRA only. Bottleneck adapters, IA3, prefix tuning,
+  a shared base adapter/shared LoRA, and any other parallel trainable policy
+  state are excluded. Gate 0's independently fitted task-local LoRA establishes
+  useful-update existence and a behavioral upper bound; its factors are not a
+  unique teacher that Writer must imitate.
+- Because LoRA can itself be the limiting mechanism, Gate 0/source-validation
+  includes a bounded capacity audit. Zero/base versus independent task-local
+  LoRA is the matched comparison. Action-expert partial/full updates or full
+  fine-tuning are explicitly non-matched capability upper bounds. If only an
+  upper bound succeeds, the target/rank contract is too narrow and enters Gate
+  recovery; Writer acquisition is not blamed for missing capacity.
+- Writer consumes language plus action-hidden teaching video and emits the full
+  task-specific LoRA under the fixed target/rank contract. Its primary signal is
+  independent-query action/flow/behavioral loss through functional adapter
+  application. Raw factor MSE cannot be primary and oracle-delta imitation is
+  optional auxiliary supervision only.
+- The ordinary-RL causal test is fixed as A) zero-LoRA initialization plus
+  ordinary RL, B) cold-start Writer LoRA initialization plus identical RL, and
+  C) reward-outer-trained Writer LoRA initialization plus identical RL. Targets,
+  rank/count, optimizer/algorithm, hyperparameters, seeds, reward, and
+  interactions match. Primary reports include J0, AUC, time-to-threshold, J_K,
+  and J_K-J0; claims about learning dynamics require a
+  matched-initial-performance or equivalent control.
+- The default source outer stage keeps the shared base frozen, updates only the
+  inner task-local LoRA on the model side, and updates Writer with the source
+  outer objective. Held evaluation freezes base, Writer, encoders, and all
+  shared state; only the predeclared task-local LoRA may use held reward.
+  Accordingly the supported claim is an improved task-conditioned LoRA
+  initialization without restricting later ordinary RL, not a learned
+  optimizer, direction, geometry, or subspace.
+- The active Goal spans the entire mechanism through frozen-held comparisons
+  against zero/base, average, retrieval, capacity-matched language-only direct
+  generation, causal language/video controls, cold-versus-outer Writer, and
+  OpenVLA-OFT scale confirmation. No environment, resume, throughput, Gate -1,
+  Gate 0, one-run, or authorization milestone can complete it.
+
+## World-size-4 recovery is operationally sufficient
+
+- The amended clean world-size-4 resume run at commit `9a8a8f5` completed rc 0.
+  Result SHA256
+  `e996dd9f5290bbb8302c1a051d81783a3353ad433d15530742ae436f6ef60a12`
+  records exact completed step, model, optimizer, scheduler, RNG, next raw batch,
+  and next row-key identity under topology contract SHA256
+  `04bf00a4326f62119b32ca22ef9836980d5743e61eb2f1366e85ae4feae25e9d`.
+  The checkpoint was schema 3/world size 4, validated before its 1.32GB payload
+  was cleaned, and the resumed step completed without functional divergence.
+- GPUs 4--7 peaked at 12,162 MiB with at least 68,993 MiB free; measured probe
+  time was 93.19 seconds. This is safe but far below the desired steady-state
+  memory envelope, so later useful batch/task/seed parallelism should consume
+  the available capacity rather than reserve it idle.
+- This closes the bounded resume investigation. Exact or ambient RNG digests,
+  bitwise telemetry/log identity, and new identity surfaces cannot block a
+  scientific Gate absent evidence that they alter checkpoint recovery, sampled
+  data, closed-loop success, matched fairness, or held isolation. The full
+  planned 1/2/4 curve is superseded by at most one necessary short four-GPU
+  throughput/stability window before source competence and Gate 0.

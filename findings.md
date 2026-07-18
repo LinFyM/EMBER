@@ -690,3 +690,33 @@
   faster end-to-end than batches 32 and 64 while remaining far above the 10 GiB
   headroom floor. These measurements select execution efficiency only and
   contain no task-classification outcome.
+
+### First canonical result: current causal-context representation fails
+
+- The run is mechanically complete and leakage-safe: every checksum, JSON,
+  cache shape/dtype/finite check, MP4 decode, source/model/split authority, and
+  atomic link passes. The encoder was exactly repeatable at the same batch
+  shape. This excludes implementation failure as an explanation for the
+  scientific result.
+- Ordered query balanced accuracy is 0.625 (95% bootstrap [0.50, 0.75]) versus
+  the frozen 0.80 minimum. Only 9/24 bidirectional query pairs are both correct,
+  and same-scene wrong-video specificity is 0.625. Ordered exceeds first-frame
+  and static-median by only 12.5 points, not 20.
+- Temporal and endpoint controls contradict a motion-use claim: reversed
+  accuracy is 0.729 and shuffled is 0.708, both above ordered; last-frame is
+  0.729, also above full video; drop-last-20% is 0.542. Consequently temporal
+  order, endpoint independence, and action-hidden video content utility are not
+  established on this reader.
+- Readout-only underfitting is not the leading cause. Ordered support accuracy
+  is 0.8125, query is 0.625, and nearest-centroid query accuracy is identically
+  0.625. Class centroids in the final causal-context space have cosines
+  0.999601 on support and 0.999775 on query, showing that this single pooled
+  token largely collapses the subtle task difference. RGB insufficiency remains
+  possible because the two identical-color butters are small and often
+  occluded, but representative videos visibly differ in which object moves.
+- The prioritized bounded remedy is therefore representation-specific: keep
+  the same pinned model, cached source RGB, support/query rows, conditions,
+  ridge readout, batch, metrics, and thresholds; extract per-frame frozen visual
+  connector features and use one fixed temporal-moment descriptor. This is the
+  least invasive test of whether temporal detail was lost by causal-context
+  pooling. It is not a Writer, learned temporal encoder, or threshold repair.

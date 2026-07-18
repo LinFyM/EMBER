@@ -91,6 +91,40 @@ The checksummed result and compact local report are
 and `language_action_latest/index.html`. The existing overlap gallery remains
 the video authority; this action-only diagnostic does not duplicate media.
 
+## Action-hidden video diagnostic and failure classification
+
+The first frozen source-only video probe completed from clean commit `b256227`
+without mechanical or leakage failure. It uses same-scene source tasks 3/4,
+disjoint 24+24 demonstrations per task, 16 standardized third-person RGB
+frames, one frozen SmolVLM2 causal-context feature, and a fixed dual-ridge
+readout. All 21 checksummed artifacts, both caches, and fourteen control videos
+validate; validation and held numeric access are zero.
+
+| Video diagnostic | Result |
+| --- | ---: |
+| Ordered balanced accuracy (95% bootstrap) | 0.625 [0.50, 0.75] |
+| Bidirectional query pairs both correct | 9 / 24 |
+| Same-scene wrong-video specificity | 0.625 |
+| First-frame / static-median accuracy | 0.500 / 0.500 |
+| Last-frame accuracy | 0.729 |
+| Reversed / shuffled accuracy | 0.729 / 0.708 |
+| Drop-last-20% accuracy | 0.542 |
+
+This fails the predeclared 0.80 primary and pair thresholds, both 20-point
+static-control gaps, the temporal-order gap, endpoint ratio, and drop-last
+retention. Gate -1 and Writer authorization therefore remain false. The result
+is classified primarily as representation/acquisition because the current
+final-token class centroids are nearly collapsed and a nearest-centroid reader
+does not improve query accuracy; source hashes, exact repeats, finite features,
+balanced rows, and video decoding pass. RGB information insufficiency remains a
+live alternative rather than a conclusion.
+
+One bounded recovery is frozen before rerun: reuse the exact RGB cache and all
+splits, controls, labels, readout, model weights, batch, metrics, and thresholds,
+while replacing only the final causal-context token with fixed per-frame visual
+connector temporal moments. A second failure is retained and diagnosed; it is
+not permission to lower standards or select a different task pair post hoc.
+
 ## Permanent specification-only reseal
 
 ### Authority and role definitions
@@ -181,7 +215,7 @@ minimal failure packet rather than being rewritten after recovery.
 | Prompt-path specification pilot | scale candidate only | On overlap-trained `libero_spatial` tasks 0/1, correct is 6/8 and 6/8; no-spec is 0/8 and 0/8; scene-only is 2/8 and 0/8; swapped is 0/8 and 0/8. This is not a LIBERO-90 result. |
 | Same-observation language-to-action path | diagnostic pass | Exact correct repeats and 16/16 substantive action-plan contrasts remove repeated-reset rendering as the prompt-effect explanation. Goal correctness is not measured. |
 | Same-init paired executable goals | source evaluator mechanics pass; policy behavior pending | Tasks 3/4 have exact shared-state compatibility and 16/16 native-goal specificity. This does not show a policy follows the switched spec. |
-| Video content and temporal necessity | protocol frozen; canonical result pending | Source tasks 3/4, disjoint support/query demos, RGB-only frozen encoder/readout, wrong/same-scene/shuffled/reversed/first/last/static/drop-last controls, thresholds, and seeds are sealed before outcomes. This cannot itself pass Gate -1. |
+| Video content and temporal necessity | first representation failed; one bounded recovery pending | Ordered is 0.625 and reversed/shuffled/last are higher. Mechanics pass, but content/temporal criteria fail. The exact-cache framewise temporal representation recovery changes no task, threshold, weight, or held access. |
 
 ## Method, robustness, and leakage boundary
 
@@ -213,7 +247,7 @@ ordered role records; it is not inferred from policy behavior.
 - No LIBERO-90 policy success, oracle, Writer, or held reward result was read in
   selecting or validating the resealed task IDs.
 
-Next, execute the frozen action-hidden video content/temporal controls, then obtain legal
+Next, execute the frozen same-cache video representation recovery, then obtain legal
 source-task competence and evaluate correct behavior on the paired native-goal
 surface without changing its state or evaluator. Gate 0 and Gate 1 remain
 downstream; Writer center training remains unauthorized.

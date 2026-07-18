@@ -163,4 +163,9 @@ progress through the complete design only when predecessor evidence supports it.
     0--23, query demos 24--47, reserved demos 48--49, 16 third-person RGB
     frames, one neutral frozen SmolVLM2 encoder, one fixed dual-ridge readout,
     and ordered/reversed/shuffled/first/last/static-median/drop-last-20%
-    controls. Canonical execution and interpretation remain pending.
+    controls. The first canonical execution is mechanically valid but fails the
+    frozen evidence thresholds: ordered balanced accuracy is 0.625 and temporal
+    controls do not degrade. Preserve this failure packet and run one bounded
+    representation recovery using the same RGB cache, task/demo split,
+    readout, thresholds, and model weights: replace only the collapsed final
+    causal-context token with fixed framewise visual-connector temporal moments.

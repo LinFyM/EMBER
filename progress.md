@@ -318,6 +318,46 @@
   architecture review. Canonical output is still pending and no scientific
   metric has been read.
 
+## Gate -1 action-hidden video failure packet and recovery
+
+- Clean commit `b256227` produced canonical longrun
+  `gate_minus1_video_information_20260718_060251` with main rc 0 and external
+  artifact `video_information_20260718T060241Z`. All 21 listed files pass
+  checksums; both NPZ caches load without pickle, all 384x960 features are
+  finite, all fourteen 16-frame 128x128 MP4 controls decode, the latest link is
+  exact, and GPU 4 was released. Validation and held numeric access remain zero.
+- The predeclared result is negative/ambiguous rather than a mechanics failure.
+  Ordered query balanced accuracy is 0.625 with a 95% source-stratified
+  bootstrap interval of [0.50, 0.75], bidirectional query-pair correctness is
+  9/24, and wrong-video specificity is 0.625. First-frame and static-median are
+  0.50, but last-frame is 0.729, reversed is 0.729, shuffled is 0.708, and
+  drop-last-20% is 0.542. Thus content, temporal order, endpoint independence,
+  and the 0.80 primary threshold all remain unestablished; Gate -1 and Writer
+  authorization stay false.
+- The failure is classified primarily as representation/acquisition. The same
+  fixed readout reaches only 0.8125 on ordered support and 0.625 on query; a
+  no-hyperparameter nearest-centroid diagnostic is also 0.625. Frozen
+  causal-context class centroids are almost collapsed (support cosine 0.999601,
+  query cosine 0.999775). Exact same-batch repeats, source hashes, balanced
+  partitions, finite caches, and video decoding rule out the mechanical layers;
+  closed-form fitting rules out iterative optimization instability. Subtle
+  same-color objects and robot occlusion remain a data/information alternative,
+  so this result does not yet prove that RGB itself is insufficient.
+- The lowest-cost discriminating recovery is frozen before rerun: reuse the
+  exact checksummed RGB cache and all task/demo/control/threshold/readout
+  choices, retain the same SmolVLM2 weights and matched batch 48, and replace
+  only the final LM context token with per-frame visual-connector embeddings
+  summarized by fixed mean/first/last/signed-delta/linear-time-slope moments.
+  No language, task ID, privileged field, held data, threshold search, model
+  fine-tuning, or alternative task pair is introduced. If ordered performance
+  remains below 0.80 or temporal/static criteria still fail, retain that result
+  and return to information/data diagnosis rather than changing the standard.
+- The run used one A100 for 38.80 seconds, reached 100% sampled utilization,
+  50,143 MiB total memory used (49,624 MiB Torch reserved), kept 31,777 MiB
+  headroom, peaked at 3,857,596 KiB host RSS, and retained 58,908,493 bytes.
+  The gallery is available at `video_information_latest/index.html`; the RGB
+  and feature caches are intentionally retained for the bounded recovery.
+
 ## Current phase
 
 Phase 0, reproducible substrate, is in progress. The immutable contract, first
@@ -336,8 +376,9 @@ outcome input. The fresh canonical manifest and source-only normalization under
 the new IDs now pass. The source same-state native-goal surface passes its
 mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
 same-observation language-to-action path. Gate -1 is still in progress on
-correct paired-goal behavior with legal source competence; the video causal
-protocol is frozen but not yet executed. Writer training remains unauthorized.
+correct paired-goal behavior with legal source competence. The first video
+causal probe is a preserved representation-level failure and its one bounded
+same-cache recovery is pending. Writer training remains unauthorized.
 
 ## Implementation ownership review
 
@@ -406,6 +447,11 @@ protocol is frozen but not yet executed. Writer training remains unauthorized.
   policy builder/action postprocessor, links the prior competence artifact by
   hash, and never steps a rollout or changes goal semantics. Its config and
   launcher are the sole current path and retire with Gate -1 evidence.
+- The action-hidden video diagnostic has three non-overlapping owners described
+  in its prelaunch section: pure protocol/statistics, pinned data/model runtime,
+  and one canonical artifact/CLI path. The split resolves the architecture
+  guard's former >1,000-line single-file hard violation; no alternate encoder,
+  reader, launcher, or legacy compatibility path remains active.
 - The action-hidden video diagnostic has three non-overlapping owners described
   in its prelaunch section: pure protocol/statistics, pinned data/model runtime,
   and one canonical artifact/CLI path. The split resolves the architecture

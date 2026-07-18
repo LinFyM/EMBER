@@ -35,6 +35,9 @@ from ember.gate_zero_support.mature_contract import (  # noqa: E402
     GateZeroMatureControlContractError,
     load_mature_lora_positive_control_spec,
 )
+from ember.gate_zero_support.mature_lora_lr_contract import (  # noqa: E402
+    GateZeroMatureLoraLRContractError,
+)
 from ember.gate_zero_support.screen import decide_support_screening  # noqa: E402
 
 
@@ -55,6 +58,12 @@ class GateZeroMatureLoraPositiveControlTest(unittest.TestCase):
         )
         self.action_expert_lr_recovery_ladder = (
             ROOT / "configs" / "gate_zero_mature_action_expert_lr_recovery_ladder.toml"
+        )
+        self.lora_lr_recovery_config = (
+            ROOT / "configs" / "gate_zero_mature_lora_lr_recovery.toml"
+        )
+        self.lora_lr_recovery_ladder = (
+            ROOT / "configs" / "gate_zero_mature_lora_lr_recovery_ladder.toml"
         )
         self.gate_zero = ROOT / "configs" / "gate_zero_oracle_pilot.toml"
         self.phase0 = ROOT / "configs" / "phase0.toml"
@@ -166,6 +175,64 @@ class GateZeroMatureLoraPositiveControlTest(unittest.TestCase):
         )
 
         self.assertEqual(spec["variants"], ["mature_action_expert_lr25e6_recovery"])
+
+    def test_matched_lora_lr_recovery_reuses_the_authorized_schedule(self) -> None:
+        spec = load_oracle_fit_spec(
+            self.lora_lr_recovery_config,
+            gate_zero_path=self.gate_zero,
+            phase0_path=self.phase0,
+            competence_path=self.competence,
+        )
+        variant_name = "mature_official_default_r32_lr25e6_recovery"
+        variant = spec["fit"][variant_name]
+
+        self.assertEqual(spec["variants"], [variant_name])
+        self.assertEqual(spec["screening_stage"], "mature_lora_lr_recovery")
+        self.assertIn(spec["screening_stage"], MATURE_SUPPORT_QUERY_STAGES)
+        self.assertEqual(variant["adaptation_kind"], "lora")
+        self.assertEqual(variant["rank"], 32)
+        self.assertEqual(variant["alpha"], 16)
+        self.assertEqual(variant["expected_trainable_parameters"], 1_485_312)
+        self.assertEqual(len(variant["target_modules"]), 37)
+        self.assertEqual(variant["learning_rate"], 0.000025)
+        self.assertEqual(variant["decay_learning_rate"], 0.000000625)
+        self.assertEqual(
+            spec["fit"]["candidate_steps"],
+            [0, 250, 500, 750, 1_000, 2_000, 5_000, 10_000, 20_000],
+        )
+        self.assertFalse(spec["screening_rollout"]["access_authorized"])
+        self.assertTrue(
+            spec["screening_rollout"]["requires_headroom_safe_source_contract"]
+        )
+        self.assertFalse(spec["authority"]["validation_numeric_access"])
+        self.assertFalse(spec["authority"]["held_numeric_access"])
+
+        with self.lora_lr_recovery_ladder.open("rb") as handle:
+            ladder = tomllib.load(handle)
+        self.assertEqual(
+            ladder["parent_fit_contract_sha256"],
+            hashlib.sha256(self.lora_lr_recovery_config.read_bytes()).hexdigest(),
+        )
+        self.assertEqual(ladder["stage_steps"], [250, 500, 750, 1_000])
+        self.assertFalse(ladder["success_at_step1000"]["authorizes_gate_zero"])
+        self.assertTrue(
+            ladder["success_at_step1000"]["authorizes_headroom_safe_source_rollout_contract"]
+        )
+
+    def test_matched_lora_lr_recovery_drift_fails_closed(self) -> None:
+        changed = self.lora_lr_recovery_config.read_text(encoding="utf-8").replace(
+            "learning_rate = 0.000025", "learning_rate = 0.00005"
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "lora-lr-recovery.toml"
+            path.write_text(changed, encoding="utf-8")
+            with self.assertRaises(GateZeroMatureLoraLRContractError):
+                load_oracle_fit_spec(
+                    path,
+                    gate_zero_path=self.gate_zero,
+                    phase0_path=self.phase0,
+                    competence_path=self.competence,
+                )
 
     def test_mature_action_expert_upper_bound_is_non_matched_and_cannot_authorize_writer(self) -> None:
         primary = self.load()

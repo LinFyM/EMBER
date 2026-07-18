@@ -527,6 +527,27 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     under ladder SHA256 `6947a9a8...ebc2c`; stop at the first failed rule. A
     step-1000 pass authorizes only the identical schedule on LoRA, not Gate 0,
     Writer, action-expert rollout, another LR trial, or a target/rank search.
+    The exact-resume action-expert ladder has now completed through step 1000
+    and stops there. Task 3/4 query reductions at steps 250, 500, 750, and 1000
+    remain positive; step 1000 is +7.883%/+3.710% (median +5.797%), above the
+    frozen 2%/nonnegative criterion, although it regresses from the step-750
+    median of +6.974%. All stage commands return 0, final candidate/recovery/
+    telemetry hashes validate, GPU 4/5 are released, and no formal rollout,
+    validation, or held surface was opened. This proves only that the bounded
+    acquisition schedule can improve independent query loss in the non-matched
+    action-expert space and authorizes no action-expert 2k continuation.
+    The matched 37-target rank-32 LoRA recovery is now permanently predeclared
+    in `gate_zero_mature_lora_lr_recovery.toml` (SHA256
+    `693cd61457ec5ec0aafb1c72837899c58f44f2c90e812cb14d115385393fafca`)
+    with ladder SHA256
+    `436bae48c5c9f754346b18bd424378d70eee5900eb0add96f6a4ea99104817d3`.
+    It changes only the matched LoRA state class relative to the successful
+    action-expert schedule and uses the same 250/500/750/1000 continuation
+    rules. Run tasks 3/4 first to step 250 on two GPUs, exact-resume only after
+    each frozen rule passes, and do not consume closed loop during staging.
+    Even a step-1000 pass authorizes only a separately predeclared headroom-safe
+    source rollout contract: source task 3 is already 8/8 under the base and
+    cannot satisfy a positive-gain-on-both-tasks rule.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

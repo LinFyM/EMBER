@@ -1,0 +1,48 @@
+schema_version = 1
+name = "smolvla_gate_zero_mature_lora_lr_recovery_ladder_v1"
+status = "predeclared_before_matched_lora_step250_query_outcomes"
+decided_at_utc = "2026-07-18T20:17:10Z"
+parent_fit_contract_sha256 = "693cd61457ec5ec0aafb1c72837899c58f44f2c90e812cb14d115385393fafca"
+same_training_trajectory_required = true
+same_37_target_rank32_lora_space_as_primary = true
+same_schedule_as_successful_action_expert_lr_recovery = true
+stage_steps = [250, 500, 750, 1000]
+maximum_optimizer_steps = 20000
+maximum_authorized_step_for_this_ladder = 1000
+first_segment_max_wall_minutes = 10
+formal_closed_loop_access = false
+validation_numeric_access = false
+held_numeric_access = false
+
+[evidence]
+mechanics = ["candidate hash", "recovery hash", "optimizer", "scheduler", "RNG", "query row digest", "finite loss and gradient", "1485312 exact trainable parameters"]
+stage_metrics = ["independent source query flow-MSE reduction", "action-drift diagnostic", "support loss", "throughput", "memory", "wall-clock"]
+query_reduction_formula = "(step0_query_flow_mse - stage_query_flow_mse) / step0_query_flow_mse"
+development_rollout_used = false
+action_expert_step1000_median_query_reduction_fraction = 0.057967528984387945
+
+[continuation.step250_to_500]
+minimum_median_query_reduction_fraction = 0.0
+minimum_each_task_query_reduction_fraction = 0.0
+
+[continuation.step500_to_750]
+minimum_median_query_reduction_fraction = 0.005
+minimum_each_task_query_reduction_fraction = 0.0
+
+[continuation.step750_to_1000]
+minimum_median_query_reduction_fraction = 0.01
+minimum_each_task_query_reduction_fraction = 0.0
+
+[success_at_step1000]
+minimum_median_query_reduction_fraction = 0.02
+minimum_each_task_query_reduction_fraction = 0.0
+authorizes_headroom_safe_source_rollout_contract = true
+authorizes_gate_zero = false
+authorizes_writer = false
+
+[stop_and_diagnose]
+rule = "stop at the first failed continuation; no second learning rate or target/rank search is authorized"
+mechanical_failure = "repair once and exact-resume from the last validated atomic candidate"
+scientific_failure = "revise the source-only Gate-0 data or acquisition evidence plan; do not blame Writer"
+scientific_success = "freeze the step-1000 candidate and predeclare a headroom-safe source closed-loop contract before using any formal rollout surface"
+forbidden = ["restart from scratch when recovery is valid", "formal closed-loop access during staging", "held access", "threshold reduction", "another learning-rate trial", "target/rank search", "Gate-0 or Writer authorization"]

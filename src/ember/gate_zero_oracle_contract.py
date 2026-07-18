@@ -22,6 +22,7 @@ MATURE_CONTROL_NAMES = frozenset(
         "smolvla_libero90_gate_zero_mature_lora_all_linear_recovery_v1",
         "smolvla_libero90_gate_zero_mature_action_expert_upper_bound_v1",
         "smolvla_libero90_gate_zero_mature_action_expert_lr_recovery_v1",
+        "smolvla_libero90_gate_zero_mature_lora_lr_recovery_v1",
     }
 )
 
@@ -316,6 +317,13 @@ def _validate_mature_prior_artifacts(
         )
         for task_id in (3, 4):
             _validate_update_scale_probe(output_root, authority, task_id=task_id)
+    elif name == "smolvla_libero90_gate_zero_mature_lora_lr_recovery_v1":
+        _validate_task_artifact_group(
+            output_root,
+            authority,
+            prefix="lr_action_expert",
+            label="lower-LR action-expert",
+        )
 
 
 def load_oracle_fit_spec(

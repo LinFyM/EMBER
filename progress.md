@@ -1539,3 +1539,30 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   stopping. Focused contract tests pass 18/18; real prerequisite loading and
   canonical launcher dry-run pass. The next launch is task 3/4 to step 250 on
   two GPUs; no LR grid, action-expert rollout, or LoRA run is yet authorized.
+
+### Action-expert lower-LR ladder completed; matched LoRA ladder frozen
+
+- Long-runs `gate0_action_expert_lr_recovery_t3_stage250_20260718_195048`
+  through `...stage1000_20260718_200640`, with the corresponding task-4 runs,
+  all complete main rc 0. Query reductions at step 1000 are +7.883%/+3.710%
+  (median +5.797%), passing the frozen source-query criterion; step 750 was the
+  observed peak (+8.771%/+5.177%, median +6.974%). Stop the non-matched
+  diagnostic at 1000 rather than burning to 2k. Final state/recovery hashes are
+  bound in the next contract, both GPUs are 0MiB after exit, and closed-loop,
+  validation, held, Gate 0, and Writer surfaces remain unopened.
+- Added the dedicated strict config validator
+  `mature_lora_lr_contract.py`; it only validates a new mode of the existing
+  oracle fitter. Config/ladders SHA256 values are
+  `693cd61457ec5ec0aafb1c72837899c58f44f2c90e812cb14d115385393fafca`
+  and `436bae48c5c9f754346b18bd424378d70eee5900eb0add96f6a4ea99104817d3`.
+  The contract binds all upstream hashes and both action-expert step-1000
+  candidate/recovery/telemetry packets, keeps 37 targets/rank32/1,485,312
+  parameters, and reuses exactly the validated lower-LR schedule.
+- Focused tests pass 20/20 and the full repository suite passes 219/219 in
+  44.38s. Real prerequisite validation resolves source checkpoint step 10k;
+  the sole launcher dry-run resolves the exact config/variant and
+  `--stop-after-step 250`. Next, commit/push this clean pre-outcome contract,
+  perform live GPU/storage preflight, and launch task 3/4 to step 250 on two
+  independent GPUs. Continue the same outputs only if the result-blind ladder
+  passes. Do not open the formal closed-loop surface until a separate
+  headroom-safe source-only contract is frozen.

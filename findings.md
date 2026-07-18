@@ -1626,3 +1626,45 @@
   preserve task 3 as a maintenance/spec control or predeclare another legal
   source task with measurable headroom. This ceiling cannot be repaired by
   lowering a success threshold after outcomes.
+
+## Lower learning rate converts the action-expert acquisition into positive query evidence
+
+- The same task-local action-expert trajectory was run by exact resume at
+  steps 250, 500, 750, and 1000 with only the predeclared 0.25 learning-rate
+  scale. Task 3 query reductions were 4.922%, 7.269%, 8.771%, and 7.883%; task
+  4 reductions were 3.790%, 4.808%, 5.177%, and 3.710%. The step-1000 median is
+  5.797%, so the frozen median-at-least-2% and every-task-nonnegative criterion
+  passes. The decline from the step-750 median of 6.974% is recorded, and the
+  non-matched trajectory is not extended to 2k.
+- Every stage completed rc 0 through the existing atomic resume path. Final
+  task-3/task-4 candidate manifests hash to `a1eaaf1d...24ab` and
+  `ca5f1586...be1c`; recovery manifests hash to `389257ca...1255` and
+  `7a495a9f...efdc`; telemetry hashes are `241bce7a...2588` and
+  `1acba6cf...9dac`. The 99,880,992-parameter states and optimizer/scheduler/RNG
+  recovery remain loadable. No formal closed loop, validation, held surface,
+  Gate-0 decision, or Writer authority was used.
+- This result distinguishes update magnitude from a total absence of useful
+  supervised signal. It does not prove LoRA capacity or behavioral utility.
+  The only authorized next comparison is the original 37-target rank-32 LoRA
+  under the identical lower-LR schedule and staged source-query rules.
+- A second benchmark-design issue remains independent of the optimizer result:
+  task 3 has frozen-base source competence 8/8, so a positive success-count gain
+  on both tasks is impossible. The formal matched LoRA closed-loop surface must
+  stay unopened until a result-blind, source-only headroom-safe contract is
+  frozen; thresholds cannot be repaired after observing rollout outcomes.
+
+## Matched mature-LoRA recovery is sealed before outcomes
+
+- Contract SHA256 `693cd614...fafca` fixes the same 40 legal source support
+  demonstrations, query demos 40--45, sampler/noise/augmentation/AdamW seed,
+  37 exact SmolVLA-native targets, rank 32/alpha 16/dropout 0, and 1,485,312
+  trainable parameters. Its only optimization change from the failed primary
+  LoRA recipe is the action-expert-validated `2.5e-5/6.25e-7` peak/decay LR.
+  Ladder SHA256 `436bae48...17d3` permits only 250 -> 500 -> 750 -> 1000 exact
+  resumes and forbids closed loop, a second LR, target/rank search, Gate 0, or
+  Writer authorization during staging.
+- The strict loader binds both final action-expert step-1000 packets and all
+  upstream contracts. A real prerequisite load resolves the frozen source-base
+  checkpoint at step 10k, the canonical launcher dry-run stops at step 250,
+  and the full repository suite passes 219 tests. This is one configuration
+  mode of the existing fitter/launcher, not a second training path.

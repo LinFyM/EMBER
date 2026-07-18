@@ -454,6 +454,17 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     gradient, and 17.93/18.56GiB peak allocation/reservation. The first-row
     digest exactly matches the primary trajectory and GPU 4 returned to 0MiB.
     The two task-1k staged fits are therefore mechanically authorized.
+    Both recovery fits reached the atomic step-1k boundary with rc 0 in
+    13:35/13:21. Task 3/4 independent-query reductions are 8.381%/1.276%
+    (median 4.829%), so both are nonnegative and the median exceeds the frozen
+    2% threshold. Task 4's weak positive response is retained as a diagnostic
+    signal without changing the aggregate rule. Candidate, trainable-state,
+    recovery and telemetry hashes validate; query/anchor identities and sample
+    counts exactly match the primary recipe. Peak device memory is
+    19,143/19,379MiB and memory-active mean utilization is 89.39%/90.69%; both
+    devices were released. No final rollout, validation, or held surface was
+    opened. Exact-resume these same states from step 1k to step 2k next, then
+    apply only the frozen all-linear 2k-to-5k rule.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

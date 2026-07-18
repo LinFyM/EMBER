@@ -1459,3 +1459,34 @@
   is identical to primary task 3 step 1, directly confirming matched sampling.
   Peak Torch allocation/reservation was 17.93/18.56GiB and the GPU returned to
   0MiB. No query candidate or rollout outcome was evaluated.
+
+## All-linear recovery shows a positive but task-heterogeneous 1k query trend
+
+- The two `all_action_expert_linear_r32_same_recipe` jobs completed normally at
+  the predeclared step-1000 atomic boundary in 13:35/13:21. Task 3 query MSE
+  falls from 0.518030 to 0.474614 (8.381%); task 4 falls from 0.488088 to
+  0.481860 (1.276%). Their median reduction is 4.829%, and both task reductions
+  are nonnegative, so the frozen 1k-to-2k rule passes. Task 4 is substantially
+  weaker than task 3 and weaker than its primary-support 1k result; that is a
+  diagnostic signal, not authority to rewrite the result-blind continuation
+  rule.
+- Candidate and recovery validators pass for both tasks. Candidate-manifest
+  SHA256 values are
+  `ff2432f7c31d45fc25bba37c022d09180df1cd9df266030794ff6e52123c707f`
+  and `2a6b28fd9650d3d915b99cede45feb624f537c7f3ea8aaa66c224695940d916f`;
+  trainable-state values are
+  `c3105040ff92b920275f85f33600b2a6077d0c63977e5fbe5bfc31509a1f8b90`
+  and `4b1b44f0102777b89ae6ac97456b63e71fd4b885ffc71b3cd9b16e20e6757165`;
+  recovery-manifest values are
+  `0191ba569b8133d03f99a81d8353982a44566197cf688b42a761064d9151bd32`
+  and `6e12ab7c3e5e721de663fd7339b3abd7fdbc8e1749c020c858beae9b5c1f1048`.
+  Query/anchor digests and query sample counts exactly match the primary
+  mature recipe, isolating target support as intended.
+- Telemetry SHA256 values are
+  `a441199d0ab40d377ba6adbebff8693fad830c6febbde0b7c4663c0a80d7d4b8`
+  and `da509a07e4d3945098ef0e1e6cab2d81f48b72ac214a90ab66a8f9675d0dac3e`.
+  Peak device memory is 19,143/19,379MiB, leaving more than 60GiB per device;
+  memory-active mean utilization is 89.39%/90.69%. Both GPUs were released and
+  no final closed-loop, validation, or held surface was accessed. This evidence
+  authorizes only exact-resume to the 2k query boundary, not Gate 0, Writer, or
+  target-support sealing.

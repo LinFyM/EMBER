@@ -1444,3 +1444,15 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   allocation/reservation. It opened no query candidate or rollout surface and
   left GPU 4 at 0MiB with no worker residue. The task-3/task-4 1k stage may now
   launch on two independent GPUs under the frozen ladder.
+- Recovery stage-1k long-runs
+  `gate0_mature_all_linear_t3_stage1k_20260718_181417` and
+  `gate0_mature_all_linear_t4_stage1k_20260718_181417` completed main rc 0 in
+  13:35/13:21. Task 3/4 query reductions are 8.381%/1.276% (median 4.829%),
+  satisfying the result-blind 1k-to-2k rule of median at least 2% and every task
+  nonnegative. Task 4's weak response is logged but does not change that rule.
+  Candidate/recovery artifacts, state hashes, telemetry hashes, primary-matched
+  query/anchor digests and sample counts all validate. Peak memory is
+  19,143/19,379MiB and memory-active utilization averages 89.39%/90.69%; GPU
+  4/5 returned to 0MiB. The next authorized action is exact-resume of these same
+  outputs to step 2k. No final rollout, validation, held, Gate 0, final target,
+  or Writer authority has been opened.

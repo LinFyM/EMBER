@@ -1196,3 +1196,27 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   the derived seed batches and leaves no simulator process behind. The next
   action is one fresh-output replay of the same immutable grant on the intended
   24--31 surface, not a rerun or reinterpretation of the invalid outcomes.
+
+### Formal rank-8 screening recovery launch contract
+
+- The repaired implementation is committed as `a4d9aac` on clean
+  `phase0/reproducible-substrate`; the documentation-only launch freeze is its
+  clean descendant. The command reuses immutable grant SHA256
+  `fd8e28a7f0b828e14ff7cfb794a047409b6e8e96562646b38aef232b65332992`
+  and the six checksum-valid rank-8 selected states, but writes only to fresh
+  output
+  `$EMBER_OUTPUT_ROOT/gate_zero/target_support_audit/screening/rank8_recovery1_20260718T151445Z`.
+  The failed output and long-run state remain unchanged.
+- Four independent ranks use physical GPUs 4/5/6/7 for eight arms and 64
+  episodes on source init states 24--31, seeds 5500--5507. The support states,
+  thresholds, query evidence, task IDs, prompts, evaluator, policy RNG, and
+  scientific budget are unchanged; the sole repair is the extra deterministic
+  warm-up reset required to reach the frozen surface. Expected peak is below
+  22GiB per GPU, wall time 3--5 minutes, and additional storage below 1GiB.
+  Trackio plus one video per arm and a checksummed gallery provide live/later
+  inspection. Stop after 64 episodes or first mechanics/authority error; no
+  resume or overwrite of either output is allowed.
+- Immediate preflight: GPUs 4--7 are 0MiB and idle, while an unrelated MEMLLM
+  job owns GPUs 0--3 and is untouched. Personal usage is 294GiB of the 500GiB
+  cap; `/data` has 2.9TiB free. Git is clean, all upstream checksums pass, the
+  reset-only live probe passes, and the repository suite passes 193/193 tests.

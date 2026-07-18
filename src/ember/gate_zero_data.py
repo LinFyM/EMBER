@@ -302,6 +302,9 @@ class TaskDemoFrameBatchSampler:
         gradient_accumulation_steps: int,
         seed: int,
         start_optimizer_step: int = 0,
+        rank: int = 0,
+        world_size: int = 1,
+        global_effective_batch_size: int | None = None,
     ) -> None:
         if (
             micro_batch_size <= 0
@@ -310,11 +313,21 @@ class TaskDemoFrameBatchSampler:
             or start_optimizer_step < 0
         ):
             raise GateZeroDataError("invalid hierarchical batch sampler bounds")
+        if world_size <= 0 or rank < 0 or rank >= world_size:
+            raise GateZeroDataError("invalid distributed sampler rank")
+        inferred_global_batch = micro_batch_size * gradient_accumulation_steps * world_size
+        if global_effective_batch_size is None:
+            global_effective_batch_size = inferred_global_batch
+        if global_effective_batch_size != inferred_global_batch:
+            raise GateZeroDataError("distributed sampler changes the global effective batch")
         self.micro_batch_size = micro_batch_size
         self.optimizer_steps = optimizer_steps
         self.gradient_accumulation_steps = gradient_accumulation_steps
         self.seed = seed
         self.start_optimizer_step = start_optimizer_step
+        self.rank = rank
+        self.world_size = world_size
+        self.global_effective_batch_size = global_effective_batch_size
         nested: dict[int, dict[int, list[int]]] = {}
         for flat_index, (task_id, demo_index, _) in enumerate(dataset.frame_index):
             nested.setdefault(task_id, {}).setdefault(demo_index, []).append(flat_index)
@@ -332,7 +345,13 @@ class TaskDemoFrameBatchSampler:
             for accumulation_step in range(self.gradient_accumulation_steps):
                 batch = []
                 for local_slot in range(self.micro_batch_size):
-                    effective_batch_slot = accumulation_step * self.micro_batch_size + local_slot
+                    effective_batch_slot = (
+                        accumulation_step * self.world_size * self.micro_batch_size
+                        + self.rank * self.micro_batch_size
+                        + local_slot
+                    )
+                    if effective_batch_slot >= self.global_effective_batch_size:
+                        raise GateZeroDataError("sampler rank shard escaped the global batch")
                     rng = np.random.default_rng(
                         np.random.SeedSequence(
                             [self.seed, optimizer_step, effective_batch_slot]

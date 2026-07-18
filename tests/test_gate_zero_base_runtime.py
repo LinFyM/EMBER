@@ -25,6 +25,8 @@ class GateZeroBaseRuntimeTest(unittest.TestCase):
     def test_effective_batch_is_exact(self) -> None:
         self.assertEqual(gradient_accumulation_steps(64, 8), 8)
         self.assertEqual(gradient_accumulation_steps(64, 64), 1)
+        self.assertEqual(gradient_accumulation_steps(64, 32, world_size=2), 1)
+        self.assertEqual(gradient_accumulation_steps(64, 16, world_size=4), 1)
         with self.assertRaisesRegex(ValueError, "divide"):
             gradient_accumulation_steps(64, 24)
 

@@ -216,4 +216,19 @@ progress through the complete design only when predecessor evidence supports it.
 17. [ ] Launch the now-authorized 10,000-step all-60-source base fit from the
     frozen batch-64 contract, retain two rotating recovery checkpoints plus the
     final scientific candidate, then evaluate only the predeclared source tasks
-    3/4 competence surface before any task-local oracle interpretation.
+    3/4 competence surface before any task-local oracle interpretation. The
+    single-GPU reference is currently running from clean commit `8ff06f2` and
+    must not be interrupted or rebound to new code; it remains the recovery and
+    efficiency reference, not evidence that one GPU is the long-term default.
+18. [ ] After item 17 commits its final hash, run the outcome-free fixed
+    1/2/4-GPU topology probe sequentially on the same available device set.
+    Preserve global effective batch 64, optimizer steps, sample/flow authority,
+    total loader workers, and scheduler. Freeze the fastest safe topology only
+    if it passes the predeclared speedup, efficiency, headroom, global-slot, and
+    same-topology resume rules; otherwise use the four-GPU allowance for
+    independent arm/task/seed work rather than leaving useful devices idle.
+19. [ ] Run the already frozen source-only tasks-3/4 competence comparison on
+    the final 10k checkpoint, preferably four-way arm parallel after live GPU
+    preflight. A correct-arm minimum pass authorizes only task-local oracle
+    fitting; a failure triggers the one bounded identical-contract extension to
+    20k. Neither branch passes Gate -1, Gate 0, or authorizes Writer.

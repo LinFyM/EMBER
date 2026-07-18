@@ -167,6 +167,44 @@ class GateZeroDataTest(unittest.TestCase):
             [index for batch in batches_16 for index in batch],
         )
 
+    def test_distributed_rank_shards_reconstruct_single_rank_draws_without_overlap(self) -> None:
+        dataset = SourceHdf5Dataset(
+            [self.authority], demo_indices=[0, 1], action_chunk_size=2, verify_sha256=False
+        )
+        single = list(
+            TaskDemoFrameBatchSampler(
+                dataset,
+                micro_batch_size=64,
+                optimizer_steps=2,
+                gradient_accumulation_steps=1,
+                seed=29,
+                rank=0,
+                world_size=1,
+                global_effective_batch_size=64,
+            )
+        )
+        for world_size, micro_batch_size in ((2, 32), (4, 16)):
+            rank_batches = [
+                list(
+                    TaskDemoFrameBatchSampler(
+                        dataset,
+                        micro_batch_size=micro_batch_size,
+                        optimizer_steps=2,
+                        gradient_accumulation_steps=1,
+                        seed=29,
+                        rank=rank,
+                        world_size=world_size,
+                        global_effective_batch_size=64,
+                    )
+                )
+                for rank in range(world_size)
+            ]
+            reconstructed = [
+                [index for rank in range(world_size) for index in rank_batches[rank][step]]
+                for step in range(2)
+            ]
+            self.assertEqual(reconstructed, single)
+
     def test_surface_factory_denies_report_without_selection_freeze(self) -> None:
         manifest = self.root / "manifest.json"
         manifest.write_text(

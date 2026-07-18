@@ -16,6 +16,20 @@ from ember.gate_zero_data import (
     SourceHdf5Dataset,
     TaskDemoFrameBatchSampler,
     load_surface_authorities,
+    verify_task_authority,
+)
+from ember.gate_zero_distributed import (
+    DistributedContext,
+    TrainingTopology,
+    broadcast_primary_object,
+    distributed_max,
+    distributed_mean,
+    gather_rank_objects,
+    global_effective_slots,
+    merge_rank_provenance,
+    native_global_flow_inputs,
+    primary_rng_state_sha256,
+    unwrap_distributed_model,
 )
 from ember.gate_zero_runtime import (
     batch_provenance_keys,
@@ -32,12 +46,17 @@ class GateZeroBaseRuntimeError(RuntimeError):
     """Raised when source-base optimization mechanics drift."""
 
 
-def gradient_accumulation_steps(effective_batch_size: int, micro_batch_size: int) -> int:
+def gradient_accumulation_steps(
+    effective_batch_size: int, micro_batch_size: int, *, world_size: int = 1
+) -> int:
     if effective_batch_size <= 0 or micro_batch_size <= 0:
         raise ValueError("batch sizes must be positive")
-    if effective_batch_size % micro_batch_size:
-        raise ValueError("microbatch must divide the effective batch")
-    return effective_batch_size // micro_batch_size
+    if world_size <= 0:
+        raise ValueError("world size must be positive")
+    distributed_micro_batch = micro_batch_size * world_size
+    if effective_batch_size % distributed_micro_batch:
+        raise ValueError("distributed microbatch must divide the effective batch")
+    return effective_batch_size // distributed_micro_batch
 
 
 def build_base_optimizer(
@@ -132,8 +151,12 @@ def make_base_loader(
     prefetch_factor: int,
     persistent_workers: bool,
     pin_memory: bool,
+    rank: int = 0,
+    world_size: int = 1,
 ) -> DataLoader:
-    accumulation_steps = gradient_accumulation_steps(effective_batch_size, micro_batch_size)
+    accumulation_steps = gradient_accumulation_steps(
+        effective_batch_size, micro_batch_size, world_size=world_size
+    )
     sampler = TaskDemoFrameBatchSampler(
         dataset,
         micro_batch_size=micro_batch_size,
@@ -141,9 +164,12 @@ def make_base_loader(
         gradient_accumulation_steps=accumulation_steps,
         seed=sampler_seed,
         start_optimizer_step=start_optimizer_step,
+        rank=rank,
+        world_size=world_size,
+        global_effective_batch_size=effective_batch_size,
     )
     worker_generator = torch.Generator(device="cpu").manual_seed(
-        sampler_seed + start_optimizer_step
+        sampler_seed + start_optimizer_step + rank * 1_000_003
     )
     kwargs: dict[str, Any] = {}
     if num_workers:
@@ -170,10 +196,16 @@ def load_base_training_components(
     dataset_root: Path,
     base_path: Path,
     vlm_path: Path,
+    verify_dataset_sha256: bool = True,
+    verify_base_weight_sha256: bool = True,
 ) -> tuple[SourceHdf5Dataset, Any, Any, Any]:
     """Load the single all-source dataset/policy/processor authority used by Gate 0."""
 
-    if sha256_file(base_path / "model.safetensors") != spec["authority"]["model_weight_sha256"]:
+    if (
+        verify_base_weight_sha256
+        and sha256_file(base_path / "model.safetensors")
+        != spec["authority"]["model_weight_sha256"]
+    ):
         raise GateZeroBaseRuntimeError("base policy weight authority changed")
     authorities, demo_indices = load_surface_authorities(
         spec,
@@ -186,7 +218,7 @@ def load_base_training_components(
         authorities,
         demo_indices=demo_indices,
         action_chunk_size=spec["data"]["action_chunk_size"],
-        verify_sha256=True,
+        verify_sha256=verify_dataset_sha256,
     )
     stats = load_source_normalization(
         normalization_path,
@@ -202,6 +234,34 @@ def load_base_training_components(
         policy.config, dataset_stats=stats
     )
     return dataset, policy, preprocessor, postprocessor
+
+
+def validate_base_training_files_authority(
+    spec: dict[str, Any],
+    phase0: dict[str, Any],
+    *,
+    manifest_path: Path,
+    dataset_root: Path,
+    base_path: Path,
+) -> dict[str, int]:
+    """Hash shared model/data files once before rank-local loading reuses them."""
+
+    if sha256_file(base_path / "model.safetensors") != spec["authority"]["model_weight_sha256"]:
+        raise GateZeroBaseRuntimeError("base policy weight authority changed")
+    authorities, _ = load_surface_authorities(
+        spec,
+        phase0,
+        manifest_path=manifest_path,
+        dataset_root=dataset_root,
+        surface=GateZeroSurface.BASE_FIT,
+    )
+    for authority in authorities:
+        verify_task_authority(authority, verify_sha256=True)
+    return {
+        "task_count": len(authorities),
+        "total_bytes": sum(authority.expected_bytes for authority in authorities),
+        "model_bytes": (base_path / "model.safetensors").stat().st_size,
+    }
 
 
 def training_row_keys(
@@ -226,29 +286,56 @@ def optimizer_step(
     optimizer_step_index: int,
     accumulation_steps: int,
     fixed_flow_seed: int | None = None,
+    topology: TrainingTopology | None = None,
+    distributed_context: DistributedContext | None = None,
 ) -> dict[str, Any]:
     started = time.perf_counter()
     optimizer.zero_grad(set_to_none=True)
     mean_loss: torch.Tensor | None = None
-    row_digest = hashlib.sha256()
+    flow_rng_state_sha256: str | None = None
+    flow_input_sha256: str | None = None
+    local_row_keys: list[str] = []
+    if (topology is None) != (distributed_context is None):
+        raise GateZeroBaseRuntimeError("topology and distributed context must be provided together")
+    owner = unwrap_distributed_model(policy)
     for accumulation_step in range(accumulation_steps):
         raw_batch = next(iterator)
+        if topology is None:
+            effective_start_slot = accumulation_step * len(raw_batch["task_id"])
+        else:
+            slots = global_effective_slots(
+                topology,
+                rank=distributed_context.rank,
+                accumulation_step=accumulation_step,
+            )
+            if len(slots) != len(raw_batch["task_id"]):
+                raise GateZeroBaseRuntimeError("local batch differs from distributed slot shard")
+            effective_start_slot = slots[0]
         keys = training_row_keys(
             raw_batch,
             optimizer_step=optimizer_step_index,
-            effective_batch_start_slot=accumulation_step * len(raw_batch["task_id"]),
+            effective_batch_start_slot=effective_start_slot,
         )
-        for key in keys:
-            row_digest.update(key.encode("utf-8") + b"\0")
+        local_row_keys.extend(keys)
         batch = preprocess_smolvla_batch(
-            raw_batch, preprocessor, list(policy.config.image_features)
+            raw_batch, preprocessor, list(owner.config.image_features)
         )
-        if fixed_flow_seed is None:
+        if fixed_flow_seed is None and topology is None:
             loss = smolvla_flow_loss(policy, batch)
+        elif fixed_flow_seed is None:
+            flow_rng_state_sha256 = primary_rng_state_sha256(distributed_context)
+            noise, flow_time, flow_input_sha256 = native_global_flow_inputs(
+                policy,
+                topology,
+                distributed_context,
+                action_shape=(spec["data"]["action_chunk_size"], owner.config.max_action_dim),
+                device=next(owner.parameters()).device,
+            )
+            loss = smolvla_flow_loss(policy, batch, noise, flow_time)
         else:
             noise, flow_time = deterministic_flow_inputs(
                 keys,
-                action_shape=(spec["data"]["action_chunk_size"], policy.config.max_action_dim),
+                action_shape=(spec["data"]["action_chunk_size"], owner.config.max_action_dim),
                 noise_seed=fixed_flow_seed,
                 time_seed=fixed_flow_seed + 1,
                 device=torch.device("cuda"),
@@ -266,11 +353,42 @@ def optimizer_step(
     learning_rate = float(optimizer.param_groups[0]["lr"])
     optimizer.step()
     optimizer.zero_grad(set_to_none=True)
-    torch.cuda.synchronize()
+    if torch.cuda.is_available() and next(owner.parameters()).is_cuda:
+        torch.cuda.synchronize()
+    local_wall_seconds = time.perf_counter() - started
+    if topology is None:
+        row_digest = hashlib.sha256()
+        for key in local_row_keys:
+            row_digest.update(key.encode("utf-8") + b"\0")
+        row_summary = {
+            "sha256": row_digest.hexdigest(),
+            "global_slot_count": len(local_row_keys),
+            "unique_global_slot_count": len(local_row_keys),
+        }
+        global_mean_loss = mean_loss
+        wall_seconds = local_wall_seconds
+    else:
+        gathered = gather_rank_objects(local_row_keys, distributed_context)
+        row_summary = (
+            merge_rank_provenance(topology, gathered)
+            if distributed_context.is_primary
+            else None
+        )
+        row_summary = broadcast_primary_object(distributed_context, row_summary)
+        global_mean_loss = distributed_mean(mean_loss, distributed_context)
+        wall_seconds = distributed_max(
+            local_wall_seconds,
+            distributed_context,
+            device=next(owner.parameters()).device,
+        )
     return {
-        "loss": float(mean_loss),
+        "loss": float(global_mean_loss),
         "gradient_norm": float(grad_norm),
         "learning_rate_used": learning_rate,
-        "row_keys_sha256": row_digest.hexdigest(),
-        "wall_seconds": time.perf_counter() - started,
+        "row_keys_sha256": row_summary["sha256"],
+        "global_slot_count": row_summary["global_slot_count"],
+        "unique_global_slot_count": row_summary["unique_global_slot_count"],
+        "flow_rng_state_sha256": flow_rng_state_sha256,
+        "flow_input_sha256": flow_input_sha256,
+        "wall_seconds": wall_seconds,
     }

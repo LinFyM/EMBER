@@ -2,16 +2,14 @@
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-CONFIG="$ROOT/configs/gate_zero_oracle_pilot.toml"
+CONFIG="$ROOT/configs/gate_zero_source_competence.toml"
+GATE_ZERO="$ROOT/configs/gate_zero_oracle_pilot.toml"
 PHASE0="$ROOT/configs/phase0.toml"
-TOPOLOGY_CONFIG="$ROOT/configs/gate_zero_training_topology.toml"
 PYTHON=${EMBER_PYTHON:-"$ROOT/.venv/bin/python"}
 
-mode=""
 gpus=""
 output_dir=""
 latest_link=""
-resume_from=""
 dry_run=false
 sampler=""
 
@@ -33,18 +31,15 @@ trap 'handle_signal 143' TERM
 
 while (($#)); do
   case "$1" in
-    --mode=*) mode=${1#*=} ;;
     --gpus=*) gpus=${1#*=} ;;
     --output-dir=*) output_dir=${1#*=} ;;
     --latest-link=*) latest_link=${1#*=} ;;
-    --resume-from=*) resume_from=${1#*=} ;;
     --dry-run) dry_run=true ;;
     *) die "unknown argument: $1" ;;
   esac
   shift
 done
 
-[[ "$mode" = "resume-probe" || "$mode" = "topology-probe" || "$mode" = "train" ]] || die "invalid --mode"
 [[ "$gpus" =~ ^[0-7](,[0-7]){0,3}$ ]] || die "--gpus must contain one, two, or four physical GPU indices"
 IFS=',' read -r -a gpu_indices <<< "$gpus"
 gpu_count=${#gpu_indices[@]}
@@ -55,8 +50,10 @@ for gpu in "${gpu_indices[@]}"; do
   seen_gpus[$gpu]=1
 done
 [[ "$output_dir" = /* ]] || die "--output-dir must be absolute"
+if [[ -z "$latest_link" ]]; then
+  latest_link="$(dirname "$output_dir")/latest"
+fi
 [[ "$latest_link" = /* ]] || die "--latest-link must be absolute"
-[[ -z "$resume_from" || "$resume_from" = /* ]] || die "--resume-from must be absolute"
 
 if [[ -f "$ROOT/.env.local" ]]; then
   set -a
@@ -64,52 +61,38 @@ if [[ -f "$ROOT/.env.local" ]]; then
   source "$ROOT/.env.local"
   set +a
 fi
-: "${EMBER_ASSET_ROOT:?set EMBER_ASSET_ROOT}"
-: "${EMBER_DATA_ROOT:?set EMBER_DATA_ROOT}"
 : "${EMBER_OUTPUT_ROOT:?set EMBER_OUTPUT_ROOT}"
 : "${HF_HOME:?set HF_HOME}"
+: "${LIBERO_CONFIG_PATH:?set LIBERO_CONFIG_PATH}"
+[[ -x "$PYTHON" ]] || die "locked Python is missing"
 
-readarray -t paths < <("$PYTHON" - "$CONFIG" <<'PY'
+source_relative=$(
+  "$PYTHON" - "$CONFIG" <<'PY'
 import sys, tomllib
-spec=tomllib.load(open(sys.argv[1], "rb"))
-print(spec["authority"]["model_revision"])
-print(spec["authority"]["canonical_manifest_relative_path"])
-print(spec["authority"]["source_normalization_relative_path"])
-print(spec["authority"]["dataset_relative_path"])
+print(tomllib.load(open(sys.argv[1], "rb"))["authority"]["source_base_output_relative_path"])
 PY
 )
-base_path="$EMBER_ASSET_ROOT/models/smolvla_base/${paths[0]}"
-vlm_revision=$("$PYTHON" - "$PHASE0" <<'PY'
-import sys, tomllib
-print(tomllib.load(open(sys.argv[1], "rb"))["models"]["smolvlm_constructor_dependency"]["revision"])
-PY
-)
-vlm_path="$EMBER_ASSET_ROOT/models/SmolVLM2-500M-Video-Instruct/$vlm_revision"
+source_base_output="$EMBER_OUTPUT_ROOT/$source_relative"
+checkpoint="$source_base_output/checkpoints/010000"
 
 command=(
   "$PYTHON" -m torch.distributed.run
   --standalone
   "--nproc-per-node=$gpu_count"
-  -m ember.gate_zero_base_train
-  --mode "$mode"
+  -m ember.gate_zero_base_competence
   --config "$CONFIG"
+  --gate-zero-contract "$GATE_ZERO"
   --phase0-contract "$PHASE0"
-  --topology-config "$TOPOLOGY_CONFIG"
-  --manifest "$EMBER_OUTPUT_ROOT/${paths[1]}"
-  --normalization "$EMBER_OUTPUT_ROOT/${paths[2]}"
-  --dataset-root "$EMBER_DATA_ROOT/${paths[3]}"
-  --base-path "$base_path"
-  --vlm-path "$vlm_path"
+  --source-base-output "$source_base_output"
+  --checkpoint "$checkpoint"
   --output-dir "$output_dir"
   --latest-link "$latest_link"
+  --physical-gpus "$gpus"
 )
-if [[ -n "$resume_from" ]]; then
-  command+=(--resume-from "$resume_from")
-fi
 
 if $dry_run; then
-  printf 'CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=%q TRACKIO_DIR=%q ' "$gpus" "$EMBER_OUTPUT_ROOT/trackio"
-  printf 'HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH=%q ' "$ROOT/src"
+  printf 'CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=%q MUJOCO_GL=egl ' "$gpus"
+  printf 'TRACKIO_DIR=%q HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH=%q ' "$EMBER_OUTPUT_ROOT/trackio" "$ROOT/src"
   printf '%q ' "${command[@]}"
   printf '\n'
   exit 0
@@ -121,29 +104,12 @@ for gpu in "${gpu_indices[@]}"; do
       sed '/^[[:space:]]*$/d'
   )
   [[ -z "$active_compute" ]] || die "GPU $gpu has active compute PID(s): ${active_compute//$'\n'/,}"
-  memory_used=$(
-    nvidia-smi -i "$gpu" --query-gpu=memory.used --format=csv,noheader,nounits |
-      tr -d '[:space:]'
-  )
+  memory_used=$(nvidia-smi -i "$gpu" --query-gpu=memory.used --format=csv,noheader,nounits | tr -d '[:space:]')
   [[ "$memory_used" =~ ^[0-9]+$ ]] || die "cannot parse GPU $gpu memory usage"
   ((memory_used < 1000)) || die "GPU $gpu already uses ${memory_used} MiB"
 done
 
-if [[ -z "$resume_from" ]]; then
-  [[ ! -e "$output_dir" ]] || die "refusing to reuse a fresh-run output directory"
-else
-  [[ "$mode" = "train" ]] || die "only formal training accepts --resume-from"
-  [[ -d "$output_dir" ]] || die "resume output directory is missing"
-  [[ "$resume_from" = "$output_dir"/checkpoints/* ]] ||
-    die "resume checkpoint must belong to the selected output directory"
-fi
-result_name=training_result.json
-if [[ "$mode" = "resume-probe" ]]; then
-  result_name=resume_probe_result.json
-elif [[ "$mode" = "topology-probe" ]]; then
-  result_name=topology_probe_result.json
-fi
-[[ ! -e "$output_dir/$result_name" ]] || die "completed result already exists"
+[[ ! -e "$output_dir" ]] || die "refusing to reuse output directory"
 mkdir -p "$output_dir"
 run_stamp=$(date -u +%Y%m%dT%H%M%SZ)
 telemetry="$output_dir/gpu_telemetry_${run_stamp}.csv"
@@ -152,12 +118,14 @@ sampler=$!
 
 export CUDA_VISIBLE_DEVICES="$gpus"
 export CUDA_DEVICE_ORDER=PCI_BUS_ID
+export MUJOCO_GL=egl
+export PYOPENGL_PLATFORM=egl
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
 export HF_HUB_DISABLE_TELEMETRY=1
 export TOKENIZERS_PARALLELISM=false
 export PYTHONHASHSEED=20260718
-export OMP_NUM_THREADS=4
+export OMP_NUM_THREADS=2
 export TRACKIO_DIR="$EMBER_OUTPUT_ROOT/trackio"
 export TRACKIO_STORAGE_MODE=sqlite
 export PYTHONPATH="$ROOT/src${PYTHONPATH:+:$PYTHONPATH}"
@@ -171,10 +139,7 @@ trap - INT TERM
 if ((main_rc == 0)); then
   (
     cd "$output_dir"
-    for telemetry_file in gpu_telemetry_*.csv; do
-      [[ -f "$telemetry_file" ]] || continue
-      sha256sum "$telemetry_file"
-    done >> checksums.sha256
+    sha256sum "$(basename "$telemetry")" >> checksums.sha256
   )
 fi
 exit "$main_rc"

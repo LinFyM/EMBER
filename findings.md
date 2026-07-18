@@ -872,3 +872,66 @@
   its checkpoint manifest is
   `21afdce35869dcaa5ec944d01e4f8c5db7472adb2d58330222399d5936cc79ff`,
   and the old exact pass remains provenance rather than execution authority.
+
+## Multi-GPU efficiency amendment frozen before topology outcomes
+
+- The clean 10k source-base run at commit `8ff06f2` remains untouched as the
+  one-GPU reference and recovery record. Its observed roughly 19.3GiB device
+  allocation shows ample headroom, but stability alone does not establish an
+  efficient long-term topology. No topology probe or source-policy outcome was
+  read when the 1/2/4-GPU engineering contract was written.
+- The sole trainer now accepts world sizes 1, 2, or 4 through the same
+  `torchrun` entrypoint. Every topology keeps global effective batch 64, one
+  optimizer step per 64 unique absolute slots, the same total four loader
+  workers, rank-0-native global flow draws followed by contiguous scatter, and
+  DDP mean aggregation over equal local batches. Rank 0 alone publishes
+  Trackio and the atomic checkpoint; schema 3 binds topology and stores every
+  rank's RNG, while legacy schema 2 remains readable only for the uninterrupted
+  one-GPU reference.
+- CPU/gloo integration tests prove that 2- and 4-rank global slots are neither
+  duplicated nor omitted, global flow inputs reconstruct the single-rank draw
+  bit-exactly, one-step DDP gradients match the single-global-batch reference
+  within the declared numerical tolerance, and same-topology interruption/
+  resume reproduces model, optimizer, scheduler, RNG, and next-batch state.
+  Injected checkpoint failures publish neither a directory, sidecar, nor
+  `last` link, including injected failures after the checkpoint directory has
+  already been renamed: the new directory and sidecar are removed and the
+  previous `last` target is restored. Topology selection additionally rejects
+  telemetry whose bytes no longer match the run-finalized checksum, so the
+  memory-headroom evidence is provenance-bound. The complete repository suite
+  is 161 passing tests before live throughput probes.
+- Cross-topology comparison binds the actual rank-0 global noise/time tensor
+  digest plus the exact initial model, optimizer, and scheduler digests. It does
+  not compare an ambient serialized CUDA-RNG bundle whose shape changes merely
+  because more devices are visible. Shared base weights and all source HDF5
+  hashes are verified once per process and then reused by the uninterrupted,
+  checkpoint, and resumed branches; every loader still enforces manifest paths,
+  byte sizes, schema, and demo allowlists.
+- The live selection remains explicitly pending. The fixed probe is five warmup
+  plus 25 measured steps, one step-30 full checkpoint, and one exact resumed
+  step. It chooses the fastest headroom-safe topology only when speedup is at
+  least 1.20 and parallel efficiency at least 0.55; a result within 2% prefers
+  fewer GPUs. If DDP scaling fails those rules, the recorded fallback is not a
+  second trainer: subsequent independent baseline/arm/task/seed jobs occupy up
+  to four GPUs under the same per-job contract.
+- Source competence is separately frozen before the final checkpoint exists:
+  resealed source tasks 3/4, correct and same-scene swapped prompts, official
+  init indices 8--15, async batch 8, and one video per arm. Four ranks assign
+  the four arms exactly once and rank 0 builds the checksummed local gallery.
+  Passing only permits task-local oracle fitting; failure permits exactly one
+  otherwise identical extension to 20k. No validation/held numeric surface and
+  no Gate/Writer authorization is exposed.
+- Architecture ownership is intentionally nonparallel despite the larger test
+  surface: `gate_zero_base_train.py` is the 226-line sole CLI and formal-fit
+  owner; `gate_zero_base_session.py` owns shared model/data/optimizer/RNG and
+  result/checkpoint session state; `gate_zero_distributed.py` owns global-slot,
+  collective, flow-input, and topology-selection invariants;
+  `gate_zero_base_probe.py` owns only resume/throughput probes;
+  `gate_zero_base_competence.py` owns only the source rollout prerequisite; and
+  `gate_zero_topology_report.py` owns the local selection report. There is no
+  versioned trainer or fallback executable. The architecture guard has no hard
+  violation; the three 600--800-line review modules stay cohesive because
+  splitting their fail-closed contracts from their sole runtime would add
+  cross-owner state without reuse. Retire topology-probe/report launch surfaces
+  after selection and evidence export, and retire the competence launcher after
+  Gate 0 evidence freezes; retain invariant tests and the selected trainer path.

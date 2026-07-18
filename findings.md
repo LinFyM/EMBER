@@ -1299,3 +1299,18 @@
   target is selected, no final Writer target is sealed, and no further support,
   optimizer, or rank search is legal. The rank-16 test remains a Gate 0
   capacity diagnosis, not permission to simplify future Writer generation.
+
+## Rank-16 escalation preserves the support and acquisition contract
+
+- `configs/gate_zero_target_support_rank16.toml` is hash-bound to the rank-8
+  audit, six-state screening grant, and completed rank-8 result. It activates
+  exactly `official_default_r16`: the same 37 action-expert q/v plus state,
+  action and time projection targets, with rank/alpha 16, dropout 0, and
+  742,656 trainable parameters. Data rows, fixed-noise query evaluator, LR
+  `1e-4`, AdamW, effective batch 64, candidate steps and 750-step budget are
+  inherited unchanged from the immutable rank-8 contract.
+- Rank-16 fitting still cannot see rollout outcomes. Only after both selected
+  states freeze may the source screen access init states 32--39. A passing
+  support would then freeze before confirmation on 40--47; a failed screen
+  authorizes no rank 32, alternate support, optimizer search, Gate 0, or Writer.
+  Validation/held numeric access and locked-report reuse remain false.

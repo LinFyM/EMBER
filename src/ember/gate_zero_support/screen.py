@@ -1,4 +1,4 @@
-"""Freeze six target-support fits before source closed-loop screening."""
+"""Freeze bounded target-support fits before source closed-loop screening."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from typing import Any, Mapping
 
 from ember.gate_zero_oracle_artifacts import atomic_json, sha256_file
 from ember.gate_zero_oracle_report import _fit_evidence
-from ember.gate_zero_support.contract import load_target_support_audit_spec
+from ember.gate_zero_support.contract import load_target_support_screen_spec
 
 
 GRANT_STATUS = "target_support_fit_selections_frozen_before_closed_loop_screening"
@@ -23,23 +23,40 @@ class GateZeroTargetSupportScreenError(RuntimeError):
     """Raised when fit evidence cannot authorize the frozen screening surface."""
 
 
-def canonical_support_screening_shards() -> list[list[tuple[int, str]]]:
-    """Balance frozen-base and three rank-8 supports across four ranks."""
+def canonical_support_screening_shards(
+    *, variants: list[str] | None = None, task_ids: list[int] | None = None
+) -> list[list[tuple[int, str]]]:
+    """Partition each bounded support stage into deterministic two-arm shards."""
 
-    return [
-        [(3, "frozen_base"), (3, "last_two_qv_r8")],
-        [(3, "all_expert_qv_r8"), (3, "official_default_r8")],
-        [(4, "frozen_base"), (4, "last_two_qv_r8")],
-        [(4, "all_expert_qv_r8"), (4, "official_default_r8")],
-    ]
+    variants = (
+        ["last_two_qv_r8", "all_expert_qv_r8", "official_default_r8"]
+        if variants is None
+        else variants
+    )
+    task_ids = [3, 4] if task_ids is None else task_ids
+    if task_ids != [3, 4] or len(variants) not in {1, 3} or len(set(variants)) != len(variants):
+        raise GateZeroTargetSupportScreenError("invalid bounded support-screening scope")
+    shards = []
+    for task_id in task_ids:
+        arms = [(task_id, condition) for condition in ["frozen_base", *variants]]
+        shards.extend(arms[index : index + 2] for index in range(0, len(arms), 2))
+    return shards
 
 
 def assigned_support_screening_arms(
-    *, rank: int, world_size: int
+    *,
+    rank: int,
+    world_size: int,
+    variants: list[str] | None = None,
+    task_ids: list[int] | None = None,
 ) -> list[tuple[int, str]]:
     if world_size not in {1, 2, 4} or rank < 0 or rank >= world_size:
         raise GateZeroTargetSupportScreenError("invalid support-screening topology")
-    shards = canonical_support_screening_shards()
+    shards = canonical_support_screening_shards(
+        variants=variants, task_ids=task_ids
+    )
+    if world_size > len(shards):
+        raise GateZeroTargetSupportScreenError("support-screening has idle ranks")
     return [
         arm
         for index, shard in enumerate(shards)
@@ -265,8 +282,12 @@ def decide_support_screening(
     thresholds: Mapping[str, Any],
     expected_init_state_indices: list[int],
     expected_seeds: list[int],
+    rank_stage: str = "rank8",
 ) -> dict[str, Any]:
-    """Select the smallest rank-8 support passing every frozen screening test."""
+    """Select a support only when every frozen screening test passes."""
+
+    if rank_stage not in {"rank8", "rank16"}:
+        raise GateZeroTargetSupportScreenError("invalid support-screening rank stage")
 
     by_key = _validate_screening_arms(
         arms=arms,
@@ -336,9 +357,10 @@ def decide_support_screening(
     )
     if passing:
         selected = passing[0]["variant"]
-        status = "rank8_support_selected_pending_confirmation"
+        status = f"{rank_stage}_support_selected_pending_confirmation"
         rank16_scope = None
-    else:
+        rank16_authorized = False
+    elif rank_stage == "rank8":
         ranking = grant.get("query_ranking")
         if (
             not isinstance(ranking, list)
@@ -349,12 +371,18 @@ def decide_support_screening(
         selected = None
         status = "rank8_support_screen_failed_rank16_authorized"
         rank16_scope = ranking[0]["variant"]
+        rank16_authorized = True
+    else:
+        selected = None
+        status = "rank16_support_screen_failed"
+        rank16_scope = None
+        rank16_authorized = False
     return {
         "status": status,
         "candidates": candidates,
         "selected_variant": selected,
         "confirmation_authorized": selected is not None,
-        "rank16_authorized": selected is None,
+        "rank16_authorized": rank16_authorized,
         "rank16_scope": rank16_scope,
         "gate_zero_authorized": False,
         "writer_authorized": False,
@@ -378,7 +406,7 @@ def _collect_fit_evidence(
     }
     if set(fit_outputs) != required:
         raise GateZeroTargetSupportScreenError(
-            "screening grant requires exactly six frozen fit outputs"
+            "screening grant requires the exact frozen fit-output set"
         )
     expected_authorities = {
         "execution_contract_sha256": sha256_file(config_path),
@@ -418,9 +446,9 @@ def create_support_screening_grant(
     fit_outputs: Mapping[tuple[str, int], Path],
     grant_path: Path,
 ) -> dict[str, Any]:
-    """Freeze all six task/support states before source rollout screening."""
+    """Freeze every task/support state before source rollout screening."""
 
-    spec = load_target_support_audit_spec(
+    spec = load_target_support_screen_spec(
         config_path,
         gate_zero_path=parent_path,
         phase0_path=phase0_path,
@@ -464,6 +492,8 @@ def create_support_screening_grant(
         "validation_numeric_access": False,
         "held_numeric_access": False,
     }
+    if spec.get("screening_stage") == "rank16":
+        grant["screening_stage"] = "rank16"
     grant_path.parent.mkdir(parents=True, exist_ok=False)
     atomic_json(grant_path, grant)
     (grant_path.parent / "checksums.sha256").write_text(
@@ -481,7 +511,7 @@ def validate_support_screening_grant(
     competence_path: Path,
     fit_outputs: Mapping[tuple[str, int], Path],
 ) -> dict[str, Any]:
-    """Revalidate the grant, six states, and query ranking before rollout."""
+    """Revalidate the grant, selected states, and query ranking before rollout."""
 
     try:
         grant = json.loads(grant_path.read_text(encoding="utf-8"))
@@ -490,7 +520,7 @@ def validate_support_screening_grant(
         ).split()
     except (OSError, json.JSONDecodeError) as error:
         raise GateZeroTargetSupportScreenError("invalid screening grant") from error
-    spec = load_target_support_audit_spec(
+    spec = load_target_support_screen_spec(
         config_path,
         gate_zero_path=parent_path,
         phase0_path=phase0_path,
@@ -519,6 +549,8 @@ def validate_support_screening_grant(
         "validation_numeric_access": False,
         "held_numeric_access": False,
     }
+    if spec.get("screening_stage") == "rank16":
+        expected["screening_stage"] = "rank16"
     for key, value in expected.items():
         if grant.get(key) != value:
             raise GateZeroTargetSupportScreenError(f"screening grant changed {key}")
@@ -559,7 +591,7 @@ def main() -> int:
         "grant_path",
     ):
         setattr(args, name, getattr(args, name).absolute())
-    spec = load_target_support_audit_spec(
+    spec = load_target_support_screen_spec(
         args.config,
         gate_zero_path=args.gate_zero_contract,
         phase0_path=args.phase0_contract,

@@ -1,4 +1,4 @@
-"""Run the frozen source closed-loop screen for three rank-8 LoRA supports."""
+"""Run a frozen source closed-loop screen for the bounded LoRA supports."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ from ember.gate_zero_oracle_artifacts import (
 )
 from ember.gate_zero_oracle_report_runtime import _closed_loop_metrics, _task_authority
 from ember.gate_zero_oracle_session import configure_oracle_variant
-from ember.gate_zero_support.contract import load_target_support_audit_spec
+from ember.gate_zero_support.contract import load_target_support_screen_spec
 from ember.gate_zero_support.screen import (
     assigned_support_screening_arms,
     canonical_support_screening_shards,
@@ -57,17 +57,18 @@ class ParallelContext:
 
 
 def support_state_authority(
-    task_id: int, condition: str
+    task_id: int, condition: str, *, variants: list[str] | None = None
 ) -> tuple[str | None, int | None]:
     if task_id not in {3, 4}:
         raise GateZeroTargetSupportScreenRuntimeError("screening task is invalid")
     if condition == "frozen_base":
         return None, None
-    if condition in {
-        "last_two_qv_r8",
-        "all_expert_qv_r8",
-        "official_default_r8",
-    }:
+    variants = (
+        ["last_two_qv_r8", "all_expert_qv_r8", "official_default_r8"]
+        if variants is None
+        else variants
+    )
+    if condition in variants:
         return condition, task_id
     raise GateZeroTargetSupportScreenRuntimeError("screening condition is invalid")
 
@@ -79,7 +80,8 @@ def _initialize_parallel() -> ParallelContext:
         local_rank = int(os.environ.get("LOCAL_RANK", "0"))
     except ValueError as error:
         raise GateZeroTargetSupportScreenRuntimeError("invalid rank environment") from error
-    assigned_support_screening_arms(rank=rank, world_size=world_size)
+    if world_size not in {1, 2, 4} or rank < 0 or rank >= world_size:
+        raise GateZeroTargetSupportScreenRuntimeError("invalid rank environment")
     if not torch.cuda.is_available():
         raise GateZeroTargetSupportScreenRuntimeError("screening requires CUDA")
     torch.cuda.set_device(local_rank)
@@ -124,7 +126,7 @@ def _fit_outputs(
 def _load_authorities(
     arguments: argparse.Namespace,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
-    spec = load_target_support_audit_spec(
+    spec = load_target_support_screen_spec(
         arguments.config,
         gate_zero_path=arguments.gate_zero_contract,
         phase0_path=arguments.phase0_contract,
@@ -200,7 +202,9 @@ def _open_arm_runtime(
             {"task_suite": "libero_90", "task_id": task_id},
         )
     )
-    variant, state_task = support_state_authority(task_id, condition)
+    variant, state_task = support_state_authority(
+        task_id, condition, variants=spec["variants"]
+    )
     evidence: dict[str, Any] = {"variant": variant, "state_task_id": state_task}
     if variant is not None and state_task is not None:
         model, summary = configure_oracle_variant(
@@ -264,7 +268,10 @@ def _evaluate_local_arms(
     authorities = {}
     rollout_spec = _rollout_spec(spec)
     for task_id, condition in assigned_support_screening_arms(
-        rank=context.rank, world_size=context.world_size
+        rank=context.rank,
+        world_size=context.world_size,
+        variants=spec["variants"],
+        task_ids=spec["task_ids"],
     ):
         language, authority = _task_authority(
             task_id, spec["screening_rollout"]["init_state_indices"]
@@ -341,10 +348,14 @@ def _prepare_output(
             trackio.init(
                 project=spec["resources"]["tracking_project"],
                 name=arguments.output_dir.name,
-                group="target_support_closed_loop_screening",
+                group=f"target_support_{spec.get('screening_stage', 'rank8')}_screening",
                 config={
                     "world_size": context.world_size,
-                    "surface": "source_recovery_init_24_31",
+                    "surface": (
+                        "source_recovery_init_"
+                        f"{spec['screening_rollout']['init_state_indices'][0]}_"
+                        f"{spec['screening_rollout']['init_state_indices'][-1]}"
+                    ),
                 },
                 auto_log_gpu=True,
                 gpu_log_interval=1.0,
@@ -360,12 +371,18 @@ def _prepare_output(
     return tracker
 
 
-def _ordered_arms(gathered: list[list[dict[str, Any]]]) -> list[dict[str, Any]]:
+def _ordered_arms(
+    gathered: list[list[dict[str, Any]]], spec: Mapping[str, Any]
+) -> list[dict[str, Any]]:
     arms = [arm for values in gathered for arm in values]
     order = {
         arm: index
         for index, arm in enumerate(
-            arm for shard in canonical_support_screening_shards() for arm in shard
+            arm
+            for shard in canonical_support_screening_shards(
+                variants=spec["variants"], task_ids=spec["task_ids"]
+            )
+            for arm in shard
         )
     }
     arms.sort(key=lambda arm: order[(arm["task_id"], arm["condition"])])
@@ -453,6 +470,7 @@ def _publish(
                 + spec["screening_rollout"]["batch_size"],
             )
         ),
+        rank_stage=spec.get("screening_stage", "rank8"),
     )
     result = {
         "schema_version": 1,
@@ -468,7 +486,8 @@ def _publish(
         "selected_support_freeze": _selected_support_freeze(
             decision=decision, spec=spec, grant=grant
         ),
-        "locked_report_access_authorized": decision["confirmation_authorized"],
+        "confirmation_authorized": decision["confirmation_authorized"],
+        "locked_report_access_authorized": False,
         "selection_changes_after_screening_forbidden": True,
         "gate_zero_authorized": False,
         "writer_authorized": False,
@@ -477,7 +496,9 @@ def _publish(
         "held_numeric_access": False,
         "parallel": {
             "world_size": context.world_size,
-            "shards": canonical_support_screening_shards(),
+            "shards": canonical_support_screening_shards(
+                variants=spec["variants"], task_ids=spec["task_ids"]
+            ),
         },
         "resources": {
             "physical_gpus": arguments.physical_gpus,
@@ -498,9 +519,7 @@ def _publish(
     update_latest_link(arguments.output_dir, arguments.latest_link)
     tracker.log(
         {
-            "support_screen/rank8_selected": int(
-                decision["selected_variant"] is not None
-            ),
+            "support_screen/selected": int(decision["selected_variant"] is not None),
             "support_screen/rank16_authorized": int(decision["rank16_authorized"]),
         }
     )
@@ -527,7 +546,7 @@ def run(arguments: argparse.Namespace) -> dict[str, Any]:
         gathered_authorities = _gather(context, local_authorities)
         if not context.is_primary:
             return {"status": "non_primary_rank_complete", "rank": context.rank}
-        arms = _ordered_arms(gathered_arms)
+        arms = _ordered_arms(gathered_arms, spec)
         by_task = {
             row["task_id"]: row
             for values in gathered_authorities

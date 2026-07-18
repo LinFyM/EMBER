@@ -230,12 +230,15 @@ def load_oracle_fit_spec(
             phase0_path=phase0_path,
             competence_path=competence_path,
         )
-    if name == "smolvla_libero90_gate_zero_target_support_audit_v1":
+    if name in {
+        "smolvla_libero90_gate_zero_target_support_audit_v1",
+        "smolvla_libero90_gate_zero_target_support_rank16_v1",
+    }:
         from ember.gate_zero_support.contract import (
-            load_target_support_audit_spec,
+            load_target_support_screen_spec,
         )
 
-        return load_target_support_audit_spec(
+        return load_target_support_screen_spec(
             path,
             gate_zero_path=gate_zero_path,
             phase0_path=phase0_path,

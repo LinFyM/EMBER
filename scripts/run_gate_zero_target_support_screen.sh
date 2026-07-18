@@ -35,6 +35,7 @@ trap 'handle_signal 143' TERM
 
 while (($#)); do
   case "$1" in
+    --config=*) CONFIG=${1#*=} ;;
     --gpus=*) gpus=${1#*=} ;;
     --fit-root=*) fit_root=${1#*=} ;;
     --screening-freeze-dir=*) freeze_dir=${1#*=} ;;
@@ -47,6 +48,8 @@ while (($#)); do
   shift
 done
 
+[[ "$CONFIG" = /* ]] || die "--config must be absolute"
+[[ -f "$CONFIG" ]] || die "--config does not exist"
 [[ "$gpus" =~ ^[0-7](,[0-7]){0,3}$ ]] || \
   die "--gpus must contain one, two, or four indices"
 IFS=',' read -r -a gpu_indices <<< "$gpus"

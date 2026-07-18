@@ -1241,3 +1241,32 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   unauthorized. Next, add one hash-bound rank-16 contract using the same
   fitter/query rows/optimizer schedule and fresh init states 32--39; no other
   search is scheduled.
+
+### Conditional rank-16 contract and implementation ownership
+
+- Added the hash-bound post-rank-8 contract
+  `configs/gate_zero_target_support_rank16.toml`. It resolves one
+  `official_default_r16` candidate by inheriting the exact 37 targets and all
+  fit/query mechanics from the frozen rank-8 contract, changing only rank,
+  alpha and declared count to 16/16/742,656. It predeclares init 32--39 with
+  seeds 5600--5607 for screening and init 40--47 with seeds 5700--5707 for a
+  conditional confirmation. Failure closes all further layer/rank search.
+  Contract SHA256 is
+  `c205b4ef1a49670b55af4eeb829555774a1ed7c786f4a1c5ec87c64aec4048ad`.
+- The sole fitter, grant builder, screening evaluator, shell entrypoint, and
+  artifact schema are reused through a bounded config/stage dispatch; no
+  second trainer/evaluator or rank-specific launcher was added. Targeted tests
+  cover config hashes/inheritance, exact target/count, canonical fitter
+  dispatch, two-rank nonduplicated shards, two-state atomic grant validation,
+  and the no-further-search failure decision. The full repository suite passes
+  199/199 tests; Python compilation, both launcher syntax checks, and diff
+  whitespace checks pass.
+- Architecture guard is REVIEW with no hard violation. Net active-source/test
+  growth is 572 lines and no source module or entrypoint was added; existing
+  `screen.py` and `screen_runtime.py` now slightly exceed 600 lines because the
+  current second use is expressed as configuration rather than duplicated
+  orchestration. Ownership remains: contract resolves authority, screen owns
+  pure grant/decision arithmetic, runtime owns model/rollout lifecycle. After
+  rank-16 confirmation seals or rejects support and evidence is exported,
+  perform the already scheduled retirement review and remove active audit
+  dispatch/launcher surfaces that no canonical rerun needs before Writer work.

@@ -367,7 +367,13 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     -25/+12.5pp, and official-default-like -12.5/+12.5pp; their median query
     reductions remain 2.36%/4.67%/4.79% versus 20%. The frozen decision
     authorizes exactly one `official_default` rank-16 fit/screen and nothing
-    else. Gate 0, final target sealing, confirmation, and Writer remain false.
+    else. That post-outcome authority is now frozen in
+    `configs/gate_zero_target_support_rank16.toml`: exact same 37 targets,
+    support/query rows, optimizer, LR, sampler and candidate steps; only
+    rank/alpha/count become 16/16/742,656. Screening uses untouched init states
+    32--39 and confirmation, only after selection, uses 40--47. A rank-16
+    screening failure authorizes no rank/support search. Gate 0, final target
+    sealing, confirmation, and Writer remain false.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import tomllib
 from pathlib import Path
@@ -19,6 +20,16 @@ EXPECTED_PRIOR_REPORT_SHA256 = (
 EXPECTED_PRIOR_GRANT_SHA256 = (
     "313ecf738b1a69ef2934c33e0681d3cef5f83506cc28925f06b8e9e16239bfad"
 )
+EXPECTED_RANK8_AUDIT_SHA256 = (
+    "aca38905fd84894d7576a5c4b0e863ea6c245ec02ec1d0473a52dc8b8b027da0"
+)
+EXPECTED_RANK8_SCREENING_GRANT_SHA256 = (
+    "fd8e28a7f0b828e14ff7cfb794a047409b6e8e96562646b38aef232b65332992"
+)
+EXPECTED_RANK8_SCREENING_RESULT_SHA256 = (
+    "0df3acb8d3fd5f94507921298940281c7430eedc359869d3918a0f2c012c6efb"
+)
+EXPECTED_RANK16_NAME = "smolvla_libero90_gate_zero_target_support_rank16_v1"
 
 
 class GateZeroTargetSupportContractError(RuntimeError):
@@ -290,3 +301,293 @@ def load_target_support_audit_spec(
     _validate_selection_and_rollouts(spec, parent)
     _validate_decision_and_resources(spec, parent)
     return spec
+
+
+def _load_rank16_raw(path: Path) -> dict[str, Any]:
+    try:
+        with path.open("rb") as handle:
+            raw = tomllib.load(handle)
+    except (OSError, tomllib.TOMLDecodeError) as error:
+        raise GateZeroTargetSupportContractError("invalid rank-16 support TOML") from error
+    return raw
+
+
+def _validate_rank16_header(raw: dict[str, Any]) -> None:
+    _require_equal(raw.get("schema_version"), 1, "rank-16 schema version")
+    _require_equal(raw.get("name"), EXPECTED_RANK16_NAME, "rank-16 contract name")
+    _require_equal(
+        raw.get("status"),
+        "predeclared_after_rank8_screen_failure_before_rank16_fit_or_outcomes",
+        "rank-16 predeclaration status",
+    )
+    _require_equal(raw.get("screening_stage"), "rank16", "rank-16 stage")
+    _require_equal(raw.get("task_ids"), [3, 4], "rank-16 tasks")
+    _require_equal(
+        raw.get("variants"), ["official_default_r16"], "rank-16 variants"
+    )
+
+
+def _validate_rank16_authority(
+    authority: dict[str, Any],
+    base: dict[str, Any],
+    *,
+    gate_zero_path: Path,
+    phase0_path: Path,
+    competence_path: Path,
+    prior_execution_path: Path,
+    rank8_audit_path: Path,
+) -> None:
+    _require_hash(
+        authority, "gate_zero_contract_sha256", gate_zero_path, "Gate 0 contract"
+    )
+    _require_hash(
+        authority, "phase0_contract_sha256", phase0_path, "Phase 0 contract"
+    )
+    _require_hash(
+        authority,
+        "source_competence_contract_sha256",
+        competence_path,
+        "source competence contract",
+    )
+    _require_hash(
+        authority,
+        "prior_oracle_execution_sha256",
+        prior_execution_path,
+        "prior oracle execution contract",
+    )
+    _require_hash(
+        authority,
+        "rank8_audit_contract_sha256",
+        rank8_audit_path,
+        "rank-8 audit contract",
+    )
+    for key, expected in (
+        ("rank8_audit_contract_sha256", EXPECTED_RANK8_AUDIT_SHA256),
+        ("rank8_screening_grant_sha256", EXPECTED_RANK8_SCREENING_GRANT_SHA256),
+        ("rank8_screening_result_sha256", EXPECTED_RANK8_SCREENING_RESULT_SHA256),
+        ("rank8_screening_status", "rank8_support_screen_failed_rank16_authorized"),
+        ("rank8_authorized_scope", "official_default_r8"),
+        (
+            "rank8_screening_result_relative_path",
+            "gate_zero/target_support_audit/screening/"
+            "rank8_recovery1_20260718T151445Z/support_screening_result.json",
+        ),
+        ("validation_numeric_access", False),
+        ("held_numeric_access", False),
+        ("locked_report_numeric_reuse_for_selection", False),
+    ):
+        _require_equal(authority.get(key), expected, f"rank-16 authority {key}")
+    for key in (
+        "source_competence_result_relative_path",
+        "source_competence_result_sha256",
+        "source_base_output_relative_path",
+        "source_base_checkpoint_step",
+        "source_base_checkpoint_role",
+        "source_base_checkpoint_manifest_sha256",
+    ):
+        _require_equal(authority.get(key), base["authority"][key], f"rank-16 {key}")
+
+
+def _validate_rank16_fit_and_resources(
+    raw: dict[str, Any], base: dict[str, Any]
+) -> None:
+    override = raw.get("fit_override", {})
+    for key, expected in (
+        ("source_variant", "official_default_r8"),
+        ("variant", "official_default_r16"),
+        ("rank", 16),
+        ("alpha", 16),
+        ("dropout", 0.0),
+        ("expected_trainable_parameters", 742656),
+        ("optimizer_steps", 750),
+        ("learning_rate", 0.0001),
+        ("same_targets_optimizer_sampler_support_query_and_candidates_as_rank8", True),
+    ):
+        _require_equal(override.get(key), expected, f"rank-16 fit override {key}")
+    escalation = raw.get("rank_escalation", {})
+    for key in (
+        "conditional_only",
+        "no_further_support_or_rank_search",
+        "failure_requires_gate_recovery_decision",
+    ):
+        _require_equal(escalation.get(key), True, f"rank-16 escalation {key}")
+    _require_equal(
+        raw.get("parallel", {}).get("fit_jobs"),
+        ["official_default_r16:3", "official_default_r16:4"],
+        "rank-16 fit jobs",
+    )
+    _require_equal(
+        raw.get("parallel", {}).get("maximum_concurrent_gpus"),
+        4,
+        "rank-16 GPU ceiling",
+    )
+    _require_equal(
+        raw.get("resources", {}).get("minimum_free_memory_mib"),
+        base["resources"]["minimum_free_memory_mib"],
+        "rank-16 memory headroom",
+    )
+
+
+def _validate_rank16_rollouts(raw: dict[str, Any]) -> None:
+    screening = raw.get("screening_rollout", {})
+    confirmation = raw.get("confirmation_rollout", {})
+    for value, expected, label in (
+        (
+            screening.get("init_state_indices"),
+            list(range(32, 40)),
+            "screening states",
+        ),
+        (screening.get("batch_size"), 8, "screening batch"),
+        (screening.get("seed_start"), 5600, "screening seeds"),
+        (screening.get("warmup_seed_start"), 5592, "screening warm-up seeds"),
+        (screening.get("policy_rng_seed"), 2026071822, "screening policy seed"),
+        (
+            screening.get("conditions"),
+            ["frozen_base", "own_adapter"],
+            "screening arms",
+        ),
+        (
+            screening.get("locked_report_demos_accessed"),
+            False,
+            "screening report access",
+        ),
+        (
+            confirmation.get("init_state_indices"),
+            list(range(40, 48)),
+            "confirmation states",
+        ),
+        (confirmation.get("batch_size"), 8, "confirmation batch"),
+        (confirmation.get("seed_start"), 5700, "confirmation seeds"),
+        (confirmation.get("warmup_seed_start"), 5692, "confirmation warm-up seeds"),
+        (confirmation.get("policy_rng_seed"), 2026071823, "confirmation policy seed"),
+        (
+            confirmation.get("conditions"),
+            ["frozen_base", "own_adapter", "swapped_adapter"],
+            "confirmation arms",
+        ),
+        (
+            confirmation.get("offline_report_episode_bounds"),
+            [46, 49],
+            "confirmation rows",
+        ),
+        (
+            confirmation.get("selection_changes_after_access_forbidden"),
+            True,
+            "confirmation selection lock",
+        ),
+    ):
+        _require_equal(value, expected, f"rank-16 {label}")
+    if set(screening["init_state_indices"]) & set(confirmation["init_state_indices"]):
+        raise GateZeroTargetSupportContractError("rank-16 rollout surfaces overlap")
+
+
+def _resolve_rank16_spec(raw: dict[str, Any], base: dict[str, Any]) -> dict[str, Any]:
+    authority = raw["authority"]
+    override = raw["fit_override"]
+    screening = raw["screening_rollout"]
+    confirmation = raw["confirmation_rollout"]
+    escalation = raw["rank_escalation"]
+    resolved = copy.deepcopy(base)
+    for key in (
+        "schema_version",
+        "name",
+        "status",
+        "screening_stage",
+        "task_ids",
+        "variants",
+    ):
+        resolved[key] = copy.deepcopy(raw[key])
+    resolved["authority"].update(copy.deepcopy(authority))
+    source = copy.deepcopy(base["fit"]["official_default_r8"])
+    source.update(
+        {
+            "support_scope": "single_conditional_smolvla_default_like_rank16",
+            "rank": override["rank"],
+            "alpha": override["alpha"],
+            "dropout": override["dropout"],
+            "expected_trainable_parameters": override[
+                "expected_trainable_parameters"
+            ],
+        }
+    )
+    resolved["fit"] = {
+        key: copy.deepcopy(value)
+        for key, value in base["fit"].items()
+        if key not in base["variants"]
+    }
+    resolved["fit"]["official_default_r16"] = source
+    resolved["screening_rollout"] = copy.deepcopy(screening)
+    resolved["confirmation_rollout"] = copy.deepcopy(confirmation)
+    resolved["rank_escalation"] = copy.deepcopy(escalation)
+    resolved["parallel"] = copy.deepcopy(raw["parallel"])
+    resolved["resources"].update(copy.deepcopy(raw["resources"]))
+    return resolved
+
+
+def load_target_support_rank16_spec(
+    path: Path,
+    *,
+    gate_zero_path: Path,
+    phase0_path: Path,
+    competence_path: Path,
+    prior_execution_path: Path,
+    rank8_audit_path: Path,
+) -> dict[str, Any]:
+    """Resolve the sole rank-16 escalation from its hash-bound rank-8 parent."""
+
+    raw = _load_rank16_raw(path)
+    _validate_rank16_header(raw)
+    base = load_target_support_audit_spec(
+        rank8_audit_path,
+        gate_zero_path=gate_zero_path,
+        phase0_path=phase0_path,
+        competence_path=competence_path,
+        prior_execution_path=prior_execution_path,
+    )
+    _validate_rank16_authority(
+        raw.get("authority", {}),
+        base,
+        gate_zero_path=gate_zero_path,
+        phase0_path=phase0_path,
+        competence_path=competence_path,
+        prior_execution_path=prior_execution_path,
+        rank8_audit_path=rank8_audit_path,
+    )
+    _validate_rank16_fit_and_resources(raw, base)
+    _validate_rank16_rollouts(raw)
+    return _resolve_rank16_spec(raw, base)
+
+
+def load_target_support_screen_spec(
+    path: Path,
+    *,
+    gate_zero_path: Path,
+    phase0_path: Path,
+    competence_path: Path,
+    prior_execution_path: Path,
+) -> dict[str, Any]:
+    """Load either stage of the one bounded target-support recovery."""
+
+    try:
+        with path.open("rb") as handle:
+            name = tomllib.load(handle).get("name")
+    except (OSError, tomllib.TOMLDecodeError) as error:
+        raise GateZeroTargetSupportContractError("invalid target-support TOML") from error
+    if name == EXPECTED_NAME:
+        return load_target_support_audit_spec(
+            path,
+            gate_zero_path=gate_zero_path,
+            phase0_path=phase0_path,
+            competence_path=competence_path,
+            prior_execution_path=prior_execution_path,
+        )
+    if name == EXPECTED_RANK16_NAME:
+        return load_target_support_rank16_spec(
+            path,
+            gate_zero_path=gate_zero_path,
+            phase0_path=phase0_path,
+            competence_path=competence_path,
+            prior_execution_path=prior_execution_path,
+            rank8_audit_path=path.with_name("gate_zero_target_support_audit.toml"),
+        )
+    raise GateZeroTargetSupportContractError("unknown target-support contract")

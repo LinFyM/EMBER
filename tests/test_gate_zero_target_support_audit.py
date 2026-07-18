@@ -15,12 +15,14 @@ from ember.gate_zero_oracle_session import resolve_lora_variant_spec  # noqa: E4
 from ember.gate_zero_support.contract import (  # noqa: E402
     GateZeroTargetSupportContractError,
     load_target_support_audit_spec,
+    load_target_support_rank16_spec,
 )
 
 
 class GateZeroTargetSupportAuditContractTest(unittest.TestCase):
     def setUp(self) -> None:
         self.audit_path = ROOT / "configs" / "gate_zero_target_support_audit.toml"
+        self.rank16_path = ROOT / "configs" / "gate_zero_target_support_rank16.toml"
         self.gate_zero_path = ROOT / "configs" / "gate_zero_oracle_pilot.toml"
         self.phase0_path = ROOT / "configs" / "phase0.toml"
         self.competence_path = ROOT / "configs" / "gate_zero_source_competence.toml"
@@ -156,6 +158,65 @@ class GateZeroTargetSupportAuditContractTest(unittest.TestCase):
         self.assertIn("-m ember.gate_zero_oracle_fit", completed.stdout)
         self.assertIn(str(self.audit_path), completed.stdout)
         self.assertIn("--variant all_expert_qv_r8", completed.stdout)
+
+    def test_rank16_contract_is_the_single_hash_bound_conditional_scope(self) -> None:
+        spec = load_target_support_rank16_spec(
+            self.rank16_path,
+            gate_zero_path=self.gate_zero_path,
+            phase0_path=self.phase0_path,
+            competence_path=self.competence_path,
+            prior_execution_path=self.prior_execution_path,
+            rank8_audit_path=self.audit_path,
+        )
+        rank8 = self.load()
+
+        self.assertEqual(spec["variants"], ["official_default_r16"])
+        candidate = spec["fit"]["official_default_r16"]
+        self.assertEqual(candidate["rank"], 16)
+        self.assertEqual(candidate["alpha"], 16)
+        self.assertEqual(candidate["dropout"], 0.0)
+        self.assertEqual(candidate["expected_trainable_parameters"], 742656)
+        self.assertEqual(
+            candidate["target_modules"],
+            rank8["fit"]["official_default_r8"]["target_modules"],
+        )
+        self.assertEqual(spec["screening_stage"], "rank16")
+        self.assertEqual(
+            spec["screening_rollout"]["init_state_indices"], list(range(32, 40))
+        )
+        self.assertEqual(
+            spec["confirmation_rollout"]["init_state_indices"], list(range(40, 48))
+        )
+        self.assertEqual(
+            spec["authority"]["rank8_screening_result_sha256"],
+            "0df3acb8d3fd5f94507921298940281c7430eedc359869d3918a0f2c012c6efb",
+        )
+        self.assertFalse(spec["authority"]["validation_numeric_access"])
+        self.assertFalse(spec["authority"]["held_numeric_access"])
+        self.assertTrue(spec["rank_escalation"]["no_further_support_or_rank_search"])
+
+    def test_canonical_fitter_accepts_only_the_declared_rank16_variant(self) -> None:
+        completed = subprocess.run(
+            [
+                str(ROOT / "scripts" / "run_gate_zero_oracle_fit.sh"),
+                f"--config={self.rank16_path}",
+                "--variant=official_default_r16",
+                "--task-id=3",
+                "--gpu=4",
+                "--output-dir=/tmp/ember-gate0-rank16-fit-test",
+                "--latest-link=/tmp/ember-gate0-rank16-fit-latest-test",
+                "--dry-run",
+            ],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            env={**os.environ, "EMBER_PYTHON": sys.executable},
+        )
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn("-m ember.gate_zero_oracle_fit", completed.stdout)
+        self.assertIn("--variant official_default_r16", completed.stdout)
 
 
 if __name__ == "__main__":

@@ -1668,3 +1668,10 @@
   checkpoint at step 10k, the canonical launcher dry-run stops at step 250,
   and the full repository suite passes 219 tests. This is one configuration
   mode of the existing fitter/launcher, not a second training path.
+- The first matched-LoRA segment reaches atomic step 250 with task-3/task-4
+  query reductions of +0.892%/+1.038% (median +0.965%). Both exceed the frozen
+  nonnegative continuation floor; drift remains 0.00167/0.000925. This is an
+  early positive query trend, not Gate-0 or behavioral evidence. Candidate
+  manifests hash to `871c5093...5fef`/`4a691249...8c92`, recovery manifests to
+  `6e969071...1ec2`/`6662e1a0...bfe1`, and telemetry to
+  `56bef9ce...a54`/`94ebc132...1d36`. Exact resume to 500 is authorized.

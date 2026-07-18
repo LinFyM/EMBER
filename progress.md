@@ -1566,3 +1566,12 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   independent GPUs. Continue the same outputs only if the result-blind ladder
   passes. Do not open the formal closed-loop surface until a separate
   headroom-safe source-only contract is frozen.
+- Step-250 long-runs `gate0_mature_lora_lr_recovery_t3_stage250_20260718_203014`
+  and `...t4...203015` complete main rc 0 on clean commit `a392634` in
+  3:54/3:53. Task 3/4 query reductions are +0.892%/+1.038% (median +0.965%),
+  satisfying the frozen nonnegative continuation rule; drift is
+  0.00167/0.000925. Candidate and recovery validators pass, current recovery
+  pointers resolve to step 250, peak memory is 18,485/18,545MiB, active-window
+  utilization is 89.44%/88.89%, GPU 4/5 return to 0MiB, and retained output is
+  58MiB. Exact-resume the same output to step 500 next; no formal rollout,
+  validation, held, Gate 0, or Writer authority was opened.

@@ -548,6 +548,13 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     Even a step-1000 pass authorizes only a separately predeclared headroom-safe
     source rollout contract: source task 3 is already 8/8 under the base and
     cannot satisfy a positive-gain-on-both-tasks rule.
+    The matched LoRA step-250 segment now completes rc 0 on both tasks in
+    3:54/3:53. Query reductions are +0.892%/+1.038% (median +0.965%), with
+    drift 0.00167/0.000925; both per-task and median nonnegative conditions
+    pass. Candidate/recovery hashes validate, peak memory is
+    18,485/18,545MiB, GPU 4/5 are released, and the output is only 58MiB.
+    Exact-resume these same states to step 500; do not start a new trajectory
+    or access closed loop.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

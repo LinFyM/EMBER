@@ -510,6 +510,41 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   the four-file surface: one canonical eval shell entrypoint, one reusable
   artifact owner, and their two focused test files.
 
+## Gate 0 pilot frozen before policy outcomes
+
+- Added `configs/gate_zero_oracle_pilot.toml` and its explanatory contract before
+  any LIBERO-90 source policy training or outcome access. It binds the permanent
+  split, canonical manifest, source-only normalization, base/model/data
+  revisions, source task pair 3/4, episode partitions, thresholds, target
+  matrices, seeds, optimizer budgets, matched rollout init states, failure
+  classes, and single bounded recovery. The two-task result cannot authorize
+  Writer training.
+- The access amendment preserves the earlier video evidence without pretending
+  it never happened: demos 40--47 had RGB-only exposure, demos 46--49 still
+  have locked actions/rewards/policy outcomes, and only 48--49 are untouched in
+  every field. The streaming surface factory derives tasks from the checksummed
+  canonical manifest, exposes all 60 source tasks only for base-fit, restricts
+  support/query to source tasks 3/4, and refuses report construction without a
+  selected-adapter freeze record.
+- Added a deterministic, resumable task→demo→frame sampler and a lazy per-worker
+  HDF5 dataset. It constructs state from `ee_states + gripper_states`, applies
+  exactly one H/W camera flip, emits 50-step action chunks with repeat-last
+  padding plus an explicit mask, and never creates a duplicate converted video
+  corpus. Synthetic tests cover partition denial, unknown demos, image/state
+  transforms, padding, and O(1) step-resume identity.
+- Pinned PEFT 0.19.1 in the project and Phase 0 environment lock. Static
+  safetensors inspection verifies the four declared action-expert q/v matrices
+  and exactly 40,320 rank-8 parameters. Fixed query noise/time is keyed by
+  task/demo/frame rather than batch order, preventing the earlier batch-shape
+  mechanics issue from changing the common random numbers.
+- Source-only mechanics checks, still before any policy outcome, established
+  that HDF5 demo init rows are not official pruned-init rows and that HDF5 RGB
+  matches raw simulator orientation. A real source support batch then passed
+  the exact SmolVLA tokenizer/normalizer interface as finite two-camera 128x128,
+  8D state, 50x7 action, padding-mask, and 48-token tensors. Live preflight
+  selected one free device for the short EGL probe, released it afterward, and
+  did not interfere with unrelated jobs.
+
 ## Immediate handoff
 
 1. Preserve the permanent reseal and fresh canonical manifest as the only active

@@ -38,7 +38,7 @@ progress through the complete design only when predecessor evidence supports it.
 | --- | --- | --- |
 | Phase 0. Reproducible substrate | in progress | environment lock, revisions, hashes, known-path smoke test, VRAM/throughput/storage measurements |
 | Gate -1. Benchmark/spec validity | in progress under fixed statistical contract | task-factor audit, counterfactual/spec-swap/no-language/video controls |
-| Gate 0. Useful-update oracle | pending | independent query and closed-loop gain with drift/non-harm diagnostics |
+| Gate 0. Useful-update oracle | in progress; source-only pilot frozen before outcomes | independent query and closed-loop gain with drift/non-harm diagnostics |
 | Gate 1. Canonical representation | pending | functional preservation, conditioning, task-specificity, dimension/rank decision |
 | Stage 2. Writer center | pending | zero-interaction utility over retrieval, average, direct-conditioning, and DISC/HyPoGen-style baselines |
 | Stage 3. Center plus ordinary local RL | pending | matched-budget adaptation AUC/steps-to-threshold benefit |
@@ -130,8 +130,13 @@ progress through the complete design only when predecessor evidence supports it.
    evaluator, fixes one measured-safe batch/mode across every arm in a
    comparison, and judges task-level functional estimates with uncertainty;
    batch-1 exactness remains a small audit rather than the primary Gate.
-9. [ ] Design the smallest useful-update oracle pilot with explicit pass,
-   diagnosis, and recovery criteria.
+9. [x] Design and permanently predeclare the smallest useful-update oracle
+   pilot with explicit pass, diagnosis, and recovery criteria. The canonical
+   contract uses the all-60-source base-fit surface at demos 8--27, source tasks
+   3/4 for independent rank-8 support at 28--39, fixed-noise selection only at
+   40--45, and a report-access freeze before 46--49 or official init 16--23.
+   It discloses the prior RGB-only access to 40--47, keeps validation/held
+   numeric access at zero, and cannot authorize Writer from a two-task pilot.
 10. [x] Run the predeclared official-overlap specification pilot before scaling
     Gate -1: `libero_spatial` tasks 0/1, one fixed async batch of eight per arm,
     correct/no-spec/scene-only/swapped prompts, paired seeds/init states, one

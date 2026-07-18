@@ -751,3 +751,34 @@
   authorized after this outcome. The result establishes only a useful temporal
   representation diagnostic on one resealed source pair; it does not pass
   Gate -1, establish held-video sufficiency, or authorize Writer training.
+
+## Gate 0 pre-outcome mechanics and access findings
+
+- The pinned base snapshot exposes the intended task-local mechanism without
+  borrowing an OpenVLA layer name. The last action self-attention and
+  VLM-to-expert cross-attention q/v weights have shapes `(960,720)`,
+  `(320,720)`, `(960,720)`, and `(320,320)`. Rank 8 therefore gives exactly
+  40,320 trainable scalars. PEFT 0.19.1 supports the frozen full target list and
+  orthogonal initialization and is now part of the project lock.
+- HDF5 demonstration init states and official `.pruned_init` rows are distinct
+  authorities: zero of 50 rows match for either source task 3 or 4, with
+  differences much larger than floating-point noise. Offline episode numbers
+  must not be reused as simulator init-state indices. Locked offline loss and
+  official fresh-rollout success are separate evidence surfaces.
+- Replaying source task 3 demo 8 state 0 through the pinned simulator shows the
+  HDF5 RGB is already aligned with the raw simulator observation. Identity
+  orientation has correlation 0.973/0.909 for agent/wrist cameras, whereas a
+  180-degree H/W flip has -0.578/0.087. Because the canonical LIBERO runtime
+  performs exactly one H/W flip before SmolVLA, streaming training must also
+  apply exactly one flip to HDF5 images.
+- Gate -1 previously accessed RGB only for demonstrations 40--47. It did not
+  access their actions, rewards, terminals, or policy outcomes. Consequently
+  46--47 are modality-scoped action/reward/policy-outcome locks, while 48--49
+  alone are fully pristine. The Gate 0 source contract records that distinction
+  before any policy result.
+- A real task-3 support batch passes the pinned SmolVLA preprocessing path with
+  two finite float32 `128x128` cameras, finite 8D normalized state, finite
+  `50x7` normalized action chunks, boolean padding, and `48` language tokens.
+  The streaming path repeats the terminal action under the padding mask to
+  match LeRobot dataset semantics and does not materialize a duplicate video
+  dataset.

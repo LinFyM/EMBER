@@ -40,6 +40,7 @@ torchcodec = "0.11.1"
 pyav = "15.1.0"
 video_decode_backend = "pyav"
 numpy = "2.2.6"
+peft = "0.19.1"
 ziglang = "0.16.0"
 render_backend = "egl"
 

@@ -1081,9 +1081,10 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
 
 ### Formal rank-8 support-fit launch contract
 
-- Canonical launch revision is clean commit
+- Canonical implementation revision is clean commit
   `c8c0ad0e4c2ca7845e2ef90a96302fd5257abe8a` on
-  `phase0/reproducible-substrate`. The six outputs live below
+  `phase0/reproducible-substrate`; launch occurs from its clean documentation-only
+  descendant, whose exact HEAD is captured by every long-run record. The six outputs live below
   `$EMBER_OUTPUT_ROOT/gate_zero/target_support_audit/fit/rank8_20260718T143438Z`;
   stable `latest_<variant>_task<id>` links live in the parent fit directory.
 - Every job calls the sole `scripts/run_gate_zero_oracle_fit.sh` with

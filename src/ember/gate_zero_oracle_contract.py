@@ -209,6 +209,42 @@ def _load_json(path: Path, label: str) -> dict[str, Any]:
     return value
 
 
+def load_oracle_fit_spec(
+    path: Path,
+    *,
+    gate_zero_path: Path,
+    phase0_path: Path,
+    competence_path: Path,
+) -> dict[str, Any]:
+    """Dispatch frozen pilot and support-audit configs to their strict validators."""
+
+    try:
+        with path.open("rb") as handle:
+            name = tomllib.load(handle).get("name")
+    except (OSError, tomllib.TOMLDecodeError) as error:
+        raise GateZeroOracleContractError("invalid oracle fit TOML") from error
+    if name == "smolvla_libero90_gate_zero_oracle_execution_v1":
+        return load_oracle_execution_spec(
+            path,
+            gate_zero_path=gate_zero_path,
+            phase0_path=phase0_path,
+            competence_path=competence_path,
+        )
+    if name == "smolvla_libero90_gate_zero_target_support_audit_v1":
+        from ember.gate_zero_target_support_contract import (
+            load_target_support_audit_spec,
+        )
+
+        return load_target_support_audit_spec(
+            path,
+            gate_zero_path=gate_zero_path,
+            phase0_path=phase0_path,
+            competence_path=competence_path,
+            prior_execution_path=path.with_name("gate_zero_oracle_execution.toml"),
+        )
+    raise GateZeroOracleContractError("unknown oracle fit contract")
+
+
 def validate_oracle_fit_prerequisites(
     *,
     config_path: Path,
@@ -220,7 +256,7 @@ def validate_oracle_fit_prerequisites(
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
     """Bind a fit job to source competence and the immutable base checkpoint."""
 
-    spec = load_oracle_execution_spec(
+    spec = load_oracle_fit_spec(
         config_path,
         gate_zero_path=gate_zero_path,
         phase0_path=phase0_path,

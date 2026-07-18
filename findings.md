@@ -1213,3 +1213,25 @@
   source/query surfaces and evaluating on fresh reserved recovery init states.
   Threshold reduction, locked-report reuse for selection, and Writer launch are
   prohibited.
+
+## Target-support recovery is bounded before outcomes
+
+- The current long-term Goal's LoRA capacity audit is instantiated by
+  `configs/gate_zero_target_support_audit.toml`; it does not change the Goal or
+  revive any bank/geometry route. The old last-two q/v rank-8 support remains a
+  40,320-parameter pilot candidate, compared fairly with all action-expert q/v
+  (322,560 parameters) and the SmolVLA-default-like action support (371,328
+  parameters). Frozen-checkpoint tensor inspection validates all 4/32/37 exact
+  targets and declared counts.
+- The fit remedy is intentionally singular: lower LoRA AdamW learning rate from
+  `3e-4` to `1e-4` and inspect denser early candidates through step 750. The
+  sampler, effective batch, support/query rows, noise, drift cap, base, rank,
+  alpha, and dropout remain matched. This targets the observed task-3 early
+  gain-above-drift-cap and task-4 post-step-250 overfit without an unbounded
+  optimizer search.
+- Locked demos cannot select support. Rank-8 screening uses reserved source
+  init states 24--31; a selected support freezes before confirmation on 32--39
+  and before reopening the locked reporting surface. One rank-16 version of the
+  best declared support is conditionally available only if every rank-8 scope
+  fails the frozen screening contract. There is no other support/rank search,
+  and Writer remains unauthorized until the matched confirmation passes.

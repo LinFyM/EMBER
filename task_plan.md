@@ -338,7 +338,13 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     equally bounded remedy) together with the three required support scopes;
     choose only on legal source/query evidence, then use the already reserved
     recovery init states for the closed-loop check. Do not reuse locked report
-    demos for selection.
+    demos for selection. The pre-outcome authority is now frozen in
+    `configs/gate_zero_target_support_audit.toml` and its concise decision record
+    in `docs/gate_zero_target_support_audit.md`: rank-8 supports contain
+    40,320/322,560/371,328 parameters, use one lower-LR/dense-early-candidate
+    remedy, screen on init states 24--31, and confirm only after support freeze
+    on 32--39. Exactly one conditional rank-16 escalation is allowed only when
+    no rank-8 support passes; no other layer/rank/optimizer search is scheduled.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

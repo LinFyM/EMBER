@@ -372,12 +372,25 @@ def _build_result(
     started: float,
 ) -> dict[str, Any]:
     selection = spec["selection"]
+    variant_spec = spec["fit"][args.variant]
+    if variant_spec.get("adaptation_kind") == "lora":
+        capacity_role = "matched_target_support_audit_candidate"
+        pilot_scope = (
+            "source_only_gate_zero_target_support_audit_"
+            "not_final_writer_target_support"
+        )
+    elif args.variant == "lora":
+        capacity_role = "matched_primary_lora_pilot"
+        pilot_scope = "source_only_gate_zero_pilot_not_final_writer_target_support"
+    else:
+        capacity_role = "non_matched_partial_update_upper_bound_only"
+        pilot_scope = "source_only_gate_zero_pilot_not_final_writer_target_support"
     return {
         "schema_version": 1,
         "status": "oracle_fit_selection_complete_pending_global_report_grant",
         "variant": args.variant,
         "task_id": args.task_id,
-        "pilot_scope": "source_only_gate_zero_pilot_not_final_writer_target_support",
+        "pilot_scope": pilot_scope,
         "authorities": authorities,
         "task_authorities": session.task_authorities,
         "support": {
@@ -400,11 +413,7 @@ def _build_result(
             "locked_report_accessed": False,
         },
         "trainable": session.trainable_summary,
-        "capacity_role": (
-            "matched_primary_lora_pilot"
-            if args.variant == "lora"
-            else "non_matched_partial_update_upper_bound_only"
-        ),
+        "capacity_role": capacity_role,
         "gate_zero_authorized": False,
         "writer_authorized": False,
         "final_writer_target_contract_sealed": False,
@@ -557,7 +566,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--source-base-checkpoint", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--latest-link", type=Path, required=True)
-    parser.add_argument("--variant", choices=("lora", "partial_upper_bound"), required=True)
+    parser.add_argument("--variant", required=True)
     parser.add_argument("--task-id", type=int, required=True)
     parser.add_argument("--physical-gpu", required=True)
     parser.add_argument("--resume", action="store_true")

@@ -140,6 +140,42 @@ def _load_task_datasets(
     return support, query, evidence
 
 
+def resolve_lora_variant_spec(
+    *,
+    parent: dict[str, Any],
+    variant: str,
+    variant_spec: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Resolve legacy and named audit variants through one PEFT model path."""
+
+    if variant == "lora":
+        oracle = parent["oracle"]
+        return {
+            "target_modules": list(oracle["target_modules"]),
+            "rank": variant_spec["rank"],
+            "alpha": variant_spec["alpha"],
+            "dropout": variant_spec["dropout"],
+            "init_lora_weights": oracle["init_lora_weights"],
+        }
+    if variant_spec.get("adaptation_kind") != "lora":
+        return None
+    targets = variant_spec.get("target_modules")
+    if (
+        not isinstance(targets, list)
+        or not targets
+        or len(targets) != len(set(targets))
+        or any(not isinstance(target, str) or not target for target in targets)
+    ):
+        raise GateZeroOracleSessionError("named LoRA variant has invalid targets")
+    return {
+        "target_modules": list(targets),
+        "rank": variant_spec["rank"],
+        "alpha": variant_spec["alpha"],
+        "dropout": variant_spec["dropout"],
+        "init_lora_weights": variant_spec["init_lora_weights"],
+    }
+
+
 def configure_oracle_variant(
     policy: Any,
     *,
@@ -149,21 +185,23 @@ def configure_oracle_variant(
     variant_spec: dict[str, Any],
 ) -> tuple[Any, dict[str, Any]]:
     set_global_seed(variant_spec["seed"])
-    if variant == "lora":
-        oracle = parent["oracle"]
+    lora = resolve_lora_variant_spec(
+        parent=parent, variant=variant, variant_spec=variant_spec
+    )
+    if lora is not None:
         peft_config = build_lora_config(
-            targets=oracle["target_modules"],
-            rank=variant_spec["rank"],
-            alpha=variant_spec["alpha"],
-            dropout=variant_spec["dropout"],
-            init_lora_weights=oracle["init_lora_weights"],
+            targets=lora["target_modules"],
+            rank=lora["rank"],
+            alpha=lora["alpha"],
+            dropout=lora["dropout"],
+            init_lora_weights=lora["init_lora_weights"],
             base_revision=parent["authority"]["model_revision"],
         )
         model = policy.wrap_with_peft(peft_config=peft_config)
         actual_targets = sorted(model.base_model.targeted_module_names)
-        if actual_targets != sorted(oracle["target_modules"]):
+        if actual_targets != sorted(lora["target_modules"]):
             raise GateZeroOracleSessionError("PEFT resolved a different target set")
-        deltas = physical_lora_deltas(model, oracle["target_modules"])
+        deltas = physical_lora_deltas(model, lora["target_modules"])
         if not deltas or any(torch.count_nonzero(value).item() for value in deltas.values()):
             raise GateZeroOracleSessionError("LoRA initialization is not an exact physical zero")
     else:
@@ -229,7 +267,12 @@ def open_oracle_model_session(
             fixed_time_seed=selection["fixed_time_seed"],
             inference_noise_seed=selection["inference_noise_seed"],
         )
-        base_context = model.disable_adapter() if variant == "lora" else contextlib.nullcontext()
+        lora = resolve_lora_variant_spec(
+            parent=parent, variant=variant, variant_spec=variant_spec
+        )
+        base_context = (
+            model.disable_adapter() if lora is not None else contextlib.nullcontext()
+        )
         with base_context:
             reference = evaluator.capture_base_reference(model)
         return OracleModelSession(

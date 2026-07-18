@@ -1038,3 +1038,43 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   recovery uses only the already reserved fresh recovery init states. Writer
   remains blocked until a useful independent LoRA oracle is established and
   the final support is permanently resealed.
+
+## 2026-07-18 target-support audit predeclaration
+
+- Added the pre-outcome authority
+  `configs/gate_zero_target_support_audit.toml` and concise rationale
+  `docs/gate_zero_target_support_audit.md`. It binds the failed locked result
+  SHA256 `b7fcfc6227ba7fd6fc2e9ad21b2e55978b54d668476c9c520e216536739e9d91`,
+  immutable grant, source competence, base checkpoint, split, and held-zero
+  access. The active long-term Goal already covers this bounded LoRA capacity
+  audit and remains unchanged, active, and unbudgeted.
+- Extended the sole recoverable oracle fitter/launcher by configuration rather
+  than adding a parallel trainer. Legacy `lora` and `partial_upper_bound`
+  contracts still resolve identically; named support variants share the same
+  model/data/optimizer/artifact owners. Path-safe variant IDs remain contract
+  restricted.
+- Unit contract tests pass for exact target nesting, frozen counts, prior-report
+  hash failure, legacy/new single-path resolution, and launcher dispatch. The
+  previous ten oracle execution tests, Python compilation, shell syntax, and
+  diff checks pass. Read-only inspection of the frozen checkpoint confirms
+  target/count tuples `(4, 40320)`, `(32, 322560)`, and `(37, 371328)`.
+- Next: run one live zero-step target-resolution smoke, then launch the six
+  750-step source fits in at most four concurrent one-GPU jobs with Trackio and
+  recoverable state. No locked-report, validation, or held numeric result is
+  available to fitting or selection.
+- The one permitted live zero-step smoke completed rc 0 on physical GPU 4 and
+  released it back to 0MiB. The three variants resolved exactly 4/32/37 target
+  modules, 8/64/74 trainable LoRA tensors, and
+  40,320/322,560/371,328 parameters; all physical deltas were exact zero.
+  Peak Torch allocation was only 902MiB because no batch or outcome surface was
+  loaded. No additional target-identity instrumentation is planned.
+- Final verification passes 185/185 tests in 44.60 seconds, all Python
+  compilation, all shell syntax checks, and diff whitespace checks. The
+  architecture guard reports REVIEW with no hard violation: net active-source
+  growth is 559 lines across seven changed and two new files. The new
+  `gate_zero_target_support_contract` has one cohesive owner--the irreversible
+  audit authority--and avoids mixing the superseded pilot contract with its
+  bounded recovery. The fitter, session, artifacts, and launcher remain single
+  shared paths. After the final LoRA support is sealed and its report exported,
+  remove or freeze the audit dispatch in the next retirement review rather
+  than extending it into a general experiment framework.

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shutil
 import uuid
 from pathlib import Path
@@ -24,6 +25,15 @@ SELECTED_MANIFEST = "selected_manifest.json"
 
 class GateZeroOracleArtifactError(RuntimeError):
     """Raised when an oracle candidate is incomplete, changed, or overwritten."""
+
+
+def _valid_variant(variant: str) -> bool:
+    """Allow only contract-resolved, path-safe variant identifiers."""
+
+    return (
+        isinstance(variant, str)
+        and re.fullmatch(r"[a-z][a-z0-9_]{0,63}", variant) is not None
+    )
 
 
 def sha256_file(path: Path) -> str:
@@ -80,7 +90,7 @@ def save_candidate_artifact(
 ) -> Path:
     """Atomically publish one immutable query-evaluated candidate."""
 
-    if variant not in {"lora", "partial_upper_bound"}:
+    if not _valid_variant(variant):
         raise GateZeroOracleArtifactError("candidate variant is invalid")
     if task_id < 0 or step < 0 or metrics.get("step") != step:
         raise GateZeroOracleArtifactError("candidate task/step metadata is invalid")
@@ -205,7 +215,7 @@ def save_recovery_artifact(
 ) -> Path:
     """Publish a resumable candidate-bound state and atomically advance ``last``."""
 
-    if variant not in {"lora", "partial_upper_bound"} or task_id < 0 or step < 0:
+    if not _valid_variant(variant) or task_id < 0 or step < 0:
         raise GateZeroOracleArtifactError("recovery variant/task/step is invalid")
     root = output_root / "recovery"
     root.mkdir(parents=True, exist_ok=True)

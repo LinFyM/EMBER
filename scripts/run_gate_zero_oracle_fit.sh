@@ -35,6 +35,7 @@ trap 'handle_signal 143' TERM
 
 while (($#)); do
   case "$1" in
+    --config=*) CONFIG=${1#*=} ;;
     --variant=*) variant=${1#*=} ;;
     --task-id=*) task_id=${1#*=} ;;
     --gpu=*) gpu=${1#*=} ;;
@@ -47,8 +48,8 @@ while (($#)); do
   shift
 done
 
-[[ "$variant" = "lora" || "$variant" = "partial_upper_bound" ]] || \
-  die "--variant must be lora or partial_upper_bound"
+[[ "$CONFIG" = /* ]] || die "--config must be absolute"
+[[ -f "$CONFIG" ]] || die "--config does not exist"
 [[ "$task_id" = "3" || "$task_id" = "4" ]] || die "--task-id must be 3 or 4"
 [[ "$gpu" =~ ^[0-7]$ ]] || die "--gpu must be one physical GPU index"
 [[ "$output_dir" = /* ]] || die "--output-dir must be absolute"
@@ -69,6 +70,14 @@ fi
 : "${HF_HOME:?set HF_HOME}"
 : "${LIBERO_CONFIG_PATH:?set LIBERO_CONFIG_PATH}"
 [[ -x "$PYTHON" ]] || die "locked Python is missing"
+
+"$PYTHON" - "$CONFIG" "$variant" <<'PY' || die "--variant is not declared by --config"
+import sys
+import tomllib
+
+spec = tomllib.load(open(sys.argv[1], "rb"))
+raise SystemExit(0 if sys.argv[2] in spec.get("variants", []) else 1)
+PY
 
 mapfile -t paths < <(
   "$PYTHON" - "$CONFIG" "$GATE_ZERO" "$EMBER_OUTPUT_ROOT" "$EMBER_DATA_ROOT" <<'PY'

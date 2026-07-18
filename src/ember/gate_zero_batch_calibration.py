@@ -17,20 +17,15 @@ from ember.gate_zero_base_runtime import (
     build_base_optimizer,
     capture_trainable_state,
     gradient_accumulation_steps as _base_accumulation_steps,
+    load_base_training_components,
     make_base_loader,
     optimizer_step as run_base_optimizer_step,
     optimizer_state_summary,
     restore_trainable_state,
 )
 from ember.gate_zero_contract import load_gate_zero_contract
-from ember.gate_zero_data import (
-    GateZeroSurface,
-    SourceHdf5Dataset,
-    load_surface_authorities,
-)
+from ember.gate_zero_data import SourceHdf5Dataset
 from ember.gate_zero_runtime import (
-    load_smolvla_policy,
-    load_source_normalization,
     parameter_summary,
     set_global_seed,
     sha256_file,
@@ -213,32 +208,15 @@ def _write_result(result: dict[str, Any], output_dir: Path, latest_link: Path) -
 def _prepare_runtime(
     args: argparse.Namespace, spec: dict[str, Any], phase0: dict[str, Any]
 ) -> tuple[SourceHdf5Dataset, Any, Any]:
-    if sha256_file(args.base_path / "model.safetensors") != spec["authority"]["model_weight_sha256"]:
-        raise GateZeroBatchCalibrationError("base policy weight authority changed")
-    authorities, demo_indices = load_surface_authorities(
-        spec,
-        phase0,
+    dataset, policy, preprocessor, _ = load_base_training_components(
+        spec=spec,
+        phase0=phase0,
         manifest_path=args.manifest,
+        normalization_path=args.normalization,
         dataset_root=args.dataset_root,
-        surface=GateZeroSurface.BASE_FIT,
+        base_path=args.base_path,
+        vlm_path=args.vlm_path,
     )
-    dataset = SourceHdf5Dataset(
-        authorities,
-        demo_indices=demo_indices,
-        action_chunk_size=spec["data"]["action_chunk_size"],
-        verify_sha256=True,
-    )
-    stats = load_source_normalization(
-        args.normalization,
-        expected_sha256=spec["authority"]["source_normalization_sha256"],
-        expected_task_ids=phase0["splits"]["source"],
-        expected_count=183555,
-    )
-    policy = load_smolvla_policy(args.base_path, args.vlm_path, spec)
-    policy.train()
-    from lerobot.policies.smolvla.processor_smolvla import make_smolvla_pre_post_processors
-
-    preprocessor, _ = make_smolvla_pre_post_processors(policy.config, dataset_stats=stats)
     return dataset, policy, preprocessor
 
 

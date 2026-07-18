@@ -176,6 +176,13 @@ gradient_accumulation_steps = 1
 exact_model_tensor_equality = true
 exact_optimizer_scheduler_rng_equality = true
 exact_next_sampler_batch_equality = true
+exact_full_raw_next_batch_equality = true
+actual_stochastic_smolvla_forward = true
+fixed_flow_inputs_forbidden = true
+restore_rng_after_loader_iterator = true
+checkpoint_save_must_preserve_rng = true
+implementation_files_hash_bound = true
+stop_on_first_mismatch = true
 cleanup_transient_full_checkpoints_after_verification = true
 scientific_outcome_metrics_recorded = false
 

@@ -89,6 +89,11 @@ class GateZeroContractTest(unittest.TestCase):
         self.assertEqual(probe["interrupted_checkpoint_step"], 1)
         self.assertTrue(probe["exact_model_tensor_equality"])
         self.assertTrue(probe["exact_optimizer_scheduler_rng_equality"])
+        self.assertTrue(probe["actual_stochastic_smolvla_forward"])
+        self.assertTrue(probe["fixed_flow_inputs_forbidden"])
+        self.assertTrue(probe["restore_rng_after_loader_iterator"])
+        self.assertTrue(probe["checkpoint_save_must_preserve_rng"])
+        self.assertTrue(probe["implementation_files_hash_bound"])
         self.assertTrue(probe["cleanup_transient_full_checkpoints_after_verification"])
 
     def test_loader_rejects_episode_overlap(self) -> None:

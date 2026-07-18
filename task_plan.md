@@ -208,4 +208,6 @@ progress through the complete design only when predecessor evidence supports it.
     and sampler-step resume, rotating two recovery checkpoints, one retained
     scientific checkpoint, and a hash-bound runtime/evaluator manifest. Only
     after item 15 is resealed and resume identity passes may the 10,000-step
-    all-60-source base fit launch.
+    all-60-source base fit launch. The canonical trainer/checkpoint path and CPU
+    regression suite are implemented; the remaining mechanics condition is the
+    clean single-GPU real-SmolVLA stochastic resume probe.

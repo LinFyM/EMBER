@@ -105,11 +105,14 @@ native AdamW state rather than incorrectly claiming an all-fp32 optimizer.
 Batch-shape authority does not authorize the formal 10,000-step fit. A separate
 source-only mechanics probe must compare uninterrupted step 2 against step 1
 checkpoint plus resume to step 2. Model, optimizer, scheduler, RNG, and next
-sampler batch must match exactly. Checkpoints use the pinned LeRobot safetensors
-state format inside an atomic directory rename, hash every retained file, keep
-only the latest two recoverable checkpoints, and retain step 10,000 as a
-candidate pending source-competence evaluation rather than calling it a
-successful source base.
+sampler/full raw batch must match exactly. The probe uses SmolVLA's actual
+stochastic forward, forbids fixed flow noise/time, requires checkpoint saving
+itself to preserve RNG, builds the resumed loader and iterator before restoring
+RNG, binds the active implementation file hashes, and stops at the first
+mismatch. Checkpoints use the pinned LeRobot safetensors state format inside an
+atomic directory rename, hash every retained file, keep only the latest two
+recoverable checkpoints, and retain step 10,000 as a candidate pending source-
+competence evaluation rather than calling it a successful source base.
 
 Reusable raw HDF5 streaming avoids a duplicate converted video dataset.
 Canonical reports include a bounded local gallery; regenerable duplicate media

@@ -604,15 +604,32 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   dtype plus 155 fp32 step scalars. The contract precision label is amended
   before formal source training. Batch shape is now authorized; formal base fit
   remains false until the real stochastic checkpoint/resume identity probe.
-- The retained implementation keeps one optimization owner:
+- The retained implementation has one optimization path:
   `gate_zero_base_runtime.py` supplies the loader, optimizer, pinned upstream
-  scheduler, and optimizer step to both calibration and the forthcoming single
-  base trainer. `gate_zero_checkpoint.py` separately owns hash-bound full-policy
-  runtime views; it is not a second trainer or evaluator. The architecture scan
-  has review-only signals from this current four-file source/test slice and one
-  cohesive 81-line measurement transaction, with no hard violation or parallel
-  execution path. These owners retire after Gate 0 only if pinned LeRobot gains
-  equivalent matched sampling and atomic provenance contracts.
+  scheduler, component loader, and optimizer step to calibration and training;
+  `gate_zero_checkpoint.py` owns LeRobot-format atomic full-state artifacts,
+  sidecar/whole-tree hashes, explicit late RNG restore, and validated rotation;
+  `gate_zero_base_train.py` is the sole CLI owner for both the exact resume probe
+  and the later authorized fit. There is one shell entrypoint and no fallback
+  trainer, alternate sampler, or evaluator.
+- The trainer slice adds three active source/test/entrypoint files and about
+  1.3k net source/test lines, so the architecture guard requires an explicit
+  rationale. The 624-line orchestrator is above the review signal but below the
+  escalation boundary: its two modes deliberately share component loading,
+  stochastic optimizer steps, checkpoint metadata, state hashing, Trackio, and
+  result publication, while serialization remains in the separate 334-line
+  checkpoint owner. Splitting the two modes into runners would create the
+  parallel paths this contract forbids. The guard reports review signals only,
+  no hard violation. Retire the probe-only branch after Gate 0 evidence is
+  frozen; retire the local checkpoint/runtime owners only if pinned LeRobot
+  gains equivalent absolute-step sampling, atomic commit, hash validation, and
+  late-RNG resume semantics. Git and result manifests preserve old evidence.
+- The prelaunch regression surface now has 131 passing tests plus Python compile
+  and shell dry-run checks. It covers scalar/mixed-dtype state hashing, model/
+  optimizer/scheduler loading without RNG mutation, explicit late RNG restore,
+  payload/manifest tamper rejection, overwrite refusal, atomic `last`, and
+  validated two-checkpoint rotation. Formal training authorization remains
+  false; no source-base multistep run has started.
 
 ## Immediate handoff
 
@@ -621,10 +638,10 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
 2. Preserve both same-state native-goal mechanics and the same-observation
    language-action path, then run action-hidden video content/temporal controls.
    Do not use held results to choose thresholds, task IDs, or remedies.
-3. Complete the single matched batch-calibration recovery, then verify exact
-   full-state checkpoint/resume identity before resumable shared-base fitting.
-   Establish legal source competence before task-local oracle or paired-goal
-   behavior claims.
+3. Run the clean single-GPU exact full-state checkpoint/resume probe through the
+   canonical trainer. Only an all-surface exact result may authorize resumable
+   shared-base fitting; establish legal source competence before task-local
+   oracle or paired-goal behavior claims.
 
 ## Last verified handoff facts
 

@@ -5,16 +5,25 @@ from __future__ import annotations
 import hashlib
 import time
 from collections.abc import Iterable, Iterator
+from pathlib import Path
 from typing import Any
 
 import torch
 from torch.utils.data import DataLoader
 
-from ember.gate_zero_data import SourceHdf5Dataset, TaskDemoFrameBatchSampler
+from ember.gate_zero_data import (
+    GateZeroSurface,
+    SourceHdf5Dataset,
+    TaskDemoFrameBatchSampler,
+    load_surface_authorities,
+)
 from ember.gate_zero_runtime import (
     batch_provenance_keys,
     deterministic_flow_inputs,
+    load_smolvla_policy,
+    load_source_normalization,
     preprocess_smolvla_batch,
+    sha256_file,
     smolvla_flow_loss,
 )
 
@@ -150,6 +159,49 @@ def make_base_loader(
         generator=worker_generator,
         **kwargs,
     )
+
+
+def load_base_training_components(
+    *,
+    spec: dict[str, Any],
+    phase0: dict[str, Any],
+    manifest_path: Path,
+    normalization_path: Path,
+    dataset_root: Path,
+    base_path: Path,
+    vlm_path: Path,
+) -> tuple[SourceHdf5Dataset, Any, Any, Any]:
+    """Load the single all-source dataset/policy/processor authority used by Gate 0."""
+
+    if sha256_file(base_path / "model.safetensors") != spec["authority"]["model_weight_sha256"]:
+        raise GateZeroBaseRuntimeError("base policy weight authority changed")
+    authorities, demo_indices = load_surface_authorities(
+        spec,
+        phase0,
+        manifest_path=manifest_path,
+        dataset_root=dataset_root,
+        surface=GateZeroSurface.BASE_FIT,
+    )
+    dataset = SourceHdf5Dataset(
+        authorities,
+        demo_indices=demo_indices,
+        action_chunk_size=spec["data"]["action_chunk_size"],
+        verify_sha256=True,
+    )
+    stats = load_source_normalization(
+        normalization_path,
+        expected_sha256=spec["authority"]["source_normalization_sha256"],
+        expected_task_ids=phase0["splits"]["source"],
+        expected_count=183555,
+    )
+    policy = load_smolvla_policy(base_path, vlm_path, spec)
+    policy.train()
+    from lerobot.policies.smolvla.processor_smolvla import make_smolvla_pre_post_processors
+
+    preprocessor, postprocessor = make_smolvla_pre_post_processors(
+        policy.config, dataset_stats=stats
+    )
+    return dataset, policy, preprocessor, postprocessor
 
 
 def training_row_keys(

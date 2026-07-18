@@ -268,6 +268,13 @@ def _validate_base_checkpoint(spec: dict[str, Any]) -> None:
         "exact_model_tensor_equality",
         "exact_optimizer_scheduler_rng_equality",
         "exact_next_sampler_batch_equality",
+        "exact_full_raw_next_batch_equality",
+        "actual_stochastic_smolvla_forward",
+        "fixed_flow_inputs_forbidden",
+        "restore_rng_after_loader_iterator",
+        "checkpoint_save_must_preserve_rng",
+        "implementation_files_hash_bound",
+        "stop_on_first_mismatch",
         "cleanup_transient_full_checkpoints_after_verification",
     ):
         _require_equal(probe[key], True, f"resume probe {key}")

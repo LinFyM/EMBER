@@ -558,7 +558,13 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   no-op initializer, with exact physical-delta and fixed-loss assertions. This
   is a pre-training mechanics correction after one disclosed support batch, not
   a threshold, split, target, rank, optimizer, or outcome-selected change; a
-  clean-commit recovery remains required before batch calibration.
+  clean-commit recovery was required before batch calibration.
+- Commit `2d6d3d3` and long-run
+  `gate_zero_adapter_model_mechanics_exactzero_20260718_073720` close that
+  recovery. The real four-target adapter starts with exact zero physical update
+  and exact base-loss identity, takes a finite nonzero step, saves/reloads
+  bit-exactly, passes every checksum, records Trackio metrics, and releases its
+  sole GPU. No Gate or Writer decision is implied.
 - The source-base one-step probe completed separately from clean commit
   `51b9405`: 99,880,992 trainable parameters, finite loss and gradient, 1,818
   MiB peak PyTorch reserved memory, 2,345 MiB peak sampled device memory, and

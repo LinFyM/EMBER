@@ -802,6 +802,14 @@
   occurred after only one fixed task-3 support mechanics batch and before any
   multi-step training, query/report access, or rollout result; the prior
   artifact remains provenance rather than being overwritten.
+- The clean-commit exact-zero recovery validates the repair on the real SmolVLA
+  target set: all four initial physical-delta norms and maxima are exactly zero;
+  enabled and disabled adapter losses are both `2.4018678665161133`; and one
+  AdamW step creates finite nonzero updates in all four matrices. The saved
+  adapter reloads every physical delta bit-exactly. Both scientific and wrapper
+  return codes are zero, artifact checksums pass, Trackio contains the run, peak
+  sampled device memory is 2,331 MiB with 78,823 MiB minimum free, and GPU 4 is
+  released. This closes mechanics only.
 - The shared-base one-step mechanics path independently trains 99,880,992
   declared parameters with finite loss and gradient from the same task-3
   support batch. It completed from clean commit `51b9405`, with outer/scientific

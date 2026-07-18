@@ -179,7 +179,7 @@ progress through the complete design only when predecessor evidence supports it.
     only 15/24 paired queries are jointly correct and the two 0.80 content
     thresholds remain unmet. Preserve both readers and stop reader selection;
     the remaining item is legal source competence and closed-loop behavior.
-14. [ ] Close Gate 0 model mechanics before multi-step training. The first
+14. [x] Close Gate 0 model mechanics before multi-step training. The first
     adapter invocation failed before forward/backward because preprocessing
     correctly removed provenance that fixed-noise keying still needed; capture
     row keys before preprocessing and retain that implementation packet. The
@@ -187,8 +187,10 @@ progress through the complete design only when predecessor evidence supports it.
     not the contract's stated functional-zero update. Preserve that diagnostic,
     amend only the initializer to nonzero-`A`/zero-`B`, require exact zero
     physical delta and exact base-loss identity, and rerun from a clean commit.
-    The independent shared-base one-step path already passes with finite loss,
-    gradient, and optimizer update.
+    Recovery from `2d6d3d3` passes: all four initial deltas and the loss delta
+    are exactly zero, one step creates finite nonzero updates, and saved deltas
+    reload bit-exactly. The independent shared-base one-step path also passes
+    with finite loss, gradient, and optimizer update.
 15. [ ] After exact functional-zero mechanics pass, calibrate source-base
     microbatch candidates `[8,16,32,64]` in one model-loading process for three
     technical steps each. Select measured samples/second subject to at least

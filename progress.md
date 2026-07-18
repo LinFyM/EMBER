@@ -1584,3 +1584,11 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   recovery pointers resolve to step 500, retained output is 69MiB, and both
   GPUs return to 0MiB. Exact-resume to step 750 next; no rollout or non-source
   surface has been accessed.
+- Step-750 long-runs `gate0_mature_lora_lr_recovery_t3_stage750_20260718_204212`
+  and its task-4 peer complete main rc 0 in 3:43/3:44. Query reductions reach
+  +4.925%/+3.728% (median +4.326%), passing the frozen 1%-median/nonnegative
+  rule; drift is 0.00768/0.00684. Candidate/recovery validators pass, peak
+  memory is 18,585/18,545MiB, active utilization is 89.74%/88.96%, current
+  recovery pointers resolve to 750, and both GPUs are released. Exact-resume
+  to the final authorized step-1000 query boundary next; no closed loop or
+  validation/held access occurred.

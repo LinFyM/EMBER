@@ -559,6 +559,10 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     reductions rise to +3.388%/+2.611% (median +2.999%) with drift
     0.00572/0.00495, passing the frozen 0.5%-median/nonnegative rule. Artifacts
     validate and GPU 4/5 again release; exact-resume to step 750 next.
+    Step 750 completes rc 0 in 3:43/3:44 and improves further to
+    +4.925%/+3.728% (median +4.326%) with drift 0.00768/0.00684. This passes
+    the frozen 1%-median/nonnegative rule; exact-resume the same states to the
+    final authorized source-query boundary at step 1000.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

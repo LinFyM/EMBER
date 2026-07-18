@@ -1680,3 +1680,9 @@
   `867d1be1...affc`/`643343e2...2a59`; recovery hashes are
   `4092f457...ff56`/`676ff2af...f822`. The same data/query identities persist,
   so the frozen step500-to-750 rule passes without a new trajectory or surface.
+- Step 750 further improves task 3/4 to +4.925%/+3.728% query reduction
+  (median +4.326%), with drift 0.00768/0.00684. Candidate hashes are
+  `6cedeb90...e81c`/`2dcfe206...e488`, recovery hashes are
+  `c03d8c3f...9124`/`378da52c...d9d3`, and fixed query identities remain exact.
+  This passes the result-blind 1%-median/nonnegative rule for the final 1k
+  source-query segment; it still provides no closed-loop authority.

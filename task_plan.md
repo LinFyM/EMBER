@@ -563,6 +563,12 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     +4.925%/+3.728% (median +4.326%) with drift 0.00768/0.00684. This passes
     the frozen 1%-median/nonnegative rule; exact-resume the same states to the
     final authorized source-query boundary at step 1000.
+    Step 1000 completes rc 0 in 3:46/3:45 and passes the frozen offline-success
+    criterion: task 3/4 query reductions are +5.798%/+4.236% (median +5.017%),
+    both positive, with drift 0.01056/0.00858. Candidate/recovery/telemetry
+    hashes validate, GPU 4/5 release, and the full output is 92MiB. Stop this
+    ladder at 1000; it authorizes only a separately frozen, headroom-safe
+    source closed-loop contract. Do not resume to 2k or authorize Gate 0/Writer.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

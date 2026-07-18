@@ -1686,3 +1686,17 @@
   `c03d8c3f...9124`/`378da52c...d9d3`, and fixed query identities remain exact.
   This passes the result-blind 1%-median/nonnegative rule for the final 1k
   source-query segment; it still provides no closed-loop authority.
+- At the final authorized step 1000, task-3/task-4 query reductions reach
+  +5.798%/+4.236% (median +5.017%), above the frozen 2%-median and nonnegative
+  per-task criterion. Drift remains 0.01056/0.00858. Candidate hashes are
+  `06127175...47cf`/`9e76ed1d...b3cc`, trainable states are
+  `b20d60b1...a68c`/`ba0f2268...c053`, and recovery manifests are
+  `454144c7...6883`/`26880083...ecb9`. This is positive independent-query
+  evidence that the sealed LoRA space and acquisition recipe have useful
+  function, not yet robot closed-loop evidence.
+- The staged trajectory is permanently stopped at 1000 despite its positive
+  trend: the result-blind ladder authorized no 2k continuation. A formal
+  closed-loop comparison must first replace the mathematically impossible
+  positive-gain-on-both rule caused by task 3's frozen-base 8/8 ceiling. That
+  redesign must use only legal source outcomes, preserve task 3 as a
+  maintenance control, and be frozen before any new LoRA rollout outcome.

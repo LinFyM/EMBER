@@ -1592,3 +1592,12 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   recovery pointers resolve to 750, and both GPUs are released. Exact-resume
   to the final authorized step-1000 query boundary next; no closed loop or
   validation/held access occurred.
+- Step-1000 long-runs `gate0_mature_lora_lr_recovery_t3_stage1000_20260718_204726`
+  and its task-4 peer complete main rc 0 in 3:46/3:45 on clean `57c44c3`.
+  Task 3/4 query reductions are +5.798%/+4.236% (median +5.017%), passing the
+  frozen 2%-median/nonnegative success rule; drift is 0.01056/0.00858.
+  Candidate/recovery validation passes, peak memory is 18,585/18,545MiB,
+  active utilization is 89.06%/89.07%, current recovery pointers resolve to
+  1000, retained output is 92MiB, and GPU 4/5 return to 0MiB. The ladder is
+  complete and must not resume to 2k. Next freeze a headroom-safe source-only
+  closed-loop contract; Gate 0, final Writer support, and Writer remain false.

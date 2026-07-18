@@ -1,0 +1,55 @@
+schema_version = 1
+surface = "libero90_source_executable_goal_mechanics"
+task_suite = "libero_90"
+task_ids = [3, 4]
+source_task_ids = [3, 4]
+scene_id = "KITCHEN_SCENE10"
+split_seal_sha256 = "9f5bc62e15e2cb07887e97bc98630a3f527ac6b5e253f41c203cf37459568428"
+initial_state_source_task_id = 3
+initial_state_indices = [0, 1, 2, 3, 4, 5, 6, 7]
+demonstration_indices = [0, 1, 2, 3, 4, 5, 6, 7]
+terminal_state_selector = "last_recorded_state"
+state_identity = "exact_flattened_mujoco_state"
+success_evaluator = "pinned_libero_native_bddl_check_success"
+counterfactual_switch_threshold = 0.80
+
+[claim_boundary]
+authorized_claim = "same-state executable-goal evaluator mechanics on two resealed LIBERO-90 source tasks"
+gate_decision_authorized = false
+not_authorized = [
+  "LIBERO-90 Gate -1 pass",
+  "policy behavior follows a same-init specification switch",
+  "Writer authorization",
+  "video utility",
+]
+
+[resources]
+gpu_count = 0
+process_count = 1
+expected_peak_host_gib = 4
+timeout_seconds = 600
+stop_condition = "stop before interpretation on split, authority, layout, state-identity, or native-evaluator mismatch"
+
+[[tasks]]
+task_id = 3
+split = "source"
+scene_id = "KITCHEN_SCENE10"
+language = "put the butter at the back in the top drawer of the cabinet and close it"
+bddl_sha256 = "3d00910a47feefbe351a02442c03c9d66cf62a1dc89f4b653fd0250b90f7fa88"
+goal_sha256 = "b121c4762934a8cd7343452d13e7f6f78e379a6ac82b5dc915d6d85e5b5ea333"
+hdf5_filename = "KITCHEN_SCENE10_put_the_butter_at_the_back_in_the_top_drawer_of_the_cabinet_and_close_it_demo.hdf5"
+hdf5_sha256 = "b938c9ad909d6e9448eb7dd75be50f15b8790252b45bd8460b80d03da0b5a8f8"
+hdf5_bytes = 940593950
+state_dimension = 77
+
+[[tasks]]
+task_id = 4
+split = "source"
+scene_id = "KITCHEN_SCENE10"
+language = "put the butter at the front in the top drawer of the cabinet and close it"
+bddl_sha256 = "af0684ddb06f1b9b1f151db3bea2d390e3b8b8eed1f2529b2e82d58c5e227709"
+goal_sha256 = "a95fff6c8cb602f9ba0f45442b3a45ef9edc2a1edc1cd51d74b612e040d8f395"
+hdf5_filename = "KITCHEN_SCENE10_put_the_butter_at_the_front_in_the_top_drawer_of_the_cabinet_and_close_it_demo.hdf5"
+hdf5_sha256 = "4bf6959ee71988be431fa9274c9f59287eef5eb6fb10427160df36065bc22838"
+hdf5_bytes = 903882749
+state_dimension = 77

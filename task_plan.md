@@ -491,6 +491,11 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     authorize Writer. Run one exact-identity/count/finite-step smoke, then only
     tasks 3/4 to the 1k query boundary; continue under the same frozen ladder
     and never consume the formal closed-loop surface during staging.
+    The sole smoke passes on one A100: 99,880,992 trainable parameters in 155
+    tensors, first-row digest identical to both mature LoRA recipes, finite
+    loss/gradient, 62.3 samples/s, and 17.86/18.93GiB peak allocation/reservation.
+    It saves no candidate and opens no rollout/validation/held surface; GPU 4
+    returns to 0MiB. The two task-1k staged fits are mechanically authorized.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

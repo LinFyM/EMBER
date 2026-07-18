@@ -1500,3 +1500,11 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   stage set to the non-matched capacity diagnostic; no split, row, dataset, or
   loader implementation changed. The focused file and full 214-test suite pass
   after the repair.
+- The sole mature action-expert upper-bound smoke then passed on GPU 4 from
+  clean commit `d7f77ba`: exact 99,880,992-parameter/155-tensor identity,
+  mature-control-matched first-batch digest, finite loss 0.42178 and gradient
+  norm 1.65898, 62.3 samples/s, and 17.86/18.93GiB peak Torch allocation/
+  reservation. It published no scientific candidate, consumed no rollout,
+  validation, or held surface, and left GPU 4 at 0MiB with no worker residue.
+  Tasks 3/4 may now launch only to the 1k staged boundary on two independent
+  GPUs under the frozen capacity ladder.

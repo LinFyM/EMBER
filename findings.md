@@ -1552,3 +1552,12 @@
   contract tests pass 15/15, the full suite passes 214/214, and the real
   prerequisite load validates the frozen source checkpoint at step 10k with
   exactly 99,880,992 declared trainables.
+- The one permitted live smoke confirms the declared parameter identity in the
+  actual model: 99,880,992 trainable parameters across 155 tensors. Its first
+  effective batch digest is
+  `9a94f4376435fa94d3a96b25498e598f05790bb3b0ea067c15118d78de303605`,
+  exactly matching both mature LoRA controls and isolating the trainable-state
+  class. One augmented optimizer/scheduler step has loss 0.42178, gradient norm
+  1.65898, and 62.3 samples/s; peak Torch allocation/reservation is
+  17.86/18.93GiB. The smoke saves no query candidate, accesses no rollout,
+  validation, or held surface, and releases GPU 4 to 0MiB.

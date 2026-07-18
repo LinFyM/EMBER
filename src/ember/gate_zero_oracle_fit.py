@@ -106,6 +106,30 @@ def select_fixed_final_candidate(
     return selected
 
 
+def resolve_training_target_step(
+    *,
+    start_step: int,
+    optimizer_steps: int,
+    candidate_steps: list[int],
+    stop_after_step: int | None,
+) -> int:
+    """Resolve one resumable segment without changing the scientific budget."""
+
+    if stop_after_step is None:
+        return optimizer_steps
+    if (
+        not isinstance(stop_after_step, int)
+        or isinstance(stop_after_step, bool)
+        or stop_after_step not in candidate_steps
+        or stop_after_step <= start_step
+        or stop_after_step >= optimizer_steps
+    ):
+        raise GateZeroOracleFitError(
+            "staged stop must be a future predeclared non-final candidate"
+        )
+    return stop_after_step
+
+
 def _reference_evidence(reference: FixedQueryReference) -> dict[str, Any]:
     return {
         "base_query_flow_mse": reference.query_flow_mse,
@@ -312,6 +336,8 @@ def _log_progress(
                 "task_id": args.task_id,
                 "step": step,
                 "target_step": spec["fit"]["optimizer_steps"],
+                "segment_target_step": args.stop_after_step
+                or spec["fit"]["optimizer_steps"],
                 **record,
             },
             sort_keys=True,
@@ -369,11 +395,12 @@ def _train_to_budget(
     tracker: Any,
     iterator: Any,
     start_step: int,
+    target_step: int,
     candidates: dict[int, dict[str, Any]],
 ) -> None:
     candidate_steps = spec["fit"]["candidate_steps"]
     log_every = parent["tracking"]["log_every_optimizer_steps"]
-    for step in range(start_step + 1, spec["fit"]["optimizer_steps"] + 1):
+    for step in range(start_step + 1, target_step + 1):
         record = train_oracle_step(
             iterator,
             session=session,
@@ -387,6 +414,53 @@ def _train_to_budget(
             candidates[step] = _save_trained_candidate(
                 args, authorities, session, tracker, step, record
             )
+
+
+def _build_stage_result(
+    args: argparse.Namespace,
+    spec: dict[str, Any],
+    authorities: dict[str, Any],
+    *,
+    stage_step: int,
+) -> dict[str, Any]:
+    """Validate and summarize a resumable candidate boundary without selecting."""
+
+    expected = {
+        "variant": args.variant,
+        "task_id": args.task_id,
+        "authorities": authorities,
+    }
+    recovery_dir = (args.output_dir / "recovery" / "last").resolve(strict=True)
+    recovery = validate_recovery_artifact(recovery_dir, expected=expected)
+    if recovery["step"] != stage_step:
+        raise GateZeroOracleFitError("staged recovery did not reach the stop boundary")
+    candidate = candidate_evidence(
+        args.output_dir / "candidates" / f"{stage_step:06d}"
+    )
+    if candidate["step"] != stage_step:
+        raise GateZeroOracleFitError("staged query candidate changed step")
+    base = float(candidate["base_query_flow_mse"])
+    query = float(candidate["query_flow_mse"])
+    return {
+        "schema_version": 1,
+        "status": "oracle_fit_stage_complete_resumable",
+        "variant": args.variant,
+        "task_id": args.task_id,
+        "stage_step": stage_step,
+        "maximum_optimizer_steps": spec["fit"]["optimizer_steps"],
+        "query_loss_reduction_fraction": (base - query) / base,
+        "candidate": candidate,
+        "recovery": {
+            "step": recovery["step"],
+            "manifest_sha256": sha256_file(recovery_dir / "recovery_manifest.json"),
+            "files": recovery["files"],
+        },
+        "selection_frozen": False,
+        "final_closed_loop_accessed": False,
+        "validation_numeric_access": False,
+        "held_numeric_access": False,
+        "continuation_requires_stage_contract": True,
+    }
 
 
 def _build_result(
@@ -566,6 +640,12 @@ def run_oracle_fit(args: argparse.Namespace) -> dict[str, Any]:
         loader, iterator, start_step, candidates = _restore_training(
             args, spec, variant_spec, authorities, session
         )
+        target_step = resolve_training_target_step(
+            start_step=start_step,
+            optimizer_steps=spec["fit"]["optimizer_steps"],
+            candidate_steps=spec["fit"]["candidate_steps"],
+            stop_after_step=args.stop_after_step,
+        )
         _ensure_start_candidate(
             args, spec, authorities, session, start_step, candidates
         )
@@ -579,8 +659,25 @@ def run_oracle_fit(args: argparse.Namespace) -> dict[str, Any]:
             tracker,
             iterator,
             start_step,
+            target_step,
             candidates,
         )
+        if target_step < spec["fit"]["optimizer_steps"]:
+            result = _build_stage_result(
+                args, spec, authorities, stage_step=target_step
+            )
+            tracker.log(
+                {
+                    "stage/complete": 1,
+                    "stage/query_loss_reduction_fraction": result[
+                        "query_loss_reduction_fraction"
+                    ],
+                },
+                step=target_step,
+            )
+            tracker.finish()
+            tracker = None
+            return result
         result = _finalize_fit(
             args, spec, authorities, session, candidates, tracker, started
         )
@@ -611,6 +708,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--task-id", type=int, required=True)
     parser.add_argument("--physical-gpu", required=True)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--stop-after-step", type=int)
     return parser.parse_args()
 
 

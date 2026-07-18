@@ -399,6 +399,19 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     full LoRA contract for Writer and all matched arms; failure remains a bounded
     LoRA-capacity diagnosis, not an automatic EMBER negative. Keep items 20 and
     21 open until that closed-loop evidence exists.
+
+    Execute the unchanged mature trajectory through the exact-resume ladder
+    1k -> 2k -> 5k -> 10k -> 20k rather than a blind 20k run. The frozen
+    operational authority is `configs/gate_zero_mature_lora_stage_ladder.toml`
+    (SHA256 `0db007a1e9403902b99e5b6f106f7556d087fe41c188742f94547c986bf6a9eb`).
+    Stage 1k may continue to 2k only if both task query reductions are
+    nonnegative and their median is at least 2%; later absolute/slope criteria
+    are in that file. Every failure stops for bounded mechanics/data/
+    augmentation/optimizer diagnosis. Staging uses query only and never consumes
+    final init states 40--47. The launch race was stopped by SIGINT after about
+    10 volatile steps; both outputs retain validated atomic step-0 candidate,
+    optimizer, scheduler, RNG, and state hashes, so resume those outputs rather
+    than restarting.
 22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,

@@ -14,6 +14,7 @@ gpu=""
 output_dir=""
 latest_link=""
 resume=false
+stop_after_step=""
 dry_run=false
 sampler=""
 
@@ -42,6 +43,7 @@ while (($#)); do
     --output-dir=*) output_dir=${1#*=} ;;
     --latest-link=*) latest_link=${1#*=} ;;
     --resume) resume=true ;;
+    --stop-after-step=*) stop_after_step=${1#*=} ;;
     --dry-run) dry_run=true ;;
     *) die "unknown argument: $1" ;;
   esac
@@ -118,6 +120,10 @@ command=(
   --physical-gpu "$gpu"
 )
 $resume && command+=(--resume)
+if [[ -n "$stop_after_step" ]]; then
+  [[ "$stop_after_step" =~ ^[0-9]+$ ]] || die "--stop-after-step must be an integer"
+  command+=(--stop-after-step "$stop_after_step")
+fi
 
 if $dry_run; then
   printf 'CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=%q MUJOCO_GL=egl ' "$gpu"
@@ -172,9 +178,16 @@ set -e
 stop_sampler
 trap - INT TERM
 if ((main_rc == 0)); then
-  (
-    cd "$output_dir"
-    sha256sum "$(basename "$telemetry")" >> checksums.sha256
-  )
+  if [[ -n "$stop_after_step" ]]; then
+    printf 'stage_telemetry_sha256  '
+    sha256sum "$telemetry"
+  else
+    (
+      cd "$output_dir"
+      for telemetry_file in gpu_telemetry_*.csv; do
+        sha256sum "$telemetry_file"
+      done >> checksums.sha256
+    )
+  fi
 fi
 exit "$main_rc"

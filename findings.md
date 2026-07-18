@@ -1382,3 +1382,26 @@
   validation, or held outcome was evaluated. A CPU augmentation microbenchmark
   took only 0.04--0.05s per 64-sample/two-camera batch, so the slower first live
   step is warm-up rather than evidence for a new performance rewrite.
+
+## Mature fit cadence changed safely at an atomic boundary
+
+- A race between the initial 20k launch and the owner's staged-execution
+  correction was contained with `SIGINT`, not `SIGKILL`, after roughly 50
+  seconds. Each task logged only steps 1 and 10 before interruption. These
+  volatile steps were never published as a candidate and have no scientific
+  authority.
+- Both partial outputs contain a valid step-0 candidate and schema-2 recovery
+  with trainable state, optimizer, scheduler, RNG and file hashes. Candidate
+  state SHA256 is
+  `6aea08907880b0a9ce9bc1176429e076848502ab70ca3dff2ec6b8180bf9201f`;
+  task-3/task-4 recovery-manifest SHA256 values are
+  `1583c06f9ea3b6017963a1cb09e5daa67f11faea28a318fb2cd763f60433a9f4`
+  and `3ccbc35440bade34e7f1c5a027d2acca7e74b3877f57f55808282555c9c38fe5`.
+  Exact resume from this last complete boundary is valid and does not access a
+  final rollout surface.
+- `configs/gate_zero_mature_lora_stage_ladder.toml` freezes the same-trajectory
+  1k/2k/5k/10k/20k ladder and source-query continuation rules before step-1k
+  outcomes. The first segment continues only when both tasks are nonnegative
+  and median reduction is at least 2%; failure stops for bounded diagnosis.
+  This changes runtime cadence only, not targets, rank, support, augmentation,
+  optimizer, maximum budget, or final Gate thresholds.

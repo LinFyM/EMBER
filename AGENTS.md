@@ -240,6 +240,12 @@ exhausted, preserve the negative result and narrow the claim explicitly.
   the issue can change recoverability, sampled data, closed-loop success, a
   Gate decision, matched fairness, or the held boundary. Do not add identity
   surfaces merely to make engineering evidence cosmetically exact.
+- Run multi-hour scientific fits as predeclared exact-resume segments at
+  meaningful candidate boundaries. The first blind segment should normally be
+  at most about 30 minutes; inspect only legal source mechanics/query trends,
+  continue the same trajectory when its frozen rule passes, and reserve final
+  closed-loop surfaces until the candidate is frozen. Staging changes execution
+  cadence, not model capacity, data authority, or maximum scientific budget.
 - Optimize the full training and inference path for useful throughput. Reuse
   canonical model loads, manifests, decoded or preprocessed observations,
   cached features, and other scientifically equivalent intermediates whenever

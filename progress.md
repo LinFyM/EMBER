@@ -1355,5 +1355,27 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   0.04--0.05s/batch, disproving the initial suspicion that the per-row crop was
   a material bottleneck; no unneeded rewrite was made. Existing 750-step broad
   LoRA timings support the predeclared approximately five-hour fit estimate.
-  Next, commit/push a clean revision and launch the two independent task fits on
-  no more than two free GPUs with durable Trackio/long-run records.
+  The subsequent launch cadence is superseded by the staged race recovery below.
+
+### Staged mature-fit race recovery
+
+- Initial long-runs `gate0_mature_r32_t3_20260718_162854` and
+  `gate0_mature_r32_t4_20260718_162854` entered startup immediately before the
+  owner changed the execution cadence. Both received orderly SIGINT at about
+  50 seconds and ended rc 130; GPU 4/5 returned to 0MiB. The outputs and logs
+  remain intact. Each has a hash-valid step-0 candidate plus atomic optimizer,
+  scheduler, RNG and trainable-state recovery; approximately 10 later volatile
+  steps are correctly discarded.
+- Added one optional `--stop-after-step` argument to the existing fitter and
+  launcher. It accepts only a future predeclared non-final candidate, validates
+  the candidate and recovery manifests, returns rc 0 with a resumable stage
+  summary, and leaves the output legal for the next `--resume`. No second
+  trainer/checkpoint format was added. Stage telemetry hashes are written to the
+  long-run log rather than into the resumable output.
+- The stage ladder contract SHA256 is
+  `0db007a1e9403902b99e5b6f106f7556d087fe41c188742f94547c986bf6a9eb`.
+  The first exact-resume segment stops normally at step 1000 and is expected to
+  take about 12--18 minutes from measured 77--89 samples/s, below the 30-minute
+  cap. It evaluates only the independent source query/drift candidate; formal
+  init states 40--47 remain untouched. Continue to 2k only if both task query
+  reductions are nonnegative and the median is at least 2%.

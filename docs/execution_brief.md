@@ -142,6 +142,11 @@ LoRA uses the 37 [SmolVLA v0.6.0 default-like PEFT targets](https://github.com/h
 rank 32, alpha 16, dropout 0, Gaussian exact-physical-zero initialization,
 20k steps, effective batch 64, SmolVLA AdamW plus warmup/cosine scheduling,
 compatible 90--100% random-resized crops, and fixed-final-step selection.
+The 20k value is a maximum mature budget, not one blind run: execute the same
+trajectory through exact-resume candidate boundaries 1k, 2k, 5k, 10k, and 20k.
+Apply the pre-outcome source-query continuation rules after each segment, keep
+the first segment below about 30 minutes, and do not consume the final fresh
+closed-loop surface until the final candidate is frozen.
 
 This provenance is deliberately qualified. SmolVLA's roughly 50-episode,
 batch-64, 20k-step successful recipe trains its action expert/projections and

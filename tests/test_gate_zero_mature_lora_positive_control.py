@@ -17,7 +17,11 @@ from ember.gate_zero_oracle_artifacts import (  # noqa: E402
     load_recovery_artifact,
     save_recovery_artifact,
 )
-from ember.gate_zero_oracle_fit import select_fixed_final_candidate  # noqa: E402
+from ember.gate_zero_oracle_fit import (  # noqa: E402
+    GateZeroOracleFitError,
+    resolve_training_target_step,
+    select_fixed_final_candidate,
+)
 from ember.gate_zero_oracle_session import (  # noqa: E402
     augment_support_images,
     build_oracle_optimizer,
@@ -102,6 +106,41 @@ class GateZeroMatureLoraPositiveControlTest(unittest.TestCase):
         selected = select_fixed_final_candidate(candidates, final_step=20_000)
 
         self.assertEqual(selected["step"], 20_000)
+
+    def test_staged_stop_must_be_a_future_predeclared_candidate(self) -> None:
+        candidates = list(range(0, 20_001, 1_000))
+        self.assertEqual(
+            resolve_training_target_step(
+                start_step=0,
+                optimizer_steps=20_000,
+                candidate_steps=candidates,
+                stop_after_step=1_000,
+            ),
+            1_000,
+        )
+        self.assertEqual(
+            resolve_training_target_step(
+                start_step=1_000,
+                optimizer_steps=20_000,
+                candidate_steps=candidates,
+                stop_after_step=2_000,
+            ),
+            2_000,
+        )
+        with self.assertRaises(GateZeroOracleFitError):
+            resolve_training_target_step(
+                start_step=0,
+                optimizer_steps=20_000,
+                candidate_steps=candidates,
+                stop_after_step=500,
+            )
+        with self.assertRaises(GateZeroOracleFitError):
+            resolve_training_target_step(
+                start_step=1_000,
+                optimizer_steps=20_000,
+                candidate_steps=candidates,
+                stop_after_step=1_000,
+            )
 
     def test_training_crop_is_deterministic_shape_preserving_and_step_conditioned(self) -> None:
         base = torch.arange(2 * 3 * 16 * 16, dtype=torch.uint8).reshape(2, 3, 16, 16)
@@ -260,6 +299,7 @@ class GateZeroMatureLoraPositiveControlTest(unittest.TestCase):
                 "--gpu=4",
                 "--output-dir=/tmp/ember-mature-fit",
                 "--latest-link=/tmp/ember-mature-fit-latest",
+                "--stop-after-step=1000",
                 "--dry-run",
             ],
             cwd=ROOT,
@@ -287,6 +327,7 @@ class GateZeroMatureLoraPositiveControlTest(unittest.TestCase):
 
         self.assertEqual(fit.returncode, 0, fit.stderr)
         self.assertIn("-m ember.gate_zero_oracle_fit", fit.stdout)
+        self.assertIn("--stop-after-step 1000", fit.stdout)
         self.assertEqual(screen.returncode, 0, screen.stderr)
         self.assertIn("-m ember.gate_zero_support.screen_runtime", screen.stdout)
 

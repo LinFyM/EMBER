@@ -872,3 +872,31 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   causal arms and metrics, frozen-base source outer learning, frozen-held
   isolation, positive long-term completion evidence, and OpenVLA-OFT scale
   confirmation. Historical `docs/expert_plan.md` remains unchanged provenance.
+
+## 2026-07-18 source competence unlocks Gate 0 oracle fitting
+
+- The one permitted four-card short window ran from clean commit `e386925` and
+  measured roughly 294 global samples/s with safe 68,787 MiB minimum free. Its
+  step-30 checkpoint passed full-tree validation and loaded/reran step 31, but
+  the continuous and restarted model hashes were not bitwise equal. The failed
+  long-run state, log, and telemetry are retained; the validated 1.32GB
+  checkpoint was cleaned. Per the owner timebox there is no rerun or new
+  instrumentation. Four-card independent science parallelism is selected over
+  long world-size-4 DDP.
+- Formal source competence then completed in four-way arm parallel under
+  long-run `gate_zero_source_competence_base10k_20260718_122116`, main rc 0.
+  Task 3 correct/swapped was 8/8 versus 0/8; task 4 was 5/8 versus 0/8. All
+  mechanics are valid, the frozen minimum of 2/8 per correct task passes, and no
+  20k recovery is authorized or needed.
+- The 836KB canonical artifact is
+  `$EMBER_OUTPUT_ROOT/gate_zero/source_competence/base10k_20260718T122059Z`;
+  `latest` resolves there. Result SHA256 is
+  `c9697c4cf71d452c431424be4cd12fd6a869ac4fd58755d07152ee6928da83cc`.
+  Checksums cover result, eval info, gallery, telemetry, and four videos. Trackio
+  run `base10k_20260718T122059Z` is available in project `EMBER_gate0`; GPUs
+  4--7 are released.
+- Decision scope is narrow: task-local LoRA oracle fitting is now authorized.
+  Gate -1, Gate 0, Writer, validation, and held outcomes remain unauthorized.
+  Next implement the sole frozen Gate 0 oracle path and bounded LoRA capacity
+  audit, then launch task 3/4 fits as independent GPU jobs with locked query and
+  rollout reporting.

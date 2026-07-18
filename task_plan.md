@@ -200,7 +200,7 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     comparison exceed the predeclared 0.01 plan-delta scale. This excludes
     repeated-reset rendering as the prompt-effect explanation but still does
     not establish correct paired-goal switching.
-13. [ ] Complete the predeclared action-hidden video content and temporal
+13. [x] Complete the predeclared action-hidden video content and temporal
     controls, then obtain legal source-task policy competence before interpreting the
     paired native-goal surface behaviorally. Keep this Gate -1 dependency
     explicit when designing the Gate 0 oracle pilot. The source-only video
@@ -218,7 +218,11 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     improve to 0.7917, and the temporal-order/static-control criteria pass, but
     only 15/24 paired queries are jointly correct and the two 0.80 content
     thresholds remain unmet. Preserve both readers and stop reader selection;
-    the remaining item is legal source competence and closed-loop behavior.
+    legal source competence and closed-loop behavior are now established by the
+    frozen tasks-3/4 run: correct prompts achieve 8/8 and 5/8 while both
+    same-scene swapped prompts achieve 0/8. This closes the prerequisite but
+    does not erase the retained 0.7917 video-content threshold miss or pass
+    Gate -1.
 14. [x] Close Gate 0 model mechanics before multi-step training. The first
     adapter invocation failed before forward/backward because preprocessing
     correctly removed provenance that fixed-noise keying still needed; capture
@@ -253,16 +257,16 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     now matches full model, optimizer, scheduler, RNG, next raw batch, and next
     row keys exactly across uninterrupted and checkpoint/resume branches; the
     validated 1.32GB transient checkpoint is cleaned.
-17. [ ] Launch the now-authorized 10,000-step all-60-source base fit from the
+17. [x] Launch the now-authorized 10,000-step all-60-source base fit from the
     frozen batch-64 contract, retain two rotating recovery checkpoints plus the
     final scientific candidate, then evaluate only the predeclared source tasks
     3/4 competence surface before any task-local oracle interpretation. The
     single-GPU reference completed from clean commit `8ff06f2` with rc 0,
     checksummed step-10000 final state, validated recovery steps 8000/9000,
     Trackio completion, and released resources. It remains the recovery and
-    efficiency reference, not evidence that one GPU is the long-term default;
-    this item remains open until the frozen source competence surface runs.
-18. [ ] Close infrastructure selection with at most one necessary short
+    efficiency reference, not evidence that one GPU is the long-term default.
+    The frozen source competence surface now passes, completing this item.
+18. [x] Close infrastructure selection with at most one necessary short
     four-GPU throughput/stability window, then stop topology benchmarking. The
     clean world-size-4 recovery at commit `9a8a8f5` already returned rc 0 and
     matched model, optimizer, scheduler, global step, data, and all recorded
@@ -273,11 +277,19 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     use world-size 4 for fitting where beneficial; otherwise fill up to four
     GPUs with independent arm/task/seed jobs through canonical entries. Do not
     rerun a full 1/2/4 scaling curve merely to beautify engineering evidence.
-19. [ ] Run the already frozen source-only tasks-3/4 competence comparison on
+    The single window reached about 294 global samples/s and safe headroom, but
+    its step-31 continuous-versus-resumed model hash was not bitwise exact.
+    Because the checkpoint validated, loaded, and ran the resumed step, stop
+    exact-resume work and use four independent arm/task/seed jobs for long
+    science rather than selecting world-size-4 DDP for resumable training.
+19. [x] Run the already frozen source-only tasks-3/4 competence comparison on
     the final 10k checkpoint, preferably four-way arm parallel after live GPU
     preflight. A correct-arm minimum pass authorizes only task-local oracle
     fitting; a failure triggers the one bounded identical-contract extension to
-    20k. Neither branch passes Gate -1, Gate 0, or authorizes Writer.
+    20k. The clean four-GPU arm-parallel result passes without recovery: task 3
+    correct 8/8, task 4 correct 5/8, both swapped 0/8, all mechanics valid.
+    This authorizes task-local oracle fitting only; it does not pass Gate -1,
+    Gate 0, or authorize Writer.
 20. [ ] Complete the Gate 0 task-local rank-8 LoRA oracle and LoRA capacity
     audit on the frozen source support/query/locked-report split. Require
     independent query selection, locked closed-loop gain, non-harm/drift

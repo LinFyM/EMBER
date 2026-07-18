@@ -1089,3 +1089,37 @@
   data, closed-loop success, matched fairness, or held isolation. The full
   planned 1/2/4 curve is superseded by at most one necessary short four-GPU
   throughput/stability window before source competence and Gate 0.
+
+## Four-card science path selected and source competence passed
+
+- The single permitted world-size-4 short window completed its 30 training
+  steps at about 294 global samples/s with 12,368 MiB maximum sampled device
+  memory, 68,787 MiB minimum free, and 100% peak utilization. Its schema-3
+  step-30 checkpoint validated at manifest SHA256
+  `bb99f2c41e89c32709ea724d2c523d35d20a11c9f666b6a477d1c38b8e0e89c4`,
+  loaded on four ranks, and executed the resumed step. The probe then failed
+  only its stronger continuous-versus-resumed `model_state_sha256` equality.
+- Under the owner stop rule this is not another diagnosis program. The 1.32GB
+  validated transient checkpoint was removed, leaving an 88KB telemetry/log
+  failure packet. World-size-4 DDP is not selected for resumable long training;
+  subsequent work fills four GPUs with independent arm/task/seed jobs unless a
+  future scientific workload separately demonstrates that one DDP job is the
+  efficient safe choice.
+- Canonical source competence long-run
+  `gate_zero_source_competence_base10k_20260718_122116` completed rc 0 from clean
+  commit `e386925`. On the permanently frozen source tasks 3/4 and official init
+  indices 8--15, correct prompts achieved 8/8 and 5/8 successes; the matched
+  same-scene swapped prompts achieved 0/8 and 0/8. All four arms are
+  mechanics-valid. The task-level correct-minus-swapped gap is 81.25 percentage
+  points with the predeclared bootstrap 95% interval [50, 100].
+- Result SHA256
+  `c9697c4cf71d452c431424be4cd12fd6a869ac4fd58755d07152ee6928da83cc`
+  binds the step-10000 checkpoint manifest, four arms, seeds/init states,
+  metrics, resources, and interpretation. All result/gallery/telemetry/video
+  checksums pass; the run used world size 4 arm parallelism, took 83.71 seconds
+  for the evaluation body, peaked at 17,546 MiB, and released every GPU.
+- This is legal source-base competence and a language/specification causal
+  prerequisite. It authorizes fitting the frozen task-local LoRA oracle. It is
+  not a Gate -1 pass, Gate 0 pass, Writer authorization, video-utility result,
+  or validation/held evidence; the action-hidden-video content threshold miss
+  remains preserved for Gate -1 interpretation.

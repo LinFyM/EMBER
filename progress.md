@@ -1078,3 +1078,32 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   shared paths. After the final LoRA support is sealed and its report exported,
   remove or freeze the audit dispatch in the next retirement review rather
   than extending it into a general experiment framework.
+
+### Formal rank-8 support-fit launch contract
+
+- Canonical launch revision is clean commit
+  `c8c0ad0e4c2ca7845e2ef90a96302fd5257abe8a` on
+  `phase0/reproducible-substrate`. The six outputs live below
+  `$EMBER_OUTPUT_ROOT/gate_zero/target_support_audit/fit/rank8_20260718T143438Z`;
+  stable `latest_<variant>_task<id>` links live in the parent fit directory.
+- Every job calls the sole `scripts/run_gate_zero_oracle_fit.sh` with
+  `--config=$PWD/configs/gate_zero_target_support_audit.toml`, one declared
+  support variant, one source task, one physical GPU, and a fresh output. The
+  inputs are the frozen 10k source-base checkpoint, source demos 28--39,
+  query-only demos 40--45, fixed noise/time, effective batch 64, LR `1e-4`, and
+  750 optimizer steps. Locked demos, validation, held, rollout reward, and
+  Writer surfaces remain unavailable.
+- Wave 1 assigns last-two task 3/4 and all-expert task 3/4 independently to
+  GPUs 4/5/6/7. Wave 2 assigns official-default task 3/4 to GPUs 4/5 only after
+  wave 1 releases them. Expected peak is 20--22GiB and roughly 10--15 minutes
+  per job; each wave stops at step 750 or on first failure. Four distinct jobs
+  already saturate useful compute in wave 1. The two-job second wave does not
+  duplicate work merely to occupy GPUs 6/7, and colocating compute-saturated
+  jobs would reduce throughput despite consuming more memory.
+- Current personal storage is 294GiB against the 500GiB cap; projected peak
+  addition is below 4GiB. Each long-run records command/Git/environment/logs,
+  the fitter publishes atomic candidate and recovery states, and `--resume`
+  is legal only for the identical variant/task/config output. On success,
+  recovery state is removed after selected-state validation; compact candidates,
+  selected state, Trackio metrics, telemetry, and checksums remain. A failed or
+  partial output is never overwritten and receives a fresh recovery decision.

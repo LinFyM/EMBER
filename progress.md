@@ -1270,3 +1270,8 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   rank-16 confirmation seals or rejects support and evidence is exported,
   perform the already scheduled retirement review and remove active audit
   dispatch/launcher surfaces that no canonical rerun needs before Writer work.
+- The sole live model-level smoke on physical GPU 4 passed and released the
+  device to 0MiB: PEFT resolved exactly 37 targets, exposed exactly 742,656
+  trainable parameters, and `configure_oracle_variant` verified every physical
+  LoRA delta is exact zero. Peak Torch allocation/reservation was 902/928MiB;
+  no demonstrations, rollout outcomes, validation, or held surface was opened.

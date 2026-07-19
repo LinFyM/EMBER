@@ -32,6 +32,15 @@
   `||ΔW||₂=2.0`, coefficient `0.01`, while leaving the full LoRA output and all
   later task-local RL directions unconstrained. This is Writer-initialization
   calibration, not a bank, geometry, mask, metric, or RL search restriction.
+- The one recovery segment completed 1000 steps on eight A100s in 48.8 minutes
+  with roughly 91%--92% active mean utilization and about 70--74GiB used per
+  card. Its update norm remained near 2.0 throughout optimization. Independent
+  query results select step 250: relative loss reductions across open-drawer,
+  toggle/place, basket, spatial-relation, and shelf tasks were 14.4%, 9.7%,
+  11.5%, 7.5%, and 8.7%; physical norms were 1.96--2.33. Step 250 is best by
+  unweighted mean, frame-weighted mean, and minimum-task reduction, so it is
+  frozen before any recovered closed-loop outcome. Existing frozen-base and
+  direct-LoRA episode rows will be reused by hash rather than recomputed.
 
 ## 2026-07-19 owner interpretation: Gate 0 passed with limited coverage
 

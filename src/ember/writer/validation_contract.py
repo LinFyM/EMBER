@@ -28,11 +28,12 @@ def load_validation_contract(path: Path, *, repo_root: Path) -> dict[str, Any]:
     except (OSError, tomllib.TOMLDecodeError) as error:
         raise WriterValidationError("Writer validation contract is unreadable") from error
     require(spec.get("schema_version"), 1, "validation schema")
-    require(
-        spec.get("status"),
+    status = spec.get("status")
+    if status not in {
         "predeclared_before_writer_step1000_or_validation_outcomes",
-        "validation predeclaration",
-    )
+        "predeclared_physical_norm_recovery_validation_before_closed_loop_outcomes",
+    }:
+        raise WriterValidationError("validation predeclaration is not frozen")
     authority = spec["authority"]
     for relative_key, hash_key in (
         ("writer_contract_relative_path", "writer_contract_sha256"),
@@ -51,11 +52,22 @@ def load_validation_contract(path: Path, *, repo_root: Path) -> dict[str, Any]:
     direct = spec["direct_baseline"]
     require(evaluation["task_ids"], upstream["validation"]["task_ids"], "validation tasks")
     require(direct["task_ids"], evaluation["task_ids"], "direct-baseline tasks")
+    expected_writer_arm = (
+        "writer_physical_norm_recovery"
+        if "reuse_baseline" in spec
+        else "writer_cold_start"
+    )
     require(
         evaluation["arms"],
-        ["frozen_base", "writer_cold_start", "matched_direct_task_local_lora"],
+        ["frozen_base", expected_writer_arm, "matched_direct_task_local_lora"],
         "validation arms",
     )
+    if "reuse_baseline" in spec:
+        require(
+            spec["reuse_baseline"]["arms"],
+            ["frozen_base", "matched_direct_task_local_lora"],
+            "reused baseline arms",
+        )
     for key in ("rank", "alpha", "dropout", "expected_parameter_count"):
         require(spec["lora"][key], upstream["lora"][key], f"LoRA {key}")
     require(spec["lora"]["target_count"], upstream["lora"]["target_count"], "LoRA targets")
@@ -77,6 +89,16 @@ def validation_work_for_rank(
     if world_size != spec["parallel"]["world_size"] or not 0 <= rank < world_size:
         raise WriterValidationError("validation rank topology changed")
     tasks = list(spec["evaluation"]["task_ids"])
+    if "reuse_baseline" in spec:
+        pairs = [
+            (task_id, arm)
+            for task_id in tasks
+            for arm in spec["evaluation"]["arms"]
+        ]
+        return {
+            "direct_fit_task": None,
+            "evaluation_arms": pairs[rank::world_size],
+        }
     direct_ranks = list(spec["parallel"]["direct_fit_ranks"])
     direct_task = tasks[direct_ranks.index(rank)] if rank in direct_ranks else None
     if direct_task is not None:

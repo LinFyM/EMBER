@@ -19,8 +19,20 @@
   They localize physical-update runaway (Writer norm about 30--39 versus direct
   1.41--2.00). The single `0.05` B-scale check restored norm but erased nearly
   all query gain, so no closed-loop rollout was spent on it. The next real run
-  is the one-variant, eight-GPU physical-norm recovery frozen in
-  `configs/writer_cold_start_physical_norm_recovery.toml`; targeted tests pass.
+  was the one-variant, eight-GPU physical-norm recovery frozen in
+  `configs/writer_cold_start_physical_norm_recovery.toml`.
+- That recovery completed rc 0 at step 1000 in 48:46 wall-clock. Every atomic
+  checkpoint validates model/optimizer/scheduler/scaler/sampler/eight-rank RNG;
+  the final cursor is 2,048,000 frames. Active mean GPU utilization was about
+  91%--92%, active memory about 70--74GiB, and all GPUs are released. Trackio
+  run: `train_norm_recovery_segment1_20260719T211300Z`.
+- Five-GPU independent query evaluation completed rc 0. Step 250 reduced loss
+  on every category by 7.5%--14.4%, 10.35% unweighted mean, while keeping
+  physical norms at 1.96--2.33. It dominates the later checkpoints on mean,
+  weighted mean, and worst-task reduction, so step 250 is frozen before any new
+  rollout. Config `writer_cold_start_physical_norm_recovery_validation.toml`
+  reuses the immutable base/direct rows and schedules only the five new Writer
+  arms through the canonical validator.
 
 ## 2026-07-19 Writer segment complete; validation resume provenance
 

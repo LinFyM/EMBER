@@ -215,7 +215,7 @@ def _open_runtime(
         state_path = final / "trainable_state.safetensors"
         require(sha256_file(state_path), manifest["state_sha256"], "direct final")
         _restore_lora(lora_state, load_file(state_path))
-    elif arm == "writer_cold_start":
+    elif arm.startswith("writer_"):
         _writer_lora(
             policy,
             lora_state=lora_state,
@@ -357,6 +357,66 @@ def _read_shard(path: Path) -> tuple[list[dict[str, Any]], list[str]]:
     return list(payload["rows"]), list(payload["videos"])
 
 
+def _checksum_records(path: Path) -> dict[str, str]:
+    records: dict[str, str] = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        digest, relative = line.split(maxsplit=1)
+        records[relative.strip()] = digest
+    return records
+
+
+def _reuse_baseline_shards(
+    spec: Mapping[str, Any], *, output_root: Path, output_dir: Path
+) -> None:
+    reuse = spec.get("reuse_baseline")
+    if not reuse:
+        return
+    source = output_root / reuse["output_relative_path"]
+    require(
+        sha256_file(source / "checksums.sha256"),
+        reuse["checksums_sha256"],
+        "reused checksums",
+    )
+    require(
+        sha256_file(source / "episode_rows.csv"),
+        reuse["episode_rows_sha256"],
+        "reused episode rows",
+    )
+    require(
+        sha256_file(source / "writer_cold_start_validation_result.json"),
+        reuse["result_sha256"],
+        "reused validation result",
+    )
+    checksums = _checksum_records(source / "checksums.sha256")
+    expected_rows = (
+        spec["evaluation"]["rollouts_per_task_arm"]
+        * len(spec["evaluation"]["execution_horizons"])
+    )
+    for task_id in spec["evaluation"]["task_ids"]:
+        for arm in reuse["arms"]:
+            relative = f"shards/task_{task_id:03d}_{arm}.json"
+            source_shard = source / relative
+            require(
+                sha256_file(source_shard),
+                checksums[relative],
+                f"reused shard {relative}",
+            )
+            rows, _ = _read_shard(source_shard)
+            if len(rows) != expected_rows or any(
+                row["task_id"] != task_id or row["arm"] != arm for row in rows
+            ):
+                raise WriterValidationError(f"reused shard grain changed: {relative}")
+            _atomic_json(
+                output_dir / relative,
+                {
+                    "rows": rows,
+                    "videos": [],
+                    "reused_from": reuse["output_relative_path"],
+                    "source_sha256": checksums[relative],
+                },
+            )
+
+
 def _checksums(output_dir: Path) -> None:
     files = [
         path
@@ -434,6 +494,7 @@ def _publish_result(
     spec: Mapping[str, Any],
     rows: list[dict[str, Any]],
     videos: list[str],
+    output_root: Path,
     output_dir: Path,
     writer_checkpoint: Path,
     contract_path: Path,
@@ -453,13 +514,23 @@ def _publish_result(
     writer_stage = _json(
         writer_checkpoint.parents[1] / "writer_cold_start_stage_result.json"
     )
-    direct_manifests = {
-        str(task_id): _json(
-            direct_final_path(output_dir / "direct_lora" / f"task_{task_id:03d}")
-            / "manifest.json"
+    if "reuse_baseline" in spec:
+        source_result = _json(
+            output_root
+            / spec["reuse_baseline"]["output_relative_path"]
+            / "writer_cold_start_validation_result.json"
         )
-        for task_id in evaluation["task_ids"]
-    }
+        direct_manifests = source_result["training"]["matched_direct_task_local_lora"][
+            "per_task"
+        ]
+    else:
+        direct_manifests = {
+            str(task_id): _json(
+                direct_final_path(output_dir / "direct_lora" / f"task_{task_id:03d}")
+                / "manifest.json"
+            )
+            for task_id in evaluation["task_ids"]
+        }
     result = {
         "schema_version": 1,
         "status": "writer_cold_start_validation_completed",
@@ -503,6 +574,7 @@ def _publish_result(
             "world_size": spec["parallel"]["world_size"],
             "wall_seconds": wall_seconds,
         },
+        "reused_baseline_evidence": dict(spec.get("reuse_baseline", {})),
         "test_held_accessed": False,
     }
     _atomic_json(output_dir / "writer_cold_start_validation_result.json", result)
@@ -532,6 +604,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     try:
         if context.primary:
             _prepare_output(args.output_dir, resume=args.resume)
+            if not args.resume:
+                _reuse_baseline_shards(
+                    spec, output_root=args.output_root, output_dir=args.output_dir
+                )
         torch.distributed.barrier()
         authorities = _authorities(spec, output_root=args.output_root, data_root=args.data_root)
         source_checkpoint = _source_checkpoint(spec, args.output_root)
@@ -541,6 +617,17 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "Writer checkpoint step",
         )
         _validate_writer_checkpoint(args.writer_checkpoint, world_size=8)
+        for key, filename, label in (
+            (
+                "writer_checkpoint_manifest_sha256",
+                "writer_checkpoint_manifest.json",
+                "Writer checkpoint manifest",
+            ),
+            ("writer_state_sha256", "writer.safetensors", "Writer state"),
+        ):
+            expected = spec["authority"].get(key)
+            if expected is not None:
+                require(sha256_file(args.writer_checkpoint / filename), expected, label)
         work = validation_work_for_rank(spec, rank=context.rank, world_size=context.world_size)
         task_id = work["direct_fit_task"]
         if task_id is not None:
@@ -596,6 +683,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             spec=spec,
             rows=rows,
             videos=videos,
+            output_root=args.output_root,
             output_dir=args.output_dir,
             writer_checkpoint=args.writer_checkpoint,
             contract_path=args.config,

@@ -159,15 +159,21 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
   `18/320`, `21/320`, and `140/320`. The Writer therefore failed the current
   cold-start criterion, while the matched LoRA space and direct acquisition
   remain clearly capable.
-- [ ] Run the single predeclared physical-update recovery in
+- [x] Run the single predeclared physical-update recovery in
   `configs/writer_cold_start_physical_norm_recovery.toml`. Offline independent
   query diagnostics found that the original Writer reduced loss on all five
   validation tasks but emitted physical updates of norm about `30--39`, versus
   `1.41--2.00` for successful direct LoRAs. A post-hoc `0.05` factor scale
   restored direct-like norms but erased nearly all query gain, so it is not a
   rollout candidate. Retrain once from the prescribed initialization with a
-  soft `2.0` physical-norm cap and `0.01` excess penalty; validate independent
-  query transfer before spending the frozen cross-category rollout budget.
+  soft `2.0` physical-norm cap and `0.01` excess penalty. The eight-GPU segment
+  completed rc 0 in 48.8 minutes and kept updates near the cap. On independent
+  query demos, step 250 improved all five categories by 7.5%--14.4% (10.35%
+  unweighted mean) with norms 1.96--2.33, so it is the frozen rollout candidate.
+- [ ] Evaluate only the frozen step-250 recovered Writer on the same five
+  categories and 64 paired rollouts/task at h16/h50. Reuse hash-bound base and
+  direct-LoRA episode rows from the completed packet; do not repeat their
+  rollouts or fits. Publish all three arms together before interpreting.
 
 1. [x] Bootstrap a Python 3.12 environment from the locked project definition;
    verify package consistency and the active GPU/storage contracts.

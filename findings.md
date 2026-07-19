@@ -2754,3 +2754,39 @@
   19,281/6,431/6,447/6,447MiB; all four reached 100% utilization and were
   released to 0MiB. The existing EGL/render asymmetry remains an efficiency
   residual, not a reason to rerun or delay this scientific trajectory.
+
+## Faithful seed-1 trajectory ends with a promising ordinary-RL smoke, not Gate evidence
+
+- The same exact-resume trajectory completed node 24 in 9m47s and node 32 in
+  10m48s. Node 24 changed supervised-init task3/4 by `[-1,0]` paired wins and
+  zero-init by `[+1,+2]`, satisfying only the predeclared continuation trend.
+  Node 32 changed supervised-init by `[0,+1]` and zero-init by `[+1,+3]`.
+  Mechanics, temporal credit, per-flow-sample ratios, drift (<0.02), and finite
+  updates remain valid. The 32-interaction states are the hard end of this
+  trajectory; no node 40 or extra interaction is permitted.
+- At node 32 the supervised-init versus zero-init current-policy paired
+  advantage is `[0,0]`. Supervised-init query reductions remain +5.30%/+2.00%,
+  while zero-init query changes are -0.24%/-0.39%. Thus the lowest-cost reading
+  is a promising ordinary zero-init LoRA RL oracle smoke, with no evidence yet
+  that the supervised initialization helps RL. Because every closed-loop cell
+  is still n=8, none of these values can pass/reject Gate 0 or select Writer.
+- Node-32 stage SHA256 is
+  `9f5aa5e3da4966ccbd40c3afbbd9befba4b02e6faf711bb421f88ba717e42aed`.
+  The complete trajectory is 203MiB; all recovery hashes/JSON/telemetry pass,
+  four current-policy gallery videos decode, and all GPUs released. Across the
+  three segments it consumed 32 source interactions per arm (128 total) plus
+  three repeated 8-episode current/initial development comparisons per arm;
+  replay epochs are not independent samples.
+- A node-24 publishing bug labeled the valid `continue_to_32` status as a
+  terminal file. The attempted node-32 launch failed rc 2 before model load or
+  outcome. Its 49-byte log, state, duplicate result, and checksums are preserved
+  under `failure_packets/nonterminal_publish_ep24_20260719T140940Z`; the result
+  is byte-identical to `stage_results/000024.json`. One tested status fix then
+  exact-resumed successfully without changing the scientific contract.
+- The matched config's `active_training_seed` was previously only a bound
+  replicate label: seed-1's fixed critic/minibatch/flow/policy streams are the
+  reference mapping, so its numerical behavior is unchanged. Before seed 2,
+  the canonical loader now derives those training-only streams by the exact
+  delta from predeclared seed `2026071830`, records the master seed in recovery
+  and stage provenance, and leaves evaluation RNG unchanged. This prevents a
+  false duplicate replicate without adding another trainer.

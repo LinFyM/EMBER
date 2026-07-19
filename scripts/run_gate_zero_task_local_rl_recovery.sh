@@ -14,6 +14,7 @@ gpus=""
 output_dir=""
 latest_link=""
 stop_after_episodes=""
+training_seed=""
 resume=false
 dry_run=false
 sampler=""
@@ -41,6 +42,7 @@ while (($#)); do
     --output-dir=*) output_dir=${1#*=} ;;
     --latest-link=*) latest_link=${1#*=} ;;
     --stop-after-episodes=*) stop_after_episodes=${1#*=} ;;
+    --training-seed=*) training_seed=${1#*=} ;;
     --resume) resume=true ;;
     --dry-run) dry_run=true ;;
     *) die "unknown argument: $1" ;;
@@ -103,6 +105,7 @@ print(authority.get("horizon_support_replay_result_sha256", "-"))
 print(base["resources"]["minimum_free_memory_mib"])
 nodes = runtime["interaction_episode_nodes"] if runtime is not None else base["training_interaction"]["interaction_episode_nodes"]
 print(",".join(str(value) for value in nodes))
+print(runtime["active_training_seed"] if runtime is not None else "-")
 PY
 )
 manifest=${paths[0]}
@@ -122,6 +125,8 @@ horizon_support_replay_result=${paths[13]}
 horizon_support_replay_result_sha256=${paths[14]}
 minimum_free_memory_mib=${paths[15]}
 interaction_episode_nodes=${paths[16]}
+default_training_seed=${paths[17]}
+[[ -n "$training_seed" ]] || training_seed=$default_training_seed
 first_interaction_node=${interaction_episode_nodes%%,*}
 [[ ",$interaction_episode_nodes," == *",$stop_after_episodes,"* ]] ||
   die "--stop-after-episodes is outside the selected contract: $interaction_episode_nodes"
@@ -154,6 +159,7 @@ command=(
   --physical-gpus "$gpus"
   --stop-after-episodes "$stop_after_episodes"
 )
+[[ "$training_seed" == "-" ]] || command+=(--training-seed "$training_seed")
 if [[ "$previous_critic_result" != "-" ]]; then
   command+=(--previous-critic-result "$previous_critic_result")
 fi

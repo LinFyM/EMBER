@@ -46,6 +46,7 @@ from ember.gate_zero_support.screen_runtime import (
     _initialize_parallel,
 )
 from ember.gate_zero_task_local_rl.contract import (
+    apply_matched_training_seed,
     assigned_task_local_rl_arm,
     decide_task_local_rl_node,
     load_task_local_rl_spec,
@@ -220,6 +221,7 @@ def _recovery_authorities(
         "fit_variant": spec["authority"]["fit_variant"],
         "trainable_parameters": spec["lora"]["trainable_parameters"],
         "interaction_budget_unit": "source_environment_episodes",
+        "training_seed": spec.get("active_training_seed"),
     }
     for key in ("previous_critic_result_sha256", "support_replay_result_sha256"):
         if key in spec["authority"]:
@@ -446,6 +448,7 @@ def _stage_evaluation(
         "task_id": task_id,
         "initialization": initialization,
         "condition": f"{initialization}_rl",
+        "training_seed": spec.get("active_training_seed"),
         "initial_successes": initial,
         "successes": current,
         "paired_net_wins": paired_net,
@@ -553,6 +556,7 @@ def _aggregate_stage(
         "config_sha256": sha256_file(args.config),
         "surface": spec["surface"],
         "interaction_episodes_per_task_initialization": args.stop_after_episodes,
+        "training_seed": spec.get("active_training_seed"),
         "records": records,
         "aggregate_metrics": metrics,
         "decision": decision,
@@ -619,6 +623,8 @@ def _load_run_inputs(
         headroom_path=args.headroom_contract,
         diagnostic_path=args.diagnostic_contract,
     )
+    if args.training_seed is not None:
+        spec = apply_matched_training_seed(spec, args.training_seed)
     parent = load_gate_zero_contract(args.gate_zero_contract, args.phase0_contract)
     phase0 = _load_toml(args.phase0_contract)
     fit = _load_toml(args.fit_contract)
@@ -773,6 +779,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--support-replay-result", type=Path)
     parser.add_argument("--physical-gpus", required=True)
     parser.add_argument("--stop-after-episodes", required=True, type=int)
+    parser.add_argument("--training-seed", type=int)
     parser.add_argument("--resume", action="store_true")
     return parser.parse_args()
 

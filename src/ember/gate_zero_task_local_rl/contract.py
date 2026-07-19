@@ -39,6 +39,40 @@ def _uses_horizon_resolved_credit(spec: Mapping[str, Any]) -> bool:
     return _is_horizon_credit(spec) or _is_horizon_coverage(spec)
 
 
+def apply_matched_training_seed(
+    spec: Mapping[str, Any], training_seed: int
+) -> dict[str, Any]:
+    """Derive training-only RNG streams from one predeclared replicate seed."""
+
+    if spec.get("status") != MATCHED_EVIDENCE_STATUS:
+        raise GateZeroTaskLocalRLContractError("training-seed overlay requires matched evidence")
+    matched = spec.get("matched_evidence", {})
+    training = matched.get("training", {})
+    required = training.get("required_training_seeds", [])
+    allowed = [*required, training.get("ambiguity_replication_seed")]
+    if len(required) < 2 or training_seed not in allowed:
+        raise GateZeroTaskLocalRLContractError("training seed is outside the sealed replicates")
+    reference = int(required[0])
+    delta = int(training_seed) - reference
+    previous_delta = int(spec.get("training_seed_delta", 0))
+    result = deepcopy(spec)
+    for key in (
+        "critic_initialization_seed",
+        "minibatch_order_seed",
+        "fixed_flow_noise_seed",
+        "fixed_flow_time_seed",
+    ):
+        result["algorithm"][key] = int(result["algorithm"][key]) - previous_delta + delta
+    policy_key = "policy_rng_seed_start"
+    result["training_interaction"][policy_key] = (
+        int(result["training_interaction"][policy_key]) - previous_delta + delta
+    )
+    result["active_training_seed"] = int(training_seed)
+    result["training_seed_reference"] = reference
+    result["training_seed_delta"] = delta
+    return result
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -460,6 +494,7 @@ def load_task_local_rl_spec(
         ]
         spec["resources"]["tracking_group"] = "task_local_lora_rl_matched_early_check"
         spec["interpretation"] = requested["interpretation"]
+        spec = apply_matched_training_seed(spec, runtime["active_training_seed"])
     else:
         # Historical configs predate an explicit surrogate selector. Their
         # sealed group-eight field identifies the chunk-mean pilot.

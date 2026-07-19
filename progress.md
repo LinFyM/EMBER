@@ -13,6 +13,25 @@
   not a Gate decision. Exact-resume the same seed/arms once from 16 to 24;
   review before any node 32 or confirmation. Gate 0 and Writer remain false,
   with validation/held/locked numeric access still zero.
+- The same seed-1 trajectory then exact-resumed to node 24 (9m47s) and the hard
+  maximum node 32 (10m48s). Final n=8 paired gains are supervised-init
+  `[0,+1]` and zero-init `[+1,+3]`; supervised-init has `[0,0]` advantage over
+  zero-init on the two current policies. This is a promising ordinary-RL smoke
+  only, not Gate 0 or initialization evidence. Stage-32 SHA256 is
+  `9f5aa5e3...2aed`; 203MiB of recovery/JSON/telemetry/gallery artifacts
+  validate and all GPUs are free.
+- The first node-32 launch failed rc 2 before GPU/model/outcome because node 24
+  had been mispublished as terminal despite status `continue_to_32`. The
+  duplicate packet is preserved under the output's `failure_packets/`; tested
+  fix `0afdfdf` corrected only nonterminal publication and the recovery then
+  completed. No more seed-1 interaction is authorized.
+- Before starting required seed `2026072030`, the canonical trainer now makes
+  the already predeclared master training seed operational: critic init,
+  minibatch order, flow noise/time, and training-policy RNG receive a
+  deterministic seed delta, while evaluation RNG stays fixed. Seed 1 is the
+  zero-delta reference and is numerically unchanged. The next run is seed-2
+  node 16 on a fresh output root; later candidate evidence still requires
+  n>=32 paired rollouts/task/arm and both independent training seeds.
 
 - After the candidate-step diagnostic failed, the next source-only Gate-0
   recovery was frozen before any new outcome. Config

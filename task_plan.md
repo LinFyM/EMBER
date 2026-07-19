@@ -1210,3 +1210,14 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
   signals, so the next action is one exact-resume segment to node 24 from the
   same four checkpoints. Do not open node 32, confirmation, Gate 0, or Writer
   until the node-24 review supports it.
+- Seed-1 node 24 then met the frozen continuation trend with zero-init paired
+  wins `[+1,+2]`; after one fail-closed nonterminal-publication repair, the same
+  trajectory reached its hard node-32 maximum. Final n=8 changes are
+  supervised-init `[0,+1]` and zero-init `[+1,+3]`, with no supervised-init
+  advantage over zero-init. Treat this only as a promising ordinary-RL smoke.
+- Launch required training seed `2026072030` next through the same trainer and
+  staged nodes. The master seed must drive distinct critic/minibatch/flow and
+  training-policy RNG streams while evaluation RNG remains matched. Do not
+  expand seed-1 interaction; a scientific candidate still needs >=32 paired
+  rollouts/task/arm, multiple evaluation RNG seeds, and both required training
+  seeds before disjoint confirmation.

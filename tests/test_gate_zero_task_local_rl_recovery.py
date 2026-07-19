@@ -15,6 +15,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from ember.gate_zero_task_local_rl.contract import (  # noqa: E402
     GateZeroTaskLocalRLContractError,
+    apply_matched_training_seed,
     assigned_task_local_rl_arm,
     decide_task_local_rl_node,
     load_task_local_rl_spec,
@@ -128,6 +129,36 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
             )["status"],
             "matched_evidence_early_check_review",
         )
+
+    def test_matched_training_seed_drives_training_rng_but_not_evaluation_rng(self) -> None:
+        matched = load_task_local_rl_spec(
+            ROOT / "configs" / "gate_zero_matched_evidence.toml",
+            gate_zero_path=self.gate_zero,
+            phase0_path=self.phase0,
+            fit_path=self.fit,
+            headroom_path=self.headroom,
+            diagnostic_path=self.diagnostic,
+        )
+        self.assertEqual(matched["active_training_seed"], 2026071830)
+        seed2 = apply_matched_training_seed(matched, 2026072030)
+        self.assertEqual(seed2["active_training_seed"], 2026072030)
+        for key in (
+            "critic_initialization_seed",
+            "minibatch_order_seed",
+            "fixed_flow_noise_seed",
+            "fixed_flow_time_seed",
+        ):
+            self.assertEqual(seed2["algorithm"][key], matched["algorithm"][key] + 200)
+        self.assertEqual(
+            seed2["training_interaction"]["policy_rng_seed_start"],
+            matched["training_interaction"]["policy_rng_seed_start"] + 200,
+        )
+        self.assertEqual(
+            seed2["development_evaluation"]["policy_rng_seed"],
+            matched["development_evaluation"]["policy_rng_seed"],
+        )
+        with self.assertRaises(GateZeroTaskLocalRLContractError):
+            apply_matched_training_seed(matched, 123)
 
     def test_horizon_credit_contract_changes_only_training_credit_resolution(self) -> None:
         horizon = load_task_local_rl_spec(
@@ -527,6 +558,7 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         self.assertIn('base["training_interaction"]["interaction_episode_nodes"]', text)
         self.assertIn("first_interaction_node", text)
         self.assertIn("--resume", text)
+        self.assertIn("--training-seed", text)
         self.assertIn("gpu_telemetry_", text)
         self.assertIn("horizon_support_replay_result_sha256", text)
         self.assertNotIn("writer", text.lower())

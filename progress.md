@@ -12,9 +12,13 @@
   default 10-minute NCCL collective timeout: an early rank entered the final
   gather while slower ranks were still completing long episodes. The failed
   longrun and existing shards remain immutable; no partial performance was
-  opened. The narrow tested fix sets only the process-group timeout to three
-  hours. Resume uses the same output root and skips all complete fits/shards;
-  model, tasks, horizons, seeds, denominators, and statistics are unchanged.
+  opened. Extending the NCCL operation timeout alone preserved four additional
+  shards but exposed NCCL's separate heartbeat watchdog while one final arm was
+  still running. Because this job has no cross-rank gradient or GPU collective,
+  the final narrow fix moves only the small-object control-plane gather to Gloo
+  with a three-hour timeout. Resume uses the same output root and skips all
+  complete fits/shards; model, tasks, horizons, seeds, denominators, and
+  statistics are unchanged.
 
 ## 2026-07-19 Writer validation contract frozen before stage outcome
 

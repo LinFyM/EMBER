@@ -61,9 +61,8 @@ def _parallel(spec: Mapping[str, Any]) -> ParallelContext:
         raise WriterValidationError("Writer validation requires eight ranks")
     torch.cuda.set_device(local_rank)
     torch.distributed.init_process_group(
-        "nccl",
+        "gloo",
         init_method="env://",
-        device_id=torch.device("cuda", local_rank),
         timeout=timedelta(hours=3),
     )
     return ParallelContext(rank, local_rank, world_size)

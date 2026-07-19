@@ -33,6 +33,7 @@ def test_parallel_context_allows_slow_ranks_to_finish_before_gather(
     monkeypatch.setattr(torch.distributed, "init_process_group", init_process_group)
     context = validation._parallel(spec)
     assert context == validation.ParallelContext(rank=3, local_rank=3, world_size=8)
+    assert observed["args"] == ("gloo",)
     assert observed["kwargs"]["timeout"] == timedelta(hours=3)
 
 

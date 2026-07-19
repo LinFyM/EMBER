@@ -2536,3 +2536,16 @@
   training slices and the same scientific contract; it must not append to the
   terminal packet, relax the two-task Gate, or treat either `+1` arm as a
   selected candidate.
+- That recovery is frozen before outcome at SHA256
+  `72e4f13e193aa63e96ea90395f37e2954030a534c396998067a54a74e4d9f241`.
+  It uses the same horizon-resolved PPO/critic implementation and creates no
+  new trainer. A fresh trajectory covers source init states 8--23 at nodes
+  8/16, then adds 24--31 at node 24 and conditionally 32--39 at node 32; the
+  fixed development surface stays 40--47.
+- Stage 16 is a reproducibility/mechanics boundary and may continue exactly
+  once to the first genuinely new coverage node 24. Node 24 opens 32 only if
+  one initialization has positive aggregate paired net gain and neither task
+  is worse than -1; node 32 is terminal. A passing node still only selects a
+  hash-bound development candidate for a separately frozen fresh Gate. This
+  is not permission to append to the prior terminal output or to claim a full
+  FPO++ reproduction.

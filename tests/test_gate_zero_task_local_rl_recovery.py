@@ -47,6 +47,7 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.path = ROOT / "configs" / "gate_zero_task_local_rl_critic_warmup.toml"
         cls.horizon_path = ROOT / "configs" / "gate_zero_task_local_rl_horizon_credit.toml"
+        cls.coverage_path = ROOT / "configs" / "gate_zero_task_local_rl_horizon_coverage.toml"
         cls.gate_zero = ROOT / "configs" / "gate_zero_oracle_pilot.toml"
         cls.phase0 = ROOT / "configs" / "phase0.toml"
         cls.fit = ROOT / "configs" / "gate_zero_mature_lora_lr_recovery.toml"
@@ -219,6 +220,69 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         with self.assertRaises(GateZeroTaskLocalRLContractError):
             decide_task_local_rl_node(
                 horizon, interaction_episodes=24, metrics=self._metrics(zero=(2, 1))
+            )
+
+    def test_horizon_coverage_recovery_adds_only_disjoint_source_rounds(self) -> None:
+        coverage = load_task_local_rl_spec(
+            self.coverage_path,
+            gate_zero_path=self.gate_zero,
+            phase0_path=self.phase0,
+            fit_path=self.fit,
+            headroom_path=self.headroom,
+            diagnostic_path=self.diagnostic,
+        )
+        horizon = load_task_local_rl_spec(
+            self.horizon_path,
+            gate_zero_path=self.gate_zero,
+            phase0_path=self.phase0,
+            fit_path=self.fit,
+            headroom_path=self.headroom,
+            diagnostic_path=self.diagnostic,
+        )
+        self.assertEqual(coverage["lora"], horizon["lora"])
+        self.assertEqual(coverage["algorithm"], horizon["algorithm"])
+        self.assertEqual(coverage["candidate_decision"], horizon["candidate_decision"])
+        self.assertEqual(coverage["development_evaluation"]["init_state_indices"], list(range(40, 48)))
+        self.assertEqual(
+            coverage["training_interaction"]["train_init_state_indices_by_round"],
+            [list(range(start, start + 8)) for start in (8, 16, 24, 32)],
+        )
+        self.assertEqual(
+            coverage["training_interaction"]["interaction_episode_nodes"],
+            [8, 16, 24, 32],
+        )
+        stage8 = decide_task_local_rl_node(
+            coverage, interaction_episodes=8, metrics=self._metrics()
+        )
+        self.assertEqual(stage8["status"], "horizon_coverage_warmup_complete_continue_to_16")
+        stage16 = decide_task_local_rl_node(
+            coverage,
+            interaction_episodes=16,
+            metrics=self._metrics(zero=(-2, 1), supervised=(0, -1)),
+        )
+        self.assertEqual(stage16["status"], "horizon_coverage_recovery_continue_to_24")
+        stopped = decide_task_local_rl_node(
+            coverage, interaction_episodes=24, metrics=self._metrics()
+        )
+        self.assertEqual(stopped["status"], "task_local_rl_early_check_not_supported")
+        trended = decide_task_local_rl_node(
+            coverage, interaction_episodes=24, metrics=self._metrics(zero=(1, 0))
+        )
+        self.assertEqual(trended["status"], "horizon_coverage_recovery_continue_to_32")
+        terminal = decide_task_local_rl_node(
+            coverage, interaction_episodes=32, metrics=self._metrics()
+        )
+        self.assertEqual(terminal["status"], "task_local_rl_early_check_not_supported")
+        changed = copy.deepcopy(coverage)
+        changed["coverage_evidence"]["horizon_support_replay_result_sha256"] = "0" * 64
+        with self.assertRaises(GateZeroTaskLocalRLContractError):
+            validate_task_local_rl_spec(
+                changed,
+                gate_zero_path=self.gate_zero,
+                phase0_path=self.phase0,
+                fit_path=self.fit,
+                headroom_path=self.headroom,
+                diagnostic_path=self.diagnostic,
             )
 
     def test_stage40_is_not_an_active_decision_node(self) -> None:
@@ -422,6 +486,7 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         self.assertIn("first_interaction_node", text)
         self.assertIn("--resume", text)
         self.assertIn("gpu_telemetry_", text)
+        self.assertIn("horizon_support_replay_result_sha256", text)
         self.assertNotIn("writer", text.lower())
 
     def test_flow_noise_uses_processed_model_action_width(self) -> None:

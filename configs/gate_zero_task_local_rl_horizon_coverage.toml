@@ -1,0 +1,265 @@
+schema_version = 3
+name = "smolvla_libero90_gate_zero_task_local_lora_rl_horizon_coverage_v1"
+status = "horizon_credit_source_coverage_recovery_predeclared_after_partial_support_replay"
+predeclared_at_utc = "2026-07-19T11:22:47Z"
+surface = "source_only_gate_zero_task_local_rl_horizon_coverage_recovery"
+task_ids = [3, 4]
+initializations = ["zero_init", "supervised_init"]
+reported_arms = ["frozen_base", "supervised_lora", "zero_init_rl", "supervised_init_rl"]
+
+[authority]
+gate_zero_contract_sha256 = "7bbda2723c72c60c6cfc39c10acaf23a05f4ea0af724c054792cd00c890cfd98"
+phase0_contract_sha256 = "ba9e89971e0f88074cc8de573c8e60b9093105638364a60207ff0d5aa8b7882a"
+fit_contract_sha256 = "693cd61457ec5ec0aafb1c72837899c58f44f2c90e812cb14d115385393fafca"
+headroom_contract_sha256 = "1f92f80ddcc63be7c6a3ef3da1fe63f9870df27a0537ec02c3429bab71440a52"
+headroom_result_relative_path = "gate_zero/mature_lora_headroom/screening/owner_a_20260719T025534Z/support_screening_result.json"
+headroom_result_sha256 = "84116faaffd5115a72f4d49efa2f2467445ca0ac61edac265e571a1e8564c98f"
+candidate_diagnostic_contract_sha256 = "4445664f652744829e219fd483cde7820cfde1d588157d730e4322811e916a46"
+candidate_diagnostic_result_relative_path = "gate_zero/mature_lora_candidate_step_diagnostic/step500_750_20260719T035642Z/candidate_step_diagnostic_result.json"
+candidate_diagnostic_result_sha256 = "aae6e19f14c03a1192cb00aeb05940a48ee1c36ba8b5b07e823066e6602b11cf"
+previous_awr_result_relative_path = "gate_zero/task_local_lora_rl_recovery/awr_ep16_recovery4_20260719T052726Z/task_local_rl_recovery_result.json"
+previous_awr_result_sha256 = "aab151ea503dbada6eaf3a2242301562a47052e1399ec10986c2279425c13b57"
+previous_signed_result_relative_path = "gate_zero/task_local_lora_rl_recovery/signed_flow_ratio_ep16_20260719T060519Z/task_local_rl_recovery_result.json"
+previous_signed_result_sha256 = "73d681caf4f5d6b67519eb33636e9af905aec7412c18c5d85cd1aaf8d3488703"
+previous_temporal_result_relative_path = "gate_zero/task_local_lora_rl_recovery/temporal_credit_ep8_20260719T083749Z/task_local_rl_recovery_result.json"
+previous_temporal_result_sha256 = "e13456343564880e6ef02d48119636774e0a06b783e6f4b0218692f104afa14c"
+previous_critic_result_relative_path = "gate_zero/task_local_lora_rl_recovery/critic_warmup_ep8_20260719T092932Z/task_local_rl_recovery_result.json"
+previous_critic_result_sha256 = "986887261b47b9d4dc55ec630f8c914b60d2fbd247e33c1d98c82669e2a8b1a8"
+support_replay_result_relative_path = "gate_zero/task_local_lora_rl_recovery/support_replay_20260719T095739Z/support_replay_result.json"
+support_replay_result_sha256 = "7e92b745b53442d0df2b3e36b068402b244b17e7f0a750e053f60510d59c414e"
+horizon_credit_result_relative_path = "gate_zero/task_local_lora_rl_recovery/horizon_credit_ep8_20260719T104745Z/task_local_rl_recovery_result.json"
+horizon_credit_result_sha256 = "771eb3b9f563492299d7424ef3a63c77003c322f3fb233c555a46f089ff7f496"
+horizon_support_replay_result_relative_path = "gate_zero/task_local_lora_rl_recovery/horizon_support_replay_20260719T111331Z/horizon_support_replay_result.json"
+horizon_support_replay_result_sha256 = "4a0c13a00bb2692df048eec8426c9dc4980582d5bbd2bd70e178e327fa65f7ef"
+source_base_output_relative_path = "gate_zero/source_base_fit/base_all60_10k_20260718T090513Z"
+source_base_checkpoint_step = 10000
+source_base_checkpoint_role = "source_base_candidate_pending_competence"
+source_base_checkpoint_manifest_sha256 = "ca0c83abd8d4b46cf59e8f0a01bd267f7f0e019d3e2bfea8c8baeb2e851d4d00"
+fit_root_relative_path = "gate_zero/mature_lora_lr_recovery/fit/lr25e6_20260718T203014Z"
+fit_variant = "mature_official_default_r32_lr25e6_recovery"
+supervised_step = 1000
+task3_supervised_manifest_sha256 = "06127175cfecc8305a8ff13f2b0f085773e7ab02365b8f2153b043e2f29c47cf"
+task3_supervised_state_sha256 = "b20d60b19d83198eb26fa6a1827a910403390c0757bb1208f8af46a400faa68c"
+task4_supervised_manifest_sha256 = "9e76ed1d8e1cb1e1dfcc7ca2c27307cc6a5fbd824a40b6f844840f6c846cb3cc"
+task4_supervised_state_sha256 = "ba0f22683f04cc1cf6e8cbf287d8a5af9bc039d9f07300da77d6fe553067c053"
+validation_numeric_access = false
+held_numeric_access = false
+locked_report_numeric_access = false
+writer_present = false
+
+[predecessor_evidence]
+temporal_credit_contract_sha256 = "0cfd1c74ced6b5cdc0e792d1af48555df6f2346527377cdc753ba46fc35955d2"
+temporal_credit_result_sha256 = "e13456343564880e6ef02d48119636774e0a06b783e6f4b0218692f104afa14c"
+temporal_credit_status = "task_local_rl_early_check_not_supported"
+temporal_credit_zero_init_paired_net_wins = [-1, 0]
+temporal_credit_supervised_init_paired_net_wins = [0, 0]
+critic_warmup_contract_sha256 = "51fc9a009d0fa93476ba47a22d86e95a5d89f32182057843c3129e4147725a8a"
+critic_warmup_result_sha256 = "986887261b47b9d4dc55ec630f8c914b60d2fbd247e33c1d98c82669e2a8b1a8"
+critic_warmup_status = "task_local_rl_early_check_not_supported"
+critic_warmup_zero_init_paired_net_wins = [0, 0]
+critic_warmup_supervised_init_paired_net_wins = [0, -1]
+support_replay_contract_sha256 = "f539b7376dd1e265076941d7b45022934802f2931bdb54b866b9b97e1a533909"
+support_replay_result_sha256 = "7e92b745b53442d0df2b3e36b068402b244b17e7f0a750e053f60510d59c414e"
+support_replay_status = "support_replay_no_improvement"
+support_replay_supervised_init_paired_net_wins = [0, -1]
+support_replay_zero_init_paired_net_wins = [-1, -1]
+action_coordinate_audit = "rollout environment action, identity LIBERO env postprocessor, bit-identical pre/post MEAN_STD authority, round-trip error <=7.2e-7, model padding mask honored"
+diagnosis = "the existing 50-step execution path has only eight credit transitions per 400-step episode and fails even on its seen support slice; test the official FPO++ manipulation execution horizon of 16 without changing the canonical reporting evaluator"
+
+[coverage_evidence]
+horizon_credit_contract_sha256 = "491d031565409962cfb96cea09f6ac73ae636a1fe87a14aeb441b18c2d15e05b"
+horizon_credit_result_sha256 = "771eb3b9f563492299d7424ef3a63c77003c322f3fb233c555a46f089ff7f496"
+horizon_credit_status = "task_local_rl_early_check_not_supported"
+horizon_credit_zero_init_paired_net_wins = [-2, 1]
+horizon_credit_supervised_init_paired_net_wins = [0, -1]
+horizon_support_replay_contract_sha256 = "7e676c52f551d3624759448fd34265ecb00bc3c2ee56841c4bfdc6d84cd5a9cb"
+horizon_support_replay_result_sha256 = "4a0c13a00bb2692df048eec8426c9dc4980582d5bbd2bd70e178e327fa65f7ef"
+horizon_support_replay_status = "horizon_support_replay_improves_but_development_does_not"
+horizon_support_replay_supervised_init_paired_net_wins = [-1, 1]
+horizon_support_replay_zero_init_paired_net_wins = [1, 0]
+result_blind_diagnosis = "partial seen-support acquisition with unstable fixed-development generalization; add only disjoint legal source training coverage under the unchanged horizon-resolved mechanism"
+
+[lora]
+target_count = 37
+rank = 32
+alpha = 16
+dropout = 0.0
+trainable_parameters = 1485312
+initialization_for_zero_arm = "PEFT gaussian A plus exact-zero B; physical delta exactly zero"
+supervised_initialization = "immutable task-specific step-1000 state bound above"
+optimizer_state_for_both_arms = "fresh identical actor AdamW; never inherit supervised or prior RL optimizer state"
+only_trainable_policy_state = "the complete task-local LoRA declared here"
+
+[algorithm]
+name = "chunk_level_flow_ppo_with_task_local_critic_warmup_gae_and_horizon_resolved_credit"
+primary_source_fpo_plus = "https://arxiv.org/abs/2602.02481"
+primary_source_fpo = "https://arxiv.org/abs/2507.21053"
+primary_source_code = "https://github.com/amazon-far/fpo-control"
+primary_source_code_commit = "b80112be1e8362263c4cd176e7aef21a275ff1c6"
+primary_source_recipe = "manipulation_experiments/docs/reproduce.md main benchmark: n_action_steps=16, data_collection_steps=1600, num_envs=30"
+not_full_fpo_plus = true
+scope = "source-only execution-horizon credit-resolution correction, not a full reproduction or performance claim"
+single_changed_mechanism = "training collection executes and credits 16 actions per transition instead of 50; the model still predicts 50 and the canonical development/fresh evaluator still executes 50"
+critic_only_rounds = 1
+reward = "binary simulator success assigned to the 16 executed actions in which success first appears"
+truncation_as_done = true
+discount = 0.99
+gae_lambda = 0.99
+advantage_normalization = "zero mean and unit population standard deviation over valid executed-action transitions"
+critic = "task_local_frozen_feature_mlp"
+critic_features = "detached frozen SmolVLA pooled vision embeddings for both cameras plus normalized 32D state and executed-chunk progress"
+critic_input_dim = 1953
+critic_hidden_dims = [512, 256]
+critic_zero_output_initialization = true
+critic_learning_rate = 0.0001
+critic_betas = [0.9, 0.999]
+critic_epsilon = 0.00001
+critic_weight_decay = 0.000001
+flow_samples_per_transition = 8
+flow_sample_group_size = 8
+old_policy_reference = "round-start LoRA with old/current loss sharing exact flow time, noise, executed transition action and observation"
+flow_ratio = "exp(STE-clamp(mean_old_chunk_flow_loss - mean_current_chunk_flow_loss, -5, 5))"
+ratio_clip = 0.01
+log_ratio_clamp = 5.0
+update_epochs_per_round = 10
+minibatch_size = 16
+inference_microbatch_size = 64
+target_kl = 0.1
+shared_parameter_updates = false
+writer_updates = false
+source_demonstration_actions_during_rl = false
+actor_optimizer = "adamw"
+actor_learning_rate = 0.00001
+actor_betas = [0.9, 0.99]
+actor_epsilon = 0.00001
+actor_weight_decay = 0.000001
+actor_gradient_clip_norm = 1.0
+critic_gradient_clip_norm = 1.0
+scheduler = "constant_over_bounded_recovery"
+effective_replay_batch_size = 200
+anchors_per_episode = 25
+execution_horizon = 16
+valid_flow_action_steps_per_transition = 16
+action_chunk_size = 50
+augmentation = "none_on_on_policy_observations"
+critic_initialization_seed = 2026071970
+minibatch_order_seed = 2026071971
+fixed_flow_noise_seed = 2026071972
+fixed_flow_time_seed = 2026071973
+
+[exploration]
+kind = "native_stochastic_flow_sampling_with_no_external_action_noise"
+standard_deviation = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+clip_low = [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]
+clip_high = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+common_policy_flow_random_numbers_between_initializations = true
+external_action_noise = false
+maximum_saturation_fraction = 0.0
+
+[training_interaction]
+batch_size = 8
+rounds_maximum = 4
+episodes_per_round_per_task_initialization = 8
+interaction_episode_nodes = [8, 16, 24, 32]
+atomic_checkpoint_every_episodes = 8
+train_init_state_indices_by_round = [
+  [8, 9, 10, 11, 12, 13, 14, 15],
+  [16, 17, 18, 19, 20, 21, 22, 23],
+  [24, 25, 26, 27, 28, 29, 30, 31],
+  [32, 33, 34, 35, 36, 37, 38, 39],
+]
+seed_start = 6200
+policy_rng_seed_start = 2026071960
+fresh_vector_env_per_round = true
+replay_persistence = "in_memory_until atomic round checkpoint; no raw images retained after each committed round"
+
+[development_evaluation]
+role = "reused_source_development_slice_for_staged_continuation_not_final_gate"
+init_state_indices = [40, 41, 42, 43, 44, 45, 46, 47]
+batch_size = 8
+seed_start = 5800
+warmup_seed_start = 5792
+policy_rng_seed = 2026071836
+reuse_proposal_a_initial_arms = true
+frozen_base_successes_by_task = [3, 3]
+supervised_lora_successes_by_task = [2, 4]
+evaluate_after_interaction_episodes = [8, 16, 24, 32]
+retain_one_video_per_rl_arm_at_each_node = true
+
+[offline_safeguards]
+query_episode_bounds = [40, 45]
+minimum_query_reduction_fraction = -1.0
+maximum_action_drift_proxy = 0.02
+query_is_diagnostic_not_primary = true
+nonfinite_loss_or_gradient_fails_closed = true
+
+[continuation]
+stage8_requires_exact_actor_identity_and_healthy_critic_warmup = true
+stage16_continues_once_to_first_new_coverage_node = true
+stage24_continue_requires_positive_aggregate_paired_net_gain_in_one_initialization = true
+stage24_promising_arm_minimum_task_paired_net_win = -1
+stage32_failure_stops_without_more_interaction = true
+stage40_and_later_are_outside_this_recovery = true
+nonterminal_statuses = [
+  "horizon_coverage_warmup_complete_continue_to_16",
+  "horizon_coverage_recovery_continue_to_24",
+  "horizon_coverage_recovery_continue_to_32",
+]
+no_arbitrary_episode_extension = true
+
+[candidate_decision]
+comparison_pairs = ["zero_init_rl_vs_frozen_base", "supervised_init_rl_vs_supervised_lora"]
+minimum_each_task_success_gain_exclusive_pp = 0.0
+minimum_positive_task_count = 2
+minimum_median_success_gain_pp = 15.0
+earliest_passing_interaction_node_wins = true
+gate_zero_cannot_pass_on_development_evaluation = true
+writer_cannot_be_authorized_on_development_evaluation = true
+
+[fresh_gate]
+status = "predeclared_but_requires_hash_bound_passing_RL_checkpoint_grant"
+init_state_indices = [40, 41, 42, 43, 44, 45, 46, 47]
+batch_size = 8
+seed_start = 6000
+warmup_seed_start = 5992
+policy_rng_seed = 2026071902
+conditions = ["frozen_base", "supervised_lora", "zero_init_rl", "supervised_init_rl"]
+minimum_each_task_success_gain_exclusive_pp = 0.0
+minimum_positive_task_count = 2
+minimum_median_success_gain_pp = 15.0
+requires_all_mechanics_and_action_drift_safeguards = true
+selected_checkpoint_hash_grant_required_before_rollout = true
+only_fresh_gate_may_authorize_gate_zero = true
+initialization_help_requires_supervised_init_rl_to_beat_matched_zero_init_rl = true
+
+[parallel]
+world_size = 4
+rank_assignments = [
+  "rank0:task3:zero_init",
+  "rank1:task3:supervised_init",
+  "rank2:task4:zero_init",
+  "rank3:task4:supervised_init",
+]
+one_independent_actor_and_task_local_critic_per_rank = true
+cross_rank_gradient_reduction = false
+rank0_only_publishes_aggregate = true
+
+[resources]
+maximum_concurrent_gpus = 4
+early_check_gpus = 4
+expected_peak_device_memory_mib = 60000
+minimum_free_memory_mib = 10240
+expected_single_stage_wall_minutes = 30
+maximum_single_segment_wall_minutes = 120
+expected_additional_storage_gib = 1.5
+tracking_project = "EMBER_gate0"
+tracking_group = "task_local_lora_rl_horizon_coverage_recovery"
+cleanup = "retain latest atomic actor plus critic recovery, metrics, bounded galleries, telemetry and checksums; discard in-memory replay after each committed round and keep only bounded latest videos"
+
+[interpretation]
+coverage_recovery_scope = "start a new exact-resume trajectory; rounds 0/1 reproduce the sealed mechanism and rounds 2/3 add only disjoint source init states 24--39; no predecessor checkpoint is selected or appended"
+horizon_smoke_pass = "16-step collection produces 25 ordered transitions per 400-step episode, preserves a 50-slot model action tensor with only the 16 executed actions valid, and restores the 50-step reporting evaluator"
+rl_only_pass = "useful ordinary task-local RL update exists in the exact LoRA space; supervised LoRA zero-interaction utility remains unsupported"
+supervised_init_advantage = "supervised initialization helps later ordinary task-local RL only if it beats matched zero-init RL"
+forbidden_claims = ["Writer utility", "validation performance", "held performance", "full FPO++ reproduction", "exact action likelihood", "shared policy learning", "a changed Gate threshold", "a changed reporting evaluator"]
+

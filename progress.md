@@ -2328,3 +2328,21 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   unchanged canonical trainer and Gate. It may run only staged evidence nodes
   and must stop before blind scale, fresh Gate, validation, held, or locked
   access.
+
+## 2026-07-19 horizon coverage recovery frozen before outcomes
+
+- Added `configs/gate_zero_task_local_rl_horizon_coverage.toml`, SHA256
+  `72e4f13e...f241`. It binds both the terminal horizon result and the partial
+  support-replay result, preserves all earlier failure provenance, and changes
+  only the number of disjoint legal source training rounds from two to at most
+  four in a new trajectory.
+- Reused the single canonical trainer/launcher. The validator distinguishes the
+  sealed two-node horizon probe from the new four-node coverage recovery;
+  launcher preflight now hash-checks both new evidence packets before GPU use.
+  No predecessor actor is selected or appended, and validation/held/locked
+  access stays false.
+- Red/green focused tests now pass 22/22. Python compilation, shell syntax,
+  node-8 and resume-node-24 dry-runs, config/hash authority, and diff checks
+  pass. The frozen nodes are 8/16/24/32; stage 24 must show the predeclared
+  positive aggregate trend to open 32, while the original two-task candidate
+  rule remains unchanged. Deliver clean Git before launching node 8.

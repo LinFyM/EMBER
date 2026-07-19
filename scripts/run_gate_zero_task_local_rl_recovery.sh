@@ -94,6 +94,10 @@ print(output_root / spec["authority"]["previous_signed_result_relative_path"])
 print(output_root / spec["authority"]["previous_temporal_result_relative_path"])
 print(output_root / spec["authority"]["previous_critic_result_relative_path"] if "previous_critic_result_relative_path" in spec["authority"] else "-")
 print(output_root / spec["authority"]["support_replay_result_relative_path"] if "support_replay_result_relative_path" in spec["authority"] else "-")
+print(output_root / spec["authority"]["horizon_credit_result_relative_path"] if "horizon_credit_result_relative_path" in spec["authority"] else "-")
+print(spec["authority"].get("horizon_credit_result_sha256", "-"))
+print(output_root / spec["authority"]["horizon_support_replay_result_relative_path"] if "horizon_support_replay_result_relative_path" in spec["authority"] else "-")
+print(spec["authority"].get("horizon_support_replay_result_sha256", "-"))
 print(spec["resources"]["minimum_free_memory_mib"])
 print(",".join(str(value) for value in spec["training_interaction"]["interaction_episode_nodes"]))
 PY
@@ -109,8 +113,12 @@ previous_signed_result=${paths[7]}
 previous_temporal_result=${paths[8]}
 previous_critic_result=${paths[9]}
 support_replay_result=${paths[10]}
-minimum_free_memory_mib=${paths[11]}
-interaction_episode_nodes=${paths[12]}
+horizon_credit_result=${paths[11]}
+horizon_credit_result_sha256=${paths[12]}
+horizon_support_replay_result=${paths[13]}
+horizon_support_replay_result_sha256=${paths[14]}
+minimum_free_memory_mib=${paths[15]}
+interaction_episode_nodes=${paths[16]}
 first_interaction_node=${interaction_episode_nodes%%,*}
 [[ ",$interaction_episode_nodes," == *",$stop_after_episodes,"* ]] ||
   die "--stop-after-episodes is outside the selected contract: $interaction_episode_nodes"
@@ -168,6 +176,15 @@ done
 for path in "$previous_critic_result" "$support_replay_result"; do
   [[ "$path" == "-" || -e "$path" ]] || die "required recovery authority is missing: $path"
 done
+for path in "$horizon_credit_result" "$horizon_support_replay_result"; do
+  [[ "$path" == "-" || -e "$path" ]] || die "required coverage authority is missing: $path"
+done
+if [[ "$horizon_credit_result" != "-" ]]; then
+  [[ "$(sha256sum "$horizon_credit_result" | cut -d' ' -f1)" == "$horizon_credit_result_sha256" ]] ||
+    die "horizon-credit terminal result hash changed"
+  [[ "$(sha256sum "$horizon_support_replay_result" | cut -d' ' -f1)" == "$horizon_support_replay_result_sha256" ]] ||
+    die "horizon support-replay result hash changed"
+fi
 for gpu in "${gpu_indices[@]}"; do
   active_compute=$(
     nvidia-smi -i "$gpu" --query-compute-apps=pid --format=csv,noheader,nounits 2>/dev/null |

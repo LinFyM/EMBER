@@ -18,10 +18,21 @@ CRITIC_WARMUP_STATUS = (
 HORIZON_CREDIT_STATUS = (
     "fpo_compatibility_horizon_credit_recovery_predeclared_after_support_replay_stop"
 )
+HORIZON_COVERAGE_STATUS = (
+    "horizon_credit_source_coverage_recovery_predeclared_after_partial_support_replay"
+)
 
 
 def _is_horizon_credit(spec: Mapping[str, Any]) -> bool:
     return spec.get("status") == HORIZON_CREDIT_STATUS
+
+
+def _is_horizon_coverage(spec: Mapping[str, Any]) -> bool:
+    return spec.get("status") == HORIZON_COVERAGE_STATUS
+
+
+def _uses_horizon_resolved_credit(spec: Mapping[str, Any]) -> bool:
+    return _is_horizon_credit(spec) or _is_horizon_coverage(spec)
 
 
 def _sha256(path: Path) -> str:
@@ -92,7 +103,7 @@ def _validate_upstream_hashes(
         "task4_supervised_state_sha256",
     ):
         _require_sha(authority.get(key), key)
-    if _is_horizon_credit(spec):
+    if _uses_horizon_resolved_credit(spec):
         for key in ("previous_critic_result_sha256", "support_replay_result_sha256"):
             _require_sha(authority.get(key), key)
     return authority
@@ -119,7 +130,7 @@ def _validate_lora_and_optimizer(spec: Mapping[str, Any], fit: Mapping[str, Any]
     required_algorithm = {
         "name": (
             "chunk_level_flow_ppo_with_task_local_critic_warmup_gae_and_horizon_resolved_credit"
-            if _is_horizon_credit(spec)
+            if _uses_horizon_resolved_credit(spec)
             else "chunk_level_flow_ppo_with_task_local_critic_warmup_and_gae"
         ),
         "primary_source_fpo_plus": "https://arxiv.org/abs/2602.02481",
@@ -155,12 +166,12 @@ def _validate_lora_and_optimizer(spec: Mapping[str, Any], fit: Mapping[str, Any]
         "actor_gradient_clip_norm": 1.0,
         "critic_gradient_clip_norm": 1.0,
         "scheduler": "constant_over_bounded_recovery",
-        "effective_replay_batch_size": 200 if _is_horizon_credit(spec) else 64,
-        "anchors_per_episode": 25 if _is_horizon_credit(spec) else 8,
+        "effective_replay_batch_size": 200 if _uses_horizon_resolved_credit(spec) else 64,
+        "anchors_per_episode": 25 if _uses_horizon_resolved_credit(spec) else 8,
         "action_chunk_size": 50,
         "augmentation": "none_on_on_policy_observations",
     }
-    if _is_horizon_credit(spec):
+    if _uses_horizon_resolved_credit(spec):
         required_algorithm.update(
             {
                 "execution_horizon": 16,
@@ -190,7 +201,7 @@ def _validate_recovery_provenance(spec: Mapping[str, Any]) -> None:
         expected["temporal_credit_result_sha256"],
         "authority.previous_temporal_result_sha256",
     )
-    if _is_horizon_credit(spec):
+    if _uses_horizon_resolved_credit(spec):
         horizon_expected = {
             "critic_warmup_contract_sha256": "51fc9a009d0fa93476ba47a22d86e95a5d89f32182057843c3129e4147725a8a",
             "critic_warmup_result_sha256": "986887261b47b9d4dc55ec630f8c914b60d2fbd247e33c1d98c82669e2a8b1a8",
@@ -215,12 +226,47 @@ def _validate_recovery_provenance(spec: Mapping[str, Any]) -> None:
             horizon_expected["support_replay_result_sha256"],
             "authority.support_replay_result_sha256",
         )
+    if _is_horizon_coverage(spec):
+        coverage = spec.get("coverage_evidence")
+        if not isinstance(coverage, dict):
+            raise GateZeroTaskLocalRLContractError("horizon coverage evidence is missing")
+        coverage_expected = {
+            "horizon_credit_contract_sha256": "491d031565409962cfb96cea09f6ac73ae636a1fe87a14aeb441b18c2d15e05b",
+            "horizon_credit_result_sha256": "771eb3b9f563492299d7424ef3a63c77003c322f3fb233c555a46f089ff7f496",
+            "horizon_credit_status": "task_local_rl_early_check_not_supported",
+            "horizon_credit_zero_init_paired_net_wins": [-2, 1],
+            "horizon_credit_supervised_init_paired_net_wins": [0, -1],
+            "horizon_support_replay_contract_sha256": "7e676c52f551d3624759448fd34265ecb00bc3c2ee56841c4bfdc6d84cd5a9cb",
+            "horizon_support_replay_result_sha256": "4a0c13a00bb2692df048eec8426c9dc4980582d5bbd2bd70e178e327fa65f7ef",
+            "horizon_support_replay_status": "horizon_support_replay_improves_but_development_does_not",
+            "horizon_support_replay_supervised_init_paired_net_wins": [-1, 1],
+            "horizon_support_replay_zero_init_paired_net_wins": [1, 0],
+        }
+        for key, value in coverage_expected.items():
+            _require_equal(coverage.get(key), value, f"coverage_evidence.{key}")
+        _require_equal(
+            spec["authority"].get("horizon_credit_result_sha256"),
+            coverage_expected["horizon_credit_result_sha256"],
+            "authority.horizon_credit_result_sha256",
+        )
+        _require_equal(
+            spec["authority"].get("horizon_support_replay_result_sha256"),
+            coverage_expected["horizon_support_replay_result_sha256"],
+            "authority.horizon_support_replay_result_sha256",
+        )
 
 
 def _validate_surfaces_and_decisions(spec: Mapping[str, Any]) -> None:
     horizon_credit = _is_horizon_credit(spec)
-    _require_equal(spec.get("schema_version"), 2 if horizon_credit else 1, "schema_version")
-    _require_equal(spec.get("status"), HORIZON_CREDIT_STATUS if horizon_credit else CRITIC_WARMUP_STATUS, "status")
+    horizon_coverage = _is_horizon_coverage(spec)
+    expected_schema = 3 if horizon_coverage else (2 if horizon_credit else 1)
+    expected_status = (
+        HORIZON_COVERAGE_STATUS
+        if horizon_coverage
+        else (HORIZON_CREDIT_STATUS if horizon_credit else CRITIC_WARMUP_STATUS)
+    )
+    _require_equal(spec.get("schema_version"), expected_schema, "schema_version")
+    _require_equal(spec.get("status"), expected_status, "status")
     _require_equal(spec.get("task_ids"), [3, 4], "task_ids")
     _require_equal(spec.get("initializations"), ["zero_init", "supervised_init"], "initializations")
     _require_equal(
@@ -261,6 +307,33 @@ def _validate_surfaces_and_decisions(spec: Mapping[str, Any]) -> None:
         _require_equal(continuation["stage16_failure_stops_without_more_interaction"], True, "stage16 stop")
         _require_equal(continuation["stage24_and_later_are_outside_this_recovery"], True, "later boundary")
         _require_equal(continuation["nonterminal_statuses"], ["horizon_credit_warmup_complete_continue_to_16"], "nonterminal statuses")
+    elif horizon_coverage:
+        _require_equal(
+            continuation["stage16_continues_once_to_first_new_coverage_node"],
+            True,
+            "stage16 coverage continuation",
+        )
+        _require_equal(
+            continuation["stage24_continue_requires_positive_aggregate_paired_net_gain_in_one_initialization"],
+            True,
+            "stage24 coverage continuation",
+        )
+        _require_equal(
+            continuation["stage24_promising_arm_minimum_task_paired_net_win"],
+            -1,
+            "stage24 coverage task floor",
+        )
+        _require_equal(continuation["stage32_failure_stops_without_more_interaction"], True, "stage32 coverage stop")
+        _require_equal(continuation["stage40_and_later_are_outside_this_recovery"], True, "coverage later boundary")
+        _require_equal(
+            continuation["nonterminal_statuses"],
+            [
+                "horizon_coverage_warmup_complete_continue_to_16",
+                "horizon_coverage_recovery_continue_to_24",
+                "horizon_coverage_recovery_continue_to_32",
+            ],
+            "coverage nonterminal statuses",
+        )
     else:
         _require_equal(continuation["stage16_continues_once_if_mechanics_and_temporal_credit_are_healthy"], True, "stage16 continuation")
         _require_equal(continuation["stage24_continue_requires_positive_aggregate_paired_net_gain_in_one_initialization"], True, "stage24 continuation")
@@ -412,12 +485,24 @@ def decide_task_local_rl_node(
         selected = interaction_episodes
     elif interaction_episodes == 8:
         status = (
-            "horizon_credit_warmup_complete_continue_to_16"
-            if _is_horizon_credit(spec)
-            else "critic_warmup_complete_continue_to_16"
+            "horizon_coverage_warmup_complete_continue_to_16"
+            if _is_horizon_coverage(spec)
+            else (
+                "horizon_credit_warmup_complete_continue_to_16"
+                if _is_horizon_credit(spec)
+                else "critic_warmup_complete_continue_to_16"
+            )
         )
     elif _is_horizon_credit(spec):
         status = "task_local_rl_early_check_not_supported"
+    elif _is_horizon_coverage(spec) and interaction_episodes == 16:
+        status = "horizon_coverage_recovery_continue_to_24"
+    elif _is_horizon_coverage(spec) and interaction_episodes == 24 and any(
+        sum(values) > 0
+        and min(values) >= spec["continuation"]["stage24_promising_arm_minimum_task_paired_net_win"]
+        for values in nets.values()
+    ):
+        status = "horizon_coverage_recovery_continue_to_32"
     elif interaction_episodes == 16:
         status = "critic_warmup_recovery_continue_to_24"
     elif interaction_episodes == 24 and any(

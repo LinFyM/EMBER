@@ -78,7 +78,7 @@ def validate_result_authorities(
         "previous_signed_result_sha256": previous_signed_result,
         "previous_temporal_result_sha256": previous_temporal_result,
     }
-    horizon_credit = spec.get("schema_version") == 2
+    horizon_credit = spec.get("schema_version") in (2, 3)
     if horizon_credit:
         if previous_critic_result is None or support_replay_result is None:
             raise GateZeroTaskLocalRLRuntimeError("horizon-credit predecessor is missing")

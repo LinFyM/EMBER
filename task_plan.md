@@ -1052,6 +1052,15 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     LoRA/optimizer/evaluator/Gate, with result-blind staged stop rules. It must
     start a new immutable trajectory rather than append to the terminal
     stage-16 packet, and it cannot use validation/held/locked surfaces.
+    The result-blind coverage contract is now frozen in
+    `configs/gate_zero_task_local_rl_horizon_coverage.toml`, SHA256
+    `72e4f13e...f241`. It starts a new trajectory at node 8, repeats the sealed
+    critic-warmup/first-actor mechanics at nodes 8/16, and adds only source init
+    states 24--31 at node 24 and 32--39 at conditional node 32. Node 24 must
+    show positive aggregate paired gain in at least one initialization with no
+    task below -1 to open 32; otherwise it stops. The original two-task/15pp
+    candidate rule, development states 40--47, all four arms, LoRA, optimizer,
+    evaluator, query/drift safeguards, and fresh-Gate boundary are unchanged.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

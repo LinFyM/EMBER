@@ -1819,3 +1819,25 @@
   longer than one to two hours, stopping once reliable matched evidence answers
   the Gate. It cannot change task, seed, or threshold to evade Proposal A,
   access validation/held/locked surfaces, or burn arbitrary step milestones.
+
+## Earlier supervised checkpoints do not recover closed-loop utility
+
+- Canonical source-development diagnostic
+  `step500_750_20260719T035642Z` completed main rc 0 from clean commit
+  `19e5ea2` in 2:57.68 on GPUs 4/5. All four arms are mechanics-valid, all
+  checksums pass, four bounded videos plus the local gallery and Trackio run
+  are retained, and both GPUs released. Result SHA256 is
+  `aae6e19f14c03a1192cb00aeb05940a48ee1c36ba8b5b07e823066e6602b11cf`.
+- Step 500 and step 750 produce identical success vectors on the frozen
+  development slice: task 3 scores 2/8 against its 3/8 base and task 4 scores
+  3/8 against its 3/8 base. Each candidate therefore has aggregate paired net
+  -1, zero positive tasks, and -6.25pp median gain. Their per-task query
+  reductions and drift safeguards still pass.
+- The frozen decision is
+  `candidate_step_magnitude_recovery_not_supported`: neither earlier state is
+  selected, the separately frozen fresh recovery Gate remains unopened, and
+  Gate 0/Writer remain unauthorized. This specifically weakens the hypothesis
+  that step-1000 update magnitude or duration alone explains Proposal A; it
+  does not prove the LoRA space or ordinary task-local RL lacks a useful update.
+  Under the pre-outcome recovery contract, the next discriminator is the
+  same-task four-arm matched ordinary-RL comparison, not more supervised steps.

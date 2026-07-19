@@ -1709,3 +1709,16 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   check, and limits resumable segments to one to two hours. No task/seed/
   threshold evasion, validation/held/locked access, or arbitrary long training
   is authorized.
+- Candidate-step long-run
+  `gate0_candidate_step_diagnostic_20260719T035642Z_20260719_035642` completed
+  main rc 0 on clean `19e5ea2` in 2:57.68. Step 500 and 750 both give task-3
+  2/8 and task-4 3/8 versus the reused frozen bases 3/8 and 3/8, so neither has
+  a positive task, both have -6.25pp median gain and paired net -1, and the
+  frozen decision selects no state. Query/drift safeguards pass, but no fresh
+  recovery Gate, Gate 0, target seal, or Writer authorization is issued.
+  Result SHA256 is `aae6e19f...b11cf`; result/eval/gallery/video/telemetry
+  checksums and JSON parse checks pass, four videos and `index.html` are
+  viewable locally and through Trackio run `step500_750_20260719T035642Z`, the
+  retained packet is 600KiB, and GPU 4/5 released to 0MiB. The supervised
+  trajectory remains stopped; next freeze the already authorized same-task
+  four-arm matched ordinary task-local RL recovery before any new outcome.

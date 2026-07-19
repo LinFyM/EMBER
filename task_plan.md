@@ -615,6 +615,18 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     diagnostic cannot pass Gate 0. Only a passing candidate may receive a
     separately hash-bound fresh-seed matched recovery Gate; no default 2k
     continuation is authorized.
+    The canonical diagnostic
+    `step500_750_20260719T035642Z` completed main rc 0 on clean `19e5ea2`.
+    Both earlier states reproduce the same source-development behavior:
+    task 3 is 2/8 versus the frozen 3/8 base and task 4 is 3/8 versus the
+    frozen 3/8 base. Thus each step has zero positive tasks, -6.25pp median
+    gain, and aggregate paired net -1. The pre-existing query and drift
+    safeguards pass, but the behavioral rules fail; result SHA256 is
+    `aae6e19f...b11cf`. No checkpoint is selected, no fresh recovery Gate is
+    granted, and Gate 0/Writer remain false. This bounded evidence does not
+    support step-1000 update magnitude or duration as the sufficient failure
+    explanation, so stop the supervised trajectory and proceed to the matched
+    ordinary-RL recovery below.
     If this same-task candidate diagnostic still lacks credible closed-loop
     positive evidence, do not reinterpret Gate 0 as an SFT-only Gate. Before
     any new outcome, freeze one small-budget source-only ordinary-RL recovery

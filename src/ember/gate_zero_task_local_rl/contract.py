@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import math
 import tomllib
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -20,6 +21,9 @@ HORIZON_CREDIT_STATUS = (
 )
 HORIZON_COVERAGE_STATUS = (
     "horizon_credit_source_coverage_recovery_predeclared_after_partial_support_replay"
+)
+MATCHED_EVIDENCE_STATUS = (
+    "post_smoke_matched_evidence_predeclared_before_new_lora_outcomes"
 )
 
 
@@ -411,18 +415,52 @@ def load_task_local_rl_spec(
     headroom_path: Path,
     diagnostic_path: Path,
 ) -> dict[str, Any]:
+    requested = _load_toml(path, "task-local RL contract")
+    if requested.get("status") == MATCHED_EVIDENCE_STATUS:
+        runtime = requested.get("runtime", {})
+        relative = runtime.get("base_contract_relative_path")
+        if not isinstance(relative, str):
+            raise GateZeroTaskLocalRLContractError("matched runtime base is missing")
+        base_path = path.parents[1] / relative
+        _require_equal(_sha256(base_path), runtime.get("base_contract_sha256"), "matched runtime base hash")
+        requested_base = _load_toml(base_path, "matched runtime base contract")
+    else:
+        requested_base = requested
     spec = validate_task_local_rl_spec(
-        _load_toml(path, "task-local RL contract"),
+        requested_base,
         gate_zero_path=gate_zero_path,
         phase0_path=phase0_path,
         fit_path=fit_path,
         headroom_path=headroom_path,
         diagnostic_path=diagnostic_path,
     )
-    # Historical configs predate an explicit surrogate selector. Their sealed
-    # group-size-eight field unambiguously identifies the chunk-mean pilot; the
-    # active matched contract uses an explicit faithful group-one selector.
-    spec["algorithm"]["surrogate"] = "historical_chunk_mean_flow_ppo"
+    spec = deepcopy(spec)
+    if requested.get("status") == MATCHED_EVIDENCE_STATUS:
+        runtime = requested["runtime"]
+        spec["status"] = MATCHED_EVIDENCE_STATUS
+        spec["name"] = "smolvla_libero90_gate_zero_matched_early_check_v1"
+        spec["surface"] = requested["surface"]
+        spec["matched_evidence"] = requested
+        spec["algorithm"].update(requested["algorithm"])
+        spec["training_interaction"]["interaction_episode_nodes"] = runtime[
+            "interaction_episode_nodes"
+        ]
+        spec["development_evaluation"].update(
+            {
+                "role": "matched_evidence_early_check_not_gate_decision",
+                "execution_horizon": runtime["development_execution_horizon"],
+                "evaluate_initialization_in_stage": runtime[
+                    "evaluate_initialization_in_stage"
+                ],
+            }
+        )
+        spec["continuation"]["nonterminal_statuses"] = [runtime["early_check_status"]]
+        spec["resources"]["tracking_group"] = "task_local_lora_rl_matched_early_check"
+        spec["interpretation"] = requested["interpretation"]
+    else:
+        # Historical configs predate an explicit surrogate selector. Their
+        # sealed group-eight field identifies the chunk-mean pilot.
+        spec["algorithm"]["surrogate"] = "historical_chunk_mean_flow_ppo"
     return spec
 
 
@@ -462,6 +500,7 @@ def decide_task_local_rl_node(
     if not isinstance(drift, dict) or set(drift) != set(nets):
         raise GateZeroTaskLocalRLContractError("RL decision lacks drift safeguards")
     passed = [arm for arm, values in nets.items() if _arm_passes(values, spec)]
+    passed = {MATCHED_EVIDENCE_STATUS: []}.get(spec.get("status"), passed)
     warmup_identity = metrics.get("critic_warmup_actor_state_unchanged") is True
     safeguards = (
         metrics.get("mechanics_valid") is True
@@ -518,6 +557,10 @@ def decide_task_local_rl_node(
         status = "critic_warmup_recovery_continue_to_32"
     else:
         status = "task_local_rl_early_check_not_supported"
+    status = {
+        (MATCHED_EVIDENCE_STATUS, "critic_warmup_recovery_continue_to_24"): "matched_evidence_early_check_review",
+        (MATCHED_EVIDENCE_STATUS, "task_local_rl_early_check_not_supported"): "matched_evidence_early_check_review",
+    }.get((spec.get("status"), status), status)
     return {
         "status": status,
         "interaction_episodes": interaction_episodes,

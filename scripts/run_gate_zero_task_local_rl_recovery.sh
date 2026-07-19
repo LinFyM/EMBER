@@ -82,24 +82,27 @@ spec = tomllib.load(open(sys.argv[1], "rb"))
 gate_zero = tomllib.load(open(sys.argv[2], "rb"))
 output_root = pathlib.Path(sys.argv[3])
 data_root = pathlib.Path(sys.argv[4])
-source_base = output_root / spec["authority"]["source_base_output_relative_path"]
+runtime = spec.get("runtime")
+base = spec
+if runtime is not None:
+    root = pathlib.Path(sys.argv[1]).parents[1]
+    base = tomllib.load(open(root / runtime["base_contract_relative_path"], "rb"))
+authority = base["authority"]
+source_base = output_root / authority["source_base_output_relative_path"]
 print(output_root / gate_zero["authority"]["canonical_manifest_relative_path"])
 print(data_root / gate_zero["authority"]["dataset_relative_path"])
-print(source_base / "checkpoints" / f'{spec["authority"]["source_base_checkpoint_step"]:06d}')
-print(output_root / spec["authority"]["fit_root_relative_path"])
-print(output_root / spec["authority"]["headroom_result_relative_path"])
-print(output_root / spec["authority"]["candidate_diagnostic_result_relative_path"])
-print(output_root / spec["authority"]["previous_awr_result_relative_path"])
-print(output_root / spec["authority"]["previous_signed_result_relative_path"])
-print(output_root / spec["authority"]["previous_temporal_result_relative_path"])
-print(output_root / spec["authority"]["previous_critic_result_relative_path"] if "previous_critic_result_relative_path" in spec["authority"] else "-")
-print(output_root / spec["authority"]["support_replay_result_relative_path"] if "support_replay_result_relative_path" in spec["authority"] else "-")
-print(output_root / spec["authority"]["horizon_credit_result_relative_path"] if "horizon_credit_result_relative_path" in spec["authority"] else "-")
-print(spec["authority"].get("horizon_credit_result_sha256", "-"))
-print(output_root / spec["authority"]["horizon_support_replay_result_relative_path"] if "horizon_support_replay_result_relative_path" in spec["authority"] else "-")
-print(spec["authority"].get("horizon_support_replay_result_sha256", "-"))
-print(spec["resources"]["minimum_free_memory_mib"])
-print(",".join(str(value) for value in spec["training_interaction"]["interaction_episode_nodes"]))
+print(source_base / "checkpoints" / f'{authority["source_base_checkpoint_step"]:06d}')
+for key in ("fit_root", "headroom_result", "candidate_diagnostic_result", "previous_awr_result", "previous_signed_result", "previous_temporal_result"):
+    print(output_root / authority[f"{key}_relative_path"])
+print(output_root / authority["previous_critic_result_relative_path"] if "previous_critic_result_relative_path" in authority else "-")
+print(output_root / authority["support_replay_result_relative_path"] if "support_replay_result_relative_path" in authority else "-")
+print(output_root / authority["horizon_credit_result_relative_path"] if "horizon_credit_result_relative_path" in authority else "-")
+print(authority.get("horizon_credit_result_sha256", "-"))
+print(output_root / authority["horizon_support_replay_result_relative_path"] if "horizon_support_replay_result_relative_path" in authority else "-")
+print(authority.get("horizon_support_replay_result_sha256", "-"))
+print(base["resources"]["minimum_free_memory_mib"])
+nodes = runtime["interaction_episode_nodes"] if runtime is not None else base["training_interaction"]["interaction_episode_nodes"]
+print(",".join(str(value) for value in nodes))
 PY
 )
 manifest=${paths[0]}

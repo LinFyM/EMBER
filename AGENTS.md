@@ -279,6 +279,15 @@ exhausted, preserve the negative result and narrow the claim explicitly.
   continue the same trajectory when its frozen rule passes, and reserve final
   closed-loop surfaces until the candidate is frozen. Staging changes execution
   cadence, not model capacity, data authority, or maximum scientific budget.
+- Apply this experiment-first cadence to every remaining EMBER stage: Writer
+  cold start, Writer-only RL, task-local RL, source-only outer learning,
+  baselines, ablations, full-system runs, and scale confirmation. Contracts,
+  schemas, validators, tests, and docs stop at the minimum needed to launch,
+  recover, audit, and interpret the next real run. Do not add a second runner,
+  speculative future abstraction, or paper-grade infrastructure before a
+  concrete run exposes that need. After time-boxed targeted preflight, start a
+  10--30 minute real early check; only a reproducible run-blocking failure
+  justifies more engineering before the experiment.
 - Optimize the full training and inference path for useful throughput. Reuse
   canonical model loads, manifests, decoded or preprocessed observations,
   cached features, and other scientifically equivalent intermediates whenever

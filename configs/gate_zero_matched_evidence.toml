@@ -34,6 +34,17 @@ maximum_segment_minutes = 120
 early_check_minutes = 30
 new_outcome_before_contract_freeze = false
 
+[runtime]
+base_contract_relative_path = "configs/gate_zero_task_local_rl_horizon_coverage.toml"
+base_contract_sha256 = "72e4f13e193aa63e96ea90395f37e2954030a534c396998067a54a74e4d9f241"
+active_training_seed = 2026071830
+interaction_episode_nodes = [16, 32]
+first_segment_stop_episodes = 16
+development_execution_horizon = 16
+evaluate_initialization_in_stage = true
+early_check_status = "matched_evidence_early_check_review"
+early_check_may_pass_or_reject_gate_zero = false
+
 [lora]
 target_count = 37
 rank = 32
@@ -89,7 +100,10 @@ huber_delta = 0.5
 old_loss_clamp = 4.0
 log_ratio_clamp = 5.0
 ratio_clip = 0.02
+actor_gradient_clip_norm = 5.0
 execution_horizon = 16
+not_full_fpo_plus = false
+flow_ratio = "one modified-Huber conditional-flow loss ratio per flow sample; no sample averaging before ratio"
 shared_parameter_updates = false
 writer_updates = false
 task_local_lora_only = true

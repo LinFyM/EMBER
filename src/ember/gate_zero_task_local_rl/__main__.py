@@ -55,6 +55,7 @@ from ember.gate_zero_task_local_rl.runtime import (
     collect_training_round,
     initial_successes,
     load_supervised_state,
+    scoped_policy_execution_horizon,
     validate_result_authorities,
 )
 from ember.gate_zero_task_local_rl.temporal_credit import (
@@ -75,6 +76,7 @@ class LiveRLArm:
     language: str
     task_authority: dict[str, Any]
     initial_state_authority: dict[str, Any]
+    initial_trainable_state: dict[str, torch.Tensor]
     critic: TemporalCritic
     critic_optimizer: torch.optim.Optimizer
 
@@ -191,6 +193,7 @@ def _open_live_arm(
             language,
             task_authority,
             initial_authority,
+            capture_trainable_state(model),
             critic,
             critic_optimizer,
         )
@@ -389,20 +392,45 @@ def _stage_evaluation(
     }
     stage_root = arm_root / f"stage_{interaction_episodes:06d}"
     stage_root.mkdir(exist_ok=False)
-    closed_loop = _closed_loop_metrics(
-        runtime=arm.runtime,
-        task_id=task_id,
-        condition=f"{initialization}_rl_ep{interaction_episodes}",
-        language=arm.language,
-        spec=rollout_spec,
-        output_dir=stage_root,
-    )
-    initial = initial_successes(
-        headroom,
-        task_id=task_id,
-        initialization=initialization,
-        variant=spec["authority"]["fit_variant"],
-    )
+    execution_horizon = development.get("execution_horizon")
+    def evaluate(condition: str) -> dict[str, Any]:
+        scope = (
+            scoped_policy_execution_horizon(
+                arm.runtime[0],
+                execution_horizon=execution_horizon,
+                expected_model_chunk_size=spec["algorithm"]["action_chunk_size"],
+            )
+            if execution_horizon is not None
+            else contextlib.nullcontext()
+        )
+        with scope:
+            return _closed_loop_metrics(
+                runtime=arm.runtime,
+                task_id=task_id,
+                condition=condition,
+                language=arm.language,
+                spec=rollout_spec,
+                output_dir=stage_root,
+            )
+
+    closed_loop = evaluate(f"{initialization}_rl_ep{interaction_episodes}")
+    initial_closed_loop = None
+    if development.get("evaluate_initialization_in_stage") is True:
+        current_state = capture_trainable_state(arm.session.model)
+        try:
+            restore_trainable_state(arm.session.model, arm.initial_trainable_state)
+            initial_condition = "frozen_base" if initialization == "zero_init" else "supervised_lora"
+            initial_closed_loop = evaluate(initial_condition)
+        finally:
+            restore_trainable_state(arm.session.model, current_state)
+        initial = [bool(value) for value in initial_closed_loop["successes"]]
+    else:
+        initial = initial_successes(
+            headroom,
+            task_id=task_id,
+            initialization=initialization,
+            variant=spec["authority"]["fit_variant"],
+        )
     current = [bool(value) for value in closed_loop["successes"]]
     paired_net = sum(int(right) - int(left) for left, right in zip(initial, current, strict=True))
     all_rounds = [
@@ -435,6 +463,7 @@ def _stage_evaluation(
         / arm.session.reference.query_flow_mse,
         "action_drift_proxy": offline["action_drift_proxy"],
         "closed_loop": closed_loop,
+        "initial_closed_loop": initial_closed_loop,
         "rounds": all_rounds,
         "task_authority": arm.task_authority,
         "initial_state_authority": arm.initial_state_authority,

@@ -2463,7 +2463,7 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
 ## 2026-07-19 matched Gate 0 evidence contract frozen
 
 - Added `configs/gate_zero_matched_evidence.toml` (SHA256
-  `acbd8f2a...a47e`), binding the evidence-repair
+  `cdd3c91b...f8132`), binding the evidence-repair
   contract, permanent split, mature LoRA support, base-difficulty result, and
   selected confirmation manifest. Tasks 3/4 remain development; source tasks
   6/16/33/39 and their deterministic partitions are confirmation.
@@ -2481,8 +2481,10 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   status: passed with immutable 19/24 ordered/wrong-video, 15/24 paired,
   original 0.80 threshold, and drop-last residual. Gate 0 and Writer remain
   unauthorized.
-- Next: run focused and full verification, architecture/diff checks, commit and
-  push the outcome-free boundary. Then extend the existing staged launcher to
-  consume the sealed faithful contract and begin only the first two-seed
-  task3/task4 development early check; do not consume confirmation or h50 for
-  candidate selection.
+- The existing staged launcher now consumes the sealed faithful contract
+  without a second trainer. The first fresh segment reaches 16 interaction
+  episodes/arm (critic warmup plus one actor round), executes all four matched
+  development conditions at horizon 16, and remains n=8 early-check evidence
+  only. Targeted tests and the canonical dry-run pass. Next: clean commit/push,
+  live preflight, and immediate launch on GPUs 4--7; do not consume
+  confirmation or h50 for candidate selection.

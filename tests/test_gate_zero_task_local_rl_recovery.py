@@ -94,6 +94,34 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         self.assertEqual(self.spec["algorithm"]["gae_lambda"], 0.99)
         self.assertEqual(self.spec["algorithm"]["critic_only_rounds"], 1)
 
+    def test_matched_early_check_uses_same_trainer_with_faithful_h16_runtime(self) -> None:
+        matched = load_task_local_rl_spec(
+            ROOT / "configs" / "gate_zero_matched_evidence.toml",
+            gate_zero_path=self.gate_zero,
+            phase0_path=self.phase0,
+            fit_path=self.fit,
+            headroom_path=self.headroom,
+            diagnostic_path=self.diagnostic,
+        )
+        self.assertEqual(
+            matched["status"],
+            "post_smoke_matched_evidence_predeclared_before_new_lora_outcomes",
+        )
+        self.assertEqual(matched["algorithm"]["surrogate"], "faithful_fpo_plus_group1")
+        self.assertEqual(matched["algorithm"]["flow_sample_group_size"], 1)
+        self.assertEqual(matched["algorithm"]["execution_horizon"], 16)
+        self.assertEqual(matched["training_interaction"]["interaction_episode_nodes"], [16, 32])
+        self.assertEqual(matched["development_evaluation"]["execution_horizon"], 16)
+        self.assertTrue(matched["development_evaluation"]["evaluate_initialization_in_stage"])
+        self.assertEqual(
+            decide_task_local_rl_node(
+                matched,
+                interaction_episodes=16,
+                metrics=self._metrics(),
+            )["status"],
+            "matched_evidence_early_check_review",
+        )
+
     def test_horizon_credit_contract_changes_only_training_credit_resolution(self) -> None:
         horizon = load_task_local_rl_spec(
             self.horizon_path,
@@ -488,7 +516,8 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         text = self.launcher.read_text(encoding="utf-8")
         self.assertIn("gate_zero_task_local_rl_critic_warmup.toml", text)
         self.assertIn("--nproc-per-node=4", text)
-        self.assertIn('spec["training_interaction"]["interaction_episode_nodes"]', text)
+        self.assertIn('runtime["interaction_episode_nodes"]', text)
+        self.assertIn('base["training_interaction"]["interaction_episode_nodes"]', text)
         self.assertIn("first_interaction_node", text)
         self.assertIn("--resume", text)
         self.assertIn("gpu_telemetry_", text)

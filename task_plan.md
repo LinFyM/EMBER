@@ -873,6 +873,21 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     from the active tree now that immutable packets and this canonical recovery
     are frozen; Git history retains them, while the reusable action-error metric
     remains in the canonical evaluator.
+    The exact-resume ladder stopped at its frozen step-10 rule. Step 1 completed
+    rc 0 for task 3/4 with 64/64 unique rows, 50,697/50,657MiB peak device
+    memory, and valid atomic candidates/recovery. Step 5 improved mean four-noise
+    query action MSE by 0.210%/0.219%, passing only the non-regression rule.
+    Step 10 improved every fixed-noise draw and the means by 0.881%/0.928%, with
+    drift `1.19e-4`/`4.38e-5`; flow-query changes were +0.065%/-0.033% and remain
+    diagnostic. Candidate SHA256 values are `c9b0d940...e5571` and
+    `292781f4...acbb`; recovery manifest SHA256 values are
+    `6fdf67de...b4a49` and `4412cba7...f265c`. Both tasks miss the predeclared
+    1% step-10-to-25 continuation floor, so stop without rounding, threshold
+    change, step 25, or closed-loop access. This is bounded negative evidence
+    for the fixed 10-step action-aligned acquisition ladder, not a final LoRA or
+    EMBER negative. Gate 0 and Writer remain false. The next source-only recovery
+    must address temporal credit in ordinary task-local LoRA RL under matched
+    zero/supervised initialization; do not add blind supervised steps.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

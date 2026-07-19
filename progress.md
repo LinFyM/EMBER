@@ -2000,3 +2000,21 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   pass. Architecture guard is REVIEW with no hard violation and net active
   source shrinkage. No new GPU training, simulator, validation, held, locked-
   report, Gate, or Writer outcome was accessed while freezing this contract.
+- Committed/pushed the clean pre-outcome implementation as `16b6e14`. Ran
+  task3/task4 on GPU4/5 through separate durable exact-resume segments at steps
+  1, 5, and 10; all six longruns completed rc 0 and released both GPUs. Output
+  root is `gate_zero/action_aligned_lora_acquisition/fit/action_20260719T074144Z`.
+  Step-1 telemetry peaks at 50,697/50,657MiB and the total output remains small;
+  no additional GPU was used for duplicate work.
+- Step-1 action-MSE reductions are +0.074%/+0.109%; step-5 reductions are
+  +0.210%/+0.219%; step-10 reductions are +0.881%/+0.928%. Step-10 candidate
+  SHA256 values are `c9b0d940...e5571`/`292781f4...acbb`, and current recovery
+  manifest SHA256 values are `6fdf67de...b4a49`/`4412cba7...f265c`. Candidate,
+  optimizer, scheduler, RNG, and telemetry hashes validate; GPUs 4/5 return to
+  0MiB.
+- Enforced the frozen stop: both tasks miss the 1% step-10-to-25 action-MSE
+  floor, despite positive signs on all four inference-noise seeds. Did not run
+  step 25, round up the metric, lower the threshold, or access source closed-
+  loop/validation/held/locked surfaces. Gate 0/Writer remain false. Next freeze
+  the smallest ordinary task-local LoRA RL recovery that adds genuine temporal
+  credit and preserves the matched zero-init versus supervised-init comparison.

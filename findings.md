@@ -2166,3 +2166,22 @@
   frozen, the one-time query/action controller and launcher are retired from
   the active source tree (1,065 lines removed); their immutable packets and Git
   provenance remain, and the reusable fixed-anchor action metric is retained.
+- The action-aligned ladder is mechanically healthy but stops at step 10 under
+  its result-blind rule. Task-3/4 step-1 peak memory is 50,697/50,657MiB with
+  64/64 unique source rows and atomic recovery. Mean four-noise action-MSE
+  reduction progresses from +0.074%/+0.109% at step 1 to +0.210%/+0.219% at
+  step 5 and +0.881%/+0.928% at step 10. Every individual fixed-noise draw is
+  positive at steps 5 and 10, so the gradient direction is consistent rather
+  than sampling-sign noise.
+- Step-10 drift remains only `1.19e-4`/`4.38e-5`, while flow-query changes are
+  +0.065%/-0.033%. The latter divergence further supports generated-action MSE
+  as the correct offline acquisition metric for this repair. However, both
+  tasks miss the frozen 1% continuation floor; no step 25 or closed-loop
+  surface is opened. Candidate SHA256 values are `c9b0d940...e5571` and
+  `292781f4...acbb`.
+- This is not a final negative about full-sampler action supervision: it tests
+  one fixed 10-step, peak-2.5e-5, 200-step-maximum ladder and stops early by
+  contract. It also does not establish zero-interaction utility. Together with
+  the wider action expert's teacher-forced improvement but zero behavioral net
+  gain, the cheapest next discriminating mechanism is genuine temporal-credit
+  task-local LoRA RL, not more blind SFT duration, targets, ranks, or held data.

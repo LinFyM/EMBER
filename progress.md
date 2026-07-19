@@ -1,5 +1,23 @@
 # EMBER Progress and Handoff
 
+## 2026-07-19 source-teacher bridge ready for real Writer training
+
+- Source teacher waves completed rc 0 with 15/15 step-1000 final manifests and
+  verified state hashes. The canonical 345MiB root is
+  `/data/ymdai/ember_outputs/writer_cold_start/source_teachers_15_20260719T225000Z`;
+  validation/test/held access flags remain false. The failed CPU-oversubscribed
+  first launch is retained separately and contains no checkpoint or outcome.
+- `configs/writer_cold_start_source_teacher_auxiliary_recovery.toml` binds the
+  teacher bundle and freezes the one recovery. The existing trainer now loads
+  gauge-invariant physical updates as a bounded auxiliary while keeping the
+  independent functional loss primary. Twenty targeted Writer tests and the
+  architecture guard pass without a hard violation; no second runner exists.
+- The eight-GPU one-step mechanical smoke completed rc 0 in about 30 seconds:
+  frozen-base trainable parameters were zero, Writer gradients were finite,
+  and no held surface was accessed. Next: commit/push this outcome-free boundary
+  and immediately launch the clean 1000-step exact-resume Writer segment on all
+  eight GPUs, then run the existing five-category validation contract.
+
 ## 2026-07-19 first Writer result complete; one bounded recovery prepared
 
 - The formal cross-category validation is complete and immutable at

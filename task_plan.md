@@ -177,11 +177,16 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
   direct scored `33/320`, `31/320`, `150/320`; at h50 they scored `18/320`,
   `21/320`, `140/320`. Norm control preserved offline transfer but did not
   produce cross-category closed-loop utility, so Writer-only RL remains blocked.
-- [ ] Fit matched direct-LoRA teachers on a specification-selected, multi-class
-  source subset and use their physical updates only as an auxiliary bridge while
-  independent-query functional loss remains primary. This tests whether the
-  Writer can learn efficient direct-like update structure rather than merely
-  lowering action loss with a weakly transferable update. Keep the full 37-target
+- [x] Fit matched direct-LoRA teachers on the frozen 15-task/five-category
+  source subset. All 15 fixed-step fits completed in two GPU-parallel waves;
+  their state hashes are bound by `teacher_bundle.json`, and physical update
+  norms span `0.703--0.955` (median `0.797`). No validation/test/held numeric
+  surface was used.
+- [ ] Run the single frozen source-teacher auxiliary Writer recovery in
+  `configs/writer_cold_start_source_teacher_auxiliary_recovery.toml`. Independent
+  source-query functional loss remains primary; coefficient `0.1` applies only
+  to gauge-invariant relative physical-Delta-W error, raw factor MSE is absent,
+  and a `1.25` soft norm cap is a runaway safeguard. Keep the full 37-target
   rank-32 space and leave later task-local RL unconstrained.
 
 1. [x] Bootstrap a Python 3.12 environment from the locked project definition;

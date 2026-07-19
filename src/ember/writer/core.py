@@ -43,6 +43,38 @@ def _load_toml(path: Path, label: str) -> dict[str, Any]:
     return value
 
 
+def _validate_teacher_auxiliary(spec: dict[str, Any], phase0: dict[str, Any]) -> None:
+    teacher = spec.get("teacher_auxiliary")
+    if teacher is None:
+        return
+    tasks = teacher.get("task_ids")
+    if (
+        not isinstance(tasks, list)
+        or len(tasks) != len(set(tasks))
+        or not set(tasks) <= set(phase0["splits"]["source"])
+        or spec.get("data", {}).get("functional_training_task_ids") != tasks
+    ):
+        raise WriterColdStartError("physical-update teacher task authority changed")
+    categories = teacher.get("task_categories", {})
+    if set(categories) != {str(task) for task in tasks} or len(set(categories.values())) < 2:
+        raise WriterColdStartError("physical-update teacher categories changed")
+    relative = Path(str(teacher.get("bundle_relative_path", "")))
+    coefficient = teacher.get("relative_physical_delta_squared_error_coefficient")
+    if (
+        not relative.parts
+        or relative.is_absolute()
+        or ".." in relative.parts
+        or not isinstance(teacher.get("bundle_sha256"), str)
+        or len(teacher["bundle_sha256"]) != 64
+        or coefficient is None
+        or not 0 < coefficient <= 1
+        or teacher.get("raw_factor_mse") is not False
+        or teacher.get("validation_numeric_access") is not False
+        or teacher.get("test_held_numeric_access") is not False
+    ):
+        raise WriterColdStartError("invalid physical-update teacher auxiliary contract")
+
+
 def load_writer_contract(
     path: Path,
     *,
@@ -58,6 +90,7 @@ def load_writer_contract(
     if spec.get("status") not in {
         "frozen_before_writer_implementation_or_training_outcomes",
         "predeclared_physical_norm_recovery_after_cross_category_failure",
+        "predeclared_source_physical_update_auxiliary_recovery_after_norm_recovery_failed_closed_loop",
     }:
         raise WriterColdStartError("Writer status is not an active frozen contract")
     authority = spec.get("authority", {})
@@ -115,6 +148,7 @@ def load_writer_contract(
         raise WriterColdStartError("removed shared-structure mechanism reappeared")
     if authority.get("test_held_numeric_access") is not False:
         raise WriterColdStartError("test/held access must remain closed")
+    _validate_teacher_auxiliary(spec, phase0)
     return spec
 
 
@@ -184,6 +218,134 @@ def physical_lora_delta_l2(
     if squared is None:
         raise WriterColdStartError("physical norm received no LoRA factors")
     return (float(alpha) / rank) * torch.sqrt(torch.clamp_min(squared, 1e-24))
+
+
+def physical_lora_delta_squared_distance(
+    state: Mapping[str, torch.Tensor],
+    target: Mapping[str, torch.Tensor],
+    *,
+    alpha: float,
+    rank: int,
+) -> torch.Tensor:
+    """Gauge-invariant squared distance between two physical LoRA updates."""
+
+    if alpha <= 0 or rank <= 0 or set(state) != set(target):
+        raise WriterColdStartError("invalid physical-update distance inputs")
+    squared: torch.Tensor | None = None
+    marker_a = ".lora_A.default.weight"
+    marker_b = ".lora_B.default.weight"
+    for name, factor_a in state.items():
+        if not name.endswith(marker_a):
+            continue
+        factor_b = state.get(name.replace(marker_a, marker_b))
+        target_a = target.get(name)
+        target_b = target.get(name.replace(marker_a, marker_b))
+        if (
+            factor_b is None
+            or target_a is None
+            or target_b is None
+            or factor_a.shape != target_a.shape
+            or factor_b.shape != target_b.shape
+            or factor_a.shape[-2] != rank
+            or factor_b.shape[-1] != rank
+        ):
+            raise WriterColdStartError("physical-update distance received an incomplete LoRA pair")
+        state_a_gram = factor_a @ factor_a.transpose(-2, -1)
+        state_b_gram = factor_b.transpose(-2, -1) @ factor_b
+        target_a_gram = target_a @ target_a.transpose(-2, -1)
+        target_b_gram = target_b.transpose(-2, -1) @ target_b
+        cross_a = factor_a @ target_a.transpose(-2, -1)
+        cross_b = factor_b.transpose(-2, -1) @ target_b
+        term = (
+            (state_a_gram * state_b_gram).sum(dim=(-2, -1))
+            + (target_a_gram * target_b_gram).sum(dim=(-2, -1))
+            - 2 * (cross_a * cross_b).sum(dim=(-2, -1))
+        )
+        squared = term if squared is None else squared + term
+    if squared is None:
+        raise WriterColdStartError("physical-update distance received no LoRA factors")
+    return (float(alpha) / rank) ** 2 * torch.clamp_min(squared, 0.0)
+
+
+def load_physical_update_teachers(
+    spec: dict[str, Any],
+    *,
+    output_root: Path,
+    template: Mapping[str, torch.Tensor],
+    device: torch.device,
+) -> tuple[dict[int, dict[str, torch.Tensor]], dict[int, float]]:
+    """Load frozen source-only physical updates bound by the Writer contract."""
+
+    auxiliary = spec.get("teacher_auxiliary")
+    if auxiliary is None:
+        return {}, {}
+    root = output_root.resolve()
+
+    def authority_path(relative: str) -> Path:
+        path = (root / relative).resolve()
+        if not path.is_relative_to(root):
+            raise WriterColdStartError("physical-update teacher path escaped output root")
+        return path
+
+    bundle_path = authority_path(auxiliary["bundle_relative_path"])
+    if sha256_file(bundle_path) != auxiliary["bundle_sha256"]:
+        raise WriterColdStartError("physical-update teacher bundle changed")
+    try:
+        bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise WriterColdStartError("invalid physical-update teacher bundle") from error
+    if (
+        not isinstance(bundle, dict)
+        or bundle.get("schema_version") != 1
+        or bundle.get("status")
+        != "source_action_supervised_physical_update_teachers_complete"
+        or bundle.get("source_teacher_contract_sha256")
+        != auxiliary["source_teacher_contract_sha256"]
+        or bundle.get("validation_numeric_access") is not False
+        or bundle.get("test_held_accessed") is not False
+    ):
+        raise WriterColdStartError("physical-update teacher bundle authority changed")
+    expected_lora = spec["lora"]
+    bundle_lora = bundle.get("lora", {})
+    for key, expected in (
+        ("target_count", expected_lora["target_count"]),
+        ("rank", expected_lora["rank"]),
+        ("alpha", expected_lora["alpha"]),
+        ("dropout", expected_lora["dropout"]),
+        ("parameters", expected_lora["expected_parameter_count"]),
+    ):
+        if bundle_lora.get(key) != expected:
+            raise WriterColdStartError(f"physical-update teacher LoRA {key} changed")
+    rows = bundle.get("teacher_tasks", {})
+    task_ids = auxiliary["task_ids"]
+    if set(rows) != {str(task) for task in task_ids}:
+        raise WriterColdStartError("physical-update teacher task set changed")
+    states: dict[int, dict[str, torch.Tensor]] = {}
+    norm_squares: dict[int, float] = {}
+    for task_id in task_ids:
+        row = rows[str(task_id)]
+        state_path = authority_path(row["state_relative_path"])
+        if sha256_file(state_path) != row["state_sha256"]:
+            raise WriterColdStartError(f"physical-update teacher state changed for task {task_id}")
+        cpu_state = load_file(state_path)
+        if set(cpu_state) != set(template) or any(
+            cpu_state[name].shape != template[name].shape for name in template
+        ):
+            raise WriterColdStartError(f"physical-update teacher shape changed for task {task_id}")
+        state = {
+            name: value.to(device=device, dtype=torch.float32, non_blocking=True)
+            for name, value in cpu_state.items()
+        }
+        norm = float(
+            physical_lora_delta_l2(
+                state, alpha=expected_lora["alpha"], rank=expected_lora["rank"]
+            )
+        )
+        if not math.isclose(norm, float(row["physical_delta_l2"]), rel_tol=1e-5, abs_tol=1e-6):
+            raise WriterColdStartError(f"physical-update teacher norm changed for task {task_id}")
+        states[task_id] = state
+        norm_squares[task_id] = norm * norm
+    return states, norm_squares
 
 
 class CompleteLoRAWriter(torch.nn.Module):
@@ -377,10 +539,13 @@ def load_writer_checkpoint(
     scheduler: Any,
     rank: int,
     world_size: int,
+    expected_authority: str | None = None,
 ) -> tuple[int, str]:
     """Restore exact Writer state after the caller constructs its data iterator."""
 
     manifest = _validate_writer_checkpoint(checkpoint_dir, world_size=world_size)
+    if expected_authority is not None:
+        _require(manifest.get("authority"), expected_authority, "checkpoint authority")
     incompatible = writer.load_state_dict(load_file(checkpoint_dir / "writer.safetensors"), strict=True)
     if incompatible.missing_keys or incompatible.unexpected_keys:
         raise WriterColdStartError("Writer model state is incomplete")

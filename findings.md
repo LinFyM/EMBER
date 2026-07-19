@@ -1,5 +1,25 @@
 # EMBER Durable Findings
 
+## 2026-07-19 source physical-update teachers complete
+
+- Fifteen source-only direct LoRAs across drawer, stove/place, basket,
+  spatial-relation, and shelf/container categories completed the same mature
+  37-target rank-32, alpha-16, dropout-0, 1,485,312-parameter fit. Two waves
+  used GPUs 0--7 then 0--6 and each took about 12.4 minutes. The first launch
+  created 84 CPU threads per process and made all GPUs idle; it was stopped
+  before any checkpoint or outcome, preserved as a failed longrun, and the
+  only retry change limited CPU libraries to eight threads per process.
+- All 15 final state hashes pass. Their physical update norms are
+  `0.703--0.955`, with mean `0.804` and median `0.797`; the hash-bound bundle is
+  `$EMBER_OUTPUT_ROOT/writer_cold_start/source_teachers_15_20260719T225000Z/teacher_bundle.json`
+  (SHA256 `b9202a94...93f7`). These are source acquisition targets, not
+  validation-performance evidence.
+- The next bounded recovery is frozen before its outcome: functional query loss
+  remains primary, while coefficient `0.1` weights per-task teacher-normalized
+  physical-Delta-W squared error; raw A/B factor MSE remains excluded. A soft
+  norm cap of `1.25` with coefficient `0.01` guards against the previously
+  observed runaway. This adds no bank, subspace, geometry, or RL constraint.
+
 ## 2026-07-19 first Writer cold-start result and bounded recovery
 
 - The first real Writer segment completed step 1000 on eight A100s in

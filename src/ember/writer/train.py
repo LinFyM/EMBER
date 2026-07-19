@@ -30,7 +30,9 @@ from ember.writer.core import (
     WriterColdStartError,
     build_lora_tensor_specs,
     cosine_warmup_scheduler,
+    load_physical_update_teachers,
     load_writer_checkpoint,
+    physical_lora_delta_squared_distance,
     physical_lora_delta_l2,
     load_writer_contract,
     save_writer_checkpoint,
@@ -326,7 +328,8 @@ def _tracking(spec: dict[str, Any], args: argparse.Namespace, rank: int) -> Any:
             "world_size": spec["train"]["world_size"],
             "global_batch_size": spec["train"]["global_batch_size"],
             "lora_parameters": spec["lora"]["expected_parameter_count"],
-            "source_tasks": 60,
+            "source_tasks": len(spec["data"].get("functional_training_task_ids", [])) or 60,
+            "teacher_physical_update_auxiliary": "teacher_auxiliary" in spec,
         },
         auto_log_gpu=True,
         gpu_log_interval=1.0,
@@ -337,14 +340,24 @@ def _tracking(spec: dict[str, Any], args: argparse.Namespace, rank: int) -> Any:
 
 
 def _write_stage_result(
-    args: argparse.Namespace, *, step: int, elapsed: float, final_loss: float, spec_sha256: str
+    args: argparse.Namespace,
+    *,
+    step: int,
+    elapsed: float,
+    final_metrics: dict[str, float],
+    spec_sha256: str,
 ) -> None:
     result = {
         "schema_version": 1,
         "status": "writer_cold_start_training_segment_completed_pending_validation",
         "completed_step": step,
         "wall_seconds": elapsed,
-        "final_global_functional_loss": final_loss,
+        "final_global_functional_loss": final_metrics["global_functional_loss"],
+        "final_global_objective_loss": final_metrics["global_objective_loss"],
+        "final_global_physical_delta_l2": final_metrics["global_physical_delta_l2"],
+        "final_global_teacher_relative_physical_delta_squared_error": final_metrics[
+            "global_teacher_relative_physical_delta_squared_error"
+        ],
         "writer_contract_sha256": spec_sha256,
         "validation_performance_accessed": False,
         "test_held_accessed": False,
@@ -368,6 +381,8 @@ class TrainRuntime:
     policy: Any
     preprocessor: Any
     template: dict[str, torch.Tensor]
+    teacher_states: dict[int, dict[str, torch.Tensor]]
+    teacher_norm_squares: dict[int, float]
     feature_cache: Path
     writer: torch.nn.Module
     writer_owner: CompleteLoRAWriter
@@ -379,6 +394,53 @@ class TrainRuntime:
     start_step: int
     target_step: int
     data_chain: str
+
+
+def _functional_query_loader(
+    spec: dict[str, Any],
+    phase0: dict[str, Any],
+    authorities: list[WriterSpecAuthority],
+    *,
+    start_step: int,
+    target_step: int,
+    rank: int,
+    world_size: int,
+) -> tuple[WriterQueryDataset, Any]:
+    bounds = spec["data"]["functional_train_episode_bounds"]
+    training_task_ids = spec["data"].get(
+        "functional_training_task_ids", phase0["splits"]["source"]
+    )
+    training_task_set = set(training_task_ids)
+    training_authorities = [
+        authority for authority in authorities if authority.task_id in training_task_set
+    ]
+    if len(training_authorities) != len(training_task_ids):
+        raise WriterColdStartError("Writer functional training task authority changed")
+    dataset = WriterQueryDataset(
+        training_authorities,
+        demo_indices=list(range(bounds[0], bounds[1] + 1)),
+        action_chunk_size=spec["data"]["functional_action_chunk_size"],
+    )
+    train = spec["train"]
+    sampler = WriterTaskBatchSampler(
+        dataset,
+        task_ids=training_task_ids,
+        per_rank_batch_size=train["per_rank_micro_batch_size"],
+        start_step=start_step,
+        stop_step=target_step,
+        rank=rank,
+        world_size=world_size,
+        seed=train["seed"],
+    )
+    loader = DataLoader(
+        dataset,
+        batch_sampler=sampler,
+        num_workers=train["num_workers_per_rank"],
+        pin_memory=True,
+        persistent_workers=train["num_workers_per_rank"] > 0,
+        prefetch_factor=2 if train["num_workers_per_rank"] > 0 else None,
+    )
+    return dataset, iter(loader)
 
 
 def _setup_runtime(args: argparse.Namespace) -> TrainRuntime:
@@ -414,6 +476,9 @@ def _setup_runtime(args: argparse.Namespace) -> TrainRuntime:
     policy, preprocessor, template = _open_frozen_policy(
         spec, paths["mature"], source_checkpoint, authorities[rank].task_id
     )
+    teacher_states, teacher_norm_squares = load_physical_update_teachers(
+        spec, output_root=args.output_root, template=template, device=device
+    )
     feature_cache = _feature_cache(
         spec,
         policy,
@@ -447,31 +512,15 @@ def _setup_runtime(args: argparse.Namespace) -> TrainRuntime:
     target_step = args.stop_after_step or train["first_segment_steps"]
     if not start_step < target_step <= train["maximum_steps"]:
         raise WriterColdStartError("Writer target step is outside the resumable ladder")
-    bounds = spec["data"]["functional_train_episode_bounds"]
-    dataset = WriterQueryDataset(
+    dataset, iterator = _functional_query_loader(
+        spec,
+        phase0,
         authorities,
-        demo_indices=list(range(bounds[0], bounds[1] + 1)),
-        action_chunk_size=spec["data"]["functional_action_chunk_size"],
-    )
-    sampler = WriterTaskBatchSampler(
-        dataset,
-        task_ids=phase0["splits"]["source"],
-        per_rank_batch_size=train["per_rank_micro_batch_size"],
         start_step=start_step,
-        stop_step=target_step,
+        target_step=target_step,
         rank=rank,
         world_size=world_size,
-        seed=train["seed"],
     )
-    loader = DataLoader(
-        dataset,
-        batch_sampler=sampler,
-        num_workers=train["num_workers_per_rank"],
-        pin_memory=True,
-        persistent_workers=train["num_workers_per_rank"] > 0,
-        prefetch_factor=2 if train["num_workers_per_rank"] > 0 else None,
-    )
-    iterator = iter(loader)
     data_chain = ""
     if args.resume_checkpoint:
         restored_step, data_chain = load_writer_checkpoint(
@@ -481,6 +530,7 @@ def _setup_runtime(args: argparse.Namespace) -> TrainRuntime:
             scheduler=scheduler,
             rank=rank,
             world_size=world_size,
+            expected_authority=sha256_file(args.config),
         )
         if restored_step != start_step:
             raise WriterColdStartError("resume checkpoint name and payload differ")
@@ -490,6 +540,7 @@ def _setup_runtime(args: argparse.Namespace) -> TrainRuntime:
         raise WriterColdStartError("functional LoRA parameter names changed")
     return TrainRuntime(
         args, spec, rank, world_size, device, policy, preprocessor, template,
+        teacher_states, teacher_norm_squares,
         feature_cache, writer, writer_owner, optimizer, scheduler, dataset,
         iterator, tracker, start_step, target_step, data_chain,
     )
@@ -544,7 +595,30 @@ def _functional_step(runtime: TrainRuntime, step: int) -> dict[str, float]:
         soft_cap = float(train.get("physical_delta_l2_soft_cap", float("inf")))
         coefficient = float(train.get("physical_delta_excess_coefficient", 0.0))
         excess = torch.relu(physical_delta_l2 - soft_cap)
-        loss = functional_loss + coefficient * excess.square()
+        teacher_relative_error = torch.zeros_like(physical_delta_l2)
+        teacher_coefficient = 0.0
+        if runtime.teacher_states:
+            if task_id not in runtime.teacher_states:
+                raise WriterColdStartError("functional task lacks a physical-update teacher")
+            teacher_distance = physical_lora_delta_squared_distance(
+                generated,
+                runtime.teacher_states[task_id],
+                alpha=runtime.spec["lora"]["alpha"],
+                rank=runtime.spec["lora"]["rank"],
+            )
+            teacher_relative_error = teacher_distance / max(
+                runtime.teacher_norm_squares[task_id], 1e-12
+            )
+            teacher_coefficient = float(
+                runtime.spec["teacher_auxiliary"][
+                    "relative_physical_delta_squared_error_coefficient"
+                ]
+            )
+        loss = (
+            functional_loss
+            + coefficient * excess.square()
+            + teacher_coefficient * teacher_relative_error
+        )
         if loss.ndim != 0 or not torch.isfinite(loss):
             raise WriterColdStartError("Writer functional loss is non-finite")
         loss.backward()
@@ -556,7 +630,12 @@ def _functional_step(runtime: TrainRuntime, step: int) -> dict[str, float]:
         runtime.optimizer.step()
         runtime.scheduler.step()
         reduced = torch.stack(
-            (functional_loss.detach(), loss.detach(), physical_delta_l2.detach())
+            (
+                functional_loss.detach(),
+                loss.detach(),
+                physical_delta_l2.detach(),
+                teacher_relative_error.detach(),
+            )
         )
         torch.distributed.all_reduce(reduced)
         reduced.div_(runtime.world_size)
@@ -564,6 +643,7 @@ def _functional_step(runtime: TrainRuntime, step: int) -> dict[str, float]:
             "global_functional_loss": float(reduced[0]),
             "global_objective_loss": float(reduced[1]),
             "global_physical_delta_l2": float(reduced[2]),
+            "global_teacher_relative_physical_delta_squared_error": float(reduced[3]),
             "gradient_norm": float(gradient_norm),
             "learning_rate": runtime.scheduler.get_last_lr()[0],
             "global_samples_per_second": train["global_batch_size"]
@@ -594,13 +674,13 @@ def _log_step(runtime: TrainRuntime, step: int, metrics: dict[str, float]) -> No
                 )
 
 
-def _train_loop(runtime: TrainRuntime) -> tuple[float, float]:
+def _train_loop(runtime: TrainRuntime) -> tuple[dict[str, float], float]:
     started = time.perf_counter()
-    final_loss = float("nan")
+    final_metrics: dict[str, float] | None = None
     train = runtime.spec["train"]
     for step in range(runtime.start_step + 1, runtime.target_step + 1):
         metrics = _functional_step(runtime, step)
-        final_loss = metrics["global_functional_loss"]
+        final_metrics = metrics
         _log_step(runtime, step, metrics)
         if runtime.args.mode == "train" and step in train["checkpoint_steps"]:
             _checkpoint(
@@ -615,10 +695,14 @@ def _train_loop(runtime: TrainRuntime) -> tuple[float, float]:
                 spec_sha256=sha256_file(runtime.args.config),
                 train=train,
             )
-    return final_loss, time.perf_counter() - started
+    if final_metrics is None:
+        raise WriterColdStartError("Writer training segment completed no steps")
+    return final_metrics, time.perf_counter() - started
 
 
-def _finish_runtime(runtime: TrainRuntime, *, final_loss: float, elapsed: float) -> None:
+def _finish_runtime(
+    runtime: TrainRuntime, *, final_metrics: dict[str, float], elapsed: float
+) -> None:
     _barrier()
     if runtime.rank == 0:
         if runtime.args.mode == "smoke":
@@ -640,7 +724,7 @@ def _finish_runtime(runtime: TrainRuntime, *, final_loss: float, elapsed: float)
                 runtime.args,
                 step=runtime.target_step,
                 elapsed=elapsed,
-                final_loss=final_loss,
+                final_metrics=final_metrics,
                 spec_sha256=sha256_file(runtime.args.config),
             )
     if runtime.tracker is not None:
@@ -652,8 +736,8 @@ def _finish_runtime(runtime: TrainRuntime, *, final_loss: float, elapsed: float)
 
 def run(args: argparse.Namespace) -> None:
     runtime = _setup_runtime(args)
-    final_loss, elapsed = _train_loop(runtime)
-    _finish_runtime(runtime, final_loss=final_loss, elapsed=elapsed)
+    final_metrics, elapsed = _train_loop(runtime)
+    _finish_runtime(runtime, final_metrics=final_metrics, elapsed=elapsed)
 
 
 def _parser() -> argparse.ArgumentParser:

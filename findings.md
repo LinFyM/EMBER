@@ -2510,3 +2510,29 @@
   only source round 1 (init states 16--23, seeds 6208--6215, policy RNG
   2026071961), retains horizon 16 and model chunk 50, and performs exactly zero
   policy, critic, optimizer, or Writer updates across 32 episodes.
+
+## Horizon support replay finds partial acquisition but no stable generalization
+
+- The four-rank replay completed rc 0 in 2m01s from clean `bff88bd`; result
+  SHA256 is
+  `4a0c13a00bb2692df048eec8426c9dc4980582d5bbd2bd70e178e327fa65f7ef`.
+  All result/source/config/telemetry checksums pass, every arm preserves its
+  step-16 trainable state and actor-optimizer entry count, and GPUs 4--7
+  released. Peak usage was 16,679MiB on GPU4 and 4,317MiB elsewhere.
+- On the exact round-1 training slice, supervised task3/task4 paired net wins
+  are `[-1,+1]`; zero-init task3/task4 are `[+1,0]`. Thus two individual arms
+  improve by one paired episode, one is unchanged, and one regresses. The
+  frozen classification is
+  `horizon_support_replay_improves_but_development_does_not`.
+- This rejects a claim that the horizon-resolved optimizer cannot move behavior
+  on any seen support, but it does not establish robust acquisition: neither
+  initialization family improves both tasks, and the already frozen
+  development result remains `[-2,+1]`/`[0,-1]`. The evidence is best read as
+  partial support acquisition plus unstable source-slice generalization, not
+  as useful task-local RL or supervised-init advantage.
+- Gate 0, Writer, selected checkpoint, fresh Gate, validation, held, and locked
+  report remain closed. A new result-before-outcome recovery may test only the
+  primary-source-supported data-coverage gap with additional disjoint source
+  training slices and the same scientific contract; it must not append to the
+  terminal packet, relax the two-task Gate, or treat either `+1` arm as a
+  selected candidate.

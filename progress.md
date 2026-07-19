@@ -2306,3 +2306,25 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   manifests, initial vectors, 32-episode budget, and validation/held closure.
   Python compilation and whitespace checks pass. Commit and push this frozen
   boundary before allocating GPUs 4--7.
+
+## 2026-07-19 horizon support replay completed
+
+- Committed/pushed the outcome-free boundary as `bff88bd`. Live preflight kept
+  the unrelated MemLLM processes on GPUs 0--3 untouched and selected idle GPUs
+  4--7. Long-run `gate0_horizon_support_replay_20260719_111434` completed rc 0
+  in 2m01s with 32 source episodes and exactly zero policy/critic/optimizer
+  updates; all four GPUs returned to 0MiB.
+- Output is the 140KiB packet
+  `horizon_support_replay_20260719T111331Z`. All four checksums pass. Peak GPU
+  usage was 16,679MiB on rank0 and 4,317MiB on ranks1--3, preserving more than
+  64GiB headroom; no video or final Gate surface was consumed.
+- Result SHA256 is `4a0c13a0...f7ef`, status
+  `horizon_support_replay_improves_but_development_does_not`. Supervised-init
+  task3/4 paired wins are `[-1,+1]`; zero-init wins are `[+1,0]`. This records
+  partial seen-support acquisition but no two-task or development utility.
+  Gate 0 and Writer remain false.
+- Next freeze, test, and cleanly deliver one coverage-only recovery that starts
+  a new trajectory and adds disjoint legal source training slices under the
+  unchanged canonical trainer and Gate. It may run only staged evidence nodes
+  and must stop before blind scale, fresh Gate, validation, held, or locked
+  access.

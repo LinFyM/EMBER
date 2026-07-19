@@ -1042,6 +1042,16 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     init states 16--23, seeds 6208--6215, policy RNG 2026071961, horizon 16,
     all four initial success vectors, four-rank topology, zero updates, and a
     32-episode maximum. No video or final Gate surface is consumed.
+    The diagnostic completed rc 0 in 2m01s. Exact round-1 paired net wins were
+    `[-1,+1]` for supervised-init and `[+1,0]` for zero-init, so status is
+    `horizon_support_replay_improves_but_development_does_not`; result SHA256
+    is `4a0c13a0...f7ef`. This is partial seen-support acquisition, not a Gate
+    pass: fixed development remains negative and no initialization improves
+    both tasks. The next bounded recovery may only test data coverage by adding
+    fresh legal source training slices under the same trainer, four arms,
+    LoRA/optimizer/evaluator/Gate, with result-blind staged stop rules. It must
+    start a new immutable trajectory rather than append to the terminal
+    stage-16 packet, and it cannot use validation/held/locked surfaces.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

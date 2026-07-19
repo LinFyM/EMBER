@@ -15,7 +15,6 @@ from pathlib import Path
 from typing import Any, Mapping
 
 import torch
-from safetensors.torch import load_file
 
 from ember.eval_artifacts import build_eval_gallery, update_latest_link
 from ember.evaluation_identity import _load_policy
@@ -28,7 +27,6 @@ from ember.gate_zero_oracle_artifacts import (
     save_candidate_artifact,
     save_recovery_artifact,
     sha256_file,
-    validate_candidate_artifact,
     validate_recovery_artifact,
     write_output_checksums,
 )
@@ -37,7 +35,6 @@ from ember.gate_zero_oracle_report_runtime import _closed_loop_metrics, _task_au
 from ember.gate_zero_oracle_session import (
     OracleModelSession,
     _load_task_datasets,
-    build_oracle_optimizer,
     capture_trainable_state,
     configure_oracle_variant,
 )
@@ -56,7 +53,15 @@ from ember.gate_zero_task_local_rl.contract import (
 from ember.gate_zero_task_local_rl.runtime import (
     GateZeroTaskLocalRLRuntimeError,
     collect_training_round,
-    train_signed_flow_ratio_round,
+    initial_successes,
+    load_supervised_state,
+    validate_result_authorities,
+)
+from ember.gate_zero_task_local_rl.temporal_credit import (
+    TemporalCritic,
+    build_actor_optimizer,
+    build_task_local_critic,
+    train_temporal_credit_round,
 )
 
 
@@ -70,6 +75,8 @@ class LiveRLArm:
     language: str
     task_authority: dict[str, Any]
     initial_state_authority: dict[str, Any]
+    critic: TemporalCritic
+    critic_optimizer: torch.optim.Optimizer
 
     def close(self) -> None:
         self.session.close()
@@ -91,94 +98,6 @@ def _load_toml(path: Path) -> dict[str, Any]:
             return tomllib.load(handle)
     except (OSError, tomllib.TOMLDecodeError) as error:
         raise GateZeroTaskLocalRLRuntimeError(f"invalid TOML: {path}") from error
-
-
-def _validate_result_authorities(
-    spec: Mapping[str, Any],
-    *,
-    headroom_result: Path,
-    diagnostic_result: Path,
-    previous_awr_result: Path,
-) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
-    authority = spec["authority"]
-    if sha256_file(headroom_result) != authority["headroom_result_sha256"]:
-        raise GateZeroTaskLocalRLRuntimeError("Proposal-A result hash changed")
-    if sha256_file(diagnostic_result) != authority["candidate_diagnostic_result_sha256"]:
-        raise GateZeroTaskLocalRLRuntimeError("candidate diagnostic result hash changed")
-    if sha256_file(previous_awr_result) != authority["previous_awr_result_sha256"]:
-        raise GateZeroTaskLocalRLRuntimeError("previous AWR result hash changed")
-    headroom = _load_json(headroom_result, "Proposal-A result")
-    diagnostic = _load_json(diagnostic_result, "candidate diagnostic result")
-    previous_awr = _load_json(previous_awr_result, "previous AWR result")
-    counts = {
-        (arm["task_id"], arm["condition"]): sum(arm["successes"])
-        for arm in headroom.get("arms", [])
-    }
-    expected = {
-        (3, "frozen_base"): 3,
-        (4, "frozen_base"): 3,
-        (3, authority["fit_variant"]): 2,
-        (4, authority["fit_variant"]): 4,
-    }
-    if (
-        headroom.get("status") != "mature_lora_headroom_control_failed_gate_recovery_required"
-        or counts != expected
-        or headroom.get("gate_zero_authorized") is not False
-        or diagnostic.get("status") != "candidate_step_magnitude_recovery_not_supported"
-        or diagnostic.get("selected_step") is not None
-        or diagnostic.get("gate_zero_authorized") is not False
-        or previous_awr.get("status") != "task_local_rl_early_check_not_supported"
-        or previous_awr.get("interaction_episodes_per_task_initialization") != 16
-        or previous_awr.get("gate_zero_authorized") is not False
-        or previous_awr.get("writer_authorized") is not False
-    ):
-        raise GateZeroTaskLocalRLRuntimeError("upstream Gate-0 failure boundary changed")
-    return headroom, diagnostic, previous_awr
-
-
-def _initial_successes(
-    headroom: Mapping[str, Any], *, task_id: int, initialization: str, variant: str
-) -> list[bool]:
-    condition = "frozen_base" if initialization == "zero_init" else variant
-    matches = [
-        arm
-        for arm in headroom["arms"]
-        if arm["task_id"] == task_id and arm["condition"] == condition
-    ]
-    if len(matches) != 1 or len(matches[0].get("successes", [])) != 8:
-        raise GateZeroTaskLocalRLRuntimeError("initial closed-loop vector changed")
-    return [bool(value) for value in matches[0]["successes"]]
-
-
-def _supervised_candidate_path(fit_root: Path, spec: Mapping[str, Any], task_id: int) -> Path:
-    return (
-        fit_root
-        / f"{spec['authority']['fit_variant']}_task{task_id}"
-        / "candidates"
-        / f"{spec['authority']['supervised_step']:06d}"
-    )
-
-
-def _load_supervised_state(
-    path: Path, *, spec: Mapping[str, Any], task_id: int
-) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
-    manifest = validate_candidate_artifact(
-        path,
-        expected={
-            "variant": spec["authority"]["fit_variant"],
-            "task_id": task_id,
-            "step": spec["authority"]["supervised_step"],
-        },
-    )
-    prefix = f"task{task_id}_supervised"
-    if (
-        sha256_file(path / "candidate_manifest.json")
-        != spec["authority"][f"{prefix}_manifest_sha256"]
-        or sha256_file(path / "trainable_state.safetensors")
-        != spec["authority"][f"{prefix}_state_sha256"]
-    ):
-        raise GateZeroTaskLocalRLRuntimeError("supervised LoRA state hash changed")
-    return load_file(path / "trainable_state.safetensors"), manifest
 
 
 def _open_live_arm(
@@ -225,11 +144,7 @@ def _open_live_arm(
             "physical_zero": initialization == "zero_init",
         }
         if initialization == "supervised_init":
-            state, selected = _load_supervised_state(
-                _supervised_candidate_path(fit_root, spec, task_id),
-                spec=spec,
-                task_id=task_id,
-            )
+            state, selected = load_supervised_state(fit_root, spec=spec, task_id=task_id)
             restore_trainable_state(model, state)
             initial_authority.update(
                 {
@@ -251,7 +166,7 @@ def _open_live_arm(
         )
         with model.disable_adapter():
             reference = evaluator.capture_base_reference(model)
-        optimizer = build_oracle_optimizer(model, variant_spec)
+        optimizer = build_actor_optimizer(model, spec["algorithm"])
         session = OracleModelSession(
             support,
             evaluator,
@@ -264,8 +179,21 @@ def _open_live_arm(
             task_authorities,
         )
         loaded[0] = model
+        critic, critic_optimizer = build_task_local_critic(
+            spec["algorithm"],
+            device=next(model.parameters()).device,
+            task_id=task_id,
+        )
         language, task_authority = _task_authority(task_id, list(range(40, 48)))
-        return LiveRLArm(session, tuple(loaded), language, task_authority, initial_authority)
+        return LiveRLArm(
+            session,
+            tuple(loaded),
+            language,
+            task_authority,
+            initial_authority,
+            critic,
+            critic_optimizer,
+        )
     except BaseException:
         if evaluator is not None:
             evaluator.close()
@@ -282,6 +210,7 @@ def _recovery_authorities(
         "task_local_rl_contract_sha256": sha256_file(spec_path),
         "candidate_diagnostic_result_sha256": spec["authority"]["candidate_diagnostic_result_sha256"],
         "previous_awr_result_sha256": spec["authority"]["previous_awr_result_sha256"],
+        "previous_signed_result_sha256": spec["authority"]["previous_signed_result_sha256"],
         "task_id": task_id,
         "initialization": initialization,
         "fit_variant": spec["authority"]["fit_variant"],
@@ -306,6 +235,8 @@ def _resume_or_initialize(
         last,
         model=arm.session.model,
         optimizer=arm.session.optimizer,
+        auxiliary_module=arm.critic,
+        auxiliary_optimizer=arm.critic_optimizer,
         expected={"authorities": authorities},
     )
     if step != 8:
@@ -352,7 +283,6 @@ def _run_rounds(
     rounds_root.mkdir(exist_ok=True)
     records = []
     episodes_per_round = spec["training_interaction"]["episodes_per_round_per_task_initialization"]
-    optimizer_steps_per_round = spec["algorithm"]["optimizer_steps_per_rollout_round"]
     for round_index in range(start_episodes // episodes_per_round, stop_episodes // episodes_per_round):
         replay, collection = collect_training_round(
             runtime=arm.runtime,
@@ -368,11 +298,13 @@ def _run_rounds(
             failed = rounds_root / f"{(round_index + 1) * episodes_per_round:06d}_failed.json"
             atomic_json(failed, {"status": "collection_safeguard_failed", "collection": collection})
             raise GateZeroTaskLocalRLRuntimeError("RL collection failed mechanics or saturation guard")
-        training = train_signed_flow_ratio_round(
+        training = train_temporal_credit_round(
             arm.session,
             replay,
+            critic=arm.critic,
+            critic_optimizer=arm.critic_optimizer,
             spec=spec,
-            optimizer_step_start=round_index * optimizer_steps_per_round,
+            round_index=round_index,
         )
         interaction_episodes = (round_index + 1) * episodes_per_round
         record = {
@@ -388,6 +320,8 @@ def _run_rounds(
             step=interaction_episodes,
             trainable_state=capture_trainable_state(arm.session.model),
             optimizer=arm.session.optimizer,
+            auxiliary_module=arm.critic,
+            auxiliary_optimizer=arm.critic_optimizer,
             authorities=authorities,
         )
         validate_recovery_artifact(
@@ -400,9 +334,13 @@ def _run_rounds(
                 "training_success_rate": collection["success_rate"],
                 "training_environment_steps": collection["environment_steps"],
                 "saturation_fraction": collection["saturation_fraction"],
-                "signed_flow_ratio_loss": training[-1]["signed_flow_ratio_loss"],
-                "ratio_clip_fraction": training[-1]["ratio_clip_fraction"],
-                "gradient_norm": training[-1]["gradient_norm"],
+                "actor_loss": training["updates"][-1]["actor_loss"],
+                "critic_loss": training["updates"][-1]["critic_loss"],
+                "ratio_clip_fraction": training["updates"][-1]["ratio_clip_fraction"],
+                "actor_gradient_norm": training["updates"][-1]["actor_gradient_norm"],
+                "critic_explained_variance_after": training[
+                    "critic_explained_variance_after"
+                ],
             },
             step=interaction_episodes,
         )
@@ -448,7 +386,7 @@ def _stage_evaluation(
         spec=rollout_spec,
         output_dir=stage_root,
     )
-    initial = _initial_successes(
+    initial = initial_successes(
         headroom,
         task_id=task_id,
         initialization=initialization,
@@ -473,7 +411,11 @@ def _stage_evaluation(
         "successes": current,
         "paired_net_wins": paired_net,
         "mechanics_valid": closed_loop["mechanics_valid"]
-        and all(value["collection"]["mechanics_valid"] for value in all_rounds),
+        and all(value["collection"]["mechanics_valid"] for value in all_rounds)
+        and all(value["training"]["temporal_credit_healthy"] for value in all_rounds),
+        "temporal_credit_healthy": all(
+            value["training"]["temporal_credit_healthy"] for value in all_rounds
+        ),
         "maximum_saturation_fraction": maximum_saturation,
         "offline_query_flow_mse": offline["query_flow_mse"],
         "offline_query_reduction_fraction": (
@@ -526,6 +468,7 @@ def _aggregate_stage(
     }
     metrics = {
         "mechanics_valid": all(value["mechanics_valid"] for value in records),
+        "temporal_credit_healthy": all(value["temporal_credit_healthy"] for value in records),
         "maximum_saturation_fraction": max(value["maximum_saturation_fraction"] for value in records),
         "nonfinite_count": 0,
         "action_drift_by_arm": {
@@ -614,7 +557,7 @@ def _publish_stage(
     atomic_json(args.output_dir / "eval_info.json", eval_info)
     build_eval_gallery(args.output_dir)
     update_latest_link(args.output_dir, args.latest_link)
-    if stage["status"] != "continue_same_rl_trajectories_to_32_episodes":
+    if stage["status"] != "task_local_rl_temporal_credit_continue_to_16":
         atomic_json(args.output_dir / RESULT_NAME, stage)
         write_output_checksums(args.output_dir)
 
@@ -645,11 +588,12 @@ def _load_run_inputs(
         != spec["authority"]["source_base_checkpoint_manifest_sha256"]
     ):
         raise GateZeroTaskLocalRLRuntimeError("source-base checkpoint hash changed")
-    headroom, _, _ = _validate_result_authorities(
+    headroom, _, _, _ = validate_result_authorities(
         spec,
         headroom_result=args.headroom_result,
         diagnostic_result=args.diagnostic_result,
         previous_awr_result=args.previous_awr_result,
+        previous_signed_result=args.previous_signed_result,
     )
     return spec, parent, phase0, fit, checkpoint, headroom
 
@@ -769,7 +713,8 @@ def _parse_args() -> argparse.Namespace:
     for name in (
         "config gate-zero-contract phase0-contract fit-contract headroom-contract "
         "diagnostic-contract manifest dataset-root source-base-checkpoint fit-root "
-        "headroom-result diagnostic-result previous-awr-result output-dir latest-link"
+        "headroom-result diagnostic-result previous-awr-result previous-signed-result "
+        "output-dir latest-link"
     ).split():
         parser.add_argument(f"--{name}", required=True, type=Path)
     parser.add_argument("--physical-gpus", required=True)

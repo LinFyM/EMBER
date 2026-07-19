@@ -2018,3 +2018,36 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   loop/validation/held/locked surfaces. Gate 0/Writer remain false. Next freeze
   the smallest ordinary task-local LoRA RL recovery that adds genuine temporal
   credit and preserves the matched zero-init versus supervised-init comparison.
+
+## 2026-07-19 temporal-credit Gate-0 recovery frozen before outcomes
+
+- Rechecked the active unbudgeted full-EMBER Goal and clean `c370df1` base.
+  The already documented owner contract remains active: Writer supervised cold
+  start, a separate Writer-only RL stage that updates Writer only, later
+  ordinary LoRA-only RL, and adaptation-aware source meta-outer learning are
+  distinct experiments. Gate 0 is not SFT-only and currently contains no
+  Writer or shared-state update.
+- Replaced the canonical active task-local RL estimator in the existing
+  `ember.gate_zero_task_local_rl` entrypoint; no second trainer or launcher was
+  added. Historical AWR/signed-ratio configs and immutable result packets
+  remain provenance, but their executable objective code and experiment-only
+  tests were retired. Runtime/contract source shrank while temporal mechanics
+  moved into one cohesive owner module.
+- Froze `configs/gate_zero_task_local_rl_temporal_credit.toml` at SHA256
+  `0cfd1c74ced6b5cdc0e792d1af48555df6f2346527377cdc753ba46fc35955d2`.
+  It binds the negative AWR (`aab151ea...b57`), signed-ratio
+  (`73d681ca...8703`), and stopped action-aligned step-10 manifests; task3/4,
+  supervised step-1000 versus physical zero initialization, LoRA structure,
+  source seeds/init states, evaluator, exploration, drift and Gate thresholds
+  are unchanged.
+- Added ordered action-chunk replay, task-local 512/256 critic, masked GAE,
+  eight-sample matched flow ratios, PPO clipping, and separate actor/critic
+  AdamW. Atomic recovery schema 3 now includes critic and critic optimizer;
+  old schemas remain readable. Stage 8 must start fresh; stage 16 must resume
+  the exact stage-8 actor+critic state. A passing stage-8 candidate stops;
+  otherwise only healthy mechanics may continue once to 16.
+- Red/green focused tests pass 15/15; the full suite passes 264/264. Python
+  compilation, shell syntax, contract/hash dry-run, and diff checks pass. No
+  simulator, validation, held, locked-report, Gate, or Writer outcome was
+  consumed while freezing this contract. One real-model no-environment/no-step
+  smoke remains before Git pre-outcome delivery and any source rollout.

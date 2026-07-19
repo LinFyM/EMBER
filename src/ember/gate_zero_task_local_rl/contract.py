@@ -8,9 +8,6 @@ import tomllib
 from pathlib import Path
 from typing import Any, Mapping
 
-import torch
-
-
 class GateZeroTaskLocalRLContractError(RuntimeError):
     """Raised when the task-local RL recovery differs from its sealed contract."""
 
@@ -74,6 +71,7 @@ def _validate_upstream_hashes(
         "headroom_result_sha256",
         "candidate_diagnostic_result_sha256",
         "previous_awr_result_sha256",
+        "previous_signed_result_sha256",
         "source_base_checkpoint_manifest_sha256",
         "task3_supervised_manifest_sha256",
         "task3_supervised_state_sha256",
@@ -103,134 +101,67 @@ def _validate_lora_and_optimizer(spec: Mapping[str, Any], fit: Mapping[str, Any]
     _require_equal(authority.get("supervised_step"), 1000, "supervised_step")
     _require_equal(authority.get("writer_present"), False, "writer_present")
     required_algorithm = {
-        "name": "per_sample_conditional_flow_loss_ratio_with_signed_episode_advantage",
-        "primary_source_fpo": "https://arxiv.org/abs/2602.02481",
+        "name": "chunk_level_flow_ppo_with_task_local_critic_and_gae",
+        "primary_source_fpo_plus": "https://arxiv.org/abs/2602.02481",
+        "primary_source_fpo": "https://arxiv.org/abs/2507.21053",
         "primary_source_code_commit": "b80112be1e8362263c4cd176e7aef21a275ff1c6",
         "not_full_fpo_plus": True,
-        "reward": "binary simulator episode success only",
-        "baseline": "mean binary success within the eight-episode task-local rollout batch",
-        "advantage_normalization": "zero mean and unit population standard deviation within the eight-episode task-local rollout batch",
-        "ratio_clip": 0.02,
-        "negative_spo_penalty": 0.01,
+        "discount": 0.99,
+        "gae_lambda": 0.95,
+        "critic": "task_local_frozen_feature_mlp",
+        "critic_input_dim": 1953,
+        "critic_hidden_dims": [512, 256],
+        "critic_zero_output_initialization": True,
+        "critic_learning_rate": 0.0001,
+        "critic_betas": [0.9, 0.999],
+        "critic_epsilon": 0.00001,
+        "critic_weight_decay": 0.000001,
+        "flow_samples_per_transition": 8,
+        "flow_sample_group_size": 8,
+        "ratio_clip": 0.01,
         "log_ratio_clamp": 5.0,
-        "critic": "none",
+        "update_epochs_per_round": 10,
+        "minibatch_size": 16,
+        "target_kl": 0.1,
         "shared_parameter_updates": False,
         "writer_updates": False,
         "source_demonstration_actions_during_rl": False,
-        "optimizer": "adamw",
-        "learning_rate": variant["learning_rate"],
-        "betas": variant["betas"],
-        "epsilon": variant["epsilon"],
-        "weight_decay": variant["weight_decay"],
-        "gradient_clip_norm": variant["gradient_clip_norm"],
+        "actor_optimizer": "adamw",
+        "actor_learning_rate": 0.00001,
+        "actor_betas": [0.9, 0.99],
+        "actor_epsilon": 0.00001,
+        "actor_weight_decay": 0.000001,
+        "actor_gradient_clip_norm": 1.0,
+        "critic_gradient_clip_norm": 1.0,
         "scheduler": "constant_over_bounded_recovery",
-        "optimizer_steps_per_rollout_round": 8,
         "effective_replay_batch_size": 64,
         "anchors_per_episode": 8,
         "action_chunk_size": 50,
+        "augmentation": "none_on_on_policy_observations",
     }
     for key, value in required_algorithm.items():
         _require_equal(algorithm.get(key), value, f"algorithm.{key}")
 
 
 def _validate_recovery_provenance(spec: Mapping[str, Any]) -> None:
-    recovery = spec.get("mechanical_recovery")
-    flow_recovery = spec.get("flow_shape_recovery")
-    model_shape_recovery = spec.get("model_internal_shape_recovery")
-    ratio_recovery = spec.get("signed_flow_ratio_recovery")
-    if not all(
-        isinstance(value, dict)
-        for value in (recovery, flow_recovery, model_shape_recovery, ratio_recovery)
-    ):
+    provenance = spec.get("predecessor_evidence")
+    if not isinstance(provenance, dict):
         raise GateZeroTaskLocalRLContractError("task-local RL recovery provenance is missing")
+    expected = {
+        "awr_contract_sha256": "75ceeec398f472d53fb1c7b88b4dd135469b0f841bbf8ac3dfc0ac4b13cd5c68",
+        "awr_result_sha256": "aab151ea503dbada6eaf3a2242301562a47052e1399ec10986c2279425c13b57",
+        "signed_flow_ratio_contract_sha256": "d322339eb417536a8b96b124b3c8d6324c4b25b95e89f4a3cffb5d6cadce200c",
+        "signed_flow_ratio_result_sha256": "73d681caf4f5d6b67519eb33636e9af905aec7412c18c5d85cd1aaf8d3488703",
+        "action_aligned_contract_sha256": "3d5b54be47c20bf29e356395f43ad2c9d43834b90eded994e68b141be0902246",
+        "action_aligned_task3_step10_manifest_sha256": "c9b0d9407b9a386d4a152116b7cd328d4ac961c51624957f8bb0d2a9df5e5571",
+        "action_aligned_task4_step10_manifest_sha256": "292781f4205384f1f130681addd50dc575b0983acd82e4f6dfd7355a89a8acbb",
+    }
+    for key, value in expected.items():
+        _require_equal(provenance.get(key), value, f"predecessor_evidence.{key}")
     _require_equal(
-        recovery["predecessor_contract_sha256"],
-        "75ceeec398f472d53fb1c7b88b4dd135469b0f841bbf8ac3dfc0ac4b13cd5c68",
-        "mechanical predecessor",
-    )
-    _require_equal(recovery["optimizer_updates_before_failure"], 0, "failed optimizer updates")
-    _require_equal(recovery["development_rollouts_before_failure"], 0, "failed development access")
-    _require_equal(
-        recovery["saturated_scalars_by_dimension"],
-        [0, 3, 10, 0, 0, 0, 1195],
-        "saturation diagnosis",
-    )
-    _require_equal(
-        recovery["failure_rank2_sha256"],
-        "f9a6ba3280bada9585891976373e34ea1b5667ea19c76dcd03252a48aa2a38d6",
-        "failed collection packet",
-    )
-    _require_equal(
-        recovery["localization_json_sha256"],
-        "d4ed8fa2e66319b268ef61e0cc66ccb3bfc55525770996718d76cace2c9f9dd6",
-        "mechanical localization packet",
-    )
-    _require_equal(
-        flow_recovery["predecessor_contract_sha256"],
-        "e138b7d649c192d4618a8e5b9c0f8fe29b60c95a5117815313f271f405d4d406",
-        "flow-shape predecessor",
-    )
-    _require_equal(flow_recovery["optimizer_updates_before_failure"], 0, "flow failed updates")
-    _require_equal(
-        flow_recovery["development_rollouts_before_failure"], 0, "flow failed development access"
-    )
-    _require_equal(
-        flow_recovery["model_action_shape_after_preprocessing"],
-        [64, 50, 32],
-        "processed model action shape",
-    )
-    _require_equal(
-        flow_recovery["failure_rank2_sha256"],
-        "42dbabe45f76a07e18f9e171018a4b65d2f0249d7ea10d6a0266ba8e2a499f2f",
-        "flow-shape failure packet",
-    )
-    _require_equal(
-        model_shape_recovery["predecessor_contract_sha256"],
-        "504d20bc371078b5ffeabaad84eb1e041423c5167cd7331b91e047a3324f673d",
-        "model-shape predecessor",
-    )
-    _require_equal(
-        model_shape_recovery["optimizer_updates_before_failure"], 0, "model-shape failed updates"
-    )
-    _require_equal(
-        model_shape_recovery["development_rollouts_before_failure"],
-        0,
-        "model-shape failed development access",
-    )
-    _require_equal(
-        model_shape_recovery["preprocessor_preserves_input_action_shape"],
-        [64, 50, 7],
-        "preprocessor action shape",
-    )
-    _require_equal(
-        model_shape_recovery["model_prepare_action_pads_to_max_action_dim"],
-        32,
-        "model internal action width",
-    )
-    _require_equal(
-        model_shape_recovery["failure_rank2_sha256"],
-        "eb71d231334645b5ac62fbd345c1a9cdf76493482c0ed337977d01c53745fcb0",
-        "model-shape failure packet",
-    )
-    _require_equal(
-        ratio_recovery["predecessor_contract_sha256"],
-        "b08a85b8de1bf04c788d217cfab8d34bb984d0f70ab8795e8c0aaf0f19820a37",
-        "signed-ratio predecessor",
-    )
-    _require_equal(
-        ratio_recovery["parent_awr_result_sha256"],
-        "aab151ea503dbada6eaf3a2242301562a47052e1399ec10986c2279425c13b57",
-        "signed-ratio parent result",
-    )
-    _require_equal(
-        ratio_recovery["parent_status"],
-        "task_local_rl_early_check_not_supported",
-        "signed-ratio parent status",
-    )
-    _require_equal(
-        ratio_recovery["primary_source_code_commit"],
-        "b80112be1e8362263c4cd176e7aef21a275ff1c6",
-        "signed-ratio source commit",
+        spec["authority"].get("previous_signed_result_sha256"),
+        expected["signed_flow_ratio_result_sha256"],
+        "authority.previous_signed_result_sha256",
     )
 
 
@@ -238,7 +169,7 @@ def _validate_surfaces_and_decisions(spec: Mapping[str, Any]) -> None:
     _require_equal(spec.get("schema_version"), 1, "schema_version")
     _require_equal(
         spec.get("status"),
-        "bounded_signed_flow_ratio_recovery_predeclared_after_awr_early_check",
+        "fpo_plus_anchored_temporal_credit_recovery_predeclared_after_action_aligned_stop",
         "status",
     )
     _require_equal(spec.get("task_ids"), [3, 4], "task_ids")
@@ -263,7 +194,7 @@ def _validate_surfaces_and_decisions(spec: Mapping[str, Any]) -> None:
     _validate_recovery_provenance(spec)
     _require_equal(training["batch_size"], 8, "training batch_size")
     _require_equal(training["rounds_maximum"], 2, "training rounds_maximum")
-    _require_equal(training["interaction_episode_nodes"], [16], "interaction nodes")
+    _require_equal(training["interaction_episode_nodes"], [8, 16], "interaction nodes")
     _require_equal(training["atomic_checkpoint_every_episodes"], 8, "checkpoint interval")
     _require_equal(
         training["train_init_state_indices_by_round"],
@@ -271,11 +202,13 @@ def _validate_surfaces_and_decisions(spec: Mapping[str, Any]) -> None:
         "training init states",
     )
     _require_equal(development["init_state_indices"], list(range(40, 48)), "development init states")
+    _require_equal(development["evaluate_after_interaction_episodes"], [8, 16], "development nodes")
     _require_equal(development["frozen_base_successes_by_task"], [3, 3], "base J0")
     _require_equal(development["supervised_lora_successes_by_task"], [2, 4], "supervised J0")
     _require_equal(safeguards["maximum_action_drift_proxy"], 0.02, "drift safeguard")
-    _require_equal(continuation["stage16_failure_stops_without_stage32"], True, "stage16 stop")
-    _require_equal(continuation["stage32_is_outside_this_recovery"], True, "stage32 boundary")
+    _require_equal(continuation["stage8_otherwise_continues_only_if_temporal_credit_healthy"], True, "stage8 continuation")
+    _require_equal(continuation["stage16_failure_stops_without_more_interaction"], True, "stage16 stop")
+    _require_equal(continuation["stage24_and_later_are_outside_this_recovery"], True, "later boundary")
     _require_equal(decision["minimum_each_task_success_gain_exclusive_pp"], 0.0, "task gain")
     _require_equal(decision["minimum_positive_task_count"], 2, "positive task count")
     _require_equal(decision["minimum_median_success_gain_pp"], 15.0, "median gain")
@@ -355,18 +288,6 @@ def assigned_task_local_rl_arm(
     return assignments[rank]
 
 
-def normalized_episode_advantages(returns: torch.Tensor) -> torch.Tensor:
-    """Center and normalize binary episodic return for the signed ratio check."""
-
-    if returns.ndim != 1 or returns.numel() == 0 or not torch.isfinite(returns).all():
-        raise GateZeroTaskLocalRLContractError("invalid signed-ratio returns")
-    advantages = returns.to(dtype=torch.float32) - returns.to(dtype=torch.float32).mean()
-    scale = advantages.std(unbiased=False)
-    if not torch.isfinite(scale) or scale <= 0:
-        raise GateZeroTaskLocalRLContractError("signed-ratio recovery requires reward variation")
-    return advantages / scale
-
-
 def _arm_passes(nets: list[int], spec: Mapping[str, Any]) -> bool:
     if len(nets) != 2 or any(not isinstance(value, int) or isinstance(value, bool) for value in nets):
         raise GateZeroTaskLocalRLContractError("invalid paired task-local RL gains")
@@ -383,7 +304,7 @@ def _arm_passes(nets: list[int], spec: Mapping[str, Any]) -> bool:
 def decide_task_local_rl_node(
     spec: Mapping[str, Any], *, interaction_episodes: int, metrics: Mapping[str, Any]
 ) -> dict[str, Any]:
-    """Apply the frozen single-node signed-flow-ratio selection rule."""
+    """Apply the frozen two-node temporal-credit selection rule."""
 
     if interaction_episodes not in spec["training_interaction"]["interaction_episode_nodes"]:
         raise GateZeroTaskLocalRLContractError("unknown task-local RL decision node")
@@ -396,6 +317,7 @@ def decide_task_local_rl_node(
     passed = [arm for arm, values in nets.items() if _arm_passes(values, spec)]
     safeguards = (
         metrics.get("mechanics_valid") is True
+        and metrics.get("temporal_credit_healthy") is True
         and metrics.get("nonfinite_count") == 0
         and isinstance(metrics.get("maximum_saturation_fraction"), (int, float))
         and metrics["maximum_saturation_fraction"] <= spec["exploration"]["maximum_saturation_fraction"]
@@ -413,6 +335,8 @@ def decide_task_local_rl_node(
     elif passed:
         status = "rl_candidate_selected_for_fresh_gate"
         selected = interaction_episodes
+    elif interaction_episodes == 8:
+        status = "task_local_rl_temporal_credit_continue_to_16"
     else:
         status = "task_local_rl_early_check_not_supported"
     return {

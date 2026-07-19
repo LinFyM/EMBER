@@ -888,6 +888,22 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     EMBER negative. Gate 0 and Writer remain false. The next source-only recovery
     must address temporal credit in ordinary task-local LoRA RL under matched
     zero/supervised initialization; do not add blind supervised steps.
+    The result-blind temporal-credit recovery is now frozen at config SHA256
+    `0cfd1c74ced6b5cdc0e792d1af48555df6f2346527377cdc753ba46fc35955d2`.
+    It keeps tasks 3/4, both immutable initializations, the exact 37-target
+    rank-32/alpha-16/dropout-0 LoRA, exploration, evaluator, source identities,
+    four-arm comparisons, query/drift safeguards, and original two-task
+    positive-improvement rule. It changes only the failed RL estimator: each
+    arm receives a task-local 512/256 critic over detached frozen SmolVLA
+    visual features plus state/progress, action-chunk GAE (`0.99/0.95`), eight
+    matched conditional-flow samples, chunk-level PPO clipping, and separate
+    fresh actor/critic AdamW state. This is an FPO++-anchored source mechanism
+    probe, not a reproduction or performance claim. Stage 8 is the first
+    atomic actor+critic checkpoint and development decision; a passing
+    behavioral candidate freezes immediately, otherwise only finite,
+    nondegenerate temporal-credit mechanics with safe drift may exact-resume
+    the same trajectories to stage 16. Failure at 16 stops; episodes 24 and
+    later are outside this recovery. No Writer or shared parameter is updated.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

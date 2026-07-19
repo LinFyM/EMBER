@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -16,24 +17,31 @@ from ember.gate_zero_task_local_rl.contract import (  # noqa: E402
     assigned_task_local_rl_arm,
     decide_task_local_rl_node,
     load_task_local_rl_spec,
-    normalized_episode_advantages,
     validate_task_local_rl_spec,
 )
 from ember.gate_zero_task_local_rl.runtime import (  # noqa: E402
     AnchorRecordingEnvPreprocessor,
     ExplorationActionProcessor,
-    balanced_anchor_slots,
     build_balanced_replay_batch,
-    signed_flow_ratio_loss,
     validated_flow_action_shape,
     validate_training_reset_events,
 )
+from ember.gate_zero_task_local_rl.temporal_credit import (  # noqa: E402
+    TemporalCritic,
+    calculate_masked_gae,
+    clipped_flow_ppo_loss,
+)
+from ember.gate_zero_oracle_artifacts import (  # noqa: E402
+    load_recovery_artifact,
+    save_recovery_artifact,
+)
+from ember.gate_zero_oracle_session import capture_trainable_state  # noqa: E402
 
 
 class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.path = ROOT / "configs" / "gate_zero_task_local_rl_recovery.toml"
+        cls.path = ROOT / "configs" / "gate_zero_task_local_rl_temporal_credit.toml"
         cls.gate_zero = ROOT / "configs" / "gate_zero_oracle_pilot.toml"
         cls.phase0 = ROOT / "configs" / "phase0.toml"
         cls.fit = ROOT / "configs" / "gate_zero_mature_lora_lr_recovery.toml"
@@ -58,13 +66,17 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         self.assertFalse(self.spec["authority"]["writer_present"])
         self.assertFalse(self.spec["algorithm"]["shared_parameter_updates"])
         self.assertFalse(self.spec["algorithm"]["writer_updates"])
-        self.assertEqual(self.spec["training_interaction"]["interaction_episode_nodes"], [16])
+        self.assertEqual(self.spec["training_interaction"]["interaction_episode_nodes"], [8, 16])
         self.assertEqual(self.spec["exploration"]["standard_deviation"], [0.05] * 6 + [0.0])
         self.assertEqual(
             self.spec["algorithm"]["name"],
-            "per_sample_conditional_flow_loss_ratio_with_signed_episode_advantage",
+            "chunk_level_flow_ppo_with_task_local_critic_and_gae",
         )
         self.assertTrue(self.spec["algorithm"]["not_full_fpo_plus"])
+        self.assertEqual(self.spec["algorithm"]["flow_samples_per_transition"], 8)
+        self.assertEqual(self.spec["algorithm"]["critic"], "task_local_frozen_feature_mlp")
+        self.assertEqual(self.spec["algorithm"]["discount"], 0.99)
+        self.assertEqual(self.spec["algorithm"]["gae_lambda"], 0.95)
 
     def test_four_rank_assignment_has_no_duplicate_or_idle_arm(self) -> None:
         assignments = [assigned_task_local_rl_arm(rank=i, world_size=4, spec=self.spec) for i in range(4)]
@@ -74,19 +86,10 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         )
         self.assertEqual(len(set(assignments)), 4)
 
-    def test_episode_advantages_are_signed_normalized_and_fail_on_flat_reward(self) -> None:
-        advantages = normalized_episode_advantages(torch.tensor([1.0, 0.0, 0.0, 1.0]))
-        self.assertTrue(torch.isfinite(advantages).all())
-        self.assertAlmostEqual(float(advantages.mean()), 0.0, places=6)
-        self.assertAlmostEqual(float(advantages.std(unbiased=False)), 1.0, places=6)
-        self.assertGreater(float(advantages[0]), 0.0)
-        self.assertLess(float(advantages[1]), 0.0)
-        with self.assertRaises(GateZeroTaskLocalRLContractError):
-            normalized_episode_advantages(torch.zeros(8))
-
     def _metrics(self, *, zero=(2, 1), supervised=(2, 1), drift=0.01) -> dict:
         return {
             "mechanics_valid": True,
+            "temporal_credit_healthy": True,
             "maximum_saturation_fraction": 0.01,
             "nonfinite_count": 0,
             "action_drift_by_arm": {"zero_init_rl": drift, "supervised_init_rl": drift},
@@ -96,7 +99,19 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
             },
         }
 
-    def test_stage16_passes_early_or_stops_without_budget_extension(self) -> None:
+    def test_stage8_continues_only_healthy_temporal_credit_and_stage16_stops(self) -> None:
+        continued = decide_task_local_rl_node(
+            self.spec,
+            interaction_episodes=8,
+            metrics=self._metrics(zero=(0, 0), supervised=(0, 0)),
+        )
+        self.assertEqual(continued["status"], "task_local_rl_temporal_credit_continue_to_16")
+        unhealthy = self._metrics(zero=(0, 0), supervised=(0, 0))
+        unhealthy["temporal_credit_healthy"] = False
+        stopped_early = decide_task_local_rl_node(
+            self.spec, interaction_episodes=8, metrics=unhealthy
+        )
+        self.assertEqual(stopped_early["status"], "task_local_rl_mechanical_or_safeguard_failure")
         passed = decide_task_local_rl_node(self.spec, interaction_episodes=16, metrics=self._metrics())
         self.assertEqual(passed["status"], "rl_candidate_selected_for_fresh_gate")
         self.assertEqual(passed["selected_interaction_episodes"], 16)
@@ -124,7 +139,7 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
                 diagnostic_path=self.diagnostic,
             )
         changed = copy.deepcopy(self.spec)
-        changed["mechanical_recovery"]["optimizer_updates_before_failure"] = 1
+        changed["predecessor_evidence"]["signed_flow_ratio_result_sha256"] = "0" * 64
         with self.assertRaises(GateZeroTaskLocalRLContractError):
             validate_task_local_rl_spec(
                 changed,
@@ -135,7 +150,7 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
                 diagnostic_path=self.diagnostic,
             )
         changed = copy.deepcopy(self.spec)
-        changed["flow_shape_recovery"]["model_action_shape_after_preprocessing"] = [64, 50, 7]
+        changed["algorithm"]["flow_samples_per_transition"] = 1
         with self.assertRaises(GateZeroTaskLocalRLContractError):
             validate_task_local_rl_spec(
                 changed,
@@ -146,7 +161,7 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
                 diagnostic_path=self.diagnostic,
             )
         changed = copy.deepcopy(self.spec)
-        changed["signed_flow_ratio_recovery"]["parent_awr_result_sha256"] = "0" * 64
+        changed["authority"]["previous_signed_result_sha256"] = "0" * 64
         with self.assertRaises(GateZeroTaskLocalRLContractError):
             validate_task_local_rl_spec(
                 changed,
@@ -156,14 +171,6 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
                 headroom_path=self.headroom,
                 diagnostic_path=self.diagnostic,
             )
-
-    def test_balanced_anchor_slots_are_fixed_count_and_cover_endpoints(self) -> None:
-        self.assertEqual(balanced_anchor_slots(8, slots=8), list(range(8)))
-        short = balanced_anchor_slots(3, slots=8)
-        self.assertEqual(len(short), 8)
-        self.assertEqual(short[0], 0)
-        self.assertEqual(short[-1], 2)
-        self.assertTrue(all(0 <= value < 3 for value in short))
 
     def test_exploration_processor_is_common_random_and_clips(self) -> None:
         def identity(value):
@@ -192,7 +199,7 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         self.assertEqual(left.saturated_scalars_by_dimension[-1], 0)
         self.assertTrue(torch.equal(first[:, -1], action[:, -1]))
 
-    def test_replay_builder_balances_episodes_and_pads_chunks(self) -> None:
+    def test_replay_builder_preserves_temporal_order_and_masks_padded_suffix(self) -> None:
         batch_size = 2
         anchors = []
         for step in (0, 50):
@@ -228,10 +235,14 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         )
         self.assertEqual(replay["action"].shape, (16, 50, 7))
         self.assertEqual(replay["action_is_pad"].shape, (16, 50))
-        self.assertEqual(replay["episode_return"].tolist(), [1.0] * 8 + [0.0] * 8)
+        self.assertEqual(replay["transition_valid"].reshape(2, 8).sum(dim=1).tolist(), [1, 2])
+        self.assertEqual(replay["transition_reward"].reshape(2, 8)[0].tolist(), [1.0] + [0.0] * 7)
+        self.assertTrue(replay["transition_done"].reshape(2, 8)[0, 0])
+        self.assertTrue(replay["transition_done"].reshape(2, 8)[1, 1])
+        self.assertEqual(replay["trajectory_shape"], [2, 8])
         self.assertEqual(len(replay["row_keys"]), 16)
         self.assertEqual(len(set(replay["row_keys"])), 16)
-        self.assertTrue(replay["action_is_pad"][:8, 21:].all())
+        self.assertTrue(replay["action_is_pad"][0, 21:].all())
 
     def test_anchor_recorder_keeps_only_replan_observations_as_uint8(self) -> None:
         recorder = AnchorRecordingEnvPreprocessor(base=lambda value: value, interval=50)
@@ -276,38 +287,11 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
     def test_launcher_is_one_canonical_four_gpu_staged_path(self) -> None:
         text = self.launcher.read_text(encoding="utf-8")
         self.assertIn("--nproc-per-node=4", text)
-        self.assertIn('[[ "$stop_after_episodes" == 16 ]]', text)
+        self.assertIn('"$stop_after_episodes" == 8', text)
+        self.assertIn('"$stop_after_episodes" == 16', text)
         self.assertIn("--resume", text)
         self.assertIn("gpu_telemetry_", text)
-        self.assertNotIn("ppo", text.lower())
         self.assertNotIn("writer", text.lower())
-
-    def test_signed_flow_ratio_loss_pushes_success_toward_and_failure_away(self) -> None:
-        current = torch.tensor([1.0, 1.0], requires_grad=True)
-        old = torch.tensor([1.0, 1.0])
-        advantages = torch.tensor([1.0, -1.0])
-        loss, metrics = signed_flow_ratio_loss(
-            current,
-            old,
-            advantages,
-            ratio_clip=0.02,
-            negative_spo_penalty=0.01,
-            log_ratio_clamp=5.0,
-        )
-        loss.backward()
-        self.assertGreater(float(current.grad[0]), 0.0)
-        self.assertLess(float(current.grad[1]), 0.0)
-        self.assertAlmostEqual(metrics["ratio_mean"], 1.0, places=6)
-        self.assertAlmostEqual(metrics["advantage_mean"], 0.0, places=6)
-        with self.assertRaises(Exception):
-            signed_flow_ratio_loss(
-                torch.ones(2),
-                torch.ones(3),
-                torch.ones(2),
-                ratio_clip=0.02,
-                negative_spo_penalty=0.01,
-                log_ratio_clamp=5.0,
-            )
 
     def test_flow_noise_uses_processed_model_action_width(self) -> None:
         batch = {"action": torch.zeros(64, 50, 7)}
@@ -329,6 +313,87 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
                 input_action_dim=7,
                 model_action_dim=32,
             )
+
+
+class GateZeroTemporalCreditRecoveryTest(unittest.TestCase):
+    def test_masked_gae_propagates_terminal_reward_only_through_valid_time(self) -> None:
+        rewards = torch.tensor([[0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 0.0]])
+        values = torch.zeros_like(rewards)
+        dones = torch.tensor([[False, False, True, True], [False, True, True, True]])
+        valid = torch.tensor([[True, True, True, False], [True, True, False, False]])
+        advantages, returns = calculate_masked_gae(
+            rewards,
+            values,
+            dones,
+            valid,
+            discount=1.0,
+            gae_lambda=1.0,
+        )
+        self.assertTrue(torch.equal(advantages[0], torch.tensor([1.0, 1.0, 1.0, 0.0])))
+        self.assertTrue(torch.equal(advantages[1], torch.zeros(4)))
+        self.assertTrue(torch.equal(returns, advantages))
+
+    def test_chunk_flow_ppo_averages_matched_samples_and_masks_padding(self) -> None:
+        current = torch.tensor([[1.0, 1.0], [1.0, 1.0], [9.0, 9.0]], requires_grad=True)
+        old = torch.ones_like(current)
+        advantages = torch.tensor([1.0, -1.0, 100.0])
+        valid = torch.tensor([True, True, False])
+        loss, metrics = clipped_flow_ppo_loss(
+            current,
+            old,
+            advantages,
+            valid,
+            ratio_clip=0.01,
+            log_ratio_clamp=5.0,
+        )
+        loss.backward()
+        self.assertGreater(float(current.grad[0].mean()), 0.0)
+        self.assertLess(float(current.grad[1].mean()), 0.0)
+        self.assertTrue(torch.equal(current.grad[2], torch.zeros(2)))
+        self.assertEqual(metrics["valid_transitions"], 2)
+        self.assertAlmostEqual(metrics["ratio_mean"], 1.0, places=6)
+
+    def test_task_local_critic_has_zero_initial_value_and_expected_shape(self) -> None:
+        critic = TemporalCritic(input_dim=17, hidden_dims=(12, 7))
+        values = critic(torch.randn(5, 17))
+        self.assertEqual(values.shape, (5,))
+        self.assertTrue(torch.equal(values, torch.zeros(5)))
+
+    def test_atomic_recovery_restores_auxiliary_critic_and_optimizer(self) -> None:
+        model = torch.nn.Linear(3, 2, bias=False)
+        actor_optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
+        critic = TemporalCritic(input_dim=4, hidden_dims=(6, 5))
+        critic_optimizer = torch.optim.AdamW(critic.parameters(), lr=1e-4)
+        with torch.no_grad():
+            critic.mlp[-1].weight.fill_(0.25)
+        expected = {name: value.detach().clone() for name, value in critic.state_dict().items()}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            recovery = save_recovery_artifact(
+                root,
+                variant="temporal_credit",
+                task_id=3,
+                step=8,
+                trainable_state=capture_trainable_state(model),
+                optimizer=actor_optimizer,
+                auxiliary_module=critic,
+                auxiliary_optimizer=critic_optimizer,
+                authorities={"contract": "frozen"},
+            )
+            with torch.no_grad():
+                for value in critic.parameters():
+                    value.zero_()
+            restored = load_recovery_artifact(
+                recovery,
+                model=model,
+                optimizer=actor_optimizer,
+                auxiliary_module=critic,
+                auxiliary_optimizer=critic_optimizer,
+                expected={"step": 8, "authorities": {"contract": "frozen"}},
+            )
+        self.assertEqual(restored, 8)
+        for name, value in critic.state_dict().items():
+            self.assertTrue(torch.equal(value, expected[name]), name)
 
 
 if __name__ == "__main__":

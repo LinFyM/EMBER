@@ -2185,3 +2185,35 @@
   the wider action expert's teacher-forced improvement but zero behavioral net
   gain, the cheapest next discriminating mechanism is genuine temporal-credit
   task-local LoRA RL, not more blind SFT duration, targets, ranks, or held data.
+
+## Temporal-credit recovery is anchored to FPO++ but remains a bounded Gate-0 probe
+
+- Primary-source inspection of [Flow Policy Gradients for Robot Control](https://arxiv.org/abs/2602.02481)
+  and its [official FPO++ code](https://github.com/amazon-far/fpo-control) at
+  commit `b80112be1e8362263c4cd176e7aef21a275ff1c6` confirms that the prior EMBER
+  AWR and signed-ratio checks omitted the mechanisms needed to test temporal
+  credit: a learned critic, GAE, sequential reward/done state, multiple matched
+  conditional-flow samples, chunk-level ratios, and PPO trust-region updates.
+  The official manipulation implementation uses a 512/256 critic and much
+  larger vectorized/million-step budgets; those scale claims are not transferred
+  to EMBER.
+- The new source-only contract is frozen before outcomes at SHA256
+  `0cfd1c74ced6b5cdc0e792d1af48555df6f2346527377cdc753ba46fc35955d2`.
+  It is explicitly an FPO++-anchored SmolVLA compatibility probe, not a full
+  method reproduction. Each of the four fixed task×initialization arms owns
+  one independent task-local critic and the same complete task-local LoRA;
+  base, Writer, encoders, and all shared state remain frozen. The critic sees
+  detached frozen vision embeddings, normalized state, and chunk progress.
+- Eight episodes form eight ordered action-chunk transitions per episode;
+  terminal suffixes are masked instead of repeated as independent samples.
+  Binary success is assigned to its action chunk, truncation is terminal, GAE
+  uses discount/lambda `0.99/0.95`, and eight old/current flow losses share
+  exact observation, action, time, and noise authority before their mean
+  chunk ratio enters PPO clip `0.01`. A memory-safe two-pass gradient computes
+  the exact surrogate coefficient without retaining eight SmolVLA graphs.
+- Stage 8 is an early 10--30 minute evidence node with atomic LoRA, actor
+  optimizer, critic, critic optimizer, and RNG recovery. Only healthy finite
+  temporal credit and the existing drift/mechanics guards may continue the
+  identical trajectories to stage 16; a behavioral pass stops early, and a
+  stage-16 failure cannot expand the budget. This keeps the owner-mandated
+  four-arm Gate-0 recovery distinct from the later Writer-only RL stage.

@@ -2,18 +2,125 @@
 
 from __future__ import annotations
 
+import json
 import math
 import time
 from collections.abc import Callable, Mapping, Sequence
+from pathlib import Path
 from typing import Any
 
 import torch
+from safetensors.torch import load_file
 
-from ember.gate_zero_task_local_rl.contract import normalized_episode_advantages
+from ember.gate_zero_oracle_artifacts import (
+    sha256_file,
+    validate_candidate_artifact,
+)
 
 
 class GateZeroTaskLocalRLRuntimeError(RuntimeError):
     """Raised when online task-local RL mechanics differ from the frozen contract."""
+
+
+def _load_json(path: Path, label: str) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise GateZeroTaskLocalRLRuntimeError(f"invalid {label}: {path}") from error
+    if not isinstance(value, dict):
+        raise GateZeroTaskLocalRLRuntimeError(f"invalid {label}: {path}")
+    return value
+
+
+def validate_result_authorities(
+    spec: Mapping[str, Any],
+    *,
+    headroom_result: Path,
+    diagnostic_result: Path,
+    previous_awr_result: Path,
+    previous_signed_result: Path,
+) -> tuple[dict[str, Any], ...]:
+    """Bind the temporal probe to immutable prior negative evidence."""
+
+    authority = spec["authority"]
+    paths = {
+        "headroom_result_sha256": headroom_result,
+        "candidate_diagnostic_result_sha256": diagnostic_result,
+        "previous_awr_result_sha256": previous_awr_result,
+        "previous_signed_result_sha256": previous_signed_result,
+    }
+    for key, path in paths.items():
+        if sha256_file(path) != authority[key]:
+            raise GateZeroTaskLocalRLRuntimeError(f"upstream result hash changed: {key}")
+    headroom = _load_json(headroom_result, "Proposal-A result")
+    diagnostic = _load_json(diagnostic_result, "candidate diagnostic result")
+    awr = _load_json(previous_awr_result, "previous AWR result")
+    signed = _load_json(previous_signed_result, "previous signed-ratio result")
+    counts = {
+        (arm["task_id"], arm["condition"]): sum(arm["successes"])
+        for arm in headroom.get("arms", [])
+    }
+    expected = {
+        (3, "frozen_base"): 3,
+        (4, "frozen_base"): 3,
+        (3, authority["fit_variant"]): 2,
+        (4, authority["fit_variant"]): 4,
+    }
+    valid = (
+        headroom.get("status") == "mature_lora_headroom_control_failed_gate_recovery_required"
+        and counts == expected
+        and diagnostic.get("status") == "candidate_step_magnitude_recovery_not_supported"
+        and diagnostic.get("selected_step") is None
+        and all(value.get("status") == "task_local_rl_early_check_not_supported" for value in (awr, signed))
+        and all(value.get("interaction_episodes_per_task_initialization") == 16 for value in (awr, signed))
+        and all(value.get("gate_zero_authorized") is False for value in (headroom, diagnostic, awr, signed))
+        and all(value.get("writer_authorized") is False for value in (awr, signed))
+    )
+    if not valid:
+        raise GateZeroTaskLocalRLRuntimeError("upstream Gate-0 failure boundary changed")
+    return headroom, diagnostic, awr, signed
+
+
+def initial_successes(
+    headroom: Mapping[str, Any], *, task_id: int, initialization: str, variant: str
+) -> list[bool]:
+    condition = "frozen_base" if initialization == "zero_init" else variant
+    matches = [
+        arm
+        for arm in headroom["arms"]
+        if arm["task_id"] == task_id and arm["condition"] == condition
+    ]
+    if len(matches) != 1 or len(matches[0].get("successes", [])) != 8:
+        raise GateZeroTaskLocalRLRuntimeError("initial closed-loop vector changed")
+    return [bool(value) for value in matches[0]["successes"]]
+
+
+def load_supervised_state(
+    fit_root: Path, *, spec: Mapping[str, Any], task_id: int
+) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
+    path = (
+        fit_root
+        / f"{spec['authority']['fit_variant']}_task{task_id}"
+        / "candidates"
+        / f"{spec['authority']['supervised_step']:06d}"
+    )
+    manifest = validate_candidate_artifact(
+        path,
+        expected={
+            "variant": spec["authority"]["fit_variant"],
+            "task_id": task_id,
+            "step": spec["authority"]["supervised_step"],
+        },
+    )
+    prefix = f"task{task_id}_supervised"
+    if (
+        sha256_file(path / "candidate_manifest.json")
+        != spec["authority"][f"{prefix}_manifest_sha256"]
+        or sha256_file(path / "trainable_state.safetensors")
+        != spec["authority"][f"{prefix}_state_sha256"]
+    ):
+        raise GateZeroTaskLocalRLRuntimeError("supervised LoRA state hash changed")
+    return load_file(path / "trainable_state.safetensors"), manifest
 
 
 class AnchorRecordingEnvPreprocessor:
@@ -121,16 +228,6 @@ class ExplorationActionProcessor:
         return {**processed, "action": proposed.clamp(min=low, max=high)}
 
 
-def balanced_anchor_slots(anchor_count: int, *, slots: int) -> list[int]:
-    """Choose a fixed number of evenly spaced slots, repeating when episodes end early."""
-
-    if anchor_count <= 0 or slots <= 0:
-        raise GateZeroTaskLocalRLRuntimeError("anchor count and slots must be positive")
-    if slots == 1:
-        return [0]
-    return [round(index * (anchor_count - 1) / (slots - 1)) for index in range(slots)]
-
-
 def validate_training_reset_events(
     events: Sequence[Mapping[str, Any]],
     *,
@@ -159,55 +256,6 @@ def validate_training_reset_events(
             }
         )
     return list(events) == expected
-
-
-def signed_flow_ratio_loss(
-    current_loss: torch.Tensor,
-    old_loss: torch.Tensor,
-    advantages: torch.Tensor,
-    *,
-    ratio_clip: float,
-    negative_spo_penalty: float,
-    log_ratio_clamp: float,
-) -> tuple[torch.Tensor, dict[str, float]]:
-    """Apply a per-sample signed conditional-flow ratio trust objective."""
-
-    if (
-        current_loss.ndim != 1
-        or old_loss.shape != current_loss.shape
-        or advantages.shape != current_loss.shape
-        or current_loss.numel() == 0
-        or not torch.isfinite(current_loss).all()
-        or not torch.isfinite(old_loss).all()
-        or not torch.isfinite(advantages).all()
-        or not 0 < ratio_clip < 1
-        or negative_spo_penalty <= 0
-        or log_ratio_clamp <= 0
-    ):
-        raise GateZeroTaskLocalRLRuntimeError("invalid signed flow-ratio inputs")
-    log_ratio_raw = old_loss.detach() - current_loss
-    log_ratio = log_ratio_raw + (
-        log_ratio_raw.clamp(-log_ratio_clamp, log_ratio_clamp) - log_ratio_raw
-    ).detach()
-    ratio = log_ratio.exp()
-    clipped = ratio.clamp(1.0 - ratio_clip, 1.0 + ratio_clip)
-    positive_loss = torch.maximum(-advantages * ratio, -advantages * clipped)
-    spo_objective = advantages * ratio - advantages.abs() * (ratio - 1.0).square() / (
-        2.0 * negative_spo_penalty
-    )
-    per_sample_objective = torch.where(advantages > 0, positive_loss, -spo_objective)
-    value = per_sample_objective.mean()
-    if value.ndim != 0 or not torch.isfinite(value):
-        raise GateZeroTaskLocalRLRuntimeError("signed flow-ratio loss is non-finite")
-    metrics = {
-        "ratio_mean": float(ratio.detach().mean()),
-        "ratio_min": float(ratio.detach().min()),
-        "ratio_max": float(ratio.detach().max()),
-        "ratio_clip_fraction": float(((ratio.detach() - 1.0).abs() > ratio_clip).float().mean()),
-        "advantage_mean": float(advantages.detach().mean()),
-        "advantage_std": float(advantages.detach().std(unbiased=False)),
-    }
-    return value, metrics
 
 
 def validated_flow_action_shape(
@@ -313,7 +361,7 @@ def build_balanced_replay_batch(
     action_chunk_size: int,
     anchors_per_episode: int,
 ) -> dict[str, Any]:
-    """Build equal-episode replay slots from replan observations and executed actions."""
+    """Build fixed temporal action-chunk trajectories with masked terminal suffixes."""
 
     batch_size = len(seeds)
     if batch_size <= 0 or len(set(seeds)) != batch_size or task_id not in {3, 4}:
@@ -327,7 +375,10 @@ def build_balanced_replay_batch(
         "action": [],
         "action_is_pad": [],
         "task": [],
-        "episode_return": [],
+        "transition_reward": [],
+        "transition_done": [],
+        "transition_valid": [],
+        "transition_progress": [],
         "row_keys": [],
     }
     for episode_index, seed in enumerate(seeds):
@@ -335,11 +386,9 @@ def build_balanced_replay_batch(
         valid_anchors = [anchor for anchor in anchors if int(anchor["step"]) < length]
         if not valid_anchors:
             raise GateZeroTaskLocalRLRuntimeError("episode has no valid replay anchor")
-        episode_return = float(success[episode_index, :length].any())
-        for slot, anchor_index in enumerate(
-            balanced_anchor_slots(len(valid_anchors), slots=anchors_per_episode)
-        ):
-            anchor = valid_anchors[anchor_index]
+        for slot in range(anchors_per_episode):
+            transition_valid = slot < len(valid_anchors)
+            anchor = valid_anchors[min(slot, len(valid_anchors) - 1)]
             start = int(anchor["step"])
             chunk, is_pad = _action_chunk(
                 actions[episode_index],
@@ -355,189 +404,43 @@ def build_balanced_replay_batch(
             samples["action"].append(chunk)
             samples["action_is_pad"].append(is_pad)
             samples["task"].append(str(anchor["task"][episode_index]))
-            samples["episode_return"].append(episode_return)
+            stop = min(start + action_chunk_size, length)
+            reward = float(success[episode_index, start:stop].any()) if transition_valid else 0.0
+            terminal = (
+                bool(done[episode_index, start:stop].any())
+                or slot == len(valid_anchors) - 1
+                if transition_valid
+                else True
+            )
+            samples["transition_reward"].append(reward)
+            samples["transition_done"].append(terminal)
+            samples["transition_valid"].append(transition_valid)
+            samples["transition_progress"].append(slot / max(anchors_per_episode - 1, 1))
             samples["row_keys"].append(
-                f"task{task_id}/seed{seed}/anchor{start}/balanced_slot{slot}"
+                f"task{task_id}/seed{seed}/anchor{start}/temporal_slot{slot}/valid{int(transition_valid)}"
             )
     stacked: dict[str, Any] = {
         key: torch.stack(value)
         for key, value in samples.items()
-        if key not in {"task", "row_keys", "episode_return"}
+        if key not in {
+            "task",
+            "row_keys",
+            "transition_reward",
+            "transition_done",
+            "transition_valid",
+            "transition_progress",
+        }
     }
-    stacked["episode_return"] = torch.tensor(samples["episode_return"], dtype=torch.float32)
+    stacked["transition_reward"] = torch.tensor(samples["transition_reward"], dtype=torch.float32)
+    stacked["transition_done"] = torch.tensor(samples["transition_done"], dtype=torch.bool)
+    stacked["transition_valid"] = torch.tensor(samples["transition_valid"], dtype=torch.bool)
+    stacked["transition_progress"] = torch.tensor(
+        samples["transition_progress"], dtype=torch.float32
+    )
+    stacked["trajectory_shape"] = [batch_size, anchors_per_episode]
     stacked["task"] = samples["task"]
     stacked["row_keys"] = samples["row_keys"]
     return stacked
-
-
-def _clone_replay_training_batch(replay: Mapping[str, Any]) -> dict[str, Any]:
-    keys = {
-        "observation.images.camera1",
-        "observation.images.camera2",
-        "observation.state",
-        "action",
-        "action_is_pad",
-        "task",
-    }
-    if not keys <= set(replay):
-        raise GateZeroTaskLocalRLRuntimeError("replay training fields are incomplete")
-    result: dict[str, Any] = {}
-    for key in keys:
-        value = replay[key]
-        result[key] = value.clone() if torch.is_tensor(value) else list(value)
-    return result
-
-
-def _prepare_flow_training_inputs(
-    session: Any,
-    replay: Mapping[str, Any],
-    row_keys: Sequence[str],
-    algorithm: Mapping[str, Any],
-    *,
-    optimizer_step: int,
-) -> tuple[dict[str, Any], torch.Tensor, torch.Tensor]:
-    """Build one deterministic augmented flow batch from the replay authority."""
-
-    from ember.gate_zero_oracle_session import augment_support_images
-    from ember.gate_zero_runtime import deterministic_flow_inputs, preprocess_smolvla_batch
-
-    model = session.model
-    owner = model.get_base_model() if hasattr(model, "get_base_model") else model
-    raw = augment_support_images(
-        _clone_replay_training_batch(replay),
-        row_keys=list(row_keys),
-        optimizer_step=optimizer_step,
-        seed=algorithm["augmentation_seed"],
-        scale_min=algorithm["augmentation_scale_min"],
-        scale_max=algorithm["augmentation_scale_max"],
-    )
-    batch = preprocess_smolvla_batch(
-        raw, session.preprocessor, list(owner.config.image_features)
-    )
-    flow_action_shape = validated_flow_action_shape(
-        batch,
-        expected_batch_size=algorithm["effective_replay_batch_size"],
-        expected_chunk_size=algorithm["action_chunk_size"],
-        input_action_dim=7,
-        model_action_dim=owner.config.max_action_dim,
-    )
-    noise, flow_time = deterministic_flow_inputs(
-        list(row_keys),
-        action_shape=flow_action_shape,
-        noise_seed=algorithm["fixed_flow_noise_seed"] + optimizer_step,
-        time_seed=algorithm["fixed_flow_time_seed"] + optimizer_step,
-        device=next(model.parameters()).device,
-    )
-    return batch, noise, flow_time
-
-
-def _round_start_flow_losses(
-    session: Any,
-    replay: Mapping[str, Any],
-    row_keys: Sequence[str],
-    algorithm: Mapping[str, Any],
-    *,
-    optimizer_step_start: int,
-) -> list[torch.Tensor]:
-    """Freeze the per-sample reference loss for every update in one rollout round."""
-
-    model = session.model
-    losses = []
-    model.eval()
-    for offset in range(algorithm["optimizer_steps_per_rollout_round"]):
-        optimizer_step = optimizer_step_start + offset + 1
-        batch, noise, flow_time = _prepare_flow_training_inputs(
-            session, replay, row_keys, algorithm, optimizer_step=optimizer_step
-        )
-        with torch.no_grad(), torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-            per_sample_loss, _ = model.forward(
-                batch, noise=noise, time=flow_time, reduction="none"
-            )
-        losses.append(per_sample_loss.detach().to(dtype=torch.float32, device="cpu"))
-        del batch, noise, flow_time, per_sample_loss
-    return losses
-
-
-def train_signed_flow_ratio_round(
-    session: Any,
-    replay: Mapping[str, Any],
-    *,
-    spec: Mapping[str, Any],
-    optimizer_step_start: int,
-) -> list[dict[str, Any]]:
-    """Run fixed signed-ratio updates against a frozen round-start reference."""
-
-    algorithm = spec["algorithm"]
-    row_keys = list(replay.get("row_keys", []))
-    returns = replay.get("episode_return")
-    expected = algorithm["effective_replay_batch_size"]
-    if (
-        len(row_keys) != expected
-        or len(set(row_keys)) != expected
-        or not torch.is_tensor(returns)
-        or returns.shape != (expected,)
-    ):
-        raise GateZeroTaskLocalRLRuntimeError("replay batch differs from effective batch authority")
-    advantages = normalized_episode_advantages(returns)
-    model = session.model
-    trainable = [value for value in model.parameters() if value.requires_grad]
-    if sum(value.numel() for value in trainable) != spec["lora"]["trainable_parameters"]:
-        raise GateZeroTaskLocalRLRuntimeError("RL trainable parameter count changed")
-    old_losses = _round_start_flow_losses(
-        session,
-        replay,
-        row_keys,
-        algorithm,
-        optimizer_step_start=optimizer_step_start,
-    )
-
-    records = []
-    for offset in range(algorithm["optimizer_steps_per_rollout_round"]):
-        optimizer_step = optimizer_step_start + offset + 1
-        started = time.perf_counter()
-        batch, noise, flow_time = _prepare_flow_training_inputs(
-            session, replay, row_keys, algorithm, optimizer_step=optimizer_step
-        )
-        model.eval()
-        session.optimizer.zero_grad(set_to_none=True)
-        with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-            per_sample_loss, _ = model.forward(
-                batch, noise=noise, time=flow_time, reduction="none"
-            )
-            loss, ratio_metrics = signed_flow_ratio_loss(
-                per_sample_loss,
-                old_losses[offset].to(per_sample_loss.device),
-                advantages.to(per_sample_loss.device),
-                ratio_clip=algorithm["ratio_clip"],
-                negative_spo_penalty=algorithm["negative_spo_penalty"],
-                log_ratio_clamp=algorithm["log_ratio_clamp"],
-            )
-        loss.backward()
-        gradient_norm = torch.nn.utils.clip_grad_norm_(
-            trainable, algorithm["gradient_clip_norm"]
-        )
-        if not torch.isfinite(gradient_norm):
-            raise GateZeroTaskLocalRLRuntimeError("RL gradient norm is non-finite")
-        learning_rate = float(session.optimizer.param_groups[0]["lr"])
-        session.optimizer.step()
-        session.optimizer.zero_grad(set_to_none=True)
-        torch.cuda.synchronize()
-        records.append(
-            {
-                "optimizer_step": optimizer_step,
-                "signed_flow_ratio_loss": float(loss.detach()),
-                "unweighted_flow_loss": float(per_sample_loss.detach().mean()),
-                "gradient_norm": float(gradient_norm),
-                "learning_rate": learning_rate,
-                **ratio_metrics,
-                "reward_mean": float(returns.mean()),
-                "reward_std": float(returns.std(unbiased=False)),
-                "wall_seconds": time.perf_counter() - started,
-            }
-        )
-        del batch, noise, flow_time, per_sample_loss, loss
-    model.eval()
-    return records
 
 
 def collect_training_round(

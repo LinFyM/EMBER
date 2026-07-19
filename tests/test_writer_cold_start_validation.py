@@ -83,3 +83,5 @@ def test_validation_aggregation_preserves_raw_denominators_and_pairs() -> None:
     comparison = result["paired_vs_frozen_base"]["11"]["writer_cold_start"]["16"]
     assert comparison["episodes"] == 64
     assert comparison["paired_success_rate_difference"] == 12 / 64
+    assert result["overall"]["writer_cold_start"]["16"]["successes"] == 72
+    assert result["overall"]["writer_cold_start"]["16"]["episodes"] == 128

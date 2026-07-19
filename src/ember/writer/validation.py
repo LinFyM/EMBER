@@ -446,6 +446,17 @@ def _publish_result(
         bootstrap_seed=evaluation["paired_bootstrap_seed"],
         bootstrap_replicates=evaluation["paired_bootstrap_replicates"],
     )
+    writer_manifest = _json(writer_checkpoint / "writer_checkpoint_manifest.json")
+    writer_stage = _json(
+        writer_checkpoint.parents[1] / "writer_cold_start_stage_result.json"
+    )
+    direct_manifests = {
+        str(task_id): _json(
+            direct_final_path(output_dir / "direct_lora" / f"task_{task_id:03d}")
+            / "manifest.json"
+        )
+        for task_id in evaluation["task_ids"]
+    }
     result = {
         "schema_version": 1,
         "status": "writer_cold_start_validation_completed",
@@ -454,6 +465,31 @@ def _publish_result(
         "writer_checkpoint": {
             "step": spec["authority"]["writer_checkpoint_step"],
             "writer_state_sha256": sha256_file(writer_checkpoint / "writer.safetensors"),
+        },
+        "training": {
+            "writer": {
+                "source_tasks": 60,
+                "functional_episode_bounds": [8, 39],
+                "completed_step": writer_manifest["step"],
+                "consumed_query_frames": writer_manifest["sampler"]["consumed_query_frames"],
+                "wall_seconds": writer_stage["wall_seconds"],
+                "environment_interactions": 0,
+            },
+            "matched_direct_task_local_lora": {
+                "validation_tasks": evaluation["task_ids"],
+                "support_episode_bounds": spec["direct_baseline"]["support_episode_bounds"],
+                "per_task": direct_manifests,
+                "environment_interactions": 0,
+                "information_role": spec["direct_baseline"]["role"],
+            },
+        },
+        "evaluation": {
+            "task_ids": evaluation["task_ids"],
+            "task_categories": evaluation["task_categories"],
+            "policy_rng_seeds": evaluation["policy_rng_seeds"],
+            "physical_init_state_indices": evaluation["physical_init_state_indices"],
+            "rollouts_per_task_arm": evaluation["rollouts_per_task_arm"],
+            "execution_horizons": evaluation["execution_horizons"],
         },
         "aggregate": aggregate,
         "task_categories": evaluation["task_categories"],

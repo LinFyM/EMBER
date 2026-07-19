@@ -193,8 +193,47 @@ def aggregate_validation_rows(
                     seed=bootstrap_seed + task_id * 101 + horizon,
                     replicates=bootstrap_replicates,
                 )
+    overall: dict[str, Any] = {}
+    overall_comparisons: dict[str, Any] = {}
+    for arm in arms:
+        overall[arm] = {}
+        if arm != "frozen_base":
+            overall_comparisons[arm] = {}
+        for horizon in horizons:
+            cell = [
+                row
+                for task_id in task_ids
+                for row in grouped[(task_id, arm, horizon)]
+            ]
+            successes = sum(bool(row["success"]) for row in cell)
+            overall[arm][str(horizon)] = {
+                "successes": successes,
+                "episodes": len(cell),
+                "success_rate": successes / len(cell),
+                "wilson_95_interval": _wilson(successes, len(cell)),
+            }
+            if arm != "frozen_base":
+                key = lambda row: (
+                    row["task_id"], row["policy_rng_seed"], row["evaluator_seed"],
+                    row["physical_init_state_index"],
+                )
+                left = {key(row): bool(row["success"]) for row in cell}
+                base = {
+                    key(row): bool(row["success"])
+                    for task_id in task_ids
+                    for row in grouped[(task_id, "frozen_base", horizon)]
+                }
+                ordered = sorted(left)
+                overall_comparisons[arm][str(horizon)] = _paired_interval(
+                    [left[value] for value in ordered],
+                    [base[value] for value in ordered],
+                    seed=bootstrap_seed + horizon,
+                    replicates=bootstrap_replicates,
+                )
     return {
         "per_task": per_task,
         "paired_vs_frozen_base": comparisons,
+        "overall": overall,
+        "overall_paired_vs_frozen_base": overall_comparisons,
         "raw_episode_rows": len(rows),
     }

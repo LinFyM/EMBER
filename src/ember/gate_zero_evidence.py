@@ -88,6 +88,64 @@ def deterministic_state_partition(*, task_id: int, seed: int) -> dict[str, Any]:
     return {**payload, "sha256": hashlib.sha256(encoded).hexdigest()}
 
 
+def select_confirmation_tasks(
+    spec: Mapping[str, Any],
+    split: Mapping[str, Any],
+    base_success_counts: Mapping[int, int],
+) -> dict[str, Any]:
+    """Apply the frozen base-only competence/headroom rule after the audit."""
+
+    selection = spec["confirmation_selection"]
+    candidates = selection["candidate_task_ids"]
+    if set(base_success_counts) != set(candidates):
+        raise GateZeroEvidenceError("base audit does not cover the frozen candidate pool")
+    episodes = selection["audit_rollouts_per_task"]
+    if any(
+        not isinstance(value, int) or not 0 <= value <= episodes
+        for value in base_success_counts.values()
+    ):
+        raise GateZeroEvidenceError("base audit success counts are invalid")
+    eligible = [
+        task_id
+        for task_id in candidates
+        if base_success_counts[task_id] >= selection["minimum_base_successes"]
+        and episodes - base_success_counts[task_id]
+        >= selection["minimum_base_failures"]
+    ]
+    if len(eligible) < selection["minimum_selected_tasks"]:
+        raise GateZeroEvidenceError("base-only audit found too few confirmation tasks")
+    ranked = sorted(
+        eligible,
+        key=lambda task_id: (
+            abs(base_success_counts[task_id] / episodes - 0.5),
+            task_id,
+        ),
+    )
+    selected = sorted(ranked[: selection["maximum_selected_tasks"]])
+    signatures = {
+        int(row["task_index"]): row["order_signature"]
+        for row in split["tasks"]
+        if row.get("task_index") in selected
+    }
+    if len(signatures) != len(selected) or len(set(signatures.values())) != len(selected):
+        raise GateZeroEvidenceError("selected confirmation primitives are not distinct")
+    result = {
+        "outcome_authority": "frozen_base_only",
+        "audit_episodes_per_task": episodes,
+        "base_success_counts": {
+            str(task_id): base_success_counts[task_id] for task_id in candidates
+        },
+        "eligible_task_ids": sorted(eligible),
+        "selection_rank": ranked,
+        "selected_task_ids": selected,
+        "selected_order_signatures": {
+            str(task_id): signatures[task_id] for task_id in selected
+        },
+    }
+    encoded = json.dumps(result, sort_keys=True, separators=(",", ":")).encode()
+    return {**result, "sha256": hashlib.sha256(encoded).hexdigest()}
+
+
 def _validate_gate_minus_one(spec: Mapping[str, Any]) -> None:
     value = spec.get("gate_minus_one_resolution", {})
     _require(value.get("status"), "passed_with_residuals", "Gate -1 status")

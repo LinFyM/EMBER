@@ -13,6 +13,7 @@ from ember.gate_zero_evidence import (
     deterministic_state_partition,
     load_gate_zero_evidence_spec,
     paired_binary_summary,
+    select_confirmation_tasks,
     validate_bound_authority,
     validate_evaluation_records,
 )
@@ -64,6 +65,27 @@ class GateZeroEvidenceContractTest(unittest.TestCase):
         )
         self.assertFalse(set(first["train"]) & set(first["development"]))
         self.assertEqual(len(first["sha256"]), 64)
+
+    def test_confirmation_selection_is_base_only_deterministic_and_headroom_bounded(self) -> None:
+        counts = {
+            6: 16,
+            9: 20,
+            16: 15,
+            20: 17,
+            23: 3,
+            33: 25,
+            39: 12,
+            46: 24,
+            63: 8,
+        }
+        selection = select_confirmation_tasks(self.spec, self.split, counts)
+        self.assertEqual(selection["selected_task_ids"], [6, 9, 16, 20])
+        self.assertEqual(selection["eligible_task_ids"], [6, 9, 16, 20, 39, 46, 63])
+        self.assertEqual(selection["outcome_authority"], "frozen_base_only")
+        self.assertFalse(set(selection["selected_task_ids"]) & {3, 4})
+
+        with self.assertRaises(GateZeroEvidenceError):
+            select_confirmation_tasks(self.spec, self.split, {6: 16, 9: 20})
 
     def test_n8_is_smoke_only_and_scientific_minima_are_enforced(self) -> None:
         evaluation = self.spec["evaluation"]

@@ -2412,3 +2412,22 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   owner rather than creating a second trainer. The next action is test and
   clean Git delivery of this frozen boundary, followed by a result-blind
   source difficulty/partition audit—not another n=8 or blind node continuation.
+
+## 2026-07-19 source difficulty audit frozen before outcomes
+
+- Added `configs/gate_zero_base_difficulty_audit.toml` at SHA256
+  `ae73a4b0...6443`, plus one thin orchestration entry inside the existing
+  `gate_zero_support` owner and a single canonical shell launcher. It reuses the
+  upstream evaluator and does not add a trainer or LoRA path.
+- The contract covers nine source-only factor-derived candidates, 32 unique
+  physical train states/task, four policy RNG batches, horizon 16, four-GPU
+  task parallelism, 288 total episodes, deterministic base-only headroom
+  selection, one retained video/task, Trackio, gallery, telemetry, and atomic
+  result/selection manifests. Validation/held/locked access and all LoRA
+  outcomes remain forbidden.
+- Focused tests pass for contract authority, world-size assignment, physical
+  state setting, dry-run routing, deterministic selection, pairing statistics,
+  and SHA checks. The dry run binds the exact 10k base checkpoint and competence
+  packet; their live manifest/result hashes validate. Next: full repository
+  verification, clean commit/push, then live GPU/storage preflight and one
+  <=30-minute four-GPU audit. This audit cannot itself pass Gate 0.

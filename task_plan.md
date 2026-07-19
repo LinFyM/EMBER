@@ -1104,6 +1104,15 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     code is a custom chunk-level flow-loss PPO pilot, not FPO++; a bounded
     faithful per-flow-sample/group-size-one core is required before an ordinary
     task-local RL negative claim.
+    The first result-blind confirmation prerequisite is frozen before outcomes
+    in `configs/gate_zero_base_difficulty_audit.toml`, SHA256
+    `ae73a4b0...6443`. It evaluates only the frozen source base on candidate
+    tasks `[6,9,16,20,23,33,39,46,63]`, using 32 unique SHA-partitioned physical
+    train states/task, four policy RNG batches, horizon 16, and 288 total source
+    episodes. A deterministic base-only competence/headroom rule selects at
+    most four distinct primitive signatures; no LoRA, validation, held, or
+    locked outcome participates. Keep one video/task plus Trackio/gallery, and
+    fail closed on checkpoint/state identity. This audit cannot pass Gate 0.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

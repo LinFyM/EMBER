@@ -1,0 +1,76 @@
+schema_version = 1
+status = "predeclared_before_source_base_difficulty_outcomes"
+surface = "libero90_source_only_base_difficulty_audit"
+task_suite = "libero_90"
+task_ids = [6, 9, 16, 20, 23, 33, 39, 46, 63]
+batch_size = 8
+episodes_per_task = 32
+policy_rng_seeds = [2026071971, 2026071972, 2026071973, 2026071974]
+evaluator_seed_starts = [7100, 7200, 7300, 7400]
+execution_horizon = 16
+model_action_chunk_size = 50
+max_videos_per_task = 1
+validation_numeric_access = false
+held_numeric_access = false
+locked_numeric_access = false
+
+[authority]
+evidence_contract_relative_path = "configs/gate_zero_evidence_repair.toml"
+evidence_contract_sha256 = "0196419d7abc6132890248da1c332b451767db45aeef2c96f3ab989eb1c0aa4e"
+split_reseal_relative_path = "configs/libero90_split_reseal.json"
+split_reseal_sha256 = "9f5bc62e15e2cb07887e97bc98630a3f527ac6b5e253f41c203cf37459568428"
+source_base_checkpoint_relative_path = "gate_zero/source_base_fit/base_all60_10k_20260718T090513Z/checkpoints/010000"
+source_base_checkpoint_manifest_sha256 = "ca0c83abd8d4b46cf59e8f0a01bd267f7f0e019d3e2bfea8c8baeb2e851d4d00"
+source_competence_result_relative_path = "gate_zero/source_competence/base10k_20260718T122059Z/competence_result.json"
+source_competence_result_sha256 = "c9697c4cf71d452c431424be4cd12fd6a869ac4fd58755d07152ee6928da83cc"
+expected_checkpoint_step = 10000
+expected_checkpoint_role = "source_base_candidate_pending_competence"
+
+[partition]
+algorithm = "sort_physical_init_indices_by_sha256_of_seed_task_index"
+seed = 20260719
+role = "train"
+physical_state_count = 50
+selected_state_count = 32
+batch_order = "partition_order_in_four_batches_of_eight"
+
+[selection]
+outcome_authority = "frozen_base_only"
+minimum_base_successes = 4
+minimum_base_failures = 8
+minimum_selected_tasks = 2
+maximum_selected_tasks = 4
+ranking = "absolute_success_rate_distance_to_0.5_then_task_id"
+distinct_order_signature = true
+freeze_manifest_before_lora = true
+
+[parallel]
+allowed_world_sizes = [1, 2, 4]
+preferred_world_size = 4
+assignment = "task_index_mod_world_size"
+one_policy_process_per_rank = true
+rank_zero_result_writer = true
+
+[resources]
+maximum_concurrent_gpus = 4
+minimum_free_memory_mib = 10240
+expected_peak_device_memory_mib = 20000
+expected_wall_clock_minutes_world4 = 30
+maximum_total_episodes = 288
+stop_conditions = ["authority_failure", "physical_state_identity_failure", "nonfinite_metric", "error"]
+cleanup = "retain result, selection manifest, one video per task, gallery, telemetry, and checksums"
+
+[tracking]
+backend = "trackio"
+project = "EMBER_gate0"
+group = "source_base_difficulty_audit"
+remote_sync = false
+
+[interpretation]
+authorized_claim = "result-blind source-base competence and headroom for selecting disjoint confirmation tasks"
+forbidden_claims = [
+  "Gate 0 pass or failure",
+  "LoRA or Writer utility",
+  "validation or held performance",
+  "checkpoint selection",
+]

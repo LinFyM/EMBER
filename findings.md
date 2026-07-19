@@ -2631,3 +2631,27 @@
   old-loss/log-ratio clamps, PPO trust region, and horizon 16. This core is
   required before an ordinary task-local RL negative claim, but does not imply
   the paper-scale FPO++ budget or change the common LoRA space.
+
+## Source-base difficulty audit is frozen before confirmation selection
+
+- The new pre-outcome contract is
+  `configs/gate_zero_base_difficulty_audit.toml`, SHA256
+  `ae73a4b0728e0ab8a3f6a018952b14280b697a150656f9e9c4cf47d2a9836443`.
+  It derives nine candidates solely from the resealed source-task factor table;
+  no base, LoRA, validation, held, or locked outcome was used to form that pool.
+- Each candidate receives exactly 32 frozen-base rollouts on the `train` role
+  of its deterministic SHA partition, in four batches of eight with four
+  policy RNG seeds and unique physical init-state hashes. Primary execution is
+  horizon 16. The audit totals 288 source episodes and retains at most one
+  bounded video/task.
+- The post-audit rule is already executable and deterministic: eligible tasks
+  need at least four successes and eight failures, are ranked by absolute
+  distance from 0.5 success then task ID, and at most four distinct primitive
+  signatures are selected. If fewer than two qualify, the packet records a
+  bounded-recovery requirement instead of failing mechanically or consulting
+  LoRA outcomes.
+- The runner is an orchestration layer over the existing upstream evaluator,
+  not a second evaluator or trainer. It explicitly sets and verifies the
+  physical pre-reset state counter, binds per-state SHA/evaluator/policy seeds,
+  scopes action execution to 16 while preserving the model chunk of 50, and
+  checks the base checkpoint manifest and prior source-competence result.

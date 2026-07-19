@@ -1883,3 +1883,24 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   canonical evaluator. No capacity outcome exists yet. Next commit/push
   cleanly, then launch exactly two source arms if live GPU/storage preflight
   passes.
+- Long-run `gate0_action_expert_capacity_closed_loop_20260719_062725`
+  subsequently completed main rc 0 from clean `7e5f905` in 1:37.99. All
+  result/eval/gallery/video/telemetry checksums pass; the two videos and local
+  gallery are retained, Trackio run is `capacity_20260719T062725Z`, and GPUs
+  4/5 released. Result SHA256 is `9a91fbb8...170ad`.
+- The non-matched 99,880,992-parameter partial action-expert state gives task 3
+  3/8 with the exact base vector and task 4 3/8 with one paired loss and one
+  paired win. Both net gains and the median gain are zero; frozen status is
+  `nonmatched_action_expert_capacity_behavioral_signal_absent`. Gate 0,
+  Writer, fresh Gate, target sealing, validation, held, and locked-report
+  access remain false.
+- This completes the planned bounded target/rank/capacity discriminator. Do
+  not add supervised steps, rank sweeps, or target expansions: even the much
+  wider query-positive state failed to convert into stable closed-loop gain.
+  The next scientific contract must instead isolate query/behavior alignment
+  or use a pre-outcome-frozen task-local RL estimator with genuine temporal
+  credit, keeping tasks 3/4 and the matched base/supervised/zero-init-RL/
+  supervised-init-RL comparison. The already documented later stages remain
+  separate: supervised Writer cold start, Writer-only RL updating Writer only,
+  ordinary LoRA-only task-local RL, then adaptation-aware source meta-outer
+  learning.

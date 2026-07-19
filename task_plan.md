@@ -761,6 +761,22 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     reached no episode because its last-warm-up seed was not stride-adjacent to
     the unchanged report seed 5800; retain that failure packet and use the
     corrected last warm-up seed 5792 without changing any scientific surface.
+    The corrected run completed main rc 0 in 1:37.99 from clean commit
+    `7e5f905`; all checksums, mechanics, two videos/gallery, Trackio, and
+    telemetry validate. Task 3 exactly matches its paired base vector at 3/8;
+    task 4 exchanges one success for one failure and also remains 3/8. Both
+    paired net wins and the median gain are zero, so status is
+    `nonmatched_action_expert_capacity_behavioral_signal_absent`, result SHA256
+    is `9a91fbb8...170ad`, and Gate 0/Writer remain false. The wider
+    query-positive partial-update state therefore does not support “LoRA
+    parameter count alone” as the current bottleneck. Stop the target/rank/
+    supervised-step route and diagnose the action/flow-query-to-closed-loop
+    and temporal-credit mismatch on these same source tasks. Any further RL
+    mechanism must be frozen before outcomes, preserve the four matched Gate-0
+    arms and fast resumable cadence, and cannot be called mature FPO++ unless
+    its critic/temporal-credit estimator and other claimed essentials are
+    actually implemented. No validation, held, locked-report, arbitrary
+    step-2k continuation, or fresh Gate is authorized by this diagnostic.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

@@ -2021,3 +2021,40 @@
   useful, that supports the LoRA search space but not supervised zero-step
   utility; only a stable supervised-init RL advantage over matched zero-init RL
   supports the claim that supervised initialization helps later adaptation.
+
+## Wider action-expert capacity does not repair query-to-behavior conversion
+
+- The frozen non-matched capacity diagnostic completed main rc 0 from clean
+  commit `7e5f905` in 1:37.99. Output
+  `capacity_20260719T062725Z` has complete checksums, two bounded videos,
+  gallery, Trackio run `capacity_20260719T062725Z`, and released GPUs. Result
+  SHA256 is
+  `9a91fbb8d53bff90a1c6bcb58bef1270f076f14212ca846c369ca8017bf170ad`;
+  `eval_info.json` SHA256 is
+  `67688b098c02237f744b1a1e38e1eafa1ba444bb6f0a9c22948f4d79d9699bf4`.
+- Each candidate is the immutable lower-LR step-1000 partial action-expert
+  state with 99,880,992 trainable parameters across 155 tensors and positive
+  independent-query reduction. On the exact Proposal-A source-development
+  identities, task 3 is 3/8 with the same success vector as base. Task 4 is
+  also 3/8: one base success is lost and one different episode succeeds, so
+  paired net improvement remains zero. Positive-task count is zero and median
+  success gain is 0pp.
+- Status is `nonmatched_action_expert_capacity_behavioral_signal_absent`.
+  This weakens insufficient LoRA rank/target support as the sole explanation:
+  a much wider query-positive task-local state also fails to produce stable
+  paired closed-loop gain. Together with the supervised LoRA, AWR, and signed-
+  ratio evidence, the leading failure class is acquisition/query-surrogate to
+  closed-loop conversion and/or temporal credit, not a vanishing update or
+  LoRA parameter count alone.
+- This is a non-matched upper-bound diagnostic, not evidence that full fine-
+  tuning, a faithful mature flow-policy RL method, LoRA, or EMBER is negative.
+  It cannot pass Gate 0, seal Writer targets, or authorize Writer. It instead
+  stops blind supervised-step, rank, and target expansion and requires any
+  next source-only RL mechanism to state its temporal-credit estimator and
+  matched four-arm contract before outcomes.
+- Telemetry recorded GPU-4/5 peaks of 9,473/1,751MiB and active-sample mean
+  utilization of 21.44%/2.68%. The simulator-bound one-off diagnostic finished
+  in under two minutes, so no rerun is justified for scaling aesthetics; later
+  independent task/arm rollouts should use process-level parallelism when it
+  shortens the scientific wall clock while retaining about 10GiB memory
+  headroom.

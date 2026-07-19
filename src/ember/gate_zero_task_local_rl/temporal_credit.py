@@ -281,6 +281,23 @@ def prepare_temporal_flow_batch(
 
 
 @torch.no_grad()
+def _select_real_camera_inputs(
+    images: list[torch.Tensor],
+    masks: list[torch.Tensor],
+    *,
+    empty_cameras: int,
+) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
+    """Remove only the policy-declared trailing empty camera slots."""
+
+    if len(images) != len(masks) or not 0 <= empty_cameras < len(images):
+        raise TemporalCreditError("policy camera/empty-camera contract changed")
+    real_count = len(images) - empty_cameras
+    if any(torch.any(mask.to(dtype=torch.bool)) for mask in masks[real_count:]):
+        raise TemporalCreditError("declared empty camera became observation-bearing")
+    return images[:real_count], masks[:real_count]
+
+
+@torch.no_grad()
 def encode_frozen_critic_features(
     session: Any,
     batch: dict[str, Any],
@@ -293,6 +310,11 @@ def encode_frozen_critic_features(
     model = session.model
     owner = model.get_base_model() if hasattr(model, "get_base_model") else model
     images, masks = owner.prepare_images(batch)
+    images, masks = _select_real_camera_inputs(
+        images,
+        masks,
+        empty_cameras=int(owner.config.empty_cameras),
+    )
     pooled = []
     with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
         for image, mask in zip(images, masks, strict=True):

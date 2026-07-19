@@ -28,6 +28,7 @@ from ember.gate_zero_task_local_rl.runtime import (  # noqa: E402
 )
 from ember.gate_zero_task_local_rl.temporal_credit import (  # noqa: E402
     TemporalCritic,
+    _select_real_camera_inputs,
     calculate_masked_gae,
     clipped_flow_ppo_loss,
 )
@@ -358,6 +359,20 @@ class GateZeroTemporalCreditRecoveryTest(unittest.TestCase):
         values = critic(torch.randn(5, 17))
         self.assertEqual(values.shape, (5,))
         self.assertTrue(torch.equal(values, torch.zeros(5)))
+
+    def test_frozen_critic_excludes_declared_empty_camera(self) -> None:
+        images = [torch.full((2, 1), value) for value in (1.0, 2.0, 0.0)]
+        masks = [
+            torch.ones(2, dtype=torch.bool),
+            torch.ones(2, dtype=torch.bool),
+            torch.zeros(2, dtype=torch.bool),
+        ]
+        selected_images, selected_masks = _select_real_camera_inputs(
+            images, masks, empty_cameras=1
+        )
+        self.assertEqual(len(selected_images), 2)
+        self.assertEqual(len(selected_masks), 2)
+        self.assertTrue(torch.equal(selected_images[1], images[1]))
 
     def test_atomic_recovery_restores_auxiliary_critic_and_optimizer(self) -> None:
         model = torch.nn.Linear(3, 2, bias=False)

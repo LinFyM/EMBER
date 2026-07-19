@@ -110,7 +110,7 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         self.assertEqual(matched["algorithm"]["surrogate"], "faithful_fpo_plus_group1")
         self.assertEqual(matched["algorithm"]["flow_sample_group_size"], 1)
         self.assertEqual(matched["algorithm"]["execution_horizon"], 16)
-        self.assertEqual(matched["training_interaction"]["interaction_episode_nodes"], [16, 32])
+        self.assertEqual(matched["training_interaction"]["interaction_episode_nodes"], [16, 24, 32])
         self.assertEqual(matched["development_evaluation"]["execution_horizon"], 16)
         self.assertTrue(matched["development_evaluation"]["evaluate_initialization_in_stage"])
         self.assertEqual(

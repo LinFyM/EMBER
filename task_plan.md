@@ -1174,7 +1174,7 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
 
 ## Post-smoke matched Gate 0 contract (frozen before new LoRA outcomes)
 
-- `configs/gate_zero_matched_evidence.toml` (SHA256 `cdd3c91b...f8132`) is the only active post-selection
+- `configs/gate_zero_matched_evidence.toml` (SHA256 `625db578...e0038`) is the only active post-selection
   evidence contract. It hash-binds the repaired Gate-0 contract, permanent
   split, base-difficulty result, confirmation-selection manifest, and mature
   37-target LoRA support.

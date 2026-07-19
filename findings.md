@@ -2712,7 +2712,7 @@
   trainable arm to cover two independent sealed training seeds on the same
   paired evaluation episodes; the final statistics interface must preserve
   that unit structure.
-- `configs/gate_zero_matched_evidence.toml` (SHA256 `cdd3c91b...f8132`) binds confirmation tasks
+- `configs/gate_zero_matched_evidence.toml` (SHA256 `625db578...e0038`) binds confirmation tasks
   `[6,16,33,39]`, their result-blind state partitions, mature 37-target
   rank-32/alpha-16/dropout-0 LoRA, h16 primary/h50 robustness, and the source
   access boundary before any new task-specific LoRA outcome.

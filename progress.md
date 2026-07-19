@@ -2463,7 +2463,7 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
 ## 2026-07-19 matched Gate 0 evidence contract frozen
 
 - Added `configs/gate_zero_matched_evidence.toml` (SHA256
-  `cdd3c91b...f8132`), binding the evidence-repair
+  `625db578...e0038`), binding the evidence-repair
   contract, permanent split, mature LoRA support, base-difficulty result, and
   selected confirmation manifest. Tasks 3/4 remain development; source tasks
   6/16/33/39 and their deterministic partitions are confirmation.

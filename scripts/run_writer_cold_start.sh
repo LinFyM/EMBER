@@ -8,6 +8,8 @@ mode=train
 output_dir=
 stop_after_step=
 resume_checkpoint=
+writer_checkpoint=
+resume=false
 dry_run=false
 sampler=
 
@@ -26,13 +28,16 @@ while (($#)); do
     --output-dir=*) output_dir=${1#*=} ;;
     --stop-after-step=*) stop_after_step=${1#*=} ;;
     --resume-checkpoint=*) resume_checkpoint=${1#*=} ;;
+    --writer-checkpoint=*) writer_checkpoint=${1#*=} ;;
+    --resume) resume=true ;;
     --dry-run) dry_run=true ;;
     *) die "unknown argument: $1" ;;
   esac
   shift
 done
 
-[[ "$mode" = train || "$mode" = smoke ]] || die "--mode must be train or smoke"
+[[ "$mode" = train || "$mode" = smoke || "$mode" = validate ]] ||
+  die "--mode must be train, smoke, or validate"
 [[ "$output_dir" = /* ]] || die "--output-dir must be absolute"
 if [[ -f "$ROOT/.env.local" ]]; then
   set -a
@@ -45,17 +50,31 @@ fi
 : "${HF_HOME:?set HF_HOME}"
 : "${LIBERO_CONFIG_PATH:?set LIBERO_CONFIG_PATH}"
 
-command=(
-  "$PYTHON" -m torch.distributed.run --standalone --nproc-per-node=8
-  -m ember.writer.train
-  --config "$CONFIG"
-  --output-root "$EMBER_OUTPUT_ROOT"
-  --data-root "$EMBER_DATA_ROOT"
-  --output-dir "$output_dir"
-  --mode "$mode"
-)
-[[ -z "$stop_after_step" ]] || command+=(--stop-after-step "$stop_after_step")
-[[ -z "$resume_checkpoint" ]] || command+=(--resume-checkpoint "$resume_checkpoint")
+if [[ "$mode" = validate ]]; then
+  [[ "$writer_checkpoint" = /* ]] || die "--writer-checkpoint must be absolute for validation"
+  command=(
+    "$PYTHON" -m torch.distributed.run --standalone --nproc-per-node=8
+    -m ember.writer.validation
+    --config "$ROOT/configs/writer_cold_start_validation.toml"
+    --output-root "$EMBER_OUTPUT_ROOT"
+    --data-root "$EMBER_DATA_ROOT"
+    --output-dir "$output_dir"
+    --writer-checkpoint "$writer_checkpoint"
+  )
+  $resume && command+=(--resume)
+else
+  command=(
+    "$PYTHON" -m torch.distributed.run --standalone --nproc-per-node=8
+    -m ember.writer.train
+    --config "$CONFIG"
+    --output-root "$EMBER_OUTPUT_ROOT"
+    --data-root "$EMBER_DATA_ROOT"
+    --output-dir "$output_dir"
+    --mode "$mode"
+  )
+  [[ -z "$stop_after_step" ]] || command+=(--stop-after-step "$stop_after_step")
+  [[ -z "$resume_checkpoint" ]] || command+=(--resume-checkpoint "$resume_checkpoint")
+fi
 
 if $dry_run; then
   printf 'CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 PYTHONPATH=%q ' "$ROOT/src"
@@ -68,7 +87,8 @@ for gpu in {0..7}; do
   active=$(nvidia-smi -i "$gpu" --query-compute-apps=pid --format=csv,noheader,nounits | sed '/^[[:space:]]*$/d')
   [[ -z "$active" ]] || die "GPU $gpu has active compute PID(s): ${active//$'\n'/,}"
 done
-[[ ! -e "$output_dir" || -n "$resume_checkpoint" ]] || die "refusing to reuse output directory"
+[[ ! -e "$output_dir" || -n "$resume_checkpoint" || "$resume" = true ]] ||
+  die "refusing to reuse output directory"
 mkdir -p "$output_dir"
 
 telemetry="$output_dir/gpu_telemetry_$(date -u +%Y%m%dT%H%M%SZ).csv"

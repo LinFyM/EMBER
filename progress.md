@@ -1,5 +1,31 @@
 # EMBER Progress and Handoff
 
+## 2026-07-19 Writer validation contract frozen before stage outcome
+
+- The first all-source Writer segment is running from clean `a92e1a2` on GPUs
+  0--7 toward atomic step 1000. At the last pre-validation-contract check it
+  had reached step 550 at about 708 global samples/s with finite gradients and
+  no OOM; the complete step-250 checkpoint validates all payload hashes, eight
+  rank RNG states, optimizer/scheduler, and the 512,000-frame sampler cursor.
+- `configs/writer_cold_start_validation.toml` freezes five validation categories
+  (tasks 11/21/51/70/86), 64 paired rollouts per task/arm over eight policy RNG
+  seeds, h16 primary plus h50 robustness, and base/Writer/direct-LoRA arms before
+  step-1000 or validation outcomes. Five one-GPU direct fits run concurrently
+  with base/Writer rollout shards on the other three GPUs; no partial success
+  count is printed before the complete aggregate. Direct LoRA uses the same
+  37-target rank-32 space and episodes 8--39, with the already evidenced
+  lower-LR mature schedule and fixed step 1000; it is an action-supervised
+  task-local upper bound, not information-matched to Writer.
+- Architecture ownership is deliberately narrow: `validation_contract` owns
+  only authority/assignment/statistics, `direct_fit` owns the one required
+  exact-resume baseline, and `validation` owns rollout orchestration and final
+  publication. The existing Writer runner gains one mode instead of a second
+  runner. Gate-0's source-only fitter cannot legally be reused on validation
+  numeric data without weakening its fail-closed contract. These three modules
+  are retained through development and formal comparison; no old Writer path
+  is duplicated or awaiting retirement. This is the explicit rationale for the
+  architecture guard's net-growth review; it reports no hard violation.
+
 ## 2026-07-19 Writer cold start authorized and frozen
 
 - The owner replaced the prior strict Gate-0 interpretation: Gate -1 is passed

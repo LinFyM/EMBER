@@ -25,8 +25,10 @@ the current project and long-term Goal, not pending milestones.
   bounds so an underspecified LoRA contract is not misdiagnosed as Writer
   failure.
 - Documented diagnosis and bounded recovery for every failed or ambiguous gate.
-- A direct Writer whose complete generated LoRA improves independent
-  zero-interaction behavior over all required matched baselines.
+- A direct Writer whose complete generated LoRA clearly improves independent
+  zero-interaction behavior over frozen base across multiple task categories;
+  its gap to the same-space action-supervised direct-LoRA upper bound guides
+  optimization but is not an automatic rejection rule.
 - A separate source-only Writer-RL result after supervised cold start: the
   shared base stays frozen, the generated LoRA is used functionally but is not
   optimized as an independent inner variable, and rollout reward updates only
@@ -65,12 +67,10 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
 - The only common structural search space is the predeclared LoRA target layers
   and rank. Writer initializes all task-local LoRA parameters in that space;
   ordinary RL updates the same parameters without a second constraint object.
-- The frozen last-two action-expert q/v rank-8 contract is only the Gate 0
-  pilot. Before Writer acquisition, run one bounded source/validation-only
-  support audit across the pilot set, all action-expert q/v, and near-official
-  SmolVLA PEFT support; then permanently reseal exact targets, rank, alpha,
-  dropout, and parameter count. All Writer/RL/direct-generator arms share that
-  final contract exactly.
+- The last-two q/v rank-8 setting was only a Gate-0 pilot. The bounded support
+  audit is complete and the active Writer/RL/direct-generator contract is
+  permanently resealed to the mature 37-target, rank-32, alpha-16, dropout-0,
+  1,485,312-parameter LoRA space for every compared arm.
 - The shared base stays frozen throughout direct Writer training and the default
   source reward/meta-RL stage. Shared-base/shared-LoRA updates are future
   separate matched ablations, not this plan or its completion criteria.

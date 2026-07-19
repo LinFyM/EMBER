@@ -2131,3 +2131,16 @@
   unchanged 37-target rank-32 LoRA, zero optimizer/environment steps, and a
   71,680MiB peak-reservation ceiling. Its temporary script SHA256 is
   `1e5a8542...c5468` and must be copied into the result packet before cleanup.
+- The full-sampler backward is mechanically cheap and valid. The timed Python
+  command exited 0 with action/target shape `[2,50,7]`, loss 0.21559, finite
+  LoRA gradient norm 0.52946 across all 74 trainable tensors, identical state
+  digest before/after, 2,513MiB peak allocated, and 2,796MiB peak reserved.
+  Result SHA256 is
+  `b4e6fcefc5ba3d943980beea2fbe8cdeaa6e0a97069234a1be9ee0681cad4fe4`;
+  copied source/config and telemetry checksums pass.
+- The longrun state is conservatively `failed` with outer rc 1 even though the
+  scientific command and GNU time report exit 0 and all post-command checksum
+  lines are OK. A no-GPU reproduction of the shell cleanup skeleton exits 0;
+  the ad-hoc wrapper is not a retained launcher, so record this as an isolated
+  wrapper-exit residual and do not repeat scientific compute. It has no effect
+  on loss, gradients, state, data authority, or Gate decisions.

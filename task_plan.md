@@ -839,6 +839,16 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     optimizer steps, and zero environment episodes. The source is copied into
     the immutable output packet and then removed from workspace; no parallel
     retained trainer path is created.
+    The scientific command passed on clean `fe2d270`: full 10-step action shape
+    `[2,50,7]`, finite loss 0.21559, all 74 LoRA gradient tensors present with
+    norm 0.52946, identical trainable-state digests before/after backward, and
+    only 2,796MiB peak reserved. Result SHA256 is `b4e6fcef...4fe4`; checksums
+    and copied source/config pass. The outer ad-hoc telemetry wrapper alone
+    reported rc 1 after the timed command printed exit 0 and checksum cleanup
+    completed. Retain that immutable wrapper failure packet, do not rerun GPU
+    work, and use the canonical fit launcher for training. The smoke authorizes
+    predeclaration of a short resumable action-aligned LoRA ladder, not Gate 0,
+    Writer, or closed-loop access by itself.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

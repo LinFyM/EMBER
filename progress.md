@@ -1967,3 +1967,16 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   rank-32 LoRA, no optimizer step, no simulator, and a 10GiB-headroom memory
   stop. A pass authorizes only a separately predeclared short action-aligned
   acquisition ladder.
+- Long-run `gate0_differentiable_action_loss_smoke_20260719_071538` produced a
+  valid scientific packet from clean `fe2d270`: full 10-step `[2,50,7]`
+  sampling, loss 0.21559, 74 finite LoRA gradients with norm 0.52946, unchanged
+  parameters, 2,796MiB peak reserved, zero optimizer/environment steps, and
+  result SHA256 `b4e6fcef...4fe4`. All output/source/config/telemetry checksums
+  pass and GPU4 released. The exact temporary script was copied into the packet
+  and removed from workspace.
+- The outer ad-hoc telemetry command is retained as a wrapper failure packet:
+  longrun rc 1 conflicts with the inner GNU-time exit 0 and completed checksum
+  cleanup. One no-GPU shell-skeleton verification exits 0; per the engineering
+  stop rule, do not investigate or rerun further because checkpoint/data/
+  behavior/Gate/held integrity is unaffected. Use the canonical oracle-fit
+  launcher for the newly authorized predeclared action-aligned ladder.

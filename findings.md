@@ -1906,6 +1906,10 @@
   is incapable. Frozen status is `task_local_rl_early_check_not_supported`, so
   stage 32 and the fresh Gate are not authorized. Result SHA256 is
   `aab151ea503dbada6eaf3a2242301562a47052e1399ec10986c2279425c13b57`.
+- Artifact inspection confirms that the canonical package retains only the
+  loadable step-16 model/optimizer/RNG recovery state. Step 8 retains its round
+  metrics JSON but not a model state, so no later report may claim or evaluate
+  a pre-existing step-8 checkpoint.
 
 ## Earlier supervised checkpoints do not recover closed-loop utility
 

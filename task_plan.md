@@ -708,10 +708,12 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     trajectory at 16 without stage 32 or a fresh Gate. Result SHA256 is
     `aab151ea...b57`. Treat this as bounded negative evidence about this small-
     budget AWR-style estimator, not a final negative about LoRA or EMBER.
-    Before any further source interaction, use the retained step-8/step-16
-    states and legal source-query diagnostics to distinguish an update that is
-    too weak from one that overshot; freeze any later optimizer/estimator
-    recovery before outcomes and do not reopen stage 32 by default.
+    Only the step-16 model/recovery state is retained; step 8 has round metrics
+    but no loadable weights. Before any further source interaction, use the
+    retained step-16 state plus round-8/round-16 reward, loss, gradient, query,
+    and drift evidence to diagnose whether the update is merely too weak or
+    directionally unhelpful. Freeze any later optimizer/estimator recovery
+    before outcomes and do not reopen stage 32 by default.
     No validation, held, locked-report, or step-2k access is authorized. The
     original SHA256 `ba3ee431...f132f`
     reached no episode because its last-warm-up seed was not stride-adjacent to

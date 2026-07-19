@@ -71,10 +71,12 @@
   zero 3/8 -> 3/8. Frozen decision
   `task_local_rl_early_check_not_supported` prohibits stage 32/fresh Gate;
   result SHA256 is `aab151ea...b57`. Gate 0 and Writer remain unauthorized.
-- Next is a no-new-interaction source-only diagnosis using the already retained
-  step-8/step-16 states and independent query/drift surfaces to separate weak
-  updates from overshoot. Any later estimator or optimizer recovery must be
-  sealed before outcomes; no automatic interaction extension is permitted.
+- Only step 16 has a retained loadable model/optimizer/RNG state; step 8 has
+  round metrics only. Next is a no-new-interaction source-only diagnosis using
+  the step-16 state and the two rounds' reward/loss/gradient/query/drift evidence
+  to separate weak or directionally unhelpful updates. Any later estimator or
+  optimizer recovery must be sealed before outcomes; no automatic interaction
+  extension is permitted.
 - Architecture ownership is deliberately narrow: the
   `ember.gate_zero_task_local_rl` package owns only this bounded Gate-0 recovery
   contract, reward-weighted replay mechanics, and orchestration. It reuses the

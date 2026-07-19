@@ -914,6 +914,23 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     now excludes only declared all-false empty slots and rejects any such slot
     that becomes observation-bearing. This authorizes the frozen stage-8
     source run only; it is not Gate-0 evidence.
+    Stage 8 and its exact-resume stage 16 are now complete on clean `86b3e40`.
+    Stage 8 was mechanically healthy but behaviorally negative, so the frozen
+    rule continued once. Stage 16 terminated with status
+    `task_local_rl_early_check_not_supported`: zero-init RL changed task3/4
+    from `3/8,3/8` to `2/8,3/8`; supervised-init RL changed its own SFT starts
+    from `2/8,4/8` to `2/8,4/8`. No task has a positive paired gain. Result
+    SHA256 is `e1345634...a14c`; all packet checksums and eight retained videos
+    validate. Do not continue this trajectory to episode 24 or reinterpret the
+    task4 one-success supervised-vs-zero difference as a useful-update pass.
+    The failure is not caused by a zero physical update: final zero-init LoRA
+    operator norms are `0.0701/0.0743`, and the RL increment moves the SFT
+    operator by `11.3%/11.7%` in task3/4. Before another RL outcome, freeze a
+    new, explicitly separate compatibility recovery only if it corrects a
+    primary-source-supported mechanism gap rather than merely extending this
+    failed budget. The first such bounded candidate is critic-only warmup before
+    actor updates with source-result-blind interaction nodes; keep task3/4,
+    LoRA, initializations, evaluator, Gate rule, and held isolation unchanged.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

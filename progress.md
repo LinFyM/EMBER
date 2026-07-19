@@ -2068,3 +2068,28 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   LoRA state, zero optimizer/environment steps, and only 5,268MiB peak reserved
   memory. GPU4 returned to 0MiB. This authorizes only the already frozen stage-8
   source run and does not change Gate-0/Writer status.
+- Launched the canonical four-arm stage 8 from clean `86b3e40` on GPUs 4--7.
+  Long-run `gate0_temporal_credit_stage8_20260719_083749` completed rc 0 in
+  4m46s. Fifteen JSON files and 20 candidate/recovery payloads validated; the
+  stage packet SHA256 is `30629d47...f21f`. Its fixed decision was
+  `task_local_rl_temporal_credit_continue_to_16`, so no configuration or task
+  changed before exact resume.
+- Long-run `gate0_temporal_credit_stage16_20260719_084442` exact-resumed the
+  same four actor/critic/optimizer/RNG states and completed rc 0 in 5m01s.
+  Terminal result SHA256 is `e13456343564880e6ef02d48119636774e0a06b783e6f4b0218692f104afa14c`;
+  all `checksums.sha256` entries pass, all eight bounded videos decode, output
+  is 169MiB, and GPUs 4--7 returned to 0MiB. The local gallery is
+  `gate_zero/task_local_lora_rl_recovery/temporal_credit_ep8_20260719T083749Z/index.html`;
+  Trackio project `EMBER_gate0` contains all eight stage runs.
+- Recorded the terminal negative without changing the Gate: zero-init task3/4
+  is `3→2,3→3`; supervised-init task3/4 is `2→2,4→4`; status is
+  `task_local_rl_early_check_not_supported`, Gate 0 and Writer remain false,
+  and validation/held numeric access remains zero. Stage 24 is forbidden for
+  this trajectory.
+- Completed one artifact-only physical-update audit. The RL state is not
+  mechanically inert: zero-init operator norms reach 0.0701/0.0743 and the
+  supervised-init operator moves 11.3%/11.7% from its SFT value. Official-code
+  reconciliation identifies critic-only first-iteration warmup and far larger
+  collection scale as the cheapest primary-source-supported gaps. Freeze any
+  corrected bounded recovery as a new contract before new outcomes; do not
+  append interaction to the failed trajectory.

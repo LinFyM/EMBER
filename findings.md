@@ -2230,3 +2230,46 @@
   `0.14634/1.18642`, unchanged LoRA state, zero optimizer/environment steps,
   and 5,268MiB peak reserved memory. This validates mechanics and memory only
   and does not supply a policy or Gate outcome.
+
+## The bounded temporal-credit recovery is mechanically valid but behaviorally negative
+
+- Stage 8 (`gate0_temporal_credit_stage8_20260719_083749`) completed rc 0 in
+  4m46s. Its development paired gains were zero-init `[-1,-1]` and
+  supervised-init `[0,-1]`; finite/nondegenerate temporal credit, zero
+  nonfinite values, 0.01077 maximum drift, and exact actor+critic recovery
+  authorized only the frozen exact resume.
+- Stage 16 (`gate0_temporal_credit_stage16_20260719_084442`) completed rc 0 in
+  5m01s and terminates this recovery. On the unchanged eight-state source
+  development slice, zero-init RL is task3/4 `2/8,3/8` versus frozen base
+  `3/8,3/8`; supervised-init RL is `2/8,4/8` versus supervised LoRA
+  `2/8,4/8`. Thus paired net gains are `[-1,0]` and `[0,0]`; no task shows a
+  positive gain and neither initialization passes. Task4 supervised-init is
+  one success above matched zero-init, but only because both return to their
+  distinct initial success counts; it is not evidence that either RL arm
+  improved.
+- Mechanics do not explain away the negative result. All checksums pass,
+  temporal credit is healthy, nonfinite count is zero, saturation is at most
+  0.00146, maximum drift is 0.01232, and eight videos decode. Query flow loss
+  still improves 5.67%/4.04% for supervised initialization but only
+  +0.117%/-0.038% for zero initialization, while closed-loop utility does not
+  improve. This continues the offline-surrogate/closed-loop mismatch rather
+  than resolving it.
+- Physical operator deltas rule out a no-update explanation. At episode 16,
+  zero-init RL produces operator norms 0.0701/0.0743 for tasks 3/4. Relative to
+  the mature supervised operator norm 0.718/0.700, supervised-init RL adds
+  physical increments of norm 0.0811/0.0816 (`11.3%/11.7%`) with near-orthogonal
+  or mildly opposing cosine. These are real but behaviorally unhelpful updates.
+- Primary-source reconciliation narrows the next mechanism question. The
+  official FPO++ manipulation code at commit
+  `b80112be1e8362263c4cd176e7aef21a275ff1c6` uses the same old-minus-current
+  conditional-flow loss ratio, eight samples, chunk PPO, critic and GAE, so the
+  central ratio sign is not missing. However it trains the critic alone for the
+  first iteration by default, uses `lambda=0.99`, collects roughly
+  `30×1600` environment steps per iteration, and runs up to five million
+  timesteps; the current probe trained actor and a zero-output critic together
+  from its first ~2--3k-step round and stopped after two rounds. Therefore this
+  is negative evidence for the declared 16-episode compatibility probe, not a
+  final negative about adequately trained ordinary LoRA RL. Any next recovery
+  must be separately frozen, start from the immutable initializations, and
+  correct the critic/data-acquisition mismatch rather than silently resuming to
+  episode 24.

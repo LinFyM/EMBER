@@ -742,14 +742,20 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     about 10% of the supervised physical-update norm, while AWR produced about
     17%, yet neither changed behavior positively. The cheapest next
     discriminator is the already mandated non-matched lower-LR action-expert
-    capacity upper bound on the exact same source-development slice. Freeze its
-    artifact hashes and evaluator contract before rollout. If it converts its
+    capacity upper bound on the exact same source-development slice. Its
+    result-blind contract is frozen at SHA256
+    `e313e437fe57f20d2cd390fbede0c89432bb89f1d40dd7d37bcf8156e1af9f3a`:
+    exact 99,880,992-parameter state hashes, tasks 3/4, init states 40--47,
+    seeds 5800--5807, warmup 5792, policy seed 2026071836, paired 3/8 base
+    vectors, and the original two-positive-task/15pp-median rule. Run exactly
+    16 new source episodes on two GPUs with bounded videos/gallery/Trackio.
+    If it converts its
     positive independent-query evidence into behavior while LoRA does not,
     classify the LoRA contract/acquisition as too narrow; if it also fails,
     classify query-to-closed-loop conversion or credit assignment as the
     primary bottleneck before considering a materially fuller flow-policy RL
-    method. Neither branch weakens the full EMBER objective or authorizes
-    Writer by itself.
+    method. This non-matched diagnostic cannot pass Gate 0, seal LoRA targets,
+    or authorize Writer; neither branch weakens the full EMBER objective.
     No validation, held, locked-report, or step-2k access is authorized. The
     original SHA256 `ba3ee431...f132f`
     reached no episode because its last-warm-up seed was not stride-adjacent to

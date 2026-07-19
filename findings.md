@@ -1992,6 +1992,21 @@
   pre-existing lower-LR action-expert state as a non-matched capacity upper
   bound on the same frozen source-development slice—not an arbitrary increase
   in signed optimizer steps.
+- That capacity diagnostic is now result-blind and immutable at contract
+  SHA256
+  `e313e437fe57f20d2cd390fbede0c89432bb89f1d40dd7d37bcf8156e1af9f3a`.
+  It binds both query-positive lower-LR action-expert states (99,880,992
+  parameters, 155 tensors), their candidate/state hashes, Proposal-A base
+  vectors, and the signed-ratio negative packet. It evaluates only tasks 3/4
+  on the identical init-state/seed/evaluator identity and reuses the 3/8 base
+  results without rerunning them.
+- The decision retains the original behavioral rule: both tasks must improve
+  over paired base and median gain must be at least 15pp. A positive result is
+  only non-matched evidence that a wider partial-update state can convert query
+  signal; a negative result points to query-to-closed-loop acquisition or
+  temporal credit rather than merely LoRA parameter count. Either outcome
+  leaves Gate 0, target sealing, Writer, validation, held, and locked-report
+  access false.
 
 ## Writer reward learning and task-local adaptation are distinct causal stages
 

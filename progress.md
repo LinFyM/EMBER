@@ -1869,3 +1869,17 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   development identities as a non-matched upper bound. Its contract and hashes
   must be frozen before any rollout, and it cannot pass Gate 0 or authorize
   Writer alone.
+- Added the selected one-time action-expert capacity closed-loop controller,
+  config, launcher, and red-then-green tests. It reuses the existing policy
+  loader, variant configuration, state restoration and `_closed_loop_metrics`
+  evaluator; it adds no policy or trainer implementation. Contract SHA256 is
+  `e313e437fe57f20d2cd390fbede0c89432bb89f1d40dd7d37bcf8156e1af9f3a`.
+- Focused tests pass 22/22 with active-contract checks, and the full non-DDP
+  suite passes 253/253. Python compilation, shell syntax, two-GPU dry-run,
+  diff checks, and real no-GPU authority loading pass. The real load validates
+  both 155-tensor/99,880,992-parameter step-1000 states and exact query metrics.
+  Architecture guard is REVIEW with no hard violation: this is the single
+  selected capacity diagnostic and all rollout behavior delegates to the
+  canonical evaluator. No capacity outcome exists yet. Next commit/push
+  cleanly, then launch exactly two source arms if live GPU/storage preflight
+  passes.

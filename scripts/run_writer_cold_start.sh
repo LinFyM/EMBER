@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 PYTHON=${EMBER_PYTHON:-"$ROOT/.venv/bin/python"}
 CONFIG="$ROOT/configs/writer_cold_start.toml"
+train_config="$CONFIG"
 mode=train
 output_dir=
 stop_after_step=
@@ -25,6 +26,7 @@ trap cleanup EXIT INT TERM
 while (($#)); do
   case "$1" in
     --mode=*) mode=${1#*=} ;;
+    --config=*) train_config=${1#*=} ;;
     --output-dir=*) output_dir=${1#*=} ;;
     --stop-after-step=*) stop_after_step=${1#*=} ;;
     --resume-checkpoint=*) resume_checkpoint=${1#*=} ;;
@@ -39,6 +41,8 @@ done
 [[ "$mode" = train || "$mode" = smoke || "$mode" = validate ]] ||
   die "--mode must be train, smoke, or validate"
 [[ "$output_dir" = /* ]] || die "--output-dir must be absolute"
+[[ "$train_config" = /* && -f "$train_config" ]] ||
+  die "--config must name an existing absolute file"
 if [[ -f "$ROOT/.env.local" ]]; then
   set -a
   # shellcheck disable=SC1091
@@ -66,7 +70,7 @@ else
   command=(
     "$PYTHON" -m torch.distributed.run --standalone --nproc-per-node=8
     -m ember.writer.train
-    --config "$CONFIG"
+    --config "$train_config"
     --output-root "$EMBER_OUTPUT_ROOT"
     --data-root "$EMBER_DATA_ROOT"
     --output-dir "$output_dir"

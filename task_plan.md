@@ -904,6 +904,16 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     nondegenerate temporal-credit mechanics with safe drift may exact-resume
     the same trajectories to stage 16. Failure at 16 stops; episodes 24 and
     later are outside this recovery. No Writer or shared parameter is updated.
+    The required real-model mechanics smoke is complete on clean `8237bed`:
+    64/64 unique legal source rows produced `[64,1953]` frozen two-camera
+    critic features and `[64,8]` matched flow losses, actor/critic gradients
+    were finite and nonzero, trainable LoRA state was unchanged, optimizer and
+    environment counts stayed zero, and peak reserved memory was 5,268MiB.
+    The first fail-closed attempt exposed that the policy's declared trailing
+    empty-camera slot had been included in the critic vector; the narrow fix
+    now excludes only declared all-false empty slots and rejects any such slot
+    that becomes observation-bearing. This authorizes the frozen stage-8
+    source run only; it is not Gate-0 evidence.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

@@ -2217,3 +2217,16 @@
   identical trajectories to stage 16; a behavioral pass stops early, and a
   stage-16 failure cannot expand the budget. This keeps the owner-mandated
   four-arm Gate-0 recovery distinct from the later Writer-only RL stage.
+- The first real-model smoke failed before gradient computation because the
+  pinned SmolVLA policy exposes two real cameras plus one configured empty
+  camera slot. The critic contract correctly specified two 960D visual pools,
+  padded 32D state, and progress (`1953D`), while the implementation initially
+  concatenated the masked empty slot and produced `2913D`. This was an
+  implementation error, not evidence about temporal credit or Gate 0.
+- Clean commit `8237bed` fixes only that boundary: trailing policy-declared
+  empty slots must have all-false masks and are excluded; an observation-bearing
+  slot fails closed. The retry completed rc 0 with 64 unique source rows,
+  `[64,1953]` features, `[64,8]` flow losses, actor/critic gradient norms
+  `0.14634/1.18642`, unchanged LoRA state, zero optimizer/environment steps,
+  and 5,268MiB peak reserved memory. This validates mechanics and memory only
+  and does not supply a policy or Gate outcome.

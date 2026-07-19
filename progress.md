@@ -2051,3 +2051,20 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   simulator, validation, held, locked-report, Gate, or Writer outcome was
   consumed while freezing this contract. One real-model no-environment/no-step
   smoke remains before Git pre-outcome delivery and any source rollout.
+- Committed and pushed the outcome-free temporal-credit contract and canonical
+  implementation as `3590f70`. Long-run
+  `gate0_temporal_credit_real_model_smoke_20260719_082844` then failed closed
+  before gradients because the configured empty third camera was included in
+  the otherwise two-camera critic vector. It used zero optimizer steps and
+  zero environment episodes; GPUs released. The immutable run remains the
+  mechanical failure packet.
+- Added one narrow production regression: only declared trailing all-false
+  empty-camera slots are removed, while an observation-bearing empty slot is
+  rejected. Focused temporal tests pass 16/16; committed/pushed as `8237bed`.
+  The single allowed retry,
+  `gate0_temporal_credit_real_model_smoke_retry_20260719_083159`, completed rc 0
+  in 35.70s. It verified 64/64 unique source rows, `[64,1953]` critic features,
+  `[64,8]` matched flow losses, finite nonzero actor/critic gradients, unchanged
+  LoRA state, zero optimizer/environment steps, and only 5,268MiB peak reserved
+  memory. GPU4 returned to 0MiB. This authorizes only the already frozen stage-8
+  source run and does not change Gate-0/Writer status.

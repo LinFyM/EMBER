@@ -1919,3 +1919,18 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   be retired after its packet and the selected recovery contract are frozen.
   The 50x7 fixed-anchor action-error summary remains because it is a current
   second use for later direct-Writer query supervision/diagnostics.
+- Long-run `gate0_query_action_alignment_20260719_065332` completed main rc 0
+  from clean `9568921` in 43.77 seconds. Both task ranks finished, checksums
+  pass, output is 56KiB, Trackio run is `alignment_20260719T065332Z`, and
+  GPUs 4/5 returned to 0MiB. Result SHA256 is `95f8adfc...c1c6`.
+- Status is `fixed_flow_query_surrogate_misaligned`: task-3/4 supervised-LoRA
+  fixed-flow loss improves 5.798%/4.236% while generated-action MSE worsens
+  3.114%/2.479%; action-expert loss improves 7.883%/3.710% while action MSE
+  worsens 0.886%/0.304%. Gate 0, Writer, targets, validation, held, locked
+  report, and new closed-loop access remain false.
+- Next freeze one small multi-inference-noise replication on the same 48
+  source-query anchors and immutable states. It must consume zero environment
+  episodes and is the last variance check before either a differentiable full-
+  sampler action-loss acquisition smoke (stable mismatch) or a multi-sample
+  flow estimator repair (unstable signs). Do not add supervised steps, target/
+  rank variants, or task-local RL budget before this discriminator.

@@ -2081,3 +2081,21 @@
   targets, or authorize Writer. The reusable metric stays with the canonical
   fixed-query evaluator; the one-time runner has a removal trigger once its
   packet and the next recovery contract are frozen.
+- The audit completed rc 0 on clean `9568921`; result SHA256 is
+  `95f8adfc0d16c72d5443b7466ff72c92dca9616d26106e25a1d42bb71150c1c6`.
+  All checksums pass, no environment was opened, output is 56KiB, Trackio run
+  is `alignment_20260719T065332Z`, and GPU4/5 released. Peak memory was
+  5,635/4,317MiB and active-sample mean utilization was 76.76%/79.20%.
+- The mismatch is directionally uniform at the aggregate level. Task-3/4
+  supervised LoRA improves fixed flow-query loss by 5.798%/4.236% but worsens
+  generated-action MSE by 3.114%/2.479%. The partial action expert improves
+  flow-query loss by 7.883%/3.710% but worsens action MSE by 0.886%/0.304%.
+  Episode, action-dimension, and chunk-quarter effects are heterogeneous, but
+  no candidate/task aggregate action error improves.
+- This is direct evidence against using the present single-noise fixed-flow
+  query scalar as a sufficient acquisition/selection proxy. It is not yet
+  evidence that a distributional flow objective cannot improve actions: both
+  metrics use one deterministic inference/noise authority. A small fixed
+  multi-noise replication is the remaining cheap discriminator between robust
+  surrogate mismatch and sampling variance before any differentiable sampler
+  loss, further supervised training, or temporal-credit RL is authorized.

@@ -794,6 +794,21 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     launcher after its immutable packet and the selected next recovery contract
     are frozen; retain the general fixed-anchor action-error metric for direct
     Writer query supervision/diagnostics.
+    The audit completed main rc 0 from clean `9568921` in 43.77 seconds with
+    result SHA256 `95f8adfc...c1c6`. Supervised-LoRA flow-query reductions are
+    +5.798%/+4.236% on tasks 3/4, but generated-action MSE changes are
+    -3.114%/-2.479% (negative means worse). The non-matched action-expert flow
+    reductions are +7.883%/+3.710%, while action MSE changes are
+    -0.886%/-0.304%. Thus all four query-positive updates worsen the actual
+    fixed-noise generated-action metric; Gate 0/Writer remain false. Because
+    both flow and action metrics currently use one deterministic random draw,
+    the final no-rollout discriminator before changing acquisition is a small
+    predeclared multi-inference-noise replication on the same 48 anchors and
+    immutable states. If the sign is stable, test a no-update differentiable
+    full-sampler action-loss mechanics smoke, then train only a staged
+    action-aligned acquisition recovery. If signs are unstable, treat sampling
+    variance/multi-sample estimation as the repair target. Do not reopen SFT
+    steps, targets, ranks, simulator outcomes, or RL budget meanwhile.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

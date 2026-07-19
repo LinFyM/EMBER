@@ -27,6 +27,11 @@ the current project and long-term Goal, not pending milestones.
 - Documented diagnosis and bounded recovery for every failed or ambiguous gate.
 - A direct Writer whose complete generated LoRA improves independent
   zero-interaction behavior over all required matched baselines.
+- A separate source-only Writer-RL result after supervised cold start: the
+  shared base stays frozen, the generated LoRA is used functionally but is not
+  optimized as an independent inner variable, and rollout reward updates only
+  Writer parameters. This tests whether reward improves the LoRA that the
+  Writer emits immediately.
 - Matched-budget A/B/C ordinary task-local LoRA RL from zero-LoRA, cold-start
   Writer, and source-reward-outer-trained Writer initializations, with J0, AUC,
   time-to-threshold, J_K, and J_K-J0 reported under identical budgets.
@@ -583,40 +588,93 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     two. Both query reductions must remain at least 2% and both drift proxies
     at most 0.02. If task 4 exposes fewer than two failures, classify headroom
     as absent and predeclare a source-task extension rather than lowering the
-    rule. Proposal A is now active authority without changing these frozen
-    scientific fields. If the fresh task-4 base slice has fewer than two
-    failures, a base-first distributed barrier forbids opening either LoRA arm;
-    select a replacement source task only from legal base-competence evidence,
-    then freeze task/seed/Gate before any replacement-task LoRA result.
+    rule. The completed two-GPU run
+    `gate0_mature_lora_headroom_owner_a_20260719_025534` returned rc 0 and
+    exposed real headroom on both tasks: frozen base was 3/8 on task 3 and
+    3/8 on task 4. Step-1000 LoRA was 2/8 and 4/8, respectively, so paired net
+    wins are -1/+1 and aggregate zero. Query and drift safeguards pass, but the
+    maintenance, improvement, and aggregate behavioral checks fail. Gate 0,
+    target sealing, and Writer authorization remain false. Result SHA256 is
+    `84116faa...c98f`; all result, gallery, video, freeze, and telemetry hashes
+    validate, wall time was 171.95s, and GPU 4/5 released.
+    A later Option-B instruction to replace task 3 raced with this run and was
+    withdrawn once the owner learned that task 3's fresh base is 3/8 rather
+    than the old competence slice's 8/8. No replacement selection rollout was
+    launched. Its four-file WIP is recoverable only as local stash
+    `201d097e...1476` and is not an active repository path. Keep tasks 3/4;
+    do not change task, threshold, or seed to evade the failed A result.
+    The active cheapest discriminating recovery is the pre-outcome candidate-
+    step diagnostic in
+    `gate_zero_mature_lora_candidate_step_diagnostic.toml` (SHA256
+    `4445664f...6a46`): reuse A's base and
+    step-1000 arms, evaluate only existing exact step-500/750 LoRA states on
+    the same source development slice, and test update-duration/magnitude
+    overrun. Both tasks must improve, median gain must retain the original
+    15pp rule, and every query reduction/drift must retain 2%/0.02 safeguards;
+    select maximum aggregate net wins with an earliest-step tie-break. This
+    diagnostic cannot pass Gate 0. Only a passing candidate may receive a
+    separately hash-bound fresh-seed matched recovery Gate; no default 2k
+    continuation is authorized.
+    If this same-task candidate diagnostic still lacks credible closed-loop
+    positive evidence, do not reinterpret Gate 0 as an SFT-only Gate. Before
+    any new outcome, freeze one small-budget source-only ordinary-RL recovery
+    on the unchanged task-3/task-4, LoRA, evaluator, init-state, seed, and
+    success contract. Its four matched arms are frozen base; supervised LoRA;
+    zero-init LoRA plus ordinary task-local RL; and supervised-LoRA-init plus
+    the identical ordinary task-local RL. The two RL arms must share estimator,
+    optimizer, reward, interaction budget, compute accounting, and all LoRA
+    structure; only initialization differs. Start with a 10--30 minute early
+    check and keep each resumable segment within one to two hours. If only RL
+    arms improve, conclude only that the LoRA space contains a useful RL
+    oracle; support for helpful initialization requires supervised-init plus RL
+    to beat matched zero-init plus RL. No Writer participates in this Gate-0
+    recovery, and no task/seed/threshold change, validation/held/locked access,
+    or arbitrary 2k/5k continuation is authorized.
     No validation, held, locked-report, or step-2k access is authorized. The
     original SHA256 `ba3ee431...f132f`
     reached no episode because its last-warm-up seed was not stride-adjacent to
     the unchanged report seed 5800; retain that failure packet and use the
     corrected last warm-up seed 5792 without changing any scientific surface.
-22. [ ] Train and evaluate direct Writer zero-interaction utility on source and
+22. [ ] Train and evaluate supervised direct-Writer cold-start
+    zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,
     wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,
     direct conditioning, ordinary task-specific LoRA, and capacity-matched
-    DISC/HyPoGen-style generation. Freeze all choices before held outcomes.
-23. [ ] Run the fixed causal arms: A) zero-LoRA initialization plus ordinary
+    DISC/HyPoGen-style generation. Writer takes language plus action-hidden
+    teaching video and emits the complete declared LoRA; attach it to the
+    frozen base and backpropagate independent source-query action/flow/
+    behavioral loss into Writer. Freeze all choices before held outcomes.
+23. [ ] After supervised cold start, run a separate source-only Writer-only RL
+    stage. Freeze the shared base; use each generated LoRA for environment
+    rollout, but do not optimize that LoRA in place or maintain it as a second
+    independent variable. Rollout reward updates Writer parameters only. Report
+    immediate generated-LoRA utility before/after this stage and its effect on
+    later adaptation. This stage tests reward acquisition by the generator and
+    is not ordinary task-local LoRA RL.
+24. [ ] Run the fixed ordinary task-local LoRA RL causal arms: A) zero-LoRA
+    initialization plus ordinary
     RL; B) cold-start Writer LoRA initialization plus identical RL; and C)
     reward-outer-trained Writer LoRA initialization plus identical RL. Update
-    the same LoRA parameters in place under identical target layers/rank/count,
+    only the same task-local LoRA parameters in place while Writer and base are
+    frozen, under identical target layers/rank/count,
     algorithm, hyperparameters, seeds, reward, and interaction budget. Include
     average/retrieval/language-only direct-generator baselines; report J0, AUC,
     time-to-threshold, J_K, J_K-J0, uncertainty, resources, and failures. Add a
     matched-initial-performance or equivalent control before claiming a better
     learning process rather than only a better starting point. Writer emits no
     RL constraint object.
-24. [ ] Run source-only reward/delayed outer learning with the shared base
+25. [ ] Run source-only reward/delayed meta-outer learning with the shared base
     frozen. Inner adaptation updates task-local LoRA; the outer objective updates
     Writer parameters through a predeclared differentiable path or estimator.
-    Shared base/shared LoRA training is not part of the mainline.
-25. [ ] Permanently freeze base, Writer, encoders, all shared state, target/rank,
+    This is distinct from the Writer-only RL stage because it explicitly asks
+    whether reward through a task-local adaptation process improves future
+    Writer initializations. Shared base/shared LoRA training is not part of the
+    mainline.
+26. [ ] Permanently freeze base, Writer, encoders, all shared state, target/rank,
     optimizer, budgets, thresholds, and baselines before held evaluation. Only
     predeclared task-local LoRA may adapt from held reward. Require Writer-start
     to beat zero/base, average, retrieval, and the capacity-matched language-only
     direct LoRA generator with predeclared seeds, confidence intervals, causal
     controls, isolation audit, and reproducible rerun.
-26. [ ] After the mechanism survives, re-pin and execute the four-GPU-compatible
+27. [ ] After the mechanism survives, re-pin and execute the four-GPU-compatible
     OpenVLA-OFT scale confirmation without changing the causal or held contract.

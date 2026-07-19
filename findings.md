@@ -52,6 +52,14 @@
 - Ordinary task-local RL updates the same generated LoRA in place. Writer emits
   no bank, basis, mask, metric, radius, learning rate, or other search
   constraint.
+- Reward learning has two distinct questions and must retain two distinct
+  stages. Immediately after supervised Writer cold start, source-only
+  Writer-only RL freezes the base and treats the generated LoRA only as the
+  functional output through which rollout reward updates Writer; it neither
+  optimizes that LoRA in place nor updates shared policy state. Later ordinary
+  task-local LoRA RL freezes both base and Writer and updates only the generated
+  or matched-zero LoRA. The former tests reward acquisition by the generator;
+  the latter tests whether its initialization adapts faster or better.
 - The shared base stays frozen during direct Writer and default source
   reward/meta learning. Inner adaptation updates task-local LoRA and the outer
   source objective updates Writer parameters.
@@ -1742,3 +1750,72 @@
   Report seeds, init states, policy RNG, LoRA states, thresholds and all data
   surfaces are unchanged; both failure packets and telemetry remain bound in
   the corrected contract.
+
+## Proposal A fails behaviorally despite valid offline query gains
+
+- Canonical run `gate0_mature_lora_headroom_owner_a_20260719_025534` completed
+  rc 0 from clean commit `dbcb729` in 171.95 seconds on GPUs 4/5. The base-only
+  barrier first found 3/8 success on both task 3 and task 4, so both tasks have
+  five failures and genuine fresh-slice headroom. It then legally opened the
+  two matched LoRA arms. GPUs released after completion; no EMBER process
+  remains on them.
+- Task 3 changed 3/8 -> 2/8 and task 4 changed 3/8 -> 4/8. The exact paired
+  net wins are -1 and +1, hence aggregate zero. Task-3 maintenance, task-4
+  minimum +2, and aggregate minimum +2 all fail. The independent-query checks
+  (+5.798%/+4.236%) and drift checks (0.01056/0.00858) still pass. This narrows
+  the failure to conversion from supervised query improvement to stable
+  closed-loop behavior; it is not a data-authority, state-load, headroom, query
+  acquisition, or drift-cap failure.
+- Result SHA256 is `84116faaffd5115a72f4d49efa2f2467445ca0ac61edac265e571a1e8564c98f`.
+  The four arm videos, gallery, eval info, result, freeze grant, and telemetry
+  checksum sets all validate. The retained packet is only 636KiB plus a 12KiB
+  freeze and remains viewable through its local gallery and Trackio run
+  `owner_a_20260719T025534Z`. Gate 0, Writer, and final target sealing are false.
+- The owner's temporary Option-B choice to replace task 3 was made before the
+  owner was shown this raced result, but the remote run completed before that
+  instruction arrived. Once informed that task 3's fresh base is 3/8 rather
+  than the old 8/8 competence slice, the owner withdrew replacement. No
+  replacement base or LoRA rollout occurred. The exact four-file WIP is kept
+  outside the active path as stash `201d097ec542b76014eb885dbd04ffb166221476`.
+  Neither the A LoRA regression nor task-4 +1 was used to choose a new task.
+
+## Earlier exact candidates are the cheapest conversion diagnostic
+
+- Steps 500 and 750 are existing immutable states on the same task-3/task-4
+  37-target rank-32 trajectory; no retraining or 2k continuation is needed.
+  Both already satisfy the pre-existing per-task 2% query-reduction floor and
+  0.02 drift cap. Step 250 is excluded because it does not satisfy that reliable
+  offline criterion, while step 1000 is the failed A reference.
+- Before any new candidate-step rollout, the diagnostic freezes the A slice
+  (init 40--47, seeds 5800--5807), evaluates only four LoRA arms, and retains
+  the original positive-improvement semantics: both tasks must improve and the
+  median gain must be at least 15pp. Among passing states, maximum aggregate
+  paired net wins wins with the earlier-step tie-break. Failure supports no
+  default longer training; success authorizes only a separately grant-bound
+  fresh-seed matched recovery Gate. This is transparent post-failure recovery,
+  not a claim that its rule preceded Proposal A.
+
+## Gate 0 is a useful-update Gate, not an SFT-only Gate
+
+- The current 40-demonstration supervised LoRA evidence establishes independent
+  query-loss improvement, but Proposal A shows that this has not yet produced
+  stable closed-loop utility. Therefore supervised acquisition is one oracle
+  route, not a definition of Gate 0.
+- The already frozen candidate-step diagnostic remains the cheapest first
+  discriminator and must complete before another recovery. If it still lacks
+  credible closed-loop positive evidence, the next bounded source-only test is
+  a four-arm comparison on unchanged tasks 3/4: frozen base; supervised LoRA;
+  matched zero-init LoRA plus ordinary task-local RL; and supervised-LoRA-init
+  plus the identical ordinary task-local RL. LoRA support/capacity, evaluator,
+  init states/seeds, reward, estimator/optimizer, interaction budget, and
+  compute accounting remain matched.
+- If only the RL arms improve behavior, the supported conclusion is only that
+  ordinary task-local RL can find a useful update in the LoRA space. Evidence
+  that the supervised initialization helps later adaptation requires the
+  supervised-init RL arm to stably beat matched zero-init RL. Neither result is
+  Writer evidence because Gate-0 RL updates only task-local LoRA and contains
+  no Writer.
+- This recovery must use a 10--30 minute early check and resumable segments no
+  longer than one to two hours, stopping once reliable matched evidence answers
+  the Gate. It cannot change task, seed, or threshold to evade Proposal A,
+  access validation/held/locked surfaces, or burn arbitrary step milestones.

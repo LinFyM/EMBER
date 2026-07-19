@@ -8,7 +8,8 @@
   recommendation and a full staged design; it is now historical provenance.
 - The owner rechecked the original design on 2026-07-18. The active contract is
   direct language/action-hidden-video to complete task-specific LoRA, immediate
-  utility, ordinary task-local LoRA RL, source-only Writer reward/meta learning,
+  utility, an independent source-only Writer-only RL stage, ordinary task-local
+  LoRA RL, source-only Writer reward/meta learning,
   shared-frozen held evaluation, and conditional OpenVLA-OFT confirmation.
   Canonical bank/shared subspace/soft geometry/residual escape was a later
   assistant/expert addition and is outside the current project/Goal. The
@@ -1659,3 +1660,52 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   number, task, seed, init state, evaluator, LoRA state, or data surface changed.
   Architecture guard is REVIEW with no hard violation; the existing runtime
   and contract owner remain the single canonical path.
+
+### Proposal A completed, failed Gate 0, and entered same-task bounded recovery
+
+- Long-run `gate0_mature_lora_headroom_owner_a_20260719_025534` completed
+  main rc 0 on clean `dbcb729`. The base-first barrier measured task 3/4 at
+  3/8 and 3/8, then authorized the matched step-1000 LoRA arms at 2/8 and 4/8.
+  Paired net wins are -1/+1 and aggregate zero, so the frozen A Gate fails even
+  though both query-reduction and drift safeguards pass. Gate 0, Writer, and
+  final support sealing remain false; the ladder stays stopped at step 1000.
+- Both output and freeze checksum manifests pass; result SHA256 is
+  `84116faa...c98f`, four bounded videos/gallery are present, the latest link is
+  canonical, output is 636KiB plus a 12KiB freeze, wall time is 171.95s, and
+  GPU 4/5 returned to 0MiB. Unrelated MemLLM jobs on GPU 0--3 were untouched.
+- An owner instruction to replace task 3 arrived after the run because of a
+  remote-turn race, then was explicitly withdrawn once the fresh 3/8 base
+  result was known. No Option-B selection experiment launched. Its uncommitted
+  config/launcher/module/test are recoverable as local stash
+  `201d097ec542b76014eb885dbd04ffb166221476`, but are absent from the active
+  worktree and must not be committed or run.
+- Added a narrow post-failure candidate-step diagnostic contract, runtime,
+  launcher, and red-then-green tests. It keeps task 3/4, binds A and the exact
+  step-500/750 candidate manifests/states, reuses the A source development
+  slice without rerunning base/step1000, and evaluates only 32 new episodes on
+  two GPUs. Its deterministic rule preserves the original 15pp median and two
+  positive tasks plus per-task 2% query and 0.02 drift safeguards. The result
+  can only authorize a hash-bound fresh-seed recovery Gate, never Gate 0 or
+  Writer directly; step 2k remains forbidden. Contract SHA256 is
+  `4445664f652744829e219fd483cde7820cfde1d588157d730e4322811e916a46`;
+  focused tests pass 36/36, the full repository suite passes 235/235, real
+  loading validates all four 74-tensor candidate states at 1,485,312 trainable
+  parameters, and the canonical two-GPU dry-run passes.
+- Before any candidate-step outcome, the owner separated two later reward
+  stages. After supervised Writer cold start, a dedicated source-only
+  Writer-only RL phase freezes the base, does not optimize generated task-local
+  LoRA in place, and updates only Writer from rollout reward. Ordinary
+  task-local LoRA RL remains a later, separate phase that freezes base/Writer
+  and updates only the same LoRA from Writer or matched-zero initialization.
+  A subsequent adaptation-aware reward/meta outer stage may differentiate
+  through the inner LoRA learner, but must not be conflated with Writer-only RL.
+- The owner also clarified before any new recovery outcome that Gate 0 is not
+  SFT-only. The candidate-step diagnostic remains first and unchanged. If it
+  does not show credible closed-loop utility, the next bounded recovery is a
+  pre-outcome-frozen, same-task four-arm source comparison: base; supervised
+  LoRA; zero-init LoRA plus ordinary task-local RL; and supervised-init LoRA
+  plus identical RL. This phase has no Writer, matches LoRA/reward/estimator/
+  optimizer/seed/init/interaction/compute, starts with a 10--30 minute early
+  check, and limits resumable segments to one to two hours. No task/seed/
+  threshold evasion, validation/held/locked access, or arbitrary long training
+  is authorized.

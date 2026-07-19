@@ -155,6 +155,8 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         self.assertTrue(torch.all(first >= -1.0))
         self.assertGreater(left.total_scalars, 0)
         self.assertGreaterEqual(left.saturation_fraction, 0.0)
+        self.assertEqual(sum(left.saturated_scalars_by_dimension), left.saturated_scalars)
+        self.assertEqual(len(left.saturated_scalars_by_dimension), 7)
 
     def test_replay_builder_balances_episodes_and_pads_chunks(self) -> None:
         batch_size = 2

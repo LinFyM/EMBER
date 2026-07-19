@@ -88,6 +88,7 @@ class ExplorationActionProcessor:
         self.high = torch.tensor(high, dtype=torch.float32)
         self.generator = torch.Generator(device="cpu").manual_seed(seed)
         self.saturated_scalars = 0
+        self.saturated_scalars_by_dimension = [0] * 7
         self.total_scalars = 0
 
     @property
@@ -103,7 +104,15 @@ class ExplorationActionProcessor:
         proposed = action + noise.to(action.device) * self.standard_deviation.to(action.device)
         low = self.low.to(action.device)
         high = self.high.to(action.device)
-        self.saturated_scalars += int(((proposed < low) | (proposed > high)).sum().item())
+        saturated = (proposed < low) | (proposed > high)
+        by_dimension = saturated.sum(dim=0).tolist()
+        self.saturated_scalars += int(saturated.sum().item())
+        self.saturated_scalars_by_dimension = [
+            left + int(right)
+            for left, right in zip(
+                self.saturated_scalars_by_dimension, by_dimension, strict=True
+            )
+        ]
         self.total_scalars += proposed.numel()
         return {**processed, "action": proposed.clamp(min=low, max=high)}
 
@@ -478,19 +487,20 @@ def collect_training_round(
         final_init_state_ids = list(env.call("init_state_id"))
     finally:
         env.close()
-    mechanics = (
-        override["mechanically_valid"]
-        and validate_training_reset_events(
+    mechanics_checks = {
+        "prompt_override": override["mechanically_valid"],
+        "reset_and_init_state_identity": validate_training_reset_events(
             reset_events,
             round_index=round_index,
             batch_size=batch_size,
             seed_start=seed_start,
             final_init_state_ids=final_init_state_ids,
             expected_init_state_ids=training["train_init_state_indices_by_round"][round_index],
-        )
-        and [anchor["step"] for anchor in recorder.anchors]
-        == list(range(0, 400, spec["algorithm"]["action_chunk_size"]))
-    )
+        ),
+        "anchor_steps": [anchor["step"] for anchor in recorder.anchors]
+        == list(range(0, 400, spec["algorithm"]["action_chunk_size"])),
+    }
+    mechanics = all(mechanics_checks.values())
     replay = build_balanced_replay_batch(
         anchors=recorder.anchors,
         rollout=rollout_data,
@@ -512,6 +522,7 @@ def collect_training_round(
         "reset_events": reset_events,
         "final_init_state_ids": final_init_state_ids,
         "mechanics_valid": mechanics,
+        "mechanics_checks": mechanics_checks,
         "episode_steps": episode_steps,
         "environment_steps": sum(episode_steps),
         "episode_successes": episode_successes,
@@ -520,6 +531,7 @@ def collect_training_round(
         "replay_rows": len(replay["row_keys"]),
         "unique_replan_anchors": len(set(key.rsplit("/balanced_slot", 1)[0] for key in replay["row_keys"])),
         "saturated_action_scalars": explorer.saturated_scalars,
+        "saturated_action_scalars_by_dimension": explorer.saturated_scalars_by_dimension,
         "total_action_scalars": explorer.total_scalars,
         "saturation_fraction": explorer.saturation_fraction,
         "rollout_seconds": elapsed,

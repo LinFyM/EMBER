@@ -353,6 +353,8 @@ def _run_rounds(
             collection["mechanics_valid"] is not True
             or collection["saturation_fraction"] > spec["exploration"]["maximum_saturation_fraction"]
         ):
+            failed = rounds_root / f"{(round_index + 1) * episodes_per_round:06d}_failed.json"
+            atomic_json(failed, {"status": "collection_safeguard_failed", "collection": collection})
             raise GateZeroTaskLocalRLRuntimeError("RL collection failed mechanics or saturation guard")
         training = train_awr_replay_round(
             arm.session,

@@ -29,6 +29,19 @@
   the predecessor/failure/localization hashes are bound in the config before
   rerun. One temporary diagnostic attempt lacked a multiprocessing main guard,
   was terminated before a result, and released GPU 6; the guarded repeat rc 0.
+- Canonical recovery2
+  `gate0_task_local_rl_ep16_recovery2_20260719_050401` passed the repaired
+  collection guards but failed before the first optimizer update or development
+  rollout. The replay action tensor `[64,50,7]` is correctly padded by SmolVLA
+  preprocessing to `[64,50,32]`; the deterministic flow-noise helper was
+  mistakenly called with the original width 7. Ranks 1--3 recorded identical
+  fail-closed tracebacks and all GPUs released. The final bounded implementation
+  repair validates the processed `[64,50,32]` tensor and derives noise shape
+  `[50,32]`; active config SHA256 is
+  `504d20bc371078b5ffeabaad84eb1e041423c5167cd7331b91e047a3324f673d`.
+  No scientific field changes. Exactly one final canonical verification is
+  authorized; another mechanical failure stops for diagnosis instead of a
+  further automatic rerun.
 - Architecture ownership is deliberately narrow: the
   `ember.gate_zero_task_local_rl` package owns only this bounded Gate-0 recovery
   contract, reward-weighted replay mechanics, and orchestration. It reuses the

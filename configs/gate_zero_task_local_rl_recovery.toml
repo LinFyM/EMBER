@@ -1,6 +1,6 @@
 schema_version = 1
 name = "smolvla_libero90_gate_zero_task_local_lora_rl_recovery_v1"
-status = "mechanically_amended_after_fail_closed_collection_before_any_optimizer_or_development_outcome"
+status = "mechanically_amended_twice_before_any_optimizer_or_development_outcome"
 predeclared_at_utc = "2026-07-19T04:40:00Z"
 surface = "source_only_gate_zero_task_local_rl_recovery"
 task_ids = [3, 4]
@@ -49,6 +49,22 @@ final_ids_are_post_success_autoreset_not_initial_identity = true
 saturated_scalars_by_dimension = [0, 3, 10, 0, 0, 0, 1195]
 repair = "audit initial identity at reset; preserve Gaussian exploration on continuous dimensions 0-5 and preserve the policy gripper command on binary dimension 6"
 unchanged_scientific_fields = ["tasks", "LoRA", "reward", "seeds", "interaction budget", "optimizer", "decision thresholds", "development and fresh Gate surfaces"]
+
+[flow_shape_recovery]
+amended_at_utc = "2026-07-19T05:08:00Z"
+predecessor_contract_sha256 = "e138b7d649c192d4618a8e5b9c0f8fe29b60c95a5117815313f271f405d4d406"
+failed_run_id = "gate0_task_local_rl_ep16_recovery2_20260719_050401"
+failed_output_relative_path = "gate_zero/task_local_lora_rl_recovery/awr_ep16_recovery2_20260719T050347Z"
+failure_rank1_sha256 = "cadfde92a353b79f9b72a4ee0e5e65ac9cceed5fe8dd2e8e81b89ee2977dbc04"
+failure_rank2_sha256 = "42dbabe45f76a07e18f9e171018a4b65d2f0249d7ea10d6a0266ba8e2a499f2f"
+failure_rank3_sha256 = "3d984bf1fe81c87b87c65d14a77115fc5b8d97a34c52597541b9ae4a58b954cf"
+failure_telemetry_sha256 = "f71c99b0589b6f3f9f86bf3bc16ebbb46e0c1ae8f04579daee14db41cde370c5"
+optimizer_updates_before_failure = 0
+development_rollouts_before_failure = 0
+replay_action_shape_before_preprocessing = [64, 50, 7]
+model_action_shape_after_preprocessing = [64, 50, 32]
+repair = "derive deterministic flow-noise shape from the validated post-preprocessor model action tensor"
+unchanged_scientific_fields = ["tasks", "LoRA", "exploration", "reward", "seeds", "interaction budget", "optimizer", "decision thresholds", "development and fresh Gate surfaces"]
 
 [lora]
 target_count = 37

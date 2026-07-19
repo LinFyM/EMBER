@@ -132,7 +132,7 @@ def _validate_surfaces_and_decisions(spec: Mapping[str, Any]) -> None:
     _require_equal(spec.get("schema_version"), 1, "schema_version")
     _require_equal(
         spec.get("status"),
-        "mechanically_amended_after_fail_closed_collection_before_any_optimizer_or_development_outcome",
+        "mechanically_amended_twice_before_any_optimizer_or_development_outcome",
         "status",
     )
     _require_equal(spec.get("task_ids"), [3, 4], "task_ids")
@@ -150,6 +150,7 @@ def _validate_surfaces_and_decisions(spec: Mapping[str, Any]) -> None:
     fresh = spec.get("fresh_gate")
     parallel = spec.get("parallel")
     recovery = spec.get("mechanical_recovery")
+    flow_recovery = spec.get("flow_shape_recovery")
     if not all(
         isinstance(value, dict)
         for value in (
@@ -161,6 +162,7 @@ def _validate_surfaces_and_decisions(spec: Mapping[str, Any]) -> None:
             fresh,
             parallel,
             recovery,
+            flow_recovery,
         )
     ):
         raise GateZeroTaskLocalRLContractError("task-local RL surface declaration is missing")
@@ -185,6 +187,25 @@ def _validate_surfaces_and_decisions(spec: Mapping[str, Any]) -> None:
         recovery["localization_json_sha256"],
         "d4ed8fa2e66319b268ef61e0cc66ccb3bfc55525770996718d76cace2c9f9dd6",
         "mechanical localization packet",
+    )
+    _require_equal(
+        flow_recovery["predecessor_contract_sha256"],
+        "e138b7d649c192d4618a8e5b9c0f8fe29b60c95a5117815313f271f405d4d406",
+        "flow-shape predecessor",
+    )
+    _require_equal(flow_recovery["optimizer_updates_before_failure"], 0, "flow failed updates")
+    _require_equal(
+        flow_recovery["development_rollouts_before_failure"], 0, "flow failed development access"
+    )
+    _require_equal(
+        flow_recovery["model_action_shape_after_preprocessing"],
+        [64, 50, 32],
+        "processed model action shape",
+    )
+    _require_equal(
+        flow_recovery["failure_rank2_sha256"],
+        "42dbabe45f76a07e18f9e171018a4b65d2f0249d7ea10d6a0266ba8e2a499f2f",
+        "flow-shape failure packet",
     )
     _require_equal(training["batch_size"], 8, "training batch_size")
     _require_equal(training["rounds_maximum"], 4, "training rounds_maximum")

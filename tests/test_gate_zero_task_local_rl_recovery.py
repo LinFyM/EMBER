@@ -24,6 +24,7 @@ from ember.gate_zero_task_local_rl.runtime import (  # noqa: E402
     ExplorationActionProcessor,
     balanced_anchor_slots,
     build_balanced_replay_batch,
+    validated_flow_action_shape,
     validate_training_reset_events,
     weighted_flow_loss,
 )
@@ -128,6 +129,17 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
             )
         changed = copy.deepcopy(self.spec)
         changed["mechanical_recovery"]["optimizer_updates_before_failure"] = 1
+        with self.assertRaises(GateZeroTaskLocalRLContractError):
+            validate_task_local_rl_spec(
+                changed,
+                gate_zero_path=self.gate_zero,
+                phase0_path=self.phase0,
+                fit_path=self.fit,
+                headroom_path=self.headroom,
+                diagnostic_path=self.diagnostic,
+            )
+        changed = copy.deepcopy(self.spec)
+        changed["flow_shape_recovery"]["model_action_shape_after_preprocessing"] = [64, 50, 7]
         with self.assertRaises(GateZeroTaskLocalRLContractError):
             validate_task_local_rl_spec(
                 changed,
@@ -270,6 +282,19 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         self.assertEqual(float(loss), 2.5)
         with self.assertRaises(Exception):
             weighted_flow_loss(torch.ones(2), torch.ones(2) * 2)
+
+    def test_flow_noise_uses_processed_model_action_width(self) -> None:
+        batch = {"action": torch.zeros(64, 50, 32)}
+        self.assertEqual(
+            validated_flow_action_shape(batch, expected_batch_size=64, expected_chunk_size=50),
+            (50, 32),
+        )
+        with self.assertRaises(Exception):
+            validated_flow_action_shape(
+                {"action": torch.zeros(64, 50, 7)},
+                expected_batch_size=64,
+                expected_chunk_size=50,
+            )
 
 
 if __name__ == "__main__":

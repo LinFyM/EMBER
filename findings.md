@@ -1859,6 +1859,16 @@
   dimensions. No task, LoRA, reward, seed, budget, optimizer, evaluator,
   surface, or decision threshold changes. Amended contract SHA256 is
   `e138b7d649c192d4618a8e5b9c0f8fe29b60c95a5117815313f271f405d4d406`.
+- Recovery2 passed reset, anchor, and repaired saturation guards, then ranks
+  1--3 reached the first optimizer forward and failed with an exact shape
+  mismatch before any update: replay actions are `[64,50,7]`, while the pinned
+  SmolVLA preprocessor pads actions to `[64,50,32]`; fixed flow noise was still
+  created as `[64,50,7]`. The unique mechanical repair is to validate the
+  processed action tensor and derive deterministic noise shape `[50,32]` from
+  it. It changes no samples, rewards, exploration, optimizer, budget, or Gate
+  rule. Active contract SHA256
+  `504d20bc371078b5ffeabaad84eb1e041423c5167cd7331b91e047a3324f673d`
+  binds recovery2 failure packets and permits one final canonical verification.
 
 ## Earlier supervised checkpoints do not recover closed-loop utility
 

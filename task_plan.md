@@ -670,6 +670,17 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     `e138b7d649c192d4618a8e5b9c0f8fe29b60c95a5117815313f271f405d4d406`;
     it binds the predecessor, failure packet, and localization packet before
     rerun.
+    Recovery2 passed those collection guards but failed before its first
+    optimizer update because the replay action is 7D before preprocessing while
+    SmolVLA pads the model action tensor to 32D; deterministic flow noise had
+    incorrectly retained the preprocessor input width. This is a single tensor-
+    shape implementation error, not an RL result. The final bounded repair
+    derives and validates noise shape `[50,32]` from the processed action tensor;
+    all scientific fields remain unchanged. Active contract SHA256 is
+    `504d20bc371078b5ffeabaad84eb1e041423c5167cd7331b91e047a3324f673d`,
+    binding both prior contracts and failure packets. Run one final canonical
+    verification; any further mechanical failure stops this implementation
+    attempt for diagnosis rather than triggering another blind rerun.
     No validation, held, locked-report, or step-2k access is authorized. The
     original SHA256 `ba3ee431...f132f`
     reached no episode because its last-warm-up seed was not stride-adjacent to

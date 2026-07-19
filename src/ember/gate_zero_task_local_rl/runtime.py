@@ -178,6 +178,18 @@ def weighted_flow_loss(per_sample_loss: torch.Tensor, weights: torch.Tensor) -> 
     return value
 
 
+def validated_flow_action_shape(
+    batch: Mapping[str, Any], *, expected_batch_size: int, expected_chunk_size: int
+) -> tuple[int, int]:
+    """Bind deterministic noise to the action tensor after SmolVLA preprocessing."""
+
+    action = batch.get("action")
+    expected = (expected_batch_size, expected_chunk_size, 32)
+    if not torch.is_tensor(action) or tuple(action.shape) != expected:
+        raise GateZeroTaskLocalRLRuntimeError("processed SmolVLA action shape changed")
+    return expected[1:]
+
+
 def _episode_length(done: torch.Tensor) -> int:
     locations = torch.nonzero(done, as_tuple=False).flatten()
     return int(locations[0]) + 1 if locations.numel() else int(done.numel())
@@ -381,9 +393,14 @@ def train_awr_replay_round(
             scale_max=algorithm["augmentation_scale_max"],
         )
         batch = preprocess_smolvla_batch(raw, session.preprocessor, list(owner.config.image_features))
+        flow_action_shape = validated_flow_action_shape(
+            batch,
+            expected_batch_size=expected,
+            expected_chunk_size=algorithm["action_chunk_size"],
+        )
         noise, flow_time = deterministic_flow_inputs(
             row_keys,
-            action_shape=(algorithm["action_chunk_size"], 7),
+            action_shape=flow_action_shape,
             noise_seed=algorithm["fixed_flow_noise_seed"] + optimizer_step,
             time_seed=algorithm["fixed_flow_time_seed"] + optimizer_step,
             device=next(model.parameters()).device,

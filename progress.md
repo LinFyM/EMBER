@@ -2093,3 +2093,38 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   collection scale as the cheapest primary-source-supported gaps. Freeze any
   corrected bounded recovery as a new contract before new outcomes; do not
   append interaction to the failed trajectory.
+
+## 2026-07-19 critic-warmup recovery frozen before outcomes
+
+- Reconfirmed the active unbudgeted full-EMBER Goal. The fixed task3/task4
+  Gate-0 surface and the completed temporal-credit negative remain authoritative;
+  no replacement-task selection, validation, held, locked-report, Writer, or
+  new closed-loop outcome was opened during this implementation.
+- Added the result-blind compatibility contract
+  `configs/gate_zero_task_local_rl_critic_warmup.toml`, SHA256
+  `51fc9a009d0fa93476ba47a22d86e95a5d89f32182057843c3129e4147725a8a`.
+  It binds the immutable episode-16 negative, starts a new trajectory, runs one
+  critic-only round, sets GAE lambda to `0.99`, removes external Gaussian action
+  noise, and caps exact-resume decisions at episodes `8/16/24/32` under the
+  predeclared trend rule. It preserves the exact four matched Gate-0 arms and
+  all source/held scientific boundaries.
+- Kept one canonical trainer and launcher. The first round skips all actor
+  forward/backward/optimizer work, verifies exact LoRA identity, and records
+  actor/critic optimizer counts separately; later rounds reuse the same PPO
+  actor path. Exact resume now requires the immediately preceding atomic node,
+  and only contract-declared nonterminal statuses can continue. The retired
+  external-noise processor was removed rather than retained as a second path.
+- Focused recovery tests pass 16/16; the full suite passes 265/265. Python
+  compilation, shell syntax, config/hash validation, canonical four-GPU
+  launcher dry-run, and diff whitespace checks pass. The dry-run binds the
+  new temporal predecessor packet and retains Trackio plus bounded video
+  gallery output. Next, after clean Git delivery, run one GPU real-model
+  no-environment/no-optimizer smoke for critic update and exact actor identity;
+  only that mechanics result may open the staged source rollout.
+- The active research sequence remains explicit: supervised Writer cold start;
+  independent Writer-only RL that updates Writer only; ordinary task-local LoRA
+  RL that freezes Writer/base and updates LoRA only; then adaptation-aware
+  source meta-outer learning. Gate 0 may establish a useful LoRA update through
+  supervised training or matched ordinary RL, but must report which mechanism
+  supplied the evidence and cannot convert RL utility into a supervised
+  zero-interaction claim.

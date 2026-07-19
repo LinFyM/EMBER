@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import math
 import time
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
@@ -39,8 +38,9 @@ def validate_result_authorities(
     diagnostic_result: Path,
     previous_awr_result: Path,
     previous_signed_result: Path,
+    previous_temporal_result: Path,
 ) -> tuple[dict[str, Any], ...]:
-    """Bind the temporal probe to immutable prior negative evidence."""
+    """Bind the critic-warmup probe to immutable prior negative evidence."""
 
     authority = spec["authority"]
     paths = {
@@ -48,6 +48,7 @@ def validate_result_authorities(
         "candidate_diagnostic_result_sha256": diagnostic_result,
         "previous_awr_result_sha256": previous_awr_result,
         "previous_signed_result_sha256": previous_signed_result,
+        "previous_temporal_result_sha256": previous_temporal_result,
     }
     for key, path in paths.items():
         if sha256_file(path) != authority[key]:
@@ -56,6 +57,7 @@ def validate_result_authorities(
     diagnostic = _load_json(diagnostic_result, "candidate diagnostic result")
     awr = _load_json(previous_awr_result, "previous AWR result")
     signed = _load_json(previous_signed_result, "previous signed-ratio result")
+    temporal = _load_json(previous_temporal_result, "previous temporal-credit result")
     counts = {
         (arm["task_id"], arm["condition"]): sum(arm["successes"])
         for arm in headroom.get("arms", [])
@@ -73,12 +75,19 @@ def validate_result_authorities(
         and diagnostic.get("selected_step") is None
         and all(value.get("status") == "task_local_rl_early_check_not_supported" for value in (awr, signed))
         and all(value.get("interaction_episodes_per_task_initialization") == 16 for value in (awr, signed))
-        and all(value.get("gate_zero_authorized") is False for value in (headroom, diagnostic, awr, signed))
-        and all(value.get("writer_authorized") is False for value in (awr, signed))
+        and temporal.get("status") == spec["predecessor_evidence"]["temporal_credit_status"]
+        and temporal.get("interaction_episodes_per_task_initialization") == 16
+        and temporal.get("aggregate_metrics", {}).get("paired_net_wins_by_arm")
+        == {
+            "zero_init_rl": spec["predecessor_evidence"]["temporal_credit_zero_init_paired_net_wins"],
+            "supervised_init_rl": spec["predecessor_evidence"]["temporal_credit_supervised_init_paired_net_wins"],
+        }
+        and all(value.get("gate_zero_authorized") is False for value in (headroom, diagnostic, awr, signed, temporal))
+        and all(value.get("writer_authorized") is False for value in (awr, signed, temporal))
     )
     if not valid:
         raise GateZeroTaskLocalRLRuntimeError("upstream Gate-0 failure boundary changed")
-    return headroom, diagnostic, awr, signed
+    return headroom, diagnostic, awr, signed, temporal
 
 
 def initial_successes(
@@ -167,65 +176,6 @@ class AnchorRecordingEnvPreprocessor:
             self.anchors.append(record)
         self.step += 1
         return processed
-
-
-class ExplorationActionProcessor:
-    """Apply deterministic common-random Gaussian exploration in raw action space."""
-
-    def __init__(
-        self,
-        *,
-        base: Callable[[dict[str, Any]], dict[str, Any]],
-        standard_deviation: Sequence[float],
-        low: Sequence[float],
-        high: Sequence[float],
-        seed: int,
-    ) -> None:
-        if (
-            len(standard_deviation) != 7
-            or len(low) != 7
-            or len(high) != 7
-            or any(value < 0 or not math.isfinite(value) for value in standard_deviation)
-            or not any(value > 0 for value in standard_deviation)
-            or any(left >= right for left, right in zip(low, high, strict=True))
-        ):
-            raise GateZeroTaskLocalRLRuntimeError("invalid exploration action contract")
-        self.base = base
-        self.standard_deviation = torch.tensor(standard_deviation, dtype=torch.float32)
-        self.explored_dimensions = self.standard_deviation > 0
-        self.low = torch.tensor(low, dtype=torch.float32)
-        self.high = torch.tensor(high, dtype=torch.float32)
-        self.generator = torch.Generator(device="cpu").manual_seed(seed)
-        self.saturated_scalars = 0
-        self.saturated_scalars_by_dimension = [0] * 7
-        self.total_scalars = 0
-
-    @property
-    def saturation_fraction(self) -> float:
-        return self.saturated_scalars / self.total_scalars if self.total_scalars else 0.0
-
-    def __call__(self, transition: dict[str, Any]) -> dict[str, Any]:
-        processed = self.base(transition)
-        action = processed.get("action")
-        if not torch.is_tensor(action) or action.ndim != 2 or action.shape[-1] != 7:
-            raise GateZeroTaskLocalRLRuntimeError("exploration received an invalid action")
-        noise = torch.randn(action.shape, generator=self.generator, dtype=torch.float32)
-        proposed = action + noise.to(action.device) * self.standard_deviation.to(action.device)
-        low = self.low.to(action.device)
-        high = self.high.to(action.device)
-        saturated = ((proposed < low) | (proposed > high)) & self.explored_dimensions.to(
-            action.device
-        )
-        by_dimension = saturated.sum(dim=0).tolist()
-        self.saturated_scalars += int(saturated.sum().item())
-        self.saturated_scalars_by_dimension = [
-            left + int(right)
-            for left, right in zip(
-                self.saturated_scalars_by_dimension, by_dimension, strict=True
-            )
-        ]
-        self.total_scalars += action.shape[0] * int(self.explored_dimensions.sum())
-        return {**processed, "action": proposed.clamp(min=low, max=high)}
 
 
 def validate_training_reset_events(
@@ -459,20 +409,12 @@ def collect_training_round(
     from lerobot.utils.random_utils import set_seed
 
     training = spec["training_interaction"]
-    exploration = spec["exploration"]
     batch_size = training["batch_size"]
     if not 0 <= round_index < training["rounds_maximum"]:
         raise GateZeroTaskLocalRLRuntimeError("training round escaped the contract")
     policy, preprocessor, postprocessor, env_preprocessor, env_postprocessor = runtime
     recorder = AnchorRecordingEnvPreprocessor(
         base=env_preprocessor, interval=spec["algorithm"]["action_chunk_size"]
-    )
-    explorer = ExplorationActionProcessor(
-        base=env_postprocessor,
-        standard_deviation=exploration["standard_deviation"],
-        low=exploration["clip_low"],
-        high=exploration["clip_high"],
-        seed=exploration["exploration_seed_start"] + round_index,
     )
     env = ResetAuditEnv(
         _make_condition_env(
@@ -494,7 +436,7 @@ def collect_training_round(
             env=env,
             policy=policy,
             env_preprocessor=recorder,
-            env_postprocessor=explorer,
+            env_postprocessor=env_postprocessor,
             preprocessor=preprocessor,
             postprocessor=postprocessor,
             seeds=seeds,
@@ -546,9 +488,9 @@ def collect_training_round(
         "success_rate": sum(episode_successes) / batch_size,
         "replay_rows": len(replay["row_keys"]),
         "unique_replan_anchors": len(set(key.rsplit("/balanced_slot", 1)[0] for key in replay["row_keys"])),
-        "saturated_action_scalars": explorer.saturated_scalars,
-        "saturated_action_scalars_by_dimension": explorer.saturated_scalars_by_dimension,
-        "total_action_scalars": explorer.total_scalars,
-        "saturation_fraction": explorer.saturation_fraction,
+        "saturated_action_scalars": 0,
+        "saturated_action_scalars_by_dimension": [0] * 7,
+        "total_action_scalars": 0,
+        "saturation_fraction": 0.0,
         "rollout_seconds": elapsed,
     }

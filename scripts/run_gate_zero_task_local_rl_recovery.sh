@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-CONFIG="$ROOT/configs/gate_zero_task_local_rl_temporal_credit.toml"
+CONFIG="$ROOT/configs/gate_zero_task_local_rl_critic_warmup.toml"
 GATE_ZERO="$ROOT/configs/gate_zero_oracle_pilot.toml"
 PHASE0="$ROOT/configs/phase0.toml"
 FIT="$ROOT/configs/gate_zero_mature_lora_lr_recovery.toml"
@@ -54,12 +54,13 @@ done
 IFS=',' read -r -a gpu_indices <<< "$gpus"
 [[ "$(printf '%s\n' "${gpu_indices[@]}" | sort -u | wc -l)" -eq 4 ]] ||
   die "--gpus contains a duplicate"
-[[ "$stop_after_episodes" == 8 || "$stop_after_episodes" == 16 ]] ||
-  die "--stop-after-episodes must be 8 or 16"
+[[ "$stop_after_episodes" == 8 || "$stop_after_episodes" == 16 || \
+   "$stop_after_episodes" == 24 || "$stop_after_episodes" == 32 ]] ||
+  die "--stop-after-episodes must be 8, 16, 24, or 32"
 if [[ "$stop_after_episodes" == 8 ]]; then
   $resume && die "stage 8 must start fresh"
 else
-  $resume || die "stage 16 must exact-resume the stage-8 output"
+  $resume || die "stages 16, 24, and 32 must exact-resume the prior output"
 fi
 [[ "$output_dir" = /* ]] || die "--output-dir must be absolute"
 if [[ -z "$latest_link" ]]; then
@@ -98,6 +99,7 @@ print(output_root / spec["authority"]["headroom_result_relative_path"])
 print(output_root / spec["authority"]["candidate_diagnostic_result_relative_path"])
 print(output_root / spec["authority"]["previous_awr_result_relative_path"])
 print(output_root / spec["authority"]["previous_signed_result_relative_path"])
+print(output_root / spec["authority"]["previous_temporal_result_relative_path"])
 print(spec["resources"]["minimum_free_memory_mib"])
 PY
 )
@@ -109,7 +111,8 @@ headroom_result=${paths[4]}
 diagnostic_result=${paths[5]}
 previous_awr_result=${paths[6]}
 previous_signed_result=${paths[7]}
-minimum_free_memory_mib=${paths[8]}
+previous_temporal_result=${paths[8]}
+minimum_free_memory_mib=${paths[9]}
 
 command=(
   "$PYTHON" -m torch.distributed.run --standalone --nproc-per-node=4
@@ -128,6 +131,7 @@ command=(
   --diagnostic-result "$diagnostic_result"
   --previous-awr-result "$previous_awr_result"
   --previous-signed-result "$previous_signed_result"
+  --previous-temporal-result "$previous_temporal_result"
   --output-dir "$output_dir"
   --latest-link "$latest_link"
   --physical-gpus "$gpus"
@@ -146,7 +150,7 @@ fi
 
 for path in "$manifest" "$dataset_root" "$source_checkpoint" "$fit_root" \
   "$headroom_result" "$diagnostic_result" "$previous_awr_result" \
-  "$previous_signed_result"; do
+  "$previous_signed_result" "$previous_temporal_result"; do
   [[ -e "$path" ]] || die "required authority is missing: $path"
 done
 for gpu in "${gpu_indices[@]}"; do

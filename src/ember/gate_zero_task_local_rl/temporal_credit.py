@@ -377,6 +377,22 @@ def _temporal_targets(
     return flat_advantages, flat_returns, valid, reward_variation
 
 
+def _actor_update_enabled(algorithm: dict[str, Any], *, round_index: int) -> bool:
+    """Return whether the frozen critic-only warmup has completed."""
+
+    critic_only_rounds = algorithm.get("critic_only_rounds")
+    if (
+        not isinstance(critic_only_rounds, int)
+        or isinstance(critic_only_rounds, bool)
+        or critic_only_rounds < 0
+        or not isinstance(round_index, int)
+        or isinstance(round_index, bool)
+        or round_index < 0
+    ):
+        raise TemporalCreditError("invalid critic-only warmup boundary")
+    return round_index >= critic_only_rounds
+
+
 def _update_minibatch(
     session: Any,
     critic: TemporalCritic,
@@ -385,7 +401,7 @@ def _update_minibatch(
     batch: dict[str, Any],
     noises: list[torch.Tensor],
     times: list[torch.Tensor],
-    old_losses: torch.Tensor,
+    old_losses: torch.Tensor | None,
     advantages: torch.Tensor,
     returns: torch.Tensor,
     valid: torch.Tensor,
@@ -395,43 +411,59 @@ def _update_minibatch(
     algorithm: dict[str, Any],
     epoch: int,
     start: int,
+    update_actor: bool,
 ) -> dict[str, Any]:
     """Apply one memory-bounded actor/critic minibatch update."""
 
     started = torch.cuda.Event(enable_timing=True)
     finished = torch.cuda.Event(enable_timing=True)
     started.record()
-    model = session.model
-    current_detached = _flow_losses(
-        model, batch, noises, times, indices, gradient=False
-    ).requires_grad_(True)
-    proxy_loss, ratio_metrics = clipped_flow_ppo_loss(
-        current_detached,
-        old_losses.index_select(0, indices),
-        advantages.index_select(0, indices),
-        valid.index_select(0, indices),
-        ratio_clip=algorithm["ratio_clip"],
-        log_ratio_clamp=algorithm["log_ratio_clamp"],
-    )
-    coefficients = torch.autograd.grad(proxy_loss, current_detached)[0].detach()
-    session.optimizer.zero_grad(set_to_none=True)
-    for sample, (noise, flow_time) in enumerate(zip(noises, times, strict=True)):
-        with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-            current, _ = model.forward(
-                _slice_batch(batch, indices),
-                noise=noise.index_select(0, indices),
-                time=flow_time.index_select(0, indices),
-                reduction="none",
-            )
-            surrogate = (current * coefficients[:, sample]).sum()
-        surrogate.backward()
-    actor_grad = torch.nn.utils.clip_grad_norm_(
-        trainable, algorithm["actor_gradient_clip_norm"]
-    )
-    if not torch.isfinite(actor_grad):
-        raise TemporalCreditError("actor gradient is non-finite")
-    session.optimizer.step()
-    session.optimizer.zero_grad(set_to_none=True)
+    if update_actor:
+        if old_losses is None:
+            raise TemporalCreditError("actor update lacks frozen old-policy losses")
+        model = session.model
+        current_detached = _flow_losses(
+            model, batch, noises, times, indices, gradient=False
+        ).requires_grad_(True)
+        proxy_loss, ratio_metrics = clipped_flow_ppo_loss(
+            current_detached,
+            old_losses.index_select(0, indices),
+            advantages.index_select(0, indices),
+            valid.index_select(0, indices),
+            ratio_clip=algorithm["ratio_clip"],
+            log_ratio_clamp=algorithm["log_ratio_clamp"],
+        )
+        coefficients = torch.autograd.grad(proxy_loss, current_detached)[0].detach()
+        session.optimizer.zero_grad(set_to_none=True)
+        for sample, (noise, flow_time) in enumerate(zip(noises, times, strict=True)):
+            with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+                current, _ = model.forward(
+                    _slice_batch(batch, indices),
+                    noise=noise.index_select(0, indices),
+                    time=flow_time.index_select(0, indices),
+                    reduction="none",
+                )
+                surrogate = (current * coefficients[:, sample]).sum()
+            surrogate.backward()
+        actor_grad = torch.nn.utils.clip_grad_norm_(
+            trainable, algorithm["actor_gradient_clip_norm"]
+        )
+        if not torch.isfinite(actor_grad):
+            raise TemporalCreditError("actor gradient is non-finite")
+        session.optimizer.step()
+        session.optimizer.zero_grad(set_to_none=True)
+        actor_loss = float(proxy_loss.detach())
+    else:
+        actor_grad = torch.zeros((), device=features.device)
+        actor_loss = 0.0
+        ratio_metrics = {
+            "valid_transitions": int(valid.index_select(0, indices).sum()),
+            "ratio_mean": 1.0,
+            "ratio_min": 1.0,
+            "ratio_max": 1.0,
+            "ratio_clip_fraction": 0.0,
+            "approx_kl": 0.0,
+        }
 
     critic_optimizer.zero_grad(set_to_none=True)
     predicted = critic(features.index_select(0, indices))
@@ -451,7 +483,8 @@ def _update_minibatch(
     return {
         "epoch": epoch,
         "minibatch_start": start,
-        "actor_loss": float(proxy_loss.detach()),
+        "actor_update_enabled": update_actor,
+        "actor_loss": actor_loss,
         "critic_loss": float(critic_loss.detach()),
         "actor_gradient_norm": float(actor_grad),
         "critic_gradient_norm": float(critic_grad),
@@ -476,6 +509,8 @@ def train_temporal_credit_round(
     trainable = [value for value in model.parameters() if value.requires_grad]
     if sum(value.numel() for value in trainable) != spec["lora"]["trainable_parameters"]:
         raise TemporalCreditError("RL trainable policy parameter count changed")
+    update_actor = _actor_update_enabled(algorithm, round_index=round_index)
+    actor_before = [value.detach().clone() for value in trainable]
     batch, noises, times = prepare_temporal_flow_batch(session, replay, algorithm)
     features = encode_frozen_critic_features(
         session,
@@ -486,9 +521,12 @@ def train_temporal_credit_round(
     advantages, returns, valid, advantage_std = _temporal_targets(
         critic, features, replay, algorithm
     )
-    all_indices = torch.arange(len(replay["row_keys"]), device=features.device)
     valid_indices = torch.nonzero(valid, as_tuple=False).flatten()
-    old_losses = _flow_losses(model, batch, noises, times, all_indices, gradient=False).detach()
+    if update_actor:
+        all_indices = torch.arange(len(replay["row_keys"]), device=features.device)
+        old_losses = _flow_losses(model, batch, noises, times, all_indices, gradient=False).detach()
+    else:
+        old_losses = None
     with torch.no_grad():
         old_values = critic(features)
     records: list[dict[str, Any]] = []
@@ -520,19 +558,28 @@ def train_temporal_credit_round(
                 algorithm=algorithm,
                 epoch=epoch,
                 start=start,
+                update_actor=update_actor,
             )
             records.append(record)
-            if record["approx_kl"] > algorithm["target_kl"]:
+            if update_actor and record["approx_kl"] > algorithm["target_kl"]:
                 stop_for_kl = True
                 break
         if stop_for_kl:
             break
     with torch.no_grad():
         final_values = critic(features)
+    actor_state_unchanged = all(
+        torch.equal(before, after.detach())
+        for before, after in zip(actor_before, trainable, strict=True)
+    )
     valid_returns = returns[valid]
     return {
         "updates": records,
         "optimizer_updates": len(records),
+        "actor_optimizer_updates": len(records) if update_actor else 0,
+        "critic_optimizer_updates": len(records),
+        "actor_update_enabled": update_actor,
+        "actor_state_unchanged": actor_state_unchanged,
         "valid_transitions": int(valid.sum()),
         "advantage_std_before_normalization": advantage_std,
         "critic_explained_variance_before": explained_variance(valid_returns, old_values[valid]),
@@ -543,7 +590,10 @@ def train_temporal_credit_round(
             and advantage_std > 1e-8
             and all(math.isfinite(value["actor_loss"]) for value in records)
             and all(math.isfinite(value["critic_loss"]) for value in records)
-            and all(value["actor_gradient_norm"] > 0 for value in records)
+            and (
+                (not update_actor and actor_state_unchanged)
+                or (update_actor and all(value["actor_gradient_norm"] > 0 for value in records))
+            )
             and all(value["critic_gradient_norm"] > 0 for value in records)
         ),
     }

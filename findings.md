@@ -2273,3 +2273,39 @@
   must be separately frozen, start from the immutable initializations, and
   correct the critic/data-acquisition mismatch rather than silently resuming to
   episode 24.
+
+## Critic-only warmup is the next frozen compatibility discriminator
+
+- Before any new outcome, the official FPO++ implementation at commit
+  `b80112be1e8362263c4cd176e7aef21a275ff1c6` identified one narrow mechanism
+  correction: its default manipulation schedule trains the value function for
+  the first iteration before policy updates. The new EMBER contract therefore
+  changes only that ordering, aligns GAE lambda to `0.99`, and removes the
+  previous externally added Gaussian action noise. It does not claim a full
+  FPO++ reproduction and does not import its million-step scale.
+- `configs/gate_zero_task_local_rl_critic_warmup.toml` is frozen at SHA256
+  `51fc9a009d0fa93476ba47a22d86e95a5d89f32182057843c3129e4147725a8a`.
+  Tasks 3/4, fresh source slice, base/SFT starting vectors, all 37 LoRA targets,
+  rank 32/alpha 16/dropout 0, evaluator, query/drift safeguards, success Gate,
+  four matched arms, and source/validation/held boundaries are unchanged. It
+  starts fresh rather than resuming the behaviorally negative episode-16
+  state.
+- Episode 8 is a critic-only mechanics boundary: all four LoRA actors must be
+  bitwise unchanged and have zero actor optimizer steps while each critic has
+  finite positive updates. Later nodes 16/24/32 enable ordinary task-local
+  LoRA RL. The source-development continuation ladder is result-blind and
+  bounded; a candidate stops immediately, episode 24 needs a predeclared
+  positive trend to open 32, and there is no episode 40.
+- This remains the owner-approved Gate-0 four-arm recovery: frozen base,
+  supervised LoRA, zero-init LoRA plus ordinary task-local RL, and supervised-
+  init LoRA plus identical RL. If only an RL arm succeeds, the supported claim
+  is useful task-local LoRA RL capacity, not supervised zero-interaction
+  utility. Supervised-init helps adaptation only if it beats matched zero-init.
+  No Writer parameter is present or updated here.
+- The later EMBER stages remain scientifically distinct: supervised Writer
+  cold start updates Writer through independent query behavioral loss;
+  Writer-only RL freezes base and treats generated LoRA as a functional output
+  while reward updates Writer only; ordinary LoRA RL freezes Writer/base and
+  optimizes the task-local LoRA in place; adaptation-aware source meta-outer
+  learning updates Writer through the inner LoRA adaptation. These stages must
+  not be merged into one result.

@@ -72,6 +72,7 @@ def _validate_upstream_hashes(
         "candidate_diagnostic_result_sha256",
         "previous_awr_result_sha256",
         "previous_signed_result_sha256",
+        "previous_temporal_result_sha256",
         "source_base_checkpoint_manifest_sha256",
         "task3_supervised_manifest_sha256",
         "task3_supervised_state_sha256",
@@ -101,13 +102,14 @@ def _validate_lora_and_optimizer(spec: Mapping[str, Any], fit: Mapping[str, Any]
     _require_equal(authority.get("supervised_step"), 1000, "supervised_step")
     _require_equal(authority.get("writer_present"), False, "writer_present")
     required_algorithm = {
-        "name": "chunk_level_flow_ppo_with_task_local_critic_and_gae",
+        "name": "chunk_level_flow_ppo_with_task_local_critic_warmup_and_gae",
         "primary_source_fpo_plus": "https://arxiv.org/abs/2602.02481",
         "primary_source_fpo": "https://arxiv.org/abs/2507.21053",
         "primary_source_code_commit": "b80112be1e8362263c4cd176e7aef21a275ff1c6",
         "not_full_fpo_plus": True,
         "discount": 0.99,
-        "gae_lambda": 0.95,
+        "gae_lambda": 0.99,
+        "critic_only_rounds": 1,
         "critic": "task_local_frozen_feature_mlp",
         "critic_input_dim": 1953,
         "critic_hidden_dims": [512, 256],
@@ -148,20 +150,18 @@ def _validate_recovery_provenance(spec: Mapping[str, Any]) -> None:
     if not isinstance(provenance, dict):
         raise GateZeroTaskLocalRLContractError("task-local RL recovery provenance is missing")
     expected = {
-        "awr_contract_sha256": "75ceeec398f472d53fb1c7b88b4dd135469b0f841bbf8ac3dfc0ac4b13cd5c68",
-        "awr_result_sha256": "aab151ea503dbada6eaf3a2242301562a47052e1399ec10986c2279425c13b57",
-        "signed_flow_ratio_contract_sha256": "d322339eb417536a8b96b124b3c8d6324c4b25b95e89f4a3cffb5d6cadce200c",
-        "signed_flow_ratio_result_sha256": "73d681caf4f5d6b67519eb33636e9af905aec7412c18c5d85cd1aaf8d3488703",
-        "action_aligned_contract_sha256": "3d5b54be47c20bf29e356395f43ad2c9d43834b90eded994e68b141be0902246",
-        "action_aligned_task3_step10_manifest_sha256": "c9b0d9407b9a386d4a152116b7cd328d4ac961c51624957f8bb0d2a9df5e5571",
-        "action_aligned_task4_step10_manifest_sha256": "292781f4205384f1f130681addd50dc575b0983acd82e4f6dfd7355a89a8acbb",
+        "temporal_credit_contract_sha256": "0cfd1c74ced6b5cdc0e792d1af48555df6f2346527377cdc753ba46fc35955d2",
+        "temporal_credit_result_sha256": "e13456343564880e6ef02d48119636774e0a06b783e6f4b0218692f104afa14c",
+        "temporal_credit_status": "task_local_rl_early_check_not_supported",
+        "temporal_credit_zero_init_paired_net_wins": [-1, 0],
+        "temporal_credit_supervised_init_paired_net_wins": [0, 0],
     }
     for key, value in expected.items():
         _require_equal(provenance.get(key), value, f"predecessor_evidence.{key}")
     _require_equal(
-        spec["authority"].get("previous_signed_result_sha256"),
-        expected["signed_flow_ratio_result_sha256"],
-        "authority.previous_signed_result_sha256",
+        spec["authority"].get("previous_temporal_result_sha256"),
+        expected["temporal_credit_result_sha256"],
+        "authority.previous_temporal_result_sha256",
     )
 
 
@@ -169,7 +169,7 @@ def _validate_surfaces_and_decisions(spec: Mapping[str, Any]) -> None:
     _require_equal(spec.get("schema_version"), 1, "schema_version")
     _require_equal(
         spec.get("status"),
-        "fpo_plus_anchored_temporal_credit_recovery_predeclared_after_action_aligned_stop",
+        "fpo_compatibility_critic_warmup_recovery_predeclared_after_temporal_credit_stop",
         "status",
     )
     _require_equal(spec.get("task_ids"), [3, 4], "task_ids")
@@ -193,22 +193,34 @@ def _validate_surfaces_and_decisions(spec: Mapping[str, Any]) -> None:
         raise GateZeroTaskLocalRLContractError("task-local RL surface declaration is missing")
     _validate_recovery_provenance(spec)
     _require_equal(training["batch_size"], 8, "training batch_size")
-    _require_equal(training["rounds_maximum"], 2, "training rounds_maximum")
-    _require_equal(training["interaction_episode_nodes"], [8, 16], "interaction nodes")
+    _require_equal(training["rounds_maximum"], 4, "training rounds_maximum")
+    _require_equal(training["interaction_episode_nodes"], [8, 16, 24, 32], "interaction nodes")
     _require_equal(training["atomic_checkpoint_every_episodes"], 8, "checkpoint interval")
     _require_equal(
         training["train_init_state_indices_by_round"],
-        [list(range(start, start + 8)) for start in (8, 16)],
+        [list(range(start, start + 8)) for start in (8, 16, 24, 32)],
         "training init states",
     )
     _require_equal(development["init_state_indices"], list(range(40, 48)), "development init states")
-    _require_equal(development["evaluate_after_interaction_episodes"], [8, 16], "development nodes")
+    _require_equal(development["evaluate_after_interaction_episodes"], [8, 16, 24, 32], "development nodes")
     _require_equal(development["frozen_base_successes_by_task"], [3, 3], "base J0")
     _require_equal(development["supervised_lora_successes_by_task"], [2, 4], "supervised J0")
     _require_equal(safeguards["maximum_action_drift_proxy"], 0.02, "drift safeguard")
-    _require_equal(continuation["stage8_otherwise_continues_only_if_temporal_credit_healthy"], True, "stage8 continuation")
-    _require_equal(continuation["stage16_failure_stops_without_more_interaction"], True, "stage16 stop")
-    _require_equal(continuation["stage24_and_later_are_outside_this_recovery"], True, "later boundary")
+    _require_equal(continuation["stage8_requires_exact_actor_identity_and_healthy_critic_warmup"], True, "stage8 continuation")
+    _require_equal(continuation["stage16_continues_once_if_mechanics_and_temporal_credit_are_healthy"], True, "stage16 continuation")
+    _require_equal(continuation["stage24_continue_requires_positive_aggregate_paired_net_gain_in_one_initialization"], True, "stage24 continuation")
+    _require_equal(continuation["stage24_promising_arm_minimum_task_paired_net_win"], -1, "stage24 task floor")
+    _require_equal(continuation["stage32_failure_stops_without_more_interaction"], True, "stage32 stop")
+    _require_equal(continuation["stage40_and_later_are_outside_this_recovery"], True, "later boundary")
+    _require_equal(
+        continuation["nonterminal_statuses"],
+        [
+            "critic_warmup_complete_continue_to_16",
+            "critic_warmup_recovery_continue_to_24",
+            "critic_warmup_recovery_continue_to_32",
+        ],
+        "nonterminal statuses",
+    )
     _require_equal(decision["minimum_each_task_success_gain_exclusive_pp"], 0.0, "task gain")
     _require_equal(decision["minimum_positive_task_count"], 2, "positive task count")
     _require_equal(decision["minimum_median_success_gain_pp"], 15.0, "median gain")
@@ -253,10 +265,12 @@ def validate_task_local_rl_spec(
     fit = _load_toml(fit_path, "mature LoRA fit contract")
     _validate_lora_and_optimizer(spec, fit)
     exploration = spec.get("exploration", {})
-    _require_equal(exploration.get("standard_deviation"), [0.05] * 6 + [0.0], "exploration std")
+    _require_equal(exploration.get("kind"), "native_stochastic_flow_sampling_with_no_external_action_noise", "exploration kind")
+    _require_equal(exploration.get("standard_deviation"), [0.0] * 7, "exploration std")
     _require_equal(exploration.get("clip_low"), [-1.0] * 7, "exploration low")
     _require_equal(exploration.get("clip_high"), [1.0] * 7, "exploration high")
-    _require_equal(exploration.get("maximum_saturation_fraction"), 0.05, "saturation safeguard")
+    _require_equal(exploration.get("external_action_noise"), False, "external action noise")
+    _require_equal(exploration.get("maximum_saturation_fraction"), 0.0, "saturation safeguard")
     return spec
 
 
@@ -304,7 +318,7 @@ def _arm_passes(nets: list[int], spec: Mapping[str, Any]) -> bool:
 def decide_task_local_rl_node(
     spec: Mapping[str, Any], *, interaction_episodes: int, metrics: Mapping[str, Any]
 ) -> dict[str, Any]:
-    """Apply the frozen two-node temporal-credit selection rule."""
+    """Apply the frozen four-node critic-warmup recovery selection rule."""
 
     if interaction_episodes not in spec["training_interaction"]["interaction_episode_nodes"]:
         raise GateZeroTaskLocalRLContractError("unknown task-local RL decision node")
@@ -315,6 +329,7 @@ def decide_task_local_rl_node(
     if not isinstance(drift, dict) or set(drift) != set(nets):
         raise GateZeroTaskLocalRLContractError("RL decision lacks drift safeguards")
     passed = [arm for arm, values in nets.items() if _arm_passes(values, spec)]
+    warmup_identity = metrics.get("critic_warmup_actor_state_unchanged") is True
     safeguards = (
         metrics.get("mechanics_valid") is True
         and metrics.get("temporal_credit_healthy") is True
@@ -327,6 +342,11 @@ def decide_task_local_rl_node(
             and value <= spec["offline_safeguards"]["maximum_action_drift_proxy"]
             for value in drift.values()
         )
+        and (interaction_episodes != 8 or warmup_identity)
+        and (
+            interaction_episodes != 8
+            or all(value == 0 for values in nets.values() for value in values)
+        )
     )
     status: str
     selected: int | None = None
@@ -336,7 +356,15 @@ def decide_task_local_rl_node(
         status = "rl_candidate_selected_for_fresh_gate"
         selected = interaction_episodes
     elif interaction_episodes == 8:
-        status = "task_local_rl_temporal_credit_continue_to_16"
+        status = "critic_warmup_complete_continue_to_16"
+    elif interaction_episodes == 16:
+        status = "critic_warmup_recovery_continue_to_24"
+    elif interaction_episodes == 24 and any(
+        sum(values) > 0
+        and min(values) >= spec["continuation"]["stage24_promising_arm_minimum_task_paired_net_win"]
+        for values in nets.values()
+    ):
+        status = "critic_warmup_recovery_continue_to_32"
     else:
         status = "task_local_rl_early_check_not_supported"
     return {

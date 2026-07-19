@@ -211,6 +211,7 @@ def _recovery_authorities(
         "candidate_diagnostic_result_sha256": spec["authority"]["candidate_diagnostic_result_sha256"],
         "previous_awr_result_sha256": spec["authority"]["previous_awr_result_sha256"],
         "previous_signed_result_sha256": spec["authority"]["previous_signed_result_sha256"],
+        "previous_temporal_result_sha256": spec["authority"]["previous_temporal_result_sha256"],
         "task_id": task_id,
         "initialization": initialization,
         "fit_variant": spec["authority"]["fit_variant"],
@@ -224,6 +225,8 @@ def _resume_or_initialize(
     arm: LiveRLArm,
     arm_root: Path,
     authorities: dict[str, Any],
+    spec: Mapping[str, Any],
+    stop_after_episodes: int,
     resume: bool,
 ) -> int:
     if not resume:
@@ -239,7 +242,11 @@ def _resume_or_initialize(
         auxiliary_optimizer=arm.critic_optimizer,
         expected={"authorities": authorities},
     )
-    if step != 8:
+    expected_step = (
+        stop_after_episodes
+        - spec["training_interaction"]["episodes_per_round_per_task_initialization"]
+    )
+    if step != expected_step:
         raise GateZeroTaskLocalRLRuntimeError("RL resume step is not an atomic round boundary")
     return step
 
@@ -483,6 +490,12 @@ def _aggregate_stage(
             ]
             for initialization in spec["initializations"]
         },
+        "critic_warmup_actor_state_unchanged": all(
+            value["rounds"][0]["training"]["actor_state_unchanged"] is True
+            and value["rounds"][0]["training"]["actor_optimizer_updates"] == 0
+            and value["rounds"][0]["training"]["critic_optimizer_updates"] > 0
+            for value in records
+        ),
         "supervised_init_advantage_paired_wins_by_task": [
             sum(
                 int(supervised) - int(zero)
@@ -557,7 +570,7 @@ def _publish_stage(
     atomic_json(args.output_dir / "eval_info.json", eval_info)
     build_eval_gallery(args.output_dir)
     update_latest_link(args.output_dir, args.latest_link)
-    if stage["status"] != "task_local_rl_temporal_credit_continue_to_16":
+    if stage["status"] not in spec["continuation"]["nonterminal_statuses"]:
         atomic_json(args.output_dir / RESULT_NAME, stage)
         write_output_checksums(args.output_dir)
 
@@ -588,12 +601,13 @@ def _load_run_inputs(
         != spec["authority"]["source_base_checkpoint_manifest_sha256"]
     ):
         raise GateZeroTaskLocalRLRuntimeError("source-base checkpoint hash changed")
-    headroom, _, _, _ = validate_result_authorities(
+    headroom, _, _, _, _ = validate_result_authorities(
         spec,
         headroom_result=args.headroom_result,
         diagnostic_result=args.diagnostic_result,
         previous_awr_result=args.previous_awr_result,
         previous_signed_result=args.previous_signed_result,
+        previous_temporal_result=args.previous_temporal_result,
     )
     return spec, parent, phase0, fit, checkpoint, headroom
 
@@ -632,6 +646,8 @@ def run_task_local_rl(args: argparse.Namespace) -> dict[str, Any]:
             arm=arm,
             arm_root=arm_root,
             authorities=authorities,
+            spec=spec,
+            stop_after_episodes=args.stop_after_episodes,
             resume=args.resume,
         )
         if (
@@ -714,6 +730,7 @@ def _parse_args() -> argparse.Namespace:
         "config gate-zero-contract phase0-contract fit-contract headroom-contract "
         "diagnostic-contract manifest dataset-root source-base-checkpoint fit-root "
         "headroom-result diagnostic-result previous-awr-result previous-signed-result "
+        "previous-temporal-result "
         "output-dir latest-link"
     ).split():
         parser.add_argument(f"--{name}", required=True, type=Path)

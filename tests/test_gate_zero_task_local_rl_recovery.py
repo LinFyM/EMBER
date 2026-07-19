@@ -21,13 +21,13 @@ from ember.gate_zero_task_local_rl.contract import (  # noqa: E402
 )
 from ember.gate_zero_task_local_rl.runtime import (  # noqa: E402
     AnchorRecordingEnvPreprocessor,
-    ExplorationActionProcessor,
     build_balanced_replay_batch,
     validated_flow_action_shape,
     validate_training_reset_events,
 )
 from ember.gate_zero_task_local_rl.temporal_credit import (  # noqa: E402
     TemporalCritic,
+    _actor_update_enabled,
     _select_real_camera_inputs,
     calculate_masked_gae,
     clipped_flow_ppo_loss,
@@ -42,7 +42,7 @@ from ember.gate_zero_oracle_session import capture_trainable_state  # noqa: E402
 class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.path = ROOT / "configs" / "gate_zero_task_local_rl_temporal_credit.toml"
+        cls.path = ROOT / "configs" / "gate_zero_task_local_rl_critic_warmup.toml"
         cls.gate_zero = ROOT / "configs" / "gate_zero_oracle_pilot.toml"
         cls.phase0 = ROOT / "configs" / "phase0.toml"
         cls.fit = ROOT / "configs" / "gate_zero_mature_lora_lr_recovery.toml"
@@ -67,17 +67,21 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         self.assertFalse(self.spec["authority"]["writer_present"])
         self.assertFalse(self.spec["algorithm"]["shared_parameter_updates"])
         self.assertFalse(self.spec["algorithm"]["writer_updates"])
-        self.assertEqual(self.spec["training_interaction"]["interaction_episode_nodes"], [8, 16])
-        self.assertEqual(self.spec["exploration"]["standard_deviation"], [0.05] * 6 + [0.0])
+        self.assertEqual(
+            self.spec["training_interaction"]["interaction_episode_nodes"],
+            [8, 16, 24, 32],
+        )
+        self.assertEqual(self.spec["exploration"]["standard_deviation"], [0.0] * 7)
         self.assertEqual(
             self.spec["algorithm"]["name"],
-            "chunk_level_flow_ppo_with_task_local_critic_and_gae",
+            "chunk_level_flow_ppo_with_task_local_critic_warmup_and_gae",
         )
         self.assertTrue(self.spec["algorithm"]["not_full_fpo_plus"])
         self.assertEqual(self.spec["algorithm"]["flow_samples_per_transition"], 8)
         self.assertEqual(self.spec["algorithm"]["critic"], "task_local_frozen_feature_mlp")
         self.assertEqual(self.spec["algorithm"]["discount"], 0.99)
-        self.assertEqual(self.spec["algorithm"]["gae_lambda"], 0.95)
+        self.assertEqual(self.spec["algorithm"]["gae_lambda"], 0.99)
+        self.assertEqual(self.spec["algorithm"]["critic_only_rounds"], 1)
 
     def test_four_rank_assignment_has_no_duplicate_or_idle_arm(self) -> None:
         assignments = [assigned_task_local_rl_arm(rank=i, world_size=4, spec=self.spec) for i in range(4)]
@@ -87,44 +91,70 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         )
         self.assertEqual(len(set(assignments)), 4)
 
-    def _metrics(self, *, zero=(2, 1), supervised=(2, 1), drift=0.01) -> dict:
+    def _metrics(self, *, zero=(0, 0), supervised=(0, 0), drift=0.01) -> dict:
         return {
             "mechanics_valid": True,
             "temporal_credit_healthy": True,
-            "maximum_saturation_fraction": 0.01,
+            "maximum_saturation_fraction": 0.0,
             "nonfinite_count": 0,
             "action_drift_by_arm": {"zero_init_rl": drift, "supervised_init_rl": drift},
+            "critic_warmup_actor_state_unchanged": True,
             "paired_net_wins_by_arm": {
                 "zero_init_rl": list(zero),
                 "supervised_init_rl": list(supervised),
             },
         }
 
-    def test_stage8_continues_only_healthy_temporal_credit_and_stage16_stops(self) -> None:
+    def test_critic_warmup_and_result_blind_four_node_decisions(self) -> None:
         continued = decide_task_local_rl_node(
             self.spec,
             interaction_episodes=8,
-            metrics=self._metrics(zero=(0, 0), supervised=(0, 0)),
+            metrics=self._metrics(),
         )
-        self.assertEqual(continued["status"], "task_local_rl_temporal_credit_continue_to_16")
-        unhealthy = self._metrics(zero=(0, 0), supervised=(0, 0))
+        self.assertEqual(continued["status"], "critic_warmup_complete_continue_to_16")
+        identity_failed = self._metrics(zero=(1, 0))
+        self.assertEqual(
+            decide_task_local_rl_node(
+                self.spec, interaction_episodes=8, metrics=identity_failed
+            )["status"],
+            "task_local_rl_mechanical_or_safeguard_failure",
+        )
+        unhealthy = self._metrics()
         unhealthy["temporal_credit_healthy"] = False
         stopped_early = decide_task_local_rl_node(
             self.spec, interaction_episodes=8, metrics=unhealthy
         )
         self.assertEqual(stopped_early["status"], "task_local_rl_mechanical_or_safeguard_failure")
-        passed = decide_task_local_rl_node(self.spec, interaction_episodes=16, metrics=self._metrics())
+        stage16 = decide_task_local_rl_node(
+            self.spec, interaction_episodes=16, metrics=self._metrics()
+        )
+        self.assertEqual(stage16["status"], "critic_warmup_recovery_continue_to_24")
+        stopped_at24 = decide_task_local_rl_node(
+            self.spec, interaction_episodes=24, metrics=self._metrics()
+        )
+        self.assertEqual(stopped_at24["status"], "task_local_rl_early_check_not_supported")
+        trended = decide_task_local_rl_node(
+            self.spec,
+            interaction_episodes=24,
+            metrics=self._metrics(zero=(1, 0)),
+        )
+        self.assertEqual(trended["status"], "critic_warmup_recovery_continue_to_32")
+        passed = decide_task_local_rl_node(
+            self.spec,
+            interaction_episodes=32,
+            metrics=self._metrics(zero=(2, 1)),
+        )
         self.assertEqual(passed["status"], "rl_candidate_selected_for_fresh_gate")
-        self.assertEqual(passed["selected_interaction_episodes"], 16)
+        self.assertEqual(passed["selected_interaction_episodes"], 32)
         stopped = decide_task_local_rl_node(
-            self.spec, interaction_episodes=16, metrics=self._metrics(zero=(0, 0), supervised=(0, 0))
+            self.spec, interaction_episodes=32, metrics=self._metrics()
         )
         self.assertEqual(stopped["status"], "task_local_rl_early_check_not_supported")
 
-    def test_stage32_is_not_an_active_decision_node(self) -> None:
+    def test_stage40_is_not_an_active_decision_node(self) -> None:
         with self.assertRaises(GateZeroTaskLocalRLContractError):
             decide_task_local_rl_node(
-                self.spec, interaction_episodes=32, metrics=self._metrics(zero=(1, 0))
+                self.spec, interaction_episodes=40, metrics=self._metrics(zero=(1, 0))
             )
 
     def test_threshold_or_task_mutation_fails_closed(self) -> None:
@@ -140,7 +170,7 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
                 diagnostic_path=self.diagnostic,
             )
         changed = copy.deepcopy(self.spec)
-        changed["predecessor_evidence"]["signed_flow_ratio_result_sha256"] = "0" * 64
+        changed["predecessor_evidence"]["temporal_credit_result_sha256"] = "0" * 64
         with self.assertRaises(GateZeroTaskLocalRLContractError):
             validate_task_local_rl_spec(
                 changed,
@@ -162,7 +192,7 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
                 diagnostic_path=self.diagnostic,
             )
         changed = copy.deepcopy(self.spec)
-        changed["authority"]["previous_signed_result_sha256"] = "0" * 64
+        changed["authority"]["previous_temporal_result_sha256"] = "0" * 64
         with self.assertRaises(GateZeroTaskLocalRLContractError):
             validate_task_local_rl_spec(
                 changed,
@@ -172,33 +202,6 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
                 headroom_path=self.headroom,
                 diagnostic_path=self.diagnostic,
             )
-
-    def test_exploration_processor_is_common_random_and_clips(self) -> None:
-        def identity(value):
-            return value
-
-        kwargs = {
-            "base": identity,
-            "standard_deviation": [0.05] * 6 + [0.0],
-            "low": [-1.0] * 7,
-            "high": [1.0] * 7,
-            "seed": 123,
-        }
-        left = ExplorationActionProcessor(**kwargs)
-        right = ExplorationActionProcessor(**kwargs)
-        action = torch.tensor([[0.99] * 7, [-0.99] * 7])
-        first = left({"action": action.clone()})["action"]
-        second = right({"action": action.clone()})["action"]
-        self.assertTrue(torch.equal(first, second))
-        self.assertTrue(torch.all(first <= 1.0))
-        self.assertTrue(torch.all(first >= -1.0))
-        self.assertGreater(left.total_scalars, 0)
-        self.assertGreaterEqual(left.saturation_fraction, 0.0)
-        self.assertEqual(sum(left.saturated_scalars_by_dimension), left.saturated_scalars)
-        self.assertEqual(len(left.saturated_scalars_by_dimension), 7)
-        self.assertEqual(left.total_scalars, 12)
-        self.assertEqual(left.saturated_scalars_by_dimension[-1], 0)
-        self.assertTrue(torch.equal(first[:, -1], action[:, -1]))
 
     def test_replay_builder_preserves_temporal_order_and_masks_padded_suffix(self) -> None:
         batch_size = 2
@@ -287,9 +290,12 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
 
     def test_launcher_is_one_canonical_four_gpu_staged_path(self) -> None:
         text = self.launcher.read_text(encoding="utf-8")
+        self.assertIn("gate_zero_task_local_rl_critic_warmup.toml", text)
         self.assertIn("--nproc-per-node=4", text)
         self.assertIn('"$stop_after_episodes" == 8', text)
         self.assertIn('"$stop_after_episodes" == 16', text)
+        self.assertIn('"$stop_after_episodes" == 24', text)
+        self.assertIn('"$stop_after_episodes" == 32', text)
         self.assertIn("--resume", text)
         self.assertIn("gpu_telemetry_", text)
         self.assertNotIn("writer", text.lower())
@@ -317,6 +323,11 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
 
 
 class GateZeroTemporalCreditRecoveryTest(unittest.TestCase):
+    def test_actor_updates_start_only_after_frozen_critic_warmup(self) -> None:
+        algorithm = {"critic_only_rounds": 1}
+        self.assertFalse(_actor_update_enabled(algorithm, round_index=0))
+        self.assertTrue(_actor_update_enabled(algorithm, round_index=1))
+
     def test_masked_gae_propagates_terminal_reward_only_through_valid_time(self) -> None:
         rewards = torch.tensor([[0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 0.0]])
         values = torch.zeros_like(rewards)

@@ -931,6 +931,22 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     failed budget. The first such bounded candidate is critic-only warmup before
     actor updates with source-result-blind interaction nodes; keep task3/4,
     LoRA, initializations, evaluator, Gate rule, and held isolation unchanged.
+    That compatibility recovery is now outcome-free frozen in
+    `configs/gate_zero_task_local_rl_critic_warmup.toml` at SHA256
+    `51fc9a009d0fa93476ba47a22d86e95a5d89f32182057843c3129e4147725a8a`.
+    It starts a new trajectory from the immutable zero/SFT initializations,
+    trains only the task-local critic in round 0, requires exact LoRA identity
+    at episode 8, uses `gamma=lambda=0.99`, and removes the added Gaussian
+    action perturbation in favor of SmolVLA's native stochastic flow sampling.
+    Healthy stage 8 exact-resumes to 16; healthy stage 16 exact-resumes once to
+    24; episode 24 opens 32 only if at least one initialization has positive
+    aggregate paired gain and neither task is below -1. Episode 32 is terminal
+    and 40+ is forbidden. A passing node freezes immediately. Run one real-
+    model, no-environment critic-warmup smoke before the first source rollout;
+    it must show zero actor optimizer steps, exact trainable-state identity,
+    finite positive critic gradients, and at least 10GiB device headroom.
+    This is the current cheapest source-only Gate-0 recovery, not a Writer
+    experiment and not permission to reinterpret the completed negative run.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

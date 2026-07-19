@@ -206,7 +206,7 @@ def _open_live_arm(
 def _recovery_authorities(
     *, spec_path: Path, spec: Mapping[str, Any], task_id: int, initialization: str
 ) -> dict[str, Any]:
-    return {
+    result = {
         "task_local_rl_contract_sha256": sha256_file(spec_path),
         "candidate_diagnostic_result_sha256": spec["authority"]["candidate_diagnostic_result_sha256"],
         "previous_awr_result_sha256": spec["authority"]["previous_awr_result_sha256"],
@@ -218,6 +218,10 @@ def _recovery_authorities(
         "trainable_parameters": spec["lora"]["trainable_parameters"],
         "interaction_budget_unit": "source_environment_episodes",
     }
+    for key in ("previous_critic_result_sha256", "support_replay_result_sha256"):
+        if key in spec["authority"]:
+            result[key] = spec["authority"][key]
+    return result
 
 
 def _resume_or_initialize(
@@ -608,6 +612,8 @@ def _load_run_inputs(
         previous_awr_result=args.previous_awr_result,
         previous_signed_result=args.previous_signed_result,
         previous_temporal_result=args.previous_temporal_result,
+        previous_critic_result=args.previous_critic_result,
+        support_replay_result=args.support_replay_result,
     )
     return spec, parent, phase0, fit, checkpoint, headroom
 
@@ -734,6 +740,8 @@ def _parse_args() -> argparse.Namespace:
         "output-dir latest-link"
     ).split():
         parser.add_argument(f"--{name}", required=True, type=Path)
+    parser.add_argument("--previous-critic-result", type=Path)
+    parser.add_argument("--support-replay-result", type=Path)
     parser.add_argument("--physical-gpus", required=True)
     parser.add_argument("--stop-after-episodes", required=True, type=int)
     parser.add_argument("--resume", action="store_true")

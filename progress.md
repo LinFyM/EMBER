@@ -2210,3 +2210,30 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   next source-only recovery must be a new primary-source-supported
   credit/acquisition correction frozen before outcome, not a threshold, task,
   seed, or surface change.
+
+## 2026-07-19 horizon-credit recovery frozen before outcomes
+
+- Verified the primary FPO++ manipulation recipe at commit
+  `b80112be1e8362263c4cd176e7aef21a275ff1c6`: its main benchmark uses a
+  16-step execution horizon. This motivates one bounded compatibility
+  discriminator after the support replay ruled out coverage-only failure. It
+  does not authorize copying the official multi-million-step budget.
+- Added the outcome-free contract
+  `configs/gate_zero_task_local_rl_horizon_credit.toml`, SHA256
+  `491d031565409962cfb96cea09f6ac73ae636a1fe87a14aeb441b18c2d15e05b`.
+  The same trainer now scopes training rollout execution to 16 actions while
+  preserving a 50-slot model action tensor and restoring the canonical 50-step
+  evaluator immediately afterward. Replay contains 25 transitions per episode
+  and 200 rows per arm-round; only the 16 executed actions are unmasked.
+- Kept one canonical four-GPU launcher and made its allowed stage nodes come
+  from the selected sealed contract. For this recovery only 8/16 are legal;
+  stage 24 fails before launch. The prior critic-warmup contract still validates
+  unchanged. Full-replay feature and old-loss capture is microbatched to cap
+  memory without changing row order or the 16-sample actor minibatches.
+- Focused recovery tests pass 21/21; the full repository unittest suite, Python
+  compilation, shell syntax, predecessor-artifact validation, canonical dry
+  run, forbidden-stage dry run, and whitespace checks are the pre-launch gates.
+  After clean Git delivery, run exactly one real-model no-environment smoke on
+  one free GPU. Only a passing smoke with actor identity, finite critic updates,
+  exact 200-row/16-of-50 mechanics, and at least 10GiB headroom may open the
+  four-GPU stage-8 source run.

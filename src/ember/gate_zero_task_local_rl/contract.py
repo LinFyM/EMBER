@@ -12,6 +12,18 @@ class GateZeroTaskLocalRLContractError(RuntimeError):
     """Raised when the task-local RL recovery differs from its sealed contract."""
 
 
+CRITIC_WARMUP_STATUS = (
+    "fpo_compatibility_critic_warmup_recovery_predeclared_after_temporal_credit_stop"
+)
+HORIZON_CREDIT_STATUS = (
+    "fpo_compatibility_horizon_credit_recovery_predeclared_after_support_replay_stop"
+)
+
+
+def _is_horizon_credit(spec: Mapping[str, Any]) -> bool:
+    return spec.get("status") == HORIZON_CREDIT_STATUS
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -80,6 +92,9 @@ def _validate_upstream_hashes(
         "task4_supervised_state_sha256",
     ):
         _require_sha(authority.get(key), key)
+    if _is_horizon_credit(spec):
+        for key in ("previous_critic_result_sha256", "support_replay_result_sha256"):
+            _require_sha(authority.get(key), key)
     return authority
 
 
@@ -102,7 +117,11 @@ def _validate_lora_and_optimizer(spec: Mapping[str, Any], fit: Mapping[str, Any]
     _require_equal(authority.get("supervised_step"), 1000, "supervised_step")
     _require_equal(authority.get("writer_present"), False, "writer_present")
     required_algorithm = {
-        "name": "chunk_level_flow_ppo_with_task_local_critic_warmup_and_gae",
+        "name": (
+            "chunk_level_flow_ppo_with_task_local_critic_warmup_gae_and_horizon_resolved_credit"
+            if _is_horizon_credit(spec)
+            else "chunk_level_flow_ppo_with_task_local_critic_warmup_and_gae"
+        ),
         "primary_source_fpo_plus": "https://arxiv.org/abs/2602.02481",
         "primary_source_fpo": "https://arxiv.org/abs/2507.21053",
         "primary_source_code_commit": "b80112be1e8362263c4cd176e7aef21a275ff1c6",
@@ -136,11 +155,19 @@ def _validate_lora_and_optimizer(spec: Mapping[str, Any], fit: Mapping[str, Any]
         "actor_gradient_clip_norm": 1.0,
         "critic_gradient_clip_norm": 1.0,
         "scheduler": "constant_over_bounded_recovery",
-        "effective_replay_batch_size": 64,
-        "anchors_per_episode": 8,
+        "effective_replay_batch_size": 200 if _is_horizon_credit(spec) else 64,
+        "anchors_per_episode": 25 if _is_horizon_credit(spec) else 8,
         "action_chunk_size": 50,
         "augmentation": "none_on_on_policy_observations",
     }
+    if _is_horizon_credit(spec):
+        required_algorithm.update(
+            {
+                "execution_horizon": 16,
+                "valid_flow_action_steps_per_transition": 16,
+                "inference_microbatch_size": 64,
+            }
+        )
     for key, value in required_algorithm.items():
         _require_equal(algorithm.get(key), value, f"algorithm.{key}")
 
@@ -163,15 +190,37 @@ def _validate_recovery_provenance(spec: Mapping[str, Any]) -> None:
         expected["temporal_credit_result_sha256"],
         "authority.previous_temporal_result_sha256",
     )
+    if _is_horizon_credit(spec):
+        horizon_expected = {
+            "critic_warmup_contract_sha256": "51fc9a009d0fa93476ba47a22d86e95a5d89f32182057843c3129e4147725a8a",
+            "critic_warmup_result_sha256": "986887261b47b9d4dc55ec630f8c914b60d2fbd247e33c1d98c82669e2a8b1a8",
+            "critic_warmup_status": "task_local_rl_early_check_not_supported",
+            "critic_warmup_zero_init_paired_net_wins": [0, 0],
+            "critic_warmup_supervised_init_paired_net_wins": [0, -1],
+            "support_replay_contract_sha256": "f539b7376dd1e265076941d7b45022934802f2931bdb54b866b9b97e1a533909",
+            "support_replay_result_sha256": "7e92b745b53442d0df2b3e36b068402b244b17e7f0a750e053f60510d59c414e",
+            "support_replay_status": "support_replay_no_improvement",
+            "support_replay_supervised_init_paired_net_wins": [0, -1],
+            "support_replay_zero_init_paired_net_wins": [-1, -1],
+        }
+        for key, value in horizon_expected.items():
+            _require_equal(provenance.get(key), value, f"predecessor_evidence.{key}")
+        _require_equal(
+            spec["authority"].get("previous_critic_result_sha256"),
+            horizon_expected["critic_warmup_result_sha256"],
+            "authority.previous_critic_result_sha256",
+        )
+        _require_equal(
+            spec["authority"].get("support_replay_result_sha256"),
+            horizon_expected["support_replay_result_sha256"],
+            "authority.support_replay_result_sha256",
+        )
 
 
 def _validate_surfaces_and_decisions(spec: Mapping[str, Any]) -> None:
-    _require_equal(spec.get("schema_version"), 1, "schema_version")
-    _require_equal(
-        spec.get("status"),
-        "fpo_compatibility_critic_warmup_recovery_predeclared_after_temporal_credit_stop",
-        "status",
-    )
+    horizon_credit = _is_horizon_credit(spec)
+    _require_equal(spec.get("schema_version"), 2 if horizon_credit else 1, "schema_version")
+    _require_equal(spec.get("status"), HORIZON_CREDIT_STATUS if horizon_credit else CRITIC_WARMUP_STATUS, "status")
     _require_equal(spec.get("task_ids"), [3, 4], "task_ids")
     _require_equal(spec.get("initializations"), ["zero_init", "supervised_init"], "initializations")
     _require_equal(
@@ -193,34 +242,40 @@ def _validate_surfaces_and_decisions(spec: Mapping[str, Any]) -> None:
         raise GateZeroTaskLocalRLContractError("task-local RL surface declaration is missing")
     _validate_recovery_provenance(spec)
     _require_equal(training["batch_size"], 8, "training batch_size")
-    _require_equal(training["rounds_maximum"], 4, "training rounds_maximum")
-    _require_equal(training["interaction_episode_nodes"], [8, 16, 24, 32], "interaction nodes")
+    _require_equal(training["rounds_maximum"], 2 if horizon_credit else 4, "training rounds_maximum")
+    nodes = [8, 16] if horizon_credit else [8, 16, 24, 32]
+    _require_equal(training["interaction_episode_nodes"], nodes, "interaction nodes")
     _require_equal(training["atomic_checkpoint_every_episodes"], 8, "checkpoint interval")
     _require_equal(
         training["train_init_state_indices_by_round"],
-        [list(range(start, start + 8)) for start in (8, 16, 24, 32)],
+        [list(range(start, start + 8)) for start in ((8, 16) if horizon_credit else (8, 16, 24, 32))],
         "training init states",
     )
     _require_equal(development["init_state_indices"], list(range(40, 48)), "development init states")
-    _require_equal(development["evaluate_after_interaction_episodes"], [8, 16, 24, 32], "development nodes")
+    _require_equal(development["evaluate_after_interaction_episodes"], nodes, "development nodes")
     _require_equal(development["frozen_base_successes_by_task"], [3, 3], "base J0")
     _require_equal(development["supervised_lora_successes_by_task"], [2, 4], "supervised J0")
     _require_equal(safeguards["maximum_action_drift_proxy"], 0.02, "drift safeguard")
     _require_equal(continuation["stage8_requires_exact_actor_identity_and_healthy_critic_warmup"], True, "stage8 continuation")
-    _require_equal(continuation["stage16_continues_once_if_mechanics_and_temporal_credit_are_healthy"], True, "stage16 continuation")
-    _require_equal(continuation["stage24_continue_requires_positive_aggregate_paired_net_gain_in_one_initialization"], True, "stage24 continuation")
-    _require_equal(continuation["stage24_promising_arm_minimum_task_paired_net_win"], -1, "stage24 task floor")
-    _require_equal(continuation["stage32_failure_stops_without_more_interaction"], True, "stage32 stop")
-    _require_equal(continuation["stage40_and_later_are_outside_this_recovery"], True, "later boundary")
-    _require_equal(
-        continuation["nonterminal_statuses"],
-        [
-            "critic_warmup_complete_continue_to_16",
-            "critic_warmup_recovery_continue_to_24",
-            "critic_warmup_recovery_continue_to_32",
-        ],
-        "nonterminal statuses",
-    )
+    if horizon_credit:
+        _require_equal(continuation["stage16_failure_stops_without_more_interaction"], True, "stage16 stop")
+        _require_equal(continuation["stage24_and_later_are_outside_this_recovery"], True, "later boundary")
+        _require_equal(continuation["nonterminal_statuses"], ["horizon_credit_warmup_complete_continue_to_16"], "nonterminal statuses")
+    else:
+        _require_equal(continuation["stage16_continues_once_if_mechanics_and_temporal_credit_are_healthy"], True, "stage16 continuation")
+        _require_equal(continuation["stage24_continue_requires_positive_aggregate_paired_net_gain_in_one_initialization"], True, "stage24 continuation")
+        _require_equal(continuation["stage24_promising_arm_minimum_task_paired_net_win"], -1, "stage24 task floor")
+        _require_equal(continuation["stage32_failure_stops_without_more_interaction"], True, "stage32 stop")
+        _require_equal(continuation["stage40_and_later_are_outside_this_recovery"], True, "later boundary")
+        _require_equal(
+            continuation["nonterminal_statuses"],
+            [
+                "critic_warmup_complete_continue_to_16",
+                "critic_warmup_recovery_continue_to_24",
+                "critic_warmup_recovery_continue_to_32",
+            ],
+            "nonterminal statuses",
+        )
     _require_equal(decision["minimum_each_task_success_gain_exclusive_pp"], 0.0, "task gain")
     _require_equal(decision["minimum_positive_task_count"], 2, "positive task count")
     _require_equal(decision["minimum_median_success_gain_pp"], 15.0, "median gain")
@@ -356,7 +411,13 @@ def decide_task_local_rl_node(
         status = "rl_candidate_selected_for_fresh_gate"
         selected = interaction_episodes
     elif interaction_episodes == 8:
-        status = "critic_warmup_complete_continue_to_16"
+        status = (
+            "horizon_credit_warmup_complete_continue_to_16"
+            if _is_horizon_credit(spec)
+            else "critic_warmup_complete_continue_to_16"
+        )
+    elif _is_horizon_credit(spec):
+        status = "task_local_rl_early_check_not_supported"
     elif interaction_episodes == 16:
         status = "critic_warmup_recovery_continue_to_24"
     elif interaction_episodes == 24 and any(

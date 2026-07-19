@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 import torch
 
@@ -22,12 +23,14 @@ from ember.gate_zero_task_local_rl.contract import (  # noqa: E402
 from ember.gate_zero_task_local_rl.runtime import (  # noqa: E402
     AnchorRecordingEnvPreprocessor,
     build_balanced_replay_batch,
+    scoped_policy_execution_horizon,
     validated_flow_action_shape,
     validate_training_reset_events,
 )
 from ember.gate_zero_task_local_rl.temporal_credit import (  # noqa: E402
     TemporalCritic,
     _actor_update_enabled,
+    _flow_losses_microbatched,
     _select_real_camera_inputs,
     calculate_masked_gae,
     clipped_flow_ppo_loss,
@@ -43,6 +46,7 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.path = ROOT / "configs" / "gate_zero_task_local_rl_critic_warmup.toml"
+        cls.horizon_path = ROOT / "configs" / "gate_zero_task_local_rl_horizon_credit.toml"
         cls.gate_zero = ROOT / "configs" / "gate_zero_oracle_pilot.toml"
         cls.phase0 = ROOT / "configs" / "phase0.toml"
         cls.fit = ROOT / "configs" / "gate_zero_mature_lora_lr_recovery.toml"
@@ -82,6 +86,46 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         self.assertEqual(self.spec["algorithm"]["discount"], 0.99)
         self.assertEqual(self.spec["algorithm"]["gae_lambda"], 0.99)
         self.assertEqual(self.spec["algorithm"]["critic_only_rounds"], 1)
+
+    def test_horizon_credit_contract_changes_only_training_credit_resolution(self) -> None:
+        horizon = load_task_local_rl_spec(
+            self.horizon_path,
+            gate_zero_path=self.gate_zero,
+            phase0_path=self.phase0,
+            fit_path=self.fit,
+            headroom_path=self.headroom,
+            diagnostic_path=self.diagnostic,
+        )
+        self.assertEqual(horizon["task_ids"], [3, 4])
+        self.assertEqual(horizon["reported_arms"], self.spec["reported_arms"])
+        self.assertEqual(horizon["lora"], self.spec["lora"])
+        self.assertEqual(horizon["algorithm"]["execution_horizon"], 16)
+        self.assertEqual(horizon["algorithm"]["action_chunk_size"], 50)
+        self.assertEqual(horizon["algorithm"]["anchors_per_episode"], 25)
+        self.assertEqual(horizon["algorithm"]["effective_replay_batch_size"], 200)
+        for key in (
+            "init_state_indices",
+            "batch_size",
+            "seed_start",
+            "warmup_seed_start",
+            "policy_rng_seed",
+            "frozen_base_successes_by_task",
+            "supervised_lora_successes_by_task",
+        ):
+            self.assertEqual(
+                horizon["development_evaluation"][key],
+                self.spec["development_evaluation"][key],
+            )
+        self.assertEqual(
+            horizon["development_evaluation"]["evaluate_after_interaction_episodes"],
+            [8, 16],
+        )
+        self.assertEqual(
+            horizon["candidate_decision"], self.spec["candidate_decision"]
+        )
+        self.assertEqual(
+            horizon["training_interaction"]["interaction_episode_nodes"], [8, 16]
+        )
 
     def test_four_rank_assignment_has_no_duplicate_or_idle_arm(self) -> None:
         assignments = [assigned_task_local_rl_arm(rank=i, world_size=4, spec=self.spec) for i in range(4)]
@@ -150,6 +194,32 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
             self.spec, interaction_episodes=32, metrics=self._metrics()
         )
         self.assertEqual(stopped["status"], "task_local_rl_early_check_not_supported")
+
+    def test_horizon_credit_stops_after_one_actor_round_without_gain(self) -> None:
+        horizon = load_task_local_rl_spec(
+            self.horizon_path,
+            gate_zero_path=self.gate_zero,
+            phase0_path=self.phase0,
+            fit_path=self.fit,
+            headroom_path=self.headroom,
+            diagnostic_path=self.diagnostic,
+        )
+        stage8 = decide_task_local_rl_node(
+            horizon, interaction_episodes=8, metrics=self._metrics()
+        )
+        self.assertEqual(stage8["status"], "horizon_credit_warmup_complete_continue_to_16")
+        stage16 = decide_task_local_rl_node(
+            horizon, interaction_episodes=16, metrics=self._metrics()
+        )
+        self.assertEqual(stage16["status"], "task_local_rl_early_check_not_supported")
+        passing = decide_task_local_rl_node(
+            horizon, interaction_episodes=16, metrics=self._metrics(zero=(2, 1))
+        )
+        self.assertEqual(passing["status"], "rl_candidate_selected_for_fresh_gate")
+        with self.assertRaises(GateZeroTaskLocalRLContractError):
+            decide_task_local_rl_node(
+                horizon, interaction_episodes=24, metrics=self._metrics(zero=(2, 1))
+            )
 
     def test_stage40_is_not_an_active_decision_node(self) -> None:
         with self.assertRaises(GateZeroTaskLocalRLContractError):
@@ -248,6 +318,62 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         self.assertEqual(len(set(replay["row_keys"])), 16)
         self.assertTrue(replay["action_is_pad"][0, 21:].all())
 
+    def test_horizon_resolved_replay_masks_unexecuted_model_chunk_suffix(self) -> None:
+        batch_size = 1
+        anchors = [
+            {
+                "step": step,
+                "observation.images.camera1": torch.zeros(
+                    batch_size, 3, 4, 4, dtype=torch.uint8
+                ),
+                "observation.images.camera2": torch.zeros(
+                    batch_size, 3, 4, 4, dtype=torch.uint8
+                ),
+                "observation.state": torch.zeros(batch_size, 8),
+                "task": ["task"],
+            }
+            for step in (0, 16)
+        ]
+        actions = torch.arange(40 * 7, dtype=torch.float32).reshape(1, 40, 7)
+        done = torch.zeros(1, 40, dtype=torch.bool)
+        done[:, 39] = True
+        success = torch.zeros(1, 40, dtype=torch.bool)
+        success[:, 20] = True
+        replay = build_balanced_replay_batch(
+            anchors=anchors,
+            rollout={"action": actions, "done": done, "success": success},
+            seeds=[6200],
+            task_id=3,
+            action_chunk_size=50,
+            execution_horizon=16,
+            anchors_per_episode=2,
+        )
+        self.assertEqual(replay["action"].shape, (2, 50, 7))
+        self.assertTrue(torch.equal(replay["action"][0, :16], actions[0, :16]))
+        self.assertTrue(replay["action_is_pad"][0, 16:].all())
+        self.assertFalse(replay["action_is_pad"][0, :16].any())
+        self.assertEqual(replay["transition_reward"].tolist(), [0.0, 1.0])
+
+    def test_policy_execution_horizon_is_scoped_and_restored(self) -> None:
+        class Policy:
+            def __init__(self) -> None:
+                self.config = SimpleNamespace(n_action_steps=50, chunk_size=50)
+                self.reset_calls = 0
+
+            def reset(self) -> None:
+                self.reset_calls += 1
+
+        policy = Policy()
+        with scoped_policy_execution_horizon(
+            policy, execution_horizon=16, expected_model_chunk_size=50
+        ):
+            self.assertEqual(policy.config.n_action_steps, 16)
+            self.assertEqual(policy.config.chunk_size, 50)
+            self.assertEqual(policy.reset_calls, 1)
+        self.assertEqual(policy.config.n_action_steps, 50)
+        self.assertEqual(policy.config.chunk_size, 50)
+        self.assertEqual(policy.reset_calls, 2)
+
     def test_anchor_recorder_keeps_only_replan_observations_as_uint8(self) -> None:
         recorder = AnchorRecordingEnvPreprocessor(base=lambda value: value, interval=50)
         batch = {
@@ -292,10 +418,8 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         text = self.launcher.read_text(encoding="utf-8")
         self.assertIn("gate_zero_task_local_rl_critic_warmup.toml", text)
         self.assertIn("--nproc-per-node=4", text)
-        self.assertIn('"$stop_after_episodes" == 8', text)
-        self.assertIn('"$stop_after_episodes" == 16', text)
-        self.assertIn('"$stop_after_episodes" == 24', text)
-        self.assertIn('"$stop_after_episodes" == 32', text)
+        self.assertIn('spec["training_interaction"]["interaction_episode_nodes"]', text)
+        self.assertIn("first_interaction_node", text)
         self.assertIn("--resume", text)
         self.assertIn("gpu_telemetry_", text)
         self.assertNotIn("writer", text.lower())
@@ -323,6 +447,32 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
 
 
 class GateZeroTemporalCreditRecoveryTest(unittest.TestCase):
+    def test_flow_loss_capture_is_ordered_and_memory_bounded(self) -> None:
+        class FakeModel:
+            def __init__(self) -> None:
+                self.batch_sizes: list[int] = []
+
+            def forward(self, batch, *, noise, time, reduction):
+                self.batch_sizes.append(len(batch["action"]))
+                return batch["action"][:, 0, 0] + noise[:, 0, 0] * 0 + time[:, 0] * 0, {}
+
+        model = FakeModel()
+        batch = {"action": torch.arange(11, dtype=torch.float32).reshape(11, 1, 1)}
+        noises = [torch.zeros(11, 1, 1), torch.ones(11, 1, 1)]
+        times = [torch.zeros(11, 1), torch.ones(11, 1)]
+        losses = _flow_losses_microbatched(
+            model,
+            batch,
+            noises,
+            times,
+            torch.arange(11),
+            microbatch_size=4,
+        )
+        self.assertEqual(losses.shape, (11, 2))
+        self.assertTrue(torch.equal(losses[:, 0], torch.arange(11)))
+        self.assertTrue(torch.equal(losses[:, 1], torch.arange(11)))
+        self.assertLessEqual(max(model.batch_sizes), 4)
+
     def test_actor_updates_start_only_after_frozen_critic_warmup(self) -> None:
         algorithm = {"critic_only_rounds": 1}
         self.assertFalse(_actor_update_enabled(algorithm, round_index=0))

@@ -54,14 +54,6 @@ done
 IFS=',' read -r -a gpu_indices <<< "$gpus"
 [[ "$(printf '%s\n' "${gpu_indices[@]}" | sort -u | wc -l)" -eq 4 ]] ||
   die "--gpus contains a duplicate"
-[[ "$stop_after_episodes" == 8 || "$stop_after_episodes" == 16 || \
-   "$stop_after_episodes" == 24 || "$stop_after_episodes" == 32 ]] ||
-  die "--stop-after-episodes must be 8, 16, 24, or 32"
-if [[ "$stop_after_episodes" == 8 ]]; then
-  $resume && die "stage 8 must start fresh"
-else
-  $resume || die "stages 16, 24, and 32 must exact-resume the prior output"
-fi
 [[ "$output_dir" = /* ]] || die "--output-dir must be absolute"
 if [[ -z "$latest_link" ]]; then
   latest_link="$(dirname "$output_dir")/latest"
@@ -100,7 +92,10 @@ print(output_root / spec["authority"]["candidate_diagnostic_result_relative_path
 print(output_root / spec["authority"]["previous_awr_result_relative_path"])
 print(output_root / spec["authority"]["previous_signed_result_relative_path"])
 print(output_root / spec["authority"]["previous_temporal_result_relative_path"])
+print(output_root / spec["authority"]["previous_critic_result_relative_path"] if "previous_critic_result_relative_path" in spec["authority"] else "-")
+print(output_root / spec["authority"]["support_replay_result_relative_path"] if "support_replay_result_relative_path" in spec["authority"] else "-")
 print(spec["resources"]["minimum_free_memory_mib"])
+print(",".join(str(value) for value in spec["training_interaction"]["interaction_episode_nodes"]))
 PY
 )
 manifest=${paths[0]}
@@ -112,7 +107,18 @@ diagnostic_result=${paths[5]}
 previous_awr_result=${paths[6]}
 previous_signed_result=${paths[7]}
 previous_temporal_result=${paths[8]}
-minimum_free_memory_mib=${paths[9]}
+previous_critic_result=${paths[9]}
+support_replay_result=${paths[10]}
+minimum_free_memory_mib=${paths[11]}
+interaction_episode_nodes=${paths[12]}
+first_interaction_node=${interaction_episode_nodes%%,*}
+[[ ",$interaction_episode_nodes," == *",$stop_after_episodes,"* ]] ||
+  die "--stop-after-episodes is outside the selected contract: $interaction_episode_nodes"
+if [[ "$stop_after_episodes" == "$first_interaction_node" ]]; then
+  $resume && die "the first stage must start fresh"
+else
+  $resume || die "later stages must exact-resume the prior output"
+fi
 
 command=(
   "$PYTHON" -m torch.distributed.run --standalone --nproc-per-node=4
@@ -137,6 +143,12 @@ command=(
   --physical-gpus "$gpus"
   --stop-after-episodes "$stop_after_episodes"
 )
+if [[ "$previous_critic_result" != "-" ]]; then
+  command+=(--previous-critic-result "$previous_critic_result")
+fi
+if [[ "$support_replay_result" != "-" ]]; then
+  command+=(--support-replay-result "$support_replay_result")
+fi
 $resume && command+=(--resume)
 
 if $dry_run; then
@@ -152,6 +164,9 @@ for path in "$manifest" "$dataset_root" "$source_checkpoint" "$fit_root" \
   "$headroom_result" "$diagnostic_result" "$previous_awr_result" \
   "$previous_signed_result" "$previous_temporal_result"; do
   [[ -e "$path" ]] || die "required authority is missing: $path"
+done
+for path in "$previous_critic_result" "$support_replay_result"; do
+  [[ "$path" == "-" || -e "$path" ]] || die "required recovery authority is missing: $path"
 done
 for gpu in "${gpu_indices[@]}"; do
   active_compute=$(

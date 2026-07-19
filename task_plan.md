@@ -988,6 +988,22 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     mechanism under a new result-before-outcome contract, while keeping tasks
     3/4, all four arms, the canonical reporting evaluator, LoRA support, and
     source/held boundaries fixed.
+    The next result-blind recovery is now frozen in
+    `configs/gate_zero_task_local_rl_horizon_credit.toml` at SHA256
+    `491d0315...e05b`. The official FPO++ manipulation recipe at commit
+    `b80112be...f1c6` uses `n_action_steps=16`; EMBER previously executed 50
+    actions per inference, leaving only eight reward-credit transitions in a
+    400-step episode. The new path changes training collection/credit resolution
+    only: execute 16 actions, retain the native 50-slot SmolVLA model output,
+    mark only the 16 executed actions valid for flow loss, and collect 25
+    ordered transitions per episode. The canonical 50-step development/fresh
+    evaluator, four arms, task3/task4, LoRA, optimizer, seeds, thresholds, and
+    held boundary stay unchanged. Stage 8 remains critic-only; one exact resume
+    to stage 16 is the only actor check. Stage 16 either selects a passing
+    checkpoint or terminates; episode 24+ is forbidden. Before any source
+    outcome, require one real-model zero-environment smoke proving 200 replay
+    rows, ordered 16/50 masking, actor identity, finite critic updates, bounded
+    microbatches, and at least 10GiB device headroom.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

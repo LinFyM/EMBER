@@ -2400,3 +2400,34 @@
   padding, and normalization therefore cannot explain the observed no-gain
   replay. The remaining diagnosis is reward-credit/optimizer acquisition, not
   an action-coordinate implementation failure.
+
+## The next discriminator is training credit resolution, not blind scale
+
+- The official FPO++ manipulation reproduction at code commit
+  `b80112be1e8362263c4cd176e7aef21a275ff1c6` declares
+  `n_action_steps=16`, `data_collection_steps=1600`, and 30 environments for
+  the main benchmark. EMBER's preceding compatibility probes preserved
+  SmolVLA's 50-action execution queue, so each 400-step episode produced only
+  eight reward-credit transitions. This is a concrete compatibility gap after
+  the support-replay and action-coordinate branches were eliminated; it is not
+  evidence that the full official scale should be copied.
+- The outcome-free contract
+  `configs/gate_zero_task_local_rl_horizon_credit.toml` is frozen at SHA256
+  `491d031565409962cfb96cea09f6ac73ae636a1fe87a14aeb441b18c2d15e05b`.
+  Training executes 16 actions per policy inference, records 25 ordered
+  transitions per 400-step episode, and stores each transition in SmolVLA's
+  unchanged 50-slot model action tensor with only the 16 executed actions
+  unmasked. Thus reward is not assigned to unexecuted future actions.
+- This is a single training-acquisition change. The canonical reporting
+  evaluator continues to execute 50 actions; tasks 3/4, all 37 LoRA targets,
+  rank 32/alpha 16/dropout 0, 1,485,312 parameters, zero/SFT starts, optimizer,
+  collection seeds, development/fresh seeds, query/drift safeguards, success
+  thresholds, and source/validation/held boundaries are unchanged. No Writer or
+  shared parameter is present.
+- The recovery has only nodes 8 and 16. Node 8 is critic-only and must preserve
+  the actor exactly. A healthy node 8 may exact-resume once; node 16 must either
+  meet the original two-task positive-improvement rule or stop. There is no
+  episode-24 continuation. A real-model, no-environment smoke must first prove
+  200-row replay mechanics, 16/50 masking, memory-bounded inference, finite
+  critic learning, actor identity, and 10GiB A100 headroom. It is mechanics
+  authorization only, not Gate-0 evidence.

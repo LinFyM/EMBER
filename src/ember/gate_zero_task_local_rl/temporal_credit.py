@@ -298,7 +298,7 @@ def _select_real_camera_inputs(
 
 
 @torch.no_grad()
-def encode_frozen_critic_features(
+def _encode_frozen_critic_feature_batch(
     session: Any,
     batch: dict[str, Any],
     progress: torch.Tensor,
@@ -329,6 +329,37 @@ def encode_frozen_critic_features(
     return features
 
 
+def encode_frozen_critic_features(
+    session: Any,
+    batch: dict[str, Any],
+    progress: torch.Tensor,
+    *,
+    expected_dim: int,
+    microbatch_size: int | None = None,
+) -> torch.Tensor:
+    """Encode critic inputs in bounded batches while preserving replay order."""
+
+    first = next((value for value in batch.values() if torch.is_tensor(value)), None)
+    if first is None or first.ndim == 0:
+        raise TemporalCreditError("critic replay batch is empty")
+    size = len(first)
+    microbatch_size = microbatch_size or size
+    if microbatch_size <= 0 or len(progress) != size:
+        raise TemporalCreditError("invalid critic feature microbatch contract")
+    chunks = []
+    for start in range(0, size, microbatch_size):
+        indices = torch.arange(start, min(start + microbatch_size, size), device=first.device)
+        chunks.append(
+            _encode_frozen_critic_feature_batch(
+                session,
+                _slice_batch(batch, indices),
+                progress.index_select(0, indices.to(progress.device)),
+                expected_dim=expected_dim,
+            )
+        )
+    return torch.cat(chunks, dim=0)
+
+
 def _flow_losses(
     model: nn.Module,
     batch: dict[str, Any],
@@ -350,6 +381,35 @@ def _flow_losses(
             )
         losses.append(value.to(dtype=torch.float32))
     return torch.stack(losses, dim=1)
+
+
+def _flow_losses_microbatched(
+    model: nn.Module,
+    batch: dict[str, Any],
+    noises: list[torch.Tensor],
+    times: list[torch.Tensor],
+    indices: torch.Tensor,
+    *,
+    microbatch_size: int,
+) -> torch.Tensor:
+    """Capture flow losses without one full-replay model forward."""
+
+    if microbatch_size <= 0 or indices.ndim != 1:
+        raise TemporalCreditError("invalid flow-loss microbatch contract")
+    chunks = [
+        _flow_losses(
+            model,
+            batch,
+            noises,
+            times,
+            indices[start : start + microbatch_size],
+            gradient=False,
+        )
+        for start in range(0, len(indices), microbatch_size)
+    ]
+    if not chunks:
+        raise TemporalCreditError("flow-loss microbatch is empty")
+    return torch.cat(chunks, dim=0)
 
 
 def _temporal_targets(
@@ -517,6 +577,7 @@ def train_temporal_credit_round(
         batch,
         replay["transition_progress"],
         expected_dim=algorithm["critic_input_dim"],
+        microbatch_size=algorithm.get("inference_microbatch_size"),
     )
     advantages, returns, valid, advantage_std = _temporal_targets(
         critic, features, replay, algorithm
@@ -524,7 +585,14 @@ def train_temporal_credit_round(
     valid_indices = torch.nonzero(valid, as_tuple=False).flatten()
     if update_actor:
         all_indices = torch.arange(len(replay["row_keys"]), device=features.device)
-        old_losses = _flow_losses(model, batch, noises, times, all_indices, gradient=False).detach()
+        old_losses = _flow_losses_microbatched(
+            model,
+            batch,
+            noises,
+            times,
+            all_indices,
+            microbatch_size=algorithm.get("inference_microbatch_size", len(all_indices)),
+        ).detach()
     else:
         old_losses = None
     with torch.no_grad():

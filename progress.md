@@ -2281,3 +2281,28 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   same-output resume to terminal stage 16 after clean documentation delivery
   and fresh GPU preflight; no parameter, task, seed, threshold, or surface may
   change.
+
+## 2026-07-19 horizon-credit stage 16 terminated negative
+
+- Long-run `gate0_horizon_credit_stage16_20260719_105345` exact-resumed the
+  clean `b50458d` stage-8 output on GPUs 4--7 and completed rc 0 in 7m58s. Peak
+  memory was 19,278MiB on GPU4 and at most 6,439MiB on the other ranks; all
+  devices released. The same output is 170MiB and the bounded Trackio/video
+  evidence remains available.
+- The fixed development gains are zero-init `[-2,+1]` and supervised-init
+  `[0,-1]`. Status is `task_local_rl_early_check_not_supported`; no checkpoint
+  was selected, and Gate 0, Writer, validation, held, and fresh Gate remain
+  closed. Result SHA256 is `771eb3b9...f496`.
+- Revalidated root checksums, every recovery/candidate/round JSON, all eight
+  videos, gallery, and telemetry. Actor/critic update mechanics are healthy,
+  so no stage-24 scale extension is permitted. The next source-only action is
+  to freeze and run one zero-update replay of the exact round-1 training slice
+  from the immutable step-16 actors; it is a diagnostic only and consumes no
+  final closed-loop surface.
+- Frozen that diagnostic before outcome in
+  `configs/gate_zero_task_local_rl_horizon_support_replay.toml`, SHA256
+  `7e676c52...a9cb`. Its script is hash-bound at `54e43db0...2599`; the
+  no-GPU authority dry-run confirms the terminal result, four recovery
+  manifests, initial vectors, 32-episode budget, and validation/held closure.
+  Python compilation and whitespace checks pass. Commit and push this frozen
+  boundary before allocating GPUs 4--7.

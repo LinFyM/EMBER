@@ -2480,3 +2480,33 @@
   the actor and is terminal: it either meets the unchanged two-task positive-
   improvement rule and becomes a candidate for a separately frozen fresh Gate,
   or records a bounded negative and stops. Stage 24 remains impossible.
+
+## Horizon-resolved credit still fails the fixed two-task behavioral Gate
+
+- The exact-resume stage 16 completed rc 0 in 7m58s. All four arms had healthy
+  temporal mechanics, finite gradients, zero nonfinite/saturation events, and
+  bounded KL below `1.7e-4`; every artifact checksum and video decode passed.
+  This is therefore a behavioral negative, not an implementation failure.
+- On the unchanged fixed development slice, zero-init task3/task4 paired net
+  wins were `[-2,+1]`; supervised-init wins were `[0,-1]`. Neither family
+  improved both tasks, and supervised initialization did not improve the
+  matched zero-init trajectory. The isolated task4 `+1` cannot be selected
+  against task3's `-2` under the sealed rule.
+- The terminal result is
+  `task_local_rl_early_check_not_supported`, SHA256
+  `771eb3b9f563492299d7424ef3a63c77003c322f3fb233c555a46f089ff7f496`.
+  Gate 0 and Writer remain unauthorized; there is no selected checkpoint and
+  no validation, held, locked-report, task, seed, or threshold change.
+- The supervised arms still reduce independent query loss by 5.76% and 4.00%
+  while closed-loop behavior is flat/worse. The cheapest remaining
+  discriminator is a zero-update replay of each immutable step-16 actor on its
+  exact round-1 horizon-16 training slice. Improvement there with development
+  failure indicates coverage/generalization; no improvement there isolates
+  reward-credit/optimizer acquisition even on seen horizon support. This new
+  diagnostic cannot itself pass Gate 0 or justify more interaction.
+- The outcome-free replay contract is frozen at SHA256
+  `7e676c52f551d3624759448fd34265ecb00bc3c2ee56841c4bfdc6d84cd5a9cb`.
+  It binds the terminal result and all four step-16 recovery manifests, uses
+  only source round 1 (init states 16--23, seeds 6208--6215, policy RNG
+  2026071961), retains horizon 16 and model chunk 50, and performs exactly zero
+  policy, critic, optimizer, or Writer updates across 32 episodes.

@@ -1025,6 +1025,23 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     candidates, four videos, and telemetry validate; peak memory is 19,266MiB
     and all GPUs release. This authorizes exactly one same-output exact resume
     to terminal stage 16, with no configuration or checkpoint selection.
+    Terminal stage 16 then exact-resumed from the same output and completed rc 0
+    in 7m58s. Mechanics, temporal credit, critic/actor gradients, and all
+    artifact checks remained healthy, but the fixed development paired gains
+    were `[-2,+1]` for zero-init and `[0,-1]` for supervised-init. The result
+    therefore stopped with `task_local_rl_early_check_not_supported`, no
+    selected checkpoint, Gate 0/Writer/validation/held all false, and SHA256
+    `771eb3b9...f496`. Stage 24 remains forbidden. Before any further outcome,
+    freeze one zero-update replay of the exact round-1 horizon-16 training slice
+    from the immutable step-16 actors. This diagnostic may distinguish
+    support acquisition from development generalization, but cannot pass Gate
+    0, select a checkpoint, alter tasks/seeds/thresholds, or authorize Writer.
+    That zero-update diagnostic is now frozen before outcome in
+    `configs/gate_zero_task_local_rl_horizon_support_replay.toml`, SHA256
+    `7e676c52...a9cb`. It binds the terminal result/recovery hashes, round-1
+    init states 16--23, seeds 6208--6215, policy RNG 2026071961, horizon 16,
+    all four initial success vectors, four-rank topology, zero updates, and a
+    32-episode maximum. No video or final Gate surface is consumed.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

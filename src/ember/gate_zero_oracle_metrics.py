@@ -59,6 +59,43 @@ def unit_variance_mean_action_kl(
     return float(0.5 * (adapted_actions.to(torch.float32) - base_actions.to(torch.float32)).square().mean())
 
 
+def select_action_mse_candidate(
+    candidates: list[dict[str, Any]], *, drift_proxy_max: float
+) -> dict[str, Any]:
+    """Select minimum generated-action query MSE under the frozen drift cap."""
+
+    if not candidates or not torch.isfinite(torch.tensor(drift_proxy_max)) or drift_proxy_max < 0:
+        raise ValueError("invalid action-MSE candidates or drift cap")
+    seen_steps: set[int] = set()
+    safe: list[dict[str, Any]] = []
+    for candidate in candidates:
+        step = candidate.get("step")
+        action_mse = candidate.get("query_action_mse_mean")
+        drift = candidate.get("action_drift_proxy")
+        numeric = all(
+            isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and torch.isfinite(torch.tensor(float(value)))
+            for value in (action_mse, drift)
+        )
+        if (
+            not isinstance(step, int)
+            or isinstance(step, bool)
+            or step < 0
+            or step in seen_steps
+            or not numeric
+            or action_mse < 0
+            or drift < 0
+        ):
+            raise ValueError("invalid action-MSE selection candidate")
+        seen_steps.add(step)
+        if drift <= drift_proxy_max:
+            safe.append(candidate)
+    if not safe:
+        raise ValueError("no drift-safe action-MSE candidate")
+    return min(safe, key=lambda value: (float(value["query_action_mse_mean"]), value["step"]))
+
+
 def summarize_action_chunk_errors(
     predicted_actions: torch.Tensor,
     target_actions: torch.Tensor,
@@ -132,6 +169,7 @@ class FixedQueryReference:
     anchor_actions: torch.Tensor
     anchor_row_keys_sha256: str
     anchor_count: int
+    action_error_mse_by_noise_seed: dict[str, float] | None = None
 
 
 class FixedQueryEvaluator:
@@ -149,6 +187,7 @@ class FixedQueryEvaluator:
         fixed_noise_seed: int,
         fixed_time_seed: int,
         inference_noise_seed: int,
+        action_error_inference_noise_seeds: Sequence[int] | None = None,
     ) -> None:
         if batch_size <= 0 or num_workers < 0 or action_chunk_size <= 0:
             raise ValueError("fixed-query loader parameters are invalid")
@@ -158,6 +197,18 @@ class FixedQueryEvaluator:
         self.fixed_noise_seed = fixed_noise_seed
         self.fixed_time_seed = fixed_time_seed
         self.inference_noise_seed = inference_noise_seed
+        self.action_error_inference_noise_seeds = tuple(
+            action_error_inference_noise_seeds or ()
+        )
+        if (
+            len(set(self.action_error_inference_noise_seeds))
+            != len(self.action_error_inference_noise_seeds)
+            or any(
+                not isinstance(seed, int) or isinstance(seed, bool) or seed < 0
+                for seed in self.action_error_inference_noise_seeds
+            )
+        ):
+            raise ValueError("action-error inference noise seeds are invalid")
         loader_kwargs: dict[str, Any] = {}
         if num_workers:
             loader_kwargs.update(persistent_workers=True, prefetch_factor=2)
@@ -251,9 +302,14 @@ class FixedQueryEvaluator:
                 row_keys.extend(keys)
         return torch.cat(values), _row_digest(row_keys)
 
-    def _anchor_action_error_summary(self, model: Any) -> dict[str, Any]:
+    def _anchor_action_error_summary(
+        self, model: Any, *, noise_seed: int | None = None
+    ) -> dict[str, Any]:
         owner = _owner(model)
         device = next(owner.parameters()).device
+        resolved_noise_seed = (
+            self.inference_noise_seed if noise_seed is None else noise_seed
+        )
         predictions: list[torch.Tensor] = []
         targets: list[torch.Tensor] = []
         row_keys: list[str] = []
@@ -266,8 +322,8 @@ class FixedQueryEvaluator:
                 noise, _ = deterministic_flow_inputs(
                     keys,
                     action_shape=(self.action_chunk_size, owner.config.max_action_dim),
-                    noise_seed=self.inference_noise_seed,
-                    time_seed=self.inference_noise_seed + 1,
+                    noise_seed=resolved_noise_seed,
+                    time_seed=resolved_noise_seed + 1,
                     device=device,
                 )
                 owner.reset()
@@ -285,6 +341,18 @@ class FixedQueryEvaluator:
         return summarize_action_chunk_errors(
             torch.cat(predictions), torch.cat(targets), row_keys
         )
+
+    def _action_error_mse_by_noise_seed(self, model: Any) -> dict[str, float]:
+        values: dict[str, float] = {}
+        row_digest: str | None = None
+        for seed in self.action_error_inference_noise_seeds:
+            summary = self._anchor_action_error_summary(model, noise_seed=seed)
+            if row_digest is None:
+                row_digest = summary["row_keys_sha256"]
+            elif summary["row_keys_sha256"] != row_digest:
+                raise ValueError("action-error query identity changed across noise seeds")
+            values[str(seed)] = float(summary["mean_squared_error"])
+        return values
 
     def evaluate_action_chunk_errors(self, model: Any) -> dict[str, Any]:
         """Evaluate generated actions against fixed source-query demonstrations."""
@@ -305,6 +373,7 @@ class FixedQueryEvaluator:
             model.eval()
             query_mse, sample_count, query_digest = self._query_losses(model)
             actions, anchor_digest = self._anchor_actions(model)
+            action_errors = self._action_error_mse_by_noise_seed(model)
             return FixedQueryReference(
                 query_flow_mse=query_mse,
                 query_sample_count=sample_count,
@@ -312,6 +381,7 @@ class FixedQueryEvaluator:
                 anchor_actions=actions,
                 anchor_row_keys_sha256=anchor_digest,
                 anchor_count=len(actions),
+                action_error_mse_by_noise_seed=action_errors or None,
             )
         finally:
             model.train(was_training)
@@ -326,6 +396,7 @@ class FixedQueryEvaluator:
             model.eval()
             query_mse, sample_count, query_digest = self._query_losses(model)
             actions, anchor_digest = self._anchor_actions(model)
+            action_errors = self._action_error_mse_by_noise_seed(model)
         finally:
             model.train(was_training)
             self._restore_rng(rng)
@@ -336,7 +407,7 @@ class FixedQueryEvaluator:
             or len(actions) != reference.anchor_count
         ):
             raise ValueError("candidate query/anchor authority changed")
-        return {
+        metrics = {
             "step": step,
             "query_flow_mse": query_mse,
             "base_query_flow_mse": reference.query_flow_mse,
@@ -348,6 +419,32 @@ class FixedQueryEvaluator:
             "anchor_count": len(actions),
             "anchor_row_keys_sha256": anchor_digest,
         }
+        reference_errors = reference.action_error_mse_by_noise_seed
+        if action_errors or reference_errors:
+            if not action_errors or not reference_errors or set(action_errors) != set(reference_errors):
+                raise ValueError("candidate action-error noise authority changed")
+            query_action_mean = sum(action_errors.values()) / len(action_errors)
+            base_action_mean = sum(reference_errors.values()) / len(reference_errors)
+            if base_action_mean <= 0 or any(value <= 0 for value in reference_errors.values()):
+                raise ValueError("base generated-action MSE is invalid")
+            metrics.update(
+                {
+                    "query_action_mse_by_noise_seed": action_errors,
+                    "base_query_action_mse_by_noise_seed": reference_errors,
+                    "query_action_mse_mean": query_action_mean,
+                    "base_query_action_mse_mean": base_action_mean,
+                    "query_action_mse_reduction_fraction": (
+                        base_action_mean - query_action_mean
+                    )
+                    / base_action_mean,
+                    "query_action_mse_reduction_by_noise_seed": {
+                        seed: (reference_errors[seed] - action_errors[seed])
+                        / reference_errors[seed]
+                        for seed in sorted(action_errors)
+                    },
+                }
+            )
+        return metrics
 
     def close(self) -> None:
         for loader in (self.query_loader, self.anchor_loader):

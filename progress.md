@@ -1980,3 +1980,23 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   stop rule, do not investigate or rerun further because checkpoint/data/
   behavior/Gate/held integrity is unaffected. Use the canonical oracle-fit
   launcher for the newly authorized predeclared action-aligned ladder.
+- Added the result-blind action-aligned acquisition contract at SHA256
+  `3d5b54be47c20bf29e356395f43ad2c9d43834b90eded994e68b141be0902246`.
+  It freezes the unchanged task3/task4 37-target rank-32 LoRA and batch-64
+  support/query surface, a full-sampler generated-action-MSE objective, a
+  5/200-step warmup/decay horizon with unchanged peak/decay LR magnitudes, four
+  query inference-noise seeds, and candidates `0/1/5/10/25/50/100/200`.
+  Step 1 is memory/recovery only; later continuation requires two-task action-
+  MSE evidence under the frozen 0%/1% ladder, and closed-loop access requires
+  at least 2% per-task action-MSE improvement plus drift no greater than 0.02.
+- Extended the single canonical oracle fitter and evaluator rather than adding
+  a trainer: objective dispatch, deterministic row/step/slot sampler noise,
+  multi-noise action-query metrics, action-MSE selection, Trackio logging, and
+  existing atomic resume are one path. Retired the one-time query/action audit
+  controller, launcher, two configs, and experiment-only tests after their
+  packets and next contract were frozen; Git history remains the rollback.
+- Red/green focused tests pass 6/6; the full suite passes 263/263. Python
+  compilation, shell dry-run, prerequisite/hash validation, and diff checks
+  pass. Architecture guard is REVIEW with no hard violation and net active
+  source shrinkage. No new GPU training, simulator, validation, held, locked-
+  report, Gate, or Writer outcome was accessed while freezing this contract.

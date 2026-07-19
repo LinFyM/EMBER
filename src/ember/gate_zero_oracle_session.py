@@ -25,6 +25,7 @@ from ember.gate_zero_oracle_metrics import FixedQueryEvaluator, FixedQueryRefere
 from ember.gate_zero_runtime import (
     batch_provenance_keys,
     build_lora_config,
+    deterministic_flow_inputs,
     parameter_summary,
     physical_lora_deltas,
     preprocess_smolvla_batch,
@@ -39,6 +40,7 @@ MATURE_SUPPORT_QUERY_STAGES = frozenset(
         "mature_capacity_upper_bound",
         "mature_capacity_lr_recovery",
         "mature_lora_lr_recovery",
+        "action_aligned_lora_acquisition_recovery",
     }
 )
 
@@ -372,6 +374,9 @@ def open_oracle_model_session(
             fixed_noise_seed=selection["fixed_noise_seed"],
             fixed_time_seed=selection["fixed_time_seed"],
             inference_noise_seed=selection["inference_noise_seed"],
+            action_error_inference_noise_seeds=selection.get(
+                "action_error_inference_noise_seeds"
+            ),
         )
         lora = resolve_lora_variant_spec(
             parent=parent, variant=variant, variant_spec=variant_spec
@@ -447,6 +452,34 @@ def close_loader(loader: DataLoader | None) -> None:
         iterator._shutdown_workers()
 
 
+def full_sampler_generated_action_mse(
+    model: torch.nn.Module,
+    batch: dict[str, Any],
+    *,
+    noise: torch.Tensor,
+) -> torch.Tensor:
+    """Differentiate normalized action-chunk MSE through SmolVLA's full sampler."""
+
+    owner = model.get_base_model() if hasattr(model, "get_base_model") else model
+    target = batch.get("action")
+    if not isinstance(target, torch.Tensor) or target.ndim != 3:
+        raise GateZeroOracleSessionError("generated-action target is invalid")
+    expected_noise_shape = (
+        target.shape[0],
+        target.shape[1],
+        getattr(owner.config, "max_action_dim", 0),
+    )
+    if noise.shape != expected_noise_shape or not torch.isfinite(noise).all():
+        raise GateZeroOracleSessionError("generated-action training noise is invalid")
+    if getattr(owner.config, "num_steps", None) <= 0:
+        raise GateZeroOracleSessionError("generated-action sampler step count is invalid")
+    owner.reset()
+    predicted = owner._get_action_chunk(batch, noise=noise)
+    if predicted.shape != target.shape or not torch.isfinite(predicted).all():
+        raise GateZeroOracleSessionError("generated action chunk is invalid")
+    return F.mse_loss(predicted, target)
+
+
 def train_oracle_step(
     iterator: Any,
     *,
@@ -475,7 +508,36 @@ def train_oracle_step(
         raw_batch, session.preprocessor, list(owner.config.image_features)
     )
     session.optimizer.zero_grad(set_to_none=True)
-    loss = smolvla_flow_loss(model, batch)
+    objective = variant_spec.get("training_objective", "flow_matching")
+    if objective == "flow_matching":
+        loss = smolvla_flow_loss(model, batch)
+    elif objective == "full_sampler_generated_action_mse":
+        if owner.config.num_steps != variant_spec.get("action_loss_sampler_steps"):
+            raise GateZeroOracleSessionError("generated-action sampler contract changed")
+        target = batch.get("action")
+        if not isinstance(target, torch.Tensor) or target.ndim != 3:
+            raise GateZeroOracleSessionError("generated-action target is missing")
+        if (
+            owner.config.max_action_dim
+            != variant_spec.get("action_loss_noise_dimension")
+            or target.shape[2] != variant_spec.get("generated_action_dimension")
+        ):
+            raise GateZeroOracleSessionError("generated-action dimension contract changed")
+        noise_keys = [
+            f"{key}@optimizer_step={optimizer_step}/batch_slot={slot}"
+            for slot, key in enumerate(row_keys)
+        ]
+        noise, _ = deterministic_flow_inputs(
+            noise_keys,
+            action_shape=(target.shape[1], owner.config.max_action_dim),
+            noise_seed=variant_spec["action_loss_noise_seed"],
+            time_seed=variant_spec["action_loss_noise_seed"] + 1,
+            device=target.device,
+        )
+        with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+            loss = full_sampler_generated_action_mse(model, batch, noise=noise)
+    else:
+        raise GateZeroOracleSessionError("unknown oracle training objective")
     loss.backward()
     trainable = [value for value in model.parameters() if value.requires_grad]
     gradient_norm = torch.nn.utils.clip_grad_norm_(trainable, gradient_clip_norm)
@@ -491,8 +553,9 @@ def train_oracle_step(
     digest = hashlib.sha256()
     for key in row_keys:
         digest.update(key.encode("utf-8") + b"\0")
-    return {
-        "support_flow_loss": float(loss.detach()),
+    record = {
+        "training_objective": objective,
+        "support_objective_loss": float(loss.detach()),
         "gradient_norm": float(gradient_norm),
         "wall_seconds": wall_seconds,
         "samples_per_second": len(row_keys) / wall_seconds,
@@ -502,3 +565,8 @@ def train_oracle_step(
         "learning_rate": learning_rate,
         "next_learning_rate": float(session.optimizer.param_groups[0]["lr"]),
     }
+    if objective == "flow_matching":
+        record["support_flow_loss"] = record["support_objective_loss"]
+    else:
+        record["support_action_mse"] = record["support_objective_loss"]
+    return record

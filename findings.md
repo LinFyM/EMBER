@@ -2144,3 +2144,25 @@
   the ad-hoc wrapper is not a retained launcher, so record this as an isolated
   wrapper-exit residual and do not repeat scientific compute. It has no effect
   on loss, gradients, state, data authority, or Gate decisions.
+- The next recovery is result-blind at contract SHA256
+  `3d5b54be47c20bf29e356395f43ad2c9d43834b90eded994e68b141be0902246`.
+  It changes the acquisition objective from flow matching to normalized
+  generated-action MSE differentiated through the full pinned 10-step sampler
+  and compresses the schedule horizon to the fixed 200-step ladder while
+  preserving the prior peak/decay LR magnitudes.
+  Tasks 3/4, source support 0--39, independent query 40--45, 37-target
+  rank-32/alpha-16/dropout-0 LoRA, effective batch 64, seeds, augmentation,
+  evaluator, drift cap, and Gate thresholds do not change.
+- Four fixed inference-noise seeds make mean generated-action MSE the primary
+  offline continuation metric; flow-query loss remains diagnostic. The staged
+  maximum is 200 steps with candidates `0/1/5/10/25/50/100/200`. Step 1 tests
+  batch-64 memory and atomic recovery. Both tasks must avoid action-MSE
+  regression at step 5 and improve by at least 1% at step 10 before later
+  segments. At least 2% improvement on each task with drift no greater than
+  0.02 is necessary to open one source-development closed-loop check, but is
+  never sufficient for Gate 0 or Writer authority.
+- The canonical oracle fitter now owns both the original flow and new
+  action-aligned objectives; no second trainer exists. With the recovery
+  frozen, the one-time query/action controller and launcher are retired from
+  the active source tree (1,065 lines removed); their immutable packets and Git
+  provenance remain, and the reusable fixed-anchor action metric is retained.

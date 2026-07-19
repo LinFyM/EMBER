@@ -849,6 +849,30 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     work, and use the canonical fit launcher for training. The smoke authorizes
     predeclaration of a short resumable action-aligned LoRA ladder, not Gate 0,
     Writer, or closed-loop access by itself.
+    The result-blind recovery is now frozen in
+    `configs/gate_zero_action_aligned_lora_acquisition.toml` at SHA256
+    `3d5b54be47c20bf29e356395f43ad2c9d43834b90eded994e68b141be0902246`.
+    It keeps tasks 3/4, support/query authority, all 37 targets, rank 32/alpha
+    16/dropout 0, effective batch 64, augmentation, evaluator, and four fixed
+    action-inference noise seeds. The bounded acquisition repair changes the
+    objective to differentiable 10-step generated-action MSE and compresses
+    only the warmup/decay horizon to the fixed 200-step ladder while preserving
+    the prior 2.5e-5/6.25e-7 peak/decay LR magnitudes; flow-query loss is
+    diagnostic. The same
+    canonical oracle fitter owns atomic recovery and candidates at steps
+    `0/1/5/10/25/50/100/200`, with peak LR 2.5e-5, five-step warmup, and a
+    200-step cosine maximum. Step 1 is the batch-64 memory/recovery boundary;
+    do not continue scientifically until both tasks reach the same boundary.
+    Both task action-MSE reductions must be nonnegative at step 5 to open step
+    10 and at least 1% at step 10 to open step 25. Only a candidate with at
+    least 2% mean generated-action-MSE reduction on each task and drift at most
+    0.02 may open one unchanged source-development closed-loop check; it cannot
+    itself pass Gate 0 or authorize Writer. Each blind segment remains below
+    30 minutes initially and two hours thereafter. The one-time query/action
+    audit controller, launcher, configs, and experiment-only tests are retired
+    from the active tree now that immutable packets and this canonical recovery
+    are frozen; Git history retains them, while the reusable action-error metric
+    remains in the canonical evaluator.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

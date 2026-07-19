@@ -25,6 +25,9 @@ MATURE_CONTROL_NAMES = frozenset(
         "smolvla_libero90_gate_zero_mature_lora_lr_recovery_v1",
     }
 )
+ACTION_ALIGNED_CONTROL_NAME = (
+    "smolvla_libero90_gate_zero_action_aligned_lora_acquisition_v1"
+)
 
 
 def _sha256(path: Path) -> str:
@@ -326,6 +329,45 @@ def _validate_mature_prior_artifacts(
         )
 
 
+def _validate_action_aligned_prior_artifacts(
+    authority: dict[str, Any], competence_result_path: Path
+) -> None:
+    competence_relative = Path(authority["source_competence_result_relative_path"])
+    if tuple(competence_result_path.parts[-len(competence_relative.parts) :]) != competence_relative.parts:
+        raise GateZeroOracleContractError("action-aligned output-root authority changed")
+    output_root = competence_result_path
+    for _ in competence_relative.parts:
+        output_root = output_root.parent
+    alignment = _require_hashed_artifact(
+        output_root,
+        authority,
+        relative_key="action_alignment_result_relative_path",
+        sha_key="action_alignment_result_sha256",
+        label="action-alignment result",
+    )
+    smoke = _require_hashed_artifact(
+        output_root,
+        authority,
+        relative_key="action_loss_smoke_result_relative_path",
+        sha_key="action_loss_smoke_result_sha256",
+        label="differentiable action-loss smoke result",
+    )
+    alignment_result = _load_json(alignment, "action-alignment result")
+    smoke_result = _load_json(smoke, "differentiable action-loss smoke result")
+    if alignment_result.get("status") != "inference_sampling_variance_obscures_alignment":
+        raise GateZeroOracleContractError("action-alignment result status changed")
+    if (
+        smoke_result.get("status")
+        != "differentiable_full_sampler_action_loss_mechanics_passed"
+        or smoke_result.get("parameters_unchanged") is not True
+        or smoke_result.get("gradient_tensor_count") != 74
+        or smoke_result.get("sampler_steps") != 10
+        or smoke_result.get("optimizer_steps") != 0
+        or smoke_result.get("new_environment_rollout_episodes") != 0
+    ):
+        raise GateZeroOracleContractError("differentiable action-loss smoke authority changed")
+
+
 def load_oracle_fit_spec(
     path: Path,
     *,
@@ -362,6 +404,17 @@ def load_oracle_fit_spec(
             competence_path=competence_path,
             prior_execution_path=path.with_name("gate_zero_oracle_execution.toml"),
         )
+    if name == ACTION_ALIGNED_CONTROL_NAME:
+        from ember.gate_zero_support.action_aligned_contract import (
+            load_action_aligned_acquisition_spec,
+        )
+
+        return load_action_aligned_acquisition_spec(
+            path,
+            gate_zero_path=gate_zero_path,
+            phase0_path=phase0_path,
+            competence_path=competence_path,
+        )
     raise GateZeroOracleContractError("unknown oracle fit contract")
 
 
@@ -390,6 +443,8 @@ def validate_oracle_fit_prerequisites(
         raise GateZeroOracleContractError("source competence result SHA256 changed")
     if spec.get("name") in MATURE_CONTROL_NAMES:
         _validate_mature_prior_artifacts(spec, authority, competence_result_path)
+    elif spec.get("name") == ACTION_ALIGNED_CONTROL_NAME:
+        _validate_action_aligned_prior_artifacts(authority, competence_result_path)
     competence = _load_json(competence_result_path, "source competence result")
     decision = competence.get("decision", {})
     if (

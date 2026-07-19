@@ -31,7 +31,11 @@ from ember.gate_zero_oracle_contract import (
     oracle_fit_authorities,
     validate_oracle_fit_prerequisites,
 )
-from ember.gate_zero_oracle_metrics import FixedQueryReference, evenly_spaced_anchor_indices
+from ember.gate_zero_oracle_metrics import (
+    FixedQueryReference,
+    evenly_spaced_anchor_indices,
+    select_action_mse_candidate,
+)
 from ember.gate_zero_oracle_session import (
     OracleModelSession,
     build_oracle_optimizer,
@@ -131,13 +135,21 @@ def resolve_training_target_step(
 
 
 def _reference_evidence(reference: FixedQueryReference) -> dict[str, Any]:
-    return {
+    evidence = {
         "base_query_flow_mse": reference.query_flow_mse,
         "query_sample_count": reference.query_sample_count,
         "query_row_keys_sha256": reference.query_row_keys_sha256,
         "anchor_count": reference.anchor_count,
         "anchor_row_keys_sha256": reference.anchor_row_keys_sha256,
     }
+    if reference.action_error_mse_by_noise_seed:
+        evidence["base_query_action_mse_by_noise_seed"] = (
+            reference.action_error_mse_by_noise_seed
+        )
+        evidence["base_query_action_mse_mean"] = sum(
+            reference.action_error_mse_by_noise_seed.values()
+        ) / len(reference.action_error_mse_by_noise_seed)
+    return evidence
 
 
 def _existing_candidates(
@@ -204,6 +216,11 @@ def _require_step_zero(
         or metrics["action_drift_proxy"] != 0.0
     ):
         raise GateZeroOracleFitError(f"{variant} step zero is not a functional base identity")
+    if reference.action_error_mse_by_noise_seed is not None:
+        if metrics.get("query_action_mse_by_noise_seed") != reference.action_error_mse_by_noise_seed:
+            raise GateZeroOracleFitError(
+                f"{variant} step zero action metric is not a functional base identity"
+            )
 
 
 def _initialize_tracker(
@@ -319,15 +336,17 @@ def _log_progress(
     step: int,
     record: dict[str, Any],
 ) -> None:
-    tracker.log(
-        {
-            "fit/support_flow_loss": record["support_flow_loss"],
-            "fit/gradient_norm": record["gradient_norm"],
-            "fit/samples_per_second": record["samples_per_second"],
-            "fit/learning_rate": record["learning_rate"],
-        },
-        step=step,
-    )
+    tracked = {
+        "fit/support_objective_loss": record["support_objective_loss"],
+        "fit/gradient_norm": record["gradient_norm"],
+        "fit/samples_per_second": record["samples_per_second"],
+        "fit/learning_rate": record["learning_rate"],
+    }
+    if "support_flow_loss" in record:
+        tracked["fit/support_flow_loss"] = record["support_flow_loss"]
+    if "support_action_mse" in record:
+        tracked["fit/support_action_mse"] = record["support_action_mse"]
+    tracker.log(tracked, step=step)
     print(
         json.dumps(
             {
@@ -375,13 +394,22 @@ def _save_trained_candidate(
         support_record=record,
         authorities=authorities,
     )
-    tracker.log(
-        {
-            "selection/query_flow_mse": metrics["query_flow_mse"],
-            "selection/action_drift_proxy": metrics["action_drift_proxy"],
-        },
-        step=step,
-    )
+    tracked = {
+        "selection/query_flow_mse": metrics["query_flow_mse"],
+        "selection/action_drift_proxy": metrics["action_drift_proxy"],
+    }
+    if "query_action_mse_mean" in metrics:
+        tracked.update(
+            {
+                "selection/query_action_mse_mean": metrics[
+                    "query_action_mse_mean"
+                ],
+                "selection/query_action_mse_reduction_fraction": metrics[
+                    "query_action_mse_reduction_fraction"
+                ],
+            }
+        )
+    tracker.log(tracked, step=step)
     return metrics
 
 
@@ -441,7 +469,7 @@ def _build_stage_result(
         raise GateZeroOracleFitError("staged query candidate changed step")
     base = float(candidate["base_query_flow_mse"])
     query = float(candidate["query_flow_mse"])
-    return {
+    result = {
         "schema_version": 1,
         "status": "oracle_fit_stage_complete_resumable",
         "variant": args.variant,
@@ -461,6 +489,20 @@ def _build_stage_result(
         "held_numeric_access": False,
         "continuation_requires_stage_contract": True,
     }
+    if "query_action_mse_reduction_fraction" in candidate:
+        result.update(
+            {
+                "primary_stage_metric": "generated_action_query_mse",
+                "query_action_mse_reduction_fraction": candidate[
+                    "query_action_mse_reduction_fraction"
+                ],
+                "query_action_mse_mean": candidate["query_action_mse_mean"],
+                "base_query_action_mse_mean": candidate[
+                    "base_query_action_mse_mean"
+                ],
+            }
+        )
+    return result
 
 
 def _build_result(
@@ -475,7 +517,10 @@ def _build_result(
 ) -> dict[str, Any]:
     selection = spec["selection"]
     variant_spec = spec["fit"][args.variant]
-    if spec.get("screening_stage") == "mature_positive_control":
+    if spec.get("screening_stage") == "action_aligned_lora_acquisition_recovery":
+        capacity_role = "action_aligned_task_local_lora_acquisition_recovery"
+        pilot_scope = "source_only_gate_zero_action_aligned_recovery_pending_closed_loop"
+    elif spec.get("screening_stage") == "mature_positive_control":
         capacity_role = "mature_recipe_task_local_lora_positive_control"
         pilot_scope = (
             "source_only_mature_lora_competence_control_"
@@ -559,6 +604,11 @@ def _finalize_fit(
             candidate_metrics,
             final_step=spec["selection"]["fixed_final_optimizer_step"],
         )
+    elif spec["selection"]["candidate_rule"] == "minimum_mean_generated_action_mse_with_drift_cap":
+        selected_metrics = select_action_mse_candidate(
+            candidate_metrics,
+            drift_proxy_max=spec["selection"]["drift_proxy_max"],
+        )
     else:
         selected_metrics = select_drift_safe_candidate(
             candidate_metrics,
@@ -583,8 +633,7 @@ def _finalize_fit(
     cleanup_completed_fit_state(args.output_dir, variant=args.variant)
     write_output_checksums(args.output_dir)
     update_latest_link(args.output_dir, args.latest_link)
-    tracker.log(
-        {
+    tracked = {
             "selection/selected_step": selected["selected_step"],
             "selection/selected_query_flow_mse": selected["selected_metrics"][
                 "query_flow_mse"
@@ -593,9 +642,12 @@ def _finalize_fit(
                 "action_drift_proxy"
             ],
             "selection/complete": 1,
-        },
-        step=spec["fit"]["optimizer_steps"],
-    )
+    }
+    if "query_action_mse_mean" in selected["selected_metrics"]:
+        tracked["selection/selected_query_action_mse_mean"] = selected[
+            "selected_metrics"
+        ]["query_action_mse_mean"]
+    tracker.log(tracked, step=spec["fit"]["optimizer_steps"])
     return result
 
 

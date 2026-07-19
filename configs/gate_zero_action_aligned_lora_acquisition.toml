@@ -1,0 +1,197 @@
+schema_version = 1
+name = "smolvla_libero90_gate_zero_action_aligned_lora_acquisition_v1"
+status = "predeclared_after_differentiable_action_loss_smoke_before_action_aligned_fit_outcomes"
+predeclared_at_utc = "2026-07-19T07:30:00Z"
+screening_stage = "action_aligned_lora_acquisition_recovery"
+task_ids = [3, 4]
+variants = ["action_aligned_official_default_r32"]
+writer_authorized_before_closed_loop = false
+
+[authority]
+gate_zero_contract_sha256 = "7bbda2723c72c60c6cfc39c10acaf23a05f4ea0af724c054792cd00c890cfd98"
+phase0_contract_sha256 = "ba9e89971e0f88074cc8de573c8e60b9093105638364a60207ff0d5aa8b7882a"
+source_competence_contract_sha256 = "0d3de88783e119c029642fb14f627df5a2d4e2e9cc4984b4400dfc575680c158"
+source_competence_result_relative_path = "gate_zero/source_competence/base10k_20260718T122059Z/competence_result.json"
+source_competence_result_sha256 = "c9697c4cf71d452c431424be4cd12fd6a869ac4fd58755d07152ee6928da83cc"
+source_base_output_relative_path = "gate_zero/source_base_fit/base_all60_10k_20260718T090513Z"
+source_base_checkpoint_step = 10000
+source_base_checkpoint_role = "source_base_candidate_pending_competence"
+source_base_checkpoint_manifest_sha256 = "ca0c83abd8d4b46cf59e8f0a01bd267f7f0e019d3e2bfea8c8baeb2e851d4d00"
+prior_lora_fit_contract_sha256 = "693cd61457ec5ec0aafb1c72837899c58f44f2c90e812cb14d115385393fafca"
+action_alignment_result_relative_path = "gate_zero/diagnostics/query_action_alignment_robustness/robust_20260719T070642Z/query_action_alignment_robustness_result.json"
+action_alignment_result_sha256 = "c1fc3ab448370590c34d5e234aa900377d63834318187be77b4ff9a9bc8eae4b"
+action_loss_smoke_contract_sha256 = "2dab3cd4399cd93daa26725b3c7ea50d07e555ee70f027ac53c622ac3bc10f25"
+action_loss_smoke_result_relative_path = "gate_zero/diagnostics/differentiable_action_loss_smoke/smoke_20260719T071538Z/differentiable_action_loss_smoke_result.json"
+action_loss_smoke_result_sha256 = "b4e6fcefc5ba3d943980beea2fbe8cdeaa6e0a97069234a1be9ee0681cad4fe4"
+validation_numeric_access = false
+held_numeric_access = false
+locked_report_numeric_reuse_for_selection = false
+new_closed_loop_outcome_accessed_before_freeze = false
+
+[recovery_rationale]
+failure_class = "flow_matching_query_improvement_did_not_improve_generated_query_actions_or_closed_loop_behavior"
+single_noise_lora_action_mse_reduction_fraction_task3 = -0.03114
+single_noise_lora_action_mse_reduction_fraction_task4 = -0.02479
+four_noise_mean_lora_action_mse_reduction_fraction_task3 = -0.019009
+four_noise_mean_lora_action_mse_reduction_fraction_task4 = -0.0306196
+four_noise_action_expert_improvement_fraction_task3 = 0.016796
+four_noise_action_expert_improvement_fraction_task4 = 0.014283
+action_expert_closed_loop_net_gain_task3 = 0
+action_expert_closed_loop_net_gain_task4 = 0
+bounded_intervention = "replace_supervised_acquisition_loss_with_differentiable_full_sampler_generated_action_mse_and_compress_only_the_schedule_horizon_to_the_fixed_200_step_ladder_while_preserving_peak_and_decay_lr_magnitudes"
+no_target_rank_task_seed_or_gate_change = true
+
+[fit]
+support_episode_bounds = [0, 39]
+support_episode_roles = ["writer_spec", "source_base_fit", "oracle_support"]
+support_action_authority = "source-task actions are legal for Gate-0 oracle acquisition; writer_spec actions remain hidden from future Writer inputs"
+optimizer_steps = 200
+effective_batch_size = 64
+micro_batch_size = 64
+gradient_accumulation_steps = 1
+num_workers = 4
+prefetch_factor = 2
+persistent_workers = true
+pin_memory = true
+candidate_steps = [0, 1, 5, 10, 25, 50, 100, 200]
+retain_scientific_candidate_records = true
+retain_selected_trainable_state = true
+cleanup_unselected_partial_trainable_states_after_selection = true
+cleanup_recovery_state_after_completed_selection = true
+
+[fit.action_aligned_official_default_r32]
+adaptation_kind = "lora"
+support_scope = "smolvla_v0_6_default_like_action_support_mature_positive_control"
+rank = 32
+alpha = 16
+dropout = 0.0
+init_lora_weights = "gaussian"
+expected_trainable_parameters = 1485312
+training_objective = "full_sampler_generated_action_mse"
+action_loss_sampler_steps = 10
+action_loss_noise_dimension = 32
+generated_action_dimension = 7
+action_loss_noise_seed = 2026072235
+action_loss_noise_authority = "sha256_of_seed_plus_optimizer_step_and_canonical_row_plus_batch_slot"
+optimizer = "adamw"
+learning_rate = 0.000025
+betas = [0.9, 0.95]
+epsilon = 1e-8
+weight_decay = 1e-10
+gradient_clip_norm = 10.0
+scheduler = "linear_warmup_cosine_decay"
+scheduler_implementation = "lerobot.optim.schedulers.CosineDecayWithWarmupSchedulerConfig"
+warmup_steps = 5
+decay_steps = 200
+decay_learning_rate = 0.000000625
+augmentation = "random_resized_crop"
+augmentation_scale_min = 0.9
+augmentation_scale_max = 1.0
+augmentation_ratio = 1.0
+augmentation_seed = 2026071832
+seed = 2026071830
+target_modules = [
+  "model.action_in_proj",
+  "model.action_out_proj",
+  "model.action_time_mlp_in",
+  "model.action_time_mlp_out",
+  "model.state_proj",
+  "model.vlm_with_expert.lm_expert.layers.0.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.0.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.1.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.1.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.2.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.2.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.3.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.3.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.4.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.4.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.5.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.5.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.6.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.6.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.7.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.7.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.8.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.8.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.9.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.9.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.10.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.10.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.11.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.11.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.12.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.12.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.13.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.13.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.14.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.14.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.15.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.15.self_attn.v_proj",
+]
+
+[selection]
+query_episode_bounds = [40, 45]
+candidate_rule = "minimum_mean_generated_action_mse_with_drift_cap"
+selection_uses_locked_report = false
+step_zero_must_be_functional_zero = true
+fixed_noise_seed = 2026071833
+fixed_time_seed = 2026071834
+inference_noise_seed = 2026071835
+action_error_inference_noise_seeds = [2026071835, 2026071935, 2026072035, 2026072135]
+noise_draws = 4
+anchor_frames_per_demo = 8
+anchor_algorithm = "round_evenly_spaced_inclusive_first_last_then_unique"
+drift_formula = "mean_over_anchor_chunk_action_scalars_of_0.5_times_squared_adapter_minus_frozen_base_normalized_action"
+drift_proxy_max = 0.02
+flow_query_role = "diagnostic_only_not_primary_selection_or_continuation_metric"
+primary_metric = "mean_generated_action_mse_across_four_fixed_inference_noise_seeds"
+evaluation_batch_size = 64
+
+[staged_ladder]
+stage_steps = [1, 5, 10, 25, 50, 100, 200]
+first_memory_probe_step = 1
+first_blind_scientific_boundary_step = 5
+maximum_blind_wall_minutes = 30
+maximum_resumable_segment_wall_minutes = 120
+two_task_evidence_required_before_scientific_continuation = true
+step1_requires_finite_loss_gradient_and_state = true
+step1_maximum_peak_reserved_mib = 71680
+step5_to_step10_minimum_each_task_action_mse_reduction_fraction = 0.0
+step10_to_step25_minimum_each_task_action_mse_reduction_fraction = 0.01
+later_continuation_requires_non_regression_from_best_prior_candidate = true
+stop_on_persistent_flat_or_worse_action_mse = true
+mechanical_error_resumes_from_atomic_checkpoint = true
+
+[closed_loop_opening]
+minimum_each_task_action_mse_reduction_fraction = 0.02
+maximum_each_task_action_drift_proxy = 0.02
+flow_query_is_diagnostic_only = true
+opens_only_one_fixed_task3_task4_source_development_rollout = true
+gate_zero_success_still_requires_closed_loop_behavior = true
+writer_authorized_by_offline_metric = false
+
+[boundary]
+same_tasks_seeds_thresholds_and_evaluator_as_failed_gate = true
+no_validation_or_held_or_locked_access = true
+no_target_rank_or_learning_rate_search = true
+no_closed_loop_before_offline_opening_rule = true
+failure_does_not_lower_gate_threshold = true
+gate_zero_authorized_before_closed_loop = false
+writer_authorized = false
+
+[parallel]
+fit_jobs = ["action_aligned_official_default_r32:3", "action_aligned_official_default_r32:4"]
+maximum_concurrent_gpus = 4
+one_independent_process_per_gpu = true
+shared_parameters_across_jobs = false
+
+[resources]
+minimum_free_memory_mib = 10240
+maximum_peak_device_memory_mib = 71680
+expected_peak_additional_storage_gib_per_task = 0.5
+expected_wall_clock_minutes_to_step5 = 30.0
+tracking_project = "EMBER_gate0"
+tracking_group_fit = "action_aligned_lora_acquisition"
+visual_gallery = true
+cleanup = "retain candidate metrics and current atomic recovery only; remove verified superseded temporary audit controllers after the canonical path is frozen"

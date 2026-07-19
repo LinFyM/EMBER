@@ -55,11 +55,11 @@ def load_writer_contract(
 
     spec = _load_toml(path, "Writer contract")
     _require(spec.get("schema_version"), 1, "Writer schema")
-    _require(
-        spec.get("status"),
+    if spec.get("status") not in {
         "frozen_before_writer_implementation_or_training_outcomes",
-        "Writer status",
-    )
+        "predeclared_physical_norm_recovery_after_cross_category_failure",
+    }:
+        raise WriterColdStartError("Writer status is not an active frozen contract")
     authority = spec.get("authority", {})
     for key, upstream in (
         ("phase0_contract_sha256", phase0_path),
@@ -105,6 +105,12 @@ def load_writer_contract(
         * train.get("gradient_accumulation_steps")
     ):
         raise WriterColdStartError("eight-rank global batch is inconsistent")
+    soft_cap = train.get("physical_delta_l2_soft_cap")
+    coefficient = train.get("physical_delta_excess_coefficient")
+    if (soft_cap is None) != (coefficient is None) or (
+        soft_cap is not None and (soft_cap <= 0 or coefficient < 0)
+    ):
+        raise WriterColdStartError("physical-delta recovery parameters are invalid")
     if spec.get("writer", {}).get("bank_geometry_or_shared_subspace") is not False:
         raise WriterColdStartError("removed shared-structure mechanism reappeared")
     if authority.get("test_held_numeric_access") is not False:
@@ -154,6 +160,30 @@ def build_lora_tensor_specs(state: Mapping[str, torch.Tensor]) -> tuple[LoraTens
             )
         )
     return tuple(result)
+
+
+def physical_lora_delta_l2(
+    state: Mapping[str, torch.Tensor], *, alpha: float, rank: int
+) -> torch.Tensor:
+    """Return the physical LoRA update norm without materializing full BA matrices."""
+
+    if alpha <= 0 or rank <= 0:
+        raise WriterColdStartError("invalid LoRA scale for physical norm")
+    squared: torch.Tensor | None = None
+    marker_a = ".lora_A.default.weight"
+    for name, factor_a in state.items():
+        if not name.endswith(marker_a):
+            continue
+        factor_b = state.get(name.replace(marker_a, ".lora_B.default.weight"))
+        if factor_b is None or factor_a.shape[-2] != rank or factor_b.shape[-1] != rank:
+            raise WriterColdStartError("physical norm received an incomplete LoRA pair")
+        gram_a = factor_a @ factor_a.transpose(-2, -1)
+        gram_b = factor_b.transpose(-2, -1) @ factor_b
+        term = (gram_a * gram_b).sum(dim=(-2, -1))
+        squared = term if squared is None else squared + term
+    if squared is None:
+        raise WriterColdStartError("physical norm received no LoRA factors")
+    return (float(alpha) / rank) * torch.sqrt(torch.clamp_min(squared, 1e-24))
 
 
 class CompleteLoRAWriter(torch.nn.Module):

@@ -70,10 +70,11 @@ horizon-16 primary evaluation, and disjoint source-only confirmation. Every
 novelty claim remains provisional until predecessor evidence and matched-budget
 experiments pass.
 
-The active execution ceiling is **4 x NVIDIA A100 80GB GPUs**. The expert plan
-was originally written for an eight-GPU ceiling and is retained as research
-advice; its mandatory canonical-bank/geometry route is also superseded.
-`docs/execution_brief.md` records the four-GPU direct-Writer execution contract.
+The active execution ceiling is **8 x NVIDIA A100 80GB GPUs**. Use all legally
+free devices for useful work, with about 10GB average training headroom per
+device; the historical expert plan remains advice, and its mandatory
+canonical-bank/geometry route is superseded.
+`docs/execution_brief.md` records the current eight-GPU direct-Writer execution contract.
 
 ## Repository map
 
@@ -91,7 +92,7 @@ advice; its mandatory canonical-bank/geometry route is also superseded.
 - [`docs/expert_plan.md`](docs/expert_plan.md): the independent expert's complete
   conditional-go assessment and staged research plan.
 - [`docs/execution_brief.md`](docs/execution_brief.md): active execution
-  decisions, corrections to the plan, four-GPU constraints, and the first work
+  decisions, corrections to the plan, active GPU constraints, and the first work
   package.
 - [`docs/benchmark_validity_report.md`](docs/benchmark_validity_report.md): the
   current Gate -1 evidence, preserved split-validity failure, permanent

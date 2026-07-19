@@ -1,6 +1,28 @@
 # EMBER Progress and Handoff
 
-## 2026-07-19 Writer segment complete; validation resume prepared
+## 2026-07-19 first Writer result complete; one bounded recovery prepared
+
+- The formal cross-category validation is complete and immutable at
+  `/data/ymdai/ember_outputs/writer_cold_start/validation_cross_category_20260719T192045Z`.
+  All 15 shards, 1,920 episode rows, direct states, JSON/checksums and 15 compact
+  videos validate. Primary h16 totals are base `33/320`, Writer `21/320`, and
+  direct LoRA `150/320`; h50 totals are `18/320`, `21/320`, and `140/320`.
+  Thus the first Writer failed to beat base across categories and Writer-only
+  RL remains pending. The local gallery is `index.html`, also linked by
+  `writer_cold_start/validation_latest`.
+- Two control-plane failures are retained honestly: default NCCL operation
+  timeout after 10/15 shards, then NCCL heartbeat timeout after 14/15. Neither
+  changed science or consumed partial outcomes. Commit `0977aed` routes only
+  result coordination through Gloo; exact resume then completed all 15 shards
+  rc 0 without rerunning complete work.
+- Offline query diagnostics completed on GPUs 0--4, then released all devices.
+  They localize physical-update runaway (Writer norm about 30--39 versus direct
+  1.41--2.00). The single `0.05` B-scale check restored norm but erased nearly
+  all query gain, so no closed-loop rollout was spent on it. The next real run
+  is the one-variant, eight-GPU physical-norm recovery frozen in
+  `configs/writer_cold_start_physical_norm_recovery.toml`; targeted tests pass.
+
+## 2026-07-19 Writer segment complete; validation resume provenance
 
 - The first all-source Writer cold-start segment completed rc 0 at step 1000
   on GPUs 0--7 in 2891.65s. Its 16-file checkpoint validates Writer,
@@ -223,7 +245,8 @@
   assistant/expert addition and is outside the current project/Goal. The
   corrected authority is recorded in `AGENTS.md` and
   `docs/execution_brief.md`.
-- The active compute ceiling is four A100 80GB GPUs.
+- The active compute ceiling is eight A100 80GB GPUs; historical four-GPU runs
+  retain their original resource records.
 - A clean execution clone and user-home workspace entry have been verified on
   the target GPU host. Work is isolated on
   `phase0/reproducible-substrate`.

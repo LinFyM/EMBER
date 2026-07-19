@@ -109,17 +109,14 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
   into a false outer failure during function-context unwinding.
 - A gate failure starts the recovery protocol in `AGENTS.md`. Do not silently
   change the scientific contract to create a pass.
-- Treat every n<32 run as mechanics-only and do not inspect its performance.
-  A decision packet must retain paired episode rows,
-  use at least n=32/task/arm over multiple policy RNG seeds, include paired
-  bootstrap and exact intervals, and replicate at least two (preferably three)
-  independently trained candidates. Development task3/task4 and confirmation
-  tasks/states must be hash-bound and disjoint before LoRA outcomes.
-- Effective immediately, do not inspect, aggregate, discuss, or report
-  performance from any n<32 slice. Small runs may check only launch, tensor
-  shape, OOM/NaN, resume identity, and isolation. Both required training seeds
-  are frozen at step 32 and may not receive more interaction. The formal paired
-  development evaluation in
+- The completed Gate-0 collection treated every n<32 run as mechanics-only and
+  did not inspect its performance. That historical rule prevented small-sample
+  checkpoint or seed selection; it is not a universal denominator for later
+  EMBER stages. Each new validation contract chooses enough independent
+  rollouts from expected effect and observed variance, retains episode rows and
+  uncertainty, and covers multiple categories and policy RNG seeds.
+- Both Gate-0 training seeds are frozen at step 32 and may not receive more
+  interaction. The formal paired development evaluation in
   `configs/gate_zero_formal_development_evaluation.toml` is complete with four
   policy RNG seeds, 32 rollouts/task/arm, h16 primary, h50 robustness, fixed
   initialization arms evaluated once, and no partial performance report.
@@ -154,12 +151,23 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
   passed for rapid development from the positive SFT-LoRA point gains, while
   retaining the two-near-similar-task and n=32/arm limitation. Gate -1 remains
   passed with residuals. Do not rewrite either immutable result packet.
-- [ ] Run Writer cold start through the frozen
-  `configs/writer_cold_start.toml` contract: all 60 source tasks, the mature
-  complete LoRA, eight-rank useful training, exact-resume stops, then five
-  cross-category validation tasks. Use only frozen base and matched direct LoRA
-  as the first stage baselines; defer the paper-wide matrix until the mechanism
-  has functional value.
+- [x] Run the first Writer cold start through the frozen
+  `configs/writer_cold_start.toml` contract. The eight-GPU step-1000 segment
+  completed in 48.2 minutes, then 1,920 paired validation rows covered five
+  categories, 64 rollouts/task/arm and horizons 16/50. At h16, base/Writer/
+  direct-LoRA scored `33/320`, `21/320`, and `150/320`; at h50 they scored
+  `18/320`, `21/320`, and `140/320`. The Writer therefore failed the current
+  cold-start criterion, while the matched LoRA space and direct acquisition
+  remain clearly capable.
+- [ ] Run the single predeclared physical-update recovery in
+  `configs/writer_cold_start_physical_norm_recovery.toml`. Offline independent
+  query diagnostics found that the original Writer reduced loss on all five
+  validation tasks but emitted physical updates of norm about `30--39`, versus
+  `1.41--2.00` for successful direct LoRAs. A post-hoc `0.05` factor scale
+  restored direct-like norms but erased nearly all query gain, so it is not a
+  rollout candidate. Retrain once from the prescribed initialization with a
+  soft `2.0` physical-norm cap and `0.01` excess penalty; validate independent
+  query transfer before spending the frozen cross-category rollout budget.
 
 1. [x] Bootstrap a Python 3.12 environment from the locked project definition;
    verify package consistency and the active GPU/storage contracts.

@@ -1,5 +1,38 @@
 # EMBER Durable Findings
 
+## 2026-07-19 first Writer cold-start result and bounded recovery
+
+- The first real Writer segment completed step 1000 on eight A100s in
+  `2891.65s`, consumed `2,048,000` source query frames, and saved complete
+  model/optimizer/scheduler/sampler/scaler/eight-rank-RNG state. The formal
+  validation packet contains 1,920 unique episode rows over tasks
+  11/21/51/70/86, three arms, 64 rollouts/task/arm and horizons 16/50; test and
+  reporting-only held surfaces remained closed.
+- At the primary horizon 16, frozen base was `33/320` (10.31%), Writer was
+  `21/320` (6.56%), and the matched-space action-supervised direct LoRA was
+  `150/320` (46.88%). Writer minus base was -3.75 percentage points with paired
+  bootstrap interval [-6.88, -0.63]. At horizon 50, the corresponding totals
+  were `18/320`, `21/320`, and `140/320`; Writer minus base was +0.94 points
+  with interval [-1.25, 3.44]. This Writer checkpoint does not establish
+  cross-category zero-interaction utility and does not authorize Writer-only
+  RL. The direct arm shows that the fixed 37-target rank-32 LoRA space is not
+  the limiting capacity.
+- A bounded no-rollout diagnostic used independent validation query demos
+  40--45. Writer checkpoints reduced flow loss relative to base on all five
+  categories, but their physical update norm grew monotonically to roughly
+  `30--39` at step 1000; direct LoRAs were only `1.41--2.00` (legal source
+  direct-LoRA references were about `0.70`). Multiplying every Writer B factor
+  by the single predeclared scale `0.05` restored norms to `1.50--1.95`, but
+  retained only about 0.4%--1.1% query-loss improvement. It is therefore not a
+  credible closed-loop candidate.
+- The evidence isolates an acquisition problem: the current functional
+  objective obtains modest offline transfer by allowing oversized physical
+  updates rather than learning direct-LoRA-like efficient updates. The one
+  predeclared recovery adds a soft penalty only above total physical
+  `||ΔW||₂=2.0`, coefficient `0.01`, while leaving the full LoRA output and all
+  later task-local RL directions unconstrained. This is Writer-initialization
+  calibration, not a bank, geometry, mask, metric, or RL search restriction.
+
 ## 2026-07-19 owner interpretation: Gate 0 passed with limited coverage
 
 - The immutable formal packet remains unchanged: at horizon 16, task 3 improves

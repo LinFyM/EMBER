@@ -12,6 +12,7 @@ from ember.writer.core import (
     CompleteLoRAWriter,
     WriterColdStartError,
     build_lora_tensor_specs,
+    physical_lora_delta_l2,
     load_writer_contract,
     load_writer_checkpoint,
     save_writer_checkpoint,
@@ -80,6 +81,19 @@ def test_active_writer_contract_is_hash_bound_and_has_no_removed_mechanism() -> 
     assert spec["authority"]["test_held_numeric_access"] is False
 
 
+def test_writer_physical_norm_recovery_contract_is_loadable_and_bounded() -> None:
+    spec = load_writer_contract(
+        ROOT / "configs/writer_cold_start_physical_norm_recovery.toml",
+        phase0_path=ROOT / "configs/phase0.toml",
+        split_path=ROOT / "configs/libero90_split_reseal.json",
+        gate_zero_path=ROOT / "configs/gate_zero_oracle_pilot.toml",
+        mature_lora_path=ROOT / "configs/gate_zero_mature_lora_positive_control.toml",
+    )
+    assert spec["train"]["physical_delta_l2_soft_cap"] == 2.0
+    assert spec["train"]["physical_delta_excess_coefficient"] == 0.01
+    assert spec["recovery"]["maximum_mechanism_variants"] == 1
+
+
 def test_writer_emits_every_factor_and_starts_at_physical_zero() -> None:
     state = _tiny_lora_state()
     writer = _tiny_writer(state)
@@ -114,6 +128,21 @@ def test_functional_loss_reaches_writer_without_training_base() -> None:
         parameter.grad is not None and torch.count_nonzero(parameter.grad)
         for parameter in writer.parameters()
     )
+
+
+def test_physical_lora_delta_norm_matches_materialized_update_and_has_gradient() -> None:
+    a = torch.randn(2, 3, requires_grad=True)
+    b = torch.randn(4, 2, requires_grad=True)
+    state = {
+        "base.block.q_proj.lora_A.default.weight": a,
+        "base.block.q_proj.lora_B.default.weight": b,
+    }
+    norm = physical_lora_delta_l2(state, alpha=8, rank=2)
+    expected = torch.linalg.vector_norm(4 * (b @ a))
+    torch.testing.assert_close(norm, expected)
+    norm.backward()
+    assert a.grad is not None and torch.count_nonzero(a.grad)
+    assert b.grad is not None and torch.count_nonzero(b.grad)
 
 
 def _write_hdf5(path: Path) -> None:

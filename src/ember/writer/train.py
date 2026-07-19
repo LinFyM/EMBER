@@ -31,6 +31,7 @@ from ember.writer.core import (
     build_lora_tensor_specs,
     cosine_warmup_scheduler,
     load_writer_checkpoint,
+    physical_lora_delta_l2,
     load_writer_contract,
     save_writer_checkpoint,
     sha256_file,
@@ -528,13 +529,22 @@ def _functional_step(runtime: TrainRuntime, step: int) -> dict[str, float]:
         runtime.optimizer.zero_grad(set_to_none=True)
         generated = {key: value[0] for key, value in runtime.writer(feature).items()}
         with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-            loss, _ = torch.func.functional_call(
+            functional_loss, _ = torch.func.functional_call(
                 runtime.policy,
                 generated,
                 (batch,),
                 {"noise": noise, "time": flow_time},
                 strict=False,
             )
+        physical_delta_l2 = physical_lora_delta_l2(
+            generated,
+            alpha=runtime.spec["lora"]["alpha"],
+            rank=runtime.spec["lora"]["rank"],
+        )
+        soft_cap = float(train.get("physical_delta_l2_soft_cap", float("inf")))
+        coefficient = float(train.get("physical_delta_excess_coefficient", 0.0))
+        excess = torch.relu(physical_delta_l2 - soft_cap)
+        loss = functional_loss + coefficient * excess.square()
         if loss.ndim != 0 or not torch.isfinite(loss):
             raise WriterColdStartError("Writer functional loss is non-finite")
         loss.backward()
@@ -545,11 +555,15 @@ def _functional_step(runtime: TrainRuntime, step: int) -> dict[str, float]:
             raise WriterColdStartError("Writer gradient is non-finite")
         runtime.optimizer.step()
         runtime.scheduler.step()
-        global_loss = loss.detach().clone()
-        torch.distributed.all_reduce(global_loss)
-        global_loss.div_(runtime.world_size)
+        reduced = torch.stack(
+            (functional_loss.detach(), loss.detach(), physical_delta_l2.detach())
+        )
+        torch.distributed.all_reduce(reduced)
+        reduced.div_(runtime.world_size)
         return {
-            "global_functional_loss": float(global_loss),
+            "global_functional_loss": float(reduced[0]),
+            "global_objective_loss": float(reduced[1]),
+            "global_physical_delta_l2": float(reduced[2]),
             "gradient_norm": float(gradient_norm),
             "learning_rate": runtime.scheduler.get_last_lr()[0],
             "global_samples_per_second": train["global_batch_size"]

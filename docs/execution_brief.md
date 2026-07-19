@@ -373,17 +373,20 @@ mechanical issues and reasonable bounded remedies are exhausted.
 
 ## 9. Immediate work package
 
-The clean world-size-4 resume result is the final bounded resume verification.
 Gate -1 is closed as passed with residuals; do not reopen it to polish the
-0.7917 result. The first admissible Gate 0 development evaluation is complete:
-768 unique rows, n=32 per declared cell, two real training seeds, fixed
-base/SFT evaluated once, h16 primary and h50 robustness. Its saved decision is
-negative/ambiguous: current evidence does not authorize Gate 0 or Writer. Do
-not append training, select a favorable seed, lower the threshold, or open
-validation/held/locked outcomes. Any next experiment must answer one explicit
-scientific question with a mature fixed method, only necessary arms, a full
-minimum denominator before performance inspection, and one-to-two-hour blind
-segments; do not create recovery families or a bank/geometry branch.
-Continuously update `task_plan.md`, `findings.md`, and `progress.md` and commit
-each reproducible milestone without weights, datasets, private host details, or
-large outputs in public Git.
+0.7917 result. Gate 0 is passed for mechanism development from the immutable
+task-3/task-4 SFT-LoRA improvements, with the near-similar-task and n=32/arm
+coverage limitation retained. A multi-category supplement is optional only if
+frozen checkpoints can be reused without retraining or material preparation;
+it does not block Writer.
+
+The active work is direct Writer cold start on all 60 source tasks, followed by
+five-category validation of frozen base, Writer LoRA, and the same-space direct
+task-local LoRA upper bound. Use the current eight-GPU ceiling for useful work,
+keep one-to-two-hour feedback segments and exact resume, publish raw stage
+performance only after the full declared denominator, and retain a compact
+video gallery. Then proceed in order to Writer-only RL, matched task-local LoRA
+RL, source-only outer learning, and shared-frozen held evaluation. Do not build
+recovery families or a bank/geometry branch. Update the durable state after
+each real milestone without weights, datasets, private host details, or large
+outputs in public Git.

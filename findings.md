@@ -35,10 +35,10 @@
   task-local LoRA RL and source-only Writer reward/meta learning. Mandatory
   canonical bank/shared subspace/soft geometry/residual escape was a later
   assistant/expert addition and is superseded.
-- The persistent Goal record cannot be text-edited by the available Goal API.
-  It remains active for continuity, while its mandatory Gate-1/geometry wording
-  is superseded by the dated owner contract; no fake Gate 1 result or replacement
-  Goal is scientifically valid.
+- The current unbudgeted Goal was recreated with the owner's direct-Writer
+  lifecycle and contains no mandatory Gate-1/bank/geometry condition. It stays
+  active through cold start, Writer-only RL, task-local RL, source-only outer
+  learning, held evaluation, formal retraining, and OpenVLA-OFT confirmation.
 
 ## Adopted scientific lessons
 
@@ -54,7 +54,9 @@
 
 ## Adopted execution decisions
 
-- Active compute cap: four A100 80GB GPUs, normally one or two for pilots.
+- Active compute cap: eight A100 80GB GPUs. Use all legally free devices for
+  useful training/task/arm/evaluation work while preserving the fixed method
+  budget and avoiding unrelated processes.
 - After a minimal correctness baseline, useful batching, simulator concurrency,
   and caching should target about 70GB used per allocated A100 with about 10GB
   average headroom. Unused memory is not filled with dummy allocations.

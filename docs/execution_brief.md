@@ -45,9 +45,19 @@ span of the removed bank kind.
 
 For each task, the Writer emits all LoRA factors required by that contract. The
 generated LoRA is applied functionally to the frozen shared base and must improve
-independent task behavior before target-task interaction. Ordinary task-local RL
-then updates those same LoRA parameters in place from the Writer initialization.
-The Writer emits no second object that constrains RL.
+independent task behavior before target-task interaction. After supervised cold
+start, an independent Writer-only RL stage freezes the base, uses each generated
+LoRA only as the functional policy output, and updates Writer parameters from
+rollout reward; it does not optimize generated LoRA in place. Ordinary task-local
+RL is a separate experiment: it freezes Writer and base, then updates those same
+LoRA parameters in place from the Writer initialization. The Writer emits no
+second object that constrains RL.
+
+Gate 0 is not restricted to supervised fine-tuning. If supervised LoRA improves
+independent query loss but lacks stable closed-loop utility, a bounded
+source-only recovery may compare frozen base, supervised LoRA, matched zero-init
+LoRA plus ordinary task-local RL, and supervised-init LoRA plus the identical RL.
+Only task-local LoRA updates in this Gate: no Writer or shared state participates.
 
 The removed assistant/expert route had a different purpose: a canonical bank
 supplied a shared basis/span, task-conditioned soft geometry scaled or

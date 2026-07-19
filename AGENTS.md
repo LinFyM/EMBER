@@ -53,11 +53,15 @@ establish:
 2. a useful task-specific update oracle;
 3. direct Writer acquisition of complete task-specific LoRA tensors at the
    predeclared target matrices, with immediate zero-interaction utility;
-4. matched-budget ordinary task-local LoRA RL from the Writer initialization;
-5. source-only reward/delayed outer learning that updates the Writer through
+4. an independent source-only Writer-only RL phase that freezes the base,
+   treats generated LoRA as functional output rather than a separately updated
+   variable, and updates Writer parameters from rollout reward;
+5. matched-budget ordinary task-local LoRA RL from the Writer initialization,
+   with the Writer and base frozen and only task-local LoRA updated in place;
+6. source-only reward/delayed outer learning that updates the Writer through
    task-local LoRA adaptation while the shared base remains frozen; and
-6. shared-frozen held-task evaluation; and
-7. OpenVLA-OFT scale confirmation after the lower-cost mechanism survives.
+7. shared-frozen held-task evaluation; and
+8. OpenVLA-OFT scale confirmation after the lower-cost mechanism survives.
 
 Phase 0, exact resume, throughput work, Gate -1, Gate 0, one training run, or
 authorization of a later stage cannot by itself complete the long-term Goal.
@@ -116,6 +120,10 @@ plan. Each expensive component needs evidence from its scientific predecessor.
   explicitly non-matched capability upper bounds. If only those upper bounds
   work, classify the fixed LoRA target/rank contract as too narrow before
   attributing failure to the Writer.
+- Gate 0 is a useful-update Gate, not an SFT-only Gate. A bounded source-only,
+  matched-control task-local LoRA RL recovery may establish that the declared
+  LoRA space contains a useful behavioral update. Such a result is not
+  supervised zero-interaction utility and is not Writer evidence.
 - The last-two q/v rank-8 pilot and its rank-16 support recovery test only the
   frozen 12-demo, 750-step custom acquisition recipe. Their outcomes cannot by
   themselves establish a final LoRA, Gate 0, Writer, or EMBER negative. A

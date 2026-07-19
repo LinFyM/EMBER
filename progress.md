@@ -52,6 +52,15 @@
   The next action is not another environment rerun: first execute one single-GPU
   real-model synthetic forward/backward with no optimizer step and no simulator
   interaction. Only a pass reopens the canonical 16-episode verification.
+- Real-model shape smoke `gate0_flow_shape_real_model_smoke_20260719_052352`
+  passed rc 0 from clean commit `cd95342` in 29.06 seconds on one A100. It
+  validated `[64,50,7]` replay input, `[64,50,32]` deterministic noise,
+  per-sample loss `[64]`, and a finite backward pass, with no optimizer step or
+  simulator/validation/held access. Result SHA256 is
+  `64e522b8863527234e7633a1c8ea72482459b57d43d4b129e4a67c60668a689c`.
+  GPU memory was released. The already frozen canonical stage-16 source-only
+  verification is mechanically reopened; no Gate or Writer claim follows from
+  this smoke.
 - Architecture ownership is deliberately narrow: the
   `ember.gate_zero_task_local_rl` package owns only this bounded Gate-0 recovery
   contract, reward-weighted replay mechanics, and orchestration. It reuses the

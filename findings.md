@@ -1879,6 +1879,13 @@
   requires a real-model synthetic forward/backward before another environment
   launch; no optimizer step or scientific surface may be consumed by that
   integration check.
+- The required real-model integration check passed on one A100 in 29.06 seconds
+  from clean commit `cd95342`: processed replay input remained `[64,50,7]`,
+  deterministic noise was `[64,50,32]`, native per-sample loss was `[64]`, loss
+  `1.031875` and gradient norm `1.098731` were finite, and rc was 0. There was no
+  optimizer step, simulator interaction, validation, or held access. Durable
+  result SHA256 is `64e522b8863527234e7633a1c8ea72482459b57d43d4b129e4a67c60668a689c`.
+  This resolves the model-boundary mechanism only; it does not answer Gate 0.
 
 ## Earlier supervised checkpoints do not recover closed-loop utility
 

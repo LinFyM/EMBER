@@ -692,6 +692,12 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     forward/backward with noise `[64,50,32]`, no optimizer step, and no
     environment/validation/held access. Do not relaunch the canonical rollout
     unless this exact integration check passes.
+    That integration check passed from clean commit `cd95342` in 29.06 seconds:
+    input `[64,50,7]`, noise `[64,50,32]`, per-sample loss `[64]`, finite loss
+    and gradient norm, rc 0, and no optimizer/environment/validation/held
+    access. Result SHA256 is `64e522b8...a689c`. This reopens only the already
+    frozen 16-episode source-development verification; it is not Gate-0 or
+    behavioral evidence.
     No validation, held, locked-report, or step-2k access is authorized. The
     original SHA256 `ba3ee431...f132f`
     reached no episode because its last-warm-up seed was not stride-adjacent to

@@ -23,6 +23,7 @@ from ember.writer.data import (
     WriterTaskBatchSampler,
     read_action_hidden_spec_frames,
 )
+from ember.writer.direct_fit import load_source_teacher_contract
 from ember.writer.train import prepare_writer_images, repository_root
 
 
@@ -92,6 +93,18 @@ def test_writer_physical_norm_recovery_contract_is_loadable_and_bounded() -> Non
     assert spec["train"]["physical_delta_l2_soft_cap"] == 2.0
     assert spec["train"]["physical_delta_excess_coefficient"] == 0.01
     assert spec["recovery"]["maximum_mechanism_variants"] == 1
+
+
+def test_source_teacher_contract_is_source_only_and_multicategory() -> None:
+    spec = load_source_teacher_contract(
+        ROOT / "configs/writer_cold_start_source_teachers.toml", repo_root=ROOT
+    )
+    assert spec["teacher_task_ids"] == [
+        6, 23, 35, 19, 20, 38, 46, 52, 54, 34, 37, 69, 73, 87, 89
+    ]
+    assert len(set(spec["teacher_categories"].values())) == 5
+    assert spec["authority"]["validation_numeric_access"] is False
+    assert spec["authority"]["test_held_numeric_access"] is False
 
 
 def test_writer_emits_every_factor_and_starts_at_physical_zero() -> None:

@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import os
 import time
+import tomllib
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -29,10 +31,46 @@ from ember.gate_zero_runtime import (
     set_global_seed,
     smolvla_flow_loss,
 )
-from ember.writer.core import sha256_file
+from ember.writer.core import load_writer_contract, sha256_file
 from ember.writer.data import WriterQueryDataset, WriterSpecAuthority, WriterTaskBatchSampler
-from ember.writer.train import _base_owner, _lora_targets
+from ember.writer.train import (
+    _authorities,
+    _base_owner,
+    _lora_targets,
+    _paths,
+    repository_root,
+)
 from ember.writer.validation_contract import WriterValidationError, require
+
+
+def load_source_teacher_contract(path: Path, *, repo_root: Path) -> dict[str, Any]:
+    try:
+        with path.open("rb") as handle:
+            spec = tomllib.load(handle)
+    except (OSError, tomllib.TOMLDecodeError) as error:
+        raise WriterValidationError("source-teacher contract is unreadable") from error
+    require(spec.get("schema_version"), 1, "source-teacher schema")
+    require(
+        spec.get("status"),
+        "predeclared_source_teacher_fit_before_teacher_outcomes",
+        "source-teacher predeclaration",
+    )
+    authority = spec["authority"]
+    writer_path = repo_root / authority["writer_contract_relative_path"]
+    split_path = repo_root / authority["split_reseal_relative_path"]
+    require(sha256_file(writer_path), authority["writer_contract_sha256"], "Writer contract")
+    require(sha256_file(split_path), authority["split_reseal_sha256"], "split reseal")
+    split = json.loads(split_path.read_text(encoding="utf-8"))["active_split"]
+    tasks = spec["teacher_task_ids"]
+    if len(tasks) != len(set(tasks)) or not set(tasks) <= set(split["source"]):
+        raise WriterValidationError("source-teacher tasks left the source split")
+    if set(tasks) & (set(split["validation"]) | set(split["held_out"])):
+        raise WriterValidationError("source-teacher tasks overlap evaluation")
+    if {str(task) for task in tasks} != set(spec["teacher_categories"]):
+        raise WriterValidationError("source-teacher categories are incomplete")
+    require(authority["validation_numeric_access"], False, "validation access")
+    require(authority["test_held_numeric_access"], False, "test/held access")
+    return spec
 
 
 def direct_final_path(root: Path) -> Path:
@@ -66,6 +104,7 @@ def _publish_final(
     contract_sha256: str,
     wall_seconds: float,
     final_loss: float,
+    artifact_role: str,
 ) -> None:
     destination = direct_final_path(root)
     if destination.exists():
@@ -77,6 +116,7 @@ def _publish_final(
     manifest = {
         "schema_version": 1,
         "status": "fixed_step_matched_direct_task_local_lora",
+        "artifact_role": artifact_role,
         "task_id": task_id,
         "step": step,
         "validation_contract_sha256": contract_sha256,
@@ -269,7 +309,74 @@ def fit_direct_lora(
             state=runtime.trainable,
             contract_sha256=validation_contract_sha256,
             wall_seconds=time.perf_counter() - started, final_loss=final_loss,
+            artifact_role=spec["direct_baseline"]["role"],
         )
     finally:
         runtime.dataset.close()
         torch.cuda.empty_cache()
+
+
+def run_source_teacher(args: argparse.Namespace) -> None:
+    root = repository_root()
+    spec = load_source_teacher_contract(args.config, repo_root=root)
+    if args.task_id not in spec["teacher_task_ids"]:
+        raise WriterValidationError("requested task is not a frozen source teacher")
+    paths = _paths(root)
+    writer_spec = load_writer_contract(
+        root / spec["authority"]["writer_contract_relative_path"],
+        phase0_path=paths["phase0"],
+        split_path=paths["split"],
+        gate_zero_path=paths["gate_zero"],
+        mature_lora_path=paths["mature"],
+    )
+    with paths["phase0"].open("rb") as handle:
+        phase0 = tomllib.load(handle)
+    authorities = {
+        authority.task_id: authority
+        for authority in _authorities(
+            writer_spec,
+            phase0,
+            manifest_path=args.output_root
+            / spec["authority"]["canonical_manifest_relative_path"],
+            dataset_root=args.data_root / spec["authority"]["dataset_relative_path"],
+        )
+    }
+    source_checkpoint = (
+        args.output_root
+        / spec["authority"]["source_base_output_relative_path"]
+        / "checkpoints"
+        / f"{spec['authority']['source_base_checkpoint_step']:06d}"
+    )
+    require(
+        sha256_file(source_checkpoint / "ember_checkpoint_manifest.json"),
+        spec["authority"]["source_base_checkpoint_manifest_sha256"],
+        "source-base checkpoint",
+    )
+    fit_direct_lora(
+        spec=spec,
+        writer_spec=writer_spec,
+        authority=authorities[args.task_id],
+        source_checkpoint=source_checkpoint,
+        mature_path=paths["mature"],
+        output_dir=args.output_dir,
+        validation_contract_sha256=sha256_file(args.config),
+    )
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--config", required=True, type=Path)
+    parser.add_argument("--output-root", required=True, type=Path)
+    parser.add_argument("--data-root", required=True, type=Path)
+    parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument("--task-id", required=True, type=int)
+    args = parser.parse_args()
+    for name in ("config", "output_root", "data_root", "output_dir"):
+        if not getattr(args, name).is_absolute():
+            raise WriterValidationError(f"--{name.replace('_', '-')} must be absolute")
+    run_source_teacher(args)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

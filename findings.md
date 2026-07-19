@@ -1,5 +1,26 @@
 # EMBER Durable Findings
 
+## 2026-07-19 owner interpretation: Gate 0 passed with limited coverage
+
+- The immutable formal packet remains unchanged: at horizon 16, task 3 improves
+  from base `22/32` to SFT-LoRA `28/32`, and task 4 from `16/32` to `20/32`.
+  These directionally consistent gains are now sufficient to enter rapid Writer
+  development. They cover only two near-similar tasks and 32 rollouts per arm;
+  that limitation must accompany every use of the evidence.
+- A valid multi-category Gate-0 supplement cannot be obtained by merely replaying
+  the frozen task3/task4 adapters: all available mature SFT LoRA checkpoints are
+  task-specific to those two tasks. Extending to the 15-task validation split
+  would require new per-task training and nontrivial preparation, so the owner
+  rule selects "skip supplement and proceed". No result is assumed favorable.
+- Gate -1 remains passed with its immutable 19/24 ordered/wrong-video, 15/24
+  paired result and drop-last residual. No threshold or historical packet was
+  changed.
+- The direct Writer contract is now frozen in
+  `configs/writer_cold_start.toml`: all 60 source tasks, action-hidden episodes
+  0--7, independent functional-train episodes 8--39, mature 37-target rank-32
+  LoRA, and five cross-category validation tasks. No test/held numeric surface
+  has been accessed.
+
 ## Research framing
 
 - The broad information-to-parameter idea is meaningful only over a structured

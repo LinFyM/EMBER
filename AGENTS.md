@@ -66,8 +66,12 @@ establish:
 Phase 0, exact resume, throughput work, Gate -1, Gate 0, one training run, or
 authorization of a later stage cannot by itself complete the long-term Goal.
 
-Do not implement the complete system merely because it appears in the expert
-plan. Each expensive component needs evidence from its scientific predecessor.
+Gate -1 is sealed as passed with residuals. Gate 0 is passed for mechanism
+development, with the explicit limitation that its positive SFT-LoRA evidence
+covers only two near-similar source tasks with 32 rollouts per arm. Proceed to
+Writer cold start; an optional Gate-0 extension may not block it unless frozen
+checkpoints can be evaluated across new task categories without retraining or
+substantial engineering.
 
 ## Hard resource constraint
 
@@ -136,19 +140,17 @@ plan. Each expensive component needs evidence from its scientific predecessor.
   paired correctness is 15/24, and the drop-last sensitivity remains recorded.
   Preserve the original 0.80 threshold and packet; do not spend more compute
   merely to cross it, and do not keep Gate -1 as a Writer prerequisite.
-- Any evaluation below 32 rollouts per task/arm is mechanics-only. Do not read,
-  aggregate, interpret, select from, or proactively report its performance
-  outcomes; retain existing small-denominator values only as historical
-  provenance. The first owner-visible performance packet must already contain
-  at least 32 paired rollouts per task/arm
-  across multiple policy RNG seeds, per-episode paired rows, paired bootstrap
-  and exact intervals, and at least two (preferably three) independent training
-  seeds. Evaluation seeds never substitute for training seeds.
-- Task 3 and task 4 are development tasks. A confirmation must be disjoint in
-  source task or physical init state, with the disjointness and hashes asserted
-  before LoRA outcomes. Prefer two to four source tasks with distinct
-  primitives and result-blind base-competence/headroom selection; do not use
-  validation, held, locked-report, or LoRA outcomes to choose them.
+- Mechanical smokes may not drive scientific decisions. Scientific evaluation
+  uses enough independent rollouts and policy RNG seeds for the task variance
+  and expected effect; 32 is neither a universal minimum nor a universal proof
+  of sufficiency. Retain per-episode rows and report uncertainty, but do not use
+  one task's strictly-positive CI lower bound as an automatic veto. Never pool
+  different checkpoints as if they were independent episodes, and never treat
+  evaluation seeds as training seeds.
+- Task 3 and task 4 remain the limited Gate-0 development evidence. Writer
+  development and model selection must use several clearly different task
+  categories from the sealed validation split; reporting-only test/held
+  surfaces remain unavailable until the final method is frozen.
 - Task-local RL training and its primary Gate evaluation use execution horizon
   16. Horizon 50 remains a separately reported canonical/deployment robustness
   metric, not the sole Gate authority.

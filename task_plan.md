@@ -87,8 +87,8 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
 | --- | --- | --- |
 | Phase 0. Reproducible substrate | in progress | environment lock, revisions, hashes, known-path smoke test, VRAM/throughput/storage measurements |
 | Gate -1. Benchmark/spec validity | passed with recorded residuals; no longer a Writer blocker | immutable 19/24 ordered and wrong-video, 15/24 paired, original 0.80 threshold and drop-last sensitivity preserved |
-| Gate 0. Useful-update oracle | formal development packet complete; current evidence negative/ambiguous and does not authorize Gate 0 or Writer | >=32 paired rollouts/task/arm, multiple policy RNG seeds, >=2 training seeds, horizon-16 primary plus horizon-50 robustness, independent confirmation |
-| Stage 1. Direct full-LoRA Writer | pending Gate 0 | independent-query zero-interaction utility over retrieval, average, direct-conditioning, standard-LoRA, and capacity-matched DISC/HyPoGen-style baselines |
+| Gate 0. Useful-update oracle | passed for development with limited coverage | task3/task4 SFT-LoRA improves over base; retain the near-similar-task and n=32/arm limitation |
+| Stage 1. Direct full-LoRA Writer | in progress | independent-query zero-interaction utility across several validation categories, with frozen-base and matched direct-LoRA comparisons |
 | Stage 2. Ordinary task-local LoRA RL | pending Writer utility | matched-budget adaptation AUC/steps-to-threshold from Writer versus standard initialization; no predicted search constraint |
 | Stage 3. Source-only Writer reward/meta learning | pending ordinary RL | outer reward improves future Writer initializations while shared base remains frozen |
 | Stage 4. Frozen held evaluation | pending complete freeze | sealed primary comparison, full controls, resources, uncertainty, and failure report |
@@ -150,19 +150,16 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
   checksums and JSON pass, 24 videos decode, no grain-key duplicates or init
   hash inconsistencies exist, and an independent in-memory recomputation
   exactly matches the saved result.
-- [ ] Gate 0 remains not authorized. At h16, supervised LoRA has positive point
-  gains on tasks 3/4 but the predeclared paired-bootstrap lower bounds are not
-  strictly positive on both tasks. Ordinary RL and supervised-init RL are not
-  stable across both training seeds, and the supervised initialization benefit
-  intervals all include zero. Do not add training, pick a favorable seed, lower
-  the threshold, open confirmation/validation/held, or start Writer from this
-  packet. Preserve this as the current evidence boundary rather than deriving
-  more recovery infrastructure.
-- [ ] Apply the owner-wide straight-line rule to the next authorized scientific
-  stage: one mature method, only necessary arms, required models trained once,
-  and no visible performance until the full minimum denominator. Use at most
-  eight live-free A100s through existing independent outputs; individual
-  training/evaluation segments should remain within about one to two hours.
+- [x] Owner interpretation supersedes the former strict-CI decision: Gate 0 is
+  passed for rapid development from the positive SFT-LoRA point gains, while
+  retaining the two-near-similar-task and n=32/arm limitation. Gate -1 remains
+  passed with residuals. Do not rewrite either immutable result packet.
+- [ ] Run Writer cold start through the frozen
+  `configs/writer_cold_start.toml` contract: all 60 source tasks, the mature
+  complete LoRA, eight-rank useful training, exact-resume stops, then five
+  cross-category validation tasks. Use only frozen base and matched direct LoRA
+  as the first stage baselines; defer the paper-wide matrix until the mechanism
+  has functional value.
 
 1. [x] Bootstrap a Python 3.12 environment from the locked project definition;
    verify package consistency and the active GPU/storage contracts.
@@ -1167,14 +1164,13 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     LoRA-matched arms to these disjoint confirmation tasks before any LoRA
     outcome.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
-    zero-interaction utility on source and
-    validation surfaces against language-only, video-only, combined,
-    wrong/shuffled/reversed/first/last/scene/task-ID controls, average/retrieval,
-    direct conditioning, ordinary task-specific LoRA, and capacity-matched
-    DISC/HyPoGen-style generation. Writer takes language plus action-hidden
-    teaching video and emits the complete declared LoRA; attach it to the
-    frozen base and backpropagate independent source-query action/flow/
-    behavioral loss into Writer. Freeze all choices before held outcomes.
+    zero-interaction utility. The rapid-development comparison is frozen base,
+    the language+action-hidden-video Writer, and exact-capacity direct
+    task-local LoRA on five distinct validation categories. Writer emits the
+    complete declared LoRA; attach it to the frozen base and backpropagate
+    independent source-query flow/behavioral loss into Writer. Add the full
+    modality/negative/retrieval/direct-generator matrix only after the complete
+    EMBER mechanism proves useful and the formal experiment is frozen.
 23. [ ] After supervised cold start, run a separate source-only Writer-only RL
     stage. Freeze the shared base; use each generated LoRA for environment
     rollout, but do not optimize that LoRA in place or maintain it as a second

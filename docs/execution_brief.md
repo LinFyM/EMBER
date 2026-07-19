@@ -11,6 +11,15 @@ The legacy `task_geometry` field in the already hash-bound `configs/phase0.toml`
 is preserved as non-executable provenance so completed evidence is not
 retroactively rewritten; it has no scheduling or implementation authority.
 
+Owner update, 2026-07-19: Gate -1 is sealed as passed with residuals and Gate 0
+is passed for rapid mechanism development, while retaining its limited
+task3/task4, n=32-per-arm coverage. The former strict per-task CI veto and fixed
+n=32 sufficiency rule are historical contracts, not current Writer blockers.
+Use enough independent samples for the observed variance and expected effect,
+judge multi-category validation evidence as a whole, and report adverse results
+unchanged. The active next stage is the direct Writer cold start specified in
+`configs/writer_cold_start.toml`.
+
 The current EMBER objective is to test this causal chain within one robot
 embodiment and simulator dynamics family:
 
@@ -84,8 +93,9 @@ separate matched ablation, not the default and not required for completion.
   rank-8 LoRA contract. This is a low-cost useful-update probe, not the final
   Writer support.
 - Compute ceiling: effective 2026-07-19, at most eight A100 80GB GPUs across all
-  EMBER work. Prefer independent four-rank task/arm/seed/evaluation jobs through
-  the existing canonical entrypoint when this reduces wall-clock.
+  EMBER work. Use all live-free devices for useful data/task/rollout parallelism
+  and tune batch for roughly 10GB average headroom per A100; never manufacture
+  utilization with dummy memory or interfere with unrelated jobs.
 
 SmolVLA plus LIBERO is the formal mechanism-development surface, not a disposable
 toy. OpenVLA-OFT starts only after task information, useful-update existence,

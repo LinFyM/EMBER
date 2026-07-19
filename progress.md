@@ -1,5 +1,48 @@
 # EMBER Progress and Handoff
 
+## 2026-07-19 Writer cold start authorized and frozen
+
+- The owner replaced the prior strict Gate-0 interpretation: Gate -1 is passed
+  with residuals and Gate 0 is passed with limited two-task/n=32 coverage. The
+  new unbudgeted full-EMBER Goal is active; canonical bank/geometry/Gate 1 remain
+  outside the project.
+- Git was clean at pushed `a0bf7ad`; all eight A100s were live-free, `/data` had
+  2.9TB free, and `/data/ymdai` used about 308GB under the 500GB cap. The source
+  base step-10000 checkpoint and task3/task4 mature LoRA evidence validate.
+- Optional Gate-0 expansion is skipped because no frozen mature adapter exists
+  for a different task category; obtaining one requires retraining and would
+  block Writer. The evidence limitation is retained rather than hidden.
+- `configs/writer_cold_start.toml` and
+  `docs/writer_cold_start_design.md` freeze the immediate run: 60 source tasks,
+  eight action-hidden specification demos/task, 32 independent functional-train
+  demos/task, five validation categories, the mature 37-target rank-32 LoRA,
+  eight-rank DDP, and atomic steps 250/500/750/1000. The first 64/rank smoke
+  passed at 17.4GiB peak; the 288/rank headroom probe passed at 74.9GiB allocated
+  but left only about 3GiB free. Interpolation therefore freezes 256/rank
+  (global 2,048) and LR 2e-4 for about 10GiB expected headroom.
+  The one functional-Writer path and targeted mechanical tests are complete;
+  next launch the first real exact-resume segment on GPUs 0--7.
+- The retained implementation has one owner path: `ember.writer.core` owns the
+  complete-LoRA generator and atomic state, `ember.writer.data` owns the two
+  disjoint HDF5 surfaces, and `ember.writer.train` is the sole trainer. There
+  was no prior Writer implementation to retain or retire; no compatibility,
+  recovery, bank, or alternate runner path was added. This cohesive new stage
+  justifies the architecture guard's size review flags; all hard flags are
+  resolved.
+- Two pre-model/pre-step smokes failed closed and remain in longrun provenance:
+  the package move initially resolved the repository root incorrectly, then
+  image preparation was called on the inner flow module instead of its owning
+  policy. Each received one narrow regression-tested fix. Recovery2 completed
+  rc 0 in 28.1s on GPUs 0--7, cached all 60 action-hidden features, confirmed
+  zero base trainable parameters and finite Writer gradients, and recorded no
+  performance outcome or validation/test access.
+- The result-blind 288/rank headroom probe completed rc 0, measured about
+  74.9GiB allocated/3GiB free per A100 and about 481 global samples/s. It was
+  safe but violated the desired 10GiB margin; interpolation between measured
+  64/rank and 288/rank points selected 256/rank, global 2,048, and LR 2e-4.
+  The shared 1.2MiB feature cache is canonical under the Writer output root so
+  formal training does not repeat video encoding.
+
 ## Current state
 
 - The first real matched faithful-FPO++ development segment is complete:

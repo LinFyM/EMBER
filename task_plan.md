@@ -714,6 +714,26 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     and drift evidence to diagnose whether the update is merely too weak or
     directionally unhelpful. Freeze any later optimizer/estimator recovery
     before outcomes and do not reopen stage 32 by default.
+    The cheapest directional discriminator is now frozen before outcomes at
+    config SHA256
+    `d322339eb417536a8b96b124b3c8d6324c4b25b95e89f4a3cffb5d6cadce200c`.
+    It replaces only the ineffective AWR optimizer objective with one bounded
+    per-sample conditional-flow-loss-ratio check using signed within-batch
+    binary-reward advantages: successful trajectories are pulled toward the
+    policy while failed trajectories are pushed away. It is anchored to the
+    FPO++ paper and official code commit
+    `b80112be1e8362263c4cd176e7aef21a275ff1c6`, but explicitly omits the
+    critic, GAE, many-flow-sample estimator, entropy term, and long training,
+    so it is not a full FPO++ reproduction or performance claim. Tasks 3/4,
+    four initial/paired arms, 37-target rank-32 LoRA, initialization states,
+    source interaction/development slices, seeds, exploration, reward,
+    optimizer hyperparameters, 16-episode budget, query/drift guards, and Gate
+    thresholds remain unchanged. There is no stage-32 fallback. First require
+    focused/full tests plus one no-environment real-model forward/backward with
+    no optimizer step; only a passing smoke permits one four-GPU source-only
+    run. A passing development candidate can open only a separately frozen
+    fresh Gate, while a failure records a bounded estimator negative and returns
+    to Gate recovery without weakening the full EMBER objective.
     No validation, held, locked-report, or step-2k access is authorized. The
     original SHA256 `ba3ee431...f132f`
     reached no episode because its last-warm-up seed was not stride-adjacent to

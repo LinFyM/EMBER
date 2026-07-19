@@ -73,6 +73,7 @@ def _validate_upstream_hashes(
     for key in (
         "headroom_result_sha256",
         "candidate_diagnostic_result_sha256",
+        "previous_awr_result_sha256",
         "source_base_checkpoint_manifest_sha256",
         "task3_supervised_manifest_sha256",
         "task3_supervised_state_sha256",
@@ -102,12 +103,16 @@ def _validate_lora_and_optimizer(spec: Mapping[str, Any], fit: Mapping[str, Any]
     _require_equal(authority.get("supervised_step"), 1000, "supervised_step")
     _require_equal(authority.get("writer_present"), False, "writer_present")
     required_algorithm = {
-        "name": "episodic_awr_style_monte_carlo_reward_weighted_flow_regression",
+        "name": "per_sample_conditional_flow_loss_ratio_with_signed_episode_advantage",
+        "primary_source_fpo": "https://arxiv.org/abs/2602.02481",
+        "primary_source_code_commit": "b80112be1e8362263c4cd176e7aef21a275ff1c6",
+        "not_full_fpo_plus": True,
         "reward": "binary simulator episode success only",
         "baseline": "mean binary success within the eight-episode task-local rollout batch",
-        "temperature": 0.5,
-        "maximum_exponential_weight": 20.0,
-        "normalize_weights_to_mean_one": True,
+        "advantage_normalization": "zero mean and unit population standard deviation within the eight-episode task-local rollout batch",
+        "ratio_clip": 0.02,
+        "negative_spo_penalty": 0.01,
+        "log_ratio_clamp": 5.0,
         "critic": "none",
         "shared_parameter_updates": False,
         "writer_updates": False,
@@ -132,7 +137,11 @@ def _validate_recovery_provenance(spec: Mapping[str, Any]) -> None:
     recovery = spec.get("mechanical_recovery")
     flow_recovery = spec.get("flow_shape_recovery")
     model_shape_recovery = spec.get("model_internal_shape_recovery")
-    if not all(isinstance(value, dict) for value in (recovery, flow_recovery, model_shape_recovery)):
+    ratio_recovery = spec.get("signed_flow_ratio_recovery")
+    if not all(
+        isinstance(value, dict)
+        for value in (recovery, flow_recovery, model_shape_recovery, ratio_recovery)
+    ):
         raise GateZeroTaskLocalRLContractError("task-local RL recovery provenance is missing")
     _require_equal(
         recovery["predecessor_contract_sha256"],
@@ -203,13 +212,33 @@ def _validate_recovery_provenance(spec: Mapping[str, Any]) -> None:
         "eb71d231334645b5ac62fbd345c1a9cdf76493482c0ed337977d01c53745fcb0",
         "model-shape failure packet",
     )
+    _require_equal(
+        ratio_recovery["predecessor_contract_sha256"],
+        "b08a85b8de1bf04c788d217cfab8d34bb984d0f70ab8795e8c0aaf0f19820a37",
+        "signed-ratio predecessor",
+    )
+    _require_equal(
+        ratio_recovery["parent_awr_result_sha256"],
+        "aab151ea503dbada6eaf3a2242301562a47052e1399ec10986c2279425c13b57",
+        "signed-ratio parent result",
+    )
+    _require_equal(
+        ratio_recovery["parent_status"],
+        "task_local_rl_early_check_not_supported",
+        "signed-ratio parent status",
+    )
+    _require_equal(
+        ratio_recovery["primary_source_code_commit"],
+        "b80112be1e8362263c4cd176e7aef21a275ff1c6",
+        "signed-ratio source commit",
+    )
 
 
 def _validate_surfaces_and_decisions(spec: Mapping[str, Any]) -> None:
     _require_equal(spec.get("schema_version"), 1, "schema_version")
     _require_equal(
         spec.get("status"),
-        "mechanically_amended_three_times_before_any_optimizer_or_development_outcome",
+        "bounded_signed_flow_ratio_recovery_predeclared_after_awr_early_check",
         "status",
     )
     _require_equal(spec.get("task_ids"), [3, 4], "task_ids")
@@ -233,20 +262,20 @@ def _validate_surfaces_and_decisions(spec: Mapping[str, Any]) -> None:
         raise GateZeroTaskLocalRLContractError("task-local RL surface declaration is missing")
     _validate_recovery_provenance(spec)
     _require_equal(training["batch_size"], 8, "training batch_size")
-    _require_equal(training["rounds_maximum"], 4, "training rounds_maximum")
-    _require_equal(training["interaction_episode_nodes"], [16, 32], "interaction nodes")
+    _require_equal(training["rounds_maximum"], 2, "training rounds_maximum")
+    _require_equal(training["interaction_episode_nodes"], [16], "interaction nodes")
     _require_equal(training["atomic_checkpoint_every_episodes"], 8, "checkpoint interval")
     _require_equal(
         training["train_init_state_indices_by_round"],
-        [list(range(start, start + 8)) for start in (8, 16, 24, 32)],
+        [list(range(start, start + 8)) for start in (8, 16)],
         "training init states",
     )
     _require_equal(development["init_state_indices"], list(range(40, 48)), "development init states")
     _require_equal(development["frozen_base_successes_by_task"], [3, 3], "base J0")
     _require_equal(development["supervised_lora_successes_by_task"], [2, 4], "supervised J0")
     _require_equal(safeguards["maximum_action_drift_proxy"], 0.02, "drift safeguard")
-    _require_equal(continuation["stage16_minimum_aggregate_paired_net_wins_to_continue"], 1, "stage16 trend")
-    _require_equal(continuation["stage16_maximum_per_task_paired_loss_to_continue"], 1, "stage16 loss cap")
+    _require_equal(continuation["stage16_failure_stops_without_stage32"], True, "stage16 stop")
+    _require_equal(continuation["stage32_is_outside_this_recovery"], True, "stage32 boundary")
     _require_equal(decision["minimum_each_task_success_gain_exclusive_pp"], 0.0, "task gain")
     _require_equal(decision["minimum_positive_task_count"], 2, "positive task count")
     _require_equal(decision["minimum_median_success_gain_pp"], 15.0, "median gain")
@@ -326,27 +355,16 @@ def assigned_task_local_rl_arm(
     return assignments[rank]
 
 
-def episodic_awr_weights(
-    returns: torch.Tensor, *, temperature: float, maximum_weight: float
-) -> torch.Tensor:
-    """Compute clipped, mean-one episodic AWR weights without a learned critic."""
+def normalized_episode_advantages(returns: torch.Tensor) -> torch.Tensor:
+    """Center and normalize binary episodic return for the signed ratio check."""
 
-    if (
-        returns.ndim != 1
-        or returns.numel() == 0
-        or not torch.isfinite(returns).all()
-        or temperature <= 0
-        or maximum_weight < 1
-        or not math.isfinite(temperature)
-        or not math.isfinite(maximum_weight)
-    ):
-        raise GateZeroTaskLocalRLContractError("invalid episodic AWR inputs")
+    if returns.ndim != 1 or returns.numel() == 0 or not torch.isfinite(returns).all():
+        raise GateZeroTaskLocalRLContractError("invalid signed-ratio returns")
     advantages = returns.to(dtype=torch.float32) - returns.to(dtype=torch.float32).mean()
-    weights = torch.exp(advantages / temperature).clamp(max=maximum_weight)
-    mean = weights.mean()
-    if not torch.isfinite(weights).all() or not torch.isfinite(mean) or mean <= 0:
-        raise GateZeroTaskLocalRLContractError("non-finite episodic AWR weights")
-    return weights / mean
+    scale = advantages.std(unbiased=False)
+    if not torch.isfinite(scale) or scale <= 0:
+        raise GateZeroTaskLocalRLContractError("signed-ratio recovery requires reward variation")
+    return advantages / scale
 
 
 def _arm_passes(nets: list[int], spec: Mapping[str, Any]) -> bool:
@@ -365,7 +383,7 @@ def _arm_passes(nets: list[int], spec: Mapping[str, Any]) -> bool:
 def decide_task_local_rl_node(
     spec: Mapping[str, Any], *, interaction_episodes: int, metrics: Mapping[str, Any]
 ) -> dict[str, Any]:
-    """Apply the frozen stage-16/stage-32 continuation and selection rule."""
+    """Apply the frozen single-node signed-flow-ratio selection rule."""
 
     if interaction_episodes not in spec["training_interaction"]["interaction_episode_nodes"]:
         raise GateZeroTaskLocalRLContractError("unknown task-local RL decision node")
@@ -395,20 +413,8 @@ def decide_task_local_rl_node(
     elif passed:
         status = "rl_candidate_selected_for_fresh_gate"
         selected = interaction_episodes
-    elif interaction_episodes == 16:
-        continuation = spec["continuation"]
-        trend = any(
-            sum(values) >= continuation["stage16_minimum_aggregate_paired_net_wins_to_continue"]
-            and min(values) >= -continuation["stage16_maximum_per_task_paired_loss_to_continue"]
-            for values in nets.values()
-        )
-        status = (
-            "continue_same_rl_trajectories_to_32_episodes"
-            if trend
-            else "task_local_rl_early_check_not_supported"
-        )
     else:
-        status = "task_local_rl_candidate_not_supported"
+        status = "task_local_rl_early_check_not_supported"
     return {
         "status": status,
         "interaction_episodes": interaction_episodes,

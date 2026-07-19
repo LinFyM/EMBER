@@ -1810,3 +1810,33 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   retained packet is 600KiB, and GPU 4/5 released to 0MiB. The supervised
   trajectory remains stopped; next freeze the already authorized same-task
   four-arm matched ordinary task-local RL recovery before any new outcome.
+
+## 2026-07-19 signed flow-ratio Gate-0 recovery prelaunch
+
+- The prior AWR-style 16-episode four-arm run was validated and closed at
+  result SHA256
+  `aab151ea503dbada6eaf3a2242301562a47052e1399ec10986c2279425c13b57`:
+  rc 0, complete checksums, finite updates, four videos/gallery/Trackio, but
+  zero paired development change in all arms. Only the step-16 recovery state
+  is loadable; step 8 retains metrics but no model checkpoint. Stage 32 and a
+  fresh Gate remain closed.
+- Before any further environment outcome, the single active trainer was
+  changed from positive-only AWR weighting to a bounded signed conditional-
+  flow-loss-ratio objective. The pre-outcome contract SHA256 is
+  `d322339eb417536a8b96b124b3c8d6324c4b25b95e89f4a3cffb5d6cadce200c`;
+  it binds the AWR result and official FPO-control commit
+  `b80112be1e8362263c4cd176e7aef21a275ff1c6`, while declaring that this is not
+  full FPO++. No second trainer or long-run path was added, and 32 episodes are
+  removed from the active recovery rather than silently reopened.
+- Red-then-green tests cover signed normalized advantages, flat-reward
+  fail-closed behavior, success/failure gradient direction, frozen hashes, the
+  single 16-episode node, and canonical launcher topology. Focused tests pass
+  30/30 and the full non-DDP suite passes 247/247; Python compilation, shell
+  syntax, dry-run authority paths, diff checks, and the architecture guard
+  pass with REVIEW/no hard violation. A no-environment real-model smoke with no
+  optimizer step is the final prelaunch requirement; no new source rollout,
+  validation, held, locked-report, or Writer outcome has been consumed yet.
+- The active plan also records the owner-mandated independent Writer-only RL
+  stage after supervised Writer cold start. That stage updates Writer only and
+  cannot be conflated with Gate-0/task-local LoRA RL, which updates LoRA only,
+  or with later adaptation-aware reward/meta outer learning.

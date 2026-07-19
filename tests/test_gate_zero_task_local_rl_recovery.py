@@ -15,8 +15,8 @@ from ember.gate_zero_task_local_rl.contract import (  # noqa: E402
     GateZeroTaskLocalRLContractError,
     assigned_task_local_rl_arm,
     decide_task_local_rl_node,
-    episodic_awr_weights,
     load_task_local_rl_spec,
+    normalized_episode_advantages,
     validate_task_local_rl_spec,
 )
 from ember.gate_zero_task_local_rl.runtime import (  # noqa: E402
@@ -24,9 +24,9 @@ from ember.gate_zero_task_local_rl.runtime import (  # noqa: E402
     ExplorationActionProcessor,
     balanced_anchor_slots,
     build_balanced_replay_batch,
+    signed_flow_ratio_loss,
     validated_flow_action_shape,
     validate_training_reset_events,
-    weighted_flow_loss,
 )
 
 
@@ -58,8 +58,13 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         self.assertFalse(self.spec["authority"]["writer_present"])
         self.assertFalse(self.spec["algorithm"]["shared_parameter_updates"])
         self.assertFalse(self.spec["algorithm"]["writer_updates"])
-        self.assertEqual(self.spec["training_interaction"]["interaction_episode_nodes"], [16, 32])
+        self.assertEqual(self.spec["training_interaction"]["interaction_episode_nodes"], [16])
         self.assertEqual(self.spec["exploration"]["standard_deviation"], [0.05] * 6 + [0.0])
+        self.assertEqual(
+            self.spec["algorithm"]["name"],
+            "per_sample_conditional_flow_loss_ratio_with_signed_episode_advantage",
+        )
+        self.assertTrue(self.spec["algorithm"]["not_full_fpo_plus"])
 
     def test_four_rank_assignment_has_no_duplicate_or_idle_arm(self) -> None:
         assignments = [assigned_task_local_rl_arm(rank=i, world_size=4, spec=self.spec) for i in range(4)]
@@ -69,18 +74,15 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         )
         self.assertEqual(len(set(assignments)), 4)
 
-    def test_awr_weights_are_finite_normalized_and_reward_sensitive(self) -> None:
-        weights = episodic_awr_weights(
-            torch.tensor([1.0, 0.0, 0.0, 1.0]), temperature=0.5, maximum_weight=20.0
-        )
-        self.assertTrue(torch.isfinite(weights).all())
-        self.assertAlmostEqual(float(weights.mean()), 1.0, places=6)
-        self.assertGreater(float(weights[0]), float(weights[1]))
-        self.assertTrue(torch.equal(weights[[0, 3]], weights[[0, 0]]))
-        flat = episodic_awr_weights(
-            torch.zeros(8), temperature=0.5, maximum_weight=20.0
-        )
-        self.assertTrue(torch.equal(flat, torch.ones(8)))
+    def test_episode_advantages_are_signed_normalized_and_fail_on_flat_reward(self) -> None:
+        advantages = normalized_episode_advantages(torch.tensor([1.0, 0.0, 0.0, 1.0]))
+        self.assertTrue(torch.isfinite(advantages).all())
+        self.assertAlmostEqual(float(advantages.mean()), 0.0, places=6)
+        self.assertAlmostEqual(float(advantages.std(unbiased=False)), 1.0, places=6)
+        self.assertGreater(float(advantages[0]), 0.0)
+        self.assertLess(float(advantages[1]), 0.0)
+        with self.assertRaises(GateZeroTaskLocalRLContractError):
+            normalized_episode_advantages(torch.zeros(8))
 
     def _metrics(self, *, zero=(2, 1), supervised=(2, 1), drift=0.01) -> dict:
         return {
@@ -94,26 +96,20 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
             },
         }
 
-    def test_stage16_passes_early_or_continues_only_on_positive_trend(self) -> None:
+    def test_stage16_passes_early_or_stops_without_budget_extension(self) -> None:
         passed = decide_task_local_rl_node(self.spec, interaction_episodes=16, metrics=self._metrics())
         self.assertEqual(passed["status"], "rl_candidate_selected_for_fresh_gate")
         self.assertEqual(passed["selected_interaction_episodes"], 16)
-        trend = decide_task_local_rl_node(
-            self.spec, interaction_episodes=16, metrics=self._metrics(zero=(1, 0), supervised=(0, 0))
-        )
-        self.assertEqual(trend["status"], "continue_same_rl_trajectories_to_32_episodes")
         stopped = decide_task_local_rl_node(
             self.spec, interaction_episodes=16, metrics=self._metrics(zero=(0, 0), supervised=(0, 0))
         )
         self.assertEqual(stopped["status"], "task_local_rl_early_check_not_supported")
 
-    def test_stage32_cannot_continue_or_authorize_writer(self) -> None:
-        decision = decide_task_local_rl_node(
-            self.spec, interaction_episodes=32, metrics=self._metrics(zero=(1, 0), supervised=(0, 0))
-        )
-        self.assertEqual(decision["status"], "task_local_rl_candidate_not_supported")
-        self.assertFalse(decision["gate_zero_authorized"])
-        self.assertFalse(decision["writer_authorized"])
+    def test_stage32_is_not_an_active_decision_node(self) -> None:
+        with self.assertRaises(GateZeroTaskLocalRLContractError):
+            decide_task_local_rl_node(
+                self.spec, interaction_episodes=32, metrics=self._metrics(zero=(1, 0))
+            )
 
     def test_threshold_or_task_mutation_fails_closed(self) -> None:
         changed = copy.deepcopy(self.spec)
@@ -140,6 +136,17 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
             )
         changed = copy.deepcopy(self.spec)
         changed["flow_shape_recovery"]["model_action_shape_after_preprocessing"] = [64, 50, 7]
+        with self.assertRaises(GateZeroTaskLocalRLContractError):
+            validate_task_local_rl_spec(
+                changed,
+                gate_zero_path=self.gate_zero,
+                phase0_path=self.phase0,
+                fit_path=self.fit,
+                headroom_path=self.headroom,
+                diagnostic_path=self.diagnostic,
+            )
+        changed = copy.deepcopy(self.spec)
+        changed["signed_flow_ratio_recovery"]["parent_awr_result_sha256"] = "0" * 64
         with self.assertRaises(GateZeroTaskLocalRLContractError):
             validate_task_local_rl_spec(
                 changed,
@@ -269,19 +276,38 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
     def test_launcher_is_one_canonical_four_gpu_staged_path(self) -> None:
         text = self.launcher.read_text(encoding="utf-8")
         self.assertIn("--nproc-per-node=4", text)
-        self.assertIn('[[ "$stop_after_episodes" =~ ^(16|32)$ ]]', text)
+        self.assertIn('[[ "$stop_after_episodes" == 16 ]]', text)
         self.assertIn("--resume", text)
         self.assertIn("gpu_telemetry_", text)
         self.assertNotIn("ppo", text.lower())
         self.assertNotIn("writer", text.lower())
 
-    def test_weighted_flow_loss_requires_mean_one_weights(self) -> None:
-        loss = weighted_flow_loss(
-            torch.tensor([1.0, 3.0]), torch.tensor([0.5, 1.5])
+    def test_signed_flow_ratio_loss_pushes_success_toward_and_failure_away(self) -> None:
+        current = torch.tensor([1.0, 1.0], requires_grad=True)
+        old = torch.tensor([1.0, 1.0])
+        advantages = torch.tensor([1.0, -1.0])
+        loss, metrics = signed_flow_ratio_loss(
+            current,
+            old,
+            advantages,
+            ratio_clip=0.02,
+            negative_spo_penalty=0.01,
+            log_ratio_clamp=5.0,
         )
-        self.assertEqual(float(loss), 2.5)
+        loss.backward()
+        self.assertGreater(float(current.grad[0]), 0.0)
+        self.assertLess(float(current.grad[1]), 0.0)
+        self.assertAlmostEqual(metrics["ratio_mean"], 1.0, places=6)
+        self.assertAlmostEqual(metrics["advantage_mean"], 0.0, places=6)
         with self.assertRaises(Exception):
-            weighted_flow_loss(torch.ones(2), torch.ones(2) * 2)
+            signed_flow_ratio_loss(
+                torch.ones(2),
+                torch.ones(3),
+                torch.ones(2),
+                ratio_clip=0.02,
+                negative_spo_penalty=0.01,
+                log_ratio_clamp=5.0,
+            )
 
     def test_flow_noise_uses_processed_model_action_width(self) -> None:
         batch = {"action": torch.zeros(64, 50, 7)}

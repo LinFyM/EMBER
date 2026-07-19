@@ -56,7 +56,7 @@ from ember.gate_zero_task_local_rl.contract import (
 from ember.gate_zero_task_local_rl.runtime import (
     GateZeroTaskLocalRLRuntimeError,
     collect_training_round,
-    train_awr_replay_round,
+    train_signed_flow_ratio_round,
 )
 
 
@@ -94,15 +94,22 @@ def _load_toml(path: Path) -> dict[str, Any]:
 
 
 def _validate_result_authorities(
-    spec: Mapping[str, Any], *, headroom_result: Path, diagnostic_result: Path
-) -> tuple[dict[str, Any], dict[str, Any]]:
+    spec: Mapping[str, Any],
+    *,
+    headroom_result: Path,
+    diagnostic_result: Path,
+    previous_awr_result: Path,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     authority = spec["authority"]
     if sha256_file(headroom_result) != authority["headroom_result_sha256"]:
         raise GateZeroTaskLocalRLRuntimeError("Proposal-A result hash changed")
     if sha256_file(diagnostic_result) != authority["candidate_diagnostic_result_sha256"]:
         raise GateZeroTaskLocalRLRuntimeError("candidate diagnostic result hash changed")
+    if sha256_file(previous_awr_result) != authority["previous_awr_result_sha256"]:
+        raise GateZeroTaskLocalRLRuntimeError("previous AWR result hash changed")
     headroom = _load_json(headroom_result, "Proposal-A result")
     diagnostic = _load_json(diagnostic_result, "candidate diagnostic result")
+    previous_awr = _load_json(previous_awr_result, "previous AWR result")
     counts = {
         (arm["task_id"], arm["condition"]): sum(arm["successes"])
         for arm in headroom.get("arms", [])
@@ -120,9 +127,13 @@ def _validate_result_authorities(
         or diagnostic.get("status") != "candidate_step_magnitude_recovery_not_supported"
         or diagnostic.get("selected_step") is not None
         or diagnostic.get("gate_zero_authorized") is not False
+        or previous_awr.get("status") != "task_local_rl_early_check_not_supported"
+        or previous_awr.get("interaction_episodes_per_task_initialization") != 16
+        or previous_awr.get("gate_zero_authorized") is not False
+        or previous_awr.get("writer_authorized") is not False
     ):
         raise GateZeroTaskLocalRLRuntimeError("upstream Gate-0 failure boundary changed")
-    return headroom, diagnostic
+    return headroom, diagnostic, previous_awr
 
 
 def _initial_successes(
@@ -270,6 +281,7 @@ def _recovery_authorities(
     return {
         "task_local_rl_contract_sha256": sha256_file(spec_path),
         "candidate_diagnostic_result_sha256": spec["authority"]["candidate_diagnostic_result_sha256"],
+        "previous_awr_result_sha256": spec["authority"]["previous_awr_result_sha256"],
         "task_id": task_id,
         "initialization": initialization,
         "fit_variant": spec["authority"]["fit_variant"],
@@ -296,7 +308,7 @@ def _resume_or_initialize(
         optimizer=arm.session.optimizer,
         expected={"authorities": authorities},
     )
-    if step not in {8, 16, 24}:
+    if step != 8:
         raise GateZeroTaskLocalRLRuntimeError("RL resume step is not an atomic round boundary")
     return step
 
@@ -356,7 +368,7 @@ def _run_rounds(
             failed = rounds_root / f"{(round_index + 1) * episodes_per_round:06d}_failed.json"
             atomic_json(failed, {"status": "collection_safeguard_failed", "collection": collection})
             raise GateZeroTaskLocalRLRuntimeError("RL collection failed mechanics or saturation guard")
-        training = train_awr_replay_round(
+        training = train_signed_flow_ratio_round(
             arm.session,
             replay,
             spec=spec,
@@ -388,7 +400,8 @@ def _run_rounds(
                 "training_success_rate": collection["success_rate"],
                 "training_environment_steps": collection["environment_steps"],
                 "saturation_fraction": collection["saturation_fraction"],
-                "weighted_flow_loss": training[-1]["weighted_flow_loss"],
+                "signed_flow_ratio_loss": training[-1]["signed_flow_ratio_loss"],
+                "ratio_clip_fraction": training[-1]["ratio_clip_fraction"],
                 "gradient_norm": training[-1]["gradient_norm"],
             },
             step=interaction_episodes,
@@ -632,10 +645,11 @@ def _load_run_inputs(
         != spec["authority"]["source_base_checkpoint_manifest_sha256"]
     ):
         raise GateZeroTaskLocalRLRuntimeError("source-base checkpoint hash changed")
-    headroom, _ = _validate_result_authorities(
+    headroom, _, _ = _validate_result_authorities(
         spec,
         headroom_result=args.headroom_result,
         diagnostic_result=args.diagnostic_result,
+        previous_awr_result=args.previous_awr_result,
     )
     return spec, parent, phase0, fit, checkpoint, headroom
 
@@ -752,20 +766,12 @@ def run_task_local_rl(args: argparse.Namespace) -> dict[str, Any]:
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", required=True, type=Path)
-    parser.add_argument("--gate-zero-contract", required=True, type=Path)
-    parser.add_argument("--phase0-contract", required=True, type=Path)
-    parser.add_argument("--fit-contract", required=True, type=Path)
-    parser.add_argument("--headroom-contract", required=True, type=Path)
-    parser.add_argument("--diagnostic-contract", required=True, type=Path)
-    parser.add_argument("--manifest", required=True, type=Path)
-    parser.add_argument("--dataset-root", required=True, type=Path)
-    parser.add_argument("--source-base-checkpoint", required=True, type=Path)
-    parser.add_argument("--fit-root", required=True, type=Path)
-    parser.add_argument("--headroom-result", required=True, type=Path)
-    parser.add_argument("--diagnostic-result", required=True, type=Path)
-    parser.add_argument("--output-dir", required=True, type=Path)
-    parser.add_argument("--latest-link", required=True, type=Path)
+    for name in (
+        "config gate-zero-contract phase0-contract fit-contract headroom-contract "
+        "diagnostic-contract manifest dataset-root source-base-checkpoint fit-root "
+        "headroom-result diagnostic-result previous-awr-result output-dir latest-link"
+    ).split():
+        parser.add_argument(f"--{name}", required=True, type=Path)
     parser.add_argument("--physical-gpus", required=True)
     parser.add_argument("--stop-after-episodes", required=True, type=int)
     parser.add_argument("--resume", action="store_true")
@@ -778,20 +784,15 @@ def main() -> int:
         raise GateZeroTaskLocalRLRuntimeError("RL output paths must be absolute")
     started = time.time()
     result = run_task_local_rl(args)
-    print(
-        json.dumps(
-            {
-                "event": "gate_zero_task_local_rl_stage_complete",
-                "status": result["status"],
-                "interaction_episodes": args.stop_after_episodes,
-                "wall_seconds": time.time() - started,
-                "gate_zero_authorized": False,
-                "writer_authorized": False,
-            },
-            sort_keys=True,
-        ),
-        flush=True,
-    )
+    payload = {
+        "event": "gate_zero_task_local_rl_stage_complete",
+        "status": result["status"],
+        "interaction_episodes": args.stop_after_episodes,
+        "wall_seconds": time.time() - started,
+        "gate_zero_authorized": False,
+        "writer_authorized": False,
+    }
+    print(json.dumps(payload, sort_keys=True), flush=True)
     return 0
 
 

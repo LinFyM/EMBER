@@ -50,8 +50,8 @@ start, an independent Writer-only RL stage freezes the base, uses each generated
 LoRA only as the functional policy output, and updates Writer parameters from
 rollout reward; it does not optimize generated LoRA in place. Ordinary task-local
 RL is a separate experiment: it freezes Writer and base, then updates those same
-LoRA parameters in place from the Writer initialization. The Writer emits no
-second object that constrains RL.
+LoRA parameters in place from the Writer initialization.
+Writer emits no second object that constrains RL.
 
 Gate 0 is not restricted to supervised fine-tuning. If supervised LoRA improves
 independent query loss but lacks stable closed-loop utility, a bounded

@@ -1932,3 +1932,47 @@
   does not prove the LoRA space or ordinary task-local RL lacks a useful update.
   Under the pre-outcome recovery contract, the next discriminator is the
   same-task four-arm matched ordinary-RL comparison, not more supervised steps.
+
+## AWR early-check evidence isolates reward direction as the next bounded discriminator
+
+- The completed four-arm AWR-style early check is mechanically valid but has
+  zero paired net wins in every arm. Because its strictly positive weights
+  still regress on both successful and failed rollout actions, it cannot test
+  whether explicitly reducing the failed-action conditional-flow proxy is the
+  missing mechanism. This is an estimator/credit-assignment ambiguity, not
+  evidence that LoRA or EMBER is incapable.
+- The next and only currently authorized optimizer recovery is sealed before
+  outcomes at config SHA256
+  `d322339eb417536a8b96b124b3c8d6324c4b25b95e89f4a3cffb5d6cadce200c`.
+  It uses the change in matched per-sample native flow loss from the round-start
+  LoRA as a bounded ratio surrogate and normalized signed binary-reward
+  advantages. Ratio clipping applies on positive advantages; a quadratic trust
+  penalty applies on negative advantages. Old losses for all eight updates are
+  computed before the first update under identical augmentation, flow noise,
+  and time authority.
+- The mechanism is informed by FPO++ (`https://arxiv.org/abs/2602.02481`) and
+  its official implementation at commit
+  `b80112be1e8362263c4cd176e7aef21a275ff1c6`, but it deliberately omits the
+  critic, GAE, many flow samples, entropy regularization, and large interaction
+  regime. Any result therefore applies only to this signed-loss-ratio mechanism
+  check, never to the full published method.
+- Every scientific comparison surface stays fixed: source tasks 3/4,
+  zero/supervised initializations, LoRA structure/capacity, exploration,
+  binary reward, source training/development seeds and init states, 16-episode
+  budget, AdamW settings, evaluator, query/drift safeguards, and candidate
+  thresholds. No stage 32, fresh Gate, validation, held, locked-report, Writer,
+  or shared update is authorized by this predeclaration.
+
+## Writer reward learning and task-local adaptation are distinct causal stages
+
+- The active sequence now explicitly separates: supervised direct-Writer cold
+  start; Writer-only RL with frozen base and only Writer parameters updated;
+  ordinary task-local LoRA RL with frozen Writer/base and only the generated
+  LoRA updated in place; and later adaptation-aware source reward/meta outer
+  learning. Generated LoRA is a functional Writer output—not a separately
+  optimized variable—during Writer-only RL.
+- Gate 0 remains a useful-update oracle rather than an SFT-only Gate. Its
+  current RL recovery contains no Writer. If only ordinary task-local RL becomes
+  useful, that supports the LoRA search space but not supervised zero-step
+  utility; only a stable supervised-init RL advantage over matched zero-init RL
+  supports the claim that supervised initialization helps later adaptation.

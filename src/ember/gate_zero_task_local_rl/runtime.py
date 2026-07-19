@@ -9,7 +9,7 @@ from typing import Any
 
 import torch
 
-from ember.gate_zero_task_local_rl.contract import episodic_awr_weights
+from ember.gate_zero_task_local_rl.contract import normalized_episode_advantages
 
 
 class GateZeroTaskLocalRLRuntimeError(RuntimeError):
@@ -161,21 +161,53 @@ def validate_training_reset_events(
     return list(events) == expected
 
 
-def weighted_flow_loss(per_sample_loss: torch.Tensor, weights: torch.Tensor) -> torch.Tensor:
+def signed_flow_ratio_loss(
+    current_loss: torch.Tensor,
+    old_loss: torch.Tensor,
+    advantages: torch.Tensor,
+    *,
+    ratio_clip: float,
+    negative_spo_penalty: float,
+    log_ratio_clamp: float,
+) -> tuple[torch.Tensor, dict[str, float]]:
+    """Apply a per-sample signed conditional-flow ratio trust objective."""
+
     if (
-        per_sample_loss.ndim != 1
-        or weights.shape != per_sample_loss.shape
-        or per_sample_loss.numel() == 0
-        or not torch.isfinite(per_sample_loss).all()
-        or not torch.isfinite(weights).all()
-        or torch.any(weights <= 0)
-        or not torch.isclose(weights.mean(), torch.ones((), device=weights.device), atol=1e-6)
+        current_loss.ndim != 1
+        or old_loss.shape != current_loss.shape
+        or advantages.shape != current_loss.shape
+        or current_loss.numel() == 0
+        or not torch.isfinite(current_loss).all()
+        or not torch.isfinite(old_loss).all()
+        or not torch.isfinite(advantages).all()
+        or not 0 < ratio_clip < 1
+        or negative_spo_penalty <= 0
+        or log_ratio_clamp <= 0
     ):
-        raise GateZeroTaskLocalRLRuntimeError("invalid weighted flow loss inputs")
-    value = (per_sample_loss * weights).mean()
+        raise GateZeroTaskLocalRLRuntimeError("invalid signed flow-ratio inputs")
+    log_ratio_raw = old_loss.detach() - current_loss
+    log_ratio = log_ratio_raw + (
+        log_ratio_raw.clamp(-log_ratio_clamp, log_ratio_clamp) - log_ratio_raw
+    ).detach()
+    ratio = log_ratio.exp()
+    clipped = ratio.clamp(1.0 - ratio_clip, 1.0 + ratio_clip)
+    positive_loss = torch.maximum(-advantages * ratio, -advantages * clipped)
+    spo_objective = advantages * ratio - advantages.abs() * (ratio - 1.0).square() / (
+        2.0 * negative_spo_penalty
+    )
+    per_sample_objective = torch.where(advantages > 0, positive_loss, -spo_objective)
+    value = per_sample_objective.mean()
     if value.ndim != 0 or not torch.isfinite(value):
-        raise GateZeroTaskLocalRLRuntimeError("weighted flow loss is non-finite")
-    return value
+        raise GateZeroTaskLocalRLRuntimeError("signed flow-ratio loss is non-finite")
+    metrics = {
+        "ratio_mean": float(ratio.detach().mean()),
+        "ratio_min": float(ratio.detach().min()),
+        "ratio_max": float(ratio.detach().max()),
+        "ratio_clip_fraction": float(((ratio.detach() - 1.0).abs() > ratio_clip).float().mean()),
+        "advantage_mean": float(advantages.detach().mean()),
+        "advantage_std": float(advantages.detach().std(unbiased=False)),
+    }
+    return value, metrics
 
 
 def validated_flow_action_shape(
@@ -356,17 +388,84 @@ def _clone_replay_training_batch(replay: Mapping[str, Any]) -> dict[str, Any]:
     return result
 
 
-def train_awr_replay_round(
+def _prepare_flow_training_inputs(
+    session: Any,
+    replay: Mapping[str, Any],
+    row_keys: Sequence[str],
+    algorithm: Mapping[str, Any],
+    *,
+    optimizer_step: int,
+) -> tuple[dict[str, Any], torch.Tensor, torch.Tensor]:
+    """Build one deterministic augmented flow batch from the replay authority."""
+
+    from ember.gate_zero_oracle_session import augment_support_images
+    from ember.gate_zero_runtime import deterministic_flow_inputs, preprocess_smolvla_batch
+
+    model = session.model
+    owner = model.get_base_model() if hasattr(model, "get_base_model") else model
+    raw = augment_support_images(
+        _clone_replay_training_batch(replay),
+        row_keys=list(row_keys),
+        optimizer_step=optimizer_step,
+        seed=algorithm["augmentation_seed"],
+        scale_min=algorithm["augmentation_scale_min"],
+        scale_max=algorithm["augmentation_scale_max"],
+    )
+    batch = preprocess_smolvla_batch(
+        raw, session.preprocessor, list(owner.config.image_features)
+    )
+    flow_action_shape = validated_flow_action_shape(
+        batch,
+        expected_batch_size=algorithm["effective_replay_batch_size"],
+        expected_chunk_size=algorithm["action_chunk_size"],
+        input_action_dim=7,
+        model_action_dim=owner.config.max_action_dim,
+    )
+    noise, flow_time = deterministic_flow_inputs(
+        list(row_keys),
+        action_shape=flow_action_shape,
+        noise_seed=algorithm["fixed_flow_noise_seed"] + optimizer_step,
+        time_seed=algorithm["fixed_flow_time_seed"] + optimizer_step,
+        device=next(model.parameters()).device,
+    )
+    return batch, noise, flow_time
+
+
+def _round_start_flow_losses(
+    session: Any,
+    replay: Mapping[str, Any],
+    row_keys: Sequence[str],
+    algorithm: Mapping[str, Any],
+    *,
+    optimizer_step_start: int,
+) -> list[torch.Tensor]:
+    """Freeze the per-sample reference loss for every update in one rollout round."""
+
+    model = session.model
+    losses = []
+    model.eval()
+    for offset in range(algorithm["optimizer_steps_per_rollout_round"]):
+        optimizer_step = optimizer_step_start + offset + 1
+        batch, noise, flow_time = _prepare_flow_training_inputs(
+            session, replay, row_keys, algorithm, optimizer_step=optimizer_step
+        )
+        with torch.no_grad(), torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+            per_sample_loss, _ = model.forward(
+                batch, noise=noise, time=flow_time, reduction="none"
+            )
+        losses.append(per_sample_loss.detach().to(dtype=torch.float32, device="cpu"))
+        del batch, noise, flow_time, per_sample_loss
+    return losses
+
+
+def train_signed_flow_ratio_round(
     session: Any,
     replay: Mapping[str, Any],
     *,
     spec: Mapping[str, Any],
     optimizer_step_start: int,
 ) -> list[dict[str, Any]]:
-    """Run the fixed number of mean-one reward-weighted flow updates."""
-
-    from ember.gate_zero_oracle_session import augment_support_images
-    from ember.gate_zero_runtime import deterministic_flow_inputs, preprocess_smolvla_batch
+    """Run fixed signed-ratio updates against a frozen round-start reference."""
 
     algorithm = spec["algorithm"]
     row_keys = list(replay.get("row_keys", []))
@@ -379,51 +478,40 @@ def train_awr_replay_round(
         or returns.shape != (expected,)
     ):
         raise GateZeroTaskLocalRLRuntimeError("replay batch differs from effective batch authority")
-    weights = episodic_awr_weights(
-        returns,
-        temperature=algorithm["temperature"],
-        maximum_weight=algorithm["maximum_exponential_weight"],
-    )
+    advantages = normalized_episode_advantages(returns)
     model = session.model
-    owner = model.get_base_model() if hasattr(model, "get_base_model") else model
     trainable = [value for value in model.parameters() if value.requires_grad]
     if sum(value.numel() for value in trainable) != spec["lora"]["trainable_parameters"]:
         raise GateZeroTaskLocalRLRuntimeError("RL trainable parameter count changed")
+    old_losses = _round_start_flow_losses(
+        session,
+        replay,
+        row_keys,
+        algorithm,
+        optimizer_step_start=optimizer_step_start,
+    )
+
     records = []
     for offset in range(algorithm["optimizer_steps_per_rollout_round"]):
         optimizer_step = optimizer_step_start + offset + 1
         started = time.perf_counter()
-        raw = _clone_replay_training_batch(replay)
-        raw = augment_support_images(
-            raw,
-            row_keys=row_keys,
-            optimizer_step=optimizer_step,
-            seed=algorithm["augmentation_seed"],
-            scale_min=algorithm["augmentation_scale_min"],
-            scale_max=algorithm["augmentation_scale_max"],
+        batch, noise, flow_time = _prepare_flow_training_inputs(
+            session, replay, row_keys, algorithm, optimizer_step=optimizer_step
         )
-        batch = preprocess_smolvla_batch(raw, session.preprocessor, list(owner.config.image_features))
-        flow_action_shape = validated_flow_action_shape(
-            batch,
-            expected_batch_size=expected,
-            expected_chunk_size=algorithm["action_chunk_size"],
-            input_action_dim=7,
-            model_action_dim=owner.config.max_action_dim,
-        )
-        noise, flow_time = deterministic_flow_inputs(
-            row_keys,
-            action_shape=flow_action_shape,
-            noise_seed=algorithm["fixed_flow_noise_seed"] + optimizer_step,
-            time_seed=algorithm["fixed_flow_time_seed"] + optimizer_step,
-            device=next(model.parameters()).device,
-        )
-        model.train()
+        model.eval()
         session.optimizer.zero_grad(set_to_none=True)
         with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
             per_sample_loss, _ = model.forward(
                 batch, noise=noise, time=flow_time, reduction="none"
             )
-            loss = weighted_flow_loss(per_sample_loss, weights.to(per_sample_loss.device))
+            loss, ratio_metrics = signed_flow_ratio_loss(
+                per_sample_loss,
+                old_losses[offset].to(per_sample_loss.device),
+                advantages.to(per_sample_loss.device),
+                ratio_clip=algorithm["ratio_clip"],
+                negative_spo_penalty=algorithm["negative_spo_penalty"],
+                log_ratio_clamp=algorithm["log_ratio_clamp"],
+            )
         loss.backward()
         gradient_norm = torch.nn.utils.clip_grad_norm_(
             trainable, algorithm["gradient_clip_norm"]
@@ -437,18 +525,17 @@ def train_awr_replay_round(
         records.append(
             {
                 "optimizer_step": optimizer_step,
-                "weighted_flow_loss": float(loss.detach()),
+                "signed_flow_ratio_loss": float(loss.detach()),
                 "unweighted_flow_loss": float(per_sample_loss.detach().mean()),
                 "gradient_norm": float(gradient_norm),
                 "learning_rate": learning_rate,
-                "weight_min": float(weights.min()),
-                "weight_max": float(weights.max()),
-                "weight_mean": float(weights.mean()),
+                **ratio_metrics,
                 "reward_mean": float(returns.mean()),
                 "reward_std": float(returns.std(unbiased=False)),
                 "wall_seconds": time.perf_counter() - started,
             }
         )
+        del batch, noise, flow_time, per_sample_loss, loss
     model.eval()
     return records
 

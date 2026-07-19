@@ -54,13 +54,7 @@ done
 IFS=',' read -r -a gpu_indices <<< "$gpus"
 [[ "$(printf '%s\n' "${gpu_indices[@]}" | sort -u | wc -l)" -eq 4 ]] ||
   die "--gpus contains a duplicate"
-[[ "$stop_after_episodes" =~ ^(16|32)$ ]] ||
-  die "--stop-after-episodes must be 16 or 32"
-if [[ "$stop_after_episodes" == 16 ]]; then
-  $resume && die "the 16-episode early check must start fresh"
-else
-  $resume || die "the 32-episode continuation requires --resume"
-fi
+[[ "$stop_after_episodes" == 16 ]] || die "--stop-after-episodes must be 16"
 [[ "$output_dir" = /* ]] || die "--output-dir must be absolute"
 if [[ -z "$latest_link" ]]; then
   latest_link="$(dirname "$output_dir")/latest"
@@ -96,6 +90,7 @@ print(source_base / "checkpoints" / f'{spec["authority"]["source_base_checkpoint
 print(output_root / spec["authority"]["fit_root_relative_path"])
 print(output_root / spec["authority"]["headroom_result_relative_path"])
 print(output_root / spec["authority"]["candidate_diagnostic_result_relative_path"])
+print(output_root / spec["authority"]["previous_awr_result_relative_path"])
 print(spec["resources"]["minimum_free_memory_mib"])
 PY
 )
@@ -105,7 +100,8 @@ source_checkpoint=${paths[2]}
 fit_root=${paths[3]}
 headroom_result=${paths[4]}
 diagnostic_result=${paths[5]}
-minimum_free_memory_mib=${paths[6]}
+previous_awr_result=${paths[6]}
+minimum_free_memory_mib=${paths[7]}
 
 command=(
   "$PYTHON" -m torch.distributed.run --standalone --nproc-per-node=4
@@ -122,6 +118,7 @@ command=(
   --fit-root "$fit_root"
   --headroom-result "$headroom_result"
   --diagnostic-result "$diagnostic_result"
+  --previous-awr-result "$previous_awr_result"
   --output-dir "$output_dir"
   --latest-link "$latest_link"
   --physical-gpus "$gpus"
@@ -139,7 +136,7 @@ if $dry_run; then
 fi
 
 for path in "$manifest" "$dataset_root" "$source_checkpoint" "$fit_root" \
-  "$headroom_result" "$diagnostic_result"; do
+  "$headroom_result" "$diagnostic_result" "$previous_awr_result"; do
   [[ -e "$path" ]] || die "required authority is missing: $path"
 done
 for gpu in "${gpu_indices[@]}"; do

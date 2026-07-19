@@ -85,6 +85,12 @@ def test_recovery_validation_reuses_baselines_and_assigns_only_new_writer_work()
         "frozen_base",
         "matched_direct_task_local_lora",
     ]
+    assert validation._existing_shard_allowed(
+        spec, arm="frozen_base", resume=False
+    )
+    assert not validation._existing_shard_allowed(
+        spec, arm="writer_physical_norm_recovery", resume=False
+    )
 
 
 def _rows() -> list[dict[str, object]]:

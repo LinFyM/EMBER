@@ -357,6 +357,12 @@ def _read_shard(path: Path) -> tuple[list[dict[str, Any]], list[str]]:
     return list(payload["rows"]), list(payload["videos"])
 
 
+def _existing_shard_allowed(
+    spec: Mapping[str, Any], *, arm: str, resume: bool
+) -> bool:
+    return resume or arm in spec.get("reuse_baseline", {}).get("arms", [])
+
+
 def _checksum_records(path: Path) -> dict[str, str]:
     records: dict[str, str] = {}
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -644,7 +650,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         for task_id, arm in work["evaluation_arms"]:
             shard_path = args.output_dir / "shards" / f"task_{task_id:03d}_{arm}.json"
             if shard_path.exists():
-                if not args.resume:
+                if not _existing_shard_allowed(spec, arm=arm, resume=args.resume):
                     raise WriterValidationError("validation arm shard already exists")
                 rows, videos = _read_shard(shard_path)
             else:

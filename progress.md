@@ -33,6 +33,12 @@
   rollout. Config `writer_cold_start_physical_norm_recovery_validation.toml`
   reuses the immutable base/direct rows and schedules only the five new Writer
   arms through the canonical validator.
+- The first recovered closed-loop launch failed before model load or rollout:
+  the fresh-run guard correctly saw the ten imported baseline shards but had no
+  exception for hash-bound reuse. The failure packet is retained with zero new
+  outcome. The narrow tested repair accepts pre-existing shards only for the
+  two explicitly declared reused arms; a new Writer shard still fails closed.
+  Resume continues in the same output root without changing science.
 
 ## 2026-07-19 Writer segment complete; validation resume provenance
 

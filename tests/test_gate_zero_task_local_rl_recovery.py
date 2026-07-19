@@ -34,6 +34,7 @@ from ember.gate_zero_task_local_rl.temporal_credit import (  # noqa: E402
     _select_real_camera_inputs,
     calculate_masked_gae,
     clipped_flow_ppo_loss,
+    fpo_plus_clipped_flow_loss,
 )
 from ember.gate_zero_oracle_artifacts import (  # noqa: E402
     load_recovery_artifact,
@@ -512,6 +513,32 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
 
 
 class GateZeroTemporalCreditRecoveryTest(unittest.TestCase):
+    def test_fpo_plus_uses_per_sample_ratios_and_modified_huber(self) -> None:
+        squared_current = torch.tensor([[0.25, 9.0], [1.0, 16.0]], requires_grad=True)
+        squared_old = torch.tensor([[1.0, 4.0], [1.0, 9.0]])
+        advantages = torch.tensor([1.0, -1.0])
+        valid = torch.tensor([True, True])
+        loss, metrics = fpo_plus_clipped_flow_loss(
+            squared_current,
+            squared_old,
+            advantages,
+            valid,
+            huber_delta=0.5,
+            old_loss_clamp=4.0,
+            ratio_clip=0.02,
+            log_ratio_clamp=5.0,
+        )
+        loss.backward()
+        self.assertTrue(torch.isfinite(loss))
+        self.assertTrue(torch.isfinite(squared_current.grad).all())
+        self.assertEqual(metrics["ratio_granularity"], "per_flow_sample")
+        self.assertEqual(metrics["flow_samples"], 2)
+        self.assertEqual(metrics["ratio_count"], 4)
+        self.assertEqual(metrics["huber_delta"], 0.5)
+        self.assertEqual(metrics["old_loss_clamp"], 4.0)
+        self.assertAlmostEqual(metrics["current_modified_huber_mean"], 1.875)
+        self.assertAlmostEqual(metrics["old_modified_huber_clamped_mean"], 1.5)
+
     def test_flow_loss_capture_is_ordered_and_memory_bounded(self) -> None:
         class FakeModel:
             def __init__(self) -> None:

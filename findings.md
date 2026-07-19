@@ -2576,3 +2576,58 @@
   telemetry validate. Mechanics/temporal credit remain healthy and no
   checkpoint is selected. The contract now opens only node 24, whose source
   init states 24--31 are the first new coverage evidence.
+
+## Coverage node 24 closes the n=8 trajectory without a Gate decision
+
+- Exact-resume node 24 completed rc 0 in 8m14s from clean `9c9f239` and stopped
+  atomically. Supervised-init task3/task4 paired gains are `[0,0]`; zero-init
+  gains are `[0,-1]`; the supervised-init advantages are `[-1,+2]`. Status is
+  `task_local_rl_early_check_not_supported`, but this classification is only
+  for the sealed small-sample development trajectory.
+- Stage-result SHA256 is
+  `9b738193312ac2aed527b075ca88c0072e1cb9807445998eb570f5d385340a94`.
+  All four candidates and four schema-3 recovery packets validate, 34 JSON
+  files parse, all four bounded videos decode, telemetry checksum passes, and
+  GPUs 4--7 released. The output occupies 196MiB; observed peak memory was
+  16,683/6,485/6,515/6,516MiB.
+- The owner correctly classified n=8 as smoke: one episode is 12.5 percentage
+  points, so observed one- or two-win changes are statistically ambiguous.
+  Node 24 cannot pass or reject Gate 0, select a checkpoint, authorize Writer,
+  or justify node 32. It remains useful evidence that the custom pilot is
+  mechanically executable and that small-slice closed-loop conversion is
+  unstable.
+
+## Gate -1 closes with residuals and Gate 0 gains a repaired evidence contract
+
+- The immutable action-hidden-video recovery is not rewritten: ordered and
+  wrong-video accuracy are 19/24 (0.7917), bidirectional paired correctness is
+  15/24, the original content threshold remains 0.80, and drop-last sensitivity
+  remains a residual. Explicit owner authority now records Gate -1 as passed
+  with residuals and forbids more compute solely to cross 0.80. It no longer
+  blocks Writer after Gate 0.
+- Before any new Gate-0 outcome, the active source-only contract requires at
+  least 32 paired rollouts/task/arm over multiple policy RNG seeds; per-episode
+  records and paired bootstrap/exact intervals; and at least two, preferably
+  three, independent training seeds. Task3/task4 remain development only.
+  Confirmation must be disjoint by source task or physical init state and
+  hash-bound before LoRA outcomes, preferably across two to four distinct
+  primitive source tasks selected from base competence/headroom only.
+- The result-before-outcome contract is
+  `configs/gate_zero_evidence_repair.toml`, SHA256
+  `0196419d7abc6132890248da1c332b451767db45aeef2c96f3ab989eb1c0aa4e`.
+  Its source-derived confirmation candidate IDs and deterministic physical
+  init-state partition are fixed without reading policy outcomes.
+- Training and primary evaluation now both execute horizon 16; horizon 50 is a
+  separate deployment-robustness report. Binary success remains primary, with
+  legal source-only grasp/object-region/drawer/progress/time diagnostics. Drift
+  is reported from both frozen base and each arm's own initialization, and
+  replayed transitions are never counted as new independent interaction.
+- Code inspection shows the existing temporal-credit pilot averages eight
+  flow-sample losses before one transition ratio. Its accurate scope is
+  `custom chunk-level flow-loss PPO pilot`; the historical
+  `flow_sample_group_size` config field did not drive runtime semantics. The
+  active contract removes that field. A new bounded faithful core implements
+  per-flow-sample/group-size-one ratios, MSE-preserving modified Huber loss,
+  old-loss/log-ratio clamps, PPO trust region, and horizon 16. This core is
+  required before an ordinary task-local RL negative claim, but does not imply
+  the paper-scale FPO++ budget or change the common LoRA space.

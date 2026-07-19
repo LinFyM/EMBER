@@ -134,6 +134,35 @@ non-matched capability upper bound. If only such an upper bound succeeds, the
 target-layer/rank LoRA contract is too narrow and enters recovery before Writer;
 do not attribute that failure to Writer acquisition.
 
+The Gate-0 evidence contract distinguishes smoke, development, and
+confirmation. The existing eight-rollout task-3/task-4 surfaces are development
+smokes only; a single episode is 12.5 percentage points and one or two paired
+wins cannot support a positive or negative mechanism claim. Candidate evidence
+requires at least 32 paired rollouts per task/arm over multiple policy RNG
+seeds, retained per-episode rows, paired bootstrap and exact intervals, and at
+least two (preferably three) independent training seeds. Evaluation RNG does
+not replace independent training. A separate confirmation uses source tasks or
+physical init states disjoint from development, binds their identities/hashes
+before LoRA outcomes, and preferably covers two to four distinct primitives
+with result-blind base competence and headroom.
+
+RL training and the primary Gate evaluation both execute horizon 16. Horizon 50
+is reported separately as canonical/deployment robustness. Binary simulator
+success stays primary; legal source-only grasp, correct object/region,
+drawer-close, completion progress, and time-to-success are diagnostics. Report
+drift/KL from the frozen base and from each arm's own RL initialization, and do
+not count replay epochs over related transitions as new independent samples.
+
+The executed temporal-credit path is named `custom chunk-level flow-loss PPO
+pilot`: eight flow-sample losses are averaged before one transition ratio. The
+historical `flow_sample_group_size` field never controlled runtime ratio
+granularity and is forbidden in the active contract. This pilot is not a full
+FPO++ reproduction. Before an ordinary task-local RL negative claim, use the
+bounded faithful FPO++ core: group-size-one/per-flow-sample ratios, the
+MSE-preserving modified Huber loss, old-loss and log-ratio clamps, PPO trust
+region, and matched horizon 16. This imports the scientific core, not the
+paper-scale budget.
+
 The last-two q/v rank-8 pilot and the subsequent default-like rank-16 run use 12
 support demonstrations, 750 optimizer steps, and a custom early-candidate
 schedule. They diagnose only that acquisition recipe. Regardless of outcome,
@@ -264,6 +293,14 @@ inaccessible.
 There is no mandatory Gate 1 between Gate 0 and Writer, and no positive
 bank/geometry result is a completion criterion.
 
+Gate -1 is now resolved as **passed with residuals** under explicit owner
+authority. The immutable action-hidden-video packet remains 19/24 (0.7917) for
+ordered and wrong-video accuracy and 15/24 paired, below the original 0.80
+content threshold with recorded drop-last sensitivity. This is sufficient for
+the present staged program without rewriting the old threshold or result; no
+additional compute is authorized merely to reach 0.80, and Gate -1 no longer
+blocks Writer once Gate 0 evidence is sufficient.
+
 These stages form one long-term Goal. Environment/code completion, exact
 resume, throughput selection, Gate -1, Gate 0, a single training run, or merely
 authorizing Writer cannot complete it. Positive completion requires the frozen
@@ -317,10 +354,11 @@ mechanical issues and reasonable bounded remedies are exhausted.
 ## 9. Immediate work package
 
 The clean world-size-4 resume result is the final bounded resume verification.
-Run at most one necessary short four-GPU throughput/stability window, then run
-the already frozen source competence surface. Complete the remaining Gate -1
-causal evidence and Gate 0 independent task-local oracle plus LoRA capacity
-audit without reading validation/held numeric outcomes. If Gate 0 is positive,
+Gate -1 is closed as passed with residuals; do not reopen it to polish the
+0.7917 result. Complete Gate 0 independent task-local oracle and LoRA capacity
+evidence under the repaired paired-statistics, disjoint-confirmation,
+horizon-matching, and algorithm-label contract without reading
+validation/held/locked numeric outcomes. If Gate 0 is positive,
 implement only the direct full-LoRA Writer path above; do not create a
 canonical-representation or geometry branch.
 Continuously update `task_plan.md`, `findings.md`, and `progress.md` and commit

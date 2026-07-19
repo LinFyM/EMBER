@@ -84,8 +84,8 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
 | Phase | Status | Required evidence |
 | --- | --- | --- |
 | Phase 0. Reproducible substrate | in progress | environment lock, revisions, hashes, known-path smoke test, VRAM/throughput/storage measurements |
-| Gate -1. Benchmark/spec validity | in progress under fixed statistical contract | task-factor audit, counterfactual/spec-swap/no-language/video controls |
-| Gate 0. Useful-update oracle | in progress; source-only pilot frozen before outcomes | independent query and closed-loop gain with drift/non-harm diagnostics |
+| Gate -1. Benchmark/spec validity | passed with recorded residuals; no longer a Writer blocker | immutable 19/24 ordered and wrong-video, 15/24 paired, original 0.80 threshold and drop-last sensitivity preserved |
+| Gate 0. Useful-update oracle | in progress under repaired evidence contract | >=32 paired rollouts/task/arm, multiple policy RNG seeds, >=2 training seeds, horizon-16 primary plus horizon-50 robustness, independent confirmation |
 | Stage 1. Direct full-LoRA Writer | pending Gate 0 | independent-query zero-interaction utility over retrieval, average, direct-conditioning, standard-LoRA, and capacity-matched DISC/HyPoGen-style baselines |
 | Stage 2. Ordinary task-local LoRA RL | pending Writer utility | matched-budget adaptation AUC/steps-to-threshold from Writer versus standard initialization; no predicted search constraint |
 | Stage 3. Source-only Writer reward/meta learning | pending ordinary RL | outer reward improves future Writer initializations while shared base remains frozen |
@@ -107,6 +107,16 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
   into a false outer failure during function-context unwinding.
 - A gate failure starts the recovery protocol in `AGENTS.md`. Do not silently
   change the scientific contract to create a pass.
+- Treat n=8 as smoke only. A decision packet must retain paired episode rows,
+  use at least n=32/task/arm over multiple policy RNG seeds, include paired
+  bootstrap and exact intervals, and replicate at least two (preferably three)
+  independently trained candidates. Development task3/task4 and confirmation
+  tasks/states must be hash-bound and disjoint before LoRA outcomes.
+- Use horizon 16 for RL training and the primary Gate comparison; report
+  horizon 50 separately as canonical/deployment robustness. Call the existing
+  mean-before-ratio implementation the custom chunk-level flow-loss PPO pilot.
+  A valid negative cannot represent ordinary LoRA RL until the bounded faithful
+  per-flow-sample/group-size-one FPO++ core is also tested.
 - Infrastructure work is timeboxed to one reproduction, one narrow repair, and
   one verification unless it can change recoverability, sampled data,
   closed-loop success, a Gate decision, matched fairness, or held isolation.
@@ -1076,6 +1086,24 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     validates. This reproducibility boundary opens exactly node 24, the first
     new disjoint source-coverage slice; its frozen trend rule decides whether
     node 32 remains closed or opens.
+    Node 24 then completed rc 0 at the same clean trajectory and atomically
+    stopped. Supervised-init task3/task4 paired gains are `[0,0]`, zero-init
+    gains are `[0,-1]`, and supervised-init advantages over zero-init are
+    `[-1,+2]`. All four candidates/recoveries, JSON, video, gallery, telemetry,
+    and hashes validate; the result SHA256 is `9b738193...0a94`. Under the
+    repaired authority this n=8 surface is only a mechanism diagnostic and
+    cannot pass/reject Gate 0, select a checkpoint, or open Writer. Do not run
+    node 32 under the superseded small-sample rule.
+    Before any new Gate outcome, freeze and use
+    `configs/gate_zero_evidence_repair.toml` at SHA256
+    `0196419d...aa4e`: preserve Gate -1 as passed with
+    residuals; keep task3/task4 as development; require n>=32 paired evidence,
+    multiple policy RNG and independent training seeds, disjoint source
+    confirmation, horizon-16 primary evaluation with horizon-50 robustness,
+    process diagnostics, and truthful independent-unit accounting. The old RL
+    code is a custom chunk-level flow-loss PPO pilot, not FPO++; a bounded
+    faithful per-flow-sample/group-size-one core is required before an ordinary
+    task-local RL negative claim.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

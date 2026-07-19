@@ -124,6 +124,31 @@ plan. Each expensive component needs evidence from its scientific predecessor.
   matched-control task-local LoRA RL recovery may establish that the declared
   LoRA space contains a useful behavioral update. Such a result is not
   supervised zero-interaction utility and is not Writer evidence.
+- The completed Gate -1 action-hidden-video recovery is accepted as **passed
+  with residuals**: ordered and wrong-video accuracy are each 19/24 (0.7917),
+  paired correctness is 15/24, and the drop-last sensitivity remains recorded.
+  Preserve the original 0.80 threshold and packet; do not spend more compute
+  merely to cross it, and do not keep Gate -1 as a Writer prerequisite.
+- Eight rollouts per task/arm are mechanics smoke only: one episode is 12.5
+  percentage points, so a one- or two-win change is statistically ambiguous.
+  A Gate-0 candidate decision needs at least 32 paired rollouts per task/arm
+  across multiple policy RNG seeds, per-episode paired rows, paired bootstrap
+  and exact intervals, and at least two (preferably three) independent training
+  seeds. Evaluation seeds never substitute for training seeds.
+- Task 3 and task 4 are development tasks. A confirmation must be disjoint in
+  source task or physical init state, with the disjointness and hashes asserted
+  before LoRA outcomes. Prefer two to four source tasks with distinct
+  primitives and result-blind base-competence/headroom selection; do not use
+  validation, held, locked-report, or LoRA outcomes to choose them.
+- Task-local RL training and its primary Gate evaluation use execution horizon
+  16. Horizon 50 remains a separately reported canonical/deployment robustness
+  metric, not the sole Gate authority.
+- The existing temporal-credit implementation is the **custom chunk-level
+  flow-loss PPO pilot**: it averages eight flow-sample losses before computing
+  one ratio. It is not an official FPO++ reproduction. Before interpreting a
+  valid pilot failure as ordinary task-local RL failure, run the bounded
+  faithful FPO++ core with per-flow-sample/group-size-one ratios, the declared
+  modified Huber transform, old-loss/log-ratio clamps, and matched horizon.
 - The last-two q/v rank-8 pilot and its rank-16 support recovery test only the
   frozen 12-demo, 750-step custom acquisition recipe. Their outcomes cannot by
   themselves establish a final LoRA, Gate 0, Writer, or EMBER negative. A
@@ -277,6 +302,12 @@ exhausted, preserve the negative result and narrow the claim explicitly.
   let multiple writers edit one worktree concurrently.
 - Update `task_plan.md`, `findings.md`, and `progress.md` after meaningful state
   changes so a resumed agent can recover without conversation history.
+- Report binary simulator success as the Gate metric while retaining legal
+  source-only grasp, correct-object/region, drawer-close, progress, and
+  time-to-success diagnostics. Report action drift/KL both from the frozen base
+  and from each arm's own RL initialization. Distinguish independent tasks,
+  training seeds, environment episodes, and real transitions from replay
+  epochs; repeated replay is not additional independent interaction.
 
 ## Current-goal completion evidence
 

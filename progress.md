@@ -2382,3 +2382,33 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   files, and telemetry. Output is 170MiB. After clean documentation delivery
   and live preflight, exact-resume once to node 24, the first new source
   coverage slice; its frozen trend rule controls any node-32 continuation.
+
+## 2026-07-19 node 24 closed and evidence authority repaired
+
+- Coverage node 24 exact-resumed the clean `9c9f239` trajectory and completed
+  rc 0 in 8m14s. Supervised-init task3/task4 paired gains are `[0,0]`, zero-init
+  gains are `[0,-1]`, and supervised-init advantages are `[-1,+2]`. Result
+  SHA256 is `9b738193...0a94`; four candidates, four recovery packets, 34 JSON
+  files, four videos, gallery, telemetry, and checksums validate. Output is
+  196MiB and GPUs 4--7 released.
+- This n=8 outcome is mechanism smoke only. It cannot pass/reject Gate 0,
+  select a checkpoint, authorize Writer, or open node 32. No validation, held,
+  locked-report, task, seed, or threshold authority was accessed or changed.
+- Added the result-before-outcome contract
+  `configs/gate_zero_evidence_repair.toml`, SHA256 `0196419d...aa4e`. Gate -1
+  is now passed with its
+  immutable 19/24 ordered/wrong-video, 15/24 paired, original 0.80 threshold,
+  and drop-last residual explicitly retained; no more compute is authorized to
+  polish it. Gate 0 requires n>=32 paired rollouts/task/arm, multiple policy RNG
+  seeds, >=2 independent training seeds, paired intervals, disjoint
+  source-only confirmation, horizon-16 primary evaluation plus horizon-50
+  robustness, process metrics, dual-reference drift, and truthful interaction
+  accounting.
+- Added one cohesive fail-closed evidence/statistics validator and focused
+  tests. The existing mean-before-ratio code is now explicitly a custom
+  chunk-level flow-loss PPO pilot. A minimal faithful FPO++ loss core uses
+  per-flow-sample/group-size-one ratios, modified Huber, old-loss/log-ratio
+  clamps, and PPO clipping; it remains inside the existing temporal-credit
+  owner rather than creating a second trainer. The next action is test and
+  clean Git delivery of this frozen boundary, followed by a result-blind
+  source difficulty/partition audit—not another n=8 or blind node continuation.

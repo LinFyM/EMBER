@@ -161,6 +161,101 @@ def clipped_flow_ppo_loss(
     }
 
 
+def _modified_huber_from_squared_error(
+    squared_error: torch.Tensor, *, delta: float
+) -> torch.Tensor:
+    """Apply FPO++'s MSE-preserving modified Huber transform."""
+
+    boundary = delta * delta
+    return torch.where(
+        squared_error <= boundary,
+        squared_error,
+        2.0 * delta * squared_error.clamp_min(0.0).sqrt() - boundary,
+    )
+
+
+def fpo_plus_clipped_flow_loss(
+    current_squared_losses: torch.Tensor,
+    old_squared_losses: torch.Tensor,
+    advantages: torch.Tensor,
+    valid: torch.Tensor,
+    *,
+    huber_delta: float,
+    old_loss_clamp: float,
+    ratio_clip: float,
+    log_ratio_clamp: float,
+) -> tuple[torch.Tensor, dict[str, Any]]:
+    """Apply a faithful group-size-one FPO++ ratio to each flow sample.
+
+    The two loss matrices contain per-flow-sample squared CFM errors after
+    averaging only over action-token and action-width axes. No flow-sample
+    averaging occurs before the likelihood-ratio surrogate.
+    """
+
+    if (
+        current_squared_losses.ndim != 2
+        or old_squared_losses.shape != current_squared_losses.shape
+        or advantages.shape != current_squared_losses.shape[:1]
+        or valid.shape != advantages.shape
+        or current_squared_losses.shape[1] < 1
+        or not torch.isfinite(current_squared_losses).all()
+        or not torch.isfinite(old_squared_losses).all()
+        or (current_squared_losses < 0).any()
+        or (old_squared_losses < 0).any()
+        or not torch.isfinite(advantages).all()
+        or huber_delta <= 0
+        or old_loss_clamp <= 0
+        or not 0 < ratio_clip < 1
+        or log_ratio_clamp <= 0
+        or not valid.bool().any()
+    ):
+        raise TemporalCreditError("invalid per-flow-sample FPO++ inputs")
+    current = _modified_huber_from_squared_error(
+        current_squared_losses, delta=huber_delta
+    )
+    old = _modified_huber_from_squared_error(
+        old_squared_losses.detach(), delta=huber_delta
+    )
+    old = _straight_through_clamp(old, minimum=0.0, maximum=old_loss_clamp)
+    log_ratio = _straight_through_clamp(
+        old - current,
+        minimum=-log_ratio_clamp,
+        maximum=log_ratio_clamp,
+    )
+    ratio = log_ratio.exp()
+    clipped = ratio.clamp(1.0 - ratio_clip, 1.0 + ratio_clip)
+    sample_advantages = advantages[:, None].expand_as(ratio)
+    valid_samples = valid.bool()[:, None].expand_as(ratio)
+    surrogate = torch.maximum(
+        -sample_advantages * ratio,
+        -sample_advantages * clipped,
+    )[valid_samples]
+    loss = surrogate.mean()
+    if loss.ndim != 0 or not torch.isfinite(loss):
+        raise TemporalCreditError("per-flow-sample FPO++ loss is non-finite")
+    detached_ratio = ratio.detach()[valid_samples]
+    approx_kl = ((detached_ratio - 1.0) - detached_ratio.log()).mean()
+    return loss, {
+        "valid_transitions": int(valid.bool().sum()),
+        "flow_samples": int(current_squared_losses.shape[1]),
+        "ratio_count": int(detached_ratio.numel()),
+        "ratio_granularity": "per_flow_sample",
+        "huber_delta": huber_delta,
+        "old_loss_clamp": old_loss_clamp,
+        "current_modified_huber_mean": float(current.detach().mean()),
+        "old_modified_huber_clamped_mean": float(old.detach().mean()),
+        "ratio_mean": float(detached_ratio.mean()),
+        "ratio_min": float(detached_ratio.min()),
+        "ratio_max": float(detached_ratio.max()),
+        "ratio_clip_fraction": float(
+            ((detached_ratio - 1.0).abs() > ratio_clip)
+            .to(dtype=torch.float32)
+            .mean()
+        ),
+        "approx_kl": float(approx_kl),
+    }
+
+
 def explained_variance(targets: torch.Tensor, predictions: torch.Tensor) -> float:
     """Return finite explained variance, using zero when the target is constant."""
 

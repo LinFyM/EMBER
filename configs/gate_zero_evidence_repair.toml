@@ -1,0 +1,108 @@
+schema_version = 1
+status = "predeclared_after_n8_atomic_stop_before_new_gate_decision_outcome"
+surface = "libero90_source_only_gate_zero_evidence_repair"
+
+[authority]
+split_reseal_sha256 = "9f5bc62e15e2cb07887e97bc98630a3f527ac6b5e253f41c203cf37459568428"
+horizon_coverage_contract_relative_path = "configs/gate_zero_task_local_rl_horizon_coverage.toml"
+horizon_coverage_contract_sha256 = "72e4f13e193aa63e96ea90395f37e2954030a534c396998067a54a74e4d9f241"
+horizon_coverage_stage24_result_relative_path = "gate_zero/task_local_lora_rl_recovery/horizon_coverage_ep8_20260719T112902Z/stage_results/000024.json"
+horizon_coverage_stage24_result_sha256 = "9b738193312ac2aed527b075ca88c0072e1cb9807445998eb570f5d385340a94"
+video_information_result_relative_path = "gate_minus1/specification/video_information_recovery1_20260718T062713Z/probe_result.json"
+video_information_result_sha256 = "f80d2b2b4c8ac1bb1b9dea5755178d1648fca381de52917708ec8fcc440bbde1"
+validation_numeric_access = false
+held_numeric_access = false
+locked_numeric_access = false
+
+[gate_minus_one_resolution]
+status = "passed_with_residuals"
+ordered_balanced_accuracy = 0.7916666666666666
+wrong_video_specificity = 0.7916666666666666
+bidirectional_pairs_correct = 15
+bidirectional_pairs_total = 24
+original_content_threshold = 0.80
+drop_last_retention = 0.8157894736842106
+drop_last_residual_preserved = true
+additional_compute_to_reach_threshold_authorized = false
+writer_prerequisite_blocked = false
+
+[evaluation]
+development_task_ids = [3, 4]
+development_role = "mechanism_screen_only_not_general_confirmation"
+arms = ["frozen_base", "supervised_lora", "zero_init_rl", "supervised_init_rl"]
+smoke_rollouts_per_task_arm = 8
+smoke_may_select_or_reject_mechanism = false
+minimum_rollouts_per_task_arm = 32
+minimum_policy_rng_seeds = 2
+minimum_training_seeds = 2
+preferred_training_seeds = 3
+primary_execution_horizon = 16
+deployment_robustness_horizon = 50
+binary_success_is_primary = true
+paired_episode_rows_required = true
+bootstrap_and_exact_intervals_required = true
+validation_numeric_access = false
+held_numeric_access = false
+locked_numeric_access = false
+action_drift_references = ["frozen_base", "own_rl_initialization"]
+independent_units_reported_separately = ["task", "training_seed", "environment_episode", "environment_transition"]
+replay_epochs_are_not_independent_samples = true
+source_progress_diagnostics = ["grasp", "correct_object_or_region", "drawer_closed", "goal_predicate_fraction", "time_to_success"]
+
+[confirmation_selection]
+selection_uses_base_outcomes_only = true
+candidate_algorithm = "one_lexicographically_smallest_source_task_per_nondevelopment_order_signature"
+candidate_task_ids = [6, 9, 16, 20, 23, 33, 39, 46, 63]
+audit_rollouts_per_task = 32
+minimum_base_successes = 4
+minimum_base_failures = 8
+minimum_selected_tasks = 2
+maximum_selected_tasks = 4
+rank_eligible_by = "absolute_success_rate_distance_to_0.5_then_task_id"
+selected_tasks_require_distinct_order_signature = true
+freeze_task_seed_evaluator_partition_and_hash_before_lora = true
+development_and_confirmation_must_be_disjoint_by_task_or_physical_init_state = true
+no_lora_validation_or_held_outcome_may_select_task = true
+
+[state_partition]
+algorithm = "sort_physical_init_indices_by_sha256_of_seed_task_index"
+seed = 20260719
+physical_state_count = 50
+train_count = 32
+development_count = 16
+reserve_count = 2
+contiguous_index_blocks_forbidden = true
+physical_index_and_state_sha256_required = true
+
+[statistics]
+paired_bootstrap_replicates = 10000
+paired_bootstrap_seed = 2026071970
+exact_interval = "clopper_pearson_on_discordant_matched_pairs"
+confidence_level = 0.95
+one_or_two_net_wins_at_n8_is_ambiguous = true
+ambiguous_recovery = "legal_source_confirmation_task_or_process_diagnostic_not_threshold_seed_or_node_selection"
+
+[custom_pilot]
+name = "custom_chunk_level_flow_loss_ppo_pilot"
+flow_samples_per_transition = 8
+flow_samples_averaged_before_ratio = 8
+ratio_granularity = "one_ratio_per_action_chunk_transition"
+negative_result_scope = "this_custom_surrogate_only"
+
+[faithful_fpo_plus_core]
+required_before_ordinary_rl_negative_claim = true
+primary_source_repository = "https://github.com/amazon-far/fpo-control"
+primary_source_commit = "b80112be1e8362263c4cd176e7aef21a275ff1c6"
+ratio_granularity = "per_flow_sample"
+cfm_loss_average_group_size = 1
+flow_samples_per_transition = 8
+modified_huber_matches_mse_below_delta = true
+huber_delta = 0.5
+old_cfm_loss_clamp = 4.0
+log_ratio_clamp = 5.0
+trust_region = "ppo"
+ratio_clip = 0.02
+actor_gradient_clip_norm = 5.0
+execution_horizon = 16
+paper_scale_budget_required = false
+matched_zero_and_supervised_initialization_arms = true

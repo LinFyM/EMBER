@@ -24,7 +24,7 @@ from ember.gate_zero_oracle_artifacts import (
 
 
 EXPECTED_NAME = "smolvla_libero90_gate_zero_mature_lora_headroom_screen_v1"
-EXPECTED_STATUS = "pending_owner_gate_design_decision_after_zero_outcome_mechanical_failure"
+EXPECTED_STATUS = "owner_approved_proposal_a_before_any_new_closed_loop_outcome"
 EXPECTED_STAGE = "mature_lora_headroom_control"
 SELECTED_STEP = 1_000
 
@@ -169,6 +169,8 @@ def _validate_rollout_decision(raw: Mapping[str, Any]) -> None:
         "warmup_seed_start": 5792,
         "policy_rng_seed": 2026071836,
         "conditions": ["frozen_base", EXPECTED_VARIANT],
+        "base_headroom_barrier_before_lora": True,
+        "lora_rollout_forbidden_without_improvement_headroom": True,
         "maintenance_task_id": 3,
         "improvement_task_id": 4,
         "locked_report_demos_accessed": False,
@@ -191,6 +193,12 @@ def _validate_rollout_decision(raw: Mapping[str, Any]) -> None:
     }
     _require_equal(raw.get("mechanical_recovery", {}), expected_recovery, "mechanical recovery")
     expected_owner_decision = {
+        "decision_status": "approved",
+        "approved_option": "A",
+        "decision_date_asia_singapore": "2026-07-19",
+        "pending_proposal_commit": "108ce650799e41903a689c82ab7f8f1d845169e1",
+        "pending_proposal_sha256": "8c7ae12b7c38a20479ca968b29a9045c8abb59a71dd28f0144fd2029ce075d5c",
+        "approval_before_any_new_closed_loop_outcome": True,
         "reason": (
             "replacing the unreachable two-of-two positive-success Gate changes "
             "the scientific completion standard and has multiple defensible designs"
@@ -201,6 +209,7 @@ def _validate_rollout_decision(raw: Mapping[str, Any]) -> None:
             "C: task3 predeclared fine-grained functional metric plus task4 success improvement",
         ],
         "choice_must_precede_new_closed_loop_outcome": True,
+        "future_evidence_sufficient_reversible_mechanics_may_proceed_autonomously": True,
         "validation_numeric_access": False,
         "held_numeric_access": False,
     }
@@ -247,8 +256,8 @@ def load_mature_lora_headroom_spec(
         ("task_ids", [3, 4]),
         ("variants", [EXPECTED_VARIANT]),
         ("writer_authorized_before_closed_loop", False),
-        ("owner_decision_required", True),
-        ("screening_rollout_authorized", False),
+        ("owner_decision_required", False),
+        ("screening_rollout_authorized", True),
     ):
         _require_equal(raw.get(key), expected, key)
 
@@ -428,6 +437,96 @@ def _query_metrics(
     return (float(base) - float(query)) / float(base), float(drift)
 
 
+def _validated_behavioral_arms(
+    arms: list[dict[str, Any]], *, variant: str
+) -> tuple[dict[tuple[int, str], dict[str, Any]], bool]:
+    base_keys = {(task_id, "frozen_base") for task_id in (3, 4)}
+    full_keys = {
+        (task_id, condition)
+        for task_id in (3, 4)
+        for condition in ("frozen_base", variant)
+    }
+    by_key: dict[tuple[int, str], dict[str, Any]] = {}
+    for arm in arms:
+        key = (arm.get("task_id"), arm.get("condition"))
+        successes = arm.get("successes")
+        if (
+            key not in full_keys
+            or key in by_key
+            or arm.get("mechanics_valid") is not True
+            or not isinstance(successes, list)
+            or len(successes) != 8
+            or any(not isinstance(value, bool) for value in successes)
+            or arm.get("official_rollout_init_state_indices") != list(range(40, 48))
+            or arm.get("seeds") != list(range(5800, 5808))
+        ):
+            raise GateZeroMatureLoraHeadroomContractError("invalid paired rollout arm")
+        by_key[key] = arm
+    keys = set(by_key)
+    if keys != base_keys and keys != full_keys:
+        raise GateZeroMatureLoraHeadroomContractError("paired rollout arms are incomplete")
+    return by_key, keys == full_keys
+
+
+def inspect_mature_lora_base_headroom(
+    *,
+    arms: list[dict[str, Any]],
+    variant: str,
+    thresholds: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Validate base-only arms before any LoRA rollout is opened."""
+
+    by_key, includes_lora = _validated_behavioral_arms(arms, variant=variant)
+    if includes_lora:
+        raise GateZeroMatureLoraHeadroomContractError(
+            "base headroom inspection must precede LoRA outcomes"
+        )
+    task_metrics = {
+        str(task_id): {
+            "base_successes": sum(by_key[(task_id, "frozen_base")]["successes"]),
+            "available_failures": 8
+            - sum(by_key[(task_id, "frozen_base")]["successes"]),
+        }
+        for task_id in (3, 4)
+    }
+    improvement = str(thresholds["improvement_task_id"])
+    available = (
+        task_metrics[improvement]["available_failures"]
+        >= thresholds["minimum_improvement_headroom_failures"]
+    )
+    return {"available": available, "task_metrics": task_metrics}
+
+
+def _base_only_absent_decision(
+    *,
+    summary: Mapping[str, Any],
+    variant: str,
+    parameter_count: int,
+) -> dict[str, Any]:
+    candidate = {
+        "variant": variant,
+        "trainable_parameters": parameter_count,
+        "task_metrics": summary["task_metrics"],
+        "aggregate": {"paired_net_wins": None, "success_gain_pp": None},
+        "threshold_checks": {
+            "improvement_headroom": False,
+            "lora_outcomes_accessed": False,
+        },
+        "screening_passed": False,
+    }
+    return {
+        "status": "mature_lora_headroom_absent_source_recovery_required",
+        "candidates": [candidate],
+        "selected_variant": None,
+        "confirmation_authorized": False,
+        "rank16_authorized": False,
+        "rank16_scope": None,
+        "gate_zero_authorized": False,
+        "writer_authorized": False,
+        "final_writer_target_contract_sealed": False,
+    }
+
+
 def decide_mature_lora_headroom(
     *,
     arms: list[dict[str, Any]],
@@ -440,25 +539,27 @@ def decide_mature_lora_headroom(
 
     if variant != EXPECTED_VARIANT or parameter_count != 1_485_312:
         raise GateZeroMatureLoraHeadroomContractError("headroom variant changed")
-    expected_keys = {(task_id, condition) for task_id in (3, 4) for condition in ("frozen_base", variant)}
-    by_key: dict[tuple[int, str], dict[str, Any]] = {}
-    for arm in arms:
-        key = (arm.get("task_id"), arm.get("condition"))
-        successes = arm.get("successes")
-        if (
-            key not in expected_keys
-            or key in by_key
-            or arm.get("mechanics_valid") is not True
-            or not isinstance(successes, list)
-            or len(successes) != 8
-            or any(not isinstance(value, bool) for value in successes)
-            or arm.get("official_rollout_init_state_indices") != list(range(40, 48))
-            or arm.get("seeds") != list(range(5800, 5808))
-        ):
-            raise GateZeroMatureLoraHeadroomContractError("invalid paired rollout arm")
-        by_key[key] = arm
-    if set(by_key) != expected_keys:
-        raise GateZeroMatureLoraHeadroomContractError("paired rollout arms are incomplete")
+    by_key, includes_lora = _validated_behavioral_arms(arms, variant=variant)
+    base_arms = [by_key[(task_id, "frozen_base")] for task_id in (3, 4)]
+    headroom = inspect_mature_lora_base_headroom(
+        arms=base_arms,
+        variant=variant,
+        thresholds=thresholds,
+    )
+    if not headroom["available"]:
+        if includes_lora:
+            raise GateZeroMatureLoraHeadroomContractError(
+                "LoRA outcomes are forbidden without base headroom"
+            )
+        return _base_only_absent_decision(
+            summary=headroom,
+            variant=variant,
+            parameter_count=parameter_count,
+        )
+    if not includes_lora:
+        raise GateZeroMatureLoraHeadroomContractError(
+            "LoRA arms are required when base headroom is available"
+        )
 
     task_metrics: dict[str, dict[str, Any]] = {}
     aggregate_net_wins = 0
@@ -487,10 +588,8 @@ def decide_mature_lora_headroom(
 
     maintenance = str(thresholds["maintenance_task_id"])
     improvement = str(thresholds["improvement_task_id"])
-    improvement_headroom = 8 - task_metrics[improvement]["base_successes"]
     checks = {
-        "improvement_headroom": improvement_headroom
-        >= thresholds["minimum_improvement_headroom_failures"],
+        "improvement_headroom": True,
         "improvement_paired_net_wins": task_metrics[improvement]["paired_net_wins"]
         >= thresholds["minimum_improvement_net_wins"],
         "maintenance_paired_net_wins": task_metrics[maintenance]["paired_net_wins"]
@@ -501,9 +600,7 @@ def decide_mature_lora_headroom(
         "each_selection_drift": all(drift_checks),
     }
     passed = all(checks.values())
-    if not checks["improvement_headroom"]:
-        status = "mature_lora_headroom_absent_source_recovery_required"
-    elif passed:
+    if passed:
         status = "mature_lora_headroom_control_passed"
     else:
         status = "mature_lora_headroom_control_failed_gate_recovery_required"

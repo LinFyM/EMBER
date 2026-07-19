@@ -1,13 +1,13 @@
 schema_version = 1
 name = "smolvla_libero90_gate_zero_mature_lora_headroom_screen_v1"
-status = "pending_owner_gate_design_decision_after_zero_outcome_mechanical_failure"
+status = "owner_approved_proposal_a_before_any_new_closed_loop_outcome"
 predeclared_at_utc = "2026-07-18T21:01:01Z"
 screening_stage = "mature_lora_headroom_control"
 task_ids = [3, 4]
 variants = ["mature_official_default_r32_lr25e6_recovery"]
 writer_authorized_before_closed_loop = false
-owner_decision_required = true
-screening_rollout_authorized = false
+owner_decision_required = false
+screening_rollout_authorized = true
 
 [authority]
 gate_zero_contract_sha256 = "7bbda2723c72c60c6cfc39c10acaf23a05f4ea0af724c054792cd00c890cfd98"
@@ -73,6 +73,12 @@ report_seed_start_unchanged = 5800
 repair_changes_scientific_surface = false
 
 [owner_decision]
+decision_status = "approved"
+approved_option = "A"
+decision_date_asia_singapore = "2026-07-19"
+pending_proposal_commit = "108ce650799e41903a689c82ab7f8f1d845169e1"
+pending_proposal_sha256 = "8c7ae12b7c38a20479ca968b29a9045c8abb59a71dd28f0144fd2029ce075d5c"
+approval_before_any_new_closed_loop_outcome = true
 reason = "replacing the unreachable two-of-two positive-success Gate changes the scientific completion standard and has multiple defensible designs"
 options = [
   "A: ceiling-aware task3 non-harm plus task4 success improvement",
@@ -80,6 +86,7 @@ options = [
   "C: task3 predeclared fine-grained functional metric plus task4 success improvement",
 ]
 choice_must_precede_new_closed_loop_outcome = true
+future_evidence_sufficient_reversible_mechanics_may_proceed_autonomously = true
 validation_numeric_access = false
 held_numeric_access = false
 
@@ -180,6 +187,8 @@ seed_start = 5800
 warmup_seed_start = 5792
 policy_rng_seed = 2026071836
 conditions = ["frozen_base", "mature_official_default_r32_lr25e6_recovery"]
+base_headroom_barrier_before_lora = true
+lora_rollout_forbidden_without_improvement_headroom = true
 maintenance_task_id = 3
 improvement_task_id = 4
 locked_report_demos_accessed = false

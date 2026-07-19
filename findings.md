@@ -1701,7 +1701,7 @@
   redesign must use only legal source outcomes, preserve task 3 as a
   maintenance control, and be frozen before any new LoRA rollout outcome.
 
-## A paired maintenance/improvement design is a pending Gate proposal
+## The owner approved the paired maintenance/improvement Gate before outcomes
 
 - Prior source competence makes the old positive-gain-on-both-tasks rule
   unidentifiable: task 3 is already 8/8 while task 4 is 5/8. Proposal A is
@@ -1710,8 +1710,10 @@
   have at least two available failures and recover at least two net wins; the
   two-task aggregate must recover at least two net wins. This preserves a
   behavioral requirement without inventing success-count headroom.
-- The pending proposal SHA256 is
-  `8c7ae12b7c38a20479ca968b29a9045c8abb59a71dd28f0144fd2029ce075d5c`.
+- The active owner-approved contract SHA256 is
+  `1f92f80ddcc63be7c6a3ef3da1fe63f9870df27a0537ec02c3429bab71440a52`;
+  pending proposal SHA256 `8c7ae12b...075d5c` and commit `108ce65` preserve the
+  pre-approval state.
   It also retains the already observed independent-query safeguards: every
   task must reduce query flow MSE by at least 2%, and every task's action-drift
   proxy must remain at most 0.02. An underpowered task-4 base slice has a
@@ -1723,14 +1725,15 @@
   about Writer/video utility, validation or held performance, RL, or the
   overall EMBER hypothesis. No validation, held, or locked-report numeric
   surface is used in either the grant or the paired rollout.
-- This proposal is not active authority because changing the Gate changes the
-  paper's completion standard. Two other defensible, still outcome-free
-  designs remain: B) replace task 3 using only base competence to select a
-  non-ceiling source task and keep the original two-of-two positive-success
-  rule; C) keep task 3 but predeclare a finer-grained functional metric while
-  retaining task-4 success gain. The config is fail-closed with
-  `screening_rollout_authorized=false`; owner selection must precede any grant
-  or new closed-loop result.
+- The owner explicitly selected Proposal A on 2026-07-19 Asia/Singapore before
+  any new outcome. Only authorization metadata changed:
+  `owner_decision_required=false` and `screening_rollout_authorized=true`.
+  Tasks, seeds, init states, evaluator, matched base/LoRA arms, LoRA structure,
+  query/drift safeguards and success rules remain byte-for-byte unchanged.
+  If task 4 lacks at least two fresh base failures, the contract's
+  base-first distributed barrier forbids opening either LoRA arm; the
+  `headroom_absent` result contains base arms only and requires a result-blind
+  source-task replacement freeze.
 - The first launch under historical SHA256 `ba3ee431...f132f` failed before
   any episode or policy outcome: the evaluator defines `warmup_seed_start` as
   the *last* warm-up batch start, so 5760 could not immediately precede report

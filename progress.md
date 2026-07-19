@@ -1602,10 +1602,10 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   complete and must not resume to 2k. Next freeze a headroom-safe source-only
   closed-loop contract; Gate 0, final Writer support, and Writer remain false.
 
-### Headroom-safe matched-LoRA Gate proposal frozen pending owner decision
+### Owner approved the headroom-safe matched-LoRA Gate before outcomes
 
-- Added `configs/gate_zero_mature_lora_headroom_screen.toml` at SHA256
-  `8c7ae12b7c38a20479ca968b29a9045c8abb59a71dd28f0144fd2029ce075d5c`
+- Active `configs/gate_zero_mature_lora_headroom_screen.toml` SHA256 is
+  `1f92f80ddcc63be7c6a3ef3da1fe63f9870df27a0537ec02c3429bab71440a52`
   before any new LoRA closed-loop result. It binds both task step-1000
   candidate/state/recovery/telemetry hashes, fixes source init states 40--47,
   seeds 5800--5807, and predeclares the maintenance-task, improvement-task,
@@ -1621,14 +1621,12 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
 - Before the supervisory pause, focused screening tests passed 38/38 and the
   full repository suite passed 226/226 after the mechanical seed regression;
   Python compilation, shell syntax, shellcheck, diff checks and the canonical
-  two-GPU dry-run passed. The later pending-owner fail-closed guard has its
-  focused file passing 8/8 plus Python compilation and diff checks; the stop
-  instruction intentionally prevents another unbounded verification cycle.
+  two-GPU dry-run passed. The pending-owner fail-closed guard had its focused
+  file passing 8/8 plus Python compilation and diff checks.
   Architecture guard is REVIEW with no hard violation: the new contract owner
   is bounded and reuses the existing evaluator rather than adding a second
-  rollout path. The proposal is now fail-closed: grant creation raises pending
-  owner decision, and no GPU rollout is authorized. Gate 0 and Writer remain
-  false.
+  rollout path. Gate 0 and Writer remain false until the owner-approved screen
+  is complete and mechanically validated.
 - The first launch `gate0_mature_lora_headroom_screen_20260718_211501` stopped
   rc 1 before any episode on the evaluator's warm-up-seed adjacency check.
   GPUs 4/5 released to 0MiB. Failure-packet SHA256 values are
@@ -1641,7 +1639,23 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
 - Supervisory review correctly identified that the ceiling-aware rule is a
   scientific Gate redesign, not part of the mechanical seed fix. Commit
   `aa16f20` had already been pushed before that instruction arrived, but no
-  relaunch occurred. Active config now records options A/B/C, sets
-  `owner_decision_required=true` and `screening_rollout_authorized=false`, and
-  the grant path has a tested fail-closed guard. GPU 4/5 remain released; wait
-  for explicit owner selection before any new result.
+  relaunch occurred. The owner then explicitly approved Proposal A on
+  2026-07-19 Asia/Singapore and resumed the unchanged full EMBER objective.
+  Active config changes only authorization state to
+  `owner_decision_required=false` and `screening_rollout_authorized=true`,
+  preserving pending SHA256 `8c7ae12b...075d5c` and commit `108ce65` as
+  provenance. Focused screening tests pass 41/41; Python compilation, shell
+  syntax, diff checks and the canonical two-GPU dry-run pass. A disposable
+  real grant validates both staged candidates and its own checksum, while
+  keeping Gate 0/Writer and validation/held access false. Next commit/push,
+  then launch only the two-GPU short screen.
+- Launch review caught that the prior runtime evaluated base and LoRA arms
+  before classifying missing headroom. The owner-approved recovery forbids even
+  reading a LoRA outcome in that case, so the same canonical runtime now uses
+  one distributed base-only barrier: task-4 base failures >=2 opens the LoRA
+  stage; otherwise both LoRA arms remain unopened and the published
+  `headroom_absent` packet contains base arms only. Red/green tests cover both
+  branches and reject any full-arm result whose base lacks headroom. No Gate
+  number, task, seed, init state, evaluator, LoRA state, or data surface changed.
+  Architecture guard is REVIEW with no hard violation; the existing runtime
+  and contract owner remain the single canonical path.

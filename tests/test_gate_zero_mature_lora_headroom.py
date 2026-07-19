@@ -13,16 +13,15 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from ember.gate_zero_support.contract import load_target_support_screen_spec  # noqa: E402
-from ember.gate_zero_support.screen import (  # noqa: E402
-    GateZeroTargetSupportScreenError,
-    create_support_screening_grant,
-)
 from ember.gate_zero_support.mature_headroom import (  # noqa: E402
     GateZeroMatureLoraHeadroomContractError,
     decide_mature_lora_headroom,
 )
 from ember.gate_zero_oracle_report_runtime import (  # noqa: E402
     report_warmup_seed_batches,
+)
+from ember.gate_zero_support.screen_runtime import (  # noqa: E402
+    headroom_allows_lora_stage,
 )
 
 
@@ -69,23 +68,22 @@ class GateZeroMatureLoraHeadroomTest(unittest.TestCase):
         self.assertEqual(spec["decision"]["minimum_each_query_reduction_fraction"], 0.02)
         self.assertFalse(spec["authority"]["validation_numeric_access"])
         self.assertFalse(spec["authority"]["held_numeric_access"])
-        self.assertTrue(spec["owner_decision_required"])
-        self.assertFalse(spec["screening_rollout_authorized"])
+        self.assertFalse(spec["owner_decision_required"])
+        self.assertTrue(spec["screening_rollout_authorized"])
 
-    def test_pending_proposal_cannot_create_a_screening_grant(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            grant = Path(temporary) / "fresh" / "screening_grant.json"
-            with self.assertRaisesRegex(
-                GateZeroTargetSupportScreenError, "pending owner decision"
-            ):
-                create_support_screening_grant(
-                    config_path=self.config,
-                    parent_path=self.gate_zero,
-                    phase0_path=self.phase0,
-                    competence_path=self.competence,
-                    fit_outputs={},
-                    grant_path=grant,
-                )
+    def test_owner_approval_selects_proposal_a_before_new_outcomes(self) -> None:
+        spec = self.load()
+        self.assertEqual(
+            spec["status"],
+            "owner_approved_proposal_a_before_any_new_closed_loop_outcome",
+        )
+        self.assertEqual(spec["owner_decision"]["approved_option"], "A")
+        self.assertEqual(
+            spec["owner_decision"]["pending_proposal_sha256"],
+            "8c7ae12b7c38a20479ca968b29a9045c8abb59a71dd28f0144fd2029ce075d5c",
+        )
+        self.assertFalse(spec["owner_decision"]["validation_numeric_access"])
+        self.assertFalse(spec["owner_decision"]["held_numeric_access"])
 
     def test_warmup_seed_batches_end_immediately_before_report_seeds(self) -> None:
         rollout = self.load()["screening_rollout"]
@@ -212,9 +210,7 @@ class GateZeroMatureLoraHeadroomTest(unittest.TestCase):
         decision = decide_mature_lora_headroom(
             arms=[
                 self._arm(3, "frozen_base", [True] * 8),
-                self._arm(3, self.variant, [True] * 8),
                 self._arm(4, "frozen_base", [True] * 7 + [False]),
-                self._arm(4, self.variant, [True] * 8),
             ],
             grant=self._grant(),
             variant=self.variant,
@@ -228,6 +224,43 @@ class GateZeroMatureLoraHeadroomTest(unittest.TestCase):
         )
         self.assertFalse(decision["gate_zero_authorized"])
         self.assertFalse(decision["writer_authorized"])
+        self.assertFalse(
+            decision["candidates"][0]["threshold_checks"]["lora_outcomes_accessed"]
+        )
+
+    def test_lora_outcomes_are_rejected_when_base_headroom_is_absent(self) -> None:
+        with self.assertRaisesRegex(
+            GateZeroMatureLoraHeadroomContractError,
+            "LoRA outcomes are forbidden without base headroom",
+        ):
+            decide_mature_lora_headroom(
+                arms=[
+                    self._arm(3, "frozen_base", [True] * 8),
+                    self._arm(3, self.variant, [True] * 8),
+                    self._arm(4, "frozen_base", [True] * 7 + [False]),
+                    self._arm(4, self.variant, [True] * 8),
+                ],
+                grant=self._grant(),
+                variant=self.variant,
+                parameter_count=1_485_312,
+                thresholds=self._thresholds(),
+            )
+
+    def test_runtime_barrier_opens_lora_only_with_base_headroom(self) -> None:
+        spec = self.load()
+        task3 = self._arm(3, "frozen_base", [True] * 8)
+        self.assertFalse(
+            headroom_allows_lora_stage(
+                [task3, self._arm(4, "frozen_base", [True] * 7 + [False])],
+                spec,
+            )
+        )
+        self.assertTrue(
+            headroom_allows_lora_stage(
+                [task3, self._arm(4, "frozen_base", [True] * 5 + [False] * 3)],
+                spec,
+            )
+        )
 
     def test_canonical_launcher_accepts_staged_candidate_outputs(self) -> None:
         script = ROOT / "scripts" / "run_gate_zero_target_support_screen.sh"

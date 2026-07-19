@@ -268,6 +268,25 @@ def _rollout_spec(spec: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def headroom_allows_lora_stage(
+    arms: list[dict[str, Any]], spec: Mapping[str, Any]
+) -> bool:
+    """Decide the base-only barrier without opening a LoRA rollout."""
+
+    if spec.get("screening_stage") != "mature_lora_headroom_control":
+        raise GateZeroTargetSupportScreenRuntimeError("invalid headroom barrier stage")
+    from ember.gate_zero_support.mature_headroom import (
+        inspect_mature_lora_base_headroom,
+    )
+
+    summary = inspect_mature_lora_base_headroom(
+        arms=arms,
+        variant=spec["variants"][0],
+        thresholds=spec["decision"],
+    )
+    return bool(summary["available"])
+
+
 def _evaluate_local_arms(
     *,
     context: ParallelContext,
@@ -276,6 +295,7 @@ def _evaluate_local_arms(
     checkpoint: dict[str, Any],
     grant: dict[str, Any],
     arguments: argparse.Namespace,
+    conditions: set[str] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     local = []
     authorities = {}
@@ -286,6 +306,8 @@ def _evaluate_local_arms(
         variants=spec["variants"],
         task_ids=spec["task_ids"],
     ):
+        if conditions is not None and condition not in conditions:
+            continue
         language, authority = _task_authority(
             task_id, spec["screening_rollout"]["init_state_indices"]
         )
@@ -333,6 +355,64 @@ def _evaluate_local_arms(
         gc.collect()
         torch.cuda.empty_cache()
     return local, list(authorities.values())
+
+
+def _evaluate_screening_stages(
+    *,
+    context: ParallelContext,
+    spec: dict[str, Any],
+    parent: dict[str, Any],
+    checkpoint: dict[str, Any],
+    grant: dict[str, Any],
+    arguments: argparse.Namespace,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    if spec.get("screening_stage") != "mature_lora_headroom_control":
+        return _evaluate_local_arms(
+            context=context,
+            spec=spec,
+            parent=parent,
+            checkpoint=checkpoint,
+            grant=grant,
+            arguments=arguments,
+        )
+    local_arms, local_authorities = _evaluate_local_arms(
+        context=context,
+        spec=spec,
+        parent=parent,
+        checkpoint=checkpoint,
+        grant=grant,
+        arguments=arguments,
+        conditions={"frozen_base"},
+    )
+    gathered_base = _gather(context, local_arms)
+    available = None
+    if context.is_primary:
+        assert gathered_base is not None
+        base_arms = [arm for values in gathered_base for arm in values]
+        available = headroom_allows_lora_stage(base_arms, spec)
+        print(
+            json.dumps(
+                {
+                    "event": "gate_zero_mature_lora_base_headroom_barrier",
+                    "lora_rollout_authorized": available,
+                },
+                sort_keys=True,
+            ),
+            flush=True,
+        )
+    available = bool(_broadcast(context, available))
+    if not available:
+        return local_arms, local_authorities
+    lora_arms, lora_authorities = _evaluate_local_arms(
+        context=context,
+        spec=spec,
+        parent=parent,
+        checkpoint=checkpoint,
+        grant=grant,
+        arguments=arguments,
+        conditions=set(spec["variants"]),
+    )
+    return local_arms + lora_arms, local_authorities + lora_authorities
 
 
 def _prepare_output(
@@ -550,7 +630,7 @@ def run(arguments: argparse.Namespace) -> dict[str, Any]:
         spec, parent, checkpoint, grant = _load_authorities(arguments)
         tracker = _prepare_output(context, arguments, spec)
         started = time.perf_counter()
-        local_arms, local_authorities = _evaluate_local_arms(
+        local_arms, local_authorities = _evaluate_screening_stages(
             context=context,
             spec=spec,
             parent=parent,

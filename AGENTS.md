@@ -129,9 +129,11 @@ plan. Each expensive component needs evidence from its scientific predecessor.
   paired correctness is 15/24, and the drop-last sensitivity remains recorded.
   Preserve the original 0.80 threshold and packet; do not spend more compute
   merely to cross it, and do not keep Gate -1 as a Writer prerequisite.
-- Eight rollouts per task/arm are mechanics smoke only: one episode is 12.5
-  percentage points, so a one- or two-win change is statistically ambiguous.
-  A Gate-0 candidate decision needs at least 32 paired rollouts per task/arm
+- Any evaluation below 32 rollouts per task/arm is mechanics-only. Do not read,
+  aggregate, interpret, select from, or proactively report its performance
+  outcomes; retain existing small-denominator values only as historical
+  provenance. The first owner-visible performance packet must already contain
+  at least 32 paired rollouts per task/arm
   across multiple policy RNG seeds, per-episode paired rows, paired bootstrap
   and exact intervals, and at least two (preferably three) independent training
   seeds. Evaluation seeds never substitute for training seeds.
@@ -286,7 +288,8 @@ exhausted, preserve the negative result and narrow the claim explicitly.
   recover, audit, and interpret the next real run. Do not add a second runner,
   speculative future abstraction, or paper-grade infrastructure before a
   concrete run exposes that need. After time-boxed targeted preflight, start a
-  10--30 minute real early check; only a reproducible run-blocking failure
+  10--30 minute real mechanical/collection check; do not expose a performance
+  result until its predeclared minimum denominator is complete. Only a reproducible run-blocking failure
   justifies more engineering before the experiment.
 - Optimize the full training and inference path for useful throughput. Reuse
   canonical model loads, manifests, decoded or preprocessed observations,

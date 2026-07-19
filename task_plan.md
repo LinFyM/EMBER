@@ -107,11 +107,19 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
   into a false outer failure during function-context unwinding.
 - A gate failure starts the recovery protocol in `AGENTS.md`. Do not silently
   change the scientific contract to create a pass.
-- Treat n=8 as smoke only. A decision packet must retain paired episode rows,
+- Treat every n<32 run as mechanics-only and do not inspect its performance.
+  A decision packet must retain paired episode rows,
   use at least n=32/task/arm over multiple policy RNG seeds, include paired
   bootstrap and exact intervals, and replicate at least two (preferably three)
   independently trained candidates. Development task3/task4 and confirmation
   tasks/states must be hash-bound and disjoint before LoRA outcomes.
+- Effective immediately, do not inspect, aggregate, discuss, or report
+  performance from any n<32 slice. Small runs may check only launch, tensor
+  shape, OOM/NaN, resume identity, and isolation. Both required training seeds
+  are frozen at step 32; the next run is the formal paired development
+  evaluation in `configs/gate_zero_formal_development_evaluation.toml`, with
+  four policy RNG seeds, 32 rollouts/task/arm, h16 primary, h50 robustness,
+  fixed initialization arms evaluated once, and no partial performance report.
 - Use horizon 16 for RL training and the primary Gate comparison; report
   horizon 50 separately as canonical/deployment robustness. Call the existing
   mean-before-ratio implementation the custom chunk-level flow-loss PPO pilot.

@@ -298,6 +298,7 @@ def _run_upstream_eval(
     runtime: tuple[Any, Any, Any, Any, Any],
     env: Any,
     videos_dir: Path,
+    return_episode_data: bool = False,
 ) -> tuple[dict[str, Any], float]:
     from lerobot.scripts.lerobot_eval import eval_policy
     from lerobot.utils.random_utils import set_seed
@@ -316,6 +317,7 @@ def _run_upstream_eval(
         max_episodes_rendered=spec["max_videos_per_arm"],
         videos_dir=videos_dir,
         start_seed=spec["seed_start"],
+        return_episode_data=return_episode_data,
     )
     return metrics, time.time() - started
 

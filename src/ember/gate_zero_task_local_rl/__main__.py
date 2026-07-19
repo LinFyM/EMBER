@@ -765,6 +765,171 @@ def run_task_local_rl(args: argparse.Namespace) -> dict[str, Any]:
         _close_parallel(context)
 
 
+def run_formal_evaluation(args: argparse.Namespace) -> dict[str, Any]:
+    from ember.gate_zero_task_local_rl.formal_evaluation import (
+        aggregate_formal_rows,
+        evaluate_live_arm,
+        load_formal_evaluation_spec,
+        read_rows,
+        validate_evaluation_source,
+        write_rows,
+    )
+
+    if args.training_seed is None or args.evaluation_source_root is None:
+        raise GateZeroTaskLocalRLRuntimeError(
+            "formal evaluation requires one training seed and source root"
+        )
+    context = _initialize_parallel()
+    arm: LiveRLArm | None = None
+    try:
+        spec, parent, phase0, fit, checkpoint, _headroom = _load_run_inputs(args)
+        formal, evidence = load_formal_evaluation_spec(
+            args.formal_evaluation_contract, repo_root=Path(__file__).resolve().parents[3]
+        )
+        if args.training_seed not in formal["evaluation"]["required_training_seeds"]:
+            raise GateZeroTaskLocalRLRuntimeError("formal evaluation seed is not sealed")
+        validate_evaluation_source(
+            args.evaluation_source_root,
+            spec=formal,
+            training_seed=args.training_seed,
+        )
+        expected_name = f"seed{args.training_seed}"
+        if args.output_dir.name != expected_name:
+            raise GateZeroTaskLocalRLRuntimeError(
+                f"formal output directory must end in {expected_name}"
+            )
+        task_id, initialization = assigned_task_local_rl_arm(
+            rank=context.rank, world_size=context.world_size, spec=spec
+        )
+        arm = _open_live_arm(
+            spec=spec,
+            parent=parent,
+            phase0=phase0,
+            fit=fit,
+            checkpoint=checkpoint,
+            manifest_path=args.manifest,
+            dataset_root=args.dataset_root,
+            source_base_checkpoint=args.source_base_checkpoint,
+            fit_root=args.fit_root,
+            task_id=task_id,
+            initialization=initialization,
+        )
+        authorities = _recovery_authorities(
+            spec_path=args.config,
+            spec=spec,
+            task_id=task_id,
+            initialization=initialization,
+        )
+        recovery = (
+            args.evaluation_source_root
+            / "arms"
+            / f"task{task_id}_{initialization}"
+            / "recovery"
+            / "last"
+        ).resolve(strict=True)
+        step = load_recovery_artifact(
+            recovery,
+            model=arm.session.model,
+            optimizer=arm.session.optimizer,
+            auxiliary_module=arm.critic,
+            auxiliary_optimizer=arm.critic_optimizer,
+            expected={"authorities": authorities},
+        )
+        if step != formal["authority"]["checkpoint_interaction_episodes"]:
+            raise GateZeroTaskLocalRLRuntimeError("formal checkpoint step changed")
+        current_state = capture_trainable_state(arm.session.model)
+        local_rows = evaluate_live_arm(
+            arm=arm,
+            spec=formal,
+            output_dir=args.output_dir / f"rank{context.rank}",
+            task_id=task_id,
+            initialization=initialization,
+            training_seed=args.training_seed,
+            current_state=current_state,
+        )
+        gathered = _gather(context, local_rows)
+        public = None
+        if context.is_primary:
+            rows = [row for shard in (gathered or []) for row in shard]
+            write_rows(args.output_dir / "evaluation_rows.json", rows)
+            seed_packet = {
+                "schema_version": 1,
+                "status": "formal_seed_collection_complete",
+                "training_seed": args.training_seed,
+                "checkpoint_interaction_episodes": step,
+                "row_count": len(rows),
+                "performance_withheld_until_minimum_denominator": True,
+                "validation_numeric_access": False,
+                "held_numeric_access": False,
+                "locked_numeric_access": False,
+            }
+            atomic_json(args.output_dir / "formal_seed_result.json", seed_packet)
+            write_output_checksums(args.output_dir)
+            all_rows: list[dict[str, Any]] = []
+            complete = True
+            for seed in formal["evaluation"]["required_training_seeds"]:
+                path = args.output_dir.parent / f"seed{seed}" / "evaluation_rows.json"
+                if not path.is_file():
+                    complete = False
+                    break
+                all_rows.extend(read_rows(path))
+            if complete:
+                result = aggregate_formal_rows(all_rows, spec=formal, evidence=evidence)
+                result.update(
+                    {
+                        "config_filename": args.formal_evaluation_contract.name,
+                        "config_sha256": sha256_file(args.formal_evaluation_contract),
+                        "row_count": len(all_rows),
+                    }
+                )
+                formal_root = args.output_dir.parent
+                atomic_json(formal_root / "formal_development_result.json", result)
+                per_task = []
+                for task_id in formal["tasks"]["development"]:
+                    for arm_name in formal["evaluation"]["arms"]:
+                        for horizon in formal["evaluation"]["execution_horizons"]:
+                            selected = [
+                                row
+                                for row in all_rows
+                                if row["task_id"] == task_id
+                                and row["arm"] == arm_name
+                                and row["execution_horizon"] == horizon
+                            ]
+                            marker = f"_{arm_name}_h{horizon}_"
+                            videos = [
+                                path.relative_to(formal_root).as_posix()
+                                for path in formal_root.glob(
+                                    f"seed*/rank*/videos/task_{task_id}/**/*.mp4"
+                                )
+                                if marker in path.as_posix()
+                            ]
+                            per_task.append(
+                                {
+                                    "task_group": f"formal:{arm_name}:h{horizon}",
+                                    "task_id": task_id,
+                                    "metrics": {
+                                        "successes": [row["success"] for row in selected],
+                                        "sum_rewards": [],
+                                        "video_paths": videos,
+                                    },
+                                }
+                            )
+                atomic_json(
+                    formal_root / "eval_info.json",
+                    {"overall": result, "per_task": per_task},
+                )
+                build_eval_gallery(formal_root)
+                update_latest_link(formal_root, args.latest_link)
+                public = result
+            else:
+                public = seed_packet
+        return _broadcast(context, public)
+    finally:
+        if arm is not None:
+            arm.close()
+        _close_parallel(context)
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in (
@@ -780,6 +945,9 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--physical-gpus", required=True)
     parser.add_argument("--stop-after-episodes", required=True, type=int)
     parser.add_argument("--training-seed", type=int)
+    parser.add_argument("--formal-evaluation", action="store_true")
+    parser.add_argument("--formal-evaluation-contract", type=Path)
+    parser.add_argument("--evaluation-source-root", type=Path)
     parser.add_argument("--resume", action="store_true")
     return parser.parse_args()
 
@@ -789,7 +957,14 @@ def main() -> int:
     if not args.output_dir.is_absolute() or not args.latest_link.is_absolute():
         raise GateZeroTaskLocalRLRuntimeError("RL output paths must be absolute")
     started = time.time()
-    result = run_task_local_rl(args)
+    if args.formal_evaluation:
+        if args.formal_evaluation_contract is None:
+            raise GateZeroTaskLocalRLRuntimeError(
+                "--formal-evaluation-contract is required"
+            )
+        result = run_formal_evaluation(args)
+    else:
+        result = run_task_local_rl(args)
     payload = {
         "event": "gate_zero_task_local_rl_stage_complete",
         "status": result["status"],

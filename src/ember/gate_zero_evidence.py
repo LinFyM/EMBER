@@ -423,7 +423,7 @@ _EVALUATION_ROW_FIELDS = {
 
 def _validate_evaluation_row(
     row: Mapping[str, Any], evaluation: Mapping[str, Any]
-) -> tuple[int, str, int, int]:
+) -> tuple[int, str, int | None, int]:
     if not _EVALUATION_ROW_FIELDS <= set(row) or row["surface"] != "development":
         raise GateZeroEvidenceError("evaluation row authority is incomplete")
     if row["task_id"] not in evaluation["development_task_ids"]:
@@ -453,20 +453,29 @@ def _validate_evaluation_row(
         value = float(row[name])
         if not math.isfinite(value) or value < 0:
             raise GateZeroEvidenceError(f"{name} is invalid")
+    fixed_arms = {"frozen_base", "supervised_lora"}
+    training_seed = row["training_seed"]
+    if row["arm"] in fixed_arms:
+        if training_seed is not None:
+            raise GateZeroEvidenceError(
+                "fixed initialization was duplicated as a training replicate"
+            )
+    elif not isinstance(training_seed, int) or isinstance(training_seed, bool):
+        raise GateZeroEvidenceError("trained evaluation arm lacks a training seed")
     return (
         int(row["task_id"]),
         str(row["arm"]),
-        int(row["training_seed"]),
+        training_seed,
         int(row["execution_horizon"]),
     )
 
 
 def _validate_episode_pairing(
-    groups: Mapping[tuple[int, str, int, int], Sequence[Mapping[str, Any]]]
+    groups: Mapping[tuple[int, str, int | None, int], Sequence[Mapping[str, Any]]]
 ) -> None:
-    pairing: dict[tuple[int, int, int], set[tuple[Any, ...]]] = {}
+    pairing: dict[tuple[int, int], set[tuple[Any, ...]]] = {}
     for (task_id, _arm, training_seed, horizon), rows in groups.items():
-        key = (task_id, training_seed, horizon)
+        key = (task_id, horizon)
         episode_keys = {
             (
                 row["evaluator_seed"],
@@ -489,17 +498,33 @@ def validate_evaluation_records(
     """Reject n=8, unpaired arms, or insufficient policy/training seeds."""
 
     evaluation = spec["evaluation"]
-    groups: dict[tuple[int, str, int, int], list[Mapping[str, Any]]] = defaultdict(list)
+    groups: dict[
+        tuple[int, str, int | None, int], list[Mapping[str, Any]]
+    ] = defaultdict(list)
     for row in records:
         groups[_validate_evaluation_row(row, evaluation)].append(row)
-    expected_groups = (
-        len(evaluation["development_task_ids"])
-        * len(evaluation["arms"])
-        * len({row["training_seed"] for row in records})
-        * 2
+    training_seeds = {
+        seed for _task, _arm, seed, _horizon in groups if seed is not None
+    }
+    fixed_arms = {"frozen_base", "supervised_lora"}
+    trained_arms = set(evaluation["arms"]) - fixed_arms
+    expected_groups = len(evaluation["development_task_ids"]) * 2 * (
+        len(fixed_arms) + len(trained_arms) * len(training_seeds)
     )
     if len(groups) != expected_groups:
         raise GateZeroEvidenceError("evaluation arm/task/seed/horizon grid is incomplete")
+    for task_id in evaluation["development_task_ids"]:
+        for horizon in (
+            evaluation["primary_execution_horizon"],
+            evaluation["deployment_robustness_horizon"],
+        ):
+            for arm in fixed_arms:
+                if (task_id, arm, None, horizon) not in groups:
+                    raise GateZeroEvidenceError("fixed evaluation arm grid is incomplete")
+            for seed in training_seeds:
+                for arm in trained_arms:
+                    if (task_id, arm, seed, horizon) not in groups:
+                        raise GateZeroEvidenceError("trained evaluation arm grid is incomplete")
     _validate_episode_pairing(groups)
     minimum_count = min(len(rows) for rows in groups.values())
     if minimum_count < evaluation["minimum_rollouts_per_task_arm"]:
@@ -507,7 +532,6 @@ def validate_evaluation_records(
     policy_counts = [len({row["policy_rng_seed"] for row in rows}) for rows in groups.values()]
     if min(policy_counts) < evaluation["minimum_policy_rng_seeds"]:
         raise GateZeroEvidenceError("evaluation lacks multiple policy RNG seeds")
-    training_seeds = {row["training_seed"] for row in records}
     if len(training_seeds) < evaluation["minimum_training_seeds"]:
         raise GateZeroEvidenceError("candidate lacks independent training-seed replication")
     return {

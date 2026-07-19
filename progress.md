@@ -2519,3 +2519,20 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   only. Targeted tests and the canonical dry-run pass. Next: clean commit/push,
   live preflight, and immediate launch on GPUs 4--7; do not consume
   confirmation or h50 for candidate selection.
+
+## 2026-07-19 formal n>=32 development evaluation ready to launch
+
+- Both required task-local RL training seeds are complete at their sealed
+  step-32 checkpoints; all four seed-2 recovery packets, JSON, telemetry, and
+  hashes validate, and no EMBER GPU process remains. Training interaction is
+  permanently stopped for these trajectories.
+- Owner-visible n<32 performance reporting is now forbidden. Existing small
+  packets remain immutable provenance only; no partial formal-evaluation slice
+  will be summarized before the full minimum denominator is collected.
+- Added one formal-evaluation mode to the existing canonical four-rank entry
+  point, not a second runner. It reuses the frozen checkpoints, records paired
+  episode/state/policy-seed identities and time-to-success, evaluates fixed
+  initializations once, and automatically aggregates only after both training
+  seeds exist. Targeted contract/runtime/statistics tests and the canonical
+  four-GPU dry run pass. Next action: commit/push this outcome-free boundary,
+  then launch seed `2026071830` on GPUs 4--7 without reading partial performance.

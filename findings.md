@@ -2790,3 +2790,24 @@
   delta from predeclared seed `2026071830`, records the master seed in recovery
   and stage provenance, and leaves evaluation RNG unchanged. This prevents a
   false duplicate replicate without adding another trainer.
+
+## Both required RL checkpoints are frozen; only n>=32 performance is admissible
+
+- Required training seeds `2026071830` and `2026072030` both reached the
+  predeclared step-32 hard limit through exact resume. The second trajectory's
+  final stage SHA256 is `f15eb2c922167cd8ea648f82bb678f435298d8f2818777daf6d41e84512f722a`;
+  its four recovery manifests bind the correct training seed and unchanged
+  contract, all internal hashes and telemetry pass, and GPUs 4--7 released.
+  No further training interaction is authorized for either trajectory.
+- All prior n<32 performance values are quarantined as historical provenance.
+  They may not drive checkpoint, task, seed, threshold, continuation, or
+  interpretation, and no future owner-facing performance packet may be emitted
+  before every required cell reaches n=32.
+- `configs/gate_zero_formal_development_evaluation.toml` (SHA256
+  `1ad045abba630049a68a1b02ed5f8121c087aff54721117e69899d10c173910c`) freezes the first
+  admissible comparison before those outcomes: tasks 3/4, existing step-32
+  checkpoints, four policy RNG seeds over the paired physical states, h16
+  primary plus h50 robustness, per-episode rows, paired bootstrap/exact
+  intervals, and both independent training seeds. Frozen base and fixed
+  supervised LoRA are evaluated once with `training_seed=null`, preventing
+  pseudoreplication while pairing them against both trained replicates.

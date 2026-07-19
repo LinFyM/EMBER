@@ -1,0 +1,51 @@
+schema_version = 1
+status = "predeclared_formal_development_evaluation_after_two_n8_smokes_before_n32_outcomes"
+surface = "libero90_source_only_gate_zero_formal_development"
+predeclared_at_utc = "2026-07-19T15:20:00Z"
+
+[authority]
+training_contract_relative_path = "configs/gate_zero_matched_evidence.toml"
+training_contract_sha256 = "625db578e394ad9eda7884af000b9ead0d34a3d9f0ecda781f4473727cde0038"
+evidence_contract_relative_path = "configs/gate_zero_evidence_repair.toml"
+evidence_contract_sha256 = "0196419d7abc6132890248da1c332b451767db45aeef2c96f3ab989eb1c0aa4e"
+checkpoint_interaction_episodes = 32
+validation_numeric_access = false
+held_numeric_access = false
+locked_numeric_access = false
+
+[authority.stage_result_sha256_by_training_seed]
+"2026071830" = "9f5aa5e3da4966ccbd40c3afbbd9befba4b02e6faf711bb421f88ba717e42aed"
+"2026072030" = "f15eb2c922167cd8ea648f82bb678f435298d8f2818777daf6d41e84512f722a"
+
+[tasks]
+development = [3, 4]
+confirmation = [6, 16, 33, 39]
+development_and_confirmation_disjoint = true
+
+[evaluation]
+arms = ["frozen_base", "supervised_lora", "zero_init_rl", "supervised_init_rl"]
+required_training_seeds = [2026071830, 2026072030]
+fixed_initialization_training_seed = 2026071830
+fixed_initializations_are_evaluated_once = true
+policy_rng_seeds = [2026071836, 2026071837, 2026071838, 2026071839]
+evaluator_seed_start = 5800
+warmup_seed_start = 5792
+physical_init_state_indices = [40, 41, 42, 43, 44, 45, 46, 47]
+rollouts_per_policy_seed = 8
+rollouts_per_task_arm = 32
+execution_horizons = [16, 50]
+primary_execution_horizon = 16
+deployment_robustness_horizon = 50
+retain_video_policy_seed = 2026071836
+retain_one_video_per_task_arm_horizon = true
+paired_episode_rows_required = true
+paired_bootstrap_replicates = 10000
+paired_bootstrap_seed = 2026071970
+
+[decision]
+gate_zero_primary_route = "one LoRA route must have a strictly positive paired-bootstrap CI lower bound on each development task at horizon 16; trainable RL routes must satisfy this separately for both required training seeds"
+initialization_benefit = "supervised-init RL must beat matched zero-init RL on each development task separately for both required training seeds"
+horizon_50_role = "deployment robustness only; never checkpoint or threshold selection"
+ambiguous_result = "use the already reserved third training seed or the cheapest source-only mechanism diagnostic; do not change task, checkpoint, seed, or threshold"
+gate_zero_authorized_by_single_seed = false
+writer_authorized_by_development_evaluation = false

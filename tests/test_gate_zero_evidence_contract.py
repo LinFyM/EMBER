@@ -132,10 +132,15 @@ class GateZeroEvidenceContractTest(unittest.TestCase):
 
     def _records(self, *, count: int = 32, training_seeds=(71, 72)) -> list[dict]:
         rows = []
-        for training_seed in training_seeds:
-            for task_id in (3, 4):
-                for horizon in (16, 50):
-                    for arm in self.spec["evaluation"]["arms"]:
+        fixed_arms = ("frozen_base", "supervised_lora")
+        trained_arms = ("zero_init_rl", "supervised_init_rl")
+        for task_id in (3, 4):
+            for horizon in (16, 50):
+                for training_seed, arms in [
+                    (None, fixed_arms),
+                    *((seed, trained_arms) for seed in training_seeds),
+                ]:
+                    for arm in arms:
                         for episode in range(count):
                             rows.append(
                                 {
@@ -180,9 +185,21 @@ class GateZeroEvidenceContractTest(unittest.TestCase):
         with self.assertRaises(GateZeroEvidenceError):
             validate_evaluation_records(changed, self.spec)
         unpaired = self._records()
-        unpaired[0]["evaluator_seed"] += 10_000
+        first_trained = next(
+            row for row in unpaired if row["arm"] == "zero_init_rl"
+        )
+        first_trained["evaluator_seed"] += 10_000
         with self.assertRaises(GateZeroEvidenceError):
             validate_evaluation_records(unpaired, self.spec)
+
+    def test_fixed_initializations_are_not_duplicated_as_training_replicates(self) -> None:
+        duplicated = self._records()
+        baseline = next(row for row in duplicated if row["arm"] == "frozen_base")
+        copied = dict(baseline)
+        copied["training_seed"] = 71
+        duplicated.append(copied)
+        with self.assertRaises(GateZeroEvidenceError):
+            validate_evaluation_records(duplicated, self.spec)
 
     def test_paired_summary_has_bootstrap_and_exact_discordant_interval(self) -> None:
         left = [True] * 12 + [False] * 20

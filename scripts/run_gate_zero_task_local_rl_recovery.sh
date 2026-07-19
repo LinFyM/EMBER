@@ -16,6 +16,9 @@ latest_link=""
 stop_after_episodes=""
 training_seed=""
 resume=false
+formal_evaluation=false
+formal_evaluation_contract="$ROOT/configs/gate_zero_formal_development_evaluation.toml"
+evaluation_source_root=""
 dry_run=false
 sampler=""
 
@@ -43,6 +46,9 @@ while (($#)); do
     --latest-link=*) latest_link=${1#*=} ;;
     --stop-after-episodes=*) stop_after_episodes=${1#*=} ;;
     --training-seed=*) training_seed=${1#*=} ;;
+    --formal-evaluation) formal_evaluation=true ;;
+    --formal-evaluation-contract=*) formal_evaluation_contract=${1#*=} ;;
+    --evaluation-source-root=*) evaluation_source_root=${1#*=} ;;
     --resume) resume=true ;;
     --dry-run) dry_run=true ;;
     *) die "unknown argument: $1" ;;
@@ -130,7 +136,14 @@ default_training_seed=${paths[17]}
 first_interaction_node=${interaction_episode_nodes%%,*}
 [[ ",$interaction_episode_nodes," == *",$stop_after_episodes,"* ]] ||
   die "--stop-after-episodes is outside the selected contract: $interaction_episode_nodes"
-if [[ "$stop_after_episodes" == "$first_interaction_node" ]]; then
+if $formal_evaluation; then
+  $resume && die "formal evaluation does not mutate or resume training"
+  [[ "$formal_evaluation_contract" = /* && -f "$formal_evaluation_contract" ]] ||
+    die "formal evaluation contract is missing"
+  [[ "$evaluation_source_root" = /* && -d "$evaluation_source_root" ]] ||
+    die "formal evaluation source root is missing"
+  [[ "$stop_after_episodes" == "32" ]] || die "formal evaluation checkpoint must be step 32"
+elif [[ "$stop_after_episodes" == "$first_interaction_node" ]]; then
   $resume && die "the first stage must start fresh"
 else
   $resume || die "later stages must exact-resume the prior output"
@@ -160,6 +173,11 @@ command=(
   --stop-after-episodes "$stop_after_episodes"
 )
 [[ "$training_seed" == "-" ]] || command+=(--training-seed "$training_seed")
+$formal_evaluation && command+=(
+  --formal-evaluation
+  --formal-evaluation-contract "$formal_evaluation_contract"
+  --evaluation-source-root "$evaluation_source_root"
+)
 if [[ "$previous_critic_result" != "-" ]]; then
   command+=(--previous-critic-result "$previous_critic_result")
 fi
@@ -207,7 +225,10 @@ for gpu in "${gpu_indices[@]}"; do
   ((memory_used < 1000)) || die "GPU $gpu already uses ${memory_used} MiB"
   ((memory_total - memory_used >= minimum_free_memory_mib)) || die "GPU $gpu lacks OOM headroom"
 done
-if $resume; then
+if $formal_evaluation; then
+  [[ ! -e "$output_dir" ]] || die "refusing to reuse formal evaluation output directory"
+  mkdir -p "$output_dir"
+elif $resume; then
   [[ -d "$output_dir" ]] || die "resume output directory does not exist"
   [[ ! -e "$output_dir/task_local_rl_recovery_result.json" ]] ||
     die "refusing to resume a terminal RL recovery"

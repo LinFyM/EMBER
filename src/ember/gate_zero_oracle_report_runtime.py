@@ -450,6 +450,9 @@ def _closed_loop_metrics(
             runtime=runtime,
             env=env,
             videos_dir=output_dir / "videos" / f"task_{task_id}" / condition,
+            return_episode_data=bool(
+                spec["resources"].get("return_episode_data", False)
+            ),
         )
         final_init_ids = list(env.call("init_state_id"))
     finally:
@@ -464,6 +467,30 @@ def _closed_loop_metrics(
     episodes = metrics["per_episode"]
     if len(episodes) != batch_size:
         raise GateZeroOracleReportRuntimeError("upstream report episode count changed")
+    time_to_success: list[int | None] = [None] * batch_size
+    episode_steps: list[int] = [0] * batch_size
+    episode_data = metrics.pop("episodes", None)
+    if spec["resources"].get("return_episode_data", False):
+        if not isinstance(episode_data, dict):
+            raise GateZeroOracleReportRuntimeError("episode diagnostics are missing")
+        episode_indices = episode_data["episode_index"].tolist()
+        frame_indices = episode_data["frame_index"].tolist()
+        successes = episode_data["next.success"].tolist()
+        for episode_index in range(batch_size):
+            selected = [
+                offset
+                for offset, value in enumerate(episode_indices)
+                if int(value) == episode_index
+            ]
+            if not selected:
+                raise GateZeroOracleReportRuntimeError("episode diagnostics are incomplete")
+            episode_steps[episode_index] = int(max(frame_indices[offset] for offset in selected))
+            successful = [
+                int(frame_indices[offset])
+                for offset in selected
+                if bool(successes[offset])
+            ]
+            time_to_success[episode_index] = min(successful) if successful else None
     return {
         "mechanics_valid": mechanics,
         "prompt": language,
@@ -477,6 +504,8 @@ def _closed_loop_metrics(
         "successes": [bool(value["success"]) for value in episodes],
         "sum_rewards": [float(value["sum_reward"]) for value in episodes],
         "max_rewards": [float(value["max_reward"]) for value in episodes],
+        "episode_steps": episode_steps,
+        "time_to_success": time_to_success,
         "video_paths": _relative_videos(output_dir, metrics.get("video_paths", [])),
         "eval_seconds": elapsed,
     }

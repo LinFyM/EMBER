@@ -284,16 +284,24 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
             weighted_flow_loss(torch.ones(2), torch.ones(2) * 2)
 
     def test_flow_noise_uses_processed_model_action_width(self) -> None:
-        batch = {"action": torch.zeros(64, 50, 32)}
+        batch = {"action": torch.zeros(64, 50, 7)}
         self.assertEqual(
-            validated_flow_action_shape(batch, expected_batch_size=64, expected_chunk_size=50),
+            validated_flow_action_shape(
+                batch,
+                expected_batch_size=64,
+                expected_chunk_size=50,
+                input_action_dim=7,
+                model_action_dim=32,
+            ),
             (50, 32),
         )
         with self.assertRaises(Exception):
             validated_flow_action_shape(
-                {"action": torch.zeros(64, 50, 7)},
+                {"action": torch.zeros(64, 50, 32)},
                 expected_batch_size=64,
                 expected_chunk_size=50,
+                input_action_dim=7,
+                model_action_dim=32,
             )
 
 

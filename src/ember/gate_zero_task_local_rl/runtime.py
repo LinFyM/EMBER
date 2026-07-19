@@ -179,15 +179,25 @@ def weighted_flow_loss(per_sample_loss: torch.Tensor, weights: torch.Tensor) -> 
 
 
 def validated_flow_action_shape(
-    batch: Mapping[str, Any], *, expected_batch_size: int, expected_chunk_size: int
+    batch: Mapping[str, Any],
+    *,
+    expected_batch_size: int,
+    expected_chunk_size: int,
+    input_action_dim: int,
+    model_action_dim: int,
 ) -> tuple[int, int]:
-    """Bind deterministic noise to the action tensor after SmolVLA preprocessing."""
+    """Bind noise to SmolVLA's internal padded width while auditing 7D input."""
 
     action = batch.get("action")
-    expected = (expected_batch_size, expected_chunk_size, 32)
-    if not torch.is_tensor(action) or tuple(action.shape) != expected:
+    expected_input = (expected_batch_size, expected_chunk_size, input_action_dim)
+    if (
+        not torch.is_tensor(action)
+        or tuple(action.shape) != expected_input
+        or input_action_dim != 7
+        or model_action_dim != 32
+    ):
         raise GateZeroTaskLocalRLRuntimeError("processed SmolVLA action shape changed")
-    return expected[1:]
+    return expected_chunk_size, model_action_dim
 
 
 def _episode_length(done: torch.Tensor) -> int:
@@ -397,6 +407,8 @@ def train_awr_replay_round(
             batch,
             expected_batch_size=expected,
             expected_chunk_size=algorithm["action_chunk_size"],
+            input_action_dim=7,
+            model_action_dim=owner.config.max_action_dim,
         )
         noise, flow_time = deterministic_flow_inputs(
             row_keys,

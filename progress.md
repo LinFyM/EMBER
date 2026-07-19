@@ -42,6 +42,16 @@
   No scientific field changes. Exactly one final canonical verification is
   authorized; another mechanical failure stops for diagnosis instead of a
   further automatic rerun.
+- Recovery3 `gate0_task_local_rl_ep16_recovery3_20260719_051103` stopped at the
+  new guard, again before optimizer/development evidence, and released all
+  GPUs. Source inspection localized the exact API boundary: preprocessing
+  retains `[64,50,7]`, while `SmolVLAPolicy.prepare_action` pads internally to
+  `max_action_dim=32`. The active code now audits 7D replay input and creates
+  `[64,50,32]` noise from the pinned model config. Config SHA256 is
+  `b08a85b8de1bf04c788d217cfab8d34bb984d0f70ab8795e8c0aaf0f19820a37`.
+  The next action is not another environment rerun: first execute one single-GPU
+  real-model synthetic forward/backward with no optimizer step and no simulator
+  interaction. Only a pass reopens the canonical 16-episode verification.
 - Architecture ownership is deliberately narrow: the
   `ember.gate_zero_task_local_rl` package owns only this bounded Gate-0 recovery
   contract, reward-weighted replay mechanics, and orchestration. It reuses the

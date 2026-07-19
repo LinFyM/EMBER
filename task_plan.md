@@ -681,6 +681,17 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     binding both prior contracts and failure packets. Run one final canonical
     verification; any further mechanical failure stops this implementation
     attempt for diagnosis rather than triggering another blind rerun.
+    That final verification failed at its explicit shape guard and exposed the
+    remaining layer boundary: preprocessing correctly preserves replay actions
+    as `[64,50,7]`; `SmolVLAPolicy.prepare_action` pads to the frozen
+    `max_action_dim=32` inside `model.forward`. The repaired code now validates
+    the 7D input and derives noise width 32 from the pinned model config. Active
+    contract SHA256 is
+    `b08a85b8de1bf04c788d217cfab8d34bb984d0f70ab8795e8c0aaf0f19820a37`.
+    Before any environment rerun, require a real-model synthetic-batch
+    forward/backward with noise `[64,50,32]`, no optimizer step, and no
+    environment/validation/held access. Do not relaunch the canonical rollout
+    unless this exact integration check passes.
     No validation, held, locked-report, or step-2k access is authorized. The
     original SHA256 `ba3ee431...f132f`
     reached no episode because its last-warm-up seed was not stride-adjacent to

@@ -1869,6 +1869,16 @@
   rule. Active contract SHA256
   `504d20bc371078b5ffeabaad84eb1e041423c5167cd7331b91e047a3324f673d`
   binds recovery2 failure packets and permits one final canonical verification.
+- Recovery3's explicit guard proved that the preceding repair put the boundary
+  one layer too early: the policy preprocessor leaves actions `[64,50,7]`, and
+  `SmolVLAPolicy.prepare_action` pads them to 32 only inside the forward pass.
+  This explains both prior traces without an algorithmic ambiguity. The active
+  implementation validates the 7D replay input and binds deterministic noise to
+  frozen `model.config.max_action_dim=32`. Contract SHA256
+  `b08a85b8de1bf04c788d217cfab8d34bb984d0f70ab8795e8c0aaf0f19820a37`
+  requires a real-model synthetic forward/backward before another environment
+  launch; no optimizer step or scientific surface may be consumed by that
+  integration check.
 
 ## Earlier supervised checkpoints do not recover closed-loop utility
 

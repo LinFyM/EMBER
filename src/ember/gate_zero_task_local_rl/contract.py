@@ -128,44 +128,12 @@ def _validate_lora_and_optimizer(spec: Mapping[str, Any], fit: Mapping[str, Any]
         _require_equal(algorithm.get(key), value, f"algorithm.{key}")
 
 
-def _validate_surfaces_and_decisions(spec: Mapping[str, Any]) -> None:
-    _require_equal(spec.get("schema_version"), 1, "schema_version")
-    _require_equal(
-        spec.get("status"),
-        "mechanically_amended_twice_before_any_optimizer_or_development_outcome",
-        "status",
-    )
-    _require_equal(spec.get("task_ids"), [3, 4], "task_ids")
-    _require_equal(spec.get("initializations"), ["zero_init", "supervised_init"], "initializations")
-    _require_equal(
-        spec.get("reported_arms"),
-        ["frozen_base", "supervised_lora", "zero_init_rl", "supervised_init_rl"],
-        "reported_arms",
-    )
-    training = spec.get("training_interaction")
-    development = spec.get("development_evaluation")
-    safeguards = spec.get("offline_safeguards")
-    continuation = spec.get("continuation")
-    decision = spec.get("candidate_decision")
-    fresh = spec.get("fresh_gate")
-    parallel = spec.get("parallel")
+def _validate_recovery_provenance(spec: Mapping[str, Any]) -> None:
     recovery = spec.get("mechanical_recovery")
     flow_recovery = spec.get("flow_shape_recovery")
-    if not all(
-        isinstance(value, dict)
-        for value in (
-            training,
-            development,
-            safeguards,
-            continuation,
-            decision,
-            fresh,
-            parallel,
-            recovery,
-            flow_recovery,
-        )
-    ):
-        raise GateZeroTaskLocalRLContractError("task-local RL surface declaration is missing")
+    model_shape_recovery = spec.get("model_internal_shape_recovery")
+    if not all(isinstance(value, dict) for value in (recovery, flow_recovery, model_shape_recovery)):
+        raise GateZeroTaskLocalRLContractError("task-local RL recovery provenance is missing")
     _require_equal(
         recovery["predecessor_contract_sha256"],
         "75ceeec398f472d53fb1c7b88b4dd135469b0f841bbf8ac3dfc0ac4b13cd5c68",
@@ -207,6 +175,63 @@ def _validate_surfaces_and_decisions(spec: Mapping[str, Any]) -> None:
         "42dbabe45f76a07e18f9e171018a4b65d2f0249d7ea10d6a0266ba8e2a499f2f",
         "flow-shape failure packet",
     )
+    _require_equal(
+        model_shape_recovery["predecessor_contract_sha256"],
+        "504d20bc371078b5ffeabaad84eb1e041423c5167cd7331b91e047a3324f673d",
+        "model-shape predecessor",
+    )
+    _require_equal(
+        model_shape_recovery["optimizer_updates_before_failure"], 0, "model-shape failed updates"
+    )
+    _require_equal(
+        model_shape_recovery["development_rollouts_before_failure"],
+        0,
+        "model-shape failed development access",
+    )
+    _require_equal(
+        model_shape_recovery["preprocessor_preserves_input_action_shape"],
+        [64, 50, 7],
+        "preprocessor action shape",
+    )
+    _require_equal(
+        model_shape_recovery["model_prepare_action_pads_to_max_action_dim"],
+        32,
+        "model internal action width",
+    )
+    _require_equal(
+        model_shape_recovery["failure_rank2_sha256"],
+        "eb71d231334645b5ac62fbd345c1a9cdf76493482c0ed337977d01c53745fcb0",
+        "model-shape failure packet",
+    )
+
+
+def _validate_surfaces_and_decisions(spec: Mapping[str, Any]) -> None:
+    _require_equal(spec.get("schema_version"), 1, "schema_version")
+    _require_equal(
+        spec.get("status"),
+        "mechanically_amended_three_times_before_any_optimizer_or_development_outcome",
+        "status",
+    )
+    _require_equal(spec.get("task_ids"), [3, 4], "task_ids")
+    _require_equal(spec.get("initializations"), ["zero_init", "supervised_init"], "initializations")
+    _require_equal(
+        spec.get("reported_arms"),
+        ["frozen_base", "supervised_lora", "zero_init_rl", "supervised_init_rl"],
+        "reported_arms",
+    )
+    training = spec.get("training_interaction")
+    development = spec.get("development_evaluation")
+    safeguards = spec.get("offline_safeguards")
+    continuation = spec.get("continuation")
+    decision = spec.get("candidate_decision")
+    fresh = spec.get("fresh_gate")
+    parallel = spec.get("parallel")
+    if not all(
+        isinstance(value, dict)
+        for value in (training, development, safeguards, continuation, decision, fresh, parallel)
+    ):
+        raise GateZeroTaskLocalRLContractError("task-local RL surface declaration is missing")
+    _validate_recovery_provenance(spec)
     _require_equal(training["batch_size"], 8, "training batch_size")
     _require_equal(training["rounds_maximum"], 4, "training rounds_maximum")
     _require_equal(training["interaction_episode_nodes"], [16, 32], "interaction nodes")

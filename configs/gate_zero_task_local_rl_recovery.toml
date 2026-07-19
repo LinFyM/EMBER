@@ -1,6 +1,6 @@
 schema_version = 1
 name = "smolvla_libero90_gate_zero_task_local_lora_rl_recovery_v1"
-status = "mechanically_amended_twice_before_any_optimizer_or_development_outcome"
+status = "mechanically_amended_three_times_before_any_optimizer_or_development_outcome"
 predeclared_at_utc = "2026-07-19T04:40:00Z"
 surface = "source_only_gate_zero_task_local_rl_recovery"
 task_ids = [3, 4]
@@ -64,6 +64,23 @@ development_rollouts_before_failure = 0
 replay_action_shape_before_preprocessing = [64, 50, 7]
 model_action_shape_after_preprocessing = [64, 50, 32]
 repair = "derive deterministic flow-noise shape from the validated post-preprocessor model action tensor"
+unchanged_scientific_fields = ["tasks", "LoRA", "exploration", "reward", "seeds", "interaction budget", "optimizer", "decision thresholds", "development and fresh Gate surfaces"]
+
+[model_internal_shape_recovery]
+amended_at_utc = "2026-07-19T05:17:00Z"
+predecessor_contract_sha256 = "504d20bc371078b5ffeabaad84eb1e041423c5167cd7331b91e047a3324f673d"
+failed_run_id = "gate0_task_local_rl_ep16_recovery3_20260719_051103"
+failed_output_relative_path = "gate_zero/task_local_lora_rl_recovery/awr_ep16_recovery3_20260719T051050Z"
+failure_rank2_sha256 = "eb71d231334645b5ac62fbd345c1a9cdf76493482c0ed337977d01c53745fcb0"
+failure_rank3_sha256 = "b371949825505f3fd73b918f787c9e73a4cbe73e4c4976f132f4bd372e738225"
+failure_telemetry_sha256 = "7c8b4a0f224de5ba5fbae13b573946aa52f91c9d234985583a3acc5c7c34bf2e"
+optimizer_updates_before_failure = 0
+development_rollouts_before_failure = 0
+preprocessor_preserves_input_action_shape = [64, 50, 7]
+model_prepare_action_pads_to_max_action_dim = 32
+source_anchor = "lerobot.policies.smolvla.modeling_smolvla.SmolVLAPolicy.prepare_action"
+repair = "validate the processed 7D replay action and derive deterministic flow-noise width from pinned model.config.max_action_dim=32"
+verification_before_any_environment_rerun = "one real-model synthetic-batch forward/backward without environment interaction"
 unchanged_scientific_fields = ["tasks", "LoRA", "exploration", "reward", "seeds", "interaction budget", "optimizer", "decision thresholds", "development and fresh Gate surfaces"]
 
 [lora]

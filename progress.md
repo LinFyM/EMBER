@@ -2237,3 +2237,27 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   one free GPU. Only a passing smoke with actor identity, finite critic updates,
   exact 200-row/16-of-50 mechanics, and at least 10GiB headroom may open the
   four-GPU stage-8 source run.
+
+## 2026-07-19 horizon-credit real-model smoke passed
+
+- Preflight found clean `b5aaaea`, 306GiB personal usage against the 500GiB
+  cap, 2.9TiB free on `/data`, and all eight A100s idle. The canonical smoke
+  used only GPU4, zero environment episodes, and a new mechanics output root.
+- The first long-run failed rc 1 in 1.47s before model load because the telemetry
+  sampler precreated a directory that the smoke required to create atomically.
+  The second failed rc 1 before flow/critic work because the support-loader
+  surrogate legitimately repeated provenance keys across batches while
+  production rollout keys are task/seed/anchor unique. Both packets and logs
+  are retained. Narrow smoke-only fixes allowed a telemetry-only directory and
+  suffixed deterministic smoke slots; no trainer or contract path changed.
+- Long-run `gate0_horizon_credit_real_model_smoke_recovery2_20260719_104517`
+  then completed rc 0 in 31.42s. It verified 200/200 replay identities,
+  16-step scoped execution and 50-step restoration, 16-of-50 processed action
+  masking, finite `[16,8]` real-model flow losses, 130 critic updates, exact
+  actor identity, empty actor optimizer, and healthy temporal credit. Peak
+  allocated/reserved memory was 2,858/4,004MiB; GPU4 released.
+- Result SHA256 is `29528c5f...844a`; result/source/config/telemetry checksums
+  all pass. This mechanically authorizes only the already frozen four-GPU
+  stage 8 from a new output root. Stage 8 remains critic-only and cannot pass
+  Gate 0 or authorize Writer; only its frozen decision may open exact-resume
+  stage 16.

@@ -2431,3 +2431,30 @@
   200-row replay mechanics, 16/50 masking, memory-bounded inference, finite
   critic learning, actor identity, and 10GiB A100 headroom. It is mechanics
   authorization only, not Gate-0 evidence.
+
+## Horizon-credit mechanics pass with large A100 headroom
+
+- The clean `b5aaaea` real-model smoke passed in 31.42 seconds on one A100.
+  It built 200/200 unique deterministic replay identities, scoped the policy
+  from 50 to 16 executed actions and restored 50 afterward, preserved the
+  50-slot model action tensor with every suffix after step 16 masked, and
+  obtained finite real-model flow losses of shape `[16,8]`.
+- The critic-only round made 130 finite optimizer updates with minimum gradient
+  norm 0.01347. The complete LoRA actor remained exact, actor optimizer state
+  remained empty, actor updates and maximum actor gradient were zero, and all
+  200 transitions were temporally healthy. Peak allocated/reserved memory was
+  2,858/4,004MiB, far above the required 10GiB headroom.
+- Result SHA256 is
+  `29528c5f8a4f2fd1c570e74c5c85e8a5e6ad4baf1c7239c00842579d215b844a`;
+  smoke source SHA256 is
+  `64c14b4cb0e43a765c503990c02f6ff0509c06c3f69a6c862a880d8eacd6f78d`.
+  Result, copied source, frozen config, and GPU telemetry checksums all pass;
+  GPU4 returned to 0MiB.
+- Two earlier attempts remain mechanics failure packets, not negative scientific
+  evidence. The first failed before model load because telemetry precreated the
+  output directory; the second stopped before flow or optimizer work because a
+  support-loader surrogate repeated provenance keys across batches. The
+  recovery allowed a telemetry-only directory and appended deterministic smoke
+  slots while retaining source identity. Production rollout key construction,
+  trainer behavior, configuration, Gate, and scientific surfaces were not
+  changed. The passed smoke authorizes only stage 8, not Gate 0 or Writer.

@@ -1004,6 +1004,17 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     outcome, require one real-model zero-environment smoke proving 200 replay
     rows, ordered 16/50 masking, actor identity, finite critic updates, bounded
     microbatches, and at least 10GiB device headroom.
+    The clean-commit smoke passed in 31.42 seconds on one A100: 200/200 replay
+    row identities, exact 16-step scoped execution with restoration to 50,
+    16-by-8 finite real-model flow losses, 130 finite critic updates, exact
+    actor and empty actor-optimizer identity, and only 4,004MiB peak reserved.
+    Result SHA256 is `29528c5f...844a`; all result/source/config/telemetry
+    checksums pass and GPU4 released. Two preceding no-outcome mechanics
+    failures are preserved: telemetry precreated the supposedly new directory,
+    then repeated support-loader provenance keys violated the production replay
+    uniqueness check. Each received one narrow smoke-only fix; neither changed
+    trainer/config/Gate semantics or produced flow/critic/rollout outcomes.
+    This authorizes only the frozen four-GPU stage 8 on a new output root.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

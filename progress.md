@@ -39,6 +39,18 @@
   outcome. The narrow tested repair accepts pre-existing shards only for the
   two explicitly declared reused arms; a new Writer shard still fails closed.
   Resume continues in the same output root without changing science.
+- Resume completed rc 0 in 17m28s and published 1,920 unique paired rows, five
+  new 400-frame videos, checksums and gallery. Raw h16 totals are base
+  `33/320`, recovered Writer `31/320`, direct `150/320`; h50 totals are
+  `18/320`, `21/320`, `140/320`. The recovered Writer still fails the current
+  cold-start criterion and Writer-only RL is not started. All GPUs are released;
+  artifacts are at `writer_cold_start/validation_norm_recovery_step250_20260719T221400Z`
+  and the compact `validation_latest` gallery.
+- Next recovery targets update acquisition rather than more steps or another
+  output scale: fit direct-LoRA teachers on a predeclared multi-category source
+  subset, then train the same complete Writer with physical-update imitation as
+  a bounded auxiliary and independent-query functional loss as the primary
+  objective. Validation/test/held task actions remain closed to Writer training.
 
 ## 2026-07-19 Writer segment complete; validation resume provenance
 

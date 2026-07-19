@@ -41,6 +41,20 @@
   unweighted mean, frame-weighted mean, and minimum-task reduction, so it is
   frozen before any recovered closed-loop outcome. Existing frozen-base and
   direct-LoRA episode rows will be reused by hash rather than recomputed.
+- The recovered closed-loop packet is complete: at h16 base/Writer/direct were
+  `33/320`, `31/320`, and `150/320`; Writer-base was -0.63 points with paired
+  interval [-3.44, 2.19]. At h50 they were `18/320`, `21/320`, and `140/320`;
+  Writer-base was +0.94 points with interval [-1.56, 3.13]. Only the spatial
+  relation task had nonzero Writer success; the other four categories stayed
+  at zero. Physical-norm calibration is therefore necessary for stable updates
+  but insufficient for zero-interaction utility.
+- At the selected recovery checkpoint, Writer A-factor norms are close to the
+  mature initialization (`26.8`) but B-factor norms are `6.0--6.6`, roughly
+  twice direct-LoRA's `2.6--3.4`, despite similar physical update norms. Together
+  with the large direct-vs-Writer query-loss gap, this supports one structured
+  bridge recovery: source direct-LoRA physical-update imitation as a bounded
+  auxiliary to the still-primary independent-query functional loss. Raw factor
+  MSE is not promoted to the objective, and no bank/subspace is introduced.
 
 ## 2026-07-19 owner interpretation: Gate 0 passed with limited coverage
 

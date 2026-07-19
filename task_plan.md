@@ -170,10 +170,19 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
   completed rc 0 in 48.8 minutes and kept updates near the cap. On independent
   query demos, step 250 improved all five categories by 7.5%--14.4% (10.35%
   unweighted mean) with norms 1.96--2.33, so it is the frozen rollout candidate.
-- [ ] Evaluate only the frozen step-250 recovered Writer on the same five
+- [x] Evaluate only the frozen step-250 recovered Writer on the same five
   categories and 64 paired rollouts/task at h16/h50. Reuse hash-bound base and
   direct-LoRA episode rows from the completed packet; do not repeat their
-  rollouts or fits. Publish all three arms together before interpreting.
+  rollouts or fits. The 1,920-row packet completed rc 0. At h16 base/Writer/
+  direct scored `33/320`, `31/320`, `150/320`; at h50 they scored `18/320`,
+  `21/320`, `140/320`. Norm control preserved offline transfer but did not
+  produce cross-category closed-loop utility, so Writer-only RL remains blocked.
+- [ ] Fit matched direct-LoRA teachers on a specification-selected, multi-class
+  source subset and use their physical updates only as an auxiliary bridge while
+  independent-query functional loss remains primary. This tests whether the
+  Writer can learn efficient direct-like update structure rather than merely
+  lowering action loss with a weakly transferable update. Keep the full 37-target
+  rank-32 space and leave later task-local RL unconstrained.
 
 1. [x] Bootstrap a Python 3.12 environment from the locked project definition;
    verify package consistency and the active GPU/storage contracts.

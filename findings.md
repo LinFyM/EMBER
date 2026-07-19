@@ -2458,3 +2458,25 @@
   slots while retaining source identity. Production rollout key construction,
   trainer behavior, configuration, Gate, and scientific surfaces were not
   changed. The passed smoke authorizes only stage 8, not Gate 0 or Writer.
+
+## Horizon-credit stage 8 preserves the actor and opens one terminal check
+
+- Clean `ac9cf2f` stage 8 completed rc 0 in 3m34s on GPUs 4--7. Every arm
+  collected 200 ordered replay rows with 16-step execution, healthy temporal
+  credit, zero saturation, 90 finite critic updates, exact actor identity, and
+  zero actor optimizer updates. The four source training slices each happened
+  to score 6/8; this is acquisition telemetry, not the fixed Gate metric.
+- Fixed development paired gains are `[0,0]` for both zero-init and supervised-
+  init families, exactly as required by a critic-only warmup. Status is
+  `horizon_credit_warmup_complete_continue_to_16`; Gate 0, Writer, validation,
+  and held remain false/unopened. No policy-quality inference follows from the
+  warmup result.
+- Stage-result SHA256 is
+  `a3b93ebf04fec8ab0f6ee7a3db7801cb80733d51d79a3079f2c46113a26a1b0d`.
+  All 15 JSON files parse; four recovery and candidate packets validate; all
+  four videos decode; telemetry checksum passes. Output is 99MiB. Peak memory
+  is 19,266MiB on GPU4 and at most 5,121MiB on GPUs5--7; every GPU released.
+- The sealed decision allows one exact resume to stage 16. That node enables
+  the actor and is terminal: it either meets the unchanged two-task positive-
+  improvement rule and becomes a candidate for a separately frozen fresh Gate,
+  or records a bounded negative and stops. Stage 24 remains impossible.

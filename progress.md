@@ -2261,3 +2261,23 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   stage 8 from a new output root. Stage 8 remains critic-only and cannot pass
   Gate 0 or authorize Writer; only its frozen decision may open exact-resume
   stage 16.
+
+## 2026-07-19 horizon-credit stage 8 completed
+
+- Long-run `gate0_horizon_credit_stage8_20260719_104802` completed rc 0 from
+  clean `ac9cf2f` in 3m34s on GPUs 4--7. It wrote a new 99MiB output root and
+  released every GPU. Trackio project `EMBER_gate0` contains the four arm runs;
+  the local `index.html` gallery contains one bounded video per arm.
+- Every arm collected 200 replay rows at execution horizon 16 and made 90
+  critic updates. Mechanics and temporal credit are healthy, actor state is
+  exact, actor optimizer updates are zero, saturation is zero, and fixed
+  development paired gains are `[0,0]` for both initialization families.
+  Frozen status is `horizon_credit_warmup_complete_continue_to_16`; Gate 0 and
+  Writer remain false.
+- Stage-result SHA256 is `a3b93ebf...1b0d`. Validated 15 JSON files, four
+  latest recoveries, four candidate packets, four decodable videos, and the
+  telemetry checksum. Peak memory is 19,266MiB on GPU4 and <=5,121MiB on the
+  other ranks, retaining >60GiB headroom. The only next action is an exact
+  same-output resume to terminal stage 16 after clean documentation delivery
+  and fresh GPU preflight; no parameter, task, seed, threshold, or surface may
+  change.

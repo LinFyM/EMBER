@@ -1015,6 +1015,16 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     uniqueness check. Each received one narrow smoke-only fix; neither changed
     trainer/config/Gate semantics or produced flow/critic/rollout outcomes.
     This authorizes only the frozen four-GPU stage 8 on a new output root.
+    Stage 8 then completed rc 0 on clean `ac9cf2f` in 3m34s. All four arms
+    collected 200 replay rows at execution horizon 16, made 90 finite critic
+    updates, kept actor state exact with zero actor optimizer updates, and
+    passed temporal/mechanical safeguards. As required for critic-only warmup,
+    both initialization families have task3/task4 paired gains `[0,0]`; status
+    is `horizon_credit_warmup_complete_continue_to_16`. Stage-result SHA256 is
+    `a3b93ebf...1b0d`. Fifteen JSON files, four atomic recoveries, four
+    candidates, four videos, and telemetry validate; peak memory is 19,266MiB
+    and all GPUs release. This authorizes exactly one same-output exact resume
+    to terminal stage 16, with no configuration or checkpoint selection.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

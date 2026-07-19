@@ -2176,3 +2176,37 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   states 8--15/seeds 6200--6207 with zero updates. It consumes only 32 source
   episodes and classifies credit/optimizer versus coverage/generalization;
   it cannot change the failed Gate result or authorize Writer.
+
+## 2026-07-19 support-replay diagnostic closed and next boundary narrowed
+
+- Long-run `gate0_support_replay_diagnostic_20260719_095823` completed rc 0 in
+  1m46s from clean `0804f21` on GPUs 4--7 and released all four devices. Its
+  immutable output is the bounded 32-episode source-only packet
+  `support_replay_20260719T095739Z`; all checksums pass.
+- Status is `support_replay_no_improvement`. Supervised task3/task4 paired net
+  wins on the exact round-0 support slice are `[0,-1]`; zero-init task3/task4
+  are `[-1,-1]`. Actor/trainable and optimizer states are unchanged because
+  this diagnostic performs zero updates. Result SHA256 is
+  `7e92b745...414e`; Gate 0 and Writer remain false, and validation/held/locked
+  numeric access remains zero.
+- The result rejects the coverage-only branch: the existing reward update does
+  not improve even the seen support slice. No episode-32 or blind scale
+  extension is authorized. The same task3/task4, exact mature LoRA, fixed
+  reporting evaluator, four matched arms, query/drift safeguards, and original
+  success-gain rule remain active.
+- Completed one read-only action-authority audit before another recovery. The
+  rollout action is the postprocessed environment action; LIBERO adds no env
+  action postprocessing; checkpoint action normalization statistics match
+  bit-exactly in both directions; numerical round-trip error is at most
+  `7.2e-7`; replay uses those actions; and SmolVLA honors the padding mask.
+  Action-coordinate mismatch is therefore excluded without new GPU outcomes.
+- The full research plan now explicitly keeps four different optimization
+  questions separate: supervised Writer cold start; Writer-only RL with frozen
+  base and reward updating Writer only; ordinary task-local LoRA RL with
+  frozen Writer/base and LoRA-only updates; and adaptation-aware source
+  meta-outer learning. Gate 0 is not SFT-only: the already executed four-arm
+  recovery is base, supervised LoRA, zero-init LoRA plus ordinary RL, and
+  supervised-init LoRA plus identical RL. Because none is yet positive, the
+  next source-only recovery must be a new primary-source-supported
+  credit/acquisition correction frozen before outcome, not a threshold, task,
+  seed, or surface change.

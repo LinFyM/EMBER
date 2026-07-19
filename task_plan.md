@@ -970,6 +970,24 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     development behavior diagnoses generalization/coverage; no positive arm
     diagnoses reward-credit/optimizer acquisition. It consumes 32 source
     episodes, changes no Gate threshold, and cannot authorize Writer.
+    The diagnostic has now completed rc 0 on clean `0804f21`. All four replay
+    arms are non-positive on the exact round-0 source support slice: supervised
+    task3/task4 paired net wins are `[0,-1]`, and zero-init task3/task4 are
+    `[-1,-1]`. Status is `support_replay_no_improvement`; result SHA256 is
+    `7e92b745...414e`. The four actor states and optimizer states remain exact,
+    optimizer steps are zero, all packet checksums pass, and validation/held
+    access remains zero. This rejects the coverage-only explanation: the
+    current 24-episode reward-credit/optimizer acquisition does not improve
+    even its seen support slice. Do not open episode 32 or blindly add scale.
+    A read-only action-authority audit also rules out an action-coordinate
+    mismatch: LIBERO's env postprocessor is empty, the pinned SmolVLA action
+    pre/post statistics are bit-identical, unnormalize-to-normalize round-trip
+    error is at most `7.2e-7`, replay consumes the postprocessed environment
+    actions, and the model honors the action padding mask. The next recovery
+    must therefore change a primary-source-supported credit/acquisition
+    mechanism under a new result-before-outcome contract, while keeping tasks
+    3/4, all four arms, the canonical reporting evaluator, LoRA support, and
+    source/held boundaries fixed.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

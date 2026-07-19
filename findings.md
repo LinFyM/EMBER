@@ -2359,3 +2359,44 @@
   coverage/generalization gap; no positive arm isolates credit/optimizer
   acquisition. It cannot pass Gate 0, authorize Writer, access validation or
   held data, or change task/seed/threshold/checkpoint.
+
+## Support replay rejects a coverage-only account of the RL negative
+
+- The frozen support-replay discriminator completed rc 0 on clean `0804f21`
+  with status `support_replay_no_improvement`. It loaded the four immutable
+  episode-24 states, made zero optimizer updates, and replayed only the exact
+  round-0 task3/task4 source init states 8--15 and seeds 6200--6207. Supervised
+  task3/task4 paired net wins are `[0,-1]`; zero-init task3/task4 are `[-1,-1]`.
+  No arm improves even on the support slice used to acquire its first reward
+  update.
+- This separates the remaining failure from support-to-development coverage:
+  the declared 24-episode acquisition is behaviorally ineffective on its seen
+  support surface as well as on the fixed development surface. It does not
+  prove that sufficiently resolved or scaled ordinary task-local LoRA RL is
+  ineffective, but it forbids a blind episode-32 continuation of this path.
+- Result SHA256 is
+  `7e92b745b53442d0df2b3e36b068402b244b17e7f0a750e053f60510d59c414e`;
+  config SHA256 is
+  `f539b7376dd1e265076941d7b45022934802f2931bdb54b866b9b97e1a533909`.
+  All packet checksums pass, the four trainable states and actor optimizer
+  states remain exact, and Gate 0/Writer/validation/held remain unopened. An
+  initial checksum invocation from the repository cwd could not resolve the
+  packet-relative paths; the immediate packet-directory invocation passed all
+  entries. This is an operator-cwd residual, not an artifact defect.
+
+## Replay action coordinates are mechanically correct
+
+- LeRobot rollout stores the policy-postprocessed environment action. In the
+  pinned LIBERO path the environment postprocessor is empty, so this is exactly
+  the action consumed by the simulator and later copied into replay.
+- The pinned checkpoint's SmolVLA action normalizer and unnormalizer use the
+  same seven-dimensional MEAN_STD tensors; every action/state tensor is
+  bit-identical between the two processor artifacts. A direct numerical
+  unnormalize-then-normalize probe has maximum absolute error below `7.2e-7`
+  over normalized magnitudes through 10.
+- `build_balanced_replay_batch` chunks those stored environment actions; the
+  source preprocessor maps them back into normalized coordinates, and SmolVLA
+  applies `action_is_pad` before reducing the flow loss. Action dimensionality,
+  padding, and normalization therefore cannot explain the observed no-gain
+  replay. The remaining diagnosis is reward-credit/optimizer acquisition, not
+  an action-coordinate implementation failure.

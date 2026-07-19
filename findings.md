@@ -2655,3 +2655,14 @@
   physical pre-reset state counter, binds per-state SHA/evaluator/policy seeds,
   scopes action execution to 16 while preserving the model chunk of 50, and
   checks the base checkpoint manifest and prior source-competence result.
+- The first four-GPU launch failed before any reset, rollout, reward, or policy
+  outcome. All ranks loaded the base, created their first lazy vector env, then
+  raised because LeRobot's `_LazyAsyncVectorEnv` forwards `call/get_attr` but
+  not Gymnasium's `set_attr`. The immutable failure root is
+  `source_base_n32_20260719T124341Z`; longrun main rc is 1 and all GPUs released
+  after 20.22 seconds. This is an implementation failure packet only.
+- The narrow repair materializes the existing lazy wrapper through `get_attr`,
+  calls `set_attr` on its owned Gymnasium vector env, and immediately reads the
+  counters back through the public `call` path. It does not alter the partition,
+  tasks, seeds, evaluator, horizon, checkpoint, or selection rule. A matching
+  lazy-wrapper regression test now accompanies the direct-vector test.

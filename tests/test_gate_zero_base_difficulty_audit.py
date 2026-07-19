@@ -62,6 +62,45 @@ class GateZeroBaseDifficultyAuditTest(unittest.TestCase):
         self.assertEqual(env.assert_name, "init_state_id")
         self.assertEqual(env.assert_call, "init_state_id")
 
+    def test_physical_state_setter_supports_lerobot_lazy_vector_wrapper(self) -> None:
+        class Actual:
+            def __init__(self) -> None:
+                self.values = [0, 1]
+
+            def set_attr(self, name, values) -> None:
+                self.values = list(values)
+
+            def call(self, name):
+                return self.values
+
+            def get_attr(self, name):
+                return tuple(self.values)
+
+        class Lazy:
+            def __init__(self) -> None:
+                self._env = None
+
+            def _ensure(self) -> None:
+                self._env = self._env or Actual()
+
+            def get_attr(self, name):
+                self._ensure()
+                return self._env.get_attr(name)
+
+            def call(self, name):
+                self._ensure()
+                return self._env.call(name)
+
+        class AuditProxy:
+            def __init__(self) -> None:
+                self._env = Lazy()
+
+            def __getattr__(self, name):
+                return getattr(self._env, name)
+
+        env = AuditProxy()
+        self.assertEqual(set_physical_init_state_ids(env, [11, 37]), [11, 37])
+
     def test_launcher_dry_run_uses_one_canonical_module(self) -> None:
         completed = subprocess.run(
             [

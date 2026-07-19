@@ -2431,3 +2431,10 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   packet; their live manifest/result hashes validate. Next: full repository
   verification, clean commit/push, then live GPU/storage preflight and one
   <=30-minute four-GPU audit. This audit cannot itself pass Gate 0.
+- The first launch `gate0_source_base_difficulty_audit_20260719_124341` failed
+  rc 1 in 20.22 seconds before reset/outcome because LeRobot's lazy async wrapper
+  exposes no `set_attr`. Four failure packets and telemetry are retained; all
+  GPUs returned to 0MiB. Applied one narrow wrapper-materialization repair and
+  added a faithful lazy-wrapper regression. After clean delivery, run one
+  actual-env no-policy state-assignment/reset smoke, then relaunch to a new
+  output root only if the physical before/after IDs match exactly.

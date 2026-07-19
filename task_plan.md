@@ -1113,6 +1113,11 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     most four distinct primitive signatures; no LoRA, validation, held, or
     locked outcome participates. Keep one video/task plus Trackio/gallery, and
     fail closed on checkpoint/state identity. This audit cannot pass Gate 0.
+    Its first launch failed before reset/outcome because LeRobot's lazy async
+    wrapper omitted `set_attr`; preserve the rc-1 packet. Materialize the owned
+    Gymnasium vector env, set/read back the counters, and require one actual-env
+    no-policy identity smoke before a fresh-root relaunch. No scientific
+    contract field changes.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

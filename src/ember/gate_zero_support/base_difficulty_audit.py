@@ -158,7 +158,19 @@ def set_physical_init_state_ids(env: Any, indices: Sequence[int]) -> list[int]:
     expected = [int(value) for value in indices]
     if len(expected) != len(set(expected)) or any(not 0 <= value < 50 for value in expected):
         raise GateZeroBaseDifficultyAuditError("invalid physical init-state batch")
-    env.set_attr("init_state_id", expected)
+    try:
+        setter = getattr(env, "set_attr")
+    except AttributeError:
+        setter = None
+    if not callable(setter):
+        lazy = getattr(env, "_env", None)
+        if lazy is None or not callable(getattr(lazy, "get_attr", None)):
+            raise GateZeroBaseDifficultyAuditError("vector env cannot set physical state")
+        lazy.get_attr("init_state_id")  # materialize LeRobot's lazy vector wrapper
+        setter = getattr(getattr(lazy, "_env", None), "set_attr", None)
+    if not callable(setter):
+        raise GateZeroBaseDifficultyAuditError("materialized vector env lacks set_attr")
+    setter("init_state_id", expected)
     observed = list(env.call("init_state_id"))
     if observed != expected:
         raise GateZeroBaseDifficultyAuditError("physical init-state assignment failed")

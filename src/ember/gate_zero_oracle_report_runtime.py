@@ -480,7 +480,7 @@ def _closed_loop_metrics(
         if spec["resources"].get("return_episode_data", False)
         else None
     )
-    env = diagnostics or base_env
+    rollout_env = diagnostics or base_env
     evaluation_spec = {
         "episodes_per_task": batch_size,
         "max_videos_per_arm": int(
@@ -490,7 +490,7 @@ def _closed_loop_metrics(
         "policy_rng_seed": report["policy_rng_seed"],
     }
     try:
-        override = apply_prompt_override(env, language, batch_size=batch_size)
+        override = apply_prompt_override(base_env, language, batch_size=batch_size)
         warmup_seed_batches = report_warmup_seed_batches(
             batch_size=batch_size,
             warmup_seed_start=report["warmup_seed_start"],
@@ -498,18 +498,18 @@ def _closed_loop_metrics(
             expected_report_init_states=report["official_rollout_init_state_indices"],
         )
         for warmup_seeds in warmup_seed_batches:
-            env.reset(seed=warmup_seeds)
+            base_env.reset(seed=warmup_seeds)
         metrics, elapsed = _run_upstream_eval(
             spec=evaluation_spec,
             runtime=runtime,
-            env=env,
+            env=rollout_env,
             videos_dir=output_dir / "videos" / f"task_{task_id}" / condition,
         )
-        final_init_ids = list(env.call("init_state_id"))
+        final_init_ids = list(base_env.call("init_state_id"))
     finally:
-        env.close()
+        base_env.close()
     mechanics = override["mechanically_valid"] and validate_report_reset_identity(
-        env.reset_events,
+        base_env.reset_events,
         batch_size=batch_size,
         warmup_seed_start=report["warmup_seed_start"],
         report_seed_start=report["seed_start"],
@@ -524,7 +524,7 @@ def _closed_loop_metrics(
         "mechanics_valid": mechanics,
         "prompt": language,
         "prompt_override": override,
-        "reset_events": env.reset_events,
+        "reset_events": base_env.reset_events,
         "official_rollout_init_state_indices": report[
             "official_rollout_init_state_indices"
         ],

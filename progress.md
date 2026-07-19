@@ -2548,3 +2548,9 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   transport with a tested terminal-timing environment observer; the policy,
   evaluator, paired identities, horizons, checkpoints, and thresholds remain
   unchanged. Relaunch once to a new root.
+- Recovery2 also failed before rollout/rows because the transparent diagnostic
+  wrapper was applied one layer too early for the existing prompt-override
+  owner. Prompt override and reset audit now operate on their canonical base
+  wrapper; terminal timing wraps only the upstream rollout call. This is a
+  mechanical ownership fix with no scientific field change. Verify it once on
+  an actual no-policy env, then use a fresh formal root.

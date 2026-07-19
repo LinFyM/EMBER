@@ -2119,7 +2119,7 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   launcher dry-run, and diff whitespace checks pass. The dry-run binds the
   new temporal predecessor packet and retains Trackio plus bounded video
   gallery output. Next, after clean Git delivery, run one GPU real-model
-  no-environment/no-optimizer smoke for critic update and exact actor identity;
+  no-environment/no-actor-optimizer smoke for critic update and exact actor identity;
   only that mechanics result may open the staged source rollout.
 - The active research sequence remains explicit: supervised Writer cold start;
   independent Writer-only RL that updates Writer only; ordinary task-local LoRA
@@ -2128,3 +2128,16 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   supervised training or matched ordinary RL, but must report which mechanism
   supplied the evidence and cannot convert RL utility into a supervised
   zero-interaction claim.
+- Committed and pushed the outcome-free contract/implementation as `faf1564`.
+  Long-run `gate0_critic_warmup_real_model_smoke_20260719_092504` then completed
+  rc 0 on GPU4 in 28.95 seconds. It used 64/64 unique source rows and zero
+  environment episodes; actor state remained exact, actor optimizer state and
+  updates remained zero, while the critic made 40 finite updates with minimum
+  gradient norm 0.835. Peak allocated/reserved memory was 2,689/4,128MiB.
+  Result SHA256 is `91db6430...3c07`; result/source/config checksums pass, the
+  packet is only 32KiB, and GPU4 returned to 0MiB. The first checksum command
+  was invoked from the repository rather than the packet directory and could
+  not resolve its relative paths; immediate verification from the correct
+  directory passed all entries. This operator cwd residual did not alter the
+  packet. The frozen four-GPU episode-8 source stage is now mechanically
+  authorized; it remains a development decision, not Gate-0 evidence by itself.

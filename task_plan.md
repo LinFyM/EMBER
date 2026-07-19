@@ -947,6 +947,13 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     finite positive critic gradients, and at least 10GiB device headroom.
     This is the current cheapest source-only Gate-0 recovery, not a Writer
     experiment and not permission to reinterpret the completed negative run.
+    The real-model smoke passed on clean `faf1564` in 28.95 seconds: 64/64
+    unique source rows, exact actor/LoRA identity, zero actor optimizer state
+    and steps, 40 finite critic updates (minimum gradient norm 0.835), and only
+    4,128MiB peak reserved. Result SHA256 is `91db6430...3c07`; all three packet
+    checksums pass and GPU4 released. This authorizes only the already frozen
+    episode-8 stage on GPUs 4--7; the stage must start fresh and stop at its
+    predeclared decision.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

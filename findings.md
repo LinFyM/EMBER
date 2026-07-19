@@ -2309,3 +2309,13 @@
   optimizes the task-local LoRA in place; adaptation-aware source meta-outer
   learning updates Writer through the inner LoRA adaptation. These stages must
   not be merged into one result.
+- The clean-revision real-model critic-warmup smoke passed without simulator
+  access in 28.95 seconds. All 64 legal task-3 source rows were unique; round 0
+  produced 40 critic optimizer updates with minimum gradient norm 0.835 and a
+  changed critic state, while the complete LoRA actor remained exactly
+  unchanged, actor optimizer state stayed empty, actor steps were zero, and
+  actor gradient norm was exactly zero. Peak reserved memory was 4,128MiB,
+  leaving far more than the required 10GiB headroom. Result SHA256 is
+  `91db643019a79d905b2878f6411484ccf68e49a58bb66f3dd4a1419019963c07`;
+  packet checksums pass. This validates the intended scheduling mechanic only,
+  not useful behavior or Gate 0.

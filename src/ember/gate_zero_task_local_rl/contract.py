@@ -454,7 +454,10 @@ def load_task_local_rl_spec(
                 ],
             }
         )
-        spec["continuation"]["nonterminal_statuses"] = [runtime["early_check_status"]]
+        spec["continuation"]["nonterminal_statuses"] = [
+            runtime["early_check_status"],
+            "critic_warmup_recovery_continue_to_32",
+        ]
         spec["resources"]["tracking_group"] = "task_local_lora_rl_matched_early_check"
         spec["interpretation"] = requested["interpretation"]
     else:

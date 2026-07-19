@@ -2099,3 +2099,10 @@
   multi-noise replication is the remaining cheap discriminator between robust
   surrogate mismatch and sampling variance before any differentiable sampler
   loss, further supervised training, or temporal-credit RL is authorized.
+- The four-draw replication is result-blind at config SHA256
+  `d436e17f2a5b91b8cdf22806e3967fc1f0f170590ba8a96692c610c7ef42212f`.
+  It changes only inference-noise seeds to `[2026071835, 2026071935,
+  2026072035, 2026072135]` on the same 48 anchors and immutable states. Robust
+  mismatch requires worse mean action MSE for every candidate-task pair and at
+  least three worsening draws per pair; otherwise the diagnosis is sampling
+  variance. It consumes no rollout and cannot authorize Gate 0 or Writer.

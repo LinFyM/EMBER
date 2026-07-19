@@ -67,12 +67,13 @@ print(base / "checkpoints" / f'{spec["authority"]["source_base_checkpoint_step"]
 print(out / spec["authority"]["lora_fit_root_relative_path"])
 print(out / spec["authority"]["action_expert_fit_root_relative_path"])
 print(out / spec["authority"]["capacity_result_relative_path"])
+print(out / spec["authority"]["single_noise_result_relative_path"] if "single_noise_result_relative_path" in spec["authority"] else "-")
 print(spec["resources"]["minimum_free_memory_mib"])
 PY
 )
 manifest=${paths[0]}; dataset_root=${paths[1]}; source_checkpoint=${paths[2]}
 lora_fit_root=${paths[3]}; action_fit_root=${paths[4]}; capacity_result=${paths[5]}
-minimum_free_memory_mib=${paths[6]}
+single_noise_result=${paths[6]}; minimum_free_memory_mib=${paths[7]}
 command=(
   "$PYTHON" -m torch.distributed.run --standalone --nproc-per-node=2
   -m ember.gate_zero_query_action_alignment
@@ -84,6 +85,9 @@ command=(
   --action-expert-fit-root "$action_fit_root" --output-dir "$output_dir"
   --latest-link "$latest_link" --physical-gpus "$gpus"
 )
+if [[ "$single_noise_result" != "-" ]]; then
+  command+=(--single-noise-result "$single_noise_result")
+fi
 
 if $dry_run; then
   printf 'CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=%q MUJOCO_GL=egl ' "$gpus"
@@ -95,6 +99,7 @@ for path in "$manifest" "$dataset_root" "$source_checkpoint" "$lora_fit_root" \
   "$action_fit_root" "$capacity_result"; do
   [[ -e "$path" ]] || die "required authority is missing: $path"
 done
+[[ "$single_noise_result" == "-" || -f "$single_noise_result" ]] || die "single-noise authority is missing"
 for gpu in "${gpu_indices[@]}"; do
   active=$(nvidia-smi -i "$gpu" --query-compute-apps=pid --format=csv,noheader,nounits | sed '/^[[:space:]]*$/d')
   [[ -z "$active" ]] || die "GPU $gpu has active compute PID(s): ${active//$'\n'/,}"

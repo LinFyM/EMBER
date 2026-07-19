@@ -7,6 +7,7 @@ import contextlib
 import gc
 import json
 import os
+import statistics
 import time
 import tomllib
 import traceback
@@ -40,6 +41,8 @@ EXPECTED_NAME = "smolvla_libero90_gate_zero_query_action_alignment_audit_v1"
 EXPECTED_STATUS = (
     "predeclared_after_action_expert_capacity_failure_before_query_action_alignment_outcomes"
 )
+ROBUST_NAME = "smolvla_libero90_gate_zero_query_action_alignment_robustness_v1"
+ROBUST_STATUS = "predeclared_after_single_noise_mismatch_before_multi_noise_outcomes"
 RESULT_NAME = "query_action_alignment_result.json"
 
 
@@ -60,6 +63,51 @@ def _load_toml(path: Path, label: str) -> dict[str, Any]:
         raise GateZeroQueryActionAlignmentError(f"invalid {label} TOML") from error
 
 
+def _validate_candidate_query_decision(spec: Mapping[str, Any], *, robust: bool) -> None:
+    evidence = spec.get("candidate_evidence", {})
+    expected_hashes = {
+        "task3_lora_manifest_sha256": "06127175cfecc8305a8ff13f2b0f085773e7ab02365b8f2153b043e2f29c47cf",
+        "task3_lora_state_sha256": "b20d60b19d83198eb26fa6a1827a910403390c0757bb1208f8af46a400faa68c",
+        "task4_lora_manifest_sha256": "9e76ed1d8e1cb1e1dfcc7ca2c27307cc6a5fbd824a40b6f844840f6c846cb3cc",
+        "task4_lora_state_sha256": "ba0f22683f04cc1cf6e8cbf287d8a5af9bc039d9f07300da77d6fe553067c053",
+        "task3_action_expert_manifest_sha256": "a1eaaf1d7e81b6d602743b5c943eb65a142d07fad9ec66f038fde3326fce24ab",
+        "task3_action_expert_state_sha256": "67a2ffe2054e0cd1985211bcfe6fbf929d7203ab4572f56fc12b1cbc089962b2",
+        "task4_action_expert_manifest_sha256": "ca5f1586b9b735014e00c778e003246235ef4707eb8030d62e78684d2d0dbe1c",
+        "task4_action_expert_state_sha256": "d5a94c0f8b34b06d939bfea3e1b62fc9db48db648ab8827f65d705709736226c",
+    }
+    for key, expected in expected_hashes.items():
+        _require(evidence.get(key), expected, key)
+    for key, expected in (
+        ("lora_variant", "mature_official_default_r32_lr25e6_recovery"),
+        ("action_expert_variant", "mature_action_expert_lr25e6_recovery"),
+        ("candidate_step", 1_000), ("lora_trainable_parameters", 1_485_312),
+        ("action_expert_trainable_parameters", 99_880_992),
+    ):
+        _require(evidence.get(key), expected, key)
+    query = spec.get("query", {})
+    for key, expected in (
+        ("episode_bounds", [40, 45]), ("anchor_frames_per_demo", 8),
+        ("anchor_count_per_task", 48), ("action_chunk_size", 50),
+        ("action_dimension", 7), ("time_partition_count", 4),
+        ("fixed_inference_noise_seed", 2026071835), ("new_environment_rollout_episodes", 0),
+    ):
+        _require(query.get(key), expected, f"query {key}")
+    expected_seeds = [2026071835, 2026071935, 2026072035, 2026072135] if robust else [2026071835]
+    _require(
+        query.get("inference_noise_seeds", [query.get("fixed_inference_noise_seed")]),
+        expected_seeds,
+        "query inference-noise seeds",
+    )
+    decision = spec.get("decision", {})
+    for key in ("may_change_gate_threshold", "may_authorize_gate_zero", "may_authorize_writer",
+                "may_seal_writer_targets", "may_access_validation_or_held"):
+        _require(decision.get(key), False, f"decision {key}")
+    _require(decision.get("no_new_closed_loop_outcome"), True, "closed-loop boundary")
+    if robust:
+        _require(decision.get("minimum_consistent_worsening_draws"), 3, "robust draw count")
+        _require(decision.get("total_inference_noise_draws"), 4, "robust total draws")
+
+
 def validate_query_action_alignment_spec(
     spec: Mapping[str, Any],
     *,
@@ -70,11 +118,21 @@ def validate_query_action_alignment_spec(
     action_fit_path: Path,
     capacity_path: Path,
 ) -> None:
+    robust = spec.get("name") == ROBUST_NAME
+    identity = (
+        ROBUST_NAME,
+        ROBUST_STATUS,
+        "source_only_offline_query_action_alignment_multi_noise_diagnostic",
+    ) if robust else (
+        EXPECTED_NAME,
+        EXPECTED_STATUS,
+        "source_only_offline_query_action_alignment_diagnostic",
+    )
     for key, expected in (
         ("schema_version", 1),
-        ("name", EXPECTED_NAME),
-        ("status", EXPECTED_STATUS),
-        ("surface", "source_only_offline_query_action_alignment_diagnostic"),
+        ("name", identity[0]),
+        ("status", identity[1]),
+        ("surface", identity[2]),
         ("task_ids", [3, 4]),
         (
             "conditions",
@@ -103,49 +161,13 @@ def validate_query_action_alignment_spec(
     )
     for key in ("validation_numeric_access", "held_numeric_access", "locked_report_numeric_access"):
         _require(authority.get(key), False, key)
-    evidence = spec.get("candidate_evidence", {})
-    expected_hashes = {
-        "task3_lora_manifest_sha256": "06127175cfecc8305a8ff13f2b0f085773e7ab02365b8f2153b043e2f29c47cf",
-        "task3_lora_state_sha256": "b20d60b19d83198eb26fa6a1827a910403390c0757bb1208f8af46a400faa68c",
-        "task4_lora_manifest_sha256": "9e76ed1d8e1cb1e1dfcc7ca2c27307cc6a5fbd824a40b6f844840f6c846cb3cc",
-        "task4_lora_state_sha256": "ba0f22683f04cc1cf6e8cbf287d8a5af9bc039d9f07300da77d6fe553067c053",
-        "task3_action_expert_manifest_sha256": "a1eaaf1d7e81b6d602743b5c943eb65a142d07fad9ec66f038fde3326fce24ab",
-        "task3_action_expert_state_sha256": "67a2ffe2054e0cd1985211bcfe6fbf929d7203ab4572f56fc12b1cbc089962b2",
-        "task4_action_expert_manifest_sha256": "ca5f1586b9b735014e00c778e003246235ef4707eb8030d62e78684d2d0dbe1c",
-        "task4_action_expert_state_sha256": "d5a94c0f8b34b06d939bfea3e1b62fc9db48db648ab8827f65d705709736226c",
-    }
-    for key, expected in expected_hashes.items():
-        _require(evidence.get(key), expected, key)
-    for key, expected in (
-        ("lora_variant", "mature_official_default_r32_lr25e6_recovery"),
-        ("action_expert_variant", "mature_action_expert_lr25e6_recovery"),
-        ("candidate_step", 1_000),
-        ("lora_trainable_parameters", 1_485_312),
-        ("action_expert_trainable_parameters", 99_880_992),
-    ):
-        _require(evidence.get(key), expected, key)
-    query = spec.get("query", {})
-    for key, expected in (
-        ("episode_bounds", [40, 45]),
-        ("anchor_frames_per_demo", 8),
-        ("anchor_count_per_task", 48),
-        ("action_chunk_size", 50),
-        ("action_dimension", 7),
-        ("time_partition_count", 4),
-        ("fixed_inference_noise_seed", 2026071835),
-        ("new_environment_rollout_episodes", 0),
-    ):
-        _require(query.get(key), expected, f"query {key}")
-    decision = spec.get("decision", {})
-    for key in (
-        "may_change_gate_threshold",
-        "may_authorize_gate_zero",
-        "may_authorize_writer",
-        "may_seal_writer_targets",
-        "may_access_validation_or_held",
-    ):
-        _require(decision.get(key), False, f"decision {key}")
-    _require(decision.get("no_new_closed_loop_outcome"), True, "closed-loop boundary")
+    _validate_candidate_query_decision(spec, robust=robust)
+    if robust:
+        _require(
+            authority.get("single_noise_result_sha256"),
+            "95f8adfc0d16c72d5443b7466ff72c92dca9616d26106e25a1d42bb71150c1c6",
+            "single-noise result",
+        )
     resources = spec.get("resources", {})
     for key, expected in (
         ("maximum_concurrent_gpus", 4),
@@ -221,6 +243,51 @@ def classify_action_alignment(
     return {"status": status, "relative_action_mse_reduction": reductions}
 
 
+def classify_multi_seed_action_alignment(
+    base_mse: Mapping[int, list[float]],
+    candidate_mse: Mapping[str, Mapping[int, list[float]]],
+    *,
+    minimum_consistent_worsening_draws: int,
+) -> dict[str, Any]:
+    """Require both worse mean action MSE and consistent draw-level signs."""
+
+    tasks = {3, 4}
+    if set(base_mse) != tasks or set(candidate_mse) != {"lora", "action_expert"}:
+        raise GateZeroQueryActionAlignmentError("multi-seed alignment identity changed")
+    details: dict[str, dict[str, Any]] = {}
+    robust = True
+    for condition in ("lora", "action_expert"):
+        if set(candidate_mse[condition]) != tasks:
+            raise GateZeroQueryActionAlignmentError("multi-seed candidate tasks changed")
+        details[condition] = {}
+        for task in sorted(tasks):
+            base = [float(value) for value in base_mse[task]]
+            candidate = [float(value) for value in candidate_mse[condition][task]]
+            if len(base) != len(candidate) or len(base) < minimum_consistent_worsening_draws:
+                raise GateZeroQueryActionAlignmentError("multi-seed draw count changed")
+            if any(value <= 0 for value in base) or any(value < 0 for value in candidate):
+                raise GateZeroQueryActionAlignmentError("multi-seed MSE is invalid")
+            reductions = [(left - right) / left for left, right in zip(base, candidate, strict=True)]
+            mean_reduction = (statistics.mean(base) - statistics.mean(candidate)) / statistics.mean(base)
+            worsening = sum(value < 0 for value in reductions)
+            pair_robust = mean_reduction < 0 and worsening >= minimum_consistent_worsening_draws
+            robust = robust and pair_robust
+            details[condition][str(task)] = {
+                "mean_relative_action_mse_reduction": mean_reduction,
+                "per_seed_relative_action_mse_reduction": reductions,
+                "worsening_draws": worsening,
+                "robust_mismatch": pair_robust,
+            }
+    return {
+        "status": (
+            "multi_seed_flow_query_surrogate_misaligned"
+            if robust
+            else "inference_sampling_variance_obscures_alignment"
+        ),
+        "multi_seed_action_alignment": details,
+    }
+
+
 def _candidate(
     spec: Mapping[str, Any], *, root: Path, task_id: int, kind: str
 ) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
@@ -248,6 +315,29 @@ def _candidate(
     return load_file(candidate / "trainable_state.safetensors"), manifest
 
 
+def _evaluate_noise_seeds(evaluator: Any, model: Any, spec: Mapping[str, Any]) -> dict[str, Any]:
+    seeds = spec["query"].get(
+        "inference_noise_seeds", [spec["query"]["fixed_inference_noise_seed"]]
+    )
+    original = evaluator.inference_noise_seed
+    by_seed = {}
+    try:
+        for seed in seeds:
+            evaluator.inference_noise_seed = seed
+            by_seed[str(seed)] = evaluator.evaluate_action_chunk_errors(model)
+    finally:
+        evaluator.inference_noise_seed = original
+    if len(seeds) == 1:
+        return next(iter(by_seed.values()))
+    return {
+        "mean_squared_error": statistics.mean(
+            value["mean_squared_error"] for value in by_seed.values()
+        ),
+        "inference_noise_seeds": seeds,
+        "by_inference_noise_seed": by_seed,
+    }
+
+
 def _evaluate_variant(
     args: argparse.Namespace,
     spec: Mapping[str, Any],
@@ -273,10 +363,10 @@ def _evaluate_variant(
     try:
         base_context = session.model.disable_adapter() if kind == "lora" else contextlib.nullcontext()
         with base_context:
-            base = session.evaluator.evaluate_action_chunk_errors(session.model)
+            base = _evaluate_noise_seeds(session.evaluator, session.model, spec)
         state, manifest = _candidate(spec, root=root, task_id=task_id, kind=kind)
         restore_trainable_state(session.model, state)
-        candidate = session.evaluator.evaluate_action_chunk_errors(session.model)
+        candidate = _evaluate_noise_seeds(session.evaluator, session.model, spec)
         metrics = manifest["metrics"]
         candidate.update(
             query_flow_mse=metrics["query_flow_mse"],
@@ -330,6 +420,21 @@ def _validate_capacity_result(path: Path, spec: Mapping[str, Any]) -> None:
         raise GateZeroQueryActionAlignmentError("capacity failure boundary changed")
 
 
+def _validate_single_noise_result(path: Path | None, spec: Mapping[str, Any]) -> None:
+    expected = spec["authority"].get("single_noise_result_sha256")
+    if expected is None:
+        return
+    if path is None or not path.is_file() or sha256_file(path) != expected:
+        raise GateZeroQueryActionAlignmentError("single-noise result hash changed")
+    result = json.loads(path.read_text(encoding="utf-8"))
+    if (
+        result.get("status") != "fixed_flow_query_surrogate_misaligned"
+        or result.get("gate_zero_authorized") is not False
+        or result.get("writer_authorized") is not False
+    ):
+        raise GateZeroQueryActionAlignmentError("single-noise mismatch boundary changed")
+
+
 def _load_runtime_inputs(
     args: argparse.Namespace, spec: Mapping[str, Any]
 ) -> tuple[Mapping[str, Any], Mapping[str, Any], Mapping[str, Any], Mapping[str, Any], Mapping[str, Any]]:
@@ -357,17 +462,30 @@ def _load_runtime_inputs(
 
 def _classify_records(records: list[dict[str, Any]], spec: Mapping[str, Any]) -> dict[str, Any]:
     by_task = {record["task_id"]: record for record in records}
-    base = {
-        task: record["conditions"]["frozen_base"]["mean_squared_error"]
-        for task, record in by_task.items()
-    }
+    robust = "inference_noise_seeds" in spec["query"]
+    def values(metrics: Mapping[str, Any]) -> Any:
+        if not robust:
+            return metrics["mean_squared_error"]
+        return [
+            metrics["by_inference_noise_seed"][str(seed)]["mean_squared_error"]
+            for seed in spec["query"]["inference_noise_seeds"]
+        ]
+    base = {task: values(record["conditions"]["frozen_base"]) for task, record in by_task.items()}
     candidates = {}
     for short, key in (("lora", "lora_variant"), ("action_expert", "action_expert_variant")):
         variant = spec["candidate_evidence"][key]
         candidates[short] = {
-            task: record["conditions"][variant]["mean_squared_error"]
+            task: values(record["conditions"][variant])
             for task, record in by_task.items()
         }
+    if robust:
+        return classify_multi_seed_action_alignment(
+            base,
+            candidates,
+            minimum_consistent_worsening_draws=spec["decision"][
+                "minimum_consistent_worsening_draws"
+            ],
+        )
     return classify_action_alignment(base, candidates)
 
 
@@ -418,6 +536,7 @@ def run_query_action_alignment(args: argparse.Namespace) -> dict[str, Any]:
         capacity_path=args.capacity_contract,
     )
     _validate_capacity_result(args.capacity_result, spec)
+    _validate_single_noise_result(args.single_noise_result, spec)
     parent, phase0, checkpoint, lora_fit, action_fit = _load_runtime_inputs(args, spec)
     context = _initialize_parallel()
     try:
@@ -441,7 +560,7 @@ def run_query_action_alignment(args: argparse.Namespace) -> dict[str, Any]:
         decision = _classify_records(records, spec)
         result = _build_result(args, spec, records, decision, time.perf_counter() - started)
         args.output_dir.mkdir(parents=True, exist_ok=True)
-        atomic_json(args.output_dir / RESULT_NAME, result)
+        atomic_json(args.output_dir / spec.get("result_name", RESULT_NAME), result)
         _track_records(args, spec, records)
         write_output_checksums(args.output_dir)
         update_latest_link(args.output_dir, args.latest_link)
@@ -471,6 +590,7 @@ def _parse_args() -> argparse.Namespace:
     ):
         parser.add_argument(f"--{name}", type=Path, required=True)
     parser.add_argument("--physical-gpus", required=True)
+    parser.add_argument("--single-noise-result", type=Path)
     return parser.parse_args()
 
 

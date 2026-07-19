@@ -1934,3 +1934,13 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   sampler action-loss acquisition smoke (stable mismatch) or a multi-sample
   flow estimator repair (unstable signs). Do not add supervised steps, target/
   rank variants, or task-local RL budget before this discriminator.
+- The four-draw replication contract is frozen at SHA256
+  `d436e17f2a5b91b8cdf22806e3967fc1f0f170590ba8a96692c610c7ef42212f`.
+  It reuses the existing two-task audit entrypoint, binds the single-noise
+  result, and adds only seeds `[2026071835, 2026071935, 2026072035,
+  2026072135]`. Robust mismatch requires worse mean action MSE for all four
+  candidate-task pairs and at least three worsening draws per pair; otherwise
+  status is sampling variance. No rollout, new model state, or threshold is
+  opened. Focused tests pass 17/17; compile, shell syntax, dry-run, and diff
+  checks pass. Architecture guard is REVIEW/no hard violation; the 626-line
+  one-time controller remains under its documented retirement trigger.

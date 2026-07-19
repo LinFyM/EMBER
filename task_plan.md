@@ -809,6 +809,14 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     action-aligned acquisition recovery. If signs are unstable, treat sampling
     variance/multi-sample estimation as the repair target. Do not reopen SFT
     steps, targets, ranks, simulator outcomes, or RL budget meanwhile.
+    The replication is frozen before outcomes at config SHA256
+    `d436e17f2a5b91b8cdf22806e3967fc1f0f170590ba8a96692c610c7ef42212f`.
+    It reuses the same controller and adds exactly inference-noise seeds
+    `[2026071835, 2026071935, 2026072035, 2026072135]`; no data, state, metric,
+    or environment surface changes. Confirm robust mismatch only when all four
+    candidate-task mean action-MSE reductions are negative and each is negative
+    on at least three of four draws; otherwise classify inference sampling
+    variance. Neither branch changes Gate authority.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

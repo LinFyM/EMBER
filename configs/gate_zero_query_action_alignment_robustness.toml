@@ -1,0 +1,84 @@
+schema_version = 1
+name = "smolvla_libero90_gate_zero_query_action_alignment_robustness_v1"
+status = "predeclared_after_single_noise_mismatch_before_multi_noise_outcomes"
+predeclared_at_utc = "2026-07-19T07:03:00Z"
+surface = "source_only_offline_query_action_alignment_multi_noise_diagnostic"
+result_name = "query_action_alignment_robustness_result.json"
+task_ids = [3, 4]
+conditions = ["frozen_base", "mature_official_default_r32_lr25e6_recovery", "mature_action_expert_lr25e6_recovery"]
+
+[authority]
+gate_zero_contract_sha256 = "7bbda2723c72c60c6cfc39c10acaf23a05f4ea0af724c054792cd00c890cfd98"
+phase0_contract_sha256 = "ba9e89971e0f88074cc8de573c8e60b9093105638364a60207ff0d5aa8b7882a"
+source_competence_contract_sha256 = "0d3de88783e119c029642fb14f627df5a2d4e2e9cc4984b4400dfc575680c158"
+lora_fit_contract_sha256 = "693cd61457ec5ec0aafb1c72837899c58f44f2c90e812cb14d115385393fafca"
+action_expert_fit_contract_sha256 = "30e2c575b2af3907e9dbdad502865e6b888d9551d93dc55106291867901a3c7c"
+capacity_contract_sha256 = "e313e437fe57f20d2cd390fbede0c89432bb89f1d40dd7d37bcf8156e1af9f3a"
+capacity_result_relative_path = "gate_zero/diagnostics/action_expert_capacity_closed_loop/capacity_20260719T062725Z/capacity_closed_loop_result.json"
+capacity_result_sha256 = "9a91fbb8d53bff90a1c6bcb58bef1270f076f14212ca846c369ca8017bf170ad"
+single_noise_contract_sha256 = "a85de2e89ae0e5477e931cf887b79b6b756aa0c090bf0903353c7bf475262c3d"
+single_noise_result_relative_path = "gate_zero/diagnostics/query_action_alignment/alignment_20260719T065332Z/query_action_alignment_result.json"
+single_noise_result_sha256 = "95f8adfc0d16c72d5443b7466ff72c92dca9616d26106e25a1d42bb71150c1c6"
+source_base_output_relative_path = "gate_zero/source_base_fit/base_all60_10k_20260718T090513Z"
+source_base_checkpoint_step = 10000
+source_base_checkpoint_role = "source_base_candidate_pending_competence"
+source_base_checkpoint_manifest_sha256 = "ca0c83abd8d4b46cf59e8f0a01bd267f7f0e019d3e2bfea8c8baeb2e851d4d00"
+lora_fit_root_relative_path = "gate_zero/mature_lora_lr_recovery/fit/lr25e6_20260718T203014Z"
+action_expert_fit_root_relative_path = "gate_zero/mature_action_expert_lr_recovery/fit/lr25e6_20260718T195027Z"
+validation_numeric_access = false
+held_numeric_access = false
+locked_report_numeric_access = false
+
+[candidate_evidence]
+lora_variant = "mature_official_default_r32_lr25e6_recovery"
+action_expert_variant = "mature_action_expert_lr25e6_recovery"
+candidate_step = 1000
+task3_lora_manifest_sha256 = "06127175cfecc8305a8ff13f2b0f085773e7ab02365b8f2153b043e2f29c47cf"
+task3_lora_state_sha256 = "b20d60b19d83198eb26fa6a1827a910403390c0757bb1208f8af46a400faa68c"
+task4_lora_manifest_sha256 = "9e76ed1d8e1cb1e1dfcc7ca2c27307cc6a5fbd824a40b6f844840f6c846cb3cc"
+task4_lora_state_sha256 = "ba0f22683f04cc1cf6e8cbf287d8a5af9bc039d9f07300da77d6fe553067c053"
+task3_action_expert_manifest_sha256 = "a1eaaf1d7e81b6d602743b5c943eb65a142d07fad9ec66f038fde3326fce24ab"
+task3_action_expert_state_sha256 = "67a2ffe2054e0cd1985211bcfe6fbf929d7203ab4572f56fc12b1cbc089962b2"
+task4_action_expert_manifest_sha256 = "ca5f1586b9b735014e00c778e003246235ef4707eb8030d62e78684d2d0dbe1c"
+task4_action_expert_state_sha256 = "d5a94c0f8b34b06d939bfea3e1b62fc9db48db648ab8827f65d705709736226c"
+lora_trainable_parameters = 1485312
+action_expert_trainable_parameters = 99880992
+
+[query]
+episode_bounds = [40, 45]
+anchor_frames_per_demo = 8
+anchor_algorithm = "round_evenly_spaced_inclusive_first_last_then_unique"
+anchor_count_per_task = 48
+action_chunk_size = 50
+action_dimension = 7
+time_partition_count = 4
+fixed_inference_noise_seed = 2026071835
+inference_noise_seeds = [2026071835, 2026071935, 2026072035, 2026072135]
+metric = "mean_over_predeclared_noise_draws_of_normalized_generated_action_chunk_mse_against_source_query_demonstration_action"
+breakdowns = ["inference_noise_seed", "row", "episode", "action_dimension", "four_equal_contiguous_time_partitions"]
+new_environment_rollout_episodes = 0
+
+[decision]
+question = "is the single-noise flow-query versus generated-action mismatch stable across four predeclared inference-noise draws"
+minimum_consistent_worsening_draws = 3
+total_inference_noise_draws = 4
+robust_mismatch_requires = "all four candidate_task mean_action_mse_reductions_below_zero_and_each_worsens_on_at_least_three_of_four_draws"
+robust_status = "multi_seed_flow_query_surrogate_misaligned"
+variance_status = "inference_sampling_variance_obscures_alignment"
+may_change_gate_threshold = false
+may_authorize_gate_zero = false
+may_authorize_writer = false
+may_seal_writer_targets = false
+may_access_validation_or_held = false
+no_new_closed_loop_outcome = true
+
+[resources]
+maximum_concurrent_gpus = 4
+diagnostic_gpus = 2
+minimum_free_memory_mib = 10240
+expected_peak_device_memory_mib = 30000
+expected_wall_minutes = 10
+expected_additional_storage_gib = 0.1
+tracking_project = "EMBER_gate0"
+tracking_group = "query_action_alignment_multi_noise_diagnostic"
+cleanup = "retain compact JSON, Trackio metrics, telemetry, checksums and exact Git/config provenance; no checkpoint or video copy; retire one-time controller after next recovery is frozen"

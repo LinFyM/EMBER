@@ -2542,3 +2542,9 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   and all GPUs released. One narrow tested compatibility rule now accepts only
   this hash-bound reference omission. Relaunch to a fresh seed output; do not
   reuse the failed directory or disclose partial outcomes.
+- Recovery1 failed rc 1 before a complete evaluation cell because upstream
+  LeRobot cannot archive the nested task observation. No result/row/video
+  packet was published and GPUs released. Replaced only that diagnostic
+  transport with a tested terminal-timing environment observer; the policy,
+  evaluator, paired identities, horizons, checkpoints, and thresholds remain
+  unchanged. Relaunch once to a new root.

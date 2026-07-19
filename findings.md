@@ -2817,3 +2817,9 @@
   manifest hashes already bind that exact reference trajectory. The bounded
   compatibility repair accepts only that one exact missing field for seed
   `2026071830`; all other authority differences still fail closed.
+- Recovery1 then exposed a LeRobot API limitation before a completed cell or
+  published packet: `return_episode_data=True` attempts to stack the nested
+  task observation and raises `TypeError`. The narrow repair leaves the
+  canonical rollout untouched and observes terminal step/success timing in a
+  transparent environment wrapper, avoiding observation archival entirely.
+  No partial performance is retained or interpreted from the failed run.

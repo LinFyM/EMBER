@@ -55,6 +55,54 @@ class GateZeroOracleReportRuntimeError(RuntimeError):
     """Raised when the locked source report changes mechanics or authority."""
 
 
+class EpisodeDiagnosticEnv:
+    """Observe terminal timing without requesting LeRobot's observation archive."""
+
+    def __init__(self, env: Any) -> None:
+        self.env = env
+        self.time_to_success: list[int | None] = [None] * env.num_envs
+        self.episode_steps: list[int | None] = [None] * env.num_envs
+        self.step_count = 0
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self.env, name)
+
+    def reset(self, *args: Any, **kwargs: Any) -> Any:
+        self.time_to_success = [None] * self.env.num_envs
+        self.episode_steps = [None] * self.env.num_envs
+        self.step_count = 0
+        return self.env.reset(*args, **kwargs)
+
+    def step(self, action: Any) -> Any:
+        observation, reward, terminated, truncated, info = self.env.step(action)
+        self.step_count += 1
+        if "final_info" in info:
+            final_info = info["final_info"]
+            if isinstance(final_info, dict):
+                raw = final_info.get("is_success", [False] * self.env.num_envs)
+                successes = raw.tolist() if hasattr(raw, "tolist") else [bool(raw)] * self.env.num_envs
+            else:
+                successes = [
+                    bool(item.get("is_success", False)) if isinstance(item, dict) else False
+                    for item in final_info
+                ]
+        elif "is_success" in info:
+            raw = info["is_success"]
+            successes = raw.tolist() if hasattr(raw, "tolist") else [bool(raw)] * self.env.num_envs
+        else:
+            successes = [False] * self.env.num_envs
+        for index, success in enumerate(successes):
+            if success and self.time_to_success[index] is None:
+                self.time_to_success[index] = self.step_count
+        for index, done in enumerate(terminated | truncated):
+            if bool(done) and self.episode_steps[index] is None:
+                self.episode_steps[index] = self.step_count
+        return observation, reward, terminated, truncated, info
+
+    def finalized_steps(self) -> list[int]:
+        return [int(value or self.step_count) for value in self.episode_steps]
+
+
 @dataclass(frozen=True)
 class ParallelContext:
     rank: int
@@ -421,12 +469,18 @@ def _closed_loop_metrics(
 ) -> dict[str, Any]:
     report = spec["report"]
     batch_size = report["rollout_batch_size"]
-    env = ResetAuditEnv(
+    base_env = ResetAuditEnv(
         _make_condition_env(
             {"task_suite": "libero_90", "task_id": task_id},
             {"name": f"{task_id}_{condition}", "batch_size": batch_size, "mode": "async"},
         )
     )
+    diagnostics = (
+        EpisodeDiagnosticEnv(base_env)
+        if spec["resources"].get("return_episode_data", False)
+        else None
+    )
+    env = diagnostics or base_env
     evaluation_spec = {
         "episodes_per_task": batch_size,
         "max_videos_per_arm": int(
@@ -450,9 +504,6 @@ def _closed_loop_metrics(
             runtime=runtime,
             env=env,
             videos_dir=output_dir / "videos" / f"task_{task_id}" / condition,
-            return_episode_data=bool(
-                spec["resources"].get("return_episode_data", False)
-            ),
         )
         final_init_ids = list(env.call("init_state_id"))
     finally:
@@ -467,30 +518,8 @@ def _closed_loop_metrics(
     episodes = metrics["per_episode"]
     if len(episodes) != batch_size:
         raise GateZeroOracleReportRuntimeError("upstream report episode count changed")
-    time_to_success: list[int | None] = [None] * batch_size
-    episode_steps: list[int] = [0] * batch_size
-    episode_data = metrics.pop("episodes", None)
-    if spec["resources"].get("return_episode_data", False):
-        if not isinstance(episode_data, dict):
-            raise GateZeroOracleReportRuntimeError("episode diagnostics are missing")
-        episode_indices = episode_data["episode_index"].tolist()
-        frame_indices = episode_data["frame_index"].tolist()
-        successes = episode_data["next.success"].tolist()
-        for episode_index in range(batch_size):
-            selected = [
-                offset
-                for offset, value in enumerate(episode_indices)
-                if int(value) == episode_index
-            ]
-            if not selected:
-                raise GateZeroOracleReportRuntimeError("episode diagnostics are incomplete")
-            episode_steps[episode_index] = int(max(frame_indices[offset] for offset in selected))
-            successful = [
-                int(frame_indices[offset])
-                for offset in selected
-                if bool(successes[offset])
-            ]
-            time_to_success[episode_index] = min(successful) if successful else None
+    time_to_success = diagnostics.time_to_success if diagnostics else [None] * batch_size
+    episode_steps = diagnostics.finalized_steps() if diagnostics else [0] * batch_size
     return {
         "mechanics_valid": mechanics,
         "prompt": language,

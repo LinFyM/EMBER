@@ -4,6 +4,10 @@ import tomllib
 import unittest
 from pathlib import Path
 
+import numpy as np
+
+from ember.gate_zero_oracle_report_runtime import EpisodeDiagnosticEnv
+
 from ember.gate_zero_task_local_rl.formal_evaluation import (
     aggregate_formal_rows,
     compatible_recovery_authorities,
@@ -74,6 +78,28 @@ class FormalEvaluationTest(unittest.TestCase):
                 spec=self.spec,
                 training_seed=2026071830,
             )
+
+    def test_episode_diagnostics_do_not_require_observation_archival(self) -> None:
+        class FakeEnv:
+            num_envs = 2
+
+            def reset(self, *args, **kwargs):
+                return {"image": np.zeros((2, 1))}, {}
+
+            def step(self, action):
+                return (
+                    {"image": np.zeros((2, 1))},
+                    np.zeros(2),
+                    np.array([True, False]),
+                    np.array([False, False]),
+                    {"is_success": np.array([True, False])},
+                )
+
+        env = EpisodeDiagnosticEnv(FakeEnv())
+        env.reset()
+        env.step(np.zeros((2, 1)))
+        self.assertEqual(env.time_to_success, [1, None])
+        self.assertEqual(env.finalized_steps(), [1, 1])
 
     def test_aggregate_uses_fixed_baselines_once_and_two_training_seeds(self) -> None:
         rows = []

@@ -642,6 +642,22 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     to beat matched zero-init plus RL. No Writer participates in this Gate-0
     recovery, and no task/seed/threshold change, validation/held/locked access,
     or arbitrary 2k/5k continuation is authorized.
+    The concrete pre-outcome recovery is now sealed in
+    `configs/gate_zero_task_local_rl_recovery.toml` (SHA256
+    `75ceeec398f472d53fb1c7b88b4dd135469b0f841bbf8ac3dfc0ac4b13cd5c68`).
+    It uses episodic Monte-Carlo AWR-style reward-weighted flow regression,
+    because SmolVLA exposes a per-sample flow loss but no trustworthy exact
+    action likelihood: binary source success, an in-batch mean baseline,
+    temperature 0.5, deterministic Gaussian raw-action exploration, eight
+    optimizer updates per eight-episode round, and fresh identical AdamW state
+    for both initializations. Four independent ranks run task 3/4 crossed with
+    zero/supervised initialization; there is no cross-rank gradient reduction,
+    critic, Writer, shared update, or demonstration action in the RL optimizer.
+    Atomic nodes are 16 and at most 32 episodes per task/initialization. The
+    source development slice can only stop/continue/select a candidate for a
+    separately hash-bound fresh Gate; it can never pass Gate 0 itself. The
+    launcher retains Trackio, one video per arm/node, bounded galleries,
+    telemetry, and about 10GiB device headroom.
     No validation, held, locked-report, or step-2k access is authorized. The
     original SHA256 `ba3ee431...f132f`
     reached no episode because its last-warm-up seed was not stride-adjacent to

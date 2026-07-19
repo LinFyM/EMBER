@@ -1,0 +1,186 @@
+schema_version = 1
+name = "smolvla_libero90_gate_zero_task_local_lora_rl_recovery_v1"
+status = "predeclared_after_candidate_step_failure_before_any_task_local_rl_outcome"
+predeclared_at_utc = "2026-07-19T04:40:00Z"
+surface = "source_only_gate_zero_task_local_rl_recovery"
+task_ids = [3, 4]
+initializations = ["zero_init", "supervised_init"]
+reported_arms = ["frozen_base", "supervised_lora", "zero_init_rl", "supervised_init_rl"]
+
+[authority]
+gate_zero_contract_sha256 = "7bbda2723c72c60c6cfc39c10acaf23a05f4ea0af724c054792cd00c890cfd98"
+phase0_contract_sha256 = "ba9e89971e0f88074cc8de573c8e60b9093105638364a60207ff0d5aa8b7882a"
+fit_contract_sha256 = "693cd61457ec5ec0aafb1c72837899c58f44f2c90e812cb14d115385393fafca"
+headroom_contract_sha256 = "1f92f80ddcc63be7c6a3ef3da1fe63f9870df27a0537ec02c3429bab71440a52"
+headroom_result_relative_path = "gate_zero/mature_lora_headroom/screening/owner_a_20260719T025534Z/support_screening_result.json"
+headroom_result_sha256 = "84116faaffd5115a72f4d49efa2f2467445ca0ac61edac265e571a1e8564c98f"
+candidate_diagnostic_contract_sha256 = "4445664f652744829e219fd483cde7820cfde1d588157d730e4322811e916a46"
+candidate_diagnostic_result_relative_path = "gate_zero/mature_lora_candidate_step_diagnostic/step500_750_20260719T035642Z/candidate_step_diagnostic_result.json"
+candidate_diagnostic_result_sha256 = "aae6e19f14c03a1192cb00aeb05940a48ee1c36ba8b5b07e823066e6602b11cf"
+source_base_output_relative_path = "gate_zero/source_base_fit/base_all60_10k_20260718T090513Z"
+source_base_checkpoint_step = 10000
+source_base_checkpoint_role = "source_base_candidate_pending_competence"
+source_base_checkpoint_manifest_sha256 = "ca0c83abd8d4b46cf59e8f0a01bd267f7f0e019d3e2bfea8c8baeb2e851d4d00"
+fit_root_relative_path = "gate_zero/mature_lora_lr_recovery/fit/lr25e6_20260718T203014Z"
+fit_variant = "mature_official_default_r32_lr25e6_recovery"
+supervised_step = 1000
+task3_supervised_manifest_sha256 = "06127175cfecc8305a8ff13f2b0f085773e7ab02365b8f2153b043e2f29c47cf"
+task3_supervised_state_sha256 = "b20d60b19d83198eb26fa6a1827a910403390c0757bb1208f8af46a400faa68c"
+task4_supervised_manifest_sha256 = "9e76ed1d8e1cb1e1dfcc7ca2c27307cc6a5fbd824a40b6f844840f6c846cb3cc"
+task4_supervised_state_sha256 = "ba0f22683f04cc1cf6e8cbf287d8a5af9bc039d9f07300da77d6fe553067c053"
+validation_numeric_access = false
+held_numeric_access = false
+locked_report_numeric_access = false
+writer_present = false
+
+[lora]
+target_count = 37
+rank = 32
+alpha = 16
+dropout = 0.0
+trainable_parameters = 1485312
+initialization_for_zero_arm = "PEFT gaussian A plus exact-zero B; physical delta exactly zero"
+supervised_initialization = "immutable task-specific step-1000 state bound above"
+optimizer_state_for_both_arms = "fresh identical AdamW; never inherit supervised optimizer state"
+only_trainable_policy_state = "the complete task-local LoRA declared here"
+
+[algorithm]
+name = "episodic_awr_style_monte_carlo_reward_weighted_flow_regression"
+primary_source_awr = "https://arxiv.org/abs/1910.00177"
+online_robotics_anchor_awac = "https://arxiv.org/abs/2006.09359"
+smolvla_compatibility = "per-sample flow-matching loss is weighted by source-environment episodic advantage; no approximate action log-prob"
+reward = "binary simulator episode success only"
+baseline = "mean binary success within the eight-episode task-local rollout batch"
+temperature = 0.5
+maximum_exponential_weight = 20.0
+normalize_weights_to_mean_one = true
+critic = "none"
+shared_parameter_updates = false
+writer_updates = false
+source_demonstration_actions_during_rl = false
+optimizer = "adamw"
+learning_rate = 0.000025
+betas = [0.9, 0.95]
+epsilon = 1e-8
+weight_decay = 1e-10
+gradient_clip_norm = 10.0
+scheduler = "constant_over_bounded_recovery"
+optimizer_steps_per_rollout_round = 8
+effective_replay_batch_size = 64
+anchors_per_episode = 8
+action_chunk_size = 50
+augmentation = "deterministic_random_resized_crop"
+augmentation_scale_min = 0.9
+augmentation_scale_max = 1.0
+augmentation_seed = 2026071940
+fixed_flow_noise_seed = 2026071941
+fixed_flow_time_seed = 2026071942
+
+[exploration]
+kind = "external_gaussian_on_raw_relative_action_after_policy_postprocessing"
+standard_deviation = [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+clip_low = [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]
+clip_high = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+common_random_numbers_between_initializations = true
+exploration_seed_start = 2026071950
+maximum_saturation_fraction = 0.05
+
+[training_interaction]
+batch_size = 8
+rounds_maximum = 4
+episodes_per_round_per_task_initialization = 8
+interaction_episode_nodes = [16, 32]
+atomic_checkpoint_every_episodes = 8
+train_init_state_indices_by_round = [
+  [8, 9, 10, 11, 12, 13, 14, 15],
+  [16, 17, 18, 19, 20, 21, 22, 23],
+  [24, 25, 26, 27, 28, 29, 30, 31],
+  [32, 33, 34, 35, 36, 37, 38, 39],
+]
+seed_start = 6200
+policy_rng_seed_start = 2026071960
+fresh_vector_env_per_round = true
+replay_persistence = "in_memory_until_atomic round checkpoint; no raw images retained after successful checkpoint"
+
+[development_evaluation]
+role = "reused_source_development_slice_for_staged_continuation_not_final_gate"
+init_state_indices = [40, 41, 42, 43, 44, 45, 46, 47]
+batch_size = 8
+seed_start = 5800
+warmup_seed_start = 5792
+policy_rng_seed = 2026071836
+reuse_proposal_a_initial_arms = true
+frozen_base_successes_by_task = [3, 3]
+supervised_lora_successes_by_task = [2, 4]
+evaluate_after_interaction_episodes = [16, 32]
+retain_one_video_per_rl_arm_at_each_node = true
+
+[offline_safeguards]
+query_episode_bounds = [40, 45]
+minimum_query_reduction_fraction = -1.0
+maximum_action_drift_proxy = 0.02
+query_is_diagnostic_not_primary = true
+nonfinite_loss_or_gradient_fails_closed = true
+
+[continuation]
+stage16_can_freeze_early_if_gate_candidate_rule_passes = true
+stage16_minimum_aggregate_paired_net_wins_to_continue = 1
+stage16_maximum_per_task_paired_loss_to_continue = 1
+stage16_requires_all_mechanics_and_safeguards = true
+stage16_failure_stops_without_stage32 = true
+stage32_is_maximum = true
+no_arbitrary_step_or_episode_extension = true
+
+[candidate_decision]
+comparison_pairs = ["zero_init_rl_vs_frozen_base", "supervised_init_rl_vs_supervised_lora"]
+minimum_each_task_success_gain_exclusive_pp = 0.0
+minimum_positive_task_count = 2
+minimum_median_success_gain_pp = 15.0
+earliest_passing_interaction_node_wins = true
+gate_zero_cannot_pass_on_development_evaluation = true
+writer_cannot_be_authorized_on_development_evaluation = true
+
+[fresh_gate]
+status = "predeclared_but_requires_hash_bound_passing_RL_checkpoint_grant"
+init_state_indices = [40, 41, 42, 43, 44, 45, 46, 47]
+batch_size = 8
+seed_start = 6000
+warmup_seed_start = 5992
+policy_rng_seed = 2026071902
+conditions = ["frozen_base", "supervised_lora", "zero_init_rl", "supervised_init_rl"]
+minimum_each_task_success_gain_exclusive_pp = 0.0
+minimum_positive_task_count = 2
+minimum_median_success_gain_pp = 15.0
+requires_all_mechanics_and_action_drift_safeguards = true
+selected_checkpoint_hash_grant_required_before_rollout = true
+only_fresh_gate_may_authorize_gate_zero = true
+initialization_help_requires_supervised_init_rl_to_beat_matched_zero_init_rl = true
+
+[parallel]
+world_size = 4
+rank_assignments = [
+  "rank0:task3:zero_init",
+  "rank1:task3:supervised_init",
+  "rank2:task4:zero_init",
+  "rank3:task4:supervised_init",
+]
+one_independent_model_and_optimizer_per_rank = true
+cross_rank_gradient_reduction = false
+rank0_only_publishes_aggregate = true
+
+[resources]
+maximum_concurrent_gpus = 4
+early_check_gpus = 4
+expected_peak_device_memory_mib = 30000
+minimum_free_memory_mib = 10240
+expected_early_check_wall_minutes = 30
+maximum_single_segment_wall_minutes = 120
+expected_additional_storage_gib = 1.0
+tracking_project = "EMBER_gate0"
+tracking_group = "task_local_lora_rl_recovery"
+cleanup = "retain atomic LoRA checkpoints, metrics, bounded galleries, telemetry and checksums; discard in-memory replay after each committed round"
+
+[interpretation]
+rl_only_pass = "useful ordinary task-local RL update exists in the exact LoRA space; supervised LoRA zero-interaction utility remains unsupported"
+supervised_init_advantage = "supervised initialization helps later ordinary task-local RL under matched interaction and optimizer budgets"
+forbidden_claims = ["Writer utility", "validation performance", "held performance", "PPO", "exact action likelihood", "shared policy learning", "a changed Gate threshold"]

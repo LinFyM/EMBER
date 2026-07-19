@@ -2,6 +2,32 @@
 
 ## Current state
 
+- After the candidate-step diagnostic failed, the next source-only Gate-0
+  recovery was frozen before any new outcome. Config
+  `configs/gate_zero_task_local_rl_recovery.toml` has SHA256
+  `75ceeec398f472d53fb1c7b88b4dd135469b0f841bbf8ac3dfc0ac4b13cd5c68`.
+  It keeps task 3/4 and the exact 37-target rank-32 LoRA, and compares frozen
+  base, supervised LoRA, zero-init LoRA plus ordinary RL, and supervised-init
+  LoRA plus identical ordinary RL. Four independent GPU ranks run an episodic
+  AWR-style reward-weighted native flow-loss update with matched exploration,
+  reward, optimizer, interaction, and compute; Writer/shared state are absent.
+  The 16-episode development node is a 10--30 minute continuation decision and
+  32 episodes is the hard maximum; only a later separately bound fresh Gate can
+  pass Gate 0. Atomic checkpoints, Trackio, compact videos/gallery, telemetry,
+  and exact-resume are part of the canonical launcher.
+- Architecture ownership is deliberately narrow: the
+  `ember.gate_zero_task_local_rl` package owns only this bounded Gate-0 recovery
+  contract, reward-weighted replay mechanics, and orchestration. It reuses the
+  existing canonical LoRA session, evaluator, simulator rollout, atomic
+  checkpoint, gallery, and launcher conventions rather than creating another
+  trainer. There was no earlier ordinary task-local RL implementation to
+  retire; the failed supervised candidate diagnostic remains immutable
+  evidence, not an alternate executable RL path. The package is removed from
+  the active plan after this bounded recovery is answered and its reusable
+  invariant tests/checkpoint primitives have been folded into the direct
+  Writer/ordinary-RL owner, rather than being extended into a generic RL
+  framework.
+
 - General thesis, embodied concept, novelty landscape, decisions, and prior
   Writer-program lessons are documented.
 - An independent expert completed `docs/expert_plan.md` with a conditional-go

@@ -1820,6 +1820,30 @@
   the Gate. It cannot change task, seed, or threshold to evade Proposal A,
   access validation/held/locked surfaces, or burn arbitrary step milestones.
 
+## The task-local RL recovery is frozen before outcomes
+
+- Contract SHA256
+  `75ceeec398f472d53fb1c7b88b4dd135469b0f841bbf8ac3dfc0ac4b13cd5c68`
+  binds the failed Proposal-A result, failed candidate-step diagnostic, base
+  checkpoint, immutable task-3/task-4 supervised step-1000 states, exact
+  37-target rank-32/alpha-16/dropout-0 LoRA, source-only surfaces, and the
+  four matched arm roles. No task-local RL outcome existed when this contract
+  was sealed.
+- SmolVLA does not provide an exact normalized action likelihood suitable for
+  a faithful PPO ratio. The bounded compatible choice is episodic AWR-style
+  Monte-Carlo reward-weighted regression on the model's native per-sample flow
+  loss, anchored to AWR (`arXiv:1910.00177`) and the online robotics use of
+  advantage-weighted actor updates in AWAC (`arXiv:2006.09359`). It uses binary
+  simulator success, a batch-mean baseline, and deterministic matched Gaussian
+  action exploration; it makes no PPO or exact-likelihood claim.
+- The early node is 16 source episodes per task/initialization and the absolute
+  maximum is 32 on the same exact-resume trajectories. The reusable development
+  slice can only select a checkpoint for a new hash-bound fresh Gate. A
+  development improvement proves neither Gate 0 nor Writer utility. Cross-arm
+  comparison of supervised-init plus RL against zero-init plus identical RL is
+  reported explicitly; only the former outperforming the latter supports a
+  helpful-initialization interpretation.
+
 ## Earlier supervised checkpoints do not recover closed-loop utility
 
 - Canonical source-development diagnostic

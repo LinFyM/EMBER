@@ -411,7 +411,7 @@ def load_task_local_rl_spec(
     headroom_path: Path,
     diagnostic_path: Path,
 ) -> dict[str, Any]:
-    return validate_task_local_rl_spec(
+    spec = validate_task_local_rl_spec(
         _load_toml(path, "task-local RL contract"),
         gate_zero_path=gate_zero_path,
         phase0_path=phase0_path,
@@ -419,6 +419,11 @@ def load_task_local_rl_spec(
         headroom_path=headroom_path,
         diagnostic_path=diagnostic_path,
     )
+    # Historical configs predate an explicit surrogate selector. Their sealed
+    # group-size-eight field unambiguously identifies the chunk-mean pilot; the
+    # active matched contract uses an explicit faithful group-one selector.
+    spec["algorithm"]["surrogate"] = "historical_chunk_mean_flow_ppo"
+    return spec
 
 
 def assigned_task_local_rl_arm(

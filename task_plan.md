@@ -1171,3 +1171,35 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     controls, isolation audit, and reproducible rerun.
 27. [ ] After the mechanism survives, re-pin and execute the four-GPU-compatible
     OpenVLA-OFT scale confirmation without changing the causal or held contract.
+
+## Post-smoke matched Gate 0 contract (frozen before new LoRA outcomes)
+
+- `configs/gate_zero_matched_evidence.toml` (SHA256 `acbd8f2a...a47e`) is the only active post-selection
+  evidence contract. It hash-binds the repaired Gate-0 contract, permanent
+  split, base-difficulty result, confirmation-selection manifest, and mature
+  37-target LoRA support.
+- Development stays on tasks 3/4. Independent confirmation is fixed to source
+  tasks 6/16/33/39 and their deterministic 32/16/2 physical-state partitions.
+  No task, partition, seed, checkpoint, or threshold may be selected from a
+  task-specific LoRA outcome.
+- Run required training replicates `2026071830` and `2026072030`. Use
+  `2026072130` only if the two required replicates leave the predeclared matched
+  effect ambiguous. Evaluation RNG never counts as training replication.
+- Each trainable arm/task/seed needs at least 32 paired episodes and at least
+  two policy RNG seeds. Evaluate frozen base once per task/horizon with
+  `training_seed=null`; reuse it for paired contrasts without duplicating it
+  into false independent seed observations. Retain paired rows and
+  bootstrap/exact intervals.
+- The primary RL/evaluation horizon is 16. Report horizon 50 only as frozen
+  deployment robustness, never for checkpoint selection. Binary success stays
+  primary; process diagnostics and drift to both base and each RL
+  initialization explain failures without weakening success.
+- The canonical trainer now has an explicit surrogate selector. Historical
+  packets retain the custom chunk-mean pilot; new matched runs must use the
+  faithful per-flow-sample/group-size-one FPO++ core. Use the same LoRA space,
+  interaction budget, optimizer, estimator, and evaluation episodes for
+  zero-init and supervised-init RL.
+- Stage development before confirmation. A credible development candidate
+  opens the already frozen confirmation; persistent flat/negative evidence
+  with healthy mechanics gets one cheapest source-only diagnostic, not seed,
+  node, task, or threshold shopping.

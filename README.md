@@ -55,14 +55,20 @@ source reward/meta-RL experiments; model-side adaptation is task-local LoRA.
 ## Current status
 
 The independent expert review is complete and staged execution is active. The
-repository now contains a reproducible SmolVLA/LIBERO substrate and Gate -1
-diagnostics. The original invalid LIBERO-90 split has been preserved and
-replaced once by a permanently sealed specification-only 60/15/15 split before
-any LIBERO-90 policy outcome. The fresh data/normalization audit under that seal
-passes with zero validation/held numeric access. Gate -1 causal controls, legal
-source competence, and Gate 0 remain incomplete, so direct Writer training is
-not yet authorized. Every novelty claim remains provisional until predecessor
-evidence and matched-budget experiments pass.
+repository now contains a reproducible SmolVLA/LIBERO substrate. Gate -1 is
+closed as **passed with residuals**: the immutable action-hidden-video recovery
+reached 19/24 ordered and wrong-video accuracy and 15/24 paired correctness,
+while the original 0.80 threshold and drop-last residual remain recorded. No
+extra compute is authorized merely to polish that result. The original invalid
+LIBERO-90 split has been preserved and replaced once by a permanently sealed
+specification-only 60/15/15 split before any LIBERO-90 policy outcome. The fresh
+data/normalization audit under that seal passes with zero validation/held
+numeric access. Gate 0 remains incomplete, so direct Writer training is not yet
+authorized. Its active evidence contract uses at least 32 paired rollouts per
+task/arm, multiple policy RNG seeds, at least two independent training seeds,
+horizon-16 primary evaluation, and disjoint source-only confirmation. Every
+novelty claim remains provisional until predecessor evidence and matched-budget
+experiments pass.
 
 The active execution ceiling is **4 x NVIDIA A100 80GB GPUs**. The expert plan
 was originally written for an eight-GPU ceiling and is retained as research

@@ -2703,3 +2703,25 @@
   performance. The next contract must keep tasks3/4 as development and use the
   selected tasks/states as disjoint confirmation with >=32 paired episodes,
   multiple policy RNG seeds, >=2 training seeds, and h16 primary/h50 robustness.
+
+## Post-selection contract removes two remaining statistical ambiguities
+
+- The frozen-base arm has no training process and therefore no training seed.
+  Repeating identical base rows under each candidate seed would be
+  pseudoreplication. The active contract stores base once and requires each
+  trainable arm to cover two independent sealed training seeds on the same
+  paired evaluation episodes; the final statistics interface must preserve
+  that unit structure.
+- `configs/gate_zero_matched_evidence.toml` (SHA256 `acbd8f2a...a47e`) binds confirmation tasks
+  `[6,16,33,39]`, their result-blind state partitions, mature 37-target
+  rank-32/alpha-16/dropout-0 LoRA, h16 primary/h50 robustness, and the source
+  access boundary before any new task-specific LoRA outcome.
+- The prior temporal-credit runtime always averaged eight CFM losses before one
+  PPO ratio. A loss helper existing in the tree was not sufficient evidence
+  because the trainer did not call it. Runtime dispatch now selects the faithful
+  per-flow-sample/group-size-one modified-Huber path explicitly for new matched
+  runs; historical configs load with an explicit custom chunk-mean label.
+- The two required training seeds are `2026071830` and `2026072030`; a third
+  seed `2026072130` is result-blindly reserved only for a predeclared ambiguous
+  two-seed outcome. This is replication, not a hyperparameter or favorable-seed
+  search.

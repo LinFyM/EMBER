@@ -4,6 +4,7 @@ import copy
 import hashlib
 import json
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -110,6 +111,24 @@ class GateZeroEvidenceContractTest(unittest.TestCase):
         self.assertTrue(faithful["modified_huber_matches_mse_below_delta"])
         self.assertEqual(faithful["old_cfm_loss_clamp"], 4.0)
         self.assertEqual(faithful["log_ratio_clamp"], 5.0)
+
+    def test_post_selection_contract_freezes_matched_development_run(self) -> None:
+        with (ROOT / "configs" / "gate_zero_matched_evidence.toml").open("rb") as handle:
+            matched = tomllib.load(handle)
+        self.assertEqual(matched["tasks"]["development"], [3, 4])
+        self.assertEqual(matched["tasks"]["confirmation"], [6, 16, 33, 39])
+        self.assertFalse(
+            set(matched["tasks"]["development"])
+            & set(matched["tasks"]["confirmation"])
+        )
+        self.assertEqual(matched["training"]["required_training_seeds"], [2026071830, 2026072030])
+        self.assertTrue(matched["training"]["evaluation_rng_never_substitutes_for_training_seed"])
+        self.assertEqual(len(matched["lora"]["target_modules"]), 37)
+        self.assertEqual(matched["lora"]["trainable_parameters"], 1_485_312)
+        self.assertEqual(matched["algorithm"]["surrogate"], "faithful_fpo_plus_group1")
+        self.assertEqual(matched["algorithm"]["flow_sample_group_size"], 1)
+        self.assertEqual(matched["evaluation"]["minimum_rollouts_per_task_arm_seed"], 32)
+        self.assertEqual(matched["evaluation"]["primary_execution_horizon"], 16)
 
     def _records(self, *, count: int = 32, training_seeds=(71, 72)) -> list[dict]:
         rows = []

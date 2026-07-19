@@ -1,0 +1,126 @@
+schema_version = 1
+status = "post_smoke_matched_evidence_predeclared_before_new_lora_outcomes"
+surface = "libero90_source_only_gate_zero_matched_evidence"
+predeclared_at_utc = "2026-07-19T13:30:00Z"
+
+[authority]
+evidence_contract_relative_path = "configs/gate_zero_evidence_repair.toml"
+evidence_contract_sha256 = "0196419d7abc6132890248da1c332b451767db45aeef2c96f3ab989eb1c0aa4e"
+split_reseal_relative_path = "configs/libero90_split_reseal.json"
+split_reseal_sha256 = "9f5bc62e15e2cb07887e97bc98630a3f527ac6b5e253f41c203cf37459568428"
+selection_manifest_relative_path = "gate_zero/base_difficulty_audit/source_base_n32_recovery1_20260719T124855Z/confirmation_selection_manifest.json"
+selection_manifest_sha256 = "a4d57cf9737aee8b824c93d972ec22e5376731a4f25fe3eedbeea9bd58e9f670"
+difficulty_result_relative_path = "gate_zero/base_difficulty_audit/source_base_n32_recovery1_20260719T124855Z/difficulty_result.json"
+difficulty_result_sha256 = "240de3134b3bb28a3fc57059b18d0baffb8a8b2ce5bdb9274b2a68848a01dd61"
+mature_lora_contract_relative_path = "configs/gate_zero_mature_lora_lr_recovery.toml"
+mature_lora_contract_sha256 = "693cd61457ec5ec0aafb1c72837899c58f44f2c90e812cb14d115385393fafca"
+validation_numeric_access = false
+held_numeric_access = false
+locked_numeric_access = false
+
+[tasks]
+development = [3, 4]
+confirmation = [6, 16, 33, 39]
+confirmation_selection_authority = "frozen_base_only_before_any_task_specific_lora_outcome"
+development_and_confirmation_disjoint = true
+
+[training]
+required_training_seeds = [2026071830, 2026072030]
+ambiguity_replication_seed = 2026072130
+ambiguity_seed_use = "only_if_two_required_seeds_leave_the_predeclared_matched_effect_ambiguous"
+evaluation_rng_never_substitutes_for_training_seed = true
+exact_resume_staged = true
+maximum_segment_minutes = 120
+early_check_minutes = 30
+new_outcome_before_contract_freeze = false
+
+[lora]
+target_count = 37
+rank = 32
+alpha = 16
+dropout = 0.0
+trainable_parameters = 1485312
+target_modules = [
+  "model.action_in_proj",
+  "model.action_out_proj",
+  "model.action_time_mlp_in",
+  "model.action_time_mlp_out",
+  "model.state_proj",
+  "model.vlm_with_expert.lm_expert.layers.0.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.0.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.1.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.1.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.2.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.2.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.3.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.3.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.4.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.4.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.5.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.5.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.6.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.6.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.7.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.7.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.8.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.8.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.9.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.9.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.10.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.10.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.11.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.11.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.12.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.12.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.13.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.13.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.14.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.14.self_attn.v_proj",
+  "model.vlm_with_expert.lm_expert.layers.15.self_attn.q_proj",
+  "model.vlm_with_expert.lm_expert.layers.15.self_attn.v_proj",
+]
+
+[algorithm]
+name = "faithful_fpo_plus_group1_task_local_lora_pilot"
+surrogate = "faithful_fpo_plus_group1"
+flow_samples_per_transition = 8
+flow_sample_group_size = 1
+huber_delta = 0.5
+old_loss_clamp = 4.0
+log_ratio_clamp = 5.0
+ratio_clip = 0.02
+execution_horizon = 16
+shared_parameter_updates = false
+writer_updates = false
+task_local_lora_only = true
+
+[evaluation]
+arms = ["frozen_base", "supervised_lora", "zero_init_rl", "supervised_init_rl"]
+minimum_rollouts_per_task_arm_seed = 32
+minimum_policy_rng_seeds = 2
+primary_execution_horizon = 16
+deployment_robustness_horizon = 50
+binary_success_is_primary = true
+paired_episode_rows_required = true
+paired_bootstrap_replicates = 10000
+paired_bootstrap_seed = 2026071970
+exact_discordant_interval_required = true
+frozen_base_has_no_training_seed = true
+replay_epochs_are_not_independent_samples = true
+source_progress_diagnostics = ["grasp", "correct_object_or_region", "drawer_closed", "progress_fraction", "time_to_success"]
+action_drift_references = ["frozen_base", "own_rl_initialization"]
+
+[staging]
+development_before_confirmation = true
+horizon16_controls_candidate_decision = true
+horizon50_is_robustness_not_checkpoint_selection = true
+confirmation_rollout_before_development_candidate_freeze = false
+no_threshold_seed_node_or_task_selection_after_lora_outcome = true
+no_validation_held_or_locked_surface = true
+
+[interpretation]
+n8_role = "smoke_only"
+supervised_only_positive = "supports supervised task-local LoRA zero-interaction utility"
+rl_only_positive = "supports useful ordinary task-local LoRA update in the sealed LoRA space, not supervised zero-step utility"
+supervised_init_rl_advantage = "supports initialization benefit only against matched zero-init RL"
+forbidden_claims = ["Writer utility", "validation performance", "held performance", "paper-scale FPO++ reproduction", "independent samples from replay epochs"]

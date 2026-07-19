@@ -256,6 +256,40 @@ def fpo_plus_clipped_flow_loss(
     }
 
 
+def policy_surrogate_loss(
+    current_losses: torch.Tensor,
+    old_losses: torch.Tensor,
+    advantages: torch.Tensor,
+    valid: torch.Tensor,
+    algorithm: dict[str, Any],
+) -> tuple[torch.Tensor, dict[str, Any]]:
+    """Dispatch the sealed surrogate without silently changing ratio semantics."""
+
+    surrogate = algorithm.get("surrogate")
+    if surrogate == "faithful_fpo_plus_group1":
+        return fpo_plus_clipped_flow_loss(
+            current_losses,
+            old_losses,
+            advantages,
+            valid,
+            huber_delta=algorithm["huber_delta"],
+            old_loss_clamp=algorithm["old_loss_clamp"],
+            ratio_clip=algorithm["ratio_clip"],
+            log_ratio_clamp=algorithm["log_ratio_clamp"],
+        )
+    if surrogate == "historical_chunk_mean_flow_ppo":
+        loss, metrics = clipped_flow_ppo_loss(
+            current_losses,
+            old_losses,
+            advantages,
+            valid,
+            ratio_clip=algorithm["ratio_clip"],
+            log_ratio_clamp=algorithm["log_ratio_clamp"],
+        )
+        return loss, {**metrics, "ratio_granularity": "per_action_chunk_transition"}
+    raise TemporalCreditError("unknown or undeclared flow-ratio surrogate")
+
+
 def explained_variance(targets: torch.Tensor, predictions: torch.Tensor) -> float:
     """Return finite explained variance, using zero when the target is constant."""
 
@@ -580,13 +614,12 @@ def _update_minibatch(
         current_detached = _flow_losses(
             model, batch, noises, times, indices, gradient=False
         ).requires_grad_(True)
-        proxy_loss, ratio_metrics = clipped_flow_ppo_loss(
+        proxy_loss, ratio_metrics = policy_surrogate_loss(
             current_detached,
             old_losses.index_select(0, indices),
             advantages.index_select(0, indices),
             valid.index_select(0, indices),
-            ratio_clip=algorithm["ratio_clip"],
-            log_ratio_clamp=algorithm["log_ratio_clamp"],
+            algorithm,
         )
         coefficients = torch.autograd.grad(proxy_loss, current_detached)[0].detach()
         session.optimizer.zero_grad(set_to_none=True)

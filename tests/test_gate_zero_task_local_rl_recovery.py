@@ -35,6 +35,7 @@ from ember.gate_zero_task_local_rl.temporal_credit import (  # noqa: E402
     calculate_masked_gae,
     clipped_flow_ppo_loss,
     fpo_plus_clipped_flow_loss,
+    policy_surrogate_loss,
 )
 from ember.gate_zero_oracle_artifacts import (  # noqa: E402
     load_recovery_artifact,
@@ -83,6 +84,10 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
             "chunk_level_flow_ppo_with_task_local_critic_warmup_and_gae",
         )
         self.assertTrue(self.spec["algorithm"]["not_full_fpo_plus"])
+        self.assertEqual(
+            self.spec["algorithm"]["surrogate"],
+            "historical_chunk_mean_flow_ppo",
+        )
         self.assertEqual(self.spec["algorithm"]["flow_samples_per_transition"], 8)
         self.assertEqual(self.spec["algorithm"]["critic"], "task_local_frozen_feature_mlp")
         self.assertEqual(self.spec["algorithm"]["discount"], 0.99)
@@ -513,6 +518,55 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
 
 
 class GateZeroTemporalCreditRecoveryTest(unittest.TestCase):
+    def test_runtime_dispatches_faithful_group_one_fpo_plus_without_sample_averaging(self) -> None:
+        current = torch.tensor([[0.25, 9.0], [1.0, 16.0]], requires_grad=True)
+        old = torch.tensor([[1.0, 4.0], [1.0, 9.0]])
+        advantages = torch.tensor([1.0, -1.0])
+        valid = torch.tensor([True, True])
+        loss, metrics = policy_surrogate_loss(
+            current,
+            old,
+            advantages,
+            valid,
+            {
+                "surrogate": "faithful_fpo_plus_group1",
+                "huber_delta": 0.5,
+                "old_loss_clamp": 4.0,
+                "ratio_clip": 0.02,
+                "log_ratio_clamp": 5.0,
+            },
+        )
+        loss.backward()
+        self.assertEqual(metrics["ratio_granularity"], "per_flow_sample")
+        self.assertEqual(metrics["ratio_count"], 4)
+        self.assertTrue(torch.isfinite(current.grad).all())
+
+    def test_runtime_keeps_historical_chunk_surrogate_only_when_explicit(self) -> None:
+        current = torch.ones(2, 2, requires_grad=True)
+        old = torch.ones_like(current)
+        advantages = torch.tensor([1.0, -1.0])
+        valid = torch.tensor([True, True])
+        _, metrics = policy_surrogate_loss(
+            current,
+            old,
+            advantages,
+            valid,
+            {
+                "surrogate": "historical_chunk_mean_flow_ppo",
+                "ratio_clip": 0.01,
+                "log_ratio_clamp": 5.0,
+            },
+        )
+        self.assertEqual(metrics["ratio_granularity"], "per_action_chunk_transition")
+        with self.assertRaises(Exception):
+            policy_surrogate_loss(
+                current,
+                old,
+                advantages,
+                valid,
+                {"surrogate": "unknown"},
+            )
+
     def test_fpo_plus_uses_per_sample_ratios_and_modified_huber(self) -> None:
         squared_current = torch.tensor([[0.25, 9.0], [1.0, 16.0]], requires_grad=True)
         squared_old = torch.tensor([[1.0, 4.0], [1.0, 9.0]])

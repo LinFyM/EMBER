@@ -2459,3 +2459,30 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   multiple policy RNG seeds, >=2 independent training seeds, horizon16 primary,
   horizon50 robustness, process diagnostics, and LoRA-identical arms. Gate 0
   and Writer remain unauthorized; validation/held/locked access remains zero.
+
+## 2026-07-19 matched Gate 0 evidence contract frozen
+
+- Added `configs/gate_zero_matched_evidence.toml` (SHA256
+  `acbd8f2a...a47e`), binding the evidence-repair
+  contract, permanent split, mature LoRA support, base-difficulty result, and
+  selected confirmation manifest. Tasks 3/4 remain development; source tasks
+  6/16/33/39 and their deterministic partitions are confirmation.
+- Required trainable checkpoint seeds are `2026071830` and `2026072030`; the
+  predeclared ambiguity-only replicate is `2026072130`. Core contract tests
+  bind those seeds, the disjoint task sets, n>=32, horizon 16, and the exact
+  LoRA support. Frozen base is recorded once rather than relabeled as multiple
+  training replicates.
+- Wired the already implemented modified-Huber per-flow-sample FPO++ loss into
+  the existing temporal-credit trainer through one explicit surrogate
+  selector. Historical configs receive the accurate
+  `historical_chunk_mean_flow_ppo` label at load time; no second trainer or RL
+  path was added.
+- Updated the benchmark report and README to reflect the owner-resolved Gate -1
+  status: passed with immutable 19/24 ordered/wrong-video, 15/24 paired,
+  original 0.80 threshold, and drop-last residual. Gate 0 and Writer remain
+  unauthorized.
+- Next: run focused and full verification, architecture/diff checks, commit and
+  push the outcome-free boundary. Then extend the existing staged launcher to
+  consume the sealed faithful contract and begin only the first two-seed
+  task3/task4 development early check; do not consume confirmation or h50 for
+  candidate selection.

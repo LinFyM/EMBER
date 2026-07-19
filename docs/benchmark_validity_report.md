@@ -1,14 +1,17 @@
 # EMBER Gate -1 Benchmark and Specification Validity Report
 
-Status: **split resealed and source paired-goal mechanics valid; Gate -1 remains in progress**
-Evidence cutoff: 2026-07-18
+Status: **Gate -1 passed with residuals; original metrics and thresholds preserved**
+Evidence cutoff: 2026-07-19
 
 ## Technical summary
 
 The reproducible SmolVLA/LIBERO path and pinned LIBERO-90 specification
-authority are mechanically valid. A two-task overlap-trained pilot also shows a
-large descriptive dependence on the policy-visible prompt. Those results are
-substrate evidence, not a LIBERO-90 Gate -1 pass.
+authority are mechanically valid. The permanently resealed split, paired-goal
+mechanics, same-observation prompt path, and bounded action-hidden-video
+recovery together close Gate -1 as passed with residuals under explicit owner
+authority. This status does not rewrite the recovery's original 0.80 threshold,
+does not turn overlap-trained prompt evidence into a LIBERO-90 result, and does
+not by itself authorize Writer training; Gate 0 remains the next prerequisite.
 
 The original predeclared 60/15/15 split failed its stronger source-atom
 coverage contract before any LIBERO-90 policy training or evaluation result was
@@ -110,9 +113,10 @@ validate; validation and held numeric access are zero.
 | Reversed / shuffled accuracy | 0.729 / 0.708 |
 | Drop-last-20% accuracy | 0.542 |
 
-This fails the predeclared 0.80 primary and pair thresholds, both 20-point
+This failed the predeclared 0.80 primary and pair thresholds, both 20-point
 static-control gaps, the temporal-order gap, endpoint ratio, and drop-last
-retention. Gate -1 and Writer authorization therefore remain false. The result
+retention. At that original evidence boundary, Gate -1 and Writer authorization
+therefore remained false. The result
 is classified primarily as representation/acquisition because the current
 final-token class centroids are nearly collapsed and a nearest-centroid reader
 does not improve query accuracy; source hashes, exact repeats, finite features,
@@ -139,8 +143,18 @@ static controls by at least 0.25 and the stronger reversed/shuffled control by
 0.2292. It nevertheless remains a predeclared content-gate failure because the
 ordered and wrong-video scores miss 0.80 and paired correctness is only 0.625;
 drop-last retention also misses 0.90. No threshold changed, and no new reader
-or task pair is selected after this result. Gate -1 and Writer authorization
-remain false.
+or task pair is selected after this result.
+
+### Final Gate -1 resolution
+
+The owner subsequently judged the bounded recovery scientifically sufficient
+to continue and resolved Gate -1 as **passed with residuals**. The immutable
+facts remain ordered/wrong-video `19/24 = 0.7917`, paired `15/24`, original
+content threshold `0.80`, and unresolved drop-last sensitivity. This is an
+explicit stage decision, not a post-hoc metric pass: no threshold was lowered,
+no result was changed, and no more compute is authorized solely to cross 0.80.
+Gate -1 no longer blocks Writer after Gate 0, but it supplies no evidence for a
+useful LoRA update or Writer utility by itself.
 
 ## Permanent specification-only reseal
 
@@ -232,7 +246,7 @@ minimal failure packet rather than being rewritten after recovery.
 | Prompt-path specification pilot | scale candidate only | On overlap-trained `libero_spatial` tasks 0/1, correct is 6/8 and 6/8; no-spec is 0/8 and 0/8; scene-only is 2/8 and 0/8; swapped is 0/8 and 0/8. This is not a LIBERO-90 result. |
 | Same-observation language-to-action path | diagnostic pass | Exact correct repeats and 16/16 substantive action-plan contrasts remove repeated-reset rendering as the prompt-effect explanation. Goal correctness is not measured. |
 | Same-init paired executable goals | source evaluator mechanics pass; policy behavior pending | Tasks 3/4 have exact shared-state compatibility and 16/16 native-goal specificity. This does not show a policy follows the switched spec. |
-| Video content and temporal necessity | bounded recovery complete; temporal criterion passes, content criterion fails | The fixed framewise reader raises ordered to 0.7917 and makes reversed/shuffled/static controls degrade, but ordered/wrong-video miss 0.80 and only 15/24 paired queries are jointly correct. No further reader selection is authorized. |
+| Video content and temporal necessity | Gate -1 passed with residuals by explicit owner resolution | The fixed framewise reader raises ordered/wrong-video to 0.7917 and makes reversed/shuffled/static controls degrade; the original 0.80 miss, 15/24 paired result, and drop-last residual remain visible. No further reader selection or threshold polishing is authorized. |
 
 ## Method, robustness, and leakage boundary
 
@@ -257,17 +271,19 @@ ordered role records; it is not inferred from policy behavior.
   source policy has learned the primitives.
 - Language-derived roles cannot prove policy competence or causal use of task
   information. The overlap policy now has a same-observation language-action
-  path, while the video recovery isolates temporal signal but not sufficiently
-  stable task content. Correct paired-goal behavior remains required even
-  though the native paired-goal surface is valid.
+  path, while the video recovery isolates useful temporal signal with retained
+  content and drop-last residuals. Those residuals limit the eventual claim but
+  no longer block the current stage.
 - The overlap specification pilot has two tasks and an overlap-trained policy;
   it cannot estimate LIBERO-90 validity, Writer utility, or video utility.
 - No LIBERO-90 policy success, oracle, Writer, or held reward result was read in
   selecting or validating the resealed task IDs.
 
-Next, obtain legal source-task competence and evaluate correct behavior on the
-paired native-goal surface without changing its state or evaluator, using the
-same closed-loop surface to begin the predeclared Gate 0 useful-update oracle.
-Direct full-LoRA Writer training remains unauthorized until the Gate 0 oracle
-has independent-query and locked closed-loop evidence. Canonical-bank/geometry
-work is outside the current project rather than a downstream Gate.
+Next, complete the source-only Gate 0 useful-update oracle under the sealed
+matched-evidence contract: task3/task4 are development only; confirmation tasks
+6/16/33/39 are independently frozen from base-only evidence; decisions require
+at least 32 paired rollouts/task/arm, multiple policy RNG seeds, and at least
+two training seeds, with horizon 16 primary and horizon 50 robustness. Direct
+full-LoRA Writer training remains unauthorized until Gate 0 has credible
+closed-loop evidence. Canonical-bank/geometry work is outside the current
+project rather than a downstream Gate.

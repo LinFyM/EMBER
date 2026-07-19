@@ -2319,3 +2319,43 @@
   `91db643019a79d905b2878f6411484ccf68e49a58bb66f3dd4a1419019963c07`;
   packet checksums pass. This validates the intended scheduling mechanic only,
   not useful behavior or Gate 0.
+
+## Critic warmup does not convert the matched RL probe into useful behavior
+
+- The same clean `2d103d6` four-arm trajectory completed episodes 8, 16, and
+  24 with rc 0 in 3m24s, 5m02s, and 5m16s. Episode 8 exactly reproduced all
+  starting success vectors with zero actor updates; episode 16 enabled the
+  actor and was still negative/flat; episode 24 terminated under the frozen
+  trend rule. No episode 32 was run.
+- The terminal episode-24 paired gains are zero-init task3/4 `[0,0]` and
+  supervised-init `[0,-1]`. Thus neither initialization supplies a useful
+  closed-loop update, supervised initialization does not help matched RL, and
+  Gate 0/Writer remain false. This is a negative for the declared 24-episode
+  critic-warmup compatibility recovery, not for sufficiently scaled LoRA RL or
+  EMBER as a whole.
+- Mechanics remain healthy: no nonfinite value or saturation, maximum drift is
+  0.01254, critic explained variance generally rises, actor and critic gradients
+  are finite, and approximate KL stays far below the 0.1 limit. The LoRA actor
+  is not inert: episode-8-to-24 physical operator increments have norms
+  `0.0586/0.0644` for zero-init task3/4 and `0.0732/0.0841` for supervised-init.
+  These real updates do not improve the fixed development behavior.
+- Result SHA256 is
+  `986887261b47b9d4dc55ec630f8c914b60d2fbd247e33c1d98c82669e2a8b1a8`.
+  The launcher validates every retained candidate/recovery/round/stage file,
+  the terminal result, gallery, latest four bounded videos, and three telemetry
+  files. Across stages, peak memory is about 19.3GiB on rank0 and at most 6.1GiB
+  on other ranks; output is 193MiB and all GPUs release.
+- Training-slice success rates oscillate strongly across the three disjoint
+  eight-state rounds, while fixed development behavior stays flat or worsens.
+  This leaves a precise ambiguity: the reward update may fail even on seen
+  support states, or it may fit sampled support behavior without transferring
+  to the development slice. More blind interaction cannot distinguish these.
+- The next result-blind diagnostic is frozen at config SHA256
+  `f539b7376dd1e265076941d7b45022934802f2931bdb54b866b9b97e1a533909`
+  with temporary source SHA256
+  `1a410a6a5b695d1dcc9d024a9ef90ed36238d078303a5b6cf782213e40c737c4`.
+  It loads each immutable episode-24 recovery and replays exact round-0 source
+  init states/seeds with zero updates. A positive paired arm isolates a
+  coverage/generalization gap; no positive arm isolates credit/optimizer
+  acquisition. It cannot pass Gate 0, authorize Writer, access validation or
+  held data, or change task/seed/threshold/checkpoint.

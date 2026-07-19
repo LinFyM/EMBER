@@ -2141,3 +2141,38 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   directory passed all entries. This operator cwd residual did not alter the
   packet. The frozen four-GPU episode-8 source stage is now mechanically
   authorized; it remains a development decision, not Gate-0 evidence by itself.
+- Ran the clean four-arm trajectory through its evidence-gated ladder. Stage 8
+  long-run `gate0_critic_warmup_stage8_20260719_092947` completed rc 0 in 3m24s,
+  reproduced all initial vectors exactly, recorded zero actor optimizer state,
+  and returned the frozen continue-to-16 status. Stage 16
+  `gate0_critic_warmup_stage16_20260719_093614` exact-resumed all four
+  actor/critic/optimizer/RNG states, completed rc 0 in 5m02s, and produced
+  zero/supervised paired gains `[-1,0]`/`[0,0]`; its fixed contract continued
+  once to 24.
+- Stage 24 `gate0_critic_warmup_stage24_20260719_094255` exact-resumed, completed
+  rc 0 in 5m16s, and terminated with
+  `task_local_rl_early_check_not_supported`. Final zero-init paired gains are
+  `[0,0]`; supervised-init gains are `[0,-1]`. Result SHA256 is
+  `98688726...b1a8`; Gate 0/Writer remain false and validation/held access
+  remains zero. The trend gate correctly prevents stage 32.
+- The terminal launcher checksum pass covers all candidates, latest schema-3
+  recoveries, round/stage JSON, 12 retained stage videos, gallery/index,
+  terminal result, and telemetry. All videos were separately decoded at their
+  stages. Peak memory across the ladder is 19,274MiB on GPU4 and at most
+  6,075MiB on GPUs5--7; total output is 193MiB. GPUs4--7 returned to 0MiB after
+  every segment. The gallery remains bounded to the latest four videos and is
+  available at the run's `index.html`; Trackio project `EMBER_gate0` contains
+  the 12 staged arm runs.
+- Completed one artifact-only physical-update audit: episode-8-to-24 LoRA
+  operator increments are nonzero (`0.0586/0.0644` zero-init and
+  `0.0732/0.0841` supervised-init for task3/4). Combined with finite gradients,
+  safe KL/drift, and low but improving critic explained variance, this rules out
+  a no-update implementation failure while preserving the behavioral negative.
+- Froze the cheapest next source-only discriminator before its outcome in
+  `configs/gate_zero_task_local_rl_support_replay.toml`, SHA256
+  `f539b7376dd1e265076941d7b45022934802f2931bdb54b866b9b97e1a533909`.
+  A four-rank one-time script (SHA256 `1a410a6a...37c4`) loads the immutable
+  episode-24 states and reuses the canonical round-0 collector on exact init
+  states 8--15/seeds 6200--6207 with zero updates. It consumes only 32 source
+  episodes and classifies credit/optimizer versus coverage/generalization;
+  it cannot change the failed Gate result or authorize Writer.

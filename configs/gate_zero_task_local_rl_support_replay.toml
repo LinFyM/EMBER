@@ -1,0 +1,74 @@
+schema_version = 1
+name = "smolvla_libero90_gate_zero_task_local_lora_rl_support_replay_diagnostic_v1"
+status = "predeclared_after_critic_warmup_recovery_stop_before_support_replay_outcome"
+predeclared_at_utc = "2026-07-19T09:55:30Z"
+surface = "source_only_gate_zero_task_local_rl_support_replay_diagnostic"
+task_ids = [3, 4]
+initializations = ["zero_init", "supervised_init"]
+
+[authority]
+script_sha256 = "1a410a6a5b695d1dcc9d024a9ef90ed36238d078303a5b6cf782213e40c737c4"
+task_local_rl_contract_sha256 = "51fc9a009d0fa93476ba47a22d86e95a5d89f32182057843c3129e4147725a8a"
+previous_result_relative_path = "gate_zero/task_local_lora_rl_recovery/critic_warmup_ep8_20260719T092932Z/task_local_rl_recovery_result.json"
+previous_result_sha256 = "986887261b47b9d4dc55ec630f8c914b60d2fbd247e33c1d98c82669e2a8b1a8"
+previous_status = "task_local_rl_early_check_not_supported"
+previous_interaction_episodes_per_task_initialization = 24
+previous_zero_init_paired_net_wins = [0, 0]
+previous_supervised_init_paired_net_wins = [0, -1]
+selected_checkpoint_step = 24
+validation_numeric_access = false
+held_numeric_access = false
+locked_report_numeric_access = false
+
+[evaluation]
+method = "load each immutable episode-24 actor/critic recovery and call the unchanged canonical training collector at round_index zero"
+init_state_indices = [8, 9, 10, 11, 12, 13, 14, 15]
+seed_start = 6200
+policy_rng_seed = 2026071960
+initial_vector_authority = "the same arm's immutable round-0 collection episode_successes in the bound terminal result"
+final_vector_authority = "an exact source support-slice replay by the immutable episode-24 actor"
+episodes_per_arm = 8
+total_environment_episodes = 32
+optimizer_steps = 0
+model_updates = false
+critic_updates = false
+writer_present = false
+retain_video = false
+
+[classification]
+mechanical_failure = "any changed actor/optimizer state, reset/seed/init mismatch, missing arm, or invalid collection"
+support_replay_improves_but_development_does_not = "at least one arm has positive paired net wins on this exact support replay while the already-bound development result has no passing initialization; diagnose coverage/generalization before scaling optimization"
+support_replay_no_improvement = "no arm has positive paired net wins on its exact support replay; diagnose credit/optimizer acquisition before adding interaction scale"
+gate_zero_cannot_pass = true
+writer_cannot_be_authorized = true
+thresholds_cannot_change = true
+
+[parallel]
+world_size = 4
+rank_assignments = [
+  "rank0:task3:zero_init",
+  "rank1:task3:supervised_init",
+  "rank2:task4:zero_init",
+  "rank3:task4:supervised_init",
+]
+cross_rank_gradient_reduction = false
+
+[resources]
+maximum_concurrent_gpus = 4
+gpus = 4
+expected_peak_device_memory_mib = 20000
+minimum_free_memory_mib = 10240
+expected_wall_minutes = 5
+maximum_wall_minutes = 30
+expected_additional_storage_mib = 2
+cleanup = "retain result, copied config/source, checksums and durable longrun log; discard replay tensors and do not retain model copies"
+
+[interpretation]
+purpose = "separate reward-credit/optimizer acquisition failure from source-support-to-development generalization failure after the bounded matched RL recovery"
+forbidden_claims = [
+  "Gate 0 pass",
+  "Writer utility",
+  "validation performance",
+  "held performance",
+  "a task, seed, threshold, checkpoint, or LoRA-capacity change",
+]

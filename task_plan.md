@@ -954,6 +954,22 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     checksums pass and GPU4 released. This authorizes only the already frozen
     episode-8 stage on GPUs 4--7; the stage must start fresh and stop at its
     predeclared decision.
+    The staged recovery completed rc 0 at episodes 8, 16, and 24 on clean
+    `2d103d6`; episode 24 is terminal with result SHA256
+    `98688726...b1a8`. Zero-init ends with task3/4 paired gains `[0,0]` and
+    supervised-init with `[0,-1]`; mechanics, critic/GAE/PPO gradients, drift,
+    atomic recovery, checksums, and source/held boundaries remain valid. The
+    frozen trend rule therefore stops without episode 32. Gate 0 and Writer
+    remain false. Before considering more interaction or another optimizer,
+    run the outcome-free support-replay discriminator frozen in
+    `configs/gate_zero_task_local_rl_support_replay.toml` at SHA256
+    `f539b7376dd1e265076941d7b45022934802f2931bdb54b866b9b97e1a533909`.
+    It loads the four immutable episode-24 states and, with zero optimizer
+    steps, replays exactly round-0 init states 8--15/seeds 6200--6207 using the
+    canonical collector. Positive paired support replay with negative fixed
+    development behavior diagnoses generalization/coverage; no positive arm
+    diagnoses reward-credit/optimizer acquisition. It consumes 32 source
+    episodes, changes no Gate threshold, and cannot authorize Writer.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

@@ -2666,3 +2666,40 @@
   counters back through the public `call` path. It does not alter the partition,
   tasks, seeds, evaluator, horizon, checkpoint, or selection rule. A matching
   lazy-wrapper regression test now accompanies the direct-vector test.
+
+## Base-only audit freezes four disjoint confirmation tasks
+
+- Actual-env no-policy validation passed before relaunch: task6 physical
+  counters `[49,9,21,14,5,36,32,41]` reset exactly to each value plus eight,
+  with zero policy actions and zero reward reads. Recovery1 then completed rc 0
+  from clean `3cbb975` in 645.34 seconds on GPUs 4--7, consuming exactly 288
+  source episodes at horizon 16.
+- Frozen-base successes are task6 `4/32`, task9 `27/32`, task16 `17/32`, task20
+  `32/32`, task23 `0/32`, task33 `13/32`, task39 `24/32`, task46 `4/32`, and
+  task63 `0/32`. The frozen competence/headroom filter retains
+  `[6,16,33,39,46]`; ranking by distance from 0.5 then task ID selects
+  `[6,16,33,39]` with distinct `open`, `stack`, `close`, and `turn_off`
+  signatures. No LoRA outcome participated.
+- Canonical result SHA256 is
+  `240de3134b3bb28a3fc57059b18d0baffb8a8b2ce5bdb9274b2a68848a01dd61`;
+  confirmation selection SHA256 is
+  `a4d57cf9737aee8b824c93d972ec22e5376731a4f25fe3eedbeea9bd58e9f670`.
+  The selected partition hashes are task6 `f857cb29...e4eae`, task16
+  `42559521...ebcd`, task33 `3110a7a6...c5de`, and task39
+  `cf104892...065a2`.
+- All checksums including telemetry pass; all JSON parses; 288 episode rows
+  contain 32 unique state indices/hashes per task and four policy RNG seeds;
+  nine videos decode with 68--400 frames; gallery/latest are valid; output is
+  2.3MiB. Peak memory/utilization was GPU4 20,021MiB/100% and GPUs5--7 only
+  1,752MiB/73%, 1,752MiB/69%, and 1,752MiB/65%. All GPUs released.
+- The asymmetric memory plus three-rank idle tail is systems evidence, not a
+  scientific issue. It is consistent with all async EGL workers selecting the
+  first visible render device and whole-task assignment leaving rank0 with
+  three tasks; this is an inference to verify before later rollouts. Do not
+  rerun this valid audit merely to improve utilization. Future work should bind
+  EGL per local rank and batch-balance tasks without changing episode identity.
+- This result freezes confirmation identities only. It does not establish a
+  useful LoRA update, Gate 0, Writer utility, validation performance, or held
+  performance. The next contract must keep tasks3/4 as development and use the
+  selected tasks/states as disjoint confirmation with >=32 paired episodes,
+  multiple policy RNG seeds, >=2 training seeds, and h16 primary/h50 robustness.

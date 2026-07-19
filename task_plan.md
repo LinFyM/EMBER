@@ -1118,6 +1118,16 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     Gymnasium vector env, set/read back the counters, and require one actual-env
     no-policy identity smoke before a fresh-root relaunch. No scientific
     contract field changes.
+    Recovery1 completed rc 0 from clean `3cbb975` in 645.34s and selected
+    source confirmation tasks `[6,16,33,39]` with distinct signatures
+    `[open,stack,close,turn_off]`. Frozen-base successes across the nine
+    candidates are `{6:4,9:27,16:17,20:32,23:0,33:13,39:24,46:4,63:0}`;
+    eligible IDs are `[6,16,33,39,46]`, then the predeclared distance/task-ID
+    ranking selects four. The canonical selection manifest SHA256 is
+    `a4d57cf9...f670`; the result SHA256 is `240de313...dd61`. Gate 0 and Writer
+    remain false. Next bind evaluation seeds, h16/h50, >=2 training seeds, and
+    LoRA-matched arms to these disjoint confirmation tasks before any LoRA
+    outcome.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

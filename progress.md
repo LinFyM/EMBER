@@ -2438,3 +2438,24 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   added a faithful lazy-wrapper regression. After clean delivery, run one
   actual-env no-policy state-assignment/reset smoke, then relaunch to a new
   output root only if the physical before/after IDs match exactly.
+
+## 2026-07-19 source difficulty audit completed and selection frozen
+
+- The actual lazy-vector no-policy smoke passed, then longrun
+  `gate0_source_base_difficulty_audit_recovery1_20260719_124855` completed rc 0
+  from clean `3cbb975` in 645.34s. All 288 horizon-16 source episodes, nine
+  task packets, and deterministic state/seed identities are present; GPUs 4--7
+  released.
+- Base successes are `{6:4,9:27,16:17,20:32,23:0,33:13,39:24,46:4,63:0}`.
+  The frozen base-only rule yields eligible `[6,16,33,39,46]` and selects
+  confirmation tasks `[6,16,33,39]` (`open/stack/close/turn_off`). Result SHA256
+  is `240de313...dd61`; selection manifest SHA256 is `a4d57cf9...f670`.
+- Checksums/JSON/state uniqueness/policy-seed coverage/gallery/latest and nine
+  video decodes pass. Output is 2.3MiB. Telemetry peaks are 20,021MiB on GPU4
+  and 1,752MiB on each other GPU, with a final three-rank idle tail; record this
+  as an efficiency residual and do not rerun valid science to polish it.
+- Next freeze the matched development/confirmation evaluation contract around
+  task3/task4 and selected tasks6/16/33/39: >=32 paired rollouts/task/arm,
+  multiple policy RNG seeds, >=2 independent training seeds, horizon16 primary,
+  horizon50 robustness, process diagnostics, and LoRA-identical arms. Gate 0
+  and Writer remain unauthorized; validation/held/locked access remains zero.

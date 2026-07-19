@@ -1,6 +1,6 @@
 schema_version = 1
 name = "smolvla_libero90_gate_zero_task_local_lora_rl_recovery_v1"
-status = "predeclared_after_candidate_step_failure_before_any_task_local_rl_outcome"
+status = "mechanically_amended_after_fail_closed_collection_before_any_optimizer_or_development_outcome"
 predeclared_at_utc = "2026-07-19T04:40:00Z"
 surface = "source_only_gate_zero_task_local_rl_recovery"
 task_ids = [3, 4]
@@ -32,6 +32,23 @@ validation_numeric_access = false
 held_numeric_access = false
 locked_report_numeric_access = false
 writer_present = false
+
+[mechanical_recovery]
+amended_at_utc = "2026-07-19T04:59:00Z"
+predecessor_contract_sha256 = "75ceeec398f472d53fb1c7b88b4dd135469b0f841bbf8ac3dfc0ac4b13cd5c68"
+failed_run_id = "gate0_task_local_rl_ep16_20260719_044843"
+failed_output_relative_path = "gate_zero/task_local_lora_rl_recovery/awr_ep16_20260719T044824Z"
+failure_rank2_sha256 = "f9a6ba3280bada9585891976373e34ea1b5667ea19c76dcd03252a48aa2a38d6"
+failure_telemetry_sha256 = "718e08704b697dbb148358f1256278594f4b89faee5d1986ae1d0019eaa3324b"
+localization_run_id = "gate0_saturation_diag2_20260719_045651"
+localization_json_sha256 = "d4ed8fa2e66319b268ef61e0cc66ccb3bfc55525770996718d76cace2c9f9dd6"
+optimizer_updates_before_failure = 0
+development_rollouts_before_failure = 0
+reset_after_ids = [8, 9, 10, 11, 12, 13, 14, 15]
+final_ids_are_post_success_autoreset_not_initial_identity = true
+saturated_scalars_by_dimension = [0, 3, 10, 0, 0, 0, 1195]
+repair = "audit initial identity at reset; preserve Gaussian exploration on continuous dimensions 0-5 and preserve the policy gripper command on binary dimension 6"
+unchanged_scientific_fields = ["tasks", "LoRA", "reward", "seeds", "interaction budget", "optimizer", "decision thresholds", "development and fresh Gate surfaces"]
 
 [lora]
 target_count = 37
@@ -78,7 +95,7 @@ fixed_flow_time_seed = 2026071942
 
 [exploration]
 kind = "external_gaussian_on_raw_relative_action_after_policy_postprocessing"
-standard_deviation = [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+standard_deviation = [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.0]
 clip_low = [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]
 clip_high = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 common_random_numbers_between_initializations = true

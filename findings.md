@@ -1843,6 +1843,22 @@
   comparison of supervised-init plus RL against zero-init plus identical RL is
   reported explicitly; only the former outperforming the latter supports a
   helpful-initialization interpretation.
+- The first canonical four-rank launch failed closed during rank-2 collection,
+  before any optimizer update or development rollout. The original failure
+  packet is retained under run `gate0_task_local_rl_ep16_20260719_044843`.
+  A one-card repeat of that already consumed source training slice showed all
+  prompt/anchor/reset-after checks valid: reset reached init states 8--15.
+  End-of-rollout IDs changed only for successful auto-reset environments, so
+  using them as the initial-state identity was mechanically invalid.
+- The same repeat counted 1208 proposed clips: `[0, 3, 10, 0, 0, 0, 1195]`
+  by action dimension. Thus 98.9% came from adding continuous Gaussian noise to
+  the naturally near-binary gripper command. This is an exploration-domain
+  mismatch, not evidence about task-local RL. The active, result-transparent
+  recovery preserves std 0.05 on continuous dimensions 0--5, leaves the policy
+  gripper output untouched, and computes saturation only over explored
+  dimensions. No task, LoRA, reward, seed, budget, optimizer, evaluator,
+  surface, or decision threshold changes. Amended contract SHA256 is
+  `e138b7d649c192d4618a8e5b9c0f8fe29b60c95a5117815313f271f405d4d406`.
 
 ## Earlier supervised checkpoints do not recover closed-loop utility
 

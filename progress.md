@@ -4,7 +4,7 @@
 
 - After the candidate-step diagnostic failed, the next source-only Gate-0
   recovery was frozen before any new outcome. Config
-  `configs/gate_zero_task_local_rl_recovery.toml` has SHA256
+  `configs/gate_zero_task_local_rl_recovery.toml` initially had SHA256
   `75ceeec398f472d53fb1c7b88b4dd135469b0f841bbf8ac3dfc0ac4b13cd5c68`.
   It keeps task 3/4 and the exact 37-target rank-32 LoRA, and compares frozen
   base, supervised LoRA, zero-init LoRA plus ordinary RL, and supervised-init
@@ -15,6 +15,20 @@
   32 episodes is the hard maximum; only a later separately bound fresh Gate can
   pass Gate 0. Atomic checkpoints, Trackio, compact videos/gallery, telemetry,
   and exact-resume are part of the canonical launcher.
+- First launch `gate0_task_local_rl_ep16_20260719_044843` failed closed after
+  rank 2 collected its first eight source episodes, with zero optimizer updates,
+  zero development rollouts, no checkpoint, and no Gate result; all GPUs were
+  released. A bounded single-card repeat localized both guards. Reset-after IDs
+  were exactly 8--15; final IDs changed only because successful vector-env
+  members auto-reset. Proposed clipping was `[0,3,10,0,0,0,1195]` by dimension,
+  making the binary gripper 98.9% of the false saturation signal. Active config
+  SHA256 `e138b7d649c192d4618a8e5b9c0f8fe29b60c95a5117815313f271f405d4d406`
+  now audits identity at reset, explores only continuous dimensions 0--5 with
+  the unchanged std 0.05, and preserves the policy gripper command. Every
+  scientific arm, seed, budget, optimizer, surface, and threshold is unchanged;
+  the predecessor/failure/localization hashes are bound in the config before
+  rerun. One temporary diagnostic attempt lacked a multiprocessing main guard,
+  was terminated before a result, and released GPU 6; the guarded repeat rc 0.
 - Architecture ownership is deliberately narrow: the
   `ember.gate_zero_task_local_rl` package owns only this bounded Gate-0 recovery
   contract, reward-weighted replay mechanics, and orchestration. It reuses the

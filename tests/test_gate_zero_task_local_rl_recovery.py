@@ -58,6 +58,7 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         self.assertFalse(self.spec["algorithm"]["shared_parameter_updates"])
         self.assertFalse(self.spec["algorithm"]["writer_updates"])
         self.assertEqual(self.spec["training_interaction"]["interaction_episode_nodes"], [16, 32])
+        self.assertEqual(self.spec["exploration"]["standard_deviation"], [0.05] * 6 + [0.0])
 
     def test_four_rank_assignment_has_no_duplicate_or_idle_arm(self) -> None:
         assignments = [assigned_task_local_rl_arm(rank=i, world_size=4, spec=self.spec) for i in range(4)]
@@ -125,6 +126,17 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
                 headroom_path=self.headroom,
                 diagnostic_path=self.diagnostic,
             )
+        changed = copy.deepcopy(self.spec)
+        changed["mechanical_recovery"]["optimizer_updates_before_failure"] = 1
+        with self.assertRaises(GateZeroTaskLocalRLContractError):
+            validate_task_local_rl_spec(
+                changed,
+                gate_zero_path=self.gate_zero,
+                phase0_path=self.phase0,
+                fit_path=self.fit,
+                headroom_path=self.headroom,
+                diagnostic_path=self.diagnostic,
+            )
 
     def test_balanced_anchor_slots_are_fixed_count_and_cover_endpoints(self) -> None:
         self.assertEqual(balanced_anchor_slots(8, slots=8), list(range(8)))
@@ -140,7 +152,7 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
 
         kwargs = {
             "base": identity,
-            "standard_deviation": [0.05] * 7,
+            "standard_deviation": [0.05] * 6 + [0.0],
             "low": [-1.0] * 7,
             "high": [1.0] * 7,
             "seed": 123,
@@ -157,6 +169,9 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
         self.assertGreaterEqual(left.saturation_fraction, 0.0)
         self.assertEqual(sum(left.saturated_scalars_by_dimension), left.saturated_scalars)
         self.assertEqual(len(left.saturated_scalars_by_dimension), 7)
+        self.assertEqual(left.total_scalars, 12)
+        self.assertEqual(left.saturated_scalars_by_dimension[-1], 0)
+        self.assertTrue(torch.equal(first[:, -1], action[:, -1]))
 
     def test_replay_builder_balances_episodes_and_pads_chunks(self) -> None:
         batch_size = 2
@@ -226,18 +241,16 @@ class GateZeroTaskLocalRLRecoveryTest(unittest.TestCase):
                 round_index=1,
                 batch_size=8,
                 seed_start=6200,
-                final_init_state_ids=list(range(16, 24)),
-                expected_init_state_ids=list(range(16, 24)),
             )
         )
+        changed = copy.deepcopy(events)
+        changed[-1]["after"] = list(range(24, 32))
         self.assertFalse(
             validate_training_reset_events(
-                events,
+                changed,
                 round_index=1,
                 batch_size=8,
                 seed_start=6200,
-                final_init_state_ids=list(range(8, 16)),
-                expected_init_state_ids=list(range(16, 24)),
             )
         )
 

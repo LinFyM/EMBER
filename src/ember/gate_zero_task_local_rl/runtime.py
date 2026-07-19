@@ -78,12 +78,14 @@ class ExplorationActionProcessor:
             len(standard_deviation) != 7
             or len(low) != 7
             or len(high) != 7
-            or any(value <= 0 or not math.isfinite(value) for value in standard_deviation)
+            or any(value < 0 or not math.isfinite(value) for value in standard_deviation)
+            or not any(value > 0 for value in standard_deviation)
             or any(left >= right for left, right in zip(low, high, strict=True))
         ):
             raise GateZeroTaskLocalRLRuntimeError("invalid exploration action contract")
         self.base = base
         self.standard_deviation = torch.tensor(standard_deviation, dtype=torch.float32)
+        self.explored_dimensions = self.standard_deviation > 0
         self.low = torch.tensor(low, dtype=torch.float32)
         self.high = torch.tensor(high, dtype=torch.float32)
         self.generator = torch.Generator(device="cpu").manual_seed(seed)
@@ -104,7 +106,9 @@ class ExplorationActionProcessor:
         proposed = action + noise.to(action.device) * self.standard_deviation.to(action.device)
         low = self.low.to(action.device)
         high = self.high.to(action.device)
-        saturated = (proposed < low) | (proposed > high)
+        saturated = ((proposed < low) | (proposed > high)) & self.explored_dimensions.to(
+            action.device
+        )
         by_dimension = saturated.sum(dim=0).tolist()
         self.saturated_scalars += int(saturated.sum().item())
         self.saturated_scalars_by_dimension = [
@@ -113,7 +117,7 @@ class ExplorationActionProcessor:
                 self.saturated_scalars_by_dimension, by_dimension, strict=True
             )
         ]
-        self.total_scalars += proposed.numel()
+        self.total_scalars += action.shape[0] * int(self.explored_dimensions.sum())
         return {**processed, "action": proposed.clamp(min=low, max=high)}
 
 
@@ -133,8 +137,6 @@ def validate_training_reset_events(
     round_index: int,
     batch_size: int,
     seed_start: int,
-    final_init_state_ids: Sequence[int],
-    expected_init_state_ids: Sequence[int],
 ) -> bool:
     if round_index < 0 or batch_size <= 0:
         return False
@@ -156,10 +158,7 @@ def validate_training_reset_events(
                 ),
             }
         )
-    return (
-        list(events) == expected
-        and list(final_init_state_ids) == list(expected_init_state_ids)
-    )
+    return list(events) == expected
 
 
 def weighted_flow_loss(per_sample_loss: torch.Tensor, weights: torch.Tensor) -> torch.Tensor:
@@ -494,8 +493,6 @@ def collect_training_round(
             round_index=round_index,
             batch_size=batch_size,
             seed_start=seed_start,
-            final_init_state_ids=final_init_state_ids,
-            expected_init_state_ids=training["train_init_state_indices_by_round"][round_index],
         ),
         "anchor_steps": [anchor["step"] for anchor in recorder.anchors]
         == list(range(0, 400, spec["algorithm"]["action_chunk_size"])),

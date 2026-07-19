@@ -130,6 +130,11 @@ def _validate_lora_and_optimizer(spec: Mapping[str, Any], fit: Mapping[str, Any]
 
 def _validate_surfaces_and_decisions(spec: Mapping[str, Any]) -> None:
     _require_equal(spec.get("schema_version"), 1, "schema_version")
+    _require_equal(
+        spec.get("status"),
+        "mechanically_amended_after_fail_closed_collection_before_any_optimizer_or_development_outcome",
+        "status",
+    )
     _require_equal(spec.get("task_ids"), [3, 4], "task_ids")
     _require_equal(spec.get("initializations"), ["zero_init", "supervised_init"], "initializations")
     _require_equal(
@@ -144,11 +149,43 @@ def _validate_surfaces_and_decisions(spec: Mapping[str, Any]) -> None:
     decision = spec.get("candidate_decision")
     fresh = spec.get("fresh_gate")
     parallel = spec.get("parallel")
+    recovery = spec.get("mechanical_recovery")
     if not all(
         isinstance(value, dict)
-        for value in (training, development, safeguards, continuation, decision, fresh, parallel)
+        for value in (
+            training,
+            development,
+            safeguards,
+            continuation,
+            decision,
+            fresh,
+            parallel,
+            recovery,
+        )
     ):
         raise GateZeroTaskLocalRLContractError("task-local RL surface declaration is missing")
+    _require_equal(
+        recovery["predecessor_contract_sha256"],
+        "75ceeec398f472d53fb1c7b88b4dd135469b0f841bbf8ac3dfc0ac4b13cd5c68",
+        "mechanical predecessor",
+    )
+    _require_equal(recovery["optimizer_updates_before_failure"], 0, "failed optimizer updates")
+    _require_equal(recovery["development_rollouts_before_failure"], 0, "failed development access")
+    _require_equal(
+        recovery["saturated_scalars_by_dimension"],
+        [0, 3, 10, 0, 0, 0, 1195],
+        "saturation diagnosis",
+    )
+    _require_equal(
+        recovery["failure_rank2_sha256"],
+        "f9a6ba3280bada9585891976373e34ea1b5667ea19c76dcd03252a48aa2a38d6",
+        "failed collection packet",
+    )
+    _require_equal(
+        recovery["localization_json_sha256"],
+        "d4ed8fa2e66319b268ef61e0cc66ccb3bfc55525770996718d76cace2c9f9dd6",
+        "mechanical localization packet",
+    )
     _require_equal(training["batch_size"], 8, "training batch_size")
     _require_equal(training["rounds_maximum"], 4, "training rounds_maximum")
     _require_equal(training["interaction_episode_nodes"], [16, 32], "interaction nodes")
@@ -208,7 +245,7 @@ def validate_task_local_rl_spec(
     fit = _load_toml(fit_path, "mature LoRA fit contract")
     _validate_lora_and_optimizer(spec, fit)
     exploration = spec.get("exploration", {})
-    _require_equal(exploration.get("standard_deviation"), [0.05] * 7, "exploration std")
+    _require_equal(exploration.get("standard_deviation"), [0.05] * 6 + [0.0], "exploration std")
     _require_equal(exploration.get("clip_low"), [-1.0] * 7, "exploration low")
     _require_equal(exploration.get("clip_high"), [1.0] * 7, "exploration high")
     _require_equal(exploration.get("maximum_saturation_fraction"), 0.05, "saturation safeguard")

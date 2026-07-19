@@ -1849,3 +1849,23 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   released. The temporary source is durably copied into the mechanics packet;
   remove the workspace copy and proceed to the sole frozen four-card stage-16
   run after a fresh GPU/storage preflight.
+- Long-run `gate0_signed_flow_ratio_ep16_20260719_060519` completed main rc 0
+  from clean `30d9e22` in 4:52.99. All four arms reached loadable atomic step
+  16, output checksums and recovery validators pass, mechanics/nonfinite guards
+  pass, four videos plus `index.html` and Trackio are retained, output is
+  93MiB, and GPUs 4--7 returned to 0MiB. Result SHA256 is
+  `73d681ca...8703`.
+- The frozen source-development result is negative: supervised task3/4 remain
+  2/8 and 4/8; zero task3 falls 3/8 to 2/8 and zero task4 remains 3/8. Status is
+  `task_local_rl_early_check_not_supported`; Gate 0, fresh Gate, Writer, stage
+  32, validation, held, and locked-report access remain unauthorized.
+- A no-GPU factor/physical-delta audit compared both retained RL estimators to
+  their exact zero/supervised initialization states. Signed physical updates
+  are 0.067--0.072 L2 versus AWR 0.096--0.120; supervised-relative moves are
+  about 10% versus 17%. Since the larger AWR move also failed behaviorally,
+  do not simply multiply optimizer steps. Next implement only the lowest-cost
+  source diagnostic already required by the capacity audit: evaluate the
+  immutable lower-LR action-expert step-1000 state on the same frozen task3/4
+  development identities as a non-matched upper bound. Its contract and hashes
+  must be frozen before any rollout, and it cannot pass Gate 0 or authorize
+  Writer alone.

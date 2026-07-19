@@ -733,9 +733,23 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     passed: 64 unique source rows, exact repeated old/current loss, finite
     gradient norm 0.0803, no optimizer step, no simulator, and result SHA256
     `b1e75b43...b4687`. This permits exactly one four-GPU source-only 16-episode
-    run. A passing development candidate can open only a separately frozen
-    fresh Gate, while a failure records a bounded estimator negative and returns
-    to Gate recovery without weakening the full EMBER objective.
+    run. That run completed mechanically but did not select a candidate:
+    supervised-init stayed 2/8 and 4/8 on task 3/4; zero-init changed 3/8 to
+    2/8 and stayed 3/8. The status is
+    `task_local_rl_early_check_not_supported`, result SHA256 is
+    `73d681ca...8703`, and stage 32/fresh Gate remain closed. Do not increase
+    signed update steps blindly: its physical LoRA displacement was already
+    about 10% of the supervised physical-update norm, while AWR produced about
+    17%, yet neither changed behavior positively. The cheapest next
+    discriminator is the already mandated non-matched lower-LR action-expert
+    capacity upper bound on the exact same source-development slice. Freeze its
+    artifact hashes and evaluator contract before rollout. If it converts its
+    positive independent-query evidence into behavior while LoRA does not,
+    classify the LoRA contract/acquisition as too narrow; if it also fails,
+    classify query-to-closed-loop conversion or credit assignment as the
+    primary bottleneck before considering a materially fuller flow-policy RL
+    method. Neither branch weakens the full EMBER objective or authorizes
+    Writer by itself.
     No validation, held, locked-report, or step-2k access is authorized. The
     original SHA256 `ba3ee431...f132f`
     reached no episode because its last-warm-up seed was not stride-adjacent to

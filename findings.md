@@ -1972,6 +1972,26 @@
   `b1e75b43e62b2b5ba9f9f3386d8a023e42ece2d696a069a223bcebb13f5b4687`.
   This is interface/mechanics evidence only and unlocks exactly one frozen
   source-development run, not Gate 0 or a fresh Gate.
+- The signed-ratio stage-16 run then completed rc 0 in 4:52.99 from clean
+  `30d9e22`. All four atomic recovery packets, checksums, mechanics, videos,
+  gallery, Trackio records, and telemetry validate; peak memory was
+  23,350/19,047/18,771/18,771MiB, output size is 93MiB, and GPUs 4--7 released.
+  Result SHA256 is
+  `73d681caf4f5d6b67519eb33636e9af905aec7412c18c5d85cd1aaf8d3488703`.
+- Behavior still does not improve: task-3/4 supervised-init stays 2/8 and 4/8
+  (paired 0/0), while zero-init changes 3/8 to 2/8 and stays 3/8 (paired -1/0).
+  Query reduction is +5.68%/+4.01% for supervised-init and +0.074%/-0.113%
+  for zero-init; drift and saturation remain inside safeguards. Thus no
+  initialization passes, fresh Gate/Gate 0/Writer remain false, and no stage 32
+  exists in this recovery.
+- This is not explained by a vanishing parameter move alone. Signed-ratio
+  physical LoRA displacement is about 0.067--0.072 L2 (roughly 10% of the
+  supervised initial physical-update norm), while AWR produced about
+  0.096--0.120 (roughly 17% for supervised arms); neither yielded positive
+  paired behavior. The more discriminating next test is therefore the
+  pre-existing lower-LR action-expert state as a non-matched capacity upper
+  bound on the same frozen source-development slice—not an arbitrary increase
+  in signed optimizer steps.
 
 ## Writer reward learning and task-local adaptation are distinct causal stages
 

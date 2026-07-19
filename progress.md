@@ -1,5 +1,21 @@
 # EMBER Progress and Handoff
 
+## 2026-07-19 Writer segment complete; validation resume prepared
+
+- The first all-source Writer cold-start segment completed rc 0 at step 1000
+  on GPUs 0--7 in 2891.65s. Its 16-file checkpoint validates Writer,
+  optimizer, scheduler, sampler/data cursor, scaler marker, and eight rank RNG
+  states; 2,048,000 query frames were consumed. No validation performance or
+  test/held surface was accessed during training.
+- Cross-category validation completed all five fixed direct-LoRA fits and 10
+  of 15 full 128-row arm shards before failing closed. The root cause was the
+  default 10-minute NCCL collective timeout: an early rank entered the final
+  gather while slower ranks were still completing long episodes. The failed
+  longrun and existing shards remain immutable; no partial performance was
+  opened. The narrow tested fix sets only the process-group timeout to three
+  hours. Resume uses the same output root and skips all complete fits/shards;
+  model, tasks, horizons, seeds, denominators, and statistics are unchanged.
+
 ## 2026-07-19 Writer validation contract frozen before stage outcome
 
 - The first all-source Writer segment is running from clean `a92e1a2` on GPUs

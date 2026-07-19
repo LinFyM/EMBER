@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 from pathlib import Path
+from datetime import timedelta
 
+import torch
+
+import ember.writer.validation as validation
 from ember.writer.validation import (
     aggregate_validation_rows,
     load_validation_contract,
@@ -10,6 +14,26 @@ from ember.writer.validation import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_parallel_context_allows_slow_ranks_to_finish_before_gather(
+    monkeypatch,
+) -> None:
+    spec = {"parallel": {"world_size": 8}}
+    monkeypatch.setenv("RANK", "3")
+    monkeypatch.setenv("LOCAL_RANK", "3")
+    monkeypatch.setenv("WORLD_SIZE", "8")
+    observed: dict[str, object] = {}
+    monkeypatch.setattr(torch.cuda, "set_device", lambda device: observed.setdefault("device", device))
+
+    def init_process_group(*args, **kwargs):
+        observed["args"] = args
+        observed["kwargs"] = kwargs
+
+    monkeypatch.setattr(torch.distributed, "init_process_group", init_process_group)
+    context = validation._parallel(spec)
+    assert context == validation.ParallelContext(rank=3, local_rank=3, world_size=8)
+    assert observed["kwargs"]["timeout"] == timedelta(hours=3)
 
 
 def test_validation_contract_binds_writer_and_keeps_held_closed() -> None:

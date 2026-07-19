@@ -2,6 +2,18 @@
 
 ## Current state
 
+- The first real matched faithful-FPO++ development segment is complete:
+  `gate0_matched_dev_seed2026071830_ep16_20260719_134125`, clean `77e15c7`,
+  main rc 0, 11m03s, GPUs 4--7, 16 source interactions per each of four arms.
+  All per-flow-sample actor updates, temporal-credit/mechanics checks, atomic
+  recovery hashes, JSON, telemetry, Trackio, and the four-video gallery
+  validate; GPUs are released. The n=8 horizon-16 paired gains are supervised
+  `[-1,-1]` and zero-init `[-2,+2]`, while supervised source-query reductions
+  remain +5.70%/+3.90%. By the frozen smoke-only rule this is mixed/ambiguous,
+  not a Gate decision. Exact-resume the same seed/arms once from 16 to 24;
+  review before any node 32 or confirmation. Gate 0 and Writer remain false,
+  with validation/held/locked numeric access still zero.
+
 - After the candidate-step diagnostic failed, the next source-only Gate-0
   recovery was frozen before any new outcome. Config
   `configs/gate_zero_task_local_rl_recovery.toml` initially had SHA256

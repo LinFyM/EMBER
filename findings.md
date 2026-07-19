@@ -2725,3 +2725,32 @@
   seed `2026072130` is result-blindly reserved only for a predeclared ambiguous
   two-seed outcome. This is replication, not a hyperparameter or favorable-seed
   search.
+
+## First faithful matched-RL segment is mechanically healthy but statistically ambiguous
+
+- Long-run `gate0_matched_dev_seed2026071830_ep16_20260719_134125` completed
+  rc 0 from clean `77e15c7` in 11m03s on GPUs 4--7. Each of the four matched
+  task/initialization arms consumed 16 source interaction episodes; the first
+  eight formed critic warmup and the second eight enabled 80--90 finite actor
+  updates. Every runtime ratio is genuinely per-flow-sample, temporal-credit
+  checks pass, saturation/nonfinite counts are zero, and all four atomic
+  recovery manifests and file hashes validate.
+- The same horizon-16 development slice compares each updated arm with its own
+  initialization. Supervised-init RL changes task 3 from 7/8 to 6/8 and task 4
+  from 5/8 to 4/8; zero-init RL changes task 3 from 6/8 to 4/8 and task 4 from
+  3/8 to 5/8. These paired gains `[-1,-1]` and `[-2,+2]` are all inside the
+  predeclared n=8 ambiguity region and cannot pass or reject Gate 0.
+- Independent source-query reductions are +5.70%/+3.90% for supervised-init
+  RL and approximately -0.04%/-0.05% for zero-init RL. This is enough to rule
+  out a mechanical no-update run, but not enough to claim closed-loop utility
+  or initialization benefit. Because mechanics are healthy and the legal
+  signals are mixed rather than decisively harmful, the frozen ladder permits
+  exactly one same-trajectory resume to 24 interactions/arm before the next
+  review; it does not authorize node 32, confirmation, Gate 0, or Writer.
+- The retained packet is 147MiB. Stage-result SHA256 is
+  `cd786d189e2a23f8511e17805a75e0383d39241899c4e6e5376eb0b43321d26c`;
+  the compact gallery contains one current-policy video per arm and Trackio
+  project `EMBER_gate0` contains the live metrics. Peak memory on GPUs 4--7 was
+  19,281/6,431/6,447/6,447MiB; all four reached 100% utilization and were
+  released to 0MiB. The existing EGL/render asymmetry remains an efficiency
+  residual, not a reason to rerun or delay this scientific trajectory.

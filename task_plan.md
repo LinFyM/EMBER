@@ -1203,3 +1203,10 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
   opens the already frozen confirmation; persistent flat/negative evidence
   with healthy mechanics gets one cheapest source-only diagnostic, not seed,
   node, task, or threshold shopping.
+- Required-seed-1 node 16 completed rc 0 in 11m03s with 16 interactions per
+  arm and a fully healthy faithful per-flow-sample update path. Its n=8 paired
+  changes are supervised-init `[-1,-1]` and zero-init `[-2,+2]`; supervised
+  query reductions remain +5.70%/+3.90%. These are explicitly ambiguous smoke
+  signals, so the next action is one exact-resume segment to node 24 from the
+  same four checkpoints. Do not open node 32, confirmation, Gate 0, or Writer
+  until the node-24 review supports it.

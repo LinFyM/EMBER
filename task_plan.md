@@ -777,6 +777,23 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     its critic/temporal-credit estimator and other claimed essentials are
     actually implemented. No validation, held, locked-report, arbitrary
     step-2k continuation, or fresh Gate is authorized by this diagnostic.
+    Before any further source interaction, run the no-environment query/action
+    alignment audit frozen at config SHA256
+    `a85de2e89ae0e5477e931cf887b79b6b756aa0c090bf0903353c7bf475262c3d`.
+    On source query demos 40--45 only, compare frozen base, step-1000 supervised
+    rank-32 LoRA, and step-1000 partial action-expert states using the same 48
+    fixed anchors and inference noise. Report normalized generated-action-chunk
+    MSE by row, episode, action dimension, and four contiguous time partitions,
+    alongside the immutable flow-query reductions. It opens zero new simulator
+    episodes and cannot alter a threshold or authorize Gate 0/Writer. If flow
+    improves but generated-action error does not, repair the selection/
+    acquisition surrogate before more RL; if generated actions improve but
+    closed loop does not, predeclare one task-local RL recovery with genuine
+    temporal credit; if signs are mixed, treat aggregate averaging as hiding
+    behavior-critical heterogeneity. Retire the one-time audit controller and
+    launcher after its immutable packet and the selected next recovery contract
+    are frozen; retain the general fixed-anchor action-error metric for direct
+    Writer query supervision/diagnostics.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

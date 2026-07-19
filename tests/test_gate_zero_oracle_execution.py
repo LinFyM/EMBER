@@ -34,6 +34,7 @@ from ember.gate_zero_oracle_artifacts import (  # noqa: E402
 )
 from ember.gate_zero_oracle_metrics import (  # noqa: E402
     anchor_flat_indices,
+    summarize_action_chunk_errors,
     unit_variance_mean_action_kl,
 )
 
@@ -119,6 +120,42 @@ class GateZeroOracleExecutionContractTest(unittest.TestCase):
 
         self.assertEqual(selected[:8], list(range(8)))
         self.assertEqual(selected[8:], [8, 10, 12, 14, 16, 18, 20, 22])
+
+    def test_action_chunk_error_summary_keeps_row_episode_dimension_and_time_identity(self) -> None:
+        target = torch.zeros(2, 4, 2)
+        predicted = torch.tensor(
+            [
+                [[1.0, 0.0], [1.0, 0.0], [0.0, 2.0], [0.0, 2.0]],
+                [[0.0, 1.0], [0.0, 1.0], [2.0, 0.0], [2.0, 0.0]],
+            ]
+        )
+
+        summary = summarize_action_chunk_errors(
+            predicted,
+            target,
+            ["task3/demo40/frame0", "task3/demo41/frame7"],
+            time_partition_count=2,
+        )
+
+        self.assertEqual(summary["sample_count"], 2)
+        self.assertEqual(summary["action_chunk_size"], 4)
+        self.assertEqual(summary["action_dimension"], 2)
+        self.assertEqual(summary["time_partitions"], [[0, 2], [2, 4]])
+        self.assertEqual(summary["mean_squared_error"], 1.25)
+        self.assertEqual(summary["by_row_mse"], {
+            "task3/demo40/frame0": 1.25,
+            "task3/demo41/frame7": 1.25,
+        })
+        self.assertEqual(summary["by_episode_mse"], {"40": 1.25, "41": 1.25})
+        self.assertEqual(summary["by_action_dimension_mse"], [1.25, 1.25])
+        self.assertEqual(summary["by_time_partition_mse"], [0.5, 2.0])
+
+    def test_action_chunk_error_summary_rejects_changed_identity_or_shape(self) -> None:
+        value = torch.zeros(2, 4, 2)
+        with self.assertRaisesRegex(ValueError, "row keys"):
+            summarize_action_chunk_errors(value, value, ["task3/demo40/frame0"])
+        with self.assertRaisesRegex(ValueError, "shape"):
+            summarize_action_chunk_errors(value[:, :3], value, ["a", "b"])
 
     def test_candidate_artifact_is_atomic_hash_bound_and_non_overwriting(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

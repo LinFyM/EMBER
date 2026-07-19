@@ -1904,3 +1904,18 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   separate: supervised Writer cold start, Writer-only RL updating Writer only,
   ordinary LoRA-only task-local RL, then adaptation-aware source meta-outer
   learning.
+- Froze the next no-environment discriminator before outcomes at config SHA256
+  `a85de2e89ae0e5477e931cf887b79b6b756aa0c090bf0903353c7bf475262c3d`.
+  It reuses the canonical fixed-query evaluator and immutable candidate states
+  to compare generated action-chunk MSE for base, supervised LoRA, and partial
+  action expert on 48 source-query anchors per task, with row/episode/action-
+  dimension/time-partition breakdowns and zero new simulator episodes.
+- Red-then-green tests cover aggregation identity, shape failure, all three
+  decision branches, frozen source-only authority, and the two-rank dry-run.
+  Focused tests pass 15/15; shell syntax, Python compilation, dry-run, and diff
+  checks pass. Architecture guard is REVIEW with no hard violation. The
+  one-time 506-line controller owns only authority validation, two-task
+  orchestration, and compact output; it adds no trainer/evaluator path and will
+  be retired after its packet and the selected recovery contract are frozen.
+  The 50x7 fixed-anchor action-error summary remains because it is a current
+  second use for later direct-Writer query supervision/diagnostics.

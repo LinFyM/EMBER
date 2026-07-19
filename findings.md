@@ -2058,3 +2058,26 @@
   independent task/arm rollouts should use process-level parallelism when it
   shortens the scientific wall clock while retaining about 10GiB memory
   headroom.
+
+## Query-flow selection versus generated actions is the next no-rollout discriminator
+
+- Existing immutable success vectors show that the policies are not simply
+  identical: task-3 supervised LoRA consistently loses base-success episode 4,
+  task-4 supervised LoRA gains episode 1, and the wider task-4 action-expert
+  state trades episode 0 for episode 1. AWR and signed-ratio mostly retain or
+  exchange the same boundary outcomes. Aggregate teacher-forced flow loss does
+  not reveal which time/action errors caused those closed-loop changes.
+- The result-blind source-only audit is frozen before its output at config
+  SHA256
+  `a85de2e89ae0e5477e931cf887b79b6b756aa0c090bf0903353c7bf475262c3d`.
+  It uses only query demonstrations 40--45, eight evenly spaced anchors per
+  demo, the existing inference-noise seed, and the already immutable base,
+  supervised-LoRA, and action-expert states. The generated 50x7 normalized
+  action chunks are compared with demonstration chunks overall and by episode,
+  action dimension, and four contiguous time partitions.
+- This audit consumes no environment rollout and has no Gate threshold. It can
+  distinguish fixed-flow-query surrogate mismatch from teacher-forced/open-
+  loop compounding or temporal-credit failure, but cannot pass Gate 0, change
+  targets, or authorize Writer. The reusable metric stays with the canonical
+  fixed-query evaluator; the one-time runner has a removal trigger once its
+  packet and the next recovery contract are frozen.

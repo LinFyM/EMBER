@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 from dataclasses import dataclass
 from typing import Any, Sequence
 
@@ -56,6 +57,60 @@ def unit_variance_mean_action_kl(
     if not torch.isfinite(adapted_actions).all() or not torch.isfinite(base_actions).all():
         raise ValueError("action mean tensors are non-finite")
     return float(0.5 * (adapted_actions.to(torch.float32) - base_actions.to(torch.float32)).square().mean())
+
+
+def summarize_action_chunk_errors(
+    predicted_actions: torch.Tensor,
+    target_actions: torch.Tensor,
+    row_keys: Sequence[str],
+    *,
+    time_partition_count: int = 4,
+) -> dict[str, Any]:
+    """Summarize normalized action-chunk MSE without losing query identity."""
+
+    if (
+        predicted_actions.shape != target_actions.shape
+        or predicted_actions.ndim != 3
+        or predicted_actions.numel() == 0
+    ):
+        raise ValueError("predicted and target action chunk shape changed")
+    if len(row_keys) != len(predicted_actions) or len(set(row_keys)) != len(row_keys):
+        raise ValueError("action chunk row keys changed or are duplicated")
+    if not torch.isfinite(predicted_actions).all() or not torch.isfinite(target_actions).all():
+        raise ValueError("action chunks are non-finite")
+    chunk_size = predicted_actions.shape[1]
+    if time_partition_count <= 0 or time_partition_count > chunk_size:
+        raise ValueError("action chunk time partition count is invalid")
+    episodes: list[str] = []
+    for key in row_keys:
+        match = re.fullmatch(r"task\d+/demo(\d+)/frame\d+", key)
+        if match is None:
+            raise ValueError("action chunk row key format changed")
+        episodes.append(match.group(1))
+    squared = (
+        predicted_actions.to(device="cpu", dtype=torch.float64)
+        - target_actions.to(device="cpu", dtype=torch.float64)
+    ).square()
+    by_row = squared.mean(dim=(1, 2))
+    by_episode: dict[str, float] = {}
+    for episode in sorted(set(episodes), key=int):
+        selected = torch.tensor([value == episode for value in episodes])
+        by_episode[episode] = float(squared[selected].mean())
+    bounds = [index * chunk_size // time_partition_count for index in range(time_partition_count)]
+    bounds.append(chunk_size)
+    partitions = [[start, stop] for start, stop in zip(bounds[:-1], bounds[1:], strict=True)]
+    return {
+        "sample_count": len(row_keys),
+        "row_keys_sha256": _row_digest(row_keys),
+        "action_chunk_size": chunk_size,
+        "action_dimension": predicted_actions.shape[2],
+        "mean_squared_error": float(squared.mean()),
+        "by_row_mse": {key: float(value) for key, value in zip(row_keys, by_row, strict=True)},
+        "by_episode_mse": by_episode,
+        "by_action_dimension_mse": [float(value) for value in squared.mean(dim=(0, 1))],
+        "time_partitions": partitions,
+        "by_time_partition_mse": [float(squared[:, start:stop].mean()) for start, stop in partitions],
+    }
 
 
 def _owner(model: Any) -> Any:
@@ -195,6 +250,53 @@ class FixedQueryEvaluator:
                 values.append(actions.detach().to(device="cpu", dtype=torch.float32))
                 row_keys.extend(keys)
         return torch.cat(values), _row_digest(row_keys)
+
+    def _anchor_action_error_summary(self, model: Any) -> dict[str, Any]:
+        owner = _owner(model)
+        device = next(owner.parameters()).device
+        predictions: list[torch.Tensor] = []
+        targets: list[torch.Tensor] = []
+        row_keys: list[str] = []
+        with torch.inference_mode():
+            for raw_batch in self.anchor_loader:
+                keys = batch_provenance_keys(raw_batch)
+                batch = preprocess_smolvla_batch(
+                    raw_batch, self.preprocessor, list(owner.config.image_features)
+                )
+                noise, _ = deterministic_flow_inputs(
+                    keys,
+                    action_shape=(self.action_chunk_size, owner.config.max_action_dim),
+                    noise_seed=self.inference_noise_seed,
+                    time_seed=self.inference_noise_seed + 1,
+                    device=device,
+                )
+                owner.reset()
+                actions = owner.predict_action_chunk(batch, noise=noise)
+                target = batch.get("action")
+                if (
+                    not isinstance(target, torch.Tensor)
+                    or actions.shape != target.shape
+                    or actions.ndim != 3
+                ):
+                    raise ValueError("fixed anchor predicted/target action shape changed")
+                predictions.append(actions.detach().to(device="cpu", dtype=torch.float32))
+                targets.append(target.detach().to(device="cpu", dtype=torch.float32))
+                row_keys.extend(keys)
+        return summarize_action_chunk_errors(
+            torch.cat(predictions), torch.cat(targets), row_keys
+        )
+
+    def evaluate_action_chunk_errors(self, model: Any) -> dict[str, Any]:
+        """Evaluate generated actions against fixed source-query demonstrations."""
+
+        rng = self._preserve_rng()
+        was_training = model.training
+        try:
+            model.eval()
+            return self._anchor_action_error_summary(model)
+        finally:
+            model.train(was_training)
+            self._restore_rng(rng)
 
     def capture_base_reference(self, model: Any) -> FixedQueryReference:
         rng = self._preserve_rng()

@@ -2549,3 +2549,20 @@
   hash-bound development candidate for a separately frozen fresh Gate. This
   is not permission to append to the prior terminal output or to claim a full
   FPO++ reproduction.
+
+## Coverage-recovery warmup exactly preserves the actor
+
+- Fresh node 8 completed rc 0 in 3m36s on clean `4b8dde6`. All four source
+  arms collected 200 ordered horizon-16 replay rows, made 90 finite critic
+  updates, retained healthy temporal mechanics and zero saturation, and kept
+  every LoRA actor plus its empty optimizer state exact.
+- Fixed development paired gains are `[0,0]` for both zero-init and
+  supervised-init, as required for critic-only warmup. Status is
+  `horizon_coverage_warmup_complete_continue_to_16`; stage-result SHA256 is
+  `219eff172d920fc93732032f1e33e548deb9ae430a5c9a88d33176a8b8f289dd`.
+  This contains no policy-quality evidence and cannot pass Gate 0.
+- Fifteen JSON files parse; all four candidate and recovery artifacts validate;
+  four bounded videos fully decode; telemetry checksum passes. Peak memory was
+  19,267MiB on GPU4 and at most 5,122MiB elsewhere, leaving over 61GiB
+  headroom. The only authorized next action is same-output exact resume to
+  node 16; node 24 remains closed until that sealed decision completes.

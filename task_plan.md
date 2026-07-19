@@ -1061,6 +1061,14 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     task below -1 to open 32; otherwise it stops. The original two-task/15pp
     candidate rule, development states 40--47, all four arms, LoRA, optimizer,
     evaluator, query/drift safeguards, and fresh-Gate boundary are unchanged.
+    Fresh node 8 completed rc 0 in 3m36s with status
+    `horizon_coverage_warmup_complete_continue_to_16`: every arm collected 200
+    replay rows, made 90 finite critic updates, and preserved the complete
+    actor plus empty actor optimizer exactly. Both initialization families have
+    fixed development gains `[0,0]`. Stage-result SHA256 is
+    `219eff17...89dd`; 15 JSON files, four candidates/recoveries, four videos,
+    and telemetry validate. This opens only exact-resume node 16 on the same
+    output, not Gate 0 or a checkpoint selection.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

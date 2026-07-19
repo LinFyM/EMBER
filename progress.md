@@ -2346,3 +2346,23 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   pass. The frozen nodes are 8/16/24/32; stage 24 must show the predeclared
   positive aggregate trend to open 32, while the original two-task candidate
   rule remains unchanged. Deliver clean Git before launching node 8.
+
+## 2026-07-19 horizon coverage node 8 completed
+
+- Committed/pushed the pre-outcome implementation as `4b8dde6`. Live
+  preflight found all GPUs free; long-run
+  `gate0_horizon_coverage_stage8_20260719_112918` used GPUs 4--7 and completed
+  rc 0 in 3m36s. The 99MiB output is
+  `horizon_coverage_ep8_20260719T112902Z`, with local gallery and Trackio
+  records retained; all GPUs released.
+- Each arm collected 200 replay rows, performed 90 critic optimizer updates,
+  and performed zero actor optimizer updates with exact actor identity.
+  Mechanics/temporal credit are healthy, saturation is zero, and fixed
+  development gains are `[0,0]` for both initialization families. Frozen
+  status is `horizon_coverage_warmup_complete_continue_to_16`; Gate 0 and
+  Writer remain false.
+- Stage SHA256 is `219eff17...89dd`. Validated 15 JSON files, four candidate
+  packets, four atomic recovery packets, four fully decoded videos, and the
+  telemetry checksum. Peak memory is 19,267MiB on GPU4 and <=5,122MiB on the
+  other ranks. After clean documentation delivery and fresh preflight, exact
+  resume only to node 16; do not alter config, checkpoint, task, or surface.

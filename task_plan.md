@@ -1069,6 +1069,13 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     `219eff17...89dd`; 15 JSON files, four candidates/recoveries, four videos,
     and telemetry validate. This opens only exact-resume node 16 on the same
     output, not Gate 0 or a checkpoint selection.
+    Node 16 exact-resumed and completed rc 0 in 8m03s. It exactly reproduces
+    the sealed horizon result: zero-init `[-2,+1]`, supervised-init `[0,-1]`,
+    with healthy mechanics and no selected checkpoint. Stage-result SHA256 is
+    `3d4bf5a1...5050`; all new candidate/recovery/video/telemetry evidence
+    validates. This reproducibility boundary opens exactly node 24, the first
+    new disjoint source-coverage slice; its frozen trend rule decides whether
+    node 32 remains closed or opens.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

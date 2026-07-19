@@ -2366,3 +2366,19 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   telemetry checksum. Peak memory is 19,267MiB on GPU4 and <=5,122MiB on the
   other ranks. After clean documentation delivery and fresh preflight, exact
   resume only to node 16; do not alter config, checkpoint, task, or surface.
+
+## 2026-07-19 horizon coverage node 16 reproduced the sealed trajectory
+
+- Long-run `gate0_horizon_coverage_stage16_20260719_113650` exact-resumed the
+  same output from clean `52e1efc` and completed rc 0 in 8m03s. GPU4/5/6/7
+  peak memory was 19,278/6,417/6,439/6,439MiB; mean utilization was
+  65.4/51.3/55.2/55.7%, and every GPU released.
+- The stage exactly reproduces the predecessor outcome: zero-init task3/4
+  paired gains `[-2,+1]`, supervised-init `[0,-1]`. Status is
+  `horizon_coverage_recovery_continue_to_24`, but no checkpoint, Gate, Writer,
+  validation, held, or fresh-Gate authority is selected.
+- Stage-result SHA256 is `3d4bf5a1...5050`. Validated all four new candidate
+  and atomic recovery packets, four fully decoded stage-16 videos, 24 JSON
+  files, and telemetry. Output is 170MiB. After clean documentation delivery
+  and live preflight, exact-resume once to node 24, the first new source
+  coverage slice; its frozen trend rule controls any node-32 continuation.

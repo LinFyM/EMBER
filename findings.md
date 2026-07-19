@@ -2566,3 +2566,13 @@
   19,267MiB on GPU4 and at most 5,122MiB elsewhere, leaving over 61GiB
   headroom. The only authorized next action is same-output exact resume to
   node 16; node 24 remains closed until that sealed decision completes.
+- Node 16 then exact-resumed and completed rc 0 in 8m03s. Its fixed development
+  gains exactly match the independent predecessor trajectory: zero-init
+  `[-2,+1]`, supervised-init `[0,-1]`. This independently confirms that the new
+  contract did not alter the first two rounds, evaluator, or RNG/data identity.
+- Stage-result SHA256 is
+  `3d4bf5a1e40e4ebf6bfc14ee896f0aa30991fd6c75770f279dccc9bd585e5050`;
+  all four step-16 candidates/recoveries, four new videos, 24 JSON files, and
+  telemetry validate. Mechanics/temporal credit remain healthy and no
+  checkpoint is selected. The contract now opens only node 24, whose source
+  init states 24--31 are the first new coverage evidence.

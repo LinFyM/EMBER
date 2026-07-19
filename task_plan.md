@@ -817,6 +817,21 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     candidate-task mean action-MSE reductions are negative and each is negative
     on at least three of four draws; otherwise classify inference sampling
     variance. Neither branch changes Gate authority.
+    The four-draw run completed rc 0 from clean `ccb2934` in 52.31 seconds,
+    result SHA256 `c1fc3ab4...ae4b`. Supervised LoRA action MSE worsens on 4/4
+    draws for both tasks and by 1.901%/3.062% in the mean, establishing a robust
+    LoRA flow-to-generated-action acquisition mismatch. The non-matched action
+    expert instead improves on 3/4 draws and by 1.680%/1.428% in the mean, yet
+    its closed-loop net gain is already zero. Therefore two layers coexist:
+    repair LoRA acquisition toward generated actions, while retaining temporal
+    closed-loop credit as a separate necessary test. Next run only a no-update,
+    one-GPU mechanics smoke that differentiates through the pinned full 10-step
+    sampler into the same 37-target rank-32 LoRA and records finite gradient,
+    exact source authority, wall time, and peak memory. If it passes below the
+    10GiB-headroom limit, freeze a short resumable action-aligned acquisition
+    ladder; if it fails, use a multi-sample flow estimator rather than a hidden
+    sampler approximation. No new closed-loop or RL outcome precedes that
+    mechanics decision.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

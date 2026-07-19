@@ -1944,3 +1944,19 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   opened. Focused tests pass 17/17; compile, shell syntax, dry-run, and diff
   checks pass. Architecture guard is REVIEW/no hard violation; the 626-line
   one-time controller remains under its documented retirement trigger.
+- Long-run `gate0_query_action_alignment_robustness_20260719_070642` completed
+  main rc 0 from clean `ccb2934` in 52.31 seconds. Checksums pass, output is
+  144KiB, Trackio run is `robust_20260719T070642Z`, and GPU4/5 released. Result
+  SHA256 is `c1fc3ab4...ae4b`; no environment episode was opened.
+- Supervised-LoRA action MSE worsens on all four noise draws for each task and
+  by 1.901%/3.062% in mean task-3/4 error. Partial action expert improves on
+  three draws per task and by 1.680%/1.428% in the mean despite its earlier
+  zero closed-loop gain. Gate 0/Writer remain false. This confirms a robust
+  LoRA acquisition-surrogate failure plus a distinct teacher-forced-to-closed-
+  loop/temporal-credit gap.
+- Next freeze and run only a one-GPU, no-optimizer, no-environment mechanics
+  smoke for differentiating normalized action-chunk MSE through the pinned
+  full 10-step sampler into the same rank-32 LoRA. It must record finite loss/
+  gradient, exact source rows, wall time, and peak memory with at least 10GiB
+  free. Only a passing smoke may authorize a short resumable action-aligned
+  acquisition ladder; no simulator/RL budget is opened yet.

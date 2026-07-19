@@ -2106,3 +2106,21 @@
   mismatch requires worse mean action MSE for every candidate-task pair and at
   least three worsening draws per pair; otherwise the diagnosis is sampling
   variance. It consumes no rollout and cannot authorize Gate 0 or Writer.
+- The replication completed rc 0 on clean `ccb2934` in 52.31 seconds; result
+  SHA256 is
+  `c1fc3ab448370590c34d5e234aa900377d63834318187be77b4ff9a9bc8eae4b`.
+  Checksums pass, output is 144KiB, GPUs released, and GPU4/5 peak memory was
+  5,635/4,317MiB with 80.06%/80.52% active-sample mean utilization.
+- The aggregate status is `inference_sampling_variance_obscures_alignment`,
+  but its pair-level evidence separates two mechanisms. Supervised rank-32
+  LoRA worsens generated-action MSE on every one of four draws for task 3 and
+  task 4, with mean reductions -1.901%/-3.062%; its flow-to-action mismatch is
+  robust. The wider action expert worsens only the original draw, improves the
+  other three, and has mean reductions +1.680%/+1.428%.
+- Because the action expert's multi-seed teacher-forced action error improves
+  while its paired closed-loop net gain is zero, generated-action query MSE is
+  a better acquisition diagnostic than the current fixed-flow scalar but is
+  not a sufficient behavioral Gate. The evidence supports a staged LoRA
+  acquisition repair followed by unchanged closed-loop testing, and keeps a
+  temporally credited task-local RL recovery as the next layer if action-
+  aligned supervised acquisition still does not convert.

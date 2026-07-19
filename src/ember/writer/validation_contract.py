@@ -127,6 +127,122 @@ def _wilson(successes: int, episodes: int) -> list[float]:
     return [max(0.0, center - radius), min(1.0, center + radius)]
 
 
+def _success_summary(cell: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    successes = sum(bool(row["success"]) for row in cell)
+    return {
+        "successes": successes,
+        "episodes": len(cell),
+        "success_rate": successes / len(cell),
+        "wilson_95_interval": _wilson(successes, len(cell)),
+    }
+
+
+def _paired_cell_interval(
+    left_rows: Sequence[Mapping[str, Any]],
+    right_rows: Sequence[Mapping[str, Any]],
+    *,
+    episode_fields: Sequence[str],
+    seed: int,
+    replicates: int,
+) -> dict[str, Any]:
+    episode_key = lambda row: tuple(row[field] for field in episode_fields)
+    left = {episode_key(row): bool(row["success"]) for row in left_rows}
+    right = {episode_key(row): bool(row["success"]) for row in right_rows}
+    if set(left) != set(right):
+        raise WriterValidationError("validation arms are not episode-paired")
+    ordered = sorted(left)
+    return _paired_interval(
+        [left[key] for key in ordered],
+        [right[key] for key in ordered],
+        seed=seed,
+        replicates=replicates,
+    )
+
+
+def _aggregate_per_task(
+    grouped: Mapping[tuple[int, str, int], Sequence[Mapping[str, Any]]],
+    *,
+    task_ids: Sequence[int],
+    arms: Sequence[str],
+    horizons: Sequence[int],
+    expected_rollouts: int,
+    bootstrap_seed: int,
+    bootstrap_replicates: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    per_task: dict[str, Any] = {}
+    comparisons: dict[str, Any] = {}
+    for task_id in task_ids:
+        per_task[str(task_id)] = {}
+        comparisons[str(task_id)] = {}
+        for arm in arms:
+            per_task[str(task_id)][arm] = {}
+            if arm != "frozen_base":
+                comparisons[str(task_id)][arm] = {}
+            for horizon in horizons:
+                cell = grouped.get((task_id, arm, horizon), [])
+                if len(cell) != expected_rollouts:
+                    raise WriterValidationError(
+                        f"task {task_id} arm {arm} h{horizon} has {len(cell)} rows"
+                    )
+                per_task[str(task_id)][arm][str(horizon)] = _success_summary(cell)
+                if arm != "frozen_base":
+                    comparisons[str(task_id)][arm][str(horizon)] = _paired_cell_interval(
+                        cell,
+                        grouped.get((task_id, "frozen_base", horizon), []),
+                        episode_fields=(
+                            "policy_rng_seed",
+                            "evaluator_seed",
+                            "physical_init_state_index",
+                        ),
+                        seed=bootstrap_seed + task_id * 101 + horizon,
+                        replicates=bootstrap_replicates,
+                    )
+    return per_task, comparisons
+
+
+def _aggregate_overall(
+    grouped: Mapping[tuple[int, str, int], Sequence[Mapping[str, Any]]],
+    *,
+    task_ids: Sequence[int],
+    arms: Sequence[str],
+    horizons: Sequence[int],
+    bootstrap_seed: int,
+    bootstrap_replicates: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    overall: dict[str, Any] = {}
+    comparisons: dict[str, Any] = {}
+    for arm in arms:
+        overall[arm] = {}
+        if arm != "frozen_base":
+            comparisons[arm] = {}
+        for horizon in horizons:
+            cell = [
+                row
+                for task_id in task_ids
+                for row in grouped[(task_id, arm, horizon)]
+            ]
+            overall[arm][str(horizon)] = _success_summary(cell)
+            if arm != "frozen_base":
+                base = [
+                    row
+                    for task_id in task_ids
+                    for row in grouped[(task_id, "frozen_base", horizon)]
+                ]
+                comparisons[arm][str(horizon)] = _paired_cell_interval(
+                    cell,
+                    base,
+                    episode_fields=(
+                        "task_id",
+                        "policy_rng_seed",
+                        "evaluator_seed",
+                        "physical_init_state_index",
+                    ),
+                    seed=bootstrap_seed + horizon,
+                    replicates=bootstrap_replicates,
+                )
+    return overall, comparisons
+
+
 def aggregate_validation_rows(
     rows: Sequence[Mapping[str, Any]],
     *,
@@ -152,84 +268,23 @@ def aggregate_validation_rows(
     for row in rows:
         key = (int(row["task_id"]), str(row["arm"]), int(row["execution_horizon"]))
         grouped.setdefault(key, []).append(row)
-    per_task: dict[str, Any] = {}
-    comparisons: dict[str, Any] = {}
-    for task_id in task_ids:
-        per_task[str(task_id)] = {}
-        comparisons[str(task_id)] = {}
-        for arm in arms:
-            per_task[str(task_id)][arm] = {}
-            if arm != "frozen_base":
-                comparisons[str(task_id)][arm] = {}
-            for horizon in horizons:
-                cell = grouped.get((task_id, arm, horizon), [])
-                if len(cell) != expected_rollouts:
-                    raise WriterValidationError(
-                        f"task {task_id} arm {arm} h{horizon} has {len(cell)} rows"
-                    )
-                successes = sum(bool(row["success"]) for row in cell)
-                per_task[str(task_id)][arm][str(horizon)] = {
-                    "successes": successes,
-                    "episodes": len(cell),
-                    "success_rate": successes / len(cell),
-                    "wilson_95_interval": _wilson(successes, len(cell)),
-                }
-                if arm == "frozen_base":
-                    continue
-                episode_key = lambda row: (
-                    row["policy_rng_seed"],
-                    row["evaluator_seed"],
-                    row["physical_init_state_index"],
-                )
-                left = {episode_key(row): bool(row["success"]) for row in cell}
-                base_rows = grouped.get((task_id, "frozen_base", horizon), [])
-                right = {episode_key(row): bool(row["success"]) for row in base_rows}
-                if set(left) != set(right):
-                    raise WriterValidationError("validation arms are not episode-paired")
-                ordered = sorted(left)
-                comparisons[str(task_id)][arm][str(horizon)] = _paired_interval(
-                    [left[key] for key in ordered],
-                    [right[key] for key in ordered],
-                    seed=bootstrap_seed + task_id * 101 + horizon,
-                    replicates=bootstrap_replicates,
-                )
-    overall: dict[str, Any] = {}
-    overall_comparisons: dict[str, Any] = {}
-    for arm in arms:
-        overall[arm] = {}
-        if arm != "frozen_base":
-            overall_comparisons[arm] = {}
-        for horizon in horizons:
-            cell = [
-                row
-                for task_id in task_ids
-                for row in grouped[(task_id, arm, horizon)]
-            ]
-            successes = sum(bool(row["success"]) for row in cell)
-            overall[arm][str(horizon)] = {
-                "successes": successes,
-                "episodes": len(cell),
-                "success_rate": successes / len(cell),
-                "wilson_95_interval": _wilson(successes, len(cell)),
-            }
-            if arm != "frozen_base":
-                key = lambda row: (
-                    row["task_id"], row["policy_rng_seed"], row["evaluator_seed"],
-                    row["physical_init_state_index"],
-                )
-                left = {key(row): bool(row["success"]) for row in cell}
-                base = {
-                    key(row): bool(row["success"])
-                    for task_id in task_ids
-                    for row in grouped[(task_id, "frozen_base", horizon)]
-                }
-                ordered = sorted(left)
-                overall_comparisons[arm][str(horizon)] = _paired_interval(
-                    [left[value] for value in ordered],
-                    [base[value] for value in ordered],
-                    seed=bootstrap_seed + horizon,
-                    replicates=bootstrap_replicates,
-                )
+    per_task, comparisons = _aggregate_per_task(
+        grouped,
+        task_ids=task_ids,
+        arms=arms,
+        horizons=horizons,
+        expected_rollouts=expected_rollouts,
+        bootstrap_seed=bootstrap_seed,
+        bootstrap_replicates=bootstrap_replicates,
+    )
+    overall, overall_comparisons = _aggregate_overall(
+        grouped,
+        task_ids=task_ids,
+        arms=arms,
+        horizons=horizons,
+        bootstrap_seed=bootstrap_seed,
+        bootstrap_replicates=bootstrap_replicates,
+    )
     return {
         "per_task": per_task,
         "paired_vs_frozen_base": comparisons,

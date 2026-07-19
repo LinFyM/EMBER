@@ -1886,6 +1886,26 @@
   optimizer step, simulator interaction, validation, or held access. Durable
   result SHA256 is `64e522b8863527234e7633a1c8ea72482459b57d43d4b129e4a67c60668a689c`.
   This resolves the model-boundary mechanism only; it does not answer Gate 0.
+- Canonical stage-16 run `awr_ep16_recovery4_20260719T052726Z` completed rc 0
+  from clean commit `a581eea` in 4:38.96, with complete checksums, four atomic
+  recovery states, four videos/gallery, Trackio, and released GPUs. Peak memory
+  was 22,123/19,047/18,771/18,771 MiB on GPUs 4--7; the output is 93 MiB.
+- Mechanics are valid, nonfinite count is zero, maximum continuous-action
+  saturation is 0.00167, and all arms received nonconstant binary reward and 16
+  finite optimizer steps. Nevertheless no arm changed its paired development
+  outcome relative to its own initialization: task 3 supervised 2/8 -> 2/8,
+  task 3 zero 3/8 -> 3/8, task 4 supervised 4/8 -> 4/8, and task 4 zero 3/8 ->
+  3/8. Supervised-init versus matched zero-init has paired advantage -1 on task
+  3 and +1 on task 4, cancelling in aggregate.
+- Supervised-init query reductions remain positive (5.89%/3.66%) and drift stays
+  below 0.02 (0.01286/0.00988); zero-init changes are much smaller (query
+  +0.28%/-0.06%, drift 0.00037/0.00047). This pattern supports an
+  optimization/credit-assignment diagnosis: the estimator is mechanically
+  active, but its small-budget native-flow update has no stable closed-loop
+  effect. It neither supports a useful RL oracle nor proves that the LoRA space
+  is incapable. Frozen status is `task_local_rl_early_check_not_supported`, so
+  stage 32 and the fresh Gate are not authorized. Result SHA256 is
+  `aab151ea503dbada6eaf3a2242301562a47052e1399ec10986c2279425c13b57`.
 
 ## Earlier supervised checkpoints do not recover closed-loop utility
 

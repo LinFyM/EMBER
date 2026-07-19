@@ -61,6 +61,20 @@
   GPU memory was released. The already frozen canonical stage-16 source-only
   verification is mechanically reopened; no Gate or Writer claim follows from
   this smoke.
+- Canonical stage-16 recovery `gate0_task_local_rl_ep16_recovery4_20260719_052739`
+  completed rc 0 from clean `a581eea` in 4:38.96 and released GPUs 4--7. All
+  checksums, mechanics, atomic states, Trackio runs, gallery, and four videos
+  are valid. Peak device memory was 22.1/19.0/18.8/18.8 GiB and retained output
+  is 93 MiB. Each arm completed 16 finite optimizer steps with varied source
+  reward, but none changed its development success count from its own start:
+  task3 supervised 2/8 -> 2/8, zero 3/8 -> 3/8; task4 supervised 4/8 -> 4/8,
+  zero 3/8 -> 3/8. Frozen decision
+  `task_local_rl_early_check_not_supported` prohibits stage 32/fresh Gate;
+  result SHA256 is `aab151ea...b57`. Gate 0 and Writer remain unauthorized.
+- Next is a no-new-interaction source-only diagnosis using the already retained
+  step-8/step-16 states and independent query/drift surfaces to separate weak
+  updates from overshoot. Any later estimator or optimizer recovery must be
+  sealed before outcomes; no automatic interaction extension is permitted.
 - Architecture ownership is deliberately narrow: the
   `ember.gate_zero_task_local_rl` package owns only this bounded Gate-0 recovery
   contract, reward-weighted replay mechanics, and orchestration. It reuses the

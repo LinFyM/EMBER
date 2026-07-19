@@ -698,6 +698,20 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     access. Result SHA256 is `64e522b8...a689c`. This reopens only the already
     frozen 16-episode source-development verification; it is not Gate-0 or
     behavioral evidence.
+    The canonical stage-16 recovery then completed rc 0 from clean commit
+    `a581eea` in 4:38.96. All checksums and mechanics passed, all four arms made
+    16 finite optimizer updates, and reward varied, but each arm reproduced its
+    own initial development success count: task 3 supervised 2/8 -> 2/8 and
+    zero 3/8 -> 3/8; task 4 supervised 4/8 -> 4/8 and zero 3/8 -> 3/8. Thus
+    paired net wins are zero for all arms, the supervised-init advantage is
+    -1/+1 across tasks, and `task_local_rl_early_check_not_supported` stops the
+    trajectory at 16 without stage 32 or a fresh Gate. Result SHA256 is
+    `aab151ea...b57`. Treat this as bounded negative evidence about this small-
+    budget AWR-style estimator, not a final negative about LoRA or EMBER.
+    Before any further source interaction, use the retained step-8/step-16
+    states and legal source-query diagnostics to distinguish an update that is
+    too weak from one that overshot; freeze any later optimizer/estimator
+    recovery before outcomes and do not reopen stage 32 by default.
     No validation, held, locked-report, or step-2k access is authorized. The
     original SHA256 `ba3ee431...f132f`
     reached no episode because its last-warm-up seed was not stride-adjacent to

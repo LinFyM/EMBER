@@ -768,6 +768,7 @@ def run_task_local_rl(args: argparse.Namespace) -> dict[str, Any]:
 def run_formal_evaluation(args: argparse.Namespace) -> dict[str, Any]:
     from ember.gate_zero_task_local_rl.formal_evaluation import (
         aggregate_formal_rows,
+        compatible_recovery_authorities,
         evaluate_live_arm,
         load_formal_evaluation_spec,
         read_rows,
@@ -827,6 +828,15 @@ def run_formal_evaluation(args: argparse.Namespace) -> dict[str, Any]:
             / "recovery"
             / "last"
         ).resolve(strict=True)
+        recovery_manifest = _load_json(
+            recovery / "recovery_manifest.json", "formal recovery manifest"
+        )
+        authorities = compatible_recovery_authorities(
+            authorities,
+            recovery_manifest.get("authorities", {}),
+            spec=formal,
+            training_seed=args.training_seed,
+        )
         step = load_recovery_artifact(
             recovery,
             model=arm.session.model,

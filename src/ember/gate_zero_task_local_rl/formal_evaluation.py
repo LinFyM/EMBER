@@ -67,6 +67,26 @@ def validate_evaluation_source(
         raise FormalEvaluationError("formal evaluation source stage changed")
 
 
+def compatible_recovery_authorities(
+    expected: Mapping[str, Any],
+    actual: Mapping[str, Any],
+    *,
+    spec: Mapping[str, Any],
+    training_seed: int,
+) -> dict[str, Any]:
+    """Accept the immutable reference replicate created before seed labeling."""
+
+    resolved = dict(expected)
+    reference = spec["evaluation"]["required_training_seeds"][0]
+    legacy = dict(resolved)
+    legacy.pop("training_seed", None)
+    if training_seed == reference and dict(actual) == legacy:
+        return legacy
+    if dict(actual) != resolved:
+        raise FormalEvaluationError("formal recovery authority changed")
+    return resolved
+
+
 def rollout_rows(
     *,
     rollout: Mapping[str, Any],

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from ember.gate_zero_task_local_rl.formal_evaluation import (
     aggregate_formal_rows,
+    compatible_recovery_authorities,
     load_formal_evaluation_spec,
     rollout_rows,
 )
@@ -54,6 +55,25 @@ class FormalEvaluationTest(unittest.TestCase):
         self.assertEqual(rows[0]["time_to_success"], 17)
         self.assertIsNone(rows[1]["time_to_success"])
         self.assertEqual(rows[0]["physical_init_state_index"], 40)
+
+    def test_reference_seed_legacy_authority_is_the_only_allowed_omission(self) -> None:
+        expected = {"task_id": 3, "training_seed": 2026071830}
+        self.assertEqual(
+            compatible_recovery_authorities(
+                expected,
+                {"task_id": 3},
+                spec=self.spec,
+                training_seed=2026071830,
+            ),
+            {"task_id": 3},
+        )
+        with self.assertRaises(Exception):
+            compatible_recovery_authorities(
+                expected,
+                {"task_id": 4},
+                spec=self.spec,
+                training_seed=2026071830,
+            )
 
     def test_aggregate_uses_fixed_baselines_once_and_two_training_seeds(self) -> None:
         rows = []

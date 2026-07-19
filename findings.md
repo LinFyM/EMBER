@@ -2811,3 +2811,9 @@
   intervals, and both independent training seeds. Frozen base and fixed
   supervised LoRA are evaluated once with `training_seed=null`, preventing
   pseudoreplication while pairing them against both trained replicates.
+- The first formal launch failed before any reset, rollout, video, or
+  performance outcome because the immutable reference-seed recovery predates
+  the later explicit `training_seed` authority field. Its stage result and
+  manifest hashes already bind that exact reference trajectory. The bounded
+  compatibility repair accepts only that one exact missing field for seed
+  `2026071830`; all other authority differences still fail closed.

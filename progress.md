@@ -2536,3 +2536,9 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   seeds exist. Targeted contract/runtime/statistics tests and the canonical
   four-GPU dry run pass. Next action: commit/push this outcome-free boundary,
   then launch seed `2026071830` on GPUs 4--7 without reading partial performance.
+- First launch `gate0_formal_dev_seed2026071830_20260719_153450` failed rc 1
+  before any rollout or performance outcome on the reference checkpoint's
+  legacy missing seed-label field; telemetry and the failure log are retained,
+  and all GPUs released. One narrow tested compatibility rule now accepts only
+  this hash-bound reference omission. Relaunch to a fresh seed output; do not
+  reuse the failed directory or disclose partial outcomes.

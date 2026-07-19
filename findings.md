@@ -1962,6 +1962,16 @@
   budget, AdamW settings, evaluator, query/drift safeguards, and candidate
   thresholds. No stage 32, fresh Gate, validation, held, locked-report, Writer,
   or shared update is authorized by this predeclaration.
+- The required no-environment real-model integration smoke passed from clean
+  commit `2a72bd4` in 30.07 seconds. It used 64 unique legal source-support
+  rows and synthetic balanced reward labels, reproduced the round-start loss
+  exactly (`max_abs_difference=0`), produced ratio 1.0 and a finite nonzero
+  LoRA gradient norm 0.0803, and performed no optimizer step or simulator
+  interaction. Peak CUDA reservation was 17,948MiB; GPU 6 released to 0MiB.
+  Result SHA256 is
+  `b1e75b43e62b2b5ba9f9f3386d8a023e42ece2d696a069a223bcebb13f5b4687`.
+  This is interface/mechanics evidence only and unlocks exactly one frozen
+  source-development run, not Gate 0 or a fresh Gate.
 
 ## Writer reward learning and task-local adaptation are distinct causal stages
 

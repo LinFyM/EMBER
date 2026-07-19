@@ -1840,3 +1840,12 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   stage after supervised Writer cold start. That stage updates Writer only and
   cannot be conflated with Gate-0/task-local LoRA RL, which updates LoRA only,
   or with later adaptation-aware reward/meta outer learning.
+- Long-run `gate0_signed_flow_ratio_real_model_smoke_20260719_060242`
+  completed rc 0 from clean `2a72bd4` in 30.07 seconds on GPU 6. The real model
+  accepted `[64,50,7]` source actions with `[64,50,32]` flow noise, repeated
+  old/current losses exactly, and produced finite nonzero gradient norm 0.0803
+  without optimizer or environment interaction. Checksums pass; result SHA256
+  is `b1e75b43...b4687`, peak reserved CUDA memory is 17,948MiB, and GPU 6 is
+  released. The temporary source is durably copied into the mechanics packet;
+  remove the workspace copy and proceed to the sole frozen four-card stage-16
+  run after a fresh GPU/storage preflight.

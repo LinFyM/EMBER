@@ -728,9 +728,11 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     four initial/paired arms, 37-target rank-32 LoRA, initialization states,
     source interaction/development slices, seeds, exploration, reward,
     optimizer hyperparameters, 16-episode budget, query/drift guards, and Gate
-    thresholds remain unchanged. There is no stage-32 fallback. First require
-    focused/full tests plus one no-environment real-model forward/backward with
-    no optimizer step; only a passing smoke permits one four-GPU source-only
+    thresholds remain unchanged. There is no stage-32 fallback. Focused/full
+    tests and the required no-environment real-model forward/backward have
+    passed: 64 unique source rows, exact repeated old/current loss, finite
+    gradient norm 0.0803, no optimizer step, no simulator, and result SHA256
+    `b1e75b43...b4687`. This permits exactly one four-GPU source-only 16-episode
     run. A passing development candidate can open only a separately frozen
     fresh Gate, while a failure records a bounded estimator negative and returns
     to Gate recovery without weakening the full EMBER objective.

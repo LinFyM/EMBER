@@ -832,6 +832,13 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     ladder; if it fails, use a multi-sample flow estimator rather than a hidden
     sampler approximation. No new closed-loop or RL outcome precedes that
     mechanics decision.
+    The smoke is frozen at config SHA256
+    `2dab3cd4399cd93daa26725b3c7ea50d07e555ee70f027ac53c622ac3bc10f25`
+    and exact temporary source SHA256 `1e5a8542...c5468`. It uses only
+    `task3/demo0/frame0` and `frame1`, batch 2, noise seed 2026072235, zero
+    optimizer steps, and zero environment episodes. The source is copied into
+    the immutable output packet and then removed from workspace; no parallel
+    retained trainer path is created.
 22. [ ] Train and evaluate supervised direct-Writer cold-start
     zero-interaction utility on source and
     validation surfaces against language-only, video-only, combined,

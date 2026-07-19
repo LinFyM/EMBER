@@ -1960,3 +1960,10 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   gradient, exact source rows, wall time, and peak memory with at least 10GiB
   free. Only a passing smoke may authorize a short resumable action-aligned
   acquisition ladder; no simulator/RL budget is opened yet.
+- Froze that smoke at config SHA256
+  `2dab3cd4399cd93daa26725b3c7ea50d07e555ee70f027ac53c622ac3bc10f25`
+  and script SHA256 `1e5a8542...c5468`. Static compilation passes. It uses one
+  GPU, task-3 demo-0 frames 0/1, batch 2, the full 10-step sampler, unchanged
+  rank-32 LoRA, no optimizer step, no simulator, and a 10GiB-headroom memory
+  stop. A pass authorizes only a separately predeclared short action-aligned
+  acquisition ladder.

@@ -1,0 +1,64 @@
+schema_version = 1
+name = "smolvla_gate0_differentiable_action_loss_smoke_v1"
+status = "predeclared_before_full_sampler_gradient_outcome"
+predeclared_at_utc = "2026-07-19T07:11:58Z"
+surface = "source_only_no_update_full_sampler_gradient_mechanics"
+
+[authority]
+gate_zero_contract_sha256 = "7bbda2723c72c60c6cfc39c10acaf23a05f4ea0af724c054792cd00c890cfd98"
+phase0_contract_sha256 = "ba9e89971e0f88074cc8de573c8e60b9093105638364a60207ff0d5aa8b7882a"
+source_competence_contract_sha256 = "0d3de88783e119c029642fb14f627df5a2d4e2e9cc4984b4400dfc575680c158"
+lora_fit_contract_sha256 = "693cd61457ec5ec0aafb1c72837899c58f44f2c90e812cb14d115385393fafca"
+robustness_result_relative_path = "gate_zero/diagnostics/query_action_alignment_robustness/robust_20260719T070642Z/query_action_alignment_robustness_result.json"
+robustness_result_sha256 = "c1fc3ab448370590c34d5e234aa900377d63834318187be77b4ff9a9bc8eae4b"
+source_base_output_relative_path = "gate_zero/source_base_fit/base_all60_10k_20260718T090513Z"
+source_base_checkpoint_step = 10000
+source_base_checkpoint_manifest_sha256 = "ca0c83abd8d4b46cf59e8f0a01bd267f7f0e019d3e2bfea8c8baeb2e851d4d00"
+mechanics_script_sha256 = "1e5a854275cb7b855a1c0aa099809015d8055c2caaccedab145ad2aae49c5468"
+
+[smoke]
+task_id = 3
+demo_index = 0
+flat_indices = [0, 1]
+row_keys = ["task3/demo0/frame0", "task3/demo0/frame1"]
+batch_size = 2
+variant = "mature_official_default_r32_lr25e6_recovery"
+target_modules = 37
+rank = 32
+alpha = 16
+dropout = 0.0
+trainable_parameters = 1485312
+sampler_steps = 10
+action_chunk_size = 50
+action_dimension = 7
+expected_action_shape = [2, 50, 7]
+noise_seed = 2026072235
+loss = "normalized_generated_action_chunk_mse_against_source_demonstration_action"
+autocast_dtype = "bfloat16"
+
+[boundary]
+optimizer_steps = 0
+new_environment_rollout_episodes = 0
+validation_numeric_access = false
+held_numeric_access = false
+may_authorize_gate_zero = false
+may_authorize_writer = false
+may_start_action_aligned_training_without_mechanics_pass = false
+
+[success]
+require_finite_loss = true
+require_finite_nonzero_lora_gradient = true
+require_parameter_digest_unchanged = true
+require_full_sampler_steps = 10
+require_exact_action_shape = [2, 50, 7]
+passing_result_authorizes_only = "predeclare_short_resumable_action_aligned_source_acquisition_ladder"
+
+[resources]
+maximum_concurrent_gpus = 4
+smoke_gpus = 1
+physical_gpu = 4
+minimum_free_memory_mib = 10240
+maximum_peak_reserved_mib = 71680
+expected_wall_minutes = 10
+expected_additional_storage_gib = 0.05
+cleanup = "retain result, exact source/config copies and checksums; remove workspace temporary script after packet validation"

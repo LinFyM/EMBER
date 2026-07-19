@@ -2124,3 +2124,10 @@
   acquisition repair followed by unchanged closed-loop testing, and keeps a
   temporally credited task-local RL recovery as the next layer if action-
   aligned supervised acquisition still does not convert.
+- The differentiable full-sampler mechanics check is result-blind at config
+  SHA256
+  `2dab3cd4399cd93daa26725b3c7ea50d07e555ee70f027ac53c622ac3bc10f25`.
+  It binds exactly two legal task-3 source rows, the 10-step sampler, batch 2,
+  unchanged 37-target rank-32 LoRA, zero optimizer/environment steps, and a
+  71,680MiB peak-reservation ceiling. Its temporary script SHA256 is
+  `1e5a8542...c5468` and must be copied into the result packet before cleanup.

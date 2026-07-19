@@ -2,7 +2,7 @@
 
 ## Goal
 
-Advance EMBER from a research design to a reproducible, four-GPU-compatible
+Advance EMBER from a research design to a reproducible, eight-GPU-ceiling-compatible
 experimental program. Establish benchmark validity and useful-update existence,
 then train a direct Writer to emit the complete task-specific LoRA allowed by a
 common predeclared target-layer/rank contract. Demonstrate immediate utility,
@@ -18,7 +18,7 @@ the current project and long-term Goal, not pending milestones.
 ## Definition of success for the current goal
 
 - Reproducible environment, upstream revisions, dataset/task manifests, and
-  measured systems envelope under at most four A100 80GB GPUs.
+  measured systems envelope under at most eight A100 80GB GPUs.
 - Benchmark/specification validity evidence with causal hard-negative controls.
 - A useful-update oracle that improves independent closed-loop behavior, plus a
   bounded LoRA capacity audit against non-matched partial/full-update upper
@@ -52,7 +52,9 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
 - No real robot, human-video transfer, cross-embodiment claim, or arbitrary web
   video in the first study.
 - No held actions or shared held-task updates.
-- No more than four concurrent A100s for all EMBER work.
+- No more than eight concurrent A100s for all EMBER work. Prefer independent
+  task/arm/evaluation-shard/training-seed parallelism through the existing
+  canonical entrypoint when a single four-rank job does not use all devices.
 - LoRA is the only adaptation mechanism in the current project; do not add a
   bottleneck adapter, IA3, prefix tuning, shared base adapter, shared LoRA, or a
   parallel parameter-efficient path.
@@ -85,12 +87,12 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
 | --- | --- | --- |
 | Phase 0. Reproducible substrate | in progress | environment lock, revisions, hashes, known-path smoke test, VRAM/throughput/storage measurements |
 | Gate -1. Benchmark/spec validity | passed with recorded residuals; no longer a Writer blocker | immutable 19/24 ordered and wrong-video, 15/24 paired, original 0.80 threshold and drop-last sensitivity preserved |
-| Gate 0. Useful-update oracle | in progress under repaired evidence contract | >=32 paired rollouts/task/arm, multiple policy RNG seeds, >=2 training seeds, horizon-16 primary plus horizon-50 robustness, independent confirmation |
+| Gate 0. Useful-update oracle | formal development packet complete; current evidence negative/ambiguous and does not authorize Gate 0 or Writer | >=32 paired rollouts/task/arm, multiple policy RNG seeds, >=2 training seeds, horizon-16 primary plus horizon-50 robustness, independent confirmation |
 | Stage 1. Direct full-LoRA Writer | pending Gate 0 | independent-query zero-interaction utility over retrieval, average, direct-conditioning, standard-LoRA, and capacity-matched DISC/HyPoGen-style baselines |
 | Stage 2. Ordinary task-local LoRA RL | pending Writer utility | matched-budget adaptation AUC/steps-to-threshold from Writer versus standard initialization; no predicted search constraint |
 | Stage 3. Source-only Writer reward/meta learning | pending ordinary RL | outer reward improves future Writer initializations while shared base remains frozen |
 | Stage 4. Frozen held evaluation | pending complete freeze | sealed primary comparison, full controls, resources, uncertainty, and failure report |
-| Stage 5. OpenVLA-OFT confirmation | pending mechanism survival | same mechanism survives a re-pinned four-GPU-compatible scale test |
+| Stage 5. OpenVLA-OFT confirmation | pending mechanism survival | same mechanism survives a re-pinned eight-GPU-ceiling-compatible scale test |
 
 ## Evidence policy
 
@@ -116,10 +118,11 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
 - Effective immediately, do not inspect, aggregate, discuss, or report
   performance from any n<32 slice. Small runs may check only launch, tensor
   shape, OOM/NaN, resume identity, and isolation. Both required training seeds
-  are frozen at step 32; the next run is the formal paired development
-  evaluation in `configs/gate_zero_formal_development_evaluation.toml`, with
-  four policy RNG seeds, 32 rollouts/task/arm, h16 primary, h50 robustness,
-  fixed initialization arms evaluated once, and no partial performance report.
+  are frozen at step 32 and may not receive more interaction. The formal paired
+  development evaluation in
+  `configs/gate_zero_formal_development_evaluation.toml` is complete with four
+  policy RNG seeds, 32 rollouts/task/arm, h16 primary, h50 robustness, fixed
+  initialization arms evaluated once, and no partial performance report.
 - Use horizon 16 for RL training and the primary Gate comparison; report
   horizon 50 separately as canonical/deployment robustness. Call the existing
   mean-before-ratio implementation the custom chunk-level flow-loss PPO pilot.
@@ -134,8 +137,35 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
 
 ## Current next actions
 
+### 2026-07-19 formal Gate 0 decision boundary
+
+- [x] Collect the first admissible Gate 0 performance packet from the two
+  frozen step-32 training seeds. Seed `2026071830` completed 512 rows on GPUs
+  4--7; after the owner raised the project ceiling to eight GPUs, seed
+  `2026072030` ran concurrently on GPUs 0--3 and completed 256 rows. The
+  aggregate contains 768 unique source-development rows, n=32 in every declared
+  task/arm/training-seed/horizon cell, four policy RNG seeds, paired episode
+  identity, and h16/h50 results. Fixed base/SFT rows have `training_seed=null`.
+- [x] Verify the packet before interpretation: both run rc values are zero,
+  checksums and JSON pass, 24 videos decode, no grain-key duplicates or init
+  hash inconsistencies exist, and an independent in-memory recomputation
+  exactly matches the saved result.
+- [ ] Gate 0 remains not authorized. At h16, supervised LoRA has positive point
+  gains on tasks 3/4 but the predeclared paired-bootstrap lower bounds are not
+  strictly positive on both tasks. Ordinary RL and supervised-init RL are not
+  stable across both training seeds, and the supervised initialization benefit
+  intervals all include zero. Do not add training, pick a favorable seed, lower
+  the threshold, open confirmation/validation/held, or start Writer from this
+  packet. Preserve this as the current evidence boundary rather than deriving
+  more recovery infrastructure.
+- [ ] Apply the owner-wide straight-line rule to the next authorized scientific
+  stage: one mature method, only necessary arms, required models trained once,
+  and no visible performance until the full minimum denominator. Use at most
+  eight live-free A100s through existing independent outputs; individual
+  training/evaluation segments should remain within about one to two hours.
+
 1. [x] Bootstrap a Python 3.12 environment from the locked project definition;
-   verify package consistency and the four-GPU/storage contracts.
+   verify package consistency and the active GPU/storage contracts.
 2. [x] Pin immutable LeRobot, LIBERO runtime/official, SmolVLA, SmolVLM,
    LIBERO-90, and simulator-asset revisions and hashes.
 3. [x] Reproduce one official one-episode LIBERO inference/evaluation path from
@@ -1177,8 +1207,9 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     to beat zero/base, average, retrieval, and the capacity-matched language-only
     direct LoRA generator with predeclared seeds, confidence intervals, causal
     controls, isolation audit, and reproducible rerun.
-27. [ ] After the mechanism survives, re-pin and execute the four-GPU-compatible
-    OpenVLA-OFT scale confirmation without changing the causal or held contract.
+27. [ ] After the mechanism survives, re-pin and execute the
+    eight-GPU-ceiling-compatible OpenVLA-OFT scale confirmation without changing
+    the causal or held contract.
 
 ## Post-smoke matched Gate 0 contract (frozen before new LoRA outcomes)
 

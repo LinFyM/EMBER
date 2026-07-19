@@ -2554,3 +2554,40 @@ mechanics contract, and the fixed-batch overlap policy has an exact-repeat,
   wrapper; terminal timing wraps only the upstream rollout call. This is a
   mechanical ownership fix with no scientific field change. Verify it once on
   an actual no-policy env, then use a fresh formal root.
+
+## 2026-07-19 formal Gate 0 development evaluation completed
+
+- Mechanical no-policy env smoke passed after the wrapper-layer repair: prompt
+  override and init states 40--47 matched, with zero policy actions/reward
+  reads. No performance surface was opened by the smoke.
+- Longrun `gate0_formal_dev_seed2026071830_recovery3_20260719_155209`
+  completed rc 0 on GPUs 4--7 in 22m18s from clean `51a1a2e`, publishing 512
+  rows and 16 videos. During the atomic run the owner raised the temporary
+  project ceiling to eight A100s. GPUs 0--3 were live-free with no unrelated
+  process, so `gate0_formal_dev_seed2026072030_parallel_20260719_161358`
+  launched through the same runner/output parent and completed rc 0 in 11m51s,
+  publishing 256 rows and eight videos. All GPUs are now released.
+- Both seed packets/checksums/telemetry pass, all 24 videos decode, and the
+  parent HTML gallery/latest link are valid. The combined 768-row dataset has
+  no duplicate grain keys or authority inconsistencies; every declared cell is
+  n=32 and independent recomputation exactly matches
+  `formal_development_result.json`.
+- The first admissible performance packet is
+  `formal_development_ambiguous_or_negative`: no predeclared route has a
+  strictly positive paired-bootstrap lower bound on both development tasks and
+  both required training seeds, and the supervised-init-versus-zero-init
+  benefit intervals all include zero. Gate 0 and Writer remain unauthorized;
+  no additional training, seed selection, threshold change, confirmation,
+  validation, held, or locked access occurred.
+- Effective immediately, the resource ceiling is eight A100s. Use independent
+  task/arm/seed/evaluation output roots in parallel through the existing
+  canonical entrypoint when GPUs are free; scheduling may not change any
+  scientific budget or unit. All future stages follow the same straight line:
+  mature fixed method and necessary arms, train each required model once, then
+  formal evaluation with a complete minimum denominator before outcome access.
+  Individual blind train/eval segments should remain within about one to two
+  hours. Do not turn this Gate 0 boundary into a family of recovery runners,
+  schemas, or validators.
+- Next safe state: update/verify/commit/push this evidence boundary. The full
+  EMBER Goal remains active, but direct Writer acquisition is not authorized by
+  this Gate 0 result and no GPU job is currently scheduled.

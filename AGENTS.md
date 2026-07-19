@@ -71,19 +71,26 @@ plan. Each expensive component needs evidence from its scientific predecessor.
 
 ## Hard resource constraint
 
-- At most **four NVIDIA A100 80GB GPUs** may be allocated to EMBER at any time,
-  across all concurrent EMBER processes and agents.
-- Default to one GPU for smoke tests and one or two GPUs for pilots. Use three or
-  four only when measured memory or throughput justifies it.
+- Effective 2026-07-19, at most **eight NVIDIA A100 80GB GPUs** may be allocated
+  to EMBER at any time across all concurrent EMBER processes and agents. This
+  owner override supersedes the earlier four-GPU project ceiling.
+- Default to one GPU for smoke tests and the minimum topology needed by one
+  arm. When independent task, arm, evaluation-shard, or training-seed work is
+  ready and devices are live-free, run it concurrently up to the eight-GPU
+  ceiling instead of leaving useful devices idle. Parallel scheduling may not
+  change a method's model, LoRA, batch, data, step/interaction, evaluation, or
+  statistical contract.
 - After a minimal correctness smoke establishes the real memory baseline, tune
   useful batch size, environment/task parallelism, gradient accumulation, and
   caching so that each allocated A100 normally uses about 70GB and retains about
   10GB average headroom against OOM. This is a steady-state efficiency target,
   not permission to allocate dummy tensors or sacrifice correctness and
   reproducibility merely to fill memory.
-- Do not copy eight-GPU launch commands from `docs/expert_plan.md`. Recompute
-  batch size, gradient accumulation, parallelism, GPU-hours, and wall-clock for
-  the four-GPU ceiling.
+- Do not copy the historical eight-GPU launch commands from
+  `docs/expert_plan.md`; their model/stage assumptions remain invalid. Recompute
+  useful per-job topology and use two independent four-rank jobs when that is
+  the existing canonical path. Never build a second runner merely to use eight
+  devices.
 - Before a substantial download or run, check available storage and estimate
   data, cache, checkpoint, and log growth.
 
@@ -291,6 +298,15 @@ exhausted, preserve the negative result and narrow the claim explicitly.
   10--30 minute real mechanical/collection check; do not expose a performance
   result until its predeclared minimum denominator is complete. Only a reproducible run-blocking failure
   justifies more engineering before the experiment.
+- Use a straight scientific execution line at every stage: fix the mature
+  method and necessary arms, train each required model once, run a formal
+  evaluation with the full minimum denominator, then freeze valid evidence and
+  move to the next scientific question. A single training or formal-evaluation
+  segment should normally remain within one to two hours and may blind-resume
+  when more samples are predeclared. Never use sub-minimum results to choose a
+  checkpoint, continuation, method, task, or seed; do not retrain an already
+  qualified model or derive a family of recovery algorithms and workflow
+  layers after a result.
 - Optimize the full training and inference path for useful throughput. Reuse
   canonical model loads, manifests, decoded or preprocessed observations,
   cached features, and other scientifically equivalent intermediates whenever
@@ -326,7 +342,7 @@ exhausted, preserve the negative result and narrow the claim explicitly.
 The current long-term execution goal is complete only when the repository
 contains:
 
-- a reproducible four-GPU-compatible environment and data manifest;
+- a reproducible eight-GPU-ceiling-compatible environment and data manifest;
 - a benchmark/specification validity report;
 - a closed-loop useful-update oracle report;
 - recorded recovery attempts for any failed or ambiguous gate; and

@@ -83,7 +83,9 @@ separate matched ablation, not the default and not required for completion.
 - Gate 0 pilot target: the predeclared last-two action-expert q/v matrices and
   rank-8 LoRA contract. This is a low-cost useful-update probe, not the final
   Writer support.
-- Compute ceiling: at most four A100 80GB GPUs across all EMBER work.
+- Compute ceiling: effective 2026-07-19, at most eight A100 80GB GPUs across all
+  EMBER work. Prefer independent four-rank task/arm/seed/evaluation jobs through
+  the existing canonical entrypoint when this reduces wall-clock.
 
 SmolVLA plus LIBERO is the formal mechanism-development surface, not a disposable
 toy. OpenVLA-OFT starts only after task information, useful-update existence,
@@ -94,9 +96,9 @@ contract survive at lower cost.
 
 The initial OpenVLA-OFT candidate targets are the two 4096-to-4096 residual
 linear layers in the L1 action head. Before launch, re-pin the active revision,
-recompute the four-GPU recipe, and run a measured memory/throughput pilot. The
-confirmation may not change the scientific contract merely to fit the larger
-model.
+recompute the topology within the active eight-GPU ceiling, and run a measured
+memory/throughput pilot. The confirmation may not change the scientific
+contract merely to fit the larger model.
 
 ## 4. Information-flow experiment
 
@@ -309,11 +311,15 @@ versus source-reward-outer-trained Writer evidence, causal language/video
 controls with predeclared seeds/confidence intervals and reproducible reruns,
 and OpenVLA-OFT scale confirmation.
 
-## 7. Four-GPU efficiency and artifact rules
+## 7. Eight-GPU efficiency and artifact rules
 
-- Never allocate more than four A100s across concurrent EMBER jobs.
-- Smoke on one GPU, then use at most one necessary four-GPU short
-  throughput/stability window after the current clean world-size-4 recovery.
+- Never allocate more than eight A100s across concurrent EMBER jobs. This
+  supersedes the former four-GPU project ceiling without reviving historical
+  eight-GPU experiment commands.
+- Smoke on one GPU, then use the minimum faithful topology per job. When an
+  independent task, arm, evaluation shard, or training seed is ready and GPUs
+  are live-free, schedule it concurrently through the same canonical entrypoint
+  rather than leaving devices idle.
   Do not rerun a full 1/2/4 scaling curve solely to polish systems evidence;
   when one DDP job scales poorly, occupy useful devices with independent
   arm/task/seed jobs instead.
@@ -322,6 +328,10 @@ and OpenVLA-OFT scale confirmation.
   headroom; do not allocate dummy tensors merely to fill memory.
 - Preserve global effective batch, sample/flow authority, optimizer steps, and
   schedules when comparing topologies.
+- Resource parallelism changes scheduling only. It never changes model/LoRA
+  capacity, batch, legal data, training steps/interactions, evaluation sample,
+  or statistical units. Train a required model once; do not repeat it merely to
+  occupy devices.
 - Every multi-GPU run records devices, process topology, expected/observed
   memory, wall time, stop condition, resume, and cleanup.
 - Maintain Trackio and bounded local HTML/video galleries for real-time or later
@@ -355,12 +365,15 @@ mechanical issues and reasonable bounded remedies are exhausted.
 
 The clean world-size-4 resume result is the final bounded resume verification.
 Gate -1 is closed as passed with residuals; do not reopen it to polish the
-0.7917 result. Complete Gate 0 independent task-local oracle and LoRA capacity
-evidence under the repaired paired-statistics, disjoint-confirmation,
-horizon-matching, and algorithm-label contract without reading
-validation/held/locked numeric outcomes. If Gate 0 is positive,
-implement only the direct full-LoRA Writer path above; do not create a
-canonical-representation or geometry branch.
+0.7917 result. The first admissible Gate 0 development evaluation is complete:
+768 unique rows, n=32 per declared cell, two real training seeds, fixed
+base/SFT evaluated once, h16 primary and h50 robustness. Its saved decision is
+negative/ambiguous: current evidence does not authorize Gate 0 or Writer. Do
+not append training, select a favorable seed, lower the threshold, or open
+validation/held/locked outcomes. Any next experiment must answer one explicit
+scientific question with a mature fixed method, only necessary arms, a full
+minimum denominator before performance inspection, and one-to-two-hour blind
+segments; do not create recovery families or a bank/geometry branch.
 Continuously update `task_plan.md`, `findings.md`, and `progress.md` and commit
 each reproducible milestone without weights, datasets, private host details, or
 large outputs in public Git.

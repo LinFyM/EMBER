@@ -2823,3 +2823,55 @@
   canonical rollout untouched and observes terminal step/success timing in a
   transparent environment wrapper, avoiding observation archival entirely.
   No partial performance is retained or interpreted from the failed run.
+
+## Formal n=32 Gate 0 development evidence does not authorize Gate 0
+
+- The no-policy wrapper smoke passed with zero policy actions and zero reward
+  reads. Formal seed `2026071830` then completed rc 0 in 22m18s on GPUs 4--7
+  with 512 rows. The owner raised the project ceiling from four to eight while
+  that atomic run was finishing; live preflight found GPUs 0--3 empty, so seed
+  `2026072030` launched through the same entrypoint and independent output root,
+  overlapped safely, and completed rc 0 in 11m51s with 256 rows. Parallelism
+  changed scheduling only. Both checkpoints remained frozen at 32 source
+  interactions/arm and no training interaction was added.
+- Canonical output is
+  `$EMBER_OUTPUT_ROOT/gate_zero/task_local_lora_rl_formal_development/formal_n32_recovery3_20260719T155209Z`.
+  Contract SHA256 is `1ad045abba630049a68a1b02ed5f8121c087aff54721117e69899d10c173910c` and
+  launch commit is `51a1a2e`. The aggregate contains 768 unique rows: every
+  declared task/arm/training-seed/horizon cell has exactly 32 rollouts over four
+  policy RNG seeds and eight physical states. Fixed base/SFT rows have null
+  training seed; both RL arms contain exactly the two independent training
+  seeds. There are no duplicate grain keys, missing required fields, invalid
+  success/progress/time values, or inconsistent init-state hashes. All
+  validation/held/locked access flags are false. Independent aggregation
+  exactly reproduces the saved packet.
+- Primary h16 success counts are: task 3 base `22/32`, supervised LoRA `28/32`,
+  zero-init RL `26/32` and `22/32`, supervised-init RL `26/32` and `24/32` for
+  seeds `2026071830/2026072030`; task 4 base `16/32`, supervised LoRA `20/32`,
+  zero-init RL `21/32` and `17/32`, supervised-init RL `23/32` and `22/32`.
+  This is the first performance packet discussed after every required cell
+  reached the minimum denominator.
+- Supervised LoRA versus base has paired gains `+18.75pp` on task 3 (95%
+  paired-bootstrap interval `[0.0,37.5]`) and `+12.5pp` on task 4
+  (`[-3.125,28.125]`). These favorable point estimates do not satisfy the
+  predeclared strictly-positive lower-bound rule on both tasks. Zero-init RL
+  versus base ranges from `0.0pp` to `+15.625pp` across task/seed cells but all
+  intervals include zero. Supervised-init RL versus its own SFT initialization
+  includes a significant task-3 regression for seed `2026072030`
+  (`-12.5pp`, `[-25.0,-3.125]`) and otherwise intervals cross zero.
+  Supervised-init RL versus matched zero-init RL has point differences
+  `[0.0,+6.25]pp` on task 3 and `[+6.25,+15.625]pp` on task 4 across the two
+  seeds, with every interval crossing zero. This is SFT-initialization evidence,
+  not Writer evidence.
+- Deployment-robustness h50 success counts are task 3 base/SFT `14/32` and
+  `10/32`, zero-init RL `15/32` and `10/32`, supervised-init RL `10/32` and
+  `12/32`; task 4 base/SFT `19/32` and `20/32`, zero-init RL `19/32` and
+  `18/32`, supervised-init RL `18/32` and `16/32`. H50 was never a selection
+  metric and does not rescue the h16 decision.
+- Both seed checksums pass; all 24 retained videos decode; the parent
+  `index.html`, `gallery_manifest.json`, `eval_info.json`, latest symlink, and
+  full result are present. The saved status is
+  `formal_development_ambiguous_or_negative`; Gate 0, Writer, confirmation,
+  validation, held, and locked access remain unauthorized. Do not append
+  training, favor one seed, or lower the frozen criterion to relabel this a
+  pass.

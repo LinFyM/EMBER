@@ -2,19 +2,21 @@
 
 最后更新：2026-07-20。状态词只描述当前新 70/10/10 主线；旧 60/15/15 实验不计为这些阶段完成。
 
+本文后续的 frozen source embodiment base 统一且只指：通用预训练 `lerobot/smolvla_base` → 在 70 个 train tasks、每任务全部 50 条成功 teacher episodes 上联合训练 → 得到一个共享、多任务、语言条件的 source embodiment base → 训练完成后冻结。EMBER、target-action-supervised direct LoRA oracle 和 ordinary task-local LoRA RL 都以它为共同起点；它只能按 train/source evidence 选择。
+
 ## 完成定义
 
 长期工作只有在以下链条全部完成后才可标记 Goal complete：
 
 1. specification-only 同分布 70/10/10 split 与新 manifest 永久封存；
-2. 70×50 source embodiment base 可复现训练并具备基本 source competence；
-3. Writer cold start 在多个不同类别 validation tasks 上明显超过 frozen base；
+2. 70×50 shared source embodiment base 可复现训练、按 train/source evidence 选择并冻结；
+3. Writer cold start 在多个不同类别 validation tasks 上明显超过 frozen source embodiment base；
 4. Writer-only RL 保存独立产物并报告相对 cold-start 的 validation 原始结果；
 5. Writer-init task-local LoRA RL 与 matched zero-init ordinary LoRA RL 在相同 interaction/update 预算下完成；
-6. source-only outer learning 保存独立产物并报告 outer 前后 zero-step 与 adaptation curve；
-7. 方案冻结后，所有方法从规定初态、全部 70×50 数据重训，完成完整 validation/test、seeds、强 baselines 和必要消融；
-8. shared-frozen held/test 合同成立；
-9. surviving mechanism 在 OpenVLA-OFT 上完成规模确认。
+6. 全部方法、checkpoint、预算、selection rule 和 baseline 冻结后，补齐必要独立 seeds、尚缺 matched baselines，并统一完成 reporting-only test；
+7. shared-frozen held/test 合同成立。
+
+完全符合最终合同的开发 trajectory 可直接作为正式 seed 1；只重训受 split、source base、architecture、LoRA、loss、data、optimizer、RL 或 evaluator 变化影响的 arms。source-only reward/meta outer learning 只可在 Phase F 完成后作为可选增强，不是完成条件；当前 Goal 不包含 OpenVLA-OFT 或 source direct-LoRA localization。
 
 代码完成、环境完成、一个 checkpoint、Gate -1、Gate 0、一次 source 结果或“可以进入 Writer”都不能完成长期 Goal。
 
@@ -40,7 +42,7 @@
 
 ## Phase B：Source embodiment base
 
-状态：下一步；Phase A 已满足。
+状态：进行中；Phase A 已满足。
 
 合同：
 
@@ -63,22 +65,13 @@
 - [ ] 第一个完整阶段结果前确认 3500 条 episode 均贡献训练信号，并记录完成的 corpus epochs/consumed chunks。
 - [ ] 标准 LIBERO h50 闭环测 train/source development。
 - [ ] 冻结 source base、完整训练状态、hash 和 compute ledger。
+- [ ] 冻结后在 10 个 validation tasks 建立 frozen source embodiment base reference。
+- [ ] 每个 validation task 用自己的全部 50 条 teacher action episodes 训练 matched direct LoRA oracle，并明确标注 action-supervised reference。
+- [ ] Phase F 解封前不运行任何 test policy evaluation、不训练 test direct LoRA，也不读取 test actions/reward/success。
 
 如果 30 分钟后 competence 明显仍在上升，可从同一 checkpoint 续一个有理由的短段；不得从头重跑。
 
-## Phase C：基础参考
-
-状态：等待 source base。
-
-- [ ] Frozen source base：10 validation tasks，标准 init states，h50。
-- [ ] Frozen source base：10 test tasks，作为提前固定的 reference；结果不得用于模型/方法决策。
-- [ ] Direct LoRA oracle：每个 validation/test task 用全部 50 teacher episodes、统一 per-task steps 和完整 LoRA contract。
-- [ ] 报告 direct LoRA 是 target-action-supervised oracle/reference，不是信息匹配 baseline。
-- [ ] 若最终正式阶段重训 source base/direct LoRA，统一重测，不复用开发 reference 冒充正式结果。
-
-每个任务先用 50 个标准 init states；若独立 policy RNG 方差需要，再扩为 100 episodes/task。
-
-## Phase D：Writer cold start
+## Phase C：Writer cold start
 
 状态：架构内核保留，训练合同需适配新 split。
 
@@ -99,13 +92,12 @@
 - [ ] 只做 shape/OOM/NaN/gradient/freeze/resume/leakage smoke。
 - [ ] 8 GPU 真实训练，初始总预算 ≤约 90 分钟。
 - [ ] checkpoints 位于估算总 steps 的 1/3、2/3、3/3，每个边界覆盖 70 tasks。
-- [ ] 在 10 个跨类别 validation tasks 比 frozen base、Writer、direct LoRA oracle。
-- [ ] 在按类别预先固定的少量 train tasks 比 frozen base、Writer、direct LoRA，定位 source acquisition 与 validation generalization。
+- [ ] 在 10 个跨类别 validation tasks 比 frozen source embodiment base、Writer、direct LoRA oracle。
 - [ ] 保存原始 per-task successes、rollouts、seeds、steps、数据、GPU 和 wall-clock。
 
-判断：跨多个类别明显超过 frozen base即可进入下一阶段；低于 direct LoRA 是优化信号，不是一票否决。效果差时先看实现、数据规模和 source base，再从同一 checkpoint 加训；数据充分仍失败才改 architecture/loss。
+判断：跨多个类别明显超过 frozen source embodiment base 即可证明核心机制产生功能价值并进入下一阶段；低于 direct LoRA 是优化信号，不是一票否决。效果差时先看实现、数据规模和 source base，再从同一 checkpoint 加训；数据充分仍失败才改 architecture/loss。
 
-## Phase E：Writer-only RL
+## Phase D：Writer-only RL
 
 状态：等待 cold start。
 
@@ -116,10 +108,9 @@
 - [ ] checkpoints 在 1/3、2/3、3/3 full-task cycles。
 - [ ] 每个候选在 validation 做 frozen-Writer zero-interaction h50 评估。
 - [ ] 报告 cold-start 与 Writer-only-RL 的原始数字。
-- [ ] 复用同一 frozen source diagnostic tasks 报告 base/Writer/direct 原始数字，不新增训练。
 - [ ] 在 validation 选择一个最佳 Writer initialization 进入首轮 task-local RL。
 
-## Phase F：Task-local LoRA RL
+## Phase E：Task-local LoRA RL
 
 状态：等待 validation 选出的 Writer。
 
@@ -147,51 +138,28 @@ Arm B：
 
 所有 target tasks 的总 wall-clock 是预算对象，不允许每 task 各跑 90 分钟。
 
-## Phase G：Source-only outer learning
+## Phase F：合同冻结与统一 reporting-only test
 
-状态：等待 task-local RL。
+进入条件：Writer cold start 已在多个类别 validation tasks 上明显优于 frozen source embodiment base，Writer-only RL 和 matched task-local RL 已完成 validation 选择。
 
-- [ ] inner/source RL 更新 task-local LoRA。
-- [ ] outer source reward/meta objective 更新 Writer。
-- [ ] base 和额外 shared state 冻结。
-- [ ] validation 比较 outer 前后 zero-step utility 和 matched adaptation curve。
-- [ ] 保存独立 stage artifact 与 raw results。
-- [ ] 首轮总 wall-clock 目标约 90 分钟，后续只在 validation 证据支持时 exact-resume。
+- [ ] 冻结 split、source base、Writer/architecture、LoRA、loss、data、optimizer、steps、RL algorithm、interaction/update budget、checkpoint selection rule、evaluator 和 baseline 集合。
+- [ ] 保留从一开始就使用完整 70×50 数据且完全符合最终合同的开发 trajectory 作为正式 seed 1。
+- [ ] 只重训因合同变化失去可比性的 arms，并补齐必要独立 training seeds、尚缺 matched baselines 和 validation rows。
+- [ ] 冻结并完成 frozen source embodiment base、最佳 EMBER zero-interaction、zero/identity-init ordinary LoRA RL、best Writer-init matched LoRA RL，以及必要同信息墙强 baseline。
+- [ ] 最后统一解封 test，运行上述方法和 target-action-supervised direct LoRA oracle；test direct LoRA 每 task 可用全部 50 条 teacher action episodes，但不进入信息匹配主结论。
+- [ ] test task-local RL 只按 validation 已冻结的 reward budget/selection rule 适应，最终性能使用 fresh rollouts；test 结果不反向改方法。
+- [ ] 统一 task/init/RNG/h50/precision/budget，报告 data、steps、interactions、GPU-hours、wall-clock 和原始 rows。
 
-不把 Writer-only RL 与 outer learning合并成一个阶段。
+当前不做 standalone Language-only Writer、standalone Video-only Writer、source direct-LoRA localization、full/action-expert task-local RL upper bound 或 OpenVLA-OFT。
 
-## Phase H：快速 baseline 与机制判断
+## Phase F 之后的可选增强：Source-only reward/meta outer learning
 
-快速核心：
+状态：只在 Phase F 完成后按价值决定，不阻塞 Phase F 或 Goal complete。
 
-- [ ] frozen base；
-- [ ] EMBER zero-interaction；
-- [ ] direct LoRA SFT oracle；
-- [ ] zero-LoRA ordinary task-local RL；
-- [ ] best Writer-init task-local RL。
-
-当前不做：
-
-- standalone Language-only Writer；
-- standalone Video-only Writer；
-- full/action-expert task-local RL upper bound；
-- 完整论文 baseline 矩阵；
-- OpenVLA-OFT。
-
-## Phase I：最终正式实验
-
-进入条件：完整 SmolVLA EMBER 在多类别 validation 上有明显 base 增益，并且 RL/outer 阶段已有可解释结果。
-
-- [ ] 冻结 split、architecture、LoRA、loss、data、steps、RL、evaluator 和 baselines。
-- [ ] 所有方法从规定初态使用全部 70×50 数据重训。
-- [ ] EMBER 重走 cold start、Writer-only RL、task-local RL、outer learning。
-- [ ] 多个训练 seeds。
-- [ ] 完整 validation 选择。
-- [ ] 完整 test/held 一次性报告。
-- [ ] HyPoGen/DISC-style、ViVLA/DAML-style、direct conditioned、retrieval/average 和必要 reward-adaptation baselines。
-- [ ] 统一 task/init/RNG/h50/precision/budget。
-- [ ] 报告 data、steps、interactions、GPU-hours、wall-clock 和原始 rows。
-- [ ] OpenVLA-OFT scale confirmation。
+- [ ] 若执行，inner/source RL 只更新 task-local LoRA。
+- [ ] outer source reward/meta objective 只更新 Writer；shared source embodiment base 始终冻结。
+- [ ] 只用 source 训练、validation 选择，不影响已经冻结并报告的核心 Phase F 结果。
+- [ ] 有收益时作为后续额外 arm；未实现或负结果不否定核心 EMBER。若未来要给该 arm 增加 test，必须另行冻结并声明为 Phase F 之后的扩展。
 
 ## 每次运行前的最小检查
 

@@ -4,16 +4,17 @@
 
 ### 科研范围
 
-- SmolVLA + LIBERO-90 是当前主线；OpenVLA-OFT 只做最后 scale confirmation。
+- 当前 Goal 只包含 SmolVLA + LIBERO-90，不包含 OpenVLA-OFT。
 - split 改为同分布 70/10/10，旧 60/15/15 退役。
 - 70 train tasks 的全部 50 success episodes 用于 source base 和 Writer。
-- source base 是一个联合训练的共享多任务 policy。
+- frozen source embodiment base 统一指：通用预训练 `lerobot/smolvla_base` → 在 70 个 train tasks、每任务全部 50 条成功 teacher episodes 上联合训练 → 得到一个共享、多任务、语言条件的 source embodiment base → 训练完成后冻结。它只能按 train/source evidence 选择，是 EMBER、target direct LoRA oracle 和 ordinary task-local LoRA RL 的共同起点。
 - Writer 是一个共享 hypernetwork，但输出 task-specific LoRA。
 - Writer 输入是完整 language + 任意数量/长度 action-hidden videos。
 - Writer source training 时，同一 50 episodes 的 actions 可作 functional labels。
-- validation/test Writer 冻结且不可看 actions。
-- task-local LoRA RL 可在 validation/test 执行。
-- direct val/test LoRA SFT 保留为 target-action oracle/reference。
+- validation Writer 冻结且不可看 actions；用于选择 Writer 和冻结 task-local RL 合同。
+- 全部方法、checkpoint、预算、selection rule 和 baseline 冻结前不打开 test policy/action/reward surface。
+- task-local LoRA RL 先在 validation 冻结合同，最终 test 只按该合同更新 task-local LoRA。
+- direct validation LoRA 和最终统一 test 中的 direct LoRA 保留为 target-action oracle/reference。
 - 主评估采用标准 LIBERO max horizon 400、SmolVLA execution horizon 50。
 - 训练最多用 8 张 A100，每卡平均保留约 10GB。
 
@@ -25,7 +26,7 @@
 - cold start 更新 Writer，base 冻结。
 - Writer-only RL 只更新 Writer，不原位更新 LoRA。
 - task-local RL 只更新 LoRA，base/Writer 冻结。
-- outer learning 只用 source reward 更新 Writer，不更新 shared base。
+- source-only reward/meta outer learning 只可在 Phase F 完成后执行；它只用 source reward 更新 Writer、不更新 shared base，是不阻塞 Goal complete 的可选增强，也不改写已报告的核心 test。
 
 ### 不再做
 
@@ -38,6 +39,9 @@
 - extra shared trainable adapter；
 - standalone Language-only Writer / Video-only Writer；
 - 旧 custom Gate0 RL recovery tree；
+- source direct-LoRA localization；
+- 所有方法无条件从头全量重训；完全符合最终合同的开发 trajectory 可作 seed 1，只重训受合同变化影响的 arms；
+- 当前 OpenVLA-OFT scale confirmation；
 - 把旧 h16 当标准主结果。
 
 ## 已解释清楚的公平性

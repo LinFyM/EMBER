@@ -46,12 +46,24 @@ language + action-hidden teaching videos
 
 ## Stage boundaries
 
-1. source embodiment base：从通用 SmolVLA base 在 70×50 train episodes 上联合训练一个共享多任务 base。
+本文后续的 frozen source embodiment base 统一且只指：
+
+```text
+通用预训练 lerobot/smolvla_base
+    → 在 70 个 train tasks、每任务全部 50 条成功 teacher episodes 上联合训练
+    → 得到一个共享、多任务、语言条件的 source embodiment base
+    → 训练完成后冻结
+```
+
+EMBER、target-action-supervised direct LoRA oracle 和 ordinary task-local LoRA RL 都以这同一个 frozen source embodiment base 为共同起点。它只能根据 train/source evidence 选择；validation/test 不得用于选择或调整它。
+
+1. source embodiment base：完成上述 70×50 联合训练并冻结共享 base。
 2. Writer cold start：base 冻结，functional action/flow/behavior loss 更新 Writer。
 3. Writer-only RL：base 冻结，生成 LoRA 不原位更新，source reward 只更新 Writer。
-4. task-local RL：base/Writer 冻结，只原位更新目标任务的同一套 LoRA；可在 validation/test 进行。
-5. source-only outer learning：若执行，inner LoRA 适应，outer source reward/meta objective 更新 Writer；不更新 shared base。
-6. held/test：shared base、Writer、encoders 和所有共享状态冻结，只有预声明的 task-local LoRA reward adaptation 可更新。
+4. task-local RL：base/Writer 冻结，只原位更新目标任务的同一套 LoRA；先在 validation 冻结算法、预算和选择规则。
+5. held/test：全部方法、checkpoint、预算、selection rule 和 baseline 冻结后统一打开；shared base、Writer、encoders 和所有共享状态冻结，只有预声明的 task-local LoRA reward adaptation 可更新。
+
+source-only reward/meta outer learning 仅可在 Phase F 合同冻结与统一 test 完成后作为可选增强：若执行，inner LoRA 在 source tasks 适应，outer source reward/meta objective 只更新 Writer，不更新 shared base；它不阻塞 Goal complete，也不改写已报告的核心 test。
 
 每个 EMBER 阶段保存产物，并在合法 validation tasks 上报告原始成功率、任务、rollout、seed、数据、step、interaction、GPU 和 wall-clock。训练 loss 或代码完成不是阶段证据。
 
@@ -64,14 +76,15 @@ language + action-hidden teaching videos
 - 开发评估通常先用每任务全部 50 个标准 init states；如模型采样方差仍影响判断，再加第二个独立 policy RNG。
 - 不拼接不同 checkpoint 形成分母，不把 replay transition 当独立 episode。
 - checkpoint/model/hyperparameter 只能在 validation 选择；test 最终 evaluation rows 不参与选择。
-- source base 冻结后可提前生成 frozen-base 和 target-action direct-LoRA 的 test reference，但它们不得影响任何设计或选择；正式重训后必须统一重测。
+- 在全部方法、架构、checkpoint、预算、selection rule 和 baseline 冻结前，不运行 test policy evaluation、不训练 test direct LoRA，也不读取 test actions、reward outcomes 或成功率。
+- 最终 test 才统一运行 frozen source embodiment base、最佳 EMBER、target-action-supervised direct LoRA oracle、zero/identity-init ordinary LoRA RL、Writer-init matched LoRA RL 和已冻结强 baseline。
 - test task-local RL 可以依据预算内 adaptation reward 选择该 task 的 checkpoint，但选择规则、interaction budget 和 fresh post-selection evaluation 必须先在 validation 冻结。最终评估 episode 不参与选择。
 
 ## Baselines
 
 快速核心对照：
 
-- frozen source base；
+- frozen source embodiment base；
 - EMBER zero-interaction Writer LoRA；
 - direct task-local LoRA SFT（目标 action 可见的 oracle/reference）；
 - source base + zero/identity LoRA + ordinary task-local LoRA RL；
@@ -86,7 +99,6 @@ language + action-hidden teaching videos
 - 训练通过真实 batch、data/task parallelism 和缓存使每卡平均约 70GB、预留约 10GB。不要用 dummy tensor 填显存。
 - 评估通常受 MuJoCo/CPU/EGL 限制；一张卡一个 policy CUDA process，持久化 env pool，把 task/arm/seed 动态分片到 8 卡。多个 CPU worker 不等于多个 GPU model。
 - source base 第一轮约 30 分钟；共享 Writer 阶段通常总 wall-clock 不超过约 90 分钟；一次盲态科学反馈通常不超过 1–2 小时。
-- 每个 Writer 阶段需在少量按类别固定的 train tasks 上做 base/EMBER/direct-LoRA source localization，再与跨类别 validation 对照。
 - 先估算总 optimizer steps，再在约 1/3、2/3、3/3 保存 checkpoint；不是机械每 30 分钟保存。
 - shared multi-task 阶段使用 deterministic no-replacement task cycles。每个完整 checkpoint 边界前，70 个 train tasks 都至少提供一次有效信号。
 - task-local RL 的 wall-clock 是所有目标 tasks 的总预算，不是每个 task 90 分钟。先在 validation profile，再统一冻结每 task interaction/update 预算。

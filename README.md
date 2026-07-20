@@ -20,6 +20,10 @@ Writer 不是通用优化器，也不生成 bank、basis、geometry、mask、met
 - specification-only 同分布 70/10/10 已封存在 `configs/libero90_70_10_10/`；下一步在全部 70×50 条成功 teacher episode 上训练共享 source embodiment base，再重训 Writer。
 - 当前长期 Goal 已建立；尚无活动 GPU 作业或可继续沿用的正式新协议 checkpoint。
 
+## Frozen source embodiment base
+
+本文后续的 frozen source embodiment base 统一且只指：通用预训练 `lerobot/smolvla_base` → 在 70 个 train tasks、每任务全部 50 条成功 teacher episodes 上联合训练 → 得到一个共享、多任务、语言条件的 source embodiment base → 训练完成后冻结。它不是原始通用 checkpoint，只能按 train/source evidence 选择，并且是 EMBER、target-action-supervised direct LoRA oracle 和 ordinary task-local LoRA RL 的共同起点。
+
 ## 权威阅读顺序
 
 新进入者先完整阅读：
@@ -40,11 +44,12 @@ Writer 不是通用优化器，也不生成 bank、basis、geometry、mask、met
 
 - 数据：只用 LIBERO-90；每个任务 50 条成功 teacher episode。
 - 新 split：70 train / 10 validation / 10 reporting-only test，同分布、任务不重叠、只依据语言/task factor/scene 设计。
-- source base：从 `lerobot/smolvla_base` 出发，在 70 个 train task 的全部 3500 条 episode 上联合训练一个多任务 embodiment base。
+- source base：按上述定义训练、选择并冻结一个共享多任务 policy。
 - Writer：跨 70 个 train task 混合训练；每次根据某任务的语言和全部 50 条 action-hidden 完整视频生成一套该任务 LoRA。
-- validation/test：Writer 冻结，只看目标任务 language + action-hidden video；不看目标 action。
-- target-task RL：val/test 均可进行，但 base 和 Writer 冻结，只更新 task-local LoRA；预算和选择规则先在 validation 冻结。
-- direct LoRA：目标任务 teacher action 可见的 task-local oracle/reference，不伪装成与 EMBER 信息条件相同的 baseline。
+- validation：Writer 冻结，只看目标任务 language + action-hidden video；用于选择 Writer 和冻结 task-local RL 合同。
+- reporting-only test：所有方法、checkpoint、预算、selection rule 和 baseline 冻结后才统一打开；此前不运行 policy evaluation、不训练 direct LoRA，也不读取 test actions/reward/success。
+- target-task RL：先在 validation 冻结预算和选择规则；最终 test 中 base/Writer/shared state 仍冻结，只更新 task-local LoRA。
+- direct LoRA：validation 与最终 test 中目标 teacher action 可见的 task-local oracle/reference，不伪装成与 EMBER 信息条件相同的 baseline。
 
 标准闭环评估采用 LIBERO 官方 task suite 和固定 init states；环境最大 horizon 为 400，SmolVLA 标准 action execution horizon 采用 50。开发期通常先覆盖每任务全部 50 个标准 init states；若 flow sampling 方差需要，再增加独立 policy RNG，而不是拼接不同 checkpoint。
 

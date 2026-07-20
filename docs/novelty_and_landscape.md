@@ -11,10 +11,11 @@
 3. zero-interaction closed-loop utility；
 4. Writer-only reward training；
 5. 在同一 LoRA 上继续 ordinary task-local RL；
-6. source-only outer learning；
-7. shared-frozen held evaluation。
+6. shared-frozen held evaluation。
 
 EMBER 的 novelty 必须由这条组合链和因果对照支持，而不是由一个新名词或 bank 假设支持。
+
+source-only reward/meta outer learning 只可在 Phase F 完成后作为可选增强，不是当前 novelty 链或 Goal 完成条件，也不改写已报告的核心 test。本文后续的 frozen source embodiment base 统一指：通用预训练 `lerobot/smolvla_base` → 在 70 个 train tasks、每任务全部 50 条成功 teacher episodes 上联合训练 → 得到一个共享、多任务、语言条件的 source embodiment base → 训练完成后冻结；所有核心方法从这同一个 policy 开始。
 
 ## 可在相同 information wall 下比较的方法
 
@@ -105,7 +106,7 @@ DISC 的主结果更多是在训练任务内换初态，不能原样证明未见
 
 ### Direct target LoRA SFT
 
-它在 val/test 读取 teacher actions，违反 EMBER 的 hidden-action 主信息墙，但 owner 明确要求作为 oracle/reference：
+它在 validation 与最终统一 test 读取 teacher actions，违反 EMBER 的 hidden-action 主信息墙，但 owner 明确要求作为 oracle/reference；test arm 只能在 Phase F 解封后训练和评估：
 
 - 说明目标 task 在同一 LoRA 空间是否可学；
 - 给出 action-supervised 能力参考；
@@ -138,13 +139,13 @@ SmolVLA 不是最终 SOTA 保证，但当前适合作机制开发：
 - 有完整 action expert 和 PEFT 接口；
 - 同一个 backbone 可实现 Writer、direct LoRA、conditioning 和 parameter-generator baselines。
 
-绝大多数 baseline 的核心机制可以在 SmolVLA 上重实现，因此基础模型公平性更好。若在 SmolVLA 上机制成立，再在 OpenVLA-OFT 做 scale confirmation；现在换大模型会把基础 competence、工程吞吐和研究机制混在一起。
+绝大多数 baseline 的核心机制可以在 SmolVLA 上重实现，因此基础模型公平性更好。当前 Goal 到 SmolVLA + LIBERO-90 的统一 test 为止；OpenVLA-OFT 属于已 supersede、当前未安排的 scale-confirmation 设想。
 
 ## 最终 baseline 分层
 
 快速开发：
 
-- frozen base；
+- frozen source embodiment base；
 - EMBER；
 - direct LoRA oracle；
 - ordinary LoRA RL；

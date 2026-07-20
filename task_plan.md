@@ -90,6 +90,8 @@
 
 同空间 LoRA 合同已封存为 `configs/smolvla_lora_v1.json`：精确 37 targets、74 个 A/B tensors、1,485,312 parameters；Writer、direct oracle 和后续 matched RL 共用这一实现。当前只完成了参数空间和 differentiable functional application，尚未把 Writer 数据/特征/训练链路接到新 source base。
 
+frozen-VLM cache 的唯一入口与合同已封存为 `scripts/cache_writer_features.py` / `configs/writer_feature_cache_v1.json`。真实 8-rank smoke 覆盖 8 tasks × 1 full episode、1,194 frames，并验证 task-level atomic resume 零重算；正式 70×50 cache 需等 source checkpoint 最终选择后生成，因此下面的全量动作仍未完成。
+
 动作：
 
 - [ ] 将 `writer/model.py`、`temporal.py`、`data.py` 接入新 source base 与新 manifest。

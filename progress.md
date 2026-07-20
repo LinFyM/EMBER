@@ -36,8 +36,9 @@
 - 正式 source-base seed-1 trajectory：commit `72eb10d`、630/630 steps、退出码 0、约 28 分钟；210/420/630 三个 checkpoint 均完整。最终累计 1,774,080 examples、5,040 task slots，70 tasks × 50 episodes 全覆盖；launch contract `22c4ffb5...2e8`，最终 checkpoint manifest `89e9f493...ed22c`。
 - step 630 当前只按 source loss 选为候选；正式冻结仍等待 8 个预声明 source-development tasks 的官方 h50 闭环结果，validation 不参与 checkpoint 选择，test 保持封存。
 - shared LoRA 合同已实现并封存：37 targets、rank 32、alpha 16、dropout 0、1,485,312 parameters，支持 in-place injection 和 differentiable functional application；Writer/direct/RL 将共用同一挂载空间。
-- source-base evaluator 已通过真实 8-rank smoke：固定 state IDs 0–7 各出现一次、每卡一个 policy CUDA process、显存完全一致、退出后全清；完整测试为 28 passed。该 smoke 的 `0/8` 不作行为结论。
+- source-base evaluator 已通过真实 8-rank smoke：固定 state IDs 0–7 各出现一次、每卡一个 policy CUDA process、显存完全一致、退出后全清。该 smoke 的 `0/8` 不作行为结论。
 - 初始 source-base thirds 使用同一 8 tasks × 50 states 得到 step210/420/630=`3/400, 8/400, 15/400`；420→630 为 11 paired gains、4 paired losses。绝对 competence 仍低，故不冻结并只追加一次 315-step exact continuation。
+- frozen-VLM cache runner 已通过 8-rank 真实 smoke 与 resume：8 tasks、8 full episodes、1,194 frames，全部 finite；resume 逐 task 校验 SHA 后零重算。全量 70×50 cache 尚未生成，必须锚定最终 source checkpoint。合并后全套测试为 32 passed。
 
 ## 已明确退役
 
@@ -56,7 +57,7 @@
 1. 从 step-630 checkpoint exact-resume 315 steps；保持 batch/rank 352、8 ranks、原 optimizer/RNG/sampler 和 floor LR，保存 735/840/945。
 2. 先同口径评估 step945；若无增益保留630，含混时才补735/840。选定后冻结 base；validation 不回选 checkpoint，test 继续封存。
 3. 生成 10 validation tasks 的 frozen-base reference，并训练各自 50-episode matched direct-LoRA oracle，复用同一 37-target LoRA/evaluator 合同。
-4. 训练等待期间推进 frozen VLM feature cache 与 Writer functional-loss 接线；先 profile 真实完整视频路径，再只优化会影响 90 分钟反馈预算的瓶颈。
+4. 续训等待期间推进 Writer functional-loss 接线；最终 source checkpoint 选定后约 5 分钟生成 70×50 frozen-VLM cache，不重复 profile 已验证的提取路径。
 
 ## Canonical runner ownership
 

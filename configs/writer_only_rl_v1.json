@@ -1,0 +1,68 @@
+{
+  "schema_version": "ember_writer_only_rl_v1",
+  "protocol": {
+    "manifest": "configs/libero90_70_10_10/data_manifest.json",
+    "manifest_sha256": "b18f1cfa66a82e7dae35c83278b013f719d3b912a81096ba9bd2c2f1a2ddbe7e",
+    "split_sha256": "996a30616da97aa08dac177a94a3e7b723762a6e947c60e11df382c0a637b77e",
+    "writer_config": "configs/writer_cold_start_v1.json",
+    "writer_config_sha256": "a3fe058eda082e0be51b77583b522d2f5785b98f1b92f3ef98a65d874b58a915",
+    "lora_contract": "configs/smolvla_lora_v1.json",
+    "lora_contract_sha256": "ed5047de5206f0464fefb5f7d5513bf3dbc3d48ea6c639b0bb4a1aa07c80ae6a"
+  },
+  "algorithm": {
+    "name": "on_policy_success_weighted_flow_regression",
+    "reward": "binary_task_success",
+    "rollouts_per_task_cycle": 4,
+    "replay_epochs": 1,
+    "episode_weighting": "equal_successful_episode",
+    "exact_action_log_probability": false,
+    "critic": false,
+    "external_exploration_adapter": false,
+    "teacher_actions": false
+  },
+  "environment": {
+    "suite": "libero_90",
+    "official_random_reset": true,
+    "fixed_pruned_init_states": false,
+    "dummy_settling_steps": 10,
+    "max_horizon": 400,
+    "terminate_on_success": true,
+    "control_mode": "relative",
+    "observation_height": 128,
+    "observation_width": 128,
+    "camera_name": "agentview_image,robot0_eye_in_hand_image"
+  },
+  "policy": {
+    "action_execution_horizon": 50,
+    "precision": "bfloat16",
+    "rename_map": {
+      "observation.images.image": "observation.images.camera1",
+      "observation.images.image2": "observation.images.camera2"
+    }
+  },
+  "optimization": {
+    "learning_rate": 0.00001,
+    "betas": [0.9, 0.95],
+    "eps": 1e-8,
+    "weight_decay": 0.0,
+    "grad_clip_norm": 1.0
+  },
+  "parallel": {
+    "world_size": 8,
+    "policy_processes_per_gpu": 1,
+    "envs_per_rank": 1,
+    "use_async_envs": false,
+    "schedule": "rank-strided 70-task no-replacement cycles with two no-rollout padding slots"
+  },
+  "rng": {
+    "training_seed": 20260721,
+    "environment_seed_base": 320260721,
+    "policy_seed_base": 1320260721,
+    "update_seed_base": 2320260721
+  },
+  "formal_run": {
+    "status": "pending_real_profile",
+    "expected_world_size": 8,
+    "target_wall_clock_minutes_max": 90
+  }
+}

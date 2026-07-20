@@ -6,6 +6,7 @@ from ember.lora import LoRATarget, SmolVLALoRAContract, lora_state_sha256
 from ember.writer.functional import (
     prepare_frozen_writer_policy,
     writer_functional_action_loss,
+    writer_success_weighted_flow_loss,
 )
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
 
@@ -20,10 +21,14 @@ class _LossPolicy(torch.nn.Module):
         batch: dict[str, torch.Tensor],
         noise: torch.Tensor | None = None,
         time: torch.Tensor | None = None,
+        reduction: str = "mean",
     ) -> tuple[torch.Tensor, dict[str, float]]:
         del noise, time
         value = self.projection(batch["value"])
-        loss = value.square().mean()
+        per_sample = value.square().mean(dim=1)
+        if reduction == "none":
+            return per_sample, {"loss": float(per_sample.mean().detach())}
+        loss = per_sample.mean()
         return loss, {"loss": float(loss.detach())}
 
 
@@ -87,3 +92,29 @@ def test_tensor_state_hash_covers_names_metadata_and_bytes() -> None:
     changed = {**state, "b": state["b"].clone()}
     changed["b"][0, 0] = 0
     assert digest != lora_state_sha256(changed)
+
+
+def test_success_weighted_flow_loss_weights_episodes_equally() -> None:
+    policy = _LossPolicy()
+    template = prepare_frozen_writer_policy(policy, _contract())
+    writer = _writer(template)
+    loss, details = writer_success_weighted_flow_loss(
+        writer,
+        policy,
+        _contract(),
+        language_features=torch.randn(3, 5),
+        video_features=torch.randn(9, 7),
+        episode_offsets=torch.tensor([0, 4, 9]),
+        batch={
+            "value": torch.tensor(
+                [[1.0, 1.0, 1.0], [3.0, 3.0, 3.0], [2.0, 2.0, 2.0]]
+            )
+        },
+        rollout_episode_ids=torch.tensor([0, 0, 1]),
+    )
+    loss.backward()
+    assert details["successful_episodes"] == 2
+    assert details["successful_chunks"] == 3
+    assert bool(torch.isfinite(loss))
+    assert all(parameter.grad is None for parameter in policy.parameters())
+    assert any(parameter.grad is not None for parameter in writer.parameters())

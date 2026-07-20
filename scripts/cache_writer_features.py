@@ -26,8 +26,8 @@ from ember.writer.feature_cache import (
     FeatureCacheError,
     balanced_task_assignments,
     extraction_contract_sha256,
+    load_feature_tasks,
     load_feature_cache_config,
-    load_train_tasks,
     pool_visual_tokens,
     save_task_cache,
     select_language_tokens,
@@ -248,7 +248,7 @@ def main() -> int:
     config = load_feature_cache_config(args.config.resolve(), REPO_ROOT)
     if world_size != int(config["parallel"]["world_size"]):
         raise FeatureCacheError("launch world size differs from cache contract")
-    all_tasks = load_train_tasks(config, REPO_ROOT, args.data_root.resolve())
+    all_tasks = load_feature_tasks(config, REPO_ROOT, args.data_root.resolve())
     tasks = all_tasks
     demo_indices = tuple(range(int(config["protocol"]["demo_count_per_task"])))
     if args.mode == "smoke":

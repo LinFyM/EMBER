@@ -122,13 +122,16 @@ def load_feature_cache_config(path: Path, repo_root: Path) -> dict[str, Any]:
         "manifest_sha256"
     ):
         raise FeatureCacheError("sealed data manifest changed")
-    required = {
-        "required_split": "train",
-        "task_count": 70,
-        "demo_count_per_task": 50,
-    }
-    if any(protocol.get(key) != value for key, value in required.items()):
-        raise FeatureCacheError("feature cache must cover the sealed 70x50 train pool")
+    required_split = protocol.get("required_split")
+    expected_task_count = {"train": 70, "validation": 10}.get(required_split)
+    if (
+        expected_task_count is None
+        or protocol.get("task_count") != expected_task_count
+        or protocol.get("demo_count_per_task") != 50
+    ):
+        raise FeatureCacheError(
+            "feature cache must cover one sealed train or validation video pool"
+        )
     features = config.get("features", {})
     feature_required = {
         "camera_dataset": "obs/agentview_rgb",
@@ -159,7 +162,7 @@ def load_feature_cache_config(path: Path, repo_root: Path) -> dict[str, Any]:
     return config
 
 
-def load_train_tasks(
+def load_feature_tasks(
     config: Mapping[str, Any], repo_root: Path, data_root: Path
 ) -> tuple[FeatureCacheTask, ...]:
     manifest = read_json(repo_root / str(config["protocol"]["manifest"]))
@@ -200,8 +203,20 @@ def load_train_tasks(
     tasks.sort(key=lambda task: task.task_id)
     expected_count = int(config["protocol"]["task_count"])
     if len(tasks) != expected_count or len({task.task_id for task in tasks}) != expected_count:
-        raise FeatureCacheError("feature cache requires exactly 70 unique train tasks")
+        raise FeatureCacheError(
+            "feature cache task count differs from its sealed split role"
+        )
     return tuple(tasks)
+
+
+def load_train_tasks(
+    config: Mapping[str, Any], repo_root: Path, data_root: Path
+) -> tuple[FeatureCacheTask, ...]:
+    """Load the source-only pool used by Writer training."""
+
+    if config.get("protocol", {}).get("required_split") != "train":
+        raise FeatureCacheError("Writer training cache must remain source-only")
+    return load_feature_tasks(config, repo_root, data_root)
 
 
 def balanced_task_assignments(

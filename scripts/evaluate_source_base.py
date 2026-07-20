@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Eight-rank official LIBERO evaluation for a frozen source embodiment base."""
+"""Eight-rank official LIBERO fresh evaluation for the base or Writer LoRA."""
 
 from __future__ import annotations
 
@@ -29,6 +29,7 @@ from ember.libero_evaluation import (
     sha256_file,
     validate_complete_rows,
 )
+from ember.writer.inference import FrozenWriterTaskAdapter
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -40,6 +41,13 @@ def _parse_args() -> argparse.Namespace:
         "--config", type=Path, default=REPO_ROOT / "configs/source_base_eval_v1.json"
     )
     parser.add_argument("--policy-path", type=Path, required=True)
+    parser.add_argument(
+        "--writer-config",
+        type=Path,
+        default=REPO_ROOT / "configs/writer_cold_start_v1.json",
+    )
+    parser.add_argument("--writer-checkpoint", type=Path)
+    parser.add_argument("--writer-feature-cache", type=Path)
     parser.add_argument(
         "--role", choices=("source_development", "validation"), required=True
     )
@@ -133,6 +141,8 @@ def _episode_rows(
     policy_rng_seed: int,
     rank: int,
     batch_index: int,
+    arm: str,
+    adapter_sha256: str | None,
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for index in range(valid_count):
@@ -149,6 +159,8 @@ def _episode_rows(
                 "policy_seed": policy_rng_seed,
                 "rank": rank,
                 "batch_index": batch_index,
+                "arm": arm,
+                "adapter_sha256": adapter_sha256,
                 "success": success,
                 "steps": done_index + 1,
                 "sum_reward": float(reward.sum().item()),
@@ -160,6 +172,12 @@ def _episode_rows(
 
 def main() -> int:
     args = _parse_args()
+    writer_requested = args.writer_checkpoint is not None
+    if writer_requested != (args.writer_feature_cache is not None):
+        raise EvaluationContractError(
+            "Writer evaluation requires both checkpoint and validation feature cache"
+        )
+    arm = "writer_zero_interaction" if writer_requested else "frozen_source_base"
     rank = int(os.environ.get("RANK", "0"))
     local_rank = int(os.environ.get("LOCAL_RANK", "0"))
     world_size = int(os.environ.get("WORLD_SIZE", "1"))
@@ -219,6 +237,7 @@ def main() -> int:
         contract = {
             "schema_version": "ember_source_base_eval_launch_v1",
             "mode": args.mode,
+            "arm": arm,
             "role": role.name,
             "required_split": role.required_split,
             "task_ids": list(task_ids),
@@ -241,6 +260,36 @@ def main() -> int:
             "policy": config["policy"],
             "rng": config["rng"],
         }
+        if writer_requested:
+            required_writer_files = (
+                args.writer_checkpoint / "checkpoint_manifest.json",
+                args.writer_checkpoint / "writer.safetensors",
+                args.writer_feature_cache / "run_contract.json",
+                args.writer_feature_cache / "cache_manifest.json",
+                args.writer_config,
+            )
+            missing_writer_files = [
+                str(path) for path in required_writer_files if not path.is_file()
+            ]
+            if missing_writer_files:
+                raise EvaluationContractError(
+                    f"Writer evaluation input is incomplete: {missing_writer_files}"
+                )
+            contract["writer_inputs"] = {
+                "config_path": str(args.writer_config.resolve()),
+                "config_sha256": sha256_file(args.writer_config.resolve()),
+                "checkpoint_path": str(args.writer_checkpoint.resolve()),
+                "checkpoint_manifest_sha256": sha256_file(
+                    args.writer_checkpoint / "checkpoint_manifest.json"
+                ),
+                "feature_cache_path": str(args.writer_feature_cache.resolve()),
+                "feature_cache_contract_sha256": sha256_file(
+                    args.writer_feature_cache / "run_contract.json"
+                ),
+                "feature_cache_manifest_sha256": sha256_file(
+                    args.writer_feature_cache / "cache_manifest.json"
+                ),
+            }
         contract["contract_sha256"] = canonical_sha256(contract)
         _write_json_atomic(args.output_dir / "run_contract.json", contract)
     dist.barrier()
@@ -294,10 +343,37 @@ def main() -> int:
     torch.backends.cudnn.benchmark = True
     torch.backends.cuda.matmul.allow_tf32 = True
 
+    writer_adapter = None
+    if writer_requested:
+        writer_adapter = FrozenWriterTaskAdapter(
+            policy=policy,
+            policy_files={
+                name: sha256_file(args.policy_path / name)
+                for name in (
+                    "config.json",
+                    "model.safetensors",
+                    "policy_preprocessor.json",
+                    "policy_postprocessor.json",
+                    "policy_preprocessor_step_5_normalizer_processor.safetensors",
+                    "policy_postprocessor_step_0_unnormalizer_processor.safetensors",
+                )
+            },
+            writer_config_path=args.writer_config.resolve(),
+            writer_checkpoint=args.writer_checkpoint.resolve(),
+            feature_cache=args.writer_feature_cache.resolve(),
+            task_ids=task_ids,
+            device=device,
+            require_formal=args.mode == "formal",
+        )
+
     rows: list[dict[str, Any]] = []
     task_timings: list[dict[str, Any]] = []
     for task_id in task_ids:
         started = time.monotonic()
+        adapter_sha256 = (
+            writer_adapter.apply(task_id) if writer_adapter is not None else None
+        )
+        dist.barrier()
         env_config = LiberoEnv(
             task=env_common["suite"],
             task_ids=[task_id],
@@ -357,6 +433,8 @@ def main() -> int:
                         policy_rng_seed=policy_rng_seed,
                         rank=rank,
                         batch_index=batch_index,
+                        arm=arm,
+                        adapter_sha256=adapter_sha256,
                     )
                 )
         finally:
@@ -367,6 +445,7 @@ def main() -> int:
                 "rank": rank,
                 "episodes": len(assigned_states),
                 "wall_seconds": time.monotonic() - started,
+                "adapter_sha256": adapter_sha256,
             }
         )
         dist.barrier()
@@ -378,6 +457,8 @@ def main() -> int:
         "device": str(device),
         "egl_device_id": os.environ["MUJOCO_EGL_DEVICE_ID"],
         "assigned_state_ids": list(assigned_states),
+        "arm": arm,
+        "writer_evidence": writer_adapter.evidence if writer_adapter is not None else None,
         "rows": rows,
         "task_timings": task_timings,
     }
@@ -393,15 +474,40 @@ def main() -> int:
             )
             all_rows.extend(payload["rows"])
             timings.extend(payload["task_timings"])
+        if writer_adapter is not None:
+            evidence_values = {
+                canonical_sha256(
+                    json.loads(
+                        (args.output_dir / f"rank_{source_rank:02d}.json").read_text(
+                            encoding="utf-8"
+                        )
+                    )["writer_evidence"]
+                )
+                for source_rank in range(world_size)
+            }
+            if len(evidence_values) != 1:
+                raise EvaluationContractError("Writer evidence differs across ranks")
+            for task_id in task_ids:
+                task_hashes = {
+                    timing["adapter_sha256"]
+                    for timing in timings
+                    if int(timing["task_id"]) == task_id
+                }
+                if len(task_hashes) != 1 or None in task_hashes:
+                    raise EvaluationContractError(
+                        f"Writer adapter differs across ranks for task {task_id}"
+                    )
         all_rows = validate_complete_rows(all_rows, task_ids, state_count)
         result = {
             "schema_version": "ember_fresh_eval_results_v1",
             "mode": args.mode,
+            "arm": arm,
             "role": role.name,
             "task_ids": list(task_ids),
             "fixed_init_state_count": state_count,
             "rows": all_rows,
             "metrics": aggregate_rows(all_rows),
+            "writer_evidence": writer_adapter.evidence if writer_adapter is not None else None,
             "task_rank_timings": timings,
         }
         _write_json_atomic(args.output_dir / "results.json", result)

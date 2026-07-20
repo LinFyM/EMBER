@@ -1,0 +1,41 @@
+{
+  "schema_version": "ember_writer_feature_cache_v1",
+  "protocol": {
+    "manifest": "configs/libero90_70_10_10/data_manifest.json",
+    "manifest_sha256": "b18f1cfa66a82e7dae35c83278b013f719d3b912a81096ba9bd2c2f1a2ddbe7e",
+    "split_sha256": "996a30616da97aa08dac177a94a3e7b723762a6e947c60e11df382c0a637b77e",
+    "required_split": "validation",
+    "task_count": 10,
+    "demo_count_per_task": 50
+  },
+  "model": {
+    "policy_type": "smolvla",
+    "frozen_vlm_repo_id": "HuggingFaceTB/SmolVLM2-500M-Video-Instruct",
+    "frozen_vlm_revision": "7b375e1b73b11138ff12fe22c8f2822d8fe03467",
+    "expected_policy_config_sha256": "ab6ae00ccdc3043b2c847a6c44d824d2f844c392662c7be1c979e96a9d4a8db6"
+  },
+  "features": {
+    "camera_dataset": "obs/agentview_rgb",
+    "camera_transform": "libero_opengl_rotate_180_chw_unit_float_v1",
+    "frame_batch_size_per_rank": 64,
+    "vision_token_count": 64,
+    "vision_feature_dim": 960,
+    "vision_normalization": "multiply_sqrt_feature_dim",
+    "vision_pooling": "mean_over_spatial_tokens_per_frame",
+    "language_feature_dim": 960,
+    "language_max_tokens": 48,
+    "language_suffix": "newline",
+    "language_padding": "max_length_right",
+    "stored_dtype": "bfloat16",
+    "preserve_episode_order_and_boundaries": true
+  },
+  "parallel": {
+    "world_size": 8,
+    "policy_processes_per_gpu": 1,
+    "assignment": "deterministic_lpt_by_manifest_frame_count"
+  },
+  "smoke": {
+    "task_count": 8,
+    "demo_count_per_task": 1
+  }
+}

@@ -10,6 +10,7 @@ from ember.writer.feature_cache import (
     WriterFeatureStore,
     balanced_task_assignments,
     load_feature_cache_config,
+    load_feature_tasks,
     load_train_tasks,
     load_task_cache,
     pool_visual_tokens,
@@ -47,6 +48,25 @@ def test_config_and_lpt_schedule_cover_every_task_once() -> None:
     ]
     assert len(sealed_tasks) == 70 and sum(sealed_loads) == 537_946
     assert max(sealed_loads) <= (sum(sealed_loads) / 8) * 1.03
+
+    validation_config = load_feature_cache_config(
+        REPO_ROOT / "configs/writer_feature_cache_validation_v1.json", REPO_ROOT
+    )
+    validation_tasks = load_feature_tasks(
+        validation_config, REPO_ROOT, Path("/not-read-by-schedule")
+    )
+    assert tuple(task.task_id for task in validation_tasks) == (
+        0,
+        8,
+        15,
+        28,
+        40,
+        56,
+        61,
+        71,
+        85,
+        88,
+    )
 
 
 def test_visual_pool_and_language_mask_match_sealed_math() -> None:

@@ -31,6 +31,22 @@
   is allowed unless source mean error reaches `<=0.25` and all five validation
   query losses remain below base; otherwise the next recovery changes Writer
   acquisition architecture or loss rather than blindly adding steps.
+- The unchanged exact continuation completed step 2000 rc 0 in `2934.68s` and
+  saved a fully verified 16-file/eight-rank checkpoint. Source reconstruction
+  improved only from `0.466` to `0.420`; generated/teacher physical norms were
+  `0.669/0.804`. Validation-query relative reductions remained positive on all
+  five tasks (`9.43%`, `5.31%`, `8.27%`, `6.23%`, `5.95%`) but averaged
+  `7.04%`, essentially flat versus step 1000's `7.12%`. The predeclared
+  conjunction therefore fails on source acquisition, so no closed-loop rollout
+  is run and no further step-only continuation is allowed.
+- The next single bounded change is frozen before its outcome in
+  `configs/writer_cold_start_source_teacher_weight_recovery.toml`: increase
+  only the gauge-invariant relative physical-update auxiliary coefficient from
+  `0.1` to `0.3`. At the observed loss scale the functional query term remains
+  the largest objective component; raw factor MSE stays absent, the Writer
+  architecture and full 37-target rank-32 LoRA are unchanged, and test/held
+  access remains false. Because the objective changes, this starts a new
+  exact-resumable trajectory rather than mislabeling a warm start as resume.
 
 ## 2026-07-19 source physical-update teachers complete
 

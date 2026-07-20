@@ -20,6 +20,17 @@
   change the acquisition architecture/loss in one bounded recovery. Git was
   clean at pushed `fbf230c`; all eight GPUs were live-free, personal usage was
   309GB, and no artifact cleanup was required.
+- The step1000-to-2000 exact continuation completed rc 0 in 48:55 on all eight
+  A100s. Its step2000 model/optimizer/scheduler/scaler/sampler/eight-rank RNG
+  checkpoint validates, and GPUs are released. Source reconstruction is still
+  underfit at `0.420`; five-category query improvement is positive but flat at
+  `7.04%`. Per the frozen rule, no rollout or further unchanged continuation is
+  authorized.
+- `configs/writer_cold_start_source_teacher_weight_recovery.toml` is the next
+  minimal real run: fresh trajectory, same architecture/data/full-LoRA space,
+  only teacher auxiliary coefficient `0.1 -> 0.3`, first stop step 1000. Its
+  targeted contract/gradient tests pass; after commit/push, run the mechanical
+  smoke and immediately launch the eight-GPU segment.
 
 ## 2026-07-19 source-teacher bridge ready for real Writer training
 

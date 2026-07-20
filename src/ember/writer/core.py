@@ -91,6 +91,7 @@ def load_writer_contract(
         "frozen_before_writer_implementation_or_training_outcomes",
         "predeclared_physical_norm_recovery_after_cross_category_failure",
         "predeclared_source_physical_update_auxiliary_recovery_after_norm_recovery_failed_closed_loop",
+        "predeclared_source_physical_update_weight_recovery_after_data_scale_underfit",
     }:
         raise WriterColdStartError("Writer status is not an active frozen contract")
     authority = spec.get("authority", {})

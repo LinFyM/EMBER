@@ -199,11 +199,15 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
   `0.490`, and `0.466` at steps 250/500/750/1000. The best value remains above
   the predeclared `0.25` underfit boundary, while step-1000 validation-query
   improvement remains positive on all five categories and averages `7.12%`.
-  Resume the exact same eight-rank trajectory once from step 1000 to 2000; do
-  not run another rollout first. Step 2000 becomes rollout-eligible only if
-  mean source-teacher error exits the underfit region (`<=0.25`) and every
-  validation-query task remains better than frozen base. Otherwise stop adding
-  steps and make one evidence-driven acquisition architecture/loss change.
+  The exact same eight-rank trajectory then resumed once from step 1000 to
+  2000, rc 0 in 48.9 minutes. Source-teacher error improved only to `0.420`,
+  still above the frozen `0.25` boundary; all five validation query tasks stayed
+  better than base but mean improvement was flat at `7.04%`. Step 2000 is not
+  rollout-eligible and step scaling stops. Run one fresh-objective recovery in
+  `configs/writer_cold_start_source_teacher_weight_recovery.toml`: change only
+  the gauge-invariant teacher auxiliary coefficient from `0.1` to `0.3`, keep
+  functional query loss primary and every model/data/LoRA/norm-cap field fixed,
+  and evaluate offline before authorizing any rollout.
 
 1. [x] Bootstrap a Python 3.12 environment from the locked project definition;
    verify package consistency and the active GPU/storage contracts.

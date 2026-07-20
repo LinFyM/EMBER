@@ -117,6 +117,25 @@ def test_writer_source_teacher_auxiliary_recovery_contract_is_bounded() -> None:
     assert spec["authority"]["test_held_numeric_access"] is False
 
 
+def test_writer_source_teacher_weight_recovery_keeps_functional_primary() -> None:
+    spec = load_writer_contract(
+        ROOT / "configs/writer_cold_start_source_teacher_weight_recovery.toml",
+        phase0_path=ROOT / "configs/phase0.toml",
+        split_path=ROOT / "configs/libero90_split_reseal.json",
+        gate_zero_path=ROOT / "configs/gate_zero_oracle_pilot.toml",
+        mature_lora_path=ROOT / "configs/gate_zero_mature_lora_positive_control.toml",
+    )
+    auxiliary = spec["teacher_auxiliary"]
+    assert auxiliary["relative_physical_delta_squared_error_coefficient"] == 0.3
+    assert auxiliary["raw_factor_mse"] is False
+    assert spec["recovery"]["functional_query_loss_remains_primary"] is True
+    assert spec["recovery"]["architecture_changed"] is False
+    assert spec["lora"]["expected_parameter_count"] == 1_485_312
+    assert spec["train"]["first_segment_steps"] == 1000
+    assert spec["train"]["maximum_steps"] == 2000
+    assert spec["authority"]["test_held_numeric_access"] is False
+
+
 def test_source_teacher_contract_is_source_only_and_multicategory() -> None:
     spec = load_source_teacher_contract(
         ROOT / "configs/writer_cold_start_source_teachers.toml", repo_root=ROOT

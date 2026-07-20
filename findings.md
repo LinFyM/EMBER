@@ -1,5 +1,16 @@
 # EMBER Durable Findings
 
+## 2026-07-20 remaining source-teacher competence screen frozen
+
+- Before any new source rollout outcome, contract SHA256
+  `eb60e30b...ee7b` fixes the ten untested tasks from the already selected
+  15-task teacher bundle, two per category. It compares the immutable base,
+  coefficient-0.3 Writer, and direct teacher at h16 with 64 paired rollouts per
+  task/arm, using init states 24--31 and policy RNG seeds disjoint from the
+  first five-task localization packet. No model is retrained and no
+  validation/test/held surface is accessed. This is the cheapest test of
+  whether target competence or Writer acquisition should be repaired next.
+
 ## 2026-07-20 source localization rules out a validation-only explanation
 
 - The owner-requested source diagnostic completed rc 0 in 38m07s from clean

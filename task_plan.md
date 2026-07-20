@@ -232,6 +232,14 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
   eight-rank EGL smoke now shows exactly one matching `C+G` process on each
   GPU; use this path for subsequent validation rather than accepting GPU0
   renderer contention.
+- [ ] Screen the ten remaining immutable source teachers before retraining any
+  target or Writer. Contract
+  `configs/writer_cold_start_source_teacher_coverage_screen.toml` binds tasks
+  23/35/20/38/52/54/37/69/87/89, three frozen arms, disjoint init/policy RNG
+  identities, h16 only, 64 paired rollouts/task/arm, 1,920 total rows, and the
+  corrected eight-rank CUDA/EGL topology. Read no partial performance; use the
+  complete result only to decide whether the existing teacher bundle already
+  contains useful targets across categories or requires a data/fit recovery.
 
 1. [x] Bootstrap a Python 3.12 environment from the locked project definition;
    verify package consistency and the active GPU/storage contracts.

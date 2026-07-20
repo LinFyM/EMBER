@@ -1,5 +1,15 @@
 # EMBER Progress and Handoff
 
+## 2026-07-20 remaining source-teacher screen ready
+
+- `configs/writer_cold_start_source_teacher_coverage_screen.toml` is frozen at
+  SHA256 `eb60e30b...ee7b`. It uses the remaining ten immutable source teachers,
+  base/Writer/direct arms, h16, 64 paired rollouts/task/arm, 1,920 total rows,
+  eight ranks, and disjoint init/policy RNG identities. Contract loading,
+  30-shard uniqueness, row count, teacher-bundle membership, split separation,
+  and held closure pass. Commit/push this outcome-free boundary, then launch
+  once on all eight free GPUs with the corrected per-rank EGL binding.
+
 ## 2026-07-20 source localization complete; per-rank EGL binding fixed
 
 - Longrun `writer_source_localization_step1000_20260720_030043` completed rc 0

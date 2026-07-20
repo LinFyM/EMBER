@@ -1,151 +1,162 @@
-# Novelty Audit and VLA Landscape
+# Novelty and Baseline Landscape
 
-## Status of the novelty claim
+本文件只讨论在当前 70/10/10 信息墙下，哪些近邻方法可以公平比较。论文原始协议不同，不能直接把原表数字并排当结论。
 
-The current literature sweep did not identify a method with the complete EMBER
-training and deployment contract. This is evidence of a plausible contribution,
-not proof of priority. Concurrent, unpublished, or differently framed work may
-still overlap.
+## EMBER 的增量
 
-This audit primarily covers the embodied instantiation. The broader thesis in
-[`origin_and_general_thesis.md`](origin_and_general_thesis.md)—translating an
-informative non-label input into a beneficial parameter update across tasks—has
-wider overlap with learned optimizers, amortized meta-learning, hypernetworks,
-model editing, and context-to-adapter generation. A successful EMBER result
-would establish one concrete instance, not priority over that entire general
-area.
+现有工作分别覆盖了参数生成、示范视频理解和 reward adaptation，但没有统一覆盖：
 
-No individual ingredient should be presented as new. Demonstration-conditioned
-adaptation, hypernetwork-generated policies, LoRA generation, action-free video
-learning, and RL refinement all have prior art.
+1. language + action-hidden video；
+2. 生成完整 task-specific LoRA；
+3. zero-interaction closed-loop utility；
+4. Writer-only reward training；
+5. 在同一 LoRA 上继续 ordinary task-local RL；
+6. source-only outer learning；
+7. shared-frozen held evaluation。
 
-The candidate contribution is their specific conjunction:
+EMBER 的 novelty 必须由这条组合链和因果对照支持，而不是由一个新名词或 bank 假设支持。
 
-> A language/action-hidden-video task specification conditions a Writer that
-> produces a complete task-specific LoRA with immediate functional utility;
-> ordinary task-local LoRA RL refines those same parameters; source-only reward
-> improves future Writer initializations while the shared base stays frozen;
-> and all shared state remains frozen on held-out tasks.
+## 可在相同 information wall 下比较的方法
 
-No novelty is claimed for a learned policy subspace or search geometry. The
-canonical-bank/shared-subspace/soft-geometry/residual route in historical plans
-is superseded and outside the current project.
+### HyPoGen-style parameter generator
 
-## Closest work by mechanism
+原理：用 source task specification 和 source action demonstrations 训练 hypernetwork，在未见 specification 上直接生成策略参数。
 
-| Work | Relevant overlap | Remaining difference from EMBER |
-| --- | --- | --- |
-| [DAML](https://arxiv.org/abs/1802.01557) | Meta-learns how a human demonstration video should induce robot-policy adaptation. | Learns an adaptation loss and gradient step rather than directly generating a complete LoRA whose zero-interaction utility is separately measured. |
-| [Watch, Try, Learn](https://arxiv.org/abs/1906.03352) | Combines demonstration-conditioned meta-learning with sparse-reward trial and error. | Does not use a multimodal Writer to generate a complete task-specific VLA LoRA before ordinary matched local RL. |
-| [FLAP](https://arxiv.org/abs/2101.04750) | Learns a shared linear policy representation and predicts task-specific linear weights for instant adaptation. | Uses a shared policy representation rather than the current direct full-LoRA Writer and action-hidden-video causal contract. |
-| [Hypernetworks in Meta-RL](https://proceedings.mlr.press/v205/beck23a.html) | Uses a hypernetwork to generate task-conditioned policy parameters in meta-RL. | Does not target action-hidden-video VLA post-training with separately measured zero-step LoRA utility and a shared-frozen held contract. |
-| [Hyper-GoalNet](https://openreview.net/forum?id=aWWRPyGMie) | Maps goal specifications to generated robot-policy weights. | Focuses on goal-to-policy generation rather than an initialization-and-refinement contract. |
-| [DISC / DeTaCH](https://arxiv.org/abs/2605.20856) | Generates task-specific visuomotor-policy parameters from a task description. | The capacity-matched baseline must determine whether action-hidden video, zero-interaction utility, ordinary reward refinement, and the frozen-held contract add value. |
-| [Hypernetwork-Conditioned RL for Fixed-Wing Control](https://arxiv.org/abs/2604.03392) | A hypernetwork generates FiLM/LoRA parameters and the controller is trained with PPO. | Conditions on explicit actuator-fault parameters in fixed-wing control; no action-hidden multimodal task specification or composition-held VLA bootstrap contract. |
-| [DeGAML-LLM](https://openreview.net/forum?id=4yyi9TXbv7) | Generates distributions over task-conditioned LoRA adapter parameters. | Operates in NLP rather than embodied VLA control and does not establish the proposed video-to-bootstrap-to-local-RL contract. |
+映射到 EMBER：
 
-## Action-free video and latent-action context
+- train：70 tasks 的 language 和 teacher actions；
+- val/test：只给 language，不给 action；
+- 输出：与 EMBER 完全相同的 LoRA tensor contract，而非任意不同容量的 full policy；
+- base：共享同一个 frozen source embodiment base；
+- steps/data：与 Writer cold start 的 source training budget 匹配。
 
-- [LAPA](https://arxiv.org/abs/2410.11758) learns latent actions from action-free
-  video for pretraining.
-- [UniVLA](https://arxiv.org/abs/2505.06111) uses task-centric latent actions to
-  exploit video and improve transfer.
-- [WALA](https://arxiv.org/abs/2607.11397) jointly uses action-labeled
-  demonstrations and action-free videos to learn executable latent actions.
-- [DreamGen](https://research.nvidia.com/labs/gear/dreamgen/) turns video world
-  models into synthetic robot-trajectory generators.
+它是强 language-to-parameters baseline。虽然 owner 移除了“Language-only Writer”内部消融，最终仍可保留这个有外部方法语义的成熟 baseline；二者不要重复运行。
 
-These works support the premise that action-free video is useful, but they also
-raise the bar. EMBER must show value beyond video representation learning,
-latent-action pretraining, or direct video conditioning. Its distinctive object
-must be the task-specific generated LoRA, its immediate utility, and its
-ordinary reward-driven refinement.
+### DISC-style language-to-policy/LoRA generator
 
-## VLA reinforcement-learning context
+DISC 的主结果更多是在训练任务内换初态，不能原样证明未见 task 泛化。公平版本应：
 
-- [VLA-RL](https://arxiv.org/abs/2505.18719) studies RL post-training and reward
-  design for VLA policies.
-- [SimpleVLA-RL](https://arxiv.org/abs/2509.09674) provides evidence that RL can
-  improve a VLA once useful task competence exists, while a zero-success base
-  may not bootstrap under outcome-only reward.
-- [VLA Jump-Starting](https://openreview.net/forum?id=J9I5EQyL1h) uses transient
-  VLA guidance to improve exploration for an RL agent.
-- [DICE-RL](https://openreview.net/forum?id=DsXN7VUwA3) refines a broad
-  generative behavior prior into a high-performing policy with stable residual
-  RL.
-- [WMPO](https://openreview.net/forum?id=qE2FyvRvuF) optimizes VLA policies using
-  world-model imagination.
-- [EXPO-FT](https://arxiv.org/abs/2605.25477) studies sample-efficient and stable
-  online RL fine-tuning on real robots.
+- 用 70 source tasks 训练；
+- 在 10 val/10 test unseen tasks 只读 language；
+- 输出 matched LoRA；
+- 不读取目标 action；
+- 报告 unseen-task 成功率。
 
-This is the most direct problem context for EMBER: how to cross the
-zero-competence barrier without collecting a full new action-labeled dataset,
-then preserve stable improvement under limited interaction.
+它与 HyPoGen 机制接近，可根据实现质量选择一个主 baseline、另一个作补充，避免两个几乎相同的巨大复现拖慢机制开发。
 
-## Broader frontier map
+### ViVLA / See Once, Then Act-style video-conditioned policy
 
-As of July 2026, major VLA and embodied-AI directions include:
+原理：在 source 上用 expert-video/robot-trajectory 配对训练，held task 只看一段或多段 expert video，直接执行而不做 action-supervised target fine-tune。
 
-1. **Generalist scaling and open-world transfer.** Heterogeneous co-training,
-   multi-embodiment foundation policies, and unseen-environment generalization,
-   exemplified by [pi0.5](https://arxiv.org/abs/2504.16054),
-   [OpenVLA-OFT](https://arxiv.org/abs/2502.19645),
-   [GR00T N1](https://research.nvidia.com/publication/2025-03_nvidia-isaac-gr00t-n1-open-foundation-model-humanoid-robots),
-   and [Gemini Robotics 1.5](https://deepmind.google/blog/gemini-robotics-15-brings-ai-agents-into-the-physical-world/).
-2. **Action-free video, latent actions, world models, and synthetic data.** Video
-   is increasingly treated as a dynamics and data source rather than only a
-   prompt.
-3. **RL post-training and self-improvement.** Online RL, test-time adaptation,
-   process rewards, imagination, and robust real-robot fine-tuning are replacing
-   the assumption that behavior cloning alone is sufficient.
-4. **Long-horizon reasoning and memory.** Hierarchical reasoner-planner-policy
-   systems and experience retrieval, including
-   [MemER](https://openreview.net/forum?id=1dH4ARGdwD) and
-   [SCOPE](https://openreview.net/forum?id=PLJ53zWDTD).
-5. **Spatial and real-time action representations.** 3D grounding, continuous
-   or flow/diffusion action experts, action chunking, and correction heads,
-   including [SpatialVLA](https://arxiv.org/abs/2501.15830) and
-   [A2C2](https://arxiv.org/abs/2509.23224).
-6. **Cross-embodiment and contact-rich dexterity.** Humanoids, dexterous hands,
-   bimanual control, tactile feedback, and variable-rate control.
-7. **Reliability and deployment.** Continual-learning failure, catastrophic
-   forgetting, sim-to-real validity, safe resets, intervention, and evaluation
-   are increasingly first-class research questions.
+映射：
 
-EMBER sits primarily at the intersection of action-free multimodal task
-specification and RL post-training, with meta-learning as the mechanism that
-amortizes adaptation across tasks. It should not compete directly with
-foundation-model scaling.
+- train：同样 70×50 language/video/action teacher data；
+- val/test：相同 language + action-hidden videos；
+- 输出：直接条件动作策略，不要求生成参数；
+- shared source base、数据量、steps 和 eval 匹配。
 
-## Claims that are currently unsafe
+它是最重要的“视频有用，但不一定生成 LoRA”baseline，可检验 EMBER 的参数编译是否优于 direct conditioning。
 
-- "The first method to learn robot skills from video."
-- "The first hypernetwork to generate a robot policy or LoRA."
-- "A general optimizer for arbitrary cross-distribution learning."
-- "Human videos can replace executable robot supervision."
-- "Jointly updating the base and Writer on a held-out task proves
-  meta-generalization."
+### DAML-style learned adaptation
 
-## Evidence required for a defensible contribution
+原理：source tasks 上从示范视频学一个 adaptation procedure，再在 held task 根据未标动作视频进行内层适应。
 
-1. The generated complete LoRA improves held-out-task performance before
-   interaction over base, average, retrieval, direct-conditioning,
-   standard-LoRA, and capacity-matched direct-generator controls.
-2. Writer initialization improves matched-budget ordinary task-local LoRA RL
-   AUC or time-to-threshold without changing its optimizer/search contract.
-3. Source-only reward/meta learning improves future Writer initializations while
-   the shared base remains frozen.
-4. Gains appear in success-versus-interactions AUC, stability, or
-   episodes-to-threshold, not only final success after a large budget.
-5. The shared Writer/base remain frozen on held-out tasks and only task-local
-   LoRA adapts.
-6. Language-only, video-only, language-plus-video, and task-ID controls show
-   what information the multimodal input actually contributes.
-7. The task split explicitly states which notion of distribution shift is being
-   tested.
+公平版本：
 
-## Evidence freshness
+- source action labels 可用于 meta objective；
+- val/test adaptation 只能消耗 language/video；
+- 不读取目标 teacher actions；
+- 若产生 target optimizer steps，要报告并匹配其 compute，而不是假装 zero-step；
+- 最终在同一 held rollout 合同评估。
 
-This map was assembled from primary papers and official project pages available
-through 2026-07-17. Several 2026 entries are recent preprints rather than settled
-peer-reviewed results and should be rechecked before publication.
+它与 EMBER 都利用 held video，但参数化和 adaptation procedure 不同。
+
+### Direct language+video conditioning
+
+在 shared source base 上增加/训练一个 source-only multimodal conditioning path，val/test 输入与 EMBER 完全相同，直接输出 actions。它不对应单篇论文，但解释力很强：
+
+- 若 direct conditioning 强而 Writer 弱，问题更可能在 parameter generation/acquisition；
+- 若两者都弱，可能是 video representation、source diversity 或 task information 不足；
+- 若 Writer 强，才支持“编译为可适应 LoRA”有额外价值。
+
+### Retrieval / average adapter
+
+从 source task LoRA 库按 language/video embedding 检索最近 adapter，或平均若干 source adapters。它们：
+
+- val/test 不用 actions；
+- 使用相同 LoRA contract；
+- 训练成本低；
+- 可判断 Writer 是否只是在做粗粒度 nearest-task selection。
+
+## Reward adaptation baseline
+
+### Watch-Try-Learn / RIPT-style
+
+这类方法在 held task 看 demonstration 后进行 trial/reward adaptation。EMBER 也允许 val/test task-local RL，因此它们并非“不公平”：
+
+- 都可消费预声明 target reward interactions；
+- 必须匹配或明确报告 interaction budget；
+- trial/adaptation rollout 与最终 fresh evaluation 分开；
+- shared source modules在 test 不更新，除非原方法不可避免且单独标注信息/参数差异。
+
+核心 Base+ordinary LoRA RL 和 best Writer-init+LoRA RL 已在 EMBER task-local RL 阶段运行，不应在 baseline 阶段换名重复。WTL/RIPT-style 只在其 adaptation mechanism 本身提供独立科学比较时补。
+
+## 不属于信息匹配 baseline
+
+### Direct target LoRA SFT
+
+它在 val/test 读取 teacher actions，违反 EMBER 的 hidden-action 主信息墙，但 owner 明确要求作为 oracle/reference：
+
+- 说明目标 task 在同一 LoRA 空间是否可学；
+- 给出 action-supervised 能力参考；
+- 帮助区分 Writer 泛化失败与 LoRA/source-base 能力不足。
+
+它不能用于声称 EMBER 打败/落后于一个公平 held baseline。
+
+### Full/action-expert target fine-tuning
+
+参数量和信息都更大，当前快速阶段不做。最终如需要，只作非 matched capability upper bound。
+
+## Shared source base 的公平处理
+
+不同近邻方法在原论文中可能训练整个 policy、conditioning module 或 hypernetwork。当前统一做法：
+
+1. 所有方法从同一 frozen source embodiment base 开始；
+2. 方法特有的 shared module 只在 70 source tasks 上训练；
+3. source data、可见字段和 update budget 尽量匹配；
+4. val/test 不更新 shared module；
+5. 若某方法必须 source-finetune base 才忠实，单独允许相同 train-only budget，并明确它与“frozen shared base”主对照的差异。
+
+这样既不禁止成熟 baseline 学 source tasks，也不允许它在 val/test 偷看 actions。
+
+## SmolVLA 是否足够
+
+SmolVLA 不是最终 SOTA 保证，但当前适合作机制开发：
+
+- 规模允许 8 卡快速重训、多 arm 和大量 rollout；
+- LeRobot/LIBERO 路径成熟；
+- 有完整 action expert 和 PEFT 接口；
+- 同一个 backbone 可实现 Writer、direct LoRA、conditioning 和 parameter-generator baselines。
+
+绝大多数 baseline 的核心机制可以在 SmolVLA 上重实现，因此基础模型公平性更好。若在 SmolVLA 上机制成立，再在 OpenVLA-OFT 做 scale confirmation；现在换大模型会把基础 competence、工程吞吐和研究机制混在一起。
+
+## 最终 baseline 分层
+
+快速开发：
+
+- frozen base；
+- EMBER；
+- direct LoRA oracle；
+- ordinary LoRA RL；
+- Writer-init LoRA RL。
+
+机制成立后：
+
+- HyPoGen/DISC-style language generator；
+- ViVLA/DAML-style video adaptation；
+- direct language+video conditioning；
+- retrieval/average；
+- 必要的 WTL/RIPT-style reward adaptation；
+- 多 seeds、完整 tasks、统一 test。
+
+主指标始终是闭环 success。flow loss、action error、LoRA distance、progress 和 time-to-success 只作诊断。

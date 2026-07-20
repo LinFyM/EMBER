@@ -1,7 +1,8 @@
-"""Leakage-safe action-hidden specification and functional-query data access."""
+"""Action-hidden full-video inputs and source-only functional-query data."""
 
 from __future__ import annotations
 
+import hashlib
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -10,58 +11,82 @@ from typing import Any, Iterator, Sequence
 import h5py
 import numpy as np
 
-from ember.writer.core import WriterColdStartError
+from ember.writer.model import WriterModelError
 
 
 @dataclass(frozen=True)
-class WriterSpecAuthority:
+class WriterTaskAuthority:
+    """Immutable source/validation task data identity."""
+
     task_id: int
     language: str
     path: Path
     expected_bytes: int
-    expected_sha256: str | None
+    expected_sha256: str | None = None
 
 
-def verify_authority(authority: WriterSpecAuthority) -> None:
-    if not authority.path.is_file() or authority.path.stat().st_size != authority.expected_bytes:
-        raise WriterColdStartError(f"Writer HDF5 authority changed for task {authority.task_id}")
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(16 * 1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def verify_authority(authority: WriterTaskAuthority) -> None:
+    if (
+        not authority.path.is_file()
+        or authority.path.stat().st_size != authority.expected_bytes
+    ):
+        raise WriterModelError(f"task authority changed: {authority.task_id}")
+    if (
+        authority.expected_sha256 is not None
+        and _sha256(authority.path) != authority.expected_sha256
+    ):
+        raise WriterModelError(f"task SHA256 changed: {authority.task_id}")
 
 
 def _camera(value: np.ndarray) -> np.ndarray:
     if value.ndim != 3 or value.shape[-1] != 3 or value.dtype != np.uint8:
-        raise WriterColdStartError("Writer camera frame changed shape or dtype")
+        raise WriterModelError("camera frame changed shape or dtype")
     return np.ascontiguousarray(value[::-1, ::-1].transpose(2, 0, 1))
 
 
 def _camera_batch(value: np.ndarray) -> np.ndarray:
     if value.ndim != 4 or value.shape[-1] != 3 or value.dtype != np.uint8:
-        raise WriterColdStartError("Writer camera video changed shape or dtype")
+        raise WriterModelError("camera video changed shape or dtype")
     return np.ascontiguousarray(value[:, ::-1, ::-1].transpose(0, 3, 1, 2))
 
 
 def iter_action_hidden_video_chunks(
-    authority: WriterSpecAuthority,
+    authority: WriterTaskAuthority,
     demo_indices: Sequence[int],
     *,
     chunk_size: int,
 ) -> Iterator[tuple[int, int, int, np.ndarray]]:
-    """Stream every third-person frame while never touching privileged fields.
+    """Stream every third-person frame without reading privileged fields.
 
-    Yields ``(demo_index, frame_start, episode_length, frames)``. Neither the
-    number of demonstrations nor their lengths is fixed by this interface.
+    Yields demo index, frame start, episode length, and a frame batch. Neither
+    the number of demonstrations nor their lengths is fixed by this interface.
     """
 
     verify_authority(authority)
-    if not demo_indices or chunk_size <= 0:
-        raise WriterColdStartError("invalid action-hidden video request")
+    if not demo_indices or len(set(demo_indices)) != len(demo_indices):
+        raise WriterModelError("video request needs unique non-empty demo indices")
+    if chunk_size <= 0:
+        raise WriterModelError("video chunk size must be positive")
     with h5py.File(authority.path, "r") as handle:
         for demo_index in demo_indices:
-            name = f"data/demo_{demo_index}"
-            if name not in handle:
-                raise WriterColdStartError(f"missing Writer specification {name}")
-            pixels = handle[name].get("obs/agentview_rgb")
-            if not isinstance(pixels, h5py.Dataset) or pixels.ndim != 4 or pixels.shape[0] <= 0:
-                raise WriterColdStartError("invalid action-hidden teaching video")
+            demo = handle.get(f"data/demo_{demo_index}")
+            if not isinstance(demo, h5py.Group):
+                raise WriterModelError(f"missing teaching episode {demo_index}")
+            pixels = demo.get("obs/agentview_rgb")
+            if (
+                not isinstance(pixels, h5py.Dataset)
+                or pixels.ndim != 4
+                or pixels.shape[0] <= 0
+            ):
+                raise WriterModelError("invalid action-hidden teaching video")
             episode_length = int(pixels.shape[0])
             for start in range(0, episode_length, chunk_size):
                 stop = min(start + chunk_size, episode_length)
@@ -73,64 +98,50 @@ def iter_action_hidden_video_chunks(
                 )
 
 
-def read_action_hidden_spec_frames(
-    authority: WriterSpecAuthority,
-    demo_indices: Sequence[int],
-    positions: Sequence[str],
-) -> np.ndarray:
-    """Read only third-person pixels; action/proprio datasets are never touched."""
-
-    verify_authority(authority)
-    if list(positions) != ["first", "middle", "last"]:
-        raise WriterColdStartError("teaching-video frame rule changed")
-    frames: list[np.ndarray] = []
-    with h5py.File(authority.path, "r") as handle:
-        for demo_index in demo_indices:
-            name = f"data/demo_{demo_index}"
-            if name not in handle:
-                raise WriterColdStartError(f"missing Writer specification {name}")
-            demo = handle[name]
-            pixels = demo.get("obs/agentview_rgb")
-            if not isinstance(pixels, h5py.Dataset) or pixels.ndim != 4 or pixels.shape[0] <= 0:
-                raise WriterColdStartError("invalid action-hidden teaching video")
-            last = pixels.shape[0] - 1
-            for frame_index in (0, last // 2, last):
-                frames.append(_camera(np.asarray(pixels[frame_index])))
-    if not frames:
-        raise WriterColdStartError("empty action-hidden teaching video")
-    return np.stack(frames)
-
-
-class WriterQueryDataset:
-    """Lazy HDF5 functional-query dataset over sealed source tasks."""
+class FunctionalQueryDataset:
+    """Lazy source-only observation/action chunks for Writer or direct LoRA."""
 
     def __init__(
         self,
-        authorities: Sequence[WriterSpecAuthority],
+        authorities: Sequence[WriterTaskAuthority],
         *,
         demo_indices: Sequence[int],
         action_chunk_size: int,
     ) -> None:
-        if not authorities or not demo_indices or action_chunk_size <= 0:
-            raise WriterColdStartError("invalid Writer query dataset bounds")
+        if (
+            not authorities
+            or not demo_indices
+            or len(set(demo_indices)) != len(demo_indices)
+            or action_chunk_size <= 0
+        ):
+            raise WriterModelError("invalid functional-query data request")
         self.authorities = {item.task_id: item for item in authorities}
+        if len(self.authorities) != len(authorities):
+            raise WriterModelError("duplicate task authority")
         self.action_chunk_size = action_chunk_size
         self._index: list[tuple[int, int, int]] = []
         self._task_rows: dict[int, list[int]] = {}
         self._handles: dict[tuple[int, int], h5py.File] = {}
+
         for authority in sorted(authorities, key=lambda item: item.task_id):
             verify_authority(authority)
             with h5py.File(authority.path, "r") as handle:
                 for demo_index in demo_indices:
                     demo = handle.get(f"data/demo_{demo_index}")
                     if not isinstance(demo, h5py.Group):
-                        raise WriterColdStartError("functional query demo is missing")
+                        raise WriterModelError("functional-query episode is missing")
                     actions = demo.get("actions")
-                    if not isinstance(actions, h5py.Dataset) or actions.ndim != 2 or actions.shape[1] != 7:
-                        raise WriterColdStartError("functional query actions are invalid")
+                    if (
+                        not isinstance(actions, h5py.Dataset)
+                        or actions.ndim != 2
+                        or actions.shape[1] != 7
+                    ):
+                        raise WriterModelError("functional-query actions are invalid")
                     for frame_index in range(actions.shape[0]):
                         flat = len(self._index)
-                        self._index.append((authority.task_id, demo_index, frame_index))
+                        self._index.append(
+                            (authority.task_id, int(demo_index), frame_index)
+                        )
                         self._task_rows.setdefault(authority.task_id, []).append(flat)
 
     @property
@@ -159,7 +170,9 @@ class WriterQueryDataset:
         actions_ds = demo["actions"]
         stop = min(frame_index + self.action_chunk_size, actions_ds.shape[0])
         valid = stop - frame_index
-        valid_actions = np.asarray(actions_ds[frame_index:stop], dtype=np.float32)
+        valid_actions = np.asarray(
+            actions_ds[frame_index:stop], dtype=np.float32
+        )
         actions = np.repeat(valid_actions[-1:], self.action_chunk_size, axis=0)
         actions[:valid] = valid_actions
         action_is_pad = np.ones(self.action_chunk_size, dtype=np.bool_)
@@ -172,8 +185,12 @@ class WriterQueryDataset:
             )
         )
         return {
-            "observation.images.camera1": _camera(np.asarray(obs["agentview_rgb"][frame_index])),
-            "observation.images.camera2": _camera(np.asarray(obs["eye_in_hand_rgb"][frame_index])),
+            "observation.images.camera1": _camera(
+                np.asarray(obs["agentview_rgb"][frame_index])
+            ),
+            "observation.images.camera2": _camera(
+                np.asarray(obs["eye_in_hand_rgb"][frame_index])
+            ),
             "observation.state": state,
             "action": actions,
             "action_is_pad": action_is_pad,
@@ -194,12 +211,12 @@ class WriterQueryDataset:
         return state
 
 
-class WriterTaskBatchSampler:
-    """Deterministic single-task batches with O(1) step resume on each rank."""
+class MixedTaskBatchSampler:
+    """Deterministic no-replacement task cycles with exact step resume."""
 
     def __init__(
         self,
-        dataset: WriterQueryDataset,
+        dataset: FunctionalQueryDataset,
         *,
         task_ids: Sequence[int],
         per_rank_batch_size: int,
@@ -216,12 +233,14 @@ class WriterTaskBatchSampler:
             or not 0 <= start_step <= stop_step
             or not 0 <= rank < world_size
         ):
-            raise WriterColdStartError("invalid Writer task sampler")
+            raise WriterModelError("invalid mixed-task sampler")
         missing = set(task_ids) - set(dataset.task_rows)
         if missing:
-            raise WriterColdStartError(f"Writer task sampler lacks query rows: {sorted(missing)}")
-        if any(len(dataset.task_rows[task]) < per_rank_batch_size for task in task_ids):
-            raise WriterColdStartError("Writer task has fewer unique frames than one batch")
+            raise WriterModelError(f"query rows missing for tasks: {sorted(missing)}")
+        if any(
+            len(dataset.task_rows[task]) < per_rank_batch_size for task in task_ids
+        ):
+            raise WriterModelError("a task has fewer unique rows than one rank batch")
         self.dataset = dataset
         self.task_ids = tuple(sorted(task_ids))
         self.per_rank_batch_size = per_rank_batch_size
@@ -234,18 +253,24 @@ class WriterTaskBatchSampler:
     def __len__(self) -> int:
         return self.stop_step - self.start_step
 
-    def _task_for_slot(self, slot: int) -> int:
+    def _task_for_global_slot(self, slot: int) -> int:
         cycle, offset = divmod(slot, len(self.task_ids))
-        order = np.random.default_rng(np.random.SeedSequence([self.seed, cycle])).permutation(
-            self.task_ids
-        )
+        order = np.random.default_rng(
+            np.random.SeedSequence([self.seed, cycle])
+        ).permutation(self.task_ids)
         return int(order[offset])
 
     def __iter__(self) -> Iterator[list[int]]:
         task_rows = self.dataset.task_rows
         for step in range(self.start_step, self.stop_step):
-            task_id = self._task_for_slot(step * self.world_size + self.rank)
+            task_id = self._task_for_global_slot(
+                step * self.world_size + self.rank
+            )
             rows = task_rows[task_id]
-            rng = np.random.default_rng(np.random.SeedSequence([self.seed, step, self.rank]))
-            chosen = rng.choice(len(rows), size=self.per_rank_batch_size, replace=False)
+            rng = np.random.default_rng(
+                np.random.SeedSequence([self.seed, step, self.rank])
+            )
+            chosen = rng.choice(
+                len(rows), size=self.per_rank_batch_size, replace=False
+            )
             yield [rows[int(index)] for index in chosen]

@@ -1,195 +1,36 @@
-# Origin and General Research Thesis
+# Origin and General Thesis
 
-## Current owner authority and provenance
+EMBER 的原始动机是把任务描述或示范“编译”为一个可直接使用、又能继续适应的策略状态。owner 最初强调的是：
 
-The original EMBER core is language/action-hidden video to a Writer that emits
-an immediately useful task-specific adapter/LoRA, followed by ordinary
-task-local reward refinement and source-only learning of better future writes.
-The later canonical-bank, shared-subspace, task-conditioned-geometry, and
-residual-escape route was introduced by assistant/expert planning; it was not
-the owner's original mechanism. On 2026-07-18 the owner removed that route from
-the current project and long-term Goal. Historical expert documents may retain
-it as provenance, but active work must neither implement nor reserve it.
+- language/action-hidden video 提供任务规格；
+- Writer 输出 task-specific adapter/LoRA；
+- 输出应有 zero-interaction utility；
+- source action supervision 和 reward 可训练 Writer；
+- 后续目标任务 reward 可继续优化同一 task-local state；
+- held 时共享模块冻结。
 
-That removed route had imposed a second search object on local RL: a bank
-defined a shared span, geometry scaled/preconditioned its coordinates, and a
-residual allowed escape. Current EMBER has no such Writer-predicted bank, basis,
-mask, metric, radius, or learning-rate object. Its only structural space is the
-predeclared target-layer/rank LoRA contract; Writer initializes all task-local
-LoRA parameters and ordinary RL updates those same parameters.
+后来出现的 canonical bank、shared update subspace、soft geometry 和 residual escape 是 assistant/expert 添加的增强假设，不是 owner 原始核心，现已明确移出当前项目。
 
-## 1. Original point of departure
+## 当前具身实例
 
-EMBER did not begin from the narrower question "how can a robot learn from a
-video?" The original ambition is broader:
+在 LIBERO-90 中：
 
-> 找到一种元学习优化器，能将不同分布的数据，尤其是原始模型无法直接拿来
-> 做监督信号的输入信息，跨分布地转变成能提高模型性能的参数更新。
+- source tasks 给出成功 robot teacher episodes；
+- Writer 可以从这些 episodes 的 action-hidden 视频和 language 学习；
+- validation/test 只给 Writer language/video；
+- task-local RL 可以使用目标 reward，但不能把目标 action 泄露给 Writer；
+- direct target LoRA 用 action，只作 oracle。
 
-An operational English formulation is:
+## 更一般的研究命题
 
-> Learn a meta-learning optimizer that can transform informative data from
-> different input distributions—especially information that the base model
-> cannot directly use as an ordinary supervised target—into parameter updates
-> that improve the base model on the related downstream task.
+如果成立，EMBER 支持一个较窄但有意义的结论：任务规格可以被摊销地映射到局部参数初始化，并且这种初始化比统一起点更适合当前任务和后续标准适应。
 
-Examples of the mismatch include:
+它不自动推出：
 
-- raw documents contain knowledge but are not question-answer supervision;
-- human or action-free video shows how a task unfolds but does not contain the
-  robot's executable action labels;
-- language describes intent but does not directly specify continuous control;
-- later success/failure feedback evaluates behavior but is not itself a
-  parameter update.
+- 任意 embodiment 迁移；
+- human-to-robot domain transfer；
+- 真机安全；
+- universal optimizer；
+- shared low-dimensional update geometry。
 
-The desired system learns the transformation between these information and
-supervision spaces across many source tasks, then amortizes that learned
-transformation into a fast Writer at deployment.
-
-## 2. General formalization
-
-For a task \(T\), let:
-
-- \(f_\theta\) be a shared base model;
-- \(x_T \sim \mathcal{D}^{info}_T\) be informative task data available at
-  deployment;
-- \(y_T\) or \(r_T\) be executable supervision or outcome feedback available
-  on source tasks during meta-training but not necessarily attached to
-  \(x_T\) at deployment;
-- \(J_T(\theta)\) be downstream task utility;
-- \(H_\psi\) be a learned Writer or amortized optimizer.
-
-The basic operation is:
-
-\[
-\Delta\theta_T = H_\psi(x_T),
-\qquad
-J_T(\theta + \Delta\theta_T) > J_T(\theta).
-\]
-
-The Writer is trained episodically across \(T \sim p_{train}(T)\), using
-downstream query loss, executable labels, rewards, or post-adaptation return as
-the bridge signal. On a held-out task \(T \sim p_{test}(T)\), the Writer must
-produce a useful update from the allowed information input without receiving
-the held-out answer or action label as input.
-
-In current EMBER, \(\Delta\theta_T\) is the complete task-specific LoRA within
-the common target-layer/rank contract. Subsequent ordinary local RL updates
-that same \(\Delta\theta_T\); the Writer does not emit a second search-space or
-preconditioning object.
-
-## 3. What "cross-distribution" must mean precisely
-
-The phrase currently bundles three different generalization problems:
-
-1. **Information-to-supervision shift.** The Writer reads one kind of signal
-   (document, video, language) while utility is defined in another space
-   (answers, actions, rewards).
-2. **Cross-task meta-generalization.** The transformation is learned on source
-   tasks and applied to held-out tasks with shared modules frozen.
-3. **Domain or modality shift.** The held-out input may differ in objects,
-   visual appearance, phrasing, environment, or embodiment.
-
-EMBER should not claim all three from one experiment. Every evaluation must
-name which shift is tested. "Arbitrary different distributions" is not a
-scientifically defensible promise.
-
-The input must contain information causally relevant to downstream behavior,
-and the source-task family must contain enough recurring structure to learn the
-bridge. A Writer cannot recover robot contact dynamics from a video that does
-not reveal them, nor learn a useful transformation without some executable
-outer supervision on related source tasks.
-
-## 4. Necessary conditions and central risks
-
-### Information sufficiency
-
-The deployment input must identify at least part of the desired behavior. Any
-missing embodiment, contact, timing, or hidden-state information must be learned
-from source-task priors or recovered through interaction.
-
-### Learnable shared structure
-
-Source and held-out tasks must share primitives, dynamics, or semantic
-structure. If tasks are unrelated, the Writer can only memorize task identities
-or emit a generic average update.
-
-### Parameter non-identifiability
-
-Many different parameter updates implement similar behavior. Matching a teacher
-adapter with raw parameter MSE can therefore be ill-posed or dominated by
-factorization gauge. Functional action, prediction, or return objectives should
-remain primary.
-
-### Shortcut and leakage risk
-
-The Writer may learn task identity, answer format, generic policy bias, or
-dataset artifacts rather than translate the input's content. Matched versus
-source-disjoint controls and task-ID baselines are required.
-
-### Capacity and interference
-
-A low-rank update may not contain the needed behavior; a generated update may
-also damage unrelated capabilities. Immediate gain must be evaluated together
-with control harm, preservation, and later adaptability.
-
-### Meta-training cost
-
-Fast deployment does not mean cheap learning. One-time Writer meta-training,
-teacher generation, rollouts, and outer-loop optimization must be reported
-separately from per-task adaptation cost.
-
-## 5. EMBER as the embodied instantiation
-
-| General thesis component | EMBER instantiation |
-| --- | --- |
-| Informative but non-supervisory input | language, action-free robot video, or later human video |
-| Base model | pretrained VLA or visuomotor policy |
-| Missing direct target | executable robot action sequence, contact dynamics, and task reward |
-| Source-task bridge supervision | paired robot trajectories, teacher actions, query behavior, and environment rewards |
-| Writer output | complete immediately useful task-specific LoRA for the predeclared target matrices/rank |
-| Immediate utility | nonzero improvement in held-out-task action quality or success before new-task RL |
-| Later refinement | ordinary task-local RL updating the same LoRA parameters |
-| Meta-generalization test | shared Writer/base frozen; only task-local state adapts |
-
-The embodied domain is attractive because the information/supervision mismatch
-is real and consequential. Action-free demonstrations are easier to obtain than
-fully synchronized robot actions, while sparse-reward RL often needs a minimum
-level of initial competence. It is therefore a meaningful testbed for the
-general thesis rather than an arbitrary application pivot.
-
-## 6. Scope of the research claim
-
-The project has two nested questions:
-
-1. **General question:** can an amortized meta-optimizer translate an
-   informative non-label input into a beneficial parameter update across a task
-   distribution?
-2. **EMBER question:** can language/video task information initialize a useful
-   task-specific LoRA, after which ordinary LoRA RL and source-only Writer
-   reward learning improve adaptation under a shared-frozen held contract?
-
-A successful embodied experiment supports one concrete instance of the general
-question. It does not prove a universal optimizer across arbitrary modalities
-or distributions. Conversely, failure of one VLA parameterization does not by
-itself disprove the general thesis; the failure should be localized to
-information sufficiency, representation, acquisition, adaptation, or
-optimization.
-
-A possible future research program on unified multi-task learning and delayed
-feedback would require a fresh bottleneck and matched evidence before any
-shared structure is considered. It is not part of this Goal, a bank is not
-presumed even there, and this repository should not reserve architecture for it.
-
-## 7. Questions for expert review
-
-The expert should explicitly judge:
-
-- whether this general abstraction is scientifically meaningful or too broad;
-- whether the best terminology is meta-optimizer, amortized meta-learner,
-  task-conditioned hypernetwork, learned update rule, or another term;
-- which assumptions are required for information-to-parameter transfer;
-- which embodied task distribution tests the thesis without reducing to task-ID
-  lookup;
-- and which result would support the general thesis beyond a narrow VLA
-  engineering improvement.
+这些必须由独立项目和证据支持。

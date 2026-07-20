@@ -1,202 +1,81 @@
-# EMBER Research Concept
+# EMBER Concept
 
-This document specifies the active embodied instance. The broader motivation is
-defined in [`origin_and_general_thesis.md`](origin_and_general_thesis.md). The
-2026-07-18 owner correction supersedes historical proposals for a canonical
-bank, shared update subspace, soft geometry, residual escape, or mandatory
-canonical-representation Gate.
+## 一句话定义
 
-## 1. Motivation
+EMBER 是一个 multimodal task-conditioned hypernetwork / amortized LoRA initializer：
 
-Action-labeled robot trajectories contain synchronized observations, robot
-states, actions, and often success labels. Language and action-hidden videos can
-describe a task but do not directly provide calibrated robot actions, contact
-dynamics, or reward. At the same time, sparse-reward RL may not improve a VLA
-whose initial success probability is effectively zero.
+```text
+Writer(language, action-hidden videos) -> task-specific LoRA
+```
 
-EMBER asks whether source-task executable supervision can train a Writer to
-transform language/action-hidden video into a rough but functional task-specific
-LoRA. The Writer's deployment output should cross the zero-competence barrier;
-ordinary interaction then refines that same LoRA. This is a concrete
-information-to-parameter test, not a claim that action-hidden video alone
-contains every robot-control detail.
+其中 frozen base policy 加载 task-specific LoRA 后应立即提高目标任务成功率；随后标准 task-local RL 可继续原位更新同一套 LoRA。
 
-## 2. Problem statement
+## 为什么不是多任务通用 LoRA
 
-For each task \(T\):
+Writer 参数在 70 个 source tasks 间共享，学习“如何根据任务证据生成参数”。它每次接到一个 task 的 language/video 时输出不同 LoRA。若改成一套多任务通用 LoRA，就不再测试 task-conditioned parameter generation，也无法回答未见任务视频是否足以编译新技能。
 
-- \(x_T=(l_T,v_T)\) is legal language, action-hidden robot video, or both;
-- \(D_T^{support}\) and \(D_T^{query}\) are independent executable source
-  surfaces used only by training objectives;
-- \(E_T\) supplies rollouts and reward; and
-- \(\pi_\theta\) is a shared pretrained VLA base.
+## Source base、direct LoRA 与 EMBER
 
-The shared Writer \(H_\psi\) emits task-local LoRA parameters \(a_T^0\):
+- source embodiment base：一个在 70 个 source tasks 的 3500 条 teacher episodes 上联合训练的共享 SmolVLA。
+- direct task-local LoRA：针对一个 task，直接用该 task teacher actions 优化一套 LoRA。
+- EMBER：Writer 看 language + action-hidden videos，输出该 task 的 LoRA；Writer 的 source 训练仍可通过 action loss 得到梯度。
 
-\[
-a_T^0 = H_\psi(x_T), \qquad
-J_T(\pi_{\theta,a_T^0}) > J_T(\pi_{\theta,0}).
-\]
+source base 和 LoRA 都能改变动作策略，但训练范围与使用方式不同。当前项目不再设“LoRA 必须进一步超过 source base”这一人为 Gate。真正的目标是：在统一 source base 上，EMBER 对未见 task 只凭 language/video 也能比 frozen base 好。
 
-The target matrices, rank, scaling, and parameter count are common and frozen
-before outcomes. The values of all task-local LoRA factors are task-specific.
-The shared base \(\theta\) remains frozen during direct Writer training, source
-reward/meta learning, and held evaluation.
+## Functional supervision
 
-## 3. Exact adaptation parameterization
+对 source task，Writer 先产生一套 LoRA。把它 functional 地装入 frozen base，在 source teacher observation/action batch 上计算 SmolVLA 标准 flow/action behavior loss；梯度通过 policy 和 functional LoRA 回到 Writer。
 
-Let the predeclared target set be \(\mathcal{M}\). For every matrix
-\(W_m\in\mathcal{M}\), rank-\(r\) LoRA applies
+direct LoRA 使用同类 behavior loss，但 optimizer 直接更新该 task 的 LoRA tensors。匹配两者的数据、LoRA 空间和 loss 后，差异就是“每任务直接拟合”与“从语言/视频摊销生成”。
 
-\[
-W'_m = W_m + s_m B_{T,m}A_{T,m}.
-\]
+## 视频表示
 
-The Writer emits every \(A_{T,m}\) and \(B_{T,m}\) required by this contract.
-"Complete task-specific LoRA" means complete within \(\mathcal{M}\), rank
-\(r\), and the fixed parameter budget; it does not mean modifying every base
-weight.
+输入不是三帧摘要。冻结 VLM 对完整视频帧产生 features；Writer：
 
-After zero-step evaluation, ordinary task-local RL updates the same
-\(\{A_{T,m},B_{T,m}\}\) in place. The Writer emits no additional bank, basis,
-mask, gate, metric, radius, learning rate, preconditioner, or residual object.
+1. 在时间 chunk 内做 attention；
+2. 把所有 chunks 聚合成 episode memories；
+3. 对任意数量的 episode memories 做集合注意力；
+4. 与完整语言 token memory 融合；
+5. 以 layer/module/rank-aware decoder 生成 LoRA tensors。
 
-Historical assistant/expert planning proposed a canonical bank that supplied a
-shared span, a task-conditioned geometry that scaled/preconditioned directions
-inside it, and a residual escape that could leave it. That was a second,
-narrower Writer-conditioned RL search space. It is outside the current project
-and long-term Goal; no implementation path should be reserved for it.
+chunking 是计算分块，不是丢帧或固定视频长度。训练使用 50 条 episode，架构接口不设 50 上限。
 
-## 4. Training contract
+## 四个训练阶段
 
-### 4.1 Gate 0: independent useful-update oracle
+### Cold start
 
-Before amortization, independently fit one task-local LoRA per source task at
-the exact declared targets/rank. Use a support surface for optimization,
-independent query data for selection, and a locked closed-loop surface for the
-report. Record immediate gain, task specificity, drift/non-harm, confidence
-intervals, and resource cost.
+base 冻结，action监督只来自 source teacher episodes，更新 Writer。目标是 zero-interaction LoRA。
 
-This oracle establishes that useful updates exist and provides an upper bound
-and baseline. It does not show that Writer-visible information can predict them.
+### Writer-only RL
 
-### 4.2 Direct Writer cold-start
+base 冻结，Writer 生成 LoRA 后直接 rollout；不更新 LoRA，reward 只更新 Writer。目标是改善未来生成的初始化。
 
-For source tasks, the Writer sees only legal \(x_T\). Its generated LoRA is
-applied functionally to the frozen base and evaluated on independent executable
-query data:
+### Task-local RL
 
-\[
-\mathcal{L}_{writer}
-= \mathbb{E}_{T}\left[
-  \mathcal{L}_{action/flow/behavior}
-  (\pi_{\theta,H_\psi(x_T)},D_T^{query})
-\right].
-\]
+base/Writer 冻结，针对当前 task 原位更新完整 LoRA。比较 zero-init 与 Writer-init 的 matched adaptation。
 
-Gradient through functional adapter application is the primary bridge signal.
-Raw factor MSE is prohibited as the primary objective because LoRA gauge and
-parameter non-identifiability need not align with behavior. Oracle physical
-delta/update imitation may be a predeclared auxiliary, never a substitute for
-independent functional utility.
+### Source-only outer learning
 
-Report language-only, video-only, language-plus-video, wrong-video,
-same-scene, shuffled/reversed, first/last/scene-only, task-ID, average,
-retrieval, direct-conditioning, standard task-specific LoRA, and
-capacity-matched DISC/HyPoGen-style parameter-generator baselines. Neutral-prompt
-parameter compilation and practical instruction prompting are co-primary
-settings.
+inner loop 更新 source task LoRA，outer reward/meta objective 更新 Writer；base 仍冻结。目标是让 Writer initialization 更利于后续 adaptation。
 
-### 4.3 Ordinary task-local LoRA RL
+## Information wall
 
-Initialize \(a_T\leftarrow H_\psi(x_T)\), collect the predeclared reward
-budget, and run an ordinary LoRA optimizer over \(a_T\) only. Compare the full
-interaction curve against the same optimizer, parameter count, and budget from
-standard and other declared initializations. No Writer-predicted object may
-change the optimizer or constrain its search.
+| 阶段 | Language/video | Action labels | Reward | 更新对象 |
+| --- | --- | --- | --- | --- |
+| source base | train | train | 可选诊断 | shared action expert/projections |
+| direct source LoRA | train | train | 否 | task LoRA |
+| Writer cold start | train | train，仅作 loss | 否 | Writer |
+| Writer-only RL | train | 否 | source | Writer |
+| val/test zero-step | target | 否 | 否 | 无 |
+| val/test task-local RL | target | 否 | target，计入预算 | task LoRA |
+| direct val/test LoRA oracle | target | target | 否 | task LoRA |
 
-Primary evidence includes zero-step success/return, success-versus-interaction
-AUC, steps/episodes to threshold, final performance, seed uncertainty,
-catastrophic drift, wall time, and peak memory.
+direct val/test LoRA 故意越过主 information wall，因而只作能力参考。
 
-### 4.4 Source-only reward or delayed outer learning
+## Claim boundary
 
-For a source meta-batch:
+最小正向 claim：
 
-1. generate each task's initial LoRA;
-2. adapt only that task-local LoRA from source reward;
-3. evaluate fresh source query return; and
-4. update \(\psi\) so future zero-step initializations and subsequent
-   adaptation improve.
+> 在同一 embodiment 和 simulator family 内，Writer 从未见任务的语言与 action-hidden robot videos 生成完整 task-specific LoRA；该 LoRA 在不约束后续 RL 搜索方向的情况下，提高 frozen base 的 zero-interaction 成功率，并可改善 matched ordinary task-local LoRA RL 的适应。
 
-The estimator may differentiate through the inner loop or use one predeclared
-stable alternative. In the default mainline, no shared base weight, shared
-adapter, or other shared policy state is trained. The model-side update is the
-task-local LoRA; the shared learning update is the Writer.
-
-Updating shared base weights/shared LoRA would be a separate justified matched
-ablation, not the default and not required for completion.
-
-### 4.5 Held-task evaluation
-
-Before held outcomes, freeze the base, Writer, encoders, target/rank contract,
-normalization authority, optimizer, budgets, thresholds, and all shared state.
-For each held task:
-
-1. generate a zero-step LoRA from legal language/action-hidden video;
-2. measure immediate utility;
-3. adapt only that task-local LoRA from the declared held reward budget; and
-4. report the complete curve and matched controls.
-
-Held actions, labels, proprioceptive trajectories, terminals, filenames, task
-IDs, and hidden normalization information are never Writer inputs or tuning
-surfaces.
-
-## 5. What bootstrapping means
-
-Bootstrapping is the deployment-time Writer step that moves the base VLA to
-minimum viable competence before target-task interaction:
-
-\[
-J_T(\pi_{\theta,H_\psi(x_T)}) > J_T(\pi_{\theta,0}).
-\]
-
-Source supervision teaches this transformation; it is not itself the held-task
-bootstrap. If the generated LoRA has no immediate functional utility and only
-changes later optimization, the bootstrapping claim fails.
-
-## 6. Falsifiable hypotheses
-
-- **H1: Information validity.** Legal language/video contains task-relevant
-  information beyond scene/task-ID shortcuts.
-- **H2: Useful-update existence.** Independent task-local LoRA oracles improve
-  locked source behavior at the declared targets/rank.
-- **H3: Direct Writer utility.** Generated LoRA improves zero-interaction
-  behavior over base, average, retrieval, direct-conditioning, standard-LoRA,
-  and capacity-matched direct-generator controls.
-- **H4: Local-RL value.** Writer initialization improves matched-budget
-  ordinary LoRA RL AUC or time-to-threshold without hiding a final-performance
-  loss.
-- **H5: Source reward learning.** Source-only outer reward improves future
-  Writer initializations while the shared base remains frozen.
-- **H6: Frozen meta-generalization.** The declared gains persist on sealed held
-  compositions with all shared state frozen.
-- **H7: Multimodal value.** Action-hidden video contributes causally beyond
-  language/task-ID controls.
-
-Each failure localizes a different claim and triggers bounded recovery; none
-authorizes held leakage, threshold weakening, or substitution of direct
-conditioning for parameter-generation evidence.
-
-## 7. Non-goals for the current project
-
-- Canonical banks, shared task-update subspaces, predicted RL geometry,
-  residual escape, or any second Writer-conditioned search object.
-- Shared-base/shared-LoRA source outer training in the default mainline.
-- A universal optimizer across arbitrary modalities or distributions.
-- Human-video or cross-embodiment transfer, arbitrary web video, or real-robot
-  RL in the first claim.
-- Training a foundation VLA from scratch.
-- Updating shared state on held tasks.
-- Treating parameter distance, factor MSE, healthy gradients, or final success
-  alone as proof of the mechanism.
+不能声称 Writer 学到了 optimizer、geometry、subspace 或 update direction。

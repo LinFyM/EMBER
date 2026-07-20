@@ -33,6 +33,46 @@ def _camera(value: np.ndarray) -> np.ndarray:
     return np.ascontiguousarray(value[::-1, ::-1].transpose(2, 0, 1))
 
 
+def _camera_batch(value: np.ndarray) -> np.ndarray:
+    if value.ndim != 4 or value.shape[-1] != 3 or value.dtype != np.uint8:
+        raise WriterColdStartError("Writer camera video changed shape or dtype")
+    return np.ascontiguousarray(value[:, ::-1, ::-1].transpose(0, 3, 1, 2))
+
+
+def iter_action_hidden_video_chunks(
+    authority: WriterSpecAuthority,
+    demo_indices: Sequence[int],
+    *,
+    chunk_size: int,
+) -> Iterator[tuple[int, int, int, np.ndarray]]:
+    """Stream every third-person frame while never touching privileged fields.
+
+    Yields ``(demo_index, frame_start, episode_length, frames)``. Neither the
+    number of demonstrations nor their lengths is fixed by this interface.
+    """
+
+    verify_authority(authority)
+    if not demo_indices or chunk_size <= 0:
+        raise WriterColdStartError("invalid action-hidden video request")
+    with h5py.File(authority.path, "r") as handle:
+        for demo_index in demo_indices:
+            name = f"data/demo_{demo_index}"
+            if name not in handle:
+                raise WriterColdStartError(f"missing Writer specification {name}")
+            pixels = handle[name].get("obs/agentview_rgb")
+            if not isinstance(pixels, h5py.Dataset) or pixels.ndim != 4 or pixels.shape[0] <= 0:
+                raise WriterColdStartError("invalid action-hidden teaching video")
+            episode_length = int(pixels.shape[0])
+            for start in range(0, episode_length, chunk_size):
+                stop = min(start + chunk_size, episode_length)
+                yield (
+                    int(demo_index),
+                    start,
+                    episode_length,
+                    _camera_batch(np.asarray(pixels[start:stop])),
+                )
+
+
 def read_action_hidden_spec_frames(
     authority: WriterSpecAuthority,
     demo_indices: Sequence[int],

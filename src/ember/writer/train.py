@@ -42,7 +42,7 @@ from ember.writer.data import (
     WriterQueryDataset,
     WriterSpecAuthority,
     WriterTaskBatchSampler,
-    read_action_hidden_spec_frames,
+    iter_action_hidden_video_chunks,
 )
 
 
@@ -162,33 +162,66 @@ def prepare_writer_images(owner: Any, images: torch.Tensor) -> torch.Tensor:
 
 
 @torch.inference_mode()
-def _encode_spec_feature(
-    policy: Any, authority: WriterSpecAuthority, *, demo_indices: list[int], positions: list[str]
-) -> torch.Tensor:
-    frames = read_action_hidden_spec_frames(authority, demo_indices, positions)
+def _encode_spec_features(
+    policy: Any,
+    authority: WriterSpecAuthority,
+    *,
+    demo_indices: list[int],
+    encode_batch_size: int,
+) -> dict[str, torch.Tensor]:
+    """Encode all frames and full language while preserving episode boundaries."""
+
     device = next(policy.parameters()).device
-    images = torch.from_numpy(frames).to(device=device, dtype=torch.float32).div_(255.0)
     owner = _base_owner(policy)
-    prepared = prepare_writer_images(owner, images)
-    visual_tokens = owner.model.vlm_with_expert.embed_image(prepared)
-    frame_features = visual_tokens.mean(dim=1).to(torch.float32)
-    first = frame_features[0::3]
-    last = frame_features[2::3]
-    video = torch.cat(
-        (frame_features.mean(0), first.mean(0), last.mean(0), (last - first).mean(0)), dim=0
-    )
+    video_chunks: list[torch.Tensor] = []
+    episode_offsets = [0]
+    active_demo: int | None = None
+    active_frames = 0
+    active_length = 0
+    for demo_index, start, episode_length, frames in iter_action_hidden_video_chunks(
+        authority, demo_indices, chunk_size=encode_batch_size
+    ):
+        if active_demo != demo_index:
+            if active_demo is not None:
+                if active_frames != active_length:
+                    raise WriterColdStartError("action-hidden episode encoding was incomplete")
+                episode_offsets.append(episode_offsets[-1] + active_frames)
+            active_demo = demo_index
+            active_frames = 0
+            active_length = episode_length
+        if start != active_frames or episode_length != active_length:
+            raise WriterColdStartError("action-hidden episode order changed")
+        images = torch.from_numpy(frames).to(device=device, dtype=torch.float32).div_(255.0)
+        prepared = prepare_writer_images(owner, images)
+        visual_tokens = owner.model.vlm_with_expert.embed_image(prepared)
+        video_chunks.append(visual_tokens.mean(dim=1).to(torch.float16).cpu())
+        active_frames += frames.shape[0]
+    if active_demo is None or active_frames != active_length:
+        raise WriterColdStartError("action-hidden video set is empty or incomplete")
+    episode_offsets.append(episode_offsets[-1] + active_frames)
+
     tokenizer = owner.model.vlm_with_expert.processor.tokenizer
-    tokens = tokenizer(
-        authority.language,
-        return_tensors="pt",
-        truncation=True,
-        max_length=48,
-    )
+    tokens = tokenizer(authority.language, return_tensors="pt", truncation=False)
     token_ids = tokens["input_ids"].to(device)
     mask = tokens["attention_mask"].to(device=device, dtype=torch.bool)
-    language_tokens = owner.model.vlm_with_expert.embed_language_tokens(token_ids).to(torch.float32)
-    language = (language_tokens * mask[..., None]).sum(1) / mask.sum(1, keepdim=True)
-    return torch.cat((language[0], video), dim=0).cpu().contiguous()
+    language_tokens = owner.model.vlm_with_expert.embed_language_tokens(token_ids)[0, mask[0]]
+    return {
+        "language_tokens": language_tokens.to(torch.float16).cpu().contiguous(),
+        "video_features": torch.cat(video_chunks).contiguous(),
+        "episode_offsets": torch.tensor(episode_offsets, dtype=torch.int64),
+    }
+
+
+def _load_task_input(path: Path, device: torch.device) -> tuple[torch.Tensor, ...]:
+    tensors = load_file(path)
+    required = {"language_tokens", "video_features", "episode_offsets"}
+    if set(tensors) != required:
+        raise WriterColdStartError("cached Writer task input is incomplete")
+    return (
+        tensors["language_tokens"].to(device=device, dtype=torch.float32, non_blocking=True),
+        tensors["video_features"].to(device=device, dtype=torch.float32, non_blocking=True),
+        tensors["episode_offsets"],
+    )
 
 
 def _feature_cache(
@@ -204,17 +237,24 @@ def _feature_cache(
     cache.mkdir(parents=True, exist_ok=True)
     bounds = spec["data"]["writer_spec_episode_bounds"]
     demos = list(range(bounds[0], bounds[1] + 1))
-    positions = spec["data"]["teaching_video_frame_positions"]
     for authority in authorities[rank::world_size]:
         path = cache / f"task_{authority.task_id:03d}.safetensors"
         if not path.exists():
-            feature = _encode_spec_feature(
-                policy, authority, demo_indices=demos, positions=positions
+            features = _encode_spec_features(
+                policy,
+                authority,
+                demo_indices=demos,
+                encode_batch_size=spec["writer"]["vision_encode_batch_size"],
             )
-            if feature.shape != (spec["writer"]["feature_dim"],) or not torch.isfinite(feature).all():
-                raise WriterColdStartError("frozen Writer feature has wrong shape or values")
+            if (
+                features["video_features"].shape[1] != spec["writer"]["vision_feature_dim"]
+                or features["language_tokens"].shape[1]
+                != spec["writer"]["language_feature_dim"]
+                or not all(torch.isfinite(value).all() for value in features.values())
+            ):
+                raise WriterColdStartError("frozen Writer sequence features have wrong values")
             temporary = cache / f".{path.name}.tmp-rank{rank}"
-            save_file({"feature": feature}, temporary)
+            save_file(features, temporary)
             os.replace(temporary, path)
     _barrier()
     manifest_path = cache / "feature_manifest.json"
@@ -222,13 +262,22 @@ def _feature_cache(
         records = {}
         for authority in authorities:
             path = cache / f"task_{authority.task_id:03d}.safetensors"
-            feature = load_file(path)["feature"]
-            if feature.shape != (spec["writer"]["feature_dim"],):
-                raise WriterColdStartError("cached Writer feature shape changed")
+            features = load_file(path)
+            offsets = features["episode_offsets"].tolist()
+            if (
+                features["video_features"].shape[1] != spec["writer"]["vision_feature_dim"]
+                or features["language_tokens"].shape[1]
+                != spec["writer"]["language_feature_dim"]
+                or offsets[-1] != features["video_features"].shape[0]
+            ):
+                raise WriterColdStartError("cached Writer sequence feature shape changed")
             records[str(authority.task_id)] = {
                 "sha256": sha256_file(path),
                 "bytes": path.stat().st_size,
                 "language": authority.language,
+                "episode_count": len(offsets) - 1,
+                "episode_lengths": [right - left for left, right in zip(offsets, offsets[1:])],
+                "frame_count": offsets[-1],
                 "visible_fields": spec["data"]["writer_visible_fields"],
             }
         temporary = cache / ".feature_manifest.json.tmp"
@@ -248,11 +297,14 @@ def _writer_model(
     return CompleteLoRAWriter(
         build_lora_tensor_specs(template),
         template_state=template,
-        feature_dim=writer["feature_dim"],
+        vision_feature_dim=writer["vision_feature_dim"],
+        language_feature_dim=writer["language_feature_dim"],
         hidden_dim=writer["hidden_dim"],
-        module_embedding_dim=writer["module_embedding_dim"],
-        factor_embedding_dim=writer["factor_embedding_dim"],
-        rank_embedding_dim=writer["rank_embedding_dim"],
+        attention_heads=writer["attention_heads"],
+        temporal_chunk_size=writer["temporal_chunk_size"],
+        chunk_memory_tokens=writer["chunk_memory_tokens"],
+        episode_memory_tokens=writer["episode_memory_tokens"],
+        task_memory_tokens=writer["task_memory_tokens"],
         decoder_hidden_dim=writer["decoder_hidden_dim"],
     ).to(device)
 
@@ -394,6 +446,7 @@ class TrainRuntime:
     start_step: int
     target_step: int
     data_chain: str
+    task_inputs: dict[int, tuple[torch.Tensor, ...]]
 
 
 def _functional_query_loader(
@@ -479,10 +532,18 @@ def _setup_runtime(args: argparse.Namespace) -> TrainRuntime:
     teacher_states, teacher_norm_squares = load_physical_update_teachers(
         spec, output_root=args.output_root, template=template, device=device
     )
+    training_task_ids = set(
+        spec["data"].get("functional_training_task_ids", phase0["splits"]["source"])
+    )
+    cache_authorities = [
+        authority for authority in authorities if authority.task_id in training_task_ids
+    ]
+    if len(cache_authorities) != len(training_task_ids):
+        raise WriterColdStartError("Writer video cache task authority changed")
     feature_cache = _feature_cache(
         spec,
         policy,
-        authorities,
+        cache_authorities,
         args.output_root / spec["authority"]["feature_cache_relative_path"],
         rank=rank,
         world_size=world_size,
@@ -542,7 +603,7 @@ def _setup_runtime(args: argparse.Namespace) -> TrainRuntime:
         args, spec, rank, world_size, device, policy, preprocessor, template,
         teacher_states, teacher_norm_squares,
         feature_cache, writer, writer_owner, optimizer, scheduler, dataset,
-        iterator, tracker, start_step, target_step, data_chain,
+        iterator, tracker, start_step, target_step, data_chain, {},
     )
 
 
@@ -575,10 +636,13 @@ def _functional_step(runtime: TrainRuntime, step: int) -> dict[str, float]:
             time_seed=train["flow_time_seed"],
             device=runtime.device,
         )
-        feature = load_file(runtime.feature_cache / f"task_{task_id:03d}.safetensors")["feature"]
-        feature = feature.to(runtime.device, non_blocking=True)[None]
+        if task_id not in runtime.task_inputs:
+            runtime.task_inputs[task_id] = _load_task_input(
+                runtime.feature_cache / f"task_{task_id:03d}.safetensors", runtime.device
+            )
+        task_input = runtime.task_inputs[task_id]
         runtime.optimizer.zero_grad(set_to_none=True)
-        generated = {key: value[0] for key, value in runtime.writer(feature).items()}
+        generated = {key: value[0] for key, value in runtime.writer(*task_input).items()}
         with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
             functional_loss, _ = torch.func.functional_call(
                 runtime.policy,

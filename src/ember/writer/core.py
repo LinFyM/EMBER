@@ -16,6 +16,8 @@ from typing import Any, Mapping
 import torch
 from safetensors.torch import load_file, save_file
 
+from ember.writer.temporal import VariableEpisodeTaskEncoder
+
 
 class WriterColdStartError(RuntimeError):
     """Raised when the direct-Writer contract or state is incomplete."""
@@ -350,18 +352,21 @@ def load_physical_update_teachers(
 
 
 class CompleteLoRAWriter(torch.nn.Module):
-    """Layer/module/rank-aware generator for every tensor in one LoRA."""
+    """Full-video, layer/module/rank-aware generator for every LoRA tensor."""
 
     def __init__(
         self,
         tensor_specs: tuple[LoraTensorSpec, ...],
         *,
         template_state: Mapping[str, torch.Tensor],
-        feature_dim: int,
+        vision_feature_dim: int,
+        language_feature_dim: int,
         hidden_dim: int,
-        module_embedding_dim: int,
-        factor_embedding_dim: int,
-        rank_embedding_dim: int,
+        attention_heads: int,
+        temporal_chunk_size: int,
+        chunk_memory_tokens: int,
+        episode_memory_tokens: int,
+        task_memory_tokens: int,
         decoder_hidden_dim: int,
     ) -> None:
         super().__init__()
@@ -371,24 +376,35 @@ class CompleteLoRAWriter(torch.nn.Module):
         if len(ranks) != 1:
             raise WriterColdStartError("one Writer contract cannot mix LoRA ranks")
         self.tensor_specs = tensor_specs
-        self.feature_dim = feature_dim
-        self.encoder = torch.nn.Sequential(
-            torch.nn.LayerNorm(feature_dim),
-            torch.nn.Linear(feature_dim, hidden_dim),
-            torch.nn.GELU(),
-            torch.nn.Linear(hidden_dim, hidden_dim),
-            torch.nn.LayerNorm(hidden_dim),
+        self.task_encoder = VariableEpisodeTaskEncoder(
+            vision_feature_dim=vision_feature_dim,
+            language_feature_dim=language_feature_dim,
+            hidden_dim=hidden_dim,
+            attention_heads=attention_heads,
+            temporal_chunk_size=temporal_chunk_size,
+            chunk_memory_tokens=chunk_memory_tokens,
+            episode_memory_tokens=episode_memory_tokens,
+            task_memory_tokens=task_memory_tokens,
         )
         module_count = max(item.module_index for item in tensor_specs) + 1
         rank = next(iter(ranks))
-        self.module_embedding = torch.nn.Embedding(module_count, module_embedding_dim)
-        self.factor_embedding = torch.nn.Embedding(2, factor_embedding_dim)
-        self.rank_embedding = torch.nn.Embedding(rank, rank_embedding_dim)
-        decoder_input = hidden_dim + module_embedding_dim + factor_embedding_dim + rank_embedding_dim
+        self.module_embedding = torch.nn.Embedding(module_count, hidden_dim)
+        self.factor_embedding = torch.nn.Embedding(2, hidden_dim)
+        self.rank_embedding = torch.nn.Embedding(rank, hidden_dim)
+        self.parameter_attention = torch.nn.MultiheadAttention(
+            hidden_dim, attention_heads, batch_first=True, dropout=0.0
+        )
+        self.parameter_norm = torch.nn.LayerNorm(hidden_dim)
+        self.parameter_ffn = torch.nn.Sequential(
+            torch.nn.LayerNorm(hidden_dim),
+            torch.nn.Linear(hidden_dim, hidden_dim * 4),
+            torch.nn.GELU(),
+            torch.nn.Linear(hidden_dim * 4, hidden_dim),
+        )
         self.heads = torch.nn.ModuleDict()
         for width in sorted({item.width for item in tensor_specs}):
             head = torch.nn.Sequential(
-                torch.nn.Linear(decoder_input, decoder_hidden_dim),
+                torch.nn.Linear(hidden_dim, decoder_hidden_dim),
                 torch.nn.GELU(),
                 torch.nn.Linear(decoder_hidden_dim, width),
             )
@@ -404,29 +420,56 @@ class CompleteLoRAWriter(torch.nn.Module):
             self.register_buffer(buffer_name, value, persistent=True)
             self._template_buffers[item.name] = buffer_name
 
-    def forward(self, features: torch.Tensor) -> dict[str, torch.Tensor]:
-        if features.ndim != 2 or features.shape[1] != self.feature_dim:
-            raise WriterColdStartError("Writer feature tensor has wrong shape")
-        task = self.encoder(features.to(torch.float32))
-        batch_size = task.shape[0]
+        module_ids: list[int] = []
+        factor_ids: list[int] = []
+        rank_ids: list[int] = []
+        query_slices: list[tuple[int, int]] = []
+        cursor = 0
+        for item in tensor_specs:
+            module_ids.extend([item.module_index] * item.rank)
+            factor_ids.extend([item.factor_index] * item.rank)
+            rank_ids.extend(range(item.rank))
+            query_slices.append((cursor, cursor + item.rank))
+            cursor += item.rank
+        self.register_buffer("parameter_module_ids", torch.tensor(module_ids), persistent=False)
+        self.register_buffer("parameter_factor_ids", torch.tensor(factor_ids), persistent=False)
+        self.register_buffer("parameter_rank_ids", torch.tensor(rank_ids), persistent=False)
+        self._query_slices = tuple(query_slices)
+
+    def encode_task(
+        self,
+        language_tokens: torch.Tensor,
+        video_features: torch.Tensor,
+        episode_offsets: torch.Tensor,
+    ) -> torch.Tensor:
+        return self.task_encoder(language_tokens, video_features, episode_offsets)
+
+    def forward(
+        self,
+        language_tokens: torch.Tensor,
+        video_features: torch.Tensor,
+        episode_offsets: torch.Tensor,
+    ) -> dict[str, torch.Tensor]:
+        task_memory = self.encode_task(language_tokens, video_features, episode_offsets)
+        queries = (
+            self.module_embedding(self.parameter_module_ids)
+            + self.factor_embedding(self.parameter_factor_ids)
+            + self.rank_embedding(self.parameter_rank_ids)
+        )
+        attended, _ = self.parameter_attention(
+            self.parameter_norm(queries)[None],
+            self.parameter_norm(task_memory)[None],
+            self.parameter_norm(task_memory)[None],
+            need_weights=False,
+        )
+        decoded = queries + attended[0]
+        decoded = decoded + self.parameter_ffn(decoded)
         result: dict[str, torch.Tensor] = {}
-        for item in self.tensor_specs:
-            ranks = torch.arange(item.rank, device=task.device)
-            module_ids = torch.full_like(ranks, item.module_index)
-            factor_ids = torch.full_like(ranks, item.factor_index)
-            condition = torch.cat(
-                (
-                    task[:, None, :].expand(batch_size, item.rank, -1),
-                    self.module_embedding(module_ids)[None].expand(batch_size, -1, -1),
-                    self.factor_embedding(factor_ids)[None].expand(batch_size, -1, -1),
-                    self.rank_embedding(ranks)[None].expand(batch_size, -1, -1),
-                ),
-                dim=-1,
-            )
-            rows = self.heads[str(item.width)](condition)
+        for item, (start, stop) in zip(self.tensor_specs, self._query_slices, strict=True):
+            rows = self.heads[str(item.width)](decoded[start:stop])
             generated = rows.transpose(-1, -2) if item.transpose_output else rows
             template = getattr(self, self._template_buffers[item.name])
-            result[item.name] = generated + template[None]
+            result[item.name] = (generated + template)[None]
         return result
 
 

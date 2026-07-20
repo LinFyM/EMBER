@@ -57,7 +57,8 @@ from ember.writer.core import (
 from ember.writer.data import WriterSpecAuthority
 from ember.writer.direct_fit import direct_final_path, fit_direct_lora
 from ember.writer.train import (
-    _encode_spec_feature,
+    _encode_spec_features,
+    _load_task_input,
     _lora_targets,
     _paths,
     _writer_model,
@@ -193,6 +194,7 @@ def _writer_lora(
     authority: WriterSpecAuthority,
     writer_spec: Mapping[str, Any],
     writer_checkpoint: Path,
+    output_root: Path,
 ) -> None:
     template = {
         name: value.detach().cpu().to(torch.float32) for name, value in lora_state.items()
@@ -204,17 +206,33 @@ def _writer_lora(
     if incompatible.missing_keys or incompatible.unexpected_keys:
         raise WriterValidationError("Writer checkpoint model is incomplete")
     writer.eval()
-    bounds = writer_spec["data"]["writer_spec_episode_bounds"]
-    feature = _encode_spec_feature(
-        policy,
-        authority,
-        demo_indices=list(range(bounds[0], bounds[1] + 1)),
-        positions=writer_spec["data"]["teaching_video_frame_positions"],
+    cache_path = (
+        output_root
+        / writer_spec["authority"]["feature_cache_relative_path"]
+        / "writer_spec_features"
+        / f"task_{authority.task_id:03d}.safetensors"
     )
+    device = next(writer.parameters()).device
+    if cache_path.is_file():
+        task_input = _load_task_input(cache_path, device)
+    else:
+        bounds = writer_spec["data"]["writer_spec_episode_bounds"]
+        features = _encode_spec_features(
+            policy,
+            authority,
+            demo_indices=list(range(bounds[0], bounds[1] + 1)),
+            encode_batch_size=writer_spec["writer"]["vision_encode_batch_size"],
+        )
+        task_input = tuple(
+            features[key].to(device=device, dtype=torch.float32)
+            if key != "episode_offsets"
+            else features[key]
+            for key in ("language_tokens", "video_features", "episode_offsets")
+        )
     with torch.inference_mode():
         generated = {
             key: value[0].detach()
-            for key, value in writer(feature.to(next(writer.parameters()).device)[None]).items()
+            for key, value in writer(*task_input).items()
         }
     _restore_lora(lora_state, generated)
 
@@ -268,6 +286,7 @@ def _open_runtime(
             authority=authority,
             writer_spec=writer_spec,
             writer_checkpoint=writer_checkpoint,
+            output_root=output_root,
         )
     else:
         raise WriterValidationError(f"unknown validation arm: {arm}")

@@ -1,7 +1,7 @@
 schema_version = 1
 name = "smolvla_libero90_writer_foundation_source_screen_v1"
 status = "frozen_before_writer_implementation_or_training_outcomes"
-predeclared_at_utc = "2026-07-20T06:20:00Z"
+predeclared_at_utc = "2026-07-20T06:38:00Z"
 
 [authority]
 phase0_contract_sha256 = "ba9e89971e0f88074cc8de573c8e60b9093105638364a60207ff0d5aa8b7882a"
@@ -18,8 +18,8 @@ base_weight_sha256 = "7cd549ac2351fb069c0ddb3c34ad2d09cfc92b56a15dccdfc2e41467aa
 canonical_manifest_relative_path = "phase0/libero90_manifest/reseal1_20260718T044331Z/manifest.json"
 canonical_manifest_sha256 = "2cde2e8ed05fc892309dce0009ca776c57c51158a313d836588a01c1f475e81b"
 dataset_relative_path = "LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a/libero_90"
-feature_cache_relative_path = "writer_cold_start/action_hidden_feature_cache_v1"
-feature_cache_reuse_authority = "only frozen VLM image/language embeddings; prior source-base training changed action expert and projections, not the VLM feature encoder"
+feature_cache_relative_path = "foundation_source_screen/action_hidden_feature_cache_source16_ep8_39_v1"
+feature_cache_reuse_authority = "none; rebuild from the exact action-hidden videos used for supervision"
 source_task_ids_authority = "configs/phase0.toml:splits.source"
 validation_numeric_access = false
 test_held_numeric_access = false
@@ -34,25 +34,33 @@ expected_parameter_count = 1485312
 initialization = "frozen_gaussian_A_zero_B_plus_writer_residual"
 
 [data]
-writer_spec_episode_bounds = [0, 7]
+writer_spec_episode_bounds = [8, 39]
 functional_train_episode_bounds = [8, 39]
+functional_training_task_ids = [3, 6, 9, 16, 19, 20, 33, 35, 34, 37, 46, 57, 63, 73, 84, 87]
 source_selection_query_episode_bounds = [40, 45]
 writer_visible_fields = ["language", "agentview_rgb"]
 writer_forbidden_fields = ["actions", "ee_states", "gripper_states", "reward", "terminal", "task_id_feature", "filename_feature"]
-teaching_video_frame_positions = ["first", "middle", "last"]
+teaching_video_frames = "all_frames_in_original_order_without_temporal_subsampling"
+episode_count_contract = "any_positive_count; no architecture maximum"
+episode_length_contract = "any_positive_length; hierarchical chunks do not truncate"
 functional_action_chunk_size = 50
-training_tasks = "all_60_resealed_source_tasks"
+training_tasks = "16_predeclared_primitive_stratified_source_tasks"
 
 [writer]
-language_feature = "frozen_smolvlm_mean_token_embedding"
-video_feature = "frozen_smolvlm_agentview_frame_embedding_mean_first_last_delta"
-feature_dim = 4800
+language_feature = "full_frozen_smolvlm_token_sequence"
+video_feature = "every_frozen_smolvlm_frame_embedding_with_episode_boundaries_and_time_order"
+vision_feature_dim = 960
+language_feature_dim = 960
 hidden_dim = 384
-module_embedding_dim = 64
-factor_embedding_dim = 32
-rank_embedding_dim = 32
+attention_heads = 8
+temporal_chunk_size = 128
+chunk_memory_tokens = 4
+episode_memory_tokens = 8
+task_memory_tokens = 16
+vision_encode_batch_size = 32
 decoder_hidden_dim = 256
-decoder = "shared_layer_module_rank_aware_width_typed_heads"
+encoder = "hierarchical_temporal_attention_then_episode_set_attention"
+decoder = "layer_module_factor_rank_queries_cross_attend_task_memory_then_width_typed_heads"
 outputs = "all_A_and_B_factors_for_every_declared_target"
 bank_geometry_or_shared_subspace = false
 
@@ -69,16 +77,16 @@ weight_decay = 0.000001
 gradient_clip_norm = 10.0
 scheduler = "linear_warmup_cosine_decay"
 warmup_steps = 100
-first_segment_steps = 600
-maximum_steps = 600
+first_segment_steps = 300
+maximum_steps = 300
 minimum_learning_rate = 0.00001
-checkpoint_steps = [300, 600]
+checkpoint_steps = [150, 300]
 seed = 2026072001
 flow_noise_seed = 2026072002
 flow_time_seed = 2026072003
 augmentation = "deterministic_random_resized_crop_0.9_1.0"
 num_workers_per_rank = 2
-expected_feedback_wall_clock_minutes = 35
+expected_feedback_wall_clock_minutes = 18
 
 [validation]
 task_ids = [11, 21, 51, 70, 86]
@@ -107,4 +115,4 @@ minimum_free_memory_mib = 10240
 target_average_free_memory_mib = 10240
 expected_peak_additional_storage_gib = 5.0
 visual_gallery = true
-cleanup = "retain step-600 checkpoint, metrics, compact videos and latest gallery; remove only verified regenerable temporary shards"
+cleanup = "retain step-300 checkpoint, metrics, compact videos and latest gallery; remove only verified regenerable temporary shards"

@@ -122,6 +122,16 @@ def build_contract(
     trainable: dict[str, Any],
     git: dict[str, Any],
 ) -> dict[str, Any]:
+    segment = (
+        resolve_formal_segment(config, resuming=args.continuation)
+        if args.mode == "formal"
+        else {
+            "start_step": 0,
+            "scheduler_horizon_steps": args.total_steps,
+            "parent_contract_sha256": None,
+            "parent_checkpoint_manifest_sha256": None,
+        }
+    )
     return {
         "schema_version": "ember_source_base_launch_v1",
         "mode": args.mode,
@@ -144,6 +154,13 @@ def build_contract(
             "effective_batch_size": context.world_size * args.batch_size,
             "total_steps": args.total_steps,
             "checkpoint_steps": list(checkpoint_steps),
+            "continuation": bool(args.continuation),
+            "segment_start_step": segment["start_step"],
+            "scheduler_horizon_steps": segment["scheduler_horizon_steps"],
+            "parent_contract_sha256": segment["parent_contract_sha256"],
+            "parent_checkpoint_manifest_sha256": segment[
+                "parent_checkpoint_manifest_sha256"
+            ],
             "num_workers_per_rank": args.num_workers,
             "distributed_backend": "nccl" if context.world_size > 1 else None,
             "one_policy_cuda_process_per_rank": True,
@@ -172,12 +189,62 @@ def parse_checkpoint_steps(raw: str, total_steps: int) -> tuple[int, ...]:
     return steps
 
 
+def resolve_formal_segment(
+    config: dict[str, Any], *, resuming: bool
+) -> dict[str, Any]:
+    """Resolve either the original trajectory or its one sealed source-only extension."""
+
+    formal = config["formal_run"]
+    if not resuming:
+        total_steps = int(formal["total_steps"])
+        return {
+            "start_step": 0,
+            "total_steps": total_steps,
+            "checkpoint_steps": (
+                total_steps // 3,
+                2 * total_steps // 3,
+                total_steps,
+            ),
+            "scheduler_horizon_steps": total_steps,
+            "parent_contract_sha256": None,
+            "parent_checkpoint_manifest_sha256": None,
+        }
+    continuation = formal.get("continuation")
+    if not isinstance(continuation, dict):
+        raise SourceBaseError("formal source-base continuation is not sealed")
+    start_step = int(continuation["parent_step"])
+    total_steps = int(continuation["total_steps"])
+    checkpoint_steps = tuple(int(value) for value in continuation["checkpoint_steps"])
+    if (
+        start_step != int(formal["total_steps"])
+        or int(continuation["additional_steps"]) != total_steps - start_step
+        or len(checkpoint_steps) != 3
+        or checkpoint_steps[-1] != total_steps
+        or tuple(value - start_step for value in checkpoint_steps)
+        != tuple((index + 1) * (total_steps - start_step) // 3 for index in range(3))
+        or int(continuation["scheduler_horizon_steps"]) != start_step
+    ):
+        raise SourceBaseError("formal continuation thirds or scheduler boundary changed")
+    return {
+        "start_step": start_step,
+        "total_steps": total_steps,
+        "checkpoint_steps": checkpoint_steps,
+        "scheduler_horizon_steps": int(continuation["scheduler_horizon_steps"]),
+        "parent_contract_sha256": str(continuation["parent_contract_sha256"]),
+        "parent_checkpoint_manifest_sha256": str(
+            continuation["parent_checkpoint_manifest_sha256"]
+        ),
+    }
+
+
 def validate_launch(
     config: dict[str, Any],
     args: argparse.Namespace,
     context: DistributedContext,
     checkpoint_steps: tuple[int, ...],
 ) -> None:
+    if args.continuation and args.mode != "formal":
+        raise SourceBaseError("source-base continuation is only available in formal mode")
     if args.foundation_path.name != config["models"]["foundation_revision"]:
         raise SourceBaseError("foundation snapshot does not match its locked revision")
     if args.vlm_path.name != config["models"]["vlm_revision"]:
@@ -188,22 +255,20 @@ def validate_launch(
                 raise SourceBaseError(f"missing locked model file: {root / filename}")
     if args.mode == "formal":
         formal = config["formal_run"]
+        if args.continuation and args.resume is None:
+            raise SourceBaseError("formal continuation requires its sealed parent checkpoint")
+        segment = resolve_formal_segment(config, resuming=args.continuation)
         if context.world_size != formal["expected_world_size"]:
             raise SourceBaseError("formal source-base launch requires exactly eight ranks")
         if formal["per_rank_batch_size"] != args.batch_size:
             raise SourceBaseError("formal batch size is not locked in the active config")
-        if formal["total_steps"] != args.total_steps:
+        if segment["total_steps"] != args.total_steps:
             raise SourceBaseError("formal total steps are not locked in the active config")
-        if args.total_steps % 105 != 0:
+        if (segment["total_steps"] - segment["start_step"]) % 105 != 0:
             raise SourceBaseError(
                 "formal total steps must align all thirds to 35-step task cycles"
             )
-        expected = (
-            args.total_steps // 3,
-            2 * args.total_steps // 3,
-            args.total_steps,
-        )
-        if checkpoint_steps != expected:
+        if checkpoint_steps != segment["checkpoint_steps"]:
             raise SourceBaseError("formal checkpoints must be exact thirds")
         if args.stop_after_step != args.total_steps:
             raise SourceBaseError("formal runs cannot stop before the full contract")

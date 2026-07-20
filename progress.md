@@ -8,7 +8,7 @@
 - RL 数据合同已冻结：更新与 adaptation checkpoint 选择使用官方 reset/BDDL 随机初态，matched 两臂共享 task/env seed/初态序列；固定 50 个 `.pruned_init` states 只用于独立 fresh evaluation。
 - 旧 60/15/15 config、Gate recovery runner、自定义 Gate0 RL、旧 Writer runner 和对应 tests 已从活动树删除；完整版本可由父提交 `999df28` 追溯。
 - 保留的代码仅是通用 LIBERO 审计、runtime/gallery、可变长度 Writer model/data/topology 内核。
-- 新 70/10/10 task IDs、factor table、data manifest 和 train-only normalization 已封存在 `configs/libero90_70_10_10/`；唯一 canonical source-base seed-1 trajectory 已完成，step 630 是等待 source-development 闭环确认的 source-only 候选。新 Writer 训练 config 尚未生成。
+- 新 70/10/10 task IDs、factor table、data manifest 和 train-only normalization 已封存在 `configs/libero90_70_10_10/`；source-base 首段 seed-1 trajectory 与 thirds source-development h50 已完成，已据 source-only 上升趋势封存 step630→945 短续段。新 Writer 训练 config 尚未生成。
 - 旧 checkpoint 全部与新协议不兼容，不得 exact-resume。
 - 当前没有活动 EMBER GPU 训练/评估进程。
 - 完整长期 Goal 已建立且保持 active；Phase A 不能单独触发 Goal complete。
@@ -37,6 +37,7 @@
 - step 630 当前只按 source loss 选为候选；正式冻结仍等待 8 个预声明 source-development tasks 的官方 h50 闭环结果，validation 不参与 checkpoint 选择，test 保持封存。
 - shared LoRA 合同已实现并封存：37 targets、rank 32、alpha 16、dropout 0、1,485,312 parameters，支持 in-place injection 和 differentiable functional application；Writer/direct/RL 将共用同一挂载空间。
 - source-base evaluator 已通过真实 8-rank smoke：固定 state IDs 0–7 各出现一次、每卡一个 policy CUDA process、显存完全一致、退出后全清；完整测试为 28 passed。该 smoke 的 `0/8` 不作行为结论。
+- 初始 source-base thirds 使用同一 8 tasks × 50 states 得到 step210/420/630=`3/400, 8/400, 15/400`；420→630 为 11 paired gains、4 paired losses。绝对 competence 仍低，故不冻结并只追加一次 315-step exact continuation。
 
 ## 已明确退役
 
@@ -52,10 +53,10 @@
 
 ## 当前下一批动作
 
-1. 从 clean committed main 启动 step-630 的 8-task × 50-state source-development 官方 h50 fresh evaluation，按原始每任务成功数判断 competence。
-2. source-only 候选确认后冻结 base；再生成 10 validation tasks 的 frozen-base reference。validation 不回选 source checkpoint，test 继续封存。
-3. 训练 10 个 validation task 各自的 50-episode matched direct-LoRA oracle，并复用同一 37-target LoRA/evaluator 合同。
-4. 评估等待期间推进 frozen VLM feature cache 与 Writer functional-loss 接线；先 profile 真实完整视频路径，再只优化会影响 90 分钟反馈预算的瓶颈。
+1. 从 step-630 checkpoint exact-resume 315 steps；保持 batch/rank 352、8 ranks、原 optimizer/RNG/sampler 和 floor LR，保存 735/840/945。
+2. 先同口径评估 step945；若无增益保留630，含混时才补735/840。选定后冻结 base；validation 不回选 checkpoint，test 继续封存。
+3. 生成 10 validation tasks 的 frozen-base reference，并训练各自 50-episode matched direct-LoRA oracle，复用同一 37-target LoRA/evaluator 合同。
+4. 训练等待期间推进 frozen VLM feature cache 与 Writer functional-loss 接线；先 profile 真实完整视频路径，再只优化会影响 90 分钟反馈预算的瓶颈。
 
 ## Canonical runner ownership
 

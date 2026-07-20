@@ -54,6 +54,17 @@
     "target_wall_clock_minutes": 30,
     "per_rank_batch_size": 352,
     "total_steps": 630,
+    "continuation": {
+      "reason": "source-development h50 rose from 8/400 at step 420 to 15/400 at step 630 with 11 paired gains and 4 paired losses",
+      "parent_step": 630,
+      "parent_contract_sha256": "22c4ffb5e7c53ddfbf4f65e27d6f89657320685889822e20edf16da556b2d2e8",
+      "parent_checkpoint_manifest_sha256": "89e9f4933caed54f4b774f2571e3ac51c3e2c073a1dae2a77073b20229ced22c",
+      "additional_steps": 315,
+      "total_steps": 945,
+      "checkpoint_steps": [735, 840, 945],
+      "scheduler_horizon_steps": 630,
+      "scheduler_rule": "exact parent scheduler state; cosine remains clamped at decay_lr"
+    },
     "profile_evidence": {
       "world_size": 8,
       "steady_step_seconds_max": 2.5901026278734207,

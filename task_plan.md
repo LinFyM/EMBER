@@ -42,7 +42,7 @@
 
 ## Phase B：Source embodiment base
 
-状态：正式训练已完成；step 630 是按 train/source loss 得到的当前候选，等待 source-development 闭环评估后冻结。
+状态：首段正式训练与 thirds source-development 评估已完成；绝对成功率仍低但 `3/400 → 8/400 → 15/400` 持续上升，已封存从 step 630 exact-resume 的 315-step source-only 短续段，尚未冻结 base。
 
 合同：
 
@@ -59,6 +59,8 @@
 
 正式 seed-1 trajectory 已在 commit `72eb10d` 完成：630 steps、退出码 0、约 28 分钟；最终 loss `0.483089`，三个 checkpoint 均含 policy、optimizer/scheduler/scaler、sampler/data cursor 和 8-rank RNG。最终 checkpoint manifest SHA256 为 `89e9f493...ed22c`，launch contract SHA256 为 `22c4ffb5...2e8`；step 630 累计 1,774,080 global examples、5,040 global task slots，70 tasks 均覆盖全部 50 episodes。
 
+同一组 8 个预声明 train/source-development tasks、每 task 50 个固定 fresh states、相同 env/policy seeds 下，step 210/420/630 分别为 `3/400`、`8/400`、`15/400`。420→630 有 11 个 paired gains、4 个 paired losses；因此只用 source evidence 封存一次相对 thirds 为 735/840/945 的 continuation。它保留 step-630 policy、optimizer、8-rank RNG、sampler cursor 和原 scheduler state，LR 继续钳在 `2.5e-6`，不重启高 LR。
+
 动作：
 
 - [x] 核验官方 recipe、trainable names、normalization 和 exact loss。
@@ -67,13 +69,13 @@
 - [x] 固定 global batch 与学习率合同。
 - [x] 运行约 30 分钟 exact-resume trajectory。
 - [x] 第一个完整阶段结果前确认 3500 条 episode 均贡献训练信号，并记录完成的 corpus epochs/consumed chunks。
-- [ ] 标准 LIBERO h50 闭环测 train/source development。
+- [x] 标准 LIBERO h50 闭环测初始 thirds 的 train/source development；continuation 后重测最终候选。
 - [ ] 冻结 source base、完整训练状态、hash 和 compute ledger。
 - [ ] 冻结后在 10 个 validation tasks 建立 frozen source embodiment base reference。
 - [ ] 每个 validation task 用自己的全部 50 条 teacher action episodes 训练 matched direct LoRA oracle，并明确标注 action-supervised reference。
 - [ ] Phase F 解封前不运行任何 test policy evaluation、不训练 test direct LoRA，也不读取 test actions/reward/success。
 
-如果 30 分钟后 competence 明显仍在上升，可从同一 checkpoint 续一个有理由的短段；不得从头重跑。
+已触发且只触发一次上述停止规则：从 step 630 exact-resume 到 step 945，新增 315 steps、约 14 分钟，checkpoints 735/840/945。结束后先测 step 945；若无增益保留 step 630，若结果含混才补测 735/840。不得从头重跑或用 validation 选择。
 
 ## Phase C：Writer cold start
 

@@ -32,6 +32,7 @@ from ember.source_base_checkpoint import (
     git_state,
     parse_checkpoint_steps,
     read_json,
+    resolve_formal_segment,
     restore_rng,
     save_checkpoint,
     sha256_file,
@@ -286,12 +287,17 @@ def _build_stage_components(
         eps=config["optimization"]["eps"],
         weight_decay=config["optimization"]["weight_decay"],
     )
+    scheduler_horizon_steps = args.total_steps
+    if args.mode == "formal" and args.continuation:
+        scheduler_horizon_steps = resolve_formal_segment(
+            config, resuming=True
+        )["scheduler_horizon_steps"]
     scheduler = CosineDecayWithWarmupSchedulerConfig(
         num_warmup_steps=config["optimization"]["scheduler_reference_warmup_steps"],
         num_decay_steps=config["optimization"]["scheduler_reference_decay_steps"],
         peak_lr=config["optimization"]["peak_lr"],
         decay_lr=config["optimization"]["decay_lr"],
-    ).build(optimizer, args.total_steps)
+    ).build(optimizer, scheduler_horizon_steps)
     return (
         dataset,
         task_ids,
@@ -335,6 +341,7 @@ def _persist_launch(
 def _load_trainer_resume(
     args: argparse.Namespace,
     context: DistributedContext,
+    config: dict[str, Any],
     contract_hash: str,
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler,
@@ -344,8 +351,22 @@ def _load_trainer_resume(
     state = torch.load(
         args.resume / "trainer_state.pt", map_location=context.device, weights_only=False
     )
-    if state["contract_sha256"] != contract_hash:
-        raise SourceBaseError("resume checkpoint belongs to a different launch contract")
+    resume_contract = str(state["contract_sha256"])
+    if resume_contract != contract_hash:
+        segment = (
+            resolve_formal_segment(config, resuming=True)
+            if args.mode == "formal" and args.continuation
+            else None
+        )
+        parent_is_exact = (
+            segment is not None
+            and int(state["next_step"]) == segment["start_step"]
+            and resume_contract == segment["parent_contract_sha256"]
+            and sha256_file(args.resume / "checkpoint_manifest.json")
+            == segment["parent_checkpoint_manifest_sha256"]
+        )
+        if not parent_is_exact:
+            raise SourceBaseError("resume checkpoint belongs to a different launch contract")
     optimizer.load_state_dict(state["optimizer"])
     scheduler.load_state_dict(state["scheduler"])
     return int(state["next_step"])
@@ -442,7 +463,7 @@ def _prepare_runtime(
     )
     contract_hash = _persist_launch(args, context, contract, expected_hashes)
     resume_step = _load_trainer_resume(
-        args, context, contract_hash, optimizer, scheduler
+        args, context, config, contract_hash, optimizer, scheduler
     )
     if not 0 <= resume_step <= args.stop_after_step <= args.total_steps:
         raise SourceBaseError("invalid resume or stop step")
@@ -610,6 +631,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--vlm-path", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--resume", type=Path)
+    parser.add_argument("--continuation", action="store_true")
     parser.add_argument("--total-steps", type=int, required=True)
     parser.add_argument("--stop-after-step", type=int)
     parser.add_argument("--checkpoint-steps", type=str, required=True)

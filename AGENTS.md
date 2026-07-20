@@ -37,7 +37,7 @@ language + action-hidden teaching videos
 ## Current data protocol
 
 - 只用 LIBERO-90。
-- 下一活动 split 是 specification-only 的同分布 70/10/10；当前尚未生成和永久封存。
+- 活动 split 是 `configs/libero90_70_10_10/` 中永久封存的 specification-only 同分布 70/10/10；不得重新搜索或替换 IDs。
 - split 只能使用 task language、role-aware factors、scene identity 和 specification-derived composition/difficulty。不得使用任何 policy outcome、action、reward、proprio、terminal 或 held privileged surface。
 - train/validation/test 的 task IDs 必须互斥；val/test 中每个 task-relevant primitive/role 要在 train 中有多个近邻，三个集合的类别和难度分布要相近，同时 exact task/composition 保持未见。
 - 每任务 50 条成功 teacher episode 全部可用，不再人为截成 8/32/40 条。

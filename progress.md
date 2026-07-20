@@ -7,15 +7,17 @@
 - 当前活动科研合同已统一到同分布 70/10/10 + SmolVLA source embodiment base + full-video task-specific LoRA Writer。
 - 旧 60/15/15 config、Gate recovery runner、自定义 Gate0 RL、旧 Writer runner 和对应 tests 已从活动树删除；完整版本可由父提交 `999df28` 追溯。
 - 保留的代码仅是通用 LIBERO 审计、runtime/gallery、可变长度 Writer model/data/topology 内核。
-- 新 70/10/10 task IDs、manifest、normalization、source base config 和新 Writer config **尚未生成**。
+- 新 70/10/10 task IDs、factor table、data manifest 和 train-only normalization 已封存在 `configs/libero90_70_10_10/`；source base config 和新 Writer config 尚未生成。
 - 旧 checkpoint 全部与新协议不兼容，不得 exact-resume。
 - 当前没有活动 EMBER GPU 训练/评估进程。
-- 当前没有活动 Goal；下一 session 应按 `docs/new_session_prompt.md` 创建无 token budget 的完整 Goal。
+- 完整长期 Goal 已建立且保持 active；Phase A 不能单独触发 Goal complete。
 - 已删除 179 个非 canonical `.codex/longrun` wrapper 目录（约 65MB）；原始科学证据仍在外部 checksummed output，完整旧执行树在 Git 父提交。
 - 已核验并删除四个干净、已 supersede 的 worktree/local branches：`d25544e`、`cc4ba36`、`1722b9d`、`dbfaa59`。它们没有未提交用户改动；相关活动实现已由当前历史取代。
 
 ## 已完成且仍有效
 
+- specification-only 70/10/10 seal：seed `20260720`，validation `[0,8,15,28,40,56,61,71,85,88]`，test `[4,7,11,32,41,59,60,70,84,86]`。
+- 90-task HDF5/BDDL/init-state audit：4500 demos、669,043 frames；normalization 只读 70×50 train episodes。
 - Gate -1：passed with residuals。
 - Gate 0：passed with limited coverage。
 - pinned SmolVLA/LIBERO 环境与 HDF5/task factor 审计经验。
@@ -36,15 +38,12 @@
 - 旧 Gate0 custom chunk-level PPO/FPO recovery tree。
 - 旧 source base 与所有旧 Writer/direct checkpoint 作为新协议起点。
 
-## 下一 session 的第一批动作
+## 当前下一批动作
 
-1. 调用 `get_goal`，确认没有 active Goal；创建 `docs/new_session_prompt.md` 中的完整长期 Goal，不设置 token budget。
-2. 完整阅读权威顺序。
-3. `git status --short --branch`、`nvidia-smi`、磁盘和现有 cache 只读检查。
-4. 用 `libero_task_factors.py` 建立 90-row specification factor table。
-5. 在任何新 policy outcome 前生成并封存同分布 70/10/10。
-6. 写最小单一路径 source-base config/runner。
-7. 8-GPU 真实吞吐 smoke 后运行约 30 分钟 source base。
+1. 核验 pinned `lerobot/smolvla_base@c83c316...` 的成熟 trainable set、pre/postprocessor、37-target LoRA 挂载空间和数据 normalization 接口。
+2. 写最小单一路径 source-base config/runner；只消费 sealed train IDs 和全部 70×50 episodes。
+3. 在启动前重新做实时 GPU/storage preflight，随后 8-GPU DDP 真实吞吐 smoke。
+4. 根据实测 samples/s 冻结约 30 分钟的 total steps、full-task-cycle thirds 和 exact-resume command，启动 source base。
 
 不得先做：
 
@@ -60,6 +59,7 @@
 cd /data/ymdai/projects/EMBER
 git status --short --branch
 .venv/bin/python -m pytest -q
+cd configs/libero90_70_10_10 && sha256sum -c checksums.sha256
 rg -n '60/15/15|Gate 1|canonical bank|soft geometry|horizon 16|three.*frame|0--7|8--39' \
   README.md AGENTS.md task_plan.md findings.md progress.md docs \
   --glob '!docs/expert_plan.md'

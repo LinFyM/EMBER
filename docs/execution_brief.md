@@ -2,6 +2,8 @@
 
 状态：2026-07-20 owner 对齐后的唯一活动版本。
 
+执行状态：Phase A 已封存于 `configs/libero90_70_10_10/`；当前进入 source embodiment base。
+
 本文件回答三个问题：EMBER 到底研究什么；每个阶段究竟看什么数据、更新什么参数；下一 session 应按什么顺序运行。若任何旧文档、旧配置或旧 checkpoint 与本文件冲突，以本文件为准。
 
 ## 1. 研究问题
@@ -57,7 +59,7 @@ action、proprio、reward、terminal、hidden normalization、task ID 和文件�
 
 ## 3. 新 70/10/10 split
 
-旧 60/15/15 已退役。新 split 必须在读取新协议的 policy outcome 前，只根据 specification 设计并永久封存：
+旧 60/15/15 已退役。新 split 已在读取任何新协议 policy outcome 前，只根据 specification 设计并永久封存为：
 
 - 70 train/source tasks；
 - 10 validation tasks；
@@ -72,7 +74,7 @@ action、proprio、reward、terminal、hidden normalization、task ID 和文件�
 - exact task 与完整 composition 互斥，仍然是未见任务；
 - validation/test 各自覆盖多个明显不同类别。
 
-允许确定性搜索或人工安排，但算法、seed、factor rules、task IDs、hash 和理由必须在任何新协议训练/评估结果前封存。split 不能读取 action、proprio、reward、terminal、normalization 或任何 policy result。旧 60/15/15 factor parser 可作为 specification-only 经验，但旧 IDs 和旧 normalization 不可继承。
+canonical factor table、算法、seed、task IDs、manifest、train-only normalization 和 hashes 位于 `configs/libero90_70_10_10/`。split 不能读取 action、proprio、reward、terminal、normalization 或任何 policy result；不得根据后续 outcome 重新搜索。旧 IDs 和旧 normalization 未被继承。
 
 ## 4. Source embodiment base
 
@@ -459,14 +461,11 @@ SmolVLA 完整机制成立后，才进行 OpenVLA-OFT scale confirmation；当�
 
 ## 18. 下一条 canonical 动作
 
-1. 只读核验 LIBERO-90 90 条 task language、scene 和 factor table。
-2. specification-only 生成同分布 70/10/10，检查每个 val/test role 的 train 近邻与类别平衡。
-3. 在任何新训练前永久封存 task IDs、algorithm/seed、factor rules、manifest 和 hash。
-4. 为 source base 写一个最小 canonical config/runner，复用现有 LIBERO audit 原语。
-5. 八卡短吞吐窗口后，运行约 30 分钟 source base，按 thirds 保存，train/source 选择 checkpoint。
-6. 用标准 LIBERO h50 评估 frozen source base 在 train development、validation；test base 数字可预先测作固定参考，但不得用来选 source base或改方法。更保守的正式顺序是方案冻结后再统一打开 test。
-7. 适配现有 full-video Writer core 到新 split/full-50 feature cache，训练 cold start。
-8. validation 选 Writer，随后 Writer-only RL、matched task-local RL、outer learning。
-9. 机制成立后运行最终全量重训、baselines、test 和 OpenVLA-OFT confirmation。
+1. 为 source base 写一个最小 canonical config/runner，复用 sealed split 与现有 LIBERO audit 原语。
+2. 八卡短吞吐窗口后，运行约 30 分钟 source base，按 full-task-cycle thirds 保存，train/source 选择 checkpoint。
+3. 用标准 LIBERO h50 评估 frozen source base 在 train development、validation；test base 数字可预先测作固定 reference，但不得用来选 source base或改方法。
+4. 适配现有 full-video Writer core 到新 split/full-50 feature cache，训练 cold start。
+5. validation 选 Writer，随后 Writer-only RL、matched task-local RL、outer learning。
+6. 机制成立后运行最终全量重训、baselines、test 和 OpenVLA-OFT confirmation。
 
 任何真实阻塞必须是具体可复现的命令/错误；“还可以写更多 schema、测试或文档”不构成阻塞。

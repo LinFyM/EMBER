@@ -51,9 +51,9 @@
 
 ## 尚需在 validation 冻结、但不需要现在询问 owner
 
-### 70/10/10 的精确 IDs
+### 70/10/10 的精确 IDs：已冻结
 
-用 specification-only deterministic objective 决定。只在多个不可比较方案会改变论文解释时再询问。
+deterministic specification-only MILP、seed `20260720`、精确 IDs、factor table、data manifest、train-only normalization 和 hashes 已封存在 `configs/libero90_70_10_10/`。不得根据任何 policy outcome 重新搜索或替换。
 
 ### Source base 精确训练 steps
 

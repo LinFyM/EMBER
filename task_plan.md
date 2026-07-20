@@ -20,27 +20,27 @@
 
 ## Phase A：永久封存 70/10/10
 
-状态：下一步，未开始。
+状态：已完成；canonical seal 为 `configs/libero90_70_10_10/`。
 
 动作：
 
-- [ ] 从 pinned LIBERO-90 task language/scene 重建 90-row role-aware factor table。
-- [ ] 明确 verb、moved object、target receptacle、target relation、order/composition 和 specification difficulty。
-- [ ] 未知/歧义 instruction fail closed。
-- [ ] 在只读 specification surface 上确定 deterministic algorithm、seed 和 objective。
-- [ ] 搜索或安排 70 train / 10 validation / 10 test。
-- [ ] 验证 task IDs 互斥且覆盖 0..89。
-- [ ] 验证每个 val/test task-relevant role 在 train 有多个近邻。
-- [ ] 验证三组 scene/category/difficulty 大致同分布，val/test 各含多个类别。
-- [ ] 在任何新协议 policy outcome 前封存 factor rules、IDs、algorithm/seed、manifest 和 SHA256。
-- [ ] 重新审计 HDF5、BDDL、init states、controller、camera、50 success demos/task。
-- [ ] normalization 只使用新 train tasks；validation/test numeric access 为零。
+- [x] 从 pinned LIBERO-90 task language/scene 重建 90-row role-aware factor table。
+- [x] 明确 verb、moved object、target receptacle、target relation、order/composition 和 specification difficulty。
+- [x] 未知/歧义 instruction fail closed。
+- [x] 在只读 specification surface 上确定 deterministic algorithm、seed 和 objective。
+- [x] 搜索并冻结 70 train / 10 validation / 10 test。
+- [x] 验证 task IDs 互斥且覆盖 0..89。
+- [x] 验证每个 val/test task-relevant exact role atom 在 train 至少有 2 个支持，并封存同 family top-neighbor audit。
+- [x] 验证 val/test 各有 10 个不同 scene、相同 scene/category/difficulty 配额。
+- [x] 在任何新协议 policy outcome 前封存 factor rules、IDs、algorithm/seed、manifest 和 SHA256。
+- [x] 重新审计 HDF5、BDDL、init states、controller、camera、50 success demos/task。
+- [x] normalization 只使用新 train tasks；validation/test numeric access 为零。
 
 停止条件：存在多个实质改变论文解释、无法用 specification-only objective 排序的 split 时才询问 owner。不得用旧 policy performance 选 split。
 
 ## Phase B：Source embodiment base
 
-状态：等待 Phase A。
+状态：下一步；Phase A 已满足。
 
 合同：
 

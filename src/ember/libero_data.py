@@ -231,10 +231,10 @@ def audit_demonstration_file(
     expected_bytes: int,
     normalization_episodes: tuple[int, ...],
 ) -> AuditResult:
-    """Audit one task while reading values only for source normalization episodes."""
+    """Audit one task while reading values only for train normalization episodes."""
 
-    if normalization_episodes and split != "source":
-        raise ManifestError("normalization values may only be read from source tasks")
+    if normalization_episodes and split != "train":
+        raise ManifestError("normalization values may only be read from train tasks")
     if path.name != f"{task_name}_demo.hdf5":
         raise ManifestError(f"demonstration filename does not match task {task_index}")
     if path.stat().st_size != expected_bytes:
@@ -308,18 +308,18 @@ def _stats(samples: np.ndarray) -> dict[str, Any]:
 
 
 def compute_normalization(
-    results: list[AuditResult], *, source_task_indices: list[int], episode_bounds: list[int]
+    results: list[AuditResult], *, train_task_indices: list[int], episode_bounds: list[int]
 ) -> dict[str, Any]:
     selected = [result for result in results if result.state_samples is not None]
     observed_indices = sorted(result.record["task_index"] for result in selected)
-    if observed_indices != sorted(source_task_indices):
-        raise ManifestError("normalization task set differs from the declared source split")
+    if observed_indices != sorted(train_task_indices):
+        raise ManifestError("normalization task set differs from the declared train split")
     if len(episode_bounds) != 2 or episode_bounds[0] > episode_bounds[1]:
         raise ManifestError("invalid source_base_fit episode bounds")
     expected_episodes = list(range(episode_bounds[0], episode_bounds[1] + 1))
     for result in selected:
-        if result.record["split"] != "source":
-            raise ManifestError("normalization includes a non-source task")
+        if result.record["split"] != "train":
+            raise ManifestError("normalization includes a non-train task")
         if result.record["normalization_episode_indices"] != expected_episodes:
             raise ManifestError("normalization includes the wrong source episode pool")
     states = np.concatenate([result.state_samples for result in selected])
@@ -327,11 +327,11 @@ def compute_normalization(
     return {
         "schema_version": 1,
         "authority": {
-            "split": "source",
-            "task_indices": sorted(source_task_indices),
+            "split": "train",
+            "task_indices": sorted(train_task_indices),
             "episode_pool": "source_base_fit",
             "episode_bounds_inclusive": episode_bounds,
-            "forbidden_surfaces": ["validation", "held_out"],
+            "forbidden_surfaces": ["validation", "test"],
         },
         "feature_definitions": {
             "observation.state": [

@@ -1,5 +1,19 @@
 # EMBER Execution Plan
 
+## 2026-07-20 foundation source/validation localization result
+
+- The requested comparison is complete. On all 16 selected source tasks,
+  base/Writer/direct scored `0/512`, `55/512`, and `51/512`. On five
+  cross-category validation tasks, the same arms scored `0/160`, `1/160`, and
+  `18/160`; only direct LoRA was allowed validation teacher actions. Both
+  packets use h50, 32 paired rollouts/task/arm, unique episode identities,
+  retained videos, and no test/held access.
+- This freezes the present diagnosis: the step-300 full-video Writer has clear
+  source utility but negligible validation transfer. Do not spend another
+  evaluation cycle on the same checkpoints; the next Writer change must answer
+  the observed generalization failure while preserving the full-video,
+  complete-LoRA and information-isolation contract.
+
 ## 2026-07-20 foundation validation three-arm launch
 
 - Evaluate validation tasks 11/21/51/70/86, chosen before outcomes to span

@@ -1,5 +1,31 @@
 # EMBER Durable Findings
 
+## 2026-07-20 foundation-base validation comparison localizes generalization failure
+
+- The five-category validation comparison completed with 480 unique h50 rows:
+  32 paired rollouts for each of tasks 11/21/51/70/86 and each of frozen
+  foundation base, frozen source-trained Writer, and validation-action-supervised
+  direct LoRA. Aggregate success was base `0/160`, Writer `1/160` (0.625%),
+  and direct LoRA `18/160` (11.25%). Writer's only success was task 11;
+  direct-LoRA successes were task 11 `16/32`, task 51 `1/32`, and task 86
+  `1/32`, with tasks 21/70 at zero.
+- Together with the all-source result (base `0/512`, Writer `55/512`, direct
+  LoRA `51/512`), this is strong localization evidence: the current Writer
+  learned useful source-task behavior but almost entirely failed to transfer
+  it to the selected compositional validation tasks. The result does not show
+  that the validation tasks are impossible, because matched-space direct LoRA
+  using validation teacher actions reached 11.25%; however, its gain is also
+  highly task-concentrated rather than uniformly strong.
+- The first publication attempt failed after all rollouts because fixed-arm
+  scheduling wrote the historical `writer_cold_start` label while the frozen
+  contract expected `writer_foundation_full_video_cold_start`. Commit
+  `07097e9` makes future scheduling use the configured arm and normalizes the
+  five already-complete labels only in memory on explicit resume. The original
+  shards remain unchanged; the published packet records five normalized labels
+  and zero recomputed rollouts. All checksums pass, all 15 shards contain 32
+  rows and one video, all 480 episode identities are unique, and test/held
+  access is false.
+
 ## 2026-07-20 foundation-base source comparison establishes Writer utility
 
 - The corrected source comparison completed rc 0 in 20m50s on all eight A100s:

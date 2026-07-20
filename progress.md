@@ -1,5 +1,25 @@
 # EMBER Progress and Handoff
 
+## 2026-07-20 foundation validation comparison complete
+
+- Canonical validation packet:
+  `/data/ymdai/ember_outputs/foundation_source_screen/validation_three_arm_20260720T102000Z`.
+  It contains 15/15 atomic shards, 480 unique rows, 15 videos/gallery, five
+  exact direct-LoRA finals, and passing checksums. Aggregate h50 success is
+  base `0/160`, frozen source-trained Writer `1/160`, and validation-action-
+  supervised direct LoRA `18/160`; test/held access is false.
+- Per-task `[base, Writer, direct]` successes out of 32 are task 11
+  `[0,1,16]`, task 21 `[0,0,0]`, task 51 `[0,0,1]`, task 70 `[0,0,0]`, and
+  task 86 `[0,0,1]`. In contrast, the same Writer scored `55/512` across the
+  16 source tasks. The immediate scientific issue is therefore validation
+  generalization, not inability to learn any source behavior.
+- Publication initially failed only because completed Writer shards carried a
+  stale generic arm label. Pushed commit `07097e9` fixes future assignments;
+  explicit resume published from the original shards in 9.97 seconds without
+  training or rollout. The result packet records the five label normalizations
+  and `rollouts_recomputed=false`. All GPUs are released and no EMBER process
+  remains.
+
 ## 2026-07-20 foundation source comparison complete; validation next
 
 - Canonical source packet:
@@ -11,11 +31,8 @@
   re-imported the already rank-remapped entrypoint. Commit `b20ce1c` makes
   children inherit EGL placement without reopening torch CUDA; unchanged
   `--resume` then completed rc 0 and released all GPUs.
-- Next run is the fixed five-category validation comparison on task
-  11/21/51/70/86. The source-trained Writer remains frozen and sees only
-  validation language plus action-hidden videos. The direct-LoRA upper-bound
-  arm alone may train on validation teacher actions; frozen base receives no
-  validation training. No test/held surface is accessed.
+- The fixed five-category validation comparison on task 11/21/51/70/86 is now
+  complete and summarized above.
 
 
 ## 2026-07-20 remaining source-teacher screen ready

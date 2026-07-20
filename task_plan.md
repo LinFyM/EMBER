@@ -1,5 +1,25 @@
 # EMBER Execution Plan
 
+## 2026-07-20 task-22 base/direct launch contract
+
+- From clean pushed revision `8ad5be0`, compare the immutable foundation
+  SmolVLA base with a task-22 action-supervised direct LoRA. The direct fit uses
+  validation episode 8--39 actions, the mature 37-target rank-32/alpha-16/
+  dropout-0 space, batch 128, 300 AdamW steps and the already frozen schedule.
+  This is an action-supervised task-local upper bound; it does not train or
+  evaluate EMBER again.
+- Evaluate both arms at h50 on exactly the same init states 32--47 and policy
+  RNG seeds 2026072085/86 used by the frozen-Writer probe: 32 episodes/arm and
+  64 rows total. GPUs 0--3 run four independent ranks: rank 0 fits direct LoRA,
+  ranks 1--2 concurrently collect the two base seed shards, then ranks 0/3
+  collect the two direct seed shards. No DDP or sample-budget change is made.
+- Canonical output is
+  `/data/ymdai/ember_outputs/foundation_source_screen/task22_base_direct_20260720T105838Z`.
+  The temporary runner SHA256 is `2c645049...6d63` and copies its exact source
+  into the output packet before work. Estimated wall time is under 12 minutes,
+  retained growth under 1 GiB, personal usage is 310 GiB under the 500 GiB cap,
+  and any mechanics failure stops without reinterpreting partial outcomes.
+
 ## 2026-07-20 additional validation probe result
 
 - The ten-minute frozen-Writer probe on eight previously untested validation

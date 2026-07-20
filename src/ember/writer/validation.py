@@ -465,6 +465,44 @@ def _read_shard(path: Path) -> tuple[list[dict[str, Any]], list[str]]:
     return list(payload["rows"]), list(payload["videos"])
 
 
+def _existing_arm_shard(
+    spec: Mapping[str, Any],
+    *,
+    output_dir: Path,
+    task_id: int,
+    arm: str,
+    resume: bool,
+) -> tuple[list[dict[str, Any]], list[str], bool] | None:
+    shard_path = output_dir / "shards" / f"task_{task_id:03d}_{arm}.json"
+    if shard_path.exists():
+        if not _existing_shard_allowed(spec, arm=arm, resume=resume):
+            raise WriterValidationError("validation arm shard already exists")
+        rows, videos = _read_shard(shard_path)
+        return rows, videos, False
+
+    # The first foundation-validation launch used the configured Writer
+    # checkpoint but the scheduler wrote the historical generic arm label.
+    # On explicit resume, accept only that exact label mismatch and normalize
+    # it in memory; preserve the original atomic shard as provenance.
+    writer_arm = spec["evaluation"].get("writer_arm", "writer_cold_start")
+    if not resume or arm != writer_arm or writer_arm == "writer_cold_start":
+        return None
+    legacy_path = output_dir / "shards" / f"task_{task_id:03d}_writer_cold_start.json"
+    if not legacy_path.exists():
+        return None
+    rows, videos = _read_shard(legacy_path)
+    expected_rows = spec["evaluation"]["rollouts_per_task_arm"] * len(
+        spec["evaluation"]["execution_horizons"]
+    )
+    if len(rows) != expected_rows or any(
+        row.get("task_id") != task_id or row.get("arm") != "writer_cold_start"
+        for row in rows
+    ):
+        raise WriterValidationError("legacy Writer shard identity changed")
+    normalized = [{**row, "arm": writer_arm} for row in rows]
+    return normalized, videos, True
+
+
 def _existing_shard_allowed(
     spec: Mapping[str, Any], *, arm: str, resume: bool
 ) -> bool:
@@ -579,7 +617,14 @@ def _eval_info(
         parts = Path(relative).parts
         task_id = int(parts[1].split("_")[-1])
         condition = parts[2]
-        arm = next(value for value in evaluation["arms"] if condition.startswith(value))
+        arm = next(
+            (value for value in evaluation["arms"] if condition.startswith(value)),
+            None,
+        )
+        if arm is None and condition.startswith("writer_cold_start"):
+            arm = evaluation.get("writer_arm")
+        if arm not in evaluation["arms"]:
+            raise WriterValidationError(f"video arm identity changed: {condition}")
         video_by_arm.setdefault((task_id, arm), []).append(relative)
     per_task = []
     primary_horizon = str(evaluation["primary_execution_horizon"])
@@ -619,6 +664,7 @@ def _publish_result(
     writer_checkpoint: Path,
     contract_path: Path,
     wall_seconds: float,
+    normalized_legacy_writer_shards: int = 0,
 ) -> dict[str, Any]:
     evaluation = spec["evaluation"]
     aggregate = aggregate_validation_rows(
@@ -727,6 +773,10 @@ def _publish_result(
             "wall_seconds": wall_seconds,
         },
         "reused_baseline_evidence": dict(spec.get("reuse_baseline", {})),
+        "mechanical_recovery": {
+            "normalized_legacy_writer_arm_shards": normalized_legacy_writer_shards,
+            "rollouts_recomputed": False,
+        },
         "test_held_accessed": False,
     }
     _atomic_json(output_dir / "writer_cold_start_validation_result.json", result)
@@ -793,13 +843,17 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 validation_contract_sha256=sha256_file(args.config),
             )
         local_rows, local_videos = [], []
+        normalized_legacy_writer_shards = 0
         for task_id, arm in work["evaluation_arms"]:
             shard_path = args.output_dir / "shards" / f"task_{task_id:03d}_{arm}.json"
-            if shard_path.exists():
-                if not _existing_shard_allowed(spec, arm=arm, resume=args.resume):
-                    raise WriterValidationError("validation arm shard already exists")
-                rows, videos = _read_shard(shard_path)
-            else:
+            existing = _existing_arm_shard(
+                spec,
+                output_dir=args.output_dir,
+                task_id=task_id,
+                arm=arm,
+                resume=args.resume,
+            )
+            if existing is None:
                 rows, videos = _evaluate_arm(
                     task_id=task_id,
                     arm=arm,
@@ -821,17 +875,29 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                     "episodes": len(rows),
                     "performance_withheld_until_complete": True,
                 }, sort_keys=True), flush=True)
+            else:
+                rows, videos, normalized_legacy = existing
+                normalized_legacy_writer_shards += int(normalized_legacy)
             local_rows.extend(rows)
             local_videos.extend(videos)
         gathered: list[Any] | None = [None] * context.world_size if context.primary else None
         torch.distributed.gather_object(
-            {"rows": local_rows, "videos": local_videos}, gathered, dst=0
+            {
+                "rows": local_rows,
+                "videos": local_videos,
+                "normalized_legacy_writer_shards": normalized_legacy_writer_shards,
+            },
+            gathered,
+            dst=0,
         )
         if not context.primary:
             return {"status": "non_primary_rank_complete", "rank": context.rank}
         assert gathered is not None
         rows = [row for shard in gathered for row in shard["rows"]]
         videos = [video for shard in gathered for video in shard["videos"]]
+        normalized_legacy_writer_shards = sum(
+            shard["normalized_legacy_writer_shards"] for shard in gathered
+        )
         result = _publish_result(
             spec=spec,
             rows=rows,
@@ -841,6 +907,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             writer_checkpoint=args.writer_checkpoint,
             contract_path=args.config,
             wall_seconds=time.perf_counter() - started,
+            normalized_legacy_writer_shards=normalized_legacy_writer_shards,
         )
         latest = spec["resources"].get(
             "latest_link_relative_path", "writer_cold_start/validation_latest"

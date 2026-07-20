@@ -149,10 +149,11 @@ def validation_work_for_rank(
     if direct_task is not None:
         arms = [(direct_task, "matched_direct_task_local_lora")]
     else:
+        writer_arm = spec["evaluation"].get("writer_arm", "writer_cold_start")
         fixed = [
             (task, arm)
             for task in tasks
-            for arm in ("frozen_base", "writer_cold_start")
+            for arm in ("frozen_base", writer_arm)
         ]
         ranks = list(spec["parallel"]["base_writer_eval_ranks"])
         offset = ranks.index(rank)

@@ -106,6 +106,17 @@ def test_eight_rank_assignment_covers_each_validation_arm_once() -> None:
         assert sum(pair == (task_id, "matched_direct_task_local_lora") for pair in evals) == 1
 
 
+def test_foundation_validation_assignment_uses_configured_writer_arm() -> None:
+    spec = load_validation_contract(
+        ROOT / "configs/writer_foundation_validation_comparison.toml",
+        repo_root=ROOT,
+    )
+    work = [validation_work_for_rank(spec, rank=rank, world_size=8) for rank in range(8)]
+    evals = [arm for item in work for arm in item["evaluation_arms"]]
+    assert len(evals) == 15 and len(set(evals)) == 15
+    assert {arm for _, arm in evals} == set(spec["evaluation"]["arms"])
+
+
 def test_recovery_validation_reuses_baselines_and_assigns_only_new_writer_work() -> None:
     spec = load_validation_contract(
         ROOT / "configs/writer_cold_start_physical_norm_recovery_validation.toml",

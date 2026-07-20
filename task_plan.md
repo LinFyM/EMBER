@@ -81,7 +81,7 @@ direct oracle 的单一 canonical runner 已接通：每个 validation task 独�
 
 ## Phase C：Writer cold start
 
-状态：train/validation 正式 feature cache、真实 8-rank interrupted/resume profile、Writer fresh-eval smoke 和 1575-step formal cold start 已完成；525/1050/1575 三个候选的首个 policy RNG validation 已完成，并按预封存规则选择 step1050。
+状态：train/validation 正式 feature cache、真实 8-rank interrupted/resume profile、Writer fresh-eval smoke 和 1575-step formal cold start 已完成；525/1050/1575 三个候选按首个 policy RNG 选择 step1050，随后预封存的独立 policy RNG 确认也已完成。
 
 固定结构：
 
@@ -99,6 +99,8 @@ frozen-VLM cache 的唯一入口与合同已封存为 `scripts/cache_writer_feat
 正式 seed-1 trajectory 已在 commit `69bbdee` 上完成 1575/1575 steps、exit 0，wall-clock 约 92.9 分钟；累计 4,838,400 queries。最终每个 70 train task 精确消费 69,120 queries 且覆盖全部 50 episodes，8 卡始终各一个 CUDA rank，峰值 reserved 70.71GiB。三个 thirds checkpoint 的 Writer、optimizer/scheduler 与 8-rank RNG 文件均由 manifest 做 size/SHA 封存。
 
 同一 500 条 validation rows 上，frozen base 与 Writer step525/1050/1575 的成功数分别为 `56/500` 与 `58/500, 63/500, 60/500`。step1050 按预封存规则获选；其 per-task 为 `{0:19,8:0,15:0,28:24,40:0,56:1,61:0,71:0,85:0,88:19}`，相对 base 配对 `31 gains / 24 losses / net +7`。正增益来自 KITCHEN-actuation task28 与 STUDY-pick-place task88，但 aggregate 仅 +1.4pp 且 task0 回退 9，因此 checkpoint 选择已完成、核心机制结论仍未成立；已在读取第二 RNG outcome 前封存只复核 base 与 selected step1050、不得重选 checkpoint 的独立 policy-RNG 合同。
+
+第二 RNG 同口径得到 base/Writer `51/500, 57/500`，配对 `30 gains / 24 losses / net +6`。两个 RNG 合并为 `107/1000` 对 `120/1000`；task28 配对净增益 `+22/100`、task88 `+12/100`，且两次 RNG 中方向分别为 `+10/+12` 与 `+6/+6`，因此 language+action-hidden-video Writer 在 KITCHEN-actuation 和 STUDY-pick-place 两个未见类别上的即时功能信号可复现。覆盖仍有限：总增益仅 +1.3pp，task0 为 `-20/100`，其余多数任务双方均为零；Phase D 必须检验 source reward 是否扩展而非只移动这项窄效用。
 
 validation action-hidden cache 覆盖预封存 10 tasks × 50 full episodes、63,544 frames。profile step35 仅作 fresh-eval mechanics smoke：8 ranks 对 task0 生成的完整 LoRA SHA 完全一致，8 个固定 state 各出现一次并成功闭环退出；该小分母结果不用于任何行为判断。
 

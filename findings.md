@@ -70,6 +70,13 @@
 - 正增益落在 KITCHEN-actuation task28 `+10` 与 STUDY-pick-place task88 `+6`，但 KITCHEN-actuation task0 同时 `-9`，aggregate 只增加 1.4pp。因此这足以确定后续 cold initialization，不足以声称 Writer 已明显跨类别优于 base。
 - selection 与所有 artifact hashes 已封存在 `configs/writer_cold_start_selected_v1.json`。根据既有“policy sampling 方差可能左右判断时加第二 RNG”规则，已在查看新 outcome 前封存 `configs/source_base_eval_rng2_v1.json`；它只比较 base 与已选 step1050，不能重新选择 checkpoint，test 仍未打开。
 
+### Writer cold-start：第二 policy RNG 复现两类功能信号，同时确认覆盖有限
+
+- RNG2 的 frozen base/selected Writer 为 `51/500, 57/500`，配对 `30 gains / 24 losses / net +6`；RNG1 对应为 `56/500, 63/500` 与 `31/24/+7`。两组使用同一 50 fixed states 和 env seeds，policy seeds 完全不相交，selected checkpoint 没有重选。
+- 两 RNG 合并后 base/Writer 为 `107/1000, 120/1000`。task28 为 `26/100 → 48/100`，配对 `32 gains / 10 losses / net +22`；task88 为 `24/100 → 36/100`，配对 `18/6/+12`。它们分别属于 KITCHEN-actuation 与 STUDY-pick-place，且增益方向在两个 policy RNG 中逐次复现。
+- 同时，task0 从 `55/100` 降到 `35/100`，配对净 `-20`；task85 净 `-1`，其余六个任务净零且多数双方均无成功。故可支持“Writer 在两个不同未见类别产生真实即时功能价值”，不能支持“已广泛泛化”。aggregate 只增加 1.3pp，Phase D/后续 matched RL 需要原样报告这项局限。
+- 完整 RNG2 合同、result hashes、逐任务配对数与解释封存在 `configs/writer_cold_start_rng2_confirmation_v1.json`；test 从未打开。
+
 ### Validation direct-LoRA：真实 profile/resume 通过
 
 - 8 个 validation tasks 各由一个独立 GPU rank 从同一 frozen source base 训练自己的 37-target LoRA；每卡恰好一个 CUDA process，batch384 的 peak allocated/reserved 为 67.09/69.09GiB，实测最慢 step 2.816 秒。

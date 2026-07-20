@@ -44,6 +44,7 @@
 - Writer cold-start formal seed 1 已在 commit `69bbdee` 完成 1575/1575 steps、exit 0，约 92.9 分钟、4,838,400 global queries；70 tasks 各精确消费 69,120 queries 并覆盖全部 50 episodes。最终 manifest `c30c49af...3357`、consumed identity `2029f311...4112`，每卡仍恰好一个 CUDA rank。
 - validation Writer cache 已完成 10×50 episodes / 63,544 frames；profile step35 的 8-rank fresh-eval smoke 生成完全一致的 task0 adapter SHA，并完成 8 条唯一 fixed-state rows。该 smoke 只证明 mechanics。
 - cold Writer 首个完整 validation RNG 已完成：step525/1050/1575=`58/500,63/500,60/500`，按预封存规则选择 step1050。相对 base `56/500`，selected 为 `31 gains / 24 losses / net +7`，正增益在 task28/task88 两类但 task0 `-9`；故 selection 完成而机制结论仍待独立 policy RNG 确认。选择 seal 为 `configs/writer_cold_start_selected_v1.json`，RNG2 合同已在 outcome 前封存且不得重选 checkpoint。
+- 独立 policy RNG2 已完成：base/selected Writer=`51/500,57/500`，配对 `30/24/+6`。两 RNG 合并为 `107/1000 → 120/1000`；task28 `+22/100`、task88 `+12/100` 且方向逐 RNG 复现，构成 KITCHEN-actuation 与 STUDY-pick-place 两个不同未见类别上的真实功能信号。覆盖仍有限：task0 `-20/100`，aggregate 仅 +1.3pp，多数任务双方为零。确认 seal 为 `configs/writer_cold_start_rng2_confirmation_v1.json`，test 未打开。
 - validation direct-LoRA 真实 8-rank profile 已从 step1 exact-resume 到 step10，8 tasks 的 16 个 checkpoint manifests 全部逐文件验证；batch384 峰值 reserved 69.09GiB、最慢约 2.816s/step，每卡一个 CUDA rank。formal 已封存为每 target task 180 steps、60/120/180 checkpoints，共 69,120 matched queries，且固定使用 final checkpoint。
 - Writer-only RL 已从 update1 exact-resume 到 update9 并完成一个 70-task cycle：每 task 4 个官方随机 reset rollouts，总计 `280` interactions / `87` successes / `90,391` env steps，72 个 worker ledgers、280 个唯一 seed rows和两个 10-file checkpoints 全部通过 cursor/manifest 审计。max-rank wall 405.50 秒；formal 已封存 12 cycles，即 108 updates、每 task 48 rollouts、thirds 36/72/108，预计 81.1 分钟。
 
@@ -61,8 +62,8 @@
 
 ## 当前下一批动作
 
-1. 用已封存的第二独立 policy RNG 在同一固定 50 states/相同 env seeds 上复核 frozen base 与 selected cold step1050；只作结论确认，不重选 checkpoint。
-2. 完成 validation target-action-supervised direct-LoRA oracle 的 formal fit 与同口径 fresh evaluation；真实 profile/resume 已通过，test 继续封存。
+1. 完成已经启动的 validation target-action-supervised direct-LoRA oracle formal fit 与同口径 fresh evaluation；真实 profile/resume 已通过，test 继续封存。
+2. 保留 cold Writer 两 RNG 已确认的“两类正效用、覆盖有限、task0 回退”原始结论，不再增加 policy RNG 或重选 cold checkpoint。
 3. RNG2 与 direct oracle 队列完成后，从 cold step1050 启动已封存的 108-update Writer-only RL formal；在 36/72/108 三个 full-cycle checkpoint 上做同口径 validation，选择最佳 Writer 后进入 matched task-local RL。
 4. optional outer learning 只可在 Phase F 完成后考虑，不阻塞核心 Goal。
 
@@ -71,7 +72,7 @@
 - `scripts/train_source_base.py` 是 Phase B 唯一活动入口；`src/ember/source_base.py` 负责训练编排，`source_base_checkpoint.py` 只拥有 launch provenance 和 exact-resume 原子 checkpoint，现有 `writer/data.py` 提供共享的 HDF5/sampler owner。没有保留平行或版本化 runner。
 - `scripts/evaluate_source_base.py` 是 base/Writer/direct/task-local-RL 共用的唯一 fresh-evaluation 入口；`src/ember/libero_evaluation.py` 只拥有 split/RNG/state schedule 和结果聚合，各 inference 模块只拥有各自产物 → task LoRA materialization，test role 在 Phase F 前不存在。`src/ember/lora.py` 是 Writer/direct/RL 的共享 37-target LoRA owner。
 - `scripts/train_writer_cold_start.py` 是 Phase C 唯一训练入口；`src/ember/writer/training.py` 只编排 frozen source policy、feature cache、Writer DDP 和 functional loss，`writer/checkpoint.py` 独占 exact-resume checkpoint。没有第二套 Writer runner。
-- `scripts/train_direct_lora.py` 是 action-supervised direct reference 的唯一训练入口；`direct_lora_protocol.py` 固定 validation-only split、69,120 matched queries/task 和 8-rank assignment，`direct_lora_checkpoint.py` 独占 task-local LoRA/optimizer/scheduler/RNG/sampler 恢复状态。formal 在真实 profile 前关闭。
+- `scripts/train_direct_lora.py` 是 action-supervised direct reference 的唯一训练入口；`direct_lora_protocol.py` 固定 validation-only split、69,120 matched queries/task 和 8-rank assignment，`direct_lora_checkpoint.py` 独占 task-local LoRA/optimizer/scheduler/RNG/sampler 恢复状态。真实 profile/resume 通过后 formal 已按 batch384、180 steps、60/120/180 打开。
 - `scripts/train_writer_only_rl.py` 是 Phase D 唯一训练入口；只对 shared Writer 做 8-rank DDP，生成 LoRA 不原位更新，70-task no-replacement source cycles 与 official-random-reset interaction ledger 可 exact-resume。
 - `scripts/train_task_local_lora_rl.py` 是 Phase E 唯一训练入口；identity/Writer 两臂共享不含 arm 的 env/policy seed schedule，只更新各目标任务自己的 LoRA。`task_local_rl_checkpoint.py` 独占 optimizer/scheduler/RNG/interaction cursor，selected adaptation checkpoint 由预算内随机-reset reward segment 决定；固定 50 states 只在 shared fresh evaluator 中使用。formal 在真实 profile 前关闭。
 - 这些文件在 source base 冻结后继续作为可复现入口保留，不再复制出下一版 runner；只有出现第二个当前消费者时才提炼公共抽象。profile 和 resume-smoke 大权重是可删除的临时产物，正式 checkpoints、manifest、metrics 和 hashes 才是 retained evidence。

@@ -70,16 +70,16 @@
 - [x] 运行约 30 分钟 exact-resume trajectory。
 - [x] 第一个完整阶段结果前确认 3500 条 episode 均贡献训练信号，并记录完成的 corpus epochs/consumed chunks。
 - [x] 标准 LIBERO h50 闭环测初始 thirds 的 train/source development；continuation 后重测最终候选。
-- [ ] 冻结 source base、完整训练状态、hash 和 compute ledger。
+- [x] 冻结 source base、完整训练状态、hash 和 compute ledger。
 - [ ] 冻结后在 10 个 validation tasks 建立 frozen source embodiment base reference。
 - [ ] 每个 validation task 用自己的全部 50 条 teacher action episodes 训练 matched direct LoRA oracle，并明确标注 action-supervised reference。
 - [ ] Phase F 解封前不运行任何 test policy evaluation、不训练 test direct LoRA，也不读取 test actions/reward/success。
 
-已触发且只触发一次上述停止规则：从 step 630 exact-resume 到 step 945，新增 315 steps、约 14 分钟，checkpoints 735/840/945。结束后先测 step 945；若无增益保留 step 630，若结果含混才补测 735/840。不得从头重跑或用 validation 选择。
+已触发且只触发一次上述停止规则：从 step630 exact-resume 到step945，新增315 steps、约14分钟，checkpoints735/840/945。step945 与630 均为 `15/400`，配对 `5 gains / 5 losses`，故已按规则冻结step630且不补测735/840；selection seal 为 `configs/source_base_selected_v1.json`。
 
 ## Phase C：Writer cold start
 
-状态：架构内核保留，训练合同需适配新 split。
+状态：canonical runner 已接通并静态验证；正式 cache 与真实8-rank profile 待运行。
 
 固定结构：
 
@@ -88,17 +88,17 @@
 - trainable temporal/episode/set attention、fusion、task memory、layer-aware LoRA decoder；
 - 输出完整 37-target rank-32/alpha-16/dropout-0 LoRA。
 
-同空间 LoRA 合同已封存为 `configs/smolvla_lora_v1.json`：精确 37 targets、74 个 A/B tensors、1,485,312 parameters；Writer、direct oracle 和后续 matched RL 共用这一实现。当前只完成了参数空间和 differentiable functional application，尚未把 Writer 数据/特征/训练链路接到新 source base。
+同空间 LoRA 合同已封存为 `configs/smolvla_lora_v1.json`：精确37 targets、74个A/B tensors、1,485,312 parameters；Writer、direct oracle 和后续 matched RL 共用这一实现。`scripts/train_writer_cold_start.py` 已把 selected source base、full-video cache、mixed sampler、functional loss 和 exact-resume checkpoint 接成唯一活动路径；formal 仍被 profile gate 关闭。
 
 frozen-VLM cache 的唯一入口与合同已封存为 `scripts/cache_writer_features.py` / `configs/writer_feature_cache_v1.json`。真实 8-rank smoke 覆盖 8 tasks × 1 full episode、1,194 frames，并验证 task-level atomic resume 零重算；正式 70×50 cache 需等 source checkpoint 最终选择后生成，因此下面的全量动作仍未完成。
 
 动作：
 
-- [ ] 将 `writer/model.py`、`temporal.py`、`data.py` 接入新 source base 与新 manifest。
+- [x] 将 `writer/model.py`、`temporal.py`、`data.py` 接入新 source base 与新 manifest。
 - [ ] 构建每 task 全部 50 条完整视频的 frozen feature cache，保留 episode boundaries。
-- [ ] 70-task mixed/no-replacement sampler。
-- [ ] 70-task cycle 之上再保证每 task 50 episodes 的最小覆盖；记录 consumed episode/chunk identity。
-- [ ] functional action/flow loss；action 不进入 Writer。
+- [x] 70-task mixed/no-replacement sampler。
+- [x] 70-task cycle 之上再保证每 task 50 episodes 的最小覆盖；记录 consumed episode/chunk identity。
+- [x] functional action/flow loss；action 不进入 Writer。
 - [ ] 只做 shape/OOM/NaN/gradient/freeze/resume/leakage smoke。
 - [ ] 8 GPU 真实训练，初始总预算 ≤约 90 分钟。
 - [ ] checkpoints 位于估算总 steps 的 1/3、2/3、3/3，每个边界覆盖 70 tasks。

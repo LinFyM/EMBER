@@ -62,6 +62,8 @@ Writer 不是通用优化器，也不生成 bank、basis、geometry、mask、met
 - `src/ember/writer/model.py`：完整 LoRA Writer；
 - `src/ember/writer/temporal.py`：不限制 episode 数量和视频长度的层次注意力编码器；
 - `src/ember/writer/data.py`：完整 action-hidden 视频流与 functional-query 数据；
+- `src/ember/writer/functional.py`：Writer 完整 LoRA 到冻结 policy 标准 action loss 的 differentiable 接线；
+- `scripts/train_writer_cold_start.py`：Phase C 唯一 canonical Writer 训练入口；
 - `src/ember/writer/topology.py`：GPU/NUMA 绑定；
 - `src/ember/eval_artifacts.py`：紧凑视频 gallery；
 - `src/ember/runtime_env.py`：锁定环境的兼容修复。

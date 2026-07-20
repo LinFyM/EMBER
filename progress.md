@@ -1,5 +1,36 @@
 # EMBER Progress and Handoff
 
+## 2026-07-20 final session handoff
+
+- Completed the requested task-22 localization. Canonical results are base
+  `0/32`, frozen Writer `4/32`, and validation-action-supervised direct LoRA
+  `12/32`; use the checksummed packet at
+  `/data/ymdai/ember_outputs/foundation_source_screen/task22_base_direct_20260720T105838Z`.
+- Fixed the evaluation topology in the existing Writer validation path: one
+  policy process/GPU, a persistent fixed-size simulator pool per active arm,
+  exact init-state rewind/audit between seeds, local-NUMA rank/child placement,
+  and one-worker rendering for one retained video. Matched wall time improved
+  6.44% without video and 3.34% with video; simulation remains the bottleneck,
+  so low instantaneous GPU UTL is expected and should be optimized by useful
+  task/arm rollout parallelism rather than extra model processes or dummy VRAM.
+- Fixed the handoff launcher hazard: `scripts/run_writer_cold_start.sh` now
+  defaults to `configs/writer_foundation_source_screen.toml`, while validation
+  requires `--config`. The corrected eight-rank one-step smoke passed rc 0;
+  peak memory was 66,860.9MiB/card and all GPUs were released.
+- Architecture cleanup moved the shared closed-loop mechanics out of the
+  996-line legacy report runtime into one 364-line owner, reducing the former
+  to 680 lines. The architecture guard still flags `writer/train.py` and
+  `writer/validation.py` because those pre-existing owners exceed 800 lines;
+  this handoff keeps a scoped exception for the two-line NUMA training hook and
+  the single-session validation hook rather than creating another runner or
+  broad refactor. Revisit only when either owner next receives structural work.
+- Scientific handoff: Gate -1 remains passed with residuals and Gate 0 passed
+  with limited coverage. The step-300 foundation/full-video Writer has strong
+  aggregate source utility but sparse validation transfer. The next session
+  should improve multimodal Writer generalization using legal source/train and
+  validation surfaces; do not rerun unchanged checkpoints, reopen Gate 0, use
+  test/held for selection, or reintroduce bank/geometry/shared subspaces.
+
 ## 2026-07-20 additional frozen-Writer validation probe complete
 
 - Eight additional validation tasks completed in 281 seconds on eight GPUs,

@@ -1,5 +1,27 @@
 # EMBER Execution Plan
 
+## 2026-07-20 task-22 result and systems handoff closure
+
+- Task 22 (`close the bottom drawer of the cabinet`) now has a complete matched
+  h50 comparison on init states 32--47 and policy RNG seeds 2026072085/86:
+  foundation base `0/32`, frozen full-video Writer `4/32`, and task-22
+  action-supervised direct LoRA `12/32`. The canonical base/direct packet is
+  `/data/ymdai/ember_outputs/foundation_source_screen/task22_base_direct_20260720T105838Z`;
+  all checksums and 64 episode identities validate and test/held access is false.
+- The canonical evaluator now keeps one async LIBERO worker pool alive across
+  matched policy seeds, explicitly rewinds and audits the physical init-state
+  cursor, renders only the retained first-worker video, and binds policy plus
+  simulator children to the GPU-local NUMA node. Matched mechanics-only
+  benchmarks reduced two-seed wall time from `113.59s` to `106.28s` and
+  one-video wall time from `66.54s` to `64.32s`; all four benchmark cells passed
+  reset/mechanics checks and performance outcomes were intentionally omitted.
+- The Writer launcher now defaults to the active foundation/full-video source
+  config; validation requires an explicit config instead of silently selecting
+  the retired three-frame path. An eight-rank one-step smoke completed rc 0 in
+  29.64s, reached 460.87 global samples/s and 66,860.9MiB peak/card, retained
+  roughly 14GiB headroom, kept the base frozen, and produced finite Writer
+  gradients. No more GPU work is scheduled during handoff cleanup.
+
 ## 2026-07-20 task-22 base/direct launch contract
 
 - From clean pushed revision `8ad5be0`, compare the immutable foundation
@@ -1350,7 +1372,7 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
     only the same task-local LoRA parameters in place while Writer and base are
     frozen, under identical target layers/rank/count,
     algorithm, hyperparameters, seeds, reward, and interaction budget. Include
-    average/retrieval/language-only direct-generator baselines; report J0, AUC,
+    the final predeclared strong baselines; report J0, AUC,
     time-to-threshold, J_K, J_K-J0, uncertainty, resources, and failures. Add a
     matched-initial-performance or equivalent control before claiming a better
     learning process rather than only a better starting point. Writer emits no
@@ -1365,8 +1387,8 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
 26. [ ] Permanently freeze base, Writer, encoders, all shared state, target/rank,
     optimizer, budgets, thresholds, and baselines before held evaluation. Only
     predeclared task-local LoRA may adapt from held reward. Require Writer-start
-    to beat zero/base, average, retrieval, and the capacity-matched language-only
-    direct LoRA generator with predeclared seeds, confidence intervals, causal
+    to beat zero/base and the final predeclared strong baselines with
+    predeclared seeds, confidence intervals, causal
     controls, isolation audit, and reproducible rerun.
 27. [ ] After the mechanism survives, re-pin and execute the
     eight-GPU-ceiling-compatible OpenVLA-OFT scale confirmation without changing

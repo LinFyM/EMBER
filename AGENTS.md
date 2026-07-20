@@ -191,8 +191,7 @@ substantial engineering.
   generation. If the bounded positive controls show that no declared LoRA
   space has behavioral capacity, preserve the failure packet and escalate the
   scientific decision; do not blame Writer acquisition before it is tested.
-- After that seal, Writer, zero-init ordinary LoRA RL, average/retrieval,
-  language-only HyPoGen/DISC-style direct generators, and every other matched
+- After that seal, Writer, zero-init ordinary LoRA RL, and every other matched
   arm must use exactly the same LoRA support and trainable-parameter budget. If
   broad support is hard to generate, use layer/module-aware, chunked or
   type-specific generation rather than silently shrinking targets; this is an
@@ -236,8 +235,10 @@ exhausted, preserve the negative result and narrow the claim explicitly.
 - Make neutral-prompt parameter compilation a co-primary mechanism test; also
   report the practical setting where the online policy receives the task
   instruction.
-- Include a strong language-only HyPoGen/DISC-style parameter-generator
-  baseline, not only task-ID, retrieval, or direct-conditioning controls.
+- Do not schedule standalone language-only or video-only Writer arms; the owner
+  removed them from the current experiment. During rapid development compare
+  frozen base, the multimodal Writer, and matched direct task-local LoRA, then
+  freeze the broader strong-baseline set only after the mechanism survives.
 - After Gate 0, train a direct Writer that emits all LoRA factors for the
   declared target matrices. Differentiate independent source-query functional
   loss through adapter application into the Writer.
@@ -359,11 +360,11 @@ contains:
   OpenVLA-OFT scale confirmation of the surviving mechanism.
 
 Positive completion additionally requires held-frozen evidence that Writer
-initialization beats zero/base, average, retrieval, and a capacity-matched
-language-only HyPoGen/DISC-style direct LoRA generator; matched A/B/C ordinary
-RL evidence for zero-step utility and adaptation efficiency/final behavior; and
-a cold-start versus source-reward-outer-trained Writer comparison showing that
-delayed reward improves the generated initialization. If bounded recovery
+initialization beats zero/base and the final predeclared strong baselines;
+matched A/B/C ordinary RL evidence for zero-step utility and adaptation
+efficiency/final behavior; and a cold-start versus source-reward-outer-trained
+Writer comparison showing that delayed reward improves the generated
+initialization. If bounded recovery
 instead falsifies a core hypothesis or requires changing the paper claim,
 preserve the negative evidence and escalate the decision rather than marking
 the Goal complete.

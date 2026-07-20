@@ -120,13 +120,13 @@ The Writer input and online policy prompt are separate causal paths:
    the task instruction, with capacity- and inference-matched direct
    conditioning controls.
 
-Required specification arms include language-only, video-only,
-language-plus-video, wrong same-scene video, shuffled/reversed video,
-first/last/scene-only video, task-ID, average adapter, nearest/retrieved adapter,
-direct conditioning, standard task-specific LoRA, and a capacity-matched
-HyPoGen/DISC-style direct parameter generator. The first claim uses successful
-same-embodiment robot video with actions hidden from the Writer; it does not
-claim human-video, cross-embodiment, real-robot, or cheaper-data transfer.
+The current rapid-development arm is language-plus-video; the owner removed
+standalone language-only and video-only Writer arms. Compare it first with the
+frozen base and matched action-supervised task-local LoRA, and defer the broader
+negative/retrieval/direct-generator matrix until the mechanism survives. The
+first claim uses successful same-embodiment robot video with actions hidden
+from the Writer; it does not claim human-video, cross-embodiment, real-robot,
+or cheaper-data transfer.
 
 ## 5. Training contract
 
@@ -217,9 +217,9 @@ Writer generation. If neither bounded LoRA positive control succeeds, preserve
 the failure packet and escalate the LoRA-capacity decision before attributing
 failure to Writer acquisition.
 
-Every downstream Writer, zero-init ordinary-LoRA RL, average/retrieval,
-language-only direct generator, and matched control must use that identical
-sealed support and parameter budget. If emitting a broad adapter is difficult,
+Every downstream Writer, zero-init ordinary-LoRA RL, and matched control must
+use that identical sealed support and parameter budget. If emitting a broad
+adapter is difficult,
 the bounded design options are structured layer/module embeddings, shared
 layer-aware decoders, chunked or per-module generation, memory/Perceiver
 queries, and type-specific heads. [SHINE](https://arxiv.org/abs/2602.06358)
@@ -239,10 +239,10 @@ primary.
 
 Raw LoRA-factor MSE is prohibited as the primary objective because factor gauge
 and parameter non-identifiability can decouple it from behavior. Oracle physical
-delta or update imitation is allowed only as a predeclared auxiliary. Writer
-selection requires zero-interaction functional utility plus matched modality,
-negative, retrieval, average, direct-conditioning, standard-LoRA, and
-capacity-matched direct-generator comparisons.
+delta or update imitation is allowed only as a predeclared auxiliary. Rapid
+Writer development requires zero-interaction functional utility relative to the
+frozen base; matched direct task-local LoRA is the action-supervised upper
+bound. Freeze the complete strong-baseline matrix only for final experiments.
 
 ### 5.3 Ordinary task-local LoRA RL
 
@@ -251,8 +251,7 @@ cold-start Writer LoRA initialization plus identical RL; and C)
 reward-outer-trained Writer LoRA initialization plus identical RL. Update the
 same task-local LoRA under identical target layers/rank/count, RL algorithm,
 hyperparameters, seeds, reward, interaction budget, and environment budget;
-also retain average, retrieval, language-only direct-generator, and other
-declared baselines. Report J0, the full success/return curve, AUC,
+also retain the final declared baselines. Report J0, the full success/return curve, AUC,
 time-to-threshold, J_K, J_K-J0, drift, uncertainty, memory, and wall time. A
 claim about improved learning dynamics rather than a better initial policy also
 requires a matched-initial-performance or equivalent control. There is no

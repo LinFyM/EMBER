@@ -57,6 +57,7 @@ def _bind_rank_devices_from_environment() -> tuple[int, str] | None:
     # creates the misleading extra GPU processes seen in nvidia-smi.
     if multiprocessing.current_process().name == "MainProcess":
         torch.cuda.set_device(0)
+        bind_current_process_to_cuda_numa(0)
     return local_rank, physical_gpu
 
 
@@ -66,8 +67,8 @@ from safetensors.torch import load_file
 
 from ember.eval_artifacts import build_eval_gallery, update_latest_link
 from ember.evaluation_identity import _load_policy
-from ember.gate_zero_oracle_report_runtime import _closed_loop_metrics
 from ember.gate_zero_runtime import build_lora_config, set_global_seed
+from ember.gate_zero_support.closed_loop import ClosedLoopMetricsSession
 from ember.gate_zero_task_local_rl.runtime import scoped_policy_execution_horizon
 from ember.writer.core import (
     _validate_writer_checkpoint,
@@ -75,6 +76,7 @@ from ember.writer.core import (
     sha256_file,
 )
 from ember.writer.data import WriterSpecAuthority
+from ember.writer.topology import bind_current_process_to_cuda_numa
 from ember.writer.direct_fit import direct_final_path, fit_direct_lora
 from ember.writer.train import (
     _encode_spec_features,
@@ -415,6 +417,13 @@ def _evaluate_arm(
     evaluation = spec["evaluation"]
     rows: list[dict[str, Any]] = []
     videos: list[str] = []
+    session = ClosedLoopMetricsSession(
+        task_id=task_id,
+        condition=arm,
+        language=authority.language,
+        batch_size=evaluation["rollouts_per_policy_seed"],
+        return_episode_data=True,
+    )
     try:
         for horizon in evaluation["execution_horizons"]:
             for policy_seed in evaluation["policy_rng_seeds"]:
@@ -426,11 +435,9 @@ def _evaluate_arm(
                 with scoped_policy_execution_horizon(
                     runtime[0], execution_horizon=horizon, expected_model_chunk_size=50
                 ):
-                    result = _closed_loop_metrics(
+                    result = session.evaluate(
                         runtime=runtime,
-                        task_id=task_id,
                         condition=condition,
-                        language=authority.language,
                         spec=_rollout_spec(evaluation, policy_seed, retain),
                         output_dir=output_dir,
                     )
@@ -449,6 +456,7 @@ def _evaluate_arm(
                 )
                 videos.extend(result["video_paths"])
     finally:
+        session.close()
         del runtime
         torch.cuda.empty_cache()
     return rows, videos

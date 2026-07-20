@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 PYTHON=${EMBER_PYTHON:-"$ROOT/.venv/bin/python"}
-CONFIG="$ROOT/configs/writer_cold_start.toml"
+CONFIG="$ROOT/configs/writer_foundation_source_screen.toml"
 train_config=
 mode=train
 output_dir=
@@ -43,7 +43,7 @@ done
 [[ "$output_dir" = /* ]] || die "--output-dir must be absolute"
 if [[ -z "$train_config" ]]; then
   if [[ "$mode" = validate ]]; then
-    train_config="$ROOT/configs/writer_cold_start_validation.toml"
+    die "--config is required for validation"
   else
     train_config="$CONFIG"
   fi

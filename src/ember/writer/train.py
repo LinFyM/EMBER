@@ -38,6 +38,7 @@ from ember.writer.core import (
     save_writer_checkpoint,
     sha256_file,
 )
+from ember.writer.topology import bind_current_process_to_cuda_numa
 from ember.writer.data import (
     WriterQueryDataset,
     WriterSpecAuthority,
@@ -69,6 +70,7 @@ def _init_distributed(spec: dict[str, Any]) -> tuple[int, int, int]:
     if world_size != spec["train"]["world_size"] or not 0 <= rank < world_size:
         raise WriterColdStartError("Writer launch must use the frozen eight-rank topology")
     torch.cuda.set_device(local_rank)
+    bind_current_process_to_cuda_numa(local_rank)
     if not torch.distributed.is_initialized():
         torch.distributed.init_process_group("nccl", init_method="env://")
     return rank, local_rank, world_size

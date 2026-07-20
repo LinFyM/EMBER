@@ -58,17 +58,19 @@ The independent expert review is complete and staged execution is active. The
 repository now contains a reproducible SmolVLA/LIBERO substrate. Gate -1 is
 closed as **passed with residuals**: the immutable action-hidden-video recovery
 reached 19/24 ordered and wrong-video accuracy and 15/24 paired correctness,
-while the original 0.80 threshold and drop-last residual remain recorded. No
-extra compute is authorized merely to polish that result. The original invalid
-LIBERO-90 split has been preserved and replaced once by a permanently sealed
-specification-only 60/15/15 split before any LIBERO-90 policy outcome. The fresh
-data/normalization audit under that seal passes with zero validation/held
-numeric access. Gate 0 remains incomplete, so direct Writer training is not yet
-authorized. Its active evidence contract uses at least 32 paired rollouts per
-task/arm, multiple policy RNG seeds, at least two independent training seeds,
-horizon-16 primary evaluation, and disjoint source-only confirmation. Every
-novelty claim remains provisional until predecessor evidence and matched-budget
-experiments pass.
+while the original 0.80 threshold and drop-last residual remain recorded. The
+original invalid LIBERO-90 split is preserved and was replaced once by a sealed
+specification-only 60/15/15 split before any LIBERO-90 policy outcome.
+
+Gate 0 is **passed with limited coverage**. The current foundation-base Writer
+has clear source utility (base/Writer/direct LoRA: 0/512, 55/512, 51/512 over
+16 source tasks) but weak validation transfer (1/160 on the initial five-task
+comparison, plus 4/256 on eight additional tasks). Task 22 is the clearest
+localization: base 0/32, Writer 4/32, validation-action-supervised direct LoRA
+12/32. The next scientific problem is improving Writer generalization from
+language plus action-hidden video, not rerunning Gate 0 or adding a removed
+shared-structure mechanism. Every novelty claim remains provisional until the
+later staged and matched-budget experiments pass.
 
 The active execution ceiling is **8 x NVIDIA A100 80GB GPUs**. Use all legally
 free devices for useful work, with about 10GB average training headroom per

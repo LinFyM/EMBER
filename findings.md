@@ -1,5 +1,49 @@
 # EMBER Durable Findings
 
+## 2026-07-20 task 22 separates zero-interaction transfer from action supervision
+
+- On the exact h50 identities used by the frozen Writer probe, foundation base
+  scored `0/32`, the language plus action-hidden-video Writer scored `4/32`, and
+  a separate task-22 action-supervised direct LoRA scored `12/32`. Direct LoRA
+  used validation episodes 8--39 only for this explicit task-local upper bound;
+  Writer remained frozen and saw no validation actions. The result shows that
+  task 22 has learnable headroom, the current Writer has real but weak transfer,
+  and most of the action-supervised attainable gain is not yet generalized.
+- The base/direct packet at
+  `/data/ymdai/ember_outputs/foundation_source_screen/task22_base_direct_20260720T105838Z`
+  contains 64 unique episode rows, two policy RNG seeds, two compact videos,
+  exact LoRA state/manifest, gallery and passing checksums. Direct fitting took
+  427.47s and the four-rank fit/evaluation job took 544.47s total; held/test was
+  not accessed.
+
+## 2026-07-20 evaluator process and throughput diagnosis is closed
+
+- One policy rank owns one CUDA model process. The additional per-card processes
+  seen during evaluation are the expected async topology: one resource tracker,
+  one forkserver, and one MuJoCo/EGL worker per parallel environment. GPU0's
+  earlier extra load came from a concurrently assigned direct-LoRA fit, not a
+  duplicate evaluation model. SmolVLA h50 executes one policy inference and then
+  up to 50 simulator actions, so low/bursty GPU utilization is primarily a real
+  CPU/simulator bottleneck; filling memory with dummy work would not improve
+  episodes/s.
+- Avoidable overhead was real: the evaluator destroyed and recreated the full
+  worker pool for every policy RNG seed, allowed workers to migrate across the
+  remote NUMA socket, and asked every async worker to render when only one video
+  was retained. The single canonical path now persists the pool across seeds,
+  rewinds/audits `init_state_id`, pins each rank and its children to the
+  GPU-local NUMA node, and renders only worker zero. On task-22 mechanics-only
+  matched probes, persistent pooling improved `113.594s -> 106.281s` (6.44%);
+  first-worker video rendering improved `66.543s -> 64.320s` (3.34%) while the
+  retained MP4 remained 400 frames at 360x360. Reset identity passed throughout.
+- The first eight-rank training smoke accidentally exercised the launcher's
+  stale default three-frame config and failed before step 1 on its historical
+  feature schema. The active full-video cache was intact; the launcher default,
+  not the cache, was wrong. After switching the default to
+  `writer_foundation_source_screen.toml` and requiring explicit validation
+  configs, the same one-step eight-GPU smoke passed in 29.64s at 460.87 global
+  samples/s, 66,860.9MiB peak/card, frozen base, finite Writer gradient and no
+  held access.
+
 ## 2026-07-20 additional validation probe finds sparse single-task transfer
 
 - A frozen-Writer-only probe evaluated eight previously untested validation

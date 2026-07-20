@@ -61,13 +61,20 @@ def _tiny_writer(state: dict[str, torch.Tensor] | None = None) -> CompleteLoRAWr
     return CompleteLoRAWriter(
         build_lora_tensor_specs(state),
         template_state=state,
-        feature_dim=7,
+        vision_feature_dim=7,
+        language_feature_dim=5,
         hidden_dim=12,
-        module_embedding_dim=4,
-        factor_embedding_dim=3,
-        rank_embedding_dim=3,
+        attention_heads=3,
+        temporal_chunk_size=4,
+        chunk_memory_tokens=2,
+        episode_memory_tokens=2,
+        task_memory_tokens=2,
         decoder_hidden_dim=10,
     )
+
+
+def _tiny_writer_input() -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    return torch.zeros(2, 5), torch.zeros(6, 7), torch.tensor([0, 3, 6])
 
 
 def test_active_writer_contract_is_hash_bound_and_has_no_removed_mechanism() -> None:
@@ -151,7 +158,7 @@ def test_source_teacher_contract_is_source_only_and_multicategory() -> None:
 def test_writer_emits_every_factor_and_starts_at_physical_zero() -> None:
     state = _tiny_lora_state()
     writer = _tiny_writer(state)
-    generated = writer(torch.zeros(1, 7))
+    generated = writer(*_tiny_writer_input())
     assert set(generated) == set(state)
     assert {key: value.shape for key, value in generated.items()} == {
         key: (1, *value.shape) for key, value in state.items()
@@ -170,7 +177,7 @@ def test_writer_emits_every_factor_and_starts_at_physical_zero() -> None:
 def test_functional_loss_reaches_writer_without_training_base() -> None:
     writer = _tiny_writer()
     base_weight = torch.nn.Parameter(torch.randn(4, 3), requires_grad=False)
-    generated = writer(torch.randn(1, 7))
+    generated = writer(*_tiny_writer_input())
     a = generated["base.block.q_proj.lora_A.default.weight"][0]
     b = generated["base.block.q_proj.lora_B.default.weight"][0]
     x = torch.randn(5, 3)
@@ -336,7 +343,7 @@ def test_atomic_writer_checkpoint_restores_model_optimizer_scheduler(tmp_path: P
     writer = _tiny_writer()
     optimizer = torch.optim.AdamW(writer.parameters(), lr=1e-3)
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda step: 1.0 - 0.1 * step)
-    loss = sum(value.square().mean() for value in writer(torch.randn(1, 7)).values())
+    loss = sum(value.square().mean() for value in writer(*_tiny_writer_input()).values())
     loss.backward()
     optimizer.step()
     scheduler.step()

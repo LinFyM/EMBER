@@ -1,5 +1,26 @@
 # EMBER Progress and Handoff
 
+## 2026-07-20 source-teacher validation negative; exact continuation next
+
+- Formal source-teacher auxiliary validation is complete at
+  `/data/ymdai/ember_outputs/writer_cold_start/validation_source_teacher_aux_step500_recovery1_20260720T002900Z`.
+  Primary h16 base/Writer/direct totals are `33/320`, `32/320`, `150/320`; h50
+  totals are `18/320`, `22/320`, `140/320`. Writer success occurs only on task
+  70, so cold-start utility is not established and Writer-only RL is not
+  started. The `validation_latest/index.html` gallery is available for review.
+- A source-only, no-rollout reconstruction diagnostic completed on frozen
+  checkpoints. Its best mean teacher-normalized physical-update error is
+  `0.466` at step 1000, above the predeclared `0.25` acquisition-underfit
+  boundary. Step-1000 validation-query improvement remains positive on all five
+  categories (`7.12%` mean), so the cheapest discriminating action is one exact
+  continuation from step 1000 to 2000 using the unchanged eight-rank contract.
+- Before the continuation outcome, the stop rule is frozen: run no closed-loop
+  rollout unless step 2000 reaches source mean error `<=0.25` and all five
+  validation query tasks remain better than base. If not, stop step-scaling and
+  change the acquisition architecture/loss in one bounded recovery. Git was
+  clean at pushed `fbf230c`; all eight GPUs were live-free, personal usage was
+  309GB, and no artifact cleanup was required.
+
 ## 2026-07-19 source-teacher bridge ready for real Writer training
 
 - Source teacher waves completed rc 0 with 15/15 step-1000 final manifests and
@@ -18,12 +39,11 @@
   completed rc 0 in 48:44; checkpoints 250/500/750/1000 all validate and GPUs
   are released. Five complete validation-query diagnostics selected step 500 by
   a result-blind frozen rule.
-- `configs/writer_cold_start_source_teacher_auxiliary_validation.toml` now binds
-  that step-500 state and the query selection packet. It reuses the immutable
-  base/direct shards and schedules only five new Writer arms, each with 64
-  rollouts at h16 and h50 over eight policy RNG seeds. Next: commit/push this
-  pre-outcome contract and launch the eight-rank validation; do not inspect
-  partial arm success.
+- `configs/writer_cold_start_source_teacher_auxiliary_validation.toml` bound
+  that step-500 state and the query selection packet. It reused the immutable
+  base/direct shards and scheduled only five new Writer arms, each with 64
+  rollouts at h16 and h50 over eight policy RNG seeds. That validation has now
+  completed and is summarized above.
 
 ## 2026-07-19 first Writer result complete; one bounded recovery prepared
 

@@ -1,5 +1,37 @@
 # EMBER Durable Findings
 
+## 2026-07-20 source-teacher Writer remains acquisition-underfit
+
+- The source-teacher auxiliary Writer validation completed rc 0 with 1,920
+  unique paired rows across five categories, 64 rollouts/task/arm and h16/h50.
+  At h16, frozen base/Writer/matched direct LoRA scored `33/320`, `32/320`, and
+  `150/320`; Writer minus base was `-0.31pp` with paired bootstrap interval
+  `[-2.81,+2.19]pp`. At h50 the totals were `18/320`, `22/320`, and `140/320`;
+  Writer minus base was `+1.25pp`, interval `[-1.25,+3.75]pp`. All Writer
+  successes came from task 70; tasks 11/21/51/86 remained at zero. This is not
+  multi-category zero-interaction utility, so Writer-only RL remains blocked.
+- The canonical packet is
+  `$EMBER_OUTPUT_ROOT/writer_cold_start/validation_source_teacher_aux_step500_recovery1_20260720T002900Z`.
+  All 15 shards, 1,920 episode grains, checksums, JSON and five videos validate;
+  test/held access is false. The first launch failed before any shard because
+  control telemetry occupied a fresh science output root. Recovery moved only
+  launch-control files outside that root. The simulator-heavy job was CPU-bound,
+  so low GPU occupancy is an efficiency residual rather than missing evidence.
+- Before opening source reconstruction outcomes, a no-rollout diagnostic froze
+  `<=0.10` as sufficient teacher acquisition and `>0.25` as acquisition
+  underfit. Mean teacher-normalized gauge-invariant physical-update error fell
+  monotonically from `0.741` at step 250 to `0.555/0.490/0.466` at steps
+  500/750/1000. The best result is still firmly in the underfit region; mean
+  generated/teacher norms at step 1000 are `0.653/0.804`, excluding another
+  norm explosion as the immediate cause.
+- Step 1000 still improves every independent validation query task over frozen
+  base, with `7.12%` unweighted mean reduction versus `7.21%` at selected step
+  500. This supports one data-scale test before changing the method: exact-resume
+  the same objective/optimizer/scheduler/topology to step 2000. No new rollout
+  is allowed unless source mean error reaches `<=0.25` and all five validation
+  query losses remain below base; otherwise the next recovery changes Writer
+  acquisition architecture or loss rather than blindly adding steps.
+
 ## 2026-07-19 source physical-update teachers complete
 
 - Fifteen source-only direct LoRAs across drawer, stove/place, basket,

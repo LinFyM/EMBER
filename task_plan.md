@@ -182,7 +182,7 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
   their state hashes are bound by `teacher_bundle.json`, and physical update
   norms span `0.703--0.955` (median `0.797`). No validation/test/held numeric
   surface was used.
-- [ ] Run the single frozen source-teacher auxiliary Writer recovery in
+- [ ] Complete the single frozen source-teacher auxiliary Writer recovery in
   `configs/writer_cold_start_source_teacher_auxiliary_recovery.toml`. Independent
   source-query functional loss remains primary; coefficient `0.1` applies only
   to gauge-invariant relative physical-Delta-W error, raw factor MSE is absent,
@@ -190,8 +190,20 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
   rank-32 space and leave later task-local RL unconstrained.
   The eight-GPU step-1000 segment completed rc 0 in 48.7 minutes with four
   validated exact-resume checkpoints. A five-category validation-query rule
-  frozen before result access selected step 500; only its 64-rollout/task
-  closed-loop validation remains before this recovery is decided.
+  frozen before result access selected step 500. Its complete 64-rollout/task
+  closed-loop packet did not establish utility: at h16 base/Writer/direct were
+  `33/320`, `32/320`, and `150/320`; at h50 they were `18/320`, `22/320`, and
+  `140/320`. Writer success remained confined to the spatial-relation task.
+  A no-rollout source-teacher reconstruction diagnostic, frozen before its
+  outcome, found mean normalized physical-update errors of `0.741`, `0.555`,
+  `0.490`, and `0.466` at steps 250/500/750/1000. The best value remains above
+  the predeclared `0.25` underfit boundary, while step-1000 validation-query
+  improvement remains positive on all five categories and averages `7.12%`.
+  Resume the exact same eight-rank trajectory once from step 1000 to 2000; do
+  not run another rollout first. Step 2000 becomes rollout-eligible only if
+  mean source-teacher error exits the underfit region (`<=0.25`) and every
+  validation-query task remains better than frozen base. Otherwise stop adding
+  steps and make one evidence-driven acquisition architecture/loss change.
 
 1. [x] Bootstrap a Python 3.12 environment from the locked project definition;
    verify package consistency and the active GPU/storage contracts.

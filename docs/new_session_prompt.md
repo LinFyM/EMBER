@@ -88,6 +88,8 @@ Phase F 解封前：
 
 最终 test 统一运行 frozen source embodiment base、validation 选出的最佳 EMBER zero-interaction、target-action-supervised direct LoRA oracle、zero/identity-init ordinary LoRA RL、best Writer-init matched LoRA RL 和已冻结必要强 baseline。test direct LoRA 可使用目标 task 的全部 50 条 teacher action episodes，但只作 oracle/reference。test task-local RL 只按 validation 已冻结的 reward budget 和 selection rule 适应，并用 fresh rollout 报告最终性能。
 
+所有 RL 更新与 adaptation checkpoint 选择 rollouts 必须通过 LIBERO 官方 reset/BDDL 随机化机制生成初态，禁止从每任务 50 个固定 `.pruned_init` states 取样。matched zero/identity-init 与 Writer-init 两臂使用相同 task、env seeds 和初态序列，并保存可恢复的 worker RNG/seed schedule 与 interaction cursor。固定 50 states 只用于与 RL 数据分离的 fresh evaluation，采用官方 dummy settling、horizon 400、成功即终止。
+
 ## 当前 Phase B 执行要求
 
 - `cd ~/EMBER && git pull --ff-only origin main && git status --short --branch`；先保护任何未提交用户工作。

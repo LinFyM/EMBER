@@ -56,6 +56,8 @@ base 冻结，Writer 生成 LoRA 后直接 rollout；不更新 LoRA，reward 只
 
 base/Writer 冻结，针对当前 task 原位更新完整 LoRA。比较 zero-init 与 Writer-init 的 matched adaptation。
 
+更新与 adaptation checkpoint 选择 rollouts 使用 LIBERO 官方 reset/BDDL 随机初态；两臂共享 task、env seeds 和初态序列，并保存 worker RNG/seed schedule 与 interaction cursor。每任务固定 50 个 `.pruned_init` states 只用于与 RL 数据分离的 fresh evaluation。
+
 ### Phase F 之后可选：Source-only reward/meta outer learning
 
 只在合同冻结与统一 test 的 Phase F 完成后考虑：inner loop 更新 source task LoRA，outer reward/meta objective 只更新 Writer；base 仍冻结。它只用 source 训练、validation 选择，不影响已经报告的核心 Phase F 结果；不实现或结果为负都不阻塞 Goal complete。

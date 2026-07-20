@@ -129,11 +129,13 @@ Arm B：
 动作：
 
 - [ ] 在 validation 选择成熟 RL algorithm、K interactions、U updates、optimizer 和 selection rule。
+- [ ] 所有 RL 更新与 adaptation checkpoint 选择 rollouts 通过 LIBERO 官方 reset/BDDL 随机化初态；禁止从固定 50 个 `.pruned_init` states 取样。
+- [ ] zero/identity-init 与 Writer-init 两臂使用相同 task、env seeds 和初态序列，并保存可恢复的 worker RNG/seed schedule 与 interaction cursor。
 - [ ] 初始 profile 约 10–15 分钟/task/arm 等价预算，8 卡并行。
 - [ ] 若不足，在 test 前统一提升到约 20 分钟/task；不得按 task outcome 临时改预算。
 - [ ] checkpoints K/3、2K/3、K。
 - [ ] 每 task 可按预算内 adaptation reward 选择 checkpoint。
-- [ ] 用 fresh rollout 评估所选 checkpoint。
+- [ ] 用与 RL 数据分离的固定 50 个 `.pruned_init` states 做 fresh evaluation，保留 dummy settling、horizon 400、成功即终止。
 - [ ] 报告 J0、curve、AUC、time-to-threshold、JK、JK−J0、interactions、updates、wall-clock。
 
 所有 target tasks 的总 wall-clock 是预算对象，不允许每 task 各跑 90 分钟。
@@ -170,7 +172,7 @@ Arm B：
 - [ ] exact command/config/revisions/output root 唯一。
 - [ ] 不覆盖已有 artifact。
 - [ ] split/surface/visible fields 正确。
-- [ ] checkpoint/resume stop condition 清楚。
+- [ ] checkpoint/resume stop condition、worker RNG/env seed schedule 和 interaction cursor 清楚。
 - [ ] 视频/gallery 保留和清理策略清楚。
 
 ## 每次 meaningful 结果后

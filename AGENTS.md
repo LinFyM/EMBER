@@ -69,11 +69,13 @@ source-only reward/meta outer learning 仅可在 Phase F 合同冻结与统一 t
 
 ## Evaluation
 
-- 使用 LIBERO 官方 task suite、BDDL、controller、camera、normalization 和固定 init states。
+- 使用 LIBERO 官方 task suite、BDDL、controller、camera 和 normalization。
 - 环境最大 horizon 400；reset 后保留官方 dummy settling；成功即终止。
 - SmolVLA 主 action execution horizon 为 50，和其 50-step action chunk 对齐。旧 h16 只属历史诊断，不得作为新主指标。
-- 同轮比较必须匹配 task/init-state、policy RNG、evaluator、precision、horizon 和运行模式。
-- 开发评估通常先用每任务全部 50 个标准 init states；如模型采样方差仍影响判断，再加第二个独立 policy RNG。
+- 所有 RL 更新与 adaptation checkpoint 选择 rollouts 必须通过 LIBERO 官方 reset/BDDL 随机化机制生成初态，禁止从每任务 50 个固定 `.pruned_init` states 取样。
+- matched zero/identity-init 与 Writer-init 两臂必须使用相同 task、env seeds 和随机初态序列；保存可恢复的 worker RNG/seed schedule 与 interaction cursor。
+- 每任务全部 50 个固定 `.pruned_init` states 只用于与 RL 数据分离的 fresh evaluation；仍采用官方 dummy settling、horizon 400、成功即终止。若 policy sampling 方差仍影响判断，再加第二个独立 policy RNG。
+- 同轮 fresh evaluation 必须匹配 task/init-state、policy RNG、evaluator、precision、horizon 和运行模式。
 - 不拼接不同 checkpoint 形成分母，不把 replay transition 当独立 episode。
 - checkpoint/model/hyperparameter 只能在 validation 选择；test 最终 evaluation rows 不参与选择。
 - 在全部方法、架构、checkpoint、预算、selection rule 和 baseline 冻结前，不运行 test policy evaluation、不训练 test direct LoRA，也不读取 test actions、reward outcomes 或成功率。
@@ -102,7 +104,7 @@ source-only reward/meta outer learning 仅可在 Phase F 合同冻结与统一 t
 - 先估算总 optimizer steps，再在约 1/3、2/3、3/3 保存 checkpoint；不是机械每 30 分钟保存。
 - shared multi-task 阶段使用 deterministic no-replacement task cycles。每个完整 checkpoint 边界前，70 个 train tasks 都至少提供一次有效信号。
 - task-local RL 的 wall-clock 是所有目标 tasks 的总预算，不是每个 task 90 分钟。先在 validation profile，再统一冻结每 task interaction/update 预算。
-- checkpoint 保存 model、optimizer、scheduler、scaler、sampler/data cursor、每 rank RNG、step、episode、interaction 和 consumed-data state；不足时从同一 checkpoint exact-resume。
+- checkpoint 保存 model、optimizer、scheduler、scaler、sampler/data cursor、每 rank/worker RNG、env seed schedule、interaction cursor、step、episode、interaction 和 consumed-data state；不足时从同一 checkpoint exact-resume。
 
 ## Engineering style
 

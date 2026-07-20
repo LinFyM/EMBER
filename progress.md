@@ -5,6 +5,7 @@
 ## 工作区状态
 
 - 当前活动科研合同已统一到 Phase A–F：70/10/10 → shared source embodiment base → Writer cold start → Writer-only RL → matched task-local LoRA RL → 全部冻结后统一 reporting-only test；outer learning 只可在 Phase F 之后作为可选增强。
+- RL 数据合同已冻结：更新与 adaptation checkpoint 选择使用官方 reset/BDDL 随机初态，matched 两臂共享 task/env seed/初态序列；固定 50 个 `.pruned_init` states 只用于独立 fresh evaluation。
 - 旧 60/15/15 config、Gate recovery runner、自定义 Gate0 RL、旧 Writer runner 和对应 tests 已从活动树删除；完整版本可由父提交 `999df28` 追溯。
 - 保留的代码仅是通用 LIBERO 审计、runtime/gallery、可变长度 Writer model/data/topology 内核。
 - 新 70/10/10 task IDs、factor table、data manifest 和 train-only normalization 已封存在 `configs/libero90_70_10_10/`；source-base config/runner 正在当前工作树实现，尚未完成验证或提交，新 Writer config 尚未生成。

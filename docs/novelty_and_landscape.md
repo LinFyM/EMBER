@@ -97,6 +97,7 @@ DISC 的主结果更多是在训练任务内换初态，不能原样证明未见
 
 - 都可消费预声明 target reward interactions；
 - 必须匹配或明确报告 interaction budget；
+- RL/adaptation rollouts 都使用官方 reset/BDDL 随机初态；matched arms 共享 env seed/初态序列，固定 `.pruned_init` states 只用于独立 fresh evaluation；
 - trial/adaptation rollout 与最终 fresh evaluation 分开；
 - shared source modules在 test 不更新，除非原方法不可避免且单独标注信息/参数差异。
 

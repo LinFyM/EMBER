@@ -51,7 +51,7 @@ Writer 不是通用优化器，也不生成 bank、basis、geometry、mask、met
 - target-task RL：先在 validation 冻结预算和选择规则；最终 test 中 base/Writer/shared state 仍冻结，只更新 task-local LoRA。
 - direct LoRA：validation 与最终 test 中目标 teacher action 可见的 task-local oracle/reference，不伪装成与 EMBER 信息条件相同的 baseline。
 
-标准闭环评估采用 LIBERO 官方 task suite 和固定 init states；环境最大 horizon 为 400，SmolVLA 标准 action execution horizon 采用 50。开发期通常先覆盖每任务全部 50 个标准 init states；若 flow sampling 方差需要，再增加独立 policy RNG，而不是拼接不同 checkpoint。
+标准闭环 fresh evaluation 采用 LIBERO 官方 task suite 和每任务全部 50 个固定 `.pruned_init` states；环境最大 horizon 为 400，保留官方 dummy settling、成功即终止，SmolVLA action execution horizon 采用 50。所有 RL 更新与 adaptation checkpoint 选择 rollouts 则必须来自官方 reset/BDDL 随机化初态，禁止使用这 50 个固定 states；matched 两臂共享 task、env seeds 和初态序列。若 flow sampling 方差需要，再增加独立 policy RNG，而不是拼接不同 checkpoint。
 
 ## 代码状态
 

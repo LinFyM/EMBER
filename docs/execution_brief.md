@@ -224,7 +224,7 @@ task-local RL 本来就是每个目标任务单独适应，这在 meta-learning/
 - Arm A：source base + zero/identity LoRA + ordinary task-local LoRA RL；
 - Arm B：validation 选出的最佳 Writer LoRA + 完全相同 ordinary task-local LoRA RL。
 
-两者的 LoRA、RL algorithm、optimizer、hyperparameters、reward、task、init states、policy RNG、interaction K、update U、replay epochs 和 checkpoint schedule完全相同，唯一因果差异是初始化。
+两者的 LoRA、RL algorithm、optimizer、hyperparameters、reward、task、env seeds、官方 reset/BDDL 随机初态序列、policy RNG、interaction K、update U、replay epochs 和 checkpoint schedule 完全相同，唯一因果差异是初始化。所有 RL 更新 rollouts 都由 LIBERO 官方 reset/BDDL 随机化机制生成初态，禁止从每任务 50 个固定 `.pruned_init` states 取样。
 
 记录：
 
@@ -246,6 +246,7 @@ task-local RL 的预算是所有目标 tasks 的总预算，不是每个 task 90
 
 - 选择规则、K/U 和候选节点先在 validation 固定；
 - 用于选择的 reward interactions 全部计入预算；
+- adaptation checkpoint 选择 rollouts 同样使用官方 reset/BDDL 随机初态，并保存可恢复的 worker RNG、env seed schedule 和 interaction cursor；
 - 最终性能用新的、未参与选择的 rollout 评估；
 - 不得观察最终 test evaluation rows 后反选 checkpoint。
 
@@ -292,7 +293,7 @@ test reward 可以作为 task-local adaptation 数据，但不得更新 shared W
 - max episode horizon 400；
 - SmolVLA action chunk/execution horizon 50。
 
-旧实验中的 h16 是历史 credit diagnostic，不是新主测试协议。标准评估先覆盖每任务全部 50 个官方 init states。若 flow sampling 的 policy RNG 方差可能左右结论，再用第二个独立 policy RNG，在相同 50 states 上形成 100 episodes/task；不能把不同 checkpoint 拼成一个分母。
+旧实验中的 h16 是历史 credit diagnostic，不是新主测试协议。标准 fresh evaluation 覆盖每任务全部 50 个固定 `.pruned_init` states，并与任何 RL 更新或 adaptation checkpoint 选择数据严格分离；仍采用官方 dummy settling、horizon 400、成功即终止。若 flow sampling 的 policy RNG 方差可能左右结论，再用第二个独立 policy RNG，在相同 50 states 上形成 100 episodes/task；不能把不同 checkpoint 拼成一个分母。
 
 同一比较中的 task/init-state/policy RNG/evaluator/precision/horizon/run mode 完全一致。报告：
 
@@ -385,7 +386,8 @@ Writer 才使用八 rank DDP 聚合跨任务梯度。
 - scheduler；
 - scaler；
 - sampler/data cursor；
-- 每 rank RNG；
+- 每 rank/worker RNG；
+- RL env seed schedule 与 interaction cursor；
 - global step；
 - episode/interaction/update count；
 - consumed-data identity/cycle position；

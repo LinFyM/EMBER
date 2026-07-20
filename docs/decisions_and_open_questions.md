@@ -14,8 +14,9 @@
 - validation Writer 冻结且不可看 actions；用于选择 Writer 和冻结 task-local RL 合同。
 - 全部方法、checkpoint、预算、selection rule 和 baseline 冻结前不打开 test policy/action/reward surface。
 - task-local LoRA RL 先在 validation 冻结合同，最终 test 只按该合同更新 task-local LoRA。
+- 所有 RL 更新与 adaptation checkpoint 选择使用 LIBERO 官方 reset/BDDL 随机初态，不使用固定 `.pruned_init` states；matched 两臂共享 task、env seeds 和初态序列，并保存 worker RNG/seed schedule 与 interaction cursor。
 - direct validation LoRA 和最终统一 test 中的 direct LoRA 保留为 target-action oracle/reference。
-- 主评估采用标准 LIBERO max horizon 400、SmolVLA execution horizon 50。
+- 固定 50 个 `.pruned_init` states 仅用于与 RL 数据分离的 fresh evaluation；采用官方 dummy settling、max horizon 400、成功即终止和 SmolVLA execution horizon 50。
 - 训练最多用 8 张 A100，每卡平均保留约 10GB。
 
 ### 训练对象

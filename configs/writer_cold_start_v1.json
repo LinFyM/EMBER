@@ -42,8 +42,24 @@
     "precision": "bfloat16"
   },
   "formal_run": {
-    "status": "pending_profile",
+    "status": "sealed",
     "expected_world_size": 8,
-    "target_wall_clock_minutes_max": 90
+    "per_rank_batch_size": 384,
+    "total_steps": 1575,
+    "checkpoint_steps": [525, 1050, 1575],
+    "target_wall_clock_minutes_max": 90,
+    "profile_evidence": {
+      "run_id": "profile_b384_resume17_35_h1575_e4bbd6d_20260720",
+      "git_commit": "e4bbd6d2b5f9837bbb8ab1cf96758049b5597681",
+      "interrupted_step": 17,
+      "resumed_step": 35,
+      "observed_steps": 35,
+      "complete_task_cycles": 4,
+      "mean_step_seconds_steps_2_to_35": 3.425987,
+      "projected_training_minutes": 89.9322,
+      "peak_allocated_gib_max": 67.9996,
+      "peak_reserved_gib_max": 70.5352,
+      "checkpoint_35_manifest_sha256": "835f975804bd0f51d309e93b22f947648077fb4dfde96ed30c54264cb564ec15"
+    }
   }
 }

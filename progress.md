@@ -8,9 +8,9 @@
 - RL 数据合同已冻结：更新与 adaptation checkpoint 选择使用官方 reset/BDDL 随机初态，matched 两臂共享 task/env seed/初态序列；固定 50 个 `.pruned_init` states 只用于独立 fresh evaluation。
 - 旧 60/15/15 config、Gate recovery runner、自定义 Gate0 RL、旧 Writer runner 和对应 tests 已从活动树删除；完整版本可由父提交 `999df28` 追溯。
 - 保留的代码仅是通用 LIBERO 审计、runtime/gallery、可变长度 Writer model/data/topology 内核。
-- 新 70/10/10 task IDs、factor table、data manifest 和 train-only normalization 已封存在 `configs/libero90_70_10_10/`；source base 已依据 train/source-development evidence 冻结为 step630，选择合同在 `configs/source_base_selected_v1.json`。Writer profile config 与唯一 canonical cold-start runner 已生成，但 formal 入口在真实 profile 前保持关闭。
+- 新 70/10/10 task IDs、factor table、data manifest 和 train-only normalization 已封存在 `configs/libero90_70_10_10/`；source base 已依据 train/source-development evidence 冻结为 step630，选择合同在 `configs/source_base_selected_v1.json`。正式 Writer cache 与 interrupted/resume profile 已完成，formal cold-start 参数已封存。
 - 旧 checkpoint 全部与新协议不兼容，不得 exact-resume。
-- 当前没有活动 EMBER GPU 训练/评估进程。
+- GPU 进程与占用必须以每次 launch 前的实时快照为准；任何阶段都保持一张卡一个 policy CUDA rank，GPU0 不放额外 controller/model 进程。
 - 完整长期 Goal 已建立且保持 active；Phase A 不能单独触发 Goal complete。
 - 已删除 179 个非 canonical `.codex/longrun` wrapper 目录（约 65MB）；原始科学证据仍在外部 checksummed output，完整旧执行树在 Git 父提交。
 - 已核验并删除四个干净、已 supersede 的 worktree/local branches：`d25544e`、`cc4ba36`、`1722b9d`、`dbfaa59`。它们没有未提交用户改动；相关活动实现已由当前历史取代。
@@ -38,8 +38,8 @@
 - shared LoRA 合同已实现并封存：37 targets、rank 32、alpha 16、dropout 0、1,485,312 parameters，支持 in-place injection 和 differentiable functional application；Writer/direct/RL 将共用同一挂载空间。
 - source-base evaluator 已通过真实 8-rank smoke：固定 state IDs 0–7 各出现一次、每卡一个 policy CUDA process、显存完全一致、退出后全清。该 smoke 的 `0/8` 不作行为结论。
 - 初始 source-base thirds 使用同一 8 tasks × 50 states 得到 step210/420/630=`3/400, 8/400, 15/400`；420→630 为 11 paired gains、4 paired losses。绝对 competence 仍低，故不冻结并只追加一次 315-step exact continuation。
-- frozen-VLM cache runner 已通过 8-rank 真实 smoke 与 resume：8 tasks、8 full episodes、1,194 frames，全部 finite；resume 逐 task校验 SHA 后零重算。全量 70×50 cache 尚未生成，现已可锚定 selected step630。
-- Writer cold-start canonical path 已接通：bounded task-feature LRU、完整 LoRA differentiable functional action loss、只回传 Writer 的冻结检查、70-task deterministic query schedule 的 exact identity digest，以及 Writer/optimizer/scheduler/per-rank RNG 原子 checkpoint。35 tests passed；formal config 仍标记 `pending_profile`，不能绕过真实 loss/backward/OOM/resume smoke。
+- frozen-VLM cache 正式产物已完成：70 tasks、3500 full episodes、537,946 frames，70 个 tensor 独立 size/SHA 全通过；manifest `ae5854a6...be127`。提取与 smoke/resume 均保持 8 卡各一个 CUDA rank。
+- Writer cold-start canonical path 已接通并通过真实 8-rank interrupted/resume profile：每 rank batch 384、steps 2–35 平均 3.426s、峰值 reserved 70.54GiB；step17 的 10 个 checkpoint 文件均验 SHA，恢复至 step35 后 70 tasks × 50 episodes 全覆盖。formal 已封存为 1575 steps 与 525/1050/1575 checkpoints，预计纯训练 89.93 分钟。
 
 ## 已明确退役
 
@@ -55,10 +55,10 @@
 
 ## 当前下一批动作
 
-1. 用 selected step630 生成正式 70×50 frozen-VLM cache；不重复已通过的提取 profile。
-2. 并行推进 10 validation tasks 的 frozen-base reference 与 matched direct-LoRA oracle 入口；validation 只用于后续选择，test 继续封存。
-3. 在正式 cache 上运行 Writer 8-rank 真实 loss/backward/OOM 与 interrupted/resume profile，按吞吐封存 global batch、LR、总 steps 和 thirds 后再打开 formal。
-4. 启动 ≤约90分钟 Writer cold start；训练等待期间继续实现 Writer/LoRA validation evaluator，不启动 RL 或 optional outer learning。
+1. 在 10 个 validation tasks 上完成 selected step630 frozen-base reference；固定 50 states 只作 fresh evaluation，test 继续封存。
+2. 从干净 commit 启动约 90 分钟 Writer cold start；训练等待期间继续实现 Writer/LoRA validation evaluator与 matched direct-LoRA oracle，不启动 RL 或 optional outer learning。
+3. 在 Writer 525/1050/1575 三个候选上按 validation 选择，并完成少量预声明 train tasks 的 source localization。
+4. 机制成立后才进入 Writer-only RL；optional outer learning 仍只可在 Phase F 之后。
 
 ## Canonical runner ownership
 

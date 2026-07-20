@@ -37,18 +37,22 @@
 - step-630 mechanics smoke 在 8 ranks 上各跑 1 个不同固定 state，共 8 条唯一 rows；运行时每卡恰好一个 policy CUDA process、显存一致为 3347MiB，退出后全部归零。`0/8` 只是 smoke 小分母，不作性能证据。
 - 完整 source-development/validation 评估按 task 同步、state rank-strided、每 rank 4 个持久 async env workers；这使八卡 policy 进程拓扑完全对称，同时把 MuJoCo rollout 吞吐作为优先优化对象。
 
-### Frozen Writer feature cache：真实 smoke 与 resume 通过
+### Frozen Writer feature cache：正式 70×50 cache 完成
 
 - 只读取每条 source teacher episode 的 `obs/agentview_rgb` 和 language；不读取 action、proprio、reward、terminal、task ID/file-name features。每帧按 source-base 相同 OpenGL transform 进入 frozen SmolVLA VLM，64 个 960-d 空间 tokens 经固定 `sqrt(960)` normalization 后确定性均值池化为一个 960-d BF16 frame feature。
 - 8-rank smoke 为每 rank 1 个不同 train task/episode，共 1,194 frames；所有视觉/语言 features finite，episode offsets 与原 episode lengths 一致。单 task 108–197 frames 的提取 wall time 为 0.63–0.83 秒，按正式 LPT 调度估计全 537,946 frames 约 5 分钟。
-- resume 再运行时 8/8 ranks 均验证既有文件 size/SHA 后 `new=0`；模型加载阶段每卡恰好 1 CUDA PID、414MiB，GPU0 无额外 context，退出后 8 卡全清。正式 cache 尚未生成，smoke artifact 不作为训练数据。
+- resume 再运行时 8/8 ranks 均验证既有文件 size/SHA 后 `new=0`；模型加载阶段每卡恰好 1 CUDA PID、414MiB，GPU0 无额外 context，退出后 8 卡全清。
+- selected step630 的正式 cache 已完成：70 tasks、3500 episodes、537,946 frames、1,034,531,040 tensor bytes、825 language tokens。70 个 task tensor 均独立通过 size/SHA；cache manifest SHA256 为 `ae5854a6...be127`，run contract 内部 SHA256 为 `7b7fb765...e03ce`。全程每卡一个 3900MiB CUDA rank，GPU0 无额外进程。
 
-### Writer functional cold-start 路径：静态合同通过，等待真实 profile
+### Writer functional cold-start：真实 profile/resume 通过，formal 已封存
 
 - Writer 生成的全部74个 LoRA A/B tensors 已通过 `torch.func.functional_call` 接入冻结 SmolVLA 标准 flow/action loss；单元 backward 验证 policy 所有物理参数无梯度、Writer 获得 finite gradient。
 - source query sampler 继续使用跨rank 70-task no-replacement cycles，并可对每个 checkpoint 生成精确 `(step, rank, batch offset, task, episode, frame)` identity SHA256；不是只保存不可审计的 step 数。
 - feature cache 训练侧使用有界 task LRU，每个 task 首次载入验证 size/SHA，换入时不重复做15MB级哈希；这是吞吐优化，不改变 features。
-- canonical runner 保存 Writer、optimizer、scheduler、sampler cursor、consumed identity、每rank RNG和完整 launch contract。`configs/writer_cold_start_v1.json` 的 formal 状态仍为 `pending_profile`，因此当前35 tests通过只证明机械路径，不构成科学结果。
+- canonical runner 保存 Writer、optimizer、scheduler、sampler cursor、consumed identity、每rank RNG和完整 launch contract。
+- 真实 8-rank functional profile 选择每 rank batch 384（global 3072）：steps 2–35 平均 3.426s、898.1 queries/s，峰值 allocated/reserved 68.00/70.54GiB；8 卡各恰好一个约 72.6–73.4GiB CUDA rank，GPU0 没有额外 context。更大的 448/512/768/896 batch 均在 8 卡对称 OOM，因此不再为小幅吞吐继续挤压约 10GiB headroom。
+- step17 checkpoint 的 Writer、optimizer/scheduler 与 8-rank RNG 共 10 个文件均独立通过 size/SHA；从它恢复至 step35 后 loss、吞吐和显存连续稳定。35 steps 恰好为 4 个完整 70-task cycles，每 task 1536 queries、50/50 episodes 覆盖，consumed identity SHA256 为 `59804c03...6db01`，step35 manifest SHA256 为 `835f9758...ec15`。
+- 正式 cold-start 已封存为 1575 steps、525/1050/1575 thirds；按 profile 预计纯训练 89.93 分钟。profile 只证明 mechanics 和资源合同，不能作为 Writer 行为结论。
 
 ### Gate -1：通过但带残差
 

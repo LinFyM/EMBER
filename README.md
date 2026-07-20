@@ -17,8 +17,8 @@ Writer 不是通用优化器，也不生成 bank、basis、geometry、mask、met
 - Gate -1 已按“通过但带残差”封存。原始 action-hidden-video recovery 为 ordered/wrong-video `19/24`、paired `15/24`，旧 `0.80` 阈值和 drop-last 残差没有被改写。
 - Gate 0 按“通过但证据覆盖有限”处理。历史 task 3/4 的 action-supervised LoRA 相对当时 base 呈一致正向点估计，但只覆盖两个近似任务、每臂 32 次评估；它不再是 Writer 的前置门槛。
 - 旧 60/15/15 split、旧 source base、旧 Writer checkpoint、旧 recovery runner 与旧 h16 主评估合同均已退役。它们只保留在 Git 父提交 `999df28` 和外部证据包中，不能作为下一轮实验的活动输入。
-- specification-only 同分布 70/10/10 已封存在 `configs/libero90_70_10_10/`；下一步在全部 70×50 条成功 teacher episode 上训练共享 source embodiment base，再重训 Writer。
-- 当前长期 Goal 已建立；尚无活动 GPU 作业或可继续沿用的正式新协议 checkpoint。
+- specification-only 同分布 70/10/10 已封存在 `configs/libero90_70_10_10/`；共享 source embodiment base 已仅据 source evidence 冻结为 step630，正式 70×50 Writer feature cache 与 8-rank profile 已完成，下一步是 validation frozen-base reference 和正式 Writer cold start。
+- 当前长期 Goal 已建立并保持 active；正式新协议 source base 已冻结，GPU 作业状态必须在每次 launch 前实时核验。
 
 ## Frozen source embodiment base
 

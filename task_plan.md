@@ -42,7 +42,7 @@
 
 ## Phase B：Source embodiment base
 
-状态：首段正式训练与 thirds source-development 评估已完成；绝对成功率仍低但 `3/400 → 8/400 → 15/400` 持续上升，已封存从 step 630 exact-resume 的 315-step source-only 短续段，尚未冻结 base。
+状态：source-only 选择已结束并冻结 step 630。短续段 step 945 同口径仍为 `15/400`，相对 step 630 为 `5 gains / 5 losses`，因此按预声明规则不评 735/840，也不读取 validation/test 选择 base。
 
 合同：
 
@@ -79,7 +79,7 @@
 
 ## Phase C：Writer cold start
 
-状态：canonical runner 已接通并静态验证；正式 cache 与真实8-rank profile 待运行。
+状态：正式 70×50 feature cache 与真实 8-rank interrupted/resume profile 已完成；formal 参数已封存，等待从干净 commit 启动 1575-step cold start。
 
 固定结构：
 
@@ -88,18 +88,20 @@
 - trainable temporal/episode/set attention、fusion、task memory、layer-aware LoRA decoder；
 - 输出完整 37-target rank-32/alpha-16/dropout-0 LoRA。
 
-同空间 LoRA 合同已封存为 `configs/smolvla_lora_v1.json`：精确37 targets、74个A/B tensors、1,485,312 parameters；Writer、direct oracle 和后续 matched RL 共用这一实现。`scripts/train_writer_cold_start.py` 已把 selected source base、full-video cache、mixed sampler、functional loss 和 exact-resume checkpoint 接成唯一活动路径；formal 仍被 profile gate 关闭。
+同空间 LoRA 合同已封存为 `configs/smolvla_lora_v1.json`：精确37 targets、74个A/B tensors、1,485,312 parameters；Writer、direct oracle 和后续 matched RL 共用这一实现。`scripts/train_writer_cold_start.py` 已把 selected source base、full-video cache、mixed sampler、functional loss 和 exact-resume checkpoint 接成唯一活动路径；真实 profile/resume 通过后 formal gate 已按测量参数打开。
 
-frozen-VLM cache 的唯一入口与合同已封存为 `scripts/cache_writer_features.py` / `configs/writer_feature_cache_v1.json`。真实 8-rank smoke 覆盖 8 tasks × 1 full episode、1,194 frames，并验证 task-level atomic resume 零重算；正式 70×50 cache 需等 source checkpoint 最终选择后生成，因此下面的全量动作仍未完成。
+frozen-VLM cache 的唯一入口与合同已封存为 `scripts/cache_writer_features.py` / `configs/writer_feature_cache_v1.json`。正式 cache 已由 selected step630 生成：70 tasks、3500 full episodes、537,946 frames，70 个 task tensors 均独立通过 size/SHA 校验；提取期间每卡恰好一个 CUDA rank、GPU0 无额外进程。
+
+真实 functional profile 采用每 rank batch 384、global batch 3072；step 17 checkpoint 的 10 个文件独立通过 SHA，随后 exact-resume 至 step 35。35 steps 恰好覆盖 4 个完整 70-task cycles，每 task 1536 queries 且全部 50 episodes 覆盖；steps 2–35 平均 3.426s，峰值 allocated/reserved 68.00/70.54GiB。正式合同据此封存为 1575 steps、checkpoints 525/1050/1575，预计纯训练 89.93 分钟。
 
 动作：
 
 - [x] 将 `writer/model.py`、`temporal.py`、`data.py` 接入新 source base 与新 manifest。
-- [ ] 构建每 task 全部 50 条完整视频的 frozen feature cache，保留 episode boundaries。
+- [x] 构建每 task 全部 50 条完整视频的 frozen feature cache，保留 episode boundaries。
 - [x] 70-task mixed/no-replacement sampler。
 - [x] 70-task cycle 之上再保证每 task 50 episodes 的最小覆盖；记录 consumed episode/chunk identity。
 - [x] functional action/flow loss；action 不进入 Writer。
-- [ ] 只做 shape/OOM/NaN/gradient/freeze/resume/leakage smoke。
+- [x] 只做 shape/OOM/NaN/gradient/freeze/resume/leakage smoke。
 - [ ] 8 GPU 真实训练，初始总预算 ≤约 90 分钟。
 - [ ] checkpoints 位于估算总 steps 的 1/3、2/3、3/3，每个边界覆盖 70 tasks。
 - [ ] 在 10 个跨类别 validation tasks 比 frozen source embodiment base、Writer、direct LoRA oracle。

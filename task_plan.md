@@ -115,7 +115,8 @@ validation action-hidden cache 覆盖预封存 10 tasks × 50 full episodes、63
 
 ## Phase D：Writer-only RL
 
-状态：等待 cold start。
+状态：等待 cold start validation；canonical source-only reward runner 与 exact-resume
+checkpoint 已接通，formal gate 在真实 profile 前保持关闭。
 
 - [ ] 只用 70 train/source tasks。
 - [ ] base 冻结；生成 LoRA 不原位更新；reward 只更新 Writer。
@@ -128,7 +129,8 @@ validation action-hidden cache 覆盖预封存 10 tasks × 50 full episodes、63
 
 ## Phase E：Task-local LoRA RL
 
-状态：等待 validation 选出的 Writer。
+状态：等待 validation 选出的 Writer；matched canonical runner、恢复状态和 shared
+fresh-evaluation 读取路径已接通，尚未启动 RL 或产生性能证据。
 
 Arm A：
 
@@ -153,6 +155,13 @@ Arm B：
 - [ ] 每 task 可按预算内 adaptation reward 选择 checkpoint。
 - [ ] 用与 RL 数据分离的固定 50 个 `.pruned_init` states 做 fresh evaluation，保留 dummy settling、horizon 400、成功即终止。
 - [ ] 报告 J0、curve、AUC、time-to-threshold、JK、JK−J0、interactions、updates、wall-clock。
+
+活动实现把 4-task profile 映射成 8 个 task×arm 单元，恰好每卡一个 policy
+进程；正式 20 单元按 rank-strided 分片。两臂的 rollout seed 函数不含 arm，
+ledger 保存每次 official random reset 的 env/policy seed、interaction cursor 和
+`fixed_init_state_id=null`。checkpoint 只允许在完整 rollout block 后保存，恢复时
+机械核验 `interaction_cursor = update × rollouts_per_update`；固定 50 states 仅由
+同一个 fresh evaluator 在 RL 外读取。
 
 所有 target tasks 的总 wall-clock 是预算对象，不允许每 task 各跑 90 分钟。
 

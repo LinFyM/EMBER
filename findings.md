@@ -175,6 +175,20 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 不能把旧 source task 结果、旧 validation 结果或 task 22 用于新 split。
 - 不能重新引入 bank/geometry 作为“修复”。
 
+## 当前 RL 实现边界
+
+- Writer-only RL 与 task-local RL 都采用 binary-success on-policy
+  success-weighted flow regression；这是为 SmolVLA 没有可直接使用的 exact action
+  likelihood 而选的 ordinary reward adaptation，不含 critic、teacher action、外部
+  exploration adapter 或伪 PPO。
+- task-local 两臂只允许同一 37-target LoRA 可训练；base、Writer、encoders 和所有
+  shared state 冻结。其配对 seed schedule 明确排除 arm，官方随机 reset rollout
+  ledger 与 worker RNG/interaction cursor 进入 checkpoint；`.pruned_init` 只由独立
+  fresh evaluator 使用。
+- 以上目前只有代码与 49 项 CPU/contract tests 证据，不是 Writer-only RL 或
+  task-local RL 的性能证据；formal gate 仍等待真实 GPU profile 和前序 validation
+  选择。
+
 ## 证据定位
 
 外部结果根不写入公开仓库；使用本地 `EMBER_OUTPUT_ROOT` 查找。关键历史目录名：

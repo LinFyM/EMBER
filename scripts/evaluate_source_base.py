@@ -30,6 +30,7 @@ from ember.libero_evaluation import (
     validate_complete_rows,
 )
 from ember.direct_lora_inference import FrozenDirectLoRAAdapter
+from ember.task_local_rl_inference import FrozenTaskLocalRLAdapter
 from ember.writer.inference import FrozenWriterTaskAdapter
 
 
@@ -64,6 +65,13 @@ def _parse_args() -> argparse.Namespace:
         default=REPO_ROOT / "configs/direct_lora_sft_v1.json",
     )
     parser.add_argument("--direct-lora-run", type=Path)
+    parser.add_argument(
+        "--task-local-rl-config",
+        type=Path,
+        default=REPO_ROOT / "configs/task_local_lora_rl_v1.json",
+    )
+    parser.add_argument("--task-local-rl-run", type=Path)
+    parser.add_argument("--task-local-rl-arm", choices=("identity", "writer"))
     parser.add_argument(
         "--role", choices=("source_development", "validation"), required=True
     )
@@ -198,7 +206,12 @@ def main() -> int:
             "Writer-only RL config requires a Writer checkpoint and feature cache"
         )
     direct_requested = args.direct_lora_run is not None
-    if writer_requested and direct_requested:
+    task_local_requested = args.task_local_rl_run is not None
+    if task_local_requested != (args.task_local_rl_arm is not None):
+        raise EvaluationContractError(
+            "task-local RL evaluation requires both run and arm"
+        )
+    if sum((writer_requested, direct_requested, task_local_requested)) > 1:
         raise EvaluationContractError("fresh evaluation accepts only one LoRA arm")
     arm = (
         "writer_only_rl_zero_interaction"
@@ -207,6 +220,8 @@ def main() -> int:
         if writer_requested
         else "direct_lora_sft_oracle"
         if direct_requested
+        else f"task_local_lora_rl_{args.task_local_rl_arm}"
+        if task_local_requested
         else "frozen_source_base"
     )
     rank = int(os.environ.get("RANK", "0"))
@@ -350,6 +365,36 @@ def main() -> int:
                     args.direct_lora_run / "run_summary.json"
                 ),
             }
+        if task_local_requested:
+            required_task_local_files = (
+                args.task_local_rl_config,
+                args.task_local_rl_run / "run_contract.json",
+                args.task_local_rl_run / "run_summary.json",
+            )
+            missing_task_local_files = [
+                str(path)
+                for path in required_task_local_files
+                if not path.is_file()
+            ]
+            if missing_task_local_files:
+                raise EvaluationContractError(
+                    "task-local RL evaluation input is incomplete: "
+                    f"{missing_task_local_files}"
+                )
+            contract["task_local_rl_inputs"] = {
+                "arm": args.task_local_rl_arm,
+                "config_path": str(args.task_local_rl_config.resolve()),
+                "config_sha256": sha256_file(
+                    args.task_local_rl_config.resolve()
+                ),
+                "run_path": str(args.task_local_rl_run.resolve()),
+                "run_contract_sha256": sha256_file(
+                    args.task_local_rl_run / "run_contract.json"
+                ),
+                "run_summary_sha256": sha256_file(
+                    args.task_local_rl_run / "run_summary.json"
+                ),
+            }
         contract["contract_sha256"] = canonical_sha256(contract)
         _write_json_atomic(args.output_dir / "run_contract.json", contract)
     dist.barrier()
@@ -429,6 +474,17 @@ def main() -> int:
             policy_files=adapter_policy_files,
             config_path=args.direct_lora_config.resolve(),
             run_root=args.direct_lora_run.resolve(),
+            task_ids=task_ids,
+            device=device,
+            require_formal=args.mode == "formal",
+        )
+    elif task_local_requested:
+        task_adapter = FrozenTaskLocalRLAdapter(
+            policy=policy,
+            policy_files=adapter_policy_files,
+            config_path=args.task_local_rl_config.resolve(),
+            run_root=args.task_local_rl_run.resolve(),
+            arm=args.task_local_rl_arm,
             task_ids=task_ids,
             device=device,
             require_formal=args.mode == "formal",
@@ -554,7 +610,7 @@ def main() -> int:
                 for source_rank in range(world_size)
             }
             if len(evidence_values) != 1:
-                raise EvaluationContractError("Writer evidence differs across ranks")
+                raise EvaluationContractError("adapter evidence differs across ranks")
             for task_id in task_ids:
                 task_hashes = {
                     timing["adapter_sha256"]
@@ -563,7 +619,7 @@ def main() -> int:
                 }
                 if len(task_hashes) != 1 or None in task_hashes:
                     raise EvaluationContractError(
-                        f"Writer adapter differs across ranks for task {task_id}"
+                        f"task adapter differs across ranks for task {task_id}"
                     )
         all_rows = validate_complete_rows(all_rows, task_ids, state_count)
         result = {

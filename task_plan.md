@@ -133,6 +133,8 @@ validation action-hidden cache 覆盖预封存 10 tasks × 50 full episodes、63
 
 profile 从 update1 checkpoint 由新进程恢复到 update9，完成一个 70-task cycle：每 task 4 个官方随机 reset rollouts，共 `280` interactions、`87` successes、`90,391` env steps 和 9 个真实 Writer updates；72 个 rank/update ledgers、280 个唯一 env/policy seed rows 与两个 10-file checkpoints 全部通过恢复审计。max-rank wall 为 405.50 秒，因此 formal 封存 12 个 full cycles，即 108 updates、每 task 48 rollouts、总 3,360 interactions，thirds 为 36/72/108，预计约 81.1 分钟。
 
+cold step1050 与 Writer-RL update36/72/108 的 validation 选择规则已在任何 Writer-RL validation outcome 前封存为 `configs/writer_only_rl_selection_rule_v1.json`：先最大化 500 rows 总成功数，再比较相对 frozen base 的正增益任务数与配对净增益，最后偏好更少 source reward interactions。全部候选复用 cold/base 的 fixed states、env/policy seeds 和 evaluator；选择与机制声明分开，test 保持封存。
+
 ## Phase E：Task-local LoRA RL
 
 状态：等待 validation 选出的 Writer；matched canonical runner、恢复状态和 shared

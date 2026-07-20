@@ -1,5 +1,39 @@
 # EMBER Durable Findings
 
+## 2026-07-20 source localization rules out a validation-only explanation
+
+- The owner-requested source diagnostic completed rc 0 in 38m07s from clean
+  `7276f93`. It compares frozen base, the coefficient-0.3 step-1000 Writer, and
+  immutable source direct-LoRA teachers on tasks 6/19/46/34/73 (five
+  categories), with 64 paired rollouts/task/arm and h16/h50. All 15 shards,
+  1,920 episode rows, 15 videos, JSON and checksums validate; test/held access
+  is false.
+- Primary h16 aggregate success is base `141/320` (44.06%), Writer `127/320`
+  (39.69%), and direct teacher `137/320` (42.81%). Writer versus base is
+  `-4.375pp`, paired-bootstrap 95% interval `[-8.75,0.0]pp`. H50 totals are
+  `104/320`, `101/320`, and `111/320`, respectively. Thus the Writer does not
+  merely fail to generalize to validation: its generated LoRA also lacks
+  aggregate closed-loop utility on these source tasks.
+- The source direct teachers are themselves not a robust behavioral upper
+  bound: at h16 they improve task46 from `14/64` to `30/64`, but are flat or
+  worse on the other four tasks and slightly underperform base in aggregate.
+  Writer improves task46 from `14/64` to `19/64` but does not reproduce the
+  full teacher gain and regresses elsewhere. Current evidence therefore mixes
+  target/recipe insufficiency with Writer acquisition underfit; it does not
+  support blaming validation generalization alone. The next discriminating
+  recovery should first establish useful direct source-LoRA behavior across
+  multiple categories, then train/evaluate Writer against those same matched
+  targets.
+- Live process inspection also localized the asymmetric GPU load. Every policy
+  rank had the correct `LOCAL_RANK`, but each forkserver EGL worker inherited
+  all eight visible GPUs without `MUJOCO_EGL_DEVICE_ID`, so robosuite rendered
+  on physical GPU0. GPU0 averaged about 59.6% utilization while GPUs1--7
+  averaged only about 4.2--7.0%. Commit `973c07e` binds both policy CUDA and
+  EGL rendering before project imports. A real eight-rank smoke shows ranks
+  0--7 as one matching `C+G` process per GPU, eliminating the GPU0 context and
+  renderer pile-up. This fixes placement; future rollout throughput still must
+  be measured rather than inferred from allocated memory.
+
 ## 2026-07-20 source-teacher Writer remains acquisition-underfit
 
 - The source-teacher auxiliary Writer validation completed rc 0 with 1,920

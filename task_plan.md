@@ -182,7 +182,7 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
   their state hashes are bound by `teacher_bundle.json`, and physical update
   norms span `0.703--0.955` (median `0.797`). No validation/test/held numeric
   surface was used.
-- [ ] Complete the single frozen source-teacher auxiliary Writer recovery in
+- [x] Complete the single frozen source-teacher auxiliary Writer recovery in
   `configs/writer_cold_start_source_teacher_auxiliary_recovery.toml`. Independent
   source-query functional loss remains primary; coefficient `0.1` applies only
   to gauge-invariant relative physical-Delta-W error, raw factor MSE is absent,
@@ -216,6 +216,22 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
   base, Writer, and immutable direct teacher on source tasks 6/19/46/34/73,
   64 paired rollouts/task/arm at h16/h50. This result may diagnose acquisition
   versus generalization but cannot retroactively make the checkpoint eligible.
+  The complete source packet has 1,920 rows and passes all hashes. At primary
+  h16, base/Writer/direct teacher score `141/320`, `127/320`, and `137/320`;
+  at h50 they score `104/320`, `101/320`, and `111/320`. Writer therefore also
+  lacks aggregate source-task utility, while these source teachers themselves
+  are not a reliable closed-loop upper bound. The failure is not merely
+  validation generalization. Before another Writer recovery, establish a
+  behaviorally useful direct source-LoRA target on multiple categories using
+  the existing mature LoRA path; do not start Writer-only RL from this
+  checkpoint.
+- [x] Correct the eight-rank Writer evaluator's device topology. The previous
+  job put each policy rank on its intended CUDA device but left every
+  MuJoCo/EGL worker on physical GPU0. Bind both PyTorch and
+  `MUJOCO_EGL_DEVICE_ID` from `LOCAL_RANK` before project imports. A real
+  eight-rank EGL smoke now shows exactly one matching `C+G` process on each
+  GPU; use this path for subsequent validation rather than accepting GPU0
+  renderer contention.
 
 1. [x] Bootstrap a Python 3.12 environment from the locked project definition;
    verify package consistency and the active GPU/storage contracts.

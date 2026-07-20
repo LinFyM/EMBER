@@ -1,5 +1,32 @@
 # EMBER Progress and Handoff
 
+## 2026-07-20 source localization complete; per-rank EGL binding fixed
+
+- Longrun `writer_source_localization_step1000_20260720_030043` completed rc 0
+  in 38m07s and published the full source diagnostic at
+  `/data/ymdai/ember_outputs/writer_cold_start/source_localization_step1000_20260720T030017Z`.
+  It contains 15/15 shards, 1,920 paired rows, 15 compact videos and a local
+  gallery; all checksums pass and validation/test/held access is false.
+- At h16, source task 6/19/46/34/73 base successes are
+  `[5,43,14,48,31]/64`, Writer `[1,42,19,42,23]/64`, and immutable direct
+  teacher `[2,41,30,46,18]/64`. Aggregate base/Writer/direct is
+  `141/320`, `127/320`, and `137/320`. At h50 the aggregates are
+  `104/320`, `101/320`, and `111/320`. This answers the localization question:
+  current EMBER is not reliably useful even on selected source tasks, and the
+  source direct-teacher targets are also inconsistent. Do not attribute the
+  failure solely to validation generalization or start Writer-only RL.
+- GPU inspection found all MuJoCo/EGL subprocesses on physical GPU0 despite
+  distinct policy ranks. The worker environment had `LOCAL_RANK` but no
+  `MUJOCO_EGL_DEVICE_ID`; robosuite therefore defaulted to GPU0. Commit
+  `973c07e` now maps each local rank to its physical visible GPU before project
+  imports. Targeted tests pass 8/8, and a real eight-rank EGL smoke shows one
+  matching `C+G` process on each GPU with rc 0. All GPUs released afterward.
+- Next scientific action: on legal source/train surfaces, use the existing
+  mature 37-target rank-32 path to establish closed-loop-positive direct LoRA
+  targets across multiple categories before spending another Writer training
+  segment. Keep the base/Writer/direct source diagnostic immutable and retain
+  the same matched LoRA space.
+
 ## 2026-07-20 source-teacher validation negative; exact continuation next
 
 - Formal source-teacher auxiliary validation is complete at

@@ -8,11 +8,13 @@ from ember.writer.data import MixedTaskBatchSampler
 @dataclass
 class _DatasetStub:
     task_episode_rows: dict[int, dict[int, tuple[int, ...]]]
+    frame_index: tuple[tuple[int, int, int], ...]
 
 
 def _dataset() -> tuple[_DatasetStub, dict[int, tuple[int, int]]]:
     rows: dict[int, dict[int, tuple[int, ...]]] = {}
     identity: dict[int, tuple[int, int]] = {}
+    frame_index: list[tuple[int, int, int]] = []
     flat = 0
     for task_id in (10, 20, 30, 40):
         rows[task_id] = {}
@@ -22,8 +24,11 @@ def _dataset() -> tuple[_DatasetStub, dict[int, tuple[int, int]]]:
             identity.update(
                 {row: (task_id, demo_index) for row in episode_rows}
             )
+            frame_index.extend(
+                (task_id, demo_index, offset) for offset in range(3)
+            )
             flat += 3
-    return _DatasetStub(rows), identity
+    return _DatasetStub(rows, tuple(frame_index)), identity
 
 
 def _sampler(
@@ -77,3 +82,9 @@ def test_mixed_task_sampler_covers_every_episode_in_each_full_window() -> None:
         episodes == (0, 1, 2, 3, 4)
         for episodes in sampler.coverage_for_steps(2, 8).values()
     )
+    summary = sampler.consumed_identity_summary(0, 8)
+    assert summary["global_examples"] == 8 * 2 * 2
+    assert summary["unique_query_rows"] <= summary["global_examples"]
+    assert summary["identity_sha256"] == _sampler(
+        dataset, rank=1, start_step=3, stop_step=8
+    ).consumed_identity_summary(0, 8)["identity_sha256"]

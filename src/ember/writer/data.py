@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import struct
 from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
@@ -355,6 +356,54 @@ class MixedTaskBatchSampler:
         return {
             task_id: tuple(sorted(demo_indices))
             for task_id, demo_indices in coverage.items()
+        }
+
+    def consumed_identity_summary(
+        self, start_step: int, stop_step: int
+    ) -> dict[str, Any]:
+        """Digest the exact cross-rank task/episode/frame query schedule."""
+
+        if not 0 <= start_step <= stop_step:
+            raise WriterModelError("invalid consumed-query step range")
+        digest = hashlib.sha256()
+        unique_rows: set[int] = set()
+        task_examples = {task_id: 0 for task_id in self.task_ids}
+        for step in range(start_step, stop_step):
+            for rank in range(self.world_size):
+                slot = step * self.world_size + rank
+                task_id, task_visit = self._task_visit_for_global_slot(slot)
+                for batch_offset in range(self.per_rank_batch_size):
+                    row = self._sample_for_task_visit(
+                        task_id, task_visit, batch_offset
+                    )
+                    row_task, demo_index, frame_index = self.dataset.frame_index[row]
+                    if row_task != task_id:
+                        raise WriterModelError("sampler query crossed task authority")
+                    digest.update(
+                        struct.pack(
+                            ">7q",
+                            step,
+                            rank,
+                            batch_offset,
+                            row,
+                            task_id,
+                            demo_index,
+                            frame_index,
+                        )
+                    )
+                    unique_rows.add(row)
+                    task_examples[task_id] += 1
+        counts = tuple(task_examples.values())
+        return {
+            "start_step": start_step,
+            "stop_step": stop_step,
+            "global_examples": (stop_step - start_step)
+            * self.world_size
+            * self.per_rank_batch_size,
+            "unique_query_rows": len(unique_rows),
+            "min_examples_per_task": min(counts),
+            "max_examples_per_task": max(counts),
+            "identity_sha256": digest.hexdigest(),
         }
 
     def __iter__(self) -> Iterator[list[int]]:

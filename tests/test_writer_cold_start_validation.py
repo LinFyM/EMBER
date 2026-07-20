@@ -28,7 +28,8 @@ def test_rank_device_binding_routes_policy_and_egl_to_the_same_physical_gpu(
     binding = validation._bind_rank_devices_from_environment()
 
     assert binding == (3, "7")
-    assert observed == [3]
+    assert observed == [0]
+    assert validation.os.environ["CUDA_VISIBLE_DEVICES"] == "7"
     assert validation.os.environ["MUJOCO_EGL_DEVICE_ID"] == "7"
 
 

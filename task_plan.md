@@ -1,5 +1,30 @@
 # EMBER Execution Plan
 
+## 2026-07-20 foundation-source three-arm evaluation launch
+
+- Canonical workspace is this checkout on branch
+  `phase0/reproducible-substrate`; launch only from the committed and pushed
+  revision containing `configs/writer_foundation_source_comparison.toml`.
+- Compare the immutable SmolVLA foundation base, step-300 full-video Writer,
+  and sixteen immutable step-300 action-supervised direct LoRAs on all 16
+  selected source tasks. Use official SmolVLA execution horizon 50, 32 paired
+  rollouts/task/arm (16 init states by two policy RNG seeds), 1,536 episodes
+  total, binary simulator success plus paired intervals, and no
+  validation/test/held access.
+- Run eight independent evaluation ranks on physical GPUs 0--7. Each rank sees
+  one CUDA device and owns sixteen asynchronous simulator environments; 48
+  task-arm shards are balanced six per rank. This changes scheduling and
+  denominator only, not any frozen model, LoRA capacity, task, arm, evaluator,
+  or metric. Estimated wall time is 20--35 minutes and additional retained
+  storage is below 1 GiB.
+- Canonical command is `scripts/run_writer_cold_start.sh --mode=validate
+  --config=/data/ymdai/projects/EMBER/configs/writer_foundation_source_comparison.toml
+  --output-dir=/data/ymdai/ember_outputs/foundation_source_screen/source_three_arm_eval_v2_20260720T094500Z
+  --writer-checkpoint=/data/ymdai/ember_outputs/foundation_source_screen/writer_fullvideo_source16_20260720T080457Z/checkpoints/000300`.
+  Complete shards are atomic and may be resumed unchanged with `--resume`;
+  incompatible or failed roots remain provenance and are never mixed into the
+  published result.
+
 ## Goal
 
 Advance EMBER from a research design to a reproducible, eight-GPU-ceiling-compatible

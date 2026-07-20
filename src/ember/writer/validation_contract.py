@@ -35,6 +35,7 @@ def load_validation_contract(path: Path, *, repo_root: Path) -> dict[str, Any]:
         "predeclared_source_teacher_auxiliary_validation_before_closed_loop_outcomes",
         "predeclared_source_localization_before_source_rollout_outcomes",
         "predeclared_foundation_source_comparison_before_rollout_outcomes",
+        "predeclared_foundation_source_comparison_throughput_recovery_before_outcomes",
     }:
         raise WriterValidationError("validation predeclaration is not frozen")
     authority = spec["authority"]
@@ -103,7 +104,8 @@ def load_validation_contract(path: Path, *, repo_root: Path) -> dict[str, Any]:
     for key in ("rank", "alpha", "dropout", "expected_parameter_count"):
         require(spec["lora"][key], upstream["lora"][key], f"LoRA {key}")
     require(spec["lora"]["target_count"], upstream["lora"]["target_count"], "LoRA targets")
-    require(evaluation["rollouts_per_task_arm"], 64, "validation denominator")
+    if evaluation["rollouts_per_task_arm"] < 32:
+        raise WriterValidationError("validation denominator fell below 32")
     require(
         evaluation["rollouts_per_policy_seed"] * len(evaluation["policy_rng_seeds"]),
         evaluation["rollouts_per_task_arm"],

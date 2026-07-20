@@ -16,7 +16,7 @@ import torch
 
 
 def _bind_rank_devices_from_environment() -> tuple[int, str] | None:
-    """Bind both policy CUDA and LIBERO EGL rendering before project imports."""
+    """Give each rank one policy CUDA device and the matching EGL device."""
 
     raw_local_rank = os.environ.get("LOCAL_RANK")
     if raw_local_rank is None:
@@ -35,8 +35,14 @@ def _bind_rank_devices_from_environment() -> tuple[int, str] | None:
         physical_gpu = str(local_rank)
     if not physical_gpu.isdigit():
         raise RuntimeError("LIBERO EGL binding requires numeric CUDA_VISIBLE_DEVICES")
+    # torchrun exposes every GPU to every rank. That is unnecessary for
+    # independent rollout ranks and lets child simulator processes create
+    # accidental CUDA contexts on device zero. Narrow the rank before its
+    # first CUDA call; robosuite still needs the physical EGL device id.
+    os.environ.setdefault("EMBER_EVALUATION_PHYSICAL_GPUS", ",".join(visible))
+    os.environ["CUDA_VISIBLE_DEVICES"] = physical_gpu
     os.environ["MUJOCO_EGL_DEVICE_ID"] = physical_gpu
-    torch.cuda.set_device(local_rank)
+    torch.cuda.set_device(0)
     return local_rank, physical_gpu
 
 
@@ -89,7 +95,8 @@ def _parallel(spec: Mapping[str, Any]) -> ParallelContext:
     world_size = int(os.environ.get("WORLD_SIZE", "1"))
     if world_size != spec["parallel"]["world_size"]:
         raise WriterValidationError("Writer validation requires eight ranks")
-    torch.cuda.set_device(local_rank)
+    # Device visibility was narrowed to one logical CUDA device above.
+    torch.cuda.set_device(0 if _EARLY_DEVICE_BINDING is not None else local_rank)
     torch.distributed.init_process_group(
         "gloo",
         init_method="env://",
@@ -698,7 +705,8 @@ def _publish_result(
         "task_categories": evaluation["task_categories"],
         "resources": {
             "cuda_visible_physical_gpus": os.environ.get(
-                "CUDA_VISIBLE_DEVICES", "0,1,2,3,4,5,6,7"
+                "EMBER_EVALUATION_PHYSICAL_GPUS",
+                os.environ.get("CUDA_VISIBLE_DEVICES", "0,1,2,3,4,5,6,7"),
             ),
             "world_size": spec["parallel"]["world_size"],
             "wall_seconds": wall_seconds,

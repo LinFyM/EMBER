@@ -1,7 +1,13 @@
 schema_version = 1
-name = "smolvla_foundation_source_base_direct_writer_comparison_v1"
-status = "predeclared_foundation_source_comparison_before_rollout_outcomes"
-predeclared_at_utc = "2026-07-20T08:24:00Z"
+name = "smolvla_foundation_source_base_direct_writer_comparison_v2"
+status = "predeclared_foundation_source_comparison_throughput_recovery_before_outcomes"
+predeclared_at_utc = "2026-07-20T09:41:00Z"
+
+[throughput_recovery]
+predecessor_contract_sha256 = "e68d03d5643e535e1b0505518f68c7908dab6758cf713ce76666f5586ca1375e"
+aborted_output_relative_path = "foundation_source_screen/source_three_arm_eval_20260720T083327Z"
+aborted_complete_scientific_shards = 0
+reason = "owner stopped the 3072-episode plan before any complete shard; retain all 16 tasks, use h50 only, and increase useful per-GPU simulator batching"
 
 [authority]
 writer_contract_relative_path = "configs/writer_foundation_source_screen.toml"
@@ -51,12 +57,12 @@ surface = "source_diagnostic"
 task_ids = [3, 6, 9, 16, 19, 20, 33, 35, 34, 37, 46, 57, 63, 73, 84, 87]
 writer_arm = "writer_foundation_full_video_cold_start"
 arms = ["frozen_base", "writer_foundation_full_video_cold_start", "matched_direct_task_local_lora"]
-physical_init_state_indices = [40, 41, 42, 43, 44, 45, 46, 47]
-policy_rng_seeds = [2026072050, 2026072051, 2026072052, 2026072053, 2026072054, 2026072055, 2026072056, 2026072057]
+physical_init_state_indices = [32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47]
+policy_rng_seeds = [2026072050, 2026072051]
 evaluator_seed_start = 8050
-warmup_seed_start = 8042
-rollouts_per_policy_seed = 8
-rollouts_per_task_arm = 64
+warmup_seed_start = 8034
+rollouts_per_policy_seed = 16
+rollouts_per_task_arm = 32
 execution_horizons = [50]
 primary_execution_horizon = 50
 deployment_robustness_horizon = 50
@@ -88,7 +94,7 @@ test_held_access = false
 world_size = 8
 direct_fit_ranks = []
 base_writer_eval_ranks = [0, 1, 2, 3, 4, 5, 6, 7]
-assignment = "forty_eight_task_arm_shards_evenly_distributed_across_eight_gpus"
+assignment = "forty_eight_task_arm_shards_evenly_distributed_across_eight_single_device_ranks; sixteen async envs per rank"
 
 [resources]
 maximum_concurrent_gpus = 8

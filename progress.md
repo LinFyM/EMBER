@@ -1,5 +1,18 @@
 # EMBER Progress and Handoff
 
+## 2026-07-20 additional frozen-Writer validation probe complete
+
+- Eight additional validation tasks completed in 281 seconds on eight GPUs,
+  one task/rank and 32 h50 rollouts/task. Canonical packet:
+  `/data/ymdai/ember_outputs/foundation_source_screen/additional_val_writer_probe_20260720T104506Z`.
+  It contains 256/256 unique rows, eight atomic shards, eight videos/gallery,
+  passing checksums and `test_held_accessed=false`.
+- Aggregate Writer success is `4/256`; task 22 contributes all four successes
+  (`4/32`, two under each policy RNG seed), while tasks 2/8/13/40/59/65/76
+  are `0/32`. All GPUs and processes were released. Uneven per-device process,
+  memory and utilization behavior remains an efficiency residual to inspect
+  after the rollout result, not a reason to alter this completed packet.
+
 ## 2026-07-20 foundation validation comparison complete
 
 - Canonical validation packet:

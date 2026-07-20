@@ -1,5 +1,13 @@
 # EMBER Execution Plan
 
+## 2026-07-20 additional validation probe result
+
+- The ten-minute frozen-Writer probe on eight previously untested validation
+  tasks completed in 281 seconds: `4/256` overall, all from task 22 (`4/32`),
+  with seven tasks at zero. Preserve this as sparse-transfer evidence; it does
+  not justify another evaluation of the unchanged Writer or weaken the current
+  diagnosis that validation generalization is the next mechanism problem.
+
 ## 2026-07-20 foundation source/validation localization result
 
 - The requested comparison is complete. On all 16 selected source tasks,

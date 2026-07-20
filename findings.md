@@ -1,5 +1,15 @@
 # EMBER Durable Findings
 
+## 2026-07-20 additional validation probe finds sparse single-task transfer
+
+- A frozen-Writer-only probe evaluated eight previously untested validation
+  tasks (2/8/13/22/40/59/65/76) with 32 h50 rollouts each. The Writer saw only
+  language plus action-hidden episode 8--39 videos. It scored `4/256` (1.56%):
+  all four successes were task 22, closing the bottom cabinet drawer
+  (`4/32`, split 2/16 across each of two policy RNG seeds); the other seven
+  tasks scored zero. This confirms sparse validation utility exists but does
+  not change the broader conclusion that transfer is weak and narrow.
+
 ## 2026-07-20 foundation-base validation comparison localizes generalization failure
 
 - The five-category validation comparison completed with 480 unique h50 rows:

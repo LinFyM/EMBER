@@ -1,0 +1,98 @@
+schema_version = 1
+name = "smolvla_foundation_source_base_direct_writer_comparison_v1"
+status = "predeclared_foundation_source_comparison_before_rollout_outcomes"
+predeclared_at_utc = "2026-07-20T08:24:00Z"
+
+[authority]
+writer_contract_relative_path = "configs/writer_foundation_source_screen.toml"
+writer_contract_sha256 = "acbab1004c8412a2531aaa90fced783ecee03c3f801993c72e85f25753af816b"
+split_reseal_relative_path = "configs/libero90_split_reseal.json"
+split_reseal_sha256 = "9f5bc62e15e2cb07887e97bc98630a3f527ac6b5e253f41c203cf37459568428"
+canonical_manifest_relative_path = "phase0/libero90_manifest/reseal1_20260718T044331Z/manifest.json"
+canonical_manifest_sha256 = "2cde2e8ed05fc892309dce0009ca776c57c51158a313d836588a01c1f475e81b"
+dataset_relative_path = "LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a/libero_90"
+source_base_output_relative_path = "foundation/smolvla_base_libero90_runtime_c83c316_20260720T061351Z"
+source_base_checkpoint_step = 0
+source_base_checkpoint_manifest_sha256 = "608552de3e8d19d93b4befffc9739742a2ed422020c453c1f5b8ef410119de55"
+writer_checkpoint_step = 300
+writer_checkpoint_manifest_sha256 = "20b7e0bb0ba781d3e0a27513205063f218174e019cda7d5f94b5df71d789a949"
+writer_state_sha256 = "5cc991efa322a45e9334019b55fe72ed91770795873eae9030b3cc4907940b77"
+checkpoint_selection = "fixed_final_step_300_before_any_closed_loop_outcome"
+validation_numeric_access = false
+test_held_numeric_access = false
+
+[source_diagnostic]
+task_ids = [3, 6, 9, 16, 19, 20, 33, 35, 34, 37, 46, 57, 63, 73, 84, 87]
+direct_state_authority = "frozen_direct_fit_output"
+direct_contract_relative_path = "configs/writer_foundation_source_direct_lora.toml"
+direct_contract_sha256 = "39a46a63b8ecb219b2f9b7533056e0095b5bf0745e0f41ac74acf0c9e709d5be"
+direct_output_relative_path = "foundation_source_screen/direct_lora_source16_20260720T074300Z"
+purpose = "compare foundation base, action-supervised direct LoRA, and full-video Writer on training tasks"
+writer_training_task_count = 16
+test_held_access = false
+
+[direct_baseline]
+role = "foundation_based_action_supervised_task_local_direct_lora"
+task_ids = [3, 6, 9, 16, 19, 20, 33, 35, 34, 37, 46, 57, 63, 73, 84, 87]
+support_episode_bounds = [8, 39]
+state_authority = "frozen_direct_fit_output"
+optimizer_steps = 300
+selection_uses_source_rollout = false
+
+[lora]
+target_count = 37
+rank = 32
+alpha = 16
+dropout = 0.0
+expected_parameter_count = 1485312
+
+[evaluation]
+surface = "source_diagnostic"
+task_ids = [3, 6, 9, 16, 19, 20, 33, 35, 34, 37, 46, 57, 63, 73, 84, 87]
+writer_arm = "writer_foundation_full_video_cold_start"
+arms = ["frozen_base", "writer_foundation_full_video_cold_start", "matched_direct_task_local_lora"]
+physical_init_state_indices = [40, 41, 42, 43, 44, 45, 46, 47]
+policy_rng_seeds = [2026072050, 2026072051, 2026072052, 2026072053, 2026072054, 2026072055, 2026072056, 2026072057]
+evaluator_seed_start = 8050
+warmup_seed_start = 8042
+rollouts_per_policy_seed = 8
+rollouts_per_task_arm = 64
+execution_horizons = [50]
+primary_execution_horizon = 50
+deployment_robustness_horizon = 50
+retain_video_policy_seed = 2026072050
+retain_video_horizon = 50
+paired_bootstrap_replicates = 10000
+paired_bootstrap_seed = 2026072090
+test_held_access = false
+
+[evaluation.task_categories]
+"3" = "drawer_insert_and_close"
+"6" = "drawer_open"
+"9" = "pick_place_plate"
+"16" = "bowl_stack"
+"19" = "pick_place_stove"
+"20" = "stove_toggle"
+"33" = "microwave_close"
+"35" = "microwave_open"
+"34" = "spatial_front_relation"
+"37" = "spatial_right_relation"
+"46" = "pick_place_basket"
+"57" = "pick_place_tray"
+"63" = "stack_then_place_tray"
+"73" = "book_to_caddy"
+"84" = "mug_relative_to_caddy"
+"87" = "book_to_shelf"
+
+[parallel]
+world_size = 8
+direct_fit_ranks = []
+base_writer_eval_ranks = [0, 1, 2, 3, 4, 5, 6, 7]
+assignment = "forty_eight_task_arm_shards_evenly_distributed_across_eight_gpus"
+
+[resources]
+maximum_concurrent_gpus = 8
+minimum_free_memory_mib = 10240
+retain_compact_videos = true
+latest_gallery = true
+latest_link_relative_path = "foundation_source_screen/source_comparison_latest"

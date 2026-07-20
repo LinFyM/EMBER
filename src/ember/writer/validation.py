@@ -264,15 +264,32 @@ def _open_runtime(
     if arm == "matched_direct_task_local_lora":
         source_diagnostic = validation_spec.get("source_diagnostic")
         if source_diagnostic is not None:
-            bundle_path = output_root / source_diagnostic["teacher_bundle_relative_path"]
-            require(
-                sha256_file(bundle_path),
-                source_diagnostic["teacher_bundle_sha256"],
-                "source teacher bundle",
-            )
-            row = _json(bundle_path)["teacher_tasks"][str(task_id)]
-            state_path = output_root / row["state_relative_path"]
-            require(sha256_file(state_path), row["state_sha256"], "source teacher state")
+            if source_diagnostic["direct_state_authority"] == "source_teacher_bundle":
+                bundle_path = output_root / source_diagnostic["teacher_bundle_relative_path"]
+                require(
+                    sha256_file(bundle_path),
+                    source_diagnostic["teacher_bundle_sha256"],
+                    "source teacher bundle",
+                )
+                row = _json(bundle_path)["teacher_tasks"][str(task_id)]
+                state_path = output_root / row["state_relative_path"]
+                require(sha256_file(state_path), row["state_sha256"], "source teacher state")
+            else:
+                final = (
+                    output_root
+                    / source_diagnostic["direct_output_relative_path"]
+                    / "direct_lora"
+                    / f"task_{task_id:03d}"
+                    / "final"
+                )
+                manifest = _json(final / "manifest.json")
+                require(
+                    manifest["validation_contract_sha256"],
+                    source_diagnostic["direct_contract_sha256"],
+                    "source direct-fit artifact contract",
+                )
+                state_path = final / "trainable_state.safetensors"
+                require(sha256_file(state_path), manifest["state_sha256"], "source direct state")
         else:
             final = direct_final_path(output_dir / "direct_lora" / f"task_{task_id:03d}")
             manifest = _json(final / "manifest.json")
@@ -598,11 +615,24 @@ def _publish_result(
     )
     source_diagnostic = spec.get("source_diagnostic")
     if source_diagnostic is not None:
-        bundle = _json(output_root / source_diagnostic["teacher_bundle_relative_path"])
-        direct_manifests = {
-            str(task_id): bundle["teacher_tasks"][str(task_id)]
-            for task_id in evaluation["task_ids"]
-        }
+        if source_diagnostic["direct_state_authority"] == "source_teacher_bundle":
+            bundle = _json(output_root / source_diagnostic["teacher_bundle_relative_path"])
+            direct_manifests = {
+                str(task_id): bundle["teacher_tasks"][str(task_id)]
+                for task_id in evaluation["task_ids"]
+            }
+        else:
+            direct_root = output_root / source_diagnostic["direct_output_relative_path"]
+            direct_manifests = {
+                str(task_id): _json(
+                    direct_root
+                    / "direct_lora"
+                    / f"task_{task_id:03d}"
+                    / "final"
+                    / "manifest.json"
+                )
+                for task_id in evaluation["task_ids"]
+            }
     elif "reuse_baseline" in spec:
         source_result = _json(
             output_root

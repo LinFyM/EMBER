@@ -34,6 +34,7 @@ def load_validation_contract(path: Path, *, repo_root: Path) -> dict[str, Any]:
         "predeclared_physical_norm_recovery_validation_before_closed_loop_outcomes",
         "predeclared_source_teacher_auxiliary_validation_before_closed_loop_outcomes",
         "predeclared_source_localization_before_source_rollout_outcomes",
+        "predeclared_foundation_source_comparison_before_rollout_outcomes",
     }:
         raise WriterValidationError("validation predeclaration is not frozen")
     authority = spec["authority"]
@@ -58,13 +59,26 @@ def load_validation_contract(path: Path, *, repo_root: Path) -> dict[str, Any]:
     else:
         require(evaluation["surface"], "source_diagnostic", "source diagnostic surface")
         require(evaluation["task_ids"], source_diagnostic["task_ids"], "source tasks")
-        require(source_diagnostic["direct_state_authority"], "source_teacher_bundle", "source direct authority")
-        selection_path = repo_root / source_diagnostic["selection_contract_relative_path"]
-        require(
-            sha256_file(selection_path),
-            source_diagnostic["selection_contract_sha256"],
-            "source selection contract",
-        )
+        direct_authority = source_diagnostic["direct_state_authority"]
+        if direct_authority == "source_teacher_bundle":
+            selection_path = repo_root / source_diagnostic["selection_contract_relative_path"]
+            require(
+                sha256_file(selection_path),
+                source_diagnostic["selection_contract_sha256"],
+                "source selection contract",
+            )
+        elif direct_authority == "frozen_direct_fit_output":
+            direct_contract = repo_root / source_diagnostic["direct_contract_relative_path"]
+            require(
+                sha256_file(direct_contract),
+                source_diagnostic["direct_contract_sha256"],
+                "source direct-fit contract",
+            )
+            with direct_contract.open("rb") as handle:
+                direct_spec = tomllib.load(handle)
+            require(direct_spec["teacher_task_ids"], evaluation["task_ids"], "direct-fit tasks")
+        else:
+            raise WriterValidationError("unknown source direct-state authority")
     require(direct["task_ids"], evaluation["task_ids"], "direct-baseline tasks")
     expected_writer_arm = evaluation.get("writer_arm")
     if expected_writer_arm is None:

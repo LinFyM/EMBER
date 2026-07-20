@@ -72,10 +72,10 @@
 - [x] 标准 LIBERO h50 闭环测初始 thirds 的 train/source development；continuation 后重测最终候选。
 - [x] 冻结 source base、完整训练状态、hash 和 compute ledger。
 - [x] 冻结后在 10 个 validation tasks 建立 frozen source embodiment base reference。
-- [ ] 每个 validation task 用自己的全部 50 条 teacher action episodes 训练 matched direct LoRA oracle，并明确标注 action-supervised reference。
+- [x] 每个 validation task 用自己的全部 50 条 teacher action episodes 训练 matched direct LoRA oracle，并明确标注 action-supervised reference。
 - [ ] Phase F 解封前不运行任何 test policy evaluation、不训练 test direct LoRA，也不读取 test actions/reward/success。
 
-direct oracle 的单一 canonical runner 已接通：每个 validation task 独立从 selected step630 注入同一 37-target LoRA，只用自己的 50 条 action episodes 做标准 action/flow loss；每 task 固定消费 69,120 queries，与 Writer cold-start 的 `1575×8×384/70` 完全相等。8-rank task assignment、task-local optimizer/scheduler、sampler identity、RNG 与原子 checkpoint 已实现。真实 batch384 profile 在 8 tasks 上从 step1 exact-resume 至 step10，峰值 reserved 69.09GiB、约 2.82s/step，8 卡各一个 rank；formal 已据此封存为每 task 180 steps 与 60/120/180 checkpoints。
+direct oracle 的单一 canonical runner 已接通并完成：每个 validation task 独立从 selected step630 注入同一 37-target LoRA，只用自己的 50 条 action episodes 做标准 action/flow loss；每 task 固定消费 69,120 queries，与 Writer cold-start 的 `1575×8×384/70` 完全相等。正式运行采用 batch384、每 task 180 steps、60/120/180 checkpoints；30 个 checkpoint manifests/files 均验证通过，每个边界覆盖全部 50 episodes，8 卡始终各一个 rank，峰值 reserved 69.09GiB，10 tasks 总 wall-clock 约 17.5 分钟。固定 final checkpoint 的 500-row fresh evaluation 为 `186/500`，per-task `{0:48,8:1,15:17,28:36,40:21,56:11,61:9,71:2,85:11,88:30}`；相对 frozen base `56/500` 为配对 `141 gains / 11 losses / net +130`。完整训练、checkpoint 与评估 hashes 封存在 `configs/direct_lora_validation_reference_v1.json`。
 
 已触发且只触发一次上述停止规则：从 step630 exact-resume 到step945，新增315 steps、约14分钟，checkpoints735/840/945。step945 与630 均为 `15/400`，配对 `5 gains / 5 losses`，故已按规则冻结step630且不补测735/840；selection seal 为 `configs/source_base_selected_v1.json`。
 
@@ -115,14 +115,14 @@ validation action-hidden cache 覆盖预封存 10 tasks × 50 full episodes、63
 - [x] 8 GPU 真实训练，初始总预算约 90 分钟。
 - [x] checkpoints 位于估算总 steps 的 1/3、2/3、3/3，每个边界覆盖 70 tasks。
 - [x] 在 10 个跨类别 validation tasks 上按预封存规则选择 Writer cold-start checkpoint。
-- [ ] 在 10 个跨类别 validation tasks 比 frozen source embodiment base、Writer、direct LoRA oracle。
-- [ ] 保存原始 per-task successes、rollouts、seeds、steps、数据、GPU 和 wall-clock。
+- [x] 在 10 个跨类别 validation tasks 比 frozen source embodiment base、Writer、direct LoRA oracle。
+- [x] 保存原始 per-task successes、rollouts、seeds、steps、数据、GPU 和 wall-clock。
 
 判断：跨多个类别明显超过 frozen source embodiment base 即可证明核心机制产生功能价值并进入下一阶段；低于 direct LoRA 是优化信号，不是一票否决。效果差时先看实现、数据规模和 source base，再从同一 checkpoint 加训；数据充分仍失败才改 architecture/loss。
 
 ## Phase D：Writer-only RL
 
-状态：cold step1050 已选；canonical source-only reward runner 的真实完整 task-cycle profile/exact-resume 已通过，formal 已按实测吞吐封存，等待 RNG2 与 direct oracle 使用完当前 GPU 队列后启动。
+状态：cold step1050 已选；canonical source-only reward runner 的真实完整 task-cycle profile/exact-resume 已通过，formal 已按实测吞吐封存并已在 direct oracle 退出后自动启动。
 
 - [ ] 只用 70 train/source tasks。
 - [ ] base 冻结；生成 LoRA 不原位更新；reward 只更新 Writer。

@@ -77,11 +77,13 @@
 - 同时，task0 从 `55/100` 降到 `35/100`，配对净 `-20`；task85 净 `-1`，其余六个任务净零且多数双方均无成功。故可支持“Writer 在两个不同未见类别产生真实即时功能价值”，不能支持“已广泛泛化”。aggregate 只增加 1.3pp，Phase D/后续 matched RL 需要原样报告这项局限。
 - 完整 RNG2 合同、result hashes、逐任务配对数与解释封存在 `configs/writer_cold_start_rng2_confirmation_v1.json`；test 从未打开。
 
-### Validation direct-LoRA：真实 profile/resume 通过
+### Validation direct-LoRA：formal oracle 完成，LoRA acquisition ceiling 明确非零
 
 - 8 个 validation tasks 各由一个独立 GPU rank 从同一 frozen source base 训练自己的 37-target LoRA；每卡恰好一个 CUDA process，batch384 的 peak allocated/reserved 为 67.09/69.09GiB，实测最慢 step 2.816 秒。
 - 每 task 在 step1 保存后由新进程 exact-resume 到 step10；两个边界的 16 个 checkpoint manifests 均逐文件验证 LoRA、trainer 与 RNG state。step1 已覆盖全部 50 teacher episodes，step10 每 task 消费 3,840 queries。
-- profile 只验证 mechanics、恢复和资源合同，不看小步性能。formal 已封存为每 task 69,120 matched queries，即 batch384 × 180 steps，checkpoints 60/120/180；10 个 validation task 都使用 final step180，不按 policy outcome 选择。
+- profile 只验证 mechanics、恢复和资源合同，不看小步性能。formal 每 task 消费 69,120 matched queries，即 batch384 × 180 steps，checkpoints 60/120/180；10 个 validation task 都固定使用 final step180，不按 policy outcome 选择。正式训练约 17.5 分钟，30 个 checkpoint manifests/files 全部通过哈希与 episode coverage 审计。
+- 同一 500 条 validation rows 上，frozen base / cold Writer / direct oracle 分别为 `56/500, 63/500, 186/500`。direct per-task 为 `{0:48,8:1,15:17,28:36,40:21,56:11,61:9,71:2,85:11,88:30}`，相对 base 配对 `141 gains / 11 losses / net +130`，相对 cold Writer 为 `138/15/+123`；它在 10 个 task 上都取得正的 raw count gain。
+- 因而当前 37-target LoRA 空间并非整体无效，且 target-action acquisition ceiling 充足；cold Writer 与 oracle 的主要差距是跨任务 acquisition/generalization coverage。direct 使用目标 action，只是 oracle/reference，不属于同信息墙主结论，也不驱动 Writer checkpoint 或 test 选择。合同与结果 hashes 封存在 `configs/direct_lora_validation_reference_v1.json`，test 未打开。
 
 ### Writer-only RL：完整 source cycle profile/resume 通过
 

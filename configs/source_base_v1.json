@@ -56,10 +56,10 @@
     "total_steps": 630,
     "profile_evidence": {
       "world_size": 8,
-      "steady_step_seconds_max": 2.568930316949263,
-      "global_samples_per_second": 1096.1760937696997,
-      "peak_allocated_gib_max": 65.0494933128357,
-      "peak_reserved_gib_max": 66.755859375
+      "steady_step_seconds_max": 2.5901026278734207,
+      "global_samples_per_second": 1087.215606708237,
+      "peak_allocated_gib_max": 65.05406332015991,
+      "peak_reserved_gib_max": 67.353515625
     }
   }
 }

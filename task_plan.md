@@ -55,7 +55,7 @@
 - checkpoint：估算总 steps 后在约 1/3、2/3、3/3，且每个边界完整覆盖 70 tasks。
 - 选择：只用 train/source development，不看 validation/test。
 
-已锁定首轮运行：每 rank batch 352、global batch 2816、630 optimizer steps、checkpoint 210/420/630；沿用官方 action-expert recipe 的 peak LR `1e-4`，不做未经验证的大 batch LR 放大。最终 8 卡 profile 为 2.569s/step、1096.2 samples/s、每卡峰值 reserved 66.76GiB。
+已锁定首轮运行：每 rank batch 352、global batch 2816、630 optimizer steps、checkpoint 210/420/630；沿用官方 action-expert recipe 的 peak LR `1e-4`，不做未经验证的大 batch LR 放大。显式 rank-local device 修复后的 8 卡 profile 为 2.590s/step、1087.2 samples/s、每卡峰值 reserved 67.35GiB。
 
 动作：
 

@@ -30,8 +30,9 @@
 - exact-resume 所需状态清单和运行纪律。
 - source-base trainable contract：98,880,992 trainable / 450,046,176 total parameters；只更新 SmolVLA action expert、state/action/time projections，VLM 保持冻结。
 - source-base 数据路径：537,946 个 train frames，70 tasks × 50 episodes；跨 rank task slots 使用 deterministic no-replacement cycles，episode/frame 选择是 global-step 的纯函数。
-- 最终 8-GPU profile：batch/rank 352、global batch 2816、2.569s/step、1096.2 samples/s、每卡峰值 allocated/reserved 65.05/66.76GiB；进程表显示每张卡恰好一个 policy CUDA rank，GPU0 无额外 CUDA 进程。
+- rank-local device 修复后的 8-GPU profile：batch/rank 352、global batch 2816、2.590s/step、1087.2 samples/s、每卡峰值 allocated/reserved 65.05/67.35GiB；steady-step 进程表显示每张卡恰好一个 policy CUDA rank、69,124–69,132MiB process memory，GPU0 与其余卡一致。
 - 8-rank interrupted/resumed smoke 的最终 policy SHA256 位级一致，optimizer/scheduler 与每 rank RNG 逐值一致。根因修复是固定 DDP static graph，避免恢复后的首轮 bucket 布局与连续运行不同。
+- 首次 formal 启动在首个 checkpoint 前由进程表发现所有 ranks 的无索引 `"cuda"` 构造路径会在 GPU0 留额外 context；作业被主动停止且失败目录不复用。policy config、processor 和模型构造现显式使用 `cuda:{local_rank}`，随后 batch=1 load smoke 与 batch=352 steady smoke 均验证 8 卡进程数一致。
 
 ## 已明确退役
 

@@ -152,7 +152,9 @@ def _load_stats(config: dict[str, Any], task_ids: Sequence[int]) -> dict[str, di
     return stats
 
 
-def _build_policy_config(config: dict[str, Any], vlm_path: Path) -> SmolVLAConfig:
+def _build_policy_config(
+    config: dict[str, Any], vlm_path: Path, device: torch.device
+) -> SmolVLAConfig:
     camera_shape = tuple(config["features"]["camera_shape"])
     return SmolVLAConfig(
         input_features={
@@ -171,7 +173,7 @@ def _build_policy_config(config: dict[str, Any], vlm_path: Path) -> SmolVLAConfi
                 type=FeatureType.ACTION, shape=(config["features"]["action_dim"],)
             )
         },
-        device="cuda",
+        device=str(device),
         use_amp=False,
         push_to_hub=False,
         chunk_size=config["features"]["chunk_size"],
@@ -200,9 +202,12 @@ def _build_policy_config(config: dict[str, Any], vlm_path: Path) -> SmolVLAConfi
 
 
 def _build_policy(
-    config: dict[str, Any], model_path: Path, vlm_path: Path
+    config: dict[str, Any],
+    model_path: Path,
+    vlm_path: Path,
+    device: torch.device,
 ) -> SmolVLAPolicy:
-    policy_config = _build_policy_config(config, vlm_path)
+    policy_config = _build_policy_config(config, vlm_path, device)
     policy = SmolVLAPolicy.from_pretrained(
         model_path,
         config=policy_config,
@@ -245,7 +250,9 @@ def _reduce_scalar(value: float, context: DistributedContext, operation: dist.Re
 
 
 def _build_stage_components(
-    args: argparse.Namespace, config: dict[str, Any]
+    args: argparse.Namespace,
+    config: dict[str, Any],
+    device: torch.device,
 ) -> tuple[
     FunctionalQueryDataset,
     tuple[int, ...],
@@ -267,7 +274,7 @@ def _build_stage_components(
         max_open_files_per_worker=config["data"]["max_open_files_per_worker"],
     )
     model_path = args.foundation_path if args.resume is None else args.resume / "policy"
-    policy = _build_policy(config, model_path, args.vlm_path)
+    policy = _build_policy(config, model_path, args.vlm_path, device)
     trainable = _trainable_contract(policy)
     preprocessor, postprocessor = make_smolvla_pre_post_processors(
         policy.config, dataset_stats=_load_stats(config, task_ids)
@@ -421,7 +428,7 @@ def _prepare_runtime(
     current_git = git_state()
     if args.mode == "formal" and current_git["dirty_paths"]:
         raise SourceBaseError("formal launch requires a clean committed worktree")
-    components = _build_stage_components(args, config)
+    components = _build_stage_components(args, config, context.device)
     dataset, task_ids, policy, trainable = components[:4]
     preprocessor, postprocessor, optimizer, scheduler, expected_hashes = components[4:]
     contract = build_contract(

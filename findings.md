@@ -18,8 +18,8 @@
 
 - 从 pinned `lerobot/smolvla_base` 严格加载 450,046,176 parameters；98,880,992 个 action-expert/projection parameters 可训练，冻结 VLM trainable 泄漏为零。
 - 全部 70×50 episodes 对应 537,946 frames；sampler 在跨 rank global task slots 上做 deterministic no-replacement cycles，并保证每个 checkpoint 边界前 3500 episodes 全覆盖。
-- 最终 8-A100 profile 使用一张卡一个 rank、batch/rank 352：稳态 2.569s/step、1096.2 global samples/s，每卡峰值 allocated/reserved 65.05/66.76GiB，data wait 0.19ms。
-- profile 存活窗口中每张 GPU 恰好一个 CUDA process，GPU0 没有额外 controller/model CUDA context。
+- 显式 rank-local device 修复后的 8-A100 profile 使用一张卡一个 rank、batch/rank 352：稳态 2.590s/step、1087.2 global samples/s，每卡峰值 allocated/reserved 65.05/67.35GiB，data wait 0.13ms。
+- 首次 formal 启动暴露出无索引 `device="cuda"` 会让非零 ranks 在 GPU0 留额外构造 context；它在首个 checkpoint 前被停止且不复用。改为 `cuda:{local_rank}` 后，满 batch steady-step 进程表为每卡恰好一个 CUDA PID、69,124–69,132MiB，GPU0 不再额外堆积。
 - 8-rank continuous/resume 对照中，step-1 policy、optimizer、scheduler 和每 rank RNG 起点一致；启用 DDP static graph 后，step-2 policy 文件 SHA256 位级一致，optimizer/scheduler/RNG 逐值一致。默认 DDP 首轮后 bucket 重建是此前微小漂移的工程原因。
 - 以上只证明数据、冻结对象、DDP、吞吐、显存和 exact-resume mechanics；未读取 validation/test outcome，也不证明 source base 已获得 LIBERO competence。
 

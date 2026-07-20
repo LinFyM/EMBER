@@ -368,6 +368,7 @@ class MixedTaskBatchSampler:
         digest = hashlib.sha256()
         unique_rows: set[int] = set()
         task_examples = {task_id: 0 for task_id in self.task_ids}
+        frame_index = self.dataset.frame_index
         for step in range(start_step, stop_step):
             for rank in range(self.world_size):
                 slot = step * self.world_size + rank
@@ -376,7 +377,7 @@ class MixedTaskBatchSampler:
                     row = self._sample_for_task_visit(
                         task_id, task_visit, batch_offset
                     )
-                    row_task, demo_index, frame_index = self.dataset.frame_index[row]
+                    row_task, demo_index, frame = frame_index[row]
                     if row_task != task_id:
                         raise WriterModelError("sampler query crossed task authority")
                     digest.update(
@@ -388,7 +389,7 @@ class MixedTaskBatchSampler:
                             row,
                             task_id,
                             demo_index,
-                            frame_index,
+                            frame,
                         )
                     )
                     unique_rows.add(row)

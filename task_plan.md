@@ -1,5 +1,23 @@
 # EMBER Execution Plan
 
+## 2026-07-20 foundation validation three-arm launch
+
+- Evaluate validation tasks 11/21/51/70/86, chosen before outcomes to span
+  open-drawer, toggle-then-place, basket pick/place, spatial relation, and
+  shelf placement. The source-trained step-300 Writer is frozen and consumes
+  only language plus action-hidden episode 8--39 videos. A separate direct
+  LoRA per validation task may use episode 8--39 actions and is explicitly an
+  action-supervised upper bound, not information-matched to Writer.
+- Use the same 37-target rank-32/alpha-16/dropout-0 LoRA space and foundation
+  base, h50, 32 paired rollouts/task/arm, five direct-fit ranks plus three
+  concurrent base/Writer evaluation ranks, and no test/held access. Retained
+  storage is estimated below 3 GiB; exact task-local fit checkpoints and
+  atomic evaluation shards permit unchanged resume.
+- Canonical command is `scripts/run_writer_cold_start.sh --mode=validate
+  --config=/data/ymdai/projects/EMBER/configs/writer_foundation_validation_comparison.toml
+  --output-dir=/data/ymdai/ember_outputs/foundation_source_screen/validation_three_arm_20260720T102000Z
+  --writer-checkpoint=/data/ymdai/ember_outputs/foundation_source_screen/writer_fullvideo_source16_20260720T080457Z/checkpoints/000300`.
+
 ## 2026-07-20 foundation-source three-arm evaluation launch
 
 - Canonical workspace is this checkout on branch

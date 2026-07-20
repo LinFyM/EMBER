@@ -688,10 +688,11 @@ def _publish_result(
         },
         "training": {
             "writer": {
-                "source_tasks": (
+                "source_tasks": evaluation.get(
+                    "writer_training_task_count",
                     source_diagnostic.get("writer_training_task_count", 60)
                     if source_diagnostic is not None
-                    else 60
+                    else 60,
                 ),
                 "functional_episode_bounds": [8, 39],
                 "completed_step": writer_manifest["step"],

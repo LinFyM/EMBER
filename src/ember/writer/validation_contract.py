@@ -36,6 +36,7 @@ def load_validation_contract(path: Path, *, repo_root: Path) -> dict[str, Any]:
         "predeclared_source_localization_before_source_rollout_outcomes",
         "predeclared_foundation_source_comparison_before_rollout_outcomes",
         "predeclared_foundation_source_comparison_throughput_recovery_before_outcomes",
+        "predeclared_foundation_validation_comparison_before_outcomes",
     }:
         raise WriterValidationError("validation predeclaration is not frozen")
     authority = spec["authority"]

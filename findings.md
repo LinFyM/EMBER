@@ -1,5 +1,28 @@
 # EMBER Durable Findings
 
+## 2026-07-20 foundation-base source comparison establishes Writer utility
+
+- The corrected source comparison completed rc 0 in 20m50s on all eight A100s:
+  16 source tasks, three arms, 32 paired h50 rollouts/task/arm, and 1,536
+  unique episode rows. Frozen foundation base scored `0/512`; the full-video
+  step-300 Writer scored `55/512` (10.74%); matched action-supervised direct
+  LoRA scored `51/512` (9.96%). Writer/base paired difference is +10.74pp with
+  bootstrap 95% interval `[+8.20,+13.48]pp`; direct/base is +9.96pp
+  `[+7.42,+12.70]pp`.
+- Writer had at least one success on 11/16 source tasks, versus 8/16 for direct
+  LoRA and 0/16 for the foundation base. This is real source-task functional
+  utility, so the current question is validation generalization rather than a
+  failure to learn source behavior. The base floor means this packet does not
+  establish parity with a strong LIBERO-trained policy or formal
+  task-generalization by itself.
+- The single-device-rank recovery removed the GPU0 pile-up: exactly one policy
+  CUDA process ran per GPU and simulator children did not initialize PyTorch
+  CUDA. Batch16 reduced the owner-stopped 3,072-episode estimate from roughly
+  75--85 minutes to 20m50s for 1,536 episodes. Mean GPU utilization remained
+  12.2--15.8% because closed-loop simulation is still the bottleneck; adding
+  dummy memory or duplicate policy ranks would not be useful throughput.
+
+
 ## 2026-07-20 remaining source-teacher competence screen frozen
 
 - Before any new source rollout outcome, contract SHA256

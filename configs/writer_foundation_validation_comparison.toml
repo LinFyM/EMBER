@@ -1,0 +1,96 @@
+schema_version = 1
+name = "smolvla_foundation_validation_base_direct_writer_comparison_v1"
+status = "predeclared_foundation_validation_comparison_before_outcomes"
+predeclared_at_utc = "2026-07-20T10:14:00Z"
+
+[authority]
+writer_contract_relative_path = "configs/writer_foundation_source_screen.toml"
+writer_contract_sha256 = "acbab1004c8412a2531aaa90fced783ecee03c3f801993c72e85f25753af816b"
+split_reseal_relative_path = "configs/libero90_split_reseal.json"
+split_reseal_sha256 = "9f5bc62e15e2cb07887e97bc98630a3f527ac6b5e253f41c203cf37459568428"
+canonical_manifest_relative_path = "phase0/libero90_manifest/reseal1_20260718T044331Z/manifest.json"
+canonical_manifest_sha256 = "2cde2e8ed05fc892309dce0009ca776c57c51158a313d836588a01c1f475e81b"
+dataset_relative_path = "LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a/libero_90"
+source_base_output_relative_path = "foundation/smolvla_base_libero90_runtime_c83c316_20260720T061351Z"
+source_base_checkpoint_step = 0
+source_base_checkpoint_manifest_sha256 = "608552de3e8d19d93b4befffc9739742a2ed422020c453c1f5b8ef410119de55"
+writer_checkpoint_step = 300
+writer_checkpoint_manifest_sha256 = "20b7e0bb0ba781d3e0a27513205063f218174e019cda7d5f94b5df71d789a949"
+writer_state_sha256 = "5cc991efa322a45e9334019b55fe72ed91770795873eae9030b3cc4907940b77"
+checkpoint_selection = "fixed_source_step_300_before_validation_outcomes"
+validation_numeric_access = true
+test_held_numeric_access = false
+
+[direct_baseline]
+role = "validation_action_supervised_task_local_direct_lora_upper_bound"
+task_ids = [11, 21, 51, 70, 86]
+support_episode_bounds = [8, 39]
+optimizer_steps = 300
+micro_batch_size = 128
+gradient_accumulation_steps = 1
+optimizer = "adamw"
+learning_rate = 0.0002
+betas = [0.9, 0.95]
+epsilon = 1e-8
+weight_decay = 1e-10
+gradient_clip_norm = 10.0
+scheduler = "linear_warmup_cosine_decay"
+warmup_steps = 100
+decay_steps = 300
+decay_learning_rate = 0.00001
+augmentation = "random_resized_crop"
+augmentation_scale_min = 0.9
+augmentation_scale_max = 1.0
+seed = 2026072070
+augmentation_seed = 2026072072
+checkpoint_steps = [150, 300]
+fixed_final_step = 300
+selection_uses_validation_rollout = false
+
+[lora]
+target_count = 37
+rank = 32
+alpha = 16
+dropout = 0.0
+expected_parameter_count = 1485312
+
+[evaluation]
+surface = "validation_only"
+task_ids = [11, 21, 51, 70, 86]
+writer_training_task_count = 16
+writer_arm = "writer_foundation_full_video_cold_start"
+arms = ["frozen_base", "writer_foundation_full_video_cold_start", "matched_direct_task_local_lora"]
+physical_init_state_indices = [32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47]
+policy_rng_seeds = [2026072075, 2026072076]
+evaluator_seed_start = 8250
+warmup_seed_start = 8234
+rollouts_per_policy_seed = 16
+rollouts_per_task_arm = 32
+execution_horizons = [50]
+primary_execution_horizon = 50
+deployment_robustness_horizon = 50
+retain_video_policy_seed = 2026072075
+retain_video_horizon = 50
+paired_bootstrap_replicates = 10000
+paired_bootstrap_seed = 2026072077
+test_held_access = false
+
+[evaluation.task_categories]
+"11" = "open_drawer"
+"21" = "toggle_then_place"
+"51" = "pick_place_basket"
+"70" = "right_of_relation"
+"86" = "book_to_shelf"
+
+[parallel]
+world_size = 8
+direct_fit_ranks = [0, 1, 2, 3, 4]
+base_writer_eval_ranks = [5, 6, 7]
+assignment = "five validation direct fits on ranks 0-4; ten frozen-base/writer shards on ranks 5-7; direct evaluation follows each fit"
+
+[resources]
+maximum_concurrent_gpus = 8
+minimum_free_memory_mib = 10240
+retain_compact_videos = true
+latest_gallery = true
+latest_link_relative_path = "foundation_source_screen/validation_comparison_latest"

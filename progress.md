@@ -1,5 +1,23 @@
 # EMBER Progress and Handoff
 
+## 2026-07-20 foundation source comparison complete; validation next
+
+- Canonical source packet:
+  `/data/ymdai/ember_outputs/foundation_source_screen/source_three_arm_eval_v2_20260720T094500Z`.
+  It contains 48/48 atomic shards, 1,536 unique episode rows, 48 compact videos,
+  a gallery, and passing checksums; held access is false. Aggregate h50 success
+  is base `0/512`, Writer `55/512`, direct LoRA `51/512`.
+- The first launch failed before any shard because forkserver children
+  re-imported the already rank-remapped entrypoint. Commit `b20ce1c` makes
+  children inherit EGL placement without reopening torch CUDA; unchanged
+  `--resume` then completed rc 0 and released all GPUs.
+- Next run is the fixed five-category validation comparison on task
+  11/21/51/70/86. The source-trained Writer remains frozen and sees only
+  validation language plus action-hidden videos. The direct-LoRA upper-bound
+  arm alone may train on validation teacher actions; frozen base receives no
+  validation training. No test/held surface is accessed.
+
+
 ## 2026-07-20 remaining source-teacher screen ready
 
 - `configs/writer_cold_start_source_teacher_coverage_screen.toml` is frozen at

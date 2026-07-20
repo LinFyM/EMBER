@@ -76,7 +76,20 @@
     "update_seed_base": 2420260722
   },
   "profile": {
-    "task_count": 4
+    "task_count": 4,
+    "formal_budget_selection": {
+      "evidence_surface": "profile mechanics and task_local_reward_update step_seconds only",
+      "ignore_profile_reward_outcomes": true,
+      "timing_statistic": "p90 step_seconds across both exact-resume segments",
+      "per_task_arm_wall_clock_minutes_min": 10,
+      "per_task_arm_wall_clock_minutes_max": 15,
+      "formal_total_wall_clock_minutes_max": 100,
+      "formal_max_units_per_rank": 3,
+      "formal_launch_overhead_seconds": 180,
+      "total_updates_multiple": 3,
+      "selection": "largest positive multiple of 3 whose p90 projection is within both wall-clock maxima; prefer a value reaching the per-task-arm minimum when feasible",
+      "checkpoint_rule": "one-third, two-thirds, final"
+    }
   },
   "formal_run": {
     "status": "pending_real_profile",

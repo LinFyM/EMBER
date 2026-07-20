@@ -173,6 +173,12 @@ ledger 保存每次 official random reset 的 env/policy seed、interaction curs
 机械核验 `interaction_cursor = update × rollouts_per_update`；固定 50 states 仅由
 同一个 fresh evaluator 在 RL 外读取。
 
+在读取 profile reward outcome 前，formal U/K 的选择已限定为纯吞吐规则：只用
+两个 exact-resume segments 中 `task_local_reward_update.step_seconds` 的 p90，选择
+满足每 task/arm 约 10–15 分钟、20 单元总 wall-clock 不超过 100 分钟的最大 3
+的正整数倍，formal 最多 3 units/rank 并计 180 秒启动余量；若可行需达到 10 分钟
+下限，checkpoint 固定为 thirds。profile successes 不参与预算选择。
+
 所有 target tasks 的总 wall-clock 是预算对象，不允许每 task 各跑 90 分钟。
 
 ## Phase F：合同冻结与统一 reporting-only test

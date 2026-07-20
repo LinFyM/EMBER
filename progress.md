@@ -8,7 +8,7 @@
 - RL 数据合同已冻结：更新与 adaptation checkpoint 选择使用官方 reset/BDDL 随机初态，matched 两臂共享 task/env seed/初态序列；固定 50 个 `.pruned_init` states 只用于独立 fresh evaluation。
 - 旧 60/15/15 config、Gate recovery runner、自定义 Gate0 RL、旧 Writer runner 和对应 tests 已从活动树删除；完整版本可由父提交 `999df28` 追溯。
 - 保留的代码仅是通用 LIBERO 审计、runtime/gallery、可变长度 Writer model/data/topology 内核。
-- 新 70/10/10 task IDs、factor table、data manifest 和 train-only normalization 已封存在 `configs/libero90_70_10_10/`；source-base config/runner 正在当前工作树实现，尚未完成验证或提交，新 Writer config 尚未生成。
+- 新 70/10/10 task IDs、factor table、data manifest 和 train-only normalization 已封存在 `configs/libero90_70_10_10/`；唯一 canonical source-base config/runner 已完成 mechanics、8-GPU profile 和 exact-resume 验证，正式 trajectory 尚未启动，新 Writer config 尚未生成。
 - 旧 checkpoint 全部与新协议不兼容，不得 exact-resume。
 - 当前没有活动 EMBER GPU 训练/评估进程。
 - 完整长期 Goal 已建立且保持 active；Phase A 不能单独触发 Goal complete。
@@ -28,6 +28,10 @@
 - full-video variable-episode Writer architecture。
 - GPU/NUMA/EGL 进程放置和评估吞吐诊断。
 - exact-resume 所需状态清单和运行纪律。
+- source-base trainable contract：98,880,992 trainable / 450,046,176 total parameters；只更新 SmolVLA action expert、state/action/time projections，VLM 保持冻结。
+- source-base 数据路径：537,946 个 train frames，70 tasks × 50 episodes；跨 rank task slots 使用 deterministic no-replacement cycles，episode/frame 选择是 global-step 的纯函数。
+- 最终 8-GPU profile：batch/rank 352、global batch 2816、2.569s/step、1096.2 samples/s、每卡峰值 allocated/reserved 65.05/66.76GiB；进程表显示每张卡恰好一个 policy CUDA rank，GPU0 无额外 CUDA 进程。
+- 8-rank interrupted/resumed smoke 的最终 policy SHA256 位级一致，optimizer/scheduler 与每 rank RNG 逐值一致。根因修复是固定 DDP static graph，避免恢复后的首轮 bucket 布局与连续运行不同。
 
 ## 已明确退役
 
@@ -43,11 +47,15 @@
 
 ## 当前下一批动作
 
-1. 核验 pinned `lerobot/smolvla_base@c83c316...` 的成熟 trainable set、pre/postprocessor、37-target LoRA 挂载空间和数据 normalization 接口。
-2. 写最小单一路径 source-base config/runner；只消费 sealed train IDs 和全部 70×50 episodes。
-3. 在启动前重新做实时 GPU/storage preflight，随后 8-GPU DDP 真实吞吐 smoke。
-4. 根据实测 samples/s 冻结约 30 分钟的 total steps、full-task-cycle thirds 和 exact-resume command，启动 source base。
-5. source base 训练等待期间，在不读取 validation/test outcome、不并发修改同一 owner 的前提下，推进 validation evaluator/direct-LoRA oracle 与 Writer 接线的只读检查和独立代码准备。
+1. 提交并推送 canonical source-base runner/config；保持正式启动时工作树 clean。
+2. 重新做实时 GPU/storage preflight，按 batch/rank 352、630 steps、210/420/630 checkpoints 启动 8-GPU formal source base。
+3. 启动后核验 8 卡 CUDA 进程数一致，GPU0 没有额外 controller/model CUDA context。
+4. source base 训练等待期间，在不读取 validation/test outcome、不并发修改同一 owner 的前提下，推进 validation evaluator/direct-LoRA oracle 与 Writer 接线的只读检查和独立代码准备。
+
+## Canonical runner ownership
+
+- `scripts/train_source_base.py` 是 Phase B 唯一活动入口；`src/ember/source_base.py` 负责训练编排，`source_base_checkpoint.py` 只拥有 launch provenance 和 exact-resume 原子 checkpoint，现有 `writer/data.py` 提供共享的 HDF5/sampler owner。没有保留平行或版本化 runner。
+- 这些文件在 source base 冻结后继续作为可复现入口保留，不再复制出下一版 runner；只有出现第二个当前消费者时才提炼公共抽象。profile 和 resume-smoke 大权重是可删除的临时产物，正式 checkpoints、manifest、metrics 和 hashes 才是 retained evidence。
 
 不得先做：
 

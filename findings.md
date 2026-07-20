@@ -14,6 +14,15 @@
 - validation/test HDF5 只读取 metadata/shape/hash；normalization 仅从 70×50 train episodes 读取 state/action 数值。producer `env_args` 有 90 个 legacy suite 注记和 6 个 legacy basename 注记，但 canonical HDF5 BDDL basename/language 均通过。
 - canonical hashes：factor table `73828b1b...015`、split `996a3061...77e`、data manifest `b18f1cfa...be7e`、train-only normalization `5141e4b3...2d28`；完整值在 `configs/libero90_70_10_10/checksums.sha256`。
 
+### Source-base launch mechanics：通过，尚无行为结论
+
+- 从 pinned `lerobot/smolvla_base` 严格加载 450,046,176 parameters；98,880,992 个 action-expert/projection parameters 可训练，冻结 VLM trainable 泄漏为零。
+- 全部 70×50 episodes 对应 537,946 frames；sampler 在跨 rank global task slots 上做 deterministic no-replacement cycles，并保证每个 checkpoint 边界前 3500 episodes 全覆盖。
+- 最终 8-A100 profile 使用一张卡一个 rank、batch/rank 352：稳态 2.569s/step、1096.2 global samples/s，每卡峰值 allocated/reserved 65.05/66.76GiB，data wait 0.19ms。
+- profile 存活窗口中每张 GPU 恰好一个 CUDA process，GPU0 没有额外 controller/model CUDA context。
+- 8-rank continuous/resume 对照中，step-1 policy、optimizer、scheduler 和每 rank RNG 起点一致；启用 DDP static graph 后，step-2 policy 文件 SHA256 位级一致，optimizer/scheduler/RNG 逐值一致。默认 DDP 首轮后 bucket 重建是此前微小漂移的工程原因。
+- 以上只证明数据、冻结对象、DDP、吞吐、显存和 exact-resume mechanics；未读取 validation/test outcome，也不证明 source base 已获得 LIBERO competence。
+
 ### Gate -1：通过但带残差
 
 - 初始 action-hidden-video probe 未达到预声明标准。

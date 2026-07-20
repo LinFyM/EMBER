@@ -1,0 +1,65 @@
+{
+  "schema_version": "ember_source_base_v1",
+  "protocol": {
+    "manifest": "configs/libero90_70_10_10/data_manifest.json",
+    "manifest_sha256": "b18f1cfa66a82e7dae35c83278b013f719d3b912a81096ba9bd2c2f1a2ddbe7e",
+    "normalization": "configs/libero90_70_10_10/normalization_train_only.json",
+    "normalization_sha256": "5141e4b3bb0916788b050c482949eb68d3e0e23e35591a482a912d0335ad2d28",
+    "split_sha256": "996a30616da97aa08dac177a94a3e7b723762a6e947c60e11df382c0a637b77e"
+  },
+  "models": {
+    "foundation_repo_id": "lerobot/smolvla_base",
+    "foundation_revision": "c83c3163b8ca9b7e67c509fffd9121e66cb96205",
+    "vlm_repo_id": "HuggingFaceTB/SmolVLM2-500M-Video-Instruct",
+    "vlm_revision": "7b375e1b73b11138ff12fe22c8f2822d8fe03467"
+  },
+  "features": {
+    "action_dim": 7,
+    "camera_shape": [
+      3,
+      128,
+      128
+    ],
+    "chunk_size": 50,
+    "state_dim": 8
+  },
+  "data": {
+    "demo_indices": [
+      0,
+      49
+    ],
+    "max_open_files_per_worker": 8,
+    "sampler_seed": 20260720
+  },
+  "loader": {
+    "num_workers_per_rank": 2,
+    "prefetch_factor": 2
+  },
+  "optimization": {
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "decay_lr": 2.5e-06,
+    "eps": 1e-08,
+    "grad_clip_norm": 10.0,
+    "peak_lr": 0.0001,
+    "precision": "bfloat16",
+    "scheduler_reference_decay_steps": 30000,
+    "scheduler_reference_warmup_steps": 1000,
+    "weight_decay": 1e-10
+  },
+  "formal_run": {
+    "expected_world_size": 8,
+    "target_wall_clock_minutes": 30,
+    "per_rank_batch_size": 352,
+    "total_steps": 630,
+    "profile_evidence": {
+      "world_size": 8,
+      "steady_step_seconds_max": 2.568930316949263,
+      "global_samples_per_second": 1096.1760937696997,
+      "peak_allocated_gib_max": 65.0494933128357,
+      "peak_reserved_gib_max": 66.755859375
+    }
+  }
+}

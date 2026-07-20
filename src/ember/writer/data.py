@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterator, Sequence
@@ -107,21 +108,25 @@ class FunctionalQueryDataset:
         *,
         demo_indices: Sequence[int],
         action_chunk_size: int,
+        max_open_files_per_worker: int = 8,
     ) -> None:
         if (
             not authorities
             or not demo_indices
             or len(set(demo_indices)) != len(demo_indices)
             or action_chunk_size <= 0
+            or max_open_files_per_worker <= 0
         ):
             raise WriterModelError("invalid functional-query data request")
         self.authorities = {item.task_id: item for item in authorities}
         if len(self.authorities) != len(authorities):
             raise WriterModelError("duplicate task authority")
         self.action_chunk_size = action_chunk_size
+        self.max_open_files_per_worker = max_open_files_per_worker
         self._index: list[tuple[int, int, int]] = []
         self._task_rows: dict[int, list[int]] = {}
-        self._handles: dict[tuple[int, int], h5py.File] = {}
+        self._task_episode_rows: dict[int, dict[int, list[int]]] = {}
+        self._handles: OrderedDict[tuple[int, int], h5py.File] = OrderedDict()
 
         for authority in sorted(authorities, key=lambda item: item.task_id):
             verify_authority(authority)
@@ -137,12 +142,16 @@ class FunctionalQueryDataset:
                         or actions.shape[1] != 7
                     ):
                         raise WriterModelError("functional-query actions are invalid")
+                    episode_rows = self._task_episode_rows.setdefault(
+                        authority.task_id, {}
+                    ).setdefault(int(demo_index), [])
                     for frame_index in range(actions.shape[0]):
                         flat = len(self._index)
                         self._index.append(
                             (authority.task_id, int(demo_index), frame_index)
                         )
                         self._task_rows.setdefault(authority.task_id, []).append(flat)
+                        episode_rows.append(flat)
 
     @property
     def frame_index(self) -> tuple[tuple[int, int, int], ...]:
@@ -152,6 +161,16 @@ class FunctionalQueryDataset:
     def task_rows(self) -> dict[int, tuple[int, ...]]:
         return {key: tuple(value) for key, value in self._task_rows.items()}
 
+    @property
+    def task_episode_rows(self) -> dict[int, dict[int, tuple[int, ...]]]:
+        return {
+            task_id: {
+                demo_index: tuple(rows)
+                for demo_index, rows in episodes.items()
+            }
+            for task_id, episodes in self._task_episode_rows.items()
+        }
+
     def __len__(self) -> int:
         return len(self._index)
 
@@ -160,8 +179,13 @@ class FunctionalQueryDataset:
         for key in [key for key in self._handles if key[0] != pid]:
             self._handles.pop(key).close()
         key = (pid, task_id)
-        if key not in self._handles:
+        if key in self._handles:
+            self._handles.move_to_end(key)
+        else:
             self._handles[key] = h5py.File(self.authorities[task_id].path, "r")
+            while len(self._handles) > self.max_open_files_per_worker:
+                _, stale = self._handles.popitem(last=False)
+                stale.close()
         return self._handles[key]
 
     def __getitem__(self, item: int) -> dict[str, Any]:
@@ -207,12 +231,19 @@ class FunctionalQueryDataset:
 
     def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
-        state["_handles"] = {}
+        state["_handles"] = OrderedDict()
         return state
 
 
 class MixedTaskBatchSampler:
-    """Deterministic no-replacement task cycles with exact step resume."""
+    """Episode-balanced no-replacement task cycles with exact step resume.
+
+    Across all ranks, every consecutive ``len(task_ids)`` global task slots is a
+    permutation of the source tasks.  A task's sample positions walk a fixed,
+    seeded permutation of its episodes cyclically, so any full episode-count
+    window includes every declared episode.  Frame choices change on later
+    episode cycles while remaining a pure function of the global step.
+    """
 
     def __init__(
         self,
@@ -234,13 +265,19 @@ class MixedTaskBatchSampler:
             or not 0 <= rank < world_size
         ):
             raise WriterModelError("invalid mixed-task sampler")
-        missing = set(task_ids) - set(dataset.task_rows)
+        episode_rows = dataset.task_episode_rows
+        missing = set(task_ids) - set(episode_rows)
         if missing:
             raise WriterModelError(f"query rows missing for tasks: {sorted(missing)}")
         if any(
-            len(dataset.task_rows[task]) < per_rank_batch_size for task in task_ids
+            not episodes or any(not rows for rows in episodes.values())
+            for task, episodes in episode_rows.items()
+            if task in task_ids
         ):
-            raise WriterModelError("a task has fewer unique rows than one rank batch")
+            raise WriterModelError("a task has an empty episode")
+        episode_counts = {len(episode_rows[task]) for task in task_ids}
+        if len(episode_counts) != 1:
+            raise WriterModelError("source tasks must declare the same episode count")
         self.dataset = dataset
         self.task_ids = tuple(sorted(task_ids))
         self.per_rank_batch_size = per_rank_batch_size
@@ -249,28 +286,82 @@ class MixedTaskBatchSampler:
         self.rank = rank
         self.world_size = world_size
         self.seed = seed
+        self.episodes_per_task = episode_counts.pop()
+        self.episode_rows = episode_rows
+        self.episode_orders = {
+            task_id: tuple(
+                int(value)
+                for value in np.random.default_rng(
+                    np.random.SeedSequence([self.seed, task_id, 0xE91])
+                ).permutation(tuple(sorted(episode_rows[task_id])))
+            )
+            for task_id in self.task_ids
+        }
 
     def __len__(self) -> int:
         return self.stop_step - self.start_step
 
-    def _task_for_global_slot(self, slot: int) -> int:
-        cycle, offset = divmod(slot, len(self.task_ids))
+    def _task_visit_for_global_slot(self, slot: int) -> tuple[int, int]:
+        task_visit, offset = divmod(slot, len(self.task_ids))
         order = np.random.default_rng(
-            np.random.SeedSequence([self.seed, cycle])
+            np.random.SeedSequence([self.seed, task_visit])
         ).permutation(self.task_ids)
-        return int(order[offset])
+        return int(order[offset]), task_visit
+
+    def _episode_for_task_visit(
+        self, task_id: int, task_visit: int, batch_offset: int
+    ) -> tuple[int, int]:
+        position = task_visit * self.per_rank_batch_size + batch_offset
+        episode_cycle, episode_offset = divmod(position, self.episodes_per_task)
+        demo_index = self.episode_orders[task_id][episode_offset]
+        return demo_index, episode_cycle
+
+    def _sample_for_task_visit(
+        self, task_id: int, task_visit: int, batch_offset: int
+    ) -> int:
+        demo_index, episode_cycle = self._episode_for_task_visit(
+            task_id, task_visit, batch_offset
+        )
+        rows = self.episode_rows[task_id][demo_index]
+        row_offset = int(
+            np.random.default_rng(
+                np.random.SeedSequence(
+                    [self.seed, task_id, demo_index, episode_cycle, 0xF4A]
+                )
+            ).integers(len(rows))
+        )
+        return rows[row_offset]
+
+    def coverage_for_steps(
+        self, start_step: int, stop_step: int
+    ) -> dict[int, tuple[int, ...]]:
+        """Return exact cross-rank episode coverage for a half-open step range."""
+
+        if not 0 <= start_step <= stop_step:
+            raise WriterModelError("invalid coverage step range")
+        coverage = {task_id: set() for task_id in self.task_ids}
+        for step in range(start_step, stop_step):
+            for rank in range(self.world_size):
+                slot = step * self.world_size + rank
+                task_id, task_visit = self._task_visit_for_global_slot(slot)
+                if self.per_rank_batch_size >= self.episodes_per_task:
+                    coverage[task_id].update(self.episode_orders[task_id])
+                    continue
+                for batch_offset in range(self.per_rank_batch_size):
+                    demo_index, _ = self._episode_for_task_visit(
+                        task_id, task_visit, batch_offset
+                    )
+                    coverage[task_id].add(demo_index)
+        return {
+            task_id: tuple(sorted(demo_indices))
+            for task_id, demo_indices in coverage.items()
+        }
 
     def __iter__(self) -> Iterator[list[int]]:
-        task_rows = self.dataset.task_rows
         for step in range(self.start_step, self.stop_step):
-            task_id = self._task_for_global_slot(
-                step * self.world_size + self.rank
-            )
-            rows = task_rows[task_id]
-            rng = np.random.default_rng(
-                np.random.SeedSequence([self.seed, step, self.rank])
-            )
-            chosen = rng.choice(
-                len(rows), size=self.per_rank_batch_size, replace=False
-            )
-            yield [rows[int(index)] for index in chosen]
+            slot = step * self.world_size + self.rank
+            task_id, task_visit = self._task_visit_for_global_slot(slot)
+            yield [
+                self._sample_for_task_visit(task_id, task_visit, batch_offset)
+                for batch_offset in range(self.per_rank_batch_size)
+            ]

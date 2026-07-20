@@ -50,17 +50,19 @@
 - 数据：全部 70×50 teacher episodes。
 - 训练对象：官方成熟 SmolVLA action expert + 必要 projections；一个共享多任务 base。
 - 混合抽样：70-task deterministic no-replacement cycles。
-- 资源：8 GPU DDP，一卡一 rank；每卡约 10GB headroom。
+- 资源：8 GPU DDP，一卡一 policy CUDA rank；GPU0 不放额外 CUDA controller/model；每卡约 10GB headroom。
 - 初始 wall-clock：约 30 分钟。
 - checkpoint：估算总 steps 后在约 1/3、2/3、3/3，且每个边界完整覆盖 70 tasks。
 - 选择：只用 train/source development，不看 validation/test。
 
+已锁定首轮运行：每 rank batch 352、global batch 2816、630 optimizer steps、checkpoint 210/420/630；沿用官方 action-expert recipe 的 peak LR `1e-4`，不做未经验证的大 batch LR 放大。最终 8 卡 profile 为 2.569s/step、1096.2 samples/s、每卡峰值 reserved 66.76GiB。
+
 动作：
 
-- [ ] 核验官方 recipe、trainable names、normalization 和 exact loss。
-- [ ] 写唯一 canonical config/runner，不恢复旧 Gate0 runner。
-- [ ] 1–5 分钟吞吐/显存 smoke，只读 mechanics。
-- [ ] 固定 global batch 与联动学习率。
+- [x] 核验官方 recipe、trainable names、normalization 和 exact loss。
+- [x] 写唯一 canonical config/runner，不恢复旧 Gate0 runner。
+- [x] 1–5 分钟吞吐/显存 smoke，只读 mechanics。
+- [x] 固定 global batch 与学习率合同。
 - [ ] 运行约 30 分钟 exact-resume trajectory。
 - [ ] 第一个完整阶段结果前确认 3500 条 episode 均贡献训练信号，并记录完成的 corpus epochs/consumed chunks。
 - [ ] 标准 LIBERO h50 闭环测 train/source development。

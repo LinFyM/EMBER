@@ -57,6 +57,7 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--writer-checkpoint", type=Path)
     parser.add_argument("--writer-feature-cache", type=Path)
+    parser.add_argument("--writer-rl-config", type=Path)
     parser.add_argument(
         "--direct-lora-config",
         type=Path,
@@ -192,11 +193,17 @@ def main() -> int:
         raise EvaluationContractError(
             "Writer evaluation requires both checkpoint and validation feature cache"
         )
+    if args.writer_rl_config is not None and not writer_requested:
+        raise EvaluationContractError(
+            "Writer-only RL config requires a Writer checkpoint and feature cache"
+        )
     direct_requested = args.direct_lora_run is not None
     if writer_requested and direct_requested:
         raise EvaluationContractError("fresh evaluation accepts only one LoRA arm")
     arm = (
-        "writer_zero_interaction"
+        "writer_only_rl_zero_interaction"
+        if args.writer_rl_config is not None
+        else "writer_zero_interaction"
         if writer_requested
         else "direct_lora_sft_oracle"
         if direct_requested
@@ -285,6 +292,8 @@ def main() -> int:
                 args.writer_feature_cache / "cache_manifest.json",
                 args.writer_config,
             )
+            if args.writer_rl_config is not None:
+                required_writer_files += (args.writer_rl_config,)
             missing_writer_files = [
                 str(path) for path in required_writer_files if not path.is_file()
             ]
@@ -305,6 +314,16 @@ def main() -> int:
                 ),
                 "feature_cache_manifest_sha256": sha256_file(
                     args.writer_feature_cache / "cache_manifest.json"
+                ),
+                "writer_rl_config_path": (
+                    str(args.writer_rl_config.resolve())
+                    if args.writer_rl_config is not None
+                    else None
+                ),
+                "writer_rl_config_sha256": (
+                    sha256_file(args.writer_rl_config.resolve())
+                    if args.writer_rl_config is not None
+                    else None
                 ),
             }
         if direct_requested:
@@ -398,6 +417,11 @@ def main() -> int:
             task_ids=task_ids,
             device=device,
             require_formal=args.mode == "formal",
+            writer_rl_config_path=(
+                args.writer_rl_config.resolve()
+                if args.writer_rl_config is not None
+                else None
+            ),
         )
     elif direct_requested:
         task_adapter = FrozenDirectLoRAAdapter(

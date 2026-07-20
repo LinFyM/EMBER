@@ -325,6 +325,7 @@ def prepare_runtime(
         "parameter_count": sum(value.numel() for value in writer.parameters()),
         "name_count": len(trainable_names),
         "names_sha256": canonical_hash(trainable_names),
+        "lora_contract_sha256": adapter.evidence["lora_contract_sha256"],
         "source_policy_parameter_count": 0,
         "generated_lora_in_place_parameter_count": 0,
         "critic_parameter_count": 0,

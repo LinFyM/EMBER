@@ -32,6 +32,7 @@ def load_validation_contract(path: Path, *, repo_root: Path) -> dict[str, Any]:
     if status not in {
         "predeclared_before_writer_step1000_or_validation_outcomes",
         "predeclared_physical_norm_recovery_validation_before_closed_loop_outcomes",
+        "predeclared_source_teacher_auxiliary_validation_before_closed_loop_outcomes",
     }:
         raise WriterValidationError("validation predeclaration is not frozen")
     authority = spec["authority"]
@@ -52,11 +53,15 @@ def load_validation_contract(path: Path, *, repo_root: Path) -> dict[str, Any]:
     direct = spec["direct_baseline"]
     require(evaluation["task_ids"], upstream["validation"]["task_ids"], "validation tasks")
     require(direct["task_ids"], evaluation["task_ids"], "direct-baseline tasks")
-    expected_writer_arm = (
-        "writer_physical_norm_recovery"
-        if "reuse_baseline" in spec
-        else "writer_cold_start"
-    )
+    expected_writer_arm = evaluation.get("writer_arm")
+    if expected_writer_arm is None:
+        expected_writer_arm = (
+            "writer_physical_norm_recovery"
+            if "reuse_baseline" in spec
+            else "writer_cold_start"
+        )
+    if not expected_writer_arm.startswith("writer_"):
+        raise WriterValidationError("validation Writer arm is invalid")
     require(
         evaluation["arms"],
         ["frozen_base", expected_writer_arm, "matched_direct_task_local_lora"],

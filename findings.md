@@ -19,6 +19,14 @@
   physical-Delta-W squared error; raw A/B factor MSE remains excluded. A soft
   norm cap of `1.25` with coefficient `0.01` guards against the previously
   observed runaway. This adds no bank, subspace, geometry, or RL constraint.
+- The eight-GPU recovery training completed step 1000 rc 0 in 48.7 minutes.
+  All four checkpoints validate complete model/optimizer/scheduler/scaler/
+  sampler/eight-rank-RNG state. Before reading the five-category query result,
+  the selection rule required positive query reduction on every category and
+  physical norm at most `1.25`, then maximized mean reduction. All checkpoints
+  qualified; step 500 won with mean reduction `7.21%`, worst-category reduction
+  `5.55%`, and per-task physical norms `0.415--0.612`. This is model selection
+  on legal validation queries, not closed-loop utility.
 
 ## 2026-07-19 first Writer cold-start result and bounded recovery
 

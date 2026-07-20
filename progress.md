@@ -14,9 +14,16 @@
   architecture guard pass without a hard violation; no second runner exists.
 - The eight-GPU one-step mechanical smoke completed rc 0 in about 30 seconds:
   frozen-base trainable parameters were zero, Writer gradients were finite,
-  and no held surface was accessed. Next: commit/push this outcome-free boundary
-  and immediately launch the clean 1000-step exact-resume Writer segment on all
-  eight GPUs, then run the existing five-category validation contract.
+  and no held surface was accessed. The subsequent clean step-1000 segment
+  completed rc 0 in 48:44; checkpoints 250/500/750/1000 all validate and GPUs
+  are released. Five complete validation-query diagnostics selected step 500 by
+  a result-blind frozen rule.
+- `configs/writer_cold_start_source_teacher_auxiliary_validation.toml` now binds
+  that step-500 state and the query selection packet. It reuses the immutable
+  base/direct shards and schedules only five new Writer arms, each with 64
+  rollouts at h16 and h50 over eight policy RNG seeds. Next: commit/push this
+  pre-outcome contract and launch the eight-rank validation; do not inspect
+  partial arm success.
 
 ## 2026-07-19 first Writer result complete; one bounded recovery prepared
 

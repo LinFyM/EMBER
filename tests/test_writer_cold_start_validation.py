@@ -93,6 +93,28 @@ def test_recovery_validation_reuses_baselines_and_assigns_only_new_writer_work()
     )
 
 
+def test_source_teacher_recovery_validation_binds_selected_writer_and_reuses_baselines() -> None:
+    spec = load_validation_contract(
+        ROOT / "configs/writer_cold_start_source_teacher_auxiliary_validation.toml",
+        repo_root=ROOT,
+    )
+    assert spec["authority"]["writer_checkpoint_step"] == 500
+    assert spec["evaluation"]["writer_arm"] == "writer_source_teacher_auxiliary_recovery"
+    assert spec["evaluation"]["arms"] == [
+        "frozen_base",
+        "writer_source_teacher_auxiliary_recovery",
+        "matched_direct_task_local_lora",
+    ]
+    work = [validation_work_for_rank(spec, rank=rank, world_size=8) for rank in range(8)]
+    assert all(item["direct_fit_task"] is None for item in work)
+    evals = [arm for item in work for arm in item["evaluation_arms"]]
+    assert len(evals) == 15 and len(set(evals)) == 15
+    assert validation._existing_shard_allowed(spec, arm="frozen_base", resume=False)
+    assert not validation._existing_shard_allowed(
+        spec, arm="writer_source_teacher_auxiliary_recovery", resume=False
+    )
+
+
 def _rows() -> list[dict[str, object]]:
     rows = []
     for task_id in (11, 21):

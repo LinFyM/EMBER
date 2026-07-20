@@ -188,6 +188,10 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
   to gauge-invariant relative physical-Delta-W error, raw factor MSE is absent,
   and a `1.25` soft norm cap is a runaway safeguard. Keep the full 37-target
   rank-32 space and leave later task-local RL unconstrained.
+  The eight-GPU step-1000 segment completed rc 0 in 48.7 minutes with four
+  validated exact-resume checkpoints. A five-category validation-query rule
+  frozen before result access selected step 500; only its 64-rollout/task
+  closed-loop validation remains before this recovery is decided.
 
 1. [x] Bootstrap a Python 3.12 environment from the locked project definition;
    verify package consistency and the active GPU/storage contracts.

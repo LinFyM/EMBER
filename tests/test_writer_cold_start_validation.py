@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from datetime import timedelta
+from types import SimpleNamespace
 
 import torch
 
@@ -30,6 +31,27 @@ def test_rank_device_binding_routes_policy_and_egl_to_the_same_physical_gpu(
     assert binding == (3, "7")
     assert observed == [0]
     assert validation.os.environ["CUDA_VISIBLE_DEVICES"] == "7"
+    assert validation.os.environ["MUJOCO_EGL_DEVICE_ID"] == "7"
+
+
+def test_simulator_child_reuses_rank_local_mapping_without_opening_torch_cuda(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("LOCAL_RANK", "3")
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "7")
+    monkeypatch.setenv("EMBER_EVALUATION_PHYSICAL_GPUS", "4,5,6,7,0,1,2,3")
+    observed: list[int] = []
+    monkeypatch.setattr(torch.cuda, "set_device", observed.append)
+    monkeypatch.setattr(
+        validation.multiprocessing,
+        "current_process",
+        lambda: SimpleNamespace(name="ForkServerProcess-1"),
+    )
+
+    binding = validation._bind_rank_devices_from_environment()
+
+    assert binding == (3, "7")
+    assert observed == []
     assert validation.os.environ["MUJOCO_EGL_DEVICE_ID"] == "7"
 
 

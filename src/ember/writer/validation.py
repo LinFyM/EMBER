@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import multiprocessing
 import os
 import time
 from dataclasses import dataclass
@@ -27,7 +28,16 @@ def _bind_rank_devices_from_environment() -> tuple[int, str] | None:
         for item in os.environ.get("CUDA_VISIBLE_DEVICES", "").split(",")
         if item.strip()
     ]
-    if visible:
+    original_visible = [
+        item.strip()
+        for item in os.environ.get("EMBER_EVALUATION_PHYSICAL_GPUS", "").split(",")
+        if item.strip()
+    ]
+    if len(visible) == 1 and original_visible:
+        if local_rank >= len(original_visible) or visible[0] != original_visible[local_rank]:
+            raise RuntimeError("rank-local CUDA remapping changed in simulator child")
+        physical_gpu = visible[0]
+    elif visible:
         if local_rank >= len(visible):
             raise RuntimeError("LOCAL_RANK exceeds CUDA_VISIBLE_DEVICES")
         physical_gpu = visible[local_rank]
@@ -42,7 +52,11 @@ def _bind_rank_devices_from_environment() -> tuple[int, str] | None:
     os.environ.setdefault("EMBER_EVALUATION_PHYSICAL_GPUS", ",".join(visible))
     os.environ["CUDA_VISIBLE_DEVICES"] = physical_gpu
     os.environ["MUJOCO_EGL_DEVICE_ID"] = physical_gpu
-    torch.cuda.set_device(0)
+    # A forkserver simulator child re-imports this module. It only needs the
+    # inherited EGL binding; initializing torch CUDA there wastes memory and
+    # creates the misleading extra GPU processes seen in nvidia-smi.
+    if multiprocessing.current_process().name == "MainProcess":
+        torch.cuda.set_device(0)
     return local_rank, physical_gpu
 
 

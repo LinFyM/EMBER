@@ -16,6 +16,22 @@ from ember.writer.validation import (
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_rank_device_binding_routes_policy_and_egl_to_the_same_physical_gpu(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("LOCAL_RANK", "3")
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "4,5,6,7,0,1,2,3")
+    monkeypatch.delenv("MUJOCO_EGL_DEVICE_ID", raising=False)
+    observed: list[int] = []
+    monkeypatch.setattr(torch.cuda, "set_device", observed.append)
+
+    binding = validation._bind_rank_devices_from_environment()
+
+    assert binding == (3, "7")
+    assert observed == [3]
+    assert validation.os.environ["MUJOCO_EGL_DEVICE_ID"] == "7"
+
+
 def test_parallel_context_allows_slow_ranks_to_finish_before_gather(
     monkeypatch,
 ) -> None:

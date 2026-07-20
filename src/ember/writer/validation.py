@@ -13,6 +13,35 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 import torch
+
+
+def _bind_rank_devices_from_environment() -> tuple[int, str] | None:
+    """Bind both policy CUDA and LIBERO EGL rendering before project imports."""
+
+    raw_local_rank = os.environ.get("LOCAL_RANK")
+    if raw_local_rank is None:
+        return None
+    local_rank = int(raw_local_rank)
+    visible = [
+        item.strip()
+        for item in os.environ.get("CUDA_VISIBLE_DEVICES", "").split(",")
+        if item.strip()
+    ]
+    if visible:
+        if local_rank >= len(visible):
+            raise RuntimeError("LOCAL_RANK exceeds CUDA_VISIBLE_DEVICES")
+        physical_gpu = visible[local_rank]
+    else:
+        physical_gpu = str(local_rank)
+    if not physical_gpu.isdigit():
+        raise RuntimeError("LIBERO EGL binding requires numeric CUDA_VISIBLE_DEVICES")
+    os.environ["MUJOCO_EGL_DEVICE_ID"] = physical_gpu
+    torch.cuda.set_device(local_rank)
+    return local_rank, physical_gpu
+
+
+_EARLY_DEVICE_BINDING = _bind_rank_devices_from_environment()
+
 from safetensors.torch import load_file
 
 from ember.eval_artifacts import build_eval_gallery, update_latest_link

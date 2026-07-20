@@ -7,6 +7,7 @@ import torch
 from ember.writer.data import WriterTaskAuthority
 from ember.writer.feature_cache import (
     FeatureCacheTask,
+    WriterFeatureStore,
     balanced_task_assignments,
     load_feature_cache_config,
     load_train_tasks,
@@ -14,7 +15,9 @@ from ember.writer.feature_cache import (
     pool_visual_tokens,
     save_task_cache,
     select_language_tokens,
+    write_task_record,
 )
+from ember.source_base_checkpoint import write_json_atomic
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -72,3 +75,46 @@ def test_task_cache_roundtrip_preserves_episode_boundaries(tmp_path: Path) -> No
     assert cached.video_features.dtype == torch.bfloat16
     assert cached.episode_offsets.tolist() == [0, 2, 7]
     assert cached.demo_indices.tolist() == [4, 9]
+
+
+def test_feature_store_validates_manifest_and_evicts_lru(tmp_path: Path) -> None:
+    extraction = "a" * 64
+    records = []
+    for task_id in (2, 5):
+        tensor_path = tmp_path / "tasks" / f"task_{task_id:03d}.safetensors"
+        file_record = save_task_cache(
+            tensor_path,
+            language_features=torch.randn(2, 5),
+            video_features=torch.randn(4, 5),
+            episode_offsets=torch.tensor([0, 4]),
+            demo_indices=torch.tensor([0]),
+            metadata={"extraction_sha256": extraction},
+        )
+        record = {
+            "schema_version": "ember_writer_task_feature_cache_v1",
+            "task_id": task_id,
+            "extraction_sha256": extraction,
+            "file": file_record,
+        }
+        write_task_record(tmp_path, task_id, record)
+        records.append(record)
+    write_json_atomic(
+        tmp_path / "cache_manifest.json",
+        {
+            "schema_version": "ember_writer_feature_cache_manifest_v1",
+            "extraction_sha256": extraction,
+            "task_count": 2,
+            "task_records": records,
+        },
+    )
+    store = WriterFeatureStore(
+        tmp_path,
+        task_ids=(2, 5),
+        expected_extraction_sha256=extraction,
+        max_cached_tasks=1,
+        expected_dim=5,
+    )
+    assert store.load(2).episode_offsets.tolist() == [0, 4]
+    assert store.cached_task_ids == (2,)
+    store.load(5)
+    assert store.cached_task_ids == (5,)

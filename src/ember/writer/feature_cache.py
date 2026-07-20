@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 import os
 import uuid
+from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -44,6 +45,71 @@ class CachedWriterInput:
     video_features: torch.Tensor
     episode_offsets: torch.Tensor
     demo_indices: torch.Tensor
+
+
+class WriterFeatureStore:
+    """Bounded task-level LRU over a completed frozen-feature cache."""
+
+    def __init__(
+        self,
+        root: Path,
+        *,
+        task_ids: Sequence[int],
+        expected_extraction_sha256: str,
+        max_cached_tasks: int,
+        expected_dim: int = 960,
+    ) -> None:
+        if (
+            not task_ids
+            or len(set(task_ids)) != len(task_ids)
+            or max_cached_tasks <= 0
+            or expected_dim <= 0
+        ):
+            raise FeatureCacheError("invalid Writer feature-store request")
+        manifest = read_json(root / "cache_manifest.json")
+        records = manifest.get("task_records", [])
+        record_ids = tuple(sorted(int(record["task_id"]) for record in records))
+        expected_ids = tuple(sorted(int(task_id) for task_id in task_ids))
+        if (
+            manifest.get("schema_version")
+            != "ember_writer_feature_cache_manifest_v1"
+            or manifest.get("extraction_sha256") != expected_extraction_sha256
+            or record_ids != expected_ids
+            or int(manifest.get("task_count", -1)) != len(expected_ids)
+        ):
+            raise FeatureCacheError("Writer feature-cache manifest changed")
+        self.root = root
+        self.task_ids = expected_ids
+        self.extraction_sha256 = expected_extraction_sha256
+        self.max_cached_tasks = max_cached_tasks
+        self.expected_dim = expected_dim
+        self._cached: OrderedDict[int, CachedWriterInput] = OrderedDict()
+        self._verified: set[int] = set()
+
+    def load(self, task_id: int) -> CachedWriterInput:
+        if task_id not in self.task_ids:
+            raise FeatureCacheError(f"task is outside the Writer cache: {task_id}")
+        if task_id in self._cached:
+            self._cached.move_to_end(task_id)
+            return self._cached[task_id]
+        if task_id not in self._verified:
+            if not task_cache_is_complete(
+                self.root,
+                task_id,
+                extraction_sha256=self.extraction_sha256,
+            ):
+                raise FeatureCacheError(f"task feature cache changed: {task_id}")
+            self._verified.add(task_id)
+        tensor_path, _ = task_cache_paths(self.root, task_id)
+        cached = load_task_cache(tensor_path, expected_dim=self.expected_dim)
+        self._cached[task_id] = cached
+        while len(self._cached) > self.max_cached_tasks:
+            self._cached.popitem(last=False)
+        return cached
+
+    @property
+    def cached_task_ids(self) -> tuple[int, ...]:
+        return tuple(self._cached)
 
 
 def load_feature_cache_config(path: Path, repo_root: Path) -> dict[str, Any]:

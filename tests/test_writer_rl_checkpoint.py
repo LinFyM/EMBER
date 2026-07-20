@@ -33,7 +33,12 @@ def test_writer_rl_checkpoint_roundtrip_and_replay_ledger(tmp_path: Path) -> Non
         task_ids=(1,),
         rollouts_per_task=4,
         contract=contract,
-        local_counters={"rollouts": 4, "successes": 1, "env_steps": 200},
+        local_counters={
+            "rollouts": 4,
+            "successes": 1,
+            "env_steps": 200,
+            "wall_nanoseconds": 10,
+        },
         formal=False,
     )
     with torch.no_grad():
@@ -46,8 +51,15 @@ def test_writer_rl_checkpoint_roundtrip_and_replay_ledger(tmp_path: Path) -> Non
         optimizer=optimizer,
         scheduler=scheduler,
         contract_sha256=canonical_hash(contract),
+        task_ids=(1,),
+        rollouts_per_task=4,
     )
     assert update == optimizer_updates == 1
-    assert counters == {"rollouts": 4, "successes": 1, "env_steps": 200}
+    assert counters == {
+        "rollouts": 4,
+        "successes": 1,
+        "env_steps": 200,
+        "wall_nanoseconds": 10,
+    }
     for name, value in writer.state_dict().items():
         torch.testing.assert_close(value, expected[name])

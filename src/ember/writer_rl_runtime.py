@@ -144,6 +144,10 @@ def _validate_launch(
 ) -> None:
     if not 0 < args.stop_after_update <= args.total_updates:
         raise WriterModelError("invalid Writer-only RL update segment")
+    if args.stop_after_update not in checkpoint_updates:
+        raise WriterModelError(
+            "Writer-only RL segment must end at an exact-resume checkpoint"
+        )
     if context.world_size != int(config["parallel"]["world_size"]):
         raise WriterModelError("Writer-only RL launch world size changed")
     if args.mode == "formal":
@@ -387,6 +391,10 @@ def prepare_runtime(
                 optimizer=optimizer,
                 scheduler=scheduler,
                 contract_sha256=contract_sha256,
+                task_ids=task_ids,
+                rollouts_per_task=int(
+                    config["algorithm"]["rollouts_per_task_cycle"]
+                ),
             )
         )
         if not 0 <= next_update < args.stop_after_update:

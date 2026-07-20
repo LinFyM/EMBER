@@ -133,3 +133,19 @@ def schedule_summary(
         "max_rollouts_per_task": max(counts.values()),
         "total_rollouts": sum(counts.values()),
     }
+
+
+def rank_rollout_count(
+    task_ids: Sequence[int],
+    world_size: int,
+    rank: int,
+    next_update: int,
+    rollouts_per_task: int,
+) -> int:
+    if next_update < 0 or rollouts_per_task <= 0:
+        raise WriterModelError("invalid Writer-only RL rank coverage request")
+    scheduled = sum(
+        task_for_update(task_ids, world_size, rank, update) is not None
+        for update in range(next_update)
+    )
+    return scheduled * rollouts_per_task

@@ -6,6 +6,7 @@ from ember.writer_rl_protocol import (
     environment_seed,
     load_writer_rl_config,
     policy_seed,
+    rank_rollout_count,
     rank_task_assignments,
     schedule_summary,
     source_task_ids,
@@ -32,6 +33,8 @@ def test_writer_rl_schedule_is_70_task_no_replacement() -> None:
     assert len(observed) == len(set(observed)) == 70
     assert set(observed) == set(task_ids)
     assert sum(value is None for value in scheduled) == 2
+    assert rank_rollout_count(task_ids, 8, 0, 9, 4) == 36
+    assert rank_rollout_count(task_ids, 8, 6, 9, 4) == 32
 
 
 def test_writer_rl_coverage_and_seed_schedules_are_explicit() -> None:

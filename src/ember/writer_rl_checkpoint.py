@@ -22,7 +22,7 @@ from ember.source_base_checkpoint import (
     write_json_atomic,
 )
 from ember.writer.model import WriterModelError
-from ember.writer_rl_protocol import schedule_summary
+from ember.writer_rl_protocol import rank_rollout_count, schedule_summary
 
 
 def capture_rng(context: DistributedContext) -> dict[str, Any]:
@@ -78,8 +78,12 @@ def write_update_ledger_once(
 def verify_writer_rl_checkpoint(checkpoint: Path) -> dict[str, Any]:
     manifest = read_json(checkpoint / "checkpoint_manifest.json")
     files = manifest.get("files", {})
-    required = {"writer.safetensors", "trainer_state.pt"}
-    if not isinstance(files, dict) or not required.issubset(files):
+    required = {"writer.safetensors", "trainer_state.pt", "rank_00_state.pt"}
+    if (
+        manifest.get("schema_version") != "ember_writer_only_rl_checkpoint_v1"
+        or not isinstance(files, dict)
+        or not required.issubset(files)
+    ):
         raise WriterModelError("Writer-only RL checkpoint manifest is incomplete")
     for name, record in files.items():
         path = checkpoint / name
@@ -107,6 +111,22 @@ def save_writer_rl_checkpoint(
     local_counters: Mapping[str, int],
     formal: bool,
 ) -> Path:
+    expected_rollouts = rank_rollout_count(
+        task_ids,
+        context.world_size,
+        context.rank,
+        next_update,
+        rollouts_per_task,
+    )
+    if (
+        int(local_counters.get("rollouts", -1)) != expected_rollouts
+        or not 0 <= int(local_counters.get("successes", -1))
+        <= expected_rollouts
+        or int(local_counters.get("env_steps", -1)) < 0
+        or int(local_counters.get("wall_nanoseconds", 0)) < 0
+        or not 0 <= optimizer_updates <= next_update
+    ):
+        raise WriterModelError("Writer-only RL checkpoint counters are inconsistent")
     nonce = _checkpoint_nonce(context)
     temporary = (
         output_dir
@@ -197,6 +217,8 @@ def load_writer_rl_checkpoint(
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     contract_sha256: str,
+    task_ids: Sequence[int],
+    rollouts_per_task: int,
 ) -> tuple[int, int, dict[str, int], Mapping[str, Any]]:
     manifest = verify_writer_rl_checkpoint(checkpoint)
     trainer = torch.load(
@@ -204,9 +226,22 @@ def load_writer_rl_checkpoint(
         map_location=context.device,
         weights_only=False,
     )
+    expected_consumed = schedule_summary(
+        task_ids,
+        context.world_size,
+        int(trainer.get("next_update", -1)),
+        rollouts_per_task,
+    )
+    expected_rank_files = {
+        f"rank_{rank:02d}_state.pt" for rank in range(context.world_size)
+    }
     if (
         manifest.get("contract_sha256") != contract_sha256
         or trainer.get("contract_sha256") != contract_sha256
+        or manifest.get("consumed") != expected_consumed
+        or int(manifest.get("optimizer_updates", -1))
+        != int(trainer.get("optimizer_updates", -2))
+        or not expected_rank_files.issubset(manifest.get("files", {}))
     ):
         raise WriterModelError("Writer-only RL resume contract changed")
     writer.load_state_dict(
@@ -234,4 +269,19 @@ def load_writer_rl_checkpoint(
     if actual != expected:
         raise WriterModelError("Writer-only RL rank resume state changed")
     counters = {key: int(value) for key, value in rank_state["local_counters"].items()}
+    expected_rollouts = rank_rollout_count(
+        task_ids,
+        context.world_size,
+        context.rank,
+        expected[0],
+        rollouts_per_task,
+    )
+    if (
+        counters.get("rollouts") != expected_rollouts
+        or not 0 <= counters.get("successes", -1) <= expected_rollouts
+        or counters.get("env_steps", -1) < 0
+        or counters.get("wall_nanoseconds", 0) < 0
+        or not 0 <= expected[1] <= expected[0]
+    ):
+        raise WriterModelError("Writer-only RL resume counters changed")
     return expected[0], expected[1], counters, rank_state["rng"]

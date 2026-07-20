@@ -208,6 +208,14 @@ cold-start versus reward-outer Writer comparison, and the scale confirmation.
   the gauge-invariant teacher auxiliary coefficient from `0.1` to `0.3`, keep
   functional query loss primary and every model/data/LoRA/norm-cap field fixed,
   and evaluate offline before authorizing any rollout.
+  That fresh eight-GPU step-1000 segment completed rc 0 in 49.2 minutes. The
+  best source-teacher error was still `0.418`, so no checkpoint qualified for
+  validation closed-loop; all five validation-query tasks remained better than
+  base with `6.93%` mean reduction. Per the owner's localization request,
+  freeze step 1000 only as a source-diagnostic checkpoint and compare frozen
+  base, Writer, and immutable direct teacher on source tasks 6/19/46/34/73,
+  64 paired rollouts/task/arm at h16/h50. This result may diagnose acquisition
+  versus generalization but cannot retroactively make the checkpoint eligible.
 
 1. [x] Bootstrap a Python 3.12 environment from the locked project definition;
    verify package consistency and the active GPU/storage contracts.

@@ -47,6 +47,22 @@
   architecture and full 37-target rank-32 LoRA are unchanged, and test/held
   access remains false. Because the objective changes, this starts a new
   exact-resumable trajectory rather than mislabeling a warm start as resume.
+- The coefficient-`0.3` recovery completed step 1000 rc 0 in about 49.2
+  minutes, with four fully verified checkpoints and the same eight-rank/global
+  batch contract. Source-teacher error at steps 250/500/750/1000 was
+  `0.710/0.513/0.442/0.418`; it converged faster than coefficient `0.1` but did
+  not exit the predeclared `>0.25` underfit region. Five-category validation
+  query improvement stayed positive at every candidate; step 1000 averaged
+  `6.93%` with a `5.26%` worst-task reduction. No candidate is eligible for a
+  validation closed-loop rollout, and no favorable interpretation is assigned.
+- The owner requested a source-task localization before another acquisition
+  change. Tasks 6/19/46/34/73 are frozen result-blind as the first task in each
+  of the existing five source-teacher categories. The source-only comparison
+  uses frozen base, step-1000 Writer, and each task's immutable direct teacher,
+  with 64 paired rollouts/arm and h16/h50. If Writer is weak while direct is
+  strong on source, acquisition is primary; if Writer approaches direct on
+  source but fails validation, generalization is primary. This diagnostic does
+  not authorize Writer-only RL or validation rollout by itself.
 
 ## 2026-07-19 source physical-update teachers complete
 

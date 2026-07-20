@@ -33,6 +33,7 @@ def load_validation_contract(path: Path, *, repo_root: Path) -> dict[str, Any]:
         "predeclared_before_writer_step1000_or_validation_outcomes",
         "predeclared_physical_norm_recovery_validation_before_closed_loop_outcomes",
         "predeclared_source_teacher_auxiliary_validation_before_closed_loop_outcomes",
+        "predeclared_source_localization_before_source_rollout_outcomes",
     }:
         raise WriterValidationError("validation predeclaration is not frozen")
     authority = spec["authority"]
@@ -51,7 +52,19 @@ def load_validation_contract(path: Path, *, repo_root: Path) -> dict[str, Any]:
     )
     evaluation = spec["evaluation"]
     direct = spec["direct_baseline"]
-    require(evaluation["task_ids"], upstream["validation"]["task_ids"], "validation tasks")
+    source_diagnostic = spec.get("source_diagnostic")
+    if source_diagnostic is None:
+        require(evaluation["task_ids"], upstream["validation"]["task_ids"], "validation tasks")
+    else:
+        require(evaluation["surface"], "source_diagnostic", "source diagnostic surface")
+        require(evaluation["task_ids"], source_diagnostic["task_ids"], "source tasks")
+        require(source_diagnostic["direct_state_authority"], "source_teacher_bundle", "source direct authority")
+        selection_path = repo_root / source_diagnostic["selection_contract_relative_path"]
+        require(
+            sha256_file(selection_path),
+            source_diagnostic["selection_contract_sha256"],
+            "source selection contract",
+        )
     require(direct["task_ids"], evaluation["task_ids"], "direct-baseline tasks")
     expected_writer_arm = evaluation.get("writer_arm")
     if expected_writer_arm is None:
@@ -94,6 +107,16 @@ def validation_work_for_rank(
     if world_size != spec["parallel"]["world_size"] or not 0 <= rank < world_size:
         raise WriterValidationError("validation rank topology changed")
     tasks = list(spec["evaluation"]["task_ids"])
+    if spec["evaluation"].get("surface") == "source_diagnostic":
+        pairs = [
+            (task_id, arm)
+            for task_id in tasks
+            for arm in spec["evaluation"]["arms"]
+        ]
+        return {
+            "direct_fit_task": None,
+            "evaluation_arms": pairs[rank::world_size],
+        }
     if "reuse_baseline" in spec:
         pairs = [
             (task_id, arm)

@@ -115,6 +115,26 @@ def test_source_teacher_recovery_validation_binds_selected_writer_and_reuses_bas
     )
 
 
+def test_source_localization_reuses_teacher_states_and_assigns_all_arms_once() -> None:
+    spec = load_validation_contract(
+        ROOT / "configs/writer_cold_start_source_localization.toml",
+        repo_root=ROOT,
+    )
+    assert spec["evaluation"]["surface"] == "source_diagnostic"
+    assert spec["evaluation"]["task_ids"] == [6, 19, 46, 34, 73]
+    assert spec["source_diagnostic"]["direct_state_authority"] == "source_teacher_bundle"
+    work = [validation_work_for_rank(spec, rank=rank, world_size=8) for rank in range(8)]
+    assert all(item["direct_fit_task"] is None for item in work)
+    evals = [pair for item in work for pair in item["evaluation_arms"]]
+    expected = [
+        (task_id, arm)
+        for task_id in spec["evaluation"]["task_ids"]
+        for arm in spec["evaluation"]["arms"]
+    ]
+    assert sorted(evals) == sorted(expected)
+    assert len(evals) == 15 and len(set(evals)) == 15
+
+
 def _rows() -> list[dict[str, object]]:
     rows = []
     for task_id in (11, 21):

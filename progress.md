@@ -31,6 +31,17 @@
   only teacher auxiliary coefficient `0.1 -> 0.3`, first stop step 1000. Its
   targeted contract/gradient tests pass; after commit/push, run the mechanical
   smoke and immediately launch the eight-GPU segment.
+- The coefficient-`0.3` segment completed rc 0 at step 1000 in 49:10. All four
+  atomic checkpoints validate and GPUs are released. Offline reconstruction
+  remains underfit (`0.418` best), while all five validation query tasks remain
+  better than base (`6.93%` mean); therefore no validation closed-loop is run.
+- Owner-requested source localization is frozen in
+  `configs/writer_cold_start_source_localization.toml`: source tasks
+  6/19/46/34/73, frozen base/step-1000 Writer/immutable direct-teacher arms,
+  64 paired rollouts/task/arm, h16 primary and h50 robustness. The existing
+  validation runner gains only a source authority/state mode; no new evaluator
+  or direct fit is created. Run its one mechanical load smoke, then launch the
+  full source comparison before any further Writer recovery.
 
 ## 2026-07-19 source-teacher bridge ready for real Writer training
 

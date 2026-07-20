@@ -88,11 +88,14 @@ def _authorities(
     records = _json(manifest).get("tasks", [])
     by_id = {row.get("task_index"): row for row in records if isinstance(row, dict)}
     dataset_root = data_root / spec["authority"]["dataset_relative_path"]
+    expected_split = (
+        "source" if spec["evaluation"].get("surface") == "source_diagnostic" else "validation"
+    )
     result = {}
     for task_id in spec["evaluation"]["task_ids"]:
         row = by_id.get(task_id)
-        if not isinstance(row, dict) or row.get("split") != "validation":
-            raise WriterValidationError(f"task {task_id} left validation split")
+        if not isinstance(row, dict) or row.get("split") != expected_split:
+            raise WriterValidationError(f"task {task_id} left {expected_split} split")
         hdf5 = row["hdf5"]
         result[task_id] = WriterSpecAuthority(
             task_id,
@@ -191,10 +194,12 @@ def _open_runtime(
     task_id: int,
     arm: str,
     authority: WriterSpecAuthority,
+    validation_spec: Mapping[str, Any],
     writer_spec: Mapping[str, Any],
     source_checkpoint: Path,
     mature_path: Path,
     writer_checkpoint: Path,
+    output_root: Path,
     output_dir: Path,
 ) -> tuple[Any, ...]:
     set_global_seed(writer_spec["train"]["seed"])
@@ -210,10 +215,22 @@ def _open_runtime(
         runtime[0], writer_spec=writer_spec, targets=_lora_targets(mature_path)
     )
     if arm == "matched_direct_task_local_lora":
-        final = direct_final_path(output_dir / "direct_lora" / f"task_{task_id:03d}")
-        manifest = _json(final / "manifest.json")
-        state_path = final / "trainable_state.safetensors"
-        require(sha256_file(state_path), manifest["state_sha256"], "direct final")
+        source_diagnostic = validation_spec.get("source_diagnostic")
+        if source_diagnostic is not None:
+            bundle_path = output_root / source_diagnostic["teacher_bundle_relative_path"]
+            require(
+                sha256_file(bundle_path),
+                source_diagnostic["teacher_bundle_sha256"],
+                "source teacher bundle",
+            )
+            row = _json(bundle_path)["teacher_tasks"][str(task_id)]
+            state_path = output_root / row["state_relative_path"]
+            require(sha256_file(state_path), row["state_sha256"], "source teacher state")
+        else:
+            final = direct_final_path(output_dir / "direct_lora" / f"task_{task_id:03d}")
+            manifest = _json(final / "manifest.json")
+            state_path = final / "trainable_state.safetensors"
+            require(sha256_file(state_path), manifest["state_sha256"], "direct final")
         _restore_lora(lora_state, load_file(state_path))
     elif arm.startswith("writer_"):
         _writer_lora(
@@ -237,6 +254,7 @@ def _episode_rows(
     arm: str,
     horizon: int,
     policy_rng_seed: int,
+    surface: str = "validation_only",
 ) -> list[dict[str, Any]]:
     values = zip(
         result["seeds"],
@@ -250,7 +268,7 @@ def _episode_rows(
     )
     return [
         {
-            "surface": "validation",
+            "surface": surface,
             "task_id": task_id,
             "task_category": task_category,
             "arm": arm,
@@ -293,16 +311,19 @@ def _evaluate_arm(
     source_checkpoint: Path,
     mature_path: Path,
     writer_checkpoint: Path,
+    output_root: Path,
     output_dir: Path,
 ) -> tuple[list[dict[str, Any]], list[str]]:
     runtime = _open_runtime(
         task_id=task_id,
         arm=arm,
         authority=authority,
+        validation_spec=spec,
         writer_spec=writer_spec,
         source_checkpoint=source_checkpoint,
         mature_path=mature_path,
         writer_checkpoint=writer_checkpoint,
+        output_root=output_root,
         output_dir=output_dir,
     )
     evaluation = spec["evaluation"]
@@ -337,6 +358,7 @@ def _evaluate_arm(
                         arm=arm,
                         horizon=horizon,
                         policy_rng_seed=policy_seed,
+                        surface=evaluation.get("surface", "validation_only"),
                     )
                 )
                 videos.extend(result["video_paths"])
@@ -460,6 +482,12 @@ def _eval_info(
     spec: Mapping[str, Any], aggregate: Mapping[str, Any], videos: Sequence[str]
 ) -> dict[str, Any]:
     evaluation = spec["evaluation"]
+    surface = evaluation.get("surface", "validation_only")
+    status = (
+        "writer_source_localization_completed"
+        if surface == "source_diagnostic"
+        else "writer_cold_start_validation_completed"
+    )
     video_by_arm: dict[tuple[int, str], list[str]] = {}
     for relative in videos:
         parts = Path(relative).parts
@@ -474,7 +502,7 @@ def _eval_info(
             cell = aggregate["per_task"][str(task_id)][arm][primary_horizon]
             per_task.append(
                 {
-                    "task_group": f"validation:{arm}",
+                    "task_group": f"{surface}:{arm}",
                     "task_id": task_id,
                     "metrics": {
                         "successes": [True] * cell["successes"]
@@ -486,8 +514,8 @@ def _eval_info(
             )
     return {
         "overall": {
-            "status": "writer_cold_start_validation_completed",
-            "surface": "validation_only",
+            "status": status,
+            "surface": surface,
             "episodes": aggregate["raw_episode_rows"],
             "primary_horizon": evaluation["primary_execution_horizon"],
         },
@@ -520,7 +548,14 @@ def _publish_result(
     writer_stage = _json(
         writer_checkpoint.parents[1] / "writer_cold_start_stage_result.json"
     )
-    if "reuse_baseline" in spec:
+    source_diagnostic = spec.get("source_diagnostic")
+    if source_diagnostic is not None:
+        bundle = _json(output_root / source_diagnostic["teacher_bundle_relative_path"])
+        direct_manifests = {
+            str(task_id): bundle["teacher_tasks"][str(task_id)]
+            for task_id in evaluation["task_ids"]
+        }
+    elif "reuse_baseline" in spec:
         source_result = _json(
             output_root
             / spec["reuse_baseline"]["output_relative_path"]
@@ -537,10 +572,16 @@ def _publish_result(
             )
             for task_id in evaluation["task_ids"]
         }
+    surface = evaluation.get("surface", "validation_only")
+    status = (
+        "writer_source_localization_completed"
+        if surface == "source_diagnostic"
+        else "writer_cold_start_validation_completed"
+    )
     result = {
         "schema_version": 1,
-        "status": "writer_cold_start_validation_completed",
-        "surface": "validation_only",
+        "status": status,
+        "surface": surface,
         "validation_contract_sha256": sha256_file(contract_path),
         "writer_checkpoint": {
             "step": spec["authority"]["writer_checkpoint_step"],
@@ -548,7 +589,11 @@ def _publish_result(
         },
         "training": {
             "writer": {
-                "source_tasks": 60,
+                "source_tasks": (
+                    source_diagnostic.get("writer_training_task_count", 60)
+                    if source_diagnostic is not None
+                    else 60
+                ),
                 "functional_episode_bounds": [8, 39],
                 "completed_step": writer_manifest["step"],
                 "consumed_query_frames": writer_manifest["sampler"]["consumed_query_frames"],
@@ -556,7 +601,7 @@ def _publish_result(
                 "environment_interactions": 0,
             },
             "matched_direct_task_local_lora": {
-                "validation_tasks": evaluation["task_ids"],
+                "evaluated_tasks": evaluation["task_ids"],
                 "support_episode_bounds": spec["direct_baseline"]["support_episode_bounds"],
                 "per_task": direct_manifests,
                 "environment_interactions": 0,
@@ -663,6 +708,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                     source_checkpoint=source_checkpoint,
                     mature_path=paths["mature"],
                     writer_checkpoint=args.writer_checkpoint,
+                    output_root=args.output_root,
                     output_dir=args.output_dir,
                 )
                 _atomic_json(shard_path, {"rows": rows, "videos": videos})
@@ -695,9 +741,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             contract_path=args.config,
             wall_seconds=time.perf_counter() - started,
         )
-        update_latest_link(
-            args.output_dir, args.output_root / "writer_cold_start" / "validation_latest"
+        latest = spec["resources"].get(
+            "latest_link_relative_path", "writer_cold_start/validation_latest"
         )
+        update_latest_link(args.output_dir, args.output_root / latest)
         return result
     finally:
         if torch.distributed.is_initialized():

@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import torch
 
-from ember.lora import LoRATarget, SmolVLALoRAContract
+from ember.lora import LoRATarget, SmolVLALoRAContract, lora_state_sha256
 from ember.writer.functional import (
     prepare_frozen_writer_policy,
     writer_functional_action_loss,
 )
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
-from ember.writer.inference import tensor_state_sha256
 
 
 class _LossPolicy(torch.nn.Module):
@@ -83,8 +82,8 @@ def test_tensor_state_hash_covers_names_metadata_and_bytes() -> None:
         "b": torch.tensor([[1.0, 2.0]], dtype=torch.bfloat16),
         "a": torch.tensor([3, 4], dtype=torch.int64),
     }
-    digest = tensor_state_sha256(state)
-    assert digest == tensor_state_sha256({"a": state["a"], "b": state["b"]})
+    digest = lora_state_sha256(state)
+    assert digest == lora_state_sha256({"a": state["a"], "b": state["b"]})
     changed = {**state, "b": state["b"].clone()}
     changed["b"][0, 0] = 0
-    assert digest != tensor_state_sha256(changed)
+    assert digest != lora_state_sha256(changed)

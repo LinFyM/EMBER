@@ -65,7 +65,7 @@
 ## Canonical runner ownership
 
 - `scripts/train_source_base.py` 是 Phase B 唯一活动入口；`src/ember/source_base.py` 负责训练编排，`source_base_checkpoint.py` 只拥有 launch provenance 和 exact-resume 原子 checkpoint，现有 `writer/data.py` 提供共享的 HDF5/sampler owner。没有保留平行或版本化 runner。
-- `scripts/evaluate_source_base.py` 是 base/Writer 共用的唯一 fresh-evaluation 入口；`src/ember/libero_evaluation.py` 只拥有 split/RNG/state schedule 和结果聚合，`writer/inference.py` 只拥有 Writer checkpoint/cache → task LoRA materialization，test role 在 Phase F 前不存在。`src/ember/lora.py` 是 Writer/direct/RL 的共享 37-target LoRA owner。
+- `scripts/evaluate_source_base.py` 是 base/Writer/direct 共用的唯一 fresh-evaluation 入口；`src/ember/libero_evaluation.py` 只拥有 split/RNG/state schedule 和结果聚合，`writer/inference.py` 与 `direct_lora_inference.py` 分别只拥有各自产物 → task LoRA materialization，test role 在 Phase F 前不存在。`src/ember/lora.py` 是 Writer/direct/RL 的共享 37-target LoRA owner。
 - `scripts/train_writer_cold_start.py` 是 Phase C 唯一训练入口；`src/ember/writer/training.py` 只编排 frozen source policy、feature cache、Writer DDP 和 functional loss，`writer/checkpoint.py` 独占 exact-resume checkpoint。没有第二套 Writer runner。
 - `scripts/train_direct_lora.py` 是 action-supervised direct reference 的唯一训练入口；`direct_lora_protocol.py` 固定 validation-only split、69,120 matched queries/task 和 8-rank assignment，`direct_lora_checkpoint.py` 独占 task-local LoRA/optimizer/scheduler/RNG/sampler 恢复状态。formal 在真实 profile 前关闭。
 - 这些文件在 source base 冻结后继续作为可复现入口保留，不再复制出下一版 runner；只有出现第二个当前消费者时才提炼公共抽象。profile 和 resume-smoke 大权重是可删除的临时产物，正式 checkpoints、manifest、metrics 和 hashes 才是 retained evidence。

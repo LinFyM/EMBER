@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Eight-rank official LIBERO fresh evaluation for the base or Writer LoRA."""
+"""Eight-rank official LIBERO fresh evaluation for base or task-local LoRA."""
 
 from __future__ import annotations
 
@@ -29,10 +29,19 @@ from ember.libero_evaluation import (
     sha256_file,
     validate_complete_rows,
 )
+from ember.direct_lora_inference import FrozenDirectLoRAAdapter
 from ember.writer.inference import FrozenWriterTaskAdapter
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+POLICY_FILE_NAMES = (
+    "config.json",
+    "model.safetensors",
+    "policy_preprocessor.json",
+    "policy_postprocessor.json",
+    "policy_preprocessor_step_5_normalizer_processor.safetensors",
+    "policy_postprocessor_step_0_unnormalizer_processor.safetensors",
+)
 
 
 def _parse_args() -> argparse.Namespace:
@@ -48,6 +57,12 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--writer-checkpoint", type=Path)
     parser.add_argument("--writer-feature-cache", type=Path)
+    parser.add_argument(
+        "--direct-lora-config",
+        type=Path,
+        default=REPO_ROOT / "configs/direct_lora_sft_v1.json",
+    )
+    parser.add_argument("--direct-lora-run", type=Path)
     parser.add_argument(
         "--role", choices=("source_development", "validation"), required=True
     )
@@ -177,7 +192,16 @@ def main() -> int:
         raise EvaluationContractError(
             "Writer evaluation requires both checkpoint and validation feature cache"
         )
-    arm = "writer_zero_interaction" if writer_requested else "frozen_source_base"
+    direct_requested = args.direct_lora_run is not None
+    if writer_requested and direct_requested:
+        raise EvaluationContractError("fresh evaluation accepts only one LoRA arm")
+    arm = (
+        "writer_zero_interaction"
+        if writer_requested
+        else "direct_lora_sft_oracle"
+        if direct_requested
+        else "frozen_source_base"
+    )
     rank = int(os.environ.get("RANK", "0"))
     local_rank = int(os.environ.get("LOCAL_RANK", "0"))
     world_size = int(os.environ.get("WORLD_SIZE", "1"))
@@ -215,17 +239,9 @@ def main() -> int:
         if args.output_dir.exists() and any(args.output_dir.iterdir()):
             raise EvaluationContractError(f"output directory is not empty: {args.output_dir}")
         args.output_dir.mkdir(parents=True, exist_ok=True)
-        required_policy_files = (
-            "config.json",
-            "model.safetensors",
-            "policy_preprocessor.json",
-            "policy_postprocessor.json",
-            "policy_preprocessor_step_5_normalizer_processor.safetensors",
-            "policy_postprocessor_step_0_unnormalizer_processor.safetensors",
-        )
         missing = [
             name
-            for name in required_policy_files
+            for name in POLICY_FILE_NAMES
             if not (args.policy_path / name).is_file()
         ]
         if missing:
@@ -246,7 +262,8 @@ def main() -> int:
             "config_sha256": sha256_file(args.config.resolve()),
             "policy_path": str(args.policy_path.resolve()),
             "policy_files": {
-                name: sha256_file(args.policy_path / name) for name in required_policy_files
+                name: sha256_file(args.policy_path / name)
+                for name in POLICY_FILE_NAMES
             },
             "git": git,
             "runtime": {
@@ -288,6 +305,30 @@ def main() -> int:
                 ),
                 "feature_cache_manifest_sha256": sha256_file(
                     args.writer_feature_cache / "cache_manifest.json"
+                ),
+            }
+        if direct_requested:
+            required_direct_files = (
+                args.direct_lora_config,
+                args.direct_lora_run / "run_contract.json",
+                args.direct_lora_run / "run_summary.json",
+            )
+            missing_direct_files = [
+                str(path) for path in required_direct_files if not path.is_file()
+            ]
+            if missing_direct_files:
+                raise EvaluationContractError(
+                    f"direct-LoRA evaluation input is incomplete: {missing_direct_files}"
+                )
+            contract["direct_lora_inputs"] = {
+                "config_path": str(args.direct_lora_config.resolve()),
+                "config_sha256": sha256_file(args.direct_lora_config.resolve()),
+                "run_path": str(args.direct_lora_run.resolve()),
+                "run_contract_sha256": sha256_file(
+                    args.direct_lora_run / "run_contract.json"
+                ),
+                "run_summary_sha256": sha256_file(
+                    args.direct_lora_run / "run_summary.json"
                 ),
             }
         contract["contract_sha256"] = canonical_sha256(contract)
@@ -343,24 +384,27 @@ def main() -> int:
     torch.backends.cudnn.benchmark = True
     torch.backends.cuda.matmul.allow_tf32 = True
 
-    writer_adapter = None
+    task_adapter = None
+    adapter_policy_files = {
+        name: sha256_file(args.policy_path / name) for name in POLICY_FILE_NAMES
+    }
     if writer_requested:
-        writer_adapter = FrozenWriterTaskAdapter(
+        task_adapter = FrozenWriterTaskAdapter(
             policy=policy,
-            policy_files={
-                name: sha256_file(args.policy_path / name)
-                for name in (
-                    "config.json",
-                    "model.safetensors",
-                    "policy_preprocessor.json",
-                    "policy_postprocessor.json",
-                    "policy_preprocessor_step_5_normalizer_processor.safetensors",
-                    "policy_postprocessor_step_0_unnormalizer_processor.safetensors",
-                )
-            },
+            policy_files=adapter_policy_files,
             writer_config_path=args.writer_config.resolve(),
             writer_checkpoint=args.writer_checkpoint.resolve(),
             feature_cache=args.writer_feature_cache.resolve(),
+            task_ids=task_ids,
+            device=device,
+            require_formal=args.mode == "formal",
+        )
+    elif direct_requested:
+        task_adapter = FrozenDirectLoRAAdapter(
+            policy=policy,
+            policy_files=adapter_policy_files,
+            config_path=args.direct_lora_config.resolve(),
+            run_root=args.direct_lora_run.resolve(),
             task_ids=task_ids,
             device=device,
             require_formal=args.mode == "formal",
@@ -371,7 +415,7 @@ def main() -> int:
     for task_id in task_ids:
         started = time.monotonic()
         adapter_sha256 = (
-            writer_adapter.apply(task_id) if writer_adapter is not None else None
+            task_adapter.apply(task_id) if task_adapter is not None else None
         )
         dist.barrier()
         env_config = LiberoEnv(
@@ -458,7 +502,7 @@ def main() -> int:
         "egl_device_id": os.environ["MUJOCO_EGL_DEVICE_ID"],
         "assigned_state_ids": list(assigned_states),
         "arm": arm,
-        "writer_evidence": writer_adapter.evidence if writer_adapter is not None else None,
+        "adapter_evidence": task_adapter.evidence if task_adapter is not None else None,
         "rows": rows,
         "task_timings": task_timings,
     }
@@ -474,14 +518,14 @@ def main() -> int:
             )
             all_rows.extend(payload["rows"])
             timings.extend(payload["task_timings"])
-        if writer_adapter is not None:
+        if task_adapter is not None:
             evidence_values = {
                 canonical_sha256(
                     json.loads(
                         (args.output_dir / f"rank_{source_rank:02d}.json").read_text(
                             encoding="utf-8"
                         )
-                    )["writer_evidence"]
+                    )["adapter_evidence"]
                 )
                 for source_rank in range(world_size)
             }
@@ -507,7 +551,7 @@ def main() -> int:
             "fixed_init_state_count": state_count,
             "rows": all_rows,
             "metrics": aggregate_rows(all_rows),
-            "writer_evidence": writer_adapter.evidence if writer_adapter is not None else None,
+            "adapter_evidence": task_adapter.evidence if task_adapter is not None else None,
             "task_rank_timings": timings,
         }
         _write_json_atomic(args.output_dir / "results.json", result)

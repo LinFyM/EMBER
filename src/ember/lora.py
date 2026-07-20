@@ -80,6 +80,19 @@ def canonical_contract_sha256(contract: SmolVLALoRAContract) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def lora_state_sha256(state: Mapping[str, torch.Tensor]) -> str:
+    """Hash LoRA names, tensor metadata, and exact bytes in stable order."""
+
+    digest = hashlib.sha256()
+    for name in sorted(state):
+        value = state[name].detach().to(device="cpu").contiguous()
+        digest.update(
+            f"{name}\0{value.dtype}\0{tuple(value.shape)}\0".encode("utf-8")
+        )
+        digest.update(value.view(torch.uint8).numpy().tobytes())
+    return digest.hexdigest()
+
+
 def load_lora_contract(path: Path) -> SmolVLALoRAContract:
     raw = json.loads(path.read_text(encoding="utf-8"))
     if raw.get("schema_version") != "ember_smolvla_lora_v1":

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -12,6 +11,7 @@ from safetensors.torch import load_file
 from ember.lora import (
     canonical_contract_sha256,
     copy_task_lora_state_,
+    lora_state_sha256,
     load_lora_contract,
     validate_lora_state,
 )
@@ -24,18 +24,6 @@ from ember.writer.model import (
     build_lora_tensor_specs,
 )
 from ember.writer.training import load_writer_config
-
-
-def tensor_state_sha256(state: Mapping[str, torch.Tensor]) -> str:
-    """Hash names, tensor metadata, and exact bytes in a stable order."""
-
-    digest = hashlib.sha256()
-    for name in sorted(state):
-        value = state[name].detach().to(device="cpu").contiguous()
-        metadata = f"{name}\0{value.dtype}\0{tuple(value.shape)}\0".encode("utf-8")
-        digest.update(metadata)
-        digest.update(value.view(torch.uint8).numpy().tobytes())
-    return digest.hexdigest()
 
 
 def _verify_checkpoint_files(checkpoint: Path, manifest: Mapping[str, Any]) -> None:
@@ -189,4 +177,4 @@ class FrozenWriterTaskAdapter:
             )
         validate_lora_state(state, self.contract)
         copy_task_lora_state_(self.policy, state, self.contract)
-        return tensor_state_sha256(state)
+        return lora_state_sha256(state)

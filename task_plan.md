@@ -42,7 +42,7 @@
 
 ## Phase B：Source embodiment base
 
-状态：进行中；Phase A 已满足。
+状态：正式训练已完成；step 630 是按 train/source loss 得到的当前候选，等待 source-development 闭环评估后冻结。
 
 合同：
 
@@ -57,14 +57,16 @@
 
 已锁定首轮运行：每 rank batch 352、global batch 2816、630 optimizer steps、checkpoint 210/420/630；沿用官方 action-expert recipe 的 peak LR `1e-4`，不做未经验证的大 batch LR 放大。显式 rank-local device 修复后的 8 卡 profile 为 2.590s/step、1087.2 samples/s、每卡峰值 reserved 67.35GiB。
 
+正式 seed-1 trajectory 已在 commit `72eb10d` 完成：630 steps、退出码 0、约 28 分钟；最终 loss `0.483089`，三个 checkpoint 均含 policy、optimizer/scheduler/scaler、sampler/data cursor 和 8-rank RNG。最终 checkpoint manifest SHA256 为 `89e9f493...ed22c`，launch contract SHA256 为 `22c4ffb5...2e8`；step 630 累计 1,774,080 global examples、5,040 global task slots，70 tasks 均覆盖全部 50 episodes。
+
 动作：
 
 - [x] 核验官方 recipe、trainable names、normalization 和 exact loss。
 - [x] 写唯一 canonical config/runner，不恢复旧 Gate0 runner。
 - [x] 1–5 分钟吞吐/显存 smoke，只读 mechanics。
 - [x] 固定 global batch 与学习率合同。
-- [ ] 运行约 30 分钟 exact-resume trajectory。
-- [ ] 第一个完整阶段结果前确认 3500 条 episode 均贡献训练信号，并记录完成的 corpus epochs/consumed chunks。
+- [x] 运行约 30 分钟 exact-resume trajectory。
+- [x] 第一个完整阶段结果前确认 3500 条 episode 均贡献训练信号，并记录完成的 corpus epochs/consumed chunks。
 - [ ] 标准 LIBERO h50 闭环测 train/source development。
 - [ ] 冻结 source base、完整训练状态、hash 和 compute ledger。
 - [ ] 冻结后在 10 个 validation tasks 建立 frozen source embodiment base reference。
@@ -83,6 +85,8 @@
 - 冻结 VLM features 可缓存；
 - trainable temporal/episode/set attention、fusion、task memory、layer-aware LoRA decoder；
 - 输出完整 37-target rank-32/alpha-16/dropout-0 LoRA。
+
+同空间 LoRA 合同已封存为 `configs/smolvla_lora_v1.json`：精确 37 targets、74 个 A/B tensors、1,485,312 parameters；Writer、direct oracle 和后续 matched RL 共用这一实现。当前只完成了参数空间和 differentiable functional application，尚未把 Writer 数据/特征/训练链路接到新 source base。
 
 动作：
 

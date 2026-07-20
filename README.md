@@ -64,6 +64,8 @@ Writer 不是通用优化器，也不生成 bank、basis、geometry、mask、met
 - `src/ember/writer/data.py`：完整 action-hidden 视频流与 functional-query 数据；
 - `src/ember/writer/functional.py`：Writer 完整 LoRA 到冻结 policy 标准 action loss 的 differentiable 接线；
 - `scripts/train_writer_cold_start.py`：Phase C 唯一 canonical Writer 训练入口；
+- `scripts/train_direct_lora.py`：validation target-action-supervised direct-LoRA reference 的唯一训练入口；
+- `src/ember/direct_lora_protocol.py` / `direct_lora_checkpoint.py`：matched query 合同与 task-local exact-resume；
 - `src/ember/writer/topology.py`：GPU/NUMA 绑定；
 - `src/ember/eval_artifacts.py`：紧凑视频 gallery；
 - `src/ember/runtime_env.py`：锁定环境的兼容修复。

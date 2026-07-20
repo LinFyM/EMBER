@@ -57,7 +57,7 @@
 
 ## 当前下一批动作
 
-1. 从干净 commit 启动约 90 分钟 Writer cold start；训练等待期间继续实现 matched direct-LoRA oracle，不启动 RL 或 optional outer learning。
+1. 完成已启动的约 90 分钟 Writer cold start；其间 matched direct-LoRA oracle 的 canonical runner 已实现，等待 GPU 做真实 profile/resume，不启动 RL 或 optional outer learning。
 2. 在 Writer 525/1050/1575 三个候选上按 validation 选择，并完成少量预声明 train tasks 的 source localization。
 3. 在完全相同 fixed states/seeds 下报告 base / Writer / direct-LoRA 每 task 原始成功数；test 继续封存。
 4. 机制成立后才进入 Writer-only RL；optional outer learning 仍只可在 Phase F 之后。
@@ -67,6 +67,7 @@
 - `scripts/train_source_base.py` 是 Phase B 唯一活动入口；`src/ember/source_base.py` 负责训练编排，`source_base_checkpoint.py` 只拥有 launch provenance 和 exact-resume 原子 checkpoint，现有 `writer/data.py` 提供共享的 HDF5/sampler owner。没有保留平行或版本化 runner。
 - `scripts/evaluate_source_base.py` 是 base/Writer 共用的唯一 fresh-evaluation 入口；`src/ember/libero_evaluation.py` 只拥有 split/RNG/state schedule 和结果聚合，`writer/inference.py` 只拥有 Writer checkpoint/cache → task LoRA materialization，test role 在 Phase F 前不存在。`src/ember/lora.py` 是 Writer/direct/RL 的共享 37-target LoRA owner。
 - `scripts/train_writer_cold_start.py` 是 Phase C 唯一训练入口；`src/ember/writer/training.py` 只编排 frozen source policy、feature cache、Writer DDP 和 functional loss，`writer/checkpoint.py` 独占 exact-resume checkpoint。没有第二套 Writer runner。
+- `scripts/train_direct_lora.py` 是 action-supervised direct reference 的唯一训练入口；`direct_lora_protocol.py` 固定 validation-only split、69,120 matched queries/task 和 8-rank assignment，`direct_lora_checkpoint.py` 独占 task-local LoRA/optimizer/scheduler/RNG/sampler 恢复状态。formal 在真实 profile 前关闭。
 - 这些文件在 source base 冻结后继续作为可复现入口保留，不再复制出下一版 runner；只有出现第二个当前消费者时才提炼公共抽象。profile 和 resume-smoke 大权重是可删除的临时产物，正式 checkpoints、manifest、metrics 和 hashes 才是 retained evidence。
 
 不得先做：

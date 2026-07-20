@@ -75,6 +75,8 @@
 - [ ] 每个 validation task 用自己的全部 50 条 teacher action episodes 训练 matched direct LoRA oracle，并明确标注 action-supervised reference。
 - [ ] Phase F 解封前不运行任何 test policy evaluation、不训练 test direct LoRA，也不读取 test actions/reward/success。
 
+direct oracle 的单一 canonical runner 已接通但 formal gate 保持关闭：每个 validation task 独立从 selected step630 注入同一 37-target LoRA，只用自己的 50 条 action episodes 做标准 action/flow loss；每 task 固定消费 69,120 queries，与 Writer cold-start 的 `1575×8×384/70` 完全相等。8-rank task assignment、task-local optimizer/scheduler、sampler identity、RNG 与原子 checkpoint 已实现，等待 Writer 正式训练释放 GPU 后做真实 OOM/resume profile。
+
 已触发且只触发一次上述停止规则：从 step630 exact-resume 到step945，新增315 steps、约14分钟，checkpoints735/840/945。step945 与630 均为 `15/400`，配对 `5 gains / 5 losses`，故已按规则冻结step630且不补测735/840；selection seal 为 `configs/source_base_selected_v1.json`。
 
 ## Phase C：Writer cold start

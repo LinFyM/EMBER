@@ -120,8 +120,7 @@ validation action-hidden cache 覆盖预封存 10 tasks × 50 full episodes、63
 
 ## Phase D：Writer-only RL
 
-状态：等待 cold start validation；canonical source-only reward runner 与 exact-resume
-checkpoint 已接通，formal gate 在真实 profile 前保持关闭。
+状态：cold step1050 已选；canonical source-only reward runner 的真实完整 task-cycle profile/exact-resume 已通过，formal 已按实测吞吐封存，等待 RNG2 与 direct oracle 使用完当前 GPU 队列后启动。
 
 - [ ] 只用 70 train/source tasks。
 - [ ] base 冻结；生成 LoRA 不原位更新；reward 只更新 Writer。
@@ -131,6 +130,8 @@ checkpoint 已接通，formal gate 在真实 profile 前保持关闭。
 - [ ] 每个候选在 validation 做 frozen-Writer zero-interaction h50 评估。
 - [ ] 报告 cold-start 与 Writer-only-RL 的原始数字。
 - [ ] 在 validation 选择一个最佳 Writer initialization 进入首轮 task-local RL。
+
+profile 从 update1 checkpoint 由新进程恢复到 update9，完成一个 70-task cycle：每 task 4 个官方随机 reset rollouts，共 `280` interactions、`87` successes、`90,391` env steps 和 9 个真实 Writer updates；72 个 rank/update ledgers、280 个唯一 env/policy seed rows 与两个 10-file checkpoints 全部通过恢复审计。max-rank wall 为 405.50 秒，因此 formal 封存 12 个 full cycles，即 108 updates、每 task 48 rollouts、总 3,360 interactions，thirds 为 36/72/108，预计约 81.1 分钟。
 
 ## Phase E：Task-local LoRA RL
 

@@ -76,6 +76,13 @@
 - 每 task 在 step1 保存后由新进程 exact-resume 到 step10；两个边界的 16 个 checkpoint manifests 均逐文件验证 LoRA、trainer 与 RNG state。step1 已覆盖全部 50 teacher episodes，step10 每 task 消费 3,840 queries。
 - profile 只验证 mechanics、恢复和资源合同，不看小步性能。formal 已封存为每 task 69,120 matched queries，即 batch384 × 180 steps，checkpoints 60/120/180；10 个 validation task 都使用 final step180，不按 policy outcome 选择。
 
+### Writer-only RL：完整 source cycle profile/resume 通过
+
+- cold step1050 起点从 update1 checkpoint 由全新 8-rank 进程恢复到 update9，完整覆盖 70 source tasks。每 task 恰好 4 个官方随机 reset rollouts，共 280 interactions、87 successes、90,391 env steps 和 9 个 Writer optimizer updates；生成 LoRA 没有原位更新。
+- 72 个 rank/update ledgers 全部声明 `official_random_reset=true`、`fixed_init_state_id=null`；70 个 active task ledgers 合计 280 个唯一 `(task, env_seed, policy_seed)` rows。update1/update9 checkpoints 各含 Writer、trainer 和 8-rank RNG 共 10 个文件，逐文件验证通过，最终 interaction cursor 精确为一个 full cycle。
+- max-rank cycle wall 为 405.50 秒，最慢 update 49.73 秒；reward updates 的 peak reserved 5.04GiB。该阶段是 rollout/CPU 受限，增加 dummy 或无科学作用的 batch 只会浪费时间，因此保留一 GPU 一 policy rank、以有效 interactions/秒为准。
+- formal 据此封存 12 个 full cycles：108 updates、每 task 48 rollouts、总 3,360 source interactions，checkpoints 36/72/108，预计约 81.1 分钟并保持在 90 分钟目标内。profile 的 source success 只证明 reward signal 非零和更新可执行，不是 validation 性能证据。
+
 ### Gate -1：通过但带残差
 
 - 初始 action-hidden-video probe 未达到预声明标准。

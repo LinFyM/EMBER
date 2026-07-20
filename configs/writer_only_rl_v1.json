@@ -61,8 +61,22 @@
     "update_seed_base": 2320260721
   },
   "formal_run": {
-    "status": "pending_real_profile",
+    "status": "sealed",
     "expected_world_size": 8,
-    "target_wall_clock_minutes_max": 90
+    "total_updates": 108,
+    "checkpoint_updates": [36, 72, 108],
+    "full_task_cycles": 12,
+    "rollouts_per_task": 48,
+    "total_rollouts": 3360,
+    "target_wall_clock_minutes_max": 90,
+    "profile_run_contract_file_sha256": "0761fb54bb6414e0b4f08dad6e78601bc4ed99f8b5e1ff1708ecb9942e03b119",
+    "profile_update1_manifest_sha256": "cf9a803eebc3a9c37d2ed7d6857beea5c9fb6cc4096382629c767e0172de039a",
+    "profile_update9_manifest_sha256": "3a75e8f6d3f885777036a7ff6ceb9c0901a90bc3e4b98aca22171074b44e1e04",
+    "profile_exact_resume": "update_1_to_update_9",
+    "profile_full_cycle_wall_seconds_max_rank": 405.498193899,
+    "profile_successes": 87,
+    "profile_rollouts": 280,
+    "profile_peak_reserved_gib": 5.037109375,
+    "estimated_formal_wall_minutes": 81.1
   }
 }

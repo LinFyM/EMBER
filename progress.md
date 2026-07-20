@@ -45,6 +45,7 @@
 - validation Writer cache 已完成 10×50 episodes / 63,544 frames；profile step35 的 8-rank fresh-eval smoke 生成完全一致的 task0 adapter SHA，并完成 8 条唯一 fixed-state rows。该 smoke 只证明 mechanics。
 - cold Writer 首个完整 validation RNG 已完成：step525/1050/1575=`58/500,63/500,60/500`，按预封存规则选择 step1050。相对 base `56/500`，selected 为 `31 gains / 24 losses / net +7`，正增益在 task28/task88 两类但 task0 `-9`；故 selection 完成而机制结论仍待独立 policy RNG 确认。选择 seal 为 `configs/writer_cold_start_selected_v1.json`，RNG2 合同已在 outcome 前封存且不得重选 checkpoint。
 - validation direct-LoRA 真实 8-rank profile 已从 step1 exact-resume 到 step10，8 tasks 的 16 个 checkpoint manifests 全部逐文件验证；batch384 峰值 reserved 69.09GiB、最慢约 2.816s/step，每卡一个 CUDA rank。formal 已封存为每 target task 180 steps、60/120/180 checkpoints，共 69,120 matched queries，且固定使用 final checkpoint。
+- Writer-only RL 已从 update1 exact-resume 到 update9 并完成一个 70-task cycle：每 task 4 个官方随机 reset rollouts，总计 `280` interactions / `87` successes / `90,391` env steps，72 个 worker ledgers、280 个唯一 seed rows和两个 10-file checkpoints 全部通过 cursor/manifest 审计。max-rank wall 405.50 秒；formal 已封存 12 cycles，即 108 updates、每 task 48 rollouts、thirds 36/72/108，预计 81.1 分钟。
 
 ## 已明确退役
 
@@ -62,7 +63,7 @@
 
 1. 用已封存的第二独立 policy RNG 在同一固定 50 states/相同 env seeds 上复核 frozen base 与 selected cold step1050；只作结论确认，不重选 checkpoint。
 2. 完成 validation target-action-supervised direct-LoRA oracle 的 formal fit 与同口径 fresh evaluation；真实 profile/resume 已通过，test 继续封存。
-3. cold step1050 的 Writer-only RL 真实 profile/resume 已接续启动；profile 通过后封存正式 task-cycle 预算，并按 validation 比较 cold-start 与 reward-trained Writer，随后进入 matched task-local RL。
+3. RNG2 与 direct oracle 队列完成后，从 cold step1050 启动已封存的 108-update Writer-only RL formal；在 36/72/108 三个 full-cycle checkpoint 上做同口径 validation，选择最佳 Writer 后进入 matched task-local RL。
 4. optional outer learning 只可在 Phase F 完成后考虑，不阻塞核心 Goal。
 
 ## Canonical runner ownership

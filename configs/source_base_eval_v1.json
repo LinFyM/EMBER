@@ -1,0 +1,55 @@
+{
+  "schema_version": "ember_source_base_eval_v1",
+  "protocol": {
+    "split": "configs/libero90_70_10_10/split.json",
+    "split_sha256": "996a30616da97aa08dac177a94a3e7b723762a6e947c60e11df382c0a637b77e",
+    "manifest": "configs/libero90_70_10_10/data_manifest.json",
+    "manifest_sha256": "b18f1cfa66a82e7dae35c83278b013f719d3b912a81096ba9bd2c2f1a2ddbe7e"
+  },
+  "roles": {
+    "source_development": {
+      "required_split": "train",
+      "task_ids": [1, 2, 6, 16, 46, 63, 65, 73],
+      "selection_rule": "lowest train task_index in each predeclared (scene_family, task_family, composition_depth) stratum: KITCHEN/compound/2, KITCHEN/single_place/1, KITCHEN/actuation/1, KITCHEN/stack/1, LIVING_ROOM/pick_place/2, LIVING_ROOM/stack/2, LIVING_ROOM/single_place/1, STUDY/pick_place/2"
+    },
+    "validation": {
+      "required_split": "validation",
+      "task_ids": [0, 8, 15, 28, 40, 56, 61, 71, 85, 88]
+    }
+  },
+  "environment": {
+    "suite": "libero_90",
+    "fixed_init_states": true,
+    "fixed_init_state_count": 50,
+    "dummy_settling_steps": 10,
+    "max_horizon": 400,
+    "terminate_on_success": true,
+    "control_mode": "relative",
+    "observation_height": 128,
+    "observation_width": 128,
+    "camera_name": "agentview_image,robot0_eye_in_hand_image"
+  },
+  "policy": {
+    "action_execution_horizon": 50,
+    "precision": "bfloat16",
+    "rename_map": {
+      "observation.images.image": "observation.images.camera1",
+      "observation.images.image2": "observation.images.camera2"
+    }
+  },
+  "parallel": {
+    "world_size": 8,
+    "policy_processes_per_gpu": 1,
+    "envs_per_rank": 4,
+    "use_async_envs": true,
+    "schedule": "task-synchronous rank-strided fixed-state partition"
+  },
+  "rng": {
+    "environment_seed_base": 202607200,
+    "policy_seed_base": 2026072000
+  },
+  "smoke": {
+    "task_count": 1,
+    "fixed_init_state_count": 8
+  }
+}

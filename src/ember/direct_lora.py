@@ -125,7 +125,12 @@ def _latest_checkpoint(task_dir: Path) -> Path | None:
     if not latest_path.is_file():
         return None
     latest = read_json(latest_path)
-    checkpoint = Path(str(latest.get("path", "")))
+    value = latest.get("path")
+    if not isinstance(value, str) or not value:
+        raise DirectLoRAError(f"invalid direct-LoRA latest checkpoint: {task_dir}")
+    checkpoint = Path(value).resolve(strict=True)
+    if checkpoint.parent != (task_dir / "checkpoints").resolve(strict=True):
+        raise DirectLoRAError("direct-LoRA checkpoint escaped its task directory")
     verify_checkpoint_files(checkpoint)
     return checkpoint
 

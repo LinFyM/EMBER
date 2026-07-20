@@ -50,7 +50,11 @@ def verify_checkpoint_files(checkpoint: Path) -> dict[str, Any]:
     manifest = read_json(checkpoint / "checkpoint_manifest.json")
     files = manifest.get("files", {})
     required = {"lora.safetensors", "trainer_state.pt", "rng_state.pt"}
-    if not isinstance(files, dict) or not required.issubset(files):
+    if (
+        manifest.get("schema_version") != "ember_direct_lora_checkpoint_v1"
+        or not isinstance(files, dict)
+        or not required.issubset(files)
+    ):
         raise DirectLoRACheckpointError("direct-LoRA checkpoint manifest is incomplete")
     for name, record in files.items():
         path = checkpoint / name

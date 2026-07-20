@@ -142,6 +142,10 @@ def validate_launch(
         )
     if not 0 < args.stop_after_step <= args.total_steps:
         raise DirectLoRAError("invalid direct-LoRA stop step")
+    if args.stop_after_step not in checkpoint_steps:
+        raise DirectLoRAError(
+            "direct-LoRA segment must end at an exact-resume checkpoint"
+        )
     if args.mode == "formal":
         formal = config["formal_run"]
         expected = (

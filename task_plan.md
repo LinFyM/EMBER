@@ -71,7 +71,7 @@
 - [x] 第一个完整阶段结果前确认 3500 条 episode 均贡献训练信号，并记录完成的 corpus epochs/consumed chunks。
 - [x] 标准 LIBERO h50 闭环测初始 thirds 的 train/source development；continuation 后重测最终候选。
 - [x] 冻结 source base、完整训练状态、hash 和 compute ledger。
-- [ ] 冻结后在 10 个 validation tasks 建立 frozen source embodiment base reference。
+- [x] 冻结后在 10 个 validation tasks 建立 frozen source embodiment base reference。
 - [ ] 每个 validation task 用自己的全部 50 条 teacher action episodes 训练 matched direct LoRA oracle，并明确标注 action-supervised reference。
 - [ ] Phase F 解封前不运行任何 test policy evaluation、不训练 test direct LoRA，也不读取 test actions/reward/success。
 
@@ -79,7 +79,7 @@
 
 ## Phase C：Writer cold start
 
-状态：正式 70×50 feature cache 与真实 8-rank interrupted/resume profile 已完成；formal 参数已封存，等待从干净 commit 启动 1575-step cold start。
+状态：train/validation 正式 feature cache、真实 8-rank interrupted/resume profile 和 Writer fresh-eval smoke 已完成；formal 参数已封存，等待从干净 commit 启动 1575-step cold start。
 
 固定结构：
 
@@ -93,6 +93,8 @@
 frozen-VLM cache 的唯一入口与合同已封存为 `scripts/cache_writer_features.py` / `configs/writer_feature_cache_v1.json`。正式 cache 已由 selected step630 生成：70 tasks、3500 full episodes、537,946 frames，70 个 task tensors 均独立通过 size/SHA 校验；提取期间每卡恰好一个 CUDA rank、GPU0 无额外进程。
 
 真实 functional profile 采用每 rank batch 384、global batch 3072；step 17 checkpoint 的 10 个文件独立通过 SHA，随后 exact-resume 至 step 35。35 steps 恰好覆盖 4 个完整 70-task cycles，每 task 1536 queries 且全部 50 episodes 覆盖；steps 2–35 平均 3.426s，峰值 allocated/reserved 68.00/70.54GiB。正式合同据此封存为 1575 steps、checkpoints 525/1050/1575，预计纯训练 89.93 分钟。
+
+validation action-hidden cache 覆盖预封存 10 tasks × 50 full episodes、63,544 frames。profile step35 仅作 fresh-eval mechanics smoke：8 ranks 对 task0 生成的完整 LoRA SHA 完全一致，8 个固定 state 各出现一次并成功闭环退出；该小分母结果不用于任何行为判断。
 
 动作：
 

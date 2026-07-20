@@ -35,11 +35,13 @@
 - 首次 formal 启动在首个 checkpoint 前由进程表发现所有 ranks 的无索引 `"cuda"` 构造路径会在 GPU0 留额外 context；作业被主动停止且失败目录不复用。policy config、processor 和模型构造现显式使用 `cuda:{local_rank}`，随后 batch=1 load smoke 与 batch=352 steady smoke 均验证 8 卡进程数一致。
 - 正式 source-base seed-1 trajectory：commit `72eb10d`、630/630 steps、退出码 0、约 28 分钟；210/420/630 三个 checkpoint 均完整。最终累计 1,774,080 examples、5,040 task slots，70 tasks × 50 episodes 全覆盖；launch contract `22c4ffb5...2e8`，最终 checkpoint manifest `89e9f493...ed22c`。
 - source base 已正式冻结为 step630：step945 续训候选同口径仍为 `15/400`，相对630配对 `5 gains / 5 losses / net 0`，因此按预声明规则保留630且不再评735/840。选择未读取 validation/test；selected checkpoint manifest 为 `89e9f493...ed22c`，policy SHA256 为 `eb7e01f2...c1f159f`。
+- 冻结后 source-base validation reference 已完成：10 tasks × 50 fixed fresh states 为 `56/500`，per-task `{0:28,8:0,15:0,28:14,40:0,56:1,61:0,71:0,85:0,88:13}`；结果 SHA256 `3d19f00f...0cac9`，test 未打开。
 - shared LoRA 合同已实现并封存：37 targets、rank 32、alpha 16、dropout 0、1,485,312 parameters，支持 in-place injection 和 differentiable functional application；Writer/direct/RL 将共用同一挂载空间。
 - source-base evaluator 已通过真实 8-rank smoke：固定 state IDs 0–7 各出现一次、每卡一个 policy CUDA process、显存完全一致、退出后全清。该 smoke 的 `0/8` 不作行为结论。
 - 初始 source-base thirds 使用同一 8 tasks × 50 states 得到 step210/420/630=`3/400, 8/400, 15/400`；420→630 为 11 paired gains、4 paired losses。绝对 competence 仍低，故不冻结并只追加一次 315-step exact continuation。
 - frozen-VLM cache 正式产物已完成：70 tasks、3500 full episodes、537,946 frames，70 个 tensor 独立 size/SHA 全通过；manifest `ae5854a6...be127`。提取与 smoke/resume 均保持 8 卡各一个 CUDA rank。
 - Writer cold-start canonical path 已接通并通过真实 8-rank interrupted/resume profile：每 rank batch 384、steps 2–35 平均 3.426s、峰值 reserved 70.54GiB；step17 的 10 个 checkpoint 文件均验 SHA，恢复至 step35 后 70 tasks × 50 episodes 全覆盖。formal 已封存为 1575 steps 与 525/1050/1575 checkpoints，预计纯训练 89.93 分钟。
+- validation Writer cache 已完成 10×50 episodes / 63,544 frames；profile step35 的 8-rank fresh-eval smoke 生成完全一致的 task0 adapter SHA，并完成 8 条唯一 fixed-state rows。该 smoke 只证明 mechanics。
 
 ## 已明确退役
 
@@ -55,15 +57,15 @@
 
 ## 当前下一批动作
 
-1. 在 10 个 validation tasks 上完成 selected step630 frozen-base reference；固定 50 states 只作 fresh evaluation，test 继续封存。
-2. 从干净 commit 启动约 90 分钟 Writer cold start；训练等待期间继续实现 Writer/LoRA validation evaluator与 matched direct-LoRA oracle，不启动 RL 或 optional outer learning。
-3. 在 Writer 525/1050/1575 三个候选上按 validation 选择，并完成少量预声明 train tasks 的 source localization。
+1. 从干净 commit 启动约 90 分钟 Writer cold start；训练等待期间继续实现 matched direct-LoRA oracle，不启动 RL 或 optional outer learning。
+2. 在 Writer 525/1050/1575 三个候选上按 validation 选择，并完成少量预声明 train tasks 的 source localization。
+3. 在完全相同 fixed states/seeds 下报告 base / Writer / direct-LoRA 每 task 原始成功数；test 继续封存。
 4. 机制成立后才进入 Writer-only RL；optional outer learning 仍只可在 Phase F 之后。
 
 ## Canonical runner ownership
 
 - `scripts/train_source_base.py` 是 Phase B 唯一活动入口；`src/ember/source_base.py` 负责训练编排，`source_base_checkpoint.py` 只拥有 launch provenance 和 exact-resume 原子 checkpoint，现有 `writer/data.py` 提供共享的 HDF5/sampler owner。没有保留平行或版本化 runner。
-- `scripts/evaluate_source_base.py` 是 Phase B frozen-base fresh evaluation 的唯一入口；`src/ember/libero_evaluation.py` 只拥有 split/RNG/state schedule 和结果聚合，test role 在 Phase F 前不存在。`src/ember/lora.py` 是 Writer/direct/RL 的共享 37-target LoRA owner。
+- `scripts/evaluate_source_base.py` 是 base/Writer 共用的唯一 fresh-evaluation 入口；`src/ember/libero_evaluation.py` 只拥有 split/RNG/state schedule 和结果聚合，`writer/inference.py` 只拥有 Writer checkpoint/cache → task LoRA materialization，test role 在 Phase F 前不存在。`src/ember/lora.py` 是 Writer/direct/RL 的共享 37-target LoRA owner。
 - `scripts/train_writer_cold_start.py` 是 Phase C 唯一训练入口；`src/ember/writer/training.py` 只编排 frozen source policy、feature cache、Writer DDP 和 functional loss，`writer/checkpoint.py` 独占 exact-resume checkpoint。没有第二套 Writer runner。
 - 这些文件在 source base 冻结后继续作为可复现入口保留，不再复制出下一版 runner；只有出现第二个当前消费者时才提炼公共抽象。profile 和 resume-smoke 大权重是可删除的临时产物，正式 checkpoints、manifest、metrics 和 hashes 才是 retained evidence。
 

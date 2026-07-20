@@ -1,0 +1,38 @@
+schema_version = 1
+name = "smolvla_libero90_writer_source_teacher_weight_selection_v1"
+status = "frozen_before_source_reconstruction_validation_query_or_source_rollout_outcomes"
+predeclared_at_utc = "2026-07-20T02:47:00Z"
+
+[authority]
+writer_contract_relative_path = "configs/writer_cold_start_source_teacher_weight_recovery.toml"
+writer_contract_sha256 = "9c952660bd97c7a0b03e6e9962875c67a10e294845b48b31302e6491bdaba301"
+train_output_relative_path = "writer_cold_start/train_source_teacher_weight_segment1_20260720T015700Z"
+candidate_steps = [250, 500, 750, 1000]
+candidate_manifest_sha256 = ["d0fb38419d16bbb39602b7c64eec61ce4585c9f8ab00a1988d8066eaa73f1449", "2f7d05d4c9243d5a8b902d09479da282865de5a7a7d10eed1befe721ea29cb27", "3447597c405cc40ffc11c0c758bdd68835ca5628c34da72414c836ed4a91f95e", "51c9dcfaf16566352371cedb9ae8988fdf60c71f91ec19cb6131e0d7420beda8"]
+source_teacher_bundle_sha256 = "b9202a944ce66d13b826d56c0fa3cab5a2a2a22090f1a0dad6260ff2c27693f7"
+validation_test_held_rollout_access_before_selection = false
+test_held_access = false
+
+[selection]
+source_metric = "mean_teacher_normalized_gauge_invariant_physical_delta_squared_error"
+source_metric_maximum = 0.25
+validation_query_requires_every_task_better_than_frozen_base = true
+ranking = ["lowest_source_error", "highest_unweighted_validation_query_relative_reduction", "earliest_step"]
+ineligible_action = "no_closed_loop_and_one_bounded_acquisition_architecture_or_loss_diagnosis"
+raw_factor_mse = false
+
+[source_localization]
+purpose = "distinguish_source_acquisition_failure_from_validation_generalization_failure"
+task_selection_rule = "first_task_in_each_frozen_source_teacher_category_order"
+task_ids = [6, 19, 46, 34, 73]
+task_categories = ["drawer_open", "stove_place", "basket_pick_place", "spatial_relation", "book_shelf_or_container"]
+arms = ["frozen_base", "selected_writer", "matched_direct_source_teacher_lora"]
+rollouts_per_task_arm = 64
+policy_rng_seeds_per_task = 8
+primary_execution_horizon = 16
+deployment_horizon = 50
+paired_init_state_and_policy_rng = true
+direct_lora_retraining = false
+source_only = true
+run_before_validation_closed_loop = true
+test_held_access = false

@@ -41,7 +41,10 @@
 - 初始 source-base thirds 使用同一 8 tasks × 50 states 得到 step210/420/630=`3/400, 8/400, 15/400`；420→630 为 11 paired gains、4 paired losses。绝对 competence 仍低，故不冻结并只追加一次 315-step exact continuation。
 - frozen-VLM cache 正式产物已完成：70 tasks、3500 full episodes、537,946 frames，70 个 tensor 独立 size/SHA 全通过；manifest `ae5854a6...be127`。提取与 smoke/resume 均保持 8 卡各一个 CUDA rank。
 - Writer cold-start canonical path 已接通并通过真实 8-rank interrupted/resume profile：每 rank batch 384、steps 2–35 平均 3.426s、峰值 reserved 70.54GiB；step17 的 10 个 checkpoint 文件均验 SHA，恢复至 step35 后 70 tasks × 50 episodes 全覆盖。formal 已封存为 1575 steps 与 525/1050/1575 checkpoints，预计纯训练 89.93 分钟。
+- Writer cold-start formal seed 1 已在 commit `69bbdee` 完成 1575/1575 steps、exit 0，约 92.9 分钟、4,838,400 global queries；70 tasks 各精确消费 69,120 queries 并覆盖全部 50 episodes。最终 manifest `c30c49af...3357`、consumed identity `2029f311...4112`，每卡仍恰好一个 CUDA rank。
 - validation Writer cache 已完成 10×50 episodes / 63,544 frames；profile step35 的 8-rank fresh-eval smoke 生成完全一致的 task0 adapter SHA，并完成 8 条唯一 fixed-state rows。该 smoke 只证明 mechanics。
+- cold Writer 首个完整 validation RNG 已完成：step525/1050/1575=`58/500,63/500,60/500`，按预封存规则选择 step1050。相对 base `56/500`，selected 为 `31 gains / 24 losses / net +7`，正增益在 task28/task88 两类但 task0 `-9`；故 selection 完成而机制结论仍待独立 policy RNG 确认。选择 seal 为 `configs/writer_cold_start_selected_v1.json`，RNG2 合同已在 outcome 前封存且不得重选 checkpoint。
+- validation direct-LoRA 真实 8-rank profile 已从 step1 exact-resume 到 step10，8 tasks 的 16 个 checkpoint manifests 全部逐文件验证；batch384 峰值 reserved 69.09GiB、最慢约 2.816s/step，每卡一个 CUDA rank。formal 已封存为每 target task 180 steps、60/120/180 checkpoints，共 69,120 matched queries，且固定使用 final checkpoint。
 
 ## 已明确退役
 
@@ -57,10 +60,10 @@
 
 ## 当前下一批动作
 
-1. 完成已启动的约 90 分钟 Writer cold start；其间 matched direct-LoRA oracle、Writer-only RL 和 matched task-local RL 的 canonical runner 已实现，等待各自合法前序条件与 GPU 做真实 profile/resume，不提前启动 RL 或 optional outer learning。
-2. 在 Writer 525/1050/1575 三个候选上按 validation 选择，并完成少量预声明 train tasks 的 source localization。
-3. 在完全相同 fixed states/seeds 下报告 base / Writer / direct-LoRA 每 task 原始成功数；test 继续封存。
-4. 机制成立后才进入 Writer-only RL；optional outer learning 仍只可在 Phase F 之后。
+1. 用已封存的第二独立 policy RNG 在同一固定 50 states/相同 env seeds 上复核 frozen base 与 selected cold step1050；只作结论确认，不重选 checkpoint。
+2. 完成 validation target-action-supervised direct-LoRA oracle 的 formal fit 与同口径 fresh evaluation；真实 profile/resume 已通过，test 继续封存。
+3. cold step1050 的 Writer-only RL 真实 profile/resume 已接续启动；profile 通过后封存正式 task-cycle 预算，并按 validation 比较 cold-start 与 reward-trained Writer，随后进入 matched task-local RL。
+4. optional outer learning 只可在 Phase F 完成后考虑，不阻塞核心 Goal。
 
 ## Canonical runner ownership
 

@@ -75,13 +75,13 @@
 - [ ] 每个 validation task 用自己的全部 50 条 teacher action episodes 训练 matched direct LoRA oracle，并明确标注 action-supervised reference。
 - [ ] Phase F 解封前不运行任何 test policy evaluation、不训练 test direct LoRA，也不读取 test actions/reward/success。
 
-direct oracle 的单一 canonical runner 已接通但 formal gate 保持关闭：每个 validation task 独立从 selected step630 注入同一 37-target LoRA，只用自己的 50 条 action episodes 做标准 action/flow loss；每 task 固定消费 69,120 queries，与 Writer cold-start 的 `1575×8×384/70` 完全相等。8-rank task assignment、task-local optimizer/scheduler、sampler identity、RNG 与原子 checkpoint 已实现，等待 Writer 正式训练释放 GPU 后做真实 OOM/resume profile。
+direct oracle 的单一 canonical runner 已接通：每个 validation task 独立从 selected step630 注入同一 37-target LoRA，只用自己的 50 条 action episodes 做标准 action/flow loss；每 task 固定消费 69,120 queries，与 Writer cold-start 的 `1575×8×384/70` 完全相等。8-rank task assignment、task-local optimizer/scheduler、sampler identity、RNG 与原子 checkpoint 已实现。真实 batch384 profile 在 8 tasks 上从 step1 exact-resume 至 step10，峰值 reserved 69.09GiB、约 2.82s/step，8 卡各一个 rank；formal 已据此封存为每 task 180 steps 与 60/120/180 checkpoints。
 
 已触发且只触发一次上述停止规则：从 step630 exact-resume 到step945，新增315 steps、约14分钟，checkpoints735/840/945。step945 与630 均为 `15/400`，配对 `5 gains / 5 losses`，故已按规则冻结step630且不补测735/840；selection seal 为 `configs/source_base_selected_v1.json`。
 
 ## Phase C：Writer cold start
 
-状态：train/validation 正式 feature cache、真实 8-rank interrupted/resume profile 和 Writer fresh-eval smoke 已完成；formal 参数已封存，等待从干净 commit 启动 1575-step cold start。
+状态：train/validation 正式 feature cache、真实 8-rank interrupted/resume profile、Writer fresh-eval smoke 和 1575-step formal cold start 已完成；525/1050/1575 三个候选的首个 policy RNG validation 已完成，并按预封存规则选择 step1050。
 
 固定结构：
 
@@ -96,6 +96,10 @@ frozen-VLM cache 的唯一入口与合同已封存为 `scripts/cache_writer_feat
 
 真实 functional profile 采用每 rank batch 384、global batch 3072；step 17 checkpoint 的 10 个文件独立通过 SHA，随后 exact-resume 至 step 35。35 steps 恰好覆盖 4 个完整 70-task cycles，每 task 1536 queries 且全部 50 episodes 覆盖；steps 2–35 平均 3.426s，峰值 allocated/reserved 68.00/70.54GiB。正式合同据此封存为 1575 steps、checkpoints 525/1050/1575，预计纯训练 89.93 分钟。
 
+正式 seed-1 trajectory 已在 commit `69bbdee` 上完成 1575/1575 steps、exit 0，wall-clock 约 92.9 分钟；累计 4,838,400 queries。最终每个 70 train task 精确消费 69,120 queries 且覆盖全部 50 episodes，8 卡始终各一个 CUDA rank，峰值 reserved 70.71GiB。三个 thirds checkpoint 的 Writer、optimizer/scheduler 与 8-rank RNG 文件均由 manifest 做 size/SHA 封存。
+
+同一 500 条 validation rows 上，frozen base 与 Writer step525/1050/1575 的成功数分别为 `56/500` 与 `58/500, 63/500, 60/500`。step1050 按预封存规则获选；其 per-task 为 `{0:19,8:0,15:0,28:24,40:0,56:1,61:0,71:0,85:0,88:19}`，相对 base 配对 `31 gains / 24 losses / net +7`。正增益来自 KITCHEN-actuation task28 与 STUDY-pick-place task88，但 aggregate 仅 +1.4pp 且 task0 回退 9，因此 checkpoint 选择已完成、核心机制结论仍未成立；已在读取第二 RNG outcome 前封存只复核 base 与 selected step1050、不得重选 checkpoint 的独立 policy-RNG 合同。
+
 validation action-hidden cache 覆盖预封存 10 tasks × 50 full episodes、63,544 frames。profile step35 仅作 fresh-eval mechanics smoke：8 ranks 对 task0 生成的完整 LoRA SHA 完全一致，8 个固定 state 各出现一次并成功闭环退出；该小分母结果不用于任何行为判断。
 
 动作：
@@ -106,8 +110,9 @@ validation action-hidden cache 覆盖预封存 10 tasks × 50 full episodes、63
 - [x] 70-task cycle 之上再保证每 task 50 episodes 的最小覆盖；记录 consumed episode/chunk identity。
 - [x] functional action/flow loss；action 不进入 Writer。
 - [x] 只做 shape/OOM/NaN/gradient/freeze/resume/leakage smoke。
-- [ ] 8 GPU 真实训练，初始总预算 ≤约 90 分钟。
-- [ ] checkpoints 位于估算总 steps 的 1/3、2/3、3/3，每个边界覆盖 70 tasks。
+- [x] 8 GPU 真实训练，初始总预算约 90 分钟。
+- [x] checkpoints 位于估算总 steps 的 1/3、2/3、3/3，每个边界覆盖 70 tasks。
+- [x] 在 10 个跨类别 validation tasks 上按预封存规则选择 Writer cold-start checkpoint。
 - [ ] 在 10 个跨类别 validation tasks 比 frozen source embodiment base、Writer、direct LoRA oracle。
 - [ ] 保存原始 per-task successes、rollouts、seeds、steps、数据、GPU 和 wall-clock。
 

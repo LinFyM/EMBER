@@ -57,6 +57,25 @@
 - 正式 cold-start 已封存为 1575 steps、525/1050/1575 thirds；按 profile 预计纯训练 89.93 分钟。profile 只证明 mechanics 和资源合同，不能作为 Writer 行为结论。
 - fresh evaluator 已能从 checkpoint 与 validation cache 生成、注入同一 37-target LoRA。profile step35 的真实 smoke 中，8 ranks 对 task0 生成的 adapter SHA256 均为 `067780eb...aa421`，8 个固定 state 各一条、设备/EGL 映射完整并 exit 0；小分母 `6/8` 明确不作性能证据。
 
+### Writer functional cold-start：formal seed 1 完成
+
+- commit `69bbdee` 的正式 trajectory 完成 1575/1575 steps、exit 0，约 92.9 分钟；累计 4,838,400 global queries。最终 70 个 train tasks 各精确消费 69,120 queries，并各覆盖全部 50 episodes。
+- 525/1050/1575 三个 checkpoint 均在完整 70-task cycle 边界保存；最终 checkpoint 的 10 个 Writer、trainer 与 rank-RNG 文件共 150,436,331 bytes，逐文件 size/SHA 校验通过，manifest 为 `c30c49af...3357`，consumed identity 为 `2029f311...4112`。
+- 全程每卡一个 Writer CUDA rank，GPU0 无额外模型/controller context；最终 peak allocated/reserved 为 68.00/70.71GiB，最后一步吞吐 916.1 queries/s。训练 loss 与机械完成本身不作为 Writer 功能价值结论，行为结论只取预封存 validation rows。
+
+### Writer cold-start：首个 validation policy RNG 选择 step1050，但增益仍边缘
+
+- frozen source base 为 `56/500`；Writer step525/1050/1575 分别为 `58/500, 63/500, 60/500`。全部结果各含 500 个唯一 `(task_id, init_state_id)` rows，环境与 policy seed 逐 row 匹配 base，每个 task 的 adapter hash 在 8 ranks 间唯一一致。
+- 预封存排名选择 step1050。它的 per-task 原始成功数为 `{0:19,8:0,15:0,28:24,40:0,56:1,61:0,71:0,85:0,88:19}`；相对 base `{0:28,8:0,15:0,28:14,40:0,56:1,61:0,71:0,85:0,88:13}` 是 `31 gains / 24 losses / net +7`。
+- 正增益落在 KITCHEN-actuation task28 `+10` 与 STUDY-pick-place task88 `+6`，但 KITCHEN-actuation task0 同时 `-9`，aggregate 只增加 1.4pp。因此这足以确定后续 cold initialization，不足以声称 Writer 已明显跨类别优于 base。
+- selection 与所有 artifact hashes 已封存在 `configs/writer_cold_start_selected_v1.json`。根据既有“policy sampling 方差可能左右判断时加第二 RNG”规则，已在查看新 outcome 前封存 `configs/source_base_eval_rng2_v1.json`；它只比较 base 与已选 step1050，不能重新选择 checkpoint，test 仍未打开。
+
+### Validation direct-LoRA：真实 profile/resume 通过
+
+- 8 个 validation tasks 各由一个独立 GPU rank 从同一 frozen source base 训练自己的 37-target LoRA；每卡恰好一个 CUDA process，batch384 的 peak allocated/reserved 为 67.09/69.09GiB，实测最慢 step 2.816 秒。
+- 每 task 在 step1 保存后由新进程 exact-resume 到 step10；两个边界的 16 个 checkpoint manifests 均逐文件验证 LoRA、trainer 与 RNG state。step1 已覆盖全部 50 teacher episodes，step10 每 task 消费 3,840 queries。
+- profile 只验证 mechanics、恢复和资源合同，不看小步性能。formal 已封存为每 task 69,120 matched queries，即 batch384 × 180 steps，checkpoints 60/120/180；10 个 validation task 都使用 final step180，不按 policy outcome 选择。
+
 ### Gate -1：通过但带残差
 
 - 初始 action-hidden-video probe 未达到预声明标准。

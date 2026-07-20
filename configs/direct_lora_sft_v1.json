@@ -47,8 +47,17 @@
     "task_count": 8
   },
   "formal_run": {
-    "status": "pending_profile",
+    "status": "sealed",
     "expected_world_size": 8,
-    "task_count": 10
+    "task_count": 10,
+    "per_rank_batch_size": 384,
+    "total_steps": 180,
+    "checkpoint_steps": [60, 120, 180],
+    "profile_run_contract_file_sha256": "8407d1516c2c2f0c9aea8ed5f3286b0b4e2c804b881a3de66aa5a4e547e285ce",
+    "profile_contract_sha256": "b1328ce2992a6bc5ffdee489350768f55d952f1192769745cb90614f9242246d",
+    "profile_interrupted_at_step": 1,
+    "profile_resumed_through_step": 10,
+    "profile_peak_reserved_gib_per_rank": 69.09375,
+    "profile_step_seconds_max": 2.8157302339095622
   }
 }

@@ -11,7 +11,7 @@ EMBER 的核心是把无法直接用于 action-SFT 的视频任务知识编译�
 
 ## 学习对象
 
-共享 Writer 在 source tasks 上学习 video/language 到 LoRA 的映射。每个 source update：
+`Action-Supervised Writer (AS-Writer)` 在 source tasks 上学习 video/language 到 LoRA 的映射。每个 source update：
 
 1. 采一个 source task；
 2. 随机采一条 action-hidden teacher video；
@@ -34,16 +34,16 @@ Writer zero-interaction LoRA 是第一主结果。若它本身很强，无需为
 
 可选 reward learning 有两类：
 
-- shared/joint Writer RL：跨多个 source tasks 的 reward 联合更新 Writer；
+- `Reward-Trained Writer (RL-Writer)`：从随机 Writer 初始化，或仅做预声明的极短 AS warm-up，然后跨多个 source tasks 只用环境 reward 联合更新 Writer；默认不从完整 AS-Writer 继续，从而直接检验没有 teacher actions 能否学出 Writer；
 - task-local LoRA RL：Writer/base 冻结，单 task 原位更新该 LoRA，与 identity/zero-init 做 matched comparison。
 
 后者每个 adaptation run 只在开始时抽一次 teacher video，随后 LoRA 持续存在。两臂用相同 official BDDL random resets、seeds、interactions、updates 和 selection rule。固定 `.pruned_init` states 只用于 fresh evaluation。source-only outer learning 只能在 Phase F 之后。
 
 ## Base policy
 
-当前先测试 generic pretrained π0.5 的 LIBERO zero-shot feasibility，不默认 action-SFT source base。generic π0.5 没有 LIBERO action normalization；必要的 action/state interface stats 只能从 28 train tasks 计算，且不更新模型权重。
+当前先测试 generic pretrained π0.5 的 LIBERO zero-shot feasibility，不默认 action-SFT source base。generic π0.5 没有 LIBERO action normalization；必要的 action/state interface stats 只能从 24 development-train tasks 计算，且不更新模型权重。
 
-如果 base feasibility 很低，是否增加 28/32-task source-base action-SFT 由 owner 根据结果另行决定，不是本轮自动分支。
+如果 base feasibility 很低，是否增加 24/32-task source-base action-SFT 由 owner 根据结果另行决定，不是本轮自动分支。无论是否把它作为共同起点，最终都会报告一个在 32 source tasks 上、与 AS-Writer 匹配 optimizer-step budget 的 `Source-SFT π0.5` baseline；它在 test 不看 held video。
 
 ## Information wall
 

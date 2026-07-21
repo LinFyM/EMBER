@@ -21,12 +21,14 @@
 
 - Backbone：通用预训练 π0.5；不默认建立 action-SFT source base。
 - Benchmark：`libero_spatial`、`libero_object`、`libero_goal`、`libero_10`（文档中可称 LIBERO-Long）。
-- Development split：每 suite 7 train / 1 validation / 2 test，总计 28/4/8；按 specification-only deterministic hash 封存，不用任何 policy outcome。
-- Final retraining：未来只有在 validation 完成方法选择后，才把 4 个 validation tasks 合入 source，形成 32 source / 8 test；当前不得启动。
+- Development split：每 suite 6 train / 2 validation / 2 test，总计 24/8/8；按 specification-only deterministic hash 封存，不用任何 policy outcome。
+- Final retraining：未来只有在 validation 完成方法选择后，才把 8 个 validation tasks 合入 source，形成每 suite 8 source / 2 test、总计 32 source / 8 test；当前不得启动。
 - EMBER 输入：训练和测试均恰好一条 action-hidden teacher video + task language。
 - Source functional training：同一 task 内独立随机抽一条 teacher video和一条 action-supervised agent episode/chunk，不要求 episode 配对；action 只进 functional loss，不进 Writer。
 - Zero-interaction evaluation：每个 rollout 从该 task 的 teacher videos 中独立随机抽一条，Writer 生成完整 task-specific LoRA 后执行。
 - Writer 可以直接产生很强的 task LoRA；RL 不是必选尾巴。若做 shared Writer RL，可跨 source tasks 联合更新 Writer。
+- `Action-Supervised Writer (AS-Writer)` 是原“Writer cold start”的正式名称；它只在 source tasks 通过 functional action loss 监督训练。
+- `Reward-Trained Writer (RL-Writer)` 是独立路线：从随机 Writer 初始化，或只做预声明的极短 AS warm-up 后直接用 source reward 联合训练；默认不从已完成的 AS-Writer 继续，以检验没有 teacher actions 能否训练 Writer。
 - Future task-local RL：一条 adaptation run 开始时抽一条 teacher video并固定其 Writer LoRA；identity/zero-init 与 Writer-init 两臂匹配 task、env seeds、随机初态和 budget。
 - Optional source-only outer learning 只能放在 Phase F 之后，且不阻塞核心结果。
 
@@ -34,14 +36,14 @@
 
 - split 只读 suite task language、BDDL filename/specification 和 task identity；不得用 action、reward、proprio、terminal、normalization 或 policy result 选 task。
 - 当前 π0.5 zero-shot 测试不读取 validation/test teacher actions，也不使用在 40 个 LIBERO tasks 上 action-finetuned 的 `pi05_libero` checkpoint。
-- 通用 base 没有可直接执行 LIBERO action space 的 norm stats；若推理接口必须 normalization，只能从 28 个 train tasks 的 action/state 数据计算并封存。这是接口校准，不更新模型权重。
+- 通用 base 没有可直接执行 LIBERO action space 的 norm stats；若推理接口必须 normalization，只能从 24 个 development-train tasks 的 action/state 数据计算并封存。这是接口校准，不更新模型权重。
 - 旧 70/10/10 normalization、SmolVLA source base、Writer 和 RL checkpoint 与新协议不兼容。
 
 ## Evaluation contract
 
 当前 π0.5 feasibility test 服从 Physical Intelligence 官方 LIBERO inference recipe：
 
-- `pi05_base` 模型结构与权重；π0.5 `action_horizon=10`；
+- `pi05_base` 模型结构与权重；LeRobot official conversion 保持 `chunk_size=50`、`n_action_steps=10`，evaluator 每次只执行前 5 actions 后重规划；
 - render 256×256，模型 resize-with-pad 到 224×224；agentview 与 wrist image 均旋转 180°；
 - state 为 EEF position + quaternion-to-axis-angle + gripper qpos；输出前 7 维 action；
 - `replan_steps=5`、inference seed 7、每 task 50 个 official fixed init states；
@@ -57,6 +59,7 @@
 - 只用 LoRA；不得引入 bank、geometry、shared update subspace、residual escape 或额外 shared trainable adapter。
 - 不依赖、不修改、不混入 MemLLM。
 - action-supervised direct LoRA 仅作 privileged oracle；不能用它否定 action-hidden-video setting 的必要性，也不能混入同信息墙主对照。
+- 最终增加 `Source-SFT π0.5`：在合并后的 32 source tasks 上，以和 AS-Writer 相同的 optimizer-step budget 做 action-SFT，不读取 test video/action，随后直接测 8 test tasks；它用于检验 EMBER 多看到 held teacher video 是否优于单纯加强 source-policy SFT。
 
 ## Compute and execution
 

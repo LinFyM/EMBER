@@ -1,12 +1,24 @@
 # EMBER Findings
 
+## 2026-07-21 最新 owner correction（活动 authority）
+
+- development split 在任何新 π0.5 rollout 前从每 suite 7/1/2 改为 6/2/2，总计 24 train / 8 validation / 8 test；沿用同一 specification-only SHA256 排序，8 个 test task 不变。validation 选定方案后合并为最终 32 source / 8 test 并从规定初态重训。
+- 原“Writer cold start”正式称为 `Action-Supervised Writer (AS-Writer)`。
+- `Reward-Trained Writer (RL-Writer)` 是独立路线：从随机初始化 Writer，或只做预声明的极短 AS warm-up，然后直接用跨 source-task reward 联合训练；默认不从完整 AS-Writer 继续，明确检验没有 teacher actions 能否训练 Writer。
+- 最终新增 `Source-SFT π0.5` baseline：在 32 source tasks 上以和 AS-Writer 相同的 optimizer-step budget 做 action-SFT，test 不看 held video/action。它与 AS-Writer 的差异是后者额外得到一条 held teacher video。
+- 当前执行边界不变：只运行 generic π0.5 的 8 test-task zero-shot feasibility；结果出来立即停止，不自动运行上述后续训练。
+- generic `lerobot/pi05_base` revision `7de663972b7817d2c4cf2d84c821153dfea772e9` 已完整下载；14,467,165,872-byte weights SHA256 为 `0eb11ca9587678c1d2ef8cf32807c29f8ce53a2bfdfc1aa4a4c96f16fca59b0f`。
+- 24-task train-only quantile normalization 使用 `HuggingFaceVLA/libero@8695891` 的 column-range reads：先读 377 个 parquet 的 task IDs，只对 62 个纯 source 文件读取 state/action，共 43,785 rows；24 train tasks 均有贡献，validation/test action 列从未在 mixed/held 文件上打开。normalization SHA256 为 `a97857dc...3b1f1`。
+- LeRobot processor 默认会向 gated `google/paligemma-3b-pt-224` 请求 tokenizer，匿名环境得到 401。当前改为 OpenPI 同 revision 明确使用、匿名公开的 `gs://big_vision/paligemma_tokenizer.model`；其 SHA256 为 `8986bb4f...168fc6`，本地预处理的 prompt、state binning、BOS、padding/mask 已逐 token 对官方 OpenPI 实现核验。
+- π0.5 evaluator mechanics 已通过。单卡吞吐 profile（同一 Spatial task、full-horizon smoke，不作性能判断）：batch 1 为 27.52 秒/episode，batch 8 为 158.07/8=19.76 秒/episode，batch 16 为 313.24/16=19.58 秒/episode；batch 8→16 仅约 0.9% 提升，峰值显存约 20.1→23.2GB。正式评测锁定每卡一个 policy CUDA process、每进程 8 个持久 env；瓶颈是官方 π0.5 推理计算而不是显存容量。
+
 ## 2026-07-21 protocol reset
 
-owner 已将活动研究协议改为 generic π0.5 + 四个标准 LIBERO suites + 每 suite 7/1/2 + one-video Writer。下文全部 SmolVLA/70-10-10 数字仍是真实历史证据，但从本节开始只作 provenance，不能作为新协议 checkpoint、normalization、split 或完成状态。
+owner 已将活动研究协议改为 generic π0.5 + 四个标准 LIBERO suites + 每 suite 6/2/2 + one-video Writer。下文全部 SmolVLA/70-10-10 数字仍是真实历史证据，但从本节开始只作 provenance，不能作为新协议 checkpoint、normalization、split 或完成状态。
 
 当前待回答的唯一实证问题是 generic `pi05_base` 在预封存 8 test tasks 的 400 个 official fixed-state rollouts 上有多少成功。该结果尚未产生；在它产生前不得声称 π0.5 有或没有 LIBERO zero-shot competence。
 
-已核验官方实现事实：generic `pi05_base` 是 fine-tuning base；`pi05_libero` 是另一个在 LIBERO 上 action-finetuned 的 inference checkpoint。当前禁止后者。官方 generic Hugging Face pre/post processors没有可执行 LIBERO action space 的 normalization state，因此有效的 generic-base test 必须从 28 source tasks 计算 interface-only state/action stats，同时保持 validation/test action read count 为零。
+已核验官方实现事实：generic `pi05_base` 是 fine-tuning base；`pi05_libero` 是另一个在 LIBERO 上 action-finetuned 的 inference checkpoint。当前禁止后者。官方 generic Hugging Face pre/post processors没有可执行 LIBERO action space 的 normalization state，因此有效的 generic-base test 必须从 24 development-train tasks 计算 interface-only state/action stats，同时保持 validation/test action read count 为零。
 
 ---
 

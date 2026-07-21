@@ -1,0 +1,9 @@
+{
+  "config_sha256": "367869712a2847c27e95c431ecb03f17bec4eee01a63995e2fb2d91940752b53",
+  "model_repo": "lerobot/pi05_base",
+  "model_revision": "7de663972b7817d2c4cf2d84c821153dfea772e9",
+  "schema_version": 1,
+  "weights_bytes": 14467165872,
+  "weights_filename": "model.safetensors",
+  "weights_sha256": "0eb11ca9587678c1d2ef8cf32807c29f8ce53a2bfdfc1aa4a4c96f16fca59b0f"
+}

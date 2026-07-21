@@ -19,6 +19,7 @@ dependencies = [
   "peft==0.19.1",
   "robosuite==1.4.0; sys_platform == 'linux'",
   "scipy==1.18.0",
+  "sentencepiece==0.2.0",
   "torch==2.11.0; sys_platform == 'linux'",
   "torchcodec==0.11.1; sys_platform == 'linux'",
   "trackio==0.30.1",

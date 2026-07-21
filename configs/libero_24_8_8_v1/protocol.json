@@ -17,30 +17,30 @@
       "normalization",
       "policy_outcome"
     ],
-    "algorithm": "sha256_lexicographic_7_1_2_v1",
+    "algorithm": "sha256_lexicographic_6_2_2_v1",
     "seed": "20260721",
     "key": "seed\\0suite_name\\0task_name\\0language\\0bddl_filename",
-    "assignment": "sort ascending by SHA256 digest; ranks 0..6 train, rank 7 validation, ranks 8..9 test",
+    "assignment": "sort ascending by SHA256 digest; ranks 0..5 train, ranks 6..7 validation, ranks 8..9 test",
     "suites": {
       "libero_spatial": {
-        "train": [0, 2, 3, 4, 5, 7, 9],
-        "validation": [1],
+        "train": [0, 2, 4, 5, 7, 9],
+        "validation": [1, 3],
         "test": [6, 8]
       },
       "libero_object": {
-        "train": [1, 2, 4, 5, 6, 8, 9],
-        "validation": [3],
+        "train": [2, 4, 5, 6, 8, 9],
+        "validation": [1, 3],
         "test": [0, 7]
       },
       "libero_goal": {
-        "train": [0, 1, 2, 5, 6, 8, 9],
-        "validation": [3],
+        "train": [0, 1, 2, 5, 8, 9],
+        "validation": [3, 6],
         "test": [4, 7]
       },
       "libero_10": {
         "display_name": "LIBERO-Long",
-        "train": [2, 4, 5, 6, 7, 8, 9],
-        "validation": [1],
+        "train": [4, 5, 6, 7, 8, 9],
+        "validation": [1, 2],
         "test": [0, 3]
       }
     }
@@ -124,16 +124,18 @@
     "forbidden_model": "pi05_libero",
     "openpi_revision": "15a9616a00943ada6c20a0f158e3adb39df2ccac",
     "weight_updates": 0,
-    "normalization_source": "28 train tasks only",
+    "normalization_source": "24 development-train tasks only",
     "validation_action_reads": 0,
     "test_action_reads": 0,
     "num_trials_per_task": 50,
+    "envs_per_policy_process": 8,
     "seed": 7,
     "render_resolution": 256,
     "model_resolution": 224,
     "num_steps_wait": 10,
     "dummy_action": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0],
-    "action_horizon": 10,
+    "model_chunk_size": 50,
+    "policy_n_action_steps": 10,
     "replan_steps": 5,
     "num_inference_steps": 10,
     "max_steps": {

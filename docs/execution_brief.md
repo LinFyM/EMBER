@@ -14,13 +14,13 @@
 
 开发期永久封存：
 
-- 7 train/source tasks；
-- 1 validation task；
+- 6 train/source tasks；
+- 2 validation tasks；
 - 2 test tasks。
 
-总计 28/4/8。精确 task IDs、language、BDDL/init-state identity、hash seed、排序算法和文件 hashes 位于 `configs/libero_28_4_8_v1/`。算法只对 `seed + suite + task name + language + BDDL filename` 做 SHA256 排序：前 7 train、第 8 validation、后 2 test；没有读取任何 action、reward、normalization 或 policy outcome。
+总计 24/8/8。精确 task IDs、language、BDDL/init-state identity、hash seed、排序算法和文件 hashes 位于 `configs/libero_24_8_8_v1/`。算法只对 `seed + suite + task name + language + BDDL filename` 做 SHA256 排序：前 6 train、中间 2 validation、后 2 test；没有读取任何 action、reward、normalization 或 policy outcome。
 
-validation 完成架构、checkpoint 和预算选择后，未来最终训练才把 4 个 validation tasks 合入 source，形成 32 source / 8 test。当前 feasibility evaluation 之后必须停住，不执行该步骤。
+validation 完成架构、checkpoint 和预算选择后，未来最终训练才把 8 个 validation tasks 合入 source，形成 32 source / 8 test。当前 feasibility evaluation 之后必须停住，不执行该步骤。
 
 ## 3. π0.5 feasibility gate
 
@@ -29,7 +29,7 @@ validation 完成架构、checkpoint 和预算选择后，未来最终训练才�
 - 权重：generic `pi05_base`，不得使用 `pi05_libero` 或其他读过 40 个目标 tasks actions 的 fine-tuned checkpoint；
 - 不训练任何模型参数；
 - 不读取 validation/test teacher video、action、reward outcome；
-- 若动作接口必须 normalization，只从 28 train tasks 的 state/action frames 计算并封存；
+- 若动作接口必须 normalization，只从 24 development-train tasks 的 state/action frames 计算并封存；
 - 在 8 个 test tasks 各跑 50 个 official fixed init states，共 400 episodes；
 - 报告每 task raw successes/50 和 aggregate，不用结果反选 task。
 
@@ -42,7 +42,7 @@ validation 完成架构、checkpoint 和预算选择后，未来最终训练才�
 - render resolution 256；resize-with-pad 224；
 - agentview、wrist view 均 180° rotate；第三视角补零；
 - state：EEF xyz + quaternion axis-angle + two gripper qpos；
-- π0.5 action horizon 10；每次规划执行前 5 actions；10 flow inference steps；
+- LeRobot official π0.5 conversion 保持 model chunk 50、`n_action_steps=10`；每次规划只执行前 5 actions；10 flow inference steps；
 - seed 7；每 task 50 fixed init states；
 - reset 后 10 dummy actions `[0,0,0,0,0,0,-1]`；
 - done/success 即终止；
@@ -52,17 +52,17 @@ validation 完成架构、checkpoint 和预算选择后，未来最终训练才�
 
 ## 5. 后续 EMBER 设计（仅记录，不在本轮运行）
 
-### Writer cold start
+### Action-Supervised Writer (AS-Writer)
 
 - 输入：task language + 恰好一条 action-hidden teacher video；
 - 输出：完整 task-specific LoRA；
-- source step：先从 task 均匀混合的 28 source tasks 采 task，再独立随机采 video episode 与 agent action episode/chunk；两者只要求同 task，不要求同 episode；
+- development source step：先从 task 均匀混合的 24 source tasks 采 task，再独立随机采 video episode 与 agent action episode/chunk；两者只要求同 task，不要求同 episode；最终冻结方案后在合并的 32 source tasks 上从规定初态重训；
 - video 不含 action/proprio/reward/terminal/task ID/filename；actions 只进入 frozen π0.5 + functional LoRA 的 behavior loss；
 - held evaluation：每个 rollout 从 50 条 teacher videos 随机采一条，Writer 生成 LoRA 后执行。
 
 ### Reward learning
 
-Writer-only RL 可跨 source tasks 联合更新 Writer；生成的 LoRA 是否原位更新取决于明确实验，不把 Writer 限定成单一算法。
+`Reward-Trained Writer (RL-Writer)` 是与 AS-Writer 分开的路线：从随机初始化 Writer 开始，或只允许预声明的极短 AS warm-up，然后直接跨 source tasks 用 reward 联合更新 Writer。默认禁止把完整 AS-Writer 当作 RL-Writer 起点；核心问题是没有 teacher actions 时能否仅靠 source reward 训练出 video-to-LoRA Writer。生成 LoRA 是否原位更新取决于明确实验，不把 Writer 限定成单一算法。
 
 matched task-local RL 作为第二实验：每个 adaptation run 抽一条 teacher video并固定 Writer initialization；identity/zero-init 与 Writer-init 使用相同 task、env seeds、BDDL random reset sequence、interaction/update budget 和 checkpoint rule。RL 与 checkpoint selection 不得使用 fixed `.pruned_init` states；保存 worker RNG/seed schedule 和 interaction cursor。fixed 50 states 只用于 fresh evaluation。
 
@@ -70,7 +70,9 @@ optional source-only outer learning 必须放在 Phase F 之后。
 
 ## 6. Baselines 与 claim
 
-主同信息墙比较：generic/frozen π0.5、EMBER one-video LoRA、ViVLA-style one-video direct conditioner，以及未来匹配的 zero-init vs Writer-init reward adaptation。目标 action 可见的 direct LoRA SFT 只作 privileged oracle。
+主同信息墙比较：generic/frozen π0.5、AS-Writer one-video LoRA、RL-Writer one-video LoRA、ViVLA-style one-video direct conditioner，以及未来匹配的 zero-init vs Writer-init reward adaptation。目标 action 可见的 direct LoRA SFT 只作 privileged oracle。
+
+最终另设 `Source-SFT π0.5`：在合并后的 32 source tasks 上，从同一 generic π0.5 出发，以和 AS-Writer 相同的 optimizer-step budget 做 action-SFT；test 时不读取 teacher video 或 action，直接测同一 8 tasks。它控制“同样在 32 个 source tasks 上训练，但只有 EMBER 额外读取 held video”这一差异。
 
 EMBER 的核心优势不是“必须做 RL”，而是把 action-hidden video 编译成可复用参数。若生成的 LoRA zero-interaction 已强，这是更好的结果；若其后 reward learning 更快，再增加 adaptation-efficiency claim。
 

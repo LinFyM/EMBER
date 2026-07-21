@@ -15,7 +15,7 @@
 
 ViVLA 在 source 上学习如何用 expert video condition 当前 robot policy，在 held LIBERO task 上只看视频、不读取 held actions，也不做 target action-SFT。这与 EMBER 的信息条件可以直接匹配；是否每个 policy step 重看视频不是不公平，因为那是方法差异。
 
-公平比较固定：相同 π0.5 base、28/32 source tasks、one-video sampling、held task IDs、current observation、target action wall 和 rollout evaluator。ViVLA 输出在线 conditioned actions；EMBER 一次把视频编译为可复用 LoRA。报告 success、video preprocessing time、policy latency、memory，并在需要时给相同 reward budget。
+公平比较固定：相同 π0.5 base、24/32 source tasks、one-video sampling、held task IDs、current observation、target action wall 和 rollout evaluator。ViVLA 输出在线 conditioned actions；EMBER 一次把视频编译为可复用 LoRA。报告 success、video preprocessing time、policy latency、memory，并在需要时给相同 reward budget。
 
 ## Direct LoRA oracle
 
@@ -24,6 +24,7 @@ target-action-supervised LoRA 是“教练拉着手”的 privileged upper bound
 ## 其他 baseline
 
 - generic/frozen π0.5：没有 target video 的下界，也是当前 feasibility test。
+- `Source-SFT π0.5`：在最终 32 source tasks 上按 AS-Writer 相同 optimizer-step budget 做 action-SFT，test 不看 held video；它控制 source-side training，并检验 EMBER 额外读取 held video 的价值。
 - language-only parameter generator：检验视频是否提供语言之外的信息；最终可选成熟 HyPoGen/DISC-style 方法，不需要重复多个近同构 arm。
 - retrieval/average source LoRA：检验 Writer 是否只是 nearest-task selection。
 - matched ordinary LoRA RL：检验 video initialization 是否提高 reward efficiency。

@@ -5,14 +5,14 @@
 ## 当前状态
 
 - active Goal 已替换为 π0.5 feasibility test；没有 token budget。
-- 本次 owner correction 前的最新已推送 commit 为 `6bb13de`；当前工作树正在实现 24/8/8 protocol 与 π0.5 evaluator，正式 launch 前必须再提交并保持 clean。
+- formal evaluation commit 为 `bf27ebc`；24/8/8 protocol 与 π0.5 evaluator 已实现并在 clean Git 上运行。
 - 当前主线是四个标准 LIBERO suites，每 suite 6 train / 2 validation / 2 test；不是 LIBERO-90 70/10/10。
 - 当前 backbone 是 generic π0.5；先不建立 source embodiment base。
 - EMBER train/test 都只输入一条 action-hidden teacher video；source video 与 action episode在 task 内独立采样。
 - 原 Writer cold start 已改名 `Action-Supervised Writer (AS-Writer)`；`Reward-Trained Writer (RL-Writer)` 改为随机初始化或仅极短 AS warm-up 后的独立 source-reward 路线，不默认继承 AS-Writer。
 - 最终 baseline 增加 `Source-SFT π0.5`：合并后的 32 source tasks、与 AS-Writer 相同 optimizer-step budget、test 不看 teacher video。
-- 当前尚未运行正式 π0.5 test，也没有读取 8 test tasks 的 teacher actions；单卡 mechanics/throughput smoke 已完成且不作性能判断。
-- `/data/ymdai` 当前约 333GB；在 500GB operator cap 下有约 167GB headroom。新模型、环境、24-task source-only numeric data 与 outputs 的预计峰值必须保持在该余量内。
+- 正式 generic π0.5 test 已完成，8 个 test tasks 均为 `0/50`，总计 `0/400`；8 test tasks 的 teacher actions 从未读取。当前停止，不自动建立 source base。
+- `/data/ymdai` formal launch 前约 354GB；在 500GB operator cap 下仍有约 146GB headroom。
 - 当前 `.venv` 有 PyTorch 2.11/CUDA 12.8、8 张可见 GPU、LeRobot 0.6.0 和 LIBERO simulator；generic π0.5 checkpoint revision `7de6639` 已下载，14,467,165,872-byte weights SHA256 为 `0eb11ca9...ca59b0f`。
 
 ## 已核验的官方事实
@@ -25,6 +25,24 @@
 - LeRobot 默认 tokenizer loader 会访问 gated Google repo；改用同一 OpenPI revision 明确引用、可匿名读取的 `gs://big_vision/paligemma_tokenizer.model`，4,264,023 bytes、SHA256 `8986bb4f...168fc6`。prompt/state discretization 逐 token 对官方 OpenPI 格式核验通过。
 - evaluator mechanics smoke 已验证模型加载、预处理、batched action、LIBERO reset/step 与结果落盘。吞吐 profile 在同一 Spatial task 的 full-horizon 失败 episodes 上为：1 env 27.52 秒/episode、8 env 19.76 秒/episode、16 env 19.58 秒/episode；8→16 只提升约 0.9%，且峰值显存约从 20.1GB 增至 23.2GB，因此正式使用每 policy process 8 个 env。这里的 0/1、0/8、0/16 不作科学性能证据。
 - 首次 8 卡 formal launch 在 rollout 前暴露 EGL rank 映射错误：旧 evaluator 固定 `MUJOCO_EGL_DEVICE_ID=0`，导致物理 GPU1–7 的 robosuite import 明确拒绝，GPU0 未完成即主动终止；该批输出标为 invalid，不进入 aggregate。现改为从每个单卡进程唯一的 numeric `CUDA_VISIBLE_DEVICES` 派生 EGL device，并已在物理 GPU1 完成一条 load/env/rollout smoke。
+
+## Generic π0.5 formal feasibility result
+
+| suite | task | language | success |
+| --- | ---: | --- | ---: |
+| `libero_spatial` | 6 | pick up the black bowl next to the cookie box and place it on the plate | 0/50 |
+| `libero_spatial` | 8 | pick up the black bowl next to the plate and place it on the plate | 0/50 |
+| `libero_object` | 0 | pick up the alphabet soup and place it in the basket | 0/50 |
+| `libero_object` | 7 | pick up the milk and place it in the basket | 0/50 |
+| `libero_goal` | 4 | put the bowl on top of the cabinet | 0/50 |
+| `libero_goal` | 7 | turn on the stove | 0/50 |
+| `libero_10` | 0 | put both the alphabet soup and the tomato sauce in the basket | 0/50 |
+| `libero_10` | 3 | put the black bowl in the bottom drawer of the cabinet and close it | 0/50 |
+
+- total：`0/400`；400 个 `(suite, task, init_state)` 键全部唯一，所有 rows 均跑到对应 suite horizon。
+- 每个 evaluator 在启动时记录 clean commit `bf27ebc`；8 卡一 task/一 policy process，GPU0 没有额外 CUDA role。
+- protocol/model/normalization/tokenizer hashes 逐 task 一致；aggregate SHA256 为 `8ffa816e...7776`，tracked result seal SHA256 为 `c78e92e9...20c2`。
+- 这个结果回答的是 generic base feasibility：当前通用 π0.5 不能直接作为 LIBERO held-task 执行 base。它不是 Writer、one-video 或 source adaptation 的负结果，因为这些方法尚未运行。
 
 ## 新 split（已封存）
 
@@ -39,11 +57,7 @@
 
 ## 下一动作
 
-1. 完成活动 docs 与 split seal。
-2. 完成已实现的 official-compatible π0.5 base evaluator及 24-task train-only normalization；评测用每 GPU 一个 policy process、进程内 8 个持久 env 做 batched planning。
-3. mechanics smoke。
-4. live GPU preflight 后 8 卡并行评测 8 test tasks。
-5. 结果、raw rows 和 hashes写回，commit/push 后停住。
+停止并等待 owner 讨论。不得自动启动 source base、AS-Writer、RL-Writer、RL 或 baseline。
 
 ## 历史边界
 

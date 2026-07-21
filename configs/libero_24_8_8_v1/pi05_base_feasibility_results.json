@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "sealed_utc": "2026-07-21T17:10:20Z",
+  "arm": "generic_pi05_base_zero_shot",
+  "evaluation_commit": "bf27ebcdc6ae4a2c8ea34f5494a4bd16cbbc85d4",
+  "protocol_sha256": "db6d575758b69380803a7032b8cdb2f120d1348b63783da0bb1aa1f84031068f",
+  "normalization_sha256": "a97857dc021654b0ecaf8e45fd25727ddb06b42987780439299cdcef3383b1f1",
+  "model_revision": "7de663972b7817d2c4cf2d84c821153dfea772e9",
+  "model_weights_sha256": "0eb11ca9587678c1d2ef8cf32807c29f8ce53a2bfdfc1aa4a4c96f16fca59b0f",
+  "tokenizer_sha256": "8986bb4f423f07f8c7f70d0dbe3526fb2316056c17bae71b1ea975e77a168fc6",
+  "summary_sha256": "8ffa816e425470f49d7f06ddbea16929036d9edabb24352eebbcdb35e4db7776",
+  "row_contract": {
+    "tasks": 8,
+    "episodes_per_task": 50,
+    "rows": 400,
+    "unique_suite_task_init_state_keys": 400,
+    "all_evaluation_git_states_clean": true,
+    "all_rows_reached_suite_horizon": true
+  },
+  "overall": {
+    "successes": 0,
+    "episodes": 400,
+    "success_rate": 0.0
+  },
+  "per_task": [
+    {
+      "suite": "libero_spatial",
+      "task_id": 6,
+      "language": "pick up the black bowl next to the cookie box and place it on the plate",
+      "successes": 0,
+      "episodes": 50,
+      "horizon": 220,
+      "wall_clock_seconds": 1003.9630529819988,
+      "results_sha256": "64034f2b93e9210eac1e9e2072a07dbca41877d7c62e47049b09222648340516"
+    },
+    {
+      "suite": "libero_spatial",
+      "task_id": 8,
+      "language": "pick up the black bowl next to the plate and place it on the plate",
+      "successes": 0,
+      "episodes": 50,
+      "horizon": 220,
+      "wall_clock_seconds": 1005.8939478569664,
+      "results_sha256": "0c9b9d10ed7f42e626e03e70577a064a1ac7de71010e6ff2f030491e37feaeff"
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 0,
+      "language": "pick up the alphabet soup and place it in the basket",
+      "successes": 0,
+      "episodes": 50,
+      "horizon": 280,
+      "wall_clock_seconds": 1168.8589964229614,
+      "results_sha256": "8857e8113a91a947821ec4e7fca564b0c96980ce5f83931089ced393361f5202"
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 7,
+      "language": "pick up the milk and place it in the basket",
+      "successes": 0,
+      "episodes": 50,
+      "horizon": 280,
+      "wall_clock_seconds": 1166.7614268690813,
+      "results_sha256": "e6cf61d6a4a0bdb6bf599bd240dccc835dad22bb768c8b13692e81cdc2b43fa8"
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 4,
+      "language": "put the bowl on top of the cabinet",
+      "successes": 0,
+      "episodes": 50,
+      "horizon": 300,
+      "wall_clock_seconds": 1245.316612787079,
+      "results_sha256": "ae79d6abaaed46825d42cc05b59c3df5f3ebc3c4534661284dad2d8159a38b5f"
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 7,
+      "language": "turn on the stove",
+      "successes": 0,
+      "episodes": 50,
+      "horizon": 300,
+      "wall_clock_seconds": 1247.8901463269722,
+      "results_sha256": "1e96835e8d9453b53f7262ec4fc2b4bbf95db32d8a05c43dc94bdcb21c9e107f"
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 0,
+      "language": "put both the alphabet soup and the tomato sauce in the basket",
+      "successes": 0,
+      "episodes": 50,
+      "horizon": 520,
+      "wall_clock_seconds": 2168.5693242538255,
+      "results_sha256": "7580fee5b3d2e73f6efb43a18f0bb9d353e5616aedbae683772e1d9e9e606afb"
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 3,
+      "language": "put the black bowl in the bottom drawer of the cabinet and close it",
+      "successes": 0,
+      "episodes": 50,
+      "horizon": 520,
+      "wall_clock_seconds": 2089.03498495603,
+      "results_sha256": "1122ce7ede0120c370c44fc81ee06ff2e68ffbf425b3ad0ec918cb2d81b3be6c"
+    }
+  ]
+}

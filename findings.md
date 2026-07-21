@@ -12,12 +12,14 @@
 - LeRobot processor 默认会向 gated `google/paligemma-3b-pt-224` 请求 tokenizer，匿名环境得到 401。当前改为 OpenPI 同 revision 明确使用、匿名公开的 `gs://big_vision/paligemma_tokenizer.model`；其 SHA256 为 `8986bb4f...168fc6`，本地预处理的 prompt、state binning、BOS、padding/mask 已逐 token 对官方 OpenPI 实现核验。
 - π0.5 evaluator mechanics 已通过。单卡吞吐 profile（同一 Spatial task、full-horizon smoke，不作性能判断）：batch 1 为 27.52 秒/episode，batch 8 为 158.07/8=19.76 秒/episode，batch 16 为 313.24/16=19.58 秒/episode；batch 8→16 仅约 0.9% 提升，峰值显存约 20.1→23.2GB。正式评测锁定每卡一个 policy CUDA process、每进程 8 个持久 env；瓶颈是官方 π0.5 推理计算而不是显存容量。
 - 首次 8 卡 formal launch 在任何 task 产出结果前失败：robosuite 要求 `MUJOCO_EGL_DEVICE_ID` 是该进程 `CUDA_VISIBLE_DEVICES` 中的物理编号，而 evaluator 固定写 0，使 GPU1–7 import 失败；GPU0 被主动终止。修复为每 rank 派生自身唯一物理 ID 后，GPU1 独立 smoke 已通过。失败 root 保留为 invalid failure packet，不复用、不聚合。
+- 修复后 commit `bf27ebc` 上的 8 卡 formal run 全部 exit 0；每卡恰好一个 policy CUDA process，GPU0 无额外进程。8 个 test tasks × 50 fixed states 的 generic `pi05_base` 结果全部为 `0/50`，总计 `0/400`；400 个 `(suite, task, init_state)` 唯一，所有 rows 均到达对应 220/280/300/520 horizon。
+- 该结论只说明 generic π0.5 在当前官方 LIBERO 接口下没有直接 zero-shot competence，因此若继续需要 source-side action adaptation/base；它不构成对 one-video Writer 的评价。aggregate SHA256 为 `8ffa816e...7776`，tracked result seal 为 `configs/libero_24_8_8_v1/pi05_base_feasibility_results.json`（SHA256 `c78e92e9...20c2`）。按 owner stop condition，不自动启动任何后续训练。
 
 ## 2026-07-21 protocol reset
 
 owner 已将活动研究协议改为 generic π0.5 + 四个标准 LIBERO suites + 每 suite 6/2/2 + one-video Writer。下文全部 SmolVLA/70-10-10 数字仍是真实历史证据，但从本节开始只作 provenance，不能作为新协议 checkpoint、normalization、split 或完成状态。
 
-当前待回答的唯一实证问题是 generic `pi05_base` 在预封存 8 test tasks 的 400 个 official fixed-state rollouts 上有多少成功。该结果尚未产生；在它产生前不得声称 π0.5 有或没有 LIBERO zero-shot competence。
+generic `pi05_base` 在预封存 8 test tasks 的 400 个 official fixed-state rollouts 上为 `0/400`，每 task 均为 `0/50`。该 feasibility 问题已经关闭，当前等待 owner 决定是否建立 source-side action adaptation/base。
 
 已核验官方实现事实：generic `pi05_base` 是 fine-tuning base；`pi05_libero` 是另一个在 LIBERO 上 action-finetuned 的 inference checkpoint。当前禁止后者。官方 generic Hugging Face pre/post processors没有可执行 LIBERO action space 的 normalization state，因此有效的 generic-base test 必须从 24 development-train tasks 计算 interface-only state/action stats，同时保持 validation/test action read count 为零。
 

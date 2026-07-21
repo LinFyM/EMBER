@@ -23,9 +23,9 @@ task language + one action-hidden teaching video
 
 ## 当前执行边界
 
-当前只做一件事：按官方参数测试通用 `pi05_base` 在预封存 8 个 test tasks 上的 zero-shot 成功率。模型不训练，test teacher actions 不读取，也不用已经在 LIBERO-40 上 fine-tune 的 `pi05_libero`。结果出来立即停止，等待 owner 讨论是否需要 source-base calibration。
+通用 `pi05_base` 的预封存 8-task zero-shot feasibility 已完成：8 tasks × 50 fixed states 均为 `0/50`，总计 `0/400`。模型未训练，test teacher actions 未读取，也未使用已经在 LIBERO-40 上 fine-tune 的 `pi05_libero`。当前按 owner 要求停止，等待讨论是否建立 source-side action adaptation/base。
 
-split 与评测合同封存在 `configs/libero_24_8_8_v1/`。旧 `configs/libero90_70_10_10/`、SmolVLA 训练结果和旧 Phase A–F 只作历史证据。
+split、评测合同与结果 seal 封存在 `configs/libero_24_8_8_v1/`。旧 `configs/libero90_70_10_10/`、SmolVLA 训练结果和旧 Phase A–F 只作历史证据。
 
 ## 阅读顺序
 

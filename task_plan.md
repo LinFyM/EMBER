@@ -39,14 +39,14 @@
 
 ## Phase C：8-task test
 
-状态：准备 launch；正式结果尚未产生。
+状态：已完成；generic π0.5 为 0/400，现按 owner 要求停止。
 
-- [ ] GPU/storage live preflight。
-- [ ] 8 GPU 同构 launch：一 task / 一 GPU / 一 policy CUDA process。
-- [ ] 每 task 50 fixed init states，共 400 rows。
-- [ ] 保存 command、revisions、normalization provenance、GPU/process snapshot、wall-clock、raw rows、summary 和 hashes。
-- [ ] 更新 `findings.md`、`progress.md` 和本计划。
-- [ ] 验证、commit、push，当前 Goal complete 并停住。
+- [x] GPU/storage live preflight。
+- [x] 8 GPU 同构 launch：一 task / 一 GPU / 一 policy CUDA process。
+- [x] 每 task 50 fixed init states，共 400 rows。
+- [x] 保存 command、revisions、normalization provenance、GPU/process snapshot、wall-clock、raw rows、summary 和 hashes。
+- [x] 更新 `findings.md`、`progress.md` 和本计划。
+- [x] 验证、commit、push，当前 Goal complete 并停住。
 
 ## 未来计划（本轮禁止执行）
 

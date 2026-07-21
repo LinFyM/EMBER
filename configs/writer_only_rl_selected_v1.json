@@ -1,0 +1,138 @@
+{
+  "schema_version": "ember_writer_only_rl_selection_v1",
+  "status": "complete",
+  "role": "validation",
+  "selection_rule": {
+    "path": "configs/writer_only_rl_selection_rule_v1.json",
+    "sha256": "cc24c6f693a838355ab1b1f44c7cf3222d2d3a7714b0bfdc871575d04c927809"
+  },
+  "training": {
+    "run_id": "formal_seed1_c89dff4_20260720",
+    "git_commit": "c89dff43bfd4126a8f8ba9d3d3c30f5bf7ce1c5a",
+    "config": "configs/writer_only_rl_v1.json",
+    "config_sha256": "79c8eb37b9202ccb50622b1ad67dceb9c23d0c5139768e9690580cc2ad3e9d8c",
+    "launch_preflight_sha256": "6475d56374a7e559fe55a3ccc2220684ea5beed60a3abf5daab4b95b18c1a528",
+    "run_contract_file_sha256": "eead46f58c04036a3bd89c099ab8f55cc1e2bbf480b82b765baa59fda27f2490",
+    "run_summary_sha256": "d5b990a612461ca71b36ee963ef7f915c2e1ef33bf7ad3b8cb2b62535c46e914",
+    "world_size": 8,
+    "one_policy_cuda_process_per_gpu": true,
+    "gpu0_extra_cuda_processes": 0,
+    "source_task_count": 70,
+    "completed_full_task_cycles": 12,
+    "rollouts_per_task": 48,
+    "source_interactions": 3360,
+    "source_successes": 679,
+    "source_env_steps": 1176874,
+    "declared_updates": 108,
+    "optimizer_updates": 107,
+    "skipped_zero-success_updates": 1,
+    "official_random_reset_only": true,
+    "fixed_init_state_ids": null,
+    "unique_seed_rows": 3360,
+    "worker_ledgers_verified": 864,
+    "wall_clock_seconds_max_rank": 4862.096943144,
+    "peak_reserved_gib_per_rank_max": 5.306640625,
+    "checkpoints": {
+      "36": {
+        "manifest_sha256": "03f0ddb432b16a3e4014fa58b4b5d3e90fadb2bc596c17334454ffb3fd0f96ec",
+        "writer_sha256": "66afd69c831d749e867f69d8d87599988b613ad6fa67a2112c710634c85cd7f5",
+        "optimizer_updates": 36,
+        "files_verified": 10
+      },
+      "72": {
+        "manifest_sha256": "685028bce11ad75eda2189991ef1a5bbb2e8e6038313e639c8eb8d2cfa993f8f",
+        "writer_sha256": "9e9226582250a46139ecb7cd427f4145eb55006dd2d1549487e103f9ef862aa5",
+        "optimizer_updates": 72,
+        "files_verified": 10
+      },
+      "108": {
+        "manifest_sha256": "de5c4257e05af83faa98c6338dc098360433d6e0c818a284125a19088f569183",
+        "writer_sha256": "e6ec1e20bc7428f2561c74360fe9439a1d41779775f6da17e38ad1637ef7b34f",
+        "optimizer_updates": 107,
+        "files_verified": 10
+      }
+    }
+  },
+  "validation": {
+    "evaluation_config": "configs/source_base_eval_v1.json",
+    "evaluation_config_sha256": "b3bf7a45dd623d87731bddead06a5bd94f0e999f612052ebc56b7303aa355ff6",
+    "task_ids": [0, 8, 15, 28, 40, 56, 61, 71, 85, 88],
+    "fixed_init_states_per_task": 50,
+    "same_rows_environment_and_policy_seeds_across_all_candidates": true,
+    "frozen_base_successes": 56,
+    "candidates": [
+      {
+        "label": "cold_step1050",
+        "source_reward_interactions": 0,
+        "checkpoint_manifest_sha256": "abd373084a7e218c080edb1eaf98fa24c8c46f859dd5a5e239a4a8181c81fe17",
+        "evaluation_contract_file_sha256": "f5c21c2ccda330c84d0ade4bd6c0bf8ec768cae9bc94863c5bdf1f1e76431e10",
+        "results_sha256": "a16bd998c40c27dfa5a559d605084851e214e1256370a33197c3f0073eac4ce6",
+        "successes": 63,
+        "per_task_successes": {"0": 19, "8": 0, "15": 0, "28": 24, "40": 0, "56": 1, "61": 0, "71": 0, "85": 0, "88": 19},
+        "paired_vs_frozen_base": {"gains": 31, "losses": 24, "net": 7},
+        "positive_net_task_ids": [28, 88]
+      },
+      {
+        "label": "writer_rl_update0036",
+        "source_reward_interactions": 1120,
+        "checkpoint_manifest_sha256": "03f0ddb432b16a3e4014fa58b4b5d3e90fadb2bc596c17334454ffb3fd0f96ec",
+        "evaluation_contract_file_sha256": "59ac2e8ea1ca897f0294206e2fe2a4b884c01e334e9d56653f462f2a92049add",
+        "evaluation_contract_sha256": "2f3bdecd0a9c4bc3e1701f206b519fc65878b1db6abfc5f8ef0600bcb44aa27a",
+        "results_sha256": "6a88ced7473a7a07f0d48cb3f16e19d62ab8ec65a23760f9c9f00b4da0f109dc",
+        "successes": 56,
+        "per_task_successes": {"0": 20, "8": 0, "15": 0, "28": 20, "40": 0, "56": 0, "61": 0, "71": 0, "85": 0, "88": 16},
+        "paired_vs_frozen_base": {"gains": 26, "losses": 26, "net": 0},
+        "positive_net_task_ids": [28, 88],
+        "evaluation_wall_seconds_max_rank": 739.1905783959664
+      },
+      {
+        "label": "writer_rl_update0072",
+        "source_reward_interactions": 2240,
+        "checkpoint_manifest_sha256": "685028bce11ad75eda2189991ef1a5bbb2e8e6038313e639c8eb8d2cfa993f8f",
+        "evaluation_contract_file_sha256": "bad2fec82cf41dca4539f52f5bf809caa39299ccc75fbeaa2fe777ce07d3a3d6",
+        "evaluation_contract_sha256": "6f2e98cd1a68ad6f902906249261f045b0fe17e3085013d8989fe68f73737c67",
+        "results_sha256": "cc2e5286d45e45aa7ab0fbfa098c82592e601ca1e5afa02b21376c196ad110b2",
+        "successes": 36,
+        "per_task_successes": {"0": 19, "8": 0, "15": 0, "28": 15, "40": 0, "56": 0, "61": 0, "71": 0, "85": 0, "88": 2},
+        "paired_vs_frozen_base": {"gains": 13, "losses": 33, "net": -20},
+        "positive_net_task_ids": [28],
+        "evaluation_wall_seconds_max_rank": 722.1662513460033
+      },
+      {
+        "label": "writer_rl_update0108",
+        "source_reward_interactions": 3360,
+        "checkpoint_manifest_sha256": "de5c4257e05af83faa98c6338dc098360433d6e0c818a284125a19088f569183",
+        "evaluation_contract_file_sha256": "6da9e29ba9329383c30b97cf2e456be566a9bff8330d6bb5b5376a9896e402f9",
+        "evaluation_contract_sha256": "0df724ddf62f2269e8f009540d0be003bb60987502eeee02f5d9d4aa593135d2",
+        "results_sha256": "52d9879928ad6d9cd82d9df5c50c39e0cb70f60c7bacbcee9ac5b95550392dba",
+        "successes": 15,
+        "per_task_successes": {"0": 12, "8": 0, "15": 0, "28": 3, "40": 0, "56": 0, "61": 0, "71": 0, "85": 0, "88": 0},
+        "paired_vs_frozen_base": {"gains": 2, "losses": 43, "net": -41},
+        "positive_net_task_ids": [],
+        "evaluation_wall_seconds_max_rank": 717.1055743875913
+      }
+    ]
+  },
+  "selected": {
+    "label": "cold_step1050",
+    "kind": "cold_start",
+    "source_reward_interactions": 0,
+    "checkpoint_manifest_sha256": "abd373084a7e218c080edb1eaf98fa24c8c46f859dd5a5e239a4a8181c81fe17",
+    "writer_state_sha256": "2010bd2496614dc3e68f0ac5a627a20ced6292283c751c46628776a588a5ebe8",
+    "successes": 63
+  },
+  "launcher_correction": {
+    "failed_attempt_preserved": true,
+    "failure": "external launcher omitted --writer-rl-config; canonical evaluator rejected the incomplete authority before rollout",
+    "minimal_fix": "pass the sealed Writer-only RL config to the unchanged evaluator",
+    "failed_log_sha256": "e34b60e528e83edeae41acd45006895f42f4f3acadbff1a9f36098b37f216f58",
+    "failed_run_contract_file_sha256": "d8ef81e7dd01b7bcb8656d87dc3fc3ea724ed1d89da46ad689518280f0ad6672",
+    "retry_launch_preflight_sha256": "e632a416238fa25db16ed18384e263d77f39dc58a28493081bc6509b291de0b4"
+  },
+  "interpretation": {
+    "writer_only_rl_completed": true,
+    "writer_only_rl_improved_validation": false,
+    "selection_result": "Cold step1050 remains the best initialization. Source-only binary-success Writer RL monotonically reduced validation success at the sealed thirds and is retained as a valid negative stage result, not treated as an engineering failure.",
+    "test_surface_opened": false
+  }
+}

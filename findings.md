@@ -85,12 +85,21 @@
 - 同一 500 条 validation rows 上，frozen base / cold Writer / direct oracle 分别为 `56/500, 63/500, 186/500`。direct per-task 为 `{0:48,8:1,15:17,28:36,40:21,56:11,61:9,71:2,85:11,88:30}`，相对 base 配对 `141 gains / 11 losses / net +130`，相对 cold Writer 为 `138/15/+123`；它在 10 个 task 上都取得正的 raw count gain。
 - 因而当前 37-target LoRA 空间并非整体无效，且 target-action acquisition ceiling 充足；cold Writer 与 oracle 的主要差距是跨任务 acquisition/generalization coverage。direct 使用目标 action，只是 oracle/reference，不属于同信息墙主结论，也不驱动 Writer checkpoint 或 test 选择。合同与结果 hashes 封存在 `configs/direct_lora_validation_reference_v1.json`，test 未打开。
 
-### Writer-only RL：完整 source cycle profile/resume 通过
+### Writer-only RL：formal 完成，但 source reward 使 validation 单调退化
 
 - cold step1050 起点从 update1 checkpoint 由全新 8-rank 进程恢复到 update9，完整覆盖 70 source tasks。每 task 恰好 4 个官方随机 reset rollouts，共 280 interactions、87 successes、90,391 env steps 和 9 个 Writer optimizer updates；生成 LoRA 没有原位更新。
 - 72 个 rank/update ledgers 全部声明 `official_random_reset=true`、`fixed_init_state_id=null`；70 个 active task ledgers 合计 280 个唯一 `(task, env_seed, policy_seed)` rows。update1/update9 checkpoints 各含 Writer、trainer 和 8-rank RNG 共 10 个文件，逐文件验证通过，最终 interaction cursor 精确为一个 full cycle。
 - max-rank cycle wall 为 405.50 秒，最慢 update 49.73 秒；reward updates 的 peak reserved 5.04GiB。该阶段是 rollout/CPU 受限，增加 dummy 或无科学作用的 batch 只会浪费时间，因此保留一 GPU 一 policy rank、以有效 interactions/秒为准。
-- formal 据此封存 12 个 full cycles：108 updates、每 task 48 rollouts、总 3,360 source interactions，checkpoints 36/72/108，预计约 81.1 分钟并保持在 90 分钟目标内。profile 的 source success 只证明 reward signal 非零和更新可执行，不是 validation 性能证据。
+- formal 完成 12 个 full cycles：108 declared updates、107 个有成功信号的 optimizer updates、每 task 48 rollouts、总 3,360 source interactions、679 successes、1,176,874 env steps；max-rank wall 4,862.10 秒。864 个 ledgers、3,360 个唯一 seed rows 和 36/72/108 三个 10-file checkpoints 全部通过 cursor/hash 审计。
+- 相同 500 条 validation rows 上，cold step1050、update36、update72、update108 依次为 `63,56,36,15` successes；相对 frozen base 的 paired net 依次为 `+7,0,-20,-41`。逐任务原始数已封存在 `configs/writer_only_rl_selected_v1.json`，预封存排序明确选择 cold step1050。
+- 因而本轮 Writer-only RL 是真实完成但未带来 held 泛化收益的负结果；source binary-success self-imitation 随交互增加破坏了 cold Writer 的窄 validation 效用。它不被解释成工程失败，也不通过改算法、加 RNG 或重选 checkpoint 来追求正结果；Phase E 使用未经过 Writer-RL 的 cold step1050。
+- 首次 validation launcher 因漏传 sealed `--writer-rl-config` 被 canonical evaluator 在 rollout 前拒绝；失败 packet 保留。重试只补齐该 authority 参数，未改 evaluator、checkpoint、rows 或选择规则，三个候选均 exit 0。
+
+### Task-local RL：matched official-random-reset profile/resume 通过
+
+- 4 tasks × 2 arms 恰好映射到 8 卡，每卡一个 CUDA policy process；update1 后由全新进程 exact-resume 到 update3。共 24 ledgers、96 trajectories、16 checkpoints，所有 `fixed_init_state_id=null`，两臂的 task/env/policy seed block 逐项一致。
+- 24 个 `task_local_reward_update.step_seconds` 的线性插值 p90 为 `49.8926s`。按读取 reward outcome 前已封存的纯吞吐规则选择 formal `U=18`、每 task/arm `K=72`、checkpoints `6/12/18`；20 单元共 1,440 interactions，含 180 秒开销的投影总 wall 为 2,874.20 秒。
+- profile reward 不参与预算选择，也不作为性能结论；下一证据是 10 validation tasks 的 formal adaptation 与独立 fixed-50 fresh evaluation。
 
 ### Gate -1：通过但带残差
 
@@ -204,7 +213,7 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 ## 不允许从历史证据推出的结论
 
 - 不能声称 EMBER 已有稳健 validation 泛化。
-- 不能声称 Writer-only RL、task-local RL 或 outer learning 已验证。
+- 不能声称 Writer-only RL 改善了 validation；本轮已验证的是其完整负结果。也不能在 fresh validation 前声称 task-local RL 有性能收益，或声称 outer learning 已验证。
 - 不能声称 direct LoRA 是信息匹配的 held baseline。
 - 不能声称 h16 是标准 SmolVLA/LIBERO 主评估。
 - 不能把旧 source task 结果、旧 validation 结果或 task 22 用于新 split。
@@ -220,9 +229,7 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   shared state 冻结。其配对 seed schedule 明确排除 arm，官方随机 reset rollout
   ledger 与 worker RNG/interaction cursor 进入 checkpoint；`.pruned_init` 只由独立
   fresh evaluator 使用。
-- 以上目前只有代码与 49 项 CPU/contract tests 证据，不是 Writer-only RL 或
-  task-local RL 的性能证据；formal gate 仍等待真实 GPU profile 和前序 validation
-  选择。
+- Writer-only RL 已有完整 source formal 与 4 候选 validation 的真实负结果；task-local RL 已有真实 GPU exact-resume/profile 机械证据，但正式 adaptation 和 fresh-validation 性能仍待完成。
 
 ## 证据定位
 

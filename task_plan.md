@@ -122,25 +122,27 @@ validation action-hidden cache 覆盖预封存 10 tasks × 50 full episodes、63
 
 ## Phase D：Writer-only RL
 
-状态：cold step1050 已选；canonical source-only reward runner 的真实完整 task-cycle profile/exact-resume 已通过，formal 已按实测吞吐封存并已在 direct oracle 退出后自动启动。
+状态：完整 formal 与四候选 validation 选择均已完成；Writer-only RL 没有改善 validation，故按预封存规则保留 cold step1050 进入 Phase E。
 
-- [ ] 只用 70 train/source tasks。
-- [ ] base 冻结；生成 LoRA 不原位更新；reward 只更新 Writer。
-- [ ] 70-task balanced mixed rollout/update cycles。
-- [ ] 总 wall-clock 目标 ≤约 90 分钟。
-- [ ] checkpoints 在 1/3、2/3、3/3 full-task cycles。
-- [ ] 每个候选在 validation 做 frozen-Writer zero-interaction h50 评估。
-- [ ] 报告 cold-start 与 Writer-only-RL 的原始数字。
-- [ ] 在 validation 选择一个最佳 Writer initialization 进入首轮 task-local RL。
+- [x] 只用 70 train/source tasks。
+- [x] base 冻结；生成 LoRA 不原位更新；reward 只更新 Writer。
+- [x] 70-task balanced mixed rollout/update cycles。
+- [x] 总 wall-clock 目标 ≤约 90 分钟。
+- [x] checkpoints 在 1/3、2/3、3/3 full-task cycles。
+- [x] 每个候选在 validation 做 frozen-Writer zero-interaction h50 评估。
+- [x] 报告 cold-start 与 Writer-only-RL 的原始数字。
+- [x] 在 validation 选择一个最佳 Writer initialization 进入首轮 task-local RL。
 
 profile 从 update1 checkpoint 由新进程恢复到 update9，完成一个 70-task cycle：每 task 4 个官方随机 reset rollouts，共 `280` interactions、`87` successes、`90,391` env steps 和 9 个真实 Writer updates；72 个 rank/update ledgers、280 个唯一 env/policy seed rows 与两个 10-file checkpoints 全部通过恢复审计。max-rank wall 为 405.50 秒，因此 formal 封存 12 个 full cycles，即 108 updates、每 task 48 rollouts、总 3,360 interactions，thirds 为 36/72/108，预计约 81.1 分钟。
 
 cold step1050 与 Writer-RL update36/72/108 的 validation 选择规则已在任何 Writer-RL validation outcome 前封存为 `configs/writer_only_rl_selection_rule_v1.json`：先最大化 500 rows 总成功数，再比较相对 frozen base 的正增益任务数与配对净增益，最后偏好更少 source reward interactions。全部候选复用 cold/base 的 fixed states、env/policy seeds 和 evaluator；选择与机制声明分开，test 保持封存。
 
+formal 实际完成 12 个 full cycles、108 declared updates、107 个有 reward signal 的 optimizer updates；70 tasks 各 48 条官方随机 reset rollouts，共 `3,360` interactions、`679` successes、`1,176,874` env steps，max-rank wall `4,862.10s`。864 个 ledgers、3,360 个唯一 seed rows 与 36/72/108 三个 10-file checkpoints 全部通过审计。相同 500 条 validation rows 上，cold/update36/update72/update108 分别为 `63/56/36/15` successes；逐任务为 cold `{0:19,8:0,15:0,28:24,40:0,56:1,61:0,71:0,85:0,88:19}`、u36 `{0:20,8:0,15:0,28:20,40:0,56:0,61:0,71:0,85:0,88:16}`、u72 `{0:19,8:0,15:0,28:15,40:0,56:0,61:0,71:0,85:0,88:2}`、u108 `{0:12,8:0,15:0,28:3,40:0,56:0,61:0,71:0,85:0,88:0}`。因此该 source-only reward recipe 是已完成的负结果，不改算法补救，也不阻塞 matched task-local RL；选择与 hashes 封存在 `configs/writer_only_rl_selected_v1.json`。
+
 ## Phase E：Task-local LoRA RL
 
-状态：等待 validation 选出的 Writer；matched canonical runner、恢复状态和 shared
-fresh-evaluation 读取路径已接通，尚未启动 RL 或产生性能证据。
+状态：cold step1050 已锁定；matched canonical runner 的 8 单元真实
+official-random-reset profile/exact-resume 已完成，formal U/K 已纯按吞吐封存，尚未产生正式 task-local 性能证据。
 
 Arm A：
 
@@ -156,10 +158,10 @@ Arm B：
 
 动作：
 
-- [ ] 在 validation 选择成熟 RL algorithm、K interactions、U updates、optimizer 和 selection rule。
-- [ ] 所有 RL 更新与 adaptation checkpoint 选择 rollouts 通过 LIBERO 官方 reset/BDDL 随机化初态；禁止从固定 50 个 `.pruned_init` states 取样。
-- [ ] zero/identity-init 与 Writer-init 两臂使用相同 task、env seeds 和初态序列，并保存可恢复的 worker RNG/seed schedule 与 interaction cursor。
-- [ ] 初始 profile 约 10–15 分钟/task/arm 等价预算，8 卡并行。
+- [x] 在 validation 选择成熟 RL algorithm、K interactions、U updates、optimizer 和 selection rule。
+- [x] 所有 RL 更新与 adaptation checkpoint 选择 rollouts 通过 LIBERO 官方 reset/BDDL 随机化初态；禁止从固定 50 个 `.pruned_init` states 取样。
+- [x] zero/identity-init 与 Writer-init 两臂使用相同 task、env seeds 和初态序列，并保存可恢复的 worker RNG/seed schedule 与 interaction cursor。
+- [x] 初始 profile 约 10–15 分钟/task/arm 等价预算，8 卡并行。
 - [ ] 若不足，在 test 前统一提升到约 20 分钟/task；不得按 task outcome 临时改预算。
 - [ ] checkpoints K/3、2K/3、K。
 - [ ] 每 task 可按预算内 adaptation reward 选择 checkpoint。
@@ -178,6 +180,8 @@ ledger 保存每次 official random reset 的 env/policy seed、interaction curs
 满足每 task/arm 约 10–15 分钟、20 单元总 wall-clock 不超过 100 分钟的最大 3
 的正整数倍，formal 最多 3 units/rank 并计 180 秒启动余量；若可行需达到 10 分钟
 下限，checkpoint 固定为 thirds。profile successes 不参与预算选择。
+
+真实 profile 在全新进程由 update1 checkpoint exact-resume 到 update3，8 个 task×arm 单元共生成 24 个 ledgers、96 条 official-random-reset trajectories 和 16 个已验证 checkpoints；matched 两臂的 env/policy seed blocks 逐 task 完全相同，所有 `fixed_init_state_id=null`。24 个 update timing 的线性插值 p90 为 `49.8926s`，纯吞吐规则选择 `U=18`、每 task/arm `K=72` interactions、thirds `6/12/18`；20 单元总 interactions 为 `1,440`，按最多 3 units/rank 加 180 秒启动余量投影 `2,874.20s`，低于 100 分钟上限。
 
 所有 target tasks 的总 wall-clock 是预算对象，不允许每 task 各跑 90 分钟。
 

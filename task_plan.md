@@ -190,12 +190,12 @@ formal 实际 wall `1,982s`，完成 360 ledgers、1,440 trajectories、720 个�
 
 进入条件：Writer cold start 已在多个类别 validation tasks 上明显优于 frozen source embodiment base，Writer-only RL 和 matched task-local RL 已完成 validation 选择。
 
-状态：进入条件已满足；test 仍未打开。下一步先封存最终方法、预算、baselines 和 reporting-only test 合同，再做最小 test-role 解封。
+状态：最终方法、预算、selection rule、evaluator 语义和 baseline 集已封存在 `configs/phase_f_protocol_v1.json`；test 仍未打开。完全合规的开发 trajectory 保留为 seed1；打开 test 前只补一个固定 step1050、不能重选方法/checkpoint 的独立 Writer training seed2，并完成其 validation confirmation 与产物封存。
 
-- [ ] 冻结 split、source base、Writer/architecture、LoRA、loss、data、optimizer、steps、RL algorithm、interaction/update budget、checkpoint selection rule、evaluator 和 baseline 集合。
-- [ ] 保留从一开始就使用完整 70×50 数据且完全符合最终合同的开发 trajectory 作为正式 seed 1。
-- [ ] 只重训因合同变化失去可比性的 arms，并补齐必要独立 training seeds、尚缺 matched baselines 和 validation rows。
-- [ ] 冻结并完成 frozen source embodiment base、最佳 EMBER zero-interaction、zero/identity-init ordinary LoRA RL、best Writer-init matched LoRA RL，以及必要同信息墙强 baseline。
+- [x] 冻结 split、source base、Writer/architecture、LoRA、loss、data、optimizer、steps、RL algorithm、interaction/update budget、checkpoint selection rule、evaluator 和 baseline 集合。
+- [x] 保留从一开始就使用完整 70×50 数据且完全符合最终合同的开发 trajectory 作为正式 seed 1。
+- [ ] 只重训因合同变化失去可比性的 arms，并补齐必要独立 training seeds、尚缺 matched baselines 和 validation rows。当前只缺固定协议的 Writer seed2 confirmation；没有合同变化 arm，也没有未完成的核心 matched baseline。
+- [x] 冻结并完成 frozen source embodiment base、最佳 EMBER zero-interaction、zero/identity-init ordinary LoRA RL、best Writer-init matched LoRA RL，以及必要同信息墙强 baseline。identity-init ordinary RL 是与 Writer-init 臂除初始化外逐项相同的强 matched baseline；不为 core test 新增未预验证的 frontier 方法。
 - [ ] 最后统一解封 test，运行上述方法和 target-action-supervised direct LoRA oracle；test direct LoRA 每 task 可用全部 50 条 teacher action episodes，但不进入信息匹配主结论。
 - [ ] test task-local RL 只按 validation 已冻结的 reward budget/selection rule 适应，最终性能使用 fresh rollouts；test 结果不反向改方法。
 - [ ] 统一 task/init/RNG/h50/precision/budget，报告 data、steps、interactions、GPU-hours、wall-clock 和原始 rows。

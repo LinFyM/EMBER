@@ -1,0 +1,147 @@
+{
+  "schema_version": "ember_phase_f_protocol_v1",
+  "status": "methods_frozen_test_sealed_pending_writer_confirmation_seed2",
+  "test_authorized": false,
+  "frozen_at_parent_commit": "63f0f4c03f38d91b646e8c870471c70762cf91c7",
+  "authorities": {
+    "split": "configs/libero90_70_10_10/split.json",
+    "split_sha256": "996a30616da97aa08dac177a94a3e7b723762a6e947c60e11df382c0a637b77e",
+    "manifest": "configs/libero90_70_10_10/data_manifest.json",
+    "manifest_sha256": "b18f1cfa66a82e7dae35c83278b013f719d3b912a81096ba9bd2c2f1a2ddbe7e",
+    "source_base_selection": "configs/source_base_selected_v1.json",
+    "source_base_selection_sha256": "e6fa40d2f807e399efc01b653140b75db7993ffa140d949e8ba4d557dc9586b9",
+    "writer_cold_start_selection": "configs/writer_cold_start_selected_v1.json",
+    "writer_cold_start_selection_sha256": "d49c229e55f5228605b6c88ec95c188e195af396623e82fcdae11670c5cdd775",
+    "writer_only_rl_selection": "configs/writer_only_rl_selected_v1.json",
+    "writer_only_rl_selection_sha256": "feaf6a228e0b5fb007627e7832e0ed53e9e12ab6a1e7a4c4063c584711f32658",
+    "task_local_rl_validation": "configs/task_local_lora_rl_validation_v1.json",
+    "task_local_rl_validation_sha256": "1079d49983afc396515dde55d20954ef8960fc6d61dfe539140190fed57ce6d5",
+    "direct_lora_validation_reference": "configs/direct_lora_validation_reference_v1.json",
+    "direct_lora_validation_reference_sha256": "ce844229bd3f3c9e8e8343b74f28182b7f9084d1922e3a2a448b8b0369f44a3f",
+    "lora_contract": "configs/smolvla_lora_v1.json",
+    "lora_contract_sha256": "ed5047de5206f0464fefb5f7d5513bf3dbc3d48ea6c639b0bb4a1aa07c80ae6a",
+    "evaluation_config": "configs/source_base_eval_v1.json",
+    "evaluation_config_sha256": "b3bf7a45dd623d87731bddead06a5bd94f0e999f612052ebc56b7303aa355ff6"
+  },
+  "common_start": {
+    "definition": "one shared multitask language-conditioned SmolVLA policy jointly trained from lerobot/smolvla_base on all 70 train tasks and all 50 successful teacher episodes per task, then frozen",
+    "selected_step": 630,
+    "run_id": "formal_seed1_72eb10d_20260720",
+    "checkpoint_manifest_sha256": "89e9f4933caed54f4b774f2571e3ac51c3e2c073a1dae2a77073b20229ced22c",
+    "selection_evidence": "train/source_development_only",
+    "shared_by_all_arms": true,
+    "frozen_during_writer_and_target_adaptation": true
+  },
+  "writer": {
+    "architecture_and_loss_config": "configs/writer_cold_start_v1.json",
+    "architecture_and_loss_config_sha256": "a3fe058eda082e0be51b77583b522d2f5785b98f1b92f3ef98a65d874b58a915",
+    "inputs": ["task_language", "action_hidden_teaching_videos"],
+    "forbidden_inputs": ["actions", "proprio", "reward", "terminal", "task_id", "file_name", "hidden_normalization"],
+    "selected_initialization": "cold_step1050",
+    "selected_writer_state_sha256": "2010bd2496614dc3e68f0ac5a627a20ced6292283c751c46628776a588a5ebe8",
+    "writer_only_rl_result": "completed_negative_cold_step1050_remains_selected"
+  },
+  "lora": {
+    "targets": 37,
+    "rank": 32,
+    "alpha": 16,
+    "dropout": 0.0,
+    "complete_task_specific": true,
+    "same_space_for_writer_direct_and_rl": true,
+    "extra_shared_trainable_adapter": false
+  },
+  "task_local_rl": {
+    "algorithm": "on_policy_success_weighted_flow_regression",
+    "reward": "binary_task_success",
+    "teacher_actions": false,
+    "critic": false,
+    "updates_per_task_arm": 18,
+    "rollouts_per_update": 4,
+    "interactions_per_task_arm": 72,
+    "checkpoint_updates": [6, 12, 18],
+    "checkpoint_selection": "maximize preceding-segment adaptation success rate; earliest interaction cursor breaks ties",
+    "adaptation_initial_state_source": "LIBERO official reset/BDDL randomization",
+    "fixed_pruned_init_states_for_adaptation": false,
+    "matched_identity_and_writer_task_env_policy_seed_sequences": true,
+    "restore_worker_rng_seed_schedule_and_interaction_cursor": true
+  },
+  "fresh_evaluation": {
+    "initial_state_source": "50 fixed official task init states per task",
+    "separate_from_adaptation_rollouts": true,
+    "dummy_settling_steps": 10,
+    "max_horizon": 400,
+    "action_execution_horizon": 50,
+    "terminate_on_success": true,
+    "precision": "bfloat16",
+    "matched_rows_environment_and_policy_seeds": true
+  },
+  "test_arm_set": [
+    {
+      "name": "frozen_source_embodiment_base",
+      "target_information": ["task_language"],
+      "target_parameter_updates": false
+    },
+    {
+      "name": "ember_zero_interaction_cold_step1050",
+      "target_information": ["task_language", "action_hidden_teaching_videos"],
+      "target_parameter_updates": false
+    },
+    {
+      "name": "identity_init_ordinary_task_local_lora_rl",
+      "target_information": ["task_language", "reward_interactions"],
+      "target_parameter_updates": "task_local_lora_only"
+    },
+    {
+      "name": "writer_init_matched_task_local_lora_rl",
+      "target_information": ["task_language", "action_hidden_teaching_videos", "reward_interactions"],
+      "target_parameter_updates": "task_local_lora_only"
+    },
+    {
+      "name": "target_action_supervised_direct_lora_sft_oracle",
+      "target_information": ["task_language", "all_50_target_teacher_action_episodes"],
+      "target_parameter_updates": "task_local_lora_only",
+      "information_matched_main_baseline": false,
+      "checkpoint_selection": "fixed_final_step180_without_policy_outcome_selection"
+    }
+  ],
+  "baseline_decision": {
+    "necessary_same_information_wall_strong_baseline": "identity_init_ordinary_task_local_lora_rl",
+    "reason": "It uses the identical frozen base, complete LoRA space, ordinary RL algorithm, interaction/update budget, checkpoint rule, tasks, environment seeds, policy seeds and initial-state sequence; the only core contrast is Writer initialization.",
+    "additional_frontier_baselines_required_before_core_test": false,
+    "standalone_language_only_or_video_only_writer": false,
+    "source_direct_lora_localization": false,
+    "openvla_oft": false
+  },
+  "training_seed_policy": {
+    "retain_compliant_development_seed1": true,
+    "seed1_selection_remains_authoritative": true,
+    "required_confirmation": {
+      "config": "configs/writer_cold_start_confirmation_seed2_v1.json",
+      "config_sha256": "4ef3509b5e3fb1f3fe24b6923593a6c728c8c2bf37d728ad6d02310a3c102a83",
+      "sampler_seed": 20260723,
+      "fixed_checkpoint_step": 1050,
+      "can_reselect_method_or_checkpoint": false,
+      "validation_only": true
+    }
+  },
+  "required_before_test_open": [
+    "complete and audit Writer cold-start confirmation seed2 at fixed step1050",
+    "run fixed validation confirmation for seed2 without reselection",
+    "seal seed2 result and exact retained test implementation/config hashes",
+    "change this protocol to test_authorized=true in a committed clean revision"
+  ],
+  "test_rules": {
+    "reporting_only": true,
+    "no_outcome_or_action_surface_before_authorization": true,
+    "shared_base_writer_encoders_and_all_shared_state_frozen": true,
+    "final_evaluation_rows_cannot_select_adaptation_checkpoint": true,
+    "test_results_cannot_modify_method": true,
+    "one_policy_cuda_process_per_gpu": true,
+    "gpu0_extra_cuda_processes": 0,
+    "symmetric_process_count_across_gpus": true
+  },
+  "optional_after_phase_f": {
+    "source_only_reward_meta_outer_learning": true,
+    "required_for_goal_complete": false
+  }
+}

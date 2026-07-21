@@ -49,6 +49,7 @@
 - Writer-only RL formal 已完成 108 updates / 12 full 70-task cycles：每 task 48 个官方随机 reset rollouts，共 `3,360` interactions / `679` successes / `1,176,874` env steps，864 个 ledgers、3,360 个唯一 seed rows 和 36/72/108 三个完整 checkpoints 全部通过审计；max-rank wall 4,862.10 秒。相同 validation 500 rows 上 cold/u36/u72/u108=`63/56/36/15`，预封存规则保留 cold step1050；该阶段是完整负结果，seal 为 `configs/writer_only_rl_selected_v1.json`。
 - matched task-local RL profile 已从 update1 exact-resume 到 update3：4 tasks × 2 arms、24 ledgers、96 条 official-random-reset trajectories、16 个 checkpoints 全部验证，fixed state IDs 全为 null，matched arms seed blocks 完全相同。24 个 update timing 的 p90 为 49.8926 秒，formal 已纯按吞吐封存为每 task/arm `U=18`、`K=72` interactions、checkpoints 6/12/18；20 单元总 1,440 interactions，投影总 wall 2,874.20 秒。
 - matched task-local RL formal 已完成：10 tasks × 2 arms、360 ledgers、1,440 official-random-reset trajectories、720 个唯一 matched seed rows、60 个 checkpoints 全部通过审计，实际 wall 1,982 秒；fixed state IDs 全为 null。adaptation reward identity/Writer=`89/720,110/720`。同一 500 条 fresh rows 上 base/cold/identity-RL/Writer-RL/direct=`56/63/54/74/186`；Writer-RL 对 identity-RL 配对 `43/23/+20`，但增益主要来自 task88，task28 回退。seal 为 `configs/task_local_lora_rl_validation_v1.json`，test 仍未打开。
+- Phase F 方法合同已冻结为 `configs/phase_f_protocol_v1.json`：共同 source base step630、cold Writer step1050、37-target rank32 LoRA、task-local U18/K72 与 6/12/18 reward selection、fixed50 fresh evaluator，以及 base/cold/identity-RL/Writer-RL/direct-oracle 五臂均不再修改。identity-init ordinary RL 是必要且已完成的同信息墙强 matched baseline；不在 core test 前临时增加 frontier 方法。完全合规的开发 trajectory 保留为 seed1；唯一待补训练证据是 sampler seed `20260723` 的 Writer seed2，在预固定 step1050 确认，validation 不得重选，test 继续封存。
 
 ## 已明确退役
 
@@ -64,9 +65,9 @@
 
 ## 当前下一批动作
 
-1. 进入 Phase F，封存 split、source base step630、cold Writer step1050、37-target LoRA、U18/K72、6/12/18 reward selection、fresh evaluator、核心 baseline 集和 reporting-only test 规则。
-2. 只在该 seal 后最小解封 test role；test adaptation 继续使用官方随机 reset 与 matched seed schedule，fixed 50 states 只作独立 fresh evaluation，最终 test rows 不参与选择。
-3. 保留 cold Writer“两类正效用但覆盖有限”、Writer-only RL 负结果、matched task-local +20 但集中 task88、direct oracle gap；不追加第二 validation RNG 来美化局部波动。
+1. 按 `configs/writer_cold_start_confirmation_seed2_v1.json` 完成固定 step1050 的独立 Writer seed2，并在同一 validation 500 rows 上只做 confirmation，不重选方法/checkpoint。
+2. 封存 seed2 后最小实现并冻结 test role/config hashes，再把 Phase F seal 显式改为 `test_authorized=true`；此前继续禁止 test outcome/action/reward surface。
+3. 统一运行五个已冻结 test arms；RL adaptation 使用官方随机 reset 与 matched seed schedule，fixed 50 states 只作独立 fresh evaluation，最终 rows 不参与选择。
 4. optional outer learning 只可在 Phase F 完成后考虑，不阻塞核心 Goal。
 
 ## Canonical runner ownership

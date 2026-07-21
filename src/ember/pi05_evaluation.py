@@ -163,9 +163,13 @@ def evaluate_test_task(
     if sha256_file(tokenizer_path) != tokenizer_manifest["sha256"]:
         raise Pi05EvaluationError("tokenizer hash differs from the sealed manifest")
     paths = prepare_libero_config(output_dir / "libero_config")
-    os.environ.update(
-        MUJOCO_GL="egl", PYOPENGL_PLATFORM="egl", MUJOCO_EGL_DEVICE_ID="0"
-    )
+    os.environ.update(MUJOCO_GL="egl", PYOPENGL_PLATFORM="egl")
+    visible_devices = os.environ.get("CUDA_VISIBLE_DEVICES", "0").split(",")
+    if len(visible_devices) != 1 or not visible_devices[0].strip().isdigit():
+        raise Pi05EvaluationError(
+            "each evaluator requires one numeric physical CUDA_VISIBLE_DEVICES entry"
+        )
+    os.environ["MUJOCO_EGL_DEVICE_ID"] = visible_devices[0].strip()
     import torch
     from libero.libero import benchmark, get_libero_path
     from libero.libero.envs import OffScreenRenderEnv

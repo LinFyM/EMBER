@@ -11,6 +11,7 @@
 - 24-task train-only quantile normalization 使用 `HuggingFaceVLA/libero@8695891` 的 column-range reads：先读 377 个 parquet 的 task IDs，只对 62 个纯 source 文件读取 state/action，共 43,785 rows；24 train tasks 均有贡献，validation/test action 列从未在 mixed/held 文件上打开。normalization SHA256 为 `a97857dc...3b1f1`。
 - LeRobot processor 默认会向 gated `google/paligemma-3b-pt-224` 请求 tokenizer，匿名环境得到 401。当前改为 OpenPI 同 revision 明确使用、匿名公开的 `gs://big_vision/paligemma_tokenizer.model`；其 SHA256 为 `8986bb4f...168fc6`，本地预处理的 prompt、state binning、BOS、padding/mask 已逐 token 对官方 OpenPI 实现核验。
 - π0.5 evaluator mechanics 已通过。单卡吞吐 profile（同一 Spatial task、full-horizon smoke，不作性能判断）：batch 1 为 27.52 秒/episode，batch 8 为 158.07/8=19.76 秒/episode，batch 16 为 313.24/16=19.58 秒/episode；batch 8→16 仅约 0.9% 提升，峰值显存约 20.1→23.2GB。正式评测锁定每卡一个 policy CUDA process、每进程 8 个持久 env；瓶颈是官方 π0.5 推理计算而不是显存容量。
+- 首次 8 卡 formal launch 在任何 task 产出结果前失败：robosuite 要求 `MUJOCO_EGL_DEVICE_ID` 是该进程 `CUDA_VISIBLE_DEVICES` 中的物理编号，而 evaluator 固定写 0，使 GPU1–7 import 失败；GPU0 被主动终止。修复为每 rank 派生自身唯一物理 ID 后，GPU1 独立 smoke 已通过。失败 root 保留为 invalid failure packet，不复用、不聚合。
 
 ## 2026-07-21 protocol reset
 

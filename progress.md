@@ -24,6 +24,7 @@
 - train-only normalization 已完成：只对 377 个 parquet 先读取 `task_index`，随后只在 task IDs 全属于 24 development-train role 的 62 个文件读取 state/action；共 43,785 source rows，24 tasks 均有贡献，8 validation 与 8 test actions 未读取。artifact SHA256 为 `a97857dc...3b1f1`。
 - LeRobot 默认 tokenizer loader 会访问 gated Google repo；改用同一 OpenPI revision 明确引用、可匿名读取的 `gs://big_vision/paligemma_tokenizer.model`，4,264,023 bytes、SHA256 `8986bb4f...168fc6`。prompt/state discretization 逐 token 对官方 OpenPI 格式核验通过。
 - evaluator mechanics smoke 已验证模型加载、预处理、batched action、LIBERO reset/step 与结果落盘。吞吐 profile 在同一 Spatial task 的 full-horizon 失败 episodes 上为：1 env 27.52 秒/episode、8 env 19.76 秒/episode、16 env 19.58 秒/episode；8→16 只提升约 0.9%，且峰值显存约从 20.1GB 增至 23.2GB，因此正式使用每 policy process 8 个 env。这里的 0/1、0/8、0/16 不作科学性能证据。
+- 首次 8 卡 formal launch 在 rollout 前暴露 EGL rank 映射错误：旧 evaluator 固定 `MUJOCO_EGL_DEVICE_ID=0`，导致物理 GPU1–7 的 robosuite import 明确拒绝，GPU0 未完成即主动终止；该批输出标为 invalid，不进入 aggregate。现改为从每个单卡进程唯一的 numeric `CUDA_VISIBLE_DEVICES` 派生 EGL device，并已在物理 GPU1 完成一条 load/env/rollout smoke。
 
 ## 新 split（已封存）
 

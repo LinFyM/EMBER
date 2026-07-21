@@ -15,7 +15,7 @@
     },
     "recipe": {
       "path": "configs/pi05_source_corpus_v1/pi05_recipe_research.json",
-      "sha256": "5772a136d66b3fd7b175eab2ee9052b83fc3c50a3dbd7d245511283753b89494"
+      "sha256": "4c537067c1da5498f366b6bc6d9e91e80e134bd8b0d60e0d0d6f5c4d1d281734"
     },
     "model_manifest": {
       "path": "configs/libero_24_8_8_v1/pi05_model_manifest.json",
@@ -61,6 +61,7 @@
     ],
     "tokenizer_max_length": 200,
     "camera_rotation_degrees": 180,
+    "right_wrist_padding": "zero_image_with_false_mask_via_missing_feature_key",
     "quantile_normalization": "(x-q01)/(q99-q01+1e-6)*2-1"
   },
   "data": {
@@ -180,7 +181,7 @@
   },
   "formal_run": {
     "locked": true,
-    "lock_reason": "Locked after real eight-GPU BF16 full-SFT profiles, explicit GPU-local NUMA binding, EMA memory checks, atomic checkpoint sizing, and two independent resumes from one immutable checkpoint passed on 2026-07-21.",
+    "lock_reason": "Locked after the corrected missing-right-wrist/false-mask path passed a real eight-GPU BF16 full-SFT smoke with explicit GPU-local NUMA binding, EMA, finite loss/gradients, and about 10GB memory headroom per A100 on 2026-07-21; checkpoint and exact-resume mechanics were established separately before launch.",
     "world_size": 8,
     "optimizer_steps": 30000,
     "micro_batch_size_per_rank": 32,
@@ -190,44 +191,31 @@
   },
   "profile_evidence": {
     "selected_topology": "eight equal DDP ranks, one policy CUDA process per A100, no extra CUDA role on GPU0",
-    "selected_steady_examples_per_second": 47.437182346475154,
-    "selected_max_cuda_allocated_bytes_per_rank": 67181209088,
-    "selected_max_cuda_reserved_bytes_per_rank": 71301070848,
+    "selected_steady_examples_per_second": 47.74984164643365,
+    "selected_max_cuda_allocated_bytes_per_rank": 67178351616,
+    "selected_max_cuda_reserved_bytes_per_rank": 71179436032,
     "selected_metrics": {
-      "path": "/data/ymdai/outputs/ember/pi05_source_smoke_ddp8_m32_ema_numa_20260721/metrics.jsonl",
-      "sha256": "bc01e6ce9d302a278e6a882ef09b049c23b1cc31b57032d33a516cfe81fb96ca"
+      "path": "/data/ymdai/outputs/ember/pi05_source_smoke_ddp8_m32_ema_right_mask_20260721/metrics.jsonl",
+      "sha256": "de2d98894a5d9563d79557c60f5836f99c3f493a3c8f48e271747dbc526e50d9"
     },
-    "numa_smoke": {
-      "run_contract_sha256": "42727d8c31693ee766daf22543cf341f5043aef011da4f99e4ac5dd5f175b18d",
+    "canonical_camera_mask_smoke": {
+      "run_contract_sha256": "90fbe1dafdcaf93518ef756ac4b42f298b7781a2696eef4353158d64b5230458",
+      "run_summary_sha256": "0a590a2943e121b5a70578e38c588a24a19f06b91f1a74dc3bc5a0a1cdd7e1bc",
+      "log_sha256": "26bb5aad831d84bab770629a9c3b6b771a697fa4d4d83df85ac144cfe173fc10",
+      "optimizer_steps": 3,
+      "global_examples": 768,
+      "finite_losses_and_gradients": true,
+      "right_wrist_contract": "feature key omitted from each batch; LeRobot creates zero padding with image_mask=false",
       "rank_0_to_3_cpu_affinity": "0-37,76-113 (NUMA 0)",
       "rank_4_to_7_cpu_affinity": "38-75,114-151 (NUMA 1)",
       "dataloader_children_inherit_parent_affinity": true
     },
-    "comparison_profiles": [
-      {
-        "micro_batch_size_per_rank": 1,
-        "ema_enabled": false,
-        "steady_examples_per_second": 13.818914197253946,
-        "metrics_sha256": "b926ea633495f6c0ab966c6fdb07b07a1137793acb1a523dbc9cf6320c43fb94"
-      },
-      {
-        "micro_batch_size_per_rank": 4,
-        "ema_enabled": true,
-        "steady_examples_per_second": 31.553948684604872,
-        "metrics_sha256": "5fd8d1779c67fd12a5f39cadde86e291035d94533686d2a7b86e78c0c34cd7c3"
-      },
-      {
-        "micro_batch_size_per_rank": 16,
-        "ema_enabled": true,
-        "steady_examples_per_second": 44.685052240514516,
-        "metrics_sha256": "0f34361b61f8c0cad36ba064bd99eb3768fa0371b5d2edb52e7addc31a3eddf7"
-      }
-    ],
+    "superseded_profile_note": "Earlier m1/m4/m16/m32 throughput profiles used an incorrect true mask for the padded right-wrist image and are retained only in Git/progress provenance, not as active scientific or launch evidence.",
     "checkpoint_bytes_observed": 33837406832,
     "exact_resume": {
       "evidence_path": "/data/ymdai/outputs/ember/pi05_source_exact_resume_evidence_20260721/comparison.json",
       "evidence_sha256": "16137fa1ea78c33c10905c7426abf2485b2431258c8805f823a61d8b85da73d3",
-      "contract": "state and cursor exact; independent distributed launches numerically reproducible within recorded last-bit NCCL reduction tolerance"
+      "contract": "mechanism-only evidence predating the camera-mask correction: state and cursor exact; independent distributed launches numerically reproducible within recorded last-bit NCCL reduction tolerance; the corrected formal run starts fresh and does not resume those weights"
     }
   },
   "checkpointing": {

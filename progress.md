@@ -8,12 +8,12 @@
 - 活动目标split仍为四个标准LIBERO suites、每suite 6 train / 2 validation / 2 test，总计24/8/8；seal位于 `configs/libero_24_8_8_v1/`。
 - generic `lerobot/pi05_base` revision `7de663972b7817d2c4cf2d84c821153dfea772e9` 已下载，weights SHA256 `0eb11ca9587678c1d2ef8cf32807c29f8ce53a2bfdfc1aa4a4c96f16fca59b0f`。
 - generic base在8 test tasks×50 fixed states上为 `0/400`。400 rows唯一、全部到suite horizon，result seal SHA256 `c78e92e9...20c2`；该结果不评价EMBER。
-- Phase A source audit、71-task manifest、source-only normalization、官方recipe研究与hash seal已完成；高吞吐evaluator仍待完成。
-- canonical π0.5 source-base full-SFT runner、真实8卡batch/EMA/NUMA profile、atomic checkpoint与exact-resume分支核验已完成；formal配置锁定为8×microbatch32、global batch256、30,000 steps。
-- commit `236202e` 的第一次formal在step12前发现NUMA affinity缺失并主动终止，无checkpoint且不作科学结果；failure packet已封存。GPU-local NUMA修复已通过目标测试与8卡真实smoke，待新commit/push后从全新root重启。
-- 当前里程碑验证为57 tests passed（NUMA修复后将再跑全套）、py_compile/JSON/checksum/diff checks通过；architecture guard为`REVIEW`且无hard violation，ownership、增长理由与旧路径retirement trigger已记录。
+- Phase A source audit、71-task manifest、source-only normalization、pinned official recipe与hash seal已完成；cost-balanced dynamic evaluator代码和fail-closed contracts已完成，真实1/2/3 replicas rollout/s profile待final source checkpoint。
+- canonical π0.5 source-base full-SFT runner、atomic checkpoint与exact-resume机制已完成；相机mask修正后的真实8卡m32+EMA smoke为47.75 examples/s、71.18GB reserved/卡，formal配置锁定为global batch256、30,000 steps。
+- formal attempt1因NUMA affinity缺失在step12终止；attempt2因显式zero右腕被LeRobot误标`mask=true`而在step316终止。两者均无checkpoint、failure packet已封存且永不resume；修正后的训练/评测都通过missing feature key得到OpenPI规定的zero image + `mask=false`。
+- 当前里程碑fresh验证为88 tests passed；py_compile、JSON/checksum与diff checks通过；architecture guard为`REVIEW`且无hard violation。ownership、增长理由与旧静态runner retirement已记录。
 - 第一轮完整流程只跑一个training seed；不提前扩多seed或direct action-budget curve。
-- 清理三套已封存证据的32GB probe checkpoint后，`/data/ymdai`为379,942,686,720 bytes。单checkpoint实测33,837,406,832 bytes；`keep_latest=1`的atomic替换峰值约447.62GB，低于500GB cap。
+- 最新live `/data/ymdai`占用379,028,677,098 bytes。单checkpoint实测33,837,406,832 bytes；`keep_latest=1`的atomic替换峰值约446.70GB，低于500GB cap。
 
 ## Generic feasibility已验证的实现事实
 
@@ -42,7 +42,7 @@
 - 排除LIBERO-90 IDs `8,9,10,20,25,27,30,31,44,46,47,48,49,50,51,52,53,54,77`，active为其71-task补集。Goal3/4/7/8/9、Object0/1/4/5/6/7/9及Long5的完整映射记录在audit rows中。
 - 明确保留near-miss IDs `2,29,12,13,14,15,38`，因为其完整composition或role selector与目标不同。
 - active corpus为71×50=3550 successful episodes、529,173 frames、52,710,755,898 bytes；HDF5 aggregate SHA256 `81bdb358...a1a50e`。
-- canonical hashes：overlap audit `fe731127...cc003`、manifest `75453a20...2e54`、source-only normalization `e259ee6e...f7c4`、recipe `5772a136...b89494`；`sha256sum -c`通过。
+- canonical hashes：overlap audit `fe731127...cc003`、manifest `75453a20...2e54`、source-only normalization `e259ee6e...f7c4`、recipe `4c537067...281734`；`sha256sum -c`通过。recipe hash变化只加入pinned OpenPI相机mask authority，不改变source corpus。
 
 不得根据后续source-base/Writer outcome修改这些source IDs。
 
@@ -50,7 +50,7 @@
 
 - 官方anchor固定为OpenPI `15a9616...ccac`、LeRobot `30da8e6...76ce`：full action-SFT、AdamW `(0.9,0.95)`、eps `1e-8`、weight decay `1e-10`、clip1、peak LR `5e-5`、10k linear warmup后constant、EMA `0.999`、30k steps、global batch256。
 - source base采用full-SFT并最终直接冻结policy/EMA，不叠shared source adapter；下游统一LoRA合同为18层action expert q/v加action_in/out共38 targets、rank/alpha16、dropout0、B=0 identity init。
-- 8卡profile从microbatch1/4/16/32提升到约13.82/31.55/44.69/47.44 examples/s；选定m32时每卡allocated/reserved为67.18/71.30GB，loss/gradient finite，八卡角色与进程数对称。最终smoke使用pinned OpenPI精确的`q99-q01+1e-6` quantile分母与显式GPU-local NUMA binding，metrics SHA256 `bc01e6ce...6ca`。
+- 当前有效8卡profile只取相机mask修正后的m32+EMA smoke：3/3 steps finite，steps2–3平均47.75 examples/s，每卡peak allocated/reserved为67.18/71.18GB，八卡角色与NUMA绑定对称。contract/metrics/summary/log SHA256为`90fbe1da...0458`、`de2d9889...50d9`、`0a590a29...e1bc`、`26bb5aad...c10`；旧batch对比profile只作工程provenance。
 - checkpoint包含policy、EMA、optimizer、scheduler、per-rank Python/NumPy/CPU/CUDA RNG、sampler/data/metrics cursor与完整hash manifest。两次从同一step1恢复到step2得到相同loss `0.3457298893481493`、grad norm `4.03354549407959`与逐rank state hashes；独立NCCL启动后policy/EMA最大末位差为`1.49e-8/3.73e-9`。compact evidence SHA256 `16137fa1...b1e`。
 - formal fresh launch要求clean且HEAD已推到`origin/main`；resume由保存的commit/contract约束，不因后续`origin/main`前进失效。每次invocation另存当时完整Git观测。
 
@@ -67,7 +67,7 @@
 - 在step12、3,072 global examples、首个checkpoint前发送SIGINT，pane exit130；failure packet明确禁止resume或科学使用。run contract/metrics/log SHA256分别为`997af43a...8b2`、`81dbfcbc...4ca`、`7a169300...118`。
 - 修复：初始化CUDA device后从PCI sysfs解析NUMA node，把rank及其DataLoader children限制到该node cpulist；formal缺少binding时fail closed。修复smoke记录8个rank的完整affinity，metrics/contract SHA256为`bc01e6ce...6ca`/`42727d8c...18d`。
 
-## Formal source-base attempt 2 launch contract（2026-07-21）
+## Formal source-base attempt 2：工程失败并关闭（2026-07-21）
 
 - canonical workspace：`/data/ymdai/worktrees/EMBER-pi05-source-formal-77ff1ef`；task-owned branch `codex/pi05-source-formal-77ff1ef`；commit `77ff1ef21567e1d5290921ca308cd8792813a504`已在`origin/main`且worktree clean。
 - command：`PYTHONPATH=/data/ymdai/worktrees/EMBER-pi05-source-formal-77ff1ef/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 OMP_NUM_THREADS=8 /data/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=8 scripts/train_source_base.py --config configs/pi05_source_base_v1.json --data-root /data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a/libero_90 --foundation-path /data/ymdai/ember_data/lerobot_pi05_base --tokenizer-path /data/ymdai/ember_data/openpi/paligemma_tokenizer.model --output-dir /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_77ff1ef_20260721 --mode formal --num-workers 4`。
@@ -75,7 +75,17 @@
 - provenance/evidence：model、71 HDF5、tokenizer、audit、normalization和recipe全部重算/核验SHA；只读source action/state，不读取target action/reward/outcome。训练metrics只作source acquisition；完成后另行运行40-task fixed-state screen。
 - output/log/storage：全新root为上述output，stdout/stderr为同名`/data/ymdai/logs/ember/*.log`；checkpoint每5,000 steps原子发布并只保留最新。与launch同一preflight shell测得个人占用379,947,614,208 bytes，双checkpoint峰值447,622,427,872 bytes，低于500GB cap且不下载/复制模型数据。
 - resume/failure：仅从该root最新完整manifest、相同commit/config/contract恢复；超前metrics隔离到failure packet。attempt1 root永不resume；任何NUMA、hash、设备数、非空output或checkpoint漂移均fail closed。
-- live acceptance：8个rank分别为PID 1131909–1131916，`nvidia-smi`逐卡仅见一个69,130MiB同角色进程；rank0–3 affinity为`0-37,76-113`，rank4–7为`38-75,114-151`。首21步loss/gradient均finite，稳态约47.1 examples/s，allocated/reserved为67,183,340,032/71,301,070,848 bytes；run contract SHA256为`e79e1c84717661e75b3e9cfee0349125d728b9b0a442d1adece695d80b0ce7d8`。训练继续运行，首个atomic checkpoint预定step5,000。
+- live acceptance：8个rank分别为PID 1131909–1131916，逐卡仅一个同角色CUDA进程且NUMA正确；运行至step316、80,896 examples时发现相机合同违反pinned OpenPI recipe，主动SIGINT停止。无checkpoint，不得resume或作科学结果。
+- 根因与修复：显式传入zero右腕使LeRobot自动生成`image_mask=true`；官方OpenPI LIBERO transform要求third-camera zero image但mask为false。canonical processor和evaluator现在省略右腕feature key，由LeRobot创建zero padding + false mask；source config对此fail closed。
+- evidence：failure packet/run contract/metrics/log SHA256分别为`2d2a9e40...9b80`、`e79e1c84...e7d8`、`fb0b2edc...f918`、`3f0eb65f...76f7`。旧tmux dead shell已在确认无GPU进程后清理。
+
+## Canonical cost-balanced evaluator（实现完成，profile待checkpoint）
+
+- `scripts/evaluate_pi05.py`取代并删除旧静态`evaluate_pi05_base.py`，是唯一活动π0.5目标评测入口；不保留双runner。
+- `pi05_eval_contract.py`拥有authority/final-EMA/test-state门，`pi05_eval_queue.py`拥有cost-balanced SQLite WAL队列，`pi05_evaluation.py`拥有persistent policy/env与official rollout，`pi05_eval_results.py`单独拥有worker拓扑证据和strict aggregation；拆分是为隔离调度、runtime与不可变结果故障边界，不是平行runner。
+- state shards按`count × horizon`估算cost并动态work-steal；8 GPUs上统一1/2/3 replicas，launcher CPU-only，GPU0无额外CUDA角色。policy noise按`(seed,suite,task,state,replan)`确定性独立，不受batch或worker顺序影响。
+- launcher lock覆盖active-worker audit、queue recovery、preflight与spawn；partial spawn/failure只回收本launcher PIDs并封存logs/jobs/hashes。正式吞吐包含worker spawn、model load和首次env/EGL，另报raw shard window。
+- formal/screen拒绝非当前完整source config、非final step30000 EMA、相机interface漂移、test init hash漂移及同大小model/tokenizer篡改；aggregate交叉核对raw rows、DB counts、producer、8×replica topology、GPU UUID和NUMA。
 
 ## 已对齐的后续方法
 
@@ -92,10 +102,10 @@
 
 ## 当前后续动作
 
-1. 验证、commit、push Phase A seal与source-base canonical runner。
-2. 创建隔离worktree，fresh live GPU/storage preflight后启动8卡formal source-base full-SFT。
-3. 训练运行期间在另一worktree推进cost-balanced dynamic evaluator、persistent env/model与统一1/2/3 replicas真实rollout/s profile。
-4. source base checkpoint产生后按预声明快速screen全部40 target tasks；只有跨多个tasks出现真实成功才进入共同冻结地基。
+1. fresh运行完整tests、JSON/checksum/architecture checks，commit并push相机mask修复和唯一dynamic evaluator。
+2. 从新push commit创建隔离clean worktree；fresh GPU/storage/process preflight后从generic base启动全新formal attempt3，绝不resume attempt1/2。
+3. 训练等待期间推进π0.5 Writer/functional LoRA；final checkpoint产生后实测evaluator统一1/2/3 replicas的有效rollouts/s并选择拓扑。
+4. 用选定evaluator快速screen全部40 target tasks；只有跨多个tasks出现真实成功才冻结共同base并进入Phase C–H。
 
 ## 历史边界
 

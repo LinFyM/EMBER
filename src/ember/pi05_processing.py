@@ -126,10 +126,11 @@ class Pi05LiberoProcessor:
         actions = self._quantile_transform(
             actions, self._action_q01, self._action_q99, inverse=False
         )
+        # OpenPI pads LIBERO's missing right wrist with image_mask=False. Omitting
+        # the key is the pinned LeRobot PI05 preprocessor's exact equivalent.
         return {
             "observation.images.base_0_rgb": base,
             "observation.images.left_wrist_0_rgb": wrist,
-            "observation.images.right_wrist_0_rgb": torch.zeros_like(base),
             OBS_LANGUAGE_TOKENS: tokens,
             OBS_LANGUAGE_ATTENTION_MASK: masks,
             ACTION: actions,

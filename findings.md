@@ -16,17 +16,25 @@
 - 排除19个完整semantic/composition等价source IDs：`8,9,10,20,25,27,30,31,44,46,47,48,49,50,51,52,53,54,77`。除已知44/77外，audit捕获Goal与Object中的别名和不同scene复现；过滤规则与逐pair理由已封存。
 - 保留71 tasks；primitive containment、不同object multiplicity、source/destination selector或额外ordered subgoal不算full-task overlap。IDs `2,29,12,13,14,15,38`是人工复核并保留的关键near misses。
 - 71×50 successful episodes全部存在，共3550 episodes、529,173 frames、52,710,755,898 bytes，aggregate HDF5 SHA256 `81bdb358...a1a50e`；source-only normalization读取这些source numeric rows且validation/test numeric reads为0。
-- seal hashes为audit `fe731127...cc003`、manifest `75453a20...2e54`、normalization `e259ee6e...f7c4`和recipe `5772a136...b89494`。后续outcome不得反向修改source IDs。
+- seal hashes为audit `fe731127...cc003`、manifest `75453a20...2e54`、normalization `e259ee6e...f7c4`和recipe `4c537067...281734`。recipe hash更新只封存pinned OpenPI缺失右腕的zero-image/false-mask相机合同，不改变source IDs或任何outcome；后续outcome不得反向修改source IDs。
 
 ## 2026-07-21 π0.5 source-base recipe、profile与resume
 
 - 官方full-SFT anchor来自pinned OpenPI/LeRobot：global batch256、30k steps、AdamW betas `(0.9,0.95)`、eps `1e-8`、weight decay `1e-10`、clip1、peak LR `5e-5`、10k warmup后constant、EMA `0.999`。EMBER source base采用full-SFT，不使用`pi05_libero`，不叠未merge shared adapter。
-- 真实8×A100 profile中，per-rank microbatch1/4/16/32稳态吞吐约13.82/31.55/44.69/47.44 global examples/s。最终m32 smoke使用pinned OpenPI的`q99-q01+1e-6` quantile公式，loss/gradient finite；EMA峰值allocated/reserved为67.18/71.30GB，保留约13.6GiB物理显存，故锁定global batch256且不做gradient accumulation。
+- 修正后的canonical 8×A100 m32+EMA smoke使用pinned OpenPI的`q99-q01+1e-6` quantile公式，并省略右腕feature key，使LeRobot产生zero padding且`image_mask=false`。3/3 steps的loss/gradient finite，steps2–3平均47.75 global examples/s；峰值allocated/reserved为67,178,351,616/71,179,436,032 bytes，约保留10.7GB稳定余量，故锁定global batch256且不做gradient accumulation。旧m1/m4/m16/m32对比profile把显式zero右腕误标为`mask=true`，只保留工程provenance，不再作活动launch证据。
 - 第一次formal启动的CUDA进程拓扑正确，但live `PSR`显示rank未受GPU-local NUMA约束；在step12、首个checkpoint前主动终止，exit130。该root仅保留20KB failure evidence，run contract/metrics/log hashes分别为`997af43a...8b2`、`81dbfcbc...4ca`、`7a169300...118`，不得resume或作科学结果。
-- 修复后每rank在CUDA初始化后立即绑定sysfs GPU NUMA cpulist，DataLoader children继承：rank0–3为`0-37,76-113`/NUMA0，rank4–7为`38-75,114-151`/NUMA1。3-step m32+EMA smoke exit0，contract SHA256 `42727d8c...18d`、metrics SHA256 `bc01e6ce...6ca`。
+- 修复后每rank在CUDA初始化后立即绑定sysfs GPU NUMA cpulist，DataLoader children继承：rank0–3为`0-37,76-113`/NUMA0，rank4–7为`38-75,114-151`/NUMA1。相机mask修正后的3-step m32+EMA smoke exit0，contract/metrics/summary/log SHA256分别为`90fbe1da...0458`、`de2d9889...50d9`、`0a590a29...e1bc`、`26bb5aad...c10`。
+- formal attempt2在step316、80,896 global examples处被主动终止：根因是训练与评测都显式传入zero右腕，LeRobot因此把第三相机标为`mask=true`，而pinned OpenPI LIBERO policy要求zero image加`mask=false`。该run无checkpoint、不得resume或作科学结果；failure packet/run-contract/metrics/log SHA256为`2d2a9e40...9b80`、`e79e1c84...e7d8`、`fb0b2edc...f918`、`3f0eb65f...76f7`。修复是省略feature key而不是另建相机路径，训练和评测共用这一唯一合同。
 - canonical runner严格加载weights，避免上游异常时静默返回随机模型；每个checkpoint封存policy、EMA、optimizer、scheduler、8个rank RNG/sampler states、metrics cursor、contract和文件hash，并在新checkpoint原子发布后才清理旧状态。
 - 两个独立8-rank进程均从同一step1 manifest `0461dee1...5953`恢复；step2 loss、grad norm、LR、cursor和8个rank state文件完全一致。4,143,404,816个policy元素中0.0308%仅有独立NCCL启动末位差，max `1.49e-8`；EMA max `3.73e-9`。这支持state/cursor exact且numerically reproducible的resume合同，不虚假宣称跨新distributed process bitwise identical。
 - 三套约32GB probe checkpoint在compact evidence封存后按500GB cap永久清理；保留evidence packet为444KB，comparison SHA256 `16137fa1...b1e`。清理后个人占用379,942,686,720 bytes，atomic双checkpoint峰值估计约447.62GB。
+
+## 2026-07-21 canonical π0.5 target evaluator
+
+- 唯一活动入口为`scripts/evaluate_pi05.py`；旧静态`scripts/evaluate_pi05_base.py`已退役，不从Git历史恢复。`pi05_eval_contract.py`拥有sealed authorities、source final-EMA门与seed schedule，`pi05_eval_queue.py`拥有cost-balanced SQLite队列，`pi05_evaluation.py`拥有persistent policy/env与rollout，`pi05_eval_results.py`拥有worker证据与strict aggregate；这些是单一runner内的故障边界，不是并行实现。
+- 40-task screen按`states × suite horizon`切成近等cost shards，8卡使用相同1/2/3 replicas并动态claim/work-steal；每worker持久加载一套policy和当前task env pool，GPU0没有额外CUDA controller。
+- formal/screen只接受与当前source config、全部model/tokenizer/recipe authorities完全一致的step30000 EMA；test `.pruned_init`逐项对sealed protocol hash。worker在load前重算model/tokenizer SHA，raw shard、DB counts与producer/claim均交叉核对。
+- launcher在任何queue recovery前独占lock；局部spawn失败只终止本launcher创建的workers并保存PID、logs、failed jobs与hash。吞吐主指标从首worker进程spawn到全体退出，包含model load与首次env/EGL创建；另报shard-only window，避免1/2/3 replicas profile偏置。
 
 下文全部SmolVLA/70-10-10证据仍是真实历史，但只作provenance，不能驱动当前π0.5训练或复用旧checkpoint/normalization/runner。
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import torch
 import pytest
@@ -54,11 +55,38 @@ def test_training_processor_maps_cameras_tokens_and_source_actions() -> None:
     assert tuple(result["observation.images.base_0_rgb"].shape) == (2, 3, 8, 8)
     assert result["observation.images.base_0_rgb"].dtype == torch.float32
     assert torch.all(result["observation.images.left_wrist_0_rgb"] == 1)
-    assert torch.all(result["observation.images.right_wrist_0_rgb"] == 0)
+    assert "observation.images.right_wrist_0_rgb" not in result
     assert result["observation.language.tokens"].tolist() == [[1, 2, 0, 0, 0], [1, 3, 0, 0, 0]]
     assert result["observation.language.attention_mask"].sum().item() == 4
     assert torch.all(result["action"][0] == -1)
     assert torch.allclose(result["action"][1], torch.ones_like(result["action"][1]))
+
+
+def test_missing_right_wrist_uses_official_false_image_mask() -> None:
+    from lerobot.policies.pi05.modeling_pi05 import PI05Policy
+
+    class StubPolicy(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.anchor = torch.nn.Parameter(torch.zeros(()))
+            self.config = SimpleNamespace(
+                image_features=(
+                    "observation.images.base_0_rgb",
+                    "observation.images.left_wrist_0_rgb",
+                    "observation.images.right_wrist_0_rgb",
+                ),
+                image_resolution=(8, 8),
+            )
+
+    batch = {
+        "observation.images.base_0_rgb": torch.zeros(2, 3, 8, 8),
+        "observation.images.left_wrist_0_rgb": torch.ones(2, 3, 8, 8),
+    }
+    images, masks = PI05Policy._preprocess_images(StubPolicy(), batch)
+    assert len(images) == len(masks) == 3
+    assert torch.all(masks[0]) and torch.all(masks[1])
+    assert not torch.any(masks[2])
+    assert torch.all(images[2] == -1)
 
 
 def test_official_warmup_starts_at_peak_over_warmup_plus_one() -> None:

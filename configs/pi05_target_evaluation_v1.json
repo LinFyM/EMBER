@@ -1,0 +1,103 @@
+{
+  "schema_version": "ember_pi05_target_evaluation_v1",
+  "authorities": {
+    "protocol": {
+      "path": "configs/libero_24_8_8_v1/protocol.json",
+      "sha256": "db6d575758b69380803a7032b8cdb2f120d1348b63783da0bb1aa1f84031068f"
+    },
+    "overlap_audit": {
+      "path": "configs/pi05_source_corpus_v1/overlap_audit.json",
+      "sha256": "fe7311272fc7b854a84f799692f96fbb069e74a88ba5008757fa5ec7fb7cc003"
+    },
+    "normalization": {
+      "path": "configs/pi05_source_corpus_v1/source_normalization.json",
+      "sha256": "e259ee6e77a5793820235983917b17cfc0f8d3e6de94774a1f3173accc73f7c4"
+    },
+    "source_manifest": {
+      "path": "configs/pi05_source_corpus_v1/source_manifest.json",
+      "sha256": "75453a2028733973ae257ab76351cd129456dbae3225e732b4bed5cc96d32e54"
+    },
+    "source_base_config": {
+      "path": "configs/pi05_source_base_v1.json",
+      "sha256": "366a5e1275a216ecde0750a40cc0cd824237fe4e74ee7a38bfabd2d195aacee8"
+    },
+    "tokenizer_manifest": {
+      "path": "configs/libero_24_8_8_v1/pi05_tokenizer_manifest.json",
+      "sha256": "948bf1ec1f2768833bead66b2e829154e3304c1c09fe9c48813a79f06e47426c"
+    }
+  },
+  "roles": {
+    "all_targets": "all 40 tasks; source-base competence screen only, never task selection",
+    "development_train": "sealed 24 train tasks",
+    "validation": "sealed 8 validation tasks",
+    "test": "sealed 8 test tasks",
+    "final_source": "sealed 24 train plus 8 validation tasks"
+  },
+  "policy": {
+    "arm": "frozen_pi05_source_base",
+    "precision": "bfloat16",
+    "chunk_size": 50,
+    "n_action_steps": 10,
+    "num_inference_steps": 10,
+    "replan_steps": 5,
+    "action_dim": 7,
+    "state_dim": 8,
+    "model_resolution": 224,
+    "camera_rotation_degrees": 180,
+    "right_wrist_padding": "zero_image_with_false_mask_via_missing_feature_key"
+  },
+  "environment": {
+    "fixed_init_states": true,
+    "fixed_init_state_count": 50,
+    "render_resolution": 256,
+    "dummy_settling_steps": 10,
+    "dummy_action": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.0
+    ],
+    "terminate_on_success": true,
+    "horizons": {
+      "libero_spatial": 220,
+      "libero_object": 280,
+      "libero_goal": 300,
+      "libero_10": 520
+    }
+  },
+  "rng": {
+    "inference_seed": 7,
+    "environment_schedule": "reseed each fixed-state episode with inference_seed before reset and set_init_state",
+    "policy_noise_schedule": "sha256 first 63 bits of canonical JSON [seed,suite,task_id,init_state_id,replan_index]",
+    "policy_noise_device": "cpu_generator_then_transfer"
+  },
+  "parallel": {
+    "physical_gpu_count": 8,
+    "allowed_replicas_per_gpu": [
+      1,
+      2,
+      3
+    ],
+    "envs_per_replica": 8,
+    "shard_target_cost": 4160,
+    "shard_cost": "fixed_state_count_times_suite_horizon",
+    "queue": "sqlite_wal_full_sync_atomic_claim",
+    "omp_threads_per_worker": {
+      "1": 8,
+      "2": 4,
+      "3": 2
+    },
+    "persistent_policy": true,
+    "persistent_task_env_pool": true,
+    "gpu0_extra_cuda_roles": 0
+  },
+  "artifacts": {
+    "raw_rows_per_shard": true,
+    "atomic_row_publish_before_queue_completion": true,
+    "aggregate_requires_exact_task_state_coverage": true,
+    "representative_video_only": true
+  }
+}

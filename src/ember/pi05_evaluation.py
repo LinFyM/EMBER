@@ -1,55 +1,54 @@
-"""Generic pi0.5 feasibility evaluation on the sealed LIBERO 24/8/8 protocol."""
+"""Persistent policy workers and strict aggregation for canonical PI05 evaluation."""
 
 from __future__ import annotations
 
 import json
+import math
 import os
-import subprocess
+import string
 import time
 from collections import deque
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping, Sequence
 
 import numpy as np
 
 from ember.libero_evaluation import sha256_file
-from ember.pi05_assets import (
-    Pi05EvaluationError,
-    load_protocol,
-    prepare_libero_config,
-    write_json_atomic,
+from ember.pi05_assets import Pi05EvaluationError
+from ember.pi05_eval_contract import load_run_contract, policy_noise_seed
+from ember.pi05_eval_queue import (
+    EvaluationClaim,
+    EvaluationShard,
+    claim_next,
+    complete_job,
+    fail_job,
+    publish_json_exclusive,
+    queue_summary,
+    read_json_with_sha256,
 )
 from ember.pi05_processing import Pi05LiberoProcessor
+from ember.writer.topology import bind_current_process_to_cuda_numa, cuda_numa_node
 
 
-def _git_state(repo_root: Path) -> dict[str, Any]:
-    def run(*args: str) -> str:
-        return subprocess.run(
-            ["git", *args], cwd=repo_root, check=True, text=True, capture_output=True
-        ).stdout.strip()
-
-    return {
-        "commit": run("rev-parse", "HEAD"),
-        "branch": run("branch", "--show-current"),
-        "dirty_paths": run("status", "--porcelain").splitlines(),
-    }
+SHARD_RESULT_SCHEMA = "ember_pi05_eval_shard_v1"
 
 
 def _quat2axisangle(quat: np.ndarray) -> np.ndarray:
     quat = np.asarray(quat, dtype=np.float32).copy()
     quat[3] = np.clip(quat[3], -1.0, 1.0)
-    den = np.sqrt(max(0.0, 1.0 - float(quat[3] * quat[3])))
-    if den < 1e-10:
+    denominator = np.sqrt(max(0.0, 1.0 - float(quat[3] * quat[3])))
+    if denominator < 1e-10:
         return np.zeros(3, dtype=np.float32)
-    return quat[:3] * (2.0 * np.arccos(quat[3]) / den)
+    return quat[:3] * (2.0 * np.arccos(quat[3]) / denominator)
 
 
-def _policy_input(obs: dict[str, Any], language: str) -> dict[str, Any]:
+def _policy_input(obs: Mapping[str, Any], language: str) -> dict[str, Any]:
     import torch
 
     def image(value: np.ndarray) -> torch.Tensor:
-        value = np.ascontiguousarray(value[::-1, ::-1])
-        return torch.from_numpy(value).permute(2, 0, 1).float().div_(255.0)
+        rotated = np.ascontiguousarray(value[::-1, ::-1])
+        return torch.from_numpy(rotated).permute(2, 0, 1).float().div_(255.0)
 
     base = image(obs["agentview_image"])
     wrist = image(obs["robot0_eye_in_hand_image"])
@@ -60,257 +59,260 @@ def _policy_input(obs: dict[str, Any], language: str) -> dict[str, Any]:
             obs["robot0_gripper_qpos"],
         )
     ).astype(np.float32)
+    # Missing right wrist must remain absent so LeRobot creates a false image mask.
     return {
         "observation.images.base_0_rgb": base,
         "observation.images.left_wrist_0_rgb": wrist,
-        "observation.images.right_wrist_0_rgb": torch.zeros_like(base),
         "observation.state": torch.from_numpy(state),
         "task": language,
     }
 
 
 def _load_policy(
-    model_path: Path, stats: dict[str, Any], tokenizer_path: Path, device: str
-) -> tuple[Any, Any, Any]:
-    import torch
+    model_path: Path,
+    stats: Mapping[str, Any],
+    tokenizer_path: Path,
+    policy_contract: Mapping[str, Any],
+) -> tuple[Any, Pi05LiberoProcessor, Any]:
     from lerobot.configs import FeatureType, PolicyFeature
     from lerobot.configs.policies import PreTrainedConfig
     from lerobot.policies.pi05 import PI05Policy
     from lerobot.policies.pi05.configuration_pi05 import PI05Config
-    from lerobot.utils.constants import ACTION
+    from lerobot.utils.constants import ACTION, OBS_STATE
 
     config = PreTrainedConfig.from_pretrained(model_path)
     if not isinstance(config, PI05Config):
-        raise Pi05EvaluationError("generic checkpoint did not resolve to PI05Config")
-    config.device = device
-    config.n_action_steps = 10
-    config.output_features[ACTION] = PolicyFeature(type=FeatureType.ACTION, shape=(7,))
-    policy = PI05Policy.from_pretrained(
-        model_path, config=config, local_files_only=True, strict=True
-    ).to(device).eval()
-    processor = Pi05LiberoProcessor(
-        stats, tokenizer_path, config.tokenizer_max_length, device
+        raise Pi05EvaluationError("evaluation checkpoint did not resolve to PI05Config")
+    config.device = "cuda:0"
+    config.dtype = str(policy_contract["precision"])
+    config.chunk_size = int(policy_contract["chunk_size"])
+    config.n_action_steps = int(policy_contract["n_action_steps"])
+    config.num_inference_steps = int(policy_contract["num_inference_steps"])
+    config.input_features[OBS_STATE] = PolicyFeature(
+        type=FeatureType.STATE, shape=(int(policy_contract["state_dim"]),)
     )
-    torch.set_grad_enabled(False)
+    config.output_features[ACTION] = PolicyFeature(
+        type=FeatureType.ACTION, shape=(int(policy_contract["action_dim"]),)
+    )
+    policy = PI05Policy.from_pretrained(
+        model_path,
+        config=config,
+        local_files_only=True,
+        strict=True,
+    ).to("cuda:0").eval()
+    if hasattr(policy.model, "gradient_checkpointing_disable"):
+        policy.model.gradient_checkpointing_disable()
+    processor = Pi05LiberoProcessor(
+        stats,
+        tokenizer_path,
+        config.tokenizer_max_length,
+        "cuda:0",
+    )
     return policy, processor, processor.unnormalize_action
 
 
-def _select_test_task(protocol: dict[str, Any], suite: str, task_id: int) -> dict[str, Any]:
-    matches = [
-        row for row in protocol["test_tasks"] if row["suite"] == suite and row["task_id"] == task_id
-    ]
-    if len(matches) != 1:
-        raise Pi05EvaluationError(f"{suite} task {task_id} is not a sealed test task")
-    return matches[0]
-
-
-def _validate_held_action_isolation(
-    protocol: dict[str, Any], normalization: dict[str, Any]
-) -> None:
-    mapping = normalization.get("local_to_global_task_ids", {})
-    for role, count in (("validation", 8), ("test", 8)):
-        expected = sorted(
-            int(mapping[suite][str(task_id)])
-            for suite, roles in protocol["split"]["suites"].items()
-            for task_id in roles[role]
-        )
-        observed = sorted(normalization.get(f"{role}_global_task_ids_not_read", []))
-        if len(expected) != count or observed != expected:
-            raise Pi05EvaluationError(f"normalization does not prove {role} action isolation")
-
-
-def evaluate_test_task(
+def make_policy_noise(
+    slots: Sequence[Mapping[str, Any]],
     *,
-    repo_root: Path,
-    protocol_path: Path,
-    normalization_path: Path,
-    model_path: Path,
-    model_manifest_path: Path,
-    tokenizer_path: Path,
-    tokenizer_manifest_path: Path,
-    suite_name: str,
+    root_seed: int,
+    suite: str,
     task_id: int,
-    output_dir: Path,
-    episode_limit: int | None = None,
-    env_count: int | None = None,
-) -> None:
-    protocol = load_protocol(protocol_path)
-    task_contract = _select_test_task(protocol, suite_name, task_id)
-    feasibility = protocol["pi05_feasibility"]
-    expected_episodes = int(feasibility["num_trials_per_task"])
-    episode_count = expected_episodes if episode_limit is None else int(episode_limit)
-    formal_env_count = int(feasibility["envs_per_policy_process"])
-    active_env_count = formal_env_count if env_count is None else int(env_count)
-    if not 1 <= episode_count <= expected_episodes:
-        raise Pi05EvaluationError("episode limit is outside 1..50")
-    if not 1 <= active_env_count <= episode_count:
-        raise Pi05EvaluationError("environment count is outside 1..episode count")
-    if episode_limit is None and active_env_count != formal_env_count:
-        raise Pi05EvaluationError("formal evaluation requires the sealed environment count")
-    output_dir.mkdir(parents=True, exist_ok=True)
-    if any(output_dir.iterdir()):
-        raise Pi05EvaluationError(f"output directory is not empty: {output_dir}")
-    git = _git_state(repo_root)
-    if episode_limit is None and git["dirty_paths"]:
-        raise Pi05EvaluationError("formal evaluation requires a clean Git worktree")
-    model_manifest = json.loads(model_manifest_path.read_text(encoding="utf-8"))
-    weights = model_path / model_manifest["weights_filename"]
-    if weights.stat().st_size != int(model_manifest["weights_bytes"]):
-        raise Pi05EvaluationError("model weight size differs from the sealed manifest")
-    tokenizer_manifest = json.loads(tokenizer_manifest_path.read_text(encoding="utf-8"))
-    if tokenizer_path.stat().st_size != int(tokenizer_manifest["bytes"]):
-        raise Pi05EvaluationError("tokenizer size differs from the sealed manifest")
-    if sha256_file(tokenizer_path) != tokenizer_manifest["sha256"]:
-        raise Pi05EvaluationError("tokenizer hash differs from the sealed manifest")
-    paths = prepare_libero_config(output_dir / "libero_config")
-    os.environ.update(MUJOCO_GL="egl", PYOPENGL_PLATFORM="egl")
-    visible_devices = os.environ.get("CUDA_VISIBLE_DEVICES", "0").split(",")
-    if len(visible_devices) != 1 or not visible_devices[0].strip().isdigit():
-        raise Pi05EvaluationError(
-            "each evaluator requires one numeric physical CUDA_VISIBLE_DEVICES entry"
-        )
-    os.environ["MUJOCO_EGL_DEVICE_ID"] = visible_devices[0].strip()
+    chunk_size: int,
+    max_action_dim: int,
+    device: Any,
+) -> tuple[Any, tuple[int, ...]]:
+    """Generate order-independent PI05 flow noise for each planning rollout."""
+
     import torch
-    from libero.libero import benchmark, get_libero_path
-    from libero.libero.envs import OffScreenRenderEnv
 
-    if not torch.cuda.is_available() or torch.cuda.device_count() != 1:
-        raise Pi05EvaluationError("each evaluator must see exactly one CUDA device")
-    torch.cuda.set_device(0)
-    seed = int(feasibility["seed"])
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    normalization = json.loads(normalization_path.read_text(encoding="utf-8"))
-    if normalization.get("protocol_sha256") != sha256_file(protocol_path):
-        raise Pi05EvaluationError("normalization does not belong to the sealed protocol")
-    _validate_held_action_isolation(protocol, normalization)
-    policy, preprocess, postprocess = _load_policy(
-        model_path, normalization["stats"], tokenizer_path, "cuda:0"
-    )
-    suite = benchmark.get_benchmark_dict()[suite_name]()
-    task = suite.get_task(task_id)
-    if task.language != task_contract["language"]:
-        raise Pi05EvaluationError("installed LIBERO task language differs from sealed contract")
-    bddl_path = Path(get_libero_path("bddl_files")) / task.problem_folder / task.bddl_file
-    init_path = (
-        Path(get_libero_path("init_states"))
-        / suite_name
-        / task_contract["init_states_file"]
-    )
-    init_states = suite.get_task_init_states(task_id)
-    if sha256_file(bddl_path) != task_contract["bddl_sha256"]:
-        raise Pi05EvaluationError("installed BDDL differs from sealed contract")
-    if sha256_file(init_path) != task_contract["init_states_sha256"]:
-        raise Pi05EvaluationError("installed fixed init states differ from sealed contract")
-    if len(init_states) < expected_episodes:
-        raise Pi05EvaluationError("installed task has fewer than 50 fixed init states")
-    envs = [
-        OffScreenRenderEnv(
-            bddl_file_name=bddl_path,
-            camera_heights=int(feasibility["render_resolution"]),
-            camera_widths=int(feasibility["render_resolution"]),
+    tensors = []
+    seeds = []
+    for slot in slots:
+        seed = policy_noise_seed(
+            root_seed,
+            suite,
+            task_id,
+            int(slot["init_state_id"]),
+            int(slot["replan_index"]),
         )
-        for _ in range(active_env_count)
-    ]
-    try:
-        for env in envs:
-            env.seed(seed)
-        rows = _rollout_rows(
-            envs,
-            init_states,
-            task_contract,
-            feasibility,
-            policy,
-            preprocess,
-            postprocess,
-            episode_count,
+        generator = torch.Generator(device="cpu")
+        generator.manual_seed(seed)
+        tensors.append(
+            torch.randn(
+                (chunk_size, max_action_dim),
+                dtype=torch.float32,
+                generator=generator,
+                device="cpu",
+            )
         )
-    finally:
-        for env in envs:
-            env.close()
-    result = {
-        "schema_version": 1,
-        "arm": "generic_pi05_base_zero_shot",
-        "suite": suite_name,
-        "task_id": task_id,
-        "language": task.language,
-        "successes": sum(bool(row["success"]) for row in rows),
-        "episodes": len(rows),
-        "rows": rows,
-        "protocol_sha256": sha256_file(protocol_path),
-        "normalization_sha256": sha256_file(normalization_path),
-        "model_path": str(model_path.resolve()),
-        "model_manifest_sha256": sha256_file(model_manifest_path),
-        "model_sha256": model_manifest["weights_sha256"],
-        "model_revision": model_manifest["model_revision"],
-        "tokenizer_manifest_sha256": sha256_file(tokenizer_manifest_path),
-        "tokenizer_sha256": tokenizer_manifest["sha256"],
-        "git": git,
-        "libero_paths": paths,
-        "runtime_seconds": sum(float(row["wall_seconds"]) for row in rows),
-        "wall_clock_seconds": max(float(row["finished_at"]) for row in rows),
-        "envs_per_policy_process": active_env_count,
+        seeds.append(seed)
+    return torch.stack(tensors).to(device=device), tuple(seeds)
+
+
+def _append_worker_event(path: Path, value: Mapping[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(dict(value), sort_keys=True) + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def task_lookup(contract: Mapping[str, Any]) -> dict[tuple[str, int], dict[str, Any]]:
+    tasks = {
+        (row["suite"], int(row["task_id"])): dict(row) for row in contract["tasks"]
     }
-    write_json_atomic(output_dir / "results.json", result)
+    if len(tasks) != len(contract["tasks"]):
+        raise Pi05EvaluationError("run contract contains duplicate target tasks")
+    return tasks
 
 
-def _rollout_rows(
-    envs: list[Any],
+class PersistentTaskEnvironmentPool:
+    """Keep one task's vector of raw LIBERO environments alive between shards."""
+
+    def __init__(self, contract: Mapping[str, Any]) -> None:
+        from libero.libero import benchmark
+
+        self.contract = contract
+        self.suites = {
+            name: benchmark.get_benchmark_dict()[name]()
+            for name in contract["environment"]["horizons"]
+        }
+        self.current_key: tuple[str, int] | None = None
+        self.envs: list[Any] = []
+        self.init_states: Any = None
+
+    def close(self) -> None:
+        for env in self.envs:
+            env.close()
+        self.envs = []
+        self.init_states = None
+        self.current_key = None
+
+    def switch(self, task: Mapping[str, Any]) -> tuple[list[Any], Any]:
+        key = task["suite"], int(task["task_id"])
+        if self.current_key == key:
+            return self.envs, self.init_states
+        self.close()
+        from libero.libero.envs import OffScreenRenderEnv
+
+        bddl = (
+            Path(self.contract["libero_paths"]["bddl_files"])
+            / task["problem_folder"]
+            / task["bddl_file"]
+        )
+        init_path = (
+            Path(self.contract["libero_paths"]["init_states"])
+            / task["suite"]
+            / task["init_states_file"]
+        )
+        if (
+            bddl.stat().st_size != int(task["bddl_bytes"])
+            or sha256_file(bddl) != task["bddl_sha256"]
+            or init_path.stat().st_size != int(task["init_states_bytes"])
+            or sha256_file(init_path) != task["init_states_sha256"]
+        ):
+            raise Pi05EvaluationError(f"installed task assets changed: {key}")
+        suite = self.suites[task["suite"]]
+        installed = suite.get_task(int(task["task_id"]))
+        if installed.language != task["language"]:
+            raise Pi05EvaluationError(f"installed task language changed: {key}")
+        self.init_states = suite.get_task_init_states(int(task["task_id"]))
+        env_count = min(
+            int(self.contract["parallel"]["envs_per_replica"]),
+            len(task["init_state_ids"]),
+        )
+        self.envs = [
+            OffScreenRenderEnv(
+                bddl_file_name=bddl,
+                camera_heights=int(self.contract["environment"]["render_resolution"]),
+                camera_widths=int(self.contract["environment"]["render_resolution"]),
+            )
+            for _ in range(env_count)
+        ]
+        self.current_key = key
+        return self.envs, self.init_states
+
+
+def rollout_shard(
+    *,
+    envs: Sequence[Any],
     init_states: Any,
-    task: dict[str, Any],
-    config: dict[str, Any],
+    task: Mapping[str, Any],
+    state_ids: Sequence[int],
+    contract: Mapping[str, Any],
     policy: Any,
     preprocess: Any,
     postprocess: Any,
-    episode_count: int,
 ) -> list[dict[str, Any]]:
     import torch
 
+    if not state_ids or len(set(state_ids)) != len(state_ids):
+        raise Pi05EvaluationError("evaluation shard state IDs are empty or duplicated")
+    dummy = np.asarray(contract["environment"]["dummy_action"], dtype=np.float32)
+    max_steps = int(task["horizon"])
+    replan_steps = int(contract["policy"]["replan_steps"])
+    root_seed = int(contract["rng"]["inference_seed"])
+    worker_started = time.monotonic()
     rows: list[dict[str, Any]] = []
-    dummy = np.asarray(config["dummy_action"], dtype=np.float32)
-    max_steps = int(config["max_steps"][task["suite"]])
-    replan_steps = int(config["replan_steps"])
-    evaluation_start = time.monotonic()
 
-    def start_episode(env: Any, episode_index: int) -> dict[str, Any]:
+    def start_episode(env: Any, init_state_id: int) -> dict[str, Any]:
+        env.seed(root_seed)
         env.reset()
-        obs = env.set_init_state(init_states[episode_index])
-        for _ in range(int(config["num_steps_wait"])):
+        obs = env.set_init_state(init_states[init_state_id])
+        for _ in range(int(contract["environment"]["dummy_settling_steps"])):
             obs, _, _, _ = env.step(dummy)
         return {
-            "episode_index": episode_index,
+            "init_state_id": init_state_id,
             "obs": obs,
             "steps": 0,
+            "replan_index": 0,
+            "policy_noise_seeds": [],
             "action_plan": deque(),
-            "start": time.monotonic(),
+            "started": time.monotonic(),
         }
 
-    policy.reset()
-    next_episode = min(len(envs), episode_count)
+    active_count = min(len(envs), len(state_ids))
+    active_envs = envs[:active_count]
+    next_state = active_count
     slots: list[dict[str, Any] | None] = [
-        start_episode(env, episode_index)
-        for env, episode_index in zip(envs, range(next_episode), strict=False)
+        start_episode(env, int(state_id))
+        for env, state_id in zip(active_envs, state_ids[:active_count], strict=True)
     ]
+    policy.reset()
     while any(slot is not None for slot in slots):
-        planning_slots = [slot for slot in slots if slot is not None and not slot["action_plan"]]
-        if planning_slots:
+        planning = [slot for slot in slots if slot is not None and not slot["action_plan"]]
+        if planning:
             processed = [
-                preprocess(_policy_input(slot["obs"], task["language"]))
-                for slot in planning_slots
+                preprocess(_policy_input(slot["obs"], str(task["language"])))
+                for slot in planning
             ]
             batch = {
                 key: torch.cat([item[key] for item in processed], dim=0)
                 for key in processed[0]
                 if isinstance(processed[0][key], torch.Tensor)
             }
+            noise, seeds = make_policy_noise(
+                planning,
+                root_seed=root_seed,
+                suite=str(task["suite"]),
+                task_id=int(task["task_id"]),
+                chunk_size=int(policy.config.chunk_size),
+                max_action_dim=int(policy.config.max_action_dim),
+                device=batch[next(iter(batch))].device,
+            )
             with torch.inference_mode():
-                chunk = policy.predict_action_chunk(batch)
-                actions = postprocess(chunk).detach().cpu().numpy()
-            for slot, plan in zip(planning_slots, actions, strict=True):
+                chunks = policy.predict_action_chunk(
+                    batch,
+                    noise=noise,
+                    num_steps=int(contract["policy"]["num_inference_steps"]),
+                )
+                actions = postprocess(chunks).detach().cpu().numpy()
+            for slot, plan, seed in zip(planning, actions, seeds, strict=True):
                 slot["action_plan"].extend(plan[:replan_steps])
+                slot["policy_noise_seeds"].append(seed)
+                slot["replan_index"] += 1
 
-        for slot_index, (env, slot) in enumerate(zip(envs, slots, strict=True)):
+        for slot_index, (env, slot) in enumerate(zip(active_envs, slots, strict=True)):
             if slot is None:
                 continue
             obs, _, done, _ = env.step(slot["action_plan"].popleft())
@@ -323,60 +325,412 @@ def _rollout_rows(
                 {
                     "suite": task["suite"],
                     "task_id": int(task["task_id"]),
+                    "split_role": task["split_role"],
                     "language": task["language"],
-                    "init_state_id": int(slot["episode_index"]),
-                    "env_seed": int(config["seed"]),
-                    "policy_seed": int(config["seed"]),
+                    "init_state_id": int(slot["init_state_id"]),
+                    "env_seed": root_seed,
+                    "policy_seed_root": root_seed,
+                    "policy_noise_seeds": list(slot["policy_noise_seeds"]),
                     "success": bool(done),
                     "steps": int(slot["steps"]),
-                    "wall_seconds": finished - float(slot["start"]),
-                    "finished_at": finished - evaluation_start,
+                    "wall_seconds": finished - float(slot["started"]),
+                    "finished_at": finished - worker_started,
                 }
             )
-            if next_episode < episode_count:
-                slots[slot_index] = start_episode(env, next_episode)
-                next_episode += 1
+            if next_state < len(state_ids):
+                slots[slot_index] = start_episode(env, int(state_ids[next_state]))
+                next_state += 1
             else:
                 slots[slot_index] = None
-    return sorted(rows, key=lambda row: row["init_state_id"])
+    return sorted(rows, key=lambda row: int(row["init_state_id"]))
 
 
-def aggregate_results(protocol_path: Path, input_root: Path, output_path: Path) -> None:
-    protocol = load_protocol(protocol_path)
-    expected = {(row["suite"], int(row["task_id"])) for row in protocol["test_tasks"]}
-    result_paths = sorted(input_root.rglob("results.json"))
-    results = [(path, json.loads(path.read_text(encoding="utf-8"))) for path in result_paths]
-    actual = {(row["suite"], int(row["task_id"])) for _, row in results}
-    if actual != expected or len(results) != len(expected):
-        raise Pi05EvaluationError(f"incomplete task results: expected={expected} actual={actual}")
-    all_rows = [episode for _, result in results for episode in result["rows"]]
-    keys = {(row["suite"], int(row["task_id"]), int(row["init_state_id"])) for row in all_rows}
-    if len(all_rows) != 400 or len(keys) != 400:
-        raise Pi05EvaluationError("formal aggregate requires 400 unique episode rows")
-    per_task = sorted(
-        (
-            {
-                "suite": result["suite"],
-                "task_id": result["task_id"],
-                "language": result["language"],
-                "successes": result["successes"],
-                "episodes": result["episodes"],
-                "success_rate": result["successes"] / result["episodes"],
-                "results_sha256": sha256_file(path),
-            }
-            for path, result in results
-        ),
-        key=lambda row: (row["suite"], row["task_id"]),
+def validate_shard_result(
+    payload: Mapping[str, Any],
+    *,
+    contract: Mapping[str, Any],
+    shard: EvaluationShard,
+) -> list[dict[str, Any]]:
+    _validate_shard_header(payload, contract=contract, shard=shard)
+    task = task_lookup(contract).get(shard.task_key)
+    if task is None:
+        raise Pi05EvaluationError(f"raw evaluation shard task is outside contract: {shard.job_id}")
+    rows = [dict(row) for row in payload.get("rows", [])]
+    expected_ids = set(int(value) for value in shard.init_state_ids)
+    actual_ids = [int(row.get("init_state_id", -1)) for row in rows]
+    if len(rows) != len(expected_ids) or set(actual_ids) != expected_ids:
+        raise Pi05EvaluationError(f"raw evaluation shard state coverage changed: {shard.job_id}")
+    for row in rows:
+        _validate_episode_row(row, contract=contract, shard=shard, task=task)
+    return sorted(rows, key=lambda row: int(row["init_state_id"]))
+
+
+def _validate_shard_header(
+    payload: Mapping[str, Any],
+    *,
+    contract: Mapping[str, Any],
+    shard: EvaluationShard,
+) -> None:
+    observed_shard = dict(payload.get("shard", {}))
+    if "init_state_ids" in observed_shard:
+        observed_shard["init_state_ids"] = tuple(observed_shard["init_state_ids"])
+    if (
+        payload.get("schema_version") != SHARD_RESULT_SCHEMA
+        or payload.get("contract_sha256") != contract["contract_sha256"]
+        or payload.get("job_id") != shard.job_id
+        or observed_shard != asdict(shard)
+    ):
+        raise Pi05EvaluationError(f"raw evaluation shard contract changed: {shard.job_id}")
+    producer = payload.get("producer", {})
+    started_unix = float(payload.get("started_unix", float("nan")))
+    finished_unix = float(payload.get("finished_unix", float("nan")))
+    if (
+        not producer.get("worker_id")
+        or len(str(producer.get("claim_token", ""))) != 32
+        or int(producer.get("attempt", 0)) <= 0
+        or not math.isfinite(started_unix)
+        or not math.isfinite(finished_unix)
+        or finished_unix < started_unix
+    ):
+        raise Pi05EvaluationError(f"raw evaluation shard producer is invalid: {shard.job_id}")
+
+
+def _validate_episode_row(
+    row: Mapping[str, Any],
+    *,
+    contract: Mapping[str, Any],
+    shard: EvaluationShard,
+    task: Mapping[str, Any],
+) -> None:
+    root_seed = int(contract["rng"]["inference_seed"])
+    replan_steps = int(contract["policy"]["replan_steps"])
+    state_id = int(row["init_state_id"])
+    steps = int(row.get("steps", 0))
+    seeds = [int(value) for value in row.get("policy_noise_seeds", [])]
+    expected_seeds = [
+        policy_noise_seed(root_seed, shard.suite, shard.task_id, state_id, index)
+        for index in range(math.ceil(steps / replan_steps))
+    ]
+    valid = (
+        row.get("suite") == shard.suite
+        and int(row.get("task_id", -1)) == shard.task_id
+        and row.get("language") == task["language"]
+        and row.get("split_role") == task["split_role"]
+        and type(row.get("success")) is bool
+        and 1 <= steps <= shard.horizon
+        and int(row.get("env_seed", -1)) == root_seed
+        and int(row.get("policy_seed_root", -1)) == root_seed
+        and seeds == expected_seeds
     )
-    successes = sum(int(row["success"]) for row in all_rows)
-    write_json_atomic(
-        output_path,
+    if not valid:
+        raise Pi05EvaluationError(f"raw evaluation row contract changed: {shard.job_id}")
+
+
+def _complete_published_shard(
+    *,
+    output_dir: Path,
+    queue_path: Path,
+    claim: EvaluationClaim,
+    worker_id: str,
+    contract: Mapping[str, Any],
+) -> list[dict[str, Any]] | None:
+    relative = Path("shards") / f"{claim.shard.job_id}.json"
+    path = output_dir / relative
+    if not path.exists():
+        return None
+    payload, digest = read_json_with_sha256(path)
+    rows = validate_shard_result(payload, contract=contract, shard=claim.shard)
+    complete_job(
+        queue_path,
+        job_id=claim.shard.job_id,
+        worker_id=worker_id,
+        claim_token=claim.claim_token,
+        rows_path=relative.as_posix(),
+        rows_sha256=digest,
+        row_count=len(rows),
+        successes=sum(bool(row["success"]) for row in rows),
+    )
+    return rows
+
+
+@dataclass
+class WorkerRuntime:
+    output_dir: Path
+    queue_path: Path
+    worker_id: str
+    gpu_index: int
+    replica: int
+    numa_node: int
+    gpu_uuid: str
+    cpu_affinity: tuple[int, ...]
+    contract: dict[str, Any]
+    tasks: dict[tuple[str, int], dict[str, Any]]
+    policy: Any
+    preprocess: Any
+    postprocess: Any
+    pool: PersistentTaskEnvironmentPool
+    event_path: Path
+
+
+def _parse_worker_assignment(
+    worker_id: str, contract: Mapping[str, Any]
+) -> tuple[int, int]:
+    visible = os.environ.get("CUDA_VISIBLE_DEVICES", "").strip()
+    try:
+        gpu_text, replica_text = worker_id.split("-r", 1)
+        gpu_index, replica = int(gpu_text), int(replica_text)
+    except ValueError as error:
+        raise Pi05EvaluationError(f"invalid PI05 evaluator worker ID: {worker_id}") from error
+    valid = (
+        visible == str(gpu_index)
+        and 0 <= gpu_index < 8
+        and 0 <= replica < int(contract["parallel"]["replicas_per_gpu"])
+    )
+    if not valid:
+        raise Pi05EvaluationError("worker ID does not match its one physical visible GPU")
+    return gpu_index, replica
+
+
+def _validate_worker_assets(contract: Mapping[str, Any]) -> tuple[Path, dict[str, Any], Path]:
+    normalization_path = Path(contract["normalization"]["path"])
+    if sha256_file(normalization_path) != contract["normalization"]["sha256"]:
+        raise Pi05EvaluationError("source-only normalization changed after queue creation")
+    normalization = json.loads(normalization_path.read_text(encoding="utf-8"))
+    model_path = Path(contract["model"]["model_path"])
+    for record in contract["model"]["model_files"]:
+        relative = Path(record["path"]).relative_to("ema_policy")
+        path = model_path / relative
+        if (
+            not path.is_file()
+            or path.stat().st_size != int(record["bytes"])
+            or sha256_file(path) != record["sha256"]
+        ):
+            raise Pi05EvaluationError(f"PI05 model file changed after queue creation: {path}")
+    tokenizer_path = Path(contract["tokenizer"]["path"])
+    if (
+        not tokenizer_path.is_file()
+        or tokenizer_path.stat().st_size != int(contract["tokenizer"]["bytes"])
+        or sha256_file(tokenizer_path) != contract["tokenizer"]["sha256"]
+    ):
+        raise Pi05EvaluationError("OpenPI tokenizer changed after queue creation")
+    return model_path, normalization, tokenizer_path
+
+
+def _initialize_worker(output_dir: Path, worker_id: str) -> WorkerRuntime:
+    import torch
+
+    output_dir = output_dir.resolve()
+    contract = load_run_contract(output_dir / "run_contract.json")
+    queue_path = output_dir / "queue.sqlite3"
+    gpu_index, replica = _parse_worker_assignment(worker_id, contract)
+    os.environ.update(
+        MUJOCO_GL="egl",
+        PYOPENGL_PLATFORM="egl",
+        MUJOCO_EGL_DEVICE_ID=str(gpu_index),
+        LIBERO_CONFIG_PATH=str((output_dir / "libero_config").resolve()),
+    )
+    if not torch.cuda.is_available() or torch.cuda.device_count() != 1:
+        raise Pi05EvaluationError("each PI05 evaluator worker must see exactly one CUDA GPU")
+    torch.cuda.set_device(0)
+    affinity = bind_current_process_to_cuda_numa(0)
+    numa_node = cuda_numa_node(0)
+    if affinity is None or numa_node is None:
+        raise Pi05EvaluationError("PI05 evaluator requires GPU-local NUMA affinity")
+    model_path, normalization, tokenizer_path = _validate_worker_assets(contract)
+    torch.manual_seed(int(contract["rng"]["inference_seed"]))
+    torch.cuda.manual_seed(int(contract["rng"]["inference_seed"]))
+    torch.backends.cuda.matmul.allow_tf32 = True
+    torch.set_grad_enabled(False)
+    policy, preprocess, postprocess = _load_policy(
+        model_path,
+        normalization["stats"],
+        tokenizer_path,
+        contract["policy"],
+    )
+    return WorkerRuntime(
+        output_dir=output_dir,
+        queue_path=queue_path,
+        worker_id=worker_id,
+        gpu_index=gpu_index,
+        replica=replica,
+        numa_node=numa_node,
+        gpu_uuid=str(torch.cuda.get_device_properties(0).uuid),
+        cpu_affinity=affinity,
+        contract=contract,
+        tasks=task_lookup(contract),
+        policy=policy,
+        preprocess=preprocess,
+        postprocess=postprocess,
+        pool=PersistentTaskEnvironmentPool(contract),
+        event_path=output_dir / "workers" / f"{worker_id}.jsonl",
+    )
+
+
+def _publish_claim_result(
+    runtime: WorkerRuntime,
+    claim: EvaluationClaim,
+    rows: list[dict[str, Any]],
+    started_unix: float,
+) -> bool:
+    payload = {
+        "schema_version": SHARD_RESULT_SCHEMA,
+        "contract_sha256": runtime.contract["contract_sha256"],
+        "job_id": claim.shard.job_id,
+        "shard": asdict(claim.shard),
+        "producer": {
+            "worker_id": runtime.worker_id,
+            "claim_token": claim.claim_token,
+            "attempt": claim.attempt,
+        },
+        "started_unix": started_unix,
+        "finished_unix": time.time(),
+        "rows": rows,
+    }
+    validate_shard_result(payload, contract=runtime.contract, shard=claim.shard)
+    relative = Path("shards") / f"{claim.shard.job_id}.json"
+    try:
+        digest = publish_json_exclusive(runtime.output_dir / relative, payload)
+    except Pi05EvaluationError:
+        adopted = _complete_published_shard(
+            output_dir=runtime.output_dir,
+            queue_path=runtime.queue_path,
+            claim=claim,
+            worker_id=runtime.worker_id,
+            contract=runtime.contract,
+        )
+        if adopted is None:
+            raise
+        return True
+    complete_job(
+        runtime.queue_path,
+        job_id=claim.shard.job_id,
+        worker_id=runtime.worker_id,
+        claim_token=claim.claim_token,
+        rows_path=relative.as_posix(),
+        rows_sha256=digest,
+        row_count=len(rows),
+        successes=sum(bool(row["success"]) for row in rows),
+    )
+    return False
+
+
+def _execute_claim(runtime: WorkerRuntime, claim: EvaluationClaim) -> bool:
+    published = _complete_published_shard(
+        output_dir=runtime.output_dir,
+        queue_path=runtime.queue_path,
+        claim=claim,
+        worker_id=runtime.worker_id,
+        contract=runtime.contract,
+    )
+    if published is not None:
+        return True
+    task = runtime.tasks[claim.task_key]
+    envs, init_states = runtime.pool.switch(task)
+    started_unix = time.time()
+    rows = rollout_shard(
+        envs=envs,
+        init_states=init_states,
+        task=task,
+        state_ids=claim.shard.init_state_ids,
+        contract=runtime.contract,
+        policy=runtime.policy,
+        preprocess=runtime.preprocess,
+        postprocess=runtime.postprocess,
+    )
+    return _publish_claim_result(runtime, claim, rows, started_unix)
+
+
+def run_worker(*, output_dir: Path, worker_id: str) -> dict[str, Any]:
+    output_dir = output_dir.resolve()
+    invocation_id = os.environ.get("EMBER_PI05_EVAL_INVOCATION_ID", "")
+    if len(invocation_id) != 32 or any(
+        character not in string.hexdigits for character in invocation_id
+    ):
+        raise Pi05EvaluationError("evaluator worker lacks a launcher invocation lease")
+    contract = load_run_contract(output_dir / "run_contract.json")
+    event_path = output_dir / "workers" / f"{worker_id}.jsonl"
+    process_started_unix = time.time()
+    _append_worker_event(
+        event_path,
         {
-            "schema_version": 1,
-            "arm": "generic_pi05_base_zero_shot",
-            "protocol_sha256": sha256_file(protocol_path),
-            "per_task": per_task,
-            "overall": {"successes": successes, "episodes": 400, "success_rate": successes / 400},
-            "rows": sorted(all_rows, key=lambda row: (row["suite"], row["task_id"], row["init_state_id"])),
+            "event": "process_started",
+            "unix": process_started_unix,
+            "worker_id": worker_id,
+            "pid": os.getpid(),
+            "invocation_id": invocation_id,
+            "contract_sha256": contract["contract_sha256"],
         },
     )
+    runtime: WorkerRuntime | None = None
+    completed = 0
+    adopted = 0
+    preferred_task: tuple[str, int] | None = None
+    try:
+        runtime = _initialize_worker(output_dir, worker_id)
+        ready_unix = time.time()
+        _append_worker_event(
+            event_path,
+            {
+                "event": "ready",
+                "unix": ready_unix,
+                "worker_id": worker_id,
+                "pid": os.getpid(),
+                "invocation_id": invocation_id,
+                "physical_gpu": runtime.gpu_index,
+                "gpu_uuid": runtime.gpu_uuid,
+                "replica": runtime.replica,
+                "numa_node": runtime.numa_node,
+                "cpu_affinity": list(runtime.cpu_affinity),
+                "model_load_seconds": ready_unix - process_started_unix,
+                "contract_sha256": runtime.contract["contract_sha256"],
+            },
+        )
+        while (claim := claim_next(
+            runtime.queue_path,
+            worker_id=worker_id,
+            preferred_task=preferred_task,
+        )) is not None:
+            preferred_task = claim.task_key
+            try:
+                adopted += int(_execute_claim(runtime, claim))
+                completed += 1
+            except Exception as error:
+                fail_job(
+                    runtime.queue_path,
+                    job_id=claim.shard.job_id,
+                    worker_id=worker_id,
+                    claim_token=claim.claim_token,
+                    error=repr(error),
+                )
+                raise
+    except Exception as error:
+        _append_worker_event(
+            event_path,
+            {
+                "event": "failed",
+                "unix": time.time(),
+                "worker_id": worker_id,
+                "pid": os.getpid(),
+                "invocation_id": invocation_id,
+                "contract_sha256": contract["contract_sha256"],
+                "error": repr(error),
+            },
+        )
+        raise
+    finally:
+        if runtime is not None:
+            runtime.pool.close()
+    summary = {
+        "event": "finished",
+        "unix": time.time(),
+        "worker_id": worker_id,
+        "pid": os.getpid(),
+        "invocation_id": invocation_id,
+        "contract_sha256": contract["contract_sha256"],
+        "completed_shards": completed,
+        "adopted_shards": adopted,
+        "wall_seconds": time.time() - process_started_unix,
+        "queue": queue_summary(runtime.queue_path),
+    }
+    _append_worker_event(event_path, summary)
+    return summary

@@ -64,6 +64,11 @@ def load_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if config.get("schema_version") != "ember_pi05_source_base_v1":
         raise Pi05SourceTrainingError("unsupported PI05 source-base config schema")
+    if (
+        config.get("features", {}).get("right_wrist_padding")
+        != "zero_image_with_false_mask_via_missing_feature_key"
+    ):
+        raise Pi05SourceTrainingError("PI05 source base must mask the missing right wrist")
     for name in (
         "overlap_audit",
         "source_manifest",

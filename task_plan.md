@@ -141,8 +141,7 @@ formal 实际完成 12 个 full cycles、108 declared updates、107 个有 rewar
 
 ## Phase E：Task-local LoRA RL
 
-状态：cold step1050 已锁定；matched canonical runner 的 8 单元真实
-official-random-reset profile/exact-resume 已完成，formal U/K 已纯按吞吐封存，尚未产生正式 task-local 性能证据。
+状态：cold step1050 已锁定；matched formal adaptation、预算内 checkpoint 选择和独立 fixed-50 fresh evaluation 均已完成。Writer-init arm 明显优于 matched identity-init arm，但收益集中而非广泛覆盖。
 
 Arm A：
 
@@ -162,11 +161,11 @@ Arm B：
 - [x] 所有 RL 更新与 adaptation checkpoint 选择 rollouts 通过 LIBERO 官方 reset/BDDL 随机化初态；禁止从固定 50 个 `.pruned_init` states 取样。
 - [x] zero/identity-init 与 Writer-init 两臂使用相同 task、env seeds 和初态序列，并保存可恢复的 worker RNG/seed schedule 与 interaction cursor。
 - [x] 初始 profile 约 10–15 分钟/task/arm 等价预算，8 卡并行。
-- [ ] 若不足，在 test 前统一提升到约 20 分钟/task；不得按 task outcome 临时改预算。
-- [ ] checkpoints K/3、2K/3、K。
-- [ ] 每 task 可按预算内 adaptation reward 选择 checkpoint。
-- [ ] 用与 RL 数据分离的固定 50 个 `.pruned_init` states 做 fresh evaluation，保留 dummy settling、horizon 400、成功即终止。
-- [ ] 报告 J0、curve、AUC、time-to-threshold、JK、JK−J0、interactions、updates、wall-clock。
+- [x] validation 的 10–15 分钟/task/arm 预算已产生可判读 matched contrast，未触发约 20 分钟扩展；不得按 task outcome 临时改预算。
+- [x] checkpoints K/3、2K/3、K。
+- [x] 每 task 可按预算内 adaptation reward 选择 checkpoint。
+- [x] 用与 RL 数据分离的固定 50 个 `.pruned_init` states 做 fresh evaluation，保留 dummy settling、horizon 400、成功即终止。
+- [x] 报告 J0、curve、AUC、time-to-threshold、JK、JK−J0、interactions、updates、wall-clock。
 
 活动实现把 4-task profile 映射成 8 个 task×arm 单元，恰好每卡一个 policy
 进程；正式 20 单元按 rank-strided 分片。两臂的 rollout seed 函数不含 arm，
@@ -183,11 +182,15 @@ ledger 保存每次 official random reset 的 env/policy seed、interaction curs
 
 真实 profile 在全新进程由 update1 checkpoint exact-resume 到 update3，8 个 task×arm 单元共生成 24 个 ledgers、96 条 official-random-reset trajectories 和 16 个已验证 checkpoints；matched 两臂的 env/policy seed blocks 逐 task 完全相同，所有 `fixed_init_state_id=null`。24 个 update timing 的线性插值 p90 为 `49.8926s`，纯吞吐规则选择 `U=18`、每 task/arm `K=72` interactions、thirds `6/12/18`；20 单元总 interactions 为 `1,440`，按最多 3 units/rank 加 180 秒启动余量投影 `2,874.20s`，低于 100 分钟上限。
 
+formal 实际 wall `1,982s`，完成 360 ledgers、1,440 trajectories、720 个唯一 matched seed rows 和 60 个逐文件验证 checkpoints；所有 RL 初态仍为官方随机 reset 且 fixed ID 为 null。adaptation reward identity/Writer 为 `89/720` 与 `110/720`，AUC `0.1236/0.1528`。独立同一 500 rows fresh evaluation 的 base/cold/identity-RL/Writer-RL/direct 为 `56/63/54/74/186`；identity-RL 对 base 配对净 `-2`，Writer-RL 对 cold 净 `+11`，Writer-RL 对 matched identity-RL 为 `43 gains / 23 losses / net +20`。逐任务 Writer-RL 为 `{0:30,8:0,15:0,28:10,40:0,56:1,61:0,71:0,85:0,88:33}`，相对 identity 的正增益在 task0/task88，task28 回退。结果足以支持“Writer initialization 提高 matched task-local RL 的终点”，但不支持广泛 reward adaptation；完整 seal 为 `configs/task_local_lora_rl_validation_v1.json`。效应与 adaptation reward 方向一致且 matched paired net 为 +20，第二 policy RNG 不会改变这项有限结论，故为效率不追加。
+
 所有 target tasks 的总 wall-clock 是预算对象，不允许每 task 各跑 90 分钟。
 
 ## Phase F：合同冻结与统一 reporting-only test
 
 进入条件：Writer cold start 已在多个类别 validation tasks 上明显优于 frozen source embodiment base，Writer-only RL 和 matched task-local RL 已完成 validation 选择。
+
+状态：进入条件已满足；test 仍未打开。下一步先封存最终方法、预算、baselines 和 reporting-only test 合同，再做最小 test-role 解封。
 
 - [ ] 冻结 split、source base、Writer/architecture、LoRA、loss、data、optimizer、steps、RL algorithm、interaction/update budget、checkpoint selection rule、evaluator 和 baseline 集合。
 - [ ] 保留从一开始就使用完整 70×50 数据且完全符合最终合同的开发 trajectory 作为正式 seed 1。

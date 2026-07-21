@@ -48,6 +48,7 @@
 - validation direct-LoRA formal 已完成：10 tasks 各自使用全部 50 action episodes、batch384 × 180 steps = 69,120 queries，60/120/180 的 30 个 manifests/files 全部验证；约 17.5 分钟、峰值 reserved 69.09GiB、每卡一个 CUDA rank。固定 final checkpoints 的 500-row fresh evaluation 为 `186/500`，per-task `{0:48,8:1,15:17,28:36,40:21,56:11,61:9,71:2,85:11,88:30}`；相对 base `56/500` 配对净 `+130`，相对 cold Writer `63/500` 净 `+123`。seal 为 `configs/direct_lora_validation_reference_v1.json`，test 未打开。
 - Writer-only RL formal 已完成 108 updates / 12 full 70-task cycles：每 task 48 个官方随机 reset rollouts，共 `3,360` interactions / `679` successes / `1,176,874` env steps，864 个 ledgers、3,360 个唯一 seed rows 和 36/72/108 三个完整 checkpoints 全部通过审计；max-rank wall 4,862.10 秒。相同 validation 500 rows 上 cold/u36/u72/u108=`63/56/36/15`，预封存规则保留 cold step1050；该阶段是完整负结果，seal 为 `configs/writer_only_rl_selected_v1.json`。
 - matched task-local RL profile 已从 update1 exact-resume 到 update3：4 tasks × 2 arms、24 ledgers、96 条 official-random-reset trajectories、16 个 checkpoints 全部验证，fixed state IDs 全为 null，matched arms seed blocks 完全相同。24 个 update timing 的 p90 为 49.8926 秒，formal 已纯按吞吐封存为每 task/arm `U=18`、`K=72` interactions、checkpoints 6/12/18；20 单元总 1,440 interactions，投影总 wall 2,874.20 秒。
+- matched task-local RL formal 已完成：10 tasks × 2 arms、360 ledgers、1,440 official-random-reset trajectories、720 个唯一 matched seed rows、60 个 checkpoints 全部通过审计，实际 wall 1,982 秒；fixed state IDs 全为 null。adaptation reward identity/Writer=`89/720,110/720`。同一 500 条 fresh rows 上 base/cold/identity-RL/Writer-RL/direct=`56/63/54/74/186`；Writer-RL 对 identity-RL 配对 `43/23/+20`，但增益主要来自 task88，task28 回退。seal 为 `configs/task_local_lora_rl_validation_v1.json`，test 仍未打开。
 
 ## 已明确退役
 
@@ -63,9 +64,9 @@
 
 ## 当前下一批动作
 
-1. 从已锁定的 cold step1050 启动 10 validation tasks × identity/Writer 两臂 formal task-local RL；保持每卡一个 CUDA policy process、同 task/env/policy seed schedule 和 official random reset。
-2. 完成后按预算内 adaptation reward 的预声明规则逐 task 选 checkpoint，再用与 RL 数据分离的 fixed 50 states 做两臂 fresh evaluation；先报告单一 policy RNG，只有结论受采样方差影响时才加第二 RNG。
-3. 保留 cold Writer 两 RNG 的“两类正效用、覆盖有限、task0 回退”、direct oracle acquisition gap 和 Writer-only RL 负结果，不为追求正数重选或改协议。
+1. 进入 Phase F，封存 split、source base step630、cold Writer step1050、37-target LoRA、U18/K72、6/12/18 reward selection、fresh evaluator、核心 baseline 集和 reporting-only test 规则。
+2. 只在该 seal 后最小解封 test role；test adaptation 继续使用官方随机 reset 与 matched seed schedule，fixed 50 states 只作独立 fresh evaluation，最终 test rows 不参与选择。
+3. 保留 cold Writer“两类正效用但覆盖有限”、Writer-only RL 负结果、matched task-local +20 但集中 task88、direct oracle gap；不追加第二 validation RNG 来美化局部波动。
 4. optional outer learning 只可在 Phase F 完成后考虑，不阻塞核心 Goal。
 
 ## Canonical runner ownership

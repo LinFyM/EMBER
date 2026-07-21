@@ -95,11 +95,15 @@
 - 因而本轮 Writer-only RL 是真实完成但未带来 held 泛化收益的负结果；source binary-success self-imitation 随交互增加破坏了 cold Writer 的窄 validation 效用。它不被解释成工程失败，也不通过改算法、加 RNG 或重选 checkpoint 来追求正结果；Phase E 使用未经过 Writer-RL 的 cold step1050。
 - 首次 validation launcher 因漏传 sealed `--writer-rl-config` 被 canonical evaluator 在 rollout 前拒绝；失败 packet 保留。重试只补齐该 authority 参数，未改 evaluator、checkpoint、rows 或选择规则，三个候选均 exit 0。
 
-### Task-local RL：matched official-random-reset profile/resume 通过
+### Task-local RL：Writer initialization 赢得 matched fresh evaluation，但覆盖集中
 
 - 4 tasks × 2 arms 恰好映射到 8 卡，每卡一个 CUDA policy process；update1 后由全新进程 exact-resume 到 update3。共 24 ledgers、96 trajectories、16 checkpoints，所有 `fixed_init_state_id=null`，两臂的 task/env/policy seed block 逐项一致。
 - 24 个 `task_local_reward_update.step_seconds` 的线性插值 p90 为 `49.8926s`。按读取 reward outcome 前已封存的纯吞吐规则选择 formal `U=18`、每 task/arm `K=72`、checkpoints `6/12/18`；20 单元共 1,440 interactions，含 180 秒开销的投影总 wall 为 2,874.20 秒。
-- profile reward 不参与预算选择，也不作为性能结论；下一证据是 10 validation tasks 的 formal adaptation 与独立 fixed-50 fresh evaluation。
+- formal 实际 wall 1,982 秒；360 ledgers、1,440 trajectories、720 个唯一 matched seed rows、60 个 checkpoint manifests/files 全部通过审计。所有 adaptation 与 selection rollouts 均 official random reset、`fixed_init_state_id=null`；fixed 50 states 只在训练结束后的 fresh evaluator 使用。
+- adaptation reward identity/Writer 为 `89/720`、`110/720`，AUC 为 `0.1236/0.1528`。成功主要来自 task0/task28/task88，六个任务两臂都没有 reward signal；这已提示 coverage 有限。
+- 同一 500 条 fresh validation rows 上，base/cold/identity-RL/Writer-RL/direct 为 `56/63/54/74/186`。identity-RL 对 base 为 `11 gains / 13 losses / net -2`；Writer-RL 对自身 cold J0 为 `37/26/+11`；Writer-RL 对 matched identity-RL 为 `43/23/+20`，exact paired-binomial two-sided `p=0.0187`。
+- Writer-RL per-task 为 `{0:30,8:0,15:0,28:10,40:0,56:1,61:0,71:0,85:0,88:33}`；相对 identity-RL 的 raw delta 为 task0 `+3`、task88 `+20`、task28 `-3`，其余为零。相对 cold 则 task0 `+11`、task88 `+14`、task28 `-14`。因此可支持 Writer initialization 在相同 K72 ordinary RL 下带来真实终点优势，但优势主要由 task88 驱动，不能宣称 reward adaptation 已广泛覆盖未见任务。
+- 不追加第二 policy RNG：matched +20 的方向同时出现在 reward AUC 与 fresh evaluation，足以支持上述有限结论；第二 RNG 可能改变小的 task0/28 波动，却不会把它升级为广泛覆盖。完整原始 counts、hashes、J0/JK、curve/AUC/time-to-threshold 与 selection 封存在 `configs/task_local_lora_rl_validation_v1.json`，test 未打开。
 
 ### Gate -1：通过但带残差
 
@@ -213,7 +217,7 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 ## 不允许从历史证据推出的结论
 
 - 不能声称 EMBER 已有稳健 validation 泛化。
-- 不能声称 Writer-only RL 改善了 validation；本轮已验证的是其完整负结果。也不能在 fresh validation 前声称 task-local RL 有性能收益，或声称 outer learning 已验证。
+- 不能声称 Writer-only RL 改善了 validation；本轮已验证的是其完整负结果。也不能把 task-local RL 的 task88 集中增益说成广泛覆盖，不能声称 identity-init ordinary RL 改善 aggregate，或声称 outer learning 已验证。
 - 不能声称 direct LoRA 是信息匹配的 held baseline。
 - 不能声称 h16 是标准 SmolVLA/LIBERO 主评估。
 - 不能把旧 source task 结果、旧 validation 结果或 task 22 用于新 split。
@@ -229,7 +233,7 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   shared state 冻结。其配对 seed schedule 明确排除 arm，官方随机 reset rollout
   ledger 与 worker RNG/interaction cursor 进入 checkpoint；`.pruned_init` 只由独立
   fresh evaluator 使用。
-- Writer-only RL 已有完整 source formal 与 4 候选 validation 的真实负结果；task-local RL 已有真实 GPU exact-resume/profile 机械证据，但正式 adaptation 和 fresh-validation 性能仍待完成。
+- Writer-only RL 已有完整 source formal 与 4 候选 validation 的真实负结果；task-local RL 已完成 matched formal、预算内选择和独立 fresh validation，支持 Writer-init 相对 identity-init 的有限终点优势。
 
 ## 证据定位
 

@@ -37,6 +37,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] 对LIBERO-90与目标40 tasks完成3600对language/BDDL/semantic/composition specification audit。
 - [x] 排除19个完整任务等价项并封存71个active source IDs、可执行规则与hashes；包含已知task44/task77及其余semantic aliases。
 - [x] 核验71 tasks×50 successful episodes、529,173 frames、52,710,755,898 bytes；封存source-only q01/q99 normalization，validation/test numeric reads为0。
+- [x] 下载并按opaque SHA/HDF5 schema-only核验目标40 tasks×50 episodes；封存24/8/8 target-data manifest，未解码target action/state/reward/terminal/video值且未改变task IDs。
 - [x] 已将当前“一task/一GPU”评测改成按 `episodes × horizon` cost-balanced state shards、动态队列、持久model/env，并删除旧静态活动入口。
 - [ ] final source checkpoint后完成每卡统一1/2/3 replicas与未来Writer异LoRA functional batching的真实profile。
 - [ ] 确认所有卡CUDA进程数相同、GPU0无额外角色；只按真实rollout/s选实现。
@@ -46,6 +47,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] 建立唯一canonical π0.5 full-SFT runner，严格模型加载、task-balanced no-replacement sampler、EMA、atomic checkpoint、metrics reconciliation与完整per-rank RNG/cursor恢复。
 - [x] 完成相机mask修正后的8卡真实profile；选定8×microbatch32、global batch256、EMA与GPU-local NUMA binding，稳态47.75 examples/s，单卡reserved 71.18GB。
 - [x] 从同一个不可变step-1 checkpoint做两次8-rank恢复；loss/grad/RNG/cursor完全一致，policy/EMA最大独立NCCL末位差分别为1.49e-8/3.73e-9。
+- [ ] 正式attempt3正在隔离worktree从generic base fresh训练；当前8卡拓扑、loss/gradient与约47 examples/s吞吐健康，首个step5000 checkpoint前不作行为结论。
 - [ ] 从generic `pi05_base`按成熟recipe在过滤后的LIBERO-90 source corpus上联合action-SFT；若用LoRA则merge成base。
 - [ ] 以已锁定8卡配置完成30,000 optimizer steps；一卡一rank，真实显存平均预留约10GB，checkpoint每5,000 steps且只保留最新完整状态。
 - [ ] 根据loss与快速行为screen避免过训，不追求高ceiling。
@@ -54,9 +56,10 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 
 ## Phase C：AS-Writer development
 
-- [ ] 将Writer core适配到π0.5成熟LoRA空间；同task video/action episode独立采样，Writer只见language+one action-hidden video。
+- [x] 将Writer core、target feature-cache与exact-resume训练owner适配到π0.5成熟LoRA空间；同task video/action episode使用独立确定性schedule，Writer只见language+one action-hidden video。
   - 已封存38 targets / 76 tensors / 1,287,168 parameters的rank16合同；真实checkpoint metadata与meta模型结构一致。
   - 已修复PI05 forward签名、BF16/FP32 LoRA dtype保真，并在Writer入口对`offsets=[0,L]`单视频合同fail-close；functional/materialized parity已测试。
+- [x] 封存target40 metadata/hash authority与development 32-task视频cache配置；cache和AS formal均保持pending real profile，不将候选batch/steps冒充正式配方。
 - [ ] 24 train tasks均衡混合；source base冻结，actions只进functional loss。
 - [ ] 先profile约短时loss/吞吐，将wall-clock换算为steps；checkpoint频繁exact-resume。
 - [ ] 单次训练不超过约2小时。用loss斜率决定何时值得运行便宜val screen，完整val只评少量候选，尽快选择接近饱和checkpoint。

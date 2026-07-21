@@ -309,6 +309,13 @@ class MixedTaskBatchSampler:
         ).permutation(self.task_ids)
         return int(order[offset]), task_visit
 
+    def task_visit_for_step(self, step: int) -> tuple[int, int]:
+        """Return this rank's task and global task-cycle visit for one data step."""
+
+        if not self.start_step <= step < self.stop_step:
+            raise WriterModelError("data step is outside the sampler interval")
+        return self._task_visit_for_global_slot(step * self.world_size + self.rank)
+
     def _episode_for_task_visit(
         self, task_id: int, task_visit: int, batch_offset: int
     ) -> tuple[int, int]:
@@ -409,9 +416,115 @@ class MixedTaskBatchSampler:
 
     def __iter__(self) -> Iterator[list[int]]:
         for step in range(self.start_step, self.stop_step):
-            slot = step * self.world_size + self.rank
-            task_id, task_visit = self._task_visit_for_global_slot(slot)
+            task_id, task_visit = self.task_visit_for_step(step)
             yield [
                 self._sample_for_task_visit(task_id, task_visit, batch_offset)
                 for batch_offset in range(self.per_rank_batch_size)
             ]
+
+
+class TeacherVideoSchedule:
+    """Independent deterministic no-replacement cycles for one teaching video."""
+
+    _SEED_TAG = 0x71DE0
+
+    def __init__(
+        self,
+        *,
+        task_ids: Sequence[int],
+        demo_indices: Sequence[int],
+        seed: int,
+    ) -> None:
+        if (
+            not task_ids
+            or len(set(task_ids)) != len(task_ids)
+            or not demo_indices
+            or len(set(demo_indices)) != len(demo_indices)
+            or seed < 0
+        ):
+            raise WriterModelError("invalid teacher-video schedule")
+        self.task_ids = tuple(sorted(int(value) for value in task_ids))
+        self.demo_indices = tuple(sorted(int(value) for value in demo_indices))
+        self.seed = int(seed)
+
+    def demo_for_task_visit(self, task_id: int, task_visit: int) -> int:
+        if task_id not in self.task_ids or task_visit < 0:
+            raise WriterModelError("teacher-video request is outside the schedule")
+        cycle, offset = divmod(task_visit, len(self.demo_indices))
+        order = np.random.default_rng(
+            np.random.SeedSequence(
+                [self.seed, task_id, cycle, self._SEED_TAG]
+            )
+        ).permutation(self.demo_indices)
+        return int(order[offset])
+
+    def identity_for_task_visits(
+        self, task_id: int, start_visit: int, stop_visit: int
+    ) -> dict[str, Any]:
+        if not 0 <= start_visit <= stop_visit:
+            raise WriterModelError("invalid teacher-video visit range")
+        demos = tuple(
+            self.demo_for_task_visit(task_id, visit)
+            for visit in range(start_visit, stop_visit)
+        )
+        digest = hashlib.sha256()
+        for visit, demo_index in enumerate(demos, start=start_visit):
+            digest.update(struct.pack(">3q", task_id, visit, demo_index))
+        return {
+            "task_id": task_id,
+            "start_visit": start_visit,
+            "stop_visit": stop_visit,
+            "demo_indices": demos,
+            "unique_demo_indices": tuple(sorted(set(demos))),
+            "identity_sha256": digest.hexdigest(),
+        }
+
+    def consumed_identity_summary(
+        self,
+        sampler: MixedTaskBatchSampler,
+        start_step: int,
+        stop_step: int,
+    ) -> dict[str, Any]:
+        """Digest the joint action-query and independent one-video schedule."""
+
+        declared_sets = {
+            tuple(sorted(sampler.episode_rows[task_id]))
+            for task_id in sampler.task_ids
+        }
+        declared_demos = next(iter(declared_sets)) if len(declared_sets) == 1 else ()
+        if (
+            self.task_ids != sampler.task_ids
+            or self.demo_indices != declared_demos
+            or not 0 <= start_step <= stop_step
+        ):
+            raise WriterModelError("Writer consumed schedule authorities differ")
+        query = sampler.consumed_identity_summary(start_step, stop_step)
+        digest = hashlib.sha256()
+        coverage = {task_id: set() for task_id in self.task_ids}
+        visits = {task_id: 0 for task_id in self.task_ids}
+        for step in range(start_step, stop_step):
+            for rank in range(sampler.world_size):
+                slot = step * sampler.world_size + rank
+                task_id, task_visit = sampler._task_visit_for_global_slot(slot)
+                demo_index = self.demo_for_task_visit(task_id, task_visit)
+                digest.update(
+                    struct.pack(">5q", step, rank, task_id, task_visit, demo_index)
+                )
+                coverage[task_id].add(demo_index)
+                visits[task_id] += 1
+        video_digest = digest.hexdigest()
+        combined = hashlib.sha256(
+            bytes.fromhex(query["identity_sha256"]) + bytes.fromhex(video_digest)
+        ).hexdigest()
+        visit_counts = tuple(visits.values())
+        video_counts = tuple(len(value) for value in coverage.values())
+        return {
+            "query": query,
+            "teacher_video_seed": self.seed,
+            "teacher_video_identity_sha256": video_digest,
+            "combined_identity_sha256": combined,
+            "min_video_visits_per_task": min(visit_counts),
+            "max_video_visits_per_task": max(visit_counts),
+            "min_unique_videos_per_task": min(video_counts),
+            "max_unique_videos_per_task": max(video_counts),
+        }

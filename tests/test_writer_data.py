@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ember.writer.data import MixedTaskBatchSampler
+from ember.writer.data import MixedTaskBatchSampler, TeacherVideoSchedule
 
 
 @dataclass
@@ -88,3 +88,47 @@ def test_mixed_task_sampler_covers_every_episode_in_each_full_window() -> None:
     assert summary["identity_sha256"] == _sampler(
         dataset, rank=1, start_step=3, stop_step=8
     ).consumed_identity_summary(0, 8)["identity_sha256"]
+
+
+def test_teacher_video_schedule_is_independent_resumable_and_cycle_complete() -> None:
+    schedule = TeacherVideoSchedule(
+        task_ids=(10, 20, 30, 40), demo_indices=range(5), seed=19
+    )
+    full = [schedule.demo_for_task_visit(20, visit) for visit in range(13)]
+    resumed = [schedule.demo_for_task_visit(20, visit) for visit in range(4, 13)]
+    assert full[4:] == resumed
+    assert all(set(full[start : start + 5]) == set(range(5)) for start in (0, 5))
+
+    changed_video_seed = TeacherVideoSchedule(
+        task_ids=(10, 20, 30, 40), demo_indices=range(5), seed=23
+    )
+    assert full != [changed_video_seed.demo_for_task_visit(20, visit) for visit in range(13)]
+
+    dataset, _ = _dataset()
+    assert list(_sampler(dataset, rank=0, start_step=0, stop_step=5)) == list(
+        _sampler(dataset, rank=0, start_step=0, stop_step=5)
+    )
+    identity = schedule.identity_for_task_visits(20, 0, 10)
+    assert identity["unique_demo_indices"] == tuple(range(5))
+    assert len(identity["identity_sha256"]) == 64
+
+
+def test_joint_writer_consumed_digest_covers_video_and_action_schedules() -> None:
+    dataset, _ = _dataset()
+    sampler = _sampler(dataset, rank=0, start_step=0, stop_step=8)
+    first = TeacherVideoSchedule(
+        task_ids=(10, 20, 30, 40), demo_indices=range(5), seed=19
+    )
+    second = TeacherVideoSchedule(
+        task_ids=(10, 20, 30, 40), demo_indices=range(5), seed=23
+    )
+    summary = first.consumed_identity_summary(sampler, 0, 8)
+    assert summary == first.consumed_identity_summary(sampler, 0, 8)
+    assert summary["query"] == sampler.consumed_identity_summary(0, 8)
+    assert summary["min_video_visits_per_task"] == 4
+    assert (
+        summary["combined_identity_sha256"]
+        != second.consumed_identity_summary(sampler, 0, 8)[
+            "combined_identity_sha256"
+        ]
+    )

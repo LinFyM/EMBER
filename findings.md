@@ -261,6 +261,16 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - Writer language不得复用带当前normalized state的PI05 action prompt，否则会泄漏proprio；新feature owner必须单独做pure task-language tokenization。policy functional action loss仍使用完整PI05 observation/action processor，且缺失right-wrist key以保持false mask。
 - `lora.py`只拥有跨backbone PEFT注入、identity、state validation/hash与functional-call机械接口；`pi05_lora.py`是唯一活动科学拓扑authority。旧Smol contract/import只作历史模块provenance，不得进入π0.5 runner。
 
+## Target40数据墙与π0.5 AS-Writer机械合同（2026-07-21）
+
+- immutable Hub revision `f13aa24...e35a` 的四个标准suites共40个HDF5已本地齐备：2,000 episodes、338,575 frames、33,784,856,577 bytes。`configs/pi05_target_data_v1/manifest.json` SHA256为`1b28547f...049d`，40个本地文件均与Hub LFS SHA一致，HDF5 identity aggregate为`6342f5d9...78a6`。
+- target封存只读取task specification、Hub metadata、HDF5 schema/shape metadata与opaque file bytes用于SHA；没有解码trajectory/video值，action/state/reward/terminal/video value reads均为0。manifest中的24/8/8 global IDs逐项等于既有protocol，policy outcome reads与task-selection changes均为0。
+- development feature cache只授权24 train + 8 validation的action-hidden agentview视频；pure-language prompt固定为`Task: {cleaned}\n`，target40实测最长23 tokens，小于sealed max64。PI05投影后每帧256×2048 tokens只做spatial mean，不沿用SmolVLA的`sqrt(dim)`缩放；缓存BF16并保留50条episode边界。
+- AS action dataset从同一32-task manifest显式筛到恰好24 train tasks；validation/test actions永不进入dataset。policy functional loss仍使用冻结LIBERO-90 source normalization，Writer路由所需task/demo identity不会作为tensor输入Writer。
+- action query与teacher video分别由不同seed的deterministic no-replacement schedule产生；每个rank/step只取同task的一条video并传`offsets=[0,L]`。checkpoint保存两套schedule identity、全部rank RNG、optimizer/scheduler、metrics cursor，并先验证canonical manifest及每文件SHA再读取pickle。
+- feature cache formal配置SHA256为`3e3a8ea7...429e`、AS-Writer配置SHA256为`971cac43...f807`；两者分别保持`pending_source_base`/`pending_profile`。这只是机械authority，不是训练或性能结果。
+- 当前架构owner为：`pi05_target_data.py`负责held-data seal；`feature_cache.py`负责PI05 cache schema/tensor store；`cache_pi05_writer_features.py`负责唯一8-rank extraction；`as_contract.py`负责24-task action wall与source/cache/hash联锁；`training.py`只负责AS模型与step loop；`checkpoint.py`负责atomic exact-resume。旧`cache_writer_features.py`与`train_writer_cold_start.py`已删除，剩余历史Smol推理/训练入口因新schema fail-close，待对应PI05 owner具备功能对等后删除。
+
 ## 数据与 benchmark 事实
 
 - LIBERO-90 正好提供 90 个大规模 task 数据文件，每 task 50 条成功 teacher demonstrations。

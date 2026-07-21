@@ -1,0 +1,123 @@
+{
+  "schema_version": "ember_pi05_as_writer_v1",
+  "authorities": {
+    "target_data_manifest": {
+      "path": "configs/pi05_target_data_v1/manifest.json",
+      "sha256": "1b28547f6080a35fdf23ebae021407da15bfe4af367b0b1791042945d91b049d"
+    },
+    "evaluation_config": {
+      "path": "configs/pi05_target_evaluation_v1.json",
+      "sha256": "9d7f6d50b8ac143c6ae89e7067437a29ec8beee475db9e1ad5aa9b3790d9d557"
+    },
+    "feature_cache_config": {
+      "path": "configs/pi05_writer_feature_cache_v1.json",
+      "sha256": "3e3a8ea782feaf515f95102a3e3a7db8aee926c74954093d82481997f566429e"
+    },
+    "lora_contract": {
+      "path": "configs/pi05_lora_v1.json",
+      "sha256": "1dcf58f73afd3fc77b98cd00abc128c027f15e3e67d7d1212ab84ca283f6cb07"
+    },
+    "source_base_config": {
+      "path": "configs/pi05_source_base_v1.json",
+      "sha256": "366a5e1275a216ecde0750a40cc0cd824237fe4e74ee7a38bfabd2d195aacee8"
+    },
+    "tokenizer_manifest": {
+      "path": "configs/libero_24_8_8_v1/pi05_tokenizer_manifest.json",
+      "sha256": "948bf1ec1f2768833bead66b2e829154e3304c1c09fe9c48813a79f06e47426c"
+    }
+  },
+  "information_wall": {
+    "writer_input": "pure task language plus exactly one action-hidden teacher video",
+    "writer_forbidden_inputs": [
+      "action",
+      "proprio",
+      "reward",
+      "terminal",
+      "task_id",
+      "filename",
+      "policy_outcome"
+    ],
+    "action_owner": "frozen functional behavior loss only",
+    "development_action_split_roles": [
+      "train"
+    ],
+    "development_video_split_roles": [
+      "train"
+    ],
+    "validation_actions_read": 0,
+    "test_actions_read": 0,
+    "test_video_values_read": 0
+  },
+  "writer": {
+    "generated_adapter": "complete_pi05_task_specific_lora",
+    "vision_feature_dim": 2048,
+    "language_feature_dim": 2048,
+    "hidden_dim": 384,
+    "attention_heads": 8,
+    "temporal_chunk_size": 64,
+    "chunk_memory_tokens": 4,
+    "episode_memory_tokens": 4,
+    "task_memory_tokens": 8,
+    "decoder_hidden_dim": 768
+  },
+  "data": {
+    "task_count": 24,
+    "episodes_per_task": 50,
+    "demo_indices": [
+      0,
+      49
+    ],
+    "action_chunk_size": 50,
+    "sampler_seed": 20260721,
+    "teacher_video_seed": 20260722,
+    "teacher_video_sampling": "independent deterministic per-task no-replacement cycles",
+    "action_query_sampling": "task-balanced deterministic no-replacement episode cycles",
+    "video_action_pairing": "independent within the same task",
+    "max_open_files_per_worker": 8,
+    "feature_lru_tasks_per_rank": 8
+  },
+  "loader": {
+    "num_workers_per_rank": 2,
+    "prefetch_factor": 2
+  },
+  "optimization": {
+    "method": "functional_pi05_flow_matching_action_loss",
+    "seed": 7,
+    "precision": "bfloat16",
+    "source_policy": "final formal frozen EMA",
+    "normalization": "frozen filtered-LIBERO-90 source normalization",
+    "optimizer": {
+      "name": "AdamW",
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "eps": 1e-08,
+      "weight_decay": 0.0001,
+      "gradient_clip_norm": 1.0
+    },
+    "scheduler": {
+      "kind": "cosine_decay_with_warmup",
+      "peak_lr": 0.0003,
+      "warmup_steps": 1000,
+      "decay_steps": 30000,
+      "decay_lr": 0.00001
+    },
+    "maximum_formal_wall_clock_minutes": 120
+  },
+  "profile_defaults": {
+    "total_steps": 4,
+    "per_rank_batch_size": 1,
+    "checkpoint_steps": [
+      4
+    ]
+  },
+  "formal_run": {
+    "status": "pending_profile",
+    "expected_world_size": 8,
+    "total_steps": 0,
+    "per_rank_batch_size": 0,
+    "checkpoint_steps": [],
+    "selection_rule": "lock measured finite-loss, finite-gradient, exact-resume configuration whose projected wall clock is at most 120 minutes; then select checkpoints only by sealed validation screens"
+  }
+}

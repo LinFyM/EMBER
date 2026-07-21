@@ -1,47 +1,69 @@
-"""Canonical eight-rank Writer cold-start training on sealed source tasks."""
+"""Canonical eight-rank PI05 Action-Supervised Writer training.
+
+Only the shared Writer is trainable.  It receives pure task language plus one
+action-hidden teacher video and generates the complete sealed PI05 task LoRA;
+an independently sampled action query from the same development-train task is
+used only by the frozen policy's functional behavior loss.
+"""
 
 from __future__ import annotations
 
 import argparse
-import importlib.metadata
 import json
-import os
-import random
-import socket
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator, Mapping
 
-import numpy as np
 import torch
 import torch.distributed as dist
-from lerobot.configs import PreTrainedConfig
 from lerobot.optim.schedulers import CosineDecayWithWarmupSchedulerConfig
-from lerobot.policies import make_pre_post_processors
-from lerobot.policies.smolvla.configuration_smolvla import SmolVLAConfig
-from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader
 
-from ember.lora import canonical_contract_sha256, load_lora_contract
-from ember.source_base_checkpoint import (
+from ember.pi05_eval_contract import (
+    inspect_source_checkpoint,
+    inspect_tokenizer,
+    load_evaluation_authorities,
+)
+from ember.pi05_lora import load_pi05_lora_contract
+from ember.pi05_processing import Pi05LiberoProcessor
+from ember.pi05_source_checkpoint import (
     DistributedContext,
     barrier,
     canonical_hash,
-    git_state,
-    parse_checkpoint_steps,
-    read_json,
     restore_rng,
-    sha256_file,
     write_json_atomic,
 )
+from ember.pi05_source_contract import append_jsonl, reconcile_metrics
+from ember.pi05_source_setup import (
+    initialize_distributed,
+    load_policy,
+    load_stats,
+    reduce_max,
+    reduce_mean,
+    seed_everything,
+)
 from ember.writer.checkpoint import load_writer_checkpoint, save_writer_checkpoint
-from ember.writer.data import FunctionalQueryDataset, MixedTaskBatchSampler
+from ember.writer.as_contract import (
+    REPO_ROOT,
+    authority_path,
+    build_contract,
+    inspect_feature_cache,
+    load_training_data,
+    load_writer_config,
+    publish_contract,
+    resolve_runtime,
+    resume_step,
+    writer_trainable_contract,
+)
+from ember.writer.data import (
+    FunctionalQueryDataset,
+    MixedTaskBatchSampler,
+    TeacherVideoSchedule,
+)
 from ember.writer.feature_cache import (
     WriterFeatureStore,
-    load_feature_cache_config,
-    load_train_tasks,
 )
 from ember.writer.functional import (
     prepare_frozen_writer_policy,
@@ -54,522 +76,469 @@ from ember.writer.model import (
 )
 
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-
-
 @dataclass
 class WriterRuntime:
+    args: argparse.Namespace
+    context: DistributedContext
     config: dict[str, Any]
-    checkpoint_steps: tuple[int, ...]
     dataset: FunctionalQueryDataset
     task_ids: tuple[int, ...]
     sampler: MixedTaskBatchSampler
-    iterator: Any
+    video_schedule: TeacherVideoSchedule
+    iterator: Iterator[dict[str, Any]]
     feature_store: WriterFeatureStore
-    policy: SmolVLAPolicy
-    preprocessor: Any
+    processor: Pi05LiberoProcessor
+    policy: torch.nn.Module
     writer: CompleteLoRAWriter
     wrapped_writer: torch.nn.Module
     optimizer: torch.optim.Optimizer
     scheduler: torch.optim.lr_scheduler.LRScheduler
+    lora_contract: Any
     contract: dict[str, Any]
     contract_sha256: str
+    total_steps: int
+    batch_size: int
+    checkpoint_steps: tuple[int, ...]
     resume_step: int
-
-
-def initialize_distributed() -> DistributedContext:
-    if not torch.cuda.is_available():
-        raise WriterModelError("Writer training requires CUDA")
-    world_size = int(os.environ.get("WORLD_SIZE", "1"))
-    rank = int(os.environ.get("RANK", "0"))
-    local_rank = int(os.environ.get("LOCAL_RANK", "0"))
-    if not 0 <= local_rank < torch.cuda.device_count():
-        raise WriterModelError("LOCAL_RANK is outside visible CUDA devices")
-    torch.cuda.set_device(local_rank)
-    if world_size > 1:
-        dist.init_process_group("nccl")
-    return DistributedContext(
-        rank=rank,
-        local_rank=local_rank,
-        world_size=world_size,
-        device=torch.device("cuda", local_rank),
-    )
-
-
-def seed_everything(seed: int, context: DistributedContext) -> None:
-    rank_seed = seed + context.rank
-    random.seed(rank_seed)
-    np.random.seed(rank_seed)
-    torch.manual_seed(rank_seed)
-    torch.cuda.manual_seed(rank_seed)
-    torch.backends.cuda.matmul.allow_tf32 = True
-
-
-def load_writer_config(path: Path) -> dict[str, Any]:
-    config = read_json(path)
-    if config.get("schema_version") != "ember_writer_cold_start_v1":
-        raise WriterModelError("unsupported Writer cold-start config")
-    protocol = config.get("protocol", {})
-    for key in ("manifest", "feature_cache_config", "lora_contract"):
-        authority = REPO_ROOT / str(protocol.get(key, ""))
-        if not authority.is_file() or sha256_file(authority) != protocol.get(
-            f"{key}_sha256"
-        ):
-            raise WriterModelError(f"sealed Writer authority changed: {key}")
-    manifest = read_json(REPO_ROOT / protocol["manifest"])
-    if (
-        manifest.get("protocol_references", {}).get("split_sha256")
-        != protocol.get("split_sha256")
-    ):
-        raise WriterModelError("Writer manifest and split disagree")
-    return config
-
-
-def _policy_files(policy_path: Path) -> dict[str, str]:
-    names = (
-        "config.json",
-        "model.safetensors",
-        "policy_preprocessor.json",
-        "policy_postprocessor.json",
-        "policy_preprocessor_step_5_normalizer_processor.safetensors",
-        "policy_postprocessor_step_0_unnormalizer_processor.safetensors",
-    )
-    missing = [name for name in names if not (policy_path / name).is_file()]
-    if missing:
-        raise WriterModelError(f"source policy is incomplete: {missing}")
-    return {name: sha256_file(policy_path / name) for name in names}
-
-
-def _validate_cache(
-    cache_root: Path,
-    *,
-    policy_files: dict[str, str],
-    task_ids: tuple[int, ...],
-) -> tuple[dict[str, Any], dict[str, Any]]:
-    run_contract = read_json(cache_root / "run_contract.json")
-    manifest = read_json(cache_root / "cache_manifest.json")
-    if (
-        run_contract.get("schema_version")
-        != "ember_writer_feature_cache_launch_v1"
-        or run_contract.get("mode") != "formal"
-        or run_contract.get("policy_files") != {
-            name: policy_files[name] for name in ("config.json", "model.safetensors")
-        }
-        or tuple(run_contract.get("task_ids", [])) != task_ids
-        or tuple(run_contract.get("demo_indices", [])) != tuple(range(50))
-        or manifest.get("schema_version")
-        != "ember_writer_feature_cache_manifest_v1"
-        or manifest.get("contract_sha256") != run_contract.get("contract_sha256")
-        or int(manifest.get("task_count", -1)) != 70
-        or int(manifest.get("episode_count", -1)) != 3500
-    ):
-        raise WriterModelError("formal Writer feature cache changed")
-    return run_contract, manifest
-
-
-def _build_policy(
-    policy_path: Path, device: torch.device
-) -> tuple[SmolVLAPolicy, Any]:
-    policy_config = PreTrainedConfig.from_pretrained(policy_path)
-    if not isinstance(policy_config, SmolVLAConfig):
-        raise WriterModelError("source checkpoint is not SmolVLA")
-    policy_config.device = str(device)
-    policy_config.pretrained_path = policy_path
-    policy_config.use_amp = False
-    policy = SmolVLAPolicy.from_pretrained(policy_path, config=policy_config)
-    preprocessor, _ = make_pre_post_processors(
-        policy_cfg=policy_config,
-        pretrained_path=str(policy_path),
-        preprocessor_overrides={"device_processor": {"device": str(device)}},
-    )
-    return policy, preprocessor
+    metrics_path: Path
+    metrics_rows: int
 
 
 def _build_writer(
-    config: dict[str, Any], policy: SmolVLAPolicy
-) -> tuple[CompleteLoRAWriter, dict[str, Any]]:
-    contract = load_lora_contract(REPO_ROOT / config["protocol"]["lora_contract"])
-    template = prepare_frozen_writer_policy(policy, contract)
-    writer_config = config["writer"]
+    config: Mapping[str, Any], policy: torch.nn.Module
+) -> tuple[CompleteLoRAWriter, Any, dict[str, Any]]:
+    lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
+    if hasattr(policy.model, "gradient_checkpointing_disable"):
+        policy.model.gradient_checkpointing_disable()
+    if hasattr(policy, "config"):
+        policy.config.gradient_checkpointing = False
+    template = prepare_frozen_writer_policy(policy, lora)
+    writer_config = {
+        key: value
+        for key, value in config["writer"].items()
+        if key != "generated_adapter"
+    }
     writer = CompleteLoRAWriter(
         build_lora_tensor_specs(template),
         template_state=template,
         **writer_config,
     )
-    trainable_names = sorted(
-        name for name, value in writer.named_parameters() if value.requires_grad
+    return writer, lora, writer_trainable_contract(writer, policy, lora)
+
+
+def _make_scheduler(
+    optimizer: torch.optim.Optimizer,
+    config: Mapping[str, Any],
+    total_steps: int,
+) -> torch.optim.lr_scheduler.LRScheduler:
+    return CosineDecayWithWarmupSchedulerConfig(
+        num_warmup_steps=int(config["warmup_steps"]),
+        num_decay_steps=int(config["decay_steps"]),
+        peak_lr=float(config["peak_lr"]),
+        decay_lr=float(config["decay_lr"]),
+    ).build(optimizer, total_steps)
+
+
+def _build_trainable_models(
+    *,
+    config: Mapping[str, Any],
+    context: DistributedContext,
+    source: Mapping[str, Any],
+    source_config: Mapping[str, Any],
+    total_steps: int,
+) -> tuple[
+    torch.nn.Module,
+    CompleteLoRAWriter,
+    Any,
+    torch.optim.Optimizer,
+    torch.optim.lr_scheduler.LRScheduler,
+    dict[str, Any],
+]:
+    policy = load_policy(Path(source["model_path"]), source_config, context.device)
+    writer, lora, trainable = _build_writer(config, policy)
+    writer.to(context.device)
+    optimizer_config = config["optimization"]["optimizer"]
+    optimizer = torch.optim.AdamW(
+        writer.parameters(),
+        lr=float(config["optimization"]["scheduler"]["peak_lr"]),
+        betas=tuple(optimizer_config["betas"]),
+        eps=float(optimizer_config["eps"]),
+        weight_decay=float(optimizer_config["weight_decay"]),
     )
-    trainable = {
-        "parameter_count": sum(value.numel() for value in writer.parameters()),
-        "name_count": len(trainable_names),
-        "names_sha256": canonical_hash(trainable_names),
-        "lora_contract_sha256": canonical_contract_sha256(contract),
-        "generated_lora_parameter_count": contract.parameter_count,
-        "generated_lora_tensor_count": contract.state_tensor_count,
-    }
-    return writer, trainable
+    scheduler = _make_scheduler(
+        optimizer, config["optimization"]["scheduler"], total_steps
+    )
+    return policy, writer, lora, optimizer, scheduler, trainable
 
 
-def _build_contract(
+def _restore_training_state(
     *,
     args: argparse.Namespace,
-    config: dict[str, Any],
     context: DistributedContext,
-    checkpoint_steps: tuple[int, ...],
-    policy_files: dict[str, str],
-    cache_contract: dict[str, Any],
-    cache_manifest: dict[str, Any],
-    trainable: dict[str, Any],
-) -> dict[str, Any]:
-    return {
-        "schema_version": "ember_writer_cold_start_launch_v1",
-        "mode": args.mode,
-        "git": git_state(),
-        "config_sha256": sha256_file(args.config.resolve()),
-        "protocol": config["protocol"],
-        "source_policy_files": policy_files,
-        "feature_cache": {
-            "contract_sha256": cache_contract["contract_sha256"],
-            "extraction_sha256": cache_contract["extraction_sha256"],
-            "manifest_sha256": sha256_file(args.feature_cache / "cache_manifest.json"),
-            "task_count": cache_manifest["task_count"],
-            "episode_count": cache_manifest["episode_count"],
-            "frame_count": cache_manifest["frame_count"],
-        },
-        "writer": config["writer"],
-        "data": config["data"],
-        "optimization": config["optimization"],
-        "runtime": {
-            "world_size": context.world_size,
-            "one_policy_cuda_process_per_rank": True,
-            "per_rank_batch_size": args.batch_size,
-            "effective_query_batch_size": context.world_size * args.batch_size,
-            "total_steps": args.total_steps,
-            "checkpoint_steps": list(checkpoint_steps),
-            "num_workers_per_rank": args.num_workers,
-            "ddp_writer_only": True,
-            "ddp_broadcast_buffers": False,
-            "ddp_static_graph": context.world_size > 1,
-        },
-        "trainable": trainable,
-        "software": {
-            "torch": torch.__version__,
-            "cuda": torch.version.cuda,
-            "lerobot": importlib.metadata.version("lerobot"),
-        },
-    }
+    config: Mapping[str, Any],
+    writer: CompleteLoRAWriter,
+    optimizer: torch.optim.Optimizer,
+    scheduler: torch.optim.lr_scheduler.LRScheduler,
+    batch_size: int,
+    contract_sha256: str,
+    initial_step: int,
+) -> tuple[dict[str, Any] | None, int]:
+    if args.resume is None:
+        return None, 0
+    loaded, rng, metrics_rows = load_writer_checkpoint(
+        checkpoint=args.resume.resolve(),
+        context=context,
+        writer=writer,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        sampler_seed=int(config["data"]["sampler_seed"]),
+        teacher_video_seed=int(config["data"]["teacher_video_seed"]),
+        per_rank_batch_size=batch_size,
+        contract_sha256=contract_sha256,
+    )
+    if loaded != initial_step:
+        raise WriterModelError("AS-Writer resume path and state disagree")
+    return rng, metrics_rows
 
 
-def _validate_launch(
+def _build_sampler_and_loader(
+    *,
     args: argparse.Namespace,
-    config: dict[str, Any],
     context: DistributedContext,
-    checkpoint_steps: tuple[int, ...],
-) -> None:
-    if not 0 < args.stop_after_step <= args.total_steps or args.batch_size <= 0:
-        raise WriterModelError("invalid Writer step or batch request")
-    if args.mode == "formal":
-        formal = config["formal_run"]
-        if formal.get("status") != "sealed":
-            raise WriterModelError("formal Writer run is not sealed after profiling")
-        expected = (
-            int(formal["expected_world_size"]),
-            int(formal["per_rank_batch_size"]),
-            int(formal["total_steps"]),
-            tuple(int(value) for value in formal["checkpoint_steps"]),
-        )
-        actual = (
-            context.world_size,
-            args.batch_size,
-            args.total_steps,
-            checkpoint_steps,
-        )
-        if actual != expected or args.stop_after_step != args.total_steps:
-            raise WriterModelError("formal Writer launch differs from sealed profile")
-        if git_state()["dirty_paths"]:
-            raise WriterModelError("formal Writer launch requires a clean worktree")
-    if context.world_size != 8:
-        raise WriterModelError("Writer training requires exactly eight symmetric ranks")
+    config: Mapping[str, Any],
+    dataset: FunctionalQueryDataset,
+    task_ids: tuple[int, ...],
+    batch_size: int,
+    initial_step: int,
+) -> tuple[MixedTaskBatchSampler, TeacherVideoSchedule, DataLoader[Any]]:
+    sampler = MixedTaskBatchSampler(
+        dataset,
+        task_ids=task_ids,
+        per_rank_batch_size=batch_size,
+        start_step=initial_step,
+        stop_step=args.stop_after_step,
+        rank=context.rank,
+        world_size=context.world_size,
+        seed=int(config["data"]["sampler_seed"]),
+    )
+    first_demo, last_demo = map(int, config["data"]["demo_indices"])
+    schedule = TeacherVideoSchedule(
+        task_ids=task_ids,
+        demo_indices=range(first_demo, last_demo + 1),
+        seed=int(config["data"]["teacher_video_seed"]),
+    )
+    loader = DataLoader(
+        dataset,
+        batch_sampler=sampler,
+        num_workers=args.num_workers,
+        pin_memory=True,
+        persistent_workers=args.num_workers > 0,
+        prefetch_factor=int(config["loader"]["prefetch_factor"]) if args.num_workers else None,
+        generator=torch.Generator().manual_seed(
+            int(config["optimization"]["seed"]) + context.rank + 0xA55A
+        ),
+    )
+    return sampler, schedule, loader
 
 
-def _reduce(value: float, context: DistributedContext, operation: dist.ReduceOp) -> float:
-    tensor = torch.tensor(value, dtype=torch.float64, device=context.device)
+def _wrap_writer(writer: CompleteLoRAWriter, context: DistributedContext) -> torch.nn.Module:
+    if context.world_size == 1:
+        return writer
+    return DistributedDataParallel(
+        writer,
+        device_ids=[context.local_rank],
+        output_device=context.local_rank,
+        broadcast_buffers=False,
+        find_unused_parameters=False,
+        static_graph=True,
+    )
+
+
+def _metrics_cursor(
+    path: Path,
+    *,
+    context: DistributedContext,
+    initial_step: int,
+    expected_rows: int,
+) -> int:
+    count = reconcile_metrics(path, initial_step, expected_rows) if context.is_main else 0
+    rows = torch.tensor(count, dtype=torch.int64, device=context.device)
     if context.world_size > 1:
-        dist.all_reduce(tensor, op=operation)
-    return float(tensor.item())
+        dist.broadcast(rows, src=0)
+    return int(rows.item())
 
 
 def prepare_runtime(
     args: argparse.Namespace, context: DistributedContext
 ) -> WriterRuntime:
     config = load_writer_config(args.config.resolve())
-    checkpoint_steps = parse_checkpoint_steps(args.checkpoint_steps, args.total_steps)
-    _validate_launch(args, config, context, checkpoint_steps)
-    seed_everything(int(config["data"]["sampler_seed"]), context)
+    total_steps, batch_size, checkpoint_steps = resolve_runtime(args, config, context)
+    initial_step = resume_step(args.resume)
+    if not 0 <= initial_step < args.stop_after_step:
+        raise WriterModelError("AS-Writer resume cursor is outside this segment")
+    seed_everything(int(config["optimization"]["seed"]), context)
 
-    cache_config = load_feature_cache_config(
-        REPO_ROOT / config["protocol"]["feature_cache_config"], REPO_ROOT
-    )
-    tasks = load_train_tasks(cache_config, REPO_ROOT, args.data_root.resolve())
+    dataset, tasks, data_validation = load_training_data(args, config, context)
     task_ids = tuple(task.task_id for task in tasks)
-    first_demo, last_demo = config["data"]["demo_indices"]
-    dataset = FunctionalQueryDataset(
-        [task.authority for task in tasks],
-        demo_indices=range(first_demo, last_demo + 1),
-        action_chunk_size=50,
-        max_open_files_per_worker=int(config["data"]["max_open_files_per_worker"]),
+    authorities = load_evaluation_authorities(
+        authority_path(config, "evaluation_config"), REPO_ROOT
     )
-
-    resume_step = 0
-    if args.resume is not None:
-        preview = torch.load(
-            args.resume / "trainer_state.pt", map_location="cpu", weights_only=False
+    source = inspect_source_checkpoint(
+        authorities, args.source_run, args.checkpoint, evaluation_mode="formal"
+    )
+    tokenizer = inspect_tokenizer(authorities, args.tokenizer_path)
+    cache = inspect_feature_cache(
+        args.feature_cache.resolve(), config, source, task_ids
+    )
+    policy, writer, lora_contract, optimizer, scheduler, trainable = (
+        _build_trainable_models(
+            config=config,
+            context=context,
+            source=source,
+            source_config=authorities.source_base_config,
+            total_steps=total_steps,
         )
-        resume_step = int(preview["next_step"])
-        if not 0 <= resume_step < args.stop_after_step:
-            raise WriterModelError("Writer resume step is outside this segment")
-    sampler = MixedTaskBatchSampler(
-        dataset,
-        task_ids=task_ids,
-        per_rank_batch_size=args.batch_size,
-        start_step=resume_step,
-        stop_step=args.stop_after_step,
-        rank=context.rank,
-        world_size=context.world_size,
-        seed=int(config["data"]["sampler_seed"]),
     )
-    dataloader = DataLoader(
-        dataset,
-        batch_sampler=sampler,
-        num_workers=args.num_workers,
-        pin_memory=True,
-        persistent_workers=args.num_workers > 0,
-        prefetch_factor=config["loader"]["prefetch_factor"] if args.num_workers else None,
-    )
-    iterator = iter(dataloader)
-
-    policy_files = _policy_files(args.policy_path.resolve())
-    cache_contract, cache_manifest = _validate_cache(
-        args.feature_cache.resolve(), policy_files=policy_files, task_ids=task_ids
-    )
-    policy, preprocessor = _build_policy(args.policy_path.resolve(), context.device)
-    writer, trainable = _build_writer(config, policy)
-    writer.to(context.device)
-    optimizer = torch.optim.AdamW(
-        writer.parameters(),
-        lr=float(config["optimization"]["peak_lr"]),
-        betas=tuple(config["optimization"]["betas"]),
-        eps=float(config["optimization"]["eps"]),
-        weight_decay=float(config["optimization"]["weight_decay"]),
-    )
-    scheduler = CosineDecayWithWarmupSchedulerConfig(
-        num_warmup_steps=int(
-            config["optimization"]["scheduler_reference_warmup_steps"]
-        ),
-        num_decay_steps=int(
-            config["optimization"]["scheduler_reference_decay_steps"]
-        ),
-        peak_lr=float(config["optimization"]["peak_lr"]),
-        decay_lr=float(config["optimization"]["decay_lr"]),
-    ).build(optimizer, args.total_steps)
-    contract = _build_contract(
+    contract = build_contract(
         args=args,
         config=config,
         context=context,
-        checkpoint_steps=checkpoint_steps,
-        policy_files=policy_files,
-        cache_contract=cache_contract,
-        cache_manifest=cache_manifest,
+        source=source,
+        tokenizer=tokenizer,
+        cache=cache,
+        data_validation=data_validation,
+        task_ids=task_ids,
         trainable=trainable,
+        total_steps=total_steps,
+        batch_size=batch_size,
+        checkpoint_steps=checkpoint_steps,
     )
     contract_sha256 = canonical_hash(contract)
+    publish_contract(args, context, contract, contract_sha256)
 
-    if context.is_main:
-        if args.resume is None and args.output_dir.exists() and any(args.output_dir.iterdir()):
-            raise WriterModelError(f"Writer output directory is not empty: {args.output_dir}")
-        args.output_dir.mkdir(parents=True, exist_ok=True)
-        contract_path = args.output_dir / "run_contract.json"
-        if args.resume is not None and (
-            not contract_path.is_file()
-            or canonical_hash(read_json(contract_path)) != contract_sha256
-        ):
-            raise WriterModelError("Writer resume launch contract changed")
-        write_json_atomic(contract_path, contract)
-        write_json_atomic(
-            args.output_dir / "runtime_paths.json",
-            {
-                "host": socket.gethostname(),
-                "source_policy": str(args.policy_path.resolve()),
-                "feature_cache": str(args.feature_cache.resolve()),
-                "data_root": str(args.data_root.resolve()),
-            },
-        )
-    barrier(context)
-
-    resume_rng = None
-    if args.resume is not None:
-        loaded_step, resume_rng = load_writer_checkpoint(
-            checkpoint=args.resume.resolve(),
-            context=context,
-            writer=writer,
-            optimizer=optimizer,
-            scheduler=scheduler,
-            sampler_seed=int(config["data"]["sampler_seed"]),
-            per_rank_batch_size=args.batch_size,
-            contract_sha256=contract_sha256,
-        )
-        if loaded_step != resume_step:
-            raise WriterModelError("Writer resume preview and checkpoint disagree")
-
-    wrapped_writer: torch.nn.Module = writer
-    if context.world_size > 1:
-        wrapped_writer = DistributedDataParallel(
-            writer,
-            device_ids=[context.local_rank],
-            output_device=context.local_rank,
-            broadcast_buffers=False,
-            static_graph=True,
-        )
-    wrapped_writer.train()
+    resume_rng, expected_metrics_rows = _restore_training_state(
+        args=args,
+        context=context,
+        config=config,
+        writer=writer,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        batch_size=batch_size,
+        contract_sha256=contract_sha256,
+        initial_step=initial_step,
+    )
+    sampler, video_schedule, loader = _build_sampler_and_loader(
+        args=args,
+        context=context,
+        config=config,
+        dataset=dataset,
+        task_ids=task_ids,
+        batch_size=batch_size,
+        initial_step=initial_step,
+    )
+    wrapped = _wrap_writer(writer, context)
+    writer.train()
     feature_store = WriterFeatureStore(
         args.feature_cache.resolve(),
         task_ids=task_ids,
-        expected_extraction_sha256=str(cache_contract["extraction_sha256"]),
+        expected_extraction_sha256=str(cache["extraction_sha256"]),
         max_cached_tasks=int(config["data"]["feature_lru_tasks_per_rank"]),
         expected_dim=int(config["writer"]["vision_feature_dim"]),
+        expected_run_contract_file_sha256=str(cache["run_contract_file_sha256"]),
+        expected_manifest_file_sha256=str(cache["cache_manifest_file_sha256"]),
+    )
+    processor = Pi05LiberoProcessor(
+        load_stats(
+            authorities.source_base_config,
+            authorities.source_base_config["data"]["active_task_ids"],
+        ),
+        args.tokenizer_path,
+        int(authorities.source_base_config["features"]["tokenizer_max_length"]),
+        str(context.device),
+    )
+    metrics_path = args.output_dir / "metrics.jsonl"
+    metrics_rows = _metrics_cursor(
+        metrics_path,
+        context=context,
+        initial_step=initial_step,
+        expected_rows=expected_metrics_rows,
     )
     torch.cuda.reset_peak_memory_stats(context.device)
     barrier(context)
     if resume_rng is not None:
         restore_rng(resume_rng, context)
     return WriterRuntime(
-        config,
-        checkpoint_steps,
-        dataset,
-        task_ids,
-        sampler,
-        iterator,
-        feature_store,
-        policy,
-        preprocessor,
-        writer,
-        wrapped_writer,
-        optimizer,
-        scheduler,
-        contract,
-        contract_sha256,
-        resume_step,
+        args=args,
+        context=context,
+        config=config,
+        dataset=dataset,
+        task_ids=task_ids,
+        sampler=sampler,
+        video_schedule=video_schedule,
+        iterator=iter(loader),
+        feature_store=feature_store,
+        processor=processor,
+        policy=policy,
+        writer=writer,
+        wrapped_writer=wrapped,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        lora_contract=lora_contract,
+        contract=contract,
+        contract_sha256=contract_sha256,
+        total_steps=total_steps,
+        batch_size=batch_size,
+        checkpoint_steps=checkpoint_steps,
+        resume_step=initial_step,
+        metrics_path=metrics_path,
+        metrics_rows=metrics_rows,
     )
 
 
-def _task_id(batch: dict[str, Any]) -> int:
+def _batch_task_id(batch: Mapping[str, Any]) -> int:
     values = batch.get("task_id")
     if not isinstance(values, torch.Tensor) or values.ndim != 1:
-        raise WriterModelError("functional query batch lost task identity")
+        raise WriterModelError("AS-Writer action batch lost task identity")
     unique = values.unique()
     if unique.numel() != 1:
-        raise WriterModelError("one Writer rank received multiple tasks")
+        raise WriterModelError("one AS-Writer rank received multiple tasks")
     return int(unique.item())
 
 
-def run_steps(
-    args: argparse.Namespace, context: DistributedContext, runtime: WriterRuntime
-) -> None:
-    lora_contract = load_lora_contract(
-        REPO_ROOT / runtime.config["protocol"]["lora_contract"]
+def _one_step(
+    runtime: WriterRuntime,
+    step: int,
+    started: float,
+) -> dict[str, Any]:
+    tick = time.monotonic()
+    batch = next(runtime.iterator)
+    data_seconds = time.monotonic() - tick
+    task_id, task_visit = runtime.sampler.task_visit_for_step(step)
+    if _batch_task_id(batch) != task_id:
+        raise WriterModelError("AS-Writer sampler and action batch disagree")
+    demo_index = runtime.video_schedule.demo_for_task_visit(task_id, task_visit)
+    teacher = runtime.feature_store.load_one_video(
+        language_task_id=task_id,
+        video_task_id=task_id,
+        demo_index=demo_index,
     )
-    step = runtime.resume_step
-    while step < args.stop_after_step:
-        tick = time.perf_counter()
-        batch = next(runtime.iterator)
-        data_seconds = time.perf_counter() - tick
-        task_id = _task_id(batch)
-        cached = runtime.feature_store.load(task_id)
-        if cached.demo_indices.tolist() != list(range(50)):
-            raise WriterModelError("Writer context does not contain all 50 episodes")
-        language = cached.language_features.to(context.device)
-        video = cached.video_features.to(context.device)
-        for camera in ("observation.images.camera1", "observation.images.camera2"):
-            batch[camera] = batch[camera].to(dtype=torch.float32).div_(255.0)
-        batch = runtime.preprocessor(batch)
+    language = teacher.language_features.to(runtime.context.device)
+    video = teacher.video_features.to(runtime.context.device)
+    policy_batch = runtime.processor.training_batch(batch)
 
-        runtime.optimizer.zero_grad(set_to_none=True)
-        with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-            loss, _ = writer_functional_action_loss(
-                runtime.wrapped_writer,  # type: ignore[arg-type]
-                runtime.policy,
-                lora_contract,
-                language_features=language,
-                video_features=video,
-                episode_offsets=cached.episode_offsets,
-                batch=batch,
-            )
-        if not bool(torch.isfinite(loss).detach()):
-            raise WriterModelError(f"non-finite Writer loss at step {step}")
-        loss.backward()
-        grad_norm = torch.nn.utils.clip_grad_norm_(
-            runtime.writer.parameters(),
-            float(runtime.config["optimization"]["grad_clip_norm"]),
+    runtime.optimizer.zero_grad(set_to_none=True)
+    with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+        loss, details = writer_functional_action_loss(
+            runtime.wrapped_writer,  # type: ignore[arg-type]
+            runtime.policy,
+            runtime.lora_contract,
+            language_features=language,
+            video_features=video,
+            episode_offsets=teacher.episode_offsets,
+            batch=policy_batch,
         )
-        runtime.optimizer.step()
-        runtime.scheduler.step()
-        torch.cuda.synchronize(context.device)
-        step += 1
-        step_seconds = time.perf_counter() - tick
+    if not bool(torch.isfinite(loss).detach()):
+        raise WriterModelError(f"non-finite AS-Writer loss at step {step}")
+    loss.backward()
+    if any(parameter.grad is not None for parameter in runtime.policy.parameters()):
+        raise WriterModelError("frozen PI05 source policy accumulated gradients")
+    grad_norm = torch.nn.utils.clip_grad_norm_(
+        runtime.writer.parameters(),
+        float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"]),
+    )
+    if not bool(torch.isfinite(grad_norm).detach()):
+        raise WriterModelError(f"non-finite AS-Writer gradient at step {step}")
+    applied_lr = float(runtime.optimizer.param_groups[0]["lr"])
+    runtime.optimizer.step()
+    runtime.scheduler.step()
+    completed = step + 1
+    step_seconds = reduce_max(time.monotonic() - tick, runtime.context)
+    return {
+        "optimizer_step": completed,
+        "mean_functional_action_loss": reduce_mean(float(loss.detach()), runtime.context),
+        "gradient_norm_before_clip_max": reduce_max(float(grad_norm), runtime.context),
+        "applied_lr": applied_lr,
+        "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
+        "global_action_queries": completed
+        * runtime.context.world_size
+        * runtime.batch_size,
+        "global_writer_invocations": completed * runtime.context.world_size,
+        "rank0_task_id": task_id,
+        "rank0_teacher_demo_index": demo_index,
+        "rank0_policy_loss_detail": details.get("loss"),
+        "data_seconds_max": reduce_max(data_seconds, runtime.context),
+        "step_seconds_max": step_seconds,
+        "global_action_queries_per_second": runtime.context.world_size
+        * runtime.batch_size
+        / step_seconds,
+        "elapsed_seconds": time.monotonic() - started,
+        "max_cuda_allocated_bytes": int(
+            reduce_max(
+                torch.cuda.max_memory_allocated(runtime.context.device), runtime.context
+            )
+        ),
+        "max_cuda_reserved_bytes": int(
+            reduce_max(
+                torch.cuda.max_memory_reserved(runtime.context.device), runtime.context
+            )
+        ),
+    }
 
-        if step % args.log_every == 0 or step == args.stop_after_step:
-            mean_loss = _reduce(float(loss.detach()), context, dist.ReduceOp.SUM)
-            mean_loss /= context.world_size
-            slowest_step = _reduce(step_seconds, context, dist.ReduceOp.MAX)
-            slowest_data = _reduce(data_seconds, context, dist.ReduceOp.MAX)
-            peak_allocated = _reduce(
-                torch.cuda.max_memory_allocated(context.device) / 2**30,
-                context,
-                dist.ReduceOp.MAX,
-            )
-            peak_reserved = _reduce(
-                torch.cuda.max_memory_reserved(context.device) / 2**30,
-                context,
-                dist.ReduceOp.MAX,
-            )
-            if context.is_main:
-                print(
-                    json.dumps(
-                        {
-                            "event": "train",
-                            "step": step,
-                            "loss": mean_loss,
-                            "grad_norm_rank0": float(grad_norm),
-                            "lr": runtime.scheduler.get_last_lr()[0],
-                            "step_seconds_max": slowest_step,
-                            "data_seconds_max": slowest_data,
-                            "global_queries_per_second": context.world_size
-                            * args.batch_size
-                            / slowest_step,
-                            "peak_allocated_gib_max": peak_allocated,
-                            "peak_reserved_gib_max": peak_reserved,
-                        }
-                    ),
-                    flush=True,
-                )
-        if step in runtime.checkpoint_steps:
+
+def run_steps(runtime: WriterRuntime) -> None:
+    started = time.monotonic()
+    for step in range(runtime.resume_step, runtime.args.stop_after_step):
+        row = _one_step(runtime, step, started)
+        completed = int(row["optimizer_step"])
+        if runtime.context.is_main:
+            append_jsonl(runtime.metrics_path, row)
+            runtime.metrics_rows += 1
+            if completed == 1 or completed % runtime.args.log_every == 0:
+                print(json.dumps(row, sort_keys=True), flush=True)
+        if completed in runtime.checkpoint_steps:
             save_writer_checkpoint(
-                output_dir=args.output_dir,
-                step=step,
-                context=context,
+                output_dir=runtime.args.output_dir,
+                step=completed,
+                context=runtime.context,
                 writer=runtime.writer,
                 optimizer=runtime.optimizer,
                 scheduler=runtime.scheduler,
                 sampler=runtime.sampler,
+                video_schedule=runtime.video_schedule,
                 contract=runtime.contract,
-                mode=args.mode,
+                mode=runtime.args.mode,
+                metrics_rows=runtime.metrics_rows,
             )
-    if context.is_main:
-        print(json.dumps({"event": "complete", "step": step}), flush=True)
+    barrier(runtime.context)
+    if runtime.context.is_main:
+        stop = runtime.args.stop_after_step
+        write_json_atomic(
+            runtime.args.output_dir / "run_summary.json",
+            {
+                "schema_version": "ember_pi05_as_writer_run_summary_v1",
+                "contract_sha256": runtime.contract_sha256,
+                "completed_optimizer_steps": stop,
+                "requested_optimizer_steps": runtime.total_steps,
+                "stopped_early_for_profile": stop < runtime.total_steps,
+                "metrics_rows": runtime.metrics_rows,
+                "wall_seconds": time.monotonic() - started,
+                "final_checkpoint": str(
+                    runtime.args.output_dir / "checkpoints" / f"step_{stop:08d}"
+                )
+                if stop in runtime.checkpoint_steps
+                else None,
+                "train_tasks": len(runtime.task_ids),
+                "teacher_action_episodes_available": len(runtime.task_ids) * 50,
+                "validation_action_reads": 0,
+                "test_action_reads": 0,
+                "test_video_value_reads": 0,
+            },
+        )
 
 
 def train(args: argparse.Namespace) -> None:
-    context = initialize_distributed()
+    context = initialize_distributed(require_numa=args.mode == "formal")
+    runtime: WriterRuntime | None = None
     try:
         runtime = prepare_runtime(args, context)
         if context.is_main:
@@ -581,44 +550,63 @@ def train(args: argparse.Namespace) -> None:
                         "contract_sha256": runtime.contract_sha256,
                         "resume_step": runtime.resume_step,
                         "stop_after_step": args.stop_after_step,
-                        "dataset_frames": len(runtime.dataset),
                         "tasks": len(runtime.task_ids),
                         "trainable": runtime.contract["trainable"],
-                    }
+                    },
+                    sort_keys=True,
                 ),
                 flush=True,
             )
-        run_steps(args, context, runtime)
-        runtime.dataset.close()
+        run_steps(runtime)
     finally:
-        if dist.is_initialized():
+        if runtime is not None:
+            runtime.dataset.close()
+        if dist.is_available() and dist.is_initialized():
             dist.destroy_process_group()
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--config", type=Path, default=REPO_ROOT / "configs/writer_cold_start_v1.json"
+        "--config",
+        type=Path,
+        default=REPO_ROOT / "configs/pi05_as_writer_v1.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
-    parser.add_argument("--policy-path", type=Path, required=True)
+    parser.add_argument("--source-run", type=Path, required=True)
+    parser.add_argument("--checkpoint", type=Path, required=True)
+    parser.add_argument("--tokenizer-path", type=Path, required=True)
     parser.add_argument("--feature-cache", type=Path, required=True)
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--resume", type=Path)
-    parser.add_argument("--total-steps", type=int, required=True)
+    parser.add_argument("--total-steps", type=int)
     parser.add_argument("--stop-after-step", type=int)
-    parser.add_argument("--checkpoint-steps", type=str, required=True)
-    parser.add_argument("--batch-size", type=int, required=True)
+    parser.add_argument("--checkpoint-steps", type=str)
+    parser.add_argument("--batch-size", type=int)
     parser.add_argument("--num-workers", type=int)
     parser.add_argument("--log-every", type=int, default=1)
+    parser.add_argument("--skip-data-sha", action="store_true")
     return parser
 
 
 def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
     config = load_writer_config(args.config.resolve())
-    if args.stop_after_step is None:
-        args.stop_after_step = args.total_steps
     if args.num_workers is None:
         args.num_workers = int(config["loader"]["num_workers_per_rank"])
+    if args.num_workers < 0 or args.log_every <= 0:
+        raise WriterModelError("invalid AS-Writer loader or logging request")
+    for name in (
+        "config",
+        "source_run",
+        "checkpoint",
+        "tokenizer_path",
+        "feature_cache",
+        "data_root",
+        "output_dir",
+        "resume",
+    ):
+        value = getattr(args, name)
+        if value is not None:
+            setattr(args, name, value.resolve())
     return args

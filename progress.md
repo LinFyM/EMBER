@@ -11,9 +11,9 @@
 - Phase A source audit、71-task manifest、source-only normalization、pinned official recipe与hash seal已完成；cost-balanced dynamic evaluator代码和fail-closed contracts已完成，真实1/2/3 replicas rollout/s profile待final source checkpoint。
 - canonical π0.5 source-base full-SFT runner、atomic checkpoint与exact-resume机制已完成；相机mask修正后的真实8卡m32+EMA smoke为47.75 examples/s、71.18GB reserved/卡，formal配置锁定为global batch256、30,000 steps。
 - formal attempt1因NUMA affinity缺失在step12终止；attempt2因显式zero右腕被LeRobot误标`mask=true`而在step316终止。两者均无checkpoint、failure packet已封存且永不resume；修正后的训练/评测都通过missing feature key得到OpenPI规定的zero image + `mask=false`。
-- 当前里程碑fresh验证为88 tests passed；py_compile、JSON/checksum与diff checks通过；architecture guard为`REVIEW`且无hard violation。ownership、增长理由与旧静态runner retirement已记录。
+- 当前里程碑fresh验证为107 tests passed；compileall、JSON/checksum与diff checks通过；architecture guard为`REVIEW`且无hard violation。ownership、增长理由与旧cache/cold-start入口retirement已记录。
 - 第一轮完整流程只跑一个training seed；不提前扩多seed或direct action-budget curve。
-- 最新live `/data/ymdai`占用379,028,677,098 bytes。单checkpoint实测33,837,406,832 bytes；`keep_latest=1`的atomic替换峰值约446.70GB，低于500GB cap。
+- 最新live `/data/ymdai`占用约412.84GB，已包含LIBERO-90和完整target40。按单checkpoint实测33,837,406,832 bytes计算，旧checkpoint+新partial的替换峰值连同约1.4GB target feature cache预计约482GB，低于500GB cap；不得再引入重复dataset/model/cache副本。
 
 ## Generic feasibility已验证的实现事实
 
@@ -59,6 +59,8 @@
 - `pi05_source_corpus.py`只拥有specification filter、data seal和source normalization；`pi05_source_setup.py`只拥有model/data/distributed setup；`pi05_source_contract.py`只拥有launch/resume contract；`pi05_source_checkpoint.py`只拥有atomic state；`pi05_source_training.py`只拥有训练编排与step loop。
 - `scripts/train_source_base.py`是唯一活动π0.5 source-base入口；拆分这些owner是因为严格加载、52.7GB一次性校验、DDP训练与33.8GB atomic checkpoint是独立故障边界。
 - 旧`source_base.py`/`source_base_checkpoint.py`仍被历史SmolVLA模块import，只作provenance；不得作为活动入口。π0.5 source-base训练与40-task evaluator达到功能对等后，先迁移剩余通用依赖，再删除旧可执行路径，不保留双canonical runner。
+- target/Writer新增代码按故障边界分属六个owner：`pi05_target_data.py`负责零数值读取seal，`feature_cache.py`负责PI05 cache schema/store，`cache_pi05_writer_features.py`负责8-rank extraction，`writer/as_contract.py`负责24-task action墙及authority联锁，`writer/training.py`原位替代旧cold-start训练owner，`writer/checkpoint.py`负责atomic exact-resume。新增体量来自target authority、PI05 2048-d cache和完整AS state合同，不是平行算法实现；architecture guard无parallel family、无hard violation。
+- 已删除旧`cache_writer_features.py`和`train_writer_cold_start.py`两个可执行入口。历史Smol `writer/inference.py`、RL与direct modules仍为provenance且会被新AS schema/PI05-only store fail-close；当PI05 Writer evaluation、RL-Writer、Source-SFT与task-local owner逐个具备功能对等时，删除对应旧CLI/import，而不是再加兼容分支。Phase F若需test video cache，将扩展同一PI05 cache authority并新增sealed role，不创建第二个cache runner。
 
 ## Formal source-base attempt 1：工程失败并关闭（2026-07-21）
 
@@ -106,6 +108,16 @@
 - `CompleteLoRAWriter`现在在活动边界只接受一个非空video (`offsets=[0,L]`)；LoRA template和输出逐tensor保留真实BF16/FP32 dtype。functional action loss调用真实PI05 `forward(batch)`，不再传旧接口`noise/time`。
 - fresh验证：真实checkpoint target metadata通过；mixed-dtype functional/copy parity精确通过；全套`91 passed`、compileall、diff/checksum通过。architecture guard为`REVIEW`、无hard violation；review仅来自既有Writer构造函数长度和目录密度，owner/lifecycle如上。
 
+## Target40 seal、PI05 feature cache与AS-Writer owner（2026-07-21）
+
+- target40下载已完成且未复制现有cache：四suite各10个HDF5，总计33,784,856,577 bytes。metadata-only seal为40 tasks/2,000 episodes/338,575 frames，24/8/8 IDs逐项一致；manifest/checksum均通过，manifest SHA256 `1b28547f...049d`。
+- `configs/pi05_writer_feature_cache_v1.json` SHA256 `3e3a8ea7...429e`，只授权development train+validation视频，禁止test video与任意trajectory action/state/reward/terminal读取；当前profile状态`pending_source_base`，formal cache必须先完成final source EMA上的真实8卡profile。
+- `configs/pi05_as_writer_v1.json` SHA256 `971cac43...f807`，明确24 train actions、one-video input、independent sampler/video seeds、frozen source normalization及≤120分钟正式wall-clock；formal状态`pending_profile`，当前4-step/batch1仅为未来mechanics profile默认值。
+- AS训练已原位替换旧Smol cold-start owner：每rank每step由task-balanced action sampler给出task/visit，再由独立teacher-video schedule选一条demo；`WriterFeatureStore.load_one_video`只暴露pure language、该episode的video features和`[0,L]` offsets。policy、base与encoder冻结，只有shared Writer DDP更新。
+- checkpoint先验证canonical manifest和全部file SHA再读取optimizer/RNG pickle，交叉核对manifest/trainer/rank cursor，metrics JSONL按checkpoint cursor隔离orphan rows；formal最终coverage由launch total-step自动推导，调用者不能关闭。rank写盘/发布失败会跨8 ranks一致传播，避免barrier死锁。
+- 删除`cache_writer_features.py`和`train_writer_cold_start.py`；相关活动测试改为PI05 schema。fresh全仓`107 passed`，compileall、config SHA和target checksum通过；architecture guard结果`REVIEW`且hard violations为空。review增长理由与retirement trigger见ownership段。
+- formal source-base attempt3在上述工作之外的隔离worktree继续健康运行；最近只读观测step840，8卡各约69GB且100%利用率，loss/gradient finite、约47.2 examples/s。此状态不构成source competence或行为结果。
+
 ## 已对齐的后续方法
 
 - frozen source base：过滤后LIBERO-90×50 action-SFT，必要source LoRA merge，source-only normalization冻结；快速screen全部目标40 tasks，需开始在多个tasks有部分真实成功，不能只靠一个易task aggregate。
@@ -121,7 +133,7 @@
 
 ## 当前后续动作
 
-1. 在不修改formal attempt3的隔离worktree/config/output前提下，原位替换旧feature-cache/Writer orchestration为π0.5 pure-language、每次单demo切片、video/action独立schedule与AS-Writer命名。
+1. 保持formal attempt3的隔离worktree/config/output不变；继续完善同一PI05 evaluator中的Writer adapter materialization与correct/wrong-video row contract，不恢复旧Smol evaluator。
 2. 继续周期性只读监测attempt3；首个step5000 checkpoint产生后校验manifest/hash/exact-resume状态，完成30k前不作source competence结论。
 3. final checkpoint产生后实测evaluator统一1/2/3 replicas的有效rollouts/s并选择唯一拓扑。
 4. 用选定evaluator快速screen全部40 target tasks；只有跨多个tasks出现真实成功才冻结共同base并进入正式Phase C开发。

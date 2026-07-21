@@ -1,5 +1,8 @@
 # Origin and General Thesis
 
+状态：动机与思想来源说明。若与当前实验合同冲突，以根目录 `AGENTS.md` 和
+`docs/execution_brief.md` 为准。
+
 EMBER 的原始动机是把任务描述或示范“编译”为一个可直接使用、又能继续适应的策略状态。owner 最初强调的是：
 
 - language/action-hidden video 提供任务规格；
@@ -13,13 +16,15 @@ EMBER 的原始动机是把任务描述或示范“编译”为一个可直接�
 
 ## 当前具身实例
 
-在 LIBERO-90 中：
+当前以过滤 exact semantic/composition overlap 后的 LIBERO-90 作为 source-base corpus，
+以 LIBERO-Spatial/Object/Goal/Long 的固定 24/8/8、final 32/8 作为目标 benchmark：
 
-- source tasks 给出成功 robot teacher episodes；
-- Writer 可以从这些 episodes 的 action-hidden 视频和 language 学习；
-- validation/test 只给 Writer language/video；
-- task-local RL 可以使用目标 reward，但不能把目标 action 泄露给 Writer；
-- direct target LoRA 用 action，只作 oracle。
+- source base 使用过滤后 LIBERO-90 成功 robot actions，随后冻结并由所有方法共享；
+- AS-Writer 在目标 source tasks 上从 language + 恰好一条 action-hidden video 学习；
+- RL-Writer 优先从随机 Writer 只用 source reward 学习；
+- held zero-interaction Writer 只看 language/video，test-task RL 可再使用目标 reward；
+- 最后的 direct target-action reference 在 8 个 test tasks 上联合训练一套 shared LoRA，
+  只作 privileged oracle。
 
 ## 更一般的研究命题
 

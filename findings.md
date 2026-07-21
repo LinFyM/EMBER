@@ -1,33 +1,29 @@
 # EMBER Findings
 
-## 2026-07-21 最新 owner correction（活动 authority）
+## 2026-07-21 当前 π0.5 协议与已验证事实
 
-- development split 在任何新 π0.5 rollout 前从每 suite 7/1/2 改为 6/2/2，总计 24 train / 8 validation / 8 test；沿用同一 specification-only SHA256 排序，8 个 test task 不变。validation 选定方案后合并为最终 32 source / 8 test 并从规定初态重训。
-- 原“Writer cold start”正式称为 `Action-Supervised Writer (AS-Writer)`。
-- `Reward-Trained Writer (RL-Writer)` 是独立路线：从随机初始化 Writer，或只做预声明的极短 AS warm-up，然后直接用跨 source-task reward 联合训练；默认不从完整 AS-Writer 继续，明确检验没有 teacher actions 能否训练 Writer。
-- 最终新增 `Source-SFT π0.5` baseline：在 32 source tasks 上以和 AS-Writer 相同的 optimizer-step budget 做 action-SFT，test 不看 held video/action。它与 AS-Writer 的差异是后者额外得到一条 held teacher video。
-- 当前执行边界不变：只运行 generic π0.5 的 8 test-task zero-shot feasibility；结果出来立即停止，不自动运行上述后续训练。
-- generic `lerobot/pi05_base` revision `7de663972b7817d2c4cf2d84c821153dfea772e9` 已完整下载；14,467,165,872-byte weights SHA256 为 `0eb11ca9587678c1d2ef8cf32807c29f8ce53a2bfdfc1aa4a4c96f16fca59b0f`。
-- 24-task train-only quantile normalization 使用 `HuggingFaceVLA/libero@8695891` 的 column-range reads：先读 377 个 parquet 的 task IDs，只对 62 个纯 source 文件读取 state/action，共 43,785 rows；24 train tasks 均有贡献，validation/test action 列从未在 mixed/held 文件上打开。normalization SHA256 为 `a97857dc...3b1f1`。
-- LeRobot processor 默认会向 gated `google/paligemma-3b-pt-224` 请求 tokenizer，匿名环境得到 401。当前改为 OpenPI 同 revision 明确使用、匿名公开的 `gs://big_vision/paligemma_tokenizer.model`；其 SHA256 为 `8986bb4f...168fc6`，本地预处理的 prompt、state binning、BOS、padding/mask 已逐 token 对官方 OpenPI 实现核验。
-- π0.5 evaluator mechanics 已通过。单卡吞吐 profile（同一 Spatial task、full-horizon smoke，不作性能判断）：batch 1 为 27.52 秒/episode，batch 8 为 158.07/8=19.76 秒/episode，batch 16 为 313.24/16=19.58 秒/episode；batch 8→16 仅约 0.9% 提升，峰值显存约 20.1→23.2GB。正式评测锁定每卡一个 policy CUDA process、每进程 8 个持久 env；瓶颈是官方 π0.5 推理计算而不是显存容量。
-- 首次 8 卡 formal launch 在任何 task 产出结果前失败：robosuite 要求 `MUJOCO_EGL_DEVICE_ID` 是该进程 `CUDA_VISIBLE_DEVICES` 中的物理编号，而 evaluator 固定写 0，使 GPU1–7 import 失败；GPU0 被主动终止。修复为每 rank 派生自身唯一物理 ID 后，GPU1 独立 smoke 已通过。失败 root 保留为 invalid failure packet，不复用、不聚合。
-- 修复后 commit `bf27ebc` 上的 8 卡 formal run 全部 exit 0；每卡恰好一个 policy CUDA process，GPU0 无额外进程。8 个 test tasks × 50 fixed states 的 generic `pi05_base` 结果全部为 `0/50`，总计 `0/400`；400 个 `(suite, task, init_state)` 唯一，所有 rows 均到达对应 220/280/300/520 horizon。
-- 该结论只说明 generic π0.5 在当前官方 LIBERO 接口下没有直接 zero-shot competence，因此若继续需要 source-side action adaptation/base；它不构成对 one-video Writer 的评价。aggregate SHA256 为 `8ffa816e...7776`，tracked result seal 为 `configs/libero_24_8_8_v1/pi05_base_feasibility_results.json`（SHA256 `c78e92e9...20c2`）。按 owner stop condition，不自动启动任何后续训练。
+- 活动目标split为四个标准LIBERO suites、每suite 6 train / 2 validation / 2 test，总计24/8/8；final合并为32 source / 8 test。
+- generic `lerobot/pi05_base` revision `7de663972b7817d2c4cf2d84c821153dfea772e9` 已完整下载；weights SHA256 `0eb11ca9587678c1d2ef8cf32807c29f8ce53a2bfdfc1aa4a4c96f16fca59b0f`。
+- generic base在8 test tasks×50 official fixed states上全部为0/50，总计0/400；400个`(suite, task, init_state)`唯一且全部到suite horizon。该结果只说明原始π0.5没有LIBERO执行能力，不评价EMBER。
+- result aggregate SHA256为`8ffa816e...7776`；tracked seal为`configs/libero_24_8_8_v1/pi05_base_feasibility_results.json`（SHA256 `c78e92e9...20c2`）。
+- 24-task interface normalization和公开OpenPI tokenizer已完成并核验，但它们只属于generic feasibility合同；新source base将从过滤后的LIBERO-90 source corpus重新计算并冻结自己的source-only stats。
+- batch1/8/16 profile分别约27.52、19.76、19.58秒/episode，8→16只快约0.9%。正式静态task/GPU运行中Spatial约1004秒，而horizon-520 task最长约2169秒，证明后续必须优化cost-balanced sharding而不是只加batch。
+- EGL rank映射错误已在commit `bf27ebc`修复；正式8卡运行每卡一个CUDA process且全部exit0。
 
-## 2026-07-21 protocol reset
+## 2026-07-21 LIBERO-90 source overlap只读发现
 
-owner 已将活动研究协议改为 generic π0.5 + 四个标准 LIBERO suites + 每 suite 6/2/2 + one-video Writer。下文全部 SmolVLA/70-10-10 数字仍是真实历史证据，但从本节开始只作 provenance，不能作为新协议 checkpoint、normalization、split 或完成状态。
+- 本地官方suite字符串audit发现LIBERO-90 task44与目标`libero_goal` task7 language同为`turn on the stove`；二者scene/BDDL不同，目标task7是当前test task。
+- LIBERO-90 task77与目标`libero_10` task5 language同为`pick up the book and place it in the back compartment of the caddy`；scene/BDDL不同。
+- Spatial/Object与LIBERO-90无exact language/name/BDDL overlap；Goal/Long各有上述1条exact language overlap。尚未完成semantic/composition等价audit，不能据此断言最终恰好保留88 tasks。
+- owner已决定在完整specification-only overlap过滤后，用active LIBERO-90 tasks×50 actions训练、merge并冻结共享π0.5-LIBERO source base。该base需在全部目标40 tasks快速screen中开始出现部分真实成功，再作为AS-Writer、RL-Writer、Source-SFT、task-local RL和joint oracle共同地基。
 
-generic `pi05_base` 在预封存 8 test tasks 的 400 个 official fixed-state rollouts 上为 `0/400`，每 task 均为 `0/50`。该 feasibility 问题已经关闭，当前等待 owner 决定是否建立 source-side action adaptation/base。
-
-已核验官方实现事实：generic `pi05_base` 是 fine-tuning base；`pi05_libero` 是另一个在 LIBERO 上 action-finetuned 的 inference checkpoint。当前禁止后者。官方 generic Hugging Face pre/post processors没有可执行 LIBERO action space 的 normalization state，因此有效的 generic-base test 必须从 24 development-train tasks 计算 interface-only state/action stats，同时保持 validation/test action read count 为零。
+下文全部SmolVLA/70-10-10证据仍是真实历史，但只作provenance，不能驱动当前π0.5训练或复用旧checkpoint/normalization/runner。
 
 ---
 
 本文件只保留会影响当前科学解释的证据。父提交 `999df28` 保存 2026-07-17 至 2026-07-20 的完整逐次日志、旧配置、runner 和测试；外部 checksummed artifacts 保存原始 rows、metrics、视频和 failure packets。这里不把历史过程重新伪装成活动合同。
 
-## 当前结论
+## 历史 70/10/10 结论（已退役）
 
 ### 新 70/10/10 protocol：已永久封存
 
@@ -202,7 +198,8 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - Writer acquisition/normalization 不充分；
 - validation generalization 弱。
 
-新 70/10/10 计划必须用统一 source embodiment base 和全 50 episodes 重训，不能只引用对自己有利的一组旧结果。
+当时的 70/10/10 计划要求统一 source embodiment base 和全 50 episodes 重训；该要求已被
+当前 π0.5 / 24-8-8 方案替代，但“不能只引用有利旧结果”的证据原则仍保留。
 
 ## 评估系统发现
 
@@ -221,7 +218,8 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - foundation base 未在当时 source tasks 上 action-train，很多任务接近 0；
 - source-trained base 已在旧 source tasks 上全 action expert/projection 训练，可在相似 source tasks 上很强。
 
-新计划通过明确的 70×50 source embodiment base 消除这个混淆。
+当前方案通过明确的“过滤后 LIBERO-90 × 每 task 50 episodes”π0.5 source base 消除这个
+混淆；最终 task 数由新的 specification-only overlap audit 决定。
 
 ## Writer architecture 已成立的机械事实
 
@@ -237,7 +235,9 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 
 - LIBERO-90 正好提供 90 个大规模 task 数据文件，每 task 50 条成功 teacher demonstrations。
 - LIBERO-10/Spatial/Object/Goal/Long 是另外的标准 benchmark suites；不应和 LIBERO-90 task IDs 当作同分布池混划。
-- 旧 60/15/15 specification-only parser 证明 role-aware factorization 可行，但旧 split 已因最新 owner 设计改为待生成的同分布 70/10/10。
+- 旧 60/15/15 specification-only parser 证明 role-aware factorization 可行；其后的
+  70/10/10 也已退役。当前目标 split 是已封存的四 suites 24/8/8，并在 final 合并为
+  32 source / 8 test。
 
 ## 不允许从历史证据推出的结论
 
@@ -248,7 +248,7 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 不能把旧 source task 结果、旧 validation 结果或 task 22 用于新 split。
 - 不能重新引入 bank/geometry 作为“修复”。
 
-## 当前 RL 实现边界
+## 历史 SmolVLA RL 实现边界（不约束当前 π0.5 算法）
 
 - Writer-only RL 与 task-local RL 都采用 binary-success on-policy
   success-weighted flow regression；这是为 SmolVLA 没有可直接使用的 exact action

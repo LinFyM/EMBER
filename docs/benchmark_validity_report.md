@@ -1,6 +1,7 @@
 # Historical Gate -1 and Gate 0 Evidence
 
-状态：历史证据摘要；不定义下一轮 split 或 runner。
+状态：历史证据摘要；不定义当前 split、backbone、runner 或 Goal。当前活动合同见
+`AGENTS.md` 与 `docs/execution_brief.md`。
 
 ## Gate -1
 
@@ -28,7 +29,10 @@ ordered 对 static/reversed/shuffled 有明显优势，证明动作隐藏视频�
 - split 需要显式平衡 task-relevant roles，而不是靠 scene distractor；
 - specification-only seal 可以防止 outcome-driven split。
 
-owner 现改用同分布 70/10/10，因此旧 IDs、hash、normalization 和 manifest 全部退役。新 split 必须重新生成，不能把旧 seal 当 authority。
+owner 后来一度改用同分布 70/10/10；该协议现也已退役。当前目标 split 是四个标准
+LIBERO suites 各 6 train / 2 validation / 2 test，并在 final 合并为 32 source / 8 test。
+60/15/15 与 70/10/10 的 IDs、hash、normalization、manifest 和 runner 均不得作为当前
+authority。
 
 ## Gate 0
 

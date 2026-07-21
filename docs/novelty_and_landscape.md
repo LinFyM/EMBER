@@ -1,39 +1,60 @@
 # Novelty and Baseline Landscape
 
-## EMBER 的问题
+## EMBER 的核心问题
 
-直接 action-SFT 很强，但依赖稀缺、embodiment-specific 的机器人 action trajectories。EMBER 研究的是 action-hidden teaching video 是否能先把策略初始化到一个更有用的位置；reward practice 是可选的第二阶段，而非方法定义。
+直接target action-SFT很强，但要求目标机器人轨迹。EMBER研究的是：一个在独立source corpus上获得基本embodiment能力的VLA，能否在held task只看一条action-hidden teaching video，就生成比无视频source adaptation更有用的task LoRA；如果环境practice继续放大差异，再增加reward-adaptation claim。
 
-当前最清楚的证据链是：
+当前证据链：
 
-1. generic π0.5 在 held task 不看视频；
-2. EMBER 看相同 held task 的一条 action-hidden teacher video，生成完整 LoRA；
-3. ViVLA-style 方法看同一条视频并直接 condition action policy；
-4. 若做 reward adaptation，identity-init 与 Writer-init 使用相同 interactions。
+1. generic π0.5在目标8 tasks为0/400，说明必须先建立公平共享的LIBERO source foundation；
+2. 过滤后的LIBERO-90 action-SFT产生共享frozen π0.5-LIBERO base；
+3. Source-SFT只使用目标source actions，held不看视频；
+4. AS/RL Writer在held看一条正确视频并生成task LoRA；
+5. cross-suite wrong-video控制视频内容是否真正有因果价值；
+6. test-task identity/AS/RL Writer三臂RL检验初始化是否改善practice；
+7. 8-test联合action-SFT shared LoRA给出privileged ceiling。
 
-## ViVLA 是最直接的 matched baseline
+## 为什么共享LIBERO-90 base不破坏故事
 
-ViVLA 在 source 上学习如何用 expert video condition 当前 robot policy，在 held LIBERO task 上只看视频、不读取 held actions，也不做 target action-SFT。这与 EMBER 的信息条件可以直接匹配；是否每个 policy step 重看视频不是不公平，因为那是方法差异。
+所有方法都需要一般视觉、语言、机器人控制和action-space能力。用与目标40 exact task去重后的LIBERO-90 actions训练共同base，等价于一般机器人foundation adaptation；它不向任何方法泄露目标task actions。真正受比较的信息差仍然是held task video、held reward或held actions。
 
-公平比较固定：相同 π0.5 base、24/32 source tasks、one-video sampling、held task IDs、current observation、target action wall 和 rollout evaluator。ViVLA 输出在线 conditioned actions；EMBER 一次把视频编译为可复用 LoRA。报告 success、video preprocessing time、policy latency、memory，并在需要时给相同 reward budget。
+若base过弱，Writer必须同时解决embodiment与task acquisition；若base已有基本能力，correct-video与wrong-video、Source-SFT之间的差异更能回答视频是否提供目标知识。base不应被故意训弱，也不应先追求把目标40做满。
 
-## Direct LoRA oracle
+## Source-SFT
 
-target-action-supervised LoRA 是“教练拉着手”的 privileged upper bound。它回答相同 LoRA 空间是否能学会任务，但不是同信息墙 baseline。论文应明确展示性能差距，而不是要求 EMBER 击败 action oracle。
+Source-SFT从同一frozen base出发，在24/32目标source tasks上联合训练一套shared LoRA，held只靠language/current observation。它与Writer各自按validation选最佳，不强制相同步数；通过完整报告action chunks、GPU-hours和参数量解释计算差异。
 
-## 其他 baseline
+## Wrong-video是核心机制对照
 
-- generic/frozen π0.5：没有 target video 的下界，也是当前 feasibility test。
-- `Source-SFT π0.5`：在最终 32 source tasks 上按 AS-Writer 相同 optimizer-step budget 做 action-SFT，test 不看 held video；它控制 source-side training，并检验 EMBER 额外读取 held video 的价值。
-- language-only parameter generator：检验视频是否提供语言之外的信息；最终可选成熟 HyPoGen/DISC-style 方法，不需要重复多个近同构 arm。
-- retrieval/average source LoRA：检验 Writer 是否只是 nearest-task selection。
-- matched ordinary LoRA RL：检验 video initialization 是否提高 reward efficiency。
+错误视频来自另一suite，正确language与执行task保持不变。若Writer只是生成通用adapter或主要依赖language，wrong-video可能同样提升；`correct - wrong` 才是视频内容价值的直接证据。这不是独立训练Language-only/Video-only Writer arm，不违反精简baseline原则。
 
-R+X、SeeTraceAct、RAD、RoboCasa 等工作继续作为场景与相关工作参考，但当前 benchmark 决策已经收敛到与 ViVLA 同口径的 LIBERO-40，不在本轮扩散到 sim-to-real 或真实机器人。
+## ViVLA 是最直接的可选 matched baseline
+
+ViVLA-style方法在执行时直接以expert video、当前观察和language condition policy；EMBER则把视频一次编译成LoRA。公平matched版本使用同一个frozen π0.5-LIBERO source base、24/32 source tasks、one-video held输入、相同target-action wall和evaluator。是否每步重看视频是方法差异，不是不公平。
+
+优先完成EMBER核心闭环；有时间再实现ViVLA-style matched reproduction，并报告success、video preprocessing、policy latency、显存和rollout throughput。原生ViVLA的大规模外部数据结果只作相关工作，不与matched因果表混写。
+
+## Test-task reward adaptation
+
+task-local RL在最终test task本身训练，与一般RL benchmark在同一任务训练/测试的口径一致。它不需要validation预冻结；但三种初始化仍应使用相同环境/策略seed schedules、RL代码和可比资源，报告完整learning curves、interactions-to-best和fresh fixed-state结果。
+
+## Joint direct-action oracle
+
+target-action oracle在8个test tasks上联合训练一套shared LoRA并使用每task全部50条actions。它回答“目标actions可见时，同一共享LoRA空间可达到什么水平”，不是同信息墙baseline，也不是8套task-local adapters。
+
+## Seen-task evidence
+
+seen panel用于区分“方法根本没在source distribution学会”与“source acquisition成立但held transfer失败”。它必须覆盖四suites并在outcome前选定；不能替代validation/test，也不能单独证明泛化。
+
+## 相关工作边界
+
+R+X、SeeTraceAct、RAD、RoboCasa等继续作为视频数据场景与相关工作参考；当前实证收敛在LIBERO-90 source foundation + LIBERO-40 target benchmark。sim-to-real与真实机器人暂不进入核心执行。
 
 ## 当前不允许的结论
 
-- generic π0.5 base 的 zero-shot 成败不是 EMBER 的最终成败；它只决定后续是否需要 source-base calibration。
-- 旧 SmolVLA 70/10/10 结果不能当新协议结果。
-- direct LoRA 强不能证明视频无用，因为其使用了额外 target action labels。
-- 不把 task-local RL 写成 EMBER 的必要组成，也不声称 outer learning 已验证。
+- generic π0.5的0/400不是EMBER失败，只说明原始base不适合直接执行LIBERO。
+- 新source base在40-task快速screen有少量成功不等于EMBER成立。
+- correct-video只高于base但不高于wrong-video，不能充分证明视频内容被利用。
+- Source-SFT或joint direct oracle强不能否定视频setting，因为它们使用额外action labels。
+- task-local RL不是EMBER必要组成；RL-Writer失败也不能抹掉AS-Writer结果。
+- 旧SmolVLA/70-10-10结果不能冒充新π0.5协议证据。

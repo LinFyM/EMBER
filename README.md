@@ -1,31 +1,39 @@
 # EMBER
 
-EMBER 研究能否把廉价但没有机器人 action 标注的教学视频，编译成可直接执行、也可继续利用环境反馈适应的 VLA 参数：
+EMBER 研究能否把廉价、没有目标机器人 action 标注的教学视频编译成可直接执行、也可继续用环境反馈优化的 VLA 参数：
 
 ```text
-task language + one action-hidden teaching video
+task language + exactly one action-hidden teaching video
                     -> shared Writer
                     -> complete task-specific LoRA
 ```
 
-## 当前协议
+## 当前主线
 
-- 基座改为通用预训练 π0.5，不默认先训练 source embodiment base。
-- benchmark 使用 LIBERO-Spatial、Object、Goal、Long（官方 suite 名为 `libero_10`）共 40 tasks。
-- 开发期每 suite 固定 6 train / 2 validation / 2 test，总计 24/8/8；validation 选完方法后，未来最终重训才合成 32 source / 8 test。
-- EMBER 训练和测试都只看一条 teacher video。source 训练时，同 task 的视频与 action-supervised episode/chunk 独立随机抽样，不做同 episode 配对。
-- held rollout 每次随机抽一条 teacher video，再由 Writer 生成 LoRA。
-- 原“Writer cold start”正式改名为 `Action-Supervised Writer (AS-Writer)`。
-- `Reward-Trained Writer (RL-Writer)` 是从随机初始化（或仅极短、预声明的 AS warm-up）开始的独立 source-reward 路线，不默认接在 AS-Writer 后面；它专门检验没有 teacher actions 能否训练 Writer。
-- Writer 直接生成的 LoRA 若已足够强，不强制继续 RL；matched task-local LoRA RL 保留为后续第二实验。
-- 最终增加 `Source-SFT π0.5` baseline：同样使用合并后的 32 source tasks，按 AS-Writer 的 optimizer-step budget 微调 π0.5，但 test 时不看 held video。
-- 不使用 bank、geometry、shared subspace、residual escape、额外 shared adapter 或 MemLLM。
+- Backbone 从 generic `lerobot/pi05_base` 开始，但不直接以其 `0/400` LIBERO表现作为Writer地基。
+- 先对 LIBERO-90 与目标 LIBERO-40 做 specification-only semantic/composition overlap audit，排除重合 source tasks；在剩余 tasks × 每 task 50 success episodes 上联合 action-SFT，并冻结一个共享 π0.5-LIBERO source base。
+- source base 快速覆盖测试全部40个目标tasks，只要求开始出现跨多个task的部分真实成功，不追求先把base训到高ceiling，也不能只靠单个易task的aggregate。
+- 目标 benchmark 为 LIBERO-Spatial/Object/Goal/Long 四 suites。development split 每 suite 6 train / 2 validation / 2 test，共24/8/8；final将validation合入形成32 source / 8 test。
+- `Action-Supervised Writer (AS-Writer)` 在source tasks上以一条视频生成LoRA，同task action episode/chunk只进functional loss，视频/action独立随机采样。
+- `Reward-Trained Writer (RL-Writer)` 从随机Writer直接用source reward开始；无信号时只允许极少AS warm-up，仍失败则暂停路线。
+- `Source-SFT` 从同一source base在24/32 source tasks上联合训练一套shared LoRA，不看held video；它独立按validation选最佳，不强制匹配AS-Writer训练步数。
+- development和final都增加seen-task comparison；AS/RL Writer还必须比较correct video与另一suite的wrong video。
+- 第一轮只跑一个training seed。开发选定后，AS-Writer、RL-Writer（若成立）和Source-SFT都在合并后的32 source tasks上重新训练，再统一做seen与zero-interaction test。
+- test打开后，直接在每个test task上将identity-init、AS-Writer-init、RL-Writer-init三臂task-local LoRA RL训练到各自接近最佳；不在validation上提前冻结这段RL。
+- 最后使用8个test tasks、每task全部50条action episodes，联合训练一套shared target-action LoRA oracle；不是每task一套LoRA。
+- 有时间再做ViVLA-style matched reproduction；outer learning不是核心完成条件。
 
-## 当前执行边界
+## 已完成证据
 
-通用 `pi05_base` 的预封存 8-task zero-shot feasibility 已完成：8 tasks × 50 fixed states 均为 `0/50`，总计 `0/400`。模型未训练，test teacher actions 未读取，也未使用已经在 LIBERO-40 上 fine-tune 的 `pi05_libero`。当前按 owner 要求停止，等待讨论是否建立 source-side action adaptation/base。
+generic `pi05_base` 在预封存8个test tasks、每task50个官方fixed states上为 `0/400`。该结果只说明原始模型没有可用LIBERO控制能力，不评价EMBER。合同与result seal位于 `configs/libero_24_8_8_v1/`。
 
-split、评测合同与结果 seal 封存在 `configs/libero_24_8_8_v1/`。旧 `configs/libero90_70_10_10/`、SmolVLA 训练结果和旧 Phase A–F 只作历史证据。
+## 约束
+
+- 不使用 `pi05_libero`，因为它读过目标40 tasks actions。
+- 不使用bank、geometry、shared subspace、residual escape、额外shared adapter、旧SmolVLA活动路径或MemLLM。
+- 所有下游方法从同一冻结source base出发并使用同一LoRA空间。
+- 训练最多8张A100；GPU0不得堆额外CUDA角色。评测改用cost-balanced state sharding和动态调度，避免horizon-520长任务拖尾。
+- 详细阶段、信息墙与执行合同见 `docs/execution_brief.md` 和 `task_plan.md`。
 
 ## 阅读顺序
 

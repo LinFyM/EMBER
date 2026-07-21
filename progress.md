@@ -4,47 +4,24 @@
 
 ## 当前状态
 
-- active Goal 已替换为 π0.5 feasibility test；没有 token budget。
-- formal evaluation commit 为 `bf27ebc`；24/8/8 protocol 与 π0.5 evaluator 已实现并在 clean Git 上运行。
-- 当前主线是四个标准 LIBERO suites，每 suite 6 train / 2 validation / 2 test；不是 LIBERO-90 70/10/10。
-- 当前 backbone 是 generic π0.5；先不建立 source embodiment base。
-- EMBER train/test 都只输入一条 action-hidden teacher video；source video 与 action episode在 task 内独立采样。
-- 原 Writer cold start 已改名 `Action-Supervised Writer (AS-Writer)`；`Reward-Trained Writer (RL-Writer)` 改为随机初始化或仅极短 AS warm-up 后的独立 source-reward 路线，不默认继承 AS-Writer。
-- 最终 baseline 增加 `Source-SFT π0.5`：合并后的 32 source tasks、与 AS-Writer 相同 optimizer-step budget、test 不看 teacher video。
-- 正式 generic π0.5 test 已完成，8 个 test tasks 均为 `0/50`，总计 `0/400`；8 test tasks 的 teacher actions 从未读取。当前停止，不自动建立 source base。
-- `/data/ymdai` formal launch 前约 354GB；在 500GB operator cap 下仍有约 146GB headroom。
-- 当前 `.venv` 有 PyTorch 2.11/CUDA 12.8、8 张可见 GPU、LeRobot 0.6.0 和 LIBERO simulator；generic π0.5 checkpoint revision `7de6639` 已下载，14,467,165,872-byte weights SHA256 为 `0eb11ca9...ca59b0f`。
+- generic π0.5 feasibility Goal已完成；结果提交为 `27593d1`。本次 authority/handoff 更新在其上承接新的长期协议。
+- 活动目标split仍为四个标准LIBERO suites、每suite 6 train / 2 validation / 2 test，总计24/8/8；seal位于 `configs/libero_24_8_8_v1/`。
+- generic `lerobot/pi05_base` revision `7de663972b7817d2c4cf2d84c821153dfea772e9` 已下载，weights SHA256 `0eb11ca9587678c1d2ef8cf32807c29f8ce53a2bfdfc1aa4a4c96f16fca59b0f`。
+- generic base在8 test tasks×50 fixed states上为 `0/400`。400 rows唯一、全部到suite horizon，result seal SHA256 `c78e92e9...20c2`；该结果不评价EMBER。
+- owner已决定下一步先从generic π0.5训练共享π0.5-LIBERO source base，再推进AS-Writer、RL-Writer、Source-SFT、seen/wrong-video、final32、test RL和联合direct oracle。
+- 第一轮完整流程只跑一个training seed；不提前扩多seed或direct action-budget curve。
+- `/data/ymdai` formal launch前约354GB，500GB个人cap下约146GB headroom；任何新source data/cache/model构建前重新实时测量。
 
-## 已核验的官方事实
+## Generic feasibility已验证的实现事实
 
-- Physical Intelligence 发布 generic `pi05_base`（用于 fine-tuning）和 separate `pi05_libero`（在 LIBERO 上 fine-tuned，用于直接 inference）。当前只允许前者。
-- 官方 OpenPI LIBERO config 使用 action horizon 10；当前 LeRobot official conversion 的 checkpoint config 为 model chunk 50、`n_action_steps=10`，evaluator 与官方 OpenPI runner 相同只执行前 5 actions 后重规划；10 flow inference steps。
-- 官方 evaluator：256 render、224 resize、两相机 180° rotate、replan 5、seed 7、50 trials/task、10 dummy settling steps；suite horizons 220/280/300/520。
-- generic base 没有 LIBERO action unnormalization stats，不能把空 postprocessor 当有效控制接口；当前只允许用 24 development-train tasks 计算接口 stats，不更新模型权重。
-- train-only normalization 已完成：只对 377 个 parquet 先读取 `task_index`，随后只在 task IDs 全属于 24 development-train role 的 62 个文件读取 state/action；共 43,785 source rows，24 tasks 均有贡献，8 validation 与 8 test actions 未读取。artifact SHA256 为 `a97857dc...3b1f1`。
-- LeRobot 默认 tokenizer loader 会访问 gated Google repo；改用同一 OpenPI revision 明确引用、可匿名读取的 `gs://big_vision/paligemma_tokenizer.model`，4,264,023 bytes、SHA256 `8986bb4f...168fc6`。prompt/state discretization 逐 token 对官方 OpenPI 格式核验通过。
-- evaluator mechanics smoke 已验证模型加载、预处理、batched action、LIBERO reset/step 与结果落盘。吞吐 profile 在同一 Spatial task 的 full-horizon 失败 episodes 上为：1 env 27.52 秒/episode、8 env 19.76 秒/episode、16 env 19.58 秒/episode；8→16 只提升约 0.9%，且峰值显存约从 20.1GB 增至 23.2GB，因此正式使用每 policy process 8 个 env。这里的 0/1、0/8、0/16 不作科学性能证据。
-- 首次 8 卡 formal launch 在 rollout 前暴露 EGL rank 映射错误：旧 evaluator 固定 `MUJOCO_EGL_DEVICE_ID=0`，导致物理 GPU1–7 的 robosuite import 明确拒绝，GPU0 未完成即主动终止；该批输出标为 invalid，不进入 aggregate。现改为从每个单卡进程唯一的 numeric `CUDA_VISIBLE_DEVICES` 派生 EGL device，并已在物理 GPU1 完成一条 load/env/rollout smoke。
+- 使用LeRobot official π0.5 conversion：model chunk50、`n_action_steps=10`、每次执行前5 actions后重规划、10 flow inference steps。
+- official evaluator：render256、model224、两相机旋转180°、seed7、50 fixed init states、dummy settling10；horizons Spatial/Object/Goal/Long=`220/280/300/520`。
+- OpenPI公开PaliGemma tokenizer已逐token核验；模型/tokenizer manifests与24-train interface stats均封存在当前config目录。
+- 首次8卡formal因固定`MUJOCO_EGL_DEVICE_ID=0`使GPU1–7在rollout前失败；修复为每进程物理`CUDA_VISIBLE_DEVICES`后formal全部exit0。失败root与正式root隔离。
+- 单卡profile：1 env约27.52秒/episode，8 env约19.76秒/episode，16 env约19.58秒/episode；8→16仅约0.9%提升，峰值显存约20.1→23.2GB。
+- 静态一task/GPU使两个horizon-520任务成为最后拖尾：正式最长task rollout约2169秒，而Spatial约1004秒。下一evaluator必须做cost-balanced state sharding/dynamic queue，不得复用静态映射作为效率上限。
 
-## Generic π0.5 formal feasibility result
-
-| suite | task | language | success |
-| --- | ---: | --- | ---: |
-| `libero_spatial` | 6 | pick up the black bowl next to the cookie box and place it on the plate | 0/50 |
-| `libero_spatial` | 8 | pick up the black bowl next to the plate and place it on the plate | 0/50 |
-| `libero_object` | 0 | pick up the alphabet soup and place it in the basket | 0/50 |
-| `libero_object` | 7 | pick up the milk and place it in the basket | 0/50 |
-| `libero_goal` | 4 | put the bowl on top of the cabinet | 0/50 |
-| `libero_goal` | 7 | turn on the stove | 0/50 |
-| `libero_10` | 0 | put both the alphabet soup and the tomato sauce in the basket | 0/50 |
-| `libero_10` | 3 | put the black bowl in the bottom drawer of the cabinet and close it | 0/50 |
-
-- total：`0/400`；400 个 `(suite, task, init_state)` 键全部唯一，所有 rows 均跑到对应 suite horizon。
-- 每个 evaluator 在启动时记录 clean commit `bf27ebc`；8 卡一 task/一 policy process，GPU0 没有额外 CUDA role。
-- protocol/model/normalization/tokenizer hashes 逐 task 一致；aggregate SHA256 为 `8ffa816e...7776`，tracked result seal SHA256 为 `c78e92e9...20c2`。
-- 这个结果回答的是 generic base feasibility：当前通用 π0.5 不能直接作为 LIBERO held-task 执行 base。它不是 Writer、one-video 或 source adaptation 的负结果，因为这些方法尚未运行。
-
-## 新 split（已封存）
+## Target split
 
 | suite | train | validation | test |
 | --- | --- | --- | --- |
@@ -53,16 +30,42 @@
 | `libero_goal` | 0,1,2,5,8,9 | 3,6 | 4,7 |
 | `libero_10` | 4,5,6,7,8,9 | 1,2 | 0,3 |
 
-算法 seed `20260721`；SHA256 key 为 `seed\0suite\0task_name\0language\0bddl_file`，按 digest 升序前 6 / 中间 2 / 后 2。canonical seal 为 `configs/libero_24_8_8_v1/protocol.json`。这次调整发生在任何 π0.5 test rollout 之前，8 个 test task 未变。
+算法seed `20260721`；key为 `seed\0suite\0task_name\0language\0bddl_file` 的SHA256排序，前6/中2/后2。test IDs不得按outcome替换。
 
-## 下一动作
+## Source-base corpus audit起点
 
-停止并等待 owner 讨论。不得自动启动 source base、AS-Writer、RL-Writer、RL 或 baseline。
+只读本地官方suite已确认：
+
+- LIBERO-90 task44：`KITCHEN_SCENE9_turn_on_the_stove`，language与target `libero_goal` task7相同；target task7为当前test。
+- LIBERO-90 task77：`STUDY_SCENE2_pick_up_the_book_and_place_it_in_the_back_compartment_of_the_caddy`，language与target `libero_10` task5相同；二者scene/BDDL不同。
+- Spatial/Object与LIBERO-90没有exact language/name/BDDL overlap；Goal/Long各有上述1条exact language overlap。当前只检查了直接字符串重合，尚未完成semantic/composition audit。
+
+下一session必须先完成完整specification-only audit，再封存过滤后的active source IDs。至少不能未经处理直接把LIBERO-90写成90/90 source tasks。
+
+## 已对齐的后续方法
+
+- frozen source base：过滤后LIBERO-90×50 action-SFT，必要source LoRA merge，source-only normalization冻结；快速screen全部目标40 tasks，需开始在多个tasks有部分真实成功，不能只靠一个易task aggregate。
+- AS-Writer：24 train/8 val开发，one video，video/action episode同task独立采样；单次训练≤约2小时，loss驱动稀疏val与早停。
+- RL-Writer：随机Writer、零AS warm-up起步；无reward再极少warm-up，仍失败则关闭。
+- Source-SFT：24/32 source tasks联合一套shared LoRA；独立val选最佳，不匹配AS steps/data。
+- seen comparison：specification-only预声明覆盖四suites的source panel。
+- wrong-video：直接另一suite，正确language/task/state/RNG不变。
+- final：合并为32 source，单seed分别重训后先seen、再zero-interaction test。
+- test-only RL：不碰validation；test task上训练identity/AS/RL Writer三臂到接近最佳，官方random resets，fixed50只fresh eval。
+- direct oracle：最后使用8 test tasks×50 actions联合一套shared LoRA，不是per-task LoRA。
+- optional：核心后有时间再做ViVLA；outer learning不阻塞。
+
+## 下一session第一批动作
+
+1. `get_goal`；若无active Goal，按 `docs/new_session_prompt.md` 创建长期Goal，不设token budget并复核。
+2. `git pull --ff-only origin main`、status、完整阅读authority。
+3. live检查8卡owner/process、CUDA/PyTorch、storage和已有LIBERO-90数据/cache；不得启动训练前盲目复制。
+4. 调研并锁定成熟π0.5 action-SFT/LoRA recipe与官方参数。
+5. 完成LIBERO-90↔目标40 overlap audit、active source manifest、normalization/data hashes。
+6. 并行推进高吞吐evaluator的cost-balanced scheduler；随后profile并启动source-base短训练/40-task快速screen。
+
+不要停在计划复述或只写第二套runner；安全检查通过后直接推进Phase A/B。等待下载、索引或训练时继续推进互不污染的后续代码。
 
 ## 历史边界
 
-旧 SmolVLA 70/10/10 已真实完成到 Phase F freeze，包含 base `56/500`、cold Writer `63/500`、identity-RL `54/500`、Writer-RL `74/500`、direct oracle `186/500` 等 validation 结果。这些仍是可引用 provenance，但与新 split/backbone/data semantics 不兼容，不得复用其 checkpoint、normalization 或继续旧 test。
-
-## 禁止自动续跑
-
-π0.5 的 8-task result 一旦生成，必须停止。不得据结果自行训练 source base、Writer、RL 或 baseline。
+旧SmolVLA 70/10/10曾完成到旧Phase F并留下真实结果，但与当前π0.5、split、one-video和source-base合同不兼容。只能用作经验/provenance，不能复用checkpoint、normalization或runner。

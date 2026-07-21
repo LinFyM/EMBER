@@ -1,65 +1,109 @@
 # EMBER Task Plan
 
-最后更新：2026-07-21。当前 Goal 是一次有明确停止点的 π0.5 feasibility evaluation，不是旧 Phase F 的自动续跑。
+最后更新：2026-07-21。当前长期 Goal 是完成共享 π0.5-LIBERO source base、one-video Writer、source baselines、seen/wrong-video机制证据、final single-seed test、test-only三臂RL和联合target-action oracle；不是停在generic base feasibility或任一局部阶段。
 
-## 当前完成定义
+## 完成定义
 
-只有以下全部完成，当前 Goal 才完成：
+只有以下核心项全部完成，长期 Goal 才可完成：
 
-1. 活动 authority、概念、决策、handoff 与新 session prompt 全部对齐 π0.5 / 24-8-8 / one-video；
-2. specification-only 6/2/2-per-suite split、任务文本、算法、seed 和 hashes 封存；
-3. generic `pi05_base` 与官方 LIBERO 推理参数核验，不使用 `pi05_libero`；
-4. 只用 24 development-train tasks 计算必要的 interface normalization，validation/test action read count 为零；
-5. 8 个 test tasks × 50 fixed states 完整评测，保存 400 条 raw rows 与逐任务成功数；
-6. 运行时 8 张卡进程角色一致、GPU0 无额外 CUDA process；
-7. 结果写回、验证、commit、push；
-8. 立即停止，不启动后续实验。
+1. specification-only 封存过滤后的 LIBERO-90 source-base corpus、数据/normalization/model hashes；
+2. 训练并冻结共享 π0.5-LIBERO source base，快速screen全部目标40 tasks并确认已出现部分真实成功；
+3. 在24 train / 8 validation上完成并选择AS-Writer、RL-Writer（若能启动）与Source-SFT；
+4. 完成source/seen panel及correct-video vs cross-suite wrong-video证据；
+5. 合并validation后，在32 source tasks上以单seed从规定初态重训已选方法；
+6. 完成final seen comparison与8-task zero-interaction test；
+7. test打开后在8个test tasks上将identity/AS-Writer/RL-Writer三臂task-local RL训练到各自接近最佳，并做训练分离的fresh evaluation；
+8. 使用8 test tasks × 50 action episodes联合训练一套shared target-action LoRA oracle并评估；
+9. 原始rows、per-task counts、learning curves、seeds、interaction/data counts、runtime与hashes齐全，验证、commit、push。
 
-## Phase A：协议与 split
+ViVLA-style matched baseline和source-only outer learning为时间允许时的后续项，不阻塞核心Goal complete。RL-Writer如在零warm-up和微量AS warm-up后均无法获得训练信号，可用完整失败证据关闭该路线，不伪造第三臂。
 
-状态：已完成，seal 为 `configs/libero_24_8_8_v1/`。
+## Phase 0：generic π0.5 feasibility
 
-- [x] 确定四 suites 与 24/8/8 数量。
-- [x] 确定 one-video train/test semantics。
-- [x] 确定 source video/action episode 独立随机采样。
-- [x] 确定 generic π0.5 先测、结果后停。
-- [x] 写完全部活动 authority。
-- [x] 封存 `configs/libero_24_8_8_v1/` 并验证 hashes。
+状态：已完成。
 
-## Phase B：π0.5 official-path mechanics
+- [x] 封存24/8/8目标split。
+- [x] official-compatible π0.5 evaluator与24-train interface stats mechanics。
+- [x] 8 test tasks × 50 fixed states：generic `pi05_base` 为 `0/400`。
+- [x] 结果seal、49项测试、commit/push完成。
 
-状态：已完成；小分母 rollout 只用于 mechanics/throughput，不作性能判断。
+该结果只作原始模型校准。当前活动路径从Phase A继续。
 
-- [x] 固定 Physical Intelligence/openpi revision、generic base checkpoint revision 与文件 hash。
-- [x] 取得 24 development-train tasks 的必要 metadata/state/action columns，不下载 image/video payload。
-- [x] 计算 train-only π0.5 LIBERO normalization；验证 val/test teacher action access 为零。
-- [x] 实现单一最小 evaluator；固定 official preprocessing、replan、horizon、seed、init states 和 raw row schema。
-- [x] 单卡 mechanics smoke 通过；未据小分母判断性能。
-- [x] 吞吐 profile：batch 8 为 158.07 秒/8 episodes，batch 16 为 313.24 秒/16 episodes，仅快约 0.9%；正式锁定 8 env/process，避免更大 batch 的尾批和稳定性代价。
+## Phase A：source corpus、成熟recipe与高吞吐评测
 
-## Phase C：8-task test
+状态：下一session直接开始。
 
-状态：已完成；generic π0.5 为 0/400，现按 owner 要求停止。
+- [ ] 调研官方/成熟π0.5 action fine-tuning与LoRA项目；锁定revision、targets、rank/alpha/dropout、identity init、训练与merge方式，不猜脚本参数。
+- [ ] 对LIBERO-90与目标40 tasks做完整language/BDDL/semantic/composition specification audit。
+- [ ] 至少处理已知overlap：LIBERO-90 task44 ↔ target Goal task7；task77 ↔ target Long task5；封存最终active source IDs与hashes。
+- [ ] 核验过滤后每task全部50条teacher episodes、数据路径、state/action定义、source-only normalization与存储峰值。
+- [ ] 将当前“一task/一GPU”评测改成按 `episodes × horizon` cost-balanced state shards、动态队列、持久model/env；profile Writer异LoRA的functional batching与每卡统一1/2/3 replicas。
+- [ ] 确认所有卡CUDA进程数相同、GPU0无额外角色；只按真实rollout/s选实现。
 
-- [x] GPU/storage live preflight。
-- [x] 8 GPU 同构 launch：一 task / 一 GPU / 一 policy CUDA process。
-- [x] 每 task 50 fixed init states，共 400 rows。
-- [x] 保存 command、revisions、normalization provenance、GPU/process snapshot、wall-clock、raw rows、summary 和 hashes。
-- [x] 更新 `findings.md`、`progress.md` 和本计划。
-- [x] 验证、commit、push，当前 Goal complete 并停住。
+## Phase B：共享 π0.5-LIBERO source base
 
-## 未来计划（本轮禁止执行）
+- [ ] 从generic `pi05_base`按成熟recipe在过滤后的LIBERO-90 source corpus上联合action-SFT；若用LoRA则merge成base。
+- [ ] 8卡训练优先，一卡一rank，真实显存平均预留约10GB；完整exact-resume state。
+- [ ] 根据loss与快速行为screen避免过训，不追求高ceiling。
+- [ ] 在全部目标40 tasks上做小型快速screen，确认source base已经开始在多个tasks产生部分真实成功，不能只靠单个易task aggregate；保存每task原始counts。
+- [ ] 冻结base、normalization、model/data hashes，作为全部后续方法共同起点。
 
-- 开发：24 source tasks 训练 one-video 方法，8 validation tasks 选方法。
-- 最终：合并 validation，32 source tasks 重训，8 test tasks 统一评估。
-- Writer 路线：`Action-Supervised Writer (AS-Writer)`；独立的 `Reward-Trained Writer (RL-Writer)` 从随机初始化或仅极短 AS warm-up 开始，不默认继承 AS-Writer。
-- 可选：matched task-local identity/Writer-init RL；Phase F 后 outer learning。
-- Baselines：generic/frozen π0.5、在最终 32 source tasks 上与 AS-Writer 匹配 optimizer steps 的 `Source-SFT π0.5`、ViVLA-style one-video direct conditioning、direct target-action LoRA oracle，以及相同 reward budget 的 matched RL。
+## Phase C：AS-Writer development
+
+- [ ] 将Writer core适配到π0.5成熟LoRA空间；同task video/action episode独立采样，Writer只见language+one action-hidden video。
+- [ ] 24 train tasks均衡混合；source base冻结，actions只进functional loss。
+- [ ] 先profile约短时loss/吞吐，将wall-clock换算为steps；checkpoint频繁exact-resume。
+- [ ] 单次训练不超过约2小时。用loss斜率决定何时值得运行便宜val screen，完整val只评少量候选，尽快选择接近饱和checkpoint。
+- [ ] 报告8 validation tasks逐任务raw success与视频采样seed。
+
+## Phase D：RL-Writer development
+
+- [ ] 从随机Writer、零AS warm-up直接跨24 source tasks用官方random-reset reward联合训练。
+- [ ] 若无正信号，加入极少量AS warm-up并明确记录teacher-action consumption；不得从完整AS-Writer继续。
+- [ ] 仍无法启动时保存完整reward coverage/interaction/failure evidence并暂停路线。
+- [ ] 若成立，根据validation快速寻找接近饱和checkpoint；保存worker RNG、seed schedule、interaction cursor和exact-resume state。
+
+## Phase E：Source-SFT、seen与视频因果证据
+
+- [ ] 从同一source base在24 train tasks上联合训练一套shared Source-SFT LoRA；按validation独立选择最佳，不强制匹配AS-Writer steps/data。
+- [ ] 在outcome前按specification预声明覆盖四suites的seen panel。
+- [ ] 比较source base、Source-SFT、AS-Writer、可用RL-Writer的seen performance。
+- [ ] 为AS/RL Writer生成固定cross-suite wrong-video map；保持正确language、task、init state和policy RNG，报告correct/wrong/base三者。
+- [ ] 冻结AS-Writer、RL-Writer、Source-SFT的architecture、LoRA空间、optimizer与最终训练steps。
+
+## Phase F：32-source final retraining与zero-interaction test
+
+- [ ] 将8 validation tasks合入source，形成32 source / 8 test；不改test IDs。
+- [ ] 第一轮只用一个training seed，从规定初态分别重训AS-Writer、RL-Writer（若成立）和Source-SFT。
+- [ ] 先完成final seen-task comparison和wrong-video control。
+- [ ] 打开test，评估新frozen source base、Source-SFT、AS-Writer、RL-Writer及correct/cross-suite-wrong video。
+- [ ] held Writer每rollout随机采一条正确task video，不挑最好video；全部方法用相同fresh evaluator和paired seeds。
+
+## Phase G：test-only three-arm task-local RL
+
+- [ ] 不在validation上预先训练或冻结此RL；test打开后直接针对每个test task调优并训练到曲线接近最佳。
+- [ ] 三臂：identity-init、AS-Writer-init、RL-Writer-init；均基于同一frozen source base和同一LoRA空间。
+- [ ] 每task/adaptation seed随机一条teacher video，AS/RL Writer共用并固定初始化LoRA。
+- [ ] 三臂匹配task、env/policy seed schedule、official random BDDL init sequence、RL代码和可比资源上限；保存全部learning curves与time/interactions-to-best。
+- [ ] adaptation与checkpoint选择不用fixed `.pruned_init`；最终固定50 states只作fresh evaluation。
+
+## Phase H：8-test联合target-action oracle
+
+- [ ] 前述无action方法与RL结果封存后，才读取8 test tasks的actions。
+- [ ] 从同一frozen source base出发，用8×50完整action episodes联合训练一套shared multi-task LoRA；不是8套task-local LoRA。
+- [ ] 第一轮只做50/task，不做1/5/10 action-budget curve。
+- [ ] 使用同一LoRA targets/rank/alpha/dropout，报告逐任务和aggregate；明确标记privileged oracle。
+
+## Optional after core
+
+- [ ] 时间允许时做同source base、split、one-video输入墙的ViVLA-style matched reproduction与test。
+- [ ] 核心成立后才考虑source-only outer learning；不阻塞Goal complete。
+- [ ] 有足够核心性能差异后再补独立training seeds；第一轮不提前扩大。
 
 ## 每次运行前
 
-- [ ] Git revision/status 明确。
-- [ ] live `nvidia-smi` 与 owner/process audit。
-- [ ] `/data/ymdai` 当前与预计峰值低于 500GB。
-- [ ] 8 卡进程拓扑相同，GPU0 无额外 CUDA role。
-- [ ] exact config、checkpoint、data surfaces、output root 和 stop condition 明确。
+- [ ] workspace/branch/commit/status明确；无未识别并发writer。
+- [ ] live GPU owner、进程、driver/CUDA与storage audit；预计峰值低于500GB个人cap。
+- [ ] exact command、model/data/config hashes、output root、process topology与停止条件记录。
+- [ ] 一卡一训练rank为默认；若评估每卡多replica，8卡replica数必须一致且GPU0无额外角色。
+- [ ] checkpoint/output不得覆盖；resume必须校验完整state与合同兼容性。

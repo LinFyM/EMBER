@@ -1,5 +1,10 @@
 # EMBER 独立专家评审与完整研究计划
 
+> **历史原文，不是活动 authority。** 其中的 60/15/15、bank、geometry、shared
+> update subspace、per-task oracle、validation-frozen test adaptation 和旧 backbone
+> 均已退役；只能用于追溯思想来源。当前合同见根目录 `AGENTS.md` 与
+> `docs/execution_brief.md`，不要从本文启动实验或恢复实现。
+
 > 评审日期：2026-07-17  
 > 评审范围：将仓库当前文件视为完整上下文，不假定任何未提交的历史讨论、实现或结果。  
 > 研究状态：**假说与设计评审，不是结果背书。**  

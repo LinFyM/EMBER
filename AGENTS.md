@@ -2,70 +2,106 @@
 
 ## Authority
 
-本文件和 `docs/execution_brief.md` 是当前活动 authority。owner 在 2026-07-21 明确将旧 SmolVLA + LIBERO-90 70/10/10 主线替换为 π0.5 + 四个标准 LIBERO suites 的单视频协议。旧配置、旧 checkpoint、旧 Phase A–F 结果和 `docs/expert_plan.md` 只作 provenance，不得自动续跑。
+本文件和 `docs/execution_brief.md` 是当前活动 authority。2026-07-21 generic π0.5 feasibility 已结束；其后 owner 明确批准继续完整 EMBER 主线，并以本文件记录的共享 π0.5-LIBERO source base、one-video Writer 和 test-task training 口径替换此前“结果后停止”的临时边界。
 
-修改代码、split、数据或实验前完整阅读：`README.md`、`docs/execution_brief.md`、`task_plan.md`、`findings.md`、`progress.md`、`docs/concept.md`、`docs/decisions_and_open_questions.md`、`docs/novelty_and_landscape.md`。
+修改代码、数据、split、模型或实验状态前，完整阅读：
 
-## Current terminal task
+1. `README.md`
+2. `docs/execution_brief.md`
+3. `task_plan.md`
+4. `findings.md`
+5. `progress.md`
+6. `docs/concept.md`
+7. `docs/decisions_and_open_questions.md`
+8. `docs/novelty_and_landscape.md`
 
-当前唯一执行任务是：
+`docs/expert_plan.md`、旧 SmolVLA/70-10-10 runner/config/checkpoint 和旧 Phase A–F 只作 provenance。不得恢复为活动路径，不得依赖或混入 MemLLM。
 
-1. 修正并封存最新协议；
-2. 从通用预训练 π0.5 出发，不做任何权重训练，在预封存的 8 个 test tasks 上完成 zero-shot policy evaluation；
-3. 保存逐任务 50-rollout 原始成功数、seeds、配置、runtime 和 hashes；
-4. 结果产生后立即停止。
+## Active objective
 
-不得在本轮结果后继续 source-base action-SFT、Writer、LoRA、RL、baseline 或其他实验。是否需要 source base 由 owner 在看到结果后另行决定。
+以 generic `lerobot/pi05_base` 为起点，先在与目标 LIBERO-40 specification 无 exact semantic/composition 重合的 LIBERO-90 source tasks 上做联合 action-SFT，得到并冻结一个共享、多任务、语言条件的 π0.5-LIBERO source base；随后在固定 24 train / 8 validation / 8 test 目标 split 上完成 AS-Writer、RL-Writer、Source-SFT、seen/wrong-video 机制对照、合并 32 source 后的单 seed 重训和 zero-interaction test；再直接在 8 个 test tasks 上把三种 task-local LoRA RL initialization 训练到各自最佳，最后用 8 个 test tasks × 50 action episodes 联合训练一个 privileged shared-LoRA oracle。ViVLA-style matched baseline 和 source-only outer learning 只在核心闭环之后有时间再做。
 
-## Active scientific protocol
+任何单一 source base、训练 loss、smoke、局部 seen 结果或一个 Writer 阶段都不能单独触发长期 Goal complete。
 
-- Backbone：通用预训练 π0.5；不默认建立 action-SFT source base。
-- Benchmark：`libero_spatial`、`libero_object`、`libero_goal`、`libero_10`（文档中可称 LIBERO-Long）。
-- Development split：每 suite 6 train / 2 validation / 2 test，总计 24/8/8；按 specification-only deterministic hash 封存，不用任何 policy outcome。
-- Final retraining：未来只有在 validation 完成方法选择后，才把 8 个 validation tasks 合入 source，形成每 suite 8 source / 2 test、总计 32 source / 8 test；当前不得启动。
-- EMBER 输入：训练和测试均恰好一条 action-hidden teacher video + task language。
-- Source functional training：同一 task 内独立随机抽一条 teacher video和一条 action-supervised agent episode/chunk，不要求 episode 配对；action 只进 functional loss，不进 Writer。
-- Zero-interaction evaluation：每个 rollout 从该 task 的 teacher videos 中独立随机抽一条，Writer 生成完整 task-specific LoRA 后执行。
-- Writer 可以直接产生很强的 task LoRA；RL 不是必选尾巴。若做 shared Writer RL，可跨 source tasks 联合更新 Writer。
-- `Action-Supervised Writer (AS-Writer)` 是原“Writer cold start”的正式名称；它只在 source tasks 通过 functional action loss 监督训练。
-- `Reward-Trained Writer (RL-Writer)` 是独立路线：从随机 Writer 初始化，或只做预声明的极短 AS warm-up 后直接用 source reward 联合训练；默认不从已完成的 AS-Writer 继续，以检验没有 teacher actions 能否训练 Writer。
-- Future task-local RL：一条 adaptation run 开始时抽一条 teacher video并固定其 Writer LoRA；identity/zero-init 与 Writer-init 两臂匹配 task、env seeds、随机初态和 budget。
-- Optional source-only outer learning 只能放在 Phase F 之后，且不阻塞核心结果。
+## Data and split
 
-## Information wall
+- 目标 benchmark 为 `libero_spatial`、`libero_object`、`libero_goal`、`libero_10`，共 40 tasks。
+- 活动 development split 已封存在 `configs/libero_24_8_8_v1/`：每 suite 6 train / 2 validation / 2 test，总计 24/8/8；不得按 outcome 改 task IDs。
+- validation 完成方法选择后，将 8 validation tasks 合入 source，形成最终 32 source / 8 test，并从规定初态重训已选方法。
+- shared source-base corpus 来自 LIBERO-90，但封存前必须只读 task language/BDDL/specification，排除与目标 40 tasks exact semantic/composition 重合的 source tasks。已知至少有 LIBERO-90 task 44（`turn on the stove`）和 task 77（`pick up the book and place it in the back compartment of the caddy`）同语言重合；最终 active task 数由完整 audit 决定，不能未经 audit 机械称 90/90。
+- source base 使用过滤后每个 active LIBERO-90 task 的全部 50 条成功 teacher episodes。不得使用 `pi05_libero`，因为它已读过目标 40 tasks actions。
+- source-base action/state normalization 只从过滤后的 LIBERO-90 source actions/states 计算并冻结；所有下游方法共用，validation/test 不单独重算。
 
-- split 只读 suite task language、BDDL filename/specification 和 task identity；不得用 action、reward、proprio、terminal、normalization 或 policy result 选 task。
-- 当前 π0.5 zero-shot 测试不读取 validation/test teacher actions，也不使用在 40 个 LIBERO tasks 上 action-finetuned 的 `pi05_libero` checkpoint。
-- 通用 base 没有可直接执行 LIBERO action space 的 norm stats；若推理接口必须 normalization，只能从 24 个 development-train tasks 的 action/state 数据计算并封存。这是接口校准，不更新模型权重。
-- 旧 70/10/10 normalization、SmolVLA source base、Writer 和 RL checkpoint 与新协议不兼容。
+## Common frozen source base
 
-## Evaluation contract
+活动文档中的 frozen π0.5-LIBERO source base 统一指：
 
-当前 π0.5 feasibility test 服从 Physical Intelligence 官方 LIBERO inference recipe：
+```text
+generic lerobot/pi05_base
+→ 在过滤后的 LIBERO-90 source tasks × 每 task 50 条成功 episodes 上联合 action-SFT
+→ 得到共享、多任务、语言条件的 π0.5-LIBERO policy
+→ 若训练 recipe 使用 source LoRA，先 merge 成 base
+→ 冻结，作为所有后续方法的共同起点
+```
 
-- `pi05_base` 模型结构与权重；LeRobot official conversion 保持 `chunk_size=50`、`n_action_steps=10`，evaluator 每次只执行前 5 actions 后重规划；
-- render 256×256，模型 resize-with-pad 到 224×224；agentview 与 wrist image 均旋转 180°；
-- state 为 EEF position + quaternion-to-axis-angle + gripper qpos；输出前 7 维 action；
-- `replan_steps=5`、inference seed 7、每 task 50 个 official fixed init states；
-- reset 后 10 个 dummy settling steps，成功即终止；
-- suite horizon 使用官方 OpenPI runner：Spatial 220、Object 280、Goal 300、LIBERO-10 520。
+- 先调研官方/成熟 π0.5 fine-tuning 与 LoRA 实现，不自行猜 targets 或 runner 参数。
+- source base 不追求高 ceiling；用全部目标 40 tasks 的小型快速 screen 确认它已开始在该 benchmark 上产生跨多个 task 的部分真实成功，不能只靠一个易 task 的 aggregate。这里不要求每个 task 已有高成功率。generic π0.5 的 `0/400` 只作原始校准，新 source base 必须另测。
+- source base 冻结后，AS-Writer、RL-Writer、Source-SFT、三臂 task-local RL、联合 target-action oracle 和 ViVLA-style baseline（若做）均从它开始。
+- 下游只保留一个活动 LoRA 空间；不得叠加未 merge 的 shared source adapter。
 
-未来 RL 更新与 adaptation checkpoint 选择只能用 LIBERO official reset/BDDL random initialization，禁止 fixed `.pruned_init`；matched arms 必须保存可恢复 RNG/seed schedule 与 interaction cursor。固定 50 states 只作与 RL 分离的 fresh evaluation。
+## Writer and source baselines
 
-## Model and method constraints
+- 核心固定为 `task language + exactly one action-hidden teaching video -> shared Writer -> complete task-specific LoRA`。
+- Writer 不得接收 action、proprio、reward、terminal、task ID、filename 或隐藏 normalization；source actions 只能进入 AS functional loss。
+- `Action-Supervised Writer (AS-Writer)`：development 在 24 train tasks 上均匀混合；同 task 内独立随机采一条 teacher video 和一条 action episode/chunk，不要求同 episode配对；frozen source base 只通过 functional LoRA forward 参与，更新 Writer。
+- AS-Writer 单次训练不超过约 2 小时。先短 profile loss/吞吐，频繁保存 exact-resume checkpoint；仅在 loss 斜率值得时运行尽量便宜的 validation screen，少量候选再做完整 validation，尽早找接近饱和点。
+- `Reward-Trained Writer (RL-Writer)` 是独立路线：先从随机 Writer、零 target-action warm-up 直接跨 source tasks 用官方环境 reward 联合训练；若没有正信号，再加入极少量 AS warm-up；仍无法启动则封存并暂停，不从完整 AS-Writer继续。
+- RL-Writer rollout 使用 LIBERO 官方随机 reset/BDDL 初态；不使用 `.pruned_init`。只用官方 env reward/success，不从 object pose 等内部状态手工构造 privileged shaping。
+- `Source-SFT` 是在同一 frozen source base 上、跨 24 development train tasks 联合训练的一套 shared LoRA，test 不看 held video/action。它和 AS-Writer各自根据 validation 选最佳，不要求机械匹配 optimizer steps 或 consumed examples，但必须报告训练数据、steps、GPU-hours、参数量和搜索上限。
+- π0.5 LoRA targets/rank/alpha/dropout 与 identity/initialization 必须先参考成熟实现；AS-Writer、RL-Writer、Source-SFT、task-local RL 和联合 direct oracle使用同一挂载空间与容量。
 
-- 核心仍是 `language + one action-hidden teaching video -> shared Writer -> complete task-specific LoRA`。
-- Writer 是共享 hypernetwork；默认每次输出 task-specific LoRA。若未来实证支持一套 LoRA 覆盖多 task，可以研究，但不得无证据写成已定合同。
-- 只用 LoRA；不得引入 bank、geometry、shared update subspace、residual escape 或额外 shared trainable adapter。
-- 不依赖、不修改、不混入 MemLLM。
-- action-supervised direct LoRA 仅作 privileged oracle；不能用它否定 action-hidden-video setting 的必要性，也不能混入同信息墙主对照。
-- 最终增加 `Source-SFT π0.5`：在合并后的 32 source tasks 上，以和 AS-Writer 相同的 optimizer-step budget 做 action-SFT，不读取 test video/action，随后直接测 8 test tasks；它用于检验 EMBER 多看到 held teacher video 是否优于单纯加强 source-policy SFT。
+## Seen and video-causality evidence
 
-## Compute and execution
+- 必须增加 source/seen-task performance comparison；seen panel 在看 outcome 前按 specification 预声明并覆盖四 suites，不用它替代 validation/test。
+- 必须做 wrong-video control：evaluation task、正确 language、init state、policy RNG 均不变，只把 Writer 输入换成另一 suite 的 teacher video。
+- 对 AS-Writer 和可用的 RL-Writer均报告 source base、correct-video LoRA、cross-suite wrong-video LoRA；核心视频特异性量是 correct-video 与 wrong-video 的差异，而不是只看两者是否各自高于 base。
+- zero-interaction held evaluation 每个 rollout 从正确 task 的 50 条 teacher videos 随机抽一条；不得挑最好视频。
 
-- 最多 8 张 A100；启动前实时检查 telemetry、进程 owner 和存储预算，不干扰无关进程。
-- 每张使用中的 GPU 恰好一个同角色 policy CUDA process；GPU0 不得额外放 server、controller 或模型进程。
-- 评测优先有效 rollout/s；每个 test task 分配一张卡正好 8 卡并行，持久化模型/env，避免无意义渲染。
-- 精度问题不影响科学结论时效率优先。等待下载、加载或 rollout 时可推进互不污染的文档、hash、结果聚合与离线检查。
-- substantial download 前确保 `/data/ymdai` 预计峰值低于 500GB；不复制已有 cache。
-- meaningful state 后更新 `task_plan.md`、`findings.md`、`progress.md`，验证、commit、push。
+## Final retraining and zero-interaction test
+
+- development 只先跑一个 training seed。AS-Writer、RL-Writer（若成立）和 Source-SFT 在 24 train / 8 validation 上选定配置后，合并成 32 source tasks，从规定初态各自重训一次。
+- 在打开最终 test 前先完成 final seen-task comparison。
+- zero-interaction test 统一比较新的 frozen source base、Source-SFT、AS-Writer、RL-Writer（若成立）及 correct/wrong-video controls。旧 generic base `0/400` 不可冒充新 source base 结果。
+- 旧 test 已做 generic/source-base feasibility audit，owner 明确不把这视为阻塞；不得再以“untouched test”异议停止推进。
+
+## Test-only task-local RL
+
+- task-local RL 不在 validation 上预训练、预冻结或选择算法；在最终 test 阶段打开后，直接把每个 test task 当作 adaptation training domain，在该 task 上调优并训练到 reward/性能曲线接近最佳。
+- 三臂为：source base + functionally identity LoRA、AS-Writer LoRA、RL-Writer LoRA。RL-Writer路线失败时如实缺席，不伪造。
+- 每个 `(task, adaptation seed)` 开始时随机选一条该 task teacher video；AS/RL Writer 两臂使用同一条并固定生成的初始化 LoRA，随后只原位更新该 LoRA。
+- 三臂使用相同 task、env/policy seed schedules、官方随机 BDDL 初态序列、相同 RL 实现和可比的调优/资源上限；保存完整 optimizer、worker RNG、seed schedule、interaction cursor 与 exact-resume state。
+- adaptation、调参和 checkpoint 选择可使用该 test task 的官方随机-reset reward rollouts；固定 50 `.pruned_init` states 只作训练分离的 fresh evaluation，仍执行 dummy settling、suite horizon 和成功即终止。
+
+## Privileged direct-action oracle
+
+- direct target-action baseline 不是 task-local per-task LoRA。
+- 在三臂 RL 和无 action 方法结果封存后，从同一 frozen source base 出发，使用 8 个 test tasks、每 task 全部 50 条 action episodes，联合训练一套 shared multi-task LoRA；第一轮只做完整 50/task，不做 action-budget 曲线。
+- 它是 privileged oracle/reference，不属于与 EMBER 同信息墙的主 baseline，也不得反向修改前面方法。
+
+## Evaluation and efficiency
+
+- official π0.5/LIBERO preprocessing 保持：render 256、model 224、两相机 180° rotate、state/action 7维、10 flow steps、执行前 5 actions后重规划、dummy settling 10、成功即终止、suite horizons 220/280/300/520。
+- generic feasibility 已证明固定“一 task/一 GPU”会被两个 horizon-520 tasks拖尾；新 evaluator 必须先调研其他成熟项目，并按预计 `episodes × horizon` 做 cost-balanced state shards、动态任务队列和持久 model/env，而不是静态 task/GPU。
+- Writer每 rollout LoRA 不同时，真实 profile batched functional LoRA 与每卡统一 1/2/3 个 policy replicas；选择有效 rollouts/s 最优且稳定的方案。所有卡使用相同 CUDA process count，GPU0 不得额外堆 controller/server/model。
+- batch 8→16 只带来约 0.9% per-episode 提升，不能把继续堆同 adapter batch 当作唯一优化。
+- 训练最多使用 8 张 A100 80GB，一卡一 DDP rank 为默认；用真实数据尽量利用显存并平均预留约 10GB。评估只优化有效 rollout/s，不用 dummy tensors填显存。
+- 任何 GPU launch 前实时检查 GPU owner/telemetry、进程拓扑、CUDA/runtime、storage 和 `/data/ymdai` 500GB cap；不得干扰无关进程。
+
+## Engineering, evidence, and delivery
+
+- 只保留一条 canonical π0.5 path；不恢复旧 runner，不新增平行版本、bank、geometry、shared update subspace、residual escape 或额外 shared trainable adapter。
+- smoke 只检查 load、shape、gradient、冻结对象、OOM、resume 和环境；不解释小分母性能。
+- checkpoint 保存 model/Writer/LoRA、optimizer、scheduler/scaler、sampler/data cursor、每 rank/worker RNG、env seed schedule、interaction cursor、step、episode和consumed-data state。
+- 等待下载、训练或 rollout 时推进不污染运行的后续代码、文档、hash和离线验证；精度细节不改变科学结论时效率优先。
+- meaningful state 后更新 `task_plan.md`、`findings.md`、`progress.md`，验证、commit、push。核心闭环完成前不要停在只写脚手架或只报告单一 smoke。
+- optional ViVLA-style matched reproduction 和 source-only outer learning 只在核心结果之后有时间再做，不阻塞长期 Goal complete。

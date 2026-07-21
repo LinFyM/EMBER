@@ -76,6 +76,18 @@ def build_contract(
     asset_validation: dict[str, Any],
 ) -> dict[str, Any]:
     git = git_state()
+    local_topology = {
+        "rank": context.rank,
+        "local_rank": context.local_rank,
+        "cuda_device": str(context.device),
+        "numa_node": context.numa_node,
+        "cpu_affinity": list(context.cpu_affinity or ()),
+    }
+    rank_topology: list[Any] = [None] * context.world_size
+    if context.world_size > 1:
+        dist.all_gather_object(rank_topology, local_topology)
+    else:
+        rank_topology[0] = local_topology
     return {
         "schema_version": "ember_pi05_source_launch_v1",
         "mode": args.mode,
@@ -103,6 +115,7 @@ def build_contract(
             "ema_enabled": ema_enabled,
             "task_limit": args.task_limit,
             "data_sha256_verified": not args.skip_data_sha,
+            "rank_topology": rank_topology,
         },
         "task_ids": list(task_ids),
         "trainable": trainable,
@@ -133,6 +146,8 @@ def validate_formal(
     failures = []
     if not formal.get("locked"):
         failures.append("formal config is not locked after profiling")
+    if context.numa_node is None or not context.cpu_affinity:
+        failures.append("formal launch requires GPU-local NUMA affinity")
     if git["dirty_paths"]:
         failures.append("formal launch requires a clean worktree")
     if args.resume is None and git["commit"] != git["origin_main"]:

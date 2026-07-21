@@ -180,7 +180,7 @@
   },
   "formal_run": {
     "locked": true,
-    "lock_reason": "Locked after real eight-GPU BF16 full-SFT profiles, EMA memory checks, atomic checkpoint sizing, and two independent resumes from one immutable checkpoint passed on 2026-07-21.",
+    "lock_reason": "Locked after real eight-GPU BF16 full-SFT profiles, explicit GPU-local NUMA binding, EMA memory checks, atomic checkpoint sizing, and two independent resumes from one immutable checkpoint passed on 2026-07-21.",
     "world_size": 8,
     "optimizer_steps": 30000,
     "micro_batch_size_per_rank": 32,
@@ -190,12 +190,18 @@
   },
   "profile_evidence": {
     "selected_topology": "eight equal DDP ranks, one policy CUDA process per A100, no extra CUDA role on GPU0",
-    "selected_steady_examples_per_second": 47.4545340396427,
+    "selected_steady_examples_per_second": 47.437182346475154,
     "selected_max_cuda_allocated_bytes_per_rank": 67181209088,
     "selected_max_cuda_reserved_bytes_per_rank": 71301070848,
     "selected_metrics": {
-      "path": "/data/ymdai/outputs/ember/pi05_source_smoke_ddp8_m32_ema_eps1e6_20260721/metrics.jsonl",
-      "sha256": "bf952859acad0b438a174091486abecc288f03328ddc0d1190a5d677810faa96"
+      "path": "/data/ymdai/outputs/ember/pi05_source_smoke_ddp8_m32_ema_numa_20260721/metrics.jsonl",
+      "sha256": "bc01e6ce9d302a278e6a882ef09b049c23b1cc31b57032d33a516cfe81fb96ca"
+    },
+    "numa_smoke": {
+      "run_contract_sha256": "42727d8c31693ee766daf22543cf341f5043aef011da4f99e4ac5dd5f175b18d",
+      "rank_0_to_3_cpu_affinity": "0-37,76-113 (NUMA 0)",
+      "rank_4_to_7_cpu_affinity": "38-75,114-151 (NUMA 1)",
+      "dataloader_children_inherit_parent_affinity": true
     },
     "comparison_profiles": [
       {

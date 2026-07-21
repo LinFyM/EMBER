@@ -21,8 +21,8 @@ def _expand_cpu_list(value: str) -> set[int]:
     return cpus
 
 
-def bind_current_process_to_cuda_numa(device: int) -> tuple[int, ...] | None:
-    """Constrain this process and its future children to the GPU-local NUMA node."""
+def cuda_numa_node(device: int) -> int | None:
+    """Resolve one visible CUDA device to its Linux NUMA node."""
 
     properties = torch.cuda.get_device_properties(device)
     pci_address = (
@@ -32,8 +32,18 @@ def bind_current_process_to_cuda_numa(device: int) -> tuple[int, ...] | None:
     numa_path = Path("/sys/bus/pci/devices") / pci_address / "numa_node"
     try:
         numa_node = int(numa_path.read_text(encoding="utf-8").strip())
-        if numa_node < 0:
-            return None
+        return numa_node if numa_node >= 0 else None
+    except (OSError, ValueError):
+        return None
+
+
+def bind_current_process_to_cuda_numa(device: int) -> tuple[int, ...] | None:
+    """Constrain this process and its future children to the GPU-local NUMA node."""
+
+    numa_node = cuda_numa_node(device)
+    if numa_node is None:
+        return None
+    try:
         cpus = _expand_cpu_list(
             (Path("/sys/devices/system/node") / f"node{numa_node}" / "cpulist")
             .read_text(encoding="utf-8")

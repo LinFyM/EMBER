@@ -34,6 +34,8 @@ class DistributedContext:
     local_rank: int
     world_size: int
     device: torch.device
+    numa_node: int | None = None
+    cpu_affinity: tuple[int, ...] | None = None
 
     @property
     def is_main(self) -> bool:

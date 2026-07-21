@@ -440,7 +440,7 @@ def _train(runtime: TrainingRuntime) -> None:
 
 
 def run(args: argparse.Namespace) -> None:
-    context = initialize_distributed()
+    context = initialize_distributed(require_numa=args.mode == "formal")
     runtime: TrainingRuntime | None = None
     try:
         runtime = _prepare_training(args, context)

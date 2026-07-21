@@ -9,6 +9,7 @@ import pytest
 
 from ember.pi05_processing import Pi05LiberoProcessor
 from ember.pi05_source_checkpoint import (
+    Pi05SourceTrainingError,
     canonical_hash,
     checkpoint_files,
     verify_checkpoint,
@@ -103,7 +104,7 @@ def test_formal_resume_is_pinned_to_contract_not_moving_origin(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     config = load_config(ROOT / "configs/pi05_source_base_v1.json")
-    context = argparse.Namespace(world_size=8)
+    context = argparse.Namespace(world_size=8, numa_node=0, cpu_affinity=(0, 1))
     common = {
         "mode": "formal",
         "task_limit": None,
@@ -126,7 +127,7 @@ def test_formal_resume_is_pinned_to_contract_not_moving_origin(
         "gradient_accumulation": 1,
         "checkpoint_interval": 5_000,
     }
-    with pytest.raises(Exception, match="must already be pushed"):
+    with pytest.raises(Pi05SourceTrainingError, match="must already be pushed"):
         validate_formal(argparse.Namespace(resume=None, **common), config, context, **kwargs)
     validate_formal(
         argparse.Namespace(resume=Path("checkpoint"), **common),
@@ -134,6 +135,13 @@ def test_formal_resume_is_pinned_to_contract_not_moving_origin(
         context,
         **kwargs,
     )
+    with pytest.raises(Pi05SourceTrainingError, match="NUMA affinity"):
+        validate_formal(
+            argparse.Namespace(resume=Path("checkpoint"), **common),
+            config,
+            argparse.Namespace(world_size=8, numa_node=None, cpu_affinity=None),
+            **kwargs,
+        )
 
 
 def test_metrics_resume_preserves_orphaned_post_checkpoint_rows(tmp_path: Path) -> None:

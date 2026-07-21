@@ -18,12 +18,13 @@ from ember.pi05_source_checkpoint import (
     sha256_file,
 )
 from ember.writer.data import WriterTaskAuthority
+from ember.writer.topology import bind_current_process_to_cuda_numa, cuda_numa_node
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
-def initialize_distributed() -> DistributedContext:
+def initialize_distributed(*, require_numa: bool = False) -> DistributedContext:
     if not torch.cuda.is_available():
         raise Pi05SourceTrainingError("PI05 source training requires CUDA")
     import os
@@ -34,6 +35,10 @@ def initialize_distributed() -> DistributedContext:
     if not 0 <= local_rank < torch.cuda.device_count():
         raise Pi05SourceTrainingError("LOCAL_RANK is outside visible CUDA devices")
     torch.cuda.set_device(local_rank)
+    numa_node = cuda_numa_node(local_rank)
+    cpu_affinity = bind_current_process_to_cuda_numa(local_rank)
+    if require_numa and (numa_node is None or not cpu_affinity):
+        raise Pi05SourceTrainingError("formal PI05 training requires GPU-local NUMA affinity")
     if world_size > 1:
         dist.init_process_group(backend="nccl")
     return DistributedContext(
@@ -41,6 +46,8 @@ def initialize_distributed() -> DistributedContext:
         local_rank=local_rank,
         world_size=world_size,
         device=torch.device("cuda", local_rank),
+        numa_node=numa_node,
+        cpu_affinity=cpu_affinity,
     )
 
 

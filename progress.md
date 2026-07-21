@@ -9,9 +9,9 @@
 - generic `lerobot/pi05_base` revision `7de663972b7817d2c4cf2d84c821153dfea772e9` 已下载，weights SHA256 `0eb11ca9587678c1d2ef8cf32807c29f8ce53a2bfdfc1aa4a4c96f16fca59b0f`。
 - generic base在8 test tasks×50 fixed states上为 `0/400`。400 rows唯一、全部到suite horizon，result seal SHA256 `c78e92e9...20c2`；该结果不评价EMBER。
 - Phase A source audit、71-task manifest、source-only normalization、官方recipe研究与hash seal已完成；高吞吐evaluator仍待完成。
-- canonical π0.5 source-base full-SFT runner、真实8卡batch/EMA profile、atomic checkpoint与exact-resume分支核验已完成；formal配置锁定为8×microbatch32、global batch256、30,000 steps。
-- 当前里程碑验证为57 tests passed、py_compile/JSON/checksum/diff checks通过；architecture guard为`REVIEW`且无hard violation，ownership、增长理由与旧路径retirement trigger已记录。
-- 下一关键动作是提交/推送该可复现里程碑，隔离正式训练worktree并启动约45小时的8卡source-base训练；运行期间在不改其import/config/output的前提下继续推进dynamic evaluator与π0.5 Writer适配。
+- canonical π0.5 source-base full-SFT runner、真实8卡batch/EMA/NUMA profile、atomic checkpoint与exact-resume分支核验已完成；formal配置锁定为8×microbatch32、global batch256、30,000 steps。
+- commit `236202e` 的第一次formal在step12前发现NUMA affinity缺失并主动终止，无checkpoint且不作科学结果；failure packet已封存。GPU-local NUMA修复已通过目标测试与8卡真实smoke，待新commit/push后从全新root重启。
+- 当前里程碑验证为57 tests passed（NUMA修复后将再跑全套）、py_compile/JSON/checksum/diff checks通过；architecture guard为`REVIEW`且无hard violation，ownership、增长理由与旧路径retirement trigger已记录。
 - 第一轮完整流程只跑一个training seed；不提前扩多seed或direct action-budget curve。
 - 清理三套已封存证据的32GB probe checkpoint后，`/data/ymdai`为379,942,686,720 bytes。单checkpoint实测33,837,406,832 bytes；`keep_latest=1`的atomic替换峰值约447.62GB，低于500GB cap。
 
@@ -50,7 +50,7 @@
 
 - 官方anchor固定为OpenPI `15a9616...ccac`、LeRobot `30da8e6...76ce`：full action-SFT、AdamW `(0.9,0.95)`、eps `1e-8`、weight decay `1e-10`、clip1、peak LR `5e-5`、10k linear warmup后constant、EMA `0.999`、30k steps、global batch256。
 - source base采用full-SFT并最终直接冻结policy/EMA，不叠shared source adapter；下游统一LoRA合同为18层action expert q/v加action_in/out共38 targets、rank/alpha16、dropout0、B=0 identity init。
-- 8卡profile从microbatch1/4/16/32提升到约13.82/31.55/44.69/47.45 examples/s；选定m32时每卡allocated/reserved为67.18/71.30GB，loss/gradient finite，八卡角色与进程数对称。最终smoke使用pinned OpenPI精确的`q99-q01+1e-6` quantile分母，metrics SHA256 `bf952859...aa96`。
+- 8卡profile从microbatch1/4/16/32提升到约13.82/31.55/44.69/47.44 examples/s；选定m32时每卡allocated/reserved为67.18/71.30GB，loss/gradient finite，八卡角色与进程数对称。最终smoke使用pinned OpenPI精确的`q99-q01+1e-6` quantile分母与显式GPU-local NUMA binding，metrics SHA256 `bc01e6ce...6ca`。
 - checkpoint包含policy、EMA、optimizer、scheduler、per-rank Python/NumPy/CPU/CUDA RNG、sampler/data/metrics cursor与完整hash manifest。两次从同一step1恢复到step2得到相同loss `0.3457298893481493`、grad norm `4.03354549407959`与逐rank state hashes；独立NCCL启动后policy/EMA最大末位差为`1.49e-8/3.73e-9`。compact evidence SHA256 `16137fa1...b1e`。
 - formal fresh launch要求clean且HEAD已推到`origin/main`；resume由保存的commit/contract约束，不因后续`origin/main`前进失效。每次invocation另存当时完整Git观测。
 
@@ -59,6 +59,13 @@
 - `pi05_source_corpus.py`只拥有specification filter、data seal和source normalization；`pi05_source_setup.py`只拥有model/data/distributed setup；`pi05_source_contract.py`只拥有launch/resume contract；`pi05_source_checkpoint.py`只拥有atomic state；`pi05_source_training.py`只拥有训练编排与step loop。
 - `scripts/train_source_base.py`是唯一活动π0.5 source-base入口；拆分这些owner是因为严格加载、52.7GB一次性校验、DDP训练与33.8GB atomic checkpoint是独立故障边界。
 - 旧`source_base.py`/`source_base_checkpoint.py`仍被历史SmolVLA模块import，只作provenance；不得作为活动入口。π0.5 source-base训练与40-task evaluator达到功能对等后，先迁移剩余通用依赖，再删除旧可执行路径，不保留双canonical runner。
+
+## Formal source-base attempt 1：工程失败并关闭（2026-07-21）
+
+- commit/worktree：`236202ed4371f301ef94bf8984aab423eef98db1`，`/data/ymdai/worktrees/EMBER-pi05-source-formal`；model/data/tokenizer全部hash门禁通过，8卡各一个69,130MiB CUDA rank。
+- root/log：`/data/ymdai/outputs/ember/pi05_source_base_v1_seed7_236202e_20260721`与同名`.log`；live CPU `PSR`发现rank可跨GPU的本地NUMA node漂移，违反launch contract。
+- 在step12、3,072 global examples、首个checkpoint前发送SIGINT，pane exit130；failure packet明确禁止resume或科学使用。run contract/metrics/log SHA256分别为`997af43a...8b2`、`81dbfcbc...4ca`、`7a169300...118`。
+- 修复：初始化CUDA device后从PCI sysfs解析NUMA node，把rank及其DataLoader children限制到该node cpulist；formal缺少binding时fail closed。修复smoke记录8个rank的完整affinity，metrics/contract SHA256为`bc01e6ce...6ca`/`42727d8c...18d`。
 
 ## 已对齐的后续方法
 

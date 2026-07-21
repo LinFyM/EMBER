@@ -43,7 +43,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 ## Phase B：共享 π0.5-LIBERO source base
 
 - [x] 建立唯一canonical π0.5 full-SFT runner，严格模型加载、task-balanced no-replacement sampler、EMA、atomic checkpoint、metrics reconciliation与完整per-rank RNG/cursor恢复。
-- [x] 完成1/8卡真实profile；选定8×microbatch32、global batch256、EMA，修正后稳态47.45 examples/s，单卡reserved 71.30GB。
+- [x] 完成1/8卡真实profile；选定8×microbatch32、global batch256、EMA与GPU-local NUMA binding，修正后稳态47.44 examples/s，单卡reserved 71.30GB。
 - [x] 从同一个不可变step-1 checkpoint做两次8-rank恢复；loss/grad/RNG/cursor完全一致，policy/EMA最大独立NCCL末位差分别为1.49e-8/3.73e-9。
 - [ ] 从generic `pi05_base`按成熟recipe在过滤后的LIBERO-90 source corpus上联合action-SFT；若用LoRA则merge成base。
 - [ ] 以已锁定8卡配置完成30,000 optimizer steps；一卡一rank，真实显存平均预留约10GB，checkpoint每5,000 steps且只保留最新完整状态。

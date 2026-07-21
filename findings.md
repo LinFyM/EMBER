@@ -21,7 +21,9 @@
 ## 2026-07-21 π0.5 source-base recipe、profile与resume
 
 - 官方full-SFT anchor来自pinned OpenPI/LeRobot：global batch256、30k steps、AdamW betas `(0.9,0.95)`、eps `1e-8`、weight decay `1e-10`、clip1、peak LR `5e-5`、10k warmup后constant、EMA `0.999`。EMBER source base采用full-SFT，不使用`pi05_libero`，不叠未merge shared adapter。
-- 真实8×A100 profile中，per-rank microbatch1/4/16/32稳态吞吐约13.82/31.55/44.69/47.45 global examples/s。最终m32 smoke使用pinned OpenPI的`q99-q01+1e-6` quantile公式，loss/gradient finite；EMA峰值allocated/reserved为67.18/71.30GB，保留约13.6GiB物理显存，故锁定global batch256且不做gradient accumulation。
+- 真实8×A100 profile中，per-rank microbatch1/4/16/32稳态吞吐约13.82/31.55/44.69/47.44 global examples/s。最终m32 smoke使用pinned OpenPI的`q99-q01+1e-6` quantile公式，loss/gradient finite；EMA峰值allocated/reserved为67.18/71.30GB，保留约13.6GiB物理显存，故锁定global batch256且不做gradient accumulation。
+- 第一次formal启动的CUDA进程拓扑正确，但live `PSR`显示rank未受GPU-local NUMA约束；在step12、首个checkpoint前主动终止，exit130。该root仅保留20KB failure evidence，run contract/metrics/log hashes分别为`997af43a...8b2`、`81dbfcbc...4ca`、`7a169300...118`，不得resume或作科学结果。
+- 修复后每rank在CUDA初始化后立即绑定sysfs GPU NUMA cpulist，DataLoader children继承：rank0–3为`0-37,76-113`/NUMA0，rank4–7为`38-75,114-151`/NUMA1。3-step m32+EMA smoke exit0，contract SHA256 `42727d8c...18d`、metrics SHA256 `bc01e6ce...6ca`。
 - canonical runner严格加载weights，避免上游异常时静默返回随机模型；每个checkpoint封存policy、EMA、optimizer、scheduler、8个rank RNG/sampler states、metrics cursor、contract和文件hash，并在新checkpoint原子发布后才清理旧状态。
 - 两个独立8-rank进程均从同一step1 manifest `0461dee1...5953`恢复；step2 loss、grad norm、LR、cursor和8个rank state文件完全一致。4,143,404,816个policy元素中0.0308%仅有独立NCCL启动末位差，max `1.49e-8`；EMA max `3.73e-9`。这支持state/cursor exact且numerically reproducible的resume合同，不虚假宣称跨新distributed process bitwise identical。
 - 三套约32GB probe checkpoint在compact evidence封存后按500GB cap永久清理；保留evidence packet为444KB，comparison SHA256 `16137fa1...b1e`。清理后个人占用379,942,686,720 bytes，atomic双checkpoint峰值估计约447.62GB。

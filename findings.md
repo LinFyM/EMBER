@@ -1,5 +1,15 @@
 # EMBER Findings
 
+## 2026-07-21 protocol reset
+
+owner 已将活动研究协议改为 generic π0.5 + 四个标准 LIBERO suites + 每 suite 7/1/2 + one-video Writer。下文全部 SmolVLA/70-10-10 数字仍是真实历史证据，但从本节开始只作 provenance，不能作为新协议 checkpoint、normalization、split 或完成状态。
+
+当前待回答的唯一实证问题是 generic `pi05_base` 在预封存 8 test tasks 的 400 个 official fixed-state rollouts 上有多少成功。该结果尚未产生；在它产生前不得声称 π0.5 有或没有 LIBERO zero-shot competence。
+
+已核验官方实现事实：generic `pi05_base` 是 fine-tuning base；`pi05_libero` 是另一个在 LIBERO 上 action-finetuned 的 inference checkpoint。当前禁止后者。官方 generic Hugging Face pre/post processors没有可执行 LIBERO action space 的 normalization state，因此有效的 generic-base test 必须从 28 source tasks 计算 interface-only state/action stats，同时保持 validation/test action read count 为零。
+
+---
+
 本文件只保留会影响当前科学解释的证据。父提交 `999df28` 保存 2026-07-17 至 2026-07-20 的完整逐次日志、旧配置、runner 和测试；外部 checksummed artifacts 保存原始 rows、metrics、视频和 failure packets。这里不把历史过程重新伪装成活动合同。
 
 ## 当前结论

@@ -1,77 +1,38 @@
 # EMBER
 
-EMBER 是一个面向机器人操作的任务条件 LoRA 生成与后续适应项目。当前核心假设只有一条：
+EMBER 研究能否把廉价但没有机器人 action 标注的教学视频，编译成可直接执行、也可继续利用环境反馈适应的 VLA 参数：
 
 ```text
-language + action-hidden teaching videos
-                    ↓
-                 Writer
-                    ↓
-       complete task-specific LoRA
+task language + one action-hidden teaching video
+                    -> shared Writer
+                    -> complete task-specific LoRA
 ```
 
-Writer 不是通用优化器，也不生成 bank、basis、geometry、mask、metric、radius、学习率或第二层搜索空间。它生成预先固定挂载位置和 rank 下的一整套任务专属 LoRA；后续普通 task-local RL 只在原位更新这套 LoRA。
+## 当前协议
 
-## 当前状态
+- 基座改为通用预训练 π0.5，不默认先训练 source embodiment base。
+- benchmark 使用 LIBERO-Spatial、Object、Goal、Long（官方 suite 名为 `libero_10`）共 40 tasks。
+- 开发期每 suite 固定 7 train / 1 validation / 2 test，总计 28/4/8；validation 选完方法后，未来最终重训才合成 32 source / 8 test。
+- EMBER 训练和测试都只看一条 teacher video。source 训练时，同 task 的视频与 action-supervised episode/chunk 独立随机抽样，不做同 episode 配对。
+- held rollout 每次随机抽一条 teacher video，再由 Writer 生成 LoRA。
+- Writer 直接生成的 LoRA 若已足够强，不强制继续 RL；shared Writer RL 可以跨 source tasks 联合训练。matched task-local LoRA RL 保留为后续第二实验。
+- 不使用 bank、geometry、shared subspace、residual escape、额外 shared adapter 或 MemLLM。
 
-- Gate -1 已按“通过但带残差”封存。原始 action-hidden-video recovery 为 ordered/wrong-video `19/24`、paired `15/24`，旧 `0.80` 阈值和 drop-last 残差没有被改写。
-- Gate 0 按“通过但证据覆盖有限”处理。历史 task 3/4 的 action-supervised LoRA 相对当时 base 呈一致正向点估计，但只覆盖两个近似任务、每臂 32 次评估；它不再是 Writer 的前置门槛。
-- 旧 60/15/15 split、旧 source base、旧 Writer checkpoint、旧 recovery runner 与旧 h16 主评估合同均已退役。它们只保留在 Git 父提交 `999df28` 和外部证据包中，不能作为下一轮实验的活动输入。
-- specification-only 同分布 70/10/10 已封存在 `configs/libero90_70_10_10/`；共享 source embodiment base 已仅据 source evidence 冻结为 step630，validation frozen-base reference、train/validation Writer feature cache 与 8-rank profile/smoke 已完成，下一步是正式 Writer cold start。
-- 当前长期 Goal 已建立并保持 active；正式新协议 source base 已冻结，GPU 作业状态必须在每次 launch 前实时核验。
+## 当前执行边界
 
-## Frozen source embodiment base
+当前只做一件事：按官方参数测试通用 `pi05_base` 在预封存 8 个 test tasks 上的 zero-shot 成功率。模型不训练，test teacher actions 不读取，也不用已经在 LIBERO-40 上 fine-tune 的 `pi05_libero`。结果出来立即停止，等待 owner 讨论是否需要 source-base calibration。
 
-本文后续的 frozen source embodiment base 统一且只指：通用预训练 `lerobot/smolvla_base` → 在 70 个 train tasks、每任务全部 50 条成功 teacher episodes 上联合训练 → 得到一个共享、多任务、语言条件的 source embodiment base → 训练完成后冻结。它不是原始通用 checkpoint，只能按 train/source evidence 选择，并且是 EMBER、target-action-supervised direct LoRA oracle 和 ordinary task-local LoRA RL 的共同起点。
+split 与评测合同封存在 `configs/libero_28_4_8_v1/`。旧 `configs/libero90_70_10_10/`、SmolVLA 训练结果和旧 Phase A–F 只作历史证据。
 
-## 权威阅读顺序
+## 阅读顺序
 
-新进入者先完整阅读：
+1. `AGENTS.md`
+2. `docs/execution_brief.md`
+3. `task_plan.md`
+4. `findings.md`
+5. `progress.md`
+6. `docs/concept.md`
+7. `docs/decisions_and_open_questions.md`
+8. `docs/novelty_and_landscape.md`
 
-1. [AGENTS.md](AGENTS.md)
-2. [docs/execution_brief.md](docs/execution_brief.md)——唯一活动科研与执行合同
-3. [task_plan.md](task_plan.md)——分阶段推进顺序与完成条件
-4. [findings.md](findings.md)——已经成立的证据、负结果与局限
-5. [progress.md](progress.md)——当前工作区状态和下一条动作
-6. [docs/concept.md](docs/concept.md)——概念和训练对象
-7. [docs/decisions_and_open_questions.md](docs/decisions_and_open_questions.md)
-8. [docs/novelty_and_landscape.md](docs/novelty_and_landscape.md)
-9. [docs/new_session_prompt.md](docs/new_session_prompt.md)——可直接交给下一 session 的 prompt
-
-[docs/expert_plan.md](docs/expert_plan.md) 是 2026-07-17 的历史专家建议，不是活动 authority。它的 60/15/15 前置关系、canonical bank、soft geometry、residual escape 和旧阶段顺序已被 owner 明确 supersede。
-
-## 数据与实验骨架
-
-- 数据：只用 LIBERO-90；每个任务 50 条成功 teacher episode。
-- 新 split：70 train / 10 validation / 10 reporting-only test，同分布、任务不重叠、只依据语言/task factor/scene 设计。
-- source base：按上述定义训练、选择并冻结一个共享多任务 policy。
-- Writer：跨 70 个 train task 混合训练；每次根据某任务的语言和全部 50 条 action-hidden 完整视频生成一套该任务 LoRA。
-- validation：Writer 冻结，只看目标任务 language + action-hidden video；用于选择 Writer 和冻结 task-local RL 合同。
-- reporting-only test：所有方法、checkpoint、预算、selection rule 和 baseline 冻结后才统一打开；此前不运行 policy evaluation、不训练 direct LoRA，也不读取 test actions/reward/success。
-- target-task RL：先在 validation 冻结预算和选择规则；最终 test 中 base/Writer/shared state 仍冻结，只更新 task-local LoRA。
-- direct LoRA：validation 与最终 test 中目标 teacher action 可见的 task-local oracle/reference，不伪装成与 EMBER 信息条件相同的 baseline。
-
-标准闭环 fresh evaluation 采用 LIBERO 官方 task suite 和每任务全部 50 个固定 `.pruned_init` states；环境最大 horizon 为 400，保留官方 dummy settling、成功即终止，SmolVLA action execution horizon 采用 50。所有 RL 更新与 adaptation checkpoint 选择 rollouts 则必须来自官方 reset/BDDL 随机化初态，禁止使用这 50 个固定 states；matched 两臂共享 task、env seeds 和初态序列。若 flow sampling 方差需要，再增加独立 policy RNG，而不是拼接不同 checkpoint。
-
-## 代码状态
-
-工作树只保留下一阶段仍有明确用途的最小内核：
-
-- `src/ember/libero_data.py`：LIBERO HDF5/normalization 审计原语；
-- `src/ember/libero_task_factors.py`：90 条语言 specification 的 role-aware factor parser；
-- `src/ember/writer/model.py`：完整 LoRA Writer；
-- `src/ember/writer/temporal.py`：不限制 episode 数量和视频长度的层次注意力编码器；
-- `src/ember/writer/data.py`：完整 action-hidden 视频流与 functional-query 数据；
-- `src/ember/writer/functional.py`：Writer 完整 LoRA 到冻结 policy 标准 action loss 的 differentiable 接线；
-- `scripts/train_writer_cold_start.py`：Phase C 唯一 canonical Writer 训练入口；
-- `scripts/train_direct_lora.py`：validation target-action-supervised direct-LoRA reference 的唯一训练入口；
-- `src/ember/direct_lora_protocol.py` / `direct_lora_checkpoint.py`：matched query 合同与 task-local exact-resume；
-- `src/ember/writer/topology.py`：GPU/NUMA 绑定；
-- `src/ember/eval_artifacts.py`：紧凑视频 gallery；
-- `src/ember/runtime_env.py`：锁定环境的兼容修复。
-
-旧 runner 没有被“藏进 archive 目录”；它们由 Git 历史保存。当前应复用这些内核，建立一条新的单一 canonical source-base 训练/评估入口。
-
-## 工作原则
-
-真实科学实验优先。配置、manifest、测试、文档和 runner 只做到保证机械正确、exact resume、matched fairness、数据隔离和可解释结果所需的最小程度。训练尽量使用全部 8 张合法空闲 A100，每卡平均保留约 10GB；评估优化有效 rollout/秒，不用虚假显存占用代替吞吐。
+`docs/expert_plan.md` 是历史原文，不是活动 authority。

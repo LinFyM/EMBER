@@ -2,84 +2,61 @@
 
 ## 一句话定义
 
-EMBER 是一个 multimodal task-conditioned hypernetwork / amortized LoRA initializer：
-
 ```text
-Writer(language, action-hidden videos) -> task-specific LoRA
+Writer(task language, one action-hidden teaching video)
+    -> complete task-specific LoRA for a frozen π0.5 policy
 ```
 
-本文后续的 frozen source embodiment base 统一且只指：通用预训练 `lerobot/smolvla_base` → 在 70 个 train tasks、每任务全部 50 条成功 teacher episodes 上联合训练 → 得到一个共享、多任务、语言条件的 source embodiment base → 训练完成后冻结。EMBER、target-action-supervised direct LoRA oracle 和 ordinary task-local LoRA RL 都从这同一个 policy 开始；它只能按 train/source evidence 选择。
+EMBER 的核心是把无法直接用于 action-SFT 的视频任务知识编译成策略参数，不是规定必须经过某种 RL。
 
-frozen source embodiment base 加载 task-specific LoRA 后应立即提高目标任务成功率；随后标准 task-local RL 可继续原位更新同一套 LoRA。
+## 学习对象
 
-## 为什么不是多任务通用 LoRA
+共享 Writer 在 source tasks 上学习 video/language 到 LoRA 的映射。每个 source update：
 
-Writer 参数在 70 个 source tasks 间共享，学习“如何根据任务证据生成参数”。它每次接到一个 task 的 language/video 时输出不同 LoRA。若改成一套多任务通用 LoRA，就不再测试 task-conditioned parameter generation，也无法回答未见任务视频是否足以编译新技能。
+1. 采一个 source task；
+2. 随机采一条 action-hidden teacher video；
+3. 从同 task 独立随机采另一条或同一条 agent episode 的 observation/action chunk；
+4. Writer 生成完整 LoRA；
+5. functional 地装到 frozen generic π0.5；
+6. action loss 的梯度回到 Writer。
 
-## Source base、direct LoRA 与 EMBER
+视频与 action episode 不配对，因此 Writer 不能靠逐帧对齐复制 action；它必须从 task-level visual procedure 和 language 提取可迁移信息。action 只进入 loss target。
 
-- source embodiment base：上述训练完成后冻结的共享 SmolVLA，而不是原始通用 `lerobot/smolvla_base`。
-- direct task-local LoRA：针对一个 task，直接用该 task teacher actions 优化一套 LoRA。
-- EMBER：Writer 看 language + action-hidden videos，输出该 task 的 LoRA；Writer 的 source 训练仍可通过 action loss 得到梯度。
+## 为什么一条视频
 
-source base 和 LoRA 都能改变动作策略，但训练范围与使用方式不同。当前项目不再设“LoRA 必须进一步超过 source base”这一人为 Gate。真正的目标是：在统一 source base 上，EMBER 对未见 task 只凭 language/video 也能比 frozen source embodiment base 好。
+当前故事是 one-shot teaching：执行前看一条教学视频，然后尝试任务。训练和测试都恰好一条，避免训练时多视频聚合、测试时单视频造成合同变化。
 
-## Functional supervision
+held evaluation 的每个 rollout 独立随机抽一条 teacher video，因此报告的是对该 task teacher-video distribution 的期望性能，不是挑选最好视频。
 
-对 source task，Writer 先产生一套 LoRA。把它 functional 地装入 frozen source embodiment base，在 source teacher observation/action batch 上计算 SmolVLA 标准 flow/action behavior loss；梯度通过 policy 和 functional LoRA 回到 Writer。
+## LoRA 与 reward adaptation
 
-direct LoRA 使用同类 behavior loss，但 optimizer 直接更新该 task 的 LoRA tensors。匹配两者的数据、LoRA 空间和 loss 后，差异就是“每任务直接拟合”与“从语言/视频摊销生成”。
+Writer zero-interaction LoRA 是第一主结果。若它本身很强，无需为了叙事强制 RL。
 
-## 视频表示
+可选 reward learning 有两类：
 
-输入不是三帧摘要。冻结 VLM 对完整视频帧产生 features；Writer：
+- shared/joint Writer RL：跨多个 source tasks 的 reward 联合更新 Writer；
+- task-local LoRA RL：Writer/base 冻结，单 task 原位更新该 LoRA，与 identity/zero-init 做 matched comparison。
 
-1. 在时间 chunk 内做 attention；
-2. 把所有 chunks 聚合成 episode memories；
-3. 对任意数量的 episode memories 做集合注意力；
-4. 与完整语言 token memory 融合；
-5. 以 layer/module/rank-aware decoder 生成 LoRA tensors。
+后者每个 adaptation run 只在开始时抽一次 teacher video，随后 LoRA 持续存在。两臂用相同 official BDDL random resets、seeds、interactions、updates 和 selection rule。固定 `.pruned_init` states 只用于 fresh evaluation。source-only outer learning 只能在 Phase F 之后。
 
-chunking 是计算分块，不是丢帧或固定视频长度。训练使用 50 条 episode，架构接口不设 50 上限。
+## Base policy
 
-## 核心训练阶段与可选增强
+当前先测试 generic pretrained π0.5 的 LIBERO zero-shot feasibility，不默认 action-SFT source base。generic π0.5 没有 LIBERO action normalization；必要的 action/state interface stats 只能从 28 train tasks 计算，且不更新模型权重。
 
-### Cold start
-
-base 冻结，action监督只来自 source teacher episodes，更新 Writer。目标是 zero-interaction LoRA。
-
-### Writer-only RL
-
-base 冻结，Writer 生成 LoRA 后直接 rollout；不更新 LoRA，reward 只更新 Writer。目标是改善未来生成的初始化。
-
-### Task-local RL
-
-base/Writer 冻结，针对当前 task 原位更新完整 LoRA。比较 zero-init 与 Writer-init 的 matched adaptation。
-
-更新与 adaptation checkpoint 选择 rollouts 使用 LIBERO 官方 reset/BDDL 随机初态；两臂共享 task、env seeds 和初态序列，并保存 worker RNG/seed schedule 与 interaction cursor。每任务固定 50 个 `.pruned_init` states 只用于与 RL 数据分离的 fresh evaluation。
-
-### Phase F 之后可选：Source-only reward/meta outer learning
-
-只在合同冻结与统一 test 的 Phase F 完成后考虑：inner loop 更新 source task LoRA，outer reward/meta objective 只更新 Writer；base 仍冻结。它只用 source 训练、validation 选择，不影响已经报告的核心 Phase F 结果；不实现或结果为负都不阻塞 Goal complete。
+如果 base feasibility 很低，是否增加 28/32-task source-base action-SFT 由 owner 根据结果另行决定，不是本轮自动分支。
 
 ## Information wall
 
-| 阶段 | Language/video | Action labels | Reward | 更新对象 |
+| 阶段 | target video | target action | target reward | 更新对象 |
 | --- | --- | --- | --- | --- |
-| source base | train | train | 可选诊断 | shared action expert/projections |
-| Writer cold start | train | train，仅作 loss | 否 | Writer |
-| Writer-only RL | train | 否 | source | Writer |
-| validation zero-step | target | 否 | 否 | 无 |
-| validation task-local RL | target | 否 | target，计入预算 | task LoRA |
-| validation direct LoRA oracle | target | target | 否 | task LoRA |
-| final test（全部合同冻结后） | target | 仅 direct oracle 可见 | 仅预声明 task-local RL 可见 | 无共享更新；可更新 task LoRA |
-
-validation 与最终 test 的 direct LoRA 故意越过主 information wall，因而只作能力参考；test direct LoRA 只能在最终统一解封后训练和评估。
+| 当前 generic π0.5 test | 否 | 否 | 只读最终 success | 无 |
+| Writer source training | source one-video | source，仅 loss | 可选 | Writer |
+| held zero-interaction | one-video | 否 | 否 | 无 |
+| held task-local RL | run-start one-video | 否 | budgeted | task LoRA |
+| direct LoRA oracle | 可选 | 是 | 否 | task LoRA |
 
 ## Claim boundary
 
-最小正向 claim：
+最小 claim 是：在同 embodiment/simulator family 中，只有 language + action-hidden teaching video 时，EMBER 产生的 LoRA 比无视频/无信息初始化表现更好；若 matched reward adaptation 进一步更快或终点更高，再增加适应效率 claim。
 
-> 在同一 embodiment 和 simulator family 内，Writer 从未见任务的语言与 action-hidden robot videos 生成完整 task-specific LoRA；该 LoRA 在不约束后续 RL 搜索方向的情况下，提高 frozen source embodiment base 的 zero-interaction 成功率，并可改善 matched ordinary task-local LoRA RL 的适应。
-
-不能声称 Writer 学到了 optimizer、geometry、subspace 或 update direction。
+不声称 Writer 必须是 task-local optimizer，也不声称 bank、geometry、subspace 或固定的多任务通用 LoRA。

@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "sealed_utc": "2026-07-21",
+  "purpose": "EMBER pi0.5 one-video development protocol and immediate generic-base feasibility evaluation",
+  "split": {
+    "surface": [
+      "suite_name",
+      "task_name",
+      "language",
+      "bddl_filename"
+    ],
+    "forbidden_selection_surfaces": [
+      "action",
+      "reward",
+      "proprio",
+      "terminal",
+      "normalization",
+      "policy_outcome"
+    ],
+    "algorithm": "sha256_lexicographic_7_1_2_v1",
+    "seed": "20260721",
+    "key": "seed\\0suite_name\\0task_name\\0language\\0bddl_filename",
+    "assignment": "sort ascending by SHA256 digest; ranks 0..6 train, rank 7 validation, ranks 8..9 test",
+    "suites": {
+      "libero_spatial": {
+        "train": [0, 2, 3, 4, 5, 7, 9],
+        "validation": [1],
+        "test": [6, 8]
+      },
+      "libero_object": {
+        "train": [1, 2, 4, 5, 6, 8, 9],
+        "validation": [3],
+        "test": [0, 7]
+      },
+      "libero_goal": {
+        "train": [0, 1, 2, 5, 6, 8, 9],
+        "validation": [3],
+        "test": [4, 7]
+      },
+      "libero_10": {
+        "display_name": "LIBERO-Long",
+        "train": [2, 4, 5, 6, 7, 8, 9],
+        "validation": [1],
+        "test": [0, 3]
+      }
+    }
+  },
+  "test_tasks": [
+    {
+      "suite": "libero_spatial",
+      "task_id": 6,
+      "language": "pick up the black bowl next to the cookie box and place it on the plate",
+      "bddl_file": "pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate.bddl",
+      "bddl_sha256": "566c65596f3472e752e6522817bff51bbf3ce5159d7bec1d3554e5ead46b1e55",
+      "init_states_file": "pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate.pruned_init",
+      "init_states_sha256": "ab86fb7b5942dc0fec762eae57e72bf636106b1c10ad8ce57227723d8eb9a81b"
+    },
+    {
+      "suite": "libero_spatial",
+      "task_id": 8,
+      "language": "pick up the black bowl next to the plate and place it on the plate",
+      "bddl_file": "pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate.bddl",
+      "bddl_sha256": "c8fbb9effa27b947d04d26862d75273d93cac1806734e53836cd472a08aec1fe",
+      "init_states_file": "pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate.pruned_init",
+      "init_states_sha256": "f43df2d80042130ac8770590d83f1a1e6fd4df7479aebc392aa2ed6e3bd0b83e"
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 0,
+      "language": "pick up the alphabet soup and place it in the basket",
+      "bddl_file": "pick_up_the_alphabet_soup_and_place_it_in_the_basket.bddl",
+      "bddl_sha256": "df088984da13131f8332ee0f13a7896c6a97afd02ee5007a42e8fc5e0893571e",
+      "init_states_file": "pick_up_the_alphabet_soup_and_place_it_in_the_basket.pruned_init",
+      "init_states_sha256": "b9023e5546b239cacb2aaa3c76df3b73c3de6f97500fea5e27a0db9827002a19"
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 7,
+      "language": "pick up the milk and place it in the basket",
+      "bddl_file": "pick_up_the_milk_and_place_it_in_the_basket.bddl",
+      "bddl_sha256": "9910aabf6717e8ba3e24a3f8500d9bce9ee075346ea6961e8fd766f1257d2996",
+      "init_states_file": "pick_up_the_milk_and_place_it_in_the_basket.pruned_init",
+      "init_states_sha256": "4a86269faf4c98baff4c1428997ac828d00c56922a9a131be94e19b6027e1db2"
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 4,
+      "language": "put the bowl on top of the cabinet",
+      "bddl_file": "put_the_bowl_on_top_of_the_cabinet.bddl",
+      "bddl_sha256": "2ffba859a154f50c3c99ffb3420743fa5aa65c70bf7d4cd26f5bc81d07be5713",
+      "init_states_file": "put_the_bowl_on_top_of_the_cabinet.pruned_init",
+      "init_states_sha256": "c0b7baf82f36f5304488bac91d788800a1c93d0a9fd19a73f448992d5366e145"
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 7,
+      "language": "turn on the stove",
+      "bddl_file": "turn_on_the_stove.bddl",
+      "bddl_sha256": "cbd2a0514d53226c5d09e17af40b22935d4cb6ff8fdaff0d55f555de1adecc13",
+      "init_states_file": "turn_on_the_stove.pruned_init",
+      "init_states_sha256": "ed121db31d749647d70741c4c4ef0bd8e0876663986578795968e962d9b91340"
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 0,
+      "language": "put both the alphabet soup and the tomato sauce in the basket",
+      "bddl_file": "LIVING_ROOM_SCENE2_put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket.bddl",
+      "bddl_sha256": "2e661058917f683a25bce480015197f0a2c1911bcbc2b9dd9d947199069c9618",
+      "init_states_file": "LIVING_ROOM_SCENE2_put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket.pruned_init",
+      "init_states_sha256": "1899fe54c51e24a41d5f9e32254730d6777f4894ab68e0e873f1fa7ae2062030"
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 3,
+      "language": "put the black bowl in the bottom drawer of the cabinet and close it",
+      "bddl_file": "KITCHEN_SCENE4_put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it.bddl",
+      "bddl_sha256": "5255fe54d7f25fad4dee8fa30a30033d8cb908f1708d953c91ab609264fb4fb8",
+      "init_states_file": "KITCHEN_SCENE4_put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it.pruned_init",
+      "init_states_sha256": "e98ded151f64a036c74c872336dd09b968c379f3c9db7bc333aba37e7c235b86"
+    }
+  ],
+  "pi05_feasibility": {
+    "model": "Physical-Intelligence/openpi pi05_base",
+    "forbidden_model": "pi05_libero",
+    "openpi_revision": "15a9616a00943ada6c20a0f158e3adb39df2ccac",
+    "weight_updates": 0,
+    "normalization_source": "28 train tasks only",
+    "validation_action_reads": 0,
+    "test_action_reads": 0,
+    "num_trials_per_task": 50,
+    "seed": 7,
+    "render_resolution": 256,
+    "model_resolution": 224,
+    "num_steps_wait": 10,
+    "dummy_action": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0],
+    "action_horizon": 10,
+    "replan_steps": 5,
+    "num_inference_steps": 10,
+    "max_steps": {
+      "libero_spatial": 220,
+      "libero_object": 280,
+      "libero_goal": 300,
+      "libero_10": 520
+    },
+    "terminal_action": "stop after results; no downstream experiment"
+  }
+}

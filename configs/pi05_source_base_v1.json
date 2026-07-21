@@ -1,0 +1,236 @@
+{
+  "schema_version": "ember_pi05_source_base_v1",
+  "authorities": {
+    "overlap_audit": {
+      "path": "configs/pi05_source_corpus_v1/overlap_audit.json",
+      "sha256": "fe7311272fc7b854a84f799692f96fbb069e74a88ba5008757fa5ec7fb7cc003"
+    },
+    "source_manifest": {
+      "path": "configs/pi05_source_corpus_v1/source_manifest.json",
+      "sha256": "75453a2028733973ae257ab76351cd129456dbae3225e732b4bed5cc96d32e54"
+    },
+    "normalization": {
+      "path": "configs/pi05_source_corpus_v1/source_normalization.json",
+      "sha256": "e259ee6e77a5793820235983917b17cfc0f8d3e6de94774a1f3173accc73f7c4"
+    },
+    "recipe": {
+      "path": "configs/pi05_source_corpus_v1/pi05_recipe_research.json",
+      "sha256": "5772a136d66b3fd7b175eab2ee9052b83fc3c50a3dbd7d245511283753b89494"
+    },
+    "model_manifest": {
+      "path": "configs/libero_24_8_8_v1/pi05_model_manifest.json",
+      "sha256": "a8261cc72ae7557fb0919f55e57c39c2a484ac69dcf3db9172e487466857bc7b"
+    },
+    "tokenizer_manifest": {
+      "path": "configs/libero_24_8_8_v1/pi05_tokenizer_manifest.json",
+      "sha256": "948bf1ec1f2768833bead66b2e829154e3304c1c09fe9c48813a79f06e47426c"
+    }
+  },
+  "models": {
+    "foundation": {
+      "repo_id": "lerobot/pi05_base",
+      "revision": "7de663972b7817d2c4cf2d84c821153dfea772e9",
+      "weights_bytes": 14467165872,
+      "weights_sha256": "0eb11ca9587678c1d2ef8cf32807c29f8ce53a2bfdfc1aa4a4c96f16fca59b0f",
+      "config_sha256": "367869712a2847c27e95c431ecb03f17bec4eee01a63995e2fb2d91940752b53"
+    },
+    "tokenizer": {
+      "source": "gs://big_vision/paligemma_tokenizer.model",
+      "openpi_revision": "15a9616a00943ada6c20a0f158e3adb39df2ccac",
+      "bytes": 4264023,
+      "sha256": "8986bb4f423f07f8c7f70d0dbe3526fb2316056c17bae71b1ea975e77a168fc6"
+    },
+    "forbidden": [
+      "pi05_libero"
+    ]
+  },
+  "features": {
+    "state_dim": 8,
+    "action_dim": 7,
+    "chunk_size": 50,
+    "n_action_steps": 10,
+    "training_image_shape": [
+      3,
+      128,
+      128
+    ],
+    "model_image_shape": [
+      3,
+      224,
+      224
+    ],
+    "tokenizer_max_length": 200,
+    "camera_rotation_degrees": 180,
+    "quantile_normalization": "(x-q01)/(q99-q01+1e-6)*2-1"
+  },
+  "data": {
+    "active_task_ids": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      21,
+      22,
+      23,
+      24,
+      26,
+      28,
+      29,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      45,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71,
+      72,
+      73,
+      74,
+      75,
+      76,
+      78,
+      79,
+      80,
+      81,
+      82,
+      83,
+      84,
+      85,
+      86,
+      87,
+      88,
+      89
+    ],
+    "episodes_per_task": 50,
+    "demo_indices": [
+      0,
+      49
+    ],
+    "sampler_seed": 20260721,
+    "max_open_files_per_worker": 8,
+    "sampling": "task-balanced deterministic no-replacement episode cycles; deterministic frame within each episode visit"
+  },
+  "optimization": {
+    "method": "full_action_sft",
+    "precision": "bfloat16",
+    "gradient_checkpointing": true,
+    "compile": false,
+    "seed": 7,
+    "global_batch_size": 256,
+    "optimizer_steps": 30000,
+    "optimizer": {
+      "name": "AdamW",
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "eps": 1e-08,
+      "weight_decay": 1e-10,
+      "gradient_clip_norm": 1.0
+    },
+    "schedule": {
+      "kind": "linear_warmup_then_constant",
+      "warmup_steps": 10000,
+      "peak_lr": 5e-05
+    },
+    "ema_decay": 0.999
+  },
+  "profile_defaults": {
+    "optimizer_steps": 2,
+    "micro_batch_size_per_rank": 1,
+    "gradient_accumulation_steps": 1,
+    "checkpoint_interval": 0,
+    "ema_enabled": false
+  },
+  "formal_run": {
+    "locked": true,
+    "lock_reason": "Locked after real eight-GPU BF16 full-SFT profiles, EMA memory checks, atomic checkpoint sizing, and two independent resumes from one immutable checkpoint passed on 2026-07-21.",
+    "world_size": 8,
+    "optimizer_steps": 30000,
+    "micro_batch_size_per_rank": 32,
+    "gradient_accumulation_steps": 1,
+    "checkpoint_interval": 5000,
+    "ema_enabled": true
+  },
+  "profile_evidence": {
+    "selected_topology": "eight equal DDP ranks, one policy CUDA process per A100, no extra CUDA role on GPU0",
+    "selected_steady_examples_per_second": 47.4545340396427,
+    "selected_max_cuda_allocated_bytes_per_rank": 67181209088,
+    "selected_max_cuda_reserved_bytes_per_rank": 71301070848,
+    "selected_metrics": {
+      "path": "/data/ymdai/outputs/ember/pi05_source_smoke_ddp8_m32_ema_eps1e6_20260721/metrics.jsonl",
+      "sha256": "bf952859acad0b438a174091486abecc288f03328ddc0d1190a5d677810faa96"
+    },
+    "comparison_profiles": [
+      {
+        "micro_batch_size_per_rank": 1,
+        "ema_enabled": false,
+        "steady_examples_per_second": 13.818914197253946,
+        "metrics_sha256": "b926ea633495f6c0ab966c6fdb07b07a1137793acb1a523dbc9cf6320c43fb94"
+      },
+      {
+        "micro_batch_size_per_rank": 4,
+        "ema_enabled": true,
+        "steady_examples_per_second": 31.553948684604872,
+        "metrics_sha256": "5fd8d1779c67fd12a5f39cadde86e291035d94533686d2a7b86e78c0c34cd7c3"
+      },
+      {
+        "micro_batch_size_per_rank": 16,
+        "ema_enabled": true,
+        "steady_examples_per_second": 44.685052240514516,
+        "metrics_sha256": "0f34361b61f8c0cad36ba064bd99eb3768fa0371b5d2edb52e7addc31a3eddf7"
+      }
+    ],
+    "checkpoint_bytes_observed": 33837406832,
+    "exact_resume": {
+      "evidence_path": "/data/ymdai/outputs/ember/pi05_source_exact_resume_evidence_20260721/comparison.json",
+      "evidence_sha256": "16137fa1ea78c33c10905c7426abf2485b2431258c8805f823a61d8b85da73d3",
+      "contract": "state and cursor exact; independent distributed launches numerically reproducible within recorded last-bit NCCL reduction tolerance"
+    }
+  },
+  "checkpointing": {
+    "keep_latest": 1,
+    "atomic_publish": true,
+    "retained_state": "policy, optional EMA policy, optimizer, scheduler, per-rank RNG, sampler cursor, metrics cursor, contract and hashes"
+  },
+  "logging": {
+    "interval_steps": 10,
+    "raw_metrics": "one JSONL row per optimizer step"
+  }
+}

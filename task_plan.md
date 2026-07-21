@@ -31,19 +31,22 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 
 ## Phase A：source corpus、成熟recipe与高吞吐评测
 
-状态：下一session直接开始。
+状态：source corpus与recipe已封存；高吞吐evaluator仍在推进。
 
-- [ ] 调研官方/成熟π0.5 action fine-tuning与LoRA项目；锁定revision、targets、rank/alpha/dropout、identity init、训练与merge方式，不猜脚本参数。
-- [ ] 对LIBERO-90与目标40 tasks做完整language/BDDL/semantic/composition specification audit。
-- [ ] 至少处理已知overlap：LIBERO-90 task44 ↔ target Goal task7；task77 ↔ target Long task5；封存最终active source IDs与hashes。
-- [ ] 核验过滤后每task全部50条teacher episodes、数据路径、state/action定义、source-only normalization与存储峰值。
+- [x] 调研官方/成熟π0.5 action fine-tuning与LoRA项目；锁定OpenPI/LeRobot revision、full-SFT recipe、下游LoRA targets/rank/alpha/dropout与identity init。
+- [x] 对LIBERO-90与目标40 tasks完成3600对language/BDDL/semantic/composition specification audit。
+- [x] 排除19个完整任务等价项并封存71个active source IDs、可执行规则与hashes；包含已知task44/task77及其余semantic aliases。
+- [x] 核验71 tasks×50 successful episodes、529,173 frames、52,710,755,898 bytes；封存source-only q01/q99 normalization，validation/test numeric reads为0。
 - [ ] 将当前“一task/一GPU”评测改成按 `episodes × horizon` cost-balanced state shards、动态队列、持久model/env；profile Writer异LoRA的functional batching与每卡统一1/2/3 replicas。
 - [ ] 确认所有卡CUDA进程数相同、GPU0无额外角色；只按真实rollout/s选实现。
 
 ## Phase B：共享 π0.5-LIBERO source base
 
+- [x] 建立唯一canonical π0.5 full-SFT runner，严格模型加载、task-balanced no-replacement sampler、EMA、atomic checkpoint、metrics reconciliation与完整per-rank RNG/cursor恢复。
+- [x] 完成1/8卡真实profile；选定8×microbatch32、global batch256、EMA，修正后稳态47.45 examples/s，单卡reserved 71.30GB。
+- [x] 从同一个不可变step-1 checkpoint做两次8-rank恢复；loss/grad/RNG/cursor完全一致，policy/EMA最大独立NCCL末位差分别为1.49e-8/3.73e-9。
 - [ ] 从generic `pi05_base`按成熟recipe在过滤后的LIBERO-90 source corpus上联合action-SFT；若用LoRA则merge成base。
-- [ ] 8卡训练优先，一卡一rank，真实显存平均预留约10GB；完整exact-resume state。
+- [ ] 以已锁定8卡配置完成30,000 optimizer steps；一卡一rank，真实显存平均预留约10GB，checkpoint每5,000 steps且只保留最新完整状态。
 - [ ] 根据loss与快速行为screen避免过训，不追求高ceiling。
 - [ ] 在全部目标40 tasks上做小型快速screen，确认source base已经开始在多个tasks产生部分真实成功，不能只靠单个易task aggregate；保存每task原始counts。
 - [ ] 冻结base、normalization、model/data hashes，作为全部后续方法共同起点。

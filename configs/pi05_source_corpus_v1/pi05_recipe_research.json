@@ -1,0 +1,115 @@
+{
+  "schema_version": "ember_pi05_recipe_research_v1",
+  "recorded_utc": "2026-07-21",
+  "scope": "Recipe authority for the filtered LIBERO-90 source base and the unified downstream PI05 LoRA space.",
+  "immutable_revisions": {
+    "openpi": "15a9616a00943ada6c20a0f158e3adb39df2ccac",
+    "lerobot": "30da8e687a6dfc617fcd94afc367ac7071c376ce",
+    "model_repo": "lerobot/pi05_base",
+    "model_revision": "7de663972b7817d2c4cf2d84c821153dfea772e9",
+    "model_weights_sha256": "0eb11ca9587678c1d2ef8cf32807c29f8ce53a2bfdfc1aa4a4c96f16fca59b0f",
+    "tokenizer_sha256": "8986bb4f423f07f8c7f70d0dbe3526fb2316056c17bae71b1ea975e77a168fc6",
+    "source_manifest_sha256": "75453a2028733973ae257ab76351cd129456dbae3225e732b4bed5cc96d32e54",
+    "source_normalization_sha256": "e259ee6e77a5793820235983917b17cfc0f8d3e6de94774a1f3173accc73f7c4",
+    "overlap_audit_sha256": "fe7311272fc7b854a84f799692f96fbb069e74a88ba5008757fa5ec7fb7cc003"
+  },
+  "primary_sources": [
+    {
+      "claim": "Official PI05 LIBERO full-finetuning configuration and data transforms.",
+      "url": "https://github.com/Physical-Intelligence/openpi/blob/15a9616a00943ada6c20a0f158e3adb39df2ccac/src/openpi/training/config.py"
+    },
+    {
+      "claim": "Official AdamW defaults and learning-rate schedule definitions.",
+      "url": "https://github.com/Physical-Intelligence/openpi/blob/15a9616a00943ada6c20a0f158e3adb39df2ccac/src/openpi/training/optimizer.py"
+    },
+    {
+      "claim": "Official PI05 LIBERO 30k evaluation result and inference recipe.",
+      "url": "https://github.com/Physical-Intelligence/openpi/blob/15a9616a00943ada6c20a0f158e3adb39df2ccac/examples/libero/README.md"
+    },
+    {
+      "claim": "Pinned PyTorch PI05 port used by EMBER.",
+      "url": "https://github.com/huggingface/lerobot/blob/30da8e687a6dfc617fcd94afc367ac7071c376ce/src/lerobot/policies/pi05/modeling_pi05.py"
+    },
+    {
+      "claim": "Pinned generic base checkpoint and Gemma model license.",
+      "url": "https://huggingface.co/lerobot/pi05_base/tree/7de663972b7817d2c4cf2d84c821153dfea772e9"
+    }
+  ],
+  "official_libero_anchor": {
+    "method": "full_action_sft",
+    "global_batch_size": 256,
+    "optimizer_steps": 30000,
+    "optimizer": {
+      "name": "AdamW",
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "eps": 1e-08,
+      "weight_decay": 1e-10,
+      "gradient_clip_norm": 1.0
+    },
+    "schedule": {
+      "kind": "linear_warmup_then_constant",
+      "warmup_steps": 10000,
+      "peak_lr": 5e-05,
+      "official_decay_steps": 1000000,
+      "official_decay_lr": 5e-05
+    },
+    "ema_decay": 0.999,
+    "official_action_horizon": 10,
+    "normalization": {
+      "statistics": "training-corpus q01/q99 quantiles",
+      "forward": "(x-q01)/(q99-q01+1e-6)*2-1",
+      "inverse": "(x+1)/2*(q99-q01+1e-6)+q01"
+    },
+    "precision": {
+      "openpi_jax": "implementation-defined",
+      "pinned_lerobot_port": "bfloat16 selected parameters with numerically sensitive projections and layer norms retained in float32"
+    }
+  },
+  "ember_source_base_decision": {
+    "initialization": "generic lerobot/pi05_base only",
+    "forbidden_initialization": "pi05_libero",
+    "method": "full_action_sft",
+    "freeze_vision_encoder": false,
+    "train_expert_only": false,
+    "source_tasks": 71,
+    "episodes_per_task": 50,
+    "task_sampling": "task-balanced deterministic no-replacement episode cycles",
+    "action_chunk": 50,
+    "action_chunk_reason": "Preserve the sealed LeRobot conversion and all downstream EMBER functional-LoRA interfaces; execution still replans after five actions.",
+    "global_batch_size": 256,
+    "optimizer_steps": 30000,
+    "optimizer_and_schedule": "official_libero_anchor",
+    "gradient_checkpointing": true,
+    "compile": false,
+    "source_adapter_after_training": false,
+    "merge_required": false,
+    "normalization": "filtered source corpus only; frozen for every downstream arm",
+    "checkpointing": "one atomically replaced exact-resume checkpoint plus final frozen export and retained metrics",
+    "ema": {
+      "primary": true,
+      "decay": 0.999,
+      "launch_gate": "retain only if the eight-GPU real-data profile remains stable with at least 10GB free per device and checkpoint peak remains below the 500GB personal cap",
+      "predeclared_engine_fallback": "If EMA alone violates that measured resource gate, keep full SFT but disable EMA and record the deviation; do not change data, optimizer, schedule, or target tasks."
+    },
+    "last_resort_fallback": "Use merged LoRA only if full SFT itself is infeasible after measured microbatch, activation-checkpointing, and accumulation profiles."
+  },
+  "unified_downstream_lora": {
+    "purpose": "AS-Writer, RL-Writer, Source-SFT, task-local RL, and the final joint action oracle share this adapter space.",
+    "target_policy": "action-expert q_proj and v_proj in all 18 layers, plus action_in_proj and action_out_proj",
+    "expected_target_modules": 38,
+    "rank": 16,
+    "alpha": 16,
+    "dropout": 0.0,
+    "identity_initialization": "A random, B exactly zero",
+    "project_choice_notice": "There is no official validated PI05-LIBERO LoRA recipe in the pinned OpenPI PyTorch path; this compact adapter contract must pass name/count and functional-identity smoke checks before use.",
+    "merge_for_source_base_only": true
+  },
+  "license": {
+    "model_weights": "Gemma license",
+    "openpi_code": "Apache-2.0",
+    "lerobot_code": "Apache-2.0"
+  }
+}

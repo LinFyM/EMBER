@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -29,16 +30,44 @@ class Pi05LiberoProcessor:
         self._action_q01 = torch.tensor(stats["action"]["q01"], device=device)
         self._action_q99 = torch.tensor(stats["action"]["q99"], device=device)
 
-    @staticmethod
-    def _quantile_transform(value: Any, q01: Any, q99: Any, inverse: bool) -> Any:
+    def _tokenize_prompts(self, states: Any, tasks: Sequence[str]) -> tuple[Any, Any]:
+        """Tokenize a batch with the exact OpenPI pi0.5 state prompt."""
+
         import torch
 
-        denominator = q99 - q01
-        denominator = torch.where(
-            denominator == 0,
-            torch.tensor(1e-8, device=value.device, dtype=value.dtype),
-            denominator,
+        if states.ndim != 2 or states.shape[0] != len(tasks):
+            raise ValueError("pi0.5 prompt states and task strings must form one batch")
+        normalized = self._quantile_transform(
+            states, self._state_q01, self._state_q99, inverse=False
         )
+        discretized = np.digitize(
+            normalized.detach().cpu().numpy(),
+            bins=np.linspace(-1, 1, 256 + 1)[:-1],
+        ) - 1
+        prompts = []
+        for task, state in zip(tasks, discretized, strict=True):
+            cleaned = str(task).strip().replace("_", " ").replace("\n", " ")
+            prompts.append(
+                f"Task: {cleaned}, State: {' '.join(map(str, state))};\nAction: "
+            )
+        encoded = self._tokenizer.encode(prompts, add_bos=True)
+        tokens = torch.zeros(
+            (len(prompts), self._max_length), dtype=torch.long, device=self._device
+        )
+        masks = torch.zeros_like(tokens, dtype=torch.bool)
+        for row, values in enumerate(encoded):
+            values = values[: self._max_length]
+            length = len(values)
+            if length:
+                tokens[row, :length] = torch.as_tensor(
+                    values, dtype=torch.long, device=self._device
+                )
+                masks[row, :length] = True
+        return tokens, masks
+
+    @staticmethod
+    def _quantile_transform(value: Any, q01: Any, q99: Any, inverse: bool) -> Any:
+        denominator = q99 - q01 + 1e-6
         if inverse:
             return (value + 1.0) * denominator / 2.0 + q01
         return 2.0 * (value - q01) / denominator - 1.0
@@ -50,35 +79,61 @@ class Pi05LiberoProcessor:
             OBS_LANGUAGE_TOKENS,
         )
 
-        state = value["observation.state"].to(self._device)
-        normalized = self._quantile_transform(
-            state, self._state_q01, self._state_q99, inverse=False
-        )
-        discretized = np.digitize(
-            normalized.detach().cpu().numpy(),
-            bins=np.linspace(-1, 1, 256 + 1)[:-1],
-        ) - 1
-        cleaned = value["task"].strip().replace("_", " ").replace("\n", " ")
-        state_text = " ".join(map(str, discretized))
-        prompt = f"Task: {cleaned}, State: {state_text};\nAction: "
-        tokens = self._tokenizer.encode(prompt, add_bos=True)
-        tokens = tokens[: self._max_length]
-        mask = [True] * len(tokens)
-        padding = self._max_length - len(tokens)
-        tokens.extend([0] * padding)
-        mask.extend([False] * padding)
+        state = value["observation.state"].to(self._device).unsqueeze(0)
+        tokens, masks = self._tokenize_prompts(state, [value["task"]])
         result = {
             key: tensor.unsqueeze(0).to(self._device)
             for key, tensor in value.items()
             if isinstance(tensor, torch.Tensor) and key.startswith("observation.images.")
         }
-        result[OBS_LANGUAGE_TOKENS] = torch.tensor(
-            tokens, dtype=torch.long, device=self._device
-        ).unsqueeze(0)
-        result[OBS_LANGUAGE_ATTENTION_MASK] = torch.tensor(
-            mask, dtype=torch.bool, device=self._device
-        ).unsqueeze(0)
+        result[OBS_LANGUAGE_TOKENS] = tokens
+        result[OBS_LANGUAGE_ATTENTION_MASK] = masks
         return result
+
+    def training_batch(self, value: dict[str, Any]) -> dict[str, Any]:
+        """Map sealed LIBERO HDF5 rows to the canonical LeRobot PI05 forward contract."""
+
+        import torch
+        from lerobot.utils.constants import (
+            ACTION,
+            OBS_LANGUAGE_ATTENTION_MASK,
+            OBS_LANGUAGE_TOKENS,
+        )
+
+        states = value["observation.state"].to(
+            self._device, dtype=torch.float32, non_blocking=True
+        )
+        tasks = value["task"]
+        if not isinstance(tasks, Sequence) or isinstance(tasks, (str, bytes)):
+            raise ValueError("training batch must contain one task string per row")
+        tokens, masks = self._tokenize_prompts(states, tasks)
+
+        def image(key: str) -> Any:
+            tensor = value[key].to(self._device, non_blocking=True)
+            if tensor.dtype == torch.uint8:
+                tensor = tensor.to(torch.float32).div_(255.0)
+            elif tensor.dtype != torch.float32:
+                tensor = tensor.to(torch.float32)
+            if tensor.ndim != 4 or tensor.shape[1] != 3:
+                raise ValueError(f"invalid PI05 training image batch: {key}")
+            return tensor
+
+        base = image("observation.images.camera1")
+        wrist = image("observation.images.camera2")
+        actions = value[ACTION].to(
+            self._device, dtype=torch.float32, non_blocking=True
+        )
+        actions = self._quantile_transform(
+            actions, self._action_q01, self._action_q99, inverse=False
+        )
+        return {
+            "observation.images.base_0_rgb": base,
+            "observation.images.left_wrist_0_rgb": wrist,
+            "observation.images.right_wrist_0_rgb": torch.zeros_like(base),
+            OBS_LANGUAGE_TOKENS: tokens,
+            OBS_LANGUAGE_ATTENTION_MASK: masks,
+            ACTION: actions,
+        }
 
     def unnormalize_action(self, action: Any) -> Any:
         return self._quantile_transform(

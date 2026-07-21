@@ -7,7 +7,7 @@ import json
 import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Protocol
 
 import torch
 from peft import LoraConfig, inject_adapter_in_model
@@ -30,6 +30,24 @@ class LoRATarget:
     @property
     def parameter_count_per_rank(self) -> int:
         return self.in_features + self.out_features
+
+
+class LoRAContract(Protocol):
+    """Structural interface shared by retired SmolVLA and active PI05 contracts."""
+
+    targets: tuple[LoRATarget, ...]
+    rank: int
+    alpha: int
+    dropout: float
+    identity_seed: int
+
+    @property
+    def parameter_count(self) -> int: ...
+
+    @property
+    def state_tensor_count(self) -> int: ...
+
+    def to_dict(self) -> dict[str, Any]: ...
 
 
 @dataclass(frozen=True)
@@ -73,7 +91,7 @@ class SmolVLALoRAContract:
         }
 
 
-def canonical_contract_sha256(contract: SmolVLALoRAContract) -> str:
+def canonical_contract_sha256(contract: LoRAContract) -> str:
     encoded = json.dumps(
         contract.to_dict(), sort_keys=True, separators=(",", ":"), ensure_ascii=False
     ).encode("utf-8")
@@ -163,7 +181,7 @@ def derive_smolvla_targets(policy: torch.nn.Module) -> tuple[LoRATarget, ...]:
 
 
 def validate_policy_against_contract(
-    policy: torch.nn.Module, contract: SmolVLALoRAContract
+    policy: torch.nn.Module, contract: LoRAContract
 ) -> None:
     module_map = dict(policy.named_modules())
     for expected in contract.targets:
@@ -181,7 +199,7 @@ def validate_policy_against_contract(
 
 
 def expected_lora_state_shapes(
-    contract: SmolVLALoRAContract,
+    contract: LoRAContract,
 ) -> dict[str, tuple[int, int]]:
     result: dict[str, tuple[int, int]] = {}
     for target in contract.targets:
@@ -204,7 +222,7 @@ def task_lora_state_dict(
 
 
 def validate_lora_state(
-    state: Mapping[str, torch.Tensor], contract: SmolVLALoRAContract
+    state: Mapping[str, torch.Tensor], contract: LoRAContract
 ) -> None:
     expected = expected_lora_state_shapes(contract)
     if set(state) != set(expected):
@@ -226,7 +244,7 @@ def _stable_tensor_seed(seed: int, name: str) -> int:
 
 @torch.no_grad()
 def initialize_identity_lora_(
-    policy: torch.nn.Module, contract: SmolVLALoRAContract
+    policy: torch.nn.Module, contract: LoRAContract
 ) -> None:
     """Create a deterministic A/random, B/zero physical identity adapter."""
 
@@ -244,7 +262,7 @@ def initialize_identity_lora_(
 
 
 def inject_task_lora(
-    policy: torch.nn.Module, contract: SmolVLALoRAContract
+    policy: torch.nn.Module, contract: LoRAContract
 ) -> torch.nn.Module:
     """Inject only the sealed adapter and freeze every shared/base parameter."""
 
@@ -274,7 +292,7 @@ def inject_task_lora(
 def copy_task_lora_state_(
     policy: torch.nn.Module,
     state: Mapping[str, torch.Tensor],
-    contract: SmolVLALoRAContract,
+    contract: LoRAContract,
 ) -> None:
     validate_lora_state(state, contract)
     destination = task_lora_state_dict(policy)
@@ -286,7 +304,7 @@ def copy_task_lora_state_(
 def functional_lora_call(
     policy: torch.nn.Module,
     state: Mapping[str, torch.Tensor],
-    contract: SmolVLALoRAContract,
+    contract: LoRAContract,
     *args: Any,
     **kwargs: Any,
 ) -> Any:

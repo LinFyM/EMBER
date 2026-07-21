@@ -246,9 +246,20 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - full video 通过 chunk temporal attention、episode memory 和 task-level set attention 聚合。
 - 语言用完整 token embeddings；视频保留 episode boundaries。
 - `CompleteLoRAWriter` 使用 module/factor/rank-aware queries 和 width-typed heads 输出每个 LoRA A/B tensor。
-- 冻结 SmolVLA/VLM features 可以缓存；Writer 自身 encoder/fusion/decoder 仍可训练。
+- 当前活动`CompleteLoRAWriter`在temporal encoder之前额外要求恰好一个非空episode，故只接受`offsets=[0,L]`；底层多episode能力不构成活动输入权限。
+- 历史SmolVLA/VLM feature cache只证明冻结features可缓存；当前π0.5必须重建pure-language、按单demo切片且与action query独立的新cache，旧cache不可复用。
 
 历史训练 checkpoint 不可续用，因为新协议将改变 split、source base、全 50 episode 输入、normalization 和数据 authority。
+
+## π0.5统一LoRA与Writer接口事实（2026-07-21）
+
+- 真实`pi05_base` safetensors metadata与meta-device模型结构独立确认同一拓扑：18层action expert的`q_proj`为1024→2048、`v_proj`为1024→256，另含`action_in_proj` 32→1024和`action_out_proj` 1024→32。
+- rank/alpha 16、dropout 0时共38 targets、76个A/B tensors和1,287,168 trainable parameters；合同文件SHA256为`1dcf58f7...cb07`，canonical payload SHA256为`42d5919e...94dd7`。
+- PEFT注入后的36个expert adapter tensors为BF16，而action in/out adapter为FP32。Writer必须逐tensor保留template dtype；全部强转FP32会让functional训练与materialized推理走不同数值路径。
+- mixed-dtype toy policy已逐值验证Writer-generated functional state与copy到物理adapter后的loss完全一致；B=0 identity仍为确定性物理恒等。
+- LeRobot `PI05Policy.forward`只接受`batch,reduction`，不接受旧Smol functional路径的`noise/time`参数。训练随机flow noise/time由PI05内部RNG产生，exact-resume保存并恢复每rank RNG。
+- Writer language不得复用带当前normalized state的PI05 action prompt，否则会泄漏proprio；新feature owner必须单独做pure task-language tokenization。policy functional action loss仍使用完整PI05 observation/action processor，且缺失right-wrist key以保持false mask。
+- `lora.py`只拥有跨backbone PEFT注入、identity、state validation/hash与functional-call机械接口；`pi05_lora.py`是唯一活动科学拓扑authority。旧Smol contract/import只作历史模块provenance，不得进入π0.5 runner。
 
 ## 数据与 benchmark 事实
 

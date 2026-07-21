@@ -84,11 +84,10 @@ def build_lora_tensor_specs(
 
 
 class CompleteLoRAWriter(torch.nn.Module):
-    """Generate every A/B tensor from language and full variable-length videos.
+    """Generate every A/B tensor from language and exactly one full video.
 
-    The model places no architectural upper bound on episode count or episode
-    length. episode_offsets partitions one concatenated frame-feature tensor
-    into a non-empty set of non-empty teaching episodes.
+    The teaching episode has no architectural upper bound on length.  The
+    explicit two-entry offset guard is the final action-hidden one-video wall.
     """
 
     def __init__(
@@ -153,7 +152,7 @@ class CompleteLoRAWriter(torch.nn.Module):
 
         self._template_buffers: dict[str, str] = {}
         for index, item in enumerate(tensor_specs):
-            value = template_state[item.name].detach().to(torch.float32).contiguous()
+            value = template_state[item.name].detach().contiguous()
             if item.factor_index == 1 and torch.count_nonzero(value):
                 raise WriterModelError("LoRA-B template must begin at physical zero")
             buffer_name = f"template_{index:03d}"
@@ -188,6 +187,14 @@ class CompleteLoRAWriter(torch.nn.Module):
         video_features: torch.Tensor,
         episode_offsets: torch.Tensor,
     ) -> torch.Tensor:
+        if (
+            episode_offsets.ndim != 1
+            or episode_offsets.numel() != 2
+            or int(episode_offsets[0]) != 0
+            or int(episode_offsets[1]) != int(video_features.shape[0])
+            or int(episode_offsets[1]) <= 0
+        ):
+            raise WriterModelError("Writer requires exactly one non-empty teaching video")
         return self.task_encoder(language_tokens, video_features, episode_offsets)
 
     def forward(
@@ -222,5 +229,5 @@ class CompleteLoRAWriter(torch.nn.Module):
             rows = self.heads[str(item.width)](decoded[start:stop])
             generated = rows.transpose(-1, -2) if item.transpose_output else rows
             template = getattr(self, self._template_buffers[item.name])
-            result[item.name] = generated + template
+            result[item.name] = generated.to(dtype=template.dtype) + template
         return result

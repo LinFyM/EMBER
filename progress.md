@@ -96,6 +96,15 @@
 - scale/topology：71×50 episodes，30,000 steps×global batch256；8个同角色rank PID 1264369–1264376，rank0–3绑定NUMA0、rank4–7绑定NUMA1。step7时每卡约69.0–69.2GB、GPU UTL 100%，loss/gradient finite，稳态约47.5 examples/s。
 - live preflight：8卡启动前均0MiB且无compute apps；driver570.158.01、CUDA12.8、torch2.11.0+cu128。`/data/ymdai`为379,033,156,799 bytes，按实测33,837,406,832-byte checkpoint的atomic双态峰值估计446,707,970,463 bytes，低于500GB cap；`/data`可用约3.059TB。
 - checkpoint每5,000 steps原子发布、只保留最新；完成前不作source competence结论。首个checkpoint预计约7.4小时，完整30k按当前吞吐约44.7小时；等待期间只在另一worktree推进不改其import/config/output的后续代码。
+- step48 fresh live check仍为8卡各一个同角色PID、约69.0–69.2GB、100% GPU；loss/gradient finite，稳态约47.2 examples/s。该检查只证明运行健康，不作行为结论。
+
+## π0.5 LoRA / one-video Writer core里程碑（2026-07-21）
+
+- 新活动合同`configs/pi05_lora_v1.json`绑定generic `lerobot/pi05_base`完整revision/weights/config、当前source config与recipe hashes；文件SHA256 `1dcf58f7...cb07`，canonical contract SHA256 `42d5919e...94dd7`。
+- 真实foundation safetensors metadata和meta-device `PI05Pytorch`结构均核验38个精确Linear targets；rank16得到76 tensors、1,287,168 parameters。没有加入state/time projections，也没有沿用旧37-target Smol合同。
+- 通用`lora.py`只保留PEFT mechanics协议；活动科学拓扑由`pi05_lora.py`单独fail-close加载。这样旧历史imports不进入π0.5 runner，也没有第二个活动训练/评测入口。
+- `CompleteLoRAWriter`现在在活动边界只接受一个非空video (`offsets=[0,L]`)；LoRA template和输出逐tensor保留真实BF16/FP32 dtype。functional action loss调用真实PI05 `forward(batch)`，不再传旧接口`noise/time`。
+- fresh验证：真实checkpoint target metadata通过；mixed-dtype functional/copy parity精确通过；全套`91 passed`、compileall、diff/checksum通过。architecture guard为`REVIEW`、无hard violation；review仅来自既有Writer构造函数长度和目录密度，owner/lifecycle如上。
 
 ## 已对齐的后续方法
 
@@ -112,10 +121,10 @@
 
 ## 当前后续动作
 
-1. fresh运行完整tests、JSON/checksum/architecture checks，commit并push相机mask修复和唯一dynamic evaluator。
-2. 从新push commit创建隔离clean worktree；fresh GPU/storage/process preflight后从generic base启动全新formal attempt3，绝不resume attempt1/2。
-3. 训练等待期间推进π0.5 Writer/functional LoRA；final checkpoint产生后实测evaluator统一1/2/3 replicas的有效rollouts/s并选择拓扑。
-4. 用选定evaluator快速screen全部40 target tasks；只有跨多个tasks出现真实成功才冻结共同base并进入Phase C–H。
+1. 在不修改formal attempt3的隔离worktree/config/output前提下，原位替换旧feature-cache/Writer orchestration为π0.5 pure-language、每次单demo切片、video/action独立schedule与AS-Writer命名。
+2. 继续周期性只读监测attempt3；首个step5000 checkpoint产生后校验manifest/hash/exact-resume状态，完成30k前不作source competence结论。
+3. final checkpoint产生后实测evaluator统一1/2/3 replicas的有效rollouts/s并选择唯一拓扑。
+4. 用选定evaluator快速screen全部40 target tasks；只有跨多个tasks出现真实成功才冻结共同base并进入正式Phase C开发。
 
 ## 历史边界
 

@@ -37,7 +37,8 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] 对LIBERO-90与目标40 tasks完成3600对language/BDDL/semantic/composition specification audit。
 - [x] 排除19个完整任务等价项并封存71个active source IDs、可执行规则与hashes；包含已知task44/task77及其余semantic aliases。
 - [x] 核验71 tasks×50 successful episodes、529,173 frames、52,710,755,898 bytes；封存source-only q01/q99 normalization，validation/test numeric reads为0。
-- [ ] 已将当前“一task/一GPU”评测改成按 `episodes × horizon` cost-balanced state shards、动态队列、持久model/env；final source checkpoint后完成每卡统一1/2/3 replicas与未来Writer异LoRA functional batching的真实profile。
+- [x] 已将当前“一task/一GPU”评测改成按 `episodes × horizon` cost-balanced state shards、动态队列、持久model/env，并删除旧静态活动入口。
+- [ ] final source checkpoint后完成每卡统一1/2/3 replicas与未来Writer异LoRA functional batching的真实profile。
 - [ ] 确认所有卡CUDA进程数相同、GPU0无额外角色；只按真实rollout/s选实现。
 
 ## Phase B：共享 π0.5-LIBERO source base
@@ -54,6 +55,8 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 ## Phase C：AS-Writer development
 
 - [ ] 将Writer core适配到π0.5成熟LoRA空间；同task video/action episode独立采样，Writer只见language+one action-hidden video。
+  - 已封存38 targets / 76 tensors / 1,287,168 parameters的rank16合同；真实checkpoint metadata与meta模型结构一致。
+  - 已修复PI05 forward签名、BF16/FP32 LoRA dtype保真，并在Writer入口对`offsets=[0,L]`单视频合同fail-close；functional/materialized parity已测试。
 - [ ] 24 train tasks均衡混合；source base冻结，actions只进functional loss。
 - [ ] 先profile约短时loss/吞吐，将wall-clock换算为steps；checkpoint频繁exact-resume。
 - [ ] 单次训练不超过约2小时。用loss斜率决定何时值得运行便宜val screen，完整val只评少量候选，尽快选择接近饱和checkpoint。

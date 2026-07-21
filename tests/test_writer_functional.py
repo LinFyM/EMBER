@@ -19,11 +19,8 @@ class _LossPolicy(torch.nn.Module):
     def forward(
         self,
         batch: dict[str, torch.Tensor],
-        noise: torch.Tensor | None = None,
-        time: torch.Tensor | None = None,
         reduction: str = "mean",
     ) -> tuple[torch.Tensor, dict[str, float]]:
-        del noise, time
         value = self.projection(batch["value"])
         per_sample = value.square().mean(dim=1)
         if reduction == "none":
@@ -69,7 +66,7 @@ def test_functional_action_loss_only_backpropagates_into_writer() -> None:
         _contract(),
         language_features=torch.randn(3, 5),
         video_features=torch.randn(9, 7),
-        episode_offsets=torch.tensor([0, 4, 9]),
+        episode_offsets=torch.tensor([0, 9]),
         batch={"value": torch.ones(6, 3)},
     )
     loss.backward()
@@ -104,7 +101,7 @@ def test_success_weighted_flow_loss_weights_episodes_equally() -> None:
         _contract(),
         language_features=torch.randn(3, 5),
         video_features=torch.randn(9, 7),
-        episode_offsets=torch.tensor([0, 4, 9]),
+        episode_offsets=torch.tensor([0, 9]),
         batch={
             "value": torch.tensor(
                 [[1.0, 1.0, 1.0], [3.0, 3.0, 3.0], [2.0, 2.0, 2.0]]

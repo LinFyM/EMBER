@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pytest
 import torch
 
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
@@ -36,7 +37,7 @@ def test_writer_generates_every_template_tensor() -> None:
     result = model(
         torch.zeros(3, 5),
         torch.zeros(9, 7),
-        torch.tensor([0, 4, 9]),
+        torch.tensor([0, 9]),
     )
     assert set(result) == set(_state())
     for name, expected in _state().items():
@@ -44,11 +45,11 @@ def test_writer_generates_every_template_tensor() -> None:
         assert torch.isfinite(result[name]).all()
 
 
-def test_writer_accepts_one_short_or_fifty_variable_episodes() -> None:
+def test_writer_accepts_one_variable_length_video_and_rejects_multiple() -> None:
     model = _model()
     language = torch.zeros(2, 5)
     one = model(language, torch.zeros(1, 7), torch.tensor([0, 1]))
-    lengths = [(index % 5) + 1 for index in range(50)]
-    offsets = torch.tensor([0, *torch.tensor(lengths).cumsum(0).tolist()])
-    many = model(language, torch.zeros(sum(lengths), 7), offsets)
-    assert set(one) == set(many)
+    longer = model(language, torch.zeros(17, 7), torch.tensor([0, 17]))
+    assert set(one) == set(longer)
+    with pytest.raises(RuntimeError, match="exactly one non-empty teaching video"):
+        model(language, torch.zeros(3, 7), torch.tensor([0, 1, 3]))

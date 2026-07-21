@@ -7,7 +7,7 @@ from typing import Any, Mapping
 import torch
 
 from ember.lora import (
-    SmolVLALoRAContract,
+    LoRAContract,
     functional_lora_call,
     inject_task_lora,
     task_lora_state_dict,
@@ -17,7 +17,7 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 def prepare_frozen_writer_policy(
     policy: torch.nn.Module,
-    contract: SmolVLALoRAContract,
+    contract: LoRAContract,
 ) -> dict[str, torch.Tensor]:
     """Inject the sealed identity LoRA and freeze all physical policy state."""
 
@@ -34,14 +34,12 @@ def prepare_frozen_writer_policy(
 def writer_functional_action_loss(
     writer: CompleteLoRAWriter,
     policy: torch.nn.Module,
-    contract: SmolVLALoRAContract,
+    contract: LoRAContract,
     *,
     language_features: torch.Tensor,
     video_features: torch.Tensor,
     episode_offsets: torch.Tensor,
     batch: Mapping[str, Any],
-    noise: torch.Tensor | None = None,
-    time: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, Mapping[str, Any]]:
     """Run the frozen policy with the Writer's differentiable complete LoRA."""
 
@@ -53,8 +51,6 @@ def writer_functional_action_loss(
         generated,
         contract,
         dict(batch),
-        noise=noise,
-        time=time,
     )
     if (
         not isinstance(output, tuple)
@@ -70,7 +66,7 @@ def writer_functional_action_loss(
 def writer_success_weighted_flow_loss(
     writer: CompleteLoRAWriter,
     policy: torch.nn.Module,
-    contract: SmolVLALoRAContract,
+    contract: LoRAContract,
     *,
     language_features: torch.Tensor,
     video_features: torch.Tensor,

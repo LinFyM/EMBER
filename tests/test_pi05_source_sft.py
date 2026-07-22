@@ -326,6 +326,17 @@ def test_static_source_sft_adapter_is_shared_and_role_gated(tmp_path: Path) -> N
     assert adapter["per_task_adapter_count"] == 0
     assert adapter["teacher_video_reads"] == adapter["test_action_reads"] == 0
 
+    exploratory_source = {**source, "source_run_summary_sha256": None}
+    exploratory = inspect_source_sft_evaluation(
+        config_path=CONFIG,
+        checkpoint=checkpoint,
+        source=exploratory_source,
+        task_keys=validation_keys,
+        evaluation_role="validation",
+        require_formal=False,
+    )
+    assert exploratory["checkpoint"] == adapter["checkpoint"]
+
     seen_keys = (
         ("libero_spatial", 0),
         ("libero_spatial", 2),

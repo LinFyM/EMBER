@@ -95,12 +95,29 @@ def _validate_run_contract(
     source: Mapping[str, Any],
     stage: str,
     lora: Any,
+    allow_missing_source_summary: bool,
 ) -> None:
+    training_source = run_contract.get("source")
+    observed_source = dict(source)
+    source_matches = training_source == observed_source
+    if (
+        not source_matches
+        and allow_missing_source_summary
+        and isinstance(training_source, Mapping)
+        and observed_source.get("source_run_summary_sha256") is None
+        and isinstance(training_source.get("source_run_summary_sha256"), str)
+        and len(training_source["source_run_summary_sha256"]) == 64
+    ):
+        training_without_summary = dict(training_source)
+        observed_without_summary = dict(observed_source)
+        training_without_summary.pop("source_run_summary_sha256", None)
+        observed_without_summary.pop("source_run_summary_sha256", None)
+        source_matches = training_without_summary == observed_without_summary
     valid = (
         run_contract.get("schema_version") == SOURCE_SFT_LAUNCH_SCHEMA
         and run_contract.get("config_sha256") == sha256_file(config_path)
         and stage == config.get("sealed_stage")
-        and run_contract.get("source") == dict(source)
+        and source_matches
         and run_contract.get("authorities") == config["authorities"]
         and run_contract.get("information_wall") == config["information_wall"]
         and run_contract.get("stage_contract") == config["stages"][stage]
@@ -200,6 +217,7 @@ def inspect_source_sft_evaluation(
         source=source,
         stage=stage,
         lora=lora,
+        allow_missing_source_summary=not require_formal,
     )
     manifest, step = _validate_checkpoint_contract(
         checkpoint=checkpoint,

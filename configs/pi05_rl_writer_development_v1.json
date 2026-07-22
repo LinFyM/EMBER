@@ -8,23 +8,23 @@
     },
     "evaluation_config": {
       "path": "configs/pi05_target_evaluation_v1.json",
-      "sha256": "9d7f6d50b8ac143c6ae89e7067437a29ec8beee475db9e1ad5aa9b3790d9d557"
+      "sha256": "5bb0a5ca4604f126cc4bcdd29c9a7a4d17403a8f3ee7161d8afdfeccbb2c488c"
     },
     "as_writer_config": {
       "path": "configs/pi05_as_writer_v1.json",
-      "sha256": "971cac4328e2f96e0cb9f81f22950e287bcab722cee92c560b342c4392dcf807"
+      "sha256": "bf1f309192ae665e0d7834702e6795572dae318f98561673f928f79be0ceb504"
     },
     "feature_cache_config": {
       "path": "configs/pi05_writer_feature_cache_v1.json",
-      "sha256": "3e3a8ea782feaf515f95102a3e3a7db8aee926c74954093d82481997f566429e"
+      "sha256": "26eb1e6d8dd8e323d3d9930cd796f792efd145c85b9e59c8eced10ab1db0e036"
     },
     "lora_contract": {
       "path": "configs/pi05_lora_v1.json",
-      "sha256": "1dcf58f73afd3fc77b98cd00abc128c027f15e3e67d7d1212ab84ca283f6cb07"
+      "sha256": "03828ca9cd23dbb013dcb841df5f0bd72678ff155fcad004703aba3a4bdd8656"
     },
     "source_base_config": {
       "path": "configs/pi05_source_base_v1.json",
-      "sha256": "366a5e1275a216ecde0750a40cc0cd824237fe4e74ee7a38bfabd2d195aacee8"
+      "sha256": "7455fc59c67ca39f7c70b1296d2f1dc98f070bfda869bb0535bf5a9e91e04cc6"
     },
     "tokenizer_manifest": {
       "path": "configs/libero_24_8_8_v1/pi05_tokenizer_manifest.json",
@@ -149,7 +149,9 @@
     "total_updates": 0,
     "checkpoint_updates": [],
     "negative_closure_rollouts_per_task": 0,
-    "selection_rule": "seal complete-task-cycle budget and checkpoints from real throughput before reading reward; zero branch must complete first"
+    "maximum_wall_clock_minutes": 120,
+    "budget_role": "guardrail_not_target",
+    "selection_rule": "profile rollout/update throughput first; use fixed cheap reward-coverage screens and full-cycle curves to choose sparse checkpoints; zero branch must complete first; stop on saturation or at the guardrail and record budget-censored undertraining without automatic extension"
   },
   "checkpointing": {
     "atomic_publish": true,

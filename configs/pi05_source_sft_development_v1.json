@@ -8,15 +8,15 @@
     },
     "evaluation_config": {
       "path": "configs/pi05_target_evaluation_v1.json",
-      "sha256": "9d7f6d50b8ac143c6ae89e7067437a29ec8beee475db9e1ad5aa9b3790d9d557"
+      "sha256": "5bb0a5ca4604f126cc4bcdd29c9a7a4d17403a8f3ee7161d8afdfeccbb2c488c"
     },
     "lora_contract": {
       "path": "configs/pi05_lora_v1.json",
-      "sha256": "1dcf58f73afd3fc77b98cd00abc128c027f15e3e67d7d1212ab84ca283f6cb07"
+      "sha256": "03828ca9cd23dbb013dcb841df5f0bd72678ff155fcad004703aba3a4bdd8656"
     },
     "source_base_config": {
       "path": "configs/pi05_source_base_v1.json",
-      "sha256": "366a5e1275a216ecde0750a40cc0cd824237fe4e74ee7a38bfabd2d195aacee8"
+      "sha256": "7455fc59c67ca39f7c70b1296d2f1dc98f070bfda869bb0535bf5a9e91e04cc6"
     },
     "tokenizer_manifest": {
       "path": "configs/libero_24_8_8_v1/pi05_tokenizer_manifest.json",
@@ -112,7 +112,9 @@
         "total_steps": 0,
         "per_rank_batch_size": 0,
         "checkpoint_steps": [],
-        "selection_rule": "seal a small validation checkpoint schedule after real throughput/loss profiling; select independently from AS-Writer by fixed-state validation success and stop near saturation"
+        "maximum_wall_clock_minutes": 120,
+        "budget_role": "guardrail_not_target",
+        "selection_rule": "profile loss and throughput first; derive sparse cheap-screen checkpoints from loss slope, reject clearly undertrained candidates cheaply, run full eight-task validation only for a few candidates, and stop near saturation or at the guardrail with budget-censored undertraining recorded"
       }
     },
     "final": {
@@ -129,7 +131,9 @@
         "total_steps": 0,
         "per_rank_batch_size": 0,
         "checkpoint_steps": [],
-        "selection_rule": "copy the frozen development hyperparameters and retrain from the prescribed fresh identity state; never resume the development LoRA"
+        "maximum_wall_clock_minutes": 120,
+        "budget_role": "guardrail_not_target",
+        "selection_rule": "copy the frozen development hyperparameters and retrain from the prescribed fresh identity state; never resume the development LoRA; stop at the selected schedule or guardrail and record any apparent undertraining"
       }
     }
   },

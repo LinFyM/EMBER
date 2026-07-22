@@ -1,6 +1,6 @@
 # EMBER Progress and Handoff
 
-最后更新：2026-07-21。
+最后更新：2026-07-22。
 
 ## 当前状态
 
@@ -9,7 +9,7 @@
 - generic `lerobot/pi05_base` revision `7de663972b7817d2c4cf2d84c821153dfea772e9` 已下载，weights SHA256 `0eb11ca9587678c1d2ef8cf32807c29f8ce53a2bfdfc1aa4a4c96f16fca59b0f`。
 - generic base在8 test tasks×50 fixed states上为 `0/400`。400 rows唯一、全部到suite horizon，result seal SHA256 `c78e92e9...20c2`；该结果不评价EMBER。
 - Phase A source audit、71-task manifest、source-only normalization、pinned official recipe与hash seal已完成；cost-balanced dynamic evaluator代码和fail-closed contracts已完成，真实1/2/3 replicas rollout/s profile待final source checkpoint。
-- canonical π0.5 source-base full-SFT runner、atomic checkpoint与exact-resume机制已完成；相机mask修正后的真实8卡m32+EMA smoke为47.75 examples/s、71.18GB reserved/卡，formal配置锁定为global batch256、30,000 steps。
+- canonical π0.5 source-base full-SFT runner、atomic checkpoint与exact-resume机制已完成；相机mask修正后的真实8卡m32+EMA smoke为47.75 examples/s、71.18GB reserved/卡。owner现将formal锁定为fresh 1,000 steps、333-step warmup、global batch256，目标是轻量interface acquisition而非LIBERO-90收敛。
 - formal attempt1因NUMA affinity缺失在step12终止；attempt2因显式zero右腕被LeRobot误标`mask=true`而在step316终止。两者均无checkpoint、failure packet已封存且永不resume；修正后的训练/评测都通过missing feature key得到OpenPI规定的zero image + `mask=false`。
 - 当前里程碑fresh验证为112 tests passed；compileall与diff checks通过；architecture guard为`REVIEW`且无hard violation。ownership、增长理由与旧cache/cold-start/inference路径retirement已记录。
 - 第一轮完整流程只跑一个training seed；不提前扩多seed或direct action-budget curve。
@@ -157,22 +157,23 @@
 ## 已对齐的后续方法
 
 - frozen source base：过滤后LIBERO-90×50 action-SFT，必要source LoRA merge，source-only normalization冻结；快速screen全部目标40 tasks，需开始在多个tasks有部分真实成功，不能只靠一个易task aggregate。
-- AS-Writer：24 train/8 val开发，one video，video/action episode同task独立采样；单次训练≤约2小时，loss驱动稀疏val与早停。
+- 全部适用训练阶段：先短profile学习速度/吞吐，用固定廉价screen与曲线斜率淘汰候选，仅对少量候选做完整validation；约2小时只是guardrail而非目标，到上限仍未充分训练则保存证据后停止自动追加。
+- AS-Writer：24 train/8 val开发，one video，video/action episode同task独立采样；loss驱动稀疏val与早停。
 - RL-Writer：随机Writer、零AS warm-up起步；无reward再极少warm-up，仍失败则关闭。
 - Source-SFT：24/32 source tasks联合一套shared LoRA；独立val选最佳，不匹配AS steps/data。
 - seen comparison：specification-only预声明覆盖四suites的source panel。
 - wrong-video：直接另一suite，正确language/task/state/RNG不变。
 - final：合并为32 source，单seed分别重训后先seen、再zero-interaction test。
 - test-only RL：不碰validation；test task上训练identity/AS/RL Writer三臂到接近最佳，官方random resets，fixed50只fresh eval。
+- task-local RL预算按每种初始化方法跨全部8个test tasks的合计训练wall-clock约束，不是每task各给2小时；逐task记录是否因总预算截断。
 - direct oracle：最后使用8 test tasks×50 actions联合一套shared LoRA，不是per-task LoRA。
 - optional：核心后有时间再做ViVLA；outer learning不阻塞。
 
 ## 当前后续动作
 
-1. 保持formal attempt3的隔离worktree/config/output不变；继续实现task-local PI05 runtime与canonical fixed-50 adapter接入，但formal budget/test gate保持关闭，不提前读取validation/test outcome。
-2. 继续周期性只读监测attempt3；首个step5000 checkpoint产生后校验manifest/hash/exact-resume状态，完成30k前不作source competence结论。
-3. final checkpoint产生后先对Source-SFT/AS-Writer做真实8卡loss、freeze、OOM/吞吐及resume profile，再实测evaluator统一1/2/3 replicas的有效rollouts/s并选择唯一拓扑。
-4. 用选定evaluator快速screen全部40 target tasks；只有跨多个tasks出现真实成功才冻结共同base并进入正式Phase C开发。
+1. 从generic `pi05_base` fresh启动1,000-step source-base run；不resume旧attempt3，最终step1000 checkpoint需通过完整manifest/hash校验。
+2. checkpoint完成后立即用canonical evaluator快速screen全部40 target tasks；依据跨task真实成功而非继续拉长source loss训练。
+3. 同时完成Source-SFT/AS-Writer真实8卡短profile与evaluator 1/2/3 replicas rollout/s profile，然后按≤120分钟单次实验口径进入Phase C–H。
 
 ## 历史边界
 

@@ -48,9 +48,9 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] 建立唯一canonical π0.5 full-SFT runner，严格模型加载、task-balanced no-replacement sampler、EMA、atomic checkpoint、metrics reconciliation与完整per-rank RNG/cursor恢复。
 - [x] 完成相机mask修正后的8卡真实profile；选定8×microbatch32、global batch256、EMA与GPU-local NUMA binding，稳态47.75 examples/s，单卡reserved 71.18GB。
 - [x] 从同一个不可变step-1 checkpoint做两次8-rank恢复；loss/grad/RNG/cursor完全一致，policy/EMA最大独立NCCL末位差分别为1.49e-8/3.73e-9。
-- [ ] 正式attempt3正在隔离worktree从generic base fresh训练；最近只读观测step2050，8卡各约69GB/100%利用率，loss/gradient finite、约47.37 examples/s，首个step5000 checkpoint前不作行为结论。
+- [x] 旧30k attempt3按owner决定在step2880停止；无checkpoint、不得resume，也不作source competence结果。其loss仍下降，只用于估计训练速度和否定“已饱和”的说法。
 - [ ] 从generic `pi05_base`按成熟recipe在过滤后的LIBERO-90 source corpus上联合action-SFT；若用LoRA则merge成base。
-- [ ] 以已锁定8卡配置完成30,000 optimizer steps；一卡一rank，真实显存平均预留约10GB，checkpoint每5,000 steps且只保留最新完整状态。
+- [ ] 从generic base fresh完成1,000 optimizer steps；333-step warmup、8卡一卡一rank、global batch256、最终step1000保存唯一完整checkpoint，预计约90–100分钟。
 - [ ] 根据loss与快速行为screen避免过训，不追求高ceiling。
 - [ ] 在全部目标40 tasks上做小型快速screen，确认source base已经开始在多个tasks产生部分真实成功，不能只靠单个易task aggregate；保存每task原始counts。
 - [ ] 冻结base、normalization、model/data hashes，作为全部后续方法共同起点。
@@ -123,3 +123,4 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [ ] exact command、model/data/config hashes、output root、process topology与停止条件记录。
 - [ ] 一卡一训练rank为默认；若评估每卡多replica，8卡replica数必须一致且GPU0无额外角色。
 - [ ] checkpoint/output不得覆盖；resume必须校验完整state与合同兼容性。
+- [ ] 所有适用阶段先短profile并由loss/reward/behavior曲线决定廉价screen间隔，只给少量候选完整validation；约120分钟是guardrail而非目标，到上限仍未充分训练则记录后停止。task-local按每个方法覆盖8 tasks的合计时间计费，不按单task计费。

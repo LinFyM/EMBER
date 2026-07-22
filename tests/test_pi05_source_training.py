@@ -150,10 +150,10 @@ def test_formal_resume_is_pinned_to_contract_not_moving_origin(
     )
     kwargs = {
         "ema_enabled": True,
-        "optimizer_steps": 30_000,
+        "optimizer_steps": 1_000,
         "micro_batch_size": 32,
         "gradient_accumulation": 1,
-        "checkpoint_interval": 5_000,
+        "checkpoint_interval": 1_000,
     }
     with pytest.raises(Pi05SourceTrainingError, match="must already be pushed"):
         validate_formal(argparse.Namespace(resume=None, **common), config, context, **kwargs)

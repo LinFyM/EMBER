@@ -28,12 +28,13 @@
 - canonical runner严格加载weights，避免上游异常时静默返回随机模型；每个checkpoint封存policy、EMA、optimizer、scheduler、8个rank RNG/sampler states、metrics cursor、contract和文件hash，并在新checkpoint原子发布后才清理旧状态。
 - 两个独立8-rank进程均从同一step1 manifest `0461dee1...5953`恢复；step2 loss、grad norm、LR、cursor和8个rank state文件完全一致。4,143,404,816个policy元素中0.0308%仅有独立NCCL启动末位差，max `1.49e-8`；EMA max `3.73e-9`。这支持state/cursor exact且numerically reproducible的resume合同，不虚假宣称跨新distributed process bitwise identical。
 - 三套约32GB probe checkpoint在compact evidence封存后按500GB cap永久清理；保留evidence packet为444KB，comparison SHA256 `16137fa1...b1e`。清理后个人占用379,942,686,720 bytes，atomic双checkpoint峰值估计约447.62GB。
+- 2026-07-22 owner将训练预算口径明确为短周期、证据驱动：先profile学习速度/吞吐，按曲线斜率安排廉价固定screen，只给少量候选完整validation，接近饱和即停。约120分钟只是所有适用训练阶段的防失控上限；到上限仍未充分训练则封存曲线与budget-censored判断，不自动追加。task-local RL按每个初始化方法在全部8个test tasks上的合计训练时间计费。
 
 ## 2026-07-21 canonical π0.5 target evaluator
 
 - 唯一活动入口为`scripts/evaluate_pi05.py`；旧静态`scripts/evaluate_pi05_base.py`已退役，不从Git历史恢复。`pi05_eval_contract.py`拥有sealed authorities、source final-EMA门与seed schedule，`pi05_eval_queue.py`拥有cost-balanced SQLite队列，`pi05_evaluation.py`拥有persistent policy/env与rollout，`pi05_eval_results.py`拥有worker证据与strict aggregate；这些是单一runner内的故障边界，不是并行实现。
 - 40-task screen按`states × suite horizon`切成近等cost shards，8卡使用相同1/2/3 replicas并动态claim/work-steal；每worker持久加载一套policy和当前task env pool，GPU0没有额外CUDA controller。
-- formal/screen只接受与当前source config、全部model/tokenizer/recipe authorities完全一致的step30000 EMA；test `.pruned_init`逐项对sealed protocol hash。worker在load前重算model/tokenizer SHA，raw shard、DB counts与producer/claim均交叉核对。
+- formal/screen只接受与当前source config、全部model/tokenizer/recipe authorities完全一致的final step1000 EMA；test `.pruned_init`逐项对sealed protocol hash。worker在load前重算model/tokenizer SHA，raw shard、DB counts与producer/claim均交叉核对。
 - launcher在任何queue recovery前独占lock；局部spawn失败只终止本launcher创建的workers并保存PID、logs、failed jobs与hash。吞吐主指标从首worker进程spawn到全体退出，包含model load与首次env/EGL创建；另报shard-only window，避免1/2/3 replicas profile偏置。
 
 下文全部SmolVLA/70-10-10证据仍是真实历史，但只作provenance，不能驱动当前π0.5训练或复用旧checkpoint/normalization/runner。

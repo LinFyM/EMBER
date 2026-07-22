@@ -8,8 +8,8 @@
     "initialization_config_sha256": "367869712a2847c27e95c431ecb03f17bec4eee01a63995e2fb2d91940752b53"
   },
   "authorities": {
-    "source_base_config_sha256": "366a5e1275a216ecde0750a40cc0cd824237fe4e74ee7a38bfabd2d195aacee8",
-    "recipe_sha256": "4c537067c1da5498f366b6bc6d9e91e80e134bd8b0d60e0d0d6f5c4d1d281734"
+    "source_base_config_sha256": "7455fc59c67ca39f7c70b1296d2f1dc98f070bfda869bb0535bf5a9e91e04cc6",
+    "recipe_sha256": "feadfff2df9111d08148c942dafbeb9db248f40904142ec5c4a2bae6d823f692"
   },
   "target_policy": "all 18 action-expert q_proj/v_proj modules plus action_in_proj/action_out_proj",
   "adapter": {

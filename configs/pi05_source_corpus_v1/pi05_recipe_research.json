@@ -78,6 +78,7 @@
     }
   },
   "ember_source_base_decision": {
+    "decision_recorded_utc": "2026-07-22",
     "initialization": "generic lerobot/pi05_base only",
     "forbidden_initialization": "pi05_libero",
     "method": "full_action_sft",
@@ -89,8 +90,10 @@
     "action_chunk": 50,
     "action_chunk_reason": "Preserve the sealed LeRobot conversion and all downstream EMBER functional-LoRA interfaces; execution still replans after five actions.",
     "global_batch_size": 256,
-    "optimizer_steps": 30000,
-    "optimizer_and_schedule": "official_libero_anchor",
+    "optimizer_steps": 1000,
+    "optimizer_and_schedule": "Use the official AdamW/EMA anchor with a proportionally shortened 333-step linear warmup followed by constant 5e-5 LR for the 1,000-step EMBER run.",
+    "maximum_wall_clock_minutes": 120,
+    "short_run_reason": "Owner-directed interface acquisition only: the source base should receive a mild LIBERO embodiment/control update, not converge or overfit LIBERO-90. Stop at step 1,000; report any apparent undertraining for later owner review rather than extending this run.",
     "gradient_checkpointing": true,
     "compile": false,
     "source_adapter_after_training": false,

@@ -46,6 +46,7 @@ generic lerobot/pi05_base
 
 - 先调研官方/成熟 π0.5 fine-tuning 与 LoRA 实现，不自行猜 targets 或 runner 参数。
 - source base 不追求高 ceiling；用全部目标 40 tasks 的小型快速 screen 确认它已开始在该 benchmark 上产生跨多个 task 的部分真实成功，不能只靠一个易 task 的 aggregate。这里不要求每个 task 已有高成功率。generic π0.5 的 `0/400` 只作原始校准，新 source base 必须另测。
+- owner 于 2026-07-22 将 source-base 正式训练锁定为从 generic base fresh 运行 1,000 optimizer steps；不续接已停止且无 checkpoint 的旧 30k attempt。对所有适用的训练阶段，核心流程是短profile学习速度与吞吐、换算候选steps/interactions、用固定廉价screen淘汰明显未充分候选、仅对少数候选做完整validation，并在接近饱和时早停。约120分钟只是防止预算暴走的上限，不是要求跑满或固定步数模板；到上限仍未充分训练时停止、保存曲线与证据，留给owner事后判断。
 - source base 冻结后，AS-Writer、RL-Writer、Source-SFT、三臂 task-local RL、联合 target-action oracle 和 ViVLA-style baseline（若做）均从它开始。
 - 下游只保留一个活动 LoRA 空间；不得叠加未 merge 的 shared source adapter。
 
@@ -54,7 +55,7 @@ generic lerobot/pi05_base
 - 核心固定为 `task language + exactly one action-hidden teaching video -> shared Writer -> complete task-specific LoRA`。
 - Writer 不得接收 action、proprio、reward、terminal、task ID、filename 或隐藏 normalization；source actions 只能进入 AS functional loss。
 - `Action-Supervised Writer (AS-Writer)`：development 在 24 train tasks 上均匀混合；同 task 内独立随机采一条 teacher video 和一条 action episode/chunk，不要求同 episode配对；frozen source base 只通过 functional LoRA forward 参与，更新 Writer。
-- AS-Writer 单次训练不超过约 2 小时。先短 profile loss/吞吐，频繁保存 exact-resume checkpoint；仅在 loss 斜率值得时运行尽量便宜的 validation screen，少量候选再做完整 validation，尽早找接近饱和点。
+- 所有适用训练阶段都遵循上述短周期、证据驱动流程。task-local RL的预算按每个初始化方法覆盖全部8个test tasks的总训练wall-clock计算，不是每task各给约2小时；到上限仍未充分训练时记录为budget-censored并停止自动追加。
 - `Reward-Trained Writer (RL-Writer)` 是独立路线：先从随机 Writer、零 target-action warm-up 直接跨 source tasks 用官方环境 reward 联合训练；若没有正信号，再加入极少量 AS warm-up；仍无法启动则封存并暂停，不从完整 AS-Writer继续。
 - RL-Writer rollout 使用 LIBERO 官方随机 reset/BDDL 初态；不使用 `.pruned_init`。只用官方 env reward/success，不从 object pose 等内部状态手工构造 privileged shaping。
 - `Source-SFT` 是在同一 frozen source base 上、跨 24 development train tasks 联合训练的一套 shared LoRA，test 不看 held video/action。它和 AS-Writer各自根据 validation 选最佳，不要求机械匹配 optimizer steps 或 consumed examples，但必须报告训练数据、steps、GPU-hours、参数量和搜索上限。

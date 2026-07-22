@@ -15,7 +15,7 @@
     },
     "recipe": {
       "path": "configs/pi05_source_corpus_v1/pi05_recipe_research.json",
-      "sha256": "4c537067c1da5498f366b6bc6d9e91e80e134bd8b0d60e0d0d6f5c4d1d281734"
+      "sha256": "feadfff2df9111d08148c942dafbeb9db248f40904142ec5c4a2bae6d823f692"
     },
     "model_manifest": {
       "path": "configs/libero_24_8_8_v1/pi05_model_manifest.json",
@@ -154,7 +154,7 @@
     "compile": false,
     "seed": 7,
     "global_batch_size": 256,
-    "optimizer_steps": 30000,
+    "optimizer_steps": 1000,
     "optimizer": {
       "name": "AdamW",
       "betas": [
@@ -167,7 +167,7 @@
     },
     "schedule": {
       "kind": "linear_warmup_then_constant",
-      "warmup_steps": 10000,
+      "warmup_steps": 333,
       "peak_lr": 5e-05
     },
     "ema_decay": 0.999
@@ -181,12 +181,13 @@
   },
   "formal_run": {
     "locked": true,
-    "lock_reason": "Locked after the corrected missing-right-wrist/false-mask path passed a real eight-GPU BF16 full-SFT smoke with explicit GPU-local NUMA binding, EMA, finite loss/gradients, and about 10GB memory headroom per A100 on 2026-07-21; checkpoint and exact-resume mechanics were established separately before launch.",
+    "lock_reason": "Owner locked a fresh 1,000-step source-interface acquisition run on 2026-07-22. It retains the corrected eight-GPU BF16 full-SFT topology, missing-right-wrist/false-mask path, EMA and exact-resume mechanics, but deliberately does not seek LIBERO-90 convergence. The run stops at step 1,000; the general 120-minute ceiling is a budget guardrail rather than a target, and any undertraining at a method ceiling is recorded for later owner review instead of automatically extended.",
     "world_size": 8,
-    "optimizer_steps": 30000,
+    "optimizer_steps": 1000,
     "micro_batch_size_per_rank": 32,
     "gradient_accumulation_steps": 1,
-    "checkpoint_interval": 5000,
+    "checkpoint_interval": 1000,
+    "maximum_wall_clock_minutes": 120,
     "ema_enabled": true
   },
   "profile_evidence": {

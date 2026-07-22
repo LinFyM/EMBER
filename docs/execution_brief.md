@@ -31,6 +31,8 @@ source action/state normalization 只由过滤后的 LIBERO-90 source corpus计�
 
 base 不追求高 ceiling。训练期间用全部目标40 tasks做小型快速screen，确认它已开始在该 benchmark 上出现跨多个task的部分真实成功；不要求每task已有高成功率，但不能只靠一个易task的aggregate。generic π0.5 的正式结果 `0/400` 仅为原始校准，不能替代新 source base 结果。
 
+owner于2026-07-22将source-base正式训练改为从generic base fresh运行1,000 optimizer steps，333-step线性warmup后到官方peak LR；旧30k attempt在step2880停止且无checkpoint，不得resume。这里的目标只是轻量获得LIBERO embodiment/control interface，而不是在LIBERO-90上收敛或过拟合。
+
 ## 4. Development methods
 
 ### AS-Writer
@@ -38,7 +40,7 @@ base 不追求高 ceiling。训练期间用全部目标40 tasks做小型快速sc
 - 输入恰好一条 action-hidden teacher video + 正确 task language；输出完整 task-specific LoRA。
 - 在24 train tasks上做均衡混合。每个 update 同 task 内独立随机采 video 与 action episode/chunk，不要求配对；action只进 functional behavior loss。
 - source base冻结，只有Writer更新。Writer不得看到action、proprio、reward、terminal、task ID、filename或隐藏stats。
-- 单次训练最多约2小时；先profile loss/吞吐并频繁保存exact-resume checkpoint，只在loss斜率显示值得时做廉价validation screen，最后完整评估少量候选，尽早停止在接近饱和处。
+- 先短profile loss与吞吐，将wall-clock换算成候选optimizer steps；按loss斜率调整固定廉价validation screen的间隔，先淘汰明显未充分候选，只对少量候选做完整8-task validation，并在接近饱和时早停。约2小时只是防预算暴走的上限，不是要求跑满或固定步数模板；到上限仍未充分训练时保存完整曲线和证据、标记budget-censored并停止自动追加。
 
 ### RL-Writer
 
@@ -99,7 +101,8 @@ task-local RL不在validation上预先冻结算法，也不在test打开前运�
 - 旧“一task/一GPU”使两个horizon-520进程严重拖尾。下一实现先调研成熟项目，再按 `episodes × horizon` cost-balanced切state shards，使用动态队列、持久model/env和work stealing。
 - Writer每rollout LoRA不同，profile batched functional LoRA与每卡统一1/2/3个policy replicas。所有卡CUDA process数相同，GPU0不得额外放controller/server/model。
 - batch8到16只有约0.9% per-episode提升；不靠盲目加batch伪装效率。
-- 训练最多8张A100，一卡一DDP rank为默认，真实batch尽量利用显存且平均预留约10GB。task-local RL的总wall-clock是全部tasks/arms的整体推进时间，不是每task固定长预算。
+- 训练最多8张A100，一卡一DDP rank为默认，真实batch尽量利用显存且平均预留约10GB。task-local RL按每个初始化方法在全部8个test tasks上的合计训练wall-clock执行约2小时上限，而不是每task各给一份上限；三臂分别报告合计time/interactions与budget-censored状态。
+- 上述短周期、证据驱动原则适用于所有训练阶段；约2小时仅为预算guardrail。到上限仍明显未训练充分时不自动延长，保存证据供owner事后分析判断。
 
 ## 10. Optional work and hard boundaries
 

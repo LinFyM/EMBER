@@ -8,27 +8,27 @@
     },
     "evaluation_config": {
       "path": "configs/pi05_target_evaluation_v1.json",
-      "sha256": "9d7f6d50b8ac143c6ae89e7067437a29ec8beee475db9e1ad5aa9b3790d9d557"
+      "sha256": "5bb0a5ca4604f126cc4bcdd29c9a7a4d17403a8f3ee7161d8afdfeccbb2c488c"
     },
     "as_writer_config": {
       "path": "configs/pi05_as_writer_v1.json",
-      "sha256": "971cac4328e2f96e0cb9f81f22950e287bcab722cee92c560b342c4392dcf807"
+      "sha256": "bf1f309192ae665e0d7834702e6795572dae318f98561673f928f79be0ceb504"
     },
     "rl_writer_config": {
       "path": "configs/pi05_rl_writer_development_v1.json",
-      "sha256": "cde828db4d11461d5d00705692127e6f60ca648202d2fb378ab2eea355d80afd"
+      "sha256": "a441fcc528c740f5d7baf8c96b408c2a068a58ddff3b8bfc8e55a6d2ed6bd469"
     },
     "feature_cache_config": {
       "path": "configs/pi05_writer_feature_cache_v1.json",
-      "sha256": "3e3a8ea782feaf515f95102a3e3a7db8aee926c74954093d82481997f566429e"
+      "sha256": "26eb1e6d8dd8e323d3d9930cd796f792efd145c85b9e59c8eced10ab1db0e036"
     },
     "lora_contract": {
       "path": "configs/pi05_lora_v1.json",
-      "sha256": "1dcf58f73afd3fc77b98cd00abc128c027f15e3e67d7d1212ab84ca283f6cb07"
+      "sha256": "03828ca9cd23dbb013dcb841df5f0bd72678ff155fcad004703aba3a4bdd8656"
     },
     "source_base_config": {
       "path": "configs/pi05_source_base_v1.json",
-      "sha256": "366a5e1275a216ecde0750a40cc0cd824237fe4e74ee7a38bfabd2d195aacee8"
+      "sha256": "7455fc59c67ca39f7c70b1296d2f1dc98f070bfda869bb0535bf5a9e91e04cc6"
     }
   },
   "role": {
@@ -156,6 +156,9 @@
     "expected_world_size": 8,
     "total_updates_per_unit": 0,
     "checkpoint_updates": [],
-    "selection_rule": "seal mechanics after test opens, then tune directly on each test adaptation domain without fixed-state outcomes"
+    "maximum_wall_clock_minutes_per_method_across_eight_tasks": 120,
+    "budget_scope": "For each initialization method/arm, sum training wall-clock across all eight test tasks; this is not a per-task allowance.",
+    "budget_role": "guardrail_not_target",
+    "selection_rule": "after test opens, use random-reset reward learning curves and sparse cheap screens to allocate each method's shared eight-task time budget; stop tasks near saturation, reallocate within that method only, and at the aggregate guardrail record any undertrained tasks as budget-censored without automatic extension"
   }
 }

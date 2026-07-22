@@ -360,3 +360,10 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - AS-Writer的显存主因是对generated LoRA保留functional policy反传图，而不是Writer本体参数量。batch1只分配约12.9GB；batch16分配63.53GB、reserve 68.17GB，并把稳态吞吐从约32提高到约122 global action queries/s，因此batch16是当前实测有效且保留稳定余量的点。
 - 极短训练必须保持预期正式scheduler horizon；把`total_steps`也缩成4会令LeRobot按`4/30000`缩放warmup并取整为0，造成首步直接使用peak LR。这是profile协议伪影，不是Writer科学发散。
 - 在1,000-step horizon下执行前128步时，首/末16-step mean functional loss为0.14714/0.11930，后64步线性斜率约`-1.58e-4/step`，gradient norm在warmup后降至约0.2–0.3且无nonfinite。曲线尚未饱和，但实测完整1,000步仅约17.5分钟净训练，故选择1,000步并以四分点做稀疏validation候选，不把120分钟guardrail当目标。
+
+## AS-Writer选择、source-base validation与Source-SFT固定预算（2026-07-22）
+
+- AS-Writer正式训练完成1,000 steps、global batch128；cheap screen选择step250与step500进入完整8-task×50 validation。step250为`119/400`、step500为`99/400`，因此development AS-Writer冻结step250。step250逐任务成功为Spatial 1/3=`0/0`、Object 1/3=`40/36`、Goal 3/6=`0/27`、Long 1/2=`16/0`。
+- 同一8-task×50 fixed-state配置下，frozen source base为`48/400`：Spatial 1/3=`0/0`、Object 1/3=`5/0`、Goal 3/6=`0/41`、Long 1/2=`2/0`。AS step250 aggregate增加71，但Goal 6从41降到27，说明增益来自任务重分配而非所有任务一致改善。
+- owner选择先做不调step的matched-scale Source-SFT。比较基准是被选中的AS step250所消耗的`250 × 128 = 32,000` action queries，而非完整1000-step曲线的累计消耗。Source-SFT保持profile选定的batch64/rank（global512），固定63 steps=`32,256` queries，与32,000相差0.8%；该匹配不要求batch size或optimizer updates相同，也不声称forward compute、参数量或监督路径相同。
+- Source-SFT profile显示batch64/rank稳定finite且峰值allocated/reserved约32.16/42.04GB、约71.88 queries/s；batch128/rank约54.92/67.93GB、约72.05 queries/s，没有有效吞吐增益。因此正式run保留batch64/rank，只保存并验证step63。

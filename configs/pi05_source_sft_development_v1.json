@@ -98,6 +98,26 @@
       4
     ]
   },
+  "profile_evidence": {
+    "status": "completed",
+    "batch_64_per_rank": {
+      "output_root": "/data/ymdai/outputs/ember/pi05_source_sft_profile_raw_b649ba5_b64_s128_20260722",
+      "completed_steps": 16,
+      "global_action_queries_per_step": 512,
+      "steady_global_action_queries_per_second": 71.875,
+      "max_cuda_allocated_bytes": 32155989504,
+      "max_cuda_reserved_bytes": 42037411840
+    },
+    "batch_128_per_rank": {
+      "output_root": "/data/ymdai/outputs/ember/pi05_source_sft_profile_raw_b649ba5_b128_s64_20260722",
+      "completed_steps": 4,
+      "global_action_queries_per_step": 1024,
+      "steady_global_action_queries_per_second": 72.05,
+      "max_cuda_allocated_bytes": 54921756672,
+      "max_cuda_reserved_bytes": 67928850432
+    },
+    "conclusion": "batch 64/rank is stable and has essentially the same measured query throughput as batch 128/rank with substantially more memory margin, so it is retained for the fixed matched-scale run"
+  },
   "stages": {
     "development": {
       "action_split_roles": [
@@ -107,14 +127,32 @@
       "available_action_episodes": 1200,
       "selection_data": "sealed eight validation tasks; no validation actions",
       "formal_run": {
-        "status": "pending_profile",
+        "status": "sealed",
         "expected_world_size": 8,
-        "total_steps": 0,
-        "per_rank_batch_size": 0,
-        "checkpoint_steps": [],
+        "total_steps": 63,
+        "per_rank_batch_size": 64,
+        "checkpoint_steps": [
+          63
+        ],
         "maximum_wall_clock_minutes": 120,
         "budget_role": "guardrail_not_target",
-        "selection_rule": "profile loss and throughput first; derive sparse cheap-screen checkpoints from loss slope, reject clearly undertrained candidates cheaply, run full eight-task validation only for a few candidates, and stop near saturation or at the guardrail with budget-censored undertraining recorded"
+        "matched_budget": {
+          "comparison_checkpoint": "AS-Writer development step 250 selected by full validation",
+          "as_writer_global_action_queries": 32000,
+          "source_sft_global_batch_size": 512,
+          "source_sft_optimizer_steps": 63,
+          "source_sft_global_action_queries": 32256,
+          "relative_query_difference": 0.008,
+          "matched_axis": "action-supervised query exposure scale",
+          "not_claimed_matched": [
+            "optimizer updates",
+            "batch size",
+            "forward compute",
+            "updated parameter count",
+            "supervision pathway"
+          ]
+        },
+        "selection_rule": "one fixed matched-query-scale run with no optimizer-step tuning; retain and evaluate only step 63 on all eight validation tasks, and record apparent undertraining without extending this run"
       }
     },
     "final": {

@@ -202,3 +202,10 @@
 ## 历史边界
 
 旧SmolVLA 70/10/10曾完成到旧Phase F并留下真实结果，但与当前π0.5、split、one-video和source-base合同不兼容。只能用作经验/provenance，不能复用checkpoint、normalization或runner。
+
+## AS-Writer validation与matched-scale Source-SFT seal（2026-07-22）
+
+- AS cheap screens为step250/500/750/1000=`24/18/15/15`（各64 rollouts），由预封存规则只将250和500送入完整validation。完整8×50结果为step250 `119/400`、step500 `99/400`，development AS-Writer据此冻结step250。
+- owner要求补测的同配置source-base validation完成`48/400`，逐任务为Spatial 1/3=`0/0`、Object 1/3=`5/0`、Goal 3/6=`0/41`、Long 1/2=`2/0`；AS step250逐任务为`0/0, 40/36, 0/27, 16/0`。
+- 在RL-Writer前先运行Source-SFT。首版不调step，只匹配已选AS checkpoint约32,000 action-query总训练量；保持实测高效的8卡每rank batch64，固定63 steps=`32,256` queries，只保留step63。此前batch64/128 profile仅作稳定性与吞吐证据，不作为科学结果。
+- 下一动作：封存并推送Source-SFT配置后完成该固定训练；仅对step63运行一次完整8-task validation，与source base `48/400`和AS `119/400`比较。

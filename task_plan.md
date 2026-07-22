@@ -64,10 +64,10 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] 封存target40 metadata/hash authority与development 32-task视频cache配置；AS formal仍需真实训练profile，不将候选steps冒充正式配方。
 - [x] feature-cache完成raw source policy上的真实8卡batch32 smoke：8 tasks/8 episodes/1,033 frames，critical-path 689.47 frames/s且无OOM/nonfinite；batch32已封存。
 - [x] 生成development 32 tasks×50 videos、274,523 frames的formal feature cache；32/32 task tensor hashes与manifest/contract复核通过，test video reads为0。
-- [ ] 24 train tasks均衡混合；source base冻结，actions只进functional loss。
+- [x] 24 train tasks均衡混合；source base冻结，actions只进functional loss；正式训练完成1,000 steps / 128,000 action queries并保留四个候选checkpoint。
 - [x] 完成真实8卡短profile并将wall-clock换算为steps：batch16每rank峰值allocated/reserved为63.53/68.17GB，稳态约1.05秒/步、约122 global action queries/s；128-step曲线的首/末16-step mean loss为0.14714/0.11930，后64步斜率仍为负。
-- [ ] 按profile封存的1,000-step、batch16正式配置训练，保留250/500/750/1000四个稀疏exact-resume checkpoints；用廉价validation screen淘汰候选，完整8-task validation只评少量候选并尽快选择接近饱和点。约2小时仍仅为guardrail。
-- [ ] 报告8 validation tasks逐任务raw success与视频采样seed。
+- [x] cheap screen从250/500/750/1000中选择250与500做完整validation；step250为119/400，step500为99/400，因此冻结step250为development AS-Writer。
+- [x] 报告8 validation tasks逐任务raw success与视频采样seed；同配置source-base control为48/400，AS step250为119/400。
 
 ## Phase D：RL-Writer development
 
@@ -81,7 +81,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 ## Phase E：Source-SFT、seen与视频因果证据
 
 - [x] 建立development-only Source-SFT authority与唯一PI05训练owner：24 train tasks共享一套38-target LoRA，raw source policy冻结，checkpoint保存adapter/optimizer/scheduler/per-rank RNG/确定性sampler与metrics cursor；现有evaluator按静态adapter一次安装并保留普通batch。
-- [ ] 从同一source base在24 train tasks上联合训练一套shared Source-SFT LoRA；按validation独立选择最佳，不强制匹配AS-Writer steps/data。
+- [ ] 从同一source base在24 train tasks上联合训练一套shared Source-SFT LoRA；首版固定匹配已选AS step250约32,000 action queries，保持profile选定batch64/rank并训练63 steps，仅评最终checkpoint，不精调step。
 - [x] 在outcome前按specification-only SHA256规则封存四suites各2个、共8个seen tasks（global IDs 0,2,15,12,21,28,39,37）；policy outcome与trajectory value reads均为0。
 - [ ] 比较source base、Source-SFT、AS-Writer、可用RL-Writer的seen performance。
 - [x] 封存同split role、按suite循环和排序ordinal构造的cross-suite wrong-video机械map；correct/wrong两臂保持同一language、task、init state、policy RNG、video seed与demo ordinal。

@@ -81,6 +81,25 @@ def test_development_config_selects_only_sealed_train_actions() -> None:
     assert config["information_wall"]["test_video_values_read"] == 0
 
 
+def test_development_formal_budget_matches_selected_as_writer_query_scale() -> None:
+    config = load_source_sft_config(CONFIG)
+    formal = config["stages"]["development"]["formal_run"]
+    budget = formal["matched_budget"]
+    assert formal["status"] == "sealed"
+    assert formal["expected_world_size"] == 8
+    assert formal["total_steps"] == 63
+    assert formal["per_rank_batch_size"] == 64
+    assert formal["checkpoint_steps"] == [63]
+    assert budget["as_writer_global_action_queries"] == 32_000
+    assert budget["source_sft_global_action_queries"] == 32_256
+    assert (
+        formal["total_steps"]
+        * formal["expected_world_size"]
+        * formal["per_rank_batch_size"]
+        == budget["source_sft_global_action_queries"]
+    )
+
+
 def test_development_config_cannot_open_final_stage() -> None:
     config = load_source_sft_config(CONFIG)
     context = SimpleNamespace(world_size=8)

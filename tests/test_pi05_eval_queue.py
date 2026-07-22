@@ -45,7 +45,7 @@ def _drain_queue_process(path: str, worker: int, output) -> None:
 
 def test_cost_balanced_shards_cover_every_state_once() -> None:
     shards = build_cost_balanced_shards(_tasks(), env_batch_size=8)
-    assert len(shards) == 19
+    assert len(shards) == 20
     assert len({shard.job_id for shard in shards}) == len(shards)
     covered = {
         (shard.suite, shard.task_id, state_id)
@@ -53,16 +53,45 @@ def test_cost_balanced_shards_cover_every_state_once() -> None:
         for state_id in shard.init_state_ids
     }
     assert len(covered) == 200
-    assert {len(shard.init_state_ids) for shard in shards if shard.suite == "libero_10"} == {
-        2,
-        8,
-    }
+    long_shards = [shard for shard in shards if shard.suite == "libero_10"]
+    assert {len(shard.init_state_ids) for shard in long_shards} == {6, 7}
+    assert {shard.preferred_gpu for shard in long_shards} == set(range(8))
+    assert all(
+        shard.preferred_gpu is None for shard in shards if shard.suite != "libero_10"
+    )
     full_costs = {
         shard.estimated_cost
         for shard in shards
         if len(shard.init_state_ids) in (8, 16)
     }
-    assert full_costs == {3520, 4160, 4480, 4800}
+    assert full_costs == {3520, 4480, 4800}
+
+
+def test_max_horizon_states_follow_actual_gpu_count_before_dynamic_work(
+    tmp_path: Path,
+) -> None:
+    tasks = (
+        EvaluationTask("libero_goal", 0, 300, tuple(range(8))),
+        EvaluationTask("libero_10", 1, 520, tuple(range(8))),
+        EvaluationTask("libero_10", 2, 520, tuple(range(8))),
+    )
+    shards = build_cost_balanced_shards(
+        tasks, env_batch_size=8, physical_gpu_count=4
+    )
+    long_shards = [shard for shard in shards if shard.horizon == 520]
+    assert len(long_shards) == 8
+    assert {shard.preferred_gpu for shard in long_shards} == set(range(4))
+    assert all(len(shard.init_state_ids) == 2 for shard in long_shards)
+
+    path = tmp_path / "queue.sqlite3"
+    initialize_queue(path, shards, contract_sha256="8" * 64)
+    for gpu in range(4):
+        first = claim_next(path, worker_id=f"{gpu}-r0", physical_gpu=gpu)
+        second = claim_next(path, worker_id=f"{gpu}-r1", physical_gpu=gpu)
+        assert first is not None and first.shard.preferred_gpu == gpu
+        assert second is not None and second.shard.preferred_gpu == gpu
+    ordinary = claim_next(path, worker_id="0-r2", physical_gpu=0)
+    assert ordinary is not None and ordinary.shard.preferred_gpu is None
 
 
 def test_queue_claim_completion_and_contract_resume(tmp_path: Path) -> None:
@@ -70,10 +99,15 @@ def test_queue_claim_completion_and_contract_resume(tmp_path: Path) -> None:
     shards = build_cost_balanced_shards(_tasks(), env_batch_size=8)
     initialize_queue(path, shards, contract_sha256="a" * 64)
 
-    first = claim_next(path, worker_id="0-r0")
-    assert first is not None and first.shard.estimated_cost == 4800
-    preferred = claim_next(path, worker_id="1-r0", preferred_task=("libero_10", 3))
-    assert preferred is not None and preferred.shard.estimated_cost == 4800
+    first = claim_next(path, worker_id="0-r0", physical_gpu=0)
+    assert first is not None and first.shard.preferred_gpu == 0
+    preferred = claim_next(
+        path,
+        worker_id="1-r0",
+        preferred_task=("libero_10", 3),
+        physical_gpu=1,
+    )
+    assert preferred is not None and preferred.shard.preferred_gpu == 1
     complete_job(
         path,
         job_id=first.shard.job_id,
@@ -187,6 +221,11 @@ def test_worker_layout_requires_symmetric_one_to_three_replicas() -> None:
         )
     with pytest.raises(Pi05EvaluationError, match="symmetric"):
         validate_worker_layout(("0-r0", "1-r0"), 1)
+    validate_worker_layout(
+        (f"{gpu}-r{replica}" for gpu in range(4) for replica in range(2)),
+        2,
+        physical_gpu_count=4,
+    )
 
 
 def test_shard_json_publish_is_durable_and_never_overwrites(tmp_path: Path) -> None:

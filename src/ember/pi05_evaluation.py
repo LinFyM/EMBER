@@ -723,6 +723,7 @@ def run_worker(*, output_dir: Path, worker_id: str) -> dict[str, Any]:
             runtime.queue_path,
             worker_id=worker_id,
             preferred_task=preferred_task,
+            physical_gpu=runtime.gpu_index,
         )) is not None:
             preferred_task = claim.task_key
             try:

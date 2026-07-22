@@ -139,14 +139,15 @@ def _validate_recipe(config: Mapping[str, Any], protocol: Mapping[str, Any]) -> 
     if config.get("rng") != required_rng:
         raise Pi05EvaluationError("PI05 target evaluator differs from the sealed RNG recipe")
     parallel = config["parallel"]
+    physical_gpu_count = int(parallel.get("physical_gpu_count", 0))
     if (
-        parallel.get("physical_gpu_count") != 8
+        not 0 < physical_gpu_count <= 8
         or parallel.get("allowed_replicas_per_gpu") != [1, 2, 3]
         or parallel.get("gpu0_extra_cuda_roles") != 0
         or int(parallel.get("envs_per_replica", 0)) <= 0
         or parallel.get("omp_threads_per_worker") != {"1": 8, "2": 4, "3": 2}
     ):
-        raise Pi05EvaluationError("PI05 evaluation topology is not eight-GPU symmetric")
+        raise Pi05EvaluationError("PI05 evaluation topology is not GPU symmetric")
     if set(config.get("roles", {})) != ROLE_NAMES:
         raise Pi05EvaluationError("PI05 evaluation role contract changed")
 
@@ -696,6 +697,7 @@ def build_run_contract(
         if expected is not None and source_hashes.get(name) != expected:
             raise Pi05EvaluationError(f"source checkpoint uses another {name} authority")
     arm = str(adapter["arm"]) if adapter is not None else authorities.config["policy"]["arm"]
+    physical_gpu_count = int(authorities.config["parallel"]["physical_gpu_count"])
     contract: dict[str, Any] = {
         "schema_version": RUN_CONTRACT_SCHEMA,
         "mode": mode,
@@ -736,9 +738,13 @@ def build_run_contract(
         "parallel": {
             **authorities.config["parallel"],
             "replicas_per_gpu": replicas_per_gpu,
-            "worker_count": 8 * replicas_per_gpu,
+            "worker_count": physical_gpu_count * replicas_per_gpu,
             "one_policy_per_worker": True,
             "cpu_only_launcher": True,
+            "sharding_algorithm": (
+                "max-horizon task states balanced across physical_gpu_count with "
+                "preferred-GPU affinity, then ordinary cost-balanced dynamic queue"
+            ),
         },
         "artifacts": authorities.config["artifacts"],
         "libero_paths": dict(libero_paths),

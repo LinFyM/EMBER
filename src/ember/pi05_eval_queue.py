@@ -16,7 +16,7 @@ from typing import Any, Iterable, Sequence
 from ember.pi05_assets import Pi05EvaluationError
 
 
-QUEUE_SCHEMA = "ember_pi05_eval_queue_v2"
+QUEUE_SCHEMA = "ember_pi05_eval_queue_v3"
 
 
 @dataclass(frozen=True)
@@ -36,6 +36,7 @@ class EvaluationShard:
     horizon: int
     init_state_ids: tuple[int, ...]
     estimated_cost: int
+    preferred_gpu: int | None = None
 
     @property
     def task_key(self) -> tuple[str, int]:
@@ -102,10 +103,11 @@ def build_cost_balanced_shards(
     *,
     env_batch_size: int,
     target_cost: int | None = None,
+    physical_gpu_count: int = 8,
 ) -> tuple[EvaluationShard, ...]:
-    """Split fixed states into near-equal horizon cost while retaining env batches."""
+    """Pre-balance max-horizon states across GPUs, then shard remaining work."""
 
-    if not tasks or env_batch_size <= 0:
+    if not tasks or env_batch_size <= 0 or physical_gpu_count <= 0:
         raise Pi05EvaluationError("evaluation sharding needs tasks and a positive env batch")
     task_keys = [(task.suite, task.task_id) for task in tasks]
     if len(set(task_keys)) != len(task_keys):
@@ -115,30 +117,49 @@ def build_cost_balanced_shards(
     if target_cost <= 0:
         raise Pi05EvaluationError("evaluation shard target cost must be positive")
 
-    by_task = [
-        _task_chunks(task, env_batch_size=env_batch_size, target_cost=target_cost)
-        for task in tasks
-    ]
-
     shards: list[EvaluationShard] = []
     ordinal = 0
-    for shard_index in range(max(len(value) for value in by_task)):
-        for task, task_shards in zip(tasks, by_task, strict=True):
+
+    def append_shard(
+        task: EvaluationTask,
+        state_ids: tuple[int, ...],
+        *,
+        preferred_gpu: int | None,
+    ) -> None:
+        nonlocal ordinal
+        shards.append(
+            EvaluationShard(
+                job_id=_job_id(task.suite, task.task_id, state_ids),
+                ordinal=ordinal,
+                suite=task.suite,
+                task_id=task.task_id,
+                horizon=task.horizon,
+                init_state_ids=state_ids,
+                estimated_cost=task.horizon * len(state_ids),
+                preferred_gpu=preferred_gpu,
+            )
+        )
+        ordinal += 1
+
+    priority_horizon = max(task.horizon for task in tasks)
+    priority_tasks = tuple(task for task in tasks if task.horizon == priority_horizon)
+    ordinary_tasks = tuple(task for task in tasks if task.horizon != priority_horizon)
+    for gpu in range(physical_gpu_count):
+        for task in priority_tasks:
+            state_ids = tuple(task.init_state_ids[gpu::physical_gpu_count])
+            if state_ids:
+                append_shard(task, state_ids, preferred_gpu=gpu)
+
+    by_task = [
+        _task_chunks(task, env_batch_size=env_batch_size, target_cost=target_cost)
+        for task in ordinary_tasks
+    ]
+    for shard_index in range(max((len(value) for value in by_task), default=0)):
+        for task, task_shards in zip(ordinary_tasks, by_task, strict=True):
             if shard_index >= len(task_shards):
                 continue
             state_ids = task_shards[shard_index]
-            shards.append(
-                EvaluationShard(
-                    job_id=_job_id(task.suite, task.task_id, state_ids),
-                    ordinal=ordinal,
-                    suite=task.suite,
-                    task_id=task.task_id,
-                    horizon=task.horizon,
-                    init_state_ids=state_ids,
-                    estimated_cost=task.horizon * len(state_ids),
-                )
-            )
-            ordinal += 1
+            append_shard(task, state_ids, preferred_gpu=None)
     _validate_shard_coverage(tasks, shards)
     return tuple(shards)
 
@@ -215,6 +236,7 @@ def initialize_queue(
             shard.suite,
             shard.task_id,
             shard.estimated_cost,
+            shard.preferred_gpu,
             _shard_payload(shard),
         )
         for shard in shards
@@ -231,7 +253,8 @@ def initialize_queue(
                 """CREATE TABLE IF NOT EXISTS jobs (
                     job_id TEXT PRIMARY KEY, ordinal INTEGER NOT NULL UNIQUE,
                     suite TEXT NOT NULL, task_id INTEGER NOT NULL,
-                    estimated_cost INTEGER NOT NULL, payload TEXT NOT NULL,
+                    estimated_cost INTEGER NOT NULL, preferred_gpu INTEGER,
+                    payload TEXT NOT NULL,
                     status TEXT NOT NULL, worker_id TEXT, claimed_unix REAL,
                     claim_token TEXT, attempt INTEGER NOT NULL DEFAULT 0,
                     finished_unix REAL, rows_path TEXT, rows_sha256 TEXT, row_count INTEGER,
@@ -245,9 +268,10 @@ def initialize_queue(
                     (("schema_version", QUEUE_SCHEMA), ("contract_sha256", contract_sha256)),
                 )
                 connection.executemany(
-                    """INSERT INTO jobs(
-                        job_id, ordinal, suite, task_id, estimated_cost, payload, status
-                    ) VALUES (?, ?, ?, ?, ?, ?, 'pending')""",
+                        """INSERT INTO jobs(
+                        job_id, ordinal, suite, task_id, estimated_cost,
+                        preferred_gpu, payload, status
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')""",
                     (
                         (
                             shard.job_id,
@@ -255,6 +279,7 @@ def initialize_queue(
                             shard.suite,
                             shard.task_id,
                             shard.estimated_cost,
+                            shard.preferred_gpu,
                             expected[shard.job_id][-1],
                         )
                         for shard in shards
@@ -272,11 +297,14 @@ def initialize_queue(
                         row["suite"],
                         int(row["task_id"]),
                         int(row["estimated_cost"]),
+                        int(row["preferred_gpu"])
+                        if row["preferred_gpu"] is not None
+                        else None,
                         row["payload"],
                     )
                     for row in connection.execute(
-                        """SELECT job_id, ordinal, suite, task_id, estimated_cost, payload
-                        FROM jobs"""
+                        """SELECT job_id, ordinal, suite, task_id, estimated_cost,
+                        preferred_gpu, payload FROM jobs"""
                     )
                 }
                 if observed != expected:
@@ -311,26 +339,50 @@ def claim_next(
     *,
     worker_id: str,
     preferred_task: tuple[str, int] | None = None,
+    physical_gpu: int | None = None,
 ) -> EvaluationClaim | None:
-    """Atomically claim the most expensive pending shard, favoring env locality."""
+    """Claim GPU-affine max-horizon work before ordinary dynamic work."""
 
     if not worker_id:
         raise Pi05EvaluationError("evaluation worker ID is empty")
+    if physical_gpu is not None and physical_gpu < 0:
+        raise Pi05EvaluationError("evaluation worker physical GPU is invalid")
     with closing(_connect(path)) as connection:
         connection.execute("BEGIN IMMEDIATE")
         try:
-            if preferred_task is None:
+            if physical_gpu is None and preferred_task is None:
                 row = connection.execute(
                     """SELECT job_id, payload FROM jobs WHERE status='pending'
                     ORDER BY estimated_cost DESC, ordinal ASC LIMIT 1"""
                 ).fetchone()
-            else:
+            elif physical_gpu is None:
                 row = connection.execute(
                     """SELECT job_id, payload FROM jobs WHERE status='pending'
                     ORDER BY estimated_cost DESC,
                     CASE WHEN suite=? AND task_id=? THEN 0 ELSE 1 END,
                     ordinal ASC LIMIT 1""",
                     preferred_task,
+                ).fetchone()
+            elif preferred_task is None:
+                row = connection.execute(
+                    """SELECT job_id, payload FROM jobs WHERE status='pending'
+                    ORDER BY CASE
+                        WHEN preferred_gpu=? THEN 0
+                        WHEN preferred_gpu IS NULL THEN 1
+                        ELSE 2 END,
+                    estimated_cost DESC, ordinal ASC LIMIT 1""",
+                    (physical_gpu,),
+                ).fetchone()
+            else:
+                row = connection.execute(
+                    """SELECT job_id, payload FROM jobs WHERE status='pending'
+                    ORDER BY CASE
+                        WHEN preferred_gpu=? THEN 0
+                        WHEN preferred_gpu IS NULL THEN 1
+                        ELSE 2 END,
+                    CASE WHEN suite=? AND task_id=? THEN 0 ELSE 1 END,
+                    estimated_cost DESC, ordinal ASC LIMIT 1""",
+                    (physical_gpu, *preferred_task),
                 ).fetchone()
             if row is None:
                 connection.commit()
@@ -476,16 +528,18 @@ def failed_jobs(path: Path) -> tuple[dict[str, Any], ...]:
         )
 
 
-def validate_worker_layout(worker_ids: Iterable[str], replicas_per_gpu: int) -> None:
+def validate_worker_layout(
+    worker_ids: Iterable[str], replicas_per_gpu: int, physical_gpu_count: int = 8
+) -> None:
     """Require the same non-zero replica count on every physical GPU."""
 
-    if replicas_per_gpu not in (1, 2, 3):
+    if replicas_per_gpu not in (1, 2, 3) or physical_gpu_count <= 0:
         raise Pi05EvaluationError("PI05 evaluator profiles only 1, 2, or 3 replicas per GPU")
     parsed = [tuple(value.rsplit("-r", 1)) for value in worker_ids]
     expected = {
         (str(gpu), str(replica))
-        for gpu in range(8)
+        for gpu in range(physical_gpu_count)
         for replica in range(replicas_per_gpu)
     }
     if set(parsed) != expected or len(parsed) != len(expected):
-        raise Pi05EvaluationError("evaluation workers are not symmetric across eight GPUs")
+        raise Pi05EvaluationError("evaluation workers are not symmetric across physical GPUs")

@@ -143,6 +143,7 @@ def _shards_from_contract(contract: dict[str, Any]) -> tuple[Any, ...]:
         tasks,
         env_batch_size=int(contract["parallel"]["envs_per_replica"]),
         target_cost=int(contract["parallel"]["shard_target_cost"]),
+        physical_gpu_count=int(contract["parallel"]["physical_gpu_count"]),
     )
 
 
@@ -251,7 +252,7 @@ def _active_worker_pids(output_dir: Path) -> list[int]:
     return sorted(active)
 
 
-def _gpu_preflight() -> dict[str, Any]:
+def _gpu_preflight(expected_gpu_count: int) -> dict[str, Any]:
     """Check storage first, then sample live GPU ownership immediately before spawn."""
 
     import torch
@@ -280,8 +281,11 @@ def _gpu_preflight() -> dict[str, Any]:
         text=True,
         capture_output=True,
     ).stdout.splitlines()
-    if len(gpu_query) != 8:
-        raise Pi05EvaluationError(f"PI05 evaluation requires eight GPUs, found {len(gpu_query)}")
+    if len(gpu_query) != expected_gpu_count:
+        raise Pi05EvaluationError(
+            "PI05 evaluation GPU count differs from its run contract: "
+            f"expected={expected_gpu_count} found={len(gpu_query)}"
+        )
     applications = subprocess.run(
         [
             "nvidia-smi",
@@ -401,11 +405,13 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
             raise Pi05EvaluationError("evaluation adapter assets changed after prepare")
 
 
-def _worker_ids(replicas_per_gpu: int) -> tuple[str, ...]:
+def _worker_ids(replicas_per_gpu: int, physical_gpu_count: int) -> tuple[str, ...]:
     values = tuple(
-        f"{gpu}-r{replica}" for gpu in range(8) for replica in range(replicas_per_gpu)
+        f"{gpu}-r{replica}"
+        for gpu in range(physical_gpu_count)
+        for replica in range(replicas_per_gpu)
     )
-    validate_worker_layout(values, replicas_per_gpu)
+    validate_worker_layout(values, replicas_per_gpu, physical_gpu_count)
     return values
 
 
@@ -704,10 +710,13 @@ def _start_workers_locked(output_dir: Path, *, resume: bool) -> dict[str, Any]:
     contract, _, ready_to_aggregate = _recover_locked_queue(output_dir, resume=resume)
     if ready_to_aggregate:
         return _finalize_aggregate(output_dir)
-    preflight = _gpu_preflight()
+    physical_gpu_count = int(contract["parallel"]["physical_gpu_count"])
+    preflight = _gpu_preflight(physical_gpu_count)
     if preflight["personal_bytes"] >= preflight["personal_cap_bytes"]:
         raise Pi05EvaluationError("personal storage already exceeds the 500GB hard cap")
-    worker_ids = _worker_ids(int(contract["parallel"]["replicas_per_gpu"]))
+    worker_ids = _worker_ids(
+        int(contract["parallel"]["replicas_per_gpu"]), physical_gpu_count
+    )
     invocation_id = uuid.uuid4().hex
     started_unix = time.time()
     _append_jsonl(

@@ -243,6 +243,7 @@ def rollout_shard(
     policy: Any,
     preprocess: Any,
     postprocess: Any,
+    task_adapter: Any | None = None,
 ) -> list[dict[str, Any]]:
     import torch
 
@@ -261,15 +262,24 @@ def rollout_shard(
         obs = env.set_init_state(init_states[init_state_id])
         for _ in range(int(contract["environment"]["dummy_settling_steps"])):
             obs, _, _, _ = env.step(dummy)
-        return {
+        started = time.monotonic()
+        prepared = None
+        if task_adapter is not None:
+            prepared = task_adapter.prepare_episode(
+                suite=str(task["suite"]), task_id=int(task["task_id"]), init_state_id=init_state_id
+            )
+        slot = {
             "init_state_id": init_state_id,
             "obs": obs,
             "steps": 0,
             "replan_index": 0,
             "policy_noise_seeds": [],
             "action_plan": deque(),
-            "started": time.monotonic(),
+            "started": started,
         }
+        if prepared is not None:
+            slot["writer_lora"] = prepared
+        return slot
 
     active_count = min(len(envs), len(state_ids))
     active_envs = envs[:active_count]
@@ -282,35 +292,33 @@ def rollout_shard(
     while any(slot is not None for slot in slots):
         planning = [slot for slot in slots if slot is not None and not slot["action_plan"]]
         if planning:
-            processed = [
-                preprocess(_policy_input(slot["obs"], str(task["language"])))
-                for slot in planning
-            ]
-            batch = {
-                key: torch.cat([item[key] for item in processed], dim=0)
-                for key in processed[0]
-                if isinstance(processed[0][key], torch.Tensor)
-            }
-            noise, seeds = make_policy_noise(
-                planning,
-                root_seed=root_seed,
-                suite=str(task["suite"]),
-                task_id=int(task["task_id"]),
-                chunk_size=int(policy.config.chunk_size),
-                max_action_dim=int(policy.config.max_action_dim),
-                device=batch[next(iter(batch))].device,
-            )
-            with torch.inference_mode():
-                chunks = policy.predict_action_chunk(
-                    batch,
-                    noise=noise,
-                    num_steps=int(contract["policy"]["num_inference_steps"]),
+            planning_groups = [planning] if task_adapter is None else [[slot] for slot in planning]
+            for group in planning_groups:
+                if task_adapter is not None:
+                    task_adapter.install(group[0]["writer_lora"])
+                processed = [preprocess(_policy_input(slot["obs"], str(task["language"]))) for slot in group]
+                batch = {
+                    key: torch.cat([item[key] for item in processed], dim=0)
+                    for key in processed[0]
+                    if isinstance(processed[0][key], torch.Tensor)
+                }
+                noise, seeds = make_policy_noise(
+                    group,
+                    root_seed=root_seed,
+                    suite=str(task["suite"]), task_id=int(task["task_id"]),
+                    chunk_size=int(policy.config.chunk_size),
+                    max_action_dim=int(policy.config.max_action_dim),
+                    device=batch[next(iter(batch))].device,
                 )
-                actions = postprocess(chunks).detach().cpu().numpy()
-            for slot, plan, seed in zip(planning, actions, seeds, strict=True):
-                slot["action_plan"].extend(plan[:replan_steps])
-                slot["policy_noise_seeds"].append(seed)
-                slot["replan_index"] += 1
+                with torch.inference_mode():
+                    chunks = policy.predict_action_chunk(
+                        batch, noise=noise, num_steps=int(contract["policy"]["num_inference_steps"])
+                    )
+                    actions = postprocess(chunks).detach().cpu().numpy()
+                for slot, plan, seed in zip(group, actions, seeds, strict=True):
+                    slot["action_plan"].extend(plan[:replan_steps])
+                    slot["policy_noise_seeds"].append(seed)
+                    slot["replan_index"] += 1
 
         for slot_index, (env, slot) in enumerate(zip(active_envs, slots, strict=True)):
             if slot is None:
@@ -321,22 +329,23 @@ def rollout_shard(
             if not bool(done) and slot["steps"] < max_steps:
                 continue
             finished = time.monotonic()
-            rows.append(
-                {
-                    "suite": task["suite"],
-                    "task_id": int(task["task_id"]),
-                    "split_role": task["split_role"],
-                    "language": task["language"],
-                    "init_state_id": int(slot["init_state_id"]),
-                    "env_seed": root_seed,
-                    "policy_seed_root": root_seed,
-                    "policy_noise_seeds": list(slot["policy_noise_seeds"]),
-                    "success": bool(done),
-                    "steps": int(slot["steps"]),
-                    "wall_seconds": finished - float(slot["started"]),
-                    "finished_at": finished - worker_started,
-                }
-            )
+            row = {
+                "suite": task["suite"],
+                "task_id": int(task["task_id"]),
+                "split_role": task["split_role"],
+                "language": task["language"],
+                "init_state_id": int(slot["init_state_id"]),
+                "env_seed": root_seed,
+                "policy_seed_root": root_seed,
+                "policy_noise_seeds": list(slot["policy_noise_seeds"]),
+                "success": bool(done),
+                "steps": int(slot["steps"]),
+                "wall_seconds": finished - float(slot["started"]),
+                "finished_at": finished - worker_started,
+            }
+            if task_adapter is not None:
+                row["writer"] = dict(slot["writer_lora"].evidence)
+            rows.append(row)
             if next_state < len(state_ids):
                 slots[slot_index] = start_episode(env, int(state_ids[next_state]))
                 next_state += 1
@@ -411,6 +420,18 @@ def _validate_episode_row(
         policy_noise_seed(root_seed, shard.suite, shard.task_id, state_id, index)
         for index in range(math.ceil(steps / replan_steps))
     ]
+    adapter = contract.get("adapter")
+    writer_valid = row.get("writer") is None
+    if adapter is not None:
+        from ember.writer.inference import validate_writer_episode_evidence
+
+        writer_valid = validate_writer_episode_evidence(
+            adapter,
+            row.get("writer"),
+            suite=shard.suite,
+            task_id=shard.task_id,
+            init_state_id=state_id,
+        )
     valid = (
         row.get("suite") == shard.suite
         and int(row.get("task_id", -1)) == shard.task_id
@@ -421,6 +442,7 @@ def _validate_episode_row(
         and int(row.get("env_seed", -1)) == root_seed
         and int(row.get("policy_seed_root", -1)) == root_seed
         and seeds == expected_seeds
+        and writer_valid
     )
     if not valid:
         raise Pi05EvaluationError(f"raw evaluation row contract changed: {shard.job_id}")
@@ -466,6 +488,7 @@ class WorkerRuntime:
     contract: dict[str, Any]
     tasks: dict[tuple[str, int], dict[str, Any]]
     policy: Any
+    task_adapter: Any | None
     preprocess: Any
     postprocess: Any
     pool: PersistentTaskEnvironmentPool
@@ -547,6 +570,21 @@ def _initialize_worker(output_dir: Path, worker_id: str) -> WorkerRuntime:
         tokenizer_path,
         contract["policy"],
     )
+    task_adapter = None
+    if contract.get("adapter") is not None:
+        from ember.writer.inference import FrozenWriterTaskAdapter
+
+        task_adapter = FrozenWriterTaskAdapter(
+            policy=policy,
+            source=contract["model"],
+            evaluation_adapter=contract["adapter"],
+            task_keys=tuple(
+                (str(row["suite"]), int(row["task_id"]))
+                for row in contract["tasks"]
+            ),
+            device=torch.device("cuda:0"),
+            require_formal=contract["mode"] != "smoke",
+        )
     return WorkerRuntime(
         output_dir=output_dir,
         queue_path=queue_path,
@@ -559,6 +597,7 @@ def _initialize_worker(output_dir: Path, worker_id: str) -> WorkerRuntime:
         contract=contract,
         tasks=task_lookup(contract),
         policy=policy,
+        task_adapter=task_adapter,
         preprocess=preprocess,
         postprocess=postprocess,
         pool=PersistentTaskEnvironmentPool(contract),
@@ -636,6 +675,7 @@ def _execute_claim(runtime: WorkerRuntime, claim: EvaluationClaim) -> bool:
         policy=runtime.policy,
         preprocess=runtime.preprocess,
         postprocess=runtime.postprocess,
+        task_adapter=runtime.task_adapter,
     )
     return _publish_claim_result(runtime, claim, rows, started_unix)
 

@@ -39,6 +39,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] 核验71 tasks×50 successful episodes、529,173 frames、52,710,755,898 bytes；封存source-only q01/q99 normalization，validation/test numeric reads为0。
 - [x] 下载并按opaque SHA/HDF5 schema-only核验目标40 tasks×50 episodes；封存24/8/8 target-data manifest，未解码target action/state/reward/terminal/video值且未改变task IDs。
 - [x] 已将当前“一task/一GPU”评测改成按 `episodes × horizon` cost-balanced state shards、动态队列、持久model/env，并删除旧静态活动入口。
+- [x] 在同一canonical evaluator内加入PI05 AS-Writer逐rollout materialized LoRA、one-video哈希schedule、role-preserving cross-suite wrong map及逐row可重算证据；没有新增第二套runner。
 - [ ] final source checkpoint后完成每卡统一1/2/3 replicas与未来Writer异LoRA functional batching的真实profile。
 - [ ] 确认所有卡CUDA进程数相同、GPU0无额外角色；只按真实rollout/s选实现。
 
@@ -47,7 +48,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] 建立唯一canonical π0.5 full-SFT runner，严格模型加载、task-balanced no-replacement sampler、EMA、atomic checkpoint、metrics reconciliation与完整per-rank RNG/cursor恢复。
 - [x] 完成相机mask修正后的8卡真实profile；选定8×microbatch32、global batch256、EMA与GPU-local NUMA binding，稳态47.75 examples/s，单卡reserved 71.18GB。
 - [x] 从同一个不可变step-1 checkpoint做两次8-rank恢复；loss/grad/RNG/cursor完全一致，policy/EMA最大独立NCCL末位差分别为1.49e-8/3.73e-9。
-- [ ] 正式attempt3正在隔离worktree从generic base fresh训练；当前8卡拓扑、loss/gradient与约47 examples/s吞吐健康，首个step5000 checkpoint前不作行为结论。
+- [ ] 正式attempt3正在隔离worktree从generic base fresh训练；最近只读观测step1100，8卡拓扑、loss/gradient与约47 examples/s吞吐健康，首个step5000 checkpoint前不作行为结论。
 - [ ] 从generic `pi05_base`按成熟recipe在过滤后的LIBERO-90 source corpus上联合action-SFT；若用LoRA则merge成base。
 - [ ] 以已锁定8卡配置完成30,000 optimizer steps；一卡一rank，真实显存平均预留约10GB，checkpoint每5,000 steps且只保留最新完整状态。
 - [ ] 根据loss与快速行为screen避免过训，不追求高ceiling。
@@ -77,7 +78,8 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [ ] 从同一source base在24 train tasks上联合训练一套shared Source-SFT LoRA；按validation独立选择最佳，不强制匹配AS-Writer steps/data。
 - [ ] 在outcome前按specification预声明覆盖四suites的seen panel。
 - [ ] 比较source base、Source-SFT、AS-Writer、可用RL-Writer的seen performance。
-- [ ] 为AS/RL Writer生成固定cross-suite wrong-video map；保持正确language、task、init state和policy RNG，报告correct/wrong/base三者。
+- [x] 封存同split role、按suite循环和排序ordinal构造的cross-suite wrong-video机械map；correct/wrong两臂保持同一language、task、init state、policy RNG、video seed与demo ordinal。
+- [ ] 用正式checkpoint运行并报告AS/可用RL Writer的correct/wrong/base逐任务结果。
 - [ ] 冻结AS-Writer、RL-Writer、Source-SFT的architecture、LoRA空间、optimizer与最终训练steps。
 
 ## Phase F：32-source final retraining与zero-interaction test

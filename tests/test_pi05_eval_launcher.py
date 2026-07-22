@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import fcntl
 import importlib.util
+import argparse
 from pathlib import Path
 import subprocess
 import sys
@@ -52,6 +53,25 @@ def test_partial_launch_cleanup_stops_only_owned_processes() -> None:
         if process.poll() is None:
             process.kill()
             process.wait()
+
+
+def test_writer_prepare_arguments_are_all_or_none() -> None:
+    module = _launcher_module()
+    empty = argparse.Namespace(
+        as_writer_config=None,
+        as_writer_checkpoint=None,
+        writer_feature_cache=None,
+        writer_video_condition=None,
+    )
+    assert module._writer_requested(empty) is False
+    partial = argparse.Namespace(
+        as_writer_config=Path("config.json"),
+        as_writer_checkpoint=None,
+        writer_feature_cache=None,
+        writer_video_condition="correct",
+    )
+    with pytest.raises(Pi05EvaluationError, match="requires config"):
+        module._writer_requested(partial)
 
 
 def test_completed_queue_without_launcher_evidence_fails_closed(

@@ -604,6 +604,7 @@ def build_run_contract(
     mode: str,
     replicas_per_gpu: int,
     command: Sequence[str],
+    adapter: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     if mode not in {"smoke", "screen", "formal"}:
         raise Pi05EvaluationError(f"unsupported PI05 evaluation mode: {mode}")
@@ -620,10 +621,12 @@ def build_run_contract(
         expected = authorities.hashes.get(name)
         if expected is not None and source_hashes.get(name) != expected:
             raise Pi05EvaluationError(f"source checkpoint uses another {name} authority")
+    arm = str(adapter["arm"]) if adapter is not None else authorities.config["policy"]["arm"]
     contract: dict[str, Any] = {
         "schema_version": RUN_CONTRACT_SCHEMA,
         "mode": mode,
-        "arm": authorities.config["policy"]["arm"],
+        "arm": arm,
+        "adapter": dict(adapter) if adapter is not None else None,
         "role": role,
         "output_dir": str(output_dir.resolve()),
         "prepared_unix": time.time(),
@@ -659,6 +662,37 @@ def build_run_contract(
         "artifacts": authorities.config["artifacts"],
         "libero_paths": dict(libero_paths),
     }
+    contract["paired_control_sha256"] = None
+    if adapter is not None:
+        contract["paired_control_sha256"] = canonical_hash(
+            {
+                "schema_version": "ember_pi05_writer_paired_control_v1",
+                "mode": mode,
+                "role": role,
+                "git": contract["git"],
+                "model": contract["model"],
+                "tokenizer": contract["tokenizer"],
+                "normalization": contract["normalization"],
+                "tasks": contract["tasks"],
+                "environment": contract["environment"],
+                "policy": contract["policy"],
+                "rng": contract["rng"],
+                "parallel": contract["parallel"],
+                "writer": {
+                    key: adapter[key]
+                    for key in (
+                        "execution_backend",
+                        "config",
+                        "training_run",
+                        "checkpoint",
+                        "feature_cache",
+                        "lora_contract_sha256",
+                        "video_schedule",
+                        "pairing_sha256",
+                    )
+                },
+            }
+        )
     contract["contract_sha256"] = canonical_hash(contract)
     return contract
 

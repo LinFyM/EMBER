@@ -161,6 +161,55 @@ def test_run_contract_hash_detects_tampering(tmp_path: Path) -> None:
     with pytest.raises(Pi05EvaluationError, match="hash changed"):
         load_run_contract(path)
 
+    shared_writer = {
+        "execution_backend": "materialized_per_rollout_sequential_replan",
+        "config": {"sha256": "b" * 64},
+        "training_run": {"run_contract_sha256": "c" * 64},
+        "checkpoint": {"manifest_file_sha256": "d" * 64},
+        "feature_cache": {"extraction_sha256": "e" * 64},
+        "lora_contract_sha256": "f" * 64,
+        "video_schedule": {"seed": 7, "demo_count": 50},
+        "pairing_sha256": "1" * 64,
+    }
+    correct = build_run_contract(
+        authorities=authorities,
+        tasks=tasks,
+        libero_paths=paths,
+        model=model,
+        tokenizer={"sha256": "a" * 64},
+        output_dir=tmp_path / "correct",
+        role="test",
+        mode="smoke",
+        replicas_per_gpu=1,
+        command=("evaluate_pi05.py", "prepare"),
+        adapter={
+            **shared_writer,
+            "arm": "as_writer_correct_video",
+            "video_condition": "correct",
+            "task_video_mapping_sha256": "2" * 64,
+        },
+    )
+    wrong = build_run_contract(
+        authorities=authorities,
+        tasks=tasks,
+        libero_paths=paths,
+        model=model,
+        tokenizer={"sha256": "a" * 64},
+        output_dir=tmp_path / "wrong",
+        role="test",
+        mode="smoke",
+        replicas_per_gpu=1,
+        command=("evaluate_pi05.py", "prepare"),
+        adapter={
+            **shared_writer,
+            "arm": "as_writer_cross_suite_wrong_video",
+            "video_condition": "cross_suite_wrong",
+            "task_video_mapping_sha256": "3" * 64,
+        },
+    )
+    assert correct["paired_control_sha256"] == wrong["paired_control_sha256"]
+    assert correct["contract_sha256"] != wrong["contract_sha256"]
+
 
 def test_source_checkpoint_inspection_requires_generic_base_and_ema_contract(
     tmp_path: Path,

@@ -271,6 +271,14 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - feature cache formal配置SHA256为`3e3a8ea7...429e`、AS-Writer配置SHA256为`971cac43...f807`；两者分别保持`pending_source_base`/`pending_profile`。这只是机械authority，不是训练或性能结果。
 - 当前架构owner为：`pi05_target_data.py`负责held-data seal；`feature_cache.py`负责PI05 cache schema/tensor store；`cache_pi05_writer_features.py`负责唯一8-rank extraction；`as_contract.py`负责24-task action wall与source/cache/hash联锁；`training.py`只负责AS模型与step loop；`checkpoint.py`负责atomic exact-resume。旧`cache_writer_features.py`与`train_writer_cold_start.py`已删除，剩余历史Smol推理/训练入口因新schema fail-close，待对应PI05 owner具备功能对等后删除。
 
+## canonical evaluator中的one-video Writer证据（2026-07-21）
+
+- `writer/inference.py`已原位替换旧Smol/cold-start实现，只接受`ember_pi05_as_writer_launch_v1`、PI05 38-target LoRA、同一source final EMA及与训练逐字段相同的formal feature cache；checkpoint先核验canonical manifest和全部文件SHA，legacy schema不再有活动分支。
+- 每个rollout的视频selection seed为`sha256([namespace, seed, eval suite, eval task, init state])`前63 bits，demo为`seed mod 50`。该纯函数不依赖worker、shard、重试、queue顺序或outcome；correct/wrong不把arm或video task写入seed，因此使用完全相同的demo ordinal。
+- wrong map在每个split role内按Spatial→Object→Goal→Long→Spatial循环，并按该role中排序后的task ordinal一一映射；它是跨suite双射且role-preserving。run contract保存显式map及SHA，避免final_source的train/validation混排导致越墙。
+- materialized backend在episode开始只运行一次Writer并固定完整LoRA；由于并行env可能使用不同LoRA，每个replan前为对应slot重装其state并逐slot推理。policy noise仍由原有`(task,init,replan)`schedule生成，correct/wrong不变。
+- raw row保存Writer checkpoint step/manifest、Writer state、LoRA contract、逐rollout LoRA、video selection seed/suite/task/role/demo、map SHA、teacher-video pairing SHA和generation timing；run contract另保存排除condition/map但覆盖source、tasks/states、env/policy RNG、topology、Writer/cache的`paired_control_sha256`。聚合重新计算schedule/map并报告每task唯一视频数与频数。当前只是机械合同，尚无Writer行为结果。
+
 ## 数据与 benchmark 事实
 
 - LIBERO-90 正好提供 90 个大规模 task 数据文件，每 task 50 条成功 teacher demonstrations。

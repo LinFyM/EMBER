@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import asdict
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 import torch
@@ -27,6 +28,13 @@ from ember.pi05_evaluation import (
 from ember.pi05_eval_results import aggregate_run
 from ember.pi05_source_checkpoint import canonical_hash
 from ember.libero_evaluation import sha256_file
+from ember.writer.inference import (
+    WRITER_ADAPTER_SCHEMA,
+    _task_video_mapping,
+    expected_writer_episode_evidence,
+    writer_video_demo_index,
+    writer_video_selection_seed,
+)
 
 
 def _contract(output_dir: Path) -> dict:
@@ -88,6 +96,86 @@ def _payload(contract: dict, shard: EvaluationShard) -> dict:
         "finished_unix": 12.0,
         "rows": _rows(),
     }
+
+
+def _writer_adapter(condition: str = "correct") -> dict:
+    keys = tuple((suite, 0) for suite in ("libero_spatial", "libero_object", "libero_goal", "libero_10"))
+    roles = {key: "train" for key in keys}
+    mapping = list(_task_video_mapping(keys, roles, condition))
+    return {
+        "schema_version": WRITER_ADAPTER_SCHEMA,
+        "arm": f"as_writer_{condition}_video",
+        "video_condition": condition,
+        "checkpoint": {
+            "cursor": 12,
+            "manifest_file_sha256": "3" * 64,
+            "writer_state_sha256": "4" * 64,
+        },
+        "lora_contract_sha256": "5" * 64,
+        "video_schedule": {"seed": 7, "demo_count": 50},
+        "task_video_mapping_sha256": canonical_hash(mapping),
+        "task_video_mapping": mapping,
+        "pairing_sha256": "6" * 64,
+    }
+
+
+def test_writer_video_schedule_and_wrong_map_are_order_independent() -> None:
+    assert writer_video_selection_seed(7, "libero_spatial", 6, 0) == 6704549548651814374
+    assert writer_video_demo_index(7, "libero_spatial", 6, 0) == 24
+    keys = (
+        ("libero_spatial", 1),
+        ("libero_spatial", 3),
+        ("libero_object", 1),
+        ("libero_object", 3),
+        ("libero_goal", 3),
+        ("libero_goal", 6),
+        ("libero_10", 1),
+        ("libero_10", 2),
+    )
+    roles = {key: "validation" for key in keys}
+    forward = _task_video_mapping(keys, roles, "cross_suite_wrong")
+    reverse = _task_video_mapping(tuple(reversed(keys)), roles, "cross_suite_wrong")
+    assert forward == reverse
+    assert len({row["video_global_task_id"] for row in forward}) == len(keys)
+    assert all(row["suite"] != row["video_suite"] for row in forward)
+    assert all(row["language_split_role"] == row["video_split_role"] for row in forward)
+    by_key = {(row["suite"], row["task_id"]): row for row in forward}
+    assert (by_key[("libero_spatial", 1)]["video_suite"], by_key[("libero_spatial", 1)]["video_task_id"]) == ("libero_object", 1)
+    assert (by_key[("libero_goal", 6)]["video_suite"], by_key[("libero_goal", 6)]["video_task_id"]) == ("libero_10", 2)
+
+
+def test_writer_row_contract_recomputes_video_schedule_and_mapping(tmp_path: Path) -> None:
+    contract = _contract(tmp_path)
+    contract["adapter"] = _writer_adapter()
+    contract["arm"] = contract["adapter"]["arm"]
+    contract["contract_sha256"] = canonical_hash(
+        {key: value for key, value in contract.items() if key != "contract_sha256"}
+    )
+    shard = EvaluationShard(
+        job_id="job",
+        ordinal=0,
+        suite="libero_spatial",
+        task_id=0,
+        horizon=220,
+        init_state_ids=(0, 1),
+        estimated_cost=440,
+    )
+    payload = _payload(contract, shard)
+    for row in payload["rows"]:
+        row["writer"] = {
+            **expected_writer_episode_evidence(
+                contract["adapter"],
+                suite=row["suite"],
+                task_id=row["task_id"],
+                init_state_id=row["init_state_id"],
+                lora_sha256="7" * 64,
+            ),
+            "writer_generation_seconds": 0.25,
+        }
+    assert len(validate_shard_result(payload, contract=contract, shard=shard)) == 2
+    payload["rows"][0]["writer"]["teacher_demo_index"] += 1
+    with pytest.raises(Pi05EvaluationError, match="row contract changed"):
+        validate_shard_result(payload, contract=contract, shard=shard)
 
 
 def test_worker_asset_validation_rehashes_model_and_tokenizer(tmp_path: Path) -> None:
@@ -158,58 +246,64 @@ def test_policy_noise_is_invariant_to_batch_order() -> None:
         assert torch.equal(tensor, by_seed[seed])
 
 
+def _observation(value: int) -> dict:
+    image = torch.full((4, 4, 3), value, dtype=torch.uint8).numpy()
+    return {
+        "agentview_image": image,
+        "robot0_eye_in_hand_image": image,
+        "robot0_eef_pos": [0.0, 0.0, 0.0],
+        "robot0_eef_quat": [0.0, 0.0, 0.0, 1.0],
+        "robot0_gripper_qpos": [0.0, 0.0],
+    }
+
+
+class _FakeEnv:
+    def __init__(self, success_after: int = 2) -> None:
+        self.action_steps = 0
+        self.success_after = success_after
+
+    def seed(self, seed: int) -> None:
+        assert seed == 7
+
+    def reset(self) -> dict:
+        return {}
+
+    def set_init_state(self, state: int) -> dict:
+        self.action_steps = 0
+        return _observation(state)
+
+    def step(self, action):
+        if float(action[-1]) != -1.0:
+            self.action_steps += 1
+        return _observation(self.action_steps), 0.0, self.action_steps >= self.success_after, {}
+
+
+class _FakePolicy:
+    class Config:
+        chunk_size = 50
+        max_action_dim = 32
+
+    config = Config()
+
+    def reset(self) -> None:
+        pass
+
+    def predict_action_chunk(self, batch, *, noise, num_steps):
+        assert noise.shape[1:] == (50, 32)
+        assert num_steps == 10
+        return torch.zeros((noise.shape[0], 50, 7), dtype=torch.float32)
+
+
+def _preprocess(value):
+    assert "observation.images.right_wrist_0_rgb" not in value
+    return {
+        key: tensor.unsqueeze(0)
+        for key, tensor in value.items()
+        if isinstance(tensor, torch.Tensor)
+    }
+
+
 def test_rollout_executes_arbitrary_state_shard_with_per_row_noise() -> None:
-    class FakeEnv:
-        def __init__(self) -> None:
-            self.action_steps = 0
-
-        def seed(self, seed: int) -> None:
-            assert seed == 7
-
-        def reset(self) -> dict:
-            return {}
-
-        def set_init_state(self, state: int) -> dict:
-            self.action_steps = 0
-            return _observation(state)
-
-        def step(self, action):
-            if float(action[-1]) != -1.0:
-                self.action_steps += 1
-            return _observation(self.action_steps), 0.0, self.action_steps >= 2, {}
-
-    class FakePolicy:
-        class Config:
-            chunk_size = 50
-            max_action_dim = 32
-
-        config = Config()
-
-        def reset(self) -> None:
-            pass
-
-        def predict_action_chunk(self, batch, *, noise, num_steps):
-            assert noise.shape[1:] == (50, 32)
-            assert num_steps == 10
-            return torch.zeros((noise.shape[0], 50, 7), dtype=torch.float32)
-
-    def _observation(value: int) -> dict:
-        image = torch.full((4, 4, 3), value, dtype=torch.uint8).numpy()
-        return {
-            "agentview_image": image,
-            "robot0_eye_in_hand_image": image,
-            "robot0_eef_pos": [0.0, 0.0, 0.0],
-            "robot0_eef_quat": [0.0, 0.0, 0.0, 1.0],
-            "robot0_gripper_qpos": [0.0, 0.0],
-        }
-
-    def preprocess(value):
-        assert "observation.images.right_wrist_0_rgb" not in value
-        return {
-            key: tensor.unsqueeze(0)
-            for key, tensor in value.items()
-            if isinstance(tensor, torch.Tensor)
-        }
 
     contract = {
         "environment": {
@@ -227,13 +321,13 @@ def test_rollout_executes_arbitrary_state_shard_with_per_row_noise() -> None:
         "horizon": 300,
     }
     rows = rollout_shard(
-        envs=(FakeEnv(), FakeEnv()),
+        envs=(_FakeEnv(), _FakeEnv()),
         init_states=tuple(range(10)),
         task=task,
         state_ids=(7, 2, 9),
         contract=contract,
-        policy=FakePolicy(),
-        preprocess=preprocess,
+        policy=_FakePolicy(),
+        preprocess=_preprocess,
         postprocess=lambda value: value,
     )
     assert [row["init_state_id"] for row in rows] == [2, 7, 9]
@@ -242,6 +336,57 @@ def test_rollout_executes_arbitrary_state_shard_with_per_row_noise() -> None:
         assert row["policy_noise_seeds"] == [
             policy_noise_seed(7, "libero_goal", 4, row["init_state_id"], 0)
         ]
+
+
+def test_writer_adapter_is_prepared_once_and_reinstalled_for_each_replan() -> None:
+    class FakeAdapter:
+        def __init__(self) -> None:
+            self.prepared = []
+            self.installed = []
+
+        def prepare_episode(self, **identity):
+            value = SimpleNamespace(evidence=dict(identity))
+            self.prepared.append(value)
+            return value
+
+        def install(self, prepared) -> None:
+            self.installed.append(prepared)
+
+    adapter = FakeAdapter()
+    contract = {
+        "environment": {
+            "dummy_action": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0],
+            "dummy_settling_steps": 10,
+        },
+        "policy": {"replan_steps": 5, "num_inference_steps": 10},
+        "rng": {"inference_seed": 7},
+    }
+    task = {
+        "suite": "libero_goal",
+        "task_id": 4,
+        "split_role": "test",
+        "language": "put the bowl on top of the cabinet",
+        "horizon": 300,
+    }
+    adapted = rollout_shard(
+        envs=(_FakeEnv(success_after=7),),
+        init_states=tuple(range(10)),
+        task=task,
+        state_ids=(3,),
+        contract=contract,
+        policy=_FakePolicy(),
+        preprocess=_preprocess,
+        postprocess=lambda value: value,
+        task_adapter=adapter,
+    )
+    assert adapted[0]["steps"] == 7
+    assert len(adapter.prepared) == 1
+    assert adapter.installed == [adapter.prepared[0], adapter.prepared[0]]
+    assert adapted[0]["writer"] == {
+        "suite": "libero_goal",
+        "task_id": 4,
+        "init_state_id": 3,
+    }
 
 
 def test_shard_validation_rejects_wrong_policy_schedule(tmp_path: Path) -> None:

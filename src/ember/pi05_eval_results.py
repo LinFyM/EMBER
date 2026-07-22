@@ -173,8 +173,7 @@ def _per_task_rows(
     for key in sorted(tasks):
         selected = [row for row in rows if (row["suite"], int(row["task_id"])) == key]
         successes = sum(bool(row["success"]) for row in selected)
-        values.append(
-            {
+        value = {
                 "suite": key[0],
                 "task_id": key[1],
                 "split_role": tasks[key]["split_role"],
@@ -183,7 +182,21 @@ def _per_task_rows(
                 "episodes": len(selected),
                 "success_rate": successes / len(selected),
             }
-        )
+        writer_rows = [row["writer"] for row in selected if row.get("writer") is not None]
+        if writer_rows:
+            demo_counts: dict[str, int] = {}
+            for writer in writer_rows:
+                demo = str(int(writer["teacher_demo_index"]))
+                demo_counts[demo] = demo_counts.get(demo, 0) + 1
+            value["writer"] = {
+                "condition": writer_rows[0]["condition"],
+                "unique_teacher_videos": len(demo_counts),
+                "teacher_demo_counts": dict(sorted(demo_counts.items(), key=lambda item: int(item[0]))),
+                "generation_wall_seconds": sum(
+                    float(writer["writer_generation_seconds"]) for writer in writer_rows
+                ),
+            }
+        values.append(value)
     return values
 
 
@@ -236,9 +249,11 @@ def aggregate_run(output_dir: Path) -> dict[str, Any]:
         "schema_version": AGGREGATE_SCHEMA,
         "contract_sha256": contract["contract_sha256"],
         "arm": contract["arm"],
+        "paired_control_sha256": contract.get("paired_control_sha256"),
         "role": contract["role"],
         "mode": contract["mode"],
         "model": contract["model"],
+        "adapter": contract.get("adapter"),
         "normalization": contract["normalization"],
         "tokenizer": contract["tokenizer"],
         "overall": {

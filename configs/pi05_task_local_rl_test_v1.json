@@ -16,7 +16,7 @@
     },
     "rl_writer_config": {
       "path": "configs/pi05_rl_writer_development_v1.json",
-      "sha256": "3f2cdb767dcf182d041dc8548335118d677edb55889754d37aa3a87e4766f80a"
+      "sha256": "25ff92e7f5d07545da349aa3ab5316bf87e424bc76aabea1af43d49468a49a0d"
     },
     "feature_cache_config": {
       "path": "configs/pi05_writer_feature_cache_v2.json",

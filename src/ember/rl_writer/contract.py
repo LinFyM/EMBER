@@ -6,6 +6,7 @@ import argparse
 import importlib.metadata
 import socket
 import sys
+import time
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -16,6 +17,7 @@ import torch.distributed as dist
 from ember.pi05_eval_contract import git_state
 from ember.pi05_source_checkpoint import DistributedContext, write_json_atomic
 from ember.pi05_source_checkpoint import canonical_hash, read_json, sha256_file
+from ember.pi05_source_contract import append_jsonl
 from ember.reward.protocol import RewardProtocolError, RewardTask, SUITE_HORIZONS
 from ember.writer.data import TeacherVideoSchedule
 
@@ -76,6 +78,9 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         or algorithm.get("name")
         != "on_policy_binary_success_filtered_executed_prefix_flow_regression"
         or algorithm.get("executed_action_prefix_only") is not True
+        or int(algorithm.get("reward_replay_chunk_batch_size", -1)) != 8
+        or algorithm.get("gradient_synchronization")
+        != "ordered_manual_sum_after_local_backward"
         or algorithm.get("teacher_actions", False) is not False
         or environment.get("official_random_bddl_reset") is not True
         or environment.get("fixed_pruned_init_states") is not False
@@ -254,7 +259,7 @@ def resolve_runtime(
             int(source["total_updates"]),
             tuple(int(value) for value in source["checkpoint_updates"]),
         )
-        if expected != (context.world_size, total, checkpoints) or stop != total:
+        if expected != (context.world_size, total, checkpoints):
             raise RewardProtocolError("formal RL-Writer launch differs from its seal")
         state = git_state(REPO_ROOT)
         if state["dirty_paths"]:
@@ -394,6 +399,15 @@ def publish_contract(
                     )
                 output_dir.mkdir(parents=True, exist_ok=True)
                 write_json_atomic(path, dict(contract))
+            append_jsonl(
+                output_dir / "invocations.jsonl",
+                {
+                    "argv": sys.argv,
+                    "host": socket.gethostname(),
+                    "resume": str(resume) if resume else None,
+                    "started_unix": time.time(),
+                },
+            )
             payload[0] = {"digest": digest}
         except Exception as error:
             payload[0] = {"error": repr(error)}

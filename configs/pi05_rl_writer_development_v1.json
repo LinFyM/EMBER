@@ -71,6 +71,8 @@
     "reward": "official_binary_task_success",
     "rollouts_per_task_update": 1,
     "replay_epochs": 1,
+    "reward_replay_chunk_batch_size": 8,
+    "gradient_synchronization": "ordered_manual_sum_after_local_backward",
     "episode_weighting": "equal_successful_episode",
     "executed_action_prefix_only": true,
     "teacher_actions": false,
@@ -144,13 +146,26 @@
     "complete_task_cycles": 1
   },
   "formal_run": {
-    "status": "pending_source_screen_and_real_profile",
+    "status": "sealed",
     "expected_world_size": 8,
-    "total_updates": 0,
-    "checkpoint_updates": [],
-    "negative_closure_rollouts_per_task": 0,
+    "total_updates": 120,
+    "checkpoint_updates": [3, 6, 12, 24, 36, 54, 72, 96, 120],
+    "initial_evidence_stop_update": 12,
+    "negative_closure_rollouts_per_task": 40,
     "maximum_wall_clock_minutes": 120,
     "budget_role": "guardrail_not_target",
+    "profile_evidence": {
+      "run_root": "pi05_rl_writer_zero_profile_cycle1_r3_manualsync_20260722",
+      "full_task_cycles": 1,
+      "rollouts": 24,
+      "successes": 7,
+      "environment_actions": 7167,
+      "optimizer_updates": 3,
+      "wall_seconds_max_rank": 133.47137033,
+      "max_cuda_reserved_bytes": 40842035200,
+      "run_contract_sha256": "487fee45921d4f4a2c01c443c27e7515889f664ac6fa8a44a86afcd6b2e74d28",
+      "checkpoint_manifest_sha256": "2a27f673f2675addbc54f239d9289930014ac071ab632b530a5c998b37538c95"
+    },
     "selection_rule": "profile rollout/update throughput first; use fixed cheap reward-coverage screens and full-cycle curves to choose sparse checkpoints; zero branch must complete first; stop on saturation or at the guardrail and record budget-censored undertraining without automatic extension"
   },
   "checkpointing": {

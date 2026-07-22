@@ -12,7 +12,6 @@ from typing import Any, Mapping
 
 import torch
 import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel
 
 from ember.lora import lora_state_sha256
 from ember.pi05_assets import prepare_libero_config
@@ -67,7 +66,6 @@ class RLWriterRuntime:
     config: dict[str, Any]
     tasks: tuple[RewardTask, ...]
     writer: CompleteLoRAWriter
-    wrapped_writer: torch.nn.Module
     policy: torch.nn.Module
     processor: Pi05LiberoProcessor
     feature_store: WriterFeatureStore
@@ -224,7 +222,7 @@ def _prepare_libero_paths(
     return values[0]
 
 
-def _restore_and_wrap(runtime: RLWriterRuntime, initial: int) -> RLWriterRuntime:
+def _restore_runtime(runtime: RLWriterRuntime, initial: int) -> RLWriterRuntime:
     expected_rows = 0
     if runtime.args.resume is not None:
         ledger = rank_ledger_summary(runtime, initial)
@@ -258,13 +256,6 @@ def _restore_and_wrap(runtime: RLWriterRuntime, initial: int) -> RLWriterRuntime
     if runtime.context.world_size > 1:
         dist.broadcast(row_tensor, src=0)
     runtime.metrics_rows = int(row_tensor.item())
-    runtime.wrapped_writer = DistributedDataParallel(
-        runtime.writer,
-        device_ids=[runtime.context.local_rank],
-        output_device=runtime.context.local_rank,
-        broadcast_buffers=False,
-        static_graph=True,
-    )
     runtime.writer.train()
     runtime.policy.eval()
     torch.cuda.reset_peak_memory_stats(runtime.context.device)
@@ -363,7 +354,6 @@ def build_runtime(
         config=config,
         tasks=tasks,
         writer=writer,
-        wrapped_writer=writer,
         policy=policy,
         processor=processor,
         feature_store=feature_store,
@@ -386,4 +376,4 @@ def build_runtime(
             bddl_root=Path(paths["bddl_files"]), render_resolution=256
         ),
     )
-    return _restore_and_wrap(runtime, initial)
+    return _restore_runtime(runtime, initial)

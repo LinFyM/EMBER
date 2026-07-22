@@ -26,6 +26,7 @@ from ember.rl_writer.contract import (
     updates_per_cycle,
 )
 from ember.rl_writer.training import build_parser
+from ember.rl_writer.loop import _episode_chunk_weights
 from ember.writer.data import TeacherVideoSchedule
 
 
@@ -38,10 +39,22 @@ def test_rl_writer_config_seals_fresh_zero_and_micro_warmup_branches() -> None:
     assert config["sealed_stage"] == "development"
     assert config["branches"]["zero_as_warmup"]["teacher_action_queries"] == 0
     assert config["branches"]["micro_as_warmup"]["teacher_action_queries"] == 24
+    assert config["algorithm"]["reward_replay_chunk_batch_size"] == 8
+    assert (
+        config["algorithm"]["gradient_synchronization"]
+        == "ordered_manual_sum_after_local_backward"
+    )
     assert "AS-Writer checkpoint" in config["branches"]["micro_as_warmup"][
         "writer_initialization"
     ]
-    assert config["formal_run"]["status"] == "pending_source_screen_and_real_profile"
+    assert config["formal_run"]["status"] == "sealed"
+    assert config["formal_run"]["initial_evidence_stop_update"] == 12
+
+
+def test_rl_writer_chunk_weights_keep_successful_episodes_equal() -> None:
+    weights = _episode_chunk_weights(torch.tensor([0, 0, 1]), global_successes=3)
+    torch.testing.assert_close(weights, torch.tensor([1 / 6, 1 / 6, 1 / 3]))
+    assert float(weights.sum()) == pytest.approx(2 / 3)
 
 
 def test_rl_writer_roles_are_exact_24_development_and_32_final() -> None:
@@ -126,6 +139,39 @@ def test_rl_writer_runtime_has_no_as_checkpoint_and_micro_branch_is_blocked() ->
     )
     with pytest.raises(RewardProtocolError, match="blocked"):
         resolve_runtime(args, config, context)
+
+
+def test_rl_writer_formal_can_stop_and_resume_at_sealed_checkpoints(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import ember.rl_writer.contract as contract
+
+    config = load_rl_writer_config(CONFIG)
+    context = DistributedContext(
+        rank=0,
+        local_rank=0,
+        world_size=8,
+        device=torch.device("cpu"),
+        numa_node=0,
+        cpu_affinity=(0,),
+    )
+    monkeypatch.setattr(
+        contract,
+        "git_state",
+        lambda _: {"dirty_paths": [], "commit": "pushed", "origin_main": "pushed"},
+    )
+    args = Namespace(
+        branch="zero_as_warmup",
+        mode="formal",
+        total_updates=None,
+        checkpoint_updates=None,
+        stop_after_update=12,
+        resume=None,
+    )
+    total, checkpoints = resolve_runtime(args, config, context)
+    assert total == 120
+    assert checkpoints[-1] == 120
+    assert args.stop_after_update == 12
 
 
 def test_rl_writer_contract_is_single_owner_and_resume_bound(tmp_path: Path) -> None:

@@ -79,7 +79,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 ## Phase D：RL-Writer development
 
 - [x] 建立共享π0.5 reward mechanics：official random BDDL reset、10-step settling、suite horizon、显式逐replan flow-noise seed、只执行/监督前5 actions、successful-episode等权与不可变interaction ledger。
-- [x] 建立fresh zero-AS RL-Writer唯一活动owner、8-rank task/video full-cycle schedule、Writer-only functional update、完整checkpoint/RNG/cursor/ledger exact-resume；source screen、AS-Writer与Source-SFT development选择已完成，下一步只需真实reward profile后按证据封存训练预算。
+- [x] 建立fresh zero-AS RL-Writer唯一活动owner、8-rank task/video full-cycle schedule、Writer-only functional update、完整checkpoint/RNG/cursor/ledger exact-resume；真实24-task profile得到7/24 successes与3/3有效Writer updates，峰值reserved 40.84GB，formal已按实测封存为可在稀疏checkpoint暂停/续训的120-update guardrail、首段只到update12。
 - [ ] 从随机Writer、零AS warm-up直接跨24 source tasks用官方random-reset reward联合训练。
 - [ ] 若无正信号，加入极少量AS warm-up并明确记录teacher-action consumption；不得从完整AS-Writer继续。
 - [ ] 仍无法启动时保存完整reward coverage/interaction/failure evidence并暂停路线。

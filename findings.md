@@ -411,3 +411,9 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - Writer-v2原run的step500/750/1000/1500 correct为`99/92/75/72`。独立dense-retention replay的350/400/450/500/550/600/650/700/750 cheap screens为`24/27/20/24/26/31/19/30/33`（各128），只将600/700/750提升为完整validation，得到`90/85/95`。它们均未超过原step500，后段亦持续退化，故没有证据支持再补800–950或更多细粒度训练。
 - 选定的原run step500逐task correct为Long `5/0`、Goal `1/38`、Object `37/12`、Spatial `2/4`，合计`99/400`。其唯一cross-suite wrong-video arm为Long `6/2`、Goal `0/27`、Object `20/0`、Spatial `0/0`，合计`55/400`；correct-only/wrong-only=`56/12`，exact McNemar `p=6.21e-8`。
 - v1的`119/115`说明高绝对correct主要来自几乎input-independent的公共adapter捷径；v2的condition-only架构与paired contrast使correct下降20、wrong下降60。v2仍有提升绝对competence的空间，但当前`99 > Source-SFT 87 > source base 48`且视频差`+44`跨6个tasks，已同时满足行为收益和视频特异性，当前最有价值的下一证据是RL-Writer而非继续AS消融。
+
+## RL-Writer初始reward可学习性（2026-07-22）
+
+- fresh identity Writer生成的初始LoRA功能上等于source base；首个完整24-task official random-reset cycle取得`7/24=29.17%`成功，成功来自7个不同tasks并覆盖Spatial、Goal、Long。因而zero-AS分支并不缺初始binary reward，当前没有科学理由消耗24条teacher-action warm-up。
+- 成功episode需要26–57左右replan chunks时，整轨迹functional反传既逼近80GB，又因成功/失败ranks走不同DDP图而互等。8-chunk proxy-state微批把同一个episode mean loss精确拆分：每chunk权重为`1/(global_successes × episode_chunks)`，生成LoRA梯度汇总后只回传Writer一次；固定顺序all-reduce等价于对全局成功episodes取均值。
+- 修复后的三次global updates均完成，successes为`4/1/2`，global gradient norms为`0.0535/0.0729/0.1341`且全部finite，峰值reserved仅40.84GB。这排除了“有reward但更新机械不可执行”的工程解释；下一科学问题是多cycle reward coverage与held validation是否随Writer训练改善。

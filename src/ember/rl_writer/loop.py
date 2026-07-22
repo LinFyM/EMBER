@@ -37,6 +37,40 @@ def _all_reduce_int(value: int, runtime: RLWriterRuntime) -> int:
     return int(tensor.item())
 
 
+def _episode_chunk_weights(
+    episode_ids: torch.Tensor, global_successes: int
+) -> torch.Tensor:
+    """Weight chunks so every successful episode has global weight 1/N."""
+
+    if episode_ids.ndim != 1 or episode_ids.numel() == 0 or global_successes <= 0:
+        raise RewardProtocolError("invalid RL-Writer episode weighting")
+    ids = episode_ids.to(dtype=torch.long)
+    unique, counts = torch.unique(ids, sorted=True, return_counts=True)
+    if (
+        not torch.equal(unique, torch.arange(unique.numel(), device=unique.device))
+        or unique.numel() > global_successes
+    ):
+        raise RewardProtocolError("RL-Writer episode IDs changed")
+    return counts[ids].reciprocal() / global_successes
+
+
+def _all_reduce_writer_gradients(runtime: RLWriterRuntime) -> None:
+    """Synchronize branch-dependent local gradients in one fixed collective."""
+
+    gradients = []
+    for parameter in runtime.writer.parameters():
+        if parameter.grad is None:
+            parameter.grad = torch.zeros_like(parameter)
+        gradients.append(parameter.grad)
+    flat = torch.cat([gradient.reshape(-1) for gradient in gradients])
+    dist.all_reduce(flat, op=dist.ReduceOp.SUM)
+    offset = 0
+    for gradient in gradients:
+        count = gradient.numel()
+        gradient.copy_(flat[offset : offset + count].view_as(gradient))
+        offset += count
+
+
 def _install_and_collect(
     runtime: RLWriterRuntime,
     task: RewardTask,
@@ -135,7 +169,7 @@ def _reward_update(
     runtime.writer.train()
     runtime.optimizer.zero_grad(set_to_none=True)
     with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-        generated = runtime.wrapped_writer(
+        generated = runtime.writer(
             teacher.language_features.to(runtime.context.device),
             teacher.video_features.to(runtime.context.device),
             teacher.episode_offsets,
@@ -145,19 +179,51 @@ def _reward_update(
             batch, episode_ids = successful_trajectory_batch(
                 successful, runtime.context.device
             )
-            per_chunk, details = functional_executed_prefix_flow_loss(
-                runtime.policy,
-                generated,
-                runtime.lora_contract,
-                batch,
+            weights = _episode_chunk_weights(episode_ids, global_successes)
+            proxy = {
+                name: value.detach().requires_grad_(True)
+                for name, value in generated.items()
+            }
+            chunk_batch = int(
+                runtime.config["algorithm"]["reward_replay_chunk_batch_size"]
             )
-            ids = episode_ids.to(per_chunk.device)
-            unique = torch.unique(ids, sorted=True)
-            episode_losses = torch.stack(
-                [per_chunk[ids == episode].mean() for episode in unique]
-            )
-            local_sum = episode_losses.sum()
-            loss = local_sum * runtime.context.world_size / global_successes
+            local_sum = torch.zeros((), device=runtime.context.device)
+            detail_totals = {
+                "successful_chunks": 0,
+                "executed_action_steps": 0,
+                "masked_unexecuted_action_steps": 0,
+            }
+            microbatches = 0
+            for start in range(0, episode_ids.numel(), chunk_batch):
+                stop = min(start + chunk_batch, episode_ids.numel())
+                sliced = {name: value[start:stop] for name, value in batch.items()}
+                per_chunk, observed = functional_executed_prefix_flow_loss(
+                    runtime.policy,
+                    proxy,
+                    runtime.lora_contract,
+                    sliced,
+                )
+                weighted = (per_chunk * weights[start:stop]).sum()
+                weighted.backward()
+                local_sum = local_sum + (
+                    per_chunk.detach()
+                    * weights[start:stop]
+                    * global_successes
+                ).sum()
+                for name in detail_totals:
+                    detail_totals[name] += int(observed[name])
+                microbatches += 1
+            state_gradients = tuple(proxy[name].grad for name in generated)
+            if any(value is None for value in state_gradients):
+                raise RewardProtocolError("RL-Writer generated LoRA gradient is incomplete")
+            torch.autograd.backward(tuple(generated.values()), state_gradients)
+            details = {
+                **detail_totals,
+                "successful_episodes": len(successful),
+                "replay_microbatches": microbatches,
+                "reward_replay_chunk_batch_size": chunk_batch,
+                "loss": float(local_sum / len(successful)),
+            }
         else:
             details = {
                 "successful_episodes": 0,
@@ -166,10 +232,10 @@ def _reward_update(
                 "masked_unexecuted_action_steps": 0,
             }
             local_sum = sum(value.sum() for value in generated.values()) * 0.0
-            loss = local_sum
-    if not bool(torch.isfinite(loss).detach()):
+            local_sum.backward()
+    if not bool(torch.isfinite(local_sum).detach()):
         raise RewardProtocolError(f"non-finite RL-Writer loss at update {update}")
-    loss.backward()
+    _all_reduce_writer_gradients(runtime)
     grad_norm = torch.nn.utils.clip_grad_norm_(
         runtime.writer.parameters(),
         float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"]),

@@ -188,9 +188,9 @@
 
 ## 当前后续动作
 
-1. 直接运行fresh zero-AS RL-Writer最小真实profile，测official random-reset reward coverage、有效rollout吞吐、显存和一次Writer update的机械闭环。
-2. 按profile把统一短周期原则换算为reward interactions/updates；到预算仍无信号则完整封存zero-AS negative，再且仅再启用预声明的24-chunk micro-AS warm-up分支。
-3. RL-Writer成立或合规关闭后继续seen comparison与final 32-source阶段；Source-SFT不重训development，AS-Writer不再补generic或额外wrong-video arms。
+1. 从fresh identity启动zero-AS RL-Writer formal首段至update12（4个完整24-task cycles），然后立即检查逐cycle reward coverage、任务覆盖、交互数和Writer变化，不盲跑120-update guardrail。
+2. 若reward/coverage仍有学习信号则从update12 exact-resume到下一个稀疏checkpoint；若已平台或退化则先做便宜validation screen并停止追加。已有7/24初始成功，因此不启用micro-AS。
+3. RL-Writer选择或合规关闭后继续seen comparison与final 32-source阶段；Source-SFT不重训development，AS-Writer不再补generic或额外wrong-video arms。
 
 ## AS-Writer短周期profile与正式seal（2026-07-22）
 
@@ -244,3 +244,11 @@
 - 唯一最终wrong-video arm在同一step500上得到`55/400`；paired both-success/correct-only/wrong-only/both-fail=`43/56/12/289`，exact McNemar `p=6.21e-8`。逐task correct−wrong为Long `-1/-2`、Goal `+1/+11`、Object `+17/+12`、Spatial `+2/+4`，视频正效应来自6/8 tasks而非单任务。
 - development主比较为source base `48/400`、Source-SFT `87/400`、Writer-v2 correct `99/400`。v1虽有`119/400` correct，但wrong仍为`115/400`；它更像公共LoRA。v2牺牲部分绝对correct性能，却把wrong降到55并建立强视频因果差异，按owner口径暂时通过。
 - peak-scan run summary/metrics SHA256为`31e36942...f29`/`171acd12...9c1c`；最终correct/wrong results SHA256为`e55cdf8e...66e4`/`3f9d6f1e...8b6f`。下一阶段直接进入zero-AS RL-Writer，不补不影响当前判断的AS消融。
+
+## RL-Writer真实profile与formal seal（2026-07-22）
+
+- 第一次profile在reset前发现64-bit hash seed不满足LIBERO内部`np.random.seed`的uint32范围；0 rollouts/0 actions。seed owner现只对environment seed做uint32映射，policy/update seeds与跨arm配对不变，相关22 tests通过。
+- 第二次profile完成首批8 rollouts（4 successes）后暴露成功/失败ranks的DDP分支互等；成功轨迹26–44 replans被整批反传，峰值约80GB。修复为8-chunk policy replay microbatch：先累积生成LoRA叶梯度，再一次回传Writer，并按固定顺序手工all-reduce；逐成功episode全局等权不变，没有新增算法分支。
+- 第三次profile完整覆盖24/24 train tasks各1条official random-reset rollout，得到7 successes、7167 environment actions、3/3 optimizer updates；成功覆盖Spatial 0/2/5/7、Goal 1/8和Long 5。单cycle max-rank wall `133.471s`，三update分别`46.668/42.297/44.510s`，峰值reserved `40,842,035,200` bytes。
+- profile checkpoint update3全文件hash、24-task no-replacement coverage和cursor复核通过；run-contract/metrics/summary/checkpoint-manifest SHA256为`487fee45...4d28`/`d7e22bc7...cdea`/`3bb5b550...008a`/`2a27f673...c95`。零warm-up已有明确reward signal，不进入micro-AS。
+- formal最大合同为120 updates=40 full cycles，按profile约89分钟净循环，并为分段模型加载、checkpoint与判断保留约31分钟；checkpoint为3/6/12/24/36/54/72/96/120。runner现允许只在这些sealed checkpoints暂停并保持同一contract exact-resume；首段预声明只跑到update12。

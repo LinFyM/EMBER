@@ -8,6 +8,7 @@ import pytest
 import torch
 
 from ember.pi05_source_checkpoint import DistributedContext, canonical_hash, sha256_file
+from ember.pi05_source_contract import reconcile_metrics
 from ember.reward.ledger import InteractionCursors
 from ember.reward.protocol import RewardProtocolError
 from ember.reward.protocol import RewardTask
@@ -55,6 +56,22 @@ def test_rl_writer_chunk_weights_keep_successful_episodes_equal() -> None:
     weights = _episode_chunk_weights(torch.tensor([0, 0, 1]), global_successes=3)
     torch.testing.assert_close(weights, torch.tensor([1 / 6, 1 / 6, 1 / 3]))
     assert float(weights.sum()) == pytest.approx(2 / 3)
+
+
+def test_rl_writer_metrics_reconcile_on_update_cursor(tmp_path: Path) -> None:
+    path = tmp_path / "metrics.jsonl"
+    path.write_text(
+        "".join(
+            json.dumps({"next_update": update}) + "\n" for update in (1, 2, 3, 4)
+        ),
+        encoding="utf-8",
+    )
+    assert reconcile_metrics(path, 3, 3, cursor_key="next_update") == 3
+    assert [json.loads(line)["next_update"] for line in path.read_text().splitlines()] == [
+        1,
+        2,
+        3,
+    ]
 
 
 def test_rl_writer_roles_are_exact_24_development_and_32_final() -> None:

@@ -35,15 +35,21 @@ def append_jsonl(path: Path, value: dict[str, Any]) -> None:
         os.fsync(handle.fileno())
 
 
-def reconcile_metrics(path: Path, optimizer_step: int, expected_rows: int) -> int:
+def reconcile_metrics(
+    path: Path,
+    optimizer_step: int,
+    expected_rows: int,
+    *,
+    cursor_key: str = "optimizer_step",
+) -> int:
     if not path.exists():
         if optimizer_step:
             raise Pi05SourceTrainingError("resume checkpoint has no retained metrics")
         return 0
     lines = path.read_text(encoding="utf-8").splitlines()
     parsed = [json.loads(line) for line in lines]
-    retained = [row for row in parsed if int(row["optimizer_step"]) <= optimizer_step]
-    orphaned = [row for row in parsed if int(row["optimizer_step"]) > optimizer_step]
+    retained = [row for row in parsed if int(row[cursor_key]) <= optimizer_step]
+    orphaned = [row for row in parsed if int(row[cursor_key]) > optimizer_step]
     if len(retained) != expected_rows:
         raise Pi05SourceTrainingError("metrics row count differs from checkpoint cursor")
     if orphaned:

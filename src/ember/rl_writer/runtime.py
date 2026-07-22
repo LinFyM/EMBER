@@ -247,15 +247,26 @@ def _restore_runtime(runtime: RLWriterRuntime, initial: int) -> RLWriterRuntime:
         runtime.reward_sum = float(counters["reward_sum"])
         runtime.wall_nanoseconds = int(counters["wall_nanoseconds"])
         restore_rng(rng, runtime.context)
-    rows = (
-        reconcile_metrics(runtime.metrics_path, initial, expected_rows)
-        if runtime.context.is_main
-        else 0
-    )
-    row_tensor = torch.tensor(rows, dtype=torch.int64, device=runtime.context.device)
+    reconciliation: list[Any] = [None]
+    if runtime.context.is_main:
+        try:
+            reconciliation[0] = {
+                "rows": reconcile_metrics(
+                    runtime.metrics_path,
+                    initial,
+                    expected_rows,
+                    cursor_key="next_update",
+                )
+            }
+        except Exception as error:
+            reconciliation[0] = {"error": repr(error)}
     if runtime.context.world_size > 1:
-        dist.broadcast(row_tensor, src=0)
-    runtime.metrics_rows = int(row_tensor.item())
+        dist.broadcast_object_list(
+            reconciliation, src=0, device=runtime.context.device
+        )
+    if reconciliation[0].get("error"):
+        raise RewardProtocolError(reconciliation[0]["error"])
+    runtime.metrics_rows = int(reconciliation[0]["rows"])
     runtime.writer.train()
     runtime.policy.eval()
     torch.cuda.reset_peak_memory_stats(runtime.context.device)

@@ -66,8 +66,8 @@ from ember.writer.feature_cache import (
     WriterFeatureStore,
 )
 from ember.writer.functional import (
+    functional_lora_loss_gradient,
     prepare_frozen_writer_policy,
-    writer_functional_action_loss,
 )
 from ember.writer.model import (
     CompleteLoRAWriter,
@@ -85,6 +85,7 @@ class WriterRuntime:
     task_ids: tuple[int, ...]
     sampler: MixedTaskBatchSampler
     video_schedule: TeacherVideoSchedule
+    video_partner: dict[int, int]
     iterator: Iterator[dict[str, Any]]
     feature_store: WriterFeatureStore
     processor: Pi05LiberoProcessor
@@ -268,6 +269,54 @@ def _metrics_cursor(
     return int(rows.item())
 
 
+def _build_condition_inputs(
+    *,
+    args: argparse.Namespace,
+    config: Mapping[str, Any],
+    cache: Mapping[str, Any],
+    authorities: Any,
+    context: DistributedContext,
+    task_ids: tuple[int, ...],
+) -> tuple[WriterFeatureStore, Pi05LiberoProcessor]:
+    store = WriterFeatureStore(
+        args.feature_cache.resolve(),
+        task_ids=task_ids,
+        expected_extraction_sha256=str(cache["extraction_sha256"]),
+        max_cached_tasks=int(config["data"]["feature_lru_tasks_per_rank"]),
+        expected_dim=int(config["writer"]["vision_feature_dim"]),
+        expected_spatial_tokens=int(config["writer"]["vision_spatial_tokens"]),
+        expected_run_contract_file_sha256=str(cache["run_contract_file_sha256"]),
+        expected_manifest_file_sha256=str(cache["cache_manifest_file_sha256"]),
+    )
+    processor = Pi05LiberoProcessor(
+        load_stats(
+            authorities.source_base_config,
+            authorities.source_base_config["data"]["active_task_ids"],
+        ),
+        args.tokenizer_path,
+        int(authorities.source_base_config["features"]["tokenizer_max_length"]),
+        str(context.device),
+    )
+    return store, processor
+
+
+def _video_partner_map(
+    config: Mapping[str, Any], task_ids: tuple[int, ...]
+) -> dict[int, int]:
+    pairs = tuple(
+        tuple(int(value) for value in pair)
+        for pair in config["conditioning_training"]["video_task_pairs"]
+    )
+    result = {
+        source: target
+        for left, right in pairs
+        for source, target in ((left, right), (right, left))
+    }
+    if set(result) != set(task_ids):
+        raise WriterModelError("video-forced task pairs do not cover the train tasks")
+    return result
+
+
 def prepare_runtime(
     args: argparse.Namespace, context: DistributedContext
 ) -> WriterRuntime:
@@ -338,23 +387,13 @@ def prepare_runtime(
     )
     wrapped = _wrap_writer(writer, context)
     writer.train()
-    feature_store = WriterFeatureStore(
-        args.feature_cache.resolve(),
+    feature_store, processor = _build_condition_inputs(
+        args=args,
+        config=config,
+        cache=cache,
+        authorities=authorities,
+        context=context,
         task_ids=task_ids,
-        expected_extraction_sha256=str(cache["extraction_sha256"]),
-        max_cached_tasks=int(config["data"]["feature_lru_tasks_per_rank"]),
-        expected_dim=int(config["writer"]["vision_feature_dim"]),
-        expected_run_contract_file_sha256=str(cache["run_contract_file_sha256"]),
-        expected_manifest_file_sha256=str(cache["cache_manifest_file_sha256"]),
-    )
-    processor = Pi05LiberoProcessor(
-        load_stats(
-            authorities.source_base_config,
-            authorities.source_base_config["data"]["active_task_ids"],
-        ),
-        args.tokenizer_path,
-        int(authorities.source_base_config["features"]["tokenizer_max_length"]),
-        str(context.device),
     )
     metrics_path = args.output_dir / "metrics.jsonl"
     metrics_rows = _metrics_cursor(
@@ -375,6 +414,7 @@ def prepare_runtime(
         task_ids=task_ids,
         sampler=sampler,
         video_schedule=video_schedule,
+        video_partner=_video_partner_map(config, task_ids),
         iterator=iter(loader),
         feature_store=feature_store,
         processor=processor,
@@ -405,6 +445,125 @@ def _batch_task_id(batch: Mapping[str, Any]) -> int:
     return int(unique.item())
 
 
+def _pack_writer_conditions(
+    language: torch.Tensor,
+    correct_video: torch.Tensor,
+    wrong_video: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    if language.ndim != 2 or correct_video.ndim != 3 or wrong_video.ndim != 3:
+        raise WriterModelError("video-forced Writer condition tensors changed shape")
+    null_language = torch.zeros(
+        1, language.shape[1], dtype=language.dtype, device=language.device
+    )
+    languages = torch.cat((language, null_language, null_language), dim=0)
+    videos = torch.cat((correct_video, correct_video, wrong_video), dim=0)
+    language_offsets = torch.tensor(
+        [0, language.shape[0], language.shape[0] + 1, language.shape[0] + 2],
+        dtype=torch.int64,
+    )
+    video_offsets = torch.tensor(
+        [
+            0,
+            correct_video.shape[0],
+            2 * correct_video.shape[0],
+            2 * correct_video.shape[0] + wrong_video.shape[0],
+        ],
+        dtype=torch.int64,
+    )
+    return languages, videos, language_offsets, video_offsets
+
+
+def _generic_policy_batch(
+    runtime: WriterRuntime, batch: Mapping[str, Any]
+) -> dict[str, Any]:
+    tasks = batch.get("task")
+    if not isinstance(tasks, (list, tuple)) or not tasks:
+        raise WriterModelError("video-forced policy batch lost language rows")
+    value = dict(batch)
+    prompt = str(runtime.config["conditioning_training"]["generic_policy_prompt"])
+    value["task"] = [prompt] * len(tasks)
+    return runtime.processor.training_batch(value)
+
+
+def _adapter_state_at(
+    generated: Mapping[str, torch.Tensor], index: int
+) -> dict[str, torch.Tensor]:
+    result = {}
+    for name, value in generated.items():
+        if value.ndim != 3 or value.shape[0] != 3:
+            raise WriterModelError("video-forced Writer did not generate three adapters")
+        result[name] = value[index]
+    return result
+
+
+def _matching_objective(
+    losses: tuple[torch.Tensor, torch.Tensor, torch.Tensor],
+    config: Mapping[str, Any],
+) -> tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor, torch.Tensor], torch.Tensor]:
+    normal, forced_correct, forced_wrong = losses
+    normal_weight = float(config["normal_loss_weight"])
+    forced_weight = float(config["video_forced_loss_weight"])
+    matching_weight = float(config["matching_loss_weight"])
+    margin = float(config["matching_margin"])
+    temperature = float(config["matching_temperature"])
+    z = (margin + forced_correct - forced_wrong) / temperature
+    probability = torch.sigmoid(z)
+    objective = (
+        normal_weight * normal
+        + forced_weight * forced_correct
+        + matching_weight * temperature * torch.nn.functional.softplus(z)
+    )
+    coefficients = (
+        torch.as_tensor(normal_weight, device=normal.device),
+        torch.as_tensor(forced_weight, device=normal.device) + matching_weight * probability,
+        -matching_weight * probability,
+    )
+    return objective, coefficients, probability
+
+
+def _differentiate_condition_batch(
+    runtime: WriterRuntime,
+    packed: tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
+    policy_batch: Mapping[str, Any],
+    forced_policy_batch: Mapping[str, Any],
+) -> tuple[torch.Tensor, list[torch.Tensor], list[Mapping[str, Any]], torch.Tensor]:
+    runtime.optimizer.zero_grad(set_to_none=True)
+    with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+        generated = runtime.wrapped_writer(
+            packed[0], packed[1], packed[3], language_offsets=packed[2]
+        )
+        values: list[torch.Tensor] = []
+        gradients: list[dict[str, torch.Tensor]] = []
+        details: list[Mapping[str, Any]] = []
+        for index, policy_value in enumerate(
+            (policy_batch, forced_policy_batch, forced_policy_batch)
+        ):
+            value, detail, gradient = functional_lora_loss_gradient(
+                runtime.policy,
+                _adapter_state_at(generated, index),
+                runtime.lora_contract,
+                batch=policy_value,
+            )
+            values.append(value)
+            details.append(detail)
+            gradients.append(gradient)
+        loss, coefficients, probability = _matching_objective(
+            (values[0], values[1], values[2]),
+            runtime.config["conditioning_training"],
+        )
+    names = tuple(generated)
+    gradient_tensors = tuple(
+        torch.stack(
+            [coefficients[index].to(gradients[index][name]) * gradients[index][name]
+             for index in range(3)],
+            dim=0,
+        )
+        for name in names
+    )
+    torch.autograd.backward(tuple(generated[name] for name in names), gradient_tensors)
+    return loss, values, details, probability
+
+
 def _one_step(
     runtime: WriterRuntime,
     step: int,
@@ -417,29 +576,30 @@ def _one_step(
     if _batch_task_id(batch) != task_id:
         raise WriterModelError("AS-Writer sampler and action batch disagree")
     demo_index = runtime.video_schedule.demo_for_task_visit(task_id, task_visit)
+    partner_id = runtime.video_partner[task_id]
+    wrong_demo_index = runtime.video_schedule.demo_for_task_visit(partner_id, task_visit)
     teacher = runtime.feature_store.load_one_video(
         language_task_id=task_id,
         video_task_id=task_id,
         demo_index=demo_index,
     )
+    wrong_teacher = runtime.feature_store.load_one_video(
+        language_task_id=task_id,
+        video_task_id=partner_id,
+        demo_index=wrong_demo_index,
+    )
     language = teacher.language_features.to(runtime.context.device)
     video = teacher.video_features.to(runtime.context.device)
+    wrong_video = wrong_teacher.video_features.to(runtime.context.device)
     policy_batch = runtime.processor.training_batch(batch)
+    forced_policy_batch = _generic_policy_batch(runtime, batch)
+    packed = _pack_writer_conditions(language, video, wrong_video)
 
-    runtime.optimizer.zero_grad(set_to_none=True)
-    with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-        loss, details = writer_functional_action_loss(
-            runtime.wrapped_writer,  # type: ignore[arg-type]
-            runtime.policy,
-            runtime.lora_contract,
-            language_features=language,
-            video_features=video,
-            episode_offsets=teacher.episode_offsets,
-            batch=policy_batch,
-        )
-    if not bool(torch.isfinite(loss).detach()):
+    loss, values, details, matching_probability = _differentiate_condition_batch(
+        runtime, packed, policy_batch, forced_policy_batch
+    )
+    if not bool(torch.isfinite(loss)):
         raise WriterModelError(f"non-finite AS-Writer loss at step {step}")
-    loss.backward()
     if any(parameter.grad is not None for parameter in runtime.policy.parameters()):
         raise WriterModelError("frozen PI05 source policy accumulated gradients")
     grad_norm = torch.nn.utils.clip_grad_norm_(
@@ -455,17 +615,27 @@ def _one_step(
     step_seconds = reduce_max(time.monotonic() - tick, runtime.context)
     return {
         "optimizer_step": completed,
-        "mean_functional_action_loss": reduce_mean(float(loss.detach()), runtime.context),
+        "mean_functional_action_loss": reduce_mean(float(loss), runtime.context),
+        "mean_normal_action_loss": reduce_mean(float(values[0]), runtime.context),
+        "mean_video_forced_correct_loss": reduce_mean(float(values[1]), runtime.context),
+        "mean_video_forced_wrong_loss": reduce_mean(float(values[2]), runtime.context),
+        "mean_matching_probability": reduce_mean(float(matching_probability), runtime.context),
         "gradient_norm_before_clip_max": reduce_max(float(grad_norm), runtime.context),
         "applied_lr": applied_lr,
         "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
         "global_action_queries": completed
         * runtime.context.world_size
         * runtime.batch_size,
-        "global_writer_invocations": completed * runtime.context.world_size,
+        "global_writer_invocations": completed * runtime.context.world_size * 3,
+        "global_functional_query_evaluations": completed
+        * runtime.context.world_size
+        * runtime.batch_size
+        * 3,
         "rank0_task_id": task_id,
         "rank0_teacher_demo_index": demo_index,
-        "rank0_policy_loss_detail": details.get("loss"),
+        "rank0_wrong_video_task_id": partner_id,
+        "rank0_wrong_teacher_demo_index": wrong_demo_index,
+        "rank0_policy_loss_detail": [value.get("loss") for value in details],
         "data_seconds_max": reduce_max(data_seconds, runtime.context),
         "step_seconds_max": step_seconds,
         "global_action_queries_per_second": runtime.context.world_size
@@ -570,7 +740,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_as_writer_v1.json",
+        default=REPO_ROOT / "configs/pi05_as_writer_v2.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--source-run", type=Path, required=True)

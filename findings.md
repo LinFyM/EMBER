@@ -378,3 +378,12 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 逐任务correct/wrong为Spatial 1/3=`0/0` vs `0/1`、Object 1/3=`40/36` vs `37/33`、Goal 3/6=`0/27` vs `0/28`、Long 1/2=`16/0` vs `16/0`。400个paired rows中both-success 102、correct-only 17、wrong-only 13、both-fail 268；不是少数任务的大幅正负效果恰好抵消。
 - 两臂400/400 rows的task/init、env seed、policy seed root及共享长度内policy-noise seed前缀完全匹配；noise列表长度仅因成功终止改变replan次数。wrong run 24 workers均exit0、38 shards和400 raw rows完整，results SHA256为`0e6ee518...a9ce`，correct/wrong对照证据SHA256为`d4a4f9f7...eaac`。
 - 科学解释应保持克制：结果与Writer主要使用language、或视频编码在该训练下近乎不敏感相一致；在没有进一步干预证据前，不能声称AS-Writer从正确视频恢复了task-specific visual information。
+
+## AS-Writer视频塌缩的根因与Writer-v2决策（2026-07-22）
+
+- `fixed video / changed language`相对有效LoRA差约`4.02e-4`，`fixed language / changed video`约`7.52e-6`；所谓53倍只表示视频残差更弱，两者绝对量都很小，不能作为language conditioning有效的证据。当前v1输出应解释为近乎input-independent shared LoRA。
+- 根因首先是目标不可辨识，而非Writer参数不足：functional PI05 policy本身收到正确language和observation；24个train tasks又各有唯一language；teacher video与action episode在同task内独立。因此一套共享domain/control LoRA加policy自身language就能降低loss，目标没有要求Writer使用视频。v1约12.48M参数生成1.287M LoRA参数，增加容量不会消除该捷径。
+- 架构进一步放大捷径：每帧256个视觉token被全局平均、整条video只压为4个episode tokens，而parameter-query residual和有bias的共享head可绕过task memory直接产生公共LoRA。1000-step全程warmup可能影响checkpoint退化，但解释不了step250已经视频不敏感。
+- owner决定效果优先、消融后补。因此Writer-v2一次性组合修复目标和架构：缓存固定4×4空间网格；language/video分别压到固定memory并使用不含learned-query residual的conditional attention；LoRA decoder只允许parameter query乘性寻址conditional task memory，最终head无bias并保持B=0 identity。
+- v2每次训练生成三种condition：正常`language A/video A`、`null language/video A`和`null language/video B`。后两者在generic policy prompt下对同一A action query计算，并用bounded softplus functional matching要求A-video adapter更适合A；三次PI05 LoRA梯度顺序求取后通过exact chain rule一次回传Writer，避免同时保留三个policy图。
+- 只让Writer做language dropout是不充分的，因为policy language仍可承担任务；仅让wrong分支变差也不构成成功。后续判断必须同时看correct是否超过constant/shared adapter、同query functional loss是否按video-task正确排序、以及多validation tasks上的correct−wrong，而不是只看LoRA hash或相对倍数。

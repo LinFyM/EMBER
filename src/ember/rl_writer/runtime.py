@@ -344,6 +344,7 @@ def build_runtime(
         expected_extraction_sha256=str(cache["extraction_sha256"]),
         max_cached_tasks=4,
         expected_dim=int(as_config["writer"]["vision_feature_dim"]),
+        expected_spatial_tokens=int(as_config["writer"]["vision_spatial_tokens"]),
         expected_run_contract_file_sha256=str(cache["run_contract_file_sha256"]),
         expected_manifest_file_sha256=str(cache["cache_manifest_file_sha256"]),
     )

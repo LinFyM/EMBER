@@ -63,6 +63,46 @@ def writer_functional_action_loss(
     return output
 
 
+def functional_lora_loss_gradient(
+    policy: torch.nn.Module,
+    state: Mapping[str, torch.Tensor],
+    contract: LoRAContract,
+    *,
+    batch: Mapping[str, Any],
+) -> tuple[torch.Tensor, Mapping[str, Any], dict[str, torch.Tensor]]:
+    """Differentiate one policy loss only through detached LoRA leaf tensors.
+
+    This lets the caller evaluate several adapters sequentially without keeping
+    several PI05 activation graphs resident. Backpropagating the returned leaf
+    gradients through the Writer is the exact first derivative by the chain
+    rule; no policy parameter is trainable or accumulated.
+    """
+
+    if any(parameter.requires_grad for parameter in policy.parameters()):
+        raise WriterModelError("functional LoRA gradient received a trainable policy")
+    leaves = {
+        name: value.detach().requires_grad_(True) for name, value in state.items()
+    }
+    output = functional_lora_call(policy, leaves, contract, dict(batch))
+    if (
+        not isinstance(output, tuple)
+        or len(output) != 2
+        or not isinstance(output[0], torch.Tensor)
+        or output[0].ndim != 0
+        or not isinstance(output[1], Mapping)
+    ):
+        raise WriterModelError("functional policy did not return a scalar loss")
+    names = tuple(leaves)
+    gradients = torch.autograd.grad(output[0], tuple(leaves[name] for name in names))
+    if any(not bool(torch.isfinite(value).all()) for value in gradients):
+        raise WriterModelError("functional policy produced non-finite LoRA gradients")
+    return (
+        output[0].detach(),
+        output[1],
+        {name: gradient.detach() for name, gradient in zip(names, gradients, strict=True)},
+    )
+
+
 def writer_success_weighted_flow_loss(
     writer: CompleteLoRAWriter,
     policy: torch.nn.Module,

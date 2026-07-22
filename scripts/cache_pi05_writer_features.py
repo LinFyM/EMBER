@@ -49,7 +49,7 @@ from ember.writer.feature_cache import (
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-RUN_SCHEMA = "ember_pi05_writer_feature_cache_launch_v1"
+RUN_SCHEMA = "ember_pi05_writer_feature_cache_launch_v2"
 ROLE_NAMES = ("development",)
 
 
@@ -63,7 +63,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_writer_feature_cache_v1.json",
+        default=REPO_ROOT / "configs/pi05_writer_feature_cache_v2.json",
     )
     parser.add_argument("--source-run", type=Path, required=True)
     parser.add_argument("--checkpoint", type=Path, required=True)
@@ -242,6 +242,7 @@ def _video_features(
                 embeddings,
                 expected_tokens=expected_tokens,
                 expected_dim=expected_dim,
+                spatial_grid_size=int(config["features"]["vision_spatial_grid_size"]),
             )
         chunks_by_demo[demo_index].append(
             pooled.to(device="cpu", dtype=torch.bfloat16)
@@ -257,7 +258,11 @@ def _video_features(
             )
         episode = torch.cat(chunks_by_demo[index], dim=0)
         expected_length = task.episode_lengths[index]
-        if episode.shape != (expected_length, expected_dim):
+        if episode.shape != (
+            expected_length,
+            int(config["features"]["vision_spatial_tokens"]),
+            expected_dim,
+        ):
             raise FeatureCacheError(
                 f"PI05 cached episode length changed: {task.task_id}/{index}"
             )

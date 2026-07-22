@@ -11,16 +11,16 @@
       "sha256": "5bb0a5ca4604f126cc4bcdd29c9a7a4d17403a8f3ee7161d8afdfeccbb2c488c"
     },
     "as_writer_config": {
-      "path": "configs/pi05_as_writer_v1.json",
-      "sha256": "ebbf4ffeb21f15ede3225e753af719c0a41bfae61ffc4383c4e609aa48521fde"
+      "path": "configs/pi05_as_writer_v2.json",
+      "sha256": "bf73dd9bf2d96809c5a964a33e9eefc79a53611e25d45edf701a796c6f8bb85f"
     },
     "rl_writer_config": {
       "path": "configs/pi05_rl_writer_development_v1.json",
-      "sha256": "1b445c06c4b1ab943d4fbbece0efb99f4a9e2cb26d6b504aa7f01a19aa87883b"
+      "sha256": "9b2db8e09afc1995475c1aa57c8404127c9cc9cf0937e3b48009be6f48f9bbeb"
     },
     "feature_cache_config": {
-      "path": "configs/pi05_writer_feature_cache_v1.json",
-      "sha256": "2165a2d9d7d94d1e3173db352449022bf3f0a6445caf1c9d79ce70b60f8ce3ce"
+      "path": "configs/pi05_writer_feature_cache_v2.json",
+      "sha256": "55f70316b2c2064834578aae520f1bf72d8d43c0c709207f6b2773ad5c7a2561"
     },
     "lora_contract": {
       "path": "configs/pi05_lora_v1.json",

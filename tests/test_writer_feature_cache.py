@@ -69,12 +69,12 @@ def test_task_cache_roundtrip_preserves_episode_boundaries(tmp_path: Path) -> No
     record = save_task_cache(
         path,
         language_features=torch.randn(3, 5),
-        video_features=torch.randn(7, 5),
+        video_features=torch.randn(7, 2, 5),
         episode_offsets=torch.tensor([0, 2, 7]),
         demo_indices=torch.tensor([4, 9]),
         metadata={"schema_version": "test"},
     )
-    cached = load_task_cache(path, expected_dim=5)
+    cached = load_task_cache(path, expected_dim=5, expected_spatial_tokens=2)
     assert record["frames"] == 7 and record["episodes"] == 2
     assert cached.video_features.dtype == torch.bfloat16
     assert cached.episode_offsets.tolist() == [0, 2, 7]
@@ -89,7 +89,7 @@ def test_feature_store_validates_manifest_and_evicts_lru(tmp_path: Path) -> None
         file_record = save_task_cache(
             tensor_path,
             language_features=torch.randn(2, 5),
-            video_features=torch.randn(4, 5),
+            video_features=torch.randn(4, 2, 5),
             episode_offsets=torch.tensor([0, 4]),
             demo_indices=torch.tensor([0]),
             metadata={"extraction_sha256": extraction},
@@ -109,6 +109,7 @@ def test_feature_store_validates_manifest_and_evicts_lru(tmp_path: Path) -> None
         expected_extraction_sha256=extraction,
         max_cached_tasks=1,
         expected_dim=5,
+        expected_spatial_tokens=2,
         expected_run_contract_file_sha256=run_sha,
         expected_manifest_file_sha256=manifest_sha,
     )
@@ -130,7 +131,7 @@ def test_feature_store_keeps_language_and_one_video_authorities_separate(
             language_features=torch.full((2, 3), language_value),
             video_features=torch.tensor(
                 [[video_value], [video_value + 1], [video_value + 2], [video_value + 3]]
-            ).repeat(1, 3),
+            ).repeat(1, 3)[:, None],
             episode_offsets=torch.tensor([0, 1, 4]),
             demo_indices=torch.tensor([7, 9]),
             metadata={"extraction_sha256": extraction},
@@ -150,6 +151,7 @@ def test_feature_store_keeps_language_and_one_video_authorities_separate(
         expected_extraction_sha256=extraction,
         max_cached_tasks=2,
         expected_dim=3,
+        expected_spatial_tokens=1,
         expected_run_contract_file_sha256=run_sha,
         expected_manifest_file_sha256=manifest_sha,
     )
@@ -157,7 +159,7 @@ def test_feature_store_keeps_language_and_one_video_authorities_separate(
         language_task_id=2, video_task_id=5, demo_index=9
     )
     assert torch.all(wrong_video.language_features == 2)
-    assert wrong_video.video_features[:, 0].tolist() == [51, 52, 53]
+    assert wrong_video.video_features[:, 0, 0].tolist() == [51, 52, 53]
     assert wrong_video.episode_offsets.tolist() == [0, 3]
 
 
@@ -203,7 +205,7 @@ def _write_pi05_feature_authorities(tmp_path: Path) -> Path:
     for name, value in files.items():
         write_json_atomic(authority_dir / name, value)
     config = {
-        "schema_version": "ember_pi05_writer_feature_cache_v1",
+        "schema_version": "ember_pi05_writer_feature_cache_v2",
         "authorities": {
             name: {
                 "path": f"authority/{filename}",
@@ -247,7 +249,9 @@ def _write_pi05_feature_authorities(tmp_path: Path) -> Path:
             "frame_batch_size_per_rank": 32,
             "vision_token_count": 256,
             "vision_feature_dim": 2048,
-            "vision_pooling": "mean_over_projected_spatial_tokens_per_frame",
+            "vision_spatial_grid_size": 4,
+            "vision_spatial_tokens": 16,
+            "vision_pooling": "fixed_4x4_grid_mean_over_projected_spatial_tokens_per_frame",
             "vision_normalization": "none_after_pi05_projection",
             "language_feature_dim": 2048,
             "language_max_tokens": 64,
@@ -293,8 +297,10 @@ def test_pi05_feature_config_and_development_role_are_sealed(tmp_path: Path) -> 
 
 def test_pi05_feature_projection_adds_no_hidden_scaling() -> None:
     visual = torch.arange(24, dtype=torch.float32).reshape(2, 4, 3)
-    pooled = pool_pi05_visual_tokens(visual, expected_tokens=4, expected_dim=3)
-    assert torch.equal(pooled, visual.mean(dim=1))
+    pooled = pool_pi05_visual_tokens(
+        visual, expected_tokens=4, expected_dim=3, spatial_grid_size=2
+    )
+    assert torch.equal(pooled, visual)
 
     language = torch.arange(18, dtype=torch.float32).reshape(1, 6, 3)
     mask = torch.tensor([[True, True, False, True, False, False]])
@@ -354,7 +360,7 @@ def test_pi05_feature_store_may_open_a_sealed_manifest_subset(
         file_record = save_task_cache(
             tensor_path,
             language_features=torch.randn(2, 4),
-            video_features=torch.randn(3, 4),
+            video_features=torch.randn(3, 2, 4),
             episode_offsets=torch.tensor([0, 3]),
             demo_indices=torch.tensor([0]),
             metadata={"extraction_sha256": extraction},
@@ -374,7 +380,8 @@ def test_pi05_feature_store_may_open_a_sealed_manifest_subset(
         expected_extraction_sha256=extraction,
         max_cached_tasks=1,
         expected_dim=4,
+        expected_spatial_tokens=2,
         expected_run_contract_file_sha256=run_sha,
         expected_manifest_file_sha256=manifest_sha,
     )
-    assert store.load(2).video_features.shape == (3, 4)
+    assert store.load(2).video_features.shape == (3, 2, 4)

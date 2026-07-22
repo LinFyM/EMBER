@@ -106,12 +106,14 @@ def _writer(template: dict[str, torch.Tensor]) -> CompleteLoRAWriter:
         build_lora_tensor_specs(template),
         template_state=template,
         vision_feature_dim=7,
+        vision_spatial_tokens=4,
         language_feature_dim=5,
         hidden_dim=12,
         attention_heads=3,
         temporal_chunk_size=4,
         chunk_memory_tokens=2,
         episode_memory_tokens=2,
+        language_memory_tokens=2,
         task_memory_tokens=2,
         decoder_hidden_dim=10,
     )
@@ -147,10 +149,10 @@ def test_writer_preserves_mixed_lora_dtypes_and_matches_materialized_policy() ->
     writer = _writer(template)
     with torch.no_grad():
         for head in writer.heads.values():
-            head[-1].bias.fill_(0.01)
+            head[-1].weight.fill_(0.01)
     generated = writer(
         torch.randn(3, 5),
-        torch.randn(7, 7),
+        torch.randn(7, 4, 7),
         torch.tensor([0, 7]),
     )
     assert {name: value.dtype for name, value in generated.items()} == {

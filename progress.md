@@ -144,7 +144,7 @@
 
 ## PI05 reward core、zero-AS RL-Writer与test-only task-local合同（2026-07-21）
 
-- 当前`configs/pi05_rl_writer_development_v1.json` SHA256为`a8c47acd...bf6d`，`configs/pi05_task_local_rl_test_v1.json` SHA256为`2c6cc053...7bd8`。前者formal状态仍为`pending_source_screen_and_real_profile`；后者所有正式budget保持0并写明`blocked_until_zero_interaction_test_and_test_open`，因此当前代码完成不会越过阶段信息墙。
+- Writer-v2替换活动authority后，`configs/pi05_rl_writer_development_v1.json`与`configs/pi05_task_local_rl_test_v1.json`只做机械rebind，当前SHA256为`9b2db8e0...9bbeb`/`b8803f8d...4a2c5`。前者formal状态仍为`pending_source_screen_and_real_profile`；后者所有正式budget保持0并写明`blocked_until_zero_interaction_test_and_test_open`，因此当前代码完成不会越过阶段信息墙，也没有启动RL。
 - `ember.reward`统一实现official random BDDL reset、10-step settling、suite horizon、显式逐replan PI05 flow-noise、成功即停、immutable raw ledger和三类cursor。成功trajectory只保留真正执行的每个replan前缀；reward loss不会监督未执行的45/50 actions。
 - `ember.rl_writer`拆分为contract、runtime、loop和checkpoint owner。fresh Writer在8 ranks上使用共同确定性seed且generated LoRA功能恒等；只有rank0原子发布run contract并跨rank校验digest。Writer-only DDP更新、task/video full-cycle coverage、完整per-rank RNG、optimizer/scheduler、metrics与ledger-bound exact-resume均已接入；micro-AS分支在zero完整负证据前硬拒绝。
 - `ember.task_local`已封存8 test tasks、三臂/cohort video/匹配seed、一次性初始化bundle、physical task-LoRA-only executed-prefix update、随机reset reward checkpoint选择和hash-bound resume mechanics；尚未实现或启动test formal runtime，不把机械合同写成结果。
@@ -188,9 +188,9 @@
 
 ## 当前后续动作
 
-1. 以已封存的batch16、1,000-step配置启动development AS-Writer正式训练，保留250/500/750/1000四个候选checkpoint。
-2. 用固定廉价validation screen先淘汰明显未收敛候选，仅对少量候选运行完整8-task validation；并行推进Source-SFT真实短profile与独立选择。
-3. 使用同一raw source policy与source-only normalization持续推进seen/wrong-video、final与RL/oracle阶段；不再把EMA 0/320带入科学解释。
+1. 对Writer-v2的4×4 spatial cache做真实8卡smoke并生成development cache。
+2. 短profile三分支functional loss、matching gap、吞吐与显存，随后直接训练首轮Writer-v2并做cheap correct/wrong screen。
+3. Writer视频特异性建立后测Source-SFT的validation时间上限；seen和RL-Writer继续暂停，不把旧AS 119/400解释成视频收益。
 
 ## AS-Writer短周期profile与正式seal（2026-07-22）
 
@@ -215,3 +215,12 @@
 - AS step250 cross-suite wrong-video正式对照完成`115/400`，correct-video为`119/400`，source base为`48/400`。paired flips为both-success 102、correct-only 17、wrong-only 13、both-fail 268；correct−wrong仅+4，当前development AS checkpoint未显示强视频内容依赖。
 - wrong-video root为`/data/ymdai/outputs/ember/pi05_as_writer_val8x50_cross_suite_wrong_step0250_fa635cc_r3_20260722`；24 workers exit0、38 shards和400 rows完整，results/comparison SHA256为`0e6ee518...a9ce`/`d4a4f9f7...eaac`。
 - canonical `evaluate_pi05.py`现直接支持已封存的8-task `seen_panel` derived role：入口核验`pi05_seen_panel_v1.json`及checksum、target-data authority、四suite各2个train task和零outcome/value reads；Source-SFT同一静态adapter路径仅接受该精确subset。没有新增runner或改写旧checkpoint/config authority，相关聚焦43 tests及全仓144 tests通过。
+
+## Writer-v2组合修订已实现、待真实profile（2026-07-22）
+
+- 旧v1 correct/wrong为119/115，且400/400视频虽不同、生成LoRA hash虽不同，有效`B@A`的correct/wrong相对差中位数只有`7.52e-6`；当前状态判定为科学shortcut negative而非cache/evaluator故障。seen与RL-Writer继续暂停。
+- 新活动authority为`configs/pi05_writer_feature_cache_v2.json`和`configs/pi05_as_writer_v2.json`，当前SHA256为`55f70316...a2561`/`bf73dd9b...bb85f`；旧v1配置由schema fail-close，只保留artifact/Git provenance。v2仍使用同一raw source policy、24 train actions、development train/validation videos、38-target complete LoRA和同一canonical训练/评测入口。
+- cache从每帧全局mean改为固定4×4 spatial grid，tensor为`frames×16×2048 BF16`；预计完整274,523-frame cache主体约17.99GB。当前`/data/ymdai`实占约232GB，峰值远低于500GB cap，无需删除既有证据。
+- Writer-v2为14,403,200 trainable parameters；language/video使用独立固定token memory，所有层级attention去除query-only residual，decoder只以parameter query乘性调制conditional memory，output heads无bias且identity init不变。CPU full-shape direct check生成76个三condition tensors、全部finite，人工开启head后condition mean diff非零。
+- 训练一次Writer forward生成normal、video-forced-correct和video-forced-paired三套LoRA；三个PI05 functional loss逐个保留单一policy图并提取LoRA leaf gradient，再按normal/forced/bounded matching目标一次性回传DDP Writer。action query仍来自同task独立episode；paired negative只来自预封存的另一个development-train task。
+- 配置当前为`pending_profile`，没有把未实测的batch/steps封存为正式配方。fresh全仓`147 passed`、config checksums与diff check通过；architecture guard由两处hard function-growth信号经内聚helper抽取后降为`REVIEW`，无hard violation、无parallel family。下一步是commit/push后做8卡spatial-cache smoke和训练profile。

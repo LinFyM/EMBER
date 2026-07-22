@@ -4,6 +4,7 @@ import torch
 
 from ember.lora import LoRATarget, SmolVLALoRAContract, lora_state_sha256
 from ember.writer.functional import (
+    functional_lora_loss_gradient,
     prepare_frozen_writer_policy,
     writer_functional_action_loss,
     writer_success_weighted_flow_loss,
@@ -44,12 +45,14 @@ def _writer(template: dict[str, torch.Tensor]) -> CompleteLoRAWriter:
         build_lora_tensor_specs(template),
         template_state=template,
         vision_feature_dim=7,
+        vision_spatial_tokens=4,
         language_feature_dim=5,
         hidden_dim=12,
         attention_heads=3,
         temporal_chunk_size=4,
         chunk_memory_tokens=2,
         episode_memory_tokens=2,
+        language_memory_tokens=2,
         task_memory_tokens=2,
         decoder_hidden_dim=10,
     )
@@ -65,7 +68,7 @@ def test_functional_action_loss_only_backpropagates_into_writer() -> None:
         policy,
         _contract(),
         language_features=torch.randn(3, 5),
-        video_features=torch.randn(9, 7),
+        video_features=torch.randn(9, 4, 7),
         episode_offsets=torch.tensor([0, 9]),
         batch={"value": torch.ones(6, 3)},
     )
@@ -91,6 +94,33 @@ def test_tensor_state_hash_covers_names_metadata_and_bytes() -> None:
     assert digest != lora_state_sha256(changed)
 
 
+def test_detached_lora_gradient_bridge_backpropagates_exact_writer_gradient() -> None:
+    policy = _LossPolicy()
+    template = prepare_frozen_writer_policy(policy, _contract())
+    writer = _writer(template)
+    with torch.no_grad():
+        for head in writer.heads.values():
+            head[-1].weight.fill_(0.01)
+    state = writer(
+        torch.randn(3, 5),
+        torch.randn(9, 4, 7),
+        torch.tensor([0, 9]),
+    )
+    loss, details, gradients = functional_lora_loss_gradient(
+        policy,
+        state,
+        _contract(),
+        batch={"value": torch.ones(6, 3)},
+    )
+    torch.autograd.backward(tuple(state.values()), tuple(gradients.values()))
+    assert details["loss"] == float(loss)
+    assert all(parameter.grad is None for parameter in policy.parameters())
+    assert any(
+        parameter.grad is not None and bool(torch.isfinite(parameter.grad).all())
+        for parameter in writer.parameters()
+    )
+
+
 def test_success_weighted_flow_loss_weights_episodes_equally() -> None:
     policy = _LossPolicy()
     template = prepare_frozen_writer_policy(policy, _contract())
@@ -100,7 +130,7 @@ def test_success_weighted_flow_loss_weights_episodes_equally() -> None:
         policy,
         _contract(),
         language_features=torch.randn(3, 5),
-        video_features=torch.randn(9, 7),
+        video_features=torch.randn(9, 4, 7),
         episode_offsets=torch.tensor([0, 9]),
         batch={
             "value": torch.tensor(

@@ -26,9 +26,9 @@ class FeatureCacheError(RuntimeError):
     """Raised when a cache input, artifact, or resume boundary is invalid."""
 
 
-PI05_FEATURE_CACHE_CONFIG_SCHEMA = "ember_pi05_writer_feature_cache_v1"
-PI05_FEATURE_CACHE_MANIFEST_SCHEMA = "ember_pi05_writer_feature_cache_manifest_v1"
-PI05_TASK_FEATURE_CACHE_SCHEMA = "ember_pi05_writer_task_feature_cache_v1"
+PI05_FEATURE_CACHE_CONFIG_SCHEMA = "ember_pi05_writer_feature_cache_v2"
+PI05_FEATURE_CACHE_MANIFEST_SCHEMA = "ember_pi05_writer_feature_cache_manifest_v2"
+PI05_TASK_FEATURE_CACHE_SCHEMA = "ember_pi05_writer_task_feature_cache_v2"
 
 
 @dataclass(frozen=True)
@@ -139,6 +139,7 @@ class WriterFeatureStore:
         expected_extraction_sha256: str,
         max_cached_tasks: int,
         expected_dim: int,
+        expected_spatial_tokens: int,
         expected_run_contract_file_sha256: str,
         expected_manifest_file_sha256: str,
     ) -> None:
@@ -147,6 +148,7 @@ class WriterFeatureStore:
             or len(set(task_ids)) != len(task_ids)
             or max_cached_tasks <= 0
             or expected_dim <= 0
+            or expected_spatial_tokens <= 0
         ):
             raise FeatureCacheError("invalid Writer feature-store request")
         manifest = _load_pi05_store_manifest(
@@ -165,6 +167,7 @@ class WriterFeatureStore:
         self.extraction_sha256 = expected_extraction_sha256
         self.max_cached_tasks = max_cached_tasks
         self.expected_dim = expected_dim
+        self.expected_spatial_tokens = expected_spatial_tokens
         self.expected_task_record_schema = PI05_TASK_FEATURE_CACHE_SCHEMA
         self._cached: OrderedDict[int, CachedWriterInput] = OrderedDict()
         self._verified: set[int] = set()
@@ -185,7 +188,11 @@ class WriterFeatureStore:
                 raise FeatureCacheError(f"task feature cache changed: {task_id}")
             self._verified.add(task_id)
         tensor_path, _ = task_cache_paths(self.root, task_id)
-        cached = load_task_cache(tensor_path, expected_dim=self.expected_dim)
+        cached = load_task_cache(
+            tensor_path,
+            expected_dim=self.expected_dim,
+            expected_spatial_tokens=self.expected_spatial_tokens,
+        )
         self._cached[task_id] = cached
         while len(self._cached) > self.max_cached_tasks:
             self._cached.popitem(last=False)
@@ -211,7 +218,7 @@ class WriterFeatureStore:
         start = int(video_cache.episode_offsets[position])
         stop = int(video_cache.episode_offsets[position + 1])
         video = video_cache.video_features[start:stop]
-        if video.ndim != 2 or video.shape[0] <= 0:
+        if video.ndim != 3 or video.shape[0] <= 0:
             raise FeatureCacheError("teaching video slice is empty")
         return OneVideoWriterInput(
             language_features=language_cache.language_features,
@@ -337,7 +344,9 @@ def _validate_pi05_feature_values(config: Mapping[str, Any]) -> None:
         "model_preprocessing": "PI05Policy._preprocess_images_resize_with_pad_224_neg_one_to_one",
         "vision_token_count": 256,
         "vision_feature_dim": 2048,
-        "vision_pooling": "mean_over_projected_spatial_tokens_per_frame",
+        "vision_spatial_grid_size": 4,
+        "vision_spatial_tokens": 16,
+        "vision_pooling": "fixed_4x4_grid_mean_over_projected_spatial_tokens_per_frame",
         "vision_normalization": "none_after_pi05_projection",
         "language_feature_dim": 2048,
         "language_max_tokens": 64,
@@ -358,7 +367,7 @@ def _validate_pi05_feature_runtime(config: Mapping[str, Any]) -> None:
     features = config["features"]
     profile = config.get("profile", {})
     if (
-        profile.get("status") not in {"pending_source_base", "sealed"}
+        profile.get("status") not in {"pending_source_base", "pending_profile", "sealed"}
         or profile.get("candidate_frame_batch_size_per_rank")
         != features["frame_batch_size_per_rank"]
         or profile.get("selection_metric")
@@ -560,9 +569,13 @@ def select_language_tokens(
 
 
 def pool_pi05_visual_tokens(
-    embeddings: torch.Tensor, *, expected_tokens: int, expected_dim: int
+    embeddings: torch.Tensor,
+    *,
+    expected_tokens: int,
+    expected_dim: int,
+    spatial_grid_size: int,
 ) -> torch.Tensor:
-    """Pool projected PI05 SigLIP tokens without SmolVLA's extra scaling."""
+    """Retain a fixed spatial grid of projected PI05 SigLIP token means."""
 
     if (
         embeddings.ndim != 3
@@ -572,7 +585,23 @@ def pool_pi05_visual_tokens(
         raise FeatureCacheError(
             f"unexpected PI05 image embedding shape: {tuple(embeddings.shape)}"
         )
-    return embeddings.mean(dim=1)
+    token_side = math.isqrt(expected_tokens)
+    if (
+        token_side * token_side != expected_tokens
+        or spatial_grid_size <= 0
+        or token_side % spatial_grid_size
+    ):
+        raise FeatureCacheError("PI05 visual-token grid is not evenly poolable")
+    block = token_side // spatial_grid_size
+    grid = embeddings.reshape(
+        embeddings.shape[0],
+        spatial_grid_size,
+        block,
+        spatial_grid_size,
+        block,
+        expected_dim,
+    ).mean(dim=(2, 4))
+    return grid.flatten(1, 2)
 
 
 def select_pi05_language_tokens(
@@ -594,7 +623,7 @@ def select_pi05_language_tokens(
 
 
 def _validate_cached_tensors(
-    tensors: Mapping[str, torch.Tensor], *, expected_dim: int
+    tensors: Mapping[str, torch.Tensor], *, expected_dim: int, expected_spatial_tokens: int
 ) -> CachedWriterInput:
     required = {"language_features", "video_features", "episode_offsets", "demo_indices"}
     if set(tensors) != required:
@@ -608,9 +637,10 @@ def _validate_cached_tensors(
         or language.shape[0] < 1
         or language.shape[1] != expected_dim
         or language.dtype != torch.bfloat16
-        or video.ndim != 2
+        or video.ndim != 3
         or video.shape[0] < 1
-        or video.shape[1] != expected_dim
+        or video.shape[1] != expected_spatial_tokens
+        or video.shape[2] != expected_dim
         or video.dtype != torch.bfloat16
         or offsets.ndim != 1
         or offsets.dtype != torch.int64
@@ -645,7 +675,13 @@ def save_task_cache(
         "episode_offsets": episode_offsets.detach().to(device="cpu", dtype=torch.int64).contiguous(),
         "demo_indices": demo_indices.detach().to(device="cpu", dtype=torch.int64).contiguous(),
     }
-    cached = _validate_cached_tensors(tensors, expected_dim=video_features.shape[1])
+    if video_features.ndim != 3:
+        raise FeatureCacheError("video cache must preserve spatial tokens")
+    cached = _validate_cached_tensors(
+        tensors,
+        expected_dim=video_features.shape[2],
+        expected_spatial_tokens=video_features.shape[1],
+    )
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
     save_file(tensors, str(temporary), metadata=dict(metadata))
@@ -659,10 +695,16 @@ def save_task_cache(
     }
 
 
-def load_task_cache(path: Path, *, expected_dim: int = 960) -> CachedWriterInput:
+def load_task_cache(
+    path: Path, *, expected_dim: int, expected_spatial_tokens: int
+) -> CachedWriterInput:
     if not path.is_file():
         raise FeatureCacheError(f"task feature cache is missing: {path}")
-    return _validate_cached_tensors(load_file(path, device="cpu"), expected_dim=expected_dim)
+    return _validate_cached_tensors(
+        load_file(path, device="cpu"),
+        expected_dim=expected_dim,
+        expected_spatial_tokens=expected_spatial_tokens,
+    )
 
 
 def task_cache_paths(output_dir: Path, task_id: int) -> tuple[Path, Path]:
@@ -675,7 +717,7 @@ def task_cache_is_complete(
     task_id: int,
     *,
     extraction_sha256: str,
-    record_schema: str = "ember_writer_task_feature_cache_v1",
+    record_schema: str = PI05_TASK_FEATURE_CACHE_SCHEMA,
 ) -> bool:
     tensor_path, record_path = task_cache_paths(output_dir, task_id)
     if not tensor_path.is_file() or not record_path.is_file():

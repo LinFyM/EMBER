@@ -38,8 +38,8 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_as_writer_v1"
-AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_as_writer_launch_v1"
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_as_writer_v2"
+AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_as_writer_launch_v2"
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
 
@@ -93,6 +93,8 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
     writer = config.get("writer", {})
     if (
         writer.get("vision_feature_dim") != feature["features"]["vision_feature_dim"]
+        or writer.get("vision_spatial_tokens")
+        != feature["features"]["vision_spatial_tokens"]
         or writer.get("language_feature_dim") != feature["features"]["language_feature_dim"]
         or writer.get("generated_adapter") != "complete_pi05_task_specific_lora"
     ):
@@ -127,10 +129,39 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         "episodes_per_task": 50,
         "teacher_video_sampling": "independent deterministic per-task no-replacement cycles",
         "action_query_sampling": "task-balanced deterministic no-replacement episode cycles",
-        "video_action_pairing": "independent within the same task",
+        "video_action_pairing": "positive video/action independent within task; contrast video from sealed paired train task",
     }
     if any(data.get(name) != value for name, value in required.items()):
         raise WriterModelError("AS-Writer sampling contract changed")
+
+
+def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
+    value = config.get("conditioning_training", {})
+    pairs = value.get("video_task_pairs", [])
+    flattened = [int(task_id) for pair in pairs for task_id in pair]
+    target = read_json(authority_path(config, "target_data_manifest"))
+    train_ids = sorted(int(task_id) for task_id in target["summary"]["roles"]["train"])
+    weights = (
+        value.get("normal_loss_weight"),
+        value.get("video_forced_loss_weight"),
+        value.get("matching_loss_weight"),
+        value.get("matching_temperature"),
+    )
+    if (
+        value.get("method")
+        != "normal_plus_video_forced_policy_prompt_mask_plus_paired_functional_matching"
+        or value.get("writer_language_mask") != "single_zero_feature_token"
+        or value.get("policy_language_mask") != "generic_prompt_on_video_forced_branches_only"
+        or not str(value.get("generic_policy_prompt", "")).strip()
+        or not isinstance(pairs, list)
+        or any(not isinstance(pair, list) or len(pair) != 2 for pair in pairs)
+        or sorted(flattened) != train_ids
+        or len(set(flattened)) != len(flattened)
+        or any(not isinstance(weight, (int, float)) or weight <= 0 for weight in weights)
+        or not isinstance(value.get("matching_margin"), (int, float))
+        or value["matching_margin"] < 0
+    ):
+        raise WriterModelError("AS-Writer video-forced training contract changed")
 
 
 def load_writer_config(path: Path) -> dict[str, Any]:
@@ -140,6 +171,7 @@ def load_writer_config(path: Path) -> dict[str, Any]:
     _validate_authorities(config)
     _validate_protocol(config)
     _validate_information_wall(config)
+    _validate_conditioning_training(config)
     return config
 
 
@@ -307,7 +339,7 @@ def inspect_feature_cache(
         "model_files",
     )
     if (
-        contract.get("schema_version") != "ember_pi05_writer_feature_cache_launch_v1"
+        contract.get("schema_version") != "ember_pi05_writer_feature_cache_launch_v2"
         or contract.get("mode") != "formal"
         or contract.get("role") != "development"
         or canonical_hash(contract_payload) != contract_digest
@@ -423,7 +455,10 @@ def build_contract(
             "ddp_object": "shared_writer_only",
             "per_rank_action_query_batch_size": batch_size,
             "effective_global_action_queries": context.world_size * batch_size,
-            "writer_invocations_per_optimizer_step": context.world_size,
+            "writer_invocations_per_optimizer_step": context.world_size * 3,
+            "functional_policy_evaluations_per_optimizer_step": context.world_size
+            * batch_size
+            * 3,
             "teacher_videos_per_writer_invocation": 1,
             "total_steps": total_steps,
             "checkpoint_steps": list(checkpoint_steps),

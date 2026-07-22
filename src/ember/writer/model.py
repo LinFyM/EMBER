@@ -96,12 +96,14 @@ class CompleteLoRAWriter(torch.nn.Module):
         *,
         template_state: Mapping[str, torch.Tensor],
         vision_feature_dim: int,
+        vision_spatial_tokens: int,
         language_feature_dim: int,
         hidden_dim: int,
         attention_heads: int,
         temporal_chunk_size: int,
         chunk_memory_tokens: int,
         episode_memory_tokens: int,
+        language_memory_tokens: int,
         task_memory_tokens: int,
         decoder_hidden_dim: int,
     ) -> None:
@@ -115,12 +117,14 @@ class CompleteLoRAWriter(torch.nn.Module):
         self.tensor_specs = tensor_specs
         self.task_encoder = VariableEpisodeTaskEncoder(
             vision_feature_dim=vision_feature_dim,
+            vision_spatial_tokens=vision_spatial_tokens,
             language_feature_dim=language_feature_dim,
             hidden_dim=hidden_dim,
             attention_heads=attention_heads,
             temporal_chunk_size=temporal_chunk_size,
             chunk_memory_tokens=chunk_memory_tokens,
             episode_memory_tokens=episode_memory_tokens,
+            language_memory_tokens=language_memory_tokens,
             task_memory_tokens=task_memory_tokens,
         )
         module_count = max(item.module_index for item in tensor_specs) + 1
@@ -132,6 +136,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             hidden_dim, attention_heads, batch_first=True, dropout=0.0
         )
         self.parameter_norm = torch.nn.LayerNorm(hidden_dim)
+        self.parameter_gate = torch.nn.Linear(hidden_dim, hidden_dim, bias=False)
         self.parameter_ffn = torch.nn.Sequential(
             torch.nn.LayerNorm(hidden_dim),
             torch.nn.Linear(hidden_dim, hidden_dim * 4),
@@ -142,12 +147,11 @@ class CompleteLoRAWriter(torch.nn.Module):
         self.heads = torch.nn.ModuleDict()
         for width in sorted({item.width for item in tensor_specs}):
             head = torch.nn.Sequential(
-                torch.nn.Linear(hidden_dim, decoder_hidden_dim),
+                torch.nn.Linear(hidden_dim, decoder_hidden_dim, bias=False),
                 torch.nn.GELU(),
-                torch.nn.Linear(decoder_hidden_dim, width),
+                torch.nn.Linear(decoder_hidden_dim, width, bias=False),
             )
             torch.nn.init.zeros_(head[-1].weight)
-            torch.nn.init.zeros_(head[-1].bias)
             self.heads[str(width)] = head
 
         self._template_buffers: dict[str, str] = {}
@@ -185,26 +189,33 @@ class CompleteLoRAWriter(torch.nn.Module):
         self,
         language_tokens: torch.Tensor,
         video_features: torch.Tensor,
-        episode_offsets: torch.Tensor,
+        video_offsets: torch.Tensor,
+        language_offsets: torch.Tensor | None = None,
     ) -> torch.Tensor:
-        if (
-            episode_offsets.ndim != 1
-            or episode_offsets.numel() != 2
-            or int(episode_offsets[0]) != 0
-            or int(episode_offsets[1]) != int(video_features.shape[0])
-            or int(episode_offsets[1]) <= 0
-        ):
-            raise WriterModelError("Writer requires exactly one non-empty teaching video")
-        return self.task_encoder(language_tokens, video_features, episode_offsets)
+        if language_offsets is None:
+            if video_offsets.numel() != 2:
+                raise WriterModelError("Writer requires one video per condition")
+            language_offsets = torch.tensor(
+                [0, language_tokens.shape[0]], dtype=torch.int64
+            )
+        if language_offsets.numel() != video_offsets.numel():
+            raise WriterModelError("Writer language/video condition batches differ")
+        return self.task_encoder(
+            language_tokens,
+            video_features,
+            language_offsets,
+            video_offsets,
+        )
 
     def forward(
         self,
         language_tokens: torch.Tensor,
         video_features: torch.Tensor,
         episode_offsets: torch.Tensor,
+        language_offsets: torch.Tensor | None = None,
     ) -> dict[str, torch.Tensor]:
         task_memory = self.encode_task(
-            language_tokens, video_features, episode_offsets
+            language_tokens, video_features, episode_offsets, language_offsets
         )
         queries = (
             self.module_embedding(self.parameter_module_ids)
@@ -214,20 +225,22 @@ class CompleteLoRAWriter(torch.nn.Module):
         normalized_queries = self.parameter_norm(queries)
         normalized_memory = self.parameter_norm(task_memory)
         attended, _ = self.parameter_attention(
-            normalized_queries[None],
-            normalized_memory[None],
-            normalized_memory[None],
+            normalized_queries[None].expand(task_memory.shape[0], -1, -1),
+            normalized_memory,
+            normalized_memory,
             need_weights=False,
         )
-        decoded = queries + attended[0]
+        gate = 1.0 + torch.tanh(self.parameter_gate(normalized_queries))
+        decoded = attended * gate[None]
         decoded = decoded + self.parameter_ffn(decoded)
 
         result: dict[str, torch.Tensor] = {}
         for item, (start, stop) in zip(
             self.tensor_specs, self._query_slices, strict=True
         ):
-            rows = self.heads[str(item.width)](decoded[start:stop])
+            rows = self.heads[str(item.width)](decoded[:, start:stop])
             generated = rows.transpose(-1, -2) if item.transpose_output else rows
             template = getattr(self, self._template_buffers[item.name])
-            result[item.name] = generated.to(dtype=template.dtype) + template
+            value = generated.to(dtype=template.dtype) + template[None]
+            result[item.name] = value[0] if task_memory.shape[0] == 1 else value
         return result

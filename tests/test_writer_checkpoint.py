@@ -21,7 +21,7 @@ from ember.writer.model import WriterModelError
 
 
 ROOT = Path(__file__).resolve().parents[1]
-AS_CONFIG = ROOT / "configs/pi05_as_writer_v1.json"
+AS_CONFIG = ROOT / "configs/pi05_as_writer_v2.json"
 
 
 def _checkpoint(tmp_path: Path, contract_sha256: str) -> Path:
@@ -89,7 +89,7 @@ def _static_as_evaluation_fixture(tmp_path: Path) -> tuple[Path, Path, dict]:
     cache.mkdir()
     extraction = "7" * 64
     cache_contract = {
-        "schema_version": "ember_pi05_writer_feature_cache_launch_v1",
+        "schema_version": "ember_pi05_writer_feature_cache_launch_v2",
         "mode": "formal",
         "role": "development",
         "config_sha256": config["authorities"]["feature_cache_config"]["sha256"],
@@ -127,7 +127,7 @@ def _static_as_evaluation_fixture(tmp_path: Path) -> tuple[Path, Path, dict]:
     checkpoint.mkdir(parents=True)
     lora = load_pi05_lora_contract(ROOT / config["authorities"]["lora_contract"]["path"])
     training = {
-        "schema_version": "ember_pi05_as_writer_launch_v1",
+        "schema_version": "ember_pi05_as_writer_launch_v2",
         "mode": "profile",
         "git": {"commit": "8" * 40},
         "config_sha256": sha256_file(AS_CONFIG),

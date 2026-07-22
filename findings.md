@@ -371,3 +371,10 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 唯一step63完整validation为`61/400 = 15.25%`，5/8 tasks非零；逐任务Spatial 1/3=`5/1`、Object 1/3=`20/0`、Goal 3/6=`0/32`、Long 1/2=`1/2`。相对source base `48/400`增加13，但同时Goal 6从41降到32、Long 1从2降到1；增益主要来自Object 1 `+15`和两个Spatial tasks `+6`，不是全任务一致改善。
 - 在400个匹配task/init rows上，Source-SFT与source base/AS都保持相同env seed、policy seed root和共享长度内全部policy-noise seed前缀。AS step250仍明显更高：`119/400`对`61/400`，主要差异为Object 1 `40 vs 20`、Object 3 `36 vs 0`和Long 1 `16 vs 1`；Source-SFT在Goal 6为`32 vs 27`并在两个Spatial tasks合计`6 vs 0`。
 - Source-SFT train contract/metrics/checkpoint-manifest SHA256为`4e113268...dd87`/`02ca6611...64bb`/`2dce01f0...fb3e`；validation results SHA256为`92e3e667...3f6d`，24 workers均exit0、38 shards完整、400 raw rows唯一。三方法对照证据文件SHA256为`c376ef9c...a1f`。
+
+## AS-Writer cross-suite wrong-video结果（2026-07-22）
+
+- step250 cross-suite-wrong完整validation为`115/400 = 28.75%`，而correct-video为`119/400 = 29.75%`、source base为`48/400 = 12%`。核心correct−wrong差值仅`+4/400 = +1pp`，因此当前checkpoint虽明显优于base，却没有建立强teacher-video任务内容依赖。
+- 逐任务correct/wrong为Spatial 1/3=`0/0` vs `0/1`、Object 1/3=`40/36` vs `37/33`、Goal 3/6=`0/27` vs `0/28`、Long 1/2=`16/0` vs `16/0`。400个paired rows中both-success 102、correct-only 17、wrong-only 13、both-fail 268；不是少数任务的大幅正负效果恰好抵消。
+- 两臂400/400 rows的task/init、env seed、policy seed root及共享长度内policy-noise seed前缀完全匹配；noise列表长度仅因成功终止改变replan次数。wrong run 24 workers均exit0、38 shards和400 raw rows完整，results SHA256为`0e6ee518...a9ce`，correct/wrong对照证据SHA256为`d4a4f9f7...eaac`。
+- 科学解释应保持克制：结果与Writer主要使用language、或视频编码在该训练下近乎不敏感相一致；在没有进一步干预证据前，不能声称AS-Writer从正确视频恢复了task-specific visual information。

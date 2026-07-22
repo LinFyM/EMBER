@@ -86,7 +86,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [ ] 比较source base、Source-SFT、AS-Writer、可用RL-Writer的seen performance。
 - [x] 封存同split role、按suite循环和排序ordinal构造的cross-suite wrong-video机械map；correct/wrong两臂保持同一language、task、init state、policy RNG、video seed与demo ordinal。
 - [x] canonical evaluator在同一dynamic queue、persistent worker和raw-row schema内支持frozen AS-Writer或RL-Writer；两者共享correct/wrong mapping与video seed，artifact kind/checkpoint axis分别fail-close。
-- [ ] 用正式checkpoint运行并报告AS/可用RL Writer的correct/wrong/base逐任务结果。
+- [x] 用正式AS checkpoint运行并报告correct/wrong/base逐任务结果：119/115/48（各400）；correct−wrong仅+4，当前AS结果未显示强teacher-video内容依赖。RL-Writer若成立后另补其对照。
 - [ ] 冻结AS-Writer、RL-Writer、Source-SFT的architecture、LoRA空间、optimizer与最终训练steps。
 
 ## Phase F：32-source final retraining与zero-interaction test

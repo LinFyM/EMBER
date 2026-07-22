@@ -20,6 +20,7 @@ from ember.pi05_eval_queue import (
 from ember.pi05_evaluation import (
     SHARD_RESULT_SCHEMA,
     _complete_published_shard,
+    _load_evaluation_adapter,
     _validate_worker_assets,
     make_policy_noise,
     rollout_shard,
@@ -178,6 +179,72 @@ def test_writer_row_contract_recomputes_video_schedule_and_mapping(tmp_path: Pat
         validate_shard_result(payload, contract=contract, shard=shard)
 
 
+def test_static_source_sft_rows_remain_batched_without_writer_evidence(
+    tmp_path: Path,
+) -> None:
+    contract = _contract(tmp_path)
+    contract["adapter"] = {
+        "kind": "shared_source_sft_lora",
+        "arm": "source_sft",
+        "lora_state_sha256": "8" * 64,
+    }
+    contract["arm"] = "source_sft"
+    contract["contract_sha256"] = canonical_hash(
+        {key: value for key, value in contract.items() if key != "contract_sha256"}
+    )
+    shard = EvaluationShard(
+        job_id="source-sft-job",
+        ordinal=0,
+        suite="libero_spatial",
+        task_id=0,
+        horizon=220,
+        init_state_ids=(0, 1),
+        estimated_cost=440,
+    )
+    payload = _payload(contract, shard)
+    for row in payload["rows"]:
+        row["policy_adapter_sha256"] = "8" * 64
+    assert all("writer" not in row for row in payload["rows"])
+    assert len(validate_shard_result(payload, contract=contract, shard=shard)) == 2
+    payload["rows"][0]["policy_adapter_sha256"] = "9" * 64
+    with pytest.raises(Pi05EvaluationError, match="row contract changed"):
+        validate_shard_result(payload, contract=contract, shard=shard)
+
+
+def test_static_source_sft_adapter_is_installed_once_not_returned_per_rollout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import ember.source_sft.inference as inference
+
+    calls = []
+
+    class FakeStaticAdapter:
+        def __init__(self, **kwargs):
+            calls.append(kwargs)
+
+    monkeypatch.setattr(inference, "FrozenSourceSFTAdapter", FakeStaticAdapter)
+    contract = {
+        "mode": "smoke",
+        "model": {"source": "base"},
+        "adapter": {"kind": "shared_source_sft_lora"},
+        "tasks": [
+            {"suite": "libero_spatial", "task_id": 1},
+            {"suite": "libero_object", "task_id": 3},
+        ],
+    }
+    policy = object()
+    result = _load_evaluation_adapter(
+        policy, contract, device=torch.device("cpu")
+    )
+    assert result is None
+    assert len(calls) == 1
+    assert calls[0]["policy"] is policy
+    assert calls[0]["task_keys"] == (
+        ("libero_spatial", 1),
+        ("libero_object", 3),
+    )
+
+
 def test_worker_asset_validation_rehashes_model_and_tokenizer(tmp_path: Path) -> None:
     normalization = tmp_path / "normalization.json"
     normalization.write_text(json.dumps({"stats": {}}) + "\n", encoding="utf-8")
@@ -285,12 +352,16 @@ class _FakePolicy:
 
     config = Config()
 
+    def __init__(self) -> None:
+        self.batch_sizes = []
+
     def reset(self) -> None:
         pass
 
     def predict_action_chunk(self, batch, *, noise, num_steps):
         assert noise.shape[1:] == (50, 32)
         assert num_steps == 10
+        self.batch_sizes.append(int(noise.shape[0]))
         return torch.zeros((noise.shape[0], 50, 7), dtype=torch.float32)
 
 
@@ -312,6 +383,10 @@ def test_rollout_executes_arbitrary_state_shard_with_per_row_noise() -> None:
         },
         "policy": {"replan_steps": 5, "num_inference_steps": 10},
         "rng": {"inference_seed": 7},
+        "adapter": {
+            "kind": "shared_source_sft_lora",
+            "lora_state_sha256": "8" * 64,
+        },
     }
     task = {
         "suite": "libero_goal",
@@ -320,19 +395,22 @@ def test_rollout_executes_arbitrary_state_shard_with_per_row_noise() -> None:
         "language": "put the bowl on top of the cabinet",
         "horizon": 300,
     }
+    policy = _FakePolicy()
     rows = rollout_shard(
         envs=(_FakeEnv(), _FakeEnv()),
         init_states=tuple(range(10)),
         task=task,
         state_ids=(7, 2, 9),
         contract=contract,
-        policy=_FakePolicy(),
+        policy=policy,
         preprocess=_preprocess,
         postprocess=lambda value: value,
     )
     assert [row["init_state_id"] for row in rows] == [2, 7, 9]
     assert all(row["steps"] == 2 and row["success"] for row in rows)
+    assert max(policy.batch_sizes) == 2
     for row in rows:
+        assert row["policy_adapter_sha256"] == "8" * 64
         assert row["policy_noise_seeds"] == [
             policy_noise_seed(7, "libero_goal", 4, row["init_state_id"], 0)
         ]

@@ -64,6 +64,8 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
         "--writer-video-condition",
         choices=("correct", "cross_suite_wrong"),
     )
+    parser.add_argument("--source-sft-config", type=Path)
+    parser.add_argument("--source-sft-checkpoint", type=Path)
 
 
 def parse_args() -> argparse.Namespace:
@@ -110,20 +112,34 @@ def _shards_from_contract(contract: dict[str, Any]) -> tuple[Any, ...]:
     )
 
 
-def _writer_requested(args: argparse.Namespace) -> bool:
-    values = (
-        args.as_writer_config,
-        args.as_writer_checkpoint,
-        args.writer_feature_cache,
-        args.writer_video_condition,
-    )
+def _all_or_none(values: Sequence[Any], label: str) -> bool:
     if any(value is not None for value in values) and not all(
         value is not None for value in values
     ):
-        raise Pi05EvaluationError(
-            "AS-Writer evaluation requires config, checkpoint, cache, and video condition"
-        )
+        raise Pi05EvaluationError(f"{label} evaluation requires all declared assets")
     return all(value is not None for value in values)
+
+
+def _writer_requested(args: argparse.Namespace) -> bool:
+    return _all_or_none(
+        (args.as_writer_config, args.as_writer_checkpoint, args.writer_feature_cache,
+         args.writer_video_condition),
+        "AS-Writer",
+    )
+
+
+def _source_sft_requested(args: argparse.Namespace) -> bool:
+    return _all_or_none(
+        (args.source_sft_config, args.source_sft_checkpoint), "Source-SFT"
+    )
+
+
+def _adapter_requests(args: argparse.Namespace) -> tuple[bool, bool]:
+    writer_requested = _writer_requested(args)
+    source_sft_requested = _source_sft_requested(args)
+    if writer_requested and source_sft_requested:
+        raise Pi05EvaluationError("AS-Writer and Source-SFT adapters are mutually exclusive")
+    return writer_requested, source_sft_requested
 
 
 def _inspect_writer_adapter(
@@ -157,8 +173,30 @@ def _inspect_writer_adapter(
         raise Pi05EvaluationError(str(error)) from error
 
 
+def _inspect_source_sft_adapter(
+    *,
+    config_path: Path,
+    checkpoint: Path,
+    source: Mapping[str, Any],
+    tasks: Sequence[Any],
+    evaluation_role: str,
+    require_formal: bool,
+) -> dict[str, Any]:
+    from ember.source_sft.inference import inspect_source_sft_evaluation
+
+    return inspect_source_sft_evaluation(
+        config_path=config_path,
+        checkpoint=checkpoint,
+        source=source,
+        task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
+        evaluation_role=evaluation_role,
+        require_formal=require_formal,
+    )
+
+
 def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
-    writer_requested = _writer_requested(args)
+    writer_requested, source_sft_requested = _adapter_requests(args)
+    adapter_requested = writer_requested or source_sft_requested
     output_dir = args.output_dir.resolve()
     if output_dir.exists() and any(output_dir.iterdir()):
         raise Pi05EvaluationError(f"PI05 evaluation output is not empty: {output_dir}")
@@ -167,7 +205,7 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
     formal_count = int(authorities.config["environment"]["fixed_init_state_count"])
     if args.mode == "formal" and args.state_count != formal_count:
         raise Pi05EvaluationError("formal PI05 evaluation requires all 50 fixed states")
-    if args.mode == "screen" and not writer_requested and args.role != "all_targets":
+    if args.mode == "screen" and not adapter_requested and args.role != "all_targets":
         raise Pi05EvaluationError("source-base screen must cover all 40 target tasks")
     tasks, libero_paths = inspect_installed_target_tasks(
         authorities,
@@ -192,6 +230,15 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
             tasks=tasks,
             video_condition=str(args.writer_video_condition),
             video_seed=int(authorities.config["rng"]["inference_seed"]),
+            require_formal=args.mode != "smoke",
+        )
+    elif source_sft_requested:
+        adapter = _inspect_source_sft_adapter(
+            config_path=args.source_sft_config.resolve(),
+            checkpoint=args.source_sft_checkpoint.resolve(),
+            source=model,
+            tasks=tasks,
+            evaluation_role=args.role,
             require_formal=args.mode != "smoke",
         )
     contract = build_run_contract(
@@ -341,21 +388,32 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
         raise Pi05EvaluationError("evaluation normalization changed after prepare")
     adapter = contract.get("adapter")
     if adapter is not None:
-        observed = _inspect_writer_adapter(
-            config_path=Path(adapter["config"]["path"]),
-            checkpoint=Path(adapter["checkpoint"]["path"]),
-            feature_cache=Path(adapter["feature_cache"]["root"]),
-            source=model,
-            tasks=tuple(
-                argparse.Namespace(suite=row["suite"], task_id=int(row["task_id"]))
-                for row in contract["tasks"]
-            ),
-            video_condition=str(adapter["video_condition"]),
-            video_seed=int(adapter["video_schedule"]["seed"]),
-            require_formal=contract["mode"] != "smoke",
+        tasks = tuple(
+            argparse.Namespace(suite=row["suite"], task_id=int(row["task_id"]))
+            for row in contract["tasks"]
         )
+        if adapter.get("kind") == "shared_source_sft_lora":
+            observed = _inspect_source_sft_adapter(
+                config_path=Path(adapter["config"]["path"]),
+                checkpoint=Path(adapter["checkpoint"]["path"]),
+                source=model,
+                tasks=tasks,
+                evaluation_role=str(adapter["evaluation_role"]),
+                require_formal=contract["mode"] != "smoke",
+            )
+        else:
+            observed = _inspect_writer_adapter(
+                config_path=Path(adapter["config"]["path"]),
+                checkpoint=Path(adapter["checkpoint"]["path"]),
+                feature_cache=Path(adapter["feature_cache"]["root"]),
+                source=model,
+                tasks=tasks,
+                video_condition=str(adapter["video_condition"]),
+                video_seed=int(adapter["video_schedule"]["seed"]),
+                require_formal=contract["mode"] != "smoke",
+            )
         if observed != adapter:
-            raise Pi05EvaluationError("AS-Writer evaluation assets changed after prepare")
+            raise Pi05EvaluationError("evaluation adapter assets changed after prepare")
 
 
 def _worker_ids(replicas_per_gpu: int) -> tuple[str, ...]:

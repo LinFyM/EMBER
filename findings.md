@@ -279,6 +279,15 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - materialized backend在episode开始只运行一次Writer并固定完整LoRA；由于并行env可能使用不同LoRA，每个replan前为对应slot重装其state并逐slot推理。policy noise仍由原有`(task,init,replan)`schedule生成，correct/wrong不变。
 - raw row保存Writer checkpoint step/manifest、Writer state、LoRA contract、逐rollout LoRA、video selection seed/suite/task/role/demo、map SHA、teacher-video pairing SHA和generation timing；run contract另保存排除condition/map但覆盖source、tasks/states、env/policy RNG、topology、Writer/cache的`paired_control_sha256`。聚合重新计算schedule/map并报告每task唯一视频数与频数。当前只是机械合同，尚无Writer行为结果。
 
+## π0.5 Source-SFT机械合同（2026-07-21）
+
+- development authority精确选择target manifest中的24个train global task IDs，四suite各6个、共1,200条可用action episodes；validation/test actions与teacher video均不进入训练。当前配置`configs/pi05_source_sft_development_v1.json` SHA256为`32e927c...8a641`，formal仍为`pending_profile`，不能被误当成正式配方。
+- 每次fresh stage都从同一final formal source EMA注入确定性B=0 identity的PI05 38-target LoRA；只有76个LoRA tensors、1,287,168 parameters可训练。八rank各取task-pure batch后由DDP聚合为一套shared multi-task LoRA，不使用functional Writer、per-task adapter或额外shared adapter。
+- checkpoint只保存shared `lora.safetensors`，不复制约14.5GB source policy；同时封存optimizer/scheduler、scaler-disabled声明、optimizer/micro cursor、metrics cursor、每rank Python/NumPy/CPU/CUDA RNG、DataLoader seed、deterministic sampler identity与逐task episode coverage。所有文件在读取pickle前先验证bytes/SHA，正式末checkpoint必须覆盖每task全部50 episodes。
+- development config只能启动development；validation选择后必须另封final config，32-source formal run从同一确定性identity fresh开始，development checkpoint因stage/config/contract hash不同而无法resume。这避免后续修改配置破坏development provenance。
+- evaluator仍只有`evaluate_pi05.py`一条canonical runner。Source-SFT LoRA在每个worker初始化时只安装一次，随后保持原有multi-env batched replan；它不会走Writer的逐rollout生成/重装路径。raw row保存固定`policy_adapter_sha256`，resume重新核验source/run/checkpoint/config/LoRA全部hash；Writer专属`paired_control_sha256`不套用于Source-SFT。
+- 新代码按当前故障边界归入`ember.source_sft`子包（contract/data wall、training、checkpoint、inference），`eval_adapters.py`只拥有两类adapter的runtime分派和row证据；这是独立baseline所需owner，不是第二套evaluator。architecture guard无hard violation、无parallel family。旧Smol `direct_lora*`仍只作provenance；待本PI05 owner完成真实8卡finite/exact-resume smoke后，迁移其仍被旧task-local模块使用的通用helper并删除旧direct CLI/module，而非长期保留双活动路径。
+
 ## 数据与 benchmark 事实
 
 - LIBERO-90 正好提供 90 个大规模 task 数据文件，每 task 50 条成功 teacher demonstrations。

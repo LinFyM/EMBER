@@ -14,6 +14,11 @@ from typing import Any, Mapping, Sequence
 
 import numpy as np
 
+from ember.eval_adapters import (
+    episode_adapter_fields,
+    load_evaluation_adapter as _load_evaluation_adapter,
+    validate_episode_adapter_fields,
+)
 from ember.libero_evaluation import sha256_file
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval_contract import load_run_contract, policy_noise_seed
@@ -343,8 +348,9 @@ def rollout_shard(
                 "wall_seconds": finished - float(slot["started"]),
                 "finished_at": finished - worker_started,
             }
-            if task_adapter is not None:
-                row["writer"] = dict(slot["writer_lora"].evidence)
+            row.update(
+                episode_adapter_fields(contract, task_adapter, slot.get("writer_lora"))
+            )
             rows.append(row)
             if next_state < len(state_ids):
                 slots[slot_index] = start_episode(env, int(state_ids[next_state]))
@@ -421,17 +427,13 @@ def _validate_episode_row(
         for index in range(math.ceil(steps / replan_steps))
     ]
     adapter = contract.get("adapter")
-    writer_valid = row.get("writer") is None
-    if adapter is not None:
-        from ember.writer.inference import validate_writer_episode_evidence
-
-        writer_valid = validate_writer_episode_evidence(
-            adapter,
-            row.get("writer"),
-            suite=shard.suite,
-            task_id=shard.task_id,
-            init_state_id=state_id,
-        )
+    adapter_valid = validate_episode_adapter_fields(
+        adapter,
+        row,
+        suite=shard.suite,
+        task_id=shard.task_id,
+        init_state_id=state_id,
+    )
     valid = (
         row.get("suite") == shard.suite
         and int(row.get("task_id", -1)) == shard.task_id
@@ -442,7 +444,7 @@ def _validate_episode_row(
         and int(row.get("env_seed", -1)) == root_seed
         and int(row.get("policy_seed_root", -1)) == root_seed
         and seeds == expected_seeds
-        and writer_valid
+        and adapter_valid
     )
     if not valid:
         raise Pi05EvaluationError(f"raw evaluation row contract changed: {shard.job_id}")
@@ -570,21 +572,11 @@ def _initialize_worker(output_dir: Path, worker_id: str) -> WorkerRuntime:
         tokenizer_path,
         contract["policy"],
     )
-    task_adapter = None
-    if contract.get("adapter") is not None:
-        from ember.writer.inference import FrozenWriterTaskAdapter
-
-        task_adapter = FrozenWriterTaskAdapter(
-            policy=policy,
-            source=contract["model"],
-            evaluation_adapter=contract["adapter"],
-            task_keys=tuple(
-                (str(row["suite"]), int(row["task_id"]))
-                for row in contract["tasks"]
-            ),
-            device=torch.device("cuda:0"),
-            require_formal=contract["mode"] != "smoke",
-        )
+    task_adapter = _load_evaluation_adapter(
+        policy,
+        contract,
+        device=torch.device("cuda:0"),
+    )
     return WorkerRuntime(
         output_dir=output_dir,
         queue_path=queue_path,

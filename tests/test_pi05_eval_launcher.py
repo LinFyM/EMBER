@@ -70,8 +70,35 @@ def test_writer_prepare_arguments_are_all_or_none() -> None:
         writer_feature_cache=None,
         writer_video_condition="correct",
     )
-    with pytest.raises(Pi05EvaluationError, match="requires config"):
+    with pytest.raises(Pi05EvaluationError, match="requires all declared assets"):
         module._writer_requested(partial)
+
+
+def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
+    module = _launcher_module()
+    empty = argparse.Namespace(
+        as_writer_config=None,
+        as_writer_checkpoint=None,
+        writer_feature_cache=None,
+        writer_video_condition=None,
+        source_sft_config=None,
+        source_sft_checkpoint=None,
+    )
+    assert module._adapter_requests(empty) == (False, False)
+    partial = argparse.Namespace(**vars(empty))
+    partial.source_sft_config = Path("source_sft.json")
+    with pytest.raises(Pi05EvaluationError, match="requires all declared assets"):
+        module._adapter_requests(partial)
+    both = argparse.Namespace(
+        as_writer_config=Path("as.json"),
+        as_writer_checkpoint=Path("as-step"),
+        writer_feature_cache=Path("cache"),
+        writer_video_condition="correct",
+        source_sft_config=Path("source_sft.json"),
+        source_sft_checkpoint=Path("source-sft-step"),
+    )
+    with pytest.raises(Pi05EvaluationError, match="mutually exclusive"):
+        module._adapter_requests(both)
 
 
 def test_completed_queue_without_launcher_evidence_fails_closed(

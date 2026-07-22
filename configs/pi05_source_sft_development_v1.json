@@ -1,0 +1,140 @@
+{
+  "schema_version": "ember_pi05_source_sft_v1",
+  "sealed_stage": "development",
+  "authorities": {
+    "target_data_manifest": {
+      "path": "configs/pi05_target_data_v1/manifest.json",
+      "sha256": "1b28547f6080a35fdf23ebae021407da15bfe4af367b0b1791042945d91b049d"
+    },
+    "evaluation_config": {
+      "path": "configs/pi05_target_evaluation_v1.json",
+      "sha256": "9d7f6d50b8ac143c6ae89e7067437a29ec8beee475db9e1ad5aa9b3790d9d557"
+    },
+    "lora_contract": {
+      "path": "configs/pi05_lora_v1.json",
+      "sha256": "1dcf58f73afd3fc77b98cd00abc128c027f15e3e67d7d1212ab84ca283f6cb07"
+    },
+    "source_base_config": {
+      "path": "configs/pi05_source_base_v1.json",
+      "sha256": "366a5e1275a216ecde0750a40cc0cd824237fe4e74ee7a38bfabd2d195aacee8"
+    },
+    "tokenizer_manifest": {
+      "path": "configs/libero_24_8_8_v1/pi05_tokenizer_manifest.json",
+      "sha256": "948bf1ec1f2768833bead66b2e829154e3304c1c09fe9c48813a79f06e47426c"
+    }
+  },
+  "information_wall": {
+    "policy_input": "correct task language plus current policy observation only",
+    "forbidden_inputs": [
+      "teacher_video",
+      "reward",
+      "terminal",
+      "task_id",
+      "filename",
+      "policy_outcome"
+    ],
+    "development_action_split_roles": [
+      "train"
+    ],
+    "final_action_split_roles": [
+      "train",
+      "validation"
+    ],
+    "test_actions_read": 0,
+    "test_video_values_read": 0,
+    "held_evaluation_adaptation": "none"
+  },
+  "adapter": {
+    "kind": "one_shared_multitask_pi05_lora",
+    "initialization": "fresh deterministic functional identity from the frozen source base for each stage",
+    "contract": "configs/pi05_lora_v1.json",
+    "stacked_shared_source_adapter": false,
+    "per_task_adapter": false
+  },
+  "data": {
+    "episodes_per_task": 50,
+    "demo_indices": [
+      0,
+      49
+    ],
+    "action_chunk_size": 50,
+    "sampler_seed": 20260723,
+    "sampling": "task-balanced deterministic no-replacement episode cycles; deterministic frame within each episode visit",
+    "max_open_files_per_worker": 8
+  },
+  "loader": {
+    "num_workers_per_rank": 2,
+    "prefetch_factor": 2
+  },
+  "optimization": {
+    "method": "shared_multitask_lora_action_sft",
+    "seed": 7,
+    "precision": "bfloat16",
+    "source_policy": "final formal frozen EMA",
+    "normalization": "frozen filtered-LIBERO-90 source normalization",
+    "gradient_checkpointing": true,
+    "optimizer": {
+      "name": "AdamW",
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "eps": 1e-08,
+      "weight_decay": 0.0001,
+      "gradient_clip_norm": 1.0
+    },
+    "scheduler": {
+      "kind": "cosine_decay_with_warmup",
+      "peak_lr": 0.0003,
+      "warmup_steps": 1000,
+      "decay_steps": 30000,
+      "decay_lr": 0.00001
+    }
+  },
+  "profile_defaults": {
+    "total_steps": 4,
+    "per_rank_batch_size": 1,
+    "checkpoint_steps": [
+      4
+    ]
+  },
+  "stages": {
+    "development": {
+      "action_split_roles": [
+        "train"
+      ],
+      "task_count": 24,
+      "available_action_episodes": 1200,
+      "selection_data": "sealed eight validation tasks; no validation actions",
+      "formal_run": {
+        "status": "pending_profile",
+        "expected_world_size": 8,
+        "total_steps": 0,
+        "per_rank_batch_size": 0,
+        "checkpoint_steps": [],
+        "selection_rule": "seal a small validation checkpoint schedule after real throughput/loss profiling; select independently from AS-Writer by fixed-state validation success and stop near saturation"
+      }
+    },
+    "final": {
+      "action_split_roles": [
+        "train",
+        "validation"
+      ],
+      "task_count": 32,
+      "available_action_episodes": 1600,
+      "selection_data": "no test outcomes; retrain once from fresh identity after development selection",
+      "formal_run": {
+        "status": "blocked_until_development_selection",
+        "expected_world_size": 8,
+        "total_steps": 0,
+        "per_rank_batch_size": 0,
+        "checkpoint_steps": [],
+        "selection_rule": "copy the frozen development hyperparameters and retrain from the prescribed fresh identity state; never resume the development LoRA"
+      }
+    }
+  },
+  "checkpointing": {
+    "atomic_publish": true,
+    "retained_state": "shared LoRA, optimizer, scheduler, per-rank RNG, deterministic sampler cursor, metrics cursor, contract and hashes"
+  }
+}

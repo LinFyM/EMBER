@@ -48,7 +48,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] 建立唯一canonical π0.5 full-SFT runner，严格模型加载、task-balanced no-replacement sampler、EMA、atomic checkpoint、metrics reconciliation与完整per-rank RNG/cursor恢复。
 - [x] 完成相机mask修正后的8卡真实profile；选定8×microbatch32、global batch256、EMA与GPU-local NUMA binding，稳态47.75 examples/s，单卡reserved 71.18GB。
 - [x] 从同一个不可变step-1 checkpoint做两次8-rank恢复；loss/grad/RNG/cursor完全一致，policy/EMA最大独立NCCL末位差分别为1.49e-8/3.73e-9。
-- [ ] 正式attempt3正在隔离worktree从generic base fresh训练；最近只读观测step1100，8卡拓扑、loss/gradient与约47 examples/s吞吐健康，首个step5000 checkpoint前不作行为结论。
+- [ ] 正式attempt3正在隔离worktree从generic base fresh训练；最近只读观测step1450，8卡拓扑、loss/gradient与约47 examples/s吞吐健康，首个step5000 checkpoint前不作行为结论。
 - [ ] 从generic `pi05_base`按成熟recipe在过滤后的LIBERO-90 source corpus上联合action-SFT；若用LoRA则merge成base。
 - [ ] 以已锁定8卡配置完成30,000 optimizer steps；一卡一rank，真实显存平均预留约10GB，checkpoint每5,000 steps且只保留最新完整状态。
 - [ ] 根据loss与快速行为screen避免过训，不追求高ceiling。
@@ -75,6 +75,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 
 ## Phase E：Source-SFT、seen与视频因果证据
 
+- [x] 建立development-only Source-SFT authority与唯一PI05训练owner：24 train tasks共享一套38-target LoRA，source EMA冻结，checkpoint保存adapter/optimizer/scheduler/per-rank RNG/确定性sampler与metrics cursor；现有evaluator按静态adapter一次安装并保留普通batch。
 - [ ] 从同一source base在24 train tasks上联合训练一套shared Source-SFT LoRA；按validation独立选择最佳，不强制匹配AS-Writer steps/data。
 - [ ] 在outcome前按specification预声明覆盖四suites的seen panel。
 - [ ] 比较source base、Source-SFT、AS-Writer、可用RL-Writer的seen performance。

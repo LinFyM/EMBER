@@ -663,7 +663,7 @@ def build_run_contract(
         "libero_paths": dict(libero_paths),
     }
     contract["paired_control_sha256"] = None
-    if adapter is not None:
+    if adapter is not None and adapter.get("kind") != "shared_source_sft_lora":
         contract["paired_control_sha256"] = canonical_hash(
             {
                 "schema_version": "ember_pi05_writer_paired_control_v1",

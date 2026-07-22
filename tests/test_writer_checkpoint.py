@@ -199,6 +199,20 @@ def test_as_writer_evaluation_seals_source_checkpoint_cache_and_video_map(
         for row in adapter["task_video_mapping"]
     )
 
+    generic = inspect_as_writer_evaluation(
+        config_path=AS_CONFIG,
+        checkpoint=checkpoint,
+        feature_cache=cache,
+        source=source,
+        task_keys=validation_keys,
+        video_condition="generic_correct",
+        video_seed=7,
+        require_formal=False,
+    )
+    assert generic["arm"] == "as_writer_generic_correct_video"
+    assert generic["writer_language_condition"] == "generic_neutral"
+    assert generic["wrong_video_mapping"] == "identity"
+
     changed = {**source, "optimizer_step": 29_999}
     with pytest.raises(WriterModelError, match="authority changed"):
         inspect_as_writer_evaluation(

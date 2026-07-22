@@ -79,14 +79,24 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--writer-feature-cache", type=Path)
     parser.add_argument(
         "--writer-video-condition",
-        choices=("correct", "cross_suite_wrong"),
+        choices=(
+            "correct",
+            "cross_suite_wrong",
+            "generic_correct",
+            "generic_cross_suite_wrong",
+        ),
     )
     parser.add_argument("--rl-writer-config", type=Path)
     parser.add_argument("--rl-writer-checkpoint", type=Path)
     parser.add_argument("--rl-writer-feature-cache", type=Path)
     parser.add_argument(
         "--rl-writer-video-condition",
-        choices=("correct", "cross_suite_wrong"),
+        choices=(
+            "correct",
+            "cross_suite_wrong",
+            "generic_correct",
+            "generic_cross_suite_wrong",
+        ),
     )
     parser.add_argument("--source-sft-config", type=Path)
     parser.add_argument("--source-sft-checkpoint", type=Path)

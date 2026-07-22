@@ -42,7 +42,14 @@ from ember.writer.model import (
 WRITER_ADAPTER_SCHEMA = "ember_pi05_as_writer_eval_adapter_v1"
 RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_rl_writer_eval_adapter_v1"
 WRITER_ADAPTER_SCHEMAS = {WRITER_ADAPTER_SCHEMA, RL_WRITER_ADAPTER_SCHEMA}
-WRITER_VIDEO_CONDITIONS = {"correct", "cross_suite_wrong"}
+WRITER_VIDEO_CONDITIONS = {
+    "correct",
+    "cross_suite_wrong",
+    "generic_correct",
+    "generic_cross_suite_wrong",
+}
+GENERIC_WRITER_CONDITIONS = {"generic_correct", "generic_cross_suite_wrong"}
+WRONG_VIDEO_CONDITIONS = {"cross_suite_wrong", "generic_cross_suite_wrong"}
 WRITER_VIDEO_SCHEDULE = (
     "sha256 first 63 bits of canonical JSON "
     "[ember_pi05_writer_video_v1,seed,suite,task_id,init_state_id] modulo 50"
@@ -117,7 +124,7 @@ def _task_video_mapping(
             for ordinal, task_id in enumerate(by_suite[suite]):
                 video_suite = suite
                 video_task_id = task_id
-                if condition == "cross_suite_wrong":
+                if condition in WRONG_VIDEO_CONDITIONS:
                     video_suite = SUITE_ORDER[
                         (SUITE_ORDER.index(suite) + 1) % len(SUITE_ORDER)
                     ]
@@ -336,7 +343,7 @@ def build_writer_evaluation_adapter(
             "video_seed": video_seed,
         }
     )
-    return {
+    result = {
         "schema_version": schema_version,
         "kind": writer_method,
         "writer_method": writer_method,
@@ -375,7 +382,7 @@ def build_writer_evaluation_adapter(
         },
         "wrong_video_mapping": (
             "identity"
-            if video_condition == "correct"
+            if video_condition not in WRONG_VIDEO_CONDITIONS
             else "same role-panel ordinal in the next suite cyclically"
         ),
         "task_video_mapping_sha256": mapping_sha256,
@@ -384,6 +391,13 @@ def build_writer_evaluation_adapter(
         "writer_forbidden_tensor_inputs": list(forbidden_inputs),
         "teacher_action_values_read_by_evaluator": 0,
     }
+    if video_condition in GENERIC_WRITER_CONDITIONS:
+        result["writer_input"] = (
+            "fixed neutral language perform the demonstrated task plus exactly one "
+            "action-hidden teacher video"
+        )
+        result["writer_language_condition"] = "generic_neutral"
+    return result
 
 
 def inspect_as_writer_evaluation(
@@ -571,8 +585,14 @@ class FrozenWriterTaskAdapter:
             dtype=torch.bfloat16,
             enabled=self.device.type == "cuda",
         ):
+            language_features = (
+                teacher.generic_language_features
+                if self.evaluation_adapter.get("writer_language_condition")
+                == "generic_neutral"
+                else teacher.language_features
+            )
             state = self.writer(
-                teacher.language_features.to(self.device),
+                language_features.to(self.device),
                 teacher.video_features.to(self.device),
                 teacher.episode_offsets,
             )

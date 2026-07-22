@@ -65,8 +65,8 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] feature-cache完成raw source policy上的真实8卡batch32 smoke：8 tasks/8 episodes/1,033 frames，critical-path 689.47 frames/s且无OOM/nonfinite；batch32已封存。
 - [x] 生成development 32 tasks×50 videos、274,523 frames的formal feature cache；32/32 task tensor hashes与manifest/contract复核通过，test video reads为0。
 - [ ] 24 train tasks均衡混合；source base冻结，actions只进functional loss。
-- [ ] 先profile约短时loss/吞吐，将wall-clock换算为steps；checkpoint频繁exact-resume。
-- [ ] 单次训练不超过约2小时。用loss斜率决定何时值得运行便宜val screen，完整val只评少量候选，尽快选择接近饱和checkpoint。
+- [x] 完成真实8卡短profile并将wall-clock换算为steps：batch16每rank峰值allocated/reserved为63.53/68.17GB，稳态约1.05秒/步、约122 global action queries/s；128-step曲线的首/末16-step mean loss为0.14714/0.11930，后64步斜率仍为负。
+- [ ] 按profile封存的1,000-step、batch16正式配置训练，保留250/500/750/1000四个稀疏exact-resume checkpoints；用廉价validation screen淘汰候选，完整8-task validation只评少量候选并尽快选择接近饱和点。约2小时仍仅为guardrail。
 - [ ] 报告8 validation tasks逐任务raw success与视频采样seed。
 
 ## Phase D：RL-Writer development

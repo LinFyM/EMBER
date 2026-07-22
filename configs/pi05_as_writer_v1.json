@@ -113,12 +113,36 @@
       4
     ]
   },
+  "profile_evidence": {
+    "selected_run": "/data/ymdai/outputs/ember/pi05_as_writer_profile_raw_a60264b_b16_s128_20260722",
+    "planned_schedule_horizon_steps": 1000,
+    "observed_optimizer_steps": 128,
+    "per_rank_batch_size": 16,
+    "effective_global_action_queries_per_step": 128,
+    "first_16_step_mean_loss": 0.14713666346506216,
+    "last_16_step_mean_loss": 0.11929692424018867,
+    "last_64_step_loss_slope_per_step": -0.000157644467,
+    "steady_step_seconds": 1.05,
+    "max_cuda_allocated_bytes": 63534307840,
+    "max_cuda_reserved_bytes": 68167925760,
+    "metrics_sha256": "1282f7923c33ea05550258c8389fe5dc2b527480e7fe2cd3305b40c6a4aab4c4",
+    "run_contract_sha256": "7d67af09fd0e88dfacdc227440bd32f3e2597b74aa42f588757959f212c59194",
+    "run_summary_sha256": "c75410b9df4939abc5e9e19c8731c95b22bcb3679e94d3607278e22583354783",
+    "log_sha256": "4893ec9dcd09fc9fdedddf67c2d2f62d404d160e7d82ca400922e97269403c9c",
+    "discarded_mechanics_profile": "The four-step/batch-one probe compressed the configured warmup to zero because its scheduler horizon was only four steps; it is retained as mechanics evidence and is not used to select the formal learning curve.",
+    "selection_reason": "The batch-16 topology used about 63.5 GB allocated per rank and sustained about 122 global action queries/s. Loss remained finite and the final 64-step slope was still negative, so run the complete 1,000-step schedule with sparse quarter checkpoints rather than treating the 120-minute guardrail as a target."
+  },
   "formal_run": {
-    "status": "pending_profile",
+    "status": "sealed",
     "expected_world_size": 8,
-    "total_steps": 0,
-    "per_rank_batch_size": 0,
-    "checkpoint_steps": [],
+    "total_steps": 1000,
+    "per_rank_batch_size": 16,
+    "checkpoint_steps": [
+      250,
+      500,
+      750,
+      1000
+    ],
     "selection_rule": "profile loss and throughput first; translate the guardrail to candidate steps, vary fixed cheap-screen spacing from loss slope, reject clearly undertrained checkpoints cheaply, and run full eight-task validation only for a few candidates; stop near saturation or at 120 minutes, recording budget-censored undertraining without automatic extension"
   }
 }

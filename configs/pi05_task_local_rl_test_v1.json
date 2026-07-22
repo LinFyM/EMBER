@@ -12,11 +12,11 @@
     },
     "as_writer_config": {
       "path": "configs/pi05_as_writer_v1.json",
-      "sha256": "eb54c74889b56d15e91ad62e1e6145f26802343305131b37d3b41758b647ea09"
+      "sha256": "ebbf4ffeb21f15ede3225e753af719c0a41bfae61ffc4383c4e609aa48521fde"
     },
     "rl_writer_config": {
       "path": "configs/pi05_rl_writer_development_v1.json",
-      "sha256": "a8c47acdf77ac972d2b869c034e52da4c451f499bafadab07dea43b49e5abf6d"
+      "sha256": "1b445c06c4b1ab943d4fbbece0efb99f4a9e2cb26d6b504aa7f01a19aa87883b"
     },
     "feature_cache_config": {
       "path": "configs/pi05_writer_feature_cache_v1.json",

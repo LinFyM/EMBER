@@ -12,7 +12,7 @@
     },
     "as_writer_config": {
       "path": "configs/pi05_as_writer_v1.json",
-      "sha256": "eb54c74889b56d15e91ad62e1e6145f26802343305131b37d3b41758b647ea09"
+      "sha256": "ebbf4ffeb21f15ede3225e753af719c0a41bfae61ffc4383c4e609aa48521fde"
     },
     "feature_cache_config": {
       "path": "configs/pi05_writer_feature_cache_v1.json",

@@ -19,7 +19,7 @@ from ember.writer.model import WriterModelError
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_as_writer_config_is_pi05_one_video_and_pending_real_profile() -> None:
+def test_as_writer_config_is_pi05_one_video_and_profile_sealed() -> None:
     path = REPO_ROOT / "configs/pi05_as_writer_v1.json"
     config = load_writer_config(path)
     assert config["writer"]["vision_feature_dim"] == 2048
@@ -28,8 +28,16 @@ def test_as_writer_config_is_pi05_one_video_and_pending_real_profile() -> None:
     assert config["data"]["task_count"] == 24
     assert config["data"]["episodes_per_task"] == 50
     assert config["data"]["sampler_seed"] != config["data"]["teacher_video_seed"]
-    assert config["formal_run"]["status"] == "pending_profile"
-    assert config["formal_run"]["total_steps"] == 0
+    assert config["formal_run"] == {
+        "status": "sealed",
+        "expected_world_size": 8,
+        "total_steps": 1000,
+        "per_rank_batch_size": 16,
+        "checkpoint_steps": [250, 500, 750, 1000],
+        "selection_rule": config["formal_run"]["selection_rule"],
+    }
+    assert config["profile_evidence"]["observed_optimizer_steps"] == 128
+    assert config["profile_evidence"]["last_64_step_loss_slope_per_step"] < 0
     assert config["information_wall"]["validation_actions_read"] == 0
     assert config["information_wall"]["test_actions_read"] == 0
     assert config["information_wall"]["test_video_values_read"] == 0
@@ -47,7 +55,9 @@ def test_as_writer_checkpoint_schedule_and_cursor_are_fail_closed() -> None:
         resume_step(Path("/tmp/trainer_state.pt"))
 
 
-def test_pending_as_writer_config_cannot_launch_formal() -> None:
+def test_profile_sealed_as_writer_config_resolves_exact_formal_runtime(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     config = load_writer_config(REPO_ROOT / "configs/pi05_as_writer_v1.json")
     args = argparse.Namespace(
         mode="formal",
@@ -66,8 +76,20 @@ def test_pending_as_writer_config_cannot_launch_formal() -> None:
         numa_node=0,
         cpu_affinity=(0,),
     )
-    with pytest.raises(WriterModelError, match="pending a real profile"):
-        resolve_runtime(args, config, context)
+    monkeypatch.setattr(
+        "ember.writer.as_contract.git_state",
+        lambda _: {
+            "commit": "a" * 40,
+            "origin_main": "a" * 40,
+            "dirty_paths": [],
+        },
+    )
+    assert resolve_runtime(args, config, context) == (
+        1000,
+        16,
+        (250, 500, 750, 1000),
+    )
+    assert args.stop_after_step == 1000
 
 
 def test_retired_smolvla_cold_start_config_is_not_an_active_writer_config() -> None:

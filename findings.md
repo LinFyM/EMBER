@@ -354,3 +354,9 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 正式raw screen绑定commit `cab2edf72a8b7d5173503735ef33bdd8fc4c2a50`、raw weights SHA256 `60ea7ee8...cdf36`、corrected source summary SHA256 `473ae3dc...f874`。320 rows/task-state唯一、24 workers均exit0；results SHA256为`4e2defaf...db3a`，wall-clock 412.372秒。
 - development Writer feature cache在同一raw source policy上完成8卡batch32 smoke：8 tasks各1条video、共1,033 frames全部成功，单task 89.77–113.70 frames/s，按并行critical path为689.47 frames/s；输出仅4.92MB且没有OOM/nonfinite。该证据足以直接锁定batch32，不再做无科学收益的batch sweep。
 - 随后的formal cache覆盖development train+validation共32 tasks、每task全部50 videos，总计1,600 episodes/274,523 frames；32个task tensors逐文件SHA全部通过，目录1.127GB，launch-to-manifest 248秒。其information wall明确记录test video与trajectory action/state/reward/terminal读取均为0。
+
+## AS-Writer profile结论（2026-07-22）
+
+- AS-Writer的显存主因是对generated LoRA保留functional policy反传图，而不是Writer本体参数量。batch1只分配约12.9GB；batch16分配63.53GB、reserve 68.17GB，并把稳态吞吐从约32提高到约122 global action queries/s，因此batch16是当前实测有效且保留稳定余量的点。
+- 极短训练必须保持预期正式scheduler horizon；把`total_steps`也缩成4会令LeRobot按`4/30000`缩放warmup并取整为0，造成首步直接使用peak LR。这是profile协议伪影，不是Writer科学发散。
+- 在1,000-step horizon下执行前128步时，首/末16-step mean functional loss为0.14714/0.11930，后64步线性斜率约`-1.58e-4/step`，gradient norm在warmup后降至约0.2–0.3且无nonfinite。曲线尚未饱和，但实测完整1,000步仅约17.5分钟净训练，故选择1,000步并以四分点做稀疏validation候选，不把120分钟guardrail当目标。

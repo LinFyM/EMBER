@@ -188,9 +188,16 @@
 
 ## 当前后续动作
 
-1. 完成development Writer feature cache真实8卡smoke、封存profile并生成32-task formal cache。
-2. 完成Source-SFT/AS-Writer真实8卡短profile，按曲线与吞吐换算候选steps/廉价screen间隔，然后按全局约120分钟guardrail进入Phase C–H。
+1. 以已封存的batch16、1,000-step配置启动development AS-Writer正式训练，保留250/500/750/1000四个候选checkpoint。
+2. 用固定廉价validation screen先淘汰明显未收敛候选，仅对少量候选运行完整8-task validation；并行推进Source-SFT真实短profile与独立选择。
 3. 使用同一raw source policy与source-only normalization持续推进seen/wrong-video、final与RL/oracle阶段；不再把EMA 0/320带入科学解释。
+
+## AS-Writer短周期profile与正式seal（2026-07-22）
+
+- 最初4-step/batch1 mechanics probe使用了4-step scheduler horizon，LeRobot的自动缩放把1,000-step warmup取整为0，首步直接施加`3e-4`并产生无代表性的loss/gradient上冲；该run仅作mechanics evidence，不参与正式步数选择。
+- 修正后的profile保持1,000-step schedule horizon，只执行前128 steps；8卡每rank batch16、global action queries/step为128。稳态约1.05秒/步、约122 queries/s，每rank峰值allocated/reserved为63,534,307,840/68,167,925,760 bytes，符合约10GB稳定余量目标且无需继续batch sweep。
+- 16-step mean loss依次从`0.14714`、`0.13880`、`0.12935`降到末段`0.11930`；后64步线性斜率为`-1.576e-4/step`，仍在学习且无nonfinite/冻结越界。由此选择完整1,000-step schedule，而不是按120分钟上限倒推；预计净训练约17.5分钟。
+- 正式AS配置封存为batch16、1,000 steps、checkpoints 250/500/750/1000。profile contract/metrics/summary/log SHA256为`7d67af09...194`/`1282f792...4c4`/`c75410b9...783`/`4893ec9d...c9c`；AS config新SHA256为`ebbf4ffe...1fde`，下游RL-Writer/task-local authority hashes已同步更新。
 
 ## 历史边界
 

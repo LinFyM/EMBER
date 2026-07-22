@@ -61,7 +61,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] 将Writer core、target feature-cache与exact-resume训练owner适配到π0.5成熟LoRA空间；同task video/action episode使用独立确定性schedule，Writer只见language+one action-hidden video。
   - 已封存38 targets / 76 tensors / 1,287,168 parameters的rank16合同；真实checkpoint metadata与meta模型结构一致。
   - 已修复PI05 forward签名、BF16/FP32 LoRA dtype保真，并在Writer入口对`offsets=[0,L]`单视频合同fail-close；functional/materialized parity已测试。
-- [x] 封存target40 metadata/hash authority与development 32-task视频cache配置；AS formal仍需真实训练profile，不将候选steps冒充正式配方。
+- [x] 封存target40 metadata/hash authority与development 32-task视频cache配置；AS formal由真实训练profile封存，不将候选steps冒充正式配方。
 - [x] feature-cache完成raw source policy上的真实8卡batch32 smoke：8 tasks/8 episodes/1,033 frames，critical-path 689.47 frames/s且无OOM/nonfinite；batch32已封存。
 - [x] 生成development 32 tasks×50 videos、274,523 frames的formal feature cache；32/32 task tensor hashes与manifest/contract复核通过，test video reads为0。
 - [x] 24 train tasks均衡混合；source base冻结，actions只进functional loss；正式训练完成1,000 steps / 128,000 action queries并保留四个候选checkpoint。
@@ -81,7 +81,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 ## Phase E：Source-SFT、seen与视频因果证据
 
 - [x] 建立development-only Source-SFT authority与唯一PI05训练owner：24 train tasks共享一套38-target LoRA，raw source policy冻结，checkpoint保存adapter/optimizer/scheduler/per-rank RNG/确定性sampler与metrics cursor；现有evaluator按静态adapter一次安装并保留普通batch。
-- [ ] 从同一source base在24 train tasks上联合训练一套shared Source-SFT LoRA；首版固定匹配已选AS step250约32,000 action queries，保持profile选定batch64/rank并训练63 steps，仅评最终checkpoint，不精调step。
+- [x] 从同一source base在24 train tasks上联合训练一套shared Source-SFT LoRA；固定匹配已选AS step250约32,000 action queries，保持batch64/rank训练63 steps。最终checkpoint在validation为61/400；曲线仍下降，按固定预算记为可能未充分训练且不追加。
 - [x] 在outcome前按specification-only SHA256规则封存四suites各2个、共8个seen tasks（global IDs 0,2,15,12,21,28,39,37）；policy outcome与trajectory value reads均为0。
 - [ ] 比较source base、Source-SFT、AS-Writer、可用RL-Writer的seen performance。
 - [x] 封存同split role、按suite循环和排序ordinal构造的cross-suite wrong-video机械map；correct/wrong两臂保持同一language、task、init state、policy RNG、video seed与demo ordinal。

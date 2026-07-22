@@ -209,3 +209,6 @@
 - owner要求补测的同配置source-base validation完成`48/400`，逐任务为Spatial 1/3=`0/0`、Object 1/3=`5/0`、Goal 3/6=`0/41`、Long 1/2=`2/0`；AS step250逐任务为`0/0, 40/36, 0/27, 16/0`。
 - 在RL-Writer前先运行Source-SFT。首版不调step，只匹配已选AS checkpoint约32,000 action-query总训练量；保持实测高效的8卡每rank batch64，固定63 steps=`32,256` queries，只保留step63。此前batch64/128 profile仅作稳定性与吞吐证据，不作为科学结果。
 - 下一动作：封存并推送Source-SFT配置后完成该固定训练；仅对step63运行一次完整8-task validation，与source base `48/400`和AS `119/400`比较。
+- Source-SFT固定run已完成：63 steps、32,256 queries、训练wall `450.263s`，唯一checkpoint完整exact-resume核验通过；首/末8-step mean loss `0.15475/0.13883`，仍下降但按固定预算停止，不追加或精调step。
+- step63完整8×50 validation得到`61/400`，逐任务Spatial 1/3=`5/1`、Object 1/3=`20/0`、Goal 3/6=`0/32`、Long 1/2=`1/2`。相对source base为`+13`，相对AS step250为`-58`；400 rows的env/policy seed与noise-seed共享前缀全部配对。
+- 训练root为`/data/ymdai/outputs/ember/pi05_source_sft_development_equalq32k_99b6020_b64_s63_20260722`，validation root为`/data/ymdai/outputs/ember/pi05_source_sft_val8x50_equalq32k_step0063_99b6020_r3_20260722`。results/comparison SHA256为`92e3e667...3f6d`/`c376ef9c...a1f`。

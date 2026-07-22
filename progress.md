@@ -144,7 +144,7 @@
 
 ## PI05 reward core、zero-AS RL-Writer与test-only task-local合同（2026-07-21）
 
-- Writer-v2替换活动authority后，`configs/pi05_rl_writer_development_v1.json`与`configs/pi05_task_local_rl_test_v1.json`只做机械rebind，当前SHA256为`a9b666de...4d3f`/`d308ca1e...9578`。前者formal状态仍为`pending_source_screen_and_real_profile`；后者所有正式budget保持0并写明`blocked_until_zero_interaction_test_and_test_open`，因此当前代码完成不会越过阶段信息墙，也没有启动RL。
+- Writer-v2替换活动authority后，`configs/pi05_rl_writer_development_v1.json`与`configs/pi05_task_local_rl_test_v1.json`只做机械rebind，当前SHA256为`b03cd57a...a6ca`/`96b29299...6c92`。前者formal状态仍为`pending_source_screen_and_real_profile`；后者所有正式budget保持0并写明`blocked_until_zero_interaction_test_and_test_open`，因此当前代码完成不会越过阶段信息墙，也没有启动RL。
 - `ember.reward`统一实现official random BDDL reset、10-step settling、suite horizon、显式逐replan PI05 flow-noise、成功即停、immutable raw ledger和三类cursor。成功trajectory只保留真正执行的每个replan前缀；reward loss不会监督未执行的45/50 actions。
 - `ember.rl_writer`拆分为contract、runtime、loop和checkpoint owner。fresh Writer在8 ranks上使用共同确定性seed且generated LoRA功能恒等；只有rank0原子发布run contract并跨rank校验digest。Writer-only DDP更新、task/video full-cycle coverage、完整per-rank RNG、optimizer/scheduler、metrics与ledger-bound exact-resume均已接入；micro-AS分支在zero完整负证据前硬拒绝。
 - `ember.task_local`已封存8 test tasks、三臂/cohort video/匹配seed、一次性初始化bundle、physical task-LoRA-only executed-prefix update、随机reset reward checkpoint选择和hash-bound resume mechanics；尚未实现或启动test formal runtime，不把机械合同写成结果。
@@ -219,8 +219,9 @@
 ## Writer-v2组合修订已实现、待真实profile（2026-07-22）
 
 - 旧v1 correct/wrong为119/115，且400/400视频虽不同、生成LoRA hash虽不同，有效`B@A`的correct/wrong相对差中位数只有`7.52e-6`；当前状态判定为科学shortcut negative而非cache/evaluator故障。seen与RL-Writer继续暂停。
-- 新活动authority为`configs/pi05_writer_feature_cache_v2.json`和`configs/pi05_as_writer_v2.json`，当前SHA256为`b62e527c...cdbf`/`9e0c85f1...c50`；旧v1配置由schema fail-close，只保留artifact/Git provenance。v2仍使用同一raw source policy、24 train actions、development train/validation videos、38-target complete LoRA和同一canonical训练/评测入口。
+- 新活动authority为`configs/pi05_writer_feature_cache_v2.json`和`configs/pi05_as_writer_v2.json`；真实cache smoke封存后当前SHA256为`3dc3557d...396c`/`5ffd85d4...b93c`。旧v1配置由schema fail-close，只保留artifact/Git provenance。v2仍使用同一raw source policy、24 train actions、development train/validation videos、38-target complete LoRA和同一canonical训练/评测入口。
 - cache从每帧全局mean改为固定4×4 spatial grid，tensor为`frames×16×2048 BF16`；预计完整274,523-frame cache主体约17.99GB。当前`/data/ymdai`实占约232GB，峰值远低于500GB cap，无需删除既有证据。
 - Writer-v2为14,403,200 trainable parameters；language/video使用独立固定token memory，所有层级attention去除query-only residual，decoder只以parameter query乘性调制conditional memory，output heads无bias且identity init不变。CPU full-shape direct check生成76个三condition tensors、全部finite，人工开启head后condition mean diff非零。
 - owner最终口径已在任何artifact产生前覆盖初版三分支：固定中性language `perform the demonstrated task`经正常tokenizer/embedding进入Writer，policy在所有分支始终收到正确task language。训练按`normal → full-language contrast → generic-language contrast`三步循环；contrast用半批query复制为correct/wrong两臂并共享policy RNG，总policy samples/step不变，两个correct臂都有绝对functional action loss。action query仍来自同task独立episode；paired negative只来自预封存的另一个development-train task并采用对称配对。
+- v2 cache smoke完成8 tasks/8 episodes/1,033 frames，8 ranks全部exit0；最慢rank task wall为1.550秒，对应critical-path约666.25 frames/s。每个task tensor包含普通task language、同一个8-token generic language embedding和`frames×16×2048 BF16`视频；8份generic embedding逐byte SHA256均为`62172105...7d27`。run-contract/cache-manifest/log SHA256为`b4313579...d2d7`/`bcadf191...17b`/`b0f8124c...7045`，batch32据此封存。
 - 配置当前为`pending_profile`，没有把未实测的batch/steps封存为正式配方；wall-clock倍率只记录，不作为削弱科学合同的接受门槛。最终口径的聚焦测试为`43 passed`、全仓为`149 passed`；architecture guard无hard violation或parallel family，仅保留既有大owner的review提示。下一步commit/push后做8卡spatial-cache smoke和训练profile。

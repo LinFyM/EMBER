@@ -118,8 +118,9 @@ def test_reward_schedules_exclude_arm_rank_and_execution_order() -> None:
     noise = policy_noise_seed(13, "libero_goal", 4, 11, 9, 3)
     update = update_seed(17, "libero_goal", 4, 11, 2)
     demo = task_local_video_demo(19, 24, 11)
+    assert 0 <= env < 2**32
     assert (env, noise, update, demo) == (
-        5687566534304364778,
+        27031786,
         5069194589751048431,
         8024636704993181904,
         16,

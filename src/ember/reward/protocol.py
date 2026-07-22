@@ -68,6 +68,8 @@ def environment_seed(
 ) -> int:
     """Seed one official BDDL reset; arm/rank/order are deliberately absent."""
 
+    # LIBERO forwards this value to NumPy's legacy RandomState.seed, whose
+    # accepted domain is uint32 rather than PyTorch's wider seed domain.
     return _seed(
         "ember_pi05_reward_environment_v1",
         root_seed,
@@ -75,7 +77,7 @@ def environment_seed(
         task_id,
         adaptation_seed,
         rollout_cursor,
-    )
+    ) % (1 << 32)
 
 
 def policy_noise_seed(

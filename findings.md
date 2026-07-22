@@ -404,3 +404,10 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 逐任务correct/wrong为Long 1/2=`4/2` vs `11/2`、Goal 3/6=`0/31` vs `0/20`、Object 1/3=`33/6` vs `29/0`、Spatial 1/3=`2/5` vs `1/0`。v2已比v1的119/115建立更强视频特异性，但correct由119降至83，当前科学问题从“无视频依赖”转为“特异性与绝对competence的权衡”。
 - owner要求分别充分训练Writer-v2与Source-SFT并找各自validation最佳。Writer选择阶段只运行correct-video；只有唯一最强Writer checkpoint选定后才运行一次correct-language + cross-suite-wrong-video完整control，不运行per-checkpoint wrong或generic full arms。RL-Writer与seen继续暂停。
 - Writer-v2 ceiling run从identity fresh训练1,500 steps，使用50-step warmup/1,500-step cosine并每250步保存；Source-SFT从identity fresh训练800 steps，使用100-step warmup/800-step cosine并保存100/200/400/600/800。两者独立选择，不匹配steps、queries、compute或参数；到120分钟guardrail仍未饱和则保留曲线并标记budget-censored。
+
+## Development ceiling最终判断（2026-07-22）
+
+- Source-SFT的完整validation在step200/400/600为`74/87/73`，最佳step400已经被前后候选夹住；恢复到计划上限800不会服务于“找最强已观测checkpoint”的当前判断，因此冻结step400且development不再重训。
+- Writer-v2原run的step500/750/1000/1500 correct为`99/92/75/72`。独立dense-retention replay的350/400/450/500/550/600/650/700/750 cheap screens为`24/27/20/24/26/31/19/30/33`（各128），只将600/700/750提升为完整validation，得到`90/85/95`。它们均未超过原step500，后段亦持续退化，故没有证据支持再补800–950或更多细粒度训练。
+- 选定的原run step500逐task correct为Long `5/0`、Goal `1/38`、Object `37/12`、Spatial `2/4`，合计`99/400`。其唯一cross-suite wrong-video arm为Long `6/2`、Goal `0/27`、Object `20/0`、Spatial `0/0`，合计`55/400`；correct-only/wrong-only=`56/12`，exact McNemar `p=6.21e-8`。
+- v1的`119/115`说明高绝对correct主要来自几乎input-independent的公共adapter捷径；v2的condition-only架构与paired contrast使correct下降20、wrong下降60。v2仍有提升绝对competence的空间，但当前`99 > Source-SFT 87 > source base 48`且视频差`+44`跨6个tasks，已同时满足行为收益和视频特异性，当前最有价值的下一证据是RL-Writer而非继续AS消融。

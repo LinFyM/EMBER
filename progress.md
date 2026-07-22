@@ -188,9 +188,9 @@
 
 ## 当前后续动作
 
-1. fresh训练Writer-v2 1,500-step完整cosine schedule，在250/500/750/1000/1250/1500保存候选；checkpoint选择阶段只跑correct-video screen与少量完整validation。
-2. fresh训练Source-SFT 800-step budget-scaled cosine schedule，在100/200/400/600/800保存候选；独立选择validation最佳，不与Writer匹配steps、queries或compute。
-3. 比较两方法各自最佳完整validation；只对唯一最佳Writer补一次correct-language + cross-suite-wrong-video完整control，随后暂停汇报。generic full、RL-Writer和seen继续暂停。
+1. 直接运行fresh zero-AS RL-Writer最小真实profile，测official random-reset reward coverage、有效rollout吞吐、显存和一次Writer update的机械闭环。
+2. 按profile把统一短周期原则换算为reward interactions/updates；到预算仍无信号则完整封存zero-AS negative，再且仅再启用预声明的24-chunk micro-AS warm-up分支。
+3. RL-Writer成立或合规关闭后继续seen comparison与final 32-source阶段；Source-SFT不重训development，AS-Writer不再补generic或额外wrong-video arms。
 
 ## AS-Writer短周期profile与正式seal（2026-07-22）
 
@@ -236,3 +236,11 @@
 - Writer-v2 step250的64-state screen为full-language correct/wrong=`12/8`、generic correct/wrong=`12/8`；完整full-language correct/wrong=`83/63`（各400），paired correct-only/wrong-only=`40/20`、exact McNemar `p=0.01349`。视频特异性已跨5个正向tasks成立，但correct绝对性能低于v1的119/400。
 - owner将当前执行范围收敛为：充分训练并独立选择Writer-v2与Source-SFT的validation最强checkpoint，然后比较并暂停。Writer候选选择只看correct-video；唯一最佳checkpoint确定后才补一次correct-language + cross-suite-wrong-video完整control，不再运行generic full或候选wrong arms。
 - formal seal已通过全仓`150 passed`：Writer-v2 fresh 1,500 steps、batch16/rank、50 warmup/1,500 decay、250-step checkpoints，配置SHA256 `34c5a1f8...34b7a`；Source-SFT fresh 800 steps、batch64/rank、100 warmup/800 decay、checkpoints 100/200/400/600/800，配置SHA256 `3f5a2c93...15818`。下游未启动的RL-Writer/task-local仅机械rebind authority hash；两者若到120分钟guardrail仍未饱和，保存曲线并明确标记budget-censored，不自动追加。
+
+## AS-Writer与Source-SFT development选择完成（2026-07-22）
+
+- Source-SFT ceiling run完整validation为step200/400/600=`74/87/73`（各400）；step400是明确峰值，故停止在最近完整checkpoint并冻结step400，不恢复到800。development Source-SFT至此完成，后续不重复。
+- Writer-v2原1,500-step run的correct-video完整曲线为step500/750/1000/1500=`99/92/75/72`。为排除未保存细峰，另从identity fresh运行相同训练合同、只加密350–750 checkpoint retention；16-state screens将600/700/750送入完整validation，结果为`90/85/95`。没有候选超过原run step500，且原run后段持续下降，因此冻结原run step500=`99/400`。
+- 唯一最终wrong-video arm在同一step500上得到`55/400`；paired both-success/correct-only/wrong-only/both-fail=`43/56/12/289`，exact McNemar `p=6.21e-8`。逐task correct−wrong为Long `-1/-2`、Goal `+1/+11`、Object `+17/+12`、Spatial `+2/+4`，视频正效应来自6/8 tasks而非单任务。
+- development主比较为source base `48/400`、Source-SFT `87/400`、Writer-v2 correct `99/400`。v1虽有`119/400` correct，但wrong仍为`115/400`；它更像公共LoRA。v2牺牲部分绝对correct性能，却把wrong降到55并建立强视频因果差异，按owner口径暂时通过。
+- peak-scan run summary/metrics SHA256为`31e36942...f29`/`171acd12...9c1c`；最终correct/wrong results SHA256为`e55cdf8e...66e4`/`3f9d6f1e...8b6f`。下一阶段直接进入zero-AS RL-Writer，不补不影响当前判断的AS消融。

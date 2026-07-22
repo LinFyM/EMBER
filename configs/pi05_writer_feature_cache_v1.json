@@ -74,10 +74,28 @@
     "task_level_atomic_resume": true
   },
   "profile": {
-    "status": "pending_source_base",
+    "status": "sealed",
     "candidate_frame_batch_size_per_rank": 32,
+    "selected_frame_batch_size_per_rank": 32,
     "selection_metric": "valid cached frames per second with zero OOM and exact tensor contract",
-    "formal_lock_trigger": "final formal raw source policy exists and one real eight-GPU smoke completes"
+    "formal_lock_trigger": "final formal raw source policy exists and one real eight-GPU smoke completes",
+    "evidence": {
+      "output_dir": "/data/ymdai/outputs/ember/pi05_writer_feature_cache_smoke_raw_197c6f2_b32_20260722",
+      "git_commit": "197c6f2a2d7540ea8f855f98784d7fa93f0f05a7",
+      "source_policy_sha256": "60ea7ee898629321cf34522e5f0e45f4f1c2659c5f5dbc7b02ed9eb46a8cdf36",
+      "tasks": 8,
+      "episodes": 8,
+      "frames": 1033,
+      "aggregate_critical_path_frames_per_second": 689.4672788495001,
+      "minimum_task_frames_per_second": 89.76806753231158,
+      "maximum_task_wall_seconds": 1.4982581939548254,
+      "launch_to_manifest_wall_seconds": 122,
+      "zero_oom_or_nonfinite_failures": true,
+      "run_contract_sha256": "f166e86b8d8a21322ad8deefb418e76574419bed6ca0eac9e2af56158a5ccda7",
+      "cache_manifest_sha256": "906e75b3c5a3493f19c22148d97e7f40cbe87c814c112b2116a122fd3348a178",
+      "cache_payload_sha256": "27959cc57e8fbccb2218bdc7ef149d8dc7398c8384a2f2d59cd84d30913392b4",
+      "log_sha256": "f845a53c59960007b9d133d40ff0cc1950c0acae1bd5bd17af2dfb1a8e1365d3"
+    }
   },
   "smoke": {
     "task_count": 8,

@@ -61,7 +61,9 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] 将Writer core、target feature-cache与exact-resume训练owner适配到π0.5成熟LoRA空间；同task video/action episode使用独立确定性schedule，Writer只见language+one action-hidden video。
   - 已封存38 targets / 76 tensors / 1,287,168 parameters的rank16合同；真实checkpoint metadata与meta模型结构一致。
   - 已修复PI05 forward签名、BF16/FP32 LoRA dtype保真，并在Writer入口对`offsets=[0,L]`单视频合同fail-close；functional/materialized parity已测试。
-- [x] 封存target40 metadata/hash authority与development 32-task视频cache配置；cache和AS formal均保持pending real profile，不将候选batch/steps冒充正式配方。
+- [x] 封存target40 metadata/hash authority与development 32-task视频cache配置；AS formal仍需真实训练profile，不将候选steps冒充正式配方。
+- [x] feature-cache完成raw source policy上的真实8卡batch32 smoke：8 tasks/8 episodes/1,033 frames，critical-path 689.47 frames/s且无OOM/nonfinite；batch32已封存。
+- [ ] 生成development 32 tasks×50 videos、274,523 frames的formal feature cache并核验全部task records/hashes。
 - [ ] 24 train tasks均衡混合；source base冻结，actions只进functional loss。
 - [ ] 先profile约短时loss/吞吐，将wall-clock换算为steps；checkpoint频繁exact-resume。
 - [ ] 单次训练不超过约2小时。用loss斜率决定何时值得运行便宜val screen，完整val只评少量候选，尽快选择接近饱和checkpoint。

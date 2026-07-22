@@ -115,8 +115,9 @@
 ## Target40 seal、PI05 feature cache与AS-Writer owner（2026-07-21）
 
 - target40下载已完成且未复制现有cache：四suite各10个HDF5，总计33,784,856,577 bytes。metadata-only seal为40 tasks/2,000 episodes/338,575 frames，24/8/8 IDs逐项一致；manifest/checksum均通过，manifest SHA256 `1b28547f...049d`。
-- `configs/pi05_writer_feature_cache_v1.json` SHA256 `7e05ce3e...ce55b`，只授权development train+validation视频，禁止test video与任意trajectory action/state/reward/terminal读取；formal cache使用final raw source policy并先做真实8卡profile。
-- `configs/pi05_as_writer_v1.json` SHA256 `ae2a8218...02f34`，明确24 train actions、one-video input、independent sampler/video seeds、frozen source normalization及≤120分钟正式wall-clock；formal状态`pending_profile`，当前4-step/batch1仅为未来mechanics profile默认值。
+- `configs/pi05_writer_feature_cache_v1.json` SHA256 `2165a2d9...e3ce`，只授权development train+validation视频，禁止test video与任意trajectory action/state/reward/terminal读取；raw source policy上的8卡batch32 smoke完成8 tasks/8 episodes/1,033 frames，critical-path `689.47 frames/s`且无OOM/nonfinite，因此profile已封存。
+- smoke从launch到manifest约122秒，其中实际每task抽取1.03–1.50秒；run-contract/cache-manifest/log SHA256为`f166e86b...cda7`/`906e75b3...a178`/`f845a53c...65d3`。development formal cache规模为32 tasks/1,600 episodes/274,523 frames，BF16视觉主体约1.124GB。
+- `configs/pi05_as_writer_v1.json`随feature authority更新后SHA256为`eb54c748...ea09`，明确24 train actions、one-video input、independent sampler/video seeds、frozen source normalization及≤120分钟正式wall-clock；formal状态`pending_profile`，当前4-step/batch1仅为未来mechanics profile默认值。
 - AS训练已原位替换旧Smol cold-start owner：每rank每step由task-balanced action sampler给出task/visit，再由独立teacher-video schedule选一条demo；`WriterFeatureStore.load_one_video`只暴露pure language、该episode的video features和`[0,L]` offsets。policy、base与encoder冻结，只有shared Writer DDP更新。
 - checkpoint先验证canonical manifest和全部file SHA再读取optimizer/RNG pickle，交叉核对manifest/trainer/rank cursor，metrics JSONL按checkpoint cursor隔离orphan rows；formal最终coverage由launch total-step自动推导，调用者不能关闭。rank写盘/发布失败会跨8 ranks一致传播，避免barrier死锁。
 - 删除`cache_writer_features.py`和`train_writer_cold_start.py`；相关活动测试改为PI05 schema。fresh全仓`107 passed`，compileall、config SHA和target checksum通过；architecture guard结果`REVIEW`且hard violations为空。review增长理由与retirement trigger见ownership段。
@@ -142,7 +143,7 @@
 
 ## PI05 reward core、zero-AS RL-Writer与test-only task-local合同（2026-07-21）
 
-- 新增`configs/pi05_rl_writer_development_v1.json`（SHA256 `cde828db...0afd`）和`configs/pi05_task_local_rl_test_v1.json`（SHA256 `cd594a97...1550`）。前者formal状态仍为`pending_source_screen_and_real_profile`；后者所有正式budget保持0并写明`blocked_until_zero_interaction_test_and_test_open`，因此当前代码完成不会越过阶段信息墙。
+- 当前`configs/pi05_rl_writer_development_v1.json` SHA256为`a8c47acd...bf6d`，`configs/pi05_task_local_rl_test_v1.json` SHA256为`2c6cc053...7bd8`。前者formal状态仍为`pending_source_screen_and_real_profile`；后者所有正式budget保持0并写明`blocked_until_zero_interaction_test_and_test_open`，因此当前代码完成不会越过阶段信息墙。
 - `ember.reward`统一实现official random BDDL reset、10-step settling、suite horizon、显式逐replan PI05 flow-noise、成功即停、immutable raw ledger和三类cursor。成功trajectory只保留真正执行的每个replan前缀；reward loss不会监督未执行的45/50 actions。
 - `ember.rl_writer`拆分为contract、runtime、loop和checkpoint owner。fresh Writer在8 ranks上使用共同确定性seed且generated LoRA功能恒等；只有rank0原子发布run contract并跨rank校验digest。Writer-only DDP更新、task/video full-cycle coverage、完整per-rank RNG、optimizer/scheduler、metrics与ledger-bound exact-resume均已接入；micro-AS分支在zero完整负证据前硬拒绝。
 - `ember.task_local`已封存8 test tasks、三臂/cohort video/匹配seed、一次性初始化bundle、physical task-LoRA-only executed-prefix update、随机reset reward checkpoint选择和hash-bound resume mechanics；尚未实现或启动test formal runtime，不把机械合同写成结果。

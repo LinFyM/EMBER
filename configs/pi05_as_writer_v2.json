@@ -134,7 +134,7 @@
       "kind": "cosine_decay_with_warmup",
       "peak_lr": 0.0003,
       "warmup_steps": 50,
-      "decay_steps": 500,
+      "decay_steps": 1500,
       "decay_lr": 0.00001
     },
     "maximum_formal_wall_clock_minutes": 120,
@@ -179,15 +179,18 @@
   "formal_run": {
     "status": "sealed",
     "expected_world_size": 8,
-    "total_steps": 250,
+    "total_steps": 1500,
     "per_rank_batch_size": 16,
     "checkpoint_steps": [
-      50,
-      100,
-      150,
-      200,
-      250
+      250,
+      500,
+      750,
+      1000,
+      1250,
+      1500
     ],
-    "selection_rule": "Inspect fixed functional correct-versus-wrong ordering, generic-correct absolute competence, normal positive loss, and generated-adapter specificity at every checkpoint. Send only checkpoints with real multi-task specificity and retained positive competence to cheap rollout screens; stop at step 250 and record undertraining if still unsaturated rather than extending automatically."
+    "maximum_wall_clock_minutes": 120,
+    "budget_role": "guardrail_not_target",
+    "selection_rule": "Train a fresh Writer-v2 through one complete 1,500-step cosine schedule. Use the same fixed correct-video 8-state validation screen for every retained checkpoint, then run full 8-task validation only for the few strongest correct-video candidates. Select the strongest checkpoint by full correct-video validation; only after selection run exactly one full correct-language plus cross-suite-wrong-video control for that checkpoint. Do not run per-checkpoint wrong-video or generic full arms. If the final checkpoint remains visibly unsaturated at the wall-clock guardrail, retain the curves and mark budget-censored undertraining instead of extending automatically."
   }
 }

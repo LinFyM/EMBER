@@ -81,23 +81,18 @@ def test_development_config_selects_only_sealed_train_actions() -> None:
     assert config["information_wall"]["test_video_values_read"] == 0
 
 
-def test_development_formal_budget_matches_selected_as_writer_query_scale() -> None:
+def test_development_formal_budget_is_independent_ceiling_search() -> None:
     config = load_source_sft_config(CONFIG)
     formal = config["stages"]["development"]["formal_run"]
-    budget = formal["matched_budget"]
     assert formal["status"] == "sealed"
     assert formal["expected_world_size"] == 8
-    assert formal["total_steps"] == 63
+    assert formal["total_steps"] == 800
     assert formal["per_rank_batch_size"] == 64
-    assert formal["checkpoint_steps"] == [63]
-    assert budget["as_writer_global_action_queries"] == 32_000
-    assert budget["source_sft_global_action_queries"] == 32_256
-    assert (
-        formal["total_steps"]
-        * formal["expected_world_size"]
-        * formal["per_rank_batch_size"]
-        == budget["source_sft_global_action_queries"]
-    )
+    assert formal["checkpoint_steps"] == [100, 200, 400, 600, 800]
+    assert config["optimization"]["scheduler"]["warmup_steps"] == 100
+    assert config["optimization"]["scheduler"]["decay_steps"] == 800
+    assert "not matched to AS-Writer" in formal["selection_rule"]
+    assert formal["prior_matched_scale_result"]["optimizer_steps"] == 63
 
 
 def test_development_config_cannot_open_final_stage() -> None:

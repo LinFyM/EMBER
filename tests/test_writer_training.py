@@ -36,9 +36,16 @@ def test_as_writer_config_is_pi05_one_video_and_formal_sealed() -> None:
     assert config["data"]["episodes_per_task"] == 50
     assert config["data"]["sampler_seed"] != config["data"]["teacher_video_seed"]
     assert config["formal_run"]["status"] == "sealed"
-    assert config["formal_run"]["total_steps"] == 250
+    assert config["formal_run"]["total_steps"] == 1500
     assert config["formal_run"]["per_rank_batch_size"] == 16
-    assert config["formal_run"]["checkpoint_steps"] == [50, 100, 150, 200, 250]
+    assert config["formal_run"]["checkpoint_steps"] == [
+        250,
+        500,
+        750,
+        1000,
+        1250,
+        1500,
+    ]
     assert len(config["conditioning_training"]["video_task_pairs"]) == 12
     assert conditioning_cycle(config) == (
         "normal",
@@ -136,11 +143,11 @@ def test_sealed_as_writer_config_resolves_profile_and_formal(
         lambda _root: {"dirty_paths": [], "commit": "sealed", "origin_main": "sealed"},
     )
     assert resolve_runtime(args, config, context) == (
-        250,
+        1500,
         16,
-        (50, 100, 150, 200, 250),
+        (250, 500, 750, 1000, 1250, 1500),
     )
-    assert args.stop_after_step == 250
+    assert args.stop_after_step == 1500
 
 
 def test_retired_smolvla_cold_start_config_is_not_an_active_writer_config() -> None:

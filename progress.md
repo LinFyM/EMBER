@@ -188,9 +188,9 @@
 
 ## 当前后续动作
 
-1. 启动已封存的Writer-v2 250-step首轮，在50/100/150/200/250保存候选。
-2. 对每个候选做固定functional task-adapter matching诊断，随后只将保持positive competence且出现多task视频特异性的少量checkpoint送入cheap correct/wrong rollout screen与完整validation。
-3. Writer视频特异性判断完成后测Source-SFT的validation上限；seen和RL-Writer继续暂停，不把旧AS 119/400解释成视频收益。
+1. fresh训练Writer-v2 1,500-step完整cosine schedule，在250/500/750/1000/1250/1500保存候选；checkpoint选择阶段只跑correct-video screen与少量完整validation。
+2. fresh训练Source-SFT 800-step budget-scaled cosine schedule，在100/200/400/600/800保存候选；独立选择validation最佳，不与Writer匹配steps、queries或compute。
+3. 比较两方法各自最佳完整validation；只对唯一最佳Writer补一次correct-language + cross-suite-wrong-video完整control，随后暂停汇报。generic full、RL-Writer和seen继续暂停。
 
 ## AS-Writer短周期profile与正式seal（2026-07-22）
 
@@ -230,3 +230,9 @@
 - 正式首轮root为`/data/ymdai/outputs/ember/pi05_as_writer_v2_development_seed7_dcfb206_b16_s250_20260722`，完成250/250 steps与五个完整checkpoint；训练段wall `334.476s`，24 tasks各覆盖全部50 action episodes与50 teacher videos。run-contract/metrics/summary/log SHA256为`08e58005...af4c`/`592212b6...289`/`8b3e456f...37b`/`dfd866b1...a7d`，250 rows连续、唯一、全部finite。
 - 首/末10步positive loss为normal `0.14501→0.11478`、full `0.14337→0.12463`、generic `0.13617→0.12040`；full/generic末10步wrong-minus-correct均值为`+0.00707/+0.00788`。这是比30-step profile更强的训练内信号，但不同step query不相同，尚不能替代fixed-query或closed-loop验证。
 - 同一canonical evaluator已增加`generic_correct/generic_cross_suite_wrong`条件；generic只替换Writer language为正常cache得到的中性embedding，policy始终接收正确task language。聚焦测试`33 passed`；下一步在clean/pushed commit上对step200/250做四分支cheap validation screen。
+
+## Writer-v2首轮validation与双方法ceiling任务（2026-07-22）
+
+- Writer-v2 step250的64-state screen为full-language correct/wrong=`12/8`、generic correct/wrong=`12/8`；完整full-language correct/wrong=`83/63`（各400），paired correct-only/wrong-only=`40/20`、exact McNemar `p=0.01349`。视频特异性已跨5个正向tasks成立，但correct绝对性能低于v1的119/400。
+- owner将当前执行范围收敛为：充分训练并独立选择Writer-v2与Source-SFT的validation最强checkpoint，然后比较并暂停。Writer候选选择只看correct-video；唯一最佳checkpoint确定后才补一次correct-language + cross-suite-wrong-video完整control，不再运行generic full或候选wrong arms。
+- formal seal已通过全仓`150 passed`：Writer-v2 fresh 1,500 steps、batch16/rank、50 warmup/1,500 decay、250-step checkpoints，配置SHA256 `34c5a1f8...34b7a`；Source-SFT fresh 800 steps、batch64/rank、100 warmup/800 decay、checkpoints 100/200/400/600/800，配置SHA256 `3f5a2c93...15818`。下游未启动的RL-Writer/task-local仅机械rebind authority hash；两者若到120分钟guardrail仍未饱和，保存曲线并明确标记budget-censored，不自动追加。

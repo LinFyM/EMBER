@@ -396,3 +396,11 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - Writer-v2首轮在commit `dcfb20689954225aa0cc92ae75f4103a7db6213c`上完成250/250 steps；训练段wall-clock `334.476s`，共产生32,000 policy samples与21,376 global action queries。24 tasks分别覆盖全部50条action episodes与全部50条teacher videos，validation/test action reads均为0；五个checkpoint manifests逐文件验证通过。
 - 三种mode的首/末10步positive loss分别为normal `0.14501→0.11478`、full-language `0.14337→0.12463`、generic `0.13617→0.12040`。full/generic的wrong-minus-correct gap从首10步`+9.37e-5/+5.95e-5`增至末10步`+0.00707/+0.00788`，说明matching方向已明显增强且positive competence没有被训练目标主动牺牲；由于各step action query不同，这仍需fixed-query和rollout证据确认。
 - canonical evaluator现在可表达`generic_correct`与`generic_cross_suite_wrong`：只有Writer language切换为cache中的中性`perform the demonstrated task` embedding，policy observation/prompt仍沿用evaluation task的正确language。旧`correct/cross_suite_wrong` adapter payload保持不变，已有评测的resume/reaggregation合同不受影响。
+
+## Writer-v2首轮closed-loop结果与充分训练决策（2026-07-22）
+
+- step250固定64-state screen中，full-language correct/wrong=`12/8`，generic correct/wrong=`12/8`；两组paired flips均为correct-only 7、wrong-only 3。generic-correct成功覆盖Goal与Object多个tasks，说明neutral Writer language下视频能生成有绝对competence的adapter，而不是只破坏negative臂。
+- full-language完整validation为correct `83/400=20.75%`、cross-suite wrong `63/400=15.75%`，净差`+20/400=+5pp`。paired rows为both-success 43、correct-only 40、wrong-only 20、both-fail 297，exact McNemar `p=0.01349`；5/8 tasks正向、1负向、2持平。共享policy-noise seed前缀逐项一致，列表长度差只来自成功提前终止。
+- 逐任务correct/wrong为Long 1/2=`4/2` vs `11/2`、Goal 3/6=`0/31` vs `0/20`、Object 1/3=`33/6` vs `29/0`、Spatial 1/3=`2/5` vs `1/0`。v2已比v1的119/115建立更强视频特异性，但correct由119降至83，当前科学问题从“无视频依赖”转为“特异性与绝对competence的权衡”。
+- owner要求分别充分训练Writer-v2与Source-SFT并找各自validation最佳。Writer选择阶段只运行correct-video；只有唯一最强Writer checkpoint选定后才运行一次correct-language + cross-suite-wrong-video完整control，不运行per-checkpoint wrong或generic full arms。RL-Writer与seen继续暂停。
+- Writer-v2 ceiling run从identity fresh训练1,500 steps，使用50-step warmup/1,500-step cosine并每250步保存；Source-SFT从identity fresh训练800 steps，使用100-step warmup/800-step cosine并保存100/200/400/600/800。两者独立选择，不匹配steps、queries、compute或参数；到120分钟guardrail仍未饱和则保留曲线并标记budget-censored。

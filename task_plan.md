@@ -72,7 +72,9 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] 在同一canonical runner内完成Writer-v2组合修订：每帧保留4×4空间网格、condition-only层级memory和LoRA decoder；按`normal → full-language contrast → generic-language contrast`训练，generic只进入Writer且policy始终看正确language；没有新增adapter、subspace或第二套runner。
 - [x] 生成并封存v2 development feature cache：32 tasks×50 videos、274,523 frames、32/32 tensor hashes与information-wall复核通过；完成8卡batch16三分支短profile，positive loss下降且两类matching gap由微负向微正移动，据此封存250-step首轮与50-step checkpoint间隔。wall-clock倍率只记录，不作为科学接受门槛。
 - [x] 完成Writer-v2首轮250-step正式训练并保存50/100/150/200/250 checkpoints；250条metrics全部finite，24 tasks各覆盖50 action episodes与50 teacher videos，三种positive loss下降且末10个contrast steps的wrong-minus-correct均值为full `+0.00707`、generic `+0.00788`。
-- [ ] 检查fixed functional task-adapter匹配并对step200/250做四分支cheap rollout screen；只把确有多task视频特异性且correct表现未崩溃的少量checkpoint送入完整validation。
+- [x] Writer-v2首轮step250完成四分支64-state screen；full-language与generic两组均为correct `12/64`、wrong `8/64`，显示初步视频特异性与generic-correct绝对competence。
+- [x] Writer-v2 step250完成full-language完整validation：correct `83/400`、cross-suite wrong `63/400`，paired correct-only/wrong-only=`40/20`、exact McNemar `p=0.01349`；5 tasks正向、1负向、2持平。相较v1的119/115，视频特异性增强但correct绝对性能下降。
+- [ ] 按owner最新口径从identity fresh训练Writer-v2至1,500-step完整cosine schedule，保存250间隔候选；只用correct-video screen与少量完整validation选择最强checkpoint。选择后只为唯一最强checkpoint运行一次correct-language + cross-suite-wrong-video完整control，不运行候选wrong或generic full arms。
 
 ## Phase D：RL-Writer development
 
@@ -86,13 +88,14 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 ## Phase E：Source-SFT、seen与视频因果证据
 
 - [x] 建立development-only Source-SFT authority与唯一PI05训练owner：24 train tasks共享一套38-target LoRA，raw source policy冻结，checkpoint保存adapter/optimizer/scheduler/per-rank RNG/确定性sampler与metrics cursor；现有evaluator按静态adapter一次安装并保留普通batch。
-- [x] 从同一source base在24 train tasks上联合训练一套shared Source-SFT LoRA；固定匹配已选AS step250约32,000 action queries，保持batch64/rank训练63 steps。最终checkpoint在validation为61/400；曲线仍下降，按固定预算记为可能未充分训练且不追加。
+- [x] Source-SFT matched-scale pilot使用batch64/rank训练63 steps、32,256 queries，validation为61/400；该run仍处于继承的1,000-step warmup且loss继续下降，只作undertrained provenance，不代表上限。
+- [ ] 从fresh identity训练独立Source-SFT ceiling run：batch64/rank、100-step warmup、800-step cosine，保存100/200/400/600/800；先固定64-state screen，再只对少量强候选做完整8-task validation并选最佳。
 - [x] 在outcome前按specification-only SHA256规则封存四suites各2个、共8个seen tasks（global IDs 0,2,15,12,21,28,39,37）；policy outcome与trajectory value reads均为0。
 - [ ] 比较source base、Source-SFT、AS-Writer、可用RL-Writer的seen performance。
 - [x] 封存同split role、按suite循环和排序ordinal构造的cross-suite wrong-video机械map；correct/wrong两臂保持同一language、task、init state、policy RNG、video seed与demo ordinal。
 - [x] canonical evaluator在同一dynamic queue、persistent worker和raw-row schema内支持frozen AS-Writer或RL-Writer；两者共享correct/wrong mapping与video seed，artifact kind/checkpoint axis分别fail-close。
 - [x] 用正式AS checkpoint运行并报告correct/wrong/base逐任务结果：119/115/48（各400）；correct−wrong仅+4，当前AS结果未显示强teacher-video内容依赖。RL-Writer若成立后另补其对照。
-- [ ] 冻结AS-Writer、RL-Writer、Source-SFT的architecture、LoRA空间、optimizer与最终训练steps。
+- [ ] 比较最强Writer-v2 correct-video与最强Source-SFT的完整validation表现；随后只对最强Writer-v2补一次full-language wrong-video control并暂停向owner汇报。RL-Writer继续暂停。
 
 ## Phase F：32-source final retraining与zero-interaction test
 

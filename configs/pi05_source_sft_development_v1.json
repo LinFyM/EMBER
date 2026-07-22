@@ -86,8 +86,8 @@
     "scheduler": {
       "kind": "cosine_decay_with_warmup",
       "peak_lr": 0.0003,
-      "warmup_steps": 1000,
-      "decay_steps": 30000,
+      "warmup_steps": 100,
+      "decay_steps": 800,
       "decay_lr": 0.00001
     }
   },
@@ -129,30 +129,25 @@
       "formal_run": {
         "status": "sealed",
         "expected_world_size": 8,
-        "total_steps": 63,
+        "total_steps": 800,
         "per_rank_batch_size": 64,
         "checkpoint_steps": [
-          63
+          100,
+          200,
+          400,
+          600,
+          800
         ],
         "maximum_wall_clock_minutes": 120,
         "budget_role": "guardrail_not_target",
-        "matched_budget": {
-          "comparison_checkpoint": "AS-Writer development step 250 selected by full validation",
-          "as_writer_global_action_queries": 32000,
-          "source_sft_global_batch_size": 512,
-          "source_sft_optimizer_steps": 63,
-          "source_sft_global_action_queries": 32256,
-          "relative_query_difference": 0.008,
-          "matched_axis": "action-supervised query exposure scale",
-          "not_claimed_matched": [
-            "optimizer updates",
-            "batch size",
-            "forward compute",
-            "updated parameter count",
-            "supervision pathway"
-          ]
+        "prior_matched_scale_result": {
+          "optimizer_steps": 63,
+          "global_action_queries": 32256,
+          "validation_successes": 61,
+          "validation_episodes": 400,
+          "interpretation": "The prior matched-scale pilot stopped during the inherited 1,000-step warmup while loss was still descending; it is provenance, not the Source-SFT ceiling."
         },
-        "selection_rule": "one fixed matched-query-scale run with no optimizer-step tuning; retain and evaluate only step 63 on all eight validation tasks, and record apparent undertraining without extending this run"
+        "selection_rule": "Train one fresh shared LoRA through a budget-scaled 800-step cosine schedule with 100 warmup steps. Screen every retained checkpoint on the same fixed 8-state validation subset, run full 8-task validation only for the few strongest candidates, and select the strongest checkpoint by full validation. This is an independent ceiling search and is not matched to AS-Writer steps, batch size, queries, compute, or parameters. If the final checkpoint remains visibly unsaturated at the wall-clock guardrail, retain the curves and mark budget-censored undertraining instead of extending automatically."
       }
     },
     "final": {

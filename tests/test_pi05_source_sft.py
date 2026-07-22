@@ -331,6 +331,26 @@ def test_static_source_sft_adapter_is_shared_and_role_gated(tmp_path: Path) -> N
     assert adapter["per_task_adapter_count"] == 0
     assert adapter["teacher_video_reads"] == adapter["test_action_reads"] == 0
 
+    seen_keys = (
+        ("libero_spatial", 0),
+        ("libero_spatial", 2),
+        ("libero_object", 5),
+        ("libero_object", 2),
+        ("libero_goal", 1),
+        ("libero_goal", 8),
+        ("libero_10", 9),
+        ("libero_10", 7),
+    )
+    seen = inspect_source_sft_evaluation(
+        config_path=CONFIG,
+        checkpoint=checkpoint,
+        source=source,
+        task_keys=seen_keys,
+        evaluation_role="seen_panel",
+        require_formal=False,
+    )
+    assert seen["evaluation_role"] == "seen_panel"
+
     with pytest.raises(Pi05SourceSFTError, match="cannot be evaluated"):
         inspect_source_sft_evaluation(
             config_path=CONFIG,

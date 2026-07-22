@@ -35,6 +35,7 @@ from ember.pi05_eval_contract import (
     inspect_tokenizer,
     load_evaluation_authorities,
     load_run_contract,
+    SEEN_PANEL_RELATIVE_PATH,
 )
 from ember.pi05_eval_queue import (
     EvaluationTask,
@@ -60,7 +61,14 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument(
         "--role",
-        choices=("all_targets", "development_train", "validation", "test", "final_source"),
+        choices=(
+            "all_targets",
+            "development_train",
+            "seen_panel",
+            "validation",
+            "test",
+            "final_source",
+        ),
         required=True,
     )
     parser.add_argument("--mode", choices=("smoke", "screen", "formal"), required=True)
@@ -319,6 +327,15 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
         or contract["mode"] != "smoke" and current_git["dirty_paths"]
     ):
         raise Pi05EvaluationError("evaluator checkout differs from the sealed run commit")
+    expected_role_authority = None
+    if contract.get("role") == "seen_panel":
+        expected_role_authority = {
+            "path": str(REPO_ROOT / SEEN_PANEL_RELATIVE_PATH),
+            "sha256": authorities.hashes["seen_panel"],
+            "schema_version": authorities.seen_panel.get("schema_version"),
+        }
+    if contract.get("role_authority") != expected_role_authority:
+        raise Pi05EvaluationError("evaluation role authority changed after prepare")
     model = inspect_source_checkpoint(
         authorities,
         Path(contract["model"]["source_run"]),

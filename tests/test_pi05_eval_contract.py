@@ -29,10 +29,17 @@ CONFIG = ROOT / "configs/pi05_target_evaluation_v1.json"
 def test_evaluation_authorities_and_roles_are_sealed() -> None:
     authorities = load_evaluation_authorities(CONFIG, ROOT)
     assert {
-        role: len(resolve_role_task_keys(authorities.protocol, role))
+        role: len(
+            resolve_role_task_keys(
+                authorities.protocol,
+                role,
+                authorities.seen_panel if role == "seen_panel" else None,
+            )
+        )
         for role in (
             "all_targets",
             "development_train",
+            "seen_panel",
             "validation",
             "test",
             "final_source",
@@ -40,10 +47,23 @@ def test_evaluation_authorities_and_roles_are_sealed() -> None:
     } == {
         "all_targets": 40,
         "development_train": 24,
+        "seen_panel": 8,
         "validation": 8,
         "test": 8,
         "final_source": 32,
     }
+    assert resolve_role_task_keys(
+        authorities.protocol, "seen_panel", authorities.seen_panel
+    ) == (
+        ("libero_spatial", 0),
+        ("libero_spatial", 2),
+        ("libero_object", 5),
+        ("libero_object", 2),
+        ("libero_goal", 1),
+        ("libero_goal", 8),
+        ("libero_10", 9),
+        ("libero_10", 7),
+    )
     assert authorities.normalization["authority"]["validation_or_test_numeric_reads"] == 0
 
 

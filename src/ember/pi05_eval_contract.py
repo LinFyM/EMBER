@@ -30,6 +30,9 @@ ROLE_NAMES = {
     "test",
     "final_source",
 }
+DERIVED_ROLE_NAMES = {"seen_panel"}
+SEEN_PANEL_RELATIVE_PATH = Path("configs/pi05_seen_panel_v1.json")
+SEEN_PANEL_CHECKSUM_RELATIVE_PATH = Path("configs/pi05_seen_panel_v1.sha256")
 FROZEN_SOURCE_POLICY_SUBDIR = "policy"
 
 
@@ -43,6 +46,7 @@ class EvaluationAuthorities:
     normalization: dict[str, Any]
     source_base_config: dict[str, Any]
     tokenizer_manifest: dict[str, Any]
+    seen_panel: dict[str, Any]
     hashes: dict[str, str]
 
 
@@ -174,6 +178,26 @@ def load_evaluation_authorities(
     }
     if set(values) != required:
         raise Pi05EvaluationError("PI05 evaluation authority set changed")
+    seen_panel_path = repo_root / SEEN_PANEL_RELATIVE_PATH
+    seen_panel_sha256 = sha256_file(seen_panel_path)
+    try:
+        checksum_fields = (
+            repo_root / SEEN_PANEL_CHECKSUM_RELATIVE_PATH
+        ).read_text(encoding="utf-8").split()
+    except OSError as error:
+        raise Pi05EvaluationError("missing sealed seen-panel checksum") from error
+    if checksum_fields != [seen_panel_sha256, seen_panel_path.name]:
+        raise Pi05EvaluationError("sealed seen-panel checksum changed")
+    seen_panel = _read_object(seen_panel_path)
+    panel_authority = seen_panel.get("authority", {})
+    panel_manifest = repo_root / str(panel_authority.get("target_data_manifest", ""))
+    if (
+        not panel_manifest.is_file()
+        or sha256_file(panel_manifest)
+        != panel_authority.get("target_data_manifest_sha256")
+    ):
+        raise Pi05EvaluationError("seen panel target-data authority changed")
+    hashes["seen_panel"] = seen_panel_sha256
     protocol = load_protocol(repo_root / config["authorities"]["protocol"]["path"])
     audit = values["overlap_audit"]
     targets = audit.get("target_tasks", [])
@@ -202,6 +226,7 @@ def load_evaluation_authorities(
         normalization=values["normalization"],
         source_base_config=values["source_base_config"],
         tokenizer_manifest=values["tokenizer_manifest"],
+        seen_panel=seen_panel,
         hashes=hashes,
     )
 
@@ -215,10 +240,51 @@ def split_role(protocol: Mapping[str, Any], suite: str, task_id: int) -> str:
 
 
 def resolve_role_task_keys(
-    protocol: Mapping[str, Any], role: str
+    protocol: Mapping[str, Any],
+    role: str,
+    seen_panel: Mapping[str, Any] | None = None,
 ) -> tuple[tuple[str, int], ...]:
-    if role not in ROLE_NAMES:
+    if role not in ROLE_NAMES | DERIVED_ROLE_NAMES:
         raise Pi05EvaluationError(f"unsupported PI05 evaluation role: {role}")
+    if role == "seen_panel":
+        if seen_panel is None:
+            raise Pi05EvaluationError("seen-panel evaluation lacks its sealed authority")
+        tasks = seen_panel.get("tasks", [])
+        keys = tuple(
+            (str(row.get("suite")), int(row.get("task_id", -1))) for row in tasks
+        )
+        expected_global_ids = (
+            [SUITE_ORDER.index(suite) * 10 + task_id for suite, task_id in keys]
+            if all(suite in SUITE_ORDER for suite, _ in keys)
+            else []
+        )
+        suite_counts = {
+            suite: sum(name == suite for name, _ in keys) for suite in SUITE_ORDER
+        }
+        valid = (
+            seen_panel.get("schema_version") == "ember_pi05_seen_panel_v1"
+            and seen_panel.get("selection", {}).get("role") == "train"
+            and int(
+                seen_panel.get("selection", {}).get("policy_outcome_reads", -1)
+            )
+            == 0
+            and int(
+                seen_panel.get("selection", {}).get("trajectory_value_reads", -1)
+            )
+            == 0
+            and len(keys) == len(set(keys)) == 8
+            and suite_counts == {suite: 2 for suite in SUITE_ORDER}
+            and all(
+                task_id in protocol["split"]["suites"][suite]["train"]
+                and row.get("split_role") == "train"
+                for row, (suite, task_id) in zip(tasks, keys, strict=True)
+            )
+            and seen_panel.get("summary", {}).get("global_task_ids") == expected_global_ids
+            and int(seen_panel.get("summary", {}).get("tasks", -1)) == 8
+        )
+        if not valid:
+            raise Pi05EvaluationError("sealed seen-panel task contract changed")
+        return keys
     keys: list[tuple[str, int]] = []
     for suite in SUITE_ORDER:
         roles = protocol["split"]["suites"][suite]
@@ -262,7 +328,11 @@ def inspect_installed_target_tasks(
         suite_name: benchmark.get_benchmark_dict()[suite_name]() for suite_name in SUITE_ORDER
     }
     result: list[TargetTaskContract] = []
-    for suite_name, task_id in resolve_role_task_keys(authorities.protocol, role):
+    for suite_name, task_id in resolve_role_task_keys(
+        authorities.protocol,
+        role,
+        authorities.seen_panel if role == "seen_panel" else None,
+    ):
         suite = suites[suite_name]
         task = suite.get_task(task_id)
         sealed = audit_by_key[(suite_name, task_id)]
@@ -641,6 +711,13 @@ def build_run_contract(
             "config_path": str(authorities.config_path),
             "hashes": authorities.hashes,
         },
+        "role_authority": {
+            "path": str(authorities.repo_root / SEEN_PANEL_RELATIVE_PATH),
+            "sha256": authorities.hashes["seen_panel"],
+            "schema_version": authorities.seen_panel.get("schema_version"),
+        }
+        if role == "seen_panel"
+        else None,
         "model": dict(model),
         "tokenizer": dict(tokenizer),
         "normalization": {

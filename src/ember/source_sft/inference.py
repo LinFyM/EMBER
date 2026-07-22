@@ -21,6 +21,7 @@ from ember.source_sft.checkpoint import validate_source_sft_checkpoint_files
 from ember.source_sft.contract import (
     SOURCE_SFT_LAUNCH_SCHEMA,
     Pi05SourceSFTError,
+    REPO_ROOT,
     authority_path,
     load_source_sft_config,
 )
@@ -32,8 +33,8 @@ STATIC_ADAPTER_SCHEMA = "ember_pi05_source_sft_eval_adapter_v1"
 
 def _validate_evaluation_role(stage: str, role: str) -> None:
     allowed = {
-        "development": {"development_train", "validation"},
-        "final": {"final_source", "test"},
+        "development": {"development_train", "seen_panel", "validation"},
+        "final": {"final_source", "seen_panel", "test"},
     }
     if role not in allowed.get(stage, set()):
         raise Pi05SourceSFTError(
@@ -46,6 +47,29 @@ def _validate_task_keys(
     task_keys: Sequence[tuple[str, int]],
     evaluation_role: str,
 ) -> None:
+    if evaluation_role == "seen_panel":
+        panel = read_json(REPO_ROOT / "configs/pi05_seen_panel_v1.json")
+        panel_authority = panel.get("authority", {})
+        manifest_authority = config["authorities"]["target_data_manifest"]
+        if (
+            panel.get("schema_version") != "ember_pi05_seen_panel_v1"
+            or panel_authority.get("target_data_manifest")
+            != manifest_authority["path"]
+            or panel_authority.get("target_data_manifest_sha256")
+            != manifest_authority["sha256"]
+        ):
+            raise Pi05SourceSFTError("Source-SFT seen-panel authority changed")
+        expected = {
+            (str(row["suite"]), int(row["task_id"])) for row in panel["tasks"]
+        }
+        observed = {(str(suite), int(task_id)) for suite, task_id in task_keys}
+        if (
+            len(expected) != len(observed)
+            or len(observed) != len(task_keys)
+            or observed != expected
+        ):
+            raise Pi05SourceSFTError("Source-SFT evaluation task panel changed")
+        return
     role_splits = {
         "development_train": {"train"},
         "validation": {"validation"},

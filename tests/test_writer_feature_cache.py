@@ -229,7 +229,7 @@ def _write_pi05_feature_authorities(tmp_path: Path) -> Path:
         },
         "model": {
             "policy_type": "pi05",
-            "source_checkpoint": "final_formal_ema_only",
+            "source_checkpoint": "final_formal_raw_policy_only",
             "vision_owner": "policy.model.paligemma_with_expert.embed_image",
             "language_owner": "policy.model.paligemma_with_expert.embed_language_tokens",
             "forbidden_checkpoint": "pi05_libero",

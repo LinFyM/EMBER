@@ -34,7 +34,7 @@
   },
   "model": {
     "policy_type": "pi05",
-    "source_checkpoint": "final_formal_ema_only",
+    "source_checkpoint": "final_formal_raw_policy_only",
     "vision_owner": "policy.model.paligemma_with_expert.embed_image",
     "language_owner": "policy.model.paligemma_with_expert.embed_language_tokens",
     "forbidden_checkpoint": "pi05_libero"
@@ -77,7 +77,7 @@
     "status": "pending_source_base",
     "candidate_frame_batch_size_per_rank": 32,
     "selection_metric": "valid cached frames per second with zero OOM and exact tensor contract",
-    "formal_lock_trigger": "final formal source EMA exists and one real eight-GPU smoke completes"
+    "formal_lock_trigger": "final formal raw source policy exists and one real eight-GPU smoke completes"
   },
   "smoke": {
     "task_count": 8,

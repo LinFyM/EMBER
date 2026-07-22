@@ -12,15 +12,15 @@
     },
     "as_writer_config": {
       "path": "configs/pi05_as_writer_v1.json",
-      "sha256": "bf1f309192ae665e0d7834702e6795572dae318f98561673f928f79be0ceb504"
+      "sha256": "ae2a821839e2bed2d8750478c0c19052acb6a8a3ee1ea85838e8557d0f902f34"
     },
     "rl_writer_config": {
       "path": "configs/pi05_rl_writer_development_v1.json",
-      "sha256": "a441fcc528c740f5d7baf8c96b408c2a068a58ddff3b8bfc8e55a6d2ed6bd469"
+      "sha256": "70f2605e55c346b86217baeb21f4146f02339665bd87f6746266ec53e0b31c92"
     },
     "feature_cache_config": {
       "path": "configs/pi05_writer_feature_cache_v1.json",
-      "sha256": "26eb1e6d8dd8e323d3d9930cd796f792efd145c85b9e59c8eced10ab1db0e036"
+      "sha256": "7e05ce3e6b6a2296fcb1f366b3a7e0336290b3ee4800038dd60b68110d3ce55b"
     },
     "lora_contract": {
       "path": "configs/pi05_lora_v1.json",

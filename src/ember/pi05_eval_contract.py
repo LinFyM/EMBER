@@ -30,6 +30,7 @@ ROLE_NAMES = {
     "test",
     "final_source",
 }
+FROZEN_SOURCE_POLICY_SUBDIR = "policy"
 
 
 @dataclass(frozen=True)
@@ -384,7 +385,7 @@ def _validate_source_checkpoint_provenance(
         raise Pi05EvaluationError("source checkpoint provenance contract changed")
 
 
-def _verified_ema_model_files(
+def _verified_model_files(
     checkpoint: Path, manifest: Mapping[str, Any]
 ) -> tuple[Path, list[dict[str, Any]]]:
     files = manifest.get("files", [])
@@ -393,11 +394,11 @@ def _verified_ema_model_files(
     expected = {row["path"]: row for row in files}
     if len(expected) != len(files):
         raise Pi05EvaluationError("source checkpoint manifest contains duplicate paths")
-    model_path = checkpoint / "ema_policy"
+    model_path = checkpoint / FROZEN_SOURCE_POLICY_SUBDIR
     observed_files: list[dict[str, Any]] = []
     for relative in (
-        "ema_policy/config.json",
-        "ema_policy/model.safetensors",
+        f"{FROZEN_SOURCE_POLICY_SUBDIR}/config.json",
+        f"{FROZEN_SOURCE_POLICY_SUBDIR}/model.safetensors",
         "trainer_state.json",
     ):
         path = checkpoint / relative
@@ -410,12 +411,12 @@ def _verified_ema_model_files(
         )
         if not valid:
             raise Pi05EvaluationError(f"source checkpoint model file changed: {relative}")
-        if relative.startswith("ema_policy/"):
+        if relative.startswith(f"{FROZEN_SOURCE_POLICY_SUBDIR}/"):
             observed_files.append(dict(record))
     return model_path, observed_files
 
 
-def _validate_ema_model_config(model_path: Path) -> None:
+def _validate_model_config(model_path: Path) -> None:
     model_config = _read_object(model_path / "config.json")
     expected_scalars = {
         "type": "pi05",
@@ -450,7 +451,7 @@ def _validate_ema_model_config(model_path: Path) -> None:
         raise Pi05EvaluationError("source checkpoint PI05 interface changed")
 
 
-def _validate_final_source_ema(
+def _validate_final_source_policy(
     authorities: EvaluationAuthorities,
     source_run: Path,
     checkpoint: Path,
@@ -504,7 +505,7 @@ def _validate_final_source_ema(
         "completed_optimizer_steps": final_step,
         "requested_optimizer_steps": final_step,
         "stopped_early_for_resume_smoke": False,
-        "frozen_policy_subdir": "ema_policy",
+        "frozen_policy_subdir": FROZEN_SOURCE_POLICY_SUBDIR,
     }
     observed_summary = {key: summary.get(key) for key in expected_summary}
     expected_micro_step = final_step * int(formal["gradient_accumulation_steps"])
@@ -520,7 +521,9 @@ def _validate_final_source_ema(
         and Path(str(summary.get("final_checkpoint", ""))).resolve() == checkpoint
     )
     if not valid:
-        raise Pi05EvaluationError("screen/formal evaluation requires the final formal EMA")
+        raise Pi05EvaluationError(
+            "screen/formal evaluation requires the selected final formal source policy"
+        )
     return sha256_file(summary_path)
 
 
@@ -544,11 +547,11 @@ def inspect_source_checkpoint(
     _validate_source_checkpoint_provenance(
         authorities, run_contract, manifest, trainer, run_contract_sha
     )
-    model_path, observed_files = _verified_ema_model_files(checkpoint, manifest)
-    _validate_ema_model_config(model_path)
+    model_path, observed_files = _verified_model_files(checkpoint, manifest)
+    _validate_model_config(model_path)
     summary_sha256 = None
     if evaluation_mode in {"screen", "formal"}:
-        summary_sha256 = _validate_final_source_ema(
+        summary_sha256 = _validate_final_source_policy(
             authorities,
             source_run,
             checkpoint,
@@ -570,6 +573,7 @@ def inspect_source_checkpoint(
         "checkpoint_manifest_sha256": sha256_file(checkpoint / "checkpoint_manifest.json"),
         "optimizer_step": int(trainer["optimizer_step"]),
         "source_run_summary_sha256": summary_sha256,
+        "frozen_policy_subdir": FROZEN_SOURCE_POLICY_SUBDIR,
         "model_path": str(model_path),
         "model_files": observed_files,
     }

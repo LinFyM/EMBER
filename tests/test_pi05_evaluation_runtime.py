@@ -272,7 +272,7 @@ def test_static_source_sft_adapter_is_installed_once_not_returned_per_rollout(
 def test_worker_asset_validation_rehashes_model_and_tokenizer(tmp_path: Path) -> None:
     normalization = tmp_path / "normalization.json"
     normalization.write_text(json.dumps({"stats": {}}) + "\n", encoding="utf-8")
-    model_path = tmp_path / "ema_policy"
+    model_path = tmp_path / "policy"
     model_path.mkdir()
     model = model_path / "model.safetensors"
     model.write_bytes(b"model-a")
@@ -285,9 +285,10 @@ def test_worker_asset_validation_rehashes_model_and_tokenizer(tmp_path: Path) ->
         },
         "model": {
             "model_path": str(model_path),
+            "frozen_policy_subdir": "policy",
             "model_files": [
                 {
-                    "path": "ema_policy/model.safetensors",
+                    "path": "policy/model.safetensors",
                     "bytes": model.stat().st_size,
                     "sha256": sha256_file(model),
                 }

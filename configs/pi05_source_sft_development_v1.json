@@ -70,7 +70,7 @@
     "method": "shared_multitask_lora_action_sft",
     "seed": 7,
     "precision": "bfloat16",
-    "source_policy": "final formal frozen EMA",
+    "source_policy": "final formal frozen raw policy",
     "normalization": "frozen filtered-LIBERO-90 source normalization",
     "gradient_checkpointing": true,
     "optimizer": {

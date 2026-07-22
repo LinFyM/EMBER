@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-最后更新：2026-07-21。当前长期 Goal 是完成共享 π0.5-LIBERO source base、one-video Writer、source baselines、seen/wrong-video机制证据、final single-seed test、test-only三臂RL和联合target-action oracle；不是停在generic base feasibility或任一局部阶段。
+最后更新：2026-07-22。当前长期 Goal 是完成共享 π0.5-LIBERO source base、one-video Writer、source baselines、seen/wrong-video机制证据、final single-seed test、test-only三臂RL和联合target-action oracle；不是停在generic base feasibility或任一局部阶段。
 
 ## 完成定义
 
@@ -31,7 +31,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 
 ## Phase A：source corpus、成熟recipe与高吞吐评测
 
-状态：source corpus与recipe已封存；高吞吐evaluator实现与机械门禁完成，待final source checkpoint做1/2/3 replicas真实rollout/s profile。
+状态：source corpus与recipe已封存；高吞吐evaluator实现、机械门禁和1/2/3 replicas真实rollout/s profile完成。
 
 - [x] 调研官方/成熟π0.5 action fine-tuning与LoRA项目；锁定OpenPI/LeRobot revision、full-SFT recipe、下游LoRA targets/rank/alpha/dropout与identity init。
 - [x] 对LIBERO-90与目标40 tasks完成3600对language/BDDL/semantic/composition specification audit。
@@ -40,8 +40,8 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] 下载并按opaque SHA/HDF5 schema-only核验目标40 tasks×50 episodes；封存24/8/8 target-data manifest，未解码target action/state/reward/terminal/video值且未改变task IDs。
 - [x] 已将当前“一task/一GPU”评测改成按 `episodes × horizon` cost-balanced state shards、动态队列、持久model/env，并删除旧静态活动入口。
 - [x] 在同一canonical evaluator内加入PI05 AS-Writer逐rollout materialized LoRA、one-video哈希schedule、role-preserving cross-suite wrong map及逐row可重算证据；没有新增第二套runner。
-- [ ] final source checkpoint后完成每卡统一1/2/3 replicas与未来Writer异LoRA functional batching的真实profile。
-- [ ] 确认所有卡CUDA进程数相同、GPU0无额外角色；只按真实rollout/s选实现。
+- [x] final source checkpoint后在同一40-task×1-state panel完成每卡统一1/2/3 replicas真实profile；有效rollout/s为0.1556/0.1818/0.1897，选择3 replicas/GPU。
+- [x] 确认所有卡CUDA进程数相同、GPU0无额外角色；3-replica每卡约31GB且24 workers全部对称。未来Writer异LoRA functional batching仍需在Writer checkpoint可用后另测。
 
 ## Phase B：共享 π0.5-LIBERO source base
 
@@ -49,11 +49,12 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] 完成相机mask修正后的8卡真实profile；选定8×microbatch32、global batch256、EMA与GPU-local NUMA binding，稳态47.75 examples/s，单卡reserved 71.18GB。
 - [x] 从同一个不可变step-1 checkpoint做两次8-rank恢复；loss/grad/RNG/cursor完全一致，policy/EMA最大独立NCCL末位差分别为1.49e-8/3.73e-9。
 - [x] 旧30k attempt3按owner决定在step2880停止；无checkpoint、不得resume，也不作source competence结果。其loss仍下降，只用于估计训练速度和否定“已饱和”的说法。
-- [ ] 从generic `pi05_base`按成熟recipe在过滤后的LIBERO-90 source corpus上联合action-SFT；若用LoRA则merge成base。
-- [ ] 从generic base fresh完成1,000 optimizer steps；333-step warmup、8卡一卡一rank、global batch256、最终step1000保存唯一完整checkpoint，预计约90–100分钟。
-- [ ] 根据loss与快速行为screen避免过训，不追求高ceiling。
-- [ ] 在全部目标40 tasks上做小型快速screen，确认source base已经开始在多个tasks产生部分真实成功，不能只靠单个易task aggregate；保存每task原始counts。
-- [ ] 冻结base、normalization、model/data hashes，作为全部后续方法共同起点。
+- [x] 从generic `pi05_base`在过滤后的71-task LIBERO-90 corpus上完成共享full action-SFT；没有未merge source LoRA。
+- [x] 从generic base fresh完成1,000 optimizer steps；333-step warmup、8卡一卡一rank、global batch256，最终step1000保存并完整验证唯一checkpoint。
+- [x] 按用户指定在step1000停止；末50-step mean loss为0.08659，曲线仍缓慢下降但明显趋平，记为budget-censored而不自动延长。
+- [x] 诊断并推翻错误的EMA screen：`decay=0.999`的step1000 EMA只走完raw更新位移的28.62%；匹配LIBERO-90 source tasks上raw为4/4、EMA为0/4，故EMA 0/320不是科学负结果。
+- [ ] 用step1000 raw policy重跑全部40 targets×8 fixed states正式screen；已完成的raw 40-task×1-state诊断为4/40、覆盖4 tasks与2 suites，只作方向确认。
+- [x] 冻结step1000 raw policy、source-only normalization及model/data/tokenizer hashes，作为全部后续方法共同起点；EMA仅保留为训练状态与负诊断证据。
 
 ## Phase C：AS-Writer development
 
@@ -77,7 +78,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 
 ## Phase E：Source-SFT、seen与视频因果证据
 
-- [x] 建立development-only Source-SFT authority与唯一PI05训练owner：24 train tasks共享一套38-target LoRA，source EMA冻结，checkpoint保存adapter/optimizer/scheduler/per-rank RNG/确定性sampler与metrics cursor；现有evaluator按静态adapter一次安装并保留普通batch。
+- [x] 建立development-only Source-SFT authority与唯一PI05训练owner：24 train tasks共享一套38-target LoRA，raw source policy冻结，checkpoint保存adapter/optimizer/scheduler/per-rank RNG/确定性sampler与metrics cursor；现有evaluator按静态adapter一次安装并保留普通batch。
 - [ ] 从同一source base在24 train tasks上联合训练一套shared Source-SFT LoRA；按validation独立选择最佳，不强制匹配AS-Writer steps/data。
 - [x] 在outcome前按specification-only SHA256规则封存四suites各2个、共8个seen tasks（global IDs 0,2,15,12,21,28,39,37）；policy outcome与trajectory value reads均为0。
 - [ ] 比较source base、Source-SFT、AS-Writer、可用RL-Writer的seen performance。

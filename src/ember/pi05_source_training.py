@@ -429,9 +429,7 @@ def _train(runtime: TrainingRuntime) -> None:
                 "metrics_rows": runtime.metrics_rows,
                 "wall_seconds": time.monotonic() - started,
                 "final_checkpoint": str(checkpoint) if checkpoint else None,
-                "frozen_policy_subdir": (
-                    "ema_policy" if runtime.ema_policy is not None else "policy"
-                ),
+                "frozen_policy_subdir": "policy",
                 "source_tasks": len(runtime.task_ids),
                 "episodes": len(runtime.task_ids) * 50,
                 "source_manifest_summary": runtime.manifest["summary"],

@@ -82,7 +82,7 @@ def _static_as_evaluation_fixture(tmp_path: Path) -> tuple[Path, Path, dict]:
         "source_base_config_sha256": config["authorities"]["source_base_config"]["sha256"],
         "source_authority_hashes": {"normalization": "5" * 64},
         "model_files": [
-            {"path": "ema_policy/model.safetensors", "bytes": 1, "sha256": "6" * 64}
+            {"path": "policy/model.safetensors", "bytes": 1, "sha256": "6" * 64}
         ],
     }
     cache = tmp_path / "cache"

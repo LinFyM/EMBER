@@ -211,13 +211,13 @@ def test_run_contract_hash_detects_tampering(tmp_path: Path) -> None:
     assert correct["contract_sha256"] != wrong["contract_sha256"]
 
 
-def test_source_checkpoint_inspection_requires_generic_base_and_ema_contract(
+def test_source_checkpoint_inspection_requires_generic_base_and_raw_policy_contract(
     tmp_path: Path,
 ) -> None:
     authorities = load_evaluation_authorities(CONFIG, ROOT)
     source_run = tmp_path / "source_run"
     checkpoint = source_run / "checkpoints" / "step_00000001"
-    model = checkpoint / "ema_policy"
+    model = checkpoint / "policy"
     model.mkdir(parents=True)
     model_config = {
         "type": "pi05",
@@ -302,4 +302,5 @@ def test_source_checkpoint_inspection_requires_generic_base_and_ema_contract(
     )
     assert inspected["optimizer_step"] == 1
     assert inspected["model_path"] == str(model)
+    assert inspected["frozen_policy_subdir"] == "policy"
     assert inspected["source_training_commit"] == "a" * 40

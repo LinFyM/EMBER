@@ -229,12 +229,12 @@ def _source() -> dict:
         "source_authority_hashes": {"normalization": "6" * 64},
         "model_files": [
             {
-                "path": "ema_policy/model.safetensors",
+                "path": "policy/model.safetensors",
                 "bytes": 1,
                 "sha256": "7" * 64,
             }
         ],
-        "model_path": "/source/ema_policy",
+        "model_path": "/source/policy",
     }
 
 

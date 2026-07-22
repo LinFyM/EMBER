@@ -521,8 +521,11 @@ def _validate_worker_assets(contract: Mapping[str, Any]) -> tuple[Path, dict[str
         raise Pi05EvaluationError("source-only normalization changed after queue creation")
     normalization = json.loads(normalization_path.read_text(encoding="utf-8"))
     model_path = Path(contract["model"]["model_path"])
+    frozen_policy_subdir = contract["model"].get("frozen_policy_subdir")
+    if frozen_policy_subdir != model_path.name:
+        raise Pi05EvaluationError("frozen source-policy subdirectory changed")
     for record in contract["model"]["model_files"]:
-        relative = Path(record["path"]).relative_to("ema_policy")
+        relative = Path(record["path"]).relative_to(frozen_policy_subdir)
         path = model_path / relative
         if (
             not path.is_file()

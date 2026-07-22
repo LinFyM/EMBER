@@ -274,7 +274,7 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 
 ## canonical evaluator中的one-video Writer证据（2026-07-21）
 
-- `writer/inference.py`已原位替换旧Smol/cold-start实现，只接受`ember_pi05_as_writer_launch_v1`、PI05 38-target LoRA、同一source final EMA及与训练逐字段相同的formal feature cache；checkpoint先核验canonical manifest和全部文件SHA，legacy schema不再有活动分支。
+- `writer/inference.py`已原位替换旧Smol/cold-start实现，只接受`ember_pi05_as_writer_launch_v1`、PI05 38-target LoRA、同一final raw source policy及与训练逐字段相同的formal feature cache；checkpoint先核验canonical manifest和全部文件SHA，legacy schema不再有活动分支。
 - 每个rollout的视频selection seed为`sha256([namespace, seed, eval suite, eval task, init state])`前63 bits，demo为`seed mod 50`。该纯函数不依赖worker、shard、重试、queue顺序或outcome；correct/wrong不把arm或video task写入seed，因此使用完全相同的demo ordinal。
 - wrong map在每个split role内按Spatial→Object→Goal→Long→Spatial循环，并按该role中排序后的task ordinal一一映射；它是跨suite双射且role-preserving。run contract保存显式map及SHA，避免final_source的train/validation混排导致越墙。
 - materialized backend在episode开始只运行一次Writer并固定完整LoRA；由于并行env可能使用不同LoRA，每个replan前为对应slot重装其state并逐slot推理。policy noise仍由原有`(task,init,replan)`schedule生成，correct/wrong不变。
@@ -283,7 +283,7 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 ## π0.5 Source-SFT机械合同（2026-07-21）
 
 - development authority精确选择target manifest中的24个train global task IDs，四suite各6个、共1,200条可用action episodes；validation/test actions与teacher video均不进入训练。当前配置`configs/pi05_source_sft_development_v1.json` SHA256为`32e927c...8a641`，formal仍为`pending_profile`，不能被误当成正式配方。
-- 每次fresh stage都从同一final formal source EMA注入确定性B=0 identity的PI05 38-target LoRA；只有76个LoRA tensors、1,287,168 parameters可训练。八rank各取task-pure batch后由DDP聚合为一套shared multi-task LoRA，不使用functional Writer、per-task adapter或额外shared adapter。
+- 每次fresh stage都从同一final formal raw source policy注入确定性B=0 identity的PI05 38-target LoRA；只有76个LoRA tensors、1,287,168 parameters可训练。八rank各取task-pure batch后由DDP聚合为一套shared multi-task LoRA，不使用functional Writer、per-task adapter或额外shared adapter。
 - checkpoint只保存shared `lora.safetensors`，不复制约14.5GB source policy；同时封存optimizer/scheduler、scaler-disabled声明、optimizer/micro cursor、metrics cursor、每rank Python/NumPy/CPU/CUDA RNG、DataLoader seed、deterministic sampler identity与逐task episode coverage。所有文件在读取pickle前先验证bytes/SHA，正式末checkpoint必须覆盖每task全部50 episodes。
 - development config只能启动development；validation选择后必须另封final config，32-source formal run从同一确定性identity fresh开始，development checkpoint因stage/config/contract hash不同而无法resume。这避免后续修改配置破坏development provenance。
 - evaluator仍只有`evaluate_pi05.py`一条canonical runner。Source-SFT LoRA在每个worker初始化时只安装一次，随后保持原有multi-env batched replan；它不会走Writer的逐rollout生成/重装路径。raw row保存固定`policy_adapter_sha256`，resume重新核验source/run/checkpoint/config/LoRA全部hash；Writer专属`paired_control_sha256`不套用于Source-SFT。
@@ -341,3 +341,13 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 活动代码所有权：`ember.reward`只拥有共享random-reset/seed/ledger/executed-prefix mechanics；`ember.rl_writer`拥有fresh shared Writer的authority/runtime/update/checkpoint；`ember.task_local`当前拥有test-only unit/initialization/update/checkpoint mechanics。三个旧Smol可执行入口已删除，避免双canonical runner；剩余历史模块/配置只作provenance，等π0.5 task-local runtime与fresh evaluator功能对等后删除，不加兼容分支。
 - seen/source panel已在任何新source/Writer/Source-SFT outcome产生前按specification-only规则封存：每suite只在6个development-train tasks内按`SHA256(tag, seed, suite, task_id, language, BDDL SHA)`排序取前2个，得到global IDs `0,2,15,12,21,28,39,37`。该panel只用于source acquisition诊断，不能替代validation/test泛化。
 - frozen RL-Writer不需要第二套evaluator：它与AS-Writer共用task/video mapping、逐rollout materialization、每次replan重装同一LoRA及row validation；adapter明确记录`writer_method`与`reward_update` checkpoint axis。RL checkpoint inspector会重算24-task task/video full-cycle coverage并核验source/cache/config/hash，formal状态未seal时不能进入非smoke评测。
+
+## Fresh 1k source base与evaluator吞吐证据（2026-07-22）
+
+- owner把source acquisition明确限定为从generic base fresh训练1,000 optimizer steps；因此旧30k attempt在step2880无checkpoint停止，不能resume或参与比较。新run在8×A100、global batch256、333-step warmup、EMA下完成256,000 examples，训练loop用时91.58分钟。
+- 50-step mean loss由0.26213降到0.08659，后半程下降幅度逐渐缩小但并未数学收敛。科学解释只能是“1k预算下获得轻量LIBERO interface acquisition且末段趋平”，不能写成LIBERO-90已过拟合或已完全收敛；到预算仍缓降按全局规则记为budget-censored。
+- step1000 checkpoint的完整manifest/hash验证通过，包含raw policy、EMA和1000条唯一finite metrics；冻结后所有下游方法必须共享同一raw source policy与source-only normalization，不能追加source adapter或因target outcome回改source IDs。
+- all-40-task×1-state公平panel显示1/2/3 replicas/GPU的有效吞吐为0.1556/0.1818/0.1897 rollout/s。3 replicas比1 replica高约22.0%、比2 replicas高约4.35%，每卡约31GB且GPU0无额外CUDA角色，因此40-task source screen锁定3 replicas/GPU。
+- 上述3个40-episode profile均为吞吐smoke且全部0 success，分母太小，不能用来断言source competence；正式行为判断只来自随后预定的40 tasks×8 states screen及其逐taskraw rows。
+- 原正式40-task×8-state screen的0/320只验证了滞后EMA，不能解释为source acquisition负结果。参数比较显示EMA只走完raw更新位移的28.62%（action expert 33.52%，action I/O/time/state 40.13%，VLM 26.87%）；匹配source closed-loop为raw 4/4、EMA 0/4，匹配offline flow loss为raw 0.06165、EMA 0.17775、generic 0.29302。
+- raw step1000的40-task×1-state目标诊断为4/40，成功分布于4个tasks和2个suites，已排除“完全不会基础操控/只靠单一易task”的解释，但小分母不能作为正式成功率。canonical下游选择修正为raw `policy/`，EMA只保留为训练状态和负诊断；完整raw 40×8 screen另行封存。

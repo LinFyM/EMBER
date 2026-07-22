@@ -48,7 +48,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] 建立唯一canonical π0.5 full-SFT runner，严格模型加载、task-balanced no-replacement sampler、EMA、atomic checkpoint、metrics reconciliation与完整per-rank RNG/cursor恢复。
 - [x] 完成相机mask修正后的8卡真实profile；选定8×microbatch32、global batch256、EMA与GPU-local NUMA binding，稳态47.75 examples/s，单卡reserved 71.18GB。
 - [x] 从同一个不可变step-1 checkpoint做两次8-rank恢复；loss/grad/RNG/cursor完全一致，policy/EMA最大独立NCCL末位差分别为1.49e-8/3.73e-9。
-- [ ] 正式attempt3正在隔离worktree从generic base fresh训练；最近只读观测step1450，8卡拓扑、loss/gradient与约47 examples/s吞吐健康，首个step5000 checkpoint前不作行为结论。
+- [ ] 正式attempt3正在隔离worktree从generic base fresh训练；最近只读观测step2050，8卡各约69GB/100%利用率，loss/gradient finite、约47.37 examples/s，首个step5000 checkpoint前不作行为结论。
 - [ ] 从generic `pi05_base`按成熟recipe在过滤后的LIBERO-90 source corpus上联合action-SFT；若用LoRA则merge成base。
 - [ ] 以已锁定8卡配置完成30,000 optimizer steps；一卡一rank，真实显存平均预留约10GB，checkpoint每5,000 steps且只保留最新完整状态。
 - [ ] 根据loss与快速行为screen避免过训，不追求高ceiling。
@@ -68,6 +68,8 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 
 ## Phase D：RL-Writer development
 
+- [x] 建立共享π0.5 reward mechanics：official random BDDL reset、10-step settling、suite horizon、显式逐replan flow-noise seed、只执行/监督前5 actions、successful-episode等权与不可变interaction ledger。
+- [x] 建立fresh zero-AS RL-Writer唯一活动owner、8-rank task/video full-cycle schedule、Writer-only functional update、完整checkpoint/RNG/cursor/ledger exact-resume；formal仍被source screen与真实profile硬门禁阻止，尚无科学结果。
 - [ ] 从随机Writer、零AS warm-up直接跨24 source tasks用官方random-reset reward联合训练。
 - [ ] 若无正信号，加入极少量AS warm-up并明确记录teacher-action consumption；不得从完整AS-Writer继续。
 - [ ] 仍无法启动时保存完整reward coverage/interaction/failure evidence并暂停路线。
@@ -77,7 +79,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 
 - [x] 建立development-only Source-SFT authority与唯一PI05训练owner：24 train tasks共享一套38-target LoRA，source EMA冻结，checkpoint保存adapter/optimizer/scheduler/per-rank RNG/确定性sampler与metrics cursor；现有evaluator按静态adapter一次安装并保留普通batch。
 - [ ] 从同一source base在24 train tasks上联合训练一套shared Source-SFT LoRA；按validation独立选择最佳，不强制匹配AS-Writer steps/data。
-- [ ] 在outcome前按specification预声明覆盖四suites的seen panel。
+- [x] 在outcome前按specification-only SHA256规则封存四suites各2个、共8个seen tasks（global IDs 0,2,15,12,21,28,39,37）；policy outcome与trajectory value reads均为0。
 - [ ] 比较source base、Source-SFT、AS-Writer、可用RL-Writer的seen performance。
 - [x] 封存同split role、按suite循环和排序ordinal构造的cross-suite wrong-video机械map；correct/wrong两臂保持同一language、task、init state、policy RNG、video seed与demo ordinal。
 - [ ] 用正式checkpoint运行并报告AS/可用RL Writer的correct/wrong/base逐任务结果。
@@ -93,6 +95,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 
 ## Phase G：test-only three-arm task-local RL
 
+- [x] 封存test-only机械合同：恰好8 test tasks、identity/AS/RL Writer三臂（RL失败时合规缺席）、同cohort video/seed schedule、一次生成并固定初始化LoRA、三类cursor和hash-bound exact-resume；formal预算保持0且test打开前无法启动。
 - [ ] 不在validation上预先训练或冻结此RL；test打开后直接针对每个test task调优并训练到曲线接近最佳。
 - [ ] 三臂：identity-init、AS-Writer-init、RL-Writer-init；均基于同一frozen source base和同一LoRA空间。
 - [ ] 每task/adaptation seed随机一条teacher video，AS/RL Writer共用并固定初始化LoRA。

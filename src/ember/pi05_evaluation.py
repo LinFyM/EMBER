@@ -32,45 +32,11 @@ from ember.pi05_eval_queue import (
     queue_summary,
     read_json_with_sha256,
 )
-from ember.pi05_processing import Pi05LiberoProcessor
+from ember.pi05_processing import Pi05LiberoProcessor, libero_policy_input
 from ember.writer.topology import bind_current_process_to_cuda_numa, cuda_numa_node
 
 
 SHARD_RESULT_SCHEMA = "ember_pi05_eval_shard_v1"
-
-
-def _quat2axisangle(quat: np.ndarray) -> np.ndarray:
-    quat = np.asarray(quat, dtype=np.float32).copy()
-    quat[3] = np.clip(quat[3], -1.0, 1.0)
-    denominator = np.sqrt(max(0.0, 1.0 - float(quat[3] * quat[3])))
-    if denominator < 1e-10:
-        return np.zeros(3, dtype=np.float32)
-    return quat[:3] * (2.0 * np.arccos(quat[3]) / denominator)
-
-
-def _policy_input(obs: Mapping[str, Any], language: str) -> dict[str, Any]:
-    import torch
-
-    def image(value: np.ndarray) -> torch.Tensor:
-        rotated = np.ascontiguousarray(value[::-1, ::-1])
-        return torch.from_numpy(rotated).permute(2, 0, 1).float().div_(255.0)
-
-    base = image(obs["agentview_image"])
-    wrist = image(obs["robot0_eye_in_hand_image"])
-    state = np.concatenate(
-        (
-            obs["robot0_eef_pos"],
-            _quat2axisangle(obs["robot0_eef_quat"]),
-            obs["robot0_gripper_qpos"],
-        )
-    ).astype(np.float32)
-    # Missing right wrist must remain absent so LeRobot creates a false image mask.
-    return {
-        "observation.images.base_0_rgb": base,
-        "observation.images.left_wrist_0_rgb": wrist,
-        "observation.state": torch.from_numpy(state),
-        "task": language,
-    }
 
 
 def _load_policy(
@@ -238,6 +204,43 @@ class PersistentTaskEnvironmentPool:
         return self.envs, self.init_states
 
 
+def _start_fixed_episode(
+    *,
+    env: Any,
+    init_state_id: int,
+    init_states: Any,
+    task: Mapping[str, Any],
+    contract: Mapping[str, Any],
+    root_seed: int,
+    dummy: np.ndarray,
+    task_adapter: Any | None,
+) -> dict[str, Any]:
+    env.seed(root_seed)
+    env.reset()
+    observation = env.set_init_state(init_states[init_state_id])
+    for _ in range(int(contract["environment"]["dummy_settling_steps"])):
+        observation, _, _, _ = env.step(dummy)
+    prepared = None
+    if task_adapter is not None:
+        prepared = task_adapter.prepare_episode(
+            suite=str(task["suite"]),
+            task_id=int(task["task_id"]),
+            init_state_id=init_state_id,
+        )
+    slot = {
+        "init_state_id": init_state_id,
+        "obs": observation,
+        "steps": 0,
+        "replan_index": 0,
+        "policy_noise_seeds": [],
+        "action_plan": deque(),
+        "started": time.monotonic(),
+    }
+    if prepared is not None:
+        slot["writer_lora"] = prepared
+    return slot
+
+
 def rollout_shard(
     *,
     envs: Sequence[Any],
@@ -261,36 +264,20 @@ def rollout_shard(
     worker_started = time.monotonic()
     rows: list[dict[str, Any]] = []
 
-    def start_episode(env: Any, init_state_id: int) -> dict[str, Any]:
-        env.seed(root_seed)
-        env.reset()
-        obs = env.set_init_state(init_states[init_state_id])
-        for _ in range(int(contract["environment"]["dummy_settling_steps"])):
-            obs, _, _, _ = env.step(dummy)
-        started = time.monotonic()
-        prepared = None
-        if task_adapter is not None:
-            prepared = task_adapter.prepare_episode(
-                suite=str(task["suite"]), task_id=int(task["task_id"]), init_state_id=init_state_id
-            )
-        slot = {
-            "init_state_id": init_state_id,
-            "obs": obs,
-            "steps": 0,
-            "replan_index": 0,
-            "policy_noise_seeds": [],
-            "action_plan": deque(),
-            "started": started,
-        }
-        if prepared is not None:
-            slot["writer_lora"] = prepared
-        return slot
-
     active_count = min(len(envs), len(state_ids))
     active_envs = envs[:active_count]
     next_state = active_count
     slots: list[dict[str, Any] | None] = [
-        start_episode(env, int(state_id))
+        _start_fixed_episode(
+            env=env,
+            init_state_id=int(state_id),
+            init_states=init_states,
+            task=task,
+            contract=contract,
+            root_seed=root_seed,
+            dummy=dummy,
+            task_adapter=task_adapter,
+        )
         for env, state_id in zip(active_envs, state_ids[:active_count], strict=True)
     ]
     policy.reset()
@@ -301,7 +288,10 @@ def rollout_shard(
             for group in planning_groups:
                 if task_adapter is not None:
                     task_adapter.install(group[0]["writer_lora"])
-                processed = [preprocess(_policy_input(slot["obs"], str(task["language"]))) for slot in group]
+                processed = [
+                    preprocess(libero_policy_input(slot["obs"], str(task["language"])))
+                    for slot in group
+                ]
                 batch = {
                     key: torch.cat([item[key] for item in processed], dim=0)
                     for key in processed[0]
@@ -353,7 +343,16 @@ def rollout_shard(
             )
             rows.append(row)
             if next_state < len(state_ids):
-                slots[slot_index] = start_episode(env, int(state_ids[next_state]))
+                slots[slot_index] = _start_fixed_episode(
+                    env=env,
+                    init_state_id=int(state_ids[next_state]),
+                    init_states=init_states,
+                    task=task,
+                    contract=contract,
+                    root_seed=root_seed,
+                    dummy=dummy,
+                    task_adapter=task_adapter,
+                )
                 next_state += 1
             else:
                 slots[slot_index] = None

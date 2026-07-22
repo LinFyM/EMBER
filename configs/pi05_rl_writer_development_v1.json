@@ -1,0 +1,159 @@
+{
+  "schema_version": "ember_pi05_rl_writer_v1",
+  "sealed_stage": "development",
+  "authorities": {
+    "target_data_manifest": {
+      "path": "configs/pi05_target_data_v1/manifest.json",
+      "sha256": "1b28547f6080a35fdf23ebae021407da15bfe4af367b0b1791042945d91b049d"
+    },
+    "evaluation_config": {
+      "path": "configs/pi05_target_evaluation_v1.json",
+      "sha256": "9d7f6d50b8ac143c6ae89e7067437a29ec8beee475db9e1ad5aa9b3790d9d557"
+    },
+    "as_writer_config": {
+      "path": "configs/pi05_as_writer_v1.json",
+      "sha256": "971cac4328e2f96e0cb9f81f22950e287bcab722cee92c560b342c4392dcf807"
+    },
+    "feature_cache_config": {
+      "path": "configs/pi05_writer_feature_cache_v1.json",
+      "sha256": "3e3a8ea782feaf515f95102a3e3a7db8aee926c74954093d82481997f566429e"
+    },
+    "lora_contract": {
+      "path": "configs/pi05_lora_v1.json",
+      "sha256": "1dcf58f73afd3fc77b98cd00abc128c027f15e3e67d7d1212ab84ca283f6cb07"
+    },
+    "source_base_config": {
+      "path": "configs/pi05_source_base_v1.json",
+      "sha256": "366a5e1275a216ecde0750a40cc0cd824237fe4e74ee7a38bfabd2d195aacee8"
+    },
+    "tokenizer_manifest": {
+      "path": "configs/libero_24_8_8_v1/pi05_tokenizer_manifest.json",
+      "sha256": "948bf1ec1f2768833bead66b2e829154e3304c1c09fe9c48813a79f06e47426c"
+    }
+  },
+  "information_wall": {
+    "writer_input": "pure task language plus exactly one action-hidden teacher video",
+    "writer_forbidden_inputs": [
+      "action",
+      "proprio",
+      "terminal",
+      "task_id",
+      "filename",
+      "fixed_init_state",
+      "policy_outcome_as_input"
+    ],
+    "reward_owner": "official LIBERO random-reset binary reward/success only",
+    "development_reward_split_roles": ["train"],
+    "development_video_split_roles": ["train"],
+    "validation_reward_reads": 0,
+    "validation_action_reads": 0,
+    "test_reward_reads": 0,
+    "test_action_reads": 0,
+    "fixed_pruned_init_reads": 0
+  },
+  "branches": {
+    "zero_as_warmup": {
+      "writer_initialization": "fresh random Writer with functionally identity generated LoRA",
+      "teacher_action_queries": 0,
+      "starts_reward_cursor_at_zero": true
+    },
+    "micro_as_warmup": {
+      "status": "blocked_until_complete_zero-branch_no-signal_evidence",
+      "writer_initialization": "fresh same-seed Writer; never load an AS-Writer checkpoint",
+      "teacher_action_queries": 24,
+      "coverage": "exactly one independently sampled action chunk per development-train task",
+      "starts_reward_cursor_at_zero": true,
+      "matched_reward_schedule_with_zero_branch": true
+    }
+  },
+  "algorithm": {
+    "name": "on_policy_binary_success_filtered_executed_prefix_flow_regression",
+    "reward": "official_binary_task_success",
+    "rollouts_per_task_update": 1,
+    "replay_epochs": 1,
+    "episode_weighting": "equal_successful_episode",
+    "executed_action_prefix_only": true,
+    "teacher_actions": false,
+    "critic": false,
+    "exact_action_log_probability": false,
+    "external_exploration_adapter": false,
+    "generated_lora_in_place_updates": false
+  },
+  "environment": {
+    "official_random_bddl_reset": true,
+    "fixed_pruned_init_states": false,
+    "dummy_settling_steps": 10,
+    "dummy_action": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0],
+    "render_resolution": 256,
+    "terminate_on_success": true,
+    "horizons": {
+      "libero_spatial": 220,
+      "libero_object": 280,
+      "libero_goal": 300,
+      "libero_10": 520
+    }
+  },
+  "policy": {
+    "precision": "bfloat16",
+    "chunk_size": 50,
+    "n_action_steps": 10,
+    "num_inference_steps": 10,
+    "replan_steps": 5,
+    "action_dim": 7,
+    "state_dim": 8,
+    "camera_rotation_degrees": 180,
+    "right_wrist_padding": "zero_image_with_false_mask_via_missing_feature_key"
+  },
+  "data": {
+    "task_count": 24,
+    "episodes_per_task": 50,
+    "demo_indices": [0, 49],
+    "teacher_video_seed": 20260724,
+    "teacher_video_sampling": "one independent no-replacement video per task visit",
+    "task_schedule_seed": 20260725
+  },
+  "optimization": {
+    "seed": 7,
+    "optimizer": {
+      "name": "AdamW",
+      "betas": [0.9, 0.95],
+      "eps": 1e-08,
+      "weight_decay": 0.0,
+      "gradient_clip_norm": 1.0
+    },
+    "profile_learning_rate": 1e-05,
+    "scheduler": "constant_after_successful_optimizer_updates_only"
+  },
+  "rng": {
+    "environment_seed_root": 320260724,
+    "policy_noise_seed_root": 1320260724,
+    "update_seed_root": 2320260724,
+    "schedule_excludes": ["arm", "rank", "worker", "queue_order", "outcome"]
+  },
+  "parallel": {
+    "world_size": 8,
+    "policy_processes_per_gpu": 1,
+    "gpu0_extra_cuda_processes": 0,
+    "persistent_policy": true,
+    "persistent_task_environment_pool": true,
+    "task_schedule": "seeded no-replacement full cycles; 24 tasks give three updates per cycle"
+  },
+  "profile_defaults": {
+    "total_updates": 3,
+    "checkpoint_updates": [3],
+    "complete_task_cycles": 1
+  },
+  "formal_run": {
+    "status": "pending_source_screen_and_real_profile",
+    "expected_world_size": 8,
+    "total_updates": 0,
+    "checkpoint_updates": [],
+    "negative_closure_rollouts_per_task": 0,
+    "selection_rule": "seal complete-task-cycle budget and checkpoints from real throughput before reading reward; zero branch must complete first"
+  },
+  "checkpointing": {
+    "atomic_publish": true,
+    "checkpoint_only_between_reset_episodes": true,
+    "retained_state": "Writer, optimizer, scheduler, per-rank RNG, task/video schedule, rollout/environment-action/optimizer cursors, ledger prefix, metrics cursor, hashes"
+  }
+}

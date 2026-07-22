@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import copy
+import hashlib
+import json
 from pathlib import Path
 
 import pytest
@@ -134,3 +136,47 @@ def test_target_checksums_use_config_local_paths(tmp_path: Path) -> None:
     write_checksums(tmp_path, ("manifest.json",))
     line = (tmp_path / "checksums.sha256").read_text(encoding="utf-8")
     assert line == f"{target_data.sha256_file(artifact)}  manifest.json\n"
+
+
+def test_seen_panel_is_specification_only_and_recomputable() -> None:
+    manifest = read_json(REPO_ROOT / "configs/pi05_target_data_v1/manifest.json")
+    panel = read_json(REPO_ROOT / "configs/pi05_seen_panel_v1.json")
+    selection = panel["selection"]
+    assert selection["policy_outcome_reads"] == 0
+    assert selection["trajectory_value_reads"] == 0
+    assert selection["selection_changes_after_outcome"] == 0
+    assert len(panel["tasks"]) == 8
+    target_rows = {
+        int(row["global_task_id"]): row for row in manifest["tasks"]
+    }
+    for suite in selection["suite_order"]:
+        candidates = []
+        for row in manifest["tasks"]:
+            if row["suite"] != suite or row["split_role"] != "train":
+                continue
+            encoded = json.dumps(
+                [
+                    "ember_pi05_seen_panel_v1",
+                    int(selection["seed"]),
+                    suite,
+                    int(row["task_id"]),
+                    row["language"],
+                    row["bddl"]["sha256"],
+                ],
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ).encode("utf-8")
+            candidates.append((hashlib.sha256(encoded).hexdigest(), row))
+        expected = sorted(candidates)[: int(selection["tasks_per_suite"])]
+        observed = [row for row in panel["tasks"] if row["suite"] == suite]
+        assert [row["selection_sha256"] for row in observed] == [
+            digest for digest, _ in expected
+        ]
+        for rank, (row, (digest, source)) in enumerate(zip(observed, expected, strict=True)):
+            assert row["selection_rank_within_suite"] == rank
+            assert row["selection_sha256"] == digest
+            assert row["global_task_id"] == source["global_task_id"]
+            assert row["split_role"] == source["split_role"] == "train"
+            assert row["language"] == source["language"]
+            assert row["bddl_sha256"] == source["bddl"]["sha256"]
+            assert target_rows[row["global_task_id"]] == source

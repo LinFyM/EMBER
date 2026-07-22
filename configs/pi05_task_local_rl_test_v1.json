@@ -1,0 +1,161 @@
+{
+  "schema_version": "ember_pi05_task_local_rl_v1",
+  "sealed_stage": "test",
+  "authorities": {
+    "target_data_manifest": {
+      "path": "configs/pi05_target_data_v1/manifest.json",
+      "sha256": "1b28547f6080a35fdf23ebae021407da15bfe4af367b0b1791042945d91b049d"
+    },
+    "evaluation_config": {
+      "path": "configs/pi05_target_evaluation_v1.json",
+      "sha256": "9d7f6d50b8ac143c6ae89e7067437a29ec8beee475db9e1ad5aa9b3790d9d557"
+    },
+    "as_writer_config": {
+      "path": "configs/pi05_as_writer_v1.json",
+      "sha256": "971cac4328e2f96e0cb9f81f22950e287bcab722cee92c560b342c4392dcf807"
+    },
+    "rl_writer_config": {
+      "path": "configs/pi05_rl_writer_development_v1.json",
+      "sha256": "cde828db4d11461d5d00705692127e6f60ca648202d2fb378ab2eea355d80afd"
+    },
+    "feature_cache_config": {
+      "path": "configs/pi05_writer_feature_cache_v1.json",
+      "sha256": "3e3a8ea782feaf515f95102a3e3a7db8aee926c74954093d82481997f566429e"
+    },
+    "lora_contract": {
+      "path": "configs/pi05_lora_v1.json",
+      "sha256": "1dcf58f73afd3fc77b98cd00abc128c027f15e3e67d7d1212ab84ca283f6cb07"
+    },
+    "source_base_config": {
+      "path": "configs/pi05_source_base_v1.json",
+      "sha256": "366a5e1275a216ecde0750a40cc0cd824237fe4e74ee7a38bfabd2d195aacee8"
+    }
+  },
+  "role": {
+    "split_role": "test",
+    "task_global_ids": [6, 8, 10, 17, 24, 27, 30, 33],
+    "task_count": 8,
+    "test_actions_read_before_or_during_adaptation": 0
+  },
+  "arms": {
+    "identity": {
+      "required": true,
+      "initialization": "fresh deterministic functional identity PI05 LoRA"
+    },
+    "as_writer": {
+      "required": true,
+      "initialization": "one frozen final AS-Writer LoRA generated once from the cohort video"
+    },
+    "rl_writer": {
+      "required_when_available": true,
+      "initialization": "one frozen final RL-Writer LoRA generated once from the same cohort video",
+      "absence_requires": "sealed compliant RL-Writer negative-closure evidence"
+    }
+  },
+  "forbidden_arms": [
+    "source_sft",
+    "pi05_libero",
+    "shared_adapter",
+    "direct_target_action_oracle"
+  ],
+  "algorithm": {
+    "name": "on_policy_binary_success_filtered_executed_prefix_flow_regression",
+    "reward": "official_binary_task_success",
+    "rollouts_per_update": 1,
+    "replay_epochs": 1,
+    "episode_weighting": "equal_successful_episode",
+    "executed_action_prefix_only": true,
+    "trainable": "one task-local PI05 LoRA only",
+    "teacher_actions": false,
+    "critic": false,
+    "exact_action_log_probability": false
+  },
+  "initialization": {
+    "adaptation_seeds": [7],
+    "teacher_video_seed": 20260726,
+    "teacher_video_schedule": "sha256(global_task_id,adaptation_seed) modulo 50; excludes arm/rank/order/outcome",
+    "writer_arms_share_video": true,
+    "writer_lora_generated_once": true,
+    "writer_lora_fixed_during_adaptation": true,
+    "base_writer_encoders_shared_state_frozen": true
+  },
+  "environment": {
+    "official_random_bddl_reset": true,
+    "fixed_pruned_init_states": false,
+    "dummy_settling_steps": 10,
+    "dummy_action": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0],
+    "render_resolution": 256,
+    "terminate_on_success": true,
+    "horizons": {
+      "libero_spatial": 220,
+      "libero_object": 280,
+      "libero_goal": 300,
+      "libero_10": 520
+    }
+  },
+  "policy": {
+    "precision": "bfloat16",
+    "chunk_size": 50,
+    "n_action_steps": 10,
+    "num_inference_steps": 10,
+    "replan_steps": 5,
+    "action_dim": 7,
+    "state_dim": 8,
+    "camera_rotation_degrees": 180,
+    "right_wrist_padding": "zero_image_with_false_mask_via_missing_feature_key"
+  },
+  "optimization": {
+    "seed": 7,
+    "profile_learning_rate": 0.0001,
+    "optimizer": {
+      "name": "AdamW",
+      "betas": [0.9, 0.95],
+      "eps": 1e-08,
+      "weight_decay": 0.0,
+      "gradient_clip_norm": 1.0
+    },
+    "scheduler": "constant_after_successful_optimizer_updates_only"
+  },
+  "rng": {
+    "environment_seed_root": 420260726,
+    "policy_noise_seed_root": 1420260726,
+    "update_seed_root": 2420260726,
+    "matched_schedule_excludes": ["arm", "rank", "worker", "queue_order", "outcome"]
+  },
+  "checkpoint_selection": {
+    "data": "adaptation official-random-reset reward only",
+    "metric": "preceding_segment_success_fraction",
+    "direction": "maximize",
+    "tie_break": "earliest environment-action cursor",
+    "fixed_50_evaluation_is_separate": true,
+    "fixed_50_may_not_select_adaptation_checkpoint": true
+  },
+  "stopping": {
+    "status": "pending_test_open_and_real_profile",
+    "rule": "continue each task/arm to a predeclared rolling-success plateau or the profiled safety cap; save complete curves and time/interactions-to-best",
+    "minimum_rollouts": 0,
+    "plateau_windows": 0,
+    "maximum_rollouts": 0
+  },
+  "parallel": {
+    "world_size": 8,
+    "policy_processes_per_gpu": 1,
+    "gpu0_extra_cuda_processes": 0,
+    "assignment_with_rl_writer": "24 task-arm-seed units; exactly three units per rank",
+    "assignment_without_rl_writer": "16 task-arm-seed units; exactly two units per rank"
+  },
+  "fresh_evaluation": {
+    "fixed_state_count_per_task": 50,
+    "uses_canonical_evaluate_pi05": true,
+    "paired_task_init_policy_seeds": true,
+    "training_artifacts_immutable_during_evaluation": true,
+    "adaptation_reward_rows_read_by_evaluator": 0
+  },
+  "formal_run": {
+    "status": "blocked_until_zero_interaction_test_and_test_open",
+    "expected_world_size": 8,
+    "total_updates_per_unit": 0,
+    "checkpoint_updates": [],
+    "selection_rule": "seal mechanics after test opens, then tune directly on each test adaptation domain without fixed-state outcomes"
+  }
+}

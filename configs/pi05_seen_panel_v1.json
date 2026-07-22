@@ -1,0 +1,118 @@
+{
+  "schema_version": "ember_pi05_seen_panel_v1",
+  "sealed_utc": "2026-07-21",
+  "authority": {
+    "target_data_manifest": "configs/pi05_target_data_v1/manifest.json",
+    "target_data_manifest_sha256": "1b28547f6080a35fdf23ebae021407da15bfe4af367b0b1791042945d91b049d"
+  },
+  "selection": {
+    "role": "train",
+    "seed": 20260727,
+    "tasks_per_suite": 2,
+    "suite_order": [
+      "libero_spatial",
+      "libero_object",
+      "libero_goal",
+      "libero_10"
+    ],
+    "algorithm": "within each suite, sort development-train tasks by SHA256 of compact UTF-8 JSON [ember_pi05_seen_panel_v1,seed,suite,task_id,language,bddl_sha256], then take the first two",
+    "policy_outcome_reads": 0,
+    "trajectory_value_reads": 0,
+    "selection_changes_after_outcome": 0
+  },
+  "summary": {
+    "tasks": 8,
+    "tasks_per_suite": 2,
+    "global_task_ids": [0, 2, 15, 12, 21, 28, 39, 37]
+  },
+  "tasks": [
+    {
+      "suite": "libero_spatial",
+      "task_id": 0,
+      "global_task_id": 0,
+      "split_role": "train",
+      "language": "pick up the black bowl between the plate and the ramekin and place it on the plate",
+      "bddl_filename": "pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate.bddl",
+      "bddl_sha256": "9b59eb1287802868ad9bc78d58e6d36d4ba31134e679cfdbdf4b0feb660c959b",
+      "selection_rank_within_suite": 0,
+      "selection_sha256": "24a94c71ba6f54085627963e01c65fba35a4ec5b70286c086b22e269c7559d80"
+    },
+    {
+      "suite": "libero_spatial",
+      "task_id": 2,
+      "global_task_id": 2,
+      "split_role": "train",
+      "language": "pick up the black bowl from table center and place it on the plate",
+      "bddl_filename": "pick_up_the_black_bowl_from_table_center_and_place_it_on_the_plate.bddl",
+      "bddl_sha256": "5e19880ebc844f86b89f63b172aab0b7a89f85b6e6955891f544f0ea7d0795d5",
+      "selection_rank_within_suite": 1,
+      "selection_sha256": "436e5226272038ddfa68623171aad8f6f07c076936122d7b2cc93e092b415c78"
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 5,
+      "global_task_id": 15,
+      "split_role": "train",
+      "language": "pick up the tomato sauce and place it in the basket",
+      "bddl_filename": "pick_up_the_tomato_sauce_and_place_it_in_the_basket.bddl",
+      "bddl_sha256": "b1f4bb69d256a05f693838de46182bb0d3de0de68eec350df1b5b1e76f6c136d",
+      "selection_rank_within_suite": 0,
+      "selection_sha256": "4e003e0db19db848565383062c02728858b19630401a510e62f1a8d0f2f1d03a"
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 2,
+      "global_task_id": 12,
+      "split_role": "train",
+      "language": "pick up the salad dressing and place it in the basket",
+      "bddl_filename": "pick_up_the_salad_dressing_and_place_it_in_the_basket.bddl",
+      "bddl_sha256": "024978e9e8f43a49b49d0965f4f426d364ce056307f0fcf5733dc4682fac437a",
+      "selection_rank_within_suite": 1,
+      "selection_sha256": "67e44485894633fd869721e55252b543254753366003f6cf6493d3e73a17044a"
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 1,
+      "global_task_id": 21,
+      "split_role": "train",
+      "language": "put the bowl on the stove",
+      "bddl_filename": "put_the_bowl_on_the_stove.bddl",
+      "bddl_sha256": "c6812d6c988be830412aa6fc4801af04d60f8c4565d2625763b6a0f2b843a87f",
+      "selection_rank_within_suite": 0,
+      "selection_sha256": "14cb57c05d4a5dcf2d044c46610d33b6edd4f3d89d514c4e05c2b50a96255982"
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 8,
+      "global_task_id": 28,
+      "split_role": "train",
+      "language": "put the bowl on the plate",
+      "bddl_filename": "put_the_bowl_on_the_plate.bddl",
+      "bddl_sha256": "358b7781437e412c67d6a7648c1c28796b6b1bf117a25e61316cb8dfeb940e5b",
+      "selection_rank_within_suite": 1,
+      "selection_sha256": "8e63f63155a50d9aed4d5ad7fdc17a3640d94e88e6453cbe5e157afb4a3e85d9"
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 9,
+      "global_task_id": 39,
+      "split_role": "train",
+      "language": "put the yellow and white mug in the microwave and close it",
+      "bddl_filename": "KITCHEN_SCENE6_put_the_yellow_and_white_mug_in_the_microwave_and_close_it.bddl",
+      "bddl_sha256": "456d145f92be049f445fc77673dc583d9d17ea7afe92f6ffcb2fd1fa5565d420",
+      "selection_rank_within_suite": 0,
+      "selection_sha256": "137fc8584371e5c24df059a582bef2635f3d70d8d89c096d82f15afe258d47ec"
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 7,
+      "global_task_id": 37,
+      "split_role": "train",
+      "language": "put both the alphabet soup and the cream cheese box in the basket",
+      "bddl_filename": "LIVING_ROOM_SCENE1_put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket.bddl",
+      "bddl_sha256": "e27ab37f512fe42e35771d6130f531e6a9656929e7b4c60b348b81360cf5675d",
+      "selection_rank_within_suite": 1,
+      "selection_sha256": "7307e7bc8bee0de07adec51ef1bec68001bd31416bab0216849b9140673c2d4b"
+    }
+  ]
+}

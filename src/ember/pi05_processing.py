@@ -2,11 +2,59 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
 import numpy as np
+
+
+def quat2axisangle(quat: np.ndarray) -> np.ndarray:
+    """Convert one LIBERO end-effector quaternion to the OpenPI axis angle."""
+
+    value = np.asarray(quat, dtype=np.float32).copy()
+    if value.shape != (4,):
+        raise ValueError("LIBERO end-effector quaternion must have shape (4,)")
+    value[3] = np.clip(value[3], -1.0, 1.0)
+    denominator = np.sqrt(max(0.0, 1.0 - float(value[3] * value[3])))
+    if denominator < 1e-10:
+        return np.zeros(3, dtype=np.float32)
+    return value[:3] * (2.0 * np.arccos(value[3]) / denominator)
+
+
+def libero_policy_input(obs: Mapping[str, Any], language: str) -> dict[str, Any]:
+    """Build the one-observation PI05 input shared by evaluation and reward RL."""
+
+    import torch
+
+    def image(value: Any) -> torch.Tensor:
+        array = np.asarray(value)
+        if array.ndim != 3 or array.shape[-1] != 3:
+            raise ValueError("LIBERO RGB observation must have shape (H,W,3)")
+        rotated = np.ascontiguousarray(array[::-1, ::-1])
+        return torch.from_numpy(rotated).permute(2, 0, 1).float().div_(255.0)
+
+    cleaned = str(language).strip()
+    if not cleaned:
+        raise ValueError("LIBERO policy language must be non-empty")
+    state = np.concatenate(
+        (
+            np.asarray(obs["robot0_eef_pos"], dtype=np.float32),
+            quat2axisangle(np.asarray(obs["robot0_eef_quat"])),
+            np.asarray(obs["robot0_gripper_qpos"], dtype=np.float32),
+        )
+    ).astype(np.float32)
+    if state.shape != (8,):
+        raise ValueError("LIBERO PI05 policy state must have exactly eight values")
+    # Missing right wrist stays absent so PI05 creates a false image mask.
+    return {
+        "observation.images.base_0_rgb": image(obs["agentview_image"]),
+        "observation.images.left_wrist_0_rgb": image(
+            obs["robot0_eye_in_hand_image"]
+        ),
+        "observation.state": torch.from_numpy(state),
+        "task": cleaned,
+    }
 
 
 class Pi05LiberoProcessor:

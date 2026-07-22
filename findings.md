@@ -329,3 +329,13 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - `foundation_source_screen/task22_base_direct_*`
 
 精确旧命令/config/code 由 Git commit `999df28` 保存。不要把这些目录复制回仓库。
+
+## π0.5 reward adaptation机械事实（2026-07-21）
+
+- π0.5每次规划产生50步chunk，但活动LIBERO runner只执行前5步后重规划。reward replay不能把未执行的后45步计入成功credit；新`Pi05ExecutedPrefixFlowLoss`直接保留逐action-step flow loss并按每个replan实际执行长度mask，successful episodes先各自平均再等权。仅传旧`action_is_pad`字段不足以建立这一合同。
+- reward rollout唯一owner使用raw `OffScreenRenderEnv`的`env.seed(seed) -> reset()`，随后10个dummy settling steps；不调用`set_init_state`，不读取`.pruned_init`。环境seed和逐replan flow-noise seed只依赖task/adaptation/rollout cursor，显式排除arm、rank、worker、queue order与outcome。
+- RL-Writer从同seed的fresh随机Writer开始，zero输出头使初始generated LoRA在功能上为identity；source policy物理冻结，只有共享Writer经functional LoRA loss更新。全局没有成功episode时optimizer/scheduler cursor不前进；有成功时8 ranks按全局successful-episode数做等权DDP缩放。
+- micro-AS分支当前明确fail-close：只有完整zero-warmup run封存为无信号后才允许从同seed fresh Writer做恰好24个action chunks（每development train task一个）的短warm-up；永不载入完整AS-Writer checkpoint。当前没有运行reward实验，也没有正/负科学结果。
+- task-local合同严格绑定8个test global IDs `6,8,10,17,24,27,30,33`。同一`(task, adaptation seed)`的AS/RL Writer臂共享一条hash选定video，初始化LoRA只生成一次并固定；identity臂不读取video。rollout、environment-action、optimizer三类cursor和初始化/ledger hashes均进入checkpoint，fixed-50不能选adaptation checkpoint。
+- 活动代码所有权：`ember.reward`只拥有共享random-reset/seed/ledger/executed-prefix mechanics；`ember.rl_writer`拥有fresh shared Writer的authority/runtime/update/checkpoint；`ember.task_local`当前拥有test-only unit/initialization/update/checkpoint mechanics。三个旧Smol可执行入口已删除，避免双canonical runner；剩余历史模块/配置只作provenance，等π0.5 task-local runtime与fresh evaluator功能对等后删除，不加兼容分支。
+- seen/source panel已在任何新source/Writer/Source-SFT outcome产生前按specification-only规则封存：每suite只在6个development-train tasks内按`SHA256(tag, seed, suite, task_id, language, BDDL SHA)`排序取前2个，得到global IDs `0,2,15,12,21,28,39,37`。该panel只用于source acquisition诊断，不能替代validation/test泛化。

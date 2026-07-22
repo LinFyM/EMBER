@@ -144,7 +144,7 @@
 
 ## PI05 reward core、zero-AS RL-Writer与test-only task-local合同（2026-07-21）
 
-- Writer-v2替换活动authority后，`configs/pi05_rl_writer_development_v1.json`与`configs/pi05_task_local_rl_test_v1.json`只做机械rebind，当前SHA256为`b03cd57a...a6ca`/`96b29299...6c92`。前者formal状态仍为`pending_source_screen_and_real_profile`；后者所有正式budget保持0并写明`blocked_until_zero_interaction_test_and_test_open`，因此当前代码完成不会越过阶段信息墙，也没有启动RL。
+- Writer-v2替换活动authority后，`configs/pi05_rl_writer_development_v1.json`与`configs/pi05_task_local_rl_test_v1.json`只做机械rebind；随Writer-v2 formal seal更新后当前SHA256为`6eac8449...b954`/`97a4ce86...b509`。前者formal状态仍为`pending_source_screen_and_real_profile`；后者所有正式budget保持0并写明`blocked_until_zero_interaction_test_and_test_open`，因此当前代码完成不会越过阶段信息墙，也没有启动RL。
 - `ember.reward`统一实现official random BDDL reset、10-step settling、suite horizon、显式逐replan PI05 flow-noise、成功即停、immutable raw ledger和三类cursor。成功trajectory只保留真正执行的每个replan前缀；reward loss不会监督未执行的45/50 actions。
 - `ember.rl_writer`拆分为contract、runtime、loop和checkpoint owner。fresh Writer在8 ranks上使用共同确定性seed且generated LoRA功能恒等；只有rank0原子发布run contract并跨rank校验digest。Writer-only DDP更新、task/video full-cycle coverage、完整per-rank RNG、optimizer/scheduler、metrics与ledger-bound exact-resume均已接入；micro-AS分支在zero完整负证据前硬拒绝。
 - `ember.task_local`已封存8 test tasks、三臂/cohort video/匹配seed、一次性初始化bundle、physical task-LoRA-only executed-prefix update、随机reset reward checkpoint选择和hash-bound resume mechanics；尚未实现或启动test formal runtime，不把机械合同写成结果。
@@ -188,9 +188,9 @@
 
 ## 当前后续动作
 
-1. 对Writer-v2的4×4 spatial cache做真实8卡smoke并生成development cache。
-2. 短profile三分支functional loss、matching gap、吞吐与显存，随后直接训练首轮Writer-v2并做cheap correct/wrong screen。
-3. Writer视频特异性建立后测Source-SFT的validation时间上限；seen和RL-Writer继续暂停，不把旧AS 119/400解释成视频收益。
+1. 启动已封存的Writer-v2 250-step首轮，在50/100/150/200/250保存候选。
+2. 对每个候选做固定functional task-adapter matching诊断，随后只将保持positive competence且出现多task视频特异性的少量checkpoint送入cheap correct/wrong rollout screen与完整validation。
+3. Writer视频特异性判断完成后测Source-SFT的validation上限；seen和RL-Writer继续暂停，不把旧AS 119/400解释成视频收益。
 
 ## AS-Writer短周期profile与正式seal（2026-07-22）
 
@@ -224,4 +224,6 @@
 - Writer-v2为14,403,200 trainable parameters；language/video使用独立固定token memory，所有层级attention去除query-only residual，decoder只以parameter query乘性调制conditional memory，output heads无bias且identity init不变。CPU full-shape direct check生成76个三condition tensors、全部finite，人工开启head后condition mean diff非零。
 - owner最终口径已在任何artifact产生前覆盖初版三分支：固定中性language `perform the demonstrated task`经正常tokenizer/embedding进入Writer，policy在所有分支始终收到正确task language。训练按`normal → full-language contrast → generic-language contrast`三步循环；contrast用半批query复制为correct/wrong两臂并共享policy RNG，总policy samples/step不变，两个correct臂都有绝对functional action loss。action query仍来自同task独立episode；paired negative只来自预封存的另一个development-train task并采用对称配对。
 - v2 cache smoke完成8 tasks/8 episodes/1,033 frames，8 ranks全部exit0；最慢rank task wall为1.550秒，对应critical-path约666.25 frames/s。每个task tensor包含普通task language、同一个8-token generic language embedding和`frames×16×2048 BF16`视频；8份generic embedding逐byte SHA256均为`62172105...7d27`。run-contract/cache-manifest/log SHA256为`b4313579...d2d7`/`bcadf191...17b`/`b0f8124c...7045`，batch32据此封存。
-- 配置当前为`pending_profile`，没有把未实测的batch/steps封存为正式配方；wall-clock倍率只记录，不作为削弱科学合同的接受门槛。最终口径的聚焦测试为`43 passed`、全仓为`149 passed`；architecture guard无hard violation或parallel family，仅保留既有大owner的review提示。下一步commit/push后做8卡spatial-cache smoke和训练profile。
+- v2 formal cache现覆盖32个development tasks、每task50条视频、共1,600 episodes/274,523 frames；32/32 task tensors、episode/frame counts与SHA256复核通过，generic embedding在全部tasks逐byte一致，test-video/action/state/reward/terminal读取均为0。cache root为`/data/ymdai/outputs/ember/pi05_writer_feature_cache_v2_development32_raw_e4c19f9_b32_20260722`；run-contract/manifest/log SHA256为`219920cc...1f3a`/`b98a934c...ade2`/`06cb5f6d...51a6`。
+- 真实8卡batch16学习profile执行30步且三种mode各10步；normal positive首/末3步均值从`0.16161`降至`0.13554`，full-language gap从`-3.44e-6`移至`+9.58e-5`，generic gap从`-1.04e-5`移至`+4.13e-5`。最大allocated/reserved为`63,748,333,032/68,543,315,968` bytes，全部finite、policy prompt始终为正确language。profile只说明机制开始向正确方向移动，尚不构成视频特异性结论。
+- 据此封存首轮250 steps、batch16/rank、checkpoints 50/100/150/200/250；每个checkpoint先做固定functional specificity诊断，step250仍未饱和则按owner规则记录undertrained而不自动追加。`configs/pi05_as_writer_v2.json`当前SHA256为`65383ab8...40ab`；下游RL-Writer/task-local仅机械rebind为`6eac8449...b954`/`97a4ce86...b509`，均未启动。不同mode的wall-clock和吞吐只作资源记录，不作为删减分支、缩小对照或拒绝启动的门槛。

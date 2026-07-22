@@ -25,7 +25,7 @@ from ember.writer.conditioning import (
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_as_writer_config_is_pi05_one_video_and_profile_pending() -> None:
+def test_as_writer_config_is_pi05_one_video_and_formal_sealed() -> None:
     path = REPO_ROOT / "configs/pi05_as_writer_v2.json"
     config = load_writer_config(path)
     assert config["writer"]["vision_feature_dim"] == 2048
@@ -35,7 +35,10 @@ def test_as_writer_config_is_pi05_one_video_and_profile_pending() -> None:
     assert config["data"]["task_count"] == 24
     assert config["data"]["episodes_per_task"] == 50
     assert config["data"]["sampler_seed"] != config["data"]["teacher_video_seed"]
-    assert config["formal_run"] == {"status": "pending_profile"}
+    assert config["formal_run"]["status"] == "sealed"
+    assert config["formal_run"]["total_steps"] == 250
+    assert config["formal_run"]["per_rank_batch_size"] == 16
+    assert config["formal_run"]["checkpoint_steps"] == [50, 100, 150, 200, 250]
     assert len(config["conditioning_training"]["video_task_pairs"]) == 12
     assert conditioning_cycle(config) == (
         "normal",
@@ -99,7 +102,9 @@ def test_writer_condition_packing_uses_real_generic_tokens_and_two_arms_only() -
     assert normal[3].tolist() == [0, 5]
 
 
-def test_profile_pending_as_writer_config_resolves_profile_and_rejects_formal() -> None:
+def test_sealed_as_writer_config_resolves_profile_and_formal(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     config = load_writer_config(REPO_ROOT / "configs/pi05_as_writer_v2.json")
     args = argparse.Namespace(
         mode="profile",
@@ -126,8 +131,16 @@ def test_profile_pending_as_writer_config_resolves_profile_and_rejects_formal() 
     assert args.stop_after_step == 6
     args.mode = "formal"
     args.stop_after_step = None
-    with pytest.raises(WriterModelError, match="pending a real profile"):
-        resolve_runtime(args, config, context)
+    monkeypatch.setattr(
+        "ember.writer.as_contract.git_state",
+        lambda _root: {"dirty_paths": [], "commit": "sealed", "origin_main": "sealed"},
+    )
+    assert resolve_runtime(args, config, context) == (
+        250,
+        16,
+        (50, 100, 150, 200, 250),
+    )
+    assert args.stop_after_step == 250
 
 
 def test_retired_smolvla_cold_start_config_is_not_an_active_writer_config() -> None:

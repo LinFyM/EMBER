@@ -70,7 +70,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] 报告8 validation tasks逐任务raw success与视频采样seed；同配置source-base control为48/400，AS step250为119/400。
 - [x] correct/wrong control确认旧AS-Writer未建立视频因果性：119/400对115/400，有效LoRA的correct/wrong相对差中位数仅`7.52e-6`；旧v1不再作为活动Writer配方。
 - [x] 在同一canonical runner内完成Writer-v2组合修订：每帧保留4×4空间网格、condition-only层级memory和LoRA decoder；按`normal → full-language contrast → generic-language contrast`训练，generic只进入Writer且policy始终看正确language；没有新增adapter、subspace或第二套runner。
-- [ ] 生成并封存v2 development feature cache；完成真实8卡短profile，由loss、三分支差异、throughput和显存选择首轮训练步数。
+- [x] 生成并封存v2 development feature cache：32 tasks×50 videos、274,523 frames、32/32 tensor hashes与information-wall复核通过；完成8卡batch16三分支短profile，positive loss下降且两类matching gap由微负向微正移动，据此封存250-step首轮与50-step checkpoint间隔。wall-clock倍率只记录，不作为科学接受门槛。
 - [ ] 训练Writer-v2并先检查functional task-adapter匹配与correct/wrong cheap screen；只把确有多task视频特异性且correct表现未崩溃的少量checkpoint送入完整validation。
 
 ## Phase D：RL-Writer development

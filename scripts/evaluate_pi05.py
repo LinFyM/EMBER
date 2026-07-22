@@ -18,6 +18,15 @@ from typing import Any, Mapping, Sequence
 
 from ember.libero_evaluation import sha256_file
 from ember.pi05_assets import Pi05EvaluationError
+from ember.eval_adapters import (
+    adapter_requests as _adapter_requests,
+    as_writer_requested as _writer_requested,
+    inspect_as_writer_adapter as _inspect_writer_adapter,
+    inspect_rl_writer_adapter as _inspect_rl_writer_adapter,
+    inspect_source_sft_adapter as _inspect_source_sft_adapter,
+    rl_writer_requested as _rl_writer_requested,
+    source_sft_requested as _source_sft_requested,
+)
 from ember.pi05_eval_contract import (
     build_run_contract,
     git_state,
@@ -62,6 +71,13 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--writer-feature-cache", type=Path)
     parser.add_argument(
         "--writer-video-condition",
+        choices=("correct", "cross_suite_wrong"),
+    )
+    parser.add_argument("--rl-writer-config", type=Path)
+    parser.add_argument("--rl-writer-checkpoint", type=Path)
+    parser.add_argument("--rl-writer-feature-cache", type=Path)
+    parser.add_argument(
+        "--rl-writer-video-condition",
         choices=("correct", "cross_suite_wrong"),
     )
     parser.add_argument("--source-sft-config", type=Path)
@@ -112,91 +128,9 @@ def _shards_from_contract(contract: dict[str, Any]) -> tuple[Any, ...]:
     )
 
 
-def _all_or_none(values: Sequence[Any], label: str) -> bool:
-    if any(value is not None for value in values) and not all(
-        value is not None for value in values
-    ):
-        raise Pi05EvaluationError(f"{label} evaluation requires all declared assets")
-    return all(value is not None for value in values)
-
-
-def _writer_requested(args: argparse.Namespace) -> bool:
-    return _all_or_none(
-        (args.as_writer_config, args.as_writer_checkpoint, args.writer_feature_cache,
-         args.writer_video_condition),
-        "AS-Writer",
-    )
-
-
-def _source_sft_requested(args: argparse.Namespace) -> bool:
-    return _all_or_none(
-        (args.source_sft_config, args.source_sft_checkpoint), "Source-SFT"
-    )
-
-
-def _adapter_requests(args: argparse.Namespace) -> tuple[bool, bool]:
-    writer_requested = _writer_requested(args)
-    source_sft_requested = _source_sft_requested(args)
-    if writer_requested and source_sft_requested:
-        raise Pi05EvaluationError("AS-Writer and Source-SFT adapters are mutually exclusive")
-    return writer_requested, source_sft_requested
-
-
-def _inspect_writer_adapter(
-    *,
-    config_path: Path,
-    checkpoint: Path,
-    feature_cache: Path,
-    source: Mapping[str, Any],
-    tasks: Sequence[Any],
-    video_condition: str,
-    video_seed: int,
-    require_formal: bool,
-) -> dict[str, Any]:
-    from ember.lora import LoRAContractError
-    from ember.writer.feature_cache import FeatureCacheError
-    from ember.writer.inference import inspect_as_writer_evaluation
-    from ember.writer.model import WriterModelError
-
-    try:
-        return inspect_as_writer_evaluation(
-            config_path=config_path,
-            checkpoint=checkpoint,
-            feature_cache=feature_cache,
-            source=source,
-            task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
-            video_condition=video_condition,
-            video_seed=video_seed,
-            require_formal=require_formal,
-        )
-    except (FeatureCacheError, LoRAContractError, WriterModelError) as error:
-        raise Pi05EvaluationError(str(error)) from error
-
-
-def _inspect_source_sft_adapter(
-    *,
-    config_path: Path,
-    checkpoint: Path,
-    source: Mapping[str, Any],
-    tasks: Sequence[Any],
-    evaluation_role: str,
-    require_formal: bool,
-) -> dict[str, Any]:
-    from ember.source_sft.inference import inspect_source_sft_evaluation
-
-    return inspect_source_sft_evaluation(
-        config_path=config_path,
-        checkpoint=checkpoint,
-        source=source,
-        task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
-        evaluation_role=evaluation_role,
-        require_formal=require_formal,
-    )
-
-
 def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
-    writer_requested, source_sft_requested = _adapter_requests(args)
-    adapter_requested = writer_requested or source_sft_requested
+    writer_kind, source_sft_requested = _adapter_requests(args)
+    adapter_requested = writer_kind is not None or source_sft_requested
     output_dir = args.output_dir.resolve()
     if output_dir.exists() and any(output_dir.iterdir()):
         raise Pi05EvaluationError(f"PI05 evaluation output is not empty: {output_dir}")
@@ -221,7 +155,7 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
     )
     tokenizer = inspect_tokenizer(authorities, args.tokenizer_path)
     adapter = None
-    if writer_requested:
+    if writer_kind == "as_writer":
         adapter = _inspect_writer_adapter(
             config_path=args.as_writer_config.resolve(),
             checkpoint=args.as_writer_checkpoint.resolve(),
@@ -229,6 +163,17 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
             source=model,
             tasks=tasks,
             video_condition=str(args.writer_video_condition),
+            video_seed=int(authorities.config["rng"]["inference_seed"]),
+            require_formal=args.mode != "smoke",
+        )
+    elif writer_kind == "rl_writer":
+        adapter = _inspect_rl_writer_adapter(
+            config_path=args.rl_writer_config.resolve(),
+            checkpoint=args.rl_writer_checkpoint.resolve(),
+            feature_cache=args.rl_writer_feature_cache.resolve(),
+            source=model,
+            tasks=tasks,
+            video_condition=str(args.rl_writer_video_condition),
             video_seed=int(authorities.config["rng"]["inference_seed"]),
             require_formal=args.mode != "smoke",
         )
@@ -401,7 +346,7 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
                 evaluation_role=str(adapter["evaluation_role"]),
                 require_formal=contract["mode"] != "smoke",
             )
-        else:
+        elif adapter.get("kind") == "as_writer":
             observed = _inspect_writer_adapter(
                 config_path=Path(adapter["config"]["path"]),
                 checkpoint=Path(adapter["checkpoint"]["path"]),
@@ -412,6 +357,19 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
                 video_seed=int(adapter["video_schedule"]["seed"]),
                 require_formal=contract["mode"] != "smoke",
             )
+        elif adapter.get("kind") == "rl_writer":
+            observed = _inspect_rl_writer_adapter(
+                config_path=Path(adapter["config"]["path"]),
+                checkpoint=Path(adapter["checkpoint"]["path"]),
+                feature_cache=Path(adapter["feature_cache"]["root"]),
+                source=model,
+                tasks=tasks,
+                video_condition=str(adapter["video_condition"]),
+                video_seed=int(adapter["video_schedule"]["seed"]),
+                require_formal=contract["mode"] != "smoke",
+            )
+        else:
+            raise Pi05EvaluationError("evaluation adapter kind changed after prepare")
         if observed != adapter:
             raise Pi05EvaluationError("evaluation adapter assets changed after prepare")
 

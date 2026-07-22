@@ -40,6 +40,8 @@ from ember.writer.model import (
 
 
 WRITER_ADAPTER_SCHEMA = "ember_pi05_as_writer_eval_adapter_v1"
+RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_rl_writer_eval_adapter_v1"
+WRITER_ADAPTER_SCHEMAS = {WRITER_ADAPTER_SCHEMA, RL_WRITER_ADAPTER_SCHEMA}
 WRITER_VIDEO_CONDITIONS = {"correct", "cross_suite_wrong"}
 WRITER_VIDEO_SCHEDULE = (
     "sha256 first 63 bits of canonical JSON "
@@ -137,6 +139,9 @@ def _task_video_mapping(
     return tuple(sorted(result, key=lambda row: (SUITE_ORDER.index(row["suite"]), row["task_id"])))
 
 
+task_video_mapping = _task_video_mapping
+
+
 def expected_writer_episode_evidence(
     adapter: Mapping[str, Any],
     *,
@@ -149,8 +154,8 @@ def expected_writer_episode_evidence(
 
     if re.fullmatch(r"[0-9a-f]{64}", lora_sha256) is None:
         raise WriterModelError("AS-Writer row lacks a valid LoRA hash")
-    if adapter.get("schema_version") != WRITER_ADAPTER_SCHEMA:
-        raise WriterModelError("unsupported AS-Writer evaluation adapter")
+    if adapter.get("schema_version") not in WRITER_ADAPTER_SCHEMAS:
+        raise WriterModelError("unsupported PI05 Writer evaluation adapter")
     matches = [
         row
         for row in adapter.get("task_video_mapping", [])
@@ -167,10 +172,14 @@ def expected_writer_episode_evidence(
     )
     selection_seed = writer_video_selection_seed(seed, suite, task_id, init_state_id)
     return {
-        "schema_version": "ember_pi05_writer_episode_evidence_v1",
+        "schema_version": "ember_pi05_writer_episode_evidence_v2",
+        "writer_method": adapter.get("writer_method", "as_writer"),
         "method_arm": adapter["arm"],
         "condition": adapter["video_condition"],
-        "writer_checkpoint_step": int(adapter["checkpoint"]["cursor"]),
+        "writer_checkpoint_axis": adapter["checkpoint"].get(
+            "cursor_axis", "optimizer_step"
+        ),
+        "writer_checkpoint_cursor": int(adapter["checkpoint"]["cursor"]),
         "writer_checkpoint_manifest_sha256": adapter["checkpoint"][
             "manifest_file_sha256"
         ],
@@ -283,6 +292,100 @@ def _inspect_training_checkpoint(
     return training, manifest, cursor
 
 
+def build_writer_evaluation_adapter(
+    *,
+    schema_version: str,
+    writer_method: str,
+    config_path: Path,
+    checkpoint: Path,
+    training: Mapping[str, Any],
+    manifest: Mapping[str, Any],
+    cursor: int,
+    cursor_axis: str,
+    cache: Mapping[str, Any],
+    lora_contract_sha256: str,
+    mapping: Sequence[Mapping[str, Any]],
+    task_keys: Sequence[tuple[str, int]],
+    source: Mapping[str, Any],
+    video_condition: str,
+    video_seed: int,
+    forbidden_inputs: Sequence[str],
+) -> dict[str, Any]:
+    if schema_version not in WRITER_ADAPTER_SCHEMAS or writer_method not in {
+        "as_writer",
+        "rl_writer",
+    }:
+        raise WriterModelError("invalid PI05 Writer evaluation method")
+    writer_record = manifest.get("files", {}).get("writer.safetensors", {})
+    if re.fullmatch(r"[0-9a-f]{64}", str(writer_record.get("sha256", ""))) is None:
+        raise WriterModelError("PI05 Writer checkpoint lacks a sealed Writer state")
+    mapping_sha256 = canonical_hash(list(mapping))
+    pairing_sha256 = canonical_hash(
+        {
+            "schema_version": "ember_pi05_writer_eval_pairing_v2",
+            "writer_method": writer_method,
+            "source_run_contract_sha256": source.get("source_run_contract_sha256"),
+            "source_checkpoint_manifest_sha256": source.get(
+                "checkpoint_manifest_sha256"
+            ),
+            "writer_checkpoint_manifest_sha256": sha256_file(
+                checkpoint / "checkpoint_manifest.json"
+            ),
+            "task_keys": [list(key) for key in task_keys],
+            "video_schedule": WRITER_VIDEO_SCHEDULE,
+            "video_seed": video_seed,
+        }
+    )
+    return {
+        "schema_version": schema_version,
+        "kind": writer_method,
+        "writer_method": writer_method,
+        "arm": f"{writer_method}_{video_condition}_video",
+        "execution_backend": "materialized_per_rollout_sequential_replan",
+        "video_condition": video_condition,
+        "writer_input": "pure task language plus exactly one action-hidden teacher video",
+        "config": {"path": str(config_path), "sha256": sha256_file(config_path)},
+        "training_run": {
+            "path": str(checkpoint.parent.parent),
+            "run_contract_file_sha256": sha256_file(
+                checkpoint.parent.parent / "run_contract.json"
+            ),
+            "run_contract_sha256": canonical_hash(training),
+            "mode": training["mode"],
+            "git_commit": training["git"]["commit"],
+        },
+        "checkpoint": {
+            "path": str(checkpoint),
+            "cursor": cursor,
+            "cursor_axis": cursor_axis,
+            "manifest_file_sha256": sha256_file(
+                checkpoint / "checkpoint_manifest.json"
+            ),
+            "manifest_payload_sha256": manifest["canonical_payload_sha256"],
+            "writer_state_sha256": writer_record["sha256"],
+        },
+        "feature_cache": dict(cache),
+        "lora_contract_sha256": lora_contract_sha256,
+        "video_schedule": {
+            "algorithm": WRITER_VIDEO_SCHEDULE,
+            "seed": video_seed,
+            "demo_count": 50,
+            "queue_order_independent": True,
+            "paired_between_correct_and_wrong": True,
+        },
+        "wrong_video_mapping": (
+            "identity"
+            if video_condition == "correct"
+            else "same role-panel ordinal in the next suite cyclically"
+        ),
+        "task_video_mapping_sha256": mapping_sha256,
+        "task_video_mapping": list(mapping),
+        "pairing_sha256": pairing_sha256,
+        "writer_forbidden_tensor_inputs": list(forbidden_inputs),
+        "teacher_action_values_read_by_evaluator": 0,
+    }
+
+
 def inspect_as_writer_evaluation(
     *,
     config_path: Path,
@@ -331,78 +434,27 @@ def inspect_as_writer_evaluation(
     cache = inspect_feature_cache(feature_cache, config, source, needed_task_ids)
     if training.get("feature_cache") != cache:
         raise WriterModelError("AS-Writer checkpoint and feature cache disagree")
-    writer_record = manifest.get("files", {}).get("writer.safetensors", {})
-    if re.fullmatch(r"[0-9a-f]{64}", str(writer_record.get("sha256", ""))) is None:
-        raise WriterModelError("AS-Writer checkpoint lacks a sealed Writer state")
     lora = load_pi05_lora_contract(
         REPO_ROOT / str(config["authorities"]["lora_contract"]["path"])
     )
-    mapping_sha256 = canonical_hash(list(mapping))
-    pairing_sha256 = canonical_hash(
-        {
-            "schema_version": "ember_pi05_writer_eval_pairing_v1",
-            "source_run_contract_sha256": source.get("source_run_contract_sha256"),
-            "source_checkpoint_manifest_sha256": source.get(
-                "checkpoint_manifest_sha256"
-            ),
-            "writer_checkpoint_manifest_sha256": sha256_file(
-                checkpoint / "checkpoint_manifest.json"
-            ),
-            "task_keys": [list(key) for key in normalized_keys],
-            "video_schedule": WRITER_VIDEO_SCHEDULE,
-            "video_seed": video_seed,
-        }
+    return build_writer_evaluation_adapter(
+        schema_version=WRITER_ADAPTER_SCHEMA,
+        writer_method="as_writer",
+        config_path=config_path,
+        checkpoint=checkpoint,
+        training=training,
+        manifest=manifest,
+        cursor=cursor,
+        cursor_axis="optimizer_step",
+        cache=cache,
+        lora_contract_sha256=canonical_contract_sha256(lora),
+        mapping=mapping,
+        task_keys=normalized_keys,
+        source=source,
+        video_condition=video_condition,
+        video_seed=video_seed,
+        forbidden_inputs=config["information_wall"]["writer_forbidden_inputs"],
     )
-    return {
-        "schema_version": WRITER_ADAPTER_SCHEMA,
-        "arm": f"as_writer_{video_condition}_video",
-        "execution_backend": "materialized_per_rollout_sequential_replan",
-        "video_condition": video_condition,
-        "writer_input": "pure task language plus exactly one action-hidden teacher video",
-        "config": {
-            "path": str(config_path),
-            "sha256": sha256_file(config_path),
-        },
-        "training_run": {
-            "path": str(checkpoint.parent.parent),
-            "run_contract_file_sha256": sha256_file(
-                checkpoint.parent.parent / "run_contract.json"
-            ),
-            "run_contract_sha256": canonical_hash(training),
-            "mode": training["mode"],
-            "git_commit": training["git"]["commit"],
-        },
-        "checkpoint": {
-            "path": str(checkpoint),
-            "cursor": cursor,
-            "manifest_file_sha256": sha256_file(
-                checkpoint / "checkpoint_manifest.json"
-            ),
-            "manifest_payload_sha256": manifest["canonical_payload_sha256"],
-            "writer_state_sha256": writer_record["sha256"],
-        },
-        "feature_cache": cache,
-        "lora_contract_sha256": canonical_contract_sha256(lora),
-        "video_schedule": {
-            "algorithm": WRITER_VIDEO_SCHEDULE,
-            "seed": video_seed,
-            "demo_count": 50,
-            "queue_order_independent": True,
-            "paired_between_correct_and_wrong": True,
-        },
-        "wrong_video_mapping": (
-            "identity"
-            if video_condition == "correct"
-            else "same role-panel ordinal in the next suite cyclically"
-        ),
-        "task_video_mapping_sha256": mapping_sha256,
-        "task_video_mapping": list(mapping),
-        "pairing_sha256": pairing_sha256,
-        "writer_forbidden_tensor_inputs": list(
-            config["information_wall"]["writer_forbidden_inputs"]
-        ),
-        "teacher_action_values_read_by_evaluator": 0,
-    }
 
 
 @dataclass(frozen=True)
@@ -424,19 +476,31 @@ class FrozenWriterTaskAdapter:
         device: torch.device,
         require_formal: bool,
     ) -> None:
-        observed = inspect_as_writer_evaluation(
-            config_path=Path(evaluation_adapter["config"]["path"]),
-            checkpoint=Path(evaluation_adapter["checkpoint"]["path"]),
-            feature_cache=Path(evaluation_adapter["feature_cache"]["root"]),
-            source=source,
-            task_keys=task_keys,
-            video_condition=str(evaluation_adapter["video_condition"]),
-            video_seed=int(evaluation_adapter["video_schedule"]["seed"]),
-            require_formal=require_formal,
-        )
+        kind = str(evaluation_adapter.get("kind", "as_writer"))
+        common = {
+            "config_path": Path(evaluation_adapter["config"]["path"]),
+            "checkpoint": Path(evaluation_adapter["checkpoint"]["path"]),
+            "feature_cache": Path(evaluation_adapter["feature_cache"]["root"]),
+            "source": source,
+            "task_keys": task_keys,
+            "video_condition": str(evaluation_adapter["video_condition"]),
+            "video_seed": int(evaluation_adapter["video_schedule"]["seed"]),
+            "require_formal": require_formal,
+        }
+        if kind == "rl_writer":
+            from ember.rl_writer.contract import authority_path, load_rl_writer_config
+            from ember.rl_writer.inference import inspect_rl_writer_evaluation
+
+            observed = inspect_rl_writer_evaluation(**common)
+            rl_config = load_rl_writer_config(Path(observed["config"]["path"]))
+            config = load_writer_config(authority_path(rl_config, "as_writer_config"))
+        elif kind == "as_writer":
+            observed = inspect_as_writer_evaluation(**common)
+            config = load_writer_config(Path(observed["config"]["path"]))
+        else:
+            raise WriterModelError("unknown PI05 Writer evaluation kind")
         if observed != dict(evaluation_adapter):
-            raise WriterModelError("AS-Writer evaluation artifacts changed after prepare")
-        config = load_writer_config(Path(observed["config"]["path"]))
+            raise WriterModelError("PI05 Writer evaluation artifacts changed after prepare")
         lora = load_pi05_lora_contract(
             REPO_ROOT / str(config["authorities"]["lora_contract"]["path"])
         )
@@ -515,7 +579,7 @@ class FrozenWriterTaskAdapter:
         digest = lora_state_sha256(state)
         generation_seconds = time.monotonic() - started
         if not math.isfinite(generation_seconds) or generation_seconds < 0:
-            raise WriterModelError("AS-Writer generation timing is invalid")
+            raise WriterModelError("PI05 Writer generation timing is invalid")
         evidence = {
             **row,
             "lora_sha256": digest,

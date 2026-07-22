@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import torch
 
-from ember.pi05_source_checkpoint import DistributedContext, canonical_hash
+from ember.pi05_source_checkpoint import DistributedContext, canonical_hash, sha256_file
 from ember.reward.ledger import InteractionCursors
 from ember.reward.protocol import RewardProtocolError
 from ember.reward.protocol import RewardTask
@@ -151,6 +151,74 @@ def test_rl_writer_contract_is_single_owner_and_resume_bound(tmp_path: Path) -> 
             contract={**contract, "fresh_writer_initialization_seed": 8},
             resume=tmp_path / "checkpoints/update_00000003",
             context=context,
+        )
+
+
+def test_rl_writer_inference_recomputes_checkpoint_schedule(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import ember.rl_writer.inference as inference
+
+    config = load_rl_writer_config(CONFIG)
+    tasks = reward_tasks(config, stage="development")
+    videos = TeacherVideoSchedule(
+        task_ids=tuple(task.global_task_id for task in tasks),
+        demo_indices=range(50),
+        seed=config["data"]["teacher_video_seed"],
+    )
+    consumed = schedule_summary(
+        tasks,
+        world_size=8,
+        next_update=3,
+        seed=config["data"]["task_schedule_seed"],
+        rollouts_per_task_update=1,
+        video_schedule=videos,
+    )
+    source = {"source_checkpoint": "sealed"}
+    checkpoint = tmp_path / "run" / "checkpoints" / "update_00000003"
+    checkpoint.mkdir(parents=True)
+    training = {
+        "schema_version": "ember_pi05_rl_writer_launch_v1",
+        "mode": "profile",
+        "stage": "development",
+        "branch": "zero_as_warmup",
+        "config_sha256": sha256_file(CONFIG),
+        "source": source,
+        "authorities": config["authorities"],
+        "information_wall": config["information_wall"],
+        "tasks": [
+            {"global_task_id": task.global_task_id} for task in tasks
+        ],
+        "trainable": {"object": "shared_reward_trained_writer_only"},
+        "runtime": {"world_size": 8, "checkpoint_updates": [3]},
+    }
+    (checkpoint.parent.parent / "run_contract.json").write_text(
+        json.dumps(training), encoding="utf-8"
+    )
+    manifest = {"next_update": 3, "consumed": consumed}
+    monkeypatch.setattr(
+        inference,
+        "validate_rl_writer_checkpoint_files",
+        lambda *args, **kwargs: manifest,
+    )
+    observed, observed_manifest, cursor = inference._inspect_training_checkpoint(
+        config_path=CONFIG,
+        config=config,
+        checkpoint=checkpoint,
+        source=source,
+        require_formal=False,
+    )
+    assert observed == training
+    assert observed_manifest == manifest
+    assert cursor == 3
+    manifest["consumed"] = {**consumed, "schedule_sha256": "0" * 64}
+    with pytest.raises(RewardProtocolError, match="authority changed"):
+        inference._inspect_training_checkpoint(
+            config_path=CONFIG,
+            config=config,
+            checkpoint=checkpoint,
+            source=source,
+            require_formal=False,
         )
 
 

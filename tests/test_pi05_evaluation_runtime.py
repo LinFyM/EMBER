@@ -30,6 +30,7 @@ from ember.pi05_eval_results import aggregate_run
 from ember.pi05_source_checkpoint import canonical_hash
 from ember.libero_evaluation import sha256_file
 from ember.writer.inference import (
+    RL_WRITER_ADAPTER_SCHEMA,
     WRITER_ADAPTER_SCHEMA,
     _task_video_mapping,
     expected_writer_episode_evidence,
@@ -99,16 +100,25 @@ def _payload(contract: dict, shard: EvaluationShard) -> dict:
     }
 
 
-def _writer_adapter(condition: str = "correct") -> dict:
+def _writer_adapter(condition: str = "correct", method: str = "as_writer") -> dict:
     keys = tuple((suite, 0) for suite in ("libero_spatial", "libero_object", "libero_goal", "libero_10"))
     roles = {key: "train" for key in keys}
     mapping = list(_task_video_mapping(keys, roles, condition))
     return {
-        "schema_version": WRITER_ADAPTER_SCHEMA,
-        "arm": f"as_writer_{condition}_video",
+        "schema_version": (
+            WRITER_ADAPTER_SCHEMA
+            if method == "as_writer"
+            else RL_WRITER_ADAPTER_SCHEMA
+        ),
+        "kind": method,
+        "writer_method": method,
+        "arm": f"{method}_{condition}_video",
         "video_condition": condition,
         "checkpoint": {
             "cursor": 12,
+            "cursor_axis": (
+                "optimizer_step" if method == "as_writer" else "reward_update"
+            ),
             "manifest_file_sha256": "3" * 64,
             "writer_state_sha256": "4" * 64,
         },
@@ -177,6 +187,20 @@ def test_writer_row_contract_recomputes_video_schedule_and_mapping(tmp_path: Pat
     payload["rows"][0]["writer"]["teacher_demo_index"] += 1
     with pytest.raises(Pi05EvaluationError, match="row contract changed"):
         validate_shard_result(payload, contract=contract, shard=shard)
+
+
+def test_rl_writer_row_uses_same_video_control_with_distinct_method() -> None:
+    adapter = _writer_adapter(method="rl_writer")
+    evidence = expected_writer_episode_evidence(
+        adapter,
+        suite="libero_goal",
+        task_id=0,
+        init_state_id=4,
+        lora_sha256="7" * 64,
+    )
+    assert evidence["writer_method"] == "rl_writer"
+    assert evidence["writer_checkpoint_axis"] == "reward_update"
+    assert evidence["method_arm"] == "rl_writer_correct_video"
 
 
 def test_static_source_sft_rows_remain_batched_without_writer_evidence(

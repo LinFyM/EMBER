@@ -73,6 +73,18 @@ def test_writer_prepare_arguments_are_all_or_none() -> None:
     with pytest.raises(Pi05EvaluationError, match="requires all declared assets"):
         module._writer_requested(partial)
 
+    rl_empty = argparse.Namespace(
+        rl_writer_config=None,
+        rl_writer_checkpoint=None,
+        rl_writer_feature_cache=None,
+        rl_writer_video_condition=None,
+    )
+    assert module._rl_writer_requested(rl_empty) is False
+    rl_partial = argparse.Namespace(**vars(rl_empty))
+    rl_partial.rl_writer_config = Path("rl.json")
+    with pytest.raises(Pi05EvaluationError, match="requires all declared assets"):
+        module._rl_writer_requested(rl_partial)
+
 
 def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
     module = _launcher_module()
@@ -81,10 +93,14 @@ def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
         as_writer_checkpoint=None,
         writer_feature_cache=None,
         writer_video_condition=None,
+        rl_writer_config=None,
+        rl_writer_checkpoint=None,
+        rl_writer_feature_cache=None,
+        rl_writer_video_condition=None,
         source_sft_config=None,
         source_sft_checkpoint=None,
     )
-    assert module._adapter_requests(empty) == (False, False)
+    assert module._adapter_requests(empty) == (None, False)
     partial = argparse.Namespace(**vars(empty))
     partial.source_sft_config = Path("source_sft.json")
     with pytest.raises(Pi05EvaluationError, match="requires all declared assets"):
@@ -94,11 +110,27 @@ def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
         as_writer_checkpoint=Path("as-step"),
         writer_feature_cache=Path("cache"),
         writer_video_condition="correct",
+        rl_writer_config=None,
+        rl_writer_checkpoint=None,
+        rl_writer_feature_cache=None,
+        rl_writer_video_condition=None,
         source_sft_config=Path("source_sft.json"),
         source_sft_checkpoint=Path("source-sft-step"),
     )
     with pytest.raises(Pi05EvaluationError, match="mutually exclusive"):
         module._adapter_requests(both)
+
+    as_and_rl = argparse.Namespace(**vars(empty))
+    as_and_rl.as_writer_config = Path("as.json")
+    as_and_rl.as_writer_checkpoint = Path("as-step")
+    as_and_rl.writer_feature_cache = Path("cache")
+    as_and_rl.writer_video_condition = "correct"
+    as_and_rl.rl_writer_config = Path("rl.json")
+    as_and_rl.rl_writer_checkpoint = Path("rl-update")
+    as_and_rl.rl_writer_feature_cache = Path("cache")
+    as_and_rl.rl_writer_video_condition = "correct"
+    with pytest.raises(Pi05EvaluationError, match="mutually exclusive"):
+        module._adapter_requests(as_and_rl)
 
 
 def test_completed_queue_without_launcher_evidence_fails_closed(

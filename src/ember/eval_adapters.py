@@ -2,10 +2,144 @@
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from pathlib import Path
+from typing import Any, Mapping, Sequence
+
+from ember.pi05_assets import Pi05EvaluationError
 
 
 STATIC_SOURCE_SFT_KIND = "shared_source_sft_lora"
+
+
+def _all_or_none(values: Sequence[Any], label: str) -> bool:
+    if any(value is not None for value in values) and not all(
+        value is not None for value in values
+    ):
+        raise Pi05EvaluationError(f"{label} evaluation requires all declared assets")
+    return all(value is not None for value in values)
+
+
+def as_writer_requested(args: Any) -> bool:
+    return _all_or_none(
+        (
+            args.as_writer_config,
+            args.as_writer_checkpoint,
+            args.writer_feature_cache,
+            args.writer_video_condition,
+        ),
+        "AS-Writer",
+    )
+
+
+def rl_writer_requested(args: Any) -> bool:
+    return _all_or_none(
+        (
+            args.rl_writer_config,
+            args.rl_writer_checkpoint,
+            args.rl_writer_feature_cache,
+            args.rl_writer_video_condition,
+        ),
+        "RL-Writer",
+    )
+
+
+def source_sft_requested(args: Any) -> bool:
+    return _all_or_none(
+        (args.source_sft_config, args.source_sft_checkpoint), "Source-SFT"
+    )
+
+
+def adapter_requests(args: Any) -> tuple[str | None, bool]:
+    as_requested = as_writer_requested(args)
+    rl_requested = rl_writer_requested(args)
+    sft_requested = source_sft_requested(args)
+    if sum((as_requested, rl_requested, sft_requested)) > 1:
+        raise Pi05EvaluationError("PI05 evaluation adapters are mutually exclusive")
+    kind = "as_writer" if as_requested else "rl_writer" if rl_requested else None
+    return kind, sft_requested
+
+
+def inspect_as_writer_adapter(
+    *,
+    config_path: Path,
+    checkpoint: Path,
+    feature_cache: Path,
+    source: Mapping[str, Any],
+    tasks: Sequence[Any],
+    video_condition: str,
+    video_seed: int,
+    require_formal: bool,
+) -> dict[str, Any]:
+    from ember.lora import LoRAContractError
+    from ember.writer.feature_cache import FeatureCacheError
+    from ember.writer.inference import inspect_as_writer_evaluation
+    from ember.writer.model import WriterModelError
+
+    try:
+        return inspect_as_writer_evaluation(
+            config_path=config_path,
+            checkpoint=checkpoint,
+            feature_cache=feature_cache,
+            source=source,
+            task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
+            video_condition=video_condition,
+            video_seed=video_seed,
+            require_formal=require_formal,
+        )
+    except (FeatureCacheError, LoRAContractError, WriterModelError) as error:
+        raise Pi05EvaluationError(str(error)) from error
+
+
+def inspect_rl_writer_adapter(
+    *,
+    config_path: Path,
+    checkpoint: Path,
+    feature_cache: Path,
+    source: Mapping[str, Any],
+    tasks: Sequence[Any],
+    video_condition: str,
+    video_seed: int,
+    require_formal: bool,
+) -> dict[str, Any]:
+    from ember.reward.protocol import RewardProtocolError
+    from ember.rl_writer.inference import inspect_rl_writer_evaluation
+    from ember.writer.feature_cache import FeatureCacheError
+    from ember.writer.model import WriterModelError
+
+    try:
+        return inspect_rl_writer_evaluation(
+            config_path=config_path,
+            checkpoint=checkpoint,
+            feature_cache=feature_cache,
+            source=source,
+            task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
+            video_condition=video_condition,
+            video_seed=video_seed,
+            require_formal=require_formal,
+        )
+    except (FeatureCacheError, RewardProtocolError, WriterModelError) as error:
+        raise Pi05EvaluationError(str(error)) from error
+
+
+def inspect_source_sft_adapter(
+    *,
+    config_path: Path,
+    checkpoint: Path,
+    source: Mapping[str, Any],
+    tasks: Sequence[Any],
+    evaluation_role: str,
+    require_formal: bool,
+) -> dict[str, Any]:
+    from ember.source_sft.inference import inspect_source_sft_evaluation
+
+    return inspect_source_sft_evaluation(
+        config_path=config_path,
+        checkpoint=checkpoint,
+        source=source,
+        task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
+        evaluation_role=evaluation_role,
+        require_formal=require_formal,
+    )
 
 
 def load_evaluation_adapter(

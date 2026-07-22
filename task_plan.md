@@ -53,7 +53,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] 从generic base fresh完成1,000 optimizer steps；333-step warmup、8卡一卡一rank、global batch256，最终step1000保存并完整验证唯一checkpoint。
 - [x] 按用户指定在step1000停止；末50-step mean loss为0.08659，曲线仍缓慢下降但明显趋平，记为budget-censored而不自动延长。
 - [x] 诊断并推翻错误的EMA screen：`decay=0.999`的step1000 EMA只走完raw更新位移的28.62%；匹配LIBERO-90 source tasks上raw为4/4、EMA为0/4，故EMA 0/320不是科学负结果。
-- [ ] 用step1000 raw policy重跑全部40 targets×8 fixed states正式screen；已完成的raw 40-task×1-state诊断为4/40、覆盖4 tasks与2 suites，只作方向确认。
+- [x] 用step1000 raw policy完成全部40 targets×8 fixed states正式screen：46/320成功，覆盖13 tasks与全部4 suites；逐suite为Long 2、Goal 28、Object 1、Spatial 15 successes，满足多task partial competence门槛。
 - [x] 冻结step1000 raw policy、source-only normalization及model/data/tokenizer hashes，作为全部后续方法共同起点；EMA仅保留为训练状态与负诊断证据。
 
 ## Phase C：AS-Writer development

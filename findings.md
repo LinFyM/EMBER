@@ -350,4 +350,5 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - all-40-task×1-state公平panel显示1/2/3 replicas/GPU的有效吞吐为0.1556/0.1818/0.1897 rollout/s。3 replicas比1 replica高约22.0%、比2 replicas高约4.35%，每卡约31GB且GPU0无额外CUDA角色，因此40-task source screen锁定3 replicas/GPU。
 - 上述3个40-episode profile均为吞吐smoke且全部0 success，分母太小，不能用来断言source competence；正式行为判断只来自随后预定的40 tasks×8 states screen及其逐taskraw rows。
 - 原正式40-task×8-state screen的0/320只验证了滞后EMA，不能解释为source acquisition负结果。参数比较显示EMA只走完raw更新位移的28.62%（action expert 33.52%，action I/O/time/state 40.13%，VLM 26.87%）；匹配source closed-loop为raw 4/4、EMA 0/4，匹配offline flow loss为raw 0.06165、EMA 0.17775、generic 0.29302。
-- raw step1000的40-task×1-state目标诊断为4/40，成功分布于4个tasks和2个suites，已排除“完全不会基础操控/只靠单一易task”的解释，但小分母不能作为正式成功率。canonical下游选择修正为raw `policy/`，EMA只保留为训练状态和负诊断；完整raw 40×8 screen另行封存。
+- raw step1000的正式40-task×8-state screen为`46/320 = 14.375%`，成功覆盖13 tasks和全部四个suites：Long 2/80、Goal 28/80、Object 1/80、Spatial 15/80。它满足“多个tasks有部分真实成功、aggregate不由单task支撑”的source acquisition条件；canonical下游使用raw `policy/`，EMA只保留为训练状态和负诊断。
+- 正式raw screen绑定commit `cab2edf72a8b7d5173503735ef33bdd8fc4c2a50`、raw weights SHA256 `60ea7ee8...cdf36`、corrected source summary SHA256 `473ae3dc...f874`。320 rows/task-state唯一、24 workers均exit0；results SHA256为`4e2defaf...db3a`，wall-clock 412.372秒。

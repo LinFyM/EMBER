@@ -166,7 +166,8 @@
 - final checkpoint为`checkpoints/step_00001000`，完整file/manifest验证通过；原始contract/summary/metrics/checkpoint-manifest/log SHA256分别为`ae05c077...e374`、`921ea45a...2032`、`b77c8498...6d3c`、`c236cb2d...d6bf`、`d2f17289...2d0c`。checkpoint contract canonical hash为`b6090341...e867`；原summary选择EMA已被后续诊断纠正并保留原hash作provenance。
 - checkpoint apparent bytes为`33,837,823,088`；trainer state确认step1000、raw与EMA都存在、1000条metrics step唯一且无invalid rows。下游共同起点现明确为raw `policy/`与同一source-only normalization；不重训source base。
 - 先前40-task×8-state EMA screen为0/320，机械执行虽完整，但该模型选择无效：EMA0.999从generic初始化，在1k短训后仅走完raw参数更新位移的28.62%。同一4个active LIBERO-90 tasks、相同init/noise下raw 4/4、EMA 0/4；同一32 source samples flow loss为raw `0.06165`、EMA `0.17775`、generic `0.29302`。
-- raw 40-task×1-state诊断得到4/40，成功覆盖Goal tasks 1/4/6和Spatial task8，跨train/validation/test角色与2个suites。这只确认已出现多task target competence，不当正式成功率；raw 40-task×8-state screen待重跑，旧EMA 0/320标记为superseded engineering result。
+- raw 40-task×8-state正式screen得到`46/320 = 14.375%`，成功覆盖13/40 tasks及全部4 suites；逐suite为Long `2/80`（1 task）、Goal `28/80`（5 tasks）、Object `1/80`（1 task）、Spatial `15/80`（6 tasks）。因此跨多task partial competence门槛正式通过，不是0 competence或单易task支撑。
+- screen共有320个唯一task/state rows、24/24 workers exit0、40 shards完整、无错误；wall-clock `412.372s`、有效`0.775999 rollout/s`。results/run-contract/run-summary/log SHA256分别为`4e2defaf...db3a`、`e496dc6a...1d7b`、`7befa655...ed71`、`ab553c0e...4e9d`；旧EMA 0/320仅保留为superseded engineering evidence。
 
 ## 已对齐的后续方法
 
@@ -185,9 +186,9 @@
 
 ## 当前后续动作
 
-1. 提交raw source-policy selection修复并重跑40-task×8-state正式screen；旧EMA 0/320只保留为已推翻诊断证据。
-2. 完成development Writer feature cache真实8卡smoke、封存profile并生成32-task formal cache。
-3. 完成Source-SFT/AS-Writer真实8卡短profile，按曲线与吞吐换算候选steps/廉价screen间隔，然后按全局约120分钟guardrail进入Phase C–H。
+1. 完成development Writer feature cache真实8卡smoke、封存profile并生成32-task formal cache。
+2. 完成Source-SFT/AS-Writer真实8卡短profile，按曲线与吞吐换算候选steps/廉价screen间隔，然后按全局约120分钟guardrail进入Phase C–H。
+3. 使用同一raw source policy与source-only normalization持续推进seen/wrong-video、final与RL/oracle阶段；不再把EMA 0/320带入科学解释。
 
 ## 历史边界
 

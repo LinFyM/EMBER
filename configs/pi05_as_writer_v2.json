@@ -11,7 +11,7 @@
     },
     "feature_cache_config": {
       "path": "configs/pi05_writer_feature_cache_v2.json",
-      "sha256": "55f70316b2c2064834578aae520f1bf72d8d43c0c709207f6b2773ad5c7a2561"
+      "sha256": "b62e527cc9301f88975fc018bb762c759d0c2c36c4525b57991b89f6f6aacdbf"
     },
     "lora_contract": {
       "path": "configs/pi05_lora_v1.json",
@@ -79,12 +79,19 @@
     "feature_lru_tasks_per_rank": 2
   },
   "conditioning_training": {
-    "method": "normal_plus_video_forced_policy_prompt_mask_plus_paired_functional_matching",
-    "writer_language_mask": "single_zero_feature_token",
-    "policy_language_mask": "generic_prompt_on_video_forced_branches_only",
-    "generic_policy_prompt": "perform the demonstrated task",
+    "method": "normal_full_language_contrast_generic_language_contrast_cycle",
+    "step_cycle": [
+      "normal",
+      "full_language_contrast",
+      "generic_language_contrast"
+    ],
+    "generic_writer_language": "perform the demonstrated task",
+    "generic_writer_language_owner": "normal_pi05_pure_language_tokenizer_and_embedding_cache",
+    "policy_language_contract": "correct_action_query_task_language_on_every_branch",
+    "contrast_backend": "paired_sequential_half_batch_with_shared_policy_rng",
+    "contrast_query_fraction": 0.5,
     "normal_loss_weight": 1.0,
-    "video_forced_loss_weight": 0.5,
+    "contrast_correct_loss_weight": 1.0,
     "matching_loss_weight": 0.5,
     "matching_margin": 0.01,
     "matching_temperature": 0.01,
@@ -134,10 +141,10 @@
     "budget_role": "guardrail_not_target"
   },
   "profile_defaults": {
-    "total_steps": 4,
-    "per_rank_batch_size": 1,
+    "total_steps": 6,
+    "per_rank_batch_size": 2,
     "checkpoint_steps": [
-      4
+      6
     ]
   },
   "profile_evidence": {

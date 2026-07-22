@@ -85,6 +85,7 @@ def _write_rank_state(
             "rank": context.rank,
             "world_size": context.world_size,
             "per_rank_batch_size": sampler.per_rank_batch_size,
+            "per_rank_batch_cycle": sampler.per_rank_batch_cycle,
             "sampler_seed": sampler.seed,
             "teacher_video_seed": video_schedule.seed,
             "rng": saved_rng,
@@ -282,6 +283,7 @@ def load_writer_checkpoint(
     sampler_seed: int,
     teacher_video_seed: int,
     per_rank_batch_size: int,
+    per_rank_batch_cycle: tuple[int, ...],
     contract_sha256: str,
 ) -> tuple[int, dict[str, Any], int]:
     validation: list[Any] = [None]
@@ -326,6 +328,7 @@ def load_writer_checkpoint(
         context.rank,
         context.world_size,
         per_rank_batch_size,
+        per_rank_batch_cycle,
         sampler_seed,
         teacher_video_seed,
     )
@@ -334,6 +337,7 @@ def load_writer_checkpoint(
         int(rank_state["rank"]),
         int(rank_state["world_size"]),
         int(rank_state["per_rank_batch_size"]),
+        tuple(int(value) for value in rank_state.get("per_rank_batch_cycle", ())),
         int(rank_state["sampler_seed"]),
         int(rank_state["teacher_video_seed"]),
     )

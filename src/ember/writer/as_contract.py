@@ -137,22 +137,33 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
 
 def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
     value = config.get("conditioning_training", {})
+    feature = load_pi05_feature_cache_config(
+        authority_path(config, "feature_cache_config"), REPO_ROOT
+    )
     pairs = value.get("video_task_pairs", [])
     flattened = [int(task_id) for pair in pairs for task_id in pair]
     target = read_json(authority_path(config, "target_data_manifest"))
     train_ids = sorted(int(task_id) for task_id in target["summary"]["roles"]["train"])
     weights = (
         value.get("normal_loss_weight"),
-        value.get("video_forced_loss_weight"),
+        value.get("contrast_correct_loss_weight"),
         value.get("matching_loss_weight"),
         value.get("matching_temperature"),
     )
     if (
         value.get("method")
-        != "normal_plus_video_forced_policy_prompt_mask_plus_paired_functional_matching"
-        or value.get("writer_language_mask") != "single_zero_feature_token"
-        or value.get("policy_language_mask") != "generic_prompt_on_video_forced_branches_only"
-        or not str(value.get("generic_policy_prompt", "")).strip()
+        != "normal_full_language_contrast_generic_language_contrast_cycle"
+        or value.get("step_cycle")
+        != ["normal", "full_language_contrast", "generic_language_contrast"]
+        or value.get("generic_writer_language")
+        != feature["features"]["generic_writer_language"]
+        or value.get("generic_writer_language_owner")
+        != "normal_pi05_pure_language_tokenizer_and_embedding_cache"
+        or value.get("policy_language_contract")
+        != "correct_action_query_task_language_on_every_branch"
+        or value.get("contrast_backend")
+        != "paired_sequential_half_batch_with_shared_policy_rng"
+        or value.get("contrast_query_fraction") != 0.5
         or not isinstance(pairs, list)
         or any(not isinstance(pair, list) or len(pair) != 2 for pair in pairs)
         or sorted(flattened) != train_ids
@@ -419,6 +430,7 @@ def build_contract(
     trainable: Mapping[str, Any],
     total_steps: int,
     batch_size: int,
+    batch_cycle: Sequence[int],
     checkpoint_steps: Sequence[int],
 ) -> dict[str, Any]:
     local = {
@@ -446,6 +458,7 @@ def build_contract(
         "information_wall": dict(config["information_wall"]),
         "writer": dict(config["writer"]),
         "data": dict(config["data"]),
+        "conditioning_training": dict(config["conditioning_training"]),
         "optimization": dict(config["optimization"]),
         "task_ids": list(task_ids),
         "runtime": {
@@ -453,12 +466,11 @@ def build_contract(
             "one_policy_cuda_process_per_rank": True,
             "gpu0_extra_cuda_roles": 0,
             "ddp_object": "shared_writer_only",
-            "per_rank_action_query_batch_size": batch_size,
-            "effective_global_action_queries": context.world_size * batch_size,
-            "writer_invocations_per_optimizer_step": context.world_size * 3,
-            "functional_policy_evaluations_per_optimizer_step": context.world_size
-            * batch_size
-            * 3,
+            "per_rank_policy_sample_batch_size": batch_size,
+            "per_rank_unique_action_query_cycle": list(batch_cycle),
+            "global_policy_samples_per_step": context.world_size * batch_size,
+            "writer_conditions_per_rank_cycle": [1, 2, 2],
+            "policy_forward_calls_per_rank_cycle": [1, 2, 2],
             "teacher_videos_per_writer_invocation": 1,
             "total_steps": total_steps,
             "checkpoint_steps": list(checkpoint_steps),

@@ -62,6 +62,7 @@
     "language_max_tokens": 64,
     "observed_target40_max_language_tokens": 23,
     "language_prompt": "Task: {cleaned_task}\n",
+    "generic_writer_language": "perform the demonstrated task",
     "language_normalization": "none_after_pi05_embedding",
     "stored_dtype": "bfloat16",
     "preserve_episode_order_and_boundaries": true,

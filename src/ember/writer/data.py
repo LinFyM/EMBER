@@ -252,16 +252,23 @@ class MixedTaskBatchSampler:
         *,
         task_ids: Sequence[int],
         per_rank_batch_size: int,
+        per_rank_batch_cycle: Sequence[int] | None = None,
         start_step: int,
         stop_step: int,
         rank: int,
         world_size: int,
         seed: int,
     ) -> None:
+        batch_cycle = tuple(
+            int(value)
+            for value in (per_rank_batch_cycle or (per_rank_batch_size,))
+        )
         if (
             not task_ids
             or len(set(task_ids)) != len(task_ids)
             or per_rank_batch_size <= 0
+            or not batch_cycle
+            or any(value <= 0 or value > per_rank_batch_size for value in batch_cycle)
             or not 0 <= start_step <= stop_step
             or not 0 <= rank < world_size
         ):
@@ -282,6 +289,7 @@ class MixedTaskBatchSampler:
         self.dataset = dataset
         self.task_ids = tuple(sorted(task_ids))
         self.per_rank_batch_size = per_rank_batch_size
+        self.per_rank_batch_cycle = batch_cycle
         self.start_step = start_step
         self.stop_step = stop_step
         self.rank = rank
@@ -298,6 +306,7 @@ class MixedTaskBatchSampler:
             )
             for task_id in self.task_ids
         }
+        self._query_prefixes = {task_id: [0] for task_id in self.task_ids}
 
     def __len__(self) -> int:
         return self.stop_step - self.start_step
@@ -316,10 +325,33 @@ class MixedTaskBatchSampler:
             raise WriterModelError("data step is outside the sampler interval")
         return self._task_visit_for_global_slot(step * self.world_size + self.rank)
 
+    def batch_size_for_step(self, step: int) -> int:
+        if step < 0:
+            raise WriterModelError("data step must be non-negative")
+        return self.per_rank_batch_cycle[step % len(self.per_rank_batch_cycle)]
+
+    def _global_slot_for_task_visit(self, task_id: int, task_visit: int) -> int:
+        order = np.random.default_rng(
+            np.random.SeedSequence([self.seed, task_visit])
+        ).permutation(self.task_ids)
+        offsets = np.flatnonzero(order == task_id)
+        if offsets.size != 1:
+            raise WriterModelError("task visit is outside the sampler authority")
+        return task_visit * len(self.task_ids) + int(offsets[0])
+
+    def _queries_before_task_visit(self, task_id: int, task_visit: int) -> int:
+        prefixes = self._query_prefixes[task_id]
+        while len(prefixes) <= task_visit:
+            previous_visit = len(prefixes) - 1
+            slot = self._global_slot_for_task_visit(task_id, previous_visit)
+            step = slot // self.world_size
+            prefixes.append(prefixes[-1] + self.batch_size_for_step(step))
+        return prefixes[task_visit]
+
     def _episode_for_task_visit(
         self, task_id: int, task_visit: int, batch_offset: int
     ) -> tuple[int, int]:
-        position = task_visit * self.per_rank_batch_size + batch_offset
+        position = self._queries_before_task_visit(task_id, task_visit) + batch_offset
         episode_cycle, episode_offset = divmod(position, self.episodes_per_task)
         demo_index = self.episode_orders[task_id][episode_offset]
         return demo_index, episode_cycle
@@ -352,10 +384,11 @@ class MixedTaskBatchSampler:
             for rank in range(self.world_size):
                 slot = step * self.world_size + rank
                 task_id, task_visit = self._task_visit_for_global_slot(slot)
-                if self.per_rank_batch_size >= self.episodes_per_task:
+                batch_size = self.batch_size_for_step(step)
+                if batch_size >= self.episodes_per_task:
                     coverage[task_id].update(self.episode_orders[task_id])
                     continue
-                for batch_offset in range(self.per_rank_batch_size):
+                for batch_offset in range(batch_size):
                     demo_index, _ = self._episode_for_task_visit(
                         task_id, task_visit, batch_offset
                     )
@@ -380,7 +413,7 @@ class MixedTaskBatchSampler:
             for rank in range(self.world_size):
                 slot = step * self.world_size + rank
                 task_id, task_visit = self._task_visit_for_global_slot(slot)
-                for batch_offset in range(self.per_rank_batch_size):
+                for batch_offset in range(self.batch_size_for_step(step)):
                     row = self._sample_for_task_visit(
                         task_id, task_visit, batch_offset
                     )
@@ -405,9 +438,11 @@ class MixedTaskBatchSampler:
         return {
             "start_step": start_step,
             "stop_step": stop_step,
-            "global_examples": (stop_step - start_step)
-            * self.world_size
-            * self.per_rank_batch_size,
+            "global_examples": sum(
+                self.batch_size_for_step(step)
+                for step in range(start_step, stop_step)
+            )
+            * self.world_size,
             "unique_query_rows": len(unique_rows),
             "min_examples_per_task": min(counts),
             "max_examples_per_task": max(counts),
@@ -419,7 +454,7 @@ class MixedTaskBatchSampler:
             task_id, task_visit = self.task_visit_for_step(step)
             yield [
                 self._sample_for_task_visit(task_id, task_visit, batch_offset)
-                for batch_offset in range(self.per_rank_batch_size)
+                for batch_offset in range(self.batch_size_for_step(step))
             ]
 
 

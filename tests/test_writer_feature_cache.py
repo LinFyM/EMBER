@@ -69,6 +69,7 @@ def test_task_cache_roundtrip_preserves_episode_boundaries(tmp_path: Path) -> No
     record = save_task_cache(
         path,
         language_features=torch.randn(3, 5),
+        generic_language_features=torch.randn(4, 5),
         video_features=torch.randn(7, 2, 5),
         episode_offsets=torch.tensor([0, 2, 7]),
         demo_indices=torch.tensor([4, 9]),
@@ -77,6 +78,7 @@ def test_task_cache_roundtrip_preserves_episode_boundaries(tmp_path: Path) -> No
     cached = load_task_cache(path, expected_dim=5, expected_spatial_tokens=2)
     assert record["frames"] == 7 and record["episodes"] == 2
     assert cached.video_features.dtype == torch.bfloat16
+    assert cached.generic_language_features.shape == (4, 5)
     assert cached.episode_offsets.tolist() == [0, 2, 7]
     assert cached.demo_indices.tolist() == [4, 9]
 
@@ -89,6 +91,7 @@ def test_feature_store_validates_manifest_and_evicts_lru(tmp_path: Path) -> None
         file_record = save_task_cache(
             tensor_path,
             language_features=torch.randn(2, 5),
+            generic_language_features=torch.randn(3, 5),
             video_features=torch.randn(4, 2, 5),
             episode_offsets=torch.tensor([0, 4]),
             demo_indices=torch.tensor([0]),
@@ -129,6 +132,7 @@ def test_feature_store_keeps_language_and_one_video_authorities_separate(
         file_record = save_task_cache(
             tensor_path,
             language_features=torch.full((2, 3), language_value),
+            generic_language_features=torch.full((3, 3), 7.0),
             video_features=torch.tensor(
                 [[video_value], [video_value + 1], [video_value + 2], [video_value + 3]]
             ).repeat(1, 3)[:, None],
@@ -159,6 +163,7 @@ def test_feature_store_keeps_language_and_one_video_authorities_separate(
         language_task_id=2, video_task_id=5, demo_index=9
     )
     assert torch.all(wrong_video.language_features == 2)
+    assert torch.all(wrong_video.generic_language_features == 7)
     assert wrong_video.video_features[:, 0, 0].tolist() == [51, 52, 53]
     assert wrong_video.episode_offsets.tolist() == [0, 3]
 
@@ -257,6 +262,7 @@ def _write_pi05_feature_authorities(tmp_path: Path) -> Path:
             "language_max_tokens": 64,
             "observed_target40_max_language_tokens": 23,
             "language_prompt": "Task: {cleaned_task}\n",
+            "generic_writer_language": "perform the demonstrated task",
             "language_normalization": "none_after_pi05_embedding",
             "stored_dtype": "bfloat16",
             "preserve_episode_order_and_boundaries": True,
@@ -360,6 +366,7 @@ def test_pi05_feature_store_may_open_a_sealed_manifest_subset(
         file_record = save_task_cache(
             tensor_path,
             language_features=torch.randn(2, 4),
+            generic_language_features=torch.randn(3, 4),
             video_features=torch.randn(3, 2, 4),
             episode_offsets=torch.tensor([0, 3]),
             demo_indices=torch.tensor([0]),

@@ -50,6 +50,7 @@ class FeatureCacheTask:
 @dataclass(frozen=True)
 class CachedWriterInput:
     language_features: torch.Tensor
+    generic_language_features: torch.Tensor
     video_features: torch.Tensor
     episode_offsets: torch.Tensor
     demo_indices: torch.Tensor
@@ -60,6 +61,7 @@ class OneVideoWriterInput:
     """Only the tensors permitted to enter one Writer invocation."""
 
     language_features: torch.Tensor
+    generic_language_features: torch.Tensor
     video_features: torch.Tensor
     episode_offsets: torch.Tensor
 
@@ -222,6 +224,7 @@ class WriterFeatureStore:
             raise FeatureCacheError("teaching video slice is empty")
         return OneVideoWriterInput(
             language_features=language_cache.language_features,
+            generic_language_features=language_cache.generic_language_features,
             video_features=video,
             episode_offsets=torch.tensor([0, stop - start], dtype=torch.int64),
         )
@@ -352,6 +355,7 @@ def _validate_pi05_feature_values(config: Mapping[str, Any]) -> None:
         "language_max_tokens": 64,
         "observed_target40_max_language_tokens": 23,
         "language_prompt": "Task: {cleaned_task}\n",
+        "generic_writer_language": "perform the demonstrated task",
         "language_normalization": "none_after_pi05_embedding",
         "stored_dtype": "bfloat16",
         "preserve_episode_order_and_boundaries": True,
@@ -625,10 +629,17 @@ def select_pi05_language_tokens(
 def _validate_cached_tensors(
     tensors: Mapping[str, torch.Tensor], *, expected_dim: int, expected_spatial_tokens: int
 ) -> CachedWriterInput:
-    required = {"language_features", "video_features", "episode_offsets", "demo_indices"}
+    required = {
+        "language_features",
+        "generic_language_features",
+        "video_features",
+        "episode_offsets",
+        "demo_indices",
+    }
     if set(tensors) != required:
         raise FeatureCacheError("task cache contains the wrong tensor set")
     language = tensors["language_features"]
+    generic_language = tensors["generic_language_features"]
     video = tensors["video_features"]
     offsets = tensors["episode_offsets"]
     demos = tensors["demo_indices"]
@@ -637,6 +648,10 @@ def _validate_cached_tensors(
         or language.shape[0] < 1
         or language.shape[1] != expected_dim
         or language.dtype != torch.bfloat16
+        or generic_language.ndim != 2
+        or generic_language.shape[0] < 1
+        or generic_language.shape[1] != expected_dim
+        or generic_language.dtype != torch.bfloat16
         or video.ndim != 3
         or video.shape[0] < 1
         or video.shape[1] != expected_spatial_tokens
@@ -657,13 +672,14 @@ def _validate_cached_tensors(
         or len(set(demos.tolist())) != demos.numel()
     ):
         raise FeatureCacheError("task cache episode boundaries are invalid")
-    return CachedWriterInput(language, video, offsets, demos)
+    return CachedWriterInput(language, generic_language, video, offsets, demos)
 
 
 def save_task_cache(
     path: Path,
     *,
     language_features: torch.Tensor,
+    generic_language_features: torch.Tensor,
     video_features: torch.Tensor,
     episode_offsets: torch.Tensor,
     demo_indices: torch.Tensor,
@@ -671,6 +687,7 @@ def save_task_cache(
 ) -> dict[str, Any]:
     tensors = {
         "language_features": language_features.detach().to(device="cpu", dtype=torch.bfloat16).contiguous(),
+        "generic_language_features": generic_language_features.detach().to(device="cpu", dtype=torch.bfloat16).contiguous(),
         "video_features": video_features.detach().to(device="cpu", dtype=torch.bfloat16).contiguous(),
         "episode_offsets": episode_offsets.detach().to(device="cpu", dtype=torch.int64).contiguous(),
         "demo_indices": demo_indices.detach().to(device="cpu", dtype=torch.int64).contiguous(),
@@ -690,6 +707,7 @@ def save_task_cache(
         "bytes": path.stat().st_size,
         "sha256": sha256_file(path),
         "language_tokens": int(cached.language_features.shape[0]),
+        "generic_language_tokens": int(cached.generic_language_features.shape[0]),
         "frames": int(cached.video_features.shape[0]),
         "episodes": int(cached.demo_indices.numel()),
     }

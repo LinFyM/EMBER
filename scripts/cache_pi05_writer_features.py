@@ -285,6 +285,12 @@ def _cache_task(
 ) -> dict[str, Any]:
     started = time.monotonic()
     language = _language_features(policy, tokenizer, task.language, config)
+    generic_language = _language_features(
+        policy,
+        tokenizer,
+        str(config["features"]["generic_writer_language"]),
+        config,
+    )
     video, offsets = _video_features(
         policy, task, demo_indices, config, device
     )
@@ -292,6 +298,7 @@ def _cache_task(
     file_record = save_task_cache(
         tensor_path,
         language_features=language,
+        generic_language_features=generic_language,
         video_features=video,
         episode_offsets=offsets,
         demo_indices=torch.tensor(demo_indices, dtype=torch.int64),

@@ -14,7 +14,12 @@ from ember.writer.as_contract import (
     resume_step,
 )
 from ember.writer.model import WriterModelError
-from ember.writer.training import _matching_objective
+from ember.writer.conditioning import (
+    batch_size_cycle,
+    conditioning_cycle,
+    matching_objective,
+    pack_writer_conditions,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -32,6 +37,18 @@ def test_as_writer_config_is_pi05_one_video_and_profile_pending() -> None:
     assert config["data"]["sampler_seed"] != config["data"]["teacher_video_seed"]
     assert config["formal_run"] == {"status": "pending_profile"}
     assert len(config["conditioning_training"]["video_task_pairs"]) == 12
+    assert conditioning_cycle(config) == (
+        "normal",
+        "full_language_contrast",
+        "generic_language_contrast",
+    )
+    assert batch_size_cycle(16, config) == (16, 8, 8)
+    assert config["conditioning_training"]["generic_writer_language"] == (
+        "perform the demonstrated task"
+    )
+    assert config["conditioning_training"]["policy_language_contract"] == (
+        "correct_action_query_task_language_on_every_branch"
+    )
     assert config["information_wall"]["validation_actions_read"] == 0
     assert config["information_wall"]["test_actions_read"] == 0
     assert config["information_wall"]["test_video_values_read"] == 0
@@ -50,19 +67,36 @@ def test_as_writer_checkpoint_schedule_and_cursor_are_fail_closed() -> None:
 
 
 def test_video_matching_manual_gradient_coefficients_equal_autograd() -> None:
-    losses = tuple(torch.tensor(value, requires_grad=True) for value in (0.12, 0.11, 0.10))
+    losses = tuple(torch.tensor(value, requires_grad=True) for value in (0.11, 0.10))
     config = {
-        "normal_loss_weight": 1.0,
-        "video_forced_loss_weight": 0.5,
+        "contrast_correct_loss_weight": 1.0,
         "matching_loss_weight": 0.5,
         "matching_margin": 0.01,
         "matching_temperature": 0.01,
     }
-    objective, coefficients, probability = _matching_objective(losses, config)
+    objective, coefficients, probability = matching_objective(losses, config)
     observed = torch.autograd.grad(objective, losses)
     for actual, expected in zip(observed, coefficients, strict=True):
         torch.testing.assert_close(actual, expected)
     assert 0 < float(probability.detach()) < 1
+
+
+def test_writer_condition_packing_uses_real_generic_tokens_and_two_arms_only() -> None:
+    language = torch.full((2, 4), 1.0)
+    generic = torch.full((3, 4), 7.0)
+    correct = torch.full((5, 2, 4), 2.0)
+    wrong = torch.full((6, 2, 4), 3.0)
+    packed = pack_writer_conditions(
+        language, generic, correct, wrong, "generic_language_contrast"
+    )
+    assert packed[2].tolist() == [0, 3, 6]
+    assert packed[3].tolist() == [0, 5, 11]
+    assert torch.all(packed[0] == 7)
+    assert packed[1].shape == (11, 2, 4)
+
+    normal = pack_writer_conditions(language, generic, correct, None, "normal")
+    assert normal[2].tolist() == [0, 2]
+    assert normal[3].tolist() == [0, 5]
 
 
 def test_profile_pending_as_writer_config_resolves_profile_and_rejects_formal() -> None:
@@ -85,11 +119,11 @@ def test_profile_pending_as_writer_config_resolves_profile_and_rejects_formal() 
         cpu_affinity=(0,),
     )
     assert resolve_runtime(args, config, context) == (
-        4,
-        1,
-        (4,),
+        6,
+        2,
+        (6,),
     )
-    assert args.stop_after_step == 4
+    assert args.stop_after_step == 6
     args.mode = "formal"
     args.stop_after_step = None
     with pytest.raises(WriterModelError, match="pending a real profile"):

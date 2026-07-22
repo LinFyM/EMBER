@@ -74,6 +74,30 @@ def test_mixed_task_sampler_resume_is_sample_exact() -> None:
     assert prefix + resumed == full
 
 
+def test_mixed_task_sampler_variable_batch_cycle_is_exact_and_counts_used_queries() -> None:
+    dataset, identity = _dataset()
+
+    def build(start: int, stop: int) -> MixedTaskBatchSampler:
+        return MixedTaskBatchSampler(
+            dataset,  # type: ignore[arg-type]
+            task_ids=(10, 20, 30, 40),
+            per_rank_batch_size=2,
+            per_rank_batch_cycle=(2, 1, 2, 1),
+            start_step=start,
+            stop_step=stop,
+            rank=0,
+            world_size=2,
+            seed=20260720,
+        )
+
+    full = list(build(0, 8))
+    assert [len(batch) for batch in full] == [2, 1, 2, 1, 2, 1, 2, 1]
+    assert list(build(0, 3)) + list(build(3, 8)) == full
+    assert build(0, 8).consumed_identity_summary(0, 8)["global_examples"] == 24
+    for batch in full:
+        assert len({identity[row][0] for row in batch}) == 1
+
+
 def test_mixed_task_sampler_covers_every_episode_in_each_full_window() -> None:
     dataset, _ = _dataset()
     sampler = _sampler(dataset, rank=0, start_step=0, stop_step=8)

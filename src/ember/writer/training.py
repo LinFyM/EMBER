@@ -32,6 +32,7 @@ from ember.pi05_source_checkpoint import (
     DistributedContext,
     barrier,
     canonical_hash,
+    capture_rng,
     restore_rng,
     write_json_atomic,
 )
@@ -45,6 +46,14 @@ from ember.pi05_source_setup import (
     seed_everything,
 )
 from ember.writer.checkpoint import load_writer_checkpoint, save_writer_checkpoint
+from ember.writer.conditioning import (
+    adapter_state_at,
+    batch_size_cycle,
+    conditioning_cycle,
+    matching_objective,
+    pack_writer_conditions,
+    same_torch_rng,
+)
 from ember.writer.as_contract import (
     REPO_ROOT,
     authority_path,
@@ -181,6 +190,7 @@ def _restore_training_state(
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     batch_size: int,
+    batch_cycle: tuple[int, ...],
     contract_sha256: str,
     initial_step: int,
 ) -> tuple[dict[str, Any] | None, int]:
@@ -195,6 +205,7 @@ def _restore_training_state(
         sampler_seed=int(config["data"]["sampler_seed"]),
         teacher_video_seed=int(config["data"]["teacher_video_seed"]),
         per_rank_batch_size=batch_size,
+        per_rank_batch_cycle=batch_cycle,
         contract_sha256=contract_sha256,
     )
     if loaded != initial_step:
@@ -210,12 +221,14 @@ def _build_sampler_and_loader(
     dataset: FunctionalQueryDataset,
     task_ids: tuple[int, ...],
     batch_size: int,
+    batch_cycle: tuple[int, ...],
     initial_step: int,
 ) -> tuple[MixedTaskBatchSampler, TeacherVideoSchedule, DataLoader[Any]]:
     sampler = MixedTaskBatchSampler(
         dataset,
         task_ids=task_ids,
         per_rank_batch_size=batch_size,
+        per_rank_batch_cycle=batch_cycle,
         start_step=initial_step,
         stop_step=args.stop_after_step,
         rank=context.rank,
@@ -322,6 +335,7 @@ def prepare_runtime(
 ) -> WriterRuntime:
     config = load_writer_config(args.config.resolve())
     total_steps, batch_size, checkpoint_steps = resolve_runtime(args, config, context)
+    batch_cycle = batch_size_cycle(batch_size, config)
     initial_step = resume_step(args.resume)
     if not 0 <= initial_step < args.stop_after_step:
         raise WriterModelError("AS-Writer resume cursor is outside this segment")
@@ -360,6 +374,7 @@ def prepare_runtime(
         trainable=trainable,
         total_steps=total_steps,
         batch_size=batch_size,
+        batch_cycle=batch_cycle,
         checkpoint_steps=checkpoint_steps,
     )
     contract_sha256 = canonical_hash(contract)
@@ -373,6 +388,7 @@ def prepare_runtime(
         optimizer=optimizer,
         scheduler=scheduler,
         batch_size=batch_size,
+        batch_cycle=batch_cycle,
         contract_sha256=contract_sha256,
         initial_step=initial_step,
     )
@@ -383,6 +399,7 @@ def prepare_runtime(
         dataset=dataset,
         task_ids=task_ids,
         batch_size=batch_size,
+        batch_cycle=batch_cycle,
         initial_step=initial_step,
     )
     wrapped = _wrap_writer(writer, context)
@@ -445,89 +462,19 @@ def _batch_task_id(batch: Mapping[str, Any]) -> int:
     return int(unique.item())
 
 
-def _pack_writer_conditions(
-    language: torch.Tensor,
-    correct_video: torch.Tensor,
-    wrong_video: torch.Tensor,
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    if language.ndim != 2 or correct_video.ndim != 3 or wrong_video.ndim != 3:
-        raise WriterModelError("video-forced Writer condition tensors changed shape")
-    null_language = torch.zeros(
-        1, language.shape[1], dtype=language.dtype, device=language.device
-    )
-    languages = torch.cat((language, null_language, null_language), dim=0)
-    videos = torch.cat((correct_video, correct_video, wrong_video), dim=0)
-    language_offsets = torch.tensor(
-        [0, language.shape[0], language.shape[0] + 1, language.shape[0] + 2],
-        dtype=torch.int64,
-    )
-    video_offsets = torch.tensor(
-        [
-            0,
-            correct_video.shape[0],
-            2 * correct_video.shape[0],
-            2 * correct_video.shape[0] + wrong_video.shape[0],
-        ],
-        dtype=torch.int64,
-    )
-    return languages, videos, language_offsets, video_offsets
-
-
-def _generic_policy_batch(
-    runtime: WriterRuntime, batch: Mapping[str, Any]
-) -> dict[str, Any]:
-    tasks = batch.get("task")
-    if not isinstance(tasks, (list, tuple)) or not tasks:
-        raise WriterModelError("video-forced policy batch lost language rows")
-    value = dict(batch)
-    prompt = str(runtime.config["conditioning_training"]["generic_policy_prompt"])
-    value["task"] = [prompt] * len(tasks)
-    return runtime.processor.training_batch(value)
-
-
-def _adapter_state_at(
-    generated: Mapping[str, torch.Tensor], index: int
-) -> dict[str, torch.Tensor]:
-    result = {}
-    for name, value in generated.items():
-        if value.ndim != 3 or value.shape[0] != 3:
-            raise WriterModelError("video-forced Writer did not generate three adapters")
-        result[name] = value[index]
-    return result
-
-
-def _matching_objective(
-    losses: tuple[torch.Tensor, torch.Tensor, torch.Tensor],
-    config: Mapping[str, Any],
-) -> tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor, torch.Tensor], torch.Tensor]:
-    normal, forced_correct, forced_wrong = losses
-    normal_weight = float(config["normal_loss_weight"])
-    forced_weight = float(config["video_forced_loss_weight"])
-    matching_weight = float(config["matching_loss_weight"])
-    margin = float(config["matching_margin"])
-    temperature = float(config["matching_temperature"])
-    z = (margin + forced_correct - forced_wrong) / temperature
-    probability = torch.sigmoid(z)
-    objective = (
-        normal_weight * normal
-        + forced_weight * forced_correct
-        + matching_weight * temperature * torch.nn.functional.softplus(z)
-    )
-    coefficients = (
-        torch.as_tensor(normal_weight, device=normal.device),
-        torch.as_tensor(forced_weight, device=normal.device) + matching_weight * probability,
-        -matching_weight * probability,
-    )
-    return objective, coefficients, probability
-
-
 def _differentiate_condition_batch(
     runtime: WriterRuntime,
     packed: tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
     policy_batch: Mapping[str, Any],
-    forced_policy_batch: Mapping[str, Any],
-) -> tuple[torch.Tensor, list[torch.Tensor], list[Mapping[str, Any]], torch.Tensor]:
+    mode: str,
+) -> tuple[
+    torch.Tensor,
+    list[torch.Tensor],
+    list[Mapping[str, Any]],
+    torch.Tensor | None,
+]:
     runtime.optimizer.zero_grad(set_to_none=True)
+    count = 1 if mode == "normal" else 2
     with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
         generated = runtime.wrapped_writer(
             packed[0], packed[1], packed[3], language_offsets=packed[2]
@@ -535,33 +482,67 @@ def _differentiate_condition_batch(
         values: list[torch.Tensor] = []
         gradients: list[dict[str, torch.Tensor]] = []
         details: list[Mapping[str, Any]] = []
-        for index, policy_value in enumerate(
-            (policy_batch, forced_policy_batch, forced_policy_batch)
-        ):
+        paired_rng = capture_rng(runtime.context) if count == 2 else None
+        post_correct_rng: dict[str, Any] | None = None
+        for index in range(count):
+            if index == 1:
+                restore_rng(paired_rng, runtime.context)  # type: ignore[arg-type]
             value, detail, gradient = functional_lora_loss_gradient(
                 runtime.policy,
-                _adapter_state_at(generated, index),
+                adapter_state_at(generated, index, count),
                 runtime.lora_contract,
-                batch=policy_value,
+                batch=policy_batch,
             )
             values.append(value)
             details.append(detail)
             gradients.append(gradient)
-        loss, coefficients, probability = _matching_objective(
-            (values[0], values[1], values[2]),
-            runtime.config["conditioning_training"],
-        )
+            if index == 0 and count == 2:
+                post_correct_rng = capture_rng(runtime.context)
+        if count == 1:
+            loss = float(runtime.config["conditioning_training"]["normal_loss_weight"]) * values[0]
+            coefficients = (torch.as_tensor(
+                float(runtime.config["conditioning_training"]["normal_loss_weight"]),
+                device=values[0].device,
+            ),)
+            probability = None
+        else:
+            post_wrong_rng = capture_rng(runtime.context)
+            restore_rng(post_correct_rng, runtime.context)  # type: ignore[arg-type]
+            if not same_torch_rng(post_correct_rng, post_wrong_rng):  # type: ignore[arg-type]
+                raise WriterModelError("paired contrast policy RNG consumption diverged")
+            loss, coefficients, probability = matching_objective(
+                (values[0], values[1]), runtime.config["conditioning_training"]
+            )
     names = tuple(generated)
-    gradient_tensors = tuple(
-        torch.stack(
-            [coefficients[index].to(gradients[index][name]) * gradients[index][name]
-             for index in range(3)],
-            dim=0,
+    if count == 1:
+        gradient_tensors = tuple(
+            coefficients[0].to(gradients[0][name]) * gradients[0][name]
+            for name in names
         )
-        for name in names
-    )
+    else:
+        gradient_tensors = tuple(
+            torch.stack(
+                [
+                    coefficients[index].to(gradients[index][name])
+                    * gradients[index][name]
+                    for index in range(count)
+                ],
+                dim=0,
+            )
+            for name in names
+        )
     torch.autograd.backward(tuple(generated[name] for name in names), gradient_tensors)
     return loss, values, details, probability
+
+
+def _cumulative_counts(runtime: WriterRuntime, completed: int) -> tuple[int, int, int]:
+    unique = sum(runtime.sampler.batch_size_for_step(step) for step in range(completed))
+    conditions = sum(
+        1 if conditioning_cycle(runtime.config)[step % 3] == "normal" else 2
+        for step in range(completed)
+    )
+    scale = runtime.context.world_size
+    return unique * scale, completed * runtime.batch_size * scale, conditions * scale
 
 
 def _one_step(
@@ -572,31 +553,44 @@ def _one_step(
     tick = time.monotonic()
     batch = next(runtime.iterator)
     data_seconds = time.monotonic() - tick
+    mode = conditioning_cycle(runtime.config)[step % 3]
     task_id, task_visit = runtime.sampler.task_visit_for_step(step)
     if _batch_task_id(batch) != task_id:
         raise WriterModelError("AS-Writer sampler and action batch disagree")
+    observed_batch = int(batch["task_id"].shape[0])
+    expected_batch = runtime.sampler.batch_size_for_step(step)
+    if observed_batch != expected_batch:
+        raise WriterModelError("AS-Writer conditioning and sampler batch sizes disagree")
     demo_index = runtime.video_schedule.demo_for_task_visit(task_id, task_visit)
-    partner_id = runtime.video_partner[task_id]
-    wrong_demo_index = runtime.video_schedule.demo_for_task_visit(partner_id, task_visit)
     teacher = runtime.feature_store.load_one_video(
         language_task_id=task_id,
         video_task_id=task_id,
         demo_index=demo_index,
     )
-    wrong_teacher = runtime.feature_store.load_one_video(
-        language_task_id=task_id,
-        video_task_id=partner_id,
-        demo_index=wrong_demo_index,
-    )
     language = teacher.language_features.to(runtime.context.device)
+    generic_language = teacher.generic_language_features.to(runtime.context.device)
     video = teacher.video_features.to(runtime.context.device)
-    wrong_video = wrong_teacher.video_features.to(runtime.context.device)
+    partner_id: int | None = None
+    wrong_demo_index: int | None = None
+    wrong_video: torch.Tensor | None = None
+    if mode != "normal":
+        partner_id = runtime.video_partner[task_id]
+        wrong_demo_index = runtime.video_schedule.demo_for_task_visit(
+            partner_id, task_visit
+        )
+        wrong_teacher = runtime.feature_store.load_one_video(
+            language_task_id=task_id,
+            video_task_id=partner_id,
+            demo_index=wrong_demo_index,
+        )
+        wrong_video = wrong_teacher.video_features.to(runtime.context.device)
     policy_batch = runtime.processor.training_batch(batch)
-    forced_policy_batch = _generic_policy_batch(runtime, batch)
-    packed = _pack_writer_conditions(language, video, wrong_video)
+    packed = pack_writer_conditions(
+        language, generic_language, video, wrong_video, mode
+    )
 
     loss, values, details, matching_probability = _differentiate_condition_batch(
-        runtime, packed, policy_batch, forced_policy_batch
+        runtime, packed, policy_batch, mode
     )
     if not bool(torch.isfinite(loss)):
         raise WriterModelError(f"non-finite AS-Writer loss at step {step}")
@@ -613,24 +607,37 @@ def _one_step(
     runtime.scheduler.step()
     completed = step + 1
     step_seconds = reduce_max(time.monotonic() - tick, runtime.context)
+    unique_queries, policy_samples, writer_conditions = _cumulative_counts(
+        runtime, completed
+    )
+    positive = reduce_mean(float(values[0]), runtime.context)
+    wrong = reduce_mean(float(values[1]), runtime.context) if len(values) == 2 else None
+    probability = (
+        reduce_mean(float(matching_probability), runtime.context)
+        if matching_probability is not None
+        else None
+    )
     return {
         "optimizer_step": completed,
+        "conditioning_mode": mode,
+        "writer_language_condition": (
+            "generic_neutral" if mode == "generic_language_contrast" else "task_language"
+        ),
+        "policy_language_condition": "correct_action_query_task_language",
         "mean_functional_action_loss": reduce_mean(float(loss), runtime.context),
-        "mean_normal_action_loss": reduce_mean(float(values[0]), runtime.context),
-        "mean_video_forced_correct_loss": reduce_mean(float(values[1]), runtime.context),
-        "mean_video_forced_wrong_loss": reduce_mean(float(values[2]), runtime.context),
-        "mean_matching_probability": reduce_mean(float(matching_probability), runtime.context),
+        "mean_positive_action_loss": positive,
+        "mean_wrong_video_action_loss": wrong,
+        "mean_matching_probability": probability,
         "gradient_norm_before_clip_max": reduce_max(float(grad_norm), runtime.context),
         "applied_lr": applied_lr,
         "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
-        "global_action_queries": completed
-        * runtime.context.world_size
-        * runtime.batch_size,
-        "global_writer_invocations": completed * runtime.context.world_size * 3,
-        "global_functional_query_evaluations": completed
-        * runtime.context.world_size
-        * runtime.batch_size
-        * 3,
+        "global_unique_action_queries": unique_queries,
+        "global_policy_samples": policy_samples,
+        "global_writer_conditions": writer_conditions,
+        "global_unique_action_queries_this_step": observed_batch
+        * runtime.context.world_size,
+        "global_policy_samples_this_step": runtime.batch_size
+        * runtime.context.world_size,
         "rank0_task_id": task_id,
         "rank0_teacher_demo_index": demo_index,
         "rank0_wrong_video_task_id": partner_id,
@@ -638,8 +645,11 @@ def _one_step(
         "rank0_policy_loss_detail": [value.get("loss") for value in details],
         "data_seconds_max": reduce_max(data_seconds, runtime.context),
         "step_seconds_max": step_seconds,
-        "global_action_queries_per_second": runtime.context.world_size
+        "global_policy_samples_per_second": runtime.context.world_size
         * runtime.batch_size
+        / step_seconds,
+        "global_unique_action_queries_per_second": runtime.context.world_size
+        * observed_batch
         / step_seconds,
         "elapsed_seconds": time.monotonic() - started,
         "max_cuda_allocated_bytes": int(

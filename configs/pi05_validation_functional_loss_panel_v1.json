@@ -1,0 +1,50 @@
+{
+  "schema_version": "ember_pi05_validation_functional_loss_panel_v1",
+  "status": "sealed_before_validation_action_value_reads",
+  "role": "validation",
+  "authorities": {
+    "target_data_manifest": {
+      "path": "configs/pi05_target_data_v1/manifest.json",
+      "sha256": "1b28547f6080a35fdf23ebae021407da15bfe4af367b0b1791042945d91b049d"
+    },
+    "evaluation_config": {
+      "path": "configs/pi05_target_evaluation_v1.json",
+      "sha256": "5bb0a5ca4604f126cc4bcdd29c9a7a4d17403a8f3ee7161d8afdfeccbb2c488c"
+    }
+  },
+  "information_wall": {
+    "validation_actions": "fixed labels for checkpoint-screen loss only",
+    "validation_action_gradient": false,
+    "validation_actions_visible_to_writer": false,
+    "validation_actions_visible_to_training_optimizer": false,
+    "writer_input": "correct task language plus exactly one action-hidden correct-task teacher video",
+    "video_action_episode_pairing": "different episodes from the same validation task",
+    "test_action_reads": 0,
+    "test_video_value_reads": 0
+  },
+  "sampling": {
+    "seed": 20260723,
+    "tasks": 8,
+    "episodes_per_task": 50,
+    "video_groups_per_task": 8,
+    "action_queries_per_video_group": 8,
+    "action_chunk_size": 50,
+    "video_demo_selection": "task-keyed deterministic no-replacement permutation",
+    "action_demo_selection": "group-keyed deterministic no-replacement permutation excluding the teacher-video episode",
+    "action_frame_selection": "row-keyed deterministic uniform frame from the selected action episode",
+    "policy_noise_schedule": "sha256 first 63 bits of canonical JSON [schema,seed,global_task_id,video_group]",
+    "task_aggregation": "mean within each task then equal mean across eight tasks"
+  },
+  "checkpoint_selection": {
+    "purpose": "cheap saturation and candidate screening only",
+    "cadence": "every retained 100-step checkpoint",
+    "signals": [
+      "task-balanced mean functional action loss",
+      "per-task functional action loss",
+      "loss slope",
+      "train-validation gap"
+    ],
+    "final_authority": "complete 8-task x 50-state closed-loop validation success",
+    "conflict_rule": "closed-loop success overrides functional validation loss"
+  }
+}

@@ -32,7 +32,7 @@ def sinusoidal_positions(
 
 
 class RMSNorm(torch.nn.Module):
-    """Bias-free RMS normalization."""
+    """RMS normalization used by the conditional temporal path."""
 
     def __init__(self, width: int, eps: float = 1e-6) -> None:
         super().__init__()
@@ -49,9 +49,16 @@ class RMSNorm(torch.nn.Module):
 
 
 class ConditionOnlyBlock(torch.nn.Module):
-    """A bias-free pre-norm block whose output always depends on its input."""
+    """A pre-norm block with no independent output or adapter branch."""
 
-    def __init__(self, width: int, heads: int, expansion: int = 4) -> None:
+    def __init__(
+        self,
+        width: int,
+        heads: int,
+        expansion: int = 4,
+        *,
+        linear_bias: bool,
+    ) -> None:
         super().__init__()
         if width <= 0 or heads <= 0 or width % heads or expansion <= 0:
             raise VariableEpisodeInputError("invalid condition-only block dimensions")
@@ -60,14 +67,14 @@ class ConditionOnlyBlock(torch.nn.Module):
             width,
             heads,
             dropout=0.0,
-            bias=False,
+            bias=linear_bias,
             batch_first=True,
         )
         self.ffn_norm = RMSNorm(width)
         self.ffn = torch.nn.Sequential(
-            torch.nn.Linear(width, expansion * width, bias=False),
+            torch.nn.Linear(width, expansion * width, bias=linear_bias),
             torch.nn.GELU(),
-            torch.nn.Linear(expansion * width, width, bias=False),
+            torch.nn.Linear(expansion * width, width, bias=linear_bias),
         )
 
     def forward(
@@ -104,6 +111,7 @@ class ActionMemoryTemporalEncoder(torch.nn.Module):
         memory_slots: int,
         attention_heads: int,
         temporal_blocks: int,
+        conditional_linear_bias: bool,
     ) -> None:
         super().__init__()
         dimensions = (
@@ -123,24 +131,40 @@ class ActionMemoryTemporalEncoder(torch.nn.Module):
 
         self.input_norm = RMSNorm(input_width)
         self.input_projection = torch.nn.Linear(
-            input_width, hidden_width, bias=False
+            input_width, hidden_width, bias=conditional_linear_bias
         )
         self.time_modulation = torch.nn.Linear(
-            hidden_width, hidden_width, bias=False
+            hidden_width, hidden_width, bias=conditional_linear_bias
         )
         self.layer_modulation = torch.nn.Embedding(expert_layers, hidden_width)
         self.slot_modulation = torch.nn.Embedding(memory_slots, hidden_width)
         torch.nn.init.zeros_(self.time_modulation.weight)
+        if self.time_modulation.bias is not None:
+            torch.nn.init.zeros_(self.time_modulation.bias)
         torch.nn.init.zeros_(self.layer_modulation.weight)
         torch.nn.init.zeros_(self.slot_modulation.weight)
 
         self.temporal = torch.nn.ModuleList(
-            ConditionOnlyBlock(hidden_width, attention_heads)
+            ConditionOnlyBlock(
+                hidden_width,
+                attention_heads,
+                linear_bias=conditional_linear_bias,
+            )
             for _ in range(temporal_blocks)
         )
+        # A scalar score bias cancels exactly inside softmax and is therefore
+        # intentionally omitted; this is not an output-adapter restriction.
         self.temporal_score = torch.nn.Linear(hidden_width, 1, bias=False)
-        self.layer_mixer = ConditionOnlyBlock(hidden_width, attention_heads)
-        self.slot_mixer = ConditionOnlyBlock(hidden_width, attention_heads)
+        self.layer_mixer = ConditionOnlyBlock(
+            hidden_width,
+            attention_heads,
+            linear_bias=conditional_linear_bias,
+        )
+        self.slot_mixer = ConditionOnlyBlock(
+            hidden_width,
+            attention_heads,
+            linear_bias=conditional_linear_bias,
+        )
 
     def forward(
         self,

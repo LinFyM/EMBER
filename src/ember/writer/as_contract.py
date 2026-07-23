@@ -109,6 +109,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         "temporal_pooling": "one_attention_pool_per_expert_layer_and_rank_slot",
         "decoder_hidden_dim": 384,
         "frame_microbatch": 16,
+        "conditional_linear_bias": True,
     }
     if writer != expected_writer:
         raise WriterModelError("Action-Memory AS-Writer architecture changed")
@@ -262,8 +263,12 @@ def resolve_runtime(
     stop_step = args.stop_after_step or default_stop
     if min(total_steps, batch_size, stop_step) <= 0 or stop_step > total_steps:
         raise WriterModelError("invalid AS-Writer runtime request")
-    if context.world_size != 8:
-        raise WriterModelError("AS-Writer training requires exactly eight symmetric ranks")
+    expected_world_size = int(source.get("expected_world_size", 8))
+    if context.world_size != expected_world_size:
+        raise WriterModelError(
+            "AS-Writer training requires exactly "
+            f"{expected_world_size} symmetric ranks"
+        )
     if args.mode == "formal":
         formal = config["formal_run"]
         expected = (

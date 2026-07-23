@@ -134,16 +134,19 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [ ] workspace/branch/commit/status明确；无未识别并发writer。
 - [ ] live GPU owner、进程、driver/CUDA与storage audit；预计峰值低于500GB个人cap。
 - [ ] exact command、model/data/config hashes、output root、process topology与停止条件记录。
-- [ ] 一卡一训练rank为默认；若评估每卡多replica，8卡replica数必须一致且GPU0无额外角色。
+- [ ] 一卡一训练rank为默认；若评估每卡多replica，所有已授权卡的replica数必须一致且GPU0无额外角色。
 - [ ] checkpoint/output不得覆盖；resume必须校验完整state与合同兼容性。
-- [ ] 所有适用阶段先短profile并由loss/reward/behavior曲线决定廉价screen间隔，只给少量候选完整validation；约120分钟是guardrail而非目标，到上限仍未充分训练则记录后停止。task-local按每个方法覆盖8 tasks的合计时间计费，不按单task计费。
+- [ ] 所有适用阶段先短profile并由loss/reward/behavior曲线决定廉价screen间隔，只给必要候选完整validation；若owner为某阶段给出时间上限，到上限仍未充分训练则记录后停止。当前短期Goal中的AS、Source-SFT与RL-Writer由owner明确取消时间上限。
 
-## 当前短期 Goal：Action-Memory AS-Writer（2026-07-23）
+## 当前 Goal：四卡Action-Memory / Source-SFT / cold-start RL-Writer上限（2026-07-23）
 
 - [x] 将冻结PaliGemma逐帧图文prefix、16个Action-Expert memory tokens、encoder-only Meta-LoRA、变长temporal/layer/slot聚合与完整rank16 LoRA解码实现为唯一canonical Writer路径。
-- [x] trainable Writer为10,097,601参数，是rank128 Source-SFT 10,297,344参数的98.1%；8卡batch16最终源码profile完成，loss/gradient finite，峰值allocated/reserved为75.99/78.87GB。
-- [ ] 从fresh identity仅用normal positive functional action loss训练：首段到step500，段内每100步保存；若未饱和，每次exact-resume约300步（500→800→1100），累计训练wall约60分钟硬上限。
-- [ ] 用多checkpoint correct-video validation选绝对性能最强点，并与已封存rank128 Source-SFT最佳122/400比较。
-- [ ] 只对唯一最佳AS checkpoint运行一次400-rollout cross-suite wrong-video arm。
-- [ ] 仅当AS超过122/400但correct/wrong差距仍弱时，启用不牺牲correct competence的contrast objective并重复必要选点与单一wrong arm。
-- [ ] 原始rows、runtime、config/hashes、验证、commit/push完成后停止并完成当前短期Goal；本轮不推进RL-Writer或task-local RL。
+- [x] owner确认此前全局`bias=False`是额外优化限制而非condition-only必要条件；已只恢复conditional temporal/layer/slot与factor-head内部普通bias，不增加公共LoRA支路、层、token、宽度或输出。
+- [x] 在读取新validation action值前封存8-task task-balanced functional-loss panel：每task 8条video × 8个独立action query，共512 rows/checkpoint；只作候选筛选，400-rollout closed-loop success仍是最终authority。
+- [ ] 2026-07-28前所有训练和评测只能使用物理GPU `0,1,2,3`；先完成四卡真实forward/backward、batch ceiling、显存与吞吐profile并封存fresh AS合同。
+- [ ] 从fresh identity充分训练bias-restored AS-Writer；每100步保留checkpoint，以validation loss筛点并用完整8×50 correct-video validation确认真实峰值及峰后持续下降，不设时间上限。
+- [ ] 从fresh identity在同参数口径充分训练rank128 Source-SFT；同样确认完整validation的真实峰值与持续峰后下降，旧`122/400`只作已观测参考而不是已证明上限。
+- [ ] 要求AS在validation上明显超过Source-SFT；若未达到，保留逐task证据并诊断/迭代，但不改变source base、split、信息墙或核心科学问题。
+- [ ] 对唯一最强AS checkpoint运行必要的correct/cross-suite-wrong video对照，确认correct优势来自多个tasks；若特异性不足，在保持绝对competence优先的前提下研究并解决。
+- [ ] 只有AS同时通过相对Source-SFT与视频特异性门槛后，才启动fresh cold-start RL-Writer；cold-start阶段先取得24个source tasks逐task成功信号，再切到纯reward训练，并充分探索validation峰值，不设时间上限。
+- [ ] 保存raw rows、loss/reward curves、seeds、actions/interactions、runtime、config/hashes与exact-resume证据，更新文档、验证、commit、push后完成Goal；本Goal不推进task-local RL或test阶段。

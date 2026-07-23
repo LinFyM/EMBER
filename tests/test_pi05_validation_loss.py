@@ -1,0 +1,77 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+from ember.writer.validation_panel import (
+    build_validation_loss_manifest,
+    load_validation_loss_panel,
+    summarize_validation_losses,
+)
+
+
+ROOT = Path(__file__).resolve().parents[1]
+CONFIG = ROOT / "configs/pi05_validation_functional_loss_panel_v1.json"
+
+
+class _Dataset:
+    def __init__(self, task_ids: tuple[int, ...]) -> None:
+        self._frame_index: list[tuple[int, int, int]] = []
+        self._episodes: dict[int, dict[int, tuple[int, ...]]] = {}
+        for task_id in task_ids:
+            task_episodes = {}
+            for demo in range(50):
+                rows = []
+                for frame in range(3):
+                    rows.append(len(self._frame_index))
+                    self._frame_index.append((task_id, demo, frame))
+                task_episodes[demo] = tuple(rows)
+            self._episodes[task_id] = task_episodes
+
+    @property
+    def frame_index(self) -> tuple[tuple[int, int, int], ...]:
+        return tuple(self._frame_index)
+
+    @property
+    def task_episode_rows(self) -> dict[int, dict[int, tuple[int, ...]]]:
+        return self._episodes
+
+
+def test_validation_loss_panel_is_deterministic_balanced_and_unpaired() -> None:
+    config = load_validation_loss_panel(CONFIG)
+    task_ids = tuple(
+        sorted(
+            int(value)
+            for value in __import__("json").loads(
+                (
+                    ROOT
+                    / config["authorities"]["target_data_manifest"]["path"]
+                ).read_text(encoding="utf-8")
+            )["summary"]["roles"]["validation"]
+        )
+    )
+    dataset = _Dataset(task_ids)
+    left = build_validation_loss_manifest(dataset, config)
+    right = build_validation_loss_manifest(dataset, config)
+    assert left == right
+    assert left["row_count"] == 512
+    assert left["rows_per_task"] == 64
+    assert all(
+        row["teacher_demo_index"] != row["action_demo_index"]
+        for row in left["rows"]
+    )
+    assert {
+        task_id: sum(row["global_task_id"] == task_id for row in left["rows"])
+        for task_id in task_ids
+    } == {task_id: 64 for task_id in task_ids}
+
+
+def test_validation_loss_summary_equal_weights_tasks() -> None:
+    rows = [
+        {"checkpoint_cursor": 100, "global_task_id": 1, "loss": 1.0},
+        {"checkpoint_cursor": 100, "global_task_id": 1, "loss": 3.0},
+        {"checkpoint_cursor": 100, "global_task_id": 2, "loss": 10.0},
+    ]
+    summary = summarize_validation_losses(rows)["checkpoints"][0]
+    assert summary["per_task"]["1"]["mean_loss"] == 2.0
+    assert summary["per_task"]["2"]["mean_loss"] == 10.0
+    assert summary["task_balanced_mean_loss"] == 6.0

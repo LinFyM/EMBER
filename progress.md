@@ -293,3 +293,12 @@
 - 最终源码8卡profile root为`/data/ymdai/outputs/ember/pi05_as_writer_action_memory_v1_profile_refactor_20260723`：per-rank batch16、global128，两步耗时3.851/2.477秒，loss与gradient全部finite；峰值allocated/reserved为75,991,897,600/78,873,886,720 bytes。
 - profile run-contract/metrics/summary SHA256为`21f15cab...24c`/`1979da53...7e9`/`6175b068...061`。全仓fresh `166 passed`，architecture guard无hard violation。
 - 正式训练合同为fresh normal-positive-only，scheduler horizon 1,200；先到step500并每100步保存。若loss/validation未饱和，避免每100步重载模型，改为每次约300步exact-resume至800、1100，累计训练wall约60分钟后无论是否充分均封存曲线并停止追加。
+
+## 四卡bias-restored Action-Memory新Goal启动（2026-07-23）
+
+- owner将本轮设备权限明确收窄为2026-07-28前只用物理GPU `0,1,2,3`；GPU4–7即使空闲也不进入训练、评测或额外controller角色。此前8卡profile与bias-free checkpoint只作provenance，不作为新trajectory的resume初态。
+- 当前模型拓扑保持冻结PaliGemma prefix、16个Action-Expert memory tokens、encoder-only Meta-LoRA、变长temporal/layer/slot聚合和完整task-specific rank16 LoRA不变。仅把conditional path内部Linear/MHA/factor-head普通bias恢复；final factor-head bias和weight都从零初始化，fresh adapter仍为functional identity，且不存在独立公共LoRA支路。
+- Writer构造字段已收敛到单一代码合同，AS训练、checkpoint评测和RL runtime共同使用；同时修复RL新Action-Memory Writer初始化漏传冻结`action_in_proj`的问题。当前只影响未来fresh RL启动，不修改任何旧artifact。
+- 在读取validation action值前封存`pi05_validation_functional_loss_panel_v1`：8个validation tasks各8个teacher-video groups、每组8个不同episode action queries，共512 rows/checkpoint；query seed、task-equal aggregation和“closed-loop覆盖loss”的冲突规则均固定。新增评测只读取validation label算loss，不向Writer或optimizer暴露，不读取test action/video值。
+- 四卡AS预合同使用per-rank batch16/global64、每100步checkpoint；首个候选阶段到step3200，对应204,800 action queries，和rank128 Source-SFT step400的query量相同，但只是首个判断点。可exact-resume到4800/6400，最终是否继续由validation loss与完整closed-loop峰后持续下降证据决定，不设wall-clock上限。
+- fresh全仓验证为`169 passed`；配置/面板加载、CLI、compile和diff check通过。architecture guard为`REVIEW`但无hard violation，新增validation owner位于`ember.writer`且没有第二套policy evaluator。下一动作是live四卡/storage preflight与真实profile，profile后再封存并启动fresh formal AS。

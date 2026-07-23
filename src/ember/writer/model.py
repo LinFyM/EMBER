@@ -16,6 +16,23 @@ class WriterModelError(RuntimeError):
     """Raised when the Writer input or sealed LoRA contract is inconsistent."""
 
 
+ACTION_MEMORY_WRITER_CONSTRUCTOR_KEYS = frozenset(
+    {
+        "expert_layers",
+        "memory_slots",
+        "expert_width",
+        "action_code_width",
+        "meta_lora_rank",
+        "hidden_dim",
+        "attention_heads",
+        "temporal_blocks",
+        "decoder_hidden_dim",
+        "frame_microbatch",
+        "conditional_linear_bias",
+    }
+)
+
+
 @dataclass(frozen=True)
 class LoraTensorSpec:
     """One row-oriented output tensor in a PEFT LoRA state."""
@@ -88,16 +105,25 @@ def build_lora_tensor_specs(
 class FactorHead(torch.nn.Module):
     """Decode one rank-slot state into one LoRA factor row or column."""
 
-    def __init__(self, input_width: int, hidden_width: int, output_width: int) -> None:
+    def __init__(
+        self,
+        input_width: int,
+        hidden_width: int,
+        output_width: int,
+        *,
+        linear_bias: bool,
+    ) -> None:
         super().__init__()
         self.network = torch.nn.Sequential(
             RMSNorm(input_width),
-            torch.nn.Linear(input_width, hidden_width, bias=False),
+            torch.nn.Linear(input_width, hidden_width, bias=linear_bias),
             torch.nn.GELU(),
-            torch.nn.Linear(hidden_width, output_width, bias=False),
+            torch.nn.Linear(hidden_width, output_width, bias=linear_bias),
         )
         # The physical task adapter begins exactly at its identity template.
         torch.nn.init.zeros_(self.network[-1].weight)
+        if self.network[-1].bias is not None:
+            torch.nn.init.zeros_(self.network[-1].bias)
 
     def forward(self, value: torch.Tensor) -> torch.Tensor:
         return self.network(value)
@@ -132,6 +158,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         temporal_blocks: int,
         decoder_hidden_dim: int,
         frame_microbatch: int,
+        conditional_linear_bias: bool,
     ) -> None:
         super().__init__()
         if (
@@ -175,6 +202,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             memory_slots=memory_slots,
             attention_heads=attention_heads,
             temporal_blocks=temporal_blocks,
+            conditional_linear_bias=conditional_linear_bias,
         )
 
         expected_heads = {
@@ -189,7 +217,12 @@ class CompleteLoRAWriter(torch.nn.Module):
         }
         self.factor_heads = torch.nn.ModuleDict(
             {
-                name: FactorHead(hidden_dim, decoder_hidden_dim, width)
+                name: FactorHead(
+                    hidden_dim,
+                    decoder_hidden_dim,
+                    width,
+                    linear_bias=conditional_linear_bias,
+                )
                 for name, width in expected_heads.items()
             }
         )

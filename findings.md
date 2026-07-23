@@ -459,3 +459,11 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 冻结PaliGemma的图文prefix可以预计算；但按当前stride-4开发集估算，保存pre-transformer图文prefix约50–60GiB，保存18层KV约250GiB，后者不符合当前收益/存储比。由于直接训练预计低于一小时，本轮不让cache工程阻塞科学结果；若后续确认encoder是主瓶颈，优先缓存language-independent image embeddings而非完整KV。
 - Action-Memory Writer将语言理解留给冻结π0.5的PaliGemma，并让16个memory tokens从Action Expert流读取每帧图文prefix；初始化使用16个确定性正交32D action codes经冻结`action_in_proj`投到1024D后detach。Meta-LoRA仅增强teacher encoder对该输入的读取，不成为共享execution adapter。
 - 最终profile证明per-rank batch16可执行，10.10M训练参数与rank128 Source-SFT 10.30M基本等量，因此后续AS对SFT的比较不再有约10倍训练参数容量差这一明显混杂。当前尚无closed-loop性能结论；必须由多checkpoint validation和唯一best correct/wrong arm决定。
+
+## bias-free初测、bias恢复与新上限判据（2026-07-23）
+
+- bias-free Action-Memory run的完整correct-video validation在step300/500为`105/400`与`89/400`；step300逐task为Long `15/3`、Goal `1/35`、Object `25/26`、Spatial `0/0`。step500为Long `5/0`、Goal `0/39`、Object `22/23`、Spatial `0/0`。paired step300-only/step500-only=`41/25`，exact binomial约`p=0.064`：300更好，但两个点不足以证明真实峰值或架构上限。
+- 同参数口径rank128 Source-SFT先前完整validation曲线为step100/200/300/400/600=`90/105/65/122/111`。step300后又在400大幅恢复，证明一个下降点不能作为饱和证据；旧`122/400`是当前最佳观测值，不是已充分探索的上限。
+- `condition-only`只要求完整LoRA经language/video条件路径产生、没有独立公共LoRA输出支路；它不要求所有内部线性层无bias。此前全局`bias=False`会降低约束网络的平移自由度并增加优化难度，属于额外实现限制。owner据此选择保持拓扑不变而恢复conditional path普通bias。
+- 恢复bias不会自动创建显式共享adapter：temporal/layer/slot block和factor head仍只处理条件hidden states；factor-head最终bias从零初始化，与最终weight一起保证fresh task LoRA为identity。它仍可能通过共享参数学出近公共输出，这必须由correct/wrong视频行为和生成LoRA差异实证判断，而不是靠`bias=False`宣称排除。
+- 新validation functional-loss panel固定512个task-balanced、video/action不配对query，可低成本观察loss斜率、train–val gap和候选checkpoint；由于teacher-forced action loss与closed-loop恢复能力可能错位，它不能单独选best。真实峰值要求完整8-task×50 success曲线，且“峰后持续下降”不能由单一相邻checkpoint判断。

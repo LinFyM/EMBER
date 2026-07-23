@@ -74,6 +74,7 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         temporal_blocks=1,
         decoder_hidden_dim=16,
         frame_microbatch=4,
+        conditional_linear_bias=True,
     )
     model.action_memory = _FakeActionMemory()
     return model, template
@@ -96,6 +97,23 @@ def test_action_memory_writer_starts_at_exact_identity_template() -> None:
         assert value.shape == (2, *template[name].shape)
         assert torch.equal(value[0], template[name])
         assert torch.equal(value[1], template[name])
+
+
+def test_action_memory_writer_restores_only_internal_conditional_biases() -> None:
+    model, _ = _model()
+    encoder = model.task_encoder
+    assert encoder.input_projection.bias is not None
+    assert encoder.time_modulation.bias is not None
+    for block in (*encoder.temporal, encoder.layer_mixer, encoder.slot_mixer):
+        assert block.attention.in_proj_bias is not None
+        assert block.attention.out_proj.bias is not None
+        assert block.ffn[0].bias is not None
+        assert block.ffn[2].bias is not None
+    for head in model.factor_heads.values():
+        assert head.network[1].bias is not None
+        assert head.network[-1].bias is not None
+        assert torch.count_nonzero(head.network[-1].bias) == 0
+    assert not hasattr(model, "shared_lora")
 
 
 def test_action_memory_writer_accepts_variable_video_batch() -> None:
@@ -125,6 +143,7 @@ def test_action_memory_initialization_is_deterministic_in_action_input_manifold(
         temporal_blocks=1,
         decoder_hidden_dim=16,
         frame_microbatch=4,
+        conditional_linear_bias=True,
     )
     left = CompleteLoRAWriter(**kwargs)
     right = CompleteLoRAWriter(**kwargs)

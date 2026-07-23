@@ -1,4 +1,4 @@
-"""Canonical eight-rank PI05 Action-Supervised Writer training.
+"""Canonical symmetric-rank PI05 Action-Supervised Writer training.
 
 Only the shared Writer is trainable.  It receives pure task language plus one
 action-hidden teacher video and generates the complete sealed PI05 task LoRA;
@@ -70,6 +70,7 @@ from ember.writer.data import (
 )
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.model import (
+    ACTION_MEMORY_WRITER_CONSTRUCTOR_KEYS,
     CompleteLoRAWriter,
     WriterModelError,
     build_lora_tensor_specs,
@@ -117,22 +118,10 @@ def _build_writer(
     if hasattr(policy, "config"):
         policy.config.gradient_checkpointing = False
     template = prepare_frozen_writer_policy(policy, lora)
-    constructor_keys = {
-        "expert_layers",
-        "memory_slots",
-        "expert_width",
-        "action_code_width",
-        "meta_lora_rank",
-        "hidden_dim",
-        "attention_heads",
-        "temporal_blocks",
-        "decoder_hidden_dim",
-        "frame_microbatch",
-    }
     writer_config = {
         key: value
         for key, value in config["writer"].items()
-        if key in constructor_keys
+        if key in ACTION_MEMORY_WRITER_CONSTRUCTOR_KEYS
     }
     writer = CompleteLoRAWriter(
         build_lora_tensor_specs(template),

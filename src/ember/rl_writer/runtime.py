@@ -53,7 +53,11 @@ from ember.writer.as_contract import inspect_feature_cache, load_writer_config
 from ember.writer.data import TeacherVideoSchedule
 from ember.writer.feature_cache import WriterFeatureStore
 from ember.writer.functional import prepare_frozen_writer_policy
-from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
+from ember.writer.model import (
+    ACTION_MEMORY_WRITER_CONSTRUCTOR_KEYS,
+    CompleteLoRAWriter,
+    build_lora_tensor_specs,
+)
 
 
 _CHECKPOINT_NAME = re.compile(r"update_([0-9]{8})")
@@ -110,7 +114,7 @@ def _fresh_writer(
     values = {
         key: value
         for key, value in as_config["writer"].items()
-        if key != "generated_adapter"
+        if key in ACTION_MEMORY_WRITER_CONSTRUCTOR_KEYS
     }
     seed = int(config["optimization"]["seed"])
     fork_devices = [device] if device.type == "cuda" else []
@@ -119,7 +123,10 @@ def _fresh_writer(
         if device.type == "cuda":
             torch.cuda.manual_seed(seed)
         writer = CompleteLoRAWriter(
-            build_lora_tensor_specs(template), template_state=template, **values
+            build_lora_tensor_specs(template),
+            template_state=template,
+            action_in_projection=policy.model.action_in_proj,
+            **values,
         ).to(device)
     names = sorted(name for name, value in writer.named_parameters() if value.requires_grad)
     if not names or any(parameter.requires_grad for parameter in policy.parameters()):

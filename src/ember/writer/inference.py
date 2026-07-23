@@ -36,6 +36,7 @@ from ember.pi05_processing import Pi05PureLanguageTokenizer
 from ember.writer.data import ActionHiddenVideoStore, WriterTaskAuthority
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.model import (
+    ACTION_MEMORY_WRITER_CONSTRUCTOR_KEYS,
     CompleteLoRAWriter,
     WriterModelError,
     build_lora_tensor_specs,
@@ -290,7 +291,8 @@ def _inspect_training_checkpoint(
         == "shared_action_supervised_writer_only"
         and training.get("trainable", {}).get("lora_contract_sha256")
         == canonical_contract_sha256(lora)
-        and world_size == 8
+        and world_size
+        == int(config.get("formal_run", {}).get("expected_world_size", -1))
         and cursor > 0
         and cursor in training.get("runtime", {}).get("checkpoint_steps", [])
         and checkpoint.name == f"step_{cursor:08d}"
@@ -533,22 +535,10 @@ class FrozenWriterTaskAdapter:
             REPO_ROOT / str(config["authorities"]["lora_contract"]["path"])
         )
         template = prepare_frozen_writer_policy(policy, lora)
-        constructor_keys = {
-            "expert_layers",
-            "memory_slots",
-            "expert_width",
-            "action_code_width",
-            "meta_lora_rank",
-            "hidden_dim",
-            "attention_heads",
-            "temporal_blocks",
-            "decoder_hidden_dim",
-            "frame_microbatch",
-        }
         writer_values = {
             key: value
             for key, value in config["writer"].items()
-            if key in constructor_keys
+            if key in ACTION_MEMORY_WRITER_CONSTRUCTOR_KEYS
         }
         writer = CompleteLoRAWriter(
             build_lora_tensor_specs(template),

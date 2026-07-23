@@ -39,6 +39,7 @@ def test_action_memory_writer_config_seals_architecture_and_information_wall() -
     assert writer["hidden_dim"] == 320
     assert writer["frame_stride"] == 4
     assert writer["frame_microbatch"] == 16
+    assert writer["conditional_linear_bias"] is True
     assert config["data"]["task_count"] == 24
     assert config["data"]["episodes_per_task"] == 50
     assert writer_split_roles(config) == ("train",)
@@ -47,13 +48,14 @@ def test_action_memory_writer_config_seals_architecture_and_information_wall() -
     assert config["information_wall"]["validation_actions_read"] == 0
     assert config["information_wall"]["test_actions_read"] == 0
     assert config["information_wall"]["test_video_values_read"] == 0
-    assert config["optimization"]["maximum_formal_wall_clock_minutes"] == 60
-    assert config["formal_run"]["selected_stop_step"] == 500
+    assert config["optimization"]["maximum_formal_wall_clock_minutes"] is None
+    assert config["profile_defaults"]["expected_world_size"] == 4
+    assert config["formal_run"]["expected_world_size"] == 4
+    assert config["formal_run"]["selected_stop_step"] == 3200
     assert config["formal_run"]["stage_stop_steps"] == [
-        500,
-        800,
-        1100,
-        1200,
+        3200,
+        4800,
+        6400,
     ]
 
 
@@ -98,14 +100,14 @@ def test_zero_matching_weight_keeps_only_correct_arm_gradient() -> None:
     torch.testing.assert_close(coefficients[1], torch.zeros_like(losses[1]))
 
 
-def test_formal_runtime_uses_half_hour_stage_then_declared_extensions(
+def test_formal_runtime_uses_six_rank_query_scaled_stage(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     config = load_writer_config(CONFIG)
     context = DistributedContext(
         rank=0,
         local_rank=0,
-        world_size=8,
+        world_size=4,
         device=torch.device("cpu"),
         numa_node=0,
         cpu_affinity=(0,),
@@ -141,23 +143,23 @@ def test_formal_runtime_uses_half_hour_stage_then_declared_extensions(
     )
     expected_checkpoints = tuple(config["formal_run"]["checkpoint_steps"])
     assert resolve_runtime(formal, config, context) == (
-        1200,
+        6400,
         16,
         expected_checkpoints,
     )
-    assert formal.stop_after_step == 500
-    formal.resume = Path("/tmp/step_00000500")
-    formal.stop_after_step = 800
-    assert resolve_runtime(formal, config, context)[0] == 1200
-    assert formal.stop_after_step == 800
+    assert formal.stop_after_step == 3200
+    formal.resume = Path("/tmp/step_00003200")
+    formal.stop_after_step = 4800
+    assert resolve_runtime(formal, config, context)[0] == 6400
+    assert formal.stop_after_step == 4800
 
 
 def test_formal_extension_keeps_original_contract_stop() -> None:
     config = load_writer_config(CONFIG)
-    args = argparse.Namespace(mode="formal", stop_after_step=800)
-    assert _contract_stop_step(args, config, 1200) == 500
+    args = argparse.Namespace(mode="formal", stop_after_step=4800)
+    assert _contract_stop_step(args, config, 6400) == 3200
     args.mode = "profile"
-    assert _contract_stop_step(args, config, 1200) == 800
+    assert _contract_stop_step(args, config, 6400) == 4800
 
 
 def test_code_compatible_resume_allows_only_recorded_commit_change(

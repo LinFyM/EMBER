@@ -133,13 +133,19 @@ def _static_as_evaluation_fixture(
             "object": "shared_action_supervised_writer_only",
             "lora_contract_sha256": canonical_contract_sha256(lora),
         },
-        "runtime": {"world_size": 8, "checkpoint_steps": [4]},
+        "runtime": {
+            "world_size": config["formal_run"]["expected_world_size"],
+            "checkpoint_steps": [4],
+        },
     }
     write_json_atomic(run / "run_contract.json", training)
     for name in (
         "writer.safetensors",
         "trainer_state.pt",
-        *(f"rank_{rank:02d}_state.pt" for rank in range(8)),
+        *(
+            f"rank_{rank:02d}_state.pt"
+            for rank in range(config["formal_run"]["expected_world_size"])
+        ),
     ):
         (checkpoint / name).write_bytes(name.encode("utf-8"))
     files = {

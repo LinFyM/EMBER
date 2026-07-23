@@ -153,12 +153,29 @@
     "checkpoint_steps": [2]
   },
   "profile_evidence": {
-    "status": "pending_four_rank_profile",
+    "status": "sealed",
+    "selected_run": "/data/ymdai/outputs/ember/pi05_as_writer_action_memory_bias_profile_r4_b16_580793a_20260723",
     "superseded_eight_rank_run": "/data/ymdai/outputs/ember/pi05_as_writer_action_memory_v1_profile_refactor_20260723",
-    "reason": "Owner limited all launches through 2026-07-28 to physical GPUs 0,1,2,3; the bias-restored Writer requires a fresh four-rank profile and training trajectory."
+    "observed_optimizer_steps": 2,
+    "physical_gpu_indices": [0, 1, 2, 3],
+    "world_size": 4,
+    "per_rank_batch_size": 16,
+    "global_policy_samples_per_step": 64,
+    "step_seconds": [3.8103169261012226, 1.930034494958818],
+    "all_losses_and_gradients_finite": true,
+    "writer_trainable_parameter_count": 10119297,
+    "generated_lora_parameter_count": 1287168,
+    "rank128_source_sft_trainable_parameter_count": 10297344,
+    "writer_to_rank128_sft_parameter_ratio": 0.982709,
+    "max_cuda_allocated_bytes": 75992039424,
+    "max_cuda_reserved_bytes": 78871789568,
+    "run_contract_sha256": "819bbbb62360e01cb417c57ed2881ef7fde4384994bb7a91ccea6fc586a845a1",
+    "metrics_sha256": "19b8fd85bf45f668bf95b38faf17767eab9887e41063076eee0da2c6a4abde28",
+    "run_summary_sha256": "950ff9957d252af77f3dbdcf21e749b6414997567ad508fc6fa81fc6e78cc3ef",
+    "selection_reason": "Four symmetric ranks on physical GPUs 0,1,2,3 completed finite forward/backward at per-rank batch 16. Peak reserved memory was 78.87 GB, so batch 16 remains the stable ceiling with several GiB of physical headroom for variable-length videos. Fresh formal training uses the same per-rank batch and retains every 100-step checkpoint."
   },
   "formal_run": {
-    "status": "pending_four_rank_profile",
+    "status": "sealed",
     "expected_world_size": 4,
     "total_steps": 6400,
     "per_rank_batch_size": 16,

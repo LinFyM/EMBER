@@ -467,3 +467,5 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - `condition-only`只要求完整LoRA经language/video条件路径产生、没有独立公共LoRA输出支路；它不要求所有内部线性层无bias。此前全局`bias=False`会降低约束网络的平移自由度并增加优化难度，属于额外实现限制。owner据此选择保持拓扑不变而恢复conditional path普通bias。
 - 恢复bias不会自动创建显式共享adapter：temporal/layer/slot block和factor head仍只处理条件hidden states；factor-head最终bias从零初始化，与最终weight一起保证fresh task LoRA为identity。它仍可能通过共享参数学出近公共输出，这必须由correct/wrong视频行为和生成LoRA差异实证判断，而不是靠`bias=False`宣称排除。
 - 新validation functional-loss panel固定512个task-balanced、video/action不配对query，可低成本观察loss斜率、train–val gap和候选checkpoint；由于teacher-forced action loss与closed-loop恢复能力可能错位，它不能单独选best。真实峰值要求完整8-task×50 success曲线，且“峰后持续下降”不能由单一相邻checkpoint判断。
+- bias恢复只增加`21,696`个训练参数：Writer从`10,097,601`变为`10,119,297`，仍仅为rank128 Source-SFT容量的`98.27%`。四卡真实profile的显存与旧bias-free八卡profile几乎相同（reserved均约78.87GB），说明恢复bias没有引入隐藏模型副本或新执行支路。
+- 每rank batch16/global64的第二个稳态profile step为`1.930s`，对应约`33.16` global queries/s；四卡相对旧八卡global128约`1.93–2.48s/step`的单步时延相近、总吞吐约减半，符合相同单卡工作量和world-size缩减预期。后续step数按实际action-query量解释，不能把四卡step与旧八卡step直接等同。

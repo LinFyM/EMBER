@@ -33,6 +33,7 @@ from ember.source_sft.contract import (
     _contract_stop_step,
     _target_tasks,
     load_source_sft_config,
+    reconcile_resume_contract,
     resolve_runtime as resolve_source_sft_runtime,
 )
 from ember.source_sft.inference import inspect_source_sft_evaluation
@@ -180,6 +181,35 @@ def test_formal_stage_extension_does_not_change_source_sft_contract_stop() -> No
     assert _contract_stop_step(args, config, 800) == 400
     args.mode = "profile"
     assert _contract_stop_step(args, config, 800) == 600
+
+
+def test_source_sft_code_compatible_resume_allows_only_commit_change(
+    tmp_path: Path,
+) -> None:
+    existing = {
+        "schema_version": "contract",
+        "git": {"branch": "main", "commit": "old"},
+        "runtime": {"selected_stop_step": 400, "total_steps": 800},
+    }
+    write_json_atomic(tmp_path / "run_contract.json", existing)
+    args = SimpleNamespace(
+        output_dir=tmp_path,
+        resume=tmp_path / "checkpoints/step_00000400",
+        allow_contract_compatible_code_resume=True,
+    )
+    candidate = {**existing, "git": {"branch": "main", "commit": "new"}}
+    assert reconcile_resume_contract(args, candidate) == existing
+
+    changed = {
+        **candidate,
+        "runtime": {"selected_stop_step": 400, "total_steps": 1000},
+    }
+    with pytest.raises(Pi05SourceSFTError, match="scientific contract"):
+        reconcile_resume_contract(args, changed)
+
+    args.allow_contract_compatible_code_resume = False
+    with pytest.raises(Pi05SourceSFTError, match="launch contract changed"):
+        reconcile_resume_contract(args, candidate)
 
 
 def test_development_config_cannot_open_final_stage() -> None:

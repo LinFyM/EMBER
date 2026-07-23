@@ -475,3 +475,41 @@ def publish_contract(
         return {"ok": True}
 
     _broadcast(context, operation)
+
+
+def reconcile_resume_contract(
+    args: argparse.Namespace, candidate: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Reuse an exact run contract when only the recorded code commit advanced."""
+
+    candidate = dict(candidate)
+    if args.resume is None:
+        if getattr(args, "allow_contract_compatible_code_resume", False):
+            raise Pi05SourceSFTError(
+                "contract-compatible code resume requires a checkpoint"
+            )
+        return candidate
+    contract_path = args.output_dir / "run_contract.json"
+    if not contract_path.is_file():
+        return candidate
+    existing = read_json(contract_path)
+    if existing == candidate:
+        return existing
+    if not getattr(args, "allow_contract_compatible_code_resume", False):
+        raise Pi05SourceSFTError("Source-SFT resume launch contract changed")
+    existing_git = existing.get("git", {})
+    candidate_git = candidate.get("git", {})
+    if (
+        existing_git.get("branch") != candidate_git.get("branch")
+        or existing_git.get("commit") == candidate_git.get("commit")
+    ):
+        raise Pi05SourceSFTError(
+            "Source-SFT code-compatible resume did not isolate one commit change"
+        )
+    normalized = dict(candidate)
+    normalized["git"] = existing_git
+    if normalized != existing:
+        raise Pi05SourceSFTError(
+            "Source-SFT code-compatible resume changed the scientific contract"
+        )
+    return existing

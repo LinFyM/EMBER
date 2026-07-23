@@ -471,3 +471,5 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 每rank batch16/global64的第二个稳态profile step为`1.930s`，对应约`33.16` global queries/s；四卡相对旧八卡global128约`1.93–2.48s/step`的单步时延相近、总吞吐约减半，符合相同单卡工作量和world-size缩减预期。后续step数按实际action-query量解释，不能把四卡step与旧八卡step直接等同。
 - rank128 Source-SFT的四卡重训不能从旧8-rank step600 checkpoint续接，因为per-rank RNG、sampler cursor和DDP world-size属于exact-resume状态。新run必须fresh；以4×batch128保持global batch512，才能让step数、query量和前800步scheduler轨迹与旧容量实验保持同口径。
 - 为充分检验`122/400`是否真实上限，新SFT最大horizon可延到2400，但不把cosine decay从800拉长：这样前800步不因扩大上限而获得更高LR，800后只是固定低LR tail。若完整validation已在800前后显示多点持续退化，便无需机械跑满；若仍波动或回升，则同一合同可恢复到1600/2400。
+- bias-restored AS的封存512-row validation functional loss在step100–800依次为`0.135237/0.138363/0.134698/0.141123/0.134224/0.138690/0.139285/0.140583`。step400的单点回升随后在500完全恢复，验证了“单点不能早停”；而500后连续三个checkpoint回升、同时train loss继续下降，已经把closed-loop候选区间收缩到step500附近，但不能单独证明closed-loop最优。
+- 独立backfill与resident monitor在step300/400/500的1,536条逐query loss完全一致，排除了训练进程内切换eval数据导致数值漂移的实现疑点。validation过程无gradient、无optimizer update，结束后恢复完整RNG与Writer train mode。

@@ -22,7 +22,6 @@ from ember.pi05_lora import (
 )
 from ember.pi05_source_checkpoint import sha256_file
 from ember.writer.functional import prepare_frozen_writer_policy
-from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -103,22 +102,26 @@ class _MixedPolicy(torch.nn.Module):
         return loss, {"loss": float(loss.detach())}
 
 
-def _writer(template: dict[str, torch.Tensor]) -> CompleteLoRAWriter:
-    return CompleteLoRAWriter(
-        build_lora_tensor_specs(template),
-        template_state=template,
-        vision_feature_dim=7,
-        vision_spatial_tokens=4,
-        language_feature_dim=5,
-        hidden_dim=12,
-        attention_heads=3,
-        temporal_chunk_size=4,
-        chunk_memory_tokens=2,
-        episode_memory_tokens=2,
-        language_memory_tokens=2,
-        task_memory_tokens=2,
-        decoder_hidden_dim=10,
-    )
+class _TinyWriter(torch.nn.Module):
+    def __init__(self, template: dict[str, torch.Tensor]) -> None:
+        super().__init__()
+        self.scale = torch.nn.Parameter(torch.zeros(()))
+        self._names = {}
+        for index, (name, value) in enumerate(template.items()):
+            key = f"template_{index}"
+            self.register_buffer(key, value.detach().clone())
+            self._names[name] = key
+
+    def forward(self, *_args: torch.Tensor) -> dict[str, torch.Tensor]:
+        return {
+            name: value + self.scale.to(value) * torch.ones_like(value)
+            for name, key in self._names.items()
+            for value in (getattr(self, key),)
+        }
+
+
+def _writer(template: dict[str, torch.Tensor]) -> _TinyWriter:
+    return _TinyWriter(template)
 
 
 def test_sealed_pi05_contract_has_exact_topology_and_capacity() -> None:
@@ -175,8 +178,7 @@ def test_writer_preserves_mixed_lora_dtypes_and_matches_materialized_policy() ->
     assert {value.dtype for value in template.values()} == {torch.bfloat16, torch.float32}
     writer = _writer(template)
     with torch.no_grad():
-        for head in writer.heads.values():
-            head[-1].weight.fill_(0.01)
+        writer.scale.fill_(0.01)
     generated = writer(
         torch.randn(3, 5),
         torch.randn(7, 4, 7),

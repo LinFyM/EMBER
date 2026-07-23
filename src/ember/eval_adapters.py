@@ -24,7 +24,7 @@ def as_writer_requested(args: Any) -> bool:
         (
             args.as_writer_config,
             args.as_writer_checkpoint,
-            args.writer_feature_cache,
+            args.writer_video_data_root,
             args.writer_video_condition,
         ),
         "AS-Writer",
@@ -63,7 +63,7 @@ def inspect_as_writer_adapter(
     *,
     config_path: Path,
     checkpoint: Path,
-    feature_cache: Path,
+    video_data_root: Path,
     source: Mapping[str, Any],
     tasks: Sequence[Any],
     video_condition: str,
@@ -71,7 +71,6 @@ def inspect_as_writer_adapter(
     require_formal: bool,
 ) -> dict[str, Any]:
     from ember.lora import LoRAContractError
-    from ember.writer.feature_cache import FeatureCacheError
     from ember.writer.inference import inspect_as_writer_evaluation
     from ember.writer.model import WriterModelError
 
@@ -79,14 +78,14 @@ def inspect_as_writer_adapter(
         return inspect_as_writer_evaluation(
             config_path=config_path,
             checkpoint=checkpoint,
-            feature_cache=feature_cache,
+            video_data_root=video_data_root,
             source=source,
             task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
             video_condition=video_condition,
             video_seed=video_seed,
             require_formal=require_formal,
         )
-    except (FeatureCacheError, LoRAContractError, WriterModelError) as error:
+    except (LoRAContractError, WriterModelError) as error:
         raise Pi05EvaluationError(str(error)) from error
 
 
@@ -166,6 +165,7 @@ def load_evaluation_adapter(
         return None
     from ember.writer.inference import FrozenWriterTaskAdapter
 
+    common["tokenizer_path"] = Path(contract["tokenizer"]["path"])
     return FrozenWriterTaskAdapter(**common)
 
 

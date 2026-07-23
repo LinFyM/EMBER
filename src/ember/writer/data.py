@@ -27,6 +27,15 @@ class WriterTaskAuthority:
     expected_sha256: str | None = None
 
 
+@dataclass(frozen=True)
+class ActionHiddenVideo:
+    """One sampled third-person teaching video and its original frame indices."""
+
+    frames: Any
+    frame_indices: Any
+    raw_frame_count: int
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -98,6 +107,77 @@ def iter_action_hidden_video_chunks(
                     episode_length,
                     _camera_batch(np.asarray(pixels[start:stop])),
                 )
+
+
+class ActionHiddenVideoStore:
+    """Load fixed-stride, variable-length videos without privileged fields."""
+
+    def __init__(
+        self,
+        authorities: Sequence[WriterTaskAuthority],
+        *,
+        frame_stride: int,
+        max_open_files: int = 2,
+    ) -> None:
+        if (
+            not authorities
+            or frame_stride <= 0
+            or max_open_files <= 0
+            or len({item.task_id for item in authorities}) != len(authorities)
+        ):
+            raise WriterModelError("invalid action-hidden video store")
+        self.authorities = {item.task_id: item for item in authorities}
+        self.frame_stride = int(frame_stride)
+        self.max_open_files = int(max_open_files)
+        self._handles: OrderedDict[int, h5py.File] = OrderedDict()
+        for authority in authorities:
+            verify_authority(authority)
+
+    def _handle(self, task_id: int) -> h5py.File:
+        if task_id not in self.authorities:
+            raise WriterModelError("teaching video task is outside its authority")
+        if task_id in self._handles:
+            self._handles.move_to_end(task_id)
+        else:
+            self._handles[task_id] = h5py.File(
+                self.authorities[task_id].path, "r"
+            )
+            while len(self._handles) > self.max_open_files:
+                _, stale = self._handles.popitem(last=False)
+                stale.close()
+        return self._handles[task_id]
+
+    def load(self, task_id: int, demo_index: int) -> ActionHiddenVideo:
+        if demo_index < 0:
+            raise WriterModelError("teaching video demo index must be non-negative")
+        demo = self._handle(task_id).get(f"data/demo_{demo_index}")
+        if not isinstance(demo, h5py.Group):
+            raise WriterModelError("teaching video episode is missing")
+        pixels = demo.get("obs/agentview_rgb")
+        if (
+            not isinstance(pixels, h5py.Dataset)
+            or pixels.ndim != 4
+            or pixels.shape[0] <= 0
+            or pixels.shape[-1] != 3
+            or pixels.dtype != np.uint8
+        ):
+            raise WriterModelError("invalid action-hidden teaching video")
+        raw_count = int(pixels.shape[0])
+        indices = list(range(0, raw_count, self.frame_stride))
+        if indices[-1] != raw_count - 1:
+            indices.append(raw_count - 1)
+        # Camera convention is identical to the execution policy: rotate 180°.
+        frames = _camera_batch(np.asarray(pixels[indices]))
+        return ActionHiddenVideo(
+            frames=frames,
+            frame_indices=np.asarray(indices, dtype=np.int64),
+            raw_frame_count=raw_count,
+        )
+
+    def close(self) -> None:
+        for handle in self._handles.values():
+            handle.close()
+        self._handles.clear()
 
 
 class FunctionalQueryDataset:

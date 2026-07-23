@@ -1,17 +1,19 @@
-"""Layer-aware generator for a complete task-specific LoRA state."""
+"""Action-Memory generator for a complete task-specific PI05 LoRA."""
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Mapping
 
 import torch
 
-from ember.writer.temporal import VariableEpisodeTaskEncoder
+from ember.writer.action_memory import Pi05ActionMemoryEncoder
+from ember.writer.temporal import ActionMemoryTemporalEncoder, RMSNorm
 
 
 class WriterModelError(RuntimeError):
-    """Raised when the Writer input or LoRA template is inconsistent."""
+    """Raised when the Writer input or sealed LoRA contract is inconsistent."""
 
 
 @dataclass(frozen=True)
@@ -83,188 +85,274 @@ def build_lora_tensor_specs(
     return tuple(result)
 
 
-class CompleteLoRAWriter(torch.nn.Module):
-    """Generate every A/B tensor from language and exactly one full video.
+class FactorHead(torch.nn.Module):
+    """Decode one rank-slot state into one LoRA factor row or column."""
 
-    The teaching episode has no architectural upper bound on length.  The
-    explicit two-entry offset guard is the final action-hidden one-video wall.
+    def __init__(self, input_width: int, hidden_width: int, output_width: int) -> None:
+        super().__init__()
+        self.network = torch.nn.Sequential(
+            RMSNorm(input_width),
+            torch.nn.Linear(input_width, hidden_width, bias=False),
+            torch.nn.GELU(),
+            torch.nn.Linear(hidden_width, output_width, bias=False),
+        )
+        # The physical task adapter begins exactly at its identity template.
+        torch.nn.init.zeros_(self.network[-1].weight)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        return self.network(value)
+
+
+class CompleteLoRAWriter(torch.nn.Module):
+    """Generate a complete rank-16 task LoRA from language and one raw video.
+
+    Frozen PaliGemma jointly grounds each sampled frame with the task language.
+    Sixteen learned Action-Expert memory tokens then expose all 18 expert-layer
+    states.  A variable-length temporal encoder and direct factor heads map
+    those content-derived states to the sealed PI05 task-LoRA space.
     """
+
+    _EXPERT_MODULE = re.compile(
+        r".*gemma_expert\.model\.layers\.([0-9]+)\.self_attn\.(q_proj|v_proj)$"
+    )
 
     def __init__(
         self,
         tensor_specs: tuple[LoraTensorSpec, ...],
         *,
         template_state: Mapping[str, torch.Tensor],
-        vision_feature_dim: int,
-        vision_spatial_tokens: int,
-        language_feature_dim: int,
+        action_in_projection: torch.nn.Module,
+        expert_layers: int,
+        memory_slots: int,
+        expert_width: int,
+        action_code_width: int,
+        meta_lora_rank: int,
         hidden_dim: int,
         attention_heads: int,
-        temporal_chunk_size: int,
-        chunk_memory_tokens: int,
-        episode_memory_tokens: int,
-        language_memory_tokens: int,
-        task_memory_tokens: int,
+        temporal_blocks: int,
         decoder_hidden_dim: int,
-        conditioned_query_fusion: str = "condition_only_v2",
+        frame_microbatch: int,
     ) -> None:
         super().__init__()
-        if not tensor_specs or set(template_state) != {item.name for item in tensor_specs}:
-            raise WriterModelError("Writer template and tensor specification differ")
-        ranks = {item.rank for item in tensor_specs}
-        if len(ranks) != 1:
-            raise WriterModelError("one Writer cannot mix LoRA ranks")
-        if conditioned_query_fusion not in {
-            "condition_only_v2",
-            "memory_gated_query_v3",
-        }:
-            raise WriterModelError("unsupported Writer conditioned-query fusion")
-
-        self.tensor_specs = tensor_specs
-        self.conditioned_query_fusion = conditioned_query_fusion
-        self.task_encoder = VariableEpisodeTaskEncoder(
-            vision_feature_dim=vision_feature_dim,
-            vision_spatial_tokens=vision_spatial_tokens,
-            language_feature_dim=language_feature_dim,
-            hidden_dim=hidden_dim,
-            attention_heads=attention_heads,
-            temporal_chunk_size=temporal_chunk_size,
-            chunk_memory_tokens=chunk_memory_tokens,
-            episode_memory_tokens=episode_memory_tokens,
-            language_memory_tokens=language_memory_tokens,
-            task_memory_tokens=task_memory_tokens,
-            conditioned_query_fusion=conditioned_query_fusion,
-        )
-        module_count = max(item.module_index for item in tensor_specs) + 1
-        rank = next(iter(ranks))
-        self.module_embedding = torch.nn.Embedding(module_count, hidden_dim)
-        self.factor_embedding = torch.nn.Embedding(2, hidden_dim)
-        self.rank_embedding = torch.nn.Embedding(rank, hidden_dim)
-        self.parameter_attention = torch.nn.MultiheadAttention(
-            hidden_dim,
-            attention_heads,
-            batch_first=True,
-            dropout=0.0,
-            bias=conditioned_query_fusion == "condition_only_v2",
-        )
-        self.parameter_norm = torch.nn.LayerNorm(hidden_dim)
-        self.parameter_gate = torch.nn.Linear(hidden_dim, hidden_dim, bias=False)
-        self.parameter_ffn = torch.nn.Sequential(
-            torch.nn.LayerNorm(hidden_dim),
-            torch.nn.Linear(
+        if (
+            not tensor_specs
+            or set(template_state) != {item.name for item in tensor_specs}
+            or min(
+                expert_layers,
+                memory_slots,
+                expert_width,
+                action_code_width,
+                meta_lora_rank,
                 hidden_dim,
-                hidden_dim * 4,
-                bias=conditioned_query_fusion == "condition_only_v2",
-            ),
-            torch.nn.GELU(),
-            torch.nn.Linear(
-                hidden_dim * 4,
-                hidden_dim,
-                bias=conditioned_query_fusion == "condition_only_v2",
-            ),
-        )
-
-        self.heads = torch.nn.ModuleDict()
-        for width in sorted({item.width for item in tensor_specs}):
-            head = torch.nn.Sequential(
-                torch.nn.Linear(hidden_dim, decoder_hidden_dim, bias=False),
-                torch.nn.GELU(),
-                torch.nn.Linear(decoder_hidden_dim, width, bias=False),
+                attention_heads,
+                temporal_blocks,
+                decoder_hidden_dim,
+                frame_microbatch,
             )
-            torch.nn.init.zeros_(head[-1].weight)
-            self.heads[str(width)] = head
+            <= 0
+        ):
+            raise WriterModelError("invalid Action-Memory Writer dimensions")
+        ranks = {item.rank for item in tensor_specs}
+        if ranks != {memory_slots}:
+            raise WriterModelError("memory slots must equal the sealed task-LoRA rank")
+        self.tensor_specs = tensor_specs
+        self.expert_layers = int(expert_layers)
+        self.memory_slots = int(memory_slots)
+        self.frame_microbatch = int(frame_microbatch)
+
+        self.action_memory = Pi05ActionMemoryEncoder(
+            action_in_projection=action_in_projection,
+            memory_slots=memory_slots,
+            expert_layers=expert_layers,
+            expert_width=expert_width,
+            action_code_width=action_code_width,
+            meta_rank=meta_lora_rank,
+        )
+        self.task_encoder = ActionMemoryTemporalEncoder(
+            input_width=expert_width,
+            hidden_width=hidden_dim,
+            expert_layers=expert_layers,
+            memory_slots=memory_slots,
+            attention_heads=attention_heads,
+            temporal_blocks=temporal_blocks,
+        )
+
+        expected_heads = {
+            "q_a": 1024,
+            "q_b": 2048,
+            "v_a": 1024,
+            "v_b": 256,
+            "action_in_a": 32,
+            "action_in_b": 1024,
+            "action_out_a": 1024,
+            "action_out_b": 32,
+        }
+        self.factor_heads = torch.nn.ModuleDict(
+            {
+                name: FactorHead(hidden_dim, decoder_hidden_dim, width)
+                for name, width in expected_heads.items()
+            }
+        )
 
         self._template_buffers: dict[str, str] = {}
+        self._decoding: dict[str, tuple[str, int | None]] = {}
+        observed_heads: dict[str, int] = {}
+        observed_layers: set[int] = set()
         for index, item in enumerate(tensor_specs):
+            key, layer = self._decode_owner(item)
+            observed_heads[key] = item.width
+            if layer is not None:
+                observed_layers.add(layer)
             value = template_state[item.name].detach().contiguous()
             if item.factor_index == 1 and torch.count_nonzero(value):
                 raise WriterModelError("LoRA-B template must begin at physical zero")
             buffer_name = f"template_{index:03d}"
             self.register_buffer(buffer_name, value, persistent=True)
             self._template_buffers[item.name] = buffer_name
+            self._decoding[item.name] = (key, layer)
+        if observed_heads != expected_heads or observed_layers != set(range(expert_layers)):
+            raise WriterModelError("sealed PI05 LoRA modules changed topology")
 
-        module_ids: list[int] = []
-        factor_ids: list[int] = []
-        rank_ids: list[int] = []
-        query_slices: list[tuple[int, int]] = []
-        cursor = 0
-        for item in tensor_specs:
-            module_ids.extend([item.module_index] * item.rank)
-            factor_ids.extend([item.factor_index] * item.rank)
-            rank_ids.extend(range(item.rank))
-            query_slices.append((cursor, cursor + item.rank))
-            cursor += item.rank
-        self.register_buffer(
-            "parameter_module_ids", torch.tensor(module_ids), persistent=False
+    @staticmethod
+    def _validated_offsets(
+        offsets: torch.Tensor, total: int
+    ) -> tuple[int, ...]:
+        if offsets.ndim != 1 or offsets.numel() < 2:
+            raise WriterModelError("Writer video offsets are invalid")
+        values = tuple(
+            int(value)
+            for value in offsets.detach().to(device="cpu", dtype=torch.long).tolist()
         )
-        self.register_buffer(
-            "parameter_factor_ids", torch.tensor(factor_ids), persistent=False
+        if (
+            values[0] != 0
+            or values[-1] != total
+            or any(right <= left for left, right in zip(values, values[1:]))
+        ):
+            raise WriterModelError("Writer video offsets are invalid")
+        return values
+
+    def _decode_owner(self, item: LoraTensorSpec) -> tuple[str, int | None]:
+        factor = "a" if item.factor_index == 0 else "b"
+        if item.module.endswith("action_in_proj"):
+            return f"action_in_{factor}", None
+        if item.module.endswith("action_out_proj"):
+            return f"action_out_{factor}", None
+        match = self._EXPERT_MODULE.fullmatch(item.module)
+        if match is None:
+            raise WriterModelError(f"unsupported PI05 task-LoRA module: {item.module}")
+        layer = int(match.group(1))
+        if not 0 <= layer < self.expert_layers:
+            raise WriterModelError("PI05 task-LoRA layer is outside Action Expert")
+        projection = match.group(2)[0]
+        return f"{projection}_{factor}", layer
+
+    def _pack_trajectories(
+        self,
+        states: torch.Tensor,
+        frame_indices: torch.Tensor,
+        offsets: tuple[int, ...],
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        batch = len(offsets) - 1
+        lengths = tuple(right - left for left, right in zip(offsets, offsets[1:]))
+        maximum = max(lengths)
+        packed = states.new_zeros(
+            (
+                batch,
+                maximum,
+                self.expert_layers,
+                self.memory_slots,
+                states.shape[-1],
+            )
         )
-        self.register_buffer(
-            "parameter_rank_ids", torch.tensor(rank_ids), persistent=False
+        indices = torch.zeros(
+            batch, maximum, dtype=torch.long, device=states.device
         )
-        self._query_slices = tuple(query_slices)
+        mask = torch.zeros(
+            batch, maximum, dtype=torch.bool, device=states.device
+        )
+        for row, (left, right) in enumerate(zip(offsets, offsets[1:])):
+            length = right - left
+            packed[row, :length] = states[left:right]
+            indices[row, :length] = frame_indices[left:right]
+            mask[row, :length] = True
+        return packed, indices, mask
 
     def encode_task(
         self,
-        language_tokens: torch.Tensor,
-        video_features: torch.Tensor,
+        policy: torch.nn.Module,
+        frames: torch.Tensor,
+        frame_indices: torch.Tensor,
         video_offsets: torch.Tensor,
-        language_offsets: torch.Tensor | None = None,
+        language_tokens: torch.Tensor,
+        language_mask: torch.Tensor,
     ) -> torch.Tensor:
-        if language_offsets is None:
-            if video_offsets.numel() != 2:
-                raise WriterModelError("Writer requires one video per condition")
-            language_offsets = torch.tensor(
-                [0, language_tokens.shape[0]], dtype=torch.int64
-            )
-        if language_offsets.numel() != video_offsets.numel():
-            raise WriterModelError("Writer language/video condition batches differ")
-        return self.task_encoder(
-            language_tokens,
-            video_features,
-            language_offsets,
-            video_offsets,
+        offsets = self._validated_offsets(video_offsets, frames.shape[0])
+        conditions = len(offsets) - 1
+        if (
+            frames.ndim != 4
+            or frame_indices.ndim != 1
+            or frame_indices.shape[0] != frames.shape[0]
+            or frame_indices.dtype != torch.long
+            or language_tokens.ndim != 2
+            or language_tokens.shape[0] != conditions
+            or language_mask.shape != language_tokens.shape
+        ):
+            raise WriterModelError("Writer frame-language condition batch changed")
+        lengths = torch.tensor(
+            [right - left for left, right in zip(offsets, offsets[1:])],
+            dtype=torch.long,
+            device=frames.device,
         )
+        condition_ids = torch.repeat_interleave(
+            torch.arange(conditions, device=frames.device), lengths
+        )
+        states = self.action_memory(
+            policy,
+            frames,
+            condition_ids,
+            language_tokens,
+            language_mask,
+            frame_microbatch=self.frame_microbatch,
+        )
+        packed, indices, mask = self._pack_trajectories(
+            states, frame_indices, offsets
+        )
+        return self.task_encoder(packed, indices, mask)
 
     def forward(
         self,
+        frames: torch.Tensor,
+        frame_indices: torch.Tensor,
+        video_offsets: torch.Tensor,
         language_tokens: torch.Tensor,
-        video_features: torch.Tensor,
-        episode_offsets: torch.Tensor,
-        language_offsets: torch.Tensor | None = None,
+        language_mask: torch.Tensor,
+        *,
+        policy: torch.nn.Module,
     ) -> dict[str, torch.Tensor]:
-        task_memory = self.encode_task(
-            language_tokens, video_features, episode_offsets, language_offsets
+        features = self.encode_task(
+            policy,
+            frames,
+            frame_indices,
+            video_offsets,
+            language_tokens,
+            language_mask,
         )
-        queries = (
-            self.module_embedding(self.parameter_module_ids)
-            + self.factor_embedding(self.parameter_factor_ids)
-            + self.rank_embedding(self.parameter_rank_ids)
-        )
-        normalized_queries = self.parameter_norm(queries)
-        normalized_memory = self.parameter_norm(task_memory)
-        attended, _ = self.parameter_attention(
-            normalized_queries[None].expand(task_memory.shape[0], -1, -1),
-            normalized_memory,
-            normalized_memory,
-            need_weights=False,
-        )
-        if self.conditioned_query_fusion == "memory_gated_query_v3":
-            gate = torch.tanh(self.parameter_gate(self.parameter_norm(attended)))
-            decoded = attended + gate * normalized_queries[None]
-        else:
-            gate = 1.0 + torch.tanh(self.parameter_gate(normalized_queries))
-            decoded = attended * gate[None]
-        decoded = decoded + self.parameter_ffn(decoded)
-
+        early = features[:, :3].mean(dim=1)
+        late = features[:, -3:].mean(dim=1)
         result: dict[str, torch.Tensor] = {}
-        for item, (start, stop) in zip(
-            self.tensor_specs, self._query_slices, strict=True
-        ):
-            rows = self.heads[str(item.width)](decoded[:, start:stop])
+        for item in self.tensor_specs:
+            key, layer = self._decoding[item.name]
+            if key.startswith("action_in_"):
+                source = early
+            elif key.startswith("action_out_"):
+                source = late
+            else:
+                if layer is None:
+                    raise WriterModelError("expert LoRA output lost its layer")
+                source = features[:, layer]
+            rows = self.factor_heads[key](source)
             generated = rows.transpose(-1, -2) if item.transpose_output else rows
             template = getattr(self, self._template_buffers[item.name])
             value = generated.to(dtype=template.dtype) + template[None]
-            result[item.name] = value[0] if task_memory.shape[0] == 1 else value
+            result[item.name] = value[0] if features.shape[0] == 1 else value
         return result

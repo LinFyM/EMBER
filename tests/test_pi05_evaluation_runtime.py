@@ -8,7 +8,6 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-import ember.writer.inference as writer_inference
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval_contract import RUN_CONTRACT_SCHEMA, policy_noise_seed
 from ember.pi05_eval_queue import (
@@ -31,7 +30,6 @@ from ember.pi05_eval_results import aggregate_run
 from ember.pi05_source_checkpoint import canonical_hash
 from ember.libero_evaluation import sha256_file
 from ember.writer.inference import (
-    FrozenWriterTaskAdapter,
     RL_WRITER_ADAPTER_SCHEMA,
     WRITER_ADAPTER_SCHEMA,
     _task_video_mapping,
@@ -159,42 +157,6 @@ def test_writer_video_schedule_and_wrong_map_are_order_independent() -> None:
     by_key = {(row["suite"], row["task_id"]): row for row in forward}
     assert (by_key[("libero_spatial", 1)]["video_suite"], by_key[("libero_spatial", 1)]["video_task_id"]) == ("libero_object", 1)
     assert (by_key[("libero_goal", 6)]["video_suite"], by_key[("libero_goal", 6)]["video_task_id"]) == ("libero_10", 2)
-
-
-def test_generic_writer_condition_uses_cached_neutral_language_only(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    adapter = _writer_adapter("generic_correct")
-    adapter["writer_language_condition"] = "generic_neutral"
-    task_language = torch.full((2, 3), 1.0)
-    generic_language = torch.full((4, 3), 7.0)
-    teacher = SimpleNamespace(
-        language_features=task_language,
-        generic_language_features=generic_language,
-        video_features=torch.zeros(5, 2, 3),
-        episode_offsets=torch.tensor([0, 5]),
-    )
-    observed: dict[str, torch.Tensor] = {}
-
-    class Store:
-        def load_one_video(self, **_kwargs):
-            return teacher
-
-    class Writer:
-        def __call__(self, language, _video, _offsets):
-            observed["language"] = language.detach().cpu()
-            return {"adapter": torch.zeros(1)}
-
-    frozen = object.__new__(FrozenWriterTaskAdapter)
-    frozen.store = Store()
-    frozen.writer = Writer()
-    frozen.lora_contract = object()
-    frozen.device = torch.device("cpu")
-    frozen.evaluation_adapter = adapter
-    monkeypatch.setattr(writer_inference, "validate_lora_state", lambda *_args: None)
-    monkeypatch.setattr(writer_inference, "lora_state_sha256", lambda _state: "7" * 64)
-    frozen.prepare_episode(suite="libero_spatial", task_id=0, init_state_id=0)
-    torch.testing.assert_close(observed["language"], generic_language)
 
 
 def test_writer_row_contract_recomputes_video_schedule_and_mapping(tmp_path: Path) -> None:

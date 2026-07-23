@@ -137,3 +137,13 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [ ] 一卡一训练rank为默认；若评估每卡多replica，8卡replica数必须一致且GPU0无额外角色。
 - [ ] checkpoint/output不得覆盖；resume必须校验完整state与合同兼容性。
 - [ ] 所有适用阶段先短profile并由loss/reward/behavior曲线决定廉价screen间隔，只给少量候选完整validation；约120分钟是guardrail而非目标，到上限仍未充分训练则记录后停止。task-local按每个方法覆盖8 tasks的合计时间计费，不按单task计费。
+
+## 当前短期 Goal：Action-Memory AS-Writer（2026-07-23）
+
+- [x] 将冻结PaliGemma逐帧图文prefix、16个Action-Expert memory tokens、encoder-only Meta-LoRA、变长temporal/layer/slot聚合与完整rank16 LoRA解码实现为唯一canonical Writer路径。
+- [x] trainable Writer为10,097,601参数，是rank128 Source-SFT 10,297,344参数的98.1%；8卡batch16最终源码profile完成，loss/gradient finite，峰值allocated/reserved为75.99/78.87GB。
+- [ ] 从fresh identity仅用normal positive functional action loss训练：首段到step500，段内每100步保存；若未饱和，每次exact-resume约300步（500→800→1100），累计训练wall约60分钟硬上限。
+- [ ] 用多checkpoint correct-video validation选绝对性能最强点，并与已封存rank128 Source-SFT最佳122/400比较。
+- [ ] 只对唯一最佳AS checkpoint运行一次400-rollout cross-suite wrong-video arm。
+- [ ] 仅当AS超过122/400但correct/wrong差距仍弱时，启用不牺牲correct competence的contrast objective并重复必要选点与单一wrong arm。
+- [ ] 原始rows、runtime、config/hashes、验证、commit/push完成后停止并完成当前短期Goal；本轮不推进RL-Writer或task-local RL。

@@ -453,3 +453,9 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - final Source-SFT从fresh identity在32 source tasks上完成development已选的400/400 steps，保留原800-step cosine horizon与100-step warmup；训练loop wall为`2852.793s`，累计204,800 action queries，400条metrics连续且全部finite。
 - step400 coverage证明32 tasks均覆盖全部50条action episodes，每task 6,400 examples，共138,952 unique query rows；test action/video reads均为0。首/末20-step平均loss为`0.15139→0.11531`，稳态吞吐约`71.88 queries/s`，峰值reserved `42,037,411,840` bytes。
 - step400 checkpoint manifest payload SHA256为`0012ffb6...52bd`，run-contract/metrics/summary/file-manifest SHA256为`bc136964...da31`/`c0d91c9b...6211`/`ff0a33f7...d472`/`cd2f0766...d034`；10个exact-resume文件全部通过size/hash校验。
+
+## Action-Memory Writer设计与资源结论（2026-07-23）
+
+- 冻结PaliGemma的图文prefix可以预计算；但按当前stride-4开发集估算，保存pre-transformer图文prefix约50–60GiB，保存18层KV约250GiB，后者不符合当前收益/存储比。由于直接训练预计低于一小时，本轮不让cache工程阻塞科学结果；若后续确认encoder是主瓶颈，优先缓存language-independent image embeddings而非完整KV。
+- Action-Memory Writer将语言理解留给冻结π0.5的PaliGemma，并让16个memory tokens从Action Expert流读取每帧图文prefix；初始化使用16个确定性正交32D action codes经冻结`action_in_proj`投到1024D后detach。Meta-LoRA仅增强teacher encoder对该输入的读取，不成为共享execution adapter。
+- 最终profile证明per-rank batch16可执行，10.10M训练参数与rank128 Source-SFT 10.30M基本等量，因此后续AS对SFT的比较不再有约10倍训练参数容量差这一明显混杂。当前尚无closed-loop性能结论；必须由多checkpoint validation和唯一best correct/wrong arm决定。

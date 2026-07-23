@@ -8,7 +8,6 @@ import re
 import socket
 import sys
 import time
-from dataclasses import replace
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -26,20 +25,13 @@ from ember.pi05_source_checkpoint import (
     write_json_atomic,
 )
 from ember.pi05_source_contract import append_jsonl
-from ember.writer.data import FunctionalQueryDataset
-from ember.writer.feature_cache import (
-    PI05_FEATURE_CACHE_MANIFEST_SCHEMA,
-    PI05_TASK_FEATURE_CACHE_SCHEMA,
-    FeatureCacheTask,
-    load_pi05_feature_cache_config,
-    load_pi05_feature_tasks,
-)
+from ember.writer.data import FunctionalQueryDataset, WriterTaskAuthority
 from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_as_writer_v2"
-AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_as_writer_launch_v2"
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_action_memory_as_writer_v1"
+AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_action_memory_as_writer_launch_v1"
 AS_WRITER_STAGES = ("development", "final")
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
@@ -68,7 +60,6 @@ def _validate_authorities(config: Mapping[str, Any]) -> None:
     required = {
         "target_data_manifest",
         "evaluation_config",
-        "feature_cache_config",
         "lora_contract",
         "source_base_config",
         "tokenizer_manifest",
@@ -92,31 +83,35 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         != {"train": 24, "validation": 8, "test": 8}
     ):
         raise WriterModelError("AS-Writer target-data authority is not sealed 24/8/8")
-    feature = load_pi05_feature_cache_config(
-        authority_path(config, "feature_cache_config"), REPO_ROOT
-    )
-    linked = (
-        "target_data_manifest",
-        "evaluation_config",
-        "lora_contract",
-        "tokenizer_manifest",
-    )
-    if any(feature["authorities"][name] != config["authorities"][name] for name in linked):
-        raise WriterModelError("AS-Writer and feature-cache authorities disagree")
     lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
     if lora.source_base_config_sha256 != config["authorities"]["source_base_config"]["sha256"]:
         raise WriterModelError("AS-Writer LoRA and source-base authorities disagree")
     writer = config.get("writer", {})
-    if (
-        writer.get("vision_feature_dim") != feature["features"]["vision_feature_dim"]
-        or writer.get("vision_spatial_tokens")
-        != feature["features"]["vision_spatial_tokens"]
-        or writer.get("language_feature_dim") != feature["features"]["language_feature_dim"]
-        or writer.get("generated_adapter") != "complete_pi05_task_specific_lora"
-        or writer.get("conditioned_query_fusion", "condition_only_v2")
-        not in {"condition_only_v2", "memory_gated_query_v3"}
-    ):
-        raise WriterModelError("AS-Writer architecture and PI05 features disagree")
+    expected_writer = {
+        "architecture": "pi05_action_memory_writer_v1",
+        "generated_adapter": "complete_pi05_task_specific_lora",
+        "prefix_owner": "frozen_pi05_paligemma_full_frame_text_prefix",
+        "expert_memory_owner": "pi05_action_expert_all_layer_hidden_states",
+        "camera_dataset": "obs/agentview_rgb",
+        "camera_transform": "libero_opengl_rotate_180_chw_uint8",
+        "frame_stride": 4,
+        "include_final_frame": True,
+        "expert_layers": 18,
+        "memory_slots": 16,
+        "expert_width": 1024,
+        "action_code_width": 32,
+        "memory_initialization": "orthogonal_action_codes_through_frozen_action_in_proj",
+        "meta_lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
+        "meta_lora_rank": 8,
+        "hidden_dim": 320,
+        "attention_heads": 8,
+        "temporal_blocks": 2,
+        "temporal_pooling": "one_attention_pool_per_expert_layer_and_rank_slot",
+        "decoder_hidden_dim": 384,
+        "frame_microbatch": 16,
+    }
+    if writer != expected_writer:
+        raise WriterModelError("Action-Memory AS-Writer architecture changed")
 
 
 def _validate_information_wall(config: Mapping[str, Any]) -> None:
@@ -177,9 +172,6 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
         ],
         "normal_only_positive_action_loss_diagnostic": ["normal"],
     }
-    feature = load_pi05_feature_cache_config(
-        authority_path(config, "feature_cache_config"), REPO_ROOT
-    )
     pairs = value.get("video_task_pairs", [])
     flattened = [int(task_id) for pair in pairs for task_id in pair]
     target = read_json(authority_path(config, "target_data_manifest"))
@@ -197,9 +189,9 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
     if (
         allowed_schedules.get(value.get("method")) != value.get("step_cycle")
         or value.get("generic_writer_language")
-        != feature["features"]["generic_writer_language"]
+        != "perform the demonstrated task"
         or value.get("generic_writer_language_owner")
-        != "normal_pi05_pure_language_tokenizer_and_embedding_cache"
+        != "normal_pi05_pure_language_tokenizer_full_frozen_prefix"
         or value.get("policy_language_contract")
         != "correct_action_query_task_language_on_every_branch"
         or value.get("contrast_backend")
@@ -329,21 +321,21 @@ def _broadcast_validation(
 
 
 def _validate_target_files(
-    tasks: Sequence[FeatureCacheTask], verify_hashes: bool
+    tasks: Sequence[WriterTaskAuthority], verify_hashes: bool
 ) -> dict[str, Any]:
     for task in tasks:
-        path = task.authority.path
-        if not path.is_file() or path.stat().st_size != task.authority.expected_bytes:
+        path = task.path
+        if not path.is_file() or path.stat().st_size != task.expected_bytes:
             raise WriterModelError(f"AS-Writer train HDF5 size changed: {task.task_id}")
-        if verify_hashes and sha256_file(path) != task.expected_hdf5_sha256:
+        if verify_hashes and sha256_file(path) != task.expected_sha256:
             raise WriterModelError(f"AS-Writer train HDF5 hash changed: {task.task_id}")
     return {
         "tasks_checked": len(tasks),
-        "bytes_checked": sum(task.authority.expected_bytes for task in tasks),
+        "bytes_checked": sum(task.expected_bytes for task in tasks),
         "full_sha256_verified": verify_hashes,
         "hdf5_identity_sha256": canonical_hash(
             [
-                [task.task_id, task.authority.expected_bytes, task.expected_hdf5_sha256]
+                [task.task_id, task.expected_bytes, task.expected_sha256]
                 for task in tasks
             ]
         ),
@@ -354,18 +346,31 @@ def load_training_data(
     args: argparse.Namespace,
     config: Mapping[str, Any],
     context: DistributedContext,
-) -> tuple[FunctionalQueryDataset, tuple[FeatureCacheTask, ...], dict[str, Any]]:
-    cache_config = load_pi05_feature_cache_config(
-        authority_path(config, "feature_cache_config"), REPO_ROOT
-    )
-    development = load_pi05_feature_tasks(
-        cache_config, REPO_ROOT, args.data_root.resolve(), role="development"
-    )
+) -> tuple[FunctionalQueryDataset, tuple[WriterTaskAuthority, ...], dict[str, Any]]:
+    target = read_json(authority_path(config, "target_data_manifest"))
     roles = set(writer_split_roles(config))
-    tasks = tuple(task for task in development if task.split_role in roles)
+    root = args.data_root.resolve()
+    rows = tuple(
+        row for row in target["tasks"] if str(row["split_role"]) in roles
+    )
+    tasks_list = []
+    for row in rows:
+        path = (root / str(row["hdf5"]["relative_path"])).resolve()
+        if not path.is_relative_to(root):
+            raise WriterModelError("target HDF5 escaped its declared data root")
+        tasks_list.append(
+            WriterTaskAuthority(
+                task_id=int(row["global_task_id"]),
+                language=str(row["language"]),
+                path=path,
+                expected_bytes=int(row["hdf5"]["bytes"]),
+                expected_sha256=str(row["hdf5"]["sha256"]),
+            )
+        )
+    tasks = tuple(sorted(tasks_list, key=lambda task: task.task_id))
     suite_counts: dict[str, int] = {}
-    for task in tasks:
-        suite_counts[str(task.suite)] = suite_counts.get(str(task.suite), 0) + 1
+    for row in rows:
+        suite_counts[str(row["suite"])] = suite_counts.get(str(row["suite"]), 0) + 1
     per_suite = 6 if writer_stage(config) == "development" else 8
     if (
         len(tasks) != int(config["data"]["task_count"])
@@ -376,8 +381,17 @@ def load_training_data(
         context, lambda: _validate_target_files(tasks, not args.skip_data_sha)
     )
     first_demo, last_demo = map(int, config["data"]["demo_indices"])
+    query_authorities = tuple(
+        WriterTaskAuthority(
+            task_id=task.task_id,
+            language=task.language,
+            path=task.path,
+            expected_bytes=task.expected_bytes,
+        )
+        for task in tasks
+    )
     dataset = FunctionalQueryDataset(
-        [replace(task.authority, expected_sha256=None) for task in tasks],
+        query_authorities,
         demo_indices=range(first_demo, last_demo + 1),
         action_chunk_size=int(config["data"]["action_chunk_size"]),
         max_open_files_per_worker=int(config["data"]["max_open_files_per_worker"]),
@@ -385,69 +399,60 @@ def load_training_data(
     return dataset, tasks, validation
 
 
-def inspect_feature_cache(
+def inspect_video_data(
     root: Path,
     config: Mapping[str, Any],
-    source: Mapping[str, Any],
-    train_task_ids: Sequence[int],
+    task_ids: Sequence[int],
+    *,
+    verify_hashes: bool,
 ) -> dict[str, Any]:
-    contract_path = root / "run_contract.json"
-    manifest_path = root / "cache_manifest.json"
-    contract = read_json(contract_path)
-    manifest = read_json(manifest_path)
-    contract_payload = dict(contract)
-    contract_digest = contract_payload.pop("contract_sha256", None)
-    manifest_payload = dict(manifest)
-    manifest_digest = manifest_payload.pop("canonical_payload_sha256", None)
-    records = manifest.get("task_records", [])
-    record_ids = tuple(sorted(int(record["task_id"]) for record in records))
-    source_keys = (
-        "source_run_contract_sha256",
-        "checkpoint_manifest_sha256",
-        "optimizer_step",
-        "source_run_summary_sha256",
-        "source_training_commit",
-        "source_base_config_sha256",
-        "source_authority_hashes",
-        "model_files",
-    )
-    if (
-        contract.get("schema_version") != "ember_pi05_writer_feature_cache_launch_v2"
-        or contract.get("mode") != "formal"
-        or contract.get("role") != "development"
-        or canonical_hash(contract_payload) != contract_digest
-        or contract.get("config_sha256")
-        != config["authorities"]["feature_cache_config"]["sha256"]
-        or contract.get("test_video_values_read") != 0
-        or any(contract.get("source", {}).get(key) != source.get(key) for key in source_keys)
-        or manifest.get("schema_version") != PI05_FEATURE_CACHE_MANIFEST_SCHEMA
-        or canonical_hash(manifest_payload) != manifest_digest
-        or manifest.get("contract_sha256") != contract_digest
-        or manifest.get("extraction_sha256") != contract.get("extraction_sha256")
-        or int(manifest.get("task_count", -1)) != 32
-        or int(manifest.get("episode_count", -1)) != 1600
-        or len(records) != 32
-        or len(set(record_ids)) != 32
-        or not set(train_task_ids) <= set(record_ids)
-        or any(
-            record.get("schema_version") != PI05_TASK_FEATURE_CACHE_SCHEMA
-            or record.get("extraction_sha256") != manifest.get("extraction_sha256")
-            for record in records
+    root = root.resolve()
+    target_path = authority_path(config, "target_data_manifest")
+    target = read_json(target_path)
+    by_id = {
+        int(row["global_task_id"]): row for row in target.get("tasks", [])
+    }
+    selected_ids = tuple(sorted({int(task_id) for task_id in task_ids}))
+    if not selected_ids or set(selected_ids) - set(by_id):
+        raise WriterModelError("Writer video task IDs are outside target40")
+    records = []
+    for task_id in selected_ids:
+        row = by_id[task_id]
+        path = (root / str(row["hdf5"]["relative_path"])).resolve()
+        expected_bytes = int(row["hdf5"]["bytes"])
+        expected_sha256 = str(row["hdf5"]["sha256"])
+        if (
+            not path.is_relative_to(root)
+            or not path.is_file()
+            or path.stat().st_size != expected_bytes
+            or (verify_hashes and sha256_file(path) != expected_sha256)
+        ):
+            raise WriterModelError(f"Writer video HDF5 changed: {task_id}")
+        records.append(
+            [task_id, str(row["hdf5"]["relative_path"]), expected_bytes, expected_sha256]
         )
-    ):
-        raise WriterModelError("formal PI05 Writer feature cache changed")
     return {
         "root": str(root.resolve()),
-        "run_contract_file_sha256": sha256_file(contract_path),
-        "run_contract_sha256": contract_digest,
-        "cache_manifest_file_sha256": sha256_file(manifest_path),
-        "cache_manifest_payload_sha256": manifest_digest,
-        "extraction_sha256": manifest["extraction_sha256"],
-        "task_count": 32,
-        "episode_count": 1600,
-        "frame_count": int(manifest["frame_count"]),
+        "schema_version": "ember_pi05_action_hidden_video_data_v1",
+        "target_data_manifest_file_sha256": sha256_file(target_path),
+        "target_data_manifest_payload_sha256": target["canonical_payload_sha256"],
+        "dataset": dict(target["dataset"]),
+        "task_ids": list(selected_ids),
+        "task_count": len(selected_ids),
+        "episode_count": 50 * len(selected_ids),
+        "hdf5_identity_sha256": canonical_hash(records),
+        "full_sha256_verified": verify_hashes,
         "test_video_values_read": 0,
     }
+
+
+def inspect_feature_cache(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
+    """Fail closed for pre-Action-Memory callers retained only as provenance."""
+
+    raise WriterModelError(
+        "pooled PI05 Writer feature caches are retired; Action-Memory AS-Writer "
+        "requires raw action-hidden video data"
+    )
 
 
 def writer_trainable_contract(
@@ -494,7 +499,7 @@ def build_contract(
     context: DistributedContext,
     source: Mapping[str, Any],
     tokenizer: Mapping[str, Any],
-    cache: Mapping[str, Any],
+    video_data: Mapping[str, Any],
     data_validation: Mapping[str, Any],
     task_ids: Sequence[int],
     trainable: Mapping[str, Any],
@@ -525,7 +530,7 @@ def build_contract(
         "authorities": dict(config["authorities"]),
         "source": dict(source),
         "tokenizer": dict(tokenizer),
-        "feature_cache": dict(cache),
+        "video_data": dict(video_data),
         "target_action_data_validation": dict(data_validation),
         "information_wall": dict(config["information_wall"]),
         "writer": dict(config["writer"]),
@@ -541,8 +546,14 @@ def build_contract(
             "per_rank_policy_sample_batch_size": batch_size,
             "per_rank_unique_action_query_cycle": list(batch_cycle),
             "global_policy_samples_per_step": context.world_size * batch_size,
-            "writer_conditions_per_rank_cycle": [1, 2, 2],
-            "policy_forward_calls_per_rank_cycle": [1, 2, 2],
+            "writer_conditions_per_rank_cycle": [
+                1 if mode == "normal" else 2
+                for mode in config["conditioning_training"]["step_cycle"]
+            ],
+            "policy_forward_calls_per_rank_cycle": [
+                1 if mode == "normal" else 2
+                for mode in config["conditioning_training"]["step_cycle"]
+            ],
             "teacher_videos_per_writer_invocation": 1,
             "total_steps": total_steps,
             "selected_stop_step": contract_stop_step,
@@ -596,7 +607,6 @@ def publish_contract(
             {
                 "source_run": str(args.source_run.resolve()),
                 "source_checkpoint": str(args.checkpoint.resolve()),
-                "feature_cache": str(args.feature_cache.resolve()),
                 "target_data_root": str(args.data_root.resolve()),
                 "tokenizer": str(args.tokenizer_path.resolve()),
             },

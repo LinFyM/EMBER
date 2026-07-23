@@ -80,7 +80,7 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--as-writer-config", type=Path)
     parser.add_argument("--as-writer-checkpoint", type=Path)
-    parser.add_argument("--writer-feature-cache", type=Path)
+    parser.add_argument("--writer-video-data-root", type=Path)
     parser.add_argument(
         "--writer-video-condition",
         choices=(
@@ -198,7 +198,7 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
         adapter = _inspect_writer_adapter(
             config_path=args.as_writer_config.resolve(),
             checkpoint=args.as_writer_checkpoint.resolve(),
-            feature_cache=args.writer_feature_cache.resolve(),
+            video_data_root=args.writer_video_data_root.resolve(),
             source=model,
             tasks=tasks,
             video_condition=str(args.writer_video_condition),
@@ -418,7 +418,7 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
             observed = _inspect_writer_adapter(
                 config_path=Path(adapter["config"]["path"]),
                 checkpoint=Path(adapter["checkpoint"]["path"]),
-                feature_cache=Path(adapter["feature_cache"]["root"]),
+                video_data_root=Path(adapter["video_data"]["root"]),
                 source=model,
                 tasks=tasks,
                 video_condition=str(adapter["video_condition"]),

@@ -1,292 +1,217 @@
-"""Condition-only language/video memory for the complete-LoRA Writer."""
+"""Variable-length temporal aggregation for PI05 Action-Memory states."""
 
 from __future__ import annotations
 
 import math
 
 import torch
+import torch.nn.functional as F
 
 
 class VariableEpisodeInputError(ValueError):
-    """Raised when a batched one-video Writer input is structurally invalid."""
+    """Raised when a variable-length Action-Memory batch is malformed."""
 
 
-def _sinusoidal_positions(
-    start: int, length: int, width: int, *, device: torch.device, dtype: torch.dtype
+def sinusoidal_positions(
+    positions: torch.Tensor, width: int, dtype: torch.dtype
 ) -> torch.Tensor:
-    positions = torch.arange(start, start + length, device=device, dtype=torch.float32)[:, None]
+    """Return deterministic absolute positions at an arbitrary integer stride."""
+
+    if positions.ndim != 1 or width <= 0:
+        raise VariableEpisodeInputError("invalid temporal position request")
+    half = width // 2
     frequencies = torch.exp(
-        torch.arange(0, width, 2, device=device, dtype=torch.float32)
-        * (-math.log(10_000.0) / max(width, 2))
-    )[None]
-    encoding = torch.zeros(length, width, device=device, dtype=torch.float32)
-    encoding[:, 0::2] = torch.sin(positions * frequencies)
-    encoding[:, 1::2] = torch.cos(
-        positions * frequencies[:, : encoding[:, 1::2].shape[1]]
+        torch.arange(half, device=positions.device, dtype=torch.float32)
+        * (-math.log(10_000.0) / max(half - 1, 1))
     )
-    return encoding.to(dtype=dtype)
+    angles = positions.to(torch.float32)[:, None] * frequencies[None]
+    value = torch.cat((torch.sin(angles), torch.cos(angles)), dim=-1)
+    if value.shape[-1] < width:
+        value = F.pad(value, (0, width - value.shape[-1]))
+    return value.to(dtype=dtype)
 
 
-def _validated_offsets(
-    offsets: torch.Tensor, total: int, *, label: str
-) -> tuple[int, ...]:
-    if offsets.ndim != 1 or offsets.numel() < 2:
-        raise VariableEpisodeInputError(f"Writer {label} offsets are invalid")
-    values = tuple(
-        int(value)
-        for value in offsets.detach().to(device="cpu", dtype=torch.int64).tolist()
-    )
-    if (
-        values[0] != 0
-        or values[-1] != total
-        or any(right <= left for left, right in zip(values, values[1:]))
-    ):
-        raise VariableEpisodeInputError(f"Writer {label} offsets are invalid")
-    return values
+class RMSNorm(torch.nn.Module):
+    """Bias-free RMS normalization."""
+
+    def __init__(self, width: int, eps: float = 1e-6) -> None:
+        super().__init__()
+        if width <= 0:
+            raise VariableEpisodeInputError("RMSNorm width must be positive")
+        self.weight = torch.nn.Parameter(torch.ones(width))
+        self.eps = float(eps)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        normalized = value * torch.rsqrt(
+            value.to(torch.float32).square().mean(dim=-1, keepdim=True) + self.eps
+        ).to(value.dtype)
+        return normalized * self.weight
 
 
-class VariableEpisodeTaskEncoder(torch.nn.Module):
-    """Encode a batch where every condition contains one language and one video.
+class ConditionOnlyBlock(torch.nn.Module):
+    """A bias-free pre-norm block whose output always depends on its input."""
 
-    PI05 spatial tokens are preserved inside each frame.  V2 returns only
-    condition-attended values.  V3 restores learned slot identity through gates
-    computed from those values, so no query-only route can produce an adapter.
+    def __init__(self, width: int, heads: int, expansion: int = 4) -> None:
+        super().__init__()
+        if width <= 0 or heads <= 0 or width % heads or expansion <= 0:
+            raise VariableEpisodeInputError("invalid condition-only block dimensions")
+        self.attention_norm = RMSNorm(width)
+        self.attention = torch.nn.MultiheadAttention(
+            width,
+            heads,
+            dropout=0.0,
+            bias=False,
+            batch_first=True,
+        )
+        self.ffn_norm = RMSNorm(width)
+        self.ffn = torch.nn.Sequential(
+            torch.nn.Linear(width, expansion * width, bias=False),
+            torch.nn.GELU(),
+            torch.nn.Linear(expansion * width, width, bias=False),
+        )
+
+    def forward(
+        self, value: torch.Tensor, padding_mask: torch.Tensor | None = None
+    ) -> torch.Tensor:
+        normalized = self.attention_norm(value)
+        attended, _ = self.attention(
+            normalized,
+            normalized,
+            normalized,
+            key_padding_mask=padding_mask,
+            need_weights=False,
+        )
+        value = value + attended
+        return value + self.ffn(self.ffn_norm(value))
+
+
+class ActionMemoryTemporalEncoder(torch.nn.Module):
+    """Aggregate ``[B,T,layer,slot,1024]`` into one vector per layer/slot.
+
+    Every ``(layer, slot)`` trajectory is a separate member of a flattened
+    batch during temporal attention.  The shared temporal weights therefore
+    process all 288 trajectories in parallel without allowing them to attend
+    to one another.  Explicit layer and slot mixing happens only after temporal
+    pooling.
     """
 
     def __init__(
         self,
         *,
-        vision_feature_dim: int,
-        vision_spatial_tokens: int,
-        language_feature_dim: int,
-        hidden_dim: int,
+        input_width: int,
+        hidden_width: int,
+        expert_layers: int,
+        memory_slots: int,
         attention_heads: int,
-        temporal_chunk_size: int,
-        chunk_memory_tokens: int,
-        episode_memory_tokens: int,
-        language_memory_tokens: int,
-        task_memory_tokens: int,
-        conditioned_query_fusion: str = "condition_only_v2",
+        temporal_blocks: int,
     ) -> None:
         super().__init__()
-        values = (
-            vision_feature_dim,
-            vision_spatial_tokens,
-            language_feature_dim,
-            hidden_dim,
+        dimensions = (
+            input_width,
+            hidden_width,
+            expert_layers,
+            memory_slots,
             attention_heads,
-            temporal_chunk_size,
-            chunk_memory_tokens,
-            episode_memory_tokens,
-            language_memory_tokens,
-            task_memory_tokens,
+            temporal_blocks,
         )
-        if any(value <= 0 for value in values) or hidden_dim % attention_heads:
-            raise VariableEpisodeInputError("invalid variable-video Writer dimensions")
-        if conditioned_query_fusion not in {
-            "condition_only_v2",
-            "memory_gated_query_v3",
-        }:
-            raise VariableEpisodeInputError("invalid Writer conditioned-query fusion")
-        self.conditioned_query_fusion = conditioned_query_fusion
-        bias = conditioned_query_fusion == "condition_only_v2"
-        self.vision_feature_dim = vision_feature_dim
-        self.vision_spatial_tokens = vision_spatial_tokens
-        self.language_feature_dim = language_feature_dim
-        self.hidden_dim = hidden_dim
-        self.temporal_chunk_size = temporal_chunk_size
+        if any(value <= 0 for value in dimensions) or hidden_width % attention_heads:
+            raise VariableEpisodeInputError("invalid Action-Memory temporal dimensions")
+        self.input_width = int(input_width)
+        self.hidden_width = int(hidden_width)
+        self.expert_layers = int(expert_layers)
+        self.memory_slots = int(memory_slots)
 
-        self.vision_projection = self._projection(
-            vision_feature_dim, hidden_dim, bias=bias
+        self.input_norm = RMSNorm(input_width)
+        self.input_projection = torch.nn.Linear(
+            input_width, hidden_width, bias=False
         )
-        self.language_projection = self._projection(
-            language_feature_dim, hidden_dim, bias=bias
+        self.time_modulation = torch.nn.Linear(
+            hidden_width, hidden_width, bias=False
         )
-        self.chunk_queries = self._queries(chunk_memory_tokens, hidden_dim)
-        self.episode_queries = self._queries(episode_memory_tokens, hidden_dim)
-        self.language_queries = self._queries(language_memory_tokens, hidden_dim)
-        self.task_queries = self._queries(task_memory_tokens, hidden_dim)
+        self.layer_modulation = torch.nn.Embedding(expert_layers, hidden_width)
+        self.slot_modulation = torch.nn.Embedding(memory_slots, hidden_width)
+        torch.nn.init.zeros_(self.time_modulation.weight)
+        torch.nn.init.zeros_(self.layer_modulation.weight)
+        torch.nn.init.zeros_(self.slot_modulation.weight)
 
-        self.chunk_attention = self._attention(hidden_dim, attention_heads, bias=bias)
-        self.episode_attention = self._attention(hidden_dim, attention_heads, bias=bias)
-        self.language_attention = self._attention(hidden_dim, attention_heads, bias=bias)
-        self.task_attention = self._attention(hidden_dim, attention_heads, bias=bias)
-        self.chunk_norm = torch.nn.LayerNorm(hidden_dim)
-        self.episode_norm = torch.nn.LayerNorm(hidden_dim)
-        self.language_norm = torch.nn.LayerNorm(hidden_dim)
-        self.task_norm = torch.nn.LayerNorm(hidden_dim)
-        self.chunk_ffn = self._ffn(hidden_dim, bias=bias)
-        self.episode_ffn = self._ffn(hidden_dim, bias=bias)
-        self.language_ffn = self._ffn(hidden_dim, bias=bias)
-        self.task_ffn = self._ffn(hidden_dim, bias=bias)
-        self.condition_gates = torch.nn.ModuleDict()
-        if conditioned_query_fusion == "memory_gated_query_v3":
-            for name in ("chunk", "episode", "language", "task"):
-                self.condition_gates[name] = torch.nn.Linear(
-                    hidden_dim, hidden_dim, bias=False
-                )
-
-    @staticmethod
-    def _projection(
-        input_dim: int, hidden_dim: int, *, bias: bool
-    ) -> torch.nn.Sequential:
-        return torch.nn.Sequential(
-            torch.nn.LayerNorm(input_dim),
-            torch.nn.Linear(input_dim, hidden_dim, bias=bias),
-            torch.nn.GELU(),
-            torch.nn.LayerNorm(hidden_dim),
+        self.temporal = torch.nn.ModuleList(
+            ConditionOnlyBlock(hidden_width, attention_heads)
+            for _ in range(temporal_blocks)
         )
-
-    @staticmethod
-    def _queries(count: int, hidden_dim: int) -> torch.nn.Parameter:
-        return torch.nn.Parameter(torch.randn(count, hidden_dim) * 0.02)
-
-    @staticmethod
-    def _attention(
-        hidden_dim: int, heads: int, *, bias: bool
-    ) -> torch.nn.MultiheadAttention:
-        return torch.nn.MultiheadAttention(
-            hidden_dim, heads, batch_first=True, dropout=0.0, bias=bias
-        )
-
-    @staticmethod
-    def _ffn(width: int, *, bias: bool) -> torch.nn.Sequential:
-        return torch.nn.Sequential(
-            torch.nn.LayerNorm(width),
-            torch.nn.Linear(width, width * 4, bias=bias),
-            torch.nn.GELU(),
-            torch.nn.Linear(width * 4, width, bias=bias),
-        )
-
-    @staticmethod
-    def _conditional_attention(
-        queries: torch.Tensor,
-        memory: torch.Tensor,
-        attention: torch.nn.MultiheadAttention,
-        norm: torch.nn.LayerNorm,
-        ffn: torch.nn.Module,
-        condition_gate: torch.nn.Module | None = None,
-    ) -> torch.Tensor:
-        attended, _ = attention(
-            norm(queries)[None], norm(memory)[None], norm(memory)[None], need_weights=False
-        )
-        result = attended[0]
-        if condition_gate is not None:
-            gate = torch.tanh(condition_gate(norm(result)))
-            result = result + gate * norm(queries)
-        return result + ffn(result)
-
-    def _encode_video(self, frames: torch.Tensor) -> torch.Tensor:
-        if (
-            frames.ndim != 3
-            or frames.shape[0] < 1
-            or frames.shape[1] != self.vision_spatial_tokens
-            or frames.shape[2] != self.vision_feature_dim
-        ):
-            raise VariableEpisodeInputError("Writer video feature tensor has wrong shape")
-        memories: list[torch.Tensor] = []
-        spatial = _sinusoidal_positions(
-            0,
-            self.vision_spatial_tokens,
-            self.hidden_dim,
-            device=frames.device,
-            dtype=torch.float32,
-        )
-        for start in range(0, frames.shape[0], self.temporal_chunk_size):
-            stop = min(start + self.temporal_chunk_size, frames.shape[0])
-            tokens = self.vision_projection(frames[start:stop].to(torch.float32))
-            temporal = _sinusoidal_positions(
-                start,
-                stop - start,
-                self.hidden_dim,
-                device=tokens.device,
-                dtype=tokens.dtype,
-            )
-            tokens = tokens + temporal[:, None] + spatial.to(tokens)[None]
-            memories.append(
-                self._conditional_attention(
-                    self.chunk_queries,
-                    tokens.flatten(0, 1),
-                    self.chunk_attention,
-                    self.chunk_norm,
-                    self.chunk_ffn,
-                    self._condition_gate("chunk"),
-                )
-            )
-        return self._conditional_attention(
-            self.episode_queries,
-            torch.cat(memories, dim=0),
-            self.episode_attention,
-            self.episode_norm,
-            self.episode_ffn,
-            self._condition_gate("episode"),
-        )
-
-    def _encode_language(self, tokens: torch.Tensor) -> torch.Tensor:
-        if (
-            tokens.ndim != 2
-            or tokens.shape[0] < 1
-            or tokens.shape[1] != self.language_feature_dim
-        ):
-            raise VariableEpisodeInputError("Writer language feature tensor has wrong shape")
-        memory = self.language_projection(tokens.to(torch.float32))
-        memory = memory + _sinusoidal_positions(
-            0,
-            memory.shape[0],
-            self.hidden_dim,
-            device=memory.device,
-            dtype=memory.dtype,
-        )
-        return self._conditional_attention(
-            self.language_queries,
-            memory,
-            self.language_attention,
-            self.language_norm,
-            self.language_ffn,
-            self._condition_gate("language"),
-        )
+        self.temporal_score = torch.nn.Linear(hidden_width, 1, bias=False)
+        self.layer_mixer = ConditionOnlyBlock(hidden_width, attention_heads)
+        self.slot_mixer = ConditionOnlyBlock(hidden_width, attention_heads)
 
     def forward(
         self,
-        language_tokens: torch.Tensor,
-        video_features: torch.Tensor,
-        language_offsets: torch.Tensor,
-        video_offsets: torch.Tensor,
+        states: torch.Tensor,
+        frame_indices: torch.Tensor,
+        frame_mask: torch.Tensor,
     ) -> torch.Tensor:
-        if language_tokens.ndim != 2 or video_features.ndim != 3:
-            raise VariableEpisodeInputError("Writer language/video task input has wrong shape")
-        language = _validated_offsets(
-            language_offsets, language_tokens.shape[0], label="language"
-        )
-        video = _validated_offsets(video_offsets, video_features.shape[0], label="video")
-        if len(language) != len(video):
-            raise VariableEpisodeInputError("Writer condition batch sizes differ")
-        tasks = []
-        for language_span, video_span in zip(
-            zip(language, language[1:]), zip(video, video[1:]), strict=True
-        ):
-            left_l, right_l = language_span
-            left_v, right_v = video_span
-            memory = torch.cat(
-                (
-                    self._encode_language(language_tokens[left_l:right_l]),
-                    self._encode_video(video_features[left_v:right_v]),
-                ),
-                dim=0,
-            )
-            tasks.append(
-                self._conditional_attention(
-                    self.task_queries,
-                    memory,
-                    self.task_attention,
-                    self.task_norm,
-                    self.task_ffn,
-                    self._condition_gate("task"),
-                )
-            )
-        return torch.stack(tasks, dim=0)
+        """Return ``[B, expert_layers, memory_slots, hidden_width]``."""
 
-    def _condition_gate(self, name: str) -> torch.nn.Module | None:
-        if name not in self.condition_gates:
-            return None
-        return self.condition_gates[name]
+        if (
+            states.ndim != 5
+            or states.shape[2:4] != (self.expert_layers, self.memory_slots)
+            or states.shape[-1] != self.input_width
+            or frame_indices.shape != frame_mask.shape
+            or states.shape[:2] != frame_mask.shape
+            or frame_indices.dtype != torch.long
+            or frame_mask.dtype != torch.bool
+            or not bool(frame_mask.any(dim=1).all())
+        ):
+            raise VariableEpisodeInputError("invalid Action-Memory trajectory batch")
+        value = self.input_projection(self.input_norm(states))
+        batch, frames = frame_mask.shape
+        positions = sinusoidal_positions(
+            frame_indices.reshape(-1), self.hidden_width, value.dtype
+        ).reshape(batch, frames, self.hidden_width)
+        time_gate = torch.tanh(self.time_modulation(positions))
+        layer_gate = torch.tanh(self.layer_modulation.weight)
+        slot_gate = torch.tanh(self.slot_modulation.weight)
+
+        # Identity signals modulate condition-derived states.  They cannot form
+        # a query-only route that emits a public adapter without video content.
+        value = value * (
+            1.0
+            + time_gate[:, :, None, None]
+            + layer_gate[None, None, :, None]
+            + slot_gate[None, None, None, :]
+        )
+
+        value = value.permute(0, 2, 3, 1, 4).reshape(
+            batch * self.expert_layers * self.memory_slots,
+            frames,
+            self.hidden_width,
+        )
+        padding = (
+            ~frame_mask[:, None, None, :]
+            .expand(batch, self.expert_layers, self.memory_slots, frames)
+            .reshape(batch * self.expert_layers * self.memory_slots, frames)
+        )
+        for block in self.temporal:
+            value = block(value, padding)
+
+        scores = self.temporal_score(value).squeeze(-1).masked_fill(
+            padding, float("-inf")
+        )
+        pooled = torch.sum(torch.softmax(scores, dim=-1)[..., None] * value, dim=1)
+        pooled = pooled.reshape(
+            batch, self.expert_layers, self.memory_slots, self.hidden_width
+        )
+
+        layer_view = pooled.permute(0, 2, 1, 3).reshape(
+            batch * self.memory_slots, self.expert_layers, self.hidden_width
+        )
+        layer_view = self.layer_mixer(layer_view)
+        pooled = layer_view.reshape(
+            batch, self.memory_slots, self.expert_layers, self.hidden_width
+        ).permute(0, 2, 1, 3)
+
+        slot_view = pooled.reshape(
+            batch * self.expert_layers, self.memory_slots, self.hidden_width
+        )
+        slot_view = self.slot_mixer(slot_view)
+        return slot_view.reshape(
+            batch, self.expert_layers, self.memory_slots, self.hidden_width
+        )

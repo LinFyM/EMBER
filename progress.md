@@ -285,3 +285,11 @@
 - root为`/data/ymdai/outputs/ember/pi05_source_sft_final32_seed7_5922c61_b64_stop0400_20260723`；fresh shared LoRA实际完成400 steps、保留原800-step scheduler horizon，wall `2857.608s`（metrics训练loop `2852.793s`），共204,800 queries。
 - 32 tasks各用满50条action episodes，400 metrics连续finite；首/末20-step mean loss `0.15139→0.11531`。checkpoint/run-contract/metrics/summary SHA256为`0012ffb6...52bd`/`bc136964...da31`/`c0d91c9b...6211`/`ff0a33f7...d472`，exact-resume文件全部校验通过。
 - final AS与Source-SFT现均完成；下一步从fresh zero-AS Writer初态启动48-update final RL-Writer，不启用micro-AS或额外分支。
+
+## Action-Memory AS-Writer实现与formal profile（2026-07-23）
+
+- owner将当前执行范围重置为新Action-Memory AS-Writer闭环，暂不推进RL。新canonical路径直接对每个stride-4采样帧运行冻结PaliGemma图文prefix，再用16个可学习memory tokens读取Action Expert全部18层hidden states；encoder-only rank8 Meta-LoRA只在teacher-video编码时安装，执行policy不携带它。
+- 变长视频按padding mask批处理；`B×18×16`条时间序列在同一temporal Transformer中并行但互不注意，随后批量layer/slot mixing并直接解码完整76-tensor、1,287,168-scalar task LoRA。Writer共10,097,601个训练参数，是rank128 Source-SFT 10,297,344的98.1%。
+- 最终源码8卡profile root为`/data/ymdai/outputs/ember/pi05_as_writer_action_memory_v1_profile_refactor_20260723`：per-rank batch16、global128，两步耗时3.851/2.477秒，loss与gradient全部finite；峰值allocated/reserved为75,991,897,600/78,873,886,720 bytes。
+- profile run-contract/metrics/summary SHA256为`21f15cab...24c`/`1979da53...7e9`/`6175b068...061`。全仓fresh `166 passed`，architecture guard无hard violation。
+- 正式训练合同为fresh normal-positive-only，scheduler horizon 1,200；先到step500并每100步保存。若loss/validation未饱和，避免每100步重载模型，改为每次约300步exact-resume至800、1100，累计训练wall约60分钟后无论是否充分均封存曲线并停止追加。

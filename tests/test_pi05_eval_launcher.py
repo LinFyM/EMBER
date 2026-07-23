@@ -60,14 +60,14 @@ def test_writer_prepare_arguments_are_all_or_none() -> None:
     empty = argparse.Namespace(
         as_writer_config=None,
         as_writer_checkpoint=None,
-        writer_feature_cache=None,
+        writer_video_data_root=None,
         writer_video_condition=None,
     )
     assert module._writer_requested(empty) is False
     partial = argparse.Namespace(
         as_writer_config=Path("config.json"),
         as_writer_checkpoint=None,
-        writer_feature_cache=None,
+        writer_video_data_root=None,
         writer_video_condition="correct",
     )
     with pytest.raises(Pi05EvaluationError, match="requires all declared assets"):
@@ -91,7 +91,7 @@ def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
     empty = argparse.Namespace(
         as_writer_config=None,
         as_writer_checkpoint=None,
-        writer_feature_cache=None,
+        writer_video_data_root=None,
         writer_video_condition=None,
         rl_writer_config=None,
         rl_writer_checkpoint=None,
@@ -108,7 +108,7 @@ def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
     both = argparse.Namespace(
         as_writer_config=Path("as.json"),
         as_writer_checkpoint=Path("as-step"),
-        writer_feature_cache=Path("cache"),
+        writer_video_data_root=Path("target-data"),
         writer_video_condition="correct",
         rl_writer_config=None,
         rl_writer_checkpoint=None,
@@ -123,7 +123,7 @@ def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
     as_and_rl = argparse.Namespace(**vars(empty))
     as_and_rl.as_writer_config = Path("as.json")
     as_and_rl.as_writer_checkpoint = Path("as-step")
-    as_and_rl.writer_feature_cache = Path("cache")
+    as_and_rl.writer_video_data_root = Path("target-data")
     as_and_rl.writer_video_condition = "correct"
     as_and_rl.rl_writer_config = Path("rl.json")
     as_and_rl.rl_writer_checkpoint = Path("rl-update")

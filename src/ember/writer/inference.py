@@ -26,13 +26,14 @@ from ember.pi05_target_data import SUITE_ORDER, target_global_task_id
 from ember.writer.as_contract import (
     AS_WRITER_LAUNCH_SCHEMA,
     REPO_ROOT,
-    inspect_feature_cache,
+    inspect_video_data,
     load_writer_config,
     writer_split_roles,
     writer_stage,
 )
 from ember.writer.checkpoint import validate_writer_checkpoint_files
-from ember.writer.feature_cache import WriterFeatureStore
+from ember.pi05_processing import Pi05PureLanguageTokenizer
+from ember.writer.data import ActionHiddenVideoStore, WriterTaskAuthority
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.model import (
     CompleteLoRAWriter,
@@ -317,7 +318,7 @@ def build_writer_evaluation_adapter(
     manifest: Mapping[str, Any],
     cursor: int,
     cursor_axis: str,
-    cache: Mapping[str, Any],
+    video_data: Mapping[str, Any],
     lora_contract_sha256: str,
     mapping: Sequence[Mapping[str, Any]],
     task_keys: Sequence[tuple[str, int]],
@@ -379,7 +380,7 @@ def build_writer_evaluation_adapter(
             "manifest_payload_sha256": manifest["canonical_payload_sha256"],
             "writer_state_sha256": writer_record["sha256"],
         },
-        "feature_cache": dict(cache),
+        "video_data": dict(video_data),
         "lora_contract_sha256": lora_contract_sha256,
         "video_schedule": {
             "algorithm": WRITER_VIDEO_SCHEDULE,
@@ -412,18 +413,18 @@ def inspect_as_writer_evaluation(
     *,
     config_path: Path,
     checkpoint: Path,
-    feature_cache: Path,
+    video_data_root: Path,
     source: Mapping[str, Any],
     task_keys: Sequence[tuple[str, int]],
     video_condition: str,
     video_seed: int,
     require_formal: bool,
 ) -> dict[str, Any]:
-    """Seal a Writer checkpoint/cache pair before queue creation or resume."""
+    """Seal a Writer checkpoint and raw-video authority before queue creation."""
 
     config_path = config_path.resolve()
     checkpoint = checkpoint.resolve()
-    feature_cache = feature_cache.resolve()
+    video_data_root = video_data_root.resolve()
     config = load_writer_config(config_path)
     target_manifest = read_json(
         REPO_ROOT / str(config["authorities"]["target_data_manifest"]["path"])
@@ -453,9 +454,17 @@ def inspect_as_writer_evaluation(
         source=source,
         require_formal=require_formal,
     )
-    cache = inspect_feature_cache(feature_cache, config, source, needed_task_ids)
-    if training.get("feature_cache") != cache:
-        raise WriterModelError("AS-Writer checkpoint and feature cache disagree")
+    video_data = inspect_video_data(
+        video_data_root, config, needed_task_ids, verify_hashes=False
+    )
+    training_video = training.get("video_data", {})
+    if (
+        training_video.get("root") != video_data.get("root")
+        or training_video.get("dataset") != video_data.get("dataset")
+        or training_video.get("target_data_manifest_file_sha256")
+        != video_data.get("target_data_manifest_file_sha256")
+    ):
+        raise WriterModelError("AS-Writer checkpoint and video data disagree")
     lora = load_pi05_lora_contract(
         REPO_ROOT / str(config["authorities"]["lora_contract"]["path"])
     )
@@ -468,7 +477,7 @@ def inspect_as_writer_evaluation(
         manifest=manifest,
         cursor=cursor,
         cursor_axis="optimizer_step",
-        cache=cache,
+        video_data=video_data,
         lora_contract_sha256=canonical_contract_sha256(lora),
         mapping=mapping,
         task_keys=normalized_keys,
@@ -496,45 +505,55 @@ class FrozenWriterTaskAdapter:
         evaluation_adapter: Mapping[str, Any],
         task_keys: Sequence[tuple[str, int]],
         device: torch.device,
+        tokenizer_path: Path,
         require_formal: bool,
     ) -> None:
         kind = str(evaluation_adapter.get("kind", "as_writer"))
-        common = {
-            "config_path": Path(evaluation_adapter["config"]["path"]),
-            "checkpoint": Path(evaluation_adapter["checkpoint"]["path"]),
-            "feature_cache": Path(evaluation_adapter["feature_cache"]["root"]),
-            "source": source,
-            "task_keys": task_keys,
-            "video_condition": str(evaluation_adapter["video_condition"]),
-            "video_seed": int(evaluation_adapter["video_schedule"]["seed"]),
-            "require_formal": require_formal,
-        }
         if kind == "rl_writer":
-            from ember.rl_writer.contract import authority_path, load_rl_writer_config
-            from ember.rl_writer.inference import inspect_rl_writer_evaluation
-
-            observed = inspect_rl_writer_evaluation(**common)
-            rl_config = load_rl_writer_config(Path(observed["config"]["path"]))
-            config = load_writer_config(authority_path(rl_config, "as_writer_config"))
-        elif kind == "as_writer":
-            observed = inspect_as_writer_evaluation(**common)
-            config = load_writer_config(Path(observed["config"]["path"]))
-        else:
+            raise WriterModelError(
+                "pre-Action-Memory RL-Writer is architecture-incompatible and must "
+                "be retrained before evaluation"
+            )
+        if kind != "as_writer":
             raise WriterModelError("unknown PI05 Writer evaluation kind")
+        observed = inspect_as_writer_evaluation(
+            config_path=Path(evaluation_adapter["config"]["path"]),
+            checkpoint=Path(evaluation_adapter["checkpoint"]["path"]),
+            video_data_root=Path(evaluation_adapter["video_data"]["root"]),
+            source=source,
+            task_keys=task_keys,
+            video_condition=str(evaluation_adapter["video_condition"]),
+            video_seed=int(evaluation_adapter["video_schedule"]["seed"]),
+            require_formal=require_formal,
+        )
+        config = load_writer_config(Path(observed["config"]["path"]))
         if observed != dict(evaluation_adapter):
             raise WriterModelError("PI05 Writer evaluation artifacts changed after prepare")
         lora = load_pi05_lora_contract(
             REPO_ROOT / str(config["authorities"]["lora_contract"]["path"])
         )
         template = prepare_frozen_writer_policy(policy, lora)
+        constructor_keys = {
+            "expert_layers",
+            "memory_slots",
+            "expert_width",
+            "action_code_width",
+            "meta_lora_rank",
+            "hidden_dim",
+            "attention_heads",
+            "temporal_blocks",
+            "decoder_hidden_dim",
+            "frame_microbatch",
+        }
         writer_values = {
             key: value
             for key, value in config["writer"].items()
-            if key != "generated_adapter"
+            if key in constructor_keys
         }
         writer = CompleteLoRAWriter(
             build_lora_tensor_specs(template),
             template_state=template,
+            action_in_projection=policy.model.action_in_proj,
             **writer_values,
         ).to(device)
         writer.load_state_dict(
@@ -553,20 +572,49 @@ class FrozenWriterTaskAdapter:
                 | {int(row["video_global_task_id"]) for row in observed["task_video_mapping"]}
             )
         )
-        cache = observed["feature_cache"]
-        self.store = WriterFeatureStore(
-            Path(cache["root"]),
-            task_ids=needed,
-            expected_extraction_sha256=str(cache["extraction_sha256"]),
-            max_cached_tasks=2,
-            expected_dim=int(config["writer"]["vision_feature_dim"]),
-            expected_spatial_tokens=int(config["writer"]["vision_spatial_tokens"]),
-            expected_run_contract_file_sha256=str(cache["run_contract_file_sha256"]),
-            expected_manifest_file_sha256=str(cache["cache_manifest_file_sha256"]),
+        target = read_json(
+            REPO_ROOT / str(config["authorities"]["target_data_manifest"]["path"])
+        )
+        root = Path(observed["video_data"]["root"])
+        by_id = {
+            int(record["global_task_id"]): record for record in target["tasks"]
+        }
+        authorities = []
+        for global_task_id in needed:
+            record = by_id[global_task_id]
+            authorities.append(
+                WriterTaskAuthority(
+                    task_id=global_task_id,
+                    language=str(record["language"]),
+                    path=root / str(record["hdf5"]["relative_path"]),
+                    expected_bytes=int(record["hdf5"]["bytes"]),
+                )
+            )
+        self.store = ActionHiddenVideoStore(
+            authorities,
+            frame_stride=int(config["writer"]["frame_stride"]),
+            max_open_files=2,
+        )
+        self.language_by_id = {
+            authority.task_id: authority.language for authority in authorities
+        }
+        source_config = read_json(
+            REPO_ROOT / str(config["authorities"]["source_base_config"]["path"])
+        )
+        self.tokenizer = Pi05PureLanguageTokenizer(
+            tokenizer_path,
+            int(source_config["features"]["tokenizer_max_length"]),
+            str(device),
+        )
+        self.generic_language = str(
+            config["conditioning_training"]["generic_writer_language"]
         )
         self.policy = policy
         self.writer = writer
         self.lora_contract = lora
+        self.identity_state = {
+            name: value.detach().clone() for name, value in template.items()
+        }
         self.device = device
         self.evaluation_adapter = dict(observed)
 
@@ -582,27 +630,44 @@ class FrozenWriterTaskAdapter:
             init_state_id=init_state_id,
             lora_sha256=placeholder,
         )
-        teacher = self.store.load_one_video(
-            language_task_id=int(row["language_global_task_id"]),
-            video_task_id=int(row["video_global_task_id"]),
-            demo_index=int(row["teacher_demo_index"]),
+        teacher = self.store.load(
+            int(row["video_global_task_id"]),
+            int(row["teacher_demo_index"]),
+        )
+        writer_language = (
+            self.generic_language
+            if self.evaluation_adapter.get("writer_language_condition")
+            == "generic_neutral"
+            else self.language_by_id[int(row["language_global_task_id"])]
+        )
+        language_tokens, language_mask = self.tokenizer([writer_language])
+        frames = torch.from_numpy(teacher.frames).to(
+            self.device, non_blocking=True
+        )
+        frame_indices = torch.from_numpy(teacher.frame_indices).to(
+            self.device, non_blocking=True
+        )
+        video_offsets = torch.tensor(
+            [0, frames.shape[0]], dtype=torch.long, device=self.device
         )
         started = time.monotonic()
+        # The Action-Memory encoder must always see the frozen source policy,
+        # never the task adapter left installed by the preceding rollout.
+        copy_task_lora_state_(
+            self.policy, self.identity_state, self.lora_contract
+        )
         with torch.autocast(
             device_type=self.device.type,
             dtype=torch.bfloat16,
             enabled=self.device.type == "cuda",
         ):
-            language_features = (
-                teacher.generic_language_features
-                if self.evaluation_adapter.get("writer_language_condition")
-                == "generic_neutral"
-                else teacher.language_features
-            )
             state = self.writer(
-                language_features.to(self.device),
-                teacher.video_features.to(self.device),
-                teacher.episode_offsets,
+                frames,
+                frame_indices,
+                video_offsets,
+                language_tokens,
+                language_mask,
+                policy=self.policy,
             )
         validate_lora_state(state, self.lora_contract)
         digest = lora_state_sha256(state)

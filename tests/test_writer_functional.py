@@ -9,7 +9,6 @@ from ember.writer.functional import (
     writer_functional_action_loss,
     writer_success_weighted_flow_loss,
 )
-from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
 
 
 class _LossPolicy(torch.nn.Module):
@@ -40,22 +39,26 @@ def _contract() -> SmolVLALoRAContract:
     )
 
 
-def _writer(template: dict[str, torch.Tensor]) -> CompleteLoRAWriter:
-    return CompleteLoRAWriter(
-        build_lora_tensor_specs(template),
-        template_state=template,
-        vision_feature_dim=7,
-        vision_spatial_tokens=4,
-        language_feature_dim=5,
-        hidden_dim=12,
-        attention_heads=3,
-        temporal_chunk_size=4,
-        chunk_memory_tokens=2,
-        episode_memory_tokens=2,
-        language_memory_tokens=2,
-        task_memory_tokens=2,
-        decoder_hidden_dim=10,
-    )
+class _TinyWriter(torch.nn.Module):
+    def __init__(self, template: dict[str, torch.Tensor]) -> None:
+        super().__init__()
+        self.scale = torch.nn.Parameter(torch.zeros(()))
+        self._names = {}
+        for index, (name, value) in enumerate(template.items()):
+            key = f"template_{index}"
+            self.register_buffer(key, value.detach().clone())
+            self._names[name] = key
+
+    def forward(self, *_args: torch.Tensor) -> dict[str, torch.Tensor]:
+        return {
+            name: value + self.scale.to(value) * torch.ones_like(value)
+            for name, key in self._names.items()
+            for value in (getattr(self, key),)
+        }
+
+
+def _writer(template: dict[str, torch.Tensor]) -> _TinyWriter:
+    return _TinyWriter(template)
 
 
 def test_functional_action_loss_only_backpropagates_into_writer() -> None:
@@ -99,8 +102,7 @@ def test_detached_lora_gradient_bridge_backpropagates_exact_writer_gradient() ->
     template = prepare_frozen_writer_policy(policy, _contract())
     writer = _writer(template)
     with torch.no_grad():
-        for head in writer.heads.values():
-            head[-1].weight.fill_(0.01)
+        writer.scale.fill_(0.01)
     state = writer(
         torch.randn(3, 5),
         torch.randn(9, 4, 7),

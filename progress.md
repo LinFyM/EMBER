@@ -188,8 +188,8 @@
 
 ## 当前后续动作
 
-1. 使用已在outcome前封存的8-task seen panel比较source base、Source-SFT step400、AS-Writer step500和RL-Writer update36；只补完成该核心比较所需的arms。
-2. seen comparison封存后进入final 32-source单seed重训；development Source-SFT、AS-Writer和RL-Writer均不再追加训练或额外消融。
+1. 进入final 32-source单seed fresh重训；development Source-SFT、AS-Writer和RL-Writer均不再追加训练或额外消融。
+2. final模型先完成sealed seen comparison，再打开8个test tasks做zero-interaction correct/wrong对照。
 3. RL-Writer后续只保留既定task-local RL-init与final correct/wrong用途；其development视频因果证据较弱，不补generic arm或micro-AS追正结果。
 
 ## AS-Writer短周期profile与正式seal（2026-07-22）
@@ -260,3 +260,10 @@
 - 固定64-state screens为update12/24/36/54=`6/11/15/14`，results SHA256分别为`97c78986...e78`、`59dacc72...17e`、`d7e73252...3eb`、`ae641ec8...2a1`；据此冻结update36，不继续训练。selected checkpoint manifest/writer SHA256为`85577446...596`/`57f9b12c...2af`。
 - selected update36完整correct-video validation为`94/400`，root为`/data/ymdai/outputs/ember/pi05_rl_writer_validation8x50_r2_update00000036_correct_376ac0f_r1_20260722`，results SHA256 `d1d4b1cf...aa5`。唯一cross-suite wrong arm为`87/400`，root suffix为`...update00000036_wrong_376ac0f_r1_20260722`，results SHA256 `6601221a...325`；两者`paired_control_sha256=57e3985c...321`。
 - paired correct-only/wrong-only为`10/3`，exact McNemar `p=0.092285`。因此RL-Writer held competence成立但视频特异性较弱；已有zero-AS reward signal，不启用micro-AS，不补generic或更多wrong arms。下一阶段是预封存seen panel比较。
+
+## Phase E sealed seen-panel完成（2026-07-23）
+
+- 预封存8 train-task panel的四个必要arms均完成8×50 official fixed-state评测：source base `137/400`、Source-SFT step400 `182/400`、AS-Writer-v2 step500 `204/400`、RL-Writer update36 `164/400`。逐task原始counts与runtime已写入各自`results.json`；AS最强，SFT次之，RL仍高于base。
+- results roots依次为`pi05_source_base_seen8x50_raw_e92b482_r3_20260723`、`pi05_source_sft_seen8x50_step0400_e92b482_r3_r2_20260723`、`pi05_as_writer_v2_seen8x50_step0500_e92b482_r3_20260723`、`pi05_rl_writer_seen8x50_update00000036_e92b482_r3_20260723`；SHA256依次为`91a9a31f...fb833`、`05c4c0d1...d889b`、`3d640e57...d97479`、`92a958a3...3f2c8`。
+- Source-SFT原训练被owner在选择step400后于step600停止，未发布terminal summary；当前evaluator的fail-closed检查在0 rollout处暴露该缺口。只依据不可变contract、600条metrics和step600 manifest确定性重建summary并另存recovery provenance，SHA256为`887ae816...ab2e`/`c7f29ae7...803c`，未运行训练或改写checkpoint。
+- Phase E的必要seen比较至此封存；不补seen wrong-video或额外checkpoint。下一步为final 32-source fresh AS/SFT/RL重训合同与运行。

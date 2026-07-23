@@ -91,7 +91,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] Source-SFT matched-scale pilot使用batch64/rank训练63 steps、32,256 queries，validation为61/400；该run仍处于继承的1,000-step warmup且loss继续下降，只作undertrained provenance，不代表上限。
 - [x] 从fresh identity完成独立Source-SFT ceiling run；完整validation为step200/400/600=`74/87/73`（各400），step400明确最强并冻结。曲线在600前后已出现validation回落，因此不恢复到800，也不重复训练。
 - [x] 在outcome前按specification-only SHA256规则封存四suites各2个、共8个seen tasks（global IDs 0,2,15,12,21,28,39,37）；policy outcome与trajectory value reads均为0。
-- [ ] 比较source base、Source-SFT、AS-Writer、可用RL-Writer的seen performance。
+- [x] 在预封存8-task×50 fixed-state seen panel上比较source base、Source-SFT、AS-Writer与RL-Writer：分别为`137/400`、`182/400`、`204/400`、`164/400`；AS最强，四方法的Long task 9均为0，结论保留逐task raw rows而不追加无决策价值的seen消融。
 - [x] 封存同split role、按suite循环和排序ordinal构造的cross-suite wrong-video机械map；correct/wrong两臂保持同一language、task、init state、policy RNG、video seed与demo ordinal。
 - [x] canonical evaluator在同一dynamic queue、persistent worker和raw-row schema内支持frozen AS-Writer或RL-Writer；两者共享correct/wrong mapping与video seed，artifact kind/checkpoint axis分别fail-close。
 - [x] 用正式AS checkpoint运行并报告correct/wrong/base逐任务结果：119/115/48（各400）；correct−wrong仅+4，当前AS结果未显示强teacher-video内容依赖。RL-Writer若成立后另补其对照。

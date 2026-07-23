@@ -425,3 +425,11 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - update36完整correct-video validation为`94/400=23.5%`，逐task为Long 1/2=`1/3`、Goal 3/6=`0/47`、Object 1/3=`40/0`、Spatial 1/3=`3/0`，成功覆盖5/8 tasks。development绝对性能排序为AS-Writer `99`、RL-Writer `94`、Source-SFT `87`、source base `48`。
 - 同一checkpoint唯一cross-suite wrong-video arm为`87/400=21.75%`，逐task为Long `0/1`、Goal `0/44`、Object `40/0`、Spatial `2/0`。400对rows的correct-only/wrong-only/both/neither为`10/3/84/303`，exact McNemar `p=0.092285`；方向为正但不足以宣称强视频特异性。
 - 科学结论因此分开表述：reward-only Writer确实学到可泛化且优于source base/Source-SFT的held competence，但其增益主要仍可由language/common adapter解释，视频因果控制较弱。已有明确source reward，故不以结果不够正为由启用micro-AS或改协议；后续RL-init task-local arm可以保留，但不得写成已证明强依赖teacher video。
+
+## Sealed seen-panel比较（2026-07-23）
+
+- 在任何这些outcome产生前封存的8-task panel（global IDs `0,2,15,12,21,28,39,37`）上，四方法均完成每task 50个相同official fixed states：source base `137/400`、Source-SFT step400 `182/400`、AS-Writer-v2 step500 correct-video `204/400`、RL-Writer update36 correct-video `164/400`。因此source acquisition在seen任务上成立，绝对排序为AS > SFT > RL > base；seen诊断不替代held validation。
+- 按`Long 7/9, Goal 1/8, Object 2/5, Spatial 0/2`顺序，逐task successes为base `2/0,50/34,0/0,22/29`；SFT `0/0,48/41,10/0,41/42`；AS `1/0,49/47,23/1,41/42`；RL `1/0,41/45,1/0,35/41`。AS相对SFT的主要额外收益来自Object-2，而Long-9对四方法均为0，不能把aggregate写成全suite普遍提升。
+- 四份results SHA256依次为base `91a9a31f...fb833`、SFT `05c4c0d1...d889b`、AS `3d640e57...d97479`、RL `92a958a3...3f2c8`；对应evaluation wall分别为`504.007/510.400/736.591/815.813s`，每份均保留400条raw rows和逐task aggregation。
+- Source-SFT训练因owner在development选择step400后于step600手动停止，原runner未走到terminal summary发布；这不影响已原子发布的step400 checkpoint，但当前fail-closed evaluator要求训练summary。修复只从不可变run contract、600条连续metrics和step600 manifest重建`run_summary.json`，没有GPU forward、optimizer update或权重改写；summary/recovery provenance SHA256为`887ae816...ab2e`/`c7f29ae7...803c`。第一次seen启动在任何rollout前因此失败并保留，成功结果来自新root，未把失败目录续作正式证据。
+- 该比较已回答Phase E的source acquisition问题；不再补seen wrong-video、额外checkpoint或generic arms。下一步使用development已选普通配置从规定fresh初态进行final 32-source重训。

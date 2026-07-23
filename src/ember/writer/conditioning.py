@@ -1,4 +1,4 @@
-"""Sealed Writer-v2 conditioning cycle and paired functional objective."""
+"""Sealed Writer-v2 conditioning schedules and paired functional objective."""
 
 from __future__ import annotations
 
@@ -11,17 +11,25 @@ from ember.writer.model import WriterModelError
 
 def conditioning_cycle(config: Mapping[str, Any]) -> tuple[str, ...]:
     cycle = tuple(str(value) for value in config["conditioning_training"]["step_cycle"])
-    expected = (
-        "normal",
-        "full_language_contrast",
-        "generic_language_contrast",
-    )
-    if cycle != expected:
+    allowed = {
+        ("normal",),
+        (
+            "normal",
+            "full_language_contrast",
+            "generic_language_contrast",
+        ),
+    }
+    if cycle not in allowed:
         raise WriterModelError("AS-Writer conditioning cycle changed")
     return cycle
 
 
 def batch_size_cycle(batch_size: int, config: Mapping[str, Any]) -> tuple[int, ...]:
+    cycle = conditioning_cycle(config)
+    if batch_size <= 0:
+        raise WriterModelError("AS-Writer batch must be positive")
+    if cycle == ("normal",):
+        return (batch_size,)
     if batch_size < 2 or batch_size % 2:
         raise WriterModelError("AS-Writer contrast requires an even per-rank batch")
     fraction = float(config["conditioning_training"]["contrast_query_fraction"])
@@ -30,7 +38,7 @@ def batch_size_cycle(batch_size: int, config: Mapping[str, Any]) -> tuple[int, .
         raise WriterModelError("AS-Writer contrast must use paired half batches")
     return tuple(
         batch_size if mode == "normal" else contrast
-        for mode in conditioning_cycle(config)
+        for mode in cycle
     )
 
 

@@ -167,6 +167,14 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
 
 def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
     value = config.get("conditioning_training", {})
+    allowed_schedules = {
+        "normal_full_language_contrast_generic_language_contrast_cycle": [
+            "normal",
+            "full_language_contrast",
+            "generic_language_contrast",
+        ],
+        "normal_only_positive_action_loss_diagnostic": ["normal"],
+    }
     feature = load_pi05_feature_cache_config(
         authority_path(config, "feature_cache_config"), REPO_ROOT
     )
@@ -185,10 +193,7 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
     )
     matching_weight = value.get("matching_loss_weight")
     if (
-        value.get("method")
-        != "normal_full_language_contrast_generic_language_contrast_cycle"
-        or value.get("step_cycle")
-        != ["normal", "full_language_contrast", "generic_language_contrast"]
+        allowed_schedules.get(value.get("method")) != value.get("step_cycle")
         or value.get("generic_writer_language")
         != feature["features"]["generic_writer_language"]
         or value.get("generic_writer_language_owner")

@@ -173,6 +173,25 @@ def test_no_matching_ablation_preserves_conditioning_cycle() -> None:
     ).read_text(encoding="utf-8").split()[0]
 
 
+def test_normal_only_ablation_preserves_architecture_and_full_positive_batch() -> None:
+    baseline = load_writer_config(
+        REPO_ROOT / "configs/pi05_as_writer_v2_no_matching.json"
+    )
+    path = REPO_ROOT / "configs/pi05_as_writer_v2_normal_only.json"
+    config = load_writer_config(path)
+    assert config["writer"] == baseline["writer"]
+    assert config["data"] == baseline["data"]
+    assert config["optimization"]["optimizer"] == baseline["optimization"]["optimizer"]
+    assert config["optimization"]["scheduler"] == baseline["optimization"]["scheduler"]
+    assert config["conditioning_training"]["matching_loss_weight"] == 0.0
+    assert conditioning_cycle(config) == ("normal",)
+    assert batch_size_cycle(16, config) == (16,)
+    assert config["formal_run"]["selected_stop_step"] == 250
+    assert sha256_file(path) == (
+        REPO_ROOT / "configs/pi05_as_writer_v2_normal_only.sha256"
+    ).read_text(encoding="utf-8").split()[0]
+
+
 def test_no_matching_ablation_allows_declared_exact_resume_stage(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

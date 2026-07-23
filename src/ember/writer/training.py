@@ -540,8 +540,9 @@ def _differentiate_condition_batch(
 
 def _cumulative_counts(runtime: WriterRuntime, completed: int) -> tuple[int, int, int]:
     unique = sum(runtime.sampler.batch_size_for_step(step) for step in range(completed))
+    cycle = conditioning_cycle(runtime.config)
     conditions = sum(
-        1 if conditioning_cycle(runtime.config)[step % 3] == "normal" else 2
+        1 if cycle[step % len(cycle)] == "normal" else 2
         for step in range(completed)
     )
     scale = runtime.context.world_size
@@ -556,7 +557,8 @@ def _one_step(
     tick = time.monotonic()
     batch = next(runtime.iterator)
     data_seconds = time.monotonic() - tick
-    mode = conditioning_cycle(runtime.config)[step % 3]
+    cycle = conditioning_cycle(runtime.config)
+    mode = cycle[step % len(cycle)]
     task_id, task_visit = runtime.sampler.task_visit_for_step(step)
     if _batch_task_id(batch) != task_id:
         raise WriterModelError("AS-Writer sampler and action batch disagree")

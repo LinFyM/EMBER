@@ -30,6 +30,7 @@ from ember.source_sft.checkpoint import (
 from ember.source_sft.contract import (
     SOURCE_SFT_LAUNCH_SCHEMA,
     Pi05SourceSFTError,
+    _contract_stop_step,
     _target_tasks,
     load_source_sft_config,
     resolve_runtime as resolve_source_sft_runtime,
@@ -166,6 +167,16 @@ def test_source_sft_declared_stage_stop_can_extend_without_schedule_change(
     args.stop_after_step = 500
     with pytest.raises(Pi05SourceSFTError, match="sealed profile"):
         resolve_source_sft_runtime(args, config, context)
+
+
+def test_formal_stage_extension_does_not_change_source_sft_contract_stop() -> None:
+    config = load_source_sft_config(RANK128_CONFIG)
+    args = SimpleNamespace(
+        stage="development", mode="formal", stop_after_step=600
+    )
+    assert _contract_stop_step(args, config, 800) == 400
+    args.mode = "profile"
+    assert _contract_stop_step(args, config, 800) == 600
 
 
 def test_development_config_cannot_open_final_stage() -> None:

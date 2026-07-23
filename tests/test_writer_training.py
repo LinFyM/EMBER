@@ -8,6 +8,7 @@ import torch
 
 from ember.pi05_source_checkpoint import DistributedContext, sha256_file
 from ember.writer.as_contract import (
+    _contract_stop_step,
     load_writer_config,
     parse_checkpoint_steps,
     resolve_runtime,
@@ -203,6 +204,16 @@ def test_no_matching_ablation_allows_declared_exact_resume_stage(
     args.stop_after_step = 600
     with pytest.raises(WriterModelError, match="sealed profile"):
         resolve_runtime(args, config, context)
+
+
+def test_formal_stage_extension_does_not_change_writer_contract_stop() -> None:
+    config = load_writer_config(
+        REPO_ROOT / "configs/pi05_as_writer_v2_no_matching.json"
+    )
+    args = argparse.Namespace(mode="formal", stop_after_step=750)
+    assert _contract_stop_step(args, config, 1500) == 500
+    args.mode = "profile"
+    assert _contract_stop_step(args, config, 1500) == 750
 
 
 def test_writer_condition_packing_uses_real_generic_tokens_and_two_arms_only() -> None:

@@ -472,6 +472,14 @@ def _software_versions() -> dict[str, Any]:
     }
 
 
+def _contract_stop_step(
+    args: argparse.Namespace, config: Mapping[str, Any], total_steps: int
+) -> int:
+    if args.mode == "formal":
+        return int(config["formal_run"].get("selected_stop_step", total_steps))
+    return int(args.stop_after_step)
+
+
 def build_contract(
     *,
     args: argparse.Namespace,
@@ -488,6 +496,7 @@ def build_contract(
     batch_cycle: Sequence[int],
     checkpoint_steps: Sequence[int],
 ) -> dict[str, Any]:
+    contract_stop_step = _contract_stop_step(args, config, total_steps)
     local = {
         "rank": context.rank,
         "local_rank": context.local_rank,
@@ -529,7 +538,7 @@ def build_contract(
             "policy_forward_calls_per_rank_cycle": [1, 2, 2],
             "teacher_videos_per_writer_invocation": 1,
             "total_steps": total_steps,
-            "selected_stop_step": args.stop_after_step,
+            "selected_stop_step": contract_stop_step,
             "checkpoint_steps": list(checkpoint_steps),
             "num_workers_per_rank": args.num_workers,
             "rank_topology": topology,

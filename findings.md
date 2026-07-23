@@ -447,3 +447,9 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - normal/full/generic positive loss首20到末20均值分别为`0.13805→0.12183`、`0.14542→0.11595`、`0.13450→0.11863`；末20步full/generic wrong-minus-correct gap为`0.00729/0.00783`。所有500 metrics连续唯一且finite，峰值reserved `68,344,086,528` bytes。
 - final step500 checkpoint manifest payload SHA256为`b30b2e1d...c395`；run-contract/metrics/corrected-summary SHA256为`36207182...2de`/`0d208b15...b619`/`a4f76fb2...9de7`。
 - 初始summary错误继承了development字段`validation_action_reads=0`，与final source角色冲突；训练contract、checkpoint和coverage均正确。已仅修正summary为400个validation-source action/video episodes available并保存零权重改动的correction provenance，SHA256 `ebc1bed8...414e`；代码同步按stage生成正确字段。
+
+## Final Source-SFT完成（2026-07-23）
+
+- final Source-SFT从fresh identity在32 source tasks上完成development已选的400/400 steps，保留原800-step cosine horizon与100-step warmup；训练loop wall为`2852.793s`，累计204,800 action queries，400条metrics连续且全部finite。
+- step400 coverage证明32 tasks均覆盖全部50条action episodes，每task 6,400 examples，共138,952 unique query rows；test action/video reads均为0。首/末20-step平均loss为`0.15139→0.11531`，稳态吞吐约`71.88 queries/s`，峰值reserved `42,037,411,840` bytes。
+- step400 checkpoint manifest payload SHA256为`0012ffb6...52bd`，run-contract/metrics/summary/file-manifest SHA256为`bc136964...da31`/`c0d91c9b...6211`/`ff0a33f7...d472`/`cd2f0766...d034`；10个exact-resume文件全部通过size/hash校验。

@@ -99,9 +99,17 @@
     ]
   },
   "profile_evidence": {
-    "status": "pending_rank128_profile",
-    "parent_rank16_profile": "/data/ymdai/outputs/ember/pi05_source_sft_profile_raw_b649ba5_b64_s128_20260722",
-    "planned_check": "Four real optimizer steps at rank 128 and batch 64 per rank must be finite and leave stable device headroom before the formal capacity comparison is sealed."
+    "status": "completed",
+    "output_root": "/data/ymdai/outputs/ember/pi05_source_sft_rank128_profile_seed7_d87698d_b64_s4_20260723",
+    "completed_steps": 4,
+    "rank": 128,
+    "per_rank_batch_size": 64,
+    "global_action_queries_per_step": 512,
+    "steady_global_action_queries_per_second": 72.35,
+    "max_cuda_allocated_bytes": 32230333952,
+    "max_cuda_reserved_bytes": 42087743488,
+    "all_losses_and_gradients_finite": true,
+    "conclusion": "Rank 128 at batch 64 per rank preserves the rank-16 throughput class, leaves more than 38 GB device headroom, and is stable for the staged 400-step capacity comparison."
   },
   "stages": {
     "development": {
@@ -112,7 +120,7 @@
       "available_action_episodes": 1200,
       "selection_data": "sealed eight validation tasks; no validation actions",
       "formal_run": {
-        "status": "pending_profile",
+        "status": "sealed",
         "expected_world_size": 8,
         "total_steps": 800,
         "per_rank_batch_size": 64,

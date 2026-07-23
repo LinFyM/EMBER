@@ -62,6 +62,7 @@ from ember.writer.as_contract import (
     load_training_data,
     load_writer_config,
     publish_contract,
+    reconcile_resume_contract,
     resume_step,
     resolve_runtime,
     writer_trainable_contract,
@@ -363,7 +364,7 @@ def prepare_runtime(
             total_steps=total_steps,
         )
     )
-    contract = build_contract(
+    candidate_contract = build_contract(
         args=args,
         config=config,
         context=context,
@@ -378,6 +379,7 @@ def prepare_runtime(
         batch_cycle=batch_cycle,
         checkpoint_steps=checkpoint_steps,
     )
+    contract = reconcile_resume_contract(args, candidate_contract)
     contract_sha256 = canonical_hash(contract)
     publish_contract(args, context, contract, contract_sha256)
 
@@ -775,6 +777,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--num-workers", type=int)
     parser.add_argument("--log-every", type=int, default=1)
     parser.add_argument("--skip-data-sha", action="store_true")
+    parser.add_argument(
+        "--allow-contract-compatible-code-resume",
+        action="store_true",
+        help=(
+            "Allow an explicit exact resume when every run-contract field except "
+            "the recorded code commit is unchanged."
+        ),
+    )
     return parser
 
 

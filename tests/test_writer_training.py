@@ -6,11 +6,16 @@ from pathlib import Path
 import pytest
 import torch
 
-from ember.pi05_source_checkpoint import DistributedContext, sha256_file
+from ember.pi05_source_checkpoint import (
+    DistributedContext,
+    sha256_file,
+    write_json_atomic,
+)
 from ember.writer.as_contract import (
     _contract_stop_step,
     load_writer_config,
     parse_checkpoint_steps,
+    reconcile_resume_contract,
     resolve_runtime,
     resume_step,
     writer_split_roles,
@@ -214,6 +219,38 @@ def test_formal_stage_extension_does_not_change_writer_contract_stop() -> None:
     assert _contract_stop_step(args, config, 1500) == 500
     args.mode = "profile"
     assert _contract_stop_step(args, config, 1500) == 750
+
+
+def test_code_compatible_resume_allows_only_recorded_commit_change(
+    tmp_path: Path,
+) -> None:
+    existing = {
+        "schema_version": "contract",
+        "git": {"branch": "main", "commit": "old"},
+        "runtime": {"selected_stop_step": 500, "total_steps": 1500},
+    }
+    write_json_atomic(tmp_path / "run_contract.json", existing)
+    args = argparse.Namespace(
+        output_dir=tmp_path,
+        resume=tmp_path / "checkpoints/step_00000500",
+        allow_contract_compatible_code_resume=True,
+    )
+    candidate = {
+        **existing,
+        "git": {"branch": "main", "commit": "new"},
+    }
+    assert reconcile_resume_contract(args, candidate) == existing
+
+    changed = {
+        **candidate,
+        "runtime": {"selected_stop_step": 500, "total_steps": 2000},
+    }
+    with pytest.raises(WriterModelError, match="scientific contract"):
+        reconcile_resume_contract(args, changed)
+
+    args.allow_contract_compatible_code_resume = False
+    with pytest.raises(WriterModelError, match="launch contract changed"):
+        reconcile_resume_contract(args, candidate)
 
 
 def test_writer_condition_packing_uses_real_generic_tokens_and_two_arms_only() -> None:

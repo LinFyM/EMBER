@@ -568,6 +568,17 @@ def publish_contract(
             args.output_dir / "invocations.jsonl",
             {
                 "argv": sys.argv,
+                "contract_git": dict(contract["git"]),
+                "runtime_git": {
+                    key: value
+                    for key, value in git_state(REPO_ROOT).items()
+                    if key in {"branch", "commit"}
+                },
+                "contract_compatible_code_resume": bool(
+                    args.resume is not None
+                    and contract["git"].get("commit")
+                    != git_state(REPO_ROOT).get("commit")
+                ),
                 "host": socket.gethostname(),
                 "resume": str(args.resume) if args.resume else None,
                 "started_unix": time.time(),
@@ -586,3 +597,39 @@ def publish_contract(
         return {"ok": True}
 
     _broadcast_validation(context, operation)
+
+
+def reconcile_resume_contract(
+    args: argparse.Namespace, candidate: Mapping[str, Any]
+) -> dict[str, Any]:
+    candidate = dict(candidate)
+    if args.resume is None:
+        if getattr(args, "allow_contract_compatible_code_resume", False):
+            raise WriterModelError(
+                "contract-compatible code resume requires a checkpoint"
+            )
+        return candidate
+    contract_path = args.output_dir / "run_contract.json"
+    if not contract_path.is_file():
+        return candidate
+    existing = read_json(contract_path)
+    if existing == candidate:
+        return existing
+    if not getattr(args, "allow_contract_compatible_code_resume", False):
+        raise WriterModelError("AS-Writer resume launch contract changed")
+    existing_git = existing.get("git", {})
+    candidate_git = candidate.get("git", {})
+    if (
+        existing_git.get("branch") != candidate_git.get("branch")
+        or existing_git.get("commit") == candidate_git.get("commit")
+    ):
+        raise WriterModelError(
+            "AS-Writer code-compatible resume did not isolate one commit change"
+        )
+    normalized = dict(candidate)
+    normalized["git"] = existing_git
+    if normalized != existing:
+        raise WriterModelError(
+            "AS-Writer code-compatible resume changed the scientific contract"
+        )
+    return existing

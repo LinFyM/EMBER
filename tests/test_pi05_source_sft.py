@@ -113,7 +113,7 @@ def test_rank128_capacity_config_keeps_data_wall_and_changes_only_capacity() -> 
     assert rank128.parameter_count == 10_297_344
     assert (
         capacity["stages"]["development"]["formal_run"]["status"]
-        == "pending_profile"
+        == "sealed"
     )
     assert (
         capacity["stages"]["development"]["formal_run"]["selected_stop_step"]
@@ -126,6 +126,8 @@ def test_rank128_capacity_config_keeps_data_wall_and_changes_only_capacity() -> 
         600,
         800,
     ]
+    assert capacity["profile_evidence"]["rank"] == 128
+    assert capacity["profile_evidence"]["all_losses_and_gradients_finite"] is True
     assert sha256_file(RANK128_CONFIG) == (
         ROOT / "configs/pi05_source_sft_rank128_capacity_v1.sha256"
     ).read_text(encoding="utf-8").split()[0]

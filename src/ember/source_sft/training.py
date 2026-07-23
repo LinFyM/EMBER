@@ -490,6 +490,18 @@ def run_steps(runtime: SourceSFTRuntime) -> None:
     if runtime.context.is_main:
         stop = runtime.args.stop_after_step
         validation_episodes = 400 if runtime.args.stage == "final" else 0
+        validation_summaries = (
+            [
+                json.loads(path.read_text(encoding="utf-8"))
+                for path in sorted(
+                    runtime.checkpoint_validation.output_dir.glob(
+                        "step_*/summary.json"
+                    )
+                )
+            ]
+            if runtime.checkpoint_validation is not None
+            else []
+        )
         write_json_atomic(
             runtime.args.output_dir / "run_summary.json",
             {
@@ -514,6 +526,11 @@ def run_steps(runtime: SourceSFTRuntime) -> None:
                 "train_tasks": len(runtime.task_ids),
                 "teacher_action_episodes_available": len(runtime.task_ids) * 50,
                 "validation_action_episodes_available": validation_episodes,
+                "validation_action_queries_read_by_checkpoint_monitor": sum(
+                    int(summary["row_count"]) for summary in validation_summaries
+                ),
+                "validation_checkpoint_monitor_count": len(validation_summaries),
+                "validation_checkpoint_monitor_optimizer_updates": 0,
                 "test_action_reads": 0,
                 "teacher_video_value_reads": 0,
                 "trainable_parameter_count": runtime.contract["trainable"][

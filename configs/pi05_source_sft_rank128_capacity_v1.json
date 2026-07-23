@@ -100,10 +100,29 @@
     ]
   },
   "profile_evidence": {
-    "status": "pending_four_rank_profile",
+    "status": "sealed",
     "rank": 128,
+    "selected_run": "/data/ymdai/outputs/ember/pi05_source_sft_rank128_profile_r4_b128_22fae58_s4_20260723",
+    "physical_gpu_indices": [0, 1, 2, 3],
+    "world_size": 4,
+    "per_rank_batch_size": 128,
+    "global_batch_size": 512,
+    "observed_optimizer_steps": 4,
+    "step_seconds": [
+      14.919482443016022,
+      14.109093043021858,
+      14.151898057898507,
+      14.18982703005895
+    ],
+    "steady_global_action_queries_per_second": 36.18324481558128,
+    "max_cuda_allocated_bytes": 54998429696,
+    "max_cuda_reserved_bytes": 67979182080,
+    "all_losses_and_gradients_finite": true,
+    "run_contract_sha256": "9a15add84e34027be8c97d0e367a8c12880e12e6dcb6a01b3e380a51d4c78479",
+    "metrics_sha256": "ff033c3f574b14c53f02707b29d585f45e53f2bee79950ae7775bf6bacc7d2a0",
+    "run_summary_sha256": "c6b3c1f6d438c9b855d2a7e788aa82c610d8fd574f083517f3460d2522e670cd",
     "superseded_eight_rank_run": "/data/ymdai/outputs/ember/pi05_source_sft_rank128_profile_seed7_d87698d_b64_s4_20260723",
-    "reason": "Owner limited all launches through 2026-07-28 to physical GPUs 0,1,2,3. Profile four ranks at batch 128 per rank so the global batch remains 512 before sealing a fresh trajectory."
+    "reason": "Four symmetric ranks on physical GPUs 0,1,2,3 completed finite forward/backward at batch128 per rank. The global batch remains512, matching the prior rank128 trajectory, while peak reserved memory is67.98GB and leaves stable headroom."
   },
   "stages": {
     "development": {
@@ -112,9 +131,9 @@
       ],
       "task_count": 24,
       "available_action_episodes": 1200,
-      "selection_data": "sealed eight validation tasks; no validation actions",
+      "selection_data": "sealed 512-query validation action-loss panel for checkpoint screening only; no gradients or optimizer updates; complete 8-task x 50 closed-loop remains final authority",
       "formal_run": {
-        "status": "pending_four_rank_profile",
+        "status": "sealed",
         "expected_world_size": 4,
         "total_steps": 2400,
         "per_rank_batch_size": 128,
@@ -145,11 +164,7 @@
           2400
         ],
         "selected_stop_step": 800,
-        "stage_stop_steps": [
-          800,
-          1600,
-          2400
-        ],
+        "stage_stop_steps": [800, 1100, 1400, 1700, 2000, 2300, 2400],
         "maximum_wall_clock_minutes": null,
         "budget_role": "no_time_limit_owner_20260723",
         "prior_matched_scale_result": {
@@ -159,7 +174,7 @@
           "validation_episodes": 400,
           "interpretation": "The prior matched-scale pilot stopped during the inherited 1,000-step warmup while loss was still descending; it is provenance, not the Source-SFT ceiling."
         },
-        "selection_rule": "Fresh four-rank rank-128 shared LoRA on physical GPUs 0,1,2,3. Batch 128 per rank preserves global batch 512. Keep the established 100-step warmup and 800-step cosine decay exactly, then allow a low-learning-rate tail through step 2400 without changing the early trajectory. Retain every 100-step checkpoint, stop first at 800, and exact-resume to 1600/2400 only until complete validation establishes a true peak and sustained post-peak decline rather than one noisy dip. Validation functional loss screens candidates; complete 8-task x 50 closed-loop success remains authoritative. There is no wall-clock limit."
+        "selection_rule": "Fresh four-rank rank-128 shared LoRA on physical GPUs 0,1,2,3. Batch128 per rank preserves global batch512. Keep the established 100-step warmup and 800-step cosine decay exactly, then allow a low-learning-rate tail through step2400 without changing the early trajectory. Retain every100-step checkpoint, stop first at800, and exact-resume in300-step increments only until validation establishes a true peak and sustained post-peak decline rather than one noisy dip. The resident 512-query validation functional loss screens candidates; complete 8-task x50 closed-loop success remains authoritative. There is no wall-clock limit."
       }
     },
     "final": {

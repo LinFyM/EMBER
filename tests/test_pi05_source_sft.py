@@ -114,7 +114,7 @@ def test_rank128_capacity_config_keeps_data_wall_and_changes_only_capacity() -> 
     assert rank128.parameter_count == 10_297_344
     assert (
         capacity["stages"]["development"]["formal_run"]["status"]
-        == "pending_four_rank_profile"
+        == "sealed"
     )
     assert (
         capacity["stages"]["development"]["formal_run"]["selected_stop_step"]
@@ -122,7 +122,11 @@ def test_rank128_capacity_config_keeps_data_wall_and_changes_only_capacity() -> 
     )
     assert capacity["stages"]["development"]["formal_run"]["stage_stop_steps"] == [
         800,
-        1600,
+        1100,
+        1400,
+        1700,
+        2000,
+        2300,
         2400,
     ]
     assert capacity["profile_evidence"]["rank"] == 128
@@ -156,7 +160,7 @@ def test_source_sft_declared_stage_stop_can_extend_without_schedule_change(
         total_steps=None,
         batch_size=None,
         checkpoint_steps=None,
-        stop_after_step=1600,
+        stop_after_step=1100,
         resume=Path("/tmp/step_00000800"),
         skip_data_sha=False,
     )
@@ -165,7 +169,7 @@ def test_source_sft_declared_stage_stop_can_extend_without_schedule_change(
         128,
         tuple(range(100, 2401, 100)),
     )
-    assert args.stop_after_step == 1600
+    assert args.stop_after_step == 1100
     args.stop_after_step = 500
     with pytest.raises(Pi05SourceSFTError, match="sealed profile"):
         resolve_source_sft_runtime(args, config, context)
@@ -174,11 +178,11 @@ def test_source_sft_declared_stage_stop_can_extend_without_schedule_change(
 def test_formal_stage_extension_does_not_change_source_sft_contract_stop() -> None:
     config = load_source_sft_config(RANK128_CONFIG)
     args = SimpleNamespace(
-        stage="development", mode="formal", stop_after_step=1600
+        stage="development", mode="formal", stop_after_step=1100
     )
     assert _contract_stop_step(args, config, 2400) == 800
     args.mode = "profile"
-    assert _contract_stop_step(args, config, 2400) == 1600
+    assert _contract_stop_step(args, config, 2400) == 1100
 
 
 def test_source_sft_code_compatible_resume_allows_only_commit_change(

@@ -489,3 +489,9 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 完整correct-video closed-loop在step300/400/500/600/800依次为`57/91/86/87/88`；逐任务step400为Long `2/0`、Goal `0/43`、Object `31/15`、Spatial `0/0`。step400相对step300的paired flips为`49/15`、exact `p=2.44e-5`；相对500/600/800分别为`33/28`、`26/22`、`29/26`，后三个差异均不显著。故step400是该轨迹已观测真实峰值，step300已显著较差，无需再补step200。
 - val-loss的用途需要保持克制：本轮最低val-loss和最高closed-loop都在step400，且400后的train–val分叉正确提示停止长训；但五个候选的loss-success Spearman仅`-0.10`，step300的loss接近400而success低34。因此它能判断继续/早停并收缩候选区间，不能独立精确排序checkpoint，最终best仍由完整rollout决定。
 - 当前Action-Memory AS首轨迹没有通过相对SFT门槛：step400 AS为`91/400`，旧rank128 Source-SFT step400为`122/400`；paired AS-only/SFT-only=`25/56`、exact `p=7.52e-4`。在充分探索新的Source-SFT ceiling同时，下一轮AS应优先修正训练统计效率，而不是继续当前已经过拟合的轨迹：目前每个task-condition每步只有16个action queries，而rank128 SFT为128个；这会让约10.12M参数Writer的functional梯度方差远高于约10.30M参数SFT。
+
+## 四卡rank128 Source-SFT ceiling profile（2026-07-23）
+
+- 在物理GPU0–3上用4个对称DDP ranks、batch128/rank完成4步真实forward/backward；global batch保持512，与旧八卡rank128轨迹完全相同。四步均finite，step wall为`14.919/14.109/14.152/14.190s`，后3步平均吞吐约`36.18 queries/s`。
+- 峰值CUDA allocated/reserved为`54,998,429,696/67,979,182,080` bytes，保留约14GB物理余量；无需降低batch。run contract、metrics、summary SHA256依次为`9a15add8...8479`、`ff033c3f...d2a0`、`c6b3c1f6...70cd`。
+- 正式轨迹沿用已建立的rank128 optimizer：warmup100、cosine decay800、每100步checkpoint。首段到step800；之后只在val-loss或闭环候选仍未充分时按300步exact-resume。每个checkpoint在同一驻留policy上原地测封存512-query validation action loss，不卸载模型、不更新参数；完整8×50 closed-loop仍决定最终best。

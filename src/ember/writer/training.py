@@ -62,9 +62,10 @@ from ember.writer.as_contract import (
     load_training_data,
     load_writer_config,
     publish_contract,
-    resolve_runtime,
     resume_step,
+    resolve_runtime,
     writer_trainable_contract,
+    writer_stage,
 )
 from ember.writer.data import (
     FunctionalQueryDataset,
@@ -692,33 +693,35 @@ def run_steps(runtime: WriterRuntime) -> None:
     barrier(runtime.context)
     if runtime.context.is_main:
         stop = runtime.args.stop_after_step
-        write_json_atomic(
-            runtime.args.output_dir / "run_summary.json",
-            {
-                "schema_version": "ember_pi05_as_writer_run_summary_v1",
-                "contract_sha256": runtime.contract_sha256,
-                "completed_optimizer_steps": stop,
-                "requested_optimizer_steps": runtime.total_steps,
-                "stopped_early_for_profile": (
-                    runtime.args.mode == "profile" and stop < runtime.total_steps
-                ),
-                "selected_stage_stop": (
-                    runtime.args.mode == "formal" and stop < runtime.total_steps
-                ),
-                "metrics_rows": runtime.metrics_rows,
-                "wall_seconds": time.monotonic() - started,
-                "final_checkpoint": str(
-                    runtime.args.output_dir / "checkpoints" / f"step_{stop:08d}"
-                )
-                if stop in runtime.checkpoint_steps
-                else None,
-                "train_tasks": len(runtime.task_ids),
-                "teacher_action_episodes_available": len(runtime.task_ids) * 50,
-                "validation_action_reads": 0,
-                "test_action_reads": 0,
-                "test_video_value_reads": 0,
-            },
-        )
+        summary = {
+            "schema_version": "ember_pi05_as_writer_run_summary_v1",
+            "contract_sha256": runtime.contract_sha256,
+            "completed_optimizer_steps": stop,
+            "requested_optimizer_steps": runtime.total_steps,
+            "stopped_early_for_profile": (
+                runtime.args.mode == "profile" and stop < runtime.total_steps
+            ),
+            "selected_stage_stop": (
+                runtime.args.mode == "formal" and stop < runtime.total_steps
+            ),
+            "metrics_rows": runtime.metrics_rows,
+            "wall_seconds": time.monotonic() - started,
+            "final_checkpoint": str(
+                runtime.args.output_dir / "checkpoints" / f"step_{stop:08d}"
+            )
+            if stop in runtime.checkpoint_steps
+            else None,
+            "train_tasks": len(runtime.task_ids),
+            "teacher_action_episodes_available": len(runtime.task_ids) * 50,
+            "test_action_reads": 0,
+            "test_video_value_reads": 0,
+        }
+        if writer_stage(runtime.config) == "final":
+            summary["validation_action_episodes_available"] = 400
+            summary["validation_video_episodes_available"] = 400
+        else:
+            summary["validation_action_reads"] = 0
+        write_json_atomic(runtime.args.output_dir / "run_summary.json", summary)
 
 
 def train(args: argparse.Namespace) -> None:

@@ -440,3 +440,10 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - AS复现development最优step500时必须保留原1,500-step cosine horizon；若把formal total直接改成500，LeRobot会把50-step warmup自动缩到16并把decay压到500，已不再是同一配置。因此final合同以`total_steps=1500`封存scheduler，机械`selected_stop_step=500`，只实际训练到并发布step500。
 - Source-SFT同理保留800-step horizon与100-step warmup，机械停在development选定的step400；final不是把scheduler重缩到400。RL-Writer development update36在24 tasks上等于每task 12个完整cycles，32-task final据此固定为48 updates=`384` rollouts、每task仍12次，不用test outcome重新选择预算。
 - 三份final配置SHA256为AS `ebe269ea...e299e`、Source-SFT `25e99628...d10c2`、RL `32dd979b...2ab30`。AS/RL扩展同一canonical runner的sealed stage和source roles，没有增加第二套入口；现有32-task feature cache完整覆盖train+validation，可直接复用而不生成重复17GB cache。
+
+## Final AS-Writer完成（2026-07-23）
+
+- final AS从同seed fresh identity在32 source tasks上实际完成500/500 selected steps，保持原1,500-step scheduler horizon；训练loop wall为`634.671s`。checkpoint coverage证明32 tasks均使用全部50条action episodes和全部50条teacher videos，累计64,000 policy samples、42,688 unique action queries，test action/video reads均为0。
+- normal/full/generic positive loss首20到末20均值分别为`0.13805→0.12183`、`0.14542→0.11595`、`0.13450→0.11863`；末20步full/generic wrong-minus-correct gap为`0.00729/0.00783`。所有500 metrics连续唯一且finite，峰值reserved `68,344,086,528` bytes。
+- final step500 checkpoint manifest payload SHA256为`b30b2e1d...c395`；run-contract/metrics/corrected-summary SHA256为`36207182...2de`/`0d208b15...b619`/`a4f76fb2...9de7`。
+- 初始summary错误继承了development字段`validation_action_reads=0`，与final source角色冲突；训练contract、checkpoint和coverage均正确。已仅修正summary为400个validation-source action/video episodes available并保存零权重改动的correction provenance，SHA256 `ebc1bed8...414e`；代码同步按stage生成正确字段。

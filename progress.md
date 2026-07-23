@@ -273,3 +273,9 @@
 - 单一AS与RL canonical runner现按immutable config支持development/final stage；Source-SFT已有final owner。32-source角色严格为`train+validation`，每suite8 tasks，test不进入训练。
 - final AS保持1,500-step scheduler horizon并机械停在选定step500；final Source-SFT保持800-step horizon并停在选定step400，避免LeRobot因缩短`total_steps`自动改变warmup/decay。final RL固定12 full source-task cycles，即48 updates/384 rollouts。
 - final AS/SFT/RL配置SHA256依次为`ebe269ea...e299e`、`25e99628...d10c2`、`32dd979b...2ab30`；32-task Writer cache可直接复用。聚焦测试与全仓fresh验证为`28 passed`/`159 passed`，下一步在clean pushed commit上依次启动三套fresh单seed训练。
+
+## Final AS-Writer训练完成（2026-07-23）
+
+- root为`/data/ymdai/outputs/ember/pi05_as_writer_v2_final32_seed7_a5173a1_b16_stop0500_20260723`；fresh训练实际500 steps、原scheduler horizon 1,500、wall `634.671s`，32 tasks各覆盖50 action episodes与50 videos，500 rows全部finite。
+- checkpoint/run-contract/metrics SHA256为`b30b2e1d...c395`/`36207182...2de`/`0d208b15...b619`；末20 full/generic matching gap为`0.00729/0.00783`，训练机械与信息墙通过。
+- 修正了run summary沿用development `validation_action_reads=0`的报告错误；权重和optimizer改动为0，corrected summary/correction provenance SHA256为`a4f76fb2...9de7`/`ebc1bed8...414e`。全仓fresh仍为`159 passed`；下一步启动final Source-SFT。

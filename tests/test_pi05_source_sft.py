@@ -32,6 +32,7 @@ from ember.source_sft.contract import (
     Pi05SourceSFTError,
     _target_tasks,
     load_source_sft_config,
+    resolve_runtime as resolve_source_sft_runtime,
 )
 from ember.source_sft.inference import inspect_source_sft_evaluation
 
@@ -39,6 +40,7 @@ from ember.source_sft.inference import inspect_source_sft_evaluation
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "configs/pi05_source_sft_development_v1.json"
 FINAL_CONFIG = ROOT / "configs/pi05_source_sft_final_v1.json"
+RANK128_CONFIG = ROOT / "configs/pi05_source_sft_rank128_capacity_v1.json"
 
 
 def test_development_config_selects_only_sealed_train_actions() -> None:
@@ -94,6 +96,76 @@ def test_development_formal_budget_is_independent_ceiling_search() -> None:
     assert config["optimization"]["scheduler"]["decay_steps"] == 800
     assert "not matched to AS-Writer" in formal["selection_rule"]
     assert formal["prior_matched_scale_result"]["optimizer_steps"] == 63
+
+
+def test_rank128_capacity_config_keeps_data_wall_and_changes_only_capacity() -> None:
+    baseline = load_source_sft_config(CONFIG)
+    capacity = load_source_sft_config(RANK128_CONFIG)
+    rank128 = load_pi05_lora_contract(
+        ROOT / capacity["authorities"]["lora_contract"]["path"]
+    )
+    assert capacity["sealed_stage"] == "development"
+    assert capacity["information_wall"] == baseline["information_wall"]
+    assert capacity["data"] == baseline["data"]
+    assert capacity["optimization"] == baseline["optimization"]
+    assert rank128.rank == rank128.alpha == 128
+    assert rank128.parameter_count == 10_297_344
+    assert (
+        capacity["stages"]["development"]["formal_run"]["status"]
+        == "pending_profile"
+    )
+    assert (
+        capacity["stages"]["development"]["formal_run"]["selected_stop_step"]
+        == 400
+    )
+    assert capacity["stages"]["development"]["formal_run"]["stage_stop_steps"] == [
+        100,
+        200,
+        400,
+        600,
+        800,
+    ]
+    assert sha256_file(RANK128_CONFIG) == (
+        ROOT / "configs/pi05_source_sft_rank128_capacity_v1.sha256"
+    ).read_text(encoding="utf-8").split()[0]
+
+
+def test_source_sft_declared_stage_stop_can_extend_without_schedule_change(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = load_source_sft_config(RANK128_CONFIG)
+    config["stages"]["development"]["formal_run"]["status"] = "sealed"
+    context = DistributedContext(
+        rank=0,
+        local_rank=0,
+        world_size=8,
+        device=torch.device("cpu"),
+        numa_node=0,
+        cpu_affinity=(0,),
+    )
+    monkeypatch.setattr(
+        "ember.source_sft.contract.git_state",
+        lambda _root: {"dirty_paths": [], "commit": "sealed", "origin_main": "sealed"},
+    )
+    args = SimpleNamespace(
+        stage="development",
+        mode="formal",
+        total_steps=None,
+        batch_size=None,
+        checkpoint_steps=None,
+        stop_after_step=600,
+        resume=Path("/tmp/step_00000400"),
+        skip_data_sha=False,
+    )
+    assert resolve_source_sft_runtime(args, config, context) == (
+        800,
+        64,
+        (100, 200, 400, 600, 800),
+    )
+    assert args.stop_after_step == 600
+    args.stop_after_step = 500
+    with pytest.raises(Pi05SourceSFTError, match="sealed profile"):
+        resolve_source_sft_runtime(args, config, context)
 
 
 def test_development_config_cannot_open_final_stage() -> None:

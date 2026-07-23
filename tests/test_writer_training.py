@@ -117,6 +117,94 @@ def test_video_matching_manual_gradient_coefficients_equal_autograd() -> None:
     assert 0 < float(probability.detach()) < 1
 
 
+def test_zero_matching_weight_keeps_only_correct_arm_gradient() -> None:
+    losses = tuple(torch.tensor(value, requires_grad=True) for value in (0.11, 0.10))
+    config = {
+        "contrast_correct_loss_weight": 1.0,
+        "matching_loss_weight": 0.0,
+        "matching_margin": 0.01,
+        "matching_temperature": 0.01,
+    }
+    objective, coefficients, probability = matching_objective(losses, config)
+    observed = torch.autograd.grad(objective, losses)
+    torch.testing.assert_close(objective, losses[0])
+    torch.testing.assert_close(observed[0], torch.ones_like(losses[0]))
+    torch.testing.assert_close(observed[1], torch.zeros_like(losses[1]))
+    torch.testing.assert_close(coefficients[0], torch.ones_like(losses[0]))
+    torch.testing.assert_close(coefficients[1], torch.zeros_like(losses[1]))
+    assert 0 < float(probability.detach()) < 1
+
+
+def test_no_matching_ablation_preserves_conditioning_cycle() -> None:
+    path = REPO_ROOT / "configs/pi05_as_writer_v2_no_matching.json"
+    config = load_writer_config(path)
+    assert config["conditioning_training"]["matching_loss_weight"] == 0.0
+    assert conditioning_cycle(config) == (
+        "normal",
+        "full_language_contrast",
+        "generic_language_contrast",
+    )
+    assert batch_size_cycle(16, config) == (16, 8, 8)
+    assert config["formal_run"]["checkpoint_steps"] == [
+        250,
+        500,
+        750,
+        1000,
+        1250,
+        1500,
+    ]
+    assert config["formal_run"]["selected_stop_step"] == 500
+    assert config["formal_run"]["stage_stop_steps"] == [
+        250,
+        500,
+        750,
+        1000,
+        1250,
+        1500,
+    ]
+    assert sha256_file(path) == (
+        REPO_ROOT / "configs/pi05_as_writer_v2_no_matching.sha256"
+    ).read_text(encoding="utf-8").split()[0]
+
+
+def test_no_matching_ablation_allows_declared_exact_resume_stage(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = load_writer_config(
+        REPO_ROOT / "configs/pi05_as_writer_v2_no_matching.json"
+    )
+    context = DistributedContext(
+        rank=0,
+        local_rank=0,
+        world_size=8,
+        device=torch.device("cpu"),
+        numa_node=0,
+        cpu_affinity=(0,),
+    )
+    monkeypatch.setattr(
+        "ember.writer.as_contract.git_state",
+        lambda _root: {"dirty_paths": [], "commit": "sealed", "origin_main": "sealed"},
+    )
+    args = argparse.Namespace(
+        mode="formal",
+        total_steps=None,
+        batch_size=None,
+        checkpoint_steps=None,
+        stop_after_step=750,
+        resume=Path("/tmp/step_00000500"),
+        skip_data_sha=False,
+    )
+    assert resolve_runtime(args, config, context) == (
+        1500,
+        16,
+        (250, 500, 750, 1000, 1250, 1500),
+    )
+    assert args.stop_after_step == 750
+    args.stop_after_step = 600
+    with pytest.raises(WriterModelError, match="sealed profile"):
+        resolve_runtime(args, config, context)
+
+
 def test_writer_condition_packing_uses_real_generic_tokens_and_two_arms_only() -> None:
     language = torch.full((2, 4), 1.0)
     generic = torch.full((3, 4), 7.0)

@@ -1,0 +1,170 @@
+{
+  "schema_version": "ember_pi05_source_sft_v1",
+  "sealed_stage": "development",
+  "authorities": {
+    "target_data_manifest": {
+      "path": "configs/pi05_target_data_v1/manifest.json",
+      "sha256": "1b28547f6080a35fdf23ebae021407da15bfe4af367b0b1791042945d91b049d"
+    },
+    "evaluation_config": {
+      "path": "configs/pi05_target_evaluation_v1.json",
+      "sha256": "5bb0a5ca4604f126cc4bcdd29c9a7a4d17403a8f3ee7161d8afdfeccbb2c488c"
+    },
+    "lora_contract": {
+      "path": "configs/pi05_lora_rank128_capacity_v1.json",
+      "sha256": "9c54ae4fb060586a1e26c48b82389a0487555c9071d556bdb54c2516c0edb672"
+    },
+    "source_base_config": {
+      "path": "configs/pi05_source_base_v1.json",
+      "sha256": "7455fc59c67ca39f7c70b1296d2f1dc98f070bfda869bb0535bf5a9e91e04cc6"
+    },
+    "tokenizer_manifest": {
+      "path": "configs/libero_24_8_8_v1/pi05_tokenizer_manifest.json",
+      "sha256": "948bf1ec1f2768833bead66b2e829154e3304c1c09fe9c48813a79f06e47426c"
+    }
+  },
+  "information_wall": {
+    "policy_input": "correct task language plus current policy observation only",
+    "forbidden_inputs": [
+      "teacher_video",
+      "reward",
+      "terminal",
+      "task_id",
+      "filename",
+      "policy_outcome"
+    ],
+    "development_action_split_roles": [
+      "train"
+    ],
+    "final_action_split_roles": [
+      "train",
+      "validation"
+    ],
+    "test_actions_read": 0,
+    "test_video_values_read": 0,
+    "held_evaluation_adaptation": "none"
+  },
+  "adapter": {
+    "kind": "one_shared_multitask_pi05_lora",
+    "initialization": "fresh deterministic functional identity from the frozen source base for each stage",
+    "contract": "configs/pi05_lora_rank128_capacity_v1.json",
+    "stacked_shared_source_adapter": false,
+    "per_task_adapter": false
+  },
+  "data": {
+    "episodes_per_task": 50,
+    "demo_indices": [
+      0,
+      49
+    ],
+    "action_chunk_size": 50,
+    "sampler_seed": 20260723,
+    "sampling": "task-balanced deterministic no-replacement episode cycles; deterministic frame within each episode visit",
+    "max_open_files_per_worker": 8
+  },
+  "loader": {
+    "num_workers_per_rank": 2,
+    "prefetch_factor": 2
+  },
+  "optimization": {
+    "method": "shared_multitask_lora_action_sft",
+    "seed": 7,
+    "precision": "bfloat16",
+    "source_policy": "final formal frozen raw policy",
+    "normalization": "frozen filtered-LIBERO-90 source normalization",
+    "gradient_checkpointing": true,
+    "optimizer": {
+      "name": "AdamW",
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "eps": 1e-08,
+      "weight_decay": 0.0001,
+      "gradient_clip_norm": 1.0
+    },
+    "scheduler": {
+      "kind": "cosine_decay_with_warmup",
+      "peak_lr": 0.0003,
+      "warmup_steps": 100,
+      "decay_steps": 800,
+      "decay_lr": 0.00001
+    }
+  },
+  "profile_defaults": {
+    "total_steps": 4,
+    "per_rank_batch_size": 64,
+    "checkpoint_steps": [
+      4
+    ]
+  },
+  "profile_evidence": {
+    "status": "pending_rank128_profile",
+    "parent_rank16_profile": "/data/ymdai/outputs/ember/pi05_source_sft_profile_raw_b649ba5_b64_s128_20260722",
+    "planned_check": "Four real optimizer steps at rank 128 and batch 64 per rank must be finite and leave stable device headroom before the formal capacity comparison is sealed."
+  },
+  "stages": {
+    "development": {
+      "action_split_roles": [
+        "train"
+      ],
+      "task_count": 24,
+      "available_action_episodes": 1200,
+      "selection_data": "sealed eight validation tasks; no validation actions",
+      "formal_run": {
+        "status": "pending_profile",
+        "expected_world_size": 8,
+        "total_steps": 800,
+        "per_rank_batch_size": 64,
+        "checkpoint_steps": [
+          100,
+          200,
+          400,
+          600,
+          800
+        ],
+        "selected_stop_step": 400,
+        "stage_stop_steps": [
+          100,
+          200,
+          400,
+          600,
+          800
+        ],
+        "maximum_wall_clock_minutes": 120,
+        "budget_role": "guardrail_not_target",
+        "prior_matched_scale_result": {
+          "optimizer_steps": 63,
+          "global_action_queries": 32256,
+          "validation_successes": 61,
+          "validation_episodes": 400,
+          "interpretation": "The prior matched-scale pilot stopped during the inherited 1,000-step warmup while loss was still descending; it is provenance, not the Source-SFT ceiling."
+        },
+        "selection_rule": "Capacity diagnostic against the completed rank-16 Source-SFT ceiling: train a fresh rank-128 shared LoRA, with alpha/rank kept at one, using the same 800-step scheduler horizon, batch, data, seed, and information wall. Stop first at step 400, screen steps 100/200/400, and exact-resume only to 600 or 800 if evidence remains unsaturated. Full-evaluate only the few candidates needed to locate its validation peak. This tests whether the 119/400 collapsed Writer-v1 result over rank-16 Source-SFT 87/400 is explained by roughly ten-fold trainable-parameter capacity; it is not constrained to the Writer LoRA rank."
+      }
+    },
+    "final": {
+      "action_split_roles": [
+        "train",
+        "validation"
+      ],
+      "task_count": 32,
+      "available_action_episodes": 1600,
+      "selection_data": "no test outcomes; retrain once from fresh identity after development selection",
+      "formal_run": {
+        "status": "blocked_until_development_selection",
+        "expected_world_size": 8,
+        "total_steps": 0,
+        "per_rank_batch_size": 0,
+        "checkpoint_steps": [],
+        "maximum_wall_clock_minutes": 120,
+        "budget_role": "guardrail_not_target",
+        "selection_rule": "copy the frozen development hyperparameters and retrain from the prescribed fresh identity state; never resume the development LoRA; stop at the selected schedule or guardrail and record any apparent undertraining"
+      }
+    }
+  },
+  "checkpointing": {
+    "atomic_publish": true,
+    "retained_state": "shared LoRA, optimizer, scheduler, per-rank RNG, deterministic sampler cursor, metrics cursor, contract and hashes"
+  }
+}

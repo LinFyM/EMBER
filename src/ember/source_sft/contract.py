@@ -196,7 +196,16 @@ def resolve_runtime(
             batch_size,
             checkpoint_steps,
         )
-        if observed != expected or stop_step != default_stop:
+        stage_stops = tuple(
+            int(value) for value in formal.get("stage_stop_steps", [default_stop])
+        )
+        if (
+            observed != expected
+            or not stage_stops
+            or any(value not in checkpoint_steps for value in stage_stops)
+            or default_stop not in stage_stops
+            or stop_step not in stage_stops
+        ):
             raise Pi05SourceSFTError("formal Source-SFT launch differs from its sealed profile")
         state = git_state(REPO_ROOT)
         if state["dirty_paths"]:

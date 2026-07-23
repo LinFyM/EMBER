@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import json
 from pathlib import Path
 
 import pytest
@@ -19,6 +20,7 @@ from ember.pi05_lora import (
     load_pi05_lora_contract,
     pi05_target_names,
 )
+from ember.pi05_source_checkpoint import sha256_file
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
 
@@ -128,6 +130,31 @@ def test_sealed_pi05_contract_has_exact_topology_and_capacity() -> None:
     assert contract.rank == contract.alpha == 16
     assert contract.dropout == 0.0
     assert len(canonical_contract_sha256(contract)) == 64
+
+
+def test_pi05_topology_allows_method_owned_rank_with_unit_scale(
+    tmp_path: Path,
+) -> None:
+    raw = json.loads(
+        (REPO_ROOT / "configs/pi05_lora_v1.json").read_text(encoding="utf-8")
+    )
+    raw["adapter"]["rank"] = 128
+    raw["adapter"]["alpha"] = 128
+    raw["trainable_parameter_count"] *= 8
+    path = tmp_path / "rank128.json"
+    path.write_text(json.dumps(raw), encoding="utf-8")
+    contract = load_pi05_lora_contract(path)
+    assert contract.rank == contract.alpha == 128
+    assert contract.parameter_count == 10_297_344
+
+
+def test_rank128_capacity_contract_is_hashed() -> None:
+    path = REPO_ROOT / "configs/pi05_lora_rank128_capacity_v1.json"
+    contract = load_pi05_lora_contract(path)
+    assert contract.rank == 128
+    assert sha256_file(path) == (
+        REPO_ROOT / "configs/pi05_lora_rank128_capacity_v1.sha256"
+    ).read_text(encoding="utf-8").split()[0]
 
 
 def test_pi05_derivation_requires_all_exact_named_linears() -> None:

@@ -1,4 +1,4 @@
-"""Sealed PI05 task-LoRA topology shared by every active EMBER method."""
+"""Sealed PI05 task-LoRA topology with method-owned capacity."""
 
 from __future__ import annotations
 
@@ -118,8 +118,8 @@ def _validate_pi05_contract(contract: Pi05LoRAContract, raw: dict[str, Any]) -> 
         raise LoRAContractError("PI05 LoRA target shapes differ from pi05_base")
     if (
         contract.foundation_repository != "lerobot/pi05_base"
-        or contract.rank != 16
-        or contract.alpha != 16
+        or contract.rank <= 0
+        or contract.alpha != contract.rank
         or contract.dropout != 0.0
         or contract.identity_seed < 0
     ):

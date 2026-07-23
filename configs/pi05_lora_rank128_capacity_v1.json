@@ -1,0 +1,217 @@
+{
+  "schema_version": "ember_pi05_lora_v1",
+  "backbone": {
+    "policy_type": "pi05",
+    "initialization_repository": "lerobot/pi05_base",
+    "initialization_revision": "7de663972b7817d2c4cf2d84c821153dfea772e9",
+    "initialization_weights_sha256": "0eb11ca9587678c1d2ef8cf32807c29f8ce53a2bfdfc1aa4a4c96f16fca59b0f",
+    "initialization_config_sha256": "367869712a2847c27e95c431ecb03f17bec4eee01a63995e2fb2d91940752b53"
+  },
+  "authorities": {
+    "source_base_config_sha256": "7455fc59c67ca39f7c70b1296d2f1dc98f070bfda869bb0535bf5a9e91e04cc6",
+    "recipe_sha256": "feadfff2df9111d08148c942dafbeb9db248f40904142ec5c4a2bae6d823f692"
+  },
+  "target_policy": "all 18 action-expert q_proj/v_proj modules plus action_in_proj/action_out_proj",
+  "adapter": {
+    "rank": 128,
+    "alpha": 128,
+    "dropout": 0,
+    "identity_seed": 20260721,
+    "identity_initialization": "A deterministic random, B exactly zero"
+  },
+  "target_count": 38,
+  "state_tensor_count": 76,
+  "trainable_parameter_count": 10297344,
+  "targets": [
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.q_proj",
+      "in_features": 1024,
+      "out_features": 2048
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.v_proj",
+      "in_features": 1024,
+      "out_features": 256
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.1.self_attn.q_proj",
+      "in_features": 1024,
+      "out_features": 2048
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.1.self_attn.v_proj",
+      "in_features": 1024,
+      "out_features": 256
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.2.self_attn.q_proj",
+      "in_features": 1024,
+      "out_features": 2048
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.2.self_attn.v_proj",
+      "in_features": 1024,
+      "out_features": 256
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.3.self_attn.q_proj",
+      "in_features": 1024,
+      "out_features": 2048
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.3.self_attn.v_proj",
+      "in_features": 1024,
+      "out_features": 256
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.4.self_attn.q_proj",
+      "in_features": 1024,
+      "out_features": 2048
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.4.self_attn.v_proj",
+      "in_features": 1024,
+      "out_features": 256
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.5.self_attn.q_proj",
+      "in_features": 1024,
+      "out_features": 2048
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.5.self_attn.v_proj",
+      "in_features": 1024,
+      "out_features": 256
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.6.self_attn.q_proj",
+      "in_features": 1024,
+      "out_features": 2048
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.6.self_attn.v_proj",
+      "in_features": 1024,
+      "out_features": 256
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.7.self_attn.q_proj",
+      "in_features": 1024,
+      "out_features": 2048
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.7.self_attn.v_proj",
+      "in_features": 1024,
+      "out_features": 256
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+      "in_features": 1024,
+      "out_features": 2048
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+      "in_features": 1024,
+      "out_features": 256
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.9.self_attn.q_proj",
+      "in_features": 1024,
+      "out_features": 2048
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.9.self_attn.v_proj",
+      "in_features": 1024,
+      "out_features": 256
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.10.self_attn.q_proj",
+      "in_features": 1024,
+      "out_features": 2048
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.10.self_attn.v_proj",
+      "in_features": 1024,
+      "out_features": 256
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.11.self_attn.q_proj",
+      "in_features": 1024,
+      "out_features": 2048
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.11.self_attn.v_proj",
+      "in_features": 1024,
+      "out_features": 256
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.12.self_attn.q_proj",
+      "in_features": 1024,
+      "out_features": 2048
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.12.self_attn.v_proj",
+      "in_features": 1024,
+      "out_features": 256
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.13.self_attn.q_proj",
+      "in_features": 1024,
+      "out_features": 2048
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.13.self_attn.v_proj",
+      "in_features": 1024,
+      "out_features": 256
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.14.self_attn.q_proj",
+      "in_features": 1024,
+      "out_features": 2048
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.14.self_attn.v_proj",
+      "in_features": 1024,
+      "out_features": 256
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.15.self_attn.q_proj",
+      "in_features": 1024,
+      "out_features": 2048
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.15.self_attn.v_proj",
+      "in_features": 1024,
+      "out_features": 256
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.16.self_attn.q_proj",
+      "in_features": 1024,
+      "out_features": 2048
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.16.self_attn.v_proj",
+      "in_features": 1024,
+      "out_features": 256
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.17.self_attn.q_proj",
+      "in_features": 1024,
+      "out_features": 2048
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.17.self_attn.v_proj",
+      "in_features": 1024,
+      "out_features": 256
+    },
+    {
+      "name": "model.action_in_proj",
+      "in_features": 32,
+      "out_features": 1024
+    },
+    {
+      "name": "model.action_out_proj",
+      "in_features": 1024,
+      "out_features": 32
+    }
+  ]
+}

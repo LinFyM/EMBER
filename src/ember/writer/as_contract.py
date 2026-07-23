@@ -178,12 +178,12 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
         for role in writer_split_roles(config)
         for task_id in target["summary"]["roles"][role]
     )
-    weights = (
+    positive_weights = (
         value.get("normal_loss_weight"),
         value.get("contrast_correct_loss_weight"),
-        value.get("matching_loss_weight"),
         value.get("matching_temperature"),
     )
+    matching_weight = value.get("matching_loss_weight")
     if (
         value.get("method")
         != "normal_full_language_contrast_generic_language_contrast_cycle"
@@ -202,7 +202,12 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
         or any(not isinstance(pair, list) or len(pair) != 2 for pair in pairs)
         or sorted(flattened) != source_ids
         or len(set(flattened)) != len(flattened)
-        or any(not isinstance(weight, (int, float)) or weight <= 0 for weight in weights)
+        or any(
+            not isinstance(weight, (int, float)) or weight <= 0
+            for weight in positive_weights
+        )
+        or not isinstance(matching_weight, (int, float))
+        or matching_weight < 0
         or not isinstance(value.get("matching_margin"), (int, float))
         or value["matching_margin"] < 0
     ):
@@ -276,7 +281,16 @@ def resolve_runtime(
             batch_size,
             checkpoint_steps,
         )
-        if observed != expected or stop_step != default_stop:
+        stage_stops = tuple(
+            int(value) for value in formal.get("stage_stop_steps", [default_stop])
+        )
+        if (
+            observed != expected
+            or not stage_stops
+            or any(value not in checkpoint_steps for value in stage_stops)
+            or default_stop not in stage_stops
+            or stop_step not in stage_stops
+        ):
             raise WriterModelError("formal AS-Writer launch differs from its sealed profile")
         state = git_state(REPO_ROOT)
         if state["dirty_paths"]:

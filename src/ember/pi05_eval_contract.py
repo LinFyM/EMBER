@@ -11,6 +11,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from ember.eval_adapters import paired_writer_identity
 from ember.libero_evaluation import sha256_file
 from ember.pi05_assets import (
     Pi05EvaluationError,
@@ -786,19 +787,7 @@ def build_run_contract(
                 "policy": contract["policy"],
                 "rng": contract["rng"],
                 "parallel": contract["parallel"],
-                "writer": {
-                    key: adapter[key]
-                    for key in (
-                        "execution_backend",
-                        "config",
-                        "training_run",
-                        "checkpoint",
-                        "feature_cache",
-                        "lora_contract_sha256",
-                        "video_schedule",
-                        "pairing_sha256",
-                    )
-                },
+                "writer": paired_writer_identity(adapter),
             }
         )
     contract["contract_sha256"] = canonical_hash(contract)

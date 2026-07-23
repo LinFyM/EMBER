@@ -59,6 +59,30 @@ def adapter_requests(args: Any) -> tuple[str | None, bool]:
     return kind, sft_requested
 
 
+def paired_writer_identity(adapter: Mapping[str, Any]) -> dict[str, Any]:
+    """Return method-specific assets shared by correct/wrong Writer arms."""
+
+    data_key = {
+        "as_writer": "video_data",
+        "rl_writer": "feature_cache",
+    }.get(str(adapter.get("kind")))
+    if data_key is None or data_key not in adapter:
+        raise Pi05EvaluationError(
+            "writer adapter lost its method-specific video authority"
+        )
+    keys = (
+        "execution_backend",
+        "config",
+        "training_run",
+        "checkpoint",
+        data_key,
+        "lora_contract_sha256",
+        "video_schedule",
+        "pairing_sha256",
+    )
+    return {key: adapter[key] for key in keys}
+
+
 def inspect_as_writer_adapter(
     *,
     config_path: Path,

@@ -213,8 +213,8 @@ def test_resume_rejects_tampered_scheduler_columns(tmp_path: Path) -> None:
         initialize_queue(path, shards, contract_sha256="1" * 64)
 
 
-def test_worker_layout_requires_symmetric_one_to_three_replicas() -> None:
-    for replicas in (1, 2, 3):
+def test_worker_layout_requires_symmetric_one_to_five_replicas() -> None:
+    for replicas in (1, 2, 3, 4, 5):
         validate_worker_layout(
             (f"{gpu}-r{replica}" for gpu in range(8) for replica in range(replicas)),
             replicas,
@@ -226,6 +226,13 @@ def test_worker_layout_requires_symmetric_one_to_three_replicas() -> None:
         2,
         physical_gpu_count=4,
     )
+    validate_worker_layout(
+        (f"{gpu}-r{replica}" for gpu in (2, 3) for replica in range(5)),
+        5,
+        physical_gpu_ids=(2, 3),
+    )
+    with pytest.raises(Pi05EvaluationError, match="profile"):
+        validate_worker_layout(("0-r0",), 6)
 
 
 def test_shard_json_publish_is_durable_and_never_overwrites(tmp_path: Path) -> None:

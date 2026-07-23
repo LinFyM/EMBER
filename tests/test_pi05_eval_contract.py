@@ -176,6 +176,23 @@ def test_run_contract_hash_detects_tampering(tmp_path: Path) -> None:
     path = tmp_path / "run_contract.json"
     path.write_text(json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     assert load_run_contract(path)["contract_sha256"] == contract["contract_sha256"]
+    subset = build_run_contract(
+        authorities=authorities,
+        tasks=tasks,
+        libero_paths=paths,
+        model=model,
+        tokenizer={"sha256": "a" * 64},
+        output_dir=tmp_path / "subset",
+        role="test",
+        mode="smoke",
+        replicas_per_gpu=5,
+        physical_gpu_ids=(2, 3),
+        command=("evaluate_pi05.py", "prepare"),
+    )
+    assert subset["parallel"]["physical_gpu_ids"] == [2, 3]
+    assert subset["parallel"]["physical_gpu_count"] == 2
+    assert subset["parallel"]["worker_count"] == 10
+    assert subset["parallel"]["omp_threads_per_worker"]["5"] == 1
     contract["tasks"][0]["init_state_ids"] = [49]
     path.write_text(json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     with pytest.raises(Pi05EvaluationError, match="hash changed"):

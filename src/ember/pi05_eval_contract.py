@@ -34,6 +34,8 @@ DERIVED_ROLE_NAMES = {"seen_panel"}
 SEEN_PANEL_RELATIVE_PATH = Path("configs/pi05_seen_panel_v1.json")
 SEEN_PANEL_CHECKSUM_RELATIVE_PATH = Path("configs/pi05_seen_panel_v1.sha256")
 FROZEN_SOURCE_POLICY_SUBDIR = "policy"
+RUNTIME_REPLICA_PROFILES = (1, 2, 3, 4, 5)
+RUNTIME_OMP_THREADS = {"1": 8, "2": 4, "3": 2, "4": 1, "5": 1}
 
 
 @dataclass(frozen=True)
@@ -680,15 +682,15 @@ def build_run_contract(
     replicas_per_gpu: int,
     command: Sequence[str],
     adapter: Mapping[str, Any] | None = None,
+    physical_gpu_ids: Sequence[int] | None = None,
 ) -> dict[str, Any]:
     if mode not in {"smoke", "screen", "formal"}:
         raise Pi05EvaluationError(f"unsupported PI05 evaluation mode: {mode}")
     git = git_state(authorities.repo_root)
     if mode != "smoke" and git["dirty_paths"]:
         raise Pi05EvaluationError("screen/formal PI05 evaluation requires a clean worktree")
-    allowed = authorities.config["parallel"]["allowed_replicas_per_gpu"]
-    if replicas_per_gpu not in allowed:
-        raise Pi05EvaluationError("replicas per GPU are outside the sealed profile set")
+    if replicas_per_gpu not in RUNTIME_REPLICA_PROFILES:
+        raise Pi05EvaluationError("replicas per GPU are outside the supported runtime profiles")
     if not tasks:
         raise Pi05EvaluationError("PI05 evaluation run has no tasks")
     source_hashes = model.get("source_authority_hashes", {})
@@ -697,7 +699,18 @@ def build_run_contract(
         if expected is not None and source_hashes.get(name) != expected:
             raise Pi05EvaluationError(f"source checkpoint uses another {name} authority")
     arm = str(adapter["arm"]) if adapter is not None else authorities.config["policy"]["arm"]
-    physical_gpu_count = int(authorities.config["parallel"]["physical_gpu_count"])
+    configured_gpu_count = int(authorities.config["parallel"]["physical_gpu_count"])
+    if physical_gpu_ids is None:
+        physical_gpu_ids = tuple(range(configured_gpu_count))
+    else:
+        physical_gpu_ids = tuple(int(value) for value in physical_gpu_ids)
+    if (
+        not physical_gpu_ids
+        or len(set(physical_gpu_ids)) != len(physical_gpu_ids)
+        or any(index < 0 or index >= configured_gpu_count for index in physical_gpu_ids)
+    ):
+        raise Pi05EvaluationError("physical GPU subset is invalid for this host contract")
+    physical_gpu_count = len(physical_gpu_ids)
     contract: dict[str, Any] = {
         "schema_version": RUN_CONTRACT_SCHEMA,
         "mode": mode,
@@ -737,6 +750,14 @@ def build_run_contract(
         "rng": authorities.config["rng"],
         "parallel": {
             **authorities.config["parallel"],
+            "authority_allowed_replicas_per_gpu": authorities.config["parallel"][
+                "allowed_replicas_per_gpu"
+            ],
+            "allowed_replicas_per_gpu": list(RUNTIME_REPLICA_PROFILES),
+            "omp_threads_per_worker": RUNTIME_OMP_THREADS,
+            "configured_physical_gpu_count": configured_gpu_count,
+            "physical_gpu_ids": list(physical_gpu_ids),
+            "physical_gpu_count": physical_gpu_count,
             "replicas_per_gpu": replicas_per_gpu,
             "worker_count": physical_gpu_count * replicas_per_gpu,
             "one_policy_per_worker": True,

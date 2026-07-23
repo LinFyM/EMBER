@@ -529,16 +529,28 @@ def failed_jobs(path: Path) -> tuple[dict[str, Any], ...]:
 
 
 def validate_worker_layout(
-    worker_ids: Iterable[str], replicas_per_gpu: int, physical_gpu_count: int = 8
+    worker_ids: Iterable[str],
+    replicas_per_gpu: int,
+    physical_gpu_count: int = 8,
+    *,
+    physical_gpu_ids: Iterable[int] | None = None,
 ) -> None:
     """Require the same non-zero replica count on every physical GPU."""
 
-    if replicas_per_gpu not in (1, 2, 3) or physical_gpu_count <= 0:
-        raise Pi05EvaluationError("PI05 evaluator profiles only 1, 2, or 3 replicas per GPU")
+    if physical_gpu_ids is None:
+        gpu_ids = tuple(range(physical_gpu_count))
+    else:
+        gpu_ids = tuple(int(value) for value in physical_gpu_ids)
+    if (
+        replicas_per_gpu not in (1, 2, 3, 4, 5)
+        or not gpu_ids
+        or len(set(gpu_ids)) != len(gpu_ids)
+    ):
+        raise Pi05EvaluationError("PI05 evaluator worker profile is invalid")
     parsed = [tuple(value.rsplit("-r", 1)) for value in worker_ids]
     expected = {
         (str(gpu), str(replica))
-        for gpu in range(physical_gpu_count)
+        for gpu in gpu_ids
         for replica in range(replicas_per_gpu)
     }
     if set(parsed) != expected or len(parsed) != len(expected):

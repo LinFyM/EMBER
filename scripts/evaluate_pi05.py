@@ -73,7 +73,11 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--mode", choices=("smoke", "screen", "formal"), required=True)
     parser.add_argument("--state-count", type=int, required=True)
-    parser.add_argument("--replicas-per-gpu", type=int, choices=(1, 2, 3), required=True)
+    parser.add_argument("--replicas-per-gpu", type=int, choices=(1, 2, 3, 4, 5), required=True)
+    parser.add_argument(
+        "--gpu-indices",
+        help="Comma-separated physical GPU indices; defaults to every configured GPU.",
+    )
     parser.add_argument("--as-writer-config", type=Path)
     parser.add_argument("--as-writer-checkpoint", type=Path)
     parser.add_argument("--writer-feature-cache", type=Path)
@@ -147,6 +151,22 @@ def _shards_from_contract(contract: dict[str, Any]) -> tuple[Any, ...]:
     )
 
 
+def _parse_gpu_indices(value: str | None) -> tuple[int, ...] | None:
+    if value is None:
+        return None
+    try:
+        indices = tuple(int(part.strip()) for part in value.split(","))
+    except ValueError as error:
+        raise Pi05EvaluationError("GPU indices must be comma-separated integers") from error
+    if (
+        not indices
+        or any(index < 0 for index in indices)
+        or len(set(indices)) != len(indices)
+    ):
+        raise Pi05EvaluationError("GPU indices must be a non-empty unique sequence")
+    return indices
+
+
 def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
     writer_kind, source_sft_requested = _adapter_requests(args)
     adapter_requested = writer_kind is not None or source_sft_requested
@@ -215,6 +235,7 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
         role=args.role,
         mode=args.mode,
         replicas_per_gpu=args.replicas_per_gpu,
+        physical_gpu_ids=_parse_gpu_indices(args.gpu_indices),
         command=sys.argv,
         adapter=adapter,
     )
@@ -232,6 +253,7 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
         "states": sum(len(task.init_state_ids) for task in tasks),
         "shards": len(shards),
         "replicas_per_gpu": args.replicas_per_gpu,
+        "physical_gpu_ids": contract["parallel"]["physical_gpu_ids"],
         "arm": contract["arm"],
         "output_dir": str(output_dir),
     }
@@ -252,7 +274,7 @@ def _active_worker_pids(output_dir: Path) -> list[int]:
     return sorted(active)
 
 
-def _gpu_preflight(expected_gpu_count: int) -> dict[str, Any]:
+def _gpu_preflight(physical_gpu_ids: Sequence[int]) -> dict[str, Any]:
     """Check storage first, then sample live GPU ownership immediately before spawn."""
 
     import torch
@@ -281,10 +303,18 @@ def _gpu_preflight(expected_gpu_count: int) -> dict[str, Any]:
         text=True,
         capture_output=True,
     ).stdout.splitlines()
-    if len(gpu_query) != expected_gpu_count:
+    gpu_by_index: dict[int, str] = {}
+    uuid_by_index: dict[int, str] = {}
+    for row in gpu_query:
+        fields = [value.strip() for value in row.split(",")]
+        if len(fields) < 2 or not fields[0].isdigit():
+            raise Pi05EvaluationError(f"invalid nvidia-smi GPU row: {row}")
+        gpu_by_index[int(fields[0])] = row
+        uuid_by_index[int(fields[0])] = fields[1]
+    missing = sorted(set(physical_gpu_ids) - set(gpu_by_index))
+    if missing:
         raise Pi05EvaluationError(
-            "PI05 evaluation GPU count differs from its run contract: "
-            f"expected={expected_gpu_count} found={len(gpu_query)}"
+            f"PI05 evaluation physical GPUs are unavailable: {missing}"
         )
     applications = subprocess.run(
         [
@@ -296,9 +326,15 @@ def _gpu_preflight(expected_gpu_count: int) -> dict[str, Any]:
         text=True,
         capture_output=True,
     ).stdout.splitlines()
-    if applications:
+    selected_uuids = {uuid_by_index[index] for index in physical_gpu_ids}
+    selected_applications = [
+        row
+        for row in applications
+        if row.split(",", 1)[0].strip() in selected_uuids
+    ]
+    if selected_applications:
         owned = []
-        for application in applications:
+        for application in selected_applications:
             fields = [value.strip() for value in application.split(",")]
             owner = "unknown"
             if len(fields) >= 2 and fields[1].isdigit():
@@ -315,7 +351,8 @@ def _gpu_preflight(expected_gpu_count: int) -> dict[str, Any]:
         )
     return {
         "unix": time.time(),
-        "gpus": gpu_query,
+        "physical_gpu_ids": list(physical_gpu_ids),
+        "gpus": [gpu_by_index[index] for index in physical_gpu_ids],
         "compute_applications": [],
         "python": sys.version,
         "torch": torch.__version__,
@@ -405,13 +442,19 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
             raise Pi05EvaluationError("evaluation adapter assets changed after prepare")
 
 
-def _worker_ids(replicas_per_gpu: int, physical_gpu_count: int) -> tuple[str, ...]:
+def _worker_ids(
+    replicas_per_gpu: int, physical_gpu_ids: Sequence[int]
+) -> tuple[str, ...]:
     values = tuple(
         f"{gpu}-r{replica}"
-        for gpu in range(physical_gpu_count)
+        for gpu in physical_gpu_ids
         for replica in range(replicas_per_gpu)
     )
-    validate_worker_layout(values, replicas_per_gpu, physical_gpu_count)
+    validate_worker_layout(
+        values,
+        replicas_per_gpu,
+        physical_gpu_ids=physical_gpu_ids,
+    )
     return values
 
 
@@ -710,12 +753,18 @@ def _start_workers_locked(output_dir: Path, *, resume: bool) -> dict[str, Any]:
     contract, _, ready_to_aggregate = _recover_locked_queue(output_dir, resume=resume)
     if ready_to_aggregate:
         return _finalize_aggregate(output_dir)
-    physical_gpu_count = int(contract["parallel"]["physical_gpu_count"])
-    preflight = _gpu_preflight(physical_gpu_count)
+    physical_gpu_ids = tuple(
+        int(value)
+        for value in contract["parallel"].get(
+            "physical_gpu_ids",
+            range(int(contract["parallel"]["physical_gpu_count"])),
+        )
+    )
+    preflight = _gpu_preflight(physical_gpu_ids)
     if preflight["personal_bytes"] >= preflight["personal_cap_bytes"]:
         raise Pi05EvaluationError("personal storage already exceeds the 500GB hard cap")
     worker_ids = _worker_ids(
-        int(contract["parallel"]["replicas_per_gpu"]), physical_gpu_count
+        int(contract["parallel"]["replicas_per_gpu"]), physical_gpu_ids
     )
     invocation_id = uuid.uuid4().hex
     started_unix = time.time()

@@ -23,10 +23,13 @@ AGGREGATE_SCHEMA = "ember_pi05_target_eval_results_v1"
 
 def _expected_worker_ids(contract: Mapping[str, Any]) -> tuple[str, ...]:
     replicas = int(contract["parallel"]["replicas_per_gpu"])
-    physical_gpu_count = int(contract["parallel"].get("physical_gpu_count", 8))
+    physical_gpu_ids = contract["parallel"].get(
+        "physical_gpu_ids",
+        range(int(contract["parallel"].get("physical_gpu_count", 8))),
+    )
     return tuple(
         f"{gpu}-r{replica}"
-        for gpu in range(physical_gpu_count)
+        for gpu in physical_gpu_ids
         for replica in range(replicas)
     )
 
@@ -109,11 +112,18 @@ def _validated_worker_lifecycles(
     ]
     if len({row["pid"] for row in lifecycles}) != len(lifecycles):
         raise Pi05EvaluationError("worker lifecycle reused a process across CUDA roles")
+    physical_gpu_ids = tuple(
+        int(value)
+        for value in contract["parallel"].get(
+            "physical_gpu_ids",
+            range(int(contract["parallel"].get("physical_gpu_count", 8))),
+        )
+    )
     gpu_uuids = {
         gpu: {row["gpu_uuid"] for row in lifecycles if row["physical_gpu"] == gpu}
-        for gpu in range(int(contract["parallel"].get("physical_gpu_count", 8)))
+        for gpu in physical_gpu_ids
     }
-    physical_gpu_count = int(contract["parallel"].get("physical_gpu_count", 8))
+    physical_gpu_count = len(physical_gpu_ids)
     if any(len(values) != 1 for values in gpu_uuids.values()) or len(
         {next(iter(values)) for values in gpu_uuids.values()}
     ) != physical_gpu_count:

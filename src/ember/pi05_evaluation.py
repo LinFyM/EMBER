@@ -482,6 +482,7 @@ class WorkerRuntime:
     queue_path: Path
     worker_id: str
     gpu_index: int
+    gpu_slot: int
     replica: int
     numa_node: int
     gpu_uuid: str
@@ -498,21 +499,28 @@ class WorkerRuntime:
 
 def _parse_worker_assignment(
     worker_id: str, contract: Mapping[str, Any]
-) -> tuple[int, int]:
+) -> tuple[int, int, int]:
     visible = os.environ.get("CUDA_VISIBLE_DEVICES", "").strip()
     try:
         gpu_text, replica_text = worker_id.split("-r", 1)
         gpu_index, replica = int(gpu_text), int(replica_text)
     except ValueError as error:
         raise Pi05EvaluationError(f"invalid PI05 evaluator worker ID: {worker_id}") from error
+    physical_gpu_ids = tuple(
+        int(value)
+        for value in contract["parallel"].get(
+            "physical_gpu_ids",
+            range(int(contract["parallel"].get("physical_gpu_count", 8))),
+        )
+    )
     valid = (
         visible == str(gpu_index)
-        and 0 <= gpu_index < 8
+        and gpu_index in physical_gpu_ids
         and 0 <= replica < int(contract["parallel"]["replicas_per_gpu"])
     )
     if not valid:
         raise Pi05EvaluationError("worker ID does not match its one physical visible GPU")
-    return gpu_index, replica
+    return gpu_index, physical_gpu_ids.index(gpu_index), replica
 
 
 def _validate_worker_assets(contract: Mapping[str, Any]) -> tuple[Path, dict[str, Any], Path]:
@@ -549,7 +557,7 @@ def _initialize_worker(output_dir: Path, worker_id: str) -> WorkerRuntime:
     output_dir = output_dir.resolve()
     contract = load_run_contract(output_dir / "run_contract.json")
     queue_path = output_dir / "queue.sqlite3"
-    gpu_index, replica = _parse_worker_assignment(worker_id, contract)
+    gpu_index, gpu_slot, replica = _parse_worker_assignment(worker_id, contract)
     os.environ.update(
         MUJOCO_GL="egl",
         PYOPENGL_PLATFORM="egl",
@@ -584,6 +592,7 @@ def _initialize_worker(output_dir: Path, worker_id: str) -> WorkerRuntime:
         queue_path=queue_path,
         worker_id=worker_id,
         gpu_index=gpu_index,
+        gpu_slot=gpu_slot,
         replica=replica,
         numa_node=numa_node,
         gpu_uuid=str(torch.cuda.get_device_properties(0).uuid),
@@ -723,7 +732,7 @@ def run_worker(*, output_dir: Path, worker_id: str) -> dict[str, Any]:
             runtime.queue_path,
             worker_id=worker_id,
             preferred_task=preferred_task,
-            physical_gpu=runtime.gpu_index,
+            physical_gpu=runtime.gpu_slot,
         )) is not None:
             preferred_task = claim.task_key
             try:

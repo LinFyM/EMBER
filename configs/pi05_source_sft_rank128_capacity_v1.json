@@ -127,6 +127,7 @@
         "checkpoint_steps": [
           100,
           200,
+          300,
           400,
           600,
           800
@@ -135,6 +136,7 @@
         "stage_stop_steps": [
           100,
           200,
+          300,
           400,
           600,
           800
@@ -148,7 +150,7 @@
           "validation_episodes": 400,
           "interpretation": "The prior matched-scale pilot stopped during the inherited 1,000-step warmup while loss was still descending; it is provenance, not the Source-SFT ceiling."
         },
-        "selection_rule": "Capacity diagnostic against the completed rank-16 Source-SFT ceiling: train a fresh rank-128 shared LoRA, with alpha/rank kept at one, using the same 800-step scheduler horizon, batch, data, seed, and information wall. Stop first at step 400, screen steps 100/200/400, and exact-resume only to 600 or 800 if evidence remains unsaturated. Full-evaluate only the few candidates needed to locate its validation peak. This tests whether the 119/400 collapsed Writer-v1 result over rank-16 Source-SFT 87/400 is explained by roughly ten-fold trainable-parameter capacity; it is not constrained to the Writer LoRA rank."
+        "selection_rule": "Capacity diagnostic against the completed rank-16 Source-SFT ceiling: train a fresh rank-128 shared LoRA, with alpha/rank kept at one, using the same 800-step scheduler horizon, batch, data, seed, and information wall. Stop first at step 400, retain steps 100/200/300/400 to resolve an early validation turn, and exact-resume only to 600 or 800 if evidence remains unsaturated. Full-evaluate only the few candidates needed to locate its validation peak. This tests whether the 119/400 collapsed Writer-v1 result over rank-16 Source-SFT 87/400 is explained by roughly ten-fold trainable-parameter capacity; it is not constrained to the Writer LoRA rank."
       }
     },
     "final": {

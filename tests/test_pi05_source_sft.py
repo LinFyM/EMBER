@@ -122,6 +122,7 @@ def test_rank128_capacity_config_keeps_data_wall_and_changes_only_capacity() -> 
     assert capacity["stages"]["development"]["formal_run"]["stage_stop_steps"] == [
         100,
         200,
+        300,
         400,
         600,
         800,
@@ -163,7 +164,7 @@ def test_source_sft_declared_stage_stop_can_extend_without_schedule_change(
     assert resolve_source_sft_runtime(args, config, context) == (
         800,
         64,
-        (100, 200, 400, 600, 800),
+        (100, 200, 300, 400, 600, 800),
     )
     assert args.stop_after_step == 600
     args.stop_after_step = 500

@@ -155,7 +155,10 @@ def _validate_task_hashes(
     records = []
     for task in tasks:
         observed = sha256_file(task.path)
-        if observed != expected[task.task_id]:
+        if (
+            task.path.stat().st_size != task.expected_bytes
+            or observed != expected[task.task_id]
+        ):
             raise WriterModelError("validation HDF5 hash changed")
         records.append([task.task_id, task.expected_bytes, observed])
     return {
@@ -260,7 +263,15 @@ def _group_loss(
     prepared = processor.training_batch(batch)
     seed = int(rows[0]["policy_noise_seed"])
     fork_devices = [device] if device.type == "cuda" else []
-    with torch.inference_mode(), torch.random.fork_rng(devices=fork_devices):
+    with (
+        torch.inference_mode(),
+        torch.random.fork_rng(devices=fork_devices),
+        torch.autocast(
+            device_type=device.type,
+            dtype=torch.bfloat16,
+            enabled=device.type == "cuda",
+        ),
+    ):
         torch.manual_seed(seed)
         if device.type == "cuda":
             torch.cuda.manual_seed(seed)

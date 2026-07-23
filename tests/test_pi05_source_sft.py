@@ -114,22 +114,20 @@ def test_rank128_capacity_config_keeps_data_wall_and_changes_only_capacity() -> 
     assert rank128.parameter_count == 10_297_344
     assert (
         capacity["stages"]["development"]["formal_run"]["status"]
-        == "sealed"
+        == "pending_four_rank_profile"
     )
     assert (
         capacity["stages"]["development"]["formal_run"]["selected_stop_step"]
-        == 400
+        == 800
     )
     assert capacity["stages"]["development"]["formal_run"]["stage_stop_steps"] == [
-        100,
-        200,
-        300,
-        400,
-        600,
         800,
+        1600,
+        2400,
     ]
     assert capacity["profile_evidence"]["rank"] == 128
-    assert capacity["profile_evidence"]["all_losses_and_gradients_finite"] is True
+    assert capacity["profile_defaults"]["expected_world_size"] == 4
+    assert capacity["profile_defaults"]["per_rank_batch_size"] == 128
     assert sha256_file(RANK128_CONFIG) == (
         ROOT / "configs/pi05_source_sft_rank128_capacity_v1.sha256"
     ).read_text(encoding="utf-8").split()[0]
@@ -143,7 +141,7 @@ def test_source_sft_declared_stage_stop_can_extend_without_schedule_change(
     context = DistributedContext(
         rank=0,
         local_rank=0,
-        world_size=8,
+        world_size=4,
         device=torch.device("cpu"),
         numa_node=0,
         cpu_affinity=(0,),
@@ -158,16 +156,16 @@ def test_source_sft_declared_stage_stop_can_extend_without_schedule_change(
         total_steps=None,
         batch_size=None,
         checkpoint_steps=None,
-        stop_after_step=600,
-        resume=Path("/tmp/step_00000400"),
+        stop_after_step=1600,
+        resume=Path("/tmp/step_00000800"),
         skip_data_sha=False,
     )
     assert resolve_source_sft_runtime(args, config, context) == (
-        800,
-        64,
-        (100, 200, 300, 400, 600, 800),
+        2400,
+        128,
+        tuple(range(100, 2401, 100)),
     )
-    assert args.stop_after_step == 600
+    assert args.stop_after_step == 1600
     args.stop_after_step = 500
     with pytest.raises(Pi05SourceSFTError, match="sealed profile"):
         resolve_source_sft_runtime(args, config, context)
@@ -176,11 +174,11 @@ def test_source_sft_declared_stage_stop_can_extend_without_schedule_change(
 def test_formal_stage_extension_does_not_change_source_sft_contract_stop() -> None:
     config = load_source_sft_config(RANK128_CONFIG)
     args = SimpleNamespace(
-        stage="development", mode="formal", stop_after_step=600
+        stage="development", mode="formal", stop_after_step=1600
     )
-    assert _contract_stop_step(args, config, 800) == 400
+    assert _contract_stop_step(args, config, 2400) == 800
     args.mode = "profile"
-    assert _contract_stop_step(args, config, 800) == 600
+    assert _contract_stop_step(args, config, 2400) == 1600
 
 
 def test_source_sft_code_compatible_resume_allows_only_commit_change(

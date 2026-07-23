@@ -1,4 +1,4 @@
-"""Eight-rank shared PI05 Source-SFT LoRA training."""
+"""Symmetric-rank shared PI05 Source-SFT LoRA training."""
 
 from __future__ import annotations
 

@@ -179,8 +179,12 @@ def resolve_runtime(
     stop_step = args.stop_after_step or default_stop
     if min(total_steps, batch_size, stop_step) <= 0 or stop_step > total_steps:
         raise Pi05SourceSFTError("invalid Source-SFT runtime request")
-    if context.world_size != 8:
-        raise Pi05SourceSFTError("Source-SFT training requires exactly eight symmetric ranks")
+    expected_world_size = int(source.get("expected_world_size", 8))
+    if context.world_size != expected_world_size:
+        raise Pi05SourceSFTError(
+            "Source-SFT training requires exactly "
+            f"{expected_world_size} symmetric ranks"
+        )
     if args.mode == "formal":
         expected = (
             "sealed",

@@ -469,3 +469,5 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 新validation functional-loss panel固定512个task-balanced、video/action不配对query，可低成本观察loss斜率、train–val gap和候选checkpoint；由于teacher-forced action loss与closed-loop恢复能力可能错位，它不能单独选best。真实峰值要求完整8-task×50 success曲线，且“峰后持续下降”不能由单一相邻checkpoint判断。
 - bias恢复只增加`21,696`个训练参数：Writer从`10,097,601`变为`10,119,297`，仍仅为rank128 Source-SFT容量的`98.27%`。四卡真实profile的显存与旧bias-free八卡profile几乎相同（reserved均约78.87GB），说明恢复bias没有引入隐藏模型副本或新执行支路。
 - 每rank batch16/global64的第二个稳态profile step为`1.930s`，对应约`33.16` global queries/s；四卡相对旧八卡global128约`1.93–2.48s/step`的单步时延相近、总吞吐约减半，符合相同单卡工作量和world-size缩减预期。后续step数按实际action-query量解释，不能把四卡step与旧八卡step直接等同。
+- rank128 Source-SFT的四卡重训不能从旧8-rank step600 checkpoint续接，因为per-rank RNG、sampler cursor和DDP world-size属于exact-resume状态。新run必须fresh；以4×batch128保持global batch512，才能让step数、query量和前800步scheduler轨迹与旧容量实验保持同口径。
+- 为充分检验`122/400`是否真实上限，新SFT最大horizon可延到2400，但不把cosine decay从800拉长：这样前800步不因扩大上限而获得更高LR，800后只是固定低LR tail。若完整validation已在800前后显示多点持续退化，便无需机械跑满；若仍波动或回升，则同一合同可恢复到1600/2400。

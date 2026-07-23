@@ -356,4 +356,6 @@
 
 - fresh run root为`/data/ymdai/outputs/ember/pi05_as_writer_action_memory_bias_qscaled_r4_seed7_s1200_20260723`。step100–800 validation loss为`0.135237/0.141384/0.135191/0.134058/0.134964/0.135579/0.141342/0.139462`；step400后形成持续上升区间，故在step800完整checkpoint/val后早停。
 - step800训练elapsed为`1951.68s`，累计51,200 queries；最大allocated/reserved为`79,540,023,808/82,288,050,176` bytes，loss/gradient均finite。run contract、当前完整metrics和validation metrics SHA256依次为`b5053300...e978347`、`2279f960...18461e`、`4d5936b0...722079`；latest checkpoint仍严格指向step800。
-- 中断前step801–809已完成并保留在metrics中，但没有checkpoint也不进入候选；不删除或改写该证据。step400/600 correct-video完整8×50已分别在GPU0–1和2–3启动，output roots为`pi05_action_memory_as_bias_qscaled_val8x50_step0400_correct_713a5ee_g01_r5_20260723`与`...step0600_correct_713a5ee_g23_r5_20260723`，各28个cost-balanced shards、10个persistent workers。
+- 中断前step801–809已完成并保留在metrics中，但没有checkpoint也不进入候选；不删除或改写该证据。step300/400/500/600各用两张物理GPU、每卡5个persistent replicas，step800用四卡同样每卡5 replicas；所有run均有400条唯一rows、全部shards完成、workers exit0。
+- step300/400/500/600/800完整correct-video success依次为`57/91/86/87/88`，results SHA256依次为`57ea1be8...e8179`、`07847743...99197`、`60b41c56...1b35d`、`6cb2d5af...4768`、`70b33252...74745`。对应wall为`2190.35/2135.77/2197.09/2146.22/1231.29s`；四卡step800有效吞吐`0.32486 rollouts/s`，两卡runs约`0.182–0.187`。
+- step400相对300/500/600/800的paired `400-only/other-only`为`49/15`、`33/28`、`26/22`、`29/26`；只有300显著较差。val-loss最低点与真实峰值同在400，但五点总体相关性很弱，因此在线loss只负责趋势早停和候选筛选。该轨迹best `91/400`显著低于旧rank128 SFT的`122/400`（paired `25/56`，`p=7.52e-4`），下一步先完成SFT真实ceiling，再对AS做训练统计效率修正。

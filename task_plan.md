@@ -144,7 +144,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] owner确认此前全局`bias=False`是额外优化限制而非condition-only必要条件；已只恢复conditional temporal/layer/slot与factor-head内部普通bias，不增加公共LoRA支路、层、token、宽度或输出。
 - [x] 在读取新validation action值前封存8-task task-balanced functional-loss panel：每task 8条video × 8个独立action query，共512 rows/checkpoint；只作候选筛选，400-rollout closed-loop success仍是最终authority。
 - [x] 2026-07-28前所有训练和评测只能使用物理GPU `0,1,2,3`；四卡真实forward/backward、batch ceiling、显存与吞吐profile及fresh AS合同已封存，GPU4–7始终未触碰。
-- [ ] 从fresh identity充分训练bias-restored AS-Writer；旧decay-6400轨迹因global batch减半后的scheduler混淆只作provenance。query-scaled warmup100/decay2400 fresh轨迹已保留step100–800，val-loss在step400到达`0.134058`后至500/600/700连续回升，800仍为`0.139462`，故按预声明趋势在完整step800后早停；当前并行做step400/600完整8×50，随后补step800，由closed-loop确认真实峰值。
+- [x] 从fresh identity充分训练首条bias-restored AS-Writer轨迹；旧decay-6400轨迹因global batch减半后的scheduler混淆只作provenance。query-scaled warmup100/decay2400轨迹的val-loss在step400到达`0.134058`，随后整体恶化，故在完整step800后早停。step300/400/500/600/800的完整8×50 correct-video结果为`57/91/86/87/88`，确认step400为该轨迹真实峰值且无需补step200；但它仍显著低于旧rank128 Source-SFT step400的`122/400`，所以只完成了首轨迹上限诊断，尚未通过本Goal的AS>SFT门槛。
 - [ ] 从fresh identity在同参数口径充分训练rank128 Source-SFT；同样确认完整validation的真实峰值与持续峰后下降，旧`122/400`只作已观测参考而不是已证明上限。
 - [ ] 要求AS在validation上明显超过Source-SFT；若未达到，保留逐task证据并诊断/迭代，但不改变source base、split、信息墙或核心科学问题。
 - [ ] 对唯一最强AS checkpoint运行必要的correct/cross-suite-wrong video对照，确认correct优势来自多个tasks；若特异性不足，在保持绝对competence优先的前提下研究并解决。

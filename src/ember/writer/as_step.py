@@ -32,6 +32,73 @@ def _batch_task_id(batch: Mapping[str, Any]) -> int:
     return int(unique.item())
 
 
+def _policy_microbatches(
+    batch: Mapping[str, Any], microbatch_size: int
+) -> tuple[dict[str, torch.Tensor], ...]:
+    tensors = tuple(batch.values())
+    if (
+        not tensors
+        or microbatch_size <= 0
+        or any(not isinstance(value, torch.Tensor) or value.ndim < 1 for value in tensors)
+    ):
+        raise WriterModelError("AS-Writer policy batch cannot be microbatched")
+    sizes = {int(value.shape[0]) for value in tensors}
+    if len(sizes) != 1:
+        raise WriterModelError("AS-Writer policy batch dimensions disagree")
+    total = sizes.pop()
+    if total <= 0:
+        raise WriterModelError("AS-Writer policy batch is empty")
+    return tuple(
+        {
+            name: value[start : min(start + microbatch_size, total)]
+            for name, value in batch.items()
+        }
+        for start in range(0, total, microbatch_size)
+    )
+
+
+def _functional_arm_gradient(
+    runtime: WriterRuntime,
+    state: Mapping[str, torch.Tensor],
+    policy_batch: Mapping[str, Any],
+) -> tuple[torch.Tensor, Mapping[str, Any], dict[str, torch.Tensor]]:
+    microbatches = _policy_microbatches(
+        policy_batch,
+        int(
+            runtime.config["conditioning_training"][
+                "functional_policy_microbatch_size"
+            ]
+        ),
+    )
+    total = sum(int(next(iter(batch.values())).shape[0]) for batch in microbatches)
+    loss: torch.Tensor | None = None
+    detail_loss = 0.0
+    gradients: dict[str, torch.Tensor] | None = None
+    for batch in microbatches:
+        count = int(next(iter(batch.values())).shape[0])
+        weight = count / total
+        value, detail, current = functional_lora_loss_gradient(
+            runtime.policy,
+            state,
+            runtime.lora_contract,
+            batch=batch,
+        )
+        loss = value * weight if loss is None else loss + value * weight
+        detail_loss += float(detail.get("loss", value)) * weight
+        if gradients is None:
+            gradients = {name: item * weight for name, item in current.items()}
+        else:
+            for name, item in current.items():
+                gradients[name].add_(item, alpha=weight)
+    if loss is None or gradients is None:
+        raise WriterModelError("AS-Writer policy microbatch produced no gradient")
+    return (
+        loss,
+        {"loss": detail_loss, "policy_forward_calls": len(microbatches)},
+        gradients,
+    )
+
+
 def _differentiate_condition_batch(
     runtime: WriterRuntime,
     packed: tuple[
@@ -68,11 +135,10 @@ def _differentiate_condition_batch(
         for index in range(count):
             if index == 1:
                 restore_rng(paired_rng, runtime.context)  # type: ignore[arg-type]
-            value, detail, gradient = functional_lora_loss_gradient(
-                runtime.policy,
+            value, detail, gradient = _functional_arm_gradient(
+                runtime,
                 adapter_state_at(generated, index, count),
-                runtime.lora_contract,
-                batch=policy_batch,
+                policy_batch,
             )
             values.append(value)
             details.append(detail)
@@ -279,6 +345,14 @@ def _step_metrics(
         "rank0_wrong_teacher_demo_index": wrong_demo_index,
         **video_metrics,
         "rank0_policy_loss_detail": [value.get("loss") for value in details],
+        "functional_policy_microbatch_size": int(
+            runtime.config["conditioning_training"][
+                "functional_policy_microbatch_size"
+            ]
+        ),
+        "policy_forward_calls_this_step": sum(
+            int(value.get("policy_forward_calls", 1)) for value in details
+        ),
         "data_seconds_max": reduce_max(data_seconds, runtime.context),
         "step_seconds_max": step_seconds,
         "global_policy_samples_per_second": (

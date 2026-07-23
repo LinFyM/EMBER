@@ -365,3 +365,8 @@
 - profile root为`/data/ymdai/outputs/ember/pi05_source_sft_rank128_profile_r4_b128_22fae58_s4_20260723`；仅使用GPU0–3，一卡一rank，batch128/rank、global512。4步全部finite，稳定吞吐约`36.18 queries/s`，峰值allocated/reserved为`54.998/67.979GB`。
 - profile artifact约61MB；正式run到step800保留8个约61MB checkpoint、在线validation rows及原子临时副本，峰值新增低于1GB。当前个人占用约259GB，远低于500GB cap。
 - 配置已封存首段step800、每100步checkpoint与驻留512-query val-loss monitor；允许的后续stop为`1100/1400/1700/2000/2300/2400`。val-loss连续下降则续训，连续上升且train loss仍降则停止；单点不决策，完整8×50 closed-loop覆盖loss选择最终best。
+
+## AS query-matched微批实现待profile（2026-07-23）
+
+- canonical `as_step.py`现支持同一generated adapter跨多个policy microbatches复用；128 queries按`16×8`顺序执行、按chunk实际样本数加权loss/adapter-gradient，最后只反传一次Writer。新增聚焦测试覆盖尾部不等长切片和加权梯度等价性；既有normal/contrast owner、checkpoint和sampler cursor未分叉。
+- 配置暂为`pending_query_matched_profile`，formal不能启动。候选profile仍只使用GPU0–3，一卡一rank；global512与rank128 SFT相同，scheduler暂按同一warmup100/decay800以消除样本统计与学习率口径混杂。SFT正式首段运行期间只做代码和CPU测试，不抢占或改写其输出。

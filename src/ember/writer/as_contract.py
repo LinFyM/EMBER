@@ -136,7 +136,9 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
             **common,
             "development_action_split_roles": ["train"],
             "development_video_split_roles": ["train"],
-            "validation_actions_read": 0,
+            "validation_actions_read_by_training_optimizer": 0,
+            "validation_action_queries_per_checkpoint_monitor": 512,
+            "validation_action_gradient": False,
         }
     else:
         expected = {
@@ -197,6 +199,7 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
         != "correct_action_query_task_language_on_every_branch"
         or value.get("contrast_backend")
         != "paired_sequential_half_batch_with_shared_policy_rng"
+        or not _positive_integer(value.get("functional_policy_microbatch_size"))
         or value.get("contrast_query_fraction") != 0.5
         or not isinstance(pairs, list)
         or any(not isinstance(pair, list) or len(pair) != 2 for pair in pairs)
@@ -212,6 +215,10 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
         or value["matching_margin"] < 0
     ):
         raise WriterModelError("AS-Writer video-forced training contract changed")
+
+
+def _positive_integer(value: Any) -> bool:
+    return isinstance(value, int) and value > 0
 
 
 def load_writer_config(path: Path) -> dict[str, Any]:
@@ -514,6 +521,9 @@ def build_contract(
     checkpoint_steps: Sequence[int],
 ) -> dict[str, Any]:
     contract_stop_step = _contract_stop_step(args, config, total_steps)
+    microbatch = int(
+        config["conditioning_training"]["functional_policy_microbatch_size"]
+    )
     local = {
         "rank": context.rank,
         "local_rank": context.local_rank,
@@ -551,13 +561,19 @@ def build_contract(
             "per_rank_policy_sample_batch_size": batch_size,
             "per_rank_unique_action_query_cycle": list(batch_cycle),
             "global_policy_samples_per_step": context.world_size * batch_size,
+            "functional_policy_microbatch_size": microbatch,
             "writer_conditions_per_rank_cycle": [
                 1 if mode == "normal" else 2
                 for mode in config["conditioning_training"]["step_cycle"]
             ],
             "policy_forward_calls_per_rank_cycle": [
-                1 if mode == "normal" else 2
-                for mode in config["conditioning_training"]["step_cycle"]
+                (1 if mode == "normal" else 2)
+                * ((queries + microbatch - 1) // microbatch)
+                for mode, queries in zip(
+                    config["conditioning_training"]["step_cycle"],
+                    batch_cycle,
+                    strict=True,
+                )
             ],
             "teacher_videos_per_writer_invocation": 1,
             "total_steps": total_steps,

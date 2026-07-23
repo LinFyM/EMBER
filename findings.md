@@ -495,3 +495,9 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 在物理GPU0–3上用4个对称DDP ranks、batch128/rank完成4步真实forward/backward；global batch保持512，与旧八卡rank128轨迹完全相同。四步均finite，step wall为`14.919/14.109/14.152/14.190s`，后3步平均吞吐约`36.18 queries/s`。
 - 峰值CUDA allocated/reserved为`54,998,429,696/67,979,182,080` bytes，保留约14GB物理余量；无需降低batch。run contract、metrics、summary SHA256依次为`9a15add8...8479`、`ff033c3f...d2a0`、`c6b3c1f6...70cd`。
 - 正式轨迹沿用已建立的rank128 optimizer：warmup100、cosine decay800、每100步checkpoint。首段到step800；之后只在val-loss或闭环候选仍未充分时按300步exact-resume。每个checkpoint在同一驻留policy上原地测封存512-query validation action loss，不卸载模型、不更新参数；完整8×50 closed-loop仍决定最终best。
+
+## AS query-matched训练修正（2026-07-23）
+
+- 首轨迹每rank每个task/video condition只用16个action queries，而容量匹配的rank128 SFT每rank为128；两者虽然训练参数约10.12M/10.30M相当，单步functional梯度统计精度并不相当。这是先于改Writer架构需要消除的混杂。
+- 修正保持Writer、16 memory tokens、Meta-LoRA、temporal/layer/slot、rank16输出LoRA和信息墙全部不变：一次生成adapter后，将128 queries拆成8个16-query policy microbatches；每个microbatch独立求adapter梯度，按真实query数加权平均，再只对同一Writer图反传一次。峰值显存保持原batch16量级，计算量约增至8次policy forward。
+- 该行为仍由现有`ember.writer.as_step`和同一canonical runner拥有，没有并行入口。normal以及已有contrast模式都复用同一微批机制；paired contrast仍在整组microbatch前后恢复并核验相同policy RNG。正式配置在真实四卡profile前保持pending。

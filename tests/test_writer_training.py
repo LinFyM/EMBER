@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 import torch
@@ -21,6 +22,7 @@ from ember.writer.conditioning import (
     conditioning_cycle,
     matching_objective,
 )
+from ember.writer.as_step import _functional_arm_gradient, _policy_microbatches
 from ember.writer.model import WriterModelError
 
 
@@ -44,18 +46,34 @@ def test_action_memory_writer_config_seals_architecture_and_information_wall() -
     assert config["data"]["episodes_per_task"] == 50
     assert writer_split_roles(config) == ("train",)
     assert conditioning_cycle(config) == ("normal",)
-    assert batch_size_cycle(16, config) == (16,)
-    assert config["information_wall"]["validation_actions_read"] == 0
+    assert batch_size_cycle(128, config) == (128,)
+    assert (
+        config["information_wall"][
+            "validation_actions_read_by_training_optimizer"
+        ]
+        == 0
+    )
+    assert (
+        config["information_wall"][
+            "validation_action_queries_per_checkpoint_monitor"
+        ]
+        == 512
+    )
+    assert config["conditioning_training"]["functional_policy_microbatch_size"] == 16
     assert config["information_wall"]["test_actions_read"] == 0
     assert config["information_wall"]["test_video_values_read"] == 0
     assert config["optimization"]["maximum_formal_wall_clock_minutes"] is None
     assert config["profile_defaults"]["expected_world_size"] == 4
     assert config["formal_run"]["expected_world_size"] == 4
-    assert config["optimization"]["scheduler"]["decay_steps"] == 2400
-    assert config["formal_run"]["selected_stop_step"] == 1200
+    assert config["optimization"]["scheduler"]["decay_steps"] == 800
+    assert config["formal_run"]["selected_stop_step"] == 800
     assert config["formal_run"]["stage_stop_steps"] == [
-        1200,
-        1800,
+        800,
+        1100,
+        1400,
+        1700,
+        2000,
+        2300,
         2400,
     ]
 
@@ -122,7 +140,7 @@ def test_formal_runtime_uses_four_rank_query_scaled_stage(
         resume=None,
         skip_data_sha=False,
     )
-    assert resolve_runtime(profile, config, context) == (2, 16, (2,))
+    assert resolve_runtime(profile, config, context) == (2, 128, (2,))
     assert profile.stop_after_step == 2
 
     formal = argparse.Namespace(
@@ -145,22 +163,77 @@ def test_formal_runtime_uses_four_rank_query_scaled_stage(
     expected_checkpoints = tuple(config["formal_run"]["checkpoint_steps"])
     assert resolve_runtime(formal, config, context) == (
         2400,
-        16,
+        128,
         expected_checkpoints,
     )
-    assert formal.stop_after_step == 1200
-    formal.resume = Path("/tmp/step_00001200")
-    formal.stop_after_step = 1800
+    assert formal.stop_after_step == 800
+    formal.resume = Path("/tmp/step_00000800")
+    formal.stop_after_step = 1100
     assert resolve_runtime(formal, config, context)[0] == 2400
-    assert formal.stop_after_step == 1800
+    assert formal.stop_after_step == 1100
 
 
 def test_formal_extension_keeps_original_contract_stop() -> None:
     config = load_writer_config(CONFIG)
-    args = argparse.Namespace(mode="formal", stop_after_step=1800)
-    assert _contract_stop_step(args, config, 2400) == 1200
+    args = argparse.Namespace(mode="formal", stop_after_step=1100)
+    assert _contract_stop_step(args, config, 2400) == 800
     args.mode = "profile"
-    assert _contract_stop_step(args, config, 2400) == 1800
+    assert _contract_stop_step(args, config, 2400) == 1100
+
+
+def test_policy_microbatches_preserve_all_rows_and_tensor_alignment() -> None:
+    batch = {
+        "images": torch.arange(30).reshape(10, 3),
+        "tokens": torch.arange(20).reshape(10, 2),
+    }
+    chunks = _policy_microbatches(batch, 4)
+    assert [chunk["images"].shape[0] for chunk in chunks] == [4, 4, 2]
+    assert torch.equal(torch.cat([chunk["images"] for chunk in chunks]), batch["images"])
+    assert torch.equal(torch.cat([chunk["tokens"] for chunk in chunks]), batch["tokens"])
+
+    with pytest.raises(WriterModelError, match="dimensions disagree"):
+        _policy_microbatches(
+            {"images": torch.zeros(2, 3), "tokens": torch.zeros(3, 2)},
+            2,
+        )
+
+
+def test_functional_arm_gradient_is_query_weighted_across_microbatches(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_gradient(
+        _policy: object,
+        _state: object,
+        _contract: object,
+        *,
+        batch: dict[str, torch.Tensor],
+    ) -> tuple[torch.Tensor, dict[str, float], dict[str, torch.Tensor]]:
+        value = batch["value"].mean()
+        return value, {"loss": float(value)}, {"adapter": value.reshape(1)}
+
+    monkeypatch.setattr(
+        "ember.writer.as_step.functional_lora_loss_gradient",
+        fake_gradient,
+    )
+    runtime = SimpleNamespace(
+        policy=object(),
+        lora_contract=object(),
+        config={
+            "conditioning_training": {
+                "functional_policy_microbatch_size": 4,
+            }
+        },
+    )
+    values = torch.arange(10, dtype=torch.float32)
+    loss, detail, gradient = _functional_arm_gradient(
+        runtime,  # type: ignore[arg-type]
+        {"adapter": torch.zeros(1)},
+        {"value": values, "other": values[:, None]},
+    )
+    torch.testing.assert_close(loss, values.mean())
+    torch.testing.assert_close(gradient["adapter"], values.mean().reshape(1))
+    assert detail["loss"] == pytest.approx(float(values.mean()))
+    assert detail["policy_forward_calls"] == 3
 
 
 def test_code_compatible_resume_allows_only_recorded_commit_change(

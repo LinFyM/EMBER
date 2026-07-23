@@ -40,7 +40,9 @@
     "development_video_split_roles": [
       "train"
     ],
-    "validation_actions_read": 0,
+    "validation_actions_read_by_training_optimizer": 0,
+    "validation_action_queries_per_checkpoint_monitor": 512,
+    "validation_action_gradient": false,
     "test_actions_read": 0,
     "test_video_values_read": 0
   },
@@ -98,6 +100,7 @@
     "generic_writer_language_owner": "normal_pi05_pure_language_tokenizer_full_frozen_prefix",
     "policy_language_contract": "correct_action_query_task_language_on_every_branch",
     "contrast_backend": "paired_sequential_half_batch_with_shared_policy_rng",
+    "functional_policy_microbatch_size": 16,
     "contrast_query_fraction": 0.5,
     "normal_loss_weight": 1.0,
     "contrast_correct_loss_weight": 1.0,
@@ -140,7 +143,7 @@
       "kind": "cosine_decay_with_warmup",
       "peak_lr": 0.0003,
       "warmup_steps": 100,
-      "decay_steps": 2400,
+      "decay_steps": 800,
       "decay_lr": 1e-05
     },
     "maximum_formal_wall_clock_minutes": null,
@@ -149,36 +152,41 @@
   "profile_defaults": {
     "expected_world_size": 4,
     "total_steps": 2,
-    "per_rank_batch_size": 16,
+    "per_rank_batch_size": 128,
     "checkpoint_steps": [2]
   },
   "profile_evidence": {
-    "status": "sealed",
-    "selected_run": "/data/ymdai/outputs/ember/pi05_as_writer_action_memory_bias_profile_r4_b16_580793a_20260723",
+    "status": "pending_query_matched_profile",
+    "selected_run": null,
+    "prior_selected_run": "/data/ymdai/outputs/ember/pi05_as_writer_action_memory_bias_profile_r4_b16_580793a_20260723",
     "superseded_eight_rank_run": "/data/ymdai/outputs/ember/pi05_as_writer_action_memory_v1_profile_refactor_20260723",
-    "observed_optimizer_steps": 2,
     "physical_gpu_indices": [0, 1, 2, 3],
     "world_size": 4,
-    "per_rank_batch_size": 16,
-    "global_policy_samples_per_step": 64,
-    "step_seconds": [3.8103169261012226, 1.930034494958818],
-    "all_losses_and_gradients_finite": true,
+    "per_rank_batch_size": 128,
+    "functional_policy_microbatch_size": 16,
+    "global_policy_samples_per_step": 512,
     "writer_trainable_parameter_count": 10119297,
     "generated_lora_parameter_count": 1287168,
     "rank128_source_sft_trainable_parameter_count": 10297344,
     "writer_to_rank128_sft_parameter_ratio": 0.982709,
-    "max_cuda_allocated_bytes": 75992039424,
-    "max_cuda_reserved_bytes": 78871789568,
-    "run_contract_sha256": "819bbbb62360e01cb417c57ed2881ef7fde4384994bb7a91ccea6fc586a845a1",
-    "metrics_sha256": "19b8fd85bf45f668bf95b38faf17767eab9887e41063076eee0da2c6a4abde28",
-    "run_summary_sha256": "950ff9957d252af77f3dbdcf21e749b6414997567ad508fc6fa81fc6e78cc3ef",
-    "selection_reason": "Four symmetric ranks on physical GPUs 0,1,2,3 completed finite forward/backward at per-rank batch 16. Peak reserved memory was 78.87 GB, so batch 16 remains the stable ceiling with several GiB of physical headroom for variable-length videos. Fresh formal training uses the same per-rank batch and retains every 100-step checkpoint."
+    "prior_profile_evidence": {
+      "observed_optimizer_steps": 2,
+      "per_rank_batch_size": 16,
+      "step_seconds": [3.8103169261012226, 1.930034494958818],
+      "all_losses_and_gradients_finite": true,
+      "max_cuda_allocated_bytes": 75992039424,
+      "max_cuda_reserved_bytes": 78871789568,
+      "run_contract_sha256": "819bbbb62360e01cb417c57ed2881ef7fde4384994bb7a91ccea6fc586a845a1",
+      "metrics_sha256": "19b8fd85bf45f668bf95b38faf17767eab9887e41063076eee0da2c6a4abde28",
+      "run_summary_sha256": "950ff9957d252af77f3dbdcf21e749b6414997567ad508fc6fa81fc6e78cc3ef"
+    },
+    "selection_reason": "Pending a four-rank profile of one generated adapter reused across eight sequential 16-query functional policy microbatches. This preserves the measured memory ceiling while matching rank-128 Source-SFT's 128 action queries per task condition and 512 global queries per optimizer step."
   },
   "formal_run": {
-    "status": "sealed",
+    "status": "pending_query_matched_profile",
     "expected_world_size": 4,
     "total_steps": 2400,
-    "per_rank_batch_size": 16,
+    "per_rank_batch_size": 128,
     "checkpoint_steps": [
       100,
       200,
@@ -205,10 +213,10 @@
       2300,
       2400
     ],
-    "selected_stop_step": 1200,
-    "stage_stop_steps": [1200, 1800, 2400],
+    "selected_stop_step": 800,
+    "stage_stop_steps": [800, 1100, 1400, 1700, 2000, 2300, 2400],
     "maximum_wall_clock_minutes": null,
     "budget_role": "no_time_limit_owner_20260723",
-    "selection_rule": "Fresh four-rank training on GPUs 0,1,2,3 uses per-rank batch 16 (global batch 64). Warmup 100 and cosine decay 2400 exactly preserve the action-query learning-rate schedule of the prior eight-rank global-batch-128 warmup-50/decay-1200 experiment; the superseded decay-6400 trajectory is retained only as confounded provenance. Retain every 100-step checkpoint and measure the pre-sealed task-balanced validation functional-loss panel in the resident process. Start with step 1200 (76,800 action queries), then exact-resume to 1800 and 2400 only as needed to establish the closed-loop peak and sustained post-peak decline. There is no wall-clock limit."
+    "selection_rule": "Pending a real four-rank profile, fresh training on GPUs 0,1,2,3 uses 128 unique action queries per task condition, executed as eight sequential policy microbatches of 16 against one generated adapter. The global batch is 512, matching rank-128 Source-SFT's query statistics without changing the Writer architecture, output LoRA, information wall, or optimizer-step ownership. Use the same 100-step warmup and 800-step cosine decay as the capacity-matched Source-SFT, retain every 100-step checkpoint, and measure the pre-sealed task-balanced validation functional-loss panel in the resident process. Start at step800, then exact-resume in 300-step increments only while validation trend or closed-loop candidates remain underexplored. There is no wall-clock limit."
   }
 }

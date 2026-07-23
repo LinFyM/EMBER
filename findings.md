@@ -480,3 +480,10 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - paired closed-loop比较中，step500对800为500-only `27`、800-only `30`、exact `p≈0.791`，两点实质持平；step300对800为23/41、`p≈0.0328`。因此functional val loss从step500的`0.134224`连续升至step800的`0.140583`可提示train–val分叉和候选区间，但不能精确排序77与80个闭环成功，最终best仍必须由完整rollout决定。
 - 该轨迹存在决定性的scheduler混淆：旧八卡global batch128实验使用warmup50/decay1200；四卡global batch64若按action-query数保持同一学习率轨迹，应机械换算为warmup100/decay2400。现有warmup100正确，但decay6400令step500–800仍接近peak LR，所以`80/400`既不能归因于bias恢复，也不能作为当前架构上限。
 - 干净修正只把cosine decay改为2400；冻结prefix、Action Expert memory、Meta-LoRA、temporal/layer/slot架构、全部已恢复conditional bias、数据、sampler和loss均不变。fresh首段到step1200并每100步在驻留进程测封存val-loss panel；若仍未建立闭环峰后持续下降，再exact-resume到1800/2400。
+
+## query-scaled bias-restored AS训练曲线（2026-07-23）
+
+- fresh四卡轨迹在step100–800的task-balanced val functional loss依次为`0.135237/0.141384/0.135191/0.134058/0.134964/0.135579/0.141342/0.139462`。step200上冲在300完全恢复，证明单点不能早停；step400后500/600/700连续上升，800虽较700回落但仍比400高`0.005403`，已形成可执行的候选谷底与峰后区间。
+- 同期每100步train-loss mean为`0.138046/0.128935/0.122111/0.117919/0.116702/0.114383/0.110524/0.110282`，持续下降而validation自400后恶化，支持真实train–val分叉。按owner要求用趋势避免无意义长训，run在完整step800 checkpoint和validation后停止，不机械执行原首段1200。
+- step800保存了全部24 train tasks的50 action episodes和50 teacher videos覆盖，累计51,200 global action queries；checkpoint manifest payload SHA256为`4198c15cd82c0acc000951462ec6c410273c6d2ea474f5f9673369173fb963a1`，Writer state SHA256为`e680c4f2f45acf4a35ea664ae7078958345bf6b601e0b4ced21880eba880debf`。中断信号到达前额外完成step801–809，但没有覆盖latest checkpoint；这些rows保留作透明运行证据，科学候选只使用原子step800及以前checkpoint。
+- functional loss仍不负责最终排序：完整correct-video closed-loop首批候选为step400/600/800。step400与600已各用2张物理GPU、每卡5个persistent replicas并行启动，完成后step800用4卡评测；只有closed-loop结果可确定best和是否需要补更细checkpoint。

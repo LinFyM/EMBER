@@ -433,3 +433,10 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 四份results SHA256依次为base `91a9a31f...fb833`、SFT `05c4c0d1...d889b`、AS `3d640e57...d97479`、RL `92a958a3...3f2c8`；对应evaluation wall分别为`504.007/510.400/736.591/815.813s`，每份均保留400条raw rows和逐task aggregation。
 - Source-SFT训练因owner在development选择step400后于step600手动停止，原runner未走到terminal summary发布；这不影响已原子发布的step400 checkpoint，但当前fail-closed evaluator要求训练summary。修复只从不可变run contract、600条连续metrics和step600 manifest重建`run_summary.json`，没有GPU forward、optimizer update或权重改写；summary/recovery provenance SHA256为`887ae816...ab2e`/`c7f29ae7...803c`。第一次seen启动在任何rollout前因此失败并保留，成功结果来自新root，未把失败目录续作正式证据。
 - 该比较已回答Phase E的source acquisition问题；不再补seen wrong-video、额外checkpoint或generic arms。下一步使用development已选普通配置从规定fresh初态进行final 32-source重训。
+
+## Final 32-source训练合同（2026-07-23）
+
+- final角色只把封存的8 validation global IDs机械并入24 train IDs，四suite各8 source tasks，8 test IDs不变。AS与Source-SFT读取32 tasks各50条source action episodes；RL-Writer只读取同32 tasks的official random-reset reward和action-hidden videos；三者test action/reward/video reads在训练合同中均为0。
+- AS复现development最优step500时必须保留原1,500-step cosine horizon；若把formal total直接改成500，LeRobot会把50-step warmup自动缩到16并把decay压到500，已不再是同一配置。因此final合同以`total_steps=1500`封存scheduler，机械`selected_stop_step=500`，只实际训练到并发布step500。
+- Source-SFT同理保留800-step horizon与100-step warmup，机械停在development选定的step400；final不是把scheduler重缩到400。RL-Writer development update36在24 tasks上等于每task 12个完整cycles，32-task final据此固定为48 updates=`384` rollouts、每task仍12次，不用test outcome重新选择预算。
+- 三份final配置SHA256为AS `ebe269ea...e299e`、Source-SFT `25e99628...d10c2`、RL `32dd979b...2ab30`。AS/RL扩展同一canonical runner的sealed stage和source roles，没有增加第二套入口；现有32-task feature cache完整覆盖train+validation，可直接复用而不生成重复17GB cache。

@@ -175,7 +175,8 @@ def resolve_runtime(
     checkpoint_steps = parse_checkpoint_steps(
         args.checkpoint_steps or source["checkpoint_steps"], total_steps
     )
-    stop_step = args.stop_after_step or total_steps
+    default_stop = int(source.get("selected_stop_step", total_steps))
+    stop_step = args.stop_after_step or default_stop
     if min(total_steps, batch_size, stop_step) <= 0 or stop_step > total_steps:
         raise Pi05SourceSFTError("invalid Source-SFT runtime request")
     if context.world_size != 8:
@@ -195,7 +196,7 @@ def resolve_runtime(
             batch_size,
             checkpoint_steps,
         )
-        if observed != expected or stop_step != total_steps:
+        if observed != expected or stop_step != default_stop:
             raise Pi05SourceSFTError("formal Source-SFT launch differs from its sealed profile")
         state = git_state(REPO_ROOT)
         if state["dirty_paths"]:
@@ -397,6 +398,7 @@ def build_contract(
             "per_rank_batch_size": batch_size,
             "effective_global_batch_size": context.world_size * batch_size,
             "total_steps": total_steps,
+            "selected_stop_step": args.stop_after_step,
             "checkpoint_steps": list(checkpoint_steps),
             "num_workers_per_rank": args.num_workers,
             "dataloader_generator_seed_base": int(config["optimization"]["seed"])

@@ -38,6 +38,7 @@ from ember.source_sft.inference import inspect_source_sft_evaluation
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "configs/pi05_source_sft_development_v1.json"
+FINAL_CONFIG = ROOT / "configs/pi05_source_sft_final_v1.json"
 
 
 def test_development_config_selects_only_sealed_train_actions() -> None:
@@ -112,6 +113,62 @@ def test_development_config_cannot_open_final_stage() -> None:
 
     with pytest.raises(Pi05SourceSFTError, match="own immutable sealed config"):
         resolve_runtime(args, config, context)
+
+
+def test_final_config_selects_32_source_actions_and_frozen_step_budget() -> None:
+    config = load_source_sft_config(FINAL_CONFIG)
+    tasks = _target_tasks(config, Path("/target-data"), "final")
+    formal = config["stages"]["final"]["formal_run"]
+    assert config["sealed_stage"] == "final"
+    assert len(tasks) == 32
+    assert {task.split_role for task in tasks} == {"train", "validation"}
+    assert not any(task.split_role == "test" for task in tasks)
+    assert formal["status"] == "sealed"
+    assert formal["total_steps"] == 800
+    assert formal["selected_stop_step"] == 400
+    assert formal["per_rank_batch_size"] == 64
+    assert formal["checkpoint_steps"] == [200, 400, 600, 800]
+    assert formal["development_selection"]["selected_optimizer_step"] == 400
+    assert sha256_file(FINAL_CONFIG) == (
+        ROOT / "configs/pi05_source_sft_final_v1.sha256"
+    ).read_text(encoding="utf-8").split()[0]
+
+
+def test_final_formal_runtime_keeps_development_scheduler_horizon(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from ember.source_sft import contract
+
+    config = load_source_sft_config(FINAL_CONFIG)
+    context = DistributedContext(
+        rank=0,
+        local_rank=0,
+        world_size=8,
+        device=torch.device("cpu"),
+        numa_node=0,
+        cpu_affinity=(0,),
+    )
+    monkeypatch.setattr(
+        contract,
+        "git_state",
+        lambda _: {"dirty_paths": [], "commit": "pushed", "origin_main": "pushed"},
+    )
+    args = SimpleNamespace(
+        stage="final",
+        mode="formal",
+        total_steps=None,
+        batch_size=None,
+        checkpoint_steps=None,
+        stop_after_step=None,
+        resume=None,
+        skip_data_sha=False,
+    )
+    assert contract.resolve_runtime(args, config, context) == (
+        800,
+        64,
+        (200, 400, 600, 800),
+    )
+    assert args.stop_after_step == 400
 
 
 class _TinyPolicy(torch.nn.Module):

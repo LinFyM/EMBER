@@ -40,11 +40,27 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 REPO_ROOT = Path(__file__).resolve().parents[3]
 AS_WRITER_CONFIG_SCHEMA = "ember_pi05_as_writer_v2"
 AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_as_writer_launch_v2"
+AS_WRITER_STAGES = ("development", "final")
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
 
 def authority_path(config: Mapping[str, Any], name: str) -> Path:
     return REPO_ROOT / str(config["authorities"][name]["path"])
+
+
+def writer_stage(config: Mapping[str, Any]) -> str:
+    """Return the sealed data stage, preserving old development artifacts."""
+
+    stage = str(config.get("sealed_stage", "development"))
+    if stage not in AS_WRITER_STAGES:
+        raise WriterModelError("unsupported PI05 AS-Writer stage")
+    return stage
+
+
+def writer_split_roles(config: Mapping[str, Any]) -> tuple[str, ...]:
+    if writer_stage(config) == "development":
+        return ("train",)
+    return ("train", "validation")
 
 
 def _validate_authorities(config: Mapping[str, Any]) -> None:
@@ -102,7 +118,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
 
 
 def _validate_information_wall(config: Mapping[str, Any]) -> None:
-    expected = {
+    common = {
         "writer_input": "pure task language plus exactly one action-hidden teacher video",
         "writer_forbidden_inputs": [
             "action",
@@ -114,22 +130,36 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
             "policy_outcome",
         ],
         "action_owner": "frozen functional behavior loss only",
-        "development_action_split_roles": ["train"],
-        "development_video_split_roles": ["train"],
-        "validation_actions_read": 0,
         "test_actions_read": 0,
         "test_video_values_read": 0,
     }
+    if writer_stage(config) == "development":
+        expected = {
+            **common,
+            "development_action_split_roles": ["train"],
+            "development_video_split_roles": ["train"],
+            "validation_actions_read": 0,
+        }
+    else:
+        expected = {
+            **common,
+            "final_action_split_roles": ["train", "validation"],
+            "final_video_split_roles": ["train", "validation"],
+        }
     if config.get("information_wall") != expected:
         raise WriterModelError("AS-Writer information wall changed")
     data = config.get("data", {})
     required = {
-        "task_count": 24,
+        "task_count": 24 if writer_stage(config) == "development" else 32,
         "demo_indices": [0, 49],
         "episodes_per_task": 50,
         "teacher_video_sampling": "independent deterministic per-task no-replacement cycles",
         "action_query_sampling": "task-balanced deterministic no-replacement episode cycles",
-        "video_action_pairing": "positive video/action independent within task; contrast video from sealed paired train task",
+        "video_action_pairing": (
+            "positive video/action independent within task; contrast video from sealed paired train task"
+            if writer_stage(config) == "development"
+            else "positive video/action independent within task; contrast video from sealed paired final-source task"
+        ),
     }
     if any(data.get(name) != value for name, value in required.items()):
         raise WriterModelError("AS-Writer sampling contract changed")
@@ -143,7 +173,11 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
     pairs = value.get("video_task_pairs", [])
     flattened = [int(task_id) for pair in pairs for task_id in pair]
     target = read_json(authority_path(config, "target_data_manifest"))
-    train_ids = sorted(int(task_id) for task_id in target["summary"]["roles"]["train"])
+    source_ids = sorted(
+        int(task_id)
+        for role in writer_split_roles(config)
+        for task_id in target["summary"]["roles"][role]
+    )
     weights = (
         value.get("normal_loss_weight"),
         value.get("contrast_correct_loss_weight"),
@@ -166,7 +200,7 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
         or value.get("contrast_query_fraction") != 0.5
         or not isinstance(pairs, list)
         or any(not isinstance(pair, list) or len(pair) != 2 for pair in pairs)
-        or sorted(flattened) != train_ids
+        or sorted(flattened) != source_ids
         or len(set(flattened)) != len(flattened)
         or any(not isinstance(weight, (int, float)) or weight <= 0 for weight in weights)
         or not isinstance(value.get("matching_margin"), (int, float))
@@ -179,6 +213,7 @@ def load_writer_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if config.get("schema_version") != AS_WRITER_CONFIG_SCHEMA:
         raise WriterModelError("unsupported PI05 AS-Writer config schema")
+    writer_stage(config)
     _validate_authorities(config)
     _validate_protocol(config)
     _validate_information_wall(config)
@@ -219,7 +254,8 @@ def resolve_runtime(
     checkpoint_steps = parse_checkpoint_steps(
         args.checkpoint_steps or source["checkpoint_steps"], total_steps
     )
-    stop_step = args.stop_after_step or total_steps
+    default_stop = int(source.get("selected_stop_step", total_steps))
+    stop_step = args.stop_after_step or default_stop
     if min(total_steps, batch_size, stop_step) <= 0 or stop_step > total_steps:
         raise WriterModelError("invalid AS-Writer runtime request")
     if context.world_size != 8:
@@ -240,7 +276,7 @@ def resolve_runtime(
             batch_size,
             checkpoint_steps,
         )
-        if observed != expected or stop_step != total_steps:
+        if observed != expected or stop_step != default_stop:
             raise WriterModelError("formal AS-Writer launch differs from its sealed profile")
         state = git_state(REPO_ROOT)
         if state["dirty_paths"]:
@@ -304,12 +340,17 @@ def load_training_data(
     development = load_pi05_feature_tasks(
         cache_config, REPO_ROOT, args.data_root.resolve(), role="development"
     )
-    tasks = tuple(task for task in development if task.split_role == "train")
+    roles = set(writer_split_roles(config))
+    tasks = tuple(task for task in development if task.split_role in roles)
     suite_counts: dict[str, int] = {}
     for task in tasks:
         suite_counts[str(task.suite)] = suite_counts.get(str(task.suite), 0) + 1
-    if len(tasks) != 24 or sorted(suite_counts.values()) != [6, 6, 6, 6]:
-        raise WriterModelError("AS-Writer action training is not the sealed 24-task role")
+    per_suite = 6 if writer_stage(config) == "development" else 8
+    if (
+        len(tasks) != int(config["data"]["task_count"])
+        or sorted(suite_counts.values()) != [per_suite] * 4
+    ):
+        raise WriterModelError("AS-Writer action training is not its sealed source role")
     validation = _broadcast_validation(
         context, lambda: _validate_target_files(tasks, not args.skip_data_sha)
     )
@@ -448,6 +489,7 @@ def build_contract(
     return {
         "schema_version": AS_WRITER_LAUNCH_SCHEMA,
         "mode": args.mode,
+        "stage": writer_stage(config),
         "git": {key: value for key, value in git_state(REPO_ROOT).items() if key in {"branch", "commit"}},
         "config_sha256": sha256_file(args.config.resolve()),
         "authorities": dict(config["authorities"]),
@@ -473,6 +515,7 @@ def build_contract(
             "policy_forward_calls_per_rank_cycle": [1, 2, 2],
             "teacher_videos_per_writer_invocation": 1,
             "total_steps": total_steps,
+            "selected_stop_step": args.stop_after_step,
             "checkpoint_steps": list(checkpoint_steps),
             "num_workers_per_rank": args.num_workers,
             "rank_topology": topology,

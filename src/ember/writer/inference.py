@@ -28,6 +28,8 @@ from ember.writer.as_contract import (
     REPO_ROOT,
     inspect_feature_cache,
     load_writer_config,
+    writer_split_roles,
+    writer_stage,
 )
 from ember.writer.checkpoint import validate_writer_checkpoint_files
 from ember.writer.feature_cache import WriterFeatureStore
@@ -264,19 +266,25 @@ def _inspect_training_checkpoint(
     )
     cursor = int(manifest.get("consumed", {}).get("next_step", -1))
     target_manifest = read_json(REPO_ROOT / config["authorities"]["target_data_manifest"]["path"])
-    train_ids = target_manifest.get("summary", {}).get("roles", {}).get("train", [])
+    role_ids = target_manifest.get("summary", {}).get("roles", {})
+    source_ids = [
+        int(task_id)
+        for role in writer_split_roles(config)
+        for task_id in role_ids.get(role, [])
+    ]
     lora = load_pi05_lora_contract(
         REPO_ROOT / str(config["authorities"]["lora_contract"]["path"])
     )
     valid = (
         training.get("schema_version") == AS_WRITER_LAUNCH_SCHEMA
+        and training.get("stage", "development") == writer_stage(config)
         and training.get("config_sha256") == sha256_file(config_path)
         and training.get("source") == dict(source)
         and training.get("authorities") == config["authorities"]
         and training.get("information_wall") == config["information_wall"]
         and training.get("writer") == config["writer"]
         and training.get("data") == config["data"]
-        and training.get("task_ids") == train_ids
+        and training.get("task_ids") == sorted(source_ids)
         and training.get("trainable", {}).get("object")
         == "shared_action_supervised_writer_only"
         and training.get("trainable", {}).get("lora_contract_sha256")

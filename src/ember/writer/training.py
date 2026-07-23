@@ -699,7 +699,12 @@ def run_steps(runtime: WriterRuntime) -> None:
                 "contract_sha256": runtime.contract_sha256,
                 "completed_optimizer_steps": stop,
                 "requested_optimizer_steps": runtime.total_steps,
-                "stopped_early_for_profile": stop < runtime.total_steps,
+                "stopped_early_for_profile": (
+                    runtime.args.mode == "profile" and stop < runtime.total_steps
+                ),
+                "selected_stage_stop": (
+                    runtime.args.mode == "formal" and stop < runtime.total_steps
+                ),
                 "metrics_rows": runtime.metrics_rows,
                 "wall_seconds": time.monotonic() - started,
                 "final_checkpoint": str(

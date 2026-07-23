@@ -57,21 +57,43 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
     algorithm = config.get("algorithm", {})
     environment = config.get("environment", {})
     policy = config.get("policy", {})
-    if (
-        wall.get("writer_input")
-        != "pure task language plus exactly one action-hidden teacher video"
-        or wall.get("development_reward_split_roles") != ["train"]
-        or wall.get("development_video_split_roles") != ["train"]
-        or any(int(wall.get(name, -1)) != 0 for name in (
+    stage = str(config.get("sealed_stage", ""))
+    expected_roles = (
+        ["train"] if stage == "development" else ["train", "validation"]
+    )
+    role_fields = (
+        ("development_reward_split_roles", "development_video_split_roles")
+        if stage == "development"
+        else ("final_reward_split_roles", "final_video_split_roles")
+    )
+    expected_micro_queries = 24 if stage == "development" else 32
+    zero_read_fields = (
+        (
             "validation_reward_reads",
             "validation_action_reads",
             "test_reward_reads",
             "test_action_reads",
             "fixed_pruned_init_reads",
-        ))
+        )
+        if stage == "development"
+        else (
+            "validation_action_reads",
+            "test_reward_reads",
+            "test_action_reads",
+            "fixed_pruned_init_reads",
+        )
+    )
+    if (
+        stage not in {"development", "final"}
+        or wall.get("writer_input")
+        != "pure task language plus exactly one action-hidden teacher video"
+        or wall.get(role_fields[0]) != expected_roles
+        or wall.get(role_fields[1]) != expected_roles
+        or any(int(wall.get(name, -1)) != 0 for name in zero_read_fields)
         or set(branches) != RL_WRITER_BRANCHES
         or int(branches["zero_as_warmup"].get("teacher_action_queries", -1)) != 0
-        or int(branches["micro_as_warmup"].get("teacher_action_queries", -1)) != 24
+        or int(branches["micro_as_warmup"].get("teacher_action_queries", -1))
+        != expected_micro_queries
         or "fresh same-seed" not in branches["micro_as_warmup"].get(
             "writer_initialization", ""
         )
@@ -97,16 +119,22 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
 
 def load_rl_writer_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
-    if (
-        config.get("schema_version") != RL_WRITER_CONFIG_SCHEMA
-        or config.get("sealed_stage") != "development"
-    ):
+    stage = str(config.get("sealed_stage", ""))
+    if config.get("schema_version") != RL_WRITER_CONFIG_SCHEMA or stage not in {
+        "development",
+        "final",
+    }:
         raise RewardProtocolError("unsupported PI05 RL-Writer config")
     _validate_authorities(config)
     _validate_information_wall(config)
-    tasks = reward_tasks(config, stage="development")
-    if len(tasks) != 24 or any(task.split_role != "train" for task in tasks):
-        raise RewardProtocolError("RL-Writer development role changed")
+    tasks = reward_tasks(config, stage=stage)
+    expected_roles = (
+        {"train"} if stage == "development" else {"train", "validation"}
+    )
+    if len(tasks) != (24 if stage == "development" else 32) or {
+        task.split_role for task in tasks
+    } != expected_roles:
+        raise RewardProtocolError("RL-Writer sealed source role changed")
     return config
 
 
@@ -229,6 +257,8 @@ def resolve_runtime(
     config: Mapping[str, Any],
     context: DistributedContext,
 ) -> tuple[int, tuple[int, ...]]:
+    if args.stage != config.get("sealed_stage"):
+        raise RewardProtocolError("RL-Writer stage requires its own immutable config")
     if args.branch not in RL_WRITER_BRANCHES:
         raise RewardProtocolError("unsupported RL-Writer branch")
     if args.branch == "micro_as_warmup":
@@ -251,8 +281,11 @@ def resolve_runtime(
     stop = int(args.stop_after_update or total)
     if not 0 < stop <= total or stop not in checkpoints:
         raise RewardProtocolError("RL-Writer segment must end at a checkpoint")
-    if any(value % 3 for value in checkpoints):
-        raise RewardProtocolError("development RL-Writer checkpoints need full 24-task cycles")
+    cycle_updates = updates_per_cycle(
+        reward_tasks(config, stage=args.stage), context.world_size
+    )
+    if any(value % cycle_updates for value in checkpoints):
+        raise RewardProtocolError("RL-Writer checkpoints need complete source-task cycles")
     if args.mode == "formal":
         expected = (
             int(source["expected_world_size"]),

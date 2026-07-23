@@ -33,6 +33,7 @@ from ember.writer.data import TeacherVideoSchedule
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "configs/pi05_rl_writer_development_v1.json"
+FINAL_CONFIG = ROOT / "configs/pi05_rl_writer_final_v1.json"
 
 
 def test_rl_writer_config_seals_fresh_zero_and_micro_warmup_branches() -> None:
@@ -85,6 +86,57 @@ def test_rl_writer_roles_are_exact_24_development_and_32_final() -> None:
     assert not any(task.split_role == "test" for task in final)
     assert updates_per_cycle(development, 8) == 3
     assert updates_per_cycle(final, 8) == 4
+
+
+def test_final_rl_writer_seals_twelve_32_task_cycles_without_test_reads() -> None:
+    config = load_rl_writer_config(FINAL_CONFIG)
+    tasks = reward_tasks(config, stage="final")
+    assert config["sealed_stage"] == "final"
+    assert len(tasks) == 32
+    assert {task.split_role for task in tasks} == {"train", "validation"}
+    assert config["branches"]["micro_as_warmup"]["teacher_action_queries"] == 32
+    assert config["formal_run"]["total_updates"] == 48
+    assert config["formal_run"]["checkpoint_updates"] == [4, 16, 32, 48]
+    assert config["formal_run"]["development_selection"][
+        "selected_rollouts_per_task"
+    ] == 12
+    assert config["information_wall"]["test_reward_reads"] == 0
+    assert config["information_wall"]["test_action_reads"] == 0
+    assert sha256_file(FINAL_CONFIG) == (
+        ROOT / "configs/pi05_rl_writer_final_v1.sha256"
+    ).read_text(encoding="utf-8").split()[0]
+
+
+def test_final_rl_writer_runtime_accepts_only_complete_32_task_cycles(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import ember.rl_writer.contract as contract
+
+    config = load_rl_writer_config(FINAL_CONFIG)
+    context = DistributedContext(
+        rank=0,
+        local_rank=0,
+        world_size=8,
+        device=torch.device("cpu"),
+        numa_node=0,
+        cpu_affinity=(0,),
+    )
+    monkeypatch.setattr(
+        contract,
+        "git_state",
+        lambda _: {"dirty_paths": [], "commit": "pushed", "origin_main": "pushed"},
+    )
+    args = Namespace(
+        stage="final",
+        branch="zero_as_warmup",
+        mode="formal",
+        total_updates=None,
+        checkpoint_updates=None,
+        stop_after_update=None,
+        resume=None,
+    )
+    assert resolve_runtime(args, config, context) == (48, (4, 16, 32, 48))
+    assert args.stop_after_update == 48
 
 
 def test_rl_writer_schedule_is_balanced_and_video_no_replacement() -> None:
@@ -147,6 +199,7 @@ def test_rl_writer_runtime_has_no_as_checkpoint_and_micro_branch_is_blocked() ->
         cpu_affinity=(0,),
     )
     args = Namespace(
+        stage="development",
         branch="micro_as_warmup",
         mode="profile",
         total_updates=None,
@@ -178,6 +231,7 @@ def test_rl_writer_formal_can_stop_and_resume_at_sealed_checkpoints(
         lambda _: {"dirty_paths": [], "commit": "pushed", "origin_main": "pushed"},
     )
     args = Namespace(
+        stage="development",
         branch="zero_as_warmup",
         mode="formal",
         total_updates=None,

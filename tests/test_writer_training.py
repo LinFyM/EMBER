@@ -12,6 +12,7 @@ from ember.writer.as_contract import (
     parse_checkpoint_steps,
     resolve_runtime,
     resume_step,
+    writer_split_roles,
 )
 from ember.writer.model import WriterModelError
 from ember.writer.conditioning import (
@@ -23,6 +24,7 @@ from ember.writer.conditioning import (
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+FINAL_CONFIG = REPO_ROOT / "configs/pi05_as_writer_final_v1.json"
 
 
 def test_as_writer_config_is_pi05_one_video_and_formal_sealed() -> None:
@@ -74,6 +76,30 @@ def test_as_writer_checkpoint_schedule_and_cursor_are_fail_closed() -> None:
         parse_checkpoint_steps("2,3", 4)
     with pytest.raises(WriterModelError, match="not a step checkpoint"):
         resume_step(Path("/tmp/trainer_state.pt"))
+
+
+def test_final_as_writer_reuses_one_runner_for_exact_32_source_role() -> None:
+    config = load_writer_config(FINAL_CONFIG)
+    assert config["sealed_stage"] == "final"
+    assert writer_split_roles(config) == ("train", "validation")
+    assert config["data"]["task_count"] == 32
+    pairs = config["conditioning_training"]["video_task_pairs"]
+    assert len(pairs) == 16
+    assert len({task for pair in pairs for task in pair}) == 32
+    assert config["formal_run"]["total_steps"] == 1500
+    assert config["formal_run"]["selected_stop_step"] == 500
+    assert config["formal_run"]["checkpoint_steps"] == [
+        250,
+        500,
+        750,
+        1000,
+        1250,
+        1500,
+    ]
+    assert config["optimization"]["scheduler"]["decay_steps"] == 1500
+    assert sha256_file(FINAL_CONFIG) == (
+        REPO_ROOT / "configs/pi05_as_writer_final_v1.sha256"
+    ).read_text(encoding="utf-8").split()[0]
 
 
 def test_video_matching_manual_gradient_coefficients_equal_autograd() -> None:
@@ -148,6 +174,15 @@ def test_sealed_as_writer_config_resolves_profile_and_formal(
         (250, 500, 750, 1000, 1250, 1500),
     )
     assert args.stop_after_step == 1500
+
+    final = load_writer_config(FINAL_CONFIG)
+    args.stop_after_step = None
+    assert resolve_runtime(args, final, context) == (
+        1500,
+        16,
+        (250, 500, 750, 1000, 1250, 1500),
+    )
+    assert args.stop_after_step == 500
 
 
 def test_retired_smolvla_cold_start_config_is_not_an_active_writer_config() -> None:

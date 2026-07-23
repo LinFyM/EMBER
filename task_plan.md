@@ -100,7 +100,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 
 ## Phase F：32-source final retraining与zero-interaction test
 
-- [ ] 将8 validation tasks合入source，形成32 source / 8 test；不改test IDs。
+- [x] 将8 validation tasks机械合入形成32 source / 8 test；final AS/Source-SFT/RL配置只选择`train+validation`，test IDs与test action/reward reads保持封闭。
 - [ ] 第一轮只用一个training seed，从规定初态分别重训AS-Writer、RL-Writer（若成立）和Source-SFT。
 - [ ] 先完成final seen-task comparison和wrong-video control。
 - [ ] 打开test，评估新frozen source base、Source-SFT、AS-Writer、RL-Writer及correct/cross-suite-wrong video。

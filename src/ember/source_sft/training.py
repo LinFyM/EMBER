@@ -57,6 +57,11 @@ from ember.source_sft.contract import (
     resolve_runtime,
     trainable_contract,
 )
+from ember.source_sft.online_validation import (
+    OnlineSourceSFTValidation,
+    evaluate_online_source_sft_checkpoint,
+    prepare_online_source_sft_validation,
+)
 from ember.writer.data import FunctionalQueryDataset, MixedTaskBatchSampler
 
 
@@ -87,6 +92,7 @@ class SourceSFTRuntime:
     resume_step: int
     metrics_path: Path
     metrics_rows: int
+    checkpoint_validation: OnlineSourceSFTValidation | None
 
 
 def _resume_step(checkpoint: Path | None) -> int:
@@ -207,6 +213,35 @@ def _wrap(policy: torch.nn.Module, context: DistributedContext) -> torch.nn.Modu
     )
 
 
+def _build_processor(
+    args: argparse.Namespace,
+    context: DistributedContext,
+    authorities: Any,
+) -> Pi05LiberoProcessor:
+    source = authorities.source_base_config
+    return Pi05LiberoProcessor(
+        load_stats(source, source["data"]["active_task_ids"]),
+        args.tokenizer_path,
+        int(source["features"]["tokenizer_max_length"]),
+        str(context.device),
+    )
+
+
+def _prepare_validation_monitor(
+    args: argparse.Namespace,
+    context: DistributedContext,
+    contract: Mapping[str, Any],
+) -> OnlineSourceSFTValidation | None:
+    if args.mode != "formal" or args.stage != "development":
+        return None
+    return prepare_online_source_sft_validation(
+        training=contract,
+        data_root=args.data_root,
+        context=context,
+        output_dir=args.output_dir,
+    )
+
+
 def prepare_runtime(
     args: argparse.Namespace, context: DistributedContext
 ) -> SourceSFTRuntime:
@@ -281,15 +316,7 @@ def prepare_runtime(
         initial_step=initial_step,
     )
     wrapped = _wrap(policy, context)
-    processor = Pi05LiberoProcessor(
-        load_stats(
-            authorities.source_base_config,
-            authorities.source_base_config["data"]["active_task_ids"],
-        ),
-        args.tokenizer_path,
-        int(authorities.source_base_config["features"]["tokenizer_max_length"]),
-        str(context.device),
-    )
+    processor = _build_processor(args, context, authorities)
     metrics_path = args.output_dir / "metrics.jsonl"
     metrics_rows = _metrics_cursor(
         metrics_path,
@@ -298,6 +325,11 @@ def prepare_runtime(
         expected_rows=expected_metrics_rows,
     )
     iterator = iter(loader)
+    checkpoint_validation = _prepare_validation_monitor(
+        args,
+        context,
+        contract,
+    )
     torch.cuda.reset_peak_memory_stats(context.device)
     barrier(context)
     if resume_rng is not None:
@@ -325,6 +357,7 @@ def prepare_runtime(
         resume_step=initial_step,
         metrics_path=metrics_path,
         metrics_rows=metrics_rows,
+        checkpoint_validation=checkpoint_validation,
     )
 
 
@@ -398,8 +431,39 @@ def _one_step(runtime: SourceSFTRuntime, step: int, started: float) -> dict[str,
     }
 
 
+def _run_checkpoint_validation(
+    runtime: SourceSFTRuntime,
+    checkpoint_cursor: int,
+) -> None:
+    if runtime.checkpoint_validation is None:
+        return
+    checkpoint_dir = (
+        runtime.args.output_dir
+        / "checkpoints"
+        / f"step_{checkpoint_cursor:08d}"
+    )
+    summary = evaluate_online_source_sft_checkpoint(
+        validation=runtime.checkpoint_validation,
+        context=runtime.context,
+        checkpoint_cursor=checkpoint_cursor,
+        checkpoint_dir=checkpoint_dir,
+        policy=runtime.policy,
+        processor=runtime.processor,
+    )
+    if runtime.context.is_main:
+        print(
+            json.dumps(
+                {"event": "validation_functional_loss", **summary},
+                sort_keys=True,
+            ),
+            flush=True,
+        )
+
+
 def run_steps(runtime: SourceSFTRuntime) -> None:
     started = time.monotonic()
+    if runtime.resume_step in runtime.checkpoint_steps:
+        _run_checkpoint_validation(runtime, runtime.resume_step)
     for step in range(runtime.resume_step, runtime.args.stop_after_step):
         row = _one_step(runtime, step, started)
         completed = int(row["optimizer_step"])
@@ -421,6 +485,7 @@ def run_steps(runtime: SourceSFTRuntime) -> None:
                 mode=runtime.args.mode,
                 metrics_rows=runtime.metrics_rows,
             )
+            _run_checkpoint_validation(runtime, completed)
     barrier(runtime.context)
     if runtime.context.is_main:
         stop = runtime.args.stop_after_step
@@ -487,6 +552,8 @@ def train(args: argparse.Namespace) -> None:
     finally:
         if runtime is not None:
             runtime.dataset.close()
+            if runtime.checkpoint_validation is not None:
+                runtime.checkpoint_validation.close()
         if dist.is_available() and dist.is_initialized():
             dist.destroy_process_group()
 

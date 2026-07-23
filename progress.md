@@ -320,6 +320,7 @@
 - Source-SFT runtime不再硬编码8 ranks，而是从profile/formal sealed contract读取world size。当前profile待物理GPU0–3可用后以4 ranks×batch128运行，从而保持旧比较的global batch512；此前8×batch64 profile与训练只作provenance，不能跨world-size exact-resume。
 - rank128 fresh formal预合同保留原100-step warmup和800-step cosine decay，使前800步LR轨迹定义不变；最大horizon扩至2400，只在800后增加`1e-5`低LR tail。每100步保留checkpoint，首段到800，只有validation仍未建立真实峰值与持续峰后下降时才exact-resume到1600/2400；owner明确不设wall-clock上限。
 - 当前只封存“pending four-rank profile”，不得直接formal启动。相关Source-SFT/LoRA聚焦测试`16 passed`，architecture guard无hard violation；AS释放四卡后先跑真实batch128 profile，再写入吞吐/显存/hash并封存正式合同。
+- Source-SFT现复用同一封存512-row panel并支持两种互补生命周期：active formal训练在每个checkpoint后用常驻policy原地测loss、恢复完整RNG后继续；独立只读入口仅用于历史checkpoint backfill或训练进程结束后的复核，不执行训练、也不构成第二套policy evaluator。两者共享panel manifest、task-equal summary和Source-SFT adapter owner。
 
 ## checkpoint内联validation-loss监控（2026-07-23）
 

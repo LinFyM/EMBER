@@ -51,11 +51,12 @@ def test_action_memory_writer_config_seals_architecture_and_information_wall() -
     assert config["optimization"]["maximum_formal_wall_clock_minutes"] is None
     assert config["profile_defaults"]["expected_world_size"] == 4
     assert config["formal_run"]["expected_world_size"] == 4
-    assert config["formal_run"]["selected_stop_step"] == 3200
+    assert config["optimization"]["scheduler"]["decay_steps"] == 2400
+    assert config["formal_run"]["selected_stop_step"] == 1200
     assert config["formal_run"]["stage_stop_steps"] == [
-        3200,
-        4800,
-        6400,
+        1200,
+        1800,
+        2400,
     ]
 
 
@@ -100,7 +101,7 @@ def test_zero_matching_weight_keeps_only_correct_arm_gradient() -> None:
     torch.testing.assert_close(coefficients[1], torch.zeros_like(losses[1]))
 
 
-def test_formal_runtime_uses_six_rank_query_scaled_stage(
+def test_formal_runtime_uses_four_rank_query_scaled_stage(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     config = load_writer_config(CONFIG)
@@ -143,23 +144,23 @@ def test_formal_runtime_uses_six_rank_query_scaled_stage(
     )
     expected_checkpoints = tuple(config["formal_run"]["checkpoint_steps"])
     assert resolve_runtime(formal, config, context) == (
-        6400,
+        2400,
         16,
         expected_checkpoints,
     )
-    assert formal.stop_after_step == 3200
-    formal.resume = Path("/tmp/step_00003200")
-    formal.stop_after_step = 4800
-    assert resolve_runtime(formal, config, context)[0] == 6400
-    assert formal.stop_after_step == 4800
+    assert formal.stop_after_step == 1200
+    formal.resume = Path("/tmp/step_00001200")
+    formal.stop_after_step = 1800
+    assert resolve_runtime(formal, config, context)[0] == 2400
+    assert formal.stop_after_step == 1800
 
 
 def test_formal_extension_keeps_original_contract_stop() -> None:
     config = load_writer_config(CONFIG)
-    args = argparse.Namespace(mode="formal", stop_after_step=4800)
-    assert _contract_stop_step(args, config, 6400) == 3200
+    args = argparse.Namespace(mode="formal", stop_after_step=1800)
+    assert _contract_stop_step(args, config, 2400) == 1200
     args.mode = "profile"
-    assert _contract_stop_step(args, config, 6400) == 4800
+    assert _contract_stop_step(args, config, 2400) == 1800
 
 
 def test_code_compatible_resume_allows_only_recorded_commit_change(

@@ -473,3 +473,10 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 为充分检验`122/400`是否真实上限，新SFT最大horizon可延到2400，但不把cosine decay从800拉长：这样前800步不因扩大上限而获得更高LR，800后只是固定低LR tail。若完整validation已在800前后显示多点持续退化，便无需机械跑满；若仍波动或回升，则同一合同可恢复到1600/2400。
 - bias-restored AS的封存512-row validation functional loss在step100–800依次为`0.135237/0.138363/0.134698/0.141123/0.134224/0.138690/0.139285/0.140583`。step400的单点回升随后在500完全恢复，验证了“单点不能早停”；而500后连续三个checkpoint回升、同时train loss继续下降，已经把closed-loop候选区间收缩到step500附近，但不能单独证明closed-loop最优。
 - 独立backfill与resident monitor在step300/400/500的1,536条逐query loss完全一致，排除了训练进程内切换eval数据导致数值漂移的实现疑点。validation过程无gradient、无optimizer update，结束后恢复完整RNG与Writer train mode。
+
+## bias-restored AS首轨迹结果与四卡scheduler混淆（2026-07-23）
+
+- decay-6400首轨迹的完整correct-video validation为step300/500/800=`62/77/80`（各400）。逐任务分别为Long `0/0`、Goal `0/36`、Object `16/8`、Spatial `0/2`；Long `2/0`、Goal `0/27`、Object `33/15`、Spatial `0/0`；Long `3/0`、Goal `0/38`、Object `26/12`、Spatial `0/1`。results SHA256依次为`3c2643cf85c1a33a8335fd96636b46e55deef9f1839747c88cd7d62d30fa8334`、`db01087c00b2dd162f6900cead653d553d7c9e2e8ae8c9e20535c5902624fce6`、`f2ef8786ffb536b03483de3900a9fcab3fa3b6e417862c73cc89532174a8af10`。
+- paired closed-loop比较中，step500对800为500-only `27`、800-only `30`、exact `p≈0.791`，两点实质持平；step300对800为23/41、`p≈0.0328`。因此functional val loss从step500的`0.134224`连续升至step800的`0.140583`可提示train–val分叉和候选区间，但不能精确排序77与80个闭环成功，最终best仍必须由完整rollout决定。
+- 该轨迹存在决定性的scheduler混淆：旧八卡global batch128实验使用warmup50/decay1200；四卡global batch64若按action-query数保持同一学习率轨迹，应机械换算为warmup100/decay2400。现有warmup100正确，但decay6400令step500–800仍接近peak LR，所以`80/400`既不能归因于bias恢复，也不能作为当前架构上限。
+- 干净修正只把cosine decay改为2400；冻结prefix、Action Expert memory、Meta-LoRA、temporal/layer/slot架构、全部已恢复conditional bias、数据、sampler和loss均不变。fresh首段到step1200并每100步在驻留进程测封存val-loss panel；若仍未建立闭环峰后持续下降，再exact-resume到1800/2400。

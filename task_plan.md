@@ -80,10 +80,10 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 
 - [x] 建立共享π0.5 reward mechanics：official random BDDL reset、10-step settling、suite horizon、显式逐replan flow-noise seed、只执行/监督前5 actions、successful-episode等权与不可变interaction ledger。
 - [x] 建立fresh zero-AS RL-Writer唯一活动owner、8-rank task/video full-cycle schedule、Writer-only functional update、完整checkpoint/RNG/cursor/ledger exact-resume；真实24-task profile得到7/24 successes与3/3有效Writer updates，峰值reserved 40.84GB，formal已按实测封存为可在稀疏checkpoint暂停/续训的120-update guardrail、首段只到update12。
-- [ ] 从随机Writer、零AS warm-up直接跨24 source tasks用官方random-reset reward联合训练。
-- [ ] 若无正信号，加入极少量AS warm-up并明确记录teacher-action consumption；不得从完整AS-Writer继续。
-- [ ] 仍无法启动时保存完整reward coverage/interaction/failure evidence并暂停路线。
-- [ ] 若成立，根据validation快速寻找接近饱和checkpoint；保存worker RNG、seed schedule、interaction cursor和exact-resume state。
+- [x] 从随机Writer、零AS warm-up直接跨24 source tasks用官方random-reset reward联合训练；到update54累计432 rollouts、81 successes、131,354 environment actions，全部teacher-action consumption为0。
+- [x] fresh identity首个cycle即有7/24正信号，故按预声明规则不进入micro-AS分支；这不是缺失证据，也不从完整AS-Writer继续。
+- [x] 通过update3→24→36→54的真实8-rank exact-resume保存worker RNG、seed schedule、interaction cursor和完整checkpoint；source reward后段cycles已平台。
+- [x] 固定64-state validation screens在update12/24/36/54为`6/11/15/14`，据此冻结最早峰值update36；完整correct-video validation为`94/400`，不再追加72/96/120。
 
 ## Phase E：Source-SFT、seen与视频因果证据
 
@@ -96,6 +96,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] canonical evaluator在同一dynamic queue、persistent worker和raw-row schema内支持frozen AS-Writer或RL-Writer；两者共享correct/wrong mapping与video seed，artifact kind/checkpoint axis分别fail-close。
 - [x] 用正式AS checkpoint运行并报告correct/wrong/base逐任务结果：119/115/48（各400）；correct−wrong仅+4，当前AS结果未显示强teacher-video内容依赖。RL-Writer若成立后另补其对照。
 - [x] 完成development比较：source base `48/400`、Source-SFT step400 `87/400`、Writer-v2 step500 correct `99/400`、同Writer唯一wrong-video arm `55/400`。correct-only/wrong-only=`56/12`、exact McNemar `p=6.21e-8`，6/8 tasks为正向视频效应；AS-Writer暂时通过并解除RL-Writer暂停。
+- [x] 对唯一冻结的RL-Writer update36完成correct/cross-suite-wrong完整validation：`94/400` vs `87/400`；paired correct-only/wrong-only=`10/3`、exact McNemar `p=0.09229`。reward-only held competence成立，但视频因果证据较弱；不补generic或其他checkpoint wrong arms。
 
 ## Phase F：32-source final retraining与zero-interaction test
 

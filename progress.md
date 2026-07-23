@@ -188,9 +188,9 @@
 
 ## 当前后续动作
 
-1. 从fresh identity启动zero-AS RL-Writer formal首段至update12（4个完整24-task cycles），然后立即检查逐cycle reward coverage、任务覆盖、交互数和Writer变化，不盲跑120-update guardrail。
-2. 若reward/coverage仍有学习信号则从update12 exact-resume到下一个稀疏checkpoint；若已平台或退化则先做便宜validation screen并停止追加。已有7/24初始成功，因此不启用micro-AS。
-3. RL-Writer选择或合规关闭后继续seen comparison与final 32-source阶段；Source-SFT不重训development，AS-Writer不再补generic或额外wrong-video arms。
+1. 使用已在outcome前封存的8-task seen panel比较source base、Source-SFT step400、AS-Writer step500和RL-Writer update36；只补完成该核心比较所需的arms。
+2. seen comparison封存后进入final 32-source单seed重训；development Source-SFT、AS-Writer和RL-Writer均不再追加训练或额外消融。
+3. RL-Writer后续只保留既定task-local RL-init与final correct/wrong用途；其development视频因果证据较弱，不补generic arm或micro-AS追正结果。
 
 ## AS-Writer短周期profile与正式seal（2026-07-22）
 
@@ -252,3 +252,11 @@
 - 第三次profile完整覆盖24/24 train tasks各1条official random-reset rollout，得到7 successes、7167 environment actions、3/3 optimizer updates；成功覆盖Spatial 0/2/5/7、Goal 1/8和Long 5。单cycle max-rank wall `133.471s`，三update分别`46.668/42.297/44.510s`，峰值reserved `40,842,035,200` bytes。
 - profile checkpoint update3全文件hash、24-task no-replacement coverage和cursor复核通过；run-contract/metrics/summary/checkpoint-manifest SHA256为`487fee45...4d28`/`d7e22bc7...cdea`/`3bb5b550...008a`/`2a27f673...c95`。零warm-up已有明确reward signal，不进入micro-AS。
 - formal最大合同为120 updates=40 full cycles，按profile约89分钟净循环，并为分段模型加载、checkpoint与判断保留约31分钟；checkpoint为3/6/12/24/36/54/72/96/120。runner现允许只在这些sealed checkpoints暂停并保持同一contract exact-resume；首段预声明只跑到update12。
+
+## RL-Writer development完成（2026-07-23）
+
+- canonical root为`/data/ymdai/outputs/ember/pi05_rl_writer_zero_formal_seed7_r2_376ac0f_20260722`。此前resume启动前的metrics reconciliation错误已定位为AS轴`optimizer_step`与RL轴`next_update`混用；修复后rank0异常会广播到全部ranks，fresh全仓`154 passed`，旧失败run只保留failure evidence，未跨代码commit恢复。
+- 新run先到update3，再从update3真实8-rank exact-resume到24，随后从24到36、36到54；最终432 rollouts、81 successes、131,354 environment actions、44个有效optimizer updates，净训练wall `2261.716s`。run-contract/invocations/metrics/summary SHA256分别为`d637959f...073`/`637f4878...946`/`d5a064c7...22d`/`ed5aee66...4d4`。
+- 固定64-state screens为update12/24/36/54=`6/11/15/14`，results SHA256分别为`97c78986...e78`、`59dacc72...17e`、`d7e73252...3eb`、`ae641ec8...2a1`；据此冻结update36，不继续训练。selected checkpoint manifest/writer SHA256为`85577446...596`/`57f9b12c...2af`。
+- selected update36完整correct-video validation为`94/400`，root为`/data/ymdai/outputs/ember/pi05_rl_writer_validation8x50_r2_update00000036_correct_376ac0f_r1_20260722`，results SHA256 `d1d4b1cf...aa5`。唯一cross-suite wrong arm为`87/400`，root suffix为`...update00000036_wrong_376ac0f_r1_20260722`，results SHA256 `6601221a...325`；两者`paired_control_sha256=57e3985c...321`。
+- paired correct-only/wrong-only为`10/3`，exact McNemar `p=0.092285`。因此RL-Writer held competence成立但视频特异性较弱；已有zero-AS reward signal，不启用micro-AS，不补generic或更多wrong arms。下一阶段是预封存seen panel比较。

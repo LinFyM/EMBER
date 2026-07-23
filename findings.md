@@ -417,3 +417,11 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - fresh identity Writer生成的初始LoRA功能上等于source base；首个完整24-task official random-reset cycle取得`7/24=29.17%`成功，成功来自7个不同tasks并覆盖Spatial、Goal、Long。因而zero-AS分支并不缺初始binary reward，当前没有科学理由消耗24条teacher-action warm-up。
 - 成功episode需要26–57左右replan chunks时，整轨迹functional反传既逼近80GB，又因成功/失败ranks走不同DDP图而互等。8-chunk proxy-state微批把同一个episode mean loss精确拆分：每chunk权重为`1/(global_successes × episode_chunks)`，生成LoRA梯度汇总后只回传Writer一次；固定顺序all-reduce等价于对全局成功episodes取均值。
 - 修复后的三次global updates均完成，successes为`4/1/2`，global gradient norms为`0.0535/0.0729/0.1341`且全部finite，峰值reserved仅40.84GB。这排除了“有reward但更新机械不可执行”的工程解释；下一科学问题是多cycle reward coverage与held validation是否随Writer训练改善。
+
+## RL-Writer development选择与视频对照（2026-07-23）
+
+- canonical zero-AS run从fresh identity出发，经update3→24→36→54三次真实8-rank exact-resume完成；累计`432`条official random-reset source rollouts、`81` successes、`131,354` environment actions，optimizer cursor为44，teacher-action consumption、fixed-pruned-init reads和validation/test reward reads均为0。净训练wall为`2261.716s`，远低于120分钟guardrail。
+- 18个完整24-task cycles的后六轮successes为`5/2/4/3/5/3`，没有持续上升。固定同一64-state validation screen在update12/24/36/54依次为`6/11/15/14`；source base同subset为`7/64`，因此选择最早峰值update36并停止到54，不继续72/96/120。
+- update36完整correct-video validation为`94/400=23.5%`，逐task为Long 1/2=`1/3`、Goal 3/6=`0/47`、Object 1/3=`40/0`、Spatial 1/3=`3/0`，成功覆盖5/8 tasks。development绝对性能排序为AS-Writer `99`、RL-Writer `94`、Source-SFT `87`、source base `48`。
+- 同一checkpoint唯一cross-suite wrong-video arm为`87/400=21.75%`，逐task为Long `0/1`、Goal `0/44`、Object `40/0`、Spatial `2/0`。400对rows的correct-only/wrong-only/both/neither为`10/3/84/303`，exact McNemar `p=0.092285`；方向为正但不足以宣称强视频特异性。
+- 科学结论因此分开表述：reward-only Writer确实学到可泛化且优于source base/Source-SFT的held competence，但其增益主要仍可由language/common adapter解释，视频因果控制较弱。已有明确source reward，故不以结果不够正为由启用micro-AS或改协议；后续RL-init task-local arm可以保留，但不得写成已证明强依赖teacher video。

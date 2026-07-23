@@ -1,7 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
+import pytest
+
+from ember.source_sft.contract import Pi05SourceSFTError
+from ember.source_sft.validation import finalize_args as finalize_source_sft_args
 from ember.writer.validation_panel import (
     build_validation_loss_manifest,
     load_validation_loss_panel,
@@ -75,3 +80,44 @@ def test_validation_loss_summary_equal_weights_tasks() -> None:
     assert summary["per_task"]["1"]["mean_loss"] == 2.0
     assert summary["per_task"]["2"]["mean_loss"] == 10.0
     assert summary["task_balanced_mean_loss"] == 6.0
+
+
+def test_source_sft_validation_panel_cannot_be_truncated_formally() -> None:
+    values = {
+        "panel_config": Path("panel.json"),
+        "config": Path("source-sft.json"),
+        "training_run": Path("training"),
+        "checkpoints": [Path("checkpoint")],
+        "source_run": Path("source"),
+        "source_checkpoint": Path("source-checkpoint"),
+        "tokenizer_path": Path("tokenizer"),
+        "data_root": Path("data"),
+        "output_dir": Path("output"),
+    }
+    with pytest.raises(Pi05SourceSFTError, match="cannot truncate"):
+        finalize_source_sft_args(
+            SimpleNamespace(
+                **values,
+                mode="formal",
+                max_groups_per_task=1,
+            )
+        )
+
+    profile = finalize_source_sft_args(
+        SimpleNamespace(
+            **values,
+            mode="profile",
+            max_groups_per_task=8,
+        )
+    )
+    assert profile.max_groups_per_task == 8
+    assert isinstance(profile.checkpoints, tuple)
+
+    with pytest.raises(Pi05SourceSFTError, match="invalid"):
+        finalize_source_sft_args(
+            SimpleNamespace(
+                **values,
+                mode="profile",
+                max_groups_per_task=9,
+            )
+        )

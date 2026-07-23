@@ -192,6 +192,28 @@ def test_normal_only_ablation_preserves_architecture_and_full_positive_batch() -
     ).read_text(encoding="utf-8").split()[0]
 
 
+def test_v3_normal_only_changes_only_conditioned_query_architecture() -> None:
+    baseline = load_writer_config(
+        REPO_ROOT / "configs/pi05_as_writer_v2_normal_only.json"
+    )
+    path = REPO_ROOT / "configs/pi05_as_writer_v3_normal_only.json"
+    config = load_writer_config(path)
+    expected_writer = {
+        **baseline["writer"],
+        "conditioned_query_fusion": "memory_gated_query_v3",
+    }
+    assert config["writer"] == expected_writer
+    assert config["data"] == baseline["data"]
+    assert config["conditioning_training"] == baseline["conditioning_training"]
+    assert config["optimization"]["optimizer"] == baseline["optimization"]["optimizer"]
+    assert config["optimization"]["scheduler"] == baseline["optimization"]["scheduler"]
+    assert config["formal_run"]["status"] == "sealed"
+    assert config["formal_run"]["selected_stop_step"] == 250
+    assert sha256_file(path) == (
+        REPO_ROOT / "configs/pi05_as_writer_v3_normal_only.sha256"
+    ).read_text(encoding="utf-8").split()[0]
+
+
 def test_no_matching_ablation_allows_declared_exact_resume_stage(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -106,6 +106,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         language_memory_tokens: int,
         task_memory_tokens: int,
         decoder_hidden_dim: int,
+        conditioned_query_fusion: str = "condition_only_v2",
     ) -> None:
         super().__init__()
         if not tensor_specs or set(template_state) != {item.name for item in tensor_specs}:
@@ -113,8 +114,14 @@ class CompleteLoRAWriter(torch.nn.Module):
         ranks = {item.rank for item in tensor_specs}
         if len(ranks) != 1:
             raise WriterModelError("one Writer cannot mix LoRA ranks")
+        if conditioned_query_fusion not in {
+            "condition_only_v2",
+            "memory_gated_query_v3",
+        }:
+            raise WriterModelError("unsupported Writer conditioned-query fusion")
 
         self.tensor_specs = tensor_specs
+        self.conditioned_query_fusion = conditioned_query_fusion
         self.task_encoder = VariableEpisodeTaskEncoder(
             vision_feature_dim=vision_feature_dim,
             vision_spatial_tokens=vision_spatial_tokens,
@@ -126,6 +133,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             episode_memory_tokens=episode_memory_tokens,
             language_memory_tokens=language_memory_tokens,
             task_memory_tokens=task_memory_tokens,
+            conditioned_query_fusion=conditioned_query_fusion,
         )
         module_count = max(item.module_index for item in tensor_specs) + 1
         rank = next(iter(ranks))
@@ -133,15 +141,27 @@ class CompleteLoRAWriter(torch.nn.Module):
         self.factor_embedding = torch.nn.Embedding(2, hidden_dim)
         self.rank_embedding = torch.nn.Embedding(rank, hidden_dim)
         self.parameter_attention = torch.nn.MultiheadAttention(
-            hidden_dim, attention_heads, batch_first=True, dropout=0.0
+            hidden_dim,
+            attention_heads,
+            batch_first=True,
+            dropout=0.0,
+            bias=conditioned_query_fusion == "condition_only_v2",
         )
         self.parameter_norm = torch.nn.LayerNorm(hidden_dim)
         self.parameter_gate = torch.nn.Linear(hidden_dim, hidden_dim, bias=False)
         self.parameter_ffn = torch.nn.Sequential(
             torch.nn.LayerNorm(hidden_dim),
-            torch.nn.Linear(hidden_dim, hidden_dim * 4),
+            torch.nn.Linear(
+                hidden_dim,
+                hidden_dim * 4,
+                bias=conditioned_query_fusion == "condition_only_v2",
+            ),
             torch.nn.GELU(),
-            torch.nn.Linear(hidden_dim * 4, hidden_dim),
+            torch.nn.Linear(
+                hidden_dim * 4,
+                hidden_dim,
+                bias=conditioned_query_fusion == "condition_only_v2",
+            ),
         )
 
         self.heads = torch.nn.ModuleDict()
@@ -230,8 +250,12 @@ class CompleteLoRAWriter(torch.nn.Module):
             normalized_memory,
             need_weights=False,
         )
-        gate = 1.0 + torch.tanh(self.parameter_gate(normalized_queries))
-        decoded = attended * gate[None]
+        if self.conditioned_query_fusion == "memory_gated_query_v3":
+            gate = torch.tanh(self.parameter_gate(self.parameter_norm(attended)))
+            decoded = attended + gate * normalized_queries[None]
+        else:
+            gate = 1.0 + torch.tanh(self.parameter_gate(normalized_queries))
+            decoded = attended * gate[None]
         decoded = decoded + self.parameter_ffn(decoded)
 
         result: dict[str, torch.Tensor] = {}

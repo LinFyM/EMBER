@@ -15,7 +15,9 @@ def _state() -> dict[str, torch.Tensor]:
     }
 
 
-def _model() -> CompleteLoRAWriter:
+def _model(
+    conditioned_query_fusion: str = "condition_only_v2",
+) -> CompleteLoRAWriter:
     state = _state()
     return CompleteLoRAWriter(
         build_lora_tensor_specs(state),
@@ -31,6 +33,7 @@ def _model() -> CompleteLoRAWriter:
         language_memory_tokens=2,
         task_memory_tokens=2,
         decoder_hidden_dim=10,
+        conditioned_query_fusion=conditioned_query_fusion,
     )
 
 
@@ -67,3 +70,29 @@ def test_writer_accepts_variable_videos_and_batches_one_video_per_condition() ->
             torch.tensor([0, 1, 3]),
             language_offsets=torch.tensor([0, 4]),
         )
+
+
+def test_v3_query_identity_is_memory_gated_and_bias_free() -> None:
+    model = _model("memory_gated_query_v3")
+    assert set(model.task_encoder.condition_gates) == {
+        "chunk",
+        "episode",
+        "language",
+        "task",
+    }
+    assert model.parameter_attention.in_proj_bias is None
+    assert model.parameter_attention.out_proj.bias is None
+    assert model.parameter_ffn[1].bias is None
+    assert model.parameter_ffn[3].bias is None
+    assert model.task_encoder.chunk_attention.in_proj_bias is None
+    assert model.task_encoder.vision_projection[1].bias is None
+    assert model.parameter_gate.bias is None
+
+    result = model(
+        torch.zeros(3, 5),
+        torch.zeros(9, 4, 7),
+        torch.tensor([0, 9]),
+    )
+    for name, buffer_name in model._template_buffers.items():
+        expected = getattr(model, buffer_name)
+        assert torch.equal(result[name], expected)

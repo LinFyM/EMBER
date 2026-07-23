@@ -113,6 +113,8 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         != feature["features"]["vision_spatial_tokens"]
         or writer.get("language_feature_dim") != feature["features"]["language_feature_dim"]
         or writer.get("generated_adapter") != "complete_pi05_task_specific_lora"
+        or writer.get("conditioned_query_fusion", "condition_only_v2")
+        not in {"condition_only_v2", "memory_gated_query_v3"}
     ):
         raise WriterModelError("AS-Writer architecture and PI05 features disagree")
 

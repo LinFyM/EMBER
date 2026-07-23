@@ -48,9 +48,9 @@ def _validated_offsets(
 class VariableEpisodeTaskEncoder(torch.nn.Module):
     """Encode a batch where every condition contains one language and one video.
 
-    PI05 spatial tokens are preserved inside each frame. Learned queries only
-    address conditional memories; they are never added to the returned values,
-    so there is no query-only route to a task-independent adapter.
+    PI05 spatial tokens are preserved inside each frame.  V2 returns only
+    condition-attended values.  V3 restores learned slot identity through gates
+    computed from those values, so no query-only route can produce an adapter.
     """
 
     def __init__(
@@ -66,6 +66,7 @@ class VariableEpisodeTaskEncoder(torch.nn.Module):
         episode_memory_tokens: int,
         language_memory_tokens: int,
         task_memory_tokens: int,
+        conditioned_query_fusion: str = "condition_only_v2",
     ) -> None:
         super().__init__()
         values = (
@@ -82,37 +83,56 @@ class VariableEpisodeTaskEncoder(torch.nn.Module):
         )
         if any(value <= 0 for value in values) or hidden_dim % attention_heads:
             raise VariableEpisodeInputError("invalid variable-video Writer dimensions")
+        if conditioned_query_fusion not in {
+            "condition_only_v2",
+            "memory_gated_query_v3",
+        }:
+            raise VariableEpisodeInputError("invalid Writer conditioned-query fusion")
+        self.conditioned_query_fusion = conditioned_query_fusion
+        bias = conditioned_query_fusion == "condition_only_v2"
         self.vision_feature_dim = vision_feature_dim
         self.vision_spatial_tokens = vision_spatial_tokens
         self.language_feature_dim = language_feature_dim
         self.hidden_dim = hidden_dim
         self.temporal_chunk_size = temporal_chunk_size
 
-        self.vision_projection = self._projection(vision_feature_dim, hidden_dim)
-        self.language_projection = self._projection(language_feature_dim, hidden_dim)
+        self.vision_projection = self._projection(
+            vision_feature_dim, hidden_dim, bias=bias
+        )
+        self.language_projection = self._projection(
+            language_feature_dim, hidden_dim, bias=bias
+        )
         self.chunk_queries = self._queries(chunk_memory_tokens, hidden_dim)
         self.episode_queries = self._queries(episode_memory_tokens, hidden_dim)
         self.language_queries = self._queries(language_memory_tokens, hidden_dim)
         self.task_queries = self._queries(task_memory_tokens, hidden_dim)
 
-        self.chunk_attention = self._attention(hidden_dim, attention_heads)
-        self.episode_attention = self._attention(hidden_dim, attention_heads)
-        self.language_attention = self._attention(hidden_dim, attention_heads)
-        self.task_attention = self._attention(hidden_dim, attention_heads)
+        self.chunk_attention = self._attention(hidden_dim, attention_heads, bias=bias)
+        self.episode_attention = self._attention(hidden_dim, attention_heads, bias=bias)
+        self.language_attention = self._attention(hidden_dim, attention_heads, bias=bias)
+        self.task_attention = self._attention(hidden_dim, attention_heads, bias=bias)
         self.chunk_norm = torch.nn.LayerNorm(hidden_dim)
         self.episode_norm = torch.nn.LayerNorm(hidden_dim)
         self.language_norm = torch.nn.LayerNorm(hidden_dim)
         self.task_norm = torch.nn.LayerNorm(hidden_dim)
-        self.chunk_ffn = self._ffn(hidden_dim)
-        self.episode_ffn = self._ffn(hidden_dim)
-        self.language_ffn = self._ffn(hidden_dim)
-        self.task_ffn = self._ffn(hidden_dim)
+        self.chunk_ffn = self._ffn(hidden_dim, bias=bias)
+        self.episode_ffn = self._ffn(hidden_dim, bias=bias)
+        self.language_ffn = self._ffn(hidden_dim, bias=bias)
+        self.task_ffn = self._ffn(hidden_dim, bias=bias)
+        self.condition_gates = torch.nn.ModuleDict()
+        if conditioned_query_fusion == "memory_gated_query_v3":
+            for name in ("chunk", "episode", "language", "task"):
+                self.condition_gates[name] = torch.nn.Linear(
+                    hidden_dim, hidden_dim, bias=False
+                )
 
     @staticmethod
-    def _projection(input_dim: int, hidden_dim: int) -> torch.nn.Sequential:
+    def _projection(
+        input_dim: int, hidden_dim: int, *, bias: bool
+    ) -> torch.nn.Sequential:
         return torch.nn.Sequential(
             torch.nn.LayerNorm(input_dim),
-            torch.nn.Linear(input_dim, hidden_dim),
+            torch.nn.Linear(input_dim, hidden_dim, bias=bias),
             torch.nn.GELU(),
             torch.nn.LayerNorm(hidden_dim),
         )
@@ -122,18 +142,20 @@ class VariableEpisodeTaskEncoder(torch.nn.Module):
         return torch.nn.Parameter(torch.randn(count, hidden_dim) * 0.02)
 
     @staticmethod
-    def _attention(hidden_dim: int, heads: int) -> torch.nn.MultiheadAttention:
+    def _attention(
+        hidden_dim: int, heads: int, *, bias: bool
+    ) -> torch.nn.MultiheadAttention:
         return torch.nn.MultiheadAttention(
-            hidden_dim, heads, batch_first=True, dropout=0.0
+            hidden_dim, heads, batch_first=True, dropout=0.0, bias=bias
         )
 
     @staticmethod
-    def _ffn(width: int) -> torch.nn.Sequential:
+    def _ffn(width: int, *, bias: bool) -> torch.nn.Sequential:
         return torch.nn.Sequential(
             torch.nn.LayerNorm(width),
-            torch.nn.Linear(width, width * 4),
+            torch.nn.Linear(width, width * 4, bias=bias),
             torch.nn.GELU(),
-            torch.nn.Linear(width * 4, width),
+            torch.nn.Linear(width * 4, width, bias=bias),
         )
 
     @staticmethod
@@ -143,11 +165,15 @@ class VariableEpisodeTaskEncoder(torch.nn.Module):
         attention: torch.nn.MultiheadAttention,
         norm: torch.nn.LayerNorm,
         ffn: torch.nn.Module,
+        condition_gate: torch.nn.Module | None = None,
     ) -> torch.Tensor:
         attended, _ = attention(
             norm(queries)[None], norm(memory)[None], norm(memory)[None], need_weights=False
         )
         result = attended[0]
+        if condition_gate is not None:
+            gate = torch.tanh(condition_gate(norm(result)))
+            result = result + gate * norm(queries)
         return result + ffn(result)
 
     def _encode_video(self, frames: torch.Tensor) -> torch.Tensor:
@@ -184,6 +210,7 @@ class VariableEpisodeTaskEncoder(torch.nn.Module):
                     self.chunk_attention,
                     self.chunk_norm,
                     self.chunk_ffn,
+                    self._condition_gate("chunk"),
                 )
             )
         return self._conditional_attention(
@@ -192,6 +219,7 @@ class VariableEpisodeTaskEncoder(torch.nn.Module):
             self.episode_attention,
             self.episode_norm,
             self.episode_ffn,
+            self._condition_gate("episode"),
         )
 
     def _encode_language(self, tokens: torch.Tensor) -> torch.Tensor:
@@ -215,6 +243,7 @@ class VariableEpisodeTaskEncoder(torch.nn.Module):
             self.language_attention,
             self.language_norm,
             self.language_ffn,
+            self._condition_gate("language"),
         )
 
     def forward(
@@ -252,6 +281,12 @@ class VariableEpisodeTaskEncoder(torch.nn.Module):
                     self.task_attention,
                     self.task_norm,
                     self.task_ffn,
+                    self._condition_gate("task"),
                 )
             )
         return torch.stack(tasks, dim=0)
+
+    def _condition_gate(self, name: str) -> torch.nn.Module | None:
+        if name not in self.condition_gates:
+            return None
+        return self.condition_gates[name]

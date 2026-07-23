@@ -75,6 +75,11 @@ from ember.writer.model import (
     WriterModelError,
     build_lora_tensor_specs,
 )
+from ember.writer.online_validation import (
+    OnlineWriterValidation,
+    evaluate_online_writer_checkpoint,
+    prepare_online_writer_validation,
+)
 
 
 @dataclass
@@ -94,6 +99,7 @@ class WriterRuntime:
     generic_language: tuple[torch.Tensor, torch.Tensor]
     processor: Pi05LiberoProcessor
     policy: torch.nn.Module
+    identity_state: dict[str, torch.Tensor]
     writer: CompleteLoRAWriter
     wrapped_writer: torch.nn.Module
     optimizer: torch.optim.Optimizer
@@ -107,11 +113,34 @@ class WriterRuntime:
     resume_step: int
     metrics_path: Path
     metrics_rows: int
+    checkpoint_validation: OnlineWriterValidation | None
+
+
+@dataclass
+class WriterSetup:
+    dataset: FunctionalQueryDataset
+    tasks: tuple[WriterTaskAuthority, ...]
+    task_ids: tuple[int, ...]
+    authorities: Any
+    policy: torch.nn.Module
+    writer: CompleteLoRAWriter
+    lora_contract: Any
+    optimizer: torch.optim.Optimizer
+    scheduler: torch.optim.lr_scheduler.LRScheduler
+    trainable: dict[str, Any]
+    identity_state: dict[str, torch.Tensor]
+    contract: dict[str, Any]
+    contract_sha256: str
 
 
 def _build_writer(
     config: Mapping[str, Any], policy: torch.nn.Module
-) -> tuple[CompleteLoRAWriter, Any, dict[str, Any]]:
+) -> tuple[
+    CompleteLoRAWriter,
+    Any,
+    dict[str, Any],
+    dict[str, torch.Tensor],
+]:
     lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
     if hasattr(policy.model, "gradient_checkpointing_disable"):
         policy.model.gradient_checkpointing_disable()
@@ -129,7 +158,12 @@ def _build_writer(
         action_in_projection=policy.model.action_in_proj,
         **writer_config,
     )
-    return writer, lora, writer_trainable_contract(writer, policy, lora)
+    return (
+        writer,
+        lora,
+        writer_trainable_contract(writer, policy, lora),
+        {name: value.detach().clone() for name, value in template.items()},
+    )
 
 
 def _make_scheduler(
@@ -159,9 +193,10 @@ def _build_trainable_models(
     torch.optim.Optimizer,
     torch.optim.lr_scheduler.LRScheduler,
     dict[str, Any],
+    dict[str, torch.Tensor],
 ]:
     policy = load_policy(Path(source["model_path"]), source_config, context.device)
-    writer, lora, trainable = _build_writer(config, policy)
+    writer, lora, trainable, identity = _build_writer(config, policy)
     writer.to(context.device)
     optimizer_config = config["optimization"]["optimizer"]
     optimizer = torch.optim.AdamW(
@@ -174,7 +209,7 @@ def _build_trainable_models(
     scheduler = _make_scheduler(
         optimizer, config["optimization"]["scheduler"], total_steps
     )
-    return policy, writer, lora, optimizer, scheduler, trainable
+    return policy, writer, lora, optimizer, scheduler, trainable, identity
 
 
 def _restore_training_state(
@@ -366,17 +401,16 @@ def _load_run_authorities(
     return authorities, source, tokenizer, video_data
 
 
-def prepare_runtime(
-    args: argparse.Namespace, context: DistributedContext
-) -> WriterRuntime:
-    config = load_writer_config(args.config.resolve())
-    total_steps, batch_size, checkpoint_steps = resolve_runtime(args, config, context)
-    batch_cycle = batch_size_cycle(batch_size, config)
-    initial_step = resume_step(args.resume)
-    if not 0 <= initial_step < args.stop_after_step:
-        raise WriterModelError("AS-Writer resume cursor is outside this segment")
-    seed_everything(int(config["optimization"]["seed"]), context)
-
+def _prepare_setup(
+    *,
+    args: argparse.Namespace,
+    context: DistributedContext,
+    config: Mapping[str, Any],
+    total_steps: int,
+    batch_size: int,
+    batch_cycle: tuple[int, ...],
+    checkpoint_steps: tuple[int, ...],
+) -> WriterSetup:
     dataset, tasks, data_validation = load_training_data(args, config, context)
     task_ids = tuple(task.task_id for task in tasks)
     authorities, source, tokenizer, video_data = _load_run_authorities(
@@ -384,16 +418,22 @@ def prepare_runtime(
         config,
         task_ids,
     )
-    policy, writer, lora_contract, optimizer, scheduler, trainable = (
-        _build_trainable_models(
-            config=config,
-            context=context,
-            source=source,
-            source_config=authorities.source_base_config,
-            total_steps=total_steps,
-        )
+    (
+        policy,
+        writer,
+        lora_contract,
+        optimizer,
+        scheduler,
+        trainable,
+        identity_state,
+    ) = _build_trainable_models(
+        config=config,
+        context=context,
+        source=source,
+        source_config=authorities.source_base_config,
+        total_steps=total_steps,
     )
-    candidate_contract = build_contract(
+    candidate = build_contract(
         args=args,
         config=config,
         context=context,
@@ -408,41 +448,77 @@ def prepare_runtime(
         batch_cycle=batch_cycle,
         checkpoint_steps=checkpoint_steps,
     )
-    contract = reconcile_resume_contract(args, candidate_contract)
+    contract = reconcile_resume_contract(args, candidate)
     contract_sha256 = canonical_hash(contract)
     publish_contract(args, context, contract, contract_sha256)
+    return WriterSetup(
+        dataset=dataset,
+        tasks=tasks,
+        task_ids=task_ids,
+        authorities=authorities,
+        policy=policy,
+        writer=writer,
+        lora_contract=lora_contract,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        trainable=trainable,
+        identity_state=identity_state,
+        contract=contract,
+        contract_sha256=contract_sha256,
+    )
 
+
+def prepare_runtime(
+    args: argparse.Namespace, context: DistributedContext
+) -> WriterRuntime:
+    config = load_writer_config(args.config.resolve())
+    total_steps, batch_size, checkpoint_steps = resolve_runtime(args, config, context)
+    batch_cycle = batch_size_cycle(batch_size, config)
+    initial_step = resume_step(args.resume)
+    if not 0 <= initial_step < args.stop_after_step:
+        raise WriterModelError("AS-Writer resume cursor is outside this segment")
+    seed_everything(int(config["optimization"]["seed"]), context)
+
+    setup = _prepare_setup(
+        args=args,
+        context=context,
+        config=config,
+        total_steps=total_steps,
+        batch_size=batch_size,
+        batch_cycle=batch_cycle,
+        checkpoint_steps=checkpoint_steps,
+    )
     resume_rng, expected_metrics_rows = _restore_training_state(
         args=args,
         context=context,
         config=config,
-        writer=writer,
-        optimizer=optimizer,
-        scheduler=scheduler,
+        writer=setup.writer,
+        optimizer=setup.optimizer,
+        scheduler=setup.scheduler,
         batch_size=batch_size,
         batch_cycle=batch_cycle,
-        contract_sha256=contract_sha256,
+        contract_sha256=setup.contract_sha256,
         initial_step=initial_step,
     )
     sampler, video_schedule, loader = _build_sampler_and_loader(
         args=args,
         context=context,
         config=config,
-        dataset=dataset,
-        task_ids=task_ids,
+        dataset=setup.dataset,
+        task_ids=setup.task_ids,
         batch_size=batch_size,
         batch_cycle=batch_cycle,
         initial_step=initial_step,
     )
-    wrapped = _wrap_writer(writer, context)
-    writer.train()
+    wrapped = _wrap_writer(setup.writer, context)
+    setup.writer.train()
     video_store, processor, language_tokens, generic_language = _build_condition_inputs(
         args=args,
         config=config,
-        authorities=authorities,
+        authorities=setup.authorities,
         context=context,
-        task_ids=task_ids,
-        tasks=tasks,
+        task_ids=setup.task_ids,
+        tasks=setup.tasks,
     )
     metrics_path = args.output_dir / "metrics.jsonl"
     metrics_rows = _metrics_cursor(
@@ -450,6 +526,17 @@ def prepare_runtime(
         context=context,
         initial_step=initial_step,
         expected_rows=expected_metrics_rows,
+    )
+    checkpoint_validation = (
+        prepare_online_writer_validation(
+            training=setup.contract,
+            data_root=args.data_root,
+            tokenizer_path=args.tokenizer_path,
+            context=context,
+            output_dir=args.output_dir,
+        )
+        if args.mode == "formal" and writer_stage(config) == "development"
+        else None
     )
     torch.cuda.reset_peak_memory_stats(context.device)
     barrier(context)
@@ -459,36 +546,75 @@ def prepare_runtime(
         args=args,
         context=context,
         config=config,
-        dataset=dataset,
-        task_authorities=tasks,
-        task_ids=task_ids,
+        dataset=setup.dataset,
+        task_authorities=setup.tasks,
+        task_ids=setup.task_ids,
         sampler=sampler,
         video_schedule=video_schedule,
-        video_partner=_video_partner_map(config, task_ids),
+        video_partner=_video_partner_map(config, setup.task_ids),
         iterator=iter(loader),
         video_store=video_store,
         language_tokens=language_tokens,
         generic_language=generic_language,
         processor=processor,
-        policy=policy,
-        writer=writer,
+        policy=setup.policy,
+        identity_state=setup.identity_state,
+        writer=setup.writer,
         wrapped_writer=wrapped,
-        optimizer=optimizer,
-        scheduler=scheduler,
-        lora_contract=lora_contract,
-        contract=contract,
-        contract_sha256=contract_sha256,
+        optimizer=setup.optimizer,
+        scheduler=setup.scheduler,
+        lora_contract=setup.lora_contract,
+        contract=setup.contract,
+        contract_sha256=setup.contract_sha256,
         total_steps=total_steps,
         batch_size=batch_size,
         checkpoint_steps=checkpoint_steps,
         resume_step=initial_step,
         metrics_path=metrics_path,
         metrics_rows=metrics_rows,
+        checkpoint_validation=checkpoint_validation,
     )
+
+
+def _run_checkpoint_validation(
+    runtime: WriterRuntime,
+    checkpoint_cursor: int,
+) -> None:
+    if runtime.checkpoint_validation is None:
+        return
+    checkpoint_dir = (
+        runtime.args.output_dir
+        / "checkpoints"
+        / f"step_{checkpoint_cursor:08d}"
+    )
+    summary = evaluate_online_writer_checkpoint(
+        validation=runtime.checkpoint_validation,
+        context=runtime.context,
+        checkpoint_cursor=checkpoint_cursor,
+        checkpoint_dir=checkpoint_dir,
+        policy=runtime.policy,
+        writer=runtime.writer,
+        identity=runtime.identity_state,
+        lora=runtime.lora_contract,
+        processor=runtime.processor,
+    )
+    if runtime.context.is_main:
+        print(
+            json.dumps(
+                {
+                    "event": "validation_functional_loss",
+                    **summary,
+                },
+                sort_keys=True,
+            ),
+            flush=True,
+        )
 
 
 def run_steps(runtime: WriterRuntime) -> None:
     started = time.monotonic()
+    if runtime.resume_step in runtime.checkpoint_steps:
+        _run_checkpoint_validation(runtime, runtime.resume_step)
     for step in range(runtime.resume_step, runtime.args.stop_after_step):
         row = run_writer_step(runtime, step, started)
         completed = int(row["optimizer_step"])
@@ -511,6 +637,7 @@ def run_steps(runtime: WriterRuntime) -> None:
                 mode=runtime.args.mode,
                 metrics_rows=runtime.metrics_rows,
             )
+            _run_checkpoint_validation(runtime, completed)
     barrier(runtime.context)
     if runtime.context.is_main:
         stop = runtime.args.stop_after_step
@@ -571,6 +698,8 @@ def train(args: argparse.Namespace) -> None:
         if runtime is not None:
             runtime.dataset.close()
             runtime.video_store.close()
+            if runtime.checkpoint_validation is not None:
+                runtime.checkpoint_validation.close()
         if dist.is_available() and dist.is_initialized():
             dist.destroy_process_group()
 

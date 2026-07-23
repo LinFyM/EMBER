@@ -320,3 +320,9 @@
 - Source-SFT runtime不再硬编码8 ranks，而是从profile/formal sealed contract读取world size。当前profile待物理GPU0–3可用后以4 ranks×batch128运行，从而保持旧比较的global batch512；此前8×batch64 profile与训练只作provenance，不能跨world-size exact-resume。
 - rank128 fresh formal预合同保留原100-step warmup和800-step cosine decay，使前800步LR轨迹定义不变；最大horizon扩至2400，只在800后增加`1e-5`低LR tail。每100步保留checkpoint，首段到800，只有validation仍未建立真实峰值与持续峰后下降时才exact-resume到1600/2400；owner明确不设wall-clock上限。
 - 当前只封存“pending four-rank profile”，不得直接formal启动。相关Source-SFT/LoRA聚焦测试`16 passed`，architecture guard无hard violation；AS释放四卡后先跑真实batch128 profile，再写入吞吐/显存/hash并封存正式合同。
+
+## checkpoint内联validation-loss监控（2026-07-23）
+
+- owner澄清validation functional loss应在训练进程保持π0.5、Writer和显存常驻时原地计算，而不是每个checkpoint暂停并重载模型。bias-restored AS正式run已在完整step300 checkpoint后做一次必要代码升级；step100/200/300均已原子保存，训练轨迹未回滚。
+- canonical AS runner现在只在development formal checkpoint后切换`eval/inference_mode`，换入封存512-row panel，四rank各处理16个`task×video-group`，随后恢复Writer train mode和进入monitor前的Python/NumPy/CPU/CUDA RNG。validation actions不进入Writer、optimizer或反向传播，policy/Writer不复制、不重载，训练更新合同不变。
+- 每个step目录保存512 raw losses、逐task等权mean/std、相邻checkpoint loss delta、wall和checkpoint hash；连续下降用于继续训练，平台或连续多点回升用于收缩候选区间。单点波动不触发早停，完整8×50 closed-loop success仍覆盖loss诊断选择最终best。

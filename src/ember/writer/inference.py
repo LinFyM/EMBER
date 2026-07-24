@@ -14,7 +14,6 @@ from typing import Any, Mapping, Sequence
 import torch
 from safetensors.torch import load_file
 
-from ember.batched_lora import BatchedLoRAInference
 from ember.lora import (
     canonical_contract_sha256,
     copy_task_lora_state_,
@@ -40,6 +39,7 @@ from ember.writer.data import (
     WriterTaskAuthority,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
+from ember.writer.lora_rollout import WriterLoRARolloutAdapter
 from ember.writer.model import (
     ACTION_FORECAST_WRITER_CONSTRUCTOR_KEYS,
     CompleteLoRAWriter,
@@ -363,7 +363,7 @@ def build_writer_evaluation_adapter(
         "kind": writer_method,
         "writer_method": writer_method,
         "arm": f"{writer_method}_{video_condition}_video",
-        "execution_backend": "per_sample_lora_batched_replan",
+        "execution_backend": "two_stage_cached_per_sample_lora_batched_replan",
         "video_condition": video_condition,
         "writer_input": "task language plus exactly one raw action-hidden teacher video",
         "config": {"path": str(config_path), "sha256": sha256_file(config_path)},
@@ -494,8 +494,8 @@ class PreparedWriterLoRA:
     evidence: dict[str, Any]
 
 
-class FrozenWriterTaskAdapter:
-    """Generate one PI05 task LoRA per rollout and batch distinct policy adapters."""
+class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
+    """Generate batches of PI05 task LoRAs before the rollout phase begins."""
 
     def __init__(
         self,
@@ -596,22 +596,18 @@ class FrozenWriterTaskAdapter:
             int(source_config["features"]["tokenizer_max_length"]),
             str(device),
         )
-        self.policy = policy
         self.writer = writer
-        self.lora_contract = lora
-        self.identity_state = {
-            name: value.detach().clone() for name, value in template.items()
-        }
-        self.device = device
-        self.evaluation_adapter = dict(observed)
-        self.batched_lora = BatchedLoRAInference(policy, lora)
-        self._physical_lora_is_identity = True
-        self._state_cache: dict[tuple[Any, ...], Mapping[str, torch.Tensor]] = {}
+        self._initialize_rollout(
+            policy=policy,
+            lora_contract=lora,
+            identity_state=template,
+            evaluation_adapter=observed,
+            device=device,
+        )
 
-    @torch.inference_mode()
-    def prepare_episode(
+    def _episode_inputs(
         self, *, suite: str, task_id: int, init_state_id: int
-    ) -> PreparedWriterLoRA:
+    ) -> tuple[dict[str, Any], torch.Tensor, torch.Tensor, str, torch.Tensor]:
         placeholder = "0" * 64
         row = expected_writer_episode_evidence(
             self.evaluation_adapter,
@@ -625,9 +621,6 @@ class FrozenWriterTaskAdapter:
             int(row["teacher_demo_index"]),
         )
         writer_language = self.language_by_id[int(row["language_global_task_id"])]
-        language_tokens, language_mask, state_positions = self.tokenizer(
-            [writer_language]
-        )
         frames = torch.from_numpy(teacher.frames).to(
             self.device, non_blocking=True
         )
@@ -646,83 +639,117 @@ class FrozenWriterTaskAdapter:
                 generator=generator,
             ).to(self.device)
             frames = frames.index_select(0, permutation)
-        video_offsets = torch.tensor(
-            [0, frames.shape[0]], dtype=torch.long, device=self.device
-        )
         flow_noise = WriterFlowNoiseSchedule(
             seed=int(row["teacher_video_selection_seed"])
-        ).noise_for_visit(0, device=self.device)[None]
-        cache_key = (
-            int(row["language_global_task_id"]),
-            int(row["video_global_task_id"]),
-            int(row["teacher_demo_index"]),
-            condition,
-            int(row["teacher_video_selection_seed"]),
+        ).noise_for_visit(0, device=self.device)
+        return row, frames, frame_indices, writer_language, flow_noise
+
+    @torch.inference_mode()
+    def prepare_episodes(
+        self, identities: Sequence[Mapping[str, Any]]
+    ) -> tuple[PreparedWriterLoRA, ...]:
+        if not identities:
+            raise WriterModelError("Writer generation batch is empty")
+        inputs = [
+            self._episode_inputs(
+                suite=str(identity["suite"]),
+                task_id=int(identity["task_id"]),
+                init_state_id=int(identity["init_state_id"]),
+            )
+            for identity in identities
+        ]
+        rows, frame_batches, index_batches, languages, noise_batches = zip(
+            *inputs, strict=True
         )
+        language_tokens, language_mask, state_positions = self.tokenizer(
+            list(languages)
+        )
+        frames = torch.cat(frame_batches, dim=0)
+        frame_indices = torch.cat(index_batches, dim=0)
+        offsets = [0]
+        for batch in frame_batches:
+            offsets.append(offsets[-1] + int(batch.shape[0]))
+        video_offsets = torch.tensor(
+            offsets, dtype=torch.long, device=self.device
+        )
+        flow_noise = torch.stack(noise_batches, dim=0)
         started = time.monotonic()
-        # The forecast path must always see the frozen source policy,
-        # never the task adapter left installed by the preceding rollout.
+        # Forecasts always use the frozen source policy, never a rollout LoRA.
         copy_task_lora_state_(
             self.policy, self.identity_state, self.lora_contract
         )
         self._physical_lora_is_identity = True
-        state = self._state_cache.get(cache_key)
-        if state is None:
-            with torch.autocast(
-                device_type=self.device.type,
-                dtype=torch.bfloat16,
-                enabled=self.device.type == "cuda",
-            ):
-                state = self.writer(
-                    frames,
-                    frame_indices,
-                    video_offsets,
-                    language_tokens,
-                    language_mask,
-                    state_positions,
-                    flow_noise,
-                    policy=self.policy,
-                )
-            self._state_cache[cache_key] = state
-        validate_lora_state(state, self.lora_contract)
-        digest = lora_state_sha256(state)
-        generation_seconds = time.monotonic() - started
-        if not math.isfinite(generation_seconds) or generation_seconds < 0:
+        with torch.autocast(
+            device_type=self.device.type,
+            dtype=torch.bfloat16,
+            enabled=self.device.type == "cuda",
+        ):
+            generated = self.writer(
+                frames,
+                frame_indices,
+                video_offsets,
+                language_tokens,
+                language_mask,
+                state_positions,
+                flow_noise,
+                policy=self.policy,
+            )
+        elapsed = time.monotonic() - started
+        if not math.isfinite(elapsed) or elapsed < 0:
             raise WriterModelError("PI05 Writer generation timing is invalid")
-        evidence = {
-            **row,
-            "lora_sha256": digest,
-            "writer_generation_seconds": generation_seconds,
-        }
-        return PreparedWriterLoRA(state=state, evidence=evidence)
+        batch_size = len(identities)
+        prepared: list[PreparedWriterLoRA] = []
+        for row_index, row in enumerate(rows):
+            state: dict[str, torch.Tensor] = {}
+            for name, value in generated.items():
+                expected_shape = tuple(self.identity_state[name].shape)
+                if batch_size == 1 and tuple(value.shape) == expected_shape:
+                    selected = value
+                elif tuple(value.shape) == (batch_size, *expected_shape):
+                    selected = value[row_index]
+                else:
+                    raise WriterModelError(
+                        f"Writer generated an invalid batched LoRA tensor: {name}"
+                    )
+                state[name] = selected.detach()
+            validate_lora_state(state, self.lora_contract)
+            digest = lora_state_sha256(state)
+            evidence = {
+                **row,
+                "lora_sha256": digest,
+                "writer_generation_seconds": elapsed / batch_size,
+            }
+            prepared.append(PreparedWriterLoRA(state=state, evidence=evidence))
+        return tuple(prepared)
 
     @torch.inference_mode()
-    def install(self, prepared: PreparedWriterLoRA) -> None:
-        validate_lora_state(prepared.state, self.lora_contract)
-        copy_task_lora_state_(self.policy, prepared.state, self.lora_contract)
-        self._physical_lora_is_identity = False
-
-    @torch.inference_mode()
-    def predict_action_chunk(
-        self,
-        prepared: Sequence[PreparedWriterLoRA],
-        batch: Mapping[str, torch.Tensor],
-        *,
-        noise: torch.Tensor,
-        num_steps: int,
-    ) -> torch.Tensor:
-        """Run one native policy batch with a distinct Writer LoRA per sample."""
-
-        if len(prepared) != int(noise.shape[0]):
-            raise WriterModelError("Writer LoRA batch and policy noise batch differ")
-        if not self._physical_lora_is_identity:
-            copy_task_lora_state_(
-                self.policy, self.identity_state, self.lora_contract
+    def prepare_episode(
+        self, *, suite: str, task_id: int, init_state_id: int
+    ) -> PreparedWriterLoRA:
+        return self.prepare_episodes(
+            (
+                {
+                    "suite": suite,
+                    "task_id": task_id,
+                    "init_state_id": init_state_id,
+                },
             )
-            self._physical_lora_is_identity = True
-        with self.batched_lora.activate([item.state for item in prepared]):
-            return self.policy.predict_action_chunk(
-                dict(batch),
-                noise=noise,
-                num_steps=num_steps,
-            )
+        )[0]
+
+    def release_to_cache(
+        self, cache_contract: Mapping[str, Any]
+    ) -> Any:
+        """Release only Writer-owned modules while retaining the source policy."""
+
+        from ember.writer.evaluation_runtime import FrozenCachedWriterTaskAdapter
+
+        cached = FrozenCachedWriterTaskAdapter.from_live(
+            self,
+            cache_contract=cache_contract,
+        )
+        self.store.close()
+        del self.store
+        del self.language_by_id
+        del self.tokenizer
+        del self.writer
+        return cached

@@ -462,3 +462,32 @@
   exact-resume segment。首段之后只先评测step150/300 correct-video；owner明确
   撤销前置的单卡最小顺序诊断，wrong/shuffled/reversed只能在充分训练、找到
   validation observed-best且验证明显稳健峰后下降之后，对最佳checkpoint执行。
+
+## Action-Forecast AS首段与两阶段evaluator（2026-07-24）
+
+- fresh formal root
+  `/data/ymdai/outputs/ember/pi05_action_forecast_as_development_seed7_49cef59_r4_s5_fm32_b16_20260724`
+  已完成step0→300：300条metrics、19,200 action queries、1,200独立video
+  conditions，训练body wall `2022.169s`；step wall中位数/p95为
+  `6.1408/9.1705s`，loss范围`0.089996–0.186392`、最大grad norm
+  `1.845997`，峰值allocated/reserved为`67,092,966,912/
+  70,185,385,984` bytes，全部finite。
+- step75/150/225/300四个约124.8MB checkpoint均通过完整manifest与file SHA
+  核验。512-query在线functional monitor依次为
+  `0.137364/0.133570/0.137465/0.134575`，只作弱候选信号，不作为closed-loop
+  selection或停止依据。
+- step150耦合式correct screen仅作实现provenance：GPU0–1 r3和GPU2–3 r4各跑
+  16 episodes，分别为`1/16`，execution window约`94.3/100.5s`，显存约
+  `40/53GB`每卡；小分母不作科学解释，也不能用于确定rollout replicas。
+- owner指出LoRA生成和rollout并发必须解耦、共同模型应尽量常驻复用。现已在
+  唯一`evaluate_pi05.py`内实现两阶段cache/handoff：generator数量和batch独立，
+  cache完成后原generator进程只释放Writer并保留source π0.5直接rollout，随后
+  再启动额外rollout-only workers；相同cache可跨rollout replica profile复用。
+- cache身份包含完整adapter/model/task-state与生成batch/grouping但排除rollout
+  replicas；逐entry safetensors+evidence以目录原子发布，final manifest核验
+  coverage、LoRA SHA及file SHA，完整400-entry panel估计约1.03GB。结果新增
+  rollout-only吞吐，同时保留end-to-end wall。
+- 结构门无hard violation（`REVIEW`仅保留既有大函数与可接受的新模块审阅项）；
+  新逻辑收口在`src/ember/pi05_eval/`和`src/ember/writer/evaluation_*`，没有
+  平行runner。全仓fresh验证为`177 passed`，`py_compile`、`git diff --check`
+  通过。下一步commit/push后在GPU0–3分别profile生成batch与纯rollout replicas。

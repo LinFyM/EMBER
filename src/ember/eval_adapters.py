@@ -166,7 +166,11 @@ def inspect_source_sft_adapter(
 
 
 def load_evaluation_adapter(
-    policy: Any, contract: Mapping[str, Any], *, device: Any
+    policy: Any,
+    contract: Mapping[str, Any],
+    *,
+    device: Any,
+    writer_generation: bool = False,
 ) -> Any | None:
     """Install one static shared adapter, or return a per-rollout Writer adapter."""
 
@@ -187,10 +191,14 @@ def load_evaluation_adapter(
 
         FrozenSourceSFTAdapter(**common)
         return None
+    from ember.writer.evaluation_runtime import FrozenCachedWriterTaskAdapter
     from ember.writer.inference import FrozenWriterTaskAdapter
 
     common["tokenizer_path"] = Path(contract["tokenizer"]["path"])
-    return FrozenWriterTaskAdapter(**common)
+    if writer_generation:
+        return FrozenWriterTaskAdapter(**common)
+    common["cache_contract"] = contract
+    return FrozenCachedWriterTaskAdapter(**common)
 
 
 def episode_adapter_fields(

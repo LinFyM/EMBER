@@ -2,16 +2,12 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
-import socket
 import subprocess
-import time
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from ember.eval_adapters import paired_writer_identity
 from ember.libero_evaluation import sha256_file
 from ember.pi05_assets import (
     Pi05EvaluationError,
@@ -670,149 +666,8 @@ def inspect_tokenizer(authorities: EvaluationAuthorities, tokenizer_path: Path) 
     }
 
 
-def build_run_contract(
-    *,
-    authorities: EvaluationAuthorities,
-    tasks: Sequence[TargetTaskContract],
-    libero_paths: Mapping[str, str],
-    model: Mapping[str, Any],
-    tokenizer: Mapping[str, Any],
-    output_dir: Path,
-    role: str,
-    mode: str,
-    replicas_per_gpu: int,
-    command: Sequence[str],
-    adapter: Mapping[str, Any] | None = None,
-    physical_gpu_ids: Sequence[int] | None = None,
-) -> dict[str, Any]:
-    if mode not in {"smoke", "screen", "formal"}:
-        raise Pi05EvaluationError(f"unsupported PI05 evaluation mode: {mode}")
-    git = git_state(authorities.repo_root)
-    if mode != "smoke" and git["dirty_paths"]:
-        raise Pi05EvaluationError("screen/formal PI05 evaluation requires a clean worktree")
-    if replicas_per_gpu not in RUNTIME_REPLICA_PROFILES:
-        raise Pi05EvaluationError("replicas per GPU are outside the supported runtime profiles")
-    if not tasks:
-        raise Pi05EvaluationError("PI05 evaluation run has no tasks")
-    source_hashes = model.get("source_authority_hashes", {})
-    for name in ("normalization", "overlap_audit", "source_manifest"):
-        expected = authorities.hashes.get(name)
-        if expected is not None and source_hashes.get(name) != expected:
-            raise Pi05EvaluationError(f"source checkpoint uses another {name} authority")
-    arm = str(adapter["arm"]) if adapter is not None else authorities.config["policy"]["arm"]
-    configured_gpu_count = int(authorities.config["parallel"]["physical_gpu_count"])
-    if physical_gpu_ids is None:
-        physical_gpu_ids = tuple(range(configured_gpu_count))
-    else:
-        physical_gpu_ids = tuple(int(value) for value in physical_gpu_ids)
-    if (
-        not physical_gpu_ids
-        or len(set(physical_gpu_ids)) != len(physical_gpu_ids)
-        or any(index < 0 or index >= configured_gpu_count for index in physical_gpu_ids)
-    ):
-        raise Pi05EvaluationError("physical GPU subset is invalid for this host contract")
-    physical_gpu_count = len(physical_gpu_ids)
-    contract: dict[str, Any] = {
-        "schema_version": RUN_CONTRACT_SCHEMA,
-        "mode": mode,
-        "arm": arm,
-        "adapter": dict(adapter) if adapter is not None else None,
-        "role": role,
-        "output_dir": str(output_dir.resolve()),
-        "prepared_unix": time.time(),
-        "host": socket.gethostname(),
-        "command": list(command),
-        "git": git,
-        "authorities": {
-            "config_path": str(authorities.config_path),
-            "hashes": authorities.hashes,
-        },
-        "role_authority": {
-            "path": str(authorities.repo_root / SEEN_PANEL_RELATIVE_PATH),
-            "sha256": authorities.hashes["seen_panel"],
-            "schema_version": authorities.seen_panel.get("schema_version"),
-        }
-        if role == "seen_panel"
-        else None,
-        "model": dict(model),
-        "tokenizer": dict(tokenizer),
-        "normalization": {
-            "path": str(
-                authorities.repo_root
-                / authorities.config["authorities"]["normalization"]["path"]
-            ),
-            "sha256": authorities.hashes["normalization"],
-            "source_only_numeric_reads": True,
-            "validation_or_test_numeric_reads": 0,
-        },
-        "tasks": [asdict(task) for task in tasks],
-        "environment": authorities.config["environment"],
-        "policy": authorities.config["policy"],
-        "rng": authorities.config["rng"],
-        "parallel": {
-            **authorities.config["parallel"],
-            "authority_allowed_replicas_per_gpu": authorities.config["parallel"][
-                "allowed_replicas_per_gpu"
-            ],
-            "allowed_replicas_per_gpu": list(RUNTIME_REPLICA_PROFILES),
-            "omp_threads_per_worker": RUNTIME_OMP_THREADS,
-            "configured_physical_gpu_count": configured_gpu_count,
-            "physical_gpu_ids": list(physical_gpu_ids),
-            "physical_gpu_count": physical_gpu_count,
-            "replicas_per_gpu": replicas_per_gpu,
-            "worker_count": physical_gpu_count * replicas_per_gpu,
-            "one_policy_per_worker": True,
-            "cpu_only_launcher": True,
-            "sharding_algorithm": (
-                "max-horizon task states balanced across physical_gpu_count with "
-                "preferred-GPU affinity, then ordinary cost-balanced dynamic queue"
-            ),
-        },
-        "artifacts": authorities.config["artifacts"],
-        "libero_paths": dict(libero_paths),
-    }
-    contract["paired_control_sha256"] = None
-    if adapter is not None and adapter.get("kind") != "shared_source_sft_lora":
-        contract["paired_control_sha256"] = canonical_hash(
-            {
-                "schema_version": "ember_pi05_writer_paired_control_v1",
-                "mode": mode,
-                "role": role,
-                "git": contract["git"],
-                "model": contract["model"],
-                "tokenizer": contract["tokenizer"],
-                "normalization": contract["normalization"],
-                "tasks": contract["tasks"],
-                "environment": contract["environment"],
-                "policy": contract["policy"],
-                "rng": contract["rng"],
-                "parallel": contract["parallel"],
-                "writer": paired_writer_identity(adapter),
-            }
-        )
-    contract["contract_sha256"] = canonical_hash(contract)
-    return contract
-
-
-def load_run_contract(path: Path) -> dict[str, Any]:
-    contract = _read_object(path)
-    expected = contract.pop("contract_sha256", None)
-    observed = canonical_hash(contract)
-    contract["contract_sha256"] = expected
-    if contract.get("schema_version") != RUN_CONTRACT_SCHEMA or expected != observed:
-        raise Pi05EvaluationError("PI05 evaluation run contract hash changed")
-    return contract
-
-
-def policy_noise_seed(
-    root_seed: int,
-    suite: str,
-    task_id: int,
-    init_state_id: int,
-    replan_index: int,
-) -> int:
-    encoded = json.dumps(
-        [root_seed, suite, task_id, init_state_id, replan_index],
-        separators=(",", ":"),
-    ).encode("utf-8")
-    return int.from_bytes(hashlib.sha256(encoded).digest()[:8], "big") & ((1 << 63) - 1)
+from ember.pi05_eval.run_contract import (  # noqa: E402
+    build_run_contract,
+    load_run_contract,
+    policy_noise_seed,
+)

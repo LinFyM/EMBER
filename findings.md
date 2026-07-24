@@ -575,3 +575,23 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   可延续的预声明schedule horizon，不是科学停止点。训练期间只对每段第2/4点
   做correct-video validation并按趋势补点；wrong/shuffled/reversed严格推迟到
   充分训练并选出observed-best以后，不能再把单卡最小诊断前置。
+
+## Action-Forecast Writer两阶段评测拓扑（2026-07-24）
+
+- 原先`replicas_per_gpu`会让每个rollout replica都同时加载source π0.5和Writer，
+  因而Writer生成并发、rollout并发和显存占用被错误绑定；早期step150 r3/r4
+  profile只能证明耦合路径可执行，不能决定最终rollout吞吐。
+- canonical evaluator现先按独立`writer_generators_per_gpu ×
+  writer_generation_batch_size`生成固定panel的逐episode rank16 LoRA，并以
+  adapter/model/tokenizer/task-state/generation grouping共同hash的原子cache封存。
+  rollout拓扑不进入cache identity，所以相同生成recipe可在r3/r4/r5等纯rollout
+  profile之间复用；生成batch改变时则不会错误复用数值可能不同的LoRA。
+- generator写完后不重载共同模型：只关闭raw-video handles、tokenizer和Writer
+  专属模块，保留同一进程内已加载的source π0.5、physical identity LoRA及
+  batched-LoRA hooks，释放CUDA cache后直接转为首个rollout worker；launcher
+  此后才启动额外rollout-only replicas。生命周期证据显式记录
+  `source_policy_reloaded=false`。
+- 结果同时保留launcher end-to-end wall与shard rollout-only window，分别报告
+  end-to-end和rollout-only吞吐；不能再用模型加载/LoRA生成时间污染replica选择。
+  缓存entry采用目录级原子发布，manifest核验每个state/file hash，预计完整
+  400-entry panel只新增约1.03GB tensor数据。

@@ -201,12 +201,17 @@ def test_run_contract_hash_detects_tampering(tmp_path: Path) -> None:
 
     shared_writer = {
         "kind": "as_writer",
-        "execution_backend": "per_sample_lora_batched_replan",
-        "config": {"sha256": "b" * 64},
+        "execution_backend": "two_stage_cached_per_sample_lora_batched_replan",
+        "config": {
+            "path": str(ROOT / "configs/pi05_as_writer_action_forecast_v1.json"),
+            "sha256": "b" * 64,
+        },
         "training_run": {"run_contract_sha256": "c" * 64},
         "checkpoint": {"manifest_file_sha256": "d" * 64},
         "video_data": {"target_data_manifest_file_sha256": "e" * 64},
-        "lora_contract_sha256": "f" * 64,
+        "lora_contract_sha256": (
+            "da14fb2cdfc6ca575f97ba5d70fd2d0a70efb0a243b5028b6fd728d19b097d87"
+        ),
         "video_schedule": {"seed": 7, "demo_count": 50},
         "pairing_sha256": "1" * 64,
     }

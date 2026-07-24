@@ -32,54 +32,14 @@ from ember.pi05_eval_queue import (
     queue_summary,
     read_json_with_sha256,
 )
-from ember.pi05_processing import Pi05LiberoProcessor, libero_policy_input
+from ember.pi05_eval.worker_setup import load_policy, validate_worker_assets
+from ember.pi05_processing import libero_policy_input
 from ember.writer.topology import bind_current_process_to_cuda_numa, cuda_numa_node
 
 
 SHARD_RESULT_SCHEMA = "ember_pi05_eval_shard_v1"
-
-
-def _load_policy(
-    model_path: Path,
-    stats: Mapping[str, Any],
-    tokenizer_path: Path,
-    policy_contract: Mapping[str, Any],
-) -> tuple[Any, Pi05LiberoProcessor, Any]:
-    from lerobot.configs import FeatureType, PolicyFeature
-    from lerobot.configs.policies import PreTrainedConfig
-    from lerobot.policies.pi05 import PI05Policy
-    from lerobot.policies.pi05.configuration_pi05 import PI05Config
-    from lerobot.utils.constants import ACTION, OBS_STATE
-
-    config = PreTrainedConfig.from_pretrained(model_path)
-    if not isinstance(config, PI05Config):
-        raise Pi05EvaluationError("evaluation checkpoint did not resolve to PI05Config")
-    config.device = "cuda:0"
-    config.dtype = str(policy_contract["precision"])
-    config.chunk_size = int(policy_contract["chunk_size"])
-    config.n_action_steps = int(policy_contract["n_action_steps"])
-    config.num_inference_steps = int(policy_contract["num_inference_steps"])
-    config.input_features[OBS_STATE] = PolicyFeature(
-        type=FeatureType.STATE, shape=(int(policy_contract["state_dim"]),)
-    )
-    config.output_features[ACTION] = PolicyFeature(
-        type=FeatureType.ACTION, shape=(int(policy_contract["action_dim"]),)
-    )
-    policy = PI05Policy.from_pretrained(
-        model_path,
-        config=config,
-        local_files_only=True,
-        strict=True,
-    ).to("cuda:0").eval()
-    if hasattr(policy.model, "gradient_checkpointing_disable"):
-        policy.model.gradient_checkpointing_disable()
-    processor = Pi05LiberoProcessor(
-        stats,
-        tokenizer_path,
-        config.tokenizer_max_length,
-        "cuda:0",
-    )
-    return policy, processor, processor.unnormalize_action
+_load_policy = load_policy
+_validate_worker_assets = validate_worker_assets
 
 
 def make_policy_noise(
@@ -543,41 +503,27 @@ def _parse_worker_assignment(
     return gpu_index, physical_gpu_ids.index(gpu_index), replica
 
 
-def _validate_worker_assets(contract: Mapping[str, Any]) -> tuple[Path, dict[str, Any], Path]:
-    normalization_path = Path(contract["normalization"]["path"])
-    if sha256_file(normalization_path) != contract["normalization"]["sha256"]:
-        raise Pi05EvaluationError("source-only normalization changed after queue creation")
-    normalization = json.loads(normalization_path.read_text(encoding="utf-8"))
-    model_path = Path(contract["model"]["model_path"])
-    frozen_policy_subdir = contract["model"].get("frozen_policy_subdir")
-    if frozen_policy_subdir != model_path.name:
-        raise Pi05EvaluationError("frozen source-policy subdirectory changed")
-    for record in contract["model"]["model_files"]:
-        relative = Path(record["path"]).relative_to(frozen_policy_subdir)
-        path = model_path / relative
-        if (
-            not path.is_file()
-            or path.stat().st_size != int(record["bytes"])
-            or sha256_file(path) != record["sha256"]
-        ):
-            raise Pi05EvaluationError(f"PI05 model file changed after queue creation: {path}")
-    tokenizer_path = Path(contract["tokenizer"]["path"])
-    if (
-        not tokenizer_path.is_file()
-        or tokenizer_path.stat().st_size != int(contract["tokenizer"]["bytes"])
-        or sha256_file(tokenizer_path) != contract["tokenizer"]["sha256"]
-    ):
-        raise Pi05EvaluationError("OpenPI tokenizer changed after queue creation")
-    return model_path, normalization, tokenizer_path
-
-
-def _initialize_worker(output_dir: Path, worker_id: str) -> WorkerRuntime:
+def _initialize_worker(
+    output_dir: Path,
+    worker_id: str,
+    *,
+    writer_generation: bool = False,
+) -> WorkerRuntime:
     import torch
 
     output_dir = output_dir.resolve()
     contract = load_run_contract(output_dir / "run_contract.json")
     queue_path = output_dir / "queue.sqlite3"
     gpu_index, gpu_slot, replica = _parse_worker_assignment(worker_id, contract)
+    if writer_generation:
+        adapter = contract.get("adapter")
+        generators = int(contract["parallel"].get("writer_generators_per_gpu", 0))
+        if (
+            not isinstance(adapter, Mapping)
+            or adapter.get("kind") not in {"as_writer", "rl_writer"}
+            or not 0 <= replica < generators
+        ):
+            raise Pi05EvaluationError("invalid Writer generator worker assignment")
     os.environ.update(
         MUJOCO_GL="egl",
         PYOPENGL_PLATFORM="egl",
@@ -591,12 +537,12 @@ def _initialize_worker(output_dir: Path, worker_id: str) -> WorkerRuntime:
     numa_node = cuda_numa_node(0)
     if affinity is None or numa_node is None:
         raise Pi05EvaluationError("PI05 evaluator requires GPU-local NUMA affinity")
-    model_path, normalization, tokenizer_path = _validate_worker_assets(contract)
+    model_path, normalization, tokenizer_path = validate_worker_assets(contract)
     torch.manual_seed(int(contract["rng"]["inference_seed"]))
     torch.cuda.manual_seed(int(contract["rng"]["inference_seed"]))
     torch.backends.cuda.matmul.allow_tf32 = True
     torch.set_grad_enabled(False)
-    policy, preprocess, postprocess = _load_policy(
+    policy, preprocess, postprocess = load_policy(
         model_path,
         normalization["stats"],
         tokenizer_path,
@@ -606,6 +552,7 @@ def _initialize_worker(output_dir: Path, worker_id: str) -> WorkerRuntime:
         policy,
         contract,
         device=torch.device("cuda:0"),
+        writer_generation=writer_generation,
     )
     return WorkerRuntime(
         output_dir=output_dir,
@@ -703,7 +650,12 @@ def _execute_claim(runtime: WorkerRuntime, claim: EvaluationClaim) -> bool:
     return _publish_claim_result(runtime, claim, rows, started_unix)
 
 
-def run_worker(*, output_dir: Path, worker_id: str) -> dict[str, Any]:
+def run_worker(
+    *,
+    output_dir: Path,
+    worker_id: str,
+    writer_generator: bool = False,
+) -> dict[str, Any]:
     output_dir = output_dir.resolve()
     invocation_id = os.environ.get("EMBER_PI05_EVAL_INVOCATION_ID", "")
     if len(invocation_id) != 32 or any(
@@ -729,7 +681,11 @@ def run_worker(*, output_dir: Path, worker_id: str) -> dict[str, Any]:
     adopted = 0
     preferred_task: tuple[str, int] | None = None
     try:
-        runtime = _initialize_worker(output_dir, worker_id)
+        runtime = _initialize_worker(
+            output_dir,
+            worker_id,
+            writer_generation=writer_generator,
+        )
         ready_unix = time.time()
         _append_worker_event(
             event_path,
@@ -746,8 +702,17 @@ def run_worker(*, output_dir: Path, worker_id: str) -> dict[str, Any]:
                 "cpu_affinity": list(runtime.cpu_affinity),
                 "model_load_seconds": ready_unix - process_started_unix,
                 "contract_sha256": runtime.contract["contract_sha256"],
+                "writer_generator": writer_generator,
             },
         )
+        if writer_generator:
+            from ember.writer.evaluation_runtime import run_writer_generation_phase
+
+            run_writer_generation_phase(
+                runtime,
+                invocation_id=invocation_id,
+                append_event=_append_worker_event,
+            )
         while (claim := claim_next(
             runtime.queue_path,
             worker_id=worker_id,

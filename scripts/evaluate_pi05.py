@@ -7,17 +7,20 @@ import argparse
 import fcntl
 import json
 import os
-import pwd
 import subprocess
 import sys
 import time
 import uuid
-from contextlib import ExitStack
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ember.libero_evaluation import sha256_file
 from ember.pi05_assets import Pi05EvaluationError
+from ember.pi05_eval.launcher import (
+    gpu_preflight as _gpu_preflight,
+    spawn_worker_processes,
+    terminate_owned_workers as _terminate_owned_workers,
+)
 from ember.eval_adapters import (
     adapter_requests as _adapter_requests,
     as_writer_requested as _writer_requested,
@@ -81,6 +84,28 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
         required=True,
     )
     parser.add_argument(
+        "--writer-generators-per-gpu",
+        type=int,
+        choices=RUNTIME_REPLICA_PROFILES,
+        default=1,
+        help=(
+            "Writer-LoRA generator processes per GPU; independent of rollout "
+            "replicas and no greater than --replicas-per-gpu."
+        ),
+    )
+    parser.add_argument(
+        "--writer-generation-batch-size",
+        type=int,
+        choices=(1, 2, 4, 8, 16),
+        default=1,
+        help="Episode LoRAs generated together by each Writer process.",
+    )
+    parser.add_argument(
+        "--writer-lora-cache-root",
+        type=Path,
+        help="Optional reusable cache root shared by rollout-topology profiles.",
+    )
+    parser.add_argument(
         "--gpu-indices",
         help="Comma-separated physical GPU indices; defaults to every configured GPU.",
     )
@@ -126,6 +151,7 @@ def parse_args() -> argparse.Namespace:
     worker = commands.add_parser("worker")
     worker.add_argument("--output-dir", type=Path, required=True)
     worker.add_argument("--worker-id", required=True)
+    worker.add_argument("--writer-generator", action="store_true")
     aggregate = commands.add_parser("aggregate")
     aggregate.add_argument("--output-dir", type=Path, required=True)
     return parser.parse_args()
@@ -244,6 +270,9 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
         physical_gpu_ids=_parse_gpu_indices(args.gpu_indices),
         command=sys.argv,
         adapter=adapter,
+        writer_generators_per_gpu=args.writer_generators_per_gpu,
+        writer_generation_batch_size=args.writer_generation_batch_size,
+        writer_cache_root=args.writer_lora_cache_root,
     )
     publish_json_exclusive(output_dir / "run_contract.json", contract)
     shards = _shards_from_contract(contract)
@@ -259,6 +288,13 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
         "states": sum(len(task.init_state_ids) for task in tasks),
         "shards": len(shards),
         "replicas_per_gpu": args.replicas_per_gpu,
+        "writer_generators_per_gpu": contract["parallel"][
+            "writer_generators_per_gpu"
+        ],
+        "writer_generation_batch_size": contract["parallel"][
+            "writer_generation_batch_size"
+        ],
+        "writer_lora_cache": contract["writer_lora_cache"],
         "physical_gpu_ids": contract["parallel"]["physical_gpu_ids"],
         "arm": contract["arm"],
         "output_dir": str(output_dir),
@@ -278,101 +314,6 @@ def _active_worker_pids(output_dir: Path) -> list[int]:
         if b"evaluate_pi05.py" in command and b"worker" in command and needle in command:
             active.append(int(path.parent.name))
     return sorted(active)
-
-
-def _gpu_preflight(physical_gpu_ids: Sequence[int]) -> dict[str, Any]:
-    """Check storage first, then sample live GPU ownership immediately before spawn."""
-
-    import torch
-
-    personal_bytes = int(
-        subprocess.run(
-            ["du", "-sb", "/data/ymdai"],
-            check=True,
-            text=True,
-            capture_output=True,
-        ).stdout.split()[0]
-    )
-    data_capacity = subprocess.run(
-        ["df", "-B1", "--output=size,used,avail,pcent,target", "/data"],
-        check=True,
-        text=True,
-        capture_output=True,
-    ).stdout.splitlines()[-1].split()
-    gpu_query = subprocess.run(
-        [
-            "nvidia-smi",
-            "--query-gpu=index,uuid,memory.used,memory.total,utilization.gpu,temperature.gpu,driver_version",
-            "--format=csv,noheader,nounits",
-        ],
-        check=True,
-        text=True,
-        capture_output=True,
-    ).stdout.splitlines()
-    gpu_by_index: dict[int, str] = {}
-    uuid_by_index: dict[int, str] = {}
-    for row in gpu_query:
-        fields = [value.strip() for value in row.split(",")]
-        if len(fields) < 2 or not fields[0].isdigit():
-            raise Pi05EvaluationError(f"invalid nvidia-smi GPU row: {row}")
-        gpu_by_index[int(fields[0])] = row
-        uuid_by_index[int(fields[0])] = fields[1]
-    missing = sorted(set(physical_gpu_ids) - set(gpu_by_index))
-    if missing:
-        raise Pi05EvaluationError(
-            f"PI05 evaluation physical GPUs are unavailable: {missing}"
-        )
-    applications = subprocess.run(
-        [
-            "nvidia-smi",
-            "--query-compute-apps=gpu_uuid,pid,process_name,used_memory",
-            "--format=csv,noheader,nounits",
-        ],
-        check=True,
-        text=True,
-        capture_output=True,
-    ).stdout.splitlines()
-    selected_uuids = {uuid_by_index[index] for index in physical_gpu_ids}
-    selected_applications = [
-        row
-        for row in applications
-        if row.split(",", 1)[0].strip() in selected_uuids
-    ]
-    if selected_applications:
-        owned = []
-        for application in selected_applications:
-            fields = [value.strip() for value in application.split(",")]
-            owner = "unknown"
-            if len(fields) >= 2 and fields[1].isdigit():
-                try:
-                    status = Path(f"/proc/{fields[1]}/status").read_text(encoding="utf-8")
-                    uid_line = next(line for line in status.splitlines() if line.startswith("Uid:"))
-                    owner = pwd.getpwuid(int(uid_line.split()[1])).pw_name
-                except (OSError, KeyError, StopIteration, ValueError):
-                    pass
-            owned.append(f"{application}, owner={owner}")
-        raise Pi05EvaluationError(
-            "GPU preflight found existing compute processes; refusing to interfere: "
-            + " | ".join(owned)
-        )
-    return {
-        "unix": time.time(),
-        "physical_gpu_ids": list(physical_gpu_ids),
-        "gpus": [gpu_by_index[index] for index in physical_gpu_ids],
-        "compute_applications": [],
-        "python": sys.version,
-        "torch": torch.__version__,
-        "cuda_runtime": torch.version.cuda,
-        "personal_bytes": personal_bytes,
-        "personal_cap_bytes": 500_000_000_000,
-        "data_filesystem": {
-            "size": int(data_capacity[0]),
-            "used": int(data_capacity[1]),
-            "available": int(data_capacity[2]),
-            "percent": data_capacity[3],
-            "mount": data_capacity[4],
-        },
-    }
 
 
 def _validate_resume_inputs(contract: dict[str, Any]) -> None:
@@ -500,27 +441,6 @@ def _record_launcher_failure(
     return path
 
 
-def _terminate_owned_workers(processes: dict[str, subprocess.Popen[bytes]]) -> None:
-    """Stop only workers created by this launcher after a local launch failure."""
-
-    live = [process for process in processes.values() if process.poll() is None]
-    for process in live:
-        process.terminate()
-    deadline = time.monotonic() + 10.0
-    while live and time.monotonic() < deadline:
-        live = [process for process in live if process.poll() is None]
-        if live:
-            time.sleep(0.1)
-    for process in live:
-        process.kill()
-    for process in processes.values():
-        try:
-            process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            process.wait()
-
-
 def _finalize_aggregate(output_dir: Path) -> dict[str, Any]:
     from ember.pi05_eval_results import aggregate_run
 
@@ -602,81 +522,6 @@ def _recover_locked_queue(
     if completion_exists and not complete:
         raise Pi05EvaluationError("launcher completion exists for an incomplete queue")
     return contract, shards, bool(completion_exists and complete)
-
-
-def _spawn_worker_processes(
-    output_dir: Path,
-    contract: Mapping[str, Any],
-    worker_ids: Sequence[str],
-    *,
-    invocation_id: str,
-) -> tuple[
-    dict[str, subprocess.Popen[bytes]],
-    dict[str, int],
-    BaseException | None,
-]:
-    replicas = int(contract["parallel"]["replicas_per_gpu"])
-    processes: dict[str, subprocess.Popen[bytes]] = {}
-    return_codes: dict[str, int] = {}
-    launch_error: BaseException | None = None
-    (output_dir / "worker_logs").mkdir(parents=True, exist_ok=True)
-    try:
-        with ExitStack() as stack:
-            for worker_id in worker_ids:
-                gpu = worker_id.split("-r", 1)[0]
-                log = stack.enter_context(
-                    (output_dir / "worker_logs" / f"{worker_id}.log").open("ab")
-                )
-                environment = os.environ.copy()
-                environment.update(
-                    PYTHONPATH=str(REPO_ROOT / "src"),
-                    CUDA_DEVICE_ORDER="PCI_BUS_ID",
-                    CUDA_VISIBLE_DEVICES=gpu,
-                    OMP_NUM_THREADS=str(
-                        contract["parallel"]["omp_threads_per_worker"][str(replicas)]
-                    ),
-                    EMBER_PI05_EVAL_INVOCATION_ID=invocation_id,
-                )
-                processes[worker_id] = subprocess.Popen(
-                    [
-                        sys.executable,
-                        str(Path(__file__).resolve()),
-                        "worker",
-                        "--output-dir",
-                        str(output_dir),
-                        "--worker-id",
-                        worker_id,
-                    ],
-                    cwd=REPO_ROOT,
-                    env=environment,
-                    stdout=log,
-                    stderr=subprocess.STDOUT,
-                )
-            while True:
-                return_codes = {
-                    worker_id: code
-                    for worker_id, process in processes.items()
-                    if (code := process.poll()) is not None
-                }
-                if any(code != 0 for code in return_codes.values()):
-                    _terminate_owned_workers(processes)
-                    break
-                if len(return_codes) == len(processes):
-                    break
-                time.sleep(0.2)
-            return_codes = {
-                worker_id: int(process.wait())
-                for worker_id, process in processes.items()
-            }
-    except BaseException as error:
-        launch_error = error
-        _terminate_owned_workers(processes)
-        return_codes = {
-            worker_id: int(process.returncode)
-            for worker_id, process in processes.items()
-            if process.returncode is not None
-        }
-    return processes, return_codes, launch_error
 
 
 def _fail_launcher_invocation(
@@ -767,8 +612,25 @@ def _start_workers_locked(output_dir: Path, *, resume: bool) -> dict[str, Any]:
         )
     )
     preflight = _gpu_preflight(physical_gpu_ids)
-    if preflight["personal_bytes"] >= preflight["personal_cap_bytes"]:
-        raise Pi05EvaluationError("personal storage already exceeds the 500GB hard cap")
+    projected_new_bytes = 0
+    if contract.get("writer_lora_cache") is not None:
+        from ember.writer.evaluation_cache import writer_cache_manifest_is_ready
+
+        if not writer_cache_manifest_is_ready(contract):
+            projected_new_bytes = int(
+                contract["writer_lora_cache"]["estimated_peak_new_bytes"]
+            )
+    preflight["projected_new_bytes"] = projected_new_bytes
+    preflight["projected_personal_peak_bytes"] = (
+        int(preflight["personal_bytes"]) + projected_new_bytes
+    )
+    if (
+        preflight["projected_personal_peak_bytes"]
+        >= preflight["personal_cap_bytes"]
+    ):
+        raise Pi05EvaluationError(
+            "PI05 evaluation would exceed the 500GB personal storage cap"
+        )
     worker_ids = _worker_ids(
         int(contract["parallel"]["replicas_per_gpu"]), physical_gpu_ids
     )
@@ -786,11 +648,13 @@ def _start_workers_locked(output_dir: Path, *, resume: bool) -> dict[str, Any]:
             "preflight": preflight,
         },
     )
-    processes, return_codes, launch_error = _spawn_worker_processes(
+    processes, return_codes, launch_error = spawn_worker_processes(
         output_dir,
         contract,
         worker_ids,
         invocation_id=invocation_id,
+        repo_root=REPO_ROOT,
+        script_path=Path(__file__).resolve(),
     )
     queue = queue_summary(output_dir / "queue.sqlite3")
     failed = (
@@ -836,7 +700,15 @@ def main() -> int:
     elif args.command == "worker":
         from ember.pi05_evaluation import run_worker
 
-        print(json.dumps(run_worker(output_dir=args.output_dir, worker_id=args.worker_id)))
+        print(
+            json.dumps(
+                run_worker(
+                    output_dir=args.output_dir,
+                    worker_id=args.worker_id,
+                    writer_generator=args.writer_generator,
+                )
+            )
+        )
     else:
         _finalize_aggregate(args.output_dir)
     return 0

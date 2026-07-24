@@ -179,8 +179,16 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
   `frame_microbatch_size=32`、per-rank action-query batch=`16`。stride10仅有
   单步参考且owner决定不再扩测；frame-microbatch64在一rank达到
   `80,821/81,920 MiB`并失去前进，已明确拒绝。
-- [ ] 用正式Action-Forecast checkpoint实测评测并发/缓存参数；不得用早期
-  checkpoint运行wrong/shuffled/reversed，机制诊断只对最终observed-best执行。
+- [x] 将Writer LoRA生成与rollout并发原位解耦：每卡generator数量、生成batch
+  和rollout replicas各自封存；generator生成完整fixed panel cache后只释放
+  Writer专属模块，同一进程保留source π0.5并转为首个rollout worker，其余
+  replicas随后扩容。缓存可跨rollout拓扑复用，canonical入口仍只有
+  `scripts/evaluate_pi05.py`。
+- [ ] 用正式Action-Forecast checkpoint分别实测生成batch/generator数与纯
+  rollout replicas；早期耦合r3/r4只作provenance，不用于最终拓扑选择。不得用
+  早期checkpoint运行wrong/shuffled/reversed，机制诊断只对最终observed-best执行。
+- [x] fresh formal AS首段完成step0→300，按75/150/225/300保存四个完整
+  exact-resume checkpoints；19,200 queries与全部loss/gradient均finite。
 - [ ] 按约30分钟一段、每段四个checkpoint推进四卡AS；优先评测每段第2/4点，
   必要时补1/3点，定位paired 8×50 validation最佳checkpoint。
 - [ ] 对observed-best完成correct/wrong/shuffled/reversed视频证据；目标是不明显

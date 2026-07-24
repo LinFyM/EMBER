@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval_contract import load_run_contract
@@ -48,9 +48,16 @@ def _worker_lifecycle(
         raise Pi05EvaluationError(f"invalid worker lifecycle evidence: {worker_id}") from error
     selected = [row for row in events if row.get("invocation_id") == invocation_id]
     by_event = {row.get("event"): row for row in selected}
+    ready = by_event.get("ready", {})
+    writer_generator = bool(ready.get("writer_generator", False))
+    expected_events = {"process_started", "ready", "finished"}
+    if writer_generator:
+        expected_events.update(
+            {"writer_generation_finished", "rollout_ready_with_retained_policy"}
+        )
     if (
-        len(selected) != 3
-        or set(by_event) != {"process_started", "ready", "finished"}
+        len(selected) != len(expected_events)
+        or set(by_event) != expected_events
         or any(
             row.get("worker_id") != worker_id
             or row.get("contract_sha256") != contract["contract_sha256"]
@@ -59,8 +66,9 @@ def _worker_lifecycle(
     ):
         raise Pi05EvaluationError(f"worker lifecycle is incomplete: {worker_id}")
     process = by_event["process_started"]
-    ready = by_event["ready"]
     finished = by_event["finished"]
+    generation = by_event.get("writer_generation_finished")
+    rollout_ready = by_event.get("rollout_ready_with_retained_policy", ready)
     gpu_text, replica_text = worker_id.split("-r", 1)
     physical_gpu = int(gpu_text)
     expected_numa = 0 if physical_gpu < 4 else 1
@@ -71,6 +79,15 @@ def _worker_lifecycle(
         or ready.get("numa_node") != expected_numa
         or not ready.get("cpu_affinity")
         or not float(process["unix"]) <= float(ready["unix"]) <= float(finished["unix"])
+        or not float(ready["unix"])
+        <= float(rollout_ready["unix"])
+        <= float(finished["unix"])
+        or (
+            generation is not None
+            and not float(ready["unix"])
+            <= float(generation["unix"])
+            <= float(rollout_ready["unix"])
+        )
     ):
         raise Pi05EvaluationError(f"worker topology evidence changed: {worker_id}")
     return {
@@ -83,8 +100,31 @@ def _worker_lifecycle(
         "cpu_affinity": ready["cpu_affinity"],
         "process_started_unix": float(process["unix"]),
         "ready_unix": float(ready["unix"]),
+        "rollout_ready_unix": float(rollout_ready["unix"]),
         "finished_unix": float(finished["unix"]),
         "model_load_seconds": float(ready["model_load_seconds"]),
+        "writer_generator": writer_generator,
+        "writer_generation": (
+            {
+                key: generation[key]
+                for key in (
+                    "assigned_entries",
+                    "generated_entries",
+                    "reused_entries",
+                    "generated_batches",
+                    "generation_batch_size",
+                    "generation_wall_seconds",
+                    "peak_allocated_bytes",
+                    "peak_reserved_bytes",
+                    "post_release_allocated_bytes",
+                    "post_release_reserved_bytes",
+                    "source_policy_reused_for_rollout",
+                    "writer_modules_released",
+                )
+            }
+            if generation is not None
+            else None
+        ),
         "completed_shards": int(finished["completed_shards"]),
         "adopted_shards": int(finished["adopted_shards"]),
     }
@@ -129,6 +169,41 @@ def _validated_worker_lifecycles(
     ) != physical_gpu_count:
         raise Pi05EvaluationError("worker lifecycle GPU UUID mapping is not device symmetric")
     return lifecycles
+
+
+def _writer_generation_summary(workers: Sequence[Mapping[str, Any]]) -> dict[str, Any] | None:
+    generated = [
+        row["writer_generation"]
+        for row in workers
+        if row.get("writer_generation") is not None
+    ]
+    if not generated:
+        return None
+    return {
+        "generator_workers": len(generated),
+        "assigned_entries": sum(int(row["assigned_entries"]) for row in generated),
+        "generated_entries": sum(int(row["generated_entries"]) for row in generated),
+        "reused_entries": sum(int(row["reused_entries"]) for row in generated),
+        "generated_batches": sum(int(row["generated_batches"]) for row in generated),
+        "generation_batch_size": sorted(
+            {int(row["generation_batch_size"]) for row in generated}
+        ),
+        "max_worker_generation_wall_seconds": max(
+            float(row["generation_wall_seconds"]) for row in generated
+        ),
+        "max_peak_allocated_bytes": max(
+            int(row["peak_allocated_bytes"]) for row in generated
+        ),
+        "max_peak_reserved_bytes": max(
+            int(row["peak_reserved_bytes"]) for row in generated
+        ),
+        "all_source_policy_processes_reused_for_rollout": all(
+            row["source_policy_reused_for_rollout"] is True for row in generated
+        ),
+        "all_writer_modules_released": all(
+            row["writer_modules_released"] is True for row in generated
+        ),
+    }
 
 
 def _load_shard_records(
@@ -276,7 +351,14 @@ def aggregate_run(output_dir: Path) -> dict[str, Any]:
             "shard_execution_window_seconds": shard_window_seconds,
             "effective_rollouts_per_second": len(rows) / evaluation_seconds,
             "episodes_per_hour": len(rows) * 3600.0 / evaluation_seconds,
+            "rollout_only_effective_rollouts_per_second": (
+                len(rows) / shard_window_seconds
+            ),
+            "rollout_only_episodes_per_hour": (
+                len(rows) * 3600.0 / shard_window_seconds
+            ),
         },
+        "writer_generation": _writer_generation_summary(workers),
         "per_task": _per_task_rows(rows, tasks),
         "launcher": launcher,
         "workers": workers,

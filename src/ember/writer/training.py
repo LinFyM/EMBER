@@ -27,7 +27,7 @@ from ember.pi05_eval_contract import (
     load_evaluation_authorities,
 )
 from ember.pi05_lora import load_pi05_lora_contract
-from ember.pi05_processing import Pi05LiberoProcessor, Pi05PureLanguageTokenizer
+from ember.pi05_processing import Pi05ForecastPrefixTokenizer, Pi05LiberoProcessor
 from ember.pi05_source_checkpoint import (
     DistributedContext,
     barrier,
@@ -48,9 +48,6 @@ from ember.writer.checkpoint import (
     load_writer_checkpoint,
     save_writer_checkpoint,
 )
-from ember.writer.conditioning import (
-    batch_size_cycle,
-)
 from ember.writer.as_contract import (
     REPO_ROOT,
     authority_path,
@@ -66,15 +63,16 @@ from ember.writer.as_contract import (
     writer_stage,
 )
 from ember.writer.data import (
-    ActionHiddenVideoStore,
     FunctionalQueryDataset,
     MixedTaskBatchSampler,
+    RawTeacherVideoStore,
     TeacherVideoSchedule,
+    WriterFlowNoiseSchedule,
     WriterTaskAuthority,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.model import (
-    ACTION_MEMORY_WRITER_CONSTRUCTOR_KEYS,
+    ACTION_FORECAST_WRITER_CONSTRUCTOR_KEYS,
     CompleteLoRAWriter,
     WriterModelError,
     build_lora_tensor_specs,
@@ -96,11 +94,13 @@ class WriterRuntime:
     task_ids: tuple[int, ...]
     sampler: MixedTaskBatchSampler
     video_schedule: TeacherVideoSchedule
-    video_partner: dict[int, int]
+    flow_noise_schedule: WriterFlowNoiseSchedule
     iterator: Iterator[dict[str, Any]]
-    video_store: ActionHiddenVideoStore
-    language_tokens: dict[int, tuple[torch.Tensor, torch.Tensor]]
-    generic_language: tuple[torch.Tensor, torch.Tensor]
+    video_store: RawTeacherVideoStore
+    language_tokens: dict[
+        int,
+        tuple[torch.Tensor, torch.Tensor, torch.Tensor],
+    ]
     processor: Pi05LiberoProcessor
     policy: torch.nn.Module
     identity_state: dict[str, torch.Tensor]
@@ -155,12 +155,14 @@ def _build_writer(
     writer_config = {
         key: value
         for key, value in config["writer"].items()
-        if key in ACTION_MEMORY_WRITER_CONSTRUCTOR_KEYS
+        if key in ACTION_FORECAST_WRITER_CONSTRUCTOR_KEYS
     }
+    bridge = policy.model.paligemma_with_expert
     writer = CompleteLoRAWriter(
         build_lora_tensor_specs(template),
         template_state=template,
-        action_in_projection=policy.model.action_in_proj,
+        paligemma_model=bridge.paligemma.model.language_model,
+        expert_model=bridge.gemma_expert.model,
         **writer_config,
     )
     return (
@@ -241,6 +243,7 @@ def _restore_training_state(
         scheduler=scheduler,
         sampler_seed=int(config["data"]["sampler_seed"]),
         teacher_video_seed=int(config["data"]["teacher_video_seed"]),
+        writer_flow_noise_seed=int(config["data"]["writer_flow_noise_seed"]),
         per_rank_batch_size=batch_size,
         per_rank_batch_cycle=batch_cycle,
         conditions_per_optimizer_step=conditions_per_optimizer_step,
@@ -263,8 +266,10 @@ def _build_sampler_and_loader(
     conditions_per_optimizer_step: int,
     initial_step: int,
 ) -> tuple[MixedTaskBatchSampler, TeacherVideoSchedule, DataLoader[Any]]:
-    initial_data_step = initial_step * conditions_per_optimizer_step
-    stop_data_step = args.stop_after_step * conditions_per_optimizer_step
+    if conditions_per_optimizer_step != 1:
+        raise WriterModelError("Action-Forecast AS uses one video condition per rank")
+    initial_data_step = initial_step
+    stop_data_step = args.stop_after_step
     sampler = MixedTaskBatchSampler(
         dataset,
         task_ids=task_ids,
@@ -304,8 +309,8 @@ def _wrap_writer(writer: CompleteLoRAWriter, context: DistributedContext) -> tor
         device_ids=[context.local_rank],
         output_device=context.local_rank,
         broadcast_buffers=False,
-        find_unused_parameters=False,
-        static_graph=True,
+        find_unused_parameters=True,
+        static_graph=False,
     )
 
 
@@ -332,12 +337,11 @@ def _build_condition_inputs(
     task_ids: tuple[int, ...],
     tasks: tuple[WriterTaskAuthority, ...],
 ) -> tuple[
-    ActionHiddenVideoStore,
+    RawTeacherVideoStore,
     Pi05LiberoProcessor,
-    dict[int, tuple[torch.Tensor, torch.Tensor]],
-    tuple[torch.Tensor, torch.Tensor],
+    dict[int, tuple[torch.Tensor, torch.Tensor, torch.Tensor]],
 ]:
-    store = ActionHiddenVideoStore(
+    store = RawTeacherVideoStore(
         tasks,
         frame_stride=int(config["writer"]["frame_stride"]),
         max_open_files=int(config["data"]["video_open_files_per_rank"]),
@@ -351,7 +355,7 @@ def _build_condition_inputs(
         int(authorities.source_base_config["features"]["tokenizer_max_length"]),
         str(context.device),
     )
-    tokenizer = Pi05PureLanguageTokenizer(
+    tokenizer = Pi05ForecastPrefixTokenizer(
         args.tokenizer_path,
         int(authorities.source_base_config["features"]["tokenizer_max_length"]),
         str(context.device),
@@ -361,27 +365,7 @@ def _build_condition_inputs(
     }
     if set(language_tokens) != set(task_ids):
         raise WriterModelError("Writer language authorities changed")
-    generic = tokenizer(
-        [str(config["conditioning_training"]["generic_writer_language"])]
-    )
-    return store, processor, language_tokens, generic
-
-
-def _video_partner_map(
-    config: Mapping[str, Any], task_ids: tuple[int, ...]
-) -> dict[int, int]:
-    pairs = tuple(
-        tuple(int(value) for value in pair)
-        for pair in config["conditioning_training"]["video_task_pairs"]
-    )
-    result = {
-        source: target
-        for left, right in pairs
-        for source, target in ((left, right), (right, left))
-    }
-    if set(result) != set(task_ids):
-        raise WriterModelError("video-forced task pairs do not cover the train tasks")
-    return result
+    return store, processor, language_tokens
 
 
 def _load_run_authorities(
@@ -489,7 +473,7 @@ def prepare_runtime(
 ) -> WriterRuntime:
     config = load_writer_config(args.config.resolve())
     total_steps, batch_size, checkpoint_steps = resolve_runtime(args, config, context)
-    batch_cycle = batch_size_cycle(batch_size, config)
+    batch_cycle = (batch_size,)
     conditions_per_optimizer_step = int(
         config["conditioning_training"]["independent_conditions_per_optimizer_step"]
     )
@@ -533,7 +517,7 @@ def prepare_runtime(
     )
     wrapped = _wrap_writer(setup.writer, context)
     setup.writer.train()
-    video_store, processor, language_tokens, generic_language = _build_condition_inputs(
+    video_store, processor, language_tokens = _build_condition_inputs(
         args=args,
         config=config,
         authorities=setup.authorities,
@@ -572,11 +556,12 @@ def prepare_runtime(
         task_ids=setup.task_ids,
         sampler=sampler,
         video_schedule=video_schedule,
-        video_partner=_video_partner_map(config, setup.task_ids),
+        flow_noise_schedule=WriterFlowNoiseSchedule(
+            seed=int(config["data"]["writer_flow_noise_seed"]),
+        ),
         iterator=iter(loader),
         video_store=video_store,
         language_tokens=language_tokens,
-        generic_language=generic_language,
         processor=processor,
         policy=setup.policy,
         identity_state=setup.identity_state,
@@ -655,6 +640,7 @@ def run_steps(runtime: WriterRuntime) -> None:
                 scheduler=runtime.scheduler,
                 sampler=runtime.sampler,
                 video_schedule=runtime.video_schedule,
+                flow_noise_schedule=runtime.flow_noise_schedule,
                 contract=runtime.contract,
                 mode=runtime.args.mode,
                 metrics_rows=runtime.metrics_rows,
@@ -684,15 +670,10 @@ def run_steps(runtime: WriterRuntime) -> None:
             "train_tasks": len(runtime.task_ids),
             "teacher_action_episodes_available": len(runtime.task_ids) * 50,
             "global_policy_samples": (
-                stop
-                * runtime.context.world_size
-                * runtime.batch_size
-                * runtime.conditions_per_optimizer_step
+                stop * runtime.context.world_size * runtime.batch_size
             ),
             "global_independent_task_video_conditions": (
-                stop
-                * runtime.context.world_size
-                * runtime.conditions_per_optimizer_step
+                stop * runtime.context.world_size
             ),
             "test_action_reads": 0,
             "test_video_value_reads": 0,
@@ -745,7 +726,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_as_writer_action_memory_v1.json",
+        default=REPO_ROOT / "configs/pi05_as_writer_action_forecast_v1.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--source-run", type=Path, required=True)

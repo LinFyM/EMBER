@@ -30,8 +30,8 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_action_memory_as_writer_v1"
-AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_action_memory_as_writer_launch_v1"
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_action_forecast_as_writer_v1"
+AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_action_forecast_as_writer_launch_v1"
 AS_WRITER_STAGES = ("development", "final")
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
@@ -87,39 +87,54 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
     if lora.source_base_config_sha256 != config["authorities"]["source_base_config"]["sha256"]:
         raise WriterModelError("AS-Writer LoRA and source-base authorities disagree")
     writer = config.get("writer", {})
+    if writer.get("frame_stride") != 5 or writer.get("frame_microbatch_size") != 32:
+        raise WriterModelError("sealed Action-Forecast profile dimensions changed")
     expected_writer = {
-        "architecture": "pi05_action_memory_writer_temporal_rope_v1",
-        "generated_adapter": "complete_pi05_task_specific_lora",
-        "prefix_owner": "frozen_pi05_paligemma_full_frame_text_prefix",
-        "expert_memory_owner": "pi05_action_expert_all_layer_hidden_states",
+        "architecture": "pi05_action_forecast_plan_revision_v1",
+        "generated_adapter": "complete_pi05_task_specific_rank16_lora",
         "camera_dataset": "obs/agentview_rgb",
         "camera_transform": "libero_opengl_rotate_180_chw_uint8",
-        "frame_stride": 4,
+        "frame_stride": writer["frame_stride"],
         "include_final_frame": True,
-        "expert_layers": 18,
-        "memory_slots": 16,
-        "expert_width": 1024,
-        "action_code_width": 32,
-        "memory_initialization": "orthogonal_action_codes_through_frozen_action_in_proj",
-        "meta_lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
-        "meta_lora_rank": 8,
-        "hidden_dim": 320,
-        "attention_heads": 8,
+        "image_width": 2048,
+        "state_width": 128,
+        "state_coordinates": 8,
+        "state_heads": 4,
+        "state_blocks": 2,
+        "state_fourier_width": 64,
+        "state_embed_hidden": 256,
+        "vl_meta_lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
+        "vl_meta_lora_rank": 4,
+        "action_meta_lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
+        "action_meta_lora_rank": 8,
+        "frame_microbatch_size": writer["frame_microbatch_size"],
+        "activation_checkpointing": True,
+        "num_flow_steps": 10,
+        "action_horizon": 50,
+        "padded_action_dim": 32,
+        "output_action_dim": 7,
+        "plan_revision_alignment": (
+            "absolute_control_time_latest_plan_and_adjacent_revisions"
+        ),
+        "temporal_width": 256,
+        "temporal_heads": 8,
         "temporal_blocks": 2,
-        "temporal_position_encoding": "one_dimensional_rope_on_actual_sample_positions",
-        "temporal_memory_tokens": 4,
-        "temporal_pooling": "four_condition_only_learned_memory_queries",
-        "decoder_hidden_dim": 384,
-        "frame_microbatch": 16,
-        "conditional_linear_bias": True,
+        "temporal_position_encoding": (
+            "one_dimensional_rope_on_absolute_control_time"
+        ),
+        "query_count": 320,
+        "query_decoder_blocks": 2,
+        "query_memory_direction": "lora_queries_read_temporal_memory_only",
+        "factor_hidden_width": 256,
+        "initialization_seed": 7,
     }
     if writer != expected_writer:
-        raise WriterModelError("Action-Memory AS-Writer architecture changed")
+        raise WriterModelError("Action-Forecast AS-Writer architecture changed")
 
 
 def _validate_information_wall(config: Mapping[str, Any]) -> None:
     common = {
-        "writer_input": "pure task language plus exactly one action-hidden teacher video",
+        "writer_input": "task language plus exactly one raw action-hidden teacher video",
         "writer_forbidden_inputs": [
             "action",
             "proprio",
@@ -127,6 +142,7 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
             "terminal",
             "task_id",
             "filename",
+            "hidden_normalization",
             "policy_outcome",
         ],
         "action_owner": "frozen functional behavior loss only",
@@ -158,76 +174,33 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         "teacher_video_sampling": "independent deterministic per-task no-replacement cycles",
         "action_query_sampling": "task-balanced deterministic no-replacement episode cycles",
         "video_action_pairing": (
-            "positive video/action independent within task; contrast video from sealed paired train task"
-            if writer_stage(config) == "development"
-            else "positive video/action independent within task; contrast video from sealed paired final-source task"
+            "positive video and action query independently sampled within task"
+        ),
+        "flow_noise_sampling": (
+            "one deterministic [50,32] Gaussian sample per video visit shared "
+            "across its frames"
         ),
     }
     if any(data.get(name) != value for name, value in required.items()):
         raise WriterModelError("AS-Writer sampling contract changed")
 
 
-def _valid_video_task_pairs(pairs: Any, source_ids: Sequence[int]) -> bool:
-    if not isinstance(pairs, list) or any(
-        not isinstance(pair, list) or len(pair) != 2 for pair in pairs
-    ):
-        return False
-    flattened = [int(task_id) for pair in pairs for task_id in pair]
-    return sorted(flattened) == list(source_ids) and len(set(flattened)) == len(
-        flattened
-    )
-
-
 def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
     value = config.get("conditioning_training", {})
-    allowed_schedules = {
-        "normal_full_language_contrast_generic_language_contrast_cycle": [
-            "normal",
-            "full_language_contrast",
-            "generic_language_contrast",
-        ],
-        "normal_only_positive_action_loss_diagnostic": ["normal"],
+    expected = {
+        "method": "normal_positive_functional_action_loss_only",
+        "writer_language_contract": (
+            "correct_task_language_native_state_action_layout"
+        ),
+        "policy_language_contract": "correct_action_query_task_language",
+        "action_query_batch_owner": (
+            "one physical batch per rank with no second policy microbatch"
+        ),
+        "independent_conditions_per_optimizer_step": 1,
+        "normal_loss_weight": 1.0,
     }
-    pairs = value.get("video_task_pairs", [])
-    target = read_json(authority_path(config, "target_data_manifest"))
-    source_ids = sorted(
-        int(task_id)
-        for role in writer_split_roles(config)
-        for task_id in target["summary"]["roles"][role]
-    )
-    positive_weights = (
-        value.get("normal_loss_weight"),
-        value.get("contrast_correct_loss_weight"),
-        value.get("matching_temperature"),
-    )
-    positive_integers = (
-        value.get("functional_policy_microbatch_size"),
-        value.get("independent_conditions_per_optimizer_step"),
-    )
-    matching_weight = value.get("matching_loss_weight")
-    if (
-        allowed_schedules.get(value.get("method")) != value.get("step_cycle")
-        or value.get("generic_writer_language")
-        != "perform the demonstrated task"
-        or value.get("generic_writer_language_owner")
-        != "normal_pi05_pure_language_tokenizer_full_frozen_prefix"
-        or value.get("policy_language_contract")
-        != "correct_action_query_task_language_on_every_branch"
-        or value.get("contrast_backend")
-        != "paired_sequential_half_batch_with_shared_policy_rng"
-        or any(not _positive_integer(item) for item in positive_integers)
-        or value.get("contrast_query_fraction") != 0.5
-        or not _valid_video_task_pairs(pairs, source_ids)
-        or any(
-            not isinstance(weight, (int, float)) or weight <= 0
-            for weight in positive_weights
-        )
-        or not isinstance(matching_weight, (int, float))
-        or matching_weight < 0
-        or not isinstance(value.get("matching_margin"), (int, float))
-        or value["matching_margin"] < 0
-    ):
-        raise WriterModelError("AS-Writer video-forced training contract changed")
+    if value != expected:
+        raise WriterModelError("AS-Writer positive-only training contract changed")
 
 
 def _positive_integer(value: Any) -> bool:
@@ -247,6 +220,16 @@ def load_writer_config(path: Path) -> dict[str, Any]:
 
 
 def parse_checkpoint_steps(value: str | Sequence[int], total_steps: int) -> tuple[int, ...]:
+    if isinstance(value, str) and value.startswith("every:"):
+        try:
+            interval = int(value.removeprefix("every:"))
+        except ValueError as error:
+            raise WriterModelError("invalid AS-Writer checkpoint interval") from error
+        if interval <= 0 or total_steps % interval:
+            raise WriterModelError(
+                "AS-Writer checkpoint interval must divide total steps"
+            )
+        return tuple(range(interval, total_steps + 1, interval))
     raw = value.split(",") if isinstance(value, str) else value
     try:
         result = tuple(sorted({int(item) for item in raw}))
@@ -296,7 +279,7 @@ def resolve_runtime(
             int(formal["expected_world_size"]),
             int(formal["total_steps"]),
             int(formal["per_rank_batch_size"]),
-            tuple(int(value) for value in formal["checkpoint_steps"]),
+            parse_checkpoint_steps(formal["checkpoint_steps"], total_steps),
         )
         observed = (
             formal.get("status"),
@@ -305,8 +288,9 @@ def resolve_runtime(
             batch_size,
             checkpoint_steps,
         )
-        stage_stops = tuple(
-            int(value) for value in formal.get("stage_stop_steps", [default_stop])
+        stage_stops = parse_checkpoint_steps(
+            formal.get("stage_stop_steps", [default_stop]),
+            total_steps,
         )
         if (
             observed != expected
@@ -458,7 +442,7 @@ def inspect_video_data(
         )
     return {
         "root": str(root.resolve()),
-        "schema_version": "ember_pi05_action_hidden_video_data_v1",
+        "schema_version": "ember_pi05_raw_teacher_video_data_v1",
         "target_data_manifest_file_sha256": sha256_file(target_path),
         "target_data_manifest_payload_sha256": target["canonical_payload_sha256"],
         "dataset": dict(target["dataset"]),
@@ -472,11 +456,11 @@ def inspect_video_data(
 
 
 def inspect_feature_cache(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
-    """Fail closed for pre-Action-Memory callers retained only as provenance."""
+    """Fail closed for retired pooled-feature callers."""
 
     raise WriterModelError(
-        "pooled PI05 Writer feature caches are retired; Action-Memory AS-Writer "
-        "requires raw action-hidden video data"
+        "pooled PI05 Writer feature caches are retired; Action-Forecast AS-Writer "
+        "requires raw teacher video data"
     )
 
 
@@ -512,9 +496,8 @@ def _software_versions() -> dict[str, Any]:
 def _contract_stop_step(
     args: argparse.Namespace, config: Mapping[str, Any], total_steps: int
 ) -> int:
-    if args.mode == "formal":
-        return int(config["formal_run"].get("selected_stop_step", total_steps))
-    return int(args.stop_after_step)
+    source = config["formal_run"] if args.mode == "formal" else config["profile_defaults"]
+    return int(source.get("selected_stop_step", total_steps))
 
 
 def build_contract(
@@ -535,9 +518,6 @@ def build_contract(
     initialization: Mapping[str, Any],
 ) -> dict[str, Any]:
     contract_stop_step = _contract_stop_step(args, config, total_steps)
-    microbatch = int(
-        config["conditioning_training"]["functional_policy_microbatch_size"]
-    )
     conditions_per_step = int(
         config["conditioning_training"]["independent_conditions_per_optimizer_step"]
     )
@@ -580,7 +560,7 @@ def build_contract(
             "one_policy_cuda_process_per_rank": True,
             "gpu0_extra_cuda_roles": 0,
             "ddp_object": "shared_writer_only",
-            "per_rank_policy_sample_batch_size_per_condition": batch_size,
+            "action_query_batch_size_per_rank": batch_size,
             "per_rank_unique_action_query_cycle": list(batch_cycle),
             "independent_conditions_per_optimizer_step": conditions_per_step,
             "global_independent_conditions_per_optimizer_step": (
@@ -589,20 +569,7 @@ def build_contract(
             "global_policy_samples_per_step": (
                 context.world_size * batch_size * conditions_per_step
             ),
-            "functional_policy_microbatch_size": microbatch,
-            "writer_conditions_per_data_condition_cycle": [
-                1 if mode == "normal" else 2
-                for mode in config["conditioning_training"]["step_cycle"]
-            ],
-            "policy_forward_calls_per_data_condition_cycle": [
-                (1 if mode == "normal" else 2)
-                * ((queries + microbatch - 1) // microbatch)
-                for mode, queries in zip(
-                    config["conditioning_training"]["step_cycle"],
-                    batch_cycle,
-                    strict=True,
-                )
-            ],
+            "policy_forward_calls_per_optimizer_step": 1,
             "teacher_videos_per_writer_invocation": 1,
             "total_steps": total_steps,
             "selected_stop_step": contract_stop_step,

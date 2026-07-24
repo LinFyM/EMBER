@@ -28,7 +28,7 @@ class WriterTaskAuthority:
 
 
 @dataclass(frozen=True)
-class ActionHiddenVideo:
+class RawTeacherVideo:
     """One sampled third-person teaching video and its original frame indices."""
 
     frames: Any
@@ -109,7 +109,7 @@ def iter_action_hidden_video_chunks(
                 )
 
 
-class ActionHiddenVideoStore:
+class RawTeacherVideoStore:
     """Load fixed-stride, variable-length videos without privileged fields."""
 
     def __init__(
@@ -147,7 +147,7 @@ class ActionHiddenVideoStore:
                 stale.close()
         return self._handles[task_id]
 
-    def load(self, task_id: int, demo_index: int) -> ActionHiddenVideo:
+    def load(self, task_id: int, demo_index: int) -> RawTeacherVideo:
         if demo_index < 0:
             raise WriterModelError("teaching video demo index must be non-negative")
         demo = self._handle(task_id).get(f"data/demo_{demo_index}")
@@ -168,7 +168,7 @@ class ActionHiddenVideoStore:
             indices.append(raw_count - 1)
         # Camera convention is identical to the execution policy: rotate 180°.
         frames = _camera_batch(np.asarray(pixels[indices]))
-        return ActionHiddenVideo(
+        return RawTeacherVideo(
             frames=frames,
             frame_indices=np.asarray(indices, dtype=np.int64),
             raw_frame_count=raw_count,
@@ -642,4 +642,82 @@ class TeacherVideoSchedule:
             "max_video_visits_per_task": max(visit_counts),
             "min_unique_videos_per_task": min(video_counts),
             "max_unique_videos_per_task": max(video_counts),
+        }
+
+
+class WriterFlowNoiseSchedule:
+    """Exact-resume Gaussian flow noise, shared by all frames of one visit."""
+
+    _SEED_TAG = 0xF10A05
+
+    def __init__(
+        self,
+        *,
+        seed: int,
+        action_horizon: int = 50,
+        padded_action_dim: int = 32,
+    ) -> None:
+        if seed < 0 or min(action_horizon, padded_action_dim) <= 0:
+            raise WriterModelError("invalid Writer flow-noise schedule")
+        self.seed = int(seed)
+        self.action_horizon = int(action_horizon)
+        self.padded_action_dim = int(padded_action_dim)
+
+    def _visit_seed(self, global_visit_slot: int) -> int:
+        if global_visit_slot < 0:
+            raise WriterModelError("Writer flow-noise visit must be non-negative")
+        digest = hashlib.sha256(
+            struct.pack(
+                ">3Q",
+                self.seed,
+                int(global_visit_slot),
+                self._SEED_TAG,
+            )
+        ).digest()
+        return int.from_bytes(digest[:8], byteorder="big", signed=False)
+
+    def noise_for_visit(
+        self,
+        global_visit_slot: int,
+        *,
+        device: Any,
+    ) -> Any:
+        """Return one CPU-generated, device-independent ``[50,32]`` sample."""
+
+        import torch
+
+        generator = torch.Generator(device="cpu").manual_seed(
+            self._visit_seed(global_visit_slot)
+        )
+        value = torch.randn(
+            self.action_horizon,
+            self.padded_action_dim,
+            generator=generator,
+            dtype=torch.float32,
+        )
+        return value.to(device=device, non_blocking=True)
+
+    def identity_for_visits(
+        self,
+        start_global_visit: int,
+        stop_global_visit: int,
+    ) -> dict[str, Any]:
+        if not 0 <= start_global_visit <= stop_global_visit:
+            raise WriterModelError("invalid Writer flow-noise visit interval")
+        digest = hashlib.sha256()
+        for visit in range(start_global_visit, stop_global_visit):
+            digest.update(
+                struct.pack(
+                    ">2Q",
+                    visit,
+                    self._visit_seed(visit),
+                )
+            )
+        return {
+            "writer_flow_noise_seed": self.seed,
+            "start_global_visit": start_global_visit,
+            "stop_global_visit": stop_global_visit,
+            "action_horizon": self.action_horizon,
+            "padded_action_dim": self.padded_action_dim,
+            "identity_sha256": digest.hexdigest(),
         }

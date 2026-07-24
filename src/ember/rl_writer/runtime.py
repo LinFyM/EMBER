@@ -54,7 +54,7 @@ from ember.writer.data import TeacherVideoSchedule
 from ember.writer.feature_cache import WriterFeatureStore
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.model import (
-    ACTION_MEMORY_WRITER_CONSTRUCTOR_KEYS,
+    ACTION_FORECAST_WRITER_CONSTRUCTOR_KEYS,
     CompleteLoRAWriter,
     build_lora_tensor_specs,
 )
@@ -114,7 +114,7 @@ def _fresh_writer(
     values = {
         key: value
         for key, value in as_config["writer"].items()
-        if key in ACTION_MEMORY_WRITER_CONSTRUCTOR_KEYS
+        if key in ACTION_FORECAST_WRITER_CONSTRUCTOR_KEYS
     }
     seed = int(config["optimization"]["seed"])
     fork_devices = [device] if device.type == "cuda" else []
@@ -122,10 +122,12 @@ def _fresh_writer(
         torch.manual_seed(seed)
         if device.type == "cuda":
             torch.cuda.manual_seed(seed)
+        bridge = policy.model.paligemma_with_expert
         writer = CompleteLoRAWriter(
             build_lora_tensor_specs(template),
             template_state=template,
-            action_in_projection=policy.model.action_in_proj,
+            paligemma_model=bridge.paligemma.model.language_model,
+            expert_model=bridge.gemma_expert.model,
             **values,
         ).to(device)
     names = sorted(name for name, value in writer.named_parameters() if value.requires_grad)

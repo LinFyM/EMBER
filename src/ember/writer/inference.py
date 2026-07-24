@@ -33,28 +33,31 @@ from ember.writer.as_contract import (
     writer_stage,
 )
 from ember.writer.checkpoint import validate_writer_checkpoint_files
-from ember.pi05_processing import Pi05PureLanguageTokenizer
-from ember.writer.data import ActionHiddenVideoStore, WriterTaskAuthority
+from ember.pi05_processing import Pi05ForecastPrefixTokenizer
+from ember.writer.data import (
+    RawTeacherVideoStore,
+    WriterFlowNoiseSchedule,
+    WriterTaskAuthority,
+)
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.model import (
-    ACTION_MEMORY_WRITER_CONSTRUCTOR_KEYS,
+    ACTION_FORECAST_WRITER_CONSTRUCTOR_KEYS,
     CompleteLoRAWriter,
     WriterModelError,
     build_lora_tensor_specs,
 )
 
 
-WRITER_ADAPTER_SCHEMA = "ember_pi05_as_writer_eval_adapter_v1"
-RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_rl_writer_eval_adapter_v1"
+WRITER_ADAPTER_SCHEMA = "ember_pi05_action_forecast_writer_eval_adapter_v1"
+RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_action_forecast_rl_writer_eval_adapter_v1"
 WRITER_ADAPTER_SCHEMAS = {WRITER_ADAPTER_SCHEMA, RL_WRITER_ADAPTER_SCHEMA}
 WRITER_VIDEO_CONDITIONS = {
     "correct",
     "cross_suite_wrong",
-    "generic_correct",
-    "generic_cross_suite_wrong",
+    "shuffled",
+    "reversed",
 }
-GENERIC_WRITER_CONDITIONS = {"generic_correct", "generic_cross_suite_wrong"}
-WRONG_VIDEO_CONDITIONS = {"cross_suite_wrong", "generic_cross_suite_wrong"}
+WRONG_VIDEO_CONDITIONS = {"cross_suite_wrong"}
 WRITER_VIDEO_SCHEDULE = (
     "sha256 first 63 bits of canonical JSON "
     "[ember_pi05_writer_video_v1,seed,suite,task_id,init_state_id] modulo 50"
@@ -184,7 +187,7 @@ def expected_writer_episode_evidence(
     )
     selection_seed = writer_video_selection_seed(seed, suite, task_id, init_state_id)
     return {
-        "schema_version": "ember_pi05_writer_episode_evidence_v2",
+        "schema_version": "ember_pi05_writer_episode_evidence_v3",
         "writer_method": adapter.get("writer_method", "as_writer"),
         "method_arm": adapter["arm"],
         "condition": adapter["video_condition"],
@@ -362,7 +365,7 @@ def build_writer_evaluation_adapter(
         "arm": f"{writer_method}_{video_condition}_video",
         "execution_backend": "per_sample_lora_batched_replan",
         "video_condition": video_condition,
-        "writer_input": "pure task language plus exactly one action-hidden teacher video",
+        "writer_input": "task language plus exactly one raw action-hidden teacher video",
         "config": {"path": str(config_path), "sha256": sha256_file(config_path)},
         "training_run": {
             "path": str(checkpoint.parent.parent),
@@ -403,12 +406,6 @@ def build_writer_evaluation_adapter(
         "writer_forbidden_tensor_inputs": list(forbidden_inputs),
         "teacher_action_values_read_by_evaluator": 0,
     }
-    if video_condition in GENERIC_WRITER_CONDITIONS:
-        result["writer_input"] = (
-            "fixed neutral language perform the demonstrated task plus exactly one "
-            "action-hidden teacher video"
-        )
-        result["writer_language_condition"] = "generic_neutral"
     return result
 
 
@@ -514,7 +511,7 @@ class FrozenWriterTaskAdapter:
         kind = str(evaluation_adapter.get("kind", "as_writer"))
         if kind == "rl_writer":
             raise WriterModelError(
-                "pre-Action-Memory RL-Writer is architecture-incompatible and must "
+                "RL-Writer has not yet been trained under Action-Forecast and must "
                 "be retrained before evaluation"
             )
         if kind != "as_writer":
@@ -539,12 +536,14 @@ class FrozenWriterTaskAdapter:
         writer_values = {
             key: value
             for key, value in config["writer"].items()
-            if key in ACTION_MEMORY_WRITER_CONSTRUCTOR_KEYS
+            if key in ACTION_FORECAST_WRITER_CONSTRUCTOR_KEYS
         }
+        bridge = policy.model.paligemma_with_expert
         writer = CompleteLoRAWriter(
             build_lora_tensor_specs(template),
             template_state=template,
-            action_in_projection=policy.model.action_in_proj,
+            paligemma_model=bridge.paligemma.model.language_model,
+            expert_model=bridge.gemma_expert.model,
             **writer_values,
         ).to(device)
         writer.load_state_dict(
@@ -581,7 +580,7 @@ class FrozenWriterTaskAdapter:
                     expected_bytes=int(record["hdf5"]["bytes"]),
                 )
             )
-        self.store = ActionHiddenVideoStore(
+        self.store = RawTeacherVideoStore(
             authorities,
             frame_stride=int(config["writer"]["frame_stride"]),
             max_open_files=2,
@@ -592,13 +591,10 @@ class FrozenWriterTaskAdapter:
         source_config = read_json(
             REPO_ROOT / str(config["authorities"]["source_base_config"]["path"])
         )
-        self.tokenizer = Pi05PureLanguageTokenizer(
+        self.tokenizer = Pi05ForecastPrefixTokenizer(
             tokenizer_path,
             int(source_config["features"]["tokenizer_max_length"]),
             str(device),
-        )
-        self.generic_language = str(
-            config["conditioning_training"]["generic_writer_language"]
         )
         self.policy = policy
         self.writer = writer
@@ -610,6 +606,7 @@ class FrozenWriterTaskAdapter:
         self.evaluation_adapter = dict(observed)
         self.batched_lora = BatchedLoRAInference(policy, lora)
         self._physical_lora_is_identity = True
+        self._state_cache: dict[tuple[Any, ...], Mapping[str, torch.Tensor]] = {}
 
     @torch.inference_mode()
     def prepare_episode(
@@ -627,42 +624,66 @@ class FrozenWriterTaskAdapter:
             int(row["video_global_task_id"]),
             int(row["teacher_demo_index"]),
         )
-        writer_language = (
-            self.generic_language
-            if self.evaluation_adapter.get("writer_language_condition")
-            == "generic_neutral"
-            else self.language_by_id[int(row["language_global_task_id"])]
+        writer_language = self.language_by_id[int(row["language_global_task_id"])]
+        language_tokens, language_mask, state_positions = self.tokenizer(
+            [writer_language]
         )
-        language_tokens, language_mask = self.tokenizer([writer_language])
         frames = torch.from_numpy(teacher.frames).to(
             self.device, non_blocking=True
         )
         frame_indices = torch.from_numpy(teacher.frame_indices).to(
             self.device, non_blocking=True
         )
+        condition = str(self.evaluation_adapter["video_condition"])
+        if condition == "reversed":
+            frames = frames.flip(0)
+        elif condition == "shuffled":
+            generator = torch.Generator(device="cpu").manual_seed(
+                int(row["teacher_video_selection_seed"])
+            )
+            permutation = torch.randperm(
+                frames.shape[0],
+                generator=generator,
+            ).to(self.device)
+            frames = frames.index_select(0, permutation)
         video_offsets = torch.tensor(
             [0, frames.shape[0]], dtype=torch.long, device=self.device
         )
+        flow_noise = WriterFlowNoiseSchedule(
+            seed=int(row["teacher_video_selection_seed"])
+        ).noise_for_visit(0, device=self.device)[None]
+        cache_key = (
+            int(row["language_global_task_id"]),
+            int(row["video_global_task_id"]),
+            int(row["teacher_demo_index"]),
+            condition,
+            int(row["teacher_video_selection_seed"]),
+        )
         started = time.monotonic()
-        # The Action-Memory encoder must always see the frozen source policy,
+        # The forecast path must always see the frozen source policy,
         # never the task adapter left installed by the preceding rollout.
         copy_task_lora_state_(
             self.policy, self.identity_state, self.lora_contract
         )
         self._physical_lora_is_identity = True
-        with torch.autocast(
-            device_type=self.device.type,
-            dtype=torch.bfloat16,
-            enabled=self.device.type == "cuda",
-        ):
-            state = self.writer(
-                frames,
-                frame_indices,
-                video_offsets,
-                language_tokens,
-                language_mask,
-                policy=self.policy,
-            )
+        state = self._state_cache.get(cache_key)
+        if state is None:
+            with torch.autocast(
+                device_type=self.device.type,
+                dtype=torch.bfloat16,
+                enabled=self.device.type == "cuda",
+            ):
+                state = self.writer(
+                    frames,
+                    frame_indices,
+                    video_offsets,
+                    language_tokens,
+                    language_mask,
+                    state_positions,
+                    flow_noise,
+                    policy=self.policy,
+                )
+            self._state_cache[cache_key] = state
         validate_lora_state(state, self.lora_contract)
         digest = lora_state_sha256(state)
         generation_seconds = time.monotonic() - started

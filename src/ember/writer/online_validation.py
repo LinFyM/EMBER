@@ -10,7 +10,7 @@ from typing import Any, Mapping
 import torch
 import torch.distributed as dist
 
-from ember.pi05_processing import Pi05LiberoProcessor, Pi05PureLanguageTokenizer
+from ember.pi05_processing import Pi05ForecastPrefixTokenizer, Pi05LiberoProcessor
 from ember.pi05_source_checkpoint import (
     DistributedContext,
     barrier,
@@ -23,7 +23,7 @@ from ember.pi05_source_checkpoint import (
 )
 from ember.pi05_source_contract import append_jsonl
 from ember.writer.as_contract import REPO_ROOT
-from ember.writer.data import ActionHiddenVideoStore, FunctionalQueryDataset
+from ember.writer.data import FunctionalQueryDataset, RawTeacherVideoStore
 from ember.writer.model import CompleteLoRAWriter, WriterModelError
 from ember.writer.validation import (
     _condition_state,
@@ -50,8 +50,8 @@ class OnlineWriterValidation:
     manifest: dict[str, Any]
     tasks: tuple[Any, ...]
     dataset: FunctionalQueryDataset
-    store: ActionHiddenVideoStore
-    tokenizer: Pi05PureLanguageTokenizer
+    store: RawTeacherVideoStore
+    tokenizer: Pi05ForecastPrefixTokenizer
     output_dir: Path
     local_keys: tuple[tuple[int, int], ...]
 
@@ -153,14 +153,14 @@ def prepare_online_writer_validation(
         action_chunk_size=int(panel["sampling"]["action_chunk_size"]),
     )
     manifest = build_validation_loss_manifest(dataset, panel)
-    store = ActionHiddenVideoStore(
+    store = RawTeacherVideoStore(
         tasks,
         frame_stride=int(training["writer"]["frame_stride"]),
     )
     source_config = read_json(
         REPO_ROOT / str(training["authorities"]["source_base_config"]["path"])
     )
-    tokenizer = Pi05PureLanguageTokenizer(
+    tokenizer = Pi05ForecastPrefixTokenizer(
         tokenizer_path,
         int(source_config["features"]["tokenizer_max_length"]),
         str(context.device),
@@ -229,6 +229,7 @@ def _online_local_rows(
             tokenizer=validation.tokenizer,
             task=tasks[task_id],
             demo_index=int(rows[0]["teacher_demo_index"]),
+            flow_noise_seed=int(rows[0]["policy_noise_seed"]),
             device=context.device,
         )
         losses = _group_loss(

@@ -239,3 +239,82 @@ class Pi05PureLanguageTokenizer:
         if not bool(masks.any(dim=1).all()):
             raise ValueError("pure-language tokenization produced an empty task")
         return tokens, masks
+
+
+class Pi05ForecastPrefixTokenizer:
+    """Build the native pi0.5 prompt with differentiable state-token slots.
+
+    The returned token IDs preserve the native ``Task/State/Action`` text
+    layout.  Exactly eight placeholder positions are marked for replacement by
+    the Writer's continuous virtual-state embeddings before PaliGemma.
+    """
+
+    STATE_SLOTS = 8
+
+    def __init__(self, tokenizer_path: Path, max_length: int, device: str) -> None:
+        import sentencepiece
+
+        if max_length <= self.STATE_SLOTS:
+            raise ValueError("forecast-prefix tokenizer length is too small")
+        self._tokenizer = sentencepiece.SentencePieceProcessor(
+            model_file=str(tokenizer_path)
+        )
+        self._max_length = int(max_length)
+        self._device = device
+
+    @staticmethod
+    def _clean(task: str) -> str:
+        cleaned = str(task).strip().replace("_", " ").replace("\n", " ")
+        if not cleaned:
+            raise ValueError("Writer task language must be non-empty")
+        return cleaned
+
+    def __call__(self, tasks: Sequence[str]) -> tuple[Any, Any, Any]:
+        import torch
+
+        if not tasks or isinstance(tasks, (str, bytes)):
+            raise ValueError("forecast-prefix tokenizer requires a task sequence")
+        token_rows: list[list[int]] = []
+        state_rows: list[list[int]] = []
+        for task in tasks:
+            prefix = self._tokenizer.encode(
+                f"Task: {self._clean(task)}, State: ",
+                add_bos=True,
+            )
+            suffix = self._tokenizer.encode(";\nAction: ", add_bos=False)
+            state_start = len(prefix)
+            values = [
+                *prefix,
+                *([0] * self.STATE_SLOTS),
+                *suffix,
+            ]
+            if len(values) > self._max_length:
+                raise ValueError(
+                    "Writer forecast prefix exceeds the sealed tokenizer length: "
+                    f"{len(values)} > {self._max_length}"
+                )
+            token_rows.append(values)
+            state_rows.append(
+                list(range(state_start, state_start + self.STATE_SLOTS))
+            )
+
+        tokens = torch.zeros(
+            (len(token_rows), self._max_length),
+            dtype=torch.long,
+            device=self._device,
+        )
+        masks = torch.zeros_like(tokens, dtype=torch.bool)
+        state_positions = torch.empty(
+            (len(token_rows), self.STATE_SLOTS),
+            dtype=torch.long,
+            device=self._device,
+        )
+        for row, values in enumerate(token_rows):
+            tokens[row, : len(values)] = torch.as_tensor(
+                values, dtype=torch.long, device=self._device
+            )
+            masks[row, : len(values)] = True
+            state_positions[row] = torch.as_tensor(
+                state_rows[row], dtype=torch.long, device=self._device
+            )
+        return tokens, masks, state_positions

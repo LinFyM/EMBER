@@ -169,13 +169,18 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 [`docs/action_forecast_writer_handoff.md`](docs/action_forecast_writer_handoff.md)
 为准；下列任务覆盖上方 Action-Memory 的已完成历史，不恢复旧 checkpoint。
 
-- [ ] 原位替换旧 Action-Memory owner，完成 imagined-state、VL/Action
+- [x] 原位替换旧 Action-Memory owner，完成 imagined-state、VL/Action
   Meta-LoRA、完整10-flow action plans、absolute-time Plan/Revision、
   variable-time temporal encoder和one-way LoRA query decoder。
-- [ ] 退役旧 source/config/schema/tests，确认活动树只有一个 AS runner和一个
-  Writer architecture；真实参数量接近rank128 Source-SFT的`10,297,344`。
-- [ ] 在GPU0–3实测并封存per-rank action-query batch、
-  `frame_microbatch_size`、stride5/10和评测并发/缓存参数。
+- [x] 退役旧 source/config/schema/tests，确认活动树只有一个 AS runner和一个
+  Writer architecture；真实Writer参数量为`10,161,217`，是rank128
+  Source-SFT `10,297,344`的`98.68%`。
+- [x] 在GPU0–3实测并封存训练效率参数：stride=`5`、
+  `frame_microbatch_size=32`、per-rank action-query batch=`16`。stride10仅有
+  单步参考且owner决定不再扩测；frame-microbatch64在一rank达到
+  `80,821/81,920 MiB`并失去前进，已明确拒绝。
+- [ ] 用正式Action-Forecast checkpoint实测评测并发/缓存参数；不得用早期
+  checkpoint运行wrong/shuffled/reversed，机制诊断只对最终observed-best执行。
 - [ ] 按约30分钟一段、每段四个checkpoint推进四卡AS；优先评测每段第2/4点，
   必要时补1/3点，定位paired 8×50 validation最佳checkpoint。
 - [ ] 对observed-best完成correct/wrong/shuffled/reversed视频证据；目标是不明显

@@ -435,3 +435,30 @@
   prompt。当前prompt明确source/SFT已封存、只用GPU0–3、AS/RL无总时限和上述
   强下降停止标准，并加入owner最新效率要求：仅做防止无效实验/不可恢复浪费的
   最小shape/gradient/identity/freeze/resume检查，通过后立即GPU profile/训练。
+
+## Action-Forecast Writer实现与formal训练收口（2026-07-24）
+
+- 新session已将旧Action-Memory活动owner原位替换为唯一Action-Forecast路径：
+  imagined-state/PaliGemma融合、Writer内部VL和Action Meta-LoRA、每帧完整
+  10-step flow action plans、同绝对时刻Plan/Revision tokens、变长temporal
+  Transformer及单向LoRA query decoder均已接入AS训练、checkpoint、inference和
+  canonical evaluator。旧source/config/schema/tests及独立specificity runner
+  已删除；历史文档和artifact只保留provenance，不再是可执行入口。
+- Writer真实训练参数为`10,161,217`，相当于rank128 Source-SFT
+  `10,297,344`的`98.68%`；生成的public task adapter保持完整38-target
+  rank16合同，共76 tensors、`1,287,168` scalars，初始化为严格functional
+  identity，source policy trainable parameter count为0。
+- GPU0–3真实profile已封存stride5、frame-microbatch32、每rank batch16。
+  17-step长profile覆盖全部24个train tasks与1088 action queries，steady
+  step中位数/p95为`6.1183/9.0442s`，吞吐中位数`10.4611 queries/s`，最大
+  allocated/reserved为`67.08/70.18GB`。frame-microbatch64令rank1达到
+  `80,821/81,920 MiB`并失去前进，已拒绝；owner决定不再扩测stride10。
+- profile checkpoint完成step1→2 exact-resume；flow-noise cursor、sampler、
+  optimizer/scheduler及各rank RNG均恢复，contract SHA256为
+  `c7a3dc88ae840d386b9d825e6f71f2f9613fccf0f37adf85b29c5a577d0ecd68`。
+  两组提交前focused tests分别为`30 passed`和`51 passed`，相关Python模块
+  `py_compile`及`git diff --check`通过。
+- formal AS配置现为四卡、每rank batch16、每75 steps checkpoint、每300 steps
+  exact-resume segment。首段之后只先评测step150/300 correct-video；owner明确
+  撤销前置的单卡最小顺序诊断，wrong/shuffled/reversed只能在充分训练、找到
+  validation observed-best且验证明显稳健峰后下降之后，对最佳checkpoint执行。

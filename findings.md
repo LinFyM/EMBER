@@ -545,6 +545,33 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   或18×10 hidden states。
 - 320个LoRA queries通过显式单向cross-attention读取procedural memory；普通
   conditional bias保留，final factor heads零初始化保证public task LoRA identity。
-  预算约10.27M，须用真实实现校准到rank128 SFT的10.297M附近。
+  实现后Writer为`10,161,217`个训练参数，是rank128 Source-SFT
+  `10,297,344`的`98.68%`；public rank16 LoRA仍为76 tensors、
+  `1,287,168` scalars。
 - 详细实现、profile、训练和RL接续合同见
   `docs/action_forecast_writer_handoff.md`；它覆盖旧架构活动口径。
+
+## Action-Forecast Writer实现与训练profile（2026-07-24）
+
+- canonical路径已原位完成：冻结π0.5/PaliGemma参数但保留到Writer的梯度路径；
+  每帧只读`agentview_rgb`与正确task language，构造imagined-state并经VL/Action
+  Meta-LoRA执行完整10-step flow，随后用同绝对控制时刻Plan/Revision tokens、
+  变长RoPE temporal encoder与单向query decoder生成完整rank16 LoRA。旧
+  `action_memory.py`、`conditioning.py`、旧活动config/schema/tests及独立
+  specificity runner均已退役。
+- 四卡真实forward/backward profile封存训练选择为stride5、
+  frame-microbatch32、每rank 16 action queries。覆盖全部24个train tasks的
+  17-step长profile共消费1088 queries；稳定step wall中位数`6.1183s`、
+  p95 `9.0442s`，global query throughput中位数`10.4611/s`，峰值
+  allocated/reserved为`67,078,778,368/70,183,288,832` bytes，未见OOM或
+  nonfinite loss/gradient。
+- frame-microbatch64不是可用余量：rank1实测占用`80,821/81,920 MiB`后停止
+  前进而其余DDP ranks仍在等待，零step完成，故选择32。stride10只保留单步
+  吞吐参考；owner指定stride5符合真实控制节奏且无需继续扩测。
+- exact-resume已完成step1→2并恢复optimizer、scheduler、sampler、flow-noise
+  cursor与四rank RNG；resume contract SHA256为
+  `c7a3dc88ae840d386b9d825e6f71f2f9613fccf0f37adf85b29c5a577d0ecd68`。
+- 正式AS合同为四卡、每段300 steps、每75 steps一个checkpoint；`12000`只是
+  可延续的预声明schedule horizon，不是科学停止点。训练期间只对每段第2/4点
+  做correct-video validation并按趋势补点；wrong/shuffled/reversed严格推迟到
+  充分训练并选出observed-best以后，不能再把单卡最小诊断前置。

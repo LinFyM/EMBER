@@ -146,11 +146,11 @@ def test_writer_video_schedule_and_wrong_map_are_order_independent() -> None:
     roles = {key: "validation" for key in keys}
     forward = _task_video_mapping(keys, roles, "cross_suite_wrong")
     reverse = _task_video_mapping(tuple(reversed(keys)), roles, "cross_suite_wrong")
-    generic_correct = _task_video_mapping(keys, roles, "generic_correct")
-    generic_wrong = _task_video_mapping(keys, roles, "generic_cross_suite_wrong")
+    shuffled = _task_video_mapping(keys, roles, "shuffled")
+    reversed_video = _task_video_mapping(keys, roles, "reversed")
     assert forward == reverse
-    assert generic_wrong == forward
-    assert all(row["suite"] == row["video_suite"] for row in generic_correct)
+    assert shuffled == reversed_video
+    assert all(row["suite"] == row["video_suite"] for row in shuffled)
     assert len({row["video_global_task_id"] for row in forward}) == len(keys)
     assert all(row["suite"] != row["video_suite"] for row in forward)
     assert all(row["language_split_role"] == row["video_split_role"] for row in forward)

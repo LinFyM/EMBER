@@ -92,8 +92,8 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
         choices=(
             "correct",
             "cross_suite_wrong",
-            "generic_correct",
-            "generic_cross_suite_wrong",
+            "shuffled",
+            "reversed",
         ),
     )
     parser.add_argument("--rl-writer-config", type=Path)
@@ -104,8 +104,8 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
         choices=(
             "correct",
             "cross_suite_wrong",
-            "generic_correct",
-            "generic_cross_suite_wrong",
+            "shuffled",
+            "reversed",
         ),
     )
     parser.add_argument("--source-sft-config", type=Path)

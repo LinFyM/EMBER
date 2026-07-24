@@ -1,4 +1,4 @@
-"""Action-Memory generator for a complete task-specific PI05 LoRA."""
+"""Canonical Action-Forecast Writer for a complete task-specific PI05 LoRA."""
 
 from __future__ import annotations
 
@@ -8,29 +8,42 @@ from typing import Mapping
 
 import torch
 
-from ember.writer.action_memory import Pi05ActionMemoryEncoder
-from ember.writer.temporal import ActionMemoryTemporalEncoder, RMSNorm
+from ember.writer.action_forecast import Pi05ActionForecastEncoder
+from ember.writer.temporal import (
+    LoRAQueryDecoder,
+    PlanRevisionEncoder,
+    RMSNorm,
+    VariableTimeTemporalEncoder,
+)
 
 
 class WriterModelError(RuntimeError):
     """Raised when the Writer input or sealed LoRA contract is inconsistent."""
 
 
-ACTION_MEMORY_WRITER_CONSTRUCTOR_KEYS = frozenset(
+ACTION_FORECAST_WRITER_CONSTRUCTOR_KEYS = frozenset(
     {
-        "expert_layers",
-        "memory_slots",
-        "expert_width",
-        "action_code_width",
-        "meta_lora_rank",
-        "hidden_dim",
-        "attention_heads",
+        "image_width",
+        "state_width",
+        "state_coordinates",
+        "state_heads",
+        "state_blocks",
+        "state_fourier_width",
+        "state_embed_hidden",
+        "vl_meta_lora_rank",
+        "action_meta_lora_rank",
+        "frame_microbatch_size",
+        "num_flow_steps",
+        "action_horizon",
+        "padded_action_dim",
+        "output_action_dim",
+        "temporal_width",
+        "temporal_heads",
         "temporal_blocks",
-        "temporal_memory_tokens",
-        "decoder_hidden_dim",
-        "frame_microbatch",
-        "frame_stride",
-        "conditional_linear_bias",
+        "query_decoder_blocks",
+        "factor_hidden_width",
+        "initialization_seed",
+        "activation_checkpointing",
     }
 )
 
@@ -105,144 +118,144 @@ def build_lora_tensor_specs(
 
 
 class FactorHead(torch.nn.Module):
-    """Decode one rank-slot state into one LoRA factor row or column."""
+    """Decode one conditionally updated rank-slot state into one LoRA row."""
 
-    def __init__(
-        self,
-        input_width: int,
-        hidden_width: int,
-        output_width: int,
-        *,
-        linear_bias: bool,
-    ) -> None:
+    def __init__(self, input_width: int, hidden_width: int, output_width: int) -> None:
         super().__init__()
-        self.memory_score = torch.nn.Linear(input_width, 1, bias=False)
+        if min(input_width, hidden_width, output_width) <= 0:
+            raise WriterModelError("invalid LoRA factor-head dimensions")
         self.network = torch.nn.Sequential(
             RMSNorm(input_width),
-            torch.nn.Linear(input_width, hidden_width, bias=linear_bias),
+            torch.nn.Linear(input_width, hidden_width),
             torch.nn.GELU(),
-            torch.nn.Linear(hidden_width, output_width, bias=linear_bias),
+            torch.nn.Linear(hidden_width, output_width),
         )
-        # The physical task adapter begins exactly at its identity template.
         torch.nn.init.zeros_(self.network[-1].weight)
-        if self.network[-1].bias is not None:
-            torch.nn.init.zeros_(self.network[-1].bias)
+        torch.nn.init.zeros_(self.network[-1].bias)
 
     def forward(self, value: torch.Tensor) -> torch.Tensor:
         if value.ndim < 3:
-            raise WriterModelError("factor head lost temporal memory tokens")
-        scores = self.memory_score(value).squeeze(-1)
-        pooled = torch.sum(
-            torch.softmax(scores, dim=-1)[..., None] * value,
-            dim=-2,
-        )
-        return self.network(pooled)
+            raise WriterModelError("factor head lost its rank-slot dimension")
+        return self.network(value)
 
 
 class CompleteLoRAWriter(torch.nn.Module):
-    """Generate a complete rank-16 task LoRA from language and one raw video.
+    """Map task language and one raw video to the sealed rank-16 task LoRA."""
 
-    Frozen PaliGemma jointly grounds each sampled frame with the task language.
-    Sixteen learned Action-Expert memory tokens then expose all 18 expert-layer
-    states.  A variable-length temporal encoder and direct factor heads map
-    those content-derived states to the sealed PI05 task-LoRA space.
-    """
-
+    EXPERT_LAYERS = 18
+    PUBLIC_LORA_RANK = 16
     _EXPERT_MODULE = re.compile(
         r".*gemma_expert\.model\.layers\.([0-9]+)\.self_attn\.(q_proj|v_proj)$"
     )
+    FACTOR_WIDTHS = {
+        "q_a": 1024,
+        "q_b": 2048,
+        "v_a": 1024,
+        "v_b": 256,
+        "action_in_a": 32,
+        "action_in_b": 1024,
+        "action_out_a": 1024,
+        "action_out_b": 32,
+    }
 
     def __init__(
         self,
         tensor_specs: tuple[LoraTensorSpec, ...],
         *,
         template_state: Mapping[str, torch.Tensor],
-        action_in_projection: torch.nn.Module,
-        expert_layers: int,
-        memory_slots: int,
-        expert_width: int,
-        action_code_width: int,
-        meta_lora_rank: int,
-        hidden_dim: int,
-        attention_heads: int,
+        paligemma_model: torch.nn.Module,
+        expert_model: torch.nn.Module,
+        image_width: int,
+        state_width: int,
+        state_coordinates: int,
+        state_heads: int,
+        state_blocks: int,
+        state_fourier_width: int,
+        state_embed_hidden: int,
+        vl_meta_lora_rank: int,
+        action_meta_lora_rank: int,
+        frame_microbatch_size: int,
+        num_flow_steps: int,
+        action_horizon: int,
+        padded_action_dim: int,
+        output_action_dim: int,
+        temporal_width: int,
+        temporal_heads: int,
         temporal_blocks: int,
-        temporal_memory_tokens: int,
-        decoder_hidden_dim: int,
-        frame_microbatch: int,
-        frame_stride: int,
-        conditional_linear_bias: bool,
+        query_decoder_blocks: int,
+        factor_hidden_width: int,
+        initialization_seed: int,
+        activation_checkpointing: bool,
     ) -> None:
         super().__init__()
         if (
             not tensor_specs
             or set(template_state) != {item.name for item in tensor_specs}
-            or min(
-                expert_layers,
-                memory_slots,
-                expert_width,
-                action_code_width,
-                meta_lora_rank,
-                hidden_dim,
-                attention_heads,
-                temporal_blocks,
-                temporal_memory_tokens,
-                decoder_hidden_dim,
-                frame_microbatch,
-                frame_stride,
-            )
-            <= 0
+            or len(paligemma_model.layers) != self.EXPERT_LAYERS
+            or len(expert_model.layers) != self.EXPERT_LAYERS
+            or {item.rank for item in tensor_specs} != {self.PUBLIC_LORA_RANK}
+            or temporal_width != 256
+            or output_action_dim != 7
+            or action_horizon != 50
+            or padded_action_dim != 32
         ):
-            raise WriterModelError("invalid Action-Memory Writer dimensions")
-        ranks = {item.rank for item in tensor_specs}
-        if ranks != {memory_slots}:
-            raise WriterModelError("memory slots must equal the sealed task-LoRA rank")
+            raise WriterModelError("invalid Action-Forecast Writer topology")
         self.tensor_specs = tensor_specs
-        self.expert_layers = int(expert_layers)
-        self.memory_slots = int(memory_slots)
-        self.frame_microbatch = int(frame_microbatch)
-
-        self.action_memory = Pi05ActionMemoryEncoder(
-            action_in_projection=action_in_projection,
-            memory_slots=memory_slots,
-            expert_layers=expert_layers,
-            expert_width=expert_width,
-            action_code_width=action_code_width,
-            meta_rank=meta_lora_rank,
+        self.action_forecast = Pi05ActionForecastEncoder(
+            paligemma_model=paligemma_model,
+            expert_model=expert_model,
+            image_width=image_width,
+            state_width=state_width,
+            state_coordinates=state_coordinates,
+            state_heads=state_heads,
+            state_blocks=state_blocks,
+            state_fourier_width=state_fourier_width,
+            state_embed_hidden=state_embed_hidden,
+            vl_meta_lora_rank=vl_meta_lora_rank,
+            action_meta_lora_rank=action_meta_lora_rank,
+            frame_microbatch_size=frame_microbatch_size,
+            num_flow_steps=num_flow_steps,
+            action_horizon=action_horizon,
+            padded_action_dim=padded_action_dim,
+            output_action_dim=output_action_dim,
+            initialization_seed=initialization_seed,
+            activation_checkpointing=activation_checkpointing,
         )
-        self.task_encoder = ActionMemoryTemporalEncoder(
-            input_width=expert_width,
-            hidden_width=hidden_dim,
-            expert_layers=expert_layers,
-            memory_slots=memory_slots,
-            attention_heads=attention_heads,
-            temporal_blocks=temporal_blocks,
-            temporal_memory_tokens=temporal_memory_tokens,
-            frame_stride=frame_stride,
-            conditional_linear_bias=conditional_linear_bias,
+        self.plan_revision = PlanRevisionEncoder(
+            action_width=output_action_dim,
+            horizon=action_horizon,
+            width=temporal_width,
+            heads=temporal_heads,
+        )
+        self.temporal = VariableTimeTemporalEncoder(
+            width=temporal_width,
+            heads=temporal_heads,
+            blocks=temporal_blocks,
+        )
+        self.query_decoder = LoRAQueryDecoder(
+            width=temporal_width,
+            heads=temporal_heads,
+            blocks=query_decoder_blocks,
+            initialization_seed=initialization_seed + 1,
         )
 
-        expected_heads = {
-            "q_a": 1024,
-            "q_b": 2048,
-            "v_a": 1024,
-            "v_b": 256,
-            "action_in_a": 32,
-            "action_in_b": 1024,
-            "action_out_a": 1024,
-            "action_out_b": 32,
-        }
         self.factor_heads = torch.nn.ModuleDict(
             {
                 name: FactorHead(
-                    hidden_dim,
-                    decoder_hidden_dim,
+                    temporal_width,
+                    factor_hidden_width,
                     width,
-                    linear_bias=conditional_linear_bias,
                 )
-                for name, width in expected_heads.items()
+                for name, width in self.FACTOR_WIDTHS.items()
             }
         )
+        self._register_template_state(tensor_specs, template_state)
 
+    def _register_template_state(
+        self,
+        tensor_specs: tuple[LoraTensorSpec, ...],
+        template_state: Mapping[str, torch.Tensor],
+    ) -> None:
         self._template_buffers: dict[str, str] = {}
         self._decoding: dict[str, tuple[str, int | None]] = {}
         observed_heads: dict[str, int] = {}
@@ -259,12 +272,16 @@ class CompleteLoRAWriter(torch.nn.Module):
             self.register_buffer(buffer_name, value, persistent=True)
             self._template_buffers[item.name] = buffer_name
             self._decoding[item.name] = (key, layer)
-        if observed_heads != expected_heads or observed_layers != set(range(expert_layers)):
+        if (
+            observed_heads != self.FACTOR_WIDTHS
+            or observed_layers != set(range(self.EXPERT_LAYERS))
+        ):
             raise WriterModelError("sealed PI05 LoRA modules changed topology")
 
     @staticmethod
     def _validated_offsets(
-        offsets: torch.Tensor, total: int
+        offsets: torch.Tensor,
+        total: int,
     ) -> tuple[int, ...]:
         if offsets.ndim != 1 or offsets.numel() < 2:
             raise WriterModelError("Writer video offsets are invalid")
@@ -288,40 +305,44 @@ class CompleteLoRAWriter(torch.nn.Module):
             return f"action_out_{factor}", None
         match = self._EXPERT_MODULE.fullmatch(item.module)
         if match is None:
-            raise WriterModelError(f"unsupported PI05 task-LoRA module: {item.module}")
+            raise WriterModelError(
+                f"unsupported PI05 task-LoRA module: {item.module}"
+            )
         layer = int(match.group(1))
-        if not 0 <= layer < self.expert_layers:
+        if not 0 <= layer < self.EXPERT_LAYERS:
             raise WriterModelError("PI05 task-LoRA layer is outside Action Expert")
-        projection = match.group(2)[0]
-        return f"{projection}_{factor}", layer
+        return f"{match.group(2)[0]}_{factor}", layer
 
-    def _pack_trajectories(
-        self,
-        states: torch.Tensor,
+    @staticmethod
+    def _pack_forecasts(
+        plans: torch.Tensor,
         frame_indices: torch.Tensor,
         offsets: tuple[int, ...],
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         batch = len(offsets) - 1
         lengths = tuple(right - left for left, right in zip(offsets, offsets[1:]))
         maximum = max(lengths)
-        packed = states.new_zeros(
-            (
-                batch,
-                maximum,
-                self.expert_layers,
-                self.memory_slots,
-                states.shape[-1],
-            )
+        packed = plans.new_zeros(
+            batch,
+            maximum,
+            plans.shape[1],
+            plans.shape[2],
         )
         indices = torch.zeros(
-            batch, maximum, dtype=torch.long, device=states.device
+            batch,
+            maximum,
+            dtype=torch.long,
+            device=plans.device,
         )
         mask = torch.zeros(
-            batch, maximum, dtype=torch.bool, device=states.device
+            batch,
+            maximum,
+            dtype=torch.bool,
+            device=plans.device,
         )
         for row, (left, right) in enumerate(zip(offsets, offsets[1:])):
             length = right - left
-            packed[row, :length] = states[left:right]
+            packed[row, :length] = plans[left:right]
             indices[row, :length] = frame_indices[left:right]
             mask[row, :length] = True
         return packed, indices, mask
@@ -334,7 +355,9 @@ class CompleteLoRAWriter(torch.nn.Module):
         video_offsets: torch.Tensor,
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
-    ) -> torch.Tensor:
+        state_positions: torch.Tensor,
+        flow_noise: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         offsets = self._validated_offsets(video_offsets, frames.shape[0])
         conditions = len(offsets) - 1
         if (
@@ -345,6 +368,8 @@ class CompleteLoRAWriter(torch.nn.Module):
             or language_tokens.ndim != 2
             or language_tokens.shape[0] != conditions
             or language_mask.shape != language_tokens.shape
+            or state_positions.shape != (conditions, 8)
+            or flow_noise.shape != (conditions, 50, 32)
         ):
             raise WriterModelError("Writer frame-language condition batch changed")
         lengths = torch.tensor(
@@ -353,20 +378,29 @@ class CompleteLoRAWriter(torch.nn.Module):
             device=frames.device,
         )
         condition_ids = torch.repeat_interleave(
-            torch.arange(conditions, device=frames.device), lengths
+            torch.arange(conditions, device=frames.device),
+            lengths,
         )
-        states = self.action_memory(
+        plans = self.action_forecast(
             policy,
             frames,
             condition_ids,
             language_tokens,
             language_mask,
-            frame_microbatch=self.frame_microbatch,
+            state_positions,
+            flow_noise,
         )
-        packed, indices, mask = self._pack_trajectories(
-            states, frame_indices, offsets
+        packed, indices, frame_mask = self._pack_forecasts(
+            plans,
+            frame_indices,
+            offsets,
         )
-        return self.task_encoder(packed, indices, mask)
+        tokens, positions, valid = self.plan_revision(
+            packed,
+            indices,
+            frame_mask,
+        )
+        return self.temporal(tokens, positions, valid), valid
 
     def forward(
         self,
@@ -375,33 +409,36 @@ class CompleteLoRAWriter(torch.nn.Module):
         video_offsets: torch.Tensor,
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
+        state_positions: torch.Tensor,
+        flow_noise: torch.Tensor,
         *,
         policy: torch.nn.Module,
     ) -> dict[str, torch.Tensor]:
-        features = self.encode_task(
+        memory, valid_memory = self.encode_task(
             policy,
             frames,
             frame_indices,
             video_offsets,
             language_tokens,
             language_mask,
+            state_positions,
+            flow_noise,
         )
-        early = features[:, :3].mean(dim=1)
-        late = features[:, -3:].mean(dim=1)
+        expert, action_in, action_out = self.query_decoder(memory, valid_memory)
         result: dict[str, torch.Tensor] = {}
         for item in self.tensor_specs:
             key, layer = self._decoding[item.name]
             if key.startswith("action_in_"):
-                source = early
+                source = action_in
             elif key.startswith("action_out_"):
-                source = late
+                source = action_out
             else:
                 if layer is None:
                     raise WriterModelError("expert LoRA output lost its layer")
-                source = features[:, layer]
+                source = expert[:, layer]
             rows = self.factor_heads[key](source)
             generated = rows.transpose(-1, -2) if item.transpose_output else rows
             template = getattr(self, self._template_buffers[item.name])
             value = generated.to(dtype=template.dtype) + template[None]
-            result[item.name] = value[0] if features.shape[0] == 1 else value
+            result[item.name] = value[0] if memory.shape[0] == 1 else value
         return result

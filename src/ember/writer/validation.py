@@ -23,7 +23,7 @@ from ember.pi05_eval_contract import (
     load_evaluation_authorities,
 )
 from ember.pi05_lora import load_pi05_lora_contract
-from ember.pi05_processing import Pi05LiberoProcessor, Pi05PureLanguageTokenizer
+from ember.pi05_processing import Pi05ForecastPrefixTokenizer, Pi05LiberoProcessor
 from ember.pi05_source_checkpoint import (
     DistributedContext,
     barrier,
@@ -42,13 +42,14 @@ from ember.writer.validation_panel import (
 from ember.writer.as_contract import AS_WRITER_LAUNCH_SCHEMA, REPO_ROOT
 from ember.writer.checkpoint import validate_writer_checkpoint_files
 from ember.writer.data import (
-    ActionHiddenVideoStore,
     FunctionalQueryDataset,
+    RawTeacherVideoStore,
+    WriterFlowNoiseSchedule,
     WriterTaskAuthority,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.model import (
-    ACTION_MEMORY_WRITER_CONSTRUCTOR_KEYS,
+    ACTION_FORECAST_WRITER_CONSTRUCTOR_KEYS,
     CompleteLoRAWriter,
     WriterModelError,
     build_lora_tensor_specs,
@@ -190,15 +191,14 @@ def _build_models(
     writer_values = {
         key: value
         for key, value in training["writer"].items()
-        if key in ACTION_MEMORY_WRITER_CONSTRUCTOR_KEYS
+        if key in ACTION_FORECAST_WRITER_CONSTRUCTOR_KEYS
     }
-    # Pre-bias Action-Memory checkpoints remain diagnosable under their own
-    # immutable run contract; new runs explicitly seal this field as true.
-    writer_values.setdefault("conditional_linear_bias", False)
+    bridge = policy.model.paligemma_with_expert
     writer = CompleteLoRAWriter(
         build_lora_tensor_specs(identity),
         template_state=identity,
-        action_in_projection=policy.model.action_in_proj,
+        paligemma_model=bridge.paligemma.model.language_model,
+        expert_model=bridge.gemma_expert.model,
         **writer_values,
     ).to(context.device)
     writer.eval()
@@ -218,17 +218,22 @@ def _condition_state(
     writer: CompleteLoRAWriter,
     identity: Mapping[str, torch.Tensor],
     lora: Any,
-    store: ActionHiddenVideoStore,
-    tokenizer: Pi05PureLanguageTokenizer,
+    store: RawTeacherVideoStore,
+    tokenizer: Pi05ForecastPrefixTokenizer,
     task: WriterTaskAuthority,
     demo_index: int,
+    flow_noise_seed: int,
     device: torch.device,
 ) -> dict[str, torch.Tensor]:
     video = store.load(task.task_id, demo_index)
-    tokens, masks = tokenizer([task.language])
+    tokens, masks, state_positions = tokenizer([task.language])
     frames = torch.from_numpy(video.frames).to(device, non_blocking=True)
     indices = torch.from_numpy(video.frame_indices).to(device, non_blocking=True)
     offsets = torch.tensor([0, frames.shape[0]], dtype=torch.long, device=device)
+    flow_noise = WriterFlowNoiseSchedule(seed=flow_noise_seed).noise_for_visit(
+        0,
+        device=device,
+    )[None]
     copy_task_lora_state_(policy, identity, lora)
     with torch.inference_mode(), torch.autocast(
         device_type=device.type,
@@ -241,6 +246,8 @@ def _condition_state(
             offsets,
             tokens,
             masks,
+            state_positions,
+            flow_noise,
             policy=policy,
         )
     validate_lora_state(state, lora)
@@ -304,8 +311,8 @@ def _local_rows(
     identity: Mapping[str, torch.Tensor],
     lora: Any,
     tasks: Sequence[WriterTaskAuthority],
-    store: ActionHiddenVideoStore,
-    tokenizer: Pi05PureLanguageTokenizer,
+    store: RawTeacherVideoStore,
+    tokenizer: Pi05ForecastPrefixTokenizer,
     processor: Pi05LiberoProcessor,
     dataset: FunctionalQueryDataset,
     max_groups_per_task: int | None,
@@ -340,6 +347,7 @@ def _local_rows(
                 tokenizer=tokenizer,
                 task=task_by_id[task_id],
                 demo_index=int(rows[0]["teacher_demo_index"]),
+                flow_noise_seed=int(rows[0]["policy_noise_seed"]),
                 device=context.device,
             )
             losses = _group_loss(
@@ -450,7 +458,7 @@ def _finalize_results(
 def evaluate(args: argparse.Namespace) -> None:
     context = initialize_distributed(require_numa=args.mode == "formal")
     dataset: FunctionalQueryDataset | None = None
-    store: ActionHiddenVideoStore | None = None
+    store: RawTeacherVideoStore | None = None
     try:
         panel = load_validation_loss_panel(args.panel_config)
         training_run = args.training_run.resolve()
@@ -484,7 +492,7 @@ def evaluate(args: argparse.Namespace) -> None:
             action_chunk_size=int(panel["sampling"]["action_chunk_size"]),
         )
         manifest = build_validation_loss_manifest(dataset, panel)
-        store = ActionHiddenVideoStore(
+        store = RawTeacherVideoStore(
             tasks,
             frame_stride=int(training["writer"]["frame_stride"]),
         )
@@ -500,7 +508,7 @@ def evaluate(args: argparse.Namespace) -> None:
             int(source_config["features"]["tokenizer_max_length"]),
             str(context.device),
         )
-        tokenizer = Pi05PureLanguageTokenizer(
+        tokenizer = Pi05ForecastPrefixTokenizer(
             args.tokenizer_path,
             int(source_config["features"]["tokenizer_max_length"]),
             str(context.device),

@@ -25,7 +25,7 @@ from ember.writer.model import WriterModelError
 
 
 ROOT = Path(__file__).resolve().parents[1]
-AS_CONFIG = ROOT / "configs/pi05_as_writer_action_memory_v1.json"
+AS_CONFIG = ROOT / "configs/pi05_as_writer_action_forecast_v1.json"
 
 
 def _checkpoint(tmp_path: Path, contract_sha256: str) -> Path:
@@ -188,18 +188,18 @@ def test_as_writer_evaluation_seals_raw_video_authority_and_wrong_map(
         for row in adapter["task_video_mapping"]
     )
 
-    generic = inspect_as_writer_evaluation(
+    shuffled = inspect_as_writer_evaluation(
         config_path=AS_CONFIG,
         checkpoint=checkpoint,
         video_data_root=data_root,
         source=source,
         task_keys=validation_keys,
-        video_condition="generic_correct",
+        video_condition="shuffled",
         video_seed=7,
         require_formal=False,
     )
-    assert generic["writer_language_condition"] == "generic_neutral"
-    assert generic["wrong_video_mapping"] == "identity"
+    assert shuffled["video_condition"] == "shuffled"
+    assert shuffled["wrong_video_mapping"] == "identity"
 
     changed = {**source, "optimizer_step": 999}
     with pytest.raises(WriterModelError, match="authority changed"):

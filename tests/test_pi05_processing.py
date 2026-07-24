@@ -3,46 +3,41 @@ from __future__ import annotations
 import pytest
 import torch
 
-from ember.pi05_processing import Pi05PureLanguageTokenizer
+from ember.pi05_processing import Pi05ForecastPrefixTokenizer
 
 
 class _TokenizerStub:
     def __init__(self) -> None:
-        self.prompts: list[str] = []
+        self.calls: list[tuple[str, bool]] = []
 
-    def encode(self, prompts: list[str], *, add_bos: bool) -> list[list[int]]:
-        assert add_bos is True
-        self.prompts = prompts
-        return [[1, 2, 3], [4, 5]]
+    def encode(self, prompt: str, *, add_bos: bool) -> list[int]:
+        self.calls.append((prompt, add_bos))
+        return [1, 2, 3] if add_bos else [4, 5]
 
 
-def test_writer_language_prompt_contains_no_state_or_other_privileged_fields() -> None:
-    tokenizer = object.__new__(Pi05PureLanguageTokenizer)
+def _tokenizer(max_length: int = 16) -> Pi05ForecastPrefixTokenizer:
+    tokenizer = object.__new__(Pi05ForecastPrefixTokenizer)
     tokenizer._tokenizer = _TokenizerStub()  # type: ignore[attr-defined]
-    tokenizer._max_length = 4  # type: ignore[attr-defined]
+    tokenizer._max_length = max_length  # type: ignore[attr-defined]
     tokenizer._device = "cpu"  # type: ignore[attr-defined]
-    tokens, masks = tokenizer(["pick_up bowl", "open drawer\n"])
+    return tokenizer
 
-    assert tokenizer._tokenizer.prompts == [  # type: ignore[attr-defined]
-        "Task: pick up bowl\n",
-        "Task: open drawer\n",
+
+def test_forecast_prompt_preserves_native_layout_with_eight_virtual_slots() -> None:
+    tokenizer = _tokenizer()
+    tokens, masks, positions = tokenizer(["pick_up bowl"])
+    assert tokenizer._tokenizer.calls == [  # type: ignore[attr-defined]
+        ("Task: pick up bowl, State: ", True),
+        (";\nAction: ", False),
     ]
-    assert all(
-        forbidden not in "".join(tokenizer._tokenizer.prompts).lower()  # type: ignore[attr-defined]
-        for forbidden in ("state:", "action:", "reward", "terminal", "proprio")
-    )
-    assert tokens.tolist() == [[1, 2, 3, 0], [4, 5, 0, 0]]
-    assert torch.equal(
-        masks,
-        torch.tensor([[True, True, True, False], [True, True, False, False]]),
-    )
+    assert positions.tolist() == [[3, 4, 5, 6, 7, 8, 9, 10]]
+    assert tokens.shape == masks.shape == (1, 16)
+    assert int(masks.sum()) == 13
+    assert torch.equal(tokens[0, :3], torch.tensor([1, 2, 3]))
+    assert torch.equal(tokens[0, 11:13], torch.tensor([4, 5]))
 
 
-def test_writer_language_prompt_fails_closed_instead_of_truncating() -> None:
-    tokenizer = object.__new__(Pi05PureLanguageTokenizer)
-    tokenizer._tokenizer = _TokenizerStub()  # type: ignore[attr-defined]
-    tokenizer._max_length = 2  # type: ignore[attr-defined]
-    tokenizer._device = "cpu"  # type: ignore[attr-defined]
-
+def test_forecast_prompt_fails_closed_instead_of_truncating() -> None:
+    tokenizer = _tokenizer(max_length=12)
     with pytest.raises(ValueError, match="exceeds the sealed tokenizer length"):
-        tokenizer(["pick up bowl", "open drawer"])
+        tokenizer(["pick up bowl"])

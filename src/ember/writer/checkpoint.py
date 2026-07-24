@@ -22,13 +22,19 @@ from ember.pi05_source_checkpoint import (
     sha256_file,
     write_json_atomic,
 )
-from ember.writer.data import MixedTaskBatchSampler, TeacherVideoSchedule
+from ember.writer.data import (
+    MixedTaskBatchSampler,
+    TeacherVideoSchedule,
+    WriterFlowNoiseSchedule,
+)
 from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 
-AS_WRITER_CHECKPOINT_SCHEMA = "ember_pi05_as_writer_checkpoint_v1"
-AS_WRITER_TRAINER_STATE_SCHEMA = "ember_pi05_as_writer_trainer_state_v1"
-AS_WRITER_RANK_STATE_SCHEMA = "ember_pi05_as_writer_rank_state_v1"
+AS_WRITER_CHECKPOINT_SCHEMA = "ember_pi05_action_forecast_writer_checkpoint_v1"
+AS_WRITER_TRAINER_STATE_SCHEMA = (
+    "ember_pi05_action_forecast_writer_trainer_state_v1"
+)
+AS_WRITER_RANK_STATE_SCHEMA = "ember_pi05_action_forecast_writer_rank_state_v1"
 
 
 def _rng_state(context: DistributedContext) -> dict[str, Any]:
@@ -76,6 +82,7 @@ def _write_rank_state(
     context: DistributedContext,
     sampler: MixedTaskBatchSampler,
     video_schedule: TeacherVideoSchedule,
+    flow_noise_schedule: WriterFlowNoiseSchedule,
     saved_rng: Mapping[str, Any],
     conditions_per_optimizer_step: int,
 ) -> None:
@@ -91,6 +98,7 @@ def _write_rank_state(
             "per_rank_batch_cycle": sampler.per_rank_batch_cycle,
             "sampler_seed": sampler.seed,
             "teacher_video_seed": video_schedule.seed,
+            "writer_flow_noise_seed": flow_noise_schedule.seed,
             "independent_conditions_per_optimizer_step": (
                 conditions_per_optimizer_step
             ),
@@ -111,6 +119,7 @@ def _write_shared_state(
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     sampler: MixedTaskBatchSampler,
     video_schedule: TeacherVideoSchedule,
+    flow_noise_schedule: WriterFlowNoiseSchedule,
     contract: Mapping[str, Any],
     require_full_coverage: bool,
     metrics_rows: int,
@@ -144,6 +153,10 @@ def _write_shared_state(
         0,
         data_stop_step,
     )
+    flow_noise = flow_noise_schedule.identity_for_visits(
+        0,
+        data_stop_step * sampler.world_size,
+    )
     if require_full_coverage and (
         any(len(episodes) != sampler.episodes_per_task for episodes in coverage.values())
         or schedule["min_unique_videos_per_task"] != len(video_schedule.demo_indices)
@@ -151,6 +164,7 @@ def _write_shared_state(
         raise WriterModelError("final AS-Writer checkpoint lacks full data coverage")
     consumed = {
         **schedule,
+        "writer_flow_noise": flow_noise,
         "declared_task_count": len(coverage),
         "tasks_with_action_signal": sum(bool(episodes) for episodes in coverage.values()),
         "min_action_episodes_per_task": min(map(len, coverage.values())),
@@ -191,6 +205,7 @@ def save_writer_checkpoint(
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     sampler: MixedTaskBatchSampler,
     video_schedule: TeacherVideoSchedule,
+    flow_noise_schedule: WriterFlowNoiseSchedule,
     contract: dict[str, Any],
     mode: str,
     metrics_rows: int,
@@ -224,6 +239,7 @@ def save_writer_checkpoint(
             context=context,
             sampler=sampler,
             video_schedule=video_schedule,
+            flow_noise_schedule=flow_noise_schedule,
             saved_rng=saved_rng,
             conditions_per_optimizer_step=conditions_per_optimizer_step,
         )
@@ -244,6 +260,7 @@ def save_writer_checkpoint(
                 scheduler=scheduler,
                 sampler=sampler,
                 video_schedule=video_schedule,
+                flow_noise_schedule=flow_noise_schedule,
                 contract=contract,
                 require_full_coverage=require_full_coverage,
                 metrics_rows=metrics_rows,
@@ -346,7 +363,7 @@ def initialize_writer_phase(
             writer_record = manifest.get("files", {}).get("writer.safetensors", {})
             if (
                 training.get("schema_version")
-                != "ember_pi05_action_memory_as_writer_launch_v1"
+                != "ember_pi05_action_forecast_as_writer_launch_v1"
                 or training.get("stage", "development") != stage
                 or training.get("source") != dict(source)
                 or training.get("authorities") != dict(authorities)
@@ -392,6 +409,7 @@ def load_writer_checkpoint(
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     sampler_seed: int,
     teacher_video_seed: int,
+    writer_flow_noise_seed: int,
     per_rank_batch_size: int,
     per_rank_batch_cycle: tuple[int, ...],
     conditions_per_optimizer_step: int,
@@ -444,6 +462,7 @@ def load_writer_checkpoint(
         int(trainer["next_step"]) * conditions_per_optimizer_step,
         sampler_seed,
         teacher_video_seed,
+        writer_flow_noise_seed,
     )
     actual = (
         int(rank_state["next_step"]),
@@ -455,6 +474,7 @@ def load_writer_checkpoint(
         int(rank_state.get("next_data_step", -1)),
         int(rank_state["sampler_seed"]),
         int(rank_state["teacher_video_seed"]),
+        int(rank_state["writer_flow_noise_seed"]),
     )
     if (
         rank_state.get("schema_version") != AS_WRITER_RANK_STATE_SCHEMA

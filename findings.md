@@ -501,6 +501,7 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 首轨迹每rank每个task/video condition只用16个action queries，而容量匹配的rank128 SFT每rank为128；两者虽然训练参数约10.12M/10.30M相当，单步functional梯度统计精度并不相当。这是先于改Writer架构需要消除的混杂。
 - 修正保持Writer、16 memory tokens、Meta-LoRA、temporal/layer/slot、rank16输出LoRA和信息墙全部不变：一次生成adapter后，将128 queries拆成8个16-query policy microbatches；每个microbatch独立求adapter梯度，按真实query数加权平均，再只对同一Writer图反传一次。峰值显存保持原batch16量级，计算量约增至8次policy forward。
 - 该行为仍由现有`ember.writer.as_step`和同一canonical runner拥有，没有并行入口。normal以及已有contrast模式都复用同一微批机制；paired contrast仍在整组microbatch前后恢复并核验相同policy RNG。正式配置在真实四卡profile前保持pending。
+- owner随后明确batch size不应成为公平性门槛。最终待profile方案不再用每condition 64 queries去机械匹配SFT；改为四卡每rank顺序累计2个独立conditions、每condition保留16 queries，使每update合计8 conditions/128 queries，与旧八卡AS逻辑单位一致。上面的128-query/condition方案保留为未启动的设计provenance，不进入正式实验。
 
 ## rank128 Source-SFT step100–400训练–validation分叉（2026-07-23）
 

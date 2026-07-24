@@ -153,21 +153,21 @@
   "profile_defaults": {
     "expected_world_size": 4,
     "total_steps": 2,
-    "per_rank_batch_size": 64,
+    "per_rank_batch_size": 16,
     "checkpoint_steps": [2]
   },
   "profile_evidence": {
-    "status": "pending_query_matched_profile",
+    "status": "pending_condition_balanced_profile",
     "selected_run": null,
     "prior_selected_run": "/data/ymdai/outputs/ember/pi05_as_writer_action_memory_bias_profile_r4_b16_580793a_20260723",
     "superseded_eight_rank_run": "/data/ymdai/outputs/ember/pi05_as_writer_action_memory_v1_profile_refactor_20260723",
     "physical_gpu_indices": [0, 1, 2, 3],
     "world_size": 4,
-    "per_rank_batch_size": 64,
+    "per_rank_batch_size": 16,
     "functional_policy_microbatch_size": 16,
     "independent_conditions_per_optimizer_step": 2,
     "global_independent_conditions_per_optimizer_step": 8,
-    "global_policy_samples_per_step": 512,
+    "global_policy_samples_per_step": 128,
     "writer_trainable_parameter_count": 10119297,
     "generated_lora_parameter_count": 1287168,
     "rank128_source_sft_trainable_parameter_count": 10297344,
@@ -183,13 +183,13 @@
       "metrics_sha256": "19b8fd85bf45f668bf95b38faf17767eab9887e41063076eee0da2c6a4abde28",
       "run_summary_sha256": "950ff9957d252af77f3dbdcf21e749b6414997567ad508fc6fa81fc6e78cc3ef"
     },
-    "selection_reason": "Pending a four-rank profile with two independent task/video conditions per rank and optimizer update. Each generated adapter receives 64 independent action queries through four sequential 16-query functional policy microbatches; the update averages eight task/video conditions and 512 global queries without changing the Writer architecture. This is a gradient-stability and condition-coverage choice, not a claim that batch size is a scientific method constraint."
+    "selection_reason": "Pending a four-rank profile with two independent task/video conditions per rank and optimizer update. Each generated adapter receives 16 independent action queries in one functional policy microbatch; the update averages eight task/video conditions and 128 global queries without changing the Writer architecture. This restores the prior eight-rank AS logical condition/query unit efficiently; it does not match Source-SFT batch size or treat batch size as a scientific constraint."
   },
   "formal_run": {
-    "status": "pending_query_matched_profile",
+    "status": "pending_condition_balanced_profile",
     "expected_world_size": 4,
     "total_steps": 2400,
-    "per_rank_batch_size": 64,
+    "per_rank_batch_size": 16,
     "checkpoint_steps": [
       100,
       200,
@@ -220,6 +220,6 @@
     "stage_stop_steps": [800, 1100, 1400, 1700, 2000, 2300, 2400],
     "maximum_wall_clock_minutes": null,
     "budget_role": "no_time_limit_owner_20260723",
-    "selection_rule": "Pending a real four-rank profile, training on GPUs 0,1,2,3 processes two independent task/video conditions per rank and optimizer update. Each condition uses 64 unique action queries as four sequential policy microbatches of 16 against its own generated adapter; gradients are averaged before one optimizer update. The logical update therefore contains eight task/video conditions and 512 global queries without changing the Writer architecture, output LoRA, information wall, or optimizer-step ownership. Batch size is not a scientific gate: prefer a sealed continuation from an existing checkpoint when the changed optimization contract can be represented honestly, and run a fresh control only when needed for attribution. Retain every 100-step checkpoint and measure the pre-sealed task-balanced validation functional-loss panel in the resident process. Continue in 300-step increments only while closed-loop candidates remain underexplored; validation functional loss is only a weak divergence or severe-overfit diagnostic. There is no wall-clock limit."
+    "selection_rule": "Pending a real four-rank profile, training on GPUs 0,1,2,3 processes two independent task/video conditions per rank and optimizer update. Each condition uses 16 unique action queries in one functional policy microbatch against its own generated adapter; gradients are averaged before one optimizer update. The logical update therefore contains eight task/video conditions and 128 global queries, restoring the prior eight-rank AS training unit without changing the Writer architecture, output LoRA, information wall, or optimizer-step ownership. Source-SFT batch size is intentionally not matched and batch size is not a scientific gate. Prefer a sealed continuation from an existing checkpoint when the changed optimization contract can be represented honestly, and run a fresh control only when needed for attribution. Retain every 100-step checkpoint and measure the pre-sealed task-balanced validation functional-loss panel in the resident process. Continue in 300-step increments only while closed-loop candidates remain underexplored; validation functional loss is only a weak divergence or severe-overfit diagnostic. There is no wall-clock limit."
   }
 }

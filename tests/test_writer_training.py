@@ -52,7 +52,7 @@ def test_action_memory_writer_config_seals_architecture_and_information_wall() -
     assert config["data"]["episodes_per_task"] == 50
     assert writer_split_roles(config) == ("train",)
     assert conditioning_cycle(config) == ("normal",)
-    assert batch_size_cycle(64, config) == (64,)
+    assert batch_size_cycle(16, config) == (16,)
     assert (
         config["information_wall"][
             "validation_actions_read_by_training_optimizer"
@@ -152,7 +152,7 @@ def test_formal_runtime_uses_four_rank_query_scaled_stage(
         resume=None,
         skip_data_sha=False,
     )
-    assert resolve_runtime(profile, config, context) == (2, 64, (2,))
+    assert resolve_runtime(profile, config, context) == (2, 16, (2,))
     assert profile.stop_after_step == 2
 
     formal = argparse.Namespace(
@@ -175,7 +175,7 @@ def test_formal_runtime_uses_four_rank_query_scaled_stage(
     expected_checkpoints = tuple(config["formal_run"]["checkpoint_steps"])
     assert resolve_runtime(formal, config, context) == (
         2400,
-        64,
+        16,
         expected_checkpoints,
     )
     assert formal.stop_after_step == 800

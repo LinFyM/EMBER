@@ -366,10 +366,10 @@
 - profile artifact约61MB；正式run到step800保留8个约61MB checkpoint、在线validation rows及原子临时副本，峰值新增低于1GB。当前个人占用约259GB，远低于500GB cap。
 - 配置已封存首段step800、每100步checkpoint与驻留512-query val-loss monitor；允许的后续stop为`1100/1400/1700/2000/2300/2400`。val-loss连续下降则续训，连续上升且train loss仍降则停止；单点不决策，完整8×50 closed-loop覆盖loss选择最终best。
 
-## AS query-matched微批实现待profile（2026-07-23）
+## AS condition-balanced累计实现待profile（2026-07-23）
 
 - canonical `as_step.py`现支持同一generated adapter跨多个policy microbatches复用；128 queries按`16×8`顺序执行、按chunk实际样本数加权loss/adapter-gradient，最后只反传一次Writer。新增聚焦测试覆盖尾部不等长切片和加权梯度等价性；既有normal/contrast owner、checkpoint和sampler cursor未分叉。
-- 配置暂为`pending_query_matched_profile`，formal不能启动。候选profile仍只使用GPU0–3，一卡一rank；global512与rank128 SFT相同，scheduler暂按同一warmup100/decay800以消除样本统计与学习率口径混杂。SFT正式首段运行期间只做代码和CPU测试，不抢占或改写其输出。
+- owner澄清batch size不应成为方法门槛后，候选profile收敛为四卡每rank顺序2个独立conditions、每condition 16 queries，即8 conditions/128 global queries；这恢复旧八卡AS的逻辑训练单位，不再机械匹配rank128 SFT的global512。配置为`pending_condition_balanced_profile`，formal仍不能启动；SFT正式进程期间只做代码和CPU测试，不抢占或改写其输出。
 
 ## 四卡rank128 Source-SFT在线早停与候选评测修复（2026-07-23）
 
@@ -382,6 +382,6 @@
 - 四卡fresh rank128 SFT的完整8-task×50 validation曲线为step100/200/300/400/500/600/700/800=`81/95/68/78/94/99/108/97`。step700是该轨迹当前best，但600/700/800之间的paired差异均未形成明确峰后持续下降；旧八卡step400的`122/400`仍是全局SFT incumbent。
 - 旧八卡8×64与当前四卡4×128都为global batch512，所以同一step的optimizer updates与总queries相同；两个step400 checkpoint也都实际记录`204,800` examples，每task覆盖范围仅相差一个128-example小批，确认训练量大体可比。每次更新内task小批数量不同只作为次要梯度方差信息。四卡step800的updates和queries已经是旧step400的两倍，不能因condition visits相同就称为等价点。后续仍记录拓扑与条件覆盖，但不再因GPU数量或batch变化机械缩放step或从零训练。
 - 当前四卡run已从完整step800 checkpoint在相同四卡合同下exact-resume到step1100，首个新finite metric为step802、loss `0.0867007`、gradient norm `0.0237412`、吞吐`36.26 queries/s`。step900/1000/1100保存后仍以完整closed-loop决定是否继续；functional val loss只作微弱参考。
-- AS低方差实现相应改为每rank每个optimizer update处理2个独立task/video conditions、每condition 64 queries并拆成4个16-query policy microbatches；四卡每update合计仍为8 conditions/512 queries。该设置用于稳定functional训练而非把batch设为科学门槛，真实profile后才决定续现有best或做必要对照。
+- AS累计实现最终采用每rank每optimizer update处理2个独立task/video conditions、每condition 16 queries；四卡每update合计8 conditions/128 queries，与旧八卡AS一致。此前每condition64/global512仅是未启动的SFT-batch-matched提案，已在owner澄清后退役。该设置用于恢复条件覆盖与梯度稳定性而非把batch设为科学门槛，真实profile后优先warm-start现有best。
 - canonical AS runner新增显式`--initialize-writer-checkpoint`阶段初始化：可从已封存且source/authority/Writer/LoRA完全兼容的最佳Writer权重启动新优化阶段，同时重新初始化optimizer、scheduler、sampler和RNG；run contract记录源checkpoint、源step及三类hash，并明确标为warm-start而非exact-resume。这样GPU数或训练统计合同变化时无需重跑0→best，也不伪造跨合同exact-resume。旧qscaled step400 checkpoint已通过只读manifest/architecture/authority兼容检查；是否采用仍由真实低方差profile后决定。
 - evaluator新增受控`6 replicas/GPU, OMP=1`运行profile；它只扩展同一dynamic-queue/persistent-policy owner，不改变task、seed、rows或结果聚合。按既有3 replicas约31GB估算6 replicas仍低于80GB，但必须由下一轮900/1000 checkpoint正式评测实测显存稳定性与有效rollout/s；若OOM或吞吐不优于5，立即退回5并保留failure/profile证据。

@@ -6,7 +6,7 @@ import os
 import re
 import shutil
 import uuid
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -35,6 +35,12 @@ WRITER_LORA_GENERATOR_MARKER_SCHEMA = "ember_pi05_writer_lora_generator_marker_v
 WRITER_LORA_REQUEST_ORDER = (
     "suite/task order from the sealed evaluation contract, then ascending init_state_id"
 )
+WRITER_LORA_VIDEO_KEY_ALGORITHM = (
+    "language-task/video-task/demo/condition/order-transform-v1"
+)
+WRITER_LORA_VIDEO_REQUEST_ORDER = (
+    "first occurrence of each visible Writer input in sealed suite/task/state order"
+)
 WRITER_LORA_ASSIGNMENT = (
     "request_ordinal modulo generator_worker_count; each worker batches its assigned "
     "subsequence in ordinal order"
@@ -47,14 +53,75 @@ class WriterCacheRequest:
     task_id: int
     init_state_id: int
     ordinal: int
+    video_suite: str | None = None
+    video_task_id: int | None = None
+    teacher_demo_index: int | None = None
+    video_condition: str | None = None
+    order_transform: str | None = None
+    writer_flow_noise_seed: int | None = None
+    teacher_video_order_seed: int | None = None
+
+    @property
+    def is_video_keyed(self) -> bool:
+        return self.video_suite is not None
+
+    @property
+    def video_key(self) -> tuple[Any, ...]:
+        if not self.is_video_keyed:
+            return self.suite, self.task_id, self.init_state_id
+        return (
+            self.suite,
+            self.task_id,
+            self.video_suite,
+            self.video_task_id,
+            self.teacher_demo_index,
+            self.video_condition,
+            self.order_transform,
+        )
+
+    def record(self) -> dict[str, Any]:
+        if not self.is_video_keyed:
+            return {
+                "suite": self.suite,
+                "task_id": self.task_id,
+                "init_state_id": self.init_state_id,
+                "ordinal": self.ordinal,
+            }
+        return {
+            "language_suite": self.suite,
+            "language_task_id": self.task_id,
+            "video_suite": self.video_suite,
+            "video_task_id": self.video_task_id,
+            "teacher_demo_index": self.teacher_demo_index,
+            "video_condition": self.video_condition,
+            "order_transform": self.order_transform,
+            "writer_flow_noise_seed": self.writer_flow_noise_seed,
+            "teacher_video_order_seed": self.teacher_video_order_seed,
+            "representative_init_state_id": self.init_state_id,
+            "ordinal": self.ordinal,
+        }
 
     @property
     def entry_id(self) -> str:
         if re.fullmatch(r"[a-z0-9_]+", self.suite) is None:
             raise WriterModelError("Writer cache suite is unsafe")
+        if not self.is_video_keyed:
+            return (
+                f"{self.suite}_task_{self.task_id:02d}_"
+                f"state_{self.init_state_id:03d}"
+            )
+        if (
+            re.fullmatch(r"[a-z0-9_]+", str(self.video_suite)) is None
+            or re.fullmatch(r"[a-z_]+", str(self.video_condition)) is None
+            or re.fullmatch(r"[a-z_]+", str(self.order_transform)) is None
+        ):
+            raise WriterModelError("Writer cache video key is unsafe")
+        digest = canonical_hash(self.record())[:12]
         return (
-            f"{self.suite}_task_{self.task_id:02d}_"
-            f"state_{self.init_state_id:03d}"
+            f"{self.suite}_task_{self.task_id:02d}_video_"
+            f"{self.video_suite}_task_{self.video_task_id:02d}_"
+            f"demo_{self.teacher_demo_index:03d}_{self.video_condition}_"
+            f"{self.order_transform}_{digest}"
         )
 
 
@@ -62,9 +129,69 @@ def is_writer_adapter(adapter: Mapping[str, Any] | None) -> bool:
     return adapter is not None and adapter.get("kind") in {"as_writer", "rl_writer"}
 
 
-def writer_cache_requests(contract: Mapping[str, Any]) -> tuple[WriterCacheRequest, ...]:
+def _cache_key_algorithm(
+    contract: Mapping[str, Any],
+    override: str | None = None,
+) -> str | None:
+    if override is not None:
+        if override != WRITER_LORA_VIDEO_KEY_ALGORITHM:
+            raise WriterModelError("unsupported Writer cache key algorithm")
+        return override
+    descriptor = contract.get("writer_lora_cache")
+    if isinstance(descriptor, Mapping):
+        return descriptor.get("generation_recipe", {}).get("cache_key_algorithm")
+    return None
+
+
+def _video_keyed_request(
+    contract: Mapping[str, Any],
+    *,
+    suite: str,
+    task_id: int,
+    state_id: int,
+    ordinal: int,
+) -> WriterCacheRequest:
+    from ember.writer.inference import expected_writer_episode_evidence
+
+    row = expected_writer_episode_evidence(
+        contract["adapter"],
+        suite=suite,
+        task_id=task_id,
+        init_state_id=state_id,
+        lora_sha256="0" * 64,
+    )
+    condition = str(row["teacher_video_kind"])
+    return WriterCacheRequest(
+        suite=suite,
+        task_id=task_id,
+        init_state_id=state_id,
+        ordinal=ordinal,
+        video_suite=str(row["video_suite"]),
+        video_task_id=int(row["video_task_id"]),
+        teacher_demo_index=int(row["teacher_demo_index"]),
+        video_condition=condition,
+        order_transform=(
+            condition if condition in {"shuffled", "reversed"} else "forward"
+        ),
+        writer_flow_noise_seed=int(row["writer_flow_noise_seed"]),
+        teacher_video_order_seed=int(row["teacher_video_order_seed"]),
+    )
+
+
+def _writer_cache_layout(
+    contract: Mapping[str, Any],
+    *,
+    cache_key_algorithm: str | None,
+) -> tuple[
+    tuple[WriterCacheRequest, ...],
+    dict[tuple[str, int, int], WriterCacheRequest],
+]:
     requests: list[WriterCacheRequest] = []
+    episode_requests: dict[tuple[str, int, int], WriterCacheRequest] = {}
     observed: set[tuple[str, int, int]] = set()
+    video_requests: dict[tuple[Any, ...], WriterCacheRequest] = {}
+    if cache_key_algorithm not in {None, WRITER_LORA_VIDEO_KEY_ALGORITHM}:
+        raise WriterModelError("unsupported Writer cache key algorithm")
     for task in contract.get("tasks", []):
         suite = str(task["suite"])
         task_id = int(task["task_id"])
@@ -80,17 +207,49 @@ def writer_cache_requests(contract: Mapping[str, Any]) -> tuple[WriterCacheReque
             if key in observed:
                 raise WriterModelError("Writer cache requests are duplicated")
             observed.add(key)
-            requests.append(
-                WriterCacheRequest(
+            if cache_key_algorithm is None:
+                request = WriterCacheRequest(
                     suite=suite,
                     task_id=task_id,
                     init_state_id=state_id,
                     ordinal=len(requests),
                 )
-            )
+                requests.append(request)
+            else:
+                candidate = _video_keyed_request(
+                    contract,
+                    suite=suite,
+                    task_id=task_id,
+                    state_id=state_id,
+                    ordinal=len(requests),
+                )
+                request = video_requests.get(candidate.video_key)
+                if request is None:
+                    request = candidate
+                    video_requests[request.video_key] = request
+                    requests.append(request)
+            episode_requests[key] = request
     if not requests:
         raise WriterModelError("Writer cache has no episode requests")
-    return tuple(requests)
+    return tuple(requests), episode_requests
+
+
+def writer_cache_requests(contract: Mapping[str, Any]) -> tuple[WriterCacheRequest, ...]:
+    requests, _ = _writer_cache_layout(
+        contract,
+        cache_key_algorithm=_cache_key_algorithm(contract),
+    )
+    return requests
+
+
+def writer_cache_episode_request_map(
+    contract: Mapping[str, Any],
+) -> dict[tuple[str, int, int], WriterCacheRequest]:
+    _, episode_requests = _writer_cache_layout(
+        contract,
+        cache_key_algorithm=_cache_key_algorithm(contract),
+    )
+    return episode_requests
 
 
 def _cache_identity_payload(
@@ -143,12 +302,18 @@ def build_writer_lora_cache_descriptor(
         "generators_per_gpu": generators_per_gpu,
         "generator_worker_count": generator_worker_count,
         "generation_batch_size": generation_batch_size,
-        "request_order": WRITER_LORA_REQUEST_ORDER,
+        "cache_key_algorithm": WRITER_LORA_VIDEO_KEY_ALGORITHM,
+        "episode_evidence_schema": "ember_pi05_writer_episode_evidence_v4",
+        "request_order": WRITER_LORA_VIDEO_REQUEST_ORDER,
         "assignment": WRITER_LORA_ASSIGNMENT,
         "precision": "bfloat16",
     }
     identity = _cache_identity_payload(contract, generation_recipe)
-    entry_count = len(writer_cache_requests(contract))
+    requests, _ = _writer_cache_layout(
+        contract,
+        cache_key_algorithm=WRITER_LORA_VIDEO_KEY_ALGORITHM,
+    )
+    entry_count = len(requests)
     tensor_bytes = entry_count * lora_parameter_count * torch.bfloat16.itemsize
     return {
         "schema_version": WRITER_LORA_CACHE_SCHEMA,
@@ -230,7 +395,7 @@ def validate_writer_cache_entry_record(
     if not record_path.is_file() or not lora_path.is_file():
         raise WriterModelError(f"Writer cache entry is incomplete: {request.entry_id}")
     record = _validated_payload(record_path, WRITER_LORA_CACHE_ENTRY_SCHEMA)
-    expected_request = asdict(request)
+    expected_request = request.record()
     file_record = record.get("lora_file", {})
     if (
         record.get("cache_identity_sha256") != descriptor["identity_sha256"]
@@ -276,6 +441,17 @@ def write_writer_cache_entry(
     state_sha256 = lora_state_sha256(state)
     if evidence.get("lora_sha256") != state_sha256:
         raise WriterModelError("Writer cache evidence and LoRA state disagree")
+    if request.is_video_keyed:
+        from ember.writer.inference import validate_writer_episode_evidence
+
+        if not validate_writer_episode_evidence(
+            contract["adapter"],
+            evidence,
+            suite=request.suite,
+            task_id=request.task_id,
+            init_state_id=request.init_state_id,
+        ):
+            raise WriterModelError("Writer cache episode evidence changed")
     final = _entry_root(Path(descriptor["root"]), request)
     if final.exists():
         observed = validate_writer_cache_entry_record(contract, request)
@@ -298,7 +474,7 @@ def write_writer_cache_entry(
             "schema_version": WRITER_LORA_CACHE_ENTRY_SCHEMA,
             "cache_identity_sha256": descriptor["identity_sha256"],
             "entry_id": request.entry_id,
-            "request": asdict(request),
+            "request": request.record(),
             "lora_contract_sha256": descriptor["lora_contract_sha256"],
             "lora_state_sha256": state_sha256,
             "lora_file": {

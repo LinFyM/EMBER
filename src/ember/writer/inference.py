@@ -62,6 +62,12 @@ WRITER_VIDEO_SCHEDULE = (
     "sha256 first 63 bits of canonical JSON "
     "[ember_pi05_writer_video_v1,seed,suite,task_id,init_state_id] modulo 50"
 )
+WRITER_EPISODE_EVIDENCE_V3 = "ember_pi05_writer_episode_evidence_v3"
+WRITER_EPISODE_EVIDENCE_V4 = "ember_pi05_writer_episode_evidence_v4"
+WRITER_GENERATION_SEED_SCHEDULE = (
+    "sha256 first 63 bits of canonical JSON: ember_pi05_writer_generation_v1/"
+    "stream/seed/suite/task_id/demo_index"
+)
 
 
 def writer_video_selection_seed(
@@ -95,6 +101,25 @@ def writer_video_demo_index(
         raise WriterModelError("invalid AS-Writer evaluation video count")
     return writer_video_selection_seed(root_seed, suite, task_id, init_state_id) % demo_count
 
+
+def writer_generation_seed(
+    root_seed: int,
+    suite: str,
+    task_id: int,
+    demo_index: int,
+    *,
+    stream: str,
+) -> int:
+    if (
+        root_seed < 0 or suite not in SUITE_ORDER or not 0 <= task_id < 10
+        or demo_index < 0 or stream not in {"flow_noise", "frame_order"}
+    ):
+        raise WriterModelError("invalid AS-Writer generation seed key")
+    encoded = json.dumps(
+        ["ember_pi05_writer_generation_v1", stream, root_seed, suite, task_id, demo_index],
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return int.from_bytes(hashlib.sha256(encoded).digest()[:8], "big") & ((1 << 63) - 1)
 
 def _task_video_mapping(
     task_keys: Sequence[tuple[str, int]],
@@ -164,6 +189,7 @@ def expected_writer_episode_evidence(
     task_id: int,
     init_state_id: int,
     lora_sha256: str,
+    evidence_schema: str = WRITER_EPISODE_EVIDENCE_V4,
 ) -> dict[str, Any]:
     """Build the exact dynamic row fields implied by a sealed adapter contract."""
 
@@ -186,8 +212,13 @@ def expected_writer_episode_evidence(
         seed, suite, task_id, init_state_id, demo_count=count
     )
     selection_seed = writer_video_selection_seed(seed, suite, task_id, init_state_id)
-    return {
-        "schema_version": "ember_pi05_writer_episode_evidence_v3",
+    if evidence_schema not in {
+        WRITER_EPISODE_EVIDENCE_V3,
+        WRITER_EPISODE_EVIDENCE_V4,
+    }:
+        raise WriterModelError("unsupported PI05 Writer episode evidence")
+    result = {
+        "schema_version": evidence_schema,
         "writer_method": adapter.get("writer_method", "as_writer"),
         "method_arm": adapter["arm"],
         "condition": adapter["video_condition"],
@@ -213,6 +244,19 @@ def expected_writer_episode_evidence(
         "pairing_sha256": adapter["pairing_sha256"],
         "lora_sha256": lora_sha256,
     }
+    if evidence_schema == WRITER_EPISODE_EVIDENCE_V4:
+        result.update(
+            {
+                "writer_generation_seed_schedule": WRITER_GENERATION_SEED_SCHEDULE,
+                "writer_flow_noise_seed": writer_generation_seed(
+                    seed, suite, task_id, demo_index, stream="flow_noise"
+                ),
+                "teacher_video_order_seed": writer_generation_seed(
+                    seed, suite, task_id, demo_index, stream="frame_order"
+                ),
+            }
+        )
+    return result
 
 
 def validate_writer_episode_evidence(
@@ -237,6 +281,7 @@ def validate_writer_episode_evidence(
             task_id=task_id,
             init_state_id=init_state_id,
             lora_sha256=str(row.get("lora_sha256", "")),
+            evidence_schema=str(row.get("schema_version", "")),
         )
     except (WriterModelError, TypeError, ValueError):
         return False
@@ -632,7 +677,7 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
             frames = frames.flip(0)
         elif condition == "shuffled":
             generator = torch.Generator(device="cpu").manual_seed(
-                int(row["teacher_video_selection_seed"])
+                int(row["teacher_video_order_seed"])
             )
             permutation = torch.randperm(
                 frames.shape[0],
@@ -640,7 +685,7 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
             ).to(self.device)
             frames = frames.index_select(0, permutation)
         flow_noise = WriterFlowNoiseSchedule(
-            seed=int(row["teacher_video_selection_seed"])
+            seed=int(row["writer_flow_noise_seed"])
         ).noise_for_visit(0, device=self.device)
         return row, frames, frame_indices, writer_language, flow_noise
 

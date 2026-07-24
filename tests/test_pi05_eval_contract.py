@@ -20,6 +20,7 @@ from ember.pi05_eval_contract import (
 )
 from ember.libero_evaluation import sha256_file
 from ember.pi05_source_checkpoint import canonical_hash
+from ember.writer.inference import WRITER_ADAPTER_SCHEMA, task_video_mapping
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -199,15 +200,27 @@ def test_run_contract_hash_detects_tampering(tmp_path: Path) -> None:
     with pytest.raises(Pi05EvaluationError, match="hash changed"):
         load_run_contract(path)
 
+    task_keys = tuple((task.suite, task.task_id) for task in tasks)
+    task_roles = {key: task.split_role for key, task in zip(task_keys, tasks)}
+    correct_mapping = list(task_video_mapping(task_keys, task_roles, "correct"))
+    wrong_mapping = list(
+        task_video_mapping(task_keys, task_roles, "cross_suite_wrong")
+    )
     shared_writer = {
+        "schema_version": WRITER_ADAPTER_SCHEMA,
         "kind": "as_writer",
+        "writer_method": "as_writer",
         "execution_backend": "two_stage_cached_per_sample_lora_batched_replan",
         "config": {
             "path": str(ROOT / "configs/pi05_as_writer_action_forecast_v1.json"),
             "sha256": "b" * 64,
         },
         "training_run": {"run_contract_sha256": "c" * 64},
-        "checkpoint": {"manifest_file_sha256": "d" * 64},
+        "checkpoint": {
+            "cursor": 12,
+            "manifest_file_sha256": "d" * 64,
+            "writer_state_sha256": "f" * 64,
+        },
         "video_data": {"target_data_manifest_file_sha256": "e" * 64},
         "lora_contract_sha256": (
             "da14fb2cdfc6ca575f97ba5d70fd2d0a70efb0a243b5028b6fd728d19b097d87"
@@ -227,10 +240,11 @@ def test_run_contract_hash_detects_tampering(tmp_path: Path) -> None:
         replicas_per_gpu=1,
         command=("evaluate_pi05.py", "prepare"),
         adapter={
-            **shared_writer,
-            "arm": "as_writer_correct_video",
-            "video_condition": "correct",
-            "task_video_mapping_sha256": "2" * 64,
+                **shared_writer,
+                "arm": "as_writer_correct_video",
+                "video_condition": "correct",
+                "task_video_mapping_sha256": canonical_hash(correct_mapping),
+                "task_video_mapping": correct_mapping,
         },
     )
     wrong = build_run_contract(
@@ -245,10 +259,11 @@ def test_run_contract_hash_detects_tampering(tmp_path: Path) -> None:
         replicas_per_gpu=1,
         command=("evaluate_pi05.py", "prepare"),
         adapter={
-            **shared_writer,
-            "arm": "as_writer_cross_suite_wrong_video",
-            "video_condition": "cross_suite_wrong",
-            "task_video_mapping_sha256": "3" * 64,
+                **shared_writer,
+                "arm": "as_writer_cross_suite_wrong_video",
+                "video_condition": "cross_suite_wrong",
+                "task_video_mapping_sha256": canonical_hash(wrong_mapping),
+                "task_video_mapping": wrong_mapping,
         },
     )
     assert correct["paired_control_sha256"] == wrong["paired_control_sha256"]

@@ -12,19 +12,20 @@ import torch
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer.as_contract import REPO_ROOT, load_writer_config
 from ember.writer.evaluation_cache import (
-    WriterCacheRequest,
     assigned_writer_cache_requests,
     load_writer_cache_entry,
     validate_writer_cache_manifest,
     write_generator_marker,
     write_writer_cache_entry,
     writer_cache_entry_is_complete,
+    writer_cache_episode_request_map,
     writer_cache_manifest_path,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.inference import (
     FrozenWriterTaskAdapter,
     PreparedWriterLoRA,
+    expected_writer_episode_evidence,
     inspect_as_writer_evaluation,
     validate_writer_episode_evidence,
 )
@@ -99,26 +100,13 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
 
     def _initialize_cache(self, cache_contract: Mapping[str, Any]) -> None:
         self.cache_contract = dict(cache_contract)
-        requests = (
-            WriterCacheRequest(
-                suite=str(task["suite"]),
-                task_id=int(task["task_id"]),
-                init_state_id=int(state_id),
-                ordinal=ordinal,
-            )
-            for ordinal, (task, state_id) in enumerate(
-                (task, state_id)
-                for task in self.cache_contract["tasks"]
-                for state_id in task["init_state_ids"]
-            )
+        self._request_by_key = writer_cache_episode_request_map(
+            self.cache_contract
         )
-        self._request_by_key = {
-            (request.suite, request.task_id, request.init_state_id): request
-            for request in requests
-        }
         self._state_cache: dict[
-            tuple[str, int, int], PreparedWriterLoRA
+            str, tuple[Mapping[str, torch.Tensor], dict[str, Any]]
         ] = {}
+        self._prepared_cache: dict[tuple[str, int, int], PreparedWriterLoRA] = {}
         self._cache_validated = False
 
     def activate_cache(self) -> None:
@@ -138,13 +126,36 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
         request = self._request_by_key.get(key)
         if request is None:
             raise WriterModelError("rollout episode is outside the Writer LoRA cache")
-        prepared = self._state_cache.get(key)
+        prepared = self._prepared_cache.get(key)
         if prepared is None:
-            state, evidence = load_writer_cache_entry(
-                self.cache_contract,
-                request,
-                lora_contract=self.lora_contract,
-                device=self.device,
+            cached = self._state_cache.get(request.entry_id)
+            if cached is None:
+                cached = load_writer_cache_entry(
+                    self.cache_contract,
+                    request,
+                    lora_contract=self.lora_contract,
+                    device=self.device,
+                )
+                if not validate_writer_episode_evidence(
+                    self.evaluation_adapter,
+                    cached[1],
+                    suite=request.suite,
+                    task_id=request.task_id,
+                    init_state_id=request.init_state_id,
+                ):
+                    raise WriterModelError("cached Writer source evidence changed")
+                self._state_cache[request.entry_id] = cached
+            state, cached_evidence = cached
+            evidence = expected_writer_episode_evidence(
+                self.evaluation_adapter,
+                suite=suite,
+                task_id=task_id,
+                init_state_id=init_state_id,
+                lora_sha256=str(cached_evidence["lora_sha256"]),
+                evidence_schema=str(cached_evidence["schema_version"]),
+            )
+            evidence["writer_generation_seconds"] = float(
+                cached_evidence["writer_generation_seconds"]
             )
             if not validate_writer_episode_evidence(
                 self.evaluation_adapter,
@@ -155,7 +166,7 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
             ):
                 raise WriterModelError("cached Writer episode evidence changed")
             prepared = PreparedWriterLoRA(state=state, evidence=evidence)
-            self._state_cache[key] = prepared
+            self._prepared_cache[key] = prepared
         return prepared
 
 

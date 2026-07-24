@@ -216,8 +216,8 @@
       2300,
       2400
     ],
-    "selected_stop_step": 800,
-    "stage_stop_steps": [800, 1100, 1400, 1700, 2000, 2300, 2400],
+    "selected_stop_step": 300,
+    "stage_stop_steps": [300, 600, 900, 1200, 1500, 1800, 2100, 2400],
     "maximum_wall_clock_minutes": null,
     "budget_role": "no_time_limit_owner_20260723",
     "selection_rule": "Pending a real four-rank profile, training on GPUs 0,1,2,3 processes two independent task/video conditions per rank and optimizer update. Each condition uses 16 unique action queries in one functional policy microbatch against its own generated adapter; gradients are averaged before one optimizer update. The logical update therefore contains eight task/video conditions and 128 global queries, restoring the prior eight-rank AS training unit without changing the Writer architecture, output LoRA, information wall, or optimizer-step ownership. Source-SFT batch size is intentionally not matched and batch size is not a scientific gate. Prefer a sealed continuation from an existing checkpoint when the changed optimization contract can be represented honestly, and run a fresh control only when needed for attribution. Retain every 100-step checkpoint and measure the pre-sealed task-balanced validation functional-loss panel in the resident process. Continue in 300-step increments only while closed-loop candidates remain underexplored; validation functional loss is only a weak divergence or severe-overfit diagnostic. There is no wall-clock limit."

@@ -78,14 +78,15 @@ def test_action_memory_writer_config_seals_architecture_and_information_wall() -
     assert config["profile_defaults"]["expected_world_size"] == 4
     assert config["formal_run"]["expected_world_size"] == 4
     assert config["optimization"]["scheduler"]["decay_steps"] == 800
-    assert config["formal_run"]["selected_stop_step"] == 800
+    assert config["formal_run"]["selected_stop_step"] == 300
     assert config["formal_run"]["stage_stop_steps"] == [
-        800,
-        1100,
-        1400,
-        1700,
-        2000,
-        2300,
+        300,
+        600,
+        900,
+        1200,
+        1500,
+        1800,
+        2100,
         2400,
     ]
 
@@ -178,17 +179,17 @@ def test_formal_runtime_uses_four_rank_query_scaled_stage(
         16,
         expected_checkpoints,
     )
-    assert formal.stop_after_step == 800
-    formal.resume = Path("/tmp/step_00000800")
-    formal.stop_after_step = 1100
+    assert formal.stop_after_step == 300
+    formal.resume = Path("/tmp/step_00000300")
+    formal.stop_after_step = 600
     assert resolve_runtime(formal, config, context)[0] == 2400
-    assert formal.stop_after_step == 1100
+    assert formal.stop_after_step == 600
 
 
 def test_formal_extension_keeps_original_contract_stop() -> None:
     config = load_writer_config(CONFIG)
     args = argparse.Namespace(mode="formal", stop_after_step=1100)
-    assert _contract_stop_step(args, config, 2400) == 800
+    assert _contract_stop_step(args, config, 2400) == 300
     args.mode = "profile"
     assert _contract_stop_step(args, config, 2400) == 1100
 

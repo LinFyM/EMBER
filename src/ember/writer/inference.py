@@ -1,4 +1,4 @@
-"""PI05 AS-Writer evaluation authority and per-rollout LoRA materialization."""
+"""PI05 AS-Writer evaluation authority and per-sample batched LoRA execution."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ from typing import Any, Mapping, Sequence
 import torch
 from safetensors.torch import load_file
 
+from ember.batched_lora import BatchedLoRAInference
 from ember.lora import (
     canonical_contract_sha256,
     copy_task_lora_state_,
@@ -359,7 +360,7 @@ def build_writer_evaluation_adapter(
         "kind": writer_method,
         "writer_method": writer_method,
         "arm": f"{writer_method}_{video_condition}_video",
-        "execution_backend": "materialized_per_rollout_sequential_replan",
+        "execution_backend": "per_sample_lora_batched_replan",
         "video_condition": video_condition,
         "writer_input": "pure task language plus exactly one action-hidden teacher video",
         "config": {"path": str(config_path), "sha256": sha256_file(config_path)},
@@ -497,7 +498,7 @@ class PreparedWriterLoRA:
 
 
 class FrozenWriterTaskAdapter:
-    """Generate one PI05 task LoRA per rollout and install it only for policy calls."""
+    """Generate one PI05 task LoRA per rollout and batch distinct policy adapters."""
 
     def __init__(
         self,
@@ -607,6 +608,8 @@ class FrozenWriterTaskAdapter:
         }
         self.device = device
         self.evaluation_adapter = dict(observed)
+        self.batched_lora = BatchedLoRAInference(policy, lora)
+        self._physical_lora_is_identity = True
 
     @torch.inference_mode()
     def prepare_episode(
@@ -646,6 +649,7 @@ class FrozenWriterTaskAdapter:
         copy_task_lora_state_(
             self.policy, self.identity_state, self.lora_contract
         )
+        self._physical_lora_is_identity = True
         with torch.autocast(
             device_type=self.device.type,
             dtype=torch.bfloat16,
@@ -675,3 +679,29 @@ class FrozenWriterTaskAdapter:
     def install(self, prepared: PreparedWriterLoRA) -> None:
         validate_lora_state(prepared.state, self.lora_contract)
         copy_task_lora_state_(self.policy, prepared.state, self.lora_contract)
+        self._physical_lora_is_identity = False
+
+    @torch.inference_mode()
+    def predict_action_chunk(
+        self,
+        prepared: Sequence[PreparedWriterLoRA],
+        batch: Mapping[str, torch.Tensor],
+        *,
+        noise: torch.Tensor,
+        num_steps: int,
+    ) -> torch.Tensor:
+        """Run one native policy batch with a distinct Writer LoRA per sample."""
+
+        if len(prepared) != int(noise.shape[0]):
+            raise WriterModelError("Writer LoRA batch and policy noise batch differ")
+        if not self._physical_lora_is_identity:
+            copy_task_lora_state_(
+                self.policy, self.identity_state, self.lora_contract
+            )
+            self._physical_lora_is_identity = True
+        with self.batched_lora.activate([item.state for item in prepared]):
+            return self.policy.predict_action_chunk(
+                dict(batch),
+                noise=noise,
+                num_steps=num_steps,
+            )

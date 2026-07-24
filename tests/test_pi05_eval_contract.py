@@ -201,7 +201,7 @@ def test_run_contract_hash_detects_tampering(tmp_path: Path) -> None:
 
     shared_writer = {
         "kind": "as_writer",
-        "execution_backend": "materialized_per_rollout_sequential_replan",
+        "execution_backend": "per_sample_lora_batched_replan",
         "config": {"sha256": "b" * 64},
         "training_run": {"run_contract_sha256": "c" * 64},
         "checkpoint": {"manifest_file_sha256": "d" * 64},

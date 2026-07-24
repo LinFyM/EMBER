@@ -284,9 +284,17 @@ def rollout_shard(
     while any(slot is not None for slot in slots):
         planning = [slot for slot in slots if slot is not None and not slot["action_plan"]]
         if planning:
-            planning_groups = [planning] if task_adapter is None else [[slot] for slot in planning]
+            batched_adapter = (
+                task_adapter is not None
+                and callable(getattr(task_adapter, "predict_action_chunk", None))
+            )
+            planning_groups = (
+                [planning]
+                if task_adapter is None or batched_adapter
+                else [[slot] for slot in planning]
+            )
             for group in planning_groups:
-                if task_adapter is not None:
+                if task_adapter is not None and not batched_adapter:
                     task_adapter.install(group[0]["writer_lora"])
                 processed = [
                     preprocess(libero_policy_input(slot["obs"], str(task["language"])))
@@ -306,8 +314,20 @@ def rollout_shard(
                     device=batch[next(iter(batch))].device,
                 )
                 with torch.inference_mode():
-                    chunks = policy.predict_action_chunk(
-                        batch, noise=noise, num_steps=int(contract["policy"]["num_inference_steps"])
+                    predict = (
+                        policy.predict_action_chunk
+                        if task_adapter is None or not batched_adapter
+                        else task_adapter.predict_action_chunk
+                    )
+                    predict_args = (
+                        (batch,)
+                        if task_adapter is None or not batched_adapter
+                        else ([slot["writer_lora"] for slot in group], batch)
+                    )
+                    chunks = predict(
+                        *predict_args,
+                        noise=noise,
+                        num_steps=int(contract["policy"]["num_inference_steps"]),
                     )
                     actions = postprocess(chunks).detach().cpu().numpy()
                 for slot, plan, seed in zip(group, actions, seeds, strict=True):

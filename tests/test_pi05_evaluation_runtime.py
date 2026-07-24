@@ -496,6 +496,55 @@ def test_writer_adapter_is_prepared_once_and_reinstalled_for_each_replan() -> No
     }
 
 
+def test_writer_adapter_batches_distinct_prepared_loras_for_each_replan() -> None:
+    class FakeBatchedAdapter:
+        def __init__(self) -> None:
+            self.prepared = []
+            self.batch_sizes = []
+
+        def prepare_episode(self, **identity):
+            value = SimpleNamespace(evidence=dict(identity))
+            self.prepared.append(value)
+            return value
+
+        def predict_action_chunk(self, prepared, batch, *, noise, num_steps):
+            assert len(prepared) == int(noise.shape[0])
+            self.batch_sizes.append(len(prepared))
+            return _FakePolicy().predict_action_chunk(
+                batch, noise=noise, num_steps=num_steps
+            )
+
+    adapter = FakeBatchedAdapter()
+    contract = {
+        "environment": {
+            "dummy_action": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0],
+            "dummy_settling_steps": 10,
+        },
+        "policy": {"replan_steps": 5, "num_inference_steps": 10},
+        "rng": {"inference_seed": 7},
+    }
+    task = {
+        "suite": "libero_goal",
+        "task_id": 4,
+        "split_role": "test",
+        "language": "put the bowl on top of the cabinet",
+        "horizon": 300,
+    }
+    rows = rollout_shard(
+        envs=(_FakeEnv(success_after=7), _FakeEnv(success_after=7)),
+        init_states=tuple(range(10)),
+        task=task,
+        state_ids=(3, 4),
+        contract=contract,
+        policy=_FakePolicy(),
+        preprocess=_preprocess,
+        postprocess=lambda value: value,
+        task_adapter=adapter,
+    )
+    assert [row["init_state_id"] for row in rows] == [3, 4]
+    assert adapter.batch_sizes == [2, 2]
+
+
 def test_shard_validation_rejects_wrong_policy_schedule(tmp_path: Path) -> None:
     contract = _contract(tmp_path)
     shard = EvaluationShard(

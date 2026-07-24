@@ -510,6 +510,6 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 
 ## Source-SFT八卡/四卡训练量口径与step100–800闭环（2026-07-24）
 
-- 旧八卡rank128轨迹每个optimizer update覆盖8个独立task conditions和512个action queries；其`step400=122/400`对应400次更新、204,800 queries与3,200次condition visits。当前四卡轨迹虽然用batch128/rank保持每步512 queries，却只有4个独立task conditions；所以四卡step400只含1,600次condition visits，而step800才达到3,200次。不存在一个同时匹配updates、queries和condition visits的简单“等价step”。
+- 旧八卡rank128轨迹每个optimizer update覆盖8个task小批和512个action queries；其`step400=122/400`对应400次更新与204,800 queries。当前四卡轨迹用batch128/rank保持每步512 queries，所以同为step400时主要训练量大体可比。每次更新内只有4个更大的task小批、累计condition visits较少，可能改变梯度方差，但这是次要优化差异，不能据此将四卡step机械乘2或把step800称为旧step400的等价点。
 - 当前四卡fresh轨迹step100/200/300/400/500/600/700/800的完整validation success为`81/95/68/78/94/99/108/97`。step700是该轨迹当前best；600→700 paired flips为`19/28`，700→800为`31/20`，均不足以证明显著上升或持续下降。旧八卡step400的`122/400`仍是全部SFT候选的incumbent，而不是可移植的早停step。
 - 对应四卡functional val loss为`0.133067/0.133336/0.134167/0.137131/0.134146/0.134832/0.135634/0.135192`，与闭环曲线只呈弱对应，因此后续仅微弱参考。四卡run已从完整step800原地exact-resume到1100；候选判断继续以同seed 8×50 rollout为主，不因batch或卡数变化机械重启。

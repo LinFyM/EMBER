@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-最后更新：2026-07-22。当前长期 Goal 是完成共享 π0.5-LIBERO source base、one-video Writer、source baselines、seen/wrong-video机制证据、final single-seed test、test-only三臂RL和联合target-action oracle；不是停在generic base feasibility或任一局部阶段。
+最后更新：2026-07-24。长期 EMBER Goal 是完成共享 π0.5-LIBERO source base、one-video Writer、source baselines、seen/wrong-video机制证据、final single-seed test、test-only三臂RL和联合target-action oracle；当前 active 子任务由下方“Action-Forecast Writer”段及 `docs/action_forecast_writer_handoff.md` 定义。
 
 ## 完成定义
 
@@ -16,7 +16,7 @@
 8. 使用8 test tasks × 50 action episodes联合训练一套shared target-action LoRA oracle并评估；
 9. 原始rows、per-task counts、learning curves、seeds、interaction/data counts、runtime与hashes齐全，验证、commit、push。
 
-ViVLA-style matched baseline和source-only outer learning为时间允许时的后续项，不阻塞核心Goal complete。RL-Writer如在零warm-up和微量AS warm-up后均无法获得训练信号，可用完整失败证据关闭该路线，不伪造第三臂。
+ViVLA-style matched baseline和source-only outer learning为时间允许时的后续项，不阻塞核心Goal complete。当前focused RL-Writer合同已改为独立、短且task-balanced的AS cold start，直到24个train tasks逐task至少一次official random-reset success后才转pure reward；不得再按旧“零warm-up优先”口径启动。
 
 ## Phase 0：generic π0.5 feasibility
 
@@ -27,7 +27,8 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] 8 test tasks × 50 fixed states：generic `pi05_base` 为 `0/400`。
 - [x] 结果seal、49项测试、commit/push完成。
 
-该结果只作原始模型校准。当前活动路径从Phase A继续。
+该结果只作原始模型校准。Phase A/B及Source-SFT comparator现已完成；当前活动
+路径是本文后方的Action-Forecast Writer执行段。
 
 ## Phase A：source corpus、成熟recipe与高吞吐评测
 
@@ -136,9 +137,9 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [ ] exact command、model/data/config hashes、output root、process topology与停止条件记录。
 - [ ] 一卡一训练rank为默认；若评估每卡多replica，所有已授权卡的replica数必须一致且GPU0无额外角色。
 - [ ] checkpoint/output不得覆盖；resume必须校验完整state与合同兼容性。
-- [ ] 所有适用阶段先短profile并由loss/reward/behavior曲线决定廉价screen间隔，只给必要候选完整validation；若owner为某阶段给出时间上限，到上限仍未充分训练则记录后停止。当前短期Goal中的AS、Source-SFT与RL-Writer由owner明确取消时间上限。
+- [ ] 所有适用阶段先短profile并由loss/reward/behavior曲线决定廉价screen间隔，只给必要候选完整validation；若owner为某阶段给出时间上限，到上限仍未充分训练则记录后停止。当前focused Action-Forecast AS/RL Writer不设总时间上限；Source-SFT comparator已经封存，不在本子任务重训。
 
-## 当前 Goal：四卡Action-Memory / Source-SFT / cold-start RL-Writer上限（2026-07-23）
+## 历史 Goal：四卡Action-Memory / Source-SFT / cold-start RL-Writer上限（2026-07-23，已被下方Action-Forecast执行段覆盖）
 
 - [x] 将冻结PaliGemma逐帧图文prefix、16个Action-Expert memory tokens、encoder-only Meta-LoRA、变长temporal/layer/slot聚合与完整rank16 LoRA解码实现为唯一canonical Writer路径。
 - [x] owner确认此前全局`bias=False`是额外优化限制而非condition-only必要条件；已只恢复conditional temporal/layer/slot与factor-head内部普通bias，不增加公共LoRA支路、层、token、宽度或输出。
@@ -180,9 +181,10 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [ ] 对observed-best完成correct/wrong/shuffled/reversed视频证据；目标是不明显
   落后于四卡rank128 SFT best `108/400`，并争取超过旧八卡全局incumbent
   `122/400`，同时显著改善旧架构的顺序不敏感。
-- [ ] AS和RL都不能以train/val-loss平台或单个较差validation点停止；必须找到
-  validation observed-best，并用多个峰后checkpoint整体下降、必要时独立panel
-  复测排除rollout噪声后，才确认饱和与最佳checkpoint。
+- [ ] AS和RL都不能以train/val-loss平台、单个较差点或多个仅略低的validation
+  点停止；必须找到validation observed-best，并在其后观察到幅度非常明显、
+  明显超过rollout噪声、由多个tasks共同贡献且独立panel复测后仍成立的下降
+  趋势，才能确认饱和与最佳checkpoint。
 - [ ] 仅在AS同时通过性能与特异性后，推进独立short-AS cold start，直到24个
   train tasks各至少一次random-reset success，再切换pure-reward RL-Writer并
   完成train平台与validation选择。

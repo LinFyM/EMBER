@@ -1,39 +1,52 @@
-# Prompt for the Next EMBER Session
+# Prompt for the next EMBER session
 
-你现在在 BCI A100 主机上接手独立研究项目 EMBER，工作区是：
+你现在在 BCI A100 主机上接手独立研究项目 EMBER。
+
+工作区：
 
 ```text
 /data/ymdai/projects/EMBER
 ```
 
-远程仓库：
+远程：
 
 ```text
 git@github.com:LinFyM/EMBER.git
 https://github.com/LinFyM/EMBER
 ```
 
-## 先建立完整长期 Goal
+这次不要重新开始长期 EMBER 主线，也不要从旧对话猜设计。仓库已经封存了
+Action-Forecast Writer 的完整架构和执行合同；你需要直接实现、训练、评测并
+推进到本 prompt 指定的 AS/RL Writer 子任务终点。
 
-先调用 `get_goal`。若没有 active Goal，调用 `create_goal`，不要设置
+## 1. Goal
+
+首先调用 `get_goal`。当前应已有 active Goal；核验其 objective 与下文完全一致，
+且没有 `token_budget`。若确实没有 active Goal，调用 `create_goal`，不要设置
 `token_budget`，objective 原文使用：
 
-> 在最多使用 8 张 NVIDIA A100 80GB、每卡训练平均预留约 10GB、统一 π0.5-LoRA 空间、exact-resume、one-video 信息墙和高效多卡调度约束下，完成 EMBER 从共享 π0.5-LIBERO source base 到完整单 seed 核心实证：以 specification-only 方式审计并排除 LIBERO-90 与目标 LIBERO-40 exact semantic/composition overlap，使用剩余 source tasks 每 task 全部 50 条成功 action episodes 从 generic lerobot/pi05_base 联合训练、merge 并冻结共享 source base，快速 screen 全部 40 个目标 tasks 确认部分真实成功；在封存的 24 train / 8 validation / 8 test split 上完成 Action-Supervised Writer、从零 action warm-up 优先的 Reward-Trained Writer 和 shared Source-SFT LoRA 开发，完成 seen-task 与 correct-video/cross-suite-wrong-video 对照，并根据 validation 快速早停选择；将 validation 合入形成 32 source 后从规定初态重训并完成 seen 与 zero-interaction test；test 阶段直接在每个 test task 上将 identity-init、AS-Writer-init、RL-Writer-init 三臂 task-local LoRA RL 训练到各自接近最佳，使用官方随机 BDDL 初态并与 fixed-50 fresh evaluation 隔离；最后使用 8 个 test tasks 每 task 全部 50 条 action episodes 联合训练一套 shared target-action LoRA oracle 并统一报告逐任务 rows、learning curves、seeds、interaction/data counts、runtime 与 hashes。第一轮只跑一个 training seed；RL-Writer 在零 warm-up 和极少 AS warm-up 后仍无信号可带完整证据关闭；ViVLA-style matched reproduction 和 source-only outer learning 仅在核心闭环后有时间再做，不阻塞 Goal complete。全过程不使用 pi05_libero、bank、geometry、shared subspace、residual escape、额外 shared adapter、旧 SmolVLA 活动路径或 MemLLM，任何 source base、smoke、loss 或局部结果都不能单独触发 Goal complete。
+> 在仅使用GPU 0–3且不干扰任何现有进程的约束下，完成EMBER新Action-Forecast Writer核心闭环：将旧Action-Memory Writer活动架构完全退役并更新代码、测试、配置与项目文档；实现由教师视频逐帧imagined-state/PaliGemma融合、Writer内部VL与Action Meta-LoRA、π0.5完整10-step flow最终action plans、同绝对时刻Plan/Revision tokens、变长Temporal Transformer及单向LoRA query decoder生成完整rank-16 task LoRA的唯一canonical路径，并使Writer训练参数量约等于rank-128 Source-SFT；实测并固定训练的每rank action-query batch、frame microbatch、frame stride和评测最优并发/批处理参数，在四卡上按约半小时一段、每段四个等间隔checkpoint的时间导向方式持续AS-Writer训练，优先评测每段第二/第四checkpoint并按趋势补测，直至找到validation最优并在其后观察到幅度非常明显、复测后仍成立的validation性能下降趋势；要求AS-Writer性能不明显落后于四卡rank-128 Source-SFT已观测最佳108/400，并争取超过所有SFT候选的全局incumbent 122/400，同时correct/wrong及乱序视频特异性成立。若经合规诊断和最小改进仍不能同时过关，保存完整证据并停止汇报；若过关，则实现和高效profile cold-start RL-Writer，先确保每个source task至少一次成功再切换纯RL；RL同样必须训练到train平台、在validation上找到observed-best，并在其后看到幅度非常明显且复测稳健的validation下降趋势，而不是在第一个平台、单个较差点或多个仅略低的点停止。全过程优先尽快把可运行训练/评测部署到合法空闲GPU，再在运行期间并行推进互不污染的文档、诊断与后续代码；保存命令、配置、曲线、rows、runtime、hash、exact-resume状态，完成验证、文档、task-scoped commit和push后方可Goal complete。
 
-创建后再次调用 `get_goal`，核验 objective 完整且没有 token budget。不要把已经完成的
-generic `pi05_base` 0/400 feasibility audit 当成新 Goal。
+本 Goal 只在上述 focused AS/RL Writer 子任务全部完成后标记 complete。代码完成、
+smoke、loss下降、一个validation点、一个train平台或一个方法阶段都不够。
 
-## 必读与 authority
+## 2. 启动与 authority
 
-先执行：
+执行：
 
 ```bash
 cd /data/ymdai/projects/EMBER
 git pull --ff-only origin main
 git status --short --branch
+git rev-parse HEAD
+git rev-parse origin/main
 ```
 
-然后完整阅读根目录 `AGENTS.md`，并严格按其中顺序完整阅读：
+确认没有用户未提交修改或活跃进程写同一 checkout/output。不要从 Git 历史恢复
+旧 runner、旧 prompt、旧 split 或旧 checkpoint。历史 worktrees 不要因为
+“看起来没用”就删除；main clean且无并发writer时直接使用main。
+
+先完整阅读根 `AGENTS.md`，再按其顺序完整阅读：
 
 1. `README.md`
 2. `docs/execution_brief.md`
@@ -44,138 +57,291 @@ git status --short --branch
 7. `docs/decisions_and_open_questions.md`
 8. `docs/novelty_and_landscape.md`
 
-这些文件已经按 owner 的最新决定更新，是活动 authority。旧 70/10/10、SmolVLA、
-Writer cold start、validation 预冻结 test-RL、task-local direct oracle、静态一 task 一 GPU
-等内容只可作为历史 provenance，不能恢复成活动路径。不要使用或混入 MemLLM。
+然后完整阅读：
 
-## 当前已知事实
+```text
+docs/action_forecast_writer_handoff.md
+```
 
-- 固定目标 split 是四个 LIBERO suites 各 `6 train / 2 validation / 2 test`，即开发期
-  `24/8/8`；确认配置后把 8 个 validation tasks 合入，最终为 `32 source / 8 test`。
-- generic `lerobot/pi05_base` 已按官方口径在 8 个 sealed test tasks、每 task 50 个固定
-  init states 上完成评测，结果是 `0/400`。这是校准结果，不再重复，也不因此立刻改用
-  `pi05_libero`；`pi05_libero` 因见过目标四 suites 的 actions 而禁用。
-- 现有 source corpus 候选是 LIBERO-90，但必须先做 specification-only exact
-  semantic/composition overlap audit。已经确认至少两处语义重合：LIBERO-90 task 44 与
-  Goal test task 7 都是 `turn on the stove`；LIBERO-90 task 77 与 Long train task 5 都是
-  `pick up the book and place it in the back compartment of the caddy`。不得机械假定剩余数目
-  就是 88；先完成全量审计并封存规则、manifest 和 hashes。
-- 当前没有正式 π0.5-LIBERO source base、AS-Writer、RL-Writer 或可续用的新协议
-  checkpoint。旧 SmolVLA/70-task checkpoint 与新协议不兼容。
-- 之前静态 task/GPU evaluator 在最后两个 Long tasks 上出现明显拖尾；未来评估必须改为
-  cost-balanced state shards、动态队列/工作窃取、持久化 model/env，而不是一 task 固定一卡。
-  GPU0 不得额外堆 controller/model 进程，每张卡 CUDA 进程拓扑一致。
+该 handoff 是新架构的完整活动 authority，包含精确 tensor 合同、模块设计、
+参数预算、退役边界、profile矩阵、AS/RL训练和停止规则。无需也不得依赖旧对话。
+若旧 Action-Memory 文档、配置、测试或历史 ledger 与它冲突，以 handoff 为准；
+历史实验结果保留为 provenance，但不再是活动实现。
 
-## 活动实验合同
+这次是非平凡结构替换，开始改源码前读取并应用 `code-architecture-gate`。它只用于
+控制单一 owner、文件职责和退役边界，不得变成拖延实现的额外流程。
 
-### 1. 共享 source base
+## 3. 当前事实：不要重做已完成工作
 
-从 generic `lerobot/pi05_base` 出发，在经过 overlap 过滤的 LIBERO-90 source tasks 上，
-每 task 使用全部 50 条成功 action episodes，按成熟/官方 π0.5 action-SFT/LoRA 配方进行
-联合多任务训练。若用 LoRA 训练 source base，完成后必须 merge 成一个普通共享 policy，
-避免下游再堆一层 shared adapter。只从 source 数据计算并冻结 action/state normalization；
-不得使用 target-specific 或 test normalization。
+- specification-only source audit 已完成：71个active LIBERO-90 tasks、每task
+  50条成功episodes、source-only normalization和hashes均已封存。
+- 共享 π0.5-LIBERO source base 已从generic `lerobot/pi05_base` fresh full-SFT
+  1,000 steps并冻结；40-task快速screen为`46/320`，覆盖13 tasks和全部4 suites。
+- 不要重训source base，不要重新做Phase A，不要使用`pi05_libero`。
+- Source-SFT当前focused task不重训。四卡rank-128完整validation曲线
+  step100–1100为：
+  `81,95,68,78,94,99,108,97,95,104,94 / 400`；
+  四卡observed-best是step700的`108/400`。
+- `122/400`来自旧八卡rank-128 Source-SFT step400，不是四卡结果；它是所有
+  SFT候选的全局incumbent和stretch目标。
+- 旧Action-Memory temporal-RoPE Writer step400为`108/400`，有视频任务内容
+  特异性，但倒序/乱序effective-LoRA相对变化仅`0.00937/0.00699`，近似
+  bag-of-states。它是新架构要解决的问题，不是新模型初始化。
+- 当前仓库尚未实现Action-Forecast架构；这是有意的干净接手点，不是遗漏。
 
-随后快速 screen 全部 40 个目标 train/validation/test tasks，确认这个地基已经能在目标
-benchmark 上跨多个 task 产生部分真实成功、而不是仍然完全不会控制或只靠单个易 task
-支撑 aggregate。这里是低门槛能力筛查，不要求每个 task 已有高成功率。source base 冻结后，所有下游方法从同一权重、
-normalization 和相同 LoRA target names/rank/alpha/dropout/capacity 出发。
+固定实物路径：
 
-### 2. Action-Supervised Writer（AS-Writer）
+```text
+source run:
+/data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722
 
-输入固定为 `correct task language + exactly one action-hidden teacher video`，输出完整
-task-specific LoRA。开发期在 24 train tasks 上联合训练；同一 task 内，Writer 可见的
-video episode 与 functional action loss 使用的 episode/chunk 独立随机抽取，不做成对模仿。
-actions 只进入 functional loss，绝不进入 Writer。总训练不超过约 2 小时：先 profile
-throughput 与 loss，按 loss 斜率安排稀疏而便宜的 validation screens，只对少数候选 checkpoint
-做完整 validation，并在接近饱和时早停。所有 checkpoint 必须 exact-resume。
+source checkpoint:
+/data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000
 
-### 3. Reward-Trained Writer（RL-Writer）
+tokenizer:
+/data/ymdai/ember_data/openpi/paligemma_tokenizer.model
 
-这是与 AS-Writer 独立的一条路线，从随机初始化 Writer 开始，优先完全不使用 action
-warm-up，直接在 source tasks 上用联合 reward/RL 更新共享 Writer。不要从训练完整的
-AS-Writer 继续。RL rollouts 使用 LIBERO 官方 BDDL/reset 随机初态与官方 reward/success；
-不使用自定义 privileged object-pose shaping。若完全没有 reward signal，可加入极少量
-AS warm-up；若仍无信号，保存完整失败证据并暂时关闭这条路线，不让它阻塞核心闭环。
+target data:
+/data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a
 
-### 4. Source-SFT baseline、seen 与错误视频
+old 8-card SFT 122/400 artifact:
+/data/ymdai/outputs/ember/pi05_source_sft_rank128_val8x50_step0400_77ec0ae_g67_r5_20260723
 
-Source-SFT 是在 24/32 个目标 source tasks 上联合 action-SFT 的**一套 shared multi-task
-LoRA**，不是 source base，也不是每 task 一套 LoRA。它独立用 validation 选到近饱和；
-不再要求和 AS-Writer 严格匹配 optimizer steps 或数据量，但必须报告实际 steps、action
-chunks、GPU-hours、参数量和搜索规模。
+four-card SFT 108/400 artifact:
+/data/ymdai/outputs/ember/pi05_source_sft_rank128_ceiling_r4_val8x50_step0700_982c115_g01_r5_20260724
+```
 
-必须预先按 specification 选一个覆盖四 suites 的 seen/source panel，比较 source base、
-Source-SFT、AS-Writer 以及可用的 RL-Writer。还必须做错误视频对照：保持 task language、
-evaluation task、init state 和 policy RNG 不变，给 Writer 一条来自**不同 suite**的 teacher
-video，比较 source base、correct-video LoRA 与 cross-suite wrong-video LoRA。不要为了造
-hard negative 改成同 suite。
+已有17GB旧feature cache只保存每帧`16×2048`粗空间pool，不能冒充新架构需要的
+full projected image tokens。是否构建约42GiB BF16（或约21GiB int8/FP8）
+full-token cache，必须先比较online路径、量化误差和实际吞吐，并纳入500GB cap。
 
-### 5. 最终合并、test 与 RL
+## 4. 不可改变的科学合同
 
-开发期根据 8 个 validation tasks 选择模型与普通训练超参数后，把 validation 合入，形成
-32 source tasks；从规定初态重训 AS-Writer、可用的 RL-Writer 和 Source-SFT。第一轮完整
-流程只用一个 training seed。先完成最终 seen comparison，再统一进行 zero-interaction test。
-held/test rollout 每次从该 task 的 50 条 teacher videos 中随机抽一条；不得挑最好视频。
+- `correct task language + exactly one action-hidden teacher video -> shared Writer
+  -> complete rank-16 task-specific LoRA`。
+- frozen source base、24 development-train tasks、source normalization、同task内
+  独立video/action episode和functional policy接口保持不变。
+- Writer不得读取teacher action、proprio、reward、terminal、task ID、filename
+  或隐藏normalization；AS action只进入frozen policy functional loss。
+- teacher视频当前只用单条`obs/agentview_rgb`；不要静默加入wrist、第二视频或
+  真实robot state。
+- policy在AS及correct/wrong/shuffled/reversed评测中始终接收正确task language；
+  只替换或重排Writer视频。
+- 初始AS只用normal positive functional action loss，不先加contrast。
+- Writer生成公开完整rank-16 task LoRA；Writer内部Meta-LoRA只服务教师视频
+  理解，执行时不携带。
+- 不增加独立公共LoRA支路。conditional module bias允许存在，但public LoRA
+  输出必须经过当前language/video procedural memory和query decoder。
+- 禁止`pi05_libero`、MemLLM、bank、geometry、shared update subspace、
+  residual escape、额外shared trainable adapter和未merge source LoRA。
+- 四卡就是4个native DDP ranks；不做gradient accumulation模拟8卡。
+- 只有一个真实`action_query_batch_size_per_rank`，不要另设不同的
+  `functional_policy_microbatch_size`。`frame_microbatch_size`只切同一视频的
+  帧，不改变optimizer batch。
+- RL训练与selection只用LIBERO official BDDL/random reset；fixed
+  `.pruned_init`只作训练隔离的fresh evaluation。
 
-task-local RL **只在 test 打开以后、只在 8 个 test tasks 上做**，不需要先在 validation
-冻结算法。对每个 test task，把该 task 当作 adaptation training domain，允许根据官方随机
-BDDL reward rollouts 调参、训练、选 adaptation checkpoint，直到各臂接近各自最佳/平台。
-三臂为：
+## 5. 必须实现的唯一Action-Forecast Writer
 
-1. source base + identity-init LoRA；
-2. source base + AS-Writer-init LoRA；
-3. source base + RL-Writer-init LoRA（仅在 RL-Writer 可用时）。
+完整细节以handoff第3节为准，不能自行简化成旧Action-Memory。端到端路径是：
 
-每个 task/adaptation seed 为 Writer 两臂随机选一条目标视频，并在本次 adaptation 内固定。
-三臂匹配 task、env/policy seeds、官方随机 BDDL 初态序列、RL 实现和可比资源；保存 worker
-RNG/seed schedule、optimizer、interaction cursor 和完整 exact-resume 状态。固定 50 个
-`.pruned_init` states 只能做与 RL 数据隔离的 fresh evaluation，沿用官方 dummy settling、
-成功即终止及 suite 官方 horizon。
+```text
+frames [T,3,H,W] + true frame indices [T] + full task tokens [L]
+  -> frozen SigLIP/projector full image tokens [T,N_img,2048]
+  -> Visual State Head -> imagined state [T,8]
+  -> differentiable virtual state tokens [T,8,2048]
+  -> full PaliGemma contextual prefix + VL Meta-LoRA
+  -> Action Expert + Action Meta-LoRA + full 10-step flow
+  -> final normalized action plans [T,50,7]
+  -> same-absolute-time Plan/Revision tokens [U,2,256]
+  -> variable-length Temporal Transformer [2U,256]
+  -> 320 one-way LoRA queries
+  -> exact sealed rank-16 public LoRA state
+```
 
-### 6. 最后的 action-supervised oracle
+关键实现：
 
-所有 action-free 与 RL 结果封存后，才读取 8 个 test tasks 的 teacher actions。从同一 source
-base 出发，用 `8 tasks × 50 episodes` 联合训练**一套 shared multi-task target-action LoRA**；
-它不是 task-local LoRA。第一轮只做全部 50 episodes/task，不做 1/5/10 demonstration 曲线。
+- 固定物理/控制时间stride采帧，视频`T`保持变长；只在batch内padding并携带mask
+  和真实frame index。首轮真实比较stride 5与10。
+- 每帧完整image tokens与完整task language通过PaliGemma；语言必须使用经过
+  backbone上下文化的hidden state，不能只取embedding table。
+- Visual State Head：image width 2048先投到128；8个正交初始化coordinate
+  queries，经2个pre-norm单向cross-attention+FFN blocks、4 heads读取image，
+  shared scalar head+tanh输出8维continuous imagined state。
+- 每个scalar做64维确定性Fourier features，经共享`64->256->2048` MLP并加
+  slot embedding，形成8个可微virtual state tokens，替换原生
+  `State: <8 integers>`语义位置；不要离散tokenize，也不要放进action suffix。
+- PaliGemma 18层q/k/v/o用identity-init VL Meta-LoRA rank4；Action Expert
+  18层q/k/v/o用identity-init Action Meta-LoRA rank8。A Kaiming、B zero。
+- 每帧运行真实π0.5 10-step flow、horizon50；同一个video condition内所有帧
+  共享同一可恢复Gaussian `[50,32]`起始noise。PaliGemma prefix每帧只算一次，
+  KV在10次flow中复用。
+- 只保留最终`[T,50,7]`计划，不保留`10×18` hidden states，也不把imagined
+  state另喂temporal encoder。
+- pinned LeRobot `sample_actions`带`@torch.no_grad()`，不能直接用于训练。
+  在仓库内写可微wrapper，严格复用真实`embed_suffix`、mask/position、KV格式
+  和10次`denoise_step` Euler更新；不得修改site-packages或写近似flow。
+- 绝对时间`u=t_i+k`。`Plan_u`取时刻u之前最新帧对u的receding-horizon决定；
+  `Revision_u`聚合同一u的连续forecast revisions。不要只比较一对相邻chunk，
+  也不要平均掉同一未来时刻的多次预测。
+- Plan MLP是`8->256->256`；revision event MLP是`24->256->256`，随后一个
+  learned revision query以单层单向cross-attention+FFN聚合数量可变events，
+  并加入count和delta-norm统计。无event使用learned no-revision token。
+- Temporal Transformer接受变长`[U,2,256]`，width256、8 heads、2 blocks，
+  使用真实absolute-time RoPE、padding mask和token-type embedding。
+- 320 queries：288个`18 layers×16 rank slots` expert queries、16个
+  `action_in_proj` queries、16个`action_out_proj` queries。两层decoder均为
+  query self-attention、query单向读取procedural memory的cross-attention、
+  expansion-4 FFN。
+- 8类factor heads严格生成真实identity template中的38 targets/76 tensors；
+  final projections weight+bias为zero，fresh public LoRA必须functionally identity。
+  tensor name/shape从真实`LoraTensorSpec`读取，不手写猜测。
 
-ViVLA-style matched reproduction 和 source-only outer learning 都只是在上述核心闭环完成后
-有时间再做的可选项，不阻塞 Goal complete。
+训练参数预算约等于rank-128 Source-SFT的`10,297,344`：
 
-## 计算、信息墙与记录要求
+```text
+Visual State Head + state embedder     ~1.09M
+VL Meta-LoRA rank4                    ~0.922M
+Action Meta-LoRA rank8                ~1.253M
+Revision encoder                      ~1.05M
+Temporal encoder                      ~1.57M
+2-block one-way query decoder         ~2.10M
+Factor heads                          ~2.19M
+embeddings/norm/bias                  ~0.10M
+total                                 ~10.27M
+```
 
-- 最多使用 8 张合法空闲 A100 80GB；启动前只读检查 GPU owner/process、driver/CUDA、
-  Python/PyTorch、磁盘和现有 cache。不得干扰无关进程。
-- substantial download/run 前核算 `/data/ymdai` 当前占用和峰值增量；个人硬上限 500GB。
-- 训练默认一卡一 DDP rank，使用真实 batch/data parallelism，每卡平均预留约 10GB；GPU0
-  不得多一个 controller/model 进程。
-- 评估优先有效 rollout/秒：先研究成熟 π0.5/LIBERO 项目的 evaluator，再使用 cost-balanced
-  state shards、动态调度、持久化 model/env；Writer 逐 rollout 变化 LoRA 时，实测 batched
-  functional LoRA 与每卡统一 1/2/3 个 policy replicas 的真实吞吐后再选择。
-- Writer 永远只看 language、恰好一条 RGB teaching video 和允许的公开视觉输入；不得接收
-  actions、proprio、reward、terminal、task ID、文件名或隐藏 normalization。
-- 禁止 bank、geometry、shared update subspace、residual escape、额外 shared trainable
-  adapter、MemLLM、旧 SmolVLA 活动 runner 或从 Git 历史恢复已退役协议。
-- 每个 meaningful 阶段保存 command、config、代码/data/model revision、manifest/hash、raw
-  episode rows、逐 task successes、steps/interactions、seeds、GPU/process topology、wall-clock、
-  checkpoint 与 sampler/RNG cursor；更新 `task_plan.md`、`findings.md`、`progress.md`，验证后
-  commit 并 push。
-- smoke 只验证 mechanics，不用小分母性能做科学判断。source base、环境、cache、代码、loss
-  下降或任一局部正结果都不能单独完成 Goal。
+从真实model/config打印逐模块参数量；可微调hidden widths以接近10.297M，但不能
+改变上述信息流。public rank-16 LoRA仍为1,287,168 scalars。
 
-## 现在直接开始
+## 6. 代码替换与效率优先
 
-完成 Goal 核验、authority 阅读和只读 live checks 后，不要停在复述，也不要等待形式确认，
-直接推进 `task_plan.md` 的 Phase A：
+先用`rg`建立imports/callers/schema/checkpoint map，然后原位替换：
 
-1. 查清并记录成熟/官方 π0.5 action-SFT/LoRA 的确切模型加载、processor、action head、
-   optimizer、scheduler、precision 与 LoRA target 方式；脚本参数不要猜。
-2. 对 LIBERO-90 与目标 40 tasks 做完整 specification-only semantic/composition overlap audit，
-   只使用 language、BDDL/scene/object/role/composition specification，不读取 policy outcomes；
-   封存规则、task IDs、algorithm/seed、manifest 和 hashes。
-3. 在不改变科学合同的前提下修正 evaluator 的拖尾与多卡利用率，并做最小真实 smoke。
-4. 做 live GPU/storage preflight，形成可恢复 launch contract，随后训练并验证共享
-   π0.5-LIBERO source base，继续按 Phase B 以后顺序推进。
+- `scripts/train_as_writer.py`保留为唯一AS入口；
+- `scripts/evaluate_pi05.py`保留为唯一π0.5 rollout入口；
+- `src/ember/writer/model.py`继续拥有LoRA specs/decoder；
+- 退役`src/ember/writer/action_memory.py`，由单一
+  `action_forecast.py`或同等职责owner替换；
+- `temporal.py`原位成为Plan/Revision variable-time owner；
+- 同步替换`as_contract.py`、checkpoint schema、training/inference/evaluator
+  调用点和必要测试；
+- 用唯一`configs/pi05_as_writer_action_forecast_v1.json`替换旧active
+  action-memory配置；不保留v4/new/experimental平行runner。
 
-遇到具体阻塞时，先定位并尝试最小修复；只有确实无法继续时才报告一个可复现失败。效率与
-精度需要取舍且不影响科学结论时，以持续推进和反馈速度优先。
+优先尽快得到最短可运行垂直切片。一旦shape、梯度、identity/freeze和一个
+exact-resume smoke通过，就立即做真实GPU profile/训练；不要先花数小时写大批
+脚手架、广泛测试或cache。
+
+校验一律以效率为先：
+
+- 只做会直接防止无效科学结果、OOM、信息墙泄漏、错误冻结、错误LoRA schema、
+  不可恢复checkpoint或安全越界的最小检查；
+- 不做重复的流程门槛、全仓仪式性测试、无关lint、反复hash或为“更严谨”而增加
+  的测试矩阵；
+- 真实训练/rollout是研究结论authority，smoke只证机械合同；
+- meaningful里程碑自动保存必要config/hash/rows/resume evidence，不要让整理
+  工作阻塞下一段GPU任务。
+
+速度与显存：
+
+- BF16、fused SDPA/FlashAttention、静态Meta-LoRA、prefix KV复用、
+  `output_hidden_states=False`；
+- frozen SigLIP/projector可`no_grad`或缓存；从virtual state起的PaliGemma、
+  十次Action Expert flow必须保留到Writer的梯度；
+- forecast使用activation checkpoint/rematerialization，只保留最终plans和
+  Plan/Revision最小张量；
+- 若Writer graph与functional policy graph共驻留OOM，使用严格同sample/RNG/loss
+  的two-pass replay/VJP，不改变optimizer step定义；
+- evaluation先批量生成/cache固定panel的public LoRA并复用现有
+  `per_sample_lora_batched_replan`，绝不退回逐rollout materialize+sequential。
+
+## 7. 四卡profile与正式AS训练
+
+只能使用物理GPU`0,1,2,3`。这不是终止他人进程的授权；每次launch前实时检查
+owner、显存、利用率、温度、进程、driver/CUDA、`/data/ymdai`占用和`/data`
+容量。不得kill/reset别人任务。个人硬上限500GB，大cache或新run先估峰值。
+
+最小真实profile：
+
+1. 典型视频和p95/最大长视频测`frame_microbatch_size=1/2/4`，安全时再试8；
+2. 稳定设置下测每rank action-query batch候选4/8/16；不做梯度累积；
+3. stride5/10都做真实full forward+backward，以有效queries/s、长视频稳定性
+   和最小order/action-specificity smoke选择，不只看显存；
+4. 评测从旧稳定点4 replicas/GPU、8 envs/replica附近实测，并测adapter
+   预生成/cache；旧6 replicas在旧Writer编码阶段OOM，新路径只有实测通过才用；
+5. Long tasks按实际可用GPU数先做cost-balanced shards覆盖每个device，之后所有
+   workers从统一dynamic queue接普通tasks并work-steal；不固定切八份；
+6. profile后只把唯一选择写入canonical config，删除临时开关，立即正式训练。
+
+正式AS：
+
+- 4个同角色DDP ranks；GPU0无额外CUDA model/server/controller。
+- 约30分钟一个segment；按真实step time换算steps，在25/50/75/100%保存四个
+  完整checkpoint。
+- 每段先评第二、第四checkpoint的paired `8 tasks×50 fixed states`完整
+  closed-loop validation；第四更好或没有明确下降就exact-resume下一段。
+  趋势需要细化才补第一/第三checkpoint。
+- val functional loss只能微微参考，不能决定best。最终看完整rollout、
+  per-task counts、paired flips和独立复测。
+- 只在最终observed-best做correct/cross-suite-wrong/shuffled/reversed视频诊断；
+  paired task/init/policy/video/noise seeds保持一致，shuffle/reverse使用同一帧集合。
+
+Writer停止标准必须严格执行：
+
+- 必须先找到validation observed-best；
+- best之后必须出现幅度非常明显的下降：明显超过400-rollout正常复测波动，
+  aggregate上清晰可见，由多个tasks共同贡献，而不是单task崩掉；
+- 该明显下降必须在预先封存的独立evaluation seed/panel或重复测量中仍成立；
+- 多个后续checkpoint只是略低、paired统计勉强可区分、loss平台、train平台、
+  success持平或一个坏点，全部不算饱和；
+- 没看到上述明显下降，就继续加约30分钟segment，不设总wall-clock上限。
+
+性能门槛：AS不能明显落后四卡SFT`108/400`；超过旧八卡SFT`122/400`是stretch。
+还必须做到correct优于cross-suite wrong，且对shuffled/reversed的变化显著优于
+旧Action-Memory近似bag-of-states的表现。若不过关，先区分实现故障与科学负
+结果，做最小、证据驱动修正后继续；不要为正结果改变split、数据墙或任务。
+
+## 8. AS通过后才做RL-Writer
+
+不要提前推进RL。AS同时通过绝对性能、correct/wrong和帧顺序特异性后：
+
+1. 从新架构规定identity initialization新建独立RL-Writer run；不加载完整AS best。
+2. 做短、task-balanced AS cold start，同时持续official random-reset reward
+   screen；直到24个development-train tasks每个至少一次真实success。
+3. 保存每task first-success step、teacher action query数量和wall；全task覆盖后
+   永久关闭action入口，转pure official env reward。
+4. 高效profile RL estimator、每rank配置、persistent env pool和rollout拓扑；
+   自主选择真实reward signal最好的合规实现，不为普通参数等待owner。
+5. 保存optimizer、scheduler、worker/env/policy RNG、seed schedule、interaction
+   cursor、reward rows、task coverage、runtime和exact-resume。
+6. train曲线必须由多个tasks支撑并训练到平台，但train平台不是停止点。继续对
+   合适checkpoint做完整validation，找到observed-best。
+7. RL停止标准与AS完全相同：best后必须出现非常明显、远超rollout噪声、由多个
+   tasks贡献、独立panel/复测仍成立的validation下降；多个略低点绝对不够。
+8. 只在selected RL best做correct-video与一次cross-suite wrong-video。
+
+若AS经过多轮最小合规修正仍无法同时通过，保存完整证据并停下汇报，不伪造RL。
+若RL实现或科学信号经多轮合规修正仍无法推进，也保存failure packet后停下汇报。
+
+本focused Goal完成后不要自动继续final-32、test task-local RL、joint oracle或
+ViVLA；先向owner汇报。
+
+## 9. 自主推进与交付
+
+除新增权限、必须干扰他人进程、预计突破500GB、删除/覆盖不可恢复数据、实质
+改变科学问题或同一具体阻塞经多轮修复仍无法推进外，不要停下来逐项询问。
+训练/评测一旦可启动就先启动；运行期间只推进不会修改其import/config/output
+contract、也不写同一目录的工作。
+
+每个meaningful里程碑更新`task_plan.md`、`findings.md`、`progress.md`。只提交
+task-scoped代码/文档，不提交dataset、weights、checkpoint、cache、凭据或私有
+大文件。完成必要的最小验证后commit并push main。最终汇报必须包含：
+
+- 新架构逐模块真实参数量；
+- 训练/评测最优配置、显存、吞吐和wall；
+- AS/RL全部候选的逐task validation曲线及明显峰后下降证据；
+- observed-best、correct/wrong/shuffled/reversed结果；
+- cold-start action消耗、24-task first-success coverage、纯RL interactions；
+- commands、commit、configs、raw rows、hashes和exact-resume状态；
+- 任何未通过项的工程/科学归因与failure packet。

@@ -1,6 +1,6 @@
 # EMBER Current Execution Brief
 
-状态：2026-07-21 最终 handoff 协议。generic π0.5 feasibility 已完成；当前从共享 π0.5-LIBERO source base 开始推进完整 one-video EMBER 实证。
+状态：2026-07-24。共享 π0.5-LIBERO source base 与 Source-SFT comparator 已封存；当前 focused execution 是 `docs/action_forecast_writer_handoff.md` 定义的四卡 Action-Forecast AS/RL Writer 子任务。
 
 ## 1. 研究问题
 
@@ -40,7 +40,10 @@ owner于2026-07-22将source-base正式训练改为从generic base fresh运行1,0
 - 输入恰好一条 action-hidden teacher video + 正确 task language；输出完整 task-specific LoRA。
 - 在24 train tasks上做均衡混合。每个 update 同 task 内独立随机采 video 与 action episode/chunk，不要求配对；action只进 functional behavior loss。
 - source base冻结，只有Writer更新。Writer不得看到action、proprio、reward、terminal、task ID、filename或隐藏stats。
-- 先短profile loss与吞吐，将wall-clock换算成候选optimizer steps；按loss斜率调整固定廉价validation screen的间隔，先淘汰明显未充分候选，只对少量候选做完整8-task validation，并在接近饱和时早停。约2小时只是防预算暴走的上限，不是要求跑满或固定步数模板；到上限仍未充分训练时保存完整曲线和证据、标记budget-censored并停止自动追加。
+- 当前Action-Forecast focused task先短profile吞吐，再按约30分钟一段训练并
+  稀疏评测。它不设总wall-clock上限：必须找到validation observed-best，并在
+  其后看到幅度非常明显、明显超过rollout噪声、由多个tasks贡献且复测稳健的
+  下降趋势才能停止。多个略低点、functional loss平台或train平台都不算饱和。
 - 当前 canonical 替换设计、参数预算、Plan/Revision 绝对时间对齐、四卡
   profile 与分段训练合同完整封存在
   [`docs/action_forecast_writer_handoff.md`](action_forecast_writer_handoff.md)。

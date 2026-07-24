@@ -11,7 +11,7 @@ EMBER 把不能直接用于目标 action-SFT 的视频任务知识编译成策�
 
 ## 共同地基
 
-generic π0.5 已在目标8 test tasks上得到 `0/400`，说明它没有足够LIBERO embodiment competence。当前先对LIBERO-90与目标40 tasks做specification-only overlap过滤，再用剩余source tasks×50 action episodes联合训练、merge并冻结一个共享π0.5-LIBERO source base。所有主方法从该base开始；`pi05_libero`因读过目标40 actions而禁止使用。
+generic π0.5 已在目标8 test tasks上得到 `0/400`，说明它没有足够LIBERO embodiment competence。LIBERO-90与目标40 tasks的specification-only overlap过滤、剩余71 source tasks×50 action episodes联合训练和共享π0.5-LIBERO source base冻结均已完成。所有主方法从该base开始；`pi05_libero`因读过目标40 actions而禁止使用。
 
 source base只负责基本camera/controller/robot/action与通用技能，不追求先解决目标任务。它要在全部40目标tasks的快速screen上开始产生部分成功，从而给Writer和reward exploration一个真实可用的地基。
 

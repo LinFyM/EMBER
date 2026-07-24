@@ -30,6 +30,9 @@ owner 于 2026-07-24 将当前执行焦点切换为
 定义的 Action-Forecast Writer 子任务。该文件覆盖此前 Action-Memory /
 temporal-RoPE Writer 的活动实现口径：旧结果保留为 provenance，但旧架构、
 schema、活动配置和专用测试必须退役，只保留一个 canonical Writer runner。
+新 session 的唯一启动提示为
+[`docs/new_session_prompt.md`](docs/new_session_prompt.md)；若它与 handoff
+摘要粒度不同，以 handoff 的完整设计合同为准，不得使用 Git 历史中的旧 prompt。
 
 当前先完成新 AS-Writer 架构、四卡效率 profile、分段训练、validation 最佳点
 和 correct/wrong/shuffled-video 机制证据；只有 AS 同时通过性能与特异性门槛
@@ -39,8 +42,14 @@ schema、活动配置和专用测试必须退役，只保留一个 canonical Wri
 比较口径不得混淆：四卡rank-128 Source-SFT observed-best为`108/400`
 （step700），旧八卡全局incumbent才是`122/400`。AS必须不明显落后于前者，
 超过后者是stretch目标。AS和RL都必须在validation rollout上找到observed-best，
-并由多个较晚checkpoint整体下降、必要时独立panel复测来排除单点波动；train
-平台、val loss平台或一个较差checkpoint不能单独触发停止。
+并在其后观察到幅度非常明显、明显超过rollout噪声、由多个tasks共同贡献且独立
+panel复测后仍成立的下降趋势。多个较晚checkpoint仅略低也绝对不算饱和；train
+平台、val loss平台或一个较差checkpoint都不能触发停止。
+
+当前子任务以推进效率为最高工程优先级：只保留会直接防止无效实验、信息墙
+泄漏、OOM、错误冻结/LoRA schema或不可恢复checkpoint的最小校验。最短垂直
+路径通过shape/gradient/identity/freeze和一次resume smoke后立即进入真实GPU
+profile/训练；不得用广泛全仓测试、重复流程门槛或文档整理延迟可运行实验。
 
 ## Data and split
 

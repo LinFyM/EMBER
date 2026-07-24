@@ -414,9 +414,10 @@
   当时clean且等于origin/main；GPU0–3空闲，GPU4–7为其他用户进程；
   `/data/ymdai`占用`278,857,052,160` bytes。新session必须重新核验所有live
   状态，不能把该快照当launch许可。
-- 旧tmux `ember_as_bias_r4_s3200`只剩空bash，没有训练子进程；多个历史
-  worktree均未删除。新session在main仍clean且无并发writer时直接使用main，
-  不因历史worktree数量另造并行canonical路径。
+- 最终交接审计确认旧tmux `ember_as_bias_r4_s3200`只剩空bash且没有训练/eval
+  子进程，随后已删除该空session；main外15个历史worktree均clean且无活跃写
+  进程，因此全部保留provenance。新session在main clean且无并发writer时直接
+  使用main，不因历史worktree数量另造平行canonical路径。
 - owner要求确认新session无需读取旧对话即可实现后，又对交接文档做逐层完整性
   审计：补齐了端到端tensor shapes、single-agentview信息墙、state-width128
   coordinate-query head、连续state token在PaliGemma文本state位置的插入方式、
@@ -425,6 +426,12 @@
   长Long-shard动态调度、近似候选复测规则和已封存`122/400` SFT artifact。
 - owner进一步纠正比较口径：`122/400`来自旧八卡rank128 SFT，不是四卡成绩。
   四卡step100–1100为`81/95/68/78/94/99/108/97/95/104/94`，best为step700
-  `108/400`且已由四个后续较低点括住。当前AS硬比较是“不明显落后于108”，
-  超过122为stretch；AS/RL都必须在validation找到best并看到经噪声核验的多个
-  峰后下降点后才能停止。
+  `108/400`。当前AS硬比较是“不明显落后于108”，超过122为stretch。
+- owner随后明确禁止把“多个峰后点略低”的判断套给Writer：AS/RL都必须在
+  validation找到best，并在其后看到幅度非常明显、明显超过rollout噪声、由
+  多个tasks贡献且独立panel复测后仍成立的下降趋势；否则继续训练。
+- 最终仓库审计发现旧`docs/new_session_prompt.md`仍错误要求8卡、重做Phase A/
+  source base、RL零warm-up和AS约2小时上限；现已原位替换为唯一Action-Forecast
+  prompt。当前prompt明确source/SFT已封存、只用GPU0–3、AS/RL无总时限和上述
+  强下降停止标准，并加入owner最新效率要求：仅做防止无效实验/不可恢复浪费的
+  最小shape/gradient/identity/freeze/resume检查，通过后立即GPU profile/训练。

@@ -8,7 +8,12 @@
 - source base训练若使用LoRA，完成后merge进policy；所有下游方法共享同一个冻结base和source-only normalization，不叠加shared source adapter。
 - source base在全部目标40 tasks上快速测试，只要求已开始在多个tasks出现部分真实成功，不先追求高ceiling，也不能只靠单个易task aggregate。
 - `Action-Supervised Writer (AS-Writer)`输入正确language+恰好一条action-hidden video；source video/action episode在同task内独立采样。
-- AS-Writer单次训练不超过约2小时；根据loss斜率和val成本尽快找到接近饱和点，不频繁做昂贵完整val。
+- 当前Action-Forecast AS/RL Writer不设总训练时间上限，按约30分钟segment和
+  稀疏完整validation推进；只有找到validation best并观察到幅度非常明显、
+  复测稳健且由多个tasks共同贡献的下降趋势才算饱和。
+- 当前工程推进以效率优先：最短垂直切片通过必要的shape/gradient/
+  identity/freeze/resume检查后立即真实profile/训练，不用广泛全仓校验、
+  重复流程门槛或文档整理延迟GPU启动。
 - `Reward-Trained Writer (RL-Writer)`从新架构规定初态做短、task-balanced AS cold start，直到24个train tasks各在official random-reset rollout中至少一次success，再关闭action入口转pure reward；不从完整AS-Writer best继续。
 - Source-SFT是在24/32 source tasks上联合训练的一套shared LoRA；它与AS-Writer各自按validation选最佳，不要求相同训练steps或数据量。
 - 第一轮完整流程只跑一个training seed；有足够性能差异后再考虑独立seeds。
@@ -24,27 +29,33 @@
 - ViVLA-style matched reproduction有时间再做；outer learning仅为核心之后optional。
 - 不用`pi05_libero`、bank、geometry、shared update subspace、residual escape、额外shared adapter、旧SmolVLA活动checkpoint/runner或MemLLM。
 
-## 已核验但待封存的source overlap
+## 已完成的source overlap audit
 
-本地官方task suite的只读audit发现：
+本地官方task suite的只读audit先发现：
 
 - LIBERO-90 task44与目标`libero_goal` task7均为`turn on the stove`，scene/BDDL不同；后者当前是test task。
 - LIBERO-90 task77与目标`libero_10` task5均为`pick up the book and place it in the back compartment of the caddy`，scene/BDDL不同。
 
-这两个至少必须进入完整semantic/composition overlap audit；最终过滤规则、active source IDs和数量在看任何新policy outcome前封存。
+完整3600-pair semantic/composition audit随后已在看新policy outcome前封存；
+最终排除19项、保留71个active source task及其manifest/hash。新session不得
+重新修改source IDs或把这两条初步发现误写成audit仍未完成。
 
-## 尚需通过官方/成熟实现确定
+## 当前必须通过真实 profile / rollout 确定
 
-这些是下一session的Phase A工作，不需要owner重新选择研究方向：
+Phase A、source base、public rank-16 LoRA合同、functional per-sample注入和
+Source-SFT comparator均已封存，不得由新session重新开启。当前只剩以下
+Action-Forecast focused变量需要实测：
 
-- π0.5 source action-SFT是full fine-tune、action expert还是LoRA-then-merge；以成熟recipe和实际8-A100 profile决定。
-- 下游LoRA targets/rank/alpha/dropout与functionally identity initialization。
-- Writer对π0.5的feature extraction、functional per-sample LoRA注入和checkpoint格式。
-- RL-Writer与task-local RL在π0.5 flow policy上的最佳可执行reward-update算法；task-local算法直接在test tasks上调优。
-- 训练loss斜率触发val screen的具体steps，以及完整validation候选数；目标是最少昂贵rollouts下可靠早停。
-- seen panel的精确task IDs/episode数量；必须specification-only覆盖四suites并兼顾评测成本。
-- 高吞吐evaluator选择batched functional LoRA还是每卡统一多policy replicas；按真实rollouts/s profile决定。
-- ViVLA matched implementation的具体范围，仅在核心闭环后处理。
+- stride最终选5还是10、`frame_microbatch_size`和每rank
+  `action_query_batch_size_per_rank`；
+- full-token cache是否值得构建，以及量化后是否保持等价；
+- 新Writer评测的replicas/env batch/cache组合；
+- 每个约30分钟AS segment对应的真实steps，以及需要评测哪些补充checkpoint；
+- AS observed-best及其后何时出现幅度非常明显、多个tasks共同贡献、独立panel
+  复测仍成立的validation下降；多个略低点不算；
+- AS若未同时通过性能和视频/顺序特异性，最小证据驱动修正是什么；
+- AS通过后，RL-Writer reward estimator/optimizer与rollout拓扑的最高效实现。
+  RL也必须找到validation best并观察同样明显且复测稳健的峰后下降。
 
 ## 不再开放的问题
 
@@ -62,7 +73,9 @@
 - one-video train/test 信息墙；source 内 video/action 独立抽样；held 每 rollout 随机正确视频；
 - 四 suites 的 6/2/2 development split、validation 合并后的 32/8 final split；
 - 过滤 LIBERO-90 overlap 后训练并 merge/freeze 共享 π0.5 source base，40-task 快速能力筛查；
-- AS-Writer 约 2 小时上限、loss 驱动的低成本 validation 与早停；
+- 当前Action-Forecast AS/RL Writer不设总wall-clock上限；以约30分钟segment、
+  稀疏完整rollout validation推进，且必须看到幅度非常明显、多个tasks共同
+  贡献、独立panel复测仍成立的峰后下降；
 - RL-Writer 使用独立短AS cold start取得24-task逐task成功覆盖后转pure reward，并完整报告action消耗；
 - Source-SFT 是一套 shared target-source LoRA，独立按 validation 选最佳；
 - seen/source panel 与 cross-suite wrong-video 对照；

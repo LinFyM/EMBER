@@ -88,7 +88,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         raise WriterModelError("AS-Writer LoRA and source-base authorities disagree")
     writer = config.get("writer", {})
     expected_writer = {
-        "architecture": "pi05_action_memory_writer_v1",
+        "architecture": "pi05_action_memory_writer_temporal_rope_v1",
         "generated_adapter": "complete_pi05_task_specific_lora",
         "prefix_owner": "frozen_pi05_paligemma_full_frame_text_prefix",
         "expert_memory_owner": "pi05_action_expert_all_layer_hidden_states",
@@ -106,7 +106,9 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         "hidden_dim": 320,
         "attention_heads": 8,
         "temporal_blocks": 2,
-        "temporal_pooling": "one_attention_pool_per_expert_layer_and_rank_slot",
+        "temporal_position_encoding": "one_dimensional_rope_on_actual_sample_positions",
+        "temporal_memory_tokens": 4,
+        "temporal_pooling": "four_condition_only_learned_memory_queries",
         "decoder_hidden_dim": 384,
         "frame_microbatch": 16,
         "conditional_linear_bias": True,

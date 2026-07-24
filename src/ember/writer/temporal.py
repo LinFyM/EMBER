@@ -2,33 +2,11 @@
 
 from __future__ import annotations
 
-import math
-
 import torch
-import torch.nn.functional as F
 
 
 class VariableEpisodeInputError(ValueError):
     """Raised when a variable-length Action-Memory batch is malformed."""
-
-
-def sinusoidal_positions(
-    positions: torch.Tensor, width: int, dtype: torch.dtype
-) -> torch.Tensor:
-    """Return deterministic absolute positions at an arbitrary integer stride."""
-
-    if positions.ndim != 1 or width <= 0:
-        raise VariableEpisodeInputError("invalid temporal position request")
-    half = width // 2
-    frequencies = torch.exp(
-        torch.arange(half, device=positions.device, dtype=torch.float32)
-        * (-math.log(10_000.0) / max(half - 1, 1))
-    )
-    angles = positions.to(torch.float32)[:, None] * frequencies[None]
-    value = torch.cat((torch.sin(angles), torch.cos(angles)), dim=-1)
-    if value.shape[-1] < width:
-        value = F.pad(value, (0, width - value.shape[-1]))
-    return value.to(dtype=dtype)
 
 
 class RMSNorm(torch.nn.Module):
@@ -92,14 +70,148 @@ class ConditionOnlyBlock(torch.nn.Module):
         return value + self.ffn(self.ffn_norm(value))
 
 
+def _apply_rope(value: torch.Tensor, positions: torch.Tensor) -> torch.Tensor:
+    """Apply one-dimensional rotary positions to ``[N,H,T,D]`` Q or K."""
+
+    width = value.shape[-1]
+    if width % 2 or positions.shape != (value.shape[0], value.shape[2]):
+        raise VariableEpisodeInputError("invalid temporal RoPE request")
+    inverse_frequency = torch.exp(
+        torch.arange(0, width, 2, device=value.device, dtype=torch.float32)
+        * (-torch.log(torch.tensor(10_000.0, device=value.device)) / width)
+    )
+    angles = positions.to(torch.float32)[:, None, :, None] * inverse_frequency[
+        None, None, None
+    ]
+    cosine = torch.cos(angles).to(value.dtype)
+    sine = torch.sin(angles).to(value.dtype)
+    even = value[..., 0::2]
+    odd = value[..., 1::2]
+    return torch.stack(
+        (even * cosine - odd * sine, even * sine + odd * cosine),
+        dim=-1,
+    ).flatten(-2)
+
+
+class RotaryConditionOnlyBlock(torch.nn.Module):
+    """A temporal pre-norm block whose Q/K carry signed relative time."""
+
+    def __init__(
+        self,
+        width: int,
+        heads: int,
+        expansion: int = 4,
+        *,
+        linear_bias: bool,
+    ) -> None:
+        super().__init__()
+        if (
+            width <= 0
+            or heads <= 0
+            or width % heads
+            or (width // heads) % 2
+            or expansion <= 0
+        ):
+            raise VariableEpisodeInputError("invalid rotary block dimensions")
+        self.heads = int(heads)
+        self.head_width = width // heads
+        self.attention_norm = RMSNorm(width)
+        self.qkv = torch.nn.Linear(width, 3 * width, bias=linear_bias)
+        self.output = torch.nn.Linear(width, width, bias=linear_bias)
+        self.ffn_norm = RMSNorm(width)
+        self.ffn = torch.nn.Sequential(
+            torch.nn.Linear(width, expansion * width, bias=linear_bias),
+            torch.nn.GELU(),
+            torch.nn.Linear(expansion * width, width, bias=linear_bias),
+        )
+
+    def forward(
+        self,
+        value: torch.Tensor,
+        positions: torch.Tensor,
+        padding_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        batch, tokens, width = value.shape
+        query, key, content = self.qkv(self.attention_norm(value)).chunk(3, dim=-1)
+
+        def split_heads(tensor: torch.Tensor) -> torch.Tensor:
+            return tensor.reshape(
+                batch, tokens, self.heads, self.head_width
+            ).transpose(1, 2)
+
+        query = _apply_rope(split_heads(query), positions)
+        key = _apply_rope(split_heads(key), positions)
+        content = split_heads(content)
+        attended = torch.nn.functional.scaled_dot_product_attention(
+            query,
+            key,
+            content,
+            attn_mask=(~padding_mask)[:, None, None, :],
+            dropout_p=0.0,
+            is_causal=False,
+        )
+        attended = attended.transpose(1, 2).reshape(batch, tokens, width)
+        value = value + self.output(attended)
+        return value + self.ffn(self.ffn_norm(value))
+
+
+class TemporalMemoryPool(torch.nn.Module):
+    """Compress a variable trajectory with learned condition-only queries."""
+
+    def __init__(
+        self,
+        width: int,
+        heads: int,
+        memory_tokens: int,
+        *,
+        linear_bias: bool,
+    ) -> None:
+        super().__init__()
+        if min(width, heads, memory_tokens) <= 0 or width % heads:
+            raise VariableEpisodeInputError("invalid temporal memory dimensions")
+        self.memory_tokens = torch.nn.Parameter(torch.empty(memory_tokens, width))
+        torch.nn.init.normal_(self.memory_tokens, mean=0.0, std=0.02)
+        self.query_norm = RMSNorm(width)
+        self.value_norm = RMSNorm(width)
+        self.attention = torch.nn.MultiheadAttention(
+            width,
+            heads,
+            dropout=0.0,
+            bias=linear_bias,
+            batch_first=True,
+        )
+        self.ffn_norm = RMSNorm(width)
+        self.ffn = torch.nn.Sequential(
+            torch.nn.Linear(width, 4 * width, bias=linear_bias),
+            torch.nn.GELU(),
+            torch.nn.Linear(4 * width, width, bias=linear_bias),
+        )
+
+    def forward(
+        self, value: torch.Tensor, padding_mask: torch.Tensor
+    ) -> torch.Tensor:
+        queries = self.memory_tokens[None].expand(value.shape[0], -1, -1)
+        normalized = self.value_norm(value)
+        # Queries control what is read, but their residual is not propagated.
+        # Every output token therefore remains conditioned on video states.
+        attended, _ = self.attention(
+            self.query_norm(queries),
+            normalized,
+            normalized,
+            key_padding_mask=padding_mask,
+            need_weights=False,
+        )
+        return attended + self.ffn(self.ffn_norm(attended))
+
+
 class ActionMemoryTemporalEncoder(torch.nn.Module):
-    """Aggregate ``[B,T,layer,slot,1024]`` into one vector per layer/slot.
+    """Aggregate ``[B,T,layer,slot,1024]`` into temporal memory tokens.
 
     Every ``(layer, slot)`` trajectory is a separate member of a flattened
     batch during temporal attention.  The shared temporal weights therefore
     process all 288 trajectories in parallel without allowing them to attend
     to one another.  Explicit layer and slot mixing happens only after temporal
-    pooling.
+    memory extraction.
     """
 
     def __init__(
@@ -111,6 +223,8 @@ class ActionMemoryTemporalEncoder(torch.nn.Module):
         memory_slots: int,
         attention_heads: int,
         temporal_blocks: int,
+        temporal_memory_tokens: int,
+        frame_stride: int,
         conditional_linear_bias: bool,
     ) -> None:
         super().__init__()
@@ -121,6 +235,8 @@ class ActionMemoryTemporalEncoder(torch.nn.Module):
             memory_slots,
             attention_heads,
             temporal_blocks,
+            temporal_memory_tokens,
+            frame_stride,
         )
         if any(value <= 0 for value in dimensions) or hidden_width % attention_heads:
             raise VariableEpisodeInputError("invalid Action-Memory temporal dimensions")
@@ -128,33 +244,32 @@ class ActionMemoryTemporalEncoder(torch.nn.Module):
         self.hidden_width = int(hidden_width)
         self.expert_layers = int(expert_layers)
         self.memory_slots = int(memory_slots)
+        self.temporal_memory_tokens = int(temporal_memory_tokens)
+        self.frame_stride = int(frame_stride)
 
         self.input_norm = RMSNorm(input_width)
         self.input_projection = torch.nn.Linear(
             input_width, hidden_width, bias=conditional_linear_bias
         )
-        self.time_modulation = torch.nn.Linear(
-            hidden_width, hidden_width, bias=conditional_linear_bias
-        )
         self.layer_modulation = torch.nn.Embedding(expert_layers, hidden_width)
         self.slot_modulation = torch.nn.Embedding(memory_slots, hidden_width)
-        torch.nn.init.zeros_(self.time_modulation.weight)
-        if self.time_modulation.bias is not None:
-            torch.nn.init.zeros_(self.time_modulation.bias)
         torch.nn.init.zeros_(self.layer_modulation.weight)
         torch.nn.init.zeros_(self.slot_modulation.weight)
 
         self.temporal = torch.nn.ModuleList(
-            ConditionOnlyBlock(
+            RotaryConditionOnlyBlock(
                 hidden_width,
                 attention_heads,
                 linear_bias=conditional_linear_bias,
             )
             for _ in range(temporal_blocks)
         )
-        # A scalar score bias cancels exactly inside softmax and is therefore
-        # intentionally omitted; this is not an output-adapter restriction.
-        self.temporal_score = torch.nn.Linear(hidden_width, 1, bias=False)
+        self.temporal_memory = TemporalMemoryPool(
+            hidden_width,
+            attention_heads,
+            temporal_memory_tokens,
+            linear_bias=conditional_linear_bias,
+        )
         self.layer_mixer = ConditionOnlyBlock(
             hidden_width,
             attention_heads,
@@ -172,7 +287,7 @@ class ActionMemoryTemporalEncoder(torch.nn.Module):
         frame_indices: torch.Tensor,
         frame_mask: torch.Tensor,
     ) -> torch.Tensor:
-        """Return ``[B, expert_layers, memory_slots, hidden_width]``."""
+        """Return ``[B, expert_layers, memory_slots, memories, hidden]``."""
 
         if (
             states.ndim != 5
@@ -187,18 +302,13 @@ class ActionMemoryTemporalEncoder(torch.nn.Module):
             raise VariableEpisodeInputError("invalid Action-Memory trajectory batch")
         value = self.input_projection(self.input_norm(states))
         batch, frames = frame_mask.shape
-        positions = sinusoidal_positions(
-            frame_indices.reshape(-1), self.hidden_width, value.dtype
-        ).reshape(batch, frames, self.hidden_width)
-        time_gate = torch.tanh(self.time_modulation(positions))
         layer_gate = torch.tanh(self.layer_modulation.weight)
         slot_gate = torch.tanh(self.slot_modulation.weight)
 
-        # Identity signals modulate condition-derived states.  They cannot form
+        # Identity signals modulate condition-derived states. They cannot form
         # a query-only route that emits a public adapter without video content.
         value = value * (
             1.0
-            + time_gate[:, :, None, None]
             + layer_gate[None, None, :, None]
             + slot_gate[None, None, None, :]
         )
@@ -213,29 +323,48 @@ class ActionMemoryTemporalEncoder(torch.nn.Module):
             .expand(batch, self.expert_layers, self.memory_slots, frames)
             .reshape(batch * self.expert_layers * self.memory_slots, frames)
         )
+        positions = (
+            frame_indices.to(torch.float32)
+            .div(float(self.frame_stride))[:, None, None, :]
+            .expand(batch, self.expert_layers, self.memory_slots, frames)
+            .reshape(batch * self.expert_layers * self.memory_slots, frames)
+        )
         for block in self.temporal:
-            value = block(value, padding)
+            value = block(value, positions, padding)
 
-        scores = self.temporal_score(value).squeeze(-1).masked_fill(
-            padding, float("-inf")
-        )
-        pooled = torch.sum(torch.softmax(scores, dim=-1)[..., None] * value, dim=1)
+        pooled = self.temporal_memory(value, padding)
         pooled = pooled.reshape(
-            batch, self.expert_layers, self.memory_slots, self.hidden_width
+            batch,
+            self.expert_layers,
+            self.memory_slots,
+            self.temporal_memory_tokens,
+            self.hidden_width,
         )
 
-        layer_view = pooled.permute(0, 2, 1, 3).reshape(
-            batch * self.memory_slots, self.expert_layers, self.hidden_width
+        layer_view = pooled.permute(0, 2, 3, 1, 4).reshape(
+            batch * self.memory_slots * self.temporal_memory_tokens,
+            self.expert_layers,
+            self.hidden_width,
         )
         layer_view = self.layer_mixer(layer_view)
         pooled = layer_view.reshape(
-            batch, self.memory_slots, self.expert_layers, self.hidden_width
-        ).permute(0, 2, 1, 3)
+            batch,
+            self.memory_slots,
+            self.temporal_memory_tokens,
+            self.expert_layers,
+            self.hidden_width,
+        ).permute(0, 3, 1, 2, 4)
 
-        slot_view = pooled.reshape(
-            batch * self.expert_layers, self.memory_slots, self.hidden_width
+        slot_view = pooled.permute(0, 1, 3, 2, 4).reshape(
+            batch * self.expert_layers * self.temporal_memory_tokens,
+            self.memory_slots,
+            self.hidden_width,
         )
         slot_view = self.slot_mixer(slot_view)
         return slot_view.reshape(
-            batch, self.expert_layers, self.memory_slots, self.hidden_width
-        )
+            batch,
+            self.expert_layers,
+            self.temporal_memory_tokens,
+            self.memory_slots,
+            self.hidden_width,
+        ).permute(0, 1, 3, 2, 4)

@@ -514,3 +514,8 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 旧八卡rank128轨迹每个optimizer update覆盖8个task小批和512个action queries；其`step400=122/400`对应400次更新与204,800 queries。当前四卡轨迹用batch128/rank保持每步512 queries，所以同为step400时主要训练量大体可比。checkpoint实数进一步确认两者均消费`204,800` examples；旧/新每task范围分别为`8,512–8,576`与`8,448–8,576`。每次更新内4个更大task小批与8个较小task小批主要改变梯度方差和顺序，不能据此将四卡step机械乘2或把step800称为旧step400的等价点。
 - 当前四卡fresh轨迹step100/200/300/400/500/600/700/800的完整validation success为`81/95/68/78/94/99/108/97`。step700是该轨迹当前best；600→700 paired flips为`19/28`，700→800为`31/20`，均不足以证明显著上升或持续下降。旧八卡step400的`122/400`仍是全部SFT候选的incumbent，而不是可移植的早停step。
 - 对应四卡functional val loss为`0.133067/0.133336/0.134167/0.137131/0.134146/0.134832/0.135634/0.135192`，与闭环曲线只呈弱对应，因此后续仅微弱参考。四卡run已从完整step800原地exact-resume到1100；候选判断继续以同seed 8×50 rollout为主，不因batch或卡数变化机械重启。
+
+## Action-Memory时间顺序诊断与最小结构修正（2026-07-24）
+
+- 旧Action-Memory checkpoint在固定语言下换跨suite视频会明显改变有效LoRA，但完整视频倒序/打乱的相对变化仅约`0.036/0.027`，远小于单帧或重复端点帧的`0.237–0.312`；因此问题不是公共LoRA塌缩，而是temporal路径近似将视频作为无序状态集合。
+- 当前最小修正不预设functional loss与closed-loop错位，也不增加额外训练目标：只让顺序通过RoPE直接进入temporal Q/K，并用4个不传播query residual的learned memory queries替代单一pool。显式帧差分、手工phase和order auxiliary均暂不采用，以便500-step实验直接回答正常AS监督是否会利用可表达的时间顺序。

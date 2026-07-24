@@ -26,8 +26,10 @@ ACTION_MEMORY_WRITER_CONSTRUCTOR_KEYS = frozenset(
         "hidden_dim",
         "attention_heads",
         "temporal_blocks",
+        "temporal_memory_tokens",
         "decoder_hidden_dim",
         "frame_microbatch",
+        "frame_stride",
         "conditional_linear_bias",
     }
 )
@@ -114,6 +116,7 @@ class FactorHead(torch.nn.Module):
         linear_bias: bool,
     ) -> None:
         super().__init__()
+        self.memory_score = torch.nn.Linear(input_width, 1, bias=False)
         self.network = torch.nn.Sequential(
             RMSNorm(input_width),
             torch.nn.Linear(input_width, hidden_width, bias=linear_bias),
@@ -126,7 +129,14 @@ class FactorHead(torch.nn.Module):
             torch.nn.init.zeros_(self.network[-1].bias)
 
     def forward(self, value: torch.Tensor) -> torch.Tensor:
-        return self.network(value)
+        if value.ndim < 3:
+            raise WriterModelError("factor head lost temporal memory tokens")
+        scores = self.memory_score(value).squeeze(-1)
+        pooled = torch.sum(
+            torch.softmax(scores, dim=-1)[..., None] * value,
+            dim=-2,
+        )
+        return self.network(pooled)
 
 
 class CompleteLoRAWriter(torch.nn.Module):
@@ -156,8 +166,10 @@ class CompleteLoRAWriter(torch.nn.Module):
         hidden_dim: int,
         attention_heads: int,
         temporal_blocks: int,
+        temporal_memory_tokens: int,
         decoder_hidden_dim: int,
         frame_microbatch: int,
+        frame_stride: int,
         conditional_linear_bias: bool,
     ) -> None:
         super().__init__()
@@ -173,8 +185,10 @@ class CompleteLoRAWriter(torch.nn.Module):
                 hidden_dim,
                 attention_heads,
                 temporal_blocks,
+                temporal_memory_tokens,
                 decoder_hidden_dim,
                 frame_microbatch,
+                frame_stride,
             )
             <= 0
         ):
@@ -202,6 +216,8 @@ class CompleteLoRAWriter(torch.nn.Module):
             memory_slots=memory_slots,
             attention_heads=attention_heads,
             temporal_blocks=temporal_blocks,
+            temporal_memory_tokens=temporal_memory_tokens,
+            frame_stride=frame_stride,
             conditional_linear_bias=conditional_linear_bias,
         )
 

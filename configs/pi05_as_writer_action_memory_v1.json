@@ -47,7 +47,7 @@
     "test_video_values_read": 0
   },
   "writer": {
-    "architecture": "pi05_action_memory_writer_v1",
+    "architecture": "pi05_action_memory_writer_temporal_rope_v1",
     "generated_adapter": "complete_pi05_task_specific_lora",
     "prefix_owner": "frozen_pi05_paligemma_full_frame_text_prefix",
     "expert_memory_owner": "pi05_action_expert_all_layer_hidden_states",
@@ -70,7 +70,9 @@
     "hidden_dim": 320,
     "attention_heads": 8,
     "temporal_blocks": 2,
-    "temporal_pooling": "one_attention_pool_per_expert_layer_and_rank_slot",
+    "temporal_position_encoding": "one_dimensional_rope_on_actual_sample_positions",
+    "temporal_memory_tokens": 4,
+    "temporal_pooling": "four_condition_only_learned_memory_queries",
     "decoder_hidden_dim": 384,
     "frame_microbatch": 16,
     "conditional_linear_bias": true
@@ -101,7 +103,7 @@
     "policy_language_contract": "correct_action_query_task_language_on_every_branch",
     "contrast_backend": "paired_sequential_half_batch_with_shared_policy_rng",
     "functional_policy_microbatch_size": 16,
-    "independent_conditions_per_optimizer_step": 2,
+    "independent_conditions_per_optimizer_step": 1,
     "contrast_query_fraction": 0.5,
     "normal_loss_weight": 1.0,
     "contrast_correct_loss_weight": 1.0,
@@ -157,21 +159,32 @@
     "checkpoint_steps": [2]
   },
   "profile_evidence": {
-    "status": "pending_condition_balanced_profile",
-    "selected_run": null,
+    "status": "sealed",
+    "selected_run": "/data/ymdai/outputs/ember/pi05_as_writer_action_memory_rope_mem4_native_r4_profile_20260724",
     "prior_selected_run": "/data/ymdai/outputs/ember/pi05_as_writer_action_memory_bias_profile_r4_b16_580793a_20260723",
     "superseded_eight_rank_run": "/data/ymdai/outputs/ember/pi05_as_writer_action_memory_v1_profile_refactor_20260723",
     "physical_gpu_indices": [0, 1, 2, 3],
     "world_size": 4,
     "per_rank_batch_size": 16,
     "functional_policy_microbatch_size": 16,
-    "independent_conditions_per_optimizer_step": 2,
-    "global_independent_conditions_per_optimizer_step": 8,
-    "global_policy_samples_per_step": 128,
-    "writer_trainable_parameter_count": 10119297,
+    "independent_conditions_per_optimizer_step": 1,
+    "global_independent_conditions_per_optimizer_step": 4,
+    "global_policy_samples_per_step": 64,
+    "writer_trainable_parameter_count": 11252737,
     "generated_lora_parameter_count": 1287168,
     "rank128_source_sft_trainable_parameter_count": 10297344,
-    "writer_to_rank128_sft_parameter_ratio": 0.982709,
+    "writer_to_rank128_sft_parameter_ratio": 1.092781,
+    "selected_profile_evidence": {
+      "observed_optimizer_steps": 2,
+      "per_rank_batch_size": 16,
+      "step_seconds": [3.8036580171901733, 1.9552280060015619],
+      "all_losses_and_gradients_finite": true,
+      "max_cuda_allocated_bytes": 76119387136,
+      "max_cuda_reserved_bytes": 78928412672,
+      "run_contract_sha256": "26dda8b2fff729e2a98d57e25b419309778721228e5f7cfbe3587705f283c148",
+      "metrics_sha256": "7f6ac26cdc2ef14d4e2656d5c441ea66c9c2f387eb95c529315d1c2876339fca",
+      "run_summary_sha256": "dce859baf9b4aa0d0306b6227c1f7fd58eef3a38ddf416aeba44c28a09cf3a58"
+    },
     "prior_profile_evidence": {
       "observed_optimizer_steps": 2,
       "per_rank_batch_size": 16,
@@ -183,43 +196,21 @@
       "metrics_sha256": "19b8fd85bf45f668bf95b38faf17767eab9887e41063076eee0da2c6a4abde28",
       "run_summary_sha256": "950ff9957d252af77f3dbdcf21e749b6414997567ad508fc6fa81fc6e78cc3ef"
     },
-    "selection_reason": "Pending a four-rank profile with two independent task/video conditions per rank and optimizer update. Each generated adapter receives 16 independent action queries in one functional policy microbatch; the update averages eight task/video conditions and 128 global queries without changing the Writer architecture. This restores the prior eight-rank AS logical condition/query unit efficiently; it does not match Source-SFT batch size or treat batch size as a scientific constraint."
+    "selection_reason": "The owner requested the native four-rank update without gradient accumulation or simulated eight-rank batching. A real two-step profile on physical GPUs 0,1,2,3 verified one condition and 16 queries per rank, 64 global policy samples per update, finite loss and gradients, a steady-state 1.9552 second optimizer step, and stable memory below the physical 80GB limit."
   },
   "formal_run": {
-    "status": "pending_condition_balanced_profile",
+    "status": "sealed",
     "expected_world_size": 4,
-    "total_steps": 2400,
+    "total_steps": 500,
     "per_rank_batch_size": 16,
     "checkpoint_steps": [
-      100,
-      200,
-      300,
       400,
-      500,
-      600,
-      700,
-      800,
-      900,
-      1000,
-      1100,
-      1200,
-      1300,
-      1400,
-      1500,
-      1600,
-      1700,
-      1800,
-      1900,
-      2000,
-      2100,
-      2200,
-      2300,
-      2400
+      500
     ],
-    "selected_stop_step": 300,
-    "stage_stop_steps": [300, 600, 900, 1200, 1500, 1800, 2100, 2400],
+    "selected_stop_step": 500,
+    "stage_stop_steps": [500],
     "maximum_wall_clock_minutes": null,
     "budget_role": "no_time_limit_owner_20260723",
-    "selection_rule": "Pending a real four-rank profile, training on GPUs 0,1,2,3 processes two independent task/video conditions per rank and optimizer update. Each condition uses 16 unique action queries in one functional policy microbatch against its own generated adapter; gradients are averaged before one optimizer update. The logical update therefore contains eight task/video conditions and 128 global queries, restoring the prior eight-rank AS training unit without changing the Writer architecture, output LoRA, information wall, or optimizer-step ownership. Source-SFT batch size is intentionally not matched and batch size is not a scientific gate. Prefer a sealed continuation from an existing checkpoint when the changed optimization contract can be represented honestly, and run a fresh control only when needed for attribution. Retain every 100-step checkpoint and measure the pre-sealed task-balanced validation functional-loss panel in the resident process. Continue in 300-step increments only while closed-loop candidates remain underexplored; validation functional loss is only a weak divergence or severe-overfit diagnostic. There is no wall-clock limit."
+    "selection_rule": "Owner-requested fast temporal-architecture probe on GPUs 0,1,2,3. Train the bias-enabled Action-Memory Writer from its prescribed identity initialization for 500 optimizer steps with the unchanged normal positive functional objective. Each of four native ranks processes one task/video condition and 16 action queries per optimizer step, for 64 global queries without gradient accumulation or simulated eight-rank batching. Retain steps 400 and 500, evaluate both on the same paired 8-task x 50 validation rollout panel, then run video/frame/order specificity diagnostics only on the better observed checkpoint. This run changes temporal position encoding and temporal memory aggregation."
   }
 }

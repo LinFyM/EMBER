@@ -3,6 +3,7 @@ from __future__ import annotations
 import torch
 
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
+from ember.writer.temporal import ActionMemoryTemporalEncoder
 
 
 def _template() -> dict[str, torch.Tensor]:
@@ -72,8 +73,10 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         hidden_dim=32,
         attention_heads=4,
         temporal_blocks=1,
+        temporal_memory_tokens=4,
         decoder_hidden_dim=16,
         frame_microbatch=4,
+        frame_stride=4,
         conditional_linear_bias=True,
     )
     model.action_memory = _FakeActionMemory()
@@ -103,12 +106,19 @@ def test_action_memory_writer_restores_only_internal_conditional_biases() -> Non
     model, _ = _model()
     encoder = model.task_encoder
     assert encoder.input_projection.bias is not None
-    assert encoder.time_modulation.bias is not None
-    for block in (*encoder.temporal, encoder.layer_mixer, encoder.slot_mixer):
+    for block in (encoder.layer_mixer, encoder.slot_mixer):
         assert block.attention.in_proj_bias is not None
         assert block.attention.out_proj.bias is not None
         assert block.ffn[0].bias is not None
         assert block.ffn[2].bias is not None
+    for block in encoder.temporal:
+        assert block.qkv.bias is not None
+        assert block.output.bias is not None
+        assert block.ffn[0].bias is not None
+        assert block.ffn[2].bias is not None
+    assert encoder.temporal_memory.attention.in_proj_bias is not None
+    assert encoder.temporal_memory.attention.out_proj.bias is not None
+    assert encoder.temporal_memory.memory_tokens.shape == (4, 32)
     for head in model.factor_heads.values():
         assert head.network[1].bias is not None
         assert head.network[-1].bias is not None
@@ -123,6 +133,28 @@ def test_action_memory_writer_accepts_variable_video_batch() -> None:
     output = model(*_inputs(), policy=torch.nn.Identity())
     assert all(value.shape[0] == 2 for value in output.values())
     assert any(not torch.equal(value[0], value[1]) for value in output.values())
+
+
+def test_temporal_rope_changes_memory_when_frame_content_is_reversed() -> None:
+    torch.manual_seed(17)
+    encoder = ActionMemoryTemporalEncoder(
+        input_width=8,
+        hidden_width=8,
+        expert_layers=2,
+        memory_slots=2,
+        attention_heads=2,
+        temporal_blocks=1,
+        temporal_memory_tokens=4,
+        frame_stride=4,
+        conditional_linear_bias=True,
+    )
+    states = torch.randn(1, 4, 2, 2, 8)
+    indices = torch.tensor([[0, 4, 8, 12]], dtype=torch.long)
+    mask = torch.ones(1, 4, dtype=torch.bool)
+    forward = encoder(states, indices, mask)
+    reversed_content = encoder(states.flip(1), indices, mask)
+    assert forward.shape == (1, 2, 2, 4, 8)
+    assert not torch.allclose(forward, reversed_content)
 
 
 def test_action_memory_initialization_is_deterministic_in_action_input_manifold() -> None:
@@ -141,8 +173,10 @@ def test_action_memory_initialization_is_deterministic_in_action_input_manifold(
         hidden_dim=32,
         attention_heads=4,
         temporal_blocks=1,
+        temporal_memory_tokens=4,
         decoder_hidden_dim=16,
         frame_microbatch=4,
+        frame_stride=4,
         conditional_linear_bias=True,
     )
     left = CompleteLoRAWriter(**kwargs)

@@ -39,13 +39,15 @@ CONFIG = REPO_ROOT / "configs/pi05_as_writer_action_memory_v1.json"
 def test_action_memory_writer_config_seals_architecture_and_information_wall() -> None:
     config = load_writer_config(CONFIG)
     writer = config["writer"]
-    assert writer["architecture"] == "pi05_action_memory_writer_v1"
+    assert writer["architecture"] == "pi05_action_memory_writer_temporal_rope_v1"
     assert writer["prefix_owner"] == "frozen_pi05_paligemma_full_frame_text_prefix"
     assert writer["expert_layers"] == 18
     assert writer["memory_slots"] == 16
     assert writer["meta_lora_rank"] == 8
     assert writer["hidden_dim"] == 320
     assert writer["frame_stride"] == 4
+    assert writer["temporal_memory_tokens"] == 4
+    assert writer["temporal_position_encoding"].startswith("one_dimensional_rope")
     assert writer["frame_microbatch"] == 16
     assert writer["conditional_linear_bias"] is True
     assert config["data"]["task_count"] == 24
@@ -70,7 +72,7 @@ def test_action_memory_writer_config_seals_architecture_and_information_wall() -
         config["conditioning_training"][
             "independent_conditions_per_optimizer_step"
         ]
-        == 2
+        == 1
     )
     assert config["information_wall"]["test_actions_read"] == 0
     assert config["information_wall"]["test_video_values_read"] == 0
@@ -78,17 +80,8 @@ def test_action_memory_writer_config_seals_architecture_and_information_wall() -
     assert config["profile_defaults"]["expected_world_size"] == 4
     assert config["formal_run"]["expected_world_size"] == 4
     assert config["optimization"]["scheduler"]["decay_steps"] == 800
-    assert config["formal_run"]["selected_stop_step"] == 300
-    assert config["formal_run"]["stage_stop_steps"] == [
-        300,
-        600,
-        900,
-        1200,
-        1500,
-        1800,
-        2100,
-        2400,
-    ]
+    assert config["formal_run"]["selected_stop_step"] == 500
+    assert config["formal_run"]["stage_stop_steps"] == [500]
 
 
 def test_action_memory_checkpoint_schedule_and_cursor_are_fail_closed() -> None:
@@ -132,7 +125,7 @@ def test_zero_matching_weight_keeps_only_correct_arm_gradient() -> None:
     torch.testing.assert_close(coefficients[1], torch.zeros_like(losses[1]))
 
 
-def test_formal_runtime_uses_four_rank_query_scaled_stage(
+def test_formal_runtime_uses_native_four_rank_stage(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     config = load_writer_config(CONFIG)
@@ -175,21 +168,21 @@ def test_formal_runtime_uses_four_rank_query_scaled_stage(
     )
     expected_checkpoints = tuple(config["formal_run"]["checkpoint_steps"])
     assert resolve_runtime(formal, config, context) == (
-        2400,
+        500,
         16,
         expected_checkpoints,
     )
-    assert formal.stop_after_step == 300
-    formal.resume = Path("/tmp/step_00000300")
-    formal.stop_after_step = 600
-    assert resolve_runtime(formal, config, context)[0] == 2400
-    assert formal.stop_after_step == 600
+    assert formal.stop_after_step == 500
+    formal.resume = Path("/tmp/step_00000400")
+    formal.stop_after_step = 500
+    assert resolve_runtime(formal, config, context)[0] == 500
+    assert formal.stop_after_step == 500
 
 
 def test_formal_extension_keeps_original_contract_stop() -> None:
     config = load_writer_config(CONFIG)
     args = argparse.Namespace(mode="formal", stop_after_step=1100)
-    assert _contract_stop_step(args, config, 2400) == 300
+    assert _contract_stop_step(args, config, 2400) == 500
     args.mode = "profile"
     assert _contract_stop_step(args, config, 2400) == 1100
 

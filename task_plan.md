@@ -153,3 +153,11 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [ ] 对唯一最强AS checkpoint运行必要的correct/cross-suite-wrong video对照，确认correct优势来自多个tasks；若特异性不足，在保持绝对competence优先的前提下研究并解决。
 - [ ] 只有AS同时通过相对Source-SFT与视频特异性门槛后，才启动fresh cold-start RL-Writer；cold-start阶段先取得24个source tasks逐task成功信号，再切到纯reward训练，并充分探索validation峰值，不设时间上限。
 - [ ] 保存raw rows、loss/reward curves、seeds、actions/interactions、runtime、config/hashes与exact-resume证据，更新文档、验证、commit、push后完成Goal；本Goal不推进task-local RL或test阶段。
+
+### 当前快速子任务：temporal-RoPE Writer（2026-07-24）
+
+- [x] 原位替换canonical temporal owner：1D RoPE + 4个condition-only learned memory queries；保留bias、Action Memory、Meta-LoRA、信息墙与完整LoRA decoder。
+- [x] GPU0–3原生global64两步profile通过，不做梯度累计或8卡逻辑batch模拟。
+- [ ] fresh训练到step500并封存step400/500。
+- [ ] 用同一paired 8×50 validation panel评测两个checkpoint。
+- [ ] 只对observed-best运行视频/单帧/倒序/打乱特异性诊断，然后停止汇报。

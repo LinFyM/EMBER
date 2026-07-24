@@ -43,6 +43,17 @@ def test_launcher_lock_precedes_queue_or_worker_inspection(
         assert not reached_locked_body
 
 
+def test_launcher_uses_the_contract_replica_profiles() -> None:
+    module = _launcher_module()
+    parser = argparse.ArgumentParser()
+    module._add_prepare_arguments(parser)
+    action = next(
+        value for value in parser._actions if value.dest == "replicas_per_gpu"
+    )
+    assert tuple(action.choices) == module.RUNTIME_REPLICA_PROFILES
+    assert 6 in action.choices
+
+
 def test_partial_launch_cleanup_stops_only_owned_processes() -> None:
     module = _launcher_module()
     process = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])

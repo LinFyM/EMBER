@@ -28,6 +28,7 @@ from ember.eval_adapters import (
     source_sft_requested as _source_sft_requested,
 )
 from ember.pi05_eval_contract import (
+    RUNTIME_REPLICA_PROFILES,
     build_run_contract,
     git_state,
     inspect_installed_target_tasks,
@@ -73,7 +74,12 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--mode", choices=("smoke", "screen", "formal"), required=True)
     parser.add_argument("--state-count", type=int, required=True)
-    parser.add_argument("--replicas-per-gpu", type=int, choices=(1, 2, 3, 4, 5), required=True)
+    parser.add_argument(
+        "--replicas-per-gpu",
+        type=int,
+        choices=RUNTIME_REPLICA_PROFILES,
+        required=True,
+    )
     parser.add_argument(
         "--gpu-indices",
         help="Comma-separated physical GPU indices; defaults to every configured GPU.",

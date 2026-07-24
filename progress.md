@@ -559,3 +559,25 @@
   时，已从step1200 exact-resume到1500；仍按75步保存并正式评测
   step1350/1500。若没有出现明显、多个tasks共同贡献且独立复测成立的峰后
   下降，继续下一段而不设总wall-clock上限。
+
+## Action-Forecast AS step1200→1500与继续探索（2026-07-24）
+
+- 四卡从step1200同合同exact-resume到1500，本段wall `2019.83s`；
+  step1275/1350/1425/1500在线functional monitor为
+  `0.135102/0.134932/0.134596/0.135012`，仍只是弱平台。step1500累计
+  96,000 queries、6,000 video conditions，24 tasks各4,000 queries与250次
+  视频访问且50/50 videos全覆盖；最终checkpoint逐文件SHA验证通过。
+- step1350/1500正式8×50 correct-video validation为`120/119`，均为32/32
+  shards、400 rows、24 workers exit0、无错误/重试。逐task分别为Long
+  `10/2, 8/1`、Goal `0/32, 1/33`、Object `43/19, 43/18`、Spatial
+  `0/14, 0/15`。
+- 相对step1200，1350/1500的paired净差仅`-5/-6`，exact
+  `p≈0.6029/0.4614`；1350→1500净差`-1`、`p=1.0`。因此
+  `125→120→119`只是两个略低且彼此持平的点，不满足强峰后下降停止条件。
+- step1350/1500 results SHA256为
+  `edf5b889eb4d6fdc0da9554966f97e8f9e5417cae250597526b2da7336337327`
+  和`1a9232906b30d1d2ae679d8b726f332af5279aaff4a8e2ea1d8873981c035cc5`；
+  rollout-only吞吐为`0.60530/0.63953 episode/s`。r6完成两次全panel，
+  step1350瞬时显存约80.6GiB但未OOM。
+- GPU0–3实时空闲、GPU4–7仍隔离、个人占用约291.6GB时，已从step1500
+  exact-resume到1800；继续正式评测step1650/1800，仍不提前做specificity。

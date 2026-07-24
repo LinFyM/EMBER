@@ -665,3 +665,25 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   optimizer/scheduler、sampler/cursor和四rank RNG文件逐SHA核验通过。正式
   轨迹已从该checkpoint同合同exact-resume到step1500，继续优先评测
   step1350/1500；当前不能进行最终specificity诊断。
+
+## Action-Forecast AS step1350/1500弱回落（2026-07-24）
+
+- step1350/1500完整correct-video validation为`120/119`。逐task按Long
+  1/2、Goal 3/6、Object 1/3、Spatial 1/3分别为step1350
+  `10/2, 0/32, 43/19, 0/14`，step1500
+  `8/1, 1/33, 43/18, 0/15`。相对step1200的`125`只低5/6个成功，且任务
+  方向混合；两个后续点彼此几乎完全持平。
+- step1200→1350 paired为1200-only `32`、1350-only `27`，净`-5`、
+  exact `p≈0.6029`；step1200→1500为`26/20`，净`-6`、`p≈0.4614`；
+  step1350→1500为`26/25`，净`-1`、`p=1.0`。这正是owner明确禁止据此停止的
+  “多个后续checkpoint只是略低”，远非多个tasks共同贡献的明显强下降。
+- 两次评测均完成32/32 shards、400 rows、24 workers exit0且无错误/重试；
+  results SHA256分别为
+  `edf5b889eb4d6fdc0da9554966f97e8f9e5417cae250597526b2da7336337327`
+  和`1a9232906b30d1d2ae679d8b726f332af5279aaff4a8e2ea1d8873981c035cc5`。
+  rollout-only吞吐为`0.60530/0.63953 episode/s`；step1350曾瞬时达到约
+  `80.6GiB`但未OOM并随worker完成释放，r6仍完成全panel。
+- step1500 checkpoint累计96,000 queries、6,000 video conditions；24 tasks
+  各4,000 queries、250次视频访问且50/50 videos全覆盖，完整恢复文件逐SHA
+  验证通过。现已同合同exact-resume到step1800并将正式评测step1650/1800；
+  specificity继续推迟。

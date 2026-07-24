@@ -519,3 +519,12 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 
 - 旧Action-Memory checkpoint在固定语言下换跨suite视频会明显改变有效LoRA，但完整视频倒序/打乱的相对变化仅约`0.036/0.027`，远小于单帧或重复端点帧的`0.237–0.312`；因此问题不是公共LoRA塌缩，而是temporal路径近似将视频作为无序状态集合。
 - 当前最小修正不预设functional loss与closed-loop错位，也不增加额外训练目标：只让顺序通过RoPE直接进入temporal Q/K，并用4个不传播query residual的learned memory queries替代单一pool。显式帧差分、手工phase和order auxiliary均暂不采用，以便500-step实验直接回答正常AS监督是否会利用可表达的时间顺序。
+
+## temporal-RoPE Writer 500-step结果（2026-07-24）
+
+- bias-enabled Action-Memory、Meta-LoRA、信息墙和完整rank16 LoRA均未改变；唯一结构变化是temporal self-attention使用原始frame index的1D RoPE，并以4个condition-only temporal memory queries保留多阶段摘要。Writer为`11,252,737`个训练参数，约为rank128 Source-SFT的`1.093×`。
+- 四卡native global64 fresh训练到step500，训练body wall为`1188.6s`。封存512-query functional validation loss在step400/500为`0.1364674/0.1369167`，几乎持平且后者略差；它正确提示没有继续改善，但最终选择仍由closed-loop决定。
+- 优化后的`per_sample_lora_batched_replan` evaluator在step400/500分别得到`108/400`和`98/400`。paired rows中step400-only/step500-only=`24/14`、both=`84`；逐task step400→500为Long `5→4, 3→0`、Goal `0→0, 37→35`、Object `37→35, 26→24`、Spatial `0→0, 0→0`，故step400是明确observed-best。它仍低于rank128 Source-SFT incumbent `122/400`以及旧v1 AS的`119/400`，本次结构修正没有恢复AS绝对泛化上限。
+- 仅在step400进行post-selection、无action/reward/outcome的特异性诊断。保持正确language不变，仅换跨suite错误视频时，temporal feature、LoRA参数和有效LoRA更新的中位相对L2分别为`0.1228/0.1595/0.2267`；同task另一demo对应`0.0255/0.0368/0.0403`。8/8 tasks的跨suite有效更新变化均为`0.1770–0.2715`，说明视频任务内容已经稳定进入adapter，不是公共LoRA塌缩。
+- 对同一视频倒放或确定性乱序时，有效LoRA更新的中位相对L2却仅为`0.00937/0.00699`，cosine中位数为`0.999957/0.999976`；而只保留首/中/末帧时为`0.1745/0.1124/0.3339`。因此模型使用了多帧内容和端点状态，但normal functional监督几乎没有让新RoPE路径学习动作顺序。这个结论是representation/adapter诊断，不冒充错误视频的closed-loop performance arm。
+- 当前最直接的科学结论不是“视频没用”，而是“视频语义内容有用、时间顺序仍未被当前监督识别”。由于correct性能未超过SFT，按owner的快速子任务合同不启动contrast、更多checkpoint或RL，先停止汇报。

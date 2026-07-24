@@ -158,6 +158,6 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 
 - [x] 原位替换canonical temporal owner：1D RoPE + 4个condition-only learned memory queries；保留bias、Action Memory、Meta-LoRA、信息墙与完整LoRA decoder。
 - [x] GPU0–3原生global64两步profile通过，不做梯度累计或8卡逻辑batch模拟。
-- [ ] fresh训练到step500并封存step400/500。
-- [ ] 用同一paired 8×50 validation panel评测两个checkpoint。
-- [ ] 只对observed-best运行视频/单帧/倒序/打乱特异性诊断，然后停止汇报。
+- [x] fresh训练到step500并封存step400/500；500-step训练body wall为`1188.6s`，两个checkpoint及完整四rank resume state均通过manifest校验。
+- [x] 用同一paired 8×50 validation panel评测两个checkpoint；step400/500分别为`108/400`与`98/400`，逐task上step400处处不差，故冻结step400为本轨迹observed-best。
+- [x] 只对step400运行视频/单帧/倒序/打乱特异性诊断并停止：固定语言时跨suite错误视频令有效LoRA相对变化中位数为`0.2267`，同task另一demo为`0.0403`，但倒序/打乱仅`0.00937/0.00699`。当前Writer已利用视频任务内容，却基本未利用动作时序；不继续本轮训练、contrast或RL。

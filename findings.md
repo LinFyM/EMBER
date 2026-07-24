@@ -640,3 +640,28 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   和`4c1d62d0b3fbc847b776cdbcce0558d502b12a70381fa7f72d0913112d32a1cf`；
   两次均为32/32 shards、400 rows、24 workers exit0、无重试。对应
   rollout-only吞吐为`0.61976/0.62315 episode/s`，继续确认r6稳定。
+
+## Action-Forecast AS step1050/1200新高（2026-07-24）
+
+- step1050/1200完整correct-video validation为`117/125`。逐task按Long
+  1/2、Goal 3/6、Object 1/3、Spatial 1/3分别为step1050
+  `6/1, 0/40, 44/18, 0/8`，step1200
+  `6/3, 1/38, 45/20, 1/11`。step1200在8个tasks中的7个有成功，aggregate
+  超过四卡rank128 Source-SFT best `108/400`，也略高于旧八卡stretch
+  `122/400`；后者仍不是必须超过的停止门槛。
+- step600→1050 paired为600-only `31`、1050-only `30`，exact McNemar
+  `p=1.0`，两者实质相同；step600→1200为600-only `31`、1200-only `38`
+  （净`+7`，`p≈0.4704`）。step1050→1200为1050-only `15`、1200-only
+  `23`（净`+8`，`p≈0.2559`）。此前750的回落不仅未持续，1200还产生新高，
+  因此当前不存在可讨论的峰后下降，更不满足强下降停止条件。
+- 两次评测均完成32/32 shards、400 rows、24 workers exit0且无错误/重试。
+  step1050/1200 results SHA256分别为
+  `b88303cbf2a170315a1d5523f58cb1b0b3346d4671a9e37f024a0dda23f339a7`
+  和`c575591ba36d949578061aa164f59572fcd59c81952a3f301c4c66b4afd38dd0`。
+  两次均只生成259个唯一视频LoRA，batch100、4个generator batches；
+  rollout-only吞吐分别为`0.62721/0.60638 episode/s`，r6继续稳定。
+- step1200 checkpoint累计76,800 action queries、4,800 video conditions；
+  24 tasks各3,200 queries、200次视频访问且50/50 videos全覆盖，Writer、
+  optimizer/scheduler、sampler/cursor和四rank RNG文件逐SHA核验通过。正式
+  轨迹已从该checkpoint同合同exact-resume到step1500，继续优先评测
+  step1350/1500；当前不能进行最终specificity诊断。

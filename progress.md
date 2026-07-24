@@ -535,3 +535,27 @@
   和`4c1d62d0b3fbc847b776cdbcce0558d502b12a70381fa7f72d0913112d32a1cf`。
   在GPU0–3实时空闲、GPU4–7仍隔离、个人占用约287.4GB时，已从step900启动
   下一段exact-resume到step1200，继续优先评测step1050/1200。
+
+## Action-Forecast AS step900→1200与新observed-best（2026-07-24）
+
+- 四卡从step900同合同exact-resume到1200；step975/1050/1125/1200在线
+  functional monitor为`0.134745/0.134612/0.134946/0.134434`，只显示微弱
+  摆动。step1200累计76,800 queries、4,800 video conditions，24 tasks各
+  3,200 queries与200次视频访问且50/50 videos全覆盖；checkpoint全部文件SHA
+  校验通过。
+- step1050/1200正式8×50 correct-video validation为`117/125`，均为32/32
+  shards、400 rows、24 workers exit0、无错误/重试。step1200逐task为Long
+  `6/3`、Goal `1/38`、Object `45/20`、Spatial `1/11`，7/8 tasks非零。
+- step600→1050 paired flips为`31/30`、exact `p=1.0`；step600→1200为
+  `31/38`、净`+7`；step1050→1200为`15/23`、净`+8`。step1200成为新的
+  AS observed-best `125/400`，因此不存在持续峰后下降，不能停止或提前做
+  wrong/shuffled/reversed诊断。
+- step1050/1200 results SHA256为
+  `b88303cbf2a170315a1d5523f58cb1b0b3346d4671a9e37f024a0dda23f339a7`
+  和`c575591ba36d949578061aa164f59572fcd59c81952a3f301c4c66b4afd38dd0`；
+  rollout-only吞吐为`0.62721/0.60638 episode/s`。两次均按视频级cache只
+  生成259个唯一LoRA，generator batch100与每卡6 rollout replicas解耦。
+- GPU0–3再次实时空闲、GPU4–7仍为其他用户进程且未触碰、个人占用约289.8GB
+  时，已从step1200 exact-resume到1500；仍按75步保存并正式评测
+  step1350/1500。若没有出现明显、多个tasks共同贡献且独立复测成立的峰后
+  下降，继续下一段而不设总wall-clock上限。

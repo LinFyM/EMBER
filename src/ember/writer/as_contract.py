@@ -530,6 +530,7 @@ def build_contract(
     batch_size: int,
     batch_cycle: Sequence[int],
     checkpoint_steps: Sequence[int],
+    initialization: Mapping[str, Any],
 ) -> dict[str, Any]:
     contract_stop_step = _contract_stop_step(args, config, total_steps)
     microbatch = int(
@@ -566,6 +567,11 @@ def build_contract(
         "data": dict(config["data"]),
         "conditioning_training": dict(config["conditioning_training"]),
         "optimization": dict(config["optimization"]),
+        **(
+            {"initialization": dict(initialization)}
+            if initialization.get("mode") == "writer_weight_warm_start"
+            else {}
+        ),
         "task_ids": list(task_ids),
         "runtime": {
             "world_size": context.world_size,
@@ -648,6 +654,11 @@ def publish_contract(
             {
                 "source_run": str(args.source_run.resolve()),
                 "source_checkpoint": str(args.checkpoint.resolve()),
+                "writer_initialization_checkpoint": (
+                    str(args.initialize_writer_checkpoint.resolve())
+                    if args.initialize_writer_checkpoint
+                    else None
+                ),
                 "target_data_root": str(args.data_root.resolve()),
                 "tokenizer": str(args.tokenizer_path.resolve()),
             },

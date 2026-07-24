@@ -295,6 +295,94 @@ def validate_writer_checkpoint_files(
     return manifest
 
 
+def inspect_writer_checkpoint(
+    checkpoint: Path,
+) -> tuple[dict[str, Any], dict[str, Any], str]:
+    """Validate a published Writer checkpoint against its owning run contract."""
+
+    checkpoint = checkpoint.resolve()
+    if checkpoint.parent.name != "checkpoints":
+        raise WriterModelError("AS-Writer initialization is outside a training run")
+    contract_path = checkpoint.parent.parent / "run_contract.json"
+    if not contract_path.is_file():
+        raise WriterModelError("AS-Writer initialization lost its run contract")
+    contract = read_json(contract_path)
+    contract_sha256 = canonical_hash(contract)
+    world_size = int(contract.get("runtime", {}).get("world_size", -1))
+    if world_size <= 0:
+        raise WriterModelError("AS-Writer initialization topology is invalid")
+    manifest = validate_writer_checkpoint_files(
+        checkpoint,
+        world_size=world_size,
+        contract_sha256=contract_sha256,
+    )
+    return contract, manifest, contract_sha256
+
+
+def initialize_writer_phase(
+    checkpoint: Path | None,
+    context: DistributedContext,
+    stage: str,
+    source: Mapping[str, Any],
+    authorities: Mapping[str, Any],
+    writer_config: Mapping[str, Any],
+    writer: CompleteLoRAWriter,
+    lora_contract_sha256: str,
+) -> dict[str, Any]:
+    """Load a compatible Writer state while deliberately resetting optimization."""
+
+    if checkpoint is None:
+        return {
+            "mode": "functional_identity_init",
+            "optimizer": "fresh",
+            "scheduler": "fresh",
+            "rng": "fresh_seed",
+        }
+    validation: list[Any] = [None]
+    if context.is_main:
+        try:
+            training, manifest, contract_sha256 = inspect_writer_checkpoint(checkpoint)
+            cursor = int(manifest.get("consumed", {}).get("next_step", -1))
+            writer_record = manifest.get("files", {}).get("writer.safetensors", {})
+            if (
+                training.get("schema_version")
+                != "ember_pi05_action_memory_as_writer_launch_v1"
+                or training.get("stage", "development") != stage
+                or training.get("source") != dict(source)
+                or training.get("authorities") != dict(authorities)
+                or training.get("writer") != dict(writer_config)
+                or training.get("trainable", {}).get("lora_contract_sha256")
+                != lora_contract_sha256
+                or cursor <= 0
+                or checkpoint.name != f"step_{cursor:08d}"
+                or not isinstance(writer_record.get("sha256"), str)
+            ):
+                raise WriterModelError("AS-Writer warm-start authority changed")
+            validation[0] = {
+                "mode": "writer_weight_warm_start",
+                "source_checkpoint": str(checkpoint),
+                "source_run_contract_sha256": contract_sha256,
+                "source_checkpoint_manifest_sha256": sha256_file(
+                    checkpoint / "checkpoint_manifest.json"
+                ),
+                "source_writer_state_sha256": writer_record["sha256"],
+                "source_optimizer_step": cursor,
+                "optimizer": "fresh",
+                "scheduler": "fresh",
+                "rng": "fresh_seed",
+            }
+        except Exception as error:
+            validation[0] = {"error": repr(error)}
+    if context.world_size > 1:
+        dist.broadcast_object_list(validation, src=0, device=context.device)
+    if validation[0].get("error"):
+        raise WriterModelError(validation[0]["error"])
+    writer.load_state_dict(
+        load_file(str(checkpoint / "writer.safetensors"), device=str(context.device))
+    )
+    return dict(validation[0])
+
+
 def load_writer_checkpoint(
     *,
     checkpoint: Path,

@@ -43,7 +43,11 @@ from ember.pi05_source_setup import (
     seed_everything,
 )
 from ember.writer.as_step import run_writer_step
-from ember.writer.checkpoint import load_writer_checkpoint, save_writer_checkpoint
+from ember.writer.checkpoint import (
+    initialize_writer_phase,
+    load_writer_checkpoint,
+    save_writer_checkpoint,
+)
 from ember.writer.conditioning import (
     batch_size_cycle,
 )
@@ -439,6 +443,11 @@ def _prepare_setup(
         source_config=authorities.source_base_config,
         total_steps=total_steps,
     )
+    initialization = initialize_writer_phase(
+        args.initialize_writer_checkpoint, context, writer_stage(config), source,
+        config["authorities"], config["writer"], writer,
+        str(trainable["lora_contract_sha256"]),
+    )
     candidate = build_contract(
         args=args,
         config=config,
@@ -453,6 +462,7 @@ def _prepare_setup(
         batch_size=batch_size,
         batch_cycle=batch_cycle,
         checkpoint_steps=checkpoint_steps,
+        initialization=initialization,
     )
     contract = reconcile_resume_contract(args, candidate)
     contract_sha256 = canonical_hash(contract)
@@ -744,6 +754,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--resume", type=Path)
+    parser.add_argument(
+        "--initialize-writer-checkpoint",
+        type=Path,
+        help="Warm-start Writer weights in a new optimizer/scheduler/RNG phase.",
+    )
     parser.add_argument("--total-steps", type=int)
     parser.add_argument("--stop-after-step", type=int)
     parser.add_argument("--checkpoint-steps", type=str)
@@ -776,6 +791,7 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
         "data_root",
         "output_dir",
         "resume",
+        "initialize_writer_checkpoint",
     ):
         value = getattr(args, name)
         if value is not None:

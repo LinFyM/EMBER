@@ -29,6 +29,7 @@ from ember.writer.as_step import (
     run_writer_step,
 )
 from ember.writer.model import WriterModelError
+from ember.writer.checkpoint import initialize_writer_phase
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -323,6 +324,62 @@ def test_writer_update_averages_two_independent_task_conditions(
     assert [item["data_step"] for item in observed["conditions"]] == [0, 1]  # type: ignore[index]
     assert float(parameter.detach()) == pytest.approx(-4.0)
     assert scheduler_steps == [True]
+
+
+def test_writer_weight_warm_start_resets_optimization_and_records_provenance(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    checkpoint = tmp_path / "prior" / "checkpoints" / "step_00000005"
+    checkpoint.mkdir(parents=True)
+    (checkpoint / "checkpoint_manifest.json").write_text("{}")
+    writer = torch.nn.Linear(2, 2)
+    warm_state = {
+        name: torch.full_like(value, 3.0)
+        for name, value in writer.state_dict().items()
+    }
+    config = {
+        "sealed_stage": "development",
+        "authorities": {"target_data_manifest": {"sha256": "target"}},
+        "writer": {"architecture": "same"},
+    }
+    source = {"checkpoint": "same"}
+    training = {
+        "schema_version": "ember_pi05_action_memory_as_writer_launch_v1",
+        "stage": "development",
+        "source": source,
+        "authorities": config["authorities"],
+        "writer": config["writer"],
+        "trainable": {"lora_contract_sha256": "lora"},
+    }
+    manifest = {
+        "consumed": {"next_step": 5},
+        "files": {"writer.safetensors": {"sha256": "a" * 64}},
+    }
+    monkeypatch.setattr(
+        "ember.writer.checkpoint.inspect_writer_checkpoint",
+        lambda _checkpoint: (training, manifest, "contract-sha"),
+    )
+    monkeypatch.setattr(
+        "ember.writer.checkpoint.load_file",
+        lambda _path, device: warm_state,
+    )
+    record = initialize_writer_phase(
+        checkpoint,
+        SimpleNamespace(is_main=True, world_size=1, device=torch.device("cpu")),
+        "development",
+        source,
+        config["authorities"],
+        config["writer"],
+        writer,  # type: ignore[arg-type]
+        "lora",
+    )
+    assert record["mode"] == "writer_weight_warm_start"
+    assert record["source_optimizer_step"] == 5
+    assert record["optimizer"] == "fresh"
+    assert record["scheduler"] == "fresh"
+    assert record["rng"] == "fresh_seed"
+    assert all(torch.equal(value, warm_state[name]) for name, value in writer.state_dict().items())
 
 
 def test_functional_arm_gradient_is_query_weighted_across_microbatches(

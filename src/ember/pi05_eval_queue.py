@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Iterable, Sequence
 
 from ember.pi05_assets import Pi05EvaluationError
+from ember.pi05_eval_contract import RUNTIME_REPLICA_PROFILES
 
 
 QUEUE_SCHEMA = "ember_pi05_eval_queue_v3"
@@ -542,7 +543,7 @@ def validate_worker_layout(
     else:
         gpu_ids = tuple(int(value) for value in physical_gpu_ids)
     if (
-        replicas_per_gpu not in (1, 2, 3, 4, 5)
+        replicas_per_gpu not in RUNTIME_REPLICA_PROFILES
         or not gpu_ids
         or len(set(gpu_ids)) != len(gpu_ids)
     ):

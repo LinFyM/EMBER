@@ -687,3 +687,26 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   各4,000 queries、250次视频访问且50/50 videos全覆盖，完整恢复文件逐SHA
   验证通过。现已同合同exact-resume到step1800并将正式评测step1650/1800；
   specificity继续推迟。
+
+## Action-Forecast AS step1650/1800仍未建立强下降（2026-07-24）
+
+- step1650/1800完整correct-video validation为`120/114`。逐task按Long
+  1/2、Goal 3/6、Object 1/3、Spatial 1/3分别为step1650
+  `6/3, 0/33, 43/21, 0/14`，step1800
+  `4/2, 1/34, 45/17, 0/11`。step1800仍有6/8 tasks非零，后段变化不是
+  多个tasks一致塌陷。
+- step1200→1650 paired为1200-only `29`、1650-only `24`，净`-5`、
+  exact `p≈0.5831`；step1200→1800为`31/20`，净`-11`、`p≈0.1608`；
+  step1650→1800为`30/24`，净`-6`、`p≈0.4966`。因此
+  `125→120→119→120→114`最多是第一处略大的回落，幅度和复现性均不满足
+  owner要求的“远超400-rollout正常波动、多个tasks共同贡献、独立复测仍成立”。
+- 两次评测均完成32/32 shards、400 rows、24 workers exit0且无错误/重试；
+  results SHA256分别为
+  `e800361b3bcdf57d57f39f635b20136f043a73d80197560098f0e087b5c35f9a`
+  和`5c0de70f6b75c63d332e6e6e35ece5f2f4a57041cf364111123b6d73f61654d3`。
+  两次均只生成259个唯一视频LoRA，batch100、4个generator batches并复用
+  source-policy进入rollout；rollout-only吞吐为`0.61633/0.61129 episode/s`。
+- step1800 checkpoint累计115,200 action queries、7,200 video conditions；
+  24 tasks各4,800 queries、300次视频访问且50/50 videos全覆盖，完整Writer、
+  trainer、sampler/cursor和四rank恢复状态已封存。轨迹已同合同exact-resume
+  到step2100，优先正式评测step1950/2100；仍不能开始最终specificity诊断。

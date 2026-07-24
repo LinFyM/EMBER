@@ -581,3 +581,27 @@
   step1350瞬时显存约80.6GiB但未OOM。
 - GPU0–3实时空闲、GPU4–7仍隔离、个人占用约291.6GB时，已从step1500
   exact-resume到1800；继续正式评测step1650/1800，仍不提前做specificity。
+
+## Action-Forecast AS step1500→1800与继续充分探索（2026-07-24）
+
+- 四卡从step1500同合同exact-resume到1800，本段wall `2051.35s`；
+  step1575/1650/1725/1800在线functional monitor为
+  `0.135525/0.134902/0.134651/0.134745`，仍是弱平台。step1800累计
+  115,200 queries、7,200 video conditions，24 tasks各4,800 queries与300次
+  视频访问且50/50 videos全覆盖；完整checkpoint和四rank恢复状态已核验。
+- step1650/1800正式8×50 correct-video validation为`120/114`，均为32/32
+  shards、400 rows、24 workers exit0、无错误/重试。逐task分别为Long
+  `6/3, 4/2`、Goal `0/33, 1/34`、Object `43/21, 45/17`、Spatial
+  `0/14, 0/11`。
+- 相对step1200，1650/1800 paired为`29/24`与`31/20`，净`-5/-11`，
+  exact `p≈0.5831/0.1608`；1650→1800为`30/24`，净`-6`、
+  `p≈0.4966`。该幅度未远超400-rollout噪声，任务方向也混合，不能把
+  `125→120→119→120→114`解释成充分确认的峰后下降。
+- step1650/1800 results SHA256为
+  `e800361b3bcdf57d57f39f635b20136f043a73d80197560098f0e087b5c35f9a`
+  和`5c0de70f6b75c63d332e6e6e35ece5f2f4a57041cf364111123b6d73f61654d3`；
+  rollout-only吞吐为`0.61633/0.61129 episode/s`。两次均以batch100生成
+  259个唯一视频LoRA，随后每卡6 replicas稳定完成。
+- GPU0–3再次实时空闲、GPU4–7仍为其他用户进程且未触碰、个人占用约274GB
+  时，已从step1800 exact-resume到2100；下一步正式评测step1950/2100，
+  specificity继续推迟。

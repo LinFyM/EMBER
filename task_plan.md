@@ -193,11 +193,12 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
   exact-resume checkpoints；19,200 queries与全部loss/gradient均finite。
 - [ ] 按约30分钟一段、每段四个checkpoint推进四卡AS；优先评测每段第2/4点，
   必要时补1/3点，定位paired 8×50 validation最佳checkpoint。
-  - 当前step150/300/450/600/750/900/1050/1200/1350/1500
-    correct-video为`75/99/93/118/104/113/117/125/120/119`；step1200仍是
-    observed-best，但1350/1500只低5/6，且两者逐episode配对净差仅`-1`。
-    这只是略低平台，不是明显峰后下降；已exact-resume推进step1500→1800，
-    下一步正式评测step1650/1800。
+  - 当前step150/300/450/600/750/900/1050/1200/1350/1500/1650/1800
+    correct-video为`75/99/93/118/104/113/117/125/120/119/120/114`；
+    step1200仍是observed-best。相对1200，1650/1800逐episode paired净差仅
+    `-5/-11`、exact `p≈0.583/0.161`，1800相对1650净`-6`、`p≈0.497`。
+    `125→120→119→120→114`仍未形成远超400-rollout噪声的多task强下降；
+    已exact-resume推进step1800→2100，下一步正式评测step1950/2100。
 - [ ] 对observed-best完成correct/wrong/shuffled/reversed视频证据；目标是不明显
   落后于四卡rank128 SFT best `108/400`，并争取超过旧八卡全局incumbent
   `122/400`，同时显著改善旧架构的顺序不敏感。

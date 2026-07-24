@@ -109,6 +109,7 @@ class WriterRuntime:
     contract_sha256: str
     total_steps: int
     batch_size: int
+    conditions_per_optimizer_step: int
     checkpoint_steps: tuple[int, ...]
     resume_step: int
     metrics_path: Path
@@ -222,6 +223,7 @@ def _restore_training_state(
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     batch_size: int,
     batch_cycle: tuple[int, ...],
+    conditions_per_optimizer_step: int,
     contract_sha256: str,
     initial_step: int,
 ) -> tuple[dict[str, Any] | None, int]:
@@ -237,6 +239,7 @@ def _restore_training_state(
         teacher_video_seed=int(config["data"]["teacher_video_seed"]),
         per_rank_batch_size=batch_size,
         per_rank_batch_cycle=batch_cycle,
+        conditions_per_optimizer_step=conditions_per_optimizer_step,
         contract_sha256=contract_sha256,
     )
     if loaded != initial_step:
@@ -253,15 +256,18 @@ def _build_sampler_and_loader(
     task_ids: tuple[int, ...],
     batch_size: int,
     batch_cycle: tuple[int, ...],
+    conditions_per_optimizer_step: int,
     initial_step: int,
 ) -> tuple[MixedTaskBatchSampler, TeacherVideoSchedule, DataLoader[Any]]:
+    initial_data_step = initial_step * conditions_per_optimizer_step
+    stop_data_step = args.stop_after_step * conditions_per_optimizer_step
     sampler = MixedTaskBatchSampler(
         dataset,
         task_ids=task_ids,
         per_rank_batch_size=batch_size,
         per_rank_batch_cycle=batch_cycle,
-        start_step=initial_step,
-        stop_step=args.stop_after_step,
+        start_step=initial_data_step,
+        stop_step=stop_data_step,
         rank=context.rank,
         world_size=context.world_size,
         seed=int(config["data"]["sampler_seed"]),
@@ -474,6 +480,9 @@ def prepare_runtime(
     config = load_writer_config(args.config.resolve())
     total_steps, batch_size, checkpoint_steps = resolve_runtime(args, config, context)
     batch_cycle = batch_size_cycle(batch_size, config)
+    conditions_per_optimizer_step = int(
+        config["conditioning_training"]["independent_conditions_per_optimizer_step"]
+    )
     initial_step = resume_step(args.resume)
     if not 0 <= initial_step < args.stop_after_step:
         raise WriterModelError("AS-Writer resume cursor is outside this segment")
@@ -497,6 +506,7 @@ def prepare_runtime(
         scheduler=setup.scheduler,
         batch_size=batch_size,
         batch_cycle=batch_cycle,
+        conditions_per_optimizer_step=conditions_per_optimizer_step,
         contract_sha256=setup.contract_sha256,
         initial_step=initial_step,
     )
@@ -508,6 +518,7 @@ def prepare_runtime(
         task_ids=setup.task_ids,
         batch_size=batch_size,
         batch_cycle=batch_cycle,
+        conditions_per_optimizer_step=conditions_per_optimizer_step,
         initial_step=initial_step,
     )
     wrapped = _wrap_writer(setup.writer, context)
@@ -568,6 +579,7 @@ def prepare_runtime(
         contract_sha256=setup.contract_sha256,
         total_steps=total_steps,
         batch_size=batch_size,
+        conditions_per_optimizer_step=conditions_per_optimizer_step,
         checkpoint_steps=checkpoint_steps,
         resume_step=initial_step,
         metrics_path=metrics_path,
@@ -661,6 +673,17 @@ def run_steps(runtime: WriterRuntime) -> None:
             else None,
             "train_tasks": len(runtime.task_ids),
             "teacher_action_episodes_available": len(runtime.task_ids) * 50,
+            "global_policy_samples": (
+                stop
+                * runtime.context.world_size
+                * runtime.batch_size
+                * runtime.conditions_per_optimizer_step
+            ),
+            "global_independent_task_video_conditions": (
+                stop
+                * runtime.context.world_size
+                * runtime.conditions_per_optimizer_step
+            ),
             "test_action_reads": 0,
             "test_video_value_reads": 0,
         }
@@ -686,6 +709,9 @@ def train(args: argparse.Namespace) -> None:
                         "contract_sha256": runtime.contract_sha256,
                         "resume_step": runtime.resume_step,
                         "stop_after_step": args.stop_after_step,
+                        "independent_conditions_per_optimizer_step": (
+                            runtime.conditions_per_optimizer_step
+                        ),
                         "tasks": len(runtime.task_ids),
                         "trainable": runtime.contract["trainable"],
                     },

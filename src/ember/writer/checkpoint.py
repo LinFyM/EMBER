@@ -77,17 +77,23 @@ def _write_rank_state(
     sampler: MixedTaskBatchSampler,
     video_schedule: TeacherVideoSchedule,
     saved_rng: Mapping[str, Any],
+    conditions_per_optimizer_step: int,
 ) -> None:
+    next_data_step = step * conditions_per_optimizer_step
     torch.save(
         {
             "schema_version": AS_WRITER_RANK_STATE_SCHEMA,
             "next_step": step,
+            "next_data_step": next_data_step,
             "rank": context.rank,
             "world_size": context.world_size,
             "per_rank_batch_size": sampler.per_rank_batch_size,
             "per_rank_batch_cycle": sampler.per_rank_batch_cycle,
             "sampler_seed": sampler.seed,
             "teacher_video_seed": video_schedule.seed,
+            "independent_conditions_per_optimizer_step": (
+                conditions_per_optimizer_step
+            ),
             "rng": saved_rng,
         },
         path,
@@ -109,6 +115,10 @@ def _write_shared_state(
     require_full_coverage: bool,
     metrics_rows: int,
 ) -> dict[str, Any]:
+    conditions_per_optimizer_step = int(
+        contract["runtime"]["independent_conditions_per_optimizer_step"]
+    )
+    data_stop_step = step * conditions_per_optimizer_step
     save_file(
         {
             name: value.detach().to(device="cpu").contiguous()
@@ -128,8 +138,12 @@ def _write_shared_state(
         },
         temporary / "trainer_state.pt",
     )
-    coverage = sampler.coverage_for_steps(0, step)
-    schedule = video_schedule.consumed_identity_summary(sampler, 0, step)
+    coverage = sampler.coverage_for_steps(0, data_stop_step)
+    schedule = video_schedule.consumed_identity_summary(
+        sampler,
+        0,
+        data_stop_step,
+    )
     if require_full_coverage and (
         any(len(episodes) != sampler.episodes_per_task for episodes in coverage.values())
         or schedule["min_unique_videos_per_task"] != len(video_schedule.demo_indices)
@@ -142,6 +156,10 @@ def _write_shared_state(
         "min_action_episodes_per_task": min(map(len, coverage.values())),
         "max_action_episodes_per_task": max(map(len, coverage.values())),
         "next_step": step,
+        "next_data_step": data_stop_step,
+        "independent_conditions_per_optimizer_step": (
+            conditions_per_optimizer_step
+        ),
     }
     files = {
         str(path.relative_to(temporary)): {
@@ -195,6 +213,9 @@ def save_writer_checkpoint(
     _raise_distributed_errors(context, "initialization", error)
 
     saved_rng = _rng_state(context)
+    conditions_per_optimizer_step = int(
+        contract["runtime"]["independent_conditions_per_optimizer_step"]
+    )
     error = None
     try:
         _write_rank_state(
@@ -204,6 +225,7 @@ def save_writer_checkpoint(
             sampler=sampler,
             video_schedule=video_schedule,
             saved_rng=saved_rng,
+            conditions_per_optimizer_step=conditions_per_optimizer_step,
         )
     except Exception as caught:
         error = caught
@@ -284,6 +306,7 @@ def load_writer_checkpoint(
     teacher_video_seed: int,
     per_rank_batch_size: int,
     per_rank_batch_cycle: tuple[int, ...],
+    conditions_per_optimizer_step: int,
     contract_sha256: str,
 ) -> tuple[int, dict[str, Any], int]:
     validation: list[Any] = [None]
@@ -329,6 +352,8 @@ def load_writer_checkpoint(
         context.world_size,
         per_rank_batch_size,
         per_rank_batch_cycle,
+        conditions_per_optimizer_step,
+        int(trainer["next_step"]) * conditions_per_optimizer_step,
         sampler_seed,
         teacher_video_seed,
     )
@@ -338,6 +363,8 @@ def load_writer_checkpoint(
         int(rank_state["world_size"]),
         int(rank_state["per_rank_batch_size"]),
         tuple(int(value) for value in rank_state.get("per_rank_batch_cycle", ())),
+        int(rank_state.get("independent_conditions_per_optimizer_step", -1)),
+        int(rank_state.get("next_data_step", -1)),
         int(rank_state["sampler_seed"]),
         int(rank_state["teacher_video_seed"]),
     )
@@ -345,6 +372,8 @@ def load_writer_checkpoint(
         rank_state.get("schema_version") != AS_WRITER_RANK_STATE_SCHEMA
         or actual != expected
         or checkpoint.name != f"step_{expected[0]:08d}"
+        or int(validation[0].get("consumed", {}).get("next_data_step", -1))
+        != expected[0] * conditions_per_optimizer_step
     ):
         raise WriterModelError("Writer rank resume state changed")
     return (

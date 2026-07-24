@@ -145,9 +145,10 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] 在读取新validation action值前封存8-task task-balanced functional-loss panel：每task 8条video × 8个独立action query，共512 rows/checkpoint；只作候选筛选，400-rollout closed-loop success仍是最终authority。
 - [x] 2026-07-28前所有训练和评测只能使用物理GPU `0,1,2,3`；四卡真实forward/backward、batch ceiling、显存与吞吐profile及fresh AS合同已封存，GPU4–7始终未触碰。
 - [x] 从fresh identity充分训练首条bias-restored AS-Writer轨迹；旧decay-6400轨迹因global batch减半后的scheduler混淆只作provenance。query-scaled warmup100/decay2400轨迹的val-loss在step400到达`0.134058`，随后整体恶化，故在完整step800后早停。step300/400/500/600/800的完整8×50 correct-video结果为`57/91/86/87/88`，确认step400为该轨迹真实峰值且无需补step200；但它仍显著低于旧rank128 Source-SFT step400的`122/400`，所以只完成了首轨迹上限诊断，尚未通过本Goal的AS>SFT门槛。
-- [ ] 对AS做不改架构的query-matched训练修正：同一task/video生成一次adapter，每rank使用128个独立action queries，并以8个16-query policy microbatches顺序求精确加权平均梯度；global query batch512与rank128 SFT一致。现有`as_step.py`仍是唯一训练owner，不新增runner；profile通过后才封存fresh正式轨迹。
-- [ ] 从fresh identity在同参数口径充分训练rank128 Source-SFT；四卡batch128 profile已完成，global batch512、稳定吞吐约`36.18 queries/s`、峰值reserved `67.98GB`，正式首段封存到step800并每100步原地测512-query val loss。旧`122/400`只作已观测参考，必须继续确认真实峰值与持续峰后下降。
-  - 当前fresh run已在step100–400得到连续validation-loss回升并安全暂停；正在对100/200/300/400做完整closed-loop验证。若step400仍未下降则从完整step400 exact-resume，不能仅凭functional loss冻结step100。
+- [ ] 对AS做不改架构的低方差functional训练修正：四卡时每rank每个optimizer update顺序处理2个独立task/video conditions，每个condition使用64个独立action queries并拆成4个16-query policy microbatches；因此每次更新仍覆盖8个独立conditions和512个queries。该设置只用于提高条件覆盖与梯度稳定性，不把batch size当作方法门槛；已有checkpoint能合规续训时不因GPU数量变化机械重训。现有`as_step.py`仍是唯一训练owner，不新增runner；profile通过后再决定从现有best继续还是fresh对照。
+- [ ] 充分探索rank128 Source-SFT。四卡batch128 profile已完成，稳定吞吐约`36.18 queries/s`、峰值reserved `67.98GB`；旧八卡`step400=122/400`仍是全局incumbent，但它对应400次更新、204,800 queries和3,200个独立task-condition visits，不能把raw step机械映射到四卡轨迹。
+  - 当前四卡fresh run的step100–800 closed-loop依次为`81/95/68/78/94/99/108/97`；step700是该轨迹当前best，但相邻候选尚无显著峰后下降。已从step800原地exact-resume到1100。selection只微弱参考functional val loss，最终依赖同seed完整8×50 rollouts。
+  - GPU数量变化不再触发从零重训：优先延续已有checkpoint，并同时报告optimizer updates、累计action queries、独立task-condition visits与拓扑切换点。跨world-size续训若不能保持逐rank RNG的bitwise exact-resume，则明确封存为同权重/optimizer的topology-transition continuation，而不是错误宣称exact resume。
 - [ ] 要求AS在validation上明显超过Source-SFT；若未达到，保留逐task证据并诊断/迭代，但不改变source base、split、信息墙或核心科学问题。
 - [ ] 对唯一最强AS checkpoint运行必要的correct/cross-suite-wrong video对照，确认correct优势来自多个tasks；若特异性不足，在保持绝对competence优先的前提下研究并解决。
 - [ ] 只有AS同时通过相对Source-SFT与视频特异性门槛后，才启动fresh cold-start RL-Writer；cold-start阶段先取得24个source tasks逐task成功信号，再切到纯reward训练，并充分探索validation峰值，不设时间上限。

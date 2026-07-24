@@ -376,3 +376,10 @@
 - fresh formal root为`/data/ymdai/outputs/ember/pi05_source_sft_rank128_ceiling_r4_b128_af658c4_s2400_20260723`。step100/200/300/400的task-balanced validation functional loss依次为`0.133067/0.133336/0.134167/0.137131`，同期100-step train-loss mean为`0.138862/0.117804/0.109806/0.106153`；validation连续且加速回升而train继续下降，故在完整step400 checkpoint/validation后暂停，后续可从step400 exact-resume。
 - 首次候选评测在任何rollout前被旧机械合同拒绝：adapter检查仍硬编码formal world-size为8，并要求整个训练run已有最终`run_summary.json`，与当前四卡协议及“暂停→评中间checkpoint→必要时续训”冲突。
 - 最小修复改为读取sealed formal config中的`expected_world_size`；仅`development + validation`允许用已完整发布、manifest校验通过的formal checkpoint在run summary尚不存在时评测，并显式记录`published_checkpoint_before_run_completion`。seen/final/test仍要求完成run summary；相关Source-SFT与evaluator回归`51 passed`。
+
+## Source-SFT四卡step100–800结果与继续训练（2026-07-24）
+
+- 四卡fresh rank128 SFT的完整8-task×50 validation曲线为step100/200/300/400/500/600/700/800=`81/95/68/78/94/99/108/97`。step700是该轨迹当前best，但600/700/800之间的paired差异均未形成明确峰后持续下降；旧八卡step400的`122/400`仍是全局SFT incumbent。
+- raw step不能跨拓扑直接解释：旧八卡step400为400 optimizer updates、204,800 queries、3,200 independent task-condition visits；当前四卡step400虽然queries相同但condition visits只有1,600，step800才达到3,200且updates/queries已翻倍。后续统一报告三种训练量，不再因GPU数量或batch变化机械从零训练。
+- 当前四卡run已从完整step800 checkpoint在相同四卡合同下exact-resume到step1100，首个新finite metric为step802、loss `0.0867007`、gradient norm `0.0237412`、吞吐`36.26 queries/s`。step900/1000/1100保存后仍以完整closed-loop决定是否继续；functional val loss只作微弱参考。
+- AS低方差实现相应改为每rank每个optimizer update处理2个独立task/video conditions、每condition 64 queries并拆成4个16-query policy microbatches；四卡每update合计仍为8 conditions/512 queries。该设置用于稳定functional训练而非把batch设为科学门槛，真实profile后才决定续现有best或做必要对照。

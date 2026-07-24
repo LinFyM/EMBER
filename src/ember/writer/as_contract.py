@@ -165,6 +165,17 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         raise WriterModelError("AS-Writer sampling contract changed")
 
 
+def _valid_video_task_pairs(pairs: Any, source_ids: Sequence[int]) -> bool:
+    if not isinstance(pairs, list) or any(
+        not isinstance(pair, list) or len(pair) != 2 for pair in pairs
+    ):
+        return False
+    flattened = [int(task_id) for pair in pairs for task_id in pair]
+    return sorted(flattened) == list(source_ids) and len(set(flattened)) == len(
+        flattened
+    )
+
+
 def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
     value = config.get("conditioning_training", {})
     allowed_schedules = {
@@ -176,7 +187,6 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
         "normal_only_positive_action_loss_diagnostic": ["normal"],
     }
     pairs = value.get("video_task_pairs", [])
-    flattened = [int(task_id) for pair in pairs for task_id in pair]
     target = read_json(authority_path(config, "target_data_manifest"))
     source_ids = sorted(
         int(task_id)
@@ -187,6 +197,10 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
         value.get("normal_loss_weight"),
         value.get("contrast_correct_loss_weight"),
         value.get("matching_temperature"),
+    )
+    positive_integers = (
+        value.get("functional_policy_microbatch_size"),
+        value.get("independent_conditions_per_optimizer_step"),
     )
     matching_weight = value.get("matching_loss_weight")
     if (
@@ -199,12 +213,9 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
         != "correct_action_query_task_language_on_every_branch"
         or value.get("contrast_backend")
         != "paired_sequential_half_batch_with_shared_policy_rng"
-        or not _positive_integer(value.get("functional_policy_microbatch_size"))
+        or any(not _positive_integer(item) for item in positive_integers)
         or value.get("contrast_query_fraction") != 0.5
-        or not isinstance(pairs, list)
-        or any(not isinstance(pair, list) or len(pair) != 2 for pair in pairs)
-        or sorted(flattened) != source_ids
-        or len(set(flattened)) != len(flattened)
+        or not _valid_video_task_pairs(pairs, source_ids)
         or any(
             not isinstance(weight, (int, float)) or weight <= 0
             for weight in positive_weights
@@ -524,6 +535,9 @@ def build_contract(
     microbatch = int(
         config["conditioning_training"]["functional_policy_microbatch_size"]
     )
+    conditions_per_step = int(
+        config["conditioning_training"]["independent_conditions_per_optimizer_step"]
+    )
     local = {
         "rank": context.rank,
         "local_rank": context.local_rank,
@@ -558,15 +572,21 @@ def build_contract(
             "one_policy_cuda_process_per_rank": True,
             "gpu0_extra_cuda_roles": 0,
             "ddp_object": "shared_writer_only",
-            "per_rank_policy_sample_batch_size": batch_size,
+            "per_rank_policy_sample_batch_size_per_condition": batch_size,
             "per_rank_unique_action_query_cycle": list(batch_cycle),
-            "global_policy_samples_per_step": context.world_size * batch_size,
+            "independent_conditions_per_optimizer_step": conditions_per_step,
+            "global_independent_conditions_per_optimizer_step": (
+                context.world_size * conditions_per_step
+            ),
+            "global_policy_samples_per_step": (
+                context.world_size * batch_size * conditions_per_step
+            ),
             "functional_policy_microbatch_size": microbatch,
-            "writer_conditions_per_rank_cycle": [
+            "writer_conditions_per_data_condition_cycle": [
                 1 if mode == "normal" else 2
                 for mode in config["conditioning_training"]["step_cycle"]
             ],
-            "policy_forward_calls_per_rank_cycle": [
+            "policy_forward_calls_per_data_condition_cycle": [
                 (1 if mode == "normal" else 2)
                 * ((queries + microbatch - 1) // microbatch)
                 for mode, queries in zip(

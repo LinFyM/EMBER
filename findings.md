@@ -469,7 +469,7 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 新validation functional-loss panel固定512个task-balanced、video/action不配对query，可低成本观察loss斜率、train–val gap和候选checkpoint；由于teacher-forced action loss与closed-loop恢复能力可能错位，它不能单独选best。真实峰值要求完整8-task×50 success曲线，且“峰后持续下降”不能由单一相邻checkpoint判断。
 - bias恢复只增加`21,696`个训练参数：Writer从`10,097,601`变为`10,119,297`，仍仅为rank128 Source-SFT容量的`98.27%`。四卡真实profile的显存与旧bias-free八卡profile几乎相同（reserved均约78.87GB），说明恢复bias没有引入隐藏模型副本或新执行支路。
 - 每rank batch16/global64的第二个稳态profile step为`1.930s`，对应约`33.16` global queries/s；四卡相对旧八卡global128约`1.93–2.48s/step`的单步时延相近、总吞吐约减半，符合相同单卡工作量和world-size缩减预期。后续step数按实际action-query量解释，不能把四卡step与旧八卡step直接等同。
-- rank128 Source-SFT的四卡重训不能从旧8-rank step600 checkpoint续接，因为per-rank RNG、sampler cursor和DDP world-size属于exact-resume状态。新run必须fresh；以4×batch128保持global batch512，才能让step数、query量和前800步scheduler轨迹与旧容量实验保持同口径。
+- rank128 Source-SFT从8 ranks切到4 ranks时无法宣称逐rank RNG与sampler完全相同的bitwise exact-resume，但这不意味着必须从零重训。合理做法是优先延续已有权重与optimizer、封存拓扑切换和重分片后的cursor，并将其标记为`topology-transition continuation`；只有完全相同的world size与合同才称exact-resume。batch size本身不是科学门槛，跨轨迹比较需同时给出optimizer updates、累计action queries和独立task-condition visits。
 - 为充分检验`122/400`是否真实上限，新SFT最大horizon可延到2400，但不把cosine decay从800拉长：这样前800步不因扩大上限而获得更高LR，800后只是固定低LR tail。若完整validation已在800前后显示多点持续退化，便无需机械跑满；若仍波动或回升，则同一合同可恢复到1600/2400。
 - bias-restored AS的封存512-row validation functional loss在step100–800依次为`0.135237/0.138363/0.134698/0.141123/0.134224/0.138690/0.139285/0.140583`。step400的单点回升随后在500完全恢复，验证了“单点不能早停”；而500后连续三个checkpoint回升、同时train loss继续下降，已经把closed-loop候选区间收缩到step500附近，但不能单独证明closed-loop最优。
 - 独立backfill与resident monitor在step300/400/500的1,536条逐query loss完全一致，排除了训练进程内切换eval数据导致数值漂移的实现疑点。validation过程无gradient、无optimizer update，结束后恢复完整RNG与Writer train mode。
@@ -507,3 +507,9 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 新四卡fresh run的固定512-query validation loss从step100的`0.1330666`连续升到step200 `0.1333360`、step300 `0.1341674`、step400 `0.1371306`；100→400相对恶化约3.05%，最后一段恶化约2.21%。同期train-loss区间均值持续下降，形成了比单点波动更强的早停证据。
 - loss曲线只把closed-loop候选收缩到step100–400，不能独立宣布step100最优。旧rank128完整success高度非单调，因此必须比较四个checkpoint的同seed 8×50 rollouts；若真实success仍在最晚点上升，则从step400 exact-resume继续。
 - 中间formal checkpoint已由run-contract hash、四rank RNG/optimizer state、LoRA hash和原子manifest封存。正式validation不需要伪造整个run完成；缺失的最终summary保持为null并明确标注checkpoint-before-completion，同时final/test仍禁止打开。
+
+## Source-SFT八卡/四卡训练量口径与step100–800闭环（2026-07-24）
+
+- 旧八卡rank128轨迹每个optimizer update覆盖8个独立task conditions和512个action queries；其`step400=122/400`对应400次更新、204,800 queries与3,200次condition visits。当前四卡轨迹虽然用batch128/rank保持每步512 queries，却只有4个独立task conditions；所以四卡step400只含1,600次condition visits，而step800才达到3,200次。不存在一个同时匹配updates、queries和condition visits的简单“等价step”。
+- 当前四卡fresh轨迹step100/200/300/400/500/600/700/800的完整validation success为`81/95/68/78/94/99/108/97`。step700是该轨迹当前best；600→700 paired flips为`19/28`，700→800为`31/20`，均不足以证明显著上升或持续下降。旧八卡step400的`122/400`仍是全部SFT候选的incumbent，而不是可移植的早停step。
+- 对应四卡functional val loss为`0.133067/0.133336/0.134167/0.137131/0.134146/0.134832/0.135634/0.135192`，与闭环曲线只呈弱对应，因此后续仅微弱参考。四卡run已从完整step800原地exact-resume到1100；候选判断继续以同seed 8×50 rollout为主，不因batch或卡数变化机械重启。

@@ -22,7 +22,12 @@ from ember.writer.conditioning import (
     conditioning_cycle,
     matching_objective,
 )
-from ember.writer.as_step import _functional_arm_gradient, _policy_microbatches
+from ember.writer.as_step import (
+    _cumulative_counts,
+    _functional_arm_gradient,
+    _policy_microbatches,
+    run_writer_step,
+)
 from ember.writer.model import WriterModelError
 
 
@@ -46,7 +51,7 @@ def test_action_memory_writer_config_seals_architecture_and_information_wall() -
     assert config["data"]["episodes_per_task"] == 50
     assert writer_split_roles(config) == ("train",)
     assert conditioning_cycle(config) == ("normal",)
-    assert batch_size_cycle(128, config) == (128,)
+    assert batch_size_cycle(64, config) == (64,)
     assert (
         config["information_wall"][
             "validation_actions_read_by_training_optimizer"
@@ -60,6 +65,12 @@ def test_action_memory_writer_config_seals_architecture_and_information_wall() -
         == 512
     )
     assert config["conditioning_training"]["functional_policy_microbatch_size"] == 16
+    assert (
+        config["conditioning_training"][
+            "independent_conditions_per_optimizer_step"
+        ]
+        == 2
+    )
     assert config["information_wall"]["test_actions_read"] == 0
     assert config["information_wall"]["test_video_values_read"] == 0
     assert config["optimization"]["maximum_formal_wall_clock_minutes"] is None
@@ -140,7 +151,7 @@ def test_formal_runtime_uses_four_rank_query_scaled_stage(
         resume=None,
         skip_data_sha=False,
     )
-    assert resolve_runtime(profile, config, context) == (2, 128, (2,))
+    assert resolve_runtime(profile, config, context) == (2, 64, (2,))
     assert profile.stop_after_step == 2
 
     formal = argparse.Namespace(
@@ -163,7 +174,7 @@ def test_formal_runtime_uses_four_rank_query_scaled_stage(
     expected_checkpoints = tuple(config["formal_run"]["checkpoint_steps"])
     assert resolve_runtime(formal, config, context) == (
         2400,
-        128,
+        64,
         expected_checkpoints,
     )
     assert formal.stop_after_step == 800
@@ -196,6 +207,122 @@ def test_policy_microbatches_preserve_all_rows_and_tensor_alignment() -> None:
             {"images": torch.zeros(2, 3), "tokens": torch.zeros(3, 2)},
             2,
         )
+
+
+def test_logical_optimizer_update_counts_two_independent_conditions_per_rank() -> None:
+    runtime = SimpleNamespace(
+        conditions_per_optimizer_step=2,
+        batch_size=64,
+        sampler=SimpleNamespace(batch_size_for_step=lambda _step: 64),
+        context=SimpleNamespace(world_size=4),
+        config={"conditioning_training": {"step_cycle": ["normal"]}},
+    )
+    assert _cumulative_counts(runtime, completed=3) == (
+        3 * 2 * 4 * 64,
+        3 * 2 * 4 * 64,
+        3 * 2 * 4,
+    )
+
+
+def test_writer_update_averages_two_independent_task_conditions(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parameter = torch.nn.Parameter(torch.tensor(0.0))
+    writer = torch.nn.ParameterList([parameter])
+    optimizer = torch.optim.SGD(writer.parameters(), lr=1.0)
+    scheduler_steps: list[bool] = []
+    calls: list[tuple[int, float]] = []
+    observed: dict[str, object] = {}
+
+    def fake_pack(
+        _runtime: object,
+        *,
+        task_id: int,
+        correct_demo_index: int,
+        mode: str,
+        wrong_task_id: int | None,
+        wrong_demo_index: int | None,
+    ) -> tuple[tuple[torch.Tensor, ...], dict[str, int | None]]:
+        del correct_demo_index, mode, wrong_task_id, wrong_demo_index
+        return (torch.tensor(task_id),) * 5, {
+            "correct_video_raw_frames": 1,
+            "correct_video_sampled_frames": 1,
+            "wrong_video_raw_frames": None,
+            "wrong_video_sampled_frames": None,
+        }
+
+    def fake_differentiate(
+        _runtime: object,
+        _packed: object,
+        policy_batch: dict[str, torch.Tensor],
+        _mode: str,
+        gradient_scale: float,
+    ) -> tuple[
+        torch.Tensor,
+        list[torch.Tensor],
+        list[dict[str, float]],
+        None,
+    ]:
+        task_id = int(policy_batch["task_id"].item())
+        calls.append((task_id, gradient_scale))
+        contribution = torch.tensor(float(task_id) * gradient_scale)
+        parameter.grad = (
+            contribution
+            if parameter.grad is None
+            else parameter.grad + contribution
+        )
+        value = torch.tensor(float(task_id))
+        return value, [value], [{"loss": float(value), "policy_forward_calls": 1}], None
+
+    def fake_metrics(
+        _runtime: object,
+        *,
+        step: int,
+        conditions: list[dict[str, object]],
+        **_kwargs: object,
+    ) -> dict[str, int]:
+        observed["conditions"] = conditions
+        return {"optimizer_step": step + 1}
+
+    monkeypatch.setattr("ember.writer.as_step._pack_raw_conditions", fake_pack)
+    monkeypatch.setattr(
+        "ember.writer.as_step._differentiate_condition_batch",
+        fake_differentiate,
+    )
+    monkeypatch.setattr("ember.writer.as_step._step_metrics", fake_metrics)
+
+    runtime = SimpleNamespace(
+        iterator=iter(
+            [
+                {"task_id": torch.tensor([2])},
+                {"task_id": torch.tensor([6])},
+            ]
+        ),
+        sampler=SimpleNamespace(
+            task_visit_for_step=lambda data_step: ((2, 0), (6, 0))[data_step],
+            batch_size_for_step=lambda _data_step: 1,
+        ),
+        video_schedule=SimpleNamespace(
+            demo_for_task_visit=lambda _task_id, _visit: 0
+        ),
+        video_partner={2: 6, 6: 2},
+        processor=SimpleNamespace(training_batch=lambda batch: batch),
+        optimizer=optimizer,
+        scheduler=SimpleNamespace(step=lambda: scheduler_steps.append(True)),
+        writer=writer,
+        policy=torch.nn.Identity(),
+        config={
+            "conditioning_training": {"step_cycle": ["normal"]},
+            "optimization": {"optimizer": {"gradient_clip_norm": 100.0}},
+        },
+        conditions_per_optimizer_step=2,
+    )
+    row = run_writer_step(runtime, step=0, started=0.0)
+    assert row == {"optimizer_step": 1}
+    assert calls == [(2, 0.5), (6, 0.5)]
+    assert [item["data_step"] for item in observed["conditions"]] == [0, 1]  # type: ignore[index]
+    assert float(parameter.detach()) == pytest.approx(-4.0)
+    assert scheduler_steps == [True]
 
 
 def test_functional_arm_gradient_is_query_weighted_across_microbatches(

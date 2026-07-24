@@ -193,6 +193,7 @@ def test_run_contract_hash_detects_tampering(tmp_path: Path) -> None:
     assert subset["parallel"]["physical_gpu_count"] == 2
     assert subset["parallel"]["worker_count"] == 10
     assert subset["parallel"]["omp_threads_per_worker"]["5"] == 1
+    assert subset["parallel"]["omp_threads_per_worker"]["6"] == 1
     contract["tasks"][0]["init_state_ids"] = [49]
     path.write_text(json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     with pytest.raises(Pi05EvaluationError, match="hash changed"):

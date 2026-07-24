@@ -427,11 +427,18 @@ def _source() -> dict:
     }
 
 
-def _static_adapter_fixture(tmp_path: Path) -> tuple[Path, dict]:
-    config = load_source_sft_config(CONFIG)
+def _static_adapter_fixture(
+    tmp_path: Path,
+    *,
+    config_path: Path = CONFIG,
+    mode: str = "profile",
+    world_size: int = 8,
+    step: int = 4,
+) -> tuple[Path, dict]:
+    config = load_source_sft_config(config_path)
     lora = load_pi05_lora_contract(ROOT / config["authorities"]["lora_contract"]["path"])
     run = tmp_path / "run"
-    checkpoint = run / "checkpoints" / "step_00000004"
+    checkpoint = run / "checkpoints" / f"step_{step:08d}"
     checkpoint.mkdir(parents=True)
     state = {
         name: torch.zeros(shape, dtype=torch.float32)
@@ -439,14 +446,14 @@ def _static_adapter_fixture(tmp_path: Path) -> tuple[Path, dict]:
     }
     save_file(state, str(checkpoint / "lora.safetensors"))
     (checkpoint / "trainer_state.pt").write_bytes(b"trainer")
-    for rank in range(8):
+    for rank in range(world_size):
         (checkpoint / f"rank_{rank:02d}_state.pt").write_bytes(f"rank-{rank}".encode())
     source = _source()
     training = {
         "schema_version": SOURCE_SFT_LAUNCH_SCHEMA,
-        "mode": "profile",
+        "mode": mode,
         "stage": "development",
-        "config_sha256": sha256_file(CONFIG),
+        "config_sha256": sha256_file(config_path),
         "authorities": config["authorities"],
         "source": source,
         "information_wall": config["information_wall"],
@@ -456,7 +463,7 @@ def _static_adapter_fixture(tmp_path: Path) -> tuple[Path, dict]:
             "per_task_adapters": 0,
             "lora_contract_sha256": canonical_contract_sha256(lora),
         },
-        "runtime": {"world_size": 8, "checkpoint_steps": [4]},
+        "runtime": {"world_size": world_size, "checkpoint_steps": [step]},
     }
     write_json_atomic(run / "run_contract.json", training)
     files = {
@@ -467,12 +474,68 @@ def _static_adapter_fixture(tmp_path: Path) -> tuple[Path, dict]:
         "schema_version": SOURCE_SFT_CHECKPOINT_SCHEMA,
         "contract_sha256": canonical_hash(training),
         "stage": "development",
-        "consumed": {"next_step": 4},
+        "consumed": {"next_step": step},
         "files": files,
     }
     manifest["canonical_payload_sha256"] = canonical_hash(manifest)
     write_json_atomic(checkpoint / "checkpoint_manifest.json", manifest)
     return checkpoint, source
+
+
+def test_formal_development_validation_accepts_published_checkpoint_before_summary(
+    tmp_path: Path,
+) -> None:
+    checkpoint, source = _static_adapter_fixture(
+        tmp_path,
+        config_path=RANK128_CONFIG,
+        mode="formal",
+        world_size=4,
+        step=100,
+    )
+    validation_keys = (
+        ("libero_spatial", 1),
+        ("libero_spatial", 3),
+        ("libero_object", 1),
+        ("libero_object", 3),
+        ("libero_goal", 3),
+        ("libero_goal", 6),
+        ("libero_10", 1),
+        ("libero_10", 2),
+    )
+    adapter = inspect_source_sft_evaluation(
+        config_path=RANK128_CONFIG,
+        checkpoint=checkpoint,
+        source=source,
+        task_keys=validation_keys,
+        evaluation_role="validation",
+        require_formal=True,
+    )
+    assert adapter["checkpoint"]["step"] == 100
+    assert adapter["training_run"]["run_summary_sha256"] is None
+    assert (
+        adapter["training_run"]["completion_evidence"]
+        == "published_checkpoint_before_run_completion"
+    )
+
+    seen_keys = (
+        ("libero_spatial", 0),
+        ("libero_spatial", 2),
+        ("libero_object", 5),
+        ("libero_object", 2),
+        ("libero_goal", 1),
+        ("libero_goal", 8),
+        ("libero_10", 9),
+        ("libero_10", 7),
+    )
+    with pytest.raises(Pi05SourceSFTError, match="completed Source-SFT run summary"):
+        inspect_source_sft_evaluation(
+            config_path=RANK128_CONFIG,
+            checkpoint=checkpoint,
+            source=source,
+            task_keys=seen_keys,
+            evaluation_role="seen_panel",
+            require_formal=True,
+        )
 
 
 def test_static_source_sft_adapter_is_shared_and_role_gated(tmp_path: Path) -> None:

@@ -370,3 +370,9 @@
 
 - canonical `as_step.py`现支持同一generated adapter跨多个policy microbatches复用；128 queries按`16×8`顺序执行、按chunk实际样本数加权loss/adapter-gradient，最后只反传一次Writer。新增聚焦测试覆盖尾部不等长切片和加权梯度等价性；既有normal/contrast owner、checkpoint和sampler cursor未分叉。
 - 配置暂为`pending_query_matched_profile`，formal不能启动。候选profile仍只使用GPU0–3，一卡一rank；global512与rank128 SFT相同，scheduler暂按同一warmup100/decay800以消除样本统计与学习率口径混杂。SFT正式首段运行期间只做代码和CPU测试，不抢占或改写其输出。
+
+## 四卡rank128 Source-SFT在线早停与候选评测修复（2026-07-23）
+
+- fresh formal root为`/data/ymdai/outputs/ember/pi05_source_sft_rank128_ceiling_r4_b128_af658c4_s2400_20260723`。step100/200/300/400的task-balanced validation functional loss依次为`0.133067/0.133336/0.134167/0.137131`，同期100-step train-loss mean为`0.138862/0.117804/0.109806/0.106153`；validation连续且加速回升而train继续下降，故在完整step400 checkpoint/validation后暂停，后续可从step400 exact-resume。
+- 首次候选评测在任何rollout前被旧机械合同拒绝：adapter检查仍硬编码formal world-size为8，并要求整个训练run已有最终`run_summary.json`，与当前四卡协议及“暂停→评中间checkpoint→必要时续训”冲突。
+- 最小修复改为读取sealed formal config中的`expected_world_size`；仅`development + validation`允许用已完整发布、manifest校验通过的formal checkpoint在run summary尚不存在时评测，并显式记录`published_checkpoint_before_run_completion`。seen/final/test仍要求完成run summary；相关Source-SFT与evaluator回归`51 passed`。

@@ -501,3 +501,9 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 首轨迹每rank每个task/video condition只用16个action queries，而容量匹配的rank128 SFT每rank为128；两者虽然训练参数约10.12M/10.30M相当，单步functional梯度统计精度并不相当。这是先于改Writer架构需要消除的混杂。
 - 修正保持Writer、16 memory tokens、Meta-LoRA、temporal/layer/slot、rank16输出LoRA和信息墙全部不变：一次生成adapter后，将128 queries拆成8个16-query policy microbatches；每个microbatch独立求adapter梯度，按真实query数加权平均，再只对同一Writer图反传一次。峰值显存保持原batch16量级，计算量约增至8次policy forward。
 - 该行为仍由现有`ember.writer.as_step`和同一canonical runner拥有，没有并行入口。normal以及已有contrast模式都复用同一微批机制；paired contrast仍在整组microbatch前后恢复并核验相同policy RNG。正式配置在真实四卡profile前保持pending。
+
+## rank128 Source-SFT step100–400训练–validation分叉（2026-07-23）
+
+- 新四卡fresh run的固定512-query validation loss从step100的`0.1330666`连续升到step200 `0.1333360`、step300 `0.1341674`、step400 `0.1371306`；100→400相对恶化约3.05%，最后一段恶化约2.21%。同期train-loss区间均值持续下降，形成了比单点波动更强的早停证据。
+- loss曲线只把closed-loop候选收缩到step100–400，不能独立宣布step100最优。旧rank128完整success高度非单调，因此必须比较四个checkpoint的同seed 8×50 rollouts；若真实success仍在最晚点上升，则从step400 exact-resume继续。
+- 中间formal checkpoint已由run-contract hash、四rank RNG/optimizer state、LoRA hash和原子manifest封存。正式validation不需要伪造整个run完成；缺失的最终summary保持为null并明确标注checkpoint-before-completion，同时final/test仍禁止打开。

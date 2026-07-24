@@ -164,18 +164,26 @@ def _formal_summary_sha(
     config: Mapping[str, Any],
     stage: str,
     step: int,
-) -> str | None:
+    evaluation_role: str,
+) -> tuple[str | None, str]:
     if not require_formal:
-        return None
+        return None, "not_required"
     world_size = int(run_contract.get("runtime", {}).get("world_size", -1))
     formal = config["stages"][stage]["formal_run"]
+    expected_world_size = int(formal.get("expected_world_size", -1))
     if (
         run_contract.get("mode") != "formal"
         or formal.get("status") != "sealed"
-        or world_size != 8
+        or world_size != expected_world_size
     ):
         raise Pi05SourceSFTError("formal evaluation requires a sealed formal Source-SFT run")
     summary_path = run_root / "run_summary.json"
+    if not summary_path.is_file():
+        if stage != "development" or evaluation_role != "validation":
+            raise Pi05SourceSFTError(
+                "formal evaluation requires a completed Source-SFT run summary"
+            )
+        return None, "published_checkpoint_before_run_completion"
     summary = read_json(summary_path)
     if (
         summary.get("schema_version") != "ember_pi05_source_sft_run_summary_v1"
@@ -185,7 +193,7 @@ def _formal_summary_sha(
         or int(summary.get("test_action_reads", -1)) != 0
     ):
         raise Pi05SourceSFTError("Source-SFT run summary changed")
-    return sha256_file(summary_path)
+    return sha256_file(summary_path), "completed_run_summary"
 
 
 def inspect_source_sft_evaluation(
@@ -225,7 +233,7 @@ def inspect_source_sft_evaluation(
         run_contract_sha=run_contract_sha,
         stage=stage,
     )
-    summary_sha = _formal_summary_sha(
+    summary_sha, completion_evidence = _formal_summary_sha(
         require_formal=require_formal,
         run_root=run_root,
         run_contract=run_contract,
@@ -233,6 +241,7 @@ def inspect_source_sft_evaluation(
         config=config,
         stage=stage,
         step=step,
+        evaluation_role=evaluation_role,
     )
     lora_path = checkpoint / "lora.safetensors"
     state = load_file(str(lora_path), device="cpu")
@@ -254,6 +263,7 @@ def inspect_source_sft_evaluation(
             "run_contract_file_sha256": sha256_file(run_contract_path),
             "run_contract_sha256": run_contract_sha,
             "run_summary_sha256": summary_sha,
+            "completion_evidence": completion_evidence,
         },
         "checkpoint": {
             "path": str(checkpoint),

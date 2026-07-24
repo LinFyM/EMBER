@@ -380,7 +380,7 @@
 ## Source-SFT四卡step100–800结果与继续训练（2026-07-24）
 
 - 四卡fresh rank128 SFT的完整8-task×50 validation曲线为step100/200/300/400/500/600/700/800=`81/95/68/78/94/99/108/97`。step700是该轨迹当前best，但600/700/800之间的paired差异均未形成明确峰后持续下降；旧八卡step400的`122/400`仍是全局SFT incumbent。
-- 旧八卡8×64与当前四卡4×128都为global batch512，所以同一step的optimizer updates与总queries相同，训练量大体可比；每次更新内task小批数量不同只作为次要梯度方差信息。四卡step800的updates和queries已经是旧step400的两倍，不能因condition visits相同就称为等价点。后续仍记录拓扑与条件覆盖，但不再因GPU数量或batch变化机械缩放step或从零训练。
+- 旧八卡8×64与当前四卡4×128都为global batch512，所以同一step的optimizer updates与总queries相同；两个step400 checkpoint也都实际记录`204,800` examples，每task覆盖范围仅相差一个128-example小批，确认训练量大体可比。每次更新内task小批数量不同只作为次要梯度方差信息。四卡step800的updates和queries已经是旧step400的两倍，不能因condition visits相同就称为等价点。后续仍记录拓扑与条件覆盖，但不再因GPU数量或batch变化机械缩放step或从零训练。
 - 当前四卡run已从完整step800 checkpoint在相同四卡合同下exact-resume到step1100，首个新finite metric为step802、loss `0.0867007`、gradient norm `0.0237412`、吞吐`36.26 queries/s`。step900/1000/1100保存后仍以完整closed-loop决定是否继续；functional val loss只作微弱参考。
 - AS低方差实现相应改为每rank每个optimizer update处理2个独立task/video conditions、每condition 64 queries并拆成4个16-query policy microbatches；四卡每update合计仍为8 conditions/512 queries。该设置用于稳定functional训练而非把batch设为科学门槛，真实profile后才决定续现有best或做必要对照。
 - canonical AS runner新增显式`--initialize-writer-checkpoint`阶段初始化：可从已封存且source/authority/Writer/LoRA完全兼容的最佳Writer权重启动新优化阶段，同时重新初始化optimizer、scheduler、sampler和RNG；run contract记录源checkpoint、源step及三类hash，并明确标为warm-start而非exact-resume。这样GPU数或训练统计合同变化时无需重跑0→best，也不伪造跨合同exact-resume。旧qscaled step400 checkpoint已通过只读manifest/architecture/authority兼容检查；是否采用仍由真实低方差profile后决定。

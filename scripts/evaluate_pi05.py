@@ -57,6 +57,13 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = REPO_ROOT / "configs/pi05_target_evaluation_v1.json"
 
 
+def _positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return parsed
+
+
 def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--source-run", type=Path, required=True)
@@ -95,10 +102,12 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--writer-generation-batch-size",
-        type=int,
-        choices=(1, 2, 4, 8, 16),
+        type=_positive_int,
         default=1,
-        help="Episode LoRAs generated together by each Writer process.",
+        help=(
+            "Positive number of episode LoRAs generated together by each Writer "
+            "process; select from measured GPU memory rather than a fixed whitelist."
+        ),
     )
     parser.add_argument(
         "--writer-lora-cache-root",

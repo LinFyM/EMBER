@@ -54,6 +54,13 @@ def test_launcher_uses_the_contract_replica_profiles() -> None:
     assert 6 in action.choices
 
 
+def test_writer_generation_batch_size_accepts_measured_positive_values() -> None:
+    module = _launcher_module()
+    assert module._positive_int("100") == 100
+    with pytest.raises(argparse.ArgumentTypeError, match="positive integer"):
+        module._positive_int("0")
+
+
 def test_partial_launch_cleanup_stops_only_owned_processes() -> None:
     module = _launcher_module()
     process = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])

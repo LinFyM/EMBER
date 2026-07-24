@@ -423,3 +423,8 @@
   冻结backbone仍需保留的梯度路径、per-condition flow noise、Plan/Revision
   精确MLP/attention聚合、query identities、8个factor heads及真实输出宽度、
   长Long-shard动态调度、近似候选复测规则和已封存`122/400` SFT artifact。
+- owner进一步纠正比较口径：`122/400`来自旧八卡rank128 SFT，不是四卡成绩。
+  四卡step100–1100为`81/95/68/78/94/99/108/97/95/104/94`，best为step700
+  `108/400`且已由四个后续较低点括住。当前AS硬比较是“不明显落后于108”，
+  超过122为stretch；AS/RL都必须在validation找到best并看到经噪声核验的多个
+  峰后下降点后才能停止。

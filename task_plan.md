@@ -178,7 +178,11 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [ ] 按约30分钟一段、每段四个checkpoint推进四卡AS；优先评测每段第2/4点，
   必要时补1/3点，定位paired 8×50 validation最佳checkpoint。
 - [ ] 对observed-best完成correct/wrong/shuffled/reversed视频证据；目标是不明显
-  落后于owner指定SFT参考`122/400`并显著改善旧架构的顺序不敏感。
+  落后于四卡rank128 SFT best `108/400`，并争取超过旧八卡全局incumbent
+  `122/400`，同时显著改善旧架构的顺序不敏感。
+- [ ] AS和RL都不能以train/val-loss平台或单个较差validation点停止；必须找到
+  validation observed-best，并用多个峰后checkpoint整体下降、必要时独立panel
+  复测排除rollout噪声后，才确认饱和与最佳checkpoint。
 - [ ] 仅在AS同时通过性能与特异性后，推进独立short-AS cold start，直到24个
   train tasks各至少一次random-reset success，再切换pure-reward RL-Writer并
   完成train平台与validation选择。

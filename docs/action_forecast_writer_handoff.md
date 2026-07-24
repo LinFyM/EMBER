@@ -12,7 +12,7 @@ Action-Memory / temporal-RoPE Writer 的活动实现口径，但不改写那些�
 新session若`get_goal`没有返回active Goal，使用以下原文创建且不设置
 `token_budget`：
 
-> 在仅使用GPU 0–3且不干扰任何现有进程的约束下，完成EMBER新Action-Forecast Writer核心闭环：将旧Action-Memory Writer活动架构完全退役并更新代码、测试、配置与项目文档；实现由教师视频逐帧imagined-state/PaliGemma融合、Writer内部VL与Action Meta-LoRA、π0.5完整10-step flow最终action plans、同绝对时刻Plan/Revision tokens、变长Temporal Transformer及单向LoRA query decoder生成完整rank-16 task LoRA的唯一canonical路径，并使Writer训练参数量约等于rank-128 Source-SFT；实测并固定训练的每rank action-query batch、frame microbatch、frame stride和评测最优并发/批处理参数，在四卡上按约半小时一段、每段四个等间隔checkpoint的时间导向方式持续AS-Writer训练，优先评测每段第二/第四checkpoint并按趋势补测，直至找到validation最优或明确下降平台；要求AS-Writer性能不明显落后于四卡rank-128 Source-SFT（参考122/400，争取超过），同时correct/wrong及乱序视频特异性成立。若经合规诊断和最小改进仍不能同时过关，保存完整证据并停止汇报；若过关，则实现和高效profile cold-start RL-Writer，先确保每个source task至少一次成功再切换纯RL，训练到train表现平台并对合适checkpoint完成validation选择。全过程优先尽快把可运行训练/评测部署到合法空闲GPU，再在运行期间并行推进互不污染的文档、诊断与后续代码；保存命令、配置、曲线、rows、runtime、hash、exact-resume状态，完成验证、文档、task-scoped commit和push后方可Goal complete。
+> 在仅使用GPU 0–3且不干扰任何现有进程的约束下，完成EMBER新Action-Forecast Writer核心闭环：将旧Action-Memory Writer活动架构完全退役并更新代码、测试、配置与项目文档；实现由教师视频逐帧imagined-state/PaliGemma融合、Writer内部VL与Action Meta-LoRA、π0.5完整10-step flow最终action plans、同绝对时刻Plan/Revision tokens、变长Temporal Transformer及单向LoRA query decoder生成完整rank-16 task LoRA的唯一canonical路径，并使Writer训练参数量约等于rank-128 Source-SFT；实测并固定训练的每rank action-query batch、frame microbatch、frame stride和评测最优并发/批处理参数，在四卡上按约半小时一段、每段四个等间隔checkpoint的时间导向方式持续AS-Writer训练，优先评测每段第二/第四checkpoint并按趋势补测，直至找到validation最优并由多个峰后checkpoint的可信下降括住；要求AS-Writer性能不明显落后于四卡rank-128 Source-SFT已观测最佳108/400，并争取超过所有SFT候选的全局incumbent 122/400，同时correct/wrong及乱序视频特异性成立。若经合规诊断和最小改进仍不能同时过关，保存完整证据并停止汇报；若过关，则实现和高效profile cold-start RL-Writer，先确保每个source task至少一次成功再切换纯RL；RL同样必须训练到train平台、在validation上找到observed-best并由可信峰后下降确认，而不是在第一个平台或单个较差点停止。全过程优先尽快把可运行训练/评测部署到合法空闲GPU，再在运行期间并行推进互不污染的文档、诊断与后续代码；保存命令、配置、曲线、rows、runtime、hash、exact-resume状态，完成验证、文档、task-scoped commit和push后方可Goal complete。
 
 ## 1. 当前目标和停止条件
 
@@ -24,8 +24,9 @@ Action-Memory / temporal-RoPE Writer 的活动实现口径，但不改写那些�
    `frame_microbatch_size`、frame stride，以及评测的最佳并发参数。
 3. 四卡训练按约 30 分钟一段推进；每段保存四个等间隔 checkpoint，优先对
    第二和第四个做完整 validation rollout，趋势不清时再补第一/第三个。
-4. 找到 AS-Writer 的 validation 最佳 checkpoint。主要门槛是不要明显落后于
-   owner 指定的 rank-128 Source-SFT 参考 `122/400`，最好超过。
+4. 找到 AS-Writer 的 validation 最佳 checkpoint，并由多个后续checkpoint的
+   可信下降将峰值括住。主要门槛是不要明显落后于四卡rank-128 Source-SFT
+   observed-best `108/400`；超过旧八卡全局incumbent `122/400`是stretch目标。
 5. 只对 observed-best checkpoint 做 correct-video、cross-suite wrong-video
    和 shuffled/reversed-video 机制诊断。Writer 要真正依赖视频任务内容，并比
    旧 temporal-RoPE Writer 更能感知帧顺序。
@@ -34,8 +35,9 @@ Action-Memory / temporal-RoPE Writer 的活动实现口径，但不改写那些�
 7. RL-Writer 先做一个独立、短 AS cold start，直到 24 个 source/train tasks
    每个在 official random-reset reward rollout 中至少成功一次，再切换为纯
    reward 更新。它不是从完整 AS-Writer best checkpoint 继续训练。
-8. RL 阶段先在 train tasks 上训练到曲线平台，再对少量合适 checkpoint 做
-   validation，尽可能定位最佳点。
+8. RL 阶段先在 train tasks 上训练到曲线平台，再持续评测合适validation
+   checkpoints，直到定位observed-best并看到可信峰后下降；train平台本身不构成
+   停止条件。
 
 本子任务完成前不要自动继续 final-32、test task-local RL、joint target-action
 oracle 或 ViVLA。长期 EMBER Goal 仍存在，但本轮交接的边界是上述 AS/RL
@@ -377,6 +379,10 @@ profile-only开关。估算不能替代实测。
   凭aggregate差几次就宣称峰值；优先补中间checkpoint。仍无法区分时，给两个
   候选增加一个预先封存的独立evaluation seed/panel复测，再做选择，并把重复
   测量波动本身报告出来。
+- AS只有在validation observed-best之后至少有多个较晚checkpoint整体下降，
+  且paired/复测证据排除单点随机波动后，才算把最佳点和饱和区间找全。这里不
+  要求每个checkpoint严格单调下降，但仅有loss平台、一个较差checkpoint或
+  success持平都不够；尚未看到可信峰后下降就继续增加训练segment。
 - 不因为 GPU 数变化机械缩放 step；steps、global queries、task/video
   conditions、wall/GPU-hours都同时记录。
 - 每次先启动可运行训练/评测，再在不修改其 import/config/output contract 的
@@ -391,9 +397,12 @@ profile-only开关。估算不能替代实测。
 - 同 checkpoint 的 cross-suite wrong video 会明显改变 adapter，但倒序/乱序
   的 effective-LoRA relative L2 中位数仅 `0.00937/0.00699`，说明近似
   bag-of-states。
-- owner 指定 SFT 比较门槛：`122/400`。四卡 rank-128 SFT 已观测的当前轨迹
-  best 为 step 700 的 `108/400`；`122/400` 来自此前 incumbent。新 Writer
-  的目标仍按 owner 最新口径尽量达到/超过 122，而不是只超过 108。
+- 四卡rank-128 SFT的完整step100–1100曲线为
+  `81/95/68/78/94/99/108/97/95/104/94`，observed-best是step700的
+  `108/400`。step800/900/1000/1100虽非严格单调，但全部低于108，已经用多个
+  峰后点括住该四卡best。因此AS的必须比较口径是“不明显落后于108/400”。
+- `122/400`不是四卡成绩，而是旧八卡rank-128 SFT step400的全局incumbent；
+  新Writer超过122是stretch目标，不能在文档或论文中误写成四卡baseline。
 - `122/400`的已封存结果root为
   `/data/ymdai/outputs/ember/pi05_source_sft_rank128_val8x50_step0400_77ec0ae_g67_r5_20260723`
   （逐task`15/2/4/29/42/30/0/0`，合计122）。当前focused task不重新训练
@@ -412,9 +421,15 @@ profile-only开关。估算不能替代实测。
 4. RL rollout 保存 env/policy/worker RNG、seed schedule、interaction cursor、
    per-task reward rows、optimizer/scheduler和exact-resume状态。
 5. 在 train tasks 上按多个任务覆盖和aggregate曲线判断平台，避免只由一两个
-   易任务支撑。只对少量平台附近checkpoint运行完整validation。
+   易任务支撑。train平台后对少量相邻checkpoint运行完整validation，但必须
+   继续到validation best之后出现经过噪声核验的多个峰后下降点。
 6. 评测 correct-video，并在 selected best 上做一次 cross-suite wrong-video；
    不读取 validation actions，不用 fixed states训练或选 RL checkpoint。
+
+RL和AS采用同一停止语义：必须报告validation observed-best及其两侧证据；
+“train reward平台”“validation loss平台”或“一个后续checkpoint变差”都不能
+单独触发停止。下降不必逐点单调，但必须由多个较晚checkpoint整体低于best，
+必要时用独立evaluation seed/panel复测排除rollout噪声。
 
 现有 `train_rl_writer.py` 和 `src/ember/pi05_rl_writer*` 只能复用通用
 RNG/checkpoint/env-pool机制；任何绑定旧 Action-Memory schema、旧冷启动含义
@@ -429,9 +444,11 @@ RNG/checkpoint/env-pool机制；任何绑定旧 Action-Memory schema、旧冷启
 - 是否值得构建full-token cache及其精度；
 - evaluation replicas/env batch的最终组合；
 - 新架构的实际step wall、显存峰值和每个30分钟segment对应多少steps；
-- normal AS最优checkpoint位于哪个step，以及是否需要比第二/第四点更密评测；
+- normal AS最优checkpoint位于哪个step、峰后下降从何时开始，以及是否需要比
+  第二/第四点更密评测；
 - 若AS不过关，下一次最小修正的具体内容；
-- RL reward estimator/optimizer的最终高效配置和平台判据细节。
+- RL reward estimator/optimizer的最终高效配置；其validation停止门槛不是待定
+  项，仍必须找到best并观察可信峰后下降。
 
 Source-SFT不在这份待定列表中：其参考结果已经封存，本focused task不重训它。
 任何未固定变量都应先用最小真实profile/paired evidence决定，不能变成等待owner

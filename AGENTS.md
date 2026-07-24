@@ -36,6 +36,12 @@ schema、活动配置和专用测试必须退役，只保留一个 canonical Wri
 后才推进独立的 short-AS-cold-start → pure-reward RL-Writer。本轮子任务结束
 后先向 owner 汇报，不自动继续 final-32、test task-local RL 或 joint oracle。
 
+比较口径不得混淆：四卡rank-128 Source-SFT observed-best为`108/400`
+（step700），旧八卡全局incumbent才是`122/400`。AS必须不明显落后于前者，
+超过后者是stretch目标。AS和RL都必须在validation rollout上找到observed-best，
+并由多个较晚checkpoint整体下降、必要时独立panel复测来排除单点波动；train
+平台、val loss平台或一个较差checkpoint不能单独触发停止。
+
 ## Data and split
 
 - 目标 benchmark 为 `libero_spatial`、`libero_object`、`libero_goal`、`libero_10`，共 40 tasks。

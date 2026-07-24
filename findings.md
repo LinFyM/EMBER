@@ -595,3 +595,28 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   end-to-end和rollout-only吞吐；不能再用模型加载/LoRA生成时间污染replica选择。
   缓存entry采用目录级原子发布，manifest核验每个state/file hash，预计完整
   400-entry panel只新增约1.03GB tensor数据。
+
+## Action-Forecast AS step150–600 validation曲线（2026-07-24）
+
+- 同一固定8-task×50 correct-video validation panel的step150/300/450/600结果
+  为`75/99/93/118`。step600逐任务为Long `13/2`、Goal `1/34`、Object
+  `46/17`、Spatial `0/5`；它超过四卡rank128 Source-SFT observed-best
+  `108/400`，距旧八卡`122/400` stretch目标4个成功。
+- step450→600在完全相同的video-level cache/seed协议下，paired flips为
+  450-only `29`、600-only `54`，exact McNemar `p≈0.00804`。净提升来自
+  Long task1 `0→13`、Goal task6 `23→34`、Object task1 `40→46`和Spatial
+  task3 `1→5`等多个tasks；Object task3同时从`24→17`，不能把aggregate
+  上升误写成所有任务单调改善。
+- step300→450仅`99→93`，且Long2/Object3改善而Long1/Goal6下降；这是幅度小、
+  任务方向混合的正常波动，不是owner规定的明显峰后下降。随后step600升到新高，
+  进一步证明不得因一个或多个略低checkpoint停止。
+- step150/300生成时旧cache按init state重复计算同一可见视频，并使重复视频使用
+  不同Writer内部随机流；科学输入墙未泄漏，但协议不再作为最终峰值复测标准。
+  step450/600开始按`(language task, video task, demo_id, condition, order
+  transform)`去重，并为同一可见视频固定生成随机流，因此后续checkpoint之间
+  可严格paired比较。若最终best落回step300附近，须用新协议独立复测该候选。
+- 正式panel的400个episodes去重为259个唯一视频LoRA、141个aliases；每卡一个
+  generator、batch100只需一个batch，四卡分别生成64/65个。step600最大生成
+  wall为`55.50s`、峰值allocated/reserved为`16.55/19.27GB`，释放Writer后
+  原进程保留约`9.55GB` source policy并直接转rollout；每卡6 replicas的
+  rollout-only吞吐为`0.61045 episode/s`，400 episodes无OOM、无重试。

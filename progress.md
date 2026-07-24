@@ -491,3 +491,26 @@
   新逻辑收口在`src/ember/pi05_eval/`和`src/ember/writer/evaluation_*`，没有
   平行runner。全仓fresh验证为`177 passed`，`py_compile`、`git diff --check`
   通过。下一步commit/push后在GPU0–3分别profile生成batch与纯rollout replicas。
+
+## Action-Forecast AS step300→600与正式validation（2026-07-24）
+
+- formal AS从完整step300 checkpoint同合同exact-resume到step600；本段300
+  optimizer steps消费19,200 queries和1,200 video conditions，body wall
+  `1978.45s`，step wall中位数`6.0985s`。step375/450/525/600四个checkpoint
+  均含Writer、optimizer/scheduler、sampler/data cursor与四rank RNG；累计到
+  step600为38,400 queries和2,400 video conditions，loss/gradient均finite。
+- step150/300/450/600的完整correct-video validation依次为
+  `75/99/93/118`。step600逐任务为Long `13/2`、Goal `1/34`、Object
+  `46/17`、Spatial `0/5`；32/32 shards、400 rows、118 successes、所有24
+  workers exit0且无重试。results SHA256为
+  `bf3c98dc9a9df0e067b6589d7627b02863197528555ac6c11964799dfd7733be`。
+- step450→600 paired为450-only `29`、600-only `54`（exact
+  `p≈0.00804`），多个tasks共同贡献净提升。step600成为新observed-best并超过
+  四卡Source-SFT的`108/400`；尚未出现任何峰后下降，故不做特异性诊断、不停训。
+- commit `493917e`将cache identity原位改为可见视频级去重，并让aliases复用同一
+  LoRA tensor与Writer生成随机流；全仓fresh测试`182 passed`。正式400-episode
+  panel现为259个唯一LoRA和141个aliases，生成约53–56秒；每卡6 replicas稳定，
+  step600 end-to-end/rollout-only吞吐分别为`0.45836/0.61045 episode/s`。
+- 启动下一段前GPU0–3全空闲、GPU4–7仍为其他用户进程且未进入visible set；
+  main/`493917e` clean并等于origin/main，个人占用约285.6GB。现已从step600
+  启动四卡exact-resume到step900，仍按75步保存并优先正式评测step750/900。

@@ -514,3 +514,24 @@
 - 启动下一段前GPU0–3全空闲、GPU4–7仍为其他用户进程且未进入visible set；
   main/`493917e` clean并等于origin/main，个人占用约285.6GB。现已从step600
   启动四卡exact-resume到step900，仍按75步保存并优先正式评测step750/900。
+
+## Action-Forecast AS step600→900与继续训练（2026-07-24）
+
+- 四卡从step600 exact-resume到900，300步body wall `1994.75s`，step wall
+  中位数/p95为`6.1495/9.0615s`；本段mean functional loss `0.114818`、
+  最大grad norm `0.360586`，峰值allocated/reserved为
+  `67,084,895,744/70,176,997,376` bytes，全部finite。
+- step675/750/825/900在线functional monitor为
+  `0.135046/0.134811/0.134446/0.134562`，仅显示弱平台。step900 checkpoint
+  逐文件SHA核验通过，累计57,600 queries、3,600 video conditions；24 tasks
+  各150次视频访问且均覆盖全部50 videos，完整optimizer、sampler与四rank RNG
+  可恢复。
+- step750/900正式validation为`104/113`，均为32/32 shards、400 rows、24
+  workers exit0。600→750下降14但paired `p≈0.0814`；900随后回升9，且600与
+  900 paired `p≈0.6254`。因此step600仍是observed-best，但没有满足owner停止
+  条件的峰后下降，不能做特异性诊断。
+- step750/900 results SHA256分别为
+  `584a5c2164b631eb96fc6d60589720ad4ad297626ac750548b78b953c664ea22`
+  和`4c1d62d0b3fbc847b776cdbcce0558d502b12a70381fa7f72d0913112d32a1cf`。
+  在GPU0–3实时空闲、GPU4–7仍隔离、个人占用约287.4GB时，已从step900启动
+  下一段exact-resume到step1200，继续优先评测step1050/1200。

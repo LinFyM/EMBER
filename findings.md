@@ -620,3 +620,23 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   wall为`55.50s`、峰值allocated/reserved为`16.55/19.27GB`，释放Writer后
   原进程保留约`9.55GB` source policy并直接转rollout；每卡6 replicas的
   rollout-only吞吐为`0.61045 episode/s`，400 episodes无OOM、无重试。
+
+## Action-Forecast AS step750/900继续探索（2026-07-24）
+
+- step750/900完整correct-video validation为`104/113`，逐任务分别为Long
+  `7/1`、Goal `1/34`、Object `42/17`、Spatial `0/2`，以及Long `7/2`、
+  Goal `1/38`、Object `42/16`、Spatial `0/7`。两点都低于step600的
+  `118/400`，但750后的900已经回升9个成功，故不存在单调或持续下降。
+- step600→750 paired为600-only `35`、750-only `21`，exact McNemar
+  `p≈0.0814`；step750→900为750-only `20`、900-only `29`，
+  `p≈0.2529`；step600→900为600-only `36`、900-only `31`，
+  `p≈0.6254`。step900与当前best实质持平，750只是一个未复现的较低点。
+- 任务方向同样不满足停止条件：600→750的净下降集中于Long1、Object1、
+  Spatial3，Goal6/Object3保持不变；随后750→900又由Goal6与Spatial3回升。
+  这不是“幅度非常明显、由多个tasks共同贡献且独立复测成立”的峰后下降，
+  所以必须继续训练。
+- step750/900的results SHA256分别为
+  `584a5c2164b631eb96fc6d60589720ad4ad297626ac750548b78b953c664ea22`
+  和`4c1d62d0b3fbc847b776cdbcce0558d502b12a70381fa7f72d0913112d32a1cf`；
+  两次均为32/32 shards、400 rows、24 workers exit0、无重试。对应
+  rollout-only吞吐为`0.61976/0.62315 episode/s`，继续确认r6稳定。

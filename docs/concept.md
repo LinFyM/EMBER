@@ -30,7 +30,7 @@ video与action sample不要求配对，Writer不能靠逐帧复制目标action�
 
 ## RL-Writer
 
-RL-Writer不是AS-Writer的默认后训练阶段。它先从随机Writer、零action warm-up开始，跨source tasks只用官方环境reward训练video-to-LoRA映射。若source base仍无法提供正reward，再加入极少量AS warm-up；仍不能启动则如实关闭路线。任何warm-up都必须报告teacher-action consumption。
+RL-Writer不是完整AS-Writer的默认后训练阶段。当前路线从新架构规定初态做短、task-balanced AS cold start，直到24个development-train tasks各在official random-reset rollout中至少成功一次；随后关闭action数据入口，跨source tasks只用官方环境reward训练video-to-LoRA映射。cold-start必须报告teacher-action consumption、每task first-success step和wall，不能加载完整AS best冒充独立RL路线。
 
 ## Source-SFT
 
@@ -59,7 +59,7 @@ task-local RL只在最终test阶段开始。每个test task本身是adaptation t
 | frozen source base test | 否 | 否 | 只读评估success | 无 |
 | Source-SFT source training | 否 | source task actions | 否 | shared LoRA |
 | AS-Writer source training | one source video | source task actions仅进loss | 否 | Writer |
-| RL-Writer source training | one source video | 否或明确极少warm-up | source reward | Writer |
+| RL-Writer source training | one source video | 明确报告的短AS cold start；转型后否 | source reward | Writer |
 | held zero-interaction | one held video | 否 | 否 | 无 |
 | test task-local RL | run-start one held video | 否 | test task reward | task LoRA |
 | joint direct oracle | 可忽略 | 8 test tasks actions | 否 | one shared LoRA |

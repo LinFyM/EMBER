@@ -9,7 +9,7 @@
 - source base在全部目标40 tasks上快速测试，只要求已开始在多个tasks出现部分真实成功，不先追求高ceiling，也不能只靠单个易task aggregate。
 - `Action-Supervised Writer (AS-Writer)`输入正确language+恰好一条action-hidden video；source video/action episode在同task内独立采样。
 - AS-Writer单次训练不超过约2小时；根据loss斜率和val成本尽快找到接近饱和点，不频繁做昂贵完整val。
-- `Reward-Trained Writer (RL-Writer)`先完全无AS warm-up直接用source reward训练；无信号时加极少warm-up，仍失败就暂停，不从完整AS-Writer继续。
+- `Reward-Trained Writer (RL-Writer)`从新架构规定初态做短、task-balanced AS cold start，直到24个train tasks各在official random-reset rollout中至少一次success，再关闭action入口转pure reward；不从完整AS-Writer best继续。
 - Source-SFT是在24/32 source tasks上联合训练的一套shared LoRA；它与AS-Writer各自按validation选最佳，不要求相同训练steps或数据量。
 - 第一轮完整流程只跑一个training seed；有足够性能差异后再考虑独立seeds。
 - development和final都必须报告seen-task performance。
@@ -63,7 +63,7 @@
 - 四 suites 的 6/2/2 development split、validation 合并后的 32/8 final split；
 - 过滤 LIBERO-90 overlap 后训练并 merge/freeze 共享 π0.5 source base，40-task 快速能力筛查；
 - AS-Writer 约 2 小时上限、loss 驱动的低成本 validation 与早停；
-- RL-Writer 从随机初始化和零 warm-up优先，极少 AS warm-up 仅作失败恢复；
+- RL-Writer 使用独立短AS cold start取得24-task逐task成功覆盖后转pure reward，并完整报告action消耗；
 - Source-SFT 是一套 shared target-source LoRA，独立按 validation 选最佳；
 - seen/source panel 与 cross-suite wrong-video 对照；
 - final 第一轮单 training seed，不提前扩多 seed；

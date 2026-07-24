@@ -402,3 +402,18 @@
 - evaluator优化将此前AS约`36.6min/0.182 rollout/s`改善为最佳run的`28.5min/0.234 rollout/s`；旧sequential失败目录无有效rows，不参与科学结果。优化commit `d2997ed`及诊断commit `85962bf`均已推送`origin/main`。
 - step400视频/帧特异性artifact为`pi05_as_writer_rope_mem4_step0400_video_frame_specificity_85962bf_20260724/diagnostic.json`，SHA256 `4f8110c1bf719d2ff07b220b5965af8d98d818ad7ae5e85c95c3216dc03a9316`，wall `173.316s`。跨suite错误视频、同task另一demo、倒序、乱序的有效LoRA相对变化中位数分别为`0.2267/0.0403/0.00937/0.00699`；单首/中/末帧为`0.1745/0.1124/0.3339`。
 - 快速子任务到此按owner要求停止：新Writer对视频任务内容有明确特异性，但对时间顺序仍近似不敏感；correct峰值`108/400`未超过rank128 Source-SFT incumbent `122/400`。本轮不启动contrast、额外AS训练、SFT或RL。
+
+## Action-Forecast Writer跨session交接（2026-07-24）
+
+- owner决定将实现和实验交给新的独立session；当前session停止改代码和GPU
+  launch，没有产生半成品实现，也没有修改正在运行进程的import/config/output。
+- 新的活动设计、参数预算、退役边界、profile矩阵、AS分段训练和RL cold-start
+  接续合同已封存在`docs/action_forecast_writer_handoff.md`，并由根
+  `AGENTS.md`与`docs/execution_brief.md`显式引用。
+- 交接只读快照：main/`b78584ab05e7f639cf1c022fdf457b3a971d64e6`
+  当时clean且等于origin/main；GPU0–3空闲，GPU4–7为其他用户进程；
+  `/data/ymdai`占用`278,857,052,160` bytes。新session必须重新核验所有live
+  状态，不能把该快照当launch许可。
+- 旧tmux `ember_as_bias_r4_s3200`只剩空bash，没有训练子进程；多个历史
+  worktree均未删除。新session在main仍clean且无并发writer时直接使用main，
+  不因历史worktree数量另造并行canonical路径。

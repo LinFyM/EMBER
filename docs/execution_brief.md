@@ -41,12 +41,19 @@ owner于2026-07-22将source-base正式训练改为从generic base fresh运行1,0
 - 在24 train tasks上做均衡混合。每个 update 同 task 内独立随机采 video 与 action episode/chunk，不要求配对；action只进 functional behavior loss。
 - source base冻结，只有Writer更新。Writer不得看到action、proprio、reward、terminal、task ID、filename或隐藏stats。
 - 先短profile loss与吞吐，将wall-clock换算成候选optimizer steps；按loss斜率调整固定廉价validation screen的间隔，先淘汰明显未充分候选，只对少量候选做完整8-task validation，并在接近饱和时早停。约2小时只是防预算暴走的上限，不是要求跑满或固定步数模板；到上限仍未充分训练时保存完整曲线和证据、标记budget-censored并停止自动追加。
+- 当前 canonical 替换设计、参数预算、Plan/Revision 绝对时间对齐、四卡
+  profile 与分段训练合同完整封存在
+  [`docs/action_forecast_writer_handoff.md`](action_forecast_writer_handoff.md)。
+  它覆盖此前 Action-Memory Writer 的活动实现口径；旧结果只作 provenance。
 
 ### RL-Writer
 
-- 与AS-Writer分开，从随机Writer开始，先完全不做action warm-up，跨source tasks用官方env reward联合训练。
+- 与完整AS-Writer best分开，从新架构规定初态做短、task-balanced AS cold
+  start；持续用官方random-reset reward screen，直到24个train tasks每个至少
+  一次真实success，再关闭action数据入口并跨source tasks做纯reward训练。
 - rollout初态来自官方随机reset/BDDL机制，不来自fixed `.pruned_init`。
-- 若始终没有正reward，再加入极少量AS warm-up；仍无法启动则封存负结果并暂停，不能偷换成完整AS-Writer continuation。
+- cold-start必须报告teacher-action queries、每task first-success step和wall；
+  不能偷换成完整AS-Writer continuation。
 - 使用官方reward/success，不额外读取object pose构造privileged shaping。
 
 ### Source-SFT
@@ -55,7 +62,11 @@ owner于2026-07-22将source-base正式训练改为从generic base fresh运行1,0
 - test不看held video/action；它控制“只加强source policy”与“额外读取held video”的差异。
 - 它与AS-Writer各自在validation上选最佳，不要求相同步数或数据量；必须报告各自steps、action chunks、参数量、GPU-hours和搜索上限。
 
-所有下游方法使用同一LoRA targets/rank/alpha/dropout/容量。若成熟recipe要求functionally identity initialization，按其标准实现，不能把两因子同时全零造成无梯度。
+所有方法共享同一frozen source base、normalization和policy接口，但不机械要求
+相同LoRA rank。Writer生成sealed rank-16 task LoRA；capacity-matched
+Source-SFT可使用rank128，并以其`10,297,344`个trainable参数约束Writer本体
+参数预算。各自targets/rank/alpha/dropout、identity initialization和参数量均
+需显式报告；不能把LoRA两因子同时全零造成无梯度。
 
 ## 5. Seen-task 与 wrong-video 机制证据
 

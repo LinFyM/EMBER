@@ -16,7 +16,7 @@ task language + exactly one action-hidden teaching video
 - 当前source base从generic base fresh训练1,000 steps；其余适用阶段先短profile，再以廉价screen和曲线斜率快速筛选，完整validation只给少量候选。约2小时是防预算暴走的上限而非训练目标；到上限仍未充分训练则记录后停止。
 - 目标 benchmark 为 LIBERO-Spatial/Object/Goal/Long 四 suites。development split 每 suite 6 train / 2 validation / 2 test，共24/8/8；final将validation合入形成32 source / 8 test。
 - `Action-Supervised Writer (AS-Writer)` 在source tasks上以一条视频生成LoRA，同task action episode/chunk只进functional loss，视频/action独立随机采样。
-- `Reward-Trained Writer (RL-Writer)` 从随机Writer直接用source reward开始；无信号时只允许极少AS warm-up，仍失败则暂停路线。
+- `Reward-Trained Writer (RL-Writer)` 与完整AS best分开：新架构先做短、均衡AS cold start，直到24个train tasks各有至少一次official random-reset success，再关闭action入口并转纯source reward训练。
 - `Source-SFT` 从同一source base在24/32 source tasks上联合训练一套shared LoRA，不看held video；它独立按validation选最佳，不强制匹配AS-Writer训练步数。
 - development和final都增加seen-task comparison；AS/RL Writer还必须比较correct video与另一suite的wrong video。
 - 第一轮只跑一个training seed。开发选定后，AS-Writer、RL-Writer（若成立）和Source-SFT都在合并后的32 source tasks上重新训练，再统一做seen与zero-interaction test。
@@ -32,7 +32,7 @@ generic `pi05_base` 在预封存8个test tasks、每task50个官方fixed states�
 
 - 不使用 `pi05_libero`，因为它读过目标40 tasks actions。
 - 不使用bank、geometry、shared subspace、residual escape、额外shared adapter、旧SmolVLA活动路径或MemLLM。
-- 所有下游方法从同一冻结source base出发并使用同一LoRA空间。
+- 所有下游方法从同一冻结source base、normalization和policy接口出发；Writer生成sealed rank-16 task LoRA，capacity-matched Source-SFT可用rank128，比较时显式报告各自参数量而不机械强制相同rank。
 - 训练最多8张A100；GPU0不得堆额外CUDA角色。评测改用cost-balanced state sharding和动态调度，避免horizon-520长任务拖尾。
 - 详细阶段、信息墙与执行合同见 `docs/execution_brief.md` 和 `task_plan.md`。
 

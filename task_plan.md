@@ -161,3 +161,26 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] fresh训练到step500并封存step400/500；500-step训练body wall为`1188.6s`，两个checkpoint及完整四rank resume state均通过manifest校验。
 - [x] 用同一paired 8×50 validation panel评测两个checkpoint；step400/500分别为`108/400`与`98/400`，逐task上step400处处不差，故冻结step400为本轨迹observed-best。
 - [x] 只对step400运行视频/单帧/倒序/打乱特异性诊断并停止：固定语言时跨suite错误视频令有效LoRA相对变化中位数为`0.2267`，同task另一demo为`0.0403`，但倒序/打乱仅`0.00937/0.00699`。当前Writer已利用视频任务内容，却基本未利用动作时序；不继续本轮训练、contrast或RL。
+
+## 当前执行：Action-Forecast Writer（2026-07-24）
+
+活动设计与接管顺序以
+[`docs/action_forecast_writer_handoff.md`](docs/action_forecast_writer_handoff.md)
+为准；下列任务覆盖上方 Action-Memory 的已完成历史，不恢复旧 checkpoint。
+
+- [ ] 原位替换旧 Action-Memory owner，完成 imagined-state、VL/Action
+  Meta-LoRA、完整10-flow action plans、absolute-time Plan/Revision、
+  variable-time temporal encoder和one-way LoRA query decoder。
+- [ ] 退役旧 source/config/schema/tests，确认活动树只有一个 AS runner和一个
+  Writer architecture；真实参数量接近rank128 Source-SFT的`10,297,344`。
+- [ ] 在GPU0–3实测并封存per-rank action-query batch、
+  `frame_microbatch_size`、stride5/10和评测并发/缓存参数。
+- [ ] 按约30分钟一段、每段四个checkpoint推进四卡AS；优先评测每段第2/4点，
+  必要时补1/3点，定位paired 8×50 validation最佳checkpoint。
+- [ ] 对observed-best完成correct/wrong/shuffled/reversed视频证据；目标是不明显
+  落后于owner指定SFT参考`122/400`并显著改善旧架构的顺序不敏感。
+- [ ] 仅在AS同时通过性能与特异性后，推进独立short-AS cold start，直到24个
+  train tasks各至少一次random-reset success，再切换pure-reward RL-Writer并
+  完成train平台与validation选择。
+- [ ] 更新authority/ledger、验证、task-scoped commit并push；完成或经多轮最小
+  修正仍不通过时，按完整证据向owner汇报后停止本子任务。

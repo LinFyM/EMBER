@@ -23,6 +23,19 @@
 
 任何单一 source base、训练 loss、smoke、局部 seen 结果或一个 Writer 阶段都不能单独触发长期 Goal complete。
 
+## Current focused execution task
+
+owner 于 2026-07-24 将当前执行焦点切换为
+[`docs/action_forecast_writer_handoff.md`](docs/action_forecast_writer_handoff.md)
+定义的 Action-Forecast Writer 子任务。该文件覆盖此前 Action-Memory /
+temporal-RoPE Writer 的活动实现口径：旧结果保留为 provenance，但旧架构、
+schema、活动配置和专用测试必须退役，只保留一个 canonical Writer runner。
+
+当前先完成新 AS-Writer 架构、四卡效率 profile、分段训练、validation 最佳点
+和 correct/wrong/shuffled-video 机制证据；只有 AS 同时通过性能与特异性门槛
+后才推进独立的 short-AS-cold-start → pure-reward RL-Writer。本轮子任务结束
+后先向 owner 汇报，不自动继续 final-32、test task-local RL 或 joint oracle。
+
 ## Data and split
 
 - 目标 benchmark 为 `libero_spatial`、`libero_object`、`libero_goal`、`libero_10`，共 40 tasks。
@@ -56,10 +69,10 @@ generic lerobot/pi05_base
 - Writer 不得接收 action、proprio、reward、terminal、task ID、filename 或隐藏 normalization；source actions 只能进入 AS functional loss。
 - `Action-Supervised Writer (AS-Writer)`：development 在 24 train tasks 上均匀混合；同 task 内独立随机采一条 teacher video 和一条 action episode/chunk，不要求同 episode配对；frozen source base 只通过 functional LoRA forward 参与，更新 Writer。
 - 所有适用训练阶段都遵循上述短周期、证据驱动流程。task-local RL的预算按每个初始化方法覆盖全部8个test tasks的总训练wall-clock计算，不是每task各给约2小时；到上限仍未充分训练时记录为budget-censored并停止自动追加。
-- `Reward-Trained Writer (RL-Writer)` 是独立路线：先从随机 Writer、零 target-action warm-up 直接跨 source tasks 用官方环境 reward 联合训练；若没有正信号，再加入极少量 AS warm-up；仍无法启动则封存并暂停，不从完整 AS-Writer继续。
+- `Reward-Trained Writer (RL-Writer)` 是独立路线：按当前 focused task 从新架构规定初态做短、task-balanced AS cold start，直到24个development-train tasks各在官方random-reset rollout中至少成功一次，再关闭action数据入口并跨source tasks做纯reward训练；它不从完整AS-Writer best继续，cold-start消耗必须完整报告。
 - RL-Writer rollout 使用 LIBERO 官方随机 reset/BDDL 初态；不使用 `.pruned_init`。只用官方 env reward/success，不从 object pose 等内部状态手工构造 privileged shaping。
 - `Source-SFT` 是在同一 frozen source base 上、跨 24 development train tasks 联合训练的一套 shared LoRA，test 不看 held video/action。它和 AS-Writer各自根据 validation 选最佳，不要求机械匹配 optimizer steps 或 consumed examples，但必须报告训练数据、steps、GPU-hours、参数量和搜索上限。
-- π0.5 LoRA targets/rank/alpha/dropout 与 identity/initialization 必须先参考成熟实现；AS-Writer、RL-Writer、Source-SFT、task-local RL 和联合 direct oracle使用同一挂载空间与容量。
+- 所有方法共享同一frozen source base、normalization和policy接口，但不再机械要求相同trainable参数化或LoRA rank。Writer继续生成sealed rank-16 public task LoRA；capacity-matched Source-SFT可使用rank128，其10,297,344个trainable参数用于约束Writer本体参数预算。各方法的targets/rank/alpha/dropout与identity初始化都必须显式报告。
 
 ## Seen and video-causality evidence
 

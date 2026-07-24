@@ -528,3 +528,23 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 仅在step400进行post-selection、无action/reward/outcome的特异性诊断。保持正确language不变，仅换跨suite错误视频时，temporal feature、LoRA参数和有效LoRA更新的中位相对L2分别为`0.1228/0.1595/0.2267`；同task另一demo对应`0.0255/0.0368/0.0403`。8/8 tasks的跨suite有效更新变化均为`0.1770–0.2715`，说明视频任务内容已经稳定进入adapter，不是公共LoRA塌缩。
 - 对同一视频倒放或确定性乱序时，有效LoRA更新的中位相对L2却仅为`0.00937/0.00699`，cosine中位数为`0.999957/0.999976`；而只保留首/中/末帧时为`0.1745/0.1124/0.3339`。因此模型使用了多帧内容和端点状态，但normal functional监督几乎没有让新RoPE路径学习动作顺序。这个结论是representation/adapter诊断，不冒充错误视频的closed-loop performance arm。
 - 当前最直接的科学结论不是“视频没用”，而是“视频语义内容有用、时间顺序仍未被当前监督识别”。由于correct性能未超过SFT，按owner的快速子任务合同不启动contrast、更多checkpoint或RL，先停止汇报。
+
+## Action-Forecast Writer最终设计判断（2026-07-24）
+
+- 旧Action-Memory的主要科学缺口不是视频内容完全塌缩，而是它只聚合逐帧
+  hidden states：倒序/乱序的effective-LoRA相对变化中位数仅
+  `0.00937/0.00699`。仅靠temporal RoPE没有让normal functional loss学会
+  “一个连续动作计划怎样随新观察被修正”。
+- 新设计因此不再保存18层memory hidden states，而是让每个teacher frame经
+  imagined-state + PaliGemma VL Meta-LoRA + Action Meta-LoRA执行完整10-step
+  flow，保留最终50×7 action forecast。相同绝对未来时刻的滚动forecast构成
+  receding-horizon Plan与有方向的Revision，直接把“最终打算做什么”和“新帧
+  如何修正旧计划”暴露给变长temporal encoder。
+- 同一视频所有帧必须使用相同fixed flow noise；prefix KV只算一次并供10次flow
+  复用。temporal只读取normalized actions/revisions，不再额外读取pseudo-state
+  或18×10 hidden states。
+- 320个LoRA queries通过显式单向cross-attention读取procedural memory；普通
+  conditional bias保留，final factor heads零初始化保证public task LoRA identity。
+  预算约10.27M，须用真实实现校准到rank128 SFT的10.297M附近。
+- 详细实现、profile、训练和RL接续合同见
+  `docs/action_forecast_writer_handoff.md`；它覆盖旧架构活动口径。

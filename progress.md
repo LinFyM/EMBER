@@ -417,3 +417,9 @@
 - 旧tmux `ember_as_bias_r4_s3200`只剩空bash，没有训练子进程；多个历史
   worktree均未删除。新session在main仍clean且无并发writer时直接使用main，
   不因历史worktree数量另造并行canonical路径。
+- owner要求确认新session无需读取旧对话即可实现后，又对交接文档做逐层完整性
+  审计：补齐了端到端tensor shapes、single-agentview信息墙、state-width128
+  coordinate-query head、连续state token在PaliGemma文本state位置的插入方式、
+  冻结backbone仍需保留的梯度路径、per-condition flow noise、Plan/Revision
+  精确MLP/attention聚合、query identities、8个factor heads及真实输出宽度、
+  长Long-shard动态调度、近似候选复测规则和已封存`122/400` SFT artifact。

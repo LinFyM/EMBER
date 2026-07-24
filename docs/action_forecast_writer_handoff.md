@@ -7,6 +7,13 @@ Action-Memory / temporal-RoPE Writer 的活动实现口径，但不改写那些�
 历史结果。若旧配置、旧测试、`task_plan.md` 的已完成历史条目或早期设计文档
 与本文件冲突，以本文件和 owner 最新指令为准。
 
+## 0. Active Goal原文
+
+新session若`get_goal`没有返回active Goal，使用以下原文创建且不设置
+`token_budget`：
+
+> 在仅使用GPU 0–3且不干扰任何现有进程的约束下，完成EMBER新Action-Forecast Writer核心闭环：将旧Action-Memory Writer活动架构完全退役并更新代码、测试、配置与项目文档；实现由教师视频逐帧imagined-state/PaliGemma融合、Writer内部VL与Action Meta-LoRA、π0.5完整10-step flow最终action plans、同绝对时刻Plan/Revision tokens、变长Temporal Transformer及单向LoRA query decoder生成完整rank-16 task LoRA的唯一canonical路径，并使Writer训练参数量约等于rank-128 Source-SFT；实测并固定训练的每rank action-query batch、frame microbatch、frame stride和评测最优并发/批处理参数，在四卡上按约半小时一段、每段四个等间隔checkpoint的时间导向方式持续AS-Writer训练，优先评测每段第二/第四checkpoint并按趋势补测，直至找到validation最优或明确下降平台；要求AS-Writer性能不明显落后于四卡rank-128 Source-SFT（参考122/400，争取超过），同时correct/wrong及乱序视频特异性成立。若经合规诊断和最小改进仍不能同时过关，保存完整证据并停止汇报；若过关，则实现和高效profile cold-start RL-Writer，先确保每个source task至少一次成功再切换纯RL，训练到train表现平台并对合适checkpoint完成validation选择。全过程优先尽快把可运行训练/评测部署到合法空闲GPU，再在运行期间并行推进互不污染的文档、诊断与后续代码；保存命令、配置、曲线、rows、runtime、hash、exact-resume状态，完成验证、文档、task-scoped commit和push后方可Goal complete。
+
 ## 1. 当前目标和停止条件
 
 当前先完成一个闭合的 Action-Forecast Writer 子任务：
@@ -67,10 +74,34 @@ Writer 子任务。
   中位 30、p95 70、最大 105。
 - 每个采样帧和完整 task language 进入 π0.5 的视觉语言 backbone。语言必须
   使用 frozen PaliGemma 经过上下文处理后的表示，不能只取 embedding table。
+- 当前 sealed teacher input 是`RawTeacherVideoStore`读取的单条
+  `obs/agentview_rgb`视频；不要静默加入wrist image、第二条视频或真实robot
+  state。架构允许未来换成人类/第三视角视频，正因如此才需要imagined-state
+  与VL Meta-LoRA，而不是假定teacher view等同于policy执行视角。
 - frozen SigLIP/full projected image tokens 可以缓存；task token IDs、固定语言
   embedding、固定 flow noise、对齐索引也可缓存。因为 VL Meta-LoRA 和
   imagined-state path 会更新，contextual PaliGemma prefix 不能跨 optimizer
   step 缓存。
+
+一个视频条件的端到端张量合同是：
+
+```text
+frames [T,3,H,W] + frame_indices [T] + task tokens [L]
+  -> frozen SigLIP/projector full image tokens [T,N_img,2048]
+  -> Visual State Head: imagined state [T,8]
+  -> virtual state tokens [T,8,2048]
+  -> PaliGemma + VL Meta-LoRA contextual prefix/KV
+  -> Action Expert + Action Meta-LoRA + 10 flow iterations
+  -> final normalized plans [T,50,7]
+  -> absolute-time Plan/Revision tokens [U,2,256]
+  -> variable-time temporal memory [2U,256]
+  -> 320 one-way LoRA queries [320,256]
+  -> sealed complete rank-16 LoRA state
+```
+
+旧的16个Action-Memory tokens和18层memory-state tensor不进入新路径。新路径
+中的learned tokens只有明确职责的visual coordinate queries、no-revision/
+type tokens和LoRA output queries。
 
 ### 3.2 Visual State Head 与 VL Meta-LoRA
 
@@ -78,14 +109,40 @@ Writer 子任务。
   8 维连续 agent-centric imagined state。它是 action-hidden teacher video
   中模型“想象自己处在教师位置时”的连续 pseudo-state，不宣称是有监督的
   真实机器人坐标。
+- 默认实现为：projected image tokens先从2048投影到state width 128；8个
+  learned coordinate queries经过两个pre-norm cross-attention + expansion-2
+  FFN blocks，4 heads，只允许queries读取image K/V，image tokens不读取queries；
+  每个query经共享scalar head和`tanh`得到一个`[-1,1]`连续值。这里没有state
+  label，全部梯度只来自最终AS functional loss。
 - imagined state 经过连续/Fourier/MLP state embedder 变成 8 个可微的
   PaliGemma-width virtual state tokens，插入原生 state-prefix 对应的位置。
   不要把连续状态离散化后再走 tokenizer，否则梯度被截断。
+- 默认continuous embedder对每个scalar构造64维确定性Fourier features，经共享
+  `64 -> 256 -> 2048` MLP，再加8个不同的state-slot embeddings；这样每个
+  coordinate得到一个2048维virtual token。
+- π0.5并不存在独立的原生`state_proj`。正常LIBERO processor把8维state量化
+  后写成文本`Task: ..., State: <8 integers>;\nAction:`。Writer必须保留同一
+  语义布局：正常token embeddings负责BOS/task/`State:`/`Action:`分隔文本，
+  用8个连续virtual tokens替换离散整数所在片段。不要误以为Action Expert中
+  天然存在8个state tokens，也不要把virtual state放进Action suffix。
 - PaliGemma 18 层 q/k/v/o 使用 Writer 内部 identity-init VL Meta-LoRA，
   首选 rank 4。作用是把 teacher-view 图像、正确语言和 virtual state 融合成
   source policy Action Expert 能理解的 agent-centric prefix KV。
 - VL Meta-LoRA 只存在于 Writer 的教师视频理解路径；生成的公开 task LoRA
   执行时不携带它。
+- rank 4/8并非要求两条Meta-LoRA表达力相同：PaliGemma width 2048使rank4已约
+  0.922M参数，且其预训练图文语义应尽量少改；Action Expert承担teacher-view
+  到robot action plan的主要适配，rank8约1.253M，因此给更高rank。只有真实
+  profile或训练证据才能改变这两个rank，不能因“看起来不对称”自行拉齐。
+- 两类Meta-LoRA都采用functional identity initialization：A用Kaiming初始化、
+  B为零。8个coordinate queries使用固定seed生成的归一化正交128维初值；
+  state scalar head小方差初始化且zero bias。旧Action-Memory曾采用
+  action-in manifold orthogonal initialization，但那些16个tokens已经退役，
+  不得把该初始化连同旧tokens恢复到新Action Expert suffix。
+- frozen SigLIP/projector可在`no_grad`下运行或读取cache；从virtual state、
+  VL Meta-LoRA开始的PaliGemma contextual forward不能包在`torch.no_grad`
+  中。base weights保持`requires_grad=False`，但梯度必须穿过冻结PaliGemma
+  回到state head/VL Meta-LoRA，prefix KV也不能detach。
 
 ### 3.3 Action Expert forecast
 
@@ -96,10 +153,22 @@ Writer 子任务。
   迭代，不是十层，也不是只预测十个动作。
 - 同一 teacher video 的所有帧从完全相同的固定 `[50,32]` flow noise 开始，
   避免随机噪声被误当成 frame-to-frame revision。
+- “固定”指一个video condition内部共用同一Gaussian noise，并由保存的
+  Writer-flow RNG/visit schedule可恢复；不同训练visit可以获得新的可复现noise。
+  correct/wrong/shuffled/reversed paired诊断必须显式复用同一noise。
 - 每个 frame 的 PaliGemma prefix 只算一次；prefix KV 在十次 flow 迭代中
   原地复用。不要每个 flow step 重算视觉语言 prefix。
 - 只保留最终 normalized `[T,50,7]` action plans。不要保存 10×18 层 hidden
   states，也不要把 imagined state 另行喂给 temporal encoder。
+- 十次flow和frozen Action Expert base同样不能整体`no_grad`：base参数冻结，
+  但梯度要穿过十次迭代回到Action Meta-LoRA、VL Meta-LoRA和state head。
+  `output_hidden_states=False`，中间flow state只为ODE更新临时存在并通过
+  checkpoint/rematerialization控制显存。
+- pinned LeRobot的`PI05Pytorch.sample_actions`带有`@torch.no_grad()`，训练
+  Writer时不能直接调用它。应在仓库内实现一个可微forecast wrapper：复用
+  `embed_suffix`、mask/position构造、prefix-cache格式和原样10次
+  `denoise_step` Euler更新，但用自定义含virtual-state/VL-Meta-LoRA的prefix
+  构造；不得修改`.venv` site-packages，也不得另写近似flow公式。
 
 ### 3.4 同绝对时刻的 Plan / Revision tokens
 
@@ -125,6 +194,17 @@ u = t_i + k
 - 每个绝对时间点输出 `[Plan_u, Revision_u]` 两个 width-256 tokens，得到
   变长序列 `[U,2,256]`。两类 token 使用相同 absolute-time RoPE，再加
   token-type embedding。
+- 具体编码保持简单且可批处理：
+  - Plan encoder读取`[latest_action(7), normalized_lead_time(1)]`，用共享
+    `8 -> 256 -> 256` MLP产生`Plan_u`；
+  - 每条revision event读取
+    `[old_action(7), new_action(7), delta(7), old_lead, new_lead, Delta_t]`
+    共24维，用共享`24 -> 256 -> 256` MLP；
+  - 同一`u`下数量可变的revision events由一个learned revision query通过一层
+    pre-norm cross-attention + expansion-4 FFN单向聚合，再加由count及
+    delta-norm mean/std/max编码的稳定性特征；
+  - 所有`(batch,u)`组合padding成一个并行batch处理，不用Python逐时刻循环；
+    没有event时直接使用learned `no_revision`表示并保留count=0 mask。
 - 对未来人类视频，核心仍是按物理时间对齐：视频帧间隔对应机器人控制周期
   中能执行多少 actions，而不是把 “5” 写死。当前 LIBERO 可以严格用原始
   frame index 对齐。
@@ -143,10 +223,25 @@ u = t_i + k
   cross-attention `Q(query) -> K/V(procedural memory)`。这是单向读取：
   temporal/video memory 不反向读取 320 个 output queries。不要用无 mask 的
   拼接 self-attention 制造不必要的双向计算。
+- 每个block是pre-norm query self-attention、pre-norm query-to-memory
+  cross-attention、expansion-4 FFN。320个query都带明确的module/layer/rank
+  identity：expert queries区分18个layer和16个rank slots；action-in/out
+  queries区分module type和rank。它们可有learned query table，但factor heads
+  只能读取经过至少一次conditional cross-attention后的states，不能另接一个
+  raw-query或常量bias直达public LoRA的旁路。
+- coordinate/query/type/no-revision embeddings都使用config seed下的确定性
+  initialization并进入checkpoint；LoRA query table与identity embeddings默认
+  `Normal(0,0.02)`。这些初始化不是额外shared adapter，且不得依赖task ID。
 - factor heads 生成当前 sealed rank-16 PEFT tensors：18 层 q/v，加
   `action_in_proj`、`action_out_proj` 的 A/B factors。普通 conditional bias
   允许存在；final factor projections 的 weight 和 bias 从零初始化，使 fresh
   public task LoRA 严格 functional identity。
+- 每个factor head固定为`RMSNorm(256) -> Linear(256,256) -> GELU ->
+  final projection`。expert layer/rank query同时送到：
+  `q_A:1024`、`q_B:2048`、`v_A:1024`、`v_B:256`；action-in queries送到
+  `A:32/B:1024`，action-out queries送到`A:1024/B:32`。B factors按真实PEFT
+  tensor方向转置，最终state的name/shape必须逐项等于从真实identity template
+  生成的`LoraTensorSpec`，不能手写猜名字。
 - 不增加独立公共 LoRA 支路。这里不是全局 `bias=False`；conditional modules
   的 bias 可以学习，但所有输出必须由当前 language/video procedural memory
   经 query decoder 产生。
@@ -210,7 +305,7 @@ Writer 生成的 public rank-16 task LoRA 本身仍为 `1,287,168` scalars。
 - `.venv/lib/python3.12/site-packages/lerobot/policies/pi05/modeling_pi05.py`：
   当前 pinned LeRobot π0.5真实实现。重点核对`PI05Pytorch.embed_prefix`、
   `sample_actions`、`denoise_step`、`paligemma_with_expert`和
-  `gemma_expert`，不要另写一个近似flow sampler。
+  `gemma_expert`；该文件只读，所有适配留在EMBER owner中。
 
 ## 5. 训练实现与显存/吞吐优化
 
@@ -232,6 +327,11 @@ Writer 生成的 public rank-16 task LoRA 本身仍为 `1,287,168` scalars。
 - 固定 checkpoint 的 evaluation 应按 checkpoint/task/language/video hash
   缓存生成的 public LoRA；复用已实现的 `per_sample_lora_batched_replan`，
   不退回逐 rollout materialize + sequential replan。
+- 旧真实profile是一个Action-Expert pass、16 memory positions、batch16/rank时
+  steady约`1.95–2.34s/step`且allocated约76GB。新架构十次50-position flow
+  明显更重；交接前的工程估算是典型优化后约`8–18s/step`，若需要two-pass
+  Writer replay约`12–25s/step`，p95长视频可能`16–30s/step`。这些只用于安排
+  首轮smoke，不能写成结果，必须由真实median/p95 profile替换。
 
 ## 6. Profile 与封存顺序
 
@@ -253,6 +353,10 @@ Writer 生成的 public rank-16 task LoRA 本身仍为 `1,287,168` scalars。
    只有新路径通过真实 profile 才能采用，不能凭空宣称更快。
 7. 以真实 rollouts/s 和完整 400-rollout wall 选评测配置；显存利用率不是
    主要指标。
+8. long-horizon拖尾必须按实际可用GPU数处理，而不是固定切八份：先把Long
+   tasks依据`states × horizon`切成至少覆盖每个device的cost-balanced shards，
+   让各device尽早承担一份Long工作；完成后所有workers从同一动态队列继续接
+   普通task shards并work-steal。原始rows仍按task/init恢复聚合。
 
 profile 后把唯一选中值写进 canonical config、manifest 和 docs，删除临时
 profile-only开关。估算不能替代实测。
@@ -269,6 +373,10 @@ profile-only开关。估算不能替代实测。
   `8 tasks × 50 fixed states` closed-loop success决定；报告 per-task counts、
   paired flips 和重复评测的不确定性，不能把一个 noisy 400-rollout点写成
   精确上限。
+- 若相邻候选在同一400-rollout panel上接近、paired flips不能支持方向，不能
+  凭aggregate差几次就宣称峰值；优先补中间checkpoint。仍无法区分时，给两个
+  候选增加一个预先封存的独立evaluation seed/panel复测，再做选择，并把重复
+  测量波动本身报告出来。
 - 不因为 GPU 数变化机械缩放 step；steps、global queries、task/video
   conditions、wall/GPU-hours都同时记录。
 - 每次先启动可运行训练/评测，再在不修改其 import/config/output contract 的
@@ -286,6 +394,10 @@ profile-only开关。估算不能替代实测。
 - owner 指定 SFT 比较门槛：`122/400`。四卡 rank-128 SFT 已观测的当前轨迹
   best 为 step 700 的 `108/400`；`122/400` 来自此前 incumbent。新 Writer
   的目标仍按 owner 最新口径尽量达到/超过 122，而不是只超过 108。
+- `122/400`的已封存结果root为
+  `/data/ymdai/outputs/ember/pi05_source_sft_rank128_val8x50_step0400_77ec0ae_g67_r5_20260723`
+  （逐task`15/2/4/29/42/30/0/0`，合计122）。当前focused task不重新训练
+  Source-SFT；除非artifact校验失败或owner另行要求，不要把GPU时间转回SFT。
 
 ## 8. RL-Writer 接续合同
 
@@ -308,13 +420,32 @@ profile-only开关。估算不能替代实测。
 RNG/checkpoint/env-pool机制；任何绑定旧 Action-Memory schema、旧冷启动含义
 或旧数据墙的部分必须适配/替换，不能原样恢复。
 
+### 8.1 明确留给实测、不是交接遗漏的变量
+
+以下内容没有在对话中拍成固定常数，必须按本文件的证据规则实测，而不是猜：
+
+- stride最终选5还是10；
+- `frame_microbatch_size`和每rank action-query batch；
+- 是否值得构建full-token cache及其精度；
+- evaluation replicas/env batch的最终组合；
+- 新架构的实际step wall、显存峰值和每个30分钟segment对应多少steps；
+- normal AS最优checkpoint位于哪个step，以及是否需要比第二/第四点更密评测；
+- 若AS不过关，下一次最小修正的具体内容；
+- RL reward estimator/optimizer的最终高效配置和平台判据细节。
+
+Source-SFT不在这份待定列表中：其参考结果已经封存，本focused task不重训它。
+任何未固定变量都应先用最小真实profile/paired evidence决定，不能变成等待owner
+确认普通实现细节的门槛。
+
 ## 9. 当前仓库与实物状态快照
 
 以下是交接时只读快照；新 session 启动后必须重新核验：
 
 - canonical checkout：`/data/ymdai/projects/EMBER`
-- branch/HEAD：`main` / `b78584ab05e7f639cf1c022fdf457b3a971d64e6`
-- 当时 `main == origin/main` 且 worktree clean。
+- 未改实现的源码基线为`b78584ab05e7f639cf1c022fdf457b3a971d64e6`；
+  首次handoff文档commit为`9beb0de4499e7b464f3107a6ab8a434dd52e9b81`。
+  新session始终使用最新`origin/main`，不要把这两个provenance hash当成必须
+  checkout的旧目标。
 - source base run：
   `/data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722`
 - source checkpoint：
@@ -343,7 +474,7 @@ RNG/checkpoint/env-pool机制；任何绑定旧 Action-Memory schema、旧冷启
 
 新 session 应：
 
-1. 先 `get_goal`；若无 active Goal，使用本文件第1节和 owner原始目标创建一个
+1. 先 `get_goal`；若无 active Goal，使用本文件第0节原文创建一个
    无 token budget 的完整 Goal。
 2. `git pull --ff-only origin main`，检查 status/HEAD/worktrees/活动进程。
 3. 完整阅读根 `AGENTS.md` 规定的 authority 文档，再完整阅读本文件。
@@ -359,3 +490,8 @@ RNG/checkpoint/env-pool机制；任何绑定旧 Action-Memory schema、旧冷启
 9. 每个可复现里程碑做 task-scoped diff/tests，commit并push main。
 10. 只有本文件第1节全部完成才把该子任务 Goal 标记 complete；代码完成、
     smoke、loss下降或一个 validation点都不够。
+
+除新增权限、不可恢复数据、500GB cap、必须干扰他人进程或实质改变科学问题
+外，不要为普通实现细节逐项停下来询问。一次smoke、训练segment或评测失败后
+先定位工程/科学层次、做最小修正并继续；能启动GPU工作时先启动，再推进互不
+污染的次要文档和后续代码。

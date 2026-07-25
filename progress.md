@@ -781,6 +781,9 @@
   吞吐约`11.83 queries/s`，峰值allocated/reserved为
   `76,926,757,376/83,703,627,776` bytes，无OOM或nonfinite；现有reserved
   已无batch22或frame-microbatch40的安全余量，因此不做故意OOM试验。
+- 75-step specificity训练保留正式1200-step scheduler时间轴，只把本次
+  `selected_stop_step`设为75；不得把scheduler总步数压缩成75后冒充正式轨迹
+  的前75步。
 - step1 checkpoint恢复到step2后，loss、gradient norm、数据/视频/flow-noise
   游标与四rank RNG均匹配连续运行；rank-state文件bitwise一致。CUDA进程重启后
   Writer仅6个tensor出现最大`4.28e-8`的浮点差异，因此checkpoint完整可恢复，

@@ -172,11 +172,12 @@
   "profile_defaults": {
     "status": "sealed_v4_specificity_gate",
     "expected_world_size": 4,
-    "total_steps": 75,
+    "total_steps": 1200,
     "per_rank_batch_size": 20,
     "checkpoint_steps": [
       50,
-      75
+      75,
+      1200
     ],
     "selected_stop_step": 75
   },

@@ -113,10 +113,11 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         skip_data_sha=False,
     )
     assert resolve_runtime(profile, config, context) == (
-        75,
+        1200,
         20,
-        (50, 75),
+        (50, 75, 1200),
     )
+    assert profile.stop_after_step == 75
     wrong_world = DistributedContext(
         rank=0,
         local_rank=0,

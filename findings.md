@@ -917,6 +917,8 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   `11.83 queries/s`；峰值allocated/reserved为
   `76,926,757,376/83,703,627,776` bytes。当前显存余量不支持把batch或
   frame-microbatch再安全上调，故不为寻找OOM边界浪费正式训练时间。
+- 低成本75-step门控必须沿用正式1200-step scheduler，只在75提前停止；若把
+  scheduler horizon本身压到75，会改变warmup/decay并使结果不能预测正式轨迹。
 - step1→2恢复的loss与gradient norm逐值等于连续运行，所有数据、视频、
   flow-noise、optimizer、scheduler和rank RNG状态均恢复。CUDA新进程造成6个
   Writer tensors最大`4.28e-8`的数值差异；这是数值等价而非bitwise

@@ -651,3 +651,27 @@
   259个唯一视频LoRA，随后每卡6 replicas稳定完成。
 - GPU0–3再次实时空闲、GPU4–7持续隔离、个人占用约277GB时，已从step2400
   exact-resume到2700；继续正式评测step2550/2700，specificity继续推迟。
+
+## Action-Forecast AS observed-best特异性门与顺序修正profile（2026-07-25）
+
+- step2550正式correct-video完成`124/400`，再次回到step1200的`125/400`
+  峰值平台；step2700 checkpoint完整存在但尚未评测。owner随后要求先对当前
+  最高AS做视频特异性，若通过再推进RL。
+- step1200四个同seed、同state、同policy-RNG的8×50 arms全部完成32/32 shards、
+  400 rows、24 workers exit0且无重试：correct/cross-suite-wrong/shuffled/
+  reversed=`125/67/121/124`。correct-vs-wrong paired为`71/13`、
+  `p=7.8639e-11`，内容特异性通过；correct-vs-shuffled/reversed分别为
+  `17/13`、`15/14`，顺序特异性失败。故没有越过RL硬门槛。
+- canonical `src/ember/writer/as_step.py`现原位支持一个最小order-contrast训练
+  mode：正例与shuffle/reverse负例共享物理action batch、policy language与
+  Writer flow noise，两个functional forward串行执行以保持峰值显存；负例只在
+  loss低于`correct+0.01`时施加`-0.5`梯度。source policy仍为0 trainable，
+  Writer输入与禁入信息不变，没有新增runner或恢复Action-Memory。
+- 从step1200 Writer权重、fresh optimizer/scheduler/RNG启动的四卡2-step真实
+  profile已完成；batch16/rank、frame-microbatch32，双forward全局
+  128 policy samples/step，峰值allocated/reserved为
+  `67,077,086,720/69,250,056,192` bytes，首步/第二步
+  `19.4614/11.6213s`，无OOM或非finite。focused tests为`13 passed`，
+  config解析、`py_compile`和`git diff --check`通过。配置已封为正式首段
+  300 steps；训练后只对新轨迹的validation候选选best，再在best上复测完整
+  四arm特异性，通过前不启动RL。

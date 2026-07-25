@@ -187,7 +187,7 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
 
 def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
     value = config.get("conditioning_training", {})
-    expected = {
+    normal = {
         "method": "normal_positive_functional_action_loss_only",
         "writer_language_contract": (
             "correct_task_language_native_state_action_layout"
@@ -199,8 +199,32 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
         "independent_conditions_per_optimizer_step": 1,
         "normal_loss_weight": 1.0,
     }
-    if value != expected:
-        raise WriterModelError("AS-Writer positive-only training contract changed")
+    order_contrast = {
+        "method": "normal_positive_plus_stop_gradient_order_contrast",
+        "writer_language_contract": (
+            "correct_task_language_native_state_action_layout"
+        ),
+        "policy_language_contract": "correct_action_query_task_language",
+        "action_query_batch_owner": (
+            "one physical batch per rank reused by correct and order-negative views"
+        ),
+        "independent_conditions_per_optimizer_step": 1,
+        "normal_loss_weight": 1.0,
+        "order_transforms": ["shuffled", "reversed"],
+        "order_transform_schedule": (
+            "alternate by global task-video visit; transform frames only while "
+            "preserving absolute frame indices"
+        ),
+        "contrast_backend": (
+            "paired sequential full-batch functional gradients with shared "
+            "policy batch and Writer flow noise"
+        ),
+        "negative_loss_weight": 0.5,
+        "negative_loss_margin": 0.01,
+        "correct_loss_anchor_gradient": "stop_gradient",
+    }
+    if value not in (normal, order_contrast):
+        raise WriterModelError("AS-Writer conditioning contract changed")
 
 
 def _positive_integer(value: Any) -> bool:
@@ -521,6 +545,12 @@ def build_contract(
     conditions_per_step = int(
         config["conditioning_training"]["independent_conditions_per_optimizer_step"]
     )
+    policy_forward_calls = (
+        2
+        if config["conditioning_training"]["method"]
+        == "normal_positive_plus_stop_gradient_order_contrast"
+        else 1
+    )
     local = {
         "rank": context.rank,
         "local_rank": context.local_rank,
@@ -567,9 +597,12 @@ def build_contract(
                 context.world_size * conditions_per_step
             ),
             "global_policy_samples_per_step": (
-                context.world_size * batch_size * conditions_per_step
+                context.world_size
+                * batch_size
+                * conditions_per_step
+                * policy_forward_calls
             ),
-            "policy_forward_calls_per_optimizer_step": 1,
+            "policy_forward_calls_per_optimizer_step": policy_forward_calls,
             "teacher_videos_per_writer_invocation": 1,
             "total_steps": total_steps,
             "selected_stop_step": contract_stop_step,

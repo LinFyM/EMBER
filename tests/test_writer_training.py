@@ -7,6 +7,7 @@ import pytest
 import torch
 
 from ember.pi05_source_checkpoint import DistributedContext, write_json_atomic
+from ember.writer.as_step import order_negative_condition
 from ember.writer.as_contract import (
     load_writer_config,
     parse_checkpoint_steps,
@@ -21,6 +22,10 @@ from ember.writer.model import WriterModelError
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = REPO_ROOT / "configs/pi05_as_writer_action_forecast_v1.json"
+ORDER_CONFIG = (
+    REPO_ROOT
+    / "configs/pi05_as_writer_action_forecast_order_contrast_v1.json"
+)
 
 
 def test_action_forecast_config_seals_architecture_and_information_wall() -> None:
@@ -139,6 +144,57 @@ def test_flow_noise_is_shared_within_visit_reproducible_and_visit_specific() -> 
     assert identity["start_global_visit"] == 7
     assert identity["stop_global_visit"] == 9
     assert len(identity["identity_sha256"]) == 64
+
+
+def test_order_contrast_config_and_transform_preserve_non_frame_inputs() -> None:
+    config = load_writer_config(ORDER_CONFIG)
+    training = config["conditioning_training"]
+    assert training["method"] == (
+        "normal_positive_plus_stop_gradient_order_contrast"
+    )
+    assert training["order_transforms"] == ["shuffled", "reversed"]
+    frames = torch.arange(5 * 3 * 2 * 2, dtype=torch.uint8).reshape(5, 3, 2, 2)
+    indices = torch.tensor([0, 5, 10, 15, 20])
+    packed = (
+        frames,
+        indices,
+        torch.tensor([0, 5]),
+        torch.tensor([[1, 2]]),
+        torch.tensor([[True, True]]),
+        torch.arange(8)[None],
+        torch.zeros(1, 50, 32),
+    )
+    shuffled, evidence = order_negative_condition(
+        packed,
+        transform="shuffled",
+        seed=31,
+        task_id=7,
+        demo_index=9,
+        global_visit=11,
+    )
+    replay, replay_evidence = order_negative_condition(
+        packed,
+        transform="shuffled",
+        seed=31,
+        task_id=7,
+        demo_index=9,
+        global_visit=11,
+    )
+    reversed_video, _ = order_negative_condition(
+        packed,
+        transform="reversed",
+        seed=31,
+        task_id=7,
+        demo_index=9,
+        global_visit=11,
+    )
+    assert torch.equal(shuffled[0], replay[0])
+    assert not torch.equal(shuffled[0], frames)
+    assert torch.equal(reversed_video[0], frames.flip(0))
+    assert evidence == replay_evidence
+    for position in range(1, len(packed)):
+        assert shuffled[position] is packed[position]
+        assert reversed_video[position] is packed[position]
 
 
 def test_code_compatible_resume_allows_only_recorded_commit_change(

@@ -194,15 +194,25 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [ ] 按约30分钟一段、每段四个checkpoint推进四卡AS；优先评测每段第2/4点，
   必要时补1/3点，定位paired 8×50 validation最佳checkpoint。
   - 当前step150/300/450/600/750/900/1050/1200/1350/1500/1650/1800/
-    1950/2100/2250/2400 correct-video为
-    `75/99/93/118/104/113/117/125/120/119/120/114/110/114/123/111`；
-    step1200仍是observed-best，但2250=`123`与其paired仅净`-2`、
+    1950/2100/2250/2400/2550 correct-video为
+    `75/99/93/118/104/113/117/125/120/119/120/114/110/114/123/111/124`；
+    step1200仍是observed-best，但2250/2550=`123/124`均回到同一峰值平台；
+    2250与1200 paired仅净`-2`、
     exact `p≈0.896`，实质追平。1200→2400净`-14`、`p≈0.065`，但2400
-    只是紧随123的单点回落且task方向混合，仍未形成持续多task强下降；
-    已exact-resume推进step2400→2700，下一步正式评测step2550/2700。
+    只是紧随123的单点回落且task方向混合，随后2550又恢复到124，仍未形成
+    持续多task强下降；step2700完整checkpoint已保存，按owner指令暂停原轨迹
+    候选评测并先检查当前observed-best的视频特异性。
 - [ ] 对observed-best完成correct/wrong/shuffled/reversed视频证据；目标是不明显
   落后于四卡rank128 SFT best `108/400`，并争取超过旧八卡全局incumbent
   `122/400`，同时显著改善旧架构的顺序不敏感。
+  - step1200的correct/cross-suite-wrong/shuffled/reversed为
+    `125/67/121/124`；内容特异性强且跨多个tasks，但shuffle与reverse均和
+    correct实质相同，故顺序特异性门未通过，RL仍关闭。
+  - 已在唯一`as_step.py`内加入共享action batch/flow-noise的stop-gradient
+    order-contrast warm-start；四卡batch16、frame-microbatch32双forward
+    profile两步通过，峰值allocated/reserved为`67.08/69.25GB`。下一步从
+    step1200权重启动300-step正式修正段，训练后重新选择最佳checkpoint，再
+    对该最佳点完整复测correct/wrong/shuffled/reversed。
 - [ ] AS和RL都不能以train/val-loss平台、单个较差点或多个仅略低的validation
   点停止；必须找到validation observed-best，并在其后观察到幅度非常明显、
   明显超过rollout噪声、由多个tasks共同贡献且独立panel复测后仍成立的下降

@@ -670,7 +670,10 @@ def run_steps(runtime: WriterRuntime) -> None:
             "train_tasks": len(runtime.task_ids),
             "teacher_action_episodes_available": len(runtime.task_ids) * 50,
             "global_policy_samples": (
-                stop * runtime.context.world_size * runtime.batch_size
+                stop
+                * runtime.context.world_size
+                * runtime.batch_size
+                * int(runtime.contract["runtime"]["policy_forward_calls_per_optimizer_step"])
             ),
             "global_independent_task_video_conditions": (
                 stop * runtime.context.world_size

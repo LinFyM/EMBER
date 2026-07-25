@@ -755,3 +755,33 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - step2400累计153,600 action queries、9,600 video conditions，24 tasks各
   6,400 queries、400次视频访问且50/50 videos全覆盖。轨迹已同合同
   exact-resume到step2700，继续正式评测step2550/2700；不能开始specificity。
+
+## Action-Forecast AS step2550与observed-best视频特异性（2026-07-25）
+
+- step2550完整correct-video validation为`124/400`，逐task按Long 1/2、
+  Goal 3/6、Object 1/3、Spatial 1/3为`8/0, 2/38, 46/20, 0/10`；
+  results SHA256为
+  `26a9595ca613e8d5beb46444da1275c47f24d76e2cb17e76bb3baa0dca5c5062`。
+  它再次回到step1200的`125`附近，确认原正例轨迹到step2550仍未形成持续、
+  多task共同贡献且远超rollout噪声的峰后下降。step2700 checkpoint已完整
+  保存，但owner指令先检查当前最高AS，因此未把未评测的2700用于选择。
+- step1200的correct/cross-suite-wrong为`125/67`；paired
+  correct-only/wrong-only为`71/13`，exact McNemar
+  `p=7.8639e-11`，6/8 tasks净受益，故视频内容特异性明确成立。wrong逐task为
+  `7/1, 1/16, 37/5, 0/0`，results SHA256为
+  `e43e5ed054156cad659f074b05a6d17755b0d1685f83bf18a0fda99a5f4a632c`。
+- 同一paired panel的shuffled/reversed分别为`121/124`；相对correct的paired
+  flips为`17/13`（`p≈0.5847`）和`15/14`（`p=1.0`）。生成LoRA有效
+  `B@A`相对L2差的中位数仅为`0.001101/0.001787`，说明失败不仅是400-rollout
+  方差：Writer表征本身也几乎不随帧序改变。两份results SHA256分别为
+  `636b448d1a829f5ebffa1aa517f94305da1c7dd766d771af15211f24b20dbd3a`
+  和`5edba10a3efc1a39dacbdc10484fe21b1258bf8d956c80c5202ce543afa43d59`。
+  因此Action-Forecast通过性能与correct/wrong内容门，但没有通过
+  shuffled/reversed顺序门，独立RL-Writer的启动条件仍为false。
+- 最小修正保持同一Writer架构、信息墙、LoRA schema与唯一AS runner，只在每个
+  正例functional update后复用同一action batch和Writer flow noise，对
+  shuffled/reversed帧视图施加weight `0.5`、margin `0.01`的stop-gradient
+  negative functional gradient。四卡batch16、frame-microbatch32真实两步
+  warm-start profile无OOM/非finite；峰值allocated/reserved为
+  `67,077,086,720/69,250,056,192` bytes，稳态第二步`11.6213s`。该profile
+  只证明mechanics可运行，不作科学性能解释。

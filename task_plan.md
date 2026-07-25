@@ -222,3 +222,30 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
   完成train平台与validation选择。
 - [ ] 更新authority/ledger、验证、task-scoped commit并push；完成或经多轮最小
   修正仍不通过时，按完整证据向owner汇报后停止本子任务。
+
+### 当前执行：Action-Forecast Writer v2 第一性原理修正（2026-07-25）
+
+本节覆盖上方仍把order-contrast写成active next step的历史条目；不得恢复
+contrast loss。
+
+- [x] 将8-scalar/Fourier state bottleneck原位替换为28个content-only
+  virtual-state tokens；routing identity只进入attention Q/K。
+- [x] 将Revision原位替换为directed-event content read、Plan/Revision独立
+  RMSNorm和bounded multiplicative stability gate；旧step1200反事实诊断中，
+  normal→reversed/shuffled的time-centered相对L2从旧`0.0281/0.0316`
+  恢复到`0.3554/0.2418`。
+- [x] 将LoRA query decoder改成routing/content分离且factor heads只读取
+  memory-derived content；factor heads bias-free，fresh public LoRA保持
+  functional identity。
+- [x] 删除canonical order-contrast配置和训练分支；AS只保留positive
+  functional action loss。
+- [x] GPU0–3真实fresh step1→exact-resume step2通过：
+  `frame_stride=5`、`frame_microbatch_size=32`、batch16/rank，Writer
+  `10,125,376`参数，source policy 0 trainable；峰值allocated/reserved
+  `67,088,471,040/69,235,376,128` bytes，无OOM/nonfinite，完整四rank
+  checkpoint和flow-noise/data cursor可恢复。
+- [ ] 从fresh identity正式训练到step600，每75步保存；完整评测step300/600。
+  若没有明显且稳健的峰后下降，以600-step大段继续到1200及之后。
+- [ ] 对最佳或暂时最佳checkpoint比较旧AS `125/400`，并完成
+  correct/wrong/shuffled/reversed。双门通过才推进独立cold-start RL；否则只
+  排查可纠正的明显错误，不加contrast，若无明显错误则停止向owner汇报。

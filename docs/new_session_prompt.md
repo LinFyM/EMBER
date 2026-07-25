@@ -19,6 +19,13 @@ https://github.com/LinFyM/EMBER
 Action-Forecast Writer 的完整架构和执行合同；你需要直接实现、训练、评测并
 推进到本 prompt 指定的 AS/RL Writer 子任务终点。
 
+> 2026-07-25更新：当前active实现已经升级为直接28个virtual-state tokens、
+> content-only Revision和content-only LoRA query decoder；AS只用positive
+> functional loss，不得恢复order-contrast。唯一配置为
+> `configs/pi05_as_writer_action_forecast_v2.json`。旧8-scalar/Fourier、
+> additive stability和static-query residual描述只作provenance；精确合同以
+> `docs/action_forecast_writer_handoff.md`顶部active override为准。
+
 ## 1. Goal
 
 首先调用 `get_goal`。当前应已有 active Goal；核验其 objective 与下文完全一致，
@@ -87,7 +94,8 @@ docs/action_forecast_writer_handoff.md
 - 旧Action-Memory temporal-RoPE Writer step400为`108/400`，有视频任务内容
   特异性，但倒序/乱序effective-LoRA相对变化仅`0.00937/0.00699`，近似
   bag-of-states。它是新架构要解决的问题，不是新模型初始化。
-- 当前仓库尚未实现Action-Forecast架构；这是有意的干净接手点，不是遗漏。
+- 当前仓库已实现Action-Forecast v2架构；正式训练前仍需用真实数据验证
+  shape/gradient/identity/freeze/OOM和exact-resume。
 
 固定实物路径：
 
@@ -148,8 +156,7 @@ full-token cache，必须先比较online路径、量化误差和实际吞吐，�
 ```text
 frames [T,3,H,W] + true frame indices [T] + full task tokens [L]
   -> frozen SigLIP/projector full image tokens [T,N_img,2048]
-  -> Visual State Head -> imagined state [T,8]
-  -> differentiable virtual state tokens [T,8,2048]
+  -> content-only virtual state tokens [T,28,2048]
   -> full PaliGemma contextual prefix + VL Meta-LoRA
   -> Action Expert + Action Meta-LoRA + full 10-step flow
   -> final normalized action plans [T,50,7]
@@ -165,12 +172,13 @@ frames [T,3,H,W] + true frame indices [T] + full task tokens [L]
   和真实frame index。首轮真实比较stride 5与10。
 - 每帧完整image tokens与完整task language通过PaliGemma；语言必须使用经过
   backbone上下文化的hidden state，不能只取embedding table。
-- Visual State Head：image width 2048先投到128；8个正交初始化coordinate
-  queries，经2个pre-norm单向cross-attention+FFN blocks、4 heads读取image，
-  shared scalar head+tanh输出8维continuous imagined state。
-- 每个scalar做64维确定性Fourier features，经共享`64->256->2048` MLP并加
-  slot embedding，形成8个可微virtual state tokens，替换原生
-  `State: <8 integers>`语义位置；不要离散tokenize，也不要放进action suffix。
+- State token decoder：image width 2048先无bias投到128；28个routing-only
+  slots、`Z_0=0`，经2个content-only self/cross-attention+expansion-4 FFN
+  blocks、4 heads直接生成28个2048-d virtual tokens。routing只进入Q/K，
+  V/residual/output只读取视频content。
+- 28个virtual tokens加一个真实whitespace位置，使state区域长度29，与真实
+  train state文本mean 28.8898/median 29对齐；不要恢复scalar、Fourier、
+  离散tokenize或把state放进action suffix。
 - PaliGemma 18层q/k/v/o用identity-init VL Meta-LoRA rank4；Action Expert
   18层q/k/v/o用identity-init Action Meta-LoRA rank8。A Kaiming、B zero。
 - 每帧运行真实π0.5 10-step flow、horizon50；同一个video condition内所有帧
@@ -185,30 +193,33 @@ frames [T,3,H,W] + true frame indices [T] + full task tokens [L]
   `Revision_u`聚合同一u的连续forecast revisions。不要只比较一对相邻chunk，
   也不要平均掉同一未来时刻的多次预测。
 - Plan MLP是`8->256->256`；revision event MLP是`24->256->256`，随后一个
-  learned revision query以单层单向cross-attention+FFN聚合数量可变events，
-  并加入count和delta-norm统计。无event使用learned no-revision token。
+  routing-only revision query以单层单向cross-attention+FFN聚合数量可变
+  events。directed content独立RMSNorm；count和delta-norm统计只产生范围
+  `[0.75,1.25]`的乘法gate，不得additive进入Revision。无event使用learned
+  no-revision token。
 - Temporal Transformer接受变长`[U,2,256]`，width256、8 heads、2 blocks，
   使用真实absolute-time RoPE、padding mask和token-type embedding。
-- 320 queries：288个`18 layers×16 rank slots` expert queries、16个
+- 320 routing identities：288个`18 layers×16 rank slots` expert queries、16个
   `action_in_proj` queries、16个`action_out_proj` queries。两层decoder均为
-  query self-attention、query单向读取procedural memory的cross-attention、
-  expansion-4 FFN。
+  `Z_0=0`的content-only self-attention、单向读取procedural memory的
+  cross-attention、expansion-4 FFN；factor heads只能读取`Z`。
 - 8类factor heads严格生成真实identity template中的38 targets/76 tensors；
-  final projections weight+bias为zero，fresh public LoRA必须functionally identity。
+  heads全部bias-free且final projection weight为zero，fresh public LoRA必须
+  functionally identity。
   tensor name/shape从真实`LoraTensorSpec`读取，不手写猜测。
 
 训练参数预算约等于rank-128 Source-SFT的`10,297,344`：
 
 ```text
-Visual State Head + state embedder     ~1.09M
+content-only 28-slot state decoder     ~1.05M
 VL Meta-LoRA rank4                    ~0.922M
 Action Meta-LoRA rank8                ~1.253M
-Revision encoder                      ~1.05M
+Plan/Revision encoder                 ~0.95M
 Temporal encoder                      ~1.57M
 2-block one-way query decoder         ~2.10M
 Factor heads                          ~2.19M
 embeddings/norm/bias                  ~0.10M
-total                                 ~10.27M
+total                              10,125,376
 ```
 
 从真实model/config打印逐模块参数量；可微调hidden widths以接近10.297M，但不能
@@ -226,7 +237,7 @@ total                                 ~10.27M
 - `temporal.py`原位成为Plan/Revision variable-time owner；
 - 同步替换`as_contract.py`、checkpoint schema、training/inference/evaluator
   调用点和必要测试；
-- 用唯一`configs/pi05_as_writer_action_forecast_v1.json`替换旧active
+- 用唯一`configs/pi05_as_writer_action_forecast_v2.json`替换旧active
   action-memory配置；不保留v4/new/experimental平行runner。
 
 优先尽快得到最短可运行垂直切片。一旦shape、梯度、identity/freeze和一个

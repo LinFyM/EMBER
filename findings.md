@@ -785,3 +785,27 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   warm-start profile无OOM/非finite；峰值allocated/reserved为
   `67,077,086,720/69,250,056,192` bytes，稳态第二步`11.6213s`。该profile
   只证明mechanics可运行，不作科学性能解释。
+
+## Action-Forecast Writer v2机制修正证据（2026-07-25）
+
+- owner明确不接受用loss强行制造顺序差异，所以上述order-contrast只保留为
+  已否决的历史，不再是活动路径。canonical AS现只含normal positive
+  functional action loss。
+- 对旧step1200在8个validation tasks各2条独立视频做无训练counterfactual：
+  raw directed event triplet的normal→reversed/shuffled time-centered相对L2
+  中位数为`0.2233/0.2296`；旧Revision token仅`0.0281/0.0316`，说明旧合成
+  确实消减了有向差异；移除query residual和additive stability后，新Revision
+  content恢复到`0.3554/0.2418`。证据：
+  `/data/ymdai/outputs/ember/pi05_action_forecast_step1200_revision_v2_counterfactual_val8x2_20260725/summary.json`。
+- v2因此采用三个同构的content-only信息闸：28个state slots、Revision read
+  和320个LoRA queries的routing identity都只进入attention Q/K，输出residual
+  只携带memory-derived content。Revision稳定性统计只通过
+  `[0.75,1.25]`乘法gate调节directed content，不能additive覆盖它。
+- v2真实Writer参数为`10,125,376`，是rank128 Source-SFT
+  `10,297,344`的`98.33%`；public LoRA仍为76 tensors、
+  `1,287,168` scalars。
+- GPU0–3、stride5、frame-microbatch32、batch16/rank的真实fresh step1和
+  exact-resume step2均finite；resumed step为`6.5025s`，峰值
+  allocated/reserved为`67,088,471,040/69,235,376,128` bytes，source policy
+  trainable count为0。该结果只封存机械可运行性，科学结论等待step300/600
+  closed-loop validation与最终特异性。

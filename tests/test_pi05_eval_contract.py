@@ -212,7 +212,7 @@ def test_run_contract_hash_detects_tampering(tmp_path: Path) -> None:
         "writer_method": "as_writer",
         "execution_backend": "two_stage_cached_per_sample_lora_batched_replan",
         "config": {
-            "path": str(ROOT / "configs/pi05_as_writer_action_forecast_v1.json"),
+            "path": str(ROOT / "configs/pi05_as_writer_action_forecast_v2.json"),
             "sha256": "b" * 64,
         },
         "training_run": {"run_contract_sha256": "c" * 64},

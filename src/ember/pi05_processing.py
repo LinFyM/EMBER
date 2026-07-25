@@ -245,11 +245,13 @@ class Pi05ForecastPrefixTokenizer:
     """Build the native pi0.5 prompt with differentiable state-token slots.
 
     The returned token IDs preserve the native ``Task/State/Action`` text
-    layout.  Exactly eight placeholder positions are marked for replacement by
-    the Writer's continuous virtual-state embeddings before PaliGemma.
+    layout.  Exactly 28 placeholder positions are marked for replacement by
+    image-conditioned virtual-state tokens before PaliGemma.  Together with the
+    real whitespace token retained after ``State:``, this matches the measured
+    median 29-token native numeric-state region.
     """
 
-    STATE_SLOTS = 8
+    STATE_SLOTS = 28
 
     def __init__(self, tokenizer_path: Path, max_length: int, device: str) -> None:
         import sentencepiece

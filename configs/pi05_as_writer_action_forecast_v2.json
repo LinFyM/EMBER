@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_action_forecast_as_writer_v1",
+  "schema_version": "ember_pi05_action_forecast_as_writer_v2",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {
@@ -49,7 +49,7 @@
     "test_video_values_read": 0
   },
   "writer": {
-    "architecture": "pi05_action_forecast_plan_revision_v1",
+    "architecture": "pi05_action_forecast_plan_revision_v2",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -57,11 +57,10 @@
     "include_final_frame": true,
     "image_width": 2048,
     "state_width": 128,
-    "state_coordinates": 8,
+    "state_slots": 28,
     "state_heads": 4,
     "state_blocks": 2,
-    "state_fourier_width": 64,
-    "state_embed_hidden": 256,
+    "state_token_generation": "content_only_detr_slots_from_full_siglip_image_tokens",
     "vl_meta_lora_targets": [
       "q_proj",
       "k_proj",
@@ -83,13 +82,18 @@
     "padded_action_dim": 32,
     "output_action_dim": 7,
     "plan_revision_alignment": "absolute_control_time_latest_plan_and_adjacent_revisions",
+    "maximum_revision_count": 10,
+    "revision_content_path": "routing_query_reads_directed_events_without_query_residual",
+    "revision_stability_path": "bounded_normalized_statistics_multiplicative_gate_0.75_to_1.25",
+    "plan_revision_branch_norm": "independent_rms_norm_before_temporal",
     "temporal_width": 256,
     "temporal_heads": 8,
     "temporal_blocks": 2,
     "temporal_position_encoding": "one_dimensional_rope_on_absolute_control_time",
     "query_count": 320,
     "query_decoder_blocks": 2,
-    "query_memory_direction": "lora_queries_read_temporal_memory_only",
+    "query_memory_direction": "routing_only_identities_with_memory_derived_content_values",
+    "factor_head_bias": false,
     "factor_hidden_width": 256,
     "initialization_seed": 7
   },
@@ -162,7 +166,7 @@
   },
   "profile_evidence": {
     "status": "sealed",
-    "profiled_utc": "2026-07-24",
+    "profiled_utc": "2026-07-25",
     "physical_gpu_ids": [
       0,
       1,
@@ -313,6 +317,28 @@
       "contract_sha256": "c7a3dc88ae840d386b9d825e6f71f2f9613fccf0f37adf85b29c5a577d0ecd68",
       "checkpoint_state_complete": true,
       "flow_noise_cursor_reproduced": true
+    },
+    "architecture_v2_revalidation": {
+      "output": "/data/ymdai/outputs/ember/pi05_action_forecast_v2_profile_resume_r4_s5_fm32_b16_20260725",
+      "architecture": "pi05_action_forecast_plan_revision_v2",
+      "profile_config_sha256": "405021319249c07d8fb0f931a67fbb05362a66355441244b61eaef6921bc0ff3",
+      "contract_sha256": "5afbb65786f70ab67c131a78ca59959fde3284dd9bbbbb4932f35eec1ddc83a6",
+      "fresh_step": 1,
+      "exact_resume_from_step": 1,
+      "exact_resume_to_step": 2,
+      "writer_parameter_count": 10125376,
+      "source_policy_trainable_parameter_count": 0,
+      "frame_stride": 5,
+      "frame_microbatch_size": 32,
+      "action_query_batch_size_per_rank": 16,
+      "resumed_step_seconds": 6.5025,
+      "resumed_global_action_queries_per_second": 9.8424,
+      "max_cuda_allocated_bytes": 67088471040,
+      "max_cuda_reserved_bytes": 69235376128,
+      "nonzero_finite_gradient": true,
+      "checkpoint_state_complete": true,
+      "flow_noise_cursor_reproduced": true,
+      "oom": false
     }
   },
   "formal_run": {
@@ -321,7 +347,7 @@
     "total_steps": 12000,
     "per_rank_batch_size": 16,
     "checkpoint_steps": "every:75",
-    "selected_stop_step": 300,
-    "stage_stop_steps": "every:300"
+    "selected_stop_step": 600,
+    "stage_stop_steps": "every:600"
   }
 }

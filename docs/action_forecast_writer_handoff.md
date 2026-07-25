@@ -1,11 +1,52 @@
 # Action-Forecast Writer execution handoff
 
-状态：2026-07-24 owner 最终对齐，供新的独立 session 直接接手。
+状态：2026-07-25 owner 最终对齐，供新的独立 session 直接接手。
 
 本文件是当前 Writer 子任务的活动设计与执行 authority。它覆盖此前
 Action-Memory / temporal-RoPE Writer 的活动实现口径，但不改写那些实验的
 历史结果。若旧配置、旧测试、`task_plan.md` 的已完成历史条目或早期设计文档
 与本文件冲突，以本文件和 owner 最新指令为准。
+
+### 2026-07-25 active architecture override
+
+owner 已明确拒绝用 contrast loss 人为制造顺序差异，并要求从第一性原理修正
+信息流。以下口径覆盖本文件中仍描述旧 8-scalar imagined-state、additive
+revision stability、static-query residual decoder 或 order-contrast 的段落：
+
+- state 前端直接从完整 SigLIP/projector image tokens 生成 28 个
+  PaliGemma-width virtual-state tokens；保留的一个真实 whitespace token使
+  `State:` 到 `Action:` 区域共29个位置，对齐真实train state文本的
+  mean `28.8898`、median `29`。不再生成8个scalar，也不再经过
+  `tanh`/Fourier scalar bottleneck。
+- 28个state slot的learned identity只作attention routing。content从零开始；
+  self-attention使用`Q/K=Norm(Z)+R, V=Norm(Z)`，cross-attention使用
+  `Q=Norm(Z)+R, K/V=image memory`，residual和最终2048-d projection只读取
+  `Z`。因此静态slot不能绕过视频内容直接生成state tokens。
+- `Revision_u`仍读取有向
+  `[old_7,new_7,new-old,lead_old,lead_new,delta_t]` event，但learned query只
+  定位event，不进入输出residual。directed content独立RMSNorm；
+  count/delta-norm mean/std/max先归一化，只形成
+  `1+0.25*tanh(MLP(stats))`的有限乘法gate，不再作为additive embedding覆盖
+  有向内容。`Plan_u`也独立RMSNorm后再进入temporal Transformer。
+- LoRA decoder同样将routing identity与content拆开：`Z_0=0`，
+  self-attention为`Q/K=Norm(Z)+R,V=Norm(Z)`，cross-attention为
+  `Q=Norm(Z)+R,K/V=temporal memory`，factor heads只读取`Norm(Z)`。
+  factor heads全部bias-free，静态query没有直达public LoRA的旁路。
+- AS只保留normal positive functional action loss。旧order-contrast配置和
+  训练分支已退役，不得恢复。
+- 唯一活动配置是
+  `configs/pi05_as_writer_action_forecast_v2.json`。新架构从fresh identity
+  训练，GPU0–3、stride5、frame-microbatch32、每rank 16 action queries；
+  每75 steps保存checkpoint，先训练到600并完整评测300/600。若尚未出现经
+  多task和独立复测确认的明显峰后下降，则以600-step大段继续到1200及之后。
+
+在旧step1200 checkpoint上做的无训练counterfactual机制诊断显示：新Revision
+合成的time-centered normal→reversed/shuffled相对L2中位数为
+`0.3554/0.2418`，旧Revision token只有`0.0281/0.0316`；raw directed events
+为`0.2233/0.2296`。证据位于
+`/data/ymdai/outputs/ember/pi05_action_forecast_step1200_revision_v2_counterfactual_val8x2_20260725/summary.json`。
+它只证明新合成没有在进入temporal前抹掉上游顺序信号，不替代新架构的正式
+训练、closed-loop performance或最终specificity评测。
 
 ## 0. Active Goal原文
 
@@ -91,8 +132,7 @@ Writer 子任务。
 ```text
 frames [T,3,H,W] + frame_indices [T] + task tokens [L]
   -> frozen SigLIP/projector full image tokens [T,N_img,2048]
-  -> Visual State Head: imagined state [T,8]
-  -> virtual state tokens [T,8,2048]
+  -> content-only state token decoder [T,28,2048]
   -> PaliGemma + VL Meta-LoRA contextual prefix/KV
   -> Action Expert + Action Meta-LoRA + 10 flow iterations
   -> final normalized plans [T,50,7]
@@ -103,31 +143,27 @@ frames [T,3,H,W] + frame_indices [T] + task tokens [L]
 ```
 
 旧的16个Action-Memory tokens和18层memory-state tensor不进入新路径。新路径
-中的learned tokens只有明确职责的visual coordinate queries、no-revision/
+中的learned tokens只有明确职责的visual state routing slots、no-revision/
 type tokens和LoRA output queries。
 
 ### 3.2 Visual State Head 与 VL Meta-LoRA
 
-- 用 8 个 coordinate queries 单向读取该帧的完整 image tokens，得到一个
-  8 维连续 agent-centric imagined state。它是 action-hidden teacher video
-  中模型“想象自己处在教师位置时”的连续 pseudo-state，不宣称是有监督的
-  真实机器人坐标。
-- 默认实现为：projected image tokens先从2048投影到state width 128；8个
-  learned coordinate queries经过两个pre-norm cross-attention + expansion-2
-  FFN blocks，4 heads，只允许queries读取image K/V，image tokens不读取queries；
-  每个query经共享scalar head和`tanh`得到一个`[-1,1]`连续值。这里没有state
-  label，全部梯度只来自最终AS functional loss。
-- imagined state 经过连续/Fourier/MLP state embedder 变成 8 个可微的
-  PaliGemma-width virtual state tokens，插入原生 state-prefix 对应的位置。
-  不要把连续状态离散化后再走 tokenizer，否则梯度被截断。
-- 默认continuous embedder对每个scalar构造64维确定性Fourier features，经共享
-  `64 -> 256 -> 2048` MLP，再加8个不同的state-slot embeddings；这样每个
-  coordinate得到一个2048维virtual token。
+- projected image tokens先从2048无bias投影到state width 128；28个learned
+  slot identities经过两个content-only self/cross-attention + expansion-4
+  FFN blocks，4 heads，直接输出28个2048-d virtual-state tokens。
+- 每层维护routing `R`和content `Z`两个职责。`R`只进入attention Q/K，
+  `Z_0=0`且只有image memory能首次写入content；self/cross attention的V、
+  residual、FFN和最终projection均不读取`R`。零image memory必须产生严格零
+  state-token content，这个结构不允许静态slot形成视频无关捷径。
+- 这些virtual tokens直接插入原生state-prefix位置，全部梯度只来自最终AS
+  functional loss。这里没有state label、scalar监督、离散化、`tanh`或Fourier
+  features。
 - π0.5并不存在独立的原生`state_proj`。正常LIBERO processor把8维state量化
   后写成文本`Task: ..., State: <8 integers>;\nAction:`。Writer必须保留同一
   语义布局：正常token embeddings负责BOS/task/`State:`/`Action:`分隔文本，
-  用8个连续virtual tokens替换离散整数所在片段。不要误以为Action Expert中
-  天然存在8个state tokens，也不要把virtual state放进Action suffix。
+  用28个连续virtual tokens替换离散整数片段。一个保留的真实whitespace token
+  加28个virtual slots使state区域长度为29；不要把virtual state放进Action
+  suffix。
 - PaliGemma 18 层 q/k/v/o 使用 Writer 内部 identity-init VL Meta-LoRA，
   首选 rank 4。作用是把 teacher-view 图像、正确语言和 virtual state 融合成
   source policy Action Expert 能理解的 agent-centric prefix KV。
@@ -138,8 +174,8 @@ type tokens和LoRA output queries。
   到robot action plan的主要适配，rank8约1.253M，因此给更高rank。只有真实
   profile或训练证据才能改变这两个rank，不能因“看起来不对称”自行拉齐。
 - 两类Meta-LoRA都采用functional identity initialization：A用Kaiming初始化、
-  B为零。8个coordinate queries使用固定seed生成的归一化正交128维初值；
-  state scalar head小方差初始化且zero bias。旧Action-Memory曾采用
+  B为零。28个state routing slots使用固定seed的`Normal(0,0.02)`初值。
+  旧Action-Memory曾采用
   action-in manifold orthogonal initialization，但那些16个tokens已经退役，
   不得把该初始化连同旧tokens恢复到新Action Expert suffix。
 - frozen SigLIP/projector可在`no_grad`下运行或读取cache；从virtual state、
@@ -190,7 +226,8 @@ u = t_i + k
 - 对所有覆盖同一 `u` 的连续 forecasts，构造有序 revision：
   `Delta_i(u)=P_{i+1}[u-t_{i+1}]-P_i[u-t_i]`。
 - 一个共享 Revision encoder 读取 old action、new action、delta、两个 lead
-  time、真实 `Delta t`、revision count 和稳定性统计，汇总成一个
+  time和真实 `Delta t`形成有向content；revision count和稳定性统计只生成
+  有限乘法gate，汇总成一个
   `Revision_u`。它表示随着新 teacher frame 到来，同一绝对未来动作被怎样
   修正。没有 revision 的边界使用 learned `no_revision` token 加 count/mask，
   不能用全零冒充稳定。
@@ -203,9 +240,12 @@ u = t_i + k
   - 每条revision event读取
     `[old_action(7), new_action(7), delta(7), old_lead, new_lead, Delta_t]`
     共24维，用共享`24 -> 256 -> 256` MLP；
-  - 同一`u`下数量可变的revision events由一个learned revision query通过一层
-    pre-norm cross-attention + expansion-4 FFN单向聚合，再加由count及
-    delta-norm mean/std/max编码的稳定性特征；
+  - 同一`u`下数量可变的revision events由一个routing-only learned revision
+    query通过一层pre-norm cross-attention + expansion-4 FFN单向聚合；query
+    本身不进入输出residual；
+  - directed content先独立RMSNorm。count和delta-norm mean/std/max均被压到
+    bounded range，只产生`1+0.25*tanh(MLP(stats))`的逐通道乘法gate；
+    gate范围严格为`[0.75,1.25]`，不得恢复additive stability支路；
   - 所有`(batch,u)`组合padding成一个并行batch处理，不用Python逐时刻循环；
     没有event时直接使用learned `no_revision`表示并保留count=0 mask。
 - 对未来人类视频，核心仍是按物理时间对齐：视频帧间隔对应机器人控制周期
@@ -226,19 +266,20 @@ u = t_i + k
   cross-attention `Q(query) -> K/V(procedural memory)`。这是单向读取：
   temporal/video memory 不反向读取 320 个 output queries。不要用无 mask 的
   拼接 self-attention 制造不必要的双向计算。
-- 每个block是pre-norm query self-attention、pre-norm query-to-memory
-  cross-attention、expansion-4 FFN。320个query都带明确的module/layer/rank
-  identity：expert queries区分18个layer和16个rank slots；action-in/out
-  queries区分module type和rank。它们可有learned query table，但factor heads
-  只能读取经过至少一次conditional cross-attention后的states，不能另接一个
-  raw-query或常量bias直达public LoRA的旁路。
+- 每个block显式拆分routing `R`与content `Z`。320个query都带明确的
+  module/layer/rank routing identity：expert queries区分18个layer和16个rank
+  slots；action-in/out queries区分module type和rank。`Z_0=0`；
+  self-attention使用`Q/K=Norm(Z)+R,V=Norm(Z)`，query-to-memory
+  cross-attention使用`Q=Norm(Z)+R,K/V=memory`，expansion-4 FFN和residual
+  只更新`Z`。factor heads只读取最终`Norm(Z)`，不能读取raw routing identity。
 - coordinate/query/type/no-revision embeddings都使用config seed下的确定性
   initialization并进入checkpoint；LoRA query table与identity embeddings默认
   `Normal(0,0.02)`。这些初始化不是额外shared adapter，且不得依赖task ID。
 - factor heads 生成当前 sealed rank-16 PEFT tensors：18 层 q/v，加
-  `action_in_proj`、`action_out_proj` 的 A/B factors。普通 conditional bias
-  允许存在；final factor projections 的 weight 和 bias 从零初始化，使 fresh
-  public task LoRA 严格 functional identity。
+  `action_in_proj`、`action_out_proj` 的 A/B factors。factor heads使用
+  `bias=False`，final projection weight从零初始化；它们输出的delta加到真实
+  identity template（A为既有Kaiming、B为零）上，使fresh public task LoRA
+  严格functional identity且首步仍能通过B factor获得梯度。
 - 每个factor head固定为`RMSNorm(256) -> Linear(256,256) -> GELU ->
   final projection`。expert layer/rank query同时送到：
   `q_A:1024`、`q_B:2048`、`v_A:1024`、`v_B:256`；action-in queries送到
@@ -256,15 +297,15 @@ u = t_i + k
 
 | 模块 | 目标参数量 |
 |---|---:|
-| Visual State Head + continuous state embedder | ~1.09M |
+| content-only 28-slot state token decoder | ~1.05M |
 | VL Meta-LoRA，PaliGemma q/k/v/o，rank 4 | ~0.922M |
 | Action Meta-LoRA，Action Expert q/k/v/o，rank 8 | ~1.253M |
-| Revision encoder | ~1.05M |
+| Plan/Revision encoder | ~0.95M |
 | Temporal encoder | ~1.57M |
 | 2-block one-way LoRA query decoder | ~2.10M |
 | Factor heads | ~2.19M |
 | embeddings/norm/bias | ~0.10M |
-| 合计 | ~10.27M |
+| 合计 | `10,125,376` |
 
 正式实现必须从真实 model/config 计算参数量；允许在不改变上述信息流的前提下
 微调 hidden widths，使总量接近 `10.297M`，并记录每个模块的真实 count。
@@ -283,7 +324,7 @@ Writer 生成的 public rank-16 task LoRA 本身仍为 `1,287,168` scalars。
 - `as_contract.py`、checkpoint schema、training/inference/evaluator 调用点和
   targeted tests 同步更新为一个 `action_forecast` schema。
 - 旧 `configs/pi05_as_writer_action_memory_v1.json` 由新的 canonical
-  `configs/pi05_as_writer_action_forecast_v1.json` 替换；旧活动配置和只验证
+  `configs/pi05_as_writer_action_forecast_v2.json` 替换；旧活动配置和只验证
   Action-Memory internals 的测试删除。历史结果由 Git、`findings.md` 和
   `progress.md` 保存，不创建 in-tree archive。
 - 先用 `rg` 建立 callers/import/checkpoint ownership map。完成后要求活动

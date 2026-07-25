@@ -15,7 +15,7 @@ class _TokenizerStub:
         return [1, 2, 3] if add_bos else [4, 5]
 
 
-def _tokenizer(max_length: int = 16) -> Pi05ForecastPrefixTokenizer:
+def _tokenizer(max_length: int = 40) -> Pi05ForecastPrefixTokenizer:
     tokenizer = object.__new__(Pi05ForecastPrefixTokenizer)
     tokenizer._tokenizer = _TokenizerStub()  # type: ignore[attr-defined]
     tokenizer._max_length = max_length  # type: ignore[attr-defined]
@@ -23,21 +23,21 @@ def _tokenizer(max_length: int = 16) -> Pi05ForecastPrefixTokenizer:
     return tokenizer
 
 
-def test_forecast_prompt_preserves_native_layout_with_eight_virtual_slots() -> None:
+def test_forecast_prompt_preserves_native_layout_with_28_virtual_slots() -> None:
     tokenizer = _tokenizer()
     tokens, masks, positions = tokenizer(["pick_up bowl"])
     assert tokenizer._tokenizer.calls == [  # type: ignore[attr-defined]
         ("Task: pick up bowl, State: ", True),
         (";\nAction: ", False),
     ]
-    assert positions.tolist() == [[3, 4, 5, 6, 7, 8, 9, 10]]
-    assert tokens.shape == masks.shape == (1, 16)
-    assert int(masks.sum()) == 13
+    assert positions.tolist() == [list(range(3, 31))]
+    assert tokens.shape == masks.shape == (1, 40)
+    assert int(masks.sum()) == 33
     assert torch.equal(tokens[0, :3], torch.tensor([1, 2, 3]))
-    assert torch.equal(tokens[0, 11:13], torch.tensor([4, 5]))
+    assert torch.equal(tokens[0, 31:33], torch.tensor([4, 5]))
 
 
 def test_forecast_prompt_fails_closed_instead_of_truncating() -> None:
-    tokenizer = _tokenizer(max_length=12)
+    tokenizer = _tokenizer(max_length=32)
     with pytest.raises(ValueError, match="exceeds the sealed tokenizer length"):
         tokenizer(["pick up bowl"])

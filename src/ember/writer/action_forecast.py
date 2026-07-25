@@ -10,6 +10,8 @@ import torch
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
 
+from ember.writer.temporal import RMSNorm
+
 
 class ActionForecastError(RuntimeError):
     """Raised when the sealed teacher-forecast interface changes."""
@@ -86,127 +88,136 @@ class MetaLoRAStack(torch.nn.Module):
                 handle.remove()
 
 
-class QueryReadBlock(torch.nn.Module):
-    """Pre-norm queries that read a memory without a memory-side update."""
+class ContentOnlyStateBlock(torch.nn.Module):
+    """DETR-style state slots whose values can only come from image content."""
 
     def __init__(self, width: int, heads: int, expansion: int) -> None:
         super().__init__()
         if min(width, heads, expansion) <= 0 or width % heads:
-            raise ActionForecastError("invalid query-read block")
-        self.query_norm = torch.nn.LayerNorm(width)
-        self.memory_norm = torch.nn.LayerNorm(width)
-        self.attention = torch.nn.MultiheadAttention(
+            raise ActionForecastError("invalid content-only state block")
+        self.self_norm = RMSNorm(width)
+        self.self_attention = torch.nn.MultiheadAttention(
             width,
             heads,
             dropout=0.0,
             batch_first=True,
+            bias=False,
         )
-        self.ffn_norm = torch.nn.LayerNorm(width)
+        self.cross_norm = RMSNorm(width)
+        self.memory_norm = RMSNorm(width)
+        self.cross_attention = torch.nn.MultiheadAttention(
+            width,
+            heads,
+            dropout=0.0,
+            batch_first=True,
+            bias=False,
+        )
+        self.ffn_norm = RMSNorm(width)
         self.ffn = torch.nn.Sequential(
-            torch.nn.Linear(width, expansion * width),
+            torch.nn.Linear(width, expansion * width, bias=False),
             torch.nn.GELU(),
-            torch.nn.Linear(expansion * width, width),
+            torch.nn.Linear(expansion * width, width, bias=False),
         )
 
-    def forward(self, queries: torch.Tensor, memory: torch.Tensor) -> torch.Tensor:
-        normalized = self.memory_norm(memory)
-        attended, _ = self.attention(
-            self.query_norm(queries),
-            normalized,
-            normalized,
+    def forward(
+        self,
+        content: torch.Tensor,
+        routing: torch.Tensor,
+        memory: torch.Tensor,
+    ) -> torch.Tensor:
+        normalized_content = self.self_norm(content)
+        addressed = normalized_content + routing
+        attended, _ = self.self_attention(
+            addressed,
+            addressed,
+            normalized_content,
             need_weights=False,
         )
-        queries = queries + attended
-        return queries + self.ffn(self.ffn_norm(queries))
+        content = content + attended
+        normalized_memory = self.memory_norm(memory)
+        attended, _ = self.cross_attention(
+            self.cross_norm(content) + routing,
+            normalized_memory,
+            normalized_memory,
+            need_weights=False,
+        )
+        content = content + attended
+        return content + self.ffn(self.ffn_norm(content))
 
 
-class VisualStateHead(torch.nn.Module):
-    """Infer eight continuous agent-centric coordinates from full image tokens."""
+class VisualStateTokenDecoder(torch.nn.Module):
+    """Generate 28 PaliGemma-width virtual-state tokens from full image tokens.
+
+    Learned slot identities are routing-only: they enter attention queries and
+    keys, never values, residual streams, or the output projection.  Therefore
+    a state token cannot be produced without image-conditioned content.
+    """
 
     def __init__(
         self,
         *,
         image_width: int,
         state_width: int,
-        coordinate_count: int,
+        state_slots: int,
         heads: int,
         blocks: int,
         initialization_seed: int,
     ) -> None:
         super().__init__()
         if (
-            min(image_width, state_width, coordinate_count, heads, blocks) <= 0
+            min(image_width, state_width, state_slots, heads, blocks) <= 0
             or state_width % heads
-            or coordinate_count > state_width
+            or state_slots > state_width
         ):
-            raise ActionForecastError("invalid visual-state dimensions")
-        self.image_projection = torch.nn.Linear(image_width, state_width)
-        generator = torch.Generator(device="cpu").manual_seed(initialization_seed)
-        random = torch.randn(
+            raise ActionForecastError("invalid visual-state-token dimensions")
+        self.image_width = int(image_width)
+        self.state_slots = int(state_slots)
+        self.image_projection = torch.nn.Linear(
+            image_width,
             state_width,
-            coordinate_count,
-            generator=generator,
+            bias=False,
+        )
+        generator = torch.Generator(device="cpu").manual_seed(initialization_seed)
+        routing = torch.empty(
+            state_slots,
+            state_width,
             dtype=torch.float32,
         )
-        orthogonal, _ = torch.linalg.qr(random, mode="reduced")
-        self.coordinate_queries = torch.nn.Parameter(orthogonal.T.contiguous())
+        routing.normal_(mean=0.0, std=0.02, generator=generator)
+        self.slot_routing = torch.nn.Parameter(routing)
+        self.routing_norm = RMSNorm(state_width)
         self.blocks = torch.nn.ModuleList(
-            QueryReadBlock(state_width, heads, expansion=2)
+            ContentOnlyStateBlock(state_width, heads, expansion=4)
             for _ in range(blocks)
         )
-        self.scalar_head = torch.nn.Linear(state_width, 1)
-        torch.nn.init.normal_(self.scalar_head.weight, mean=0.0, std=0.02)
-        torch.nn.init.zeros_(self.scalar_head.bias)
+        self.output_norm = RMSNorm(state_width)
+        self.output_projection = torch.nn.Linear(
+            state_width,
+            image_width,
+            bias=False,
+        )
 
     def forward(self, image_tokens: torch.Tensor) -> torch.Tensor:
-        if image_tokens.ndim != 3 or image_tokens.shape[1] <= 1:
+        if (
+            image_tokens.ndim != 3
+            or image_tokens.shape[1] <= 1
+            or image_tokens.shape[2] != self.image_width
+        ):
             raise ActionForecastError("full projected image tokens changed shape")
         memory = self.image_projection(image_tokens)
-        queries = self.coordinate_queries[None].expand(memory.shape[0], -1, -1)
+        routing = self.routing_norm(self.slot_routing)[None].expand(
+            memory.shape[0],
+            -1,
+            -1,
+        )
+        content = memory.new_zeros(
+            memory.shape[0],
+            self.state_slots,
+            memory.shape[-1],
+        )
         for block in self.blocks:
-            queries = block(queries, memory)
-        return torch.tanh(self.scalar_head(queries).squeeze(-1))
-
-
-class ContinuousStateEmbedder(torch.nn.Module):
-    """Map each imagined scalar to one differentiable PaliGemma-width token."""
-
-    def __init__(
-        self,
-        *,
-        coordinate_count: int,
-        fourier_width: int,
-        hidden_width: int,
-        output_width: int,
-    ) -> None:
-        super().__init__()
-        if (
-            coordinate_count <= 0
-            or fourier_width <= 0
-            or fourier_width % 2
-            or min(hidden_width, output_width) <= 0
-        ):
-            raise ActionForecastError("invalid continuous-state embedder")
-        frequencies = torch.arange(
-            1,
-            fourier_width // 2 + 1,
-            dtype=torch.float32,
-        )
-        self.register_buffer("frequencies", frequencies, persistent=True)
-        self.network = torch.nn.Sequential(
-            torch.nn.Linear(fourier_width, hidden_width),
-            torch.nn.GELU(),
-            torch.nn.Linear(hidden_width, output_width),
-        )
-        self.slot_embeddings = torch.nn.Parameter(
-            torch.empty(coordinate_count, output_width)
-        )
-        torch.nn.init.normal_(self.slot_embeddings, mean=0.0, std=0.02)
-
-    def forward(self, state: torch.Tensor) -> torch.Tensor:
-        angles = math.pi * state[..., None].to(torch.float32) * self.frequencies
-        features = torch.cat((torch.sin(angles), torch.cos(angles)), dim=-1)
-        return self.network(features) + self.slot_embeddings[None]
+            content = block(content, routing, memory)
+        return self.output_projection(self.output_norm(content))
 
 
 class Pi05ActionForecastEncoder(torch.nn.Module):
@@ -219,11 +230,9 @@ class Pi05ActionForecastEncoder(torch.nn.Module):
         expert_model: torch.nn.Module,
         image_width: int,
         state_width: int,
-        state_coordinates: int,
+        state_slots: int,
         state_heads: int,
         state_blocks: int,
-        state_fourier_width: int,
-        state_embed_hidden: int,
         vl_meta_lora_rank: int,
         action_meta_lora_rank: int,
         frame_microbatch_size: int,
@@ -238,11 +247,9 @@ class Pi05ActionForecastEncoder(torch.nn.Module):
         dimensions = (
             image_width,
             state_width,
-            state_coordinates,
+            state_slots,
             state_heads,
             state_blocks,
-            state_fourier_width,
-            state_embed_hidden,
             vl_meta_lora_rank,
             action_meta_lora_rank,
             frame_microbatch_size,
@@ -259,19 +266,14 @@ class Pi05ActionForecastEncoder(torch.nn.Module):
         self.padded_action_dim = int(padded_action_dim)
         self.output_action_dim = int(output_action_dim)
         self.activation_checkpointing = bool(activation_checkpointing)
-        self.visual_state = VisualStateHead(
+        self.state_slots = int(state_slots)
+        self.visual_state_tokens = VisualStateTokenDecoder(
             image_width=image_width,
             state_width=state_width,
-            coordinate_count=state_coordinates,
+            state_slots=state_slots,
             heads=state_heads,
             blocks=state_blocks,
             initialization_seed=initialization_seed,
-        )
-        self.state_embedder = ContinuousStateEmbedder(
-            coordinate_count=state_coordinates,
-            fourier_width=state_fourier_width,
-            hidden_width=state_embed_hidden,
-            output_width=image_width,
         )
         self.vl_meta_lora = MetaLoRAStack(
             paligemma_model.layers,
@@ -361,8 +363,7 @@ class Pi05ActionForecastEncoder(torch.nn.Module):
             image_tokens = bridge.embed_image(images)
             text_tokens = bridge.embed_language_tokens(language_tokens)
 
-        imagined_state = self.visual_state(image_tokens)
-        virtual_state = self.state_embedder(imagined_state)
+        virtual_state = self.visual_state_tokens(image_tokens)
         state_values = torch.zeros_like(text_tokens).scatter(
             1,
             state_positions[..., None].expand(-1, -1, text_tokens.shape[-1]),
@@ -443,7 +444,7 @@ class Pi05ActionForecastEncoder(torch.nn.Module):
             or language_tokens.ndim != 2
             or language_mask.shape != language_tokens.shape
             or language_mask.dtype != torch.bool
-            or state_positions.shape != (conditions, 8)
+            or state_positions.shape != (conditions, self.state_slots)
             or flow_noise.shape
             != (
                 conditions,

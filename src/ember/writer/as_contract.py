@@ -30,8 +30,8 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_action_forecast_as_writer_v1"
-AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_action_forecast_as_writer_launch_v1"
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_action_forecast_as_writer_v2"
+AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_action_forecast_as_writer_launch_v2"
 AS_WRITER_STAGES = ("development", "final")
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
@@ -90,7 +90,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
     if writer.get("frame_stride") != 5 or writer.get("frame_microbatch_size") != 32:
         raise WriterModelError("sealed Action-Forecast profile dimensions changed")
     expected_writer = {
-        "architecture": "pi05_action_forecast_plan_revision_v1",
+        "architecture": "pi05_action_forecast_plan_revision_v2",
         "generated_adapter": "complete_pi05_task_specific_rank16_lora",
         "camera_dataset": "obs/agentview_rgb",
         "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -98,11 +98,12 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         "include_final_frame": True,
         "image_width": 2048,
         "state_width": 128,
-        "state_coordinates": 8,
+        "state_slots": 28,
         "state_heads": 4,
         "state_blocks": 2,
-        "state_fourier_width": 64,
-        "state_embed_hidden": 256,
+        "state_token_generation": (
+            "content_only_detr_slots_from_full_siglip_image_tokens"
+        ),
         "vl_meta_lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
         "vl_meta_lora_rank": 4,
         "action_meta_lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
@@ -116,6 +117,14 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         "plan_revision_alignment": (
             "absolute_control_time_latest_plan_and_adjacent_revisions"
         ),
+        "maximum_revision_count": 10,
+        "revision_content_path": (
+            "routing_query_reads_directed_events_without_query_residual"
+        ),
+        "revision_stability_path": (
+            "bounded_normalized_statistics_multiplicative_gate_0.75_to_1.25"
+        ),
+        "plan_revision_branch_norm": "independent_rms_norm_before_temporal",
         "temporal_width": 256,
         "temporal_heads": 8,
         "temporal_blocks": 2,
@@ -124,7 +133,10 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         ),
         "query_count": 320,
         "query_decoder_blocks": 2,
-        "query_memory_direction": "lora_queries_read_temporal_memory_only",
+        "query_memory_direction": (
+            "routing_only_identities_with_memory_derived_content_values"
+        ),
+        "factor_head_bias": False,
         "factor_hidden_width": 256,
         "initialization_seed": 7,
     }
@@ -199,31 +211,7 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
         "independent_conditions_per_optimizer_step": 1,
         "normal_loss_weight": 1.0,
     }
-    order_contrast = {
-        "method": "normal_positive_plus_stop_gradient_order_contrast",
-        "writer_language_contract": (
-            "correct_task_language_native_state_action_layout"
-        ),
-        "policy_language_contract": "correct_action_query_task_language",
-        "action_query_batch_owner": (
-            "one physical batch per rank reused by correct and order-negative views"
-        ),
-        "independent_conditions_per_optimizer_step": 1,
-        "normal_loss_weight": 1.0,
-        "order_transforms": ["shuffled", "reversed"],
-        "order_transform_schedule": (
-            "alternate by global task-video visit; transform frames only while "
-            "preserving absolute frame indices"
-        ),
-        "contrast_backend": (
-            "paired sequential full-batch functional gradients with shared "
-            "policy batch and Writer flow noise"
-        ),
-        "negative_loss_weight": 0.5,
-        "negative_loss_margin": 0.01,
-        "correct_loss_anchor_gradient": "stop_gradient",
-    }
-    if value not in (normal, order_contrast):
+    if value != normal:
         raise WriterModelError("AS-Writer conditioning contract changed")
 
 
@@ -545,12 +533,7 @@ def build_contract(
     conditions_per_step = int(
         config["conditioning_training"]["independent_conditions_per_optimizer_step"]
     )
-    policy_forward_calls = (
-        2
-        if config["conditioning_training"]["method"]
-        == "normal_positive_plus_stop_gradient_order_contrast"
-        else 1
-    )
+    policy_forward_calls = 1
     local = {
         "rank": context.rank,
         "local_rank": context.local_rank,

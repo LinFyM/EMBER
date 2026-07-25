@@ -675,3 +675,25 @@
   config解析、`py_compile`和`git diff --check`通过。配置已封为正式首段
   300 steps；训练后只对新轨迹的validation候选选best，再在best上复测完整
   四arm特异性，通过前不启动RL。
+
+## Action-Forecast Writer v2实现与正式前检查（2026-07-25）
+
+- 按owner最新口径原位完成28-state-token、directed Revision bounded-gate、
+  content-only LoRA decoder；删除order-contrast活动配置与`as_step.py`分支，
+  schema/checkpoint/config统一升级到v2。focused tests `26 passed`，
+  `py_compile`和`git diff --check`通过。
+- Revision反事实诊断完成8 tasks×2 videos，未读actions/reward/outcome：
+  新合成time-centered reversed/shuffled相对L2中位数
+  `0.3554/0.2418`，旧Revision为`0.0281/0.0316`。
+- GPU0–3实时空闲、个人占用`301,090,004,992` bytes、总盘可用约3.06TB时，
+  运行fresh step1后从
+  `/data/ymdai/outputs/ember/pi05_action_forecast_v2_profile_resume_r4_s5_fm32_b16_20260725/checkpoints/step_00000001`
+  exact-resume到step2。contract SHA256为
+  `5afbb65786f70ab67c131a78ca59959fde3284dd9bbbbb4932f35eec1ddc83a6`；
+  四rank state、Writer、optimizer/scheduler与trainer state均在checkpoint
+  manifest中逐文件封存。
+- profile保持`stride=5`、`frame_microbatch_size=32`、
+  batch16/rank；step2为`6.5025s`、全局`9.8424 queries/s`，峰值
+  allocated/reserved为`67,088,471,040/69,235,376,128` bytes，无OOM或
+  nonfinite。下一步提交并push唯一canonical代码/配置，再从fresh identity
+  启动正式step0→600，checkpoint间隔75，完整评测step300/600。

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import torch
 
+from ember.writer.action_forecast import VisualStateTokenDecoder
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
 from ember.writer.temporal import (
     LoRAQueryDecoder,
@@ -112,11 +113,9 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         expert_model=expert,
         image_width=2048,
         state_width=128,
-        state_coordinates=8,
+        state_slots=28,
         state_heads=4,
         state_blocks=2,
-        state_fourier_width=64,
-        state_embed_hidden=256,
         vl_meta_lora_rank=4,
         action_meta_lora_rank=8,
         frame_microbatch_size=1,
@@ -124,6 +123,7 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         action_horizon=50,
         padded_action_dim=32,
         output_action_dim=7,
+        maximum_revision_count=10,
         temporal_width=256,
         temporal_heads=8,
         temporal_blocks=2,
@@ -132,7 +132,7 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         initialization_seed=7,
         activation_checkpointing=True,
     )
-    assert sum(parameter.numel() for parameter in model.parameters()) == 10_161_217
+    assert sum(parameter.numel() for parameter in model.parameters()) == 10_125_376
     model.action_forecast = _FakeForecast()
     return model, template
 
@@ -143,7 +143,7 @@ def _inputs() -> tuple[torch.Tensor, ...]:
     offsets = torch.tensor([0, 2, 5], dtype=torch.long)
     tokens = torch.tensor([[1, 2, 0], [4, 5, 6]], dtype=torch.long)
     masks = tokens.ne(0)
-    state_positions = torch.zeros(2, 8, dtype=torch.long)
+    state_positions = torch.zeros(2, 28, dtype=torch.long)
     noise = torch.stack((torch.zeros(50, 32), torch.ones(50, 32)))
     return frames, frame_indices, offsets, tokens, masks, state_positions, noise
 
@@ -167,6 +167,41 @@ def test_action_forecast_writer_is_conditioned_after_factor_heads_move() -> None
     assert not hasattr(model, "shared_lora")
 
 
+def test_virtual_state_slots_have_no_routing_only_output_bypass() -> None:
+    decoder = VisualStateTokenDecoder(
+        image_width=16,
+        state_width=8,
+        state_slots=4,
+        heads=2,
+        blocks=2,
+        initialization_seed=7,
+    )
+    empty = decoder(torch.zeros(2, 6, 16))
+    assert empty.shape == (2, 4, 16)
+    assert torch.count_nonzero(empty) == 0
+
+    image = torch.randn(2, 6, 16, requires_grad=True)
+    conditioned = decoder(image)
+    assert float(conditioned.detach().abs().sum()) > 0
+    conditioned.square().mean().backward()
+    assert image.grad is not None and float(image.grad.abs().sum()) > 0
+
+
+def test_lora_query_routing_cannot_reach_output_without_memory_content() -> None:
+    decoder = LoRAQueryDecoder(
+        width=32,
+        heads=4,
+        blocks=2,
+        initialization_seed=7,
+    )
+    valid = torch.ones(2, 5, dtype=torch.bool)
+    empty = decoder(torch.zeros(2, 5, 32), valid)
+    assert all(torch.count_nonzero(value) == 0 for value in empty)
+
+    conditioned = decoder(torch.randn(2, 5, 32), valid)
+    assert all(float(value.detach().abs().sum()) > 0 for value in conditioned)
+
+
 def test_plan_revision_temporal_and_queries_are_variable_time_and_differentiable() -> None:
     torch.manual_seed(17)
     plans = torch.randn(2, 3, 50, 7, requires_grad=True)
@@ -177,6 +212,7 @@ def test_plan_revision_temporal_and_queries_are_variable_time_and_differentiable
         horizon=50,
         width=256,
         heads=8,
+        maximum_revision_count=10,
     )
     tokens, positions, valid = plan_revision(plans, indices, mask)
     temporal = VariableTimeTemporalEncoder(width=256, heads=8, blocks=2)
@@ -194,6 +230,8 @@ def test_plan_revision_temporal_and_queries_are_variable_time_and_differentiable
     sum(value.square().mean() for value in (expert, action_in, action_out)).backward()
     assert plans.grad is not None and bool(torch.isfinite(plans.grad).all())
     assert float(plans.grad.abs().sum()) > 0
+    assert torch.count_nonzero(plan_revision.stability_gate[-1].weight) == 0
+    assert torch.count_nonzero(plan_revision.stability_gate[-1].bias) == 0
 
 
 def test_reversing_frame_content_changes_absolute_time_memory() -> None:
@@ -203,6 +241,7 @@ def test_reversing_frame_content_changes_absolute_time_memory() -> None:
         horizon=50,
         width=256,
         heads=8,
+        maximum_revision_count=10,
     )
     plans = torch.randn(1, 4, 50, 7)
     indices = torch.tensor([[0, 5, 10, 15]])

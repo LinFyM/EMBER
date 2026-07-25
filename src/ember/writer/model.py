@@ -25,11 +25,9 @@ ACTION_FORECAST_WRITER_CONSTRUCTOR_KEYS = frozenset(
     {
         "image_width",
         "state_width",
-        "state_coordinates",
+        "state_slots",
         "state_heads",
         "state_blocks",
-        "state_fourier_width",
-        "state_embed_hidden",
         "vl_meta_lora_rank",
         "action_meta_lora_rank",
         "frame_microbatch_size",
@@ -37,6 +35,7 @@ ACTION_FORECAST_WRITER_CONSTRUCTOR_KEYS = frozenset(
         "action_horizon",
         "padded_action_dim",
         "output_action_dim",
+        "maximum_revision_count",
         "temporal_width",
         "temporal_heads",
         "temporal_blocks",
@@ -126,12 +125,11 @@ class FactorHead(torch.nn.Module):
             raise WriterModelError("invalid LoRA factor-head dimensions")
         self.network = torch.nn.Sequential(
             RMSNorm(input_width),
-            torch.nn.Linear(input_width, hidden_width),
+            torch.nn.Linear(input_width, hidden_width, bias=False),
             torch.nn.GELU(),
-            torch.nn.Linear(hidden_width, output_width),
+            torch.nn.Linear(hidden_width, output_width, bias=False),
         )
         torch.nn.init.zeros_(self.network[-1].weight)
-        torch.nn.init.zeros_(self.network[-1].bias)
 
     def forward(self, value: torch.Tensor) -> torch.Tensor:
         if value.ndim < 3:
@@ -167,11 +165,9 @@ class CompleteLoRAWriter(torch.nn.Module):
         expert_model: torch.nn.Module,
         image_width: int,
         state_width: int,
-        state_coordinates: int,
+        state_slots: int,
         state_heads: int,
         state_blocks: int,
-        state_fourier_width: int,
-        state_embed_hidden: int,
         vl_meta_lora_rank: int,
         action_meta_lora_rank: int,
         frame_microbatch_size: int,
@@ -179,6 +175,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         action_horizon: int,
         padded_action_dim: int,
         output_action_dim: int,
+        maximum_revision_count: int,
         temporal_width: int,
         temporal_heads: int,
         temporal_blocks: int,
@@ -198,6 +195,8 @@ class CompleteLoRAWriter(torch.nn.Module):
             or output_action_dim != 7
             or action_horizon != 50
             or padded_action_dim != 32
+            or state_slots != 28
+            or maximum_revision_count != 10
         ):
             raise WriterModelError("invalid Action-Forecast Writer topology")
         self.tensor_specs = tensor_specs
@@ -206,11 +205,9 @@ class CompleteLoRAWriter(torch.nn.Module):
             expert_model=expert_model,
             image_width=image_width,
             state_width=state_width,
-            state_coordinates=state_coordinates,
+            state_slots=state_slots,
             state_heads=state_heads,
             state_blocks=state_blocks,
-            state_fourier_width=state_fourier_width,
-            state_embed_hidden=state_embed_hidden,
             vl_meta_lora_rank=vl_meta_lora_rank,
             action_meta_lora_rank=action_meta_lora_rank,
             frame_microbatch_size=frame_microbatch_size,
@@ -226,6 +223,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             horizon=action_horizon,
             width=temporal_width,
             heads=temporal_heads,
+            maximum_revision_count=maximum_revision_count,
         )
         self.temporal = VariableTimeTemporalEncoder(
             width=temporal_width,
@@ -368,7 +366,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             or language_tokens.ndim != 2
             or language_tokens.shape[0] != conditions
             or language_mask.shape != language_tokens.shape
-            or state_positions.shape != (conditions, 8)
+            or state_positions.shape != (conditions, 28)
             or flow_noise.shape != (conditions, 50, 32)
         ):
             raise WriterModelError("Writer frame-language condition batch changed")

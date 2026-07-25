@@ -29,8 +29,8 @@ class RMSNorm(torch.nn.Module):
         return value * scale * self.weight
 
 
-class RevisionReadBlock(torch.nn.Module):
-    """One revision query reads a variable set of same-time forecast changes."""
+class RevisionContentBlock(torch.nn.Module):
+    """Read directed revision events without copying a static query to output."""
 
     def __init__(self, width: int, heads: int) -> None:
         super().__init__()
@@ -43,29 +43,30 @@ class RevisionReadBlock(torch.nn.Module):
             heads,
             dropout=0.0,
             batch_first=True,
+            bias=False,
         )
         self.ffn_norm = RMSNorm(width)
         self.ffn = torch.nn.Sequential(
-            torch.nn.Linear(width, 4 * width),
+            torch.nn.Linear(width, 4 * width, bias=False),
             torch.nn.GELU(),
-            torch.nn.Linear(4 * width, width),
+            torch.nn.Linear(4 * width, width, bias=False),
         )
 
     def forward(
         self,
-        query: torch.Tensor,
+        routing: torch.Tensor,
         memory: torch.Tensor,
         valid_memory: torch.Tensor,
     ) -> torch.Tensor:
         attended, _ = self.attention(
-            self.query_norm(query),
+            self.query_norm(routing),
             self.memory_norm(memory),
             self.memory_norm(memory),
             key_padding_mask=~valid_memory,
             need_weights=False,
         )
-        query = query + attended
-        return query + self.ffn(self.ffn_norm(query))
+        content = attended
+        return content + self.ffn(self.ffn_norm(content))
 
 
 class PlanRevisionEncoder(torch.nn.Module):
@@ -78,13 +79,25 @@ class PlanRevisionEncoder(torch.nn.Module):
         horizon: int,
         width: int,
         heads: int,
+        maximum_revision_count: int,
     ) -> None:
         super().__init__()
-        if min(action_width, horizon, width, heads) <= 0 or width % heads:
+        if (
+            min(
+                action_width,
+                horizon,
+                width,
+                heads,
+                maximum_revision_count,
+            )
+            <= 0
+            or width % heads
+        ):
             raise VariableEpisodeInputError("invalid Plan/Revision dimensions")
         self.action_width = int(action_width)
         self.horizon = int(horizon)
         self.width = int(width)
+        self.maximum_revision_count = int(maximum_revision_count)
         self.plan_encoder = torch.nn.Sequential(
             torch.nn.Linear(action_width + 1, width),
             torch.nn.GELU(),
@@ -96,11 +109,20 @@ class PlanRevisionEncoder(torch.nn.Module):
             torch.nn.Linear(width, width),
         )
         self.revision_query = torch.nn.Parameter(torch.empty(1, 1, width))
-        self.revision_reader = RevisionReadBlock(width, heads)
-        self.stability_encoder = torch.nn.Linear(4, width)
+        self.revision_reader = RevisionContentBlock(width, heads)
+        self.plan_norm = RMSNorm(width)
+        self.revision_norm = RMSNorm(width)
+        gate_width = max(width // 4, 1)
+        self.stability_gate = torch.nn.Sequential(
+            torch.nn.Linear(4, gate_width),
+            torch.nn.GELU(),
+            torch.nn.Linear(gate_width, width),
+        )
         self.no_revision = torch.nn.Parameter(torch.empty(width))
         torch.nn.init.normal_(self.revision_query, mean=0.0, std=0.02)
         torch.nn.init.normal_(self.no_revision, mean=0.0, std=0.02)
+        torch.nn.init.zeros_(self.stability_gate[-1].weight)
+        torch.nn.init.zeros_(self.stability_gate[-1].bias)
 
     def _validate(
         self,
@@ -191,7 +213,10 @@ class PlanRevisionEncoder(torch.nn.Module):
         normalized_lead = (
             latest_lead.to(torch.float32) / max(self.horizon - 1, 1)
         )[..., None]
-        return self.plan_encoder(torch.cat((latest_action, normalized_lead), dim=-1))
+        encoded = self.plan_encoder(
+            torch.cat((latest_action, normalized_lead), dim=-1)
+        )
+        return self.plan_norm(encoded)
 
     def _revision_event_inputs(
         self,
@@ -298,9 +323,17 @@ class PlanRevisionEncoder(torch.nn.Module):
             0.0,
         )
         query = self.revision_query.expand(batch * maximum_time, -1, -1)
-        read = self.revision_reader(query, flat_events, safe_mask)[:, 0]
+        directed_content = self.revision_reader(
+            query,
+            flat_events,
+            safe_mask,
+        )[:, 0]
 
         count = event_mask.sum(dim=-1).to(torch.float32)
+        if bool((count > self.maximum_revision_count).any()):
+            raise VariableEpisodeInputError(
+                "revision count exceeds its sealed stride/horizon bound"
+            )
         delta_norm = torch.linalg.vector_norm(delta.to(torch.float32), dim=-1)
         masked_norm = delta_norm * event_mask
         denominator = count.clamp_min(1.0)
@@ -315,16 +348,24 @@ class PlanRevisionEncoder(torch.nn.Module):
             variance.clamp_min(1e-12).sqrt(),
             torch.zeros_like(variance),
         )
-        stability = torch.stack(
-            (count, mean, standard_deviation, maximum),
+        bounded_stability = torch.stack(
+            (
+                count / self.maximum_revision_count,
+                mean / (1.0 + mean),
+                standard_deviation / (1.0 + standard_deviation),
+                maximum / (1.0 + maximum),
+            ),
             dim=-1,
         )
         revision = torch.where(
             has_revision[:, None],
-            read,
-            self.no_revision[None].expand_as(read),
+            directed_content,
+            self.no_revision[None].expand_as(directed_content),
         ).reshape(batch, maximum_time, self.width)
-        return revision + self.stability_encoder(stability)
+        gate = 1.0 + 0.25 * torch.tanh(
+            self.stability_gate(bounded_stability)
+        )
+        return self.revision_norm(revision) * gate.to(revision.dtype)
 
     def forward(
         self,
@@ -486,8 +527,8 @@ class VariableTimeTemporalEncoder(torch.nn.Module):
         return self.output_norm(value).masked_fill(~valid_mask[..., None], 0.0)
 
 
-class OneWayQueryBlock(torch.nn.Module):
-    """LoRA queries self-organize, then read procedural memory one way."""
+class ContentOnlyQueryBlock(torch.nn.Module):
+    """Route LoRA slots while keeping their residual values memory-derived."""
 
     def __init__(self, width: int, heads: int) -> None:
         super().__init__()
@@ -497,45 +538,50 @@ class OneWayQueryBlock(torch.nn.Module):
             heads,
             dropout=0.0,
             batch_first=True,
+            bias=False,
         )
-        self.query_norm = RMSNorm(width)
+        self.cross_norm = RMSNorm(width)
         self.memory_norm = RMSNorm(width)
         self.cross_attention = torch.nn.MultiheadAttention(
             width,
             heads,
             dropout=0.0,
             batch_first=True,
+            bias=False,
         )
         self.ffn_norm = RMSNorm(width)
         self.ffn = torch.nn.Sequential(
-            torch.nn.Linear(width, 4 * width),
+            torch.nn.Linear(width, 4 * width, bias=False),
             torch.nn.GELU(),
-            torch.nn.Linear(4 * width, width),
+            torch.nn.Linear(4 * width, width, bias=False),
         )
 
     def forward(
         self,
-        queries: torch.Tensor,
+        content: torch.Tensor,
+        routing: torch.Tensor,
         memory: torch.Tensor,
         valid_memory: torch.Tensor,
     ) -> torch.Tensor:
-        normalized = self.self_norm(queries)
+        normalized = self.self_norm(content)
+        addressed = normalized + routing
         attended, _ = self.self_attention(
-            normalized,
-            normalized,
+            addressed,
+            addressed,
             normalized,
             need_weights=False,
         )
-        queries = queries + attended
+        content = content + attended
+        normalized_memory = self.memory_norm(memory)
         attended, _ = self.cross_attention(
-            self.query_norm(queries),
-            self.memory_norm(memory),
-            self.memory_norm(memory),
+            self.cross_norm(content) + routing,
+            normalized_memory,
+            normalized_memory,
             key_padding_mask=~valid_memory,
             need_weights=False,
         )
-        queries = queries + attended
-        return queries + self.ffn(self.ffn_norm(queries))
+        content = content + attended
+        return content + self.ffn(self.ffn_norm(content))
 
 
 class LoRAQueryDecoder(torch.nn.Module):
@@ -567,8 +613,9 @@ class LoRAQueryDecoder(torch.nn.Module):
         self.module_identity = parameter(3)
         self.layer_identity = parameter(self.EXPERT_LAYERS)
         self.rank_identity = parameter(self.RANK)
+        self.routing_norm = RMSNorm(width)
         self.blocks = torch.nn.ModuleList(
-            OneWayQueryBlock(width, heads) for _ in range(blocks)
+            ContentOnlyQueryBlock(width, heads) for _ in range(blocks)
         )
         self.output_norm = RMSNorm(width)
 
@@ -610,12 +657,21 @@ class LoRAQueryDecoder(torch.nn.Module):
             or not bool(valid_memory.any(dim=1).all())
         ):
             raise VariableEpisodeInputError("invalid LoRA decoder memory")
-        queries = self._initial_queries()[None].expand(memory.shape[0], -1, -1)
+        routing = self.routing_norm(self._initial_queries())[None].expand(
+            memory.shape[0],
+            -1,
+            -1,
+        )
+        content = memory.new_zeros(
+            memory.shape[0],
+            self.QUERY_COUNT,
+            memory.shape[-1],
+        )
         for block in self.blocks:
-            queries = block(queries, memory, valid_memory)
-        queries = self.output_norm(queries)
+            content = block(content, routing, memory, valid_memory)
+        content = self.output_norm(content)
         expert_stop = self.EXPERT_LAYERS * self.RANK
-        expert = queries[:, :expert_stop].reshape(
+        expert = content[:, :expert_stop].reshape(
             memory.shape[0],
             self.EXPERT_LAYERS,
             self.RANK,
@@ -623,6 +679,6 @@ class LoRAQueryDecoder(torch.nn.Module):
         )
         return (
             expert,
-            queries[:, expert_stop : expert_stop + self.RANK],
-            queries[:, -self.RANK :],
+            content[:, expert_stop : expert_stop + self.RANK],
+            content[:, -self.RANK :],
         )

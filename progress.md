@@ -605,3 +605,26 @@
 - GPU0–3再次实时空闲、GPU4–7仍为其他用户进程且未触碰、个人占用约274GB
   时，已从step1800 exact-resume到2100；下一步正式评测step1950/2100，
   specificity继续推迟。
+
+## Action-Forecast AS step1800→2100与再次续训（2026-07-25）
+
+- 四卡从step1800同合同exact-resume到2100，本段wall `2033.67s`；
+  step1875/1950/2025/2100在线functional monitor为
+  `0.134469/0.134724/0.135176/0.134929`，仍只有弱摆动。step2100累计
+  134,400 queries、8,400 video conditions，24 tasks各5,600 queries与350次
+  视频访问且50/50 videos全覆盖；最终checkpoint文件逐SHA与manifest一致。
+- step1950/2100正式8×50 correct-video validation为`110/114`，均为32/32
+  shards、400 rows、24 workers exit0、无错误/重试。逐task分别为Long
+  `4/0, 4/0`、Goal `1/28, 1/32`、Object `45/19, 44/14`、Spatial
+  `0/13, 0/19`。
+- step1200→1950 paired为`34/19`，净`-15`、exact `p≈0.0534`，但主要由
+  Goal-6贡献；step1200→2100为`36/25`，净`-11`、`p≈0.2000`。
+  step1800→2100恰为`28/28`、净`0`，1950→2100反而净`+4`。所以
+  `125→…→114→110→114`仍未建立明显、持续、多task共同贡献的峰后下降。
+- step1950/2100 results SHA256为
+  `c62e75973b8196e4e6052cecde8e0add00dd948f0536385ac5be44d0a158a576`
+  和`934382c211027c3b6407b46898e65f708dfda136a1bc6cbef8a60f18cacf3905`；
+  rollout-only吞吐为`0.61188/0.61723 episode/s`。两次均以batch100生成
+  259个唯一视频LoRA，随后每卡6 replicas稳定完成。
+- GPU0–3再次实时空闲、GPU4–7持续隔离、个人占用约276GB时，已从step2100
+  exact-resume到2400；继续正式评测step2250/2400，仍不提前做specificity。

@@ -923,3 +923,26 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   flow-noise、optimizer、scheduler和rank RNG状态均恢复。CUDA新进程造成6个
   Writer tensors最大`4.28e-8`的数值差异；这是数值等价而非bitwise
   deterministic，不影响checkpoint可恢复性，但已明确记录。
+
+## 32-token Visual-State v4 step75内部门结论（2026-07-25）
+
+- v4在正式1200-step学习率时间轴的前75步已经形成明确视频特异性。
+  reversed/shuffled的effective LoRA相对L2中位数为`0.0420/0.0468`，
+  相比Belief-v3失败值`0.000297/0.000169`提高约两个数量级；16条reference
+  videos全部非零，8个validation tasks都贡献差异。
+- 这不是只看到了frame permutation：对同一图像先按相同permutation配对后，
+  新visual coordinates仍改变约`0.1610/0.1463`，future forecasts仍改变约
+  `0.0231/0.0152`。冻结image embedding在该context-only检查中严格为0，说明
+  新增差异确实来自anchor/local visual-state上下文而非诊断错配。
+- 正常video的action forecasts跨帧变化RMS约占总RMS的`60.4%`，不再是近似
+  重复的task-level chunk。打乱后Revision strength均值中位比为
+  `1.119/1.200`（reverse/shuffle），分别13/16和14/16视频对增加；正常顺序
+  在统计上具有更一致的future forecasts。
+- 下游虽会压缩差异，但不再消灭它：Belief相对L2
+  `0.8217/0.7852`，Temporal `0.6902/0.6428`，query output
+  `0.0528/0.0593`，effective LoRA `0.0420/0.0468`。因此两层Temporal和现有
+  content-conditioned decoder暂时无需再加层或拆分路径。
+- 同task另一demo与cross-suite wrong的effective LoRA中位差异分别为
+  `0.0250/0.0714`；8/8 tasks均非零。internal specificity gate通过，可以
+  从fresh identity进入正式0→1200；最终仍需在具备绝对能力的候选上完成
+  correct/wrong/reversed/shuffled paired rollout。

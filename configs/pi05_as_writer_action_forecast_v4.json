@@ -215,7 +215,7 @@
     ]
   },
   "specificity_gate": {
-    "status": "pending",
+    "status": "passed_internal_step_75",
     "fresh_optimizer_steps": 75,
     "checkpoint_steps": [
       50,
@@ -229,16 +229,56 @@
       "cross_suite_wrong"
     ],
     "rollout_after_internal_pass_only": true,
+    "step_75_rollout": "deferred_to_a_formal_checkpoint_with_absolute_competence",
     "absolute_correct_performance_required": false,
-    "contrast_loss_allowed": false
+    "contrast_loss_allowed": false,
+    "evidence": {
+      "training_run": "/data/ymdai/outputs/ember/pi05_action_forecast_v4_gate75_fb280b3_r4_s5_fm32_b20_20260725",
+      "checkpoint_step": 75,
+      "diagnostic": "/data/ymdai/outputs/ember/pi05_action_forecast_v4_step0075_internal_specificity_val8x2_fb280b3_20260725",
+      "summary_sha256": "1d2a8828a17e059530a2650d18500db630407f27ea8b3d82833c65b591f410a3",
+      "rows_sha256": "f30a5e17535e11aefca81e76563c3d459ac104d07a2446c15df5739fca3611dc",
+      "reference_videos": 16,
+      "paired_comparisons": 64,
+      "effective_lora_relative_l2_median": {
+        "reversed": 0.042016842058422335,
+        "shuffled": 0.046844618864114326,
+        "same_task_other_demo": 0.02495595888168961,
+        "cross_suite_wrong": 0.07142346945387006
+      },
+      "all_eight_validation_tasks_contribute": true,
+      "information_wall_action_reward_outcome_reads": 0
+    }
   },
   "formal_run": {
-    "status": "blocked_on_specificity_gate",
+    "status": "sealed",
     "expected_world_size": 4,
-    "total_steps": 1200,
-    "per_rank_batch_size": null,
+    "total_steps": 12000,
+    "per_rank_batch_size": 20,
     "checkpoint_steps": "every:75",
-    "selected_stop_step": null,
-    "extension_steps": 600
+    "selected_stop_step": 1200,
+    "stage_stop_steps": [
+      1200,
+      1800,
+      2400,
+      3000,
+      3600,
+      4200,
+      4800,
+      5400,
+      6000,
+      6600,
+      7200,
+      7800,
+      8400,
+      9000,
+      9600,
+      10200,
+      10800,
+      11400,
+      12000
+    ],
+    "extension_steps": 600,
+    "declared_horizon_role": "resume_envelope_only; the first uninterrupted launch stops at 1200"
   }
 }

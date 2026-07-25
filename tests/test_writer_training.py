@@ -76,7 +76,9 @@ def test_action_forecast_config_seals_architecture_and_information_wall() -> Non
         "action_query_batch_size_per_rank": 20,
     }
     assert config["specificity_gate"]["fresh_optimizer_steps"] == 75
-    assert config["formal_run"]["total_steps"] == 1200
+    assert config["specificity_gate"]["status"] == "passed_internal_step_75"
+    assert config["formal_run"]["total_steps"] == 12000
+    assert config["formal_run"]["selected_stop_step"] == 1200
 
 
 def test_checkpoint_schedule_and_cursor_are_fail_closed() -> None:
@@ -146,8 +148,14 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         resume=None,
         skip_data_sha=False,
     )
-    with pytest.raises(WriterModelError, match="not sealed"):
-        resolve_runtime(formal, config, context)
+    total_steps, batch_size, checkpoints = resolve_runtime(
+        formal, config, context
+    )
+    assert total_steps == 12000
+    assert batch_size == 20
+    assert checkpoints[:2] == (75, 150)
+    assert checkpoints[-1] == 12000
+    assert formal.stop_after_step == 1200
 
 
 def test_flow_noise_is_shared_within_visit_reproducible_and_visit_specific() -> None:

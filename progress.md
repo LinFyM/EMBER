@@ -788,3 +788,26 @@
   游标与四rank RNG均匹配连续运行；rank-state文件bitwise一致。CUDA进程重启后
   Writer仅6个tensor出现最大`4.28e-8`的浮点差异，因此checkpoint完整可恢复，
   但不把跨进程CUDA计算误称为bitwise deterministic。
+
+## 32-token Visual-State v4 step75特异性门（2026-07-25）
+
+- 有效fresh轨迹位于
+  `/data/ymdai/outputs/ember/pi05_action_forecast_v4_gate75_fb280b3_r4_s5_fm32_b20_20260725`；
+  它保留正式1200-step scheduler时间轴，连续完成0→75，消费6000 action
+  queries和300个task-video conditions，24 tasks各覆盖12–13条teacher
+  videos。step50/75 checkpoint均完整发布，训练wall为`542.04s`。
+- 8 validation tasks×2 reference videos×4反事实的内部诊断位于
+  `/data/ymdai/outputs/ember/pi05_action_forecast_v4_step0075_internal_specificity_val8x2_fb280b3_20260725`。
+  正确language、flow noise和order反事实的frame indices均固定；实际重算
+  reversed/shuffled forecasts，action/reward/outcome reads均为0。
+- reversed/shuffled在effective LoRA上的相对L2中位数为
+  `0.0420/0.0468`，16/16 comparisons均非零，8/8 tasks均有贡献；旧Belief-v3
+  failure只有约`0.000297/0.000169`。同task换demo为`0.0250`，cross-suite
+  wrong为`0.0714`，直接换视频特异性同样成立。
+- 差异没有在下游再次坍缩：reversed/shuffled从Belief
+  `0.8217/0.7852`到Temporal `0.6902/0.6428`，query output仍有
+  `0.0528/0.0593`，最终effective LoRA为`0.0420/0.0468`。Revision strength
+  中位数分别增加约`11.9%/20.0%`，并由13/16与14/16视频对同向贡献。
+- 该低成本门判定通过。step75尚不要求绝对correct success，环境paired
+  rollout推迟到已有绝对能力的正式候选，避免低成功率地板把机制检查变成无效
+  证据。下一步从fresh identity连续训练到1200。

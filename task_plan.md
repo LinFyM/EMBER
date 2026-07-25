@@ -300,13 +300,12 @@ Action-Memory、temporal-RoPE、Action-Forecast v1/v2和28-slot Belief-v3均为
   exact-resume，不做无关全仓仪式性校验。
 - [x] 固定stride5，在GPU0–3上重新profile训练batch与frame-microbatch；4–7
   绝不触碰。
-- [ ] 从fresh identity训练到75 step；先做normal/reversed/shuffled、
+- [x] 从fresh identity训练到75 step；先做normal/reversed/shuffled、
   same-task-other-demo、cross-suite wrong-video的逐层内部数值检查，要求差异
   经过forecast、Revision、Belief、Temporal、query直至effective LoRA仍明确且
   由多个tasks/videos共同贡献。内部通过后才做必要paired rollout；此阶段不以
   correct arm绝对成功率为门槛。
-- [ ] 若75-step特异性不通过，按最早发生坍缩的层级分析并修改同一canonical
-  架构，fresh再训75 step，快速迭代直至通过；不得用对比损失制造差距。
+- [x] 75-step内部门已通过，无需启动失败修正循环；没有使用对比损失。
 - [ ] 最终通过的架构从fresh identity直接训练0→1200，checkpoint可每75 step
   保存但不中断训练；随后挑选8×50 validation候选。若best后未出现明显、远超
   rollout噪声、跨多个tasks且独立panel复测成立的下降，每次exact-resume增加

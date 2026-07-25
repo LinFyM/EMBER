@@ -12,6 +12,10 @@
   rollout特异性门；通过后从fresh identity直接训练到1200 step。若尚未以
   幅度非常明显、复测稳健且由多个tasks共同贡献的峰后下降括住validation
   best，每次exact-resume增加600 step，不设总训练时间上限。
+- 32-token v4的75-step内部门已通过：normal对reversed/shuffled、
+  same-task-other-demo和cross-suite wrong的差异均能经过完整路径保留到
+  effective LoRA，且8个validation tasks都有贡献。step75不以低分母环境成功率
+  作门；paired rollout留给具备绝对能力的正式候选。
 - frame stride固定为5，不再把stride 5/10作为待选变量；只使用GPU 0–3，
   绝不触碰4–7。
 - 当前工程推进以效率优先：最短垂直切片通过必要的shape/gradient/
@@ -49,11 +53,6 @@ Phase A、source base、public rank-16 LoRA合同、functional per-sample注入�
 Source-SFT comparator均已封存，不得重新开启。当前只剩以下
 Action-Forecast focused变量需要实测：
 
-- 新32-token visual-state在75 step后是否让normal/reversed/shuffled、
-  same-task-other-demo与cross-suite wrong视频在完整内部路径和effective LoRA
-  上形成明确、跨task稳定的差异；
-- 新架构的`frame_microbatch_size`和每rank
-  `action_query_batch_size_per_rank`；
 - full-token cache是否值得构建，以及量化后是否保持等价；
 - 新Writer评测的replicas/env batch/cache组合；
 - 1200-step主run中应优先评测哪些checkpoint，以及之后每个600-step增量需要

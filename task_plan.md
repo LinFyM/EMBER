@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-最后更新：2026-07-25。长期 EMBER Goal 是完成共享 π0.5-LIBERO source base、one-video Writer、source baselines、seen/wrong-video机制证据、final single-seed test、test-only三臂RL和联合target-action oracle；当前 active 子任务由下方“Action-Forecast Writer”段及 `docs/action_forecast_writer_handoff.md` 定义。
+最后更新：2026-07-25。长期 EMBER Goal 是完成共享 π0.5-LIBERO source base、one-video Writer、source baselines、seen/wrong-video机制证据、final single-seed test、test-only三臂RL和联合target-action oracle；当前 active 子任务由本文末尾“32-token Visual-State Action-Forecast Writer”段及 `docs/action_forecast_writer_design.md` 定义。
 
 ## 完成定义
 
@@ -163,11 +163,10 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [x] 用同一paired 8×50 validation panel评测两个checkpoint；step400/500分别为`108/400`与`98/400`，逐task上step400处处不差，故冻结step400为本轨迹observed-best。
 - [x] 只对step400运行视频/单帧/倒序/打乱特异性诊断并停止：固定语言时跨suite错误视频令有效LoRA相对变化中位数为`0.2267`，同task另一demo为`0.0403`，但倒序/打乱仅`0.00937/0.00699`。当前Writer已利用视频任务内容，却基本未利用动作时序；不继续本轮训练、contrast或RL。
 
-## 当前执行：Action-Forecast Writer（2026-07-24）
+## 历史执行：Action-Forecast Writer v1（2026-07-24，已覆盖）
 
-活动设计与接管顺序以
-[`docs/action_forecast_writer_handoff.md`](docs/action_forecast_writer_handoff.md)
-为准；下列任务覆盖上方 Action-Memory 的已完成历史，不恢复旧 checkpoint。
+下列任务是Action-Forecast v1已完成历史，不是活动设计，不恢复旧checkpoint。
+当前设计见`docs/action_forecast_writer_design.md`。
 
 - [x] 原位替换旧 Action-Memory owner，完成 imagined-state、VL/Action
   Meta-LoRA、完整10-flow action plans、absolute-time Plan/Revision、
@@ -191,8 +190,8 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
   replicas稳定；生成约53–56秒，rollout-only约`0.61–0.62 episode/s`。
 - [x] fresh formal AS首段完成step0→300，按75/150/225/300保存四个完整
   exact-resume checkpoints；19,200 queries与全部loss/gradient均finite。
-- [ ] 按约30分钟一段、每段四个checkpoint推进四卡AS；优先评测每段第2/4点，
-  必要时补1/3点，定位paired 8×50 validation最佳checkpoint。
+- [x] 旧版曾按约30分钟segment推进；该执行口径已退役，以下曲线只保留为
+  Action-Forecast v1的历史性能证据，不约束当前75-step门控或fresh 1200训练。
   - 当前step150/300/450/600/750/900/1050/1200/1350/1500/1650/1800/
     1950/2100/2250/2400/2550 correct-video为
     `75/99/93/118/104/113/117/125/120/119/120/114/110/114/123/111/124`；
@@ -202,28 +201,25 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
     只是紧随123的单点回落且task方向混合，随后2550又恢复到124，仍未形成
     持续多task强下降；step2700完整checkpoint已保存，按owner指令暂停原轨迹
     候选评测并先检查当前observed-best的视频特异性。
-- [ ] 对observed-best完成correct/wrong/shuffled/reversed视频证据；目标是不明显
-  落后于四卡rank128 SFT best `108/400`，并争取超过旧八卡全局incumbent
-  `122/400`，同时显著改善旧架构的顺序不敏感。
+- [x] 旧版observed-best的correct/wrong/shuffled/reversed证据已完成；其失败
+  结论只作为新架构的设计动机。
   - step1200的correct/cross-suite-wrong/shuffled/reversed为
     `125/67/121/124`；内容特异性强且跨多个tasks，但shuffle与reverse均和
     correct实质相同，故顺序特异性门未通过，RL仍关闭。
-  - 已在唯一`as_step.py`内加入共享action batch/flow-noise的stop-gradient
-    order-contrast warm-start；四卡batch16、frame-microbatch32双forward
-    profile两步通过，峰值allocated/reserved为`67.08/69.25GB`。下一步从
-    step1200权重启动300-step正式修正段，训练后重新选择最佳checkpoint，再
-    对该最佳点完整复测correct/wrong/shuffled/reversed。
-- [ ] AS和RL都不能以train/val-loss平台、单个较差点或多个仅略低的validation
+  - 曾短暂profile过stop-gradient order-contrast warm-start，但该分支随后
+    已删除且被owner明确否决；不得恢复。
+- [x] 以下充分探索停止标准已迁移到当前执行段：AS和RL都不能以
+  train/val-loss平台、单个较差点或多个仅略低的validation
   点停止；必须找到validation observed-best，并在其后观察到幅度非常明显、
   明显超过rollout噪声、由多个tasks共同贡献且独立panel复测后仍成立的下降
   趋势，才能确认饱和与最佳checkpoint。
-- [ ] 仅在AS同时通过性能与特异性后，推进独立short-AS cold start，直到24个
+- [x] 以下RL入口条件已迁移到当前执行段：仅在AS同时通过性能与特异性后，
+  推进独立short-AS cold start，直到24个
   train tasks各至少一次random-reset success，再切换pure-reward RL-Writer并
   完成train平台与validation选择。
-- [ ] 更新authority/ledger、验证、task-scoped commit并push；完成或经多轮最小
-  修正仍不通过时，按完整证据向owner汇报后停止本子任务。
+- [x] 旧执行段已由当前执行段覆盖；authority、验证和交付要求以当前段为准。
 
-### 当前执行：Action-Forecast Writer v2 第一性原理修正（2026-07-25）
+### 历史执行：Action-Forecast Writer v2（2026-07-25，已覆盖）
 
 本节覆盖上方仍把order-contrast写成active next step的历史条目；不得恢复
 contrast loss。
@@ -250,9 +246,9 @@ contrast loss。
   correct/wrong/shuffled/reversed。双门通过才推进独立cold-start RL；否则只
   排查可纠正的明显错误，不加contrast，若无明显错误则停止向owner汇报。
 
-### 当前执行：Belief-v3 Writer（2026-07-25）
+### 历史执行：Belief-v3 Writer（2026-07-25，已覆盖）
 
-本节覆盖上方v2的活动实现与待办；v2结果只保留为provenance。
+本节当时覆盖上方v2的活动实现与待办；现在v2/v3结果都只保留为provenance。
 
 - [x] 原位实现单token
   `Belief_u=[Plan_u(128)|Revision_u(128)]`：Plan只来自最新7维action；
@@ -282,3 +278,44 @@ contrast loss。
   路径并重新训练，再恢复性能曲线评测。
 - [ ] 只有AS性能与视频时序特异性双门通过，才推进独立cold-start RL；
   不使用contrast loss，无法以第一性原理架构修正通过时停下向owner汇报。
+
+## 当前执行：32-token Visual-State Action-Forecast Writer（2026-07-25）
+
+完整且唯一的活动设计见`docs/action_forecast_writer_design.md`。上方
+Action-Memory、temporal-RoPE、Action-Forecast v1/v2和28-slot Belief-v3均为
+历史证据，不得恢复其schema、配置、checkpoint或已否决的contrast路径。
+
+- [x] 记录owner最终对齐的端到端设计：32个原生中性state tokens；初始锚点
+  `h0`；同时读取`X_t-X_0`与`X_t-X_{t-1}`但不递归累计的visual-state；
+  trainable identity-init VL/Action Meta-LoRA；共享flow noise的future-action
+  forecasts；绝对时间Plan/Revision；单-token Belief；两层Temporal；
+  routing/content分离的LoRA query decoder；完整rank-16 public LoRA。
+- [x] 明确保留任务、语言、场景和动作方案的稳定信息；不得建立直接
+  `visual-state→LoRA`旁路，也不得用减去时间均值粗暴删除稳定内容。
+- [x] 明确Revision比较所有更早covering forecasts与Plan，使用
+  `stopgrad(raw residual RMS) × RMSNorm(direction)`，不使用`tau`、分位数
+  校准、count/stability加性分支、absolute-action捷径或contrast loss。
+- [x] 原位实现新架构并删除旧活动实现；核验32-token原生prompt、shape、
+  gradient、identity、冻结对象、rank-16 schema、参数预算、microbatch尾块和
+  exact-resume，不做无关全仓仪式性校验。
+- [x] 固定stride5，在GPU0–3上重新profile训练batch与frame-microbatch；4–7
+  绝不触碰。
+- [ ] 从fresh identity训练到75 step；先做normal/reversed/shuffled、
+  same-task-other-demo、cross-suite wrong-video的逐层内部数值检查，要求差异
+  经过forecast、Revision、Belief、Temporal、query直至effective LoRA仍明确且
+  由多个tasks/videos共同贡献。内部通过后才做必要paired rollout；此阶段不以
+  correct arm绝对成功率为门槛。
+- [ ] 若75-step特异性不通过，按最早发生坍缩的层级分析并修改同一canonical
+  架构，fresh再训75 step，快速迭代直至通过；不得用对比损失制造差距。
+- [ ] 最终通过的架构从fresh identity直接训练0→1200，checkpoint可每75 step
+  保存但不中断训练；随后挑选8×50 validation候选。若best后未出现明显、远超
+  rollout噪声、跨多个tasks且独立panel复测成立的下降，每次exact-resume增加
+  600 step继续探索。
+- [ ] 最终AS best应至少接近并力争超过旧Action-Forecast约`125/400`；四卡
+  rank128 Source-SFT `108/400`是已知基线，旧八卡`122/400`仅为stretch参考。
+  被选best必须同时保持correct/wrong-video及normal/reversed/shuffled特异性。
+- [ ] 双门通过后推进独立cold-start RL Writer：从fresh identity做短AS，
+  24个train tasks逐task至少一次official random-reset success后永久关闭
+  action入口，转pure reward，并同样充分寻找validation best与明显峰后下降。
+- [ ] focused AS/RL完成后停止并向owner汇报，不自动继续final-32、task-local
+  RL、joint oracle或ViVLA。

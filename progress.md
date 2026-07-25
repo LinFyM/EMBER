@@ -1,6 +1,6 @@
-# EMBER Progress and Handoff
+# EMBER Progress Ledger
 
-最后更新：2026-07-22。
+最后更新：2026-07-25。
 
 ## 当前状态
 
@@ -403,13 +403,13 @@
 - step400视频/帧特异性artifact为`pi05_as_writer_rope_mem4_step0400_video_frame_specificity_85962bf_20260724/diagnostic.json`，SHA256 `4f8110c1bf719d2ff07b220b5965af8d98d818ad7ae5e85c95c3216dc03a9316`，wall `173.316s`。跨suite错误视频、同task另一demo、倒序、乱序的有效LoRA相对变化中位数分别为`0.2267/0.0403/0.00937/0.00699`；单首/中/末帧为`0.1745/0.1124/0.3339`。
 - 快速子任务到此按owner要求停止：新Writer对视频任务内容有明确特异性，但对时间顺序仍近似不敏感；correct峰值`108/400`未超过rank128 Source-SFT incumbent `122/400`。本轮不启动contrast、额外AS训练、SFT或RL。
 
-## Action-Forecast Writer跨session交接（2026-07-24）
+## Action-Forecast Writer v1设计封存（历史，2026-07-24）
 
 - owner决定将实现和实验交给新的独立session；当前session停止改代码和GPU
   launch，没有产生半成品实现，也没有修改正在运行进程的import/config/output。
-- 新的活动设计、参数预算、退役边界、profile矩阵、AS分段训练和RL cold-start
-  接续合同已封存在`docs/action_forecast_writer_handoff.md`，并由根
-  `AGENTS.md`与`docs/execution_brief.md`显式引用。
+- 当时的v1设计、参数预算、退役边界、profile矩阵、AS分段训练和RL cold-start
+  口径已执行并由后续结果封存；相关旧辅助文档现已被2026-07-25 canonical
+  design覆盖并删除，不再作为活动入口。
 - 交接只读快照：main/`b78584ab05e7f639cf1c022fdf457b3a971d64e6`
   当时clean且等于origin/main；GPU0–3空闲，GPU4–7为其他用户进程；
   `/data/ymdai`占用`278,857,052,160` bytes。新session必须重新核验所有live
@@ -430,11 +430,9 @@
 - owner随后明确禁止把“多个峰后点略低”的判断套给Writer：AS/RL都必须在
   validation找到best，并在其后看到幅度非常明显、明显超过rollout噪声、由
   多个tasks贡献且独立panel复测后仍成立的下降趋势；否则继续训练。
-- 最终仓库审计发现旧`docs/new_session_prompt.md`仍错误要求8卡、重做Phase A/
-  source base、RL零warm-up和AS约2小时上限；现已原位替换为唯一Action-Forecast
-  prompt。当前prompt明确source/SFT已封存、只用GPU0–3、AS/RL无总时限和上述
-  强下降停止标准，并加入owner最新效率要求：仅做防止无效实验/不可恢复浪费的
-  最小shape/gradient/identity/freeze/resume检查，通过后立即GPU profile/训练。
+- 当时还发现旧启动提示错误要求8卡、重做Phase A/source base、RL零warm-up和
+  AS约2小时上限；该提示随后又被后续架构演进反复覆盖，现已删除。当前口径只
+  由根authority和`docs/action_forecast_writer_design.md`定义。
 
 ## Action-Forecast Writer实现与formal训练收口（2026-07-24）
 
@@ -752,3 +750,38 @@
 - owner要求完成特异性检查和归因后停下汇报。按先前两级门，未启动
   shuffled/reversed environment rollout；也未启动多checkpoint correct-video
   validation、后续AS续训、架构改写或RL。GPU0–3已释放，4–7始终未触碰。
+
+## 32-token Visual-State canonical design已记录（2026-07-25）
+
+- owner最终对齐的完整设计已集中记录在
+  `docs/action_forecast_writer_design.md`：32-token native state anchor、
+  初始帧锚点加非递归anchor/local有向变化、可学习identity-init双Meta-LoRA、
+  future-action forecasts、Plan/Revision、单-token Belief、两层Temporal、
+  content-conditioned query decoder和完整rank-16 LoRA。
+- 旧Action-Forecast辅助提示和handoff文档已删除；根`AGENTS.md`、
+  `README.md`、`docs/execution_brief.md`、
+  `docs/decisions_and_open_questions.md`与`task_plan.md`的活动引用统一指向
+  canonical design。旧v1/v2/v3结果继续留在findings/progress作为历史证据，
+  但相关段落已明确标为历史，不再形成平行活动口径。
+- 当前下一步是原位实现并做必要mechanical checks，然后固定stride5用GPU0–3
+  fresh训练75 step，先完成低成本内部顺序与直接换视频特异性闭环。通过后才
+  启动fresh 0→1200正式AS；未通过则按最早失效层级快速迭代，不使用contrast
+  loss。
+
+## 32-token Visual-State v4实现与profile（2026-07-25）
+
+- canonical v4已原位实现：32个原生anchor tokens、8坐标的initial/anchor/local
+  visual-state reader、可学习VL/Action Meta-LoRA、Plan/Revision单-token
+  Belief、两层identity-safe Temporal、routing/content分离query decoder及完整
+  rank-16 LoRA。旧v3 config/schema已退役。
+- Writer实测`10,299,072`个训练参数，和rank128 Source-SFT
+  `10,297,344`相差`1,728`（`0.017%`）；public LoRA仍为76 tensors、
+  `1,287,168` scalars。focused CPU checks为20 passed。
+- GPU0–3真实profile选择stride5、frame-microbatch32、batch20/rank。连续step2
+  吞吐约`11.83 queries/s`，峰值allocated/reserved为
+  `76,926,757,376/83,703,627,776` bytes，无OOM或nonfinite；现有reserved
+  已无batch22或frame-microbatch40的安全余量，因此不做故意OOM试验。
+- step1 checkpoint恢复到step2后，loss、gradient norm、数据/视频/flow-noise
+  游标与四rank RNG均匹配连续运行；rank-state文件bitwise一致。CUDA进程重启后
+  Writer仅6个tensor出现最大`4.28e-8`的浮点差异，因此checkpoint完整可恢复，
+  但不把跨进程CUDA计算误称为bitwise deterministic。

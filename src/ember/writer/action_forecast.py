@@ -10,7 +10,11 @@ import torch
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
 
-from ember.writer.temporal import RMSNorm
+from ember.pi05_processing import PI05_STATE_ANCHOR_TOKEN_IDS
+from ember.writer.visual_state import (
+    AnchoredVisualState,
+    frozen_digit_embedding_basis,
+)
 
 
 class ActionForecastError(RuntimeError):
@@ -88,138 +92,6 @@ class MetaLoRAStack(torch.nn.Module):
                 handle.remove()
 
 
-class ContentOnlyStateBlock(torch.nn.Module):
-    """DETR-style state slots whose values can only come from image content."""
-
-    def __init__(self, width: int, heads: int, expansion: int) -> None:
-        super().__init__()
-        if min(width, heads, expansion) <= 0 or width % heads:
-            raise ActionForecastError("invalid content-only state block")
-        self.self_norm = RMSNorm(width)
-        self.self_attention = torch.nn.MultiheadAttention(
-            width,
-            heads,
-            dropout=0.0,
-            batch_first=True,
-            bias=False,
-        )
-        self.cross_norm = RMSNorm(width)
-        self.memory_norm = RMSNorm(width)
-        self.cross_attention = torch.nn.MultiheadAttention(
-            width,
-            heads,
-            dropout=0.0,
-            batch_first=True,
-            bias=False,
-        )
-        self.ffn_norm = RMSNorm(width)
-        self.ffn = torch.nn.Sequential(
-            torch.nn.Linear(width, expansion * width, bias=False),
-            torch.nn.GELU(),
-            torch.nn.Linear(expansion * width, width, bias=False),
-        )
-
-    def forward(
-        self,
-        content: torch.Tensor,
-        routing: torch.Tensor,
-        memory: torch.Tensor,
-    ) -> torch.Tensor:
-        normalized_content = self.self_norm(content)
-        addressed = normalized_content + routing
-        attended, _ = self.self_attention(
-            addressed,
-            addressed,
-            normalized_content,
-            need_weights=False,
-        )
-        content = content + attended
-        normalized_memory = self.memory_norm(memory)
-        attended, _ = self.cross_attention(
-            self.cross_norm(content) + routing,
-            normalized_memory,
-            normalized_memory,
-            need_weights=False,
-        )
-        content = content + attended
-        return content + self.ffn(self.ffn_norm(content))
-
-
-class VisualStateTokenDecoder(torch.nn.Module):
-    """Generate 28 PaliGemma-width virtual-state tokens from full image tokens.
-
-    Learned slot identities are routing-only: they enter attention queries and
-    keys, never values, residual streams, or the output projection.  Therefore
-    a state token cannot be produced without image-conditioned content.
-    """
-
-    def __init__(
-        self,
-        *,
-        image_width: int,
-        state_width: int,
-        state_slots: int,
-        heads: int,
-        blocks: int,
-        initialization_seed: int,
-    ) -> None:
-        super().__init__()
-        if (
-            min(image_width, state_width, state_slots, heads, blocks) <= 0
-            or state_width % heads
-            or state_slots > state_width
-        ):
-            raise ActionForecastError("invalid visual-state-token dimensions")
-        self.image_width = int(image_width)
-        self.state_slots = int(state_slots)
-        self.image_projection = torch.nn.Linear(
-            image_width,
-            state_width,
-            bias=False,
-        )
-        generator = torch.Generator(device="cpu").manual_seed(initialization_seed)
-        routing = torch.empty(
-            state_slots,
-            state_width,
-            dtype=torch.float32,
-        )
-        routing.normal_(mean=0.0, std=0.02, generator=generator)
-        self.slot_routing = torch.nn.Parameter(routing)
-        self.routing_norm = RMSNorm(state_width)
-        self.blocks = torch.nn.ModuleList(
-            ContentOnlyStateBlock(state_width, heads, expansion=4)
-            for _ in range(blocks)
-        )
-        self.output_norm = RMSNorm(state_width)
-        self.output_projection = torch.nn.Linear(
-            state_width,
-            image_width,
-            bias=False,
-        )
-
-    def forward(self, image_tokens: torch.Tensor) -> torch.Tensor:
-        if (
-            image_tokens.ndim != 3
-            or image_tokens.shape[1] <= 1
-            or image_tokens.shape[2] != self.image_width
-        ):
-            raise ActionForecastError("full projected image tokens changed shape")
-        memory = self.image_projection(image_tokens)
-        routing = self.routing_norm(self.slot_routing)[None].expand(
-            memory.shape[0],
-            -1,
-            -1,
-        )
-        content = memory.new_zeros(
-            memory.shape[0],
-            self.state_slots,
-            memory.shape[-1],
-        )
-        for block in self.blocks:
-            content = block(content, routing, memory)
-        return self.output_projection(self.output_norm(content))
-
-
 class Pi05ActionForecastEncoder(torch.nn.Module):
     """Run contextual teacher-view pi0.5 inference for every sampled frame."""
 
@@ -231,8 +103,8 @@ class Pi05ActionForecastEncoder(torch.nn.Module):
         image_width: int,
         state_width: int,
         state_slots: int,
+        state_coordinates: int,
         state_heads: int,
-        state_blocks: int,
         vl_meta_lora_rank: int,
         action_meta_lora_rank: int,
         frame_microbatch_size: int,
@@ -248,8 +120,8 @@ class Pi05ActionForecastEncoder(torch.nn.Module):
             image_width,
             state_width,
             state_slots,
+            state_coordinates,
             state_heads,
-            state_blocks,
             vl_meta_lora_rank,
             action_meta_lora_rank,
             frame_microbatch_size,
@@ -258,7 +130,12 @@ class Pi05ActionForecastEncoder(torch.nn.Module):
             padded_action_dim,
             output_action_dim,
         )
-        if any(value <= 0 for value in dimensions) or output_action_dim > padded_action_dim:
+        if (
+            any(value <= 0 for value in dimensions)
+            or output_action_dim > padded_action_dim
+            or state_slots != AnchoredVisualState.STATE_SLOTS
+            or state_coordinates != AnchoredVisualState.COORDINATES
+        ):
             raise ActionForecastError("invalid pi0.5 action-forecast dimensions")
         self.frame_microbatch_size = int(frame_microbatch_size)
         self.num_flow_steps = int(num_flow_steps)
@@ -267,13 +144,21 @@ class Pi05ActionForecastEncoder(torch.nn.Module):
         self.output_action_dim = int(output_action_dim)
         self.activation_checkpointing = bool(activation_checkpointing)
         self.state_slots = int(state_slots)
-        self.visual_state_tokens = VisualStateTokenDecoder(
+        digit_basis = frozen_digit_embedding_basis(
+            paligemma_model,
+            image_width=image_width,
+        )
+        self.visual_state = AnchoredVisualState(
             image_width=image_width,
             state_width=state_width,
-            state_slots=state_slots,
             heads=state_heads,
-            blocks=state_blocks,
+            digit_basis=digit_basis,
             initialization_seed=initialization_seed,
+        )
+        self.register_buffer(
+            "state_anchor_token_ids",
+            torch.tensor(PI05_STATE_ANCHOR_TOKEN_IDS, dtype=torch.long),
+            persistent=True,
         )
         self.vl_meta_lora = MetaLoRAStack(
             paligemma_model.layers,
@@ -347,7 +232,10 @@ class Pi05ActionForecastEncoder(torch.nn.Module):
     def _forecast_microbatch(
         self,
         core: torch.nn.Module,
-        frames: torch.Tensor,
+        unique_frames: torch.Tensor,
+        current_map: torch.Tensor,
+        anchor_map: torch.Tensor,
+        previous_map: torch.Tensor,
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
         state_positions: torch.Tensor,
@@ -358,34 +246,42 @@ class Pi05ActionForecastEncoder(torch.nn.Module):
         bridge = core.paligemma_with_expert
         language_model = bridge.paligemma.model.language_model
         expert_model = bridge.gemma_expert.model
-        images = self._prepare_images(frames)
+        images = self._prepare_images(unique_frames)
         with torch.no_grad():
-            image_tokens = bridge.embed_image(images)
+            unique_image_tokens = bridge.embed_image(images)
             text_tokens = bridge.embed_language_tokens(language_tokens)
 
-        virtual_state = self.visual_state_tokens(image_tokens)
+        image_tokens = unique_image_tokens.index_select(0, current_map)
+        anchor_tokens = unique_image_tokens.index_select(0, anchor_map)
+        previous_tokens = unique_image_tokens.index_select(0, previous_map)
+        state_offsets = self.visual_state(
+            image_tokens,
+            anchor_tokens,
+            previous_tokens,
+        )
+        observed_anchor = torch.gather(
+            language_tokens,
+            1,
+            state_positions,
+        )
+        expected_anchor = self.state_anchor_token_ids[None].expand_as(
+            observed_anchor
+        )
+        if not torch.equal(observed_anchor, expected_anchor):
+            raise ActionForecastError("native visual-state token anchor changed")
         state_values = torch.zeros_like(text_tokens).scatter(
             1,
             state_positions[..., None].expand(-1, -1, text_tokens.shape[-1]),
-            virtual_state.to(text_tokens.dtype),
+            state_offsets.to(text_tokens.dtype),
         )
-        state_mask = torch.zeros_like(language_mask).scatter(
-            1,
-            state_positions,
-            True,
-        )
-        text_tokens = torch.where(
-            state_mask[..., None],
-            state_values,
-            text_tokens,
-        )
+        text_tokens = text_tokens + state_values
         prefix = torch.cat((image_tokens, text_tokens), dim=1)
         prefix_padding = torch.cat(
             (
                 torch.ones(
                     image_tokens.shape[:2],
                     dtype=torch.bool,
-                    device=frames.device,
+                    device=unique_frames.device,
                 ),
                 language_mask,
             ),
@@ -409,10 +305,10 @@ class Pi05ActionForecastEncoder(torch.nn.Module):
         with self.action_meta_lora.installed(expert_model):
             for step in range(self.num_flow_steps):
                 timestep = torch.full(
-                    (frames.shape[0],),
+                    (current_map.shape[0],),
                     1.0 + step * delta,
                     dtype=torch.float32,
-                    device=frames.device,
+                    device=unique_frames.device,
                 )
                 velocity = self._denoise_step(
                     core,
@@ -424,7 +320,7 @@ class Pi05ActionForecastEncoder(torch.nn.Module):
                 x_t = x_t + delta * velocity
         return x_t[..., : self.output_action_dim]
 
-    def forward(
+    def _validate_forward_batch(
         self,
         policy: torch.nn.Module,
         frames: torch.Tensor,
@@ -433,12 +329,12 @@ class Pi05ActionForecastEncoder(torch.nn.Module):
         language_mask: torch.Tensor,
         state_positions: torch.Tensor,
         flow_noise: torch.Tensor,
-    ) -> torch.Tensor:
-        """Return normalized final plans ``[sum_T,50,7]``."""
-
+    ) -> tuple[torch.nn.Module, torch.Tensor]:
         conditions = language_tokens.shape[0]
         if (
-            frame_condition_ids.ndim != 1
+            frames.ndim != 4
+            or frames.shape[0] <= 0
+            or frame_condition_ids.ndim != 1
             or frame_condition_ids.shape[0] != frames.shape[0]
             or frame_condition_ids.dtype != torch.long
             or language_tokens.ndim != 2
@@ -455,39 +351,130 @@ class Pi05ActionForecastEncoder(torch.nn.Module):
             or int(frame_condition_ids.max()) >= conditions
         ):
             raise ActionForecastError("invalid frame-language forecast batch")
+        counts = torch.bincount(frame_condition_ids, minlength=conditions)
+        expected = torch.repeat_interleave(
+            torch.arange(conditions, device=frames.device),
+            counts,
+        )
+        if bool((counts <= 0).any()) or not torch.equal(
+            frame_condition_ids,
+            expected,
+        ):
+            raise ActionForecastError(
+                "forecast frames must be contiguous by video condition"
+            )
         core = policy.model
         if (
             int(core.config.chunk_size) != self.action_horizon
             or int(core.config.max_action_dim) != self.padded_action_dim
         ):
             raise ActionForecastError("pi0.5 action forecast topology changed")
+        return core, counts
+
+    @staticmethod
+    def _context_rows(
+        frame_condition_ids: torch.Tensor,
+        counts: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        starts = torch.cumsum(counts, dim=0) - counts
+        frame_rows = torch.arange(
+            frame_condition_ids.shape[0],
+            device=frame_condition_ids.device,
+        )
+        anchor_rows = starts.index_select(0, frame_condition_ids)
+        previous_rows = torch.maximum(frame_rows - 1, anchor_rows)
+        return frame_rows, anchor_rows, previous_rows
+
+    def _microbatch_arguments(
+        self,
+        *,
+        frames: torch.Tensor,
+        frame_condition_ids: torch.Tensor,
+        frame_rows: torch.Tensor,
+        anchor_rows: torch.Tensor,
+        previous_rows: torch.Tensor,
+        language_tokens: torch.Tensor,
+        language_mask: torch.Tensor,
+        state_positions: torch.Tensor,
+        flow_noise: torch.Tensor,
+        start: int,
+    ) -> tuple[int, tuple[torch.Tensor, ...]]:
+        stop = min(start + self.frame_microbatch_size, frames.shape[0])
+        real_count = stop - start
+        current_rows = frame_rows[start:stop]
+        if real_count < self.frame_microbatch_size:
+            current_rows = torch.cat(
+                (
+                    current_rows,
+                    current_rows[-1:].expand(
+                        self.frame_microbatch_size - real_count
+                    ),
+                )
+            )
+        selected = frame_condition_ids.index_select(0, current_rows)
+        selected_anchor = anchor_rows.index_select(0, current_rows)
+        selected_previous = previous_rows.index_select(0, current_rows)
+        unique_rows, inverse = torch.unique(
+            torch.cat((current_rows, selected_anchor, selected_previous)),
+            sorted=True,
+            return_inverse=True,
+        )
+        current_map, anchor_map, previous_map = inverse.split(
+            self.frame_microbatch_size
+        )
+        return real_count, (
+            frames.index_select(0, unique_rows),
+            current_map,
+            anchor_map,
+            previous_map,
+            language_tokens.index_select(0, selected),
+            language_mask.index_select(0, selected),
+            state_positions.index_select(0, selected),
+            flow_noise.index_select(0, selected),
+        )
+
+    def forward(
+        self,
+        policy: torch.nn.Module,
+        frames: torch.Tensor,
+        frame_condition_ids: torch.Tensor,
+        language_tokens: torch.Tensor,
+        language_mask: torch.Tensor,
+        state_positions: torch.Tensor,
+        flow_noise: torch.Tensor,
+    ) -> torch.Tensor:
+        """Return normalized final plans ``[sum_T,50,7]``."""
+
+        core, counts = self._validate_forward_batch(
+            policy,
+            frames,
+            frame_condition_ids,
+            language_tokens,
+            language_mask,
+            state_positions,
+            flow_noise,
+        )
+        frame_rows, anchor_rows, previous_rows = self._context_rows(
+            frame_condition_ids,
+            counts,
+        )
         results = []
         for start in range(0, frames.shape[0], self.frame_microbatch_size):
-            stop = min(start + self.frame_microbatch_size, frames.shape[0])
-            selected = frame_condition_ids[start:stop]
-            arguments = (
-                frames[start:stop],
-                language_tokens.index_select(0, selected),
-                language_mask.index_select(0, selected),
-                state_positions.index_select(0, selected),
-                flow_noise.index_select(0, selected),
+            real_count, arguments = self._microbatch_arguments(
+                frames=frames,
+                frame_condition_ids=frame_condition_ids,
+                frame_rows=frame_rows,
+                anchor_rows=anchor_rows,
+                previous_rows=previous_rows,
+                language_tokens=language_tokens,
+                language_mask=language_mask,
+                state_positions=state_positions,
+                flow_noise=flow_noise,
+                start=start,
             )
 
-            def invoke(
-                batch_frames: torch.Tensor,
-                batch_tokens: torch.Tensor,
-                batch_mask: torch.Tensor,
-                batch_positions: torch.Tensor,
-                batch_noise: torch.Tensor,
-            ) -> torch.Tensor:
-                return self._forecast_microbatch(
-                    core,
-                    batch_frames,
-                    batch_tokens,
-                    batch_mask,
-                    batch_positions,
-                    batch_noise,
-                )
+            def invoke(*values: torch.Tensor) -> torch.Tensor:
+                return self._forecast_microbatch(core, *values)
 
             if (
                 self.activation_checkpointing
@@ -502,5 +489,5 @@ class Pi05ActionForecastEncoder(torch.nn.Module):
                 )
             else:
                 value = invoke(*arguments)
-            results.append(value)
+            results.append(value[:real_count])
         return torch.cat(results, dim=0)

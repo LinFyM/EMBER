@@ -1,0 +1,243 @@
+{
+  "schema_version": "ember_pi05_action_forecast_as_writer_v4",
+  "sealed_stage": "development",
+  "authorities": {
+    "target_data_manifest": {
+      "path": "configs/pi05_target_data_v1/manifest.json",
+      "sha256": "1b28547f6080a35fdf23ebae021407da15bfe4af367b0b1791042945d91b049d"
+    },
+    "evaluation_config": {
+      "path": "configs/pi05_target_evaluation_v1.json",
+      "sha256": "5bb0a5ca4604f126cc4bcdd29c9a7a4d17403a8f3ee7161d8afdfeccbb2c488c"
+    },
+    "lora_contract": {
+      "path": "configs/pi05_lora_v1.json",
+      "sha256": "03828ca9cd23dbb013dcb841df5f0bd72678ff155fcad004703aba3a4bdd8656"
+    },
+    "source_base_config": {
+      "path": "configs/pi05_source_base_v1.json",
+      "sha256": "7455fc59c67ca39f7c70b1296d2f1dc98f070bfda869bb0535bf5a9e91e04cc6"
+    },
+    "tokenizer_manifest": {
+      "path": "configs/libero_24_8_8_v1/pi05_tokenizer_manifest.json",
+      "sha256": "948bf1ec1f2768833bead66b2e829154e3304c1c09fe9c48813a79f06e47426c"
+    }
+  },
+  "information_wall": {
+    "writer_input": "task language plus exactly one raw action-hidden teacher video",
+    "writer_forbidden_inputs": [
+      "action",
+      "proprio",
+      "reward",
+      "terminal",
+      "task_id",
+      "filename",
+      "hidden_normalization",
+      "policy_outcome"
+    ],
+    "action_owner": "frozen functional behavior loss only",
+    "development_action_split_roles": [
+      "train"
+    ],
+    "development_video_split_roles": [
+      "train"
+    ],
+    "validation_actions_read_by_training_optimizer": 0,
+    "validation_action_queries_per_checkpoint_monitor": 512,
+    "validation_action_gradient": false,
+    "test_actions_read": 0,
+    "test_video_values_read": 0
+  },
+  "writer": {
+    "architecture": "pi05_action_forecast_anchored_visual_state_v4",
+    "generated_adapter": "complete_pi05_task_specific_rank16_lora",
+    "camera_dataset": "obs/agentview_rgb",
+    "camera_transform": "libero_opengl_rotate_180_chw_uint8",
+    "frame_stride": 5,
+    "include_final_frame": true,
+    "image_width": 2048,
+    "state_width": 128,
+    "state_slots": 32,
+    "state_coordinates": 8,
+    "state_heads": 4,
+    "state_token_generation": "native_32_token_anchor_plus_digit_embedding_subspace_offsets",
+    "state_token_trainability": "trainable_initial_change_readers_and_shared_renderer",
+    "visual_state_update": "initial_anchor_plus_nonrecursive_anchor_and_local_signed_change",
+    "visual_state_language_input": false,
+    "visual_state_recurrence": false,
+    "visual_state_content_activation": "bias_free_odd_tanh",
+    "visual_state_anchor_text": " 128 128 128 128 128 128 128 128",
+    "visual_state_anchor_token_layout": "space_1_2_8_repeated_8_exactly_32_tokens",
+    "visual_state_renderer": "eight_bounded_coordinates_control_three_digit_positions_each_in_frozen_digit_embedding_span",
+    "vl_meta_lora_targets": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj"
+    ],
+    "vl_meta_lora_rank": 4,
+    "action_meta_lora_targets": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj"
+    ],
+    "action_meta_lora_rank": 8,
+    "frame_microbatch_size": 32,
+    "frame_microbatch_remainder": "repeat_last_pad_to_fixed_size_then_crop",
+    "activation_checkpointing": true,
+    "num_flow_steps": 10,
+    "action_horizon": 50,
+    "padded_action_dim": 32,
+    "output_action_dim": 7,
+    "belief_alignment": "one_token_per_absolute_control_time_latest_plan_concat_revision",
+    "maximum_revision_count": 10,
+    "plan_content_path": "single_bias_free_linear_from_latest_seven_dimensional_action_without_output_norm",
+    "revision_reference": "all_earlier_covering_forecasts_relative_to_latest_plan",
+    "revision_direction_path": "bias_free_mlp_from_signed_mean_and_per_dimension_rms",
+    "revision_strength_path": "stop_gradient_raw_source_normalized_plan_relative_residual_rms",
+    "belief_layout": "plan_first_128_revision_second_128_without_post_concat_projection",
+    "belief_normalization": "plan_raw_revision_direction_rmsnorm_times_stopgrad_raw_rms",
+    "temporal_width": 256,
+    "temporal_heads": 8,
+    "temporal_blocks": 2,
+    "temporal_position_encoding": "one_dimensional_rope_on_absolute_control_time",
+    "temporal_routing": "latest_lead_revision_count_and_detached_strength_enter_qk_only",
+    "temporal_value_path": "raw_belief_content_only_without_time_mean_removal",
+    "temporal_initialization": "zero_attention_output_and_ffn_final_for_identity_safe_start",
+    "query_count": 320,
+    "query_decoder_blocks": 2,
+    "query_block_order": "cross_attention_before_self_attention",
+    "query_memory_direction": "static_identities_qk_only_with_normalized_keys_and_raw_memory_values",
+    "factor_head_bias": false,
+    "factor_hidden_width": 411,
+    "initialization_seed": 7
+  },
+  "data": {
+    "task_count": 24,
+    "episodes_per_task": 50,
+    "demo_indices": [
+      0,
+      49
+    ],
+    "action_chunk_size": 50,
+    "sampler_seed": 20260721,
+    "teacher_video_seed": 20260722,
+    "writer_flow_noise_seed": 20260724,
+    "teacher_video_sampling": "independent deterministic per-task no-replacement cycles",
+    "action_query_sampling": "task-balanced deterministic no-replacement episode cycles",
+    "video_action_pairing": "positive video and action query independently sampled within task",
+    "flow_noise_sampling": "one deterministic [50,32] Gaussian sample per video visit shared across its frames",
+    "max_open_files_per_worker": 8,
+    "video_open_files_per_rank": 2
+  },
+  "conditioning_training": {
+    "method": "normal_positive_functional_action_loss_only",
+    "writer_language_contract": "correct_task_language_native_state_action_layout",
+    "policy_language_contract": "correct_action_query_task_language",
+    "action_query_batch_owner": "one physical batch per rank with no second policy microbatch",
+    "independent_conditions_per_optimizer_step": 1,
+    "normal_loss_weight": 1.0
+  },
+  "loader": {
+    "num_workers_per_rank": 2,
+    "prefetch_factor": 2
+  },
+  "optimization": {
+    "method": "functional_pi05_action_forecast_positive_only",
+    "seed": 7,
+    "precision": "bfloat16",
+    "source_policy": "final formal frozen raw policy",
+    "normalization": "frozen filtered-LIBERO-90 source normalization",
+    "optimizer": {
+      "name": "AdamW",
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "eps": 1e-08,
+      "weight_decay": 0.0001,
+      "gradient_clip_norm": 1.0
+    },
+    "scheduler": {
+      "kind": "cosine_decay_with_warmup",
+      "peak_lr": 0.0003,
+      "warmup_steps": 100,
+      "decay_steps": 1200,
+      "decay_lr": 1e-05
+    },
+    "maximum_formal_wall_clock_minutes": null,
+    "budget_role": "fresh_75_step_specificity_gate_then_fresh_1200_and_600_step_exact_resume_extensions"
+  },
+  "profile_defaults": {
+    "status": "sealed_v4_specificity_gate",
+    "expected_world_size": 4,
+    "total_steps": 75,
+    "per_rank_batch_size": 20,
+    "checkpoint_steps": [
+      50,
+      75
+    ],
+    "selected_stop_step": 75
+  },
+  "profile_evidence": {
+    "status": "sealed",
+    "historical_evidence_owner": "findings.md and progress.md",
+    "fixed_frame_stride": 5,
+    "selected": {
+      "world_size": 4,
+      "frame_microbatch_size": 32,
+      "action_query_batch_size_per_rank": 20
+    },
+    "profile_output": "/data/ymdai/outputs/ember/pi05_action_forecast_v4_profile_r4_s5_fm32_b20_20260725",
+    "resume_output": "/data/ymdai/outputs/ember/pi05_action_forecast_v4_resume_r4_s5_fm32_b20_20260725",
+    "profile_contract_sha256": "5b490cfec17034fac887f82882fbb07995506be82ed023df8e359de741ba29e6",
+    "continuous_step_2_global_action_queries_per_second": 11.83,
+    "max_cuda_allocated_bytes": 76926757376,
+    "max_cuda_reserved_bytes": 83703627776,
+    "oom_or_nonfinite": false,
+    "larger_batch_rejected_without_intentional_oom": "current reservation leaves no safe margin for batch22 or frame_microbatch40",
+    "resume": {
+      "checkpoint_step": 1,
+      "resumed_stop_step": 2,
+      "loss_matches_continuous": true,
+      "gradient_norm_matches_continuous": true,
+      "rank_state_files_bitwise_match": true,
+      "maximum_writer_tensor_restart_difference": 4.284083843231201e-08,
+      "interpretation": "all optimizer scheduler sampler video flow-noise and RNG states restore; CUDA restart is numerically equivalent but not bitwise deterministic"
+    },
+    "forbidden_gpu_ids": [
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  "specificity_gate": {
+    "status": "pending",
+    "fresh_optimizer_steps": 75,
+    "checkpoint_steps": [
+      50,
+      75
+    ],
+    "internal_conditions": [
+      "normal",
+      "reversed",
+      "shuffled",
+      "same_task_other_demo",
+      "cross_suite_wrong"
+    ],
+    "rollout_after_internal_pass_only": true,
+    "absolute_correct_performance_required": false,
+    "contrast_loss_allowed": false
+  },
+  "formal_run": {
+    "status": "blocked_on_specificity_gate",
+    "expected_world_size": 4,
+    "total_steps": 1200,
+    "per_rank_batch_size": null,
+    "checkpoint_steps": "every:75",
+    "selected_stop_step": null,
+    "extension_steps": 600
+  }
+}

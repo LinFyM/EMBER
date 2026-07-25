@@ -548,8 +548,8 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   实现后Writer为`10,161,217`个训练参数，是rank128 Source-SFT
   `10,297,344`的`98.68%`；public rank16 LoRA仍为76 tensors、
   `1,287,168` scalars。
-- 详细实现、profile、训练和RL接续合同见
-  `docs/action_forecast_writer_handoff.md`；它覆盖旧架构活动口径。
+- 这是2026-07-24的历史设计判断。其实现、profile与结果保留在本ledger和Git；
+  当前架构已由`docs/action_forecast_writer_design.md`覆盖。
 
 ## Action-Forecast Writer实现与训练profile（2026-07-24）
 
@@ -888,3 +888,36 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   `161c3c392dae610be0f299810ecb6aec5773bc735f4a1c7d22bd3f9a25890313`、
   `92e48820881fc0c6038a370a2595148ad752bdd33d100ac6f376e3cb1cd7a603`、
   `0af1d094be0f058023fc793d1109aec3865ed06e15d963fc73802ef57094ac4c`。
+
+## 32-token Visual-State新设计结论（2026-07-25）
+
+- 现有证据把最大嫌疑定位到visual-state：旧virtual-state总RMS约`0.652`，
+  跨帧变化仅约`0.0057`；逐帧future forecast容易退化为近似task-level action
+  chunk。下游Revision虽能恢复部分有向差异，却不能替上游创造缺失的阶段状态。
+- 新设计不再冻结随机decoder，也不把video state直接送入LoRA。它用第一帧
+  建立绝对锚点，并为每帧同时读取相对首帧和相对前帧的有向变化；每个`h_t`
+  都由`h_0+c_t`直接得到，不递归累计，兼顾绝对状态稳定性、局部运动方向和
+  无漂移。
+- 8个latent state/motion coordinates通过冻结digit-embedding基底渲染到
+  PI05原生`" 128"`重复8次的32个state token位置；初始前向等同合法中性原生
+  prompt，训练后仍只能在native digit子空间内表达state变化。
+- VL与Action Meta-LoRA均保留并可学习、identity初始化。前者适配视觉域与
+  image-state融合；后者让机器人把observer-view或未来人类teacher理解成
+  “假如我是teacher，此刻接下来会怎么动”的机器人动作forecast。
+- Plan、Revision、Belief、两层Temporal和LoRA decoder的当前精确定义及全部
+  退役边界见`docs/action_forecast_writer_design.md`。该文档是唯一活动架构
+  设计；旧v1/v2/v3表述仅解释历史实验，不再约束实现。
+
+## 32-token Visual-State v4实现检查（2026-07-25）
+
+- v4 Writer为`10,299,072`个训练参数，和rank128 Source-SFT的
+  `10,297,344`只差`1,728`（`0.017%`）；输出仍严格遵守76个rank-16 tensor、
+  `1,287,168` scalars的公共LoRA schema。
+- 四卡真实profile确认frame-microbatch32、batch20/rank可运行，连续step2约
+  `11.83 queries/s`；峰值allocated/reserved为
+  `76,926,757,376/83,703,627,776` bytes。当前显存余量不支持把batch或
+  frame-microbatch再安全上调，故不为寻找OOM边界浪费正式训练时间。
+- step1→2恢复的loss与gradient norm逐值等于连续运行，所有数据、视频、
+  flow-noise、optimizer、scheduler和rank RNG状态均恢复。CUDA新进程造成6个
+  Writer tensors最大`4.28e-8`的数值差异；这是数值等价而非bitwise
+  deterministic，不影响checkpoint可恢复性，但已明确记录。

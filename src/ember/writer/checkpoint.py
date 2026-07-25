@@ -30,11 +30,11 @@ from ember.writer.data import (
 from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 
-AS_WRITER_CHECKPOINT_SCHEMA = "ember_pi05_action_forecast_writer_checkpoint_v3"
+AS_WRITER_CHECKPOINT_SCHEMA = "ember_pi05_action_forecast_writer_checkpoint_v4"
 AS_WRITER_TRAINER_STATE_SCHEMA = (
-    "ember_pi05_action_forecast_writer_trainer_state_v3"
+    "ember_pi05_action_forecast_writer_trainer_state_v4"
 )
-AS_WRITER_RANK_STATE_SCHEMA = "ember_pi05_action_forecast_writer_rank_state_v3"
+AS_WRITER_RANK_STATE_SCHEMA = "ember_pi05_action_forecast_writer_rank_state_v4"
 
 
 def _rng_state(context: DistributedContext) -> dict[str, Any]:

@@ -30,8 +30,8 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_action_forecast_as_writer_v3"
-AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_action_forecast_as_writer_launch_v3"
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_action_forecast_as_writer_v4"
+AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_action_forecast_as_writer_launch_v4"
 AS_WRITER_STAGES = ("development", "final")
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
@@ -93,7 +93,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
     ):
         raise WriterModelError("sealed Action-Forecast profile dimensions changed")
     expected_writer = {
-        "architecture": "pi05_action_forecast_belief_v3",
+        "architecture": "pi05_action_forecast_anchored_visual_state_v4",
         "generated_adapter": "complete_pi05_task_specific_rank16_lora",
         "camera_dataset": "obs/agentview_rgb",
         "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -101,17 +101,37 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         "include_final_frame": True,
         "image_width": 2048,
         "state_width": 128,
-        "state_slots": 28,
+        "state_slots": 32,
+        "state_coordinates": 8,
         "state_heads": 4,
-        "state_blocks": 2,
         "state_token_generation": (
-            "content_only_detr_slots_from_full_siglip_image_tokens"
+            "native_32_token_anchor_plus_digit_embedding_subspace_offsets"
+        ),
+        "state_token_trainability": (
+            "trainable_initial_change_readers_and_shared_renderer"
+        ),
+        "visual_state_update": (
+            "initial_anchor_plus_nonrecursive_anchor_and_local_signed_change"
+        ),
+        "visual_state_language_input": False,
+        "visual_state_recurrence": False,
+        "visual_state_content_activation": "bias_free_odd_tanh",
+        "visual_state_anchor_text": " 128 128 128 128 128 128 128 128",
+        "visual_state_anchor_token_layout": (
+            "space_1_2_8_repeated_8_exactly_32_tokens"
+        ),
+        "visual_state_renderer": (
+            "eight_bounded_coordinates_control_three_digit_positions_each_"
+            "in_frozen_digit_embedding_span"
         ),
         "vl_meta_lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
         "vl_meta_lora_rank": 4,
         "action_meta_lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
         "action_meta_lora_rank": 8,
         "frame_microbatch_size": writer["frame_microbatch_size"],
+        "frame_microbatch_remainder": (
+            "repeat_last_pad_to_fixed_size_then_crop"
+        ),
         "activation_checkpointing": True,
         "num_flow_steps": 10,
         "action_horizon": 50,
@@ -122,25 +142,23 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         ),
         "maximum_revision_count": 10,
         "plan_content_path": (
-            "bias_free_latest_action_only_with_lead_routing_only"
+            "single_bias_free_linear_from_latest_seven_dimensional_action_"
+            "without_output_norm"
         ),
         "revision_reference": (
             "all_earlier_covering_forecasts_relative_to_latest_plan"
         ),
-        "revision_value_path": (
-            "signed_and_absolute_plan_relative_residuals_without_absolute_actions"
+        "revision_direction_path": (
+            "bias_free_mlp_from_signed_mean_and_per_dimension_rms"
         ),
         "revision_strength_path": (
             "stop_gradient_raw_source_normalized_plan_relative_residual_rms"
-        ),
-        "revision_direction_statistics": (
-            "raw_mean_absolute_rms_and_max_absolute_without_manual_scale"
         ),
         "belief_layout": (
             "plan_first_128_revision_second_128_without_post_concat_projection"
         ),
         "belief_normalization": (
-            "plan_rmsnorm_revision_direction_rmsnorm_times_stopgrad_raw_rms"
+            "plan_raw_revision_direction_rmsnorm_times_stopgrad_raw_rms"
         ),
         "temporal_width": 256,
         "temporal_heads": 8,
@@ -149,18 +167,22 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
             "one_dimensional_rope_on_absolute_control_time"
         ),
         "temporal_routing": (
-            "latest_lead_revision_count_and_strength_enter_qk_only"
+            "latest_lead_revision_count_and_detached_strength_enter_qk_only"
         ),
         "temporal_value_path": (
-            "raw_belief_content_only_zero_preserving_bias_free"
+            "raw_belief_content_only_without_time_mean_removal"
+        ),
+        "temporal_initialization": (
+            "zero_attention_output_and_ffn_final_for_identity_safe_start"
         ),
         "query_count": 320,
         "query_decoder_blocks": 2,
+        "query_block_order": "cross_attention_before_self_attention",
         "query_memory_direction": (
-            "static_identities_qk_only_with_raw_memory_content_values"
+            "static_identities_qk_only_with_normalized_keys_and_raw_memory_values"
         ),
         "factor_head_bias": False,
-        "factor_hidden_width": 256,
+        "factor_hidden_width": 411,
         "initialization_seed": 7,
     }
     if writer != expected_writer:
@@ -290,7 +312,9 @@ def resolve_runtime(
     context: DistributedContext,
 ) -> tuple[int, int, tuple[int, ...]]:
     if args.mode == "formal" and config["formal_run"].get("status") != "sealed":
-        raise WriterModelError("formal AS-Writer config is pending a real profile")
+        raise WriterModelError(
+            "formal AS-Writer config is not sealed after the specificity gate"
+        )
     source = config["formal_run"] if args.mode == "formal" else config["profile_defaults"]
     total_steps = args.total_steps or int(source["total_steps"])
     batch_size = args.batch_size or int(source["per_rank_batch_size"])

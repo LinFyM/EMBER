@@ -25,19 +25,21 @@
 
 ## Current focused execution task
 
-owner 于 2026-07-24 将当前执行焦点切换为
-[`docs/action_forecast_writer_handoff.md`](docs/action_forecast_writer_handoff.md)
-定义的 Action-Forecast Writer 子任务。该文件覆盖此前 Action-Memory /
-temporal-RoPE Writer 的活动实现口径：旧结果保留为 provenance，但旧架构、
-schema、活动配置和专用测试必须退役，只保留一个 canonical Writer runner。
-新 session 的唯一启动提示为
-[`docs/new_session_prompt.md`](docs/new_session_prompt.md)；若它与 handoff
-摘要粒度不同，以 handoff 的完整设计合同为准，不得使用 Git 历史中的旧 prompt。
+owner 于 2026-07-25 将当前执行焦点更新为
+[`docs/action_forecast_writer_design.md`](docs/action_forecast_writer_design.md)
+定义的 Action-Forecast Writer。该文件是 focused AS/RL Writer 的唯一活动
+架构设计；它覆盖此前 Action-Memory、temporal-RoPE、Action-Forecast v1/v2、
+28-slot Belief-v3、冻结随机 visual-state decoder 和累计 transition 口径。
+旧结果保留为 provenance，但旧架构、schema、配置和专用路径不得恢复。
 
-当前先完成新 AS-Writer 架构、四卡效率 profile、分段训练、validation 最佳点
-和 correct/wrong/shuffled-video 机制证据；只有 AS 同时通过性能与特异性门槛
-后才推进独立的 short-AS-cold-start → pure-reward RL-Writer。本轮子任务结束
-后先向 owner 汇报，不自动继续 final-32、test task-local RL 或 joint oracle。
+当前先实现 32-token、初始锚点加非递归相对变化的 visual-state，并通过 fresh
+75-step 内部顺序、换视频和必要 rollout 特异性闭环；未通过则按最早失效层级
+迭代同一 canonical 架构，不使用 contrast loss。通过后从 fresh identity
+直接训练到 1200 step；若 validation best 尚未被明显、跨 task 且复测稳健的
+峰后下降括住，每次 exact-resume 增加 600 step。只有 AS 同时通过绝对性能、
+correct/wrong-video 和顺序特异性后才推进独立 short-AS-cold-start →
+pure-reward RL-Writer。focused AS/RL 完成后先向 owner 汇报，不自动继续
+final-32、test task-local RL、joint oracle 或 ViVLA。
 
 比较口径不得混淆：四卡rank-128 Source-SFT observed-best为`108/400`
 （step700），旧八卡全局incumbent才是`122/400`。AS必须不明显落后于前者，
@@ -46,7 +48,8 @@ schema、活动配置和专用测试必须退役，只保留一个 canonical Wri
 panel复测后仍成立的下降趋势。多个较晚checkpoint仅略低也绝对不算饱和；train
 平台、val loss平台或一个较差checkpoint都不能触发停止。
 
-当前子任务以推进效率为最高工程优先级：只保留会直接防止无效实验、信息墙
+当前子任务固定 frame stride=5，只使用 GPU 0、1、2、3且不触碰4–7。以推进
+效率为最高工程优先级：只保留会直接防止无效实验、信息墙
 泄漏、OOM、错误冻结/LoRA schema或不可恢复checkpoint的最小校验。最短垂直
 路径通过shape/gradient/identity/freeze和一次resume smoke后立即进入真实GPU
 profile/训练；不得用广泛全仓测试、重复流程门槛或文档整理延迟可运行实验。

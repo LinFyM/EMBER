@@ -9,6 +9,27 @@ from typing import Any
 import numpy as np
 
 
+PI05_DIGIT_TOKEN_IDS = (
+    235276,
+    235274,
+    235284,
+    235304,
+    235310,
+    235308,
+    235318,
+    235324,
+    235321,
+    235315,
+)
+PI05_STATE_ANCHOR_TOKEN_IDS = (
+    235248,
+    235274,
+    235284,
+    235321,
+) * 8
+PI05_STATE_ANCHOR_TEXT = " 128 128 128 128 128 128 128 128"
+
+
 def quat2axisangle(quat: np.ndarray) -> np.ndarray:
     """Convert one LIBERO end-effector quaternion to the OpenPI axis angle."""
 
@@ -242,16 +263,16 @@ class Pi05PureLanguageTokenizer:
 
 
 class Pi05ForecastPrefixTokenizer:
-    """Build the native pi0.5 prompt with differentiable state-token slots.
+    """Build the native pi0.5 prompt with a differentiable state-token block.
 
     The returned token IDs preserve the native ``Task/State/Action`` text
-    layout.  Exactly 28 placeholder positions are marked for replacement by
-    image-conditioned virtual-state tokens before PaliGemma.  Together with the
-    real whitespace token retained after ``State:``, this matches the measured
-    median 29-token native numeric-state region.
+    layout.  The neutral eight-coordinate state is exactly 32 native tokens:
+    ``[space, 1, 2, 8] * 8``.  The Writer later adds constrained visual-state
+    offsets at these positions instead of replacing them with arbitrary soft
+    prompts.
     """
 
-    STATE_SLOTS = 28
+    STATE_SLOTS = 32
 
     def __init__(self, tokenizer_path: Path, max_length: int, device: str) -> None:
         import sentencepiece
@@ -278,16 +299,22 @@ class Pi05ForecastPrefixTokenizer:
             raise ValueError("forecast-prefix tokenizer requires a task sequence")
         token_rows: list[list[int]] = []
         state_rows: list[list[int]] = []
+        anchor = self._tokenizer.encode(
+            PI05_STATE_ANCHOR_TEXT,
+            add_bos=False,
+        )
+        if tuple(anchor) != PI05_STATE_ANCHOR_TOKEN_IDS:
+            raise ValueError("forecast-prefix tokenizer state anchor changed")
         for task in tasks:
             prefix = self._tokenizer.encode(
-                f"Task: {self._clean(task)}, State: ",
+                f"Task: {self._clean(task)}, State:",
                 add_bos=True,
             )
             suffix = self._tokenizer.encode(";\nAction: ", add_bos=False)
             state_start = len(prefix)
             values = [
                 *prefix,
-                *([0] * self.STATE_SLOTS),
+                *anchor,
                 *suffix,
             ]
             if len(values) > self._max_length:

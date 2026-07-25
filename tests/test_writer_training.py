@@ -20,15 +20,21 @@ from ember.writer.model import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-CONFIG = REPO_ROOT / "configs/pi05_as_writer_action_forecast_v3.json"
+CONFIG = REPO_ROOT / "configs/pi05_as_writer_action_forecast_v4.json"
 
 
 def test_action_forecast_config_seals_architecture_and_information_wall() -> None:
     config = load_writer_config(CONFIG)
     writer = config["writer"]
-    assert writer["architecture"] == "pi05_action_forecast_belief_v3"
-    assert writer["state_slots"] == 28
-    assert writer["state_token_generation"].startswith("content_only_detr")
+    assert writer["architecture"] == "pi05_action_forecast_anchored_visual_state_v4"
+    assert writer["state_slots"] == 32
+    assert writer["state_coordinates"] == 8
+    assert writer["state_token_generation"].startswith("native_32_token_anchor")
+    assert writer["state_token_trainability"].startswith("trainable_initial")
+    assert (
+        writer["frame_microbatch_remainder"]
+        == "repeat_last_pad_to_fixed_size_then_crop"
+    )
     assert writer["maximum_revision_count"] == 10
     assert writer["vl_meta_lora_rank"] == 4
     assert writer["action_meta_lora_rank"] == 8
@@ -40,12 +46,12 @@ def test_action_forecast_config_seals_architecture_and_information_wall() -> Non
     assert writer["belief_alignment"].startswith("one_token_per_absolute")
     assert writer["revision_reference"].startswith("all_earlier_covering")
     assert writer["revision_strength_path"].startswith("stop_gradient_raw")
-    assert writer["revision_direction_statistics"].endswith(
-        "without_manual_scale"
+    assert writer["revision_direction_path"].endswith(
+        "signed_mean_and_per_dimension_rms"
     )
     assert writer["belief_layout"].startswith("plan_first_128_revision_second_128")
-    assert writer["temporal_value_path"].startswith("raw_belief_content_only")
-    assert writer["query_memory_direction"].startswith("static_identities_qk_only")
+    assert writer["temporal_value_path"].endswith("without_time_mean_removal")
+    assert writer["query_block_order"] == "cross_attention_before_self_attention"
     assert writer_split_roles(config) == ("train",)
     assert config["conditioning_training"] == {
         "method": "normal_positive_functional_action_loss_only",
@@ -64,7 +70,13 @@ def test_action_forecast_config_seals_architecture_and_information_wall() -> Non
     assert config["information_wall"]["test_video_values_read"] == 0
     assert config["profile_defaults"]["expected_world_size"] == 4
     assert config["profile_evidence"]["status"] == "sealed"
-    assert config["formal_run"]["status"] == "sealed"
+    assert config["profile_evidence"]["selected"] == {
+        "world_size": 4,
+        "frame_microbatch_size": 32,
+        "action_query_batch_size_per_rank": 20,
+    }
+    assert config["specificity_gate"]["fresh_optimizer_steps"] == 75
+    assert config["formal_run"]["total_steps"] == 1200
 
 
 def test_checkpoint_schedule_and_cursor_are_fail_closed() -> None:
@@ -101,9 +113,9 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         skip_data_sha=False,
     )
     assert resolve_runtime(profile, config, context) == (
-        1000,
+        75,
         20,
-        (1, 2, 1000),
+        (50, 75),
     )
     wrong_world = DistributedContext(
         rank=0,
@@ -133,9 +145,8 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         resume=None,
         skip_data_sha=False,
     )
-    total, batch, checkpoints = resolve_runtime(formal, config, context)
-    assert (total, batch, formal.stop_after_step) == (12000, 20, 600)
-    assert checkpoints == tuple(range(75, 12001, 75))
+    with pytest.raises(WriterModelError, match="not sealed"):
+        resolve_runtime(formal, config, context)
 
 
 def test_flow_noise_is_shared_within_visit_reproducible_and_visit_specific() -> None:

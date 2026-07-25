@@ -29,47 +29,6 @@ class RMSNorm(torch.nn.Module):
         return value * scale * self.weight
 
 
-class RevisionContentBlock(torch.nn.Module):
-    """Read Plan-relative residual values through routing-only event metadata."""
-
-    def __init__(self, width: int, heads: int) -> None:
-        super().__init__()
-        if min(width, heads) <= 0 or width % heads:
-            raise VariableEpisodeInputError("invalid revision-read dimensions")
-        self.query_norm = RMSNorm(width)
-        self.memory_norm = RMSNorm(width)
-        self.attention = torch.nn.MultiheadAttention(
-            width,
-            heads,
-            dropout=0.0,
-            batch_first=True,
-            bias=False,
-        )
-        self.ffn_norm = RMSNorm(width)
-        self.ffn = torch.nn.Sequential(
-            torch.nn.Linear(width, 4 * width, bias=False),
-            torch.nn.GELU(),
-            torch.nn.Linear(4 * width, width, bias=False),
-        )
-
-    def forward(
-        self,
-        routing: torch.Tensor,
-        event_routing: torch.Tensor,
-        event_values: torch.Tensor,
-        valid_memory: torch.Tensor,
-    ) -> torch.Tensor:
-        attended, _ = self.attention(
-            self.query_norm(routing),
-            self.memory_norm(event_routing),
-            event_values,
-            key_padding_mask=~valid_memory,
-            need_weights=False,
-        )
-        content = attended
-        return content + self.ffn(self.ffn_norm(content))
-
-
 class ForecastBeliefEncoder(torch.nn.Module):
     """Build one fixed-layout Plan/Revision belief token per control time."""
 
@@ -79,7 +38,6 @@ class ForecastBeliefEncoder(torch.nn.Module):
         action_width: int,
         horizon: int,
         width: int,
-        heads: int,
         maximum_revision_count: int,
     ) -> None:
         super().__init__()
@@ -88,11 +46,9 @@ class ForecastBeliefEncoder(torch.nn.Module):
                 action_width,
                 horizon,
                 width,
-                heads,
                 maximum_revision_count,
             )
             <= 0
-            or width % heads
             or width % 2
         ):
             raise VariableEpisodeInputError("invalid forecast-belief dimensions")
@@ -101,37 +57,17 @@ class ForecastBeliefEncoder(torch.nn.Module):
         self.width = int(width)
         self.branch_width = width // 2
         self.maximum_revision_count = int(maximum_revision_count)
-        self.plan_encoder = torch.nn.Sequential(
-            torch.nn.Linear(action_width, width, bias=False),
-            torch.nn.GELU(),
-            torch.nn.Linear(width, self.branch_width, bias=False),
-        )
-        self.event_value_encoder = torch.nn.Sequential(
-            torch.nn.Linear(2 * action_width, width, bias=False),
-            torch.nn.GELU(),
-            torch.nn.Linear(width, width, bias=False),
-        )
-        self.event_routing_encoder = torch.nn.Sequential(
-            torch.nn.Linear(3, width, bias=False),
-            torch.nn.GELU(),
-            torch.nn.Linear(width, width, bias=False),
-        )
-        self.revision_query = torch.nn.Parameter(torch.empty(1, 1, width))
-        self.revision_reader = RevisionContentBlock(width, heads)
-        statistic_width = max(width // 4, 1)
-        self.revision_statistics_encoder = torch.nn.Sequential(
-            torch.nn.Linear(3, statistic_width, bias=False),
-            torch.nn.GELU(),
-            torch.nn.Linear(statistic_width, width, bias=False),
-        )
-        self.revision_output = torch.nn.Linear(
-            width,
+        self.plan_encoder = torch.nn.Linear(
+            action_width,
             self.branch_width,
             bias=False,
         )
-        self.plan_norm = RMSNorm(self.branch_width)
+        self.revision_direction_encoder = torch.nn.Sequential(
+            torch.nn.Linear(2 * action_width, width, bias=False),
+            torch.nn.GELU(),
+            torch.nn.Linear(width, self.branch_width, bias=False),
+        )
         self.revision_norm = RMSNorm(self.branch_width)
-        torch.nn.init.normal_(self.revision_query, mean=0.0, std=0.02)
 
     def _validate(
         self,
@@ -192,7 +128,6 @@ class ForecastBeliefEncoder(torch.nn.Module):
         torch.Tensor,
         torch.Tensor,
         torch.Tensor,
-        torch.Tensor,
     ]:
         batch, frames = frame_indices.shape
         times = absolute_time.numel()
@@ -228,62 +163,18 @@ class ForecastBeliefEncoder(torch.nn.Module):
         frame_ids = torch.arange(frames, device=plans.device)[None, None]
         earlier_mask = coverage & (frame_ids != latest_frame[..., None])
         residual = latest_action[..., None, :] - all_actions
-        age_gap = latest_start[..., None] - frame_indices[:, None, :]
-        routing_features = torch.stack(
-            (
-                lead_grid.to(torch.float32) / max(self.horizon - 1, 1),
-                latest_lead.to(torch.float32)[..., None].expand_as(lead_grid)
-                / max(self.horizon - 1, 1),
-                age_gap.to(torch.float32) / max(self.horizon - 1, 1),
-            ),
-            dim=-1,
-        )
         return (
             latest_action,
             latest_lead,
             residual,
-            routing_features,
             earlier_mask,
         )
 
     def _revision_branch(
         self,
         residual: torch.Tensor,
-        event_routing: torch.Tensor,
         event_mask: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        batch, maximum_time, event_count, _ = residual.shape
-        value_features = torch.cat((residual, residual.abs()), dim=-1)
-        flat_values = self.event_value_encoder(value_features).reshape(
-            batch * maximum_time,
-            event_count,
-            self.width,
-        )
-        flat_routing = self.event_routing_encoder(event_routing).reshape(
-            batch * maximum_time,
-            event_count,
-            self.width,
-        )
-        flat_mask = event_mask.reshape(batch * maximum_time, event_count)
-        has_revision = flat_mask.any(dim=1)
-        safe_mask = flat_mask.clone()
-        safe_mask[~has_revision, 0] = True
-        flat_values = flat_values.masked_fill(
-            (~flat_mask)[..., None],
-            0.0,
-        )
-        flat_routing = flat_routing.masked_fill(
-            (~safe_mask)[..., None],
-            0.0,
-        )
-        query = self.revision_query.expand(batch * maximum_time, -1, -1)
-        directed_content = self.revision_reader(
-            query,
-            flat_routing,
-            flat_values,
-            safe_mask,
-        )[:, 0]
-
         count = event_mask.sum(dim=-1).to(torch.float32)
         if bool((count > self.maximum_revision_count).any()):
             raise VariableEpisodeInputError(
@@ -291,35 +182,33 @@ class ForecastBeliefEncoder(torch.nn.Module):
             )
         residual_float = residual.to(torch.float32)
         event_mask_float = event_mask.to(torch.float32)
+        masked_residual = residual_float * event_mask_float[..., None]
+        event_denominator = count.clamp_min(1.0)
+        signed_mean = masked_residual.sum(dim=-2) / event_denominator[..., None]
+        per_dimension_rms = torch.linalg.vector_norm(
+            masked_residual,
+            dim=-2,
+        ) / event_denominator.sqrt()[..., None]
+        projected = self.revision_direction_encoder(
+            torch.cat((signed_mean, per_dimension_rms), dim=-1).to(
+                dtype=residual.dtype
+            )
+        )
         scalar_denominator = (
             count * self.action_width
         ).clamp_min(1.0)
-        absolute = residual_float.abs() * event_mask_float[..., None]
-        mean_absolute = absolute.sum(dim=(-1, -2)) / scalar_denominator
-        masked_residual = residual_float * event_mask_float[..., None]
-        rms = torch.linalg.vector_norm(
-            masked_residual,
-            dim=(-1, -2),
-        ) / scalar_denominator.sqrt()
-        maximum_absolute = absolute.amax(dim=(-1, -2))
-        raw_statistics = torch.stack(
-            (mean_absolute, rms, maximum_absolute),
-            dim=-1,
-        )
-        statistic_content = self.revision_statistics_encoder(
-            raw_statistics.to(dtype=directed_content.dtype)
-        ).reshape(batch * maximum_time, self.width)
-        combined = directed_content + statistic_content
-        projected = self.revision_output(combined)
-        strength = rms.detach()
+        strength = (
+            torch.linalg.vector_norm(masked_residual, dim=(-1, -2))
+            / scalar_denominator.sqrt()
+        ).detach()
         revision = (
             self.revision_norm(projected)
-            * strength.reshape(-1, 1).to(dtype=projected.dtype)
+            * strength[..., None].to(dtype=projected.dtype)
         )
         revision = revision.masked_fill(
-            ~has_revision[:, None],
+            ~(count > 0)[..., None],
             0.0,
-        ).reshape(batch, maximum_time, self.branch_width)
+        )
         return (
             revision,
             count,
@@ -345,7 +234,6 @@ class ForecastBeliefEncoder(torch.nn.Module):
             latest_action,
             latest_lead,
             residual,
-            event_routing,
             event_mask,
         ) = self._forecast_layout(
             plans,
@@ -353,10 +241,9 @@ class ForecastBeliefEncoder(torch.nn.Module):
             absolute_time,
             coverage,
         )
-        plan = self.plan_norm(self.plan_encoder(latest_action))
+        plan = self.plan_encoder(latest_action)
         revision, count, strength = self._revision_branch(
             residual,
-            event_routing,
             event_mask,
         )
         maximum_time = absolute_time.numel()
@@ -426,6 +313,8 @@ class RotaryTemporalBlock(torch.nn.Module):
             torch.nn.GELU(),
             torch.nn.Linear(4 * width, width, bias=False),
         )
+        torch.nn.init.zeros_(self.output.weight)
+        torch.nn.init.zeros_(self.ffn[-1].weight)
 
     def forward(
         self,
@@ -541,21 +430,21 @@ class ContentOnlyQueryBlock(torch.nn.Module):
         memory: torch.Tensor,
         valid_memory: torch.Tensor,
     ) -> torch.Tensor:
-        normalized = self.self_norm(content)
-        addressed = normalized + routing
-        attended, _ = self.self_attention(
-            addressed,
-            addressed,
-            content,
-            need_weights=False,
-        )
-        content = content + attended
         normalized_memory = self.memory_norm(memory)
         attended, _ = self.cross_attention(
             self.cross_norm(content) + routing,
             normalized_memory,
             memory,
             key_padding_mask=~valid_memory,
+            need_weights=False,
+        )
+        content = content + attended
+        normalized = self.self_norm(content)
+        addressed = normalized + routing
+        attended, _ = self.self_attention(
+            addressed,
+            addressed,
+            content,
             need_weights=False,
         )
         content = content + attended

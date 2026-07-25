@@ -697,3 +697,32 @@
   allocated/reserved为`67,088,471,040/69,235,376,128` bytes，无OOM或
   nonfinite。下一步提交并push唯一canonical代码/配置，再从fresh identity
   启动正式step0→600，checkpoint间隔75，完整评测step300/600。
+
+## Belief-v3实现、效率选择与正式启动前封存（2026-07-25）
+
+- 唯一canonical Writer已升级为Belief-v3：一个absolute-time token内concat
+  Plan128/Revision128；Revision比较所有更早covering forecasts与最新Plan；
+  Temporal和LoRA query decoder均为content-only、zero-preserving路径。
+- owner最终取消所有人工Revision强度尺度。活动公式为
+  `Revision=stopgrad(raw source-normalized residual RMS)*RMSNorm(direction)`；
+  routing strength也detach，`tau`与分位数只作诊断、不参与前向。
+- 固定GPU0–3和stride5的效率profile选择frame-microbatch32、batch20/rank。
+  12-step参考output为
+  `/data/ymdai/outputs/ember/pi05_action_forecast_belief_v3_profile_r4_s5_fm32_b20_20260725`；
+  稳态中位`6.4942s`、`12.3188 global queries/s`。fm40较慢，fm48在首步前
+  达到`81,153/81,920 MiB`且失去稳定前进。
+- 最终raw-RMS实现的fresh+resume output为
+  `/data/ymdai/outputs/ember/pi05_action_forecast_belief_v3_rawrms_resume_r4_s5_fm32_b20_20260725`。
+  fresh step1后从`checkpoints/step_00000001` exact-resume到step2；contract
+  `352f7409d671d97399262b46afe0d415b4b6c145bcca66cbe43725474fa8e234`，
+  resumed step `6.9184s`、`11.5634 queries/s`，峰值allocated/reserved
+  `77,090,931,200/83,730,890,752` bytes，无OOM/nonfinite。
+- checkpoint schema v3逐文件封存Writer、trainer/optimizer/scheduler及四rank
+  RNG/sampler状态；flow-noise cursor从global visit 4准确推进到8。Writer
+  `10,247,872` trainable parameters，source policy trainable count为0。
+- focused测试、JSON解析、compile和diff检查通过后，下一步不再重做profile：
+  提交/push当前唯一路径，实时复核GPU/storage，然后用同一配置从fresh identity
+  一次连续训练0→600，每75步保存且不中途评测。
+- step600顺序特异性先跑低成本内部数值诊断；只有normal/shuffled/reversed在
+  effective LoRA等最终输出上已有明确、跨多个tasks/videos的稳定差异，才启动
+  昂贵的paired validation arms。正常correct-video多checkpoint评测仍保留。

@@ -30,8 +30,8 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_action_forecast_as_writer_v2"
-AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_action_forecast_as_writer_launch_v2"
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_action_forecast_as_writer_v3"
+AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_action_forecast_as_writer_launch_v3"
 AS_WRITER_STAGES = ("development", "final")
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
@@ -87,10 +87,13 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
     if lora.source_base_config_sha256 != config["authorities"]["source_base_config"]["sha256"]:
         raise WriterModelError("AS-Writer LoRA and source-base authorities disagree")
     writer = config.get("writer", {})
-    if writer.get("frame_stride") != 5 or writer.get("frame_microbatch_size") != 32:
+    if (
+        writer.get("frame_stride") != 5
+        or int(writer.get("frame_microbatch_size", 0)) <= 0
+    ):
         raise WriterModelError("sealed Action-Forecast profile dimensions changed")
     expected_writer = {
-        "architecture": "pi05_action_forecast_plan_revision_v2",
+        "architecture": "pi05_action_forecast_belief_v3",
         "generated_adapter": "complete_pi05_task_specific_rank16_lora",
         "camera_dataset": "obs/agentview_rgb",
         "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -114,27 +117,47 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         "action_horizon": 50,
         "padded_action_dim": 32,
         "output_action_dim": 7,
-        "plan_revision_alignment": (
-            "absolute_control_time_latest_plan_and_adjacent_revisions"
+        "belief_alignment": (
+            "one_token_per_absolute_control_time_latest_plan_concat_revision"
         ),
         "maximum_revision_count": 10,
-        "revision_content_path": (
-            "routing_query_reads_directed_events_without_query_residual"
+        "plan_content_path": (
+            "bias_free_latest_action_only_with_lead_routing_only"
         ),
-        "revision_stability_path": (
-            "bounded_normalized_statistics_multiplicative_gate_0.75_to_1.25"
+        "revision_reference": (
+            "all_earlier_covering_forecasts_relative_to_latest_plan"
         ),
-        "plan_revision_branch_norm": "independent_rms_norm_before_temporal",
+        "revision_value_path": (
+            "signed_and_absolute_plan_relative_residuals_without_absolute_actions"
+        ),
+        "revision_strength_path": (
+            "stop_gradient_raw_source_normalized_plan_relative_residual_rms"
+        ),
+        "revision_direction_statistics": (
+            "raw_mean_absolute_rms_and_max_absolute_without_manual_scale"
+        ),
+        "belief_layout": (
+            "plan_first_128_revision_second_128_without_post_concat_projection"
+        ),
+        "belief_normalization": (
+            "plan_rmsnorm_revision_direction_rmsnorm_times_stopgrad_raw_rms"
+        ),
         "temporal_width": 256,
         "temporal_heads": 8,
         "temporal_blocks": 2,
         "temporal_position_encoding": (
             "one_dimensional_rope_on_absolute_control_time"
         ),
+        "temporal_routing": (
+            "latest_lead_revision_count_and_strength_enter_qk_only"
+        ),
+        "temporal_value_path": (
+            "raw_belief_content_only_zero_preserving_bias_free"
+        ),
         "query_count": 320,
         "query_decoder_blocks": 2,
         "query_memory_direction": (
-            "routing_only_identities_with_memory_derived_content_values"
+            "static_identities_qk_only_with_raw_memory_content_values"
         ),
         "factor_head_bias": False,
         "factor_hidden_width": 256,

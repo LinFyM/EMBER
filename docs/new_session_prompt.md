@@ -19,12 +19,18 @@ https://github.com/LinFyM/EMBER
 Action-Forecast Writer 的完整架构和执行合同；你需要直接实现、训练、评测并
 推进到本 prompt 指定的 AS/RL Writer 子任务终点。
 
-> 2026-07-25更新：当前active实现已经升级为直接28个virtual-state tokens、
-> content-only Revision和content-only LoRA query decoder；AS只用positive
-> functional loss，不得恢复order-contrast。唯一配置为
-> `configs/pi05_as_writer_action_forecast_v2.json`。旧8-scalar/Fourier、
-> additive stability和static-query residual描述只作provenance；精确合同以
-> `docs/action_forecast_writer_handoff.md`顶部active override为准。
+> 2026-07-25更新：当前active实现是单-token
+> `Belief_u=[Plan_u(128)|Revision_u(128)]`、Plan-relative all-covering
+> Revision、zero-preserving Temporal和content-only LoRA query decoder；AS
+> 只用positive functional loss，不得恢复order-contrast。唯一配置为
+> `configs/pi05_as_writer_action_forecast_v3.json`，`frame_stride=5`固定。
+> Revision显式强度为frozen source normalization下的原始residual RMS：
+> `Revision_u=stopgrad(m_u)*RMSNorm(z_u)`；不得加入`tau`、训练集分位数尺度
+> 或其他人工强度超参数。
+> 新架构fresh连续训练`0→600`，不中途主动切换评测。旧8-scalar/Fourier、
+> adjacent Revision、Plan/Revision interleaving、additive/type routing和
+> static-query residual描述只作provenance；精确合同以
+> `docs/action_forecast_writer_handoff.md`顶部Belief-v3 override为准。
 
 ## 1. Goal
 
@@ -32,7 +38,7 @@ Action-Forecast Writer 的完整架构和执行合同；你需要直接实现、
 且没有 `token_budget`。若确实没有 active Goal，调用 `create_goal`，不要设置
 `token_budget`，objective 原文使用：
 
-> 在仅使用GPU 0–3且不干扰任何现有进程的约束下，完成EMBER新Action-Forecast Writer核心闭环：将旧Action-Memory Writer活动架构完全退役并更新代码、测试、配置与项目文档；实现由教师视频逐帧imagined-state/PaliGemma融合、Writer内部VL与Action Meta-LoRA、π0.5完整10-step flow最终action plans、同绝对时刻Plan/Revision tokens、变长Temporal Transformer及单向LoRA query decoder生成完整rank-16 task LoRA的唯一canonical路径，并使Writer训练参数量约等于rank-128 Source-SFT；实测并固定训练的每rank action-query batch、frame microbatch、frame stride和评测最优并发/批处理参数，在四卡上按约半小时一段、每段四个等间隔checkpoint的时间导向方式持续AS-Writer训练，优先评测每段第二/第四checkpoint并按趋势补测，直至找到validation最优并在其后观察到幅度非常明显、复测后仍成立的validation性能下降趋势；要求AS-Writer性能不明显落后于四卡rank-128 Source-SFT已观测最佳108/400，并争取超过所有SFT候选的全局incumbent 122/400，同时correct/wrong及乱序视频特异性成立。若经合规诊断和最小改进仍不能同时过关，保存完整证据并停止汇报；若过关，则实现和高效profile cold-start RL-Writer，先确保每个source task至少一次成功再切换纯RL；RL同样必须训练到train平台、在validation上找到observed-best，并在其后看到幅度非常明显且复测稳健的validation下降趋势，而不是在第一个平台、单个较差点或多个仅略低的点停止。全过程优先尽快把可运行训练/评测部署到合法空闲GPU，再在运行期间并行推进互不污染的文档、诊断与后续代码；保存命令、配置、曲线、rows、runtime、hash、exact-resume状态，完成验证、文档、task-scoped commit和push后方可Goal complete。
+> 在 EMBER 中完整实现并核查 owner 已认可的单-token Belief_u Action-Forecast Writer 架构；固定 frame stride=5，只优化训练/评测的 batch 与 frame-microbatch 等效率参数；从新架构随机初态连续训练到 600 optimizer steps（期间可密集保存 checkpoint，但不按约半小时 segment 主动停训或切换评测），随后评测多个 validation checkpoint并对 step-600 做视频顺序特异性诊断。若特异性明确，则继续按较大步长充分探索 AS Writer 的 validation observed-best 与显著峰后下降，并在绝对性能良好后推进独立 cold-start RL Writer；若任一科学 gate 经分析和第一性原理架构修正仍无法通过，则停下向 owner 汇报。全程不引入对比损失，不恢复旧 Action-Memory/平行 runner，仅使用 GPU 0、1、2、3且不触碰4–7。
 
 本 Goal 只在上述 focused AS/RL Writer 子任务全部完成后标记 complete。代码完成、
 smoke、loss下降、一个validation点、一个train平台或一个方法阶段都不够。
@@ -94,8 +100,9 @@ docs/action_forecast_writer_handoff.md
 - 旧Action-Memory temporal-RoPE Writer step400为`108/400`，有视频任务内容
   特异性，但倒序/乱序effective-LoRA相对变化仅`0.00937/0.00699`，近似
   bag-of-states。它是新架构要解决的问题，不是新模型初始化。
-- 当前仓库已实现Action-Forecast v2架构；正式训练前仍需用真实数据验证
-  shape/gradient/identity/freeze/OOM和exact-resume。
+- 当前仓库已实现并profile Action-Forecast Belief-v3架构；shape、gradient、
+  identity、freeze、OOM与exact-resume gate已经通过。正式AS下一步是直接从
+  fresh identity连续训练到step600，不再重做profile或中途评测。
 
 固定实物路径：
 
@@ -211,15 +218,14 @@ frames [T,3,H,W] + true frame indices [T] + full task tokens [L]
 训练参数预算约等于rank-128 Source-SFT的`10,297,344`：
 
 ```text
-content-only 28-slot state decoder     ~1.05M
-VL Meta-LoRA rank4                    ~0.922M
-Action Meta-LoRA rank8                ~1.253M
-Plan/Revision encoder                 ~0.95M
-Temporal encoder                      ~1.57M
-2-block one-way query decoder         ~2.10M
-Factor heads                          ~2.19M
-embeddings/norm/bias                  ~0.10M
-total                              10,125,376
+content-only 28-slot state decoder   1,053,440
+VL Meta-LoRA rank4                     921,600
+Action Meta-LoRA rank8               1,253,376
+Plan-relative Belief encoder         1,007,040
+zero-preserving Temporal encoder     1,640,192
+2-block content-only query decoder   2,191,104
+Factor heads                         2,181,120
+total                               10,247,872
 ```
 
 从真实model/config打印逐模块参数量；可微调hidden widths以接近10.297M，但不能
@@ -237,7 +243,7 @@ total                              10,125,376
 - `temporal.py`原位成为Plan/Revision variable-time owner；
 - 同步替换`as_contract.py`、checkpoint schema、training/inference/evaluator
   调用点和必要测试；
-- 用唯一`configs/pi05_as_writer_action_forecast_v2.json`替换旧active
+- 用唯一`configs/pi05_as_writer_action_forecast_v3.json`替换旧active
   action-memory配置；不保留v4/new/experimental平行runner。
 
 优先尽快得到最短可运行垂直切片。一旦shape、梯度、identity/freeze和一个
@@ -273,29 +279,39 @@ exact-resume smoke通过，就立即做真实GPU profile/训练；不要先花�
 owner、显存、利用率、温度、进程、driver/CUDA、`/data/ymdai`占用和`/data`
 容量。不得kill/reset别人任务。个人硬上限500GB，大cache或新run先估峰值。
 
-最小真实profile：
+训练profile已经完成并封存：
 
-1. 典型视频和p95/最大长视频测`frame_microbatch_size=1/2/4`，安全时再试8；
-2. 稳定设置下测每rank action-query batch候选4/8/16；不做梯度累积；
-3. stride5/10都做真实full forward+backward，以有效queries/s、长视频稳定性
-   和最小order/action-specificity smoke选择，不只看显存；
-4. 评测从旧稳定点4 replicas/GPU、8 envs/replica附近实测，并测adapter
+1. `frame_stride=5`固定，`frame_microbatch_size=32`、每rank action-query
+   batch=`20`。frame-microbatch40更慢；48在首步前达到`81,153/81,920 MiB`
+   且无法稳定前进，已拒绝；
+2. 选中配置12-step profile稳态中位约`6.49s/step`、全局约
+   `12.32 queries/s`，并覆盖rank0采到72帧的长视频；
+3. 最终无`tau` raw-RMS实现又完成fresh step1和step1→2 exact-resume：
+   resumed step约`6.92s`、全局`11.56 queries/s`，峰值allocated/reserved
+   为`77,090,931,200/83,730,890,752` bytes，source policy 0 trainable；
+4. 不再运行stride10、frame/action batch profile或未充分训练的specificity；
+   直接正式fresh 0→600；
+5. 评测从旧稳定点4 replicas/GPU、8 envs/replica附近实测，并测adapter
    预生成/cache；旧6 replicas在旧Writer编码阶段OOM，新路径只有实测通过才用；
-5. Long tasks按实际可用GPU数先做cost-balanced shards覆盖每个device，之后所有
+6. Long tasks按实际可用GPU数先做cost-balanced shards覆盖每个device，之后所有
    workers从统一dynamic queue接普通tasks并work-steal；不固定切八份；
-6. profile后只把唯一选择写入canonical config，删除临时开关，立即正式训练。
+7. 唯一训练选择已写入canonical config；不得重新引入临时profile开关。
 
 正式AS：
 
 - 4个同角色DDP ranks；GPU0无额外CUDA model/server/controller。
-- 约30分钟一个segment；按真实step time换算steps，在25/50/75/100%保存四个
-  完整checkpoint。
-- 每段先评第二、第四checkpoint的paired `8 tasks×50 fixed states`完整
-  closed-loop validation；第四更好或没有明确下降就exact-resume下一段。
-  趋势需要细化才补第一/第三checkpoint。
+- 从fresh identity一次连续运行step0→600；每75 steps保存完整checkpoint，
+  但训练期间不主动停下做validation或specificity。
+- step600保存完成后再统一选择多个checkpoint做paired
+  `8 tasks×50 fixed states` correct-video closed-loop validation；step600的
+  shuffled/reversed特异性先做低成本内部数值诊断。
 - val functional loss只能微微参考，不能决定best。最终看完整rollout、
   per-task counts、paired flips和独立复测。
-- 只在最终observed-best做correct/cross-suite-wrong/shuffled/reversed视频诊断；
+- 内部诊断逐层比较forecast residual、Revision、Temporal memory、query
+  content和effective LoRA；只有最终输出差异明确且跨多个tasks/videos稳定，
+  才运行昂贵的shuffled/reversed paired validation arms。通过后再依据绝对
+  性能和后续大步长训练选择observed-best，并给最终best补齐
+  correct/cross-suite-wrong/shuffled/reversed。
   paired task/init/policy/video/noise seeds保持一致，shuffle/reverse使用同一帧集合。
 
 Writer停止标准必须严格执行：
@@ -306,7 +322,8 @@ Writer停止标准必须严格执行：
 - 该明显下降必须在预先封存的独立evaluation seed/panel或重复测量中仍成立；
 - 多个后续checkpoint只是略低、paired统计勉强可区分、loss平台、train平台、
   success持平或一个坏点，全部不算饱和；
-- 没看到上述明显下降，就继续加约30分钟segment，不设总wall-clock上限。
+- 没看到上述明显下降，就按600-step或证据支持的更大step跨度继续，不设总
+  wall-clock上限，也不恢复约30分钟segment节奏。
 
 性能门槛：AS不能明显落后四卡SFT`108/400`；超过旧八卡SFT`122/400`是stretch。
 还必须做到correct优于cross-suite wrong，且对shuffled/reversed的变化显著优于

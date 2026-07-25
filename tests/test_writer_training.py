@@ -20,13 +20,13 @@ from ember.writer.model import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-CONFIG = REPO_ROOT / "configs/pi05_as_writer_action_forecast_v2.json"
+CONFIG = REPO_ROOT / "configs/pi05_as_writer_action_forecast_v3.json"
 
 
 def test_action_forecast_config_seals_architecture_and_information_wall() -> None:
     config = load_writer_config(CONFIG)
     writer = config["writer"]
-    assert writer["architecture"] == "pi05_action_forecast_plan_revision_v2"
+    assert writer["architecture"] == "pi05_action_forecast_belief_v3"
     assert writer["state_slots"] == 28
     assert writer["state_token_generation"].startswith("content_only_detr")
     assert writer["maximum_revision_count"] == 10
@@ -37,6 +37,15 @@ def test_action_forecast_config_seals_architecture_and_information_wall() -> Non
     assert writer["query_count"] == 320
     assert writer["frame_stride"] == 5
     assert writer["frame_microbatch_size"] == 32
+    assert writer["belief_alignment"].startswith("one_token_per_absolute")
+    assert writer["revision_reference"].startswith("all_earlier_covering")
+    assert writer["revision_strength_path"].startswith("stop_gradient_raw")
+    assert writer["revision_direction_statistics"].endswith(
+        "without_manual_scale"
+    )
+    assert writer["belief_layout"].startswith("plan_first_128_revision_second_128")
+    assert writer["temporal_value_path"].startswith("raw_belief_content_only")
+    assert writer["query_memory_direction"].startswith("static_identities_qk_only")
     assert writer_split_roles(config) == ("train",)
     assert config["conditioning_training"] == {
         "method": "normal_positive_functional_action_loss_only",
@@ -93,7 +102,7 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
     )
     assert resolve_runtime(profile, config, context) == (
         1000,
-        16,
+        20,
         (1, 2, 1000),
     )
     wrong_world = DistributedContext(
@@ -125,7 +134,7 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         skip_data_sha=False,
     )
     total, batch, checkpoints = resolve_runtime(formal, config, context)
-    assert (total, batch, formal.stop_after_step) == (12000, 16, 600)
+    assert (total, batch, formal.stop_after_step) == (12000, 20, 600)
     assert checkpoints == tuple(range(75, 12001, 75))
 
 

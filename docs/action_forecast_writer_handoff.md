@@ -7,7 +7,55 @@ Action-Memory / temporal-RoPE Writer 的活动实现口径，但不改写那些�
 历史结果。若旧配置、旧测试、`task_plan.md` 的已完成历史条目或早期设计文档
 与本文件冲突，以本文件和 owner 最新指令为准。
 
-### 2026-07-25 active architecture override
+### 2026-07-25 Belief-v3 owner override
+
+本节覆盖下文仍将Plan/Revision写成两个token、使用adjacent revision、
+additive/type routing、普通K/V共享归一化、可调stride或约30分钟训练segment的
+活动描述。那些内容只保留为v1/v2 provenance。
+
+- 唯一活动配置升级为
+  `configs/pi05_as_writer_action_forecast_v3.json`；新架构必须fresh训练，不得
+  resume任何v1/v2 Writer checkpoint。
+- `frame_stride`固定为`5`，不再profile stride10。只profile每rank action-query
+  batch和`frame_microbatch_size`等纯效率参数。
+- state前端保持28个content-only virtual-state tokens；VL Meta-LoRA rank4、
+  Action Meta-LoRA rank8、完整10-step flow、两层Temporal、320个queries和
+  public rank16 LoRA schema保持不变。
+- 每个绝对控制时刻只产生一个256维
+  `Belief_u=[Plan_u(128)|Revision_u(128)]`。`Plan_u`只编码覆盖`u`的最新
+  forecast 7维action；lead只能进入Q/K routing。
+- `Revision_u`不再比较adjacent forecasts，也不包含old/new绝对action。所有
+  更早且覆盖`u`的forecast都相对最新Plan构造
+  `r_i,u=Plan_u-a_i,u`；value只含signed residual、absolute residual和
+  disagreement magnitude statistics，lead/age/count只作routing。
+- raw source-normalized residual RMS记为`m_u`，方向content记为
+  `D_u=RMSNorm(z_u)`；最终
+  `Revision_u=stopgrad(m_u)*D_u`。无较早forecast或所有forecast完全一致时
+  Revision严格为零。`m_u`直接使用frozen source normalization下的无量纲
+  7维action residual RMS，不设置`tau`、训练集分位数或其他人工尺度超参数；
+  routing中的strength同样detach。AS loss仍可训练Revision方向，但不能通过
+  主动放大或缩小forecast来操纵显式分歧强度。
+- concat后不做独立half normalization或任意post-concat projection。
+  Temporal只可在Q/K或FFN pre-norm中对整个Belief使用共同归一化；Q/K还可读取
+  lead/count/strength routing和absolute-time RoPE，V只读取raw Belief。
+  token type、routing、position和bias都不得进入content residual。
+- LoRA query decoder保持routing/content分离：静态module/layer/rank identity
+  只进入Q/K，`Z_0=0`，self-attention V只读Z，cross-attention V只读raw
+  temporal memory，factor heads只读Z。人工将Belief content置零时，无论长度、
+  routing或position如何，Temporal、query content和dynamic LoRA都必须为零。
+- AS仍只有normal positive functional action loss，不增加contrast loss。
+- 新架构从随机初态一次连续训练`0→600` optimizer steps；可每75 steps密集保存
+  exact-resume checkpoint，但不中途主动停训或切换评测。600完成后统一评测
+  多个validation checkpoints。step600的顺序特异性先做低成本内部数值诊断；
+  只有内部差异明确且跨多个tasks/videos稳定，才运行实际shuffled/reversed
+  paired validation arms。
+- 若顺序特异性明确，再检查绝对性能并以更大step跨度继续寻找AS validation
+  observed-best和显著、稳健、多task共同贡献的峰后下降；双门通过后才推进独立
+  cold-start RL。任何科学gate经第一性原理分析仍无法修复时，停下向owner汇报；
+  不用contrast loss挽救。
+- GPU只使用0、1、2、3；即使这些卡已有进程也按owner授权共享，4–7绝不触碰。
+
+### 2026-07-25 v2 historical architecture override（已被Belief-v3覆盖）
 
 owner 已明确拒绝用 contrast loss 人为制造顺序差异，并要求从第一性原理修正
 信息流。以下口径覆盖本文件中仍描述旧 8-scalar imagined-state、additive
@@ -53,7 +101,7 @@ revision stability、static-query residual decoder 或 order-contrast 的段落�
 新session若`get_goal`没有返回active Goal，使用以下原文创建且不设置
 `token_budget`：
 
-> 在仅使用GPU 0–3且不干扰任何现有进程的约束下，完成EMBER新Action-Forecast Writer核心闭环：将旧Action-Memory Writer活动架构完全退役并更新代码、测试、配置与项目文档；实现由教师视频逐帧imagined-state/PaliGemma融合、Writer内部VL与Action Meta-LoRA、π0.5完整10-step flow最终action plans、同绝对时刻Plan/Revision tokens、变长Temporal Transformer及单向LoRA query decoder生成完整rank-16 task LoRA的唯一canonical路径，并使Writer训练参数量约等于rank-128 Source-SFT；实测并固定训练的每rank action-query batch、frame microbatch、frame stride和评测最优并发/批处理参数，在四卡上按约半小时一段、每段四个等间隔checkpoint的时间导向方式持续AS-Writer训练，优先评测每段第二/第四checkpoint并按趋势补测，直至找到validation最优并在其后观察到幅度非常明显、复测后仍成立的validation性能下降趋势；要求AS-Writer性能不明显落后于四卡rank-128 Source-SFT已观测最佳108/400，并争取超过所有SFT候选的全局incumbent 122/400，同时correct/wrong及乱序视频特异性成立。若经合规诊断和最小改进仍不能同时过关，保存完整证据并停止汇报；若过关，则实现和高效profile cold-start RL-Writer，先确保每个source task至少一次成功再切换纯RL；RL同样必须训练到train平台、在validation上找到observed-best，并在其后看到幅度非常明显且复测稳健的validation下降趋势，而不是在第一个平台、单个较差点或多个仅略低的点停止。全过程优先尽快把可运行训练/评测部署到合法空闲GPU，再在运行期间并行推进互不污染的文档、诊断与后续代码；保存命令、配置、曲线、rows、runtime、hash、exact-resume状态，完成验证、文档、task-scoped commit和push后方可Goal complete。
+> 在 EMBER 中完整实现并核查 owner 已认可的单-token Belief_u Action-Forecast Writer 架构；固定 frame stride=5，只优化训练/评测的 batch 与 frame-microbatch 等效率参数；从新架构随机初态连续训练到 600 optimizer steps（期间可密集保存 checkpoint，但不按约半小时 segment 主动停训或切换评测），随后评测多个 validation checkpoint并对 step-600 做视频顺序特异性诊断。若特异性明确，则继续按较大步长充分探索 AS Writer 的 validation observed-best 与显著峰后下降，并在绝对性能良好后推进独立 cold-start RL Writer；若任一科学 gate 经分析和第一性原理架构修正仍无法通过，则停下向 owner 汇报。全程不引入对比损失，不恢复旧 Action-Memory/平行 runner，仅使用 GPU 0、1、2、3且不触碰4–7。
 
 ## 1. 当前目标和停止条件
 
@@ -61,17 +109,20 @@ revision stability、static-query residual decoder 或 order-contrast 的段落�
 
 1. 用唯一 canonical 新架构原位替换旧 Action-Memory Writer；旧活动代码、
    schema、配置和只服务旧架构的测试退役，历史由 Git 和已有结果保存。
-2. 在 GPU 0–3 上实测并封存训练的每 rank action-query batch、
-   `frame_microbatch_size`、frame stride，以及评测的最佳并发参数。
-3. 四卡训练按约 30 分钟一段推进；每段保存四个等间隔 checkpoint，优先对
-   第二和第四个做完整 validation rollout，趋势不清时再补第一/第三个。
+2. `frame_stride=5`固定；在 GPU 0–3 上只实测并封存训练的每 rank
+   action-query batch、`frame_microbatch_size`，以及评测的最佳并发参数。
+3. Belief-v3从fresh identity一次连续训练`0→600`，每75 steps保存
+   checkpoint但不中途主动评测；600完成后统一评测多个validation checkpoints，
+   并先对step600做低成本内部顺序特异性诊断。
 4. 找到 AS-Writer 的 validation 最佳 checkpoint，并在其后观察到幅度非常
    明显、复测后仍成立的validation下降趋势。多个后续checkpoint仅略低于best
    绝对不算饱和。主要门槛是不要明显落后于四卡rank-128 Source-SFT
    observed-best `108/400`；超过旧八卡全局incumbent `122/400`是stretch目标。
-5. 只对 observed-best checkpoint 做 correct-video、cross-suite wrong-video
-   和 shuffled/reversed-video 机制诊断。Writer 要真正依赖视频任务内容，并比
-   旧 temporal-RoPE Writer 更能感知帧顺序。
+5. step600先做shuffled/reversed内部数值诊断，逐层检查forecast residual、
+   Revision、Temporal memory、query content和effective LoRA；只有最终输出
+   差异明确、跨多个tasks/videos稳定，才做昂贵的closed-loop paired arms。
+   通过后再按绝对性能和后续validation曲线选择observed-best，并对最终best补齐
+   correct-video、cross-suite wrong-video及顺序机制证据。
 6. 若 AS 同时通过性能与视频/顺序特异性门槛，才推进 cold-start RL-Writer；
    若经过最小、证据驱动的架构/训练修正仍过不了，保留完整证据并停止汇报。
 7. RL-Writer 先做一个独立、短 AS cold start，直到 24 个 source/train tasks
@@ -293,19 +344,18 @@ u = t_i + k
 ### 3.6 参数预算
 
 目标是让 Writer trainable parameter count 与 rank-128 Source-SFT 的
-`10,297,344` 接近，不能再用 10× 参数量解释优势。当前预算草案：
+`10,297,344` 接近，不能再用 10× 参数量解释优势。Belief-v3真实参数量：
 
 | 模块 | 目标参数量 |
 |---|---:|
-| content-only 28-slot state token decoder | ~1.05M |
-| VL Meta-LoRA，PaliGemma q/k/v/o，rank 4 | ~0.922M |
-| Action Meta-LoRA，Action Expert q/k/v/o，rank 8 | ~1.253M |
-| Plan/Revision encoder | ~0.95M |
-| Temporal encoder | ~1.57M |
-| 2-block one-way LoRA query decoder | ~2.10M |
-| Factor heads | ~2.19M |
-| embeddings/norm/bias | ~0.10M |
-| 合计 | `10,125,376` |
+| content-only 28-slot state token decoder | 1,053,440 |
+| VL Meta-LoRA，PaliGemma q/k/v/o，rank 4 | 921,600 |
+| Action Meta-LoRA，Action Expert q/k/v/o，rank 8 | 1,253,376 |
+| Plan-relative Belief encoder | 1,007,040 |
+| zero-preserving Temporal encoder | 1,640,192 |
+| 2-block content-only LoRA query decoder | 2,191,104 |
+| Factor heads | 2,181,120 |
+| 合计 | `10,247,872` |
 
 正式实现必须从真实 model/config 计算参数量；允许在不改变上述信息流的前提下
 微调 hidden widths，使总量接近 `10.297M`，并记录每个模块的真实 count。
@@ -324,7 +374,7 @@ Writer 生成的 public rank-16 task LoRA 本身仍为 `1,287,168` scalars。
 - `as_contract.py`、checkpoint schema、training/inference/evaluator 调用点和
   targeted tests 同步更新为一个 `action_forecast` schema。
 - 旧 `configs/pi05_as_writer_action_memory_v1.json` 由新的 canonical
-  `configs/pi05_as_writer_action_forecast_v2.json` 替换；旧活动配置和只验证
+  `configs/pi05_as_writer_action_forecast_v3.json` 替换；旧活动配置和只验证
   Action-Memory internals 的测试删除。历史结果由 Git、`findings.md` 和
   `progress.md` 保存，不创建 in-tree archive。
 - 先用 `rg` 建立 callers/import/checkpoint ownership map。完成后要求活动
@@ -379,19 +429,20 @@ Writer 生成的 public rank-16 task LoRA 本身仍为 `1,287,168` scalars。
 
 ## 6. Profile 与封存顺序
 
-先做最小 CPU/单卡 contract smoke，再立即进入四卡真实 profile：
+训练profile已完成并封存，不应在正式0→600前重复：
 
 1. shape、padding、绝对时间对齐、no-revision boundary、identity-init、
-   frozen base、Meta-LoRA gradients、checkpoint exact-resume。
-2. 典型视频和 p95 长视频分别实测 `frame_microbatch_size` 候选 1/2/4（能安全
-   再试 8），记录 step wall、峰值 allocated/reserved 和 OOM。
-3. 对稳定的 frame microbatch 实测每 rank action-query batch 候选，例如
-   4/8/16；不做 gradient accumulation。
-4. stride 5 与 10 都测真实完整 forward+backward。选择依据是有效
-   action queries/s、长视频稳定性和最小 order/action-specificity smoke，
-   不能只按显存或单步速度。
-5. 用户允许极长序列把原先平均预留约 10GB 的缓冲吃到只剩几 GB，但正式配置
-   仍必须在 p95/最大视频上稳定且不依赖 dummy allocations。
+   frozen base、Meta-LoRA gradients和checkpoint exact-resume均已通过。
+2. `frame_stride=5`固定；最终选择`frame_microbatch_size=32`和每rank
+   action-query batch20，不做gradient accumulation。
+3. 同一Belief-v3 tensor拓扑的12-step profile稳态中位为`6.49s/step`、
+   `12.32 global queries/s`；frame-microbatch40更慢，48在首步前达到
+   `81,153/81,920 MiB`且无法稳定前进。
+4. 最终无`tau`的raw-RMS Revision实现另行通过fresh step1和step1→2
+   exact-resume；resumed step为`6.918s`、`11.563 global queries/s`，
+   峰值allocated/reserved为`77,090,931,200/83,730,890,752` bytes。
+5. 不再profile stride10、frame/action batch或未充分训练的specificity；
+   下一步直接fresh连续训练0→600。
 6. 评测基于当前 4 replicas/GPU、8 envs/replica 的稳定点，实测邻近组合和
    adapter 预生成/cache。旧 6 replicas/GPU 在 Writer 视频编码阶段 OOM；
    只有新路径通过真实 profile 才能采用，不能凭空宣称更快。
@@ -402,17 +453,18 @@ Writer 生成的 public rank-16 task LoRA 本身仍为 `1,287,168` scalars。
    让各device尽早承担一份Long工作；完成后所有workers从同一动态队列继续接
    普通task shards并work-steal。原始rows仍按task/init恢复聚合。
 
-profile 后把唯一选中值写进 canonical config、manifest 和 docs，删除临时
-profile-only开关。估算不能替代实测。
+唯一训练选择已经写入canonical config和docs；评测并发仍按真实rollouts/s
+另行选择。不得重新引入profile-only训练开关。
 
-## 7. AS 分段训练与 checkpoint 选择
+## 7. AS 连续训练与 checkpoint 选择
 
 - 只用 GPU 0,1,2,3，一卡一个同角色 DDP rank。GPU0 不承担额外 model
   server/controller。
-- 每个正式 segment 目标 wall 约 30 分钟；根据实测 steady step time换算该段
-  steps，并在 25%、50%、75%、100% 四个位置保存完整 checkpoint。
-- 每段完成后优先完整评测第 2 和第 4 个 checkpoint。若第 4 个明显更好或没有
-  下降，exact-resume 再加一段；若趋势需要更细粒度，再补第 1/3 个。
+- 第一趟从fresh identity连续运行step0→600，每75 steps保存完整checkpoint；
+  checkpoint保存不是暂停训练或插入评测的理由。
+- step600完成后统一选择多个checkpoint做完整validation，并直接对step600做
+  视频顺序特异性诊断。若特异性明确但性能曲线尚未充分探索，再按600-step或
+  证据支持的更大跨度exact-resume继续。
 - val functional loss只作很弱的辅助线索。最终 best 由相同 paired
   `8 tasks × 50 fixed states` closed-loop success决定；报告 per-task counts、
   paired flips 和重复评测的不确定性，不能把一个 noisy 400-rollout点写成
@@ -425,14 +477,16 @@ profile-only开关。估算不能替代实测。
   复测后仍然成立，才算把最佳点和饱和区间找全。下降必须明显超过400-rollout
   正常波动，aggregate上肉眼清楚，并由多个tasks共同贡献，不能只是一个task
   掉点。多个后续checkpoint仅略低、paired统计刚好可区分、loss平台、一个较差
-  checkpoint或success持平都绝对不够；没有明显下降就继续增加训练segment。
+  checkpoint或success持平都绝对不够；没有明显下降就继续增加大步长训练。
 - 不因为 GPU 数变化机械缩放 step；steps、global queries、task/video
   conditions、wall/GPU-hours都同时记录。
 - 每次先启动可运行训练/评测，再在不修改其 import/config/output contract 的
   前提下并行更新文档、parser、下一阶段代码。
-- 只有 observed-best checkpoint 做 correct/wrong/shuffled/reversed 诊断。
-  correct/wrong rollout保持 task/init/policy/video seeds配对；shuffled/reversed
-  保留完全相同帧集合，只变顺序。
+- step600先做shuffled/reversed内部数值特异性；只有effective LoRA等最终输出
+  已呈现明确且跨多个tasks/videos稳定的差异，才做对应paired rollout。
+  最终observed-best再补齐correct/wrong/shuffled/reversed。correct/wrong rollout保持
+  task/init/policy/video seeds配对；shuffled/reversed保留完全相同帧集合，
+  只变顺序。
 
 当前旧架构参考不是新模型的初始化：
 
@@ -484,13 +538,10 @@ RNG/checkpoint/env-pool机制；任何绑定旧 Action-Memory schema、旧冷启
 
 ### 8.1 明确留给实测、不是交接遗漏的变量
 
-以下内容没有在对话中拍成固定常数，必须按本文件的证据规则实测，而不是猜：
+以下内容仍需按本文件的证据规则实测，而不是猜：
 
-- stride最终选5还是10；
-- `frame_microbatch_size`和每rank action-query batch；
 - 是否值得构建full-token cache及其精度；
 - evaluation replicas/env batch的最终组合；
-- 新架构的实际step wall、显存峰值和每个30分钟segment对应多少steps；
 - normal AS最优checkpoint位于哪个step、非常明显的峰后下降从何时开始，以及
   是否需要比第二/第四点更密评测；
 - 若AS不过关，下一次最小修正的具体内容；
@@ -498,6 +549,8 @@ RNG/checkpoint/env-pool机制；任何绑定旧 Action-Memory schema、旧冷启
   项，仍必须找到best并观察幅度非常明显、复测稳健的下降趋势。
 
 Source-SFT不在这份待定列表中：其参考结果已经封存，本focused task不重训它。
+训练stride/批量也不在待定列表中：固定为stride5、frame-microbatch32、
+batch20/rank；正式训练是连续0→600，不使用30分钟segment。
 任何未固定变量都应先用最小真实profile/paired evidence决定，不能变成等待owner
 确认普通实现细节的门槛。
 

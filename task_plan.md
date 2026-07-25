@@ -249,3 +249,31 @@ contrast loss。
 - [ ] 对最佳或暂时最佳checkpoint比较旧AS `125/400`，并完成
   correct/wrong/shuffled/reversed。双门通过才推进独立cold-start RL；否则只
   排查可纠正的明显错误，不加contrast，若无明显错误则停止向owner汇报。
+
+### 当前执行：Belief-v3 Writer（2026-07-25）
+
+本节覆盖上方v2的活动实现与待办；v2结果只保留为provenance。
+
+- [x] 原位实现单token
+  `Belief_u=[Plan_u(128)|Revision_u(128)]`：Plan只来自最新7维action；
+  Revision使用所有更早covering forecasts相对Plan的signed/absolute residual，
+  不再包含绝对action或adjacent-only比较。
+- [x] Revision显式强度固定为
+  `stopgrad(raw source-normalized residual RMS)`，方向为content-only
+  `RMSNorm(z_u)`；删除`tau`、训练集分位数尺度与其他人工强度超参数。
+- [x] Temporal和LoRA query decoder均改为routing只进Q/K、raw content只进V
+  和residual的zero-preserving路径；静态identity、position、lead/count/
+  strength均不能凭空生成dynamic LoRA。
+- [x] 唯一活动schema/config/checkpoint升级到v3，v2活动配置退役；focused
+  shape/gradient/identity/freeze测试通过。
+- [x] 固定stride5后完成效率选择：frame-microbatch32、batch20/rank。
+  最终raw-RMS实现fresh step1→exact-resume step2通过，Writer
+  `10,247,872`参数、source policy 0 trainable、无OOM/nonfinite，完整
+  optimizer/scheduler/sampler/RNG/cursor checkpoint可恢复。
+- [ ] 从fresh identity一次连续训练0→600，每75步保存，不中途主动评测。
+- [ ] step600后统一评测多个correct-video validation checkpoints；顺序
+  特异性先做低成本内部数值诊断，逐层检查forecast residual、Revision、
+  Temporal memory、query content和effective LoRA。只有最终差异明确且跨多个
+  tasks/videos稳定，才运行shuffled/reversed paired rollout。
+- [ ] 只有AS性能与视频时序特异性双门通过，才推进独立cold-start RL；
+  不使用contrast loss，无法以第一性原理架构修正通过时停下向owner汇报。

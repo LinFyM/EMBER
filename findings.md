@@ -809,3 +809,35 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   allocated/reserved为`67,088,471,040/69,235,376,128` bytes，source policy
   trainable count为0。该结果只封存机械可运行性，科学结论等待step300/600
   closed-loop validation与最终特异性。
+
+## Belief-v3最终架构与raw-RMS强度证据（2026-07-25）
+
+- v3把每个绝对控制时刻压成一个固定布局的256维Belief：
+  前128维Plan只编码最新forecast的7维action，后128维Revision读取所有更早
+  covering forecasts相对Plan的signed/absolute residual。lead、age、count和
+  absolute time只承担寻址，不进入content value或residual。
+- Revision显式尺度最终采用
+  `Revision_u=stopgrad(m_u)*RMSNorm(z_u)`，其中`m_u`是frozen source
+  normalization下的原始7维residual RMS。train-only、optimizer-step0的960个
+  非零样本分位数Q00/Q10/Q25/Q50/Q75/Q90/Q100为
+  `0.0031/0.0400/0.1909/0.4232/0.6212/0.7630/0.8353`，说明原始无量纲尺度
+  可直接使用；这些统计只作诊断，不设置模型超参数。`tau`和分位数校准已从
+  模型、配置和authority删除。
+- Temporal与LoRA query decoder均满足zero-preserving合同：routing identity、
+  lead/count/strength和RoPE只影响Q/K；V与residual只读取content。Belief置零时
+  temporal memory、query content和dynamic LoRA严格为零。Writer总参数
+  `10,247,872`，是rank128 Source-SFT `10,297,344`的`99.52%`。
+- stride5固定后的效率profile选择frame-microbatch32、batch20/rank。相同
+  Belief-v3 topology的12-step profile稳态中位`6.49s/step`、全局
+  `12.32 queries/s`；frame-microbatch40更慢，48在首步前达到
+  `81,153/81,920 MiB`并失去稳定前进。
+- 最终raw-RMS代码又完成四卡fresh step1和step1→2 exact-resume；contract
+  SHA256为`352f7409d671d97399262b46afe0d415b4b6c145bcca66cbe43725474fa8e234`，
+  resumed step为`6.9184s`、`11.5634 queries/s`，峰值allocated/reserved
+  `77,090,931,200/83,730,890,752` bytes。梯度finite且非零、source policy
+  trainable count为0，四rank RNG/state、Writer、optimizer/scheduler及
+  sampler/data/flow-noise cursors均完整可恢复。
+- step600后的顺序特异性采用两级门：先在相同帧集合上逐层比较normal/
+  shuffled/reversed的forecast residual、Revision、Temporal memory、query
+  content和effective LoRA；只有最终差异明确且跨多个tasks/videos稳定，才投入
+  实际paired validation rollout。内部路径仍塌缩时直接定位层级，不浪费环境评测。

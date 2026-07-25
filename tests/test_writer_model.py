@@ -5,8 +5,8 @@ import torch
 from ember.writer.action_forecast import VisualStateTokenDecoder
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
 from ember.writer.temporal import (
+    ForecastBeliefEncoder,
     LoRAQueryDecoder,
-    PlanRevisionEncoder,
     VariableTimeTemporalEncoder,
 )
 
@@ -132,7 +132,7 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         initialization_seed=7,
         activation_checkpointing=True,
     )
-    assert sum(parameter.numel() for parameter in model.parameters()) == 10_125_376
+    assert sum(parameter.numel() for parameter in model.parameters()) == 10_247_872
     model.action_forecast = _FakeForecast()
     return model, template
 
@@ -202,21 +202,21 @@ def test_lora_query_routing_cannot_reach_output_without_memory_content() -> None
     assert all(float(value.detach().abs().sum()) > 0 for value in conditioned)
 
 
-def test_plan_revision_temporal_and_queries_are_variable_time_and_differentiable() -> None:
+def test_belief_temporal_and_queries_are_variable_time_and_differentiable() -> None:
     torch.manual_seed(17)
     plans = torch.randn(2, 3, 50, 7, requires_grad=True)
     indices = torch.tensor([[0, 5, 10], [0, 10, 0]])
     mask = torch.tensor([[True, True, True], [True, True, False]])
-    plan_revision = PlanRevisionEncoder(
+    belief_encoder = ForecastBeliefEncoder(
         action_width=7,
         horizon=50,
         width=256,
         heads=8,
         maximum_revision_count=10,
     )
-    tokens, positions, valid = plan_revision(plans, indices, mask)
+    tokens, positions, valid, routing = belief_encoder(plans, indices, mask)
     temporal = VariableTimeTemporalEncoder(width=256, heads=8, blocks=2)
-    memory = temporal(tokens, positions, valid)
+    memory = temporal(tokens, positions, valid, routing)
     decoder = LoRAQueryDecoder(
         width=256,
         heads=8,
@@ -224,19 +224,17 @@ def test_plan_revision_temporal_and_queries_are_variable_time_and_differentiable
         initialization_seed=7,
     )
     expert, action_in, action_out = decoder(memory, valid)
-    assert tokens.shape == (2, 120, 256)
+    assert tokens.shape == (2, 60, 256)
     assert expert.shape == (2, 18, 16, 256)
     assert action_in.shape == action_out.shape == (2, 16, 256)
     sum(value.square().mean() for value in (expert, action_in, action_out)).backward()
     assert plans.grad is not None and bool(torch.isfinite(plans.grad).all())
     assert float(plans.grad.abs().sum()) > 0
-    assert torch.count_nonzero(plan_revision.stability_gate[-1].weight) == 0
-    assert torch.count_nonzero(plan_revision.stability_gate[-1].bias) == 0
 
 
 def test_reversing_frame_content_changes_absolute_time_memory() -> None:
     torch.manual_seed(23)
-    encoder = PlanRevisionEncoder(
+    encoder = ForecastBeliefEncoder(
         action_width=7,
         horizon=50,
         width=256,
@@ -249,3 +247,77 @@ def test_reversing_frame_content_changes_absolute_time_memory() -> None:
     forward = encoder(plans, indices, mask)[0]
     reversed_content = encoder(plans.flip(1), indices, mask)[0]
     assert not torch.allclose(forward, reversed_content)
+
+
+def test_belief_revision_is_plan_relative_zero_and_strength_preserving() -> None:
+    torch.manual_seed(29)
+    encoder = ForecastBeliefEncoder(
+        action_width=7,
+        horizon=50,
+        width=256,
+        heads=8,
+        maximum_revision_count=10,
+    )
+    indices = torch.tensor([[0, 5]])
+    mask = torch.ones(1, 2, dtype=torch.bool)
+    agreement = torch.zeros(1, 2, 50, 7)
+    agreed_belief, _, _, agreed_routing = encoder(agreement, indices, mask)
+    assert torch.count_nonzero(agreed_belief[..., 128:]) == 0
+    assert torch.count_nonzero(agreed_routing[..., 2]) == 0
+
+    small = agreement.clone()
+    small[:, 0] = -0.1
+    small.requires_grad_(True)
+    large = agreement.clone()
+    large[:, 0] = -1.0
+    small_belief, _, _, small_routing = encoder(small, indices, mask)
+    large_belief, _, _, large_routing = encoder(large, indices, mask)
+    overlap = slice(5, 50)
+    assert torch.allclose(
+        small_belief[:, overlap, :128],
+        large_belief[:, overlap, :128],
+    )
+    assert bool(
+        (
+            large_routing[:, overlap, 2]
+            > small_routing[:, overlap, 2]
+        ).all()
+    )
+    assert torch.allclose(
+        small_routing[:, overlap, 2],
+        torch.full_like(small_routing[:, overlap, 2], 0.1),
+        atol=1e-6,
+        rtol=0.0,
+    )
+    assert torch.allclose(
+        large_routing[:, overlap, 2],
+        torch.ones_like(large_routing[:, overlap, 2]),
+        atol=1e-6,
+        rtol=0.0,
+    )
+    assert not small_routing.requires_grad
+    small_revision_rms = small_belief[:, overlap, 128:].square().mean().sqrt()
+    large_revision_rms = large_belief[:, overlap, 128:].square().mean().sqrt()
+    assert float(large_revision_rms.detach()) > float(small_revision_rms.detach())
+
+    trainable = torch.randn(1, 2, 50, 7, requires_grad=True)
+    trainable_revision = encoder(trainable, indices, mask)[0][..., 128:]
+    direction_probe = torch.linspace(
+        -1.0,
+        1.0,
+        trainable_revision.shape[-1],
+    )
+    (trainable_revision * direction_probe).sum().backward()
+    assert trainable.grad is not None
+    assert bool(torch.isfinite(trainable.grad).all())
+    assert float(trainable.grad.abs().sum()) > 0
+
+
+def test_temporal_metadata_cannot_create_content_from_zero_beliefs() -> None:
+    temporal = VariableTimeTemporalEncoder(width=32, heads=4, blocks=2)
+    beliefs = torch.zeros(2, 7, 32)
+    positions = torch.arange(7)[None].expand(2, -1)
+    valid = torch.ones(2, 7, dtype=torch.bool)
+    routing = torch.randn(2, 7, 3)
+    output = temporal(beliefs, positions, valid, routing)
+    assert torch.count_nonzero(output) == 0

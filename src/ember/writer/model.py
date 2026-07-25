@@ -10,8 +10,8 @@ import torch
 
 from ember.writer.action_forecast import Pi05ActionForecastEncoder
 from ember.writer.temporal import (
+    ForecastBeliefEncoder,
     LoRAQueryDecoder,
-    PlanRevisionEncoder,
     RMSNorm,
     VariableTimeTemporalEncoder,
 )
@@ -218,7 +218,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             initialization_seed=initialization_seed,
             activation_checkpointing=activation_checkpointing,
         )
-        self.plan_revision = PlanRevisionEncoder(
+        self.belief = ForecastBeliefEncoder(
             action_width=output_action_dim,
             horizon=action_horizon,
             width=temporal_width,
@@ -393,12 +393,12 @@ class CompleteLoRAWriter(torch.nn.Module):
             frame_indices,
             offsets,
         )
-        tokens, positions, valid = self.plan_revision(
+        belief, positions, valid, routing = self.belief(
             packed,
             indices,
             frame_mask,
         )
-        return self.temporal(tokens, positions, valid), valid
+        return self.temporal(belief, positions, valid, routing), valid
 
     def forward(
         self,

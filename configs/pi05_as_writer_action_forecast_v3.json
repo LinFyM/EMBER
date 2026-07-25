@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_action_forecast_as_writer_v2",
+  "schema_version": "ember_pi05_action_forecast_as_writer_v3",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {
@@ -49,7 +49,7 @@
     "test_video_values_read": 0
   },
   "writer": {
-    "architecture": "pi05_action_forecast_plan_revision_v2",
+    "architecture": "pi05_action_forecast_belief_v3",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -81,18 +81,24 @@
     "action_horizon": 50,
     "padded_action_dim": 32,
     "output_action_dim": 7,
-    "plan_revision_alignment": "absolute_control_time_latest_plan_and_adjacent_revisions",
+    "belief_alignment": "one_token_per_absolute_control_time_latest_plan_concat_revision",
     "maximum_revision_count": 10,
-    "revision_content_path": "routing_query_reads_directed_events_without_query_residual",
-    "revision_stability_path": "bounded_normalized_statistics_multiplicative_gate_0.75_to_1.25",
-    "plan_revision_branch_norm": "independent_rms_norm_before_temporal",
+    "plan_content_path": "bias_free_latest_action_only_with_lead_routing_only",
+    "revision_reference": "all_earlier_covering_forecasts_relative_to_latest_plan",
+    "revision_value_path": "signed_and_absolute_plan_relative_residuals_without_absolute_actions",
+    "revision_strength_path": "stop_gradient_raw_source_normalized_plan_relative_residual_rms",
+    "revision_direction_statistics": "raw_mean_absolute_rms_and_max_absolute_without_manual_scale",
+    "belief_layout": "plan_first_128_revision_second_128_without_post_concat_projection",
+    "belief_normalization": "plan_rmsnorm_revision_direction_rmsnorm_times_stopgrad_raw_rms",
     "temporal_width": 256,
     "temporal_heads": 8,
     "temporal_blocks": 2,
     "temporal_position_encoding": "one_dimensional_rope_on_absolute_control_time",
+    "temporal_routing": "latest_lead_revision_count_and_strength_enter_qk_only",
+    "temporal_value_path": "raw_belief_content_only_zero_preserving_bias_free",
     "query_count": 320,
     "query_decoder_blocks": 2,
-    "query_memory_direction": "routing_only_identities_with_memory_derived_content_values",
+    "query_memory_direction": "static_identities_qk_only_with_raw_memory_content_values",
     "factor_head_bias": false,
     "factor_hidden_width": 256,
     "initialization_seed": 7
@@ -151,12 +157,12 @@
       "decay_lr": 1e-05
     },
     "maximum_formal_wall_clock_minutes": null,
-    "budget_role": "no_total_wall_clock_limit_segmented_by_evidence"
+    "budget_role": "continuous_fresh_0_to_600_then_evidence_driven_larger_step_continuations"
   },
   "profile_defaults": {
     "expected_world_size": 4,
     "total_steps": 1000,
-    "per_rank_batch_size": 16,
+    "per_rank_batch_size": 20,
     "checkpoint_steps": [
       1,
       2,
@@ -166,6 +172,34 @@
   },
   "profile_evidence": {
     "status": "sealed",
+    "architecture_finalization_note": "frame and action batch profiling used the same Belief-v3 tensor topology before raw strength finalization; the final no-tau raw-RMS path was revalidated at the selected configuration with a fresh step and exact resume",
+    "belief_v3_initial_raw_revision_rms_observation": {
+      "source_output": "/data/ymdai/outputs/ember/pi05_action_forecast_belief_v3_tau_profile_r4_s5_fm32_b16_20260725",
+      "purpose": "diagnostic_only_no_model_hyperparameter",
+      "owner": "train_only_initial_frozen_forecast_nonzero_rms",
+      "sample_count": 960,
+      "quantiles_q00_q10_q25_q50_q75_q90_q100": [
+        0.0031239455565810204,
+        0.039969947189092636,
+        0.1909480094909668,
+        0.423187255859375,
+        0.6211532354354858,
+        0.7630106210708618,
+        0.8353039026260376
+      ],
+      "used_as_model_scale": false,
+      "optimizer_updates_before_capture": 0,
+      "validation_or_test_reads": 0
+    },
+    "belief_v3_frame_microbatch48_rejection": {
+      "output": "/data/ymdai/outputs/ember/pi05_action_forecast_belief_v3_profile_r4_s5_fm48_b16_20260725",
+      "status": "rejected_unstable_before_first_optimizer_step",
+      "rank1_observed_memory_used_mib": 81153,
+      "rank1_total_memory_mib": 81920,
+      "rank1_gpu_utilization_percent": 0,
+      "other_ranks_waiting_in_ddp": true,
+      "owned_disposable_profile_interrupted": true
+    },
     "profiled_utc": "2026-07-25",
     "physical_gpu_ids": [
       0,
@@ -177,31 +211,88 @@
     "precision": "bfloat16",
     "full_forward_backward": true,
     "required_candidates": {
-      "frame_stride": [
-        5,
-        10
-      ],
+      "fixed_frame_stride": 5,
       "frame_microbatch_size": [
-        1,
-        2,
-        4,
-        8,
-        16,
         32,
-        64
+        40,
+        48
       ],
       "action_query_batch_size_per_rank": [
-        4,
-        8,
-        16
+        16,
+        18,
+        20
       ]
     },
     "selected": {
       "frame_stride": 5,
       "frame_microbatch_size": 32,
-      "action_query_batch_size_per_rank": 16,
-      "selection_reason": "stride-5 matches the 20Hz control cadence; frame-microbatch 32 and physical action batch 16 maximize measured throughput while remaining stable through a p99-length video; frame-microbatch 64 exhausted memory and stalled one DDP rank"
+      "action_query_batch_size_per_rank": 20,
+      "selection_reason": "stride-5 is fixed by owner; Belief-v3 frame-microbatch 40 was slower and frame-microbatch 48 stalled at 81,153 MiB, while frame-microbatch 32 with physical action batch 20 reached 12.32 global queries/s median and completed the 72-frame long-video step without OOM or nonfinite values"
     },
+    "belief_v3_selected_efficiency_profile_before_raw_strength_finalization": {
+      "output": "/data/ymdai/outputs/ember/pi05_action_forecast_belief_v3_profile_r4_s5_fm32_b20_20260725",
+      "evidence_role": "efficiency_only_not_a_canonical_scientific_checkpoint",
+      "optimizer_steps": 12,
+      "maximum_rank0_sampled_video_frames": 72,
+      "steady_step_seconds_median": 6.494164271513,
+      "steady_step_seconds_p90": 6.921364441048354,
+      "steady_global_action_queries_per_second_median": 12.318788007211932,
+      "steady_global_action_queries_per_second_minimum": 8.84024232028556,
+      "max_cuda_allocated_bytes": 77186986496,
+      "max_cuda_reserved_bytes": 83667976192,
+      "oom": false,
+      "nonfinite_loss_or_gradient": false
+    },
+    "belief_v3_raw_rms_selected_profile_and_exact_resume": {
+      "output": "/data/ymdai/outputs/ember/pi05_action_forecast_belief_v3_rawrms_resume_r4_s5_fm32_b20_20260725",
+      "profile_config_sha256_before_status_seal": "5bb5430da54851e9dbf246a575fcc0e13fa07db0e29adf30b0892f52ab3683df",
+      "contract_sha256": "352f7409d671d97399262b46afe0d415b4b6c145bcca66cbe43725474fa8e234",
+      "fresh_step": 1,
+      "exact_resume_from_step": 1,
+      "exact_resume_to_step": 2,
+      "writer_parameter_count": 10247872,
+      "source_policy_trainable_parameter_count": 0,
+      "frame_stride": 5,
+      "frame_microbatch_size": 32,
+      "action_query_batch_size_per_rank": 20,
+      "fresh_gradient_norm_before_clip_max": 0.1015615165233612,
+      "resumed_gradient_norm_before_clip_max": 0.14129085838794708,
+      "resumed_step_seconds": 6.918394780019298,
+      "resumed_global_action_queries_per_second": 11.563375977191178,
+      "max_cuda_allocated_bytes": 77090931200,
+      "max_cuda_reserved_bytes": 83730890752,
+      "revision_strength_hyperparameter_count": 0,
+      "checkpoint_state_complete": true,
+      "flow_noise_cursor_reproduced": true,
+      "nonzero_finite_gradient": true,
+      "oom": false
+    },
+    "belief_v3_profile_comparisons": [
+      {
+        "frame_microbatch_size": 40,
+        "action_query_batch_size_per_rank": 16,
+        "steady_step_seconds_median": 6.516984681133181,
+        "steady_global_action_queries_per_second_median": 9.82073126931618,
+        "max_cuda_allocated_bytes": 81609740288,
+        "max_cuda_reserved_bytes": 83892371456
+      },
+      {
+        "frame_microbatch_size": 32,
+        "action_query_batch_size_per_rank": 18,
+        "steady_step_seconds_median": 6.207725362968631,
+        "steady_global_action_queries_per_second_median": 11.598609811810693,
+        "max_cuda_allocated_bytes": 70423951872,
+        "max_cuda_reserved_bytes": 80998301696
+      },
+      {
+        "frame_microbatch_size": 32,
+        "action_query_batch_size_per_rank": 20,
+        "steady_step_seconds_median": 6.494164271513,
+        "steady_global_action_queries_per_second_median": 12.318788007211932,
+        "max_cuda_allocated_bytes": 77186986496,
+        "max_cuda_reserved_bytes": 83667976192
+      }
+    ],
     "frame_microbatch_profiles_stride5": [
       {
         "frame_microbatch_size": 1,
@@ -310,7 +401,7 @@
       "max_cuda_reserved_bytes": 69682069504,
       "selected": false
     },
-    "exact_resume_profile": {
+    "historical_v1_exact_resume_profile": {
       "output": "/data/ymdai/outputs/ember/pi05_action_forecast_profile_r4_s5_fm4_b4_resume_20260724",
       "resume_from_step": 1,
       "resume_to_step": 2,
@@ -318,7 +409,7 @@
       "checkpoint_state_complete": true,
       "flow_noise_cursor_reproduced": true
     },
-    "architecture_v2_revalidation": {
+    "historical_architecture_v2_revalidation": {
       "output": "/data/ymdai/outputs/ember/pi05_action_forecast_v2_profile_resume_r4_s5_fm32_b16_20260725",
       "architecture": "pi05_action_forecast_plan_revision_v2",
       "profile_config_sha256": "405021319249c07d8fb0f931a67fbb05362a66355441244b61eaef6921bc0ff3",
@@ -345,7 +436,7 @@
     "status": "sealed",
     "expected_world_size": 4,
     "total_steps": 12000,
-    "per_rank_batch_size": 16,
+    "per_rank_batch_size": 20,
     "checkpoint_steps": "every:75",
     "selected_stop_step": 600,
     "stage_stop_steps": "every:600"

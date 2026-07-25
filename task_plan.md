@@ -270,10 +270,15 @@ contrast loss。
   最终raw-RMS实现fresh step1→exact-resume step2通过，Writer
   `10,247,872`参数、source policy 0 trainable、无OOM/nonfinite，完整
   optimizer/scheduler/sampler/RNG/cursor checkpoint可恢复。
-- [ ] 从fresh identity一次连续训练0→600，每75步保存，不中途主动评测。
-- [ ] step600后统一评测多个correct-video validation checkpoints；顺序
-  特异性先做低成本内部数值诊断，逐层检查forecast residual、Revision、
-  Temporal memory、query content和effective LoRA。只有最终差异明确且跨多个
-  tasks/videos稳定，才运行shuffled/reversed paired rollout。
+- [x] 从fresh identity一次连续训练0→600，每75步保存，不中途主动评测；
+  48,000 action queries、2,400 task-video conditions，step600完整
+  schema-v3 exact-resume checkpoint已逐文件校验。
+- [x] step600完成8 validation tasks×2 videos的低成本内部顺序诊断。
+  Revision顺序差异已经恢复，但Temporal的时间常量与单路query read把它重新
+  压到effective LoRA的`0.000297/0.000169`（reversed/shuffled）相对L2；
+  内部门失败，按owner顺序不运行昂贵的shuffled/reversed paired rollout。
+- [ ] 多checkpoint correct-video validation暂未启动。owner要求本轮把特异性
+  诊断与归因闭合后停下汇报；后续应先把global/time-centered memory拆成独立
+  路径并重新训练，再恢复性能曲线评测。
 - [ ] 只有AS性能与视频时序特异性双门通过，才推进独立cold-start RL；
   不使用contrast loss，无法以第一性原理架构修正通过时停下向owner汇报。

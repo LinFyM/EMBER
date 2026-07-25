@@ -373,3 +373,17 @@ task-scoped代码/文档，不提交dataset、weights、checkpoint、cache、凭
 - cold-start action消耗、24-task first-success coverage、纯RL interactions；
 - commands、commit、configs、raw rows、hashes和exact-resume状态；
 - 任何未通过项的工程/科学归因与failure packet。
+
+## 10. 2026-07-25最新暂停点
+
+Belief-v3 formal 0→600和全部低成本内部顺序特异性检查已经完成。Revision与
+Temporal的time-centered动态分量对reversed/shuffled有明显差异，但当前单路
+Temporal memory被task-global/time-constant成分主导，最终effective LoRA差异
+只有`0.000297/0.000169`，内部gate失败。仅增加normalization无效；将真实
+Temporal memory做masked time-centering后，同一query/factor heads的effective
+差异可恢复到`0.0543/0.0401`，故根因已定位为global constant遮蔽temporal
+innovation。
+
+owner要求在结论形成后暂停并汇报。当前不得自动运行shuffled/reversed环境
+validation、correct-video性能曲线、继续AS、实现下一版或启动RL。下一次继续前
+先与owner对齐global/innovation双路、各自归一化且最终仍固定256维的合成接口。

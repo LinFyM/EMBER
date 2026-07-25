@@ -726,3 +726,29 @@
 - step600顺序特异性先跑低成本内部数值诊断；只有normal/shuffled/reversed在
   effective LoRA等最终输出上已有明确、跨多个tasks/videos的稳定差异，才启动
   昂贵的paired validation arms。正常correct-video多checkpoint评测仍保留。
+
+## Belief-v3正式step600与内部特异性failure packet（2026-07-25）
+
+- commit `3363345`上的formal run
+  `/data/ymdai/outputs/ember/pi05_action_forecast_belief_v3_as_development_seed7_3363345_r4_s5_fm32_b20_s600_20260725`
+  已一次连续完成0→600；run contract SHA256为
+  `afbdea64b3b660baaa7576bc544c37f44575b9e001715ebea5191726a65a5071`，
+  run-summary file SHA256为
+  `110b45d521d61a4b35e933906d733e6a749a86379ad48a5fa2945d01bef2fc50`，
+  wall `4157.74s`。75/150/225/300/375/450/525/600八个checkpoint均存在；
+  step600完整manifest校验通过。
+- 8 tasks×2 videos正式schedule子集的paired内部诊断位于
+  `/data/ymdai/outputs/ember/pi05_action_forecast_belief_v3_step0600_internal_order_val8x2_3363345_20260725`。
+  Revision和time-centered Temporal均有明显顺序差异，但normalized query与
+  effective LoRA分别只剩reversed/shuffled
+  `0.0000719/0.0000448`和`0.000297/0.000169`相对L2，故内部gate失败。
+- 两个8 tasks×1 video无训练反事实分别位于
+  `pi05_action_forecast_belief_v3_step0600_bounded_counterfactual_val8x1_3363345_20260725`
+  与
+  `pi05_action_forecast_belief_v3_step0600_centered_memory_counterfactual_val8x1_3363345_20260725`。
+  normalized-V/bounded-output不能解决；仅去除Temporal masked时间均值即可把
+  query/effective LoRA差异恢复到`0.1053/0.0825`与`0.0543/0.0401`，
+  定位为global constant遮蔽temporal innovation，而非Revision或query容量不足。
+- owner要求完成特异性检查和归因后停下汇报。按先前两级门，未启动
+  shuffled/reversed environment rollout；也未启动多checkpoint correct-video
+  validation、后续AS续训、架构改写或RL。GPU0–3已释放，4–7始终未触碰。

@@ -625,3 +625,28 @@ milestone随手封存，而不是变成启动前的额外门槛。
 外，不要为普通实现细节逐项停下来询问。一次smoke、训练segment或评测失败后
 先定位工程/科学层次、做最小修正并继续；能启动GPU工作时先启动，再推进互不
 污染的次要文档和后续代码。
+
+## 11. Belief-v3 step600特异性结论与当前暂停点
+
+Belief-v3 formal 0→600已完成并可exact-resume。正式validation schedule子集
+8 tasks×2 videos的内部normal/reversed/shuffled诊断表明：
+
+- Revision token相对差异为`0.0270/0.0266`，time-centered为
+  `0.1753/0.1598`，所以Revision改进有效。
+- Temporal动态差异仍在，但共同时间常量把reference RMS放大到`9.62`，
+  raw相对差异降至`0.00479/0.00425`。
+- normalized query output只有`0.0000719/0.0000448`，effective LoRA只有
+  `0.000297/0.000169`，内部顺序门失败。
+- normalized-V和bounded Temporal反事实不能修复；只将真实Temporal memory
+  masked time-center后，现有query/effective LoRA即可恢复到
+  `0.1053/0.0825`和`0.0543/0.0401`。
+
+因此下一版不能只增加普通RMSNorm，也不应修改Revision、增加contrast loss或
+人工幅度超参数。应保留单-token Belief定义，显式拆分task-global masked mean
+与zero-mean temporal innovation；innovation在Temporal层间保持zero-mean，
+global与innovation用独立content-only query reads和独立归一化，再在固定256维
+query content内合成。具体合成接口需在下一次实现前与owner对齐。
+
+按owner指令，本session在完成全部内部特异性检查和归因后暂停：没有运行
+shuffled/reversed environment validation，没有开始多checkpoint性能评测、
+后续AS训练、架构实现或RL。

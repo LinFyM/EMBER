@@ -841,3 +841,50 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   shuffled/reversed的forecast residual、Revision、Temporal memory、query
   content和effective LoRA；只有最终差异明确且跨多个tasks/videos稳定，才投入
   实际paired validation rollout。内部路径仍塌缩时直接定位层级，不浪费环境评测。
+
+## Belief-v3 step600内部顺序特异性结论（2026-07-25）
+
+- fresh formal run一次连续完成step0→600，wall `4157.74s`；累计
+  `48,000` action queries和`2,400`独立task-video conditions，24 tasks各
+  2,000 queries、100次video访问且50/50 demos全覆盖。step600 checkpoint
+  schema v3的Writer、trainer与四rank state共6个文件逐SHA校验通过；
+  Writer SHA256为
+  `a1101c62337c2f365a5891f856360a589d5c976665dafe6eeb476dd6c95695df`。
+- 正式validation schedule的8 tasks×2个不同videos内部panel保持task
+  language、帧集合、frame indices和Writer flow noise配对，只改变帧顺序；
+  actions/reward/outcome读取均为0。normal→reversed/shuffled的相对L2中位数
+  依次为：action forecasts `0.0725/0.0678`，Plan-relative residual
+  `0.0914/0.0980`，Plan tokens `0.0596/0.0514`，Revision tokens
+  `0.0270/0.0266`，Belief `0.0523/0.0464`。
+- Revision修正确实有效：其time-centered相对L2达到
+  `0.1753/0.1598`，明显高于raw值，说明有向forecast disagreement已进入
+  Belief，失败不再位于Revision合成。
+- Temporal保留了动态差异的绝对量，但被时间常量淹没。reference RMS从Belief
+  `0.834`增长到block1 `3.06`、block2 `9.62`；差异RMS仍约
+  `0.044→0.046`，time-centered相对L2也保持
+  `0.148/0.133`，但raw相对L2降到`0.00479/0.00425`。
+- 单路LoRA query read随后再次塌缩：query block1为
+  `0.000555/0.000310`，normalized query output为
+  `0.0000719/0.0000448`，最终effective `B@A`只有
+  `0.000297/0.000169`。8个tasks全部很小，reversed/shuffled每task中位最大也
+  只有`0.000571/0.000618`；该结果不高于旧失败版，内部顺序门明确失败。
+- “把RMSNorm加回来”不是充分修正。用同一已训练权重把Temporal/query V改为
+  normalized content并把Temporal出口约束到单位RMS，effective `B@A`仅恢复到
+  `0.000339/0.000266`，仍是同一失败量级。
+- 决定性反事实是只把真实Temporal memory减去其masked时间均值，再交给完全
+  相同的现有query/factor heads。memory自身为`0.1427/0.1352`，query output
+  恢复到`0.1053/0.0825`，effective `B@A`恢复到`0.0543/0.0401`。
+  reversed在8/8 tasks为`0.0098–0.1034`；shuffled除task13的
+  `0.00059`外，其余7 tasks为`0.0173–0.4011`。这只作无训练机制归因，
+  不是可报告的模型性能。
+- 结论：Revision、Temporal动态分量和query表达能力都存在；根因是将
+  task-global/time-constant belief与zero-mean temporal innovation混在同一路
+  memory里，前者主导Q/K/V并让后者在集合读取前失去信噪比。下一版应显式拆分
+  masked global mean与zero-mean temporal innovation，innovation每层重新
+  centered，两个content-only reads独立归一化后再合成固定256维query content；
+  不引入contrast loss或人工幅度超参数。按owner顺序，未运行昂贵的
+  shuffled/reversed environment validation，也未推进RL。
+- 三份内部证据summary SHA256依次为
+  `161c3c392dae610be0f299810ecb6aec5773bc735f4a1c7d22bd3f9a25890313`、
+  `92e48820881fc0c6038a370a2595148ad752bdd33d100ac6f376e3cb1cd7a603`、
+  `0af1d094be0f058023fc793d1109aec3865ed06e15d963fc73802ef57094ac4c`。

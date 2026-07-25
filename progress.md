@@ -628,3 +628,26 @@
   259个唯一视频LoRA，随后每卡6 replicas稳定完成。
 - GPU0–3再次实时空闲、GPU4–7持续隔离、个人占用约276GB时，已从step2100
   exact-resume到2400；继续正式评测step2250/2400，仍不提前做specificity。
+
+## Action-Forecast AS step2100→2400与峰值平台回访（2026-07-25）
+
+- 四卡从step2100同合同exact-resume到2400，本段wall `2037.47s`；
+  step2175/2250/2325/2400在线functional monitor为
+  `0.135174/0.134400/0.134857/0.134759`，仍是弱平台。step2400累计
+  153,600 queries、9,600 video conditions，24 tasks各6,400 queries与400次
+  视频访问且50/50 videos全覆盖；最终checkpoint完整保存。
+- step2250/2400正式8×50 correct-video validation为`123/111`，均为32/32
+  shards、400 rows、24 workers exit0、无错误/重试。逐task分别为Long
+  `5/3, 8/0`、Goal `0/34, 0/36`、Object `45/20, 43/18`、Spatial
+  `1/15, 0/6`。
+- step1200→2250 paired为`30/28`，净`-2`、exact `p≈0.8957`，2250实质
+  追平observed-best；step1950→2250反而净`+13`。step1200→2400为
+  `32/18`、净`-14`、`p≈0.0649`，2250→2400为`32/20`、净`-12`、
+  `p≈0.1263`，但这是接近峰值后的一次单点回落，且task方向混合，不能停止。
+- step2250/2400 results SHA256为
+  `35ff55e3f8c2a5f8ed8885cf2a335862879b255189907a098e63d7ad61525655`
+  和`f5c9a77b40048e6826a8b667c887e6d796c14f71be68fe9d9a249329bdc036df`；
+  rollout-only吞吐为`0.60369/0.61011 episode/s`。两次均以batch100生成
+  259个唯一视频LoRA，随后每卡6 replicas稳定完成。
+- GPU0–3再次实时空闲、GPU4–7持续隔离、个人占用约277GB时，已从step2400
+  exact-resume到2700；继续正式评测step2550/2700，specificity继续推迟。

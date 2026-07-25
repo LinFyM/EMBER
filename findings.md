@@ -733,3 +733,25 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   5,600 queries、350次视频访问且50/50 videos全覆盖；完整checkpoint逐SHA
   与manifest一致。轨迹已同合同exact-resume到step2400，继续正式评测
   step2250/2400；specificity仍只保留给最终observed-best。
+
+## Action-Forecast AS step2250重返峰值平台（2026-07-25）
+
+- step2250/2400完整correct-video validation为`123/111`。逐task按Long
+  1/2、Goal 3/6、Object 1/3、Spatial 1/3分别为step2250
+  `5/3, 0/34, 45/20, 1/15`，step2400
+  `8/0, 0/36, 43/18, 0/6`。2250只比step1200 observed-best低2个成功，
+  证明此前`114/110/114`不是已建立的持续下降。
+- step1200→2250 paired为1200-only `30`、2250-only `28`，净`-2`、
+  exact `p≈0.8957`，两者实质相同；step1950→2250为`21/34`、净`+13`。
+  step1200→2400为`32/18`、净`-14`、`p≈0.0649`，step2250→2400为
+  `32/20`、净`-12`、`p≈0.1263`。但2400紧随接近峰值的2250，且Long-1、
+  Goal-6在2400反向提升，因此只是单点回落，不满足持续且多task共同下降。
+- 两次评测均完成32/32 shards、400 rows、24 workers exit0且无错误/重试；
+  results SHA256分别为
+  `35ff55e3f8c2a5f8ed8885cf2a335862879b255189907a098e63d7ad61525655`
+  和`f5c9a77b40048e6826a8b667c887e6d796c14f71be68fe9d9a249329bdc036df`。
+  两次均生成259个唯一视频LoRA并复用source-policy；rollout-only吞吐为
+  `0.60369/0.61011 episode/s`。
+- step2400累计153,600 action queries、9,600 video conditions，24 tasks各
+  6,400 queries、400次视频访问且50/50 videos全覆盖。轨迹已同合同
+  exact-resume到step2700，继续正式评测step2550/2700；不能开始specificity。

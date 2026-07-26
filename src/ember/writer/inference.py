@@ -53,11 +53,13 @@ RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_action_forecast_rl_writer_eval_adapter_v1
 WRITER_ADAPTER_SCHEMAS = {WRITER_ADAPTER_SCHEMA, RL_WRITER_ADAPTER_SCHEMA}
 WRITER_VIDEO_CONDITIONS = {
     "correct",
+    "same_task_other",
     "cross_suite_wrong",
     "shuffled",
     "reversed",
 }
 WRONG_VIDEO_CONDITIONS = {"cross_suite_wrong"}
+SAME_TASK_OTHER_DEMO_OFFSET = 17
 WRITER_VIDEO_SCHEDULE = (
     "sha256 first 63 bits of canonical JSON "
     "[ember_pi05_writer_video_v1,seed,suite,task_id,init_state_id] modulo 50"
@@ -100,6 +102,31 @@ def writer_video_demo_index(
     if demo_count <= 0:
         raise WriterModelError("invalid AS-Writer evaluation video count")
     return writer_video_selection_seed(root_seed, suite, task_id, init_state_id) % demo_count
+
+
+def writer_condition_demo_index(
+    root_seed: int,
+    suite: str,
+    task_id: int,
+    init_state_id: int,
+    *,
+    condition: str,
+    demo_count: int = 50,
+) -> int:
+    """Apply a deterministic video-only transform to the paired correct demo."""
+
+    if condition not in WRITER_VIDEO_CONDITIONS:
+        raise WriterModelError("invalid AS-Writer evaluation video condition")
+    reference = writer_video_demo_index(
+        root_seed,
+        suite,
+        task_id,
+        init_state_id,
+        demo_count=demo_count,
+    )
+    if condition == "same_task_other":
+        return (reference + SAME_TASK_OTHER_DEMO_OFFSET) % demo_count
+    return reference
 
 
 def writer_generation_seed(
@@ -208,8 +235,16 @@ def expected_writer_episode_evidence(
     schedule = adapter.get("video_schedule", {})
     seed = int(schedule.get("seed", -1))
     count = int(schedule.get("demo_count", -1))
-    demo_index = writer_video_demo_index(
+    reference_demo_index = writer_video_demo_index(
         seed, suite, task_id, init_state_id, demo_count=count
+    )
+    demo_index = writer_condition_demo_index(
+        seed,
+        suite,
+        task_id,
+        init_state_id,
+        condition=str(adapter["video_condition"]),
+        demo_count=count,
     )
     selection_seed = writer_video_selection_seed(seed, suite, task_id, init_state_id)
     if evidence_schema not in {
@@ -249,13 +284,28 @@ def expected_writer_episode_evidence(
             {
                 "writer_generation_seed_schedule": WRITER_GENERATION_SEED_SCHEDULE,
                 "writer_flow_noise_seed": writer_generation_seed(
-                    seed, suite, task_id, demo_index, stream="flow_noise"
+                    seed,
+                    suite,
+                    task_id,
+                    reference_demo_index,
+                    stream="flow_noise",
                 ),
                 "teacher_video_order_seed": writer_generation_seed(
-                    seed, suite, task_id, demo_index, stream="frame_order"
+                    seed,
+                    suite,
+                    task_id,
+                    reference_demo_index,
+                    stream="frame_order",
                 ),
             }
         )
+        if adapter["video_condition"] == "same_task_other":
+            result.update(
+                {
+                    "teacher_reference_demo_index": reference_demo_index,
+                    "teacher_demo_offset": SAME_TASK_OTHER_DEMO_OFFSET,
+                }
+            )
     return result
 
 
@@ -451,6 +501,16 @@ def build_writer_evaluation_adapter(
         "writer_forbidden_tensor_inputs": list(forbidden_inputs),
         "teacher_action_values_read_by_evaluator": 0,
     }
+    if video_condition == "same_task_other":
+        result["video_schedule"].update(
+            {
+                "same_task_other_demo_offset": SAME_TASK_OTHER_DEMO_OFFSET,
+                "transform": (
+                    "(paired correct demo + 17) modulo 50; flow noise and "
+                    "order seeds remain paired to the correct demo"
+                ),
+            }
+        )
     return result
 
 

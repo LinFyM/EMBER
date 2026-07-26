@@ -125,6 +125,7 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
         "--writer-video-condition",
         choices=(
             "correct",
+            "same_task_other",
             "cross_suite_wrong",
             "shuffled",
             "reversed",

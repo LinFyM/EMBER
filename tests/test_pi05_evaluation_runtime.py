@@ -31,6 +31,7 @@ from ember.pi05_source_checkpoint import canonical_hash
 from ember.libero_evaluation import sha256_file
 from ember.writer.inference import (
     RL_WRITER_ADAPTER_SCHEMA,
+    SAME_TASK_OTHER_DEMO_OFFSET,
     WRITER_ADAPTER_SCHEMA,
     _task_video_mapping,
     expected_writer_episode_evidence,
@@ -148,8 +149,9 @@ def test_writer_video_schedule_and_wrong_map_are_order_independent() -> None:
     reverse = _task_video_mapping(tuple(reversed(keys)), roles, "cross_suite_wrong")
     shuffled = _task_video_mapping(keys, roles, "shuffled")
     reversed_video = _task_video_mapping(keys, roles, "reversed")
+    same_task_other = _task_video_mapping(keys, roles, "same_task_other")
     assert forward == reverse
-    assert shuffled == reversed_video
+    assert shuffled == reversed_video == same_task_other
     assert all(row["suite"] == row["video_suite"] for row in shuffled)
     assert len({row["video_global_task_id"] for row in forward}) == len(keys)
     assert all(row["suite"] != row["video_suite"] for row in forward)
@@ -157,6 +159,32 @@ def test_writer_video_schedule_and_wrong_map_are_order_independent() -> None:
     by_key = {(row["suite"], row["task_id"]): row for row in forward}
     assert (by_key[("libero_spatial", 1)]["video_suite"], by_key[("libero_spatial", 1)]["video_task_id"]) == ("libero_object", 1)
     assert (by_key[("libero_goal", 6)]["video_suite"], by_key[("libero_goal", 6)]["video_task_id"]) == ("libero_10", 2)
+
+
+def test_same_task_other_changes_only_the_teacher_demo() -> None:
+    correct_adapter = _writer_adapter("correct")
+    other_adapter = _writer_adapter("same_task_other")
+    correct = expected_writer_episode_evidence(
+        correct_adapter,
+        suite="libero_spatial",
+        task_id=0,
+        init_state_id=4,
+        lora_sha256="7" * 64,
+    )
+    other = expected_writer_episode_evidence(
+        other_adapter,
+        suite="libero_spatial",
+        task_id=0,
+        init_state_id=4,
+        lora_sha256="7" * 64,
+    )
+    assert other["teacher_demo_index"] == (
+        correct["teacher_demo_index"] + SAME_TASK_OTHER_DEMO_OFFSET
+    ) % 50
+    assert other["teacher_reference_demo_index"] == correct["teacher_demo_index"]
+    assert other["video_global_task_id"] == correct["video_global_task_id"]
+    assert other["writer_flow_noise_seed"] == correct["writer_flow_noise_seed"]
+    assert other["teacher_video_order_seed"] == correct["teacher_video_order_seed"]
 
 
 def test_writer_row_contract_recomputes_video_schedule_and_mapping(tmp_path: Path) -> None:

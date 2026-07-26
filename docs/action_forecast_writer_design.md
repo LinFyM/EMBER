@@ -1,6 +1,6 @@
 # Action-Forecast Writer canonical architecture design
 
-状态：2026-07-25 owner 最终对齐。本文是当前 focused AS/RL Writer 子任务的
+状态：2026-07-26 owner 最新对齐。本文是当前 focused Writer 子任务的
 唯一活动设计 authority。
 
 历史 Action-Memory、Action-Forecast v1/v2、28-slot Belief-v3、冻结随机
@@ -15,10 +15,11 @@ visual-state decoder、累计 transition、Plan/Revision 双 token、order contr
 
 当前 focused Goal 是：
 
-> 在 EMBER 中记录并实现 owner 最新对齐的 Action-Forecast Writer：采用32-token、初始锚点加非递归相对视觉变化的 visual-state，经 future-action forecasts、Plan/Revision、单-token Belief、两层 Temporal 和 content-conditioned LoRA decoder 生成完整 rank-16 LoRA；先训练到75 step并完成内部顺序、换视频和必要rollout特异性闭环，未通过则基于证据迭代架构直至通过；随后从fresh初态正式训练到1200 step，并以每次600 step增量充分寻找保持视频特异性的 validation observed-best，性能至少接近并力争超过此前约125/400，双门通过后推进独立 cold-start RL Writer。全程不使用对比损失，固定frame stride=5，只使用GPU 0、1、2、3且不触碰4–7。
+> 保持已经实现并通过75-step内部机制gate的Action-Forecast Writer v4不变；正式训练固定结束于step 2400，不再续训。弃用波动过大的80-episode快筛，仅在现有checkpoint中用同一固定8-task×50 validation panel充分寻找当前observed-best。随后对observed-best完成内部及完整rollout特异性检查，包括correct、same-task other correct teacher、cross-suite wrong、shuffled和reversed；重点检验同任务不同正确示范的影响是否显著小于错误任务或破坏顺序。完成证据与分析记录后停止并向owner汇报，本轮不进入cold-start RL。全程不使用对比损失，固定frame stride=5，只使用GPU 0、1、2、3且不触碰4–7。
 
-本 Goal 只有在 focused AS/RL Writer 全部完成后才能标记 complete。文档、代码、
-smoke、75-step 机制结果、单个 validation 点或 AS 单阶段完成都不够。
+本轮结束条件是现有checkpoint的observed-best和上述特异性证据已经完整获得、分析
+并记录。它不要求证明无限训练下的全局ceiling，也不再要求通过继续训练观察峰后
+下降。RL及其后续阶段均等待owner后续决定。
 
 ## 1. 科学意图与完整前向链路
 
@@ -613,7 +614,7 @@ v5/new/experimental配置、第二runner或并行checkpoint schema。
 
 不做全仓仪式性校验，不为短探索建立平行测试框架。
 
-## 19. 75-step视频特异性闭环
+## 19. 75-step视频特异性闭环（已完成）
 
 新架构从fresh identity训练到75 optimizer steps。加载成本较高，不评测更短
 checkpoint。
@@ -663,31 +664,28 @@ frozen image tokens
 新的75-step run并重复。不得用contrast loss挽救。若第一性原理分析后确实没有
 可修方案，停止并向owner汇报，而不是堆任意模块。
 
-## 20. 正式AS训练与最佳点
+本gate已经由v4通过，保留本节作为架构接受证据。此前产生的80-episode rollout
+快筛由于方差和batch-composition敏感性过大，现已退役：不再运行，也不再用于
+checkpoint排序或行为结论。后续行为判断只使用固定400-episode panel。
 
-75-step探索只作架构gate。最终通过的架构从fresh identity启动正式run：
+## 20. 正式AS训练与现有observed-best
 
-- 直接训练 `0→1200` optimizer steps；
+v4正式run已从fresh identity训练到step 2400，且训练现已结束：
+
 - checkpoint可每75 steps密集保存；
-- 不因保存checkpoint主动停训或频繁切换评测；
 - frame stride固定5；
-- batch和frame-microbatch只按真实吞吐/显存优化；
+- 已采用真实吞吐和显存profile选定的batch及frame-microbatch；
 - 只用GPU 0、1、2、3，即使这些卡已有进程也可按owner授权共享；
 - 4–7绝不触碰。
 
-1200完成后根据train/validation functional evidence和已有closed-loop曲线逐步
-挑选checkpoint做固定8-task×50 validation。最终best由paired closed-loop
-success决定，loss只作候选筛选。
+不再续训，不使用80-episode快筛。根据完整functional轨迹、已有固定400结果和
+训练时间覆盖，从现有75-step checkpoints中选择有代表性的候选，直接在完全相同
+的固定8-task×50 panel上评测。候选必须覆盖已有最佳附近、后续局部functional
+低点、训练后段和终点，避免只因loss或单个低点漏掉行为反弹。最终best只由paired
+closed-loop success决定；functional loss只用于安排评测顺序，不能替代rollout。
 
-必须充分寻找：
-
-- validation observed-best；
-- best之后幅度非常明显、远超400-rollout正常波动、由多个tasks共同贡献且在
-  独立panel/复测仍成立的下降趋势。
-
-多个后续checkpoint略低、单个较低点、loss平台或aggregate小幅波动都不能停止。
-若1200后没有明显下降趋势，每次exact-resume增加600 steps，继续选择候选和
-复测，直到最佳点被充分括住。
+本轮寻找的是截至step 2400的observed-best，不再用追加训练强求明显峰后下降，
+也不据此宣称v4的无限训练ceiling。
 
 性能参考：
 
@@ -695,20 +693,58 @@ success决定，loss只作候选筛选。
 - 四卡rank-128 Source-SFT observed-best是108/400；
 - 旧八卡122/400不是必须超过的硬门槛，但超过更好。
 
-若最终AS best没有超过或至少接近此前约125/400，应先定位容量、优化、forecast
-语义、Meta-LoRA或训练轨迹问题并重新实验；不得牺牲视频特异性换取公共adapter
-性能。最终被选best必须重新通过内部和实际视频特异性检查。
+无论绝对性能是否达到上述参考，最终被选best都必须重新通过内部和实际视频
+特异性检查。本轮只分析未达到参考时最可能的表示与优化原因，不修改架构或重训。
 
-## 21. Cold-start RL Writer
+### 20.1 高层任务逻辑与demo-specific低层变化
 
-只有AS同时通过：
+EMBER的目标不是复现teacher的逐点轨迹，而是从一条action-hidden视频提取可迁移
+的任务逻辑，例如：
 
-- 绝对性能；
-- correct/wrong-video；
-- normal/reversed/shuffled顺序特异性；
-- best与明显峰后下降；
+```text
+识别目标和相关物体
+-> 靠近目标
+-> 抓取或操作
+-> 搬运/对齐
+-> 放置或完成终态
+```
 
-才进入RL。
+AS训练中的teacher video与action episode只保证来自同一任务，并非同一episode
+配对。因此，同任务示范之间共享的物体角色、阶段顺序、因果关系和完成条件，才是
+与监督action稳定一致的信号。某条示范独有的速度、逐点轨迹、抓取角度、细微视角
+变化，以及不准确的visual-state或Action Expert forecast，则可能是与当前action
+监督不匹配的干扰。
+
+v4切断task-latent捷径并更忠实地保留visual-state、forecast和Revision差异，这是
+必要的机制修复，但它可能同时放大两类信息：
+
+- 有用的任务阶段与动作逻辑；
+- 无用或不可靠的demo-specific低层变化。
+
+因此“LoRA随视频明显变化”只证明Writer使用了视频，不证明变化对执行有益。当前
+待验证假设是：v4在精确识别、接近和抓取物体的任务上，可能对后一类变化过敏，
+从而使随机正确teacher造成策略摇摆。这个假设不是既定结论，本轮只通过内部量与
+paired rollout量化，不直接修改架构，也不通过额外loss人为压制差异。
+
+期望的特异性层级是：
+
+1. `correct`与`same-task other correct teacher`可以产生差异，但内部LoRA差异
+   应明显小于wrong-video和顺序破坏；两者的成功率应接近，paired episode churn
+   应较小。
+2. `cross-suite wrong`应改变任务语义，`shuffled/reversed`应破坏动作阶段和有向
+   转移；它们应产生更大的内部变化，并在多个任务的paired rollout中稳定伤害
+   表现。
+3. 不要求同任务不同示范生成完全相同LoRA，因为不同合法初态、布局和策略仍可能
+   提供有用调整；判断重点是变化的层级、稳定性和行为后果。
+
+若内部差异很大但各条件rollout没有稳定层级，结论应是特异性主要属于无效变化；
+若same-task other保持稳定而wrong/shuffled/reversed明显退化，才说明Writer更接近
+提取了可执行的高层任务逻辑。
+
+## 21. Cold-start RL Writer（本轮暂停）
+
+本轮完成现有AS checkpoint选择和特异性分析后立即停止，不进入RL。以下只保留
+owner未来重新授权时的科学合同，不是当前执行项。
 
 RL Writer使用同一最终架构和public LoRA schema，但不是从完整AS best继续：
 
@@ -722,8 +758,8 @@ RL Writer使用同一最终架构和public LoRA schema，但不是从完整AS be
 7. 在validation上寻找observed-best及明显、复测稳健、多task共同贡献的峰后
    下降。
 
-完成focused AS/RL Writer后停止并向owner汇报。不得自动继续final-32、
-test task-local RL、joint target-action oracle或ViVLA。
+不得自动继续cold-start RL、final-32、test task-local RL、joint target-action
+oracle或ViVLA。
 
 ## 22. 效率、存储与安全
 

@@ -1257,8 +1257,8 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 
 - owner已批准
   `docs/action_forecast_writer_v5_design.md`为唯一活动Writer架构。v4完整代码、
-  结果和根因只作provenance；当前尚未实现、profile或训练v5，不能把下面的设计
-  预算写成实测结果。
+  结果和根因只作provenance；v5现已原位实现并完成机械profile，尚未产生正式
+  AS性能或特异性结果。
 - v5 teacher侧删除state。每帧图像与正确语言经过frozen PaliGemma和trainable
   rank4 VL Meta-LoRA后，取256个language-conditioned image-position final
   hidden；固定`2×2`空间平均池化为64 tokens，再经bias-free `2048→256`得到
@@ -1283,8 +1283,23 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   逻辑上生成`B_a×4`个LoRA和functional losses并普通求均值；仅允许按精确视频
   键去重相同Writer forward，不能让整个action batch只共享4个LoRA。推理仍严格
   one-shot。
-- v5不继承v4 step等价口径。真实GPU4–7 profile后，以稳态step wall估算约一小时
-  segment，并每段均匀保存6个checkpoint。focused AS/RL无总wall-clock上限；
+- 真实构造打印trainable参数恰为`10,301,440`；全套`187 passed`。Core compiler
+  对同一memory置换数值不变，causal Procedure具备前缀因果性和顺序差异，
+  zero memory不能由routing/ordinal凭空生成content，factor-head zero-init使
+  fresh Writer严格输出identity LoRA，固定suffix buffer进入checkpoint。
+- GPU4–7实测最终选择`B_a=8`、`N=4`、frame microbatch32。12-step run从step2
+  真实exact-resume到step12；稳态11步wall中位/均值/范围为
+  `61.39/59.78/38.99–92.08s`，pairs/s中位`2.085`，峰值allocated/reserved
+  `60.32/67.47GB`。`B_a=12/20`和`m40/B8`均发生约80GB reserved跳变，只剩
+  不足3GB，故即使未OOM也不具备正式稳定余量。
+- profile边界明细：`m32/B1`第二步`2.079 pairs/s、64.13GB reserved`；
+  `m32/B4`第二步`2.186、64.05GB`；`m32/B8`第二步`2.717、67.24GB`；
+  `m32/B12`首步`1.557、81.98GB`；`m32/B20`首步`2.028、83.82GB`；
+  `m40/B8`首步中实时已达约`80.7GB`，因稳定余量不足主动停止。只有最终B8
+  root作为canonical profile evidence保留，其余可再生边界roots删除。
+- v5不继承v4 step等价口径。正式封存为每60 steps约一小时
+  exact-resume segment，并在10/20/30/40/50/60均匀保存6个checkpoint。
+  focused AS/RL无总wall-clock上限；
   best后只有明显、持续、多task且独立复测成立的下降才可停止。
 - 特异性先内后外：Core对same-frame-set order变换应不变，Procedure与delta应
   明显有向变化，same-task other变化应小于wrong，差异须穿过effective LoRA和

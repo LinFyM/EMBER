@@ -54,7 +54,7 @@ from ember.writer.data import TeacherVideoSchedule
 from ember.writer.feature_cache import WriterFeatureStore
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.model import (
-    ACTION_FORECAST_WRITER_CONSTRUCTOR_KEYS,
+    CORE_CAUSAL_WRITER_CONSTRUCTOR_KEYS,
     CompleteLoRAWriter,
     build_lora_tensor_specs,
 )
@@ -114,7 +114,7 @@ def _fresh_writer(
     values = {
         key: value
         for key, value in as_config["writer"].items()
-        if key in ACTION_FORECAST_WRITER_CONSTRUCTOR_KEYS
+        if key in CORE_CAUSAL_WRITER_CONSTRUCTOR_KEYS
     }
     seed = int(config["optimization"]["seed"])
     fork_devices = [device] if device.type == "cuda" else []

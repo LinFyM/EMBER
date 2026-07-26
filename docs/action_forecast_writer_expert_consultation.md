@@ -348,7 +348,8 @@ step75 的 final effective-LoRA reversed/shuffled 差已经达到
 当前 canonical 实现由
 [`action_forecast_writer_design.md`](action_forecast_writer_design.md)
 精确定义，配置为
-[`pi05_as_writer_action_forecast_v4.json`](../configs/pi05_as_writer_action_forecast_v4.json)。
+[`pi05_as_writer_action_forecast_v4.json`](https://github.com/LinFyM/EMBER/blob/73c419137b6004d6578c3c784633a711dfb95e0c/configs/pi05_as_writer_action_forecast_v4.json)。
+这些v4源码现已退役，链接固定到最后一个保留完整v4实现的远程commit。
 下面给出完整前向链路和每个模块存在的理由。
 
 ### 3.1 总体链路
@@ -420,7 +421,7 @@ InitialStateReader 和 ChangeReader 都不读 language。coordinate identities
 变成任意高维 soft prompt。
 
 代码：
-[`visual_state.py`](../src/ember/writer/visual_state.py)。
+[`visual_state.py`](https://github.com/LinFyM/EMBER/blob/73c419137b6004d6578c3c784633a711dfb95e0c/src/ember/writer/visual_state.py)。
 
 ### 3.4 32-token native state renderer
 
@@ -461,7 +462,7 @@ observer-to-robot 映射。风险是：AS loss 没有逐帧 forecast supervision
 也可能学到一种对最终 action loss 有用但语义不校准的内部 forecast。
 
 代码：
-[`action_forecast.py`](../src/ember/writer/action_forecast.py)。
+[`action_forecast.py`](https://github.com/LinFyM/EMBER/blob/73c419137b6004d6578c3c784633a711dfb95e0c/src/ember/writer/action_forecast.py)。
 
 ### 3.6 Per-frame future-action forecast
 
@@ -914,18 +915,18 @@ action episode 独立配对，所以只有跨 demo 稳定的任务逻辑才与 a
 2. [`action_forecast_writer_design.md`](action_forecast_writer_design.md)：
    v4 的 canonical 数学与执行合同；
 3. [`concept.md`](concept.md)：EMBER 的信息墙、比较方法与 claim boundary；
-4. [`pi05_as_writer_action_forecast_v4.json`](../configs/pi05_as_writer_action_forecast_v4.json)：
+4. [`pi05_as_writer_action_forecast_v4.json`](https://github.com/LinFyM/EMBER/blob/73c419137b6004d6578c3c784633a711dfb95e0c/configs/pi05_as_writer_action_forecast_v4.json)：
    v4 sealed schema/参数；
 5. 核心实现：
-   - [`visual_state.py`](../src/ember/writer/visual_state.py)；
-   - [`action_forecast.py`](../src/ember/writer/action_forecast.py)；
-   - [`temporal.py`](../src/ember/writer/temporal.py)；
-   - [`model.py`](../src/ember/writer/model.py)；
-   - [`as_step.py`](../src/ember/writer/as_step.py)；
+   - [`visual_state.py`](https://github.com/LinFyM/EMBER/blob/73c419137b6004d6578c3c784633a711dfb95e0c/src/ember/writer/visual_state.py)；
+   - [`action_forecast.py`](https://github.com/LinFyM/EMBER/blob/73c419137b6004d6578c3c784633a711dfb95e0c/src/ember/writer/action_forecast.py)；
+   - [`temporal.py`](https://github.com/LinFyM/EMBER/blob/73c419137b6004d6578c3c784633a711dfb95e0c/src/ember/writer/temporal.py)；
+   - [`model.py`](https://github.com/LinFyM/EMBER/blob/73c419137b6004d6578c3c784633a711dfb95e0c/src/ember/writer/model.py)；
+   - [`as_step.py`](https://github.com/LinFyM/EMBER/blob/73c419137b6004d6578c3c784633a711dfb95e0c/src/ember/writer/as_step.py)；
 6. inference/evaluation：
-   - [`inference.py`](../src/ember/writer/inference.py)；
-   - [`evaluation_cache.py`](../src/ember/writer/evaluation_cache.py)；
-   - [`evaluate_pi05.py`](../scripts/evaluate_pi05.py)；
+   - [`inference.py`](https://github.com/LinFyM/EMBER/blob/73c419137b6004d6578c3c784633a711dfb95e0c/src/ember/writer/inference.py)；
+   - [`evaluation_cache.py`](https://github.com/LinFyM/EMBER/blob/73c419137b6004d6578c3c784633a711dfb95e0c/src/ember/writer/evaluation_cache.py)；
+   - [`evaluate_pi05.py`](https://github.com/LinFyM/EMBER/blob/73c419137b6004d6578c3c784633a711dfb95e0c/scripts/evaluate_pi05.py)；
 7. [`findings.md`](../findings.md)：
    从 “Fresh 1k source base” 到 “v4 step825固定首帧shuffle归因” 的逐阶段
    证据 ledger；

@@ -1,9 +1,9 @@
 """Canonical symmetric-rank PI05 Action-Supervised Writer training.
 
-Only the shared Writer is trainable.  It receives pure task language plus one
-action-hidden teacher video and generates the complete sealed PI05 task LoRA;
-an independently sampled action query from the same development-train task is
-used only by the frozen policy's functional behavior loss.
+Only the shared Writer is trainable.  Every action query is independently
+paired with N distinct same-task action-hidden videos.  Each video still
+generates a one-shot LoRA; the frozen policy evaluates all N adapters against
+the same action target and flow-noise draw.
 """
 
 from __future__ import annotations
@@ -21,13 +21,14 @@ from lerobot.optim.schedulers import CosineDecayWithWarmupSchedulerConfig
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader
 
+from ember.batched_lora import BatchedLoRAInference
 from ember.pi05_eval_contract import (
     inspect_source_checkpoint,
     inspect_tokenizer,
     load_evaluation_authorities,
 )
 from ember.pi05_lora import load_pi05_lora_contract
-from ember.pi05_processing import Pi05ForecastPrefixTokenizer, Pi05LiberoProcessor
+from ember.pi05_processing import Pi05LiberoProcessor, Pi05TeacherPrefixTokenizer
 from ember.pi05_source_checkpoint import (
     DistributedContext,
     barrier,
@@ -67,12 +68,11 @@ from ember.writer.data import (
     MixedTaskBatchSampler,
     RawTeacherVideoStore,
     TeacherVideoSchedule,
-    WriterFlowNoiseSchedule,
     WriterTaskAuthority,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.model import (
-    ACTION_FORECAST_WRITER_CONSTRUCTOR_KEYS,
+    CORE_CAUSAL_WRITER_CONSTRUCTOR_KEYS,
     CompleteLoRAWriter,
     WriterModelError,
     build_lora_tensor_specs,
@@ -94,18 +94,18 @@ class WriterRuntime:
     task_ids: tuple[int, ...]
     sampler: MixedTaskBatchSampler
     video_schedule: TeacherVideoSchedule
-    flow_noise_schedule: WriterFlowNoiseSchedule
     iterator: Iterator[dict[str, Any]]
     video_store: RawTeacherVideoStore
     language_tokens: dict[
         int,
-        tuple[torch.Tensor, torch.Tensor, torch.Tensor],
+        tuple[torch.Tensor, torch.Tensor],
     ]
     processor: Pi05LiberoProcessor
     policy: torch.nn.Module
     identity_state: dict[str, torch.Tensor]
     writer: CompleteLoRAWriter
     wrapped_writer: torch.nn.Module
+    functional_lora: BatchedLoRAInference
     optimizer: torch.optim.Optimizer
     scheduler: torch.optim.lr_scheduler.LRScheduler
     lora_contract: Any
@@ -113,7 +113,7 @@ class WriterRuntime:
     contract_sha256: str
     total_steps: int
     batch_size: int
-    conditions_per_optimizer_step: int
+    videos_per_action: int
     checkpoint_steps: tuple[int, ...]
     resume_step: int
     metrics_path: Path
@@ -155,7 +155,7 @@ def _build_writer(
     writer_config = {
         key: value
         for key, value in config["writer"].items()
-        if key in ACTION_FORECAST_WRITER_CONSTRUCTOR_KEYS
+        if key in CORE_CAUSAL_WRITER_CONSTRUCTOR_KEYS
     }
     bridge = policy.model.paligemma_with_expert
     writer = CompleteLoRAWriter(
@@ -229,7 +229,7 @@ def _restore_training_state(
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     batch_size: int,
     batch_cycle: tuple[int, ...],
-    conditions_per_optimizer_step: int,
+    videos_per_action: int,
     contract_sha256: str,
     initial_step: int,
 ) -> tuple[dict[str, Any] | None, int]:
@@ -243,10 +243,9 @@ def _restore_training_state(
         scheduler=scheduler,
         sampler_seed=int(config["data"]["sampler_seed"]),
         teacher_video_seed=int(config["data"]["teacher_video_seed"]),
-        writer_flow_noise_seed=int(config["data"]["writer_flow_noise_seed"]),
         per_rank_batch_size=batch_size,
         per_rank_batch_cycle=batch_cycle,
-        conditions_per_optimizer_step=conditions_per_optimizer_step,
+        videos_per_action=videos_per_action,
         contract_sha256=contract_sha256,
     )
     if loaded != initial_step:
@@ -263,11 +262,8 @@ def _build_sampler_and_loader(
     task_ids: tuple[int, ...],
     batch_size: int,
     batch_cycle: tuple[int, ...],
-    conditions_per_optimizer_step: int,
     initial_step: int,
 ) -> tuple[MixedTaskBatchSampler, TeacherVideoSchedule, DataLoader[Any]]:
-    if conditions_per_optimizer_step != 1:
-        raise WriterModelError("Action-Forecast AS uses one video condition per rank")
     initial_data_step = initial_step
     stop_data_step = args.stop_after_step
     sampler = MixedTaskBatchSampler(
@@ -309,7 +305,7 @@ def _wrap_writer(writer: CompleteLoRAWriter, context: DistributedContext) -> tor
         device_ids=[context.local_rank],
         output_device=context.local_rank,
         broadcast_buffers=False,
-        find_unused_parameters=True,
+        find_unused_parameters=False,
         static_graph=False,
     )
 
@@ -339,7 +335,7 @@ def _build_condition_inputs(
 ) -> tuple[
     RawTeacherVideoStore,
     Pi05LiberoProcessor,
-    dict[int, tuple[torch.Tensor, torch.Tensor, torch.Tensor]],
+    dict[int, tuple[torch.Tensor, torch.Tensor]],
 ]:
     store = RawTeacherVideoStore(
         tasks,
@@ -355,7 +351,7 @@ def _build_condition_inputs(
         int(authorities.source_base_config["features"]["tokenizer_max_length"]),
         str(context.device),
     )
-    tokenizer = Pi05ForecastPrefixTokenizer(
+    tokenizer = Pi05TeacherPrefixTokenizer(
         args.tokenizer_path,
         int(authorities.source_base_config["features"]["tokenizer_max_length"]),
         str(context.device),
@@ -474,8 +470,8 @@ def prepare_runtime(
     config = load_writer_config(args.config.resolve())
     total_steps, batch_size, checkpoint_steps = resolve_runtime(args, config, context)
     batch_cycle = (batch_size,)
-    conditions_per_optimizer_step = int(
-        config["conditioning_training"]["independent_conditions_per_optimizer_step"]
+    videos_per_action = int(
+        config["conditioning_training"]["teacher_videos_per_action"]
     )
     initial_step = resume_step(args.resume)
     if not 0 <= initial_step < args.stop_after_step:
@@ -500,7 +496,7 @@ def prepare_runtime(
         scheduler=setup.scheduler,
         batch_size=batch_size,
         batch_cycle=batch_cycle,
-        conditions_per_optimizer_step=conditions_per_optimizer_step,
+        videos_per_action=videos_per_action,
         contract_sha256=setup.contract_sha256,
         initial_step=initial_step,
     )
@@ -512,7 +508,6 @@ def prepare_runtime(
         task_ids=setup.task_ids,
         batch_size=batch_size,
         batch_cycle=batch_cycle,
-        conditions_per_optimizer_step=conditions_per_optimizer_step,
         initial_step=initial_step,
     )
     wrapped = _wrap_writer(setup.writer, context)
@@ -556,9 +551,6 @@ def prepare_runtime(
         task_ids=setup.task_ids,
         sampler=sampler,
         video_schedule=video_schedule,
-        flow_noise_schedule=WriterFlowNoiseSchedule(
-            seed=int(config["data"]["writer_flow_noise_seed"]),
-        ),
         iterator=iter(loader),
         video_store=video_store,
         language_tokens=language_tokens,
@@ -567,6 +559,7 @@ def prepare_runtime(
         identity_state=setup.identity_state,
         writer=setup.writer,
         wrapped_writer=wrapped,
+        functional_lora=BatchedLoRAInference(setup.policy, setup.lora_contract),
         optimizer=setup.optimizer,
         scheduler=setup.scheduler,
         lora_contract=setup.lora_contract,
@@ -574,7 +567,7 @@ def prepare_runtime(
         contract_sha256=setup.contract_sha256,
         total_steps=total_steps,
         batch_size=batch_size,
-        conditions_per_optimizer_step=conditions_per_optimizer_step,
+        videos_per_action=videos_per_action,
         checkpoint_steps=checkpoint_steps,
         resume_step=initial_step,
         metrics_path=metrics_path,
@@ -640,7 +633,6 @@ def run_steps(runtime: WriterRuntime) -> None:
                 scheduler=runtime.scheduler,
                 sampler=runtime.sampler,
                 video_schedule=runtime.video_schedule,
-                flow_noise_schedule=runtime.flow_noise_schedule,
                 contract=runtime.contract,
                 mode=runtime.args.mode,
                 metrics_rows=runtime.metrics_rows,
@@ -673,10 +665,13 @@ def run_steps(runtime: WriterRuntime) -> None:
                 stop
                 * runtime.context.world_size
                 * runtime.batch_size
-                * int(runtime.contract["runtime"]["policy_forward_calls_per_optimizer_step"])
+                * runtime.videos_per_action
             ),
-            "global_independent_task_video_conditions": (
-                stop * runtime.context.world_size
+            "global_logical_task_video_conditions": (
+                stop
+                * runtime.context.world_size
+                * runtime.batch_size
+                * runtime.videos_per_action
             ),
             "test_action_reads": 0,
             "test_video_value_reads": 0,
@@ -703,9 +698,7 @@ def train(args: argparse.Namespace) -> None:
                         "contract_sha256": runtime.contract_sha256,
                         "resume_step": runtime.resume_step,
                         "stop_after_step": args.stop_after_step,
-                        "independent_conditions_per_optimizer_step": (
-                            runtime.conditions_per_optimizer_step
-                        ),
+                        "teacher_videos_per_action": runtime.videos_per_action,
                         "tasks": len(runtime.task_ids),
                         "trainable": runtime.contract["trainable"],
                     },
@@ -718,6 +711,7 @@ def train(args: argparse.Namespace) -> None:
         if runtime is not None:
             runtime.dataset.close()
             runtime.video_store.close()
+            runtime.functional_lora.close()
             if runtime.checkpoint_validation is not None:
                 runtime.checkpoint_validation.close()
         if dist.is_available() and dist.is_initialized():
@@ -729,7 +723,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_as_writer_action_forecast_v4.json",
+        default=REPO_ROOT / "configs/pi05_as_writer_core_causal_v5.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--source-run", type=Path, required=True)

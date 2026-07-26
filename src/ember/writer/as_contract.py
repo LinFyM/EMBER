@@ -30,8 +30,8 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_action_forecast_as_writer_v4"
-AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_action_forecast_as_writer_launch_v4"
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_core_causal_as_writer_v5"
+AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_core_causal_as_writer_launch_v5"
 AS_WRITER_STAGES = ("development", "final")
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
@@ -91,39 +91,27 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         writer.get("frame_stride") != 5
         or int(writer.get("frame_microbatch_size", 0)) <= 0
     ):
-        raise WriterModelError("sealed Action-Forecast profile dimensions changed")
+        raise WriterModelError("sealed Core-Causal Writer dimensions changed")
     expected_writer = {
-        "architecture": "pi05_action_forecast_anchored_visual_state_v4",
+        "architecture": "pi05_semantic_core_causal_procedure_v5",
         "generated_adapter": "complete_pi05_task_specific_rank16_lora",
         "camera_dataset": "obs/agentview_rgb",
         "camera_transform": "libero_opengl_rotate_180_chw_uint8",
         "frame_stride": writer["frame_stride"],
         "include_final_frame": True,
+        "teacher_prompt": "Task: {cleaned_task};\nAction: ",
+        "teacher_state_input": False,
         "image_width": 2048,
-        "state_width": 128,
-        "state_slots": 32,
-        "state_coordinates": 8,
-        "state_heads": 4,
-        "state_token_generation": (
-            "native_32_token_anchor_plus_digit_embedding_subspace_offsets"
+        "native_image_tokens": 256,
+        "native_image_grid": 16,
+        "spatial_pool": "parameter_free_2x2_average_to_8x8",
+        "spatial_pool_grid": 8,
+        "core_tokens_per_frame": 64,
+        "core_projection": "shared_bias_free_2048_to_256",
+        "core_order_contract": (
+            "flatten_all_frame_spatial_tokens_without_frame_ordinal_or_position_value"
         ),
-        "state_token_trainability": (
-            "trainable_initial_change_readers_and_shared_renderer"
-        ),
-        "visual_state_update": (
-            "initial_anchor_plus_nonrecursive_anchor_and_local_signed_change"
-        ),
-        "visual_state_language_input": False,
-        "visual_state_recurrence": False,
-        "visual_state_content_activation": "bias_free_odd_tanh",
-        "visual_state_anchor_text": " 128 128 128 128 128 128 128 128",
-        "visual_state_anchor_token_layout": (
-            "space_1_2_8_repeated_8_exactly_32_tokens"
-        ),
-        "visual_state_renderer": (
-            "eight_bounded_coordinates_control_three_digit_positions_each_"
-            "in_frozen_digit_embedding_span"
-        ),
+        "expert_width": 1024,
         "vl_meta_lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
         "vl_meta_lora_rank": 4,
         "action_meta_lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
@@ -133,68 +121,60 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
             "repeat_last_pad_to_fixed_size_then_crop"
         ),
         "activation_checkpointing": True,
-        "num_flow_steps": 10,
         "action_horizon": 50,
         "padded_action_dim": 32,
-        "output_action_dim": 7,
-        "belief_alignment": (
-            "one_token_per_absolute_control_time_latest_plan_concat_revision"
+        "action_expert_probe": (
+            "one_forward_fixed_persistent_gaussian_suffix_at_t1"
         ),
-        "maximum_revision_count": 10,
-        "plan_content_path": (
-            "single_bias_free_linear_from_latest_seven_dimensional_action_"
-            "without_output_norm"
+        "action_expert_action_out": False,
+        "interaction_reduction": (
+            "mean_50_final_suffix_hidden_then_shared_bias_free_1024_to_256"
         ),
-        "revision_reference": (
-            "all_earlier_covering_forecasts_relative_to_latest_plan"
+        "program_width": 256,
+        "procedure_heads": 8,
+        "procedure_blocks": 2,
+        "procedure_attention": "global_causal_pre_norm_with_valid_mask",
+        "procedure_position_encoding": (
+            "one_dimensional_rope_on_sampled_frame_ordinal_qk_only"
         ),
-        "revision_direction_path": (
-            "bias_free_mlp_from_signed_mean_and_per_dimension_rms"
-        ),
-        "revision_strength_path": (
-            "stop_gradient_raw_source_normalized_plan_relative_residual_rms"
-        ),
-        "belief_layout": (
-            "plan_first_128_revision_second_128_without_post_concat_projection"
-        ),
-        "belief_normalization": (
-            "plan_raw_revision_direction_rmsnorm_times_stopgrad_raw_rms"
-        ),
-        "temporal_width": 256,
-        "temporal_heads": 8,
-        "temporal_blocks": 2,
-        "temporal_position_encoding": (
-            "one_dimensional_rope_on_absolute_control_time"
-        ),
-        "temporal_routing": (
-            "latest_lead_revision_count_and_detached_strength_enter_qk_only"
-        ),
-        "temporal_value_path": (
-            "raw_belief_content_only_without_time_mean_removal"
-        ),
-        "temporal_initialization": (
-            "zero_attention_output_and_ffn_final_for_identity_safe_start"
-        ),
+        "procedure_value_path": "raw_interaction_content_only",
+        "procedure_initialization": "normal_nonzero",
         "query_count": 320,
-        "query_decoder_blocks": 2,
-        "query_block_order": "cross_attention_before_self_attention",
-        "query_memory_direction": (
-            "static_identities_qk_only_with_normalized_keys_and_raw_memory_values"
+        "routing_identity": "query_module_layer_rank_qk_only",
+        "core_compiler_blocks": 1,
+        "procedure_refiner_blocks": 1,
+        "core_compiler": "content_only_cross_then_self_then_ffn",
+        "procedure_refiner": (
+            "independent_content_only_delta_with_zero_initialized_cross_output"
         ),
+        "compiler_order": "all_core_blocks_then_all_procedure_blocks",
         "factor_head_bias": False,
-        "factor_hidden_width": 411,
+        "factor_hidden_width": 420,
         "initialization_seed": 7,
     }
     if writer != expected_writer:
-        raise WriterModelError("Action-Forecast AS-Writer architecture changed")
+        missing = sorted(set(expected_writer) - set(writer))
+        extra = sorted(set(writer) - set(expected_writer))
+        changed = sorted(
+            key
+            for key in set(writer) & set(expected_writer)
+            if writer[key] != expected_writer[key]
+        )
+        raise WriterModelError(
+            "Core-Causal AS-Writer architecture changed; "
+            f"missing={missing}, extra={extra}, changed={changed}"
+        )
 
 
 def _validate_information_wall(config: Mapping[str, Any]) -> None:
     common = {
-        "writer_input": "task language plus exactly one raw action-hidden teacher video",
+        "writer_input": (
+            "task language plus exactly one raw action-hidden teacher video at inference"
+        ),
         "writer_forbidden_inputs": [
             "action",
             "proprio",
+            "state",
             "reward",
             "terminal",
             "task_id",
@@ -228,14 +208,16 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         "task_count": 24 if writer_stage(config) == "development" else 32,
         "demo_indices": [0, 49],
         "episodes_per_task": 50,
-        "teacher_video_sampling": "independent deterministic per-task no-replacement cycles",
+        "teacher_video_sampling": (
+            "per_action_independent_deterministic_four_distinct_same_task_videos"
+        ),
         "action_query_sampling": "task-balanced deterministic no-replacement episode cycles",
         "video_action_pairing": (
-            "positive video and action query independently sampled within task"
+            "each action query independently samples four same-task videos"
         ),
-        "flow_noise_sampling": (
-            "one deterministic [50,32] Gaussian sample per video visit shared "
-            "across its frames"
+        "exact_video_deduplication": (
+            "deduplicate identical task_language_demo_transform Writer forwards "
+            "while retaining every logical pair loss"
         ),
     }
     if any(data.get(name) != value for name, value in required.items()):
@@ -245,15 +227,20 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
 def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
     value = config.get("conditioning_training", {})
     normal = {
-        "method": "normal_positive_functional_action_loss_only",
+        "method": "same_action_multi_video_positive_functional_loss",
         "writer_language_contract": (
-            "correct_task_language_native_state_action_layout"
+            "correct_task_language_state_free_teacher_action_suffix"
         ),
         "policy_language_contract": "correct_action_query_task_language",
         "action_query_batch_owner": (
-            "one physical batch per rank with no second policy microbatch"
+            "one physical action batch per rank with no optimizer gradient accumulation"
         ),
-        "independent_conditions_per_optimizer_step": 1,
+        "teacher_videos_per_action": 4,
+        "logical_pair_batch": "per_rank_action_batch_times_four",
+        "policy_noise_contract": (
+            "same action target flow noise and time draw across the four video adapters"
+        ),
+        "pair_loss_reduction": "mean_over_all_action_video_pairs",
         "normal_loss_weight": 1.0,
     }
     if value != normal:
@@ -518,7 +505,7 @@ def inspect_feature_cache(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
     """Fail closed for retired pooled-feature callers."""
 
     raise WriterModelError(
-        "pooled PI05 Writer feature caches are retired; Action-Forecast AS-Writer "
+        "pooled PI05 Writer feature caches are retired; Core-Causal AS-Writer "
         "requires raw teacher video data"
     )
 
@@ -577,10 +564,10 @@ def build_contract(
     initialization: Mapping[str, Any],
 ) -> dict[str, Any]:
     contract_stop_step = _contract_stop_step(args, config, total_steps)
-    conditions_per_step = int(
-        config["conditioning_training"]["independent_conditions_per_optimizer_step"]
+    videos_per_action = int(
+        config["conditioning_training"]["teacher_videos_per_action"]
     )
-    policy_forward_calls = 1
+    policy_forward_calls = videos_per_action
     local = {
         "rank": context.rank,
         "local_rank": context.local_rank,
@@ -618,22 +605,22 @@ def build_contract(
         "runtime": {
             "world_size": context.world_size,
             "one_policy_cuda_process_per_rank": True,
-            "gpu0_extra_cuda_roles": 0,
+            "extra_cuda_roles_on_any_rank": 0,
             "ddp_object": "shared_writer_only",
             "action_query_batch_size_per_rank": batch_size,
             "per_rank_unique_action_query_cycle": list(batch_cycle),
-            "independent_conditions_per_optimizer_step": conditions_per_step,
-            "global_independent_conditions_per_optimizer_step": (
-                context.world_size * conditions_per_step
-            ),
+            "teacher_videos_per_action": videos_per_action,
+            "logical_pairs_per_rank": batch_size * videos_per_action,
+            "optimizer_gradient_accumulation": False,
             "global_policy_samples_per_step": (
                 context.world_size
                 * batch_size
-                * conditions_per_step
-                * policy_forward_calls
+                * videos_per_action
             ),
             "policy_forward_calls_per_optimizer_step": policy_forward_calls,
-            "teacher_videos_per_writer_invocation": 1,
+            "writer_conditions_before_exact_dedup_per_rank": (
+                batch_size * videos_per_action
+            ),
             "total_steps": total_steps,
             "selected_stop_step": contract_stop_step,
             "checkpoint_steps": list(checkpoint_steps),

@@ -10,7 +10,7 @@ from typing import Any, Mapping
 import torch
 import torch.distributed as dist
 
-from ember.pi05_processing import Pi05ForecastPrefixTokenizer, Pi05LiberoProcessor
+from ember.pi05_processing import Pi05LiberoProcessor, Pi05TeacherPrefixTokenizer
 from ember.pi05_source_checkpoint import (
     DistributedContext,
     barrier,
@@ -51,7 +51,7 @@ class OnlineWriterValidation:
     tasks: tuple[Any, ...]
     dataset: FunctionalQueryDataset
     store: RawTeacherVideoStore
-    tokenizer: Pi05ForecastPrefixTokenizer
+    tokenizer: Pi05TeacherPrefixTokenizer
     output_dir: Path
     local_keys: tuple[tuple[int, int], ...]
 
@@ -102,7 +102,7 @@ def _online_contract(
         "policy_and_writer_reused_in_process": True,
         "optimizer_updates": 0,
         "parameter_gradients_computed": False,
-        "physical_gpu_limit": [0, 1, 2, 3],
+        "physical_gpu_limit": [4, 5, 6, 7],
     }
 
 
@@ -160,7 +160,7 @@ def prepare_online_writer_validation(
     source_config = read_json(
         REPO_ROOT / str(training["authorities"]["source_base_config"]["path"])
     )
-    tokenizer = Pi05ForecastPrefixTokenizer(
+    tokenizer = Pi05TeacherPrefixTokenizer(
         tokenizer_path,
         int(source_config["features"]["tokenizer_max_length"]),
         str(context.device),
@@ -229,7 +229,6 @@ def _online_local_rows(
             tokenizer=validation.tokenizer,
             task=tasks[task_id],
             demo_index=int(rows[0]["teacher_demo_index"]),
-            flow_noise_seed=int(rows[0]["policy_noise_seed"]),
             device=context.device,
         )
         losses = _group_loss(

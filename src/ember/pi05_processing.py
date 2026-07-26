@@ -9,27 +9,6 @@ from typing import Any
 import numpy as np
 
 
-PI05_DIGIT_TOKEN_IDS = (
-    235276,
-    235274,
-    235284,
-    235304,
-    235310,
-    235308,
-    235318,
-    235324,
-    235321,
-    235315,
-)
-PI05_STATE_ANCHOR_TOKEN_IDS = (
-    235248,
-    235274,
-    235284,
-    235321,
-) * 8
-PI05_STATE_ANCHOR_TEXT = " 128 128 128 128 128 128 128 128"
-
-
 def quat2axisangle(quat: np.ndarray) -> np.ndarray:
     """Convert one LIBERO end-effector quaternion to the OpenPI axis angle."""
 
@@ -262,23 +241,14 @@ class Pi05PureLanguageTokenizer:
         return tokens, masks
 
 
-class Pi05ForecastPrefixTokenizer:
-    """Build the native pi0.5 prompt with a differentiable state-token block.
-
-    The returned token IDs preserve the native ``Task/State/Action`` text
-    layout.  The neutral eight-coordinate state is exactly 32 native tokens:
-    ``[space, 1, 2, 8] * 8``.  The Writer later adds constrained visual-state
-    offsets at these positions instead of replacing them with arbitrary soft
-    prompts.
-    """
-
-    STATE_SLOTS = 32
+class Pi05TeacherPrefixTokenizer:
+    """Build the sealed state-free teacher prompt for the video Writer."""
 
     def __init__(self, tokenizer_path: Path, max_length: int, device: str) -> None:
         import sentencepiece
 
-        if max_length <= self.STATE_SLOTS:
-            raise ValueError("forecast-prefix tokenizer length is too small")
+        if max_length <= 0:
+            raise ValueError("teacher-prefix tokenizer length is too small")
         self._tokenizer = sentencepiece.SentencePieceProcessor(
             model_file=str(tokenizer_path)
         )
@@ -292,40 +262,27 @@ class Pi05ForecastPrefixTokenizer:
             raise ValueError("Writer task language must be non-empty")
         return cleaned
 
-    def __call__(self, tasks: Sequence[str]) -> tuple[Any, Any, Any]:
+    @classmethod
+    def format_prompt(cls, task: str) -> str:
+        return f"Task: {cls._clean(task)};\nAction: "
+
+    def __call__(self, tasks: Sequence[str]) -> tuple[Any, Any]:
         import torch
 
         if not tasks or isinstance(tasks, (str, bytes)):
-            raise ValueError("forecast-prefix tokenizer requires a task sequence")
+            raise ValueError("teacher-prefix tokenizer requires a task sequence")
         token_rows: list[list[int]] = []
-        state_rows: list[list[int]] = []
-        anchor = self._tokenizer.encode(
-            PI05_STATE_ANCHOR_TEXT,
-            add_bos=False,
-        )
-        if tuple(anchor) != PI05_STATE_ANCHOR_TOKEN_IDS:
-            raise ValueError("forecast-prefix tokenizer state anchor changed")
         for task in tasks:
-            prefix = self._tokenizer.encode(
-                f"Task: {self._clean(task)}, State:",
+            values = self._tokenizer.encode(
+                self.format_prompt(task),
                 add_bos=True,
             )
-            suffix = self._tokenizer.encode(";\nAction: ", add_bos=False)
-            state_start = len(prefix)
-            values = [
-                *prefix,
-                *anchor,
-                *suffix,
-            ]
             if len(values) > self._max_length:
                 raise ValueError(
-                    "Writer forecast prefix exceeds the sealed tokenizer length: "
+                    "Writer teacher prefix exceeds the sealed tokenizer length: "
                     f"{len(values)} > {self._max_length}"
                 )
             token_rows.append(values)
-            state_rows.append(
-                list(range(state_start, state_start + self.STATE_SLOTS))
-            )
 
         tokens = torch.zeros(
             (len(token_rows), self._max_length),
@@ -333,17 +290,11 @@ class Pi05ForecastPrefixTokenizer:
             device=self._device,
         )
         masks = torch.zeros_like(tokens, dtype=torch.bool)
-        state_positions = torch.empty(
-            (len(token_rows), self.STATE_SLOTS),
-            dtype=torch.long,
-            device=self._device,
-        )
         for row, values in enumerate(token_rows):
             tokens[row, : len(values)] = torch.as_tensor(
                 values, dtype=torch.long, device=self._device
             )
             masks[row, : len(values)] = True
-            state_positions[row] = torch.as_tensor(
-                state_rows[row], dtype=torch.long, device=self._device
-            )
-        return tokens, masks, state_positions
+        if not bool(masks.any(dim=1).all()):
+            raise ValueError("teacher-prefix tokenization produced an empty task")
+        return tokens, masks

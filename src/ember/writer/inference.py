@@ -32,24 +32,23 @@ from ember.writer.as_contract import (
     writer_stage,
 )
 from ember.writer.checkpoint import validate_writer_checkpoint_files
-from ember.pi05_processing import Pi05ForecastPrefixTokenizer
+from ember.pi05_processing import Pi05TeacherPrefixTokenizer
 from ember.writer.data import (
     RawTeacherVideoStore,
-    WriterFlowNoiseSchedule,
     WriterTaskAuthority,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.lora_rollout import WriterLoRARolloutAdapter
 from ember.writer.model import (
-    ACTION_FORECAST_WRITER_CONSTRUCTOR_KEYS,
+    CORE_CAUSAL_WRITER_CONSTRUCTOR_KEYS,
     CompleteLoRAWriter,
     WriterModelError,
     build_lora_tensor_specs,
 )
 
 
-WRITER_ADAPTER_SCHEMA = "ember_pi05_action_forecast_writer_eval_adapter_v1"
-RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_action_forecast_rl_writer_eval_adapter_v1"
+WRITER_ADAPTER_SCHEMA = "ember_pi05_core_causal_writer_eval_adapter_v5"
+RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_core_causal_rl_writer_eval_adapter_v5"
 WRITER_ADAPTER_SCHEMAS = {WRITER_ADAPTER_SCHEMA, RL_WRITER_ADAPTER_SCHEMA}
 WRITER_VIDEO_CONDITIONS = {
     "correct",
@@ -65,11 +64,10 @@ WRITER_VIDEO_SCHEDULE = (
     "sha256 first 63 bits of canonical JSON "
     "[ember_pi05_writer_video_v1,seed,suite,task_id,init_state_id] modulo 50"
 )
-WRITER_EPISODE_EVIDENCE_V3 = "ember_pi05_writer_episode_evidence_v3"
-WRITER_EPISODE_EVIDENCE_V4 = "ember_pi05_writer_episode_evidence_v4"
+WRITER_EPISODE_EVIDENCE_V5 = "ember_pi05_writer_episode_evidence_v5"
 WRITER_GENERATION_SEED_SCHEDULE = (
-    "sha256 first 63 bits of canonical JSON: ember_pi05_writer_generation_v1/"
-    "stream/seed/suite/task_id/demo_index"
+    "sha256 first 63 bits of canonical JSON: ember_pi05_writer_generation_v5/"
+    "frame_order/seed/suite/task_id/demo_index"
 )
 
 
@@ -140,11 +138,11 @@ def writer_generation_seed(
 ) -> int:
     if (
         root_seed < 0 or suite not in SUITE_ORDER or not 0 <= task_id < 10
-        or demo_index < 0 or stream not in {"flow_noise", "frame_order"}
+        or demo_index < 0 or stream != "frame_order"
     ):
         raise WriterModelError("invalid AS-Writer generation seed key")
     encoded = json.dumps(
-        ["ember_pi05_writer_generation_v1", stream, root_seed, suite, task_id, demo_index],
+        ["ember_pi05_writer_generation_v5", stream, root_seed, suite, task_id, demo_index],
         separators=(",", ":"),
     ).encode("utf-8")
     return int.from_bytes(hashlib.sha256(encoded).digest()[:8], "big") & ((1 << 63) - 1)
@@ -240,7 +238,7 @@ def expected_writer_episode_evidence(
     task_id: int,
     init_state_id: int,
     lora_sha256: str,
-    evidence_schema: str = WRITER_EPISODE_EVIDENCE_V4,
+    evidence_schema: str = WRITER_EPISODE_EVIDENCE_V5,
 ) -> dict[str, Any]:
     """Build the exact dynamic row fields implied by a sealed adapter contract."""
 
@@ -271,10 +269,7 @@ def expected_writer_episode_evidence(
         demo_count=count,
     )
     selection_seed = writer_video_selection_seed(seed, suite, task_id, init_state_id)
-    if evidence_schema not in {
-        WRITER_EPISODE_EVIDENCE_V3,
-        WRITER_EPISODE_EVIDENCE_V4,
-    }:
+    if evidence_schema != WRITER_EPISODE_EVIDENCE_V5:
         raise WriterModelError("unsupported PI05 Writer episode evidence")
     result = {
         "schema_version": evidence_schema,
@@ -303,33 +298,25 @@ def expected_writer_episode_evidence(
         "pairing_sha256": adapter["pairing_sha256"],
         "lora_sha256": lora_sha256,
     }
-    if evidence_schema == WRITER_EPISODE_EVIDENCE_V4:
+    result.update(
+        {
+            "writer_generation_seed_schedule": WRITER_GENERATION_SEED_SCHEDULE,
+            "teacher_video_order_seed": writer_generation_seed(
+                seed,
+                suite,
+                task_id,
+                reference_demo_index,
+                stream="frame_order",
+            ),
+        }
+    )
+    if adapter["video_condition"] == "same_task_other":
         result.update(
             {
-                "writer_generation_seed_schedule": WRITER_GENERATION_SEED_SCHEDULE,
-                "writer_flow_noise_seed": writer_generation_seed(
-                    seed,
-                    suite,
-                    task_id,
-                    reference_demo_index,
-                    stream="flow_noise",
-                ),
-                "teacher_video_order_seed": writer_generation_seed(
-                    seed,
-                    suite,
-                    task_id,
-                    reference_demo_index,
-                    stream="frame_order",
-                ),
+                "teacher_reference_demo_index": reference_demo_index,
+                "teacher_demo_offset": SAME_TASK_OTHER_DEMO_OFFSET,
             }
         )
-        if adapter["video_condition"] == "same_task_other":
-            result.update(
-                {
-                    "teacher_reference_demo_index": reference_demo_index,
-                    "teacher_demo_offset": SAME_TASK_OTHER_DEMO_OFFSET,
-                }
-            )
     return result
 
 
@@ -484,7 +471,9 @@ def build_writer_evaluation_adapter(
         "arm": f"{writer_method}_{video_condition}_video",
         "execution_backend": "two_stage_cached_per_sample_lora_batched_replan",
         "video_condition": video_condition,
-        "writer_input": "task language plus exactly one raw action-hidden teacher video",
+        "writer_input": (
+            "task language plus exactly one raw action-hidden teacher video at inference"
+        ),
         "config": {"path": str(config_path), "sha256": sha256_file(config_path)},
         "training_run": {
             "path": str(checkpoint.parent.parent),
@@ -530,8 +519,8 @@ def build_writer_evaluation_adapter(
             {
                 "same_task_other_demo_offset": SAME_TASK_OTHER_DEMO_OFFSET,
                 "transform": (
-                    "(paired correct demo + 17) modulo 50; flow noise and "
-                    "order seeds remain paired to the correct demo"
+                    "(paired correct demo + 17) modulo 50; order seed remains "
+                    "paired to the correct demo"
                 ),
             }
         )
@@ -645,7 +634,7 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
         kind = str(evaluation_adapter.get("kind", "as_writer"))
         if kind == "rl_writer":
             raise WriterModelError(
-                "RL-Writer has not yet been trained under Action-Forecast and must "
+                "RL-Writer has not yet been trained under Core-Causal v5 and must "
                 "be retrained before evaluation"
             )
         if kind != "as_writer":
@@ -670,7 +659,7 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
         writer_values = {
             key: value
             for key, value in config["writer"].items()
-            if key in ACTION_FORECAST_WRITER_CONSTRUCTOR_KEYS
+            if key in CORE_CAUSAL_WRITER_CONSTRUCTOR_KEYS
         }
         bridge = policy.model.paligemma_with_expert
         writer = CompleteLoRAWriter(
@@ -725,7 +714,7 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
         source_config = read_json(
             REPO_ROOT / str(config["authorities"]["source_base_config"]["path"])
         )
-        self.tokenizer = Pi05ForecastPrefixTokenizer(
+        self.tokenizer = Pi05TeacherPrefixTokenizer(
             tokenizer_path,
             int(source_config["features"]["tokenizer_max_length"]),
             str(device),
@@ -741,7 +730,7 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
 
     def _episode_inputs(
         self, *, suite: str, task_id: int, init_state_id: int
-    ) -> tuple[dict[str, Any], torch.Tensor, torch.Tensor, str, torch.Tensor]:
+    ) -> tuple[dict[str, Any], torch.Tensor, torch.Tensor, str]:
         placeholder = "0" * 64
         row = expected_writer_episode_evidence(
             self.evaluation_adapter,
@@ -771,10 +760,7 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
                 keep_first=condition == "shuffled_keep_first",
             ).to(self.device)
             frames = frames.index_select(0, permutation)
-        flow_noise = WriterFlowNoiseSchedule(
-            seed=int(row["writer_flow_noise_seed"])
-        ).noise_for_visit(0, device=self.device)
-        return row, frames, frame_indices, writer_language, flow_noise
+        return row, frames, frame_indices, writer_language
 
     @torch.inference_mode()
     def prepare_episodes(
@@ -790,12 +776,10 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
             )
             for identity in identities
         ]
-        rows, frame_batches, index_batches, languages, noise_batches = zip(
+        rows, frame_batches, index_batches, languages = zip(
             *inputs, strict=True
         )
-        language_tokens, language_mask, state_positions = self.tokenizer(
-            list(languages)
-        )
+        language_tokens, language_mask = self.tokenizer(list(languages))
         frames = torch.cat(frame_batches, dim=0)
         frame_indices = torch.cat(index_batches, dim=0)
         offsets = [0]
@@ -804,7 +788,6 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
         video_offsets = torch.tensor(
             offsets, dtype=torch.long, device=self.device
         )
-        flow_noise = torch.stack(noise_batches, dim=0)
         started = time.monotonic()
         # Forecasts always use the frozen source policy, never a rollout LoRA.
         copy_task_lora_state_(
@@ -822,8 +805,6 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
                 video_offsets,
                 language_tokens,
                 language_mask,
-                state_positions,
-                flow_noise,
                 policy=self.policy,
             )
         elapsed = time.monotonic() - started

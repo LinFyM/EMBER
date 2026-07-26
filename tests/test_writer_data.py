@@ -146,13 +146,29 @@ def test_joint_writer_consumed_digest_covers_video_and_action_schedules() -> Non
     second = TeacherVideoSchedule(
         task_ids=(10, 20, 30, 40), demo_indices=range(5), seed=23
     )
-    summary = first.consumed_identity_summary(sampler, 0, 8)
-    assert summary == first.consumed_identity_summary(sampler, 0, 8)
+    summary = first.consumed_identity_summary(
+        sampler,
+        0,
+        8,
+        views_per_action=4,
+    )
+    assert summary == first.consumed_identity_summary(
+        sampler,
+        0,
+        8,
+        views_per_action=4,
+    )
     assert summary["query"] == sampler.consumed_identity_summary(0, 8)
-    assert summary["min_video_visits_per_task"] == 4
+    assert summary["views_per_action"] == 4
+    assert summary["min_video_visits_per_task"] == 32
     assert (
         summary["combined_identity_sha256"]
-        != second.consumed_identity_summary(sampler, 0, 8)[
+        != second.consumed_identity_summary(
+            sampler,
+            0,
+            8,
+            views_per_action=4,
+        )[
             "combined_identity_sha256"
         ]
     )

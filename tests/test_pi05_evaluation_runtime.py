@@ -195,7 +195,6 @@ def test_same_task_other_changes_only_the_teacher_demo() -> None:
     ) % 50
     assert other["teacher_reference_demo_index"] == correct["teacher_demo_index"]
     assert other["video_global_task_id"] == correct["video_global_task_id"]
-    assert other["writer_flow_noise_seed"] == correct["writer_flow_noise_seed"]
     assert other["teacher_video_order_seed"] == correct["teacher_video_order_seed"]
 
 

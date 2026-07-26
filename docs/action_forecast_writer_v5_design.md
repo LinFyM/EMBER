@@ -1055,3 +1055,19 @@ RL若无法启动，先判断是reward coverage、runtime mechanics还是表示�
   路径。
 
 本文是后续session恢复当前设计的第一阅读入口。
+
+## 25. 实现与profile封存（2026-07-26）
+
+- v5已按本文原位实现；活动v4 visual-state、7D forecast、Plan/Revision/
+  Belief源码和config已删除，不保留兼容执行分支。
+- 真实Writer trainable参数为`10,301,440`；公开LoRA仍为rank16、76 tensors、
+  `1,287,168` scalars。Core permutation invariance、causal prefix、
+  zero-content、identity、gradient/freeze与固定suffix checkpoint均通过，
+  全套回归为`187 passed`。
+- GPU4–7最终选择`B_a=8`、`N=4`、frame microbatch32。12-step profile从
+  step2真实exact-resume到step12，稳态11步中位`61.39s/step`，峰值
+  allocated/reserved为`60,319,360,000/67,471,671,296 bytes`。
+- `B_a=12/20`以及`frame microbatch40 + B_a=8`均使reserved显存跳至约80GB、
+  稳定余量不足3GB，已淘汰；未用OOM作为唯一停止信号。
+- 正式AS每个segment为60 optimizer steps，每10 steps保存一次，共6个均匀
+  checkpoint；训练、评测和恢复继续只使用物理GPU4–7。

@@ -1,4 +1,4 @@
-"""Absolute-time plan/revision encoding for the canonical PI05 Writer."""
+"""Semantic Core compilation and causal Procedure refinement for PI05 Writer."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import torch.nn.functional as F
 
 
 class VariableEpisodeInputError(ValueError):
-    """Raised when a variable-length forecast batch violates its contract."""
+    """Raised when a variable-length video-program batch violates its contract."""
 
 
 class RMSNorm(torch.nn.Module):
@@ -29,249 +29,12 @@ class RMSNorm(torch.nn.Module):
         return value * scale * self.weight
 
 
-class ForecastBeliefEncoder(torch.nn.Module):
-    """Build one fixed-layout Plan/Revision belief token per control time."""
-
-    def __init__(
-        self,
-        *,
-        action_width: int,
-        horizon: int,
-        width: int,
-        maximum_revision_count: int,
-    ) -> None:
-        super().__init__()
-        if (
-            min(
-                action_width,
-                horizon,
-                width,
-                maximum_revision_count,
-            )
-            <= 0
-            or width % 2
-        ):
-            raise VariableEpisodeInputError("invalid forecast-belief dimensions")
-        self.action_width = int(action_width)
-        self.horizon = int(horizon)
-        self.width = int(width)
-        self.branch_width = width // 2
-        self.maximum_revision_count = int(maximum_revision_count)
-        self.plan_encoder = torch.nn.Linear(
-            action_width,
-            self.branch_width,
-            bias=False,
-        )
-        self.revision_direction_encoder = torch.nn.Sequential(
-            torch.nn.Linear(2 * action_width, width, bias=False),
-            torch.nn.GELU(),
-            torch.nn.Linear(width, self.branch_width, bias=False),
-        )
-        self.revision_norm = RMSNorm(self.branch_width)
-
-    def _validate(
-        self,
-        plans: torch.Tensor,
-        frame_indices: torch.Tensor,
-        frame_mask: torch.Tensor,
-    ) -> None:
-        if (
-            plans.ndim != 4
-            or plans.shape[2:] != (self.horizon, self.action_width)
-            or frame_indices.shape != plans.shape[:2]
-            or frame_indices.dtype != torch.long
-            or frame_mask.shape != plans.shape[:2]
-            or frame_mask.dtype != torch.bool
-            or not bool(frame_mask[:, 0].all())
-            or bool((frame_mask[:, 1:] & ~frame_mask[:, :-1]).any())
-        ):
-            raise VariableEpisodeInputError("invalid packed action forecasts")
-        for row in range(plans.shape[0]):
-            active = frame_indices[row, frame_mask[row]]
-            if (
-                active.numel() == 0
-                or int(active[0]) != 0
-                or bool((active[1:] <= active[:-1]).any())
-            ):
-                raise VariableEpisodeInputError(
-                    "forecast frame indices must start at zero and increase"
-                )
-
-    def _time_layout(
-        self,
-        plans: torch.Tensor,
-        frame_indices: torch.Tensor,
-        frame_mask: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        last = frame_indices.masked_fill(~frame_mask, -1).max(dim=1).values
-        lengths = last + self.horizon
-        absolute_time = torch.arange(int(lengths.max()), device=plans.device)
-        lead_grid = absolute_time[None, :, None] - frame_indices[:, None, :]
-        coverage = (
-            frame_mask[:, None, :]
-            & (lead_grid >= 0)
-            & (lead_grid < self.horizon)
-        )
-        valid_time = absolute_time[None, :] < lengths[:, None]
-        if bool((valid_time & ~coverage.any(dim=-1)).any()):
-            raise VariableEpisodeInputError("forecast sequence left an uncovered time")
-        return absolute_time, coverage, valid_time
-
-    def _forecast_layout(
-        self,
-        plans: torch.Tensor,
-        frame_indices: torch.Tensor,
-        absolute_time: torch.Tensor,
-        coverage: torch.Tensor,
-    ) -> tuple[
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-    ]:
-        batch, frames = frame_indices.shape
-        times = absolute_time.numel()
-        frame_grid = frame_indices[:, None, :].expand(batch, times, frames)
-        latest_frame = frame_grid.masked_fill(~coverage, -1).argmax(dim=-1)
-        latest_start = torch.gather(frame_indices, 1, latest_frame)
-        latest_lead = absolute_time[None, :] - latest_start
-        lead_grid = absolute_time[None, :, None] - frame_indices[:, None, :]
-        gather_indices = lead_grid.permute(0, 2, 1).clamp(
-            0,
-            self.horizon - 1,
-        )
-        all_actions = torch.gather(
-            plans,
-            2,
-            gather_indices[..., None].expand(
-                batch,
-                frames,
-                times,
-                self.action_width,
-            ),
-        ).permute(0, 2, 1, 3)
-        latest_action = torch.gather(
-            all_actions,
-            2,
-            latest_frame[..., None, None].expand(
-                batch,
-                times,
-                1,
-                self.action_width,
-            ),
-        ).squeeze(2)
-        frame_ids = torch.arange(frames, device=plans.device)[None, None]
-        earlier_mask = coverage & (frame_ids != latest_frame[..., None])
-        residual = latest_action[..., None, :] - all_actions
-        return (
-            latest_action,
-            latest_lead,
-            residual,
-            earlier_mask,
-        )
-
-    def _revision_branch(
-        self,
-        residual: torch.Tensor,
-        event_mask: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        count = event_mask.sum(dim=-1).to(torch.float32)
-        if bool((count > self.maximum_revision_count).any()):
-            raise VariableEpisodeInputError(
-                "revision count exceeds its sealed stride/horizon bound"
-            )
-        residual_float = residual.to(torch.float32)
-        event_mask_float = event_mask.to(torch.float32)
-        masked_residual = residual_float * event_mask_float[..., None]
-        event_denominator = count.clamp_min(1.0)
-        signed_mean = masked_residual.sum(dim=-2) / event_denominator[..., None]
-        per_dimension_rms = torch.linalg.vector_norm(
-            masked_residual,
-            dim=-2,
-        ) / event_denominator.sqrt()[..., None]
-        projected = self.revision_direction_encoder(
-            torch.cat((signed_mean, per_dimension_rms), dim=-1).to(
-                dtype=residual.dtype
-            )
-        )
-        scalar_denominator = (
-            count * self.action_width
-        ).clamp_min(1.0)
-        strength = (
-            torch.linalg.vector_norm(masked_residual, dim=(-1, -2))
-            / scalar_denominator.sqrt()
-        ).detach()
-        revision = (
-            self.revision_norm(projected)
-            * strength[..., None].to(dtype=projected.dtype)
-        )
-        revision = revision.masked_fill(
-            ~(count > 0)[..., None],
-            0.0,
-        )
-        return (
-            revision,
-            count,
-            strength,
-        )
-
-    def forward(
-        self,
-        plans: torch.Tensor,
-        frame_indices: torch.Tensor,
-        frame_mask: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Return Belief tokens, positions, valid mask, and Q/K routing features."""
-
-        self._validate(plans, frame_indices, frame_mask)
-        batch = plans.shape[0]
-        absolute_time, coverage, valid_time = self._time_layout(
-            plans,
-            frame_indices,
-            frame_mask,
-        )
-        (
-            latest_action,
-            latest_lead,
-            residual,
-            event_mask,
-        ) = self._forecast_layout(
-            plans,
-            frame_indices,
-            absolute_time,
-            coverage,
-        )
-        plan = self.plan_encoder(latest_action)
-        revision, count, strength = self._revision_branch(
-            residual,
-            event_mask,
-        )
-        maximum_time = absolute_time.numel()
-        belief = torch.cat((plan, revision), dim=-1).masked_fill(
-            ~valid_time[..., None],
-            0.0,
-        )
-        positions = absolute_time[None].expand(batch, maximum_time)
-        routing = torch.stack(
-            (
-                latest_lead.to(torch.float32) / max(self.horizon - 1, 1),
-                count / self.maximum_revision_count,
-                strength,
-            ),
-            dim=-1,
-        ).masked_fill(
-            ~valid_time[..., None],
-            0.0,
-        )
-        return belief, positions, valid_time, routing
-
-
 def _apply_rope(value: torch.Tensor, positions: torch.Tensor) -> torch.Tensor:
     """Apply one-dimensional RoPE to ``[B,H,T,D]`` query or key tensors."""
 
     width = value.shape[-1]
     if width % 2 or positions.shape != (value.shape[0], value.shape[2]):
-        raise VariableEpisodeInputError("invalid temporal RoPE request")
+        raise VariableEpisodeInputError("invalid video ordinal RoPE request")
     inverse_frequency = torch.exp(
         torch.arange(0, width, 2, device=value.device, dtype=torch.float32)
         * (-math.log(10_000.0) / width)
@@ -289,8 +52,8 @@ def _apply_rope(value: torch.Tensor, positions: torch.Tensor) -> torch.Tensor:
     ).flatten(-2)
 
 
-class RotaryTemporalBlock(torch.nn.Module):
-    """Zero-preserving content attention with routing-only Q/K metadata."""
+class CausalProcedureBlock(torch.nn.Module):
+    """Pre-norm global causal attention over per-frame interaction content."""
 
     def __init__(self, width: int, heads: int) -> None:
         super().__init__()
@@ -299,7 +62,7 @@ class RotaryTemporalBlock(torch.nn.Module):
             or width % heads
             or (width // heads) % 2
         ):
-            raise VariableEpisodeInputError("invalid temporal block dimensions")
+            raise VariableEpisodeInputError("invalid causal Procedure dimensions")
         self.heads = int(heads)
         self.head_width = width // heads
         self.attention_norm = RMSNorm(width)
@@ -313,103 +76,99 @@ class RotaryTemporalBlock(torch.nn.Module):
             torch.nn.GELU(),
             torch.nn.Linear(4 * width, width, bias=False),
         )
-        torch.nn.init.zeros_(self.output.weight)
-        torch.nn.init.zeros_(self.ffn[-1].weight)
 
     def forward(
         self,
-        value: torch.Tensor,
+        content: torch.Tensor,
         positions: torch.Tensor,
         valid_mask: torch.Tensor,
-        routing: torch.Tensor,
     ) -> torch.Tensor:
-        batch, tokens, width = value.shape
-        addressed = self.attention_norm(value) + routing
-        query = self.query(addressed)
-        key = self.key(addressed)
-        content = self.value(value)
+        batch, tokens, width = content.shape
+        normalized = self.attention_norm(content)
 
-        def heads(tensor: torch.Tensor) -> torch.Tensor:
-            return tensor.reshape(
+        def heads(value: torch.Tensor) -> torch.Tensor:
+            return value.reshape(
                 batch,
                 tokens,
                 self.heads,
                 self.head_width,
             ).transpose(1, 2)
 
-        query = _apply_rope(heads(query), positions)
-        key = _apply_rope(heads(key), positions)
+        query = _apply_rope(heads(self.query(normalized)), positions)
+        key = _apply_rope(heads(self.key(normalized)), positions)
+        value = heads(self.value(content))
+        causal = torch.ones(
+            tokens,
+            tokens,
+            dtype=torch.bool,
+            device=content.device,
+        ).tril()
+        allowed = (
+            valid_mask[:, None, None, :]
+            & causal[None, None, :, :]
+        )
         attended = F.scaled_dot_product_attention(
             query,
             key,
-            heads(content),
-            attn_mask=valid_mask[:, None, None, :],
+            value,
+            attn_mask=allowed,
             dropout_p=0.0,
             is_causal=False,
         )
         attended = attended.transpose(1, 2).reshape(batch, tokens, width)
-        value = value + self.output(attended)
-        value = value + self.ffn(self.ffn_norm(value))
-        return value.masked_fill(~valid_mask[..., None], 0.0)
+        content = content + self.output(attended)
+        content = content + self.ffn(self.ffn_norm(content))
+        return content.masked_fill(~valid_mask[..., None], 0.0)
 
 
-class VariableTimeTemporalEncoder(torch.nn.Module):
-    """Encode one Belief token per time without metadata entering content."""
+class CausalProcedureEncoder(torch.nn.Module):
+    """Keep one causally contextualized Procedure token per sampled frame."""
 
     def __init__(self, *, width: int, heads: int, blocks: int) -> None:
         super().__init__()
         if min(width, heads, blocks) <= 0:
-            raise VariableEpisodeInputError("invalid temporal encoder dimensions")
-        self.routing_encoder = torch.nn.Sequential(
-            torch.nn.Linear(3, width, bias=False),
-            torch.nn.GELU(),
-            torch.nn.Linear(width, width, bias=False),
-        )
+            raise VariableEpisodeInputError("invalid causal Procedure encoder")
         self.blocks = torch.nn.ModuleList(
-            RotaryTemporalBlock(width, heads) for _ in range(blocks)
+            CausalProcedureBlock(width, heads) for _ in range(blocks)
         )
 
     def forward(
         self,
-        tokens: torch.Tensor,
+        content: torch.Tensor,
         positions: torch.Tensor,
         valid_mask: torch.Tensor,
-        routing_features: torch.Tensor,
     ) -> torch.Tensor:
         if (
-            tokens.ndim != 3
-            or positions.shape != tokens.shape[:2]
-            or valid_mask.shape != tokens.shape[:2]
+            content.ndim != 3
+            or positions.shape != content.shape[:2]
+            or positions.dtype != torch.long
+            or valid_mask.shape != content.shape[:2]
             or valid_mask.dtype != torch.bool
-            or routing_features.shape != (*tokens.shape[:2], 3)
+            or not bool(valid_mask[:, 0].all())
         ):
-            raise VariableEpisodeInputError("invalid temporal token batch")
-        routing = self.routing_encoder(
-            routing_features.to(dtype=tokens.dtype)
-        ).masked_fill(~valid_mask[..., None], 0.0)
-        value = tokens
-        value = value.masked_fill(~valid_mask[..., None], 0.0)
+            raise VariableEpisodeInputError("invalid causal Procedure batch")
+        value = content.masked_fill(~valid_mask[..., None], 0.0)
         for block in self.blocks:
-            value = block(value, positions, valid_mask, routing)
+            value = block(value, positions, valid_mask)
         return value.masked_fill(~valid_mask[..., None], 0.0)
 
 
-class ContentOnlyQueryBlock(torch.nn.Module):
-    """Route LoRA slots while keeping their residual values memory-derived."""
+class CoreCompilerBlock(torch.nn.Module):
+    """Compile unordered Semantic Core memory into routed LoRA-slot content."""
 
     def __init__(self, width: int, heads: int) -> None:
         super().__init__()
-        self.self_norm = RMSNorm(width)
-        self.self_attention = torch.nn.MultiheadAttention(
+        self.cross_norm = RMSNorm(width)
+        self.memory_norm = RMSNorm(width)
+        self.cross_attention = torch.nn.MultiheadAttention(
             width,
             heads,
             dropout=0.0,
             batch_first=True,
             bias=False,
         )
-        self.cross_norm = RMSNorm(width)
-        self.memory_norm = RMSNorm(width)
-        self.cross_attention = torch.nn.MultiheadAttention(
+        self.self_norm = RMSNorm(width)
+        self.self_attention = torch.nn.MultiheadAttention(
             width,
             heads,
             dropout=0.0,
@@ -430,17 +189,15 @@ class ContentOnlyQueryBlock(torch.nn.Module):
         memory: torch.Tensor,
         valid_memory: torch.Tensor,
     ) -> torch.Tensor:
-        normalized_memory = self.memory_norm(memory)
         attended, _ = self.cross_attention(
             self.cross_norm(content) + routing,
-            normalized_memory,
+            self.memory_norm(memory),
             memory,
             key_padding_mask=~valid_memory,
             need_weights=False,
         )
         content = content + attended
-        normalized = self.self_norm(content)
-        addressed = normalized + routing
+        addressed = self.self_norm(content) + routing
         attended, _ = self.self_attention(
             addressed,
             addressed,
@@ -451,8 +208,126 @@ class ContentOnlyQueryBlock(torch.nn.Module):
         return content + self.ffn(self.ffn_norm(content))
 
 
-class LoRAQueryDecoder(torch.nn.Module):
-    """Decode 288 expert and 32 boundary-projection rank-slot states."""
+class RotaryProcedureCrossAttention(torch.nn.Module):
+    """Read ordered Procedure memory while transmitting only raw content values."""
+
+    def __init__(self, width: int, heads: int) -> None:
+        super().__init__()
+        if (
+            min(width, heads) <= 0
+            or width % heads
+            or (width // heads) % 2
+        ):
+            raise VariableEpisodeInputError("invalid Procedure cross-attention")
+        self.heads = int(heads)
+        self.head_width = width // heads
+        self.query = torch.nn.Linear(width, width, bias=False)
+        self.key = torch.nn.Linear(width, width, bias=False)
+        self.value = torch.nn.Linear(width, width, bias=False)
+        self.output = torch.nn.Linear(width, width, bias=False)
+        torch.nn.init.zeros_(self.output.weight)
+
+    def forward(
+        self,
+        query_content: torch.Tensor,
+        memory_key: torch.Tensor,
+        memory_value: torch.Tensor,
+        positions: torch.Tensor,
+        valid_memory: torch.Tensor,
+    ) -> torch.Tensor:
+        batch, queries, width = query_content.shape
+        memory_tokens = memory_key.shape[1]
+
+        def query_heads(value: torch.Tensor) -> torch.Tensor:
+            return value.reshape(
+                batch,
+                queries,
+                self.heads,
+                self.head_width,
+            ).transpose(1, 2)
+
+        def memory_heads(value: torch.Tensor) -> torch.Tensor:
+            return value.reshape(
+                batch,
+                memory_tokens,
+                self.heads,
+                self.head_width,
+            ).transpose(1, 2)
+
+        query = _apply_rope(
+            query_heads(self.query(query_content)),
+            torch.zeros(
+                batch,
+                queries,
+                dtype=torch.long,
+                device=query_content.device,
+            ),
+        )
+        key = _apply_rope(memory_heads(self.key(memory_key)), positions)
+        value = memory_heads(self.value(memory_value))
+        attended = F.scaled_dot_product_attention(
+            query,
+            key,
+            value,
+            attn_mask=valid_memory[:, None, None, :],
+            dropout_p=0.0,
+            is_causal=False,
+        )
+        attended = attended.transpose(1, 2).reshape(batch, queries, width)
+        return self.output(attended)
+
+
+class ProcedureRefinerBlock(torch.nn.Module):
+    """Produce an independent zero-preserving Procedure delta to Core content."""
+
+    def __init__(self, width: int, heads: int) -> None:
+        super().__init__()
+        self.query_norm = RMSNorm(width)
+        self.memory_norm = RMSNorm(width)
+        self.cross_attention = RotaryProcedureCrossAttention(width, heads)
+        self.self_norm = RMSNorm(width)
+        self.self_attention = torch.nn.MultiheadAttention(
+            width,
+            heads,
+            dropout=0.0,
+            batch_first=True,
+            bias=False,
+        )
+        self.ffn_norm = RMSNorm(width)
+        self.ffn = torch.nn.Sequential(
+            torch.nn.Linear(width, 4 * width, bias=False),
+            torch.nn.GELU(),
+            torch.nn.Linear(4 * width, width, bias=False),
+        )
+
+    def forward(
+        self,
+        core_content: torch.Tensor,
+        routing: torch.Tensor,
+        memory: torch.Tensor,
+        positions: torch.Tensor,
+        valid_memory: torch.Tensor,
+    ) -> torch.Tensor:
+        delta = self.cross_attention(
+            self.query_norm(core_content) + routing,
+            self.memory_norm(memory),
+            memory,
+            positions,
+            valid_memory,
+        )
+        addressed = self.self_norm(delta) + routing
+        attended, _ = self.self_attention(
+            addressed,
+            addressed,
+            delta,
+            need_weights=False,
+        )
+        delta = delta + attended
+        return delta + self.ffn(self.ffn_norm(delta))
+
+
+class CoreProcedureLoRACompiler(torch.nn.Module):
+    """Compile Core first, then add a directed Procedure refinement."""
 
     EXPERT_LAYERS = 18
     RANK = 16
@@ -463,12 +338,16 @@ class LoRAQueryDecoder(torch.nn.Module):
         *,
         width: int,
         heads: int,
-        blocks: int,
+        core_blocks: int,
+        procedure_blocks: int,
         initialization_seed: int,
     ) -> None:
         super().__init__()
-        if min(width, heads, blocks) <= 0 or width % heads:
-            raise VariableEpisodeInputError("invalid LoRA query decoder dimensions")
+        if (
+            min(width, heads, core_blocks, procedure_blocks) <= 0
+            or width % heads
+        ):
+            raise VariableEpisodeInputError("invalid Core/Procedure compiler")
         generator = torch.Generator(device="cpu").manual_seed(initialization_seed)
 
         def parameter(rows: int) -> torch.nn.Parameter:
@@ -481,12 +360,16 @@ class LoRAQueryDecoder(torch.nn.Module):
         self.layer_identity = parameter(self.EXPERT_LAYERS)
         self.rank_identity = parameter(self.RANK)
         self.routing_norm = RMSNorm(width)
-        self.blocks = torch.nn.ModuleList(
-            ContentOnlyQueryBlock(width, heads) for _ in range(blocks)
+        self.core_blocks = torch.nn.ModuleList(
+            CoreCompilerBlock(width, heads) for _ in range(core_blocks)
+        )
+        self.procedure_blocks = torch.nn.ModuleList(
+            ProcedureRefinerBlock(width, heads)
+            for _ in range(procedure_blocks)
         )
         self.output_norm = RMSNorm(width)
 
-    def _initial_queries(self) -> torch.Tensor:
+    def _routing(self) -> torch.Tensor:
         expert = (
             self.query_table[: self.EXPERT_LAYERS * self.RANK].reshape(
                 self.EXPERT_LAYERS,
@@ -514,32 +397,55 @@ class LoRAQueryDecoder(torch.nn.Module):
 
     def forward(
         self,
-        memory: torch.Tensor,
-        valid_memory: torch.Tensor,
+        core_memory: torch.Tensor,
+        valid_core: torch.Tensor,
+        procedure_memory: torch.Tensor,
+        procedure_positions: torch.Tensor,
+        valid_procedure: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         if (
-            memory.ndim != 3
-            or valid_memory.shape != memory.shape[:2]
-            or valid_memory.dtype != torch.bool
-            or not bool(valid_memory.any(dim=1).all())
+            core_memory.ndim != 3
+            or valid_core.shape != core_memory.shape[:2]
+            or valid_core.dtype != torch.bool
+            or procedure_memory.ndim != 3
+            or procedure_positions.shape != procedure_memory.shape[:2]
+            or valid_procedure.shape != procedure_memory.shape[:2]
+            or valid_procedure.dtype != torch.bool
+            or core_memory.shape[0] != procedure_memory.shape[0]
+            or not bool(valid_core.any(dim=1).all())
+            or not bool(valid_procedure.any(dim=1).all())
         ):
-            raise VariableEpisodeInputError("invalid LoRA decoder memory")
-        routing = self.routing_norm(self._initial_queries())[None].expand(
-            memory.shape[0],
+            raise VariableEpisodeInputError("invalid Core/Procedure compiler memory")
+        routing = self.routing_norm(self._routing())[None].expand(
+            core_memory.shape[0],
             -1,
             -1,
         )
-        content = memory.new_zeros(
-            memory.shape[0],
+        core_content = core_memory.new_zeros(
+            core_memory.shape[0],
             self.QUERY_COUNT,
-            memory.shape[-1],
+            core_memory.shape[-1],
         )
-        for block in self.blocks:
-            content = block(content, routing, memory, valid_memory)
-        content = self.output_norm(content)
+        for block in self.core_blocks:
+            core_content = block(
+                core_content,
+                routing,
+                core_memory,
+                valid_core,
+            )
+        delta = core_content.new_zeros(core_content.shape)
+        for block in self.procedure_blocks:
+            delta = delta + block(
+                core_content + delta,
+                routing,
+                procedure_memory,
+                procedure_positions,
+                valid_procedure,
+            )
+        content = self.output_norm(core_content + delta)
         expert_stop = self.EXPERT_LAYERS * self.RANK
         expert = content[:, :expert_stop].reshape(
-            memory.shape[0],
+            core_memory.shape[0],
             self.EXPERT_LAYERS,
             self.RANK,
             -1,

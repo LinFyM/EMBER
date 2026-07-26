@@ -27,8 +27,8 @@ from ember.writer.evaluation_cache import (
     writer_cache_requests,
 )
 from ember.writer.inference import (
-    WRITER_EPISODE_EVIDENCE_V3,
-    WRITER_EPISODE_EVIDENCE_V4,
+    WRITER_ADAPTER_SCHEMA,
+    WRITER_EPISODE_EVIDENCE_V5,
     expected_writer_episode_evidence,
     validate_writer_episode_evidence,
 )
@@ -50,7 +50,7 @@ def _contract(root: Path, *, replicas: int = 2) -> dict:
     lora = _lora_contract()
     contract = {
         "adapter": {
-            "schema_version": "ember_pi05_action_forecast_writer_eval_adapter_v1",
+            "schema_version": WRITER_ADAPTER_SCHEMA,
             "kind": "as_writer",
             "writer_method": "as_writer",
             "arm": "as_writer_correct_video",
@@ -163,7 +163,7 @@ def test_legacy_per_state_cache_descriptor_remains_loadable(tmp_path: Path) -> N
     ]
 
 
-def test_writer_generation_randomness_is_video_keyed_and_v3_remains_valid(
+def test_writer_generation_order_randomness_is_video_keyed(
     tmp_path: Path,
 ) -> None:
     adapter = _contract(tmp_path / "cache")["adapter"]
@@ -181,27 +181,18 @@ def test_writer_generation_randomness_is_video_keyed_and_v3_remains_valid(
         init_state_id=18,
         lora_sha256="7" * 64,
     )
-    assert first["schema_version"] == WRITER_EPISODE_EVIDENCE_V4
+    assert first["schema_version"] == WRITER_EPISODE_EVIDENCE_V5
     assert first["teacher_demo_index"] == repeated["teacher_demo_index"]
     assert first["teacher_video_selection_seed"] != repeated[
         "teacher_video_selection_seed"
     ]
-    assert first["writer_flow_noise_seed"] == repeated["writer_flow_noise_seed"]
     assert first["teacher_video_order_seed"] == repeated[
         "teacher_video_order_seed"
     ]
-    legacy = expected_writer_episode_evidence(
-        adapter,
-        suite="libero_spatial",
-        task_id=1,
-        init_state_id=1,
-        lora_sha256="7" * 64,
-        evidence_schema=WRITER_EPISODE_EVIDENCE_V3,
-    )
-    legacy["writer_generation_seconds"] = 0.1
+    first["writer_generation_seconds"] = 0.1
     assert validate_writer_episode_evidence(
         adapter,
-        legacy,
+        first,
         suite="libero_spatial",
         task_id=1,
         init_state_id=1,

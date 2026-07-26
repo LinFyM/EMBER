@@ -988,11 +988,21 @@
   `action_forecast_writer_v4_root_cause.md`，明确只保存v4根因证据；v4完整设计
   仍为历史provenance，不再定义当前代码。README、AGENTS、execution brief、
   decisions、concept、task plan、findings和progress已开始统一到v5。
-- v5机械参数预算为`10,301,440`，比rank128 Source-SFT多`4,096`；公开LoRA保持
-  rank16、76 tensors、`1,287,168` scalars。该数值尚待真实实现打印，不是已测
-  结果。
+- v5已原位实现并删除活动`visual_state.py`、`action_forecast.py`和v4 config；
+  AS training、checkpoint、online validation、inference、evaluation cache及
+  canonical evaluator均切换到v5 schema，不保留运行时兼容分支。
+- 真实构造打印v5 trainable参数为`10,301,440`，比rank128 Source-SFT多
+  `4,096`；公开LoRA保持rank16、76 tensors、`1,287,168` scalars。全套
+  `187 passed`，Core permutation invariance、causal prefix、zero-content、
+  identity、视频条件梯度和固定suffix buffer均通过。
 - AS初版固定每action独立`N=4`条同task videos、`B_a×4`个逻辑LoRA/loss；
   推理严格one-shot。后续只使用物理GPU4–7，frame stride5固定，重新profile
   `B_a`与frame microbatch后按约一小时segment训练，每段均匀保存6个checkpoint。
-- 下一步是原位替换v4源码/config/schema并完成最小mechanics checks；当前尚无
-  v5 checkpoint、GPU profile或科学结果。
+- GPU4–7真实profile完成`B_a=1/4/8/12/20`及`m40/B8`边界。最终选择
+  `B_a=8`、`N=4`、frame microbatch32；step2→12真实exact-resume通过，
+  11个稳态steps中位/均值/范围为`61.39/59.78/38.99–92.08s`，峰值
+  allocated/reserved为`60,319,360,000/67,471,671,296 bytes`。`B_a=12/20`
+  及`m40/B8`均因reserved跳到约80GB、余量不足3GB而淘汰。
+- 正式AS因此封存为每约一小时60 steps、每10 steps一个checkpoint，每段6个；
+  下一步是fresh identity第一段和resident validation functional-loss选择。当前
+  profile checkpoint只作mechanics/吞吐证据，不作科学性能结论。

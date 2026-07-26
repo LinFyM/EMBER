@@ -410,13 +410,17 @@ Plan/Revision/Belief或旧活动config/schema。
 - [x] 固定执行合同：frame stride5；只使用物理GPU4–7；新架构重新profile
   action batch与frame microbatch；按稳态吞吐估算约一小时segment，并在每段
   均匀保存6个checkpoint。
-- [ ] 原位替换v4代码/config/checkpoint schema，删除visual-state与误导性的
+- [x] 原位替换v4代码/config/checkpoint schema，删除visual-state与误导性的
   action-forecast活动owner；适配AS training、online validation、inference和
   canonical evaluator。
-- [ ] 完成最小shape/causal/Core-invariance/gradient/identity/freeze/LoRA
+- [x] 完成最小shape/causal/Core-invariance/gradient/identity/freeze/LoRA
   schema/parameter-count/OOM/exact-resume检查；不做无关全仓仪式性校验。
-- [ ] GPU4–7真实profile最快安全的`B_a`、frame microbatch和单step pair
+- [x] GPU4–7真实profile最快安全的`B_a`、frame microbatch和单step pair
   microbatch策略，封存一小时segment size与checkpoint cadence。
+  选择`B_a=8`、`N=4`、frame microbatch32；12-step profile从step2真实
+  exact-resume到step12，稳态11步中位`61.39s/step`，故正式每段60 steps、
+  每10 steps保存一次。`B_a=12/20`和`m40/B8`均因reserved显存只剩不足3GB
+  被淘汰。
 - [ ] 从fresh identity完成第一段AS训练；用固定400 panel选择
   validation observed-best，不使用80-episode快筛。
 - [ ] 对best先做逐层内部correct/same/wrong/shuffled/reversed检查：

@@ -539,7 +539,7 @@ class MixedTaskBatchSampler:
 
 
 class TeacherVideoSchedule:
-    """Independent deterministic no-replacement cycles for one teaching video."""
+    """Deterministic one-shot and per-action multi-video teacher schedules."""
 
     _SEED_TAG = 0x71DE0
 
@@ -573,6 +573,35 @@ class TeacherVideoSchedule:
         ).permutation(self.demo_indices)
         return int(order[offset])
 
+    def demos_for_action(
+        self,
+        task_id: int,
+        task_visit: int,
+        action_offset: int,
+        views: int,
+    ) -> tuple[int, ...]:
+        """Choose distinct same-task videos independently for one action query."""
+
+        if (
+            task_id not in self.task_ids
+            or min(task_visit, action_offset) < 0
+            or not 0 < views <= len(self.demo_indices)
+        ):
+            raise WriterModelError("multi-video request is outside the schedule")
+        order = np.random.default_rng(
+            np.random.SeedSequence(
+                [
+                    self.seed,
+                    task_id,
+                    task_visit,
+                    action_offset,
+                    views,
+                    self._SEED_TAG,
+                ]
+            )
+        ).permutation(self.demo_indices)
+        return tuple(int(value) for value in order[:views])
+
     def identity_for_task_visits(
         self, task_id: int, start_visit: int, stop_visit: int
     ) -> dict[str, Any]:
@@ -599,8 +628,10 @@ class TeacherVideoSchedule:
         sampler: MixedTaskBatchSampler,
         start_step: int,
         stop_step: int,
+        *,
+        views_per_action: int = 1,
     ) -> dict[str, Any]:
-        """Digest the joint action-query and independent one-video schedule."""
+        """Digest the joint action-query and independent teacher-video schedule."""
 
         declared_sets = {
             tuple(sorted(sampler.episode_rows[task_id]))
@@ -611,6 +642,7 @@ class TeacherVideoSchedule:
             self.task_ids != sampler.task_ids
             or self.demo_indices != declared_demos
             or not 0 <= start_step <= stop_step
+            or not 0 < views_per_action <= len(self.demo_indices)
         ):
             raise WriterModelError("Writer consumed schedule authorities differ")
         query = sampler.consumed_identity_summary(start_step, stop_step)
@@ -621,12 +653,28 @@ class TeacherVideoSchedule:
             for rank in range(sampler.world_size):
                 slot = step * sampler.world_size + rank
                 task_id, task_visit = sampler._task_visit_for_global_slot(slot)
-                demo_index = self.demo_for_task_visit(task_id, task_visit)
-                digest.update(
-                    struct.pack(">5q", step, rank, task_id, task_visit, demo_index)
-                )
-                coverage[task_id].add(demo_index)
-                visits[task_id] += 1
+                for action_offset in range(sampler.batch_size_for_step(step)):
+                    demos = self.demos_for_action(
+                        task_id,
+                        task_visit,
+                        action_offset,
+                        views_per_action,
+                    )
+                    for view, demo_index in enumerate(demos):
+                        digest.update(
+                            struct.pack(
+                                ">7q",
+                                step,
+                                rank,
+                                task_id,
+                                task_visit,
+                                action_offset,
+                                view,
+                                demo_index,
+                            )
+                        )
+                        coverage[task_id].add(demo_index)
+                        visits[task_id] += 1
         video_digest = digest.hexdigest()
         combined = hashlib.sha256(
             bytes.fromhex(query["identity_sha256"]) + bytes.fromhex(video_digest)
@@ -636,88 +684,11 @@ class TeacherVideoSchedule:
         return {
             "query": query,
             "teacher_video_seed": self.seed,
+            "views_per_action": views_per_action,
             "teacher_video_identity_sha256": video_digest,
             "combined_identity_sha256": combined,
             "min_video_visits_per_task": min(visit_counts),
             "max_video_visits_per_task": max(visit_counts),
             "min_unique_videos_per_task": min(video_counts),
             "max_unique_videos_per_task": max(video_counts),
-        }
-
-
-class WriterFlowNoiseSchedule:
-    """Exact-resume Gaussian flow noise, shared by all frames of one visit."""
-
-    _SEED_TAG = 0xF10A05
-
-    def __init__(
-        self,
-        *,
-        seed: int,
-        action_horizon: int = 50,
-        padded_action_dim: int = 32,
-    ) -> None:
-        if seed < 0 or min(action_horizon, padded_action_dim) <= 0:
-            raise WriterModelError("invalid Writer flow-noise schedule")
-        self.seed = int(seed)
-        self.action_horizon = int(action_horizon)
-        self.padded_action_dim = int(padded_action_dim)
-
-    def _visit_seed(self, global_visit_slot: int) -> int:
-        if global_visit_slot < 0:
-            raise WriterModelError("Writer flow-noise visit must be non-negative")
-        digest = hashlib.sha256(
-            struct.pack(
-                ">3Q",
-                self.seed,
-                int(global_visit_slot),
-                self._SEED_TAG,
-            )
-        ).digest()
-        return int.from_bytes(digest[:8], byteorder="big", signed=False)
-
-    def noise_for_visit(
-        self,
-        global_visit_slot: int,
-        *,
-        device: Any,
-    ) -> Any:
-        """Return one CPU-generated, device-independent ``[50,32]`` sample."""
-
-        import torch
-
-        generator = torch.Generator(device="cpu").manual_seed(
-            self._visit_seed(global_visit_slot)
-        )
-        value = torch.randn(
-            self.action_horizon,
-            self.padded_action_dim,
-            generator=generator,
-            dtype=torch.float32,
-        )
-        return value.to(device=device, non_blocking=True)
-
-    def identity_for_visits(
-        self,
-        start_global_visit: int,
-        stop_global_visit: int,
-    ) -> dict[str, Any]:
-        if not 0 <= start_global_visit <= stop_global_visit:
-            raise WriterModelError("invalid Writer flow-noise visit interval")
-        digest = hashlib.sha256()
-        for visit in range(start_global_visit, stop_global_visit):
-            digest.update(
-                struct.pack(
-                    ">2Q",
-                    visit,
-                    self._visit_seed(visit),
-                )
-            )
-        return {
-            "writer_flow_noise_seed": self.seed,
-            "start_global_visit": start_global_visit,
-            "stop_global_visit": stop_global_visit,
-            "action_horizon": self.action_horizon,
-            "padded_action_dim": self.padded_action_dim,
-            "identity_sha256": digest.hexdigest(),
         }

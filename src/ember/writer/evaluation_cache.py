@@ -28,10 +28,10 @@ from ember.pi05_source_checkpoint import (
 from ember.writer.model import WriterModelError
 
 
-WRITER_LORA_CACHE_SCHEMA = "ember_pi05_writer_lora_cache_v1"
-WRITER_LORA_CACHE_ENTRY_SCHEMA = "ember_pi05_writer_lora_cache_entry_v1"
-WRITER_LORA_CACHE_MANIFEST_SCHEMA = "ember_pi05_writer_lora_cache_manifest_v1"
-WRITER_LORA_GENERATOR_MARKER_SCHEMA = "ember_pi05_writer_lora_generator_marker_v1"
+WRITER_LORA_CACHE_SCHEMA = "ember_pi05_writer_lora_cache_v2"
+WRITER_LORA_CACHE_ENTRY_SCHEMA = "ember_pi05_writer_lora_cache_entry_v2"
+WRITER_LORA_CACHE_MANIFEST_SCHEMA = "ember_pi05_writer_lora_cache_manifest_v2"
+WRITER_LORA_GENERATOR_MARKER_SCHEMA = "ember_pi05_writer_lora_generator_marker_v2"
 WRITER_LORA_REQUEST_ORDER = (
     "suite/task order from the sealed evaluation contract, then ascending init_state_id"
 )
@@ -58,7 +58,6 @@ class WriterCacheRequest:
     teacher_demo_index: int | None = None
     video_condition: str | None = None
     order_transform: str | None = None
-    writer_flow_noise_seed: int | None = None
     teacher_video_order_seed: int | None = None
 
     @property
@@ -95,7 +94,6 @@ class WriterCacheRequest:
             "teacher_demo_index": self.teacher_demo_index,
             "video_condition": self.video_condition,
             "order_transform": self.order_transform,
-            "writer_flow_noise_seed": self.writer_flow_noise_seed,
             "teacher_video_order_seed": self.teacher_video_order_seed,
             "representative_init_state_id": self.init_state_id,
             "ordinal": self.ordinal,
@@ -175,7 +173,6 @@ def _video_keyed_request(
             if condition in {"shuffled", "shuffled_keep_first", "reversed"}
             else "forward"
         ),
-        writer_flow_noise_seed=int(row["writer_flow_noise_seed"]),
         teacher_video_order_seed=int(row["teacher_video_order_seed"]),
     )
 

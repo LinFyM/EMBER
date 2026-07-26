@@ -25,16 +25,13 @@ from ember.pi05_source_checkpoint import (
 from ember.writer.data import (
     MixedTaskBatchSampler,
     TeacherVideoSchedule,
-    WriterFlowNoiseSchedule,
 )
 from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 
-AS_WRITER_CHECKPOINT_SCHEMA = "ember_pi05_action_forecast_writer_checkpoint_v4"
-AS_WRITER_TRAINER_STATE_SCHEMA = (
-    "ember_pi05_action_forecast_writer_trainer_state_v4"
-)
-AS_WRITER_RANK_STATE_SCHEMA = "ember_pi05_action_forecast_writer_rank_state_v4"
+AS_WRITER_CHECKPOINT_SCHEMA = "ember_pi05_core_causal_writer_checkpoint_v5"
+AS_WRITER_TRAINER_STATE_SCHEMA = "ember_pi05_core_causal_writer_trainer_state_v5"
+AS_WRITER_RANK_STATE_SCHEMA = "ember_pi05_core_causal_writer_rank_state_v5"
 
 
 def _rng_state(context: DistributedContext) -> dict[str, Any]:
@@ -82,26 +79,21 @@ def _write_rank_state(
     context: DistributedContext,
     sampler: MixedTaskBatchSampler,
     video_schedule: TeacherVideoSchedule,
-    flow_noise_schedule: WriterFlowNoiseSchedule,
     saved_rng: Mapping[str, Any],
-    conditions_per_optimizer_step: int,
+    videos_per_action: int,
 ) -> None:
-    next_data_step = step * conditions_per_optimizer_step
     torch.save(
         {
             "schema_version": AS_WRITER_RANK_STATE_SCHEMA,
             "next_step": step,
-            "next_data_step": next_data_step,
+            "next_data_step": step,
             "rank": context.rank,
             "world_size": context.world_size,
             "per_rank_batch_size": sampler.per_rank_batch_size,
             "per_rank_batch_cycle": sampler.per_rank_batch_cycle,
             "sampler_seed": sampler.seed,
             "teacher_video_seed": video_schedule.seed,
-            "writer_flow_noise_seed": flow_noise_schedule.seed,
-            "independent_conditions_per_optimizer_step": (
-                conditions_per_optimizer_step
-            ),
+            "teacher_videos_per_action": videos_per_action,
             "rng": saved_rng,
         },
         path,
@@ -119,15 +111,14 @@ def _write_shared_state(
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     sampler: MixedTaskBatchSampler,
     video_schedule: TeacherVideoSchedule,
-    flow_noise_schedule: WriterFlowNoiseSchedule,
     contract: Mapping[str, Any],
     require_full_coverage: bool,
     metrics_rows: int,
 ) -> dict[str, Any]:
-    conditions_per_optimizer_step = int(
-        contract["runtime"]["independent_conditions_per_optimizer_step"]
+    videos_per_action = int(
+        contract["runtime"]["teacher_videos_per_action"]
     )
-    data_stop_step = step * conditions_per_optimizer_step
+    data_stop_step = step
     save_file(
         {
             name: value.detach().to(device="cpu").contiguous()
@@ -152,10 +143,7 @@ def _write_shared_state(
         sampler,
         0,
         data_stop_step,
-    )
-    flow_noise = flow_noise_schedule.identity_for_visits(
-        0,
-        data_stop_step * sampler.world_size,
+        views_per_action=videos_per_action,
     )
     if require_full_coverage and (
         any(len(episodes) != sampler.episodes_per_task for episodes in coverage.values())
@@ -164,16 +152,13 @@ def _write_shared_state(
         raise WriterModelError("final AS-Writer checkpoint lacks full data coverage")
     consumed = {
         **schedule,
-        "writer_flow_noise": flow_noise,
         "declared_task_count": len(coverage),
         "tasks_with_action_signal": sum(bool(episodes) for episodes in coverage.values()),
         "min_action_episodes_per_task": min(map(len, coverage.values())),
         "max_action_episodes_per_task": max(map(len, coverage.values())),
         "next_step": step,
         "next_data_step": data_stop_step,
-        "independent_conditions_per_optimizer_step": (
-            conditions_per_optimizer_step
-        ),
+        "teacher_videos_per_action": videos_per_action,
     }
     files = {
         str(path.relative_to(temporary)): {
@@ -205,7 +190,6 @@ def save_writer_checkpoint(
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     sampler: MixedTaskBatchSampler,
     video_schedule: TeacherVideoSchedule,
-    flow_noise_schedule: WriterFlowNoiseSchedule,
     contract: dict[str, Any],
     mode: str,
     metrics_rows: int,
@@ -228,8 +212,8 @@ def save_writer_checkpoint(
     _raise_distributed_errors(context, "initialization", error)
 
     saved_rng = _rng_state(context)
-    conditions_per_optimizer_step = int(
-        contract["runtime"]["independent_conditions_per_optimizer_step"]
+    videos_per_action = int(
+        contract["runtime"]["teacher_videos_per_action"]
     )
     error = None
     try:
@@ -239,9 +223,8 @@ def save_writer_checkpoint(
             context=context,
             sampler=sampler,
             video_schedule=video_schedule,
-            flow_noise_schedule=flow_noise_schedule,
             saved_rng=saved_rng,
-            conditions_per_optimizer_step=conditions_per_optimizer_step,
+            videos_per_action=videos_per_action,
         )
     except Exception as caught:
         error = caught
@@ -260,7 +243,6 @@ def save_writer_checkpoint(
                 scheduler=scheduler,
                 sampler=sampler,
                 video_schedule=video_schedule,
-                flow_noise_schedule=flow_noise_schedule,
                 contract=contract,
                 require_full_coverage=require_full_coverage,
                 metrics_rows=metrics_rows,
@@ -363,7 +345,7 @@ def initialize_writer_phase(
             writer_record = manifest.get("files", {}).get("writer.safetensors", {})
             if (
                 training.get("schema_version")
-                != "ember_pi05_action_forecast_as_writer_launch_v1"
+                != "ember_pi05_core_causal_as_writer_launch_v5"
                 or training.get("stage", "development") != stage
                 or training.get("source") != dict(source)
                 or training.get("authorities") != dict(authorities)
@@ -409,10 +391,9 @@ def load_writer_checkpoint(
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     sampler_seed: int,
     teacher_video_seed: int,
-    writer_flow_noise_seed: int,
     per_rank_batch_size: int,
     per_rank_batch_cycle: tuple[int, ...],
-    conditions_per_optimizer_step: int,
+    videos_per_action: int,
     contract_sha256: str,
 ) -> tuple[int, dict[str, Any], int]:
     validation: list[Any] = [None]
@@ -458,11 +439,10 @@ def load_writer_checkpoint(
         context.world_size,
         per_rank_batch_size,
         per_rank_batch_cycle,
-        conditions_per_optimizer_step,
-        int(trainer["next_step"]) * conditions_per_optimizer_step,
+        videos_per_action,
+        int(trainer["next_step"]),
         sampler_seed,
         teacher_video_seed,
-        writer_flow_noise_seed,
     )
     actual = (
         int(rank_state["next_step"]),
@@ -470,18 +450,17 @@ def load_writer_checkpoint(
         int(rank_state["world_size"]),
         int(rank_state["per_rank_batch_size"]),
         tuple(int(value) for value in rank_state.get("per_rank_batch_cycle", ())),
-        int(rank_state.get("independent_conditions_per_optimizer_step", -1)),
+        int(rank_state.get("teacher_videos_per_action", -1)),
         int(rank_state.get("next_data_step", -1)),
         int(rank_state["sampler_seed"]),
         int(rank_state["teacher_video_seed"]),
-        int(rank_state["writer_flow_noise_seed"]),
     )
     if (
         rank_state.get("schema_version") != AS_WRITER_RANK_STATE_SCHEMA
         or actual != expected
         or checkpoint.name != f"step_{expected[0]:08d}"
         or int(validation[0].get("consumed", {}).get("next_data_step", -1))
-        != expected[0] * conditions_per_optimizer_step
+        != expected[0]
     ):
         raise WriterModelError("Writer rank resume state changed")
     return (

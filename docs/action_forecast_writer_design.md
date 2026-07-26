@@ -570,13 +570,15 @@ public LoRA      1,287,168
 factor-head hidden width为411；总量与rank-128 Source-SFT的10,297,344只差
 1,728（0.017%）。这是唯一容量校准旋钮。
 
-## 17. 唯一代码路径与退役边界
+## 17. v4历史代码路径与退役边界
 
-只保留：
+下列列表是v4封存时的路径，不再是当前活动owner；完整源码固定保存在远程
+commit `73c419137b6004d6578c3c784633a711dfb95e0c`，当前活动路径以
+`action_forecast_writer_v5_design.md`为准：
 
 - `scripts/train_as_writer.py`：唯一AS入口；
 - `scripts/evaluate_pi05.py`：唯一PI05 rollout入口；
-- `configs/pi05_as_writer_action_forecast_v4.json`：唯一活动AS配置；
+- `configs/pi05_as_writer_action_forecast_v4.json`：当时的活动AS配置；
 - `src/ember/writer/action_forecast.py`：PI05 forecast与Meta-LoRA owner；
 - `src/ember/writer/visual_state.py`：单一职责visual-state owner；
 - `src/ember/writer/temporal.py`：Plan/Revision/Temporal/Query owner；

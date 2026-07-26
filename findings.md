@@ -1230,6 +1230,23 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   `positive task-level AS不可识别demo过程 → visual-state非瓶颈 →
   Meta学习低层phase/translation latent → absolute-time Plan/Revision放大`。
   两层Temporal和content-only decoder忠实传递差异，当前没有重写证据。
+- 对Object-1/Object-3全部成败翻转做exact replay后，完整400中shuffle收益的
+  主要行为来源也已定位。两任务有40条`correct fail→shuffle success`、7条
+  反向翻转，净增33；Object-3的31条正向翻转中，correct有23条明确去抓并常常
+  抬起深绿色干扰瓶，7条到达红橙色BBQ sauce后抓取/运输失败，1条为多物体
+  碰撞。correct/shuffled首次闭合点配对距离中位数为`0.1119 m`，但前60-step
+  抬升中位数仍为`0.2165/0.2316 m`，说明主问题是空间目标绑定而非correct不会
+  执行动作。
+- Object-1的9条正向翻转中，首次闭合step中位数由correct `122`提前到shuffle
+  `91`，correct `9/9`在闭合后60 steps抬升不足`0.10 m`；反向翻转则显示
+  shuffle同样会毁掉原本有用的抓取控制。Object-3正向翻转跨22个teacher demos，
+  demo `14/30/32/43`的同一cached LoRA在不同init上出现相反翻转，排除少数坏
+  视频。
+- 因此更准确的解释不是shuffle“腾出LoRA容量”，而是correct-order路径把
+  demo低层phase/translation写成不可迁移的静态controller bias，压过已有
+  language/object semantics；shuffle结构化破坏该bias，使既有高层信号重新
+  主导。lead-only更差且shuffled adapter不向task consensus收缩，说明它没有
+  新产生更多高层信息。
 - 旧v5决定已撤回。下一版必须先解决visual-state必要性、Meta职责、
   train-only forecast语义gate和same-task多demo高层汇聚；不通过
   contrast/order loss强制制造差距。完整证据和SHA见

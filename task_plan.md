@@ -369,6 +369,12 @@ task-local RL、joint oracle或ViVLA。
 - [x] 将根因修正为“AS可识别性不足→visual-state旁路→Meta低层phase/
   translation latent→absolute-time Plan/Revision放大”；Temporal和
   content-only decoder暂不重写。
+- [x] 原样复放Object-1/Object-3的47对correct/shuffled成败翻转并逐帧审计：
+  Object-3的31条shuffled-only中，correct有23条明确抓取深绿色干扰瓶；
+  两臂首次闭合点中位相差`0.1119 m`。Object-1主要是correct到达更晚、空夹或
+  抓后掉落。31条Object-3收益跨22个teacher demos，且同一cached LoRA会随
+  init geometry产生相反翻转，证明主效应是不可迁移的低层空间控制绑定，而非
+  少数坏视频或shuffle“释放模型容量”。
 - [x] 撤回已拍板v5。Intent+Transition保留为删除absolute-time放大器的局部
   候选；下一版必须先解决visual-state必要性、Meta职责、forecast语义gate和
   same-task多demo抽象。完整证据写入

@@ -320,6 +320,82 @@ translation RMS 中位数约 `0.0197–0.0341`，而单轴 action 上限约 `0.0
 在不引入 privileged pose/reward 训练的前提下，不能诚实地把这一步再解释成
 某个普适物理定律。它可能在另一个 task 上同样稳定地变坏。
 
+### 7.1 成败翻转复放把 Object 收益具体定位到错误空间绑定
+
+为避免只从参数和 action delta 猜测行为原因，使用 sealed correct/shuffled
+cache 原样复放 Object-1/Object-3 的全部固定 50-state panel，并只为两臂成败
+翻转的 episode 保存 agentview、wrist、EEF position 和 gripper qpos。未读取
+object pose、teacher action/state、reward shaping 或任何隐藏目标。四个
+task/condition 的 success 与 termination step 均 `50/50` 精确复现原结果。
+
+两任务共有：
+
+- `correct fail → shuffled success`：`40` 条；
+- `correct success → shuffled fail`：`7` 条；
+- 其中 Object-1 为 `9/2`，Object-3 为 `31/5`；净增 `33`，解释完整
+  400-panel `+39` 中的主要部分。
+
+Object-3 的 31 条 shuffled-only 成功给出了最明确的行为证据：
+
+- `23/31` 条 correct-order rollout 明确接近、闭合并通常抬起深绿色干扰瓶，
+  而不是语言指定的红橙色 BBQ sauce；
+- `7/31` 条接近了红橙色目标，但在抓取或后续运输中失败；
+- `1/31` 条发生多物体碰撞，无法可靠归为单一目标；
+- shuffled 在相同 init、language、policy RNG 下均把红橙色目标放入篮中。
+
+这不是“correct 不会抓东西”。在这 31 条中，correct/shuffled 首次闭合后
+60 steps 内的最大抬升中位数分别为 `0.2165/0.2316 m`；correct 经常成功抓起并
+运输了**错误物体**。两臂首次闭合 EEF 位置的配对距离中位数为 `0.1119 m`，
+shuffled-minus-correct 的均值为
+`[-0.0451, +0.0924, -0.0176] m`，即主要是稳定的平面抓取点切换，而不是
+无结构抖动。
+
+Object-1 的主要模式不同但同样属于低层控制绑定：
+
+- shuffled-only 9 条的首次闭合 step 中位数由 correct 的 `122` 提前到 `91`
+  （配对差值中位数 `-43`）；
+- correct 的前 60-step 抬升中位数仅 `0.0744 m`，`9/9` 小于 `0.10 m`；
+- 画面中反复出现极晚到达、空夹/错物体接近以及抓后掉落，shuffled 则更早
+  到达 cream cheese 并完成运输。
+
+反向翻转验证了 shuffle 不是普遍更好的语义变换。Object-3 的 5 条
+correct-only episode 中，两臂首次闭合 step 中位数同为 `78`，但
+correct/shuffled 的 60-step 抬升中位数为 `0.2392/0.0654 m`，shuffled 有
+`4/5` 低于 `0.10 m`；它通常仍朝红橙色目标运动，只是破坏了有用的抓取/运输
+控制。Object-1 的两条反向翻转也把闭合从 correct 的中位 `98` 推迟到
+shuffled 的 `155.5`。
+
+该现象不集中在少数坏视频。Object-3 的 31 条 shuffled-only episode 跨
+`22` 个 teacher demos；demo `14/30/32/43` 生成的同一个 cached LoRA 在不同
+init states 上还同时出现了两个翻转方向。这说明 teacher LoRA 携带的是会与
+当前几何相互作用的空间控制偏置，不是某几条视频被错误标注。
+
+因此 owner 提出的解释方向成立，但“释放 LoRA 容量”不是最准确的机制：
+
+1. correct-order 视频产生连贯、可被 AS 稳定利用的低层 phase/translation
+   controller code；
+2. teacher video 与监督 action episode 独立配对，而生成的又是部署到任意
+   新初态的静态 LoRA，这个 code 没有被约束为相对物体、相对当前 observation
+   的可迁移操作意图；
+3. 在 Object-3，它常把当前 policy 的到达点绑定到绿色干扰瓶一侧，压过已有
+   language/object semantics；在 Object-1，它常造成到达时机和抓取几何偏差；
+4. shuffle 改写前三维 translation 的时间绑定，破坏/旋转这条有害控制偏置，
+   已存在于 frozen source base、language 和稳定视频内容中的高层任务信号因而
+   重新占主导。
+
+这不是 shuffled video 新生成了更多高层信息：lead-only 更差、shuffled adapter
+也没有向 task consensus 收缩。它更像对错误低层 controller 的结构化消融。
+此前“success 正号只能称为 objective-unidentified 偶然补偿”的表述需要收窄为：
+AS objective 仍不能预测这条扰动是否有益，但在当前主要 Object 增益上，正号的
+具体行为来源已经定位为目标选择、到达点和抓取/运输几何的纠正。
+
+复放证据位于：
+`/data/ymdai/outputs/ember/pi05_action_forecast_v4_step0825_correct_shuffle_flip_replay_object13_g4567_20260726`。
+四个 trajectory JSON SHA256 为
+`ee87166f...d1e35a`、`f5bc893c...e1da31`、
+`ebae6587...38003`、`2f6942bf...aaee0`；47 对 contact-sheet manifest 为
+`4275d01e...a75b4e`。
+
 ## 8. 已排除或降级的解释
 
 现有证据不支持把以下因素写成主根因：

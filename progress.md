@@ -954,3 +954,21 @@
 - 原位重写`docs/action_forecast_writer_v5_decision.md`，并同步README、
   execution brief、task plan、findings、decisions和v4 provenance。当前没有
   v5代码或训练；不继续AS、不进入RL，停在下一版重新设计前。
+
+## correct/shuffled成败翻转行为复放完成（2026-07-26）
+
+- 只使用物理GPU4–7、sealed step825 correct/shuffled LoRA cache和原固定
+  Object-1/Object-3各50 states，完成四个condition/task的exact replay；
+  success与termination step均`50/50`复现。0–3上的他人进程未触碰，结束后
+  4–7均释放。
+- 只为47条成败翻转保存每5 steps的agentview/wrist和每步EEF/gripper/action；
+  未读取object pose、teacher action/state或隐藏目标。输出为
+  `/data/ymdai/outputs/ember/pi05_action_forecast_v4_step0825_correct_shuffle_flip_replay_object13_g4567_20260726`。
+- Object-1/Object-3的`shuffle-only/correct-only`分别为`9/2`和`31/5`。
+  Object-3的31条shuffle-only中，correct有23条明确选择深绿色干扰瓶；两臂
+  首次闭合点配对距离中位`0.1119 m`。Object-1收益主要来自更早到达和更可靠
+  抓取/抬升；反向翻转证明shuffle也会破坏有用控制。
+- Object-3收益跨22个teacher demos；四个相同cached LoRA在不同init geometry
+  上出现相反翻转。结论从“正号只是无法解释的偶然补偿”细化为：正序视频的
+  低层translation controller bias会压过物体语义，shuffle破坏该bias后让已有
+  高层任务信息重新主导；不是shuffle生成更多语义或释放参数容量。

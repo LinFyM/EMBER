@@ -1025,3 +1025,31 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   reverse会同时改变初始anchor与local transitions，并不是纯粹删除顺序。
 - 按owner停止条件，本轮不修改架构、不重训、不推进RL。完整结果留给后续及
   外部专家复核。
+
+## v4 step825固定首帧shuffle归因（2026-07-26）
+
+- 为隔离full-shuffle是否只是通过更换initial anchor获益，新增唯一条件
+  `shuffled_keep_first`：先生成与原shuffled逐元素相同的permutation，再把
+  原始frame 0移到首位；所有非零frames保持原full-shuffle相对次序。原始
+  frame indices不重排，teacher/demo/language/init/env/policy/Writer seeds
+  与已有arms严格配对。
+- 固定400结果为`136/400`，output位于
+  `/data/ymdai/outputs/ember/pi05_action_forecast_v4_as_formal_val8x50_step0825_shuffled_keep_first_6b5923f_g0123_gen1_b100_roll6_20260726`；
+  `results.json` SHA256为
+  `0ec198d1438bdb85d9eccb41ac5f6796a470903b963576f29260c048b453ac99`。
+  32/32 shards、400 rows、24 workers均一次成功，无重试或错误。
+- 逐任务success为Long-1/Long-2/Goal-3/Goal-6/Object-1/Object-3/
+  Spatial-1/Spatial-3=`9/1/0/45/45/26/1/9`。
+- 相对correct `109`，paired both/correct-only/keep-only/both-fail为
+  `91/18/45/246`，净`+27`、churn`63/400`、exact McNemar
+  `p=8.98e-4`。Object-1 `38→45`、Object-3 `11→26`、Goal-6
+  `40→45`共同贡献提升；保留正确首帧并不能消除shuffle收益。
+- 相对full-shuffle `148`，paired为`116/32/20/232`，净`-12`、
+  churn`52/400`、`p=0.126`。这12次总差异几乎全部来自Object-3
+  `37→26`；该task的full-only/keep-only为`14/3`、`p=0.0127`。
+- 14个full-shuffle permutation本身以frame 0开头的episodes在两条件间LoRA
+  SHA完全相同，且success逐条一致，提供了实现正确性的真实执行校验。
+- 结论：随机anchor确实可能额外帮助Object-3，但它不是`109→148`异常改善的
+  主因。总增益39中，至少27在原始anchor完全固定时仍存在。主嫌疑进一步集中到
+  后续帧顺序、相邻transition和forecast/Temporal对正确连贯时序的解释；本实验
+  尚不能在这些机制之间继续细分。

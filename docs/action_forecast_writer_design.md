@@ -786,6 +786,37 @@ task/object信息反而重新占优。这一解释由任务集中性和paired结
 获得行为上的优待。按owner要求，本轮不据此改架构，不再训练，也不进入RL；保留
 完整证据后停下，供下一阶段及外部专家复核。
 
+### 20.3 固定首帧shuffle反事实
+
+owner随后只授权一个最小anchor归因实验。新增`shuffled_keep_first`条件复用
+full-shuffle完全相同的确定性permutation，但把原始frame 0移回位置0，并保持
+其余所有帧在full-shuffle中的相对次序；frame indices、teacher、language、
+init、flow noise、policy seeds和其他合同字段均不变。
+
+step825同一固定400 panel结果为：
+
+```text
+correct                    109/400
+shuffled_keep_first        136/400
+full shuffled              148/400
+```
+
+correct与keep-first的paired
+both/correct-only/keep-only/both-fail为`91/18/45/246`，净增27，
+exact McNemar `p=8.98e-4`。因此即使原始首帧严格保留，破坏后续顺序仍显著优于
+correct；“随机阶段帧被选作anchor”不是主要解释。
+
+full-shuffle与keep-first为`116/32/20/232`，full净高12，`p=0.126`。差异几乎
+全部集中在Object-3：`37→26`，paired full-only/keep-only=`14/3`、
+`p=0.0127`。所以anchor变化可能额外帮助特定object任务，但只能解释总
+`correct→full-shuffle`增益39中的约12；至少27的增益来自首帧不变时仍被破坏的
+后续时序/transition路径。
+
+14个full-shuffle本来就把frame 0排在首位的episodes产生了与keep-first完全相同
+的LoRA，且14/14行为一致，验证该反事实实现没有引入额外随机变化。当前证据进一
+步把主嫌疑收窄到正确时序及其local-transition/forecast解释，而不是首帧anchor
+本身；但仍不区分“相邻transition有害”和“Temporal顺序聚合有害”。
+
 ## 21. Cold-start RL Writer（本轮暂停）
 
 本轮完成现有AS checkpoint选择和特异性分析后立即停止，不进入RL。以下只保留

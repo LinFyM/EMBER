@@ -322,3 +322,6 @@ Action-Memory、temporal-RoPE、Action-Forecast v1/v2和28-slot Belief-v3均为
 - [x] 按owner最新停止条件，本轮不修改架构、不重训、不推进cold-start RL，
   停下汇报并保留证据供后续外部专家分析；也不自动继续final-32、task-local
   RL、joint oracle或ViVLA。
+- [x] owner随后只重开固定首帧shuffle归因：step825固定frame 0、仅保留
+  full-shuffle其余帧相对次序得到`136/400`。相对correct仍显著净增27，
+  因而随机anchor不是主要原因；不扩展为新的训练或架构修改。

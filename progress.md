@@ -858,3 +858,26 @@
   `train_pi05/evaluate_pi05`进程；4–7未触碰。`/data/ymdai`当前占用约
   `321.61 GB`，低于500GB cap。本轮按owner要求在记录、验证、commit、push后
   停止，等待后续讨论或外部专家意见。
+
+## step825固定首帧shuffle快速归因完成（2026-07-26）
+
+- owner授权一个scoped anchor ablation。commit `6b5923f`新增
+  `shuffled_keep_first` canonical evaluator条件：复用原full-shuffle
+  permutation，只把原始frame 0移回首位。eval contract/runtime/cache focused
+  tests为`35 passed in 4.90s`，compile和diff检查通过，commit已push。
+- GPU0–3预检均为`0 MiB`、0% utilization；个人占用约`321.61 GB`、预计新增
+  `672 MB`，未触碰GPU4–7。固定400 run以4 generators、batch100、24 rollout
+  workers一次完成，wall `864.49s`、有效`0.4627 rollouts/s`。
+- 结果为`136/400`，逐task
+  `9/1/0/45/45/26/1/9`。相对correct `109`为`18`条correct-only与
+  `45`条keep-only，`p=8.98e-4`；相对full-shuffle `148`为`32`条
+  full-only与`20`条keep-only，`p=0.126`。
+- anchor只能解释full-shuffle额外约12次成功，而且主要集中在Object-3；
+  固定anchor后仍显著保留27次净收益。因此当前不再把随机anchor视为主要根因，
+  后续专家分析应优先审查非首帧order/local-transition/forecast-Temporal
+  映射。
+- run output：
+  `/data/ymdai/outputs/ember/pi05_action_forecast_v4_as_formal_val8x50_step0825_shuffled_keep_first_6b5923f_g0123_gen1_b100_roll6_20260726`；
+  results SHA256
+  `0ec198d1438bdb85d9eccb41ac5f6796a470903b963576f29260c048b453ac99`。
+  完成后GPU0–3均释放为`0 MiB`。

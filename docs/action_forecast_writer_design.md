@@ -3,6 +3,9 @@
 状态：2026-07-26 owner 最新对齐。本文是当前 focused Writer 子任务的
 唯一活动设计 authority。
 
+面向外部专家的自包含问题、历史与结果入口见
+[`action_forecast_writer_expert_consultation.md`](action_forecast_writer_expert_consultation.md)。
+
 历史 Action-Memory、Action-Forecast v1/v2、28-slot Belief-v3、冻结随机
 visual-state decoder、累计 transition、Plan/Revision 双 token、order contrast
 和旧 `0→600` 执行口径只保留为 Git、`findings.md` 和既有结果 provenance。
@@ -539,7 +542,8 @@ schema和上述信息流固定。若简化后的Plan/Revision使总量偏离10.2
 不改变科学语义的hidden width（优先factor-head hidden width）做容量校准；不得
 增加新分支、更多tokens、额外adapter或加深Temporal来凑参数。
 
-参数预算在75-step launch前封存，正式1200-step沿用完全相同schema。
+参数预算在75-step launch前封存；随后已完成的正式v4轨迹至step2400始终沿用
+完全相同schema。
 
 当前真实model机械计数为：
 
@@ -808,9 +812,9 @@ correct；“随机阶段帧被选作anchor”不是主要解释。
 
 full-shuffle与keep-first为`116/32/20/232`，full净高12，`p=0.126`。差异几乎
 全部集中在Object-3：`37→26`，paired full-only/keep-only=`14/3`、
-`p=0.0127`。所以anchor变化可能额外帮助特定object任务，但只能解释总
-`correct→full-shuffle`增益39中的约12；至少27的增益来自首帧不变时仍被破坏的
-后续时序/transition路径。
+`p=0.0127`。两项干预可能非线性交互，不能把39严格做因果加法分解；但恢复
+原始anchor只把148降到136，而固定anchor后仍相对correct净增27。因此anchor
+变化可能额外帮助特定object任务，却不是异常的必要条件或主要解释。
 
 14个full-shuffle本来就把frame 0排在首位的episodes产生了与keep-first完全相同
 的LoRA，且14/14行为一致，验证该反事实实现没有引入额外随机变化。当前证据进一

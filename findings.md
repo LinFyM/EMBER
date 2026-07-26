@@ -1050,6 +1050,22 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 14个full-shuffle permutation本身以frame 0开头的episodes在两条件间LoRA
   SHA完全相同，且success逐条一致，提供了实现正确性的真实执行校验。
 - 结论：随机anchor确实可能额外帮助Object-3，但它不是`109→148`异常改善的
-  主因。总增益39中，至少27在原始anchor完全固定时仍存在。主嫌疑进一步集中到
-  后续帧顺序、相邻transition和forecast/Temporal对正确连贯时序的解释；本实验
-  尚不能在这些机制之间继续细分。
+  必要条件或主要解释。两项干预可能非线性交互，不能把39严格做因果加法分解；
+  直接观测上，恢复原始anchor只把148降到136，而固定anchor后仍相对correct
+  净增27。主嫌疑进一步集中到后续帧顺序、相邻transition和forecast/Temporal
+  对正确连贯时序的解释；本实验尚不能在这些机制之间继续细分。
+
+## v4外部专家咨询的科学问题边界（2026-07-26）
+
+- 当前需要解释的不是“Writer是否读取视频”：v4内部same/shuffled/reversed/
+  wrong差异已经穿过完整路径到effective LoRA。真正失败的是这些差异的行为
+  语义：correct没有被优待，shuffled显著改善，wrong也未形成稳定伤害。
+- 外部分析应同时考虑forecast语义未校准、positive task-level AS目标不可辨识、
+  coherent temporal分量被错误映射、Revision强度被错误使用，以及静态task
+  LoRA是否必须依赖帧序等互相可区分的解释。不能把任一项提前写成既定根因。
+- 下一步优先寻求少量、低成本、能区分候选解释的诊断；不以contrast/order
+  loss强行制造结果，不读取forbidden teacher action/proprio/reward，也不因
+  当前负结果自动增加模型容量或启动RL。
+- 自包含的远程咨询材料为
+  `docs/action_forecast_writer_expert_consultation.md`。它嵌入理解现状所需的
+  架构、逐任务结果、paired统计和内部量，不依赖本地主机output目录。

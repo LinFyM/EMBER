@@ -1,6 +1,12 @@
 # EMBER Current Execution Brief
 
-状态：2026-07-25。共享 π0.5-LIBERO source base 与 Source-SFT comparator 已封存；当前 focused execution 是 `docs/action_forecast_writer_design.md` 定义的四卡 Action-Forecast AS/RL Writer 子任务。
+状态：2026-07-26。共享 π0.5-LIBERO source base 与 Source-SFT comparator 已
+封存。四卡 Action-Forecast Writer v4 已训练至step2400并停止；现有checkpoint
+observed-best为step825的`109/400`。内部视频/顺序特异性通过，但完整rollout
+出现`shuffled=148/400 > reversed=126/400 > correct=109/400`的反常排序；
+固定原始首帧后shuffle仍为`136/400`。当前暂停RL与继续训练，进入外部专家
+复核。自包含咨询材料见
+[`docs/action_forecast_writer_expert_consultation.md`](action_forecast_writer_expert_consultation.md)。
 
 ## 1. 研究问题
 
@@ -40,12 +46,14 @@ owner于2026-07-22将source-base正式训练改为从generic base fresh运行1,0
 - 输入恰好一条 action-hidden teacher video + 正确 task language；输出完整 task-specific LoRA。
 - 在24 train tasks上做均衡混合。每个 update 同 task 内独立随机采 video 与 action episode/chunk，不要求配对；action只进 functional behavior loss。
 - source base冻结，只有Writer更新。Writer不得看到action、proprio、reward、terminal、task ID、filename或隐藏stats。
-- 当前Action-Forecast先实现新 visual-state，fresh训练75 step并完成内部顺序、
-  换视频和必要rollout特异性闭环；未通过则按证据快速迭代同一canonical架构。
-  通过后从fresh identity直接训练到1200 step；若validation best尚未被明显、
-  超过rollout噪声、由多个tasks贡献且复测稳健的峰后下降括住，每次
-  exact-resume增加600 step。多个略低点、functional loss平台或train平台都
-  不算饱和。
+- Action-Forecast v4的75-step内部门已通过，正式fresh轨迹已训练至step2400
+  并按owner要求停止。固定400 panel的现有checkpoint observed-best是step825
+  `109/400`，不再追加训练或80-episode快筛。
+- step825已完成correct、same-task other、cross-suite wrong、shuffled、
+  reversed及fixed-anchor shuffle的内部和rollout证据。行为特异性硬门失败：
+  shuffled/reversed显著或方向性优于correct；随机首帧anchor只能解释部分
+  shuffle收益。当前先寻求外部专家对可辨识性、forecast语义和时序映射的分析，
+  不修改架构，不以contrast/order loss挽救，也不进入RL。
 - 当前 canonical 设计、参数预算、32-token visual-state、Plan/Revision、
   Temporal、LoRA decoder、特异性门和训练合同完整记录在
   [`docs/action_forecast_writer_design.md`](action_forecast_writer_design.md)。

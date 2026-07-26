@@ -8,14 +8,14 @@
 - source base训练若使用LoRA，完成后merge进policy；所有下游方法共享同一个冻结base和source-only normalization，不叠加shared source adapter。
 - source base在全部目标40 tasks上快速测试，只要求已开始在多个tasks出现部分真实成功，不先追求高ceiling，也不能只靠单个易task aggregate。
 - `Action-Supervised Writer (AS-Writer)`输入正确language+恰好一条action-hidden video；source video/action episode在同task内独立采样。
-- 当前Action-Forecast新架构先fresh训练75 step完成内部顺序、换视频和必要
-  rollout特异性门；通过后从fresh identity直接训练到1200 step。若尚未以
-  幅度非常明显、复测稳健且由多个tasks共同贡献的峰后下降括住validation
-  best，每次exact-resume增加600 step，不设总训练时间上限。
-- 32-token v4的75-step内部门已通过：normal对reversed/shuffled、
-  same-task-other-demo和cross-suite wrong的差异均能经过完整路径保留到
-  effective LoRA，且8个validation tasks都有贡献。step75不以低分母环境成功率
-  作门；paired rollout留给具备绝对能力的正式候选。
+- 32-token Action-Forecast v4的75-step内部门已通过；fresh正式轨迹已训练到
+  step2400并停止，不再继续训练或使用波动过大的80-episode快筛。固定400 panel
+  的现有observed-best为step825的`109/400`。
+- step825完整特异性为correct/same-task other/cross-suite wrong/shuffled/
+  reversed=`109/104/99/148/126`；固定原始首帧只打乱后续帧仍为`136`。
+  因此v4解决了内部视频/顺序差异塌缩，却没有正确使用这些差异；行为硬门失败。
+  当前暂停架构修改、继续训练和RL，先寻求外部专家分析。咨询入口为
+  [`docs/action_forecast_writer_expert_consultation.md`](action_forecast_writer_expert_consultation.md)。
 - frame stride固定为5，不再把stride 5/10作为待选变量；只使用GPU 0–3，
   绝不触碰4–7。
 - 当前工程推进以效率优先：最短垂直切片通过必要的shape/gradient/
@@ -47,21 +47,22 @@
 最终排除19项、保留71个active source task及其manifest/hash。新session不得
 重新修改source IDs或把这两条初步发现误写成audit仍未完成。
 
-## 当前必须通过真实 profile / rollout 确定
+## 当前待外部分析后再决定
 
-Phase A、source base、public rank-16 LoRA合同、functional per-sample注入和
-Source-SFT comparator均已封存，不得重新开启。当前只剩以下
-Action-Forecast focused变量需要实测：
+Phase A、source base、public rank-16 LoRA合同、functional per-sample注入、
+Source-SFT comparator、v4训练、现有checkpoint选择和step825完整特异性均已
+封存，不得重新开启。当前没有待启动的GPU实验；需要先分析：
 
-- full-token cache是否值得构建，以及量化后是否保持等价；
-- 新Writer评测的replicas/env batch/cache组合；
-- 1200-step主run中应优先评测哪些checkpoint，以及之后每个600-step增量需要
-  补充哪些checkpoint；
-- AS observed-best及其后何时出现幅度非常明显、多个tasks共同贡献、独立panel
-  复测仍成立的validation下降；多个略低点不算；
-- AS若未同时通过性能和视频/顺序特异性，最小证据驱动修正是什么；
-- AS通过后，RL-Writer reward estimator/optimizer与rollout拓扑的最高效实现。
-  RL也必须找到validation best并观察同样明显且复测稳健的峰后下降。
+- 为什么只以normal correct videos做positive AS训练，shuffled/reversed生成的
+  LoRA反而在rollout中更有效；
+- per-frame Action Expert forecasts是否具有我们赋予它们的future-action语义，
+  还是未对齐的task-level latent；
+- visual-state、local transition、absolute-time alignment、Revision strength
+  与Temporal read中哪一层首先把coherent order映射为有害更新；
+- 为什么wrong-video内部LoRA变化最大，却没有形成稳定行为伤害；
+- same-task teacher相对稳定与object tasks集中受损共同支持或排除哪些解释；
+- 在不使用contrast/order loss、不读取forbidden teacher signals的前提下，
+  哪些最小诊断最能区分候选解释。
 
 ## 不再开放的问题
 
@@ -79,9 +80,9 @@ Action-Forecast focused变量需要实测：
 - one-video train/test 信息墙；source 内 video/action 独立抽样；held 每 rollout 随机正确视频；
 - 四 suites 的 6/2/2 development split、validation 合并后的 32/8 final split；
 - 过滤 LIBERO-90 overlap 后训练并 merge/freeze 共享 π0.5 source base，40-task 快速能力筛查；
-- 新visual-state先以75-step快速闭环验证；正式AS直接0→1200，之后按600-step
-  增量推进，且必须看到幅度非常明显、多个tasks共同贡献、独立panel复测仍
-  成立的峰后下降；
+- 新visual-state已完成75-step内部闭环和0→2400正式轨迹；现有best与完整
+  correct/same/wrong/shuffled/reversed/fixed-anchor证据均已封存，当前按owner
+  指令停止训练与RL并进入外部专家复核；
 - RL-Writer 使用独立短AS cold start取得24-task逐task成功覆盖后转pure reward，并完整报告action消耗；
 - Source-SFT 是一套 shared target-source LoRA，独立按 validation 选最佳；
 - seen/source panel 与 cross-suite wrong-video 对照；

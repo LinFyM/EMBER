@@ -872,12 +872,25 @@
   `9/1/0/45/45/26/1/9`。相对correct `109`为`18`条correct-only与
   `45`条keep-only，`p=8.98e-4`；相对full-shuffle `148`为`32`条
   full-only与`20`条keep-only，`p=0.126`。
-- anchor只能解释full-shuffle额外约12次成功，而且主要集中在Object-3；
-  固定anchor后仍显著保留27次净收益。因此当前不再把随机anchor视为主要根因，
-  后续专家分析应优先审查非首帧order/local-transition/forecast-Temporal
-  映射。
+- full-shuffle相对fixed-anchor直接净高12，且主要集中在Object-3；两项干预
+  可能非线性交互，不能严格做因果加法分解。固定anchor后仍相对correct显著
+  净增27，因此当前不再把随机anchor视为必要条件或主要根因；后续专家分析应
+  优先审查非首帧order/local-transition/forecast-Temporal映射。
 - run output：
   `/data/ymdai/outputs/ember/pi05_action_forecast_v4_as_formal_val8x50_step0825_shuffled_keep_first_6b5923f_g0123_gen1_b100_roll6_20260726`；
   results SHA256
   `0ec198d1438bdb85d9eccb41ac5f6796a470903b963576f29260c048b453ac99`。
   完成后GPU0–3均释放为`0 MiB`。
+
+## 外部专家咨询材料已收敛（2026-07-26）
+
+- 新增`docs/action_forecast_writer_expert_consultation.md`作为只能访问远程
+  GitHub的专家唯一自包含入口，按“EMBER思想→全部关键架构演进→当前v4模块与
+  完整结果→未解问题”组织，并附远程代码/配置/证据阅读路径。
+- 文档嵌入source-base、各历史Writer、v4参数预算、step75内部量、step825
+  fixed400逐任务/paired结果及fixed-anchor归因；不要求专家访问历史聊天或
+  `/data/...`本地输出。
+- README、`docs/execution_brief.md`和
+  `docs/decisions_and_open_questions.md`已从旧“75→1200→600续训”未来式更新为
+  当前事实：v4停止于2400、observed-best为825、行为特异性失败、RL暂停。
+- 本次只整理远程可见的科学上下文，没有启动训练、rollout或新架构修改。

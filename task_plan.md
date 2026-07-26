@@ -240,11 +240,8 @@ contrast loss。
   `10,125,376`参数，source policy 0 trainable；峰值allocated/reserved
   `67,088,471,040/69,235,376,128` bytes，无OOM/nonfinite，完整四rank
   checkpoint和flow-noise/data cursor可恢复。
-- [ ] 从fresh identity正式训练到step600，每75步保存；完整评测step300/600。
-  若没有明显且稳健的峰后下降，以600-step大段继续到1200及之后。
-- [ ] 对最佳或暂时最佳checkpoint比较旧AS `125/400`，并完成
-  correct/wrong/shuffled/reversed。双门通过才推进独立cold-start RL；否则只
-  排查可纠正的明显错误，不加contrast，若无明显错误则停止向owner汇报。
+- [x] 本版本在这些待办启动前被Belief-v3覆盖，未把v2 mechanics checkpoint
+  冒充正式性能轨迹；后续性能与特异性证据由v3/v4活动段负责。
 
 ### 历史执行：Belief-v3 Writer（2026-07-25，已覆盖）
 
@@ -273,11 +270,9 @@ contrast loss。
   Revision顺序差异已经恢复，但Temporal的时间常量与单路query read把它重新
   压到effective LoRA的`0.000297/0.000169`（reversed/shuffled）相对L2；
   内部门失败，按owner顺序不运行昂贵的shuffled/reversed paired rollout。
-- [ ] 多checkpoint correct-video validation暂未启动。owner要求本轮把特异性
-  诊断与归因闭合后停下汇报；后续应先把global/time-centered memory拆成独立
-  路径并重新训练，再恢复性能曲线评测。
-- [ ] 只有AS性能与视频时序特异性双门通过，才推进独立cold-start RL；
-  不使用contrast loss，无法以第一性原理架构修正通过时停下向owner汇报。
+- [x] Belief-v3在内部失败后按门控停止，没有运行多checkpoint rollout；
+  后续由32-token visual-state v4从fresh identity重新建立证据。
+- [x] v3没有通过双门，未推进cold-start RL，也未使用contrast loss。
 
 ## 当前执行：32-token Visual-State Action-Forecast Writer（2026-07-25）
 
@@ -325,3 +320,7 @@ Action-Memory、temporal-RoPE、Action-Forecast v1/v2和28-slot Belief-v3均为
 - [x] owner随后只重开固定首帧shuffle归因：step825固定frame 0、仅保留
   full-shuffle其余帧相对次序得到`136/400`。相对correct仍显著净增27，
   因而随机anchor不是主要原因；不扩展为新的训练或架构修改。
+- [x] 面向只能访问远程仓库的外部专家，新增自包含咨询入口
+  `docs/action_forecast_writer_expert_consultation.md`；完整记录EMBER思想、
+  架构演进、v4模块、内部/rollout/固定anchor证据和待分析问题，并同步修正
+  README与活动authority中的旧未来式。本阶段不启动新GPU实验。

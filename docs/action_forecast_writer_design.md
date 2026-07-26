@@ -741,6 +741,51 @@ paired rollout量化，不直接修改架构，也不通过额外loss人为压�
 若same-task other保持稳定而wrong/shuffled/reversed明显退化，才说明Writer更接近
 提取了可执行的高层任务逻辑。
 
+### 20.2 已观测结果与本轮结论
+
+正式v4轨迹已在step2400终止。固定400-episode panel上的现有checkpoint曲线为：
+
+| step | 675 | 825 | 900 | 1200 | 1275 | 1500 | 1875 | 2100 | 2400 |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| success/400 | 100 | **109** | 82 | 96 | 94 | 92 | 90 | 90 | 89 |
+
+因此本轮observed-best是step825，不据此声称无限训练上限。它比四卡rank-128
+Source-SFT `108/400`高1，但比旧Action-Forecast observed-best `125/400`低16。
+相对旧版的16次净损失全部来自两个object validation tasks：
+`45→38`与`20→11`；其余六个task净变化为0。
+
+step825的完整固定400 paired arms为：
+
+| condition | correct | same-task other | cross-suite wrong | shuffled | reversed |
+|---|---:|---:|---:|---:|---:|
+| success/400 | 109 | 104 | 99 | **148** | 126 |
+| 与correct的paired churn | — | 53 | 70 | 87 | 77 |
+| correct-only / condition-only | — | 29 / 24 | 40 / 30 | 24 / 63 | 30 / 47 |
+
+- same-task other只净降5且是五个条件中影响最小，说明Writer部分保留了同任务
+  高层共性；但53/400条确定性翻转仍表明demo-specific变化不可忽略。
+- wrong只净降10，且逐任务方向不一致，未形成稳定的语义伤害。
+- shuffled净增39，exact McNemar `p=3.48e-5`；reversed净增17并沿改善方向。
+  提升主要来自object tasks：shuffled使两个object task合计`49→82`，
+  reversed使其`49→68`。
+
+内部16-reference检查的effective-LoRA相对L2中位数遵循预期层级：
+same-task other `0.0955` < shuffled `0.2598` < reversed `0.3255` <
+wrong `0.8762`。所以v4确实读取并传播了不同视频与顺序；失败发生在“如何把这些
+差异转成有益策略”，而不是又退化成公共LoRA。shuffled/reversed的effective
+LoRA RMS相对correct约为`0.988/0.964`，也排除其收益只是把adapter缩回identity。
+
+当前最符合证据的假设是：v4同时保留了高层任务阶段和不可靠的forecast/
+demo-specific低层变化，其中coherent normal-order temporal信号在object精确
+接近与抓取任务上被映射成了有害策略更新；打乱或倒序改变该分量后，稳定的
+task/object信息反而重新占优。这一解释由任务集中性和paired结果支持，但尚未被
+因果证明。并且shuffled/reversed还会改变anchor和local-transition构造，因此
+不能把它们解释成纯粹的“删除时序”。
+
+结论是：same-task鲁棒性部分成立，但实际视频特异性硬门失败，因为正确时序没有
+获得行为上的优待。按owner要求，本轮不据此改架构，不再训练，也不进入RL；保留
+完整证据后停下，供下一阶段及外部专家复核。
+
 ## 21. Cold-start RL Writer（本轮暂停）
 
 本轮完成现有AS checkpoint选择和特异性分析后立即停止，不进入RL。以下只保留

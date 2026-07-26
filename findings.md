@@ -946,3 +946,82 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   `0.0250/0.0714`；8/8 tasks均非零。internal specificity gate通过，可以
   从fresh identity进入正式0→1200；最终仍需在具备绝对能力的候选上完成
   correct/wrong/reversed/shuffled paired rollout。
+
+## 32-token Visual-State v4正式训练与observed-best（2026-07-26）
+
+- 正式run
+  `/data/ymdai/outputs/ember/pi05_action_forecast_v4_as_development_seed7_ad0db5f_r4_s5_fm32_b20_s1200_20260725`
+  已连续推进到step2400后按owner要求终止，不再续训。累计`192,000` policy
+  samples；24个train tasks各`8,000` queries、`400`次video访问并覆盖全部
+  50 demos。2400条metrics、32个functional validation点和step2400完整
+  checkpoint均存在，无OOM、NaN或训练错误。
+- run contract、run summary、training metrics和functional validation metrics
+  的SHA256依次为
+  `7389b8e847784809b1e2d210e2778150d77df952aec875343ce50b279ac784cc`、
+  `072aefa438366db1418fc904b3bf50b125bc1c5032a7f8f33e651840688d64e4`、
+  `bb3cf6a39808f7d7be3c51d2a526053efdc08a2d24e6467d9a2d199ee5bc7d7c`、
+  `835eb52c955af35ef0e747bc945e0cb4cedad2becb1d546665069ea7282b725d`。
+- 不再使用波动过大的80-episode快筛。完全相同的固定8-task×50 panel上，
+  step675/825/900/1200/1275/1500/1875/2100/2400依次得到
+  `100/109/82/96/94/92/90/90/89`。这些点覆盖functional global best
+  step825、第二低点step1275、后段局部低点step1875和终点，故现有
+  observed-best确定为step825的`109/400`。
+- step825比四卡rank-128 Source-SFT `108/400`高1，但低于旧Action-Forecast
+  step1200的`125/400`。两个版本使用同一固定panel；新版相对旧版30条
+  gain、46条loss。净下降16全部集中在object-1 `45→38`和object-3
+  `20→11`，其余六个tasks合计净变化为0。
+
+## v4 step825完整视频特异性结论（2026-07-26）
+
+- 内部panel使用8个validation tasks×2条reference videos，共16个references、
+  64个paired comparisons，未读取actions/reward/outcome。证据位于
+  `/data/ymdai/outputs/ember/pi05_action_forecast_v4_step0825_internal_specificity_val8x2_ad0db5f_20260725`；
+  summary/rows SHA256为
+  `618976d558ca58da592c6ab2eadf13e96caff44f971bc76afaf88b5a859682f1` /
+  `f5a2735ae31d5a78729a61e359c8b3f2f08dca998f8eb4c2c01cb4d10e017cae`。
+- effective LoRA相对L2中位数为：same-task other `0.0955`、shuffled
+  `0.2598`、reversed `0.3255`、cross-suite wrong `0.8762`；对应Temporal
+  memory为`0.1196/0.9348/0.9085/0.7533`。这说明same-task变化最小，顺序
+  与任务语义差异也确实穿过完整链路，而不是再次生成公共LoRA。
+- Revision strength均值的candidate/reference中位比为same `1.014`、
+  shuffled `1.419`、reversed `1.340`、wrong `1.038`。shuffled/reversed
+  确实显著改变forecast一致性；wrong主要改变语义和LoRA方向，而非简单放大
+  分歧强度。
+- step825五个固定400 arms全部使用同一task、language、init、env seed、
+  policy seed schedule与配对Writer随机性。结果为：
+
+| condition | total | Long-1 | Long-2 | Goal-3 | Goal-6 | Object-1 | Object-3 | Spatial-1 | Spatial-3 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| correct | 109 | 6 | 2 | 0 | 40 | 38 | 11 | 0 | 12 |
+| same-task other | 104 | 6 | 2 | 1 | 37 | 35 | 11 | 0 | 12 |
+| cross-suite wrong | 99 | 0 | 3 | 2 | 44 | 39 | 7 | 2 | 2 |
+| shuffled | 148 | 8 | 1 | 0 | 45 | 45 | 37 | 2 | 10 |
+| reversed | 126 | 6 | 2 | 0 | 41 | 48 | 20 | 3 | 6 |
+
+- same-task other与correct为both-success/correct-only/other-only/both-fail
+  `80/29/24/267`，净`-5`、churn `53/400=13.25%`、exact McNemar
+  `p=0.583`。它是行为影响最小的条件，支持“部分提取了同任务高层共性”；
+  但53条确定性翻转仍不是完全稳健。
+- wrong为`69/40/30/261`，净`-10`、churn `17.5%`、`p=0.282`；它并未
+  在多个tasks上形成稳定伤害，说明任务语义特异性也尚未通过行为硬门。
+- shuffled为`85/24/63/228`，净`+39`、churn `21.75%`、exact McNemar
+  `p=3.48e-5`，是显著改善而非退化。两个object tasks合计由`49→82`，
+  其中Object-3的correct-only/shuffled-only为`5/31`、`p=1.29e-5`。
+- reversed为`79/30/47/244`，净`+17`、churn `19.25%`、`p=0.0675`；
+  改善主要来自Object-1 `+10`和Object-3 `+9`，Object-1 paired flips为
+  `1/11`、`p=0.00635`。
+- shuffled/reversed的effective-LoRA RMS相对correct中位比约
+  `0.988/0.964`，并没有把adapter大幅缩回identity。因此其行为改善来自
+  LoRA内容/方向变化，不是简单“关掉视频adapter”。
+- 综合判断：v4解决了“是否使用视频”的机制问题，也体现了same-task内部与
+  行为变化较小的层级；但它没有解决“是否正确使用视频”。正确时序没有获得
+  行为优待，反而在旧版损失最集中的object精确任务上被shuffle/reverse改善，
+  因而完整视频特异性硬门明确失败。
+- 当前最符合证据但尚未因果证明的解释是：v4忠实保留了任务阶段的同时，也把
+  不准确forecast、视角/状态估计误差或demo-specific低层变化映射成策略更新；
+  coherent normal-order分量在精确接近和抓取任务上可能有害，扰乱它以后稳定
+  task/object信息重新占优。same-task只净降5说明问题并非对所有具体轨迹差异
+  普遍过敏，更可能集中在“如何解释连贯时序”这一映射。另需注意shuffle/
+  reverse会同时改变初始anchor与local transitions，并不是纯粹删除顺序。
+- 按owner停止条件，本轮不修改架构、不重训、不推进RL。完整结果留给后续及
+  外部专家复核。

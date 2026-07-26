@@ -811,3 +811,50 @@
 - 该低成本门判定通过。step75尚不要求绝对correct success，环境paired
   rollout推迟到已有绝对能力的正式候选，避免低成功率地板把机制检查变成无效
   证据。下一步从fresh identity连续训练到1200。
+
+## v4正式轨迹终止与现有checkpoint选择完成（2026-07-26）
+
+- 正式v4 run
+  `/data/ymdai/outputs/ember/pi05_action_forecast_v4_as_development_seed7_ad0db5f_r4_s5_fm32_b20_s1200_20260725`
+  已完成step2400并停止；不再续训。2400-step run无OOM/nonfinite/error，
+  step2400 checkpoint完整，训练过程共消费`192,000` policy samples。
+- owner取消80-episode快筛。固定400 panel评测
+  step675/825/900/1200/1275/1500/1875/2100/2400分别为
+  `100/109/82/96/94/92/90/90/89`；现有observed-best为step825。
+- step825 correct结果位于
+  `/data/ymdai/outputs/ember/pi05_action_forecast_v4_as_formal_val8x50_step0825_correct_ad0db5f_g0123_gen1_b100_roll6_20260725`，
+  `results.json` SHA256为
+  `92434e9df8e25fdd85f4b09b8102c7410cce32c758e196df196ff6a025222a82`。
+
+## v4 step825完整特异性评测完成并停止（2026-07-26）
+
+- canonical evaluator新增`same_task_other`条件：实际teacher demo固定为paired
+  correct demo的`+17 mod 50`，task/language/init/env/policy seeds及Writer
+  flow/order随机性保持配对。400/400 rows均核验为同task、不同demo。
+  当前fresh复核eval contract/runtime/cache tests为`34 passed in 4.98s`；
+  实现已在commit `64af8b0` push到`origin/main`。
+- step825内部16-reference特异性证据位于
+  `/data/ymdai/outputs/ember/pi05_action_forecast_v4_step0825_internal_specificity_val8x2_ad0db5f_20260725`。
+  effective LoRA相对L2中位数same/wrong/shuffled/reversed为
+  `0.0955/0.8762/0.2598/0.3255`。
+- 五个固定400结果为correct/same-task-other/cross-suite-wrong/shuffled/
+  reversed=`109/104/99/148/126`。新增四臂output及`results.json` SHA256：
+  - same：
+    `/data/ymdai/outputs/ember/pi05_action_forecast_v4_as_formal_val8x50_step0825_same_task_other_64af8b0_g0123_gen1_b100_roll6_20260726`，
+    `36be0c368f278ae1f36a863c672bf890566366f7c25e2b966f27fcc96aeb38f1`；
+  - wrong：
+    `/data/ymdai/outputs/ember/pi05_action_forecast_v4_as_formal_val8x50_step0825_cross_suite_wrong_64af8b0_g0123_gen1_b100_roll6_20260726`，
+    `a5f302da57a8a6d19d102f6ac05e7f21249838221f10f251e94658cfcabf501e`；
+  - shuffled：
+    `/data/ymdai/outputs/ember/pi05_action_forecast_v4_as_formal_val8x50_step0825_shuffled_64af8b0_g0123_gen1_b100_roll6_20260726`，
+    `d466374207e32adfdb33ccedee093bfc7bf3f8ff167bcb1f551d53ae710057db`；
+  - reversed：
+    `/data/ymdai/outputs/ember/pi05_action_forecast_v4_as_formal_val8x50_step0825_reversed_64af8b0_g0123_gen1_b100_roll6_20260726`，
+    `d17c9d66aab8f4f46163e914ef64ffcb1b409d93fa151d2642b4ae8ab66bb101`。
+- same-task other只净降5且行为churn最小；但shuffled显著净增39
+  (`p=3.48e-5`)，reversed净增17，收益集中在object tasks。实际行为
+  特异性硬门失败，当前不进入cold-start RL，也不修改架构或继续训练。
+- 所有训练/评测进程已结束。GPU0–3实时均为`0 MiB`且无
+  `train_pi05/evaluate_pi05`进程；4–7未触碰。`/data/ymdai`当前占用约
+  `321.61 GB`，低于500GB cap。本轮按owner要求在记录、验证、commit、push后
+  停止，等待后续讨论或外部专家意见。

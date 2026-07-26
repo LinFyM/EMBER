@@ -306,15 +306,19 @@ Action-Memory、temporal-RoPE、Action-Forecast v1/v2和28-slot Belief-v3均为
   由多个tasks/videos共同贡献。内部通过后才做必要paired rollout；此阶段不以
   correct arm绝对成功率为门槛。
 - [x] 75-step内部门已通过，无需启动失败修正循环；没有使用对比损失。
-- [ ] 最终通过的架构从fresh identity直接训练0→1200，checkpoint可每75 step
-  保存但不中断训练；随后挑选8×50 validation候选。若best后未出现明显、远超
-  rollout噪声、跨多个tasks且独立panel复测成立的下降，每次exact-resume增加
-  600 step继续探索。
-- [ ] 最终AS best应至少接近并力争超过旧Action-Forecast约`125/400`；四卡
-  rank128 Source-SFT `108/400`是已知基线，旧八卡`122/400`仅为stretch参考。
-  被选best必须同时保持correct/wrong-video及normal/reversed/shuffled特异性。
-- [ ] 双门通过后推进独立cold-start RL Writer：从fresh identity做短AS，
-  24个train tasks逐task至少一次official random-reset success后永久关闭
-  action入口，转pure reward，并同样充分寻找validation best与明显峰后下降。
-- [ ] focused AS/RL完成后停止并向owner汇报，不自动继续final-32、task-local
+- [x] 最终v4从fresh identity连续训练到step2400，每75 step保存；owner随后
+  明确终止本轨迹，不再续训，也不再使用方差过大的80-episode快筛。
+- [x] 在同一固定8 tasks×50 panel上完整评测现有代表性checkpoint：
+  step675/825/900/1200/1275/1500/1875/2100/2400分别为
+  `100/109/82/96/94/92/90/90/89`；现有observed-best为step825的
+  `109/400`。
+- [x] 对step825完成16-reference内部检查及五个固定400 arms：
+  correct/same-task-other/wrong/shuffled/reversed分别为
+  `109/104/99/148/126`。same-task影响最小，但shuffled显著优于correct，
+  reversed也沿改善方向，故“正确时序应被行为上优待”的核心特异性门失败。
+- [x] v4性能只略高于四卡rank128 Source-SFT `108/400`，低于旧
+  Action-Forecast约`125/400`；证据指向coherent temporal信号在object精确
+  抓取任务上可能被转成有害策略变化，而非简单“没有看视频”。
+- [x] 按owner最新停止条件，本轮不修改架构、不重训、不推进cold-start RL，
+  停下汇报并保留证据供后续外部专家分析；也不自动继续final-32、task-local
   RL、joint oracle或ViVLA。

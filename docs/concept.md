@@ -20,13 +20,27 @@ source base只负责基本camera/controller/robot/action与通用技能，不追
 每个source update：
 
 1. 从24 development train tasks均衡采task；
-2. 随机采一条action-hidden teacher video；
-3. 从同task独立采一条agent observation/action episode或chunk；
-4. Writer从正确language+one video生成完整LoRA；
-5. LoRA functional地装到frozen source base；
-6. action loss只通过LoRA回传到Writer。
+2. 采一条agent observation/action episode或chunk；
+3. 为该action独立采4条同task、彼此不同的action-hidden teacher videos；
+4. 每条video独立经过one-shot Writer生成完整LoRA；
+5. 同一个action分别在4个LoRA下做frozen source-base functional forward；
+6. `B_a×4`个action losses直接求均值并只更新Writer。
 
-video与action sample不要求配对，Writer不能靠逐帧复制目标action。held evaluation每rollout随机采一条正确task视频，报告对teacher-video分布的性能，不挑最好video。
+video与action sample不要求配对，Writer不能靠逐帧复制目标action。多video只
+存在于训练batch的共同梯度，推理和held evaluation仍严格每次一条video。
+held evaluation每rollout随机采一条正确task视频，报告对teacher-video分布的
+性能，不挑最好video。
+
+当前v5把视频理解分成两类互补表示：
+
+- Semantic Core从被语言条件化的PaliGemma image-position hidden中读取对象、
+  关系、场景和整体操作，并在结构上对同一组帧的shuffle不变；
+- Causal Procedure从固定native suffix下的Action Expert interaction hidden
+  读取任务如何按阶段推进，不再预测7D action trajectory。
+
+Core先形成稳定LoRA content，Procedure再以zero-init refinement加入正确的有序
+过程。完整实现合同见
+[`action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)。
 
 ## RL-Writer
 

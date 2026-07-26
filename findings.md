@@ -1170,8 +1170,9 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   positive-only causal future frozen-visual-feature prediction，而不是继续堆
   downstream补丁。
 - 该判断随后被下一节更全面的hidden-semantics、visual-state和translation-only
-  证据覆盖；当前状态以`docs/action_forecast_writer_v5_decision.md`重写后的
-  根因复审为准。
+  证据覆盖；根因复审现已改名为
+  `docs/action_forecast_writer_v4_root_cause.md`，活动架构另见
+  `docs/action_forecast_writer_v5_design.md`。
 
 ## v4全面根因复审：覆盖“absolute-time是唯一主因”的结论（2026-07-26）
 
@@ -1250,4 +1251,44 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 旧v5决定已撤回。下一版必须先解决visual-state必要性、Meta职责、
   train-only forecast语义gate和same-task多demo高层汇聚；不通过
   contrast/order loss强制制造差距。完整证据和SHA见
-  `docs/action_forecast_writer_v5_decision.md`。
+  `docs/action_forecast_writer_v4_root_cause.md`。
+
+## Semantic Core + Causal Procedure v5最终设计（2026-07-26）
+
+- owner已批准
+  `docs/action_forecast_writer_v5_design.md`为唯一活动Writer架构。v4完整代码、
+  结果和根因只作provenance；当前尚未实现、profile或训练v5，不能把下面的设计
+  预算写成实测结果。
+- v5 teacher侧删除state。每帧图像与正确语言经过frozen PaliGemma和trainable
+  rank4 VL Meta-LoRA后，取256个language-conditioned image-position final
+  hidden；固定`2×2`空间平均池化为64 tokens，再经bias-free `2048→256`得到
+  Semantic Core。Core没有frame ordinal、RoPE、causal mask或adjacency，因此同
+  一帧集合的shuffle只置换K/V行，Core compiler输出结构性不变。
+- v5保留native fixed 50-token Gaussian suffix、固定`t=1`和rank8 Action
+  Meta-LoRA，但只执行一次Action Expert forward并读取action-out之前的
+  `[50,1024]` final hidden；不做10-step denoise、不输出7D action、不再构造
+  forecast/absolute-time/Plan/Revision/Belief。50个positions均值后用
+  bias-free `1024→256`得到每帧robot-semantic interaction token。
+- 全部per-frame tokens进入两层、width256、8-head、global causal、ordinal
+  RoPE Transformer，保留可变长度`[T,256]` Procedure，不压成固定event数。
+  Core-to-LoRA Compiler先从`[64T,256]`集合形成稳定的320-slot动态content；
+  Procedure-to-LoRA Refiner再产生独立delta，cross-attention output zero-init，
+  最终`Z=Z_C+D`。静态module/layer/rank identities只进Q/K，factor heads不能
+  读取。
+- 8个bias-free factor heads为`256→420→target_width`且final zero-init，public
+  输出保持38 targets、76 tensors、rank16、`1,287,168` scalars。机械设计预算
+  为`10,301,440` trainable parameters，比rank128 Source-SFT
+  `10,297,344`多`4,096`（`0.0398%`）；真实实现必须重新打印核验。
+- 训练初版固定`N=4`：每条action query独立抽4条同task不同teacher videos，
+  逻辑上生成`B_a×4`个LoRA和functional losses并普通求均值；仅允许按精确视频
+  键去重相同Writer forward，不能让整个action batch只共享4个LoRA。推理仍严格
+  one-shot。
+- v5不继承v4 step等价口径。真实GPU4–7 profile后，以稳态step wall估算约一小时
+  segment，并每段均匀保存6个checkpoint。focused AS/RL无总wall-clock上限；
+  best后只有明显、持续、多task且独立复测成立的下降才可停止。
+- 特异性先内后外：Core对same-frame-set order变换应不变，Procedure与delta应
+  明显有向变化，same-task other变化应小于wrong，差异须穿过effective LoRA和
+  policy function；随后固定400 rollout要求correct明显优于wrong/shuffled/
+  reversed且same-task other影响最小。absolute performance最低目标为达到或
+  接近`125/400`，目标逼近v4 shuffled `148/400`。不通过则定位最早失败模块后
+  fresh迭代，不使用contrast/order loss。

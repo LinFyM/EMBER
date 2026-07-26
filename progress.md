@@ -1,6 +1,6 @@
 # EMBER Progress Ledger
 
-最后更新：2026-07-25。
+最后更新：2026-07-26。
 
 ## 当前状态
 
@@ -919,8 +919,8 @@
 - 当时根据仍不充分的证据，过早把v4根因判定为未经识别的shared robot
   absolute-time forecast alignment及其Revision direction，并排除了
   visual-state；下一节的全面复审已撤回“唯一根因”和visual-state排除结论。
-- 当时新增
-  `docs/action_forecast_writer_v5_decision.md`，曾拍板原位删除absolute-time
+- 当时新增的文档（现已改名为
+  `docs/action_forecast_writer_v4_root_cause.md`）曾拍板原位删除absolute-time
   Plan/Revision/Belief，改为256D frame-local Intent和adjacent ordered
   Transition；保留32-token visual-state、两个Meta-LoRA、两层content-only
   Temporal及decoder。该架构决定已被下一节撤回为局部候选；从未实现或训练。
@@ -951,7 +951,8 @@
 - 全面结论不再是“absolute-time唯一主因”。当前因果链为AS可识别性不足、
   visual-state旁路、Meta低层phase/translation化及absolute-time Revision放大。
   此前Intent+Transition v5只能修最后一层，已撤回为局部候选。
-- 原位重写`docs/action_forecast_writer_v5_decision.md`，并同步README、
+- 原位重写该根因文档（现名
+  `docs/action_forecast_writer_v4_root_cause.md`），并同步README、
   execution brief、task plan、findings、decisions和v4 provenance。当前没有
   v5代码或训练；不继续AS、不进入RL，停在下一版重新设计前。
 
@@ -972,3 +973,26 @@
   上出现相反翻转。结论从“正号只是无法解释的偶然补偿”细化为：正序视频的
   低层translation controller bias会压过物体语义，shuffle破坏该bias后让已有
   高层任务信息重新主导；不是shuffle生成更多语义或释放参数容量。
+
+## Semantic Core + Causal Procedure v5设计封存（2026-07-26）
+
+- owner批准新focused Goal并要求持续推进到AS特异性/性能与独立cold-start RL
+  全部完成。Goal无token budget；完成focused AS/RL后停止，不自动进入
+  final-32、task-local RL、joint oracle或ViVLA。
+- `docs/action_forecast_writer_v5_design.md`现为唯一活动设计authority，完整记录
+  teacher无state prompt、language-conditioned image-position Core、fixed
+  native suffix、双Meta-LoRA、per-frame robot-semantic hidden、两层global
+  causal Procedure、Core compiler、zero-init Procedure refiner、320
+  routing-only identities、factor heads、公开LoRA schema和退役边界。
+- 原`action_forecast_writer_v5_decision.md`已改名为
+  `action_forecast_writer_v4_root_cause.md`，明确只保存v4根因证据；v4完整设计
+  仍为历史provenance，不再定义当前代码。README、AGENTS、execution brief、
+  decisions、concept、task plan、findings和progress已开始统一到v5。
+- v5机械参数预算为`10,301,440`，比rank128 Source-SFT多`4,096`；公开LoRA保持
+  rank16、76 tensors、`1,287,168` scalars。该数值尚待真实实现打印，不是已测
+  结果。
+- AS初版固定每action独立`N=4`条同task videos、`B_a×4`个逻辑LoRA/loss；
+  推理严格one-shot。后续只使用物理GPU4–7，frame stride5固定，重新profile
+  `B_a`与frame microbatch后按约一小时segment训练，每段均匀保存6个checkpoint。
+- 下一步是原位替换v4源码/config/schema并完成最小mechanics checks；当前尚无
+  v5 checkpoint、GPU profile或科学结果。

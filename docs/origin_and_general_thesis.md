@@ -21,7 +21,9 @@ EMBER 的原始动机是把任务描述或示范“编译”为一个可直接�
 
 - source base 使用过滤后 LIBERO-90 成功 robot actions，随后冻结并由所有方法共享；
 - AS-Writer 在目标 source tasks 上从 language + 恰好一条 action-hidden video 学习；
-- RL-Writer 优先从随机 Writer 只用 source reward 学习；
+- RL-Writer 与完整AS best分离：从新架构fresh初态做短、task-balanced AS
+  cold start，直到24个development-train tasks逐task至少一次official
+  random-reset success，再永久关闭action入口并只用source reward学习；
 - held zero-interaction Writer 只看 language/video，test-task RL 可再使用目标 reward；
 - 最后的 direct target-action reference 在 8 个 test tasks 上联合训练一套 shared LoRA，
   只作 privileged oracle。

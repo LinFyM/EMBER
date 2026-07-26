@@ -21,9 +21,16 @@
   translation化、absolute-time Plan/Revision放大。translation-only在
   Object-1/Object-3得到`79/100`，correct/true-shuffled为`49/82`。
 - 此前frame-local Intent + adjacent Transition只修复最后一层，已从“下一版
-  已拍板”撤回为局部候选。下一版必须先解决visual-state必要性、Meta职责和
-  forecast语义gate；完整复审见
-  [`docs/action_forecast_writer_v5_decision.md`](action_forecast_writer_v5_decision.md)。
+  已拍板”撤回为局部候选。完整复审见
+  [`docs/action_forecast_writer_v4_root_cause.md`](action_forecast_writer_v4_root_cause.md)。
+- 当前唯一活动v5为Semantic Core + Causal Procedure，完整定义见
+  [`docs/action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)：
+  image-position hidden构成permutation-invariant Core；fixed native suffix与
+  两个Meta-LoRA产生per-frame robot-semantic hidden；两层global causal
+  Procedure保留可变长度；Core先编译，Procedure以zero-init refiner修正。
+- v5训练时每条action独立对应`N=4`条同task不同teacher videos，逻辑loss为
+  `B_a×4`普通均值；推理严格one-shot。新架构按约一小时segment训练，不继承
+  v4 step数，不设focused AS/RL总wall-clock上限。
 - frame stride固定为5，不再把stride 5/10作为待选变量；后续任何GPU工作只使用
   物理GPU 4–7，0–3不进入visible set也不被干扰。
 - 当前工程推进以效率优先：最短垂直切片通过必要的shape/gradient/
@@ -55,7 +62,7 @@
 最终排除19项、保留71个active source task及其manifest/hash。新session不得
 重新修改source IDs或把这两条初步发现误写成audit仍未完成。
 
-## 外部复核后的完整机制定位与下一版未决状态
+## 外部复核后的完整机制定位与v5决策
 
 Phase A、source base、public rank-16 LoRA合同、functional per-sample注入、
 Source-SFT comparator、v4训练、现有checkpoint选择和step825完整特异性均已
@@ -88,9 +95,18 @@ Source-SFT comparator、v4训练、现有checkpoint选择和step825完整特异�
 
 所以frame-local Intent + adjacent Transition只能删除错误absolute-time对应，
 仍可能把同一低层phase/translation latent换名为Intent。它不再是已批准v5。
-下一版具体结构保持开放，必须同时解决visual-state必要瓶颈、Meta-LoRA不可任意
-改写forecast时钟、train-only forecast语义gate和same-task多demo高层汇聚；
-不使用contrast/order loss强行制造差距。
+
+最终v5不再预测action trajectory，也不要求一个learned visual-state成为
+瓶颈。它把证据拆成两个符合目标的owner：
+
+- Core保存同一组帧中与顺序无关、但对任务有用的对象、关系、场景和整体操作；
+- Procedure只从per-frame robot-semantic hidden建立causal有序过程；
+- Core先生成稳定LoRA content，Procedure只能作为zero-init有向refinement；
+- 同action四条独立teacher的共同functional梯度负责让通用高层语义同向累积，
+  具体轨迹和速度细节相互冲突；
+- 不使用contrast/order loss强行制造差距。
+
+这仍需实验验证，不被文档措辞视为已取得科学结果。
 
 ## 不再开放的问题
 
@@ -108,10 +124,13 @@ Source-SFT comparator、v4训练、现有checkpoint选择和step825完整特异�
 - one-video train/test 信息墙；source 内 video/action 独立抽样；held 每 rollout 随机正确视频；
 - 四 suites 的 6/2/2 development split、validation 合并后的 32/8 final split；
 - 过滤 LIBERO-90 overlap 后训练并 merge/freeze 共享 π0.5 source base，40-task 快速能力筛查；
-- 新visual-state已完成75-step内部闭环和0→2400正式轨迹；现有best与完整
+- v4 visual-state已完成75-step内部闭环和0→2400正式轨迹；现有best与完整
   correct/same/wrong/shuffled/reversed/fixed-anchor证据均已封存；外部复核后的
   完整根因复审已定位AS可识别性、visual-state旁路、Meta forecast语义漂移和
-  absolute-time Revision放大的组合链，旧v5决定已撤回，当前在新设计前停止；
+  absolute-time Revision放大的组合链；
+- v5 Semantic Core + Causal Procedure的全部shape、mask、初始化、参数预算、
+  N=4训练、约一小时segment、特异性与性能gate已写入唯一活动design；当前状态
+  是实现前，不得把设计预算写成真实模型结果；
 - RL-Writer 使用独立短AS cold start取得24-task逐task成功覆盖后转pure reward，并完整报告action消耗；
 - Source-SFT 是一套 shared target-source LoRA，独立按 validation 选最佳；
 - seen/source panel 与 cross-suite wrong-video 对照；

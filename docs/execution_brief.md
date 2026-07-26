@@ -1,10 +1,9 @@
 # EMBER Current Execution Brief
 
 状态：2026-07-26。共享 π0.5-LIBERO source base 与 Source-SFT comparator 已
-封存。四卡 Action-Forecast Writer v4 已训练至step2400并停止；现有checkpoint
-observed-best为step825的`109/400`。内部视频/顺序特异性通过，但完整rollout
-出现`shuffled=148/400 > reversed=126/400 > correct=109/400`的反常排序；
-固定原始首帧后shuffle仍为`136/400`。
+封存。Action-Forecast Writer v4 已训练至step2400并停止；observed-best
+step825在固定400 panel上为`correct=109`、`same=104`、`wrong=99`、
+`shuffled=148`、`reversed=126`，行为特异性失败。
 
 外部专家复核后的第一轮诊断证明，shuffle的直接行为放大器位于per-image
 forecast之后的absolute-time Plan/Revision；但后续全面复审又确认它不是唯一
@@ -17,10 +16,21 @@ cosine从`0.335`降到`0.238`。step825 neutral visual-state几乎不改变forec
 
 完整根因是：同task独立video/action的positive AS目标不可识别demo高层过程语义；
 32-token visual-state没有成为必要瓶颈；Meta-LoRA学习了低层phase/translation
-action-shaped latent；absolute-time Plan/Revision再将其放大。此前决定的
-frame-local Intent + adjacent Transition只修复最后一项，现降为局部候选，
-下一版具体架构重新开放。当前不实现或训练v5，不进入RL。完整证据与新设计合同见
-[`docs/action_forecast_writer_v5_decision.md`](action_forecast_writer_v5_decision.md)；
+action-shaped latent；absolute-time Plan/Revision再将其放大。
+
+owner随后批准Semantic Core + Causal Procedure v5作为唯一活动架构：
+
+- language-conditioned image-position hidden形成对帧顺序严格不变的Core；
+- native fixed suffix与两个Meta-LoRA保留，但Action Expert只输出每帧
+  robot-semantic hidden，不再产生7D forecast；
+- 两层global causal Transformer形成可变长Procedure；
+- Core先编译稳定LoRA content，Procedure以zero-init refiner作有向修正；
+- 每条action独立对应4条同task teacher videos，推理仍严格one-shot。
+
+完整活动合同见
+[`docs/action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)；
+完整v4根因证据见
+[`docs/action_forecast_writer_v4_root_cause.md`](action_forecast_writer_v4_root_cause.md)；
 原咨询材料见
 [`docs/action_forecast_writer_expert_consultation.md`](action_forecast_writer_expert_consultation.md)。
 
@@ -60,23 +70,22 @@ owner于2026-07-22将source-base正式训练改为从generic base fresh运行1,0
 ### AS-Writer
 
 - 输入恰好一条 action-hidden teacher video + 正确 task language；输出完整 task-specific LoRA。
-- 在24 train tasks上做均衡混合。每个 update 同 task 内独立随机采 video 与 action episode/chunk，不要求配对；action只进 functional behavior loss。
+- 在24 train tasks上做均衡混合。每条action query独立抽4条同task不同teacher
+  videos，形成`B_a×4`个逻辑LoRA/functional losses并求均值；video与action
+  episode/chunk不要求配对，action只进functional behavior loss。
 - source base冻结，只有Writer更新。Writer不得看到action、proprio、reward、terminal、task ID、filename或隐藏stats。
-- Action-Forecast v4的75-step内部门已通过，正式fresh轨迹已训练至step2400
-  并按owner要求停止。固定400 panel的现有checkpoint observed-best是step825
-  `109/400`，不再追加训练或80-episode快筛。
-- step825已完成correct、same-task other、cross-suite wrong、shuffled、
-  reversed及fixed-anchor shuffle的内部和rollout证据。行为特异性硬门失败：
-  shuffled/reversed显著或方向性优于correct；随机首帧anchor只能解释部分
-  shuffle收益。全面复审将因果链定位为AS可识别性不足、visual-state旁路、
-  Meta forecast语义漂移和absolute-time Revision放大的组合；不以
-  contrast/order loss挽救，也不进入RL。
-- v4实现、参数预算、32-token visual-state、Plan/Revision、Temporal、
-  LoRA decoder、特异性门和训练合同完整记录在
-  [`docs/action_forecast_writer_design.md`](action_forecast_writer_design.md)。
-  下一版未决合同与旧v5决定撤回由
-  [`docs/action_forecast_writer_v5_decision.md`](action_forecast_writer_v5_decision.md)
-  覆盖其中的Plan/Revision未来口径；v4结果只作provenance。
+- v5原位替换v4的visual-state/forecast/Plan/Revision/Belief路径，不保留兼容
+  分支。初版机械预算`10,301,440`，与rank-128 Source-SFT只差`4,096`
+  parameters；公开rank-16 LoRA仍为76 tensors、`1,287,168` scalars。
+- 实现后在GPU4–7重新profile。按稳态吞吐换算约一小时一个exact-resume
+  segment，每段均匀保存6个checkpoint；不继承v4的600/1200-step等价口径。
+- 第一段best先过内部Core/Procedure/LoRA gate，再跑固定400
+  correct/same/wrong/shuffled/reversed。要求same影响最小且correct明显优于
+  wrong、shuffle、reverse；不通过则定位最早失效层后fresh迭代，不用
+  contrast/order loss。
+- 特异性通过后追求correct至少达到或接近`125/400`，目标逼近v4 shuffled
+  `148/400`。没有明显、持续、多task且独立复测成立的峰后下降就继续下一段；
+  focused v5 AS不设总wall-clock上限。
 
 ### RL-Writer
 
@@ -144,8 +153,9 @@ task-local RL不在validation上预先冻结算法，也不在test打开前运�
 - 旧“一task/一GPU”使两个horizon-520进程严重拖尾。下一实现先调研成熟项目，再按 `episodes × horizon` cost-balanced切state shards，使用动态队列、持久model/env和work stealing。
 - Writer每rollout LoRA不同，profile batched functional LoRA与每卡统一1/2/3个policy replicas。所有卡CUDA process数相同，GPU0不得额外放controller/server/model。
 - batch8到16只有约0.9% per-episode提升；不靠盲目加batch伪装效率。
-- 训练最多8张A100，一卡一DDP rank为默认，真实batch尽量利用显存且平均预留约10GB。task-local RL按每个初始化方法在全部8个test tasks上的合计训练wall-clock执行约2小时上限，而不是每task各给一份上限；三臂分别报告合计time/interactions与budget-censored状态。
-- 上述短周期、证据驱动原则适用于所有训练阶段；约2小时仅为预算guardrail。到上限仍明显未训练充分时不自动延长，保存证据供owner事后分析判断。
+- 训练最多8张A100，一卡一DDP rank为默认。当前focused v5只使用物理GPU4–7；
+  0–3不进入visible set。当前AS/RL按约一小时segment持续exact-resume且不设总
+  wall-clock上限；历史task-local RL预算合同不覆盖本focused阶段。
 
 ## 10. Optional work and hard boundaries
 

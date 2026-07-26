@@ -1,10 +1,11 @@
 # Action-Forecast Writer canonical architecture design
 
 状态：2026-07-26，Action-Forecast Writer v4 实现与结果已封存。本文继续作为
-v4代码、训练合同和历史证据的完整authority；它不再是下一版Plan/Revision
-架构的活动authority。外部复核后的完整根因诊断、旧v5决定撤回与下一版未决
-合同见
-[`action_forecast_writer_v5_decision.md`](action_forecast_writer_v5_decision.md)。
+v4代码、训练合同和历史证据的完整authority；它不再是活动架构authority。
+外部复核后的完整根因诊断见
+[`action_forecast_writer_v4_root_cause.md`](action_forecast_writer_v4_root_cause.md)；
+owner随后批准的唯一活动v5见
+[`action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)。
 
 面向外部专家的自包含问题、历史与结果入口见
 [`action_forecast_writer_expert_consultation.md`](action_forecast_writer_expert_consultation.md)。
@@ -22,11 +23,12 @@ visual-state decoder、累计 transition、Plan/Revision 双 token、order contr
 本节原focused Goal已经完成：v4停止于step2400，现有observed-best为step825，
 完整correct/same/wrong/shuffled/reversed/fixed-anchor证据均已封存。外部专家
 复核后又完成了forecast-order移植、Revision因子交换、Object定向rollout和阶段
-动作诊断；进一步全面复审已撤回过早的v5决定。当前停在根因完成、下一版具体
-架构未决的位置，不实现或训练v5，也不进入RL。
+动作诊断；进一步全面复审已撤回过早的v5决定。**在该次复审封存时**，项目停在
+根因完成、下一版具体架构未决的位置，当时不实现或训练v5，也不进入RL。该历史
+停止边界已被owner后续批准的Semantic Core + Causal Procedure v5覆盖。
 
 当前结论和未来执行边界统一由
-[`action_forecast_writer_v5_decision.md`](action_forecast_writer_v5_decision.md)
+[`action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)
 规定。尤其是本文后续关于absolute-time Plan/Revision应继续保留的未来式判断
 已经被直接因果证据覆盖，只作为解释v4 checkpoint的历史合同。
 
@@ -908,7 +910,8 @@ translation-only在Object-1/Object-3得到`79/100`，几乎复现true shuffled
 `82/100`。
 
 因此上面的Intent+Transition只保留为删除absolute-time放大器的局部候选，不再
-是已拍板v5。下一版必须先解决visual-state必要瓶颈、Meta职责、forecast语义
-gate和same-task多demo抽象；两层Temporal与content-only decoder当前没有失败
-证据，不先加深或恢复静态旁路。完整证据和当前未决合同见
-[`action_forecast_writer_v5_decision.md`](action_forecast_writer_v5_decision.md)。
+是已拍板v5。该结论随后促成了不再预测7D action trajectory的Semantic Core +
+Causal Procedure v5；完整根因证据见
+[`action_forecast_writer_v4_root_cause.md`](action_forecast_writer_v4_root_cause.md)，
+当前活动实现合同见
+[`action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)。

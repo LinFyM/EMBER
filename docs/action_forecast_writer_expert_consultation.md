@@ -1,9 +1,11 @@
 # EMBER Action-Forecast Writer：外部专家咨询材料
 
-状态：2026-07-26。本文面向只能访问远程 GitHub 仓库的外部专家，是当前
-Action-Forecast Writer 问题的自包含入口。理解本文不需要历史聊天、本地主机
-checkpoint 或 `/data/...` 实验目录；关键协议、架构、数值结果、paired 统计和
-代码入口均已写在本文或链接到同一仓库。
+状态：2026-07-26，历史外部咨询材料。本文面向只能访问远程 GitHub 仓库的
+外部专家，完整保存v4问题；它不再是当前架构authority。理解本文不需要历史
+聊天、本地主机checkpoint或`/data/...`实验目录。专家复核后的根因见
+[`action_forecast_writer_v4_root_cause.md`](action_forecast_writer_v4_root_cause.md)，
+随后owner批准的活动v5见
+[`action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)。
 
 需要先强调两点：
 
@@ -981,7 +983,11 @@ Object success的正号没有被AS objective识别；这不是shuffled视频被�
 
 第一轮曾据absolute-time证据拍板frame-local Intent + adjacent Transition。
 全面复审证明该方案只删除最后一层放大器，仍会保留visual-state旁路和
-action-shaped Meta latent，现已撤回为局部候选。当前没有批准的v5，也没有
-实现/训练新架构或进入RL。完整数字、解释、排除项、证据SHA和下一版必须满足的
-合同见
-[`action_forecast_writer_v5_decision.md`](action_forecast_writer_v5_decision.md)。
+action-shaped Meta latent，现已撤回为局部候选。完整数字、解释、排除项和
+证据SHA见
+[`action_forecast_writer_v4_root_cause.md`](action_forecast_writer_v4_root_cause.md)。
+
+该咨询阶段之后，owner已批准不再预测7D action trajectory的Semantic Core +
+Causal Procedure v5；本文上述“没有批准的v5”只描述咨询结束当时的历史状态，
+不得作为当前停止条件。活动合同见
+[`action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)。

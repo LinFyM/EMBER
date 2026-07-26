@@ -1,6 +1,10 @@
 # EMBER Task Plan
 
-最后更新：2026-07-26。长期 EMBER Goal 是完成共享 π0.5-LIBERO source base、one-video Writer、source baselines、seen/wrong-video机制证据、final single-seed test、test-only三臂RL和联合target-action oracle；当前 Action-Forecast 根因状态由本文末尾复审段及 `docs/action_forecast_writer_v5_decision.md` 定义。
+最后更新：2026-07-26。长期 EMBER Goal 是完成共享 π0.5-LIBERO source base、
+one-video Writer、source baselines、seen/wrong-video机制证据、final
+single-seed test、test-only三臂RL和联合target-action oracle；当前focused
+Semantic Core + Causal Procedure Writer由本文末尾执行段及
+`docs/action_forecast_writer_v5_design.md`定义。
 
 ## 完成定义
 
@@ -274,7 +278,7 @@ contrast loss。
   后续由32-token visual-state v4从fresh identity重新建立证据。
 - [x] v3没有通过双门，未推进cold-start RL，也未使用contrast loss。
 
-## 当前执行：32-token Visual-State Action-Forecast Writer（2026-07-25）
+## 历史执行：32-token Visual-State Action-Forecast Writer（2026-07-25）
 
 完整且唯一的活动设计见`docs/action_forecast_writer_design.md`。上方
 Action-Memory、temporal-RoPE、Action-Forecast v1/v2和28-slot Belief-v3均为
@@ -325,7 +329,7 @@ Action-Memory、temporal-RoPE、Action-Forecast v1/v2和28-slot Belief-v3均为
   架构演进、v4模块、内部/rollout/固定anchor证据和待分析问题，并同步修正
   README与活动authority中的旧未来式。本阶段不启动新GPU实验。
 
-## 当前执行：外部复核后的v4根因复审与v5重开（2026-07-26）
+## 历史执行：外部复核后的v4根因复审与v5重开（2026-07-26）
 
 本节覆盖上方“等待外部专家分析”的停止点。目标只到能够用直接证据决定下一版
 架构；不实现/训练v5，不继续AS，不运行新增full400，不进入RL、final-32、
@@ -378,6 +382,57 @@ task-local RL、joint oracle或ViVLA。
 - [x] 撤回已拍板v5。Intent+Transition保留为删除absolute-time放大器的局部
   候选；下一版必须先解决visual-state必要性、Meta职责、forecast语义gate和
   same-task多demo抽象。完整证据写入
-  `docs/action_forecast_writer_v5_decision.md`。
+  `docs/action_forecast_writer_v4_root_cause.md`。
 - [x] 当前没有v5代码、checkpoint或训练结果；不继续AS或进入RL，后续GPU工作
   仍只使用物理4–7。
+
+## 当前执行：Semantic Core + Causal Procedure Writer v5（2026-07-26）
+
+唯一活动设计为
+`docs/action_forecast_writer_v5_design.md`。上方v4与根因复审是已经封存的
+provenance，不得恢复visual-state、7D future-action forecast、absolute-time
+Plan/Revision/Belief或旧活动config/schema。
+
+- [x] 与owner完成第一性原理设计对齐：
+  - teacher侧无state；
+  - language-conditioned PaliGemma image-position hidden形成
+    permutation-invariant Semantic Core；
+  - fixed native 50-token suffix、VL Meta-LoRA rank4和Action Meta-LoRA
+    rank8只产生每帧robot-semantic interaction hidden；
+  - 两层global causal Transformer形成可变长Procedure；
+  - Core先编译稳定LoRA content，Procedure通过zero-init refiner产生有向修正；
+  - 320 routing identities只进Q/K；
+  - factor heads保持完整rank-16 public LoRA；
+  - 机械设计预算`10,301,440`，比rank128 Source-SFT只多`4,096`。
+- [x] 固定训练科学合同：每条action独立抽`N=4`条同task不同teacher videos，
+  形成`B_a×4`个逻辑LoRA/functional losses并普通求均值；推理仍严格one-shot；
+  不使用contrast/order/margin loss。
+- [x] 固定执行合同：frame stride5；只使用物理GPU4–7；新架构重新profile
+  action batch与frame microbatch；按稳态吞吐估算约一小时segment，并在每段
+  均匀保存6个checkpoint。
+- [ ] 原位替换v4代码/config/checkpoint schema，删除visual-state与误导性的
+  action-forecast活动owner；适配AS training、online validation、inference和
+  canonical evaluator。
+- [ ] 完成最小shape/causal/Core-invariance/gradient/identity/freeze/LoRA
+  schema/parameter-count/OOM/exact-resume检查；不做无关全仓仪式性校验。
+- [ ] GPU4–7真实profile最快安全的`B_a`、frame microbatch和单step pair
+  microbatch策略，封存一小时segment size与checkpoint cadence。
+- [ ] 从fresh identity完成第一段AS训练；用固定400 panel选择
+  validation observed-best，不使用80-episode快筛。
+- [ ] 对best先做逐层内部correct/same/wrong/shuffled/reversed检查：
+  Core对同帧集合顺序不变，Procedure/refinement有明确有向差异，same-task影响
+  小于wrong，差异穿过effective LoRA与policy function。
+- [ ] 内部门通过后做五个固定400 paired rollout。要求same-task other影响最小，
+  且correct明显优于wrong、shuffled、reversed；失败则定位最早失效模块、
+  修改同一架构、fresh重训并循环。
+- [ ] 特异性通过后追求correct至少达到或接近`125/400`，目标逼近v4 shuffled
+  `148/400`。若best之后没有明显、持续、多task并独立复测成立的下降，继续下一
+  个约一小时exact-resume segment；focused AS不设总wall-clock上限。
+- [ ] 若特异性通过但absolute performance长期不足，按Core-only/
+  Core+Procedure、Meta translation/phase、compiler/factor逐层定位并fresh迭代，
+  不靠扩大参数或对比loss追正结果。
+- [ ] AS全部通过后独立启动v5 cold-start RL：short AS直到24个train tasks逐task
+  至少一次official random-reset success，随后永久关闭action入口转pure reward；
+  同样探索validation observed-best与强峰后下降。
+- [ ] focused AS/RL通过后更新证据、验证、commit/push并停下向owner汇报；
+  不自动推进final-32、task-local RL、joint oracle或ViVLA。

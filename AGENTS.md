@@ -8,12 +8,13 @@
 
 1. `README.md`
 2. `docs/execution_brief.md`
-3. `task_plan.md`
-4. `findings.md`
-5. `progress.md`
-6. `docs/concept.md`
-7. `docs/decisions_and_open_questions.md`
-8. `docs/novelty_and_landscape.md`
+3. `docs/action_forecast_writer_v5_design.md`
+4. `task_plan.md`
+5. `findings.md`
+6. `progress.md`
+7. `docs/concept.md`
+8. `docs/decisions_and_open_questions.md`
+9. `docs/novelty_and_landscape.md`
 
 `docs/expert_plan.md`、旧 SmolVLA/70-10-10 runner/config/checkpoint 和旧 Phase A–F 只作 provenance。不得恢复为活动路径，不得依赖或混入 MemLLM。
 
@@ -25,33 +26,40 @@
 
 ## Current focused execution task
 
-owner 于 2026-07-25 将当前执行焦点更新为
-[`docs/action_forecast_writer_design.md`](docs/action_forecast_writer_design.md)
-定义的 Action-Forecast Writer。该文件是 focused AS/RL Writer 的唯一活动
-架构设计；它覆盖此前 Action-Memory、temporal-RoPE、Action-Forecast v1/v2、
-28-slot Belief-v3、冻结随机 visual-state decoder 和累计 transition 口径。
-旧结果保留为 provenance，但旧架构、schema、配置和专用路径不得恢复。
+owner 于 2026-07-26 批准
+[`docs/action_forecast_writer_v5_design.md`](docs/action_forecast_writer_v5_design.md)
+定义的 Semantic Core + Causal Procedure Writer。该文件是 focused AS/RL
+Writer 的唯一活动架构 authority。v4完整实现和根因证据分别保留在
+`docs/action_forecast_writer_design.md`与
+`docs/action_forecast_writer_v4_root_cause.md`，只作provenance；旧
+visual-state、future-action forecast、absolute-time Plan/Revision/Belief、
+schema、配置和专用路径不得恢复。
 
-当前先实现 32-token、初始锚点加非递归相对变化的 visual-state，并通过 fresh
-75-step 内部顺序、换视频和必要 rollout 特异性闭环；未通过则按最早失效层级
-迭代同一 canonical 架构，不使用 contrast loss。通过后从 fresh identity
-直接训练到 1200 step；若 validation best 尚未被明显、跨 task 且复测稳健的
-峰后下降括住，每次 exact-resume 增加 600 step。只有 AS 同时通过绝对性能、
-correct/wrong-video 和顺序特异性后才推进独立 short-AS-cold-start →
-pure-reward RL-Writer。focused AS/RL 完成后先向 owner 汇报，不自动继续
-final-32、test task-local RL、joint oracle 或 ViVLA。
+先原位实现v5并重新profile。新架构不继承v4的step等价口径：用真实稳态吞吐
+估算约一小时的optimizer steps，取便于均匀保存的整数作为一个
+exact-resume segment，并约每10分钟保留checkpoint。第一段后选择validation
+observed-best，先做内部Core/Procedure/LoRA特异性检查，再做固定400
+correct/same-task-other/wrong/shuffled/reversed paired rollout。未通过则按
+最早失效层级修改同一canonical架构、fresh训练并循环；不得用contrast/order
+loss追正结果。
 
-比较口径不得混淆：四卡rank-128 Source-SFT observed-best为`108/400`
-（step700），旧八卡全局incumbent才是`122/400`。AS必须不明显落后于前者，
-超过后者是stretch目标。AS和RL都必须在validation rollout上找到observed-best，
-并在其后观察到幅度非常明显、明显超过rollout噪声、由多个tasks共同贡献且独立
-panel复测后仍成立的下降趋势。多个较晚checkpoint仅略低也绝对不算饱和；train
-平台、val loss平台或一个较差checkpoint都不能触发停止。
+AS的绝对性能最低目标是达到或接近旧Action-Forecast `125/400`，目标逼近v4
+shuffled `148/400`。四卡rank-128 Source-SFT `108/400`与旧八卡`122/400`
+只作背景比较，`122`不是独立必须超过的门槛。AS和RL都必须在validation找到
+observed-best，并在best后看到幅度明显、远超400-rollout正常波动、由多个tasks
+共同贡献且独立复测仍成立的持续下降；多个后续checkpoint只是略低绝不能停止。
+本focused AS/RL探索不设总wall-clock上限。
 
-当前子任务固定 frame stride=5，只使用 GPU 0、1、2、3且不触碰4–7。以推进
-效率为最高工程优先级：只保留会直接防止无效实验、信息墙
-泄漏、OOM、错误冻结/LoRA schema或不可恢复checkpoint的最小校验。最短垂直
-路径通过shape/gradient/identity/freeze和一次resume smoke后立即进入真实GPU
+只有AS同时通过absolute performance、same-task鲁棒性、wrong-video语义性和
+correct优于shuffled/reversed的顺序特异性后，才推进独立
+short-AS-cold-start→pure-reward RL-Writer。focused AS/RL完成后先向owner汇报，
+不自动继续final-32、test task-local RL、joint oracle或ViVLA。
+
+当前及后续GPU工作固定frame stride=5，只使用物理GPU 4、5、6、7；0–3不进入
+visible set。4–7即使已有他人进程也按owner授权共卡，但不得杀、暂停、重置或
+干扰。以推进效率为最高工程优先级：只保留直接防止无效实验、信息墙泄漏、OOM、
+错误冻结/LoRA schema或不可恢复checkpoint的最小校验。最短垂直路径通过
+shape/gradient/identity/freeze和一次resume smoke后立即进入真实GPU
 profile/训练；不得用广泛全仓测试、重复流程门槛或文档整理延迟可运行实验。
 
 ## Data and split
@@ -77,7 +85,7 @@ generic lerobot/pi05_base
 
 - 先调研官方/成熟 π0.5 fine-tuning 与 LoRA 实现，不自行猜 targets 或 runner 参数。
 - source base 不追求高 ceiling；用全部目标 40 tasks 的小型快速 screen 确认它已开始在该 benchmark 上产生跨多个 task 的部分真实成功，不能只靠一个易 task 的 aggregate。这里不要求每个 task 已有高成功率。generic π0.5 的 `0/400` 只作原始校准，新 source base 必须另测。
-- owner 于 2026-07-22 将 source-base 正式训练锁定为从 generic base fresh 运行 1,000 optimizer steps；不续接已停止且无 checkpoint 的旧 30k attempt。对所有适用的训练阶段，核心流程是短profile学习速度与吞吐、换算候选steps/interactions、用固定廉价screen淘汰明显未充分候选、仅对少数候选做完整validation，并在接近饱和时早停。约120分钟只是防止预算暴走的上限，不是要求跑满或固定步数模板；到上限仍未充分训练时停止、保存曲线与证据，留给owner事后判断。
+- owner 于 2026-07-22 将 source-base 正式训练锁定为从 generic base fresh 运行 1,000 optimizer steps；不续接已停止且无 checkpoint 的旧 30k attempt。历史非focused阶段的约120分钟guardrail保留为其原实验合同；当前v5 AS/RL按上述focused authority持续分段探索，不受该旧guardrail限制。
 - source base 冻结后，AS-Writer、RL-Writer、Source-SFT、三臂 task-local RL、联合 target-action oracle 和 ViVLA-style baseline（若做）均从它开始。
 - 下游只保留一个活动 LoRA 空间；不得叠加未 merge 的 shared source adapter。
 
@@ -85,8 +93,8 @@ generic lerobot/pi05_base
 
 - 核心固定为 `task language + exactly one action-hidden teaching video -> shared Writer -> complete task-specific LoRA`。
 - Writer 不得接收 action、proprio、reward、terminal、task ID、filename 或隐藏 normalization；source actions 只能进入 AS functional loss。
-- `Action-Supervised Writer (AS-Writer)`：development 在 24 train tasks 上均匀混合；同 task 内独立随机采一条 teacher video 和一条 action episode/chunk，不要求同 episode配对；frozen source base 只通过 functional LoRA forward 参与，更新 Writer。
-- 所有适用训练阶段都遵循上述短周期、证据驱动流程。task-local RL的预算按每个初始化方法覆盖全部8个test tasks的总训练wall-clock计算，不是每task各给约2小时；到上限仍未充分训练时记录为budget-censored并停止自动追加。
+- `Action-Supervised Writer (AS-Writer)`：development 在 24 train tasks 上均匀混合；每条action query独立采`N=4`条同task不同teacher videos，形成`B_a×4`个逻辑LoRA/functional losses并直接求均值；video与action episode/chunk不要求同episode配对。frozen source base只通过functional LoRA forward参与，更新Writer。
+- 历史task-local RL的总预算合同不影响当前focused v5 AS/RL无总wall-clock上限的分段探索。
 - `Reward-Trained Writer (RL-Writer)` 是独立路线：按当前 focused task 从新架构规定初态做短、task-balanced AS cold start，直到24个development-train tasks各在官方random-reset rollout中至少成功一次，再关闭action数据入口并跨source tasks做纯reward训练；它不从完整AS-Writer best继续，cold-start消耗必须完整报告。
 - RL-Writer rollout 使用 LIBERO 官方随机 reset/BDDL 初态；不使用 `.pruned_init`。只用官方 env reward/success，不从 object pose 等内部状态手工构造 privileged shaping。
 - `Source-SFT` 是在同一 frozen source base 上、跨 24 development train tasks 联合训练的一套 shared LoRA，test 不看 held video/action。它和 AS-Writer各自根据 validation 选最佳，不要求机械匹配 optimizer steps 或 consumed examples，但必须报告训练数据、steps、GPU-hours、参数量和搜索上限。

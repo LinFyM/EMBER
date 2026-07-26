@@ -1,15 +1,17 @@
-# Action-Forecast Writer v4 根因复审与 v5 决定重开
+# Action-Forecast Writer v4 根因复审
 
-状态：2026-07-26。本文覆盖此前“已拍板 frame-local Intent + adjacent
-Transition”的结论。该方案仍是一个有价值的局部修复候选，但新证据证明：
-absolute-time Plan/Revision 只是最直接的行为放大器，不是完整根因；保留
-v4 visual-state 和两个 Meta-LoRA 原样不动，不能解决更上游的表示旁路和
-训练可识别性问题。因此当前没有已批准、可直接实现的 v5。
+状态：2026-07-26，历史机制证据。本文覆盖此前“已拍板 frame-local Intent +
+adjacent Transition”的结论。该方案仍是一个有价值的局部修复候选，但新证据
+证明：absolute-time Plan/Revision 只是最直接的行为放大器，不是完整根因；
+保留 v4 visual-state 和两个 Meta-LoRA 原样不动，不能解决更上游的表示旁路和
+训练可识别性问题。本文不再定义活动架构；2026-07-26 owner 后续对齐并批准的
+v5 唯一活动设计见
+[`action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)。
 
-当前边界：
+本轮诊断当时的边界：
 
 - v4 代码、checkpoint 和正式结果保持封存；
-- 没有实现或训练 v5，没有继续 AS，也没有进入 RL；
+- 当时没有实现或训练 v5，没有继续 AS，也没有进入 RL；
 - 本轮只做 train-split 隐藏语义诊断、既有 validation 输出的内部反事实，
   以及 Object-1/Object-3 的定向 official rollout；
 - train teacher action/proprio 只在 Writer 完成推理后作为诊断 target 读取，
@@ -445,9 +447,9 @@ adjacent Transition ΔI_i = I_i - I_(i-1)
 所以 **Intent+Transition 不再是已拍板 v5，只是下一轮设计时可复用的一个局部
 约束。** 当前不得据此直接实现、训练 75 step 或进入 RL。
 
-## 10. 下一版在设计前必须满足的合同
+## 10. 下一版在设计前必须满足的合同（已由 v5 设计落实）
 
-下一版具体结构尚未决定，但必须同时回答：
+以下是当时尚未决定具体结构时提出的必要合同。现均由活动 v5 设计逐项落实：
 
 1. **必要性：** learnable visual-state 必须成为 video→forecast 的必要 owner，
    不能被 raw-image/Meta 旁路到 action-shaped latent；neutral 或 permuted

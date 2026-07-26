@@ -1069,3 +1069,106 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 自包含的远程咨询材料为
   `docs/action_forecast_writer_expert_consultation.md`。它嵌入理解现状所需的
   架构、逐任务结果、paired统计和内部量，不依赖本地主机output目录。
+
+## v4 forecast-order因果移植与v5架构决定（2026-07-26）
+
+### Forecast之前还是之后
+
+- 在step825的16条validation reference videos上构造四臂：
+  `N→N`、`N→S`、`S→N`、`S→S`。`N→S`不重新计算visual-state或Action
+  Expert，只把normal-context per-image forecasts按原shuffled permutation放入
+  shuffled slots；`S→N`则按image identity把shuffled-context forecasts放回
+  normal slots。
+- `N→S`与真实`S→S`的effective-LoRA delta几乎相同：cosine/magnitude/
+  residual中位数为`0.999978/0.99905/0.00712`；在真实π0.5 action function中
+  为`0.999864/1.00020/0.01668`。
+- `S→N`相对`N→N`的effective LoRA relative L2中位数只有`0.00337`，
+  action chunk relative L2中位数只有`0.00156`。因此按image identity对齐后，
+  shuffled context并没有显著改变每张图的forecast；主要异常是同一批forecast
+  被放入不同time slots后由downstream构造出来的。
+- Object-1/Object-3各50个固定states的新增定向rollout为：
+
+  | condition | Object-1 | Object-3 | total |
+  |---|---:|---:|---:|
+  | correct / `N→N` | 38 | 11 | 49 |
+  | `S→N` | 36 | 11 | 47 |
+  | `N→S` | 43 | 29 | 72 |
+  | true shuffled / `S→S` | 45 | 37 | 82 |
+
+  `N→S`相对correct净`+23`、`p=4.31e-4`；`S→N`相对correct净`-2`、
+  `p=0.625`。真实shuffled context在`N→S`之上仍净`+10`、`p=0.0129`，
+  尤其来自Object-3，说明存在较小非线性交互，但上游visual-state不是主因或
+  必要条件。
+
+### Plan/Revision中究竟哪一项介导行为
+
+- 固定normal-context forecasts，只交换Plan `P`、Revision direction `D`、
+  Revision value strength `V`和Temporal Q/K strength routing `R`。
+- strength并非无界OOD：train-normal median/p95/max为
+  `0.333/0.614/0.858`，shuffled-slot为`0.454/0.670/<0.858`；没有token超过
+  train-normal max。只换routing的action target-delta magnitude约`0.011`，
+  可忽略。
+- Object rollout得到：
+
+  | arm | Object-1 | Object-3 | total |
+  |---|---:|---:|---:|
+  | correct | 38 | 11 | 49 |
+  | Plan-only | 37 | 24 | 61 |
+  | value-strength-only | 39 | 15 | 54 |
+  | direction-only | 39 | 28 | 67 |
+  | full shuffled Revision | 45 | 30 | 75 |
+  | all shuffled-slot downstream | 43 | 29 | 72 |
+
+  direction-only相对correct净`+18`、`p=0.00143`；strength-only仅净`+5`、
+  `p=0.359`；完整Revision净`+26`、`p=6.16e-6`。Revision direction是主要
+  行为中介，strength只在与direction组合时有次级协同，Plan有次级贡献。
+
+### 它怎样改变policy
+
+- 五条成功Object轨迹上选取approach、pre-grasp、gripper-close、transport和
+  terminal共25个current observations；使用相同language、observation和flow
+  noise比较12个LoRA反事实。
+- `N→S`相对normal的executed-action delta主要位于end-effector translation：
+  五阶段translation RMS中位数`0.0197–0.0341`，rotation
+  `0.00217–0.00770`，gripper`0.00155–0.00459`。direction-only在
+  pre-grasp/close/transport translation上的target-delta cosine为
+  `0.925/0.954/0.982`。
+- 这解释了Object收益：错误Revision direction成为一条训练分布外、但恰好改善
+  approach/transport的action-shaped controller code。它不是“shuffled视频被
+  理解得更好”，也不是参数差异落在policy null space。
+- 直接把Revision置零会造成目标`N→S` delta的`2.1–5.8×`动作变化，且多阶段
+  低相关或反向；现有Plan/Revision已共同适配，不能通过删除一支热修。
+
+### 根因与下一版
+
+- v4把第`i`帧的local chunk `A_i[lead]`按`u=t_i+lead`投到共享robot
+  absolute-time轴，并假设不同teacher frames在同一`u`覆盖的actions是同一未来
+  控制时刻的可比预测。独立teacher/action episodes、observer/human viewpoint、
+  不同速度和缺少intermediate supervision都没有识别这条对应关系。
+- 所以Revision并不是校准的“多次future forecast一致性”，而是对未经证明的
+  lead-position配对求residual。shuffle主要重排这些配对；其direction偶然形成
+  更好的Object translation control。
+- 下一版不优先重做visual-state、不加深两层Temporal、不裁剪strength、不恢复
+  decoder静态旁路，也不加contrast/order loss。v5删除absolute-time
+  Plan/Revision/Belief，改为：
+
+  \[
+  I_i=W_2\,\mathrm{GELU}(W_1\,\mathrm{vec}(A_i))\in\mathbb R^{256},
+  \qquad
+  \Delta I_i=I_i-I_{i-1}.
+  \]
+
+  Temporal顺序为`I_0, ΔI_1, I_1, ..., ΔI_(T-1), I_(T-1)`。它只声称teacher
+  视频推进时frame-local execution intent发生有向变化，不再声称不同frames拥有
+  共同robot action clock。
+- 32-token visual-state、anchor/local reader、VL/Action Meta-LoRA、共同flow
+  noise、frozen source base、rank-16 LoRA schema、两层content-only Temporal和
+  content-only decoder均保留。参数仍以rank128 Source-SFT的`10,297,344`为
+  comparator，差异控制在`0.1%`内。
+- 该结构只修复已证明的错误对应关系，不保证positive task-level AS已足以识别
+  高层视频语义。若未来75-step仍inversion，下一原则性候选是action-hidden、
+  positive-only causal future frozen-visual-feature prediction，而不是继续堆
+  downstream补丁。
+- 完整证据、哈希和活动决定见
+  `docs/action_forecast_writer_v5_decision.md`。本轮在架构决定处停止，尚未
+  实现/训练v5，也未进入RL。

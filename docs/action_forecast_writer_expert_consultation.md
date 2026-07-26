@@ -937,3 +937,43 @@ action episode 独立配对，所以只有跨 demo 稳定的任务逻辑才与 a
 
 本文已把咨询所需的本地实验 aggregate、逐任务结果、paired counts、显著性和
 内部量嵌入远程仓库。外部专家不需要访问本地主机 output 目录即可分析当前问题。
+
+---
+
+## 外部复核后的因果诊断结果（2026-07-26）
+
+专家建议之后，我们没有直接设计或训练新模型，而是先完成了最小的forecast-order
+移植、Revision因子交换与阶段动作反事实。结论已从“多个候选解释”收敛为：
+
+> v4的主要问题不是shuffled context先改变了visual-state/forecast，也不是
+> Revision strength爆炸或下游再次抹掉差异；而是它把各帧frame-local action
+> chunk投到一个未被数据识别的共享robot absolute-time轴，并将错误lead-position
+> 配对的residual direction解释成Revision。该方向恰好成为改善Object任务
+> end-effector translation的OOD controller code。
+
+最关键的Object-1/Object-3固定100-episode证据是：
+
+| condition | success |
+|---|---:|
+| correct normal-context + normal-slots | 49 |
+| shuffled-context forecasts放回normal-slots | 47 |
+| normal-context forecasts放入shuffled-slots | 72 |
+| true shuffled | 82 |
+
+固定normal forecasts进一步交换因子得到：
+
+| factor | success |
+|---|---:|
+| Plan-only | 61 |
+| Revision value-strength-only | 54 |
+| Revision direction-only | 67 |
+| full shuffled Revision | 75 |
+
+因此下一版已决定删除absolute-time Plan/Revision/Belief，改为frame-local
+Intent及相邻有向Intent Transition；保留现有32-token visual-state、两个
+Meta-LoRA、两层content-only Temporal和content-only LoRA decoder。完整方法、
+逐层量、阶段动作证据、参数预算、证据哈希和仍未解决的可辨识性边界见
+[`action_forecast_writer_v5_decision.md`](action_forecast_writer_v5_decision.md)。
+
+当前代码和checkpoint仍是v4；本轮停在架构决定处，没有实现/训练v5，也没有
+进入RL。

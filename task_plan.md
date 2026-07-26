@@ -324,3 +324,41 @@ Action-Memory、temporal-RoPE、Action-Forecast v1/v2和28-slot Belief-v3均为
   `docs/action_forecast_writer_expert_consultation.md`；完整记录EMBER思想、
   架构演进、v4模块、内部/rollout/固定anchor证据和待分析问题，并同步修正
   README与活动authority中的旧未来式。本阶段不启动新GPU实验。
+
+## 当前执行：外部复核后的v4因果诊断与v5决定（2026-07-26）
+
+本节覆盖上方“等待外部专家分析”的停止点。目标只到能够用直接证据决定下一版
+架构；不实现/训练v5，不继续AS，不运行新增full400，不进入RL、final-32、
+task-local RL、joint oracle或ViVLA。
+
+- [x] 固定step825、同一validation references和flow noise，实现normal/shuffled
+  forecast-order四臂交叉移植：`N→N`、normal forecast换shuffled slots的
+  `N→S`、shuffled-context forecast按image identity放回normal slots的`S→N`
+  和真实`S→S`。
+- [x] 完成16-reference逐层与policy-function诊断。`N→S`几乎完整复现`S→S`
+  effective-LoRA/action delta，而`S→N`几乎恢复`N→N`；主效应定位到
+  per-image forecast之后，而不是shuffled context首先改变了forecast。
+- [x] 只在已有差异最集中的Object-1/Object-3各50个固定states运行四臂定向
+  rollout，得到`N→N/S→N/N→S/S→S=49/47/72/82`；不扩展到full400。
+- [x] 在同一normal forecasts上拆分Plan、Revision direction、Revision value
+  strength和Q/K strength routing。内部与policy-function均证明routing可忽略，
+  strength处于train-normal支持范围内且单独行为效应弱。
+- [x] 完成Object因子rollout：
+  Plan-only/value-strength-only/direction-only/full-Revision分别为
+  `61/54/67/75`；direction为主要行为中介，Plan与strength有次级非线性交互。
+- [x] 在五条成功Object trajectories、25个经画面与gripper qpos核验的阶段上
+  比较12个LoRA反事实。shuffled Revision direction主要改写pre-grasp、close和
+  transport的end-effector translation；不是只在参数空间存在的无效差异。
+- [x] 验证直接置零Revision不是修复：zero-Revision action相对目标shuffle
+  delta放大`2.1–5.8×`且多阶段低相关或反向，Plan/Revision已共同适配。
+- [x] 判定不再优先修改visual-state、加深Temporal、裁剪Revision strength或
+  修改decoder。根因是v4未经识别的跨帧absolute-time forecast alignment及其
+  same-time Revision语义。
+- [x] 拍板v5原位替换：保留32-token visual-state、两个Meta-LoRA、frame-local
+  forecasts、两层content-only Temporal与content-only decoder；删除
+  `_time_layout`、Plan/Revision/Belief和strength/count routing，改为256D
+  frame-local Intent及adjacent ordered Intent Transition。
+- [x] 将完整数学、参数预算、证据、不能保证的语义边界和未来75-step gate记录在
+  `docs/action_forecast_writer_v5_decision.md`，并同步当前authority。后续GPU
+  工作只用物理4–7，0–3不使用或干扰。
+- [x] 按目标在“决定下一版架构”处停止；当前没有v5代码、checkpoint或训练结果。

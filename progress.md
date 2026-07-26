@@ -894,3 +894,36 @@
   `docs/decisions_and_open_questions.md`已从旧“75→1200→600续训”未来式更新为
   当前事实：v4停止于2400、observed-best为825、行为特异性失败、RL暂停。
 - 本次只整理远程可见的科学上下文，没有启动训练、rollout或新架构修改。
+
+## 外部复核后的v4因果诊断完成（2026-07-26）
+
+- owner授权自主推进到“决定下一版架构”并明确后续只使用物理GPU4–7；0–3上
+  他人进程未被停止、重置或干扰。本轮所有新增GPU launch均只把4–7放入
+  `CUDA_VISIBLE_DEVICES`，最终阶段探针峰值reserved为
+  `12,530,483,200` bytes/GPU。
+- 新增本地一次性forecast-order transplant诊断，固定step825与16条validation
+  references，完成`N→N/N→S/S→N/S→S`逐层和policy-function检查。summary：
+  `/data/ymdai/outputs/ember/pi05_action_forecast_v4_step0825_forecast_order_transplant_val8x2_2fa1a1d_20260726`
+  与
+  `/data/ymdai/outputs/ember/pi05_action_forecast_v4_step0825_forecast_order_policy_function_val8x2x2_2fa1a1d_20260726`。
+- 只对Object-1/Object-3各50 states运行新增四臂rollout，不做full400。结果
+  `correct/S→N/N→S/S→S=49/47/72/82`，output为
+  `/data/ymdai/outputs/ember/pi05_action_forecast_v4_step0825_forecast_order_cross_rollout_object13_2fa1a1d_20260726`。
+- 完成Plan、Revision direction、value strength和Q/K routing四因子内部/
+  policy-function交换，以及两个Object定向rollout。Plan-only/
+  strength-only/direction-only/full-Revision=`61/54/67/75`；主要行为中介为
+  Revision direction，strength单独与routing均非主因。
+- 完成五条Object轨迹、25个经图像与gripper qpos核验阶段、12个LoRA反事实的
+  action probe。异常主要改写pre-grasp/close/transport的end-effector
+  translation；Revision=0会产生更大且常反向的动作变化，不能直接删除。
+- 由直接证据判定v4根因为未经识别的shared robot absolute-time forecast
+  alignment及其Revision direction，而不是visual-state主导、strength爆炸、
+  Temporal层数不足或decoder坍缩。
+- 新增
+  `docs/action_forecast_writer_v5_decision.md`，拍板原位删除absolute-time
+  Plan/Revision/Belief，改为256D frame-local Intent和adjacent ordered
+  Transition；保留32-token visual-state、两个Meta-LoRA、两层content-only
+  Temporal及decoder。本轮没有改动活动模型代码、没有训练v5、没有继续AS或进入
+  RL。
+- 所有诊断summary SHA256和未来75-step gate均集中在上述v5 decision文档；
+  当前在架构决定处停止。

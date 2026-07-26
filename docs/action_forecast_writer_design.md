@@ -1,7 +1,9 @@
 # Action-Forecast Writer canonical architecture design
 
-状态：2026-07-26 owner 最新对齐。本文是当前 focused Writer 子任务的
-唯一活动设计 authority。
+状态：2026-07-26，Action-Forecast Writer v4 实现与结果已封存。本文继续作为
+v4代码、训练合同和历史证据的完整authority；它不再是下一版Plan/Revision
+架构的活动authority。外部复核后的因果诊断与v5唯一活动决定见
+[`action_forecast_writer_v5_decision.md`](action_forecast_writer_v5_decision.md)。
 
 面向外部专家的自包含问题、历史与结果入口见
 [`action_forecast_writer_expert_consultation.md`](action_forecast_writer_expert_consultation.md)。
@@ -16,13 +18,15 @@ visual-state decoder、累计 transition、Plan/Revision 双 token、order contr
 
 ## 0. Active Goal
 
-当前 focused Goal 是：
+本节原focused Goal已经完成：v4停止于step2400，现有observed-best为step825，
+完整correct/same/wrong/shuffled/reversed/fixed-anchor证据均已封存。外部专家
+复核后又完成了forecast-order移植、Revision因子交换、Object定向rollout和阶段
+动作诊断；当前已经在下一版架构决定处停止，不实现或训练v5，也不进入RL。
 
-> 保持已经实现并通过75-step内部机制gate的Action-Forecast Writer v4不变；正式训练固定结束于step 2400，不再续训。弃用波动过大的80-episode快筛，仅在现有checkpoint中用同一固定8-task×50 validation panel充分寻找当前observed-best。随后对observed-best完成内部及完整rollout特异性检查，包括correct、same-task other correct teacher、cross-suite wrong、shuffled和reversed；重点检验同任务不同正确示范的影响是否显著小于错误任务或破坏顺序。完成证据与分析记录后停止并向owner汇报，本轮不进入cold-start RL。全程不使用对比损失，固定frame stride=5，只使用GPU 0、1、2、3且不触碰4–7。
-
-本轮结束条件是现有checkpoint的observed-best和上述特异性证据已经完整获得、分析
-并记录。它不要求证明无限训练下的全局ceiling，也不再要求通过继续训练观察峰后
-下降。RL及其后续阶段均等待owner后续决定。
+当前结论和未来执行边界统一由
+[`action_forecast_writer_v5_decision.md`](action_forecast_writer_v5_decision.md)
+规定。尤其是本文后续关于absolute-time Plan/Revision应继续保留的未来式判断
+已经被直接因果证据覆盖，只作为解释v4 checkpoint的历史合同。
 
 ## 1. 科学意图与完整前向链路
 
@@ -672,15 +676,15 @@ frozen image tokens
 快筛由于方差和batch-composition敏感性过大，现已退役：不再运行，也不再用于
 checkpoint排序或行为结论。后续行为判断只使用固定400-episode panel。
 
-## 20. 正式AS训练与现有observed-best
+## 20. 正式AS训练与现有observed-best（v4历史合同）
 
 v4正式run已从fresh identity训练到step 2400，且训练现已结束：
 
 - checkpoint可每75 steps密集保存；
 - frame stride固定5；
 - 已采用真实吞吐和显存profile选定的batch及frame-microbatch；
-- 只用GPU 0、1、2、3，即使这些卡已有进程也可按owner授权共享；
-- 4–7绝不触碰。
+- 当时只用GPU 0、1、2、3，未使用4–7。该设备口径只描述v4历史run；
+  当前owner已明确后续只用物理GPU 4–7，不再使用0–3。
 
 不再续训，不使用80-episode快筛。根据完整functional轨迹、已有固定400结果和
 训练时间覆盖，从现有75-step checkpoints中选择有代表性的候选，直接在完全相同
@@ -843,7 +847,8 @@ oracle或ViVLA。
 
 ## 22. 效率、存储与安全
 
-- GPU launch前实时检查GPU0–3进程/显存/温度，4–7不查询后使用；
+- 后续GPU launch前实时检查GPU4–7进程/显存/温度，只把物理4–7放入visible
+  set；0–3不使用、不查询后启动任务，也不干扰其现有进程；
 - 不杀、不暂停、不重置他人进程；
 - `/data/ymdai` 500GB硬cap，启动新run前计算当前使用量与checkpoint峰值；
 - 复用现有source base、dataset、tokenizer和video/cache；
@@ -854,3 +859,49 @@ oracle或ViVLA。
 - 正式训练前使用`formal-training-launch`核验一次launch contract；
 - meaningful里程碑更新`task_plan.md`、`findings.md`、`progress.md`，但文档不得
   阻塞GPU关键路径。
+
+## 23. 外部复核后的v5覆盖决定
+
+四臂forecast-order移植已经证明：shuffled visual context本身几乎没有改变按
+image identity对齐的per-image forecasts；主要异常来自v4把frame-local action
+chunks放入shuffled absolute-time slots。Object-1/Object-3上：
+
+```text
+correct N→N                              49/100
+shuffled context restored to normal S→N 47/100
+normal forecasts in shuffled slots N→S 72/100
+true shuffled S→S                       82/100
+```
+
+Revision因子rollout进一步得到：
+
+```text
+Plan-only              61/100
+value-strength-only    54/100
+direction-only         67/100
+full shuffled Revision 75/100
+```
+
+因此v4的主要错误不是visual-state无差异、Revision strength爆炸、Temporal只有
+两层或decoder再次消灭差异，而是未经训练合同识别的共享robot absolute-time
+对应关系，以及由它构造的Revision direction。直接删除Revision也不可行，因为
+Plan/Revision已共同适配，zero-Revision在真实policy动作上造成更大且常反向的
+变化。
+
+下一版原位删除`_time_layout`、latest-covering Plan、same-time Revision、
+count/strength routing和Belief，改为：
+
+```text
+per-frame 50×7 action chunk
+  -> bias-free 350→256→256 Frame-Local Intent I_i
+  -> adjacent ordered transition ΔI_i = I_i - I_(i-1)
+  -> I_0, ΔI_1, I_1, ..., ΔI_(T-1), I_(T-1)
+  -> existing two-layer content-only Temporal
+  -> existing content-only LoRA decoder
+```
+
+32-token visual-state、anchor/local reader、两个trainable identity Meta-LoRA、
+共同flow noise、frozen source base和完整rank-16 LoRA schema保留。v5不增加
+confidence/strength超参数、不减去时间均值、不使用contrast/order loss。完整
+数学、参数预算、证据哈希和未来75-step gate见
+[`action_forecast_writer_v5_decision.md`](action_forecast_writer_v5_decision.md)。

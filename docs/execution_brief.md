@@ -4,8 +4,23 @@
 封存。四卡 Action-Forecast Writer v4 已训练至step2400并停止；现有checkpoint
 observed-best为step825的`109/400`。内部视频/顺序特异性通过，但完整rollout
 出现`shuffled=148/400 > reversed=126/400 > correct=109/400`的反常排序；
-固定原始首帧后shuffle仍为`136/400`。当前暂停RL与继续训练，进入外部专家
-复核。自包含咨询材料见
+固定原始首帧后shuffle仍为`136/400`。
+
+外部专家复核后的最小因果诊断现已完成。forecast-order四臂交叉移植证明，
+shuffle的主要行为效应发生在per-image forecast之后：v4把frame-local action
+chunks投到一个没有被训练合同识别的共享robot absolute-time轴，再把错位
+residual direction解释为Revision。Object-1/Object-3上，normal forecasts放入
+shuffled slots把`49/100`提高到`72/100`，而shuffled-context forecasts按image
+identity放回normal slots为`47/100`。Revision direction-only为`67/100`，
+完整shuffled Revision为`75/100`；strength-only只有`54/100`。因此主因不是
+visual-state、strength爆炸、Temporal层数或decoder坍缩。
+
+下一版决定删除absolute-time Plan/Revision/Belief，保留32-token visual-state、
+两个Meta-LoRA和content-only下游，改为frame-local Intent + adjacent ordered
+Transition。当前只完成架构决策，不实现或训练v5，不进入RL。完整证据、数学和
+后续gate见
+[`docs/action_forecast_writer_v5_decision.md`](action_forecast_writer_v5_decision.md)；
+原咨询材料见
 [`docs/action_forecast_writer_expert_consultation.md`](action_forecast_writer_expert_consultation.md)。
 
 ## 1. 研究问题
@@ -52,12 +67,15 @@ owner于2026-07-22将source-base正式训练改为从generic base fresh运行1,0
 - step825已完成correct、same-task other、cross-suite wrong、shuffled、
   reversed及fixed-anchor shuffle的内部和rollout证据。行为特异性硬门失败：
   shuffled/reversed显著或方向性优于correct；随机首帧anchor只能解释部分
-  shuffle收益。当前先寻求外部专家对可辨识性、forecast语义和时序映射的分析，
-  不修改架构，不以contrast/order loss挽救，也不进入RL。
-- 当前 canonical 设计、参数预算、32-token visual-state、Plan/Revision、
-  Temporal、LoRA decoder、特异性门和训练合同完整记录在
+  shuffle收益。外部复核后的因果诊断进一步定位到未经识别的absolute-time
+  forecast alignment及其Revision direction；不以contrast/order loss挽救，
+  也不进入RL。
+- v4实现、参数预算、32-token visual-state、Plan/Revision、Temporal、
+  LoRA decoder、特异性门和训练合同完整记录在
   [`docs/action_forecast_writer_design.md`](action_forecast_writer_design.md)。
-  它覆盖此前所有Writer活动实现口径；旧结果只作 provenance。
+  下一版活动架构决定由
+  [`docs/action_forecast_writer_v5_decision.md`](action_forecast_writer_v5_decision.md)
+  覆盖其中的Plan/Revision未来口径；v4结果只作provenance。
 
 ### RL-Writer
 

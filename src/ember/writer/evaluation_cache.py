@@ -171,7 +171,9 @@ def _video_keyed_request(
         teacher_demo_index=int(row["teacher_demo_index"]),
         video_condition=condition,
         order_transform=(
-            condition if condition in {"shuffled", "reversed"} else "forward"
+            condition
+            if condition in {"shuffled", "shuffled_keep_first", "reversed"}
+            else "forward"
         ),
         writer_flow_noise_seed=int(row["writer_flow_noise_seed"]),
         teacher_video_order_seed=int(row["teacher_video_order_seed"]),

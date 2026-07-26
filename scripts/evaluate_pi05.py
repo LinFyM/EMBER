@@ -128,6 +128,7 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
             "same_task_other",
             "cross_suite_wrong",
             "shuffled",
+            "shuffled_keep_first",
             "reversed",
         ),
     )

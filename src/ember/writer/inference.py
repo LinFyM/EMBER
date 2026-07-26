@@ -56,6 +56,7 @@ WRITER_VIDEO_CONDITIONS = {
     "same_task_other",
     "cross_suite_wrong",
     "shuffled",
+    "shuffled_keep_first",
     "reversed",
 }
 WRONG_VIDEO_CONDITIONS = {"cross_suite_wrong"}
@@ -147,6 +148,29 @@ def writer_generation_seed(
         separators=(",", ":"),
     ).encode("utf-8")
     return int.from_bytes(hashlib.sha256(encoded).digest()[:8], "big") & ((1 << 63) - 1)
+
+
+def writer_shuffled_frame_permutation(
+    frame_count: int,
+    order_seed: int,
+    *,
+    keep_first: bool,
+) -> torch.Tensor:
+    """Reproduce the sealed shuffle, optionally restoring frame zero as anchor."""
+
+    if frame_count <= 0 or order_seed < 0:
+        raise WriterModelError("invalid AS-Writer frame permutation request")
+    generator = torch.Generator(device="cpu").manual_seed(order_seed)
+    permutation = torch.randperm(frame_count, generator=generator)
+    if keep_first:
+        permutation = torch.cat(
+            (
+                torch.zeros(1, dtype=permutation.dtype),
+                permutation[permutation != 0],
+            )
+        )
+    return permutation
+
 
 def _task_video_mapping(
     task_keys: Sequence[tuple[str, int]],
@@ -511,6 +535,11 @@ def build_writer_evaluation_adapter(
                 ),
             }
         )
+    elif video_condition == "shuffled_keep_first":
+        result["video_schedule"]["transform"] = (
+            "use the sealed full-shuffle permutation, move original frame zero "
+            "to the front, and preserve the relative order of every other frame"
+        )
     return result
 
 
@@ -735,13 +764,11 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
         condition = str(self.evaluation_adapter["video_condition"])
         if condition == "reversed":
             frames = frames.flip(0)
-        elif condition == "shuffled":
-            generator = torch.Generator(device="cpu").manual_seed(
-                int(row["teacher_video_order_seed"])
-            )
-            permutation = torch.randperm(
+        elif condition in {"shuffled", "shuffled_keep_first"}:
+            permutation = writer_shuffled_frame_permutation(
                 frames.shape[0],
-                generator=generator,
+                int(row["teacher_video_order_seed"]),
+                keep_first=condition == "shuffled_keep_first",
             ).to(self.device)
             frames = frames.index_select(0, permutation)
         flow_noise = WriterFlowNoiseSchedule(

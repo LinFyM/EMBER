@@ -37,6 +37,7 @@ from ember.writer.inference import (
     expected_writer_episode_evidence,
     writer_video_demo_index,
     writer_video_selection_seed,
+    writer_shuffled_frame_permutation,
 )
 
 
@@ -148,10 +149,11 @@ def test_writer_video_schedule_and_wrong_map_are_order_independent() -> None:
     forward = _task_video_mapping(keys, roles, "cross_suite_wrong")
     reverse = _task_video_mapping(tuple(reversed(keys)), roles, "cross_suite_wrong")
     shuffled = _task_video_mapping(keys, roles, "shuffled")
+    shuffled_keep_first = _task_video_mapping(keys, roles, "shuffled_keep_first")
     reversed_video = _task_video_mapping(keys, roles, "reversed")
     same_task_other = _task_video_mapping(keys, roles, "same_task_other")
     assert forward == reverse
-    assert shuffled == reversed_video == same_task_other
+    assert shuffled == shuffled_keep_first == reversed_video == same_task_other
     assert all(row["suite"] == row["video_suite"] for row in shuffled)
     assert len({row["video_global_task_id"] for row in forward}) == len(keys)
     assert all(row["suite"] != row["video_suite"] for row in forward)
@@ -159,6 +161,16 @@ def test_writer_video_schedule_and_wrong_map_are_order_independent() -> None:
     by_key = {(row["suite"], row["task_id"]): row for row in forward}
     assert (by_key[("libero_spatial", 1)]["video_suite"], by_key[("libero_spatial", 1)]["video_task_id"]) == ("libero_object", 1)
     assert (by_key[("libero_goal", 6)]["video_suite"], by_key[("libero_goal", 6)]["video_task_id"]) == ("libero_10", 2)
+
+
+def test_shuffled_keep_first_changes_only_the_anchor_position() -> None:
+    shuffled = writer_shuffled_frame_permutation(20, 7, keep_first=False)
+    keep_first = writer_shuffled_frame_permutation(20, 7, keep_first=True)
+    assert keep_first[0].item() == 0
+    assert keep_first[1:].tolist() == [
+        index for index in shuffled.tolist() if index != 0
+    ]
+    assert sorted(keep_first.tolist()) == list(range(20))
 
 
 def test_same_task_other_changes_only_the_teacher_demo() -> None:

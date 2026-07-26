@@ -895,7 +895,7 @@
   当前事实：v4停止于2400、observed-best为825、行为特异性失败、RL暂停。
 - 本次只整理远程可见的科学上下文，没有启动训练、rollout或新架构修改。
 
-## 外部复核后的v4因果诊断完成（2026-07-26）
+## 外部复核后的v4第一轮因果诊断（后被全面复审覆盖，2026-07-26）
 
 - owner授权自主推进到“决定下一版架构”并明确后续只使用物理GPU4–7；0–3上
   他人进程未被停止、重置或干扰。本轮所有新增GPU launch均只把4–7放入
@@ -916,14 +916,41 @@
 - 完成五条Object轨迹、25个经图像与gripper qpos核验阶段、12个LoRA反事实的
   action probe。异常主要改写pre-grasp/close/transport的end-effector
   translation；Revision=0会产生更大且常反向的动作变化，不能直接删除。
-- 由直接证据判定v4根因为未经识别的shared robot absolute-time forecast
-  alignment及其Revision direction，而不是visual-state主导、strength爆炸、
-  Temporal层数不足或decoder坍缩。
-- 新增
-  `docs/action_forecast_writer_v5_decision.md`，拍板原位删除absolute-time
+- 当时根据仍不充分的证据，过早把v4根因判定为未经识别的shared robot
+  absolute-time forecast alignment及其Revision direction，并排除了
+  visual-state；下一节的全面复审已撤回“唯一根因”和visual-state排除结论。
+- 当时新增
+  `docs/action_forecast_writer_v5_decision.md`，曾拍板原位删除absolute-time
   Plan/Revision/Belief，改为256D frame-local Intent和adjacent ordered
   Transition；保留32-token visual-state、两个Meta-LoRA、两层content-only
-  Temporal及decoder。本轮没有改动活动模型代码、没有训练v5、没有继续AS或进入
-  RL。
-- 所有诊断summary SHA256和未来75-step gate均集中在上述v5 decision文档；
-  当前在架构决定处停止。
+  Temporal及decoder。该架构决定已被下一节撤回为局部候选；从未实现或训练。
+- 当时的诊断summary SHA256仍作provenance；当前根因和未决合同以重写后的
+  v5 decision文档及下一节为准。
+
+## v4根因全面复审完成，旧v5决定撤回（2026-07-26）
+
+- owner指出上一轮分析过早结束后，继续固定v4 step825并只使用物理GPU4–7完成
+  更细粒度诊断；0–3上的他人进程未停止、重置或干扰。个人存储峰前占用约
+  `305 GB`，低于500GB cap。
+- 完成24 train tasks×4 demos的step75/300/825 hidden forecast semantics审计。
+  teacher action/proprio只在inference完成后作measurement target，不进入Writer、
+  optimizer或validation/test。summary SHA256依次为
+  `99f341c2...b2baa`、`de5a4529...b763c`、`a1633aa5...edb4bf`。
+- 完成三个checkpoint的same-task demo geometry及Writer参数演化。证据显示
+  visual-state由弱demo信号退化为主要progress code，而raw-image/Meta forecasts
+  越来越贴近低层demo translation；AS loss下降时latest-is-best和
+  residual-correction语义持续恶化。
+- 完成既有400 LoRA consensus、64×8 random permutations、endpoint/time-warp、
+  AS loss/gradient和forecast component分解。summary SHA256为
+  `390fcad1...f9a6`、`edbb86c8...916e`、`2bd6ae54...7186`。
+- 生成Object-1/Object-3共100 episodes的五种root-cause LoRA cache，并运行
+  official fixed-state rollout。no-VL/no-Action/lead-only/frame-main-only/
+  translation-only为`48/50/40/72/79`；translation-only几乎复现true shuffled
+  `82`。LoRA geometry/rollout summary SHA256为
+  `3d0b6679...65c1`/`d384219c...662d`。
+- 全面结论不再是“absolute-time唯一主因”。当前因果链为AS可识别性不足、
+  visual-state旁路、Meta低层phase/translation化及absolute-time Revision放大。
+  此前Intent+Transition v5只能修最后一层，已撤回为局部候选。
+- 原位重写`docs/action_forecast_writer_v5_decision.md`，并同步README、
+  execution brief、task plan、findings、decisions和v4 provenance。当前没有
+  v5代码或训练；不继续AS、不进入RL，停在下一版重新设计前。

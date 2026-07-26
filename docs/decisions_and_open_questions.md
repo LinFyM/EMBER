@@ -14,16 +14,15 @@
 - step825完整特异性为correct/same-task other/cross-suite wrong/shuffled/
   reversed=`109/104/99/148/126`；固定原始首帧只打乱后续帧仍为`136`。
   因此v4解决了内部视频/顺序差异塌缩，却没有正确使用这些差异；行为硬门失败。
-- 外部复核后的forecast-order四臂移植、Revision因子交换和阶段动作诊断已完成。
-  主因是v4未经识别的跨帧absolute-time forecast alignment：同一批normal
-  per-image forecasts只要换到shuffled slots，就在Object-1/Object-3上把
-  `49/100`提高到`72/100`；shuffled-context forecasts放回normal slots只有
-  `47/100`。主要行为中介为Revision direction，而非strength、Q/K routing、
-  Temporal深度或decoder差异坍缩。
-- 下一版原位删除absolute-time Plan/Revision/Belief，改为frame-local Intent
-  与adjacent ordered Intent Transition；保留32-token visual-state、两个
-  trainable identity Meta-LoRA、frame-local forecasts、两层content-only
-  Temporal和content-only LoRA decoder。完整决定见
+- 外部复核后的forecast-order移植证明absolute-time Revision是直接行为放大器；
+  后续train-only语义演化、visual-state neutralization、random-permutation
+  consensus和translation-only rollout证明更完整的根因链为：positive AS目标
+  不可识别demo过程语义、visual-state非瓶颈、Meta forecast低层phase/
+  translation化、absolute-time Plan/Revision放大。translation-only在
+  Object-1/Object-3得到`79/100`，correct/true-shuffled为`49/82`。
+- 此前frame-local Intent + adjacent Transition只修复最后一层，已从“下一版
+  已拍板”撤回为局部候选。下一版必须先解决visual-state必要性、Meta职责和
+  forecast语义gate；完整复审见
   [`docs/action_forecast_writer_v5_decision.md`](action_forecast_writer_v5_decision.md)。
 - frame stride固定为5，不再把stride 5/10作为待选变量；后续任何GPU工作只使用
   物理GPU 4–7，0–3不进入visible set也不被干扰。
@@ -56,11 +55,11 @@
 最终排除19项、保留71个active source task及其manifest/hash。新session不得
 重新修改source IDs或把这两条初步发现误写成audit仍未完成。
 
-## 外部复核后的机制定位与下一版决定
+## 外部复核后的完整机制定位与下一版未决状态
 
 Phase A、source base、public rank-16 LoRA合同、functional per-sample注入、
 Source-SFT comparator、v4训练、现有checkpoint选择和step825完整特异性均已
-封存，不得重新开启。本轮新诊断也已在架构决定处停止：
+封存，不得重新开启。本轮新诊断已完成，但旧v5决定被新证据覆盖：
 
 - image identity对齐后，shuffled context对per-image forecasts及policy action
   的残余影响分别只有千分位量级；把normal forecasts放入shuffled time slots
@@ -75,17 +74,23 @@ Source-SFT comparator、v4训练、现有checkpoint选择和step825完整特异�
 - 直接删除Revision会产生比目标shuffle delta大`2.1–5.8×`且多阶段反向的
   动作变化，说明现有Plan/Revision已经共同适配，不能做Plan-only热修。
 
-据此，v5只修复被直接证明的错误对应关系：每帧`50×7` local action chunk先编码
-为256D Intent，相邻帧用`ΔI_i=I_i-I_{i-1}`表达有向演化，再按
-`I_0, ΔI_1, I_1, ...`进入两层Temporal。它不引入confidence/strength超参数、
-时间均值删除或contrast/order loss，也不声称positive task-level AS已能保证
-高层语义可辨识。
+新增证据进一步表明：
 
-当前仍开放的科学问题只有：在移除错误absolute-time语义后，positive AS和独立
-video/action pairing能否使Intent演化对应可迁移的任务过程，而不是另一种
-task/style latent。若后续75-step v5仍出现inversion，原则性下一候选是
-action-hidden、positive-only的causal future frozen-visual-feature prediction；
-它尚未被批准为v5第一版的一部分。
+- step75→300→825中，latest/earlier forecast MSE ratio从
+  `0.966→1.043→1.087`，latest-better pairs从`0.509→0.419→0.404`；
+- neutral visual-state在step825只使forecast变化约`0.855%`，visual
+  coordinates与同demo teacher action差异的相关从step75 `0.324`降为
+  step825 `0.107`，但raw-image/Meta forecast相关升到`0.587–0.740`；
+- 8个random permutations产生高度共识的LoRA delta；只重排前三维translation
+  得到`79/100`，与true shuffled `82/100`无显著差异；
+- shuffled AS loss整体更高，且LoRA delta与negative AS gradient近乎正交，
+  因而Object收益是objective-unidentified的closed-loop controller补偿。
+
+所以frame-local Intent + adjacent Transition只能删除错误absolute-time对应，
+仍可能把同一低层phase/translation latent换名为Intent。它不再是已批准v5。
+下一版具体结构保持开放，必须同时解决visual-state必要瓶颈、Meta-LoRA不可任意
+改写forecast时钟、train-only forecast语义gate和same-task多demo高层汇聚；
+不使用contrast/order loss强行制造差距。
 
 ## 不再开放的问题
 
@@ -105,8 +110,8 @@ action-hidden、positive-only的causal future frozen-visual-feature prediction�
 - 过滤 LIBERO-90 overlap 后训练并 merge/freeze 共享 π0.5 source base，40-task 快速能力筛查；
 - 新visual-state已完成75-step内部闭环和0→2400正式轨迹；现有best与完整
   correct/same/wrong/shuffled/reversed/fixed-anchor证据均已封存；外部复核后的
-  最小因果诊断已把主因定位到absolute-time Plan/Revision并形成v5决定，当前在
-  实现和训练前停止；
+  完整根因复审已定位AS可识别性、visual-state旁路、Meta forecast语义漂移和
+  absolute-time Revision放大的组合链，旧v5决定已撤回，当前在新设计前停止；
 - RL-Writer 使用独立短AS cold start取得24-task逐task成功覆盖后转pure reward，并完整报告action消耗；
 - Source-SFT 是一套 shared target-source LoRA，独立按 validation 选最佳；
 - seen/source panel 与 cross-suite wrong-video 对照；

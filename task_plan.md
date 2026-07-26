@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-最后更新：2026-07-25。长期 EMBER Goal 是完成共享 π0.5-LIBERO source base、one-video Writer、source baselines、seen/wrong-video机制证据、final single-seed test、test-only三臂RL和联合target-action oracle；当前 active 子任务由本文末尾“32-token Visual-State Action-Forecast Writer”段及 `docs/action_forecast_writer_design.md` 定义。
+最后更新：2026-07-26。长期 EMBER Goal 是完成共享 π0.5-LIBERO source base、one-video Writer、source baselines、seen/wrong-video机制证据、final single-seed test、test-only三臂RL和联合target-action oracle；当前 Action-Forecast 根因状态由本文末尾复审段及 `docs/action_forecast_writer_v5_decision.md` 定义。
 
 ## 完成定义
 
@@ -325,7 +325,7 @@ Action-Memory、temporal-RoPE、Action-Forecast v1/v2和28-slot Belief-v3均为
   架构演进、v4模块、内部/rollout/固定anchor证据和待分析问题，并同步修正
   README与活动authority中的旧未来式。本阶段不启动新GPU实验。
 
-## 当前执行：外部复核后的v4因果诊断与v5决定（2026-07-26）
+## 当前执行：外部复核后的v4根因复审与v5重开（2026-07-26）
 
 本节覆盖上方“等待外部专家分析”的停止点。目标只到能够用直接证据决定下一版
 架构；不实现/训练v5，不继续AS，不运行新增full400，不进入RL、final-32、
@@ -351,14 +351,27 @@ task-local RL、joint oracle或ViVLA。
   transport的end-effector translation；不是只在参数空间存在的无效差异。
 - [x] 验证直接置零Revision不是修复：zero-Revision action相对目标shuffle
   delta放大`2.1–5.8×`且多阶段低相关或反向，Plan/Revision已共同适配。
-- [x] 判定不再优先修改visual-state、加深Temporal、裁剪Revision strength或
-  修改decoder。根因是v4未经识别的跨帧absolute-time forecast alignment及其
-  same-time Revision语义。
-- [x] 拍板v5原位替换：保留32-token visual-state、两个Meta-LoRA、frame-local
-  forecasts、两层content-only Temporal与content-only decoder；删除
-  `_time_layout`、Plan/Revision/Belief和strength/count routing，改为256D
-  frame-local Intent及adjacent ordered Intent Transition。
-- [x] 将完整数学、参数预算、证据、不能保证的语义边界和未来75-step gate记录在
-  `docs/action_forecast_writer_v5_decision.md`，并同步当前authority。后续GPU
-  工作只用物理4–7，0–3不使用或干扰。
-- [x] 按目标在“决定下一版架构”处停止；当前没有v5代码、checkpoint或训练结果。
+- [x] 第一轮曾把absolute-time alignment过早写成唯一主因，并拍板保留
+  visual-state/Meta的Intent+Transition v5；后续证据已正式覆盖该结论。
+- [x] 对step75/300/825在24个train tasks×4 demos上完成post-inference隐藏
+  forecast语义审计。AS loss下降时latest-is-best和residual-correction语义持续
+  变差；Meta-LoRA关闭反而改善step825隐藏teacher-future误差。
+- [x] 证明32-token visual-state不是必要瓶颈：step825 neutralization几乎不改
+  forecast；visual coordinates最终主要可预测video progress，几乎不预测
+  robot state/action，而raw-image/Meta forecast越来越贴近demo低层translation。
+- [x] 完成64 references×8 permutations、same-task demo几何、AS loss/gradient
+  与forecast分量拆解；排除permutation lottery、task-consensus回归、endpoint、
+  flow noise和“只删除demo detail”。
+- [x] 完成Object-1/Object-3五臂root-cause rollout：
+  no-VL/no-Action/lead-only/frame-main-only/translation-only为
+  `48/50/40/72/79`；translation-only相对correct `49`净增30，且与true
+  shuffled `82`无显著差异。
+- [x] 将根因修正为“AS可识别性不足→visual-state旁路→Meta低层phase/
+  translation latent→absolute-time Plan/Revision放大”；Temporal和
+  content-only decoder暂不重写。
+- [x] 撤回已拍板v5。Intent+Transition保留为删除absolute-time放大器的局部
+  候选；下一版必须先解决visual-state必要性、Meta职责、forecast语义gate和
+  same-task多demo抽象。完整证据写入
+  `docs/action_forecast_writer_v5_decision.md`。
+- [x] 当前没有v5代码、checkpoint或训练结果；不继续AS或进入RL，后续GPU工作
+  仍只使用物理4–7。

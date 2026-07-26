@@ -1,430 +1,414 @@
-# Action-Forecast Writer v4 因果诊断与 v5 架构决策
+# Action-Forecast Writer v4 根因复审与 v5 决定重开
 
-状态：2026-07-26。本文记录外部专家复核后完成的最小因果诊断，以及由直接证据
-得到的下一版架构决定。
+状态：2026-07-26。本文覆盖此前“已拍板 frame-local Intent + adjacent
+Transition”的结论。该方案仍是一个有价值的局部修复候选，但新证据证明：
+absolute-time Plan/Revision 只是最直接的行为放大器，不是完整根因；保留
+v4 visual-state 和两个 Meta-LoRA 原样不动，不能解决更上游的表示旁路和
+训练可识别性问题。因此当前没有已批准、可直接实现的 v5。
 
-本文的边界是：
+当前边界：
 
-- 当前仓库代码和已有 checkpoint 仍是已封存的 v4；
-- 本轮没有实现或训练 v5，没有继续 AS，也没有进入 RL；
-- 本文覆盖 v4 文档中仍把 absolute-time Plan/Revision 当作未来活动路径的表述；
-- v4 的实现、训练和历史结果仍以
-  [`action_forecast_writer_design.md`](action_forecast_writer_design.md) 为准；
-- 后续若获准实现，v5 必须原位替换 v4 的 belief owner，不保留两套活动路径。
+- v4 代码、checkpoint 和正式结果保持封存；
+- 没有实现或训练 v5，没有继续 AS，也没有进入 RL；
+- 本轮只做 train-split 隐藏语义诊断、既有 validation 输出的内部反事实，
+  以及 Object-1/Object-3 的定向 official rollout；
+- train teacher action/proprio 只在 Writer 完成推理后作为诊断 target 读取，
+  从未进入 Writer、optimizer 或 validation/test；
+- 后续任何新架构必须原位替换 v4 owner，不保留并行 runner 或双活动 schema。
 
 ## 1. 最终判断
 
-step825 的异常不是由随机首帧、visual-state 对 shuffled context 的反应、
-Revision strength 数值爆炸、Temporal 层数不足，或 LoRA query decoder 再次
-丢失差异所主导。
+当前异常需要分成四层，而不能再归到单个模块：
 
-直接证据定位到：
+1. **科学可识别性不足。** AS 中 teacher video 与 action episode 只共享 task，
+   并非同一 episode；policy 又在执行时看到正确 language 和 current
+   observation。functional action loss 能稳定监督“这个 task 需要什么
+   controller”，却没有监督“视频第 \(i\) 帧表示哪个阶段、该帧应对应什么
+   future action、同任务不同 demo 的哪些差异应保留”。输入始终为正序，只说明
+   normal order 是训练分布，不会自动把内部 forecast 校准成 teacher future
+   action。
+2. **visual-state 没有成为必要表示。** 32 个 visual-state tokens 只是加入
+   frozen PaliGemma prompt 的一条小分支；raw image tokens 加上可训练 VL/Action
+   Meta-LoRA 仍能绕过它，直接产生 forecasts。训练因此可以忽略 visual-state，
+   通过更容易的 raw-image/Meta 路径生成 task/action-shaped latent。
+3. **Meta-LoRA 把弱语义 source forecast 改造成低层 demo/phase code。**
+   forecasts 的确越来越能区分同任务不同 teacher 的具体平移轨迹，但
+   “latest forecast 更准”和“residual 是误差修正/置信度”这两个 Plan/Revision
+   前提反而随 AS 训练持续恶化。
+4. **absolute-time Plan/Revision 把错误语义放大成 controller。** v4 把各帧
+   local chunks 投到未经识别的共享 robot clock，再把主要来自 frame phase 和
+   translation 的错配解释为 Revision。Temporal 和 content-only decoder
+   随后忠实保留这条差异；它们不是本轮差异坍缩的来源。
 
-> **v4 把每帧局部 action chunk 按 teacher frame index 放到一个假定共享的
-> robot absolute-time 轴上，再把错位后的 forecast residual direction 当作
-> Revision 内容。这个“同一绝对时刻”的对应关系没有被数据或目标识别。
-> Shuffle 主要通过改写这条 Revision direction 通道，偶然产生了更好的
-> end-effector translation controller。**
+所以最准确的根因链是：
 
-因此下一版不应：
+```text
+同 task 独立 video/action 的 positive AS 目标
+        ↓ 不能识别 demo 的高层过程语义
+非瓶颈 visual-state + raw-image/Meta 旁路
+        ↓
+低层 demo/phase/translation action-shaped forecasts
+        ↓
+未经校准的 absolute-time Plan/Revision
+        ↓
+稳定但目标外的 translation controller perturbation
+        ↓
+Object-1/Object-3 闭环阈值被跨过，shuffled 偶然优于 correct
+```
 
-- 继续修补 Revision strength 的归一化或裁剪；
-- 增加 Temporal 层数；
-- 删除稳定的 task/scene 内容；
-- 优先重做 v4 visual-state；
-- 直接删除 Revision 后只保留当前 Plan；
-- 加入 contrast/order loss 强迫 correct 与 shuffled 拉开。
-
-下一版应：
-
-> **保留逐帧 visual-state、两个 Meta-LoRA 和 frame-local Action Expert
-> forecasts；删除跨帧 absolute-time overlap、latest-covering Plan、
-> multi-forecast Revision 及其 count/strength/routing；改为
-> frame-local Intent + ordered adjacent Intent Transition。**
+这里“偶然”不表示随机抽样噪声。shuffle 扰动本身跨 permutation、video 和 task
+高度一致；偶然的是 AS objective 没有决定它对 closed-loop success 的符号。
 
 ## 2. 诊断合同
 
-所有新诊断固定使用：
+所有新增诊断固定使用：
 
-- v4 observed-best `step_00000825`；
+- v4 observed-best `step_00000825`，并补查 step75、step300 的演化；
 - 同一 frozen π0.5-LIBERO source base、rank-16 public LoRA schema；
-- 原 fixed validation task、language、init state、env seed 和 policy noise；
-- Object-1/Object-3 固定各 50 states 作为唯一新增定向 rollout panel；
-- teacher action/state、proprio、reward 和 outcome 不进入 Writer 诊断；
-- GPU 只使用物理 `4,5,6,7`，不使用或干扰正在被他人占用的 `0,1,2,3`。
+- validation 内部反事实复用相同 references、flow noise 和 action queries；
+- 新 rollout 只用 Object-1/Object-3 各 50 个既有固定 states；
+- rollout 只读 official reward/success；
+- 语义审计只使用 24 development-train tasks × 每 task 4 demos；
+- train teacher action/proprio 仅作 post-inference measurement，不更新模型；
+- validation/test hidden action、proprio、reward 和 outcome 均未读取；
+- 全部新增 GPU launch 只使用物理 GPU 4–7。
 
-没有运行新的 full400 条件，没有训练模型，也没有读取 forbidden teacher
-signals。阶段动作诊断只使用执行时 policy 本来会看到的 current observation。
+本轮没有新增 full400 condition，也没有借助对比/顺序 loss 制造预期差距。
 
-以下记号中：
+## 3. 为什么“训练时一直输入正序”仍不能校准 forecast
 
-- `N→N`：normal context 产生的 per-image forecasts 放在 normal slots；
-- `N→S`：同一批 normal-context forecasts 按 shuffle permutation 放入
-  shuffled slots，不重新计算 visual-state/Action Expert；
-- `S→N`：shuffled-context forecasts 按图像 identity 放回 normal slots；
-- `S→S`：真实 shuffled condition。
+### 3.1 正序只是常量条件，不是监督关系
 
-这里的 `S` slot 始终保留原始递增 `frame_indices`。所以 `N→S` 精确隔离的是
-forecast 之后的 slot、absolute-time alignment、Plan/Revision、Temporal 和
-decoder 响应。
+对一个 task，训练样本实际是：
 
-## 3. Forecast-order 四臂交叉移植
+\[
+(V_d,\; A_e), \qquad d \perp e \mid task,
+\]
 
-### 3.1 内部和动作函数
+其中 \(V_d\) 是 teacher demo，\(A_e\) 是另一条独立 action episode。loss 只要求：
 
-16 条 validation reference videos 上：
+\[
+F(V_d,\ language)
+\]
 
-- `N→S` 相对 `S→S` 的 effective-LoRA delta：
-  cosine 中位数 `0.999978`、magnitude ratio `0.99905`、
-  residual ratio `0.00712`；
-- 同一比较在真实 π0.5 action function 中为
-  `0.999864 / 1.00020 / 0.01668`；
-- `S→N` 相对 `N→N` 的 effective LoRA relative L2 中位数只有
-  `0.00337`；
-- `S→N` action chunk 相对 `N→N` 的 relative L2 中位数只有
-  `0.00156`。
+生成的 LoRA 能降低 \(A_e\) 上的 functional action loss。它没有要求：
 
-这说明按 image identity 对齐后，shuffled visual context 对每张图像 forecast
-的影响很小。真实 shuffle 的绝大部分参数和动作变化，都来自把基本相同的
-per-image forecasts 放到错误时间 slots。
+\[
+\hat A_i[\ell] \approx A^{teacher}_{i+\ell},
+\]
 
-### 3.2 Object-1/Object-3 定向 rollout
+也没有要求同一视频的相邻帧在真实动作时钟上如何对应。所有输入都是正序，
+意味着模型只见过 normal distribution；但 task latent、demo style latent、
+固定 action template 和真正的过程理解都能在这个分布上降低 loss，目标无法在
+它们之间选择。
 
-| condition | Object-1 | Object-3 | total |
+从期望风险看，独立配对确实会鼓励同 task 不同 demo 的输出趋同；这解释了
+same-task-other 比 wrong/shuffle 更接近 correct。但“鼓励平均”不等于建立高层
+视频语义：language 已经直接给出 task，policy 执行时又看到 current
+observation，因此 task-common controller 可以不依赖视频过程；剩余
+demo-specific directions 只要落在较平的 AS 子空间，也不会被目标可靠消除。
+当前正是这种情况：same-task aggregate 接近，但低层 translation 差异仍足以在
+closed loop 跨过抓取阈值。
+
+### 3.2 loss 下降时，forecast 基本假设反而恶化
+
+24 train tasks × 4 demos 的隐藏语义审计如下。MSE 越低越好；
+`latest/earlier MSE ratio < 1` 才支持“最新帧信息最充分”；correction cosine
+越高，才越支持 Revision residual 指向真实误差修正。
+
+| checkpoint | trailing-25 AS loss | exact forecast MSE | Pearson | latest/earlier MSE | latest-better pairs | residual→true-correction cosine |
+|---|---:|---:|---:|---:|---:|---:|
+| step75 | 0.13387 | 0.36745 | 0.26850 | 0.96625 | 0.5090 | 0.33529 |
+| step300 | 0.12011 | 0.34499 | 0.26094 | 1.04300 | 0.4194 | 0.25424 |
+| step825 | 0.10646 | 0.38592 | 0.28798 | 1.08721 | 0.4042 | 0.23847 |
+
+source-base-like 路径（关闭 visual-state、VL Meta 和 Action Meta）在同一审计上
+为 latest/earlier `0.98624`、latest-better `0.54337`、correction cosine
+`0.33851`。它不强，但至少没有 v4 step825 那样系统性违反 Plan 假设。
+
+step825 单独关闭 VL Meta、Action Meta、两者全部时，per-task forecast MSE
+相对完整 trained path 的中位比为 `0.9409/0.9037/0.8902`；小于 1 表示隐藏
+teacher future-action 误差更低。VL/Action Meta 的 LoRA-B RMS 同时从 step75
+的 `0.00126/0.00121` 增长到 step300 的 `0.00510/0.00474`，再到 step825 的
+`0.00638/0.00594`。
+
+因此不是“normal-order 训练会自然语义校准，只是下游搞坏了”。到 step300，
+AS loss 仍在改善，但 Plan/Revision 所需的 forecast 排序已经反转；到 step825
+更严重。
+
+## 4. visual-state 是主要结构问题之一
+
+### 4.1 它不是信息瓶颈
+
+当前前向同时存在：
+
+```text
+32-token visual-state offset ─┐
+                              ├─ frozen PaliGemma + trainable VL Meta
+raw image tokens ─────────────┘
+                                      ↓
+                         trainable Action Meta + Action Expert
+```
+
+所以 visual-state 即使完全无效，raw image 和两个 Meta-LoRA 仍可承担全部
+video→forecast 映射。架构没有强迫模型通过 visual-state 理解视频。
+
+step825 把 visual-state 替换为 neutral 后：
+
+- forecast relative L2 中位数只有约 `0.00855`；
+- cosine 约 `0.999963`；
+- exact forecast MSE 比值约 `0.99993`。
+
+也就是说这条设计上最重要的路径，最终对 Action Expert forecast 几乎没有
+功能影响。
+
+### 4.2 它从弱状态信号退化为时钟/进度信号
+
+同 task 不同 demo 的 pairwise distance 与真实 teacher action distance 的
+Spearman 相关随训练变化为：
+
+| representation | step75 | step300 | step825 |
 |---|---:|---:|---:|
-| correct / `N→N` reference | 38 | 11 | 49 |
-| `S→N` | 36 | 11 | 47 |
-| `N→S` | 43 | 29 | 72 |
-| true shuffled / `S→S` | 45 | 37 | 82 |
+| visual coordinates | 0.324 | 0.105 | 0.107 |
+| full forecasts | 0.144 | 0.470 | 0.587 |
+| frame-main forecasts | 0.327 | 0.561 | 0.652 |
+| frame-main translation | 0.503 | 0.625 | 0.695 |
+| frame×lead interaction vs teacher translation | 0.336 | 0.658 | 0.740 |
 
-配对结果：
+visual coordinate 的 leave-one-demo-out probe 在 step825 为：
 
-- `S→N` 相对 correct 净 `-2`，churn `4/100`，`p=0.625`；
-- `N→S` 相对 correct 净 `+23`，`p=4.31e-4`；
-- true shuffled 相对 `N→S` 再净 `+10`，`p=0.0129`。
+- normalized video progress \(R^2 \approx 0.548\)；
+- robot state \(R^2 \approx 0.046\)；
+- action \(R^2 \approx 0.038\)。
 
-所以主效应明确位于 forecast 之后。shuffled context 仍有较小的非线性交互，
-尤其在 Object-3，但它不是异常的必要条件或主要原因。当前没有证据支持优先做
-anchor/local visual-state 分路。
+所以 visual-state 最终主要表示“视频大约走到哪里”，并没有成为可供 Action
+Expert 使用的机器人视觉状态。与此同时，raw-image/Meta forecast 路径越来越
+贴近具体 demo 的低层平移轨迹。
 
-## 4. Plan / Revision 因子交换
+这也修正了先前“visual-state 不是主因”的判断：shuffled context 在 step825
+不先改变 per-image forecast，只能说明当前 visual-state 已经被旁路，不能证明
+visual-state 设计正确。
 
-固定同一批 normal-context forecasts，只在 downstream 交换：
+## 5. forecast 学到了什么
 
-- `P`：Plan；
-- `D`：Revision direction；
-- `V`：乘在 Revision value 上的 residual RMS strength；
-- `R`：进入 Temporal Q/K routing 的 strength。
+可用近似分解表示：
 
-`N` 表示 normal slot 因子，`S` 表示 `N→S` shuffled-slot 因子。
+\[
+A_{i,\ell}
+=G_{task,\ell}
++F_{demo,i}
++J_{demo,i,\ell}
++\epsilon_{i,\ell}.
+\]
 
-### 4.1 内部和初态 action-function 证据
+- \(G_{task,\ell}\)：每帧反复出现的 task-level lead/action template；
+- \(F_{demo,i}\)：随 frame phase 变化的主效应，主要是 translation；
+- \(J_{demo,i,\ell}\)：frame×lead 交互；
+- \(\epsilon\)：flow noise 和剩余误差。
 
-- 只交换 routing strength：effective-LoRA target-delta magnitude
-  `0.0061`；action target-delta magnitude `0.0112`，可忽略；
-- 把 target 的 routing strength 恢复为 normal，action delta 仍与 target
-  基本相同：cosine `0.99989`、magnitude `1.0013`；
-- Plan、direction 和 value strength 都能改变动作，但具有明显非线性交互；
-- executed first-5 action 上，完整 shuffled Revision 相对 `N→S` delta 的
-  cosine/magnitude 中位数约 `0.972/0.969`；
-- direction-only 约 `0.906/0.446`；
-- value-strength-only 约 `0.366/0.412`；
-- Plan-only 约 `0.818/0.696`。
+step825 的 ANOVA energy 中位占比约为：
 
-shuffled strength 不是无界 OOD 爆炸：
+- frame main `0.425`；
+- lead main `0.324`；
+- frame×lead interaction `0.174`。
 
-- train-normal token strength median/p95/max 为
-  `0.333/0.614/0.858`；
-- shuffled-slot 为 `0.454/0.670/<0.858`；
-- `14.4%` shuffled tokens 高于 train p95，但没有 token 超过 train max。
+同任务四个 teacher demos 的距离几何进一步显示：
 
-### 4.2 Object 行为因果结果
+- teacher action 的 within/cross-task distance ratio 为 `0.531`；
+- full forecast 为 `0.276`；
+- lead profile 为 `0.170`，但它与同 task teacher-action distance 的相关仅
+  `0.181`；
+- frame main、translation 和 interaction 与真实 demo 低层动作差异的相关为
+  `0.652–0.740`；
+- visual coordinates 只有 `0.107`。
 
-| factor arm | 含义 | Object-1 | Object-3 | total |
-|---|---|---:|---:|---:|
-| correct | normal 全部因子 | 38 | 11 | 49 |
-| `PS_DN_VN_RN` | 只换 Plan | 37 | 24 | 61 |
-| `PN_DN_VS_RN` | 只换 value strength | 39 | 15 | 54 |
-| `PN_DS_VN_RN` | 只换 direction | 39 | 28 | 67 |
-| `PN_DS_VS_RS` | 只换完整 Revision | 45 | 30 | 75 |
-| `N→S` | 全部 shuffled-slot downstream | 43 | 29 | 72 |
-| true shuffled | 重新计算 shuffled context | 45 | 37 | 82 |
+所以 v4 不是完全“看不到当前图片”。它通过 raw image/Meta 路径看到了
+demo-specific 运动和阶段，而且越来越明显；问题是这些差异主要是低层轨迹/
+translation，而不是经同任务多 demo 抽象后的统一高层逻辑。task-level lead
+profile 又非常容易充当公共 action template。
 
-相对 correct 的 paired 结果：
+## 6. shuffle 为什么产生稳定的同向扰动
 
-- Plan-only 净 `+12`，`p=0.0501`；
-- value-strength-only 净 `+5`，`p=0.359`；
-- direction-only 净 `+18`，`p=0.00143`；
-- 完整 Revision 净 `+26`，`p=6.16e-6`。
+### 6.1 不是 permutation lottery
 
-direction-only 与 `N→S` 只差 5，`p=0.458`；完整 Revision 与 `N→S`
-只差 3，`p=0.690`。完整 Revision 比 direction-only 高 8，但该配对差异
-`p=0.200`。因此：
+64 条 validation references × 每条 8 个独立 random permutations 上：
 
-1. shuffled Revision direction 是主要行为中介；
-2. value strength 单独不是主因，但与 direction 存在次级协同；
-3. Plan 有次级贡献；
-4. Q/K routing strength 没有可测的实质作用。
+- shuffle delta 的两两 cosine 中位数 `0.94095`；
+- 对 sealed shuffled delta 的 cosine 中位数 `0.94679`；
+- mean-delta norm / mean individual norm 为 `0.96556`。
 
-## 5. Policy-action 阶段诊断
+既有 400-panel LoRA 中，Object-1/Object-3 的 random-video shuffle deltas
+pairwise cosine 均值为 `0.8688/0.8676`；各自 mean-delta 保留 individual
+norm 的 `0.939/0.936`。没有一个 shuffled adapter 更接近 correct task
+consensus，因此 shuffle 不是“去掉 demo 噪声、回到 task 均值”。
 
-在五条 Object 成功轨迹上，选择经过画面与 gripper qpos 核验的：
+原因是 normal order 保留 frame phase 与 time slot 的协方差；任意充分随机的
+permutation 都会把这项协方差压到近似零。对带有相似单调 phase/translation
+主效应的 videos，不同 permutation 因而产生相似的“去相关后”下游方向，而不是
+每次随机得到完全不同的 LoRA。
+
+### 6.2 主效应是 frame phase 和前三维 translation
+
+16-reference forecast 分量移植相对完整 slot shuffle 的 LoRA delta：
+
+| 只重排的 forecast 分量 | relative L2 | cosine to full shuffle |
+|---|---:|---:|
+| frame main only | 0.208 | 0.899 |
+| frame×lead interaction only | 0.182 | 0.550 |
+| translation dims only | 0.247 | 0.996 |
+| rotation only | 0.0445 | 0.491 |
+| gripper only | 0.0015 | 0.124 |
+
+translation-only adapter 与完整 shuffled adapter 的 cosine 为 `0.99747`，
+距离仅为完整 shuffle delta norm 的 `0.0848`。所以 true frame×lead
+forecast revision 不是必要成分；主要是 frame phase 中的前三维平移内容经过
+absolute-time slot 错配后，被 Plan/Revision 编成一个 controller。
+
+### 6.3 闭环 rollout 完整复现
+
+Object-1/Object-3 各 50 episodes：
+
+| arm | Object-1 | Object-3 | total |
+|---|---:|---:|---:|
+| correct | 38 | 11 | 49 |
+| no VL Meta at inference | 40 | 8 | 48 |
+| no Action Meta at inference | 35 | 15 | 50 |
+| lead-only / remove all frame detail | 31 | 9 | 40 |
+| shuffle frame-main only | 41 | 31 | 72 |
+| normal forecasts in shuffled slots (`N→S`) | 43 | 29 | 72 |
+| shuffle translation dims only | 44 | 35 | 79 |
+| true shuffled | 45 | 37 | 82 |
+
+translation-only 相对 correct 为净 `+30`，paired exact McNemar
+`p=5.30e-6`；相对 true shuffled 仅差 3，churn `15/100`、
+`p=0.607`。这几乎闭合了 `49→82` 的全部异常。
+
+关闭 Meta-LoRA 虽改善隐藏 forecast calibration，却不能作为 step825 的
+inference hotfix：下游 Belief/Temporal/decoder 已在完整 Meta 语义上共同训练，
+直接移除一支只得到 `48/50`。lead-only 更差为 `40`，也排除了“shuffle 只是
+删除所有 demo detail”。
+
+## 7. 为什么这种扰动恰好提高 success
+
+normal→shuffle 的 AS functional loss 在 64 个 validation action queries 上：
+
+- normal `0.133615`；
+- true shuffle `0.135925`，增加 `0.002310`；
+- Object-1/Object-3 只增加 `0.000414/0.000156`，近似 objective-flat；
+- shuffle LoRA delta 与 negative local AS gradient 的 cosine 中位数约
+  `0.00164`。
+
+因此 shuffle 不是另一个 AS descent step，也不是 normal 训练漏掉的显然更优
+offline solution。它在 AS objective 看来整体略差，在两个 Object tasks 上近乎
+平坦且与梯度正交。
+
+已有 25 个分阶段 current-observation probes 显示，异常 action delta 主要位于
+approach、pre-grasp、close 和 transport 的 end-effector translation：
+translation RMS 中位数约 `0.0197–0.0341`，而单轴 action 上限约 `0.05`。
+这种幅度足以改变接近角度和抓取位置。精细抓取是明显的 closed-loop threshold：
+一个 offline loss 近似等价的 controller perturbation 可以把大量 episode 从
+抓取阈值一侧推到另一侧。
+
+所以可以解释到两层：
+
+- **扰动从哪里来、为什么跨随机 shuffle 稳定、为什么主要改 translation：**
+  已有直接因果证据；
+- **为什么它在 Object-1/Object-3 的符号恰好为正：** 当前 AS objective
+  不识别 closed-loop success，这个符号是 objective-unidentified 的偶然补偿，
+  不是随机测量噪声，也不是 Writer 理解了 shuffled video。
+
+在不引入 privileged pose/reward 训练的前提下，不能诚实地把这一步再解释成
+某个普适物理定律。它可能在另一个 task 上同样稳定地变坏。
+
+## 8. 已排除或降级的解释
+
+现有证据不支持把以下因素写成主根因：
+
+- 某一次幸运 random permutation；
+- 随机首帧 anchor；
+- 视频尾帧或单一 endpoint；
+- flow noise；
+- Revision strength 数值爆炸；
+- Temporal 只有两层；
+- content-only LoRA decoder 再次把差异压没；
+- shuffle 把 adapter 拉回 identity 或 correct task consensus；
+- 只删除全部 demo-specific detail；
+- 只在 inference 关闭任一个 Meta-LoRA；
+- 直接把 Revision 置零。
+
+其中 absolute-time Plan/Revision 仍是**已证明的直接行为放大器**，只是不能再
+被写成唯一上游根因。
+
+## 9. 对旧 v5 决定的修正
+
+旧候选：
 
 ```text
-approach
-pre-grasp
-gripper close
-transport
-place / terminal
+frame-local Intent I_i
+adjacent Transition ΔI_i = I_i - I_(i-1)
 ```
 
-共 25 个 current observations。每个 observation 使用完全相同的正确
-language 和 flow noise，对 12 个 LoRA 反事实同时计算动作。driver 单臂执行
-与多臂 probe 分开，probe 不影响环境轨迹。
+有一个明确优点：它删除未经识别的 shared robot absolute-time overlap，不再把
+不同 frames 的不同 lead positions 假装成同一控制时刻。因此这部分原则仍可
+保留为候选。
 
-主要结果：
+但旧决定原样保留以下结构：
 
-- true `S→S` 与 `N→S` action delta 在五个阶段的 cosine 为
-  `0.99927–0.99980`，magnitude ratio 为 `0.9979–1.0014`；
-- `S→N` 只保留 `N→S` delta 的 `1.9%–4.6%`；
-- 完整 shuffled Revision 在 approach/pre-grasp/close/transport 的
-  action-delta cosine 为 `0.986/0.936/0.938/0.951`，
-  magnitude 为 `0.827/0.821/0.628/0.701`；
-- direction-only 的对应 cosine 为
-  `0.867/0.830/0.927/0.849`；
-- direction-only 对 executed translation 的 cosine 在
-  pre-grasp/close/transport 为 `0.925/0.954/0.982`，
-  magnitude 为 `0.601/0.529/0.662`；
-- value-strength-only 的 behavior 和阶段动作贡献都明显更弱。
+- 非瓶颈 32-token visual-state；
+- raw image 到 full Meta-LoRA forecast 的旁路；
+- 只受 task-level AS 间接训练的 VL/Action Meta-LoRA；
+- 可直接把 frame-local low-level action chunk 编成 `I_i` 的路径。
 
-`N→S` 相对 normal 的 executed-action delta 主要位于 end-effector
-translation。五阶段 translation RMS 中位数为 `0.0197–0.0341`，而
-rotation 为 `0.00217–0.00770`、gripper 为 `0.00155–0.00459`。
-考虑 LIBERO translation command 单轴上限约 `0.05`，这不是微小 null-space
-变化，而是足以改变 approach 和 transport 轨迹的控制修正。
+新证据表明，这样做最多移除放大器，不能保证：
 
-把 Revision 完全置零也不是合理修复。`normal Plan + Revision=0` 在五阶段
-产生相对 `N→S` target delta 的 `2.1–5.8×` 动作变化，而且多阶段方向低相关
-或反向。现有 Plan 和 Revision 已共同适配成一套耦合表示；直接删除其中一支
-不会恢复干净的“Plan-only policy”。
+- `I_i` 是 visual state 或高层 intent，而不是 translation/phase latent；
+- `ΔI_i` 表示任务步骤，而不是相邻低层轨迹差；
+- same-task demos 汇聚到共同高层逻辑；
+- positive AS 不重新学习 task latent shortcut。
 
-## 6. 根因解释
+所以 **Intent+Transition 不再是已拍板 v5，只是下一轮设计时可复用的一个局部
+约束。** 当前不得据此直接实现、训练 75 step 或进入 RL。
 
-v4 对 frame `i` 生成局部 action chunk：
+## 10. 下一版在设计前必须满足的合同
 
-\[
-A_i[\ell],\qquad \ell=0,\ldots,H-1.
-\]
+下一版具体结构尚未决定，但必须同时回答：
 
-随后使用：
+1. **必要性：** learnable visual-state 必须成为 video→forecast 的必要 owner，
+   不能被 raw-image/Meta 旁路到 action-shaped latent；neutral 或 permuted
+   visual-state 应产生可解释的上游变化。
+2. **可学习但不退化：** 允许保留 task、object、scene 和绝对状态信息，不做
+   “删除所有恒定成分”；但变化分支必须 zero-preserving、有向，并且不能仅靠
+   language/static query 生成。
+3. **Meta-LoRA 职责：** 仍要支持 observer/human teacher 到机器人执行视角的
+   转换，但不能在没有中间语义约束时直接自由改写 future-action clock。
+4. **forecast gate：** 在进入任何 Plan/Revision/Intent 前，必须先证明：
+   normal 的 teacher-future calibration 优于 shuffle/reverse；latest forecast
+   统计上更准；residual 与真实修正方向相关。这个检查只作 train-only
+   post-inference 诊断，不进入训练。
+5. **抽象层级：** same-task different correct demos 的高层 representation/
+   LoRA 应明显近于 wrong-task，同时不能随低层速度、抓取角度和具体轨迹大幅
+   摇摆。
+6. **下游克制：** 两层 Temporal 和 content-only decoder 目前没有失败证据，
+   不先加深或重写；任何顺序结构都不能假设未被数据识别的共同 robot clock。
+7. **训练信号：** 不使用 contrast/order loss 强行制造 correct-shuffle 差距。
+   若 task-level AS 本身仍不可识别过程语义，优先考虑 action-hidden、
+   positive-only 的 causal/predictive visual objective，但需先完成架构设计，
+   不能把它当作已经批准的答案。
 
-\[
-u=t_i+\ell
-\]
+## 11. 本地证据与 SHA256
 
-把来自不同 teacher frames 的局部 chunks 放进同一个 absolute-time 轴，并把
-最新覆盖 `u` 的 action 当作 Plan，其他覆盖 `u` 的 action 相对它的 residual
-当作 Revision。
-
-这要求：
-
-\[
-A_i[u-t_i]\quad\text{和}\quad A_j[u-t_j]
-\]
-
-确实是对同一个未来机器人控制时刻的可比预测。当前训练没有校准这一假设：
-
-- teacher video 与监督 action episode 只共享 task，不共享 episode；
-- observer video stage、robot rollout state 和控制时钟并不对齐；
-- 以后的人类视频更不具有相同 embodiment、速度或 action clock；
-- Action Expert forecasts 只受最终 task-level functional loss 间接约束。
-
-四臂移植进一步证明，shuffle 并不是先让每张图像产生了更好的 forecast。它主要
-把同一批局部 chunks 的不同 lead positions 错配成“同一时刻的多次预测”。
-由此得到的 residual direction 不是校准的 confidence/revision，而是一条新的、
-训练分布外的 action-shaped controller code。它在两个 Object tasks 上恰好给出
-更好的 translation 修正。
-
-因此“Revision direction 有用”不能被解释为 shuffled 更懂视频；它证明的是
-当前 absolute-time residual 可以控制 policy，而且 normal residual 的语义没有
-被识别。
-
-## 7. v5：Frame-Local Intent + Ordered Transition
-
-### 7.1 保持不变
-
-第一版 v5 保留：
-
-- task language + exactly one action-hidden video 的信息墙；
-- frame stride `5`，不重新比较 stride 10；
-- v4 的 32 个 native-subspace visual-state tokens；
-- anchor/local visual change reader；
-- trainable identity-init VL Meta-LoRA 和 Action Meta-LoRA；
-- 每帧共同 flow noise；
-- frozen π0.5-LIBERO source base；
-- 完整 rank-16 public task LoRA schema；
-- 两层 content-only Temporal；
-- routing/content 分离的 LoRA query decoder；
-- positive AS functional action loss和同任务独立 video/action pairing；
-- stable task、language、scene、object 信息，不做时间均值删除。
-
-保留两个 Meta-LoRA 是必要的：Action Meta-LoRA 仍负责把 observer-view 或未来
-human teacher 理解为“假如机器人是 teacher，会怎样执行”。本轮证据没有把主要
-问题定位到这个上游适配器，因此不先冻结或删除它。
-
-### 7.2 删除
-
-v5 原位删除：
-
-- `_time_layout` / shared absolute robot-time expansion；
-- latest-covering forecast `Plan_u`；
-- same-absolute-time residual `Revision_u`；
-- revision count、residual RMS strength 和 strength routing；
-- `Belief_u=[Plan_u|Revision_u]`；
-- lead/count/strength 的 Temporal routing features。
-
-这些不是并行 ablation path；v5 实现后 v4 belief 只通过 Git 和封存结果保留。
-
-### 7.3 Frame-local Intent
-
-对第 `i` 帧，只在自己的局部 lead 坐标中解释 Action Expert chunk：
-
-\[
-A_i\in\mathbb R^{H\times 7}.
-\]
-
-使用一个 bias-free、zero-preserving local chunk encoder：
-
-\[
-I_i =
-W_2\,\mathrm{GELU}\!\left(
-W_1\,\mathrm{vec}(A_i)
-\right)\in\mathbb R^{256}.
-\]
-
-其中：
-
-- `H=50` 和 7 维 action 是 sealed π0.5 interface；
-- flatten 的列位置只表示本帧 forecast 的 local lead，不声称跨帧共享绝对时刻；
-- `bias=False` 使全零 chunk 严格生成零 content；
-- 不在 `I_i` 上做会抹掉整体动作幅度的普通 RMSNorm；
-- source-normalized action 值直接作为 content，frame/type identity 不进入 value。
-
-一枚 256D `I_i` 足以保留固定 `50×7=350` 的局部 chunk 结构，同时比把
-`T×50` action tokens直接送入全局 self-attention更高效、更简洁。
-
-### 7.4 Ordered Transition
-
-相邻帧只比较同一 local-chunk 表示：
-
-\[
-\Delta I_i=I_i-I_{i-1},\qquad i\ge1.
-\]
-
-它结构上满足：
-
-\[
-\Delta I(I,I)=0,\qquad
-\Delta I(I_a,I_b)=-\Delta I(I_b,I_a).
-\]
-
-这不再声称两个不同 lead 的 robot actions属于同一 absolute time。它只表达：
-
-> 随着 teacher 视频从上一阶段推进到当前阶段，机器人从该画面想象出的局部执行
-> intent 怎样有向变化。
-
-### 7.5 Temporal memory
-
-Temporal 输入按视频顺序交错：
-
-```text
-I_0,
-ΔI_1, I_1,
-ΔI_2, I_2,
-...,
-ΔI_(T-1), I_(T-1)
-```
-
-- `I_i` 保留任务、物体、场景和当前阶段的绝对内容；
-- `ΔI_i` 显式保留有向过程变化；
-- Intent/Transition type 只作为 Q/K routing identity；
-- frame ordinal 通过 RoPE 进入 Q/K；
-- V 和 residual 只传递 `I_i` 或 `ΔI_i` content；
-- 不增加 confidence、strength、temperature、clip threshold 或训练集分位数；
-- 两层 Temporal 先保持不变，因为 v4 已证明两层足以把输入差异传到 decoder。
-
-### 7.6 LoRA decoder
-
-当前 content-only query decoder 原样保留：
-
-```text
-static module/layer/rank identity -> Q/K routing only
-temporal memory                  -> V/content only
-factor heads(Norm(content))      -> complete rank-16 LoRA
-```
-
-四臂和阶段动作证据均表明 decoder 已忠实传递 downstream memory；没有理由恢复
-静态 query bypass、增加第二套 decoder，或先加深网络。
-
-### 7.7 参数预算
-
-v5 仍以 rank-128 Source-SFT 的 `10,297,344` trainable parameters 为容量参考。
-删除 v4 belief/routing 后加入 `350→256→256` bias-free chunk encoder。实现时只
-允许通过既有 factor-head hidden width 做一次机械容量校准，使 Writer 总参数量
-与 comparator 差异保持在 `0.1%` 内；不得为匹配参数新增科学分支或公共 adapter。
-
-## 8. v5 不能保证的事情
-
-这一改动修复的是已被直接证明的错误对应关系。它仍不能仅靠命名保证：
-
-- Action Expert chunk 已经是真实 calibrated future action；
-- `I_i` 一定只编码高层逻辑而不含 task/style latent；
-- positive task-level AS 一定会让 correct order 在所有 OOD shuffle 上占优。
-
-因此 v5 的主张必须收紧为：
-
-> 它让顺序信息来自 frame-local intent 的有向演化，而不是未经识别的跨帧
-> absolute-time residual。
-
-若 v5 仍出现 `shuffled > correct`，不得继续用 strength clipping、更多
-Temporal 层或 contrast/order loss补洞。下一项原则性候选应是 action-hidden、
-positive-only 的 causal video objective，例如让只看当前帧的局部 intent 预测
-后续 frozen visual features；是否加入必须由 v5 的新证据另行决定，不是本次
-已拍板实现的一部分。
-
-## 9. 后续实现与实验门
-
-本轮在架构决定处停止。后续若 owner 允许实现：
-
-1. 原位替换 belief owner，不新增平行 v5 runner；
-2. 做最小 shape/gradient/identity/freeze/resume/parameter checks；
-3. 固定 stride 5，在实时核验后的 GPU 4–7 profile batch 和 frame microbatch；
-4. fresh 训练到 75 step；
-5. 先做低成本内部 normal/same/wrong/shuffled/reversed 检查；
-6. 重新做 forecast/order transplant，确认顺序差异来自
-   `I/ΔI` sequence，而不是重新出现错误 absolute-time slot code；
-7. 内部门通过后只在 Object-1/Object-3 做必要 paired rollout；
-8. 只有 correct-order 行为语义与绝对性能都通过，才进入充分 AS 训练；
-9. 不通过且没有明确可纠正错误时停下讨论，不自动进入 RL。
-
-当前仍禁止自动推进 cold-start RL、final-32、task-local RL、joint oracle 或
-ViVLA。
-
-## 10. 本地证据与校验哈希
-
-远程读者不需要访问本地主机即可根据本文数字理解结论。主机上的 canonical
-summary 及 SHA256 为：
-
-| evidence | summary SHA256 |
+| evidence | summary/file SHA256 |
 |---|---|
-| forecast-order internal transplant | `6b45475d111b66e8d091d4105e36976c466f4c46b3435db4935fbe6018ec413d` |
-| forecast-order policy function | `e996caf0360fa331503684c4431929cb9696b42dd6ff57c20ea23dfc77b50df3` |
-| forecast-order Object rollout | `517fbb2ffb6282e3290ba9ad4e5849d77c97a3dbef7d4af97a99b7cfab223000` |
-| Revision factor internal exchange | `e4ff0be9c172db7049dc71e74b6ff05388129a6ce6256d546e7b7800180d88c6` |
-| Revision factor policy function | `9b6a41dfba112db75e9911529c060b3286004e6adc1140fa6e17bea6d4506b48` |
-| Plan/full-Revision Object rollout | `da2707ffa7104dccbfc0aadcfb116a3cb97390b29cbe7a589c747041fa457bfb` |
-| direction/value-strength Object rollout | `92baa928c5ec4cfb4aca45234a4f573958805ef35aa3fa424e3d912694709f5a` |
-| phase-specific policy actions | `24595de9981f19678cff47f69de55ab4b5f354e7bc9a99ddd12a826a943cb11f` |
+| 400-panel LoRA shuffle consensus | `390fcad15cb43bd4d7f588b2a45cd658d73b01f16b932f9a8e232e84aae7f9a6` |
+| 64×8 permutation、AS loss、endpoint/time-warp | `edbb86c8d7a6788fb9311f41357bcf982521e0500fb987ea4ef23e0bd1f0916e` |
+| forecast component decomposition | `2bd6ae54125d4313b8d0a9a6e59ff7eba32c88e25dd467b23b80c6f8d61c7186` |
+| step75 hidden forecast semantics | `99f341c26dd07927f6648ca867dd614d42aa0b7f39342e8cfeb26fd1e09b2baa` |
+| step300 hidden forecast semantics | `de5a4529f9a8563dae7a03bff322e749c5360d4f20422a45620cef7bb20b763c` |
+| step825 hidden forecast semantics | `a1633aa51a075c7ef30ed132f2df29fd9b3bd2d4b47f74340f37e3de9bedb4bf` |
+| step75/300/825 same-task demo geometry | `3507a53f...5169` / `90917cd1...3a84` / `846b5f50...b1e6e9` |
+| Writer parameter evolution | `6d1e26687ee7010779a2efb229a8d9e126f29acd2761c4f1c57c3df9425a7f36` |
+| root-cause LoRA geometry | `3d0b667962080977ead3a16ef1533e4fdc94b03ea925ae45eca3af92e95565c1` |
+| Object-1/Object-3 causal rollout | `d384219c73f6c59ff94a93e69f81d2894408930ab1140adba52aab7e3fc5662d` |
 
-本轮全部 GPU launch 使用物理 4–7；最终阶段探针峰值 reserved
-`12,530,483,200` bytes/GPU。0–3 上的他人进程未被停止、重置或干扰。
+此前 forecast-order transplant、Revision factor、phase-action probes 仍是有效
+provenance；本文新增证据只是把“唯一根因”和“v5 已决定”两项过度结论撤回。

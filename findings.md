@@ -1070,7 +1070,7 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   `docs/action_forecast_writer_expert_consultation.md`。它嵌入理解现状所需的
   架构、逐任务结果、paired统计和内部量，不依赖本地主机output目录。
 
-## v4 forecast-order因果移植与v5架构决定（2026-07-26）
+## v4 forecast-order第一轮因果移植与v5候选（已被下一节覆盖，2026-07-26）
 
 ### Forecast之前还是之后
 
@@ -1139,7 +1139,7 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 直接把Revision置零会造成目标`N→S` delta的`2.1–5.8×`动作变化，且多阶段
   低相关或反向；现有Plan/Revision已共同适配，不能通过删除一支热修。
 
-### 根因与下一版
+### 第一轮根因判断与当时的下一版候选
 
 - v4把第`i`帧的local chunk `A_i[lead]`按`u=t_i+lead`投到共享robot
   absolute-time轴，并假设不同teacher frames在同一`u`覆盖的actions是同一未来
@@ -1148,7 +1148,7 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 所以Revision并不是校准的“多次future forecast一致性”，而是对未经证明的
   lead-position配对求residual。shuffle主要重排这些配对；其direction偶然形成
   更好的Object translation control。
-- 下一版不优先重做visual-state、不加深两层Temporal、不裁剪strength、不恢复
+- 第一轮当时提出不优先重做visual-state、不加深两层Temporal、不裁剪strength、不恢复
   decoder静态旁路，也不加contrast/order loss。v5删除absolute-time
   Plan/Revision/Belief，改为：
 
@@ -1169,6 +1169,68 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   高层视频语义。若未来75-step仍inversion，下一原则性候选是action-hidden、
   positive-only causal future frozen-visual-feature prediction，而不是继续堆
   downstream补丁。
-- 完整证据、哈希和活动决定见
-  `docs/action_forecast_writer_v5_decision.md`。本轮在架构决定处停止，尚未
-  实现/训练v5，也未进入RL。
+- 该判断随后被下一节更全面的hidden-semantics、visual-state和translation-only
+  证据覆盖；当前状态以`docs/action_forecast_writer_v5_decision.md`重写后的
+  根因复审为准。
+
+## v4全面根因复审：覆盖“absolute-time是唯一主因”的结论（2026-07-26）
+
+- 上一节正确定位了absolute-time Plan/Revision是直接行为放大器，但过早排除了
+  visual-state并拍板v5。新增证据证明完整因果链还包括更上游的AS可识别性不足、
+  visual-state旁路和Meta forecast语义漂移；Intent+Transition现只保留为局部
+  候选。
+- 24个development-train tasks×4 demos的post-inference隐藏语义审计显示，
+  step75/300/825的latest/earlier forecast MSE ratio为
+  `0.966/1.043/1.087`，latest-better pair fraction为
+  `0.509/0.419/0.404`，residual到真实误差修正的cosine为
+  `0.335/0.254/0.238`。同期trailing-25 AS loss却从
+  `0.1339→0.1201→0.1065`持续下降，直接证明functional AS优化与forecast
+  语义校准可以反向变化。
+- source-base-like forecast的latest ratio/latest-better/correction cosine为
+  `0.986/0.543/0.339`。step825关闭VL Meta、Action Meta或两者时，隐藏
+  teacher-future MSE比完整trained path低约`5.9%/9.6%/11.0%`。两个Meta-LoRA
+  在task-level AS下逐渐改写了原本弱但较合理的source forecast ordering。
+- step825 neutral visual-state只使forecast相对变化约`0.855%`、cosine约
+  `0.999963`。visual coordinates与同demo teacher-action distance的相关由
+  step75 `0.324`降到step825 `0.107`；最终progress probe \(R^2=0.548\)，
+  state/action仅`0.046/0.038`。32-token路径没有成为机器人visual state或必要
+  信息瓶颈。
+- 与此相反，full/frame-main/translation/interaction forecast对同demo真实低层
+  动作差异的相关由step75约`0.144/0.327/0.503/0.336`升到step825约
+  `0.587/0.652/0.695/0.740`。v4确实看到了视频，但主要通过raw-image/Meta
+  旁路提取了具体轨迹、phase和translation，而不是同task多demo共享的高层逻辑。
+- 64 references×8独立random permutations的shuffle LoRA delta两两cosine
+  中位数为`0.941`，mean-delta保留individual norm的`0.966`；既有Object-1/3
+  400-panel delta也有约`0.868`跨video共识。0/31 shuffled adapters向correct
+  task consensus靠近，排除“shuffle去除demo噪声、回归任务均值”和
+  permutation lottery。
+- forecast分量移植把异常进一步定位到frame phase的前三维translation：
+  translation-only adapter对完整shuffle delta cosine为`0.99747`；
+  rotation/gripper-only影响很小。Object-1/Object-3定向rollout为：
+
+  | arm | Object-1 | Object-3 | total |
+  |---|---:|---:|---:|
+  | correct | 38 | 11 | 49 |
+  | no VL Meta | 40 | 8 | 48 |
+  | no Action Meta | 35 | 15 | 50 |
+  | lead-only | 31 | 9 | 40 |
+  | shuffle frame-main only | 41 | 31 | 72 |
+  | shuffle translation only | 44 | 35 | 79 |
+  | true shuffled | 45 | 37 | 82 |
+
+  translation-only相对correct净`+30`、`p=5.30e-6`；相对true shuffled只差3、
+  `p=0.607`。它几乎闭合了完整异常，不需要better visual context、rotation、
+  gripper或真正的frame×lead revision。
+- normal/true-shuffle AS loss为`0.133615/0.135925`；Object-1/3 loss只略增
+  `0.000414/0.000156`，shuffle LoRA delta与negative local AS gradient的
+  cosine约`0.00164`。所以扰动机制是稳定、确定的，但它对closed-loop success
+  的正号没有被AS objective识别；精细抓取阈值把近似objective-flat的
+  translation controller变化放大成`49→82`。
+- 当前完整根因是：
+  `positive task-level AS不可识别demo过程 → visual-state非瓶颈 →
+  Meta学习低层phase/translation latent → absolute-time Plan/Revision放大`。
+  两层Temporal和content-only decoder忠实传递差异，当前没有重写证据。
+- 旧v5决定已撤回。下一版必须先解决visual-state必要性、Meta职责、
+  train-only forecast语义gate和same-task多demo高层汇聚；不通过
+  contrast/order loss强制制造差距。完整证据和SHA见
+  `docs/action_forecast_writer_v5_decision.md`。

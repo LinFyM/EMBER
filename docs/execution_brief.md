@@ -6,19 +6,20 @@ observed-best为step825的`109/400`。内部视频/顺序特异性通过，但�
 出现`shuffled=148/400 > reversed=126/400 > correct=109/400`的反常排序；
 固定原始首帧后shuffle仍为`136/400`。
 
-外部专家复核后的最小因果诊断现已完成。forecast-order四臂交叉移植证明，
-shuffle的主要行为效应发生在per-image forecast之后：v4把frame-local action
-chunks投到一个没有被训练合同识别的共享robot absolute-time轴，再把错位
-residual direction解释为Revision。Object-1/Object-3上，normal forecasts放入
-shuffled slots把`49/100`提高到`72/100`，而shuffled-context forecasts按image
-identity放回normal slots为`47/100`。Revision direction-only为`67/100`，
-完整shuffled Revision为`75/100`；strength-only只有`54/100`。因此主因不是
-visual-state、strength爆炸、Temporal层数或decoder坍缩。
+外部专家复核后的第一轮诊断证明，shuffle的直接行为放大器位于per-image
+forecast之后的absolute-time Plan/Revision；但后续全面复审又确认它不是唯一
+根因。24个train tasks的隐藏语义演化显示，AS loss持续下降时，latest forecast
+更准的比例从step75约`0.509`降到step825约`0.404`，residual与真实误差修正的
+cosine从`0.335`降到`0.238`。step825 neutral visual-state几乎不改变forecast，
+而raw-image/Meta路径越来越贴近同demo低层translation。Object-1/Object-3上，
+只重排forecast前三维translation即得到`79/100`，与true shuffled的`82/100`
+统计上无差异，correct仅`49/100`。
 
-下一版决定删除absolute-time Plan/Revision/Belief，保留32-token visual-state、
-两个Meta-LoRA和content-only下游，改为frame-local Intent + adjacent ordered
-Transition。当前只完成架构决策，不实现或训练v5，不进入RL。完整证据、数学和
-后续gate见
+完整根因是：同task独立video/action的positive AS目标不可识别demo高层过程语义；
+32-token visual-state没有成为必要瓶颈；Meta-LoRA学习了低层phase/translation
+action-shaped latent；absolute-time Plan/Revision再将其放大。此前决定的
+frame-local Intent + adjacent Transition只修复最后一项，现降为局部候选，
+下一版具体架构重新开放。当前不实现或训练v5，不进入RL。完整证据与新设计合同见
 [`docs/action_forecast_writer_v5_decision.md`](action_forecast_writer_v5_decision.md)；
 原咨询材料见
 [`docs/action_forecast_writer_expert_consultation.md`](action_forecast_writer_expert_consultation.md)。
@@ -67,13 +68,13 @@ owner于2026-07-22将source-base正式训练改为从generic base fresh运行1,0
 - step825已完成correct、same-task other、cross-suite wrong、shuffled、
   reversed及fixed-anchor shuffle的内部和rollout证据。行为特异性硬门失败：
   shuffled/reversed显著或方向性优于correct；随机首帧anchor只能解释部分
-  shuffle收益。外部复核后的因果诊断进一步定位到未经识别的absolute-time
-  forecast alignment及其Revision direction；不以contrast/order loss挽救，
-  也不进入RL。
+  shuffle收益。全面复审将因果链定位为AS可识别性不足、visual-state旁路、
+  Meta forecast语义漂移和absolute-time Revision放大的组合；不以
+  contrast/order loss挽救，也不进入RL。
 - v4实现、参数预算、32-token visual-state、Plan/Revision、Temporal、
   LoRA decoder、特异性门和训练合同完整记录在
   [`docs/action_forecast_writer_design.md`](action_forecast_writer_design.md)。
-  下一版活动架构决定由
+  下一版未决合同与旧v5决定撤回由
   [`docs/action_forecast_writer_v5_decision.md`](action_forecast_writer_v5_decision.md)
   覆盖其中的Plan/Revision未来口径；v4结果只作provenance。
 

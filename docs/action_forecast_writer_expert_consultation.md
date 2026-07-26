@@ -940,40 +940,48 @@ action episode 独立配对，所以只有跨 demo 稳定的任务逻辑才与 a
 
 ---
 
-## 外部复核后的因果诊断结果（2026-07-26）
+## 外部复核后的全面根因诊断（2026-07-26）
 
-专家建议之后，我们没有直接设计或训练新模型，而是先完成了最小的forecast-order
-移植、Revision因子交换与阶段动作反事实。结论已从“多个候选解释”收敛为：
+专家建议之后，我们先用forecast-order移植和Revision因子交换定位到
+absolute-time Plan/Revision是直接行为放大器；随后继续做hidden teacher-future
+语义演化、visual-state neutralization、same-task demo几何、random permutation
+共识、AS loss/gradient和forecast分量/维度移植。更完整的结论是：
 
-> v4的主要问题不是shuffled context先改变了visual-state/forecast，也不是
-> Revision strength爆炸或下游再次抹掉差异；而是它把各帧frame-local action
-> chunk投到一个未被数据识别的共享robot absolute-time轴，并将错误lead-position
-> 配对的residual direction解释成Revision。该方向恰好成为改善Object任务
-> end-effector translation的OOD controller code。
+> v4的问题不是单一模块。positive task-level AS与同task独立video/action pairing
+> 无法识别demo的高层过程语义；32-token visual-state不是必要信息瓶颈；
+> raw-image/Meta路径逐渐学习了低层demo phase/translation latent；
+> absolute-time Plan/Revision最后把它放大成OOD translation controller。
 
-最关键的Object-1/Object-3固定100-episode证据是：
+最关键的新证据：
 
-| condition | success |
+- step75/300/825的latest/earlier forecast MSE ratio为
+  `0.966/1.043/1.087`，residual到真实误差修正的cosine为
+  `0.335/0.254/0.238`，但AS loss同期持续下降；
+- step825 neutral visual-state只改变forecast约`0.855%`；visual coordinates
+  最终主要预测video progress，而raw-image/Meta forecast对同demo真实低层
+  translation差异的相关达到`0.587–0.740`；
+- 8个独立random permutations产生高度共识的LoRA delta，并非一次幸运shuffle；
+- Object-1/Object-3固定100 episodes上：
+
+| arm | success |
 |---|---:|
-| correct normal-context + normal-slots | 49 |
-| shuffled-context forecasts放回normal-slots | 47 |
-| normal-context forecasts放入shuffled-slots | 72 |
+| correct | 49 |
+| no VL Meta at inference | 48 |
+| no Action Meta at inference | 50 |
+| remove all frame detail / lead-only | 40 |
+| shuffle frame-main only | 72 |
+| normal forecasts in shuffled slots | 72 |
+| shuffle translation dims only | 79 |
 | true shuffled | 82 |
 
-固定normal forecasts进一步交换因子得到：
+translation-only相对correct净`+30`、`p=5.30e-6`，相对true shuffled只差3、
+`p=0.607`。normal→shuffle的AS loss整体略差，且LoRA delta与negative AS
+gradient近乎正交。因此扰动生成机制是稳定确定的，但它改善closed-loop
+Object success的正号没有被AS objective识别；这不是shuffled视频被理解得更好。
 
-| factor | success |
-|---|---:|
-| Plan-only | 61 |
-| Revision value-strength-only | 54 |
-| Revision direction-only | 67 |
-| full shuffled Revision | 75 |
-
-因此下一版已决定删除absolute-time Plan/Revision/Belief，改为frame-local
-Intent及相邻有向Intent Transition；保留现有32-token visual-state、两个
-Meta-LoRA、两层content-only Temporal和content-only LoRA decoder。完整方法、
-逐层量、阶段动作证据、参数预算、证据哈希和仍未解决的可辨识性边界见
+第一轮曾据absolute-time证据拍板frame-local Intent + adjacent Transition。
+全面复审证明该方案只删除最后一层放大器，仍会保留visual-state旁路和
+action-shaped Meta latent，现已撤回为局部候选。当前没有批准的v5，也没有
+实现/训练新架构或进入RL。完整数字、解释、排除项、证据SHA和下一版必须满足的
+合同见
 [`action_forecast_writer_v5_decision.md`](action_forecast_writer_v5_decision.md)。
-
-当前代码和checkpoint仍是v4；本轮停在架构决定处，没有实现/训练v5，也没有
-进入RL。

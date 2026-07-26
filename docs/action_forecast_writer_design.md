@@ -2,7 +2,8 @@
 
 状态：2026-07-26，Action-Forecast Writer v4 实现与结果已封存。本文继续作为
 v4代码、训练合同和历史证据的完整authority；它不再是下一版Plan/Revision
-架构的活动authority。外部复核后的因果诊断与v5唯一活动决定见
+架构的活动authority。外部复核后的完整根因诊断、旧v5决定撤回与下一版未决
+合同见
 [`action_forecast_writer_v5_decision.md`](action_forecast_writer_v5_decision.md)。
 
 面向外部专家的自包含问题、历史与结果入口见
@@ -21,7 +22,8 @@ visual-state decoder、累计 transition、Plan/Revision 双 token、order contr
 本节原focused Goal已经完成：v4停止于step2400，现有observed-best为step825，
 完整correct/same/wrong/shuffled/reversed/fixed-anchor证据均已封存。外部专家
 复核后又完成了forecast-order移植、Revision因子交换、Object定向rollout和阶段
-动作诊断；当前已经在下一版架构决定处停止，不实现或训练v5，也不进入RL。
+动作诊断；进一步全面复审已撤回过早的v5决定。当前停在根因完成、下一版具体
+架构未决的位置，不实现或训练v5，也不进入RL。
 
 当前结论和未来执行边界统一由
 [`action_forecast_writer_v5_decision.md`](action_forecast_writer_v5_decision.md)
@@ -860,7 +862,7 @@ oracle或ViVLA。
 - meaningful里程碑更新`task_plan.md`、`findings.md`、`progress.md`，但文档不得
   阻塞GPU关键路径。
 
-## 23. 外部复核后的v5覆盖决定
+## 23. 外部复核后的根因复审覆盖
 
 四臂forecast-order移植已经证明：shuffled visual context本身几乎没有改变按
 image identity对齐的per-image forecasts；主要异常来自v4把frame-local action
@@ -882,14 +884,12 @@ direction-only         67/100
 full shuffled Revision 75/100
 ```
 
-因此v4的主要错误不是visual-state无差异、Revision strength爆炸、Temporal只有
-两层或decoder再次消灭差异，而是未经训练合同识别的共享robot absolute-time
-对应关系，以及由它构造的Revision direction。直接删除Revision也不可行，因为
-Plan/Revision已共同适配，zero-Revision在真实policy动作上造成更大且常反向的
-变化。
+这些结果证明未经训练合同识别的共享robot absolute-time对应关系和Revision
+direction是直接行为放大器；直接删除Revision也不可行，因为Plan/Revision已
+共同适配，zero-Revision在真实policy动作上造成更大且常反向的变化。
 
-下一版原位删除`_time_layout`、latest-covering Plan、same-time Revision、
-count/strength routing和Belief，改为：
+第一轮据此提出原位删除`_time_layout`、latest-covering Plan、same-time
+Revision、count/strength routing和Belief，改为：
 
 ```text
 per-frame 50×7 action chunk
@@ -900,8 +900,15 @@ per-frame 50×7 action chunk
   -> existing content-only LoRA decoder
 ```
 
-32-token visual-state、anchor/local reader、两个trainable identity Meta-LoRA、
-共同flow noise、frozen source base和完整rank-16 LoRA schema保留。v5不增加
-confidence/strength超参数、不减去时间均值、不使用contrast/order loss。完整
-数学、参数预算、证据哈希和未来75-step gate见
+但后续隐藏teacher-future语义、visual-state neutralization、random
+permutation consensus、same-task demo几何和translation-only rollout证明：
+visual-state已被raw-image/Meta路径旁路，Meta forecasts随AS训练变成低层
+phase/translation latent，且positive task-level AS本身不能识别demo高层过程。
+translation-only在Object-1/Object-3得到`79/100`，几乎复现true shuffled
+`82/100`。
+
+因此上面的Intent+Transition只保留为删除absolute-time放大器的局部候选，不再
+是已拍板v5。下一版必须先解决visual-state必要瓶颈、Meta职责、forecast语义
+gate和same-task多demo抽象；两层Temporal与content-only decoder当前没有失败
+证据，不先加深或恢复静态旁路。完整证据和当前未决合同见
 [`action_forecast_writer_v5_decision.md`](action_forecast_writer_v5_decision.md)。

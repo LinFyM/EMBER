@@ -819,8 +819,10 @@ SHA256 c4a62c4c091b1262c3dbcb17382aad757b8865958212ae62b4a9e4f5986231fa
 波次，标准四卡×6 worker现为48 long + 48 ordinary，避免成功早停后的单波尾部。
 实现commit `73f171a`已push，全仓`194 passed`。
 
-待启动的正式训练沿用原root、F32/B20与4-rank DDP，仅将stage stop从900推进到
-1800。step900 checkpoint manifest/canonical payload/writer/trainer SHA256为：
+正式训练已在tmux `ember-v51-as-sv1800`沿用原root、F32/B20与4-rank DDP启动，
+仅将stage stop从900推进到1800。runtime launch commit为`a92850f`；step900
+resident validation逐值复现，step1000首个新增checkpoint完整落盘后仍在继续。
+step900 checkpoint manifest/canonical payload/writer/trainer SHA256为：
 
 ```text
 6958498bcefba9093233bde7848f3a5333686d12ce7d16d0aa9d6158e735b828
@@ -832,8 +834,9 @@ a7057a84a7ecd6e16167c27960d78bed53f9728a407f8ca1d22ed179c5b63cda
 预计新增900 optimizer steps、72,000 action queries、3,600 one-video conditions、
 9个checkpoint和约一小时wall。启动前必须确认原训练contract
 `acc57fd96cace6d3a9d38a7dbfe6d8593cd29bdce1a0ff10e1f2b4239de46227`
-除兼容代码commit外完全一致；训练结束后不能用online functional loss选best，
-必须用无放回correct400曲线。
+除兼容代码commit外完全一致；该检查已通过。step1000 online validation为
+`0.1373837591`，高于step900的`0.1331426708`，再次证明训练结束后不能用它
+选best，必须用无放回correct400曲线。
 
 ## 10. 文档阅读、代码地图与接手验收
 

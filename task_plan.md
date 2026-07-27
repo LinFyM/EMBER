@@ -564,7 +564,9 @@ action-hidden teacher video -> one task LoRA`的核心映射。
   48 long + 48 ordinary，state覆盖不变；focused 48 tests和全仓194 tests通过，
   实现commit `73f171a`已push。
 - [ ] 同一formal root从step900 exact-resume到step1800；合同不变，每100步保存，
-  不因online functional loss单独选best。
+  不因online functional loss单独选best。已于runtime commit `a92850f`在tmux
+  `ember-v51-as-sv1800`启动；step900 resident validation逐值复现，step1000
+  新checkpoint完整落盘并继续推进，故resume机制已验证但该项在1800前不勾选。
 - [ ] 用无放回correct400建立足够密的step500–1800闭环曲线，选择同一合同下的
   observed-best；若best在1800仍上升，只能判为未充分训练。
 - [ ] 对最终observed-best复查内部Core/Procedure/LoRA/action与完整五条件行为；

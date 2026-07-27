@@ -1328,3 +1328,21 @@ GPU范围和训练步长是当时快照；活动状态只取
   `17da429d...7ac`、`a7057a84...cda`；原训练合同SHA256
   `acc57fd9...227`。下一动作是只在GPU4–7上同root exact-resume至step1800，
   随后按一张卡一个checkpoint并发建立无放回correct400密集曲线。
+
+## v5.1 step900→1800正式resume启动（2026-07-27）
+
+- preflight时HEAD/origin均为`a92850f`且tree clean；个人占用
+  `361,804,259,328 bytes`，预计新增约1.2GB；物理GPU4–7均0MiB、无计算
+  进程，GPU0–3未查询。正式命令与`task_plan.md`记录一致，在tmux
+  `ember-v51-as-sv1800`启动，runtime只见GPU4–7。
+- start event为`resume_step=900`、`stop_after_step=1800`、4-rank DDP、
+  Writer `10,244,872`参数、source policy trainable count0；
+  `contract_compatible_code_resume=true`，原formal合同SHA256保持
+  `acc57fd96...227`。resident step900 validation精确复现
+  `0.13314267079249476`。
+- step1000已生成第一份新增完整checkpoint并继续训练：manifest/canonical
+  payload/writer/trainer SHA256为`61e7e66a...6cfc`、
+  `b1c7f209...9d2e`、`ea249c56...f065`、`ff391fcc...e9b3`；累计80,000
+  action queries，24 tasks均已读全50 action episodes与50 unique videos。
+  step1000 online functional validation为`0.1373837591`，比step900高
+  `0.0042411`；它只作诊断，不用于替代无放回rollout选择。

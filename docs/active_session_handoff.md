@@ -1063,3 +1063,63 @@ generators完成cache后原进程切换为6个persistent policy workers，queue�
 Writer权重，fresh AdamW、peak LR `1e-4`、warmup50、phase总合同1800，
 首段只到phase step900。下一动作是等四臂完整聚合并核对逐row机制，再做一次
 只查询GPU4–7的live preflight并启动该一小时正式阶段。
+
+## 12. step1400五臂封存、低LR启动与v5.2候选（2026-07-27 22:35 UTC）
+
+四个控制臂已经全部完成，固定无放回400五臂为：
+
+```text
+correct / same-task-other / wrong / shuffled / reversed
+127     / 133             / 94    / 107      / 120
+```
+
+相对correct的discordant pair与exact McNemar为：
+
+```text
+same:     correct-only 25, arm-only 31, net -6,  p=.5044
+wrong:    correct-only 52, arm-only 19, net +33, p=1.1227e-4
+shuffled: correct-only 45, arm-only 25, net +20, p=.02246
+reversed: correct-only 39, arm-only 32, net +7,  p=.4767
+```
+
+五臂均满足8 tasks×50 states、每task demo0..49恰用一次、同env seed、
+同policy seed及实际消费noise共同前缀。paired artifact为：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v5_1_specificity400_noreplacement_seed7_step1400_
+paired_analysis_082090f_20260727.json
+SHA256 51c19b66e2c85501b986e57590deec7726ef19c7a71ae48279d6f551a4ec1579
+```
+
+结论不是“v5.1已通过”：same鲁棒、wrong语义性和shuffled方向成立，但
+reversed与correct仍统计等价，且reversed把Long-1从15推到25、Object-3从23
+推到28，只靠Goal-6从42降到23才形成aggregate净差。当前仍有顺序方向漏洞；
+同时correct的Goal-3/Spatial-1/3仅`0/0/1`，absolute breadth不足。
+
+低LR正式root已经从原step1400 Writer权重启动：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v5_1_stabilize1400_lr1e4_dev_r4_seed7_s1800_756bdaa_20260727
+tmux: ember-v51-stabilize1400
+contract canonical SHA256:
+b19937ce040d98704e6ede00cacc0bcfe31db32347677c0d865999d2708dc95a
+```
+
+启动前main/origin均为`756bdaa`且tree clean，个人占用
+`379,485,047,888 bytes`；只查询的GPU4–7均0MiB、无compute process。
+运行使用4-rank F32/B20、fresh AdamW/scheduler/RNG、peak LR `1e-4`、
+warmup50，phase总合同1800但首段只到900。step100 checkpoint已完整落盘，
+训练继续；不得重复launch。
+
+为避免等本段结束后才开始架构工作，隔离worktree
+`/data/ymdai/.codex/worktrees/EMBER-v52-20260727`已经实现并push
+`codex/v52-patch-grounding@9fe56d6`。v5.2只增加text-only task query读取
+每帧256个PaliGemma image-position contents的Q/K/O cross-attention，无
+learned V、无geometry/新loss/新adapter；factor hidden从240降到216，
+Writer总参数`10,237,704`，仍低于`10,297,344`上限。设计authority见
+`docs/action_forecast_writer_v5_2_design.md`；61项focused Writer测试通过。
+低LR首段结束后先并发full400评测phase100/300/600/900。若没有同时显著提高
+absolute、task breadth和reversed方向门，立即用GPU4–7对v5.2做F32/B20起始
+profile、向显存上限探索并fresh训练约一小时。

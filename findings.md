@@ -1801,3 +1801,37 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 后续保留`1.00×`。这项负结果排除了最便宜的推理期标量修正，也避免把一个
   易task的局部收益误写成absolute提升；下一实验应处理高学习率迁移和上游
   task-conditioned语义容量，而不是继续扫更大scale。
+
+## v5.1 step1400完整五臂的精确结论（2026-07-27）
+
+- 固定无放回400结果为
+  `correct/same/wrong/shuffled/reversed=127/133/94/107/120`。
+  same相对correct净`+6,p=.5044`，同任务跨demo鲁棒；correct相对wrong
+  净`+33,p=1.12e-4`，视频语义进入行为；correct相对shuffled
+  净`+20,p=.0225`，没有复现v4的shuffle获益。
+- reversed仍未通过：correct-only/reversed-only=`39/32`，净`+7`，
+  `p=.4767`。逐task方向高度异质：reversed在Long-1和Object-3分别
+  `+10/+5`，correct主要靠Goal-6的`+19`抵消。因而“内部Procedure差异很大”
+  不能替代行为方向门；v5.1是部分修复，不是逻辑闭环。
+- wrong净差也并非广泛均匀：Object-1/3贡献`+21/+12`，Goal-6反而`-1`，
+  Spatial-1反而`-2`。加上correct在Goal-3/Spatial-1/3仅`0/0/1`，现有
+  `127/400`仍是窄task组合，不是满意absolute competence。
+- 配对artifact SHA256为
+  `51c19b66e2c85501b986e57590deec7726ef19c7a71ae48279d6f551a4ec1579`；
+  same/wrong/shuffled/reversed results SHA256依次为
+  `3f2078ab...d5b9`、`0ff77de2...37b`、
+  `1a73dcfe...ed8`、`0a0d9e32...e73`。
+
+## v5.2 task-queried patch grounding假设（2026-07-27）
+
+- scale扫描排除“public LoRA整体幅度过小”，失败task的effective-LoRA范数
+  也不小；最早剩余瓶颈更像是v5.1只保留multimodal task-token hidden、
+  过早丢掉patch-level对象/关系/空间细节。
+- v5.2让text-only task tokens逐帧cross-attend 256个shared-projected
+  image-position contents。Q/K/O可学习，V没有投影且只携带patch content；
+  得到的task-aligned patch evidence与原multimodal task-token evidence相加
+  后才进入顺序不变Core。Procedure暂不改变，以保持实验可归因。
+- 新模块`197,120`参数由factor-head hidden `240→216`释放的`204,288`
+  参数支付，总参数从`10,244,872`降至`10,237,704`。因此它检验的是预算上移，
+  不是扩容。若它只提高spatial/absolute而reversed仍等价，下一失效owner应是
+  Procedure任务条件化/读出，不应重新扩大factor heads或扫LoRA scale。

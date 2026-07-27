@@ -1394,3 +1394,24 @@ GPU范围和训练步长是当时快照；活动状态只取
   `peak_lr=1e-4,warmup=50,decay_steps=1800,decay_lr=1e-5`的新阶段；
   首段只运行phase step0→900。完整控制结束后做live GPU/storage preflight，
   再用GPU4–7正式启动。
+
+## step1400五臂完成、低LR运行、v5.2实现（2026-07-27）
+
+- step1400四个控制root均400/400正常退出；五臂总分
+  `127/133/94/107/120`，逐row pairing、video bijection、env/policy RNG及
+  noise prefix全部通过。统一paired分析artifact已原子写入outputs，SHA256
+  `51c19b66...1579`。
+- 低LR preflight确认main/origin=`756bdaa`、tree clean、个人占用
+  `379,485,047,888 bytes`，GPU4–7均0MiB且无compute process；GPU0–3未进入
+  查询或visible set。
+- tmux `ember-v51-stabilize1400`已正式启动4-rank F32/B20 phase0→900。
+  run contract canonical SHA256为`b19937ce...c95a`，初始化精确记录原
+  step1400 manifest `a503eaac...26cb`与Writer
+  `22da8417...5d1a`，optimizer/scheduler/RNG均fresh。step100完整checkpoint
+  manifest SHA256为`5387b2cf...0a9`，训练继续。
+- 隔离worktree `EMBER-v52-20260727`完成canonical v5.2实现、schema/config、
+  参数预算与设计文档；focused Writer测试`61 passed`、`git diff --check`
+  通过。commit `9fe56d6`已push至`origin/codex/v52-patch-grounding`。
+- 训练结束后的固定动作是用GPU4/5/6/7各负责phase100/300/600/900一个
+  checkpoint，四点同时做无放回correct400；每卡6个Writer generators完成
+  cache后转6个persistent rollout workers，queue保持全局long-first。

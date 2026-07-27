@@ -94,6 +94,41 @@ def test_max_horizon_states_follow_actual_gpu_count_before_dynamic_work(
     assert ordinary is not None and ordinary.shard.preferred_gpu is None
 
 
+def test_idle_gpu_steals_other_gpu_long_work_before_ordinary(
+    tmp_path: Path,
+) -> None:
+    tasks = (
+        EvaluationTask("libero_goal", 0, 300, tuple(range(8))),
+        EvaluationTask("libero_10", 1, 520, tuple(range(8))),
+        EvaluationTask("libero_10", 2, 520, tuple(range(8))),
+    )
+    shards = build_cost_balanced_shards(
+        tasks, env_batch_size=8, physical_gpu_count=2
+    )
+    gpu_zero_long = sum(shard.preferred_gpu == 0 for shard in shards)
+    assert gpu_zero_long > 0
+
+    path = tmp_path / "queue.sqlite3"
+    initialize_queue(path, shards, contract_sha256="9" * 64)
+    for replica in range(gpu_zero_long):
+        local = claim_next(
+            path,
+            worker_id=f"0-r{replica}",
+            physical_gpu=0,
+        )
+        assert local is not None and local.shard.preferred_gpu == 0
+
+    stolen = claim_next(
+        path,
+        worker_id=f"0-r{gpu_zero_long}",
+        preferred_task=("libero_goal", 0),
+        physical_gpu=0,
+    )
+    assert stolen is not None
+    assert stolen.shard.horizon == 520
+    assert stolen.shard.preferred_gpu == 1
+
+
 def test_max_horizon_states_fill_replica_slots_before_dynamic_work(
     tmp_path: Path,
 ) -> None:

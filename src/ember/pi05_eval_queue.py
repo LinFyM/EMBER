@@ -351,7 +351,7 @@ def claim_next(
     preferred_task: tuple[str, int] | None = None,
     physical_gpu: int | None = None,
 ) -> EvaluationClaim | None:
-    """Claim GPU-affine max-horizon work before ordinary dynamic work."""
+    """Claim every pending max-horizon shard before ordinary dynamic work."""
 
     if not worker_id:
         raise Pi05EvaluationError("evaluation worker ID is empty")
@@ -363,20 +363,22 @@ def claim_next(
             if physical_gpu is None and preferred_task is None:
                 row = connection.execute(
                     """SELECT job_id, payload FROM jobs WHERE status='pending'
-                    ORDER BY estimated_cost DESC, ordinal ASC LIMIT 1"""
+                    ORDER BY CASE WHEN preferred_gpu IS NOT NULL THEN 0 ELSE 1 END,
+                    estimated_cost DESC, ordinal ASC LIMIT 1"""
                 ).fetchone()
             elif physical_gpu is None:
                 row = connection.execute(
                     """SELECT job_id, payload FROM jobs WHERE status='pending'
-                    ORDER BY estimated_cost DESC,
+                    ORDER BY CASE WHEN preferred_gpu IS NOT NULL THEN 0 ELSE 1 END,
                     CASE WHEN suite=? AND task_id=? THEN 0 ELSE 1 END,
-                    ordinal ASC LIMIT 1""",
+                    estimated_cost DESC, ordinal ASC LIMIT 1""",
                     preferred_task,
                 ).fetchone()
             elif preferred_task is None:
                 row = connection.execute(
                     """SELECT job_id, payload FROM jobs WHERE status='pending'
-                    ORDER BY CASE
+                    ORDER BY CASE WHEN preferred_gpu IS NOT NULL THEN 0 ELSE 1 END,
+                    CASE
                         WHEN preferred_gpu=? THEN 0
                         WHEN preferred_gpu IS NULL THEN 1
                         ELSE 2 END,
@@ -386,7 +388,8 @@ def claim_next(
             else:
                 row = connection.execute(
                     """SELECT job_id, payload FROM jobs WHERE status='pending'
-                    ORDER BY CASE
+                    ORDER BY CASE WHEN preferred_gpu IS NOT NULL THEN 0 ELSE 1 END,
+                    CASE
                         WHEN preferred_gpu=? THEN 0
                         WHEN preferred_gpu IS NULL THEN 1
                         ELSE 2 END,

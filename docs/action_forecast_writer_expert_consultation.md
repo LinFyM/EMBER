@@ -4,8 +4,10 @@
 外部专家，完整保存v4问题；它不再是当前架构authority。理解本文不需要历史
 聊天、本地主机checkpoint或`/data/...`实验目录。专家复核后的根因见
 [`action_forecast_writer_v4_root_cause.md`](action_forecast_writer_v4_root_cause.md)，
-随后owner批准的活动v5见
-[`action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)。
+随后v5设计见
+[`action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)；
+当前v5.1见
+[`action_forecast_writer_v5_1_proposal.md`](action_forecast_writer_v5_1_proposal.md)。
 
 需要先强调两点：
 

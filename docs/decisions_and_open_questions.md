@@ -23,17 +23,20 @@
 - 此前frame-local Intent + adjacent Transition只修复最后一层，已从“下一版
   已拍板”撤回为局部候选。完整复审见
   [`docs/action_forecast_writer_v4_root_cause.md`](action_forecast_writer_v4_root_cause.md)。
-- 当前唯一活动v5为Semantic Core + Causal Procedure，完整定义见
-  [`docs/action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)：
-  image-position hidden构成permutation-invariant Core；fixed native suffix与
-  两个Meta-LoRA产生per-frame robot-semantic hidden；两层global causal
-  Procedure保留可变长度；Core先编译，Procedure以zero-init refiner修正。
-- v5当前训练合同为每rank每step一个task、1条teacher video、1套one-shot
+- v5 Semantic Core + Causal Procedure已训练至step1800并停止。step1400
+  fixed400五臂为`115/108/74/113/114`；wrong-video通过，shuffle/reverse
+  与correct等价。内部Procedure有强顺序差但下游融合衰减，故v5顺序硬门失败，
+  不继续训练也不进入RL。
+- 当前唯一活动v5.1完整定义见
+  [`docs/action_forecast_writer_v5_1_proposal.md`](action_forecast_writer_v5_1_proposal.md)：
+  text-only task queries、multimodal task-token evidence、token-aligned
+  frame-set attention与language-axis Core；Action Expert causal Procedure；
+  centered Procedure zero-init AdaLN与post-fusion slot block。
+- v5.1训练合同仍为每rank每step一个task、1条teacher video、1套one-shot
   LoRA：完整`B_a`条独立action queries全部监督这套LoRA，逻辑loss为`B_a`
-  普通均值；后续task visit轮换video，推理严格one-shot。
-  4 ranks全局均衡轮转task，6 steps覆盖24 tasks。GPU4–7最长105帧压力测试
-  选择frame batch32、`B_a=20`；约一小时segment封存为900 steps、每100步
-  一个checkpoint。不继承v4或旧v5 step数，不设focused AS/RL总wall-clock上限。
+  普通均值；后续task visit轮换video，推理严格one-shot。v5的F32/B20和
+  900-step segment不继承；v5.1先重新profile，再按实测吞吐换算约一小时首段。
+  第二/第三段必须由前一段特异性、absolute和曲线共同支持，不能自动续训。
 - frame stride固定为5，不再把stride 5/10作为待选变量；后续任何GPU工作只使用
   物理GPU 4–7，0–3不进入visible set也不被干扰。
 - 当前工程推进以效率优先：最短垂直切片通过必要的shape/gradient/
@@ -132,11 +135,11 @@ Source-SFT comparator、v4训练、现有checkpoint选择和step825完整特异�
   correct/same/wrong/shuffled/reversed/fixed-anchor证据均已封存；外部复核后的
   完整根因复审已定位AS可识别性、visual-state旁路、Meta forecast语义漂移和
   absolute-time Revision放大的组合链；
-- v5 Semantic Core + Causal Procedure的全部shape、mask、初始化、参数预算、
-  单视频完整action-batch训练、profile、特异性与性能gate已写入唯一活动design；
-  真实trainable参数为`10,301,440`，新合同profile已封存，fresh step0→900
-  正式首段已启动；运行状态见`docs/active_session_handoff.md`，尚未产生完成的
-  fixed-400科学结果；
+- v5 Semantic Core + Causal Procedure的训练、内部机制和fixed400五臂均已
+  封存；真实trainable参数`10,301,440`，observed-best `115/400`，顺序行为门
+  失败。v5.1的全部shape、mask、初始化、参数预算`10,244,872`、单视频训练、
+  profile与分段决策门已写入唯一活动design；实时状态见
+  `docs/active_session_handoff.md`；
 - RL-Writer 使用独立短AS cold start取得24-task逐task成功覆盖后转pure reward，并完整报告action消耗；
 - Source-SFT 是一套 shared target-source LoRA，独立按 validation 选最佳；
 - seen/source panel 与 cross-suite wrong-video 对照；

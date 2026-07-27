@@ -1,21 +1,24 @@
 # EMBER Writer v5：Semantic Core + Causal Procedure
 
-状态：2026-07-27，owner 已批准；这是当前唯一活动 Writer 架构 authority。
+状态：2026-07-27，历史v5设计、实现与结果authority；不再是当前活动架构。
+step1400正式五臂`115/108/74/113/114`证明wrong-video语义性成立但顺序行为
+门失败。当前唯一活动v5.1见
+[`action_forecast_writer_v5_1_proposal.md`](action_forecast_writer_v5_1_proposal.md)。
 
-本文记录可以直接实现、profile、训练、评测和 exact-resume 的完整合同。后续
-session 不需要恢复历史聊天来重建设计。若旧 v4 文档、旧 config、历史 ledger
-中的未来式表述与本文冲突：
+本文记录已完成v5的完整历史合同。不得据此恢复v5代码、config或checkpoint；
+后续session不需要恢复历史聊天来理解其证据。若旧v4文档、旧config、历史
+ledger中的未来式表述与本文冲突：
 
 - 历史数值和实验事实保留；
-- 当前代码、配置、训练、评测和停止条件以本文为准；
+- v5历史代码、配置、训练、评测和停止条件以本文为准；
 - v4 完整实现与结果见
   [`action_forecast_writer_design.md`](action_forecast_writer_design.md)；
 - v4 的完整根因链见
   [`action_forecast_writer_v4_root_cause.md`](action_forecast_writer_v4_root_cause.md)。
 
-## 0. 当前 Goal 与停止边界
+## 0. 历史 Goal 与停止边界
 
-当前 focused Goal 是完成并验证本 v5：
+当时的 focused Goal 是完成并验证本 v5：
 
 1. 原位替换 v4，不保留平行活动 Writer、runner 或 checkpoint schema；
 2. 在物理 GPU 4、5、6、7 上重新 profile 最快安全配置；

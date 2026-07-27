@@ -1,44 +1,30 @@
-# EMBER v5 当前活动交接
+# EMBER v5结论与v5.1当前活动交接
 
 最后更新：2026-07-27 UTC。
 
-本文是当前 focused v5 AS/RL Writer Goal 的完整跨session恢复入口：集中保存
-研究北极星、从最早Writer到v5的证据链、shuffle异常带来的核心启示、v5每个
-模块的设计初衷、当前训练合同、实时进程快照和下一动作，使新session不依赖
-历史聊天也能接手。精确架构与科学合同仍以
-`docs/action_forecast_writer_v5_design.md`为准；长期项目边界以`AGENTS.md`和
-`docs/execution_brief.md`为准。本文中的step和进程状态是交接快照，接手后必须
-先做只读实时复核，不能据此启动第二个训练。
+本文是当前 focused v5.1 AS Writer Goal 的完整跨session恢复入口：集中保存
+研究北极星、从最早Writer到v5的证据链、v5正式失败结论、v5.1设计理由、当前
+运行状态和下一动作，使新session不依赖历史聊天也能接手。当前精确架构以
+`docs/action_forecast_writer_v5_1_proposal.md`为准；v5设计只作provenance。
+长期项目边界以`AGENTS.md`和`docs/execution_brief.md`为准。本文中的step和
+进程状态是交接快照，接手后必须先做只读实时复核，不能据此重复启动任务。
 
 focused AS/RL完成或本文不再承担跨session恢复作用时，更新或删除本文，不能让
 过期运行状态长期成为平行authority。
 
-## 1. 当前focused objective参考，不是新session启动指令
+## 1. 当前focused objective
 
-Goal是session-local状态，新session看不到也不应机械复制当前session的Goal。
-新session第一阶段只负责完整理解仓库、本文与实时训练现场；此时不要创建Goal、
-不要修改代码/config、不要启动训练或评测。当前session曾用的objective原文仅
-作为理解工作边界的参考：
+owner已经确认理解并授权：v5正式特异性不佳时直接建立新的session-local Goal
+推进v5.1。v5已明确失败，因此当前objective是：
 
-> 完成 EMBER v5 AS Writer 的高效单视频条件训练闭环：保持已对齐的 Core +
-> Causal-Procedure 表示架构，重新设计为少量 task/video LoRA 各自复用多条独立
-> 同任务 action supervision、取消 N=4 同一 action 跨视频 Cartesian 重复，优化
-> 整帧批处理与显存/吞吐并在 GPU 4–7 上以约一小时为首轮训练尺度；从保留
-> checkpoint 的完整 validation 中先寻找绝对性能，若未达到至少约
-> 110–120/400 则定位并改进训练或架构后重试，若达到则完成内部数值与
-> correct/same-task/wrong/shuffled/reversed rollout 特异性验证，并依据长期
-> validation 峰后明显下降标准继续充分探索 AS Writer，之后再按 owner 授权
-> 边界推进 cold-start RL。
+> 原位实现并验证canonical v5.1 Language-Axial Semantic Core + Causal Action
+> Procedure + Slot-Normalized Fusion；在GPU4–7上实测训练与推理配置上限，
+> 依据新架构吞吐确定约一小时的首个fresh AS segment，完成早期内部与轻量行为
+> 特异性判定。不得自动开始第二段、第三段或cold-start RL。
 
-正确接手顺序：
-
-1. 完整阅读第10节规定的仓库文档；
-2. 执行第8节的只读命令，核验训练是否仍运行、真实末步和Git状态；
-3. 向owner用自己的话复述研究目标、历史证据链、shuffle启示、v5每个模块、
-   当前训练合同、absolute/specificity双门与RL边界；
-4. 等owner确认理解和允许接手后，再根据那一刻的真实训练进度与具体下一动作
-   建立新的session-local Goal；不预先照抄本节objective，也不设置token budget，
-   除非owner另有明确要求。
+Goal仍是session-local状态，不能仅凭本文假定它一定存在。新session应先完整阅读
+第10节规定的文档并执行第9节末尾的只读命令，核验Git、tmux、GPU4–7和真实
+artifact状态；若代码/训练已推进，应从最新证据继续，绝不能据本文重复launch。
 
 ## 2. EMBER 的研究北极星、任务和信息合同
 
@@ -290,8 +276,9 @@ Semantic Core + Causal Procedure v5已证明结构上能把normal/shuffle/revers
 batch共同约束它；跨step轮换video。这把训练降到常规约3–4秒/step，并保留
 one-shot输入和大batch平均低层噪声的核心假设。
 
-当前未知量正是：这一训练合同下，v5能否同时恢复absolute能力并自然建立
-same-task鲁棒、wrong-video语义性与correct-order增益。不要预设答案。
+该未知量现已由第7–8节的正式结果回答：v5恢复到`115/400`并建立显著
+wrong-video语义效应，但没有建立correct-order增益；它因此退役，不能再把
+“也许继续训练会自然解决”当作未检验假设。
 
 ## 4. v5端到端架构：每个模块的输入、输出与设计初衷
 
@@ -574,125 +561,159 @@ metrics       0b39de739d2eca59274ba43c8ea1679e77ead0e1228c55878b2079273799b561
 ckpt manifest 993739d4a5c8323d04fc9e0eef60ac4439356a20ee1bc8061e314d2c5100cb1b
 ```
 
-## 7. 正在运行：step900→1800 exact resume
+## 7. v5正式训练、observed-best与失败结论
 
-不要重复启动。当前tmux与resume log：
-
-```text
-ember-v5-as-sv1800
-/data/ymdai/outputs/ember/pi05_as_writer_v5_single_video_dev_r4_seed7_s12000_0b4e006_20260727_resume0900_to1800.log
-```
-
-旧tmux `ember-v5-as-sv900`已随正常stop-after-step 900退出，不能重复fresh
-launch。
-
-正式output与log：
+v5正式root：
 
 ```text
 /data/ymdai/outputs/ember/pi05_as_writer_v5_single_video_dev_r4_seed7_s12000_0b4e006_20260727
-/data/ymdai/outputs/ember/pi05_as_writer_v5_single_video_dev_r4_seed7_s12000_0b4e006_20260727.log
+contract 03186c57ac736ac82398400676ff10c33eb46ab3e5f9bcbbe44064305944787c
 ```
 
-source base：
+fresh step0→900和exact-resume step900→1800均正常结束；metrics连续finite，
+step100至1800每100步checkpoint都包含Writer、trainer、sampler/data cursor、
+optimizer/scheduler/scaler与四rank RNG。source policy trainable参数为0，
+每step仍是全局80 action queries、4个one-video LoRA conditions和一次policy
+forward。旧tmux `ember-v5-as-sv900`与`ember-v5-as-sv1800`均已退出，不得
+resume或重复launch。
+
+fixed400 correct-video：
 
 ```text
-/data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722
-/data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000
+step       100  400  700  800  900  1000  1400  1700  1800
+successes   62   64   92   76  103   115   115    71    86
 ```
 
-首段正常完成：
+step1000与1400并列absolute observed-best；step1400的online functional loss更低，
+且是明显峰后下降前较晚一点，因此选择step1400做唯一正式特异性检查。step1700/
+1800的`71/86`构成远超正常400-rollout波动的强下降，证明v5时间轴已经充分跨过
+高点；不需要为寻找更好点继续同架构训练。
+
+step1400 checkpoint：
 
 ```text
-contract_sha256 03186c57ac736ac82398400676ff10c33eb46ab3e5f9bcbbe44064305944787c
-completed steps  900
-training body    3,485.1537s
-global samples   72,000
-video conditions 3,600
-Writer params    10,301,440
-source trainable 0
+checkpoints/step_00001400
+manifest d8e77a0ebbb7a7b61bbc9354fffffe02e2384d77f38bb29813146edc6ad71f57
+Writer state 0febb29d821dd670c7438f3c54f37ba88a5a3bfe9d2b42eb1652c9d4d95255da
 ```
 
-step100至900每100步的9个checkpoint全部有Writer、trainer、四rank state和
-atomic manifest。step900：
+内部16-reference五条件root：
 
 ```text
-checkpoint       checkpoints/step_00000900
-manifest SHA256  157599fc60e565570be7d711362469b7233606635437f6e219125e7e36f7b8e2
-payload SHA256   c838ccba4b1125753e8f11f1ddfaf25c9d6672fe9e1601d3dbb8d7f816b375e5
-per task         3,000 examples / 150 visits / 50 videos / 50 action episodes
+/data/ymdai/outputs/ember/pi05_as_writer_v5_single_video_step1400_internal_specificity_counterfactual_val8x2_0925140_20260727
+summary SHA256 962cde5cc11df528ff526602e443475d74a324c4e7d9d85e0e9cc8693a41c9e3
 ```
 
-resident 512-row functional loss：
+中位relative L2：
+
+| condition | Core set | Procedure sequence | effective LoRA | policy action |
+|---|---:|---:|---:|---:|
+| same-task-other | 4.423% | 19.052% | 7.304% | 1.394% |
+| cross-suite-wrong | 44.732% | 111.729% | 72.638% | 16.987% |
+| shuffled | ~0 | 64.299% | 2.928% | 0.486% |
+| reversed | 0.0157% | 72.560% | 4.773% | 0.752% |
+
+固定Core只换Procedure时shuffle/reverse effective LoRA为`2.921%/4.767%`，
+policy action为`0.415%/0.715%`，说明顺序信息确实在Procedure存在并能到达
+policy，但downstream fusion把它压到小于same-demo变化。相比step900，
+Procedure顺序差几乎不降，而effective LoRA与action顺序差继续缩小；最早明确
+失效层就是Procedure→slot/factor编译，而不是Procedure没有学到顺序。
+
+## 8. v5 step1400正式五臂paired rollout
+
+所有五臂使用完全相同的400个
+`(suite, task_id, init_state_id)`、language/env seed、policy-noise共同前缀、
+Writer checkpoint与pairing hash。same使用`(correct demo+17)%50`；
+wrong保持demo ordinal但映射到cross-suite task；shuffle/reverse使用与correct
+相同video和帧集合，只改帧序。四个counterfactual各独占物理GPU4/5/6/7，
+每卡6 persistent policy workers和3个Writer generators；36 shards先领取全部
+long再领取普通task。四臂均400/400、worker return code全0、无OOM/traceback，
+wall为`2201.9–2255.1s`，结束后GPU4–7已释放。
+
+总体与95% Wilson区间：
+
+| arm | success | rate | Wilson 95% |
+|---|---:|---:|---:|
+| correct | 115/400 | 28.75% | 24.53–33.37% |
+| same-task-other | 108/400 | 27.00% | 22.88–31.55% |
+| cross-suite-wrong | 74/400 | 18.50% | 15.00–22.60% |
+| shuffled | 113/400 | 28.25% | 24.06–32.85% |
+| reversed | 114/400 | 28.50% | 24.30–33.11% |
+
+相对correct的exact paired结果：
+
+| arm | both | correct-only | arm-only | both-fail | net correct | churn | McNemar p |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| same | 92 | 23 | 16 | 269 | +7 | 9.75% | 0.337 |
+| wrong | 57 | 58 | 17 | 268 | +41 | 18.75% | 2.18e-6 |
+| shuffled | 101 | 14 | 12 | 273 | +2 | 6.50% | 0.845 |
+| reversed | 103 | 12 | 11 | 274 | +1 | 5.75% | 1.000 |
+
+wrong的正向差主要由Object-1 `+16`与Object-3 `+21`贡献，correct-only flips跨
+33条teacher demos；它是真实、分散但仍偏两个tasks的视频语义效应。same的
+净`+7`不显著，且Object-3反向`-3`，可视为基本鲁棒但不是统计等价证明。
+shuffle/reverse逐task只有`-1..+3`小幅互相抵消；19个correct-fail episode在
+至少一个假顺序arm成功，而correct同时优于wrong/shuffle/reverse的episode仅3个。
+因此：
 
 ```text
-step100/200/300  0.136011 / 0.134911 / 0.133263
-step400/500/600  0.132433 / 0.134811 / 0.135303
-step700/800/900  0.132294 / 0.132574 / 0.137075
+absolute pre-gate:   勉强达到（115/400）
+same-task robustness:方向可接受，未证明等价
+wrong-video semantics:通过
+order specificity:  明确失败
+overall AS gate:     失败
 ```
 
-fixed400 correct-video代表点step100/400/700/800/900为
-`62/64/92/76/103`，所以首段observed-best为step900；它仍低于absolute预门，
-但step800→900 paired净增27且没有持续峰后下降。
-
-step900内部顺序通路已增强并到达policy。owner授权的轻量8 tasks×10 states
-行为诊断为：
+结果文件SHA256依次为：
 
 ```text
-correct / same / wrong / shuffled / reversed = 21 / 25 / 14 / 23 / 23
+correct  cc0ea7390d025101b293987b0d3a46971194b78942113e40cf07a237f2f267c2
+same     e5b9705e0d2f0e0e6a13fc59416c37cb9c8060d378bab538267eeb91dd2488a0
+wrong    2e8b54aba1e7506ff3fa90ed02b58c35cd0ff42084eda55c7d051a719f3700c6
+shuffled 514b6647bdc21187004d16581032db0f6470829b0cdc3807737724dc92880977
+reversed 2f75bc7b1307fb32dbab57199b953b159c1ede4fbcb332ff0dbe7b6525f5076a
 ```
 
-它只说明wrong-video有方向性、顺序优势尚未拉开，不是full400特异性结论。
+## 9. 当前状态与v5.1下一动作
 
-续训已从step900精确启动到step1800。launch前本文档变更已commit/push，
-worktree clean，GPU4–7与存储live preflight通过。精确命令：
-
-```bash
-cd /data/ymdai/projects/EMBER
-env \
-  PYTHONPATH=/data/ymdai/projects/EMBER/src \
-  CUDA_DEVICE_ORDER=PCI_BUS_ID \
-  CUDA_VISIBLE_DEVICES=4,5,6,7 \
-  OMP_NUM_THREADS=8 \
-  TOKENIZERS_PARALLELISM=false \
-  PYTHONUNBUFFERED=1 \
-  .venv/bin/torchrun --standalone --nproc-per-node=4 \
-  scripts/train_as_writer.py \
-  --config configs/pi05_as_writer_core_causal_v5.json \
-  --mode formal \
-  --source-run /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722 \
-  --checkpoint /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 \
-  --tokenizer-path /data/ymdai/ember_data/openpi/paligemma_tokenizer.model \
-  --data-root /data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a \
-  --output-dir /data/ymdai/outputs/ember/pi05_as_writer_v5_single_video_dev_r4_seed7_s12000_0b4e006_20260727 \
-  --resume /data/ymdai/outputs/ember/pi05_as_writer_v5_single_video_dev_r4_seed7_s12000_0b4e006_20260727/checkpoints/step_00000900 \
-  --stop-after-step 1800 \
-  --num-workers 2 \
-  --log-every 10 \
-  --allow-contract-compatible-code-resume
-```
-
-该flag只允许recorded Git commit不同；run-contract其他字段必须逐项完全相同。
-当前main相对训练commit只改canonical evaluator long-first调度，训练入口、
-`src/ember/writer/`和v5 config无diff。
-
-已核验的resume start event：
+owner已批准：v5结果不满意时无需等待讨论，直接建立新Goal推进v5.1。触发条件
+已经满足。当前唯一架构authority为
+`docs/action_forecast_writer_v5_1_proposal.md`：
 
 ```text
-contract_sha256 03186c57ac736ac82398400676ff10c33eb46ab3e5f9bcbbe44064305944787c
-runtime commit  db2a6905cc3d7433333d4c95d08345180c9b4fc2
-resume_step     900
-stop_after_step 1800
-tasks           24
-source trainable 0
+text-only task-token queries
++ multimodal per-frame task-token evidence
+→ token-aligned frame-set attention
+→ language-axis Semantic Core
+
+fixed native Action Expert suffix
+→ causal Action Procedure
+
+Core slots + centered Procedure
+→ zero-init AdaLN modulation
+→ post-fusion slot block
+→ complete rank-16 LoRA
 ```
 
-resume时resident模型重算step900 functional loss仍为`0.1370745508`，明确记录
-optimizer updates为0、parameter gradients为false、test action reads为0。
-随后step901起继续训练；最初核验到step917连续finite，常规step约`3–4s`，
-每步仍为全局80 actions、4个one-video conditions和1次policy forward，四卡
-物理显存约`77.9GB`、UTL接近100%。这些只作启动证据；接手时必须重读真实末步。
+机械参数预算为`10,244,872`，比rank-128 Source-SFT少`52,472`。v5.1必须
+原位替换canonical Writer并使用fresh不兼容schema；不保留v5 runtime兼容分支，
+不加contrast/order/margin loss。
 
-## 8. 新session接手后的第一组只读命令
+执行顺序：
+
+1. 建立session-local v5.1 Goal；
+2. 实现canonical replacement并完成最短shape/gradient/identity/freeze/
+   parameter/schema与一次exact-resume smoke；
+3. 新launch前只查询GPU4–7并检查个人存储cap；
+4. 用真实最长105帧联合profile frame/action batch、显存和step吞吐；
+5. 依据实测step时间把首个fresh formal segment定为约一小时，不预设900或1800；
+6. 首段结束后先做内部五条件与轻量paired rollout，重点检查final effective
+   LoRA和policy action是否恢复`same < shuffled/reversed`；
+7. 只有早期特异性实质改善，且absolute与训练/validation曲线共同值得继续，
+   才单独决定第二段；第三段同理，任何后续段都不得自动启动；
+8. full400和cold-start RL仍受原absolute/same/wrong/order硬门约束。
+
+新session第一组只读核验：
 
 ```bash
 cd /data/ymdai/projects/EMBER
@@ -700,131 +721,19 @@ git status --short --branch
 git rev-parse HEAD
 git rev-parse origin/main
 tmux list-sessions
-tail -n 80 \
-  /data/ymdai/outputs/ember/pi05_as_writer_v5_single_video_dev_r4_seed7_s12000_0b4e006_20260727_resume0900_to1800.log
-nvidia-smi \
-  -i 4,5,6,7 \
+nvidia-smi -i 4,5,6,7 \
   --query-gpu=index,memory.used,memory.free,utilization.gpu,temperature.gpu \
   --format=csv,noheader,nounits
 ```
 
-另外检查：
-
-- `metrics.jsonl`的optimizer step连续、loss/grad/throughput finite；
-- 每100步的checkpoint只在atomic manifest完成后才算存在；
-- tmux退出时先读terminal log与run summary，不能因为GPU释放就假定成功；
-- 若训练仍存活，绝不重复launch；
-- 若异常退出，先按checkpoint/metrics/invocation定位是否可exact-resume，不从零
-  猜测重跑。
-
-GPU边界：
-
-- 只使用物理GPU4、5、6、7；
-- 0–3绝不进入visible set；
-- 不杀、不暂停、不reset任何他人进程；
-- 新launch前必须重新做live GPU与`/data/ymdai` 500GB cap检查。
-
-## 9. step900后的执行状态与后续固定动作
-
-### 9.1 已完成：封存训练段
-
-已验证：
-
-1. terminal summary为正常stop-after-step 900；
-2. metrics严格覆盖step1–900，无nonfinite；
-3. step100/200/.../900 checkpoints的Writer、optimizer、scheduler、sampler、
-   per-rank RNG和manifest完整；
-4. source policy仍全冻结；
-5. 24 tasks/action/video coverage符合确定性schedule；
-6. 保存训练body wall、queries、task/video visits和hashes。
-
-### 9.2 已完成首段absolute observed-best；继续第二段
-
-- 先核验正式run中常驻模型已经写出的预封存512-row functional panel；正常
-  checkpoint不得另起进程重复backfill。该panel只用于安排完整rollout顺序，
-  不能用functional loss代替closed-loop选择。
-- 不使用80-episode结果选择absolute observed-best。owner明确授权的step900
-  轻量五臂80-panel只作续训前机制诊断，不得外推为full400硬门。
-- 对step100–900分布式选择有代表性的checkpoint做固定8 tasks×50=400
-  correct-video validation；逐步补齐峰值附近、segment端点和可能反弹点，直到
-  当前保留checkpoint中的observed-best得到充分定位。
-- 第一判断是absolute performance。若所有候选始终显著低于约
-  `110–120/400`，先定位训练/架构问题，不提前花费五臂特异性rollout。
-- 首段step900为`103/400`，接近但仍低于预门；内部与轻量五臂只证明机制值得
-  继续。当前下一动作是同一时间轴exact-resume到step1800。
-
-正式rollout保持官方π0.5/LIBERO合同：render256/model224、agentview与wrist
-相机180°旋转、7D state/action、10 flow inference steps、执行5 actions后
-replan、dummy settling10、success即停止，Spatial/Object/Goal/Long horizon
-分别为`220/280/300/520`。固定400使用同一8 tasks×50 states与配对seed。
-
-评估工程合同：
-
-- 使用唯一`scripts/evaluate_pi05.py`的cost-balanced dynamic queue和persistent
-  model/env，不恢复静态一task/一卡；
-- Writer LoRA生成batch与rollout replicas是两个独立工程并发量，必须对当前v5
-  checkpoint做真实显存/rollouts-per-second profile，不能机械继承v4 batch100；
-- 相同可见teacher条件按
-  `(language task, video task, demo_id, video condition/order transform)`去重，
-  不能按init-state重复生成同一LoRA；
-- cache生成完后尽量保留已经加载的source policy并原地转rollout，不无谓
-  unload/reload；
-- 每个worker始终先领取long shard；只有不存在未领取long shard时，空闲worker
-  才领取普通task。这一规则不随一个checkpoint分配的GPU数改变；
-- 每张授权卡使用相同CUDA角色数量，物理GPU4不额外堆controller/server/model；
-- generation cache可以在不同rollout topology间复用，但scientific condition
-  identity必须严格联锁。
-
-### 9.3 特异性顺序
-
-内部低成本检查条件：
-
-```text
-correct
-same_task_other
-cross_suite_wrong
-shuffled
-reversed
-```
-
-逐层检查image hidden、Core、Action Expert interaction、causal Procedure、
-Procedure refinement、final query、LoRA、effective B@A和固定policy function。
-内部差异通过后才跑五个fixed-400 paired rollout。
-
-行为硬门：
-
-```text
-same-task other ≈ correct，且变化最小
-correct > wrong
-correct > shuffled
-correct > reversed
-```
-
-方向必须由多个tasks共同贡献，并结合paired churn、McNemar和独立复测；不得以
-aggregate 1–2条差异宣称通过。
-
-### 9.4 后续训练与RL边界
-
-- 第一段仍在上升或没有observed-best后的明显、持续、多task、独立复测成立的
-  强下降时，按同一合同从best exact-resume下一个900-step segment。
-- 多个checkpoint只是略低绝不能停止。
-- absolute最低目标为达到或接近旧correct `125/400`；目标逼近或超过v4
-  shuffled `148/400`。四卡Source-SFT `108/400`与旧八卡`122/400`只是背景，
-  122不是硬门。
-- 不通过时只修改证据定位到的最早失效模块；不得增加contrast/order loss来
-  强行制造特异性。
-- AS同时通过absolute、same-task、wrong-video和order gates后，才开始独立
-  short-AS cold-start RL。
-- RL先让24 train tasks逐task至少一次official random-reset success，随后永久
-  关闭action入口并转pure official reward。
-- focused AS/RL完成后停下向owner汇报；不自动进入final-32、task-local RL、
-  joint oracle或ViVLA。
+GPU边界始终不变：只使用物理GPU4、5、6、7；0–3不进入visible set或查询；
+不得杀、暂停、reset任何他人进程；任何新GPU launch前重新做live GPU与
+`/data/ymdai` 500GB cap检查。
 
 ## 10. 文档阅读、代码地图与接手验收
 
-新session不需要历史聊天。训练尚在进行时，先完整读取以下文档；在完成阅读和
-下面的理解核对前，只做本文件第8节的只读监控，不改代码/config、不启动第二个
-训练或提前评测：
+新session不需要历史聊天。先完整读取以下文档并核对真实Git/GPU/tmux/artifact
+状态，再继续当前Goal；不得因本文中的历史命令重复启动训练或评测：
 
 1. `README.md`
 2. 本文
@@ -833,15 +742,16 @@ aggregate 1–2条差异宣称通过。
 5. `docs/action_forecast_writer_design.md`
 6. `docs/action_forecast_writer_v4_root_cause.md`
 7. `docs/action_forecast_writer_v5_design.md`
-8. `task_plan.md`
-9. `findings.md`
-10. `progress.md`
-11. `docs/concept.md`
-12. `docs/decisions_and_open_questions.md`
-13. `docs/novelty_and_landscape.md`
+8. `docs/action_forecast_writer_v5_1_proposal.md`
+9. `task_plan.md`
+10. `findings.md`
+11. `progress.md`
+12. `docs/concept.md`
+13. `docs/decisions_and_open_questions.md`
+14. `docs/novelty_and_landscape.md`
 
-历史v1–v4、共享四视频profile和专家咨询只作provenance。不得从Git历史恢复旧
-prompt、旧Action-Memory/Action-Forecast活动架构或平行runner。
+历史v1–v5、共享四视频profile和专家咨询只作provenance。不得从Git历史恢复旧
+prompt、旧Action-Memory/Action-Forecast/v5活动架构或平行runner。
 
 常用活动入口：
 
@@ -859,7 +769,7 @@ scripts/train_rl_writer.py
     唯一RL-Writer训练入口；只有AS双门通过后使用
 
 configs/pi05_as_writer_core_causal_v5.json
-    当前AS architecture/data/optimization/profile/formal合同
+    历史v5合同；v5.1实现时应由单一新canonical config原位取代
 
 src/ember/writer/video_program.py
     frame encoder、Core、Action Expert probe与Procedure owner
@@ -887,30 +797,31 @@ src/ember/writer/checkpoint.py
 6. 为什么不能直接删除temporal mean或所有稳定信息？
 7. Core与Procedure分别保存什么，为什么一个按集合不变、一个必须causal？
 8. fixed 50-token suffix为什么不是future-action forecast？
-9. 两个Meta-LoRA为何保留，又要重点防止什么退化？
+9. v5.1三个Meta-LoRA各做什么，又要重点防止什么退化？
 10. routing identity为何只能进Q/K？
-11. 为什么Procedure是zero-init refinement而不是与Core直接concat？
+11. 为什么v5.1用中心化Procedure生成zero-init AdaLN，而不是与Core直接concat？
 12. 当前为何是一video/一LoRA/大action batch，而不是N=4 Cartesian或共享四视频？
 13. absolute与五臂specificity两个gate分别如何判断，顺序是什么？
-14. AS何时可以继续下个900-step segment，何时才允许进入cold-start RL？
+14. 为什么v5.1首段不能预设900/1800 steps，第二/第三段分别何时才允许开始？
 15. GPU、storage、信息墙、停止边界和禁止恢复路径分别是什么？
 
-新session应先在commentary中用自己的话简要复述以上核心理解并报告实时训练状态，
-然后停在理解验收点；只有owner确认后才建立新Goal并接手后续执行。它不应把
-已经封存的设计重新当作待owner回答的问题。
+新session应先用自己的话核对以上核心理解并报告真实代码/训练状态；owner对
+v5.1推进的授权已经记录，不应重新要求批准，也不应把已经封存的设计重新当作
+待owner回答的问题。
 
 文档状态地图：
 
 - 活动authority：`AGENTS.md`、`docs/execution_brief.md`、
-  `docs/action_forecast_writer_v5_design.md`；
+  `docs/action_forecast_writer_v5_1_proposal.md`；
 - 活动live ledger：本文、`task_plan.md`末尾、`findings.md`末尾、
   `progress.md`末尾；
 - 历史但必须理解：`docs/action_forecast_writer_expert_consultation.md`、
-  `docs/action_forecast_writer_design.md`、`docs/action_forecast_writer_v4_root_cause.md`；
+  `docs/action_forecast_writer_design.md`、`docs/action_forecast_writer_v4_root_cause.md`、
+  `docs/action_forecast_writer_v5_design.md`；
 - 更早provenance：
   `docs/expert_plan.md`、`docs/benchmark_validity_report.md`及ledgers较早日期段落；
 - 思想/claim边界：`docs/concept.md`、`docs/novelty_and_landscape.md`、
   `docs/origin_and_general_thesis.md`、`docs/prior_work_memllm_lessons.md`。
 
 历史文档中的“当前”只指其成文日期。它们的数值证据保留，但未来式建议不能覆盖
-v5和本文；无需从Git历史、旧prompt或历史聊天补齐任何活动合同。
+v5.1和本文；无需从Git历史、旧prompt或历史聊天补齐任何活动合同。

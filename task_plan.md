@@ -141,7 +141,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [ ] exact command、model/data/config hashes、output root、process topology与停止条件记录。
 - [ ] 一卡一训练rank为默认；若评估每卡多replica，所有已授权卡的replica数必须一致且GPU0无额外角色。
 - [ ] checkpoint/output不得覆盖；resume必须校验完整state与合同兼容性。
-- [ ] 所有适用阶段先短profile并由loss/reward/behavior曲线决定廉价screen间隔，只给必要候选完整validation；若owner为某阶段给出时间上限，到上限仍未充分训练则记录后停止。当前focused Semantic Core + Causal Procedure v5 AS/RL Writer不设总时间上限；Source-SFT comparator已经封存，不在本子任务重训。
+- [ ] 所有适用阶段先短profile并由loss/reward/behavior曲线决定廉价screen间隔，只给必要候选完整validation；若owner为某阶段给出时间上限，到上限仍未充分训练则记录后停止。当前focused v5.1没有机械总时间上限，但任何第二/第三segment都必须重新过特异性、absolute和曲线证据门；Source-SFT comparator已经封存，不在本子任务重训。
 
 ## 历史 Goal：四卡Action-Memory / Source-SFT / cold-start RL-Writer上限（2026-07-23，已被下方Action-Forecast执行段覆盖）
 
@@ -463,19 +463,43 @@ Plan/Revision/Belief或旧活动config/schema。
   差异已增至`3.689%/5.764%`并穿过policy action；五臂固定8 tasks×10 states
   为correct/same/wrong/shuffled/reversed=`21/25/14/23/23`。轻量结果只支持
   wrong-video方向性，不足以宣告顺序特异性通过或失败。
-- [ ] 按封存的900-step segment合同，已在tmux `ember-v5-as-sv1800`从step900
-  完整checkpoint exact-resume到step1800；保持同一optimizer/scheduler/sampler/
-  video schedule/RNG、F32/B20、GPU4–7和每100步checkpoint。start event已确认
-  contract不变且step901起连续推进；运行期间依据online functional panel安排
-  后续fixed400候选，但不把轻量80 panel当作observed-best选择证据。
-- [ ] 若correct始终低于约`110–120/400`，先定位训练或架构问题并fresh迭代；
-  若达到则再做内部数值与correct/same/wrong/shuffled/reversed rollout特异性。
-  目标逼近或超过v4 shuffled `148/400`；best后没有明显、持续、多task且独立
-  复测成立的下降就继续约一小时segment，focused AS不设总wall-clock上限。
-- [ ] 若特异性通过但absolute performance长期不足，按Core-only/
-  Core+Procedure、Meta translation/phase、compiler/factor逐层定位并fresh迭代，
-  不靠扩大参数或对比loss追正结果。
-- [ ] AS全部通过后独立启动v5 cold-start RL：short AS直到24个train tasks逐task
+- [x] 同一formal root已从step900 exact-resume并正常完成至step1800；
+  optimizer/scheduler/sampler/video schedule/RNG、F32/B20与每100步checkpoint
+  全部保持不变。fixed400 correct在step1000/1400并列`115/400`，step1700/
+  1800降至`71/86`，构成明确峰后下降；选择更低online functional loss且较晚的
+  step1400作为唯一正式observed-best特异性checkpoint。
+- [x] step1400内部16-reference检查确认Core顺序不变、Procedure有强顺序差，
+  但Procedure→effective LoRA/action持续衰减；固定400五臂为
+  `115/108/74/113/114`。correct相对wrong净`+41`、`p=2.18e-6`，相对
+  shuffle/reverse仅`+2/+1`、`p=0.845/1.0`。v5只通过wrong-video语义性，
+  顺序行为硬门失败，停止v5且不进入cold-start RL。
+- [x] 按owner条件授权，将side-chat收敛设计完整记录到
+  `docs/action_forecast_writer_v5_1_proposal.md`；v5失败条件触发后把它提升为
+  唯一下一架构authority。设计为Language-Axial Semantic Core + Causal Action
+  Procedure + Slot-Normalized Fusion，机械预算`10,244,872`，不加辅助loss。
+
+## 当前执行：Writer v5.1（2026-07-27）
+
+- [ ] 建立新的session-local v5.1 Goal；按`code-architecture-gate`检查owner、
+  生命周期和单一canonical替换边界。
+- [ ] 原位实现v5.1：text-only task-token queries、multimodal task-token
+  evidence、token-aligned frame-set attention、language-axis Core、rank4
+  Action Meta-LoRA causal Procedure、centered Procedure zero-init AdaLN与
+  post-fusion slot block；factor hidden改240，旧v5 checkpoint/schema不兼容。
+- [ ] 完成最短shape/token alignment/Core invariance/Procedure causality/
+  gradient staging/identity/freeze/parameter/schema和一次exact-resume smoke；
+  不用全仓广泛测试延迟真实profile。
+- [ ] 新launch前只核验物理GPU4–7、process topology和个人存储cap；用105帧真实
+  最长视频联合profile frame/action batch与step吞吐，重新找显存/UTL上限，
+  不继承v5的F32/B20。
+- [ ] 依据v5.1实测step时间把首个fresh formal segment定为约一小时wall-clock，
+  不预设900/1800 steps；保存足够checkpoint支持早期曲线和机制选择。
+- [ ] 首段后先做内部五条件与轻量paired rollout，重点要求final effective
+  LoRA / policy action的`same < shuffled/reversed`相对v5实质改善，并同时看
+  absolute与validation曲线。
+- [ ] 第二段、第三段或任何额外segment都不得自动启动；每段必须根据前一段的
+  特异性、absolute和曲线证据单独决定。full400与cold-start RL继续受原硬门约束。
+- [ ] AS全部通过后独立启动v5.1 cold-start RL：short AS直到24个train tasks逐task
   至少一次official random-reset success，随后永久关闭action入口转pure reward；
   同样探索validation observed-best与强峰后下降。
 - [ ] focused AS/RL通过后更新证据、验证、commit/push并停下向owner汇报；

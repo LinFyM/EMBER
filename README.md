@@ -23,18 +23,22 @@ task language + exactly one action-hidden teaching video
   根因复审定位为：positive AS无法识别demo高层过程、visual-state被旁路、
   Meta路径学成低层phase/translation code，再被absolute-time
   Plan/Revision放大。
+- Semantic Core + Causal Procedure v5已fresh训练至step1800并停止。
+  correct-video observed-best为step1000/1400的`115/400`；step1400五臂
+  `correct/same/wrong/shuffled/reversed=115/108/74/113/114`。wrong-video
+  paired效应显著，但shuffle/reverse与correct等价；内部Procedure虽有强顺序
+  差，downstream fusion却把它压弱到effective LoRA和policy action，因此v5
+  顺序行为硬门失败。
 - 当前唯一活动架构是
-  [`Semantic Core + Causal Procedure Writer v5`](docs/action_forecast_writer_v5_design.md)：
-  language-conditioned image-position hidden形成对帧顺序严格不变的Semantic
-  Core；保留固定native suffix和两个Meta-LoRA，但Action Expert只生成每帧
-  robot-semantic interaction hidden，不再输出7D forecast；两层global causal
-  Transformer形成可变长Procedure；Core先编译稳定LoRA content，Procedure只作
-  zero-init有向修正。训练时每rank每step一个task、随机轮换1条teacher video：
-  只生成1套one-shot LoRA，完整`B_a`条独立同task action queries全部监督该
-  LoRA且每条action只计算一次；推理仍严格one-shot。旧“每action独立4视频”
-  与“每task visit共享4视频”估计器均已退役。GPU4–7最长105帧真实压力测试
-  选择`max_frames_per_encoder_call=32`、`B_a=20`；每step只生成1套LoRA并做
-  一次functional policy forward。正式首段为fresh step0→900、每100步保存。
+  [`Writer v5.1`](docs/action_forecast_writer_v5_1_proposal.md)：
+  text-only Gemma task-token queries与multimodal per-frame task-token evidence
+  经token-aligned frame-set attention形成language-axis Semantic Core；固定
+  native Action Expert suffix形成causal Procedure；中心化Procedure通过
+  zero-init AdaLN调制Core slots，再由一个post-fusion slot block生成完整LoRA。
+  机械预算`10,244,872`，低于rank-128 Source-SFT。训练仍为每rank每step
+  1 task / 1 video / 1 LoRA / 完整`B_a` action batch，不加辅助顺序loss。
+  v5.1必须重新profile显存和step吞吐，首段按实测效率取约一小时；第二/第三段
+  只有在上一段特异性、absolute和曲线共同支持时才单独启动。
 - 目标 benchmark 为 LIBERO-Spatial/Object/Goal/Long 四 suites。development split 每 suite 6 train / 2 validation / 2 test，共24/8/8；final将validation合入形成32 source / 8 test。
 - `Action-Supervised Writer (AS-Writer)` 在source tasks上以一条视频生成LoRA，同task action episode/chunk只进functional loss，视频/action独立随机采样。
 - `Reward-Trained Writer (RL-Writer)` 与完整AS best分开：新架构先做短、均衡AS cold start，直到24个train tasks各有至少一次official random-reset success，再关闭action入口并转纯source reward训练。
@@ -54,10 +58,11 @@ generic `pi05_base` 在预封存8个test tasks、每task50个官方fixed states�
 - 不使用 `pi05_libero`，因为它读过目标40 tasks actions。
 - 不使用bank、geometry、shared subspace、residual escape、额外shared adapter、旧SmolVLA活动路径或MemLLM。
 - 所有下游方法从同一冻结source base、normalization和policy接口出发；Writer生成sealed rank-16 task LoRA，capacity-matched Source-SFT可用rank128，比较时显式报告各自参数量而不机械强制相同rank。
-- 训练最多8张A100；当前focused v5工作只使用物理GPU4–7，0–3不进入visible
+- 训练最多8张A100；当前focused v5.1工作只使用物理GPU4–7，0–3不进入visible
   set。评测使用cost-balanced state sharding和动态调度，避免horizon-520长任务
   拖尾。
-- 当前v5设计见`docs/action_forecast_writer_v5_design.md`；已封存v4实现见
+- 当前v5.1设计见`docs/action_forecast_writer_v5_1_proposal.md`；已封存v5见
+  `docs/action_forecast_writer_v5_design.md`，已封存v4实现见
   `docs/action_forecast_writer_design.md`；完整v4根因复审见
   `docs/action_forecast_writer_v4_root_cause.md`；详细阶段、信息墙与执行口径
   见`docs/execution_brief.md`和`task_plan.md`。
@@ -70,8 +75,10 @@ Action-Forecast Writer 的研究动机、全部关键架构演进、已封存 v4
 该文档面向只能访问远程仓库的读者，不依赖历史聊天或本地主机结果目录。
 专家建议之后完成的因果反事实与根因复审记录在
 [`docs/action_forecast_writer_v4_root_cause.md`](docs/action_forecast_writer_v4_root_cause.md)；
-据此与owner对齐的活动v5见
-[`docs/action_forecast_writer_v5_design.md`](docs/action_forecast_writer_v5_design.md)。
+后续v5设计与失败证据见
+[`docs/action_forecast_writer_v5_design.md`](docs/action_forecast_writer_v5_design.md)
+和`docs/active_session_handoff.md`；当前v5.1见
+[`docs/action_forecast_writer_v5_1_proposal.md`](docs/action_forecast_writer_v5_1_proposal.md)。
 
 ## 阅读顺序
 
@@ -82,11 +89,12 @@ Action-Forecast Writer 的研究动机、全部关键架构演进、已封存 v4
 5. `docs/action_forecast_writer_design.md`
 6. `docs/action_forecast_writer_v4_root_cause.md`
 7. `docs/action_forecast_writer_v5_design.md`
-8. `task_plan.md`
-9. `findings.md`
-10. `progress.md`
-11. `docs/concept.md`
-12. `docs/decisions_and_open_questions.md`
-13. `docs/novelty_and_landscape.md`
+8. `docs/action_forecast_writer_v5_1_proposal.md`
+9. `task_plan.md`
+10. `findings.md`
+11. `progress.md`
+12. `docs/concept.md`
+13. `docs/decisions_and_open_questions.md`
+14. `docs/novelty_and_landscape.md`
 
 `docs/expert_plan.md` 是历史原文，不是活动 authority。

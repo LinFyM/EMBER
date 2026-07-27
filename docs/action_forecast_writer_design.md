@@ -4,8 +4,10 @@
 v4代码、训练合同和历史证据的完整authority；它不再是活动架构authority。
 外部复核后的完整根因诊断见
 [`action_forecast_writer_v4_root_cause.md`](action_forecast_writer_v4_root_cause.md)；
-owner随后批准的唯一活动v5见
-[`action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)。
+owner随后批准并已封存的v5见
+[`action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)；
+当前v5.1见
+[`action_forecast_writer_v5_1_proposal.md`](action_forecast_writer_v5_1_proposal.md)。
 
 面向外部专家的自包含问题、历史与结果入口见
 [`action_forecast_writer_expert_consultation.md`](action_forecast_writer_expert_consultation.md)。

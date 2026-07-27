@@ -912,8 +912,9 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   “假如我是teacher，此刻接下来会怎么动”的机器人动作forecast。
 - Plan、Revision、Belief、两层Temporal和LoRA decoder在该历史v4中的精确定义
   及退役边界见`docs/action_forecast_writer_design.md`。它不再是活动架构；
-  当前v5见`docs/action_forecast_writer_v5_design.md`。旧v1/v2/v3/v4表述只
-  解释历史实验，不再约束实现。
+  后续v5见`docs/action_forecast_writer_v5_design.md`，当前v5.1见
+  `docs/action_forecast_writer_v5_1_proposal.md`。旧v1/v2/v3/v4表述只解释
+  历史实验，不再约束实现。
 
 ## 32-token Visual-State v4实现检查（2026-07-25）
 
@@ -1518,3 +1519,63 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   `stop_after_step=1800`与source policy trainable参数0；invocation明确记录
   `contract_compatible_code_resume=true`。step900 resident validation复算与
   原值完全一致，step901起metrics连续追加，初始常规step约`3–4s`。
+
+## v5 observed-best与正式特异性结论（2026-07-27）
+
+- 正式时间轴已正常完成step0→1800。fixed400 correct在step100/400/700/800/
+  900/1000/1400/1700/1800依次为
+  `62/64/92/76/103/115/115/71/86`。step1000与1400并列observed-best；
+  step1400 online functional loss更低且时间更晚，故选它做唯一正式特异性。
+  step1700/1800的强下降说明训练已跨过高点，不存在“只要再训一段就可能自然
+  解决顺序”的充分依据。
+- step1400内部16-reference五条件中位relative L2：
+  - same：Core set `4.423%`、Procedure `19.052%`、effective LoRA `7.304%`、
+    action `1.394%`；
+  - wrong：`44.732%/111.729%/72.638%/16.987%`；
+  - shuffled：约`0/64.299%/2.928%/0.486%`；
+  - reversed：`0.0157%/72.560%/4.773%/0.752%`。
+  fixed-Core Procedure-only的shuffle/reverse effective LoRA仍有
+  `2.921%/4.767%`，证明上游Procedure没有忘掉顺序。与step900相比，
+  Procedure顺序差基本稳定，而LoRA/action差反而缩小；最早明确失效层是
+  Procedure到最终slots/factors的融合/编译。
+- fixed400五臂为`correct/same/wrong/shuffled/reversed =
+  115/108/74/113/114`，95% Wilson区间分别为
+  `24.53–33.37/22.88–31.55/15.00–22.60/24.06–32.85/24.30–33.11%`。
+  400个episode的task/state、language/env seed、policy noise共同前缀、
+  checkpoint和pairing hash全部严格配对。
+- 相对correct：
+  - same为both/correct-only/other-only/both-fail=`92/23/16/269`，
+    净`+7`、churn `9.75%`、exact McNemar `p=0.337`；
+  - wrong为`57/58/17/268`，净`+41`、churn `18.75%`、
+    `p=2.18e-6`；
+  - shuffled为`101/14/12/273`，净`+2`、churn `6.50%`、
+    `p=0.845`；
+  - reversed为`103/12/11/274`，净`+1`、churn `5.75%`、`p=1.0`。
+- wrong净差主要来自Object-1 `+16`和Object-3 `+21`，但correct-only flips跨
+  33条teacher demos，说明不是少数坏视频；它证明视频内容有因果语义性，
+  尚不能证明跨全部tasks普适。顺序臂逐task仅`-1..+3`互相抵消；19个
+  correct-fail episode至少在一个假顺序臂成功，correct同时优于wrong/shuffle/
+  reverse的episode只有3个。结论是same鲁棒性方向可接受、wrong-video门通过，
+  order门明确失败，v5 overall AS gate失败。
+- 四个counterfactual各独占物理GPU4/5/6/7，每卡6 rollout workers、3 Writer
+  generators，36 shards按long-first调度；全部400/400、return code全0、
+  无OOM/traceback，wall `2201.9–2255.1s`。results SHA256依次为
+  correct `cc0ea739...67c2`、same `e5b9705e...88a0`、wrong
+  `2e8b54ab...00c6`、shuffled `514b6647...977`、reversed
+  `2f75bc7b...076a`。
+
+## v5.1单一路径的证据依据（2026-07-27）
+
+- v5结果触发owner的条件授权：
+  `docs/action_forecast_writer_v5_1_proposal.md`由候选提升为下一唯一focused
+  架构。它不是因absolute略低而扩容，而是针对最早失效层重新分配预算：
+  factor hidden从420降到240，把容量放到task-token语义表征、language-axis
+  Core和slot-normalized fusion。
+- v5.1保留已经证明有效的Action Expert causal Procedure，改用text-only
+  contextual task queries与multimodal task-token evidence形成
+  permutation-invariant Semantic Core；Procedure内容先按时间中心化，再通过
+  zero-init AdaLN调制Core slots，最后只过一个post-fusion slot block。
+  机械预算`10,244,872`，比rank-128 Source-SFT少`52,472`。
+- 首段训练尺度定义为约一小时wall-clock而非固定optimizer step。v5.1必须先
+  重新profile显存与吞吐；第二/第三段都要由上一段的早期特异性、absolute与
+  曲线证据单独批准，不能把“未看到充分峰后下降”机械翻译成自动续训。

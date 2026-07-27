@@ -4,12 +4,12 @@
 
 阅读规则：本文按时间顺序保留真实执行状态。早期段落中的“当前”“下一步”、
 GPU范围和训练步长是当时快照；活动状态只取
-`docs/active_session_handoff.md`、`docs/action_forecast_writer_v5_design.md`
+`docs/active_session_handoff.md`、`docs/action_forecast_writer_v5_1_proposal.md`
 和本文末尾最新段落，不能用旧快照覆盖后续owner决定。
 
 ## 当前状态
 
-- 长期Goal已建立且无token budget；不会因source base、Writer或任一局部阶段提前完成。
+- 当前session-local Goal以工具实时状态为准；不会因source base、Writer或任一局部阶段提前完成长期主线。
 - 活动目标split仍为四个标准LIBERO suites、每suite 6 train / 2 validation / 2 test，总计24/8/8；seal位于 `configs/libero_24_8_8_v1/`。
 - generic `lerobot/pi05_base` revision `7de663972b7817d2c4cf2d84c821153dfea772e9` 已下载，weights SHA256 `0eb11ca9587678c1d2ef8cf32807c29f8ce53a2bfdfc1aa4a4c96f16fca59b0f`。
 - generic base在8 test tasks×50 fixed states上为 `0/400`。400 rows唯一、全部到suite horizon，result seal SHA256 `c78e92e9...20c2`；该结果不评价EMBER。
@@ -20,9 +20,9 @@ GPU范围和训练步长是当时快照；活动状态只取
   当前单视频合同切换后只运行防止无效正式实验所需的focused 25 tests并全部
   通过。没有用重复全仓仪式性校验延迟GPU训练。
 - 第一轮完整流程只跑一个training seed；不提前扩多seed或direct action-budget curve。
-- 当前focused Writer为Semantic Core + Causal Procedure v5；单视频完整
-  action-batch正式首段正在GPU4–7从fresh step0训练到900，实时接手信息见
-  `docs/active_session_handoff.md`。
+- v5已完成step0→1800与正式五臂并因顺序行为门失败退役。当前focused Writer
+  为v5.1 Language-Axial Semantic Core + Causal Action Procedure +
+  Slot-Normalized Fusion；实时接手信息见`docs/active_session_handoff.md`。
 - 2026-07-27交接审计时`/data/ymdai`占用约337.34GB，低于500GB cap；该值是
   live快照，新launch仍须重查。只清理已核验可再生的smoke/profile产物，不删除
   正式checkpoint、raw rows或来源不明文件。
@@ -1167,3 +1167,35 @@ GPU范围和训练步长是当时快照；活动状态只取
   初始核验至step917全部finite；常规step约`3–4s`，每步全局80 actions、
   4个one-video conditions与1次policy forward。GPU4–7约`77.9GB`且UTL接近
   100%。
+
+## v5训练封存与step1400正式特异性（2026-07-27）
+
+- step900→1800 exact-resume正常结束；metrics连续finite、每100步atomic
+  checkpoint完整，旧训练tmux已退出。fixed400 correct在step1000与1400并列
+  `115/400`，step1700/1800降至`71/86`，选择step1400 observed-best完成唯一
+  正式机制检查，不再补1100/1200/1300/1500。
+- step1400内部16-reference检查已在GPU4–7完成，16/16 rows、最大wall
+  `27.12s`、peak reserved `19.316GB`。Core对同帧集合保持不变，
+  Procedure shuffle/reverse中位差`64.30%/72.56%`，但effective LoRA仅
+  `2.93%/4.77%`、policy action仅`0.49%/0.75%`；下游融合衰减是最早失效层。
+- correct复用既有115/400；same/wrong/shuffled/reversed分别独占GPU4/5/6/7
+  同时正式运行，每卡3 Writer generators + 6 persistent rollout workers。
+  259个unique LoRA cache/臂只各生成一次；前12个long shards在普通task之前
+  全部领取，随后动态分配。四臂均36/36 shards、400/400 rows、六worker
+  return code全0、无错误，GPU已释放。
+- 最终五臂为`115/108/74/113/114`。相对correct的
+  correct-only/arm-only和exact p：
+  same `23/16, p=.337`；wrong `58/17, p=2.18e-6`；
+  shuffled `14/12, p=.845`；reversed `12/11, p=1.0`。
+  视频内容门通过，same方向可接受，顺序门明确失败；v5停止且不进入RL。
+
+## v5.1 authority切换（2026-07-27）
+
+- 已完整保存side-chat收敛方案到
+  `docs/action_forecast_writer_v5_1_proposal.md`。v5正式失败触发owner的直接
+  推进授权；`AGENTS.md`、`docs/execution_brief.md`和
+  `docs/active_session_handoff.md`已切换为v5.1唯一下一架构。
+- v5.1首段不预设900/1800 steps：实现与必要smoke后，先在GPU4–7用真实105帧
+  视频重新profile显存、action batch和step吞吐，再换算约一小时fresh formal
+  stop。首段后先查内部五条件与轻量paired行为；第二/第三段只有在特异性、
+  absolute和曲线共同支持时才单独启动，绝不自动续训。

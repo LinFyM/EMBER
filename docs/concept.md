@@ -34,16 +34,25 @@ evaluation仍严格每次一条video。
 held evaluation每rollout随机采一条正确task视频，报告对teacher-video分布的
 性能，不挑最好video。
 
-当前v5把视频理解分成两类互补表示：
+v5已经证明：permutation-invariant Core和causal Procedure可以同时存在，
+wrong-video语义效应也能成立，但若下游用additive refiner把两者编译成LoRA，
+Procedure的顺序差可能被压到行为无效。step1400五臂
+`115/108/74/113/114`封存了这个失败。
 
-- Semantic Core从被语言条件化的PaliGemma image-position hidden中读取对象、
-  关系、场景和整体操作，并在结构上对同一组帧的shuffle不变；
-- Causal Procedure从固定native suffix下的Action Expert interaction hidden
-  读取任务如何按阶段推进，不再预测7D action trajectory。
+当前v5.1仍把视频理解分成Semantic Core与Causal Procedure，但重新定义上游
+语义轴和融合：
 
-Core先形成稳定LoRA content，Procedure再以zero-init refinement加入正确的有序
-过程。完整实现合同见
-[`action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)。
+- text-only Gemma对纯任务token产生video-independent contextual queries；
+- multimodal PaliGemma只取每帧task-language span hidden作为视觉证据；
+- token-aligned frame-set attention先沿frame集合聚合，再沿language tokens做
+  bidirectional Core composition，因此Core对同帧集合顺序严格不变；
+- Action Expert固定native suffix产生per-frame interaction hidden，两层causal
+  Transformer形成Procedure；
+- 320 slots先读Core，中心化Procedure再生成zero-init AdaLN参数调制Core，
+  最后经过一个post-fusion slot block生成LoRA。
+
+完整合同见
+[`action_forecast_writer_v5_1_proposal.md`](action_forecast_writer_v5_1_proposal.md)。
 
 ## RL-Writer
 

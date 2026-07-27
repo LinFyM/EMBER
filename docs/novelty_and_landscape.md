@@ -14,18 +14,23 @@
 6. test-task identity/AS/RL Writer三臂RL检验初始化是否改善practice；
 7. 8-test联合action-SFT shared LoRA给出privileged ceiling。
 
-当前唯一活动Writer是Semantic Core + Causal Procedure v5。它不再把
-action-hidden teacher video强行解释成与独立机器人episode逐时刻对齐的7D
-future-action trajectory，而是把单条视频分解为两种互补证据：
+v5已证明wrong-video语义效应可以成立，但其additive fusion把Procedure顺序差
+压到行为无效；step1400五臂`115/108/74/113/114`因此封存为负结果。
+
+当前唯一活动Writer是v5.1 Language-Axial Semantic Core + Causal Action
+Procedure + Slot-Normalized Fusion。它不把action-hidden teacher video强行
+解释成与独立机器人episode逐时刻对齐的7D future-action trajectory，而是把
+单条视频分解为两种互补证据：
 
 - 对帧集合置换严格不变的Semantic Core，保存对象、场景、目标关系和整段视频
   共同支持的高层任务内容；
 - 对真实顺序敏感的可变长causal Procedure，保存这些交互状态如何有向演进。
 
-Core先生成稳定的LoRA内容，Procedure只作zero-init的有向修正。这一设计直接吸收
-v4 `shuffled=148/400 > correct=109/400`的教训：shuffle没有创造更多任务知识，
-而是破坏了压过高层语义的低层translation controller bias；新架构必须先保住
-这部分高层任务内容，再让正确顺序提供额外增益。
+text-only contextual task queries与multimodal task-token evidence先形成
+language-axis Core；中心化Procedure再通过zero-init AdaLN调制Core slots，并
+经过一个post-fusion block生成LoRA。这一设计同时吸收v4
+`shuffled=148/400 > correct=109/400`和v5 `shuffled=113≈correct=115`的教训：
+必须先保住高层任务内容，也必须防止融合层把正确顺序的作用压没。
 
 训练时每rank每step只处理一个task：1条teacher video生成1套one-shot LoRA，
 整批`B_a`条独立action queries全部监督该LoRA；每条action只计算一次，推理
@@ -49,7 +54,7 @@ Source-SFT从同一frozen base出发，在24/32目标source tasks上联合训练
 
 错误视频来自另一suite，正确language与执行task保持不变。若Writer只是生成通用adapter或主要依赖language，wrong-video可能同样提升；`correct - wrong` 才是视频内容价值的直接证据。这不是独立训练Language-only/Video-only Writer arm，不违反精简baseline原则。
 
-对当前v5还必须同时报告same-task other teacher、shuffle与reverse。期望关系是：
+对当前v5.1还必须同时报告same-task other teacher、shuffle与reverse。期望关系是：
 same-task other与correct的policy-function差异最小且表现接近；correct稳定优于
 wrong、shuffle和reverse。大多数当前操作任务都包含有价值的阶段顺序，因此
 `correct > shuffled/reversed`仍是硬门，而不是允许相等的装饰性指标。

@@ -987,8 +987,8 @@ v4-shuffled旁路；不足来自生成修正的有用性、稳定性和task brea
 
 ### 11.3 当前活动进程与代码
 
-HEAD=origin/main=`082090fa5cbbbbde0796fae6642b5c8af690b4fb`，tree在本节文档
-更新commit前可能暂时只含ledger diff。该commit已加入：
+evaluator实现commit为`082090fa5cbbbbde0796fae6642b5c8af690b4fb`；本节
+ledger另由后续文档commit封存。实现commit加入：
 
 - 每物理GPU EGL env close/create transition的用户级flock；
 - 多次failed/resume launcher的累计shard与active-wall证据；

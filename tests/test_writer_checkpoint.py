@@ -201,6 +201,19 @@ def test_as_writer_evaluation_seals_raw_video_authority_and_wrong_map(
     assert shuffled["video_condition"] == "shuffled"
     assert shuffled["wrong_video_mapping"] == "identity"
 
+    exploratory_source = {**source, "source_run_summary_sha256": None}
+    exploratory = inspect_as_writer_evaluation(
+        config_path=AS_CONFIG,
+        checkpoint=checkpoint,
+        video_data_root=data_root,
+        source=exploratory_source,
+        task_keys=validation_keys,
+        video_condition="correct",
+        video_seed=7,
+        require_formal=False,
+    )
+    assert exploratory["checkpoint"]["cursor"] == 4
+
     changed = {**source, "optimizer_step": 999}
     with pytest.raises(WriterModelError, match="authority changed"):
         inspect_as_writer_evaluation(

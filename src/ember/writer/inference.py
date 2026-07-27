@@ -387,11 +387,27 @@ def _inspect_training_checkpoint(
     lora = load_pi05_lora_contract(
         REPO_ROOT / str(config["authorities"]["lora_contract"]["path"])
     )
+    training_source = training.get("source")
+    observed_source = dict(source)
+    source_matches = training_source == observed_source
+    if (
+        not source_matches
+        and not require_formal
+        and isinstance(training_source, Mapping)
+        and observed_source.get("source_run_summary_sha256") is None
+        and isinstance(training_source.get("source_run_summary_sha256"), str)
+        and len(training_source["source_run_summary_sha256"]) == 64
+    ):
+        training_without_summary = dict(training_source)
+        observed_without_summary = dict(observed_source)
+        training_without_summary.pop("source_run_summary_sha256", None)
+        observed_without_summary.pop("source_run_summary_sha256", None)
+        source_matches = training_without_summary == observed_without_summary
     valid = (
         training.get("schema_version") == AS_WRITER_LAUNCH_SCHEMA
         and training.get("stage", "development") == writer_stage(config)
         and training.get("config_sha256") == sha256_file(config_path)
-        and training.get("source") == dict(source)
+        and source_matches
         and training.get("authorities") == config["authorities"]
         and training.get("information_wall") == config["information_wall"]
         and training.get("writer") == config["writer"]

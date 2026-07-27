@@ -1679,3 +1679,51 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   在state-pair层面成立但task breadth有限；shuffle顺序证据未成立；overall
   v5.1首段未通过继续训练或进入RL的门槛。owner要求特异性检查后停止，因此
   无放回重测、第二/第三段、full-400五臂和cold-start RL均未启动。
+
+## v5.1 step700无放回全量特异性与新推进判据（2026-07-27）
+
+- owner随后解除旧停止边界并要求持续探索；正式视频合同改为每个validation
+  task的50条teacher videos对50个fixed states做一次无放回随机双射。correct、
+  shuffled、reversed使用同一state对应的同一demo；same-task-other使用
+  `(correct_demo+17) mod 50`；wrong保持demo ordinal并换到cross-suite task。
+  五臂的task/state、language、env seed、policy seed和实际消费noise前缀均已
+  逐row核验一致。
+- step700无放回full400结果：
+
+  | arm | successes | success rate |
+  |---|---:|---:|
+  | correct | 88 | 22.00% |
+  | same-task-other | 97 | 24.25% |
+  | cross-suite-wrong | 75 | 18.75% |
+  | shuffled | 65 | 16.25% |
+  | reversed | 45 | 11.25% |
+
+  correct相对same为`17/26` discordant、净`-9`、`p=.2221`，说明跨同task
+  demo鲁棒；相对wrong为`46/33`、净`+13`、`p=.1766`，语义方向存在但未达到
+  显著且正向净收益的`73.7%`来自Object-1，breadth不够；相对shuffled为
+  `46/23`、净`+23`、`p=.00762`；相对reversed为`60/17`、净`+43`、
+  `p=8.91e-7`。order破坏显著伤害行为，且不再复现v4 shuffled优于correct的
+  逻辑漏洞，但主要有效task仍集中在Goal-6与Object-1/3，不能把它等同于充分
+  absolute competence。
+- absolute `88/400`比旧有放回step700的`98/400`更低，且远低于旧
+  Action-Forecast约`125/400`与v4 shuffled `148/400`目标区域。内部结构有
+  特异性、order OOD会退化，只证明video信息进入函数；它没有证明correct
+  Procedure向量对控制有足够有用的方向。因此继续训练后的关键不是只看内部
+  distance，而是用统一无放回correct曲线定位observed-best，再检查
+  Core-only/full/Procedure强度与LoRA功能尺度。
+- 完整逐row分析在
+  `/data/ymdai/outputs/ember/pi05_as_writer_v5_1_specificity400_noreplacement_seed7_step0700_paired_analysis_92b1e03_20260727.json`，
+  SHA256为
+  `c4a62c4c091b1262c3dbcb17382aad757b8865958212ae62b4a9e4f5986231fa`。
+  它只承担step700机制证据；不得与旧有放回checkpoint screen混合选best。
+
+## 多GPU评测尾部根因与修正（2026-07-27）
+
+- 24 worker现场已经满足“每个worker先long、全局无long后才ordinary”，但旧
+  ordinary分片仅24份，long结束后恰好每worker一份；成功即终止导致单波运行时
+  差异，最后阶段出现三张卡等待一个ordinary shard的长尾。
+- 新算法不改变long优先级、preferred-GPU affinity或任何state/video配对，只在
+  ordinary名义shard数少于两个worker波次时，寻找满足目标的最大state cap。
+  四卡×6 worker、8 tasks×50 states时得到48 long + 48 ordinary，ordinary
+  每片最多7 states；少卡/少worker按实际slots自适应，已有足够动态工作时不再
+  细分。该改动优化有效rollouts/s，不用dummy workload填显存。

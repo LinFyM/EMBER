@@ -1,10 +1,11 @@
-# EMBER v5结论与v5.1首段停止交接
+# EMBER v5.1持续绝对性能探索交接
 
 最后更新：2026-07-27 UTC。
 
-本文是focused v5.1 AS Writer首段与特异性检查的完整跨session恢复入口：集中
-保存研究北极星、从最早Writer到v5的证据链、v5正式失败结论、v5.1设计理由、
-首段结果和owner要求的停止点，使新session不依赖历史聊天也能接手。当前精确架构以
+本文是focused v5.1 AS Writer与开放式绝对性能探索的完整跨session恢复入口：
+集中保存研究北极星、从最早Writer到v5的证据链、v5正式失败结论、v5.1设计
+理由、首段结果、无放回五臂证据和当前继续训练合同，使新session不依赖历史聊天
+也能接手。当前精确架构以
 `docs/action_forecast_writer_v5_1_proposal.md`为准；v5设计只作provenance。
 长期项目边界以`AGENTS.md`和`docs/execution_brief.md`为准。本文中的step和
 进程状态是交接快照，接手后必须先做只读实时复核，不能据此重复启动任务。
@@ -14,19 +15,17 @@ focused AS/RL完成或本文不再承担跨session恢复作用时，更新或删
 
 ## 1. 当前focused objective
 
-owner已经确认理解并授权：v5正式特异性不佳时直接建立新的session-local Goal
-推进v5.1。v5已明确失败，因此当前objective是：
+owner已经解除此前“特异性后停止”和“AS过门后才可探索RL”的临时边界，并创建
+新的session-local Goal：在EMBER核心映射和硬约束内，自主训练、诊断、修改
+架构并可做可判别的低成本RL探索，尽可能提高correct-video absolute performance。
+推进期间不需要逐项审核；只要absolute尚未达到可信满意水平，或提升带有
+v4-shuffled式逻辑漏洞，就不得轻易停止。
 
-> 原位实现并验证canonical v5.1 Language-Axial Semantic Core + Causal Action
-> Procedure + Slot-Normalized Fusion；在GPU4–7上实测训练与推理配置上限，
-> 依据新架构吞吐确定约一小时的首个fresh AS segment，完成早期内部与轻量行为
-> 特异性判定。不得自动开始第二段、第三段或cold-start RL。
-
-该objective已经完成到owner要求的停止点：v5.1首段、observed-best选择、内部
-检查和轻量五臂paired rollout均已完成；第二/第三段、无放回重测、full-400五臂
-和cold-start RL均未启动。Goal是session-local状态，不能仅凭本文假定它存在。
-新session应先完整阅读第10节规定的文档并执行第9节末尾的只读命令，核验Git、
-tmux、GPU4–7和真实artifact状态；在owner重新讨论并明确授权前不得launch。
+v5.1首段step0→900、内部机制检查、轻量有放回五臂和step700无放回full400五臂
+已完成。当前立即路径是同一formal root从step900 exact-resume至step1800，
+随后用统一无放回correct400密集扫描checkpoint；再在真实observed-best上做
+内部/五臂复核与功能强度诊断。新session仍须先执行第9节的只读命令核验Git、
+tmux、GPU4–7和artifact，但不应重新等待owner批准。
 
 ## 2. EMBER 的研究北极星、任务和信息合同
 
@@ -797,6 +796,44 @@ nvidia-smi -i 4,5,6,7 \
 GPU边界始终不变：只使用物理GPU4、5、6、7；0–3不进入visible set或查询；
 不得杀、暂停、reset任何他人进程；任何新GPU launch前重新做live GPU与
 `/data/ymdai` 500GB cap检查。
+
+### 9.5 step700无放回full400与当前resume合同
+
+新的canonical视频采样把每task demo0..49对state0..49做无放回随机双射。
+step700 correct/same/wrong/shuffled/reversed=`88/97/75/65/45`。correct相对
+same、wrong、shuffled、reversed的discordant pairs分别为`17/26`、
+`46/33`、`46/23`、`60/17`，双侧exact p为`.2221/.1766/.00762/8.91e-7`。
+因此same鲁棒、order破坏确实更差；wrong语义方向仍不显著且主要依赖Object-1，
+absolute `88/400`也远未到停止标准。
+
+逐row证据：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v5_1_specificity400_noreplacement_seed7_step0700_
+paired_analysis_92b1e03_20260727.json
+SHA256 c4a62c4c091b1262c3dbcb17382aad757b8865958212ae62b4a9e4f5986231fa
+```
+
+评测queue的global long-first不变；ordinary在不足时细分到至少两个实际worker
+波次，标准四卡×6 worker现为48 long + 48 ordinary，避免成功早停后的单波尾部。
+实现commit `73f171a`已push，全仓`194 passed`。
+
+待启动的正式训练沿用原root、F32/B20与4-rank DDP，仅将stage stop从900推进到
+1800。step900 checkpoint manifest/canonical payload/writer/trainer SHA256为：
+
+```text
+6958498bcefba9093233bde7848f3a5333686d12ce7d16d0aa9d6158e735b828
+2971d3a46b7c061efcd0160725c8bb31cb4b8bcb6c5bab3c2d39d4de9cae48fe
+17da429d85a5a50db49173d2e147920a38cbb343b49d512c26c2ed61978087ac
+a7057a84a7ecd6e16167c27960d78bed53f9728a407f8ca1d22ed179c5b63cda
+```
+
+预计新增900 optimizer steps、72,000 action queries、3,600 one-video conditions、
+9个checkpoint和约一小时wall。启动前必须确认原训练contract
+`acc57fd96cace6d3a9d38a7dbfe6d8593cd29bdce1a0ff10e1f2b4239de46227`
+除兼容代码commit外完全一致；训练结束后不能用online functional loss选best，
+必须用无放回correct400曲线。
 
 ## 10. 文档阅读、代码地图与接手验收
 

@@ -549,9 +549,20 @@ action-hidden teacher video -> one task LoRA`的核心映射。
 
 夜间证据路径：
 
-- [ ] 对v5.1 step700完成无放回paired
+- [x] 对v5.1 step700完成无放回paired
   correct/same/wrong/shuffled/reversed各400；现有有放回correct不能混作paired
-  baseline。
+  baseline。五臂为`88/97/75/65/45`；相对correct的
+  correct-only/control-only及双侧exact McNemar分别为same
+  `17/26,p=.2221`、wrong `46/33,p=.1766`、shuffled
+  `46/23,p=.00762`、reversed `60/17,p=8.91e-7`。所有arm均400 rows、
+  每task demo0..49与state0..49一一无放回，逐row seed/noise前缀配对通过。
+  step700 absolute仅`88/400`，wrong优势还不显著且主要来自Object-1；
+  shuffle/reverse门已有真实方向，但不能据此停止探索。
+- [x] 修正四卡评测的ordinary尾部：保持所有未领取long shard全局优先，
+  同时按实际`physical_gpu_count × replicas_per_gpu`把ordinary确定性细分到
+  至少两个worker波次。标准四卡×6 worker面板由48 long + 24 ordinary改为
+  48 long + 48 ordinary，state覆盖不变；focused 48 tests和全仓194 tests通过，
+  实现commit `73f171a`已push。
 - [ ] 同一formal root从step900 exact-resume到step1800；合同不变，每100步保存，
   不因online functional loss单独选best。
 - [ ] 用无放回correct400建立足够密的step500–1800闭环曲线，选择同一合同下的
@@ -565,3 +576,51 @@ action-hidden teacher video -> one task LoRA`的核心映射。
   AS输入、把完整AS best冒充cold start、污染test或用RL结果掩盖AS绝对性能。
 - [ ] owner醒来前封存当前最好结果、失败归因、资源消耗、代码/Git状态与下一步；
   不自动推进final-32、test task-local RL或joint oracle。
+
+继续/停止判据：
+
+- 绝对分数只要仍低于可信满意区间或曲线未形成充分峰后下降，就继续训练、诊断
+  或fresh架构实验；不能因单点略涨而结束；
+- 任何absolute提升若依赖wrong video、shuffle/reverse、validation泄漏或其他
+  与EMBER核心映射冲突的捷径，一律判为机制失败，不算进展；
+- 只有correct absolute达到或实质超过旧Action-Forecast约`125/400`并向
+  `148/400`区域推进，同时same/wrong/order五臂与内部因果链均无逻辑漏洞，
+  才能考虑封存AS结论；否则继续定位最早失效层。
+
+step900→1800正式resume合同：
+
+```text
+workspace/branch: /data/ymdai/projects/EMBER @ main
+code commit:      73f171a（评测尾部修正；训练代码相对原formal合同兼容）
+source policy:    pi05_source_base_v1_seed7_1k_e2cc238_20260722/step_00001000
+resume:           v5.1 formal root/step_00000900
+devices:          physical GPU4,5,6,7; 4-rank DDP
+scale:            +900 optimizer steps, +72,000 action queries,
+                  +3,600 one-video conditions
+training:         F32/B20, bf16, exact optimizer/scheduler/sampler/RNG resume
+retention:        checkpoints1000..1800 every100; projected ~1.2GB
+selection:        validation split only; no-replacement correct400 curve,
+                  then full paired five-arm on observed-best
+resume policy:    same output root, no overwrite; reject any contract mismatch
+```
+
+精确resume命令（在tmux `ember-v51-as-sv1800`中执行）：
+
+```bash
+env PYTHONPATH=/data/ymdai/projects/EMBER/src \
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4,5,6,7 \
+OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false PYTHONUNBUFFERED=1 \
+/data/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=4 \
+scripts/train_as_writer.py \
+--config configs/pi05_as_writer_language_axial_v5_1.json \
+--mode formal \
+--source-run /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722 \
+--checkpoint /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 \
+--tokenizer-path /data/ymdai/ember_data/openpi/paligemma_tokenizer.model \
+--data-root /data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a \
+--output-dir /data/ymdai/outputs/ember/pi05_as_writer_v5_1_language_axial_dev_r4_seed7_s12000_c199ad3_20260727 \
+--resume /data/ymdai/outputs/ember/pi05_as_writer_v5_1_language_axial_dev_r4_seed7_s12000_c199ad3_20260727/checkpoints/step_00000900 \
+--stop-after-step 1800 \
+--num-workers 2 --log-every 10 \
+--allow-contract-compatible-code-resume
+```

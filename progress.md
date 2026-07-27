@@ -1301,3 +1301,30 @@ GPU范围和训练步长是当时快照；活动状态只取
   v5.1首段特异性结论，等待讨论。封存前fresh重读全部上述JSON与SHA、验证逐row
   paired统计和内部counterfactual；全仓`PYTHONPATH=src .venv/bin/pytest -q`
   为`190 passed`，物理GPU4–7均为`0 MiB`且没有活动EMBER tmux/process。
+
+## v5.1无放回五臂与持续探索恢复（2026-07-27）
+
+- owner明确解除上述停止点并创建开放式AS性能Goal；只要absolute没有提高到
+  可信满意水平，或提升存在v4-shuffled式逻辑漏洞，就继续探索，不需逐项审核。
+- step700新的无放回paired full400已全部完成：
+  correct/same/wrong/shuffled/reversed=`88/97/75/65/45`。五个root均400 rows、
+  8 tasks×50 states；每task teacher demo0..49恰好各用一次，所有worker
+  exit0。结果SHA256依次为
+  `d3391e3a...ae1b`、`2369d50c...f388`、`1e295154...a12c`、
+  `11a98c83...37ca`、`622b0bca...d598`。
+- 逐row配对分析封存在
+  `pi05_as_writer_v5_1_specificity400_noreplacement_seed7_step0700_paired_analysis_92b1e03_20260727.json`
+  （SHA256 `c4a62c4c...31fa`）。same净`-9,p=.2221`；correct相对wrong
+  净`+13,p=.1766`；相对shuffled净`+23,p=.00762`；相对reversed净
+  `+43,p=8.91e-7`。新结果消除了v4式shuffle获益，但absolute与wrong breadth
+  均未达到停止标准。
+- 根据四卡24-worker reversed现场尾部，canonical queue现在保持long全局优先
+  的同时，把ordinary工作至少保留两个worker波次。实际标准panel从
+  48 long + 24 ordinary变为48 + 48；覆盖仍为400/400且long领取顺序不变。
+  focused evaluator测试`48 passed`、全仓`194 passed`，commit
+  `73f171a`已push。
+- step900 checkpoint重新核验：manifest/canonical payload/writer/trainer
+  SHA256分别为`6958498b...b828`、`2971d3a4...8fe`、
+  `17da429d...7ac`、`a7057a84...cda`；原训练合同SHA256
+  `acc57fd9...227`。下一动作是只在GPU4–7上同root exact-resume至step1800，
+  随后按一张卡一个checkpoint并发建立无放回correct400密集曲线。

@@ -1,10 +1,10 @@
-# EMBER v5结论与v5.1当前活动交接
+# EMBER v5结论与v5.1首段停止交接
 
 最后更新：2026-07-27 UTC。
 
-本文是当前 focused v5.1 AS Writer Goal 的完整跨session恢复入口：集中保存
-研究北极星、从最早Writer到v5的证据链、v5正式失败结论、v5.1设计理由、当前
-运行状态和下一动作，使新session不依赖历史聊天也能接手。当前精确架构以
+本文是focused v5.1 AS Writer首段与特异性检查的完整跨session恢复入口：集中
+保存研究北极星、从最早Writer到v5的证据链、v5正式失败结论、v5.1设计理由、
+首段结果和owner要求的停止点，使新session不依赖历史聊天也能接手。当前精确架构以
 `docs/action_forecast_writer_v5_1_proposal.md`为准；v5设计只作provenance。
 长期项目边界以`AGENTS.md`和`docs/execution_brief.md`为准。本文中的step和
 进程状态是交接快照，接手后必须先做只读实时复核，不能据此重复启动任务。
@@ -22,9 +22,11 @@ owner已经确认理解并授权：v5正式特异性不佳时直接建立新的s
 > 依据新架构吞吐确定约一小时的首个fresh AS segment，完成早期内部与轻量行为
 > 特异性判定。不得自动开始第二段、第三段或cold-start RL。
 
-Goal仍是session-local状态，不能仅凭本文假定它一定存在。新session应先完整阅读
-第10节规定的文档并执行第9节末尾的只读命令，核验Git、tmux、GPU4–7和真实
-artifact状态；若代码/训练已推进，应从最新证据继续，绝不能据本文重复launch。
+该objective已经完成到owner要求的停止点：v5.1首段、observed-best选择、内部
+检查和轻量五臂paired rollout均已完成；第二/第三段、无放回重测、full-400五臂
+和cold-start RL均未启动。Goal是session-local状态，不能仅凭本文假定它存在。
+新session应先完整阅读第10节规定的文档并执行第9节末尾的只读命令，核验Git、
+tmux、GPU4–7和真实artifact状态；在owner重新讨论并明确授权前不得launch。
 
 ## 2. EMBER 的研究北极星、任务和信息合同
 
@@ -674,48 +676,106 @@ shuffled 514b6647bdc21187004d16581032db0f6470829b0cdc3807737724dc92880977
 reversed 2f75bc7b1307fb32dbab57199b953b159c1ede4fbcb332ff0dbe7b6525f5076a
 ```
 
-## 9. 当前状态与v5.1下一动作
+## 9. v5.1首段结果、特异性结论与当前停止点
 
-owner已批准：v5结果不满意时无需等待讨论，直接建立新Goal推进v5.1。触发条件
-已经满足。当前唯一架构authority为
-`docs/action_forecast_writer_v5_1_proposal.md`：
+v5.1仍以`docs/action_forecast_writer_v5_1_proposal.md`为唯一架构authority。
+机械参数预算为`10,244,872`，比rank-128 Source-SFT少`52,472`。canonical
+实现、F32/B20真实训练上限、每卡6个persistent policy workers共同生成LoRA、
+全局long-first queue以及step1→2 exact-resume均已通过。
+
+### 9.1 首段训练与observed-best
+
+formal root：
 
 ```text
-text-only task-token queries
-+ multimodal per-frame task-token evidence
-→ token-aligned frame-set attention
-→ language-axis Semantic Core
-
-fixed native Action Expert suffix
-→ causal Action Procedure
-
-Core slots + centered Procedure
-→ zero-init AdaLN modulation
-→ post-fusion slot block
-→ complete rank-16 LoRA
+/data/ymdai/outputs/ember/pi05_as_writer_v5_1_language_axial_dev_r4_seed7_s12000_c199ad3_20260727
 ```
 
-机械参数预算为`10,244,872`，比rank-128 Source-SFT少`52,472`。v5.1必须
-原位替换canonical Writer并使用fresh不兼容schema；不保留v5 runtime兼容分支，
-不加contrast/order/margin loss。
+fresh step0→900正常结束：4-rank DDP、F32/B20，每step全局80 action queries、
+4 one-video conditions，合计72,000 queries与3,600 video conditions；
+9个checkpoint及exact-resume state完整，wall `3,622.36s`。online
+validation 100..900依次为：
 
-当前实现状态与执行顺序：
+```text
+0.1321190  0.1306069  0.1398120  0.1341999  0.1347347
+0.1329643  0.1334706  0.1332438  0.1331427
+```
 
-1. session-local v5.1 Goal已建立；canonical source/config/schema原位替换完成；
-2. CPU合同与全仓`189 passed`、GPU4–7真实policy smoke及step1→2 exact-resume
-   均已完成；
-3. 真实105帧profile重新选择F32/B20：最长步`7.25s`、常规步`3.25–3.66s`，
-   峰值allocated/reserved `76.93/83.64GB`；
-4. 推理profile选择每卡6个worker共同分摊LoRA生成并原进程rollout；queue已保证
-   所有未领取long全局优先于ordinary；
-5. 根据v5.1实测吞吐把当前首段封存为step900约一小时，每100步checkpoint和
-   online validation。900不是继承值，也不规定下一段到1800；
-6. 当前下一动作是fresh启动该step900首段；完成后必须停止，不自动resume；
-7. 首段结束后先做内部五条件与轻量paired rollout，重点检查final effective
-   LoRA和policy action是否恢复`same < shuffled/reversed`；
-8. 只有早期特异性实质改善，且absolute与训练/validation曲线共同值得继续，
-   才单独决定第二段；第三段同理，任何后续段都不得自动启动；
-9. full400和cold-start RL仍受原absolute/same/wrong/order硬门约束。
+validation已经平台化且非单调。旧有放回video采样脚本的80-rollout screen为：
+
+```text
+step:    100  200  300  400  500  700  800  900
+success:  19   18   15    7   21   17   19   14
+```
+
+随后按一张物理卡负责一个checkpoint、四卡同时完成step100/500/700/900各
+400条正式correct rollout，得到`82/96/98/84`。step700是observed-best，
+但`98/400`明显低于约`110–120/400` absolute预门和旧Action-Forecast
+`125/400`最低参照。
+
+这批旧采样在400 rollouts中只产生259个distinct task/demo LoRAs，属于有放回
+条件；它没有覆盖每条teacher video。owner最后要求做完当前特异性后停止，
+因此此前讨论的无放回重测明确未执行，不得把本结果误写成无放回证据。
+
+### 9.2 step700轻量五臂paired rollout
+
+80条完全相同的evaluation task/state/policy RNG下，只替换teacher-video
+condition，结果为：
+
+```text
+correct / same-task-other / cross-suite-wrong / shuffled / reversed
+17      / 20              / 7                 / 11       / 6
+```
+
+相对correct：
+
+| control | correct-only | control-only | exact McNemar p | task正/负/平 |
+|---|---:|---:|---:|---:|
+| same-task-other | 4 | 7 | 0.54883 | 2/2/4 |
+| cross-suite-wrong | 12 | 2 | 0.01294 | 3/1/4 |
+| shuffled | 10 | 4 | 0.17957 | 2/1/5 |
+| reversed | 13 | 2 | 0.00739 | 3/0/5 |
+
+same没有显著退化，但小样本不构成等价性证明。wrong和reversed在paired-state
+层面已有信号，wrong却主要由Object-1的`+7/10`贡献；shuffled方向正确但不显著。
+因此闭环视频语义与reverse顺序信号存在，仍不足以证明跨task稳定的完整order
+specificity。
+
+初次cross-suite-wrong运行遇到单worker MuJoCo/EGL 0x8cdd。resume虽补齐queue，
+aggregation因两次launcher timing窗口不一致而fail-close；该root没有可信
+`results.json`。正式wrong=`7/80`只来自随后使用GPU4–7、24 workers、单次调用
+完成80/80 rows的fresh clean rerun。
+
+### 9.3 内部16-reference机制检查
+
+8 tasks × 每task 2个teacher videos的relative-L2中位数：
+
+| condition | Semantic Core | Procedure slots | effective LoRA | policy action |
+|---|---:|---:|---:|---:|
+| same-task-other | 0.0403 | 0.3801 | 0.1163 | 0.0139 |
+| cross-suite-wrong | 0.2041 | 1.1826 | 0.5884 | 0.1414 |
+| shuffled | ~0 | 1.0516 | 0.5285 | 0.1015 |
+| reversed | 0.0030 | 1.6803 | 0.7434 | 0.1668 |
+
+wrong在全部8个task都改变Semantic Core；shuffle/reverse保持set-like Core近零，
+但改变causal Procedure。固定Core、只替换Procedure时，order差异几乎完整
+保留到LoRA/action；去除Procedure后shuffled严格归零，reversed action只剩
+`0.0021`。因此v5.1模块分工和内部信息路径按设计成立，问题在于这些差异尚未
+稳定转化为足够广泛的closed-loop成功率优势。
+
+### 9.4 判定与停止边界
+
+```text
+absolute performance:    失败（observed-best 98/400）
+same-task robustness:    方向可接受，未证明等价
+wrong-video semantics:   paired-state成立，task breadth仍弱
+order specificity:       reverse部分成立，shuffle未成立
+overall v5.1 first gate:  失败
+```
+
+当前没有活动训练、评测或内部probe；GPU4–7已释放。按owner最后指令停在这里：
+不启动第二/第三段，不做无放回重测，不扩成full-400五臂，不进入cold-start RL。
+下一动作只能是向owner讨论现有证据，等待新的明确授权。
 
 新session第一组只读核验：
 

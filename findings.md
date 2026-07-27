@@ -1622,3 +1622,60 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   必须先选择observed-best并做内部Core/Procedure/LoRA检查和轻量paired
   correct/same/wrong/shuffled/reversed；若早期顺序特异性没有实质改善，
   不因loss仍下降就机械启动第二段。
+
+## v5.1首段、observed-best与轻量特异性结论（2026-07-27）
+
+- fresh v5.1正式首段完整运行step0→900：4-rank DDP、F32/B20，每step全局
+  80条action queries和4个one-video conditions，合计72,000 queries、
+  3,600 video conditions；9个每100步checkpoint和exact-resume state均完整。
+  wall为`3,622.36s`，最终train loss为`0.10348`，全程平均吞吐
+  `25.69 queries/s`。online validation从step100的`0.13212`到step900的
+  `0.13314`，中间最低为step200的`0.13061`，整体已平台化且非单调；train
+  loss继续下降不能单独支持自动续训。
+- 旧有放回video采样脚本的80-rollout checkpoint screen为：
+  step100/200/300/400/500/700/800/900 =
+  `19/18/15/7/21/17/19/14`。owner指定的四卡并行正式复核把
+  step100/500/700/900分别扩到400条，得到`82/96/98/84`。因此step700是
+  当前observed-best，但`98/400`仍明显低于v5.1 absolute预门约
+  `110–120/400`和旧Action-Forecast最低参照`125/400`；step500与step700的
+  2条差距也不足以声称形成清晰性能峰。
+- 只对step700做了80条完全配对的五臂轻量检查。最终
+  correct/same-task-other/cross-suite-wrong/shuffled/reversed为
+  `17/20/7/11/6`。相对correct的discordant pairs和双侧exact McNemar为：
+
+  | control | correct-only | control-only | correct-control | exact p |
+  |---|---:|---:|---:|---:|
+  | same-task-other | 4 | 7 | -3/80 | 0.54883 |
+  | cross-suite-wrong | 12 | 2 | +10/80 | 0.01294 |
+  | shuffled | 10 | 4 | +6/80 | 0.17957 |
+  | reversed | 13 | 2 | +11/80 | 0.00739 |
+
+  same-task-other没有显著恶化，方向上可视为鲁棒，但小样本不能证明等价。
+  wrong和reversed在paired-state层面已有显著信号；然而correct-wrong只有
+  3个task正、1个负、4个平，主要由Object-1的`+7/10`贡献，
+  correct-reversed也只有3正、0负、5平。shuffled仅2正、1负、5平且不显著。
+  因而视频语义与reverse顺序信号存在，但尚未形成跨task稳定的完整order gate。
+- 16条reference（8 tasks × 每task 2 videos）的内部检查揭示了清晰的分层机制：
+
+  | condition | Semantic Core | Procedure slots | effective LoRA | policy action |
+  |---|---:|---:|---:|---:|
+  | same-task-other | 0.0403 | 0.3801 | 0.1163 | 0.0139 |
+  | cross-suite-wrong | 0.2041 | 1.1826 | 0.5884 | 0.1414 |
+  | shuffled | ~0 | 1.0516 | 0.5285 | 0.1015 |
+  | reversed | 0.0030 | 1.6803 | 0.7434 | 0.1668 |
+
+  数值均为相对correct的逐样本relative L2中位数。wrong在所有8个task都改变
+  Semantic Core；shuffle/reverse保持set-like Core近似不变而大幅改变causal
+  Procedure。固定Core、只替换Procedure时，shuffled/reversed的effective
+  LoRA与action差异几乎完整保留；移除Procedure时shuffled严格归零，reversed
+  action只剩`0.0021`。这证明v5.1的模块分工和信息路径按设计工作，但下游
+  closed-loop成功率没有把这种内部差异稳定转化为足够强的跨task优势。
+- cross-suite-wrong第一次运行发生单worker MuJoCo/EGL
+  `Offscreen framebuffer is not complete (0x8cdd)`。native resume虽补齐queue，
+  aggregation因两次launcher timing窗口不一致而fail-close；该目录没有可信
+  `results.json`，其数值不得引用。随后在GPU4–7进行全新单次调用，80/80 rows、
+  26/26 shards、24 workers全部成功，正式wrong结果仅使用fresh rerun的`7/80`。
+- 当前科学判断：absolute gate失败；same鲁棒性方向可接受；wrong语义与reverse
+  在state-pair层面成立但task breadth有限；shuffle顺序证据未成立；overall
+  v5.1首段未通过继续训练或进入RL的门槛。owner要求特异性检查后停止，因此
+  无放回重测、第二/第三段、full-400五臂和cold-start RL均未启动。

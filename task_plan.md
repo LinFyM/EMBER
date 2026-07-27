@@ -496,13 +496,30 @@ Plan/Revision/Belief或旧活动config/schema。
 - [x] 依据v5.1吞吐而非继承v5步数，将首个fresh formal segment换算为step900
   约一小时；每100步保存并做512-query online validation。900只是本首段停止点，
   不是未来第二/第三段的固定间隔。
-- [ ] 从fresh identity运行sealed v5.1首段至step900；只使用GPU4–7，完成后停止，
-  不自动resume。
-- [ ] 首段后先做内部五条件与轻量paired rollout，重点要求final effective
-  LoRA / policy action的`same < shuffled/reversed`相对v5实质改善，并同时看
-  absolute与validation曲线。
-- [ ] 第二段、第三段或任何额外segment都不得自动启动；每段必须根据前一段的
-  特异性、absolute和曲线证据单独决定。full400与cold-start RL继续受原硬门约束。
+- [x] 从fresh identity完成sealed v5.1首段step0→900；只使用GPU4–7，
+  F32/B20、4-rank DDP、每步80 action queries/4 one-video conditions，
+  900步共72,000 queries和3,600 video conditions。9个每100步checkpoint与
+  exact-resume state均完整，wall `3,622.36s`；没有自动resume。
+- [x] 完成旧有放回采样下的checkpoint absolute screen与正式复核。80-rollout
+  screen为step100/200/300/400/500/700/800/900 =
+  `19/18/15/7/21/17/19/14`；随后按owner指定四卡同时完成
+  step100/500/700/900各400条，结果为`82/96/98/84`。当前observed-best为
+  step700，但`98/400`明显低于约`110–120/400`预门和旧Action-Forecast
+  `125/400`最低参照。
+- [x] 只对当前最佳step700完成轻量五臂paired rollout与16-reference内部检查。
+  correct/same/wrong/shuffled/reversed为`17/20/7/11/6`；相对correct，
+  wrong为`12/2` discordant、`p=.01294`，shuffled为`10/4`、`p=.1796`，
+  reversed为`13/2`、`p=.00739`。wrong与reverse有state-pair信号，但贡献仍
+  集中少数task，shuffle未显著。
+- [x] 内部机制检查确认v5.1结构按设计工作：wrong相对correct的Semantic Core /
+  effective LoRA / policy-action中位relative L2为
+  `0.204/0.588/0.141`，same仅`0.040/0.116/0.0139`；shuffle/reverse的Core
+  近零，但Procedure slots为`1.052/1.680`、effective LoRA为
+  `0.528/0.743`、action为`0.102/0.167`。固定Core时保留这些顺序差，去掉
+  Procedure后shuffle归零、reverse action仅`0.0021`。
+- [x] owner要求特异性检查完成后停止。第二段、第三段、无放回重测、full400
+  五臂和cold-start RL均未启动；当前结论是内部机制成立，但absolute不足且
+  rollout顺序证据不够跨task稳定，等待owner讨论。
 - [ ] AS全部通过后独立启动v5.1 cold-start RL：short AS直到24个train tasks逐task
   至少一次official random-reset success，随后永久关闭action入口转pure reward；
   同样探索validation observed-best与强峰后下降。

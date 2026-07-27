@@ -1247,3 +1247,57 @@ GPU范围和训练步长是当时快照；活动状态只取
   online validation。`total_steps=12000`只保留scheduler/最大探索包络；
   `selected_stop_step=900`为唯一当前launch边界。第二/第三段的停止点未预定，
   step900后必须先看早期特异性、absolute和train/validation曲线，不能自动resume。
+
+## v5.1首段训练、step700选择与特异性封存（2026-07-27）
+
+- 正式训练根目录：
+  `/data/ymdai/outputs/ember/pi05_as_writer_v5_1_language_axial_dev_r4_seed7_s12000_c199ad3_20260727`。
+  fresh step0→900已正常结束，900条metrics连续、checkpoint100..900完整，
+  总wall `3622.358s`；contract payload/run-summary file/metrics file
+  SHA256分别为
+  `acc57fd96cace6d3a9d38a7dbfe6d8593cd29bdce1a0ff10e1f2b4239de46227`、
+  `327ba70c9fc9854441a1ce75bb8b6bba103299ae4b49add8dd8c3aa361e96cb0`、
+  `0fe5d2490d2d692b98b9c3e8f70177f7839ad0a4e6cdcd5cb943f179d74d4a86`。
+- 有放回80-rollout screen全部通过aggregate验证：
+  step100/200/300/400/500/700/800/900=`19/18/15/7/21/17/19/14`。
+  随后按一张物理卡负责一个checkpoint，同时在GPU4/5/6/7完成
+  step100/500/700/900的正式correct400，结果为`82/96/98/84`。四个root：
+  `pi05_as_writer_v5_1_correct400_withreplacement_step{0100,0500,0700,0900}_c199ad3_20260727`；
+  results SHA256依次为
+  `023a9c5fb98fe4b937a1c760a2fa74bb9bb5ba944098af48d593b4cb4ac98577`、
+  `23f5032f32d0e95b301ee4b11146efe06a8c955b9e56ad86c7bf735aab9defd5`、
+  `cb42f0e7802463cb2e4a26efffc0ce5e41abdb72dad44b750ff2764bb2f9049b`、
+  `1b0e28b1afedf133dd43585e9a3b4e6e2a9711e2b436ba5d2ee65c1eaef26ab2`。
+  每个root均400 rows、8 tasks×50 states、36 shards、6 workers、return code全0。
+- step700轻量五臂复用既有correct80=`17/80`；same/shuffled/reversed分别为
+  `20/11/6`，正式root为
+  `pi05_as_writer_v5_1_specificity80_withreplacement_step0700_{same_task_other,shuffled,reversed}_c199ad3_20260727`，
+  results SHA256分别为
+  `ecee24fd84d15d23bf512da8e60316f0224d7c47e3c959d1c7b841ad8bc3fd9b`、
+  `a12dda7d65cad76dc2f808bde2f0883969b0fe04e45ec6e5e47500d2ff409324`、
+  `52553b14073e8dcca16301bd0e5b0f0ac537e016c9656dd991620d4fd34703a5`。
+- 初次wrong root
+  `pi05_as_writer_v5_1_specificity80_withreplacement_step0700_cross_suite_wrong_c199ad3_20260727`
+  遭遇单worker EGL 0x8cdd；resume后aggregation按launcher timing证据
+  fail-close，未产生可信`results.json`，只作失败provenance。正式fresh root
+  `pi05_as_writer_v5_1_specificity80_withreplacement_step0700_cross_suite_wrong_fresh2_c199ad3_20260727`
+  使用GPU4–7一次调用、24 workers、26 shards完成80/80，wrong=`7/80`，
+  results SHA256为
+  `e11c0daa1994420dd24b7d52bff5e153a2f1628396527468f1cccda0b5406b75`。
+- 五臂逐row exact-pair分析保存在
+  `/data/ymdai/outputs/ember/pi05_as_writer_v5_1_specificity80_withreplacement_step0700_paired_analysis_c199ad3_20260727.json`，
+  SHA256为
+  `6fecb53d051104b72698b5f776eb588240ee5931520bf233985e3b72e2984316`。
+  correct-only/control-only为same `4/7`、wrong `12/2`、shuffled `10/4`、
+  reversed `13/2`。
+- 内部16-reference检查保存在
+  `/data/ymdai/outputs/ember/pi05_as_writer_v5_1_internal_specificity_step0700_refs2_c199ad3_20260727`，
+  summary SHA256为
+  `7a0ced20700b38cd8500396453c7958d94dedde04bd53d5a9c562dda032ec0fe`；
+  4 ranks、16/16 rows、8 tasks×2 reference videos全部通过，无validation action
+  target或teacher state value读取。
+- 所有训练、rollout和内部probe进程完成后均已释放GPU4–7；没有启动第二段、
+  第三段、无放回重测、full-400五臂或cold-start RL。当前按owner要求停在
+  v5.1首段特异性结论，等待讨论。封存前fresh重读全部上述JSON与SHA、验证逐row
+  paired统计和内部counterfactual；全仓`PYTHONPATH=src .venv/bin/pytest -q`
+  为`190 passed`，物理GPU4–7均为`0 MiB`且没有活动EMBER tmux/process。

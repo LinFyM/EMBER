@@ -463,10 +463,11 @@ Plan/Revision/Belief或旧活动config/schema。
   差异已增至`3.689%/5.764%`并穿过policy action；五臂固定8 tasks×10 states
   为correct/same/wrong/shuffled/reversed=`21/25/14/23/23`。轻量结果只支持
   wrong-video方向性，不足以宣告顺序特异性通过或失败。
-- [ ] 按封存的900-step segment合同，从step900完整checkpoint exact-resume到
-  step1800；保持同一optimizer/scheduler/sampler/video schedule/RNG、F32/B20、
-  GPU4–7和每100步checkpoint。运行期间依据online functional panel安排后续
-  fixed400候选，但不把轻量80 panel当作observed-best选择证据。
+- [ ] 按封存的900-step segment合同，已在tmux `ember-v5-as-sv1800`从step900
+  完整checkpoint exact-resume到step1800；保持同一optimizer/scheduler/sampler/
+  video schedule/RNG、F32/B20、GPU4–7和每100步checkpoint。start event已确认
+  contract不变且step901起连续推进；运行期间依据online functional panel安排
+  后续fixed400候选，但不把轻量80 panel当作observed-best选择证据。
 - [ ] 若correct始终低于约`110–120/400`，先定位训练或架构问题并fresh迭代；
   若达到则再做内部数值与correct/same/wrong/shuffled/reversed rollout特异性。
   目标逼近或超过v4 shuffled `148/400`；best后没有明显、持续、多task且独立

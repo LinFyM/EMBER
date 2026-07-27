@@ -1150,3 +1150,20 @@ GPU范围和训练步长是当时快照；活动状态只取
   `1.2GB`新增存储。GPU仍只用4–7，F32/B20与全部scientific contract不变；
   训练代码/config相对原run commit无diff，当前main仅多了评估调度改动，故使用
   fail-close的`--allow-contract-compatible-code-resume`。
+
+## v5单视频step900→1800正式续训启动（2026-07-27）
+
+- 续训launch前`HEAD==origin/main==db2a690`、worktree clean；step900 checkpoint
+  的Writer、trainer与四rank state逐文件SHA256全部通过。个人存储
+  `342.21GB`，预计峰值约`343.42GB`；物理GPU4–7均空闲，0–3未进入查询或
+  visible set。
+- tmux `ember-v5-as-sv1800`已用同一formal root exact-resume。start event为
+  原contract `03186c57...94787c`、`resume_step=900`、
+  `stop_after_step=1800`、24 tasks、source policy trainable参数0；
+  invocation记录runtime commit `db2a690`与
+  `contract_compatible_code_resume=true`。
+- resume resident validation重算step900仍为`0.1370745508`，optimizer updates
+  为0、无parameter gradient、test action reads为0。step901起metrics连续，
+  初始核验至step917全部finite；常规step约`3–4s`，每步全局80 actions、
+  4个one-video conditions与1次policy forward。GPU4–7约`77.9GB`且UTL接近
+  100%。

@@ -574,10 +574,17 @@ metrics       0b39de739d2eca59274ba43c8ea1679e77ead0e1228c55878b2079273799b561
 ckpt manifest 993739d4a5c8323d04fc9e0eef60ac4439356a20ee1bc8061e314d2c5100cb1b
 ```
 
-## 7. 正式首段已完成；step900→1800续训待启动
+## 7. 正在运行：step900→1800 exact resume
 
-本快照时没有v5训练或评估进程，GPU4–7均已自然释放。旧tmux
-`ember-v5-as-sv900`已随正常stop-after-step 900退出，不能重复fresh launch。
+不要重复启动。当前tmux与resume log：
+
+```text
+ember-v5-as-sv1800
+/data/ymdai/outputs/ember/pi05_as_writer_v5_single_video_dev_r4_seed7_s12000_0b4e006_20260727_resume0900_to1800.log
+```
+
+旧tmux `ember-v5-as-sv900`已随正常stop-after-step 900退出，不能重复fresh
+launch。
 
 正式output与log：
 
@@ -636,8 +643,8 @@ correct / same / wrong / shuffled / reversed = 21 / 25 / 14 / 23 / 23
 
 它只说明wrong-video有方向性、顺序优势尚未拉开，不是full400特异性结论。
 
-已封存的下一正式动作是从step900精确续训到step1800。启动前必须确保本文档
-变更已commit/push、worktree clean、GPU4–7与存储live preflight通过。精确命令：
+续训已从step900精确启动到step1800。launch前本文档变更已commit/push，
+worktree clean，GPU4–7与存储live preflight通过。精确命令：
 
 ```bash
 cd /data/ymdai/projects/EMBER
@@ -667,6 +674,23 @@ env \
 该flag只允许recorded Git commit不同；run-contract其他字段必须逐项完全相同。
 当前main相对训练commit只改canonical evaluator long-first调度，训练入口、
 `src/ember/writer/`和v5 config无diff。
+
+已核验的resume start event：
+
+```text
+contract_sha256 03186c57ac736ac82398400676ff10c33eb46ab3e5f9bcbbe44064305944787c
+runtime commit  db2a6905cc3d7433333d4c95d08345180c9b4fc2
+resume_step     900
+stop_after_step 1800
+tasks           24
+source trainable 0
+```
+
+resume时resident模型重算step900 functional loss仍为`0.1370745508`，明确记录
+optimizer updates为0、parameter gradients为false、test action reads为0。
+随后step901起继续训练；最初核验到step917连续finite，常规step约`3–4s`，
+每步仍为全局80 actions、4个one-video conditions和1次policy forward，四卡
+物理显存约`77.9GB`、UTL接近100%。这些只作启动证据；接手时必须重读真实末步。
 
 ## 8. 新session接手后的第一组只读命令
 

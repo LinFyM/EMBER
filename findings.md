@@ -1512,3 +1512,9 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   `--allow-contract-compatible-code-resume`，由run-contract reconciliation
   要求除recorded Git commit外所有科学字段逐项完全相同；任何其他漂移均
   fail-close。
+- resume已从clean、pushed commit
+  `db2a6905cc3d7433333d4c95d08345180c9b4fc2`在tmux
+  `ember-v5-as-sv1800`启动。start event确认原contract SHA、`resume_step=900`、
+  `stop_after_step=1800`与source policy trainable参数0；invocation明确记录
+  `contract_compatible_code_resume=true`。step900 resident validation复算与
+  原值完全一致，step901起metrics连续追加，初始常规step约`3–4s`。

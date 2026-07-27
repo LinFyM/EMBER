@@ -72,27 +72,8 @@ def _validate_authorities(config: Mapping[str, Any]) -> None:
             raise WriterModelError(f"sealed AS-Writer authority changed: {name}")
 
 
-def _validate_protocol(config: Mapping[str, Any]) -> None:
-    target = read_json(authority_path(config, "target_data_manifest"))
-    roles = target.get("summary", {}).get("roles", {})
-    if (
-        target.get("schema_version") != "ember_pi05_target_data_manifest_v1"
-        or int(target.get("summary", {}).get("tasks", -1)) != 40
-        or int(target.get("summary", {}).get("episodes", -1)) != 2000
-        or {name: len(roles.get(name, [])) for name in ("train", "validation", "test")}
-        != {"train": 24, "validation": 8, "test": 8}
-    ):
-        raise WriterModelError("AS-Writer target-data authority is not sealed 24/8/8")
-    lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
-    if lora.source_base_config_sha256 != config["authorities"]["source_base_config"]["sha256"]:
-        raise WriterModelError("AS-Writer LoRA and source-base authorities disagree")
-    writer = config.get("writer", {})
-    if (
-        writer.get("frame_stride") != 5
-        or int(writer.get("max_frames_per_encoder_call", 0)) <= 0
-    ):
-        raise WriterModelError("sealed Language-Axial Writer dimensions changed")
-    expected_writer = {
+def _expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
+    return {
         "architecture": (
             "pi05_language_axial_patch_grounded_core_causal_procedure_"
             "slot_fusion_v5_2"
@@ -192,13 +173,36 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         "factor_hidden_width": 216,
         "initialization_seed": 7,
     }
-    if writer != expected_writer:
-        missing = sorted(set(expected_writer) - set(writer))
-        extra = sorted(set(writer) - set(expected_writer))
+
+
+def _validate_protocol(config: Mapping[str, Any]) -> None:
+    target = read_json(authority_path(config, "target_data_manifest"))
+    roles = target.get("summary", {}).get("roles", {})
+    if (
+        target.get("schema_version") != "ember_pi05_target_data_manifest_v1"
+        or int(target.get("summary", {}).get("tasks", -1)) != 40
+        or int(target.get("summary", {}).get("episodes", -1)) != 2000
+        or {name: len(roles.get(name, [])) for name in ("train", "validation", "test")}
+        != {"train": 24, "validation": 8, "test": 8}
+    ):
+        raise WriterModelError("AS-Writer target-data authority is not sealed 24/8/8")
+    lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
+    if lora.source_base_config_sha256 != config["authorities"]["source_base_config"]["sha256"]:
+        raise WriterModelError("AS-Writer LoRA and source-base authorities disagree")
+    writer = config.get("writer", {})
+    if (
+        writer.get("frame_stride") != 5
+        or int(writer.get("max_frames_per_encoder_call", 0)) <= 0
+    ):
+        raise WriterModelError("sealed Language-Axial Writer dimensions changed")
+    expected = _expected_writer_contract(writer)
+    if writer != expected:
+        missing = sorted(set(expected) - set(writer))
+        extra = sorted(set(writer) - set(expected))
         changed = sorted(
             key
-            for key in set(writer) & set(expected_writer)
-            if writer[key] != expected_writer[key]
+            for key in set(writer) & set(expected)
+            if writer[key] != expected[key]
         )
         raise WriterModelError(
             "Language-Axial AS-Writer architecture changed; "

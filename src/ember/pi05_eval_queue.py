@@ -105,10 +105,16 @@ def build_cost_balanced_shards(
     env_batch_size: int,
     target_cost: int | None = None,
     physical_gpu_count: int = 8,
+    replicas_per_gpu: int = 1,
 ) -> tuple[EvaluationShard, ...]:
-    """Pre-balance max-horizon states across GPUs, then shard remaining work."""
+    """Pre-balance max-horizon states across worker slots, then shard other work."""
 
-    if not tasks or env_batch_size <= 0 or physical_gpu_count <= 0:
+    if (
+        not tasks
+        or env_batch_size <= 0
+        or physical_gpu_count <= 0
+        or replicas_per_gpu <= 0
+    ):
         raise Pi05EvaluationError("evaluation sharding needs tasks and a positive env batch")
     task_keys = [(task.suite, task.task_id) for task in tasks]
     if len(set(task_keys)) != len(task_keys):
@@ -145,11 +151,14 @@ def build_cost_balanced_shards(
     priority_horizon = max(task.horizon for task in tasks)
     priority_tasks = tuple(task for task in tasks if task.horizon == priority_horizon)
     ordinary_tasks = tuple(task for task in tasks if task.horizon != priority_horizon)
+    worker_slot_count = physical_gpu_count * replicas_per_gpu
     for gpu in range(physical_gpu_count):
-        for task in priority_tasks:
-            state_ids = tuple(task.init_state_ids[gpu::physical_gpu_count])
-            if state_ids:
-                append_shard(task, state_ids, preferred_gpu=gpu)
+        for replica in range(replicas_per_gpu):
+            slot = gpu * replicas_per_gpu + replica
+            for task in priority_tasks:
+                state_ids = tuple(task.init_state_ids[slot::worker_slot_count])
+                if state_ids:
+                    append_shard(task, state_ids, preferred_gpu=gpu)
 
     by_task = [
         _task_chunks(task, env_batch_size=env_batch_size, target_cost=target_cost)

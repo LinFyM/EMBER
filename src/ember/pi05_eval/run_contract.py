@@ -82,8 +82,9 @@ def _parallel_contract(
         "one_policy_per_worker": True,
         "cpu_only_launcher": True,
         "sharding_algorithm": (
-            "max-horizon task states balanced across physical_gpu_count with "
-            "preferred-GPU affinity, then ordinary cost-balanced dynamic queue"
+            "max-horizon task states balanced across physical_gpu_count times "
+            "replicas_per_gpu worker slots with preferred-GPU affinity, then "
+            "ordinary cost-balanced dynamic queue"
         ),
     }
 

@@ -94,6 +94,52 @@ def test_max_horizon_states_follow_actual_gpu_count_before_dynamic_work(
     assert ordinary is not None and ordinary.shard.preferred_gpu is None
 
 
+def test_max_horizon_states_fill_replica_slots_before_dynamic_work(
+    tmp_path: Path,
+) -> None:
+    tasks = (
+        EvaluationTask("libero_goal", 0, 300, tuple(range(8))),
+        EvaluationTask("libero_10", 1, 520, tuple(range(50))),
+        EvaluationTask("libero_10", 2, 520, tuple(range(50))),
+    )
+    shards = build_cost_balanced_shards(
+        tasks,
+        env_batch_size=8,
+        physical_gpu_count=4,
+        replicas_per_gpu=6,
+    )
+    long_shards = [shard for shard in shards if shard.horizon == 520]
+    assert len(long_shards) == 48
+    assert {len(shard.init_state_ids) for shard in long_shards} == {2, 3}
+    assert {
+        gpu: sum(shard.preferred_gpu == gpu for shard in long_shards)
+        for gpu in range(4)
+    } == {gpu: 12 for gpu in range(4)}
+
+    path = tmp_path / "queue.sqlite3"
+    initialize_queue(path, shards, contract_sha256="7" * 64)
+    for gpu in range(4):
+        for replica in range(6):
+            claim = claim_next(
+                path,
+                worker_id=f"{gpu}-r{replica}",
+                physical_gpu=gpu,
+            )
+            assert claim is not None and claim.shard.horizon == 520
+            assert claim.shard.preferred_gpu == gpu
+    for gpu in range(4):
+        for replica in range(6):
+            claim = claim_next(
+                path,
+                worker_id=f"{gpu}-r{replica}",
+                physical_gpu=gpu,
+            )
+            assert claim is not None and claim.shard.horizon == 520
+            assert claim.shard.preferred_gpu == gpu
+    ordinary = claim_next(path, worker_id="0-r0", physical_gpu=0)
+    assert ordinary is not None and ordinary.shard.preferred_gpu is None
+
+
 def test_queue_claim_completion_and_contract_resume(tmp_path: Path) -> None:
     path = tmp_path / "queue.sqlite3"
     shards = build_cost_balanced_shards(_tasks(), env_batch_size=8)

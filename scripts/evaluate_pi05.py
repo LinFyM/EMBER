@@ -191,6 +191,7 @@ def _shards_from_contract(contract: dict[str, Any]) -> tuple[Any, ...]:
         env_batch_size=int(contract["parallel"]["envs_per_replica"]),
         target_cost=int(contract["parallel"]["shard_target_cost"]),
         physical_gpu_count=int(contract["parallel"]["physical_gpu_count"]),
+        replicas_per_gpu=int(contract["parallel"]["replicas_per_gpu"]),
     )
 
 

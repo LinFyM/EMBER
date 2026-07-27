@@ -1411,7 +1411,22 @@ GPU范围和训练步长是当时快照；活动状态只取
   manifest SHA256为`5387b2cf...0a9`，训练继续。
 - 隔离worktree `EMBER-v52-20260727`完成canonical v5.2实现、schema/config、
   参数预算与设计文档；focused Writer测试`61 passed`、`git diff --check`
-  通过。commit `9fe56d6`已push至`origin/codex/v52-patch-grounding`。
+  通过。当前commit `4011966`已push至`origin/codex/v52-patch-grounding`。
 - 训练结束后的固定动作是用GPU4/5/6/7各负责phase100/300/600/900一个
   checkpoint，四点同时做无放回correct400；每卡6个Writer generators完成
   cache后转6个persistent rollout workers，queue保持全局long-first。
+
+## v5.1低LR首段完成与并发correct400启动（2026-07-27）
+
+- phase0→900已正常结束：72,000 action queries、3,600 one-video conditions、
+  wall `3616.478s`；run summary SHA256 `238853ad...e7b`，最终checkpoint
+  manifest SHA256 `c0bf283d...e8d`。
+- 九个online validation loss没有持续改善；权重漂移artifact
+  `writer_drift_analysis.json`显示100-step update逐渐变小，但后续相邻方向
+  持续负余弦，SHA256 `7564fff2...ddc3`。这把低LR描述为待rollout判定的
+  稳定化尝试，而不是已成功的新best。
+- tmux `ember-v51-stabilize-correct400`已将phase100/300/600/900分别分配到
+  GPU4/5/6/7。每个checkpoint只加载一次，每卡6 generators→6 persistent
+  rollout workers；全部固定validation 8×50、无放回、全局long-first。
+- tmux `ember-v51-stabilize-analysis`等待四个结果并自动生成相对原step1400
+  的逐row paired artifact。评测期间main保持`756bdaa` clean，不合并v5.2。

@@ -1835,3 +1835,21 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   参数支付，总参数从`10,244,872`降至`10,237,704`。因此它检验的是预算上移，
   不是扩容。若它只提高spatial/absolute而reversed仍等价，下一失效owner应是
   Procedure任务条件化/读出，不应重新扩大factor heads或扫LoRA scale。
+
+## v5.1 step1400低LR稳定段训练结论（2026-07-27）
+
+- 从step1400只加载Writer权重，以fresh AdamW/RNG和`1e-4` peak LR运行的首段
+  已完整到phase900；消费72,000 action queries和3,600个单视频条件，wall
+  `3616.478s`，九个checkpoint与exact-resume状态均完整。
+- online functional loss从phase100到900为
+  `.135287/.133725/.138699/.133650/.134800/.134450/.133997/.135060/.136773`，
+  没有相对原step1400 `.135241`形成持续下降。该loss与rollout相关性弱，故
+  只用于否定“训练目标已明显改善”，不用于提前选择或拒绝checkpoint。
+- 低LR把每100步Writer update L2从`1.870`逐渐压到`1.176`，但相邻update
+  cosine除第一对`.032`外持续为负，范围`-.114`到`-.180`；Core、Procedure、
+  encoder projection和Meta-LoRA均出现同向现象。phase900相对初始权重累计
+  L2=`4.613`。因此当前证据是步幅减小但task迁移未消失，而不是稳定累积。
+- 分模块原始分析SHA256为
+  `7564fff2fa68b3d370f344d2b9e2180fe98cea640dbc9c82ed2f65af1b16ddc3`。
+  最终科学判定仍等待phase100/300/600/900四个逐state/video/RNG配对的
+  correct400；四者已在GPU4–7各占一张卡并发运行。

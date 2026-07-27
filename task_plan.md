@@ -579,15 +579,18 @@ action-hidden teacher video -> one task LoRA`的核心映射。
 - [x] 完成step1400的same-task-other/wrong/shuffled/reversed四个full400控制臂；
   五臂为`127/133/94/107/120`。wrong与shuffled方向通过，但reversed仅净
   `+7,p=.4767`，故明确判为逻辑仍不充分并继续。
-- [ ] 从step1400 Writer权重完成fresh optimizer低LR稳定阶段：
+- [x] 从step1400 Writer权重完成fresh optimizer低LR稳定阶段：
   `peak_lr=1e-4`、F32/B20、4-rank、首段900 phase steps。正式tmux
-  `ember-v51-stabilize1400`已启动且step100 checkpoint完整；结束后同时用
-  四卡做phase100/300/600/900的无放回correct400。
+  `ember-v51-stabilize1400`已完整结束，72,000 queries、wall 3616.5s；
+  checkpoints100..900和恢复状态完整。
+- [ ] 完成低LR phase100/300/600/900四个无放回correct400及逐rowpaired分析。
+  tmux `ember-v51-stabilize-correct400`已将四点分别放在GPU4/5/6/7，每卡
+  6 generators→6 persistent workers、long-first；不得按online loss换点。
 - [ ] 若特异性成立但absolute长期低于约125，按最早失效层比较Core-only、
   full、去Procedure、跨demo梯度一致性与LoRA到action的功能对齐；只修改被证据
   定位的owner后fresh训练。
 - [x] 在隔离worktree实现参数预算不增加的v5.2 task-queried patch grounding；
-  `9fe56d6`已push、61项focused测试通过。低LR结果未同时通过absolute/breadth/
+  `4011966`已push、61项focused测试通过。低LR结果未同时通过absolute/breadth/
   reversed门时，立即做真实105-frame profile、探索F/action batch上限并fresh
   训练约一小时。
 - [ ] 可提前进行独立、低成本RL-Writer机制探索，但不得把validation reward写回

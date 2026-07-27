@@ -1115,7 +1115,7 @@ warmup50，phase总合同1800但首段只到900。step100 checkpoint已完整落
 
 为避免等本段结束后才开始架构工作，隔离worktree
 `/data/ymdai/.codex/worktrees/EMBER-v52-20260727`已经实现并push
-`codex/v52-patch-grounding@9fe56d6`。v5.2只增加text-only task query读取
+`codex/v52-patch-grounding@4011966`。v5.2只增加text-only task query读取
 每帧256个PaliGemma image-position contents的Q/K/O cross-attention，无
 learned V、无geometry/新loss/新adapter；factor hidden从240降到216，
 Writer总参数`10,237,704`，仍低于`10,297,344`上限。设计authority见
@@ -1123,3 +1123,58 @@ Writer总参数`10,237,704`，仍低于`10,297,344`上限。设计authority见
 低LR首段结束后先并发full400评测phase100/300/600/900。若没有同时显著提高
 absolute、task breadth和reversed方向门，立即用GPU4–7对v5.2做F32/B20起始
 profile、向显存上限探索并fresh训练约一小时。
+
+## 13. 低LR首段完成、四checkpoint并发评测（2026-07-27 23:30 UTC）
+
+低LR首段已经按封存合同完整停在phase step900：
+
+```text
+completed steps:             900 / declared 1800
+global action queries:       72,000
+one-video conditions:        3,600
+training wall:               3,616.478 s
+selected_stage_stop:         true
+test action/video reads:     0 / 0
+```
+
+run-contract file、run-summary、train metrics和online-validation metrics的
+SHA256依次为：
+
+```text
+6e95a1d933d7ae34ab41a59787c55424e7c94e2a4155841b550062fa570d652b
+238853aed306a9f5ac470966d037dab5ade79141c69fffcaca25c1dd97a0ae7b
+b183b51f6441260363b45035545b2bcc60f58d2089c5a8ce4b7f3977d46e150d
+e513c4f2fc7433cc377369b9d20efa0e753405f0f93570ca27d5e0e7942e6efb
+```
+
+100..900每100步的task-balanced online functional loss为
+`.135287/.133725/.138699/.133650/.134800/.134450/.133997/.135060/.136773`；
+原step1400为`.135241`。它没有形成可选择的下降趋势。更重要的是，连续
+100-step Writer update的L2从`1.870`逐渐降至`1.176`，但从第二段起的相邻
+update cosine为
+`.032,-.114,-.147,-.171,-.128,-.116,-.180,-.152`。到phase900相对初始
+step1400累计移动L2=`4.613`。低LR确实缩小步幅，却没有消除跨任务来回覆盖。
+完整分模块证据为：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v5_1_stabilize1400_lr1e4_dev_r4_seed7_s1800_756bdaa_20260727/
+writer_drift_analysis.json
+SHA256 7564fff2fa68b3d370f344d2b9e2180fe98cea640dbc9c82ed2f65af1b16ddc3
+```
+
+当前tmux `ember-v51-stabilize-correct400`已经并发启动：
+
+```text
+GPU4 phase100
+GPU5 phase300
+GPU6 phase600
+GPU7 phase900
+```
+
+每卡独立加载一个checkpoint，使用6个Writer generators和6个persistent
+rollout workers，固定无放回400且全局long-first。main/origin仍为
+`756bdaa`且tree clean；自动paired分析等待四个`results.json`完整后运行。
+不得根据online loss跳过或替换这四个rollout。若四点没有相对原step1400形成
+显著、多task且改善breadth的absolute增益，低LR假设即关闭并立即进入v5.2
+live profile。

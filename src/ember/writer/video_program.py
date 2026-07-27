@@ -103,7 +103,7 @@ class Pi05FrameSemanticEncoder(torch.nn.Module):
         spatial_pool_grid: int,
         vl_meta_lora_rank: int,
         action_meta_lora_rank: int,
-        frame_microbatch_size: int,
+        max_frames_per_encoder_call: int,
         action_horizon: int,
         padded_action_dim: int,
         initialization_seed: int,
@@ -117,7 +117,7 @@ class Pi05FrameSemanticEncoder(torch.nn.Module):
             spatial_pool_grid,
             vl_meta_lora_rank,
             action_meta_lora_rank,
-            frame_microbatch_size,
+            max_frames_per_encoder_call,
             action_horizon,
             padded_action_dim,
         )
@@ -132,7 +132,7 @@ class Pi05FrameSemanticEncoder(torch.nn.Module):
         self.expert_width = int(expert_width)
         self.program_width = int(program_width)
         self.spatial_pool_grid = int(spatial_pool_grid)
-        self.frame_microbatch_size = int(frame_microbatch_size)
+        self.max_frames_per_encoder_call = int(max_frames_per_encoder_call)
         self.action_horizon = int(action_horizon)
         self.padded_action_dim = int(padded_action_dim)
         self.activation_checkpointing = bool(activation_checkpointing)
@@ -351,17 +351,9 @@ class Pi05FrameSemanticEncoder(torch.nn.Module):
         )
         core_rows = []
         interaction_rows = []
-        for start in range(0, frames.shape[0], self.frame_microbatch_size):
-            stop = min(start + self.frame_microbatch_size, frames.shape[0])
+        for start in range(0, frames.shape[0], self.max_frames_per_encoder_call):
+            stop = min(start + self.max_frames_per_encoder_call, frames.shape[0])
             rows = torch.arange(start, stop, device=frames.device)
-            real_count = int(rows.numel())
-            if real_count < self.frame_microbatch_size:
-                rows = torch.cat(
-                    (
-                        rows,
-                        rows[-1:].expand(self.frame_microbatch_size - real_count),
-                    )
-                )
             selected = frame_condition_ids.index_select(0, rows)
             arguments = (
                 frames.index_select(0, rows),
@@ -394,6 +386,6 @@ class Pi05FrameSemanticEncoder(torch.nn.Module):
                 )
             else:
                 core_value, interaction_value = invoke(*arguments)
-            core_rows.append(core_value[:real_count])
-            interaction_rows.append(interaction_value[:real_count])
+            core_rows.append(core_value)
+            interaction_rows.append(interaction_value)
         return torch.cat(core_rows, dim=0), torch.cat(interaction_rows, dim=0)

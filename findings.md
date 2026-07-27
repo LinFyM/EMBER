@@ -1279,7 +1279,7 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   输出保持38 targets、76 tensors、rank16、`1,287,168` scalars。机械设计预算
   为`10,301,440` trainable parameters，比rank128 Source-SFT
   `10,297,344`多`4,096`（`0.0398%`）；真实实现必须重新打印核验。
-- 训练初版固定`N=4`：每条action query独立抽4条同task不同teacher videos，
+- 训练初版曾固定`N=4`：每条action query独立抽4条同task不同teacher videos，
   逻辑上生成`B_a×4`个LoRA和functional losses并普通求均值；仅允许按精确视频
   键去重相同Writer forward，不能让整个action batch只共享4个LoRA。推理仍严格
   one-shot。
@@ -1307,3 +1307,92 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   reversed且same-task other影响最小。absolute performance最低目标为达到或
   接近`125/400`，目标逼近v4 shuffled `148/400`。不通过则定位最早失败模块后
   fresh迭代，不使用contrast/order loss。
+
+## v5 AS step40→120内部与闭环特异性（2026-07-27）
+
+- canonical formal root为
+  `/data/ymdai/outputs/ember/pi05_as_writer_core_causal_v5_dev_seed7_ce0b568_20260726`，
+  训练commit为`ce0b568c9ad5ed6ab783924209bbfe02fe601d7b`，contract SHA256为
+  `39379e3afd9a512d87b1f0638fc3bdfa2afb09238a8c6c54a8aa0ec94355a981`。
+  step10/20/30/40/50/60/70/80/90/100/110/120固定512-row functional
+  validation loss依次为
+  `0.140365/0.143320/0.137210/0.136874/0.137584/0.140980/0.138384/`
+  `0.138306/0.138544/0.137017/0.137679/0.139036`。functional observed-best
+  暂为step40，但40→60的回落随后反弹，至120仍没有满足停止条件的明显、持续、
+  多task峰后下降。
+- step40先完成16-reference内部反事实和五个fixed-400 rollout。内部已有真实
+  Procedure顺序路径，但有效LoRA的shuffle/reverse中位相对L2仅
+  `0.156%/0.204%`；固定correct Core、只替换Procedure时为
+  `0.147%/0.196%`，Core-only BF16排列伪差为`0.085%/0.089%`。闭环
+  correct/same-task-other/cross-suite-wrong/shuffled/reversed分别为
+  `45/52/52/51/51`，与source base `48/400`实质相同，行为特异性不通过。
+- step10→40→60→120的same/wrong有效LoRA中位差异为
+  `0.419/2.519% → 0.316/2.101% → 0.391/3.961% → 1.235/15.963%`；
+  same/wrong比值由`0.166`降到`0.077`。同期fixed-Core
+  Procedure-only的shuffle/reverse差异为
+  `0.359/0.634% → 0.147/0.196% → 0.192/0.346% → 0.626/1.087%`，
+  而Core-only伪差持续降到`0.073%/0.074%`。因此step120不是再次坍缩成
+  task latent；task语义和有向Procedure都在继续学习。
+- step120逐层中位相对L2显示顺序信息路径清楚：
+  shuffle/reverse的Core set约为`5e-6%/5e-6%`，Core content为
+  `0.151%/0.154%`，interaction sequence为`60.99%/82.67%`，
+  Procedure sequence为`29.24%/46.00%`，Procedure delta为
+  `1.954%/4.391%`，final content为`0.691%/1.285%`，effective LoRA为
+  `0.626%/1.087%`。8个validation tasks的effective-LoRA task median范围为
+  shuffle `0.371%–1.317%`、reverse `0.427%–2.201%`；不是单task异常。
+- step120五个同一fixed-400 panel的闭环结果为：
+
+  | condition | total | per-task（Long1/2, Goal3/6, Object1/3, Spatial1/3） |
+  |---|---:|---|
+  | correct | 65 | `7/0, 1/29, 22/0, 6/0` |
+  | same-task other | 59 | `6/0, 0/29, 20/0, 4/0` |
+  | cross-suite wrong | 57 | `3/1, 1/33, 14/0, 5/0` |
+  | shuffled | 61 | `10/0, 0/29, 21/0, 1/0` |
+  | reversed | 65 | `7/0, 1/33, 20/0, 4/0` |
+
+  相对correct，same/wrong/shuffle/reverse的`correct-only/other-only`为
+  `20/14`、`27/19`、`19/15`、`13/13`，双侧exact p分别为
+  `0.392/0.302/0.608/1.0`。correct方向上高于same/wrong/shuffle，但没有显著，
+  且与reverse持平，故行为特异性硬门仍未通过。
+- step120 correct相对step40为`41`条new-only、`21`条old-only，净`+20`，
+  exact `p=0.0151`；逐task净变化为`+7/0,+1/+5,+2/0,+5/0`，来自多个
+  suites/tasks。这证明继续训练产生了真实闭环提升，而不是只让内部向量差异
+  变大。该证据说明旧轨迹仍在学习，不能证明结构已失败。随后旧合同从step120
+  尝试续训，但owner在optimizer step128停止；没有step120之后的原子checkpoint，
+  因此科学证据止于step120，不能写成已恢复到step180。
+
+## v5共享四视频训练估计器决策（2026-07-27）
+
+- 旧`每action独立4 videos`代码在`B_a=8`时每rank逻辑上请求32套LoRA；虽然
+  精确demo碰撞可去重，step126–128每rank仍实际生成24–25套， sampled frames
+  为`537–799`。`max 32 frames/call`意味着约17–25次frame encoder调用，再加
+  4次functional policy forward；这解释了`61.39s/step`，不是“模型只慢一点”。
+- target train videos在stride5并保留末帧后，1,200条的采样帧数
+  min/P50/P75/P90/P95/max/mean为
+  `16/30/40/57/70/105/35.60`。因此即使只保留4条video，平均也约142帧，
+  不能安全硬塞进一次PaliGemma；保留`max_frames_per_encoder_call=32`作为
+  纯显存安全分块，但末块不再重复padding，也不把该上限作为科学搜索变量。
+- owner拍板的新估计器为：每rank每step一个task；为该task visit抽4条不同
+  teacher videos，只生成4套one-shot LoRA；该rank的`B_a`条独立action queries
+  均匀分给4套LoRA，每条action只对应一条video，形成`B_a`个等权loss。
+  4 ranks每步覆盖4个task，全局schedule每6步覆盖24 tasks，下一visit换新
+  video set。
+- 在video/action同task且独立采样、round-robin分组时，
+  \(\mathbb E[\frac1B\sum_i\ell(A_i,V_{i\bmod4})]\)
+  与独立pair采样具有相同population objective。变化的是batch covariance：
+  4条video在同一步共同提供梯度；每套video LoRA又被多个
+  action初态/轨迹约束，降低直接模仿单条teacher路径的价值。
+- 这同时实现了此前两个目标，而不引入对比/order loss：跨4条teacher提取共同
+  高层语义，以及让每个one-shot LoRA对同task action distribution通用。推理仍
+  是一条video生成一套LoRA。
+- 新合同与旧step120采样/optimizer合同不同，必须fresh identity和新root；
+  profile只调`B_a`。先以约一小时首轮训练的fixed-400 absolute performance
+  判断：至少约`110–120/400`；达到后才做内部与五条件rollout特异性，目标最终
+  逼近或超过v4 shuffled `148/400`。
+- 新合同GPU4–7真实profile选择`B_a=16`。step2→12 exact-resume后，11个稳态
+  steps的wall中位/均值/范围为
+  `10.347/10.043/7.072–14.341s`，全局有效pairs/s中位`6.185`。每step严格
+  64个全局policy samples、16个Writer video conditions、1次policy forward；
+  峰值allocated/reserved为`63,736,767,488/68,415,389,696 bytes`。B20虽跑完
+  3步但reserved `83,732,987,904 bytes`、仅余约1.3GiB；B24/B32首步OOM。
+  因此正式首段为fresh step0→400，每50步保存，预计约67–69分钟。

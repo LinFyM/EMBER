@@ -404,34 +404,50 @@ Plan/Revision/Belief或旧活动config/schema。
   - 320 routing identities只进Q/K；
   - factor heads保持完整rank-16 public LoRA；
   - 机械设计预算`10,301,440`，比rank128 Source-SFT只多`4,096`。
-- [x] 固定训练科学合同：每条action独立抽`N=4`条同task不同teacher videos，
-  形成`B_a×4`个逻辑LoRA/functional losses并普通求均值；推理仍严格one-shot；
+- [x] 初版训练科学合同曾为每条action独立抽`N=4`条video；该合同已完成
+  step0→120与机制检查，但因每rank每step实际生成约24–32套LoRA、每步中位
+  `61.39s`而由owner退役，不再续训。
+- [x] 固定新训练合同：每rank每step一个task，抽4条不同teacher videos并只生成
+  4套one-shot LoRA；`B_a`条独立同task action queries均匀分给它们，每条
+  action只对应一条video，形成`B_a`个等权functional losses。4 ranks全局均衡
+  换task；推理严格one-shot；
   不使用contrast/order/margin loss。
-- [x] 固定执行合同：frame stride5；只使用物理GPU4–7；新架构重新profile
-  action batch与frame microbatch；按稳态吞吐估算约一小时segment，并在每段
-  均匀保存6个checkpoint。
+- [x] 固定新执行合同：frame stride5；只使用物理GPU4–7；
+  `max_frames_per_encoder_call=32`只作长视频显存安全分块且末块不padding；
+  profile只搜索per-rank action batch `B_a`，不用optimizer gradient accumulation。
 - [x] 原位替换v4代码/config/checkpoint schema，删除visual-state与误导性的
   action-forecast活动owner；适配AS training、online validation、inference和
   canonical evaluator。
 - [x] 完成最小shape/causal/Core-invariance/gradient/identity/freeze/LoRA
   schema/parameter-count/OOM/exact-resume检查；不做无关全仓仪式性校验。
-- [x] GPU4–7真实profile最快安全的`B_a`、frame microbatch和单step pair
-  microbatch策略，封存一小时segment size与checkpoint cadence。
+- [x] 封存旧独立N=4估计器的GPU4–7 profile：
   选择`B_a=8`、`N=4`、frame microbatch32；12-step profile从step2真实
   exact-resume到step12，稳态11步中位`61.39s/step`，故正式每段60 steps、
   每10 steps保存一次。`B_a=12/20`和`m40/B8`均因reserved显存只剩不足3GB
   被淘汰。
-- [ ] 从fresh identity完成第一段AS训练；用固定400 panel选择
-  validation observed-best，不使用80-episode快筛。
-- [ ] 对best先做逐层内部correct/same/wrong/shuffled/reversed检查：
+- [x] 从fresh identity完成第一段AS训练；用固定400 panel选择
+  validation observed-best，不使用80-episode快筛。functional loss暂选step40，
+  并因内部/闭环均仍在学习而exact-resume到step120。
+- [x] 对step40与step120做逐层内部correct/same/wrong/shuffled/reversed检查：
   Core对同帧集合顺序不变，Procedure/refinement有明确有向差异，same-task影响
-  小于wrong，差异穿过effective LoRA与policy function。
-- [ ] 内部门通过后做五个固定400 paired rollout。要求same-task other影响最小，
-  且correct明显优于wrong、shuffled、reversed；失败则定位最早失效模块、
-  修改同一架构、fresh重训并循环。
-- [ ] 特异性通过后追求correct至少达到或接近`125/400`，目标逼近v4 shuffled
-  `148/400`。若best之后没有明显、持续、多task并独立复测成立的下降，继续下一
-  个约一小时exact-resume segment；focused AS不设总wall-clock上限。
+  小于wrong，差异穿过effective LoRA与policy function。step120的fixed-Core
+  Procedure-only有效LoRA shuffle/reverse差异为`0.626%/1.087%`，8/8 tasks
+  均贡献，内部结构门通过。
+- [x] 内部门通过后完成step40与step120五个固定400 paired rollout。
+  step40为`45/52/52/51/51`；step120为`65/59/57/61/65`。step120 correct相对
+  step40显著净增20，但相对same/wrong/shuffle/reverse仅`+6/+8/+4/0`且均未
+  显著，故行为硬门仍未通过。
+- [x] 实现并验证共享4-video估计器：采样/task轮转、`B_a→4 groups`映射、gradient、
+  freeze、identity、checkpoint schedule与exact-resume；旧step120不得resume。
+- [x] GPU4–7只profile`B_a`：选择`B_a=16`，step2→12 exact-resume通过，
+  稳态中位`10.347s/step`、峰值reserved `68,415,389,696 bytes`；B20仅余
+  约1.3GiB，B24/B32 OOM。正式封存400-step segment、每50步留ckpt。
+- [ ] 从fresh identity训练新合同首个约一小时segment；先对保留ckpt做完整
+  fixed-400 validation寻找absolute observed-best，不先做特异性。
+- [ ] 若correct始终低于约`110–120/400`，先定位训练或架构问题并fresh迭代；
+  若达到则再做内部数值与correct/same/wrong/shuffled/reversed rollout特异性。
+  目标逼近或超过v4 shuffled `148/400`；best后没有明显、持续、多task且独立
+  复测成立的下降就继续约一小时segment，focused AS不设总wall-clock上限。
 - [ ] 若特异性通过但absolute performance长期不足，按Core-only/
   Core+Procedure、Meta translation/phase、compiler/factor逐层定位并fresh迭代，
   不靠扩大参数或对比loss追正结果。

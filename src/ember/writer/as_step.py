@@ -34,34 +34,45 @@ def _batch_task_id(batch: Mapping[str, Any]) -> int:
     return int(unique.item())
 
 
+def _balanced_action_video_map(
+    action_batch_size: int,
+    video_count: int,
+    *,
+    device: torch.device,
+) -> torch.Tensor:
+    """Assign every action exactly once while balancing four video LoRAs."""
+
+    if (
+        action_batch_size <= 0
+        or video_count <= 0
+        or action_batch_size % video_count
+    ):
+        raise WriterModelError(
+            "action batch must divide evenly across teacher videos"
+        )
+    return (
+        torch.arange(action_batch_size, dtype=torch.long, device=device)
+        .remainder(video_count)
+        .unsqueeze(1)
+    )
+
+
 def _pack_raw_conditions(
     runtime: WriterRuntime,
     *,
     task_id: int,
-    action_video_demos: Sequence[Sequence[int]],
+    shared_video_demos: Sequence[int],
+    action_batch_size: int,
 ) -> tuple[WriterCondition, torch.Tensor, dict[str, Any]]:
-    flat = tuple(
-        int(demo)
-        for demos in action_video_demos
-        for demo in demos
-    )
+    unique_demos = tuple(int(demo) for demo in shared_video_demos)
     if (
-        not flat
-        or any(
-            len(demos) != runtime.videos_per_action
-            or len(set(demos)) != len(demos)
-            for demos in action_video_demos
-        )
+        len(unique_demos) != runtime.videos_per_task_visit
+        or len(set(unique_demos)) != len(unique_demos)
     ):
-        raise WriterModelError("AS-Writer multi-video condition changed")
-    unique_demos = tuple(dict.fromkeys(flat))
-    unique_index = {demo: index for index, demo in enumerate(unique_demos)}
-    pair_to_generated = torch.tensor(
-        [
-            [unique_index[int(demo)] for demo in demos]
-            for demos in action_video_demos
-        ],
-        dtype=torch.long,
+        raise WriterModelError("AS-Writer shared multi-video condition changed")
+    pair_to_generated = _balanced_action_video_map(
+        action_batch_size,
+        len(unique_demos),
         device=runtime.context.device,
     )
 
@@ -107,11 +118,10 @@ def _pack_raw_conditions(
         language_tokens,
         language_mask,
     ), pair_to_generated, {
-        "teacher_demo_indices_by_action": [
-            [int(value) for value in demos]
-            for demos in action_video_demos
-        ],
-        "logical_teacher_video_conditions": len(flat),
+        "shared_teacher_demo_indices": list(unique_demos),
+        "action_video_assignment": "round_robin_one_action_one_video",
+        "actions_per_video": action_batch_size // len(unique_demos),
+        "logical_policy_pairs": action_batch_size,
         "unique_teacher_video_conditions": len(unique_demos),
         "teacher_video_raw_frames": sum(
             video.raw_frame_count for video in videos
@@ -169,11 +179,7 @@ def _step_metrics(
     completed = step + 1
     step_seconds = reduce_max(time.monotonic() - tick, runtime.context)
     global_queries_this_step = observed_batch * runtime.context.world_size
-    logical_videos = (
-        observed_batch
-        * runtime.videos_per_action
-        * runtime.context.world_size
-    )
+    logical_pairs = observed_batch * runtime.context.world_size
     local_unique_videos = int(video_metrics["unique_teacher_video_conditions"])
     return {
         "optimizer_step": completed,
@@ -194,14 +200,19 @@ def _step_metrics(
             completed
             * runtime.batch_size
             * runtime.context.world_size
-            * runtime.videos_per_action
         ),
-        "global_logical_writer_video_conditions": completed * logical_videos,
+        "global_writer_video_conditions": (
+            completed
+            * runtime.videos_per_task_visit
+            * runtime.context.world_size
+        ),
         "global_unique_action_queries_this_step": global_queries_this_step,
         "global_policy_samples_this_step": (
-            global_queries_this_step * runtime.videos_per_action
+            global_queries_this_step
         ),
-        "global_logical_writer_video_conditions_this_step": logical_videos,
+        "global_writer_video_conditions_this_step": (
+            runtime.videos_per_task_visit * runtime.context.world_size
+        ),
         "global_unique_writer_video_conditions_this_step": int(
             reduce_mean(local_unique_videos, runtime.context)
             * runtime.context.world_size
@@ -213,7 +224,7 @@ def _step_metrics(
         },
         "rank0_policy_loss_detail": detail,
         "action_query_batch_size_per_rank": runtime.batch_size,
-        "teacher_videos_per_action": runtime.videos_per_action,
+        "teacher_videos_per_task_visit": runtime.videos_per_task_visit,
         "policy_forward_calls_this_step": policy_forward_calls,
         "optimizer_gradient_accumulation": False,
         "data_seconds_max": reduce_max(data_seconds, runtime.context),
@@ -222,7 +233,7 @@ def _step_metrics(
             global_queries_this_step / step_seconds
         ),
         "global_policy_pairs_per_second": (
-            logical_videos / step_seconds
+            logical_pairs / step_seconds
         ),
         "elapsed_seconds": time.monotonic() - started,
         "max_cuda_allocated_bytes": int(
@@ -245,7 +256,7 @@ def run_writer_step(
     step: int,
     started: float,
 ) -> dict[str, Any]:
-    """Run one task-balanced, N-video positive functional Writer update."""
+    """Run one task-balanced update with four videos shared by all actions."""
 
     tick = time.monotonic()
     runtime.optimizer.zero_grad(set_to_none=True)
@@ -258,24 +269,21 @@ def run_writer_step(
     observed_batch = int(batch["task_id"].shape[0])
     if observed_batch != runtime.sampler.batch_size_for_step(step):
         raise WriterModelError("AS-Writer action-query batch size changed")
-    action_video_demos = tuple(
-        runtime.video_schedule.demos_for_action(
-            task_id,
-            task_visit,
-            action_offset,
-            runtime.videos_per_action,
-        )
-        for action_offset in range(observed_batch)
+    shared_video_demos = runtime.video_schedule.demos_for_task_visit(
+        task_id,
+        task_visit,
+        runtime.videos_per_task_visit,
     )
     packed, pair_to_generated, video_metrics = _pack_raw_conditions(
         runtime,
         task_id=task_id,
-        action_video_demos=action_video_demos,
+        shared_video_demos=shared_video_demos,
+        action_batch_size=observed_batch,
     )
     policy_batch = runtime.processor.training_batch(batch)
     training = runtime.config["conditioning_training"]
     mode = str(training["method"])
-    if mode != "same_action_multi_video_positive_functional_loss":
+    if mode != "shared_task_videos_partitioned_multi_action_positive_functional_loss":
         raise WriterModelError("unsupported AS-Writer conditioning mode")
     loss, detail = _differentiate_conditions(
         runtime,
@@ -306,7 +314,7 @@ def run_writer_step(
         loss=loss,
         detail=detail,
         conditioning_mode=mode,
-        policy_forward_calls=runtime.videos_per_action,
+        policy_forward_calls=1,
         data_seconds=data_seconds,
         video_metrics=video_metrics,
         grad_norm=grad_norm,

@@ -113,12 +113,13 @@ def batched_functional_lora_loss_gradients(
     pair_to_generated: torch.Tensor,
     executor: BatchedLoRAInference,
 ) -> tuple[torch.Tensor, Mapping[str, Any], dict[str, torch.Tensor]]:
-    """Evaluate N per-sample adapter views with shared policy noise and targets.
+    """Evaluate one or more per-sample adapter assignments.
 
-    ``pair_to_generated`` has shape ``[action_batch, views]``.  Each column is
-    one ordinary policy forward with a distinct adapter for every action row.
-    Exact duplicate videos may point at the same generated adapter row; their
-    logical losses remain separate and their gradients are summed.
+    ``pair_to_generated`` has shape ``[action_batch, views]``. Each column is
+    one ordinary policy forward. Adapter rows may be reused across the complete
+    action batch, while every listed action/video pair remains separately
+    weighted and gradients to each generated adapter are summed. The active
+    AS contract uses exactly one column, so every action is evaluated once.
     """
 
     if (

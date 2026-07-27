@@ -539,7 +539,7 @@ class MixedTaskBatchSampler:
 
 
 class TeacherVideoSchedule:
-    """Deterministic one-shot and per-action multi-video teacher schedules."""
+    """Deterministic one-shot and shared task-visit teacher schedules."""
 
     _SEED_TAG = 0x71DE0
 
@@ -573,28 +573,26 @@ class TeacherVideoSchedule:
         ).permutation(self.demo_indices)
         return int(order[offset])
 
-    def demos_for_action(
+    def demos_for_task_visit(
         self,
         task_id: int,
         task_visit: int,
-        action_offset: int,
         views: int,
     ) -> tuple[int, ...]:
-        """Choose distinct same-task videos independently for one action query."""
+        """Choose one shared set of distinct videos for a rank's task visit."""
 
         if (
             task_id not in self.task_ids
-            or min(task_visit, action_offset) < 0
+            or task_visit < 0
             or not 0 < views <= len(self.demo_indices)
         ):
-            raise WriterModelError("multi-video request is outside the schedule")
+            raise WriterModelError("shared multi-video request is outside the schedule")
         order = np.random.default_rng(
             np.random.SeedSequence(
                 [
                     self.seed,
                     task_id,
                     task_visit,
-                    action_offset,
                     views,
                     self._SEED_TAG,
                 ]
@@ -629,9 +627,9 @@ class TeacherVideoSchedule:
         start_step: int,
         stop_step: int,
         *,
-        views_per_action: int = 1,
+        videos_per_task_visit: int = 1,
     ) -> dict[str, Any]:
-        """Digest the joint action-query and independent teacher-video schedule."""
+        """Digest action queries and the shared videos for every task visit."""
 
         declared_sets = {
             tuple(sorted(sampler.episode_rows[task_id]))
@@ -642,7 +640,7 @@ class TeacherVideoSchedule:
             self.task_ids != sampler.task_ids
             or self.demo_indices != declared_demos
             or not 0 <= start_step <= stop_step
-            or not 0 < views_per_action <= len(self.demo_indices)
+            or not 0 < videos_per_task_visit <= len(self.demo_indices)
         ):
             raise WriterModelError("Writer consumed schedule authorities differ")
         query = sampler.consumed_identity_summary(start_step, stop_step)
@@ -653,28 +651,25 @@ class TeacherVideoSchedule:
             for rank in range(sampler.world_size):
                 slot = step * sampler.world_size + rank
                 task_id, task_visit = sampler._task_visit_for_global_slot(slot)
-                for action_offset in range(sampler.batch_size_for_step(step)):
-                    demos = self.demos_for_action(
-                        task_id,
-                        task_visit,
-                        action_offset,
-                        views_per_action,
-                    )
-                    for view, demo_index in enumerate(demos):
-                        digest.update(
-                            struct.pack(
-                                ">7q",
-                                step,
-                                rank,
-                                task_id,
-                                task_visit,
-                                action_offset,
-                                view,
-                                demo_index,
-                            )
+                demos = self.demos_for_task_visit(
+                    task_id,
+                    task_visit,
+                    videos_per_task_visit,
+                )
+                for view, demo_index in enumerate(demos):
+                    digest.update(
+                        struct.pack(
+                            ">6q",
+                            step,
+                            rank,
+                            task_id,
+                            task_visit,
+                            view,
+                            demo_index,
                         )
-                        coverage[task_id].add(demo_index)
-                        visits[task_id] += 1
+                    )
+                    coverage[task_id].add(demo_index)
+                    visits[task_id] += 1
         video_digest = digest.hexdigest()
         combined = hashlib.sha256(
             bytes.fromhex(query["identity_sha256"]) + bytes.fromhex(video_digest)
@@ -684,7 +679,7 @@ class TeacherVideoSchedule:
         return {
             "query": query,
             "teacher_video_seed": self.seed,
-            "views_per_action": views_per_action,
+            "videos_per_task_visit": videos_per_task_visit,
             "teacher_video_identity_sha256": video_digest,
             "combined_identity_sha256": combined,
             "min_video_visits_per_task": min(visit_counts),

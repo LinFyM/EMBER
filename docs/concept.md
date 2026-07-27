@@ -19,15 +19,17 @@ source base只负责基本camera/controller/robot/action与通用技能，不追
 
 每个source update：
 
-1. 从24 development train tasks均衡采task；
-2. 采一条agent observation/action episode或chunk；
-3. 为该action独立采4条同task、彼此不同的action-hidden teacher videos；
-4. 每条video独立经过one-shot Writer生成完整LoRA；
-5. 同一个action分别在4个LoRA下做frozen source-base functional forward；
-6. `B_a×4`个action losses直接求均值并只更新Writer。
+1. 每rank从24 development train tasks的全局均衡schedule取得一个task；
+2. 为该task visit抽4条不同的action-hidden teacher videos；
+3. 4条video分别独立经过one-shot Writer，只生成4套完整LoRA；
+4. 采`B_a`条独立同task agent observation/action chunks；
+5. 将action queries均匀分为4组，每条action只在对应的一套LoRA下做一次
+   frozen source-base functional forward；
+6. `B_a`个action losses直接求均值并只更新Writer；下一step更换task。
 
-video与action sample不要求配对，Writer不能靠逐帧复制目标action。多video只
-存在于训练batch的共同梯度，推理和held evaluation仍严格每次一条video。
+video与action sample不要求配对，Writer不能靠逐帧复制目标action。4条video
+从不拼成一个Writer输入；每套LoRA各接收`B_a/4`条action的共同梯度。推理和
+held evaluation仍严格每次一条video。
 held evaluation每rollout随机采一条正确task视频，报告对teacher-video分布的
 性能，不挑最好video。
 

@@ -26,9 +26,13 @@ task language + exactly one action-hidden teaching video
   Core；保留固定native suffix和两个Meta-LoRA，但Action Expert只生成每帧
   robot-semantic interaction hidden，不再输出7D forecast；两层global causal
   Transformer形成可变长Procedure；Core先编译稳定LoRA content，Procedure只作
-  zero-init有向修正。训练时每条action独立对应4条同task teacher videos，
-  推理仍严格one-shot。v5已原位实现并在GPU4–7完成真实profile，选择
-  `B_a=8`、frame microbatch32和60-step约一小时segment；尚无正式AS性能结论。
+  zero-init有向修正。训练时每rank每step一个task、共享4条不同teacher videos：
+  只生成4套one-shot LoRA，独立action queries均匀分给它们且每条action只计算
+  一次，形成`B_a`个loss；
+  推理仍严格one-shot。旧“每action独立4视频”训练只到step120，因每步生成约
+  24–32套LoRA而过慢，现已退役。共享4视频合同在GPU4–7实测选择
+  `B_a=16`：每步只做一次functional policy forward，稳态中位
+  `10.35s/step`；正式首段封存为fresh step0→400、每50步保存。
 - 目标 benchmark 为 LIBERO-Spatial/Object/Goal/Long 四 suites。development split 每 suite 6 train / 2 validation / 2 test，共24/8/8；final将validation合入形成32 source / 8 test。
 - `Action-Supervised Writer (AS-Writer)` 在source tasks上以一条视频生成LoRA，同task action episode/chunk只进functional loss，视频/action独立随机采样。
 - `Reward-Trained Writer (RL-Writer)` 与完整AS best分开：新架构先做短、均衡AS cold start，直到24个train tasks各有至少一次official random-reset success，再关闭action入口并转纯source reward训练。

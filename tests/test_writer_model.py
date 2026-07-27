@@ -116,7 +116,7 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         spatial_pool_grid=8,
         vl_meta_lora_rank=4,
         action_meta_lora_rank=8,
-        frame_microbatch_size=4,
+        max_frames_per_encoder_call=4,
         action_horizon=50,
         padded_action_dim=32,
         procedure_heads=8,

@@ -28,9 +28,13 @@
   image-position hidden构成permutation-invariant Core；fixed native suffix与
   两个Meta-LoRA产生per-frame robot-semantic hidden；两层global causal
   Procedure保留可变长度；Core先编译，Procedure以zero-init refiner修正。
-- v5训练时每条action独立对应`N=4`条同task不同teacher videos，逻辑loss为
-  `B_a×4`普通均值；推理严格one-shot。新架构按约一小时segment训练，不继承
-  v4 step数，不设focused AS/RL总wall-clock上限。
+- v5当前训练合同为每rank每step一个task、共享4条同task不同teacher videos：
+  只生成4套one-shot LoRA，`B_a`条独立action queries等分给4套LoRA且每条
+  action只对应一条video，逻辑loss为`B_a`普通均值；推理严格one-shot。
+  4 ranks全局均衡轮转task，6 steps覆盖
+  24 tasks。GPU4–7新profile选择`B_a=16`，稳态中位`10.35s/step`，
+  step2→12 exact-resume通过；约一小时segment封存为400 steps、每50步一个
+  checkpoint。不继承v4或旧v5 step数，不设focused AS/RL总wall-clock上限。
 - frame stride固定为5，不再把stride 5/10作为待选变量；后续任何GPU工作只使用
   物理GPU 4–7，0–3不进入visible set也不被干扰。
 - 当前工程推进以效率优先：最短垂直切片通过必要的shape/gradient/
@@ -102,8 +106,8 @@ Source-SFT comparator、v4训练、现有checkpoint选择和step825完整特异�
 - Core保存同一组帧中与顺序无关、但对任务有用的对象、关系、场景和整体操作；
 - Procedure只从per-frame robot-semantic hidden建立causal有序过程；
 - Core先生成稳定LoRA content，Procedure只能作为zero-init有向refinement；
-- 同action四条独立teacher的共同functional梯度负责让通用高层语义同向累积，
-  具体轨迹和速度细节相互冲突；
+- 同一rank action分布下4条独立teacher LoRA的共同functional梯度负责让通用
+  高层语义同向累积，具体轨迹和速度细节相互冲突；
 - 不使用contrast/order loss强行制造差距。
 
 这仍需实验验证，不被文档措辞视为已取得科学结果。
@@ -129,8 +133,8 @@ Source-SFT comparator、v4训练、现有checkpoint选择和step825完整特异�
   完整根因复审已定位AS可识别性、visual-state旁路、Meta forecast语义漂移和
   absolute-time Revision放大的组合链；
 - v5 Semantic Core + Causal Procedure的全部shape、mask、初始化、参数预算、
-  N=4训练、约一小时segment、特异性与性能gate已写入唯一活动design；当前状态
-  是实现前，不得把设计预算写成真实模型结果；
+  共享4-video训练、profile、特异性与性能gate已写入唯一活动design；真实
+  trainable参数为`10,301,440`，共享合同profile已封存，但尚未产生正式科学结果；
 - RL-Writer 使用独立短AS cold start取得24-task逐task成功覆盖后转pure reward，并完整报告action消耗；
 - Source-SFT 是一套 shared target-source LoRA，独立按 validation 选最佳；
 - seen/source panel 与 cross-suite wrong-video 对照；

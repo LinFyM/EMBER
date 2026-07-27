@@ -730,49 +730,50 @@ comparator。
 总量应精确等于 `10,301,440`。若实现细节造成偏差，先检查重复 norm、bias 或
 identity table；不得用新增科学分支凑参数。
 
-## 15. AS 数据组织：每条 action 对 N 条视频
+## 15. AS 数据组织：四条 task videos 供整个 action batch 复用
 
-固定初版：
+每个 rank、每个 optimizer step 只处理一个 task。4 个 ranks 每步覆盖4个
+不同的task slots；全局task-balanced schedule保证每连续6步覆盖全部24个
+development train tasks一次。下一次访问同一task时重新抽视频。
 
-\[
-N=4.
-\]
-
-每 rank 的逻辑 action batch 为 `B_a` 条 action queries。对每个 action
-query `a_i`，独立从其 task 的 50 条 teacher videos 中无放回抽 4 条不同视频：
+对当前 task visit，从50条teacher videos中确定性抽4条不同视频：
 
 \[
-\{V_{i,1},V_{i,2},V_{i,3},V_{i,4}\}.
+\{V_1,V_2,V_3,V_4\}.
 \]
 
-每个 `(action_i, video_{i,n})` 独立生成 one-shot program 和 LoRA：
+它们各自独立经过严格one-shot Writer，只生成4套LoRA：
 
 \[
-\theta_{i,n}=Writer(V_{i,n},L_i).
+\theta_n=Writer(V_n,L),\qquad n\in\{1,2,3,4\}.
 \]
 
-因此逻辑上：
+同一rank再独立采样 `B_a` 条同task action queries，要求`B_a`能被4整除。
+按确定性round-robin把action均匀分给4套LoRA：
+
+\[
+g(i)=i\bmod 4.
+\]
+
+每条action只在自己分到的一套LoRA下做一次functional policy forward，因此：
 
 ```text
-action queries             = B_a
-videos per action          = 4
-logical LoRAs/pairs        = B_a × 4
-functional policy losses   = B_a × 4
+task/video conditions      = 4 per rank step
+generated one-shot LoRAs   = 4 per rank step
+independent action queries = B_a
+actions per video LoRA      = B_a / 4
+functional policy losses   = B_a
+functional policy forwards = 1 batched forward
 ```
 
-不能把整个 rank 的 action batch 共享成只有 4 个 LoRA；那是此前被 owner
-否决的不同训练定义。
+这不是把4条视频拼成一个Writer输入。每套LoRA仍只看一条视频；复用只发生在
+LoRA生成完成后，同一套LoRA服务`B_a/4`条独立action。video schedule和action
+schedule使用独立seed，二者只要求
+同task，不要求同episode配对。大action batch要求每套video LoRA同时适用于该
+task的多种初态、episode和action chunk；4条video的共同梯度则强化跨示范稳定
+内容，降低单条路径、速度和抓取角度的支配。
 
-工程上允许按精确键：
-
-```text
-(language task, video task, demo_id, video condition/order transform)
-```
-
-对重复视频条件做 forward/cache 去重。去重只减少实际 Writer 计算，不能删除
-任何逻辑 `(action,video)` pair 或改变其 loss 权重。
-
-同一 action 的四个 pairs 必须共享：
+每个action query只出现一次，并保留自己的：
 
 - policy observation/state；
 - action target；
@@ -780,18 +781,19 @@ functional policy losses   = B_a × 4
 - policy flow noise；
 - preprocessing 和 padding。
 
-它们之间唯一变化是 teacher video 及由它生成的 LoRA。
+四个video partition使用相同数量的action queries，除此之外不复制action或loss。
 
 ## 16. AS loss 与 batch/显存合同
 
-每个 pair 的 functional behavior-cloning/flow loss 记为
-\(\ell_{i,n}\)。optimizer objective：
+令\(\mathcal A_n\)为分给第\(n\)套video LoRA的action集合，
+\(|\mathcal A_n|=B_a/4\)。每个唯一pair的functional behavior-cloning/flow
+loss记为\(\ell_{i,n}\)。optimizer objective：
 
 \[
 \mathcal L_{AS}
 =
-\frac{1}{B_aN}
-\sum_{i=1}^{B_a}\sum_{n=1}^{N}\ell_{i,n}.
+\frac{1}{B_a}
+\sum_{n=1}^{4}\sum_{i\in\mathcal A_n}\ell_{i,n}.
 \]
 
 这是有意的普通均值：
@@ -802,21 +804,28 @@ functional policy losses   = B_a × 4
 - 不给 Core/Procedure 单独 auxiliary loss；
 - 不设置对比、顺序或 policy-distance regularizer。
 
-不使用 optimizer gradient accumulation。固定 `N=4` 后，重新 profile：
+不使用 optimizer gradient accumulation。固定每rank每step 1 task、4 videos
+后，只 profile 一个主要训练自由度：
 
 - 最大安全 per-rank `B_a`；
-- 最大有效 frame microbatch；
-- 是否将 `B_a×4` pairs 做单次 batched functional forward，或在同一
-  optimizer step 内用现有 graph-safe pair microbatch 分块；
 - 以实际 global action queries/s 和 optimizer steps/s 决定，而不是只看
   峰值显存。
 
-若 pair 必须物理分块，所有 chunk 的 sum loss 在同一 optimizer step 内按真实
-pair 数归一化后一次 `optimizer.step()`；这属于单步内存调度，不是跨 step
-gradient accumulation。
+4个video的所有stride-5帧先打包。真实train视频经采样后每条帧数
+P50/mean/max约为`30/35.6/105`，四条通常不能安全塞进一次PaliGemma调用。
+因此保留固定`max_frames_per_encoder_call=32`作为纯显存安全上限；最后一块
+使用真实长度、不再padding。这不是科学超参数，也不随`B_a`搜索。
 
-world size 和 GPU 显存变化时，科学合同仍是 `每 action × N=4`。只调整
-`B_a`、frame microbatch 和单步 pair chunk，不改变 N。
+world size 和 GPU 显存变化时，科学合同仍是：
+
+```text
+one task per rank step
+four shared one-shot video LoRAs
+each action assigned to exactly one LoRA
+B_a / 4 independent actions per LoRA
+```
+
+只调整`B_a`；不改变4-video set、loss权重或one-shot推理定义。
 
 ## 17. 推理与评测
 
@@ -829,7 +838,8 @@ one task language + one teacher video
 -> all replans in that rollout reuse the same LoRA
 ```
 
-训练时多 demo 共同梯度不改变推理输入数量，也不把 4 条视频拼成一个样本。
+训练时4条独立one-shot LoRA的共同梯度不改变推理输入数量，也不把4条视频拼成
+一个样本。
 
 评估阶段工程并发与训练科学超参数解耦：
 
@@ -877,7 +887,8 @@ S_{hour}=3600/\operatorname{median}(seconds/step);
 \]
 
 3. 选择接近 `S_hour`、便于均匀保存的整数 segment size；
-4. 每个约一小时 segment 均匀保存 6 个 checkpoint，即约每 10 分钟一次；
+4. 当前实测每个400-step segment均匀保存8个checkpoint，即每50步、约
+   8–9分钟一次；
 5. segment 末 checkpoint必须包含完整 exact-resume state。
 
 scheduler horizon 在首个正式 launch 前一次封存，并保持足够长，后续
@@ -1056,7 +1067,7 @@ RL若无法启动，先判断是reward coverage、runtime mechanics还是表示�
 
 本文是后续session恢复当前设计的第一阅读入口。
 
-## 25. 实现与profile封存（2026-07-26）
+## 25. 初版实现与已封存profile（2026-07-26）
 
 - v5已按本文原位实现；活动v4 visual-state、7D forecast、Plan/Revision/
   Belief源码和config已删除，不保留兼容执行分支。
@@ -1064,10 +1075,37 @@ RL若无法启动，先判断是reward coverage、runtime mechanics还是表示�
   `1,287,168` scalars。Core permutation invariance、causal prefix、
   zero-content、identity、gradient/freeze与固定suffix checkpoint均通过，
   全套回归为`187 passed`。
-- GPU4–7最终选择`B_a=8`、`N=4`、frame microbatch32。12-step profile从
+- 初版训练估计器为“每条action独立抽4条video”。GPU4–7曾选择`B_a=8`、
+  `N=4`、frame microbatch32。12-step profile从
   step2真实exact-resume到step12，稳态11步中位`61.39s/step`，峰值
   allocated/reserved为`60,319,360,000/67,471,671,296 bytes`。
 - `B_a=12/20`以及`frame microbatch40 + B_a=8`均使reserved显存跳至约80GB、
   稳定余量不足3GB，已淘汰；未用OOM作为唯一停止信号。
-- 正式AS每个segment为60 optimizer steps，每10 steps保存一次，共6个均匀
-  checkpoint；训练、评测和恢复继续只使用物理GPU4–7。
+- 该旧估计器正式AS只到原子step120；随后运行在step128被owner停止，没有
+  step120之后的可恢复checkpoint。它的60-step segment与profile只作历史
+  evidence，不再定义新训练。
+
+## 26. 共享四视频训练合同（2026-07-27）
+
+- owner最终拍板为本文件第15–16节：每rank每step一个task、4条不同teacher
+  videos、只生成4套one-shot LoRA；`B_a`条独立action queries均匀分成4组，
+  每条action只对应一条video/一套LoRA，最终只有`B_a`个等权loss。
+- 在video/action独立同task采样下，该分组估计器与独立pair采样具有相同
+  population objective；改变的是样本相关性与计算复用。它同时保留
+  “跨4条video提取共同内容”和“每套LoRA必须适用于多action分布”两种约束。
+- 每rank每step仍只有一个task；4 ranks全局均衡轮转，6 steps覆盖24 tasks。
+- 固定stride5。旧`frame_microbatch`不再作为待调参数；仅保留无padding的
+  `max_frames_per_encoder_call=32`防止长视频造成OOM。profile只搜索`B_a`。
+- 旧step120不能按新合同resume。新合同必须fresh identity、使用新root，并在
+  GPU4–7重新完成最小gradient/freeze/resume和真实吞吐profile后，按实测速度
+  封存约一小时的整百step segment与均匀checkpoint。
+- 新合同真实profile已完成：`B_a=16`从step2 exact-resume到step12，11个稳态
+  steps的wall中位/均值/范围为
+  `10.347/10.043/7.072–14.341s`，全局有效pairs/s中位`6.185`。每步严格
+  `64`个全局action/policy samples、`16`个Writer video conditions和一次
+  policy forward；峰值allocated/reserved为
+  `63,736,767,488/68,415,389,696 bytes`。B20虽完成3步但reserved达到
+  `83,732,987,904 bytes`、只余约1.3GiB；B24/B32首步OOM，均淘汰。
+- `3600/10.347≈348 steps`；为了使用整百step并保持密集、均匀checkpoint，
+  正式segment取400 steps、每50步保存一次，预计约67–69分钟。fresh首段为
+  step0→400，不继承旧step120。

@@ -89,7 +89,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
     writer = config.get("writer", {})
     if (
         writer.get("frame_stride") != 5
-        or int(writer.get("frame_microbatch_size", 0)) <= 0
+        or int(writer.get("max_frames_per_encoder_call", 0)) <= 0
     ):
         raise WriterModelError("sealed Core-Causal Writer dimensions changed")
     expected_writer = {
@@ -116,9 +116,9 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         "vl_meta_lora_rank": 4,
         "action_meta_lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
         "action_meta_lora_rank": 8,
-        "frame_microbatch_size": writer["frame_microbatch_size"],
-        "frame_microbatch_remainder": (
-            "repeat_last_pad_to_fixed_size_then_crop"
+        "max_frames_per_encoder_call": writer["max_frames_per_encoder_call"],
+        "frame_batching_contract": (
+            "pack_all_four_videos_then_use_unpadded_memory_safety_chunks"
         ),
         "activation_checkpointing": True,
         "action_horizon": 50,
@@ -209,15 +209,16 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         "demo_indices": [0, 49],
         "episodes_per_task": 50,
         "teacher_video_sampling": (
-            "per_action_independent_deterministic_four_distinct_same_task_videos"
+            "per_rank_task_visit_shared_deterministic_four_distinct_same_task_videos"
         ),
         "action_query_sampling": "task-balanced deterministic no-replacement episode cycles",
         "video_action_pairing": (
-            "each action query independently samples four same-task videos"
+            "partition rank-local same-task action queries evenly across one "
+            "shared four-video set"
         ),
-        "exact_video_deduplication": (
-            "deduplicate identical task_language_demo_transform Writer forwards "
-            "while retaining every logical pair loss"
+        "writer_generation_reuse": (
+            "generate four task-video LoRAs once then assign each action query "
+            "to exactly one LoRA"
         ),
     }
     if any(data.get(name) != value for name, value in required.items()):
@@ -227,7 +228,9 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
 def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
     value = config.get("conditioning_training", {})
     normal = {
-        "method": "same_action_multi_video_positive_functional_loss",
+        "method": (
+            "shared_task_videos_partitioned_multi_action_positive_functional_loss"
+        ),
         "writer_language_contract": (
             "correct_task_language_state_free_teacher_action_suffix"
         ),
@@ -235,10 +238,14 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
         "action_query_batch_owner": (
             "one physical action batch per rank with no optimizer gradient accumulation"
         ),
-        "teacher_videos_per_action": 4,
-        "logical_pair_batch": "per_rank_action_batch_times_four",
+        "task_assignment": (
+            "one task per rank per optimizer step with globally balanced task rotation"
+        ),
+        "teacher_videos_per_task_visit": 4,
+        "action_video_assignment": "round_robin_one_action_one_video",
+        "logical_pair_batch": "per_rank_action_batch",
         "policy_noise_contract": (
-            "same action target flow noise and time draw across the four video adapters"
+            "one independent policy flow noise and time draw per action query"
         ),
         "pair_loss_reduction": "mean_over_all_action_video_pairs",
         "normal_loss_weight": 1.0,
@@ -312,6 +319,13 @@ def resolve_runtime(
     stop_step = args.stop_after_step or default_stop
     if min(total_steps, batch_size, stop_step) <= 0 or stop_step > total_steps:
         raise WriterModelError("invalid AS-Writer runtime request")
+    videos_per_task_visit = int(
+        config["conditioning_training"]["teacher_videos_per_task_visit"]
+    )
+    if batch_size % videos_per_task_visit:
+        raise WriterModelError(
+            "per-rank action batch must divide evenly across shared teacher videos"
+        )
     expected_world_size = int(source.get("expected_world_size", 8))
     if context.world_size != expected_world_size:
         raise WriterModelError(
@@ -564,10 +578,10 @@ def build_contract(
     initialization: Mapping[str, Any],
 ) -> dict[str, Any]:
     contract_stop_step = _contract_stop_step(args, config, total_steps)
-    videos_per_action = int(
-        config["conditioning_training"]["teacher_videos_per_action"]
+    videos_per_task_visit = int(
+        config["conditioning_training"]["teacher_videos_per_task_visit"]
     )
-    policy_forward_calls = videos_per_action
+    policy_forward_calls = 1
     local = {
         "rank": context.rank,
         "local_rank": context.local_rank,
@@ -609,18 +623,18 @@ def build_contract(
             "ddp_object": "shared_writer_only",
             "action_query_batch_size_per_rank": batch_size,
             "per_rank_unique_action_query_cycle": list(batch_cycle),
-            "teacher_videos_per_action": videos_per_action,
-            "logical_pairs_per_rank": batch_size * videos_per_action,
+            "teacher_videos_per_task_visit": videos_per_task_visit,
+            "writer_video_conditions_per_rank": videos_per_task_visit,
+            "actions_per_video_condition": batch_size // videos_per_task_visit,
+            "action_video_assignment": "round_robin_one_action_one_video",
+            "logical_pairs_per_rank": batch_size,
             "optimizer_gradient_accumulation": False,
             "global_policy_samples_per_step": (
                 context.world_size
                 * batch_size
-                * videos_per_action
             ),
             "policy_forward_calls_per_optimizer_step": policy_forward_calls,
-            "writer_conditions_before_exact_dedup_per_rank": (
-                batch_size * videos_per_action
-            ),
+            "writer_conditions_per_rank": videos_per_task_visit,
             "total_steps": total_steps,
             "selected_stop_step": contract_stop_step,
             "checkpoint_steps": list(checkpoint_steps),

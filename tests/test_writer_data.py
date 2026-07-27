@@ -150,24 +150,24 @@ def test_joint_writer_consumed_digest_covers_video_and_action_schedules() -> Non
         sampler,
         0,
         8,
-        views_per_action=4,
+        videos_per_task_visit=4,
     )
     assert summary == first.consumed_identity_summary(
         sampler,
         0,
         8,
-        views_per_action=4,
+        videos_per_task_visit=4,
     )
     assert summary["query"] == sampler.consumed_identity_summary(0, 8)
-    assert summary["views_per_action"] == 4
-    assert summary["min_video_visits_per_task"] == 32
+    assert summary["videos_per_task_visit"] == 4
+    assert summary["min_video_visits_per_task"] == 16
     assert (
         summary["combined_identity_sha256"]
         != second.consumed_identity_summary(
             sampler,
             0,
             8,
-            views_per_action=4,
+            videos_per_task_visit=4,
         )[
             "combined_identity_sha256"
         ]

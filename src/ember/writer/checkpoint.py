@@ -80,7 +80,7 @@ def _write_rank_state(
     sampler: MixedTaskBatchSampler,
     video_schedule: TeacherVideoSchedule,
     saved_rng: Mapping[str, Any],
-    videos_per_action: int,
+    videos_per_task_visit: int,
 ) -> None:
     torch.save(
         {
@@ -93,7 +93,7 @@ def _write_rank_state(
             "per_rank_batch_cycle": sampler.per_rank_batch_cycle,
             "sampler_seed": sampler.seed,
             "teacher_video_seed": video_schedule.seed,
-            "teacher_videos_per_action": videos_per_action,
+            "teacher_videos_per_task_visit": videos_per_task_visit,
             "rng": saved_rng,
         },
         path,
@@ -115,8 +115,8 @@ def _write_shared_state(
     require_full_coverage: bool,
     metrics_rows: int,
 ) -> dict[str, Any]:
-    videos_per_action = int(
-        contract["runtime"]["teacher_videos_per_action"]
+    videos_per_task_visit = int(
+        contract["runtime"]["teacher_videos_per_task_visit"]
     )
     data_stop_step = step
     save_file(
@@ -143,7 +143,7 @@ def _write_shared_state(
         sampler,
         0,
         data_stop_step,
-        views_per_action=videos_per_action,
+        videos_per_task_visit=videos_per_task_visit,
     )
     if require_full_coverage and (
         any(len(episodes) != sampler.episodes_per_task for episodes in coverage.values())
@@ -158,7 +158,7 @@ def _write_shared_state(
         "max_action_episodes_per_task": max(map(len, coverage.values())),
         "next_step": step,
         "next_data_step": data_stop_step,
-        "teacher_videos_per_action": videos_per_action,
+        "teacher_videos_per_task_visit": videos_per_task_visit,
     }
     files = {
         str(path.relative_to(temporary)): {
@@ -212,8 +212,8 @@ def save_writer_checkpoint(
     _raise_distributed_errors(context, "initialization", error)
 
     saved_rng = _rng_state(context)
-    videos_per_action = int(
-        contract["runtime"]["teacher_videos_per_action"]
+    videos_per_task_visit = int(
+        contract["runtime"]["teacher_videos_per_task_visit"]
     )
     error = None
     try:
@@ -224,7 +224,7 @@ def save_writer_checkpoint(
             sampler=sampler,
             video_schedule=video_schedule,
             saved_rng=saved_rng,
-            videos_per_action=videos_per_action,
+            videos_per_task_visit=videos_per_task_visit,
         )
     except Exception as caught:
         error = caught
@@ -393,7 +393,7 @@ def load_writer_checkpoint(
     teacher_video_seed: int,
     per_rank_batch_size: int,
     per_rank_batch_cycle: tuple[int, ...],
-    videos_per_action: int,
+    videos_per_task_visit: int,
     contract_sha256: str,
 ) -> tuple[int, dict[str, Any], int]:
     validation: list[Any] = [None]
@@ -439,7 +439,7 @@ def load_writer_checkpoint(
         context.world_size,
         per_rank_batch_size,
         per_rank_batch_cycle,
-        videos_per_action,
+        videos_per_task_visit,
         int(trainer["next_step"]),
         sampler_seed,
         teacher_video_seed,
@@ -450,7 +450,7 @@ def load_writer_checkpoint(
         int(rank_state["world_size"]),
         int(rank_state["per_rank_batch_size"]),
         tuple(int(value) for value in rank_state.get("per_rank_batch_cycle", ())),
-        int(rank_state.get("teacher_videos_per_action", -1)),
+        int(rank_state.get("teacher_videos_per_task_visit", -1)),
         int(rank_state.get("next_data_step", -1)),
         int(rank_state["sampler_seed"]),
         int(rank_state["teacher_video_seed"]),

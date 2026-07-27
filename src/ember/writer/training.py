@@ -1,9 +1,9 @@
 """Canonical symmetric-rank PI05 Action-Supervised Writer training.
 
-Only the shared Writer is trainable.  Every action query is independently
-paired with N distinct same-task action-hidden videos.  Each video still
-generates a one-shot LoRA; the frozen policy evaluates all N adapters against
-the same action target and flow-noise draw.
+Only the shared Writer is trainable.  Each rank handles one task per step,
+generates four one-shot LoRAs from four distinct same-task videos, and assigns
+each independently sampled action query to exactly one of those adapters.
+Every video conditions an equal partition of the rank-local action batch.
 """
 
 from __future__ import annotations
@@ -113,7 +113,7 @@ class WriterRuntime:
     contract_sha256: str
     total_steps: int
     batch_size: int
-    videos_per_action: int
+    videos_per_task_visit: int
     checkpoint_steps: tuple[int, ...]
     resume_step: int
     metrics_path: Path
@@ -229,7 +229,7 @@ def _restore_training_state(
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     batch_size: int,
     batch_cycle: tuple[int, ...],
-    videos_per_action: int,
+    videos_per_task_visit: int,
     contract_sha256: str,
     initial_step: int,
 ) -> tuple[dict[str, Any] | None, int]:
@@ -245,7 +245,7 @@ def _restore_training_state(
         teacher_video_seed=int(config["data"]["teacher_video_seed"]),
         per_rank_batch_size=batch_size,
         per_rank_batch_cycle=batch_cycle,
-        videos_per_action=videos_per_action,
+        videos_per_task_visit=videos_per_task_visit,
         contract_sha256=contract_sha256,
     )
     if loaded != initial_step:
@@ -470,8 +470,8 @@ def prepare_runtime(
     config = load_writer_config(args.config.resolve())
     total_steps, batch_size, checkpoint_steps = resolve_runtime(args, config, context)
     batch_cycle = (batch_size,)
-    videos_per_action = int(
-        config["conditioning_training"]["teacher_videos_per_action"]
+    videos_per_task_visit = int(
+        config["conditioning_training"]["teacher_videos_per_task_visit"]
     )
     initial_step = resume_step(args.resume)
     if not 0 <= initial_step < args.stop_after_step:
@@ -496,7 +496,7 @@ def prepare_runtime(
         scheduler=setup.scheduler,
         batch_size=batch_size,
         batch_cycle=batch_cycle,
-        videos_per_action=videos_per_action,
+        videos_per_task_visit=videos_per_task_visit,
         contract_sha256=setup.contract_sha256,
         initial_step=initial_step,
     )
@@ -567,7 +567,7 @@ def prepare_runtime(
         contract_sha256=setup.contract_sha256,
         total_steps=total_steps,
         batch_size=batch_size,
-        videos_per_action=videos_per_action,
+        videos_per_task_visit=videos_per_task_visit,
         checkpoint_steps=checkpoint_steps,
         resume_step=initial_step,
         metrics_path=metrics_path,
@@ -665,13 +665,11 @@ def run_steps(runtime: WriterRuntime) -> None:
                 stop
                 * runtime.context.world_size
                 * runtime.batch_size
-                * runtime.videos_per_action
             ),
-            "global_logical_task_video_conditions": (
+            "global_writer_video_conditions": (
                 stop
                 * runtime.context.world_size
-                * runtime.batch_size
-                * runtime.videos_per_action
+                * runtime.videos_per_task_visit
             ),
             "test_action_reads": 0,
             "test_video_value_reads": 0,
@@ -698,7 +696,9 @@ def train(args: argparse.Namespace) -> None:
                         "contract_sha256": runtime.contract_sha256,
                         "resume_step": runtime.resume_step,
                         "stop_after_step": args.stop_after_step,
-                        "teacher_videos_per_action": runtime.videos_per_action,
+                        "teacher_videos_per_task_visit": (
+                            runtime.videos_per_task_visit
+                        ),
                         "tasks": len(runtime.task_ids),
                         "trainable": runtime.contract["trainable"],
                     },

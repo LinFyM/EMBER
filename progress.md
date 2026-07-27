@@ -995,7 +995,7 @@
   `4,096`；公开LoRA保持rank16、76 tensors、`1,287,168` scalars。全套
   `187 passed`，Core permutation invariance、causal prefix、zero-content、
   identity、视频条件梯度和固定suffix buffer均通过。
-- AS初版固定每action独立`N=4`条同task videos、`B_a×4`个逻辑LoRA/loss；
+- AS初版曾固定每action独立`N=4`条同task videos、`B_a×4`个逻辑LoRA/loss；
   推理严格one-shot。后续只使用物理GPU4–7，frame stride5固定，重新profile
   `B_a`与frame microbatch后按约一小时segment训练，每段均匀保存6个checkpoint。
 - GPU4–7真实profile完成`B_a=1/4/8/12/20`及`m40/B8`边界。最终选择
@@ -1006,3 +1006,68 @@
 - 正式AS因此封存为每约一小时60 steps、每10 steps一个checkpoint，每段6个；
   下一步是fresh identity第一段和resident validation functional-loss选择。当前
   profile checkpoint只作mechanics/吞吐证据，不作科学性能结论。
+
+## v5 AS首轮训练、step40/120特异性与续训（2026-07-27）
+
+- fresh formal训练已完成step0→60并exact-resume到120；每10步均保留完整
+  Writer/optimizer/scheduler/data cursor/4-rank RNG checkpoint。functional
+  validation observed-best暂为step40 `0.136874`，step100曾反弹至
+  `0.137017`，step120为`0.139036`；尚无足够峰后下降证据。
+- step40内部顺序路径存在但很弱，五条件fixed-400为
+  correct/same/wrong/shuffle/reverse=`45/52/52/51/51`，行为硬门失败。
+  checkpoint未被误判为最终架构上限；step10/40/60内部纵向比较表明task语义
+  分离和Procedure顺序差异仍在演化，因此保持架构不变继续训练。
+- step120内部反事实通过结构门：Core set对shuffle/reverse数值不变；
+  fixed-Core Procedure-only有效LoRA差异为`0.626%/1.087%`，Core-only伪差仅
+  `0.073%/0.074%`；8/8 tasks均贡献。same-task-other与wrong有效LoRA差异为
+  `1.235%/15.963%`。
+- step120完整fixed-400为`65/59/57/61/65`。correct相对step40净增20，
+  `41`条new-only、`21`条old-only、exact `p=0.0151`，且跨多个task提升；
+  但correct相对same/wrong/shuffle/reverse的净差仅`+6/+8/+4/0`，均未显著，
+  所以行为特异性和`125/400`性能门仍未通过。
+- 五条件采用每卡5个模型副本并发：每条件仍是完整400 panel、4个持久
+  policy/env workers；GPU4–7实测约`64GB`峰值、约`60GB` rollout稳态，五个
+  panel约48分钟同时完成。没有触碰GPU0–3。
+- 曾从step120按原合同续训，但owner在step128停止；没有生成step120之后的原子
+  checkpoint，旧合同科学证据止于step120。
+
+## v5共享四视频训练合同启动（2026-07-27）
+
+- 复核确认旧`B_a=8,N=4`并非每rank只生成4套LoRA：每条action独立采视频，
+  实际每step/rank在demo碰撞去重后仍生成约24–32套；step126–128 sampled
+  frames为`537–799`，这是约一分钟一步的主要根因。
+- owner现拍板：每rank每step一个task，确定性抽4条不同teacher videos，只生成
+  4套one-shot LoRA；`B_a`条独立action queries均匀分给4套LoRA，每条action
+  只对应一条video，形成`B_a`个普通均值functional losses。4 ranks全局
+  task-balanced轮转。
+- canonical sampler、AS step、checkpoint schedule identity、run metrics和
+  config已开始原位切换到共享set；不新增runner或兼容分支。旧step120不可按
+  新合同resume，后续使用fresh root。
+- frame stride5保持不变。单video sampled frames为P50/mean/max
+  `30/35.6/105`，所以保留`max_frames_per_encoder_call=32`显存安全块；末块
+  改为真实长度、不再padding。profile只搜索`B_a`，不做optimizer accumulation。
+- 该段记录的是共享合同刚切换时的待办；其focused tests、exact-resume与
+  GPU4–7 `B_a` profile已在下一节完成。首轮结束仍先做absolute fixed-400
+  validation，达到约`110–120/400`后再做特异性。
+
+## v5共享四视频一对一分组profile封存（2026-07-27）
+
+- canonical映射已改为每rank每step一个task、4条不同teacher videos生成4套
+  one-shot LoRA，`B_a`条action按`i mod 4`均分；每条action只对应一条video，
+  总functional losses为`B_a`而不是`4B_a`。focused tests直接锁定
+  `[0,1,2,3,...]`映射、等分计数和不可整除fail-close。
+- GPU4–7真实选择`B_a=16`。canonical 12-step profile先fresh到step2，再从完整
+  checkpoint exact-resume到step12；合同SHA256
+  `8dd6dfe6...263fb2`，metrics SHA256 `a570c916...09cea`，step12 manifest
+  SHA256 `1ef4bde3...61bdd`。24 tasks两轮均覆盖，每task恰好32条action和
+  8次video visits。
+- 11个稳态steps的wall中位/均值/范围为
+  `10.347/10.043/7.072–14.341s`，全局有效pairs/s中位`6.185`；每step始终
+  64个全局policy samples、16个Writer video conditions、1次policy forward。
+  峰值allocated/reserved为`63,736,767,488/68,415,389,696 bytes`，观察到的
+  rank0四视频sampled frames范围`82–240`。
+- B20虽完成3步，但reserved跳到`83,732,987,904 bytes`，只余约1.3GiB；
+  B24/B32均在首个policy forward OOM，故拒绝。按
+  `3600/10.347≈348 steps`取整，正式segment封存为400 steps、每50步一个
+  checkpoint，预计约67–69分钟。下一步从fresh identity启动step0→400；
+  首段后先做fixed-400绝对性能选择，不先跑特异性。

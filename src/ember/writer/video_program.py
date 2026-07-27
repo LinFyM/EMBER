@@ -10,6 +10,8 @@ import torch
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
 
+from ember.writer.temporal import RMSNorm
+
 
 class VideoProgramError(RuntimeError):
     """Raised when the sealed teacher-video semantic interface changes."""
@@ -86,6 +88,75 @@ class MetaLoRAStack(torch.nn.Module):
                 handle.remove()
 
 
+class TaskQueriedPatchGrounding(torch.nn.Module):
+    """Read per-frame image-position content with text-only task queries."""
+
+    NATIVE_IMAGE_TOKENS = 256
+
+    def __init__(self, *, width: int, heads: int) -> None:
+        super().__init__()
+        if min(width, heads) <= 0 or width % heads:
+            raise VideoProgramError("invalid task-queried patch grounding")
+        self.heads = int(heads)
+        self.head_width = width // heads
+        self.query_norm = RMSNorm(width)
+        self.patch_norm = RMSNorm(width)
+        self.query = torch.nn.Linear(width, width, bias=False)
+        self.key = torch.nn.Linear(width, width, bias=False)
+        self.output = torch.nn.Linear(width, width, bias=False)
+
+    def forward(
+        self,
+        task_queries: torch.Tensor,
+        patch_content: torch.Tensor,
+        valid_task_tokens: torch.Tensor,
+    ) -> torch.Tensor:
+        if (
+            task_queries.ndim != 3
+            or patch_content.ndim != 3
+            or task_queries.shape[0] != patch_content.shape[0]
+            or task_queries.shape[-1] != patch_content.shape[-1]
+            or task_queries.shape[-1] != self.heads * self.head_width
+            or patch_content.shape[1] != self.NATIVE_IMAGE_TOKENS
+            or valid_task_tokens.shape != task_queries.shape[:2]
+            or valid_task_tokens.dtype != torch.bool
+            or not bool(valid_task_tokens.any(dim=1).all())
+        ):
+            raise VideoProgramError("invalid task-query patch batch")
+        batch, task_tokens, width = task_queries.shape
+        patches = patch_content.shape[1]
+        query = self.query(self.query_norm(task_queries)).reshape(
+            batch,
+            task_tokens,
+            self.heads,
+            self.head_width,
+        ).transpose(1, 2)
+        key = self.key(self.patch_norm(patch_content)).reshape(
+            batch,
+            patches,
+            self.heads,
+            self.head_width,
+        ).transpose(1, 2)
+        value = patch_content.reshape(
+            batch,
+            patches,
+            self.heads,
+            self.head_width,
+        ).transpose(1, 2)
+        attended = F.scaled_dot_product_attention(
+            query,
+            key,
+            value,
+            dropout_p=0.0,
+            is_causal=False,
+        )
+        merged = attended.transpose(1, 2).reshape(batch, task_tokens, width)
+        return self.output(merged).masked_fill(
+            ~valid_task_tokens[..., None],
+            0.0,
+        )
+
+
 class Pi05LanguageAxialEncoder(torch.nn.Module):
     """Produce text queries, aligned video evidence, and Action-Expert probes."""
 
@@ -102,6 +173,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         text_meta_lora_rank: int,
         vl_meta_lora_rank: int,
         action_meta_lora_rank: int,
+        patch_grounding_heads: int,
         max_frames_per_encoder_call: int,
         action_horizon: int,
         padded_action_dim: int,
@@ -116,6 +188,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             text_meta_lora_rank,
             vl_meta_lora_rank,
             action_meta_lora_rank,
+            patch_grounding_heads,
             max_frames_per_encoder_call,
             action_horizon,
             padded_action_dim,
@@ -142,6 +215,10 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             expert_width,
             program_width,
             bias=False,
+        )
+        self.patch_grounding = TaskQueriedPatchGrounding(
+            width=program_width,
+            heads=patch_grounding_heads,
         )
         self.text_meta_lora = MetaLoRAStack(
             paligemma_model.layers,
@@ -271,6 +348,8 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
         task_span_mask: torch.Tensor,
+        text_queries: torch.Tensor,
+        valid_task_tokens: torch.Tensor,
         maximum_task_tokens: int,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks
@@ -354,7 +433,16 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             task_span_mask,
             maximum_task_tokens,
         )
-        evidence = self.language_projection(packed_language)
+        multimodal_evidence = self.language_projection(packed_language)
+        patch_content = self.language_projection(
+            prefix_hidden[:, : self.NATIVE_IMAGE_TOKENS]
+        )
+        patch_evidence = self.patch_grounding(
+            text_queries,
+            patch_content,
+            valid_task_tokens,
+        )
+        evidence = multimodal_evidence + patch_evidence
         interaction = self.interaction_projection(suffix_hidden.mean(dim=1))
         return evidence, interaction
 
@@ -474,6 +562,8 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
                 language_tokens.index_select(0, selected),
                 language_mask.index_select(0, selected),
                 task_span_mask.index_select(0, selected),
+                text_queries.index_select(0, selected),
+                valid_task_tokens.index_select(0, selected),
             )
 
             def invoke_frames(
@@ -481,6 +571,8 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
                 token_values: torch.Tensor,
                 mask_values: torch.Tensor,
                 span_values: torch.Tensor,
+                query_values: torch.Tensor,
+                valid_token_values: torch.Tensor,
             ) -> tuple[torch.Tensor, torch.Tensor]:
                 return self._encode_microbatch(
                     core,
@@ -488,6 +580,8 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
                     token_values,
                     mask_values,
                     span_values,
+                    query_values,
+                    valid_token_values,
                     maximum_task_tokens,
                 )
 

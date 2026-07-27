@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_language_axial_as_writer_v5_1",
+  "schema_version": "ember_pi05_language_axial_as_writer_v5_2",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {
@@ -50,7 +50,7 @@
     "test_video_values_read": 0
   },
   "writer": {
-    "architecture": "pi05_language_axial_core_causal_procedure_slot_fusion_v5_1",
+    "architecture": "pi05_language_axial_patch_grounded_core_causal_procedure_slot_fusion_v5_2",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -63,8 +63,13 @@
     "task_token_alignment": "text_and_multimodal_ids_identical_by_construction",
     "image_width": 2048,
     "native_image_tokens": 256,
-    "multimodal_core_value": "final_norm_task_span_hidden_only_no_image_position_values",
+    "multimodal_core_value": "final_norm_task_span_hidden_plus_task_queried_image_position_content",
     "shared_language_projection": "bias_free_2048_to_256",
+    "patch_grounding_attention": "per_frame_text_only_task_queries_to_256_image_positions",
+    "patch_grounding_qk": "separate_pre_rmsnorm_bias_free_256_to_256",
+    "patch_grounding_value": "raw_shared_projected_image_position_content_no_value_projection",
+    "patch_grounding_output": "bias_free_256_to_256_added_to_multimodal_task_token_evidence",
+    "patch_grounding_heads": 8,
     "expert_width": 1024,
     "text_meta_lora_targets": [
       "q_proj",
@@ -102,7 +107,7 @@
     "semantic_core_heads": 8,
     "semantic_core_blocks": 2,
     "semantic_core_position_encoding": "task_token_ordinal_rope_qk_only_bidirectional",
-    "semantic_core_value_path": "multimodal_task_token_content_only",
+    "semantic_core_value_path": "multimodal_task_token_plus_task_queried_patch_content",
     "procedure_heads": 8,
     "procedure_blocks": 2,
     "procedure_attention": "global_causal_pre_norm_with_valid_mask",
@@ -119,7 +124,7 @@
     "modulation_projection": "bias_free_256_to_512_zero_initialized",
     "post_fusion_blocks": 1,
     "factor_head_bias": false,
-    "factor_hidden_width": 240,
+    "factor_hidden_width": 216,
     "initialization_seed": 7
   },
   "data": {
@@ -180,10 +185,10 @@
       "decay_lr": 1e-05
     },
     "maximum_formal_wall_clock_minutes": null,
-    "budget_role": "profile_then_approximately_one_hour_exact_resume_segments"
+    "budget_role": "fresh_v5_2_profile_then_one_hour_early_specificity_segment"
   },
   "profile_defaults": {
-    "status": "completed_v5_1_live_f32_b20",
+    "status": "v5_2_live_profile_pending",
     "expected_world_size": 4,
     "total_steps": 12,
     "per_rank_batch_size": 20,
@@ -197,7 +202,7 @@
     "selected_stop_step": 12
   },
   "profile_evidence": {
-    "status": "sealed",
+    "status": "pending_v5_2_live_profile",
     "allowed_physical_gpu_ids": [
       4,
       5,
@@ -211,43 +216,17 @@
       "max_frames_per_encoder_call",
       "per_rank_action_batch_size"
     ],
-    "initial_candidate_from_v5_only": {
+    "initial_candidate_from_v5_1": {
       "max_frames_per_encoder_call": 32,
       "per_rank_action_batch_size": 20
     },
     "required_longest_real_stride5_video_frames": 105,
     "selection_rule": "maximize_stable_global_action_queries_per_second_with_real_longest_video_and_aggressive_allocated_memory_use",
-    "selected": {
-      "max_frames_per_encoder_call": 32,
-      "per_rank_action_batch_size": 20,
-      "global_action_queries_per_step": 80,
-      "longest_real_stride5_video_frames": 105,
-      "longest_video_step_seconds": 7.247543944977224,
-      "ordinary_step_seconds": [
-        3.2486605010926723,
-        3.6636769040487707
-      ],
-      "ordinary_global_queries_per_second": [
-        24.62553411570472,
-        21.835986659083147
-      ],
-      "max_cuda_allocated_bytes": 76926205440,
-      "max_cuda_reserved_bytes": 83638616064,
-      "allocated_headroom_bytes_on_a100_80g": 8973140480,
-      "reserved_headroom_bytes_on_a100_80g": 2260729856,
-      "longest_video_profile_output": "/data/ymdai/outputs/ember/pi05_as_writer_v5_1_profile_long105_f32_b20_0f46cc3_20260727",
-      "longest_video_run_contract_sha256": "a0ca7b584b4122a245c51572e48d5a87aebaf811fb0ae8b88e503662f89c4d29",
-      "longest_video_metrics_file_sha256": "d2e61e3825905ded29dbbb46993caac0eef13f35857f09e0ff052491702789f6",
-      "steady_profile_output": "/data/ymdai/outputs/ember/pi05_as_writer_v5_1_profile_f32_b20_3step_0f46cc3_20260727",
-      "steady_run_contract_sha256": "e6c4dbd32c8a55c14a931e13fb2dc576c65998abfaf512d5e1e17a27ef78f32c",
-      "steady_metrics_file_sha256": "094c7800fdc9e1c1a90c3a45f2a3977d2bd17fb9d5c2d838479f3e0ced6f1062",
-      "steady_checkpoint_manifest_file_sha256": "126648280fe00da45e080dc2b77a9934d2bc1147b5aa08aec4108f9d37d38bd4"
-    },
-    "upper_bound": {
-      "per_rank_action_batch_size": 20,
-      "reason": "B20 leaves 8.36GiB allocated headroom; the measured unchanged functional-policy batch slope makes B21 exceed the retained stability margin"
-    },
+    "selected": null,
+    "upper_bound": null,
     "inference_profile": {
+      "status": "pending_v5_2_generation_check",
+      "inherited_candidate_only": true,
       "physical_gpu_ids": [
         4,
         5,
@@ -267,9 +246,9 @@
       "max_worker_generation_allocated_bytes": 11631111168,
       "max_worker_generation_reserved_bytes": 12807307264,
       "rollout_only_effective_rollouts_per_second": 0.3799001050925678,
-      "profile_output": "/data/ymdai/outputs/ember/pi05_as_writer_v5_1_evalprofile_gen6_b100_roll6_step2_bb63bfd_20260727",
-      "run_contract_sha256": "040b3c54b8cc7ff65989face9b1329164f44fd5fc5980b307a164d43b7ae9d02",
-      "results_file_sha256": "753bbd8ceb88adeac6cc463f7ea6396235302448cf39621f04a2c6ab33b1c0c3",
+      "profile_output": null,
+      "run_contract_sha256": null,
+      "results_file_sha256": null,
       "queue_policy": "all pending max-horizon shards globally precede ordinary shards; GPU affinity only orders max-horizon shards"
     }
   },
@@ -286,14 +265,14 @@
     "contrast_loss_allowed": false
   },
   "formal_run": {
-    "status": "sealed",
+    "status": "pending_profile",
     "expected_world_size": 4,
-    "total_steps": 12000,
+    "total_steps": 900,
     "per_rank_batch_size": 20,
     "checkpoint_steps": "every:100",
     "selected_stop_step": 900,
     "stage_stop_steps": "every:100",
-    "segment_definition": "first_900_steps_approximately_one_hour_from_measured_v5_1_F32_B20_throughput_no_automatic_second_or_third_segment",
+    "segment_definition": "placeholder_until_v5_2_live_profile_then_one_hour_first_segment_no_automatic_continuation",
     "first_segment_scale": {
       "optimizer_steps": 900,
       "global_action_queries": 72000,
@@ -301,6 +280,6 @@
       "retained_checkpoints": 9,
       "online_validation_action_queries_per_checkpoint": 512
     },
-    "continuation_gate": "after_step900_stop_and_review_early_specificity_absolute_performance_and_train_validation_curves_before_selecting_any_later_stop"
+    "continuation_gate": "after_first_hour_stop_and_review_early_specificity_absolute_performance_and_train_validation_curves_before_selecting_any_later_stop"
   }
 }

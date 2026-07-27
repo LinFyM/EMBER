@@ -8,6 +8,7 @@ from ember.writer.temporal import (
     LanguageSemanticCore,
     SlotNormalizedCoreProcedureCompiler,
 )
+from ember.writer.video_program import TaskQueriedPatchGrounding
 
 
 class _Projection(torch.nn.Module):
@@ -122,6 +123,7 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         text_meta_lora_rank=4,
         vl_meta_lora_rank=4,
         action_meta_lora_rank=4,
+        patch_grounding_heads=8,
         max_frames_per_encoder_call=4,
         action_horizon=50,
         padded_action_dim=32,
@@ -131,7 +133,7 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         procedure_heads=8,
         procedure_blocks=2,
         fusion_heads=8,
-        factor_hidden_width=240,
+        factor_hidden_width=216,
         initialization_seed=7,
         activation_checkpointing=True,
     )
@@ -161,9 +163,9 @@ def _inputs() -> tuple[torch.Tensor, ...]:
     return frames, frame_indices, offsets, tokens, masks, task_spans
 
 
-def test_v5_1_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
+def test_v5_2_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
     model, _ = _model()
-    assert sum(parameter.numel() for parameter in model.parameters()) == 10_244_872
+    assert sum(parameter.numel() for parameter in model.parameters()) == 10_237_704
     expected = {
         "text_meta_lora": (model.semantic_encoder.text_meta_lora, 921_600),
         "vl_meta_lora": (model.semantic_encoder.vl_meta_lora, 921_600),
@@ -171,6 +173,10 @@ def test_v5_1_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
         "language_projection": (
             model.semantic_encoder.language_projection,
             524_288,
+        ),
+        "patch_grounding": (
+            model.semantic_encoder.patch_grounding,
+            197_120,
         ),
         "frame_attention": (model.semantic_core.frame_attention, 262_664),
         "semantic_core_blocks": (model.semantic_core.blocks, 1_573_888),
@@ -180,7 +186,7 @@ def test_v5_1_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
         ),
         "procedure": (model.procedure, 1_573_888),
         "compiler": (model.compiler, 1_535_232),
-        "factor_heads": (model.factor_heads, 2_042_880),
+        "factor_heads": (model.factor_heads, 1_838_592),
     }
     assert {
         name: sum(parameter.numel() for parameter in module.parameters())
@@ -191,7 +197,7 @@ def test_v5_1_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
     assert not model.semantic_encoder.fixed_suffix_noise.requires_grad
 
 
-def test_v5_1_writer_starts_at_exact_identity_template() -> None:
+def test_v5_2_writer_starts_at_exact_identity_template() -> None:
     model, template = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     output = model(*_inputs(), policy=torch.nn.Identity())
@@ -202,7 +208,7 @@ def test_v5_1_writer_starts_at_exact_identity_template() -> None:
         assert torch.equal(value[1], template[name])
 
 
-def test_v5_1_writer_becomes_video_conditioned_after_heads_open() -> None:
+def test_v5_2_writer_becomes_video_conditioned_after_heads_open() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     for head in model.factor_heads.values():
@@ -212,7 +218,7 @@ def test_v5_1_writer_becomes_video_conditioned_after_heads_open() -> None:
     assert not hasattr(model, "shared_lora")
 
 
-def test_v5_1_gradient_staging_opens_only_intended_paths() -> None:
+def test_v5_2_gradient_staging_opens_only_intended_paths() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
 
@@ -252,6 +258,30 @@ def test_v5_1_gradient_staging_opens_only_intended_paths() -> None:
         parameter.grad is not None and bool(torch.count_nonzero(parameter.grad))
         for parameter in model.procedure.parameters()
     )
+
+
+def test_task_queried_patch_grounding_uses_patch_content_without_order_geometry() -> None:
+    torch.manual_seed(23)
+    grounding = TaskQueriedPatchGrounding(width=32, heads=4)
+    queries = torch.randn(2, 5, 32)
+    patches = torch.randn(2, 256, 32)
+    valid = torch.tensor(
+        [
+            [True, True, True, False, False],
+            [True, True, True, True, True],
+        ]
+    )
+    baseline = grounding(queries, patches, valid)
+    permuted = grounding(
+        queries,
+        patches[:, torch.randperm(256)],
+        valid,
+    )
+    changed = grounding(queries, patches + 0.25, valid)
+    assert torch.allclose(baseline, permuted, atol=1e-5, rtol=1e-5)
+    assert not torch.allclose(baseline, changed)
+    assert not bool(baseline[0, 3:].count_nonzero())
+    assert not hasattr(grounding, "value")
 
 
 def test_language_core_is_frame_permutation_invariant() -> None:

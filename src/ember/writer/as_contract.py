@@ -30,8 +30,8 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_language_axial_as_writer_v5_1"
-AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_language_axial_as_writer_launch_v5_1"
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_language_axial_as_writer_v5_2"
+AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_language_axial_as_writer_launch_v5_2"
 AS_WRITER_STAGES = ("development", "final")
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
@@ -94,7 +94,8 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         raise WriterModelError("sealed Language-Axial Writer dimensions changed")
     expected_writer = {
         "architecture": (
-            "pi05_language_axial_core_causal_procedure_slot_fusion_v5_1"
+            "pi05_language_axial_patch_grounded_core_causal_procedure_"
+            "slot_fusion_v5_2"
         ),
         "generated_adapter": "complete_pi05_task_specific_rank16_lora",
         "camera_dataset": "obs/agentview_rgb",
@@ -113,9 +114,22 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         "image_width": 2048,
         "native_image_tokens": 256,
         "multimodal_core_value": (
-            "final_norm_task_span_hidden_only_no_image_position_values"
+            "final_norm_task_span_hidden_plus_task_queried_image_position_content"
         ),
         "shared_language_projection": "bias_free_2048_to_256",
+        "patch_grounding_attention": (
+            "per_frame_text_only_task_queries_to_256_image_positions"
+        ),
+        "patch_grounding_qk": (
+            "separate_pre_rmsnorm_bias_free_256_to_256"
+        ),
+        "patch_grounding_value": (
+            "raw_shared_projected_image_position_content_no_value_projection"
+        ),
+        "patch_grounding_output": (
+            "bias_free_256_to_256_added_to_multimodal_task_token_evidence"
+        ),
+        "patch_grounding_heads": 8,
         "expert_width": 1024,
         "text_meta_lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
         "text_meta_lora_rank": 4,
@@ -150,7 +164,9 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         "semantic_core_position_encoding": (
             "task_token_ordinal_rope_qk_only_bidirectional"
         ),
-        "semantic_core_value_path": "multimodal_task_token_content_only",
+        "semantic_core_value_path": (
+            "multimodal_task_token_plus_task_queried_patch_content"
+        ),
         "procedure_heads": 8,
         "procedure_blocks": 2,
         "procedure_attention": "global_causal_pre_norm_with_valid_mask",
@@ -173,7 +189,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         "modulation_projection": "bias_free_256_to_512_zero_initialized",
         "post_fusion_blocks": 1,
         "factor_head_bias": False,
-        "factor_hidden_width": 240,
+        "factor_hidden_width": 216,
         "initialization_seed": 7,
     }
     if writer != expected_writer:
@@ -329,7 +345,7 @@ def resolve_runtime(
 ) -> tuple[int, int, tuple[int, ...]]:
     if args.mode == "formal" and config["formal_run"].get("status") != "sealed":
         raise WriterModelError(
-            "formal AS-Writer config is not sealed from the live v5.1 profile"
+            "formal AS-Writer config is not sealed from the live v5.2 profile"
         )
     source = config["formal_run"] if args.mode == "formal" else config["profile_defaults"]
     total_steps = args.total_steps or int(source["total_steps"])

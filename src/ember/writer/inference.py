@@ -54,8 +54,8 @@ from ember.writer.video_schedule import (
 )
 
 
-WRITER_ADAPTER_SCHEMA = "ember_pi05_language_axial_writer_eval_adapter_v5_1"
-RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_language_axial_rl_writer_eval_adapter_v5_1"
+WRITER_ADAPTER_SCHEMA = "ember_pi05_language_axial_writer_eval_adapter_v5_2"
+RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_language_axial_rl_writer_eval_adapter_v5_2"
 WRITER_ADAPTER_SCHEMAS = {WRITER_ADAPTER_SCHEMA, RL_WRITER_ADAPTER_SCHEMA}
 WRITER_VIDEO_CONDITIONS = {
     "correct",

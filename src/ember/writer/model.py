@@ -28,6 +28,7 @@ LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
         "text_meta_lora_rank",
         "vl_meta_lora_rank",
         "action_meta_lora_rank",
+        "patch_grounding_heads",
         "max_frames_per_encoder_call",
         "action_horizon",
         "padded_action_dim",
@@ -165,6 +166,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         text_meta_lora_rank: int,
         vl_meta_lora_rank: int,
         action_meta_lora_rank: int,
+        patch_grounding_heads: int,
         max_frames_per_encoder_call: int,
         action_horizon: int,
         padded_action_dim: int,
@@ -191,6 +193,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             or text_meta_lora_rank != 4
             or vl_meta_lora_rank != 4
             or action_meta_lora_rank != 4
+            or patch_grounding_heads != 8
             or action_horizon != 50
             or padded_action_dim != 32
             or semantic_core_heads != 8
@@ -199,7 +202,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             or procedure_heads != 8
             or procedure_blocks != 2
             or fusion_heads != 8
-            or factor_hidden_width != 240
+            or factor_hidden_width != 216
         ):
             raise WriterModelError("invalid Language-Axial Writer topology")
         self.tensor_specs = tensor_specs
@@ -213,6 +216,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             text_meta_lora_rank=text_meta_lora_rank,
             vl_meta_lora_rank=vl_meta_lora_rank,
             action_meta_lora_rank=action_meta_lora_rank,
+            patch_grounding_heads=patch_grounding_heads,
             max_frames_per_encoder_call=max_frames_per_encoder_call,
             action_horizon=action_horizon,
             padded_action_dim=padded_action_dim,

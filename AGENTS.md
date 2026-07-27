@@ -14,12 +14,13 @@
 6. `docs/action_forecast_writer_v4_root_cause.md`
 7. `docs/action_forecast_writer_v5_design.md`
 8. `docs/action_forecast_writer_v5_1_proposal.md`
-9. `task_plan.md`
-10. `findings.md`
-11. `progress.md`
-12. `docs/concept.md`
-13. `docs/decisions_and_open_questions.md`
-14. `docs/novelty_and_landscape.md`
+9. `docs/action_forecast_writer_v5_2_design.md`
+10. `task_plan.md`
+11. `findings.md`
+12. `progress.md`
+13. `docs/concept.md`
+14. `docs/decisions_and_open_questions.md`
+15. `docs/novelty_and_landscape.md`
 
 `docs/active_session_handoff.md`是当前跨session恢复入口，集中摘要研究证据链、
 v5失败证据、v5.1设计理由、运行状态和下一动作，但不覆盖架构或长期科学

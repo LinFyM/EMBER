@@ -21,7 +21,7 @@ from ember.writer.model import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-CONFIG = REPO_ROOT / "configs/pi05_as_writer_language_axial_v5_1.json"
+CONFIG = REPO_ROOT / "configs/pi05_as_writer_language_axial_v5_2.json"
 
 
 def test_language_axial_config_seals_architecture_and_information_wall() -> None:
@@ -29,14 +29,14 @@ def test_language_axial_config_seals_architecture_and_information_wall() -> None
     writer = config["writer"]
     assert (
         writer["architecture"]
-        == "pi05_language_axial_core_causal_procedure_slot_fusion_v5_1"
+        == "pi05_language_axial_patch_grounded_core_causal_procedure_slot_fusion_v5_2"
     )
     assert writer["teacher_state_input"] is False
     assert writer["teacher_prompt"] == "Task: {cleaned_task};\nAction: "
     assert writer["text_branch_input"].startswith("bos_plus_exact")
-    assert writer["multimodal_core_value"].endswith(
-        "no_image_position_values"
-    )
+    assert "task_queried_image_position_content" in writer["multimodal_core_value"]
+    assert writer["patch_grounding_heads"] == 8
+    assert "no_value_projection" in writer["patch_grounding_value"]
     assert writer["frame_batching_contract"].startswith("encode_one_video")
     assert writer["text_meta_lora_rank"] == 4
     assert writer["vl_meta_lora_rank"] == 4
@@ -51,7 +51,7 @@ def test_language_axial_config_seals_architecture_and_information_wall() -> None
     assert writer["procedure_blocks"] == 2
     assert writer["slot_fusion"].startswith("zero_initialized")
     assert writer["post_fusion_blocks"] == 1
-    assert writer["factor_hidden_width"] == 240
+    assert writer["factor_hidden_width"] == 216
     assert writer_split_roles(config) == ("train",)
     conditioning = config["conditioning_training"]
     assert conditioning["teacher_videos_per_task_visit"] == 1
@@ -67,23 +67,23 @@ def test_language_axial_config_seals_architecture_and_information_wall() -> None
     assert config["information_wall"]["test_video_values_read"] == 0
     assert "state" in config["information_wall"]["writer_forbidden_inputs"]
     assert config["profile_defaults"]["expected_world_size"] == 4
-    assert config["profile_evidence"]["status"] == "sealed"
+    assert config["profile_evidence"]["status"] == "pending_v5_2_live_profile"
     assert config["profile_evidence"]["allowed_physical_gpu_ids"] == [4, 5, 6, 7]
-    assert config["profile_evidence"]["initial_candidate_from_v5_only"] == {
+    assert config["profile_evidence"]["initial_candidate_from_v5_1"] == {
         "max_frames_per_encoder_call": 32,
         "per_rank_action_batch_size": 20,
     }
-    assert config["profile_evidence"]["selected"]["per_rank_action_batch_size"] == 20
+    assert config["profile_evidence"]["selected"] is None
     assert config["profile_evidence"]["inference_profile"][
         "writer_generators_per_gpu"
     ] == 6
     assert config["profile_evidence"]["teacher_videos_per_task_visit"] == 1
     assert config["specificity_gate"]["status"] == "pending"
-    assert config["formal_run"]["status"] == "sealed"
-    assert config["formal_run"]["total_steps"] == 12000
+    assert config["formal_run"]["status"] == "pending_profile"
+    assert config["formal_run"]["total_steps"] == 900
     assert config["formal_run"]["selected_stop_step"] == 900
     assert config["formal_run"]["stage_stop_steps"] == "every:100"
-    assert "no_automatic_second_or_third_segment" in config["formal_run"][
+    assert "no_automatic_continuation" in config["formal_run"][
         "segment_definition"
     ]
 

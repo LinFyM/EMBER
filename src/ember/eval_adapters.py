@@ -92,6 +92,7 @@ def inspect_as_writer_adapter(
     tasks: Sequence[Any],
     video_condition: str,
     video_seed: int,
+    video_sampling_mode: str,
     require_formal: bool,
 ) -> dict[str, Any]:
     from ember.lora import LoRAContractError
@@ -107,6 +108,7 @@ def inspect_as_writer_adapter(
             task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
             video_condition=video_condition,
             video_seed=video_seed,
+            video_sampling_mode=video_sampling_mode,
             require_formal=require_formal,
         )
     except (LoRAContractError, WriterModelError) as error:

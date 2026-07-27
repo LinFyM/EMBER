@@ -45,6 +45,13 @@ from ember.writer.model import (
     WriterModelError,
     build_lora_tensor_specs,
 )
+from ember.writer.video_schedule import (
+    SAME_TASK_OTHER_DEMO_OFFSET,
+    writer_condition_demo_index,
+    writer_video_demo_index,
+    writer_video_schedule_contract,
+    writer_video_selection_seed,
+)
 
 
 WRITER_ADAPTER_SCHEMA = "ember_pi05_language_axial_writer_eval_adapter_v5_1"
@@ -59,73 +66,12 @@ WRITER_VIDEO_CONDITIONS = {
     "reversed",
 }
 WRONG_VIDEO_CONDITIONS = {"cross_suite_wrong"}
-SAME_TASK_OTHER_DEMO_OFFSET = 17
-WRITER_VIDEO_SCHEDULE = (
-    "sha256 first 63 bits of canonical JSON "
-    "[ember_pi05_writer_video_v1,seed,suite,task_id,init_state_id] modulo 50"
-)
 WRITER_EPISODE_EVIDENCE_V5_1 = "ember_pi05_writer_episode_evidence_v5_1"
+WRITER_EPISODE_EVIDENCE_V5_2 = "ember_pi05_writer_episode_evidence_v5_2"
 WRITER_GENERATION_SEED_SCHEDULE = (
     "sha256 first 63 bits of canonical JSON: ember_pi05_writer_generation_v5_1/"
     "frame_order/seed/suite/task_id/demo_index"
 )
-
-
-def writer_video_selection_seed(
-    root_seed: int,
-    suite: str,
-    task_id: int,
-    init_state_id: int,
-) -> int:
-    if root_seed < 0 or suite not in SUITE_ORDER or not 0 <= task_id < 10:
-        raise WriterModelError("invalid AS-Writer evaluation video seed key")
-    if init_state_id < 0:
-        raise WriterModelError("invalid AS-Writer evaluation video range")
-    encoded = json.dumps(
-        ["ember_pi05_writer_video_v1", root_seed, suite, task_id, init_state_id],
-        separators=(",", ":"),
-    ).encode("utf-8")
-    return int.from_bytes(hashlib.sha256(encoded).digest()[:8], "big") & ((1 << 63) - 1)
-
-
-def writer_video_demo_index(
-    root_seed: int,
-    suite: str,
-    task_id: int,
-    init_state_id: int,
-    *,
-    demo_count: int = 50,
-) -> int:
-    """Choose one teacher video independently of queue/worker execution order."""
-
-    if demo_count <= 0:
-        raise WriterModelError("invalid AS-Writer evaluation video count")
-    return writer_video_selection_seed(root_seed, suite, task_id, init_state_id) % demo_count
-
-
-def writer_condition_demo_index(
-    root_seed: int,
-    suite: str,
-    task_id: int,
-    init_state_id: int,
-    *,
-    condition: str,
-    demo_count: int = 50,
-) -> int:
-    """Apply a deterministic video-only transform to the paired correct demo."""
-
-    if condition not in WRITER_VIDEO_CONDITIONS:
-        raise WriterModelError("invalid AS-Writer evaluation video condition")
-    reference = writer_video_demo_index(
-        root_seed,
-        suite,
-        task_id,
-        init_state_id,
-        demo_count=demo_count,
-    )
-    if condition == "same_task_other":
-        return (reference + SAME_TASK_OTHER_DEMO_OFFSET) % demo_count
-    return reference
 
 
 def writer_generation_seed(
@@ -238,7 +184,7 @@ def expected_writer_episode_evidence(
     task_id: int,
     init_state_id: int,
     lora_sha256: str,
-    evidence_schema: str = WRITER_EPISODE_EVIDENCE_V5_1,
+    evidence_schema: str | None = None,
 ) -> dict[str, Any]:
     """Build the exact dynamic row fields implied by a sealed adapter contract."""
 
@@ -257,8 +203,14 @@ def expected_writer_episode_evidence(
     schedule = adapter.get("video_schedule", {})
     seed = int(schedule.get("seed", -1))
     count = int(schedule.get("demo_count", -1))
+    sampling_mode = str(schedule.get("sampling_mode", "with_replacement"))
     reference_demo_index = writer_video_demo_index(
-        seed, suite, task_id, init_state_id, demo_count=count
+        seed,
+        suite,
+        task_id,
+        init_state_id,
+        demo_count=count,
+        sampling_mode=sampling_mode,
     )
     demo_index = writer_condition_demo_index(
         seed,
@@ -266,10 +218,25 @@ def expected_writer_episode_evidence(
         task_id,
         init_state_id,
         condition=str(adapter["video_condition"]),
+        valid_conditions=WRITER_VIDEO_CONDITIONS,
         demo_count=count,
+        sampling_mode=sampling_mode,
     )
-    selection_seed = writer_video_selection_seed(seed, suite, task_id, init_state_id)
-    if evidence_schema != WRITER_EPISODE_EVIDENCE_V5_1:
+    selection_seed = writer_video_selection_seed(
+        seed,
+        suite,
+        task_id,
+        init_state_id,
+        sampling_mode=sampling_mode,
+    )
+    expected_schema = (
+        WRITER_EPISODE_EVIDENCE_V5_1
+        if sampling_mode == "with_replacement"
+        else WRITER_EPISODE_EVIDENCE_V5_2
+    )
+    if evidence_schema is None:
+        evidence_schema = expected_schema
+    if evidence_schema != expected_schema:
         raise WriterModelError("unsupported PI05 Writer episode evidence")
     result = {
         "schema_version": evidence_schema,
@@ -298,6 +265,8 @@ def expected_writer_episode_evidence(
         "pairing_sha256": adapter["pairing_sha256"],
         "lora_sha256": lora_sha256,
     }
+    if "sampling_mode" in schedule:
+        result["teacher_video_sampling_mode"] = sampling_mode
     result.update(
         {
             "writer_generation_seed_schedule": WRITER_GENERATION_SEED_SCHEDULE,
@@ -454,6 +423,7 @@ def build_writer_evaluation_adapter(
     video_condition: str,
     video_seed: int,
     forbidden_inputs: Sequence[str],
+    video_sampling_mode: str | None = None,
 ) -> dict[str, Any]:
     if schema_version not in WRITER_ADAPTER_SCHEMAS or writer_method not in {
         "as_writer",
@@ -464,9 +434,16 @@ def build_writer_evaluation_adapter(
     if re.fullmatch(r"[0-9a-f]{64}", str(writer_record.get("sha256", ""))) is None:
         raise WriterModelError("PI05 Writer checkpoint lacks a sealed Writer state")
     mapping_sha256 = canonical_hash(list(mapping))
+    video_schedule, pairing_schema, effective_sampling_mode = (
+        writer_video_schedule_contract(
+            video_sampling_mode,
+            seed=video_seed,
+            demo_count=50,
+        )
+    )
     pairing_sha256 = canonical_hash(
         {
-            "schema_version": "ember_pi05_writer_eval_pairing_v2",
+            "schema_version": pairing_schema,
             "writer_method": writer_method,
             "source_run_contract_sha256": source.get("source_run_contract_sha256"),
             "source_checkpoint_manifest_sha256": source.get(
@@ -476,7 +453,9 @@ def build_writer_evaluation_adapter(
                 checkpoint / "checkpoint_manifest.json"
             ),
             "task_keys": [list(key) for key in task_keys],
-            "video_schedule": WRITER_VIDEO_SCHEDULE,
+            "video_schedule": video_schedule["algorithm"],
+            **({"video_sampling_mode": effective_sampling_mode}
+               if "sampling_mode" in video_schedule else {}),
             "video_seed": video_seed,
         }
     )
@@ -512,13 +491,7 @@ def build_writer_evaluation_adapter(
         },
         "video_data": dict(video_data),
         "lora_contract_sha256": lora_contract_sha256,
-        "video_schedule": {
-            "algorithm": WRITER_VIDEO_SCHEDULE,
-            "seed": video_seed,
-            "demo_count": 50,
-            "queue_order_independent": True,
-            "paired_between_correct_and_wrong": True,
-        },
+        "video_schedule": video_schedule,
         "wrong_video_mapping": (
             "identity"
             if video_condition not in WRONG_VIDEO_CONDITIONS
@@ -558,6 +531,7 @@ def inspect_as_writer_evaluation(
     video_condition: str,
     video_seed: int,
     require_formal: bool,
+    video_sampling_mode: str | None = None,
 ) -> dict[str, Any]:
     """Seal a Writer checkpoint and raw-video authority before queue creation."""
 
@@ -623,6 +597,7 @@ def inspect_as_writer_evaluation(
         source=source,
         video_condition=video_condition,
         video_seed=video_seed,
+        video_sampling_mode=video_sampling_mode,
         forbidden_inputs=config["information_wall"]["writer_forbidden_inputs"],
     )
 
@@ -663,6 +638,11 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
             task_keys=task_keys,
             video_condition=str(evaluation_adapter["video_condition"]),
             video_seed=int(evaluation_adapter["video_schedule"]["seed"]),
+            video_sampling_mode=str(
+                evaluation_adapter["video_schedule"]["sampling_mode"]
+            )
+            if "sampling_mode" in evaluation_adapter["video_schedule"]
+            else None,
             require_formal=require_formal,
         )
         config = load_writer_config(Path(observed["config"]["path"]))

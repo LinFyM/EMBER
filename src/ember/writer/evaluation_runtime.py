@@ -61,6 +61,11 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
             task_keys=task_keys,
             video_condition=str(evaluation_adapter["video_condition"]),
             video_seed=int(evaluation_adapter["video_schedule"]["seed"]),
+            video_sampling_mode=str(
+                evaluation_adapter["video_schedule"]["sampling_mode"]
+            )
+            if "sampling_mode" in evaluation_adapter["video_schedule"]
+            else None,
             require_formal=require_formal,
         )
         if observed != dict(evaluation_adapter):

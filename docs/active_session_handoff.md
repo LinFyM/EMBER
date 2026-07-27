@@ -763,7 +763,7 @@ wrong在全部8个task都改变Semantic Core；shuffle/reverse保持set-like Cor
 `0.0021`。因此v5.1模块分工和内部信息路径按设计成立，问题在于这些差异尚未
 稳定转化为足够广泛的closed-loop成功率优势。
 
-### 9.4 判定与停止边界
+### 9.4 首段判定与已解除的停止边界
 
 ```text
 absolute performance:    失败（observed-best 98/400）
@@ -773,9 +773,13 @@ order specificity:       reverse部分成立，shuffle未成立
 overall v5.1 first gate:  失败
 ```
 
-当前没有活动训练、评测或内部probe；GPU4–7已释放。按owner最后指令停在这里：
-不启动第二/第三段，不做无放回重测，不扩成full-400五臂，不进入cold-start RL。
-下一动作只能是向owner讨论现有证据，等待新的明确授权。
+首段封存时没有活动训练、评测或内部probe；GPU4–7已释放。该快照原先要求停在
+这里。2026-07-27稍后owner已明确解除这一临时停止边界，并建立新的session-local
+Goal：在EMBER核心逻辑、信息墙、固定split/source base、one-video Writer和
+GPU4–7硬约束内，自主做无放回评测、继续训练、机制诊断、架构改进，必要时可
+提前探索RL-Writer；推进期间不需要逐项审核。当前执行合同与证据分叉记录在
+`task_plan.md`末尾“开放式AS绝对性能探索”，接手时仍须核验实时进程、artifact
+和Goal状态，不能仅凭本文重复launch。
 
 新session第一组只读核验：
 

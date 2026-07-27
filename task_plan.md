@@ -525,3 +525,43 @@ Plan/Revision/Belief或旧活动config/schema。
   同样探索validation observed-best与强峰后下降。
 - [ ] focused AS/RL通过后更新证据、验证、commit/push并停下向owner汇报；
   不自动推进final-32、task-local RL、joint oracle或ViVLA。
+
+## 当前执行：开放式AS绝对性能探索（2026-07-27夜间）
+
+owner已解除此前“特异性后停止”和“AS全部过门后才可探索RL”的临时执行边界，
+授权在EMBER核心逻辑与硬约束内自主训练、诊断、修改架构并可提前做RL-Writer
+可行性实验，不需要逐项审核。新的session-local Goal以提高AS Writer
+correct-video绝对性能为主，同时保留`task language + exactly one
+action-hidden teacher video -> one task LoRA`的核心映射。
+
+硬边界：
+
+- 固定source base、normalization与24/8/8 split；不得让Writer读取action、
+  state/proprio、reward、outcome、task ID、filename或simulator privileged state；
+- validation只作development选择，不打开test；只使用物理GPU4–7，GPU0–3不查询、
+  不进入visible set；
+- one-shot public输出仍是一套完整task-specific LoRA；不以额外shared execution
+  adapter、bank或第二条并行Writer路径替代核心问题；
+- 所有正式比较使用相同state、policy RNG和teacher-video pairing；新canonical
+  full400使用每task 50条teacher videos无放回一一匹配50 states；
+- 保留可恢复checkpoint、命令、合同、hash与负结果；任何架构替换只保留一条
+  canonical active implementation。
+
+夜间证据路径：
+
+- [ ] 对v5.1 step700完成无放回paired
+  correct/same/wrong/shuffled/reversed各400；现有有放回correct不能混作paired
+  baseline。
+- [ ] 同一formal root从step900 exact-resume到step1800；合同不变，每100步保存，
+  不因online functional loss单独选best。
+- [ ] 用无放回correct400建立足够密的step500–1800闭环曲线，选择同一合同下的
+  observed-best；若best在1800仍上升，只能判为未充分训练。
+- [ ] 对最终observed-best复查内部Core/Procedure/LoRA/action与完整五条件行为；
+  分开判断依赖性、方向性、对source/Core-only的有用性和absolute ceiling。
+- [ ] 若特异性成立但absolute长期低于约125，按最早失效层比较Core-only、
+  full、去Procedure、跨demo梯度一致性与LoRA到action的功能对齐；只修改被证据
+  定位的owner后fresh训练。
+- [ ] 可提前进行独立、低成本RL-Writer机制探索，但不得把validation reward写回
+  AS输入、把完整AS best冒充cold start、污染test或用RL结果掩盖AS绝对性能。
+- [ ] owner醒来前封存当前最好结果、失败归因、资源消耗、代码/Git状态与下一步；
+  不自动推进final-32、test task-local RL或joint oracle。

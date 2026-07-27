@@ -132,6 +132,15 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
             "reversed",
         ),
     )
+    parser.add_argument(
+        "--writer-video-sampling",
+        choices=("with_replacement", "without_replacement"),
+        default="with_replacement",
+        help=(
+            "Teacher-video pairing schedule for AS-Writer evaluation. Formal "
+            "no-replacement panels should select without_replacement explicitly."
+        ),
+    )
     parser.add_argument("--rl-writer-config", type=Path)
     parser.add_argument("--rl-writer-checkpoint", type=Path)
     parser.add_argument("--rl-writer-feature-cache", type=Path)
@@ -247,6 +256,7 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
             tasks=tasks,
             video_condition=str(args.writer_video_condition),
             video_seed=int(authorities.config["rng"]["inference_seed"]),
+            video_sampling_mode=str(args.writer_video_sampling),
             require_formal=args.mode != "smoke",
         )
     elif writer_kind == "rl_writer":
@@ -382,6 +392,11 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
                 tasks=tasks,
                 video_condition=str(adapter["video_condition"]),
                 video_seed=int(adapter["video_schedule"]["seed"]),
+                video_sampling_mode=str(
+                    adapter["video_schedule"]["sampling_mode"]
+                )
+                if "sampling_mode" in adapter["video_schedule"]
+                else None,
                 require_formal=contract["mode"] != "smoke",
             )
         elif adapter.get("kind") == "rl_writer":

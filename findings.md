@@ -1451,3 +1451,64 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   不能代替fixed-400 success选择。
 - output、tmux、精确launch和跨session接手顺序见
   `docs/active_session_handoff.md`；该step400只是运行中快照，不作性能结论。
+
+## v5单视频首段封存、long-first评估与step900轻量特异性（2026-07-27）
+
+- fresh正式run已正常完成step0→900，训练body wall为`3,485.15s`；900步累计
+  `72,000`个action queries与`3,600`个one-video Writer conditions。step100至
+  900的9个checkpoint均有Writer、optimizer/scheduler、sampler/data cursor、
+  四rank RNG与atomic manifest；step900的24个train tasks各有`3,000` examples、
+  `150`次video visits、50条unique videos和50条action episodes。
+- resident 512-row validation functional loss在step100/200/300/400/500/600/
+  700/800/900依次为
+  `0.136011/0.134911/0.133263/0.132433/0.134811/0.135303/0.132294/`
+  `0.132574/0.137075`。它和closed-loop不单调，不能代替rollout选择。
+- fixed400 correct-video代表点step100/400/700/800/900为
+  `62/64/92/76/103`；step900是首段observed-best。step700→900的paired净提升
+  为`+11`但exact `p=0.207`，step800→900净提升`+27`、exact `p=0.00155`；
+  step900仍低于约`110–120/400`预门，但没有出现可停止的持续峰后下降。
+- canonical evaluator commit `3b6d9d1`把最长horizon states按
+  `physical_gpu_count × replicas_per_gpu` worker slots切分并赋GPU affinity；
+  worker只有在没有unclaimed long shard时才领取普通task。step800四卡、
+  每卡6 replicas的真实run先领取全部48个long shards，再动态处理24个普通
+  shards，400 rollouts用`921.60s`、`0.4340 rollouts/s`，是首轮单卡约
+  `2.66×`吞吐；这一规则不依赖一个checkpoint分到几张卡。
+- step900内部16-reference反事实显示顺序机制没有坍缩。shuffle/reverse下
+  Core-set相对L2中位仅约`6.2e-8/1.93e-4`，Procedure sequence为
+  `63.83%/75.21%`，Procedure delta为`11.16%/16.36%`，effective LoRA为
+  `3.68%/5.74%`，policy action为`0.93%/1.29%`；固定Core仅替换Procedure时
+  effective LoRA为`3.689%/5.764%`，比旧step120约强`5–6×`。
+- 轻量行为screen只取同一8 tasks的init-state `0–9`。correct复用既有step900
+  full400的对应80行，另四臂各跑80行；correct/same-task-other/wrong/shuffled/
+  reversed为`21/25/14/23/23`，逐task
+  （Long1/2, Goal3/6, Object1/3, Spatial1/3）分别为
+  `0/0,0/8,8/5,0/0`、
+  `0/0,0/10,8/5,1/1`、
+  `1/0,0/3,5/3,0/2`、
+  `0/0,0/10,7/6,0/0`、
+  `1/0,0/8,8/6,0/0`。
+- 相对correct，same/wrong/shuffled/reversed的
+  `correct-only/other-only`为`3/7、12/5、2/4、2/4`，双侧exact p为
+  `0.344/0.143/0.688/0.688`。80/80 episodes的env seed、language、teacher
+  selection/order seed与policy-noise共同前缀均配对；完整noise列表只因成功
+  即终止而长度不同。该screen给出correct优于wrong的方向，但没有顺序臂优势；
+  小样本只用于判断机制仍值得训练，不能替代五臂full400硬门。
+
+## v5单视频step900→1800 exact-resume合同（2026-07-27）
+
+- 续训复用同一formal root与launch contract
+  `03186c57ac736ac82398400676ff10c33eb46ab3e5f9bcbbe44064305944787c`；
+  resume checkpoint为`step_00000900`，manifest SHA256为
+  `157599fc60e565570be7d711362469b7233606635437f6e219125e7e36f7b8e2`，
+  canonical payload为
+  `c838ccba4b1125753e8f11f1ddfaf25c9d6672fe9e1601d3dbb8d7f816b375e5`。
+- 科学合同不变：4-rank DDP只见物理GPU4–7、F32/B20、每step 80 action
+  samples/4 one-video conditions、每100步checkpoint、同一source base、
+  target HDF5、normalization、optimizer/scheduler、sampler/video schedule和
+  RNG。新增900步预计再产生`72,000` samples、`3,600` video conditions、
+  9个约121MB checkpoint，峰值新增存储约`1.2GB`。
+- 当前main相对训练commit只改了canonical evaluator的long-first调度，训练入口、
+  `src/ember/writer/`与v5 config逐文件Git diff均为空。续训使用显式
+  `--allow-contract-compatible-code-resume`，由run-contract reconciliation
+  要求除recorded Git commit外所有科学字段逐项完全相同；任何其他漂移均
+  fail-close。

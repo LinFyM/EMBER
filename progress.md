@@ -1122,3 +1122,31 @@ GPU范围和训练步长是当时快照；活动状态只取
   absolute-first评测顺序和禁止事项集中记录在
   `docs/active_session_handoff.md`。该文件是临时live-state ledger，不覆盖
   v5设计authority；新session不得据快照重复启动run。
+
+## v5单视频首段封存、评估加速与轻量特异性（2026-07-27）
+
+- 正式fresh run正常完成step0→900，训练body `3,485.15s`，累计72,000 action
+  samples与3,600 one-video conditions；9个每100步checkpoint全部atomic且
+  exact-resume state完整。step900每个train task恰有3,000 examples、150次
+  video visits并覆盖全部50 videos与50 action episodes。
+- correct-video fixed400代表点step100/400/700/800/900为
+  `62/64/92/76/103`，首段observed-best为step900。虽然尚低于absolute预门，
+  step800→900 paired净提升`+27`、exact `p=0.00155`，没有持续峰后下降证据。
+- owner要求任何GPU/checkpoint分配下都先处理long。canonical evaluator已在
+  commit `3b6d9d1`实现worker-slot级long-first；step800四卡24 workers先取完
+  48个long shards后才取24个普通shards，400 rollouts用`921.60s`，
+  `0.4340 rollouts/s`，约为首轮单卡吞吐`2.66×`。focused tests `27 passed`，
+  commit已push。
+- step900内部16-reference检查显示Core顺序不变性保持，fixed-Core
+  Procedure-only effective-LoRA shuffle/reverse差异为`3.689%/5.764%`，
+  policy action差异为`0.921%/1.406%`；顺序通路比step120明显增强并到达policy。
+- 四个80-rollout反事实臂分别独占GPU4/5/6/7并行，correct直接复用full400的
+  init-state 0–9。五臂correct/same/wrong/shuffled/reversed为
+  `21/25/14/23/23`；配对净差correct-other为`-4/+7/-2/-2`，exact p为
+  `0.344/0.143/0.688/0.688`。这只支持wrong-video方向性，尚无顺序优势；
+  按owner定义不把80样本screen冒充full400特异性结论。
+- 下一正式动作已封存为同一root从step900 exact-resume到step1800；新增900步、
+  72,000 samples、3,600 video conditions与9个checkpoint，预计约一小时和
+  `1.2GB`新增存储。GPU仍只用4–7，F32/B20与全部scientific contract不变；
+  训练代码/config相对原run commit无diff，当前main仅多了评估调度改动，故使用
+  fail-close的`--allow-contract-compatible-code-resume`。

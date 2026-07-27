@@ -449,11 +449,24 @@ Plan/Revision/Belief或旧活动config/schema。
   步`6.956s`、常规步`3.109–3.527s`、峰值reserved
   `83,630,227,456 bytes`；B24 OOM、F40无收益。正式封存900-step segment、
   每100步留ckpt。
-- [ ] 新合同首个约一小时segment已经从fresh identity正式启动：GPU4–7、
-  F32/B20、step0→900、每100步checkpoint。训练source commit为`0b4e006`，
-  output/tmux/接手命令见`docs/active_session_handoff.md`；运行结束前保持本项
-  未完成。随后先对保留ckpt做完整fixed-400 validation寻找absolute
-  observed-best，不先做特异性。
+- [x] 新合同首个约一小时segment已从fresh identity完成：GPU4–7、F32/B20、
+  step0→900、每100步checkpoint，全部finite并完整exact-resume state。固定400
+  correct-video代表点step100/400/700/800/900依次为
+  `62/64/92/76/103`，首段observed-best为step900；尚低于absolute预门但
+  700→900仍有净提升，不能判为峰后持续下降。
+- [x] evaluator已改为每个worker先取long shard，所有long均被领取后空闲worker
+  才取普通task；该规则与一个checkpoint分配几张卡无关。step800四卡24 worker
+  实测先取完48个long shards，再动态取24个普通shards；400 rollouts约
+  `15.36 min`，相对首轮单卡吞吐提高`2.66×`。实现commit `3b6d9d1`已push。
+- [x] 按owner要求先对step900做轻量而非五臂full400的特异性诊断。内部16-reference
+  显示Core set对shuffle/reverse近乎不变，fixed-Core Procedure-only有效LoRA
+  差异已增至`3.689%/5.764%`并穿过policy action；五臂固定8 tasks×10 states
+  为correct/same/wrong/shuffled/reversed=`21/25/14/23/23`。轻量结果只支持
+  wrong-video方向性，不足以宣告顺序特异性通过或失败。
+- [ ] 按封存的900-step segment合同，从step900完整checkpoint exact-resume到
+  step1800；保持同一optimizer/scheduler/sampler/video schedule/RNG、F32/B20、
+  GPU4–7和每100步checkpoint。运行期间依据online functional panel安排后续
+  fixed400候选，但不把轻量80 panel当作observed-best选择证据。
 - [ ] 若correct始终低于约`110–120/400`，先定位训练或架构问题并fresh迭代；
   若达到则再做内部数值与correct/same/wrong/shuffled/reversed rollout特异性。
   目标逼近或超过v4 shuffled `148/400`；best后没有明显、持续、多task且独立

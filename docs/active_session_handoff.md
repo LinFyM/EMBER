@@ -574,13 +574,10 @@ metrics       0b39de739d2eca59274ba43c8ea1679e77ead0e1228c55878b2079273799b561
 ckpt manifest 993739d4a5c8323d04fc9e0eef60ac4439356a20ee1bc8061e314d2c5100cb1b
 ```
 
-## 7. 正在运行的正式训练
+## 7. 正式首段已完成；step900→1800续训待启动
 
-不要重复启动。当前tmux session：
-
-```text
-ember-v5-as-sv900
-```
+本快照时没有v5训练或评估进程，GPU4–7均已自然释放。旧tmux
+`ember-v5-as-sv900`已随正常stop-after-step 900退出，不能重复fresh launch。
 
 正式output与log：
 
@@ -596,7 +593,51 @@ source base：
 /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000
 ```
 
-精确launch：
+首段正常完成：
+
+```text
+contract_sha256 03186c57ac736ac82398400676ff10c33eb46ab3e5f9bcbbe44064305944787c
+completed steps  900
+training body    3,485.1537s
+global samples   72,000
+video conditions 3,600
+Writer params    10,301,440
+source trainable 0
+```
+
+step100至900每100步的9个checkpoint全部有Writer、trainer、四rank state和
+atomic manifest。step900：
+
+```text
+checkpoint       checkpoints/step_00000900
+manifest SHA256  157599fc60e565570be7d711362469b7233606635437f6e219125e7e36f7b8e2
+payload SHA256   c838ccba4b1125753e8f11f1ddfaf25c9d6672fe9e1601d3dbb8d7f816b375e5
+per task         3,000 examples / 150 visits / 50 videos / 50 action episodes
+```
+
+resident 512-row functional loss：
+
+```text
+step100/200/300  0.136011 / 0.134911 / 0.133263
+step400/500/600  0.132433 / 0.134811 / 0.135303
+step700/800/900  0.132294 / 0.132574 / 0.137075
+```
+
+fixed400 correct-video代表点step100/400/700/800/900为
+`62/64/92/76/103`，所以首段observed-best为step900；它仍低于absolute预门，
+但step800→900 paired净增27且没有持续峰后下降。
+
+step900内部顺序通路已增强并到达policy。owner授权的轻量8 tasks×10 states
+行为诊断为：
+
+```text
+correct / same / wrong / shuffled / reversed = 21 / 25 / 14 / 23 / 23
+```
+
+它只说明wrong-video有方向性、顺序优势尚未拉开，不是full400特异性结论。
+
+已封存的下一正式动作是从step900精确续训到step1800。启动前必须确保本文档
+变更已commit/push、worktree clean、GPU4–7与存储live preflight通过。精确命令：
 
 ```bash
 cd /data/ymdai/projects/EMBER
@@ -616,52 +657,16 @@ env \
   --tokenizer-path /data/ymdai/ember_data/openpi/paligemma_tokenizer.model \
   --data-root /data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a \
   --output-dir /data/ymdai/outputs/ember/pi05_as_writer_v5_single_video_dev_r4_seed7_s12000_0b4e006_20260727 \
-  --stop-after-step 900 \
+  --resume /data/ymdai/outputs/ember/pi05_as_writer_v5_single_video_dev_r4_seed7_s12000_0b4e006_20260727/checkpoints/step_00000900 \
+  --stop-after-step 1800 \
   --num-workers 2 \
-  --log-every 10
+  --log-every 10 \
+  --allow-contract-compatible-code-resume
 ```
 
-正式start event：
-
-```text
-contract_sha256 03186c57ac736ac82398400676ff10c33eb46ab3e5f9bcbbe44064305944787c
-resume_step     0
-stop_after_step 900
-Writer params  10,301,440
-generated LoRA 76 tensors / 1,287,168 scalars
-source policy trainable params 0
-```
-
-本次文档封存快照时已完成并原子发布step100、200、300、400：
-
-```text
-step400 elapsed body   1,534.14s
-step400 wall           4.472s
-step400 loss           0.1129087
-global samples         32,000
-peak allocated         76,960,475,136 bytes
-peak reserved          83,630,227,456 bytes
-```
-
-step1–400全部finite；首步四卡约`77.9GB`物理显存占用。四个checkpoint均
-包含`writer.safetensors`、`trainer_state.pt`、四份rank state与atomic
-manifest。step400覆盖24/24 tasks，每task`1,320–1,340` action examples、
-`66–67`次video visits且仍覆盖全部`50`条unique videos。
-
-训练进程还在同一常驻模型中对每个checkpoint执行预封存512-row validation
-functional-loss panel；它不更新参数、不计算gradient、test action reads为0：
-
-```text
-step100  0.1360106688
-step200  0.1349112644
-step300  0.1332633092
-step400  0.1324332561
-```
-
-逐checkpoint明细写入
-`validation_functional_loss/metrics.jsonl`。以上step400只作交接快照，不能
-被解释为训练结束或closed-loop结论；接手时必须从训练`metrics.jsonl`与tmux
-重读真实末步。
+该flag只允许recorded Git commit不同；run-contract其他字段必须逐项完全相同。
+当前main相对训练commit只改canonical evaluator long-first调度，训练入口、
+`src/ember/writer/`和v5 config无diff。
 
 ## 8. 新session接手后的第一组只读命令
 
@@ -670,10 +675,11 @@ cd /data/ymdai/projects/EMBER
 git status --short --branch
 git rev-parse HEAD
 git rev-parse origin/main
-tmux has-session -t ember-v5-as-sv900
+tmux list-sessions
 tail -n 80 \
-  /data/ymdai/outputs/ember/pi05_as_writer_v5_single_video_dev_r4_seed7_s12000_0b4e006_20260727.log
+  /data/ymdai/outputs/ember/pi05_as_writer_v5_single_video_dev_r4_seed7_s12000_0b4e006_20260727_resume0900_to1800.log
 nvidia-smi \
+  -i 4,5,6,7 \
   --query-gpu=index,memory.used,memory.free,utilization.gpu,temperature.gpu \
   --format=csv,noheader,nounits
 ```
@@ -694,11 +700,11 @@ GPU边界：
 - 不杀、不暂停、不reset任何他人进程；
 - 新launch前必须重新做live GPU与`/data/ymdai` 500GB cap检查。
 
-## 9. step900后的固定下一动作
+## 9. step900后的执行状态与后续固定动作
 
-### 9.1 封存训练段
+### 9.1 已完成：封存训练段
 
-先验证：
+已验证：
 
 1. terminal summary为正常stop-after-step 900；
 2. metrics严格覆盖step1–900，无nonfinite；
@@ -708,18 +714,20 @@ GPU边界：
 5. 24 tasks/action/video coverage符合确定性schedule；
 6. 保存训练body wall、queries、task/video visits和hashes。
 
-### 9.2 先找absolute observed-best
+### 9.2 已完成首段absolute observed-best；继续第二段
 
 - 先核验正式run中常驻模型已经写出的预封存512-row functional panel；正常
   checkpoint不得另起进程重复backfill。该panel只用于安排完整rollout顺序，
   不能用functional loss代替closed-loop选择。
-- 不使用已退役的80-episode快筛。
+- 不使用80-episode结果选择absolute observed-best。owner明确授权的step900
+  轻量五臂80-panel只作续训前机制诊断，不得外推为full400硬门。
 - 对step100–900分布式选择有代表性的checkpoint做固定8 tasks×50=400
   correct-video validation；逐步补齐峰值附近、segment端点和可能反弹点，直到
   当前保留checkpoint中的observed-best得到充分定位。
 - 第一判断是absolute performance。若所有候选始终显著低于约
   `110–120/400`，先定位训练/架构问题，不提前花费五臂特异性rollout。
-- 若达到absolute门，再对暂时best做内部数值特异性。
+- 首段step900为`103/400`，接近但仍低于预门；内部与轻量五臂只证明机制值得
+  继续。当前下一动作是同一时间轴exact-resume到step1800。
 
 正式rollout保持官方π0.5/LIBERO合同：render256/model224、agentview与wrist
 相机180°旋转、7D state/action、10 flow inference steps、执行5 actions后
@@ -737,6 +745,8 @@ replan、dummy settling10、success即停止，Spatial/Object/Goal/Long horizon
   不能按init-state重复生成同一LoRA；
 - cache生成完后尽量保留已经加载的source policy并原地转rollout，不无谓
   unload/reload；
+- 每个worker始终先领取long shard；只有不存在未领取long shard时，空闲worker
+  才领取普通task。这一规则不随一个checkpoint分配的GPU数改变；
 - 每张授权卡使用相同CUDA角色数量，物理GPU4不额外堆controller/server/model；
 - generation cache可以在不同rollout topology间复用，但scientific condition
   identity必须严格联锁。

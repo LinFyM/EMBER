@@ -8,6 +8,7 @@ from typing import Any, Mapping, Sequence
 
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval_contract import load_run_contract
+from ember.pi05_eval.launcher_evidence import launcher_attempt_summary
 from ember.pi05_eval_queue import (
     EvaluationShard,
     completed_jobs,
@@ -311,6 +312,7 @@ def aggregate_run(output_dir: Path) -> dict[str, Any]:
         raise Pi05EvaluationError("PI05 aggregate does not cover every task/state exactly once")
     shard_window_seconds = max(finishes) - min(starts)
     launcher: dict[str, Any] | None = None
+    launcher_attempts: dict[str, Any] | None = None
     workers: list[dict[str, Any]] = []
     if contract.get("parallel", {}).get("worker_count"):
         launcher, _ = read_json_with_sha256(output_dir / "launcher_completion.json")
@@ -320,13 +322,19 @@ def aggregate_run(output_dir: Path) -> dict[str, Any]:
         ):
             raise Pi05EvaluationError("launcher completion evidence changed")
         workers = _validated_worker_lifecycles(output_dir, contract, launcher)
-        evaluation_seconds = float(launcher["wall_seconds"])
+        launcher_attempts = launcher_attempt_summary(
+            output_dir,
+            contract,
+            launcher,
+            workers,
+            total_shards=len(jobs),
+        )
+        evaluation_seconds = float(launcher_attempts["active_wall_seconds"])
         if (
             evaluation_seconds <= 0
             or float(launcher.get("finished_unix", 0))
             - float(launcher.get("started_unix", 0))
-            != evaluation_seconds
-            or sum(row["completed_shards"] for row in workers) != len(jobs)
+            != float(launcher["wall_seconds"])
         ):
             raise Pi05EvaluationError("launcher timing or completed-shard evidence changed")
     else:
@@ -341,6 +349,7 @@ def aggregate_run(output_dir: Path) -> dict[str, Any]:
         "mode": contract["mode"],
         "model": contract["model"],
         "adapter": contract.get("adapter"),
+        "writer_lora_execution": contract.get("writer_lora_execution"),
         "normalization": contract["normalization"],
         "tokenizer": contract["tokenizer"],
         "overall": {
@@ -361,6 +370,7 @@ def aggregate_run(output_dir: Path) -> dict[str, Any]:
         "writer_generation": _writer_generation_summary(workers),
         "per_task": _per_task_rows(rows, tasks),
         "launcher": launcher,
+        "launcher_attempts": launcher_attempts,
         "workers": workers,
         "shards": shard_records,
         "rows": sorted(

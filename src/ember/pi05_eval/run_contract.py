@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import socket
 import time
 from dataclasses import asdict
@@ -143,6 +144,17 @@ def _attach_writer_cache(
     )
 
 
+def _validate_writer_execution_scale(
+    *,
+    writer_adapter: bool,
+    b_scale: float,
+) -> None:
+    invalid_scale = not math.isfinite(b_scale) or not 0 < b_scale <= 4
+    non_writer_override = not writer_adapter and b_scale != 1.0
+    if invalid_scale or non_writer_override:
+        raise Pi05EvaluationError("Writer LoRA B scale is invalid")
+
+
 def _validate_build_request(
     authorities: EvaluationAuthorities,
     *,
@@ -154,6 +166,7 @@ def _validate_build_request(
     writer_generators_per_gpu: int,
     writer_generation_batch_size: int,
     writer_cache_root: Path | None,
+    writer_lora_b_scale: float,
 ) -> tuple[dict[str, Any], bool]:
     if mode not in {"smoke", "screen", "formal"}:
         raise Pi05EvaluationError(f"unsupported PI05 evaluation mode: {mode}")
@@ -171,6 +184,10 @@ def _validate_build_request(
         "as_writer",
         "rl_writer",
     }
+    _validate_writer_execution_scale(
+        writer_adapter=writer_adapter,
+        b_scale=writer_lora_b_scale,
+    )
     valid_writer_topology = (
         0 < writer_generators_per_gpu <= replicas_per_gpu
         and writer_generation_batch_size > 0
@@ -180,6 +197,49 @@ def _validate_build_request(
     if not writer_adapter and writer_cache_root is not None:
         raise Pi05EvaluationError("a Writer LoRA cache was supplied without a Writer")
     return git, writer_adapter
+
+
+def _writer_lora_execution_contract(
+    *,
+    writer_adapter: bool,
+    b_scale: float,
+) -> dict[str, Any] | None:
+    if not writer_adapter:
+        return None
+    return {
+        "b_scale": float(b_scale),
+        "effective_delta_contract": (
+            "multiply every generated public LoRA B factor at rollout; "
+            "keep its generated A factor unchanged"
+        ),
+    }
+
+
+def _paired_control_hash(
+    contract: Mapping[str, Any],
+    adapter: Mapping[str, Any],
+) -> str:
+    paired_keys = (
+        "mode",
+        "role",
+        "git",
+        "model",
+        "tokenizer",
+        "normalization",
+        "tasks",
+        "environment",
+        "policy",
+        "rng",
+        "parallel",
+        "writer_lora_execution",
+    )
+    return canonical_hash(
+        {
+            "schema_version": "ember_pi05_writer_paired_control_v1",
+            **{key: contract[key] for key in paired_keys},
+            "writer": paired_writer_identity(adapter),
+        }
+    )
 
 
 def build_run_contract(
@@ -199,6 +259,7 @@ def build_run_contract(
     writer_generators_per_gpu: int = 1,
     writer_generation_batch_size: int = 1,
     writer_cache_root: Path | None = None,
+    writer_lora_b_scale: float = 1.0,
 ) -> dict[str, Any]:
     git, writer_adapter = _validate_build_request(
         authorities,
@@ -210,6 +271,7 @@ def build_run_contract(
         writer_generators_per_gpu=writer_generators_per_gpu,
         writer_generation_batch_size=writer_generation_batch_size,
         writer_cache_root=writer_cache_root,
+        writer_lora_b_scale=float(writer_lora_b_scale),
     )
     gpu_ids = _resolve_gpu_ids(authorities, physical_gpu_ids)
     contract = {
@@ -217,6 +279,10 @@ def build_run_contract(
         "mode": mode,
         "arm": str(adapter["arm"]) if adapter else authorities.config["policy"]["arm"],
         "adapter": dict(adapter) if adapter else None,
+        "writer_lora_execution": _writer_lora_execution_contract(
+            writer_adapter=writer_adapter,
+            b_scale=writer_lora_b_scale,
+        ),
         "role": role,
         "output_dir": str(output_dir.resolve()),
         "prepared_unix": time.time(),
@@ -271,28 +337,7 @@ def build_run_contract(
     )
     contract["paired_control_sha256"] = None
     if writer_adapter:
-        contract["paired_control_sha256"] = canonical_hash(
-            {
-                "schema_version": "ember_pi05_writer_paired_control_v1",
-                **{
-                    key: contract[key]
-                    for key in (
-                        "mode",
-                        "role",
-                        "git",
-                        "model",
-                        "tokenizer",
-                        "normalization",
-                        "tasks",
-                        "environment",
-                        "policy",
-                        "rng",
-                        "parallel",
-                    )
-                },
-                "writer": paired_writer_identity(adapter),
-            }
-        )
+        contract["paired_control_sha256"] = _paired_control_hash(contract, adapter)
     contract["contract_sha256"] = canonical_hash(contract)
     return contract
 

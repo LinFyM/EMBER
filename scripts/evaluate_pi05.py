@@ -64,6 +64,42 @@ def _positive_int(value: str) -> int:
     return parsed
 
 
+def _add_writer_runtime_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--writer-generators-per-gpu",
+        type=int,
+        choices=RUNTIME_REPLICA_PROFILES,
+        default=1,
+        help=(
+            "Writer-LoRA generator processes per GPU; independent of rollout "
+            "replicas and no greater than --replicas-per-gpu."
+        ),
+    )
+    parser.add_argument(
+        "--writer-generation-batch-size",
+        type=_positive_int,
+        default=1,
+        help=(
+            "Positive number of episode LoRAs generated together by each Writer "
+            "process; select from measured GPU memory rather than a fixed whitelist."
+        ),
+    )
+    parser.add_argument(
+        "--writer-lora-cache-root",
+        type=Path,
+        help="Optional reusable cache root shared by rollout-topology profiles.",
+    )
+    parser.add_argument(
+        "--writer-lora-b-scale",
+        type=float,
+        default=1.0,
+        help=(
+            "Multiply generated public LoRA B factors at rollout while keeping "
+            "their generated A factors fixed; the default 1.0 is unchanged."
+        ),
+    )
+
+
 def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--source-run", type=Path, required=True)
@@ -90,30 +126,7 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
         choices=RUNTIME_REPLICA_PROFILES,
         required=True,
     )
-    parser.add_argument(
-        "--writer-generators-per-gpu",
-        type=int,
-        choices=RUNTIME_REPLICA_PROFILES,
-        default=1,
-        help=(
-            "Writer-LoRA generator processes per GPU; independent of rollout "
-            "replicas and no greater than --replicas-per-gpu."
-        ),
-    )
-    parser.add_argument(
-        "--writer-generation-batch-size",
-        type=_positive_int,
-        default=1,
-        help=(
-            "Positive number of episode LoRAs generated together by each Writer "
-            "process; select from measured GPU memory rather than a fixed whitelist."
-        ),
-    )
-    parser.add_argument(
-        "--writer-lora-cache-root",
-        type=Path,
-        help="Optional reusable cache root shared by rollout-topology profiles.",
-    )
+    _add_writer_runtime_arguments(parser)
     parser.add_argument(
         "--gpu-indices",
         help="Comma-separated physical GPU indices; defaults to every configured GPU.",
@@ -295,6 +308,7 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
         writer_generators_per_gpu=args.writer_generators_per_gpu,
         writer_generation_batch_size=args.writer_generation_batch_size,
         writer_cache_root=args.writer_lora_cache_root,
+        writer_lora_b_scale=args.writer_lora_b_scale,
     )
     publish_json_exclusive(output_dir / "run_contract.json", contract)
     shards = _shards_from_contract(contract)
@@ -317,6 +331,7 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
             "writer_generation_batch_size"
         ],
         "writer_lora_cache": contract["writer_lora_cache"],
+        "writer_lora_execution": contract["writer_lora_execution"],
         "physical_gpu_ids": contract["parallel"]["physical_gpu_ids"],
         "arm": contract["arm"],
         "output_dir": str(output_dir),
@@ -484,7 +499,7 @@ def _finalize_aggregate(output_dir: Path) -> dict[str, Any]:
         "invocation_id": completion["invocation_id"],
         "launcher_started_unix": completion["started_unix"],
         "completed_unix": completion["finished_unix"],
-        "panel_active_wall_seconds": completion["wall_seconds"],
+        "panel_active_wall_seconds": result["overall"]["evaluation_wall_seconds"],
         "successes": result["overall"]["successes"],
         "episodes": result["overall"]["episodes"],
         "effective_rollouts_per_second": result["overall"][

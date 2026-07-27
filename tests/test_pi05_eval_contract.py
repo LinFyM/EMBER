@@ -200,12 +200,24 @@ def test_run_contract_hash_detects_tampering(tmp_path: Path) -> None:
     with pytest.raises(Pi05EvaluationError, match="hash changed"):
         load_run_contract(path)
 
+
+def _writer_contract_inputs(tmp_path: Path) -> tuple:
+    authorities = load_evaluation_authorities(CONFIG, ROOT)
+    tasks, paths = inspect_installed_target_tasks(
+        authorities,
+        role="test",
+        state_count=1,
+        libero_config_dir=tmp_path / "libero_config",
+    )
+    model = {
+        "source_authority_hashes": {
+            name: authorities.hashes[name]
+            for name in ("normalization", "overlap_audit", "source_manifest")
+        }
+    }
     task_keys = tuple((task.suite, task.task_id) for task in tasks)
     task_roles = {key: task.split_role for key, task in zip(task_keys, tasks)}
     correct_mapping = list(task_video_mapping(task_keys, task_roles, "correct"))
-    wrong_mapping = list(
-        task_video_mapping(task_keys, task_roles, "cross_suite_wrong")
-    )
     shared_writer = {
         "schema_version": WRITER_ADAPTER_SCHEMA,
         "kind": "as_writer",
@@ -228,46 +240,83 @@ def test_run_contract_hash_detects_tampering(tmp_path: Path) -> None:
         "video_schedule": {"seed": 7, "demo_count": 50},
         "pairing_sha256": "1" * 64,
     }
-    correct = build_run_contract(
+    return (
+        authorities,
+        tasks,
+        paths,
+        model,
+        shared_writer,
+        correct_mapping,
+    )
+
+
+def _build_writer_contract(
+    *,
+    inputs: tuple,
+    output_dir: Path,
+    arm: str,
+    condition: str,
+    mapping: list,
+    b_scale: float = 1.0,
+) -> dict:
+    authorities, tasks, paths, model, shared_writer, _ = inputs
+    return build_run_contract(
         authorities=authorities,
         tasks=tasks,
         libero_paths=paths,
         model=model,
         tokenizer={"sha256": "a" * 64},
-        output_dir=tmp_path / "correct",
+        output_dir=output_dir,
         role="test",
         mode="smoke",
         replicas_per_gpu=1,
         command=("evaluate_pi05.py", "prepare"),
+        writer_lora_b_scale=b_scale,
         adapter={
-                **shared_writer,
-                "arm": "as_writer_correct_video",
-                "video_condition": "correct",
-                "task_video_mapping_sha256": canonical_hash(correct_mapping),
-                "task_video_mapping": correct_mapping,
+            **shared_writer,
+            "arm": arm,
+            "video_condition": condition,
+            "task_video_mapping_sha256": canonical_hash(mapping),
+            "task_video_mapping": mapping,
         },
     )
-    wrong = build_run_contract(
-        authorities=authorities,
-        tasks=tasks,
-        libero_paths=paths,
-        model=model,
-        tokenizer={"sha256": "a" * 64},
+
+
+def test_writer_pairing_and_lora_scale_are_sealed(tmp_path: Path) -> None:
+    inputs = _writer_contract_inputs(tmp_path)
+    _, tasks, _, _, _, correct_mapping = inputs
+    task_keys = tuple((task.suite, task.task_id) for task in tasks)
+    task_roles = {key: task.split_role for key, task in zip(task_keys, tasks)}
+    wrong_mapping = list(
+        task_video_mapping(task_keys, task_roles, "cross_suite_wrong")
+    )
+    correct = _build_writer_contract(
+        inputs=inputs,
+        output_dir=tmp_path / "correct",
+        arm="as_writer_correct_video",
+        condition="correct",
+        mapping=correct_mapping,
+    )
+    wrong = _build_writer_contract(
+        inputs=inputs,
         output_dir=tmp_path / "wrong",
-        role="test",
-        mode="smoke",
-        replicas_per_gpu=1,
-        command=("evaluate_pi05.py", "prepare"),
-        adapter={
-                **shared_writer,
-                "arm": "as_writer_cross_suite_wrong_video",
-                "video_condition": "cross_suite_wrong",
-                "task_video_mapping_sha256": canonical_hash(wrong_mapping),
-                "task_video_mapping": wrong_mapping,
-        },
+        arm="as_writer_cross_suite_wrong_video",
+        condition="cross_suite_wrong",
+        mapping=wrong_mapping,
+    )
+    scaled = _build_writer_contract(
+        inputs=inputs,
+        output_dir=tmp_path / "scaled",
+        arm="as_writer_correct_video",
+        condition="correct",
+        mapping=correct_mapping,
+        b_scale=1.5,
     )
     assert correct["paired_control_sha256"] == wrong["paired_control_sha256"]
     assert correct["contract_sha256"] != wrong["contract_sha256"]
+    assert correct["writer_lora_execution"]["b_scale"] == 1.0
+    assert scaled["writer_lora_execution"]["b_scale"] == 1.5
+    assert scaled["paired_control_sha256"] != correct["paired_control_sha256"]
 
 
 def test_source_checkpoint_inspection_requires_generic_base_and_raw_policy_contract(

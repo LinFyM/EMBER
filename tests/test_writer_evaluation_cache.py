@@ -114,6 +114,46 @@ def _state(value: float) -> dict[str, torch.Tensor]:
     }
 
 
+def _populate_writer_cache(
+    contract: dict,
+    lora: SmolVLALoRAContract,
+) -> None:
+    for request in writer_cache_requests(contract):
+        state = _state(float(request.ordinal))
+        evidence = expected_writer_episode_evidence(
+            contract["adapter"],
+            suite=request.suite,
+            task_id=request.task_id,
+            init_state_id=request.init_state_id,
+            lora_sha256=lora_state_sha256(state),
+        )
+        evidence["writer_generation_seconds"] = 0.1
+        write_writer_cache_entry(
+            contract,
+            request,
+            state=state,
+            evidence=evidence,
+            generation={"generator_worker_id": "0-r0"},
+            lora_contract=lora,
+        )
+    invocation_id = "b" * 32
+    write_generator_marker(
+        contract,
+        invocation_id=invocation_id,
+        worker_id="0-r0",
+        generator_index=0,
+        summary={
+            "source_policy_reused_for_rollout": True,
+            "writer_modules_released": True,
+        },
+    )
+    finalize_writer_cache(
+        contract,
+        invocation_id=invocation_id,
+        worker_ids=("0-r0",),
+    )
+
+
 def test_cache_identity_decouples_rollout_replicas(tmp_path: Path) -> None:
     first = _contract(tmp_path / "first", replicas=2)
     second = _contract(tmp_path / "second", replicas=6)
@@ -203,6 +243,7 @@ def test_cached_runtime_reuses_one_lora_for_duplicate_video_aliases(
     tmp_path: Path,
 ) -> None:
     contract = _contract(tmp_path / "cache")
+    contract["writer_lora_execution"] = {"b_scale": 1.5}
     contract["tasks"][0]["init_state_ids"] = list(range(50))
     lora = _lora_contract()
     contract["writer_lora_cache"] = build_writer_lora_cache_descriptor(
@@ -213,40 +254,7 @@ def test_cached_runtime_reuses_one_lora_for_duplicate_video_aliases(
         lora_parameter_count=lora.parameter_count,
         lora_tensor_count=lora.state_tensor_count,
     )
-    for request in writer_cache_requests(contract):
-        state = _state(float(request.ordinal))
-        evidence = expected_writer_episode_evidence(
-            contract["adapter"],
-            suite=request.suite,
-            task_id=request.task_id,
-            init_state_id=request.init_state_id,
-            lora_sha256=lora_state_sha256(state),
-        )
-        evidence["writer_generation_seconds"] = 0.1
-        write_writer_cache_entry(
-            contract,
-            request,
-            state=state,
-            evidence=evidence,
-            generation={"generator_worker_id": "0-r0"},
-            lora_contract=lora,
-        )
-    invocation_id = "b" * 32
-    write_generator_marker(
-        contract,
-        invocation_id=invocation_id,
-        worker_id="0-r0",
-        generator_index=0,
-        summary={
-            "source_policy_reused_for_rollout": True,
-            "writer_modules_released": True,
-        },
-    )
-    finalize_writer_cache(
-        contract,
-        invocation_id=invocation_id,
-        worker_ids=("0-r0",),
-    )
+    _populate_writer_cache(contract, lora)
     runtime = FrozenCachedWriterTaskAdapter.__new__(FrozenCachedWriterTaskAdapter)
     runtime.lora_contract = lora
     runtime.device = torch.device("cpu")
@@ -259,7 +267,24 @@ def test_cached_runtime_reuses_one_lora_for_duplicate_video_aliases(
     repeated = runtime.prepare_episode(
         suite="libero_spatial", task_id=1, init_state_id=18
     )
+    request = writer_cache_episode_request_map(contract)[
+        ("libero_spatial", 1, 1)
+    ]
+    original, _ = load_writer_cache_entry(
+        contract,
+        request,
+        lora_contract=lora,
+        device=torch.device("cpu"),
+    )
     assert first.state is repeated.state
+    assert torch.equal(
+        first.state["layer.lora_A.default.weight"],
+        original["layer.lora_A.default.weight"],
+    )
+    assert torch.equal(
+        first.state["layer.lora_B.default.weight"],
+        original["layer.lora_B.default.weight"] * 1.5,
+    )
     assert first.evidence["lora_sha256"] == repeated.evidence["lora_sha256"]
     assert first.evidence["teacher_video_selection_seed"] != repeated.evidence[
         "teacher_video_selection_seed"

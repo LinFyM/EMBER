@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import os
 import time
 from pathlib import Path
@@ -31,6 +32,25 @@ from ember.writer.inference import (
 )
 from ember.writer.lora_rollout import WriterLoRARolloutAdapter
 from ember.writer.model import WriterModelError
+
+
+def _scaled_public_lora_b(
+    state: Mapping[str, torch.Tensor],
+    scale: float,
+) -> Mapping[str, torch.Tensor]:
+    if scale == 1.0:
+        return state
+    result = {}
+    b_factors = 0
+    for name, value in state.items():
+        if ".lora_B." in name:
+            result[name] = value * scale
+            b_factors += 1
+        else:
+            result[name] = value
+    if b_factors <= 0 or b_factors * 2 != len(result):
+        raise WriterModelError("generated public LoRA A/B topology changed")
+    return result
 
 
 class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
@@ -105,6 +125,18 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
 
     def _initialize_cache(self, cache_contract: Mapping[str, Any]) -> None:
         self.cache_contract = dict(cache_contract)
+        execution = cache_contract.get("writer_lora_execution")
+        self.lora_b_scale = float(
+            execution.get("b_scale", 1.0)
+            if isinstance(execution, Mapping)
+            else 1.0
+        )
+        if (
+            not math.isfinite(self.lora_b_scale)
+            or self.lora_b_scale <= 0
+            or self.lora_b_scale > 4
+        ):
+            raise WriterModelError("cached Writer LoRA B scale is invalid")
         self._request_by_key = writer_cache_episode_request_map(
             self.cache_contract
         )
@@ -140,6 +172,10 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
                     request,
                     lora_contract=self.lora_contract,
                     device=self.device,
+                )
+                cached = (
+                    _scaled_public_lora_b(cached[0], self.lora_b_scale),
+                    cached[1],
                 )
                 if not validate_writer_episode_evidence(
                     self.evaluation_adapter,

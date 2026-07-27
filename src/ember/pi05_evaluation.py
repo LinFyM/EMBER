@@ -19,9 +19,9 @@ from ember.eval_adapters import (
     load_evaluation_adapter as _load_evaluation_adapter,
     validate_episode_adapter_fields,
 )
-from ember.libero_evaluation import sha256_file
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval_contract import load_run_contract, policy_noise_seed
+from ember.pi05_eval.environment_pool import PersistentTaskEnvironmentPool
 from ember.pi05_eval_queue import (
     EvaluationClaim,
     EvaluationShard,
@@ -95,73 +95,6 @@ def task_lookup(contract: Mapping[str, Any]) -> dict[tuple[str, int], dict[str, 
     if len(tasks) != len(contract["tasks"]):
         raise Pi05EvaluationError("run contract contains duplicate target tasks")
     return tasks
-
-
-class PersistentTaskEnvironmentPool:
-    """Keep one task's vector of raw LIBERO environments alive between shards."""
-
-    def __init__(self, contract: Mapping[str, Any]) -> None:
-        from libero.libero import benchmark
-
-        self.contract = contract
-        self.suites = {
-            name: benchmark.get_benchmark_dict()[name]()
-            for name in contract["environment"]["horizons"]
-        }
-        self.current_key: tuple[str, int] | None = None
-        self.envs: list[Any] = []
-        self.init_states: Any = None
-
-    def close(self) -> None:
-        for env in self.envs:
-            env.close()
-        self.envs = []
-        self.init_states = None
-        self.current_key = None
-
-    def switch(self, task: Mapping[str, Any]) -> tuple[list[Any], Any]:
-        key = task["suite"], int(task["task_id"])
-        if self.current_key == key:
-            return self.envs, self.init_states
-        self.close()
-        from libero.libero.envs import OffScreenRenderEnv
-
-        bddl = (
-            Path(self.contract["libero_paths"]["bddl_files"])
-            / task["problem_folder"]
-            / task["bddl_file"]
-        )
-        init_path = (
-            Path(self.contract["libero_paths"]["init_states"])
-            / task["suite"]
-            / task["init_states_file"]
-        )
-        if (
-            bddl.stat().st_size != int(task["bddl_bytes"])
-            or sha256_file(bddl) != task["bddl_sha256"]
-            or init_path.stat().st_size != int(task["init_states_bytes"])
-            or sha256_file(init_path) != task["init_states_sha256"]
-        ):
-            raise Pi05EvaluationError(f"installed task assets changed: {key}")
-        suite = self.suites[task["suite"]]
-        installed = suite.get_task(int(task["task_id"]))
-        if installed.language != task["language"]:
-            raise Pi05EvaluationError(f"installed task language changed: {key}")
-        self.init_states = suite.get_task_init_states(int(task["task_id"]))
-        env_count = min(
-            int(self.contract["parallel"]["envs_per_replica"]),
-            len(task["init_state_ids"]),
-        )
-        self.envs = [
-            OffScreenRenderEnv(
-                bddl_file_name=bddl,
-                camera_heights=int(self.contract["environment"]["render_resolution"]),
-                camera_widths=int(self.contract["environment"]["render_resolution"]),
-            )
-            for _ in range(env_count)
-        ]
-        self.current_key = key
-        return self.envs, self.init_states
 
 
 def _start_fixed_episode(
@@ -570,7 +503,10 @@ def _initialize_worker(
         task_adapter=task_adapter,
         preprocess=preprocess,
         postprocess=postprocess,
-        pool=PersistentTaskEnvironmentPool(contract),
+        pool=PersistentTaskEnvironmentPool(
+            contract,
+            physical_gpu_id=gpu_index,
+        ),
         event_path=output_dir / "workers" / f"{worker_id}.jsonl",
     )
 

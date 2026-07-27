@@ -1781,3 +1781,23 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   contract与paired-control hash，但不污染Writer输入或LoRA生成身份。该扫描
   用于检验v5.1 effective-LoRA幅度低于旧125/400 Writer约1.5倍这一可证伪假设，
   不把调大幅度本身视为性能改进。
+
+## v5.1 LoRA函数强度扫描结论（2026-07-27）
+
+- step1400保持同一400-entry Writer cache、A因子、state/video无放回双射和
+  policy RNG，只把全部public LoRA-B整体缩放。full400结果为：
+
+  | LoRA-B scale | 1.00 | 1.25 | 1.50 | 1.75 | 2.00 |
+  |---:|---:|---:|---:|---:|---:|
+  | successes | **127** | 124 | 119 | 99 | 82 |
+  | 相对1.00新增 | — | 21 | 26 | 19 | 14 |
+  | 相对1.00丢失 | — | 24 | 34 | 47 | 59 |
+
+- `1.25×`虽然把Long-1从`15`推到`20`，却同时把Object-1/3从`45/23`
+  降到`40/20`；`1.50×`也只是Long-1和Goal-6上涨，同时Object与全部近零
+  task继续恶化。四个scale上的Spatial-1始终`0/50`，Goal-3始终`0/50`。
+  因此这不是“LoRA整体幅度太小”，而是不同task的最优控制修正方向/幅度不一致；
+  放大只加剧task迁移，不能修复表示和训练稳定性。
+- 后续保留`1.00×`。这项负结果排除了最便宜的推理期标量修正，也避免把一个
+  易task的局部收益误写成absolute提升；下一实验应处理高学习率迁移和上游
+  task-conditioned语义容量，而不是继续扫更大scale。

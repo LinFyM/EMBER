@@ -1022,3 +1022,44 @@ identity SHA256
 4. 若低LR只能稳定已有易task、spatial与Goal-3仍死，按最早失效层进入单一
    canonical语义容量改进；任何架构改动前重新核对参数预算和Core/Procedure
    无旁路保证。AS门未充分通过前，RL只能作低成本可判别机制探索，不能替代AS。
+
+### 11.5 21:40 UTC scale结论与当前实时进程
+
+step1400的LoRA-B full400扫描已经全部完成：
+
+```text
+scale       1.00  1.25  1.50  1.75  2.00
+successes    127   124   119    99    82
+new/lost       — 21/24 26/34 19/47 14/59
+```
+
+四个放大scale均失败。1.25/1.50只把Long-1等局部任务推高，同时损害Object；
+Spatial-1和Goal-3在所有scale仍为零。后续固定使用`1.00`，不得把scale局部
+迁移当作性能改进。四个results SHA256为：
+
+```text
+b22e7854ffa7a8bff6fd9976cf8302c51685479a6497aa184715bcbd080e6c48
+88d84a3d7e0af7f294b8de6b6a837330e85b8b14a7ad4738990a708cac51964b
+d8e025acfc070067c3c01f1a8e2a7ef3ec3614fa37d2f117198489383bd2c378
+075f9d3fb66e4339019a689972befb421e9ce7cb405f7768a85aea07cfee0f0b
+```
+
+当前活动tmux为`ember-v51-step1400-specificity`：
+
+```text
+GPU5 same_task_other
+GPU6 cross_suite_wrong
+GPU4 shuffled
+GPU7 reversed
+```
+
+均为step1400、scale1.00、validation full400、无放回、每卡6个Writer
+generators完成cache后原进程切换为6个persistent policy workers，queue继续
+严格long-first。四个scale所在GPU释放后逐一自动衔接控制臂；不要重复launch。
+
+低LR稳定合同已封存在
+`configs/pi05_as_writer_language_axial_v5_1_stabilization.json`，commit
+`52503e149e0512b82994904012b1eccbda7589d9`已push。它从原step1400只加载
+Writer权重，fresh AdamW、peak LR `1e-4`、warmup50、phase总合同1800，
+首段只到phase step900。下一动作是等四臂完整聚合并核对逐row机制，再做一次
+只查询GPU4–7的live preflight并启动该一小时正式阶段。

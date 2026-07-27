@@ -1373,3 +1373,24 @@ GPU范围和训练步长是当时快照；活动状态只取
   6 policy workers、long-first queue、无放回state/video双射并复用原
   400-entry LoRA cache；preflight只查询GPU4–7。启动前个人占用
   `375,770,816,512 bytes`，低于500GB cap且scale roots不复制1GB cache。
+
+## v5.1 scale封存与step1400全量控制启动（2026-07-27）
+
+- 四个scale full400均完整退出：
+  `1.25/1.50/1.75/2.00 = 124/119/99/82`，均低于原`1.00=127`。
+  相对1.00的逐row`new/lost`依次为`21/24, 26/34, 19/47, 14/59`；
+  不是一致增益。results SHA256依次为
+  `b22e7854...6c48`、`88d84a3d...1964b`、
+  `d8e025ac...2c378`、`075f9d3f...0f0b`。选择保留scale 1.00。
+- 为避免卡间等待，每个scale所在GPU一释放就自动接入一个step1400控制臂。
+  tmux `ember-v51-step1400-specificity`当前在GPU5/6/4/7分别运行
+  `same_task_other/cross_suite_wrong/shuffled/reversed`；每臂full400、
+  每卡6 generators后原进程切换为6 rollout workers、无放回配对、
+  long-first。四臂预计新增约`4.27GB`，个人占用峰值仍显著低于500GB。
+- 新配置
+  `configs/pi05_as_writer_language_axial_v5_1_stabilization.json`
+  已在commit `52503e1`封存并push。它不改Writer拓扑、F32/B20、数据或信息墙，
+  只从原step1400加载Writer权重，开启fresh AdamW和
+  `peak_lr=1e-4,warmup=50,decay_steps=1800,decay_lr=1e-5`的新阶段；
+  首段只运行phase step0→900。完整控制结束后做live GPU/storage preflight，
+  再用GPU4–7正式启动。

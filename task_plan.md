@@ -569,8 +569,18 @@ action-hidden teacher video -> one task LoRA`的核心映射。
 - [x] 用无放回correct400建立足够密的step500–1800闭环曲线，选择同一合同下的
   observed-best。全局best为step1400=`127/400`；step1800=`126/400`但
   paired churn为new28/lost29，不能误判成稳定收敛。
-- [ ] 对最终observed-best复查内部Core/Procedure/LoRA/action与完整五条件行为；
-  分开判断依赖性、方向性、对source/Core-only的有用性和absolute ceiling。
+- [x] 对最终observed-best完成内部Core/Procedure/LoRA/action复查：
+  same/wrong/shuffle/reverse的effective-LoRA中位差为
+  `.096/.673/.514/.673`，action为`.0149/.1329/.1035/.1823`；
+  Core对order近零、Procedure差异能穿过LoRA/action，没有v4旁路。
+- [x] 对step1400完成`1.25/1.50/1.75/2.00×`LoRA-B paired full400；
+  得分`124/119/99/82`均低于原`1.00×=127`，且new/lost均显示任务迁移。
+  封存负结果并保留scale 1.00，不继续用全局幅度追分。
+- [ ] 完成step1400的same-task-other/wrong/shuffled/reversed四个full400控制臂；
+  当前已在GPU5/6/4/7并发运行，全部沿用无放回配对和long-first worker合同。
+- [ ] 从step1400 Writer权重启动fresh optimizer低LR稳定阶段：
+  `peak_lr=1e-4`、F32/B20、4-rank、首段900 phase steps；先建立密集screen，
+  再对多task候选补full400，不因online loss或单一易task继续第二段。
 - [ ] 若特异性成立但absolute长期低于约125，按最早失效层比较Core-only、
   full、去Procedure、跨demo梯度一致性与LoRA到action的功能对齐；只修改被证据
   定位的owner后fresh训练。

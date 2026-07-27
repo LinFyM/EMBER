@@ -486,15 +486,18 @@ Plan/Revision/Belief或旧活动config/schema。
   evidence、token-aligned frame-set attention、language-axis Core、rank4
   Action Meta-LoRA causal Procedure、centered Procedure zero-init AdaLN与
   post-fusion slot block；factor hidden改240，旧v5 checkpoint/schema不兼容。
-- [ ] 完成最短shape/token alignment/Core invariance/Procedure causality/
-  gradient staging/identity/freeze/parameter/schema和一次exact-resume smoke；
-  CPU结构与全仓`189 passed`已完成，真实policy GPU smoke/exact-resume仍待完成；
-  不用额外测试脚手架延迟真实profile。
-- [ ] 新launch前只核验物理GPU4–7、process topology和个人存储cap；用105帧真实
-  最长视频联合profile frame/action batch与step吞吐，重新找显存/UTL上限，
-  不继承v5的F32/B20。
-- [ ] 依据v5.1实测step时间把首个fresh formal segment定为约一小时wall-clock，
-  不预设900/1800 steps；保存足够checkpoint支持早期曲线和机制选择。
+- [x] 完成最短shape/token alignment/Core invariance/Procedure causality/
+  gradient staging/identity/freeze/parameter/schema和真实policy exact-resume smoke；
+  GPU4–7上step1→step2完整恢复，source policy冻结且cursor/RNG/checkpoint合同一致。
+- [x] 用105帧真实最长视频联合profile frame/action batch与step吞吐；v5.1重新实测
+  选择F32/B20，峰值allocated/reserved为`76.93/83.64GB`，最长步`7.25s`、
+  常规步`3.25–3.66s`。推理实测选择每卡6个worker全部分摊LoRA生成并原进程
+  rollout；全局queue现保证所有未领取long均先于ordinary。
+- [x] 依据v5.1吞吐而非继承v5步数，将首个fresh formal segment换算为step900
+  约一小时；每100步保存并做512-query online validation。900只是本首段停止点，
+  不是未来第二/第三段的固定间隔。
+- [ ] 从fresh identity运行sealed v5.1首段至step900；只使用GPU4–7，完成后停止，
+  不自动resume。
 - [ ] 首段后先做内部五条件与轻量paired rollout，重点要求final effective
   LoRA / policy action的`same < shuffled/reversed`相对v5实质改善，并同时看
   absolute与validation曲线。

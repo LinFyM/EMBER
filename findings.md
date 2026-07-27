@@ -1600,3 +1600,25 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   post-fusion和zero-init `W_mod`得到梯度，而Procedure仍为零；`W_mod`非零后
   Procedure路径才获得非零梯度。fresh完整public LoRA逐tensor等于identity
   template，routing和position无法从全零value生成LoRA内容。
+
+## v5.1训练与推理profile结论（2026-07-27）
+
+- 新架构没有改变单视频完整action-batch的主要显存斜率。v5.1在真实105帧压力
+  条件下F32/B20稳定完成，峰值allocated `76.93GB`、reserved `83.64GB`；
+  B20已经是当前A100 80GB上的激进稳定上限。常规步`3.25–3.66s`与最长步
+  `7.25s`共同支持将首段定为900 steps约一小时，但这只是新架构实测后得到的
+  首段尺度，不意味着下一段必然到1800。
+- LoRA生成均摊到全部rollout worker在现场可行。每卡6个worker同时常驻时，
+  24个worker对47个unique requests各处理1–2项，最大生成wall仅`5.20s`；
+  rollout阶段整卡约63–65GB、利用率`99–100%`，有效吞吐`0.3799 episode/s`。
+  主要固定开销是每个完整policy worker约`146–162s`的首次加载，因此同一
+  checkpoint的worker必须保留并直接进入rollout，多checkpoint时优先一张卡
+  负责一个checkpoint并并发摊销加载。
+- long-first必须是全局优先级而非只优先本GPU affinity。旧SQL会在本卡long
+  已领完时把ordinary排在他卡long之前；现改为所有`preferred_gpu != NULL`
+  的max-horizon shard先于ordinary，随后才在long内部优先本卡。这个规则与
+  checkpoint分配几张卡无关。
+- profile只回答效率和运行合同，不提供v5.1科学效果证据。首段step900完成后，
+  必须先选择observed-best并做内部Core/Procedure/LoRA检查和轻量paired
+  correct/same/wrong/shuffled/reversed；若早期顺序特异性没有实质改善，
+  不因loss仍下降就机械启动第二段。

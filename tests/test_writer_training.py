@@ -67,17 +67,22 @@ def test_language_axial_config_seals_architecture_and_information_wall() -> None
     assert config["information_wall"]["test_video_values_read"] == 0
     assert "state" in config["information_wall"]["writer_forbidden_inputs"]
     assert config["profile_defaults"]["expected_world_size"] == 4
-    assert config["profile_evidence"]["status"] == "pending"
+    assert config["profile_evidence"]["status"] == "sealed"
     assert config["profile_evidence"]["allowed_physical_gpu_ids"] == [4, 5, 6, 7]
     assert config["profile_evidence"]["initial_candidate_from_v5_only"] == {
         "max_frames_per_encoder_call": 32,
         "per_rank_action_batch_size": 20,
     }
+    assert config["profile_evidence"]["selected"]["per_rank_action_batch_size"] == 20
+    assert config["profile_evidence"]["inference_profile"][
+        "writer_generators_per_gpu"
+    ] == 6
     assert config["profile_evidence"]["teacher_videos_per_task_visit"] == 1
     assert config["specificity_gate"]["status"] == "pending"
-    assert config["formal_run"]["status"] == "pending_v5_1_profile"
-    assert config["formal_run"]["total_steps"] is None
-    assert config["formal_run"]["stage_stop_steps"] == []
+    assert config["formal_run"]["status"] == "sealed"
+    assert config["formal_run"]["total_steps"] == 12000
+    assert config["formal_run"]["selected_stop_step"] == 900
+    assert config["formal_run"]["stage_stop_steps"] == "every:100"
     assert "no_automatic_second_or_third_segment" in config["formal_run"][
         "segment_definition"
     ]

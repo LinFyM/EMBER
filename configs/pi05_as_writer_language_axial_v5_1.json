@@ -183,7 +183,7 @@
     "budget_role": "profile_then_approximately_one_hour_exact_resume_segments"
   },
   "profile_defaults": {
-    "status": "pending_v5_1_live_profile",
+    "status": "completed_v5_1_live_f32_b20",
     "expected_world_size": 4,
     "total_steps": 12,
     "per_rank_batch_size": 20,
@@ -197,7 +197,7 @@
     "selected_stop_step": 12
   },
   "profile_evidence": {
-    "status": "pending",
+    "status": "sealed",
     "allowed_physical_gpu_ids": [
       4,
       5,
@@ -216,7 +216,62 @@
       "per_rank_action_batch_size": 20
     },
     "required_longest_real_stride5_video_frames": 105,
-    "selection_rule": "maximize_stable_global_action_queries_per_second_with_about_10gb_headroom"
+    "selection_rule": "maximize_stable_global_action_queries_per_second_with_real_longest_video_and_aggressive_allocated_memory_use",
+    "selected": {
+      "max_frames_per_encoder_call": 32,
+      "per_rank_action_batch_size": 20,
+      "global_action_queries_per_step": 80,
+      "longest_real_stride5_video_frames": 105,
+      "longest_video_step_seconds": 7.247543944977224,
+      "ordinary_step_seconds": [
+        3.2486605010926723,
+        3.6636769040487707
+      ],
+      "ordinary_global_queries_per_second": [
+        24.62553411570472,
+        21.835986659083147
+      ],
+      "max_cuda_allocated_bytes": 76926205440,
+      "max_cuda_reserved_bytes": 83638616064,
+      "allocated_headroom_bytes_on_a100_80g": 8973140480,
+      "reserved_headroom_bytes_on_a100_80g": 2260729856,
+      "longest_video_profile_output": "/data/ymdai/outputs/ember/pi05_as_writer_v5_1_profile_long105_f32_b20_0f46cc3_20260727",
+      "longest_video_run_contract_sha256": "a0ca7b584b4122a245c51572e48d5a87aebaf811fb0ae8b88e503662f89c4d29",
+      "longest_video_metrics_file_sha256": "d2e61e3825905ded29dbbb46993caac0eef13f35857f09e0ff052491702789f6",
+      "steady_profile_output": "/data/ymdai/outputs/ember/pi05_as_writer_v5_1_profile_f32_b20_3step_0f46cc3_20260727",
+      "steady_run_contract_sha256": "e6c4dbd32c8a55c14a931e13fb2dc576c65998abfaf512d5e1e17a27ef78f32c",
+      "steady_metrics_file_sha256": "094c7800fdc9e1c1a90c3a45f2a3977d2bd17fb9d5c2d838479f3e0ced6f1062",
+      "steady_checkpoint_manifest_file_sha256": "126648280fe00da45e080dc2b77a9934d2bc1147b5aa08aec4108f9d37d38bd4"
+    },
+    "upper_bound": {
+      "per_rank_action_batch_size": 20,
+      "reason": "B20 leaves 8.36GiB allocated headroom; the measured unchanged functional-policy batch slope makes B21 exceed the retained stability margin"
+    },
+    "inference_profile": {
+      "physical_gpu_ids": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "rollout_workers_per_gpu": 6,
+      "writer_generators_per_gpu": 6,
+      "generation_assignment": "all rollout workers generate deterministic disjoint LoRA request shards before a shared cache barrier",
+      "generation_batch_cap_per_worker": 100,
+      "actual_entries_per_worker_in_profile": [
+        1,
+        2
+      ],
+      "unique_lora_entries": 47,
+      "max_worker_generation_wall_seconds": 5.2025001789443195,
+      "max_worker_generation_allocated_bytes": 11631111168,
+      "max_worker_generation_reserved_bytes": 12807307264,
+      "rollout_only_effective_rollouts_per_second": 0.3799001050925678,
+      "profile_output": "/data/ymdai/outputs/ember/pi05_as_writer_v5_1_evalprofile_gen6_b100_roll6_step2_bb63bfd_20260727",
+      "run_contract_sha256": "040b3c54b8cc7ff65989face9b1329164f44fd5fc5980b307a164d43b7ae9d02",
+      "results_file_sha256": "753bbd8ceb88adeac6cc463f7ea6396235302448cf39621f04a2c6ab33b1c0c3",
+      "queue_policy": "all pending max-horizon shards globally precede ordinary shards; GPU affinity only orders max-horizon shards"
+    }
   },
   "specificity_gate": {
     "status": "pending",
@@ -231,13 +286,21 @@
     "contrast_loss_allowed": false
   },
   "formal_run": {
-    "status": "pending_v5_1_profile",
+    "status": "sealed",
     "expected_world_size": 4,
-    "total_steps": null,
-    "per_rank_batch_size": null,
-    "checkpoint_steps": null,
-    "selected_stop_step": null,
-    "stage_stop_steps": [],
-    "segment_definition": "approximately_one_hour_from_measured_v5_1_throughput_no_automatic_second_or_third_segment"
+    "total_steps": 12000,
+    "per_rank_batch_size": 20,
+    "checkpoint_steps": "every:100",
+    "selected_stop_step": 900,
+    "stage_stop_steps": "every:100",
+    "segment_definition": "first_900_steps_approximately_one_hour_from_measured_v5_1_F32_B20_throughput_no_automatic_second_or_third_segment",
+    "first_segment_scale": {
+      "optimizer_steps": 900,
+      "global_action_queries": 72000,
+      "one_video_conditions": 3600,
+      "retained_checkpoints": 9,
+      "online_validation_action_queries_per_checkpoint": 512
+    },
+    "continuation_gate": "after_step900_stop_and_review_early_specificity_absolute_performance_and_train_validation_curves_before_selecting_any_later_stop"
   }
 }

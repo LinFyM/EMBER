@@ -1195,10 +1195,11 @@ GPU范围和训练步长是当时快照；活动状态只取
   `docs/action_forecast_writer_v5_1_proposal.md`。v5正式失败触发owner的直接
   推进授权；`AGENTS.md`、`docs/execution_brief.md`和
   `docs/active_session_handoff.md`已切换为v5.1唯一下一架构。
-- v5.1首段不预设900/1800 steps：实现与必要smoke后，先在GPU4–7用真实105帧
+- profile前不预设900/1800 steps：实现与必要smoke后，先在GPU4–7用真实105帧
   视频重新profile显存、action batch和step吞吐，再换算约一小时fresh formal
-  stop。首段后先查内部五条件与轻量paired行为；第二/第三段只有在特异性、
-  absolute和曲线共同支持时才单独启动，绝不自动续训。
+  stop。实测后来得到首段900；它不规定下一段到1800。首段后先查内部五条件与
+  轻量paired行为；第二/第三段只有在特异性、absolute和曲线共同支持时才单独
+  启动，绝不自动续训。
 
 ## v5.1 canonical实现与CPU合同验证（2026-07-27）
 
@@ -1220,5 +1221,29 @@ GPU范围和训练步长是当时快照；活动状态只取
   invariance、Procedure prefix causality、routing/value隔离、fresh identity、
   三阶段gradient opening、固定suffix与不兼容schema。全仓
   `PYTHONPATH=src .venv/bin/pytest -q`为`189 passed`；architecture guard无
-  hard violation，既有大owner仅保留review flag。下一步是GPU4–7真实policy
-  smoke与exact-resume，然后105帧联合profile；尚未启动训练。
+  hard violation，既有大owner仅保留review flag。
+
+## v5.1 GPU合同、训练/推理上限与首段seal（2026-07-27）
+
+- GPU4–7真实policy smoke完成step1并从完整checkpoint exact-resume到step2；
+  两个cursor、四rank state、Writer/optimizer/scheduler/sampler/video schedule
+  与RNG均通过原生checkpoint校验，source policy trainable参数为0。step1/2
+  分别约`4.49/2.67s`，没有nonfinite或OOM。
+- F32/B20重新在v5.1上实测，不是继承v5：105帧真实最长video步为`7.248s`、
+  `11.04` global queries/s；三步profile为`7.322/3.249/3.664s`，常规吞吐
+  `24.63/21.84` queries/s。峰值allocated/reserved为
+  `76,926,205,440/83,638,616,064` bytes；B20保留约`8.36GiB` allocated
+  headroom，按实测batch斜率不再冒险启动B21。
+- 推理profile在GPU4–7每卡一次性启动6个worker，24个worker共同按确定性分片
+  生成47个LoRA并保留source policy直接rollout。最大单worker generation wall
+  `5.203s`，峰值allocated/reserved约`11.63/12.81GB`；48 episodes的
+  rollout-only吞吐`0.3799/s`（`1367.6/h`），现场整卡约63–65GB且GPU利用率
+  `99–100%`。首次24-policy并发load耗时约`146–162s`，是主要固定成本。
+- evaluator queue已进一步修正为全局long-first：任何GPU的未领取max-horizon
+  shard都压过ordinary；GPU affinity只决定long内部先取本卡还是偷取他卡。
+  新回归覆盖“本卡long耗尽但他卡仍有long且preferred task为ordinary”的情况。
+- v5.1首段按新吞吐换算为step900约一小时：4-rank DDP、F32/B20、每step
+  80 action queries/4 one-video conditions、每100步checkpoint并做512-query
+  online validation。`total_steps=12000`只保留scheduler/最大探索包络；
+  `selected_stop_step=900`为唯一当前launch边界。第二/第三段的停止点未预定，
+  step900后必须先看早期特异性、absolute和train/validation曲线，不能自动resume。

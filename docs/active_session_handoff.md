@@ -702,16 +702,20 @@ Core slots + centered Procedure
 当前实现状态与执行顺序：
 
 1. session-local v5.1 Goal已建立；canonical source/config/schema原位替换完成；
-2. CPU shape/token/Core invariance/Procedure causality/gradient/identity/parameter
-   与全仓`189 passed`已完成；真实policy GPU smoke和一次exact-resume仍待完成；
-3. 新launch前只查询GPU4–7并检查个人存储cap；
-4. 用真实最长105帧联合profile frame/action batch、显存和step吞吐；
-5. 依据实测step时间把首个fresh formal segment定为约一小时，不预设900或1800；
-6. 首段结束后先做内部五条件与轻量paired rollout，重点检查final effective
+2. CPU合同与全仓`189 passed`、GPU4–7真实policy smoke及step1→2 exact-resume
+   均已完成；
+3. 真实105帧profile重新选择F32/B20：最长步`7.25s`、常规步`3.25–3.66s`，
+   峰值allocated/reserved `76.93/83.64GB`；
+4. 推理profile选择每卡6个worker共同分摊LoRA生成并原进程rollout；queue已保证
+   所有未领取long全局优先于ordinary；
+5. 根据v5.1实测吞吐把当前首段封存为step900约一小时，每100步checkpoint和
+   online validation。900不是继承值，也不规定下一段到1800；
+6. 当前下一动作是fresh启动该step900首段；完成后必须停止，不自动resume；
+7. 首段结束后先做内部五条件与轻量paired rollout，重点检查final effective
    LoRA和policy action是否恢复`same < shuffled/reversed`；
-7. 只有早期特异性实质改善，且absolute与训练/validation曲线共同值得继续，
+8. 只有早期特异性实质改善，且absolute与训练/validation曲线共同值得继续，
    才单独决定第二段；第三段同理，任何后续段都不得自动启动；
-8. full400和cold-start RL仍受原absolute/same/wrong/order硬门约束。
+9. full400和cold-start RL仍受原absolute/same/wrong/order硬门约束。
 
 新session第一组只读核验：
 
@@ -802,7 +806,8 @@ src/ember/writer/checkpoint.py
 11. 为什么v5.1用中心化Procedure生成zero-init AdaLN，而不是与Core直接concat？
 12. 当前为何是一video/一LoRA/大action batch，而不是N=4 Cartesian或共享四视频？
 13. absolute与五臂specificity两个gate分别如何判断，顺序是什么？
-14. 为什么v5.1首段不能预设900/1800 steps，第二/第三段分别何时才允许开始？
+14. 为什么首段900只能由v5.1实测吞吐得到而不能继承；又为什么它不意味着
+    第二段固定到1800，后续段分别何时才允许开始？
 15. GPU、storage、信息墙、停止边界和禁止恢复路径分别是什么？
 
 新session应先用自己的话核对以上核心理解并报告真实代码/训练状态；owner对

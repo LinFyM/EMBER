@@ -13,10 +13,12 @@
 focused AS/RL完成或本文不再承担跨session恢复作用时，更新或删除本文，不能让
 过期运行状态长期成为平行authority。
 
-## 1. Active Goal
+## 1. 当前focused objective参考，不是新session启动指令
 
-当前Goal已经存在、没有token budget；本次最终核验时状态为`paused`，训练tmux
-不受该会话状态影响。目标原文为：
+Goal是session-local状态，新session看不到也不应机械复制当前session的Goal。
+新session第一阶段只负责完整理解仓库、本文与实时训练现场；此时不要创建Goal、
+不要修改代码/config、不要启动训练或评测。当前session曾用的objective原文仅
+作为理解工作边界的参考：
 
 > 完成 EMBER v5 AS Writer 的高效单视频条件训练闭环：保持已对齐的 Core +
 > Causal-Procedure 表示架构，重新设计为少量 task/video LoRA 各自复用多条独立
@@ -28,9 +30,15 @@ focused AS/RL完成或本文不再承担跨session恢复作用时，更新或删
 > validation 峰后明显下降标准继续充分探索 AS Writer，之后再按 owner 授权
 > 边界推进 cold-start RL。
 
-新session先调用`get_goal`。若同一Goal为`active`或`paused`，都复用它，不要
-重建；`paused`的恢复由用户/系统控制，不能另建重复Goal规避。若跨thread后确实
-没有任何未完成Goal，才用以上原文创建且不设置token budget。
+正确接手顺序：
+
+1. 完整阅读第10节规定的仓库文档；
+2. 执行第8节的只读命令，核验训练是否仍运行、真实末步和Git状态；
+3. 向owner用自己的话复述研究目标、历史证据链、shuffle启示、v5每个模块、
+   当前训练合同、absolute/specificity双门与RL边界；
+4. 等owner确认理解和允许接手后，再根据那一刻的真实训练进度与具体下一动作
+   建立新的session-local Goal；不预先照抄本节objective，也不设置token budget，
+   除非owner另有明确要求。
 
 ## 2. EMBER 的研究北极星、任务和信息合同
 
@@ -854,7 +862,8 @@ src/ember/writer/checkpoint.py
 15. GPU、storage、信息墙、停止边界和禁止恢复路径分别是什么？
 
 新session应先在commentary中用自己的话简要复述以上核心理解并报告实时训练状态，
-再接手后续执行；不是向owner重新提问已经封存的设计。
+然后停在理解验收点；只有owner确认后才建立新Goal并接手后续执行。它不应把
+已经封存的设计重新当作待owner回答的问题。
 
 文档状态地图：
 

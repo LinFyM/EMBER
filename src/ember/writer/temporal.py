@@ -1,4 +1,4 @@
-"""Semantic Core compilation and causal Procedure refinement for PI05 Writer."""
+"""Language-axial Core, causal Procedure, and slot-normalized LoRA fusion."""
 
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ def _apply_rope(value: torch.Tensor, positions: torch.Tensor) -> torch.Tensor:
 
     width = value.shape[-1]
     if width % 2 or positions.shape != (value.shape[0], value.shape[2]):
-        raise VariableEpisodeInputError("invalid video ordinal RoPE request")
+        raise VariableEpisodeInputError("invalid ordinal RoPE request")
     inverse_frequency = torch.exp(
         torch.arange(0, width, 2, device=value.device, dtype=torch.float32)
         * (-math.log(10_000.0) / width)
@@ -52,19 +52,109 @@ def _apply_rope(value: torch.Tensor, positions: torch.Tensor) -> torch.Tensor:
     ).flatten(-2)
 
 
-class CausalProcedureBlock(torch.nn.Module):
-    """Pre-norm global causal attention over per-frame interaction content."""
+def _split_heads(value: torch.Tensor, heads: int) -> torch.Tensor:
+    batch, tokens, width = value.shape
+    if width % heads:
+        raise VariableEpisodeInputError("attention width is not divisible by heads")
+    return value.reshape(batch, tokens, heads, width // heads).transpose(1, 2)
 
-    def __init__(self, width: int, heads: int) -> None:
+
+def _merge_heads(value: torch.Tensor) -> torch.Tensor:
+    batch, heads, tokens, width = value.shape
+    return value.transpose(1, 2).reshape(batch, tokens, heads * width)
+
+
+class TokenAlignedFrameSetAttention(torch.nn.Module):
+    """Aggregate video evidence independently for every task-language token."""
+
+    def __init__(self, *, width: int, heads: int, initial_lambda: float) -> None:
         super().__init__()
         if (
             min(width, heads) <= 0
             or width % heads
-            or (width // heads) % 2
+            or not 0.0 < initial_lambda < 1.0
         ):
-            raise VariableEpisodeInputError("invalid causal Procedure dimensions")
+            raise VariableEpisodeInputError("invalid frame-set attention")
         self.heads = int(heads)
         self.head_width = width // heads
+        self.query_norm = RMSNorm(width)
+        self.evidence_norm = RMSNorm(width)
+        self.query = torch.nn.Linear(width, width, bias=False)
+        self.key = torch.nn.Linear(width, width, bias=False)
+        self.value = torch.nn.Linear(width, width, bias=False)
+        self.output = torch.nn.Linear(width, width, bias=False)
+        logit = math.log(initial_lambda / (1.0 - initial_lambda))
+        self.gate_logits = torch.nn.Parameter(torch.full((heads,), logit))
+
+    def forward(
+        self,
+        text_queries: torch.Tensor,
+        frame_evidence: torch.Tensor,
+        valid_frames: torch.Tensor,
+        valid_task_tokens: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        if (
+            text_queries.ndim != 3
+            or frame_evidence.ndim != 4
+            or frame_evidence.shape[0] != text_queries.shape[0]
+            or frame_evidence.shape[2:] != text_queries.shape[1:]
+            or valid_frames.shape != frame_evidence.shape[:2]
+            or valid_frames.dtype != torch.bool
+            or valid_task_tokens.shape != text_queries.shape[:2]
+            or valid_task_tokens.dtype != torch.bool
+            or not bool(valid_frames.any(dim=1).all())
+            or not bool(valid_task_tokens.any(dim=1).all())
+        ):
+            raise VariableEpisodeInputError("invalid token-aligned frame evidence")
+        batch, frames, tokens, width = frame_evidence.shape
+        query = _split_heads(
+            self.query(self.query_norm(text_queries)),
+            self.heads,
+        )
+        normalized = self.evidence_norm(frame_evidence)
+        key = self.key(normalized).reshape(
+            batch,
+            frames,
+            tokens,
+            self.heads,
+            self.head_width,
+        ).permute(0, 3, 1, 2, 4)
+        value = self.value(frame_evidence).reshape(
+            batch,
+            frames,
+            tokens,
+            self.heads,
+            self.head_width,
+        ).permute(0, 3, 1, 2, 4)
+        logits = torch.einsum("bhld,bhtld->bhtl", query, key)
+        logits = logits / math.sqrt(self.head_width)
+        frame_mask = valid_frames[:, None, :, None]
+        logits = logits.masked_fill(~frame_mask, torch.finfo(logits.dtype).min)
+        selected = torch.softmax(logits.to(torch.float32), dim=2).to(logits.dtype)
+        counts = valid_frames.sum(dim=1, keepdim=True).to(logits.dtype)
+        uniform = valid_frames.to(logits.dtype)[:, None, :, None]
+        uniform = uniform / counts[:, :, None, None]
+        gate = torch.sigmoid(self.gate_logits).to(logits.dtype)[None, :, None, None]
+        weights = (1.0 - gate) * uniform + gate * selected
+        attended = torch.einsum("bhtl,bhtld->bhld", weights, value)
+        output = self.output(_merge_heads(attended))
+        output = output.masked_fill(~valid_task_tokens[..., None], 0.0)
+        weights = weights.masked_fill(
+            ~valid_task_tokens[:, None, None, :],
+            0.0,
+        )
+        return output, weights
+
+
+class RoPEContentBlock(torch.nn.Module):
+    """Pre-norm content Transformer with ordinal RoPE only in Q/K."""
+
+    def __init__(self, *, width: int, heads: int, causal: bool) -> None:
+        super().__init__()
+        if min(width, heads) <= 0 or width % heads or (width // heads) % 2:
+            raise VariableEpisodeInputError("invalid content Transformer dimensions")
+        self.heads = int(heads)
+        self.causal = bool(causal)
         self.attention_norm = RMSNorm(width)
         self.query = torch.nn.Linear(width, width, bias=False)
         self.key = torch.nn.Linear(width, width, bias=False)
@@ -83,30 +173,34 @@ class CausalProcedureBlock(torch.nn.Module):
         positions: torch.Tensor,
         valid_mask: torch.Tensor,
     ) -> torch.Tensor:
-        batch, tokens, width = content.shape
+        if (
+            content.ndim != 3
+            or positions.shape != content.shape[:2]
+            or positions.dtype != torch.long
+            or valid_mask.shape != content.shape[:2]
+            or valid_mask.dtype != torch.bool
+        ):
+            raise VariableEpisodeInputError("invalid content Transformer batch")
         normalized = self.attention_norm(content)
-
-        def heads(value: torch.Tensor) -> torch.Tensor:
-            return value.reshape(
-                batch,
-                tokens,
-                self.heads,
-                self.head_width,
-            ).transpose(1, 2)
-
-        query = _apply_rope(heads(self.query(normalized)), positions)
-        key = _apply_rope(heads(self.key(normalized)), positions)
-        value = heads(self.value(content))
-        causal = torch.ones(
-            tokens,
-            tokens,
-            dtype=torch.bool,
-            device=content.device,
-        ).tril()
-        allowed = (
-            valid_mask[:, None, None, :]
-            & causal[None, None, :, :]
+        query = _apply_rope(
+            _split_heads(self.query(normalized), self.heads),
+            positions,
         )
+        key = _apply_rope(
+            _split_heads(self.key(normalized), self.heads),
+            positions,
+        )
+        value = _split_heads(self.value(content), self.heads)
+        allowed = valid_mask[:, None, None, :]
+        if self.causal:
+            tokens = content.shape[1]
+            causal = torch.ones(
+                tokens,
+                tokens,
+                dtype=torch.bool,
+                device=content.device,
+            ).tril()
+            allowed = allowed & causal[None, None, :, :]
         attended = F.scaled_dot_product_attention(
             query,
             key,
@@ -115,10 +209,56 @@ class CausalProcedureBlock(torch.nn.Module):
             dropout_p=0.0,
             is_causal=False,
         )
-        attended = attended.transpose(1, 2).reshape(batch, tokens, width)
-        content = content + self.output(attended)
+        content = content + self.output(_merge_heads(attended))
         content = content + self.ffn(self.ffn_norm(content))
         return content.masked_fill(~valid_mask[..., None], 0.0)
+
+
+class LanguageSemanticCore(torch.nn.Module):
+    """Aggregate along frames, then compose evidence along task-language tokens."""
+
+    def __init__(
+        self,
+        *,
+        width: int,
+        heads: int,
+        blocks: int,
+        frame_attention_initial_lambda: float,
+    ) -> None:
+        super().__init__()
+        if blocks <= 0:
+            raise VariableEpisodeInputError("Semantic Core needs language blocks")
+        self.frame_attention = TokenAlignedFrameSetAttention(
+            width=width,
+            heads=heads,
+            initial_lambda=frame_attention_initial_lambda,
+        )
+        self.blocks = torch.nn.ModuleList(
+            RoPEContentBlock(width=width, heads=heads, causal=False)
+            for _ in range(blocks)
+        )
+
+    def forward(
+        self,
+        text_queries: torch.Tensor,
+        frame_evidence: torch.Tensor,
+        valid_frames: torch.Tensor,
+        valid_task_tokens: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        content, weights = self.frame_attention(
+            text_queries,
+            frame_evidence,
+            valid_frames,
+            valid_task_tokens,
+        )
+        positions = torch.arange(
+            content.shape[1],
+            dtype=torch.long,
+            device=content.device,
+        )[None].expand(content.shape[0], -1)
+        for block in self.blocks:
+            content = block(content, positions, valid_task_tokens)
+        return content, weights
 
 
 class CausalProcedureEncoder(torch.nn.Module):
@@ -126,10 +266,11 @@ class CausalProcedureEncoder(torch.nn.Module):
 
     def __init__(self, *, width: int, heads: int, blocks: int) -> None:
         super().__init__()
-        if min(width, heads, blocks) <= 0:
+        if blocks <= 0:
             raise VariableEpisodeInputError("invalid causal Procedure encoder")
         self.blocks = torch.nn.ModuleList(
-            CausalProcedureBlock(width, heads) for _ in range(blocks)
+            RoPEContentBlock(width=width, heads=heads, causal=True)
+            for _ in range(blocks)
         )
 
     def forward(
@@ -138,133 +279,65 @@ class CausalProcedureEncoder(torch.nn.Module):
         positions: torch.Tensor,
         valid_mask: torch.Tensor,
     ) -> torch.Tensor:
-        if (
-            content.ndim != 3
-            or positions.shape != content.shape[:2]
-            or positions.dtype != torch.long
-            or valid_mask.shape != content.shape[:2]
-            or valid_mask.dtype != torch.bool
-            or not bool(valid_mask[:, 0].all())
-        ):
-            raise VariableEpisodeInputError("invalid causal Procedure batch")
+        if not bool(valid_mask[:, 0].all()):
+            raise VariableEpisodeInputError("Procedure must begin at frame zero")
         value = content.masked_fill(~valid_mask[..., None], 0.0)
         for block in self.blocks:
             value = block(value, positions, valid_mask)
         return value.masked_fill(~valid_mask[..., None], 0.0)
 
 
-class CoreCompilerBlock(torch.nn.Module):
-    """Compile unordered Semantic Core memory into routed LoRA-slot content."""
+class ContentCrossAttention(torch.nn.Module):
+    """Cross-attend while routing/position affect only Q/K, never content V."""
 
-    def __init__(self, width: int, heads: int) -> None:
+    def __init__(self, *, width: int, heads: int, rotary_keys: bool) -> None:
         super().__init__()
-        self.cross_norm = RMSNorm(width)
-        self.memory_norm = RMSNorm(width)
-        self.cross_attention = torch.nn.MultiheadAttention(
-            width,
-            heads,
-            dropout=0.0,
-            batch_first=True,
-            bias=False,
-        )
-        self.self_norm = RMSNorm(width)
-        self.self_attention = torch.nn.MultiheadAttention(
-            width,
-            heads,
-            dropout=0.0,
-            batch_first=True,
-            bias=False,
-        )
-        self.ffn_norm = RMSNorm(width)
-        self.ffn = torch.nn.Sequential(
-            torch.nn.Linear(width, 4 * width, bias=False),
-            torch.nn.GELU(),
-            torch.nn.Linear(4 * width, width, bias=False),
-        )
-
-    def forward(
-        self,
-        content: torch.Tensor,
-        routing: torch.Tensor,
-        memory: torch.Tensor,
-        valid_memory: torch.Tensor,
-    ) -> torch.Tensor:
-        attended, _ = self.cross_attention(
-            self.cross_norm(content) + routing,
-            self.memory_norm(memory),
-            memory,
-            key_padding_mask=~valid_memory,
-            need_weights=False,
-        )
-        content = content + attended
-        addressed = self.self_norm(content) + routing
-        attended, _ = self.self_attention(
-            addressed,
-            addressed,
-            content,
-            need_weights=False,
-        )
-        content = content + attended
-        return content + self.ffn(self.ffn_norm(content))
-
-
-class RotaryProcedureCrossAttention(torch.nn.Module):
-    """Read ordered Procedure memory while transmitting only raw content values."""
-
-    def __init__(self, width: int, heads: int) -> None:
-        super().__init__()
-        if (
-            min(width, heads) <= 0
-            or width % heads
-            or (width // heads) % 2
-        ):
-            raise VariableEpisodeInputError("invalid Procedure cross-attention")
+        if min(width, heads) <= 0 or width % heads:
+            raise VariableEpisodeInputError("invalid content cross-attention")
+        if rotary_keys and (width // heads) % 2:
+            raise VariableEpisodeInputError("rotary cross-attention head is odd")
         self.heads = int(heads)
-        self.head_width = width // heads
+        self.rotary_keys = bool(rotary_keys)
         self.query = torch.nn.Linear(width, width, bias=False)
         self.key = torch.nn.Linear(width, width, bias=False)
         self.value = torch.nn.Linear(width, width, bias=False)
         self.output = torch.nn.Linear(width, width, bias=False)
-        torch.nn.init.zeros_(self.output.weight)
 
     def forward(
         self,
-        query_content: torch.Tensor,
+        query_key: torch.Tensor,
         memory_key: torch.Tensor,
         memory_value: torch.Tensor,
-        positions: torch.Tensor,
         valid_memory: torch.Tensor,
+        memory_positions: torch.Tensor | None = None,
     ) -> torch.Tensor:
-        batch, queries, width = query_content.shape
-        memory_tokens = memory_key.shape[1]
-
-        def query_heads(value: torch.Tensor) -> torch.Tensor:
-            return value.reshape(
-                batch,
-                queries,
-                self.heads,
-                self.head_width,
-            ).transpose(1, 2)
-
-        def memory_heads(value: torch.Tensor) -> torch.Tensor:
-            return value.reshape(
-                batch,
-                memory_tokens,
-                self.heads,
-                self.head_width,
-            ).transpose(1, 2)
-
-        query = _apply_rope(
-            query_heads(self.query(query_content)),
-            torch.zeros(
-                batch,
-                queries,
-                dtype=torch.long,
-                device=query_content.device,
-            ),
-        )
-        key = _apply_rope(memory_heads(self.key(memory_key)), positions)
-        value = memory_heads(self.value(memory_value))
+        if (
+            query_key.ndim != 3
+            or memory_key.ndim != 3
+            or memory_value.shape != memory_key.shape
+            or query_key.shape[0] != memory_key.shape[0]
+            or query_key.shape[-1] != memory_key.shape[-1]
+            or valid_memory.shape != memory_key.shape[:2]
+            or valid_memory.dtype != torch.bool
+        ):
+            raise VariableEpisodeInputError("invalid content cross-attention batch")
+        query = _split_heads(self.query(query_key), self.heads)
+        key = _split_heads(self.key(memory_key), self.heads)
+        if self.rotary_keys:
+            if memory_positions is None or memory_positions.shape != memory_key.shape[:2]:
+                raise VariableEpisodeInputError("Procedure positions changed")
+            query = _apply_rope(
+                query,
+                torch.zeros(
+                    query_key.shape[:2],
+                    dtype=torch.long,
+                    device=query_key.device,
+                ),
+            )
+            key = _apply_rope(key, memory_positions)
+        elif memory_positions is not None:
+            raise VariableEpisodeInputError("Core reader received frame positions")
+        value = _split_heads(self.value(memory_value), self.heads)
         attended = F.scaled_dot_product_attention(
             query,
             key,
@@ -273,18 +346,76 @@ class RotaryProcedureCrossAttention(torch.nn.Module):
             dropout_p=0.0,
             is_causal=False,
         )
-        attended = attended.transpose(1, 2).reshape(batch, queries, width)
-        return self.output(attended)
+        return self.output(_merge_heads(attended))
 
 
-class ProcedureRefinerBlock(torch.nn.Module):
-    """Produce an independent zero-preserving Procedure delta to Core content."""
+class CoreSlotReader(torch.nn.Module):
+    """Read language-axis Core content into 320 routed LoRA slots."""
 
-    def __init__(self, width: int, heads: int) -> None:
+    def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
-        self.query_norm = RMSNorm(width)
         self.memory_norm = RMSNorm(width)
-        self.cross_attention = RotaryProcedureCrossAttention(width, heads)
+        self.attention = ContentCrossAttention(
+            width=width,
+            heads=heads,
+            rotary_keys=False,
+        )
+
+    def forward(
+        self,
+        routing: torch.Tensor,
+        core: torch.Tensor,
+        valid_core: torch.Tensor,
+    ) -> torch.Tensor:
+        return self.attention(
+            routing,
+            self.memory_norm(core),
+            core,
+            valid_core,
+        )
+
+
+class ProcedureSlotReader(torch.nn.Module):
+    """Read centered ordered Procedure content conditioned on Core slots."""
+
+    def __init__(self, *, width: int, heads: int) -> None:
+        super().__init__()
+        self.core_norm = RMSNorm(width)
+        self.memory_norm = RMSNorm(width)
+        self.attention = ContentCrossAttention(
+            width=width,
+            heads=heads,
+            rotary_keys=True,
+        )
+
+    def forward(
+        self,
+        routing: torch.Tensor,
+        core_slots: torch.Tensor,
+        procedure: torch.Tensor,
+        positions: torch.Tensor,
+        valid_procedure: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        normalized_core = self.core_norm(core_slots)
+        mask = valid_procedure[..., None]
+        count = mask.sum(dim=1, keepdim=True).clamp_min(1)
+        mean = (procedure * mask).sum(dim=1, keepdim=True) / count
+        centered = (procedure - mean).masked_fill(~mask, 0.0)
+        slots = self.attention(
+            routing + normalized_core,
+            self.memory_norm(procedure),
+            centered,
+            valid_procedure,
+            positions,
+        )
+        return slots, normalized_core, centered
+
+
+class PostFusionSlotBlock(torch.nn.Module):
+    """Coordinate already fused LoRA slots without reopening either memory path."""
+
+    def __init__(self, *, width: int, heads: int) -> None:
+        super().__init__()
         self.self_norm = RMSNorm(width)
         self.self_attention = torch.nn.MultiheadAttention(
             width,
@@ -299,35 +430,27 @@ class ProcedureRefinerBlock(torch.nn.Module):
             torch.nn.GELU(),
             torch.nn.Linear(4 * width, width, bias=False),
         )
+        self.output_norm = RMSNorm(width)
 
     def forward(
         self,
-        core_content: torch.Tensor,
+        content: torch.Tensor,
         routing: torch.Tensor,
-        memory: torch.Tensor,
-        positions: torch.Tensor,
-        valid_memory: torch.Tensor,
     ) -> torch.Tensor:
-        delta = self.cross_attention(
-            self.query_norm(core_content) + routing,
-            self.memory_norm(memory),
-            memory,
-            positions,
-            valid_memory,
-        )
-        addressed = self.self_norm(delta) + routing
+        addressed = self.self_norm(content) + routing
         attended, _ = self.self_attention(
             addressed,
             addressed,
-            delta,
+            content,
             need_weights=False,
         )
-        delta = delta + attended
-        return delta + self.ffn(self.ffn_norm(delta))
+        content = content + attended
+        content = content + self.ffn(self.ffn_norm(content))
+        return self.output_norm(content)
 
 
-class CoreProcedureLoRACompiler(torch.nn.Module):
-    """Compile Core first, then add a directed Procedure refinement."""
+class SlotNormalizedCoreProcedureCompiler(torch.nn.Module):
+    """Fuse Core and Procedure through centered readout and zero-init AdaLN."""
 
     EXPERT_LAYERS = 18
     RANK = 16
@@ -338,16 +461,11 @@ class CoreProcedureLoRACompiler(torch.nn.Module):
         *,
         width: int,
         heads: int,
-        core_blocks: int,
-        procedure_blocks: int,
         initialization_seed: int,
     ) -> None:
         super().__init__()
-        if (
-            min(width, heads, core_blocks, procedure_blocks) <= 0
-            or width % heads
-        ):
-            raise VariableEpisodeInputError("invalid Core/Procedure compiler")
+        if min(width, heads) <= 0 or width % heads:
+            raise VariableEpisodeInputError("invalid slot-normalized compiler")
         generator = torch.Generator(device="cpu").manual_seed(initialization_seed)
 
         def parameter(rows: int) -> torch.nn.Parameter:
@@ -360,14 +478,12 @@ class CoreProcedureLoRACompiler(torch.nn.Module):
         self.layer_identity = parameter(self.EXPERT_LAYERS)
         self.rank_identity = parameter(self.RANK)
         self.routing_norm = RMSNorm(width)
-        self.core_blocks = torch.nn.ModuleList(
-            CoreCompilerBlock(width, heads) for _ in range(core_blocks)
-        )
-        self.procedure_blocks = torch.nn.ModuleList(
-            ProcedureRefinerBlock(width, heads)
-            for _ in range(procedure_blocks)
-        )
-        self.output_norm = RMSNorm(width)
+        self.core_reader = CoreSlotReader(width=width, heads=heads)
+        self.procedure_reader = ProcedureSlotReader(width=width, heads=heads)
+        self.procedure_norm = RMSNorm(width)
+        self.modulation = torch.nn.Linear(width, 2 * width, bias=False)
+        torch.nn.init.zeros_(self.modulation.weight)
+        self.post_fusion = PostFusionSlotBlock(width=width, heads=heads)
 
     def _routing(self) -> torch.Tensor:
         expert = (
@@ -395,57 +511,88 @@ class CoreProcedureLoRACompiler(torch.nn.Module):
         )
         return torch.cat((expert, action_in, action_out), dim=0)
 
-    def forward(
-        self,
-        core_memory: torch.Tensor,
+    @staticmethod
+    def _validate_memories(
+        core: torch.Tensor,
         valid_core: torch.Tensor,
-        procedure_memory: torch.Tensor,
-        procedure_positions: torch.Tensor,
+        procedure: torch.Tensor,
+        positions: torch.Tensor,
         valid_procedure: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> None:
         if (
-            core_memory.ndim != 3
-            or valid_core.shape != core_memory.shape[:2]
+            core.ndim != 3
+            or valid_core.shape != core.shape[:2]
             or valid_core.dtype != torch.bool
-            or procedure_memory.ndim != 3
-            or procedure_positions.shape != procedure_memory.shape[:2]
-            or valid_procedure.shape != procedure_memory.shape[:2]
+            or procedure.ndim != 3
+            or positions.shape != procedure.shape[:2]
+            or valid_procedure.shape != procedure.shape[:2]
             or valid_procedure.dtype != torch.bool
-            or core_memory.shape[0] != procedure_memory.shape[0]
+            or core.shape[0] != procedure.shape[0]
             or not bool(valid_core.any(dim=1).all())
             or not bool(valid_procedure.any(dim=1).all())
         ):
             raise VariableEpisodeInputError("invalid Core/Procedure compiler memory")
+
+    def fused_slots(
+        self,
+        core: torch.Tensor,
+        valid_core: torch.Tensor,
+        procedure: torch.Tensor,
+        positions: torch.Tensor,
+        valid_procedure: torch.Tensor,
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+        self._validate_memories(
+            core,
+            valid_core,
+            procedure,
+            positions,
+            valid_procedure,
+        )
         routing = self.routing_norm(self._routing())[None].expand(
-            core_memory.shape[0],
+            core.shape[0],
             -1,
             -1,
         )
-        core_content = core_memory.new_zeros(
-            core_memory.shape[0],
-            self.QUERY_COUNT,
-            core_memory.shape[-1],
+        core_slots = self.core_reader(routing, core, valid_core)
+        procedure_slots, normalized_core, centered = self.procedure_reader(
+            routing,
+            core_slots,
+            procedure,
+            positions,
+            valid_procedure,
         )
-        for block in self.core_blocks:
-            core_content = block(
-                core_content,
-                routing,
-                core_memory,
-                valid_core,
-            )
-        delta = core_content.new_zeros(core_content.shape)
-        for block in self.procedure_blocks:
-            delta = delta + block(
-                core_content + delta,
-                routing,
-                procedure_memory,
-                procedure_positions,
-                valid_procedure,
-            )
-        content = self.output_norm(core_content + delta)
+        gamma, beta = self.modulation(
+            self.procedure_norm(procedure_slots)
+        ).chunk(2, dim=-1)
+        fused = (1.0 + gamma) * normalized_core + beta
+        output = self.post_fusion(fused, routing)
+        return output, {
+            "core_slots": core_slots,
+            "procedure_centered": centered,
+            "procedure_slots": procedure_slots,
+            "adaln_gamma": gamma,
+            "adaln_beta": beta,
+            "fused_slots": fused,
+        }
+
+    def forward(
+        self,
+        core: torch.Tensor,
+        valid_core: torch.Tensor,
+        procedure: torch.Tensor,
+        positions: torch.Tensor,
+        valid_procedure: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        content, _ = self.fused_slots(
+            core,
+            valid_core,
+            procedure,
+            positions,
+            valid_procedure,
+        )
         expert_stop = self.EXPERT_LAYERS * self.RANK
         expert = content[:, :expert_stop].reshape(
-            core_memory.shape[0],
+            core.shape[0],
             self.EXPERT_LAYERS,
             self.RANK,
             -1,

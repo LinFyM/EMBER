@@ -21,30 +21,37 @@ from ember.writer.model import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-CONFIG = REPO_ROOT / "configs/pi05_as_writer_core_causal_v5.json"
+CONFIG = REPO_ROOT / "configs/pi05_as_writer_language_axial_v5_1.json"
 
 
-def test_core_causal_config_seals_architecture_and_information_wall() -> None:
+def test_language_axial_config_seals_architecture_and_information_wall() -> None:
     config = load_writer_config(CONFIG)
     writer = config["writer"]
-    assert writer["architecture"] == "pi05_semantic_core_causal_procedure_v5"
+    assert (
+        writer["architecture"]
+        == "pi05_language_axial_core_causal_procedure_slot_fusion_v5_1"
+    )
     assert writer["teacher_state_input"] is False
     assert writer["teacher_prompt"] == "Task: {cleaned_task};\nAction: "
-    assert writer["core_tokens_per_frame"] == 64
-    assert writer["core_order_contract"].startswith("flatten_all_frame")
+    assert writer["text_branch_input"].startswith("bos_plus_exact")
+    assert writer["multimodal_core_value"].endswith(
+        "no_image_position_values"
+    )
     assert writer["frame_batching_contract"].startswith("encode_one_video")
+    assert writer["text_meta_lora_rank"] == 4
     assert writer["vl_meta_lora_rank"] == 4
-    assert writer["action_meta_lora_rank"] == 8
+    assert writer["action_meta_lora_rank"] == 4
     assert writer["action_horizon"] == 50
     assert writer["query_count"] == 320
     assert writer["frame_stride"] == 5
     assert writer["max_frames_per_encoder_call"] == 32
+    assert writer["frame_attention_initial_lambda"] == 0.05
+    assert writer["semantic_core_blocks"] == 2
     assert writer["procedure_attention"] == "global_causal_pre_norm_with_valid_mask"
     assert writer["procedure_blocks"] == 2
-    assert writer["core_compiler_blocks"] == 1
-    assert writer["procedure_refiner_blocks"] == 1
-    assert writer["procedure_refiner"].startswith("independent_content_only_delta")
-    assert writer["factor_hidden_width"] == 420
+    assert writer["slot_fusion"].startswith("zero_initialized")
+    assert writer["post_fusion_blocks"] == 1
+    assert writer["factor_hidden_width"] == 240
     assert writer_split_roles(config) == ("train",)
     conditioning = config["conditioning_training"]
     assert conditioning["teacher_videos_per_task_visit"] == 1
@@ -60,15 +67,20 @@ def test_core_causal_config_seals_architecture_and_information_wall() -> None:
     assert config["information_wall"]["test_video_values_read"] == 0
     assert "state" in config["information_wall"]["writer_forbidden_inputs"]
     assert config["profile_defaults"]["expected_world_size"] == 4
-    assert config["profile_evidence"]["status"] == "sealed"
+    assert config["profile_evidence"]["status"] == "pending"
     assert config["profile_evidence"]["allowed_physical_gpu_ids"] == [4, 5, 6, 7]
-    assert config["profile_evidence"]["max_frames_per_encoder_call"] == 32
+    assert config["profile_evidence"]["initial_candidate_from_v5_only"] == {
+        "max_frames_per_encoder_call": 32,
+        "per_rank_action_batch_size": 20,
+    }
     assert config["profile_evidence"]["teacher_videos_per_task_visit"] == 1
     assert config["specificity_gate"]["status"] == "pending"
-    assert config["formal_run"]["total_steps"] == 12000
-    assert config["formal_run"]["per_rank_batch_size"] == 20
-    assert config["formal_run"]["checkpoint_steps"] == "every:100"
-    assert config["formal_run"]["selected_stop_step"] == 900
+    assert config["formal_run"]["status"] == "pending_v5_1_profile"
+    assert config["formal_run"]["total_steps"] is None
+    assert config["formal_run"]["stage_stop_steps"] == []
+    assert "no_automatic_second_or_third_segment" in config["formal_run"][
+        "segment_definition"
+    ]
 
 
 def test_checkpoint_schedule_and_cursor_are_fail_closed() -> None:

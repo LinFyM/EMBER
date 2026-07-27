@@ -5,7 +5,8 @@ import torch
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
 from ember.writer.temporal import (
     CausalProcedureEncoder,
-    CoreProcedureLoRACompiler,
+    LanguageSemanticCore,
+    SlotNormalizedCoreProcedureCompiler,
 )
 
 
@@ -84,7 +85,7 @@ def _template() -> dict[str, torch.Tensor]:
     return state
 
 
-class _FakeFrameSemantics(torch.nn.Module):
+class _FakeSemanticEncoder(torch.nn.Module):
     def forward(
         self,
         _policy: torch.nn.Module,
@@ -92,13 +93,18 @@ class _FakeFrameSemantics(torch.nn.Module):
         frame_condition_ids: torch.Tensor,
         language_tokens: torch.Tensor,
         _language_mask: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        image = frames.to(torch.float32).mean(dim=(1, 2, 3))
+        task_span_mask: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        counts = task_span_mask.sum(dim=1)
+        maximum = int(counts.max())
+        valid = torch.arange(maximum)[None] < counts[:, None]
         language = language_tokens.to(torch.float32).mean(dim=1)
-        value = image + language.index_select(0, frame_condition_ids)
-        core = value[:, None, None].expand(-1, 64, 256)
-        interaction = value[:, None].expand(-1, 256)
-        return core, interaction
+        text = language[:, None, None].expand(-1, maximum, 256).clone()
+        image = frames.to(torch.float32).mean(dim=(1, 2, 3))
+        frame_value = image + language.index_select(0, frame_condition_ids)
+        evidence = frame_value[:, None, None].expand(-1, maximum, 256).clone()
+        interaction = frame_value[:, None].expand(-1, 256).clone()
+        return text, evidence, interaction, valid
 
 
 def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
@@ -113,17 +119,19 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         image_width=2048,
         expert_width=1024,
         program_width=256,
-        spatial_pool_grid=8,
+        text_meta_lora_rank=4,
         vl_meta_lora_rank=4,
-        action_meta_lora_rank=8,
+        action_meta_lora_rank=4,
         max_frames_per_encoder_call=4,
         action_horizon=50,
         padded_action_dim=32,
+        semantic_core_heads=8,
+        semantic_core_blocks=2,
+        frame_attention_initial_lambda=0.05,
         procedure_heads=8,
         procedure_blocks=2,
-        core_compiler_blocks=1,
-        procedure_refiner_blocks=1,
-        factor_hidden_width=420,
+        fusion_heads=8,
+        factor_hidden_width=240,
         initialization_seed=7,
         activation_checkpointing=True,
     )
@@ -139,22 +147,53 @@ def _inputs() -> tuple[torch.Tensor, ...]:
     )
     frame_indices = torch.tensor([0, 5, 0, 5, 10], dtype=torch.long)
     offsets = torch.tensor([0, 2, 5], dtype=torch.long)
-    tokens = torch.tensor([[1, 2, 0], [4, 5, 6]], dtype=torch.long)
+    tokens = torch.tensor(
+        [[1, 10, 11, 12, 13, 0], [1, 20, 21, 22, 23, 24]],
+        dtype=torch.long,
+    )
     masks = tokens.ne(0)
-    return frames, frame_indices, offsets, tokens, masks
+    task_spans = torch.tensor(
+        [
+            [False, False, True, True, False, False],
+            [False, True, True, True, True, False],
+        ]
+    )
+    return frames, frame_indices, offsets, tokens, masks, task_spans
 
 
-def test_v5_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
+def test_v5_1_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
     model, _ = _model()
-    assert sum(parameter.numel() for parameter in model.parameters()) == 10_301_440
-    assert model.frame_semantics.fixed_suffix_noise.shape == (50, 32)
-    assert "frame_semantics.fixed_suffix_noise" in model.state_dict()
-    assert not model.frame_semantics.fixed_suffix_noise.requires_grad
+    assert sum(parameter.numel() for parameter in model.parameters()) == 10_244_872
+    expected = {
+        "text_meta_lora": (model.semantic_encoder.text_meta_lora, 921_600),
+        "vl_meta_lora": (model.semantic_encoder.vl_meta_lora, 921_600),
+        "action_meta_lora": (model.semantic_encoder.action_meta_lora, 626_688),
+        "language_projection": (
+            model.semantic_encoder.language_projection,
+            524_288,
+        ),
+        "frame_attention": (model.semantic_core.frame_attention, 262_664),
+        "semantic_core_blocks": (model.semantic_core.blocks, 1_573_888),
+        "interaction_projection": (
+            model.semantic_encoder.interaction_projection,
+            262_144,
+        ),
+        "procedure": (model.procedure, 1_573_888),
+        "compiler": (model.compiler, 1_535_232),
+        "factor_heads": (model.factor_heads, 2_042_880),
+    }
+    assert {
+        name: sum(parameter.numel() for parameter in module.parameters())
+        for name, (module, _) in expected.items()
+    } == {name: count for name, (_, count) in expected.items()}
+    assert model.semantic_encoder.fixed_suffix_noise.shape == (50, 32)
+    assert "semantic_encoder.fixed_suffix_noise" in model.state_dict()
+    assert not model.semantic_encoder.fixed_suffix_noise.requires_grad
 
 
-def test_v5_writer_starts_at_exact_identity_template() -> None:
+def test_v5_1_writer_starts_at_exact_identity_template() -> None:
     model, template = _model()
-    model.frame_semantics = _FakeFrameSemantics()
+    model.semantic_encoder = _FakeSemanticEncoder()
     output = model(*_inputs(), policy=torch.nn.Identity())
     assert set(output) == set(template)
     for name, value in output.items():
@@ -163,9 +202,9 @@ def test_v5_writer_starts_at_exact_identity_template() -> None:
         assert torch.equal(value[1], template[name])
 
 
-def test_v5_writer_becomes_video_conditioned_after_heads_open() -> None:
+def test_v5_1_writer_becomes_video_conditioned_after_heads_open() -> None:
     model, _ = _model()
-    model.frame_semantics = _FakeFrameSemantics()
+    model.semantic_encoder = _FakeSemanticEncoder()
     for head in model.factor_heads.values():
         torch.nn.init.normal_(head.network[-1].weight, std=0.01)
     output = model(*_inputs(), policy=torch.nn.Identity())
@@ -173,37 +212,69 @@ def test_v5_writer_becomes_video_conditioned_after_heads_open() -> None:
     assert not hasattr(model, "shared_lora")
 
 
-def test_semantic_core_compiler_is_permutation_invariant() -> None:
+def test_v5_1_gradient_staging_opens_only_intended_paths() -> None:
+    model, _ = _model()
+    model.semantic_encoder = _FakeSemanticEncoder()
+
+    first = model(*_inputs(), policy=torch.nn.Identity())
+    sum(value.to(torch.float32).sum() for value in first.values()).backward()
+    assert all(
+        head.network[-1].weight.grad is not None
+        and bool(torch.count_nonzero(head.network[-1].weight.grad))
+        for head in model.factor_heads.values()
+    )
+    assert all(
+        parameter.grad is None or not bool(torch.count_nonzero(parameter.grad))
+        for parameter in model.semantic_core.parameters()
+    )
+
+    model.zero_grad(set_to_none=True)
+    for head in model.factor_heads.values():
+        torch.nn.init.normal_(head.network[-1].weight, std=0.01)
+    second = model(*_inputs(), policy=torch.nn.Identity())
+    sum(value.to(torch.float32).sum() for value in second.values()).backward()
+    assert model.compiler.modulation.weight.grad is not None
+    assert bool(torch.count_nonzero(model.compiler.modulation.weight.grad))
+    assert any(
+        parameter.grad is not None and bool(torch.count_nonzero(parameter.grad))
+        for parameter in model.semantic_core.parameters()
+    )
+    assert all(
+        parameter.grad is None or not bool(torch.count_nonzero(parameter.grad))
+        for parameter in model.procedure.parameters()
+    )
+
+    model.zero_grad(set_to_none=True)
+    torch.nn.init.normal_(model.compiler.modulation.weight, std=0.01)
+    third = model(*_inputs(), policy=torch.nn.Identity())
+    sum(value.to(torch.float32).sum() for value in third.values()).backward()
+    assert any(
+        parameter.grad is not None and bool(torch.count_nonzero(parameter.grad))
+        for parameter in model.procedure.parameters()
+    )
+
+
+def test_language_core_is_frame_permutation_invariant() -> None:
     torch.manual_seed(17)
-    compiler = CoreProcedureLoRACompiler(
+    core = LanguageSemanticCore(
         width=32,
         heads=4,
-        core_blocks=1,
-        procedure_blocks=1,
-        initialization_seed=7,
+        blocks=2,
+        frame_attention_initial_lambda=0.05,
     )
-    core = torch.randn(2, 11, 32)
-    valid_core = torch.ones(2, 11, dtype=torch.bool)
-    procedure = torch.randn(2, 5, 32)
-    positions = torch.arange(5)[None].expand(2, -1)
-    valid_procedure = torch.ones(2, 5, dtype=torch.bool)
-    baseline = compiler(
-        core,
-        valid_core,
-        procedure,
-        positions,
-        valid_procedure,
+    text = torch.randn(2, 7, 32)
+    evidence = torch.randn(2, 5, 7, 32)
+    valid_frames = torch.ones(2, 5, dtype=torch.bool)
+    valid_tokens = torch.ones(2, 7, dtype=torch.bool)
+    baseline, _ = core(text, evidence, valid_frames, valid_tokens)
+    permutation = torch.tensor([3, 0, 4, 1, 2])
+    shuffled, _ = core(
+        text,
+        evidence[:, permutation],
+        valid_frames[:, permutation],
+        valid_tokens,
     )
-    permutation = torch.tensor([7, 2, 10, 0, 5, 1, 9, 4, 8, 3, 6])
-    shuffled = compiler(
-        core[:, permutation],
-        valid_core[:, permutation],
-        procedure,
-        positions,
-        valid_procedure,
-    )
-    for left, right in zip(baseline, shuffled, strict=True):
-        assert torch.allclose(left, right, atol=1e-5, rtol=1e-5)
+    assert torch.allclose(baseline, shuffled, atol=1e-5, rtol=1e-5)
 
 
 def test_causal_procedure_preserves_prefix_and_uses_order() -> None:
@@ -222,11 +293,9 @@ def test_causal_procedure_preserves_prefix_and_uses_order() -> None:
 
 
 def test_routing_and_positions_cannot_create_lora_content_from_zero_values() -> None:
-    compiler = CoreProcedureLoRACompiler(
+    compiler = SlotNormalizedCoreProcedureCompiler(
         width=32,
         heads=4,
-        core_blocks=1,
-        procedure_blocks=1,
         initialization_seed=7,
     )
     core = torch.zeros(2, 7, 32)
@@ -244,13 +313,11 @@ def test_routing_and_positions_cannot_create_lora_content_from_zero_values() -> 
     assert all(torch.count_nonzero(value) == 0 for value in output)
 
 
-def test_procedure_refinement_is_zero_at_init_then_order_sensitive_when_opened() -> None:
+def test_procedure_modulation_is_zero_at_init_then_order_sensitive_when_opened() -> None:
     torch.manual_seed(29)
-    compiler = CoreProcedureLoRACompiler(
+    compiler = SlotNormalizedCoreProcedureCompiler(
         width=32,
         heads=4,
-        core_blocks=1,
-        procedure_blocks=1,
         initialization_seed=7,
     )
     core = torch.randn(1, 9, 32)
@@ -275,8 +342,7 @@ def test_procedure_refinement_is_zero_at_init_then_order_sensitive_when_opened()
     for left, right in zip(baseline, reversed_at_init, strict=True):
         assert torch.equal(left, right)
 
-    output = compiler.procedure_blocks[0].cross_attention.output
-    torch.nn.init.eye_(output.weight)
+    torch.nn.init.normal_(compiler.modulation.weight, std=0.01)
     normal = compiler(
         core,
         valid_core,

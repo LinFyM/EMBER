@@ -30,8 +30,8 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_core_causal_as_writer_v5"
-AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_core_causal_as_writer_launch_v5"
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_language_axial_as_writer_v5_1"
+AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_language_axial_as_writer_launch_v5_1"
 AS_WRITER_STAGES = ("development", "final")
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
@@ -91,9 +91,11 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         writer.get("frame_stride") != 5
         or int(writer.get("max_frames_per_encoder_call", 0)) <= 0
     ):
-        raise WriterModelError("sealed Core-Causal Writer dimensions changed")
+        raise WriterModelError("sealed Language-Axial Writer dimensions changed")
     expected_writer = {
-        "architecture": "pi05_semantic_core_causal_procedure_v5",
+        "architecture": (
+            "pi05_language_axial_core_causal_procedure_slot_fusion_v5_1"
+        ),
         "generated_adapter": "complete_pi05_task_specific_rank16_lora",
         "camera_dataset": "obs/agentview_rgb",
         "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -101,21 +103,26 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         "include_final_frame": True,
         "teacher_prompt": "Task: {cleaned_task};\nAction: ",
         "teacher_state_input": False,
+        "task_span_extraction": (
+            "authoritative_full_prompt_sentencepiece_piece_offsets"
+        ),
+        "text_branch_input": (
+            "bos_plus_exact_authoritative_task_span_ids_without_template"
+        ),
+        "task_token_alignment": "text_and_multimodal_ids_identical_by_construction",
         "image_width": 2048,
         "native_image_tokens": 256,
-        "native_image_grid": 16,
-        "spatial_pool": "parameter_free_2x2_average_to_8x8",
-        "spatial_pool_grid": 8,
-        "core_tokens_per_frame": 64,
-        "core_projection": "shared_bias_free_2048_to_256",
-        "core_order_contract": (
-            "flatten_all_frame_spatial_tokens_without_frame_ordinal_or_position_value"
+        "multimodal_core_value": (
+            "final_norm_task_span_hidden_only_no_image_position_values"
         ),
+        "shared_language_projection": "bias_free_2048_to_256",
         "expert_width": 1024,
+        "text_meta_lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
+        "text_meta_lora_rank": 4,
         "vl_meta_lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
         "vl_meta_lora_rank": 4,
         "action_meta_lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
-        "action_meta_lora_rank": 8,
+        "action_meta_lora_rank": 4,
         "max_frames_per_encoder_call": writer["max_frames_per_encoder_call"],
         "frame_batching_contract": (
             "encode_one_video_with_unpadded_memory_safety_chunks"
@@ -131,6 +138,19 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
             "mean_50_final_suffix_hidden_then_shared_bias_free_1024_to_256"
         ),
         "program_width": 256,
+        "frame_set_attention": (
+            "token_aligned_frame_axis_only_video_independent_text_queries"
+        ),
+        "frame_attention_initial_lambda": 0.05,
+        "frame_attention_order_contract": (
+            "permutation_invariant_mean_anchored_no_frame_position"
+        ),
+        "semantic_core_heads": 8,
+        "semantic_core_blocks": 2,
+        "semantic_core_position_encoding": (
+            "task_token_ordinal_rope_qk_only_bidirectional"
+        ),
+        "semantic_core_value_path": "multimodal_task_token_content_only",
         "procedure_heads": 8,
         "procedure_blocks": 2,
         "procedure_attention": "global_causal_pre_norm_with_valid_mask",
@@ -141,15 +161,19 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         "procedure_initialization": "normal_nonzero",
         "query_count": 320,
         "routing_identity": "query_module_layer_rank_qk_only",
-        "core_compiler_blocks": 1,
-        "procedure_refiner_blocks": 1,
-        "core_compiler": "content_only_cross_then_self_then_ffn",
-        "procedure_refiner": (
-            "independent_content_only_delta_with_zero_initialized_cross_output"
+        "core_slot_reader": "routing_qk_core_content_v",
+        "procedure_slot_reader": (
+            "routing_plus_normalized_core_q_centered_procedure_v"
         ),
-        "compiler_order": "all_core_blocks_then_all_procedure_blocks",
+        "slot_fusion": (
+            "zero_initialized_bias_free_adaln_then_one_post_fusion_block"
+        ),
+        "fusion_heads": 8,
+        "procedure_value_centering": "parameter_free_valid_time_mean",
+        "modulation_projection": "bias_free_256_to_512_zero_initialized",
+        "post_fusion_blocks": 1,
         "factor_head_bias": False,
-        "factor_hidden_width": 420,
+        "factor_hidden_width": 240,
         "initialization_seed": 7,
     }
     if writer != expected_writer:
@@ -161,7 +185,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
             if writer[key] != expected_writer[key]
         )
         raise WriterModelError(
-            "Core-Causal AS-Writer architecture changed; "
+            "Language-Axial AS-Writer architecture changed; "
             f"missing={missing}, extra={extra}, changed={changed}"
         )
 
@@ -305,7 +329,7 @@ def resolve_runtime(
 ) -> tuple[int, int, tuple[int, ...]]:
     if args.mode == "formal" and config["formal_run"].get("status") != "sealed":
         raise WriterModelError(
-            "formal AS-Writer config is not sealed after the specificity gate"
+            "formal AS-Writer config is not sealed from the live v5.1 profile"
         )
     source = config["formal_run"] if args.mode == "formal" else config["profile_defaults"]
     total_steps = args.total_steps or int(source["total_steps"])
@@ -521,11 +545,16 @@ def writer_trainable_contract(
     writer: CompleteLoRAWriter, policy: torch.nn.Module, lora: Any
 ) -> dict[str, Any]:
     names = sorted(name for name, value in writer.named_parameters() if value.requires_grad)
-    if not names or any(parameter.requires_grad for parameter in policy.parameters()):
+    parameter_count = sum(value.numel() for value in writer.parameters())
+    if (
+        not names
+        or parameter_count != 10_244_872
+        or any(parameter.requires_grad for parameter in policy.parameters())
+    ):
         raise WriterModelError("AS-Writer freeze boundary changed")
     return {
         "object": "shared_action_supervised_writer_only",
-        "parameter_count": sum(value.numel() for value in writer.parameters()),
+        "parameter_count": parameter_count,
         "parameter_name_count": len(names),
         "parameter_names_sha256": canonical_hash(names),
         "generated_lora_parameter_count": lora.parameter_count,

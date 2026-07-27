@@ -70,7 +70,7 @@ from ember.writer.data import (
 )
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.model import (
-    CORE_CAUSAL_WRITER_CONSTRUCTOR_KEYS,
+    LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS,
     CompleteLoRAWriter,
     WriterModelError,
     build_lora_tensor_specs,
@@ -152,7 +152,7 @@ def _build_writer(
     writer_config = {
         key: value
         for key, value in config["writer"].items()
-        if key in CORE_CAUSAL_WRITER_CONSTRUCTOR_KEYS
+        if key in LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
     }
     bridge = policy.model.paligemma_with_expert
     writer = CompleteLoRAWriter(
@@ -332,7 +332,7 @@ def _build_condition_inputs(
 ) -> tuple[
     RawTeacherVideoStore,
     Pi05LiberoProcessor,
-    dict[int, tuple[torch.Tensor, torch.Tensor]],
+    dict[int, tuple[torch.Tensor, torch.Tensor, torch.Tensor]],
 ]:
     store = RawTeacherVideoStore(
         tasks,
@@ -718,7 +718,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_as_writer_core_causal_v5.json",
+        default=REPO_ROOT / "configs/pi05_as_writer_language_axial_v5_1.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--source-run", type=Path, required=True)

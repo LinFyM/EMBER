@@ -699,11 +699,11 @@ Core slots + centered Procedure
 原位替换canonical Writer并使用fresh不兼容schema；不保留v5 runtime兼容分支，
 不加contrast/order/margin loss。
 
-执行顺序：
+当前实现状态与执行顺序：
 
-1. 建立session-local v5.1 Goal；
-2. 实现canonical replacement并完成最短shape/gradient/identity/freeze/
-   parameter/schema与一次exact-resume smoke；
+1. session-local v5.1 Goal已建立；canonical source/config/schema原位替换完成；
+2. CPU shape/token/Core invariance/Procedure causality/gradient/identity/parameter
+   与全仓`189 passed`已完成；真实policy GPU smoke和一次exact-resume仍待完成；
 3. 新launch前只查询GPU4–7并检查个人存储cap；
 4. 用真实最长105帧联合profile frame/action batch、显存和step吞吐；
 5. 依据实测step时间把首个fresh formal segment定为约一小时，不预设900或1800；
@@ -768,14 +768,14 @@ scripts/evaluate_pi05.py
 scripts/train_rl_writer.py
     唯一RL-Writer训练入口；只有AS双门通过后使用
 
-configs/pi05_as_writer_core_causal_v5.json
-    历史v5合同；v5.1实现时应由单一新canonical config原位取代
+configs/pi05_as_writer_language_axial_v5_1.json
+    唯一活动v5.1合同；旧v5 config已从活动树删除
 
 src/ember/writer/video_program.py
-    frame encoder、Core、Action Expert probe与Procedure owner
+    task-span双路编码、三套Meta-LoRA与Action Expert probe owner
 
 src/ember/writer/temporal.py
-    routing-only identities、Core compiler、Procedure refiner与factor heads
+    frame-set attention、language Core、causal Procedure与slot fusion owner
 
 src/ember/writer/as_step.py
     单视频/单LoRA/完整action-batch functional step owner

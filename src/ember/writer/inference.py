@@ -40,15 +40,15 @@ from ember.writer.data import (
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.lora_rollout import WriterLoRARolloutAdapter
 from ember.writer.model import (
-    CORE_CAUSAL_WRITER_CONSTRUCTOR_KEYS,
+    LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS,
     CompleteLoRAWriter,
     WriterModelError,
     build_lora_tensor_specs,
 )
 
 
-WRITER_ADAPTER_SCHEMA = "ember_pi05_core_causal_writer_eval_adapter_v5"
-RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_core_causal_rl_writer_eval_adapter_v5"
+WRITER_ADAPTER_SCHEMA = "ember_pi05_language_axial_writer_eval_adapter_v5_1"
+RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_language_axial_rl_writer_eval_adapter_v5_1"
 WRITER_ADAPTER_SCHEMAS = {WRITER_ADAPTER_SCHEMA, RL_WRITER_ADAPTER_SCHEMA}
 WRITER_VIDEO_CONDITIONS = {
     "correct",
@@ -64,9 +64,9 @@ WRITER_VIDEO_SCHEDULE = (
     "sha256 first 63 bits of canonical JSON "
     "[ember_pi05_writer_video_v1,seed,suite,task_id,init_state_id] modulo 50"
 )
-WRITER_EPISODE_EVIDENCE_V5 = "ember_pi05_writer_episode_evidence_v5"
+WRITER_EPISODE_EVIDENCE_V5_1 = "ember_pi05_writer_episode_evidence_v5_1"
 WRITER_GENERATION_SEED_SCHEDULE = (
-    "sha256 first 63 bits of canonical JSON: ember_pi05_writer_generation_v5/"
+    "sha256 first 63 bits of canonical JSON: ember_pi05_writer_generation_v5_1/"
     "frame_order/seed/suite/task_id/demo_index"
 )
 
@@ -142,7 +142,7 @@ def writer_generation_seed(
     ):
         raise WriterModelError("invalid AS-Writer generation seed key")
     encoded = json.dumps(
-        ["ember_pi05_writer_generation_v5", stream, root_seed, suite, task_id, demo_index],
+        ["ember_pi05_writer_generation_v5_1", stream, root_seed, suite, task_id, demo_index],
         separators=(",", ":"),
     ).encode("utf-8")
     return int.from_bytes(hashlib.sha256(encoded).digest()[:8], "big") & ((1 << 63) - 1)
@@ -238,7 +238,7 @@ def expected_writer_episode_evidence(
     task_id: int,
     init_state_id: int,
     lora_sha256: str,
-    evidence_schema: str = WRITER_EPISODE_EVIDENCE_V5,
+    evidence_schema: str = WRITER_EPISODE_EVIDENCE_V5_1,
 ) -> dict[str, Any]:
     """Build the exact dynamic row fields implied by a sealed adapter contract."""
 
@@ -269,7 +269,7 @@ def expected_writer_episode_evidence(
         demo_count=count,
     )
     selection_seed = writer_video_selection_seed(seed, suite, task_id, init_state_id)
-    if evidence_schema != WRITER_EPISODE_EVIDENCE_V5:
+    if evidence_schema != WRITER_EPISODE_EVIDENCE_V5_1:
         raise WriterModelError("unsupported PI05 Writer episode evidence")
     result = {
         "schema_version": evidence_schema,
@@ -659,7 +659,7 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
         writer_values = {
             key: value
             for key, value in config["writer"].items()
-            if key in CORE_CAUSAL_WRITER_CONSTRUCTOR_KEYS
+            if key in LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
         }
         bridge = policy.model.paligemma_with_expert
         writer = CompleteLoRAWriter(
@@ -779,7 +779,7 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
         rows, frame_batches, index_batches, languages = zip(
             *inputs, strict=True
         )
-        language_tokens, language_mask = self.tokenizer(list(languages))
+        language_tokens, language_mask, task_span_mask = self.tokenizer(list(languages))
         frames = torch.cat(frame_batches, dim=0)
         frame_indices = torch.cat(index_batches, dim=0)
         offsets = [0]
@@ -803,8 +803,7 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
                 frames,
                 frame_indices,
                 video_offsets,
-                language_tokens,
-                language_mask,
+                language_tokens, language_mask, task_span_mask,
                 policy=self.policy,
             )
         elapsed = time.monotonic() - started

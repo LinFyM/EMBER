@@ -1199,3 +1199,26 @@ GPU范围和训练步长是当时快照；活动状态只取
   视频重新profile显存、action batch和step吞吐，再换算约一小时fresh formal
   stop。首段后先查内部五条件与轻量paired行为；第二/第三段只有在特异性、
   absolute和曲线共同支持时才单独启动，绝不自动续训。
+
+## v5.1 canonical实现与CPU合同验证（2026-07-27）
+
+- 已在既有`CompleteLoRAWriter`、AS training/evaluation/checkpoint入口内原位
+  替换v5，没有新增runner或并行Writer。活动配置改为
+  `configs/pi05_as_writer_language_axial_v5_1.json`；v5 config、constructor
+  key和checkpoint/eval/generation schema均已从活动代码删除，v5结果只由Git
+  与文档保存。
+- tokenizer从完整权威prompt的SentencePiece immutable piece offsets提取task
+  span；Text路只输入`BOS + 同一组task-span IDs`，不重新分词也不含模板。
+  `video_program`现有Text/VL/Action三套独立rank4 Meta-LoRA，共享
+  `2048→256`语言投影；Core value只来自multimodal task-token hidden，raw
+  image-position hidden不再进入下游。
+- `temporal`现实现token-aligned、跨frame无序的mean-anchored attention，
+  两层language-axis Core、两层causal Procedure、centered Procedure reader、
+  zero-init AdaLN和一个post-fusion slot block；factor head hidden为240。
+  逐模块真实计数与设计表完全一致，总计`10,244,872`。
+- CPU验证覆盖真实tokenizer round-trip、可变L/T shape、Core frame permutation
+  invariance、Procedure prefix causality、routing/value隔离、fresh identity、
+  三阶段gradient opening、固定suffix与不兼容schema。全仓
+  `PYTHONPATH=src .venv/bin/pytest -q`为`189 passed`；architecture guard无
+  hard violation，既有大owner仅保留review flag。下一步是GPU4–7真实policy
+  smoke与exact-resume，然后105帧联合profile；尚未启动训练。

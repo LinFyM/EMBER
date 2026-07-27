@@ -28,7 +28,7 @@ from ember.writer.evaluation_cache import (
 )
 from ember.writer.inference import (
     WRITER_ADAPTER_SCHEMA,
-    WRITER_EPISODE_EVIDENCE_V5,
+    WRITER_EPISODE_EVIDENCE_V5_1,
     expected_writer_episode_evidence,
     validate_writer_episode_evidence,
 )
@@ -181,7 +181,7 @@ def test_writer_generation_order_randomness_is_video_keyed(
         init_state_id=18,
         lora_sha256="7" * 64,
     )
-    assert first["schema_version"] == WRITER_EPISODE_EVIDENCE_V5
+    assert first["schema_version"] == WRITER_EPISODE_EVIDENCE_V5_1
     assert first["teacher_demo_index"] == repeated["teacher_demo_index"]
     assert first["teacher_video_selection_seed"] != repeated[
         "teacher_video_selection_seed"

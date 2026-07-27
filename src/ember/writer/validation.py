@@ -48,7 +48,7 @@ from ember.writer.data import (
 )
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.model import (
-    CORE_CAUSAL_WRITER_CONSTRUCTOR_KEYS,
+    LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS,
     CompleteLoRAWriter,
     WriterModelError,
     build_lora_tensor_specs,
@@ -190,7 +190,7 @@ def _build_models(
     writer_values = {
         key: value
         for key, value in training["writer"].items()
-        if key in CORE_CAUSAL_WRITER_CONSTRUCTOR_KEYS
+        if key in LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
     }
     bridge = policy.model.paligemma_with_expert
     writer = CompleteLoRAWriter(
@@ -224,7 +224,7 @@ def _condition_state(
     device: torch.device,
 ) -> dict[str, torch.Tensor]:
     video = store.load(task.task_id, demo_index)
-    tokens, masks = tokenizer([task.language])
+    tokens, masks, task_spans = tokenizer([task.language])
     frames = torch.from_numpy(video.frames).to(device, non_blocking=True)
     indices = torch.from_numpy(video.frame_indices).to(device, non_blocking=True)
     offsets = torch.tensor([0, frames.shape[0]], dtype=torch.long, device=device)
@@ -240,6 +240,7 @@ def _condition_state(
             offsets,
             tokens,
             masks,
+            task_spans,
             policy=policy,
         )
     validate_lora_state(state, lora)

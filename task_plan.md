@@ -480,15 +480,16 @@ Plan/Revision/Belief或旧活动config/schema。
 
 ## 当前执行：Writer v5.1（2026-07-27）
 
-- [ ] 建立新的session-local v5.1 Goal；按`code-architecture-gate`检查owner、
+- [x] 建立新的session-local v5.1 Goal；按`code-architecture-gate`检查owner、
   生命周期和单一canonical替换边界。
-- [ ] 原位实现v5.1：text-only task-token queries、multimodal task-token
+- [x] 原位实现v5.1：text-only task-token queries、multimodal task-token
   evidence、token-aligned frame-set attention、language-axis Core、rank4
   Action Meta-LoRA causal Procedure、centered Procedure zero-init AdaLN与
   post-fusion slot block；factor hidden改240，旧v5 checkpoint/schema不兼容。
 - [ ] 完成最短shape/token alignment/Core invariance/Procedure causality/
   gradient staging/identity/freeze/parameter/schema和一次exact-resume smoke；
-  不用全仓广泛测试延迟真实profile。
+  CPU结构与全仓`189 passed`已完成，真实policy GPU smoke/exact-resume仍待完成；
+  不用额外测试脚手架延迟真实profile。
 - [ ] 新launch前只核验物理GPU4–7、process topology和个人存储cap；用105帧真实
   最长视频联合profile frame/action batch与step吞吐，重新找显存/UTL上限，
   不继承v5的F32/B20。

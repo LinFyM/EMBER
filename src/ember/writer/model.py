@@ -1,4 +1,4 @@
-"""Canonical Semantic Core + Causal Procedure Writer for a complete PI05 LoRA."""
+"""Canonical Language-Axial Core + Causal Procedure PI05 Writer."""
 
 from __future__ import annotations
 
@@ -10,30 +10,33 @@ import torch
 
 from ember.writer.temporal import (
     CausalProcedureEncoder,
-    CoreProcedureLoRACompiler,
+    LanguageSemanticCore,
+    SlotNormalizedCoreProcedureCompiler,
 )
-from ember.writer.video_program import Pi05FrameSemanticEncoder
+from ember.writer.video_program import Pi05LanguageAxialEncoder
 
 
 class WriterModelError(RuntimeError):
     """Raised when the Writer input or sealed LoRA contract is inconsistent."""
 
 
-CORE_CAUSAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
+LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
     {
         "image_width",
         "expert_width",
         "program_width",
-        "spatial_pool_grid",
+        "text_meta_lora_rank",
         "vl_meta_lora_rank",
         "action_meta_lora_rank",
         "max_frames_per_encoder_call",
         "action_horizon",
         "padded_action_dim",
+        "semantic_core_heads",
+        "semantic_core_blocks",
+        "frame_attention_initial_lambda",
         "procedure_heads",
         "procedure_blocks",
-        "core_compiler_blocks",
-        "procedure_refiner_blocks",
+        "fusion_heads",
         "factor_hidden_width",
         "initialization_seed",
         "activation_checkpointing",
@@ -159,16 +162,18 @@ class CompleteLoRAWriter(torch.nn.Module):
         image_width: int,
         expert_width: int,
         program_width: int,
-        spatial_pool_grid: int,
+        text_meta_lora_rank: int,
         vl_meta_lora_rank: int,
         action_meta_lora_rank: int,
         max_frames_per_encoder_call: int,
         action_horizon: int,
         padded_action_dim: int,
+        semantic_core_heads: int,
+        semantic_core_blocks: int,
+        frame_attention_initial_lambda: float,
         procedure_heads: int,
         procedure_blocks: int,
-        core_compiler_blocks: int,
-        procedure_refiner_blocks: int,
+        fusion_heads: int,
         factor_hidden_width: int,
         initialization_seed: int,
         activation_checkpointing: bool,
@@ -183,25 +188,29 @@ class CompleteLoRAWriter(torch.nn.Module):
             or image_width != 2048
             or expert_width != 1024
             or program_width != 256
-            or spatial_pool_grid != 8
+            or text_meta_lora_rank != 4
+            or vl_meta_lora_rank != 4
+            or action_meta_lora_rank != 4
             or action_horizon != 50
             or padded_action_dim != 32
+            or semantic_core_heads != 8
+            or semantic_core_blocks != 2
+            or abs(float(frame_attention_initial_lambda) - 0.05) > 1e-12
             or procedure_heads != 8
             or procedure_blocks != 2
-            or core_compiler_blocks != 1
-            or procedure_refiner_blocks != 1
-            or factor_hidden_width != 420
+            or fusion_heads != 8
+            or factor_hidden_width != 240
         ):
-            raise WriterModelError("invalid Core + Causal Procedure topology")
+            raise WriterModelError("invalid Language-Axial Writer topology")
         self.tensor_specs = tensor_specs
         self.program_width = int(program_width)
-        self.frame_semantics = Pi05FrameSemanticEncoder(
+        self.semantic_encoder = Pi05LanguageAxialEncoder(
             paligemma_model=paligemma_model,
             expert_model=expert_model,
             image_width=image_width,
             expert_width=expert_width,
             program_width=program_width,
-            spatial_pool_grid=spatial_pool_grid,
+            text_meta_lora_rank=text_meta_lora_rank,
             vl_meta_lora_rank=vl_meta_lora_rank,
             action_meta_lora_rank=action_meta_lora_rank,
             max_frames_per_encoder_call=max_frames_per_encoder_call,
@@ -210,16 +219,20 @@ class CompleteLoRAWriter(torch.nn.Module):
             initialization_seed=initialization_seed,
             activation_checkpointing=activation_checkpointing,
         )
+        self.semantic_core = LanguageSemanticCore(
+            width=program_width,
+            heads=semantic_core_heads,
+            blocks=semantic_core_blocks,
+            frame_attention_initial_lambda=frame_attention_initial_lambda,
+        )
         self.procedure = CausalProcedureEncoder(
             width=program_width,
             heads=procedure_heads,
             blocks=procedure_blocks,
         )
-        self.compiler = CoreProcedureLoRACompiler(
+        self.compiler = SlotNormalizedCoreProcedureCompiler(
             width=program_width,
-            heads=procedure_heads,
-            core_blocks=core_compiler_blocks,
-            procedure_blocks=procedure_refiner_blocks,
+            heads=fusion_heads,
             initialization_seed=initialization_seed + 1,
         )
         self.factor_heads = torch.nn.ModuleDict(
@@ -298,31 +311,19 @@ class CompleteLoRAWriter(torch.nn.Module):
 
     def _pack_video_program(
         self,
-        core_tokens: torch.Tensor,
+        frame_evidence: torch.Tensor,
         interactions: torch.Tensor,
         frame_indices: torch.Tensor,
         offsets: tuple[int, ...],
-    ) -> tuple[
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-    ]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         batch = len(offsets) - 1
         lengths = tuple(right - left for left, right in zip(offsets, offsets[1:]))
         maximum = max(lengths)
-        core_per_frame = core_tokens.shape[1]
-        packed_core = core_tokens.new_zeros(
+        packed_evidence = frame_evidence.new_zeros(
             batch,
-            maximum * core_per_frame,
+            maximum,
+            frame_evidence.shape[1],
             self.program_width,
-        )
-        valid_core = torch.zeros(
-            batch,
-            maximum * core_per_frame,
-            dtype=torch.bool,
-            device=core_tokens.device,
         )
         packed_interactions = interactions.new_zeros(
             batch,
@@ -351,22 +352,11 @@ class CompleteLoRAWriter(torch.nn.Module):
                 raise WriterModelError(
                     "sampled frame ordinals must start at zero and increase"
                 )
-            flattened = core_tokens[left:right].reshape(
-                length * core_per_frame,
-                self.program_width,
-            )
-            packed_core[row, : flattened.shape[0]] = flattened
-            valid_core[row, : flattened.shape[0]] = True
+            packed_evidence[row, :length] = frame_evidence[left:right]
             packed_interactions[row, :length] = interactions[left:right]
             positions[row, :length] = active_positions
             valid_frames[row, :length] = True
-        return (
-            packed_core,
-            valid_core,
-            packed_interactions,
-            positions,
-            valid_frames,
-        )
+        return packed_evidence, packed_interactions, positions, valid_frames
 
     def encode_task(
         self,
@@ -376,7 +366,9 @@ class CompleteLoRAWriter(torch.nn.Module):
         video_offsets: torch.Tensor,
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
+        task_span_mask: torch.Tensor,
     ) -> tuple[
+        torch.Tensor,
         torch.Tensor,
         torch.Tensor,
         torch.Tensor,
@@ -393,6 +385,9 @@ class CompleteLoRAWriter(torch.nn.Module):
             or language_tokens.ndim != 2
             or language_tokens.shape[0] != conditions
             or language_mask.shape != language_tokens.shape
+            or language_mask.dtype != torch.bool
+            or task_span_mask.shape != language_tokens.shape
+            or task_span_mask.dtype != torch.bool
         ):
             raise WriterModelError("Writer frame-language condition batch changed")
         lengths = torch.tensor(
@@ -404,24 +399,35 @@ class CompleteLoRAWriter(torch.nn.Module):
             torch.arange(conditions, device=frames.device),
             lengths,
         )
-        core_tokens, interactions = self.frame_semantics(
+        (
+            text_queries,
+            frame_evidence,
+            interactions,
+            valid_task_tokens,
+        ) = self.semantic_encoder(
             policy,
             frames,
             condition_ids,
             language_tokens,
             language_mask,
+            task_span_mask,
         )
         (
-            core_memory,
-            valid_core,
+            packed_evidence,
             packed_interactions,
             positions,
             valid_frames,
         ) = self._pack_video_program(
-            core_tokens,
+            frame_evidence,
             interactions,
             frame_indices,
             offsets,
+        )
+        core_memory, frame_attention = self.semantic_core(
+            text_queries,
+            packed_evidence,
+            valid_frames,
+            valid_task_tokens,
         )
         procedure_memory = self.procedure(
             packed_interactions,
@@ -430,10 +436,11 @@ class CompleteLoRAWriter(torch.nn.Module):
         )
         return (
             core_memory,
-            valid_core,
+            valid_task_tokens,
             procedure_memory,
             positions,
             valid_frames,
+            frame_attention,
         )
 
     def forward(
@@ -443,6 +450,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         video_offsets: torch.Tensor,
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
+        task_span_mask: torch.Tensor,
         *,
         policy: torch.nn.Module,
     ) -> dict[str, torch.Tensor]:
@@ -452,6 +460,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             procedure_memory,
             positions,
             valid_frames,
+            _,
         ) = self.encode_task(
             policy,
             frames,
@@ -459,6 +468,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             video_offsets,
             language_tokens,
             language_mask,
+            task_span_mask,
         )
         expert, action_in, action_out = self.compiler(
             core_memory,
@@ -482,7 +492,5 @@ class CompleteLoRAWriter(torch.nn.Module):
             generated = rows.transpose(-1, -2) if item.transpose_output else rows
             template = getattr(self, self._template_buffers[item.name])
             value = generated.to(dtype=template.dtype) + template[None]
-            result[item.name] = (
-                value[0] if core_memory.shape[0] == 1 else value
-            )
+            result[item.name] = value[0] if core_memory.shape[0] == 1 else value
         return result

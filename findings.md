@@ -1579,3 +1579,24 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 首段训练尺度定义为约一小时wall-clock而非固定optimizer step。v5.1必须先
   重新profile显存与吞吐；第二/第三段都要由上一段的早期特异性、absolute与
   曲线证据单独批准，不能把“未看到充分峰后下降”机械翻译成自动续训。
+
+## v5.1实现核验结论（2026-07-27）
+
+- 严格task-token对齐不需要第二次tokenization：完整teacher prompt只做一次
+  SentencePiece immutable-proto编码，按piece字符区间提取task span；真实
+  PaliGemma tokenizer上两条不同长度LIBERO语言分别得到`L=18/7`，选中IDs
+  decode后逐字等于cleaned task。Text分支复用这些IDs并只加BOS。
+- 新Core的唯一value路径是每帧最后层final-norm multimodal task-token hidden；
+  text-only final hidden只作跨frame query。无frame ordinal的token-aligned
+  attention在CPU置换测试中保持数值一致；Procedure的causal prefix测试通过，
+  reverse后非同值。
+- 参数重新分配严格落在计划表：
+  Text/VL/Action Meta-LoRA=`921,600/921,600/626,688`，
+  shared language projection/frame attention/Core blocks=
+  `524,288/262,664/1,573,888`，interaction projection/Procedure=
+  `262,144/1,573,888`，fusion/factor heads=`1,535,232/2,042,880`，
+  总计`10,244,872`。
+- 梯度阶段与设计一致：fresh时只有factor final layers打开；factor打开后Core、
+  post-fusion和zero-init `W_mod`得到梯度，而Procedure仍为零；`W_mod`非零后
+  Procedure路径才获得非零梯度。fresh完整public LoRA逐tensor等于identity
+  template，routing和position无法从全零value生成LoRA内容。

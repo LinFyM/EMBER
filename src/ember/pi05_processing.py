@@ -266,23 +266,40 @@ class Pi05TeacherPrefixTokenizer:
     def format_prompt(cls, task: str) -> str:
         return f"Task: {cls._clean(task)};\nAction: "
 
-    def __call__(self, tasks: Sequence[str]) -> tuple[Any, Any]:
+    def __call__(self, tasks: Sequence[str]) -> tuple[Any, Any, Any]:
         import torch
 
         if not tasks or isinstance(tasks, (str, bytes)):
             raise ValueError("teacher-prefix tokenizer requires a task sequence")
         token_rows: list[list[int]] = []
+        task_span_rows: list[list[bool]] = []
         for task in tasks:
-            values = self._tokenizer.encode(
-                self.format_prompt(task),
-                add_bos=True,
+            cleaned = self._clean(task)
+            prompt = self.format_prompt(cleaned)
+            task_start = len("Task: ")
+            task_stop = task_start + len(cleaned)
+            encoded = self._tokenizer.encode_as_immutable_proto(prompt)
+            pieces = tuple(encoded.pieces)
+            values = [int(self._tokenizer.bos_id())]
+            values.extend(int(piece.id) for piece in pieces)
+            task_span = [False]
+            task_span.extend(
+                int(piece.end) > task_start and int(piece.begin) < task_stop
+                for piece in pieces
             )
             if len(values) > self._max_length:
                 raise ValueError(
                     "Writer teacher prefix exceeds the sealed tokenizer length: "
                     f"{len(values)} > {self._max_length}"
                 )
+            if (
+                values[0] < 0
+                or len(task_span) != len(values)
+                or not any(task_span)
+            ):
+                raise ValueError("Writer task span tokenization is invalid")
             token_rows.append(values)
+            task_span_rows.append(task_span)
 
         tokens = torch.zeros(
             (len(token_rows), self._max_length),
@@ -290,11 +307,21 @@ class Pi05TeacherPrefixTokenizer:
             device=self._device,
         )
         masks = torch.zeros_like(tokens, dtype=torch.bool)
-        for row, values in enumerate(token_rows):
+        task_spans = torch.zeros_like(tokens, dtype=torch.bool)
+        for row, (values, task_span) in enumerate(
+            zip(token_rows, task_span_rows, strict=True)
+        ):
             tokens[row, : len(values)] = torch.as_tensor(
                 values, dtype=torch.long, device=self._device
             )
             masks[row, : len(values)] = True
+            task_spans[row, : len(values)] = torch.as_tensor(
+                task_span,
+                dtype=torch.bool,
+                device=self._device,
+            )
         if not bool(masks.any(dim=1).all()):
             raise ValueError("teacher-prefix tokenization produced an empty task")
-        return tokens, masks
+        if bool((task_spans & ~masks).any()):
+            raise ValueError("Writer task span escaped the teacher prefix")
+        return tokens, masks, task_spans

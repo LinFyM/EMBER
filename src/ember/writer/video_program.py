@@ -1,4 +1,4 @@
-"""Per-frame semantic evidence for the Core + Causal-Procedure PI05 Writer."""
+"""Language-aligned per-frame evidence for the PI05 v5.1 Writer."""
 
 from __future__ import annotations
 
@@ -86,11 +86,10 @@ class MetaLoRAStack(torch.nn.Module):
                 handle.remove()
 
 
-class Pi05FrameSemanticEncoder(torch.nn.Module):
-    """Read unordered visual evidence and one robot-semantic token per frame."""
+class Pi05LanguageAxialEncoder(torch.nn.Module):
+    """Produce text queries, aligned video evidence, and Action-Expert probes."""
 
     NATIVE_IMAGE_TOKENS = 256
-    NATIVE_IMAGE_GRID = 16
 
     def __init__(
         self,
@@ -100,7 +99,7 @@ class Pi05FrameSemanticEncoder(torch.nn.Module):
         image_width: int,
         expert_width: int,
         program_width: int,
-        spatial_pool_grid: int,
+        text_meta_lora_rank: int,
         vl_meta_lora_rank: int,
         action_meta_lora_rank: int,
         max_frames_per_encoder_call: int,
@@ -114,7 +113,7 @@ class Pi05FrameSemanticEncoder(torch.nn.Module):
             image_width,
             expert_width,
             program_width,
-            spatial_pool_grid,
+            text_meta_lora_rank,
             vl_meta_lora_rank,
             action_meta_lora_rank,
             max_frames_per_encoder_call,
@@ -123,20 +122,18 @@ class Pi05FrameSemanticEncoder(torch.nn.Module):
         )
         if (
             any(value <= 0 for value in dimensions)
-            or self.NATIVE_IMAGE_GRID % spatial_pool_grid
             or action_horizon != 50
             or padded_action_dim != 32
         ):
-            raise VideoProgramError("invalid PI05 frame-semantic dimensions")
+            raise VideoProgramError("invalid PI05 language-axial dimensions")
         self.image_width = int(image_width)
         self.expert_width = int(expert_width)
         self.program_width = int(program_width)
-        self.spatial_pool_grid = int(spatial_pool_grid)
         self.max_frames_per_encoder_call = int(max_frames_per_encoder_call)
         self.action_horizon = int(action_horizon)
         self.padded_action_dim = int(padded_action_dim)
         self.activation_checkpointing = bool(activation_checkpointing)
-        self.core_projection = torch.nn.Linear(
+        self.language_projection = torch.nn.Linear(
             image_width,
             program_width,
             bias=False,
@@ -145,6 +142,10 @@ class Pi05FrameSemanticEncoder(torch.nn.Module):
             expert_width,
             program_width,
             bias=False,
+        )
+        self.text_meta_lora = MetaLoRAStack(
+            paligemma_model.layers,
+            text_meta_lora_rank,
         )
         self.vl_meta_lora = MetaLoRAStack(
             paligemma_model.layers,
@@ -168,10 +169,6 @@ class Pi05FrameSemanticEncoder(torch.nn.Module):
             persistent=True,
         )
 
-    @property
-    def core_tokens_per_frame(self) -> int:
-        return self.spatial_pool_grid * self.spatial_pool_grid
-
     @staticmethod
     def _prepare_images(frames: torch.Tensor) -> torch.Tensor:
         from lerobot.policies.pi05.modeling_pi05 import resize_with_pad_torch
@@ -187,12 +184,94 @@ class Pi05FrameSemanticEncoder(torch.nn.Module):
         value = resize_with_pad_torch(value, 224, 224)
         return (value * 2.0 - 1.0).permute(0, 3, 1, 2)
 
+    @staticmethod
+    def _pack_hidden(
+        hidden: torch.Tensor,
+        task_span_mask: torch.Tensor,
+        maximum_task_tokens: int,
+    ) -> torch.Tensor:
+        if (
+            hidden.ndim != 3
+            or task_span_mask.shape != hidden.shape[:2]
+            or task_span_mask.dtype != torch.bool
+            or maximum_task_tokens <= 0
+            or int(task_span_mask.sum(dim=1).max()) > maximum_task_tokens
+        ):
+            raise VideoProgramError("task-token hidden packing changed")
+        ordinal = (task_span_mask.to(torch.long).cumsum(dim=1) - 1).clamp_min(0)
+        packed = hidden.new_zeros(
+            hidden.shape[0],
+            maximum_task_tokens,
+            hidden.shape[-1],
+        )
+        return packed.scatter_add(
+            1,
+            ordinal[..., None].expand(-1, -1, hidden.shape[-1]),
+            hidden * task_span_mask[..., None],
+        )
+
+    def _encode_text(
+        self,
+        core: torch.nn.Module,
+        language_tokens: torch.Tensor,
+        task_span_mask: torch.Tensor,
+        maximum_task_tokens: int,
+    ) -> torch.Tensor:
+        from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks
+
+        bridge = core.paligemma_with_expert
+        language_model = bridge.paligemma.model.language_model
+        batch = language_tokens.shape[0]
+        text_tokens = torch.zeros(
+            batch,
+            maximum_task_tokens + 1,
+            dtype=language_tokens.dtype,
+            device=language_tokens.device,
+        )
+        text_padding = torch.zeros_like(text_tokens, dtype=torch.bool)
+        text_tokens[:, 0] = language_tokens[:, 0]
+        text_padding[:, 0] = True
+        for row in range(batch):
+            selected = language_tokens[row, task_span_mask[row]]
+            text_tokens[row, 1 : selected.numel() + 1] = selected
+            text_padding[row, 1 : selected.numel() + 1] = True
+        with torch.no_grad():
+            text_embeds = bridge.embed_language_tokens(text_tokens)
+        text_attention = torch.zeros_like(text_padding)
+        mask = core._prepare_attention_masks_4d(
+            make_att_2d_masks(text_padding, text_attention)
+        )
+        positions = torch.cumsum(text_padding, dim=1) - 1
+        target_dtype = language_model.layers[0].self_attn.q_proj.weight.dtype
+        with self.text_meta_lora.installed(language_model):
+            (text_hidden, suffix_hidden), _ = bridge.forward(
+                attention_mask=mask,
+                position_ids=positions,
+                past_key_values=None,
+                inputs_embeds=[text_embeds.to(target_dtype), None],
+                use_cache=False,
+                adarms_cond=[None, None],
+            )
+        if (
+            suffix_hidden is not None
+            or text_hidden.shape != (
+                batch,
+                maximum_task_tokens + 1,
+                self.image_width,
+            )
+        ):
+            raise VideoProgramError("PI05 text-only hidden layout changed")
+        projected = self.language_projection(text_hidden[:, 1:])
+        return projected.masked_fill(~text_padding[:, 1:, None], 0.0)
+
     def _encode_microbatch(
         self,
         core: torch.nn.Module,
         frames: torch.Tensor,
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
+        task_span_mask: torch.Tensor,
+        maximum_task_tokens: int,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks
 
@@ -269,26 +348,15 @@ class Pi05FrameSemanticEncoder(torch.nn.Module):
         ):
             raise VideoProgramError("PI05 semantic hidden layout changed")
 
-        image_hidden = prefix_hidden[:, : self.NATIVE_IMAGE_TOKENS]
-        image_grid = image_hidden.reshape(
-            frames.shape[0],
-            self.NATIVE_IMAGE_GRID,
-            self.NATIVE_IMAGE_GRID,
-            self.image_width,
-        ).permute(0, 3, 1, 2)
-        pool_size = self.NATIVE_IMAGE_GRID // self.spatial_pool_grid
-        pooled = F.avg_pool2d(
-            image_grid,
-            kernel_size=pool_size,
-            stride=pool_size,
-        ).permute(0, 2, 3, 1).reshape(
-            frames.shape[0],
-            self.core_tokens_per_frame,
-            self.image_width,
+        language_hidden = prefix_hidden[:, self.NATIVE_IMAGE_TOKENS :]
+        packed_language = self._pack_hidden(
+            language_hidden,
+            task_span_mask,
+            maximum_task_tokens,
         )
-        core_tokens = self.core_projection(pooled)
+        evidence = self.language_projection(packed_language)
         interaction = self.interaction_projection(suffix_hidden.mean(dim=1))
-        return core_tokens, interaction
+        return evidence, interaction
 
     def _validate_forward_batch(
         self,
@@ -297,7 +365,8 @@ class Pi05FrameSemanticEncoder(torch.nn.Module):
         frame_condition_ids: torch.Tensor,
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
-    ) -> tuple[torch.nn.Module, torch.Tensor]:
+        task_span_mask: torch.Tensor,
+    ) -> tuple[torch.nn.Module, torch.Tensor, torch.Tensor]:
         conditions = language_tokens.shape[0]
         if (
             frames.ndim != 4
@@ -308,6 +377,11 @@ class Pi05FrameSemanticEncoder(torch.nn.Module):
             or language_tokens.ndim != 2
             or language_mask.shape != language_tokens.shape
             or language_mask.dtype != torch.bool
+            or task_span_mask.shape != language_tokens.shape
+            or task_span_mask.dtype != torch.bool
+            or bool((task_span_mask & ~language_mask).any())
+            or not bool(task_span_mask.any(dim=1).all())
+            or bool(task_span_mask[:, 0].any())
             or int(frame_condition_ids.min()) < 0
             or int(frame_condition_ids.max()) >= conditions
         ):
@@ -330,7 +404,16 @@ class Pi05FrameSemanticEncoder(torch.nn.Module):
             or int(core.config.max_action_dim) != self.padded_action_dim
         ):
             raise VideoProgramError("PI05 Action Expert topology changed")
-        return core, counts
+        task_counts = task_span_mask.sum(dim=1)
+        maximum_task_tokens = int(task_counts.max())
+        valid_task_tokens = (
+            torch.arange(
+                maximum_task_tokens,
+                device=frames.device,
+            )[None]
+            < task_counts[:, None]
+        )
+        return core, valid_task_tokens, task_counts
 
     def forward(
         self,
@@ -339,17 +422,48 @@ class Pi05FrameSemanticEncoder(torch.nn.Module):
         frame_condition_ids: torch.Tensor,
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Return Core tokens ``[sum_T,64,256]`` and interactions ``[sum_T,256]``."""
+        task_span_mask: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Return aligned text/video evidence and one interaction per frame."""
 
-        core, _ = self._validate_forward_batch(
+        core, valid_task_tokens, _ = self._validate_forward_batch(
             policy,
             frames,
             frame_condition_ids,
             language_tokens,
             language_mask,
+            task_span_mask,
         )
-        core_rows = []
+        maximum_task_tokens = valid_task_tokens.shape[1]
+
+        def invoke_text(
+            token_values: torch.Tensor,
+            span_values: torch.Tensor,
+        ) -> torch.Tensor:
+            return self._encode_text(
+                core,
+                token_values,
+                span_values,
+                maximum_task_tokens,
+            )
+
+        should_checkpoint = (
+            self.activation_checkpointing
+            and self.training
+            and torch.is_grad_enabled()
+        )
+        if should_checkpoint:
+            text_queries = checkpoint(
+                invoke_text,
+                language_tokens,
+                task_span_mask,
+                use_reentrant=False,
+                preserve_rng_state=False,
+            )
+        else:
+            text_queries = invoke_text(language_tokens, task_span_mask)
+
+        evidence_rows = []
         interaction_rows = []
         for start in range(0, frames.shape[0], self.max_frames_per_encoder_call):
             stop = min(start + self.max_frames_per_encoder_call, frames.shape[0])
@@ -359,33 +473,38 @@ class Pi05FrameSemanticEncoder(torch.nn.Module):
                 frames.index_select(0, rows),
                 language_tokens.index_select(0, selected),
                 language_mask.index_select(0, selected),
+                task_span_mask.index_select(0, selected),
             )
 
-            def invoke(
+            def invoke_frames(
                 frame_values: torch.Tensor,
                 token_values: torch.Tensor,
                 mask_values: torch.Tensor,
+                span_values: torch.Tensor,
             ) -> tuple[torch.Tensor, torch.Tensor]:
                 return self._encode_microbatch(
                     core,
                     frame_values,
                     token_values,
                     mask_values,
+                    span_values,
+                    maximum_task_tokens,
                 )
 
-            if (
-                self.activation_checkpointing
-                and self.training
-                and torch.is_grad_enabled()
-            ):
-                core_value, interaction_value = checkpoint(
-                    invoke,
+            if should_checkpoint:
+                evidence, interaction = checkpoint(
+                    invoke_frames,
                     *arguments,
                     use_reentrant=False,
                     preserve_rng_state=False,
                 )
             else:
-                core_value, interaction_value = invoke(*arguments)
-            core_rows.append(core_value)
-            interaction_rows.append(interaction_value)
-        return torch.cat(core_rows, dim=0), torch.cat(interaction_rows, dim=0)
+                evidence, interaction = invoke_frames(*arguments)
+            evidence_rows.append(evidence)
+            interaction_rows.append(interaction)
+        return (
+            text_queries,
+            torch.cat(evidence_rows, dim=0),
+            torch.cat(interaction_rows, dim=0),
+            valid_task_tokens,
+        )

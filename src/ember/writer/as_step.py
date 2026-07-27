@@ -21,6 +21,7 @@ WriterCondition = tuple[
     torch.Tensor,
     torch.Tensor,
     torch.Tensor,
+    torch.Tensor,
 ]
 
 
@@ -57,13 +58,14 @@ def _pack_raw_conditions(
         dtype=torch.long,
         device=runtime.context.device,
     )
-    tokens, mask = runtime.language_tokens[task_id]
+    tokens, mask, task_span = runtime.language_tokens[task_id]
     return (
         frames,
         indices,
         video_offsets,
         tokens,
         mask,
+        task_span,
     ), {
         "teacher_demo_index": int(teacher_demo),
         "action_video_assignment": "all_actions_share_single_video_lora",

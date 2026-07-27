@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_core_causal_as_writer_v5",
+  "schema_version": "ember_pi05_language_axial_as_writer_v5_1",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {
@@ -50,7 +50,7 @@
     "test_video_values_read": 0
   },
   "writer": {
-    "architecture": "pi05_semantic_core_causal_procedure_v5",
+    "architecture": "pi05_language_axial_core_causal_procedure_slot_fusion_v5_1",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -58,15 +58,21 @@
     "include_final_frame": true,
     "teacher_prompt": "Task: {cleaned_task};\nAction: ",
     "teacher_state_input": false,
+    "task_span_extraction": "authoritative_full_prompt_sentencepiece_piece_offsets",
+    "text_branch_input": "bos_plus_exact_authoritative_task_span_ids_without_template",
+    "task_token_alignment": "text_and_multimodal_ids_identical_by_construction",
     "image_width": 2048,
     "native_image_tokens": 256,
-    "native_image_grid": 16,
-    "spatial_pool": "parameter_free_2x2_average_to_8x8",
-    "spatial_pool_grid": 8,
-    "core_tokens_per_frame": 64,
-    "core_projection": "shared_bias_free_2048_to_256",
-    "core_order_contract": "flatten_all_frame_spatial_tokens_without_frame_ordinal_or_position_value",
+    "multimodal_core_value": "final_norm_task_span_hidden_only_no_image_position_values",
+    "shared_language_projection": "bias_free_2048_to_256",
     "expert_width": 1024,
+    "text_meta_lora_targets": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj"
+    ],
+    "text_meta_lora_rank": 4,
     "vl_meta_lora_targets": [
       "q_proj",
       "k_proj",
@@ -80,7 +86,7 @@
       "v_proj",
       "o_proj"
     ],
-    "action_meta_lora_rank": 8,
+    "action_meta_lora_rank": 4,
     "max_frames_per_encoder_call": 32,
     "frame_batching_contract": "encode_one_video_with_unpadded_memory_safety_chunks",
     "activation_checkpointing": true,
@@ -90,6 +96,13 @@
     "action_expert_action_out": false,
     "interaction_reduction": "mean_50_final_suffix_hidden_then_shared_bias_free_1024_to_256",
     "program_width": 256,
+    "frame_set_attention": "token_aligned_frame_axis_only_video_independent_text_queries",
+    "frame_attention_initial_lambda": 0.05,
+    "frame_attention_order_contract": "permutation_invariant_mean_anchored_no_frame_position",
+    "semantic_core_heads": 8,
+    "semantic_core_blocks": 2,
+    "semantic_core_position_encoding": "task_token_ordinal_rope_qk_only_bidirectional",
+    "semantic_core_value_path": "multimodal_task_token_content_only",
     "procedure_heads": 8,
     "procedure_blocks": 2,
     "procedure_attention": "global_causal_pre_norm_with_valid_mask",
@@ -98,13 +111,15 @@
     "procedure_initialization": "normal_nonzero",
     "query_count": 320,
     "routing_identity": "query_module_layer_rank_qk_only",
-    "core_compiler_blocks": 1,
-    "procedure_refiner_blocks": 1,
-    "core_compiler": "content_only_cross_then_self_then_ffn",
-    "procedure_refiner": "independent_content_only_delta_with_zero_initialized_cross_output",
-    "compiler_order": "all_core_blocks_then_all_procedure_blocks",
+    "core_slot_reader": "routing_qk_core_content_v",
+    "procedure_slot_reader": "routing_plus_normalized_core_q_centered_procedure_v",
+    "slot_fusion": "zero_initialized_bias_free_adaln_then_one_post_fusion_block",
+    "fusion_heads": 8,
+    "procedure_value_centering": "parameter_free_valid_time_mean",
+    "modulation_projection": "bias_free_256_to_512_zero_initialized",
+    "post_fusion_blocks": 1,
     "factor_head_bias": false,
-    "factor_hidden_width": 420,
+    "factor_hidden_width": 240,
     "initialization_seed": 7
   },
   "data": {
@@ -142,7 +157,7 @@
     "prefetch_factor": 2
   },
   "optimization": {
-    "method": "functional_pi05_core_causal_positive_only",
+    "method": "functional_pi05_language_axial_positive_only",
     "seed": 7,
     "precision": "bfloat16",
     "source_policy": "final formal frozen raw policy",
@@ -168,7 +183,7 @@
     "budget_role": "profile_then_approximately_one_hour_exact_resume_segments"
   },
   "profile_defaults": {
-    "status": "completed_single_video_joint_batch_profile",
+    "status": "pending_v5_1_live_profile",
     "expected_world_size": 4,
     "total_steps": 12,
     "per_rank_batch_size": 20,
@@ -182,7 +197,7 @@
     "selected_stop_step": 12
   },
   "profile_evidence": {
-    "status": "sealed",
+    "status": "pending",
     "allowed_physical_gpu_ids": [
       4,
       5,
@@ -196,37 +211,12 @@
       "max_frames_per_encoder_call",
       "per_rank_action_batch_size"
     ],
-    "max_frames_per_encoder_call": 32,
-    "selected": {
-      "per_rank_action_batch_size": 20,
-      "global_action_queries_per_step": 80,
-      "longest_real_stride5_video_frames": 105,
-      "longest_video_step_seconds": 6.956146225100383,
-      "ordinary_step_seconds": [
-        3.109352245926857,
-        3.5270273799542338
-      ],
-      "ordinary_global_queries_per_second": [
-        25.72883149691297,
-        22.68199006752198
-      ],
-      "max_cuda_allocated_bytes": 76937901056,
-      "max_cuda_reserved_bytes": 83630227456,
-      "profile_output": "/data/ymdai/outputs/ember/pi05_as_writer_v5_jointprofile_f32_b20_long105_20260727",
-      "run_contract_sha256": "e83dd24f5edab003280d0d8465848b7a8f45ff97606f2f66790c941c41ccb1fc",
-      "metrics_sha256": "0b39de739d2eca59274ba43c8ea1679e77ead0e1228c55878b2079273799b561",
-      "checkpoint_manifest_sha256": "993739d4a5c8323d04fc9e0eef60ac4439356a20ee1bc8061e314d2c5100cb1b"
+    "initial_candidate_from_v5_only": {
+      "max_frames_per_encoder_call": 32,
+      "per_rank_action_batch_size": 20
     },
-    "rejected": {
-      "frame32_action24": "oom_on_first_policy_functional_forward",
-      "frame24_action24": "oom_on_first_policy_functional_forward",
-      "frame40_action20": "no_throughput_gain_and_slightly_more_reserved_memory",
-      "frame105_action1": "longest_video_used_79873_MiB_and_did_not_finish_within_90_seconds"
-    },
-    "superseded_profiles": {
-      "per_action_independent_N4_B8": "61.39_seconds_per_step",
-      "four_video_partitioned_B16": "10.347_seconds_per_step"
-    }
+    "required_longest_real_stride5_video_frames": 105,
+    "selection_rule": "maximize_stable_global_action_queries_per_second_with_about_10gb_headroom"
   },
   "specificity_gate": {
     "status": "pending",
@@ -241,28 +231,13 @@
     "contrast_loss_allowed": false
   },
   "formal_run": {
-    "status": "sealed",
+    "status": "pending_v5_1_profile",
     "expected_world_size": 4,
-    "total_steps": 12000,
-    "per_rank_batch_size": 20,
-    "checkpoint_steps": "every:100",
-    "selected_stop_step": 900,
-    "stage_stop_steps": [
-      900,
-      1800,
-      2700,
-      3600,
-      4500,
-      5400,
-      6300,
-      7200,
-      8100,
-      9000,
-      9900,
-      10800,
-      11700,
-      12000
-    ],
-    "segment_definition": "900_steps_approximately_one_hour_from_single_video_F32_B20_profile"
+    "total_steps": null,
+    "per_rank_batch_size": null,
+    "checkpoint_steps": null,
+    "selected_stop_step": null,
+    "stage_stop_steps": [],
+    "segment_definition": "approximately_one_hour_from_measured_v5_1_throughput_no_automatic_second_or_third_segment"
   }
 }

@@ -407,14 +407,14 @@ Plan/Revision/Belief或旧活动config/schema。
 - [x] 初版训练科学合同曾为每条action独立抽`N=4`条video；该合同已完成
   step0→120与机制检查，但因每rank每step实际生成约24–32套LoRA、每步中位
   `61.39s`而由owner退役，不再续训。
-- [x] 固定新训练合同：每rank每step一个task，抽4条不同teacher videos并只生成
-  4套one-shot LoRA；`B_a`条独立同task action queries均匀分给它们，每条
-  action只对应一条video，形成`B_a`个等权functional losses。4 ranks全局均衡
-  换task；推理严格one-shot；
+- [x] 固定新训练合同：每rank每step一个task，抽1条teacher video并只生成
+  1套one-shot LoRA；完整`B_a`条独立同task action queries全部监督该LoRA，
+  形成`B_a`个等权functional losses。4 ranks全局均衡换task，后续task visit
+  轮换video；推理严格one-shot；
   不使用contrast/order/margin loss。
 - [x] 固定新执行合同：frame stride5；只使用物理GPU4–7；
   `max_frames_per_encoder_call=32`只作长视频显存安全分块且末块不padding；
-  profile只搜索per-rank action batch `B_a`，不用optimizer gradient accumulation。
+  联合profile frame/action batch，不用optimizer gradient accumulation。
 - [x] 原位替换v4代码/config/checkpoint schema，删除visual-state与误导性的
   action-forecast活动owner；适配AS training、online validation、inference和
   canonical evaluator。
@@ -437,11 +437,12 @@ Plan/Revision/Belief或旧活动config/schema。
   step40为`45/52/52/51/51`；step120为`65/59/57/61/65`。step120 correct相对
   step40显著净增20，但相对same/wrong/shuffle/reverse仅`+6/+8/+4/0`且均未
   显著，故行为硬门仍未通过。
-- [x] 实现并验证共享4-video估计器：采样/task轮转、`B_a→4 groups`映射、gradient、
-  freeze、identity、checkpoint schedule与exact-resume；旧step120不得resume。
-- [x] GPU4–7只profile`B_a`：选择`B_a=16`，step2→12 exact-resume通过，
-  稳态中位`10.347s/step`、峰值reserved `68,415,389,696 bytes`；B20仅余
-  约1.3GiB，B24/B32 OOM。正式封存400-step segment、每50步留ckpt。
+- [x] 共享4-video估计器曾完成mechanics/profile，随后由owner退役；旧step120
+  与共享4-video checkpoint都不得resume到当前合同。
+- [x] 实现并验证单视频完整action-batch估计器；GPU4–7选择F32/B20，最长105帧
+  步`6.956s`、常规步`3.109–3.527s`、峰值reserved
+  `83,630,227,456 bytes`；B24 OOM、F40无收益。正式封存900-step segment、
+  每100步留ckpt。
 - [ ] 从fresh identity训练新合同首个约一小时segment；先对保留ckpt做完整
   fixed-400 validation寻找absolute observed-best，不先做特异性。
 - [ ] 若correct始终低于约`110–120/400`，先定位训练或架构问题并fresh迭代；

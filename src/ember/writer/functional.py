@@ -6,7 +6,6 @@ from typing import Any, Mapping
 
 import torch
 
-from ember.batched_lora import BatchedLoRAInference
 from ember.lora import (
     LoRAContract,
     functional_lora_call,
@@ -73,10 +72,9 @@ def functional_lora_loss_gradient(
 ) -> tuple[torch.Tensor, Mapping[str, Any], dict[str, torch.Tensor]]:
     """Differentiate one policy loss only through detached LoRA leaf tensors.
 
-    This lets the caller evaluate several adapters sequentially without keeping
-    several PI05 activation graphs resident. Backpropagating the returned leaf
-    gradients through the Writer is the exact first derivative by the chain
-    rule; no policy parameter is trainable or accumulated.
+    Backpropagating the returned leaf gradients through the one-video Writer is
+    the exact first derivative by the chain rule; no policy parameter is
+    trainable or accumulated.
     """
 
     if any(parameter.requires_grad for parameter in policy.parameters()):
@@ -102,127 +100,6 @@ def functional_lora_loss_gradient(
         output[1],
         {name: gradient.detach() for name, gradient in zip(names, gradients, strict=True)},
     )
-
-
-def batched_functional_lora_loss_gradients(
-    policy: torch.nn.Module,
-    generated: Mapping[str, torch.Tensor],
-    contract: LoRAContract,
-    *,
-    batch: Mapping[str, Any],
-    pair_to_generated: torch.Tensor,
-    executor: BatchedLoRAInference,
-) -> tuple[torch.Tensor, Mapping[str, Any], dict[str, torch.Tensor]]:
-    """Evaluate one or more per-sample adapter assignments.
-
-    ``pair_to_generated`` has shape ``[action_batch, views]``. Each column is
-    one ordinary policy forward. Adapter rows may be reused across the complete
-    action batch, while every listed action/video pair remains separately
-    weighted and gradients to each generated adapter are summed. The active
-    AS contract uses exactly one column, so every action is evaluated once.
-    """
-
-    if (
-        any(parameter.requires_grad for parameter in policy.parameters())
-        or not generated
-        or pair_to_generated.ndim != 2
-        or pair_to_generated.dtype != torch.long
-        or pair_to_generated.numel() == 0
-    ):
-        raise WriterModelError("invalid batched functional LoRA request")
-    batch_size, views = pair_to_generated.shape
-    unique_count = next(iter(generated.values())).shape[0]
-    if (
-        unique_count <= 0
-        or int(pair_to_generated.min()) < 0
-        or int(pair_to_generated.max()) >= unique_count
-        or any(value.shape[0] != unique_count for value in generated.values())
-    ):
-        raise WriterModelError("generated LoRA batch and pair map differ")
-
-    gradients = {
-        name: torch.zeros_like(value)
-        for name, value in generated.items()
-    }
-    losses = []
-    details = []
-    cpu_before = torch.get_rng_state()
-    device = next(iter(generated.values())).device
-    cuda_before = (
-        torch.cuda.get_rng_state(device)
-        if device.type == "cuda"
-        else None
-    )
-    cpu_after: torch.Tensor | None = None
-    cuda_after: torch.Tensor | None = None
-    for view in range(views):
-        torch.set_rng_state(cpu_before)
-        if cuda_before is not None:
-            torch.cuda.set_rng_state(cuda_before, device)
-        indices = pair_to_generated[:, view]
-        leaves = {
-            name: value.index_select(0, indices).detach().requires_grad_(True)
-            for name, value in generated.items()
-        }
-        per_sample_states = tuple(
-            {name: value[row] for name, value in leaves.items()}
-            for row in range(batch_size)
-        )
-        with executor.activate(per_sample_states):
-            output = policy(dict(batch))
-        if (
-            not isinstance(output, tuple)
-            or len(output) != 2
-            or not isinstance(output[0], torch.Tensor)
-            or output[0].ndim != 0
-            or not isinstance(output[1], Mapping)
-        ):
-            raise WriterModelError("batched functional policy returned invalid loss")
-        names = tuple(leaves)
-        leaf_gradients = torch.autograd.grad(
-            output[0],
-            tuple(leaves[name] for name in names),
-        )
-        for name, gradient in zip(names, leaf_gradients, strict=True):
-            if not bool(torch.isfinite(gradient).all()):
-                raise WriterModelError(
-                    "batched functional policy produced non-finite LoRA gradients"
-                )
-            gradients[name].index_add_(
-                0,
-                indices,
-                gradient.detach() / views,
-            )
-        losses.append(output[0].detach())
-        details.append(dict(output[1]))
-        if cpu_after is None:
-            cpu_after = torch.get_rng_state()
-            if cuda_before is not None:
-                cuda_after = torch.cuda.get_rng_state(device)
-    if cpu_after is None:
-        raise WriterModelError("batched functional policy executed no views")
-    torch.set_rng_state(cpu_after)
-    if cuda_after is not None:
-        torch.cuda.set_rng_state(cuda_after, device)
-
-    mean_loss = torch.stack(losses).mean()
-    loss_per_dim = [
-        row.get("loss_per_dim")
-        for row in details
-        if isinstance(row.get("loss_per_dim"), list)
-    ]
-    detail: dict[str, Any] = {
-        "loss": float(mean_loss),
-        "view_losses": [float(value) for value in losses],
-    }
-    if len(loss_per_dim) == views:
-        detail["loss_per_dim"] = (
-            torch.tensor(loss_per_dim, dtype=torch.float32)
-            .mean(dim=0)
-            .tolist()
-        )
-    return mean_loss, detail, gradients
-
 
 def writer_success_weighted_flow_loss(
     writer: CompleteLoRAWriter,

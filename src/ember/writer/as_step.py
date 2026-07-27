@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import time
-from typing import TYPE_CHECKING, Any, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Mapping
 
 import torch
 
 from ember.pi05_source_setup import reduce_max, reduce_mean
-from ember.writer.functional import batched_functional_lora_loss_gradients
+from ember.writer.functional import functional_lora_loss_gradient
 from ember.writer.model import WriterModelError
 
 if TYPE_CHECKING:
@@ -34,108 +34,50 @@ def _batch_task_id(batch: Mapping[str, Any]) -> int:
     return int(unique.item())
 
 
-def _balanced_action_video_map(
-    action_batch_size: int,
-    video_count: int,
-    *,
-    device: torch.device,
-) -> torch.Tensor:
-    """Assign every action exactly once while balancing four video LoRAs."""
-
-    if (
-        action_batch_size <= 0
-        or video_count <= 0
-        or action_batch_size % video_count
-    ):
-        raise WriterModelError(
-            "action batch must divide evenly across teacher videos"
-        )
-    return (
-        torch.arange(action_batch_size, dtype=torch.long, device=device)
-        .remainder(video_count)
-        .unsqueeze(1)
-    )
-
-
 def _pack_raw_conditions(
     runtime: WriterRuntime,
     *,
     task_id: int,
-    shared_video_demos: Sequence[int],
+    teacher_demo: int,
     action_batch_size: int,
-) -> tuple[WriterCondition, torch.Tensor, dict[str, Any]]:
-    unique_demos = tuple(int(demo) for demo in shared_video_demos)
-    if (
-        len(unique_demos) != runtime.videos_per_task_visit
-        or len(set(unique_demos)) != len(unique_demos)
-    ):
-        raise WriterModelError("AS-Writer shared multi-video condition changed")
-    pair_to_generated = _balanced_action_video_map(
-        action_batch_size,
-        len(unique_demos),
-        device=runtime.context.device,
+) -> tuple[WriterCondition, dict[str, Any]]:
+    if runtime.videos_per_task_visit != 1 or action_batch_size <= 0:
+        raise WriterModelError("AS-Writer one-video condition changed")
+    video = runtime.video_store.load(task_id, int(teacher_demo))
+    frames = torch.from_numpy(video.frames).to(
+        runtime.context.device,
+        non_blocking=True,
     )
-
-    videos = tuple(
-        runtime.video_store.load(task_id, demo_index)
-        for demo_index in unique_demos
+    indices = torch.from_numpy(video.frame_indices).to(
+        runtime.context.device,
+        non_blocking=True,
     )
-    frames = torch.cat(
-        [
-            torch.from_numpy(video.frames).to(
-                runtime.context.device,
-                non_blocking=True,
-            )
-            for video in videos
-        ],
-        dim=0,
-    )
-    indices = torch.cat(
-        [
-            torch.from_numpy(video.frame_indices).to(
-                runtime.context.device,
-                non_blocking=True,
-            )
-            for video in videos
-        ],
-        dim=0,
-    )
-    offsets = [0]
-    for video in videos:
-        offsets.append(offsets[-1] + int(video.frames.shape[0]))
     video_offsets = torch.tensor(
-        offsets,
+        [0, int(video.frames.shape[0])],
         dtype=torch.long,
         device=runtime.context.device,
     )
     tokens, mask = runtime.language_tokens[task_id]
-    language_tokens = tokens.expand(len(unique_demos), -1)
-    language_mask = mask.expand(len(unique_demos), -1)
     return (
         frames,
         indices,
         video_offsets,
-        language_tokens,
-        language_mask,
-    ), pair_to_generated, {
-        "shared_teacher_demo_indices": list(unique_demos),
-        "action_video_assignment": "round_robin_one_action_one_video",
-        "actions_per_video": action_batch_size // len(unique_demos),
+        tokens,
+        mask,
+    ), {
+        "teacher_demo_index": int(teacher_demo),
+        "action_video_assignment": "all_actions_share_single_video_lora",
+        "actions_per_video": action_batch_size,
         "logical_policy_pairs": action_batch_size,
-        "unique_teacher_video_conditions": len(unique_demos),
-        "teacher_video_raw_frames": sum(
-            video.raw_frame_count for video in videos
-        ),
-        "teacher_video_sampled_frames": sum(
-            int(video.frames.shape[0]) for video in videos
-        ),
+        "unique_teacher_video_conditions": 1,
+        "teacher_video_raw_frames": video.raw_frame_count,
+        "teacher_video_sampled_frames": int(video.frames.shape[0]),
     }
 
 
 def _differentiate_conditions(
     runtime: WriterRuntime,
     packed: WriterCondition,
-    pair_to_generated: torch.Tensor,
     policy_batch: Mapping[str, Any],
 ) -> tuple[torch.Tensor, Mapping[str, Any]]:
     with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
@@ -143,13 +85,11 @@ def _differentiate_conditions(
             *packed,
             policy=runtime.policy,
         )
-        loss, detail, gradients = batched_functional_lora_loss_gradients(
+        loss, detail, gradients = functional_lora_loss_gradient(
             runtime.policy,
             generated,
             runtime.lora_contract,
             batch=policy_batch,
-            pair_to_generated=pair_to_generated,
-            executor=runtime.functional_lora,
         )
     names = tuple(generated)
     torch.autograd.backward(
@@ -256,7 +196,7 @@ def run_writer_step(
     step: int,
     started: float,
 ) -> dict[str, Any]:
-    """Run one task-balanced update with four videos shared by all actions."""
+    """Run one task/video LoRA against a broad same-task action batch."""
 
     tick = time.monotonic()
     runtime.optimizer.zero_grad(set_to_none=True)
@@ -269,26 +209,21 @@ def run_writer_step(
     observed_batch = int(batch["task_id"].shape[0])
     if observed_batch != runtime.sampler.batch_size_for_step(step):
         raise WriterModelError("AS-Writer action-query batch size changed")
-    shared_video_demos = runtime.video_schedule.demos_for_task_visit(
-        task_id,
-        task_visit,
-        runtime.videos_per_task_visit,
-    )
-    packed, pair_to_generated, video_metrics = _pack_raw_conditions(
+    teacher_demo = runtime.video_schedule.demo_for_task_visit(task_id, task_visit)
+    packed, video_metrics = _pack_raw_conditions(
         runtime,
         task_id=task_id,
-        shared_video_demos=shared_video_demos,
+        teacher_demo=teacher_demo,
         action_batch_size=observed_batch,
     )
     policy_batch = runtime.processor.training_batch(batch)
     training = runtime.config["conditioning_training"]
     mode = str(training["method"])
-    if mode != "shared_task_videos_partitioned_multi_action_positive_functional_loss":
+    if mode != "single_video_multi_action_positive_functional_loss":
         raise WriterModelError("unsupported AS-Writer conditioning mode")
     loss, detail = _differentiate_conditions(
         runtime,
         packed,
-        pair_to_generated,
         policy_batch,
     )
     if not bool(torch.isfinite(loss)):

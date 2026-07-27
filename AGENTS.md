@@ -35,10 +35,10 @@ Writer 的唯一活动架构 authority。v4完整实现和根因证据分别保�
 visual-state、future-action forecast、absolute-time Plan/Revision/Belief、
 schema、配置和专用路径不得恢复。
 
-v5已原位实现；共享四视频的一对一分组合同在GPU4–7实测选择
-`B_a=16`，稳态中位`10.35s/step`，step2→12 exact-resume通过。新架构不继承
-v4的step等价口径：正式一个segment为400 optimizer steps，每50步保留
-checkpoint，预计约67–69分钟。第一段后选择validation
+v5已原位实现；当前单视频完整action-batch合同在GPU4–7最长105帧压力测试
+选择`max_frames_per_encoder_call=32`、`B_a=20`。新架构不继承v4的step
+等价口径：正式一个segment为900 optimizer steps，每100步保留checkpoint，
+预计约一小时。第一段后选择validation
 observed-best，先做内部Core/Procedure/LoRA特异性检查，再做固定400
 correct/same-task-other/wrong/shuffled/reversed paired rollout。未通过则按
 最早失效层级修改同一canonical架构、fresh训练并循环；不得用contrast/order
@@ -94,7 +94,7 @@ generic lerobot/pi05_base
 
 - 核心固定为 `task language + exactly one action-hidden teaching video -> shared Writer -> complete task-specific LoRA`。
 - Writer 不得接收 action、proprio、reward、terminal、task ID、filename 或隐藏 normalization；source actions 只能进入 AS functional loss。
-- `Action-Supervised Writer (AS-Writer)`：development在24 train tasks上均匀混合；每rank每step只处理一个task并抽4条不同teacher videos，只生成4套one-shot LoRA；`B_a`条独立同task action queries均匀分给4套LoRA，每条action只对应一条video，形成`B_a`个functional losses并直接求均值。4 ranks全局均衡轮转tasks；video与action episode/chunk不要求同episode配对。frozen source base只通过functional LoRA forward参与，更新Writer。
+- `Action-Supervised Writer (AS-Writer)`：development在24 train tasks上均匀混合；每rank每step只处理一个task并抽1条teacher video，只生成1套one-shot LoRA；尽可能大的`B_a`条独立同task action queries全部在该LoRA下各计算一次functional loss并直接求均值。4 ranks全局均衡轮转tasks；下一次访问该task时换一条video；video与action episode/chunk不要求同episode配对。frozen source base只通过functional LoRA forward参与，更新Writer。
 - 历史task-local RL的总预算合同不影响当前focused v5 AS/RL无总wall-clock上限的分段探索。
 - `Reward-Trained Writer (RL-Writer)` 是独立路线：按当前 focused task 从新架构规定初态做短、task-balanced AS cold start，直到24个development-train tasks各在官方random-reset rollout中至少成功一次，再关闭action数据入口并跨source tasks做纯reward训练；它不从完整AS-Writer best继续，cold-start消耗必须完整报告。
 - RL-Writer rollout 使用 LIBERO 官方随机 reset/BDDL 初态；不使用 `.pruned_init`。只用官方 env reward/success，不从 object pose 等内部状态手工构造 privileged shaping。

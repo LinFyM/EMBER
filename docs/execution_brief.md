@@ -25,9 +25,9 @@ owner随后批准Semantic Core + Causal Procedure v5作为唯一活动架构：
   robot-semantic hidden，不再产生7D forecast；
 - 两层global causal Transformer形成可变长Procedure；
 - Core先编译稳定LoRA content，Procedure以zero-init refiner作有向修正；
-- 每rank每step一个task，4条不同teacher videos只生成4套one-shot LoRA，并由
-  该rank的独立action queries等量分组使用；每条action只对应一条video，推理
-  仍严格one-shot。
+- 每rank每step一个task、1条teacher video、1套one-shot LoRA；该rank完整
+  action batch的所有独立queries都监督这套LoRA。下一task visit轮换video，
+  推理仍严格one-shot。
 
 完整活动合同见
 [`docs/action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)；
@@ -72,19 +72,19 @@ owner于2026-07-22将source-base正式训练改为从generic base fresh运行1,0
 ### AS-Writer
 
 - 输入恰好一条 action-hidden teacher video + 正确 task language；输出完整 task-specific LoRA。
-- 在24 train tasks上做均衡混合。每rank每step一个task，抽4条同task不同teacher
-  videos并只生成4套LoRA；`B_a`条独立action queries均匀分给4套LoRA，每条只
-  计算一次，形成`B_a`个functional losses并求均值。video与action
-  episode/chunk不要求配对，
+- 在24 train tasks上做均衡混合。每rank每step一个task，抽1条teacher video并
+  只生成1套LoRA；`B_a`条独立action queries全部在该LoRA下各计算一次，
+  `B_a`个functional losses求均值。video与action episode/chunk不要求配对，
   action只进functional behavior loss。
 - source base冻结，只有Writer更新。Writer不得看到action、proprio、reward、terminal、task ID、filename或隐藏stats。
 - v5原位替换v4的visual-state/forecast/Plan/Revision/Belief路径，不保留兼容
   分支。初版机械预算`10,301,440`，与rank-128 Source-SFT只差`4,096`
   parameters；公开rank-16 LoRA仍为76 tensors、`1,287,168` scalars。
-- 共享4视频合同在GPU4–7只搜索`B_a`后选择`B_a=16`：稳态中位
-  `10.35s/step`，一步只做一次functional policy forward，峰值reserved
-  `68,415,389,696 bytes`；B20余量不足、B24/B32 OOM。正式约一小时一个
-  400-step exact-resume segment，每50步保存checkpoint；不继承v4的
+- 单视频合同在GPU4–7联合profile后选择frame batch32、`B_a=20`：105帧
+  最长真实视频步`6.96s`，常规步`3.11–3.53s`，峰值reserved
+  `83,630,227,456 bytes`；B24 OOM，frame40没有净吞吐收益。owner允许最长
+  视频只保留少量显存余量。正式约一小时一个900-step exact-resume segment，
+  每100步保存checkpoint；不继承v4的
   600/1200-step等价口径。
 - 第一段best先过内部Core/Procedure/LoRA gate，再跑固定400
   correct/same/wrong/shuffled/reversed。要求same影响最小且correct明显优于

@@ -82,7 +82,7 @@
     ],
     "action_meta_lora_rank": 8,
     "max_frames_per_encoder_call": 32,
-    "frame_batching_contract": "pack_all_four_videos_then_use_unpadded_memory_safety_chunks",
+    "frame_batching_contract": "encode_one_video_with_unpadded_memory_safety_chunks",
     "activation_checkpointing": true,
     "action_horizon": 50,
     "padded_action_dim": 32,
@@ -117,24 +117,24 @@
     "action_chunk_size": 50,
     "sampler_seed": 20260721,
     "teacher_video_seed": 20260722,
-    "teacher_video_sampling": "per_rank_task_visit_shared_deterministic_four_distinct_same_task_videos",
+    "teacher_video_sampling": "per_rank_task_visit_deterministic_single_same_task_video_in_no_replacement_cycles",
     "action_query_sampling": "task-balanced deterministic no-replacement episode cycles",
-    "video_action_pairing": "partition rank-local same-task action queries evenly across one shared four-video set",
-    "writer_generation_reuse": "generate four task-video LoRAs once then assign each action query to exactly one LoRA",
+    "video_action_pairing": "one task-video LoRA conditions the complete rank-local action batch",
+    "writer_generation_reuse": "generate one task-video LoRA once then reuse it across the complete rank-local action batch",
     "max_open_files_per_worker": 8,
     "video_open_files_per_rank": 2
   },
   "conditioning_training": {
-    "method": "shared_task_videos_partitioned_multi_action_positive_functional_loss",
+    "method": "single_video_multi_action_positive_functional_loss",
     "writer_language_contract": "correct_task_language_state_free_teacher_action_suffix",
     "policy_language_contract": "correct_action_query_task_language",
     "action_query_batch_owner": "one physical action batch per rank with no optimizer gradient accumulation",
     "task_assignment": "one task per rank per optimizer step with globally balanced task rotation",
-    "teacher_videos_per_task_visit": 4,
-    "action_video_assignment": "round_robin_one_action_one_video",
+    "teacher_videos_per_task_visit": 1,
+    "action_video_assignment": "all_actions_share_single_video_lora",
     "logical_pair_batch": "per_rank_action_batch",
     "policy_noise_contract": "one independent policy flow noise and time draw per action query",
-    "pair_loss_reduction": "mean_over_all_action_video_pairs",
+    "pair_loss_reduction": "mean_over_rank_local_action_batch",
     "normal_loss_weight": 1.0
   },
   "loader": {
@@ -168,10 +168,10 @@
     "budget_role": "profile_then_approximately_one_hour_exact_resume_segments"
   },
   "profile_defaults": {
-    "status": "completed_partitioned_shared_video_profile",
+    "status": "completed_single_video_joint_batch_profile",
     "expected_world_size": 4,
     "total_steps": 12,
-    "per_rank_batch_size": 16,
+    "per_rank_batch_size": 20,
     "checkpoint_steps": [
       1,
       2,
@@ -190,40 +190,43 @@
       7
     ],
     "fixed_frame_stride": 5,
-    "teacher_videos_per_task_visit": 4,
-    "writer_video_conditions_per_rank": 4,
-    "only_profiled_training_hyperparameter": "per_rank_action_batch_size",
+    "teacher_videos_per_task_visit": 1,
+    "writer_video_conditions_per_rank": 1,
+    "profiled_hyperparameters": [
+      "max_frames_per_encoder_call",
+      "per_rank_action_batch_size"
+    ],
     "max_frames_per_encoder_call": 32,
     "selected": {
-      "world_size": 4,
-      "per_rank_action_batch_size": 16,
-      "actions_per_video_condition": 4,
-      "policy_forward_calls_per_step": 1
+      "per_rank_action_batch_size": 20,
+      "global_action_queries_per_step": 80,
+      "longest_real_stride5_video_frames": 105,
+      "longest_video_step_seconds": 6.956146225100383,
+      "ordinary_step_seconds": [
+        3.109352245926857,
+        3.5270273799542338
+      ],
+      "ordinary_global_queries_per_second": [
+        25.72883149691297,
+        22.68199006752198
+      ],
+      "max_cuda_allocated_bytes": 76937901056,
+      "max_cuda_reserved_bytes": 83630227456,
+      "profile_output": "/data/ymdai/outputs/ember/pi05_as_writer_v5_jointprofile_f32_b20_long105_20260727",
+      "run_contract_sha256": "e83dd24f5edab003280d0d8465848b7a8f45ff97606f2f66790c941c41ccb1fc",
+      "metrics_sha256": "0b39de739d2eca59274ba43c8ea1679e77ead0e1228c55878b2079273799b561",
+      "checkpoint_manifest_sha256": "993739d4a5c8323d04fc9e0eef60ac4439356a20ee1bc8061e314d2c5100cb1b"
     },
-    "steady_steps": 11,
-    "step_seconds_p50": 10.347107195062563,
-    "step_seconds_mean": 10.04294115453112,
-    "step_seconds_range": [
-      7.072138651972637,
-      14.341249774908647
-    ],
-    "global_policy_pairs_per_second_p50": 6.185303659610248,
-    "max_cuda_allocated_bytes": 63736767488,
-    "max_cuda_reserved_bytes": 68415389696,
-    "sampled_frames_per_rank_step_observed_range": [
-      82,
-      240
-    ],
-    "exact_resume": "step_2_to_step_12_passed",
-    "run_contract_sha256": "8dd6dfe6bc3c4c4e60a0e34bc3d699c6cf22d37cb08676a2050f75ce5e263fb2",
-    "metrics_sha256": "a570c916a1f5bdf9e41f82a89ecd3943a23c277ebecdb68d682ca55fcfc09cea",
-    "step12_checkpoint_manifest_sha256": "1ef4bde3c2f9ffc6680284d27527eaba9d8a9e2d31c5ed41b4ff7c5bf2861bdd",
     "rejected": {
-      "batch20": "completed_three_steps_but_reserved_83732987904_bytes_left_about_1.3GiB",
-      "batch24": "oom_on_first_policy_forward",
-      "batch32": "oom_on_first_policy_forward"
+      "frame32_action24": "oom_on_first_policy_functional_forward",
+      "frame24_action24": "oom_on_first_policy_functional_forward",
+      "frame40_action20": "no_throughput_gain_and_slightly_more_reserved_memory",
+      "frame105_action1": "longest_video_used_79873_MiB_and_did_not_finish_within_90_seconds"
     },
-    "superseded_baseline": "per_action_independent_N4_B8_required_61.39_seconds_per_step"
+    "superseded_profiles": {
+      "per_action_independent_N4_B8": "61.39_seconds_per_step",
+      "four_video_partitioned_B16": "10.347_seconds_per_step"
+    }
   },
   "specificity_gate": {
     "status": "pending",
@@ -241,10 +244,25 @@
     "status": "sealed",
     "expected_world_size": 4,
     "total_steps": 12000,
-    "per_rank_batch_size": 16,
-    "checkpoint_steps": "every:50",
-    "selected_stop_step": 400,
-    "stage_stop_steps": "every:400",
-    "segment_definition": "400_steps_about_67_to_69_minutes_from_partitioned_B16_profile_with_eight_even_checkpoints"
+    "per_rank_batch_size": 20,
+    "checkpoint_steps": "every:100",
+    "selected_stop_step": 900,
+    "stage_stop_steps": [
+      900,
+      1800,
+      2700,
+      3600,
+      4500,
+      5400,
+      6300,
+      7200,
+      8100,
+      9000,
+      9900,
+      10800,
+      11700,
+      12000
+    ],
+    "segment_definition": "900_steps_approximately_one_hour_from_single_video_F32_B20_profile"
   }
 }

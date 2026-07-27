@@ -1396,3 +1396,28 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   峰值allocated/reserved为`63,736,767,488/68,415,389,696 bytes`。B20虽跑完
   3步但reserved `83,732,987,904 bytes`、仅余约1.3GiB；B24/B32首步OOM。
   因此正式首段为fresh step0→400，每50步保存，预计约67–69分钟。
+
+## v5单视频完整action-batch估计器（2026-07-27）
+
+- owner最终选择更简单的训练抽样：每rank每step一个task、1条teacher video、
+  1套LoRA，完整rank-local action batch都监督该LoRA；task后续被访问时换video。
+  同一LoRA必须解释宽action分布，跨video的共同信息则由共享Writer跨step SGD
+  累积。共享四视频分组合同因此退役，不能按其step400计划继续。
+- canonical实现删除四视频schedule、round-robin action映射、batched
+  per-sample LoRA executor和对应兼容逻辑；普通functional LoRA forward只执行
+  一次。source路径净删除多于新增，不保留平行runner。
+- `max_frames_per_encoder_call`不是optimizer microbatch。历史Action-Memory
+  已使用frame microbatch16；当前最长真实视频为task38/demo36，原始517帧、
+  stride5后105帧。固定`B_a=1`时，F32一步`5.93s`；F105占到`79,873 MiB`且
+  超过90秒未完成，证明帧安全分块必须保留。
+- GPU4–7联合profile选择`F32/B20`。最长视频步`6.956s`，随后常规步
+  `3.109/3.527s`，峰值allocated/reserved为
+  `76,937,901,056/83,630,227,456 bytes`。B24在F32与F24下都OOM；
+  F40/B20没有净吞吐收益。owner允许最长视频只保留少量空间，并停止B21搜索。
+- profile artifact为
+  `/data/ymdai/outputs/ember/pi05_as_writer_v5_jointprofile_f32_b20_long105_20260727`；
+  run-contract/metrics/checkpoint-manifest SHA256分别为
+  `e83dd24f...ccb1fc`、`0b39de73...9b561`、`993739d4...0cb1b`。
+- 正式首段封存为fresh step0→900、每100步保存；按常规约3–4秒/step折算约
+  一小时。首段后先做fixed validation绝对性能选择，达到门槛后再做内部和
+  rollout特异性。

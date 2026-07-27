@@ -143,7 +143,6 @@ def _write_shared_state(
         sampler,
         0,
         data_stop_step,
-        videos_per_task_visit=videos_per_task_visit,
     )
     if require_full_coverage and (
         any(len(episodes) != sampler.episodes_per_task for episodes in coverage.values())

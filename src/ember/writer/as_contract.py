@@ -118,7 +118,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         "action_meta_lora_rank": 8,
         "max_frames_per_encoder_call": writer["max_frames_per_encoder_call"],
         "frame_batching_contract": (
-            "pack_all_four_videos_then_use_unpadded_memory_safety_chunks"
+            "encode_one_video_with_unpadded_memory_safety_chunks"
         ),
         "activation_checkpointing": True,
         "action_horizon": 50,
@@ -209,16 +209,16 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         "demo_indices": [0, 49],
         "episodes_per_task": 50,
         "teacher_video_sampling": (
-            "per_rank_task_visit_shared_deterministic_four_distinct_same_task_videos"
+            "per_rank_task_visit_deterministic_single_same_task_video_in_"
+            "no_replacement_cycles"
         ),
         "action_query_sampling": "task-balanced deterministic no-replacement episode cycles",
         "video_action_pairing": (
-            "partition rank-local same-task action queries evenly across one "
-            "shared four-video set"
+            "one task-video LoRA conditions the complete rank-local action batch"
         ),
         "writer_generation_reuse": (
-            "generate four task-video LoRAs once then assign each action query "
-            "to exactly one LoRA"
+            "generate one task-video LoRA once then reuse it across the complete "
+            "rank-local action batch"
         ),
     }
     if any(data.get(name) != value for name, value in required.items()):
@@ -228,9 +228,7 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
 def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
     value = config.get("conditioning_training", {})
     normal = {
-        "method": (
-            "shared_task_videos_partitioned_multi_action_positive_functional_loss"
-        ),
+        "method": "single_video_multi_action_positive_functional_loss",
         "writer_language_contract": (
             "correct_task_language_state_free_teacher_action_suffix"
         ),
@@ -241,13 +239,13 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
         "task_assignment": (
             "one task per rank per optimizer step with globally balanced task rotation"
         ),
-        "teacher_videos_per_task_visit": 4,
-        "action_video_assignment": "round_robin_one_action_one_video",
+        "teacher_videos_per_task_visit": 1,
+        "action_video_assignment": "all_actions_share_single_video_lora",
         "logical_pair_batch": "per_rank_action_batch",
         "policy_noise_contract": (
             "one independent policy flow noise and time draw per action query"
         ),
-        "pair_loss_reduction": "mean_over_all_action_video_pairs",
+        "pair_loss_reduction": "mean_over_rank_local_action_batch",
         "normal_loss_weight": 1.0,
     }
     if value != normal:
@@ -319,13 +317,8 @@ def resolve_runtime(
     stop_step = args.stop_after_step or default_stop
     if min(total_steps, batch_size, stop_step) <= 0 or stop_step > total_steps:
         raise WriterModelError("invalid AS-Writer runtime request")
-    videos_per_task_visit = int(
-        config["conditioning_training"]["teacher_videos_per_task_visit"]
-    )
-    if batch_size % videos_per_task_visit:
-        raise WriterModelError(
-            "per-rank action batch must divide evenly across shared teacher videos"
-        )
+    if int(config["conditioning_training"]["teacher_videos_per_task_visit"]) != 1:
+        raise WriterModelError("AS-Writer training must use one video per rank step")
     expected_world_size = int(source.get("expected_world_size", 8))
     if context.world_size != expected_world_size:
         raise WriterModelError(
@@ -625,8 +618,8 @@ def build_contract(
             "per_rank_unique_action_query_cycle": list(batch_cycle),
             "teacher_videos_per_task_visit": videos_per_task_visit,
             "writer_video_conditions_per_rank": videos_per_task_visit,
-            "actions_per_video_condition": batch_size // videos_per_task_visit,
-            "action_video_assignment": "round_robin_one_action_one_video",
+            "actions_per_video_condition": batch_size,
+            "action_video_assignment": "all_actions_share_single_video_lora",
             "logical_pairs_per_rank": batch_size,
             "optimizer_gradient_accumulation": False,
             "global_policy_samples_per_step": (

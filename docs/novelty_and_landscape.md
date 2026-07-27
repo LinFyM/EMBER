@@ -27,12 +27,12 @@ v4 `shuffled=148/400 > correct=109/400`的教训：shuffle没有创造更多任�
 而是破坏了压过高层语义的低层translation controller bias；新架构必须先保住
 这部分高层任务内容，再让正确顺序提供额外增益。
 
-训练时每rank每step只处理一个task：4条不同teacher videos分别生成4套one-shot
-LoRA，整批`B_a`条独立action queries等分给4套LoRA；每条action只对应一条
-video并计算一次，推理仍严格one-shot。每套video LoRA由`B_a/4`条action约束，
-要求其跨初态有效，4条
-video的共同梯度应强化跨示范稳定的高层语义；demo-specific速度、路径和抓取
-角度则因与同一action分布不一致而相互抵消。这仍需same-task一致性、
+训练时每rank每step只处理一个task：1条teacher video生成1套one-shot LoRA，
+整批`B_a`条独立action queries全部监督该LoRA；每条action只计算一次，推理
+仍严格one-shot。每套video LoRA由完整action batch约束，要求其跨初态有效；
+后续task visits轮换video，共享Writer的跨step梯度应强化跨示范稳定的高层
+语义；demo-specific速度、路径和抓取角度则因与宽action分布不一致而难以稳定
+解释监督。这仍需same-task一致性、
 wrong/shuffled/reversed控制和rollout共同验证，不能仅凭内部LoRA不同宣称成立。
 
 ## 为什么共享LIBERO-90 base不破坏故事

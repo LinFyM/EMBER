@@ -1,9 +1,8 @@
 """Canonical symmetric-rank PI05 Action-Supervised Writer training.
 
-Only the shared Writer is trainable.  Each rank handles one task per step,
-generates four one-shot LoRAs from four distinct same-task videos, and assigns
-each independently sampled action query to exactly one of those adapters.
-Every video conditions an equal partition of the rank-local action batch.
+Only the shared Writer is trainable. Each rank handles one task and one
+teacher video per step, generates one one-shot LoRA, and evaluates the complete
+independent same-task action batch under that single adapter.
 """
 
 from __future__ import annotations
@@ -21,7 +20,6 @@ from lerobot.optim.schedulers import CosineDecayWithWarmupSchedulerConfig
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader
 
-from ember.batched_lora import BatchedLoRAInference
 from ember.pi05_eval_contract import (
     inspect_source_checkpoint,
     inspect_tokenizer,
@@ -105,7 +103,6 @@ class WriterRuntime:
     identity_state: dict[str, torch.Tensor]
     writer: CompleteLoRAWriter
     wrapped_writer: torch.nn.Module
-    functional_lora: BatchedLoRAInference
     optimizer: torch.optim.Optimizer
     scheduler: torch.optim.lr_scheduler.LRScheduler
     lora_contract: Any
@@ -559,7 +556,6 @@ def prepare_runtime(
         identity_state=setup.identity_state,
         writer=setup.writer,
         wrapped_writer=wrapped,
-        functional_lora=BatchedLoRAInference(setup.policy, setup.lora_contract),
         optimizer=setup.optimizer,
         scheduler=setup.scheduler,
         lora_contract=setup.lora_contract,
@@ -711,7 +707,6 @@ def train(args: argparse.Namespace) -> None:
         if runtime is not None:
             runtime.dataset.close()
             runtime.video_store.close()
-            runtime.functional_lora.close()
             if runtime.checkpoint_validation is not None:
                 runtime.checkpoint_validation.close()
         if dist.is_available() and dist.is_initialized():

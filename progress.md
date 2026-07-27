@@ -1071,3 +1071,18 @@
   `3600/10.347≈348 steps`取整，正式segment封存为400 steps、每50步一个
   checkpoint，预计约67–69分钟。下一步从fresh identity启动step0→400；
   首段后先做fixed-400绝对性能选择，不先跑特异性。
+
+## v5单视频完整action-batch切换与profile（2026-07-27）
+
+- owner终止共享四视频分组合同，活动训练改为每rank每step一个task、1条video、
+  1套LoRA，完整action batch监督这套LoRA；后续task visit轮换video。
+- canonical data/as-step/checkpoint/functional路径已原位简化，删除四视频
+  schedule、round-robin映射和batched per-sample LoRA执行器；无新runner。
+- 最长真实stride5视频为105帧。F32/B1完整一步`5.93s`；F105/B1占
+  `79,873 MiB`且超过90秒不完成，因此保留F32显存安全分块。
+- GPU4–7联合profile：F32/B20三步为`6.956/3.109/3.527s`，峰值
+  allocated/reserved `76,937,901,056/83,630,227,456 bytes`；F32/B24和
+  F24/B24 OOM；F40/B20无收益。owner接受最长视频少量余量，选择F32/B20并
+  停止B21。
+- 正式配置改为fresh step0→900、每100步checkpoint，使用物理GPU4–7；
+  fixed validation和后续特异性均等待首段完成。

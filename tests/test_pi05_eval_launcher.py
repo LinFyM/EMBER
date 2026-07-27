@@ -6,10 +6,12 @@ import argparse
 from pathlib import Path
 import subprocess
 import sys
+from types import SimpleNamespace
 
 import pytest
 
 from ember.pi05_assets import Pi05EvaluationError
+from ember.pi05_eval import launcher as runtime_launcher
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -52,6 +54,35 @@ def test_launcher_uses_the_contract_replica_profiles() -> None:
     )
     assert tuple(action.choices) == module.RUNTIME_REPLICA_PROFILES
     assert 6 in action.choices
+
+
+def test_gpu_preflight_queries_only_explicit_devices(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[list[str]] = []
+
+    def run(command, **kwargs):
+        del kwargs
+        calls.append(list(command))
+        if command[0] == "du":
+            return SimpleNamespace(stdout="100 /data/ymdai\n")
+        if command[0] == "df":
+            return SimpleNamespace(stdout="size used avail pcent target\n1000 100 900 10% /data\n")
+        if "--query-gpu" in " ".join(command):
+            return SimpleNamespace(
+                stdout=(
+                    "4, GPU-four, 0, 81920, 0, 30, 550\n"
+                    "7, GPU-seven, 0, 81920, 0, 30, 550\n"
+                )
+            )
+        return SimpleNamespace(stdout="")
+
+    monkeypatch.setattr(runtime_launcher.subprocess, "run", run)
+    observed = runtime_launcher.gpu_preflight((4, 7))
+    gpu_calls = [call for call in calls if call[0] == "nvidia-smi"]
+    assert observed["physical_gpu_ids"] == [4, 7]
+    assert len(gpu_calls) == 2
+    assert all(call[1:3] == ["-i", "4,7"] for call in gpu_calls)
 
 
 def test_writer_generation_batch_size_accepts_measured_positive_values() -> None:

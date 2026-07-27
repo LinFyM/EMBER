@@ -19,6 +19,14 @@ def gpu_preflight(physical_gpu_ids: Sequence[int]) -> dict[str, Any]:
 
     import torch
 
+    selected_indices = tuple(int(value) for value in physical_gpu_ids)
+    if (
+        not selected_indices
+        or len(set(selected_indices)) != len(selected_indices)
+        or any(value < 0 for value in selected_indices)
+    ):
+        raise Pi05EvaluationError("PI05 evaluation preflight GPU selection is invalid")
+    nvidia_selection = ",".join(str(value) for value in selected_indices)
     personal_bytes = int(
         subprocess.run(
             ["du", "-sb", "/data/ymdai"],
@@ -36,6 +44,8 @@ def gpu_preflight(physical_gpu_ids: Sequence[int]) -> dict[str, Any]:
     gpu_query = subprocess.run(
         [
             "nvidia-smi",
+            "-i",
+            nvidia_selection,
             "--query-gpu=index,uuid,memory.used,memory.total,utilization.gpu,"
             "temperature.gpu,driver_version",
             "--format=csv,noheader,nounits",
@@ -60,6 +70,8 @@ def gpu_preflight(physical_gpu_ids: Sequence[int]) -> dict[str, Any]:
     applications = subprocess.run(
         [
             "nvidia-smi",
+            "-i",
+            nvidia_selection,
             "--query-compute-apps=gpu_uuid,pid,process_name,used_memory",
             "--format=csv,noheader,nounits",
         ],

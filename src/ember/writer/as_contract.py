@@ -568,7 +568,7 @@ def writer_trainable_contract(
     parameter_count = sum(value.numel() for value in writer.parameters())
     if (
         not names
-        or parameter_count != 10_244_872
+        or parameter_count != 10_237_704
         or any(parameter.requires_grad for parameter in policy.parameters())
     ):
         raise WriterModelError("AS-Writer freeze boundary changed")

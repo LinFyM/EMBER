@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import torch
 
+from ember.pi05_lora import load_pi05_lora_contract
+from ember.writer.as_contract import writer_trainable_contract
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
 from ember.writer.temporal import (
     CausalProcedureEncoder,
@@ -166,6 +170,15 @@ def _inputs() -> tuple[torch.Tensor, ...]:
 def test_v5_2_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
     model, _ = _model()
     assert sum(parameter.numel() for parameter in model.parameters()) == 10_237_704
+    contract = writer_trainable_contract(
+        model,
+        torch.nn.Identity(),
+        load_pi05_lora_contract(
+            Path(__file__).resolve().parents[1] / "configs/pi05_lora_v1.json"
+        ),
+    )
+    assert contract["parameter_count"] == 10_237_704
+    assert contract["source_policy_trainable_parameter_count"] == 0
     expected = {
         "text_meta_lora": (model.semantic_encoder.text_meta_lora, 921_600),
         "vl_meta_lora": (model.semantic_encoder.vl_meta_lora, 921_600),

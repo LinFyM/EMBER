@@ -563,12 +563,12 @@ action-hidden teacher video -> one task LoRA`的核心映射。
   至少两个worker波次。标准四卡×6 worker面板由48 long + 24 ordinary改为
   48 long + 48 ordinary，state覆盖不变；focused 48 tests和全仓194 tests通过，
   实现commit `73f171a`已push。
-- [ ] 同一formal root从step900 exact-resume到step1800；合同不变，每100步保存，
-  不因online functional loss单独选best。已于runtime commit `a92850f`在tmux
-  `ember-v51-as-sv1800`启动；step900 resident validation逐值复现，step1000
-  新checkpoint完整落盘并继续推进，故resume机制已验证但该项在1800前不勾选。
-- [ ] 用无放回correct400建立足够密的step500–1800闭环曲线，选择同一合同下的
-  observed-best；若best在1800仍上升，只能判为未充分训练。
+- [x] 同一formal root从step900 exact-resume到step1800；合同不变，每100步保存，
+  不因online functional loss单独选best。新增900步、9个checkpoint和完整
+  exact-resume state均已封存，训练进程正常退出。
+- [x] 用无放回correct400建立足够密的step500–1800闭环曲线，选择同一合同下的
+  observed-best。全局best为step1400=`127/400`；step1800=`126/400`但
+  paired churn为new28/lost29，不能误判成稳定收敛。
 - [ ] 对最终observed-best复查内部Core/Procedure/LoRA/action与完整五条件行为；
   分开判断依赖性、方向性、对source/Core-only的有用性和absolute ceiling。
 - [ ] 若特异性成立但absolute长期低于约125，按最早失效层比较Core-only、
@@ -626,3 +626,34 @@ scripts/train_as_writer.py \
 --num-workers 2 --log-every 10 \
 --allow-contract-compatible-code-resume
 ```
+
+### 2026-07-27 21:00 UTC状态更新
+
+- step900→1800 exact-resume已经完整结束；checkpoints1000..1800、optimizer、
+  scheduler、sampler/data cursor和四rank RNG state均落盘，训练现场已退出。
+- canonical无放回correct400曲线为：
+  `100:83, 500:98, 700:88, 900:86, 1000:114, 1100:111,
+  1200:114, 1300:92, 1400:127, 1500:95, 1600:92, 1700:65,
+  1800:126`。全局observed-best为step1400；step1800近似复现aggregate，
+  但1400→1800有`28`个new successes和`29`个lost successes，不是稳定平台。
+- step1400内部16-reference机制检查已完成。same/wrong/shuffled/reversed相对
+  correct的effective-LoRA中位relative L2为
+  `.096/.673/.514/.673`，policy-action为`.0149/.1329/.1035/.1823`；
+  Core对order近似不变，固定Core只替换Procedure仍保留完整order差异。
+  因此没有v4-shuffled式信息旁路；当前最早科学问题是有用控制能力不足。
+- 全曲线两个spatial validation tasks在任一checkpoint合计最多`2/100`，
+  Goal-3也最多`3/50`；高分主要来自Object-1/3、Goal-6和Long-1。
+  相邻200-step Writer更新余弦接近零，且任务能力大幅迁移。机械沿原
+  `~3e-4`高学习率续训不再是优先动作。
+- evaluator在commit `082090f`加入同物理GPU EGL close/create串行化、
+  跨失败/resume累计wall与shard证据，以及显式封存的
+  `writer_lora_b_scale`；196项全仓测试通过并已push main。历史step500/1600
+  resume roots已正式聚合为`98/400`和`92/400`，累计attempt分别为2次。
+- 当前tmux `ember-v51-scale`在GPU5/6/4/7分别运行step1400的
+  `1.25/1.50/1.75/2.00×` LoRA-B full400；每个run严格复用同一个
+  identity SHA256
+  `40e53b52caac343275fdb63f98bb224fe48f88b32037ad50071505cfc3873043`
+  的400-entry无放回cache，A因子、state/video双射和所有paired RNG不变。
+  完成后先按多task paired收益选scale，再在选定scale跑完整五臂；若不能把
+  absolute和task breadth实质抬高，下一优先级是从step1400开启fresh optimizer
+  的一小时低学习率稳定阶段，而不是继续原高学习率轨迹。

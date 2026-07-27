@@ -1346,3 +1346,30 @@ GPU范围和训练步长是当时快照；活动状态只取
   action queries，24 tasks均已读全50 action episodes与50 unique videos。
   step1000 online functional validation为`0.1373837591`，比step900高
   `0.0042411`；它只作诊断，不用于替代无放回rollout选择。
+
+## v5.1 1800-step封存、稠密曲线与scale扫描启动（2026-07-27）
+
+- 同一formal root已经完整到step1800并正常退出；新增900步耗时约一小时，
+  checkpoints1000..1800每100步完整保留。最后一步applied LR仍为
+  `2.84213e-4`，所以没有把“训练结束”误写成“学习率已充分退火”。
+- 无放回correct400曲线全部完成：
+  `100/500/700/900/1000/1100/1200/1300/1400/1500/1600/1700/1800`
+  对应
+  `83/98/88/86/114/111/114/92/127/95/92/65/126`。step1400为全局
+  observed-best。step500与1600原先因EGL失败后resume聚合规则不完整而没有
+  `results.json`，现已从不可变raw shards正式补聚合为`98`和`92`。
+- step1400内部16-reference root为
+  `pi05_as_writer_v5_1_internal_specificity_step1400_refs2_42a9707_20260727`；
+  run-contract/summary/rows SHA256依次为
+  `39cb5206...9d3`、`1749a354...d78`、`56b3314d...342`。16/16 references
+  表明Core、Procedure、fusion、effective LoRA和policy function的信息路径
+  均按v5.1合同工作。
+- commit `082090f`完成三项canonical evaluator改进：同GPU EGL transition
+  flock、跨resume累计launcher证据、LoRA-B rollout scale。targeted
+  `37 passed`、全仓`196 passed`、architecture guard无hard violation；
+  feature branch与main均已push，HEAD=origin/main=`082090f`。
+- tmux `ember-v51-scale`已启动四个step1400 full400：
+  GPU5=`1.25×`、GPU6=`1.50×`、GPU4=`1.75×`、GPU7=`2.00×`。四者均使用
+  6 policy workers、long-first queue、无放回state/video双射并复用原
+  400-entry LoRA cache；preflight只查询GPU4–7。启动前个人占用
+  `375,770,816,512 bytes`，低于500GB cap且scale roots不复制1GB cache。

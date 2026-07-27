@@ -1727,3 +1727,57 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   四卡×6 worker、8 tasks×50 states时得到48 long + 48 ordinary，ordinary
   每片最多7 states；少卡/少worker按实际slots自适应，已有足够动态工作时不再
   细分。该改动优化有效rollouts/s，不用dummy workload填显存。
+
+## v5.1完整1800-step曲线与当前瓶颈（2026-07-27）
+
+- 同一formal轨迹的无放回correct400闭环曲线为：
+
+  | step | 100 | 500 | 700 | 900 | 1000 | 1100 | 1200 |
+  |---:|---:|---:|---:|---:|---:|---:|---:|
+  | success | 83 | 98 | 88 | 86 | 114 | 111 | 114 |
+
+  | step | 1300 | 1400 | 1500 | 1600 | 1700 | 1800 |
+  |---:|---:|---:|---:|---:|---:|---:|
+  | success | 92 | **127** | 95 | 92 | 65 | 126 |
+
+  step1400是observed-best，step1800仅少1个成功；但paired row中
+  step1800相对1400新增28、丢失29，双侧McNemar `p=1.0`。这不是所有任务
+  同时收敛到稳定平台，而是大幅能力迁移后的aggregate巧合。
+- 逐task曲线揭示结构性短板：两个spatial validation tasks在所有checkpoint
+  合计都不超过`2/100`，Goal-3不超过`3/50`。step1400的
+  Spatial-1/3、Object-1/3、Goal-3/6、Long-1/2依次为
+  `0/1, 45/23, 0/42, 15/1`；step1800为
+  `1/1, 44/19, 3/39, 16/3`。因此127不是广覆盖ceiling。
+- step1000/1200/1400/1800四点的成功集合并集为`180/400`、交集仅`65/400`；
+  1400与1800并集也有`155/400`。Writer参数每200步的更新L2约
+  `6.39–6.57`，相邻更新余弦仅`.015/-0.030/-0.055`。原scheduler在1400和
+  1800仍分别使用`2.904e-4/2.842e-4`，所以继续同一高学习率轨迹更可能继续
+  任务迁移，而非稳定累积能力。
+- step1400内部机制没有重现v4漏洞。same/wrong/shuffled/reversed相对correct的
+  Semantic-Core中位差为`.0509/.2310/~0/.00286`，effective-LoRA为
+  `.0960/.6733/.5140/.6734`，policy-action为
+  `.0149/.1329/.1035/.1823`。固定Core只换Procedure时order差异几乎完整穿过
+  fusion、LoRA与policy；Core-only对order近似不变。逻辑链成立而absolute和
+  breadth不足，指向“表示/更新有差异但未形成足够有用的控制修正”。
+- frame-set attention的8个learned gates从初始化`0.05`到step1400仍只在
+  `0.0497–0.0507`，同时两个spatial task长期近零。这是后续语义容量诊断的
+  具体证据，但尚不能仅凭参数静止断言软件bug或直接修改架构；先完成无副作用的
+  LoRA函数尺度扫描与低学习率稳定性实验。
+
+## evaluator EGL/resume根因与强度实验合同（2026-07-27）
+
+- 三次相同故障均发生在同一物理GPU的多个worker几乎同时关闭旧LIBERO env并
+  创建新env时，报
+  `mujoco.FatalError: Offscreen framebuffer is not complete, error0x8cdd`。
+  修复只把每张物理GPU的EGL close/create transition置于用户级flock内；正常
+  rollout仍并行，GPU间也不串行。
+- 旧aggregator只统计最后一次invocation的worker完成shards，使已经完整补齐的
+  step500/1600在resume后fail-close。新证据模型逐次校验
+  `invocations.jsonl`、failure artifact、累计complete计数和最终worker计数，
+  并把active wall按所有attempt求和。正式补聚合得到step500
+  `98/400, 2494.758s`和step1600 `92/400, 2578.903s`。
+- `writer_lora_b_scale`只在cache load后乘每个public LoRA的B因子，A与原始
+  cache hash不变，因而严格等价于整体缩放effective delta；scale进入run
+  contract与paired-control hash，但不污染Writer输入或LoRA生成身份。该扫描
+  用于检验v5.1 effective-LoRA幅度低于旧125/400 Writer约1.5倍这一可证伪假设，
+  不把调大幅度本身视为性能改进。

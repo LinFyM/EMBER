@@ -21,11 +21,11 @@ owner已经解除此前“特异性后停止”和“AS过门后才可探索RL�
 推进期间不需要逐项审核；只要absolute尚未达到可信满意水平，或提升带有
 v4-shuffled式逻辑漏洞，就不得轻易停止。
 
-v5.1首段step0→900、内部机制检查、轻量有放回五臂和step700无放回full400五臂
-已完成。当前立即路径是同一formal root从step900 exact-resume至step1800，
-随后用统一无放回correct400密集扫描checkpoint；再在真实observed-best上做
-内部/五臂复核与功能强度诊断。新session仍须先执行第9节的只读命令核验Git、
-tmux、GPU4–7和artifact，但不应重新等待owner批准。
+v5.1已经完整训练至step1800；统一无放回correct400密集曲线和step1400内部
+机制复核均已完成。当前立即路径是完成step1400的四个LoRA强度full400，
+随后在选定强度上做五臂复核；若不能实质提高absolute与task breadth，则从
+step1400进入fresh optimizer低学习率稳定阶段。新session仍须先执行第9节的
+只读命令核验Git、tmux、GPU4–7和artifact，但不应重新等待owner批准。
 
 ## 2. EMBER 的研究北极星、任务和信息合同
 
@@ -934,3 +934,91 @@ v5.1推进的授权已经记录，不应重新要求批准，也不应把已经�
 
 历史文档中的“当前”只指其成文日期。它们的数值证据保留，但未来式建议不能覆盖
 v5.1和本文；无需从Git历史、旧prompt或历史聊天补齐任何活动合同。
+
+## 11. 2026-07-27 21:00 UTC实时接手状态
+
+此前第9节的首段停止状态已经过期。owner已建立开放式AS性能Goal，并明确要求：
+只要absolute尚未达到可信满意水平，或提升存在v4-shuffled式逻辑漏洞，就持续
+探索，不需逐项审核。
+
+### 11.1 正式训练与完整无放回曲线
+
+v5.1同一formal root已从step900 exact-resume至1800并正常退出。所有
+checkpoints100..1800每100步完整；没有活动训练进程。无放回correct400为：
+
+```text
+step   100  500  700  900 1000 1100 1200 1300 1400 1500 1600 1700 1800
+succ    83   98   88   86  114  111  114   92  127   95   92   65  126
+```
+
+step1400为observed-best。step1800与其只差1，但paired为new28/lost29；
+两点不是同一批成功的稳定平台。两个spatial validation tasks全程合计最多
+`2/100`，Goal-3最多`3/50`；当前absolute主要来自Object、Goal-6和Long-1，
+因此仍未达到满意的多task competence。
+
+step500与step1600曾各遇到一次EGL 0x8cdd；raw queue最终均400/400。commit
+`082090f`的累计resume aggregator现已正式生成各自`results.json`：
+`98/400`和`92/400`，active wall分别`2494.758s/2578.903s`，两者各2次
+launcher attempts。
+
+### 11.2 step1400内部机制判定
+
+内部root：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v5_1_internal_specificity_step1400_refs2_42a9707_20260727
+```
+
+run-contract/summary/rows SHA256：
+
+```text
+39cb52068f5365de8ededfc6cf2319f97eb78c2d35b7ebaed6a052d9b3aad9d3
+1749a35494d63941918f0da81e682f4b196de6f457d9e0f35394c0196f576d78
+56b3314dacd0661f305dcdb6dd3bf9dddea2313479c55b06bca41212ac4d5342
+```
+
+same/wrong/shuffled/reversed的Semantic-Core中位relative L2为
+`.0509/.2310/~0/.00286`，effective-LoRA为
+`.0960/.6733/.5140/.6734`，policy-action为
+`.0149/.1329/.1035/.1823`。固定Core、只替换Procedure时order差异完整穿过
+LoRA/action；Core-only对order近似不变。结论是v5.1逻辑分工成立，没有
+v4-shuffled旁路；不足来自生成修正的有用性、稳定性和task breadth。
+
+### 11.3 当前活动进程与代码
+
+HEAD=origin/main=`082090fa5cbbbbde0796fae6642b5c8af690b4fb`，tree在本节文档
+更新commit前可能暂时只含ledger diff。该commit已加入：
+
+- 每物理GPU EGL env close/create transition的用户级flock；
+- 多次failed/resume launcher的累计shard与active-wall证据；
+- 只缩放public LoRA B、并进入paired hash的`writer_lora_b_scale`。
+
+完整回归`196 passed`，architecture guard无hard violation。当前tmux
+`ember-v51-scale`有四个窗口：
+
+```text
+GPU5 scale125  step1400 correct400, LoRA-B ×1.25
+GPU6 scale150  step1400 correct400, LoRA-B ×1.50
+GPU4 scale175  step1400 correct400, LoRA-B ×1.75
+GPU7 scale200  step1400 correct400, LoRA-B ×2.00
+```
+
+全部为validation、无放回、每卡6 policy workers、long-first；共同复用
+identity SHA256
+`40e53b52caac343275fdb63f98bb224fe48f88b32037ad50071505cfc3873043`
+的原step1400 400-entry cache，不重生成LoRA。接手时先检查四个root的
+`results.json`、queue和tmux，不得重复launch。
+
+### 11.4 下一判定
+
+1. 等四个scale full400完成，按paired、多task贡献和spatial/Goal-3 breadth
+   选择；若只是把原有易task推高或损害逻辑，不算提升。
+2. 用选定scale（若无scale胜出则1.0）对step1400做
+   correct/same/wrong/shuffled/reversed full400，并核对paired hash与逐row RNG。
+3. 当前轨迹在1400/1800 LR仍为`2.904e-4/2.842e-4`，相邻200-step更新近乎
+   正交且task能力大幅迁移。若scale不能实质提高，优先从step1400开fresh
+   optimizer的一小时低学习率稳定阶段，而不是机械续原轨迹。
+4. 若低LR只能稳定已有易task、spatial与Goal-3仍死，按最早失效层进入单一
+   canonical语义容量改进；任何架构改动前重新核对参数预算和Core/Procedure
+   无旁路保证。AS门未充分通过前，RL只能作低成本可判别机制探索，不能替代AS。

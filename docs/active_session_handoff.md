@@ -15,7 +15,8 @@ focused AS/RL完成或本文不再承担跨session恢复作用时，更新或删
 
 ## 1. Active Goal
 
-当前Goal已经存在、状态为`active`、没有token budget。目标原文为：
+当前Goal已经存在、没有token budget；本次最终核验时状态为`paused`，训练tmux
+不受该会话状态影响。目标原文为：
 
 > 完成 EMBER v5 AS Writer 的高效单视频条件训练闭环：保持已对齐的 Core +
 > Causal-Procedure 表示架构，重新设计为少量 task/video LoRA 各自复用多条独立
@@ -27,8 +28,9 @@ focused AS/RL完成或本文不再承担跨session恢复作用时，更新或删
 > validation 峰后明显下降标准继续充分探索 AS Writer，之后再按 owner 授权
 > 边界推进 cold-start RL。
 
-新session先调用`get_goal`。若Goal仍active，继续它，不要重建；若跨thread后没有
-Goal，必须用以上原文创建且不设置token budget。
+新session先调用`get_goal`。若同一Goal为`active`或`paused`，都复用它，不要
+重建；`paused`的恢复由用户/系统控制，不能另建重复Goal规避。若跨thread后确实
+没有任何未完成Goal，才用以上原文创建且不设置token budget。
 
 ## 2. EMBER 的研究北极星、任务和信息合同
 

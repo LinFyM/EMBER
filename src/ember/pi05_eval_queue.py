@@ -63,7 +63,11 @@ def _job_id(suite: str, task_id: int, state_ids: Sequence[int]) -> str:
 
 
 def _task_chunks(
-    task: EvaluationTask, *, env_batch_size: int, target_cost: int
+    task: EvaluationTask,
+    *,
+    env_batch_size: int,
+    target_cost: int,
+    max_states_per_shard: int | None = None,
 ) -> list[tuple[int, ...]]:
     state_ids = tuple(int(value) for value in task.init_state_ids)
     invalid = (
@@ -76,10 +80,51 @@ def _task_chunks(
         raise Pi05EvaluationError(f"invalid evaluation task: {task.suite}/{task.task_id}")
     waves = max(1, round(target_cost / (task.horizon * env_batch_size)))
     shard_size = waves * env_batch_size
+    if max_states_per_shard is not None:
+        if max_states_per_shard <= 0:
+            raise Pi05EvaluationError("evaluation shard state cap must be positive")
+        shard_size = min(shard_size, max_states_per_shard)
     return [
         state_ids[start : start + shard_size]
         for start in range(0, len(state_ids), shard_size)
     ]
+
+
+def _ordinary_state_cap(
+    tasks: Sequence[EvaluationTask],
+    *,
+    env_batch_size: int,
+    target_cost: int,
+    worker_slot_count: int,
+) -> int | None:
+    """Keep at least two ordinary queue waves available to absorb early exits."""
+
+    if not tasks:
+        return None
+    nominal_sizes = [
+        max(1, round(target_cost / (task.horizon * env_batch_size)))
+        * env_batch_size
+        for task in tasks
+    ]
+    current_shards = sum(
+        (len(task.init_state_ids) + size - 1) // size
+        for task, size in zip(tasks, nominal_sizes, strict=True)
+    )
+    total_states = sum(len(task.init_state_ids) for task in tasks)
+    target_shards = min(total_states, 2 * worker_slot_count)
+    if current_shards >= target_shards:
+        return None
+
+    cap = max(nominal_sizes)
+    while cap > 1:
+        proposed = sum(
+            (len(task.init_state_ids) - 1) // min(size, cap) + 1
+            for task, size in zip(tasks, nominal_sizes, strict=True)
+        )
+        if proposed >= target_shards:
+            return cap
+        cap -= 1
+    return 1
 
 
 def _validate_shard_coverage(
@@ -160,8 +205,19 @@ def build_cost_balanced_shards(
                 if state_ids:
                     append_shard(task, state_ids, preferred_gpu=gpu)
 
+    ordinary_state_cap = _ordinary_state_cap(
+        ordinary_tasks,
+        env_batch_size=env_batch_size,
+        target_cost=target_cost,
+        worker_slot_count=worker_slot_count,
+    )
     by_task = [
-        _task_chunks(task, env_batch_size=env_batch_size, target_cost=target_cost)
+        _task_chunks(
+            task,
+            env_batch_size=env_batch_size,
+            target_cost=target_cost,
+            max_states_per_shard=ordinary_state_cap,
+        )
         for task in ordinary_tasks
     ]
     for shard_index in range(max((len(value) for value in by_task), default=0)):

@@ -3,7 +3,9 @@
 > **历史原文，不是活动 authority。** 其中的 60/15/15、bank、geometry、shared
 > update subspace、per-task oracle、validation-frozen test adaptation 和旧 backbone
 > 均已退役；只能用于追溯思想来源。当前合同见根目录 `AGENTS.md` 与
-> `docs/execution_brief.md`，不要从本文启动实验或恢复实现。
+> `docs/execution_brief.md`，当前Writer架构见
+> `docs/action_forecast_writer_v5_design.md`，实时执行见
+> `docs/active_session_handoff.md`。不要从本文启动实验或恢复实现。
 
 > 评审日期：2026-07-17  
 > 评审范围：将仓库当前文件视为完整上下文，不假定任何未提交的历史讨论、实现或结果。  

@@ -1,6 +1,6 @@
 # EMBER Current Execution Brief
 
-状态：2026-07-26。共享 π0.5-LIBERO source base 与 Source-SFT comparator 已
+状态：2026-07-27。共享 π0.5-LIBERO source base 与 Source-SFT comparator 已
 封存。Action-Forecast Writer v4 已训练至step2400并停止；observed-best
 step825在固定400 panel上为`correct=109`、`same=104`、`wrong=99`、
 `shuffled=148`、`reversed=126`，行为特异性失败。
@@ -59,11 +59,18 @@ generic lerobot/pi05_base
 → 冻结共享、多任务、语言条件的 π0.5-LIBERO source base
 ```
 
-已知必须审计的同语言 overlap 至少有 LIBERO-90 task 44 对目标 `libero_goal` task 7，以及 LIBERO-90 task 77 对目标 `libero_10` task 5；完整 audit 决定最终 source task 数。禁止使用已经在目标40 actions上训练的 `pi05_libero`。
+完整3600-pair specification audit已经在看新policy outcome前封存：排除19个
+exact semantic/composition重合tasks，保留71个source tasks。task44对目标
+`libero_goal` task7、task77对目标`libero_10` task5是其中两条已知同语言
+重合，不是尚待完成的audit。禁止使用已经在目标40 actions上训练的
+`pi05_libero`。
 
 source action/state normalization 只由过滤后的 LIBERO-90 source corpus计算，并随 base 冻结供所有下游方法共用。source-base LoRA recipe、targets与训练参数必须先参考官方或成熟 π0.5 fine-tuning 项目，不能猜。
 
-base 不追求高 ceiling。训练期间用全部目标40 tasks做小型快速screen，确认它已开始在该 benchmark 上出现跨多个task的部分真实成功；不要求每task已有高成功率，但不能只靠一个易task的aggregate。generic π0.5 的正式结果 `0/400` 仅为原始校准，不能替代新 source base 结果。
+base 不追求高 ceiling。fresh step1000 raw source policy已经冻结；全部目标40
+tasks×8 states screen为`46/320`，覆盖13 tasks和四个suites，满足跨task基本
+interface competence。generic π0.5 的正式结果`0/400`仅为原始校准，不能替代
+新source base结果。
 
 owner于2026-07-22将source-base正式训练改为从generic base fresh运行1,000 optimizer steps，333-step线性warmup后到官方peak LR；旧30k attempt在step2880停止且无checkpoint，不得resume。这里的目标只是轻量获得LIBERO embodiment/control interface，而不是在LIBERO-90上收敛或过拟合。
 
@@ -86,13 +93,16 @@ owner于2026-07-22将source-base正式训练改为从generic base fresh运行1,0
   视频只保留少量显存余量。正式约一小时一个900-step exact-resume segment，
   每100步保存checkpoint；不继承v4的
   600/1200-step等价口径。
-- 第一段best先过内部Core/Procedure/LoRA gate，再跑固定400
-  correct/same/wrong/shuffled/reversed。要求same影响最小且correct明显优于
-  wrong、shuffle、reverse；不通过则定位最早失效层后fresh迭代，不用
+- 第一段先用functional panel安排顺序，再以fixed-400 correct-video寻找
+  absolute observed-best；不使用80-episode快筛。若全部候选仍明显低于约
+  `110–120/400`，先定位训练/架构问题，不提前花费五臂rollout。
+- 达到absolute预门后，对暂时best先做内部Core/Procedure/LoRA gate，再跑固定
+  400 correct/same/wrong/shuffled/reversed；要求same影响最小且correct明显
+  优于wrong、shuffle、reverse。不通过则定位最早失效层后fresh迭代，不用
   contrast/order loss。
-- 特异性通过后追求correct至少达到或接近`125/400`，目标逼近v4 shuffled
-  `148/400`。没有明显、持续、多task且独立复测成立的峰后下降就继续下一段；
-  focused v5 AS不设总wall-clock上限。
+- 最终correct至少达到或接近`125/400`，目标逼近v4 shuffled `148/400`。
+  没有明显、持续、多task且独立复测成立的峰后下降就继续下一段；focused v5
+  AS不设总wall-clock上限。
 
 ### RL-Writer
 

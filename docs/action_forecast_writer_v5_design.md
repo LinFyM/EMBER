@@ -1,6 +1,6 @@
 # EMBER Writer v5：Semantic Core + Causal Procedure
 
-状态：2026-07-26，owner 已批准；这是当前唯一活动 Writer 架构 authority。
+状态：2026-07-27，owner 已批准；这是当前唯一活动 Writer 架构 authority。
 
 本文记录可以直接实现、profile、训练、评测和 exact-resume 的完整合同。后续
 session 不需要恢复历史聊天来重建设计。若旧 v4 文档、旧 config、历史 ledger
@@ -75,7 +75,9 @@ v4 shuffled `148/400` 的启发不是“顺序不重要”。它证明：
           +
 弱起步、可学习、有向的 Causal Procedure refinement
           +
-同一 action 对多个同任务 teacher 的共同 functional 梯度
+同一 video LoRA 上的宽 action-batch 共同 functional 梯度
+          +
+跨 task visits 轮换 teacher 后的共享 Writer SGD
 ```
 
 ## 2. 不可改变的信息墙
@@ -454,7 +456,8 @@ Action-Memory/v4 弯路的是三者组合：
 
 - 单帧输入不再是 7D translation forecast；
 - Semantic Core 单独保护稳定高层内容；
-- 同 action 的多 demo functional 梯度压低 demo-specific路径。
+- 同一video LoRA必须解释宽action分布，跨task visits轮换demo后由共享Writer
+  SGD压低不稳定的demo-specific路径。
 
 ## 9. 模块 E：320 个 LoRA routing identities
 
@@ -806,8 +809,9 @@ one task language + one teacher video
 -> all replans in that rollout reuse the same LoRA
 ```
 
-训练时4条独立one-shot LoRA的共同梯度不改变推理输入数量，也不把4条视频拼成
-一个样本。
+四rank每step合计4条彼此独立的one-shot videos/LoRAs；每rank仍只输入一条
+video，且一条action只对应该rank的一套LoRA。这种DDP共同梯度不改变推理输入
+数量，也不把4条视频拼成一个样本。
 
 评估阶段工程并发与训练科学超参数解耦：
 
@@ -866,9 +870,15 @@ exact-resume segment 不因 stop step 改写已有 LR 轨迹。`selected_stop_st
 第一段完成后，先用封存的 functional validation panel安排少量候选顺序，再用
 固定8-task×50 rollout panel真正选择候选。80-episode快筛已退役，不再使用。
 
-## 20. v5 特异性 gate
+## 20. absolute预门后的v5特异性 gate
 
-对第一段 observed-best，先做低成本内部数值检查，再决定昂贵 rollout。
+第一段先按第19节在fixed-400 correct-video上确定当前保留checkpoint中的
+absolute observed-best。若所有候选仍显著低于约`110–120/400`，先定位
+训练/架构问题，不提前运行五臂specificity rollout。
+
+只有当前absolute best达到该预门，才先做低成本内部数值检查，再决定昂贵的
+五臂rollout。这个顺序不是降低特异性重要性，而是避免在尚无基本能力的模型上
+用大量行为噪声解释视频条件差异。
 
 ### 20.1 内部检查
 
@@ -935,9 +945,11 @@ correct > reversed
 说明task/video语义仍由language公共路径替代；若shuffle/reverse更好，优先检查
 Procedure是否重新学成低层轨迹controller，而不是添加顺序loss。
 
-## 21. absolute performance 与继续训练
+## 21. 最终absolute performance 与继续训练
 
-特异性通过后，再以correct-video validation观察绝对性能：
+absolute performance有两层作用：第20节的约`110–120/400`是是否值得进行
+完整specificity的预门；通过specificity后仍必须继续以correct-video
+validation寻找最终ceiling：
 
 - 主要最低目标：至少达到或接近旧 Action-Forecast `125/400`；
 - 目标：逼近或超过 v4 shuffled `148/400`；
@@ -1033,7 +1045,8 @@ RL若无法启动，先判断是reward coverage、runtime mechanics还是表示�
 - 验证、commit并push到`origin/main`，但文档整理不阻塞已经准备好的GPU关键
   路径。
 
-本文是后续session恢复当前设计的第一阅读入口。
+本文是后续session恢复v5架构的第一阅读入口；正在运行的进程、checkpoint、
+实时step和下一动作必须另读`docs/active_session_handoff.md`并现场复核。
 
 ## 25. 初版实现与已封存profile（2026-07-26）
 

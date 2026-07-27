@@ -1,5 +1,10 @@
 # EMBER Findings
 
+阅读规则：本文是按日期追加的证据账本。历史段落里的“当前”“下一步”和GPU
+权限只描述其日期当时的状态，不覆盖后续owner决定。2026-07-27的活动状态以
+`docs/active_session_handoff.md`、`docs/action_forecast_writer_v5_design.md`
+和本文末尾最新段落为准；不得从早期段落恢复旧runner、旧架构或旧训练合同。
+
 ## 2026-07-21 当前 π0.5 协议与已验证事实
 
 - 活动目标split为四个标准LIBERO suites、每suite 6 train / 2 validation / 2 test，总计24/8/8；final合并为32 source / 8 test。
@@ -549,7 +554,8 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   `10,297,344`的`98.68%`；public rank16 LoRA仍为76 tensors、
   `1,287,168` scalars。
 - 这是2026-07-24的历史设计判断。其实现、profile与结果保留在本ledger和Git；
-  当前架构已由`docs/action_forecast_writer_design.md`覆盖。
+  该历史版本后来由v4文档`docs/action_forecast_writer_design.md`覆盖；当前
+  活动架构为`docs/action_forecast_writer_v5_design.md`。
 
 ## Action-Forecast Writer实现与训练profile（2026-07-24）
 
@@ -904,9 +910,10 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - VL与Action Meta-LoRA均保留并可学习、identity初始化。前者适配视觉域与
   image-state融合；后者让机器人把observer-view或未来人类teacher理解成
   “假如我是teacher，此刻接下来会怎么动”的机器人动作forecast。
-- Plan、Revision、Belief、两层Temporal和LoRA decoder的当前精确定义及全部
-  退役边界见`docs/action_forecast_writer_design.md`。该文档是唯一活动架构
-  设计；旧v1/v2/v3表述仅解释历史实验，不再约束实现。
+- Plan、Revision、Belief、两层Temporal和LoRA decoder在该历史v4中的精确定义
+  及退役边界见`docs/action_forecast_writer_design.md`。它不再是活动架构；
+  当前v5见`docs/action_forecast_writer_v5_design.md`。旧v1/v2/v3/v4表述只
+  解释历史实验，不再约束实现。
 
 ## 32-token Visual-State v4实现检查（2026-07-25）
 
@@ -1421,3 +1428,26 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 正式首段封存为fresh step0→900、每100步保存；按常规约3–4秒/step折算约
   一小时。首段后先做fixed validation绝对性能选择，达到门槛后再做内部和
   rollout特异性。
+
+## v5单视频正式首段启动证据（2026-07-27）
+
+- canonical实现commit
+  `0b4e00696113cf6601d6e63b4c73734f3cea1073`已push；formal launch前
+  worktree clean且`HEAD==origin/main`。run只见物理GPU4–7，source policy
+  trainable参数为0，Writer trainable参数为`10,301,440`。
+- start-event contract SHA256为
+  `03186c57ac736ac82398400676ff10c33eb46ab3e5f9bcbbe44064305944787c`。
+  step1–400全部finite；step100/200/300/400原子checkpoint完整包含Writer、
+  trainer、四rank state与manifest。step400累计32,000 unique action queries，
+  训练body为`1,534.14s`。
+- step400覆盖24/24 tasks；每task有1,320–1,340 action examples、66–67次
+  video visits且全部50条unique videos均已覆盖。实际metrics确认每步全局80
+  actions、4 videos/LoRAs、4 task conditions和一次policy forward，不存在
+  Cartesian重复或optimizer accumulation。
+- 常驻模型的预封存512-row validation functional loss在
+  step100/200/300/400为
+  `0.1360107/0.1349113/0.1332633/0.1324333`，optimizer updates与parameter
+  gradients都为0，test action reads为0。它只能安排closed-loop候选顺序，
+  不能代替fixed-400 success选择。
+- output、tmux、精确launch和跨session接手顺序见
+  `docs/active_session_handoff.md`；该step400只是运行中快照，不作性能结论。

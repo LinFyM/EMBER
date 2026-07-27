@@ -1,7 +1,8 @@
 # Origin and General Thesis
 
 状态：动机与思想来源说明。若与当前实验合同冲突，以根目录 `AGENTS.md` 和
-`docs/execution_brief.md` 为准。
+`docs/execution_brief.md` 为准；当前Writer设计与实时执行分别见
+`docs/action_forecast_writer_v5_design.md`和`docs/active_session_handoff.md`。
 
 EMBER 的原始动机是把任务描述或示范“编译”为一个可直接使用、又能继续适应的策略状态。owner 最初强调的是：
 

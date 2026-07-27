@@ -7,14 +7,22 @@
 修改代码、数据、split、模型或实验状态前，完整阅读：
 
 1. `README.md`
-2. `docs/execution_brief.md`
-3. `docs/action_forecast_writer_v5_design.md`
-4. `task_plan.md`
-5. `findings.md`
-6. `progress.md`
-7. `docs/concept.md`
-8. `docs/decisions_and_open_questions.md`
-9. `docs/novelty_and_landscape.md`
+2. `docs/active_session_handoff.md`
+3. `docs/execution_brief.md`
+4. `docs/action_forecast_writer_expert_consultation.md`
+5. `docs/action_forecast_writer_design.md`
+6. `docs/action_forecast_writer_v4_root_cause.md`
+7. `docs/action_forecast_writer_v5_design.md`
+8. `task_plan.md`
+9. `findings.md`
+10. `progress.md`
+11. `docs/concept.md`
+12. `docs/decisions_and_open_questions.md`
+13. `docs/novelty_and_landscape.md`
+
+`docs/active_session_handoff.md`是当前跨session恢复入口，集中摘要研究证据链、
+v5设计理由、运行状态和下一动作，但不覆盖架构或长期科学authority；focused
+AS/RL完成或其不再承担跨session恢复作用时应更新或删除。
 
 `docs/expert_plan.md`、旧 SmolVLA/70-10-10 runner/config/checkpoint 和旧 Phase A–F 只作 provenance。不得恢复为活动路径，不得依赖或混入 MemLLM。
 
@@ -38,11 +46,12 @@ schema、配置和专用路径不得恢复。
 v5已原位实现；当前单视频完整action-batch合同在GPU4–7最长105帧压力测试
 选择`max_frames_per_encoder_call=32`、`B_a=20`。新架构不继承v4的step
 等价口径：正式一个segment为900 optimizer steps，每100步保留checkpoint，
-预计约一小时。第一段后选择validation
-observed-best，先做内部Core/Procedure/LoRA特异性检查，再做固定400
-correct/same-task-other/wrong/shuffled/reversed paired rollout。未通过则按
-最早失效层级修改同一canonical架构、fresh训练并循环；不得用contrast/order
-loss追正结果。
+预计约一小时。第一段先用fixed-400 correct-video选择absolute
+observed-best；全部候选仍显著低于约`110–120/400`时先定位训练/架构，不提前
+运行五臂特异性。达到absolute预门后，先做内部Core/Procedure/LoRA检查，再做
+固定400 correct/same-task-other/wrong/shuffled/reversed paired rollout。
+未通过则按最早失效层级修改同一canonical架构、fresh训练并循环；不得用
+contrast/order loss追正结果。
 
 AS的绝对性能最低目标是达到或接近旧Action-Forecast `125/400`，目标逼近v4
 shuffled `148/400`。四卡rank-128 Source-SFT `108/400`与旧八卡`122/400`
@@ -68,7 +77,12 @@ profile/训练；不得用广泛全仓测试、重复流程门槛或文档整理
 - 目标 benchmark 为 `libero_spatial`、`libero_object`、`libero_goal`、`libero_10`，共 40 tasks。
 - 活动 development split 已封存在 `configs/libero_24_8_8_v1/`：每 suite 6 train / 2 validation / 2 test，总计 24/8/8；不得按 outcome 改 task IDs。
 - validation 完成方法选择后，将 8 validation tasks 合入 source，形成最终 32 source / 8 test，并从规定初态重训已选方法。
-- shared source-base corpus 来自 LIBERO-90，但封存前必须只读 task language/BDDL/specification，排除与目标 40 tasks exact semantic/composition 重合的 source tasks。已知至少有 LIBERO-90 task 44（`turn on the stove`）和 task 77（`pick up the book and place it in the back compartment of the caddy`）同语言重合；最终 active task 数由完整 audit 决定，不能未经 audit 机械称 90/90。
+- shared source-base corpus 来自 LIBERO-90。完整3600-pair specification-only
+  audit已在看新policy outcome前封存：排除19个与目标40 exact
+  semantic/composition重合的source tasks，保留71个active tasks。task44
+  （`turn on the stove`）和task77
+  （`pick up the book and place it in the back compartment of the caddy`）只是
+  其中两项；不得把audit误写成尚待完成，也不得按outcome重开source IDs。
 - source base 使用过滤后每个 active LIBERO-90 task 的全部 50 条成功 teacher episodes。不得使用 `pi05_libero`，因为它已读过目标 40 tasks actions。
 - source-base action/state normalization 只从过滤后的 LIBERO-90 source actions/states 计算并冻结；所有下游方法共用，validation/test 不单独重算。
 

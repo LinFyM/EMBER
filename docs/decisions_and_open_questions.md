@@ -134,8 +134,9 @@ Source-SFT comparator、v4训练、现有checkpoint选择和step825完整特异�
   absolute-time Revision放大的组合链；
 - v5 Semantic Core + Causal Procedure的全部shape、mask、初始化、参数预算、
   单视频完整action-batch训练、profile、特异性与性能gate已写入唯一活动design；
-  真实trainable参数为`10,301,440`，新合同profile已封存，但尚未产生正式科学
-  结果；
+  真实trainable参数为`10,301,440`，新合同profile已封存，fresh step0→900
+  正式首段已启动；运行状态见`docs/active_session_handoff.md`，尚未产生完成的
+  fixed-400科学结果；
 - RL-Writer 使用独立短AS cold start取得24-task逐task成功覆盖后转pure reward，并完整报告action消耗；
 - Source-SFT 是一套 shared target-source LoRA，独立按 validation 选最佳；
 - seen/source panel 与 cross-suite wrong-video 对照；

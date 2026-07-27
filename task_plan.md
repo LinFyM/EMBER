@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-最后更新：2026-07-26。长期 EMBER Goal 是完成共享 π0.5-LIBERO source base、
+最后更新：2026-07-27。长期 EMBER Goal 是完成共享 π0.5-LIBERO source base、
 one-video Writer、source baselines、seen/wrong-video机制证据、final
 single-seed test、test-only三臂RL和联合target-action oracle；当前focused
 Semantic Core + Causal Procedure Writer由本文末尾执行段及
@@ -141,9 +141,12 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [ ] exact command、model/data/config hashes、output root、process topology与停止条件记录。
 - [ ] 一卡一训练rank为默认；若评估每卡多replica，所有已授权卡的replica数必须一致且GPU0无额外角色。
 - [ ] checkpoint/output不得覆盖；resume必须校验完整state与合同兼容性。
-- [ ] 所有适用阶段先短profile并由loss/reward/behavior曲线决定廉价screen间隔，只给必要候选完整validation；若owner为某阶段给出时间上限，到上限仍未充分训练则记录后停止。当前focused Action-Forecast AS/RL Writer不设总时间上限；Source-SFT comparator已经封存，不在本子任务重训。
+- [ ] 所有适用阶段先短profile并由loss/reward/behavior曲线决定廉价screen间隔，只给必要候选完整validation；若owner为某阶段给出时间上限，到上限仍未充分训练则记录后停止。当前focused Semantic Core + Causal Procedure v5 AS/RL Writer不设总时间上限；Source-SFT comparator已经封存，不在本子任务重训。
 
 ## 历史 Goal：四卡Action-Memory / Source-SFT / cold-start RL-Writer上限（2026-07-23，已被下方Action-Forecast执行段覆盖）
+
+本节未勾选项随该Goal退役，表示“当时未执行”，不是当前待办；不得据此恢复
+GPU0–3权限、Action-Memory、condition-balanced旧估计器或旧训练步长。
 
 - [x] 将冻结PaliGemma逐帧图文prefix、16个Action-Expert memory tokens、encoder-only Meta-LoRA、变长temporal/layer/slot聚合与完整rank16 LoRA解码实现为唯一canonical Writer路径。
 - [x] owner确认此前全局`bias=False`是额外优化限制而非condition-only必要条件；已只恢复conditional temporal/layer/slot与factor-head内部普通bias，不增加公共LoRA支路、层、token、宽度或输出。
@@ -159,7 +162,7 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 - [ ] 只有AS同时通过相对Source-SFT与视频特异性门槛后，才启动fresh cold-start RL-Writer；cold-start阶段先取得24个source tasks逐task成功信号，再切到纯reward训练，并充分探索validation峰值，不设时间上限。
 - [ ] 保存raw rows、loss/reward curves、seeds、actions/interactions、runtime、config/hashes与exact-resume证据，更新文档、验证、commit、push后完成Goal；本Goal不推进task-local RL或test阶段。
 
-### 当前快速子任务：temporal-RoPE Writer（2026-07-24）
+### 历史快速子任务：temporal-RoPE Writer（2026-07-24，已覆盖）
 
 - [x] 原位替换canonical temporal owner：1D RoPE + 4个condition-only learned memory queries；保留bias、Action Memory、Meta-LoRA、信息墙与完整LoRA decoder。
 - [x] GPU0–3原生global64两步profile通过，不做梯度累计或8卡逻辑batch模拟。
@@ -170,7 +173,8 @@ ViVLA-style matched baseline和source-only outer learning为时间允许时的�
 ## 历史执行：Action-Forecast Writer v1（2026-07-24，已覆盖）
 
 下列任务是Action-Forecast v1已完成历史，不是活动设计，不恢复旧checkpoint。
-当前设计见`docs/action_forecast_writer_design.md`。
+该历史版本设计见`docs/action_forecast_writer_design.md`；当前活动设计见
+`docs/action_forecast_writer_v5_design.md`。
 
 - [x] 原位替换旧 Action-Memory owner，完成 imagined-state、VL/Action
   Meta-LoRA、完整10-flow action plans、absolute-time Plan/Revision、
@@ -280,7 +284,8 @@ contrast loss。
 
 ## 历史执行：32-token Visual-State Action-Forecast Writer（2026-07-25）
 
-完整且唯一的活动设计见`docs/action_forecast_writer_design.md`。上方
+该历史v4的完整设计见`docs/action_forecast_writer_design.md`。当前唯一活动
+设计见`docs/action_forecast_writer_v5_design.md`。上方
 Action-Memory、temporal-RoPE、Action-Forecast v1/v2和28-slot Belief-v3均为
 历史证据，不得恢复其schema、配置、checkpoint或已否决的contrast路径。
 
@@ -383,8 +388,9 @@ task-local RL、joint oracle或ViVLA。
   候选；下一版必须先解决visual-state必要性、Meta职责、forecast语义gate和
   same-task多demo抽象。完整证据写入
   `docs/action_forecast_writer_v4_root_cause.md`。
-- [x] 当前没有v5代码、checkpoint或训练结果；不继续AS或进入RL，后续GPU工作
-  仍只使用物理4–7。
+- [x] 在该历史停止点还没有v5代码、checkpoint或训练结果；当时不继续AS或
+  进入RL，后续GPU工作仍只使用物理4–7。该状态已被下方owner批准并启动的
+  Semantic Core + Causal Procedure v5覆盖。
 
 ## 当前执行：Semantic Core + Causal Procedure Writer v5（2026-07-26）
 
@@ -443,8 +449,11 @@ Plan/Revision/Belief或旧活动config/schema。
   步`6.956s`、常规步`3.109–3.527s`、峰值reserved
   `83,630,227,456 bytes`；B24 OOM、F40无收益。正式封存900-step segment、
   每100步留ckpt。
-- [ ] 从fresh identity训练新合同首个约一小时segment；先对保留ckpt做完整
-  fixed-400 validation寻找absolute observed-best，不先做特异性。
+- [ ] 新合同首个约一小时segment已经从fresh identity正式启动：GPU4–7、
+  F32/B20、step0→900、每100步checkpoint。训练source commit为`0b4e006`，
+  output/tmux/接手命令见`docs/active_session_handoff.md`；运行结束前保持本项
+  未完成。随后先对保留ckpt做完整fixed-400 validation寻找absolute
+  observed-best，不先做特异性。
 - [ ] 若correct始终低于约`110–120/400`，先定位训练或架构问题并fresh迭代；
   若达到则再做内部数值与correct/same/wrong/shuffled/reversed rollout特异性。
   目标逼近或超过v4 shuffled `148/400`；best后没有明显、持续、多task且独立

@@ -1,6 +1,11 @@
 # EMBER Progress Ledger
 
-最后更新：2026-07-26。
+最后更新：2026-07-27。
+
+阅读规则：本文按时间顺序保留真实执行状态。早期段落中的“当前”“下一步”、
+GPU范围和训练步长是当时快照；活动状态只取
+`docs/active_session_handoff.md`、`docs/action_forecast_writer_v5_design.md`
+和本文末尾最新段落，不能用旧快照覆盖后续owner决定。
 
 ## 当前状态
 
@@ -11,9 +16,16 @@
 - Phase A source audit、71-task manifest、source-only normalization、pinned official recipe与hash seal已完成；cost-balanced dynamic evaluator及fail-closed contracts已完成，真实1/2/3 replicas吞吐profile选择3 replicas/GPU。
 - canonical π0.5 source-base full-SFT runner、atomic checkpoint与exact-resume机制已完成；fresh 1,000-step、333-step warmup、global batch256正式训练及step1000 raw/EMA checkpoint验证已完成，目标是轻量interface acquisition而非LIBERO-90收敛。
 - formal attempt1因NUMA affinity缺失在step12终止；attempt2因显式zero右腕被LeRobot误标`mask=true`而在step316终止。两者均无checkpoint、failure packet已封存且永不resume；修正后的训练/评测都通过missing feature key得到OpenPI规定的zero image + `mask=false`。
-- 当前里程碑fresh验证为112 tests passed；compileall与diff checks通过；architecture guard为`REVIEW`且无hard violation。ownership、增长理由与旧cache/cold-start/inference路径retirement已记录。
+- source/evaluator阶段的112-test里程碑是历史证据；v5初版曾完成`187 passed`，
+  当前单视频合同切换后只运行防止无效正式实验所需的focused 25 tests并全部
+  通过。没有用重复全仓仪式性校验延迟GPU训练。
 - 第一轮完整流程只跑一个training seed；不提前扩多seed或direct action-budget curve。
-- source checkpoint落盘后live `/data/ymdai`占用约446.72GB，离500GB cap约53.28GB；development feature cache按274,523帧BF16×2048维约1.12GB主体估算，不需清理。后续只在预测峰值逼近上限时清理已核验可再生的smoke/profile产物，不删除正式checkpoint、raw rows或来源不明文件。
+- 当前focused Writer为Semantic Core + Causal Procedure v5；单视频完整
+  action-batch正式首段正在GPU4–7从fresh step0训练到900，实时接手信息见
+  `docs/active_session_handoff.md`。
+- 2026-07-27交接审计时`/data/ymdai`占用约337.34GB，低于500GB cap；该值是
+  live快照，新launch仍须重查。只清理已核验可再生的smoke/profile产物，不删除
+  正式checkpoint、raw rows或来源不明文件。
 
 ## Generic feasibility已验证的实现事实
 
@@ -1086,3 +1098,27 @@
   停止B21。
 - 正式配置改为fresh step0→900、每100步checkpoint，使用物理GPU4–7；
   fixed validation和后续特异性均等待首段完成。
+
+## v5单视频正式首段启动与跨session交接（2026-07-27）
+
+- canonical单视频实现、focused tests和F32/B20 profile已在commit
+  `0b4e00696113cf6601d6e63b4c73734f3cea1073`封存并push；正式launch前
+  `HEAD==origin/main`且worktree clean。
+- fresh formal已在tmux `ember-v5-as-sv900`启动，只见物理GPU4–7；output为
+  `/data/ymdai/outputs/ember/pi05_as_writer_v5_single_video_dev_r4_seed7_s12000_0b4e006_20260727`。
+  start-event contract SHA256为
+  `03186c57ac736ac82398400676ff10c33eb46ab3e5f9bcbbe44064305944787c`。
+- 首步确认每rank B20、1 task/1 video/1 LoRA、全局80 unique actions与4个
+  video conditions、一次policy forward、无optimizer accumulation；source
+  policy trainable params为0。首步`6.209s`，随后常规步约3–4秒，四卡物理
+  显存约77.9GB。
+- step100/200/300/400均已原子发布完整checkpoint；step1–400全部finite。
+  step400训练body为`1,534.14s`，累计32,000 action queries；24/24 tasks每task
+  覆盖1,320–1,340 examples、66–67次video visits和全部50条unique videos。
+  常驻模型写出的512-row validation functional loss为step100/200/300/400
+  `0.1360107/0.1349113/0.1332633/0.1324333`，无gradient、无optimizer update
+  且test action reads为0；正式run仍继续到900。
+- 跨session当前状态、精确launch、tmux/log/output、实时复核命令、step900后
+  absolute-first评测顺序和禁止事项集中记录在
+  `docs/active_session_handoff.md`。该文件是临时live-state ledger，不覆盖
+  v5设计authority；新session不得据快照重复启动run。

@@ -11,7 +11,10 @@ task language + exactly one action-hidden teaching video
 ## 当前主线
 
 - Backbone 从 generic `lerobot/pi05_base` 开始，但不直接以其 `0/400` LIBERO表现作为Writer地基。
-- 先对 LIBERO-90 与目标 LIBERO-40 做 specification-only semantic/composition overlap audit，排除重合 source tasks；在剩余 tasks × 每 task 50 success episodes 上联合 action-SFT，并冻结一个共享 π0.5-LIBERO source base。
+- 已完成 LIBERO-90 与目标 LIBERO-40 的3600-pair specification-only
+  semantic/composition overlap audit：排除19个重合source tasks，保留71个；
+  在这71 tasks × 每task 50 success episodes上联合action-SFT，并冻结一个
+  共享π0.5-LIBERO source base。
 - source base 快速覆盖测试全部40个目标tasks，只要求开始出现跨多个task的部分真实成功，不追求先把base训到高ceiling，也不能只靠单个易task的aggregate。
 - source base已从generic base fresh训练并封存1,000-step raw policy。
   Action-Forecast Writer v4已从fresh identity训练至step2400并停止；固定
@@ -73,13 +76,17 @@ Action-Forecast Writer 的研究动机、全部关键架构演进、已封存 v4
 ## 阅读顺序
 
 1. `AGENTS.md`
-2. `docs/execution_brief.md`
-3. `docs/action_forecast_writer_v5_design.md`
-4. `task_plan.md`
-5. `findings.md`
-6. `progress.md`
-7. `docs/concept.md`
-8. `docs/decisions_and_open_questions.md`
-9. `docs/novelty_and_landscape.md`
+2. `docs/active_session_handoff.md`
+3. `docs/execution_brief.md`
+4. `docs/action_forecast_writer_expert_consultation.md`
+5. `docs/action_forecast_writer_design.md`
+6. `docs/action_forecast_writer_v4_root_cause.md`
+7. `docs/action_forecast_writer_v5_design.md`
+8. `task_plan.md`
+9. `findings.md`
+10. `progress.md`
+11. `docs/concept.md`
+12. `docs/decisions_and_open_questions.md`
+13. `docs/novelty_and_landscape.md`
 
 `docs/expert_plan.md` 是历史原文，不是活动 authority。

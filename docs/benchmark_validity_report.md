@@ -1,7 +1,8 @@
 # Historical Gate -1 and Gate 0 Evidence
 
 状态：历史证据摘要；不定义当前 split、backbone、runner 或 Goal。当前活动合同见
-`AGENTS.md` 与 `docs/execution_brief.md`。
+`AGENTS.md` 与 `docs/execution_brief.md`；当前Writer设计与实时执行分别见
+`docs/action_forecast_writer_v5_design.md`和`docs/active_session_handoff.md`。
 
 ## Gate -1
 

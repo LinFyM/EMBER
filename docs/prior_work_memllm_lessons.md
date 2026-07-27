@@ -1,5 +1,8 @@
 # Prior MemLLM Lessons
 
+状态：历史方法论来源，不是活动架构或执行authority。当前合同见`AGENTS.md`、
+`docs/action_forecast_writer_v5_design.md`和`docs/active_session_handoff.md`。
+
 EMBER 是完全独立仓库，不依赖、不复制 MemLLM Wiki/QA 代码。可复用的只有研究经验：
 
 - 先证明生成状态具有即时功能价值，再讨论后续优化。

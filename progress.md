@@ -1516,3 +1516,25 @@ GPU范围和训练步长是当时快照；活动状态只取
   400（除非absolute明确下降）。owner取消正式run全量HDF5 SHA；启动仍核对
   manifest、文件size和HDF5 schema。下一动作是验证、commit/push、集成main，
   再在GPU4–7启动fresh macro0→200。
+
+## v6 task-complete正式首段完成（2026-07-28）
+
+- 正式root
+  `/data/ymdai/outputs/ember/pi05_as_writer_v6_taskcomplete_dev_r4_b20_seed7_s2400_149badc_20260728`
+  已自然停在 macro200；tmux/训练进程退出，run summary 为 200 metrics、
+  4,800 video conditions、96,000 queries、wall `3,864.599s`。
+- checkpoints `25/50/75/100/125/150/175/200` 全部存在；终点24 tasks各
+  4,000 queries、200次video visits、50/50 action episodes和50/50 teacher
+  videos。macro200 Writer/trainer/四rank state逐文件SHA256与manifest一致；
+  正式log无OOM、nonfinite、CUDA/NCCL error或traceback。
+- 全段平均 `18.668s/macro`、`25.720 queries/s`；峰值
+  allocated/reserved `76,986,335,232/83,642,810,368` bytes。训练后GPU4–7
+  均回到0MiB。
+- 训练等待期的仓库清理在隔离分支完成：101 files changed，
+  431 insertions/18,853 deletions；tracked tree降至约3.17MB，退役临时
+  `.codex/tmp` 另清除108 files/1,820,301 bytes。正确worktree
+  `PYTHONPATH`下全仓`177 passed`、Markdown link audit与`git diff --check`
+  通过；正式run退出后可安全fast-forward合入。
+- 下一动作是合入清理提交，再用GPU4/5/6/7分别运行macro50/100/150/200
+  no-replacement correct400；每卡6 Writer generators和6 persistent policy
+  workers、全局long-first。

@@ -1994,3 +1994,20 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   gradient可达。正式首段为B20、200 macro、每25 macro checkpoint。
 - owner明确正式run同样不计算全量HDF5 SHA；保留sealed manifest、精确文件
   size、HDF5 schema和完整训练/checkpoint cursor证据。
+
+## v6 task-complete正式首段训练证据（2026-07-28）
+
+- fresh B20/K6 run 自然完成 macro0→200，wall `3,864.599s`；200 条 metrics
+  连续、唯一且 loss/gradient 全 finite。全段平均 max-rank step wall
+  `18.668s`、吞吐 `25.720 queries/s`，峰值 allocated/reserved 为
+  `76,986,335,232/83,642,810,368` bytes。
+- 终点精确消费 `4,800` 个 one-video conditions、`96,000` 条 action queries。
+  24 tasks 各 4,000 queries、200 次 video visits；每 task 均覆盖全部
+  50 action episodes 与 50 teacher videos。25..200 的 8 个 checkpoint
+  schema、contract、cursor、size 与计数一致，macro200 六个状态文件逐文件
+  SHA256 重算通过。
+- online task-balanced functional loss 在 25..200 为
+  `.130744/.133971/.133841/.133092/.132344/.133132/.134178/.137535`。
+  后段上升只作诊断；按预封存规则不能替代 closed-loop absolute，也不能单独
+  阻止第二段。下一步固定评测 macro50/100/150/200 的 paired
+  no-replacement correct400。

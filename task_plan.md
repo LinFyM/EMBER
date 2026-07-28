@@ -55,7 +55,8 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   `25.793 queries/s`、`193.447 macros/hour`，选择 B20，不触发 B16。
 - [x] step1→3 resume smoke 恢复 task/video/query/LR/cursor；真实
   visual-transition gradient 可达。
-- [ ] 完成 fresh macro0→200 正式段并核验 checkpoint/online-validation/state。
+- [x] fresh macro0→200 正式段完成：200 条连续 finite metrics、8 个 every-25
+  checkpoint、24-task 等权消费与终点全文件 SHA 均已核验。
 - [ ] 在 GPU4–7 对 macro50/100/150/200 做并行 fixed correct400；每卡一个
   checkpoint，6 Writer generators + 6 persistent workers，视频 50 条无放回，
   全局 long-first。

@@ -1567,3 +1567,8 @@ GPU范围和训练步长是当时快照；活动状态只取
   无放回视频与 global long-first。
 - 等待期额外清除约 3.8 MiB Python/pytest/editable-install 可再生缓存。
   Git 仍 clean；9.1 GiB 唯一活动 `.venv` 和实验证据未动。
+- 进一步审计发现 117 组 Writer LoRA cache 共 91.74 GB。只删除其中 113 组
+  已有 matching results/launcher completion 且所有 worker exit 0 的历史
+  cache，共 `87,487,144,566` bytes；当前四个 control cache 被硬性排除。
+  rollout rows/results、queue、日志、contract、checkpoint 全部保留，个人占用
+  从 `411,326,994,567` 降到 `323,840,205,468` bytes。

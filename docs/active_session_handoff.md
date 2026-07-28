@@ -150,7 +150,21 @@ stage extension。合入后在 canonical main 重新运行全仓回归为 `177 p
 correct400 等待期又清除了约 3.8 MiB 可再生的 `__pycache__`、pytest cache
 和 editable-install metadata；Git 仍 clean。唯一活动 `.venv` 约 9.1 GiB，
 仓库 tracked source/docs/tests/configs 合计仅约 3 MiB，不得为表面缩小仓库而
-删除运行环境。四个来源不明但大小为零的 untracked 空目录也未擅自删除。
+删除运行环境。四个大小为零的 untracked 空目录经 Git history 确认是已退役
+路径残留后也已移除；当前 `git clean -nd` 无输出。
+
+随后对 `/data/ymdai/outputs/ember` 做了生成物审计：113 个已经有完整
+`results.json`、匹配 launcher completion 且所有 worker exit 0 的历史
+`writer_lora_cache` 共 `87,487,144,566` bytes 已删除。所有 rollout rows、
+results、queue、日志、contract、checkpoint 和 paired artifact 均保留；cache
+可由保留 checkpoint、teacher videos 与 seed schedule 重建。精确删除清单：
+
+```text
+/data/ymdai/outputs/ember/cache_cleanup_completed_eval_lora_20260728.json
+```
+
+当前四个仍在运行的 v6 specificity cache 没有 completion，已被规则硬性排除
+并现场确认完整。清理后个人占用为 `323,840,205,468` bytes。
 
 ## 3. 当前研究判断
 
@@ -255,5 +269,6 @@ git rev-parse origin/main
 ```
 
 `/data/ymdai` 的 operator hard cap 是 500GB。首段完成后个人占用为
-`402,806,538,492` bytes；任何新正式 run、批量 rollout cache 或 checkpoint
-扩展前都要重新测现场和峰值空间。
+`402,806,538,492` bytes；本轮历史评测 cache 清理并生成当前四个 control
+cache 后为 `323,840,205,468` bytes。任何新正式 run、批量 rollout cache 或
+checkpoint 扩展前都要重新测现场和峰值空间。

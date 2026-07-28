@@ -139,7 +139,8 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
 - [ ] 评测按 `episodes × horizon` 动态调度；所有 worker 先处理 long task，
   long 耗尽后再取其它 task；任何 checkpoint/GPU 分配都遵守。
 - [x] 等训练/rollout 时推进不污染运行的代码、分析和仓库清理；已退役旧路径
-  18,853 行，并清除约 3.8 MiB 可再生缓存，活动运行环境与证据完整保留。
+  18,853 行、约 3.8 MiB 仓库缓存和 87.49 GB 已完成评测 LoRA 中间 cache；
+  活动运行环境、checkpoint、rollout rows/results 和 contract 证据完整保留。
 
 ## 当前继续/停止判据
 

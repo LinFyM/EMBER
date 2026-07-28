@@ -88,11 +88,16 @@ observed-best，并在best后看到幅度明显、远超400-rollout正常波动�
 focused AS/RL没有机械总wall-clock上限，但这不授权惯性续段；每个新增训练段
 都受上面的证据门约束。
 
-v6首段/续段与机制比较完成后，必须fresh重训corrected mixed-task rank-128
-Source-SFT并寻找validation observed-best；旧rank-pure SFT只作历史背景。
-随后才做严格配对one-shot baseline与独立short-AS-cold-start→pure-reward
-RL-Writer。不得把完整AS best冒充RL cold start。focused闭环不自动继续
-final-32、test task-local RL、joint oracle或ViVLA。
+v6首段/续段与机制比较已完成。corrected full-24 mixed-task rank-128
+Source-SFT的dense correct400在step400达到`109/400`，step450显著下降；
+该recipe停止。当前紧邻实验是fresh global-8 cyclic mixed Source-SFT：
+4 ranks×2 tasks/update、连续3 updates完整覆盖24 tasks，保持B144/global576、
+LR/scheduler和平均task/sample clock；GPU4–7 profile已封存，下一正式段为
+step0→240并按证据决定是否续到480。其observed-best封存后回到AS-Writer训练
+粒度/架构探索；随后才做严格配对one-shot baseline与独立
+short-AS-cold-start→pure-reward RL-Writer。不得把完整AS best冒充RL cold
+start。focused闭环不自动继续final-32、test task-local RL、joint oracle或
+ViVLA。
 
 当前及后续GPU工作固定frame stride=5，只使用物理GPU 4、5、6、7；0–3不进入
 visible set。4–7即使已有他人进程也按owner授权共卡，但不得杀、暂停、重置或

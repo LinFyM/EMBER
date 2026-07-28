@@ -1677,3 +1677,29 @@ GPU范围和训练步长是当时快照；活动状态只取
   `40/19,p=.00864`。能力在Long/Object上涨的同时从Goal/Spatial迁出，峰值
   不稳定且训练量仅129,600 queries。按sealed规则从完整step225
   exact-resume到450；不改recipe、不补当前密集rollout、不删checkpoint。
+
+## full-24 Source-SFT封顶与global-8 profile（2026-07-28）
+
+- full-24 formal从step225 exact-resume到450自然完成；metrics连续1..450，
+  step25..450的18个checkpoint全部保留，root约1.1GB。12点paired
+  correct400为
+  `60/75/77/56/77/57/87/71/98/109/107/74`；step400为observed-best，
+  step450相对400显著下降`50 lost/15 gained,p=1.57e-5`，故停止该recipe。
+- dense analysis artifact为
+  `paired_correct400_step0050_0450_dense.json`，SHA256
+  `5a781a50344b72085ac154b1602a6842cb9bcb6b44a0a957f3da544e5e8791c4`；
+  12个面板均400 rows、36 shards、6 workers exit0并满足paired seeds/noise和
+  global long-first。
+- 隔离分支`codex/source-sft-mixed8`提交`c25cd5d`实现唯一global-8 cyclic
+  sampler：4 ranks×2 tasks/update、3 updates覆盖24 tasks，保持
+  B144/global576、rank-128 LoRA、LR/scheduler及平均task/sample clock。
+- GPU4–7 profile root
+  `pi05_source_sft_rank128_mixed8_profile_r4_b144_c25cd5d_s6_20260728`
+  完成fresh0→3与exact-resume3→6。两轮cycle均精确覆盖24 tasks，3,456
+  samples全唯一；稳态wall `15.833–15.883s`、吞吐
+  `36.27–36.38 queries/s`，峰值allocated/reserved `60.69/74.07GB`，
+  loss/gradient finite，无OOM/NCCL/CUDA错误。B128 fallback未触发。
+- config封存formal fresh0→240、每30步checkpoint、closed-loop
+  60/120/180/240；除非可信下降，否则exact-resume至480并评测
+  300/360/420/480。owner最终要求保留原checkpoint，不做删除；当前个人占用
+  约296GB，远低于500GB cap。

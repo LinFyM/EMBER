@@ -213,8 +213,14 @@ def test_mixed8_rank128_config_preserves_sample_clock_and_complete_cycles() -> N
     assert mixed8["profile_defaults"]["per_rank_batch_size"] == 144
     assert 144 // 2 == 72
     assert 72 // 3 == 24
-    assert formal["status"] == "pending_profile"
+    assert formal["status"] == "sealed"
     assert formal["selected_stop_step"] == 240
+    profile = mixed8["profile_contract"]["observed_profile"]
+    assert mixed8["profile_contract"]["selected_per_rank_batch_size"] == 144
+    assert profile["optimizer_steps"] == 6
+    assert profile["complete_task_cycles"] == 2
+    assert profile["global_action_queries"] == 3456
+    assert profile["max_cuda_allocated_bytes"] < profile["max_cuda_reserved_bytes"]
     assert all(step % 3 == 0 for step in formal["checkpoint_steps"])
     assert all(step % 3 == 0 for step in formal["stage_stop_steps"])
     assert formal["closed_loop_screen_steps"] == [
@@ -230,6 +236,9 @@ def test_mixed8_rank128_config_preserves_sample_clock_and_complete_cycles() -> N
     assert set(formal["closed_loop_screen_steps"]) <= set(
         formal["checkpoint_steps"]
     )
+    assert sha256_file(MIXED8_RANK128_CONFIG) == (
+        ROOT / "configs/pi05_source_sft_rank128_mixed8_v3.sha256"
+    ).read_text(encoding="utf-8").split()[0]
 
 
 def test_source_sft_batch_task_counts_preserve_mixed_identity() -> None:

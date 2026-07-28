@@ -9,6 +9,12 @@ history。任何接手者都必须先只读复核现场，不能按本文快照�
 
 ## 1. 当前实时状态
 
+当前没有训练或评测进程。full-24 corrected Source-SFT 已完成到step450并完成
+12点dense correct400；observed-best为step400=`109/400`，随后step450出现
+显著下降，所以该recipe停止。下一条已实现并profile封存的实验是global-8
+cyclic mixed Source-SFT，正式fresh step0→240尚未启动。下文1–6节保留v6及
+full-24实验背景，10–11节是最新恢复入口。
+
 v6 fresh task-complete 正式 run 已在 GPU4–7 从 macro0 完整训练到 macro400，
 训练和评测进程均已自然退出：
 
@@ -230,17 +236,18 @@ cap；任何新formal run前仍需重测现场与预计峰值。
 
 ## 7. 紧邻动作与恢复命令
 
-当前紧邻动作是：把main与`origin/main`推进到包含`effbd4b`及本handoff的clean
-状态；做正式launch前的Git/data/storage/GPU4–7检查；随后只在GPU4–7启动
-corrected Source-SFT fresh step0→225。首段结束后先用online loss筛候选，再
-对少量checkpoint做同一fixed validation correct400，依据observed-best位置和
-breadth决定是否resume到450。
+当前紧邻动作是：验证并提交global-8 cyclic mixed Source-SFT的profile seal，
+fast-forward到clean `main == origin/main`，然后在GPU4–7从fresh identity正式
+训练step0→240。保持global576 action queries/update不变，但每次update只平均
+8个tasks，连续3 updates恰好覆盖全部24 tasks。首段固定筛
+step60/120/180/240；除非出现可信的多task绝对性能下降，否则按预封存规则
+exact-resume到480，并筛step300/360/420/480。
 
-Source-SFT observed-best封存后，回到AS-Writer：优先检验global-8/
-three-update cycle是否减轻任务漂移；若Procedure仍强而compiler传递弱，再改
-Procedure→compiler。达到上述absolute与视频因果双门后才做matched action
-one-shot和独立cold-start RL。不得自动进入final-32、test task-local RL或
-joint oracle。
+该实验只改变优化粒度，不改frozen source base、rank-128 LoRA、LR/scheduler、
+task/sample clock、action数据或information wall。全部checkpoint继续保留。
+global-8 Source-SFT observed-best封存后，回到AS-Writer检验同一优化思想；若
+Procedure仍强而compiler传递弱，再调整Procedure→compiler。达到absolute和
+视频因果双门后才做matched action one-shot与独立cold-start RL。
 
 只查询GPU4–7：
 
@@ -352,3 +359,78 @@ Long-1 `4→14`、Object-3 `2→6`，同时Goal-6 `29→25`、两个Spatial
 下一动作是从完整step225 exact-resume到450，保持B144、全部24 tasks混合、
 LR/sampler/参数化与每25步checkpoint不变。暂不补密集rollout，也不删已有
 checkpoint。
+
+## 10. full-24 corrected Source-SFT上限已封存
+
+同一正式root已从step225 exact-resume到450。`metrics.jsonl`连续`1..450`，
+所有loss/gradient finite；step25..450每25步共18个checkpoint全部保留，
+总占用约1.1GB。第二段online loss在step250..450为：
+
+```text
+.133605 .133035 .135426 .133542 .135065 .134222 .133433 .132800 .134391
+```
+
+fixed paired correct400 dense曲线为：
+
+```text
+step          50  100  175  225  275  300  325  350  375  400  425  450
+successes     60   75   77   56   77   57   87   71   98  109  107   74
+tasks > 0      5    8    6    6    6    6    8    8    7    6    7    7
+```
+
+artifact：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_source_sft_rank128_mixed_dev_r4_b144_seed7_s2400_20260728/
+paired_correct400_step0050_0450_dense.json
+SHA256 5a781a50344b72085ac154b1602a6842cb9bcb6b44a0a957f3da544e5e8791c4
+```
+
+12个面板均为400 unique rows、36/36 shards、6/6 workers exit0、paired
+state/env/policy/noise与global long-first。step400和425为`24/22` switches、
+`p=.883`，属于同一平台；425→450为`45 lost/12 gained,p=1.31e-5`，
+400→450为`50/15,p=1.57e-5`，形成明确post-best下降。故full-24
+observed-best取step400=`109/400`并停止，不续训到600。
+
+step400相对旧四卡rank-pure step700为`109 vs108`、paired
+`37/36,p=1.0`；相对旧八卡历史best为`109 vs122`、`25/38,p=.1299`；
+相对v6 macro200为`109 vs129`、`32/52,p=.0375`。该结果说明仅把每个physical
+batch改成24-task等权并未提高SFT上限，也复现了明显task能力漂移。
+
+## 11. global-8 cyclic mixed Source-SFT已完成profile
+
+隔离分支`codex/source-sft-mixed8`用唯一canonical sampler替换full-24 sampler：
+
+```text
+4 ranks × 2 tasks/rank = 8 disjoint tasks/update
+3 updates = 1 complete 24-task cycle
+B144 = 72 samples/task/rank-selected update
+global576 queries/update
+每个task跨完整cycle平均24 samples/update
+```
+
+因此它与full-24保持相同global query batch和task/sample clock，只把一次
+24-task平均拆为3次8-task AdamW update。task permutation每cycle刷新，
+物理rank轮换，episode/chunk无放回；checkpoint和stop只允许落在完整3-step
+cycle边界。配置为`configs/pi05_source_sft_rank128_mixed8_v3.json`。
+
+GPU4–7 B144 profile root：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_source_sft_rank128_mixed8_profile_r4_b144_c25cd5d_s6_20260728
+```
+
+fresh step0→3后exact-resume到6；两轮cycle的每轮24 tasks均精确覆盖一次，
+全部3,456 query identities唯一。稳态step wall为
+`15.833/15.882/15.840/15.883s`，吞吐
+`36.381/36.267/36.363/36.266 queries/s`；峰值allocated/reserved为
+`60,690,811,904/74,065,117,184 bytes`。loss/gradient均finite，无OOM、
+NCCL/CUDA错误或allocator增长，B128 fallback未触发。
+
+正式首段封存为fresh step0→240、每30步checkpoint；约64分钟training body，
+筛step60/120/180/240。默认第二段exact-resume到480并筛
+300/360/420/480，除非首段已经出现可信的多task绝对下降。全部checkpoint保留；
+不做runtime全量HDF5 SHA。正式launch前仍须clean/pushed main、GPU4–7 live
+preflight和存储复核。

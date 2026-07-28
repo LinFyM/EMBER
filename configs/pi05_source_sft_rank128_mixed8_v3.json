@@ -134,8 +134,33 @@
       "rank-128 shared LoRA is the only trainable object",
       "step3-to-step6 exact resume is sample-identical"
     ],
-    "selected_per_rank_batch_size": null,
-    "observed_profile": null
+    "selected_per_rank_batch_size": 144,
+    "observed_profile": {
+      "output_root": "/data/ymdai/outputs/ember/pi05_source_sft_rank128_mixed8_profile_r4_b144_c25cd5d_s6_20260728",
+      "git_commit": "c25cd5d159e797b162de02982ed9b3a1998afbe5",
+      "optimizer_steps": 6,
+      "complete_task_cycles": 2,
+      "global_action_queries": 3456,
+      "steady_step_seconds": [
+        15.83253288292326,
+        15.882158117834479,
+        15.84043224900961,
+        15.882723095128313
+      ],
+      "steady_global_action_queries_per_second": [
+        36.38078659045548,
+        36.26711154280696,
+        36.36264408352955,
+        36.26582145581042
+      ],
+      "max_cuda_allocated_bytes": 60690811904,
+      "max_cuda_reserved_bytes": 74065117184,
+      "run_contract_file_sha256": "7e6a1aaa82472e500bcf21eb3f2164e3c5a8789815ea73918bfd70355ff290c5",
+      "metrics_file_sha256": "b2fa6f94cae879a97da1023ab9ece947d35d4b8c6f691330e12a8f0af6b763cd",
+      "run_summary_file_sha256": "64730835c2daebf4c141d0f0b77359d5796724a79e55fa3db8f47e3682141131",
+      "final_checkpoint_manifest_file_sha256": "0bbbd92cdc9505d65aede35a995dc2ba69d514e419dd44bc228bf4dd77d93c2a",
+      "selection": "B144 completed fresh step0-to3 and exact-resume step3-to6 with two complete 24-task cycles, finite loss and gradients, all 3456 query identities unique, and no OOM or allocator growth; B128 fallback was not triggered."
+    }
   },
   "stages": {
     "development": {
@@ -146,7 +171,7 @@
       "available_action_episodes": 1200,
       "selection_data": "fixed validation action-loss panel is diagnostic; complete 8-task x 50 closed-loop success selects observed-best",
       "formal_run": {
-        "status": "pending_profile",
+        "status": "sealed",
         "expected_world_size": 4,
         "total_steps": 2400,
         "per_rank_batch_size": 144,

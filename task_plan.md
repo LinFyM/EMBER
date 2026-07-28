@@ -93,10 +93,19 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
 - [x] GPU4/5/6/7各加载step50/100/175/225之一，并行完成四个fixed
   validation correct400；结果为`60/75/77/56`，每点400 rows、36 shards、
   6 workers、零错误，paired seeds和noise prefix完全一致。
-- [ ] 从完整step225 exact-resume到450；保持原B144、sampler、LR、参数化和
-  每25步checkpoint，不因首段task迁移修改scientific contract。
-- [ ] 在 validation 找 observed-best，并看到充分的峰后证据；报告 steps、
-  consumed examples、GPU-hours、参数量与搜索上限。
+- [x] 从step225 exact-resume到450并完成12点dense correct400；
+  step400/425为`109/107`同档，step450降到`74`且paired显著，封存full-24
+  observed-best step400=`109/400`，不再续训该recipe。
+- [x] 实现global-8 cyclic mixed替代sampler：4 ranks×2 tasks、每update
+  8个disjoint tasks、连续3 updates完整覆盖24 tasks；保持B144/global576、
+  rank-128 LoRA、LR/scheduler与平均task/sample clock不变。
+- [x] GPU4–7完成global-8 B144 fresh0→3→resume6 profile；两轮完整cycle、
+  3,456 query identities唯一，稳态`36.27–36.38 queries/s`，峰值
+  allocated/reserved `60.69/74.07GB`，无OOM或nonfinite。
+- [ ] 在clean/pushed main上启动global-8 fresh step0→240，保留每30步
+  checkpoint并评测step60/120/180/240；除非可信下降，否则续到480。
+- [ ] 为global-8在validation找到observed-best并看到充分峰后证据；报告
+  steps、consumed examples、GPU-hours、参数量与搜索上限。
 - [ ] 与 v6 使用同一 frozen source base、normalization、policy interface 和
   validation rows；不机械匹配 optimizer steps。
 

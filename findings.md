@@ -2165,3 +2165,26 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - step100/175近乎平局、task集合持续交换且单个右端下降不足以排除后续恢复，
   满足预封存的“不稳定峰值”条件。下一段从step225 exact-resume到450，
   不改recipe；已有checkpoint全部保留。
+
+## corrected full-24 Source-SFT上限与global-8候选（2026-07-28）
+
+- full-24同一root从step225 exact-resume到450；450条metrics连续finite，
+  step25..450共18个checkpoint全部保留。dense paired correct400在
+  step50/100/175/225/275/300/325/350/375/400/425/450为
+  `60/75/77/56/77/57/87/71/98/109/107/74`。
+- step400/425为`24/22` switches、`p=.883`；425→450为
+  `45 lost/12 gained,p=1.31e-5`，400→450为
+  `50/15,p=1.57e-5`。因此observed-best封存为step400=`109/400`，有充分
+  post-best下降，不再续训full-24 recipe。
+- step400只与旧四卡rank-pure best `108`同档，仍低于v6 macro200=`129`
+  （paired `32/52,p=.0375`）。full-24普通SFT也表现为任务能力反复迁移，
+  说明漂移不只来自Writer异构LoRA或Procedure，而与共享多任务优化粒度有关。
+- 新canonical sampler将每个24-task平均update改为global-8：
+  4 ranks×2 tasks，连续3 updates通过cycle permutation完整覆盖24 tasks；
+  B144时global576 queries/update不变，每task跨cycle的平均sample clock与
+  full-24精确一致。没有gradient accumulation或第二套训练入口。
+- GPU4–7 B144 profile fresh0→3并exact-resume到6；两轮cycle均24 tasks
+  各一次、3,456 query identities唯一。稳态`36.27–36.38 queries/s`，
+  峰值allocated/reserved `60.69/74.07GB`，loss/grad finite且无OOM。
+  正式首段封存fresh0→240、每30步checkpoint；默认再续到480，除非首段出现
+  可信的多task绝对下降。

@@ -718,7 +718,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_as_writer_language_axial_v5_2.json",
+        default=REPO_ROOT / "configs/pi05_as_writer_language_axial_v5_3.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--source-run", type=Path, required=True)

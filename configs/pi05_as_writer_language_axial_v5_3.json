@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_language_axial_as_writer_v5_2",
+  "schema_version": "ember_pi05_language_axial_as_writer_v5_3",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {
@@ -50,7 +50,7 @@
     "test_video_values_read": 0
   },
   "writer": {
-    "architecture": "pi05_language_axial_patch_grounded_core_causal_procedure_slot_fusion_v5_2",
+    "architecture": "pi05_language_axial_patch_grounded_core_visual_transition_causal_procedure_slot_fusion_v5_3",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -112,7 +112,15 @@
     "procedure_blocks": 2,
     "procedure_attention": "global_causal_pre_norm_with_valid_mask",
     "procedure_position_encoding": "one_dimensional_rope_on_sampled_frame_ordinal_qk_only",
-    "procedure_value_path": "raw_interaction_content_only",
+    "procedure_value_path": "action_expert_probe_plus_task_grounded_adjacent_visual_transition",
+    "visual_transition_source": "adjacent_difference_of_task_queried_patch_evidence_in_actual_arm_input_order",
+    "visual_transition_first_frame": "exact_zero",
+    "visual_transition_padding": "invalid_task_tokens_and_frames_exact_zero",
+    "visual_transition_attention": "action_expert_probe_queries_task_token_aligned_visual_transition",
+    "visual_transition_qk": "separate_pre_rmsnorm_bias_free_256_to_256",
+    "visual_transition_value": "raw_adjacent_patch_evidence_difference_no_value_projection",
+    "visual_transition_output": "bias_free_256_to_256_residual_added_to_action_expert_probe",
+    "visual_transition_heads": 8,
     "procedure_initialization": "normal_nonzero",
     "query_count": 320,
     "routing_identity": "query_module_layer_rank_qk_only",
@@ -124,7 +132,7 @@
     "modulation_projection": "bias_free_256_to_512_zero_initialized",
     "post_fusion_blocks": 1,
     "factor_head_bias": false,
-    "factor_hidden_width": 216,
+    "factor_hidden_width": 192,
     "initialization_seed": 7
   },
   "data": {
@@ -185,13 +193,13 @@
       "decay_lr": 1e-05
     },
     "maximum_formal_wall_clock_minutes": null,
-    "budget_role": "fresh_v5_2_profile_then_one_hour_early_specificity_segment"
+    "budget_role": "fresh_v5_3_profile_then_one_hour_early_specificity_segment"
   },
   "profile_defaults": {
-    "status": "completed_v5_2_f32_b21_stable3",
+    "status": "pending_v5_3_f32_live_profile",
     "expected_world_size": 4,
     "total_steps": 3,
-    "per_rank_batch_size": 21,
+    "per_rank_batch_size": 20,
     "checkpoint_steps": [
       1,
       2,
@@ -200,7 +208,7 @@
     "selected_stop_step": 3
   },
   "profile_evidence": {
-    "status": "completed_v5_2_live_profile",
+    "status": "pending_v5_3_live_profile",
     "allowed_physical_gpu_ids": [
       4,
       5,
@@ -214,91 +222,17 @@
       "max_frames_per_encoder_call",
       "per_rank_action_batch_size"
     ],
-    "initial_candidate_from_v5_1": {
+    "initial_candidate_from_v5_2": {
       "max_frames_per_encoder_call": 32,
       "per_rank_action_batch_size": 20
     },
     "required_longest_real_stride5_video_frames": 105,
     "selection_rule": "maximize_stable_global_action_queries_per_second_with_real_longest_video_and_aggressive_allocated_memory_use",
-    "selected": {
-      "max_frames_per_encoder_call": 32,
-      "per_rank_action_batch_size": 21,
-      "global_action_queries_per_step": 84,
-      "profile_teacher_video_seed": 172,
-      "stability_optimizer_steps": 3,
-      "max_cuda_allocated_bytes": 80283666944,
-      "max_cuda_reserved_bytes": 83892371456,
-      "allocated_headroom_bytes_on_a100_80g": 5615678976,
-      "reserved_headroom_bytes_on_a100_80g": 2006974464,
-      "step_seconds_max": [
-        7.434120160993189,
-        4.3183822189457715,
-        6.046672699972987
-      ],
-      "profile_output": "/data/ymdai/outputs/ember/pi05_as_writer_v5_2_profile_f32_b21_stable3_849e622_20260728",
-      "contract_sha256": "0779c4a3776a0a6db43c0a6b710414742e0942bd1fa8b74b1d5569d450c865aa",
-      "run_contract_file_sha256": "24f7f1e305966f1e77de90b2350758a1127731babcc7cf221375d833f84395fa",
-      "metrics_file_sha256": "80685bab93ee3da9b6edf26ba99f4c0a28095d328331bb8a1cab18f23acec0bd",
-      "run_summary_file_sha256": "492ee56a65beac5f5b0e7950ed6f120b1c648b73899b7862a7510b1cc6f9410f",
-      "log_file_sha256": "9dba0f2c48ea3dd911fb7010a23afe43a5fc2f6dc3afdac963466047ff2bb502"
-    },
-    "upper_bound": {
-      "max_frames_per_encoder_call": 32,
-      "per_rank_action_batch_size": 22,
-      "global_action_queries_per_step": 88,
-      "status": "symmetric_cuda_oom_before_first_optimizer_step",
-      "requested_allocation_mib": 666,
-      "minimum_reported_free_mib": 54.94,
-      "maximum_reported_free_mib": 80.94,
-      "profile_output": "/data/ymdai/outputs/ember/pi05_as_writer_v5_2_profile_f32_b22_upper_bound_849e622_20260728",
-      "run_contract_file_sha256": "4f0034f16cd7d91bfc9aa8c5d68a66130b0311eca5de4dad57c2589a7f17fbfb",
-      "log_file_sha256": "963e5e7d404e65f47aa987d93dd4b4a76268979c072e95404f3895f2cfa3e3ce"
-    },
-    "exact_resume_smoke": {
-      "max_frames_per_encoder_call": 32,
-      "per_rank_action_batch_size": 20,
-      "resume_from_step": 1,
-      "completed_step": 3,
-      "profile_output": "/data/ymdai/outputs/ember/pi05_as_writer_v5_2_profile_f32_b20_long105_849e622_20260728",
-      "contract_sha256": "afc564afbd690c3dfac41ac6e5d4b452c1696012f6c5898c477e1b5a626ff886",
-      "run_contract_file_sha256": "6535afc09dc49763f2a5db508ccdf7662ae3bf40dd8bf671ad6eecc188d5134e",
-      "metrics_file_sha256": "bea776efac0ad9907f235d97e2c72d3ee8683761892f5f582c9e8c5865d513f5",
-      "run_summary_file_sha256": "78e12c80fd874b89b63d72fa810e96c8cff453bf10e71127fd8ba94ab65370f5"
-    },
-    "real_patch_evidence": {
-      "profile_output": "/data/ymdai/outputs/ember/pi05_as_writer_v5_2_profile_f32_b20_long105_849e622_20260728/v5_2_evidence_scale.json",
-      "patch_to_task_rms_ratio_min": 0.4039995,
-      "patch_to_task_rms_ratio_max": 0.461579,
-      "patch_to_task_rms_ratio_mean": 0.4290257,
-      "file_sha256": "2e2e69c6b082ac8a07a0681258d3abf1c95feef0748cf4d255d2ff17c1a789eb"
-    },
-    "inference_profile": {
-      "status": "pending_v5_2_generation_check",
-      "inherited_candidate_only": true,
-      "physical_gpu_ids": [
-        4,
-        5,
-        6,
-        7
-      ],
-      "rollout_workers_per_gpu": 6,
-      "writer_generators_per_gpu": 6,
-      "generation_assignment": "all rollout workers generate deterministic disjoint LoRA request shards before a shared cache barrier",
-      "generation_batch_cap_per_worker": 100,
-      "actual_entries_per_worker_in_profile": [
-        1,
-        2
-      ],
-      "unique_lora_entries": 47,
-      "max_worker_generation_wall_seconds": 5.2025001789443195,
-      "max_worker_generation_allocated_bytes": 11631111168,
-      "max_worker_generation_reserved_bytes": 12807307264,
-      "rollout_only_effective_rollouts_per_second": 0.3799001050925678,
-      "profile_output": null,
-      "run_contract_sha256": null,
-      "results_file_sha256": null,
-      "queue_policy": "all pending max-horizon shards globally precede ordinary shards; GPU affinity only orders max-horizon shards"
-    }
+    "selected": null,
+    "upper_bound": null,
+    "exact_resume_smoke": null,
+    "real_transition_evidence": null,
+    "inference_profile": null
   },
   "specificity_gate": {
     "status": "pending",
@@ -313,21 +247,21 @@
     "contrast_loss_allowed": false
   },
   "formal_run": {
-    "status": "sealed",
+    "status": "pending_v5_3_live_profile",
     "expected_world_size": 4,
     "total_steps": 12000,
-    "per_rank_batch_size": 21,
+    "per_rank_batch_size": 20,
     "checkpoint_steps": "every:100",
     "selected_stop_step": 900,
     "stage_stop_steps": "every:100",
-    "segment_definition": "first_900_fresh_v5_2_steps_approximately_one_hour_no_automatic_continuation",
+    "segment_definition": "provisional_first_900_fresh_v5_3_steps_pending_live_throughput_seal",
     "first_segment_scale": {
       "optimizer_steps": 900,
-      "global_action_queries": 75600,
+      "global_action_queries": 72000,
       "one_video_conditions": 3600,
       "retained_checkpoints": 9,
       "online_validation_action_queries_per_checkpoint": 512
     },
-    "continuation_gate": "after_first_hour_stop_and_review_early_specificity_absolute_performance_and_train_validation_curves_before_selecting_any_later_stop"
+    "continuation_gate": "formal_launch_blocked_until_v5_3_live_profile_seals_batch_throughput_resume_and_first_segment"
   }
 }

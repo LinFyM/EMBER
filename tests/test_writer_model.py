@@ -11,6 +11,7 @@ from ember.writer.temporal import (
     CausalProcedureEncoder,
     LanguageSemanticCore,
     SlotNormalizedCoreProcedureCompiler,
+    TaskGroundedVisualTransitionFusion,
 )
 from ember.writer.video_program import TaskQueriedPatchGrounding
 
@@ -99,7 +100,13 @@ class _FakeSemanticEncoder(torch.nn.Module):
         language_tokens: torch.Tensor,
         _language_mask: torch.Tensor,
         task_span_mask: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+    ]:
         counts = task_span_mask.sum(dim=1)
         maximum = int(counts.max())
         valid = torch.arange(maximum)[None] < counts[:, None]
@@ -108,8 +115,9 @@ class _FakeSemanticEncoder(torch.nn.Module):
         image = frames.to(torch.float32).mean(dim=(1, 2, 3))
         frame_value = image + language.index_select(0, frame_condition_ids)
         evidence = frame_value[:, None, None].expand(-1, maximum, 256).clone()
+        grounded = evidence.clone()
         interaction = frame_value[:, None].expand(-1, 256).clone()
-        return text, evidence, interaction, valid
+        return text, evidence, grounded, interaction, valid
 
 
 def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
@@ -136,8 +144,9 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         frame_attention_initial_lambda=0.05,
         procedure_heads=8,
         procedure_blocks=2,
+        visual_transition_heads=8,
         fusion_heads=8,
-        factor_hidden_width=216,
+        factor_hidden_width=192,
         initialization_seed=7,
         activation_checkpointing=True,
     )
@@ -167,9 +176,9 @@ def _inputs() -> tuple[torch.Tensor, ...]:
     return frames, frame_indices, offsets, tokens, masks, task_spans
 
 
-def test_v5_2_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
+def test_v5_3_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
     model, _ = _model()
-    assert sum(parameter.numel() for parameter in model.parameters()) == 10_237_704
+    assert sum(parameter.numel() for parameter in model.parameters()) == 10_230_536
     contract = writer_trainable_contract(
         model,
         torch.nn.Identity(),
@@ -177,7 +186,7 @@ def test_v5_2_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
             Path(__file__).resolve().parents[1] / "configs/pi05_lora_v1.json"
         ),
     )
-    assert contract["parameter_count"] == 10_237_704
+    assert contract["parameter_count"] == 10_230_536
     assert contract["source_policy_trainable_parameter_count"] == 0
     expected = {
         "text_meta_lora": (model.semantic_encoder.text_meta_lora, 921_600),
@@ -197,9 +206,10 @@ def test_v5_2_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
             model.semantic_encoder.interaction_projection,
             262_144,
         ),
+        "visual_transition": (model.visual_transition, 197_120),
         "procedure": (model.procedure, 1_573_888),
         "compiler": (model.compiler, 1_535_232),
-        "factor_heads": (model.factor_heads, 1_838_592),
+        "factor_heads": (model.factor_heads, 1_634_304),
     }
     assert {
         name: sum(parameter.numel() for parameter in module.parameters())
@@ -210,7 +220,7 @@ def test_v5_2_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
     assert not model.semantic_encoder.fixed_suffix_noise.requires_grad
 
 
-def test_v5_2_writer_starts_at_exact_identity_template() -> None:
+def test_v5_3_writer_starts_at_exact_identity_template() -> None:
     model, template = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     output = model(*_inputs(), policy=torch.nn.Identity())
@@ -221,7 +231,7 @@ def test_v5_2_writer_starts_at_exact_identity_template() -> None:
         assert torch.equal(value[1], template[name])
 
 
-def test_v5_2_writer_becomes_video_conditioned_after_heads_open() -> None:
+def test_v5_3_writer_becomes_video_conditioned_after_heads_open() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     for head in model.factor_heads.values():
@@ -231,7 +241,7 @@ def test_v5_2_writer_becomes_video_conditioned_after_heads_open() -> None:
     assert not hasattr(model, "shared_lora")
 
 
-def test_v5_2_gradient_staging_opens_only_intended_paths() -> None:
+def test_v5_3_gradient_staging_opens_only_intended_paths() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
 
@@ -262,6 +272,10 @@ def test_v5_2_gradient_staging_opens_only_intended_paths() -> None:
         parameter.grad is None or not bool(torch.count_nonzero(parameter.grad))
         for parameter in model.procedure.parameters()
     )
+    assert all(
+        parameter.grad is None or not bool(torch.count_nonzero(parameter.grad))
+        for parameter in model.visual_transition.parameters()
+    )
 
     model.zero_grad(set_to_none=True)
     torch.nn.init.normal_(model.compiler.modulation.weight, std=0.01)
@@ -270,6 +284,10 @@ def test_v5_2_gradient_staging_opens_only_intended_paths() -> None:
     assert any(
         parameter.grad is not None and bool(torch.count_nonzero(parameter.grad))
         for parameter in model.procedure.parameters()
+    )
+    assert any(
+        parameter.grad is not None and bool(torch.count_nonzero(parameter.grad))
+        for parameter in model.visual_transition.parameters()
     )
 
 
@@ -318,6 +336,45 @@ def test_language_core_is_frame_permutation_invariant() -> None:
         valid_tokens,
     )
     assert torch.allclose(baseline, shuffled, atol=1e-5, rtol=1e-5)
+
+
+def test_visual_transition_recomputes_after_order_change_without_static_value_path() -> None:
+    torch.manual_seed(19)
+    fusion = TaskGroundedVisualTransitionFusion(width=32, heads=4)
+    probe = torch.randn(1, 4, 32)
+    grounded = torch.randn(1, 4, 3, 32, requires_grad=True)
+    valid_frames = torch.tensor([[True, True, True, False]])
+    valid_tokens = torch.tensor([[True, True, False]])
+    normal, transition = fusion(
+        probe,
+        grounded,
+        valid_frames,
+        valid_tokens,
+    )
+    reversed_output, reversed_transition = fusion(
+        probe,
+        grounded.flip(1),
+        valid_frames,
+        valid_tokens,
+    )
+    assert not bool(transition[:, 0].count_nonzero())
+    assert torch.allclose(
+        transition[:, 1, :2],
+        grounded[:, 1, :2] - grounded[:, 0, :2],
+    )
+    assert not bool(transition[:, :, 2:].count_nonzero())
+    assert not bool(transition[:, 3].count_nonzero())
+    assert torch.allclose(
+        reversed_transition[:, 1, :2],
+        grounded[:, 2, :2] - grounded[:, 3, :2],
+    )
+    assert not torch.allclose(normal[:, :3], reversed_output[:, :3])
+    assert not hasattr(fusion, "value")
+    normal.sum().backward()
+    assert grounded.grad is not None
+    assert bool(grounded.grad[:, :3, :2].count_nonzero())
+    full_width = TaskGroundedVisualTransitionFusion(width=256, heads=8)
+    assert sum(parameter.numel() for parameter in full_width.parameters()) == 197_120
 
 
 def test_causal_procedure_preserves_prefix_and_uses_order() -> None:

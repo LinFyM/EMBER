@@ -1,4 +1,4 @@
-"""Language-axial Core, causal Procedure, and slot-normalized LoRA fusion."""
+"""Language Core, visual-transition Procedure, and slot-normalized LoRA fusion."""
 
 from __future__ import annotations
 
@@ -259,6 +259,97 @@ class LanguageSemanticCore(torch.nn.Module):
         for block in self.blocks:
             content = block(content, positions, valid_task_tokens)
         return content, weights
+
+
+class TaskGroundedVisualTransitionFusion(torch.nn.Module):
+    """Let each Action-Expert probe read adjacent task-grounded visual change."""
+
+    def __init__(self, *, width: int, heads: int) -> None:
+        super().__init__()
+        if min(width, heads) <= 0 or width % heads:
+            raise VariableEpisodeInputError("invalid visual-transition fusion")
+        self.heads = int(heads)
+        self.head_width = width // heads
+        self.probe_norm = RMSNorm(width)
+        self.transition_norm = RMSNorm(width)
+        self.query = torch.nn.Linear(width, width, bias=False)
+        self.key = torch.nn.Linear(width, width, bias=False)
+        self.output = torch.nn.Linear(width, width, bias=False)
+
+    def forward(
+        self,
+        action_probe: torch.Tensor,
+        grounded_evidence: torch.Tensor,
+        valid_frames: torch.Tensor,
+        valid_task_tokens: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        if (
+            action_probe.ndim != 3
+            or grounded_evidence.ndim != 4
+            or grounded_evidence.shape[:2] != action_probe.shape[:2]
+            or grounded_evidence.shape[-1] != action_probe.shape[-1]
+            or action_probe.shape[-1] != self.heads * self.head_width
+            or valid_frames.shape != action_probe.shape[:2]
+            or valid_frames.dtype != torch.bool
+            or valid_task_tokens.shape
+            != (action_probe.shape[0], grounded_evidence.shape[2])
+            or valid_task_tokens.dtype != torch.bool
+            or not bool(valid_frames[:, 0].all())
+            or not bool(valid_task_tokens.any(dim=1).all())
+        ):
+            raise VariableEpisodeInputError("invalid visual-transition batch")
+
+        batch, frames, task_tokens, width = grounded_evidence.shape
+        transition = torch.cat(
+            (
+                torch.zeros_like(grounded_evidence[:, :1]),
+                grounded_evidence[:, 1:] - grounded_evidence[:, :-1],
+            ),
+            dim=1,
+        )
+        active = valid_frames[:, :, None] & valid_task_tokens[:, None, :]
+        transition = transition.masked_fill(~active[..., None], 0.0)
+
+        query = self.query(self.probe_norm(action_probe)).reshape(
+            batch * frames,
+            1,
+            self.heads,
+            self.head_width,
+        ).transpose(1, 2)
+        normalized = self.transition_norm(transition)
+        key = self.key(normalized).reshape(
+            batch * frames,
+            task_tokens,
+            self.heads,
+            self.head_width,
+        ).transpose(1, 2)
+        value = transition.reshape(
+            batch * frames,
+            task_tokens,
+            self.heads,
+            self.head_width,
+        ).transpose(1, 2)
+        allowed = (
+            valid_task_tokens[:, None, :]
+            .expand(-1, frames, -1)
+            .reshape(batch * frames, task_tokens)
+        )
+        attended = F.scaled_dot_product_attention(
+            query,
+            key,
+            value,
+            attn_mask=allowed[:, None, None, :],
+            dropout_p=0.0,
+            is_causal=False,
+        )
+        residual = self.output(
+            attended.transpose(1, 2).reshape(batch, frames, width)
+        )
+        fused = (action_probe + residual).masked_fill(
+            ~valid_frames[..., None],
+            0.0,
+        )
+        return fused, transition
 
 
 class CausalProcedureEncoder(torch.nn.Module):

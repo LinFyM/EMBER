@@ -30,8 +30,8 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_language_axial_as_writer_v5_2"
-AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_language_axial_as_writer_launch_v5_2"
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_language_axial_as_writer_v5_3"
+AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_language_axial_as_writer_launch_v5_3"
 AS_WRITER_STAGES = ("development", "final")
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
@@ -75,8 +75,8 @@ def _validate_authorities(config: Mapping[str, Any]) -> None:
 def _expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "architecture": (
-            "pi05_language_axial_patch_grounded_core_causal_procedure_"
-            "slot_fusion_v5_2"
+            "pi05_language_axial_patch_grounded_core_visual_transition_"
+            "causal_procedure_slot_fusion_v5_3"
         ),
         "generated_adapter": "complete_pi05_task_specific_rank16_lora",
         "camera_dataset": "obs/agentview_rgb",
@@ -154,7 +154,30 @@ def _expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
         "procedure_position_encoding": (
             "one_dimensional_rope_on_sampled_frame_ordinal_qk_only"
         ),
-        "procedure_value_path": "raw_interaction_content_only",
+        "procedure_value_path": (
+            "action_expert_probe_plus_task_grounded_adjacent_visual_transition"
+        ),
+        "visual_transition_source": (
+            "adjacent_difference_of_task_queried_patch_evidence_in_actual_"
+            "arm_input_order"
+        ),
+        "visual_transition_first_frame": "exact_zero",
+        "visual_transition_padding": (
+            "invalid_task_tokens_and_frames_exact_zero"
+        ),
+        "visual_transition_attention": (
+            "action_expert_probe_queries_task_token_aligned_visual_transition"
+        ),
+        "visual_transition_qk": (
+            "separate_pre_rmsnorm_bias_free_256_to_256"
+        ),
+        "visual_transition_value": (
+            "raw_adjacent_patch_evidence_difference_no_value_projection"
+        ),
+        "visual_transition_output": (
+            "bias_free_256_to_256_residual_added_to_action_expert_probe"
+        ),
+        "visual_transition_heads": 8,
         "procedure_initialization": "normal_nonzero",
         "query_count": 320,
         "routing_identity": "query_module_layer_rank_qk_only",
@@ -170,7 +193,7 @@ def _expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
         "modulation_projection": "bias_free_256_to_512_zero_initialized",
         "post_fusion_blocks": 1,
         "factor_head_bias": False,
-        "factor_hidden_width": 216,
+        "factor_hidden_width": 192,
         "initialization_seed": 7,
     }
 
@@ -349,7 +372,7 @@ def resolve_runtime(
 ) -> tuple[int, int, tuple[int, ...]]:
     if args.mode == "formal" and config["formal_run"].get("status") != "sealed":
         raise WriterModelError(
-            "formal AS-Writer config is not sealed from the live v5.2 profile"
+            "formal AS-Writer config is not sealed from the live v5.3 profile"
         )
     source = config["formal_run"] if args.mode == "formal" else config["profile_defaults"]
     total_steps = args.total_steps or int(source["total_steps"])
@@ -568,7 +591,7 @@ def writer_trainable_contract(
     parameter_count = sum(value.numel() for value in writer.parameters())
     if (
         not names
-        or parameter_count != 10_237_704
+        or parameter_count != 10_230_536
         or any(parameter.requires_grad for parameter in policy.parameters())
     ):
         raise WriterModelError("AS-Writer freeze boundary changed")

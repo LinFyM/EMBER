@@ -1,4 +1,4 @@
-"""Language-aligned per-frame evidence for the PI05 v5.1 Writer."""
+"""Language-aligned per-frame evidence for the PI05 v5.3 Writer."""
 
 from __future__ import annotations
 
@@ -351,7 +351,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         text_queries: torch.Tensor,
         valid_task_tokens: torch.Tensor,
         maximum_task_tokens: int,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks
 
         bridge = core.paligemma_with_expert
@@ -444,7 +444,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         )
         evidence = multimodal_evidence + patch_evidence
         interaction = self.interaction_projection(suffix_hidden.mean(dim=1))
-        return evidence, interaction
+        return evidence, patch_evidence, interaction
 
     def _validate_forward_batch(
         self,
@@ -511,8 +511,14 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
         task_span_mask: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Return aligned text/video evidence and one interaction per frame."""
+    ) -> tuple[
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+    ]:
+        """Return text, Core evidence, patch evidence, and per-frame probes."""
 
         core, valid_task_tokens, _ = self._validate_forward_batch(
             policy,
@@ -552,6 +558,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             text_queries = invoke_text(language_tokens, task_span_mask)
 
         evidence_rows = []
+        patch_evidence_rows = []
         interaction_rows = []
         for start in range(0, frames.shape[0], self.max_frames_per_encoder_call):
             stop = min(start + self.max_frames_per_encoder_call, frames.shape[0])
@@ -573,7 +580,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
                 span_values: torch.Tensor,
                 query_values: torch.Tensor,
                 valid_token_values: torch.Tensor,
-            ) -> tuple[torch.Tensor, torch.Tensor]:
+            ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
                 return self._encode_microbatch(
                     core,
                     frame_values,
@@ -586,19 +593,21 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
                 )
 
             if should_checkpoint:
-                evidence, interaction = checkpoint(
+                evidence, patch_evidence, interaction = checkpoint(
                     invoke_frames,
                     *arguments,
                     use_reentrant=False,
                     preserve_rng_state=False,
                 )
             else:
-                evidence, interaction = invoke_frames(*arguments)
+                evidence, patch_evidence, interaction = invoke_frames(*arguments)
             evidence_rows.append(evidence)
+            patch_evidence_rows.append(patch_evidence)
             interaction_rows.append(interaction)
         return (
             text_queries,
             torch.cat(evidence_rows, dim=0),
+            torch.cat(patch_evidence_rows, dim=0),
             torch.cat(interaction_rows, dim=0),
             valid_task_tokens,
         )

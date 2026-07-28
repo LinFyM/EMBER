@@ -144,7 +144,7 @@
     ],
     "action_chunk_size": 50,
     "sampler_seed": 20260721,
-    "teacher_video_seed": 20260722,
+    "teacher_video_seed": 172,
     "teacher_video_sampling": "per_rank_task_visit_deterministic_single_same_task_video_in_no_replacement_cycles",
     "action_query_sampling": "task-balanced deterministic no-replacement episode cycles",
     "video_action_pairing": "one task-video LoRA conditions the complete rank-local action batch",
@@ -227,6 +227,8 @@
       "per_rank_action_batch_size": 20
     },
     "required_longest_real_stride5_video_frames": 105,
+    "profile_teacher_video_seed": 172,
+    "formal_teacher_video_seed_after_profile_seal": 20260722,
     "selection_rule": "maximize_stable_global_action_queries_per_second_with_real_longest_video_and_aggressive_allocated_memory_use",
     "selected": null,
     "upper_bound": null,

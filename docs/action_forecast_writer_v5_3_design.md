@@ -150,6 +150,9 @@ template 和 compiler 均不变。
 - 最长105帧真实视频先验证 shape、identity、gradient、freeze、B20、
   B21/上界、step1→3 exact-resume 和真实 transition 非零；正式 batch 和首段
   wall-clock 只由该 profile 决定。
+- 压力 profile 暂用已封存的 `teacher_video_seed=172`，使四个 rank 的首步真实
+  样本包含 stride-5 后105帧的最长 train video；profile 封存后，正式 fresh
+  训练恢复 canonical `teacher_video_seed=20260722`。
 
 ## 7. 判定
 

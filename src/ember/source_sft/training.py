@@ -62,12 +62,12 @@ from ember.source_sft.online_validation import (
     evaluate_online_source_sft_checkpoint,
     prepare_online_source_sft_validation,
 )
-from ember.source_sft.sampler import HierarchicalMixedBatchSampler
+from ember.source_sft.sampler import CyclicSubsetMixedBatchSampler
 from ember.writer.data import FunctionalQueryDataset
 
 
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
-_ACTIVE_TRAINING_RECIPE = "hierarchical_task_episode_chunk_mixed_v1"
+_ACTIVE_TRAINING_RECIPE = "cyclic_subset_hierarchical_mixed_v2"
 
 
 @dataclass
@@ -78,7 +78,7 @@ class SourceSFTRuntime:
     dataset: FunctionalQueryDataset
     tasks: tuple[SourceSFTTask, ...]
     task_ids: tuple[int, ...]
-    sampler: HierarchicalMixedBatchSampler
+    sampler: CyclicSubsetMixedBatchSampler
     iterator: Iterator[dict[str, Any]]
     processor: Pi05LiberoProcessor
     policy: torch.nn.Module
@@ -108,16 +108,33 @@ def _resume_step(checkpoint: Path | None) -> int:
 
 def _validate_active_training_recipe(config: Mapping[str, Any]) -> None:
     recipe = config.get("training_recipe", {})
+    if not isinstance(recipe, Mapping):
+        raise Pi05SourceSFTError(
+            "legacy rank-pure Source-SFT training is retired; "
+            "use the canonical cyclic mixed-task recipe"
+        )
+    sealed_stage = str(config.get("sealed_stage", ""))
+    stage = config.get("stages", {}).get(sealed_stage, {})
+    global_tasks = int(recipe.get("global_tasks_per_update", -1))
+    declared_tasks = int(stage.get("task_count", -1))
+    expected_updates_per_cycle = (
+        declared_tasks // global_tasks
+        if global_tasks > 0 and declared_tasks % global_tasks == 0
+        else -1
+    )
     if (
-        not isinstance(recipe, Mapping)
-        or recipe.get("kind") != _ACTIVE_TRAINING_RECIPE
+        recipe.get("kind") != _ACTIVE_TRAINING_RECIPE
         or recipe.get("rank_task_binding") != "none"
+        or int(recipe.get("tasks_per_rank_per_update", -1)) != 2
+        or global_tasks != 8
+        or int(recipe.get("updates_per_complete_task_cycle", -1))
+        != expected_updates_per_cycle
         or recipe.get("loss_reduction")
         != "equal samples per task then ordinary batch mean"
     ):
         raise Pi05SourceSFTError(
             "legacy rank-pure Source-SFT training is retired; "
-            "use the canonical hierarchical mixed-task recipe"
+            "use the canonical cyclic mixed-task recipe"
         )
 
 
@@ -176,11 +193,14 @@ def _loader(
     task_ids: tuple[int, ...],
     batch_size: int,
     initial_step: int,
-) -> tuple[HierarchicalMixedBatchSampler, DataLoader[Any]]:
-    sampler = HierarchicalMixedBatchSampler(
+) -> tuple[CyclicSubsetMixedBatchSampler, DataLoader[Any]]:
+    sampler = CyclicSubsetMixedBatchSampler(
         dataset,
         task_ids=task_ids,
         per_rank_batch_size=batch_size,
+        tasks_per_rank_per_update=int(
+            config["training_recipe"]["tasks_per_rank_per_update"]
+        ),
         start_step=initial_step,
         stop_step=args.stop_after_step,
         rank=context.rank,
@@ -316,7 +336,23 @@ def prepare_runtime(
             optimizer=optimizer,
             scheduler=scheduler,
             per_rank_batch_size=batch_size,
-            samples_per_task_per_rank=batch_size // len(task_ids),
+            tasks_per_rank_per_update=int(
+                config["training_recipe"]["tasks_per_rank_per_update"]
+            ),
+            global_tasks_per_update=int(
+                config["training_recipe"]["global_tasks_per_update"]
+            ),
+            updates_per_complete_task_cycle=int(
+                config["training_recipe"][
+                    "updates_per_complete_task_cycle"
+                ]
+            ),
+            samples_per_task_per_visit=(
+                batch_size
+                // int(
+                    config["training_recipe"]["tasks_per_rank_per_update"]
+                )
+            ),
             sampler_seed=int(config["data"]["sampler_seed"]),
             dataloader_generator_seed=int(config["optimization"]["seed"])
             + context.rank
@@ -396,9 +432,15 @@ def _one_step(runtime: SourceSFTRuntime, step: int, started: float) -> dict[str,
     batch = next(runtime.iterator)
     data_seconds = time.monotonic() - tick
     task_counts = _batch_task_counts(batch)
-    expected_per_task = runtime.sampler.samples_per_task_per_rank
+    expected_per_task = runtime.sampler.samples_per_task_per_visit
+    expected_task_ids = set(
+        runtime.sampler.tasks_for_step(
+            step,
+            rank=runtime.context.rank,
+        )
+    )
     if (
-        set(task_counts) != set(runtime.task_ids)
+        set(task_counts) != expected_task_ids
         or set(task_counts.values()) != {expected_per_task}
     ):
         raise Pi05SourceSFTError(
@@ -430,6 +472,18 @@ def _one_step(runtime: SourceSFTRuntime, step: int, started: float) -> dict[str,
     completed = step + 1
     step_seconds = reduce_max(time.monotonic() - tick, runtime.context)
     examples = runtime.context.world_size * runtime.batch_size
+    global_task_ids = sorted(
+        task_id
+        for rank in range(runtime.context.world_size)
+        for task_id in runtime.sampler.tasks_for_step(step, rank=rank)
+    )
+    if (
+        len(global_task_ids) != runtime.sampler.global_tasks_per_update
+        or len(set(global_task_ids)) != len(global_task_ids)
+    ):
+        raise Pi05SourceSFTError(
+            "Source-SFT global update does not contain disjoint tasks"
+        )
     return {
         "optimizer_step": completed,
         "mean_action_loss": reduce_mean(float(loss.detach()), runtime.context),
@@ -437,12 +491,15 @@ def _one_step(runtime: SourceSFTRuntime, step: int, started: float) -> dict[str,
         "applied_lr": applied_lr,
         "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
         "global_action_queries": completed * examples,
-        "rank0_task_ids": list(runtime.task_ids),
+        "rank0_task_ids": sorted(task_counts),
+        "global_task_ids_this_step": global_task_ids,
         "rank0_samples_per_task": expected_per_task,
-        "global_samples_per_task_this_step": (
-            expected_per_task * runtime.context.world_size
-        ),
+        "global_samples_per_selected_task_this_step": expected_per_task,
         "physical_batch_task_count": len(task_counts),
+        "global_task_count_this_step": len(global_task_ids),
+        "complete_task_cycle": (
+            runtime.sampler.updates_per_complete_task_cycle
+        ),
         "loss_reduction": "equal_samples_per_task_then_batch_mean",
         "data_seconds_max": reduce_max(data_seconds, runtime.context),
         "step_seconds_max": step_seconds,
@@ -612,7 +669,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_source_sft_rank128_mixed_v2.json",
+        default=REPO_ROOT / "configs/pi05_source_sft_rank128_mixed8_v3.json",
     )
     parser.add_argument("--stage", choices=("development", "final"), required=True)
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

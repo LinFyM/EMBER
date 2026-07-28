@@ -371,11 +371,31 @@ def build_contract(
 ) -> dict[str, Any]:
     contract_stop_step = _contract_stop_step(args, config, total_steps)
     task_count = len(tasks)
-    if task_count <= 0 or batch_size % task_count:
+    recipe = config.get("training_recipe", {})
+    tasks_per_rank = int(recipe.get("tasks_per_rank_per_update", -1))
+    global_tasks_per_update = int(recipe.get("global_tasks_per_update", -1))
+    updates_per_cycle = int(
+        recipe.get("updates_per_complete_task_cycle", -1)
+    )
+    if (
+        task_count <= 0
+        or tasks_per_rank <= 1
+        or batch_size % tasks_per_rank
+        or context.world_size * tasks_per_rank != global_tasks_per_update
+        or global_tasks_per_update * updates_per_cycle != task_count
+    ):
         raise Pi05SourceSFTError(
-            "Source-SFT physical batch must divide equally across every task"
+            "Source-SFT cyclic mixed-task topology is inconsistent"
         )
-    samples_per_task_per_rank = batch_size // task_count
+    samples_per_task_per_visit = batch_size // tasks_per_rank
+    if (
+        total_steps % updates_per_cycle
+        or contract_stop_step % updates_per_cycle
+        or any(int(step) % updates_per_cycle for step in checkpoint_steps)
+    ):
+        raise Pi05SourceSFTError(
+            "Source-SFT checkpoints and stops must be complete task-cycle boundaries"
+        )
     local = {
         "rank": context.rank,
         "local_rank": context.local_rank,
@@ -429,12 +449,14 @@ def build_contract(
             "per_rank_batch_size": batch_size,
             "effective_global_batch_size": context.world_size * batch_size,
             "physical_batch_task_mixed": True,
-            "tasks_per_physical_batch": task_count,
-            "samples_per_task_per_rank": samples_per_task_per_rank,
-            "global_samples_per_task_per_step": (
-                samples_per_task_per_rank * context.world_size
+            "tasks_per_physical_batch": tasks_per_rank,
+            "global_tasks_per_update": global_tasks_per_update,
+            "updates_per_complete_task_cycle": updates_per_cycle,
+            "samples_per_task_per_visit": samples_per_task_per_visit,
+            "global_samples_per_selected_task_per_update": (
+                samples_per_task_per_visit
             ),
-            "sampler_kind": "hierarchical_task_episode_chunk_mixed_v1",
+            "sampler_kind": "cyclic_subset_hierarchical_mixed_v2",
             "loss_reduction": "equal_samples_per_task_then_batch_mean",
             "total_steps": total_steps,
             "selected_stop_step": contract_stop_step,

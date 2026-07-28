@@ -1,0 +1,230 @@
+{
+  "schema_version": "ember_pi05_source_sft_v1",
+  "sealed_stage": "development",
+  "authorities": {
+    "target_data_manifest": {
+      "path": "configs/pi05_target_data_v1/manifest.json",
+      "sha256": "1b28547f6080a35fdf23ebae021407da15bfe4af367b0b1791042945d91b049d"
+    },
+    "evaluation_config": {
+      "path": "configs/pi05_target_evaluation_v1.json",
+      "sha256": "5bb0a5ca4604f126cc4bcdd29c9a7a4d17403a8f3ee7161d8afdfeccbb2c488c"
+    },
+    "lora_contract": {
+      "path": "configs/pi05_lora_rank128_capacity_v1.json",
+      "sha256": "9c54ae4fb060586a1e26c48b82389a0487555c9071d556bdb54c2516c0edb672"
+    },
+    "source_base_config": {
+      "path": "configs/pi05_source_base_v1.json",
+      "sha256": "7455fc59c67ca39f7c70b1296d2f1dc98f070bfda869bb0535bf5a9e91e04cc6"
+    },
+    "tokenizer_manifest": {
+      "path": "configs/libero_24_8_8_v1/pi05_tokenizer_manifest.json",
+      "sha256": "948bf1ec1f2768833bead66b2e829154e3304c1c09fe9c48813a79f06e47426c"
+    }
+  },
+  "information_wall": {
+    "policy_input": "correct task language plus current policy observation only",
+    "forbidden_inputs": [
+      "teacher_video",
+      "reward",
+      "terminal",
+      "task_id",
+      "filename",
+      "policy_outcome"
+    ],
+    "development_action_split_roles": [
+      "train"
+    ],
+    "final_action_split_roles": [
+      "train",
+      "validation"
+    ],
+    "test_actions_read": 0,
+    "test_video_values_read": 0,
+    "held_evaluation_adaptation": "none"
+  },
+  "adapter": {
+    "kind": "one_shared_multitask_pi05_lora",
+    "initialization": "fresh deterministic functional identity from the frozen source base for each stage",
+    "contract": "configs/pi05_lora_rank128_capacity_v1.json",
+    "stacked_shared_source_adapter": false,
+    "per_task_adapter": false
+  },
+  "training_recipe": {
+    "kind": "cyclic_subset_hierarchical_mixed_v2",
+    "rank_task_binding": "none",
+    "tasks_per_rank_per_update": 2,
+    "global_tasks_per_update": 8,
+    "updates_per_complete_task_cycle": 3,
+    "physical_batch": "every rank contains equal samples from two tasks; rank/task assignments rotate every update",
+    "sampling": "fresh deterministic task permutation per complete cycle, then no-replacement episode cycles and no-replacement action-chunk cycles",
+    "cross_rank_assignment": "eight disjoint tasks per update; every 3-update cycle visits all 24 tasks exactly once",
+    "loss_reduction": "equal samples per task then ordinary batch mean",
+    "exact_resume": "sample identity is a pure function of complete cycle, update phase, rank, task, and local task offset"
+  },
+  "data": {
+    "episodes_per_task": 50,
+    "demo_indices": [
+      0,
+      49
+    ],
+    "action_chunk_size": 50,
+    "sampler_seed": 20260723,
+    "sampling": "uniform complete task cycles -> uniform episode -> uniform action chunk; exact equal task counts within each selected physical batch",
+    "max_open_files_per_worker": 24
+  },
+  "loader": {
+    "num_workers_per_rank": 2,
+    "prefetch_factor": 2
+  },
+  "optimization": {
+    "method": "shared_multitask_lora_action_sft",
+    "seed": 7,
+    "precision": "bfloat16",
+    "source_policy": "final formal frozen raw policy",
+    "normalization": "frozen filtered-LIBERO-90 source normalization",
+    "gradient_checkpointing": true,
+    "optimizer": {
+      "name": "AdamW",
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "eps": 1e-08,
+      "weight_decay": 0.0001,
+      "gradient_clip_norm": 1.0
+    },
+    "scheduler": {
+      "kind": "cosine_decay_with_warmup",
+      "peak_lr": 0.0003,
+      "warmup_steps": 100,
+      "decay_steps": 800,
+      "decay_lr": 0.00001
+    }
+  },
+  "profile_defaults": {
+    "expected_world_size": 4,
+    "total_steps": 6,
+    "per_rank_batch_size": 144,
+    "checkpoint_steps": [
+      3,
+      6
+    ]
+  },
+  "profile_contract": {
+    "physical_gpu_indices": [
+      4,
+      5,
+      6,
+      7
+    ],
+    "candidates": [
+      144,
+      128
+    ],
+    "selection": "profile B144 first because it preserves the measured full-24 global batch and utilization; use B128 only if B144 OOMs or is unstable",
+    "required_checks": [
+      "each physical batch contains exactly two equally weighted tasks",
+      "each global update contains eight disjoint tasks",
+      "each consecutive three-update cycle covers all 24 tasks exactly once",
+      "cross-rank sample identities are disjoint",
+      "loss and gradients are finite for consecutive steps",
+      "source policy remains frozen",
+      "rank-128 shared LoRA is the only trainable object",
+      "step3-to-step6 exact resume is sample-identical"
+    ],
+    "selected_per_rank_batch_size": null,
+    "observed_profile": null
+  },
+  "stages": {
+    "development": {
+      "action_split_roles": [
+        "train"
+      ],
+      "task_count": 24,
+      "available_action_episodes": 1200,
+      "selection_data": "fixed validation action-loss panel is diagnostic; complete 8-task x 50 closed-loop success selects observed-best",
+      "formal_run": {
+        "status": "pending_profile",
+        "expected_world_size": 4,
+        "total_steps": 2400,
+        "per_rank_batch_size": 144,
+        "checkpoint_steps": [
+          30,
+          60,
+          90,
+          120,
+          150,
+          180,
+          210,
+          240,
+          270,
+          300,
+          330,
+          360,
+          390,
+          420,
+          450,
+          480,
+          600,
+          900,
+          1200,
+          1500,
+          1800,
+          2100,
+          2400
+        ],
+        "selected_stop_step": 240,
+        "stage_stop_steps": [
+          240,
+          480,
+          600,
+          900,
+          1200,
+          1500,
+          1800,
+          2100,
+          2400
+        ],
+        "closed_loop_screen_steps": [
+          60,
+          120,
+          180,
+          240,
+          300,
+          360,
+          420,
+          480
+        ],
+        "maximum_wall_clock_minutes": null,
+        "segment_target_wall_clock_minutes": 60,
+        "budget_role": "fresh partial-task mixed ceiling search in evidence-gated one-hour segments",
+        "selection_rule": "Fresh-train from identity at the selected profile batch. Preserve the same global action-query batch, optimizer, scheduler, and task/sample clock as the full-24 run while replacing each 24-task averaged update with three rotating 8-task updates. Retain roughly 30-step checkpoints through the first two segments and sparse checkpoints later. Select by paired full validation success and cross-task breadth; exact-resume only while the observed-best moves right without sustained material multi-task decline."
+      }
+    },
+    "final": {
+      "action_split_roles": [
+        "train",
+        "validation"
+      ],
+      "task_count": 32,
+      "available_action_episodes": 1600,
+      "selection_data": "no test outcomes; retrain once from fresh identity after development selection",
+      "formal_run": {
+        "status": "blocked_until_development_selection",
+        "expected_world_size": 4,
+        "total_steps": 0,
+        "per_rank_batch_size": 0,
+        "checkpoint_steps": [],
+        "maximum_wall_clock_minutes": null,
+        "budget_role": "copy selected development recipe",
+        "selection_rule": "fresh final-32 retrain only after owner-facing focused AS/RL handoff and development selection"
+      }
+    }
+  },
+  "checkpointing": {
+    "atomic_publish": true,
+    "retained_state": "shared LoRA, optimizer, scheduler, per-rank RNG, deterministic cyclic-subset sampler cursor, metrics cursor, contract and hashes"
+  }
+}

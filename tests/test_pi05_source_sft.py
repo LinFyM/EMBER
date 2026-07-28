@@ -22,6 +22,7 @@ from ember.pi05_source_checkpoint import (
     write_json_atomic,
 )
 from ember.source_sft.checkpoint import (
+    LEGACY_SOURCE_SFT_CHECKPOINT_SCHEMA,
     SOURCE_SFT_CHECKPOINT_SCHEMA,
     load_source_sft_checkpoint,
     save_source_sft_checkpoint,
@@ -49,6 +50,9 @@ FINAL_CONFIG = ROOT / "configs/pi05_source_sft_final_v1.json"
 RANK128_CONFIG = ROOT / "configs/pi05_source_sft_rank128_capacity_v1.json"
 MIXED_RANK128_CONFIG = (
     ROOT / "configs/pi05_source_sft_rank128_mixed_v2.json"
+)
+MIXED8_RANK128_CONFIG = (
+    ROOT / "configs/pi05_source_sft_rank128_mixed8_v3.json"
 )
 
 
@@ -184,7 +188,48 @@ def test_corrected_rank128_config_seals_hierarchical_mixed_profile() -> None:
 def test_training_rejects_legacy_rank_pure_config() -> None:
     with pytest.raises(Pi05SourceSFTError, match="rank-pure"):
         _validate_active_training_recipe(load_source_sft_config(RANK128_CONFIG))
-    _validate_active_training_recipe(load_source_sft_config(MIXED_RANK128_CONFIG))
+    with pytest.raises(Pi05SourceSFTError, match="rank-pure"):
+        _validate_active_training_recipe(
+            load_source_sft_config(MIXED_RANK128_CONFIG)
+        )
+    _validate_active_training_recipe(
+        load_source_sft_config(MIXED8_RANK128_CONFIG)
+    )
+
+
+def test_mixed8_rank128_config_preserves_sample_clock_and_complete_cycles() -> None:
+    full24 = load_source_sft_config(MIXED_RANK128_CONFIG)
+    mixed8 = load_source_sft_config(MIXED8_RANK128_CONFIG)
+    recipe = mixed8["training_recipe"]
+    formal = mixed8["stages"]["development"]["formal_run"]
+    assert mixed8["information_wall"] == full24["information_wall"]
+    assert mixed8["adapter"] == full24["adapter"]
+    assert mixed8["optimization"] == full24["optimization"]
+    assert recipe["kind"] == "cyclic_subset_hierarchical_mixed_v2"
+    assert recipe["rank_task_binding"] == "none"
+    assert recipe["tasks_per_rank_per_update"] == 2
+    assert recipe["global_tasks_per_update"] == 8
+    assert recipe["updates_per_complete_task_cycle"] == 3
+    assert mixed8["profile_defaults"]["per_rank_batch_size"] == 144
+    assert 144 // 2 == 72
+    assert 72 // 3 == 24
+    assert formal["status"] == "pending_profile"
+    assert formal["selected_stop_step"] == 240
+    assert all(step % 3 == 0 for step in formal["checkpoint_steps"])
+    assert all(step % 3 == 0 for step in formal["stage_stop_steps"])
+    assert formal["closed_loop_screen_steps"] == [
+        60,
+        120,
+        180,
+        240,
+        300,
+        360,
+        420,
+        480,
+    ]
+    assert set(formal["closed_loop_screen_steps"]) <= set(
+        formal["checkpoint_steps"]
+    )
 
 
 def test_source_sft_batch_task_counts_preserve_mixed_identity() -> None:
@@ -388,7 +433,10 @@ class _TinyPolicy(torch.nn.Module):
 
 class _Sampler:
     per_rank_batch_size = 2
-    samples_per_task_per_rank = 2
+    samples_per_task_per_visit = 2
+    tasks_per_rank_per_update = 2
+    global_tasks_per_update = 2
+    updates_per_complete_task_cycle = 1
     seed = 17
     episodes_per_task = 2
 
@@ -482,7 +530,10 @@ def test_source_sft_checkpoint_roundtrip_and_tamper_gate(
         optimizer=optimizer,
         scheduler=scheduler,
         per_rank_batch_size=2,
-        samples_per_task_per_rank=2,
+        tasks_per_rank_per_update=2,
+        global_tasks_per_update=2,
+        updates_per_complete_task_cycle=1,
+        samples_per_task_per_visit=2,
         sampler_seed=17,
         dataloader_generator_seed=23,
         contract_sha256=canonical_hash(contract),
@@ -498,6 +549,43 @@ def test_source_sft_checkpoint_roundtrip_and_tamper_gate(
             world_size=1,
             contract_sha256=canonical_hash(contract),
         )
+
+
+def test_source_sft_checkpoint_validator_keeps_v2_inference_compatibility(
+    tmp_path: Path,
+) -> None:
+    checkpoint = tmp_path / "step_00000001"
+    checkpoint.mkdir()
+    for name, payload in {
+        "lora.safetensors": b"lora",
+        "trainer_state.pt": b"trainer",
+        "rank_00_state.pt": b"rank",
+    }.items():
+        (checkpoint / name).write_bytes(payload)
+    files = {
+        path.name: {
+            "bytes": path.stat().st_size,
+            "sha256": sha256_file(path),
+        }
+        for path in sorted(checkpoint.iterdir())
+    }
+    manifest = {
+        "schema_version": LEGACY_SOURCE_SFT_CHECKPOINT_SCHEMA,
+        "contract_sha256": "a" * 64,
+        "stage": "development",
+        "consumed": {"next_step": 1},
+        "files": files,
+    }
+    manifest["canonical_payload_sha256"] = canonical_hash(manifest)
+    write_json_atomic(checkpoint / "checkpoint_manifest.json", manifest)
+    assert (
+        validate_source_sft_checkpoint_files(
+            checkpoint,
+            world_size=1,
+            contract_sha256="a" * 64,
+        )["schema_version"]
+        == LEGACY_SOURCE_SFT_CHECKPOINT_SCHEMA
+    )
 
 
 def _source() -> dict:

@@ -27,12 +27,13 @@ from ember.pi05_source_checkpoint import (
     write_json_atomic,
 )
 from ember.source_sft.contract import Pi05SourceSFTError
-from ember.source_sft.sampler import HierarchicalMixedBatchSampler
+from ember.source_sft.sampler import CyclicSubsetMixedBatchSampler
 
 
-SOURCE_SFT_CHECKPOINT_SCHEMA = "ember_pi05_source_sft_checkpoint_v2"
-SOURCE_SFT_TRAINER_SCHEMA = "ember_pi05_source_sft_trainer_state_v2"
-SOURCE_SFT_RANK_SCHEMA = "ember_pi05_source_sft_rank_state_v2"
+LEGACY_SOURCE_SFT_CHECKPOINT_SCHEMA = "ember_pi05_source_sft_checkpoint_v2"
+SOURCE_SFT_CHECKPOINT_SCHEMA = "ember_pi05_source_sft_checkpoint_v3"
+SOURCE_SFT_TRAINER_SCHEMA = "ember_pi05_source_sft_trainer_state_v3"
+SOURCE_SFT_RANK_SCHEMA = "ember_pi05_source_sft_rank_state_v3"
 
 
 def _nonce(context: DistributedContext) -> str:
@@ -81,7 +82,7 @@ def _write_rank_state(
     *,
     step: int,
     context: DistributedContext,
-    sampler: HierarchicalMixedBatchSampler,
+    sampler: CyclicSubsetMixedBatchSampler,
     contract: Mapping[str, Any],
     saved_rng: Mapping[str, Any],
 ) -> None:
@@ -95,8 +96,17 @@ def _write_rank_state(
             "world_size": context.world_size,
             "per_rank_batch_size": sampler.per_rank_batch_size,
             "sampler_seed": sampler.seed,
-            "sampler_kind": "hierarchical_task_episode_chunk_mixed_v1",
-            "samples_per_task_per_rank": sampler.samples_per_task_per_rank,
+            "sampler_kind": "cyclic_subset_hierarchical_mixed_v2",
+            "tasks_per_rank_per_update": (
+                sampler.tasks_per_rank_per_update
+            ),
+            "global_tasks_per_update": sampler.global_tasks_per_update,
+            "updates_per_complete_task_cycle": (
+                sampler.updates_per_complete_task_cycle
+            ),
+            "samples_per_task_per_visit": (
+                sampler.samples_per_task_per_visit
+            ),
             "dataloader_generator_seed": int(
                 contract["runtime"]["dataloader_generator_seed_base"]
             )
@@ -118,7 +128,7 @@ def _publish_shared_checkpoint(
     policy: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler,
-    sampler: HierarchicalMixedBatchSampler,
+    sampler: CyclicSubsetMixedBatchSampler,
     contract: Mapping[str, Any],
     mode: str,
     metrics_rows: int,
@@ -183,13 +193,17 @@ def save_source_sft_checkpoint(
     policy: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler,
-    sampler: HierarchicalMixedBatchSampler,
+    sampler: CyclicSubsetMixedBatchSampler,
     contract: Mapping[str, Any],
     mode: str,
     metrics_rows: int,
 ) -> Path:
     total_steps = int(contract.get("runtime", {}).get("total_steps", -1))
-    if mode not in {"profile", "formal"} or not 0 < step <= total_steps:
+    if (
+        mode not in {"profile", "formal"}
+        or not 0 < step <= total_steps
+        or step % sampler.updates_per_complete_task_cycle
+    ):
         raise Pi05SourceSFTError("Source-SFT checkpoint step is outside its contract")
     temporary = (
         output_dir
@@ -264,7 +278,11 @@ def validate_source_sft_checkpoint_files(
     }
     files = manifest.get("files", {})
     if (
-        manifest.get("schema_version") != SOURCE_SFT_CHECKPOINT_SCHEMA
+        manifest.get("schema_version")
+        not in {
+            LEGACY_SOURCE_SFT_CHECKPOINT_SCHEMA,
+            SOURCE_SFT_CHECKPOINT_SCHEMA,
+        }
         or canonical_hash(payload) != digest
         or not isinstance(files, dict)
         or set(files) != expected
@@ -294,7 +312,10 @@ def load_source_sft_checkpoint(
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     per_rank_batch_size: int,
-    samples_per_task_per_rank: int,
+    tasks_per_rank_per_update: int,
+    global_tasks_per_update: int,
+    updates_per_complete_task_cycle: int,
+    samples_per_task_per_visit: int,
     sampler_seed: int,
     dataloader_generator_seed: int,
     contract_sha256: str,
@@ -330,8 +351,11 @@ def load_source_sft_checkpoint(
         context.world_size,
         per_rank_batch_size,
         sampler_seed,
-        "hierarchical_task_episode_chunk_mixed_v1",
-        samples_per_task_per_rank,
+        "cyclic_subset_hierarchical_mixed_v2",
+        tasks_per_rank_per_update,
+        global_tasks_per_update,
+        updates_per_complete_task_cycle,
+        samples_per_task_per_visit,
         dataloader_generator_seed,
         False,
     )
@@ -342,7 +366,10 @@ def load_source_sft_checkpoint(
         int(rank_state.get("per_rank_batch_size", -1)),
         int(rank_state.get("sampler_seed", -1)),
         rank_state.get("sampler_kind"),
-        int(rank_state.get("samples_per_task_per_rank", -1)),
+        int(rank_state.get("tasks_per_rank_per_update", -1)),
+        int(rank_state.get("global_tasks_per_update", -1)),
+        int(rank_state.get("updates_per_complete_task_cycle", -1)),
+        int(rank_state.get("samples_per_task_per_visit", -1)),
         int(rank_state.get("dataloader_generator_seed", -1)),
         bool(rank_state.get("worker_random_transforms", True)),
     )

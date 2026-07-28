@@ -62,10 +62,12 @@ from ember.source_sft.online_validation import (
     evaluate_online_source_sft_checkpoint,
     prepare_online_source_sft_validation,
 )
-from ember.writer.data import FunctionalQueryDataset, MixedTaskBatchSampler
+from ember.source_sft.sampler import HierarchicalMixedBatchSampler
+from ember.writer.data import FunctionalQueryDataset
 
 
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
+_ACTIVE_TRAINING_RECIPE = "hierarchical_task_episode_chunk_mixed_v1"
 
 
 @dataclass
@@ -76,7 +78,7 @@ class SourceSFTRuntime:
     dataset: FunctionalQueryDataset
     tasks: tuple[SourceSFTTask, ...]
     task_ids: tuple[int, ...]
-    sampler: MixedTaskBatchSampler
+    sampler: HierarchicalMixedBatchSampler
     iterator: Iterator[dict[str, Any]]
     processor: Pi05LiberoProcessor
     policy: torch.nn.Module
@@ -102,6 +104,21 @@ def _resume_step(checkpoint: Path | None) -> int:
     if match is None:
         raise Pi05SourceSFTError("Source-SFT resume path is not a step checkpoint")
     return int(match.group(1))
+
+
+def _validate_active_training_recipe(config: Mapping[str, Any]) -> None:
+    recipe = config.get("training_recipe", {})
+    if (
+        not isinstance(recipe, Mapping)
+        or recipe.get("kind") != _ACTIVE_TRAINING_RECIPE
+        or recipe.get("rank_task_binding") != "none"
+        or recipe.get("loss_reduction")
+        != "equal samples per task then ordinary batch mean"
+    ):
+        raise Pi05SourceSFTError(
+            "legacy rank-pure Source-SFT training is retired; "
+            "use the canonical hierarchical mixed-task recipe"
+        )
 
 
 def _scheduler(
@@ -159,8 +176,8 @@ def _loader(
     task_ids: tuple[int, ...],
     batch_size: int,
     initial_step: int,
-) -> tuple[MixedTaskBatchSampler, DataLoader[Any]]:
-    sampler = MixedTaskBatchSampler(
+) -> tuple[HierarchicalMixedBatchSampler, DataLoader[Any]]:
+    sampler = HierarchicalMixedBatchSampler(
         dataset,
         task_ids=task_ids,
         per_rank_batch_size=batch_size,
@@ -246,6 +263,7 @@ def prepare_runtime(
     args: argparse.Namespace, context: DistributedContext
 ) -> SourceSFTRuntime:
     config = load_source_sft_config(args.config.resolve())
+    _validate_active_training_recipe(config)
     total_steps, batch_size, checkpoint_steps = resolve_runtime(args, config, context)
     initial_step = _resume_step(args.resume)
     if not 0 <= initial_step < args.stop_after_step:
@@ -298,6 +316,7 @@ def prepare_runtime(
             optimizer=optimizer,
             scheduler=scheduler,
             per_rank_batch_size=batch_size,
+            samples_per_task_per_rank=batch_size // len(task_ids),
             sampler_seed=int(config["data"]["sampler_seed"]),
             dataloader_generator_seed=int(config["optimization"]["seed"])
             + context.rank
@@ -361,23 +380,30 @@ def prepare_runtime(
     )
 
 
-def _batch_task_id(batch: Mapping[str, Any]) -> int:
+def _batch_task_counts(batch: Mapping[str, Any]) -> dict[int, int]:
     values = batch.get("task_id")
     if not isinstance(values, torch.Tensor) or values.ndim != 1:
         raise Pi05SourceSFTError("Source-SFT batch lost task identity")
-    unique = values.unique()
-    if unique.numel() != 1:
-        raise Pi05SourceSFTError("one Source-SFT rank received multiple tasks")
-    return int(unique.item())
+    unique, counts = values.unique(return_counts=True)
+    return {
+        int(task_id): int(count)
+        for task_id, count in zip(unique.tolist(), counts.tolist(), strict=True)
+    }
 
 
 def _one_step(runtime: SourceSFTRuntime, step: int, started: float) -> dict[str, Any]:
     tick = time.monotonic()
     batch = next(runtime.iterator)
     data_seconds = time.monotonic() - tick
-    task_id, _ = runtime.sampler.task_visit_for_step(step)
-    if _batch_task_id(batch) != task_id:
-        raise Pi05SourceSFTError("Source-SFT sampler and batch disagree")
+    task_counts = _batch_task_counts(batch)
+    expected_per_task = runtime.sampler.samples_per_task_per_rank
+    if (
+        set(task_counts) != set(runtime.task_ids)
+        or set(task_counts.values()) != {expected_per_task}
+    ):
+        raise Pi05SourceSFTError(
+            "Source-SFT physical batch is not exactly task-balanced"
+        )
     policy_batch = runtime.processor.training_batch(batch)
     runtime.optimizer.zero_grad(set_to_none=True)
     with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
@@ -411,7 +437,13 @@ def _one_step(runtime: SourceSFTRuntime, step: int, started: float) -> dict[str,
         "applied_lr": applied_lr,
         "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
         "global_action_queries": completed * examples,
-        "rank0_task_id": task_id,
+        "rank0_task_ids": list(runtime.task_ids),
+        "rank0_samples_per_task": expected_per_task,
+        "global_samples_per_task_this_step": (
+            expected_per_task * runtime.context.world_size
+        ),
+        "physical_batch_task_count": len(task_counts),
+        "loss_reduction": "equal_samples_per_task_then_batch_mean",
         "data_seconds_max": reduce_max(data_seconds, runtime.context),
         "step_seconds_max": step_seconds,
         "global_action_queries_per_second": examples / step_seconds,
@@ -580,7 +612,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_source_sft_development_v1.json",
+        default=REPO_ROOT / "configs/pi05_source_sft_rank128_mixed_v2.json",
     )
     parser.add_argument("--stage", choices=("development", "final"), required=True)
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

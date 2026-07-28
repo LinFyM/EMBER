@@ -27,12 +27,12 @@ from ember.pi05_source_checkpoint import (
     write_json_atomic,
 )
 from ember.source_sft.contract import Pi05SourceSFTError
-from ember.writer.data import MixedTaskBatchSampler
+from ember.source_sft.sampler import HierarchicalMixedBatchSampler
 
 
-SOURCE_SFT_CHECKPOINT_SCHEMA = "ember_pi05_source_sft_checkpoint_v1"
-SOURCE_SFT_TRAINER_SCHEMA = "ember_pi05_source_sft_trainer_state_v1"
-SOURCE_SFT_RANK_SCHEMA = "ember_pi05_source_sft_rank_state_v1"
+SOURCE_SFT_CHECKPOINT_SCHEMA = "ember_pi05_source_sft_checkpoint_v2"
+SOURCE_SFT_TRAINER_SCHEMA = "ember_pi05_source_sft_trainer_state_v2"
+SOURCE_SFT_RANK_SCHEMA = "ember_pi05_source_sft_rank_state_v2"
 
 
 def _nonce(context: DistributedContext) -> str:
@@ -81,7 +81,7 @@ def _write_rank_state(
     *,
     step: int,
     context: DistributedContext,
-    sampler: MixedTaskBatchSampler,
+    sampler: HierarchicalMixedBatchSampler,
     contract: Mapping[str, Any],
     saved_rng: Mapping[str, Any],
 ) -> None:
@@ -95,6 +95,8 @@ def _write_rank_state(
             "world_size": context.world_size,
             "per_rank_batch_size": sampler.per_rank_batch_size,
             "sampler_seed": sampler.seed,
+            "sampler_kind": "hierarchical_task_episode_chunk_mixed_v1",
+            "samples_per_task_per_rank": sampler.samples_per_task_per_rank,
             "dataloader_generator_seed": int(
                 contract["runtime"]["dataloader_generator_seed_base"]
             )
@@ -116,7 +118,7 @@ def _publish_shared_checkpoint(
     policy: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler,
-    sampler: MixedTaskBatchSampler,
+    sampler: HierarchicalMixedBatchSampler,
     contract: Mapping[str, Any],
     mode: str,
     metrics_rows: int,
@@ -181,7 +183,7 @@ def save_source_sft_checkpoint(
     policy: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler,
-    sampler: MixedTaskBatchSampler,
+    sampler: HierarchicalMixedBatchSampler,
     contract: Mapping[str, Any],
     mode: str,
     metrics_rows: int,
@@ -292,6 +294,7 @@ def load_source_sft_checkpoint(
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     per_rank_batch_size: int,
+    samples_per_task_per_rank: int,
     sampler_seed: int,
     dataloader_generator_seed: int,
     contract_sha256: str,
@@ -327,6 +330,8 @@ def load_source_sft_checkpoint(
         context.world_size,
         per_rank_batch_size,
         sampler_seed,
+        "hierarchical_task_episode_chunk_mixed_v1",
+        samples_per_task_per_rank,
         dataloader_generator_seed,
         False,
     )
@@ -336,6 +341,8 @@ def load_source_sft_checkpoint(
         int(rank_state.get("world_size", -1)),
         int(rank_state.get("per_rank_batch_size", -1)),
         int(rank_state.get("sampler_seed", -1)),
+        rank_state.get("sampler_kind"),
+        int(rank_state.get("samples_per_task_per_rank", -1)),
         int(rank_state.get("dataloader_generator_seed", -1)),
         bool(rank_state.get("worker_random_transforms", True)),
     )

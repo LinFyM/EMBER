@@ -31,7 +31,7 @@ from ember.writer.model import WriterModelError
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SOURCE_SFT_CONFIG_SCHEMA = "ember_pi05_source_sft_v1"
-SOURCE_SFT_LAUNCH_SCHEMA = "ember_pi05_source_sft_launch_v1"
+SOURCE_SFT_LAUNCH_SCHEMA = "ember_pi05_source_sft_launch_v2"
 SOURCE_SFT_STAGES = ("development", "final")
 
 
@@ -218,8 +218,6 @@ def resolve_runtime(
             raise Pi05SourceSFTError("fresh formal Source-SFT launch must be pushed")
         if context.numa_node is None or not context.cpu_affinity:
             raise Pi05SourceSFTError("formal Source-SFT launch requires GPU-local NUMA binding")
-        if args.skip_data_sha:
-            raise Pi05SourceSFTError("formal Source-SFT launch must verify every HDF5")
     args.stop_after_step = stop_step
     return total_steps, batch_size, checkpoint_steps
 
@@ -372,6 +370,12 @@ def build_contract(
     checkpoint_steps: Sequence[int],
 ) -> dict[str, Any]:
     contract_stop_step = _contract_stop_step(args, config, total_steps)
+    task_count = len(tasks)
+    if task_count <= 0 or batch_size % task_count:
+        raise Pi05SourceSFTError(
+            "Source-SFT physical batch must divide equally across every task"
+        )
+    samples_per_task_per_rank = batch_size // task_count
     local = {
         "rank": context.rank,
         "local_rank": context.local_rank,
@@ -401,6 +405,7 @@ def build_contract(
         "target_action_data_validation": dict(data_validation),
         "information_wall": dict(config["information_wall"]),
         "adapter": dict(config["adapter"]),
+        "training_recipe": dict(config.get("training_recipe", {})),
         "data": dict(config["data"]),
         "optimization": dict(config["optimization"]),
         "stage_contract": dict(stage),
@@ -423,6 +428,14 @@ def build_contract(
             "ddp_object": "source_policy_with_shared_lora_only_trainable",
             "per_rank_batch_size": batch_size,
             "effective_global_batch_size": context.world_size * batch_size,
+            "physical_batch_task_mixed": True,
+            "tasks_per_physical_batch": task_count,
+            "samples_per_task_per_rank": samples_per_task_per_rank,
+            "global_samples_per_task_per_step": (
+                samples_per_task_per_rank * context.world_size
+            ),
+            "sampler_kind": "hierarchical_task_episode_chunk_mixed_v1",
+            "loss_reduction": "equal_samples_per_task_then_batch_mean",
             "total_steps": total_steps,
             "selected_stop_step": contract_stop_step,
             "checkpoint_steps": list(checkpoint_steps),
@@ -462,7 +475,27 @@ def publish_contract(
             args.output_dir / "invocations.jsonl",
             {
                 "argv": sys.argv,
+                "contract_git": dict(contract["git"]),
+                "runtime_git": {
+                    key: value
+                    for key, value in git_state(REPO_ROOT).items()
+                    if key in {"branch", "commit"}
+                },
+                "contract_compatible_code_resume": bool(
+                    args.resume is not None
+                    and contract["git"].get("commit")
+                    != git_state(REPO_ROOT).get("commit")
+                ),
+                "contract_selected_stop_step": int(
+                    contract["runtime"]["selected_stop_step"]
+                ),
                 "host": socket.gethostname(),
+                "monotonic_stage_extension": bool(
+                    args.resume is not None
+                    and int(args.stop_after_step)
+                    > int(contract["runtime"]["selected_stop_step"])
+                ),
+                "requested_stop_after_step": int(args.stop_after_step),
                 "resume": str(args.resume) if args.resume else None,
                 "started_unix": time.time(),
             },
@@ -499,19 +532,38 @@ def reconcile_resume_contract(
     existing = read_json(contract_path)
     if existing == candidate:
         return existing
-    if not getattr(args, "allow_contract_compatible_code_resume", False):
-        raise Pi05SourceSFTError("Source-SFT resume launch contract changed")
-    existing_git = existing.get("git", {})
-    candidate_git = candidate.get("git", {})
+
+    existing_runtime = dict(existing.get("runtime", {}))
+    candidate_runtime = dict(candidate.get("runtime", {}))
+    existing_stop = int(existing_runtime.get("selected_stop_step", -1))
+    candidate_stop = int(candidate_runtime.get("selected_stop_step", -1))
     if (
-        existing_git.get("branch") != candidate_git.get("branch")
-        or existing_git.get("commit") == candidate_git.get("commit")
+        existing_stop <= 0
+        or candidate_stop < existing_stop
+        or candidate_stop > int(existing_runtime.get("total_steps", -1))
     ):
         raise Pi05SourceSFTError(
-            "Source-SFT code-compatible resume did not isolate one commit change"
+            "Source-SFT resume cannot shorten or exceed its sealed stage axis"
         )
+
     normalized = dict(candidate)
-    normalized["git"] = existing_git
+    normalized["runtime"] = {
+        **candidate_runtime,
+        "selected_stop_step": existing_stop,
+    }
+    existing_git = existing.get("git", {})
+    candidate_git = candidate.get("git", {})
+    if existing_git != candidate_git:
+        if not getattr(args, "allow_contract_compatible_code_resume", False):
+            raise Pi05SourceSFTError("Source-SFT resume launch contract changed")
+        if (
+            existing_git.get("branch") != candidate_git.get("branch")
+            or existing_git.get("commit") == candidate_git.get("commit")
+        ):
+            raise Pi05SourceSFTError(
+                "Source-SFT code-compatible resume did not isolate one commit change"
+            )
+        normalized["git"] = existing_git
     if normalized != existing:
         raise Pi05SourceSFTError(
             "Source-SFT code-compatible resume changed the scientific contract"

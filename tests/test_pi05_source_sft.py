@@ -37,12 +37,19 @@ from ember.source_sft.contract import (
     resolve_runtime as resolve_source_sft_runtime,
 )
 from ember.source_sft.inference import inspect_source_sft_evaluation
+from ember.source_sft.training import (
+    _batch_task_counts,
+    _validate_active_training_recipe,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "configs/pi05_source_sft_development_v1.json"
 FINAL_CONFIG = ROOT / "configs/pi05_source_sft_final_v1.json"
 RANK128_CONFIG = ROOT / "configs/pi05_source_sft_rank128_capacity_v1.json"
+MIXED_RANK128_CONFIG = (
+    ROOT / "configs/pi05_source_sft_rank128_mixed_v2.json"
+)
 
 
 def test_development_config_selects_only_sealed_train_actions() -> None:
@@ -137,6 +144,49 @@ def test_rank128_capacity_config_keeps_data_wall_and_changes_only_capacity() -> 
     ).read_text(encoding="utf-8").split()[0]
 
 
+def test_corrected_rank128_config_seals_hierarchical_mixed_profile() -> None:
+    baseline = load_source_sft_config(CONFIG)
+    mixed = load_source_sft_config(MIXED_RANK128_CONFIG)
+    rank128 = load_pi05_lora_contract(
+        ROOT / mixed["authorities"]["lora_contract"]["path"]
+    )
+    assert mixed["information_wall"] == baseline["information_wall"]
+    assert mixed["stages"]["development"]["task_count"] == 24
+    assert mixed["data"]["episodes_per_task"] == 50
+    assert mixed["training_recipe"]["kind"] == (
+        "hierarchical_task_episode_chunk_mixed_v1"
+    )
+    assert mixed["training_recipe"]["rank_task_binding"] == "none"
+    assert mixed["profile_contract"]["physical_gpu_indices"] == [4, 5, 6, 7]
+    assert mixed["profile_contract"]["candidates"] == [144, 120]
+    assert mixed["profile_defaults"]["expected_world_size"] == 4
+    assert mixed["profile_defaults"]["per_rank_batch_size"] == 144
+    assert mixed["data"]["max_open_files_per_worker"] == 24
+    assert 144 // 24 == 6
+    assert 120 // 24 == 5
+    assert (
+        mixed["stages"]["development"]["formal_run"]["status"]
+        == "pending_profile"
+    )
+    assert rank128.rank == rank128.alpha == 128
+    assert rank128.parameter_count == 10_297_344
+    assert sha256_file(MIXED_RANK128_CONFIG) == (
+        ROOT / "configs/pi05_source_sft_rank128_mixed_v2.sha256"
+    ).read_text(encoding="utf-8").split()[0]
+
+
+def test_training_rejects_legacy_rank_pure_config() -> None:
+    with pytest.raises(Pi05SourceSFTError, match="rank-pure"):
+        _validate_active_training_recipe(load_source_sft_config(RANK128_CONFIG))
+    _validate_active_training_recipe(load_source_sft_config(MIXED_RANK128_CONFIG))
+
+
+def test_source_sft_batch_task_counts_preserve_mixed_identity() -> None:
+    assert _batch_task_counts(
+        {"task_id": torch.tensor([20, 10, 20, 30, 10, 30])}
+    ) == {10: 2, 20: 2, 30: 2}
+
+
 def test_source_sft_declared_stage_stop_can_extend_without_schedule_change(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -212,6 +262,41 @@ def test_source_sft_code_compatible_resume_allows_only_commit_change(
     args.allow_contract_compatible_code_resume = False
     with pytest.raises(Pi05SourceSFTError, match="launch contract changed"):
         reconcile_resume_contract(args, candidate)
+
+
+def test_source_sft_resume_allows_only_monotonic_stage_extension(
+    tmp_path: Path,
+) -> None:
+    existing = {
+        "schema_version": "contract",
+        "git": {"branch": "main", "commit": "same"},
+        "runtime": {"selected_stop_step": 1, "total_steps": 3},
+    }
+    write_json_atomic(tmp_path / "run_contract.json", existing)
+    args = SimpleNamespace(
+        output_dir=tmp_path,
+        resume=tmp_path / "checkpoints/step_00000001",
+        allow_contract_compatible_code_resume=False,
+    )
+    extended = {
+        **existing,
+        "runtime": {"selected_stop_step": 3, "total_steps": 3},
+    }
+    assert reconcile_resume_contract(args, extended) == existing
+
+    shortened = {
+        **existing,
+        "runtime": {"selected_stop_step": 0, "total_steps": 3},
+    }
+    with pytest.raises(Pi05SourceSFTError, match="cannot shorten"):
+        reconcile_resume_contract(args, shortened)
+
+    changed_axis = {
+        **existing,
+        "runtime": {"selected_stop_step": 3, "total_steps": 4},
+    }
+    with pytest.raises(Pi05SourceSFTError, match="scientific contract"):
+        reconcile_resume_contract(args, changed_axis)
 
 
 def test_development_config_cannot_open_final_stage() -> None:
@@ -297,6 +382,7 @@ class _TinyPolicy(torch.nn.Module):
 
 class _Sampler:
     per_rank_batch_size = 2
+    samples_per_task_per_rank = 2
     seed = 17
     episodes_per_task = 2
 
@@ -390,6 +476,7 @@ def test_source_sft_checkpoint_roundtrip_and_tamper_gate(
         optimizer=optimizer,
         scheduler=scheduler,
         per_rank_batch_size=2,
+        samples_per_task_per_rank=2,
         sampler_seed=17,
         dataloader_generator_seed=23,
         contract_sha256=canonical_hash(contract),

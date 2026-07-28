@@ -1572,3 +1572,29 @@ GPU范围和训练步长是当时快照；活动状态只取
   cache，共 `87,487,144,566` bytes；当前四个 control cache 被硬性排除。
   rollout rows/results、queue、日志、contract、checkpoint 全部保留，个人占用
   从 `411,326,994,567` 降到 `323,840,205,468` bytes。
+
+## v6 macro200五臂完成与内部检查启动（2026-07-28）
+
+- 五臂结果为 `129/131/108/111/105`；same相对correct switches
+  `22/24,p=.8830`，wrong为`42/21,p=.0111`，shuffled为
+  `36/18,p=.0198`，reversed为`37/13,p=.00094`。行为方向通过，但后三臂
+  margin明显弱于v5.2，且correct只覆盖5/8 tasks。
+- 四个control均400 rows、36/36 shards、workers exit 0、零错误；视频无放回
+  双射和global long-first复核通过。paired artifact位于
+  `pi05_as_writer_v6_specificity400_noreplacement_seed7_macro0200_paired_analysis_faf6e33_20260728.json`。
+- control结果封存后删除其4组可重建LoRA cache，额外释放
+  `4,254,855,093` bytes；结果/rows/queue/log/contract/checkpoint均保留，个人
+  占用降至`319,598,037,816` bytes。
+- tmux `ember-v6-internal-m200` 已在GPU4–7启动16-reference内部传递检查；
+  输出root为
+  `pi05_as_writer_v6_internal_specificity_macro0200_refs2_aecb100_20260728`。
+
+## v6 macro200内部检查完成（2026-07-28）
+
+- 16/16 rows和四个rank输出正常完成，五条件、fixed-Core Procedure-only与
+  Core-only反事实均齐。新增visual-transition让shuffled/reversed的Procedure
+  median relative-L2达到`.0888/.1167`，并传到effective LoRA
+  `.2590/.2436`和policy action`.0282/.0392`。
+- fixed-Core结果几乎复现全部顺序差异，而Core-only接近零，排除了Semantic
+  Core顺序旁路。相对v5.2，上游Procedure差异增强但下游LoRA/action差异减弱；
+  结合macro200仍是absolute右端最高点，按合同exact-resume到macro400。

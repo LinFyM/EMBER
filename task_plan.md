@@ -62,9 +62,13 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   全局 long-first。结果为 `114/77/120/129`，paired 输入合同全部通过。
 - [x] 选择 macro200 为 absolute observed-best；其 129/400 仅覆盖 5/8 tasks，
   与覆盖 7/8 tasks 的 macro150（120/400）差异不显著，保留 breadth 风险。
-- [ ] 对 observed-best 做 correct/same-task-other/wrong/shuffled/reversed
-  full400 与内部 Core/Procedure/effective-LoRA/action 传递分析。四个 control
-  full400 已在 tmux `ember-v6-specificity400` 占用 GPU4–7 运行。
+- [x] 对 macro200 做 correct/same-task-other/wrong/shuffled/reversed
+  full400：`129/131/108/111/105`；same同档，correct对后三臂 paired
+  `p=.011/.0198/.00094`，方向门通过但 margin 弱于 v5.2。
+- [x] 完成 macro200 的 16-reference 内部传递分析：顺序差异由新增
+  visual-transition 路径进入 Procedure，并在 fixed-Core 反事实下传到
+  effective LoRA/action；无 Semantic Core 顺序旁路。相对 v5.2，Procedure
+  差异更强但下游 LoRA/action 差异更弱，需由续训判断是成熟度还是新瓶颈。
 - [ ] 除非 macro0→200 closed-loop absolute 明确下降，否则 exact-resume 到
   macro400；第三段只由届时真实曲线决定。
 - [ ] 只有 absolute、same-task 稳定性、wrong-video 语义性、

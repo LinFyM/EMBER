@@ -71,24 +71,66 @@ macro200 是 absolute observed-best，但只覆盖 5/8 tasks，且一个 object 
 `p=0.3356`，所以右端仍上涨但 breadth 不稳定，不能仅凭 aggregate 宣称 v6
 成立。
 
-macro200 的四个 full400 特异性臂已在 clean main commit
-`faf6e33932577826040e7a3c3610428409ba817f` 启动：
+macro200 的四个 control full400 已在 clean launch commit
+`faf6e33932577826040e7a3c3610428409ba817f` 全部自然完成：
 
 ```text
-tmux: ember-v6-specificity400
-GPU4: same_task_other
-GPU5: cross_suite_wrong
-GPU6: shuffled
-GPU7: reversed
-
-output prefix:
-pi05_as_writer_v6_specificity400_noreplacement_seed7_macro0200_
+condition          successes  tasks>0
+correct                  129        5
+same_task_other          131        7
+cross_suite_wrong        108        7
+shuffled                 111        6
+reversed                 105        5
 ```
 
-每臂仍为 400 episodes、6 Writer generators、generation batch16、6
-persistent policy workers、全 50 videos 无放回和 global long-first。启动前
-GPU4–7 均为 0 MiB，个人占用 `407,071,566,818` bytes；接手时先读 tmux、
-各 root 的 `queue.sqlite3` 和 launcher completion，不得重复启动。
+五臂均为 400 rows、36/36 completed shards、6/6 workers exit 0、零错误，
+全 50 videos 无放回；每个 worker 先处理所有 long shards，long pending
+归零后才领取其它 task。相对 correct 的 paired switches：
+
+```text
+same-task-other  correct-only/control-only = 22/24, p=.8830
+wrong            correct-only/control-only = 42/21, p=.0111
+shuffled         correct-only/control-only = 36/18, p=.0198
+reversed         correct-only/control-only = 37/13, p=.00094
+```
+
+same-task 鲁棒性与三个方向门均通过，但 correct 对 wrong/shuffled/reversed
+的 aggregate margin 仅 `21/18/24`，明显弱于 v5.2 的 `58/50/49`，且
+correct 仍只覆盖 5/8 tasks。paired artifact：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v6_specificity400_noreplacement_seed7_macro0200_paired_analysis_faf6e33_20260728.json
+```
+
+16-reference 内部传递检查已使用 exact implementation worktree
+`aecb1005cd00812d2dd3f2a8a33b873956d7f598` 正常完成：
+
+```text
+tmux: ember-v6-internal-m200
+output:
+  /data/ymdai/outputs/ember/
+  pi05_as_writer_v6_internal_specificity_macro0200_refs2_aecb100_20260728
+```
+
+它在 GPU4–7 各处理 2 validation tasks × 2 references，共生成 16 rows、四个
+rank 输出和合并 summary。相对 correct 的 median relative-L2 为：
+
+```text
+condition          Core   ActionProbe  Transition  Procedure  eff.LoRA  action
+same-task-other   .0664       .1593       1.2541     .0365      .0856    .0139
+wrong             .2897       .4788       1.3395     .1345      .3233    .0501
+shuffled          .0000       .3640       2.1241     .0888      .2590    .0282
+reversed          .0044       .4323       1.3767     .1167      .2436    .0392
+```
+
+fixed-Core Procedure-only 几乎完整复现 shuffled/reversed 的 effective-LoRA
+与 action 差异，Core-only 对这两个顺序臂接近零，证明顺序信号经过新增
+visual-transition→Procedure 路径传递，不是 Semantic Core 旁路。与 v5.2
+相比，v6 Procedure 差异更大，但 macro200 的 effective-LoRA/action 差异更小；
+这与行为 margin 变弱一致，说明当前最早瓶颈已从 Procedure 输入转到
+Procedure-to-compiler 传递或训练成熟度。shuffled 的 transition RMS 为正确
+顺序约 2.10 倍，但 residual/action-probe RMS 中位仅 `.269`，没有失控。
 
 正式命令为：
 
@@ -163,8 +205,10 @@ results、queue、日志、contract、checkpoint 和 paired artifact 均保留�
 /data/ymdai/outputs/ember/cache_cleanup_completed_eval_lora_20260728.json
 ```
 
-当前四个仍在运行的 v6 specificity cache 没有 completion，已被规则硬性排除
-并现场确认完整。清理后个人占用为 `323,840,205,468` bytes。
+四个 v6 specificity control 完成并生成 paired artifact 后，其
+`writer_lora_cache` 又按同一规则删除 `4,254,855,093` bytes；删除清单为
+`/data/ymdai/outputs/ember/cache_cleanup_v6_specificity_lora_20260728.json`。
+清理后个人占用为 `319,598,037,816` bytes。
 
 ## 3. 当前研究判断
 
@@ -176,6 +220,7 @@ results、queue、日志、contract、checkpoint 和 paired artifact 均保留�
 | v5 | best correct `115`; 五臂 `115/108/74/113/114` | Procedure 内部有序，但信号被 downstream 压弱 |
 | v5.1 | best correct `127`; 五臂 `127/133/94/107/120` | wrong/shuffle 有方向，reverse 不稳；低 LR 未提高 |
 | v5.2 | curve `72/79/120/132`; 五臂 `132/138/74/82/83` | 首次通过 wrong/shuffle/reverse 行为门，absolute/breadth 仍不足 |
+| v6 macro200 | 五臂 `129/131/108/111/105` | 三方向显著但 margin 变弱；absolute 同档且 breadth 不足 |
 
 v6 不是单纯扩大 v5.2。它把已验证的职责分离收敛为：
 
@@ -234,19 +279,16 @@ visual-transition 参数 step1→3 L2 更新 `0.0111083`，真实 functional gra
 
 ## 5. 当前固定动作
 
-1. 等当前 macro200 四个特异性臂自然完成；核对 400 rows、worker exit、
-   no-replacement 50-video bijection、env/policy/video pairing、global
-   long-first 和错误日志，再与 correct129 做逐 rollout paired 分析。
-2. 在 GPU4–7 空闲后运行 16-reference 内部
-   Core/Procedure/effective-LoRA/action 传递分析；内部差异不能替代行为门。
-3. macro200 是右端最高点，`114/77/120/129` 不是明确下降，因此按 owner
+1. macro200 是右端最高点，`114/77/120/129` 不是明确下降，因此按 owner
    默认合同 exact-resume 同一 recipe 到 macro400。第二段中间 checkpoint
    继续每 25 保留；第三段必须重新由真实 closed-loop 曲线决定。
-4. v6 通过 absolute 与视频特异性门后，fresh 训练 corrected mixed-task
+2. 第二段完成后优先并行评测 macro250/300/350/400；峰值不清时才补 every-25
+   稠密点。对新 observed-best 重做 full400 与内部传递检查。
+3. v6 通过 absolute 与视频特异性门后，fresh 训练 corrected mixed-task
    rank-128 Source-SFT；再做每 task 预封存一条 episode 的 matched π0.5
    action one-shot baseline，最后进入独立 short-AS cold-start →
    pure-reward RL-Writer。
-5. 不自动进入 final-32、test task-local RL 或 joint oracle。
+4. 不自动进入 final-32、test task-local RL 或 joint oracle。
 
 ## 6. 只读恢复命令
 

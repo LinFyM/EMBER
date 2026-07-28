@@ -2037,3 +2037,44 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   `p=0.3356`。所以第一段没有出现明确右端下降，满足默认续训条件；同时
   absolute 与 breadth 尚不足以宣称 v6 成立，必须先完成 macro200 五臂和内部
   传递检查。
+
+## v6 macro200正式五臂（2026-07-28）
+
+- 五臂 full400 为
+  `correct/same-task-other/cross-suite-wrong/shuffled/reversed =
+  129/131/108/111/105`，成功 task 数为 `5/7/7/6/5`。每臂 400 rows、
+  36/36 shards、6/6 workers exit 0、零错误；state/env seed/policy
+  seed/noise 均 paired，所有 task 的 50 teacher videos 无放回双射。
+- same 相对 correct 的 switches 为 `22/24,p=.8830`，属于同档鲁棒。
+  correct 相对 wrong 为 `42/21,p=.0111`，相对 shuffled 为
+  `36/18,p=.0198`，相对 reversed 为 `37/13,p=.00094`。三项行为门均通过，
+  但 aggregate margin `21/18/24` 显著小于 v5.2 step900 的 `58/50/49`。
+- 正方向不是全 task 一致：wrong 差异主要来自 Long-1 `+14`、Object-1
+  `+7`、Object-3 `+9`，Goal-6/Spatial-1 反而 `-3/-3`；shuffled 主要来自
+  Long-1 `+11`、Object-3 `+8`，Goal-6 为 `-2`；reversed 主要来自 Goal-6
+  `+15`、Long-1/Object-3 各 `+5`。因此 v6 已排除 v4 式控制臂反超，但尚未
+  获得广泛稳定的视频特异性。
+- v6 macro200 与 v5.2 step900 在同一 states/videos/RNG 下为 `129 vs 132`，
+  v6-only/v5.2-only 为 `45/48,p=.8358`。task delta 为 Long-1 `+11`、
+  Object-3 `+17`、Goal-6 `-14`、Spatial-3 `-19`；这是能力重分配，不是整体
+  架构统治。由于 macro200 仍是 v6 右端最高点，按 owner 合同继续第二段。
+
+## v6 macro200内部传递（2026-07-28）
+
+- 8 validation tasks × 2 references 的五条件检查完整生成 16 rows。same/wrong/
+  shuffled/reversed 的 Procedure median relative-L2 为
+  `.0365/.1345/.0888/.1167`，effective LoRA 为
+  `.0856/.3233/.2590/.2436`，固定 policy action 为
+  `.0139/.0501/.0282/.0392`，说明差异沿完整链路存在。
+- shuffled/reversed 在 fixed-Core Procedure-only 反事实下的 effective LoRA
+  `.2590/.2437` 与原始结果基本相同，action `.0283/.0395` 也基本相同；
+  Core-only 分别接近零。因此顺序信号来自
+  visual-transition→Procedure，而不是 Semantic Core 或 frame-set 旁路。
+- 相同面板下 v5.2 的 shuffled/reversed Procedure 仅
+  `.0393/.0589`，但 effective LoRA 达 `.7400/1.0346`、action 达
+  `.0953/.1902`。v6 确实加强了上游时序区分，却在 macro200 仍将其压缩到
+  较弱的 LoRA/action 差异；行为 margin 同步变弱，当前候选瓶颈是训练成熟度
+  或 Procedure-to-compiler 映射，而不是“Procedure看不到顺序”。
+- shuffled 的 visual-transition RMS 中位 `.06446`，correct 为 `.03075`；
+  虽有相邻跳变放大，但 transition residual/action-probe RMS 仅
+  `.2688`，attention effective tokens 约 `11.0`，未见数值爆炸。

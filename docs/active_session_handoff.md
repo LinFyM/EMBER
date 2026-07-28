@@ -310,3 +310,45 @@ fresh output不得已存在或覆盖。首段后以online validation loss筛少�
 用同一fixed validation closed-loop panel选observed-best；只有右端/峰值不稳
 才从完整step225 checkpoint exact-resume到450。任何batch、sampler、LR、
 数据、参数化或信息墙变化都必须fresh root。
+
+## 9. corrected Source-SFT首段完成与当前评测
+
+fresh step0→225已自然完成。`metrics.jsonl`恰好225行且step `1..225`连续，
+全部loss/gradient/LR/吞吐字段finite；run summary记录129,600 global action
+queries、24 train tasks、每task 5,400 samples、`10,297,344`个trainable
+rank-128 LoRA参数和`3,639.436s`训练body wall。step25..225每25步共9个
+checkpoint均存在；step225包含LoRA、optimizer/scheduler、四rank sampler/RNG
+state和manifest内逐文件SHA256。个人空间现场为约295GB，完整首段root仅551MB，
+按owner最终澄清保留原checkpoint cadence，不删除这些checkpoint。
+
+online task-balanced functional loss为：
+
+```text
+step        25       50       75      100      125      150      175      200      225
+loss   .139748  .134216  .134064  .132966  .133862  .134068  .134527  .135724  .135276
+```
+
+step100是online observed-best，但online loss只用于筛候选，不替代closed-loop
+success。step50/100/175/225分别在物理GPU4/5/6/7完成相同fixed validation
+8 tasks×50 states，结果为：
+
+```text
+step          50    100    175    225
+successes     60     75     77     56
+tasks > 0      5      8      6      6
+```
+
+四点每个checkpoint只加载一次、每卡6个persistent policy workers；冷加载约
+149–154秒，rollout稳态约72–73GB/卡并接近100% UTL。每点均为400 unique
+rows、36/36 shards、6/6 workers正常退出、所有attempt为1且零错误；
+task/state/env/policy seeds及共同长度noise prefix完全配对。每个queue首批
+6个shard均为horizon-520 long tasks，global long-first通过。
+
+step175相对step100为`39 gained / 37 lost,p=.9088`，aggregate只高2且成功
+集合大幅交换；相对step225为`40/19,p=.00864`。逐task step100→175主要是
+Long-1 `4→14`、Object-3 `2→6`，同时Goal-6 `29→25`、两个Spatial
+`1/6→0/0`。因此首段不是稳定封闭峰：step100/175同档，右端又发生显著下降，
+且历史SFT已有下降后恢复。按owner的“峰值不稳定再训一小时”和sealed合同，
+下一动作是从完整step225 exact-resume到450，保持B144、全部24 tasks混合、
+LR/sampler/参数化与每25步checkpoint不变。暂不补密集rollout，也不删已有
+checkpoint。

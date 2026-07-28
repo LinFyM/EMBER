@@ -1650,3 +1650,30 @@ GPU范围和训练步长是当时快照；活动状态只取
 - config已封存formal fresh step0→225、每25步checkpoint，约61分钟训练body；
   冷加载单独报告。首段峰值在右端或不稳定时exact-resume到450，之后不做机械
   续段。正式launch前仍需main/origin clean、GPU4–7 live preflight和存储复核。
+
+## corrected mixed-task Source-SFT首段完成与四点correct400启动（2026-07-28）
+
+- main/origin均为`64622795314ab2223b7948f526e7e32767c468df`且launch时
+  worktree clean。正式root
+  `/data/ymdai/outputs/ember/pi05_source_sft_rank128_mixed_dev_r4_b144_seed7_s2400_20260728`
+  已自然完成step225；225条metrics连续finite，累计129,600 queries、每task
+  5,400 samples，训练body wall `3,639.436s`。
+- step25..225每25步的9个checkpoint均保留；step225的LoRA、trainer state、
+  四rank state与manifest SHA256复算一致。run root为551MB，个人占用约295GB，
+  因而按owner最终澄清不做checkpoint删除。
+- online validation step25..225为
+  `.139748/.134216/.134064/.132966/.133862/.134068/.134527/.135724/.135276`；
+  step100暂为online best，但closed-loop排序尚未得出。
+- tmux `ember-source-sft-mixed-val4`将step50/100/175/225映射到
+  GPU4/5/6/7，每点fixed validation 8×50、6 persistent workers、一个
+  checkpoint只在一张卡加载。四卡冷加载约149–154秒，rollout时约
+  72–73GB/卡、接近100% UTL；四个queue首批6个shard均为horizon-520 long
+  tasks。
+- 四点自然完成为`60/75/77/56`，每点400 unique rows、36/36 shards、
+  6/6 workers exit0、全attempt1、零错误；paired state/env/policy/noise
+  合同完整。results SHA256依次为
+  `760bca21...7976/346100c7...e8a/a3f95801...b546/76687676...a863`。
+- step175与100仅差2，paired为`39/37,p=.9088`；175相对225为
+  `40/19,p=.00864`。能力在Long/Object上涨的同时从Goal/Spatial迁出，峰值
+  不稳定且训练量仅129,600 queries。按sealed规则从完整step225
+  exact-resume到450；不改recipe、不补当前密集rollout、不删checkpoint。

@@ -87,8 +87,14 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
 - [x] GPU4–7 B144真实fresh step1→resume step3通过；每步全球576 queries、
   峰值allocated/reserved `60.69/74.07GB`，稳态`34.52–36.35 queries/s`。
   B144稳定，未触发B120 fallback。
-- [ ] 用sealed config从identity fresh训练step0→225（约一小时训练body，
-  冷加载另计），每25步checkpoint；首段峰值在右端或不稳定则resume到450。
+- [x] 用sealed config从identity fresh训练step0→225（约一小时训练body，
+  冷加载另计），每25步checkpoint；225条metrics连续finite，9个checkpoint
+  和完整resume state均已核验。
+- [x] GPU4/5/6/7各加载step50/100/175/225之一，并行完成四个fixed
+  validation correct400；结果为`60/75/77/56`，每点400 rows、36 shards、
+  6 workers、零错误，paired seeds和noise prefix完全一致。
+- [ ] 从完整step225 exact-resume到450；保持原B144、sampler、LR、参数化和
+  每25步checkpoint，不因首段task迁移修改scientific contract。
 - [ ] 在 validation 找 observed-best，并看到充分的峰后证据；报告 steps、
   consumed examples、GPU-hours、参数量与搜索上限。
 - [ ] 与 v6 使用同一 frozen source base、normalization、policy interface 和

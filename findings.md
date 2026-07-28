@@ -2123,3 +2123,45 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   `10,297,344`参数rank-128 shared LoRA。B144稳定，因此不触发B120 fallback。
   正式首段封存为fresh step0→225、每25步checkpoint，约61分钟training body；
   若峰值在右端或不稳定，exact-resume到450。
+
+## corrected mixed-task Source-SFT首段与候选筛选（2026-07-28）
+
+- fresh step0→225自然完成，225条optimizer metrics连续且全部finite；累计
+  129,600 action queries，24 tasks各5,400 samples，训练body wall
+  `3,639.436s`。step25..225共9个checkpoint的LoRA、trainer state、四rank
+  RNG/sampler state与manifest hash均完整，首段root仅551MB，不需要裁剪。
+- online validation loss在step25/50/75/100/125/150/175/200/225依次为
+  `.139748/.134216/.134064/.132966/.133862/.134068/.134527/.135724/.135276`。
+  step100最低；后段Object validation tasks仍改善而若干Spatial/Goal/Long
+  tasks回退，再次提示shared SFT本身也可能发生task redistribution。但该loss
+  与closed-loop success相关性有限，不能据此直接冻结step100。
+- 为同时覆盖早期肩部、online best、中后段和训练右端，step50/100/175/225
+  分别映射到GPU4/5/6/7完成相同fixed correct400。结果为`60/75/77/56`，
+  成功task数为`5/8/6/6`。每点400 unique rows、36/36 shards、6/6 workers
+  exit 0、全attempt1、零错误；task/state/env/policy seeds与noise prefix
+  完全paired。
+- 逐task step50/100/175/225依次为：
+
+  ```text
+  Long-1       0 /  4 / 14 /  7
+  Long-2       2 /  4 /  4 /  0
+  Goal-3       0 /  3 /  1 /  1
+  Goal-6      30 / 29 / 25 / 15
+  Object-1    25 / 26 / 27 / 26
+  Object-3     0 /  2 /  6 /  6
+  Spatial-1    2 /  1 /  0 /  0
+  Spatial-3    1 /  6 /  0 /  1
+  ```
+
+  step100→175为37 lost/39 gained、`p=.9088`，aggregate同档但能力明显迁移；
+  step175→225为40 lost/19 gained、`p=.00864`，右端下降可信。online
+  per-task loss也呈相同方向：100→225时Object-1/3改善，而Spatial-1、
+  Goal-6和Long-2恶化，说明aggregate loss掩盖任务冲突。
+- step175虽比source base `77 vs 48`显著（paired `50/21,p=.00077`），却显著
+  低于旧四卡rank-128 SFT `108`（`18/49,p=.00019`）、旧八卡`122`
+  （`18/63,p=5.20e-7`）和v6 macro200 `129`（`24/76,p=1.81e-7`）。
+  这首先反映当前只训练225 updates/129,600 queries，不能把corrected
+  mixed-task recipe判为低上限。
+- step100/175近乎平局、task集合持续交换且单个右端下降不足以排除后续恢复，
+  满足预封存的“不稳定峰值”条件。下一段从step225 exact-resume到450，
+  不改recipe；已有checkpoint全部保留。

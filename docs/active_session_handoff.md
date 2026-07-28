@@ -253,3 +253,60 @@ git rev-parse HEAD
 git rev-parse origin/main
 du -sh /data/ymdai
 ```
+
+## 8. corrected Source-SFT正式launch合同
+
+本合同只用于fresh首段；同一scientific contract的step225→450 resume复用它。
+
+```text
+workspace: /data/ymdai/projects/EMBER
+branch: main
+Git gate: launch时HEAD == origin/main且worktree clean
+devices: physical GPU4,5,6,7
+topology: 4-rank DDP, one CUDA process/rank, NUMA node1
+config: configs/pi05_source_sft_rank128_mixed_v2.json
+source policy:
+  /data/ymdai/outputs/ember/
+  pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000
+data:
+  /data/ymdai/ember_data/LIBERO-datasets/
+  f13aa24a3da8c43c7225569f28c562979fa0e35a
+output:
+  /data/ymdai/outputs/ember/
+  pi05_source_sft_rank128_mixed_dev_r4_b144_seed7_s2400_20260728
+log:
+  /data/ymdai/logs/ember/
+  pi05_source_sft_rank128_mixed_dev_r4_b144_seed7_s2400_20260728.log
+```
+
+首段为225 optimizer updates、每rank B144、global576 queries/update，总计
+129,600 action queries；24 tasks等权，每task 5,400 samples。每25步保存，
+预计9个checkpoint约0.57GB，连同合同、metrics和online validation首段新增
+低于1GB；完整2400-step探索包络若全部保留仍低于2GB。模型和数据只复用现有
+路径，不复制，无额外临时root。
+
+正式命令：
+
+```bash
+numactl --cpunodebind=1 --membind=1 env \
+  PYTHONPATH=/data/ymdai/projects/EMBER/src \
+  CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4,5,6,7 \
+  OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false PYTHONUNBUFFERED=1 \
+  /data/ymdai/projects/EMBER/.venv/bin/torchrun \
+  --standalone --nproc-per-node=4 scripts/train_source_sft.py \
+  --config configs/pi05_source_sft_rank128_mixed_v2.json \
+  --stage development --mode formal \
+  --source-run /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722 \
+  --checkpoint /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 \
+  --tokenizer-path /data/ymdai/ember_data/openpi/paligemma_tokenizer.model \
+  --data-root /data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a \
+  --output-dir /data/ymdai/outputs/ember/pi05_source_sft_rank128_mixed_dev_r4_b144_seed7_s2400_20260728 \
+  --stop-after-step 225 --num-workers 2 --log-every 10 --skip-data-sha
+```
+
+`--skip-data-sha`只取消owner明确拒绝的runtime全量HDF5内容hash；sealed
+manifest、精确file size、HDF5 schema、source/tokenizer/LoRA合同仍fail closed。
+fresh output不得已存在或覆盖。首段后以online validation loss筛少量候选，再
+用同一fixed validation closed-loop panel选observed-best；只有右端/峰值不稳
+才从完整step225 checkpoint exact-resume到450。任何batch、sampler、LR、
+数据、参数化或信息墙变化都必须fresh root。

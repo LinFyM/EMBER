@@ -6,7 +6,6 @@ import hashlib
 import json
 import math
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, Mapping, Protocol
 
 import torch
@@ -109,75 +108,6 @@ def lora_state_sha256(state: Mapping[str, torch.Tensor]) -> str:
         )
         digest.update(value.view(torch.uint8).numpy().tobytes())
     return digest.hexdigest()
-
-
-def load_lora_contract(path: Path) -> SmolVLALoRAContract:
-    raw = json.loads(path.read_text(encoding="utf-8"))
-    if raw.get("schema_version") != "ember_smolvla_lora_v1":
-        raise LoRAContractError("unsupported LoRA contract schema")
-    adapter = raw.get("adapter", {})
-    targets = tuple(
-        LoRATarget(
-            name=str(item["name"]),
-            in_features=int(item["in_features"]),
-            out_features=int(item["out_features"]),
-        )
-        for item in raw.get("targets", [])
-    )
-    contract = SmolVLALoRAContract(
-        targets=targets,
-        rank=int(adapter["rank"]),
-        alpha=int(adapter["alpha"]),
-        dropout=float(adapter["dropout"]),
-        identity_seed=int(adapter["identity_seed"]),
-        foundation_revision=raw.get("foundation_revision"),
-    )
-    declared = {
-        "target_count": len(contract.targets),
-        "state_tensor_count": contract.state_tensor_count,
-        "trainable_parameter_count": contract.parameter_count,
-    }
-    for key, actual in declared.items():
-        if int(raw.get(key, -1)) != actual:
-            raise LoRAContractError(f"declared {key} does not match target shapes")
-    if not targets or contract.rank <= 0 or contract.alpha <= 0 or contract.dropout < 0:
-        raise LoRAContractError("invalid empty or non-positive LoRA contract")
-    if len({target.name for target in targets}) != len(targets):
-        raise LoRAContractError("LoRA target names are not unique")
-    return contract
-
-
-def derive_smolvla_targets(policy: torch.nn.Module) -> tuple[LoRATarget, ...]:
-    """Enumerate the canonical 16-layer action-expert q/v plus five projections."""
-
-    module_map = dict(policy.named_modules())
-    names = [
-        f"model.vlm_with_expert.lm_expert.layers.{layer}.self_attn.{projection}"
-        for layer in range(16)
-        for projection in ("q_proj", "v_proj")
-    ]
-    names.extend(
-        (
-            "model.state_proj",
-            "model.action_in_proj",
-            "model.action_out_proj",
-            "model.action_time_mlp_in",
-            "model.action_time_mlp_out",
-        )
-    )
-    targets: list[LoRATarget] = []
-    for name in names:
-        module = module_map.get(name)
-        if not isinstance(module, torch.nn.Linear):
-            raise LoRAContractError(f"required LoRA target is not a Linear: {name}")
-        targets.append(
-            LoRATarget(
-                name=name,
-                in_features=module.in_features,
-                out_features=module.out_features,
-            )
-        )
-    return tuple(targets)
 
 
 def validate_policy_against_contract(

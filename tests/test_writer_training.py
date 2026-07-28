@@ -252,15 +252,54 @@ def test_code_compatible_resume_allows_only_recorded_commit_change(
         reconcile_resume_contract(args, changed)
 
 
+def test_resume_allows_only_monotonic_stage_extension(tmp_path: Path) -> None:
+    existing = {
+        "schema_version": "contract",
+        "git": {"branch": "main", "commit": "same"},
+        "runtime": {"selected_stop_step": 200, "total_steps": 2400},
+    }
+    write_json_atomic(tmp_path / "run_contract.json", existing)
+    args = argparse.Namespace(
+        output_dir=tmp_path,
+        resume=tmp_path / "checkpoints/step_00000200",
+        allow_contract_compatible_code_resume=False,
+    )
+    extended = {
+        **existing,
+        "runtime": {"selected_stop_step": 400, "total_steps": 2400},
+    }
+    assert reconcile_resume_contract(args, extended) == existing
+    args.allow_contract_compatible_code_resume = True
+    code_extended = {
+        **extended,
+        "git": {"branch": "main", "commit": "new"},
+    }
+    assert reconcile_resume_contract(args, code_extended) == existing
+
+    shortened = {
+        **existing,
+        "runtime": {"selected_stop_step": 100, "total_steps": 2400},
+    }
+    with pytest.raises(WriterModelError, match="cannot shorten"):
+        reconcile_resume_contract(args, shortened)
+
+    changed_axis = {
+        **existing,
+        "runtime": {"selected_stop_step": 400, "total_steps": 2600},
+    }
+    with pytest.raises(WriterModelError, match="scientific contract"):
+        reconcile_resume_contract(args, changed_axis)
+
+
 def test_retired_writer_configs_are_not_active() -> None:
     for name in (
         "writer_cold_start_v1.json",
         "pi05_as_writer_v1.json",
-        "pi05_as_writer_v2.json",
         "pi05_as_writer_v3_normal_only.json",
     ):
-        with pytest.raises(WriterModelError, match="unsupported PI05 AS-Writer"):
-            load_writer_config(REPO_ROOT / "configs" / name)
+        assert not (REPO_ROOT / "configs" / name).exists()
+    with pytest.raises(WriterModelError, match="unsupported PI05 AS-Writer"):
+        load_writer_config(REPO_ROOT / "configs/pi05_as_writer_v2.json")
 
 
 def test_task_complete_step_scales_six_losses_and_syncs_only_last(

@@ -733,7 +733,16 @@ def publish_contract(
                     and contract["git"].get("commit")
                     != git_state(REPO_ROOT).get("commit")
                 ),
+                "contract_selected_stop_step": int(
+                    contract["runtime"]["selected_stop_step"]
+                ),
                 "host": socket.gethostname(),
+                "monotonic_stage_extension": bool(
+                    args.resume is not None
+                    and int(args.stop_after_step)
+                    > int(contract["runtime"]["selected_stop_step"])
+                ),
+                "requested_stop_after_step": int(args.stop_after_step),
                 "resume": str(args.resume) if args.resume else None,
                 "started_unix": time.time(),
             },
@@ -773,19 +782,38 @@ def reconcile_resume_contract(
     existing = read_json(contract_path)
     if existing == candidate:
         return existing
-    if not getattr(args, "allow_contract_compatible_code_resume", False):
-        raise WriterModelError("AS-Writer resume launch contract changed")
-    existing_git = existing.get("git", {})
-    candidate_git = candidate.get("git", {})
+
+    existing_runtime = dict(existing.get("runtime", {}))
+    candidate_runtime = dict(candidate.get("runtime", {}))
+    existing_stop = int(existing_runtime.get("selected_stop_step", -1))
+    candidate_stop = int(candidate_runtime.get("selected_stop_step", -1))
     if (
-        existing_git.get("branch") != candidate_git.get("branch")
-        or existing_git.get("commit") == candidate_git.get("commit")
+        existing_stop <= 0
+        or candidate_stop < existing_stop
+        or candidate_stop > int(existing_runtime.get("total_steps", -1))
     ):
         raise WriterModelError(
-            "AS-Writer code-compatible resume did not isolate one commit change"
+            "AS-Writer resume cannot shorten or exceed its sealed stage axis"
         )
+
     normalized = dict(candidate)
-    normalized["git"] = existing_git
+    normalized["runtime"] = {
+        **candidate_runtime,
+        "selected_stop_step": existing_stop,
+    }
+    existing_git = existing.get("git", {})
+    candidate_git = candidate.get("git", {})
+    if existing_git != candidate_git:
+        if not getattr(args, "allow_contract_compatible_code_resume", False):
+            raise WriterModelError("AS-Writer resume launch contract changed")
+        if (
+            existing_git.get("branch") != candidate_git.get("branch")
+            or existing_git.get("commit") == candidate_git.get("commit")
+        ):
+            raise WriterModelError(
+                "AS-Writer code-compatible resume did not isolate one commit change"
+            )
+        normalized["git"] = existing_git
     if normalized != existing:
         raise WriterModelError(
             "AS-Writer code-compatible resume changed the scientific contract"

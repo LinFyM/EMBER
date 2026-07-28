@@ -937,8 +937,9 @@ action episode 独立配对，所以只有跨 demo 稳定的任务逻辑才与 a
    [`test_pi05_evaluation_runtime.py`](../tests/test_pi05_evaluation_runtime.py)、
    [`test_writer_evaluation_cache.py`](../tests/test_writer_evaluation_cache.py)。
 
-[`expert_plan.md`](expert_plan.md) 是更早阶段的历史材料，不是当前 authority，
-不应据此恢复旧 SmolVLA、旧 split、旧 runner 或旧 Writer。
+更早阶段的 `expert_plan.md` 已随旧 SmolVLA 执行簇从工作树退役，历史原文保留
+在 Git commit `149badc` 及其之前；它不是当前 authority，不应据此恢复旧
+split、旧 runner 或旧 Writer。
 
 本文已把咨询所需的本地实验 aggregate、逐任务结果、paired counts、显著性和
 内部量嵌入远程仓库。外部专家不需要访问本地主机 output 目录即可分析当前问题。

@@ -234,56 +234,6 @@ class WriterFeatureStore:
         return tuple(self._cached)
 
 
-def load_feature_cache_config(path: Path, repo_root: Path) -> dict[str, Any]:
-    config = read_json(path)
-    if config.get("schema_version") != "ember_writer_feature_cache_v1":
-        raise FeatureCacheError("unsupported Writer feature-cache schema")
-    protocol = config.get("protocol", {})
-    manifest_path = repo_root / str(protocol.get("manifest", ""))
-    if not manifest_path.is_file() or sha256_file(manifest_path) != protocol.get(
-        "manifest_sha256"
-    ):
-        raise FeatureCacheError("sealed data manifest changed")
-    required_split = protocol.get("required_split")
-    expected_task_count = {"train": 70, "validation": 10}.get(required_split)
-    if (
-        expected_task_count is None
-        or protocol.get("task_count") != expected_task_count
-        or protocol.get("demo_count_per_task") != 50
-    ):
-        raise FeatureCacheError(
-            "feature cache must cover one sealed train or validation video pool"
-        )
-    features = config.get("features", {})
-    feature_required = {
-        "camera_dataset": "obs/agentview_rgb",
-        "camera_transform": "libero_opengl_rotate_180_chw_unit_float_v1",
-        "vision_token_count": 64,
-        "vision_feature_dim": 960,
-        "vision_normalization": "multiply_sqrt_feature_dim",
-        "vision_pooling": "mean_over_spatial_tokens_per_frame",
-        "language_feature_dim": 960,
-        "language_max_tokens": 48,
-        "language_suffix": "newline",
-        "language_padding": "max_length_right",
-        "stored_dtype": "bfloat16",
-        "preserve_episode_order_and_boundaries": True,
-    }
-    if any(features.get(key) != value for key, value in feature_required.items()):
-        raise FeatureCacheError("frozen feature extraction contract changed")
-    if int(features.get("frame_batch_size_per_rank", 0)) <= 0:
-        raise FeatureCacheError("frame batch size must be positive")
-    parallel = config.get("parallel", {})
-    if (
-        parallel.get("world_size") != 8
-        or parallel.get("policy_processes_per_gpu") != 1
-        or parallel.get("assignment")
-        != "deterministic_lpt_by_manifest_frame_count"
-    ):
-        raise FeatureCacheError("feature cache requires eight symmetric CUDA ranks")
-    return config
-
-
 def _load_pi05_feature_authorities(
     config: Mapping[str, Any], repo_root: Path
 ) -> dict[str, Any]:

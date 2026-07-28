@@ -1,40 +1,14 @@
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
 import pytest
 
 from ember.libero_evaluation import (
     EvaluationContractError,
     aggregate_rows,
     batched_with_padding,
-    load_evaluation_config,
     partition_fixed_state_ids,
-    resolve_role,
     validate_complete_rows,
 )
-
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-
-
-def _authorities() -> tuple[dict, dict]:
-    config = load_evaluation_config(REPO_ROOT / "configs/source_base_eval_v1.json", REPO_ROOT)
-    manifest = json.loads(
-        (REPO_ROOT / config["protocol"]["manifest"]).read_text(encoding="utf-8")
-    )
-    return config, manifest
-
-
-def test_roles_are_split_exact_and_test_is_unavailable() -> None:
-    config, manifest = _authorities()
-    source = resolve_role(config, manifest, "source_development")
-    validation = resolve_role(config, manifest, "validation")
-    assert source.required_split == "train" and len(source.task_ids) == 8
-    assert validation.required_split == "validation" and len(validation.task_ids) == 10
-    with pytest.raises(EvaluationContractError, match="test remains sealed"):
-        resolve_role(config, manifest, "test")
 
 
 def test_rank_striding_covers_every_fixed_state_once() -> None:

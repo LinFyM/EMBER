@@ -1,25 +1,16 @@
 from __future__ import annotations
 
-from pathlib import Path
-
-import pytest
 import torch
 
 from ember.lora import (
     LORA_B_SUFFIX,
-    LoRAContractError,
     LoRATarget,
     SmolVLALoRAContract,
     copy_task_lora_state_,
-    derive_smolvla_targets,
     functional_lora_call,
     inject_task_lora,
-    load_lora_contract,
     task_lora_state_dict,
 )
-
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 class _Attention(torch.nn.Module):
@@ -75,27 +66,6 @@ def _small_contract() -> SmolVLALoRAContract:
         dropout=0.0,
         identity_seed=17,
     )
-
-
-def test_sealed_contract_has_exact_canonical_capacity() -> None:
-    contract = load_lora_contract(REPO_ROOT / "configs/smolvla_lora_v1.json")
-    assert len(contract.targets) == 37
-    assert contract.state_tensor_count == 74
-    assert contract.parameter_count == 1_485_312
-    assert contract.rank == 32
-    assert contract.alpha == 16
-    assert contract.dropout == 0.0
-
-
-def test_derivation_requires_all_37_named_linears() -> None:
-    policy = _Policy()
-    targets = derive_smolvla_targets(policy)
-    assert len(targets) == 37
-    assert targets[0].name.endswith("layers.0.self_attn.q_proj")
-    assert targets[-1].name == "model.action_time_mlp_out"
-    policy.model.vlm_with_expert.lm_expert.layers[3].self_attn.q_proj = torch.nn.Identity()
-    with pytest.raises(LoRAContractError, match="not a Linear"):
-        derive_smolvla_targets(policy)
 
 
 def test_injected_identity_is_only_trainable_state_and_is_repeatable() -> None:

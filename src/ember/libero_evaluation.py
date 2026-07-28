@@ -4,20 +4,12 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 
 class EvaluationContractError(RuntimeError):
     """Raised when evaluation would cross a split or reproducibility boundary."""
-
-
-@dataclass(frozen=True)
-class EvaluationRole:
-    name: str
-    required_split: str
-    task_ids: tuple[int, ...]
 
 
 def sha256_file(path: Path) -> str:
@@ -33,70 +25,6 @@ def canonical_sha256(value: Any) -> str:
         value, sort_keys=True, separators=(",", ":"), ensure_ascii=False
     ).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
-
-
-def load_evaluation_config(path: Path, repo_root: Path) -> dict[str, Any]:
-    config = json.loads(path.read_text(encoding="utf-8"))
-    if config.get("schema_version") != "ember_source_base_eval_v1":
-        raise EvaluationContractError("unsupported source-base evaluation schema")
-    protocol = config.get("protocol", {})
-    for name in ("split", "manifest"):
-        authority = repo_root / protocol[name]
-        if sha256_file(authority) != protocol[f"{name}_sha256"]:
-            raise EvaluationContractError(f"sealed {name} authority hash changed")
-    environment = config.get("environment", {})
-    required = {
-        "suite": "libero_90",
-        "fixed_init_states": True,
-        "fixed_init_state_count": 50,
-        "dummy_settling_steps": 10,
-        "max_horizon": 400,
-        "terminate_on_success": True,
-    }
-    for key, expected in required.items():
-        if environment.get(key) != expected:
-            raise EvaluationContractError(
-                f"evaluation environment {key} must remain {expected!r}"
-            )
-    parallel = config.get("parallel", {})
-    if parallel.get("world_size") != 8 or parallel.get("policy_processes_per_gpu") != 1:
-        raise EvaluationContractError("evaluation requires eight symmetric policy ranks")
-    if int(parallel.get("envs_per_rank", 0)) <= 0:
-        raise EvaluationContractError("envs_per_rank must be positive")
-    return config
-
-
-def resolve_role(
-    config: Mapping[str, Any],
-    manifest: Mapping[str, Any],
-    role_name: str,
-) -> EvaluationRole:
-    """Resolve only train-development or validation; test is structurally absent."""
-
-    roles = config.get("roles", {})
-    if role_name not in roles:
-        raise EvaluationContractError(
-            f"role {role_name!r} is not available; reporting-only test remains sealed"
-        )
-    role = roles[role_name]
-    task_ids = tuple(int(task_id) for task_id in role.get("task_ids", []))
-    required_split = str(role.get("required_split"))
-    if required_split not in {"train", "validation"}:
-        raise EvaluationContractError("active evaluator cannot access test tasks")
-    if not task_ids or len(set(task_ids)) != len(task_ids):
-        raise EvaluationContractError("evaluation role task IDs must be non-empty and unique")
-    split_by_task = {
-        int(record["task_index"]): str(record["split"])
-        for record in manifest.get("tasks", [])
-    }
-    mismatched = [
-        task_id for task_id in task_ids if split_by_task.get(task_id) != required_split
-    ]
-    if mismatched:
-        raise EvaluationContractError(
-            f"role {role_name} crosses its {required_split} split: {mismatched}"
-        )
-    return EvaluationRole(role_name, required_split, task_ids)
 
 
 def partition_fixed_state_ids(

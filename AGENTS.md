@@ -28,7 +28,9 @@
 v5失败证据、v5.1设计理由、运行状态和下一动作，但不覆盖架构或长期科学
 authority；focused AS/RL完成或其不再承担跨session恢复作用时应更新或删除。
 
-`docs/expert_plan.md`、旧 SmolVLA/70-10-10 runner/config/checkpoint 和旧 Phase A–F 只作 provenance。不得恢复为活动路径，不得依赖或混入 MemLLM。
+旧 `docs/expert_plan.md`、SmolVLA/70-10-10 runner/config/checkpoint 和
+Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 provenance；不得恢复为
+活动路径，不得依赖或混入 MemLLM。
 
 ## Active objective
 

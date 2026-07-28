@@ -1925,6 +1925,6 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   Source-SFT上限`10,297,344`。step0 public LoRA仍由zero-init factor output
   保持精确functional identity。
 - canonical实现与fresh v5.3 schema已在隔离分支
-  `codex/v53-visual-transition-procedure@c1e3777` push；focused Writer和
-  evaluator回归`78 passed`。正式训练仍被真实GPU4–7最长视频profile、B20/B21
+  `codex/v53-visual-transition-procedure@c1e3777` push；全仓回归
+  `198 passed`。正式训练仍被真实GPU4–7最长视频profile、B20/B21
   上界、transition非零和step1→3 exact-resume阻塞。

@@ -1459,5 +1459,5 @@ GPU范围和训练步长是当时快照；活动状态只取
   评测step1200/1400/1600/1800的无放回correct400。
 - v5.3设计封存在`docs/action_forecast_writer_v5_3_design.md`。隔离分支
   `c1e3777`已实现task-grounded adjacent visual transition、fresh schema和
-  参数预算搬移，focused/评测回归`78 passed`并push。它不影响当前v5.2训练
+  参数预算搬移，全仓回归`198 passed`并push。它不影响当前v5.2训练
   commit；待v5.2上限封存后再做真实GPU profile。

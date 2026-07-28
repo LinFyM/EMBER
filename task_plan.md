@@ -619,7 +619,7 @@ action-hidden teacher video -> one task LoRA`的核心映射。
   Visual-Transition Procedure已在隔离分支`c1e3777`实现并push：
   `D_f=G_f-G_(f-1)`在各arm实际输入顺序内重算，Action-Expert probe以8头
   Q/K/O、无Wv cross-attention读取transition；factor hidden `216→192`，
-  总参数`10,230,536`，focused/评测测试`78 passed`。
+  总参数`10,230,536`，全仓测试`198 passed`。
 - [ ] v5.2上限和新best证据封存后，profile v5.3最长105帧、B20/B21上界、
   step1→3 exact-resume及真实transition；随后按实测吞吐fresh训练约一小时，
   与充分训练v5.2用同一absolute/五臂/内部传递合同比较。

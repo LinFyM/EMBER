@@ -1598,3 +1598,22 @@ GPU范围和训练步长是当时快照；活动状态只取
 - fixed-Core结果几乎复现全部顺序差异，而Core-only接近零，排除了Semantic
   Core顺序旁路。相对v5.2，上游Procedure差异增强但下游LoRA/action差异减弱；
   结合macro200仍是absolute右端最高点，按合同exact-resume到macro400。
+
+## 第二轮可重建cache清理（2026-07-28）
+
+- 审计并删除17个旧v5.1 standalone LoRA cache：16个已有完整results/
+  launcher completion，另1个结果缺失wrong-video run已被保留的fresh2重跑
+  替代，共释放`5,282,177,024` bytes。
+- 删除清单为
+  `/data/ymdai/outputs/ember/cache_cleanup_legacy_v51_standalone_lora_20260728.json`；
+  结果、rows、queue、日志、合同及全部Writer/source checkpoint未删。至此
+  outputs中不再残留`writer_lora_cache`或顶层`*_cache`目录。
+
+## v6第二段exact-resume启动（2026-07-28）
+
+- tmux `ember-v6-formal-400` 从`step_00000200`续到macro400；invocation记录
+  `contract_compatible_code_resume=true`、`monotonic_stage_extension=true`，
+  canonical contract SHA仍为
+  `e0d0cf703b596e73552f4150f5abed9f9726a80e5af214095baca33719bdd6a3`。
+- GPU4–7各一DDP rank，稳态约78.0GB/卡、约25.25queries/s；resume后metrics
+  从201连续追加，没有重放首段。

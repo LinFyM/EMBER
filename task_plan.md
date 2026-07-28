@@ -69,8 +69,9 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   visual-transition 路径进入 Procedure，并在 fixed-Core 反事实下传到
   effective LoRA/action；无 Semantic Core 顺序旁路。相对 v5.2，Procedure
   差异更强但下游 LoRA/action 差异更弱，需由续训判断是成熟度还是新瓶颈。
-- [ ] 除非 macro0→200 closed-loop absolute 明确下降，否则 exact-resume 到
-  macro400；第三段只由届时真实曲线决定。
+- [ ] exact-resume macro200→400 已在 tmux `ember-v6-formal-400` 运行；
+  contract SHA/RNG/cursor/monotonic stage extension 核验通过。完成与四点
+  correct400 尚待封存；第三段只由届时真实曲线决定。
 - [ ] 只有 absolute、same-task 稳定性、wrong-video 语义性、
   correct>shuffled/reversed、跨 task breadth 和内部传递同时成立，才封存 v6。
 

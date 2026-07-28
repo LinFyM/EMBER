@@ -38,6 +38,21 @@ queries、wall `3,864.599s`。macro200 时 24 tasks 各有 4,000 queries、
 videos。终点 checkpoint 的 Writer、trainer 与四 rank state 已逐文件重算
 SHA256 并与 manifest 一致。
 
+第二段已从 macro200 exact-resume 到 macro400：
+
+```text
+tmux: ember-v6-formal-400
+runtime commit: 3c3402a8eb5fc6298bedaecb8a564b731e7a3e78
+resume: checkpoints/step_00000200
+requested stop: 400
+```
+
+launcher 已记录 `contract_compatible_code_resume=true`、
+`monotonic_stage_extension=true`，且 canonical contract SHA 未变。GPU4–7
+各一个 DDP rank，稳态约 78.0GB/卡；不得重复启动。完成后先核对
+`metrics.jsonl` 连续 1..400、225..400 每25 checkpoint、run summary 和四 rank
+RNG/cursor，再并行评测 macro250/300/350/400。
+
 25/50/75/100/125/150/175/200 的 online task-balanced functional loss 为
 `.130744/.133971/.133841/.133092/.132344/.133132/.134178/.137535`。这些
 loss 只作数值监控，不能替代即将运行的 closed-loop rollout。
@@ -208,7 +223,12 @@ results、queue、日志、contract、checkpoint 和 paired artifact 均保留�
 四个 v6 specificity control 完成并生成 paired artifact 后，其
 `writer_lora_cache` 又按同一规则删除 `4,254,855,093` bytes；删除清单为
 `/data/ymdai/outputs/ember/cache_cleanup_v6_specificity_lora_20260728.json`。
-清理后个人占用为 `319,598,037,816` bytes。
+随后清掉 17 个旧 v5.1 standalone LoRA cache（16 个完成结果和 1 个被
+fresh2 替代的结果缺失 run），再释放 `5,282,177,024` bytes；清单为
+`/data/ymdai/outputs/ember/cache_cleanup_legacy_v51_standalone_lora_20260728.json`。
+所有结果、rows、queue、日志、合同与 Writer/source checkpoint 保留；删除的
+cache 可确定性重建。macro400 续训进行中时个人占用为
+`314,326,037,069` bytes。
 
 ## 3. 当前研究判断
 

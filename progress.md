@@ -1617,3 +1617,36 @@ GPU范围和训练步长是当时快照；活动状态只取
   `e0d0cf703b596e73552f4150f5abed9f9726a80e5af214095baca33719bdd6a3`。
 - GPU4–7各一DDP rank，稳态约78.0GB/卡、约25.25queries/s；resume后metrics
   从201连续追加，没有重放首段。
+
+## v6第二段、四点correct400与focused判断封存（2026-07-28）
+
+- macro200→400 exact-resume自然完成；metrics连续1..400，225..400每25步
+  checkpoint和四rank state完整。第二段wall `3,903.024s`，累计9,600 video
+  conditions与192,000 action queries；训练/评测进程均退出，GPU4–7释放。
+- macro250/300/350/400的paired无放回correct400为
+  `117/118/125/125`，没有超过macro200=`129`。完整八点curve artifact SHA256
+  `7789350d...72e1`；所有点task/state、env/policy/noise和50-video双射一致。
+- 第二小时没有显著aggregate下降，但成功能力在tasks间大幅迁移；因此停止
+  full-24 v6 recipe，不补every-25 rollout。macro200仍为observed-best，已有
+  `129/131/108/111/105`五臂和16-reference内部证据继续有效。
+- owner把corrected mixed-task Source-SFT提前为下一实验，并统一focused AS门：
+  `correct400 >= max(150, corrected SFT_best+30)`，同时保留全部视频因果、
+  same-task、多task breadth和独立paired复测条件。
+
+## corrected mixed-task Source-SFT集成与profile（2026-07-28）
+
+- 隔离分支`codex/source-sft-mixed`在commits
+  `4c527dd/55ccbcc/effbd4b`实现并封存hierarchical mixed sampler、checkpoint
+  v2与B144正式合同，随后fast-forward合入main。
+- 每rank B144 physical batch固定为24 tasks×6 samples；每个batch一次普通
+  同步optimizer update，无gradient accumulation。task→episode→chunk分层
+  均衡、跨rank row disjoint、absolute-step sample identity和exact resume由
+  focused tests锁定；profile seal后`21 passed`。
+- GPU4–7 fresh step1→resume step3完成；root为
+  `/data/ymdai/outputs/ember/pi05_source_sft_rank128_mixed_profile_r4_b144_55ccbcc_s3_20260728`。
+  后两步wall `16.684/15.847s`、吞吐`34.524/36.346 queries/s`，峰值
+  allocated/reserved `60.69/74.07GB`；三步共1,728 unique rows且24 tasks
+  每步等量，step3已覆盖每task全部50 episodes。B120 fallback未触发。
+- config已封存formal fresh step0→225、每25步checkpoint，约61分钟训练body；
+  冷加载单独报告。首段峰值在右端或不稳定时exact-resume到450，之后不做机械
+  续段。正式launch前仍需main/origin clean、GPU4–7 live preflight和存储复核。

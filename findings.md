@@ -2078,3 +2078,48 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - shuffled 的 visual-transition RMS 中位 `.06446`，correct 为 `.03075`；
   虽有相邻跳变放大，但 transition residual/action-probe RMS 仅
   `.2688`，attention effective tokens 约 `11.0`，未见数值爆炸。
+
+## v6第二小时与任务漂移结论（2026-07-28）
+
+- 同一root从macro200 exact-resume到400，metrics连续`1..400`、每25步完整
+  checkpoint。第二段消费额外4,800 video conditions和96,000 action queries，
+  wall `3,903.024s`；24 tasks各覆盖全部50 videos与50 action episodes。
+- paired无放回correct400完整曲线为：
+
+  ```text
+  macro          50   100   150   200   250   300   350   400
+  successes     114    77   120   129   117   118   125   125
+  tasks > 0       6     7     7     5     7     5     6     7
+  ```
+
+  macro200仍是observed-best；它相对250/300/350/400均无显著差异，但成功集合
+  大幅交换。Goal-6从24涨到40，同时Long-1从22降到14、Object-3从31降到21。
+  因而第二小时改善breadth却没有提高aggregate，能力迁移仍是主要现象。
+- 额外200个optimizer updates、下降的train loss和持续增大的Procedure
+  modulation norm没有带来多task共同上涨，“只是更新次数不足”明显降权。
+  第一嫌疑转为每次full-24平均的优化粒度；v6上游拓扑仍被内部反事实支持，
+  若训练粒度修正后仍失败，才把Procedure→compiler增益列为下一架构owner。
+- owner最终将corrected Source-SFT提前为紧邻实验，先建立可信baseline再继续
+  Writer搜索。focused AS硬门统一为
+  `correct400 >= max(150, corrected SFT_best + 30)`，并同时要求same≈correct、
+  correct显著优于wrong/shuffled/reversed、多task共同贡献和独立paired复测。
+
+## corrected mixed-task Source-SFT实现与B144 profile（2026-07-28）
+
+- canonical Source-SFT现在每个rank的physical batch直接混合全部24 tasks并
+  等量计数；B144时每task每rank6条、全球每task24条。每个batch只做一次普通
+  forward/backward/DDP sync/clip/AdamW，不使用gradient accumulation、
+  `no_sync`或Writer task-complete micro-round。
+- sampler按task→episode→chunk分层均衡，episode/chunk使用确定性无放回周期；
+  跨rank row不重复，绝对step决定sample identity，因此resume无需可变sampler
+  状态。21个sampler/contract/checkpoint/inference focused tests全部通过。
+- GPU4–7 profile root
+  `pi05_source_sft_rank128_mixed_profile_r4_b144_55ccbcc_s3_20260728`
+  fresh完成step1并从完整checkpoint resume到step3。三步共1,728 unique rows；
+  每步24 tasks等量，step3时每task已覆盖全部50 episodes。后两步wall为
+  `16.684/15.847s`，吞吐`34.524/36.346 queries/s`，峰值
+  allocated/reserved为`60,690,811,904/74,065,117,184 bytes`。
+- loss/gradient finite，frozen source policy无梯度，唯一trainable对象为
+  `10,297,344`参数rank-128 shared LoRA。B144稳定，因此不触发B120 fallback。
+  正式首段封存为fresh step0→225、每25步checkpoint，约61分钟training body；
+  若峰值在右端或不稳定，exact-resume到450。

@@ -1,4 +1,4 @@
-# EMBER v6 active session handoff
+# EMBER focused active session handoff
 
 最后更新：2026-07-28 UTC。
 
@@ -9,12 +9,10 @@ history。任何接手者都必须先只读复核现场，不能按本文快照�
 
 ## 1. 当前实时状态
 
-v6 fresh task-complete 正式首段已在 GPU4–7 正常完成：
+v6 fresh task-complete 正式 run 已在 GPU4–7 从 macro0 完整训练到 macro400，
+训练和评测进程均已自然退出：
 
 ```text
-tmux:
-  ember-v6-formal-200
-
 output:
   /data/ymdai/outputs/ember/
   pi05_as_writer_v6_taskcomplete_dev_r4_b20_seed7_s2400_149badc_20260728
@@ -23,314 +21,235 @@ log:
   /data/ymdai/logs/ember/
   pi05_as_writer_v6_taskcomplete_dev_r4_b20_seed7_s2400_149badc_20260728.log
 
-launch code:
-  main == origin/main == 149badc00c30f8d230401fa24a5dbfa4299b322c
-
-run-contract canonical SHA256:
+canonical run-contract SHA256:
   e0d0cf703b596e73552f4150f5abed9f9726a80e5af214095baca33719bdd6a3
 ```
 
-首段自然停在 macro200；tmux 和训练进程均已退出，GPU4–7 已释放。`metrics.jsonl`
-为连续 `1..200` 共 200 行，8 个 checkpoint 为 `25..200` 每 25 一点。
-run summary 记录 `4,800` 个 one-video conditions、`96,000` 条 action
-queries、wall `3,864.599s`。macro200 时 24 tasks 各有 4,000 queries、
-200 次 video visits，且各自已覆盖全部 50 action episodes 与 50 teacher
-videos。终点 checkpoint 的 Writer、trainer 与四 rank state 已逐文件重算
-SHA256 并与 manifest 一致。
-
-第二段已从 macro200 exact-resume 到 macro400：
+macro200→400 是同一 root、同一合同和完整 RNG/cursor 的 exact-resume。
+`metrics.jsonl` 连续 `1..400` 共400行；每25 macro均有 checkpoint。
+run summary 为：
 
 ```text
-tmux: ember-v6-formal-400
-runtime commit: 3c3402a8eb5fc6298bedaecb8a564b731e7a3e78
-resume: checkpoints/step_00000200
-requested stop: 400
+completed optimizer updates       400
+global video conditions         9,600
+global action queries         192,000
+second-segment wall          3,903.024 s
 ```
 
-launcher 已记录 `contract_compatible_code_resume=true`、
-`monotonic_stage_extension=true`，且 canonical contract SHA 未变。GPU4–7
-各一个 DDP rank，稳态约 78.0GB/卡；不得重复启动。完成后先核对
-`metrics.jsonl` 连续 1..400、225..400 每25 checkpoint、run summary 和四 rank
-RNG/cursor，再并行评测 macro250/300/350/400。
+24 tasks 各访问400个视频条件，均覆盖全部50个 teacher videos 和50个 action
+episodes。macro225..400 checkpoint 的schema、合同、cursor、计数和全文件
+manifest均已核验；macro400 Writer SHA256 为
+`b4873358...c5742`。owner明确不要求正式run计算整批HDF5内容SHA；不得补做。
 
-25/50/75/100/125/150/175/200 的 online task-balanced functional loss 为
-`.130744/.133971/.133841/.133092/.132344/.133132/.134178/.137535`。这些
-loss 只作数值监控，不能替代即将运行的 closed-loop rollout。
-
-四点 correct400 已在评测 commit
-`aecb1005cd00812d2dd3f2a8a33b873956d7f598` 全部自然完成：
+训练loss仍缓慢下降，25-step窗口在201..400依次为：
 
 ```text
-macro          50    100    150    200
-successes     114     77    120    129
-tasks > 0       6      7      7      5
-libero_10      10     15      9     22
-libero_goal    30     12     43     24
-libero_object  73     44     66     81
-libero_spatial  1      6      2      2
+.100447 .101343 .101482 .100144 .099740 .099170 .100669 .098620
 ```
 
-四点均为 400 rows、36/36 completed shards、6/6 workers exit 0、零 queue
-error。paired 分析确认四点使用完全相同的 400 个 task/state keys、env seed、
-policy seed/noise prefix 和 teacher demo assignment；每 task 50 videos 构成
-无放回双射。分析 artifact：
+online functional validation在macro200/400为`.137535/.136083`，只能作数值
+监控。Procedure进入compiler的zero-init modulation norm从macro200的
+`1.0244`继续增长到250/300/350/400的
+`1.1904/1.3206/1.4426/1.5651`，所以该路径没有被冻结。
+
+## 2. 完整 correct400 曲线
+
+macro50..400 的paired、每task 50 videos无放回correct400为：
+
+```text
+macro          50   100   150   200   250   300   350   400
+successes     114    77   120   129   117   118   125   125
+tasks > 0       6     7     7     5     7     5     6     7
+```
+
+完整分析artifact：
 
 ```text
 /data/ymdai/outputs/ember/
-pi05_as_writer_v6_correct_curve_paired_aecb100_20260728.json
-SHA256: 64fa284511e21230417b9ef27a99a9c050b661670eb90e549974acd8b9672464
+pi05_as_writer_v6_full_correct_curve_paired_144c30e_20260728.json
+SHA256: 7789350d0cd7d9e36c36b303c112279c4ba3d17a2448380f60e9162e20b472e1
 ```
 
-macro200 是 absolute observed-best，但只覆盖 5/8 tasks，且一个 object task
-贡献 50/50；macro150 为 120/400、覆盖 7/8 tasks。两者 paired McNemar
-`p=0.3356`，所以右端仍上涨但 breadth 不稳定，不能仅凭 aggregate 宣称 v6
-成立。
+八点使用相同400个task/state keys、env/policy/noise seeds和teacher-video
+assignment；每task的50 videos均为无放回双射。macro200仍是observed-best。
+它相对250/300/350/400的paired lost/gained分别为
+`39/27`、`34/23`、`30/26`、`40/36`，exact p分别
+`.175/.185/.689/.731`。后四点并非统计显著下降，但成功集合发生了很大交换，
+不是多task共同提高。
 
-macro200 的四个 control full400 已在 clean launch commit
-`faf6e33932577826040e7a3c3610428409ba817f` 全部自然完成：
+逐task的200→400变化最能说明问题：
 
 ```text
-condition          successes  tasks>0
-correct                  129        5
-same_task_other          131        7
-cross_suite_wrong        108        7
-shuffled                 111        6
-reversed                 105        5
+task              macro200  macro250  macro300  macro350  macro400
+Long-1                  22        18        17        11        14
+Long-2                   0         1         0         0         0
+Goal-3                   0         0         0         0         2
+Goal-6                  24        32        32        32        40
+Object-1                50        42        49        48        45
+Object-3                31        19        19        31        21
+Spatial-1                2         3         0         2         1
+Spatial-3                0         2         1         1         2
 ```
 
-五臂均为 400 rows、36/36 completed shards、6/6 workers exit 0、零错误，
-全 50 videos 无放回；每个 worker 先处理所有 long shards，long pending
-归零后才领取其它 task。相对 correct 的 paired switches：
+Goal-6上涨`+16`的同时，Long-1/Object-3分别下降`-8/-10`。第二小时提高了
+breadth，却没有提高aggregate；因此不再继续同一full-24 recipe，也不补
+every-25稠密评测。
+
+## 3. observed-best的五臂与内部传递
+
+observed-best仍是macro200，所以不对非best macro400重复五臂。macro200的
+full400为：
 
 ```text
-same-task-other  correct-only/control-only = 22/24, p=.8830
-wrong            correct-only/control-only = 42/21, p=.0111
-shuffled         correct-only/control-only = 36/18, p=.0198
-reversed         correct-only/control-only = 37/13, p=.00094
+correct / same-task-other / wrong / shuffled / reversed
+129     / 131             / 108   / 111      / 105
 ```
 
-same-task 鲁棒性与三个方向门均通过，但 correct 对 wrong/shuffled/reversed
-的 aggregate margin 仅 `21/18/24`，明显弱于 v5.2 的 `58/50/49`，且
-correct 仍只覆盖 5/8 tasks。paired artifact：
+relative-to-correct paired switches和exact p为：
+
+```text
+same-task-other  22/24  p=.8830
+wrong            42/21  p=.0111
+shuffled         36/18  p=.0198
+reversed         37/13  p=.00094
+```
+
+方向门通过，但correct对后三臂margin仅`21/18/24`，明显弱于v5.2的
+`58/50/49`，且主要由少数tasks贡献。
+
+16-reference内部检查的median relative-L2为：
+
+```text
+condition          Core  ActionProbe Transition Procedure eff.LoRA action
+same-task-other   .0664      .1593      1.2541    .0365    .0856  .0139
+wrong             .2897      .4788      1.3395    .1345    .3233  .0501
+shuffled          .0000      .3640      2.1241    .0888    .2590  .0282
+reversed          .0044      .4323      1.3767    .1167    .2436  .0392
+```
+
+fixed-Core Procedure-only几乎复现shuffled/reversed的effective-LoRA与action
+差异，Core-only接近零；顺序信号确实来自
+visual-transition→Procedure，而不是Semantic Core或静态旁路。相比v5.2，
+v6 Procedure差异更强，但LoRA/action差异更弱。
+
+## 4. 当前科学判断
+
+side-chat提出的三个解释经第二段后更新为：
+
+1. “只是optimizer updates不足”已明显降权。额外200次update、同量数据和
+   持续增大的compiler modulation没有带来absolute共同上涨。
+2. full-24 task平均/优化粒度过强成为第一嫌疑。task-complete没有稳定breadth，
+   而是让checkpoint在tasks之间交换能力；相邻25-step总更新方向后期也接近
+   正交或反向。
+3. v6拓扑仍不是第一嫌疑。Semantic Set、Visual Transition和Causal
+   Procedure的职责分离均被内部反事实支持；若存在架构瓶颈，更可能局限在
+   Procedure→compiler增益，而非上游时序表示。
+
+因此不推翻v6；若后续直接改Writer训练粒度，当前最小可归因候选仍是：
+
+```text
+每rank每update处理2 tasks
+4 ranks × 2 = global 8 tasks/update
+3个optimizer updates组成一个完整24-task cycle
+每task仍1 video、B20 action queries、task内均值、全局task等权
+```
+
+它保留多task联合更新，不退回one-task/rank；同时将每24-task cycle的AdamW
+updates从1提高到3，并把单次共享梯度平均从24 tasks降到8。每个cycle仍精确
+覆盖24 tasks，video/action schedule和long-first cost balancing保持。
+这是fresh不兼容recipe，不从macro200/400 resume。
+
+但owner随后明确把 corrected mixed-task Source-SFT 提前为紧邻动作：先得到
+可信强baseline，避免Writer反复改动后才发现没有超过普通action-SFT。SFT结果
+同时提供一个重要诊断：它没有Writer的异构per-video LoRA或六个micro-round，
+每个mixed physical batch只做一次普通forward/backward/sync/clip/AdamW。
+因此其full-24样本覆盖不能直接等同于v6 task-complete的训练机制。
+
+当前focused Goal的两个absolute硬条件已经统一为：
+
+```text
+EMBER correct400 >= 150
+EMBER correct400 >= corrected Source-SFT observed-best + 30
+```
+
+即最终门是`max(150, SFT_best+30)`；还必须同时满足same≈correct、
+correct显著优于wrong/shuffled/reversed、多个tasks共同贡献，并用独立
+RNG/video permutation复测。`+30`只是最低研究里程碑，不是达到后强制停止。
+
+## 5. corrected mixed-task Source-SFT已实现并完成profile
+
+canonical实现已fast-forward到main：
+
+```text
+branch provenance: codex/source-sft-mixed
+implementation commits: 4c527dd / 55ccbcc
+profile seal commit: effbd4b
+config: configs/pi05_source_sft_rank128_mixed_v2.json
+```
+
+它从同一frozen source base fresh训练一套shared rank-128 LoRA。每个rank的
+physical batch都含24 tasks等量样本；B144时为每task每rank 6条、全球每task
+24条。采样为确定性的
+`uniform task -> no-replacement episode cycle -> no-replacement chunk cycle`，
+跨rank row不重复且sample identity只由step/rank/task/offset决定。每个physical
+batch只做一次普通同步update，没有gradient accumulation、`no_sync`或
+task-complete micro-round。targeted tests为`21 passed`。
+
+GPU4–7 B144 profile root：
 
 ```text
 /data/ymdai/outputs/ember/
-pi05_as_writer_v6_specificity400_noreplacement_seed7_macro0200_paired_analysis_faf6e33_20260728.json
+pi05_source_sft_rank128_mixed_profile_r4_b144_55ccbcc_s3_20260728
 ```
 
-16-reference 内部传递检查已使用 exact implementation worktree
-`aecb1005cd00812d2dd3f2a8a33b873956d7f598` 正常完成：
+fresh step1后从完整checkpoint exact-resume到step3；metrics连续`1,2,3`，
+共1,728 unique query rows。每步24 tasks等量，到step3每task的50 episodes
+均已覆盖。后两步max-rank wall为`16.684/15.847s`，吞吐
+`34.524/36.346 queries/s`；峰值allocated/reserved为
+`60,690,811,904/74,065,117,184 bytes`。loss/gradient均finite，source policy
+冻结，只有`10,297,344`个rank-128 LoRA参数可训练；B120 fallback未触发。
+
+正式首段由实测吞吐封存为fresh step0→225、每25步checkpoint，约61分钟训练
+body；四rank冷加载单独报告。若首段observed-best在右端或峰值明显不稳定，
+默认exact-resume到step450；不机械固定400，也不预先授权更后段。
+
+## 6. 清理与空间
+
+四个macro250/300/350/400评测均已完整保留results、rows、queue、logs、
+contracts和paired artifact；随后只删除可确定重建的per-rollout LoRA cache，
+释放`4,254,614,115` bytes。精确清单：
 
 ```text
-tmux: ember-v6-internal-m200
-output:
-  /data/ymdai/outputs/ember/
-  pi05_as_writer_v6_internal_specificity_macro0200_refs2_aecb100_20260728
+/data/ymdai/outputs/ember/
+cache_cleanup_v6_resume_correct_lora_20260728.json
 ```
 
-它在 GPU4–7 各处理 2 validation tasks × 2 references，共生成 16 rows、四个
-rank 输出和合并 summary。相对 correct 的 median relative-L2 为：
+此前已删除的历史完成评测cache清单继续保留在同一outputs root。B144 profile
+结束后`/data/ymdai`为`315,415,540,099` bytes，低于500GB operator hard
+cap；任何新formal run前仍需重测现场与预计峰值。
 
-```text
-condition          Core   ActionProbe  Transition  Procedure  eff.LoRA  action
-same-task-other   .0664       .1593       1.2541     .0365      .0856    .0139
-wrong             .2897       .4788       1.3395     .1345      .3233    .0501
-shuffled          .0000       .3640       2.1241     .0888      .2590    .0282
-reversed          .0044       .4323       1.3767     .1167      .2436    .0392
-```
+## 7. 紧邻动作与恢复命令
 
-fixed-Core Procedure-only 几乎完整复现 shuffled/reversed 的 effective-LoRA
-与 action 差异，Core-only 对这两个顺序臂接近零，证明顺序信号经过新增
-visual-transition→Procedure 路径传递，不是 Semantic Core 旁路。与 v5.2
-相比，v6 Procedure 差异更大，但 macro200 的 effective-LoRA/action 差异更小；
-这与行为 margin 变弱一致，说明当前最早瓶颈已从 Procedure 输入转到
-Procedure-to-compiler 传递或训练成熟度。shuffled 的 transition RMS 为正确
-顺序约 2.10 倍，但 residual/action-probe RMS 中位仅 `.269`，没有失控。
+当前紧邻动作是：把main与`origin/main`推进到包含`effbd4b`及本handoff的clean
+状态；做正式launch前的Git/data/storage/GPU4–7检查；随后只在GPU4–7启动
+corrected Source-SFT fresh step0→225。首段结束后先用online loss筛候选，再
+对少量checkpoint做同一fixed validation correct400，依据observed-best位置和
+breadth决定是否resume到450。
 
-正式命令为：
+Source-SFT observed-best封存后，回到AS-Writer：优先检验global-8/
+three-update cycle是否减轻任务漂移；若Procedure仍强而compiler传递弱，再改
+Procedure→compiler。达到上述absolute与视频因果双门后才做matched action
+one-shot和独立cold-start RL。不得自动进入final-32、test task-local RL或
+joint oracle。
+
+只查询GPU4–7：
 
 ```bash
-env PYTHONPATH=/data/ymdai/projects/EMBER/src \
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4,5,6,7 \
-OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false PYTHONUNBUFFERED=1 \
-/data/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=4 \
-scripts/train_as_writer.py \
---config configs/pi05_as_writer_language_axial_v6.json \
---mode formal \
---source-run /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722 \
---checkpoint /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 \
---tokenizer-path /data/ymdai/ember_data/openpi/paligemma_tokenizer.model \
---data-root /data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a \
---output-dir /data/ymdai/outputs/ember/pi05_as_writer_v6_taskcomplete_dev_r4_b20_seed7_s2400_149badc_20260728 \
---stop-after-step 200 --num-workers 2 --log-every 10 --skip-data-sha
-```
-
-正式合同是 total axis 2400 macros、当前 stage stop 200、每 25 macros 保存。
-owner 明确取消 formal HDF5 全量 SHA；仍核对 sealed manifest、精确文件 size、
-HDF5 schema、run/checkpoint state。不要重新计算没有科学收益的全量 SHA。
-
-## 2. 已合入的仓库清理
-
-仓库清理和 macro200→400 单调 stage extension 修正已 fast-forward 合入并
-push：
-
-```text
-/data/ymdai/.codex/worktrees/EMBER-v53-20260728
-branch: codex/v53-visual-transition-procedure
-cleanup commit: 24bdc5d
-training-evidence commit: aecb100
-correct-eval handoff commit: faf6e33
-main == origin/main at specificity launch: faf6e33
-```
-
-清理只退役无现行引用的旧 SmolVLA/70-10-10/Phase A–F、flat task-local RL、
-flat Writer-RL、对应 config/test 和旧实验 config；保留仍被 source-corpus seal
-引用的 `configs/libero90_70_10_10/data_manifest.json`。历史可从
-`149badc` 及此前 Git 恢复。当前 canonical `source_sft/`、`task_local/`、
-`rl_writer/`、π0.5 evaluator 和 v6 均保留。
-
-隔离分支已通过：
-
-```text
-PYTHONPATH=<worktree>/src python -m pytest -q -p no:cacheprovider
-177 passed
-```
-
-resume 修正只允许在 sealed `total_steps=2400` 内单调增加 operational stage
-stop；其它 contract 字段仍 fail closed。它保留原 contract SHA 和 checkpoint
-link，并在 `invocations.jsonl` 记录 requested stop、原 stop、代码变更和是否
-stage extension。合入后在 canonical main 重新运行全仓回归为 `177 passed`。
-
-`.codex/tmp/v6_internal_specificity.py` 是待 observed-best 选择后使用的唯一临时
-机制诊断脚本；在完成 v6 内部检查前不要清除。
-
-correct400 等待期又清除了约 3.8 MiB 可再生的 `__pycache__`、pytest cache
-和 editable-install metadata；Git 仍 clean。唯一活动 `.venv` 约 9.1 GiB，
-仓库 tracked source/docs/tests/configs 合计仅约 3 MiB，不得为表面缩小仓库而
-删除运行环境。四个大小为零的 untracked 空目录经 Git history 确认是已退役
-路径残留后也已移除；当前 `git clean -nd` 无输出。
-
-随后对 `/data/ymdai/outputs/ember` 做了生成物审计：113 个已经有完整
-`results.json`、匹配 launcher completion 且所有 worker exit 0 的历史
-`writer_lora_cache` 共 `87,487,144,566` bytes 已删除。所有 rollout rows、
-results、queue、日志、contract、checkpoint 和 paired artifact 均保留；cache
-可由保留 checkpoint、teacher videos 与 seed schedule 重建。精确删除清单：
-
-```text
-/data/ymdai/outputs/ember/cache_cleanup_completed_eval_lora_20260728.json
-```
-
-四个 v6 specificity control 完成并生成 paired artifact 后，其
-`writer_lora_cache` 又按同一规则删除 `4,254,855,093` bytes；删除清单为
-`/data/ymdai/outputs/ember/cache_cleanup_v6_specificity_lora_20260728.json`。
-随后清掉 17 个旧 v5.1 standalone LoRA cache（16 个完成结果和 1 个被
-fresh2 替代的结果缺失 run），再释放 `5,282,177,024` bytes；清单为
-`/data/ymdai/outputs/ember/cache_cleanup_legacy_v51_standalone_lora_20260728.json`。
-所有结果、rows、queue、日志、合同与 Writer/source checkpoint 保留；删除的
-cache 可确定性重建。macro400 续训进行中时个人占用为
-`314,326,037,069` bytes。
-
-## 3. 当前研究判断
-
-历史结果只保留决定 v6 所需的最小摘要：
-
-| Writer | correct400 / controls | 结论 |
-|---|---|---|
-| v4 | correct `109`, shuffled `148`, reversed `126` | 低层 phase/translation 旁路，逻辑失败 |
-| v5 | best correct `115`; 五臂 `115/108/74/113/114` | Procedure 内部有序，但信号被 downstream 压弱 |
-| v5.1 | best correct `127`; 五臂 `127/133/94/107/120` | wrong/shuffle 有方向，reverse 不稳；低 LR 未提高 |
-| v5.2 | curve `72/79/120/132`; 五臂 `132/138/74/82/83` | 首次通过 wrong/shuffle/reverse 行为门，absolute/breadth 仍不足 |
-| v6 macro200 | 五臂 `129/131/108/111/105` | 三方向显著但 margin 变弱；absolute 同档且 breadth 不足 |
-
-v6 不是单纯扩大 v5.2。它把已验证的职责分离收敛为：
-
-```text
-task language + one action-hidden video
-  -> frozen Gemma task queries / per-frame task-grounded evidence
-  -> Semantic Set:
-       mean backbone + task-selected centered residual
-  -> Procedure:
-       frozen Action-Expert probe
-       + adjacent task-grounded visual transition
-       + causal temporal encoder
-  -> Core/Procedure compiler + refiner
-  -> 320 routing identities / factor heads
-  -> complete sealed rank-16 public LoRA
-```
-
-Semantic Set 对 frame permutation 不变；transition 必须在 correct/shuffled/
-reversed 各 arm 的实际输入顺序内重新计算。Procedure 没有 absolute patch、
-geometry、teacher action、state、reward 或 task-ID 旁路。v6 Writer 精确参数为
-`10,775,296`；比 rank-128 Source-SFT 的 `10,297,344` 多约 4.64%，这是 owner
-允许的同量级合理分配，不再机械凑相等。
-
-## 4. 当前训练合同与已验证上限
-
-每个 macro：
-
-```text
-4 DDP ranks × 6 tasks/rank = 24 tasks
-每 task: 1 teacher video -> 1 LoRA -> B20 independent action queries
-task 内 loss 求均值；24 tasks 等权
-rank 内前 5 task backward 使用 no_sync，第 6 task 同步
-每 macro 只做一次 clip / AdamW / scheduler
-```
-
-每 macro 精确消费 24 video conditions、480 action queries、24 次 functional
-policy forward。task assignment 按当前选中 video 的 stride-5 frame cost 做
-四组平衡；每 rank 内 long-first，四组跨 macro 轮换物理 rank。任何未来
-checkpoint/卡数配置都继续遵守“worker 先取 long，long 耗尽后再取其它任务”。
-
-B20 profile 已覆盖真实最长 105 帧视频并连续完成 3 macros：
-
-```text
-step seconds max-rank: 20.442 / 18.585 / 18.635
-steady throughput:    25.793 queries/s
-                      193.447 macros/hour
-max allocated:        76,985,299,968 bytes
-max reserved:         83,644,907,520 bytes
-```
-
-因此选择 B20，未运行 B16 fallback。step1→3 resume smoke 恢复了相同
-task/video/query/LR/cursor；边界 checkpoint 文件 bitwise 相同。CUDA 后续更新
-最大约 `9.82e-5` 非 bitwise 漂移已记录为 kernel 数值行为，不是状态丢失。
-visual-transition 参数 step1→3 L2 更新 `0.0111083`，真实 functional gradient
-可达。
-
-## 5. 当前固定动作
-
-1. macro200 是右端最高点，`114/77/120/129` 不是明确下降，因此按 owner
-   默认合同 exact-resume 同一 recipe 到 macro400。第二段中间 checkpoint
-   继续每 25 保留；第三段必须重新由真实 closed-loop 曲线决定。
-2. 第二段完成后优先并行评测 macro250/300/350/400；峰值不清时才补 every-25
-   稠密点。对新 observed-best 重做 full400 与内部传递检查。
-3. v6 通过 absolute 与视频特异性门后，fresh 训练 corrected mixed-task
-   rank-128 Source-SFT；再做每 task 预封存一条 episode 的 matched π0.5
-   action one-shot baseline，最后进入独立 short-AS cold-start →
-   pure-reward RL-Writer。
-4. 不自动进入 final-32、test task-local RL 或 joint oracle。
-
-## 6. 只读恢复命令
-
-只查询 GPU4–7，绝不把 GPU0–3 写进命令：
-
-```bash
-RUN=/data/ymdai/outputs/ember/pi05_as_writer_v6_taskcomplete_dev_r4_b20_seed7_s2400_149badc_20260728
-
-tmux list-windows -t ember-v6-specificity400 \
-  -F '#{window_index} #{window_name} #{pane_dead} #{pane_dead_status}'
-jq -s '{rows:length,last:.[-1]}' "$RUN/metrics.jsonl"
-find "$RUN/checkpoints" -maxdepth 1 -type d -name 'step_*' -printf '%f\n' | sort
-cat "$RUN/validation_functional_loss/metrics.jsonl"
 nvidia-smi -i 4,5,6,7 \
   --query-gpu=index,memory.used,memory.total,utilization.gpu,temperature.gpu \
   --format=csv,noheader
 git status --short --branch
 git rev-parse HEAD
 git rev-parse origin/main
+du -sh /data/ymdai
 ```
-
-`/data/ymdai` 的 operator hard cap 是 500GB。首段完成后个人占用为
-`402,806,538,492` bytes；本轮历史评测 cache 清理并生成当前四个 control
-cache 后为 `323,840,205,468` bytes。任何新正式 run、批量 rollout cache 或
-checkpoint 扩展前都要重新测现场和峰值空间。

@@ -69,20 +69,26 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   visual-transition 路径进入 Procedure，并在 fixed-Core 反事实下传到
   effective LoRA/action；无 Semantic Core 顺序旁路。相对 v5.2，Procedure
   差异更强但下游 LoRA/action 差异更弱，需由续训判断是成熟度还是新瓶颈。
-- [ ] exact-resume macro200→400 已在 tmux `ember-v6-formal-400` 运行；
-  contract SHA/RNG/cursor/monotonic stage extension 核验通过。完成与四点
-  correct400 尚待封存；第三段只由届时真实曲线决定。
-- [ ] 只有 absolute、same-task 稳定性、wrong-video 语义性、
-  correct>shuffled/reversed、跨 task breadth 和内部传递同时成立，才封存 v6。
+- [x] exact-resume macro200→400 与 macro250/300/350/400 correct400 已封存；
+  后四点为 `117/118/125/125`，均未超过 macro200=`129`。第二小时提升部分
+  breadth但aggregate不涨，能力继续在tasks间迁移；不继续同一full-24 recipe。
+- [x] v6拓扑与机制证据封存：Semantic Set、Visual Transition、Causal
+  Procedure职责成立，macro200五臂通过方向门；但absolute、margin和跨task
+  稳定性未达最终满意门，后续训练粒度/下游compiler仍需改进。
 
 ## Phase D：corrected mixed-task Source-SFT
 
-- [ ] v6 确认后从 frozen source base fresh 实现并训练 corrected rank-128
-  Source-SFT。
-- [ ] physical batch 必须跨 tasks；按 task→episode→chunk 分层均匀采样；
-  task-balanced loss，避免 rank-pure 连续覆盖少数 tasks。
-- [ ] 先 profile 两个硬件友好 batch 候选，使用 GPU4–7；按真实吞吐与稳定性
-  选择，不用 dummy tensor 填显存。
+- [x] 从 frozen source base 实现唯一canonical corrected rank-128 Source-SFT；
+  每个physical batch一次普通同步forward/backward/clip/AdamW，无gradient
+  accumulation或Writer式micro-round。
+- [x] 每rank physical batch包含全部24 tasks等量样本；按
+  task→episode→chunk分层无放回周期采样，跨rank row不重复、exact resume，
+  task-balanced普通batch mean。
+- [x] GPU4–7 B144真实fresh step1→resume step3通过；每步全球576 queries、
+  峰值allocated/reserved `60.69/74.07GB`，稳态`34.52–36.35 queries/s`。
+  B144稳定，未触发B120 fallback。
+- [ ] 用sealed config从identity fresh训练step0→225（约一小时训练body，
+  冷加载另计），每25步checkpoint；首段峰值在右端或不稳定则resume到450。
 - [ ] 在 validation 找 observed-best，并看到充分的峰后证据；报告 steps、
   consumed examples、GPU-hours、参数量与搜索上限。
 - [ ] 与 v6 使用同一 frozen source base、normalization、policy interface 和
@@ -153,7 +159,9 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   架构实验；不能因单点略涨结束。
 - correct 提升若依赖 wrong video、shuffle/reverse、validation 泄漏或其它违反
   EMBER 映射的捷径，一律判为机制失败。
-- AS 最低目标是达到或接近旧 Action-Forecast `125/400`，目标向 v4 shuffled
-  `148/400` 区域推进；但必须同时通过五臂和内部传递门。
-- `122/400` 旧八卡 Source-SFT 只是背景，不是独立硬门。新 corrected Source-SFT
-  必须重新训练和选峰后再比较。
+- focused AS-Writer的absolute硬门统一为
+  `correct400 >= max(150, corrected Source-SFT observed-best + 30)`；两个条件
+  必须同时满足。还必须same≈correct、correct显著优于wrong/shuffled/reversed、
+  多tasks共同贡献并通过独立RNG/video permutation复测。
+- `122/400`旧八卡Source-SFT只是背景，不是独立硬门；`+30`是最低研究里程碑，
+  不是达到后强制停止。新corrected Source-SFT必须重新训练和选峰后再比较。

@@ -1538,3 +1538,15 @@ GPU范围和训练步长是当时快照；活动状态只取
 - 下一动作是合入清理提交，再用GPU4/5/6/7分别运行macro50/100/150/200
   no-replacement correct400；每卡6 Writer generators和6 persistent policy
   workers、全局long-first。
+
+## v6 四点 correct400 启动（2026-07-28）
+
+- 清理/evidence commits `24bdc5d/aecb100` 已 fast-forward 到 main 并push；
+  main现场全仓 `177 passed`，status clean。
+- live preflight 时GPU4–7均0MiB、个人占用`402,806,314,951` bytes。
+  tmux `ember-v6-correct400` 已把macro50/100/150/200依次映射到GPU4/5/6/7；
+  每点一个checkpoint、400 episodes、6 generators、generation batch16、
+  6 persistent workers、无放回video。
+- 四点各自400-entry LoRA cache均已完成；同一进程保留source policy切换
+  rollout，避免第二次约150秒模型加载。首批每点6个claimed shards全部来自
+  两个horizon-520 `libero_10` tasks，global long-first现场核验通过。

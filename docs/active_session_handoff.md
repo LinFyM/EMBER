@@ -42,6 +42,27 @@ SHA256 并与 manifest 一致。
 `.130744/.133971/.133841/.133092/.132344/.133132/.134178/.137535`。这些
 loss 只作数值监控，不能替代即将运行的 closed-loop rollout。
 
+四点 correct400 已在评测 commit
+`aecb1005cd00812d2dd3f2a8a33b873956d7f598` 同时启动：
+
+```text
+tmux: ember-v6-correct400
+GPU4 / macro50:
+  pi05_as_writer_v6_correct400_noreplacement_seed7_macro0050_aecb100_20260728
+GPU5 / macro100:
+  pi05_as_writer_v6_correct400_noreplacement_seed7_macro0100_aecb100_20260728
+GPU6 / macro150:
+  pi05_as_writer_v6_correct400_noreplacement_seed7_macro0150_aecb100_20260728
+GPU7 / macro200:
+  pi05_as_writer_v6_correct400_noreplacement_seed7_macro0200_aecb100_20260728
+```
+
+每点 400 episodes、6 Writer generators、generation batch16、6 persistent
+policy workers。四点的 400-entry LoRA cache 已全部生成；同一批进程保留
+source policy 后进入 rollout，没有二次加载。首批每点 6 个 claimed shards
+均为两个 horizon-520 `libero_10` tasks；long-first 合同现场成立。接手时读
+各 root 的 `queue.sqlite3` 和 tmux，不得重复启动。
+
 正式命令为：
 
 ```bash
@@ -64,14 +85,17 @@ scripts/train_as_writer.py \
 owner 明确取消 formal HDF5 全量 SHA；仍核对 sealed manifest、精确文件 size、
 HDF5 schema、run/checkpoint state。不要重新计算没有科学收益的全量 SHA。
 
-## 2. 当前隔离改动
+## 2. 已合入的仓库清理
 
-训练期间不要修改 canonical main。仓库清理和 macro200→400 单调 stage
-extension 修正在隔离 worktree：
+仓库清理和 macro200→400 单调 stage extension 修正已 fast-forward 合入并
+push：
 
 ```text
 /data/ymdai/.codex/worktrees/EMBER-v53-20260728
 branch: codex/v53-visual-transition-procedure
+cleanup commit: 24bdc5d
+training-evidence commit: aecb100
+main == origin/main at evaluation launch: aecb100
 ```
 
 清理只退役无现行引用的旧 SmolVLA/70-10-10/Phase A–F、flat task-local RL、
@@ -90,8 +114,7 @@ PYTHONPATH=<worktree>/src python -m pytest -q -p no:cacheprovider
 resume 修正只允许在 sealed `total_steps=2400` 内单调增加 operational stage
 stop；其它 contract 字段仍 fail closed。它保留原 contract SHA 和 checkpoint
 link，并在 `invocations.jsonl` 记录 requested stop、原 stop、代码变更和是否
-stage extension。macro200 已退出并通过状态核验；下一步将该 commit
-fast-forward 合入 main 后启动评测。
+stage extension。合入后在 canonical main 重新运行全仓回归为 `177 passed`。
 
 `.codex/tmp/v6_internal_specificity.py` 是待 observed-best 选择后使用的唯一临时
 机制诊断脚本；在完成 v6 内部检查前不要清除。
@@ -164,24 +187,20 @@ visual-transition 参数 step1→3 L2 更新 `0.0111083`，真实 functional gra
 
 ## 5. 当前固定动作
 
-1. 合入已验证的清理/resume 窄修正；main 与 origin/main 必须再次一致且 clean。
-2. 在 GPU4–7 做均匀 fixed correct400 screen，默认 checkpoint 为
-   macro50/100/150/200；每张卡只加载一个 checkpoint。若曲线峰值需要更密集
-   定位，再利用每 25 保存的点补测，不预先全扫。
-3. evaluator 使用 6 个 Writer generators + 6 个 persistent policy workers，
-   teacher video 做 50 条无放回随机匹配，所有 worker 全局 long-first；不得用
-   静态 task/GPU 分配。
-4. 以 closed-loop absolute、paired 多 task 贡献和曲线选择 observed-best。
+1. 等当前四点 correct400 自然完成；核对 400 rows、worker exit、queue、
+   no-replacement 50-video bijection、env/policy/video pairing 和错误日志。
+   若曲线峰值需要更密集定位，再利用每 25 保存的点补测，不预先全扫。
+2. 以 closed-loop absolute、paired 多 task 贡献和曲线选择 observed-best。
    对 best 做 correct/same-task-other/wrong/shuffled/reversed full400，并运行
    16-reference 内部 Core/Procedure/effective-LoRA/action 传递分析。
-5. 除非 macro0→200 的 closed-loop absolute 明确下降，否则 exact-resume 同一
+3. 除非 macro0→200 的 closed-loop absolute 明确下降，否则 exact-resume 同一
    recipe 到 macro400。平台、轻微波动或 online loss 上升都不是跳过第二段的
    理由；第三段必须重新由真实曲线决定。
-6. v6 通过 absolute 与视频特异性门后，fresh 训练 corrected mixed-task
+4. v6 通过 absolute 与视频特异性门后，fresh 训练 corrected mixed-task
    rank-128 Source-SFT；再做每 task 预封存一条 episode 的 matched π0.5
    action one-shot baseline，最后进入独立 short-AS cold-start →
    pure-reward RL-Writer。
-7. 不自动进入 final-32、test task-local RL 或 joint oracle。
+5. 不自动进入 final-32、test task-local RL 或 joint oracle。
 
 ## 6. 只读恢复命令
 
@@ -190,8 +209,8 @@ visual-transition 参数 step1→3 L2 更新 `0.0111083`，真实 functional gra
 ```bash
 RUN=/data/ymdai/outputs/ember/pi05_as_writer_v6_taskcomplete_dev_r4_b20_seed7_s2400_149badc_20260728
 
-tmux has-session -t ember-v6-formal-200
-tail -n 40 /data/ymdai/logs/ember/pi05_as_writer_v6_taskcomplete_dev_r4_b20_seed7_s2400_149badc_20260728.log
+tmux list-windows -t ember-v6-correct400 \
+  -F '#{window_index} #{window_name} #{pane_dead} #{pane_dead_status}'
 jq -s '{rows:length,last:.[-1]}' "$RUN/metrics.jsonl"
 find "$RUN/checkpoints" -maxdepth 1 -type d -name 'step_*' -printf '%f\n' | sort
 cat "$RUN/validation_functional_loss/metrics.jsonl"

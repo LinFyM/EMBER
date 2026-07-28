@@ -1,9 +1,9 @@
 # EMBER Writer v5.2：Task-Queried Patch Grounding
 
-状态（2026-07-27）：已在隔离 worktree 中实现并通过 CPU 合同测试，等待 v5.1
-step1400 低学习率稳定段完成后，在 GPU4–7 做真实最长视频 profile。若 v5.1
-稳定段仍未同时显著提高 absolute performance 和 reversed 顺序门，则 v5.2
-原位取代 v5.1，成为唯一活动 Writer；不得并行保留两条执行路径。
+状态（2026-07-28）：v5.1低学习率阶段四个无放回correct400均未超过原best，
+触发本设计原位取代v5.1并成为唯一活动Writer。实现、CPU合同、GPU4–7真实
+最长视频profile、B22 OOM上界和B20 exact-resume均已完成；正式首段已按
+F32/B21、step900停止点封存。不得并行保留两条执行路径。
 
 ## 1. 直接证据与修改理由
 
@@ -134,6 +134,19 @@ fresh 训练；不得加载 v5.1 Writer 权重或 optimizer。
 2. GPU4–7 上真实最长 105-frame 视频的 F32/B20 起始 profile，并向显存上限
    探索 action batch；
 3. 一次最短真实 resume smoke。
+
+真实结果为：
+
+- B20完成step1并从该checkpoint exact-resume到step3；patch evidence相对原
+  task-token evidence的RMS比为`0.404–0.462`、均值`0.429`，两者近正交，
+  证明新内容既非数值淹没也非空路径；
+- B21连续3步全部finite，最大allocated/reserved为
+  `80,283,666,944/83,892,371,456` bytes，global batch为84；
+- B22在四个rank上对称OOM，第一步前每卡只余`54.94–80.94MiB`且还需
+  `666MiB`，因此B21是实测可行上界；
+- B21首个最长条件步`7.434s`，后续真实步`4.318/6.047s`；B20的
+  step1→3 exact-resume完整恢复Writer、optimizer、scheduler、sampler、
+  video/data cursor与四rank RNG。
 
 首段按实测吞吐约一小时，不继承 v5.1 的 optimizer-step 坐标。首段完成后先在
 fixed correct-video validation 找候选，再对 observed-best 做内部

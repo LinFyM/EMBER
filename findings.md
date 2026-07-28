@@ -1853,3 +1853,27 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   `7564fff2fa68b3d370f344d2b9e2180fe98cea640dbc9c82ed2f65af1b16ddc3`。
   最终科学判定仍等待phase100/300/600/900四个逐state/video/RNG配对的
   correct400；四者已在GPU4–7各占一张卡并发运行。
+
+## v5.1低LR闭环负结果与v5.2 profile（2026-07-28）
+
+- phase100/300/600/900的无放回correct400为`119/115/123/104`，全部低于
+  原step1400=`127`。相对原best逐row净差为`-8/-12/-4/-23`；phase900
+  exact McNemar `p=.00674`，是明确退化。四个panel都通过同task/state、
+  teacher-demo无放回双射、env/policy seed和noise-prefix配对。paired artifact
+  SHA256为
+  `f52c9b78578cd217fd99dca34f1314421ee347861f215b1504f2e6aa51566543`。
+- phase600虽为该阶段best，但逐task只有Long `10/2`、Goal `0/44`、
+  Object `35/32`、Spatial `0/0`；没有打开任何缺失能力。结合连续负更新余弦，
+  低LR只减小迁移步幅，没有修复任务间梯度冲突或上游空间语义缺口。因此不再
+  给v5.1补控制臂，直接切换v5.2。
+- v5.2真实patch-grounding hook在B20最长视频profile中测得patch/task evidence
+  RMS比`0.404–0.462`、均值`.429`，cosine近零；新路径携带显著且互补的视觉
+  内容。artifact SHA256为
+  `2e2e69c6b082ac8a07a0681258d3abf1c95feef0748cf4d255d2ff17c1a789eb`。
+- F32/B20先完成step1并exact-resume到step3；B21另做连续3步，全部finite，
+  global84 queries/step，最大allocated/reserved
+  `80,283,666,944/83,892,371,456` bytes。B21 metrics/run-summary SHA256为
+  `80685bab...c0bd`/`492ee56a...410f`。
+- B22在四rank第一步中对称OOM：每卡只余`54.94–80.94MiB`，仍需分配
+  `666MiB`。failure log SHA256为`963e5e7d...3e3ce`。由此实测上界不是保守
+  B20，而是可持续B21；正式首段使用F32/B21、global84、step900停止点。

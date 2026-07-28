@@ -1,17 +1,32 @@
-# EMBER v5.1持续绝对性能探索交接
+# EMBER v5.2持续绝对性能探索交接
 
-最后更新：2026-07-27 UTC。
+最后更新：2026-07-28 UTC。
 
-本文是focused v5.1 AS Writer与开放式绝对性能探索的完整跨session恢复入口：
-集中保存研究北极星、从最早Writer到v5的证据链、v5正式失败结论、v5.1设计
-理由、首段结果、无放回五臂证据和当前继续训练合同，使新session不依赖历史聊天
-也能接手。当前精确架构以
-`docs/action_forecast_writer_v5_1_proposal.md`为准；v5设计只作provenance。
+本文是focused AS Writer与开放式绝对性能探索的完整跨session恢复入口：
+集中保存研究北极星、从最早Writer到v5.1的证据链、失败结论和当前继续训练
+合同，使新session不依赖历史聊天也能接手。当前精确架构以
+`docs/action_forecast_writer_v5_2_design.md`为准；v5/v5.1只作provenance。
 长期项目边界以`AGENTS.md`和`docs/execution_brief.md`为准。本文中的step和
 进程状态是交接快照，接手后必须先做只读实时复核，不能据此重复启动任务。
 
 focused AS/RL完成或本文不再承担跨session恢复作用时，更新或删除本文，不能让
 过期运行状态长期成为平行authority。
+
+## 0. 2026-07-28实时恢复摘要
+
+- v5.1低LR phase100/300/600/900无放回correct400为
+  `119/115/123/104`，均低于原best `127`；paired artifact SHA256
+  `f52c9b78...543`。v5.1已停止。
+- v5.2真实profile已完成：B20支持step1→3 exact-resume；B21连续3步finite，
+  global84，max allocated/reserved
+  `80,283,666,944/83,892,371,456` bytes；B22四rank对称OOM。
+- 活动正式合同为GPU4–7、4-rank、F32/B21、frame stride5、
+  `max_frames_per_encoder_call=32`、fresh identity、首段step0→900、
+  每100步checkpoint与512-query online validation；`total_steps=12000`
+  只是相同scheduler/恢复包络，不能自动授权后续segment。
+- 首段结束后用四张卡各负责一个checkpoint，同时做四个无放回correct400；
+  只有materially improved且跨task更广的observed-best才补内部五条件与
+  full400 controls。absolute或wrong/shuffle/reverse任一不过门就继续迭代。
 
 ## 1. 当前focused objective
 
@@ -21,11 +36,12 @@ owner已经解除此前“特异性后停止”和“AS过门后才可探索RL�
 推进期间不需要逐项审核；只要absolute尚未达到可信满意水平，或提升带有
 v4-shuffled式逻辑漏洞，就不得轻易停止。
 
-v5.1已经完整训练至step1800；统一无放回correct400密集曲线和step1400内部
-机制复核均已完成。当前立即路径是完成step1400的四个LoRA强度full400，
-随后在选定强度上做五臂复核；若不能实质提高absolute与task breadth，则从
-step1400进入fresh optimizer低学习率稳定阶段。新session仍须先执行第9节的
-只读命令核验Git、tmux、GPU4–7和artifact，但不应重新等待owner批准。
+v5.1已经完整训练至step1800并完成step1400五臂、LoRA-scale扫描和额外900步
+低学习率稳定阶段。原best仍为`127/400`，低LR四点
+`119/115/123/104`均未提高它；reversed与correct等价的逻辑缺口也未解决。
+因此v5.1已经停止，v5.2 Task-Queried Patch Grounding原位成为唯一活动Writer。
+新session仍须先执行第9节的只读命令核验Git、tmux、GPU4–7和artifact，但
+不应重新等待owner批准。
 
 ## 2. EMBER 的研究北极星、任务和信息合同
 

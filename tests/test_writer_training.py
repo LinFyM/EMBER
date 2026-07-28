@@ -67,20 +67,27 @@ def test_language_axial_config_seals_architecture_and_information_wall() -> None
     assert config["information_wall"]["test_video_values_read"] == 0
     assert "state" in config["information_wall"]["writer_forbidden_inputs"]
     assert config["profile_defaults"]["expected_world_size"] == 4
-    assert config["profile_evidence"]["status"] == "pending_v5_2_live_profile"
+    assert config["profile_evidence"]["status"] == "completed_v5_2_live_profile"
     assert config["profile_evidence"]["allowed_physical_gpu_ids"] == [4, 5, 6, 7]
     assert config["profile_evidence"]["initial_candidate_from_v5_1"] == {
         "max_frames_per_encoder_call": 32,
         "per_rank_action_batch_size": 20,
     }
-    assert config["profile_evidence"]["selected"] is None
+    assert config["profile_evidence"]["selected"][
+        "per_rank_action_batch_size"
+    ] == 21
+    assert config["profile_evidence"]["upper_bound"][
+        "per_rank_action_batch_size"
+    ] == 22
+    assert "cuda_oom" in config["profile_evidence"]["upper_bound"]["status"]
     assert config["profile_evidence"]["inference_profile"][
         "writer_generators_per_gpu"
     ] == 6
     assert config["profile_evidence"]["teacher_videos_per_task_visit"] == 1
     assert config["specificity_gate"]["status"] == "pending"
-    assert config["formal_run"]["status"] == "pending_profile"
-    assert config["formal_run"]["total_steps"] == 900
+    assert config["formal_run"]["status"] == "sealed"
+    assert config["formal_run"]["total_steps"] == 12000
+    assert config["formal_run"]["per_rank_batch_size"] == 21
     assert config["formal_run"]["selected_stop_step"] == 900
     assert config["formal_run"]["stage_stop_steps"] == "every:100"
     assert "no_automatic_continuation" in config["formal_run"][
@@ -120,11 +127,11 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks() -> None:
         skip_data_sha=False,
     )
     assert resolve_runtime(profile, config, context) == (
-        12,
-        20,
-        (1, 2, 4, 8, 12),
+        3,
+        21,
+        (1, 2, 3),
     )
-    assert profile.stop_after_step == 12
+    assert profile.stop_after_step == 3
     wrong_world = DistributedContext(
         rank=0,
         local_rank=0,

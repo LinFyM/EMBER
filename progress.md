@@ -1430,3 +1430,18 @@ GPU范围和训练步长是当时快照；活动状态只取
   rollout workers；全部固定validation 8×50、无放回、全局long-first。
 - tmux `ember-v51-stabilize-analysis`等待四个结果并自动生成相对原step1400
   的逐row paired artifact。评测期间main保持`756bdaa` clean，不合并v5.2。
+
+## v5.1低LR封存与v5.2正式合同（2026-07-28）
+
+- 低LR phase100/300/600/900四个无放回correct400全部完成，结果
+  `119/115/123/104`，没有超过原step1400=`127`；paired artifact SHA256
+  `f52c9b78...543`。phase600仍由Goal-6与两个object task构成，Spatial两task
+  均0，故v5.1停止。
+- v5.2 branch已推进至`849e622`并完成真实GPU4–7 profile。B20三步含一次
+  exact-resume；Task-Queried Patch evidence相对task evidence RMS均值`.429`。
+  B21连续三步finite，最大allocated/reserved
+  `80,283,666,944/83,892,371,456` bytes；B22四rank对称OOM。
+- 配置现封存F32/B21、4-rank、global84、scheduler探索包络12000 steps；
+  只授权fresh首段stop=900、每100步checkpoint/512-query online validation。
+  900之后必须先做无放回correct400 checkpoint选择与机制检查，不自动进入
+  第二或第三段。

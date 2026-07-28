@@ -1,9 +1,10 @@
 # EMBER Current Execution Brief
 
-状态：2026-07-27。共享 π0.5-LIBERO source base 与 Source-SFT comparator 已
-封存。Action-Forecast Writer v4 与 Semantic Core + Causal Procedure v5 均已
-完成根因定位并停止；当前唯一focused架构为v5.1 Language-Axial Semantic Core
-+ Causal Action Procedure + Slot-Normalized Fusion。
+状态：2026-07-28。共享 π0.5-LIBERO source base 与 Source-SFT comparator 已
+封存。Action-Forecast Writer v4、Semantic Core + Causal Procedure v5 与
+Language-Axial v5.1 均已完成根因定位并停止；当前唯一focused架构为v5.2
+Task-Queried Patch Grounding + Language-Axial Semantic Core + Causal Action
+Procedure + Slot-Normalized Fusion。
 
 外部专家复核后的第一轮诊断证明，shuffle的直接行为放大器位于per-image
 forecast之后的absolute-time Plan/Revision；但后续全面复审又确认它不是唯一
@@ -46,14 +47,21 @@ shuffle/reverse仍有`64.30%/72.56%`中位差，但到effective LoRA只剩
 视频语义和上游顺序表征，却没有把顺序可靠编译成行为；继续同架构训练或进入
 RL没有依据。
 
-owner据此批准
-[`docs/action_forecast_writer_v5_1_proposal.md`](action_forecast_writer_v5_1_proposal.md)
-作为下一唯一活动架构。它把预算从factor decoder移到上游语义表征：text-only
+owner据此批准v5.1。它把预算从factor decoder移到上游语义表征：text-only
 Gemma产生video-independent task-token queries，multimodal task-token hidden
 提供逐帧视觉证据，token-aligned frame-set attention与language-axis
 Transformer形成Core；Action Expert fixed suffix形成causal Procedure；中心化
 Procedure通过zero-init AdaLN调制Core slots，再经一个post-fusion slot block
-生成LoRA。机械预算`10,244,872`，比rank-128 Source-SFT少`52,472`。旧v5设计见
+生成LoRA。v5.1训练与低学习率稳定段最终都未超过无放回
+correct-video `127/400`，且best的reversed为`120/400`、与correct无显著差异；
+它因此只作provenance。
+
+当前唯一活动设计为
+[`docs/action_forecast_writer_v5_2_design.md`](action_forecast_writer_v5_2_design.md)。
+v5.2保留v5.1的Core、Procedure、fusion与信息墙，只让text-only task tokens
+逐帧cross-attend PaliGemma的256个image-position contents，把对象、关系和空间
+细节重新注入Core；新增上游预算由factor hidden `240→216`支付，总参数
+`10,237,704`，仍低于rank-128 Source-SFT。旧v5设计见
 [`docs/action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)；
 完整v4根因证据见
 [`docs/action_forecast_writer_v4_root_cause.md`](action_forecast_writer_v4_root_cause.md)；
@@ -108,13 +116,13 @@ owner于2026-07-22将source-base正式训练改为从generic base fresh运行1,0
   `B_a`个functional losses求均值。video与action episode/chunk不要求配对，
   action只进functional behavior loss。
 - source base冻结，只有Writer更新。Writer不得看到action、proprio、reward、terminal、task ID、filename或隐藏stats。
-- v5.1原位替换v5 raw-image-set Core、additive Procedure refiner和宽factor
-  decoder，不保留兼容分支。机械预算`10,244,872`，低于rank-128 Source-SFT
-  `52,472` parameters；公开rank-16 LoRA仍为76 tensors、`1,287,168` scalars。
-- v5的GPU4–7上限F32/B20、常规`3.11–3.53s/step`和900-step segment只作历史
-  profile，不能机械继承。v5.1实现后必须用105帧真实最长视频重新联合profile
-  frame/action batch、显存与吞吐；首段optimizer steps按实测效率换算成约
-  一小时wall-clock，不预设900或1800。
+- v5.2原位替换v5.1的活动schema/config，不保留并行执行分支。公开rank-16
+  LoRA仍为76 tensors、`1,287,168` scalars；Writer机械预算
+  `10,237,704`，比rank-128 Source-SFT少`59,640` parameters。
+- GPU4–7真实上界profile使用最长视频压力条件：F32/B21成功，B22在四rank
+  对称OOM，所以正式训练采用每rank 21 action queries、global 84；
+  `max_frames_per_encoder_call=32`。首段仍按实测效率约一小时，只封
+  step900为当前停止点，不把第二/第三段机械预定为1800或其他步数。
 - 首段先用functional panel安排checkpoint，再以内部五条件和轻量paired rollout
   检查早期机制，重点确认final effective LoRA / policy action的
   `same < shuffled/reversed`相对v5实质改善；轻量panel不冒充full400结论。

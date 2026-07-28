@@ -583,9 +583,11 @@ action-hidden teacher video -> one task LoRA`的核心映射。
   `peak_lr=1e-4`、F32/B20、4-rank、首段900 phase steps。正式tmux
   `ember-v51-stabilize1400`已完整结束，72,000 queries、wall 3616.5s；
   checkpoints100..900和恢复状态完整。
-- [ ] 完成低LR phase100/300/600/900四个无放回correct400及逐rowpaired分析。
-  tmux `ember-v51-stabilize-correct400`已将四点分别放在GPU4/5/6/7，每卡
-  6 generators→6 persistent workers、long-first；不得按online loss换点。
+- [x] 完成低LR phase100/300/600/900四个无放回correct400及逐rowpaired分析。
+  结果为`119/115/123/104`，相对原step1400 best=`127`净差
+  `-8/-12/-4/-23`；四点逐row state/video/env/policy RNG全部配对，
+  phase900还显著更差（`p=.00674`）。低LR缩小步幅但没有稳定累积或解锁
+  spatial/Goal3，v5.1正式停止且不补五臂。
 - [ ] 若特异性成立但absolute长期低于约125，按最早失效层比较Core-only、
   full、去Procedure、跨demo梯度一致性与LoRA到action的功能对齐；只修改被证据
   定位的owner后fresh训练。
@@ -593,6 +595,14 @@ action-hidden teacher video -> one task LoRA`的核心映射。
   `4011966`已push、61项focused测试通过。低LR结果未同时通过absolute/breadth/
   reversed门时，立即做真实105-frame profile、探索F/action batch上限并fresh
   训练约一小时。
+- [x] 完成v5.2真实GPU4–7 profile并封训练合同：B20通过step1→3
+  exact-resume，真实patch/task evidence RMS比均值`.429`；B21连续3步finite，
+  max allocated/reserved=`80.284/83.892GB`；B22四rank对称OOM。选择
+  F32/B21、global84、`total_steps=12000`探索包络和唯一首段stop=900，
+  第二/第三段仍需依据首段证据单独决策。
+- [ ] 从fresh functional identity启动v5.2正式首段step0→900；每100步保存并
+  做512-query resident online validation，完成后以四张卡各负责一个候选
+  checkpoint的方式并发跑四个无放回correct400。
 - [ ] 可提前进行独立、低成本RL-Writer机制探索，但不得把validation reward写回
   AS输入、把完整AS best冒充cold start、污染test或用RL结果掩盖AS绝对性能。
 - [ ] owner醒来前封存当前最好结果、失败归因、资源消耗、代码/Git状态与下一步；

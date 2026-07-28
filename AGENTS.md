@@ -70,10 +70,13 @@ action queries和24次functional policy forward。task groups按本次实际选�
 视频的stride-5 frame count做cost balance，rank内long-first，物理rank随macro
 轮换；checkpoint/exact-resume只在完整macro边界。
 
-GPU4–7最长真实视频profile只测试`B20`；若OOM或连续完整macro不稳定，直接退到
-`B16`，不测试中间档。首个正式段按真实吞吐约一小时。除非首段出现明确可信的
-absolute下降，否则平台、小幅波动或上涨都默认exact-resume第二个约一小时段；
-第三段以后才依据当时曲线和机制证据决定。
+GPU4–7最长真实视频profile已经封存`B20`：包含105帧条件的连续3个完整macro
+均finite，稳态约25.8 queries/s、193 macro/hour，峰值allocated/reserved约
+77.0/83.6GB；`B16` fallback未触发，不再扫描中间档。首个正式段固定200
+macro、约一小时。除非首段出现明确可信的absolute下降，否则平台、小幅波动或
+上涨都默认exact-resume到400 macro；第三段以后才依据当时曲线和机制证据决定。
+owner明确取消正式run的全量HDF5 SHA启动门；仍核对sealed manifest、精确文件
+大小和HDF5 schema，并在run contract记录未做runtime full-data SHA。
 
 AS的绝对性能最低目标是达到或接近旧Action-Forecast `125/400`，目标逼近v4
 shuffled `148/400`。四卡rank-128 Source-SFT `108/400`与旧八卡`122/400`

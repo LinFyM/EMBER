@@ -148,7 +148,7 @@
     ],
     "action_chunk_size": 50,
     "sampler_seed": 20260721,
-    "teacher_video_seed": 172,
+    "teacher_video_seed": 20260722,
     "teacher_video_sampling": "per_task_macro_visit_deterministic_single_same_task_video_in_no_replacement_cycles",
     "action_query_sampling": "task-balanced deterministic no-replacement episode cycles",
     "video_action_pairing": "one task-video LoRA conditions the complete task-local action batch",
@@ -206,7 +206,7 @@
     "budget_role": "fresh_v6_task_complete_profile_then_one_hour_and_default_second_hour_unless_clear_decline"
   },
   "profile_defaults": {
-    "status": "pending_v6_b20_then_b16_only_live_profile",
+    "status": "sealed_v6_b20_live_profile",
     "expected_world_size": 4,
     "total_steps": 3,
     "per_rank_batch_size": 20,
@@ -218,7 +218,7 @@
     "selected_stop_step": 3
   },
   "profile_evidence": {
-    "status": "pending_v6_task_complete_live_profile",
+    "status": "sealed_b20",
     "allowed_physical_gpu_ids": [
       4,
       5,
@@ -245,10 +245,46 @@
     "profile_teacher_video_seed": 172,
     "formal_teacher_video_seed_after_profile_seal": 20260722,
     "selection_rule": "use_b20_if_the_real_longest_video_completes_repeated_six_microtask_macro_updates_without_oom_or_instability_otherwise_use_b16",
-    "selected": null,
-    "upper_bound": null,
-    "exact_resume_smoke": null,
-    "real_transition_evidence": null,
+    "selected": {
+      "max_frames_per_encoder_call": 32,
+      "per_task_action_batch_size": 20,
+      "profile_optimizer_steps": 3,
+      "profile_global_action_queries": 1440,
+      "profile_global_video_conditions": 72,
+      "profile_wall_seconds": 58.73049585497938,
+      "step_seconds_max": [
+        20.441554905148223,
+        18.58450243412517,
+        18.634998485911638
+      ],
+      "steady_action_queries_per_second_mean_last_two": 25.792977963355104,
+      "steady_macro_updates_per_hour_mean_last_two": 193.4473347246633,
+      "max_cuda_allocated_bytes": 76985299968,
+      "max_cuda_reserved_bytes": 83644907520,
+      "all_steps_finite": true,
+      "all_four_ranks_completed": true,
+      "contains_real_105_frame_video": true,
+      "profile_root": "/data/ymdai/outputs/ember/pi05_as_writer_v6_taskcomplete_profile_b20_d66e726_r2_20260728"
+    },
+    "upper_bound": "larger_batches_not_scanned_by_b20_or_b16_only_contract",
+    "exact_resume_smoke": {
+      "status": "pass_macro_boundary_state_and_scientific_trajectory",
+      "resume_boundary": 1,
+      "completed_step": 3,
+      "boundary_checkpoint_files_bitwise_identical": true,
+      "tasks_videos_queries_lr_and_cursors_identical": true,
+      "post_resume_cuda_bitwise_identity_required": false,
+      "maximum_writer_parameter_absolute_drift_after_two_resumed_updates": 0.00009821720595937222,
+      "root": "/data/ymdai/outputs/ember/pi05_as_writer_v6_taskcomplete_resume_smoke_d66e726_20260728"
+    },
+    "real_transition_evidence": {
+      "status": "pass_real_profile_gradient_reachability",
+      "comparison": "profile_checkpoint_step1_to_step3",
+      "visual_transition_parameter_l2_update": 0.011108280089341234,
+      "visual_transition_changed_parameters": 197067,
+      "visual_transition_parameters": 197120,
+      "interpretation": "real_video_transitions_are_nonzero_and_receive_functional_loss_gradient"
+    },
     "inference_profile": null
   },
   "specificity_gate": {
@@ -264,23 +300,24 @@
     "contrast_loss_allowed": false
   },
   "formal_run": {
-    "status": "pending_v6_live_profile",
+    "status": "sealed",
     "expected_world_size": 4,
     "total_steps": 2400,
     "per_rank_batch_size": 20,
     "checkpoint_steps": "every:25",
-    "selected_stop_step": 150,
-    "stage_stop_steps": "every:150",
-    "segment_definition": "provisional_first_150_fresh_v6_task_complete_macro_updates_pending_live_throughput_seal",
+    "selected_stop_step": 200,
+    "stage_stop_steps": "every:200",
+    "segment_definition": "first_200_fresh_v6_task_complete_macro_updates_selected_by_owner_after_live_b20_throughput",
     "first_segment_scale": {
-      "macro_optimizer_updates": 150,
-      "global_action_queries": 72000,
-      "one_video_conditions": 3600,
-      "policy_functional_forwards": 3600,
-      "retained_checkpoints": 6,
+      "macro_optimizer_updates": 200,
+      "global_action_queries": 96000,
+      "one_video_conditions": 4800,
+      "policy_functional_forwards": 4800,
+      "retained_checkpoints": 8,
       "online_validation_action_queries_per_checkpoint": 512
     },
-    "second_segment_default": "continue_to_macro_300_unless_the_first_segment_shows_clear_absolute_performance_decline",
-    "continuation_gate": "formal_launch_blocked_until_v6_live_profile_seals_batch_throughput_resume_and_first_segment"
+    "second_segment_default": "continue_to_macro_400_unless_the_first_segment_shows_clear_absolute_performance_decline",
+    "data_integrity_check": "sealed_manifest_plus_exact_file_size_and_hdf5_schema_without_runtime_full_data_sha",
+    "continuation_gate": "first_segment_authorized_then_absolute_evidence_controls_default_resume_to_macro_400"
   }
 }

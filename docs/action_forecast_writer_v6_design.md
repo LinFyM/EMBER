@@ -494,9 +494,25 @@ wall-clock、GPU-hours和显存。
 GPU4–7、完整6轮 macro、真实最长视频、正常 backward/clip/step，并报告
 allocated/reserved、queries/s、task-video conditions/s和macro updates/hour。
 
+2026-07-28真实profile已封存B20。连续三个完整macro均覆盖24 tasks并finite，
+首个macro包含全局最长105帧stride-5视频；三步max-rank wall为
+`20.442/18.585/18.635s`，后两步平均`25.793 queries/s`、
+`193.447 macro/hour`，峰值allocated/reserved为
+`76,985,299,968/83,644,907,520 bytes`。因此不触发B16，也不继续扫描更大
+batch。step1边界checkpoint全文件可恢复；resume到step3后task/video/query、
+LR、cursor与连续轨迹一致，CUDA非确定性使两次后续更新出现最大约`9.82e-5`
+参数末位漂移，不要求bitwise post-resume trajectory。
+
+profile step1→3期间visual-transition模块有`197,067/197,120`参数发生更新，
+模块L2位移`0.0111083`，证明真实视频transition非零且functional loss梯度已
+到达该路径。更细的RMS、entropy和Core→Procedure→LoRA→action传递仍在正式
+checkpoint内部分析中完成，不用短profile代替。
+
 旧 v5.2 的900 updates等于3600 task/video conditions；v6中约为150 macro。
-因此首个正式段以真实 profile 推导约一小时停止点，初始预计约150 macro；
-warmup/checkpoint/decay按 conditions/query exposure换算，peak LR不乘6。
+owner在看到真实吞吐后把首个正式段锁定为200 macro、每25 macro一个
+checkpoint；约等于96,000 action queries、4,800 task/video conditions和
+8个候选点。warmup/checkpoint/decay按 conditions/query exposure换算，
+peak LR不乘6。
 
 首段结束后做 absolute checkpoint selection、内部 Core→Procedure→effective
 LoRA→policy action传递和正式五臂。owner的最终续训规则是：
@@ -506,8 +522,13 @@ LoRA→policy action传递和正式五臂。owner的最终续训规则是：
 否则默认exact-resume第二个约一小时segment。
 ```
 
-平台、小幅波动或仍上升都进入第二段；第二段之后是否再开第三段，必须依据当时
-真实曲线和机制证据，不能机械外推固定总step。
+平台、小幅波动或仍上升都exact-resume到macro400；第二段之后是否再开第三段，
+必须依据当时真实曲线和机制证据，不能机械外推固定总step。
+
+正式训练不计算全部train HDF5内容SHA；启动只核对sealed manifest、精确文件
+大小与HDF5 schema，并在run contract显式记录
+`full_sha256_verified=false`。Git commit、config、采样cursor、四rank RNG、
+optimizer/scheduler和checkpoint manifest仍按原合同保留。
 
 ### 12.4 Corrected mixed-task Source-SFT
 

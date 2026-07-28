@@ -1976,3 +1976,21 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - v6确认后，corrected mixed-task rank-128 Source-SFT必须fresh重训：
   physical batch跨tasks，按task→episode→chunk分层均匀采样并做task-balanced
   loss。旧rank-pure SFT只作provenance，不再代表最终strong baseline。
+
+## v6 task-complete B20真实profile与正式seal（2026-07-28）
+
+- GPU4–7在commit `d66e726`完成B20三步真实profile；首步实际包含全局最长
+  105帧stride-5 teacher video，全部4 ranks和18个rank-local microtasks正常
+  完成，无OOM、nonfinite或拓扑不对称。
+- 三个macro的max-rank wall为`20.442/18.585/18.635s`，后两步平均
+  `25.793 queries/s`、`193.447 macro/hour`；峰值allocated/reserved为
+  `76,985,299,968/83,644,907,520 bytes`。按预声明二选一规则选择B20，
+  不运行B16，也不扫描更大或中间batch。
+- 独立step1→3 resume smoke确认边界checkpoint文件bitwise相同，后续
+  task/video/query、LR、sampler cursor和loss轨迹一致；CUDA后续更新最大参数
+  绝对漂移约`9.82e-5`，明确记录为非bitwise数值重现而非状态缺失。
+- 真实profile step1→3的visual-transition模块L2位移`0.0111083`，
+  `197,067/197,120`参数发生变化，证明真实transition非零且functional
+  gradient可达。正式首段为B20、200 macro、每25 macro checkpoint。
+- owner明确正式run同样不计算全量HDF5 SHA；保留sealed manifest、精确文件
+  size、HDF5 schema和完整训练/checkpoint cursor证据。

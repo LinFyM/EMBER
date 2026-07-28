@@ -1493,5 +1493,26 @@ GPU范围和训练步长是当时快照；活动状态只取
   `PYTHONPATH=src .venv/bin/pytest -q`为`200 passed`，architecture guard无
   hard violation，`git diff --check`通过。
 - corrected mixed-task Source-SFT合同已写回authority，待v6完成后fresh实现/
-  重训并寻找validation best。下一动作是GPU4–7 live preflight和B20真实最长
-  视频完整macro profile；当前尚未启动GPU进程或创建正式输出。
+  重训并寻找validation best。
+
+## v6 B20 profile、resume smoke与正式配置封存（2026-07-28）
+
+- GPU4–7只读preflight均为空闲后，在commit `d66e726`完成B20三步真实
+  task-complete profile。root为
+  `/data/ymdai/outputs/ember/pi05_as_writer_v6_taskcomplete_profile_b20_d66e726_r2_20260728`；
+  3 macro共1,440 queries和72 video conditions，wall `58.730s`。
+- 三步max-rank wall=`20.442/18.585/18.635s`，后两步平均
+  `25.793 queries/s`与`193.447 macro/hour`；峰值allocated/reserved
+  `76,985,299,968/83,644,907,520 bytes`。最长105帧条件成功，loss/grad
+  全finite，故选择B20且不运行B16。
+- run-contract/metrics/summary/final manifest SHA256依次为
+  `5f9b66fc...161e0e`、`e13f250d...16df6`、
+  `30bb3798...401a`、`282825c4...733b`。
+- 独立resume root从bitwise相同step1边界继续到step3；任务、视频、query、
+  LR和cursor一致。GPU kernel非确定性使两步后Writer最大参数漂移约
+  `9.82e-5`，不影响exact-state resume合同。visual-transition step1→3
+  L2更新`0.0111083`，真实梯度路径成立。
+- 正式config封存B20、首段200 macro、每25 macro checkpoint、默认第二段到
+  400（除非absolute明确下降）。owner取消正式run全量HDF5 SHA；启动仍核对
+  manifest、文件size和HDF5 schema。下一动作是验证、commit/push、集成main，
+  再在GPU4–7启动fresh macro0→200。

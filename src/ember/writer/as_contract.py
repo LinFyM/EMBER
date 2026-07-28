@@ -323,12 +323,6 @@ def _validate_formal_runtime(
         raise WriterModelError(
             "formal AS-Writer launch requires GPU-local NUMA binding"
         )
-    if args.skip_data_sha:
-        raise WriterModelError(
-            "formal AS-Writer launch must verify every train HDF5"
-        )
-
-
 def resolve_runtime(
     args: argparse.Namespace,
     config: Mapping[str, Any],

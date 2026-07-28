@@ -389,8 +389,8 @@ def _load_run_authorities(
         evaluation_mode="formal",
     )
     tokenizer = inspect_tokenizer(authorities, args.tokenizer_path)
-    # load_training_data already performs and broadcasts the full rank-0 SHA
-    # validation. This second inspection only records the raw-video identity.
+    # Training data already has requested size/schema and optional SHA checks;
+    # this second inspection only records video identity and frame-cost metadata.
     video_data = _broadcast_validation(
         context,
         lambda: inspect_video_data(

@@ -80,7 +80,7 @@ def test_language_axial_config_seals_architecture_and_information_wall() -> None
     assert config["information_wall"]["test_video_values_read"] == 0
     assert "state" in config["information_wall"]["writer_forbidden_inputs"]
     assert config["profile_defaults"]["expected_world_size"] == 4
-    assert config["profile_evidence"]["status"] == "pending_v6_task_complete_live_profile"
+    assert config["profile_evidence"]["status"] == "sealed_b20"
     assert config["profile_evidence"]["allowed_physical_gpu_ids"] == [4, 5, 6, 7]
     assert config["profile_evidence"]["initial_candidate"] == {
         "max_frames_per_encoder_call": 32,
@@ -90,8 +90,17 @@ def test_language_axial_config_seals_architecture_and_information_wall() -> None
         "max_frames_per_encoder_call": 32,
         "per_task_action_batch_size": 16,
     }
-    assert config["profile_evidence"]["selected"] is None
-    assert config["profile_evidence"]["upper_bound"] is None
+    assert config["profile_evidence"]["selected"]["per_task_action_batch_size"] == 20
+    assert config["profile_evidence"]["selected"]["contains_real_105_frame_video"] is True
+    assert config["profile_evidence"]["upper_bound"].startswith(
+        "larger_batches_not_scanned"
+    )
+    assert config["profile_evidence"]["exact_resume_smoke"]["status"].startswith(
+        "pass_macro_boundary"
+    )
+    assert config["profile_evidence"]["real_transition_evidence"]["status"].startswith(
+        "pass_real_profile"
+    )
     assert config["profile_evidence"]["inference_profile"] is None
     assert config["profile_evidence"]["teacher_videos_per_task_visit"] == 1
     assert config["specificity_gate"]["status"] == "pending"
@@ -101,13 +110,14 @@ def test_language_axial_config_seals_architecture_and_information_wall() -> None
         ]
         == 6
     )
-    assert config["formal_run"]["status"] == "pending_v6_live_profile"
+    assert config["formal_run"]["status"] == "sealed"
     assert config["formal_run"]["total_steps"] == 2400
     assert config["formal_run"]["per_rank_batch_size"] == 20
-    assert config["formal_run"]["selected_stop_step"] == 150
-    assert config["formal_run"]["stage_stop_steps"] == "every:150"
-    assert "pending_live_throughput" in config["formal_run"][
-        "segment_definition"
+    assert config["formal_run"]["selected_stop_step"] == 200
+    assert config["formal_run"]["stage_stop_steps"] == "every:200"
+    assert "live_b20_throughput" in config["formal_run"]["segment_definition"]
+    assert "without_runtime_full_data_sha" in config["formal_run"][
+        "data_integrity_check"
     ]
 
 
@@ -123,7 +133,9 @@ def test_checkpoint_schedule_and_cursor_are_fail_closed() -> None:
         parse_checkpoint_steps("every:4", 6)
 
 
-def test_profile_and_formal_runtime_require_four_symmetric_ranks() -> None:
+def test_profile_and_formal_runtime_require_four_symmetric_ranks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     config = load_writer_config(CONFIG)
     context = DistributedContext(
         rank=0,
@@ -180,6 +192,21 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks() -> None:
     pending["formal_run"]["status"] = "pending_profile"
     with pytest.raises(WriterModelError, match="not sealed"):
         resolve_runtime(formal, pending, context)
+    monkeypatch.setattr(
+        "ember.writer.as_contract.git_state",
+        lambda _root: {
+            "dirty_paths": [],
+            "commit": "same",
+            "origin_main": "same",
+        },
+    )
+    formal.skip_data_sha = True
+    assert resolve_runtime(formal, config, context) == (
+        2400,
+        20,
+        tuple(range(25, 2401, 25)),
+    )
+    assert formal.stop_after_step == 200
 
 
 def test_single_video_schedule_is_reproducible_and_cycle_complete() -> None:

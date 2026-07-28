@@ -37,12 +37,20 @@ focused AS/RL完成或本文不再承担跨session恢复作用时，更新或删
 - owner最终要求v6从fresh step0直接使用task-complete训练：4 ranks ×
   6 tasks/rank/macro、task内`B20`求均值、24 tasks等权、前5轮`no_sync`、
   第6轮单次同步、一次AdamW。最长视频profile只试B20，失败直接B16。
-- canonical v6 code/config/checkpoint/eval schema和macro-boundary resume已完成
-  CPU实现；全仓`200 passed`，architecture guard无hard violation。尚未启动
-  GPU profile或正式训练。
-- v6首段约一小时；除非absolute明确下降，否则默认续第二小时。v6确认后必须
+- canonical v6 code/config/checkpoint/eval schema和macro-boundary resume已完成。
+  GPU4–7真实B20 profile也已封存：最长105帧条件连续3个完整macro均finite，
+  后两步均值`25.793 queries/s`、`193.447 macro/hour`，峰值
+  allocated/reserved=`76.985/83.645GB`；B16 fallback未触发。
+- step1→3 resume smoke恢复了相同边界状态、task/video/query、LR和cursor；
+  后续CUDA更新只出现最大约`9.82e-5`非bitwise漂移。真实profile中
+  visual-transition参数step1→3 L2移动`0.0111083`，证明transition路径收到
+  functional gradient。
+- v6正式配置已封存B20、首段200 macro、checkpoint每25 macro；owner取消
+  正式run全量数据SHA，启动只做manifest、精确size和HDF5 schema核对。
+- v6首段后除非absolute明确下降，否则默认续到macro400。v6确认后必须
   fresh重训corrected mixed-task Source-SFT，再推进paired one-shot与cold-start
-  RL；不自动进入final-32/test/joint oracle。
+  RL；不自动进入final-32/test/joint oracle。下一动作是在clean
+  main/origin commit上启动fresh v6 macro0→200。
 
 ## 1. 当前focused objective
 

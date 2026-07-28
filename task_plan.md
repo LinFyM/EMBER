@@ -630,11 +630,14 @@ action-hidden teacher video -> one task LoRA`的核心映射。
   fail-closed launch/checkpoint/eval schema、selected-video cost balance、
   rank内long-first、前5轮`no_sync`与macro-boundary resume已实现；参数枚举
   `10,775,296`，全仓`200 passed`，architecture guard无hard violation。
-- [ ] 在GPU4–7用真实最长105帧条件跑完整K6/B20 profile；若OOM或连续宏步
-  不稳定直接退B16。完成step1→3 exact-resume、identity/freeze/gradient和
-  transition非零证据，按真实macro/hour封存约一小时正式停止点。
+- [x] 在GPU4–7完成真实最长105帧K6/B20 profile：连续3个完整macro finite，
+  稳态约25.8 queries/s、193 macro/hour，峰值allocated/reserved约
+  77.0/83.6GB；B16未触发。step1边界resume恢复task/video/query/LR/cursor，
+  后续CUDA漂移最大约`9.82e-5`；真实transition模块step1→3 L2更新
+  `0.0111083`。正式首段封存200 macro、每25 macro一个checkpoint，并按
+  owner要求跳过全量数据SHA。
 - [ ] fresh训练v6首段并做absolute checkpoint selection、内部传递和无放回
-  五臂。除非首段absolute明确下降，否则默认exact-resume第二个约一小时段；
+  五臂。除非macro0→200的absolute明确下降，否则默认exact-resume到macro400；
   第三段不机械启动。
 - [ ] v6确认后fresh重训corrected mixed-task rank-128 Source-SFT：physical
   batch跨tasks，按task→episode→chunk分层均匀采样，task-balanced loss，

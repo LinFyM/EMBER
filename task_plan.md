@@ -624,13 +624,23 @@ action-hidden teacher video -> one task LoRA`的核心映射。
   `mean backbone + task-selected centered residual` Semantic Set、
   task-grounded adjacent Visual-Transition Procedure和hidden=256 factor
   heads；精确手算总参数`10,775,296`。完整authority已封存在
-  `docs/action_forecast_writer_v6_design.md`，本步只记录设计，没有修改
-  code/config或启动GPU工作。
-- [ ] v5.2上限和新best证据封存后，以现有v5.3 prototype为实现起点收敛到
-  唯一canonical v6路径；完成真实最长105帧、action batch上界、step1→3
-  exact-resume、identity/gradient/freeze和真实transition profile，再沿当前
-  v5.2训练范式fresh训练约一小时，与充分训练v5.2用同一absolute/五臂/
-  内部传递合同比较。
+  `docs/action_forecast_writer_v6_design.md`。
+- [x] owner最终覆盖旧训练计划：v6从fresh step0直接使用task-complete
+  K6宏步，不再沿v5.2 one-task-per-rank范式。canonical v6 code/config、
+  fail-closed launch/checkpoint/eval schema、selected-video cost balance、
+  rank内long-first、前5轮`no_sync`与macro-boundary resume已实现；参数枚举
+  `10,775,296`，全仓`200 passed`，architecture guard无hard violation。
+- [ ] 在GPU4–7用真实最长105帧条件跑完整K6/B20 profile；若OOM或连续宏步
+  不稳定直接退B16。完成step1→3 exact-resume、identity/freeze/gradient和
+  transition非零证据，按真实macro/hour封存约一小时正式停止点。
+- [ ] fresh训练v6首段并做absolute checkpoint selection、内部传递和无放回
+  五臂。除非首段absolute明确下降，否则默认exact-resume第二个约一小时段；
+  第三段不机械启动。
+- [ ] v6确认后fresh重训corrected mixed-task rank-128 Source-SFT：physical
+  batch跨tasks，按task→episode→chunk分层均匀采样，task-balanced loss，
+  validation选择observed-best；旧rank-pure SFT只作provenance。
+- [ ] 完成v6与新SFT比较后，做每task预封存一条episode的paired π0.5 action
+  one-shot baseline；随后才进入独立short-AS cold-start→pure-reward RL。
 - [ ] 可提前进行独立、低成本RL-Writer机制探索，但不得把validation reward写回
   AS输入、把完整AS best冒充cold start、污染test或用RL结果掩盖AS绝对性能。
 - [x] owner醒来后已汇报v5.2 step900与现场；当前继续自主推进，但不自动推进

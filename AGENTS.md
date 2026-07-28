@@ -47,13 +47,9 @@ same-frame-set order不变，Procedure差异能够穿过effective LoRA和policy
 action。因此v5.2已通过视频语义和顺序行为硬门，没有v4 shuffled漏洞，但
 absolute与跨task稳定性仍未达到满意终点。
 
-owner 于2026-07-28决定先从step900 exact-resume原版v5.2 recipe测清充分训练
-上限。当前训练范式固定为每rank每optimizer update一个task、一个teacher
-video和一套one-shot LoRA，B_a条同task action queries直接求均值；不得在该
-实验中换成task-complete gradient accumulation。每100步保留checkpoint，
-本次1800只是一小时量级segment边界而非预设峰值；结束后并行评测
-step1200/1400/1600/1800。若右端仍上涨则继续，若平台、持续下降或只迁移不涨，
-才认为原recipe上限基本测清。
+原版v5.2 recipe的上限证据只作v6背景，不再是当前待执行路径。owner最终批准
+v6从fresh step0直接采用task-complete多任务更新，不再保留one-task-per-rank
+的v6训练对照。
 
 owner随后将下一fresh架构提升并封存为
 [`docs/action_forecast_writer_v6_design.md`](docs/action_forecast_writer_v6_design.md)
@@ -63,8 +59,21 @@ v5.3 transition原型之上同时把Semantic Core改为
 的`D_0=0,D_f=G_f-G_(f-1)`，并把factor-head hidden恢复为硬件友好的256；
 总参数预算为`10,775,296`，相对rank-128 Source-SFT只多约4.64%。v5.3文档和
 prototype只作provenance，后续实现只保留一条canonical v6路径。v6使用fresh
-不兼容schema，不从旧Writer resume；首个架构比较仍沿用原版v5.2训练范式，
-不采用task-complete，也不得用contrast/order loss追正结果。
+不兼容schema，不从旧Writer resume，也不得用contrast/order loss追正结果。
+
+v6每个macro optimizer update固定为4 ranks × 每rank顺序处理6个不同tasks：
+每task抽1条teacher video、生成1套one-shot LoRA、在该LoRA下对`B_a`条独立
+同task action queries求均值，再以`task_loss/6`立即backward；前5轮完整处于
+DDP`no_sync()`，第6轮执行唯一一次同步，随后只做一次clip、AdamW和scheduler
+step。每个macro全局恰好覆盖24 tasks、24 videos/LoRAs；`B_a=20`时为480
+action queries和24次functional policy forward。task groups按本次实际选中
+视频的stride-5 frame count做cost balance，rank内long-first，物理rank随macro
+轮换；checkpoint/exact-resume只在完整macro边界。
+
+GPU4–7最长真实视频profile只测试`B20`；若OOM或连续完整macro不稳定，直接退到
+`B16`，不测试中间档。首个正式段按真实吞吐约一小时。除非首段出现明确可信的
+absolute下降，否则平台、小幅波动或上涨都默认exact-resume第二个约一小时段；
+第三段以后才依据当时曲线和机制证据决定。
 
 AS的绝对性能最低目标是达到或接近旧Action-Forecast `125/400`，目标逼近v4
 shuffled `148/400`。四卡rank-128 Source-SFT `108/400`与旧八卡`122/400`
@@ -74,9 +83,10 @@ observed-best，并在best后看到幅度明显、远超400-rollout正常波动�
 focused AS/RL没有机械总wall-clock上限，但这不授权惯性续段；每个新增训练段
 都受上面的证据门约束。
 
-v5.2上限与v6首段/机制比较完成后，再依据证据决定是否尝试task-complete
-recipe、独立short-AS-cold-start→pure-reward RL-Writer或下一架构。不得把
-完整AS best冒充RL cold start。focused AS/RL完成后先向owner汇报，不自动继续
+v6首段/续段与机制比较完成后，必须fresh重训corrected mixed-task rank-128
+Source-SFT并寻找validation observed-best；旧rank-pure SFT只作历史背景。
+随后才做严格配对one-shot baseline与独立short-AS-cold-start→pure-reward
+RL-Writer。不得把完整AS best冒充RL cold start。focused闭环不自动继续
 final-32、test task-local RL、joint oracle或ViVLA。
 
 当前及后续GPU工作固定frame stride=5，只使用物理GPU 4、5、6、7；0–3不进入
@@ -122,11 +132,11 @@ generic lerobot/pi05_base
 
 - 核心固定为 `task language + exactly one action-hidden teaching video -> shared Writer -> complete task-specific LoRA`。
 - Writer 不得接收 action、proprio、reward、terminal、task ID、filename 或隐藏 normalization；source actions 只能进入 AS functional loss。
-- `Action-Supervised Writer (AS-Writer)`：development在24 train tasks上均匀混合；每rank每step只处理一个task并抽1条teacher video，只生成1套one-shot LoRA；尽可能大的`B_a`条独立同task action queries全部在该LoRA下各计算一次functional loss并直接求均值。4 ranks全局均衡轮转tasks；下一次访问该task时换一条video；video与action episode/chunk不要求同episode配对。frozen source base只通过functional LoRA forward参与，更新Writer。
-- 历史task-local RL的总预算合同不影响当前focused v5.2/v5.3 AS/RL，但每个新增训练段仍须通过当前证据门。
+- `Action-Supervised Writer (AS-Writer)`：development在24 train tasks上做上述task-complete宏步；每个task只读1条teacher video并生成1套one-shot LoRA，`B_a`条独立同task action queries在该LoRA下各计算一次functional loss、先task内求均值，再让24 tasks等权。下一次macro访问该task时换一条video；video与action episode/chunk不要求同episode配对。frozen source base只通过functional LoRA forward参与，更新Writer。
+- 历史task-local RL的总预算合同不影响当前focused v6 AS/RL，但每个新增训练段仍须通过当前证据门。
 - `Reward-Trained Writer (RL-Writer)` 是独立路线：按当前 focused task 从新架构规定初态做短、task-balanced AS cold start，直到24个development-train tasks各在官方random-reset rollout中至少成功一次，再关闭action数据入口并跨source tasks做纯reward训练；它不从完整AS-Writer best继续，cold-start消耗必须完整报告。
 - RL-Writer rollout 使用 LIBERO 官方随机 reset/BDDL 初态；不使用 `.pruned_init`。只用官方 env reward/success，不从 object pose 等内部状态手工构造 privileged shaping。
-- `Source-SFT` 是在同一 frozen source base 上、跨 24 development train tasks 联合训练的一套 shared LoRA，test 不看 held video/action。它和 AS-Writer各自根据 validation 选最佳，不要求机械匹配 optimizer steps 或 consumed examples，但必须报告训练数据、steps、GPU-hours、参数量和搜索上限。
+- `Source-SFT` 是在同一 frozen source base 上、跨 24 development train tasks fresh训练的一套 shared rank-128 LoRA，test 不看 held video/action。physical batch必须混合tasks，以`task→episode→chunk`分层均匀采样并做task-balanced loss，不得让rank固定为单一task。v6确认后默认重训并根据validation找最佳；它和AS-Writer不要求机械匹配optimizer steps或consumed examples，但必须报告训练数据、steps、GPU-hours、参数量和搜索上限。
 - 所有方法共享同一frozen source base、normalization和policy接口，但不再机械要求相同trainable参数化或LoRA rank。Writer继续生成sealed rank-16 public task LoRA；capacity-matched Source-SFT可使用rank128，其10,297,344个trainable参数用于约束Writer本体参数预算。各方法的targets/rank/alpha/dropout与identity初始化都必须显式报告。
 
 ## Seen and video-causality evidence

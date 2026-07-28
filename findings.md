@@ -1948,6 +1948,31 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   factor hidden从v5.3的192恢复为256。精确手算总参数`10,775,296`，相对
   Source-SFT `10,297,344`多`477,952`（约4.64%），换取更规整的硬件维度和
   不被人为压缩的下游compiler出口。
-- 首个v6比较仍沿用当前v5.2 one-task-per-rank训练范式以隔离架构变量；
-  task-complete、多task联合优化和RL Writer另作后续实验。本次仅封存设计，
-  尚未修改code/config、profile或启动训练。
+- 当时曾暂定首个v6比较沿用v5.2 one-task-per-rank训练范式；该暂定项随后被
+  owner明确覆盖，最终活动合同见下一节。本时间点仅封存了设计。
+
+## v6 task-complete最终训练合同与CPU实现（2026-07-28）
+
+- owner最终覆盖了上一节最后一条：v6不再沿用v5.2 recipe，而是从fresh step0
+  直接采用task-complete宏步。每macro为4 ranks × 6 tasks/rank；每task一条
+  video、一套LoRA和B20 queries，task内均值后以`1/6`backward，前5轮
+  `no_sync`、第6轮单次DDP同步，随后一次clip/AdamW/scheduler。
+- B20时每macro精确覆盖24 tasks、24 video conditions/LoRAs、480 action
+  queries和24次functional policy forward。旧900-step的3600 video conditions
+  对应新150 macro左右；warmup由100 exposure-equivalent换为17 macro，
+  decay由12000换为2000 macro，peak LR保持`3e-4`。
+- task assignment按本macro实际选中teacher video的stride-5 frame count做
+  四组cost balance；每rank内部long-first，四组随macro轮换物理rank。action
+  query继续使用原有episode-balanced no-replacement采样，video/action独立。
+- profile只允许B20和唯一B16 fallback；只有最长105帧视频OOM或连续完整macro
+  不稳定才退B16，不扫描中间batch。首段约一小时；除非absolute明确下降，
+  否则平台、轻微波动或上涨都默认续第二小时。
+- v6 canonical实现参数枚举为`10,775,296`，step0 public LoRA仍精确identity。
+  config/launch/checkpoint/eval全部提升到不兼容v6 schema；checkpoint记录
+  macro cursor与`next_data_step=macro×6`，只允许macro边界exact-resume。
+- 全仓CPU回归`200 passed`；architecture guard为REVIEW但无hard violation。
+  新增唯一`writer/architecture.py`集中模型拓扑合同，复用现有Writer、training
+  entrypoint和evaluator；v5.3 executable config已退役，没有新增平行runner。
+- v6确认后，corrected mixed-task rank-128 Source-SFT必须fresh重训：
+  physical batch跨tasks，按task→episode→chunk分层均匀采样并做task-balanced
+  loss。旧rank-pure SFT只作provenance，不再代表最终strong baseline。

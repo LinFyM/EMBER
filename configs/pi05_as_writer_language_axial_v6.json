@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_language_axial_as_writer_v5_3",
+  "schema_version": "ember_pi05_language_axial_as_writer_v6",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {
@@ -50,7 +50,7 @@
     "test_video_values_read": 0
   },
   "writer": {
-    "architecture": "pi05_language_axial_patch_grounded_core_visual_transition_causal_procedure_slot_fusion_v5_3",
+    "architecture": "pi05_task_grounded_semantic_set_visual_transition_causal_procedure_slot_fusion_v6",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -101,9 +101,13 @@
     "action_expert_action_out": false,
     "interaction_reduction": "mean_50_final_suffix_hidden_then_shared_bias_free_1024_to_256",
     "program_width": 256,
-    "frame_set_attention": "token_aligned_frame_axis_only_video_independent_text_queries",
-    "frame_attention_initial_lambda": 0.05,
-    "frame_attention_order_contract": "permutation_invariant_mean_anchored_no_frame_position",
+    "semantic_set_fusion": "valid_frame_mean_backbone_plus_task_selected_centered_residual",
+    "semantic_set_query": "text_only_task_query_q_only",
+    "semantic_set_qk": "separate_pre_rmsnorm_bias_free_256_to_256",
+    "semantic_set_mean": "bias_free_256_to_256_valid_frame_mean_backbone",
+    "semantic_set_value": "raw_frame_centered_evidence_no_value_projection",
+    "semantic_set_output": "bias_free_256_to_256_centered_residual_added_to_mean_backbone",
+    "semantic_set_order_contract": "strict_frame_permutation_invariance_without_frame_position",
     "semantic_core_heads": 8,
     "semantic_core_blocks": 2,
     "semantic_core_position_encoding": "task_token_ordinal_rope_qk_only_bidirectional",
@@ -132,7 +136,7 @@
     "modulation_projection": "bias_free_256_to_512_zero_initialized",
     "post_fusion_blocks": 1,
     "factor_head_bias": false,
-    "factor_hidden_width": 192,
+    "factor_hidden_width": 256,
     "initialization_seed": 7
   },
   "data": {
@@ -145,24 +149,30 @@
     "action_chunk_size": 50,
     "sampler_seed": 20260721,
     "teacher_video_seed": 172,
-    "teacher_video_sampling": "per_rank_task_visit_deterministic_single_same_task_video_in_no_replacement_cycles",
+    "teacher_video_sampling": "per_task_macro_visit_deterministic_single_same_task_video_in_no_replacement_cycles",
     "action_query_sampling": "task-balanced deterministic no-replacement episode cycles",
-    "video_action_pairing": "one task-video LoRA conditions the complete rank-local action batch",
-    "writer_generation_reuse": "generate one task-video LoRA once then reuse it across the complete rank-local action batch",
+    "video_action_pairing": "one task-video LoRA conditions the complete task-local action batch",
+    "writer_generation_reuse": "generate one task-video LoRA once then reuse it across the complete task-local action batch",
     "max_open_files_per_worker": 8,
     "video_open_files_per_rank": 2
   },
   "conditioning_training": {
-    "method": "single_video_multi_action_positive_functional_loss",
+    "method": "task_complete_single_video_multi_action_positive_functional_loss",
     "writer_language_contract": "correct_task_language_state_free_teacher_action_suffix",
     "policy_language_contract": "correct_action_query_task_language",
-    "action_query_batch_owner": "one physical action batch per rank with no optimizer gradient accumulation",
-    "task_assignment": "one task per rank per optimizer step with globally balanced task rotation",
+    "action_query_batch_owner": "six sequential task-pure physical action batches per rank per macro optimizer update",
+    "task_assignment": "every macro optimizer update covers all 24 tasks exactly once globally with six cost-balanced long-first tasks per rank",
+    "tasks_per_rank_per_optimizer_update": 6,
+    "global_tasks_per_optimizer_update": 24,
     "teacher_videos_per_task_visit": 1,
     "action_video_assignment": "all_actions_share_single_video_lora",
-    "logical_pair_batch": "per_rank_action_batch",
+    "logical_pair_batch": "per_task_action_batch",
     "policy_noise_contract": "one independent policy flow noise and time draw per action query",
-    "pair_loss_reduction": "mean_over_rank_local_action_batch",
+    "pair_loss_reduction": "mean_within_task_then_equal_mean_over_24_tasks",
+    "task_loss_scale_before_backward": "one_sixth",
+    "ddp_gradient_sync": "first_five_microtasks_no_sync_sixth_single_sync",
+    "optimizer_steps_per_macro_update": 1,
+    "checkpoint_boundary": "complete_macro_optimizer_update_only",
     "normal_loss_weight": 1.0
   },
   "loader": {
@@ -188,15 +198,15 @@
     "scheduler": {
       "kind": "cosine_decay_with_warmup",
       "peak_lr": 0.0003,
-      "warmup_steps": 100,
-      "decay_steps": 12000,
+      "warmup_steps": 17,
+      "decay_steps": 2000,
       "decay_lr": 1e-05
     },
     "maximum_formal_wall_clock_minutes": null,
-    "budget_role": "fresh_v5_3_profile_then_one_hour_early_specificity_segment"
+    "budget_role": "fresh_v6_task_complete_profile_then_one_hour_and_default_second_hour_unless_clear_decline"
   },
   "profile_defaults": {
-    "status": "pending_v5_3_f32_live_profile",
+    "status": "pending_v6_b20_then_b16_only_live_profile",
     "expected_world_size": 4,
     "total_steps": 3,
     "per_rank_batch_size": 20,
@@ -208,7 +218,7 @@
     "selected_stop_step": 3
   },
   "profile_evidence": {
-    "status": "pending_v5_3_live_profile",
+    "status": "pending_v6_task_complete_live_profile",
     "allowed_physical_gpu_ids": [
       4,
       5,
@@ -217,19 +227,24 @@
     ],
     "fixed_frame_stride": 5,
     "teacher_videos_per_task_visit": 1,
-    "writer_video_conditions_per_rank": 1,
+    "tasks_per_rank_per_optimizer_update": 6,
+    "global_tasks_per_optimizer_update": 24,
+    "writer_video_conditions_per_rank_per_macro_update": 6,
     "profiled_hyperparameters": [
-      "max_frames_per_encoder_call",
-      "per_rank_action_batch_size"
+      "per_task_action_batch_size"
     ],
-    "initial_candidate_from_v5_2": {
+    "initial_candidate": {
       "max_frames_per_encoder_call": 32,
-      "per_rank_action_batch_size": 20
+      "per_task_action_batch_size": 20
+    },
+    "only_fallback_candidate": {
+      "max_frames_per_encoder_call": 32,
+      "per_task_action_batch_size": 16
     },
     "required_longest_real_stride5_video_frames": 105,
     "profile_teacher_video_seed": 172,
     "formal_teacher_video_seed_after_profile_seal": 20260722,
-    "selection_rule": "maximize_stable_global_action_queries_per_second_with_real_longest_video_and_aggressive_allocated_memory_use",
+    "selection_rule": "use_b20_if_the_real_longest_video_completes_repeated_six_microtask_macro_updates_without_oom_or_instability_otherwise_use_b16",
     "selected": null,
     "upper_bound": null,
     "exact_resume_smoke": null,
@@ -249,21 +264,23 @@
     "contrast_loss_allowed": false
   },
   "formal_run": {
-    "status": "pending_v5_3_live_profile",
+    "status": "pending_v6_live_profile",
     "expected_world_size": 4,
-    "total_steps": 12000,
+    "total_steps": 2400,
     "per_rank_batch_size": 20,
-    "checkpoint_steps": "every:100",
-    "selected_stop_step": 900,
-    "stage_stop_steps": "every:100",
-    "segment_definition": "provisional_first_900_fresh_v5_3_steps_pending_live_throughput_seal",
+    "checkpoint_steps": "every:25",
+    "selected_stop_step": 150,
+    "stage_stop_steps": "every:150",
+    "segment_definition": "provisional_first_150_fresh_v6_task_complete_macro_updates_pending_live_throughput_seal",
     "first_segment_scale": {
-      "optimizer_steps": 900,
+      "macro_optimizer_updates": 150,
       "global_action_queries": 72000,
       "one_video_conditions": 3600,
-      "retained_checkpoints": 9,
+      "policy_functional_forwards": 3600,
+      "retained_checkpoints": 6,
       "online_validation_action_queries_per_checkpoint": 512
     },
-    "continuation_gate": "formal_launch_blocked_until_v5_3_live_profile_seals_batch_throughput_resume_and_first_segment"
+    "second_segment_default": "continue_to_macro_300_unless_the_first_segment_shows_clear_absolute_performance_decline",
+    "continuation_gate": "formal_launch_blocked_until_v6_live_profile_seals_batch_throughput_resume_and_first_segment"
   }
 }

@@ -1472,3 +1472,26 @@ GPU范围和训练步长是当时快照；活动状态只取
   factor hidden恢复为256。手算总参数`10,775,296`。
 - `AGENTS.md`、active handoff、task plan与findings已同步版本定位。当前只完成
   文档封存；没有修改code/config，没有启动profile、训练或评测。
+
+## v6 canonical实现与task-complete CPU封存（2026-07-28）
+
+- owner提供最终训练合同并覆盖旧v6 recipe：K6 task-complete、首选B20、
+  OOM/连续不稳定才退B16；首段后除非absolute明确下降，默认续第二小时。
+- 隔离worktree
+  `/data/ymdai/.codex/worktrees/EMBER-v53-20260728`已完成唯一canonical v6：
+  Semantic Set mean backbone + centered residual、Visual Transition、
+  hidden256 factor heads、总参数`10,775,296`。
+- 训练入口原位改为每rank六个task-pure micro-round：前5轮DDP`no_sync`，
+  第6轮同步；每个task loss乘`1/6`立即backward；一个macro一次zero_grad、
+  clip、AdamW和scheduler。B20计数为24 video conditions、480 queries、
+  24 functional forwards。
+- sampler根据本次video长度做四组cost balance、rank内long-first并跨macro
+  轮换物理rank；checkpoint和resume只在macro边界，run contract与metrics封存
+  全部计数及24个task/video assignment。
+- `configs/pi05_as_writer_language_axial_v5_3.json`已由唯一v6 config替换；
+  v5.2/v5.3 checkpoint/eval artifact fail closed。全仓
+  `PYTHONPATH=src .venv/bin/pytest -q`为`200 passed`，architecture guard无
+  hard violation，`git diff --check`通过。
+- corrected mixed-task Source-SFT合同已写回authority，待v6完成后fresh实现/
+  重训并寻找validation best。下一动作是GPU4–7 live preflight和B20真实最长
+  视频完整macro profile；当前尚未启动GPU进程或创建正式输出。

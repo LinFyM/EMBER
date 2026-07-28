@@ -1,9 +1,4 @@
-"""Canonical symmetric-rank PI05 Action-Supervised Writer training.
-
-Only the shared Writer is trainable. Each rank handles one task and one
-teacher video per step, generates one one-shot LoRA, and evaluates the complete
-independent same-task action batch under that single adapter.
-"""
+"""Canonical task-complete PI05 Action-Supervised Writer training."""
 
 from __future__ import annotations
 
@@ -49,6 +44,7 @@ from ember.writer.checkpoint import (
 )
 from ember.writer.as_contract import (
     REPO_ROOT,
+    _broadcast_validation,
     authority_path,
     build_contract,
     inspect_video_data,
@@ -110,6 +106,7 @@ class WriterRuntime:
     contract_sha256: str
     total_steps: int
     batch_size: int
+    tasks_per_rank_per_update: int
     videos_per_task_visit: int
     checkpoint_steps: tuple[int, ...]
     resume_step: int
@@ -227,6 +224,7 @@ def _restore_training_state(
     batch_size: int,
     batch_cycle: tuple[int, ...],
     videos_per_task_visit: int,
+    tasks_per_rank_per_update: int,
     contract_sha256: str,
     initial_step: int,
 ) -> tuple[dict[str, Any] | None, int]:
@@ -243,6 +241,7 @@ def _restore_training_state(
         per_rank_batch_size=batch_size,
         per_rank_batch_cycle=batch_cycle,
         videos_per_task_visit=videos_per_task_visit,
+        tasks_per_rank_per_update=tasks_per_rank_per_update,
         contract_sha256=contract_sha256,
     )
     if loaded != initial_step:
@@ -260,25 +259,37 @@ def _build_sampler_and_loader(
     batch_size: int,
     batch_cycle: tuple[int, ...],
     initial_step: int,
+    video_data: Mapping[str, Any],
+    tasks_per_rank_per_update: int,
 ) -> tuple[MixedTaskBatchSampler, TeacherVideoSchedule, DataLoader[Any]]:
-    initial_data_step = initial_step
-    stop_data_step = args.stop_after_step
-    sampler = MixedTaskBatchSampler(
-        dataset,
-        task_ids=task_ids,
-        per_rank_batch_size=batch_size,
-        per_rank_batch_cycle=batch_cycle,
-        start_step=initial_data_step,
-        stop_step=stop_data_step,
-        rank=context.rank,
-        world_size=context.world_size,
-        seed=int(config["data"]["sampler_seed"]),
-    )
     first_demo, last_demo = map(int, config["data"]["demo_indices"])
     schedule = TeacherVideoSchedule(
         task_ids=task_ids,
         demo_indices=range(first_demo, last_demo + 1),
         seed=int(config["data"]["teacher_video_seed"]),
+    )
+    task_video_costs = {
+        int(task_id): {
+            int(demo_index): int(value)
+            for demo_index, value in demo_costs.items()
+        }
+        for task_id, demo_costs in video_data[
+            "sampled_frame_counts_by_task"
+        ].items()
+    }
+    sampler = MixedTaskBatchSampler(
+        dataset,
+        task_ids=task_ids,
+        per_rank_batch_size=batch_size,
+        per_rank_batch_cycle=batch_cycle,
+        start_step=initial_step,
+        stop_step=args.stop_after_step,
+        rank=context.rank,
+        world_size=context.world_size,
+        seed=int(config["data"]["sampler_seed"]),
+        tasks_per_rank_per_update=tasks_per_rank_per_update,
+        video_schedule=schedule,
+        task_video_costs=task_video_costs,
     )
     loader = DataLoader(
         dataset,
@@ -365,6 +376,7 @@ def _load_run_authorities(
     args: argparse.Namespace,
     config: Mapping[str, Any],
     task_ids: tuple[int, ...],
+    context: DistributedContext,
 ) -> tuple[Any, dict[str, Any], dict[str, Any], dict[str, Any]]:
     authorities = load_evaluation_authorities(
         authority_path(config, "evaluation_config"),
@@ -379,11 +391,14 @@ def _load_run_authorities(
     tokenizer = inspect_tokenizer(authorities, args.tokenizer_path)
     # load_training_data already performs and broadcasts the full rank-0 SHA
     # validation. This second inspection only records the raw-video identity.
-    video_data = inspect_video_data(
-        args.data_root.resolve(),
-        config,
-        task_ids,
-        verify_hashes=False,
+    video_data = _broadcast_validation(
+        context,
+        lambda: inspect_video_data(
+            args.data_root.resolve(),
+            config,
+            task_ids,
+            verify_hashes=False,
+        ),
     )
     return authorities, source, tokenizer, video_data
 
@@ -404,6 +419,7 @@ def _prepare_setup(
         args,
         config,
         task_ids,
+        context,
     )
     (
         policy,
@@ -467,6 +483,9 @@ def prepare_runtime(
     config = load_writer_config(args.config.resolve())
     total_steps, batch_size, checkpoint_steps = resolve_runtime(args, config, context)
     batch_cycle = (batch_size,)
+    tasks_per_rank_per_update = int(
+        config["conditioning_training"]["tasks_per_rank_per_optimizer_update"]
+    )
     videos_per_task_visit = int(
         config["conditioning_training"]["teacher_videos_per_task_visit"]
     )
@@ -494,6 +513,7 @@ def prepare_runtime(
         batch_size=batch_size,
         batch_cycle=batch_cycle,
         videos_per_task_visit=videos_per_task_visit,
+        tasks_per_rank_per_update=tasks_per_rank_per_update,
         contract_sha256=setup.contract_sha256,
         initial_step=initial_step,
     )
@@ -506,6 +526,8 @@ def prepare_runtime(
         batch_size=batch_size,
         batch_cycle=batch_cycle,
         initial_step=initial_step,
+        video_data=setup.contract["video_data"],
+        tasks_per_rank_per_update=tasks_per_rank_per_update,
     )
     wrapped = _wrap_writer(setup.writer, context)
     setup.writer.train()
@@ -563,6 +585,7 @@ def prepare_runtime(
         contract_sha256=setup.contract_sha256,
         total_steps=total_steps,
         batch_size=batch_size,
+        tasks_per_rank_per_update=tasks_per_rank_per_update,
         videos_per_task_visit=videos_per_task_visit,
         checkpoint_steps=checkpoint_steps,
         resume_step=initial_step,
@@ -661,11 +684,13 @@ def run_steps(runtime: WriterRuntime) -> None:
                 stop
                 * runtime.context.world_size
                 * runtime.batch_size
+                * runtime.tasks_per_rank_per_update
             ),
             "global_writer_video_conditions": (
                 stop
                 * runtime.context.world_size
                 * runtime.videos_per_task_visit
+                * runtime.tasks_per_rank_per_update
             ),
             "test_action_reads": 0,
             "test_video_value_reads": 0,
@@ -695,6 +720,9 @@ def train(args: argparse.Namespace) -> None:
                         "teacher_videos_per_task_visit": (
                             runtime.videos_per_task_visit
                         ),
+                        "tasks_per_rank_per_optimizer_update": (
+                            runtime.tasks_per_rank_per_update
+                        ),
                         "tasks": len(runtime.task_ids),
                         "trainable": runtime.contract["trainable"],
                     },
@@ -718,7 +746,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_as_writer_language_axial_v5_3.json",
+        default=REPO_ROOT / "configs/pi05_as_writer_language_axial_v6.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--source-run", type=Path, required=True)

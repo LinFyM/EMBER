@@ -1,4 +1,4 @@
-# EMBER v5.2上限测定与v6推进交接
+# EMBER v6 task-complete训练与后续闭环交接
 
 最后更新：2026-07-28 UTC。
 
@@ -27,14 +27,22 @@ focused AS/RL完成或本文不再承担跨session恢复作用时，更新或删
   `72/79/120/132`，step900为右端observed-best。
 - step900 full400五臂为`132/138/74/82/83`。same鲁棒，correct显著优于
   wrong/shuffled/reversed；内部Core/Procedure/LoRA/action链也没有v4旁路。
-- owner决定先沿原版v5.2训练范式从step900 exact-resume测清上限；当前tmux
-  `ember-v52-resume-1800`只把1800当本次约一小时segment边界。结束后GPU4–7
-  分别评测step1200/1400/1600/1800，若右端仍上涨则继续，不机械把1800当峰值。
+- v5.2原recipe上限测定已经转为历史证据；不得根据旧tmux名或旧交接命令重复
+  启动。当前活动执行从fresh v6 profile开始。
 - owner已把下一fresh架构从v5.3提升为v6。v6同时采用task-grounded adjacent
   visual transition、`mean backbone + task-selected centered residual`
   Semantic Set aggregation和hidden=256 factor heads，总参数
   `10,775,296`；设计封存在`docs/action_forecast_writer_v6_design.md`。
-  当前v5.3 branch实现只作v6实现起点，尚未修改代码/config或启动v6 profile。
+  v5.3 branch只作实现起点。
+- owner最终要求v6从fresh step0直接使用task-complete训练：4 ranks ×
+  6 tasks/rank/macro、task内`B20`求均值、24 tasks等权、前5轮`no_sync`、
+  第6轮单次同步、一次AdamW。最长视频profile只试B20，失败直接B16。
+- canonical v6 code/config/checkpoint/eval schema和macro-boundary resume已完成
+  CPU实现；全仓`200 passed`，architecture guard无hard violation。尚未启动
+  GPU profile或正式训练。
+- v6首段约一小时；除非absolute明确下降，否则默认续第二小时。v6确认后必须
+  fresh重训corrected mixed-task Source-SFT，再推进paired one-shot与cold-start
+  RL；不自动进入final-32/test/joint oracle。
 
 ## 1. 当前focused objective
 

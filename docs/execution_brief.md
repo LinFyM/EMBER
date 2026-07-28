@@ -1,11 +1,10 @@
 # EMBER Current Execution Brief
 
-状态：2026-07-28。共享 π0.5-LIBERO source base 与 Source-SFT comparator 已
-封存。Action-Forecast Writer v4、Semantic Core + Causal Procedure v5 与
-Language-Axial v5.1 均已完成根因定位并停止。当前GPU执行先沿原版v5.2
-Task-Queried Patch Grounding recipe测定充分训练上限；owner指定v5.3
-Task-Grounded Visual-Transition Procedure为默认下一条fresh架构实验，并明确
-仍使用原版one-task-per-rank optimizer update，不采用task-complete。
+状态：2026-07-28。共享 π0.5-LIBERO source base 已封存；旧 Source-SFT结果只
+作历史 comparator。v4、v5、v5.1、v5.2和v5.3均已转为provenance。当前活动
+方法是EMBER Writer v6：Task-Grounded Semantic Set + Visual-Transition
+Procedure，并从fresh step0直接采用task-complete多任务训练。v6确认后必须
+fresh重训corrected mixed-task rank-128 Source-SFT。
 
 外部专家复核后的第一轮诊断证明，shuffle的直接行为放大器位于per-image
 forecast之后的absolute-time Plan/Revision；但后续全面复审又确认它不是唯一
@@ -57,14 +56,13 @@ Procedure通过zero-init AdaLN调制Core slots，再经一个post-fusion slot bl
 correct-video `127/400`，且best的reversed为`120/400`、与correct无显著差异；
 它因此只作provenance。
 
-当前v5.2运行设计为
-[`docs/action_forecast_writer_v5_2_design.md`](action_forecast_writer_v5_2_design.md)；
-下一fresh架构authority为
-[`docs/action_forecast_writer_v5_3_design.md`](action_forecast_writer_v5_3_design.md)。
-v5.2保留v5.1的Core、Procedure、fusion与信息墙，只让text-only task tokens
-逐帧cross-attend PaliGemma的256个image-position contents，把对象、关系和空间
-细节重新注入Core；新增上游预算由factor hidden `240→216`支付，总参数
-`10,237,704`，仍低于rank-128 Source-SFT。旧v5设计见
+当前唯一架构与训练authority为
+[`docs/action_forecast_writer_v6_design.md`](action_forecast_writer_v6_design.md)。
+v6让text-only task tokens逐帧读取PaliGemma image-position contents；Semantic
+Core用`mean backbone + task-selected centered residual`保持frame-set
+permutation invariance；Procedure用Action-Expert probe读取按实际arm顺序重算的
+adjacent task-grounded visual transition。公共宽度256、8 heads×32、Core与
+Procedure各2层、factor hidden256，总参数`10,775,296`。旧v5设计见
 [`docs/action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)；
 完整v4根因证据见
 [`docs/action_forecast_writer_v4_root_cause.md`](action_forecast_writer_v4_root_cause.md)；
@@ -73,11 +71,8 @@ v5.2保留v5.1的Core、Procedure、fusion与信息墙，只让text-only task to
 
 v5.2 step900 fixed correct400为`132/400`，五臂
 `correct/same/wrong/shuffled/reversed=132/138/74/82/83`；same鲁棒且correct
-相对wrong与两种order破坏均显著，因此没有v4 shuffled漏洞。step900仍是训练
-右端，当前从该checkpoint exact-resume原recipe测上限。v5.3不修改训练范式；
-它只在Procedure前加入按实际输入顺序重算的task-grounded adjacent visual
-transition，并把factor hidden `216→192`释放的预算上移，总参数
-`10,230,536`。
+相对wrong与两种order破坏均显著，因此没有v4 shuffled漏洞；它是v6的可信背景
+而非当前resume入口。
 
 ## 1. 研究问题
 
@@ -122,18 +117,17 @@ owner于2026-07-22将source-base正式训练改为从generic base fresh运行1,0
 ### AS-Writer
 
 - 输入恰好一条 action-hidden teacher video + 正确 task language；输出完整 task-specific LoRA。
-- 在24 train tasks上做均衡混合。每rank每step一个task，抽1条teacher video并
-  只生成1套LoRA；`B_a`条独立action queries全部在该LoRA下各计算一次，
-  `B_a`个functional losses求均值。video与action episode/chunk不要求配对，
+- 每个macro update全局等权覆盖24 train tasks；4 ranks各顺序处理6 tasks，
+  每task抽1条teacher video、生成1套LoRA，`B_a`条独立action queries先task内
+  求均值，再以`task_loss/6`backward。前5轮DDP`no_sync`，第6轮唯一同步，
+  然后只做一次clip/AdamW/scheduler。video与action episode/chunk不要求配对，
   action只进functional behavior loss。
 - source base冻结，只有Writer更新。Writer不得看到action、proprio、reward、terminal、task ID、filename或隐藏stats。
-- v5.2原位替换v5.1的活动schema/config，不保留并行执行分支。公开rank-16
-  LoRA仍为76 tensors、`1,287,168` scalars；Writer机械预算
-  `10,237,704`，比rank-128 Source-SFT少`59,640` parameters。
-- GPU4–7真实上界profile使用最长视频压力条件：F32/B21成功，B22在四rank
-  对称OOM，所以正式训练采用每rank 21 action queries、global 84；
-  `max_frames_per_encoder_call=32`。首段仍按实测效率约一小时，只封
-  step900为当前停止点，不把第二/第三段机械预定为1800或其他步数。
+- v6原位替换v5.3活动schema/config，不保留平行runner。公开rank-16 LoRA仍为
+  76 tensors、`1,287,168` scalars；Writer参数`10,775,296`。
+- GPU4–7真实最长视频profile先跑完整K6/B20 macro；OOM或连续不稳定才直接退
+  B16，不测试中间档。B20时每macro为24 videos/LoRAs、480 queries、24次
+  functional forward、1次同步和1次AdamW。
 - 首段先用functional panel安排checkpoint，再以内部五条件和轻量paired rollout
   检查早期机制，重点确认final effective LoRA / policy action的
   `same < shuffled/reversed`相对v5实质改善；轻量panel不冒充full400结论。
@@ -142,9 +136,8 @@ owner于2026-07-22将source-base正式训练改为从generic base fresh运行1,0
   wrong、shuffle、reverse。不通过则定位最早失效层后fresh迭代，不用
   contrast/order loss。
 - 最终correct至少达到或接近`125/400`，目标逼近v4 shuffled `148/400`。
-  第二段、第三段或任何更长训练不能因“尚未峰后下降”而自动开始；每次新增
-  segment必须由上一段的特异性、absolute performance和训练/validation曲线
-  共同证明值得继续，再按当时实测效率单独决定步数。
+  首段约一小时；除非absolute出现明确可信下降，否则平台、小幅波动或上涨都
+  默认续第二小时。第三段以后再由特异性、absolute和曲线共同决定。
 
 ### RL-Writer
 
@@ -158,7 +151,9 @@ owner于2026-07-22将source-base正式训练改为从generic base fresh运行1,0
 
 ### Source-SFT
 
-- 从同一frozen source base开始，在24 train tasks上联合训练一套shared multi-task LoRA。
+- v6确认后必须从同一frozen source base fresh重训一套shared rank-128 LoRA。
+- physical batch混合多个tasks，按`task→episode→chunk`分层均匀采样并做
+  task-balanced loss；旧rank-pure SFT只作provenance。
 - test不看held video/action；它控制“只加强source policy”与“额外读取held video”的差异。
 - 它与AS-Writer各自在validation上选最佳，不要求相同步数或数据量；必须报告各自steps、action chunks、参数量、GPU-hours和搜索上限。
 

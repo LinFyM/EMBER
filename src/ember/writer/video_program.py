@@ -1,4 +1,4 @@
-"""Language-aligned per-frame evidence for the PI05 v5.3 Writer."""
+"""Language-aligned per-frame evidence for the canonical PI05 v6 Writer."""
 
 from __future__ import annotations
 

@@ -64,27 +64,21 @@ def _merge_heads(value: torch.Tensor) -> torch.Tensor:
     return value.transpose(1, 2).reshape(batch, tokens, heads * width)
 
 
-class TokenAlignedFrameSetAttention(torch.nn.Module):
-    """Aggregate video evidence independently for every task-language token."""
+class TaskSelectedSemanticSetFusion(torch.nn.Module):
+    """Add task-selected centered frame evidence to a stable mean backbone."""
 
-    def __init__(self, *, width: int, heads: int, initial_lambda: float) -> None:
+    def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
-        if (
-            min(width, heads) <= 0
-            or width % heads
-            or not 0.0 < initial_lambda < 1.0
-        ):
-            raise VariableEpisodeInputError("invalid frame-set attention")
+        if min(width, heads) <= 0 or width % heads:
+            raise VariableEpisodeInputError("invalid semantic-set fusion")
         self.heads = int(heads)
         self.head_width = width // heads
         self.query_norm = RMSNorm(width)
         self.evidence_norm = RMSNorm(width)
         self.query = torch.nn.Linear(width, width, bias=False)
         self.key = torch.nn.Linear(width, width, bias=False)
-        self.value = torch.nn.Linear(width, width, bias=False)
+        self.mean = torch.nn.Linear(width, width, bias=False)
         self.output = torch.nn.Linear(width, width, bias=False)
-        logit = math.log(initial_lambda / (1.0 - initial_lambda))
-        self.gate_logits = torch.nn.Parameter(torch.full((heads,), logit))
 
     def forward(
         self,
@@ -107,6 +101,14 @@ class TokenAlignedFrameSetAttention(torch.nn.Module):
         ):
             raise VariableEpisodeInputError("invalid token-aligned frame evidence")
         batch, frames, tokens, width = frame_evidence.shape
+        active = valid_frames[:, :, None, None]
+        counts = valid_frames.sum(dim=1).to(frame_evidence.dtype)[:, None, None]
+        frame_mean = frame_evidence.masked_fill(~active, 0.0).sum(dim=1)
+        frame_mean = frame_mean / counts
+        centered = (frame_evidence - frame_mean[:, None]).masked_fill(
+            ~active,
+            0.0,
+        )
         query = _split_heads(
             self.query(self.query_norm(text_queries)),
             self.heads,
@@ -119,7 +121,7 @@ class TokenAlignedFrameSetAttention(torch.nn.Module):
             self.heads,
             self.head_width,
         ).permute(0, 3, 1, 2, 4)
-        value = self.value(frame_evidence).reshape(
+        value = centered.reshape(
             batch,
             frames,
             tokens,
@@ -130,14 +132,9 @@ class TokenAlignedFrameSetAttention(torch.nn.Module):
         logits = logits / math.sqrt(self.head_width)
         frame_mask = valid_frames[:, None, :, None]
         logits = logits.masked_fill(~frame_mask, torch.finfo(logits.dtype).min)
-        selected = torch.softmax(logits.to(torch.float32), dim=2).to(logits.dtype)
-        counts = valid_frames.sum(dim=1, keepdim=True).to(logits.dtype)
-        uniform = valid_frames.to(logits.dtype)[:, None, :, None]
-        uniform = uniform / counts[:, :, None, None]
-        gate = torch.sigmoid(self.gate_logits).to(logits.dtype)[None, :, None, None]
-        weights = (1.0 - gate) * uniform + gate * selected
+        weights = torch.softmax(logits.to(torch.float32), dim=2).to(logits.dtype)
         attended = torch.einsum("bhtl,bhtld->bhld", weights, value)
-        output = self.output(_merge_heads(attended))
+        output = self.mean(frame_mean) + self.output(_merge_heads(attended))
         output = output.masked_fill(~valid_task_tokens[..., None], 0.0)
         weights = weights.masked_fill(
             ~valid_task_tokens[:, None, None, :],
@@ -223,15 +220,13 @@ class LanguageSemanticCore(torch.nn.Module):
         width: int,
         heads: int,
         blocks: int,
-        frame_attention_initial_lambda: float,
     ) -> None:
         super().__init__()
         if blocks <= 0:
             raise VariableEpisodeInputError("Semantic Core needs language blocks")
-        self.frame_attention = TokenAlignedFrameSetAttention(
+        self.semantic_set_fusion = TaskSelectedSemanticSetFusion(
             width=width,
             heads=heads,
-            initial_lambda=frame_attention_initial_lambda,
         )
         self.blocks = torch.nn.ModuleList(
             RoPEContentBlock(width=width, heads=heads, causal=False)
@@ -245,7 +240,7 @@ class LanguageSemanticCore(torch.nn.Module):
         valid_frames: torch.Tensor,
         valid_task_tokens: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        content, weights = self.frame_attention(
+        content, weights = self.semantic_set_fusion(
             text_queries,
             frame_evidence,
             valid_frames,

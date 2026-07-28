@@ -8,6 +8,10 @@ from typing import Mapping
 
 import torch
 
+from ember.writer.architecture import (
+    LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS,
+    validate_writer_dimensions,
+)
 from ember.writer.temporal import (
     CausalProcedureEncoder,
     LanguageSemanticCore,
@@ -19,32 +23,6 @@ from ember.writer.video_program import Pi05LanguageAxialEncoder
 
 class WriterModelError(RuntimeError):
     """Raised when the Writer input or sealed LoRA contract is inconsistent."""
-
-
-LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
-    {
-        "image_width",
-        "expert_width",
-        "program_width",
-        "text_meta_lora_rank",
-        "vl_meta_lora_rank",
-        "action_meta_lora_rank",
-        "patch_grounding_heads",
-        "max_frames_per_encoder_call",
-        "action_horizon",
-        "padded_action_dim",
-        "semantic_core_heads",
-        "semantic_core_blocks",
-        "frame_attention_initial_lambda",
-        "procedure_heads",
-        "procedure_blocks",
-        "visual_transition_heads",
-        "fusion_heads",
-        "factor_hidden_width",
-        "initialization_seed",
-        "activation_checkpointing",
-    }
-)
 
 
 @dataclass(frozen=True)
@@ -174,7 +152,6 @@ class CompleteLoRAWriter(torch.nn.Module):
         padded_action_dim: int,
         semantic_core_heads: int,
         semantic_core_blocks: int,
-        frame_attention_initial_lambda: float,
         procedure_heads: int,
         procedure_blocks: int,
         visual_transition_heads: int,
@@ -184,31 +161,32 @@ class CompleteLoRAWriter(torch.nn.Module):
         activation_checkpointing: bool,
     ) -> None:
         super().__init__()
-        if (
-            not tensor_specs
-            or set(template_state) != {item.name for item in tensor_specs}
-            or len(paligemma_model.layers) != self.EXPERT_LAYERS
-            or len(expert_model.layers) != self.EXPERT_LAYERS
-            or {item.rank for item in tensor_specs} != {self.PUBLIC_LORA_RANK}
-            or image_width != 2048
-            or expert_width != 1024
-            or program_width != 256
-            or text_meta_lora_rank != 4
-            or vl_meta_lora_rank != 4
-            or action_meta_lora_rank != 4
-            or patch_grounding_heads != 8
-            or action_horizon != 50
-            or padded_action_dim != 32
-            or semantic_core_heads != 8
-            or semantic_core_blocks != 2
-            or abs(float(frame_attention_initial_lambda) - 0.05) > 1e-12
-            or procedure_heads != 8
-            or procedure_blocks != 2
-            or visual_transition_heads != 8
-            or fusion_heads != 8
-            or factor_hidden_width != 192
-        ):
+        constructor_values = locals()
+        dimensions = {
+            name: constructor_values[name]
+            for name in LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
+            if name
+            not in {
+                "max_frames_per_encoder_call",
+                "initialization_seed",
+                "activation_checkpointing",
+            }
+        }
+        try:
+            validate_writer_dimensions(dimensions)
+        except ValueError as error:
+            raise WriterModelError("invalid Language-Axial Writer topology") from error
+        if not tensor_specs or max_frames_per_encoder_call <= 0:
             raise WriterModelError("invalid Language-Axial Writer topology")
+        if set(template_state) != {item.name for item in tensor_specs}:
+            raise WriterModelError("Writer LoRA template names changed")
+        if (
+            len(paligemma_model.layers) != self.EXPERT_LAYERS
+            or len(expert_model.layers) != self.EXPERT_LAYERS
+        ):
+            raise WriterModelError("frozen PI05 expert depth changed")
+        if {item.rank for item in tensor_specs} != {self.PUBLIC_LORA_RANK}:
+            raise WriterModelError("public Writer LoRA rank changed")
         self.tensor_specs = tensor_specs
         self.program_width = int(program_width)
         self.semantic_encoder = Pi05LanguageAxialEncoder(
@@ -231,7 +209,6 @@ class CompleteLoRAWriter(torch.nn.Module):
             width=program_width,
             heads=semantic_core_heads,
             blocks=semantic_core_blocks,
-            frame_attention_initial_lambda=frame_attention_initial_lambda,
         )
         self.visual_transition = TaskGroundedVisualTransitionFusion(
             width=program_width,

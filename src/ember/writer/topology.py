@@ -4,8 +4,12 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Any, Mapping
 
 import torch
+
+from ember.pi05_source_checkpoint import DistributedContext
+from ember.writer.model import WriterModelError
 
 
 def _expand_cpu_list(value: str) -> set[int]:
@@ -55,3 +59,34 @@ def bind_current_process_to_cuda_numa(device: int) -> tuple[int, ...] | None:
         return None
     os.sched_setaffinity(0, eligible)
     return tuple(sorted(eligible))
+
+
+def validate_task_complete_topology(
+    config: Mapping[str, Any],
+    context: DistributedContext,
+    *,
+    expected_world_size: int,
+    batch_size: int,
+    mode: str,
+) -> None:
+    """Seal the v6 four-rank, all-task macro-update topology."""
+
+    if context.world_size != expected_world_size:
+        raise WriterModelError(
+            "AS-Writer training requires exactly "
+            f"{expected_world_size} symmetric ranks"
+        )
+    training = config["conditioning_training"]
+    tasks_per_rank = int(training["tasks_per_rank_per_optimizer_update"])
+    global_tasks = int(training["global_tasks_per_optimizer_update"])
+    invalid = (
+        int(training["teacher_videos_per_task_visit"]) != 1
+        or tasks_per_rank * context.world_size != global_tasks
+        or global_tasks != int(config["data"]["task_count"])
+    )
+    if invalid:
+        raise WriterModelError(
+            "AS-Writer macro update must cover every task exactly once"
+        )
+    if mode == "profile" and batch_size not in {20, 16}:
+        raise WriterModelError("v6 profile allows B20 or the single B16 fallback")

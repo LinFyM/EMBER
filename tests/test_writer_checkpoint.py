@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import h5py
+import numpy as np
 import pytest
 
 from ember.lora import canonical_contract_sha256
@@ -25,7 +27,7 @@ from ember.writer.model import WriterModelError
 
 
 ROOT = Path(__file__).resolve().parents[1]
-AS_CONFIG = ROOT / "configs/pi05_as_writer_language_axial_v5_3.json"
+AS_CONFIG = ROOT / "configs/pi05_as_writer_language_axial_v6.json"
 
 
 def _checkpoint(tmp_path: Path, contract_sha256: str) -> Path:
@@ -73,7 +75,17 @@ def _sparse_video_data(tmp_path: Path, rows: list[dict]) -> Path:
     for row in rows:
         path = root / row["hdf5"]["relative_path"]
         path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("wb") as handle:
+        with h5py.File(path, "w") as handle:
+            data = handle.create_group("data")
+            for demo_index in range(50):
+                observation = data.create_group(
+                    f"demo_{demo_index}"
+                ).create_group("obs")
+                observation.create_dataset(
+                    "agentview_rgb",
+                    data=np.zeros((1, 1, 1, 3), dtype=np.uint8),
+                )
+        with path.open("r+b") as handle:
             handle.truncate(int(row["hdf5"]["bytes"]))
     return root
 

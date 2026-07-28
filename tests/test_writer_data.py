@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import pytest
+
 from ember.writer.data import MixedTaskBatchSampler, TeacherVideoSchedule
+from ember.writer.model import WriterModelError
 
 
 @dataclass
@@ -38,6 +41,11 @@ def _sampler(
     start_step: int,
     stop_step: int,
 ) -> MixedTaskBatchSampler:
+    schedule = TeacherVideoSchedule(
+        task_ids=(10, 20, 30, 40),
+        demo_indices=range(5),
+        seed=19,
+    )
     return MixedTaskBatchSampler(
         dataset,  # type: ignore[arg-type]
         task_ids=(10, 20, 30, 40),
@@ -47,22 +55,44 @@ def _sampler(
         rank=rank,
         world_size=2,
         seed=20260720,
+        tasks_per_rank_per_update=2,
+        video_schedule=schedule,
+        task_video_costs={
+            task_id: {
+                demo_index: task_id + 3 * demo_index
+                for demo_index in range(5)
+            }
+            for task_id in (10, 20, 30, 40)
+        },
     )
 
 
-def test_mixed_task_sampler_has_global_no_replacement_cycles() -> None:
+def test_task_complete_sampler_covers_every_task_and_runs_long_first() -> None:
     dataset, identity = _dataset()
-    rank_batches = [list(_sampler(dataset, rank=rank, start_step=0, stop_step=6)) for rank in range(2)]
-
-    global_tasks = []
+    samplers = [
+        _sampler(dataset, rank=rank, start_step=0, stop_step=6)
+        for rank in range(2)
+    ]
+    rank_batches = [list(sampler) for sampler in samplers]
     for step in range(6):
+        global_tasks = []
         for rank in range(2):
-            batch_tasks = {identity[row][0] for row in rank_batches[rank][step]}
-            assert len(batch_tasks) == 1
-            global_tasks.append(batch_tasks.pop())
-
-    for start in range(0, len(global_tasks), 4):
-        assert set(global_tasks[start : start + 4]) == {10, 20, 30, 40}
+            tasks = samplers[rank].tasks_for_step(step)
+            costs = [
+                samplers[rank].task_video_costs[task_id][
+                    samplers[rank].video_schedule.demo_for_task_visit(
+                        task_id,
+                        step,
+                    )
+                ]
+                for task_id in tasks
+            ]
+            assert costs == sorted(costs, reverse=True)
+            for microtask, task_id in enumerate(tasks):
+                batch = rank_batches[rank][step * 2 + microtask]
+                assert {identity[row][0] for row in batch} == {task_id}
+                global_tasks.append(task_id)
+        assert set(global_tasks) == {10, 20, 30, 40}
 
 
 def test_mixed_task_sampler_resume_is_sample_exact() -> None:
@@ -74,28 +104,31 @@ def test_mixed_task_sampler_resume_is_sample_exact() -> None:
     assert prefix + resumed == full
 
 
-def test_mixed_task_sampler_variable_batch_cycle_is_exact_and_counts_used_queries() -> None:
-    dataset, identity = _dataset()
-
-    def build(start: int, stop: int) -> MixedTaskBatchSampler:
-        return MixedTaskBatchSampler(
+def test_task_complete_sampler_rejects_variable_batch_cycles() -> None:
+    dataset, _ = _dataset()
+    schedule = TeacherVideoSchedule(
+        task_ids=(10, 20, 30, 40),
+        demo_indices=range(5),
+        seed=19,
+    )
+    with pytest.raises(WriterModelError, match="task-complete sampler"):
+        MixedTaskBatchSampler(
             dataset,  # type: ignore[arg-type]
             task_ids=(10, 20, 30, 40),
             per_rank_batch_size=2,
-            per_rank_batch_cycle=(2, 1, 2, 1),
-            start_step=start,
-            stop_step=stop,
+            per_rank_batch_cycle=(2, 1),
+            start_step=0,
+            stop_step=8,
             rank=0,
             world_size=2,
             seed=20260720,
+            tasks_per_rank_per_update=2,
+            video_schedule=schedule,
+            task_video_costs={
+                task_id: {demo_index: 1 for demo_index in range(5)}
+                for task_id in (10, 20, 30, 40)
+            },
         )
-
-    full = list(build(0, 8))
-    assert [len(batch) for batch in full] == [2, 1, 2, 1, 2, 1, 2, 1]
-    assert list(build(0, 3)) + list(build(3, 8)) == full
-    assert build(0, 8).consumed_identity_summary(0, 8)["global_examples"] == 24
-    for batch in full:
-        assert len({identity[row][0] for row in batch}) == 1
 
 
 def test_mixed_task_sampler_covers_every_episode_in_each_full_window() -> None:
@@ -107,7 +140,7 @@ def test_mixed_task_sampler_covers_every_episode_in_each_full_window() -> None:
         for episodes in sampler.coverage_for_steps(2, 8).values()
     )
     summary = sampler.consumed_identity_summary(0, 8)
-    assert summary["global_examples"] == 8 * 2 * 2
+    assert summary["global_examples"] == 8 * 4 * 2
     assert summary["unique_query_rows"] <= summary["global_examples"]
     assert summary["identity_sha256"] == _sampler(
         dataset, rank=1, start_step=3, stop_step=8
@@ -150,7 +183,7 @@ def test_joint_writer_consumed_digest_covers_video_and_action_schedules() -> Non
     assert summary == first.consumed_identity_summary(sampler, 0, 8)
     assert summary["query"] == sampler.consumed_identity_summary(0, 8)
     assert summary["videos_per_task_visit"] == 1
-    assert summary["min_video_visits_per_task"] == 4
+    assert summary["min_video_visits_per_task"] == 8
     assert (
         summary["combined_identity_sha256"]
         != second.consumed_identity_summary(sampler, 0, 8)[

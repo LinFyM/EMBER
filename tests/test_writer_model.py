@@ -12,6 +12,7 @@ from ember.writer.temporal import (
     LanguageSemanticCore,
     SlotNormalizedCoreProcedureCompiler,
     TaskGroundedVisualTransitionFusion,
+    TaskSelectedSemanticSetFusion,
 )
 from ember.writer.video_program import TaskQueriedPatchGrounding
 
@@ -141,12 +142,11 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         padded_action_dim=32,
         semantic_core_heads=8,
         semantic_core_blocks=2,
-        frame_attention_initial_lambda=0.05,
         procedure_heads=8,
         procedure_blocks=2,
         visual_transition_heads=8,
         fusion_heads=8,
-        factor_hidden_width=192,
+        factor_hidden_width=256,
         initialization_seed=7,
         activation_checkpointing=True,
     )
@@ -176,9 +176,9 @@ def _inputs() -> tuple[torch.Tensor, ...]:
     return frames, frame_indices, offsets, tokens, masks, task_spans
 
 
-def test_v5_3_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
+def test_v6_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
     model, _ = _model()
-    assert sum(parameter.numel() for parameter in model.parameters()) == 10_230_536
+    assert sum(parameter.numel() for parameter in model.parameters()) == 10_775_296
     contract = writer_trainable_contract(
         model,
         torch.nn.Identity(),
@@ -186,7 +186,7 @@ def test_v5_3_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
             Path(__file__).resolve().parents[1] / "configs/pi05_lora_v1.json"
         ),
     )
-    assert contract["parameter_count"] == 10_230_536
+    assert contract["parameter_count"] == 10_775_296
     assert contract["source_policy_trainable_parameter_count"] == 0
     expected = {
         "text_meta_lora": (model.semantic_encoder.text_meta_lora, 921_600),
@@ -200,7 +200,10 @@ def test_v5_3_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
             model.semantic_encoder.patch_grounding,
             197_120,
         ),
-        "frame_attention": (model.semantic_core.frame_attention, 262_664),
+        "semantic_set_fusion": (
+            model.semantic_core.semantic_set_fusion,
+            262_656,
+        ),
         "semantic_core_blocks": (model.semantic_core.blocks, 1_573_888),
         "interaction_projection": (
             model.semantic_encoder.interaction_projection,
@@ -209,7 +212,7 @@ def test_v5_3_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
         "visual_transition": (model.visual_transition, 197_120),
         "procedure": (model.procedure, 1_573_888),
         "compiler": (model.compiler, 1_535_232),
-        "factor_heads": (model.factor_heads, 1_634_304),
+        "factor_heads": (model.factor_heads, 2_179_072),
     }
     assert {
         name: sum(parameter.numel() for parameter in module.parameters())
@@ -220,7 +223,7 @@ def test_v5_3_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
     assert not model.semantic_encoder.fixed_suffix_noise.requires_grad
 
 
-def test_v5_3_writer_starts_at_exact_identity_template() -> None:
+def test_v6_writer_starts_at_exact_identity_template() -> None:
     model, template = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     output = model(*_inputs(), policy=torch.nn.Identity())
@@ -231,7 +234,7 @@ def test_v5_3_writer_starts_at_exact_identity_template() -> None:
         assert torch.equal(value[1], template[name])
 
 
-def test_v5_3_writer_becomes_video_conditioned_after_heads_open() -> None:
+def test_v6_writer_becomes_video_conditioned_after_heads_open() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     for head in model.factor_heads.values():
@@ -241,7 +244,7 @@ def test_v5_3_writer_becomes_video_conditioned_after_heads_open() -> None:
     assert not hasattr(model, "shared_lora")
 
 
-def test_v5_3_gradient_staging_opens_only_intended_paths() -> None:
+def test_v6_gradient_staging_opens_only_intended_paths() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
 
@@ -321,7 +324,6 @@ def test_language_core_is_frame_permutation_invariant() -> None:
         width=32,
         heads=4,
         blocks=2,
-        frame_attention_initial_lambda=0.05,
     )
     text = torch.randn(2, 7, 32)
     evidence = torch.randn(2, 5, 7, 32)
@@ -336,6 +338,29 @@ def test_language_core_is_frame_permutation_invariant() -> None:
         valid_tokens,
     )
     assert torch.allclose(baseline, shuffled, atol=1e-5, rtol=1e-5)
+
+
+def test_semantic_set_fusion_has_mean_backbone_and_raw_centered_values() -> None:
+    torch.manual_seed(18)
+    fusion = TaskSelectedSemanticSetFusion(width=32, heads=4)
+    text = torch.randn(1, 3, 32)
+    evidence = torch.randn(1, 4, 3, 32)
+    valid_frames = torch.tensor([[True, True, True, False]])
+    valid_tokens = torch.tensor([[True, True, False]])
+    output, weights = fusion(
+        text,
+        evidence,
+        valid_frames,
+        valid_tokens,
+    )
+    assert output.shape == (1, 3, 32)
+    assert weights.shape == (1, 4, 4, 3)
+    assert not bool(output[:, 2].count_nonzero())
+    assert not bool(weights[:, :, :, 2].count_nonzero())
+    assert not hasattr(fusion, "value")
+    assert not hasattr(fusion, "gate_logits")
+    full_width = TaskSelectedSemanticSetFusion(width=256, heads=8)
+    assert sum(parameter.numel() for parameter in full_width.parameters()) == 262_656
 
 
 def test_visual_transition_recomputes_after_order_change_without_static_value_path() -> None:

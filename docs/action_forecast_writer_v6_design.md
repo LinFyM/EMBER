@@ -3,8 +3,9 @@
 ## 1. 决策与版本定位
 
 owner 于 2026-07-28 确认采用本设计，并把原计划中的 v5.3 提升为 v6。
-这是下一条 fresh Writer 架构 authority；当前文档只封存架构，不代表代码、
-config、checkpoint schema、profile 或正式训练已经完成。
+这是当前 fresh Writer 架构和训练 authority。2026-07-28 owner 又明确要求
+v6 从 step0 直接采用 task-complete 多任务更新；因此本文早期曾记录的
+“首版沿用 v5.2 one-task-per-rank update”已经失效，不再作为对照约束。
 
 v6 不是在 v5.2 上孤立增加一个视觉 transition 的小修订，而是同时完成三项
 相互配合的预算与职责重整：
@@ -20,18 +21,19 @@ v6 不是在 v5.2 上孤立增加一个视觉 transition 的小修订，而是�
 provenance；后续实现应保持一条 canonical Writer 路径，不保留可同时执行的
 v5.3/v6 双路径。
 
-首个 v6 架构实验仍沿用 v5.2 已封存的训练范式，以隔离架构变量：
+v6 的一个 macro optimizer update 固定为：
 
 ```text
 4 symmetric DDP ranks
-× one task / one teacher video / one generated LoRA per rank update
-× B_a independent same-task action queries
-→ one positive functional action loss
+× 6 distinct tasks per rank, sequential and long-video-first
+× one teacher video / one generated LoRA / B_a action queries per task
+→ mean within each task
+→ equal mean over all 24 tasks
+→ one DDP synchronization
 → one AdamW update
 ```
 
-task-complete multi-task update、其他联合优化 recipe 和 RL 均是后续独立实验，
-不混入 v6 首次比较。
+该更新同时是新的训练架构，不再额外保留 one-task-per-rank v6 路径。
 
 ## 2. 研究目标与信息墙
 
@@ -422,20 +424,110 @@ shuffled/reversed supervision。v6 仍只训练 normal-order positive AS。
 
 ## 12. 实现、profile与fresh训练合同
 
-未来实现时：
+### 12.1 唯一canonical实现
 
 - v6 使用新的、fail-closed 的 config/launch/checkpoint/evaluation schema；
 - v5.2/v5.3 Writer checkpoint 不兼容，不得 resume；
 - v5.3 prototype 只作实现起点，最终只保留 v6 canonical path；
 - 首先完成 shape、mask、identity、freeze、gradient、真实 transition 非零；
-- 以 stride-5 后105帧的真实最长视频测 `B_a` 上界；
 - 完成一次 step1→3 exact-resume；
-- 在 GPU4–7 用真实 profile 选择显存与吞吐上限；
-- 首个正式训练段按实测吞吐运行约一小时，不预设必须达到某个 step；
-- 第二段和第三段必须分别依据首段/续段的真实 absolute 与机制证据决定。
+- checkpoint 只允许在完整 macro update 边界保存和恢复，不保存半个 macro。
 
-首个比较继续使用 v5.2 当前训练范式；这样 v6 与充分训练的 v5.2 差异主要可
-归因于架构。多task联合优化、task-complete recipe 与 RL Writer 另作后续对照。
+### 12.2 Task-complete macro update
+
+development 的 24 个 train tasks 在每个 macro update 中全量、等权覆盖一次：
+
+```text
+for micro_round in 0..5:
+    每个rank接收一个不同task
+    每个rank读取该task的一条teacher video
+    Writer生成该task的一套rank-16 LoRA
+    frozen source policy在该LoRA下处理B_a条同task action queries
+    task_loss = mean(B_a functional losses)
+    backward(task_loss / 6)
+
+前5轮：完整Writer forward/backward处于DDP no_sync()
+第6轮：执行本macro唯一一次DDP gradient synchronization
+随后：clip_grad_norm → AdamW.step → scheduler.step
+```
+
+固定合同：
+
+- 一个 macro 只调用一次 `zero_grad()`、一次 gradient clip、一次
+  `AdamW.step()` 和一次 scheduler step；
+- 每个 task 的 action loss 先独立求均值，再以 `1/24` 全局等权；长视频不能
+  因运行较慢而改变统计权重；
+- 每个 macro 的 task/video assignment 是 seed 与 macro cursor 的确定函数；
+- 按本次实际选中 teacher video 的 stride-5 frame count做四组 cost balance，
+  每组内部最长视频优先，四组随 macro cursor轮换到物理rank；
+- video与action episode/chunk仍独立采样；action query保持既有
+  task-balanced、episode-balanced no-replacement语义；
+- exact resume只恢复完整 macro cursor、sampler/video schedule、四rank RNG、
+  optimizer和scheduler。
+
+`B_a=20`时，一个 macro 的精确计数为：
+
+```text
+24 task/video conditions
+24 generated LoRAs
+480 independent action queries
+24 frozen-policy functional forwards
+1 DDP synchronization
+1 AdamW update
+```
+
+新 macro step不能与旧 optimizer step直接比较。日志和汇报必须同时记录 macro
+updates、task/video conditions、action queries、functional forwards、
+wall-clock、GPU-hours和显存。
+
+### 12.3 B20/B16 profile与分段训练
+
+只保留两个硬件友好的 profile 候选：
+
+```text
+首选 B20
+→ 若真实最长105帧视频OOM，或连续完整macro出现非有限/不稳定
+→ 直接回退 B16
+```
+
+不测试 B19/B18/B4 等中间档，也不通过 dummy tensor填显存。profile必须使用
+GPU4–7、完整6轮 macro、真实最长视频、正常 backward/clip/step，并报告
+allocated/reserved、queries/s、task-video conditions/s和macro updates/hour。
+
+旧 v5.2 的900 updates等于3600 task/video conditions；v6中约为150 macro。
+因此首个正式段以真实 profile 推导约一小时停止点，初始预计约150 macro；
+warmup/checkpoint/decay按 conditions/query exposure换算，peak LR不乘6。
+
+首段结束后做 absolute checkpoint selection、内部 Core→Procedure→effective
+LoRA→policy action传递和正式五臂。owner的最终续训规则是：
+
+```text
+除非首段已经观察到明确、可信的absolute性能下降，
+否则默认exact-resume第二个约一小时segment。
+```
+
+平台、小幅波动或仍上升都进入第二段；第二段之后是否再开第三段，必须依据当时
+真实曲线和机制证据，不能机械外推固定总step。
+
+### 12.4 Corrected mixed-task Source-SFT
+
+v6确认后必须从同一 frozen source base fresh重训 capacity-matched rank-128
+Source-SFT；旧 rank-pure SFT只作provenance。新SFT只有一套 shared LoRA，
+因此直接使用 mixed-task physical batch：
+
+```text
+task ~ Uniform(24 tasks)
+episode ~ Uniform(50 episodes within task)
+chunk/frame ~ Uniform(valid chunks within episode)
+→ 每个rank的physical batch混合多个tasks
+→ task-balanced loss
+→ one shared rank-128 LoRA update
+```
+
+不得把每rank固定为一个task，不得让长episode或chunk数更多的task获得更高
+隐式权重。SFT从fresh identity LoRA训练，根据相同validation合同寻找
+observed-best，并完整报告steps、action samples、optimizer updates、
+wall-clock、GPU-hours和搜索上限。它在v6完成后默认执行，不再作为可选项。
 
 ## 13. 内部证据与成功判据
 

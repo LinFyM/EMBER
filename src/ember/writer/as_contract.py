@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+import h5py
 import torch
 import torch.distributed as dist
 
@@ -25,13 +26,18 @@ from ember.pi05_source_checkpoint import (
     write_json_atomic,
 )
 from ember.pi05_source_contract import append_jsonl
+from ember.writer.architecture import (
+    V6_WRITER_PARAMETER_COUNT,
+    expected_writer_contract,
+)
 from ember.writer.data import FunctionalQueryDataset, WriterTaskAuthority
 from ember.writer.model import CompleteLoRAWriter, WriterModelError
+from ember.writer.topology import validate_task_complete_topology
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_language_axial_as_writer_v5_3"
-AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_language_axial_as_writer_launch_v5_3"
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_language_axial_as_writer_v6"
+AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_language_axial_as_writer_launch_v6"
 AS_WRITER_STAGES = ("development", "final")
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
@@ -72,132 +78,6 @@ def _validate_authorities(config: Mapping[str, Any]) -> None:
             raise WriterModelError(f"sealed AS-Writer authority changed: {name}")
 
 
-def _expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
-    return {
-        "architecture": (
-            "pi05_language_axial_patch_grounded_core_visual_transition_"
-            "causal_procedure_slot_fusion_v5_3"
-        ),
-        "generated_adapter": "complete_pi05_task_specific_rank16_lora",
-        "camera_dataset": "obs/agentview_rgb",
-        "camera_transform": "libero_opengl_rotate_180_chw_uint8",
-        "frame_stride": writer["frame_stride"],
-        "include_final_frame": True,
-        "teacher_prompt": "Task: {cleaned_task};\nAction: ",
-        "teacher_state_input": False,
-        "task_span_extraction": (
-            "authoritative_full_prompt_sentencepiece_piece_offsets"
-        ),
-        "text_branch_input": (
-            "bos_plus_exact_authoritative_task_span_ids_without_template"
-        ),
-        "task_token_alignment": "text_and_multimodal_ids_identical_by_construction",
-        "image_width": 2048,
-        "native_image_tokens": 256,
-        "multimodal_core_value": (
-            "final_norm_task_span_hidden_plus_task_queried_image_position_content"
-        ),
-        "shared_language_projection": "bias_free_2048_to_256",
-        "patch_grounding_attention": (
-            "per_frame_text_only_task_queries_to_256_image_positions"
-        ),
-        "patch_grounding_qk": (
-            "separate_pre_rmsnorm_bias_free_256_to_256"
-        ),
-        "patch_grounding_value": (
-            "raw_shared_projected_image_position_content_no_value_projection"
-        ),
-        "patch_grounding_output": (
-            "bias_free_256_to_256_added_to_multimodal_task_token_evidence"
-        ),
-        "patch_grounding_heads": 8,
-        "expert_width": 1024,
-        "text_meta_lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
-        "text_meta_lora_rank": 4,
-        "vl_meta_lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
-        "vl_meta_lora_rank": 4,
-        "action_meta_lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
-        "action_meta_lora_rank": 4,
-        "max_frames_per_encoder_call": writer["max_frames_per_encoder_call"],
-        "frame_batching_contract": (
-            "encode_one_video_with_unpadded_memory_safety_chunks"
-        ),
-        "activation_checkpointing": True,
-        "action_horizon": 50,
-        "padded_action_dim": 32,
-        "action_expert_probe": (
-            "one_forward_fixed_persistent_gaussian_suffix_at_t1"
-        ),
-        "action_expert_action_out": False,
-        "interaction_reduction": (
-            "mean_50_final_suffix_hidden_then_shared_bias_free_1024_to_256"
-        ),
-        "program_width": 256,
-        "frame_set_attention": (
-            "token_aligned_frame_axis_only_video_independent_text_queries"
-        ),
-        "frame_attention_initial_lambda": 0.05,
-        "frame_attention_order_contract": (
-            "permutation_invariant_mean_anchored_no_frame_position"
-        ),
-        "semantic_core_heads": 8,
-        "semantic_core_blocks": 2,
-        "semantic_core_position_encoding": (
-            "task_token_ordinal_rope_qk_only_bidirectional"
-        ),
-        "semantic_core_value_path": (
-            "multimodal_task_token_plus_task_queried_patch_content"
-        ),
-        "procedure_heads": 8,
-        "procedure_blocks": 2,
-        "procedure_attention": "global_causal_pre_norm_with_valid_mask",
-        "procedure_position_encoding": (
-            "one_dimensional_rope_on_sampled_frame_ordinal_qk_only"
-        ),
-        "procedure_value_path": (
-            "action_expert_probe_plus_task_grounded_adjacent_visual_transition"
-        ),
-        "visual_transition_source": (
-            "adjacent_difference_of_task_queried_patch_evidence_in_actual_"
-            "arm_input_order"
-        ),
-        "visual_transition_first_frame": "exact_zero",
-        "visual_transition_padding": (
-            "invalid_task_tokens_and_frames_exact_zero"
-        ),
-        "visual_transition_attention": (
-            "action_expert_probe_queries_task_token_aligned_visual_transition"
-        ),
-        "visual_transition_qk": (
-            "separate_pre_rmsnorm_bias_free_256_to_256"
-        ),
-        "visual_transition_value": (
-            "raw_adjacent_patch_evidence_difference_no_value_projection"
-        ),
-        "visual_transition_output": (
-            "bias_free_256_to_256_residual_added_to_action_expert_probe"
-        ),
-        "visual_transition_heads": 8,
-        "procedure_initialization": "normal_nonzero",
-        "query_count": 320,
-        "routing_identity": "query_module_layer_rank_qk_only",
-        "core_slot_reader": "routing_qk_core_content_v",
-        "procedure_slot_reader": (
-            "routing_plus_normalized_core_q_centered_procedure_v"
-        ),
-        "slot_fusion": (
-            "zero_initialized_bias_free_adaln_then_one_post_fusion_block"
-        ),
-        "fusion_heads": 8,
-        "procedure_value_centering": "parameter_free_valid_time_mean",
-        "modulation_projection": "bias_free_256_to_512_zero_initialized",
-        "post_fusion_blocks": 1,
-        "factor_head_bias": False,
-        "factor_hidden_width": 192,
-        "initialization_seed": 7,
-    }
-
-
 def _validate_protocol(config: Mapping[str, Any]) -> None:
     target = read_json(authority_path(config, "target_data_manifest"))
     roles = target.get("summary", {}).get("roles", {})
@@ -218,7 +98,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         or int(writer.get("max_frames_per_encoder_call", 0)) <= 0
     ):
         raise WriterModelError("sealed Language-Axial Writer dimensions changed")
-    expected = _expected_writer_contract(writer)
+    expected = expected_writer_contract(writer)
     if writer != expected:
         missing = sorted(set(expected) - set(writer))
         extra = sorted(set(writer) - set(expected))
@@ -276,16 +156,16 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         "demo_indices": [0, 49],
         "episodes_per_task": 50,
         "teacher_video_sampling": (
-            "per_rank_task_visit_deterministic_single_same_task_video_in_"
+            "per_task_macro_visit_deterministic_single_same_task_video_in_"
             "no_replacement_cycles"
         ),
         "action_query_sampling": "task-balanced deterministic no-replacement episode cycles",
         "video_action_pairing": (
-            "one task-video LoRA conditions the complete rank-local action batch"
+            "one task-video LoRA conditions the complete task-local action batch"
         ),
         "writer_generation_reuse": (
             "generate one task-video LoRA once then reuse it across the complete "
-            "rank-local action batch"
+            "task-local action batch"
         ),
     }
     if any(data.get(name) != value for name, value in required.items()):
@@ -295,24 +175,36 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
 def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
     value = config.get("conditioning_training", {})
     normal = {
-        "method": "single_video_multi_action_positive_functional_loss",
+        "method": (
+            "task_complete_single_video_multi_action_positive_functional_loss"
+        ),
         "writer_language_contract": (
             "correct_task_language_state_free_teacher_action_suffix"
         ),
         "policy_language_contract": "correct_action_query_task_language",
         "action_query_batch_owner": (
-            "one physical action batch per rank with no optimizer gradient accumulation"
+            "six sequential task-pure physical action batches per rank per "
+            "macro optimizer update"
         ),
         "task_assignment": (
-            "one task per rank per optimizer step with globally balanced task rotation"
+            "every macro optimizer update covers all 24 tasks exactly once "
+            "globally with six cost-balanced long-first tasks per rank"
         ),
+        "tasks_per_rank_per_optimizer_update": 6,
+        "global_tasks_per_optimizer_update": 24,
         "teacher_videos_per_task_visit": 1,
         "action_video_assignment": "all_actions_share_single_video_lora",
-        "logical_pair_batch": "per_rank_action_batch",
+        "logical_pair_batch": "per_task_action_batch",
         "policy_noise_contract": (
             "one independent policy flow noise and time draw per action query"
         ),
-        "pair_loss_reduction": "mean_over_rank_local_action_batch",
+        "pair_loss_reduction": "mean_within_task_then_equal_mean_over_24_tasks",
+        "task_loss_scale_before_backward": "one_sixth",
+        "ddp_gradient_sync": (
+            "first_five_microtasks_no_sync_sixth_single_sync"
+        ),
+        "optimizer_steps_per_macro_update": 1,
+        "checkpoint_boundary": "complete_macro_optimizer_update_only",
         "normal_loss_weight": 1.0,
     }
     if value != normal:
@@ -365,6 +257,78 @@ def resume_step(checkpoint: Path | None) -> int:
     return int(match.group(1))
 
 
+def _runtime_values(
+    args: argparse.Namespace,
+    source: Mapping[str, Any],
+) -> tuple[int, int, tuple[int, ...], int, int]:
+    total_steps = args.total_steps or int(source["total_steps"])
+    batch_size = args.batch_size or int(source["per_rank_batch_size"])
+    checkpoint_steps = parse_checkpoint_steps(
+        args.checkpoint_steps or source["checkpoint_steps"],
+        total_steps,
+    )
+    default_stop = int(source.get("selected_stop_step", total_steps))
+    stop_step = args.stop_after_step or default_stop
+    if min(total_steps, batch_size, stop_step) <= 0 or stop_step > total_steps:
+        raise WriterModelError("invalid AS-Writer runtime request")
+    return total_steps, batch_size, checkpoint_steps, default_stop, stop_step
+
+
+def _validate_formal_runtime(
+    args: argparse.Namespace,
+    config: Mapping[str, Any],
+    context: DistributedContext,
+    *,
+    total_steps: int,
+    batch_size: int,
+    checkpoint_steps: tuple[int, ...],
+    default_stop: int,
+    stop_step: int,
+) -> None:
+    formal = config["formal_run"]
+    expected = (
+        "sealed",
+        int(formal["expected_world_size"]),
+        int(formal["total_steps"]),
+        int(formal["per_rank_batch_size"]),
+        parse_checkpoint_steps(formal["checkpoint_steps"], total_steps),
+    )
+    observed = (
+        formal.get("status"),
+        context.world_size,
+        total_steps,
+        batch_size,
+        checkpoint_steps,
+    )
+    stage_stops = parse_checkpoint_steps(
+        formal.get("stage_stop_steps", [default_stop]),
+        total_steps,
+    )
+    invalid_schedule = (
+        observed != expected
+        or any(value not in checkpoint_steps for value in stage_stops)
+        or default_stop not in stage_stops
+        or stop_step not in stage_stops
+    )
+    if invalid_schedule:
+        raise WriterModelError(
+            "formal AS-Writer launch differs from its sealed profile"
+        )
+    state = git_state(REPO_ROOT)
+    if state["dirty_paths"]:
+        raise WriterModelError("formal AS-Writer launch requires a clean worktree")
+    if args.resume is None and state["commit"] != state["origin_main"]:
+        raise WriterModelError("fresh formal AS-Writer launch must be pushed")
+    if context.numa_node is None or not context.cpu_affinity:
+        raise WriterModelError(
+            "formal AS-Writer launch requires GPU-local NUMA binding"
+        )
+    if args.skip_data_sha:
+        raise WriterModelError(
+            "formal AS-Writer launch must verify every train HDF5"
+        )
+
+
 def resolve_runtime(
     args: argparse.Namespace,
     config: Mapping[str, Any],
@@ -372,63 +336,38 @@ def resolve_runtime(
 ) -> tuple[int, int, tuple[int, ...]]:
     if args.mode == "formal" and config["formal_run"].get("status") != "sealed":
         raise WriterModelError(
-            "formal AS-Writer config is not sealed from the live v5.3 profile"
+            "formal AS-Writer config is not sealed from the live v6 profile"
         )
     source = config["formal_run"] if args.mode == "formal" else config["profile_defaults"]
-    total_steps = args.total_steps or int(source["total_steps"])
-    batch_size = args.batch_size or int(source["per_rank_batch_size"])
-    checkpoint_steps = parse_checkpoint_steps(
-        args.checkpoint_steps or source["checkpoint_steps"], total_steps
+    (
+        total_steps,
+        batch_size,
+        checkpoint_steps,
+        default_stop,
+        stop_step,
+    ) = _runtime_values(
+        args,
+        source,
     )
-    default_stop = int(source.get("selected_stop_step", total_steps))
-    stop_step = args.stop_after_step or default_stop
-    if min(total_steps, batch_size, stop_step) <= 0 or stop_step > total_steps:
-        raise WriterModelError("invalid AS-Writer runtime request")
-    if int(config["conditioning_training"]["teacher_videos_per_task_visit"]) != 1:
-        raise WriterModelError("AS-Writer training must use one video per rank step")
     expected_world_size = int(source.get("expected_world_size", 8))
-    if context.world_size != expected_world_size:
-        raise WriterModelError(
-            "AS-Writer training requires exactly "
-            f"{expected_world_size} symmetric ranks"
-        )
+    validate_task_complete_topology(
+        config,
+        context,
+        expected_world_size=expected_world_size,
+        batch_size=batch_size,
+        mode=args.mode,
+    )
     if args.mode == "formal":
-        formal = config["formal_run"]
-        expected = (
-            "sealed",
-            int(formal["expected_world_size"]),
-            int(formal["total_steps"]),
-            int(formal["per_rank_batch_size"]),
-            parse_checkpoint_steps(formal["checkpoint_steps"], total_steps),
+        _validate_formal_runtime(
+            args,
+            config,
+            context,
+            total_steps=total_steps,
+            batch_size=batch_size,
+            checkpoint_steps=checkpoint_steps,
+            default_stop=default_stop,
+            stop_step=stop_step,
         )
-        observed = (
-            formal.get("status"),
-            context.world_size,
-            total_steps,
-            batch_size,
-            checkpoint_steps,
-        )
-        stage_stops = parse_checkpoint_steps(
-            formal.get("stage_stop_steps", [default_stop]),
-            total_steps,
-        )
-        if (
-            observed != expected
-            or not stage_stops
-            or any(value not in checkpoint_steps for value in stage_stops)
-            or default_stop not in stage_stops
-            or stop_step not in stage_stops
-        ):
-            raise WriterModelError("formal AS-Writer launch differs from its sealed profile")
-        state = git_state(REPO_ROOT)
-        if state["dirty_paths"]:
-            raise WriterModelError("formal AS-Writer launch requires a clean worktree")
-        if args.resume is None and state["commit"] != state["origin_main"]:
-            raise WriterModelError("fresh formal AS-Writer launch must be pushed")
-        if context.numa_node is None or not context.cpu_affinity:
-            raise WriterModelError("formal AS-Writer launch requires GPU-local NUMA binding")
-        if args.skip_data_sha:
-            raise WriterModelError("formal AS-Writer launch must verify every train HDF5")
     args.stop_after_step = stop_step
     return total_steps, batch_size, checkpoint_steps
 
@@ -545,6 +484,9 @@ def inspect_video_data(
     if not selected_ids or set(selected_ids) - set(by_id):
         raise WriterModelError("Writer video task IDs are outside target40")
     records = []
+    first_demo, last_demo = map(int, config["data"]["demo_indices"])
+    frame_stride = int(config["writer"]["frame_stride"])
+    sampled_frame_counts: dict[str, dict[str, int]] = {}
     for task_id in selected_ids:
         row = by_id[task_id]
         path = (root / str(row["hdf5"]["relative_path"])).resolve()
@@ -560,6 +502,27 @@ def inspect_video_data(
         records.append(
             [task_id, str(row["hdf5"]["relative_path"]), expected_bytes, expected_sha256]
         )
+        demo_counts: dict[str, int] = {}
+        with h5py.File(path, "r") as handle:
+            for demo_index in range(first_demo, last_demo + 1):
+                pixels = handle.get(
+                    f"data/demo_{demo_index}/obs/agentview_rgb"
+                )
+                if (
+                    not isinstance(pixels, h5py.Dataset)
+                    or pixels.ndim != 4
+                    or pixels.shape[0] <= 0
+                    or pixels.shape[-1] != 3
+                ):
+                    raise WriterModelError(
+                        "Writer video-cost metadata changed"
+                    )
+                raw_frames = int(pixels.shape[0])
+                sampled = (raw_frames + frame_stride - 1) // frame_stride
+                if (raw_frames - 1) % frame_stride:
+                    sampled += 1
+                demo_counts[str(demo_index)] = sampled
+        sampled_frame_counts[str(task_id)] = demo_counts
     return {
         "root": str(root.resolve()),
         "schema_version": "ember_pi05_raw_teacher_video_data_v1",
@@ -570,6 +533,13 @@ def inspect_video_data(
         "task_count": len(selected_ids),
         "episode_count": 50 * len(selected_ids),
         "hdf5_identity_sha256": canonical_hash(records),
+        "sampled_frame_counts_by_task": sampled_frame_counts,
+        "sampled_frame_cost_sha256": canonical_hash(sampled_frame_counts),
+        "max_sampled_frames": max(
+            value
+            for task in sampled_frame_counts.values()
+            for value in task.values()
+        ),
         "full_sha256_verified": verify_hashes,
         "test_video_values_read": 0,
     }
@@ -591,7 +561,7 @@ def writer_trainable_contract(
     parameter_count = sum(value.numel() for value in writer.parameters())
     if (
         not names
-        or parameter_count != 10_230_536
+        or parameter_count != V6_WRITER_PARAMETER_COUNT
         or any(parameter.requires_grad for parameter in policy.parameters())
     ):
         raise WriterModelError("AS-Writer freeze boundary changed")
@@ -646,7 +616,11 @@ def build_contract(
     videos_per_task_visit = int(
         config["conditioning_training"]["teacher_videos_per_task_visit"]
     )
-    policy_forward_calls = 1
+    tasks_per_rank = int(
+        config["conditioning_training"]["tasks_per_rank_per_optimizer_update"]
+    )
+    global_tasks = context.world_size * tasks_per_rank
+    global_queries = global_tasks * batch_size
     local = {
         "rank": context.rank,
         "local_rank": context.local_rank,
@@ -686,20 +660,43 @@ def build_contract(
             "one_policy_cuda_process_per_rank": True,
             "extra_cuda_roles_on_any_rank": 0,
             "ddp_object": "shared_writer_only",
-            "action_query_batch_size_per_rank": batch_size,
+            "macro_step_axis": "complete_task_balanced_optimizer_update",
+            "tasks_per_rank_per_optimizer_update": tasks_per_rank,
+            "global_tasks_per_optimizer_update": global_tasks,
+            "task_assignment": (
+                "selected_video_frame_cost_balanced_groups_rotated_across_"
+                "physical_ranks_longest_task_first_within_each_rank"
+            ),
+            "task_video_cost_sha256": video_data[
+                "sampled_frame_cost_sha256"
+            ],
+            "action_query_batch_size_per_task": batch_size,
+            "action_query_batch_size_per_rank_per_macro": (
+                tasks_per_rank * batch_size
+            ),
             "per_rank_unique_action_query_cycle": list(batch_cycle),
             "teacher_videos_per_task_visit": videos_per_task_visit,
-            "writer_video_conditions_per_rank": videos_per_task_visit,
+            "writer_video_conditions_per_rank_per_macro": (
+                tasks_per_rank * videos_per_task_visit
+            ),
             "actions_per_video_condition": batch_size,
             "action_video_assignment": "all_actions_share_single_video_lora",
-            "logical_pairs_per_rank": batch_size,
-            "optimizer_gradient_accumulation": False,
-            "global_policy_samples_per_step": (
-                context.world_size
-                * batch_size
+            "logical_pairs_per_rank_per_macro": tasks_per_rank * batch_size,
+            "optimizer_gradient_accumulation": True,
+            "loss_reduction": (
+                "mean_within_each_task_then_equal_mean_across_all_tasks"
             ),
-            "policy_forward_calls_per_optimizer_step": policy_forward_calls,
-            "writer_conditions_per_rank": videos_per_task_visit,
+            "ddp_no_sync_microtasks_per_macro": tasks_per_rank - 1,
+            "ddp_gradient_synchronizations_per_macro": (
+                1 if context.world_size > 1 else 0
+            ),
+            "adamw_updates_per_macro": 1,
+            "global_policy_samples_per_macro": global_queries,
+            "local_policy_functional_forwards_per_macro": tasks_per_rank,
+            "global_policy_functional_forwards_per_macro": global_tasks,
+            "writer_conditions_per_rank_per_macro": (
+                tasks_per_rank * videos_per_task_visit
+            ),
             "total_steps": total_steps,
             "selected_stop_step": contract_stop_step,
             "checkpoint_steps": list(checkpoint_steps),

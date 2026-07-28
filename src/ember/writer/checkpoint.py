@@ -29,11 +29,11 @@ from ember.writer.data import (
 from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 
-AS_WRITER_CHECKPOINT_SCHEMA = "ember_pi05_language_axial_writer_checkpoint_v5_3"
+AS_WRITER_CHECKPOINT_SCHEMA = "ember_pi05_language_axial_writer_checkpoint_v6"
 AS_WRITER_TRAINER_STATE_SCHEMA = (
-    "ember_pi05_language_axial_writer_trainer_state_v5_3"
+    "ember_pi05_language_axial_writer_trainer_state_v6"
 )
-AS_WRITER_RANK_STATE_SCHEMA = "ember_pi05_language_axial_writer_rank_state_v5_3"
+AS_WRITER_RANK_STATE_SCHEMA = "ember_pi05_language_axial_writer_rank_state_v6"
 
 
 def _rng_state(context: DistributedContext) -> dict[str, Any]:
@@ -83,12 +83,13 @@ def _write_rank_state(
     video_schedule: TeacherVideoSchedule,
     saved_rng: Mapping[str, Any],
     videos_per_task_visit: int,
+    tasks_per_rank_per_update: int,
 ) -> None:
     torch.save(
         {
             "schema_version": AS_WRITER_RANK_STATE_SCHEMA,
             "next_step": step,
-            "next_data_step": step,
+            "next_data_step": step * tasks_per_rank_per_update,
             "rank": context.rank,
             "world_size": context.world_size,
             "per_rank_batch_size": sampler.per_rank_batch_size,
@@ -96,6 +97,7 @@ def _write_rank_state(
             "sampler_seed": sampler.seed,
             "teacher_video_seed": video_schedule.seed,
             "teacher_videos_per_task_visit": videos_per_task_visit,
+            "tasks_per_rank_per_optimizer_update": tasks_per_rank_per_update,
             "rng": saved_rng,
         },
         path,
@@ -119,6 +121,9 @@ def _write_shared_state(
 ) -> dict[str, Any]:
     videos_per_task_visit = int(
         contract["runtime"]["teacher_videos_per_task_visit"]
+    )
+    tasks_per_rank_per_update = int(
+        contract["runtime"]["tasks_per_rank_per_optimizer_update"]
     )
     data_stop_step = step
     save_file(
@@ -158,7 +163,7 @@ def _write_shared_state(
         "min_action_episodes_per_task": min(map(len, coverage.values())),
         "max_action_episodes_per_task": max(map(len, coverage.values())),
         "next_step": step,
-        "next_data_step": data_stop_step,
+        "next_data_step": step * tasks_per_rank_per_update,
         "teacher_videos_per_task_visit": videos_per_task_visit,
     }
     files = {
@@ -216,6 +221,9 @@ def save_writer_checkpoint(
     videos_per_task_visit = int(
         contract["runtime"]["teacher_videos_per_task_visit"]
     )
+    tasks_per_rank_per_update = int(
+        contract["runtime"]["tasks_per_rank_per_optimizer_update"]
+    )
     error = None
     try:
         _write_rank_state(
@@ -226,6 +234,7 @@ def save_writer_checkpoint(
             video_schedule=video_schedule,
             saved_rng=saved_rng,
             videos_per_task_visit=videos_per_task_visit,
+            tasks_per_rank_per_update=tasks_per_rank_per_update,
         )
     except Exception as caught:
         error = caught
@@ -346,7 +355,7 @@ def initialize_writer_phase(
             writer_record = manifest.get("files", {}).get("writer.safetensors", {})
             if (
                 training.get("schema_version")
-                != "ember_pi05_language_axial_as_writer_launch_v5_3"
+                != "ember_pi05_language_axial_as_writer_launch_v6"
                 or training.get("stage", "development") != stage
                 or training.get("source") != dict(source)
                 or training.get("authorities") != dict(authorities)
@@ -395,6 +404,7 @@ def load_writer_checkpoint(
     per_rank_batch_size: int,
     per_rank_batch_cycle: tuple[int, ...],
     videos_per_task_visit: int,
+    tasks_per_rank_per_update: int,
     contract_sha256: str,
 ) -> tuple[int, dict[str, Any], int]:
     validation: list[Any] = [None]
@@ -441,7 +451,8 @@ def load_writer_checkpoint(
         per_rank_batch_size,
         per_rank_batch_cycle,
         videos_per_task_visit,
-        int(trainer["next_step"]),
+        tasks_per_rank_per_update,
+        int(trainer["next_step"]) * tasks_per_rank_per_update,
         sampler_seed,
         teacher_video_seed,
     )
@@ -452,6 +463,7 @@ def load_writer_checkpoint(
         int(rank_state["per_rank_batch_size"]),
         tuple(int(value) for value in rank_state.get("per_rank_batch_cycle", ())),
         int(rank_state.get("teacher_videos_per_task_visit", -1)),
+        int(rank_state.get("tasks_per_rank_per_optimizer_update", -1)),
         int(rank_state.get("next_data_step", -1)),
         int(rank_state["sampler_seed"]),
         int(rank_state["teacher_video_seed"]),
@@ -461,7 +473,7 @@ def load_writer_checkpoint(
         or actual != expected
         or checkpoint.name != f"step_{expected[0]:08d}"
         or int(validation[0].get("consumed", {}).get("next_data_step", -1))
-        != expected[0]
+        != expected[7]
     ):
         raise WriterModelError("Writer rank resume state changed")
     return (

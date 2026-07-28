@@ -1550,3 +1550,20 @@ GPU范围和训练步长是当时快照；活动状态只取
 - 四点各自400-entry LoRA cache均已完成；同一进程保留source policy切换
   rollout，避免第二次约150秒模型加载。首批每点6个claimed shards全部来自
   两个horizon-520 `libero_10` tasks，global long-first现场核验通过。
+
+## v6 correct曲线完成与macro200特异性启动（2026-07-28）
+
+- macro50/100/150/200 的 no-replacement correct400 全部自然完成：
+  `114/77/120/129`；对应成功 task 数为 `6/7/7/5`。所有 launcher workers
+  exit 0、queue 36/36 complete、400 rows、零错误。
+- paired artifact
+  `/data/ymdai/outputs/ember/pi05_as_writer_v6_correct_curve_paired_aecb100_20260728.json`
+  核验四点 state/env seed/policy seed/noise/video assignment 完全一致，
+  每 task 50 teacher videos 无放回双射。macro200 是 aggregate best，但与
+  macro150 的 9-success 差异不显著，且 breadth 从 7 降到 5。
+- GPU4–7 清空后，tmux `ember-v6-specificity400` 已将 macro200 的
+  same-task-other/cross-suite-wrong/shuffled/reversed full400 映射到
+  GPU4/5/6/7；每臂仍使用 6 generators、batch16、6 persistent workers、
+  无放回视频与 global long-first。
+- 等待期额外清除约 3.8 MiB Python/pytest/editable-install 可再生缓存。
+  Git 仍 clean；9.1 GiB 唯一活动 `.venv` 和实验证据未动。

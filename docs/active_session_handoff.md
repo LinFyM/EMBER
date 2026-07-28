@@ -43,25 +43,52 @@ SHA256 并与 manifest 一致。
 loss 只作数值监控，不能替代即将运行的 closed-loop rollout。
 
 四点 correct400 已在评测 commit
-`aecb1005cd00812d2dd3f2a8a33b873956d7f598` 同时启动：
+`aecb1005cd00812d2dd3f2a8a33b873956d7f598` 全部自然完成：
 
 ```text
-tmux: ember-v6-correct400
-GPU4 / macro50:
-  pi05_as_writer_v6_correct400_noreplacement_seed7_macro0050_aecb100_20260728
-GPU5 / macro100:
-  pi05_as_writer_v6_correct400_noreplacement_seed7_macro0100_aecb100_20260728
-GPU6 / macro150:
-  pi05_as_writer_v6_correct400_noreplacement_seed7_macro0150_aecb100_20260728
-GPU7 / macro200:
-  pi05_as_writer_v6_correct400_noreplacement_seed7_macro0200_aecb100_20260728
+macro          50    100    150    200
+successes     114     77    120    129
+tasks > 0       6      7      7      5
+libero_10      10     15      9     22
+libero_goal    30     12     43     24
+libero_object  73     44     66     81
+libero_spatial  1      6      2      2
 ```
 
-每点 400 episodes、6 Writer generators、generation batch16、6 persistent
-policy workers。四点的 400-entry LoRA cache 已全部生成；同一批进程保留
-source policy 后进入 rollout，没有二次加载。首批每点 6 个 claimed shards
-均为两个 horizon-520 `libero_10` tasks；long-first 合同现场成立。接手时读
-各 root 的 `queue.sqlite3` 和 tmux，不得重复启动。
+四点均为 400 rows、36/36 completed shards、6/6 workers exit 0、零 queue
+error。paired 分析确认四点使用完全相同的 400 个 task/state keys、env seed、
+policy seed/noise prefix 和 teacher demo assignment；每 task 50 videos 构成
+无放回双射。分析 artifact：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v6_correct_curve_paired_aecb100_20260728.json
+SHA256: 64fa284511e21230417b9ef27a99a9c050b661670eb90e549974acd8b9672464
+```
+
+macro200 是 absolute observed-best，但只覆盖 5/8 tasks，且一个 object task
+贡献 50/50；macro150 为 120/400、覆盖 7/8 tasks。两者 paired McNemar
+`p=0.3356`，所以右端仍上涨但 breadth 不稳定，不能仅凭 aggregate 宣称 v6
+成立。
+
+macro200 的四个 full400 特异性臂已在 clean main commit
+`faf6e33932577826040e7a3c3610428409ba817f` 启动：
+
+```text
+tmux: ember-v6-specificity400
+GPU4: same_task_other
+GPU5: cross_suite_wrong
+GPU6: shuffled
+GPU7: reversed
+
+output prefix:
+pi05_as_writer_v6_specificity400_noreplacement_seed7_macro0200_
+```
+
+每臂仍为 400 episodes、6 Writer generators、generation batch16、6
+persistent policy workers、全 50 videos 无放回和 global long-first。启动前
+GPU4–7 均为 0 MiB，个人占用 `407,071,566,818` bytes；接手时先读 tmux、
+各 root 的 `queue.sqlite3` 和 launcher completion，不得重复启动。
 
 正式命令为：
 
@@ -95,7 +122,8 @@ push：
 branch: codex/v53-visual-transition-procedure
 cleanup commit: 24bdc5d
 training-evidence commit: aecb100
-main == origin/main at evaluation launch: aecb100
+correct-eval handoff commit: faf6e33
+main == origin/main at specificity launch: faf6e33
 ```
 
 清理只退役无现行引用的旧 SmolVLA/70-10-10/Phase A–F、flat task-local RL、
@@ -118,6 +146,11 @@ stage extension。合入后在 canonical main 重新运行全仓回归为 `177 p
 
 `.codex/tmp/v6_internal_specificity.py` 是待 observed-best 选择后使用的唯一临时
 机制诊断脚本；在完成 v6 内部检查前不要清除。
+
+correct400 等待期又清除了约 3.8 MiB 可再生的 `__pycache__`、pytest cache
+和 editable-install metadata；Git 仍 clean。唯一活动 `.venv` 约 9.1 GiB，
+仓库 tracked source/docs/tests/configs 合计仅约 3 MiB，不得为表面缩小仓库而
+删除运行环境。四个来源不明但大小为零的 untracked 空目录也未擅自删除。
 
 ## 3. 当前研究判断
 
@@ -187,15 +220,14 @@ visual-transition 参数 step1→3 L2 更新 `0.0111083`，真实 functional gra
 
 ## 5. 当前固定动作
 
-1. 等当前四点 correct400 自然完成；核对 400 rows、worker exit、queue、
-   no-replacement 50-video bijection、env/policy/video pairing 和错误日志。
-   若曲线峰值需要更密集定位，再利用每 25 保存的点补测，不预先全扫。
-2. 以 closed-loop absolute、paired 多 task 贡献和曲线选择 observed-best。
-   对 best 做 correct/same-task-other/wrong/shuffled/reversed full400，并运行
-   16-reference 内部 Core/Procedure/effective-LoRA/action 传递分析。
-3. 除非 macro0→200 的 closed-loop absolute 明确下降，否则 exact-resume 同一
-   recipe 到 macro400。平台、轻微波动或 online loss 上升都不是跳过第二段的
-   理由；第三段必须重新由真实曲线决定。
+1. 等当前 macro200 四个特异性臂自然完成；核对 400 rows、worker exit、
+   no-replacement 50-video bijection、env/policy/video pairing、global
+   long-first 和错误日志，再与 correct129 做逐 rollout paired 分析。
+2. 在 GPU4–7 空闲后运行 16-reference 内部
+   Core/Procedure/effective-LoRA/action 传递分析；内部差异不能替代行为门。
+3. macro200 是右端最高点，`114/77/120/129` 不是明确下降，因此按 owner
+   默认合同 exact-resume 同一 recipe 到 macro400。第二段中间 checkpoint
+   继续每 25 保留；第三段必须重新由真实 closed-loop 曲线决定。
 4. v6 通过 absolute 与视频特异性门后，fresh 训练 corrected mixed-task
    rank-128 Source-SFT；再做每 task 预封存一条 episode 的 matched π0.5
    action one-shot baseline，最后进入独立 short-AS cold-start →
@@ -209,7 +241,7 @@ visual-transition 参数 step1→3 L2 更新 `0.0111083`，真实 functional gra
 ```bash
 RUN=/data/ymdai/outputs/ember/pi05_as_writer_v6_taskcomplete_dev_r4_b20_seed7_s2400_149badc_20260728
 
-tmux list-windows -t ember-v6-correct400 \
+tmux list-windows -t ember-v6-specificity400 \
   -F '#{window_index} #{window_name} #{pane_dead} #{pane_dead_status}'
 jq -s '{rows:length,last:.[-1]}' "$RUN/metrics.jsonl"
 find "$RUN/checkpoints" -maxdepth 1 -type d -name 'step_*' -printf '%f\n' | sort

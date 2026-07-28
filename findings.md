@@ -2011,3 +2011,29 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   后段上升只作诊断；按预封存规则不能替代 closed-loop absolute，也不能单独
   阻止第二段。下一步固定评测 macro50/100/150/200 的 paired
   no-replacement correct400。
+
+## v6 macro0→200 closed-loop correct曲线（2026-07-28）
+
+- macro50/100/150/200 的 fixed no-replacement correct400 全部自然完成，
+  successes 为 `114/77/120/129`，成功 task 数为 `6/7/7/5`。四点均为
+  400 rows、36 completed shards、6 workers exit 0、零 queue error。
+- 四点 task/state、env seed、policy seed、终止前 noise prefix 和 teacher
+  video assignment 完全相同；每 task 的 50 teacher videos 都是一一无放回
+  使用。paired analysis SHA256 为
+  `64fa284511e21230417b9ef27a99a9c050b661670eb90e549974acd8b9672464`。
+- suite totals：
+
+  ```text
+  macro          50    100    150    200
+  libero_10      10     15      9     22
+  libero_goal    30     12     43     24
+  libero_object  73     44     66     81
+  libero_spatial  1      6      2      2
+  ```
+
+- macro200 是 aggregate observed-best，但只覆盖 5/8 tasks，并由
+  `libero_object:1=50/50` 强烈集中；macro150 为 120/400、覆盖 7/8 tasks。
+  macro150→200 的 paired switches 为 30 lost / 39 gained，McNemar
+  `p=0.3356`。所以第一段没有出现明确右端下降，满足默认续训条件；同时
+  absolute 与 breadth 尚不足以宣称 v6 成立，必须先完成 macro200 五臂和内部
+  传递检查。

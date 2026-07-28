@@ -57,12 +57,14 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   visual-transition gradient 可达。
 - [x] fresh macro0→200 正式段完成：200 条连续 finite metrics、8 个 every-25
   checkpoint、24-task 等权消费与终点全文件 SHA 均已核验。
-- [ ] 在 GPU4–7 对 macro50/100/150/200 做并行 fixed correct400；每卡一个
+- [x] 在 GPU4–7 对 macro50/100/150/200 做并行 fixed correct400；每卡一个
   checkpoint，6 Writer generators + 6 persistent workers，视频 50 条无放回，
-  全局 long-first。
-- [ ] 选择 observed-best；只有峰值不清时才补每 25 macros 的稠密点。
+  全局 long-first。结果为 `114/77/120/129`，paired 输入合同全部通过。
+- [x] 选择 macro200 为 absolute observed-best；其 129/400 仅覆盖 5/8 tasks，
+  与覆盖 7/8 tasks 的 macro150（120/400）差异不显著，保留 breadth 风险。
 - [ ] 对 observed-best 做 correct/same-task-other/wrong/shuffled/reversed
-  full400 与内部 Core/Procedure/effective-LoRA/action 传递分析。
+  full400 与内部 Core/Procedure/effective-LoRA/action 传递分析。四个 control
+  full400 已在 tmux `ember-v6-specificity400` 占用 GPU4–7 运行。
 - [ ] 除非 macro0→200 closed-loop absolute 明确下降，否则 exact-resume 到
   macro400；第三段只由届时真实曲线决定。
 - [ ] 只有 absolute、same-task 稳定性、wrong-video 语义性、
@@ -136,7 +138,8 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   内单调延长，其它 scientific contract 变化必须 fresh。
 - [ ] 评测按 `episodes × horizon` 动态调度；所有 worker 先处理 long task，
   long 耗尽后再取其它 task；任何 checkpoint/GPU 分配都遵守。
-- [ ] 等训练/rollout 时推进不污染运行的代码、分析和仓库清理。
+- [x] 等训练/rollout 时推进不污染运行的代码、分析和仓库清理；已退役旧路径
+  18,853 行，并清除约 3.8 MiB 可再生缓存，活动运行环境与证据完整保留。
 
 ## 当前继续/停止判据
 

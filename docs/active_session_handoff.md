@@ -1,11 +1,12 @@
-# EMBER v5.2持续绝对性能探索交接
+# EMBER v5.2上限测定与v5.3推进交接
 
 最后更新：2026-07-28 UTC。
 
 本文是focused AS Writer与开放式绝对性能探索的完整跨session恢复入口：
 集中保存研究北极星、从最早Writer到v5.1的证据链、失败结论和当前继续训练
-合同，使新session不依赖历史聊天也能接手。当前精确架构以
-`docs/action_forecast_writer_v5_2_design.md`为准；v5/v5.1只作provenance。
+合同，使新session不依赖历史聊天也能接手。正在运行的v5.2精确架构以
+`docs/action_forecast_writer_v5_2_design.md`为准；owner指定的下一条fresh
+架构以`docs/action_forecast_writer_v5_3_design.md`为准。v5/v5.1只作provenance。
 长期项目边界以`AGENTS.md`和`docs/execution_brief.md`为准。本文中的step和
 进程状态是交接快照，接手后必须先做只读实时复核，不能据此重复启动任务。
 
@@ -21,12 +22,17 @@ focused AS/RL完成或本文不再承担跨session恢复作用时，更新或删
   global84，max allocated/reserved
   `80,283,666,944/83,892,371,456` bytes；B22四rank对称OOM。
 - 活动正式合同为GPU4–7、4-rank、F32/B21、frame stride5、
-  `max_frames_per_encoder_call=32`、fresh identity、首段step0→900、
-  每100步checkpoint与512-query online validation；`total_steps=12000`
-  只是相同scheduler/恢复包络，不能自动授权后续segment。
-- 首段结束后用四张卡各负责一个checkpoint，同时做四个无放回correct400；
-  只有materially improved且跨task更广的observed-best才补内部五条件与
-  full400 controls。absolute或wrong/shuffle/reverse任一不过门就继续迭代。
+  `max_frames_per_encoder_call=32`。fresh step0→900已结束；correct400曲线
+  `72/79/120/132`，step900为右端observed-best。
+- step900 full400五臂为`132/138/74/82/83`。same鲁棒，correct显著优于
+  wrong/shuffled/reversed；内部Core/Procedure/LoRA/action链也没有v4旁路。
+- owner决定先沿原版v5.2训练范式从step900 exact-resume测清上限；当前tmux
+  `ember-v52-resume-1800`只把1800当本次约一小时segment边界。结束后GPU4–7
+  分别评测step1200/1400/1600/1800，若右端仍上涨则继续，不机械把1800当峰值。
+- owner同时指定v5.3为默认下一fresh架构，且仍用原版one-task-per-rank update，
+  不采用task-complete。实现已在
+  `codex/v53-visual-transition-procedure@c1e3777` push，待v5.2上限封存后
+  进行真实GPU profile。
 
 ## 1. 当前focused objective
 
@@ -39,7 +45,8 @@ v4-shuffled式逻辑漏洞，就不得轻易停止。
 v5.1已经完整训练至step1800并完成step1400五臂、LoRA-scale扫描和额外900步
 低学习率稳定阶段。原best仍为`127/400`，低LR四点
 `119/115/123/104`均未提高它；reversed与correct等价的逻辑缺口也未解决。
-因此v5.1已经停止，v5.2 Task-Queried Patch Grounding原位成为唯一活动Writer。
+因此v5.1已经停止。v5.2 Task-Queried Patch Grounding当前只继续测定充分训练
+上限；v5.3 Task-Grounded Visual-Transition Procedure是默认下一fresh Writer。
 新session仍须先执行第9节的只读命令核验Git、tmux、GPU4–7和artifact，但
 不应重新等待owner批准。
 

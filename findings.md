@@ -1877,3 +1877,54 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - B22在四rank第一步中对称OOM：每卡只余`54.94–80.94MiB`，仍需分配
   `666MiB`。failure log SHA256为`963e5e7d...3e3ce`。由此实测上界不是保守
   B20，而是可持续B21；正式首段使用F32/B21、global84、step900停止点。
+
+## v5.2首段absolute、五臂与v5.3决策（2026-07-28）
+
+- v5.2 fresh step0→900完整消费75,600 action queries和3,600个单视频条件，
+  wall `3674.799s`。无放回correct400为
+  `step100/500/700/900 = 72/79/120/132`；online functional loss在九点
+  `.1332–.1388`内振荡，不能代替闭环选择。
+- step900逐task为Long `11/0`、Goal `1/38`、Object `49/14`、
+  Spatial `0/19`。相对v5.1 step1400=`127`，v5.2是new43/lost38、
+  `p=.657`；Spatial-3净增18但Object-3净退9，故patch grounding确实打开了
+  一个空间task，aggregate `+5`仍不是稳定架构统治。
+- step900内部16-reference检查中，same/wrong/shuffle/reverse的
+  Semantic Core中位relative L2为`.0397/.1959/~0/.00288`，
+  effective-LoRA为`.1345/.6763/.7400/1.0346`，fixed-query policy action为
+  `.0253/.1612/.0953/.1902`。固定Core只换Procedure时order差异完整保留，
+  Core-only对order近零；v5.2没有v4式Core/order旁路。
+- 无放回full400五臂为：
+
+  ```text
+  correct / same-task-other / cross-suite-wrong / shuffled / reversed
+  132     / 138             / 74                / 82       / 83
+  ```
+
+  same的correct-only/control-only=`26/32,p=.512`，属于同档鲁棒；correct相对
+  wrong为`75/17,p=7.29e-10`，相对shuffled为`63/13,p=5.04e-9`，相对
+  reversed为`69/20,p=1.78e-7`。因此视频语义与正确时序都形成强闭环方向，
+  明确排除了v4 shuffled/reversed漏洞。paired artifact SHA256为
+  `d8e2f4b827f1aa22e3d778ee15c834f8ffd692c63c8fc46994414c52177a7ae7`。
+- step900仍是训练右端而非峰后点。owner决定先沿原版v5.2
+  `one task/rank/update` recipe exact-resume测上限；task-complete会改变
+  optimizer坐标、冲突和噪声，只保留为独立后续对照。自动task-complete
+  profile在用户决策到达时只完成GPU preflight，已在torchrun/输出创建前中止。
+
+## v5.3 Task-Grounded Visual-Transition Procedure（2026-07-28）
+
+- owner指定v5.3为默认下一架构实验，即使v5.2五臂已通过也要做；训练仍沿用
+  原版v5.2的每rank每update一个task/视频/B_a合同，不采用task-complete。
+- v5.3唯一改动是保留v5.2逐帧task-token patch evidence
+  `G_f∈R^(L×256)`，在各arm实际输入顺序内重算
+  `D_0=0,D_f=G_f-G_(f-1)`。Action-Expert probe `A_f`以八头Q/K/O、
+  raw `D_f` value且无Wv的cross-attention读取transition，形成
+  `Z_f=A_f+R_f`后进入原Causal Procedure。Procedure没有absolute patch
+  旁路，Semantic Core保持frame-set置换不变。
+- transition fusion真实参数`197,120`；factor-head hidden `216→192`释放
+  `204,288`，Writer总参数由`10,237,704`降至`10,230,536`，低于
+  Source-SFT上限`10,297,344`。step0 public LoRA仍由zero-init factor output
+  保持精确functional identity。
+- canonical实现与fresh v5.3 schema已在隔离分支
+  `codex/v53-visual-transition-procedure@c1e3777` push；focused Writer和
+  evaluator回归`78 passed`。正式训练仍被真实GPU4–7最长视频profile、B20/B21
+  上界、transition非零和step1→3 exact-resume阻塞。

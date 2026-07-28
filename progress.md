@@ -1445,3 +1445,19 @@ GPU范围和训练步长是当时快照；活动状态只取
   只授权fresh首段stop=900、每100步checkpoint/512-query online validation。
   900之后必须先做无放回correct400 checkpoint选择与机制检查，不自动进入
   第二或第三段。
+
+## v5.2首段封存、原recipe续训与v5.3实现（2026-07-28）
+
+- v5.2 step0→900、四点correct400、step900内部检查和五臂full400全部完成。
+  correct曲线`72/79/120/132`；五臂`132/138/74/82/83`。same无显著差异，
+  correct相对wrong/shuffled/reversed均为极显著优势；paired artifact
+  SHA256 `d8e2f4b...7ae7`。
+- owner明确先测原版v5.2训练上限，并将v5.3设为默认下一fresh架构；v5.3仍用
+  原版one-task-per-rank update，不采用task-complete。main
+  `529da6b`已从step900 exact-resume到本次segment边界1800，tmux
+  `ember-v52-resume-1800`；每100步checkpoint。训练结束后自动在GPU4–7并行
+  评测step1200/1400/1600/1800的无放回correct400。
+- v5.3设计封存在`docs/action_forecast_writer_v5_3_design.md`。隔离分支
+  `c1e3777`已实现task-grounded adjacent visual transition、fresh schema和
+  参数预算搬移，focused/评测回归`78 passed`并push。它不影响当前v5.2训练
+  commit；待v5.2上限封存后再做真实GPU profile。

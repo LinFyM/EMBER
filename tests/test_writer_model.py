@@ -358,6 +358,7 @@ def test_visual_transition_recomputes_after_order_change_without_static_value_pa
         valid_tokens,
     )
     assert not bool(transition[:, 0].count_nonzero())
+    assert torch.allclose(normal[:, 0], probe[:, 0])
     assert torch.allclose(
         transition[:, 1, :2],
         grounded[:, 1, :2] - grounded[:, 0, :2],
@@ -370,6 +371,17 @@ def test_visual_transition_recomputes_after_order_change_without_static_value_pa
     )
     assert not torch.allclose(normal[:, :3], reversed_output[:, :3])
     assert not hasattr(fusion, "value")
+    constant, constant_transition = fusion(
+        probe,
+        grounded[:, :1].expand_as(grounded),
+        valid_frames,
+        valid_tokens,
+    )
+    assert not bool(constant_transition.count_nonzero())
+    assert torch.allclose(
+        constant,
+        probe.masked_fill(~valid_frames[..., None], 0.0),
+    )
     normal.sum().backward()
     assert grounded.grad is not None
     assert bool(grounded.grad[:, :3, :2].count_nonzero())

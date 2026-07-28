@@ -15,12 +15,13 @@
 7. `docs/action_forecast_writer_v5_design.md`
 8. `docs/action_forecast_writer_v5_1_proposal.md`
 9. `docs/action_forecast_writer_v5_2_design.md`
-10. `task_plan.md`
-11. `findings.md`
-12. `progress.md`
-13. `docs/concept.md`
-14. `docs/decisions_and_open_questions.md`
-15. `docs/novelty_and_landscape.md`
+10. `docs/action_forecast_writer_v5_3_design.md`
+11. `task_plan.md`
+12. `findings.md`
+13. `progress.md`
+14. `docs/concept.md`
+15. `docs/decisions_and_open_questions.md`
+16. `docs/novelty_and_landscape.md`
 
 `docs/active_session_handoff.md`是当前跨session恢复入口，集中摘要研究证据链、
 v5失败证据、v5.1设计理由、运行状态和下一动作，但不覆盖架构或长期科学
@@ -36,35 +37,33 @@ authority；focused AS/RL完成或其不再承担跨session恢复作用时应更
 
 ## Current focused execution task
 
-owner 于 2026-07-26 批准的 Semantic Core + Causal Procedure v5 已完成
-fresh step0→1800训练、absolute checkpoint搜索和observed-best step1400的
-正式特异性检查。v5设计保留在
-[`docs/action_forecast_writer_v5_design.md`](docs/action_forecast_writer_v5_design.md)
-作provenance，不再是活动实现方向。step1400固定400五臂为
-`correct/same/wrong/shuffled/reversed=115/108/74/113/114`；correct相对wrong
-paired净`+41`、exact McNemar `p=2.18e-6`，但相对shuffled/reversed仅
-净`+2/+1`、`p=0.845/1.0`。内部Procedure对shuffle/reverse仍有强差异，
-但从Procedure到effective LoRA和policy action被下游融合持续衰减，因此v5只
-通过视频语义性方向，没有通过顺序行为硬门，不得继续训练或进入cold-start RL。
+v4、v5和v5.1均已完成根因定位并停止，架构与证据文档只作provenance。
+v5.2 Task-Queried Patch Grounding fresh step0→900的fixed correct400为
+`72/79/120/132`，step900为训练右端observed-best。step900固定400五臂为
+`correct/same/wrong/shuffled/reversed=132/138/74/82/83`；same与correct
+同档，correct相对wrong、shuffled和reversed均为极显著优势。内部Core保持
+same-frame-set order不变，Procedure差异能够穿过effective LoRA和policy
+action。因此v5.2已通过视频语义和顺序行为硬门，没有v4 shuffled漏洞，但
+absolute与跨task稳定性仍未达到满意终点。
 
-owner 于 2026-07-27 在看到上述预期失败后批准直接推进
-[`docs/action_forecast_writer_v5_1_proposal.md`](docs/action_forecast_writer_v5_1_proposal.md)
-定义的 Language-Axial Semantic Core + Causal Action Procedure +
-Slot-Normalized Fusion v5.1。该文件现在是focused AS Writer的唯一活动架构
-authority；v4/v5代码与结果只通过Git和文档保留。v5.1必须原位替换canonical
-Writer，使用fresh不兼容schema，不保留双路径；旧visual-state、future-action
-forecast、absolute-time Plan/Revision/Belief、raw image-position Core和v5
-additive Procedure refiner均不得恢复。
+owner 于2026-07-28决定先从step900 exact-resume原版v5.2 recipe测清充分训练
+上限。当前训练范式固定为每rank每optimizer update一个task、一个teacher
+video和一套one-shot LoRA，B_a条同task action queries直接求均值；不得在该
+实验中换成task-complete gradient accumulation。每100步保留checkpoint，
+本次1800只是一小时量级segment边界而非预设峰值；结束后并行评测
+step1200/1400/1600/1800。若右端仍上涨则继续，若平台、持续下降或只迁移不涨，
+才认为原recipe上限基本测清。
 
-v5.1保持单视频完整action-batch科学合同，但不继承v5的F32/B20上限或
-900/1800 step坐标。实现完成最短shape/gradient/identity/freeze/schema/resume
-检查后，必须在GPU4–7用真实最长视频联合profile frame/action batch和step
-吞吐，再按实测效率把首个fresh formal segment定为约一小时wall-clock。
-首段后先做内部五条件和轻量paired rollout，重点要求final effective LoRA与
-policy action的`same < shuffled/reversed`关系相对v5实质改善。第二段、第三段
-或任何更长训练都不得自动启动；每一段都必须由上一段的早期特异性、absolute
-performance和训练/validation曲线共同证明值得继续后再单独决定。不得用
-contrast/order loss追正结果。
+owner同时指定
+[`docs/action_forecast_writer_v5_3_design.md`](docs/action_forecast_writer_v5_3_design.md)
+定义的 Task-Grounded Visual-Transition Procedure 为默认下一fresh架构实验。
+v5.3沿用原版v5.2训练范式，不采用task-complete。它只在Procedure前加入按各
+arm实际输入顺序重算的`D_0=0,D_f=G_f-G_(f-1)`，由Action-Expert probe通过
+八头Q/K/O、raw transition value且无Wv的cross-attention读取；Procedure没有
+absolute patch旁路。factor-head hidden从216降至192支付预算，总参数
+`10,230,536`。v5.3使用fresh不兼容schema，不从v5.2 Writer resume；先做真实
+GPU4–7最长视频、B20/B21上界和step1→3 exact-resume profile，再按实测吞吐
+fresh训练约一小时。不得用contrast/order loss追正结果。
 
 AS的绝对性能最低目标是达到或接近旧Action-Forecast `125/400`，目标逼近v4
 shuffled `148/400`。四卡rank-128 Source-SFT `108/400`与旧八卡`122/400`
@@ -74,10 +73,10 @@ observed-best，并在best后看到幅度明显、远超400-rollout正常波动�
 focused AS/RL没有机械总wall-clock上限，但这不授权惯性续段；每个新增训练段
 都受上面的证据门约束。
 
-只有AS同时通过absolute performance、same-task鲁棒性、wrong-video语义性和
-correct优于shuffled/reversed的顺序特异性后，才推进独立
-short-AS-cold-start→pure-reward RL-Writer。focused AS/RL完成后先向owner汇报，
-不自动继续final-32、test task-local RL、joint oracle或ViVLA。
+v5.2上限与v5.3首段/机制比较完成后，再依据证据决定是否尝试task-complete
+recipe、独立short-AS-cold-start→pure-reward RL-Writer或下一架构。不得把
+完整AS best冒充RL cold start。focused AS/RL完成后先向owner汇报，不自动继续
+final-32、test task-local RL、joint oracle或ViVLA。
 
 当前及后续GPU工作固定frame stride=5，只使用物理GPU 4、5、6、7；0–3不进入
 visible set。4–7即使已有他人进程也按owner授权共卡，但不得杀、暂停、重置或
@@ -123,7 +122,7 @@ generic lerobot/pi05_base
 - 核心固定为 `task language + exactly one action-hidden teaching video -> shared Writer -> complete task-specific LoRA`。
 - Writer 不得接收 action、proprio、reward、terminal、task ID、filename 或隐藏 normalization；source actions 只能进入 AS functional loss。
 - `Action-Supervised Writer (AS-Writer)`：development在24 train tasks上均匀混合；每rank每step只处理一个task并抽1条teacher video，只生成1套one-shot LoRA；尽可能大的`B_a`条独立同task action queries全部在该LoRA下各计算一次functional loss并直接求均值。4 ranks全局均衡轮转tasks；下一次访问该task时换一条video；video与action episode/chunk不要求同episode配对。frozen source base只通过functional LoRA forward参与，更新Writer。
-- 历史task-local RL的总预算合同不影响当前focused v5.1 AS/RL，但每个新增训练段仍须通过当前证据门。
+- 历史task-local RL的总预算合同不影响当前focused v5.2/v5.3 AS/RL，但每个新增训练段仍须通过当前证据门。
 - `Reward-Trained Writer (RL-Writer)` 是独立路线：按当前 focused task 从新架构规定初态做短、task-balanced AS cold start，直到24个development-train tasks各在官方random-reset rollout中至少成功一次，再关闭action数据入口并跨source tasks做纯reward训练；它不从完整AS-Writer best继续，cold-start消耗必须完整报告。
 - RL-Writer rollout 使用 LIBERO 官方随机 reset/BDDL 初态；不使用 `.pruned_init`。只用官方 env reward/success，不从 object pose 等内部状态手工构造 privileged shaping。
 - `Source-SFT` 是在同一 frozen source base 上、跨 24 development train tasks 联合训练的一套 shared LoRA，test 不看 held video/action。它和 AS-Writer各自根据 validation 选最佳，不要求机械匹配 optimizer steps 或 consumed examples，但必须报告训练数据、steps、GPU-hours、参数量和搜索上限。

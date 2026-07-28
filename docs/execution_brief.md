@@ -2,9 +2,10 @@
 
 状态：2026-07-28。共享 π0.5-LIBERO source base 与 Source-SFT comparator 已
 封存。Action-Forecast Writer v4、Semantic Core + Causal Procedure v5 与
-Language-Axial v5.1 均已完成根因定位并停止；当前唯一focused架构为v5.2
-Task-Queried Patch Grounding + Language-Axial Semantic Core + Causal Action
-Procedure + Slot-Normalized Fusion。
+Language-Axial v5.1 均已完成根因定位并停止。当前GPU执行先沿原版v5.2
+Task-Queried Patch Grounding recipe测定充分训练上限；owner指定v5.3
+Task-Grounded Visual-Transition Procedure为默认下一条fresh架构实验，并明确
+仍使用原版one-task-per-rank optimizer update，不采用task-complete。
 
 外部专家复核后的第一轮诊断证明，shuffle的直接行为放大器位于per-image
 forecast之后的absolute-time Plan/Revision；但后续全面复审又确认它不是唯一
@@ -56,8 +57,10 @@ Procedure通过zero-init AdaLN调制Core slots，再经一个post-fusion slot bl
 correct-video `127/400`，且best的reversed为`120/400`、与correct无显著差异；
 它因此只作provenance。
 
-当前唯一活动设计为
-[`docs/action_forecast_writer_v5_2_design.md`](action_forecast_writer_v5_2_design.md)。
+当前v5.2运行设计为
+[`docs/action_forecast_writer_v5_2_design.md`](action_forecast_writer_v5_2_design.md)；
+下一fresh架构authority为
+[`docs/action_forecast_writer_v5_3_design.md`](action_forecast_writer_v5_3_design.md)。
 v5.2保留v5.1的Core、Procedure、fusion与信息墙，只让text-only task tokens
 逐帧cross-attend PaliGemma的256个image-position contents，把对象、关系和空间
 细节重新注入Core；新增上游预算由factor hidden `240→216`支付，总参数
@@ -67,6 +70,14 @@ v5.2保留v5.1的Core、Procedure、fusion与信息墙，只让text-only task to
 [`docs/action_forecast_writer_v4_root_cause.md`](action_forecast_writer_v4_root_cause.md)；
 原咨询材料见
 [`docs/action_forecast_writer_expert_consultation.md`](action_forecast_writer_expert_consultation.md)。
+
+v5.2 step900 fixed correct400为`132/400`，五臂
+`correct/same/wrong/shuffled/reversed=132/138/74/82/83`；same鲁棒且correct
+相对wrong与两种order破坏均显著，因此没有v4 shuffled漏洞。step900仍是训练
+右端，当前从该checkpoint exact-resume原recipe测上限。v5.3不修改训练范式；
+它只在Procedure前加入按实际输入顺序重算的task-grounded adjacent visual
+transition，并把factor hidden `216→192`释放的预算上移，总参数
+`10,230,536`。
 
 ## 1. 研究问题
 

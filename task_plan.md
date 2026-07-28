@@ -600,13 +600,33 @@ action-hidden teacher video -> one task LoRA`的核心映射。
   max allocated/reserved=`80.284/83.892GB`；B22四rank对称OOM。选择
   F32/B21、global84、`total_steps=12000`探索包络和唯一首段stop=900，
   第二/第三段仍需依据首段证据单独决策。
-- [ ] 从fresh functional identity启动v5.2正式首段step0→900；每100步保存并
-  做512-query resident online validation，完成后以四张卡各负责一个候选
-  checkpoint的方式并发跑四个无放回correct400。
+- [x] 从fresh functional identity完成v5.2正式首段step0→900；fixed
+  correct400为`100/500/700/900 = 72/79/120/132`，step900为右端
+  observed-best。相对v5.1 step1400 paired为new43/lost38，aggregate `+5`
+  尚不稳固但Spatial-3净增18。
+- [x] 完成v5.2 step900内部与无放回full400五臂。内部same/wrong/shuffle/
+  reverse的effective-LoRA中位差为`.135/.676/.740/1.035`，action为
+  `.025/.161/.095/.190`；Core保持order不变而Procedure差异穿过LoRA/action。
+  外部五臂为`132/138/74/82/83`：same配对`p=.512`，correct相对wrong/
+  shuffled/reversed的exact McNemar分别为`7.29e-10/5.04e-9/1.78e-7`。
+  因而v5.2没有v4 shuffled漏洞，absolute仍需继续提高。
+- [ ] 按owner新顺序从step900 exact-resume原版v5.2 recipe至本次约一小时
+  segment边界；这不是机械把1800定义成最终峰值。每100步checkpoint，
+  segment后在GPU4–7并行做step1200/1400/1600/1800四个无放回correct400；
+  若右端仍上涨则继续测上限，若平台/下降则选择新observed-best。
+- [x] owner指定v5.3为默认下一架构实验，同时明确沿用原版v5.2训练范式，
+  不采用task-complete optimizer update。v5.3 Task-Grounded
+  Visual-Transition Procedure已在隔离分支`c1e3777`实现并push：
+  `D_f=G_f-G_(f-1)`在各arm实际输入顺序内重算，Action-Expert probe以8头
+  Q/K/O、无Wv cross-attention读取transition；factor hidden `216→192`，
+  总参数`10,230,536`，focused/评测测试`78 passed`。
+- [ ] v5.2上限和新best证据封存后，profile v5.3最长105帧、B20/B21上界、
+  step1→3 exact-resume及真实transition；随后按实测吞吐fresh训练约一小时，
+  与充分训练v5.2用同一absolute/五臂/内部传递合同比较。
 - [ ] 可提前进行独立、低成本RL-Writer机制探索，但不得把validation reward写回
   AS输入、把完整AS best冒充cold start、污染test或用RL结果掩盖AS绝对性能。
-- [ ] owner醒来前封存当前最好结果、失败归因、资源消耗、代码/Git状态与下一步；
-  不自动推进final-32、test task-local RL或joint oracle。
+- [x] owner醒来后已汇报v5.2 step900与现场；当前继续自主推进，但不自动推进
+  final-32、test task-local RL或joint oracle。
 
 继续/停止判据：
 

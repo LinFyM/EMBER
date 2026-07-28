@@ -164,10 +164,16 @@ def test_corrected_rank128_config_seals_hierarchical_mixed_profile() -> None:
     assert mixed["data"]["max_open_files_per_worker"] == 24
     assert 144 // 24 == 6
     assert 120 // 24 == 5
-    assert (
-        mixed["stages"]["development"]["formal_run"]["status"]
-        == "pending_profile"
-    )
+    profile = mixed["profile_contract"]["observed_profile"]
+    formal = mixed["stages"]["development"]["formal_run"]
+    assert mixed["profile_contract"]["selected_per_rank_batch_size"] == 144
+    assert profile["optimizer_steps"] == 3
+    assert profile["global_action_queries"] == 1728
+    assert formal["status"] == "sealed"
+    assert formal["per_rank_batch_size"] == 144
+    assert formal["selected_stop_step"] == 225
+    assert formal["checkpoint_steps"][:9] == list(range(25, 226, 25))
+    assert formal["stage_stop_steps"][:2] == [225, 450]
     assert rank128.rank == rank128.alpha == 128
     assert rank128.parameter_count == 10_297_344
     assert sha256_file(MIXED_RANK128_CONFIG) == (

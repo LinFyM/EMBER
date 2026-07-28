@@ -128,7 +128,24 @@
       "source policy remains frozen",
       "rank-128 shared LoRA is the only trainable object",
       "step1-to-step3 exact resume is sample-identical"
-    ]
+    ],
+    "selected_per_rank_batch_size": 144,
+    "observed_profile": {
+      "output_root": "/data/ymdai/outputs/ember/pi05_source_sft_rank128_mixed_profile_r4_b144_55ccbcc_s3_20260728",
+      "optimizer_steps": 3,
+      "global_action_queries": 1728,
+      "steady_step_seconds": [
+        16.68381751095876,
+        15.84746961784549
+      ],
+      "steady_global_action_queries_per_second": [
+        34.524472568802345,
+        36.34649656317239
+      ],
+      "max_cuda_allocated_bytes": 60690811904,
+      "max_cuda_reserved_bytes": 74065117184,
+      "selection": "B144 completed fresh step1 and exact-resume through step3 with finite loss and gradients, all 24 tasks equally represented in every physical batch, and no OOM or allocator growth; B120 fallback was not triggered."
+    }
   },
   "stages": {
     "development": {
@@ -139,17 +156,29 @@
       "available_action_episodes": 1200,
       "selection_data": "fixed validation action-loss panel is diagnostic; complete 8-task x 50 closed-loop success selects observed-best",
       "formal_run": {
-        "status": "pending_profile",
+        "status": "sealed",
         "expected_world_size": 4,
         "total_steps": 2400,
         "per_rank_batch_size": 144,
         "checkpoint_steps": [
+          25,
           50,
+          75,
           100,
+          125,
           150,
+          175,
           200,
+          225,
+          250,
+          275,
           300,
+          325,
+          350,
+          375,
           400,
+          425,
+          450,
           600,
           800,
           1200,
@@ -157,10 +186,10 @@
           2000,
           2400
         ],
-        "selected_stop_step": 200,
+        "selected_stop_step": 225,
         "stage_stop_steps": [
-          200,
-          400,
+          225,
+          450,
           600,
           800,
           1200,
@@ -169,8 +198,9 @@
           2400
         ],
         "maximum_wall_clock_minutes": null,
-        "budget_role": "fresh corrected mixed-task ceiling search after v6 confirmation",
-        "selection_rule": "Seal batch, schedule, and first wall-clock segment only after the two-candidate GPU4-7 profile. Fresh-train from identity, select by paired full validation success and cross-task breadth, and continue while the observed-best moves right without a sustained material post-best decline."
+        "segment_target_wall_clock_minutes": 60,
+        "budget_role": "fresh corrected mixed-task ceiling search in evidence-gated one-hour segments",
+        "selection_rule": "Fresh-train from identity at B144. The measured 15.85-16.68 seconds per steady optimizer update sets the first boundary to step225, approximately one hour of training body excluding the separately reported cold model load. Retain every25-step checkpoint through the first two segments. Select by paired full validation success and cross-task breadth; exact-resume to step450 when the first-segment peak is at the right edge or materially unstable, then add later segments only while the observed-best moves right without a sustained material multi-task decline."
       }
     },
     "final": {

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import struct
+from functools import lru_cache
 from typing import Any, Iterator, Sequence
 
 import numpy as np
@@ -101,28 +102,19 @@ class HierarchicalMixedBatchSampler(Sampler[list[int]]):
     def __len__(self) -> int:
         return self.stop_step - self.start_step
 
-    def _episode_for_global_offset(
-        self, task_id: int, global_offset: int
-    ) -> tuple[int, int]:
-        if task_id not in self.episode_rows or global_offset < 0:
-            raise WriterModelError("hierarchical episode request is invalid")
-        episode_cycle, episode_offset = divmod(
-            global_offset, self.episodes_per_task
-        )
+    @lru_cache(maxsize=None)
+    def _episode_order(self, task_id: int, episode_cycle: int) -> tuple[int, ...]:
         declared = tuple(sorted(self.episode_rows[task_id]))
         order = np.random.default_rng(
             np.random.SeedSequence(
                 [self.seed, task_id, episode_cycle, self._EPISODE_SEED_TAG]
             )
         ).permutation(declared)
-        return int(order[episode_offset]), episode_cycle
+        return tuple(int(value) for value in order)
 
-    def _row_for_global_offset(self, task_id: int, global_offset: int) -> int:
-        demo_index, episode_visit = self._episode_for_global_offset(
-            task_id, global_offset
-        )
+    @lru_cache(maxsize=None)
+    def _chunk_order(self, task_id: int, demo_index: int) -> tuple[int, ...]:
         rows = self.episode_rows[task_id][demo_index]
-        _, chunk_offset = divmod(episode_visit, len(rows))
         order = np.random.default_rng(
             np.random.SeedSequence(
                 [
@@ -133,7 +125,25 @@ class HierarchicalMixedBatchSampler(Sampler[list[int]]):
                 ]
             )
         ).permutation(rows)
-        return int(order[chunk_offset])
+        return tuple(int(value) for value in order)
+
+    def _episode_for_global_offset(
+        self, task_id: int, global_offset: int
+    ) -> tuple[int, int]:
+        if task_id not in self.episode_rows or global_offset < 0:
+            raise WriterModelError("hierarchical episode request is invalid")
+        episode_cycle, episode_offset = divmod(
+            global_offset, self.episodes_per_task
+        )
+        return self._episode_order(task_id, episode_cycle)[episode_offset], episode_cycle
+
+    def _row_for_global_offset(self, task_id: int, global_offset: int) -> int:
+        demo_index, episode_visit = self._episode_for_global_offset(
+            task_id, global_offset
+        )
+        order = self._chunk_order(task_id, demo_index)
+        _, chunk_offset = divmod(episode_visit, len(order))
+        return order[chunk_offset]
 
     def row_for(
         self,

@@ -1928,3 +1928,26 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   `codex/v53-visual-transition-procedure@c1e3777` push；全仓回归
   `198 passed`。正式训练仍被真实GPU4–7最长视频profile、B20/B21
   上界、transition非零和step1→3 exact-resume阻塞。
+
+## v6整体架构决策（2026-07-28）
+
+- owner认可Visual-Transition方向，并决定不把它限制为v5.3小修订，而是从
+  第一性原理重整整个Writer后命名为v6。完整设计authority为
+  `docs/action_forecast_writer_v6_design.md`。
+- v5.2的frame aggregation gate在step900–1800约
+  `0.0490–0.0504`，几乎停留在0.05初始化附近。v6因此用始终保留静态信息的
+  mean backbone，加上由text-only task query选择、以frame-centered evidence
+  为value的residual；均匀attention时residual严格为零，且Core仍对frame
+  permutation不变。
+- Procedure保留v5.3最小可归因设计：`D_0=0,D_f=G_f-G_(f-1)`必须按各arm
+  的实际顺序重算，由Action-Expert probe以8头Q/K/O、raw transition value、
+  无Wv cross-attention读取；不加入absolute patch旁路、optical flow、
+  geometry、long-range matching或order supervision。
+- owner明确参数只需同量级，不要求机械等于rank-128 Source-SFT。v6所有主宽度
+  统一为256、8 heads×32维、Core/Procedure各2层、post-fusion 1层，并把
+  factor hidden从v5.3的192恢复为256。精确手算总参数`10,775,296`，相对
+  Source-SFT `10,297,344`多`477,952`（约4.64%），换取更规整的硬件维度和
+  不被人为压缩的下游compiler出口。
+- 首个v6比较仍沿用当前v5.2 one-task-per-rank训练范式以隔离架构变量；
+  task-complete、多task联合优化和RL Writer另作后续实验。本次仅封存设计，
+  尚未修改code/config、profile或启动训练。

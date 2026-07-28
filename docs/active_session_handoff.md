@@ -1,12 +1,13 @@
-# EMBER v5.2上限测定与v5.3推进交接
+# EMBER v5.2上限测定与v6推进交接
 
 最后更新：2026-07-28 UTC。
 
 本文是focused AS Writer与开放式绝对性能探索的完整跨session恢复入口：
 集中保存研究北极星、从最早Writer到v5.1的证据链、失败结论和当前继续训练
 合同，使新session不依赖历史聊天也能接手。正在运行的v5.2精确架构以
-`docs/action_forecast_writer_v5_2_design.md`为准；owner指定的下一条fresh
-架构以`docs/action_forecast_writer_v5_3_design.md`为准。v5/v5.1只作provenance。
+`docs/action_forecast_writer_v5_2_design.md`为准；owner确认的下一条fresh
+架构以`docs/action_forecast_writer_v6_design.md`为准。v5/v5.1只作provenance，
+v5.3设计和原型是v6的直接provenance。
 长期项目边界以`AGENTS.md`和`docs/execution_brief.md`为准。本文中的step和
 进程状态是交接快照，接手后必须先做只读实时复核，不能据此重复启动任务。
 
@@ -29,10 +30,11 @@ focused AS/RL完成或本文不再承担跨session恢复作用时，更新或删
 - owner决定先沿原版v5.2训练范式从step900 exact-resume测清上限；当前tmux
   `ember-v52-resume-1800`只把1800当本次约一小时segment边界。结束后GPU4–7
   分别评测step1200/1400/1600/1800，若右端仍上涨则继续，不机械把1800当峰值。
-- owner同时指定v5.3为默认下一fresh架构，且仍用原版one-task-per-rank update，
-  不采用task-complete。实现已在
-  `codex/v53-visual-transition-procedure@c1e3777` push，待v5.2上限封存后
-  进行真实GPU profile。
+- owner已把下一fresh架构从v5.3提升为v6。v6同时采用task-grounded adjacent
+  visual transition、`mean backbone + task-selected centered residual`
+  Semantic Set aggregation和hidden=256 factor heads，总参数
+  `10,775,296`；设计封存在`docs/action_forecast_writer_v6_design.md`。
+  当前v5.3 branch实现只作v6实现起点，尚未修改代码/config或启动v6 profile。
 
 ## 1. 当前focused objective
 
@@ -46,7 +48,8 @@ v5.1已经完整训练至step1800并完成step1400五臂、LoRA-scale扫描和�
 低学习率稳定阶段。原best仍为`127/400`，低LR四点
 `119/115/123/104`均未提高它；reversed与correct等价的逻辑缺口也未解决。
 因此v5.1已经停止。v5.2 Task-Queried Patch Grounding当前只继续测定充分训练
-上限；v5.3 Task-Grounded Visual-Transition Procedure是默认下一fresh Writer。
+上限；v6 Task-Grounded Semantic Set + Visual-Transition Procedure是默认
+下一fresh Writer。
 新session仍须先执行第9节的只读命令核验Git、tmux、GPU4–7和artifact，但
 不应重新等待owner批准。
 

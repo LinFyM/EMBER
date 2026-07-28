@@ -1,8 +1,12 @@
 # EMBER Writer v5.3：Task-Grounded Visual-Transition Procedure
 
+> 2026-07-28状态：本设计及其prototype已被
+> `docs/action_forecast_writer_v6_design.md`吸收并替代，只作直接provenance；
+> 不再作为待独立训练的活动架构。
+
 ## 1. 决策与实验位置
 
-v5.3 是 owner 于 2026-07-28 指定默认执行的下一条 fresh Writer 架构实验。
+v5.3 曾是 owner 于 2026-07-28 指定的下一条 fresh Writer 架构实验。
 实时 v5.2 checkpoint 和评测进度仍以现场 artifact 为准；v5.2 先沿原 recipe
 exact-resume 测清右端上限，v5.3 同时实现，待 GPU4–7 空闲后独立 profile 和
 fresh 训练。

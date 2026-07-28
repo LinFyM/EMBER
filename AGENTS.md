@@ -16,12 +16,13 @@
 8. `docs/action_forecast_writer_v5_1_proposal.md`
 9. `docs/action_forecast_writer_v5_2_design.md`
 10. `docs/action_forecast_writer_v5_3_design.md`
-11. `task_plan.md`
-12. `findings.md`
-13. `progress.md`
-14. `docs/concept.md`
-15. `docs/decisions_and_open_questions.md`
-16. `docs/novelty_and_landscape.md`
+11. `docs/action_forecast_writer_v6_design.md`
+12. `task_plan.md`
+13. `findings.md`
+14. `progress.md`
+15. `docs/concept.md`
+16. `docs/decisions_and_open_questions.md`
+17. `docs/novelty_and_landscape.md`
 
 `docs/active_session_handoff.md`是当前跨session恢复入口，集中摘要研究证据链、
 v5失败证据、v5.1设计理由、运行状态和下一动作，但不覆盖架构或长期科学
@@ -54,16 +55,16 @@ video和一套one-shot LoRA，B_a条同task action queries直接求均值；不�
 step1200/1400/1600/1800。若右端仍上涨则继续，若平台、持续下降或只迁移不涨，
 才认为原recipe上限基本测清。
 
-owner同时指定
-[`docs/action_forecast_writer_v5_3_design.md`](docs/action_forecast_writer_v5_3_design.md)
-定义的 Task-Grounded Visual-Transition Procedure 为默认下一fresh架构实验。
-v5.3沿用原版v5.2训练范式，不采用task-complete。它只在Procedure前加入按各
-arm实际输入顺序重算的`D_0=0,D_f=G_f-G_(f-1)`，由Action-Expert probe通过
-八头Q/K/O、raw transition value且无Wv的cross-attention读取；Procedure没有
-absolute patch旁路。factor-head hidden从216降至192支付预算，总参数
-`10,230,536`。v5.3使用fresh不兼容schema，不从v5.2 Writer resume；先做真实
-GPU4–7最长视频、B20/B21上界和step1→3 exact-resume profile，再按实测吞吐
-fresh训练约一小时。不得用contrast/order loss追正结果。
+owner随后将下一fresh架构提升并封存为
+[`docs/action_forecast_writer_v6_design.md`](docs/action_forecast_writer_v6_design.md)
+定义的 Task-Grounded Semantic Set + Visual-Transition Procedure。v6在
+v5.3 transition原型之上同时把Semantic Core改为
+`mean backbone + task-selected centered residual`，保留按各arm实际顺序重算
+的`D_0=0,D_f=G_f-G_(f-1)`，并把factor-head hidden恢复为硬件友好的256；
+总参数预算为`10,775,296`，相对rank-128 Source-SFT只多约4.64%。v5.3文档和
+prototype只作provenance，后续实现只保留一条canonical v6路径。v6使用fresh
+不兼容schema，不从旧Writer resume；首个架构比较仍沿用原版v5.2训练范式，
+不采用task-complete，也不得用contrast/order loss追正结果。
 
 AS的绝对性能最低目标是达到或接近旧Action-Forecast `125/400`，目标逼近v4
 shuffled `148/400`。四卡rank-128 Source-SFT `108/400`与旧八卡`122/400`
@@ -73,7 +74,7 @@ observed-best，并在best后看到幅度明显、远超400-rollout正常波动�
 focused AS/RL没有机械总wall-clock上限，但这不授权惯性续段；每个新增训练段
 都受上面的证据门约束。
 
-v5.2上限与v5.3首段/机制比较完成后，再依据证据决定是否尝试task-complete
+v5.2上限与v6首段/机制比较完成后，再依据证据决定是否尝试task-complete
 recipe、独立short-AS-cold-start→pure-reward RL-Writer或下一架构。不得把
 完整AS best冒充RL cold start。focused AS/RL完成后先向owner汇报，不自动继续
 final-32、test task-local RL、joint oracle或ViVLA。

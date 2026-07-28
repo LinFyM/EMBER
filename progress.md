@@ -1461,3 +1461,14 @@ GPU范围和训练步长是当时快照；活动状态只取
   `c1e3777`已实现task-grounded adjacent visual transition、fresh schema和
   参数预算搬移，全仓回归`198 passed`并push。它不影响当前v5.2训练
   commit；待v5.2上限封存后再做真实GPU profile。
+
+## v6设计封存（2026-07-28）
+
+- owner把默认下一fresh架构提升为EMBER Writer v6，并批准
+  Task-Grounded Semantic Set + Visual-Transition Procedure整体方案。
+- 新authority已写入`docs/action_forecast_writer_v6_design.md`：Core采用
+  mean backbone + centered residual，Procedure采用按actual arm order重算的
+  adjacent task-grounded transition，compiler保持v5.2已验证的传递路径，
+  factor hidden恢复为256。手算总参数`10,775,296`。
+- `AGENTS.md`、active handoff、task plan与findings已同步版本定位。当前只完成
+  文档封存；没有修改code/config，没有启动profile、训练或评测。

@@ -620,9 +620,17 @@ action-hidden teacher video -> one task LoRA`的核心映射。
   `D_f=G_f-G_(f-1)`在各arm实际输入顺序内重算，Action-Expert probe以8头
   Q/K/O、无Wv cross-attention读取transition；factor hidden `216→192`，
   总参数`10,230,536`，全仓测试`198 passed`。
-- [ ] v5.2上限和新best证据封存后，profile v5.3最长105帧、B20/B21上界、
-  step1→3 exact-resume及真实transition；随后按实测吞吐fresh训练约一小时，
-  与充分训练v5.2用同一absolute/五臂/内部传递合同比较。
+- [x] owner将默认下一架构从v5.3提升为v6，并批准整体设计。v6同时采用
+  `mean backbone + task-selected centered residual` Semantic Set、
+  task-grounded adjacent Visual-Transition Procedure和hidden=256 factor
+  heads；精确手算总参数`10,775,296`。完整authority已封存在
+  `docs/action_forecast_writer_v6_design.md`，本步只记录设计，没有修改
+  code/config或启动GPU工作。
+- [ ] v5.2上限和新best证据封存后，以现有v5.3 prototype为实现起点收敛到
+  唯一canonical v6路径；完成真实最长105帧、action batch上界、step1→3
+  exact-resume、identity/gradient/freeze和真实transition profile，再沿当前
+  v5.2训练范式fresh训练约一小时，与充分训练v5.2用同一absolute/五臂/
+  内部传递合同比较。
 - [ ] 可提前进行独立、低成本RL-Writer机制探索，但不得把validation reward写回
   AS输入、把完整AS best冒充cold start、污染test或用RL结果掩盖AS绝对性能。
 - [x] owner醒来后已汇报v5.2 step900与现场；当前继续自主推进，但不自动推进

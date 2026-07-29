@@ -1,4 +1,4 @@
-"""Canonical Language-Axial Core + Visual-Transition Procedure PI05 Writer."""
+"""Canonical Semantic-Core + Action-Effect-Procedure PI05 Writer."""
 
 from __future__ import annotations
 
@@ -13,10 +13,10 @@ from ember.writer.architecture import (
     validate_writer_dimensions,
 )
 from ember.writer.temporal import (
+    ActionEffectBinder,
     CausalProcedureEncoder,
     LanguageSemanticCore,
-    SlotNormalizedCoreProcedureCompiler,
-    TaskGroundedVisualTransitionFusion,
+    ProcedureContentCompiler,
 )
 from ember.writer.video_program import Pi05LanguageAxialEncoder
 
@@ -143,18 +143,18 @@ class CompleteLoRAWriter(torch.nn.Module):
         image_width: int,
         expert_width: int,
         program_width: int,
-        text_meta_lora_rank: int,
         vl_meta_lora_rank: int,
         action_meta_lora_rank: int,
         patch_grounding_heads: int,
         max_frames_per_encoder_call: int,
         action_horizon: int,
         padded_action_dim: int,
+        action_probe_positions: tuple[int, ...] | list[int],
         semantic_core_heads: int,
         semantic_core_blocks: int,
+        action_effect_heads: int,
         procedure_heads: int,
         procedure_blocks: int,
-        visual_transition_heads: int,
         fusion_heads: int,
         factor_hidden_width: int,
         initialization_seed: int,
@@ -195,13 +195,13 @@ class CompleteLoRAWriter(torch.nn.Module):
             image_width=image_width,
             expert_width=expert_width,
             program_width=program_width,
-            text_meta_lora_rank=text_meta_lora_rank,
             vl_meta_lora_rank=vl_meta_lora_rank,
             action_meta_lora_rank=action_meta_lora_rank,
             patch_grounding_heads=patch_grounding_heads,
             max_frames_per_encoder_call=max_frames_per_encoder_call,
             action_horizon=action_horizon,
             padded_action_dim=padded_action_dim,
+            action_probe_positions=action_probe_positions,
             initialization_seed=initialization_seed,
             activation_checkpointing=activation_checkpointing,
         )
@@ -210,16 +210,16 @@ class CompleteLoRAWriter(torch.nn.Module):
             heads=semantic_core_heads,
             blocks=semantic_core_blocks,
         )
-        self.visual_transition = TaskGroundedVisualTransitionFusion(
+        self.action_effect = ActionEffectBinder(
             width=program_width,
-            heads=visual_transition_heads,
+            heads=action_effect_heads,
         )
         self.procedure = CausalProcedureEncoder(
             width=program_width,
             heads=procedure_heads,
             blocks=procedure_blocks,
         )
-        self.compiler = SlotNormalizedCoreProcedureCompiler(
+        self.compiler = ProcedureContentCompiler(
             width=program_width,
             heads=fusion_heads,
             initialization_seed=initialization_seed + 1,
@@ -301,8 +301,7 @@ class CompleteLoRAWriter(torch.nn.Module):
     def _pack_video_program(
         self,
         frame_evidence: torch.Tensor,
-        grounded_evidence: torch.Tensor,
-        interactions: torch.Tensor,
+        action_probes: torch.Tensor,
         frame_indices: torch.Tensor,
         offsets: tuple[int, ...],
     ) -> tuple[
@@ -310,18 +309,18 @@ class CompleteLoRAWriter(torch.nn.Module):
         torch.Tensor,
         torch.Tensor,
         torch.Tensor,
-        torch.Tensor,
     ]:
         if (
             frame_evidence.ndim != 3
-            or grounded_evidence.shape != frame_evidence.shape
-            or interactions.shape
-            != (frame_evidence.shape[0], self.program_width)
+            or action_probes.shape
+            != (frame_evidence.shape[0], 8, self.program_width)
             or frame_indices.shape != (frame_evidence.shape[0],)
         ):
-            raise WriterModelError("Writer visual-transition evidence changed shape")
+            raise WriterModelError("Writer semantic trajectory changed shape")
         batch = len(offsets) - 1
         lengths = tuple(right - left for left, right in zip(offsets, offsets[1:]))
+        if min(lengths) < 2:
+            raise WriterModelError("Writer Procedure needs two sampled frames")
         maximum = max(lengths)
         packed_evidence = frame_evidence.new_zeros(
             batch,
@@ -329,28 +328,23 @@ class CompleteLoRAWriter(torch.nn.Module):
             frame_evidence.shape[1],
             self.program_width,
         )
-        packed_interactions = interactions.new_zeros(
+        packed_action_probes = action_probes.new_zeros(
             batch,
             maximum,
-            self.program_width,
-        )
-        packed_grounded = grounded_evidence.new_zeros(
-            batch,
-            maximum,
-            grounded_evidence.shape[1],
+            8,
             self.program_width,
         )
         positions = torch.zeros(
             batch,
             maximum,
             dtype=torch.long,
-            device=interactions.device,
+            device=action_probes.device,
         )
         valid_frames = torch.zeros(
             batch,
             maximum,
             dtype=torch.bool,
-            device=interactions.device,
+            device=action_probes.device,
         )
         for row, (left, right) in enumerate(zip(offsets, offsets[1:])):
             length = right - left
@@ -363,14 +357,12 @@ class CompleteLoRAWriter(torch.nn.Module):
                     "sampled frame ordinals must start at zero and increase"
                 )
             packed_evidence[row, :length] = frame_evidence[left:right]
-            packed_grounded[row, :length] = grounded_evidence[left:right]
-            packed_interactions[row, :length] = interactions[left:right]
+            packed_action_probes[row, :length] = action_probes[left:right]
             positions[row, :length] = active_positions
             valid_frames[row, :length] = True
         return (
             packed_evidence,
-            packed_grounded,
-            packed_interactions,
+            packed_action_probes,
             positions,
             valid_frames,
         )
@@ -417,10 +409,9 @@ class CompleteLoRAWriter(torch.nn.Module):
             lengths,
         )
         (
-            text_queries,
+            _stable_task_queries,
             frame_evidence,
-            grounded_evidence,
-            interactions,
+            action_probes,
             valid_task_tokens,
         ) = self.semantic_encoder(
             policy,
@@ -432,40 +423,38 @@ class CompleteLoRAWriter(torch.nn.Module):
         )
         (
             packed_evidence,
-            packed_grounded,
-            packed_interactions,
+            packed_action_probes,
             positions,
             valid_frames,
         ) = self._pack_video_program(
             frame_evidence,
-            grounded_evidence,
-            interactions,
+            action_probes,
             frame_indices,
             offsets,
         )
         core_memory, frame_attention = self.semantic_core(
-            text_queries,
             packed_evidence,
             valid_frames,
             valid_task_tokens,
         )
-        procedure_input, _ = self.visual_transition(
-            packed_interactions,
-            packed_grounded,
+        procedure_input, _, valid_intervals = self.action_effect(
+            packed_action_probes,
+            packed_evidence,
             valid_frames,
             valid_task_tokens,
         )
+        interval_positions = positions[:, :-1]
         procedure_memory = self.procedure(
             procedure_input,
-            positions,
-            valid_frames,
+            interval_positions,
+            valid_intervals,
         )
         return (
             core_memory,
             valid_task_tokens,
             procedure_memory,
-            positions,
-            valid_frames,
+            interval_positions,
+            valid_intervals,
             frame_attention,
         )
 

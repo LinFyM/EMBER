@@ -1899,3 +1899,45 @@ GPU范围和训练步长是当时快照；活动状态只取
   Core-only近零。训练和全部评测自然退出，GPU4–7释放。
 - 当前按owner要求停下讨论；没有修改v6架构，没有启动后续fresh训练、
   one-shot或RL。
+
+## v7第一性原理设计封存（2026-07-29）
+
+- owner解除上一轮暂停边界，要求先记录需求/设计，再创建session-local Goal
+  自主推进absolute performance。完整v7 authority已新增为
+  `docs/action_forecast_writer_v7_design.md`。
+- v7定义唯一的Task-Aligned Semantic Trajectory、frame-mean Core、8-token
+  sparse Action Expert probes、forward Action–Effect binding、三层causal
+  Procedure与Procedure-content-only compiler。
+- owner进一步把8→1聚合收敛为单步joint action–effect pooling：全部`8×L`
+  pairs直接归一化并形成每区间一个event，删除独立EventRead；Core直到
+  compiler才首次与Procedure相遇。真实模块枚举为`10,312,192`，与更新后设计
+  预算逐项吻合。
+- root `AGENTS.md`、README、execution brief、active handoff、task plan和
+  findings已同步下一fresh架构定位。architecture guard修改前baseline为pass，
+  无hard violation、parallel version family或活动source diff。
+- 设计落盘前现场只读核验：HEAD与origin/main均为
+  `f920f4a0e13366864fee3334eb60beb56c4edf6d`，原worktree clean；GPU4–7为
+  0MiB，GPU0–3存在其他用户进程且未触碰；个人空间约338GB；无EMBER训练/
+  评测进程。
+- session-local Goal已经建立。canonical Writer源码/config已原位切换到v7，
+  v6 schema/checkpoint不兼容且没有并行可执行分支；全仓192 tests通过，
+  architecture guard无hard violation或parallel family。
+
+## v7 B20真实profile、resume与正式合同（2026-07-29）
+
+- GPU4–7上B32、B24均在首个functional policy forward明确OOM；不再扫描中间
+  batch。B20连续3个完整macro finite，首步含105-frame最长视频，三步wall为
+  `19.234/17.492/17.447s`，后两步均值`27.477 queries/s`、
+  `206.075 macros/hour`；峰值allocated/reserved为
+  `77,020,274,176/83,647,004,672 bytes`。
+- B20 root为
+  `/data/ymdai/outputs/ember/pi05_as_writer_v7_profile_b20_jointae_r1_20260729`；
+  run-contract/metrics/summary SHA256为
+  `c0f1becf...e0ee3/fc1f361d...9dc8/6da42ada...fc25`。
+- 独立resume root fresh0→1后exact-resume 1→3；checkpoint1未改写，task、
+  video、query、LR与cursor身份和连续run一致，最大mean-loss绝对差
+  `2.33e-5`。joint binder的`262,656/262,656`参数在真实step1→3全部变化，
+  L2位移`0.08944`。
+- 正式配置封存task-complete B20、teacher seed`20260722`和fast cosine
+  decay400；首段fresh0→200、每25 checkpoint，共96,000 queries与4,800
+  one-video conditions。尚未启动正式训练或评测。

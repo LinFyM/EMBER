@@ -114,8 +114,8 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
 - [x] 对旧范式step500完成五臂与16-reference内部分析：
   `121/122/111/84/47`；顺序门强通过、wrong语义门失败，Procedure-only几乎
   完整复现shuffled/reversed的LoRA/action差异。
-- [ ] 按owner要求在上述证据完成后停下讨论；不改Core/Procedure融合、不启动
-  新训练、one-shot或RL。共同决定下一项可归因实验后再继续。
+- [x] 按owner要求在上述证据完成后停下讨论；owner随后已批准v7第一性原理
+  设计与自主迭代，因此该临时停止边界结束。
 
 ## Phase D：corrected mixed-task Source-SFT
 
@@ -153,6 +153,32 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   `109/400`。
 - [x] 与 v6 使用同一 frozen source base、normalization、policy interface 和
   validation rows；不机械匹配 optimizer steps。
+
+## Phase C2：v7第一性原理Writer
+
+- [x] 封存
+  [`docs/action_forecast_writer_v7_design.md`](docs/action_forecast_writer_v7_design.md)：
+  明确Core、Action–Effect Procedure与Procedure-content-only compiler的需求、
+  已有prefix/suffix信号、最少结构、参数预算和可证伪判据。
+- [x] 原位替换唯一canonical Writer：删除Text-only分支与Core-primary AdaLN；
+  一次Action Expert forward使用8个原生稀疏suffix anchors；不保留v6/v7
+  parallel executable path或checkpoint兼容分支。
+- [x] 完成task-span、shape/mask、Core permutation invariance、forward
+  transition、D=0 binder、causality、Core-only identity、freeze/gradient、
+  public-LoRA schema和checkpoint-resume最短验证；全仓192 tests与真实
+  step1→3 exact-resume均通过。
+- [x] 只在物理GPU4–7完成最长真实视频profile：B32/B24 OOM，B20三步finite，
+  含105-frame视频；稳态约27.48 queries/s、206.08 macros/hour。
+- [ ] clean/push后启动task-complete B20、fast-decay400、fresh macro0→200
+  正式段；每25 checkpoint，共96,000 action queries。
+- [ ] fresh训练并以paired fixed correct400快速筛single-checkpoint best；
+  只对当前best做full400五臂和内部Core/Procedure/effective-LoRA/action分析。
+- [ ] 若未达门，按“表示→传递→多task优化→闭环目标错位”的最早瓶颈做
+  fresh单变量迭代；不使用checkpoint融合、ensemble、contrast/order loss或
+  信息墙捷径。
+- [ ] 最低成功门为single-checkpoint correct400≥150、same≈correct、
+  correct显著优于wrong/shuffled/reversed、多task共同贡献，并在独立
+  RNG/video permutation下复测成立。150不是自动停止点。
 
 ## Phase E：matched π0.5 action one-shot baseline
 

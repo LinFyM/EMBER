@@ -59,8 +59,8 @@ from ember.writer.video_schedule import (
 )
 
 
-WRITER_ADAPTER_SCHEMA = "ember_pi05_language_axial_writer_eval_adapter_v6"
-RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_language_axial_rl_writer_eval_adapter_v6"
+WRITER_ADAPTER_SCHEMA = "ember_pi05_language_axial_writer_eval_adapter_v7"
+RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_language_axial_rl_writer_eval_adapter_v7"
 WRITER_ADAPTER_SCHEMAS = {WRITER_ADAPTER_SCHEMA, RL_WRITER_ADAPTER_SCHEMA}
 WRITER_VIDEO_CONDITIONS = {
     "correct",
@@ -72,7 +72,7 @@ WRITER_VIDEO_CONDITIONS = {
 }
 WRONG_VIDEO_CONDITIONS = {"cross_suite_wrong"}
 WRITER_EPISODE_EVIDENCE_V5_1 = "ember_pi05_writer_episode_evidence_v5_1"
-WRITER_EPISODE_EVIDENCE_V6 = "ember_pi05_writer_episode_evidence_v6"
+WRITER_EPISODE_EVIDENCE_V7 = "ember_pi05_writer_episode_evidence_v7"
 WRITER_GENERATION_SEED_SCHEDULE = (
     "sha256 first 63 bits of canonical JSON: ember_pi05_writer_generation_v5_1/"
     "frame_order/seed/suite/task_id/demo_index"
@@ -237,7 +237,7 @@ def expected_writer_episode_evidence(
     expected_schema = (
         WRITER_EPISODE_EVIDENCE_V5_1
         if sampling_mode == "with_replacement"
-        else WRITER_EPISODE_EVIDENCE_V6
+        else WRITER_EPISODE_EVIDENCE_V7
     )
     if evidence_schema is None:
         evidence_schema = expected_schema

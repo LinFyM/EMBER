@@ -2,8 +2,8 @@
 
 最后更新：2026-07-29 UTC。
 
-本文只保存当前运行状态、恢复入口和紧邻动作。架构 authority 是
-`docs/action_forecast_writer_v6_design.md`；长期科学边界是 `AGENTS.md` 与
+本文只保存当前运行状态、恢复入口和紧邻动作。下一fresh架构 authority 是
+`docs/action_forecast_writer_v7_design.md`；长期科学边界是 `AGENTS.md` 与
 `docs/execution_brief.md`；历史实验细节在 `findings.md`、`progress.md` 和 Git
 history。任何接手者都必须先只读复核现场，不能按本文快照重复启动进程。
 
@@ -11,6 +11,12 @@ history。任何接手者都必须先只读复核现场，不能按本文快照�
 
 当前没有训练或评测进程。full-24与global-8两套corrected Source-SFT均已完成
 并封存；development observed-best仍是full-24 step400=`109/400`。
+
+owner已批准按第一性原理实现、训练和迭代v7。唯一canonical v7源码/config
+已经原位实现，全仓CPU验证通过；GPU4–7真实profile拒绝B32/B24并选择B20，
+step1→3 exact-resume也已通过。正式合同已封存为task-complete B20、
+fast cosine decay400、identity fresh 0→200 macro、每25 checkpoint。下一步
+是clean/push后做紧邻live preflight并启动该正式段；尚未启动正式训练或评测。
 
 v6 fast-decay已按owner后续要求从macro400 exact-resume到600。完整
 correct400曲线为：
@@ -48,9 +54,9 @@ shuffled/reversed的Procedure差异强烈传到effective LoRA/action，Core-only
 接口：task-complete侧偏向较高absolute但弱化时序条件，old recipe侧过度放大
 时序路径并发生剧烈参数/任务能力迁移。尚不能把根因单独归给训练或架构。
 
-owner要求上述对照完成后停下讨论。当前不得改v6架构、启动新训练、one-shot或
-RL；Goal保持未完成。全部checkpoint、评测cache、rows、queue、logs和结果
-保留。下文2–15节保留历史背景，16–17节是最新恢复入口。
+上述“对照完成后停下讨论”的旧边界已被owner后续v7授权覆盖。全部v6
+checkpoint、评测cache、rows、queue、logs和结果仍保留。v7通过absolute与机制
+门前不启动one-shot或RL。下文2–17节保留历史背景，18节是最新恢复入口。
 
 v6 fresh task-complete 正式 run 已在 GPU4–7 从 macro0 完整训练到 macro400，
 训练和评测进程均已自然退出：
@@ -267,13 +273,15 @@ cap；任何新formal run前仍需重测现场与预计峰值。
 
 当前紧邻动作是：
 
-1. 把derived checkpoint实现、screen合同和证据commit、fast-forward并push到
-   clean main；
-2. 做live GPU4–7与storage preflight后，把已固定四候选分别映射到
-   GPU4/5/6/7跑paired correct400。部署仍只加载一套Writer、只做一次Writer
-   forward；
-3. 若平均不能超过raw macro200的129并改善breadth，则fresh实验改LR/优化稳定
-   化；仍失败后才动Procedure→compiler。
+1. 建立session-local Goal，成功条件为single-checkpoint correct400至少150且
+   通过完整视频因果门；
+2. 原位实现`docs/action_forecast_writer_v7_design.md`，删除v6 executable
+   schema/config，不保留并行Writer或兼容分支；
+3. 完成最短shape/mask/identity/freeze/gradient/resume检查；
+4. 做live GPU4–7与storage preflight，再用最长真实视频确定训练吞吐与显存
+   上限；
+5. 按真实证据小步训练、paired correct400筛best，并只对best做五臂和内部传递；
+   每次fresh实验只回答一个已定位瓶颈。
 
 corrected Source-SFT best已固定为109，所以focused AS硬门为
 `max(150,109+30)=150`。达到absolute和视频因果双门后才做matched action
@@ -839,3 +847,64 @@ internal:
   pi05_as_writer_v6_oldrecipe_single_checkpoint_step0500_internal_specificity_refs2_bad9a96_20260729/summary.json
   SHA256 bdd3145f572fffd5f29e823a354af8e220405930a0f912f9fdfe73ea45ae9963
 ```
+
+## 18. v7第一性原理设计与当前切换点
+
+owner要求先记录、再建立Goal。已记录的核心决策为：
+
+```text
+同一次multimodal prefix
+→ task-aligned semantic trajectory G_f
+→ frame-mean Semantic Core
++ 8-token Action Expert probes
+   × forward semantic change G_(f+1)-G_f
+→ joint softmax over all 8×L action–effect pairs
+→ high-level action–effect events
+→ 3-layer causal Procedure
+→ Core-conditioned query / Procedure-only content compiler
+→ complete rank-16 LoRA
+```
+
+Action Expert teacher suffix是在一次forward中由1个probe扩为8个稀疏原生
+positions，不是8次forward；execution policy的50-action chunk不变。v7删除
+Text-only Gemma、Core-primary AdaLN和Core到factor的content路径，不加入
+null token、Action-only residual、额外视觉encoder或order loss。设计参数
+`10,312,192`，真实实现枚举已逐项吻合。
+
+8个Action probes不先mean，也不以8个tokens进入Procedure；它们与`L`个
+forward semantic change tokens的全部`8×L` pairs在每个head内joint softmax，
+以语义变化为value、Action作zero-init逐通道调制，直接产生一个event。
+`D_f=0`时event严格为零，Core与Procedure直到compiler才首次相遇。
+
+设计文档落盘时现场为：main与origin/main均
+`f920f4a0e13366864fee3334eb60beb56c4edf6d`、原工作树clean；GPU4–7为0MiB，
+GPU0–3有其他用户进程且不得触碰；个人空间约338GB、低于500GB cap；无EMBER
+训练/评测进程。上述快照不是launch授权证据，真正GPU启动前必须重新做live
+preflight。
+
+session-local Goal已建立。canonical v7源码/config已原位实现，v6
+schema/checkpoint刻意不兼容；全仓192 tests通过，architecture guard无hard
+violation或parallel family。
+
+GPU4–7真实profile结果：
+
+```text
+B32  首个functional policy forward OOM（仍需968MiB）
+B24  首个functional policy forward OOM（仍需726MiB）
+B20  3/3 macros finite，含105-frame最长视频
+      step wall 19.234 / 17.492 / 17.447s
+      steady 27.477 queries/s，206.075 macros/hour
+      max allocated/reserved 77,020,274,176 / 83,647,004,672 bytes
+```
+
+B20 root为
+`/data/ymdai/outputs/ember/pi05_as_writer_v7_profile_b20_jointae_r1_20260729`。
+真实step1→3 resume root为
+`/data/ymdai/outputs/ember/pi05_as_writer_v7_resume_smoke_b20_jointae_r1_20260729`；
+checkpoint1恢复后未改写，三步task/video/query/LR/cursor与连续run一致，
+独立连续run的最大mean-loss差`2.33e-5`。joint Action–Effect binder
+`262,656/262,656`参数在step1→3全部变化，L2位移`0.08944`。
+
+首轮正式配置已改回正式teacher seed `20260722`，选择B20与v6已验证较优的
+fast cosine decay400；fresh 0→200 macro、每25 checkpoint，共96,000 action
+queries和4,800 one-video conditions。正式训练/评测尚未启动。

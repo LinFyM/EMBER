@@ -29,20 +29,21 @@ filename 或隐藏 normalization。
   phase/translation 旁路；v5 虽在内部形成顺序表征，却没有把它稳定传到
   effective LoRA/action。v5.2 首次同时通过 wrong/shuffled/reversed 行为门，
   step900 五臂为 `132/138/74/82/83`，但 absolute 与跨 task 稳定性仍不够。
-- 当前唯一活动 Writer 是
-  [`v6`](docs/action_forecast_writer_v6_design.md)：Semantic Set 使用
-  `mean backbone + task-selected centered residual`；Procedure 联合 frozen
-  Action-Expert probe 与 task-grounded adjacent visual transition；两路再经
-  canonical compiler/refiner 生成完整 LoRA。v5.3 仅作 v6 的直接设计来源。
-- v6 fresh 训练直接使用 task-complete update：4 ranks × 6 tasks/rank/macro，
-  task 内 `B_a=20` action queries 求均值，24 tasks 等权；前 5 个 local task
-  backward 使用 `no_sync`，第 6 个同步，随后只做一次 AdamW update。首段
-  200 macros、每 25 macros 保存；除非 absolute 明显下降，默认续到 macro400。
-- v6 用 fixed correct400 选择 observed-best，再对 best 做
-  correct/same-task-other/wrong/shuffled/reversed full400 与内部
-  Core/Procedure/effective-LoRA/action 传递检查。
-- v6 确认后，必须从同一 frozen source base fresh 训练 corrected mixed-task
-  rank-128 Source-SFT；随后做 matched one-shot baseline，最后才进入独立
+- v6 已完成 task-complete/old-recipe、fast-decay、五臂和内部传递上限证据；
+  single-checkpoint best 为 `143/400`。corrected mixed-task rank-128
+  Source-SFT development best 已封存为 `109/400`。
+- 当前下一 fresh Writer authority 是
+  [`v7`](docs/action_forecast_writer_v7_design.md)：同一次 multimodal prefix
+  形成 Task-Aligned Semantic Trajectory；frame mean 形成高层 Core；一次
+  Action Expert forward 中的 8 个稀疏 suffix probes 与 forward semantic
+  change 的全部 `8×L` pairs 联合注意力汇成每区间一个 action–effect event；
+  Core 只在 compiler 条件化 slot query，Procedure 提供全部 LoRA dynamic
+  content。
+- v7 已原位替换唯一 canonical Writer；CPU、GPU4–7最长视频和exact-resume
+  验证通过。B32/B24 OOM后封存B20，首轮以task-complete fast-decay400从
+  identity fresh训练0→200 macro。最终仍以 single-checkpoint
+  `correct400>=150` 及完整五臂/内部因果门判定。
+- v7 通过后才做 matched one-shot baseline，随后进入独立
   short-AS cold-start → pure-reward RL-Writer。
 
 ## 硬约束
@@ -56,7 +57,7 @@ filename 或隐藏 normalization。
   可执行路径已从工作树退役；provenance 只保留在 Git 历史与 evidence ledger。
 - 当前运行状态和下一动作只看
   [`docs/active_session_handoff.md`](docs/active_session_handoff.md)；架构与长期
-  科学合同分别看 v6 design、`AGENTS.md` 和 `docs/execution_brief.md`。
+  科学合同分别看 v7 design、`AGENTS.md` 和 `docs/execution_brief.md`。
 
 ## 阅读顺序
 
@@ -71,12 +72,13 @@ filename 或隐藏 normalization。
 9. `docs/action_forecast_writer_v5_2_design.md`
 10. `docs/action_forecast_writer_v5_3_design.md`
 11. `docs/action_forecast_writer_v6_design.md`
-12. `task_plan.md`
-13. `findings.md`
-14. `progress.md`
-15. `docs/concept.md`
-16. `docs/decisions_and_open_questions.md`
-17. `docs/novelty_and_landscape.md`
+12. `docs/action_forecast_writer_v7_design.md`
+13. `task_plan.md`
+14. `findings.md`
+15. `progress.md`
+16. `docs/concept.md`
+17. `docs/decisions_and_open_questions.md`
+18. `docs/novelty_and_landscape.md`
 
 外部专家所需的 v4 结构、实验 aggregate、逐任务结果和根因证据集中在
 [`docs/action_forecast_writer_expert_consultation.md`](docs/action_forecast_writer_expert_consultation.md)

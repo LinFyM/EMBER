@@ -1,10 +1,21 @@
 # EMBER Current Execution Brief
 
-状态：2026-07-28。共享 π0.5-LIBERO source base 已封存；旧 Source-SFT结果只
-作历史 comparator。v4、v5、v5.1、v5.2和v5.3均已转为provenance。当前活动
-方法是EMBER Writer v6：Task-Grounded Semantic Set + Visual-Transition
-Procedure，并从fresh step0直接采用task-complete多任务训练。v6确认后必须
-fresh重训corrected mixed-task rank-128 Source-SFT。
+状态：2026-07-29。共享 π0.5-LIBERO source base与corrected mixed-task
+rank-128 Source-SFT均已封存，后者development observed-best为`109/400`。
+v4、v5、v5.1、v5.2、v5.3和v6均已转为provenance。v6 single-checkpoint
+best为`143/400`，仍未达到focused absolute门150；task-complete与旧
+rank-rotating recipe分别呈现“较高absolute但较弱order margin”和“较强order
+margin但较低absolute/wrong语义”的互补失败。
+
+owner已批准下一fresh方法为EMBER Writer v7：Task-Aligned Semantic
+Trajectory + Causal Action–Effect Program。完整需求、拓扑、参数预算和判定
+合同见
+[`docs/action_forecast_writer_v7_design.md`](action_forecast_writer_v7_design.md)。
+唯一canonical v7已经原位实现，最短CPU、真实GPU4–7最长视频和exact-resume
+验证均通过。B32/B24在首个functional policy forward OOM，B20三步finite，
+稳态约`27.48 queries/s`、`206.08 macros/hour`。首轮固定task-complete B20与
+fast cosine decay400，从identity fresh运行0→200 macro、每25保存；不使用
+多checkpoint融合、contrast/order loss或并行架构路径。
 
 外部专家复核后的第一轮诊断证明，shuffle的直接行为放大器位于per-image
 forecast之后的absolute-time Plan/Revision；但后续全面复审又确认它不是唯一
@@ -56,13 +67,16 @@ Procedure通过zero-init AdaLN调制Core slots，再经一个post-fusion slot bl
 correct-video `127/400`，且best的reversed为`120/400`、与correct无显著差异；
 它因此只作provenance。
 
-当前唯一架构与训练authority为
-[`docs/action_forecast_writer_v6_design.md`](action_forecast_writer_v6_design.md)。
-v6让text-only task tokens逐帧读取PaliGemma image-position contents；Semantic
-Core用`mean backbone + task-selected centered residual`保持frame-set
-permutation invariance；Procedure用Action-Expert probe读取按实际arm顺序重算的
-adjacent task-grounded visual transition。公共宽度256、8 heads×32、Core与
-Procedure各2层、factor hidden256，总参数`10,775,296`。旧v5设计见
+当前下一fresh架构authority为
+[`docs/action_forecast_writer_v7_design.md`](action_forecast_writer_v7_design.md)。
+v7复用同一次multimodal prefix产生唯一task-aligned semantic trajectory；
+frame mean与task-token Transformer形成Core。Action Expert在一次forward中
+只取原50-position接口的8个稀疏suffix anchors，与`frame f→f+1`的forward
+semantic change绑定成action–effect events，再由三层causal Procedure编码。
+Core只形成task-conditioned query，全部factor content来自Procedure。公共
+宽度256、8 heads×32、factor hidden256，设计预算`10,312,192`。旧v6设计见
+[`docs/action_forecast_writer_v6_design.md`](action_forecast_writer_v6_design.md)；
+旧v5设计见
 [`docs/action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)；
 完整v4根因证据见
 [`docs/action_forecast_writer_v4_root_cause.md`](action_forecast_writer_v4_root_cause.md)；
@@ -125,12 +139,12 @@ owner于2026-07-22将source-base正式训练改为从generic base fresh运行1,0
 - source base冻结，只有Writer更新。Writer不得看到action、proprio、reward、terminal、task ID、filename或隐藏stats。
 - v6原位替换v5.3活动schema/config，不保留平行runner。公开rank-16 LoRA仍为
   76 tensors、`1,287,168` scalars；Writer参数`10,775,296`。
-- GPU4–7真实最长视频profile先跑完整K6/B20 macro；OOM或连续不稳定才直接退
-  B16，不测试中间档。B20时每macro为24 videos/LoRAs、480 queries、24次
-  functional forward、1次同步和1次AdamW。
-- 首段先用functional panel安排checkpoint，再以内部五条件和轻量paired rollout
-  检查早期机制，重点确认final effective LoRA / policy action的
-  `same < shuffled/reversed`相对v5实质改善；轻量panel不冒充full400结论。
+- GPU4–7真实最长视频profile已拒绝B32/B24并选择B20。B20时每macro为24
+  videos/LoRAs、480 queries、24次functional forward、1次同步和1次AdamW；
+  三步含105-frame视频且全部finite，step1→3 exact-resume通过。
+- 首个正式段使用fast cosine decay400，从identity fresh运行200 macro、
+  每25保存；先用paired fixed correct400筛single-checkpoint候选，再对唯一
+  当前best做完整五臂与内部传递检查。
 - absolute达到预门后，对暂时best跑固定400
   correct/same/wrong/shuffled/reversed；要求same影响最小且correct明显优于
   wrong、shuffle、reverse。不通过则定位最早失效层后fresh迭代，不用

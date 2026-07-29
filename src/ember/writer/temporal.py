@@ -1,4 +1,4 @@
-"""Language Core, visual-transition Procedure, and slot-normalized LoRA fusion."""
+"""Semantic Core, causal action-effect Procedure, and LoRA compilation."""
 
 from __future__ import annotations
 
@@ -62,85 +62,6 @@ def _split_heads(value: torch.Tensor, heads: int) -> torch.Tensor:
 def _merge_heads(value: torch.Tensor) -> torch.Tensor:
     batch, heads, tokens, width = value.shape
     return value.transpose(1, 2).reshape(batch, tokens, heads * width)
-
-
-class TaskSelectedSemanticSetFusion(torch.nn.Module):
-    """Add task-selected centered frame evidence to a stable mean backbone."""
-
-    def __init__(self, *, width: int, heads: int) -> None:
-        super().__init__()
-        if min(width, heads) <= 0 or width % heads:
-            raise VariableEpisodeInputError("invalid semantic-set fusion")
-        self.heads = int(heads)
-        self.head_width = width // heads
-        self.query_norm = RMSNorm(width)
-        self.evidence_norm = RMSNorm(width)
-        self.query = torch.nn.Linear(width, width, bias=False)
-        self.key = torch.nn.Linear(width, width, bias=False)
-        self.mean = torch.nn.Linear(width, width, bias=False)
-        self.output = torch.nn.Linear(width, width, bias=False)
-
-    def forward(
-        self,
-        text_queries: torch.Tensor,
-        frame_evidence: torch.Tensor,
-        valid_frames: torch.Tensor,
-        valid_task_tokens: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        if (
-            text_queries.ndim != 3
-            or frame_evidence.ndim != 4
-            or frame_evidence.shape[0] != text_queries.shape[0]
-            or frame_evidence.shape[2:] != text_queries.shape[1:]
-            or valid_frames.shape != frame_evidence.shape[:2]
-            or valid_frames.dtype != torch.bool
-            or valid_task_tokens.shape != text_queries.shape[:2]
-            or valid_task_tokens.dtype != torch.bool
-            or not bool(valid_frames.any(dim=1).all())
-            or not bool(valid_task_tokens.any(dim=1).all())
-        ):
-            raise VariableEpisodeInputError("invalid token-aligned frame evidence")
-        batch, frames, tokens, width = frame_evidence.shape
-        active = valid_frames[:, :, None, None]
-        counts = valid_frames.sum(dim=1).to(frame_evidence.dtype)[:, None, None]
-        frame_mean = frame_evidence.masked_fill(~active, 0.0).sum(dim=1)
-        frame_mean = frame_mean / counts
-        centered = (frame_evidence - frame_mean[:, None]).masked_fill(
-            ~active,
-            0.0,
-        )
-        query = _split_heads(
-            self.query(self.query_norm(text_queries)),
-            self.heads,
-        )
-        normalized = self.evidence_norm(frame_evidence)
-        key = self.key(normalized).reshape(
-            batch,
-            frames,
-            tokens,
-            self.heads,
-            self.head_width,
-        ).permute(0, 3, 1, 2, 4)
-        value = centered.reshape(
-            batch,
-            frames,
-            tokens,
-            self.heads,
-            self.head_width,
-        ).permute(0, 3, 1, 2, 4)
-        logits = torch.einsum("bhld,bhtld->bhtl", query, key)
-        logits = logits / math.sqrt(self.head_width)
-        frame_mask = valid_frames[:, None, :, None]
-        logits = logits.masked_fill(~frame_mask, torch.finfo(logits.dtype).min)
-        weights = torch.softmax(logits.to(torch.float32), dim=2).to(logits.dtype)
-        attended = torch.einsum("bhtl,bhtld->bhld", weights, value)
-        output = self.mean(frame_mean) + self.output(_merge_heads(attended))
-        output = output.masked_fill(~valid_task_tokens[..., None], 0.0)
-        weights = weights.masked_fill(
-            ~valid_task_tokens[:, None, None, :],
-            0.0,
-        )
-        return output, weights
 
 
 class RoPEContentBlock(torch.nn.Module):
@@ -212,7 +133,7 @@ class RoPEContentBlock(torch.nn.Module):
 
 
 class LanguageSemanticCore(torch.nn.Module):
-    """Aggregate along frames, then compose evidence along task-language tokens."""
+    """Mean away video time, then compose high-level task-token invariants."""
 
     def __init__(
         self,
@@ -224,10 +145,6 @@ class LanguageSemanticCore(torch.nn.Module):
         super().__init__()
         if blocks <= 0:
             raise VariableEpisodeInputError("Semantic Core needs language blocks")
-        self.semantic_set_fusion = TaskSelectedSemanticSetFusion(
-            width=width,
-            heads=heads,
-        )
         self.blocks = torch.nn.ModuleList(
             RoPEContentBlock(width=width, heads=heads, causal=False)
             for _ in range(blocks)
@@ -235,17 +152,29 @@ class LanguageSemanticCore(torch.nn.Module):
 
     def forward(
         self,
-        text_queries: torch.Tensor,
         frame_evidence: torch.Tensor,
         valid_frames: torch.Tensor,
         valid_task_tokens: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        content, weights = self.semantic_set_fusion(
-            text_queries,
-            frame_evidence,
-            valid_frames,
-            valid_task_tokens,
-        )
+        if (
+            frame_evidence.ndim != 4
+            or valid_frames.shape != frame_evidence.shape[:2]
+            or valid_frames.dtype != torch.bool
+            or valid_task_tokens.shape
+            != (frame_evidence.shape[0], frame_evidence.shape[2])
+            or valid_task_tokens.dtype != torch.bool
+            or not bool(valid_frames.any(dim=1).all())
+            or not bool(valid_task_tokens.any(dim=1).all())
+        ):
+            raise VariableEpisodeInputError("invalid Core semantic trajectory")
+        active = valid_frames[..., None, None]
+        counts = valid_frames.sum(dim=1).to(frame_evidence.dtype)[:, None, None]
+        content = frame_evidence.masked_fill(~active, 0.0).sum(dim=1) / counts
+        content = content.masked_fill(~valid_task_tokens[..., None], 0.0)
+        weights = (
+            valid_frames.to(frame_evidence.dtype)[:, :, None]
+            / counts[:, :, :1]
+        ) * valid_task_tokens[:, None].to(frame_evidence.dtype)
         positions = torch.arange(
             content.shape[1],
             dtype=torch.long,
@@ -256,99 +185,121 @@ class LanguageSemanticCore(torch.nn.Module):
         return content, weights
 
 
-class TaskGroundedVisualTransitionFusion(torch.nn.Module):
-    """Let each Action-Expert probe read adjacent task-grounded visual change."""
+class ActionEffectBinder(torch.nn.Module):
+    """Pool all Action-by-effect pairs into one high-level interval event."""
 
     def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
         if min(width, heads) <= 0 or width % heads:
-            raise VariableEpisodeInputError("invalid visual-transition fusion")
+            raise VariableEpisodeInputError("invalid action-effect binder")
         self.heads = int(heads)
         self.head_width = width // heads
         self.probe_norm = RMSNorm(width)
-        self.transition_norm = RMSNorm(width)
+        self.trajectory_norm = RMSNorm(width)
         self.query = torch.nn.Linear(width, width, bias=False)
         self.key = torch.nn.Linear(width, width, bias=False)
         self.output = torch.nn.Linear(width, width, bias=False)
+        self.feature_gate = torch.nn.Linear(width, width, bias=False)
+        torch.nn.init.zeros_(self.feature_gate.weight)
 
     def forward(
         self,
-        action_probe: torch.Tensor,
-        grounded_evidence: torch.Tensor,
+        action_probes: torch.Tensor,
+        semantic_trajectory: torch.Tensor,
         valid_frames: torch.Tensor,
         valid_task_tokens: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         if (
-            action_probe.ndim != 3
-            or grounded_evidence.ndim != 4
-            or grounded_evidence.shape[:2] != action_probe.shape[:2]
-            or grounded_evidence.shape[-1] != action_probe.shape[-1]
-            or action_probe.shape[-1] != self.heads * self.head_width
-            or valid_frames.shape != action_probe.shape[:2]
+            action_probes.ndim != 4
+            or action_probes.shape[2] != 8
+            or semantic_trajectory.ndim != 4
+            or semantic_trajectory.shape[:2] != action_probes.shape[:2]
+            or semantic_trajectory.shape[-1] != action_probes.shape[-1]
+            or action_probes.shape[-1] != self.heads * self.head_width
+            or valid_frames.shape != action_probes.shape[:2]
             or valid_frames.dtype != torch.bool
             or valid_task_tokens.shape
-            != (action_probe.shape[0], grounded_evidence.shape[2])
+            != (action_probes.shape[0], semantic_trajectory.shape[2])
             or valid_task_tokens.dtype != torch.bool
             or not bool(valid_frames[:, 0].all())
             or not bool(valid_task_tokens.any(dim=1).all())
+            or action_probes.shape[1] < 2
         ):
-            raise VariableEpisodeInputError("invalid visual-transition batch")
+            raise VariableEpisodeInputError("invalid action-effect batch")
 
-        batch, frames, task_tokens, width = grounded_evidence.shape
-        transition = torch.cat(
-            (
-                torch.zeros_like(grounded_evidence[:, :1]),
-                grounded_evidence[:, 1:] - grounded_evidence[:, :-1],
-            ),
-            dim=1,
-        )
-        active = valid_frames[:, :, None] & valid_task_tokens[:, None, :]
+        batch, frames, task_tokens, width = semantic_trajectory.shape
+        normalized = self.trajectory_norm(semantic_trajectory)
+        transition = normalized[:, 1:] - normalized[:, :-1]
+        valid_intervals = valid_frames[:, 1:] & valid_frames[:, :-1]
+        active = valid_intervals[:, :, None] & valid_task_tokens[:, None, :]
         transition = transition.masked_fill(~active[..., None], 0.0)
 
-        query = self.query(self.probe_norm(action_probe)).reshape(
-            batch * frames,
-            1,
+        intervals = frames - 1
+        probes = action_probes[:, :-1]
+        normalized_probes = self.probe_norm(probes)
+        query = self.query(normalized_probes).reshape(
+            batch,
+            intervals,
+            8,
             self.heads,
             self.head_width,
-        ).transpose(1, 2)
-        normalized = self.transition_norm(transition)
-        key = self.key(normalized).reshape(
-            batch * frames,
+        ).permute(0, 1, 3, 2, 4)
+        key = self.key(transition).reshape(
+            batch,
+            intervals,
             task_tokens,
             self.heads,
             self.head_width,
-        ).transpose(1, 2)
+        ).permute(0, 1, 3, 2, 4)
         value = transition.reshape(
-            batch * frames,
+            batch,
+            intervals,
             task_tokens,
             self.heads,
             self.head_width,
-        ).transpose(1, 2)
-        allowed = (
-            valid_task_tokens[:, None, :]
-            .expand(-1, frames, -1)
-            .reshape(batch * frames, task_tokens)
+        ).permute(0, 1, 3, 2, 4)
+        logits = torch.einsum("bthkd,bthld->bthkl", query, key)
+        logits = logits / math.sqrt(self.head_width)
+        allowed = valid_task_tokens[:, None, None, None, :]
+        logits = logits.masked_fill(
+            ~allowed,
+            torch.finfo(logits.dtype).min,
         )
-        attended = F.scaled_dot_product_attention(
-            query,
-            key,
+        pair_weights = torch.softmax(
+            logits.reshape(batch, intervals, self.heads, -1).to(torch.float32),
+            dim=-1,
+        ).to(logits.dtype).reshape(
+            batch,
+            intervals,
+            self.heads,
+            8,
+            task_tokens,
+        )
+        action_gate = 1.0 + torch.tanh(
+            self.feature_gate(normalized_probes)
+        ).reshape(
+            batch,
+            intervals,
+            8,
+            self.heads,
+            self.head_width,
+        ).permute(0, 1, 3, 2, 4)
+        event_heads = torch.einsum(
+            "bthkl,bthld,bthkd->bthd",
+            pair_weights,
             value,
-            attn_mask=allowed[:, None, None, :],
-            dropout_p=0.0,
-            is_causal=False,
+            action_gate,
         )
-        residual = self.output(
-            attended.transpose(1, 2).reshape(batch, frames, width)
-        )
-        fused = (action_probe + residual).masked_fill(
-            ~valid_frames[..., None],
+        event = self.output(event_heads.reshape(batch, intervals, width))
+        event = event.masked_fill(
+            ~valid_intervals[..., None],
             0.0,
         )
-        return fused, transition
+        return event, transition, valid_intervals
 
 
 class CausalProcedureEncoder(torch.nn.Module):
-    """Keep one causally contextualized Procedure token per sampled frame."""
+    """Keep one causally contextualized Procedure token per frame interval."""
 
     def __init__(self, *, width: int, heads: int, blocks: int) -> None:
         super().__init__()
@@ -462,11 +413,11 @@ class CoreSlotReader(torch.nn.Module):
 
 
 class ProcedureSlotReader(torch.nn.Module):
-    """Read centered ordered Procedure content conditioned on Core slots."""
+    """Use a Core-conditioned query to read ordered Procedure content."""
 
     def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
-        self.core_norm = RMSNorm(width)
+        self.query_norm = RMSNorm(width)
         self.memory_norm = RMSNorm(width)
         self.attention = ContentCrossAttention(
             width=width,
@@ -481,20 +432,16 @@ class ProcedureSlotReader(torch.nn.Module):
         procedure: torch.Tensor,
         positions: torch.Tensor,
         valid_procedure: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        normalized_core = self.core_norm(core_slots)
-        mask = valid_procedure[..., None]
-        count = mask.sum(dim=1, keepdim=True).clamp_min(1)
-        mean = (procedure * mask).sum(dim=1, keepdim=True) / count
-        centered = (procedure - mean).masked_fill(~mask, 0.0)
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        conditioned_query = self.query_norm(routing + core_slots)
         slots = self.attention(
-            routing + normalized_core,
+            conditioned_query,
             self.memory_norm(procedure),
-            centered,
+            procedure,
             valid_procedure,
             positions,
         )
-        return slots, normalized_core, centered
+        return slots, conditioned_query
 
 
 class PostFusionSlotBlock(torch.nn.Module):
@@ -535,8 +482,8 @@ class PostFusionSlotBlock(torch.nn.Module):
         return self.output_norm(content)
 
 
-class SlotNormalizedCoreProcedureCompiler(torch.nn.Module):
-    """Fuse Core and Procedure through centered readout and zero-init AdaLN."""
+class ProcedureContentCompiler(torch.nn.Module):
+    """Let Core address slots while Procedure supplies every content value."""
 
     EXPERT_LAYERS = 18
     RANK = 16
@@ -566,9 +513,6 @@ class SlotNormalizedCoreProcedureCompiler(torch.nn.Module):
         self.routing_norm = RMSNorm(width)
         self.core_reader = CoreSlotReader(width=width, heads=heads)
         self.procedure_reader = ProcedureSlotReader(width=width, heads=heads)
-        self.procedure_norm = RMSNorm(width)
-        self.modulation = torch.nn.Linear(width, 2 * width, bias=False)
-        torch.nn.init.zeros_(self.modulation.weight)
         self.post_fusion = PostFusionSlotBlock(width=width, heads=heads)
 
     def _routing(self) -> torch.Tensor:
@@ -640,25 +584,19 @@ class SlotNormalizedCoreProcedureCompiler(torch.nn.Module):
             -1,
         )
         core_slots = self.core_reader(routing, core, valid_core)
-        procedure_slots, normalized_core, centered = self.procedure_reader(
+        procedure_slots, conditioned_query = self.procedure_reader(
             routing,
             core_slots,
             procedure,
             positions,
             valid_procedure,
         )
-        gamma, beta = self.modulation(
-            self.procedure_norm(procedure_slots)
-        ).chunk(2, dim=-1)
-        fused = (1.0 + gamma) * normalized_core + beta
-        output = self.post_fusion(fused, routing)
+        output = self.post_fusion(procedure_slots, routing)
         return output, {
             "core_slots": core_slots,
-            "procedure_centered": centered,
+            "conditioned_query": conditioned_query,
             "procedure_slots": procedure_slots,
-            "adaln_gamma": gamma,
-            "adaln_beta": beta,
-            "fused_slots": fused,
+            "fused_slots": output,
         }
 
     def forward(

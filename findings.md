@@ -2383,3 +2383,49 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   的Procedure依赖，从而顺序margin大但absolute/breadth下降。两者共同指出
   当前瓶颈位于多任务优化与Core/Procedure融合增益的接口；现有证据尚不足以
   单独判定应只改训练还是只改融合，需先与owner讨论下一项单变量实验。
+
+## v7第一性原理需求与设计决策（2026-07-29）
+
+- owner把设计顺序明确为“需要什么→已经有什么→只补最少缺口”，同时强调
+  最少拓扑不能牺牲必要模块的表达能力。Core负责高层对象/角色/关系、环境、
+  目标与语言指定的子目标顺序；Procedure负责高层动作和随后语义效果的因果链；
+  融合必须先借Core理解任务，再从Procedure读取怎样完成。
+- 现有multimodal prefix的image/task hidden已经双向交互，足够建立唯一
+  task-aligned semantic trajectory，不再需要text-only Gemma。逐帧
+  task-to-patch grounding沿用v5.2的已验证机制；Core直接对token-aligned
+  trajectory做frame mean，再用两层task-token Transformer组合高层语义。
+- Action Expert teacher suffix的核心改动是单次forward中从1个probe扩为8个
+  稀疏原生positions`[0,7,14,21,28,35,42,49]`；不是8次forward，也不改变
+  execution policy的50-action chunk。8个probe分别读取
+  `frame f→f+1`的forward semantic change；最终收敛为在全部`8×L`
+  action–effect pairs上joint softmax，以语义变化为value、Action作逐通道
+  调制，直接汇成一个高层event。不做提前mean，也不把8个anchors当作低层
+  时间轴；Core不参与，双流直到compiler才首次相遇。
+- Procedure使用三层256-wide causal blocks。compiler删除v5.1/v6的
+  Core-primary AdaLN：Core只形成task-conditioned query，Procedure是进入
+  dynamic LoRA slots和factor heads的唯一value/content。由此Core-only在结构
+  上保持identity，避免模型重新学成language/scene驱动的通用adapter。
+- 首版明确不加入null token、Action-only residual、额外视觉encoder、flow/
+  geometry、7D forecast、Core到factor旁路或order loss。机械设计预算为
+  `10,312,192`，比rank-128 SFT多0.144%、比v6少463,104；所有主宽度仍为256。
+- 完整authority已写入
+  `docs/action_forecast_writer_v7_design.md`。本段只封存设计事实；写入时尚未
+  修改Writer源码/config、创建output或启动GPU进程。
+
+## v7真实profile与首轮recipe封存（2026-07-29）
+
+- canonical实现的真实参数为`10,312,192`。全仓192 tests通过；Core
+  permutation、forward transition、`D=0→event=0`、Procedure causality、
+  Core-only identity、完整rank16 LoRA、freeze与gradient合同均成立。
+- GPU4–7最长视频profile中，B32与B24分别在首个functional policy forward
+  仍需968MiB/726MiB时OOM；B20连续三步finite且首步确含105-frame视频。后两步
+  均值为`27.477 queries/s`、`206.075 macros/hour`，峰值
+  allocated/reserved为`77.020/83.647GB`（十进制）。
+- 真实fresh0→1再resume1→3完整通过；checkpoint1恢复后未改写，task/video/
+  query/LR/cursor身份与连续run相同，独立连续run的最大mean-loss差仅
+  `2.33e-5`。joint Action–Effect binder全部`262,656`参数发生更新，step1→3
+  L2位移`0.08944`，因此新路径并非断梯度。
+- 第一轮只同时采用两个已有证据最强的固定选择：v6上absolute较高的
+  task-complete topology，以及把v6 single-checkpoint推至143的fast cosine
+  decay400。v7从identity fresh运行B20 macro0→200、每25 checkpoint；架构是
+  本轮唯一新科学变量，不额外修改loss或task采样。

@@ -24,7 +24,7 @@ from ember.writer import as_step
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-CONFIG = REPO_ROOT / "configs/pi05_as_writer_language_axial_v6.json"
+CONFIG = REPO_ROOT / "configs/pi05_as_writer_language_axial_v7.json"
 OLD_RECIPE_CONFIG = (
     REPO_ROOT
     / "configs/pi05_as_writer_language_axial_v6_old_recipe_v1.json"
@@ -36,33 +36,34 @@ def test_language_axial_config_seals_architecture_and_information_wall() -> None
     writer = config["writer"]
     assert (
         writer["architecture"]
-        == "pi05_task_grounded_semantic_set_visual_transition_causal_procedure_slot_fusion_v6"
+        == "pi05_task_aligned_semantic_trajectory_action_effect_causal_program_procedure_content_compiler_v7"
     )
     assert writer["teacher_state_input"] is False
     assert writer["teacher_prompt"] == "Task: {cleaned_task};\nAction: "
-    assert writer["text_branch_input"].startswith("bos_plus_exact")
-    assert "task_queried_image_position_content" in writer["multimodal_core_value"]
+    assert "same_image_language_prefix" in writer["multimodal_task_evidence"]
+    assert writer["stable_task_query"].startswith("valid_frame_mean")
     assert writer["patch_grounding_heads"] == 8
     assert "no_value_projection" in writer["patch_grounding_value"]
     assert writer["frame_batching_contract"].startswith("encode_one_video")
-    assert writer["text_meta_lora_rank"] == 4
     assert writer["vl_meta_lora_rank"] == 4
     assert writer["action_meta_lora_rank"] == 4
     assert writer["action_horizon"] == 50
     assert writer["query_count"] == 320
     assert writer["frame_stride"] == 5
     assert writer["max_frames_per_encoder_call"] == 32
-    assert writer["semantic_set_fusion"].startswith("valid_frame_mean")
-    assert "centered" in writer["semantic_set_value"]
-    assert "no_value_projection" in writer["semantic_set_value"]
+    assert writer["action_probe_positions"] == [0, 7, 14, 21, 28, 35, 42, 49]
+    assert writer["semantic_core_aggregation"].startswith("parameter_free")
     assert writer["semantic_core_blocks"] == 2
-    assert writer["procedure_attention"] == "global_causal_pre_norm_with_valid_mask"
-    assert writer["procedure_blocks"] == 2
-    assert writer["visual_transition_heads"] == 8
-    assert writer["visual_transition_first_frame"] == "exact_zero"
-    assert "actual_arm_input_order" in writer["visual_transition_source"]
-    assert "no_value_projection" in writer["visual_transition_value"]
-    assert writer["slot_fusion"].startswith("zero_initialized")
+    assert writer["procedure_attention"] == (
+        "global_causal_pre_norm_with_valid_interval_mask"
+    )
+    assert writer["procedure_blocks"] == 3
+    assert writer["action_effect_heads"] == 8
+    assert "actual_arm_input_order" in writer["action_effect_source"]
+    assert "no_value_projection" in writer["action_effect_value"]
+    assert writer["action_effect_attention"].startswith("joint_softmax")
+    assert writer["action_effect_output"].startswith("one_high_level_event")
+    assert writer["slot_fusion"].startswith("procedure_readout")
     assert writer["post_fusion_blocks"] == 1
     assert writer["factor_hidden_width"] == 256
     assert writer_split_roles(config) == ("train",)
@@ -86,91 +87,41 @@ def test_language_axial_config_seals_architecture_and_information_wall() -> None
     assert config["profile_defaults"]["expected_world_size"] == 4
     assert config["profile_evidence"]["status"] == "sealed_b20"
     assert config["profile_evidence"]["allowed_physical_gpu_ids"] == [4, 5, 6, 7]
-    assert config["profile_evidence"]["initial_candidate"] == {
-        "max_frames_per_encoder_call": 32,
-        "per_task_action_batch_size": 20,
-    }
-    assert config["profile_evidence"]["only_fallback_candidate"] == {
-        "max_frames_per_encoder_call": 32,
-        "per_task_action_batch_size": 16,
-    }
+    assert [
+        row["per_task_action_batch_size"]
+        for row in config["profile_evidence"]["candidates"]
+    ] == [32, 24, 20]
     assert config["profile_evidence"]["selected"]["per_task_action_batch_size"] == 20
     assert config["profile_evidence"]["selected"]["contains_real_105_frame_video"] is True
-    assert config["profile_evidence"]["upper_bound"].startswith(
-        "larger_batches_not_scanned"
-    )
+    assert [
+        row["per_task_action_batch_size"]
+        for row in config["profile_evidence"]["rejected_candidates"]
+    ] == [32, 24]
     assert config["profile_evidence"]["exact_resume_smoke"]["status"].startswith(
         "pass_macro_boundary"
     )
-    assert config["profile_evidence"]["real_transition_evidence"]["status"].startswith(
-        "pass_real_profile"
-    )
+    assert config["profile_evidence"]["gradient_reachability"][
+        "action_effect_changed_parameter_count"
+    ] == 262656
     assert config["profile_evidence"]["inference_profile"] is None
     assert config["profile_evidence"]["teacher_videos_per_task_visit"] == 1
     assert config["specificity_gate"]["status"] == "pending"
-    assert (
-        config["profile_evidence"][
-            "writer_video_conditions_per_rank_per_macro_update"
-        ]
-        == 6
-    )
+    assert config["optimization"]["scheduler"]["decay_steps"] == 400
+    assert config["data"]["teacher_video_seed"] == 20260722
     assert config["formal_run"]["status"] == "sealed"
     assert config["formal_run"]["total_steps"] == 2400
     assert config["formal_run"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["selected_stop_step"] == 200
     assert config["formal_run"]["stage_stop_steps"] == "every:200"
-    assert "live_b20_throughput" in config["formal_run"]["segment_definition"]
+    assert config["formal_run"]["segment_definition"].startswith("fresh_v7")
     assert "without_runtime_full_data_sha" in config["formal_run"][
         "data_integrity_check"
     ]
 
 
-def test_old_recipe_overlay_changes_training_without_changing_v6() -> None:
-    config = load_writer_config(OLD_RECIPE_CONFIG)
-    assert (
-        config["writer"]["architecture"]
-        == "pi05_task_grounded_semantic_set_visual_transition_causal_procedure_slot_fusion_v6"
-    )
-    assert config["conditioning_training"] == {
-        "method": "single_video_multi_action_positive_functional_loss",
-        "update_topology": "rank_rotating_one_task_per_rank",
-        "writer_language_contract": (
-            "correct_task_language_state_free_teacher_action_suffix"
-        ),
-        "policy_language_contract": "correct_action_query_task_language",
-        "action_query_batch_owner": (
-            "one physical action batch per rank with no optimizer gradient "
-            "accumulation"
-        ),
-        "task_assignment": (
-            "one task per rank per optimizer step with globally balanced task "
-            "rotation"
-        ),
-        "tasks_per_rank_per_optimizer_update": 1,
-        "global_tasks_per_optimizer_update": 4,
-        "teacher_videos_per_task_visit": 1,
-        "action_video_assignment": "all_actions_share_single_video_lora",
-        "logical_pair_batch": "per_rank_action_batch",
-        "policy_noise_contract": (
-            "one independent policy flow noise and time draw per action query"
-        ),
-        "pair_loss_reduction": "mean_over_rank_local_action_batch",
-        "task_loss_scale_before_backward": "one",
-        "ddp_gradient_sync": "one_synchronized_backward_per_optimizer_step",
-        "optimizer_steps_per_macro_update": 1,
-        "checkpoint_boundary": "complete_optimizer_update_only",
-        "normal_loss_weight": 1.0,
-    }
-    assert config["optimization"]["scheduler"] == {
-        "kind": "cosine_decay_with_warmup",
-        "peak_lr": 0.0003,
-        "warmup_steps": 100,
-        "decay_steps": 12000,
-        "decay_lr": 1e-05,
-    }
-    assert config["_config_derivation"]["base_sha256"] == (
-        "812793661ea20b7207f15e6a4ae13d506f69d0d3003c72f1bbcc16837aaf33fb"
-    )
+def test_v6_recipe_overlay_is_provenance_not_an_active_writer_path() -> None:
+    with pytest.raises(WriterModelError, match="invalid AS-Writer recipe overlay"):
+        load_writer_config(OLD_RECIPE_CONFIG)
 
 
 def test_checkpoint_schedule_and_cursor_are_fail_closed() -> None:
@@ -212,19 +163,19 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         (1, 2, 3),
     )
     assert profile.stop_after_step == 3
-    b16 = copy.copy(profile)
-    b16.batch_size = 16
-    b16.stop_after_step = None
-    assert resolve_runtime(b16, config, context) == (3, 16, (1, 2, 3))
+    b24 = copy.copy(profile)
+    b24.batch_size = 24
+    b24.stop_after_step = None
+    assert resolve_runtime(b24, config, context) == (3, 24, (1, 2, 3))
     invalid_batch = copy.copy(profile)
     invalid_batch.batch_size = 19
     invalid_batch.stop_after_step = None
-    with pytest.raises(WriterModelError, match="B20"):
+    with pytest.raises(WriterModelError, match="hardware-friendly"):
         resolve_runtime(invalid_batch, config, context)
     oversized_batch = copy.copy(profile)
-    oversized_batch.batch_size = 21
+    oversized_batch.batch_size = 40
     oversized_batch.stop_after_step = None
-    with pytest.raises(WriterModelError, match="B20"):
+    with pytest.raises(WriterModelError, match="hardware-friendly"):
         resolve_runtime(oversized_batch, config, context)
     wrong_world = DistributedContext(
         rank=0,
@@ -246,7 +197,7 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         skip_data_sha=False,
     )
     pending = copy.deepcopy(config)
-    pending["formal_run"]["status"] = "pending_profile"
+    pending["formal_run"]["status"] = "pending_v7_live_profile"
     with pytest.raises(WriterModelError, match="not sealed"):
         resolve_runtime(formal, pending, context)
     monkeypatch.setattr(

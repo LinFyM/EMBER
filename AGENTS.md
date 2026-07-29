@@ -17,12 +17,13 @@
 9. `docs/action_forecast_writer_v5_2_design.md`
 10. `docs/action_forecast_writer_v5_3_design.md`
 11. `docs/action_forecast_writer_v6_design.md`
-12. `task_plan.md`
-13. `findings.md`
-14. `progress.md`
-15. `docs/concept.md`
-16. `docs/decisions_and_open_questions.md`
-17. `docs/novelty_and_landscape.md`
+12. `docs/action_forecast_writer_v7_design.md`
+13. `task_plan.md`
+14. `findings.md`
+15. `progress.md`
+16. `docs/concept.md`
+17. `docs/decisions_and_open_questions.md`
+18. `docs/novelty_and_landscape.md`
 
 `docs/active_session_handoff.md`是当前跨session恢复入口，集中摘要研究证据链、
 v5失败证据、v5.1设计理由、运行状态和下一动作，但不覆盖架构或长期科学
@@ -40,62 +41,60 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 
 ## Current focused execution task
 
-v4、v5和v5.1均已完成根因定位并停止，架构与证据文档只作provenance。
-v5.2 Task-Queried Patch Grounding fresh step0→900的fixed correct400为
-`72/79/120/132`，step900为训练右端observed-best。step900固定400五臂为
-`correct/same/wrong/shuffled/reversed=132/138/74/82/83`；same与correct
-同档，correct相对wrong、shuffled和reversed均为极显著优势。内部Core保持
-same-frame-set order不变，Procedure差异能够穿过effective LoRA和policy
-action。因此v5.2已通过视频语义和顺序行为硬门，没有v4 shuffled漏洞，但
-absolute与跨task稳定性仍未达到满意终点。
+v4、v5、v5.1、v5.2和v6均已完成所需根因或上限证据；旧架构与可执行配置只作
+provenance。v5.2 step900五臂
+`correct/same/wrong/shuffled/reversed=132/138/74/82/83`，证明Semantic Core
+与Causal Procedure可以同时通过视频语义和顺序行为门，但absolute不够。
 
-原版v5.2 recipe的上限证据只作v6背景，不再是当前待执行路径。owner最终批准
-v6从fresh step0直接采用task-complete多任务更新，不再保留one-task-per-rank
-的v6训练对照。
+v6 task-complete fast-decay的single-checkpoint best为macro400=`143/400`，
+五臂`143/135/125/128/129`；续到macro600后显著下降。相同v6拓扑改用旧
+rank-rotating recipe时best为`121/400`，五臂`121/122/111/84/47`：顺序门显著
+增强，但absolute、breadth和wrong-video语义门下降。该对照证明训练粒度能调节
+Procedure→compiler增益，但简单恢复旧recipe不是答案。corrected mixed-task
+rank-128 Source-SFT的development best已封存为`109/400`；full-24与global-8
+都出现task能力漂移，后者没有提高上限。
 
-owner随后将下一fresh架构提升并封存为
-[`docs/action_forecast_writer_v6_design.md`](docs/action_forecast_writer_v6_design.md)
-定义的 Task-Grounded Semantic Set + Visual-Transition Procedure。v6在
-v5.3 transition原型之上同时把Semantic Core改为
-`mean backbone + task-selected centered residual`，保留按各arm实际顺序重算
-的`D_0=0,D_f=G_f-G_(f-1)`，并把factor-head hidden恢复为硬件友好的256；
-总参数预算为`10,775,296`，相对rank-128 Source-SFT只多约4.64%。v5.3文档和
-prototype只作provenance，后续实现只保留一条canonical v6路径。v6使用fresh
-不兼容schema，不从旧Writer resume，也不得用contrast/order loss追正结果。
+owner于2026-07-29按第一性原理重新明确需求，并批准
+[`docs/action_forecast_writer_v7_design.md`](docs/action_forecast_writer_v7_design.md)
+定义的下一fresh架构：
 
-v6每个macro optimizer update固定为4 ranks × 每rank顺序处理6个不同tasks：
-每task抽1条teacher video、生成1套one-shot LoRA、在该LoRA下对`B_a`条独立
-同task action queries求均值，再以`task_loss/6`立即backward；前5轮完整处于
-DDP`no_sync()`，第6轮执行唯一一次同步，随后只做一次clip、AdamW和scheduler
-step。每个macro全局恰好覆盖24 tasks、24 videos/LoRAs；`B_a=20`时为480
-action queries和24次functional policy forward。task groups按本次实际选中
-视频的stride-5 frame count做cost balance，rank内long-first，物理rank随macro
-轮换；checkpoint/exact-resume只在完整macro边界。
+```text
+Task-Aligned Semantic Trajectory
++ Causal Action–Effect Program
+→ Procedure-content-only LoRA compiler
+```
 
-GPU4–7最长真实视频profile已经封存`B20`：包含105帧条件的连续3个完整macro
-均finite，稳态约25.8 queries/s、193 macro/hour，峰值allocated/reserved约
-77.0/83.6GB；`B16` fallback未触发，不再扫描中间档。首个正式段固定200
-macro、约一小时。除非首段出现明确可信的absolute下降，否则平台、小幅波动或
-上涨都默认exact-resume到400 macro；第三段以后才依据当时曲线和机制证据决定。
-owner明确取消正式run的全量HDF5 SHA启动门；仍核对sealed manifest、精确文件
-大小和HDF5 schema，并在run contract记录未做runtime full-data SHA。
+v7只复用一次multimodal prefix：language-conditioned image hidden和
+image-conditioned task-token hidden形成唯一逐帧semantic trajectory；frame
+mean与task-token Transformer形成高层Core。Action Expert teacher suffix在一次
+forward中从50-position接口稀疏取8个原位置
+`[0,7,14,21,28,35,42,49]`，不是8次forward，也不改变execution policy的
+50-action chunk。8个action probes与`frame f→f+1`的task-grounded semantic
+change在全部`8×L` pairs上做joint softmax，直接汇成每区间一个高层event，再
+经三层causal encoder形成Procedure。Core与Procedure直到LoRA compiler才首次
+相遇；Core只条件化slot query，factor content必须来自Procedure，Core-only
+在结构上保持public LoRA identity。设计预算`10,312,192`，约比rank-128
+Source-SFT多0.144%、比v6少463,104，所有主宽度保持硬件友好的256。
 
-AS的绝对性能最低目标是达到或接近旧Action-Forecast `125/400`，目标逼近v4
-shuffled `148/400`。四卡rank-128 Source-SFT `108/400`与旧八卡`122/400`
-只作背景比较，`122`不是独立必须超过的门槛。AS和RL都必须在validation找到
-observed-best，并在best后看到幅度明显、远超400-rollout正常波动、由多个tasks
-共同贡献且独立复测仍成立的持续下降；多个后续checkpoint只是略低绝不能停止。
-focused AS/RL没有机械总wall-clock上限，但这不授权惯性续段；每个新增训练段
-都受上面的证据门约束。
+唯一canonical v7现已原位实现；全仓CPU合同、真实GPU4–7最长视频profile和
+step1→3 exact-resume均通过。B32与B24在首个functional policy forward明确
+OOM，B20连续3个完整macro finite，含105-frame最长视频；稳态约
+`27.48 queries/s`、`206.08 macros/hour`，峰值allocated/reserved约
+`77.02/83.65GB`（十进制）。首个正式单变量实验固定task-complete、B20、
+AdamW和v6已验证较优的fast cosine decay400，从identity fresh训练0→200
+macro、每25保存；除非首段出现可信absolute下降，否则默认exact-resume到400。
+后续每次迭代只回答一个明确瓶颈；不得使用多checkpoint融合、ensemble、
+对比/顺序loss或信息墙捷径作为最终解。
 
-v6首段/续段与机制比较已完成。corrected full-24 mixed-task rank-128
-Source-SFT的dense correct400在step400达到`109/400`，step450显著下降；
-该recipe停止。当前紧邻实验是fresh global-8 cyclic mixed Source-SFT：
-4 ranks×2 tasks/update、连续3 updates完整覆盖24 tasks，保持B144/global576、
-LR/scheduler和平均task/sample clock；GPU4–7 profile已封存，下一正式段为
-step0→240并按证据决定是否续到480。其observed-best封存后回到AS-Writer训练
-粒度/架构探索；随后才做严格配对one-shot baseline与独立
-short-AS-cold-start→pure-reward RL-Writer。不得把完整AS best冒充RL cold
+focused AS硬门统一为single-checkpoint
+`correct400 >= max(150, corrected Source-SFT best+30)=150`。达到absolute后
+还必须same≈correct、correct显著优于wrong/shuffled/reversed、多个tasks共同
+贡献、独立RNG/video permutation复测成立，且内部Core→Procedure→effective
+LoRA→policy action符合职责。达到150不是自动停止；未达到时也不能因少数略低
+checkpoint随意放弃，必须继续到真实瓶颈或当前recipe的充分负证据成立。
+
+v7通过后才做严格配对one-shot baseline与独立
+short-AS-cold-start→pure-reward RL-Writer；不得把完整AS best冒充RL cold
 start。focused闭环不自动继续final-32、test task-local RL、joint oracle或
 ViVLA。
 

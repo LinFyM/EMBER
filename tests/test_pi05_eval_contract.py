@@ -224,7 +224,7 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
         "writer_method": "as_writer",
         "execution_backend": "two_stage_cached_per_sample_lora_batched_replan",
         "config": {
-            "path": str(ROOT / "configs/pi05_as_writer_language_axial_v6.json"),
+            "path": str(ROOT / "configs/pi05_as_writer_language_axial_v7.json"),
             "sha256": "b" * 64,
         },
         "training_run": {"run_contract_sha256": "c" * 64},

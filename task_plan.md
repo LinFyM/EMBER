@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-最后更新：2026-07-28 UTC。
+最后更新：2026-07-29 UTC。
 
 本文件只保存尚未完成的长期闭环与当前执行顺序。历史实验过程见
 `findings.md`、`progress.md` 和 Git；实时进程见
@@ -75,6 +75,11 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
 - [x] v6拓扑与机制证据封存：Semantic Set、Visual Transition、Causal
   Procedure职责成立，macro200五臂通过方向门；但absolute、margin和跨task
   稳定性未达最终满意门，后续训练粒度/下游compiler仍需改进。
+- [ ] 先对现有v6同轨迹checkpoint做显式provenance、inference-only的
+  Writer参数平均screen；它必须导出单套Writer权重、保持一次Writer前向，
+  且训练resume/warm-start必须拒绝derived checkpoint。若不能提高macro200
+  的absolute与breadth，再fresh修改优化器/LR；训练稳定化仍失败后才改
+  Procedure→compiler。
 
 ## Phase D：corrected mixed-task Source-SFT
 
@@ -102,11 +107,15 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
 - [x] GPU4–7完成global-8 B144 fresh0→3→resume6 profile；两轮完整cycle、
   3,456 query identities唯一，稳态`36.27–36.38 queries/s`，峰值
   allocated/reserved `60.69/74.07GB`，无OOM或nonfinite。
-- [ ] 在clean/pushed main上启动global-8 fresh step0→240，保留每30步
-  checkpoint并评测step60/120/180/240；除非可信下降，否则续到480。
-- [ ] 为global-8在validation找到observed-best并看到充分峰后证据；报告
-  steps、consumed examples、GPU-hours、参数量与搜索上限。
-- [ ] 与 v6 使用同一 frozen source base、normalization、policy interface 和
+- [x] global-8从identity fresh训练step0→240并exact-resume到480；16个每30步
+  checkpoint全部保留，累计276,480 queries、每task 11,520 samples。
+- [x] global-8八点paired correct400为
+  `63/83/85/98/90/62/90/105`；step480=`105`为该recipe observed-best，
+  但相对step420仅`+15,p=.0627`，相对full-24 step400=`109`为
+  `28 gained/32 lost,p=.699`。它没有解决task漂移或提高SFT上限，故不续到
+  600；最终corrected Source-SFT development best仍为full-24 step400
+  `109/400`。
+- [x] 与 v6 使用同一 frozen source base、normalization、policy interface 和
   validation rows；不机械匹配 optimizer steps。
 
 ## Phase E：matched π0.5 action one-shot baseline

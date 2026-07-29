@@ -2188,3 +2188,30 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   峰值allocated/reserved `60.69/74.07GB`，loss/grad finite且无OOM。
   正式首段封存fresh0→240、每30步checkpoint；默认再续到480，除非首段出现
   可信的多task绝对下降。
+
+## global-8 Source-SFT负结果与漂移归因更新（2026-07-29）
+
+- global-8保持与full-24完全相同的frozen source base、rank-128 LoRA、
+  global576 queries/update、LR/scheduler及平均task/sample clock，只把一次
+  24-task梯度平均拆成三个8-task AdamW updates。正式0→480完整消费276,480
+  queries；16个checkpoint、optimizer/scheduler、四rank RNG/cursor和终点
+  manifest均完整；两段进程启动至封存合计约`11.32 GPU-hours`。
+- paired correct400曲线为
+  `63/83/85/98/90/62/90/105`。step480虽然是该recipe右端best，但420→480
+  为`21 lost/36 gained,p=.0627`，240→480为`30/37,p=.464`；此前360又跌至
+  62。这不是稳定单调上升。八点逐task envelope为126、best为105，仍有21个
+  success无法共存于同一checkpoint。
+- global-8 step480与full-24 observed-best step400为`105 vs109`，paired
+  full24-only/global8-only=`32/28,p=.699`。global-8把Long-1/Goal-6提高
+  `+5/+4`，同时Long-2/Object-1/Object-3下降`-4/-7/-2`，两个Spatial task
+  均为0。故8-task更新只改变能力分配，没有提高aggregate或breadth上限。
+- 这条SFT直接对照显著削弱“full-24平均过强是任务漂移第一根因”的判断。
+  漂移更可能来自共享参数上的多目标不一致、action-MSE与闭环success阈值错位，
+  以及仍偏大的持续更新步幅；Writer的per-video条件噪声和较弱
+  Procedure→compiler传递是附加问题，但不是SFT也漂移的共同解释。
+- v6八点逐task envelope为156、observed-best为129，存在27-success可组合
+  空间。因此下一项最低成本判别不是直接运行同构cyclic-8 Writer，而是把同一
+  v6轨迹的若干高分/互补checkpoint在参数空间合成单套Writer权重并跑paired
+  correct400。该derived权重必须显式provenance、只允许inference且部署仍为
+  一次Writer前向；若线性合成失败，再fresh验证更快LR衰减/稳定化优化，最后
+  才修改Procedure→compiler。

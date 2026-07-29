@@ -1703,3 +1703,36 @@ GPU范围和训练步长是当时快照；活动状态只取
   60/120/180/240；除非可信下降，否则exact-resume至480并评测
   300/360/420/480。owner最终要求保留原checkpoint，不做删除；当前个人占用
   约296GB，远低于500GB cap。
+
+## global-8 Source-SFT正式上限与下一AS判别实验（2026-07-29）
+
+- global-8正式root
+  `/data/ymdai/outputs/ember/pi05_source_sft_rank128_mixed8_dev_r4_b144_seed7_s2400_85bfe8e_20260728`
+  已从identity fresh完成0→240并从完整step240 exact-resume到480。
+  `metrics.jsonl`连续1..480，loss/gradient全部finite；累计276,480 action
+  queries，24 tasks各11,520 samples、160次task visits，并覆盖全部50 action
+  episodes。step30..480共16个checkpoint全部保留，终点LoRA、trainer和四rank
+  state逐文件SHA256复算与manifest一致。两段从进程启动到终点封存合计约
+  `11.32 GPU-hours`（4×A100），唯一trainable对象为`10,297,344`参数shared
+  rank-128 LoRA。
+- step60/120/180/240/300/360/420/480的fixed paired correct400为
+  `63/83/85/98/90/62/90/105`，成功task数为
+  `4/8/6/6/8/7/4/5`。八点均400 rows、36/36 shards、6/6 workers exit0，
+  task/state/env/policy/noise完全paired且global long-first通过；analysis
+  artifact SHA256为
+  `9446b471016dfb99abb18f107de047163f3245cc9d009456673fe42115c8d2be`。
+- step480相对420为`36 gained/21 lost,p=.0627`，只是一次边缘显著的反弹；
+  相对step240为`37/30,p=.464`。逐task envelope为126，而任一checkpoint
+  最好仅105，仍有21-success能力错位。它相对full-24 step400=`109`为
+  `28 gained/32 lost,p=.699`，两个Spatial tasks同为0；因此global-8没有
+  提高SFT上限，也没有消除能力漂移，不续到step600。
+- corrected Source-SFT development observed-best最终封存为full-24
+  step400=`109/400`。focused AS absolute门仍为
+  `max(150,109+30)=150`。
+- 隔离分支`codex/v6-cyclic8-training@eb7943b`已实现与SFT同构的Writer
+  cyclic-8候选并通过正确worktree下全仓190 tests，但尚未合并或启动。
+  SFT的直接负对照使“8-task update本身解决漂移”降权，因此不因沉没成本运行。
+  下一步先做现有v6 checkpoint的单权重参数平均screen：显式记录源checkpoint/
+  权重/hash，derived checkpoint只允许inference、禁止resume/warm-start；
+  若不能同时改善absolute和breadth，再fresh改LR/优化器，最后才动
+  Procedure→compiler。

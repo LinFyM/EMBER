@@ -1,6 +1,6 @@
 # EMBER focused active session handoff
 
-最后更新：2026-07-28 UTC。
+最后更新：2026-07-29 UTC。
 
 本文只保存当前运行状态、恢复入口和紧邻动作。架构 authority 是
 `docs/action_forecast_writer_v6_design.md`；长期科学边界是 `AGENTS.md` 与
@@ -9,11 +9,12 @@ history。任何接手者都必须先只读复核现场，不能按本文快照�
 
 ## 1. 当前实时状态
 
-当前没有训练或评测进程。full-24 corrected Source-SFT 已完成到step450并完成
-12点dense correct400；observed-best为step400=`109/400`，随后step450出现
-显著下降，所以该recipe停止。下一条已实现并profile封存的实验是global-8
-cyclic mixed Source-SFT，正式fresh step0→240尚未启动。下文1–6节保留v6及
-full-24实验背景，10–11节是最新恢复入口。
+当前没有训练或评测进程。full-24与global-8两套corrected Source-SFT均已完成
+并封存；development observed-best仍是full-24 step400=`109/400`。global-8
+step480仅`105/400`且仍有明显task漂移，所以不续训到600，也不把已实现但未
+合并的Writer cyclic-8候选直接投入正式训练。下一动作是对现有v6同轨迹
+checkpoint做显式provenance、inference-only的单权重参数平均screen。下文
+1–6节保留v6与full-24背景，10–12节是最新恢复入口。
 
 v6 fresh task-complete 正式 run 已在 GPU4–7 从 macro0 完整训练到 macro400，
 训练和评测进程均已自然退出：
@@ -140,30 +141,22 @@ v6 Procedure差异更强，但LoRA/action差异更弱。
 
 ## 4. 当前科学判断
 
-side-chat提出的三个解释经第二段后更新为：
+side-chat提出的三个解释经v6第二段与两套SFT对照后更新为：
 
 1. “只是optimizer updates不足”已明显降权。额外200次update、同量数据和
    持续增大的compiler modulation没有带来absolute共同上涨。
-2. full-24 task平均/优化粒度过强成为第一嫌疑。task-complete没有稳定breadth，
-   而是让checkpoint在tasks之间交换能力；相邻25-step总更新方向后期也接近
-   正交或反向。
+2. “full-24 task平均过强”也已降权。global-8 SFT保持global batch、LR和
+   task/sample clock，只把24-task平均拆成三个8-task updates，结果仍只有
+   `105/400`且明显漂移，没有超过full-24的109。
 3. v6拓扑仍不是第一嫌疑。Semantic Set、Visual Transition和Causal
    Procedure的职责分离均被内部反事实支持；若存在架构瓶颈，更可能局限在
    Procedure→compiler增益，而非上游时序表示。
 
-因此不推翻v6；若后续直接改Writer训练粒度，当前最小可归因候选仍是：
-
-```text
-每rank每update处理2 tasks
-4 ranks × 2 = global 8 tasks/update
-3个optimizer updates组成一个完整24-task cycle
-每task仍1 video、B20 action queries、task内均值、全局task等权
-```
-
-它保留多task联合更新，不退回one-task/rank；同时将每24-task cycle的AdamW
-updates从1提高到3，并把单次共享梯度平均从24 tasks降到8。每个cycle仍精确
-覆盖24 tasks，video/action schedule和long-first cost balancing保持。
-这是fresh不兼容recipe，不从macro200/400 resume。
+因此不推翻v6，但也不再把cyclic-8 Writer作为默认下一正式run。现有v6八点
+逐task envelope为156、单点best为129，说明先检验“同一轨迹的互补能力能否在
+参数空间合成”比再烧一小时同构subset recipe更便宜、更直接。若参数平均失败，
+下一fresh实验优先改LR/稳定化优化；只有优化路径仍不能把Procedure差异传到
+LoRA/action时，才改Procedure→compiler。
 
 但owner随后明确把 corrected mixed-task Source-SFT 提前为紧邻动作：先得到
 可信强baseline，避免Writer反复改动后才发现没有超过普通action-SFT。SFT结果
@@ -236,18 +229,20 @@ cap；任何新formal run前仍需重测现场与预计峰值。
 
 ## 7. 紧邻动作与恢复命令
 
-当前紧邻动作是：验证并提交global-8 cyclic mixed Source-SFT的profile seal，
-fast-forward到clean `main == origin/main`，然后在GPU4–7从fresh identity正式
-训练step0→240。保持global576 action queries/update不变，但每次update只平均
-8个tasks，连续3 updates恰好覆盖全部24 tasks。首段固定筛
-step60/120/180/240；除非出现可信的多task绝对性能下降，否则按预封存规则
-exact-resume到480，并筛step300/360/420/480。
+当前紧邻动作是：
 
-该实验只改变优化粒度，不改frozen source base、rank-128 LoRA、LR/scheduler、
-task/sample clock、action数据或information wall。全部checkpoint继续保留。
-global-8 Source-SFT observed-best封存后，回到AS-Writer检验同一优化思想；若
-Procedure仍强而compiler传递弱，再调整Procedure→compiler。达到absolute和
-视频因果双门后才做matched action one-shot与独立cold-start RL。
+1. 把本次global-8 SFT结果更新、验证、commit并push到clean main；
+2. 在隔离worktree实现唯一的derived Writer average checkpoint合同：固定源
+   checkpoint/权重/hash，导出一套Writer参数；inference可读，但training
+   resume和warm-start必须fail closed；
+3. 在看新outcome前固定四个v6参数平均候选并各用GPU4/5/6/7跑paired
+   correct400。部署仍只加载一套Writer、只做一次Writer forward；
+4. 若平均不能超过raw macro200的129并改善breadth，则fresh实验改LR/优化稳定
+   化；仍失败后才动Procedure→compiler。
+
+corrected Source-SFT best已固定为109，所以focused AS硬门为
+`max(150,109+30)=150`。达到absolute和视频因果双门后才做matched action
+one-shot与独立cold-start RL。现有及后续checkpoint全部保留。
 
 只查询GPU4–7：
 
@@ -434,3 +429,47 @@ NCCL/CUDA错误或allocator增长，B128 fallback未触发。
 300/360/420/480，除非首段已经出现可信的多task绝对下降。全部checkpoint保留；
 不做runtime全量HDF5 SHA。正式launch前仍须clean/pushed main、GPU4–7 live
 preflight和存储复核。
+
+## 12. global-8 Source-SFT正式结果与停止判断
+
+正式root：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_source_sft_rank128_mixed8_dev_r4_b144_seed7_s2400_85bfe8e_20260728
+```
+
+fresh 0→240后从step240 exact-resume到480；`metrics.jsonl`连续1..480，
+loss/gradient全部finite。累计276,480 action queries，24 tasks各11,520
+samples、160 visits且覆盖全部50 action episodes。step30..480共16个
+checkpoint全部保留；step480的LoRA、trainer和四rank state逐文件SHA256复算
+均与manifest一致。两段进程启动至封存合计约`11.32 GPU-hours`，唯一trainable
+对象为`10,297,344`参数shared rank-128 LoRA。
+
+八点paired correct400：
+
+```text
+step          60  120  180  240  300  360  420  480
+successes     63   83   85   98   90   62   90  105
+tasks > 0      4    8    6    6    8    7    4    5
+```
+
+artifact：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_source_sft_rank128_mixed8_dev_r4_b144_seed7_s2400_85bfe8e_20260728/
+paired_correct400_step0060_0480.json
+SHA256 9446b471016dfb99abb18f107de047163f3245cc9d009456673fe42115c8d2be
+```
+
+八点均400 rows、36/36 shards、6/6 workers exit0；task/state/env/policy/noise
+完全paired，global long-first通过。step480相对420为
+`21 lost/36 gained,p=.0627`，相对240为`30/37,p=.464`；八点逐task
+envelope为126而best只有105。相对full-24 step400=`109`，step480为
+`28 gained/32 lost,p=.699`，只是能力重分配。两个Spatial tasks在两种recipe
+best中均为0。因此global-8不续到600，corrected Source-SFT development best
+封存为full-24 step400=`109/400`。
+
+隔离候选`codex/v6-cyclic8-training@eb7943b`已通过全仓190 tests，但没有合并、
+push或启动。该实现保留作provenance；SFT直接对照不支持把它作为默认下一run。

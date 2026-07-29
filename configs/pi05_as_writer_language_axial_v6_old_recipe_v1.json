@@ -12,7 +12,7 @@
       ],
       "action_chunk_size": 50,
       "sampler_seed": 20260721,
-      "teacher_video_seed": 172,
+      "teacher_video_seed": 20260722,
       "teacher_video_sampling": "per_rank_task_visit_deterministic_single_same_task_video_in_no_replacement_cycles",
       "action_query_sampling": "task-balanced deterministic no-replacement episode cycles",
       "video_action_pairing": "one task-video LoRA conditions the complete rank-local action batch",
@@ -67,7 +67,7 @@
       "budget_role": "fresh_v6_architecture_with_exact_v5_2_rank_rotating_update_recipe_one_hour_control"
     },
     "profile_defaults": {
-      "status": "pending_v6_old_recipe_live_profile",
+      "status": "sealed_fixed_b20_profile",
       "expected_world_size": 4,
       "total_steps": 3,
       "per_rank_batch_size": 20,
@@ -79,7 +79,7 @@
       "selected_stop_step": 3
     },
     "profile_evidence": {
-      "status": "pending",
+      "status": "sealed_fixed_b20",
       "allowed_physical_gpu_ids": [
         4,
         5,
@@ -93,17 +93,51 @@
       "tasks_per_rank_per_optimizer_update": 1,
       "global_tasks_per_optimizer_update": 4,
       "fixed_action_query_batch": 20,
-      "selection_rule": "validate fixed B20 on the longest real stride-5 video without scanning larger batches"
+      "selection_rule": "use fixed B20 after the longest real stride-5 video and exact-resume profile pass; do not scan larger batches",
+      "upper_bound": "larger_batches_not_scanned",
+      "exact_resume_smoke": {
+        "status": "pass_checkpoint_boundary_and_contiguous_resume",
+        "resume_boundary": 1,
+        "completed_step": 3,
+        "metrics_contiguous": true,
+        "optimizer_scheduler_sampler_and_rng_restored": true
+      },
+      "selected": {
+        "profile_root": "/data/ymdai/outputs/ember/pi05_as_writer_v6_oldrecipe_profile_b20_longseed172_a937e52_20260729",
+        "all_four_ranks_completed": true,
+        "all_steps_finite": true,
+        "contains_real_105_frame_video": true,
+        "profile_optimizer_steps": 3,
+        "profile_global_action_queries": 240,
+        "profile_global_video_conditions": 12,
+        "step_seconds_max": [
+          7.170207040850073,
+          4.3386407140642405,
+          3.679242538055405
+        ],
+        "steady_action_queries_per_second_mean_last_two": 20.09128038057526,
+        "steady_optimizer_updates_per_hour_mean_last_two": 904.1076171258868,
+        "max_cuda_allocated_bytes": 76939399168,
+        "max_cuda_reserved_bytes": 83718307840
+      }
     },
     "formal_run": {
-      "status": "pending_live_profile",
+      "status": "sealed",
       "expected_world_size": 4,
       "total_steps": 12000,
       "per_rank_batch_size": 20,
       "checkpoint_steps": "every:100",
       "selected_stop_step": 900,
       "stage_stop_steps": "every:100",
-      "segment_definition": "approximately one hour from fresh identity under the historical v5.2 one-task-per-rank update recipe",
+      "segment_definition": "fresh 900-update approximately one-hour control selected from live fixed-B20 steady profile at 904.11 optimizer updates per hour",
+      "first_segment_scale": {
+        "optimizer_updates": 900,
+        "global_action_queries": 72000,
+        "one_video_conditions": 3600,
+        "policy_functional_forwards": 3600,
+        "retained_checkpoints": 9,
+        "online_validation_action_queries_per_checkpoint": 512
+      },
       "data_integrity_check": "sealed_manifest_plus_exact_file_size_and_hdf5_schema_without_runtime_full_data_sha",
       "continuation_gate": "stop after the first segment for paired validation and specificity analysis"
     }

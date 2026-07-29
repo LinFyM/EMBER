@@ -1757,3 +1757,44 @@ GPU范围和训练步长是当时快照；活动状态只取
 - focused Writer tests为`65 passed`，全仓为`190 passed`；
   `git diff --check`与screen JSON语法通过。下一动作是集成clean main并在
   GPU4–7启动四点paired correct400。
+
+## v6 checkpoint-average评测、五臂和内部传递完成（2026-07-29）
+
+- commit `ea99f65`已合入并push到clean main。四个derived候选分别在
+  GPU4/5/6/7完成correct400，结果为`129/140/144/145`。全部输出均400 rows、
+  36/36 shards、6/6 workers exit0、无重试/OOM；每个queue前12个claim均为
+  horizon-520。winner六点late average相对raw macro200净增16，
+  `37 gained/21 lost,p=.04794`，screen paired artifact SHA256为
+  `09d4399662de821a1de0d6f38903eeba60a571fee2594c02fe6a445013dfb8ac`。
+- winner的same/wrong/shuffled/reversed在GPU4/5/6/7各自完成full400，
+  与已有correct合成`145/134/128/119/122`。四个run wall为
+  `2279.47/2295.95/2315.81/2338.50s`；所有cache、results、rows、queue、
+  logs、contract以及原始/派生checkpoint均保留，不做删除。
+- paired checks全部通过：五臂同400个state keys、env/policy/noise，
+  teacher video每task无放回双射；same为`+17` demo offset，另三臂复用
+  correct demo；所有worker全attempt1且无adopt。correct相对后三臂精确
+  p为`.03634/.001299/.006741`，各有5/6/5个正向tasks。same为
+  `30/19,p=.1524`，aggregate差11，按预先写入的`<=10`保守边界记borderline。
+  artifact SHA256为
+  `9244b8db004f4155f9ee254bbddbaf013ee033640b6d9974c2b98cd283579d8b`。
+- tmux `ember-v6-avg-late6-internal`在GPU4–7完成16-reference五条件内部检查，
+  自然exit0；max allocated/reserved为`11.69/19.33GB`，probe wall
+  `26.92s`。fixed-Core Procedure-only保留shuffled/reversed的
+  effective-LoRA/action，Core-only近零；summary/rows/run-contract SHA256为
+  `7596fbd...169d/b678403f...25d/4ed4aa43...639`。
+
+## v6 fast-decay400 fresh正式合同准备（2026-07-29）
+
+- 新sealed config
+  `configs/pi05_as_writer_language_axial_v6_decay400_v1.json`只改变scheduler
+  `decay_steps 2000→400`。authorities、information wall、完整v6 Writer、
+  data、task-complete conditioning、B20、AdamW和seed逐对象核对完全相同；
+  config loader通过。实际LR核验为macro
+  `50/100/150/200/250/300/350/400 =
+  2.8896e-4/2.5753e-4/2.1049e-4/1.55e-4/9.951e-5/
+  5.247e-5/2.104e-5/1e-5`。
+- 首段仍fresh0→200、每25 checkpoint且全部保留；评测50/100/150/200。
+  除非首段出现可信多taskabsolute下降，否则exact-resume到400并评测后四点。
+  该run不从raw或derived checkpoint warm-start。本文记录的是提交前合同；
+  正式launch只使用包含这些变更的clean/pushed main，并紧邻执行live GPU4–7、
+  storage和新output root核验，最终事实以run contract为准。

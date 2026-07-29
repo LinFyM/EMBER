@@ -79,11 +79,22 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   导出单套平均权重并保持一次Writer前向；原始checkpoint全部保留，training
   resume/warm-start对derived路径fail closed。真实四候选逐tensor独立重算
   完全一致，formal evaluation authority检查通过。
-- [ ] 按outcome前封存的四候选
+- [x] 按outcome前封存的四候选
   `{150,200}`、`{200,400}`、`{150,200,350,400}`、
-  `{150,200,250,300,350,400}`在GPU4–7各跑paired correct400。若不能提高
-  macro200的absolute与breadth，再fresh修改优化器/LR；训练稳定化仍失败后
-  才改Procedure→compiler。
+  `{150,200,250,300,350,400}`在GPU4–7各跑paired correct400；结果为
+  `129/140/144/145`，最后一组相对raw macro200净增16、
+  `37 gained/21 lost,p=.04794`，覆盖从5/8增至7/8 tasks。
+- [x] 对六点平均winner完成full400五臂与16-reference内部传递：
+  `correct/same/wrong/shuffled/reversed=145/134/128/119/122`；
+  correct对后三臂均显著且各由至少5个tasks正向贡献，fixed-Core
+  Procedure-only保留到effective LoRA/action，Core-only近零。same差11且
+  `p=.152`，只比预封存的保守差值阈值多1；absolute仍比150硬门少5。
+- [ ] fresh运行唯一的v6 fast-decay400稳定化对照：只把cosine
+  `decay_steps 2000→400`，其余架构、task-complete B20、AdamW、数据与seed
+  全部保持；先0→200并评测50/100/150/200，除可信absolute下降外默认
+  exact-resume至400并评测250/300/350/400。若仍不能同时达到absolute、
+  same与视频因果门，再直接量化task-gradient冲突并决定训练粒度或
+  Procedure→compiler修改。
 
 ## Phase D：corrected mixed-task Source-SFT
 

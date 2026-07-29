@@ -10,12 +10,20 @@ history。任何接手者都必须先只读复核现场，不能按本文快照�
 ## 1. 当前实时状态
 
 当前没有训练或评测进程。full-24与global-8两套corrected Source-SFT均已完成
-并封存；development observed-best仍是full-24 step400=`109/400`。global-8
-step480仅`105/400`且仍有明显task漂移，所以不续训到600，也不把已实现但未
-合并的Writer cyclic-8候选直接投入正式训练。v6同轨迹的四份显式provenance、
-inference-only参数平均权重已经生成并完成CPU/authority验证；下一动作是集成
-clean main后在GPU4–7并行跑四点paired correct400。下文1–6节保留v6与
-full-24背景，10–13节是最新恢复入口。
+并封存；development observed-best仍是full-24 step400=`109/400`。v6同轨迹
+参数平均screen、winner五臂和内部传递均已完成：六点late average得到
+`correct/same/wrong/shuffled/reversed=145/134/128/119/122`，correct相对
+后三臂均显著且由多个tasks贡献，内部Procedure信号保留到effective LoRA与
+policy action。它比SFT高36，但仍比absolute硬门150少5；same aggregate少11，
+只比预写的保守差值边界多1。
+
+下一fresh实验已封存为
+`configs/pi05_as_writer_language_axial_v6_decay400_v1.json`：唯一科学变化是
+cosine `decay_steps 2000→400`，不从raw或derived checkpoint warm-start。
+该config已完成逐对象验证但尚未启动。紧邻动作是以包含本文变更的
+clean/pushed main为唯一正式代码状态，随后live复核GPU4–7和storage，在
+不存在的新root fresh0→200。
+下文1–6节保留v6与full-24背景，10–14节是最新恢复入口。
 
 v6 fresh task-complete 正式 run 已在 GPU4–7 从 macro0 完整训练到 macro400，
 训练和评测进程均已自然退出：
@@ -474,7 +482,7 @@ best中均为0。因此global-8不续到600，corrected Source-SFT development b
 隔离候选`codex/v6-cyclic8-training@eb7943b`已通过全仓190 tests，但没有合并、
 push或启动。该实现保留作provenance；SFT直接对照不支持把它作为默认下一run。
 
-## 13. v6 checkpoint-average screen已封存、待GPU结果
+## 13. v6 checkpoint-average screen与机制结果
 
 实现worktree/branch：
 
@@ -516,5 +524,66 @@ git diff --check      pass
 
 评测合同固定为每候选correct400、seed7、teacher video无放回、6 Writer
 generators、generation batch16、6 persistent policy workers和global
-long-first。outcome出来前不得增删候选；screen胜者也必须补正式五臂和内部传递
-检查，不能只凭correct400取代macro200的机制证据。
+long-first。四候选结果为：
+
+```text
+sources                         correct400  tasks>0
+150,200                               129       7
+200,400                               140       6
+150,200,350,400                       144       7
+150,200,250,300,350,400               145       7
+```
+
+winner相对raw macro200=`129`为`37 gained/21 lost,p=.04794`。screen artifact：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v6_checkpoint_average_correct400_paired_ea99f65_20260729.json
+SHA256 09d4399662de821a1de0d6f38903eeba60a571fee2594c02fe6a445013dfb8ac
+```
+
+winner五臂为`145/134/128/119/122`。correct相对wrong/shuffled/reversed为
+`38/21,p=.03634`、`44/18,p=.001299`、`45/22,p=.006741`；正向task数
+为5/6/5。same为`30/19,p=.1524`，统计同档但aggregate少11；保守
+`|delta|<=10`标志因此差1未过。五臂artifact：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v6_checkpoint_average_late6_specificity400_paired_ea99f65_20260729.json
+SHA256 9244b8db004f4155f9ee254bbddbaf013ee033640b6d9974c2b98cd283579d8b
+```
+
+16-reference内部检查的wrong/shuffled/reversed effective-LoRA为
+`.3591/.2689/.2923`，action为`.0568/.0576/.0434`。fixed-Core
+Procedure-only几乎复现，Core-only近零。summary：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v6_avg_internal_specificity_late6_refs2_ea99f65_20260729/
+summary.json
+SHA256 7596fbd5cd03232d99667b5eb5b500995e5b1cbf6d1c01b97bb2c8a8628d169d
+```
+
+## 14. 紧邻fresh v6 fast-decay400
+
+新config：
+
+```text
+configs/pi05_as_writer_language_axial_v6_decay400_v1.json
+```
+
+唯一科学变化：
+
+```text
+cosine decay_steps  2000 -> 400
+peak_lr             3e-4 unchanged
+warmup              17 unchanged
+floor_lr            1e-5 unchanged
+```
+
+其余authorities、information wall、Writer、data、task-complete B20、AdamW、
+seed与checkpoint cadence逐对象相同。LR在macro200/400为
+`1.55e-4/1e-5`；旧run对应macro400仍为`2.724e-4`。formal仍每25保存且全部
+保留，首段fresh0→200评测50/100/150/200；除可信absolute下降外默认续到400
+并评测250/300/350/400。新run不得从六点average或任一旧Writer checkpoint
+初始化。

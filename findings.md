@@ -2231,3 +2231,48 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 真实state包含523个训练参数tensors与77个固定buffers。四个候选的独立重算
   均为0 mismatch、最大绝对误差0、全部finite；因此后续closed-loop差异可归因
   于参数平均本身，而不是漏tensor、dtype漂移或错误加载。
+
+## v6参数平均结果、视频因果与下一稳定化实验（2026-07-29）
+
+- 四个预封存候选的paired correct400依次为
+  `129/140/144/145`，成功task数为`7/6/7/7`。六点late average
+  `{150,200,250,300,350,400}`相对raw macro200=`129`为
+  `37 gained/21 lost,p=.04794`，净增16且把nonzero task从5/8扩到7/8；
+  相对corrected Source-SFT best=`109`高36，但仍比absolute硬门150少5。
+  候选screen paired artifact SHA256为
+  `09d4399662de821a1de0d6f38903eeba60a571fee2594c02fe6a445013dfb8ac`。
+- winner的正式五臂为
+  `correct/same-task-other/wrong/shuffled/reversed =
+  145/134/128/119/122`。correct相对wrong为
+  `38/21,p=.03634`，相对shuffled为`44/18,p=.001299`，相对reversed为
+  `45/22,p=.006741`；三项均显著。正向贡献task数分别为5/6/5，最大单task
+  占正贡献`.391/.615/.560`，没有由一个task独占。wrong在Goal-6上仍反向
+  `-5`，但Long-1/Object-1/Object-3/两个Spatial均正向，语义门整体成立。
+- same相对correct为`30/19,p=.1524`，统计上没有显著差异；aggregate少11。
+  它只比分析前固定的保守`|delta|<=10`边界多1，因此当前记为borderline
+  same-tier、要求最终winner独立复测，而不是把阈值事后放宽。
+- 五臂均400 unique rows、36 shards、6 workers exit0、全attempt1且无adopt；
+  task/state/env/policy/noise完全paired。每task 50 videos均无放回双射，
+  same固定`+17 mod 50`，wrong/shuffled/reversed复用correct demo；
+  四个queue均在领取任何其它task前先领取全部12个horizon-520 shards。
+  五臂paired artifact SHA256为
+  `9244b8db004f4155f9ee254bbddbaf013ee033640b6d9974c2b98cd283579d8b`。
+- 16-reference内部传递中，same/wrong/shuffled/reversed的effective LoRA
+  median relative-L2为`.0801/.3591/.2689/.2923`，policy action为
+  `.0116/.0568/.0576/.0434`。shuffled/reversed的fixed-Core
+  Procedure-only分别复现`.2689/.2925` LoRA与`.0576/.0431` action；
+  Core-only为`0/.00130`与`0/.00192`。因此参数平均没有抹掉视频语义或时序，
+  也没有形成Semantic Core顺序旁路。内部summary SHA256为
+  `7596fbd5cd03232d99667b5eb5b500995e5b1cbf6d1c01b97bb2c8a8628d169d`。
+- 相对raw macro200，average的shuffled/reversed Procedure sequence由
+  `.0888/.1167`降到`.0631/.0784`，但Procedure slots保持
+  `1.055/1.393`，effective LoRA/action没有坍缩，shuffled action反而从
+  `.0282`升到`.0576`。这进一步把当前瓶颈从v6拓扑降权为训练轨迹稳定性：
+  原recipe到macro400的LR仍为`2.724e-4`，50-step更新方向cosine长期很低，
+  而宽窗口平均能合成互补task能力。
+- 下一fresh单变量实验保留v6、task-complete B20、24-task等权、AdamW全部
+  不变，只把cosine `decay_steps 2000→400`；peak `3e-4`、warmup17和floor
+  `1e-5`不变。实际LR将于macro200降到`1.55e-4`、macro400降到`1e-5`。
+  首段0→200筛50/100/150/200，除可信absolute下降外默认续到400并筛
+  250/300/350/400。若仍失败，下一步直接量化per-task gradient冲突，再决定
+  update粒度或Procedure→compiler，而不凭直觉同时改多项。

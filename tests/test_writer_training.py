@@ -221,6 +221,11 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
     invalid_batch.stop_after_step = None
     with pytest.raises(WriterModelError, match="B20"):
         resolve_runtime(invalid_batch, config, context)
+    oversized_batch = copy.copy(profile)
+    oversized_batch.batch_size = 21
+    oversized_batch.stop_after_step = None
+    with pytest.raises(WriterModelError, match="B20"):
+        resolve_runtime(oversized_batch, config, context)
     wrong_world = DistributedContext(
         rank=0,
         local_rank=0,

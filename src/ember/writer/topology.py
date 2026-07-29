@@ -102,7 +102,7 @@ def validate_task_complete_topology(
         raise WriterModelError(
             "AS-Writer update topology differs from its declared contract"
         )
-    if mode == "profile" and batch_size not in {16, 20, 21}:
+    if mode == "profile" and batch_size not in {16, 20}:
         raise WriterModelError(
-            "v6 profile allows only the declared B16/B20/B21 candidates"
+            "v6 profile allows only fixed B20 or the declared B16 OOM fallback"
         )

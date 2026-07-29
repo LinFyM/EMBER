@@ -92,11 +92,8 @@
       "teacher_videos_per_task_visit": 1,
       "tasks_per_rank_per_optimizer_update": 1,
       "global_tasks_per_optimizer_update": 4,
-      "candidate_batches": [
-        20,
-        21
-      ],
-      "selection_rule": "profile B20 first and retain B21 only if the longest real stride-5 video and repeated updates remain finite without OOM"
+      "fixed_action_query_batch": 20,
+      "selection_rule": "validate fixed B20 on the longest real stride-5 video without scanning larger batches"
     },
     "formal_run": {
       "status": "pending_live_profile",

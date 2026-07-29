@@ -18,12 +18,13 @@
 10. `docs/action_forecast_writer_v5_3_design.md`
 11. `docs/action_forecast_writer_v6_design.md`
 12. `docs/action_forecast_writer_v7_design.md`
-13. `task_plan.md`
-14. `findings.md`
-15. `progress.md`
-16. `docs/concept.md`
-17. `docs/decisions_and_open_questions.md`
-18. `docs/novelty_and_landscape.md`
+13. `docs/action_forecast_writer_v8_design.md`
+14. `task_plan.md`
+15. `findings.md`
+16. `progress.md`
+17. `docs/concept.md`
+18. `docs/decisions_and_open_questions.md`
+19. `docs/novelty_and_landscape.md`
 
 `docs/active_session_handoff.md`是当前跨session恢复入口，集中摘要研究证据链、
 v5失败证据、v5.1设计理由、运行状态和下一动作，但不覆盖架构或长期科学
@@ -54,37 +55,33 @@ Procedure→compiler增益，但简单恢复旧recipe不是答案。corrected mi
 rank-128 Source-SFT的development best已封存为`109/400`；full-24与global-8
 都出现task能力漂移，后者没有提高上限。
 
-owner于2026-07-29按第一性原理重新明确需求，并批准
-[`docs/action_forecast_writer_v7_design.md`](docs/action_forecast_writer_v7_design.md)
-定义的下一fresh架构：
+owner于2026-07-29按第一性原理批准的v7已经完成fresh macro0→400和机制
+检查。correct400为`82/106/114/120/101/114/115/106`
+（macro50→400），macro200五臂为`120/112/91/100/69`。它的顺序特异性强于
+v6，但absolute明显下降。内部证据显示`8×L` joint attention的熵达到理论均匀
+熵约`99.96%`、有效Action probes约`7.998/8`，没有形成选择性Action–Effect
+binding；同时fixed-Procedure只改变Core时effective-LoRA差异仅约
+`0.1–0.2%`，模型实际退化成Procedure-only。macro400仍未修复且性能下降，
+因此v7停止，不再续训。
 
-```text
-Task-Aligned Semantic Trajectory
-+ Causal Action–Effect Program
-→ Procedure-content-only LoRA compiler
-```
+当前唯一fresh authority提升为
+[`docs/action_forecast_writer_v8_design.md`](docs/action_forecast_writer_v8_design.md)
+定义的Hierarchical Action–Effect Event + Core-Gated Procedure。v8保留同一
+Task-Aligned Semantic Trajectory、frame-mean Semantic Core、8个原生稀疏
+Action anchors和三层Causal Procedure，只修复两个实证瓶颈：
 
-v7只复用一次multimodal prefix：language-conditioned image hidden和
-image-conditioned task-token hidden形成唯一逐帧semantic trajectory；frame
-mean与task-token Transformer形成高层Core。Action Expert teacher suffix在一次
-forward中从50-position接口稀疏取8个原位置
-`[0,7,14,21,28,35,42,49]`，不是8次forward，也不改变execution policy的
-50-action chunk。8个action probes与`frame f→f+1`的task-grounded semantic
-change在全部`8×L` pairs上做joint softmax，直接汇成每区间一个高层event，再
-经三层causal encoder形成Procedure。Core与Procedure直到LoRA compiler才首次
-相遇；Core只条件化slot query，factor content必须来自Procedure，Core-only
-在结构上保持public LoRA identity。设计预算`10,312,192`，约比rank-128
-Source-SFT多0.144%、比v6少463,104，所有主宽度保持硬件友好的256。
+1. 每个Action anchor独立对`L`个task-grounded effects做softmax读取，得到8个
+   bound action–effect tokens；再由Procedure-only EventRead聚合成每区间一个
+   event，避免`8×L`全局竞争退化为均匀平均。
+2. Core除条件化Procedure query外，还用bounded tanh gate乘性调制Procedure
+   slots；没有additive Core residual，因此`Procedure=0`仍严格得到public LoRA
+   identity。
 
-唯一canonical v7现已原位实现；全仓CPU合同、真实GPU4–7最长视频profile和
-step1→3 exact-resume均通过。B32与B24在首个functional policy forward明确
-OOM，B20连续3个完整macro finite，含105-frame最长视频；稳态约
-`27.48 queries/s`、`206.08 macros/hour`，峰值allocated/reserved约
-`77.02/83.65GB`（十进制）。首个正式单变量实验固定task-complete、B20、
-AdamW和v6已验证较优的fast cosine decay400，从identity fresh训练0→200
-macro、每25保存；除非首段出现可信absolute下降，否则默认exact-resume到400。
-后续每次迭代只回答一个明确瓶颈；不得使用多checkpoint融合、ensemble、
-对比/顺序loss或信息墙捷径作为最终解。
+v8真实参数预算为`10,706,176`，相对rank-128 Source-SFT多约3.97%；所有新增
+参数都用于上述两个缺失接口。canonical源码/config已切到不兼容v8 schema，
+当前等待GPU4–7最长视频B20三macro profile与exact-resume；只在OOM或连续不稳
+时直接降B16。profile后保持task-complete与fast decay400，从identity fresh
+训练首段200 macro，以便让模型架构成为唯一科学变量。
 
 focused AS硬门统一为single-checkpoint
 `correct400 >= max(150, corrected Source-SFT best+30)=150`。达到absolute后
@@ -93,7 +90,7 @@ focused AS硬门统一为single-checkpoint
 LoRA→policy action符合职责。达到150不是自动停止；未达到时也不能因少数略低
 checkpoint随意放弃，必须继续到真实瓶颈或当前recipe的充分负证据成立。
 
-v7通过后才做严格配对one-shot baseline与独立
+当前Writer通过后才做严格配对one-shot baseline与独立
 short-AS-cold-start→pure-reward RL-Writer；不得把完整AS best冒充RL cold
 start。focused闭环不自动继续final-32、test task-local RL、joint oracle或
 ViVLA。

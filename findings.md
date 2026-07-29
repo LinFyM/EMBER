@@ -2429,3 +2429,39 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   task-complete topology，以及把v6 single-checkpoint推至143的fast cosine
   decay400。v7从identity fresh运行B20 macro0→200、每25 checkpoint；架构是
   本轮唯一新科学变量，不额外修改loss或task采样。
+
+## v7完整结果与两个结构瓶颈（2026-07-29）
+
+- 正式root完成fresh macro0→200与exact-resume200→400，loss总体下降且全程
+  finite。macro50/100/150/200/250/300/350/400的correct400为
+  `82/106/114/120/101/114/115/106`；best macro200仍只有120。
+- macro200五臂为`120/112/91/100/69`。v7确实比v6更依赖时间方向，但absolute
+  退步，不能把更低的无序臂本身当作成功。
+- macro200的pair-logit std约`.0579`、attention entropy为理论均匀值的
+  `.99963`、effective Action probes为`7.9976/8`；macro400仍为
+  `.0581/.99964/7.9976`。joint `8×L` softmax没有学会Action对effect的选择性
+  绑定。
+- fixed Procedure只变化Core时，macro200各arm的effective-LoRA relative L2
+  约`.001–.002`；fixed Core只变化Procedure则约`.145–.682`，几乎复现完整
+  差异。Core query conditioning近乎失效，v7实际是Procedure-only Writer。
+- 两项瓶颈到macro400未改善且absolute从120降到106；“只是不够训练”被排除为
+  当前首要解释，v7停止。该结论不否定Task-Aligned Semantic Trajectory、
+  Semantic Core、Causal Procedure或task-complete recipe。
+
+## v8最小结构修正（2026-07-29）
+
+- 每个Action anchor独立在`L`个task-token effects上softmax；raw transition
+  经learned value projection与Action gate形成8个bound action–effect tokens，
+  再由Procedure-only EventRead汇成每interval一个event。
+- transition只在K路径新增post-difference RMSNorm。EventRead不使用Core、
+  learned pooling token、null token或Action-only residual，因此
+  `D=0→event=0`。
+- compiler保留Core-conditioned Procedure query，并新增
+  `tanh(W RMSNorm(CoreSlots))`对Procedure slots的乘性调制。没有additive
+  Core residual，所以`Procedure=0→public LoRA identity`。
+- 真实参数为binder`590,848`、compiler`1,469,696`、Writer
+  `10,706,176`，相对rank-128 Source-SFT多约3.97%。新增参数全部对应两个
+  实证缺失接口。
+- 完整authority为`docs/action_forecast_writer_v8_design.md`。首轮保持
+  task-complete与fast decay400不变；B20必须重新live profile，OOM或重复不稳
+  才直接降B16。

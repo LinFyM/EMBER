@@ -178,9 +178,9 @@ def _inputs() -> tuple[torch.Tensor, ...]:
     return frames, frame_indices, offsets, tokens, masks, task_spans
 
 
-def test_v7_writer_parameter_budget_and_sparse_probe_contract_are_exact() -> None:
+def test_v8_writer_parameter_budget_and_sparse_probe_contract_are_exact() -> None:
     model, _ = _model()
-    assert sum(parameter.numel() for parameter in model.parameters()) == 10_312_192
+    assert sum(parameter.numel() for parameter in model.parameters()) == 10_706_176
     contract = writer_trainable_contract(
         model,
         torch.nn.Identity(),
@@ -188,7 +188,7 @@ def test_v7_writer_parameter_budget_and_sparse_probe_contract_are_exact() -> Non
             Path(__file__).resolve().parents[1] / "configs/pi05_lora_v1.json"
         ),
     )
-    assert contract["parameter_count"] == 10_312_192
+    assert contract["parameter_count"] == 10_706_176
     assert contract["source_policy_trainable_parameter_count"] == 0
     expected = {
         "vl_meta_lora": (model.semantic_encoder.vl_meta_lora, 921_600),
@@ -206,9 +206,9 @@ def test_v7_writer_parameter_budget_and_sparse_probe_contract_are_exact() -> Non
             model.semantic_encoder.interaction_projection,
             262_144,
         ),
-        "action_effect": (model.action_effect, 262_656),
+        "action_effect": (model.action_effect, 590_848),
         "procedure": (model.procedure, 2_360_832),
-        "compiler": (model.compiler, 1_403_904),
+        "compiler": (model.compiler, 1_469_696),
         "factor_heads": (model.factor_heads, 2_179_072),
     }
     assert {
@@ -231,7 +231,7 @@ def test_v7_writer_parameter_budget_and_sparse_probe_contract_are_exact() -> Non
     assert not model.semantic_encoder.fixed_suffix_noise.requires_grad
 
 
-def test_v7_writer_starts_at_exact_identity_template() -> None:
+def test_v8_writer_starts_at_exact_identity_template() -> None:
     model, template = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     output = model(*_inputs(), policy=torch.nn.Identity())
@@ -242,7 +242,7 @@ def test_v7_writer_starts_at_exact_identity_template() -> None:
         assert torch.equal(value[1], template[name])
 
 
-def test_v7_writer_becomes_video_conditioned_after_heads_open() -> None:
+def test_v8_writer_becomes_video_conditioned_after_heads_open() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     for head in model.factor_heads.values():
@@ -252,7 +252,7 @@ def test_v7_writer_becomes_video_conditioned_after_heads_open() -> None:
     assert not hasattr(model, "shared_lora")
 
 
-def test_v7_gradient_staging_reaches_both_branches_after_heads_open() -> None:
+def test_v8_gradient_staging_reaches_both_branches_after_heads_open() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
 
@@ -387,7 +387,7 @@ def test_action_effect_uses_forward_change_and_has_no_action_only_path() -> None
         reversed_normalized[:, 1, :2] - reversed_normalized[:, 0, :2],
     )
     assert not torch.allclose(normal[:, :2], reversed_output[:, :2])
-    assert not hasattr(binder, "value")
+    assert hasattr(binder, "value")
     constant, constant_transition, _ = binder(
         probes,
         trajectory[:, :1].expand_as(trajectory),
@@ -406,7 +406,7 @@ def test_action_effect_uses_forward_change_and_has_no_action_only_path() -> None
             parameter.numel()
             for parameter in ActionEffectBinder(width=256, heads=8).parameters()
         )
-        == 262_656
+        == 590_848
     )
 
 
@@ -484,3 +484,14 @@ def test_procedure_content_compiler_is_order_sensitive_without_core_value_path()
         valid_procedure,
     )
     assert all(not bool(value.count_nonzero()) for value in zero)
+    changed_core = compiler(
+        core + torch.randn_like(core),
+        valid_core,
+        procedure,
+        positions,
+        valid_procedure,
+    )
+    assert any(
+        not torch.allclose(left, right)
+        for left, right in zip(normal, changed_core, strict=True)
+    )

@@ -3,7 +3,7 @@
 最后更新：2026-07-29 UTC。
 
 本文只保存当前运行状态、恢复入口和紧邻动作。下一fresh架构 authority 是
-`docs/action_forecast_writer_v7_design.md`；长期科学边界是 `AGENTS.md` 与
+`docs/action_forecast_writer_v8_design.md`；长期科学边界是 `AGENTS.md` 与
 `docs/execution_brief.md`；历史实验细节在 `findings.md`、`progress.md` 和 Git
 history。任何接手者都必须先只读复核现场，不能按本文快照重复启动进程。
 
@@ -12,11 +12,12 @@ history。任何接手者都必须先只读复核现场，不能按本文快照�
 当前没有训练或评测进程。full-24与global-8两套corrected Source-SFT均已完成
 并封存；development observed-best仍是full-24 step400=`109/400`。
 
-owner已批准按第一性原理实现、训练和迭代v7。唯一canonical v7源码/config
-已经原位实现，全仓CPU验证通过；GPU4–7真实profile拒绝B32/B24并选择B20，
-step1→3 exact-resume也已通过。正式合同已封存为task-complete B20、
-fast cosine decay400、identity fresh 0→200 macro、每25 checkpoint。下一步
-是clean/push后做紧邻live preflight并启动该正式段；尚未启动正式训练或评测。
+v7已完成identity fresh macro0→400及macro200五臂/内部检查，停止且转为
+provenance。当前唯一canonical源码/config已经原位切换到不兼容v8；聚焦CPU
+检查38项通过，尚未做v8 live profile、exact-resume或正式训练。紧邻动作是：
+完成全仓回归与clean/push，在GPU4–7上优先测试B20连续3个完整macro和最长
+105-frame视频；仅OOM/重复不稳定才降B16。随后做macro-boundary exact-resume，
+封存profile，再保持task-complete fast-decay400从identity fresh训练0→200。
 
 v6 fast-decay已按owner后续要求从macro400 exact-resume到600。完整
 correct400曲线为：
@@ -912,4 +913,62 @@ queries和4,800 one-video conditions。实现/profile seal commit为
 预声明为
 `/data/ymdai/outputs/ember/pi05_as_writer_v7_jointae_taskcomplete_decay400_dev_r4_b20_seed7_s2400_ca7db57_20260729`，
 log为同名文件置于`/data/ymdai/logs/ember/`，tmux为
-`ember-v7-formal-200`。正式训练/评测尚未启动。
+`ember-v7-formal-200`。该run随后已经完成macro0→400；以下第19节覆盖其结果和
+当前切换点。
+
+## 19. v7结果、根因与v8当前切换点
+
+v7正式root为：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v7_jointae_taskcomplete_decay400_dev_r4_b20_seed7_s2400_ca7db57_20260729
+```
+
+macro0→200和exact-resume200→400均正常完成，metrics连续1..400且finite。
+correct400为：
+
+```text
+macro       50  100  150  200  250  300  350  400
+successes   82  106  114  120  101  114  115  106
+```
+
+macro200五臂为`correct/same/wrong/shuffled/reversed=120/112/91/100/69`。
+correct相对wrong/shuffled/reversed的paired净差为`+29/+20/+51`；v7具备强于
+v6的方向特异性，但absolute显著低于v6 best143和focused门150。
+
+refs1全8个validation tasks的内部检查显示：
+
+```text
+pair logit std                         ≈ 0.058
+pair entropy / theoretical uniform     ≈ 0.9996
+effective Action probes                ≈ 7.998 / 8
+
+fixed Procedure, varying Core LoRA L2  ≈ 0.001–0.002
+fixed Core, varying Procedure LoRA L2  ≈ full observed difference
+```
+
+所以v7的joint `8×L` softmax实际上均匀平均所有Action–Effect pairs；Core只
+通过query进入compiler也几乎不起作用，Writer实际退化为Procedure-only。
+macro200→400两项内部指标未改善且absolute下降，因此不再续训v7。
+
+当前authority为
+`docs/action_forecast_writer_v8_design.md`。v8只修复两个已证实缺口：
+
+```text
+each of 8 Action anchors
+→ independently attends over L effects
+→ 8 bound action–effect tokens
+→ Procedure-only EventRead
+→ one event / frame interval
+
+Core read
+→ Core-conditioned Procedure read
+→ bounded multiplicative Core gate on Procedure slots
+→ content-only post-fusion
+```
+
+没有additive Core residual；`D=0→event=0`、`Procedure=0→public LoRA identity`
+仍为结构硬约束。真实参数枚举为`10,706,176`：hierarchical binder
+`590,848`、Core-gated compiler`1,469,696`。活动config为
+`configs/pi05_as_writer_language_axial_v8.json`，当前profile状态为pending。

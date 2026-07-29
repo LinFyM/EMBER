@@ -12,7 +12,7 @@ from ember.writer.model import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_language_axial_as_writer_v7"
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_language_axial_as_writer_v8"
 AS_WRITER_CONFIG_OVERLAY_SCHEMA = (
     "ember_pi05_language_axial_as_writer_recipe_overlay_v1"
 )

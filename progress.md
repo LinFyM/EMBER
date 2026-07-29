@@ -1945,3 +1945,32 @@ GPU范围和训练步长是当时快照；活动状态只取
   正式root预声明为
   `/data/ymdai/outputs/ember/pi05_as_writer_v7_jointae_taskcomplete_decay400_dev_r4_b20_seed7_s2400_ca7db57_20260729`；
   尚未启动正式训练或评测。
+
+## v7正式训练、评测与内部根因完成（2026-07-29）
+
+- 正式root完成fresh macro0→200及exact-resume200→400，metrics连续1..400、
+  loss finite；16个every-25 checkpoint及完整resume状态保留。
+- macro50/100/150/200/250/300/350/400 correct400为
+  `82/106/114/120/101/114/115/106`。macro200五臂为
+  `120/112/91/100/69`。
+- refs1内部检查覆盖8个validation tasks。Action–Effect pair attention熵约为
+  理论均匀熵的99.96%，有效8 probes约7.998；fixed-Procedure/vary-Core的
+  effective-LoRA差异只有约0.1–0.2%，fixed-Core/vary-Procedure几乎复现全部
+  差异。v7停止且GPU4–7释放。
+
+## v8设计与canonical CPU实现（2026-07-29）
+
+- 新authority`docs/action_forecast_writer_v8_design.md`记录hierarchical
+  Action–Effect binding、Procedure-only EventRead与Core multiplicative
+  gate。v7 source/config已原位替换，不保留并行可执行路径或checkpoint兼容。
+- 每个Action anchor独立读取task-token effects，得到8个bound tokens后再
+  聚合成一个event；Core gate只乘性调制Procedure slots，不增加Core-only
+  value path。
+- 真实枚举：binder`590,848`、compiler`1,469,696`、Writer
+  `10,706,176`。聚焦38 tests和全仓192 tests通过；Markdown link audit零
+  缺失、`git diff --check`通过，architecture guard无hard violation或
+  parallel version/function family。shape/mask、Action/effect gradient、
+  identity、`D=0`与`Procedure=0`硬约束均成立。
+- 活动config为`configs/pi05_as_writer_language_axial_v8.json`，profile和
+  formal状态均为pending。下一步是全仓回归/clean push，然后只在GPU4–7做
+  B20三macro最长视频profile；失败才直接B16。

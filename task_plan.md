@@ -169,8 +169,8 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   step1→3 exact-resume均通过。
 - [x] 只在物理GPU4–7完成最长真实视频profile：B32/B24 OOM，B20三步finite，
   含105-frame视频；稳态约27.48 queries/s、206.08 macros/hour。
-- [ ] clean/push后启动task-complete B20、fast-decay400、fresh macro0→200
-  正式段；每25 checkpoint，共96,000 action queries。
+- [x] task-complete B20、fast-decay400从identity fresh完成macro0→200并
+  exact-resume到400；每25 checkpoint，metrics连续且finite。
 - 正式首段launch contract：
 
   ```text
@@ -204,14 +204,40 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
     --output-dir /data/ymdai/outputs/ember/pi05_as_writer_v7_jointae_taskcomplete_decay400_dev_r4_b20_seed7_s2400_ca7db57_20260729 \
     --stop-after-step 200 --num-workers 2 --log-every 10 --skip-data-sha
   ```
-- [ ] fresh训练并以paired fixed correct400快速筛single-checkpoint best；
-  只对当前best做full400五臂和内部Core/Procedure/effective-LoRA/action分析。
-- [ ] 若未达门，按“表示→传递→多task优化→闭环目标错位”的最早瓶颈做
+- [x] paired fixed correct400八点为
+  `82/106/114/120/101/114/115/106`；macro200五臂
+  `120/112/91/100/69`。内部检查定位joint `8×L` attention近均匀以及
+  Core→LoRA影响近零，v7停止。
+- [x] 未达门后按“表示→传递→多task优化→闭环目标错位”的最早瓶颈做
   fresh单变量迭代；不使用checkpoint融合、ensemble、contrast/order loss或
   信息墙捷径。
-- [ ] 最低成功门为single-checkpoint correct400≥150、same≈correct、
+- [ ] 最低成功门仍为single-checkpoint correct400≥150、same≈correct、
   correct显著优于wrong/shuffled/reversed、多task共同贡献，并在独立
   RNG/video permutation下复测成立。150不是自动停止点。
+
+## Phase C3：v8 Hierarchical Action–Effect + Core-Gated Procedure
+
+- [x] 封存
+  [`docs/action_forecast_writer_v8_design.md`](docs/action_forecast_writer_v8_design.md)：
+  v7 joint attention和Core弱影响的定量根因、hierarchical 8→1 binder、
+  bounded multiplicative Core gate、参数预算及可证伪判据。
+- [x] 原位切换唯一canonical源码/config到不兼容v8 schema；没有v7并行
+  executable或checkpoint兼容分支。
+- [x] 聚焦CPU合同通过：Writer总参数`10,706,176`、binder`590,848`、
+  compiler`1,469,696`；`D=0→event=0`、`Procedure=0→LoRA identity`、
+  Action/effect梯度和Core有效调制均成立。
+- [x] 全仓`192 passed`、Markdown link audit零缺失、`git diff --check`通过；
+  architecture guard无hard violation、无parallel version/function family。
+- [ ] clean commit/push。
+- [ ] live核验GPU4–7和存储后，优先用B20跑最长105-frame真实视频连续3个
+  task-complete macros；只在OOM或重复不稳定时直接降B16。
+- [ ] 对选定batch完成fresh0→1、exact-resume1→3，并封存profile、梯度可达
+  与formal launch contract。
+- [ ] 保持task-complete、fast decay400和其余科学合同不变，从identity fresh
+  训练0→200；paired correct400快速筛点，除明确下降外按证据决定是否续400。
+- [ ] 对single-checkpoint best做完整五臂和内部
+  per-probe-binding/EventRead/Core-gate/LoRA/action传递检查；达门或继续最早
+  瓶颈的下一项单变量迭代。
 
 ## Phase E：matched π0.5 action one-shot baseline
 

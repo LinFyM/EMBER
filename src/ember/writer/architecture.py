@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 
-V7_WRITER_PARAMETER_COUNT = 10_312_192
+V8_WRITER_PARAMETER_COUNT = 10_706_176
 ACTION_PROBE_POSITIONS = (0, 7, 14, 21, 28, 35, 42, 49)
 
 LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
@@ -54,7 +54,7 @@ WRITER_DIMENSION_CONTRACT = {
 _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "architecture": (
         "pi05_task_aligned_semantic_trajectory_action_effect_"
-        "causal_program_procedure_content_compiler_v7"
+        "causal_program_procedure_content_compiler_v8"
     ),
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
@@ -128,15 +128,20 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     ),
     "action_effect_interval": "frame_f_to_frame_f_plus_one",
     "action_effect_attention": (
-        "joint_softmax_over_all_eight_by_task_token_action_effect_pairs"
+        "per_action_probe_softmax_over_task_token_effects_then_"
+        "procedure_only_attention_pool_over_eight_bound_action_effects"
     ),
-    "action_effect_qk": "separate_pre_rmsnorm_bias_free_256_to_256",
+    "action_effect_qk": (
+        "separate_pre_rmsnorm_bias_free_256_to_256_with_dedicated_"
+        "post_difference_transition_key_norm"
+    ),
     "action_effect_value": (
-        "raw_forward_semantic_change_modulated_by_zero_initialized_"
-        "bias_free_action_feature_gate_no_value_projection"
+        "learned_bias_free_projection_of_raw_forward_semantic_change_"
+        "modulated_by_nonzero_initialized_bias_free_action_feature_gate"
     ),
     "action_effect_output": (
-        "one_high_level_event_per_frame_interval_bias_free_256_to_256"
+        "eight_bound_action_effects_then_one_procedure_only_high_level_"
+        "event_per_frame_interval"
     ),
     "action_effect_heads": 8,
     "procedure_heads": 8,
@@ -155,9 +160,13 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "procedure_slot_reader": (
         "rmsnorm_routing_plus_core_read_q_ordered_procedure_content_v"
     ),
+    "core_procedure_modulation": (
+        "bounded_tanh_core_slot_gate_multiplying_procedure_slot_content"
+    ),
     "core_procedure_first_interaction": "lora_compiler_only",
     "slot_fusion": (
-        "procedure_readout_then_one_content_only_post_fusion_block"
+        "core_conditioned_procedure_readout_then_core_multiplicative_"
+        "modulation_then_one_content_only_post_fusion_block"
     ),
     "fusion_heads": 8,
     "post_fusion_blocks": 1,
@@ -169,7 +178,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
 
 
 def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
-    """Return the exact v7 config payload, preserving profiled frame chunking."""
+    """Return the exact v8 config payload, preserving profiled frame chunking."""
 
     return {
         **_STATIC_WRITER_CONTRACT,
@@ -179,7 +188,7 @@ def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def validate_writer_dimensions(observed: Mapping[str, Any]) -> None:
-    """Reject constructor values outside the one canonical v7 topology."""
+    """Reject constructor values outside the one canonical v8 topology."""
 
     def normalized(name: str, value: Any) -> Any:
         if name == "action_probe_positions" and value is not None:

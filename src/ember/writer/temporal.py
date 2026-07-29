@@ -186,7 +186,7 @@ class LanguageSemanticCore(torch.nn.Module):
 
 
 class ActionEffectBinder(torch.nn.Module):
-    """Pool all Action-by-effect pairs into one high-level interval event."""
+    """Bind each Action anchor to effects, then pool anchors into one event."""
 
     def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
@@ -196,19 +196,26 @@ class ActionEffectBinder(torch.nn.Module):
         self.head_width = width // heads
         self.probe_norm = RMSNorm(width)
         self.trajectory_norm = RMSNorm(width)
+        self.transition_key_norm = RMSNorm(width)
         self.query = torch.nn.Linear(width, width, bias=False)
         self.key = torch.nn.Linear(width, width, bias=False)
-        self.output = torch.nn.Linear(width, width, bias=False)
+        self.value = torch.nn.Linear(width, width, bias=False)
         self.feature_gate = torch.nn.Linear(width, width, bias=False)
-        torch.nn.init.zeros_(self.feature_gate.weight)
+        self.binding_output = torch.nn.Linear(width, width, bias=False)
+        self.event_norm = RMSNorm(width)
+        self.event_query = torch.nn.Linear(width, width, bias=False)
+        self.event_key = torch.nn.Linear(width, width, bias=False)
+        self.event_value = torch.nn.Linear(width, width, bias=False)
+        self.event_output = torch.nn.Linear(width, width, bias=False)
+        torch.nn.init.normal_(self.feature_gate.weight, mean=0.0, std=0.02)
 
-    def forward(
+    def _validate_inputs(
         self,
         action_probes: torch.Tensor,
         semantic_trajectory: torch.Tensor,
         valid_frames: torch.Tensor,
         valid_task_tokens: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> None:
         if (
             action_probes.ndim != 4
             or action_probes.shape[2] != 8
@@ -227,15 +234,13 @@ class ActionEffectBinder(torch.nn.Module):
         ):
             raise VariableEpisodeInputError("invalid action-effect batch")
 
-        batch, frames, task_tokens, width = semantic_trajectory.shape
-        normalized = self.trajectory_norm(semantic_trajectory)
-        transition = normalized[:, 1:] - normalized[:, :-1]
-        valid_intervals = valid_frames[:, 1:] & valid_frames[:, :-1]
-        active = valid_intervals[:, :, None] & valid_task_tokens[:, None, :]
-        transition = transition.masked_fill(~active[..., None], 0.0)
-
-        intervals = frames - 1
-        probes = action_probes[:, :-1]
+    def _bind_effects(
+        self,
+        probes: torch.Tensor,
+        transition: torch.Tensor,
+        valid_task_tokens: torch.Tensor,
+    ) -> torch.Tensor:
+        batch, intervals, task_tokens, width = transition.shape
         normalized_probes = self.probe_norm(probes)
         query = self.query(normalized_probes).reshape(
             batch,
@@ -244,14 +249,14 @@ class ActionEffectBinder(torch.nn.Module):
             self.heads,
             self.head_width,
         ).permute(0, 1, 3, 2, 4)
-        key = self.key(transition).reshape(
+        key = self.key(self.transition_key_norm(transition)).reshape(
             batch,
             intervals,
             task_tokens,
             self.heads,
             self.head_width,
         ).permute(0, 1, 3, 2, 4)
-        value = transition.reshape(
+        value = self.value(transition).reshape(
             batch,
             intervals,
             task_tokens,
@@ -261,20 +266,11 @@ class ActionEffectBinder(torch.nn.Module):
         logits = torch.einsum("bthkd,bthld->bthkl", query, key)
         logits = logits / math.sqrt(self.head_width)
         allowed = valid_task_tokens[:, None, None, None, :]
-        logits = logits.masked_fill(
-            ~allowed,
-            torch.finfo(logits.dtype).min,
-        )
-        pair_weights = torch.softmax(
-            logits.reshape(batch, intervals, self.heads, -1).to(torch.float32),
+        logits = logits.masked_fill(~allowed, torch.finfo(logits.dtype).min)
+        effect_weights = torch.softmax(
+            logits.to(torch.float32),
             dim=-1,
-        ).to(logits.dtype).reshape(
-            batch,
-            intervals,
-            self.heads,
-            8,
-            task_tokens,
-        )
+        ).to(logits.dtype)
         action_gate = 1.0 + torch.tanh(
             self.feature_gate(normalized_probes)
         ).reshape(
@@ -284,17 +280,90 @@ class ActionEffectBinder(torch.nn.Module):
             self.heads,
             self.head_width,
         ).permute(0, 1, 3, 2, 4)
-        event_heads = torch.einsum(
-            "bthkl,bthld,bthkd->bthd",
-            pair_weights,
+        bound_heads = torch.einsum(
+            "bthkl,bthld,bthkd->bthkd",
+            effect_weights,
             value,
             action_gate,
         )
-        event = self.output(event_heads.reshape(batch, intervals, width))
-        event = event.masked_fill(
-            ~valid_intervals[..., None],
-            0.0,
+        return self.binding_output(
+            bound_heads.permute(0, 1, 3, 2, 4).reshape(
+                batch,
+                intervals,
+                8,
+                width,
+            )
         )
+
+    def _pool_event(self, bound: torch.Tensor) -> torch.Tensor:
+        batch, intervals, anchors, width = bound.shape
+        event_query_source = self.event_norm(bound.mean(dim=2, keepdim=True))
+        event_memory = self.event_norm(bound)
+        event_query = self.event_query(event_query_source).reshape(
+            batch,
+            intervals,
+            1,
+            self.heads,
+            self.head_width,
+        ).permute(0, 1, 3, 2, 4)
+        event_key = self.event_key(event_memory).reshape(
+            batch,
+            intervals,
+            anchors,
+            self.heads,
+            self.head_width,
+        ).permute(0, 1, 3, 2, 4)
+        event_value = self.event_value(bound).reshape(
+            batch,
+            intervals,
+            anchors,
+            self.heads,
+            self.head_width,
+        ).permute(0, 1, 3, 2, 4)
+        event_logits = torch.einsum(
+            "bthqd,bthkd->bthqk",
+            event_query,
+            event_key,
+        ) / math.sqrt(self.head_width)
+        event_weights = torch.softmax(
+            event_logits.to(torch.float32),
+            dim=-1,
+        ).to(event_logits.dtype)
+        event_heads = torch.einsum(
+            "bthqk,bthkd->bthqd",
+            event_weights,
+            event_value,
+        )
+        return self.event_output(
+            event_heads.squeeze(3).reshape(batch, intervals, width)
+        )
+
+    def forward(
+        self,
+        action_probes: torch.Tensor,
+        semantic_trajectory: torch.Tensor,
+        valid_frames: torch.Tensor,
+        valid_task_tokens: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        self._validate_inputs(
+            action_probes,
+            semantic_trajectory,
+            valid_frames,
+            valid_task_tokens,
+        )
+        normalized = self.trajectory_norm(semantic_trajectory)
+        transition = normalized[:, 1:] - normalized[:, :-1]
+        valid_intervals = valid_frames[:, 1:] & valid_frames[:, :-1]
+        active = valid_intervals[:, :, None] & valid_task_tokens[:, None, :]
+        transition = transition.masked_fill(~active[..., None], 0.0)
+        bound = self._bind_effects(
+            action_probes[:, :-1],
+            transition,
+            valid_task_tokens,
+        )
+        bound = bound.masked_fill(~valid_intervals[..., None, None], 0.0)
+        event = self._pool_event(bound)
+        event = event.masked_fill(~valid_intervals[..., None], 0.0)
         return event, transition, valid_intervals
 
 
@@ -483,7 +552,7 @@ class PostFusionSlotBlock(torch.nn.Module):
 
 
 class ProcedureContentCompiler(torch.nn.Module):
-    """Let Core address slots while Procedure supplies every content value."""
+    """Use Core to interpret Procedure without a Core-only LoRA value path."""
 
     EXPERT_LAYERS = 18
     RANK = 16
@@ -513,7 +582,10 @@ class ProcedureContentCompiler(torch.nn.Module):
         self.routing_norm = RMSNorm(width)
         self.core_reader = CoreSlotReader(width=width, heads=heads)
         self.procedure_reader = ProcedureSlotReader(width=width, heads=heads)
+        self.core_modulation_norm = RMSNorm(width)
+        self.core_modulation = torch.nn.Linear(width, width, bias=False)
         self.post_fusion = PostFusionSlotBlock(width=width, heads=heads)
+        torch.nn.init.normal_(self.core_modulation.weight, mean=0.0, std=0.02)
 
     def _routing(self) -> torch.Tensor:
         expert = (
@@ -591,11 +663,17 @@ class ProcedureContentCompiler(torch.nn.Module):
             positions,
             valid_procedure,
         )
-        output = self.post_fusion(procedure_slots, routing)
+        core_gate = torch.tanh(
+            self.core_modulation(self.core_modulation_norm(core_slots))
+        )
+        modulated_procedure_slots = procedure_slots * (1.0 + core_gate)
+        output = self.post_fusion(modulated_procedure_slots, routing)
         return output, {
             "core_slots": core_slots,
             "conditioned_query": conditioned_query,
             "procedure_slots": procedure_slots,
+            "core_gate": core_gate,
+            "modulated_procedure_slots": modulated_procedure_slots,
             "fused_slots": output,
         }
 

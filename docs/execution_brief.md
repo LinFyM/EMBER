@@ -7,15 +7,23 @@ best为`143/400`，仍未达到focused absolute门150；task-complete与旧
 rank-rotating recipe分别呈现“较高absolute但较弱order margin”和“较强order
 margin但较低absolute/wrong语义”的互补失败。
 
-owner已批准下一fresh方法为EMBER Writer v7：Task-Aligned Semantic
-Trajectory + Causal Action–Effect Program。完整需求、拓扑、参数预算和判定
-合同见
-[`docs/action_forecast_writer_v7_design.md`](action_forecast_writer_v7_design.md)。
-唯一canonical v7已经原位实现，最短CPU、真实GPU4–7最长视频和exact-resume
-验证均通过。B32/B24在首个functional policy forward OOM，B20三步finite，
-稳态约`27.48 queries/s`、`206.08 macros/hour`。首轮固定task-complete B20与
-fast cosine decay400，从identity fresh运行0→200 macro、每25保存；不使用
-多checkpoint融合、contrast/order loss或并行架构路径。
+v7 Task-Aligned Semantic Trajectory + joint Action–Effect pooling已完成
+fresh macro0→400。correct400曲线为
+`82/106/114/120/101/114/115/106`，macro200五臂为
+`120/112/91/100/69`。它增强了时序破坏margin，但absolute低于v6。内部检查
+显示joint `8×L` attention约`99.96%`均匀、有效Action probes约`7.998/8`；
+fixed-Procedure只改变Core时effective-LoRA差异仅约`0.1–0.2%`。继续训练没有
+修复两个接口且absolute下降，因此v7停止。
+
+当前唯一fresh方法为EMBER Writer v8：Hierarchical Action–Effect Event +
+Core-Gated Procedure。完整需求、拓扑、参数预算和判定合同见
+[`docs/action_forecast_writer_v8_design.md`](action_forecast_writer_v8_design.md)。
+每个Action anchor先独立读取task-token effects，再由Procedure-only EventRead
+将8个bound tokens聚合成一个高层event；Core以bounded multiplicative gate
+调制Procedure slots，同时保持`Procedure=0→LoRA identity`。v8真实参数为
+`10,706,176`。canonical源码/config已经原位切换到不兼容v8 schema；下一步是
+GPU4–7最长视频B20三macro profile和exact-resume，只有OOM或重复不稳定才直接
+降B16，随后保持task-complete fast-decay400从identity fresh训练。
 
 外部专家复核后的第一轮诊断证明，shuffle的直接行为放大器位于per-image
 forecast之后的absolute-time Plan/Revision；但后续全面复审又确认它不是唯一
@@ -67,14 +75,15 @@ Procedure通过zero-init AdaLN调制Core slots，再经一个post-fusion slot bl
 correct-video `127/400`，且best的reversed为`120/400`、与correct无显著差异；
 它因此只作provenance。
 
-当前下一fresh架构authority为
-[`docs/action_forecast_writer_v7_design.md`](action_forecast_writer_v7_design.md)。
-v7复用同一次multimodal prefix产生唯一task-aligned semantic trajectory；
-frame mean与task-token Transformer形成Core。Action Expert在一次forward中
-只取原50-position接口的8个稀疏suffix anchors，与`frame f→f+1`的forward
-semantic change绑定成action–effect events，再由三层causal Procedure编码。
-Core只形成task-conditioned query，全部factor content来自Procedure。公共
-宽度256、8 heads×32、factor hidden256，设计预算`10,312,192`。旧v6设计见
+当前fresh架构authority为
+[`docs/action_forecast_writer_v8_design.md`](action_forecast_writer_v8_design.md)。
+v8沿用同一次multimodal prefix产生的task-aligned semantic trajectory、
+frame-mean Core、8个Action anchors和三层causal Procedure；每个anchor独立
+读取语义变化，再做8→1 EventRead。Core-conditioned query之后新增bounded
+乘性Core gate，但不存在Core-only value path。公共宽度256、8 heads×32、
+factor hidden256，真实预算`10,706,176`。v7负结果与旧设计见
+[`docs/action_forecast_writer_v7_design.md`](action_forecast_writer_v7_design.md)；
+旧v6设计见
 [`docs/action_forecast_writer_v6_design.md`](action_forecast_writer_v6_design.md)；
 旧v5设计见
 [`docs/action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)；

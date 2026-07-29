@@ -1,9 +1,10 @@
 # EMBER Writer v7：Task-Aligned Semantic Trajectory + Causal Action–Effect Program
 
-状态：2026-07-29 owner 已批准为下一条 fresh Writer 架构，尚未实现。本文先把
-从第一性原理推导出的需求、已有信号、最少必要结构和可证伪判据封存下来。
-实现时必须原位替换唯一 canonical Writer；v6 代码、配置和 checkpoint 只通过
-Git、历史文档与实验 artifact 保留，不得形成可并行执行的 v6/v7 双路径。
+状态：2026-07-29 已实现、完成macro0→400并因joint pooling均匀退化和Core
+影响近零而停止；本文只作provenance。当前唯一canonical authority为
+[`action_forecast_writer_v8_design.md`](action_forecast_writer_v8_design.md)。
+v7代码/config已被原位替换，checkpoint和结果只通过Git、历史文档与实验
+artifact保留，不得恢复为并行可执行路径。
 
 v7 使用新的不兼容 schema，从 functional identity fresh 训练，不从任一 v6
 Writer checkpoint resume 或 warm-start。

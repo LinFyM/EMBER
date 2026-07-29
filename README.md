@@ -32,18 +32,19 @@ filename 或隐藏 normalization。
 - v6 已完成 task-complete/old-recipe、fast-decay、五臂和内部传递上限证据；
   single-checkpoint best 为 `143/400`。corrected mixed-task rank-128
   Source-SFT development best 已封存为 `109/400`。
-- 当前下一 fresh Writer authority 是
-  [`v7`](docs/action_forecast_writer_v7_design.md)：同一次 multimodal prefix
-  形成 Task-Aligned Semantic Trajectory；frame mean 形成高层 Core；一次
-  Action Expert forward 中的 8 个稀疏 suffix probes 与 forward semantic
-  change 的全部 `8×L` pairs 联合注意力汇成每区间一个 action–effect event；
-  Core 只在 compiler 条件化 slot query，Procedure 提供全部 LoRA dynamic
-  content。
-- v7 已原位替换唯一 canonical Writer；CPU、GPU4–7最长视频和exact-resume
-  验证通过。B32/B24 OOM后封存B20，首轮以task-complete fast-decay400从
-  identity fresh训练0→200 macro。最终仍以 single-checkpoint
-  `correct400>=150` 及完整五臂/内部因果门判定。
-- v7 通过后才做 matched one-shot baseline，随后进入独立
+- v7 的 joint `8×L` Action–Effect pooling 已完成 macro0→400。它增强了
+  reversed/shuffled 特异性，但single-checkpoint best只有`120/400`；内部
+  attention约`99.96%`均匀，且Core对effective LoRA几乎无影响，因此停止。
+- 当前唯一 fresh Writer authority 是
+  [`v8`](docs/action_forecast_writer_v8_design.md)：每个稀疏Action anchor先
+  独立读取task-grounded effects，8个bound tokens再聚合为每区间一个event；
+  compiler以bounded Core gate乘性解释Procedure，同时保持
+  `Procedure=0→LoRA identity`。
+- v8 已原位替换唯一 canonical Writer，参数`10,706,176`；当前先做GPU4–7
+  最长视频B20 profile和exact-resume，再保持task-complete fast-decay400从
+  identity fresh训练。最终仍以single-checkpoint `correct400>=150`及完整
+  五臂/内部因果门判定。
+- 当前 Writer 通过后才做 matched one-shot baseline，随后进入独立
   short-AS cold-start → pure-reward RL-Writer。
 
 ## 硬约束
@@ -57,7 +58,7 @@ filename 或隐藏 normalization。
   可执行路径已从工作树退役；provenance 只保留在 Git 历史与 evidence ledger。
 - 当前运行状态和下一动作只看
   [`docs/active_session_handoff.md`](docs/active_session_handoff.md)；架构与长期
-  科学合同分别看 v7 design、`AGENTS.md` 和 `docs/execution_brief.md`。
+  科学合同分别看 v8 design、`AGENTS.md` 和 `docs/execution_brief.md`。
 
 ## 阅读顺序
 
@@ -73,12 +74,13 @@ filename 或隐藏 normalization。
 10. `docs/action_forecast_writer_v5_3_design.md`
 11. `docs/action_forecast_writer_v6_design.md`
 12. `docs/action_forecast_writer_v7_design.md`
-13. `task_plan.md`
-14. `findings.md`
-15. `progress.md`
-16. `docs/concept.md`
-17. `docs/decisions_and_open_questions.md`
-18. `docs/novelty_and_landscape.md`
+13. `docs/action_forecast_writer_v8_design.md`
+14. `task_plan.md`
+15. `findings.md`
+16. `progress.md`
+17. `docs/concept.md`
+18. `docs/decisions_and_open_questions.md`
+19. `docs/novelty_and_landscape.md`
 
 外部专家所需的 v4 结构、实验 aggregate、逐任务结果和根因证据集中在
 [`docs/action_forecast_writer_expert_consultation.md`](docs/action_forecast_writer_expert_consultation.md)

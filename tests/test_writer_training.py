@@ -24,7 +24,7 @@ from ember.writer import as_step
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-CONFIG = REPO_ROOT / "configs/pi05_as_writer_language_axial_v7.json"
+CONFIG = REPO_ROOT / "configs/pi05_as_writer_language_axial_v8.json"
 OLD_RECIPE_CONFIG = (
     REPO_ROOT
     / "configs/pi05_as_writer_language_axial_v6_old_recipe_v1.json"
@@ -36,7 +36,7 @@ def test_language_axial_config_seals_architecture_and_information_wall() -> None
     writer = config["writer"]
     assert (
         writer["architecture"]
-        == "pi05_task_aligned_semantic_trajectory_action_effect_causal_program_procedure_content_compiler_v7"
+        == "pi05_task_aligned_semantic_trajectory_action_effect_causal_program_procedure_content_compiler_v8"
     )
     assert writer["teacher_state_input"] is False
     assert writer["teacher_prompt"] == "Task: {cleaned_task};\nAction: "
@@ -60,10 +60,11 @@ def test_language_axial_config_seals_architecture_and_information_wall() -> None
     assert writer["procedure_blocks"] == 3
     assert writer["action_effect_heads"] == 8
     assert "actual_arm_input_order" in writer["action_effect_source"]
-    assert "no_value_projection" in writer["action_effect_value"]
-    assert writer["action_effect_attention"].startswith("joint_softmax")
-    assert writer["action_effect_output"].startswith("one_high_level_event")
-    assert writer["slot_fusion"].startswith("procedure_readout")
+    assert "learned_bias_free_projection" in writer["action_effect_value"]
+    assert writer["action_effect_attention"].startswith("per_action_probe")
+    assert writer["action_effect_output"].startswith("eight_bound")
+    assert writer["core_procedure_modulation"].startswith("bounded_tanh")
+    assert writer["slot_fusion"].startswith("core_conditioned")
     assert writer["post_fusion_blocks"] == 1
     assert writer["factor_hidden_width"] == 256
     assert writer_split_roles(config) == ("train",)
@@ -85,35 +86,30 @@ def test_language_axial_config_seals_architecture_and_information_wall() -> None
     assert config["information_wall"]["test_video_values_read"] == 0
     assert "state" in config["information_wall"]["writer_forbidden_inputs"]
     assert config["profile_defaults"]["expected_world_size"] == 4
-    assert config["profile_evidence"]["status"] == "sealed_b20"
+    assert config["profile_evidence"]["status"] == "pending"
     assert config["profile_evidence"]["allowed_physical_gpu_ids"] == [4, 5, 6, 7]
     assert [
         row["per_task_action_batch_size"]
         for row in config["profile_evidence"]["candidates"]
-    ] == [32, 24, 20]
-    assert config["profile_evidence"]["selected"]["per_task_action_batch_size"] == 20
-    assert config["profile_evidence"]["selected"]["contains_real_105_frame_video"] is True
+    ] == [20, 16]
+    assert config["profile_evidence"]["selected"] is None
     assert [
         row["per_task_action_batch_size"]
         for row in config["profile_evidence"]["rejected_candidates"]
-    ] == [32, 24]
-    assert config["profile_evidence"]["exact_resume_smoke"]["status"].startswith(
-        "pass_macro_boundary"
-    )
-    assert config["profile_evidence"]["gradient_reachability"][
-        "action_effect_changed_parameter_count"
-    ] == 262656
+    ] == []
+    assert config["profile_evidence"]["exact_resume_smoke"] is None
+    assert config["profile_evidence"]["gradient_reachability"] is None
     assert config["profile_evidence"]["inference_profile"] is None
     assert config["profile_evidence"]["teacher_videos_per_task_visit"] == 1
     assert config["specificity_gate"]["status"] == "pending"
     assert config["optimization"]["scheduler"]["decay_steps"] == 400
     assert config["data"]["teacher_video_seed"] == 20260722
-    assert config["formal_run"]["status"] == "sealed"
+    assert config["formal_run"]["status"] == "pending_v8_live_profile"
     assert config["formal_run"]["total_steps"] == 2400
     assert config["formal_run"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["selected_stop_step"] == 200
     assert config["formal_run"]["stage_stop_steps"] == "every:200"
-    assert config["formal_run"]["segment_definition"].startswith("fresh_v7")
+    assert config["formal_run"]["segment_definition"].startswith("fresh_v8")
     assert "without_runtime_full_data_sha" in config["formal_run"][
         "data_integrity_check"
     ]
@@ -163,10 +159,10 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         (1, 2, 3),
     )
     assert profile.stop_after_step == 3
-    b24 = copy.copy(profile)
-    b24.batch_size = 24
-    b24.stop_after_step = None
-    assert resolve_runtime(b24, config, context) == (3, 24, (1, 2, 3))
+    b16 = copy.copy(profile)
+    b16.batch_size = 16
+    b16.stop_after_step = None
+    assert resolve_runtime(b16, config, context) == (3, 16, (1, 2, 3))
     invalid_batch = copy.copy(profile)
     invalid_batch.batch_size = 19
     invalid_batch.stop_after_step = None
@@ -196,10 +192,8 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         resume=None,
         skip_data_sha=False,
     )
-    pending = copy.deepcopy(config)
-    pending["formal_run"]["status"] = "pending_v7_live_profile"
     with pytest.raises(WriterModelError, match="not sealed"):
-        resolve_runtime(formal, pending, context)
+        resolve_runtime(formal, config, context)
     monkeypatch.setattr(
         "ember.writer.as_contract.git_state",
         lambda _root: {
@@ -209,7 +203,9 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         },
     )
     formal.skip_data_sha = True
-    assert resolve_runtime(formal, config, context) == (
+    sealed = copy.deepcopy(config)
+    sealed["formal_run"]["status"] = "sealed"
+    assert resolve_runtime(formal, sealed, context) == (
         2400,
         20,
         tuple(range(25, 2401, 25)),

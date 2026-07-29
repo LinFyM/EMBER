@@ -2308,3 +2308,32 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   `07d115811cf6042d5d0246e9f91c304aed3e5289b53d898d17af0330526951f5`。
   若它们不能可信超过raw143，则下一判别是per-task gradient conflict，而非
   继续同recipe或同时修改多个架构/训练变量。
+
+## v6 fast-decay checkpoint-average结果（2026-07-29）
+
+- 四份derived checkpoint均通过manifest/source provenance/inference-only
+  authority检查；独立逐tensor复算覆盖600个tensors、12,064,064个state
+  elements，四组`max_abs_error=0`。原16个every-25 checkpoint与全部派生
+  checkpoint均保留。
+- outcome前固定的四组correct400按
+  `{350,400}`、`{200,350,400}`、`{200,250,350,400}`、
+  `{150,200,250,300,350,400}`依次得到`139/135/129/130`，成功task数
+  为`6/6/6/7`；均未超过raw macro400=`143`，也均未达到absolute150。
+  只有局部两点平均`139`恰好满足corrected SFT 109的`+30`底线。
+- 相对raw的paired`gained/lost,p`依次为
+  `18/22,.6358`、`21/29,.3222`、`13/27,.03848`、
+  `18/31,.08543`。最佳average `{350,400}`逐task为
+  `Long1/Long2/Goal3/Goal6/Object1/Object3/Spatial1/Spatial3 =
+  18/0/0/39/47/33/1/1`；它换来Goal6/Object1的小幅提高，但失去Long1、
+  Object3和Spatial3，仍是能力重分配。
+- 四组均为400 unique rows、36/36 attempt1 shards、6/6 workers return0、
+  无adopt；teacher demo对每task严格`0..49`双射，且与raw的state、
+  env/policy seed、noise prefix和video assignment完全paired。队列前12个
+  shards全为horizon520，之后无long；因此负结果不是调度、采样或缺失造成。
+- 四个averages的episode union为174，加入raw后为180：不同权重确实掌握
+  大量互补成功，但fast-decay轨迹的均匀参数平均不能把它们压入单套Writer。
+  这否定了“只靠post-hoc轨迹平均即可越过150”的当前解释，但不能单凭本screen
+  证明具体梯度冲突机制；下一科学判别应先直接量化per-task gradient conflict。
+- 完整artifact file/canonical SHA256为
+  `ac6e1545...1d30/a9ffd347...9fdb`。owner要求本步完成后暂停讨论，所以没有
+  对非winner补五臂/内部分析，也没有启动第三训练段或下一fresh实验。

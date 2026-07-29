@@ -18,13 +18,17 @@ v6 fast-decay400 fresh0→400和八点fixed correct400均已完成：
 `+30`底线，但仍比absolute硬门150少7。350→400只有净+5且不显著，
 同时375→400 Writer update L2仅`.1265`，所以不机械开第三训练段。
 
-下一screen已在看outcome前封存为
+fast-decay checkpoint-average screen已按看outcome前封存的
 `configs/pi05_as_writer_v6_decay400_checkpoint_average_screen_v1.json`：
 四候选为`{350,400}`、`{200,350,400}`、`{200,250,350,400}`和
-`{150,200,250,300,350,400}`。该screen只从包含本文与sealed config的
-clean/pushed main执行：生成四份inference-only平均权重并完成独立逐tensor
-复算，再在GPU4–7各跑paired correct400。原始和派生checkpoint、评测cache
-与结果均保留。
+`{150,200,250,300,350,400}`，correct400分别为
+`139/135/129/130`，均未超过raw macro400=`143`。四组与raw完全paired，
+评测完整性和long-first审计均通过；post-hoc均匀参数平均不能进一步稳定这条
+fast-decay轨迹。原始和派生checkpoint、评测cache与结果均保留。
+
+owner要求本screen做完后暂停讨论。当前不得启动winner五臂、内部传递、
+task-gradient分析、第三训练段或下一fresh实验；Goal保持未完成，等待owner
+讨论后继续。
 下文1–6节保留v6与full-24背景，10–15节是最新恢复入口。
 
 v6 fresh task-complete 正式 run 已在 GPU4–7 从 macro0 完整训练到 macro400，
@@ -615,7 +619,7 @@ SHA256 99b04bf1cf72ad2385119638ca8020c5caf24e2c33075d758ee7f38dcc253d03
 375→400 update L2为`.12647`、cosine`.1189`；完整dynamics SHA256为
 `804689cac6e108357e6977fb1f263cdc7a13611be46eb6bd3e477d6cae805f32`。
 
-## 15. 紧邻fast-decay checkpoint-average screen
+## 15. fast-decay checkpoint-average screen已完成
 
 封存config：
 
@@ -633,7 +637,36 @@ GPU6  uniform_m200_m250_m350_m400
 GPU7  uniform_m150_m200_m250_m300_m350_m400
 ```
 
-评测仍为correct400、teacher video按task无放回、6 generators、batch16、
-6 persistent workers和global long-first。winner必须补五臂和内部传递；
-若无候选可信超过raw143，则先直接量化per-task gradient conflict，不惯性
-续训第三段，也不凭直觉同时修改update粒度与Procedure→compiler。
+四份derived checkpoint的600个tensors均经独立float32均值复算，
+`max_abs_error=0`；manifest、source provenance和inference-only authority
+全部通过。GPU4–7各跑一组correct400，teacher video按task无放回、
+6 generators、batch16、6 persistent workers和global long-first。结果：
+
+```text
+candidate                                      correct400  tasks>0
+uniform_m350_m400                                     139        6
+uniform_m200_m350_m400                                135        6
+uniform_m200_m250_m350_m400                           129        6
+uniform_m150_m200_m250_m300_m350_m400                 130        7
+raw macro400                                          143        6
+```
+
+相对raw的paired`gained/lost,p`依次为
+`18/22,.6358`、`21/29,.3222`、`13/27,.03848`、
+`18/31,.08543`。每组均为400 unique rows、36/36 attempt1 shards、
+6/6 workers return0、无adopt；每task teacher demos严格`0..49`双射，
+四组与raw的state、env/policy seed、noise prefix和video assignment完全相同。
+前12 shards均为horizon520，之后无long shard。
+
+完整paired artifact：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v6_decay400_checkpoint_average_correct400_paired_7c3879c_20260729.json
+file SHA256 ac6e15450cf99800cc15202fa90e62f38caa735b0da956c51125cef1cab61d30
+canonical payload SHA256 a9ffd347af8504cd46aad5f90fc732c6e6122a4ec3f818ae2e4ef666a39adfdb
+```
+
+四个average的episode-level union为174；把raw也加入union为180，说明能力
+模式仍高度互补，但单套线性均值没有把它们合成。raw macro400继续是当前
+fast-decay observed-best。因owner要求本步后暂停，尚未启动下一分析或实验。

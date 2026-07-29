@@ -1835,3 +1835,19 @@ GPU范围和训练步长是当时快照；活动状态只取
 - screen只从包含本文与config的clean/pushed main执行；先生成四份derived
   checkpoint并完成CPU逐tensor复算/authority检查，随后GPU4–7并行评测。
   所有源checkpoint、派生checkpoint及评测cache/rows/results继续保留。
+
+## v6 fast-decay checkpoint-average screen完成并暂停（2026-07-29）
+
+- commit `7c3879c`的sealed screen在GPU4–7完成。四份derived checkpoint均
+  独立复算为`max_abs_error=0`，formal authority通过；四卡各负责一份
+  checkpoint，每卡6 generators、batch16和6 persistent workers。
+- `{350,400}`、`{200,350,400}`、`{200,250,350,400}`、
+  `{150,200,250,300,350,400}`的correct400为
+  `139/135/129/130`，均低于raw macro400=`143`。最佳两点average相对raw
+  为`18 gained/22 lost,p=.6358`；没有candidate达到absolute150。
+- 所有run均400 rows、36/36 attempt1 shards、6 workers return0、无adopt；
+  video无放回双射、paired seeds/noise与global long-first全部通过。
+  artifact file/canonical SHA256为
+  `ac6e1545...1d30/a9ffd347...9fdb`。GPU4–7已释放。
+- owner明确要求本步后稍停讨论；未启动五臂、内部传递、gradient-conflict
+  分析、第三训练段或下一fresh实验。全部checkpoint和评测证据继续保留。

@@ -95,12 +95,15 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   exact-resume至400并评测250/300/350/400。八点结果为
   `106/64/111/133/132/117/138/143`；macro400比corrected SFT高34但仍比
   absolute150少7，末段参数位移已很小且350→400净增不显著，不机械续第三段。
-- [ ] 按outcome前sealed合同筛选四个fast-decay checkpoint-average：
+- [x] 按outcome前sealed合同筛选四个fast-decay checkpoint-average：
   `{350,400}`、`{200,350,400}`、`{200,250,350,400}`和
   `{150,200,250,300,350,400}`；GPU4–7各负责一组，跑paired correct400。
-  所有源checkpoint、派生checkpoint、评测cache/rows/results均保留。若winner
-  可信提高absolute与multi-task breadth，补五臂和内部传递；否则先量化
-  task-gradient冲突，再决定训练粒度或Procedure→compiler修改。
+  结果为`139/135/129/130`，均未超过raw macro400=`143`；只有局部两点平均
+  恰好达到SFT+30，四者均未达absolute150。所有源checkpoint、派生checkpoint、
+  评测cache/rows/results均保留；完整paired与long-first审计通过。
+- [ ] 按owner要求在average screen后暂停，不启动五臂、内部分析或下一fresh
+  实验；共同讨论后，若继续当前证据路径，则先量化task-gradient冲突，再决定
+  训练粒度或Procedure→compiler修改。
 
 ## Phase D：corrected mixed-task Source-SFT
 

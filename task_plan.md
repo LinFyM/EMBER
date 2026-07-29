@@ -101,9 +101,21 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   结果为`139/135/129/130`，均未超过raw macro400=`143`；只有局部两点平均
   恰好达到SFT+30，四者均未达absolute150。所有源checkpoint、派生checkpoint、
   评测cache/rows/results均保留；完整paired与long-first审计通过。
-- [ ] 按owner要求在average screen后暂停，不启动五臂、内部分析或下一fresh
-  实验；共同讨论后，若继续当前证据路径，则先量化task-gradient冲突，再决定
-  训练粒度或Procedure→compiler修改。
+- [x] 按owner后续决定，把fast-decay从macro400 exact-resume到600并评测
+  450/500/550/600；结果`131/130/132/126`均低于macro400=`143`，
+  400→600为`31 lost/14 gained,p=.01609`，形成可信post-best下降。
+- [x] 对fast-decay单checkpoint best macro400完成正式五臂与内部传递：
+  `143/135/125/128/129`；wrong显著，shuffled/reversed方向正确但不显著。
+  顺序信号存在于Procedure并能传到LoRA/action，只是task-complete下游增益弱。
+- [x] 在不改v6拓扑的前提下实现并封存旧rank-rotating训练范式；最长视频只做
+  fixed-B20 profile，`B21`从未运行且正式入口拒绝更大batch。
+- [x] v6旧范式fresh训练900 updates并评测step100/500/700/900：
+  `98/121/76/95`，step500为single-checkpoint observed-best，后续有显著下降。
+- [x] 对旧范式step500完成五臂与16-reference内部分析：
+  `121/122/111/84/47`；顺序门强通过、wrong语义门失败，Procedure-only几乎
+  完整复现shuffled/reversed的LoRA/action差异。
+- [ ] 按owner要求在上述证据完成后停下讨论；不改Core/Procedure融合、不启动
+  新训练、one-shot或RL。共同决定下一项可归因实验后再继续。
 
 ## Phase D：corrected mixed-task Source-SFT
 

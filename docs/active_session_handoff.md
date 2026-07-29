@@ -12,24 +12,45 @@ history。任何接手者都必须先只读复核现场，不能按本文快照�
 当前没有训练或评测进程。full-24与global-8两套corrected Source-SFT均已完成
 并封存；development observed-best仍是full-24 step400=`109/400`。
 
-v6 fast-decay400 fresh0→400和八点fixed correct400均已完成：
-`106/64/111/133/132/117/138/143`。macro400是raw右端observed-best，
-相对原v6同点`125`为`46 gained/28 lost,p=.04739`，相对SFT高34，已过
-`+30`底线，但仍比absolute硬门150少7。350→400只有净+5且不显著，
-同时375→400 Writer update L2仅`.1265`，所以不机械开第三训练段。
+v6 fast-decay已按owner后续要求从macro400 exact-resume到600。完整
+correct400曲线为：
 
-fast-decay checkpoint-average screen已按看outcome前封存的
-`configs/pi05_as_writer_v6_decay400_checkpoint_average_screen_v1.json`：
-四候选为`{350,400}`、`{200,350,400}`、`{200,250,350,400}`和
-`{150,200,250,300,350,400}`，correct400分别为
-`139/135/129/130`，均未超过raw macro400=`143`。四组与raw完全paired，
-评测完整性和long-first审计均通过；post-hoc均匀参数平均不能进一步稳定这条
-fast-decay轨迹。原始和派生checkpoint、评测cache与结果均保留。
+```text
+macro       50  100  150  200  250  300  350  400  450  500  550  600
+successes  106   64  111  133  132  117  138  143  131  130  132  126
+```
 
-owner要求本screen做完后暂停讨论。当前不得启动winner五臂、内部传递、
-task-gradient分析、第三训练段或下一fresh实验；Goal保持未完成，等待owner
-讨论后继续。
-下文1–6节保留v6与full-24背景，10–15节是最新恢复入口。
+macro400不再是右端点，但仍是单checkpoint observed-best。macro600相对400
+为`14 gained/31 lost,p=.01609`，已经形成可信post-best下降，不再续训该
+task-complete fast-decay recipe。macro400正式五臂为
+`correct/same/wrong/shuffled/reversed=143/135/125/128/129`：same同档，
+correct相对wrong显著，但shuffled/reversed只保留`+15/+14`且不显著。内部
+反事实确认顺序信号仍由Visual Transition进入Procedure并传到LoRA/action，
+只是下游差异较弱。
+
+同一套v6拓扑的旧训练范式对照也已fresh完成：每rank每update一个task、全局
+4 tasks、连续6 updates完整覆盖24 tasks、无gradient accumulation、固定
+`B20`。正式run在约1.01小时内完成900 updates；step100/500/700/900的
+paired correct400为`98/121/76/95`，step500是observed-best。其正式五臂为
+`121/122/111/84/47`：same同档，shuffled/reversed显著下降，但wrong只低10、
+不显著且仅2个tasks正向，因此语义视频门失败。内部检查显示old recipe把
+shuffled/reversed的Procedure差异强烈传到effective LoRA/action，Core-only
+仍近零。
+
+当前证据排除了两个简单解释：
+
+1. v6拓扑并非天然无法产生顺序特异性；不改拓扑只改训练粒度，就能把
+   reversed从task-complete的129压到47。
+2. 直接恢复旧训练范式也不是答案；它用更强的Procedure下游增益换来了更低
+   absolute、较差breadth和仍然不足的wrong-video语义特异性。
+
+因此当前核心矛盾更准确地位于多任务优化与Core/Procedure→compiler融合增益的
+接口：task-complete侧偏向较高absolute但弱化时序条件，old recipe侧过度放大
+时序路径并发生剧烈参数/任务能力迁移。尚不能把根因单独归给训练或架构。
+
+owner要求上述对照完成后停下讨论。当前不得改v6架构、启动新训练、one-shot或
+RL；Goal保持未完成。全部checkpoint、评测cache、rows、queue、logs和结果
+保留。下文2–15节保留历史背景，16–17节是最新恢复入口。
 
 v6 fresh task-complete 正式 run 已在 GPU4–7 从 macro0 完整训练到 macro400，
 训练和评测进程均已自然退出：
@@ -670,3 +691,151 @@ canonical payload SHA256 a9ffd347af8504cd46aad5f90fc732c6e6122a4ec3f818ae2e4ef66
 四个average的episode-level union为174；把raw也加入union为180，说明能力
 模式仍高度互补，但单套线性均值没有把它们合成。raw macro400继续是当前
 fast-decay observed-best。因owner要求本步后暂停，尚未启动下一分析或实验。
+
+## 16. fast-decay续训与macro400机制证据
+
+同一正式root从完整macro400 exact-resume到600：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v6_decay400_taskcomplete_dev_r4_b20_seed7_s2400_4efa737_20260729
+```
+
+`metrics.jsonl`连续1..600，run summary记录600 optimizer updates、
+288,000 action queries、14,400 one-video conditions，test/validation action
+reads均为0。新增macro450/500/550/600的correct400为
+`131/130/132/126`，四点均低于macro400=`143`；400→600为
+`31 lost/14 gained,p=.01609`。完整12点artifact：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v6_decay400_correct400_m50_m600_paired_4efa737_20260729.json
+SHA256 4a2b6121235b08d8b7ce9c1bf72ab93bf6592ffe78c69c0dcbcfe76be5208eef
+```
+
+macro400单checkpoint五臂：
+
+```text
+correct / same / wrong / shuffled / reversed
+143     / 135  / 125   / 128      / 129
+```
+
+相对correct的`control-only/correct-only,p`分别为：
+
+```text
+same       16/24  p=.26819
+wrong      20/38  p=.02475
+shuffled   22/37  p=.06744
+reversed   23/37  p=.09246
+```
+
+wrong方向由4个tasks贡献且显著；shuffled/reversed虽方向正确但未过显著门。
+16-reference内部median relative-L2为：
+
+```text
+condition   Core  Transition Procedure  ProcSlots  Fused  eff.LoRA action
+same       .0748      1.2550    .0363      .4199  .1002    .0627  .0123
+wrong      .3290      1.3604    .1113     1.1350  .3987    .3520  .0550
+shuffled   .0000      2.1492    .0851     1.1372  .3658    .2367  .0421
+reversed   .0044      1.3750    .0952     1.2295  .3331    .2138  .0466
+```
+
+fixed-Core Procedure-only几乎复现shuffled/reversed的effective-LoRA/action，
+Core-only近零；所以task-complete的控制臂高分不是上游没看到顺序，而是顺序
+差异在下游只形成中等增益。
+
+五臂artifact SHA256为
+`b299750377461061d13bb3dbb5f9ba38dacebd02b4117dbf1caf52a16b80f488`；
+内部summary/run-contract SHA256为
+`a91b91a9...ec315/f13706a5...bb6b4`。
+
+## 17. v6旧训练范式对照
+
+canonical config固定为：
+
+```text
+configs/pi05_as_writer_language_axial_v6_old_recipe_v1.json
+```
+
+该对照只改训练更新范式，不改v6 Writer拓扑、数据、信息墙、public rank-16
+LoRA空间或policy。最长105-frame视频的fixed-B20 profile连续3步finite，
+稳态约`20.09 queries/s`、`904 updates/hour`，峰值allocated/reserved约
+`76.94/83.72GB`。`B21`从未运行，正式入口固定B20且对更大batch fail closed。
+
+正式root与成功log：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v6_oldrecipe_rankrotating_dev_r4_b20_seed7_s12000_bad9a96_20260729
+
+/data/ymdai/logs/ember/
+pi05_as_writer_v6_oldrecipe_rankrotating_dev_r4_b20_seed7_s12000_bad9a96_20260729_launchretry1.log
+```
+
+第一次launcher在创建有效step/output前因CLI checkpoint列表末端900与sealed
+`total_steps=12000`不一致而fail closed；保留失败log。仅移除错误的CLI覆盖后
+用同一科学合同重启，900 steps自然完成。run summary为900 updates、
+72,000 action queries、3,600 video conditions、训练body
+`3,626.731s`；每100步checkpoint均保留。每6 updates精确覆盖24 tasks，
+step300时每task已访问全部50 videos一次。
+
+step100/500/700/900的correct400：
+
+```text
+step       100  500  700  900
+successes   98  121   76   95
+tasks>0      5    5    4    6
+```
+
+500→700为`50 lost/5 gained,p=2.14e-10`，500→900为
+`43/17,p=.00107`，不是400-rollout噪声。参数诊断也显示500→700整体
+update L2=`8.013`、相对L2=`.0670`、与前一段cosine仅`.190`；
+700→900 cosine仅`.081`，factor heads相对位移约`.144`，说明持续训练仍在
+大幅旋转下游解。
+
+step500五臂：
+
+```text
+correct / same / wrong / shuffled / reversed
+121     / 122  / 111   / 84       / 47
+```
+
+same为`23/24,p=1`；wrong为`34/24,p=.237`，只有2个正向tasks且最大单task
+占`.867`，语义门失败；shuffled为`58/21,p=3.76e-5`，reversed为
+`83/9,p=3.92e-16`，顺序门强通过。内部median relative-L2：
+
+```text
+condition   Core  Transition Procedure  ProcSlots  Fused  eff.LoRA action
+same       .0496      1.2320    .0377      .3870  .1591    .0794  .0104
+wrong      .2101      1.3796    .1597     1.1546  .8390    .5612  .1227
+shuffled   .0000      2.2617    .1084     1.0069  .6255    .3635  .0663
+reversed   .0034      1.3926    .1664     1.5066 1.0053    .6064  .1485
+```
+
+fixed-Core Procedure-only复现shuffled/reversed的
+`.3635/.0665`和`.6066/.1487`，Core-only近零。这直接证明训练范式能够改变
+Procedure→compiler的有效增益，而不需要改Visual Transition或Semantic Core。
+
+主要artifact：
+
+```text
+correct curve:
+  /data/ymdai/outputs/ember/
+  pi05_as_writer_v6_oldrecipe_correct400_steps0100_0500_0700_0900_paired_bad9a96_20260729.json
+  SHA256 712e51dda7371edb6fc09f57973ca6e67ad9d47fe52b95ede2becca0ba2297b6
+
+five-arm:
+  /data/ymdai/outputs/ember/
+  pi05_as_writer_v6_oldrecipe_single_checkpoint_step0500_specificity400_paired_bad9a96_20260729.json
+  SHA256 c0127e652f2f039f4f1982ac3b6f143ce84b46c8424c26ab81a14554a9ebb818
+
+checkpoint dynamics:
+  /data/ymdai/outputs/ember/
+  pi05_as_writer_v6_oldrecipe_checkpoint_dynamics_s0100_s0500_s0700_s0900_bad9a96_20260729.json
+  SHA256 19a6361d5d4c68ed04ab5d431dede9e1e7546ab690c94e25d90b994826361f48
+
+internal:
+  /data/ymdai/outputs/ember/
+  pi05_as_writer_v6_oldrecipe_single_checkpoint_step0500_internal_specificity_refs2_bad9a96_20260729/summary.json
+  SHA256 bdd3145f572fffd5f29e823a354af8e220405930a0f912f9fdfe73ea45ae9963
+```

@@ -1851,3 +1851,51 @@ GPU范围和训练步长是当时快照；活动状态只取
   `ac6e1545...1d30/a9ffd347...9fdb`。GPU4–7已释放。
 - owner明确要求本步后稍停讨论；未启动五臂、内部传递、gradient-conflict
   分析、第三训练段或下一fresh实验。全部checkpoint和评测证据继续保留。
+
+## fast-decay续训、五臂与内部检查完成（2026-07-29）
+
+- 同一fast-decay正式root从完整macro400 exact-resume到600；metrics连续
+  1..600且finite，累计288,000 action queries和14,400 one-video conditions。
+  新增450/500/550/600 correct400=`131/130/132/126`，每点400 rows、
+  36/36 attempt1 shards、6 workers return0、无adopt；long-first与无放回
+  video双射均通过。macro400仍为best，400→600显著下降`p=.01609`。
+- macro400五臂在GPU4–7完成：
+  `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。五臂pairing、
+  state/env/policy/noise、video和global long-first审计全部通过。
+- 16-reference内部检查自然exit0；fixed-Core Procedure-only复现
+  shuffled/reversed的effective-LoRA/action，Core-only近零。全部原checkpoint、
+  cache、rows、queue、logs和结果保留。
+
+## v6旧训练范式实现、profile与正式run（2026-07-29）
+
+- commits `36f1cf4/86438ab/42ac8c0/a937e52/bad9a96`实现并封存唯一的
+  rank-rotating v6 control。canonical config为
+  `configs/pi05_as_writer_language_axial_v6_old_recipe_v1.json`；固定B20，
+  对更大action-query batch fail closed。`B21`只曾作为未运行的候选名出现，
+  没有profile、训练或评测。
+- 最长105-frame真实视频完成fresh step0→1和exact-resume1→3；后两步稳态
+  `20.091 queries/s`、约904 updates/hour，峰值allocated/reserved
+  `76.94/83.72GB`。全仓192 tests通过后才启动正式run。
+- 第一次formal launcher因额外CLI checkpoint列表终点900与sealed
+  `total_steps=12000`不一致而在创建有效step/output前fail closed。失败log
+  保留；移除该错误覆盖后以不变科学合同重启。
+- 正式root
+  `/data/ymdai/outputs/ember/pi05_as_writer_v6_oldrecipe_rankrotating_dev_r4_b20_seed7_s12000_bad9a96_20260729`
+  完成900 updates；`metrics.jsonl`连续1..900，run summary记录72,000 action
+  queries、3,600 video conditions和`3,626.731s`训练body。每100步checkpoint
+  全部保留；每6 updates完整覆盖24 tasks。
+
+## v6旧训练范式评测与内部传递完成（2026-07-29）
+
+- step100/500/700/900分别映射GPU4/5/6/7并行correct400，结果
+  `98/121/76/95`。每卡一checkpoint、6分布式Writer generators、
+  batch16、6 persistent rollout workers；每个queue前12 shards均为
+  horizon520，之后才领取普通task。四点均400 rows、36 shards、全attempt1。
+- step500 single-checkpoint best完成五臂：
+  `121/122/111/84/47`。same同档；wrong不显著且贡献集中，语义门失败；
+  shuffled/reversed强显著通过。
+- checkpoint dynamics与16-reference内部检查完成。old recipe显著放大
+  Procedure→effective-LoRA/action的顺序差异，fixed-Core反事实完整复现，
+  Core-only近零。训练和全部评测自然退出，GPU4–7释放。
+- 当前按owner要求停下讨论；没有修改v6架构，没有启动后续fresh训练、
+  one-shot或RL。

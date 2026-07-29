@@ -2337,3 +2337,49 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 完整artifact file/canonical SHA256为
   `ac6e1545...1d30/a9ffd347...9fdb`。owner要求本步完成后暂停讨论，所以没有
   对非winner补五臂/内部分析，也没有启动第三训练段或下一fresh实验。
+
+## fast-decay续训封顶与macro400机制（2026-07-29）
+
+- owner后续要求先把当前v6上限与best机制测清，因此同一fast-decay root从
+  macro400 exact-resume到600。新增450/500/550/600的paired correct400为
+  `131/130/132/126`；macro400=`143`继续是12点single-checkpoint best。
+  400→600为`31 lost/14 gained,p=.01609`，右端已显著下降，排除了“只是还需
+  继续同recipe”的解释。
+- macro400五臂为
+  `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。same同档；
+  correct对wrong为`38/20,p=.02475`且4个tasks正向；对shuffled为
+  `37/22,p=.06744`，对reversed为`37/23,p=.09246`，后两项方向正确但未显著。
+  所以task-complete v6的absolute有34点SFT优势，却把大量增益保留给无序视频。
+- 内部检查没有发现上游时序失效：shuffled/reversed的Transition为
+  `2.149/1.375`、Procedure slots为`1.137/1.230`，fixed-Core
+  Procedure-only几乎复现effective-LoRA/action差异；Core-only近零。问题是
+  正确与无序视频在下游仍只相差`.237/.042`和`.214/.047`量级，信号没有被
+  行为决策充分放大。
+
+## v6旧训练范式对照的判别结论（2026-07-29）
+
+- 对照严格保持v6拓扑、数据、信息墙、B20、policy和public LoRA空间，只把
+  update改为旧rank-rotating口径：一task/rank/update、global4 tasks、
+  连续6 updates覆盖24 tasks、每步一次DDP sync/AdamW。正式900 updates约
+  `3,626.7s`，消费72,000 action queries和3,600视频条件。
+- correct400在step100/500/700/900为`98/121/76/95`。step500→700出现
+  `50 lost/5 gained,p=2.14e-10`，到900仍只有95。500→700与700→900的整体
+  update direction cosine仅`.190/.081`；factor heads每段相对位移仍约
+  `.148/.144`。能力漂移对应真实、近正交的大参数运动，不是评测噪声。
+- step500五臂为`121/122/111/84/47`。同样的v6拓扑在旧训练下把shuffled和
+  reversed分别压低37和74，exact p为`3.76e-5/3.92e-16`；因此v6的
+  Visual-Transition Procedure绝对能够形成理想的顺序因果行为，task-complete
+  控制臂高分不能归因于架构完全读不懂顺序。
+- 旧范式仍不是解：absolute仅121，比task-complete best143低22、只比SFT高12；
+  仅5/8 tasks成功。wrong仍为111，correct优势10且`p=.237`，只有2个tasks
+  正向，最大单task占正贡献`.867`。它恢复了order specificity，却没有恢复
+  v5.2式wrong-video semantic specificity。
+- 内部传递解释了行为差异。old recipe下shuffled/reversed的effective-LoRA与
+  action median为`.363/.066`和`.606/.148`，显著高于task-complete的
+  `.237/.042`和`.214/.047`；fixed-Core Procedure-only完整复现，Core-only
+  近零。训练粒度确实在调节Procedure→compiler的有效增益。
+- 综合结论不是二选一：task-complete倾向学习跨视频都有效的通用帮助，从而
+  absolute较高但顺序margin弱；old recipe让单task连续更新产生更强、更不稳定
+  的Procedure依赖，从而顺序margin大但absolute/breadth下降。两者共同指出
+  当前瓶颈位于多任务优化与Core/Procedure融合增益的接口；现有证据尚不足以
+  单独判定应只改训练还是只改融合，需先与owner讨论下一项单变量实验。

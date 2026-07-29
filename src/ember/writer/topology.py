@@ -69,7 +69,7 @@ def validate_task_complete_topology(
     batch_size: int,
     mode: str,
 ) -> None:
-    """Seal the v6 four-rank, all-task macro-update topology."""
+    """Seal one of the two explicit AS-Writer update topologies."""
 
     if context.world_size != expected_world_size:
         raise WriterModelError(
@@ -79,14 +79,30 @@ def validate_task_complete_topology(
     training = config["conditioning_training"]
     tasks_per_rank = int(training["tasks_per_rank_per_optimizer_update"])
     global_tasks = int(training["global_tasks_per_optimizer_update"])
-    invalid = (
+    task_count = int(config["data"]["task_count"])
+    update_topology = str(
+        training.get("update_topology", "task_complete_all_tasks")
+    )
+    invalid_common = (
         int(training["teacher_videos_per_task_visit"]) != 1
         or tasks_per_rank * context.world_size != global_tasks
-        or global_tasks != int(config["data"]["task_count"])
     )
+    if update_topology == "task_complete_all_tasks":
+        invalid = invalid_common or global_tasks != task_count
+    elif update_topology == "rank_rotating_one_task_per_rank":
+        invalid = (
+            invalid_common
+            or tasks_per_rank != 1
+            or global_tasks != context.world_size
+            or task_count % global_tasks != 0
+        )
+    else:
+        invalid = True
     if invalid:
         raise WriterModelError(
-            "AS-Writer macro update must cover every task exactly once"
+            "AS-Writer update topology differs from its declared contract"
         )
-    if mode == "profile" and batch_size not in {20, 16}:
-        raise WriterModelError("v6 profile allows B20 or the single B16 fallback")
+    if mode == "profile" and batch_size not in {16, 20, 21}:
+        raise WriterModelError(
+            "v6 profile allows only the declared B16/B20/B21 candidates"
+        )

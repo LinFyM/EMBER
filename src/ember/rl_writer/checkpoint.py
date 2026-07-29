@@ -24,7 +24,7 @@ from ember.pi05_source_checkpoint import (
 from ember.reward.ledger import InteractionCursors
 from ember.reward.protocol import RewardProtocolError, RewardTask
 from ember.rl_writer.contract import schedule_summary
-from ember.writer.data import TeacherVideoSchedule
+from ember.writer.as_sampling import TeacherVideoSchedule
 from ember.writer.model import CompleteLoRAWriter
 
 

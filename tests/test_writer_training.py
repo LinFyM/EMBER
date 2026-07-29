@@ -18,13 +18,17 @@ from ember.writer.as_contract import (
     resume_step,
     writer_split_roles,
 )
-from ember.writer.data import TeacherVideoSchedule
+from ember.writer.as_sampling import TeacherVideoSchedule
 from ember.writer.model import WriterModelError
 from ember.writer import as_step
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = REPO_ROOT / "configs/pi05_as_writer_language_axial_v6.json"
+OLD_RECIPE_CONFIG = (
+    REPO_ROOT
+    / "configs/pi05_as_writer_language_axial_v6_old_recipe_v1.json"
+)
 
 
 def test_language_axial_config_seals_architecture_and_information_wall() -> None:
@@ -119,6 +123,54 @@ def test_language_axial_config_seals_architecture_and_information_wall() -> None
     assert "without_runtime_full_data_sha" in config["formal_run"][
         "data_integrity_check"
     ]
+
+
+def test_old_recipe_overlay_changes_training_without_changing_v6() -> None:
+    config = load_writer_config(OLD_RECIPE_CONFIG)
+    assert (
+        config["writer"]["architecture"]
+        == "pi05_task_grounded_semantic_set_visual_transition_causal_procedure_slot_fusion_v6"
+    )
+    assert config["conditioning_training"] == {
+        "method": "single_video_multi_action_positive_functional_loss",
+        "update_topology": "rank_rotating_one_task_per_rank",
+        "writer_language_contract": (
+            "correct_task_language_state_free_teacher_action_suffix"
+        ),
+        "policy_language_contract": "correct_action_query_task_language",
+        "action_query_batch_owner": (
+            "one physical action batch per rank with no optimizer gradient "
+            "accumulation"
+        ),
+        "task_assignment": (
+            "one task per rank per optimizer step with globally balanced task "
+            "rotation"
+        ),
+        "tasks_per_rank_per_optimizer_update": 1,
+        "global_tasks_per_optimizer_update": 4,
+        "teacher_videos_per_task_visit": 1,
+        "action_video_assignment": "all_actions_share_single_video_lora",
+        "logical_pair_batch": "per_rank_action_batch",
+        "policy_noise_contract": (
+            "one independent policy flow noise and time draw per action query"
+        ),
+        "pair_loss_reduction": "mean_over_rank_local_action_batch",
+        "task_loss_scale_before_backward": "one",
+        "ddp_gradient_sync": "one_synchronized_backward_per_optimizer_step",
+        "optimizer_steps_per_macro_update": 1,
+        "checkpoint_boundary": "complete_optimizer_update_only",
+        "normal_loss_weight": 1.0,
+    }
+    assert config["optimization"]["scheduler"] == {
+        "kind": "cosine_decay_with_warmup",
+        "peak_lr": 0.0003,
+        "warmup_steps": 100,
+        "decay_steps": 12000,
+        "decay_lr": 1e-05,
+    }
+    assert config["_config_derivation"]["base_sha256"] == (
+        "812793661ea20b7207f15e6a4ae13d506f69d0d3003c72f1bbcc16837aaf33fb"
+    )
 
 
 def test_checkpoint_schedule_and_cursor_are_fail_closed() -> None:

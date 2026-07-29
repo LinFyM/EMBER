@@ -17,7 +17,6 @@ import torch.distributed as dist
 
 from ember.lora import canonical_contract_sha256
 from ember.pi05_eval_contract import git_state
-from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import (
     DistributedContext,
     canonical_hash,
@@ -26,205 +25,21 @@ from ember.pi05_source_checkpoint import (
     write_json_atomic,
 )
 from ember.pi05_source_contract import append_jsonl
-from ember.writer.architecture import (
-    V6_WRITER_PARAMETER_COUNT,
-    expected_writer_contract,
+from ember.writer.architecture import V6_WRITER_PARAMETER_COUNT
+from ember.writer.as_config import (
+    REPO_ROOT,
+    authority_path,
+    load_writer_config,
+    writer_split_roles,
+    writer_stage,
 )
 from ember.writer.data import FunctionalQueryDataset, WriterTaskAuthority
 from ember.writer.model import CompleteLoRAWriter, WriterModelError
 from ember.writer.topology import validate_task_complete_topology
 
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_language_axial_as_writer_v6"
 AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_language_axial_as_writer_launch_v6"
-AS_WRITER_STAGES = ("development", "final")
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
-
-
-def authority_path(config: Mapping[str, Any], name: str) -> Path:
-    return REPO_ROOT / str(config["authorities"][name]["path"])
-
-
-def writer_stage(config: Mapping[str, Any]) -> str:
-    """Return the sealed data stage, preserving old development artifacts."""
-
-    stage = str(config.get("sealed_stage", "development"))
-    if stage not in AS_WRITER_STAGES:
-        raise WriterModelError("unsupported PI05 AS-Writer stage")
-    return stage
-
-
-def writer_split_roles(config: Mapping[str, Any]) -> tuple[str, ...]:
-    if writer_stage(config) == "development":
-        return ("train",)
-    return ("train", "validation")
-
-
-def _validate_authorities(config: Mapping[str, Any]) -> None:
-    authorities = config.get("authorities", {})
-    required = {
-        "target_data_manifest",
-        "evaluation_config",
-        "lora_contract",
-        "source_base_config",
-        "tokenizer_manifest",
-    }
-    if set(authorities) != required:
-        raise WriterModelError("AS-Writer authority set changed")
-    for name, authority in authorities.items():
-        artifact = REPO_ROOT / str(authority.get("path", ""))
-        if not artifact.is_file() or sha256_file(artifact) != authority.get("sha256"):
-            raise WriterModelError(f"sealed AS-Writer authority changed: {name}")
-
-
-def _validate_protocol(config: Mapping[str, Any]) -> None:
-    target = read_json(authority_path(config, "target_data_manifest"))
-    roles = target.get("summary", {}).get("roles", {})
-    if (
-        target.get("schema_version") != "ember_pi05_target_data_manifest_v1"
-        or int(target.get("summary", {}).get("tasks", -1)) != 40
-        or int(target.get("summary", {}).get("episodes", -1)) != 2000
-        or {name: len(roles.get(name, [])) for name in ("train", "validation", "test")}
-        != {"train": 24, "validation": 8, "test": 8}
-    ):
-        raise WriterModelError("AS-Writer target-data authority is not sealed 24/8/8")
-    lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
-    if lora.source_base_config_sha256 != config["authorities"]["source_base_config"]["sha256"]:
-        raise WriterModelError("AS-Writer LoRA and source-base authorities disagree")
-    writer = config.get("writer", {})
-    if (
-        writer.get("frame_stride") != 5
-        or int(writer.get("max_frames_per_encoder_call", 0)) <= 0
-    ):
-        raise WriterModelError("sealed Language-Axial Writer dimensions changed")
-    expected = expected_writer_contract(writer)
-    if writer != expected:
-        missing = sorted(set(expected) - set(writer))
-        extra = sorted(set(writer) - set(expected))
-        changed = sorted(
-            key
-            for key in set(writer) & set(expected)
-            if writer[key] != expected[key]
-        )
-        raise WriterModelError(
-            "Language-Axial AS-Writer architecture changed; "
-            f"missing={missing}, extra={extra}, changed={changed}"
-        )
-
-
-def _validate_information_wall(config: Mapping[str, Any]) -> None:
-    common = {
-        "writer_input": (
-            "task language plus exactly one raw action-hidden teacher video at inference"
-        ),
-        "writer_forbidden_inputs": [
-            "action",
-            "proprio",
-            "state",
-            "reward",
-            "terminal",
-            "task_id",
-            "filename",
-            "hidden_normalization",
-            "policy_outcome",
-        ],
-        "action_owner": "frozen functional behavior loss only",
-        "test_actions_read": 0,
-        "test_video_values_read": 0,
-    }
-    if writer_stage(config) == "development":
-        expected = {
-            **common,
-            "development_action_split_roles": ["train"],
-            "development_video_split_roles": ["train"],
-            "validation_actions_read_by_training_optimizer": 0,
-            "validation_action_queries_per_checkpoint_monitor": 512,
-            "validation_action_gradient": False,
-        }
-    else:
-        expected = {
-            **common,
-            "final_action_split_roles": ["train", "validation"],
-            "final_video_split_roles": ["train", "validation"],
-        }
-    if config.get("information_wall") != expected:
-        raise WriterModelError("AS-Writer information wall changed")
-    data = config.get("data", {})
-    required = {
-        "task_count": 24 if writer_stage(config) == "development" else 32,
-        "demo_indices": [0, 49],
-        "episodes_per_task": 50,
-        "teacher_video_sampling": (
-            "per_task_macro_visit_deterministic_single_same_task_video_in_"
-            "no_replacement_cycles"
-        ),
-        "action_query_sampling": "task-balanced deterministic no-replacement episode cycles",
-        "video_action_pairing": (
-            "one task-video LoRA conditions the complete task-local action batch"
-        ),
-        "writer_generation_reuse": (
-            "generate one task-video LoRA once then reuse it across the complete "
-            "task-local action batch"
-        ),
-    }
-    if any(data.get(name) != value for name, value in required.items()):
-        raise WriterModelError("AS-Writer sampling contract changed")
-
-
-def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
-    value = config.get("conditioning_training", {})
-    normal = {
-        "method": (
-            "task_complete_single_video_multi_action_positive_functional_loss"
-        ),
-        "writer_language_contract": (
-            "correct_task_language_state_free_teacher_action_suffix"
-        ),
-        "policy_language_contract": "correct_action_query_task_language",
-        "action_query_batch_owner": (
-            "six sequential task-pure physical action batches per rank per "
-            "macro optimizer update"
-        ),
-        "task_assignment": (
-            "every macro optimizer update covers all 24 tasks exactly once "
-            "globally with six cost-balanced long-first tasks per rank"
-        ),
-        "tasks_per_rank_per_optimizer_update": 6,
-        "global_tasks_per_optimizer_update": 24,
-        "teacher_videos_per_task_visit": 1,
-        "action_video_assignment": "all_actions_share_single_video_lora",
-        "logical_pair_batch": "per_task_action_batch",
-        "policy_noise_contract": (
-            "one independent policy flow noise and time draw per action query"
-        ),
-        "pair_loss_reduction": "mean_within_task_then_equal_mean_over_24_tasks",
-        "task_loss_scale_before_backward": "one_sixth",
-        "ddp_gradient_sync": (
-            "first_five_microtasks_no_sync_sixth_single_sync"
-        ),
-        "optimizer_steps_per_macro_update": 1,
-        "checkpoint_boundary": "complete_macro_optimizer_update_only",
-        "normal_loss_weight": 1.0,
-    }
-    if value != normal:
-        raise WriterModelError("AS-Writer conditioning contract changed")
-
-
-def _positive_integer(value: Any) -> bool:
-    return isinstance(value, int) and value > 0
-
-
-def load_writer_config(path: Path) -> dict[str, Any]:
-    config = read_json(path)
-    if config.get("schema_version") != AS_WRITER_CONFIG_SCHEMA:
-        raise WriterModelError("unsupported PI05 AS-Writer config schema")
-    writer_stage(config)
-    _validate_authorities(config)
-    _validate_protocol(config)
-    _validate_information_wall(config)
-    _validate_conditioning_training(config)
-    return config
 
 
 def parse_checkpoint_steps(value: str | Sequence[int], total_steps: int) -> tuple[int, ...]:
@@ -613,6 +428,13 @@ def build_contract(
     tasks_per_rank = int(
         config["conditioning_training"]["tasks_per_rank_per_optimizer_update"]
     )
+    update_topology = str(
+        config["conditioning_training"].get(
+            "update_topology",
+            "task_complete_all_tasks",
+        )
+    )
+    task_complete = update_topology == "task_complete_all_tasks"
     global_tasks = context.world_size * tasks_per_rank
     global_queries = global_tasks * batch_size
     local = {
@@ -633,6 +455,11 @@ def build_contract(
         "stage": writer_stage(config),
         "git": {key: value for key, value in git_state(REPO_ROOT).items() if key in {"branch", "commit"}},
         "config_sha256": sha256_file(args.config.resolve()),
+        **(
+            {"config_derivation": dict(config["_config_derivation"])}
+            if "_config_derivation" in config
+            else {}
+        ),
         "authorities": dict(config["authorities"]),
         "source": dict(source),
         "tokenizer": dict(tokenizer),
@@ -654,12 +481,18 @@ def build_contract(
             "one_policy_cuda_process_per_rank": True,
             "extra_cuda_roles_on_any_rank": 0,
             "ddp_object": "shared_writer_only",
-            "macro_step_axis": "complete_task_balanced_optimizer_update",
+            "macro_step_axis": (
+                "complete_task_balanced_optimizer_update"
+                if task_complete
+                else "rank_rotating_task_balanced_optimizer_update"
+            ),
             "tasks_per_rank_per_optimizer_update": tasks_per_rank,
             "global_tasks_per_optimizer_update": global_tasks,
             "task_assignment": (
                 "selected_video_frame_cost_balanced_groups_rotated_across_"
                 "physical_ranks_longest_task_first_within_each_rank"
+                if task_complete
+                else "seeded_global_task_permutations_across_rank_step_slots"
             ),
             "task_video_cost_sha256": video_data[
                 "sampled_frame_cost_sha256"
@@ -676,9 +509,11 @@ def build_contract(
             "actions_per_video_condition": batch_size,
             "action_video_assignment": "all_actions_share_single_video_lora",
             "logical_pairs_per_rank_per_macro": tasks_per_rank * batch_size,
-            "optimizer_gradient_accumulation": True,
+            "optimizer_gradient_accumulation": tasks_per_rank > 1,
             "loss_reduction": (
                 "mean_within_each_task_then_equal_mean_across_all_tasks"
+                if task_complete
+                else "mean_rank_local_task_loss_then_ddp_mean_across_four_tasks"
             ),
             "ddp_no_sync_microtasks_per_macro": tasks_per_rank - 1,
             "ddp_gradient_synchronizations_per_macro": (

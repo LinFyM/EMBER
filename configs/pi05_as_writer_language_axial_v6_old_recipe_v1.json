@@ -1,0 +1,112 @@
+{
+  "schema_version": "ember_pi05_language_axial_as_writer_recipe_overlay_v1",
+  "base_config": "configs/pi05_as_writer_language_axial_v6.json",
+  "base_sha256": "812793661ea20b7207f15e6a4ae13d506f69d0d3003c72f1bbcc16837aaf33fb",
+  "replace": {
+    "data": {
+      "task_count": 24,
+      "episodes_per_task": 50,
+      "demo_indices": [
+        0,
+        49
+      ],
+      "action_chunk_size": 50,
+      "sampler_seed": 20260721,
+      "teacher_video_seed": 20260722,
+      "teacher_video_sampling": "per_rank_task_visit_deterministic_single_same_task_video_in_no_replacement_cycles",
+      "action_query_sampling": "task-balanced deterministic no-replacement episode cycles",
+      "video_action_pairing": "one task-video LoRA conditions the complete rank-local action batch",
+      "writer_generation_reuse": "generate one task-video LoRA once then reuse it across the complete rank-local action batch",
+      "max_open_files_per_worker": 8,
+      "video_open_files_per_rank": 2
+    },
+    "conditioning_training": {
+      "method": "single_video_multi_action_positive_functional_loss",
+      "update_topology": "rank_rotating_one_task_per_rank",
+      "writer_language_contract": "correct_task_language_state_free_teacher_action_suffix",
+      "policy_language_contract": "correct_action_query_task_language",
+      "action_query_batch_owner": "one physical action batch per rank with no optimizer gradient accumulation",
+      "task_assignment": "one task per rank per optimizer step with globally balanced task rotation",
+      "tasks_per_rank_per_optimizer_update": 1,
+      "global_tasks_per_optimizer_update": 4,
+      "teacher_videos_per_task_visit": 1,
+      "action_video_assignment": "all_actions_share_single_video_lora",
+      "logical_pair_batch": "per_rank_action_batch",
+      "policy_noise_contract": "one independent policy flow noise and time draw per action query",
+      "pair_loss_reduction": "mean_over_rank_local_action_batch",
+      "task_loss_scale_before_backward": "one",
+      "ddp_gradient_sync": "one_synchronized_backward_per_optimizer_step",
+      "optimizer_steps_per_macro_update": 1,
+      "checkpoint_boundary": "complete_optimizer_update_only",
+      "normal_loss_weight": 1.0
+    },
+    "optimization": {
+      "method": "functional_pi05_language_axial_positive_only",
+      "seed": 7,
+      "precision": "bfloat16",
+      "source_policy": "final formal frozen raw policy",
+      "normalization": "frozen filtered-LIBERO-90 source normalization",
+      "optimizer": {
+        "name": "AdamW",
+        "betas": [
+          0.9,
+          0.95
+        ],
+        "eps": 1e-08,
+        "weight_decay": 0.0001,
+        "gradient_clip_norm": 1.0
+      },
+      "scheduler": {
+        "kind": "cosine_decay_with_warmup",
+        "peak_lr": 0.0003,
+        "warmup_steps": 100,
+        "decay_steps": 12000,
+        "decay_lr": 1e-05
+      },
+      "maximum_formal_wall_clock_minutes": null,
+      "budget_role": "fresh_v6_architecture_with_exact_v5_2_rank_rotating_update_recipe_one_hour_control"
+    },
+    "profile_defaults": {
+      "status": "pending_v6_old_recipe_live_profile",
+      "expected_world_size": 4,
+      "total_steps": 3,
+      "per_rank_batch_size": 20,
+      "checkpoint_steps": [
+        1,
+        2,
+        3
+      ],
+      "selected_stop_step": 3
+    },
+    "profile_evidence": {
+      "status": "pending",
+      "allowed_physical_gpu_ids": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "fixed_frame_stride": 5,
+      "teacher_videos_per_task_visit": 1,
+      "tasks_per_rank_per_optimizer_update": 1,
+      "global_tasks_per_optimizer_update": 4,
+      "candidate_batches": [
+        20,
+        21
+      ],
+      "selection_rule": "profile B20 first and retain B21 only if the longest real stride-5 video and repeated updates remain finite without OOM"
+    },
+    "formal_run": {
+      "status": "pending_live_profile",
+      "expected_world_size": 4,
+      "total_steps": 12000,
+      "per_rank_batch_size": 20,
+      "checkpoint_steps": "every:100",
+      "selected_stop_step": 900,
+      "stage_stop_steps": "every:100",
+      "segment_definition": "approximately one hour from fresh identity under the historical v5.2 one-task-per-rank update recipe",
+      "data_integrity_check": "sealed_manifest_plus_exact_file_size_and_hdf5_schema_without_runtime_full_data_sha",
+      "continuation_gate": "stop after the first segment for paired validation and specificity analysis"
+    }
+  }
+}

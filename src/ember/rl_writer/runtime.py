@@ -50,7 +50,7 @@ from ember.rl_writer.contract import (
     task_for_update,
 )
 from ember.writer.as_contract import inspect_feature_cache, load_writer_config
-from ember.writer.data import TeacherVideoSchedule
+from ember.writer.as_sampling import TeacherVideoSchedule
 from ember.writer.feature_cache import WriterFeatureStore
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.model import (

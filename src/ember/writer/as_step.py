@@ -111,25 +111,28 @@ def _global_task_video_assignments(
     step: int,
 ) -> list[dict[str, int]]:
     assignments = []
-    for rank in range(runtime.context.world_size):
-        for microtask, task_id in enumerate(
-            runtime.sampler.tasks_for_step(step, rank=rank)
-        ):
-            teacher_demo = runtime.video_schedule.demo_for_task_visit(
-                task_id,
-                step,
-            )
-            assignments.append(
-                {
-                    "rank": rank,
-                    "microtask": microtask,
-                    "task_id": task_id,
-                    "teacher_demo_index": teacher_demo,
-                    "teacher_video_sampled_frames": (
-                        runtime.sampler.task_video_costs[task_id][teacher_demo]
-                    ),
-                }
-            )
+    for (
+        rank,
+        microtask,
+        task_id,
+        task_visit,
+    ) in runtime.sampler.assignments_for_step(step):
+        teacher_demo = runtime.video_schedule.demo_for_task_visit(
+            task_id,
+            task_visit,
+        )
+        assignments.append(
+            {
+                "rank": rank,
+                "microtask": microtask,
+                "task_id": task_id,
+                "task_visit": task_visit,
+                "teacher_demo_index": teacher_demo,
+                "teacher_video_sampled_frames": (
+                    runtime.sampler.task_video_costs[task_id][teacher_demo]
+                ),
+            }
+        )
     return assignments
 
 
@@ -214,7 +217,9 @@ def _step_metrics(
         "teacher_videos_per_task_visit": runtime.videos_per_task_visit,
         "local_policy_forward_calls_this_step": len(records),
         "policy_forward_calls_this_step": global_tasks_this_step,
-        "optimizer_gradient_accumulation": True,
+        "optimizer_gradient_accumulation": (
+            runtime.tasks_per_rank_per_update > 1
+        ),
         "task_loss_scale": 1.0 / runtime.tasks_per_rank_per_update,
         "ddp_synchronizations_this_step": (
             1 if runtime.context.world_size > 1 else 0
@@ -252,13 +257,16 @@ def run_writer_step(
     step: int,
     started: float,
 ) -> dict[str, Any]:
-    """Run one complete 24-task equal-weight macro update."""
+    """Run one optimizer update under the configured task assignment."""
 
     tick = time.monotonic()
     runtime.optimizer.zero_grad(set_to_none=True)
     training = runtime.config["conditioning_training"]
     mode = str(training["method"])
-    if mode != "task_complete_single_video_multi_action_positive_functional_loss":
+    if mode not in {
+        "task_complete_single_video_multi_action_positive_functional_loss",
+        "single_video_multi_action_positive_functional_loss",
+    }:
         raise WriterModelError("unsupported AS-Writer conditioning mode")
     records: list[dict[str, Any]] = []
     data_seconds = 0.0

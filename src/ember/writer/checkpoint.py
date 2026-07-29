@@ -22,7 +22,7 @@ from ember.pi05_source_checkpoint import (
     sha256_file,
     write_json_atomic,
 )
-from ember.writer.data import (
+from ember.writer.as_sampling import (
     MixedTaskBatchSampler,
     TeacherVideoSchedule,
 )

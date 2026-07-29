@@ -28,7 +28,7 @@ from ember.rl_writer.contract import (
 )
 from ember.rl_writer.training import build_parser
 from ember.rl_writer.loop import _episode_chunk_weights
-from ember.writer.data import TeacherVideoSchedule
+from ember.writer.as_sampling import TeacherVideoSchedule
 
 
 ROOT = Path(__file__).resolve().parents[1]

@@ -57,11 +57,13 @@ from ember.writer.as_contract import (
     writer_trainable_contract,
     writer_stage,
 )
+from ember.writer.as_sampling import (
+    MixedTaskBatchSampler,
+    TeacherVideoSchedule,
+)
 from ember.writer.data import (
     FunctionalQueryDataset,
-    MixedTaskBatchSampler,
     RawTeacherVideoStore,
-    TeacherVideoSchedule,
     WriterTaskAuthority,
 )
 from ember.writer.functional import prepare_frozen_writer_policy

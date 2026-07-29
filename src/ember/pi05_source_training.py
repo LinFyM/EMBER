@@ -51,10 +51,8 @@ from ember.pi05_source_setup import (
     validate_runtime_assets,
     validate_source_files,
 )
-from ember.writer.data import (
-    FunctionalQueryDataset,
-    MixedTaskBatchSampler,
-)
+from ember.writer.as_sampling import MixedTaskBatchSampler
+from ember.writer.data import FunctionalQueryDataset
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

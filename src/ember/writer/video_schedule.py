@@ -7,7 +7,7 @@ import json
 from typing import Any
 
 from ember.pi05_target_data import SUITE_ORDER, target_global_task_id
-from ember.writer.data import TeacherVideoSchedule
+from ember.writer.as_sampling import TeacherVideoSchedule
 from ember.writer.model import WriterModelError
 
 

@@ -19,7 +19,7 @@ from ember.pi05_source_checkpoint import DistributedContext, write_json_atomic
 from ember.pi05_source_checkpoint import canonical_hash, read_json, sha256_file
 from ember.pi05_source_contract import append_jsonl
 from ember.reward.protocol import RewardProtocolError, RewardTask, SUITE_HORIZONS
-from ember.writer.data import TeacherVideoSchedule
+from ember.writer.as_sampling import TeacherVideoSchedule
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]

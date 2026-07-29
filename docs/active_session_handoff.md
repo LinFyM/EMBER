@@ -907,4 +907,9 @@ checkpoint1恢复后未改写，三步task/video/query/LR/cursor与连续run一�
 
 首轮正式配置已改回正式teacher seed `20260722`，选择B20与v6已验证较优的
 fast cosine decay400；fresh 0→200 macro、每25 checkpoint，共96,000 action
-queries和4,800 one-video conditions。正式训练/评测尚未启动。
+queries和4,800 one-video conditions。实现/profile seal commit为
+`ca7db57d0c2d1ec2e7032a44b58238b6de35b1f4`，已push至`origin/main`。正式root
+预声明为
+`/data/ymdai/outputs/ember/pi05_as_writer_v7_jointae_taskcomplete_decay400_dev_r4_b20_seed7_s2400_ca7db57_20260729`，
+log为同名文件置于`/data/ymdai/logs/ember/`，tmux为
+`ember-v7-formal-200`。正式训练/评测尚未启动。

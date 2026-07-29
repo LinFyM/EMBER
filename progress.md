@@ -1940,4 +1940,8 @@ GPU范围和训练步长是当时快照；活动状态只取
   L2位移`0.08944`。
 - 正式配置封存task-complete B20、teacher seed`20260722`和fast cosine
   decay400；首段fresh0→200、每25 checkpoint，共96,000 queries与4,800
-  one-video conditions。尚未启动正式训练或评测。
+  one-video conditions。实现/profile seal commit为
+  `ca7db57d0c2d1ec2e7032a44b58238b6de35b1f4`，已push至`origin/main`。
+  正式root预声明为
+  `/data/ymdai/outputs/ember/pi05_as_writer_v7_jointae_taskcomplete_decay400_dev_r4_b20_seed7_s2400_ca7db57_20260729`；
+  尚未启动正式训练或评测。

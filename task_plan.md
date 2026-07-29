@@ -171,6 +171,39 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   含105-frame视频；稳态约27.48 queries/s、206.08 macros/hour。
 - [ ] clean/push后启动task-complete B20、fast-decay400、fresh macro0→200
   正式段；每25 checkpoint，共96,000 action queries。
+- 正式首段launch contract：
+
+  ```text
+  workspace  /data/ymdai/projects/EMBER
+  branch     main
+  commit     ca7db57d0c2d1ec2e7032a44b58238b6de35b1f4
+  devices    physical GPU4,5,6,7; 4-rank DDP; NUMA node1
+  input      frozen source-base raw step1000 + sealed 24 train tasks
+  scale      200 macros = 96,000 queries = 4,800 one-video conditions
+  output     /data/ymdai/outputs/ember/
+             pi05_as_writer_v7_jointae_taskcomplete_decay400_dev_r4_b20_seed7_s2400_ca7db57_20260729
+  retained   8 every-25 checkpoints; projected peak additional storage <1.3GB
+  selection  paired fixed correct400; full five-arm only for current best
+  resume     only exact same-contract complete macro checkpoint
+  ```
+
+  Exact command:
+
+  ```bash
+  numactl --cpunodebind=1 --membind=1 env \
+    PYTHONPATH=/data/ymdai/projects/EMBER/src \
+    CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4,5,6,7 \
+    OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false PYTHONUNBUFFERED=1 \
+    /data/ymdai/projects/EMBER/.venv/bin/torchrun \
+    --standalone --nproc-per-node=4 scripts/train_as_writer.py \
+    --config configs/pi05_as_writer_language_axial_v7.json --mode formal \
+    --source-run /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722 \
+    --checkpoint /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 \
+    --tokenizer-path /data/ymdai/ember_data/openpi/paligemma_tokenizer.model \
+    --data-root /data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a \
+    --output-dir /data/ymdai/outputs/ember/pi05_as_writer_v7_jointae_taskcomplete_decay400_dev_r4_b20_seed7_s2400_ca7db57_20260729 \
+    --stop-after-step 200 --num-workers 2 --log-every 10 --skip-data-sha
+  ```
 - [ ] fresh训练并以paired fixed correct400快速筛single-checkpoint best；
   只对当前best做full400五臂和内部Core/Procedure/effective-LoRA/action分析。
 - [ ] 若未达门，按“表示→传递→多task优化→闭环目标错位”的最早瓶颈做

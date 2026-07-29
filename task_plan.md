@@ -89,12 +89,18 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   correct对后三臂均显著且各由至少5个tasks正向贡献，fixed-Core
   Procedure-only保留到effective LoRA/action，Core-only近零。same差11且
   `p=.152`，只比预封存的保守差值阈值多1；absolute仍比150硬门少5。
-- [ ] fresh运行唯一的v6 fast-decay400稳定化对照：只把cosine
+- [x] fresh运行唯一的v6 fast-decay400稳定化对照：只把cosine
   `decay_steps 2000→400`，其余架构、task-complete B20、AdamW、数据与seed
   全部保持；先0→200并评测50/100/150/200，除可信absolute下降外默认
-  exact-resume至400并评测250/300/350/400。若仍不能同时达到absolute、
-  same与视频因果门，再直接量化task-gradient冲突并决定训练粒度或
-  Procedure→compiler修改。
+  exact-resume至400并评测250/300/350/400。八点结果为
+  `106/64/111/133/132/117/138/143`；macro400比corrected SFT高34但仍比
+  absolute150少7，末段参数位移已很小且350→400净增不显著，不机械续第三段。
+- [ ] 按outcome前sealed合同筛选四个fast-decay checkpoint-average：
+  `{350,400}`、`{200,350,400}`、`{200,250,350,400}`和
+  `{150,200,250,300,350,400}`；GPU4–7各负责一组，跑paired correct400。
+  所有源checkpoint、派生checkpoint、评测cache/rows/results均保留。若winner
+  可信提高absolute与multi-task breadth，补五臂和内部传递；否则先量化
+  task-gradient冲突，再决定训练粒度或Procedure→compiler修改。
 
 ## Phase D：corrected mixed-task Source-SFT
 

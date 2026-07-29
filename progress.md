@@ -1798,3 +1798,40 @@ GPU范围和训练步长是当时快照；活动状态只取
   该run不从raw或derived checkpoint warm-start。本文记录的是提交前合同；
   正式launch只使用包含这些变更的clean/pushed main，并紧邻执行live GPU4–7、
   storage和新output root核验，最终事实以run contract为准。
+
+## v6 fast-decay400正式训练与八点评测完成（2026-07-29）
+
+- commit `4efa737`的fresh run在GPU4–7完成0→200，随后从完整macro200
+  exact-resume到400。两段各约一小时，metrics恰好1..400且全部finite；
+  16个25-step checkpoint、optimizer/scheduler、4-rank sampler/RNG和
+  trainer state全部保留。累计192,000 action queries、9,600 one-video
+  conditions，信息墙记录test/validation action reads均为0。
+- macro50/100/150/200和250/300/350/400分别在GPU4/5/6/7完成correct400；
+  每点400 rows、36/36 shards、6 workers return0、全attempt1且无adopt。
+  每task 50 teacher videos为无放回双射；每个queue前12个shards全部为
+  horizon520，清空后才领取普通任务。八点结果为
+  `106/64/111/133/132/117/138/143`。
+- macro400相对原v6同点125为`46 gained/28 lost,p=.04739`；相对SFT109
+  高34但仍低于absolute150。350→400仅`25/20,p=.5515`。fullcurve artifact
+  SHA256为`99b04bf1...53d03`，完整checkpoint dynamics SHA256为
+  `804689ca...05f32`。
+- 训练和八点评测结束后GPU4–7均释放。个人空间约332GB；全部原checkpoint、
+  derived checkpoint、LoRA cache、raw rows、queue、logs和results均保留，
+  没有执行删除。
+
+## v6 fast-decay checkpoint-average screen封存（2026-07-29）
+
+- outcome前新增
+  `configs/pi05_as_writer_v6_decay400_checkpoint_average_screen_v1.json`，
+  固定四候选/GPU为
+  `{350,400}→4`、`{200,350,400}→5`、
+  `{200,250,350,400}→6`、
+  `{150,200,250,300,350,400}→7`。
+- 所有派生权重继续使用已验证的float32均匀平均、原dtype回写和
+  inference-only manifest；不得用于resume/warm-start。评测固定correct400、
+  无放回video、6 generators、batch16、6 persistent workers与global
+  long-first。config SHA256为
+  `07d115811cf6042d5d0246e9f91c304aed3e5289b53d898d17af0330526951f5`。
+- screen只从包含本文与config的clean/pushed main执行；先生成四份derived
+  checkpoint并完成CPU逐tensor复算/authority检查，随后GPU4–7并行评测。
+  所有源checkpoint、派生checkpoint及评测cache/rows/results继续保留。

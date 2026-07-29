@@ -2276,3 +2276,35 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   首段0→200筛50/100/150/200，除可信absolute下降外默认续到400并筛
   250/300/350/400。若仍失败，下一步直接量化per-task gradient冲突，再决定
   update粒度或Procedure→compiler，而不凭直觉同时改多项。
+
+## v6 fast-decay400结果与第二次参数平均screen（2026-07-29）
+
+- fresh fast-decay run从step0完整训练到macro200，再以同commit/config和完整
+  optimizer/scheduler/sampler/RNG从macro200 exact-resume到400。
+  `metrics.jsonl`连续1..400、全部finite；累计192,000 action queries和
+  9,600 video conditions。每25 macro的16个checkpoint及全部评测cache均
+  保留。run summary/final manifest SHA256为
+  `ceb03e39...bc84/c970026f...b91c`。
+- fixed paired correct400八点为
+  `106/64/111/133/132/117/138/143`，成功task数为
+  `6/7/7/6/7/7/7/6`。macro400是raw右端observed-best，相对原v6同点125为
+  `46 gained/28 lost,p=.04739`，相对corrected Source-SFT 109高34；
+  因此已过`+30`底线但仍比absolute150少7。完整曲线artifact SHA256为
+  `99b04bf1cf72ad2385119638ca8020c5caf24e2c33075d758ee7f38dcc253d03`。
+- fast decay显著缩小位移但没有让梯度方向一致。原/新225→250 update L2为
+  `2.292/.940`，325→350为`2.123/.283`；最后375→400仅`.1265`，
+  cosine`.1189`。完整dynamics SHA256为
+  `804689cac6e108357e6977fb1f263cdc7a13611be46eb6bd3e477d6cae805f32`。
+- 能力漂移幅度随低LR缩小但没有消失：250→300为
+  `29 gained/44 lost,p=.1006`，300→350为`49/28,p=.02203`，
+  350→400为`25/20,p=.5515`。macro400逐task为
+  `Long1/Long2/Goal3/Goal6/Object1/Object3/Spatial1/Spatial3 =
+  20/1/0/36/46/37/0/3`。最后50 macro仅净+5，且参数已近冻结；所以不能把
+  raw右端best机械解释为还应继续第三训练段。
+- outcome前封存四份fast-decay uniform checkpoint-average候选：
+  `{350,400}`、`{200,350,400}`、`{200,250,350,400}`和
+  `{150,200,250,300,350,400}`。前三者从局部平滑逐步加入互补高分模式，
+  第四者与原v6 late-six SWA口径匹配。screen config SHA256为
+  `07d115811cf6042d5d0246e9f91c304aed3e5289b53d898d17af0330526951f5`。
+  若它们不能可信超过raw143，则下一判别是per-task gradient conflict，而非
+  继续同recipe或同时修改多个架构/训练变量。

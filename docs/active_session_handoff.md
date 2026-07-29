@@ -10,20 +10,22 @@ history。任何接手者都必须先只读复核现场，不能按本文快照�
 ## 1. 当前实时状态
 
 当前没有训练或评测进程。full-24与global-8两套corrected Source-SFT均已完成
-并封存；development observed-best仍是full-24 step400=`109/400`。v6同轨迹
-参数平均screen、winner五臂和内部传递均已完成：六点late average得到
-`correct/same/wrong/shuffled/reversed=145/134/128/119/122`，correct相对
-后三臂均显著且由多个tasks贡献，内部Procedure信号保留到effective LoRA与
-policy action。它比SFT高36，但仍比absolute硬门150少5；same aggregate少11，
-只比预写的保守差值边界多1。
+并封存；development observed-best仍是full-24 step400=`109/400`。
 
-下一fresh实验已封存为
-`configs/pi05_as_writer_language_axial_v6_decay400_v1.json`：唯一科学变化是
-cosine `decay_steps 2000→400`，不从raw或derived checkpoint warm-start。
-该config已完成逐对象验证但尚未启动。紧邻动作是以包含本文变更的
-clean/pushed main为唯一正式代码状态，随后live复核GPU4–7和storage，在
-不存在的新root fresh0→200。
-下文1–6节保留v6与full-24背景，10–14节是最新恢复入口。
+v6 fast-decay400 fresh0→400和八点fixed correct400均已完成：
+`106/64/111/133/132/117/138/143`。macro400是raw右端observed-best，
+相对原v6同点`125`为`46 gained/28 lost,p=.04739`，相对SFT高34，已过
+`+30`底线，但仍比absolute硬门150少7。350→400只有净+5且不显著，
+同时375→400 Writer update L2仅`.1265`，所以不机械开第三训练段。
+
+下一screen已在看outcome前封存为
+`configs/pi05_as_writer_v6_decay400_checkpoint_average_screen_v1.json`：
+四候选为`{350,400}`、`{200,350,400}`、`{200,250,350,400}`和
+`{150,200,250,300,350,400}`。该screen只从包含本文与sealed config的
+clean/pushed main执行：生成四份inference-only平均权重并完成独立逐tensor
+复算，再在GPU4–7各跑paired correct400。原始和派生checkpoint、评测cache
+与结果均保留。
+下文1–6节保留v6与full-24背景，10–15节是最新恢复入口。
 
 v6 fresh task-complete 正式 run 已在 GPU4–7 从 macro0 完整训练到 macro400，
 训练和评测进程均已自然退出：
@@ -564,7 +566,7 @@ summary.json
 SHA256 7596fbd5cd03232d99667b5eb5b500995e5b1cbf6d1c01b97bb2c8a8628d169d
 ```
 
-## 14. 紧邻fresh v6 fast-decay400
+## 14. v6 fast-decay400已完成
 
 新config：
 
@@ -582,8 +584,56 @@ floor_lr            1e-5 unchanged
 ```
 
 其余authorities、information wall、Writer、data、task-complete B20、AdamW、
-seed与checkpoint cadence逐对象相同。LR在macro200/400为
-`1.55e-4/1e-5`；旧run对应macro400仍为`2.724e-4`。formal仍每25保存且全部
-保留，首段fresh0→200评测50/100/150/200；除可信absolute下降外默认续到400
-并评测250/300/350/400。新run不得从六点average或任一旧Writer checkpoint
-初始化。
+seed与checkpoint cadence逐对象相同。该run从step0 fresh，首段0→200后从
+完整macro200 exact-resume到400；未从六点average或任一旧Writer checkpoint
+初始化。输出：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v6_decay400_taskcomplete_dev_r4_b20_seed7_s2400_4efa737_20260729
+```
+
+`metrics.jsonl`连续1..400且全部finite，累计192,000 action queries和9,600
+video conditions；每25 macro的16个checkpoint全部保留。八点correct400为：
+
+```text
+macro             50  100  150  200  250  300  350  400
+fast-decay       106   64  111  133  132  117  138  143
+original-v6      114   77  120  129  117  118  125  125
+```
+
+macro400相对原同点为`46 gained/28 lost,p=.04739`。350→400为
+`25 gained/20 lost,p=.5515`；raw右端best仍在400，但后段已近冻结。
+fullcurve artifact：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v6_decay400_correct400_fullcurve_paired_4efa737_20260729.json
+SHA256 99b04bf1cf72ad2385119638ca8020c5caf24e2c33075d758ee7f38dcc253d03
+```
+
+375→400 update L2为`.12647`、cosine`.1189`；完整dynamics SHA256为
+`804689cac6e108357e6977fb1f263cdc7a13611be46eb6bd3e477d6cae805f32`。
+
+## 15. 紧邻fast-decay checkpoint-average screen
+
+封存config：
+
+```text
+configs/pi05_as_writer_v6_decay400_checkpoint_average_screen_v1.json
+SHA256 07d115811cf6042d5d0246e9f91c304aed3e5289b53d898d17af0330526951f5
+```
+
+四候选/GPU固定为：
+
+```text
+GPU4  uniform_m350_m400
+GPU5  uniform_m200_m350_m400
+GPU6  uniform_m200_m250_m350_m400
+GPU7  uniform_m150_m200_m250_m300_m350_m400
+```
+
+评测仍为correct400、teacher video按task无放回、6 generators、batch16、
+6 persistent workers和global long-first。winner必须补五臂和内部传递；
+若无候选可信超过raw143，则先直接量化per-task gradient conflict，不惯性
+续训第三段，也不凭直觉同时修改update粒度与Procedure→compiler。

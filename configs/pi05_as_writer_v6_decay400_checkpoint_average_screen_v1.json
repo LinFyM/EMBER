@@ -1,0 +1,84 @@
+{
+  "schema_version": "ember_pi05_as_writer_checkpoint_average_screen_v1",
+  "status": "sealed_before_outcome",
+  "purpose": "Test whether fast-decay v6 can consolidate complementary task modes beyond the raw macro400 observed-best before measuring per-task gradient conflict.",
+  "source": {
+    "run_root": "/data/ymdai/outputs/ember/pi05_as_writer_v6_decay400_taskcomplete_dev_r4_b20_seed7_s2400_4efa737_20260729",
+    "training_commit": "4efa7371ba1659a2b70c619cb148e43fa0768023",
+    "checkpoint_axis": "macro_optimizer_step",
+    "raw_observed_best_cursor": 400,
+    "raw_observed_best_correct400": 143,
+    "corrected_source_sft_observed_best": 109,
+    "absolute_target": 150
+  },
+  "derivation": {
+    "algorithm": "uniform_arithmetic_mean_float32_then_cast_original_dtype",
+    "deployment": "one inference-only Writer state, one load, one Writer forward per video",
+    "training_resume_or_warm_start": "forbidden",
+    "retain_all_source_checkpoints": true
+  },
+  "candidates": [
+    {
+      "name": "uniform_m350_m400",
+      "source_cursors": [
+        350,
+        400
+      ],
+      "physical_gpu": 4,
+      "rationale": "local endpoint smoothing after parameter motion has become tiny"
+    },
+    {
+      "name": "uniform_m200_m350_m400",
+      "source_cursors": [
+        200,
+        350,
+        400
+      ],
+      "physical_gpu": 5,
+      "rationale": "combine the strongest language-10, goal, object, and spatial allocation modes"
+    },
+    {
+      "name": "uniform_m200_m250_m350_m400",
+      "source_cursors": [
+        200,
+        250,
+        350,
+        400
+      ],
+      "physical_gpu": 6,
+      "rationale": "broaden across all noncollapsed second-segment modes while excluding macro300"
+    },
+    {
+      "name": "uniform_m150_m200_m250_m300_m350_m400",
+      "source_cursors": [
+        150,
+        200,
+        250,
+        300,
+        350,
+        400
+      ],
+      "physical_gpu": 7,
+      "rationale": "matched broad late-six SWA candidate for direct comparison with the original-v6 averaging result"
+    }
+  ],
+  "evaluation": {
+    "panel": "fixed development validation 8 tasks x 50 official init states",
+    "condition": "correct",
+    "episodes": 400,
+    "teacher_video_sampling": "without_replacement",
+    "teacher_video_seed": 7,
+    "pairing": "identical state, environment seed, policy seed/noise prefix, and teacher-video assignment across candidates and the raw curve",
+    "writer_generators_per_gpu": 6,
+    "writer_generation_batch_size": 16,
+    "persistent_policy_workers_per_gpu": 6,
+    "queue_policy": "global cost-balanced long-first"
+  },
+  "decision_rule": {
+    "primary": "correct400 absolute performance and multi-task breadth relative to raw macro400=143",
+    "hard_target": "prefer at least 150/400 while retaining a margin of at least 30 over corrected Source-SFT=109",
+    "paired_evidence": "report gained/lost paired episodes and exact two-sided sign test",
+    "specificity": "a winning average must undergo the existing five-arm and internal transmission checks before becoming an AS observed-best",
+    "failure_next_step": "if no candidate improves the raw best credibly, quantify per-task gradient conflict before changing update granularity or Procedure-to-compiler"
+  }
+}

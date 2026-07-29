@@ -12,9 +12,10 @@ history。任何接手者都必须先只读复核现场，不能按本文快照�
 当前没有训练或评测进程。full-24与global-8两套corrected Source-SFT均已完成
 并封存；development observed-best仍是full-24 step400=`109/400`。global-8
 step480仅`105/400`且仍有明显task漂移，所以不续训到600，也不把已实现但未
-合并的Writer cyclic-8候选直接投入正式训练。下一动作是对现有v6同轨迹
-checkpoint做显式provenance、inference-only的单权重参数平均screen。下文
-1–6节保留v6与full-24背景，10–12节是最新恢复入口。
+合并的Writer cyclic-8候选直接投入正式训练。v6同轨迹的四份显式provenance、
+inference-only参数平均权重已经生成并完成CPU/authority验证；下一动作是集成
+clean main后在GPU4–7并行跑四点paired correct400。下文1–6节保留v6与
+full-24背景，10–13节是最新恢复入口。
 
 v6 fresh task-complete 正式 run 已在 GPU4–7 从 macro0 完整训练到 macro400，
 训练和评测进程均已自然退出：
@@ -231,13 +232,12 @@ cap；任何新formal run前仍需重测现场与预计峰值。
 
 当前紧邻动作是：
 
-1. 把本次global-8 SFT结果更新、验证、commit并push到clean main；
-2. 在隔离worktree实现唯一的derived Writer average checkpoint合同：固定源
-   checkpoint/权重/hash，导出一套Writer参数；inference可读，但training
-   resume和warm-start必须fail closed；
-3. 在看新outcome前固定四个v6参数平均候选并各用GPU4/5/6/7跑paired
-   correct400。部署仍只加载一套Writer、只做一次Writer forward；
-4. 若平均不能超过raw macro200的129并改善breadth，则fresh实验改LR/优化稳定
+1. 把derived checkpoint实现、screen合同和证据commit、fast-forward并push到
+   clean main；
+2. 做live GPU4–7与storage preflight后，把已固定四候选分别映射到
+   GPU4/5/6/7跑paired correct400。部署仍只加载一套Writer、只做一次Writer
+   forward；
+3. 若平均不能超过raw macro200的129并改善breadth，则fresh实验改LR/优化稳定
    化；仍失败后才动Procedure→compiler。
 
 corrected Source-SFT best已固定为109，所以focused AS硬门为
@@ -473,3 +473,48 @@ best中均为0。因此global-8不续到600，corrected Source-SFT development b
 
 隔离候选`codex/v6-cyclic8-training@eb7943b`已通过全仓190 tests，但没有合并、
 push或启动。该实现保留作provenance；SFT直接对照不支持把它作为默认下一run。
+
+## 13. v6 checkpoint-average screen已封存、待GPU结果
+
+实现worktree/branch：
+
+```text
+/data/ymdai/.codex/worktrees/EMBER-v6-average-20260729
+codex/v6-checkpoint-average
+```
+
+screen合同：
+
+```text
+configs/pi05_as_writer_v6_checkpoint_average_screen_v1.json
+```
+
+四个候选已在原v6 run下生成：
+
+```text
+derived_checkpoints/uniform_m150_m200
+derived_checkpoints/uniform_m200_m400
+derived_checkpoints/uniform_m150_m200_m350_m400
+derived_checkpoints/uniform_m150_m200_m250_m300_m350_m400
+```
+
+固定映射为前述顺序对应物理GPU4/5/6/7。每份只含单套
+`writer.safetensors`和manifest；源raw checkpoint及其它checkpoint全部保留。
+派生算法为float32逐tensor均匀算术平均后cast回原dtype。独立复算四份均为
+600 tensors、12,064,064 state elements、0 mismatch、全部finite；523个训练
+tensor发生平均，77个固定buffer保持一致。formal evaluation adapter检查已
+通过，cursor axis明确记为`max_source_optimizer_step`；训练resume/warm-start
+仍只接受原始`checkpoints/step_*`。
+
+验证：
+
+```text
+focused Writer tests  65 passed
+full repository       190 passed
+git diff --check      pass
+```
+
+评测合同固定为每候选correct400、seed7、teacher video无放回、6 Writer
+generators、generation batch16、6 persistent policy workers和global
+long-first。outcome出来前不得增删候选；screen胜者也必须补正式五臂和内部传递
+检查，不能只凭correct400取代macro200的机制证据。

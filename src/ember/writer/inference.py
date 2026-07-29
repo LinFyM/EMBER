@@ -32,6 +32,11 @@ from ember.writer.as_contract import (
     writer_stage,
 )
 from ember.writer.checkpoint import validate_writer_checkpoint_files
+from ember.writer.derived_checkpoint import (
+    AS_WRITER_DERIVED_CHECKPOINT_SCHEMA,
+    validate_derived_writer_checkpoint_files,
+    validate_derived_writer_checkpoint_provenance,
+)
 from ember.pi05_processing import Pi05TeacherPrefixTokenizer
 from ember.writer.data import (
     RawTeacherVideoStore,
@@ -333,19 +338,38 @@ def _inspect_training_checkpoint(
     require_formal: bool,
 ) -> tuple[dict[str, Any], dict[str, Any], int]:
     checkpoint = checkpoint.resolve()
-    if checkpoint.parent.name != "checkpoints":
+    if checkpoint.parent.name not in {"checkpoints", "derived_checkpoints"}:
         raise WriterModelError("AS-Writer checkpoint is outside a training run")
     run_root = checkpoint.parent.parent
     contract_path = run_root / "run_contract.json"
     training = read_json(contract_path)
     contract_sha256 = canonical_hash(training)
     world_size = int(training.get("runtime", {}).get("world_size", -1))
-    manifest = validate_writer_checkpoint_files(
-        checkpoint,
-        world_size=world_size,
-        contract_sha256=contract_sha256,
-    )
-    cursor = int(manifest.get("consumed", {}).get("next_step", -1))
+    if checkpoint.parent.name == "checkpoints":
+        manifest = validate_writer_checkpoint_files(
+            checkpoint,
+            world_size=world_size,
+            contract_sha256=contract_sha256,
+        )
+        cursor = int(manifest.get("consumed", {}).get("next_step", -1))
+        checkpoint_authority_valid = (
+            cursor > 0
+            and cursor in training.get("runtime", {}).get("checkpoint_steps", [])
+            and checkpoint.name == f"step_{cursor:08d}"
+        )
+    else:
+        manifest = validate_derived_writer_checkpoint_files(
+            checkpoint,
+            contract_sha256=contract_sha256,
+        )
+        source_cursors = validate_derived_writer_checkpoint_provenance(
+            checkpoint,
+            run_root=run_root,
+            run_contract=training,
+            manifest=manifest,
+        )
+        cursor = max(source_cursors)
+        checkpoint_authority_valid = bool(source_cursors)
     target_manifest = read_json(REPO_ROOT / config["authorities"]["target_data_manifest"]["path"])
     role_ids = target_manifest.get("summary", {}).get("roles", {})
     source_ids = [
@@ -388,9 +412,7 @@ def _inspect_training_checkpoint(
         == canonical_contract_sha256(lora)
         and world_size
         == int(config.get("formal_run", {}).get("expected_world_size", -1))
-        and cursor > 0
-        and cursor in training.get("runtime", {}).get("checkpoint_steps", [])
-        and checkpoint.name == f"step_{cursor:08d}"
+        and checkpoint_authority_valid
     )
     if require_formal:
         valid = (
@@ -459,6 +481,32 @@ def build_writer_evaluation_adapter(
             "video_seed": video_seed,
         }
     )
+    checkpoint_record = {
+        "path": str(checkpoint),
+        "cursor": cursor,
+        "cursor_axis": cursor_axis,
+        "manifest_file_sha256": sha256_file(
+            checkpoint / "checkpoint_manifest.json"
+        ),
+        "manifest_payload_sha256": manifest["canonical_payload_sha256"],
+        "writer_state_sha256": writer_record["sha256"],
+    }
+    if manifest.get("schema_version") == AS_WRITER_DERIVED_CHECKPOINT_SCHEMA:
+        source_rows = manifest["derivation"]["source_checkpoints"]
+        checkpoint_record.update(
+            {
+                "kind": "uniform_parameter_average",
+                "inference_only": True,
+                "derivation_algorithm": manifest["derivation"]["algorithm"],
+                "source_checkpoint_cursors": [
+                    int(row["cursor"]) for row in source_rows
+                ],
+                "source_checkpoint_manifest_sha256": [
+                    str(row["checkpoint_manifest_file_sha256"])
+                    for row in source_rows
+                ],
+            }
+        )
     result = {
         "schema_version": schema_version,
         "kind": writer_method,
@@ -479,16 +527,7 @@ def build_writer_evaluation_adapter(
             "mode": training["mode"],
             "git_commit": training["git"]["commit"],
         },
-        "checkpoint": {
-            "path": str(checkpoint),
-            "cursor": cursor,
-            "cursor_axis": cursor_axis,
-            "manifest_file_sha256": sha256_file(
-                checkpoint / "checkpoint_manifest.json"
-            ),
-            "manifest_payload_sha256": manifest["canonical_payload_sha256"],
-            "writer_state_sha256": writer_record["sha256"],
-        },
+        "checkpoint": checkpoint_record,
         "video_data": dict(video_data),
         "lora_contract_sha256": lora_contract_sha256,
         "video_schedule": video_schedule,
@@ -581,6 +620,11 @@ def inspect_as_writer_evaluation(
     lora = load_pi05_lora_contract(
         REPO_ROOT / str(config["authorities"]["lora_contract"]["path"])
     )
+    cursor_axis = (
+        "max_source_optimizer_step"
+        if manifest.get("schema_version") == AS_WRITER_DERIVED_CHECKPOINT_SCHEMA
+        else "optimizer_step"
+    )
     return build_writer_evaluation_adapter(
         schema_version=WRITER_ADAPTER_SCHEMA,
         writer_method="as_writer",
@@ -589,7 +633,7 @@ def inspect_as_writer_evaluation(
         training=training,
         manifest=manifest,
         cursor=cursor,
-        cursor_axis="optimizer_step",
+        cursor_axis=cursor_axis,
         video_data=video_data,
         lora_contract_sha256=canonical_contract_sha256(lora),
         mapping=mapping,

@@ -75,11 +75,15 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
 - [x] v6拓扑与机制证据封存：Semantic Set、Visual Transition、Causal
   Procedure职责成立，macro200五臂通过方向门；但absolute、margin和跨task
   稳定性未达最终满意门，后续训练粒度/下游compiler仍需改进。
-- [ ] 先对现有v6同轨迹checkpoint做显式provenance、inference-only的
-  Writer参数平均screen；它必须导出单套Writer权重、保持一次Writer前向，
-  且训练resume/warm-start必须拒绝derived checkpoint。若不能提高macro200
-  的absolute与breadth，再fresh修改优化器/LR；训练稳定化仍失败后才改
-  Procedure→compiler。
+- [x] 实现显式provenance、inference-only的derived Writer checkpoint：
+  导出单套平均权重并保持一次Writer前向；原始checkpoint全部保留，training
+  resume/warm-start对derived路径fail closed。真实四候选逐tensor独立重算
+  完全一致，formal evaluation authority检查通过。
+- [ ] 按outcome前封存的四候选
+  `{150,200}`、`{200,400}`、`{150,200,350,400}`、
+  `{150,200,250,300,350,400}`在GPU4–7各跑paired correct400。若不能提高
+  macro200的absolute与breadth，再fresh修改优化器/LR；训练稳定化仍失败后
+  才改Procedure→compiler。
 
 ## Phase D：corrected mixed-task Source-SFT
 

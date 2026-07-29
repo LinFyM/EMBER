@@ -2215,3 +2215,19 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   correct400。该derived权重必须显式provenance、只允许inference且部署仍为
   一次Writer前向；若线性合成失败，再fresh验证更快LR衰减/稳定化优化，最后
   才修改Procedure→compiler。
+
+## v6参数平均的可证伪合同（2026-07-29）
+
+- 该screen检验的是“同一训练轨迹上互补能力是否位于可线性合成的局部参数
+  basin”，不是ensemble：每个候选最终只有一套Writer权重、每条视频仍只有
+  一次Writer forward，没有额外policy或LoRA投票。
+- 四候选在看outcome前固定，分别覆盖raw best局部邻域、macro200/400互补端点、
+  两个高分邻域和宽窗口late-SWA。若四者均不能可信超过raw macro200=`129`
+  且改善多task breadth，就能直接降低“只需轨迹平均”的解释概率，下一fresh
+  实验转向更快LR衰减/较小持续步幅，而不是事后挑选更多平均组合。
+- derived schema与raw training schema分离；manifest封存全部source
+  manifest/Writer hash和均匀权重，inference会复核source小manifest与正式run
+  authority，但训练初始化和exact-resume在目录/schema层均拒绝derived权重。
+- 真实state包含523个训练参数tensors与77个固定buffers。四个候选的独立重算
+  均为0 mismatch、最大绝对误差0、全部finite；因此后续closed-loop差异可归因
+  于参数平均本身，而不是漏tensor、dtype漂移或错误加载。

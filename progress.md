@@ -1736,3 +1736,24 @@ GPU范围和训练步长是当时快照；活动状态只取
   权重/hash，derived checkpoint只允许inference、禁止resume/warm-start；
   若不能同时改善absolute和breadth，再fresh改LR/优化器，最后才动
   Procedure→compiler。
+
+## v6 checkpoint参数平均实现与screen封存（2026-07-29）
+
+- 新增唯一的inference-only derived checkpoint owner与薄CLI。派生目录只含
+  `writer.safetensors`和canonical manifest，记录source checkpoint路径、
+  cursor、manifest/Writer SHA、均匀有理权重与tensor合同；训练resume和
+  warm-start仍只接受原始`checkpoints/step_*`。
+- outcome前封存四组候选与固定GPU映射：
+  `{150,200}→GPU4`、`{200,400}→GPU5`、
+  `{150,200,350,400}→GPU6`、
+  `{150,200,250,300,350,400}→GPU7`。评测固定为correct400、seed7、
+  50-video无放回、6 generators、batch16、6 persistent workers和global
+  long-first；合同位于
+  `configs/pi05_as_writer_v6_checkpoint_average_screen_v1.json`。
+- 四份真实派生权重均已生成，原始及派生checkpoint全部保留。每份包含600个
+  state tensors、12,064,064个元素；独立重算确认523个可训练浮点tensor按
+  float32均值后回写原dtype，77个固定buffer保持一致，逐元素mismatch为0且
+  全部finite。四份formal evaluation adapter authority均通过。
+- focused Writer tests为`65 passed`，全仓为`190 passed`；
+  `git diff --check`与screen JSON语法通过。下一动作是集成clean main并在
+  GPU4–7启动四点paired correct400。

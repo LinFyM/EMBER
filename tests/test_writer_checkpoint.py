@@ -5,6 +5,8 @@ from pathlib import Path
 import h5py
 import numpy as np
 import pytest
+import torch
+from safetensors.torch import load_file, save_file
 
 from ember.lora import canonical_contract_sha256
 from ember.pi05_lora import load_pi05_lora_contract
@@ -20,7 +22,13 @@ from ember.writer.as_contract import (
 )
 from ember.writer.checkpoint import (
     AS_WRITER_CHECKPOINT_SCHEMA,
+    inspect_writer_checkpoint,
     validate_writer_checkpoint_files,
+)
+from ember.writer.derived_checkpoint import (
+    AS_WRITER_DERIVED_CHECKPOINT_SCHEMA,
+    derive_uniform_writer_average_checkpoint,
+    validate_derived_writer_checkpoint_files,
 )
 from ember.writer.inference import inspect_as_writer_evaluation
 from ember.writer.model import WriterModelError
@@ -67,6 +75,129 @@ def test_as_writer_checkpoint_verifies_every_file_before_pickle_load(
     with pytest.raises(WriterModelError, match="checkpoint file changed"):
         validate_writer_checkpoint_files(
             checkpoint, world_size=1, contract_sha256=contract
+        )
+
+
+def _tensor_checkpoint(
+    run: Path,
+    *,
+    step: int,
+    training: dict,
+    state: dict[str, torch.Tensor],
+) -> Path:
+    checkpoint = run / "checkpoints" / f"step_{step:08d}"
+    checkpoint.mkdir(parents=True)
+    save_file(state, str(checkpoint / "writer.safetensors"))
+    (checkpoint / "trainer_state.pt").write_bytes(b"trainer")
+    for rank in range(int(training["runtime"]["world_size"])):
+        (checkpoint / f"rank_{rank:02d}_state.pt").write_bytes(
+            f"rank{rank}".encode()
+        )
+    files = {
+        path.name: {"bytes": path.stat().st_size, "sha256": sha256_file(path)}
+        for path in sorted(checkpoint.iterdir())
+    }
+    manifest = {
+        "schema_version": AS_WRITER_CHECKPOINT_SCHEMA,
+        "contract_sha256": canonical_hash(training),
+        "consumed": {"next_step": step},
+        "files": files,
+    }
+    manifest["canonical_payload_sha256"] = canonical_hash(manifest)
+    write_json_atomic(checkpoint / "checkpoint_manifest.json", manifest)
+    return checkpoint
+
+
+def test_uniform_writer_average_is_inference_only_and_exact(
+    tmp_path: Path,
+) -> None:
+    run = tmp_path / "run"
+    run.mkdir()
+    training = {"runtime": {"world_size": 1, "checkpoint_steps": [2, 4]}}
+    write_json_atomic(run / "run_contract.json", training)
+    first = _tensor_checkpoint(
+        run,
+        step=2,
+        training=training,
+        state={
+            "floating": torch.tensor([1.0, 5.0], dtype=torch.float16),
+            "fixed": torch.tensor([7], dtype=torch.int64),
+        },
+    )
+    second = _tensor_checkpoint(
+        run,
+        step=4,
+        training=training,
+        state={
+            "floating": torch.tensor([3.0, 1.0], dtype=torch.float16),
+            "fixed": torch.tensor([7], dtype=torch.int64),
+        },
+    )
+    derived, manifest = derive_uniform_writer_average_checkpoint(
+        source_run=run,
+        source_checkpoints=[first, second],
+        output_name="mean_step2_step4",
+    )
+    state = load_file(str(derived / "writer.safetensors"), device="cpu")
+    assert state["floating"].dtype == torch.float16
+    assert torch.equal(
+        state["floating"], torch.tensor([2.0, 3.0], dtype=torch.float16)
+    )
+    assert torch.equal(state["fixed"], torch.tensor([7], dtype=torch.int64))
+    assert manifest["schema_version"] == AS_WRITER_DERIVED_CHECKPOINT_SCHEMA
+    assert manifest["inference_only"] is True
+    assert [
+        row["cursor"] for row in manifest["derivation"]["source_checkpoints"]
+    ] == [2, 4]
+    validate_derived_writer_checkpoint_files(
+        derived, contract_sha256=canonical_hash(training)
+    )
+    with pytest.raises(WriterModelError, match="initialization is outside"):
+        inspect_writer_checkpoint(derived)
+    with pytest.raises(WriterModelError, match="checkpoint manifest changed"):
+        validate_writer_checkpoint_files(
+            derived,
+            world_size=1,
+            contract_sha256=canonical_hash(training),
+        )
+
+    (derived / "writer.safetensors").write_bytes(b"changed")
+    with pytest.raises(WriterModelError, match="checkpoint file changed"):
+        validate_derived_writer_checkpoint_files(
+            derived, contract_sha256=canonical_hash(training)
+        )
+
+
+def test_uniform_writer_average_rejects_duplicate_and_tensor_drift(
+    tmp_path: Path,
+) -> None:
+    run = tmp_path / "run"
+    run.mkdir()
+    training = {"runtime": {"world_size": 1, "checkpoint_steps": [2, 4]}}
+    write_json_atomic(run / "run_contract.json", training)
+    first = _tensor_checkpoint(
+        run,
+        step=2,
+        training=training,
+        state={"weight": torch.ones(2)},
+    )
+    second = _tensor_checkpoint(
+        run,
+        step=4,
+        training=training,
+        state={"weight": torch.ones(3)},
+    )
+    with pytest.raises(WriterModelError, match="distinct checkpoints"):
+        derive_uniform_writer_average_checkpoint(
+            source_run=run,
+            source_checkpoints=[first, first],
+            output_name="duplicate",
+        )
+    with pytest.raises(WriterModelError, match="tensor contract changed"):
+        derive_uniform_writer_average_checkpoint(
+            source_run=run,
+            source_checkpoints=[first, second],
+            output_name="shape_drift",
         )
 
 
@@ -118,8 +249,7 @@ def _static_as_evaluation_fixture(
         ],
     }
     run = tmp_path / "run"
-    checkpoint = run / "checkpoints" / "step_00000004"
-    checkpoint.mkdir(parents=True)
+    run.mkdir()
     lora = load_pi05_lora_contract(
         ROOT / config["authorities"]["lora_contract"]["path"]
     )
@@ -147,31 +277,22 @@ def _static_as_evaluation_fixture(
         },
         "runtime": {
             "world_size": config["formal_run"]["expected_world_size"],
-            "checkpoint_steps": [4],
+            "checkpoint_steps": [4, 6],
         },
     }
     write_json_atomic(run / "run_contract.json", training)
-    for name in (
-        "writer.safetensors",
-        "trainer_state.pt",
-        *(
-            f"rank_{rank:02d}_state.pt"
-            for rank in range(config["formal_run"]["expected_world_size"])
-        ),
-    ):
-        (checkpoint / name).write_bytes(name.encode("utf-8"))
-    files = {
-        path.name: {"bytes": path.stat().st_size, "sha256": sha256_file(path)}
-        for path in sorted(checkpoint.iterdir())
-    }
-    manifest = {
-        "schema_version": AS_WRITER_CHECKPOINT_SCHEMA,
-        "contract_sha256": canonical_hash(training),
-        "consumed": {"next_step": 4},
-        "files": files,
-    }
-    manifest["canonical_payload_sha256"] = canonical_hash(manifest)
-    write_json_atomic(checkpoint / "checkpoint_manifest.json", manifest)
+    checkpoint = _tensor_checkpoint(
+        run,
+        step=4,
+        training=training,
+        state={"weight": torch.tensor([1.0])},
+    )
+    _tensor_checkpoint(
+        run,
+        step=6,
+        training=training,
+        state={"weight": torch.tensor([3.0])},
+    )
     return checkpoint, data_root, source, validation_keys
 
 
@@ -193,6 +314,7 @@ def test_as_writer_evaluation_seals_raw_video_authority_and_wrong_map(
     )
     assert adapter["arm"] == "as_writer_cross_suite_wrong_video"
     assert adapter["checkpoint"]["cursor"] == 4
+    assert "kind" not in adapter["checkpoint"]
     assert adapter["video_data"]["task_count"] == 8
     assert all(
         row["suite"] != row["video_suite"]
@@ -238,3 +360,34 @@ def test_as_writer_evaluation_seals_raw_video_authority_and_wrong_map(
             video_seed=7,
             require_formal=False,
         )
+
+
+def test_as_writer_evaluation_accepts_sealed_parameter_average(
+    tmp_path: Path,
+) -> None:
+    checkpoint, data_root, source, validation_keys = _static_as_evaluation_fixture(
+        tmp_path
+    )
+    derived, _ = derive_uniform_writer_average_checkpoint(
+        source_run=checkpoint.parent.parent,
+        source_checkpoints=[
+            checkpoint,
+            checkpoint.parent / "step_00000006",
+        ],
+        output_name="mean_step4_step6",
+    )
+    adapter = inspect_as_writer_evaluation(
+        config_path=AS_CONFIG,
+        checkpoint=derived,
+        video_data_root=data_root,
+        source=source,
+        task_keys=validation_keys,
+        video_condition="correct",
+        video_seed=7,
+        require_formal=False,
+    )
+    assert adapter["checkpoint"]["kind"] == "uniform_parameter_average"
+    assert adapter["checkpoint"]["inference_only"] is True
+    assert adapter["checkpoint"]["cursor"] == 6
+    assert adapter["checkpoint"]["cursor_axis"] == "max_source_optimizer_step"
+    assert adapter["checkpoint"]["source_checkpoint_cursors"] == [4, 6]

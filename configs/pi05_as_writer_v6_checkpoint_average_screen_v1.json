@@ -1,0 +1,80 @@
+{
+  "schema_version": "ember_pi05_as_writer_checkpoint_average_screen_v1",
+  "status": "sealed_before_outcome",
+  "purpose": "Test whether v6 task drift is primarily movement among complementary nearby parameter basins before changing training or compiler architecture.",
+  "source": {
+    "run_root": "/data/ymdai/outputs/ember/pi05_as_writer_v6_taskcomplete_dev_r4_b20_seed7_s2400_149badc_20260728",
+    "training_commit": "149badc00c30f8d230401fa24a5dbfa4299b322c",
+    "checkpoint_axis": "macro_optimizer_step",
+    "raw_observed_best_cursor": 200,
+    "raw_observed_best_correct400": 129
+  },
+  "derivation": {
+    "algorithm": "uniform_arithmetic_mean_float32_then_cast_original_dtype",
+    "deployment": "one inference-only Writer state, one load, one Writer forward per video",
+    "training_resume_or_warm_start": "forbidden",
+    "retain_all_source_checkpoints": true
+  },
+  "candidates": [
+    {
+      "name": "uniform_m150_m200",
+      "source_cursors": [
+        150,
+        200
+      ],
+      "physical_gpu": 4,
+      "rationale": "average the local high-performing neighborhood around the raw observed best"
+    },
+    {
+      "name": "uniform_m200_m400",
+      "source_cursors": [
+        200,
+        400
+      ],
+      "physical_gpu": 5,
+      "rationale": "average complementary early and late task-allocation modes"
+    },
+    {
+      "name": "uniform_m150_m200_m350_m400",
+      "source_cursors": [
+        150,
+        200,
+        350,
+        400
+      ],
+      "physical_gpu": 6,
+      "rationale": "average both high-score neighborhoods while preserving two late modes"
+    },
+    {
+      "name": "uniform_m150_m200_m250_m300_m350_m400",
+      "source_cursors": [
+        150,
+        200,
+        250,
+        300,
+        350,
+        400
+      ],
+      "physical_gpu": 7,
+      "rationale": "broad late-run stochastic weight average across the full evaluated continuation"
+    }
+  ],
+  "evaluation": {
+    "panel": "fixed development validation 8 tasks x 50 official init states",
+    "condition": "correct",
+    "episodes": 400,
+    "teacher_video_sampling": "without_replacement",
+    "teacher_video_seed": 7,
+    "pairing": "identical state, environment seed, policy seed, noise, and teacher-video assignment across candidates and the raw curve",
+    "writer_generators_per_gpu": 6,
+    "writer_generation_batch_size": 16,
+    "persistent_policy_workers_per_gpu": 6,
+    "queue_policy": "global cost-balanced long-first"
+  },
+  "decision_rule": {
+    "primary": "correct400 absolute performance and multi-task breadth relative to raw macro200",
+    "paired_evidence": "report gained/lost paired episodes and exact two-sided sign test",
+    "specificity": "a winning average must undergo the existing five-arm and internal transmission checks before becoming an AS observed best",
+    "failure_next_step": "if no candidate improves the raw best credibly, run a fresh learning-rate and optimizer stabilization experiment before changing the v6 compiler"
+  }
+}

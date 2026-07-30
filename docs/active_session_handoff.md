@@ -36,13 +36,16 @@ Core-only、Procedure-only、zero Procedure均严格identity；constant nonzero
 Procedure保留为可用程序。精确trainable参数为`10,905,856`。活动源码/config
 已原位切换到fresh schema；Recenter executable/config退役，不兼容resume。
 
+canonical实现已在main `4769b36`完成并push；全仓`194 passed`。GPU4–7
+独立B20 profile已完成：首步包含真实105-frame视频，三步finite；后两步平均
+`25.871 queries/s`、`194.034 macro/hour`，峰值allocated/reserved为
+`76.99/83.64GB`，因此不触发B16。profile step1→3的523个trainable tensor
+全部变化且finite。
+
 紧邻顺序：
 
 ```text
-完成CPU/full-repo验证并commit/push
-→ GPU4–7 live preflight
-→ longest-105-frame B20 three-macro profile
-→ fresh0→1→exact-resume1→3 + all-parameter reachability
+fresh0→1→exact-resume1→3
 → seal formal config
 → fresh macro0→200, every25 checkpoint
 → paired correct400 at macro50/100/150/200

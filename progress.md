@@ -2124,3 +2124,16 @@ GPU范围和训练步长是当时快照；活动状态只取
   拒绝`derived_checkpoints`；RL-Writer在raw-video Core-Program接口完成重建和
   fresh retrain前于任何GPU/data加载前fail closed。GPU profile、resume smoke
   与formal训练尚未开始，不得继承Recenter evidence。
+
+## Core-Program B20最长视频profile（2026-07-30）
+
+- main `4769b36`在GPU4–7以profile-only teacher seed `172`独立完成3个
+  task-complete B20 macros；首步覆盖task38/demo36的真实105个stride-5帧，
+  三步loss/gradient均finite。
+- 三步wall为`20.4094/18.5197/18.5874s`；后两步均值
+  `25.8712 queries/s`、`194.0340 macro/hour`。峰值allocated/reserved为
+  `76,993,247,232/83,644,907,520 bytes`，因此选择B20且不触发B16。
+- profile step1→3的523个trainable tensor全部发生变化且finite，覆盖
+  Meta-LoRA、Semantic Core、transition、Procedure、strict bilinear compiler
+  和factor heads。配置已恢复正式teacher seed`20260722`；下一步为独立
+  fresh0→1→exact-resume1→3 smoke。

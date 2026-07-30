@@ -203,7 +203,7 @@
     "budget_role": "fresh_core_program_task_complete_fast_decay400"
   },
   "profile_defaults": {
-    "status": "pending_core_program_live_profile",
+    "status": "sealed_b20",
     "expected_world_size": 4,
     "total_steps": 3,
     "per_rank_batch_size": 20,
@@ -215,7 +215,7 @@
     "selected_stop_step": 3
   },
   "profile_evidence": {
-    "status": "pending_core_program_live_profile",
+    "status": "sealed_b20",
     "allowed_physical_gpu_ids": [
       4,
       5,
@@ -240,9 +240,39 @@
       }
     ],
     "selection_rule": "try_b20_on_three_complete_macros_containing_real_105_frame_video_then_fallback_directly_to_b16_only_if_oom_or_repeated_instability",
-    "selected": null,
+    "selected": {
+      "max_frames_per_encoder_call": 32,
+      "per_task_action_batch_size": 20,
+      "profile_optimizer_steps": 3,
+      "profile_global_action_queries": 1440,
+      "profile_global_video_conditions": 72,
+      "profile_wall_seconds": 58.558228506939486,
+      "step_seconds_max": [
+        20.409351255046204,
+        18.519650959875435,
+        18.587367794010788
+      ],
+      "steady_action_queries_per_second_mean_last_two": 25.871202519657096,
+      "steady_macro_updates_per_hour_mean_last_two": 194.0340188974282,
+      "max_cuda_allocated_bytes": 76993247232,
+      "max_cuda_reserved_bytes": 83644907520,
+      "all_steps_finite": true,
+      "all_four_ranks_completed": true,
+      "contains_real_105_frame_video": true,
+      "profile_root": "/data/ymdai/outputs/ember/pi05_as_writer_core_program_profile_b20_longseed172_4769b36_20260730",
+      "run_contract_sha256": "110a85c9d8866d1c596b3ad902b2df84c59cb3091c30b9beb4d43dc3c38c0600"
+    },
     "exact_resume_smoke": null,
-    "gradient_reachability": null,
+    "gradient_reachability": {
+      "status": "pass_real_profile_step1_to_step3",
+      "comparison": "profile_checkpoint_step1_to_step3",
+      "writer_trainable_parameters": 10905856,
+      "trainable_tensor_names": 523,
+      "changed_trainable_tensor_names": 523,
+      "changed_parameter_elements": 10841906,
+      "all_trainable_tensors_changed": true,
+      "all_trainable_tensors_finite": true
+    },
     "inference_profile": null
   },
   "specificity_gate": {
@@ -258,7 +288,7 @@
     "contrast_loss_allowed": false
   },
   "formal_run": {
-    "status": "pending_core_program_live_profile",
+    "status": "sealed",
     "expected_world_size": 4,
     "total_steps": 2400,
     "per_rank_batch_size": 20,

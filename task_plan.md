@@ -59,8 +59,9 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   的确定性模型合同。
 - [x] 全仓`194 passed`、compileall与diff check通过；architecture guard仅有
   既有大文件review提示、无hard violation，active source净删643行。
-- [ ] 集成canonical commit并push。
-- [ ] GPU4–7最长105-frame B20三macro独立profile；不能继承Recenter证据。
+- [x] 集成canonical commit并push。
+- [x] GPU4–7最长105-frame B20三macro独立profile；真实覆盖105帧，
+  后两步约`25.871 queries/s`、`194.034 macro/hour`，选择B20。
 - [ ] fresh0→1→exact-resume1→3并核验全部`10,905,856`参数gradient
   reachability，随后seal formal config。
 - [ ] fresh task-complete macro0→200，每25 macro checkpoint。

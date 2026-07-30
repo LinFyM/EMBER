@@ -2709,3 +2709,13 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 新架构保留`Q_text`、`M+G`、v6 Semantic Core、native 50-suffix mean
   Action、uncapped transition和2-layer causal Procedure；Core-only、
   Procedure-only与zero Procedure都严格identity。精确参数`10,905,856`。
+
+## Core-Program真实硬件profile（2026-07-30）
+
+- 新架构没有继承Recenter硬件证据。main `4769b36`在GPU4–7、真实最长105帧
+  条件下完成B20三macro，全部finite且无OOM；后两步吞吐为
+  `25.8712 queries/s`、`194.0340 macro/hour`，峰值allocated/reserved
+  `76.99/83.64GB`，故B16 fallback不触发。
+- step1→3间全部523个trainable tensor均有数值变化且保持finite；不是冻结、
+  梯度断路或新增compiler未被functional loss触达。配置恢复formal seed后才做
+  exact-resume smoke，profile checkpoint不会进入正式训练。

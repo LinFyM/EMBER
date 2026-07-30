@@ -7,15 +7,18 @@ import torch
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer.as_contract import writer_trainable_contract
 from ember.writer.compiler import (
-    AmplitudePreservingSlotMixer,
-    CoreKeyedProcedureCompiler,
+    CoreProgramCompiler,
+    ZeroPreservingSlotBlock,
 )
-from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
+from ember.writer.model import (
+    CompleteLoRAWriter,
+    FactorHead,
+    build_lora_tensor_specs,
+)
 from ember.writer.temporal import (
-    ActionAnchoredVisualTransitionFusion,
     CausalProcedureEncoder,
     LanguageSemanticCore,
-    tensor_rms,
+    TaskGroundedVisualTransitionFusion,
 )
 from ember.writer.video_program import TaskQueriedPatchGrounding
 
@@ -154,6 +157,7 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         procedure_heads=8,
         procedure_blocks=2,
         fusion_heads=8,
+        bilinear_hidden_width=512,
         factor_hidden_width=256,
         initialization_seed=7,
         activation_checkpointing=True,
@@ -184,9 +188,9 @@ def _inputs() -> tuple[torch.Tensor, ...]:
     return frames, frame_indices, offsets, tokens, masks, task_spans
 
 
-def test_recenter_writer_parameter_budget_and_native_probe_contract_are_exact() -> None:
+def test_core_program_writer_parameter_budget_and_native_probe_contract_are_exact() -> None:
     model, _ = _model()
-    assert sum(parameter.numel() for parameter in model.parameters()) == 10_709_248
+    assert sum(parameter.numel() for parameter in model.parameters()) == 10_905_856
     contract = writer_trainable_contract(
         model,
         torch.nn.Identity(),
@@ -194,7 +198,7 @@ def test_recenter_writer_parameter_budget_and_native_probe_contract_are_exact() 
             Path(__file__).resolve().parents[1] / "configs/pi05_lora_v1.json"
         ),
     )
-    assert contract["parameter_count"] == 10_709_248
+    assert contract["parameter_count"] == 10_905_856
     assert contract["source_policy_trainable_parameter_count"] == 0
     expected = {
         "text_meta_lora": (model.semantic_encoder.text_meta_lora, 921_600),
@@ -219,7 +223,7 @@ def test_recenter_writer_parameter_budget_and_native_probe_contract_are_exact() 
         ),
         "visual_transition": (model.visual_transition, 197_120),
         "procedure": (model.procedure, 1_573_888),
-        "compiler": (model.compiler, 1_469_184),
+        "compiler": (model.compiler, 1_665_792),
         "factor_heads": (model.factor_heads, 2_179_072),
     }
     assert {
@@ -230,9 +234,11 @@ def test_recenter_writer_parameter_budget_and_native_probe_contract_are_exact() 
     assert "semantic_encoder.fixed_suffix_noise" in model.state_dict()
     assert not model.semantic_encoder.fixed_suffix_noise.requires_grad
     assert not hasattr(model.semantic_encoder, "action_probe_positions")
+    assert model.compiler.bilinear_fusion.core_projection.out_features == 512
+    assert model.compiler.bilinear_fusion.program_projection.out_features == 512
 
 
-def test_recenter_writer_starts_at_exact_identity_template() -> None:
+def test_core_program_writer_starts_at_exact_identity_template() -> None:
     model, template = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     output = model(*_inputs(), policy=torch.nn.Identity())
@@ -243,7 +249,7 @@ def test_recenter_writer_starts_at_exact_identity_template() -> None:
         assert torch.equal(value[1], template[name])
 
 
-def test_recenter_writer_becomes_video_conditioned_after_heads_open() -> None:
+def test_core_program_writer_becomes_video_conditioned_after_heads_open() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     for head in model.factor_heads.values():
@@ -253,7 +259,7 @@ def test_recenter_writer_becomes_video_conditioned_after_heads_open() -> None:
     assert not hasattr(model, "shared_lora")
 
 
-def test_recenter_gradient_staging_reaches_core_procedure_and_transition() -> None:
+def test_core_program_gradient_staging_reaches_both_branches_and_transition() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
 
@@ -358,55 +364,54 @@ def test_language_core_preserves_mean_when_learned_residuals_are_zero() -> None:
     assert not bool(weights[..., 2].count_nonzero())
 
 
-def test_visual_transition_is_bounded_correction_not_an_action_bypass() -> None:
+def test_visual_transition_is_uncapped_and_recomputed_in_input_order() -> None:
     torch.manual_seed(19)
-    fusion = ActionAnchoredVisualTransitionFusion(width=32, heads=4)
-    action = torch.randn(2, 4, 32)
-    grounded = torch.randn(2, 4, 5, 32)
+    fusion = TaskGroundedVisualTransitionFusion(width=32, heads=4)
+    action = torch.full((2, 4, 32), 1e-4)
+    grounded = 10.0 * torch.randn(2, 4, 5, 32)
     valid_frames = torch.tensor(
         [[True, True, True, True], [True, True, True, False]]
     )
     valid_tokens = torch.ones(2, 5, dtype=torch.bool)
-    fused, diagnostics = fusion(
+    fused, transition = fusion(
         action,
         grounded,
         valid_frames,
         valid_tokens,
     )
-    bounded = tensor_rms(diagnostics["bounded_residual"])
-    cap = 0.25 * tensor_rms(action)
-    assert bool((bounded[valid_frames] <= cap[valid_frames] + 1e-6).all())
     assert torch.equal(
-        diagnostics["transition"][:, 0],
-        torch.zeros_like(diagnostics["transition"][:, 0]),
+        transition[:, 0],
+        torch.zeros_like(transition[:, 0]),
     )
+    residual_rms = (fused - action).square().mean(dim=-1).sqrt()
+    action_rms = action.square().mean(dim=-1).sqrt()
+    assert bool((residual_rms[valid_frames] > 0.25 * action_rms[valid_frames]).any())
     assert not bool(fused[1, 3].count_nonzero())
 
     zero_action = torch.zeros_like(action)
-    zero_fused, zero_diagnostics = fusion(
+    zero_fused, _ = fusion(
         zero_action,
         grounded,
         valid_frames,
         valid_tokens,
     )
-    assert not bool(zero_fused.count_nonzero())
-    assert not bool(zero_diagnostics["bounded_residual"].count_nonzero())
+    assert bool(zero_fused[:, 1:].count_nonzero())
 
 
 def test_visual_transition_zero_first_delta_has_finite_backward() -> None:
     torch.manual_seed(21)
-    fusion = ActionAnchoredVisualTransitionFusion(width=32, heads=4)
+    fusion = TaskGroundedVisualTransitionFusion(width=32, heads=4)
     action = torch.randn(2, 4, 32, requires_grad=True)
     grounded = torch.randn(2, 4, 5, 32, requires_grad=True)
     valid_frames = torch.ones(2, 4, dtype=torch.bool)
     valid_tokens = torch.ones(2, 5, dtype=torch.bool)
-    fused, diagnostics = fusion(
+    fused, transition = fusion(
         action,
         grounded,
         valid_frames,
         valid_tokens,
     )
-    assert not bool(diagnostics["transition"][:, 0].count_nonzero())
+    assert not bool(transition[:, 0].count_nonzero())
     fused[:, 0].sum().backward()
     assert action.grad is not None and bool(torch.isfinite(action.grad).all())
     assert grounded.grad is not None and bool(torch.isfinite(grounded.grad).all())
@@ -434,50 +439,78 @@ def test_causal_procedure_does_not_leak_future_content() -> None:
     )
 
 
-def test_compiler_constant_procedure_is_identity_for_arbitrary_core() -> None:
-    torch.manual_seed(29)
-    compiler = CoreKeyedProcedureCompiler(
-        width=32,
+def _compiler(width: int = 32) -> CoreProgramCompiler:
+    return CoreProgramCompiler(
+        width=width,
         heads=4,
+        bilinear_hidden_width=64,
         initialization_seed=7,
     )
+
+
+def test_compiler_requires_both_core_and_procedure() -> None:
+    torch.manual_seed(29)
+    compiler = _compiler()
+    core = torch.randn(2, 5, 32)
+    procedure = torch.randn(2, 4, 32)
     valid_core = torch.ones(2, 5, dtype=torch.bool)
-    procedure = torch.randn(2, 1, 32).expand(-1, 4, -1).clone()
     positions = torch.tensor([[0, 5, 10, 15], [0, 5, 10, 15]])
     valid = torch.ones(2, 4, dtype=torch.bool)
-    first, first_diagnostics = compiler.fused_slots(
-        torch.randn(2, 5, 32),
+    complete, diagnostics = compiler.fused_slots(
+        core,
         valid_core,
         procedure,
         positions,
         valid,
     )
-    second, second_diagnostics = compiler.fused_slots(
-        torch.randn(2, 5, 32),
+    core_only, _ = compiler.fused_slots(
+        core,
+        valid_core,
+        torch.zeros_like(procedure),
+        positions,
+        valid,
+    )
+    procedure_only, _ = compiler.fused_slots(
+        torch.zeros_like(core),
         valid_core,
         procedure,
         positions,
         valid,
     )
-    assert not bool(first.count_nonzero())
-    assert not bool(second.count_nonzero())
-    assert not bool(first_diagnostics["procedure_centered"].count_nonzero())
-    assert bool((first_diagnostics["core_gate"] >= 0.75).all())
-    assert bool((first_diagnostics["core_gate"] <= 1.25).all())
-    assert bool((second_diagnostics["core_gate"] >= 0.75).all())
-    assert bool((second_diagnostics["core_gate"] <= 1.25).all())
+    assert bool(complete.count_nonzero())
+    assert not bool(core_only.count_nonzero())
+    assert not bool(procedure_only.count_nonzero())
+    assert not hasattr(compiler.core_reader.attention, "value")
+    assert not hasattr(compiler.procedure_reader.attention, "value")
+    assert diagnostics["core_basis"].shape[-1] == 64
+    assert diagnostics["procedure_program"].shape[-1] == 64
 
 
-def test_compiler_zero_centered_procedure_has_finite_backward() -> None:
+def test_compiler_preserves_constant_procedure_dc_and_open_head_uses_it() -> None:
     torch.manual_seed(30)
-    compiler = CoreKeyedProcedureCompiler(
-        width=32,
-        heads=4,
-        initialization_seed=7,
+    compiler = _compiler()
+    core = torch.randn(1, 5, 32)
+    constant = torch.randn(1, 1, 32)
+    procedure = constant.expand(-1, 4, -1).clone()
+    slots, diagnostics = compiler.fused_slots(
+        core,
+        torch.ones(1, 5, dtype=torch.bool),
+        procedure,
+        torch.tensor([[0, 5, 10, 15]]),
+        torch.ones(1, 4, dtype=torch.bool),
     )
+    assert bool(diagnostics["procedure_slots"].count_nonzero())
+    assert bool(slots.count_nonzero())
+    head = FactorHead(32, 32, 8)
+    torch.nn.init.normal_(head.network[-1].weight, std=0.01)
+    assert bool(head(slots).count_nonzero())
+
+
+def test_compiler_zero_branch_backward_is_finite() -> None:
+    torch.manual_seed(31)
+    compiler = _compiler()
     core = torch.randn(1, 5, 32, requires_grad=True)
-    single = torch.randn(1, 1, 32)
-    procedure = single.expand(-1, 4, -1).clone().requires_grad_(True)
+    procedure = torch.zeros(1, 4, 32, requires_grad=True)
     slots, _ = compiler.fused_slots(
         core,
         torch.ones(1, 5, dtype=torch.bool),
@@ -495,80 +528,20 @@ def test_compiler_zero_centered_procedure_has_finite_backward() -> None:
     )
 
 
-def test_slot_mixer_zero_and_near_zero_backward_are_bounded() -> None:
+def test_zero_preserving_slot_block_keeps_routing_out_of_content() -> None:
     torch.manual_seed(33)
-    mixer = AmplitudePreservingSlotMixer(width=32, heads=4)
+    block = ZeroPreservingSlotBlock(width=32, heads=4)
     routing = torch.randn(1, 6, 32)
-
     zero = torch.zeros(1, 6, 32, requires_grad=True)
-    zero_output, _, zero_rms = mixer(zero, routing)
+    zero_output, _ = block(zero, routing)
     assert not bool(zero_output.count_nonzero())
-    assert not bool(zero_rms.count_nonzero())
     zero_output.sum().backward()
     assert zero.grad is not None
-    assert not bool(zero.grad.count_nonzero())
     assert bool(torch.isfinite(zero.grad).all())
 
-    near_zero = (torch.randn(1, 6, 32) * 1e-9).requires_grad_(True)
-    near_output, _, _ = mixer(near_zero, routing)
-    assert bool(near_output.count_nonzero())
-    near_output.sum().backward()
-    assert near_zero.grad is not None
-    assert bool(torch.isfinite(near_zero.grad).all())
-    assert float(near_zero.grad.abs().max()) < 100.0
-
-
-def test_compiler_bfloat16_constant_procedure_is_exact_zero_with_padding() -> None:
-    torch.manual_seed(32)
-    compiler = CoreKeyedProcedureCompiler(
-        width=32,
-        heads=4,
-        initialization_seed=7,
-    ).to(torch.bfloat16)
-    core = torch.randn(2, 5, 32).to(torch.bfloat16)
-    valid_core = torch.ones(2, 5, dtype=torch.bool)
-    procedure = torch.randn(2, 9, 32).to(torch.bfloat16)
-    valid = torch.zeros(2, 9, dtype=torch.bool)
-    for row, length in enumerate((3, 7)):
-        valid[row, :length] = True
-        constant = torch.randn(1, 1, 32).to(torch.bfloat16)
-        procedure[row, :length] = constant
-    slots, diagnostics = compiler.fused_slots(
-        core,
-        valid_core,
-        procedure,
-        torch.arange(9, dtype=torch.long)[None].expand(2, -1),
-        valid,
-    )
-    assert not bool(diagnostics["procedure_centered"].count_nonzero())
-    assert not bool(diagnostics["procedure_slots"].count_nonzero())
-    assert not bool(slots.count_nonzero())
-
-
-def test_compiler_preserves_procedure_scale_without_terminal_normalization() -> None:
-    torch.manual_seed(31)
-    compiler = CoreKeyedProcedureCompiler(
-        width=32,
-        heads=4,
-        initialization_seed=7,
-    )
-    core = torch.randn(1, 5, 32)
-    valid_core = torch.ones(1, 5, dtype=torch.bool)
-    procedure = torch.randn(1, 4, 32)
-    positions = torch.tensor([[0, 5, 10, 15]])
-    valid = torch.ones(1, 4, dtype=torch.bool)
-    first, _ = compiler.fused_slots(
-        core,
-        valid_core,
-        procedure,
-        positions,
-        valid,
-    )
-    doubled, _ = compiler.fused_slots(
-        core,
-        valid_core,
-        2.0 * procedure,
-        positions,
-        valid,
-    )
-    assert torch.allclose(doubled, 2.0 * first, atol=2e-5, rtol=2e-5)
+    content = torch.randn(1, 6, 32)
+    first, _ = block(content, routing)
+    second, _ = block(content, routing + 0.25)
+    assert not torch.allclose(first, second)
+    assert not hasattr(block, "output_norm")
+    assert not hasattr(block, "input_rms")

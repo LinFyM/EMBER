@@ -28,6 +28,7 @@ from ember.rl_writer.contract import (
 )
 from ember.rl_writer.training import build_parser
 from ember.rl_writer.loop import _episode_chunk_weights
+from ember.rl_writer.runtime import build_runtime
 from ember.writer.as_sampling import TeacherVideoSchedule
 
 
@@ -209,6 +210,20 @@ def test_rl_writer_runtime_has_no_as_checkpoint_and_micro_branch_is_blocked() ->
     )
     with pytest.raises(RewardProtocolError, match="blocked"):
         resolve_runtime(args, config, context)
+
+
+def test_rl_writer_runtime_fails_before_loading_retired_feature_interface() -> None:
+    context = DistributedContext(
+        rank=0,
+        local_rank=0,
+        world_size=8,
+        device=torch.device("cpu"),
+        numa_node=0,
+        cpu_affinity=(0,),
+    )
+    args = Namespace(config=CONFIG, stage="development")
+    with pytest.raises(RewardProtocolError, match="raw-video Core-Program"):
+        build_runtime(args, context)
 
 
 def test_rl_writer_formal_can_stop_and_resume_at_sealed_checkpoints(

@@ -1,9 +1,10 @@
 # EMBER Recenter：Action-Anchored Core-Keyed Centered Procedure Writer
 
-状态（2026-07-30）：本文是当前 canonical Writer 架构 authority。它基于
-v4、v5.2、v6、v7、v8、v10 与 Loom 的闭环证据，从信息需求重新推导，而不是
-在 Loom 上增加补丁。Loom 及更早版本只保留为科学 provenance；活动源码和
-配置只保留 Recenter 一条路径。
+状态（2026-07-30）：Recenter正式首段负结果后本文已退役，只作科学
+provenance；当前authority为
+[`action_forecast_writer_core_program_design.md`](action_forecast_writer_core_program_design.md)。
+下文保留当时从v4、v5.2、v6、v7、v8、v10与Loom证据形成的设计合同，不得恢复
+其可执行路径或把当时的“当前”表述当作活动状态。
 
 ## 1. 研究目标
 

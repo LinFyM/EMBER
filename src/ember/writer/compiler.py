@@ -1,10 +1,11 @@
-"""Compile centered Procedure values with bounded Core modulation."""
+"""Compile a semantic Core license with the full raw video Procedure program."""
 
 from __future__ import annotations
 
 import math
 
 import torch
+import torch.nn.functional as F
 
 from ember.writer.temporal import (
     RMSNorm,
@@ -15,8 +16,8 @@ from ember.writer.temporal import (
 )
 
 
-class ContentCrossAttention(torch.nn.Module):
-    """Cross-attend while keeping routing and positions out of value content."""
+class RawValueCrossAttention(torch.nn.Module):
+    """Use learned Q/K/O addressing while preserving the memory as raw values."""
 
     def __init__(self, *, width: int, heads: int, rotary_keys: bool) -> None:
         super().__init__()
@@ -25,12 +26,11 @@ class ContentCrossAttention(torch.nn.Module):
             or width % heads
             or (rotary_keys and (width // heads) % 2)
         ):
-            raise VariableEpisodeInputError("invalid content cross-attention")
+            raise VariableEpisodeInputError("invalid raw-value cross-attention")
         self.heads = int(heads)
         self.rotary_keys = bool(rotary_keys)
         self.query = torch.nn.Linear(width, width, bias=False)
         self.key = torch.nn.Linear(width, width, bias=False)
-        self.value = torch.nn.Linear(width, width, bias=False)
         self.output = torch.nn.Linear(width, width, bias=False)
 
     def forward(
@@ -51,7 +51,7 @@ class ContentCrossAttention(torch.nn.Module):
             or valid_memory.dtype != torch.bool
             or not bool(valid_memory.any(dim=1).all())
         ):
-            raise VariableEpisodeInputError("invalid content cross-attention batch")
+            raise VariableEpisodeInputError("invalid raw-value attention batch")
         query = _split_heads(self.query(query_key), self.heads)
         key = _split_heads(self.key(memory_key), self.heads)
         if self.rotary_keys:
@@ -73,7 +73,7 @@ class ContentCrossAttention(torch.nn.Module):
         elif memory_positions is not None:
             raise VariableEpisodeInputError("Core reader received positions")
 
-        value = _split_heads(self.value(memory_value), self.heads)
+        value = _split_heads(memory_value, self.heads)
         logits = torch.matmul(
             query.to(torch.float32),
             key.to(torch.float32).transpose(-1, -2),
@@ -89,12 +89,12 @@ class ContentCrossAttention(torch.nn.Module):
 
 
 class CoreSlotReader(torch.nn.Module):
-    """Read task Core content into 320 routed LoRA slots."""
+    """Read raw semantic Core values into the routed public-LoRA slots."""
 
     def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
         self.memory_norm = RMSNorm(width)
-        self.attention = ContentCrossAttention(
+        self.attention = RawValueCrossAttention(
             width=width,
             heads=heads,
             rotary_keys=False,
@@ -115,13 +115,13 @@ class CoreSlotReader(torch.nn.Module):
 
 
 class ProcedureSlotReader(torch.nn.Module):
-    """Use Core-keyed attention to read raw time-centered Procedure values."""
+    """Use the Core-derived address to read the complete raw Procedure program."""
 
     def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
         self.core_norm = RMSNorm(width)
         self.memory_norm = RMSNorm(width)
-        self.attention = ContentCrossAttention(
+        self.attention = RawValueCrossAttention(
             width=width,
             heads=heads,
             rotary_keys=True,
@@ -134,12 +134,7 @@ class ProcedureSlotReader(torch.nn.Module):
         procedure: torch.Tensor,
         positions: torch.Tensor,
         valid_procedure: torch.Tensor,
-    ) -> tuple[
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-    ]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         if (
             procedure.ndim != 3
             or routing.ndim != 3
@@ -154,37 +149,60 @@ class ProcedureSlotReader(torch.nn.Module):
         ):
             raise VariableEpisodeInputError("invalid Procedure slot memory")
         normalized_core = self.core_norm(core_slots)
-        mask = valid_procedure[..., None]
-        count = mask.sum(dim=1, keepdim=True).clamp_min(1)
-        procedure_float = procedure.to(torch.float32)
-        first_valid = valid_procedure.to(torch.long).argmax(dim=1)
-        reference = procedure_float.gather(
-            1,
-            first_valid[:, None, None].expand(-1, 1, procedure.shape[-1]),
-        )
-        delta = (procedure_float - reference).masked_fill(~mask, 0.0)
-        delta_mean = delta.sum(dim=1, keepdim=True) / count.to(torch.float32)
-        centered = (delta - delta_mean).masked_fill(~mask, 0.0)
-        centered = centered.to(procedure.dtype)
         slots, weights = self.attention(
             routing + normalized_core,
             self.memory_norm(procedure),
-            centered,
+            procedure,
             valid_procedure,
             positions,
         )
-        return slots, normalized_core, centered, weights
+        return slots, normalized_core, weights
 
 
-class AmplitudePreservingSlotMixer(torch.nn.Module):
-    """Mix slot directions, then restore every slot's pre-mixer RMS."""
+class CoreProgramBilinearFusion(torch.nn.Module):
+    """Require both the semantic Core license and Procedure program."""
 
-    UNIT_FLOOR = 1e-6
+    def __init__(self, *, width: int, hidden_width: int) -> None:
+        super().__init__()
+        if min(width, hidden_width) <= 0:
+            raise VariableEpisodeInputError("invalid Core-Program fusion")
+        self.core_projection = torch.nn.Linear(
+            width,
+            hidden_width,
+            bias=False,
+        )
+        self.program_projection = torch.nn.Linear(
+            width,
+            hidden_width,
+            bias=False,
+        )
+        self.output = torch.nn.Linear(hidden_width, width, bias=False)
+
+    def forward(
+        self,
+        normalized_core_slots: torch.Tensor,
+        procedure_slots: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        if (
+            normalized_core_slots.shape != procedure_slots.shape
+            or normalized_core_slots.ndim != 3
+        ):
+            raise VariableEpisodeInputError("invalid Core-Program slot fusion")
+        core_basis = F.silu(
+            self.core_projection(normalized_core_slots)
+        )
+        procedure_program = self.program_projection(procedure_slots)
+        fused = self.output(core_basis * procedure_program)
+        return fused, core_basis, procedure_program
+
+
+class ZeroPreservingSlotBlock(torch.nn.Module):
+    """Coordinate LoRA slots without letting routing enter their value content."""
 
     def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
         if min(width, heads) <= 0 or width % heads:
-            raise VariableEpisodeInputError("invalid slot mixer")
+            raise VariableEpisodeInputError("invalid zero-preserving slot block")
         self.heads = int(heads)
         self.attention_norm = RMSNorm(width)
         self.query = torch.nn.Linear(width, width, bias=False)
@@ -198,36 +216,17 @@ class AmplitudePreservingSlotMixer(torch.nn.Module):
             torch.nn.Linear(4 * width, width, bias=False),
         )
 
-    @classmethod
-    def _unit_direction(
-        cls,
-        content: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        physical_rms = (
-            torch.linalg.vector_norm(
-                content.to(torch.float32),
-                dim=-1,
-                keepdim=True,
-            )
-            / math.sqrt(content.shape[-1])
-        )
-        direction = content / physical_rms.clamp_min(cls.UNIT_FLOOR).to(
-            content.dtype
-        )
-        return direction, physical_rms
-
     def forward(
         self,
         content: torch.Tensor,
         routing: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         if content.shape != routing.shape or content.ndim != 3:
-            raise VariableEpisodeInputError("invalid slot mixing batch")
-        direction, input_rms = self._unit_direction(content)
-        addressed = self.attention_norm(direction) + routing.to(direction.dtype)
+            raise VariableEpisodeInputError("invalid slot coordination batch")
+        addressed = self.attention_norm(content) + routing.to(content.dtype)
         query = _split_heads(self.query(addressed), self.heads)
         key = _split_heads(self.key(addressed), self.heads)
-        value = _split_heads(self.value(direction), self.heads)
+        value = _split_heads(self.value(content), self.heads)
         weights = torch.softmax(
             torch.matmul(
                 query.to(torch.float32),
@@ -237,31 +236,33 @@ class AmplitudePreservingSlotMixer(torch.nn.Module):
             dim=-1,
         )
         attended = torch.matmul(weights.to(value.dtype), value)
-        mixed = direction + self.output(_merge_heads(attended))
-        mixed = mixed + self.ffn(self.ffn_norm(mixed))
-        mixed_direction, _ = self._unit_direction(mixed)
-        output = mixed_direction * input_rms.to(mixed_direction.dtype)
-        return output, weights, input_rms
+        content = content + self.output(_merge_heads(attended))
+        content = content + self.ffn(self.ffn_norm(content))
+        return content, weights
 
 
-class CoreKeyedProcedureCompiler(torch.nn.Module):
-    """Compile Procedure as value; let Core only address and boundedly modulate it."""
+class CoreProgramCompiler(torch.nn.Module):
+    """Generate LoRA content only from a licensed raw Procedure program."""
 
     EXPERT_LAYERS = 18
     RANK = 16
     QUERY_COUNT = EXPERT_LAYERS * RANK + 2 * RANK
-    CORE_MODULATION_FRACTION = 0.25
 
     def __init__(
         self,
         *,
         width: int,
         heads: int,
+        bilinear_hidden_width: int,
         initialization_seed: int,
     ) -> None:
         super().__init__()
-        if min(width, heads) <= 0 or width % heads or (width // heads) % 2:
-            raise VariableEpisodeInputError("invalid Core-keyed Procedure compiler")
+        if (
+            min(width, heads, bilinear_hidden_width) <= 0
+            or width % heads
+            or (width // heads) % 2
+        ):
+            raise VariableEpisodeInputError("invalid Core-Program compiler")
         generator = torch.Generator(device="cpu").manual_seed(initialization_seed)
 
         def parameter(rows: int) -> torch.nn.Parameter:
@@ -276,9 +277,11 @@ class CoreKeyedProcedureCompiler(torch.nn.Module):
         self.routing_norm = RMSNorm(width)
         self.core_reader = CoreSlotReader(width=width, heads=heads)
         self.procedure_reader = ProcedureSlotReader(width=width, heads=heads)
-        self.core_gate = torch.nn.Linear(width, width, bias=False)
-        torch.nn.init.zeros_(self.core_gate.weight)
-        self.slot_mixer = AmplitudePreservingSlotMixer(
+        self.bilinear_fusion = CoreProgramBilinearFusion(
+            width=width,
+            hidden_width=bilinear_hidden_width,
+        )
+        self.slot_block = ZeroPreservingSlotBlock(
             width=width,
             heads=heads,
         )
@@ -361,7 +364,6 @@ class CoreKeyedProcedureCompiler(torch.nn.Module):
         (
             procedure_slots,
             normalized_core,
-            centered_procedure,
             procedure_attention,
         ) = self.procedure_reader(
             routing,
@@ -370,26 +372,21 @@ class CoreKeyedProcedureCompiler(torch.nn.Module):
             positions,
             valid_procedure,
         )
-        core_modulation = self.CORE_MODULATION_FRACTION * torch.tanh(
-            self.core_gate(normalized_core)
+        fused, core_basis, procedure_program = self.bilinear_fusion(
+            normalized_core,
+            procedure_slots,
         )
-        core_gate = 1.0 + core_modulation
-        gated_procedure = procedure_slots * core_gate
-        content, slot_attention, pre_mixer_rms = self.slot_mixer(
-            gated_procedure,
-            routing,
-        )
+        content, slot_attention = self.slot_block(fused, routing)
         diagnostics = {
             "routing": routing,
             "core_slots": core_slots,
             "core_attention": core_attention,
-            "procedure_centered": centered_procedure,
+            "normalized_core_slots": normalized_core,
             "procedure_slots": procedure_slots,
             "procedure_attention": procedure_attention,
-            "core_modulation": core_modulation,
-            "core_gate": core_gate,
-            "gated_procedure": gated_procedure,
-            "pre_mixer_rms": pre_mixer_rms,
+            "core_basis": core_basis,
+            "procedure_program": procedure_program,
+            "bilinear_slots": fused,
             "slot_attention": slot_attention,
             "fused_slots": content,
         }

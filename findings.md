@@ -2693,3 +2693,19 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 配置据此封存task-complete B20、fresh macro0→200、每25 macro checkpoint。
   一小时规模为`4,800`个one-video LoRA conditions、`96,000`个action queries
   和8个checkpoint；结束后只评测macro50/100/150/200的paired correct400。
+
+## Recenter正式负结果与Core-Program根因（2026-07-30）
+
+- Recenter macro50/100/150/200 paired correct400为`55/84/79/85`；所有
+  validation tasks均低于v6 best，Object-3明显坍塌，远未恢复v5.2/v6同期。
+- 内部检查显示各模块与factor持续更新、输出幅度不小，排除“未训练到”或
+  “decoder没有增益”的简单解释。根因是time-centering删除Procedure DC，
+  Core又只剩slot address和窄幅标量调制，导致模型只能从很小的AC残差同时重建
+  task semantic basis与video program coefficient。
+- constant nonzero Procedure被强制identity也删除了可用的公共高层程序。
+  因此不再调整cap/gate/scale，而重构为Core semantic license × full raw
+  Procedure：Core提供slot basis，Core-keyed query读取含DC/AC的raw Procedure，
+  width512 bilinear严格要求二者共同产生content。
+- 新架构保留`Q_text`、`M+G`、v6 Semantic Core、native 50-suffix mean
+  Action、uncapped transition和2-layer causal Procedure；Core-only、
+  Procedure-only与zero Procedure都严格identity。精确参数`10,905,856`。

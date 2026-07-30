@@ -47,8 +47,8 @@ from ember.writer.data import (
     WriterTaskAuthority,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
+from ember.writer.architecture import CORE_PROGRAM_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.model import (
-    LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS,
     CompleteLoRAWriter,
     WriterModelError,
     build_lora_tensor_specs,
@@ -190,7 +190,7 @@ def _build_models(
     writer_values = {
         key: value
         for key, value in training["writer"].items()
-        if key in LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
+        if key in CORE_PROGRAM_WRITER_CONSTRUCTOR_KEYS
     }
     bridge = policy.model.paligemma_with_expert
     writer = CompleteLoRAWriter(

@@ -13,14 +13,12 @@ from typing import Any, Mapping
 import torch
 import torch.distributed as dist
 
-from ember.lora import lora_state_sha256
 from ember.pi05_assets import prepare_libero_config
 from ember.pi05_eval_contract import (
     inspect_source_checkpoint,
     inspect_tokenizer,
     load_evaluation_authorities,
 )
-from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_processing import Pi05LiberoProcessor
 from ember.pi05_source_checkpoint import (
     DistributedContext,
@@ -52,15 +50,14 @@ from ember.rl_writer.contract import (
 from ember.writer.as_contract import inspect_feature_cache, load_writer_config
 from ember.writer.as_sampling import TeacherVideoSchedule
 from ember.writer.feature_cache import WriterFeatureStore
-from ember.writer.functional import prepare_frozen_writer_policy
-from ember.writer.model import (
-    LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS,
-    CompleteLoRAWriter,
-    build_lora_tensor_specs,
-)
+from ember.writer.model import CompleteLoRAWriter
 
 
 _CHECKPOINT_NAME = re.compile(r"update_([0-9]{8})")
+_CORE_PROGRAM_RETRAIN_REQUIRED = (
+    "RL-Writer runtime is unavailable until it is rebuilt and retrained for "
+    "the canonical raw-video Core-Program Writer"
+)
 
 
 @dataclass
@@ -105,48 +102,8 @@ def _fresh_writer(
     config: Mapping[str, Any],
     device: torch.device,
 ) -> tuple[CompleteLoRAWriter, Any, dict[str, Any]]:
-    as_config = load_writer_config(authority_path(config, "as_writer_config"))
-    lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
-    if hasattr(policy.model, "gradient_checkpointing_disable"):
-        policy.model.gradient_checkpointing_disable()
-    policy.config.gradient_checkpointing = False
-    template = prepare_frozen_writer_policy(policy, lora)
-    values = {
-        key: value
-        for key, value in as_config["writer"].items()
-        if key in LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
-    }
-    seed = int(config["optimization"]["seed"])
-    fork_devices = [device] if device.type == "cuda" else []
-    with torch.random.fork_rng(devices=fork_devices):
-        torch.manual_seed(seed)
-        if device.type == "cuda":
-            torch.cuda.manual_seed(seed)
-        bridge = policy.model.paligemma_with_expert
-        writer = CompleteLoRAWriter(
-            build_lora_tensor_specs(template),
-            template_state=template,
-            paligemma_model=bridge.paligemma.model.language_model,
-            expert_model=bridge.gemma_expert.model,
-            **values,
-        ).to(device)
-    names = sorted(name for name, value in writer.named_parameters() if value.requires_grad)
-    if not names or any(parameter.requires_grad for parameter in policy.parameters()):
-        raise RewardProtocolError("RL-Writer freeze boundary changed")
-    trainable = {
-        "object": "shared_reward_trained_writer_only",
-        "parameter_count": sum(value.numel() for value in writer.parameters()),
-        "parameter_name_count": len(names),
-        "parameter_names_sha256": canonical_hash(names),
-        "generated_lora_parameter_count": lora.parameter_count,
-        "generated_lora_tensor_count": lora.state_tensor_count,
-        "source_policy_parameter_count": 0,
-        "physical_lora_parameter_count": 0,
-        "critic_parameter_count": 0,
-        "fresh_writer_initialization_seed": seed,
-        "fresh_writer_state_sha256": lora_state_sha256(writer.state_dict()),
-    }
-    return writer, lora, trainable
+    del policy, config, device
+    raise RewardProtocolError(_CORE_PROGRAM_RETRAIN_REQUIRED)
 
 
 def _optimizer(
@@ -288,6 +245,7 @@ def build_runtime(
     config = load_rl_writer_config(args.config.resolve())
     if args.stage != config["sealed_stage"]:
         raise RewardProtocolError("RL-Writer stage requires its own immutable config")
+    raise RewardProtocolError(_CORE_PROGRAM_RETRAIN_REQUIRED)
     total, checkpoints = resolve_runtime(args, config, context)
     initial = _resume_update(args.resume)
     if not 0 <= initial < args.stop_after_update:

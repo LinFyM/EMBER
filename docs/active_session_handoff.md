@@ -2,13 +2,57 @@
 
 最后更新：2026-07-30 UTC。
 
-本文只保存当前运行状态、恢复入口和紧邻动作。当前fresh架构 authority 是
-`docs/action_forecast_writer_recenter_design.md`；Loom设计与推导只作失败
-provenance。长期科学边界是`AGENTS.md`与`docs/execution_brief.md`；历史实验
-细节在`findings.md`、`progress.md`和Git history。任何接手者都必须先只读
-复核现场，不能按本文快照重复启动进程。
+本文顶部保存当前运行状态、恢复入口和紧邻动作；后续编号章节是按时间保留的
+历史快照。当前fresh架构 authority 是
+`docs/action_forecast_writer_core_program_design.md`；Recenter、Loom及更早
+设计只作失败provenance。长期科学边界是`AGENTS.md`与
+`docs/execution_brief.md`。任何接手者都必须先只读复核现场，不能按历史快照
+重复启动进程。
 
-## 1. 当前实时状态
+## 0. Core-Program当前恢复入口
+
+Recenter fresh macro50/100/150/200 paired correct400为`55/84/79/85`，不仅
+低于v6 best `143/400`，所有tasks也都低于v6 best，Object-3明显坍塌。内部
+证据显示参数持续更新、factor幅度并不小；失败根因是time-centering删除raw
+Procedure DC、Core只剩窄幅调制，造成semantic-basis starvation，而非需要再
+调scale或延长同一recipe。
+
+owner已授权从该根因继续第一性原理重构。唯一canonical Writer现切换为
+Core semantic license × raw video program：
+
+```text
+保留 Q_text、M+G、v6 Semantic Core
+保留 native 50-suffix mean Action
+恢复 v6 uncapped task-grounded transition
+两层 causal Procedure保留完整raw time signal
+Core读出slot semantic basis
+Core-keyed query读取full raw Procedure
+width512 bias-free bilinear严格相乘
+zero-preserving slot block
+→ complete rank-16 public LoRA
+```
+
+Core-only、Procedure-only、zero Procedure均严格identity；constant nonzero
+Procedure保留为可用程序。精确trainable参数为`10,905,856`。活动源码/config
+已原位切换到fresh schema；Recenter executable/config退役，不兼容resume。
+
+紧邻顺序：
+
+```text
+完成CPU/full-repo验证并commit/push
+→ GPU4–7 live preflight
+→ longest-105-frame B20 three-macro profile
+→ fresh0→1→exact-resume1→3 + all-parameter reachability
+→ seal formal config
+→ fresh macro0→200, every25 checkpoint
+→ paired correct400 at macro50/100/150/200
+```
+
+不得继承Recenter profile/resume证据；不得使用GPU0–3。首段未恢复同期v5.2/v6
+水平时只做内部反事实，不做昂贵视频控制臂；恢复后才按absolute趋势续训，并在
+达到`150/400`或稳定接近时做same/wrong/shuffled/reversed full400。
+
+## 1. Recenter历史快照（整节已失效，不得执行其命令）
 
 owner在Loom macro50/100/150/200 correct400仅为`79/106/105/112`且内部
 correspondence/confidence/gap缺少可靠锚点后，授权继续从第一性原理重设计，

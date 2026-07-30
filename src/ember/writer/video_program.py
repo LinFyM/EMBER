@@ -1,4 +1,4 @@
-"""Multimodal evidence and native-horizon Action probes for EMBER Recenter."""
+"""Multimodal Core evidence and native-horizon video-program Action probes."""
 
 from __future__ import annotations
 
@@ -156,7 +156,7 @@ class TaskQueriedPatchGrounding(torch.nn.Module):
         return grounded.masked_fill(~valid_task_tokens[..., None], 0.0)
 
 
-class Pi05LanguageAxialEncoder(torch.nn.Module):
+class Pi05CoreProgramEncoder(torch.nn.Module):
     """Produce Q_text, M+G, G, and one native-horizon Action probe per frame."""
 
     NATIVE_IMAGE_TOKENS = 256

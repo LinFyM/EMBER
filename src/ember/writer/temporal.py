@@ -1,4 +1,4 @@
-"""Semantic Core and Action-anchored causal Procedure for EMBER Recenter."""
+"""Semantic Core and uncapped visual-program Procedure for EMBER."""
 
 from __future__ import annotations
 
@@ -27,18 +27,6 @@ class RMSNorm(torch.nn.Module):
             value.to(torch.float32).square().mean(dim=-1, keepdim=True) + self.eps
         ).to(value.dtype)
         return value * scale * self.weight
-
-
-def tensor_mean_square(value: torch.Tensor) -> torch.Tensor:
-    """Return differentiable float32 mean-square without a zero sqrt."""
-
-    return value.to(torch.float32).square().mean(dim=-1, keepdim=True)
-
-
-def tensor_rms(value: torch.Tensor) -> torch.Tensor:
-    """Return a detached physical RMS for diagnostics and acceptance checks."""
-
-    return tensor_mean_square(value).detach().sqrt()
 
 
 def _apply_rope(value: torch.Tensor, positions: torch.Tensor) -> torch.Tensor:
@@ -268,11 +256,8 @@ class LanguageSemanticCore(torch.nn.Module):
         return content, weights
 
 
-class ActionAnchoredVisualTransitionFusion(torch.nn.Module):
-    """Use visible semantic change only as a bounded correction to Action."""
-
-    RESIDUAL_FRACTION = 0.25
-    RADIAL_EPS = 1e-12
+class TaskGroundedVisualTransitionFusion(torch.nn.Module):
+    """Let the native Action probe read uncapped task-grounded visual change."""
 
     def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
@@ -292,7 +277,7 @@ class ActionAnchoredVisualTransitionFusion(torch.nn.Module):
         grounded_evidence: torch.Tensor,
         valid_frames: torch.Tensor,
         valid_task_tokens: torch.Tensor,
-    ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         if (
             action_probe.ndim != 3
             or grounded_evidence.ndim != 4
@@ -351,38 +336,18 @@ class ActionAnchoredVisualTransitionFusion(torch.nn.Module):
             dropout_p=0.0,
             is_causal=False,
         )
-        raw_residual = self.output(
+        residual = self.output(
             attended.transpose(1, 2).reshape(batch, frames, width)
         )
-        action_rms = tensor_rms(action_probe)
-        raw_residual_mean_square = tensor_mean_square(raw_residual)
-        raw_residual_rms = raw_residual_mean_square.detach().sqrt()
-        radial_cap = self.RESIDUAL_FRACTION * action_rms
-        residual_scale = radial_cap / torch.sqrt(
-            radial_cap.square()
-            + raw_residual_mean_square
-            + self.RADIAL_EPS
-        )
-        bounded_residual = raw_residual * residual_scale.to(raw_residual.dtype)
-        bounded_residual = bounded_residual.masked_fill(
+        residual = residual.masked_fill(
             ~valid_frames[..., None],
             0.0,
         )
-        fused = (action_probe + bounded_residual).masked_fill(
+        fused = (action_probe + residual).masked_fill(
             ~valid_frames[..., None],
             0.0,
         )
-        diagnostics = {
-            "transition": transition,
-            "raw_residual": raw_residual,
-            "bounded_residual": bounded_residual,
-            "action_rms": action_rms,
-            "raw_residual_rms": raw_residual_rms,
-            "radial_cap": radial_cap,
-            "residual_scale": residual_scale,
-            "radial_cap_active": raw_residual_rms.gt(radial_cap),
-        }
-        return fused, diagnostics
+        return fused, transition
 
 
 class CausalProcedureEncoder(torch.nn.Module):

@@ -6,7 +6,7 @@ import h5py
 import numpy as np
 import pytest
 import torch
-from safetensors.torch import load_file, save_file
+from safetensors.torch import save_file
 
 from ember.lora import canonical_contract_sha256
 from ember.pi05_lora import load_pi05_lora_contract
@@ -22,20 +22,14 @@ from ember.writer.as_contract import (
 )
 from ember.writer.checkpoint import (
     AS_WRITER_CHECKPOINT_SCHEMA,
-    inspect_writer_checkpoint,
     validate_writer_checkpoint_files,
-)
-from ember.writer.derived_checkpoint import (
-    AS_WRITER_DERIVED_CHECKPOINT_SCHEMA,
-    derive_uniform_writer_average_checkpoint,
-    validate_derived_writer_checkpoint_files,
 )
 from ember.writer.inference import inspect_as_writer_evaluation
 from ember.writer.model import WriterModelError
 
 
 ROOT = Path(__file__).resolve().parents[1]
-AS_CONFIG = ROOT / "configs/pi05_as_writer_recenter.json"
+AS_CONFIG = ROOT / "configs/pi05_as_writer_core_program.json"
 
 
 def _checkpoint(tmp_path: Path, contract_sha256: str) -> Path:
@@ -106,99 +100,6 @@ def _tensor_checkpoint(
     manifest["canonical_payload_sha256"] = canonical_hash(manifest)
     write_json_atomic(checkpoint / "checkpoint_manifest.json", manifest)
     return checkpoint
-
-
-def test_uniform_writer_average_is_inference_only_and_exact(
-    tmp_path: Path,
-) -> None:
-    run = tmp_path / "run"
-    run.mkdir()
-    training = {"runtime": {"world_size": 1, "checkpoint_steps": [2, 4]}}
-    write_json_atomic(run / "run_contract.json", training)
-    first = _tensor_checkpoint(
-        run,
-        step=2,
-        training=training,
-        state={
-            "floating": torch.tensor([1.0, 5.0], dtype=torch.float16),
-            "fixed": torch.tensor([7], dtype=torch.int64),
-        },
-    )
-    second = _tensor_checkpoint(
-        run,
-        step=4,
-        training=training,
-        state={
-            "floating": torch.tensor([3.0, 1.0], dtype=torch.float16),
-            "fixed": torch.tensor([7], dtype=torch.int64),
-        },
-    )
-    derived, manifest = derive_uniform_writer_average_checkpoint(
-        source_run=run,
-        source_checkpoints=[first, second],
-        output_name="mean_step2_step4",
-    )
-    state = load_file(str(derived / "writer.safetensors"), device="cpu")
-    assert state["floating"].dtype == torch.float16
-    assert torch.equal(
-        state["floating"], torch.tensor([2.0, 3.0], dtype=torch.float16)
-    )
-    assert torch.equal(state["fixed"], torch.tensor([7], dtype=torch.int64))
-    assert manifest["schema_version"] == AS_WRITER_DERIVED_CHECKPOINT_SCHEMA
-    assert manifest["inference_only"] is True
-    assert [
-        row["cursor"] for row in manifest["derivation"]["source_checkpoints"]
-    ] == [2, 4]
-    validate_derived_writer_checkpoint_files(
-        derived, contract_sha256=canonical_hash(training)
-    )
-    with pytest.raises(WriterModelError, match="initialization is outside"):
-        inspect_writer_checkpoint(derived)
-    with pytest.raises(WriterModelError, match="checkpoint manifest changed"):
-        validate_writer_checkpoint_files(
-            derived,
-            world_size=1,
-            contract_sha256=canonical_hash(training),
-        )
-
-    (derived / "writer.safetensors").write_bytes(b"changed")
-    with pytest.raises(WriterModelError, match="checkpoint file changed"):
-        validate_derived_writer_checkpoint_files(
-            derived, contract_sha256=canonical_hash(training)
-        )
-
-
-def test_uniform_writer_average_rejects_duplicate_and_tensor_drift(
-    tmp_path: Path,
-) -> None:
-    run = tmp_path / "run"
-    run.mkdir()
-    training = {"runtime": {"world_size": 1, "checkpoint_steps": [2, 4]}}
-    write_json_atomic(run / "run_contract.json", training)
-    first = _tensor_checkpoint(
-        run,
-        step=2,
-        training=training,
-        state={"weight": torch.ones(2)},
-    )
-    second = _tensor_checkpoint(
-        run,
-        step=4,
-        training=training,
-        state={"weight": torch.ones(3)},
-    )
-    with pytest.raises(WriterModelError, match="distinct checkpoints"):
-        derive_uniform_writer_average_checkpoint(
-            source_run=run,
-            source_checkpoints=[first, first],
-            output_name="duplicate",
-        )
-    with pytest.raises(WriterModelError, match="tensor contract changed"):
-        derive_uniform_writer_average_checkpoint(
-            source_run=run,
-            source_checkpoints=[first, second],
-            output_name="shape_drift",
-        )
 
 
 def _sparse_video_data(tmp_path: Path, rows: list[dict]) -> Path:
@@ -362,32 +263,22 @@ def test_as_writer_evaluation_seals_raw_video_authority_and_wrong_map(
         )
 
 
-def test_as_writer_evaluation_accepts_sealed_parameter_average(
+def test_as_writer_evaluation_rejects_non_single_checkpoint_paths(
     tmp_path: Path,
 ) -> None:
     checkpoint, data_root, source, validation_keys = _static_as_evaluation_fixture(
         tmp_path
     )
-    derived, _ = derive_uniform_writer_average_checkpoint(
-        source_run=checkpoint.parent.parent,
-        source_checkpoints=[
-            checkpoint,
-            checkpoint.parent / "step_00000006",
-        ],
-        output_name="mean_step4_step6",
-    )
-    adapter = inspect_as_writer_evaluation(
-        config_path=AS_CONFIG,
-        checkpoint=derived,
-        video_data_root=data_root,
-        source=source,
-        task_keys=validation_keys,
-        video_condition="correct",
-        video_seed=7,
-        require_formal=False,
-    )
-    assert adapter["checkpoint"]["kind"] == "uniform_parameter_average"
-    assert adapter["checkpoint"]["inference_only"] is True
-    assert adapter["checkpoint"]["cursor"] == 6
-    assert adapter["checkpoint"]["cursor_axis"] == "max_source_optimizer_step"
-    assert adapter["checkpoint"]["source_checkpoint_cursors"] == [4, 6]
+    derived = checkpoint.parent.parent / "derived_checkpoints" / "mean"
+    derived.mkdir(parents=True)
+    with pytest.raises(WriterModelError, match="outside a training run"):
+        inspect_as_writer_evaluation(
+            config_path=AS_CONFIG,
+            checkpoint=derived,
+            video_data_root=data_root,
+            source=source,
+            task_keys=validation_keys,
+            video_condition="correct",
+            video_seed=7,
+            require_formal=False,
+        )

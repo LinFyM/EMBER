@@ -2106,3 +2106,21 @@ GPU范围和训练步长是当时快照；活动状态只取
 - profile step1→3间全部`10,709,248`个Writer参数变化，覆盖11个主模块组。
   config现已恢复正式teacher seed并seal为B20、fresh macro0→200、每25 macro
   checkpoint；紧邻动作是clean push后在GPU4–7启动约一小时正式段。
+
+## Core-Program canonical CPU实现（2026-07-30）
+
+- 新authority为
+  `docs/action_forecast_writer_core_program_design.md`。canonical源码/config/
+  launch/checkpoint/eval schema已原位切换；删除
+  `configs/pi05_as_writer_recenter.json`，不保留兼容执行路径。
+- compiler现为raw Core value reader、Core-keyed full raw Procedure reader、
+  width512 bias-free strict bilinear和zero-preserving slot block；transition
+  恢复v6 uncapped `A+R`。精确参数枚举为Writer `10,905,856`、compiler
+  `1,665,792`。
+- 模型合同tests `14 passed`；config/checkpoint/evaluation相关affected tests
+  `34 passed`；最终全仓`194 passed`、compileall与diff check通过。
+  architecture guard为REVIEW、无hard violation，active source净删643行。
+- 按single-checkpoint合同删除checkpoint-average module/CLI，evaluation明确
+  拒绝`derived_checkpoints`；RL-Writer在raw-video Core-Program接口完成重建和
+  fresh retrain前于任何GPU/data加载前fail closed。GPU profile、resume smoke
+  与formal训练尚未开始，不得继承Recenter evidence。

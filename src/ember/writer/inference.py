@@ -32,11 +32,6 @@ from ember.writer.as_contract import (
     writer_stage,
 )
 from ember.writer.checkpoint import validate_writer_checkpoint_files
-from ember.writer.derived_checkpoint import (
-    AS_WRITER_DERIVED_CHECKPOINT_SCHEMA,
-    validate_derived_writer_checkpoint_files,
-    validate_derived_writer_checkpoint_provenance,
-)
 from ember.pi05_processing import Pi05TeacherPrefixTokenizer
 from ember.writer.data import (
     RawTeacherVideoStore,
@@ -44,8 +39,8 @@ from ember.writer.data import (
 )
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.lora_rollout import WriterLoRARolloutAdapter
+from ember.writer.architecture import CORE_PROGRAM_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.model import (
-    LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS,
     CompleteLoRAWriter,
     WriterModelError,
     build_lora_tensor_specs,
@@ -59,8 +54,8 @@ from ember.writer.video_schedule import (
 )
 
 
-WRITER_ADAPTER_SCHEMA = "ember_pi05_recenter_writer_eval_adapter_v1"
-RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_recenter_rl_writer_eval_adapter_v1"
+WRITER_ADAPTER_SCHEMA = "ember_pi05_core_program_writer_eval_adapter_v1"
+RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_core_program_rl_writer_eval_adapter_v1"
 WRITER_ADAPTER_SCHEMAS = {WRITER_ADAPTER_SCHEMA, RL_WRITER_ADAPTER_SCHEMA}
 WRITER_VIDEO_CONDITIONS = {
     "correct",
@@ -71,8 +66,12 @@ WRITER_VIDEO_CONDITIONS = {
     "reversed",
 }
 WRONG_VIDEO_CONDITIONS = {"cross_suite_wrong"}
-WRITER_EPISODE_EVIDENCE_V5_1 = "ember_pi05_writer_episode_evidence_v5_1"
-WRITER_EPISODE_EVIDENCE_RECENTER = "ember_pi05_recenter_writer_episode_evidence_v1"
+WRITER_EPISODE_EVIDENCE_WITH_REPLACEMENT = (
+    "ember_pi05_core_program_writer_episode_evidence_with_replacement_v1"
+)
+WRITER_EPISODE_EVIDENCE_CORE_PROGRAM = (
+    "ember_pi05_core_program_writer_episode_evidence_v1"
+)
 WRITER_GENERATION_SEED_SCHEDULE = (
     "sha256 first 63 bits of canonical JSON: ember_pi05_writer_generation_v5_1/"
     "frame_order/seed/suite/task_id/demo_index"
@@ -235,9 +234,9 @@ def expected_writer_episode_evidence(
         sampling_mode=sampling_mode,
     )
     expected_schema = (
-        WRITER_EPISODE_EVIDENCE_V5_1
+        WRITER_EPISODE_EVIDENCE_WITH_REPLACEMENT
         if sampling_mode == "with_replacement"
-        else WRITER_EPISODE_EVIDENCE_RECENTER
+        else WRITER_EPISODE_EVIDENCE_CORE_PROGRAM
     )
     if evidence_schema is None:
         evidence_schema = expected_schema
@@ -338,38 +337,24 @@ def _inspect_training_checkpoint(
     require_formal: bool,
 ) -> tuple[dict[str, Any], dict[str, Any], int]:
     checkpoint = checkpoint.resolve()
-    if checkpoint.parent.name not in {"checkpoints", "derived_checkpoints"}:
+    if checkpoint.parent.name != "checkpoints":
         raise WriterModelError("AS-Writer checkpoint is outside a training run")
     run_root = checkpoint.parent.parent
     contract_path = run_root / "run_contract.json"
     training = read_json(contract_path)
     contract_sha256 = canonical_hash(training)
     world_size = int(training.get("runtime", {}).get("world_size", -1))
-    if checkpoint.parent.name == "checkpoints":
-        manifest = validate_writer_checkpoint_files(
-            checkpoint,
-            world_size=world_size,
-            contract_sha256=contract_sha256,
-        )
-        cursor = int(manifest.get("consumed", {}).get("next_step", -1))
-        checkpoint_authority_valid = (
-            cursor > 0
-            and cursor in training.get("runtime", {}).get("checkpoint_steps", [])
-            and checkpoint.name == f"step_{cursor:08d}"
-        )
-    else:
-        manifest = validate_derived_writer_checkpoint_files(
-            checkpoint,
-            contract_sha256=contract_sha256,
-        )
-        source_cursors = validate_derived_writer_checkpoint_provenance(
-            checkpoint,
-            run_root=run_root,
-            run_contract=training,
-            manifest=manifest,
-        )
-        cursor = max(source_cursors)
-        checkpoint_authority_valid = bool(source_cursors)
+    manifest = validate_writer_checkpoint_files(
+        checkpoint,
+        world_size=world_size,
+        contract_sha256=contract_sha256,
+    )
+    cursor = int(manifest.get("consumed", {}).get("next_step", -1))
+    checkpoint_authority_valid = (
+        cursor > 0
+        and cursor in training.get("runtime", {}).get("checkpoint_steps", [])
+        and checkpoint.name == f"step_{cursor:08d}"
+    )
     target_manifest = read_json(REPO_ROOT / config["authorities"]["target_data_manifest"]["path"])
     role_ids = target_manifest.get("summary", {}).get("roles", {})
     source_ids = [
@@ -491,22 +476,6 @@ def build_writer_evaluation_adapter(
         "manifest_payload_sha256": manifest["canonical_payload_sha256"],
         "writer_state_sha256": writer_record["sha256"],
     }
-    if manifest.get("schema_version") == AS_WRITER_DERIVED_CHECKPOINT_SCHEMA:
-        source_rows = manifest["derivation"]["source_checkpoints"]
-        checkpoint_record.update(
-            {
-                "kind": "uniform_parameter_average",
-                "inference_only": True,
-                "derivation_algorithm": manifest["derivation"]["algorithm"],
-                "source_checkpoint_cursors": [
-                    int(row["cursor"]) for row in source_rows
-                ],
-                "source_checkpoint_manifest_sha256": [
-                    str(row["checkpoint_manifest_file_sha256"])
-                    for row in source_rows
-                ],
-            }
-        )
     result = {
         "schema_version": schema_version,
         "kind": writer_method,
@@ -620,11 +589,6 @@ def inspect_as_writer_evaluation(
     lora = load_pi05_lora_contract(
         REPO_ROOT / str(config["authorities"]["lora_contract"]["path"])
     )
-    cursor_axis = (
-        "max_source_optimizer_step"
-        if manifest.get("schema_version") == AS_WRITER_DERIVED_CHECKPOINT_SCHEMA
-        else "optimizer_step"
-    )
     return build_writer_evaluation_adapter(
         schema_version=WRITER_ADAPTER_SCHEMA,
         writer_method="as_writer",
@@ -633,7 +597,7 @@ def inspect_as_writer_evaluation(
         training=training,
         manifest=manifest,
         cursor=cursor,
-        cursor_axis=cursor_axis,
+        cursor_axis="optimizer_step",
         video_data=video_data,
         lora_contract_sha256=canonical_contract_sha256(lora),
         mapping=mapping,
@@ -669,7 +633,7 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
         kind = str(evaluation_adapter.get("kind", "as_writer"))
         if kind == "rl_writer":
             raise WriterModelError(
-                "RL-Writer has not yet been retrained under canonical Recenter "
+                "RL-Writer has not yet been retrained under canonical Core-Program "
                 "and must be retrained before evaluation"
             )
         if kind != "as_writer":
@@ -699,7 +663,7 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
         writer_values = {
             key: value
             for key, value in config["writer"].items()
-            if key in LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
+            if key in CORE_PROGRAM_WRITER_CONSTRUCTOR_KEYS
         }
         bridge = policy.model.paligemma_with_expert
         writer = CompleteLoRAWriter(

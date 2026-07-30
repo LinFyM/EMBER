@@ -25,22 +25,28 @@ v10随后完成，observed-best仅`103/400`；其五臂`103/94/75/67/43`通过�
 `79/106/105/112`，内部correspondence/confidence/Teacher–Policy gap缺少
 信息墙内可靠锚点，因此停止。两者均只作provenance。
 
-当前唯一canonical方法为EMBER Recenter：Action-Anchored Core-Keyed Centered
-Procedure Writer。完整需求、拓扑、参数和判定合同见
-[`docs/action_forecast_writer_recenter_design.md`](action_forecast_writer_recenter_design.md)。
-它恢复原生50-token suffix mean Action主干，保留task-grounded patch evidence
-与v6 frame-set Core；visual transition只能以Action RMS的25%为上限作残差。
-单路causal Procedure作为唯一LoRA value，Core只参与slot寻址和
-`[0.75,1.25]`乘性调制；time-centering与amplitude-preserving slot mixer保证
-constant/zero Procedure回到identity，也不会用terminal normalization放大微小
-信号。真实参数为`10,709,248`。
+Recenter随后恢复native Action并限制视觉残差，但macro50/100/150/200仅为
+`55/84/79/85`。内部证据把根因定位为semantic-basis starvation：
+time-centering删除Procedure DC，Core又只剩寻址和窄幅调制，模型无法从小AC
+残差重建完整task semantic basis。它同样退役，不继续调cap/gate/scale。
 
-canonical源码/config已原位切换到fresh Recenter schema；Loom-only
-relations、dual Procedure和gap compiler已退役。当前配置保持pending，必须在
-GPU4–7重新完成105-frame B20 profile、exact-resume和gradient reachability，
-不能继承Loom seal。profile通过后才fresh训练macro0→200并评测
-macro50/100/150/200；在absolute达到同期有效架构水平前不做不必要的五臂
-rollout，也不启动one-shot或RL。
+当前唯一canonical方法为EMBER Core-Program Writer。完整需求、拓扑、参数和
+判定合同见
+[`docs/action_forecast_writer_core_program_design.md`](action_forecast_writer_core_program_design.md)。
+它保留稳定task axis、v6 Semantic Core、native 50-suffix mean Action、
+uncapped task-grounded transition与两层causal Procedure。compiler先读取raw
+Core values形成slot semantic basis，再由Core-keyed query读取full raw
+Procedure values；width512 bias-free bilinear严格要求两者共同产生content，
+zero-preserving slot block不允许routing注入value。Core-only、
+Procedure-only与zero Procedure均为identity，constant nonzero Procedure保留。
+真实参数为`10,905,856`。
+
+canonical源码/config已原位切换到fresh Core-Program schema；Recenter与
+checkpoint-average executable均已退役，RL-Writer在按raw-video接口重建和重训
+前明确fail closed。当前配置保持pending，必须在GPU4–7重新完成105-frame B20
+profile、exact-resume和gradient reachability，不能继承Recenter seal。通过后
+才fresh训练macro0→200并评测macro50/100/150/200；只选择single checkpoint，
+在absolute达到同期有效架构水平前不做不必要的五臂rollout。
 
 外部专家复核后的第一轮诊断证明，shuffle的直接行为放大器位于per-image
 forecast之后的absolute-time Plan/Revision；但后续全面复审又确认它不是唯一
@@ -93,13 +99,13 @@ correct-video `127/400`，且best的reversed为`120/400`、与correct无显著�
 它因此只作provenance。
 
 当前fresh架构authority为
-[`docs/action_forecast_writer_recenter_design.md`](action_forecast_writer_recenter_design.md)。
-Recenter使用text-only task axis、multimodal evidence与task-queried patch
-evidence；Semantic Core对frame set置换不变，原生Action mean是Procedure
-主干，视觉变化只作有界残差。compiler先用Core寻址，再读取time-centered raw
-Procedure values，并在不改变slot RMS的前提下混合content；公共宽度256、
-8 heads×32、factor hidden256，真实预算`10,709,248`。Loom/v10负结果见对应
-设计和handoff；v8负结果与旧设计见
+[`docs/action_forecast_writer_core_program_design.md`](action_forecast_writer_core_program_design.md)。
+Core-Program使用text-only task axis、multimodal evidence与task-queried patch
+evidence；Semantic Core对frame set置换不变，native Action mean与uncapped
+视觉变化形成full raw causal Procedure。compiler以Core semantic basis和raw
+Procedure program做width512严格双线性融合；公共宽度256、8 heads×32、
+factor hidden256，真实预算`10,905,856`。Recenter/Loom/v10负结果见对应设计
+和handoff；v8负结果与旧设计见
 [`docs/action_forecast_writer_v8_design.md`](action_forecast_writer_v8_design.md)；
 v7负结果与旧设计见
 [`docs/action_forecast_writer_v7_design.md`](action_forecast_writer_v7_design.md)；

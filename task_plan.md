@@ -40,33 +40,30 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   Writer per-rollout LoRA、无放回 video schedule 与逐 row paired RNG evidence。
 - [x] v4/v5/v5.1 失败根因和 v5.2 五臂成功证据已封存；旧可执行路径已退役。
 
-## 当前执行：EMBER Recenter
+## 当前执行：EMBER Core-Program Writer
 
 - [x] 完成Loom首段和内部负证据：macro50/100/150/200 correct400为
   `79/106/105/112`；correspondence/confidence/Teacher–Policy gap缺少可靠
   锚点，因此停止且不围绕其scale打补丁。
-- [x] 从第一性原理封存Recenter设计：原生50-token Action mean主干、
-  task-grounded transition有界残差、单路causal Procedure、Core-keyed
-  time-centered compiler与amplitude-preserving slot mixer。
-- [x] 原位替换canonical Writer/config；退役Loom-only relations、双Procedure
-  和gap compiler；fresh schema，不从旧Writer checkpoint resume；精确参数
-  `10,709,248`。
-- [x] 为Core permutation、transition cap、Action-zero无旁路、causality、
-  constant Procedure identity、Core gate、Procedure scale、step0 identity和
-  staged gradient建立确定性合同测试。
-- [x] 完成targeted与全仓196项CPU测试，包括zero-RMS、near-zero和bf16
-  non-power-of-two constant Procedure回归。
-- [x] 完成compileall、diff check与architecture guard；guard只有既有大文件的
-  review提示，无hard violation，且active source净删约1,100行。
-- [x] owner建立新的session-local Goal：持续按
-  `第一性原理重构→约一小时训练→四checkpoint correct400→失败只做内部分析`
-  循环推进；不做checkpoint融合。
-- [x] main复验、clean commit/push。
-- [x] GPU4–7真实105-frame B20三macro profile；3/3 finite、后两步均值
-  `25.808 queries/s`、`193.562 macro/hour`，B16未触发。
-- [x] 正式seed fresh0→1→exact-resume1→3；核验task/video/query/LR/cursor与
-  Recenter全部关键模块gradient reachability，然后seal formal config。
-- [ ] fresh task-complete macro0→200，每25 macro checkpoint（下一动作）。
+- [x] Recenter fresh macro50/100/150/200 correct400仅
+  `55/84/79/85`；所有tasks低于v6 best且Object-3坍塌。内部更新/幅度证据把
+  根因定位为time-centering和弱Core造成的semantic-basis starvation，而非
+  简单训练不足。
+- [x] 从根因重新封存Core-Program设计：v6 Semantic Core提供slot semantic
+  basis，uncapped transition+native Action形成full raw causal Procedure，
+  width512 bilinear严格要求两分支共同产生content。
+- [x] 原位替换canonical Writer/config/schema，退役Recenter可执行配置；
+  fresh不兼容，精确参数`10,905,856`。
+- [x] 建立Core permutation、uncapped transition、causality、Core/Procedure
+  双必要性、constant Procedure DC、zero-preserving slot block与step0 identity
+  的确定性模型合同。
+- [x] 全仓`194 passed`、compileall与diff check通过；architecture guard仅有
+  既有大文件review提示、无hard violation，active source净删643行。
+- [ ] 集成canonical commit并push。
+- [ ] GPU4–7最长105-frame B20三macro独立profile；不能继承Recenter证据。
+- [ ] fresh0→1→exact-resume1→3并核验全部`10,905,856`参数gradient
+  reachability，随后seal formal config。
+- [ ] fresh task-complete macro0→200，每25 macro checkpoint。
 - [ ] paired、无放回correct400评测macro50/100/150/200，选择single best。
 - [ ] 一小时best若未达v5.2/v6同期`132–133`同档，不做行为级特异性rollout，
   只做Action/transition/Core/Procedure/compiler/LoRA/action反事实和per-task

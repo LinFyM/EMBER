@@ -5,9 +5,9 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 
-RECENTER_WRITER_PARAMETER_COUNT = 10_709_248
+CORE_PROGRAM_WRITER_PARAMETER_COUNT = 10_905_856
 
-LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
+CORE_PROGRAM_WRITER_CONSTRUCTOR_KEYS = frozenset(
     {
         "image_width",
         "expert_width",
@@ -25,6 +25,7 @@ LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
         "procedure_heads",
         "procedure_blocks",
         "fusion_heads",
+        "bilinear_hidden_width",
         "factor_hidden_width",
         "initialization_seed",
         "activation_checkpointing",
@@ -47,13 +48,12 @@ WRITER_DIMENSION_CONTRACT = {
     "procedure_heads": 8,
     "procedure_blocks": 2,
     "fusion_heads": 8,
+    "bilinear_hidden_width": 512,
     "factor_hidden_width": 256,
 }
 
 _STATIC_WRITER_CONTRACT: dict[str, Any] = {
-    "architecture": (
-        "pi05_action_anchored_core_keyed_centered_procedure_writer_recenter"
-    ),
+    "architecture": "pi05_core_semantic_license_raw_video_program_writer",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -80,9 +80,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "patch_grounding_attention": (
         "text_only_task_queries_to_each_frames_256_image_positions"
     ),
-    "patch_grounding_qk": (
-        "separate_pre_rmsnorm_bias_free_256_to_256"
-    ),
+    "patch_grounding_qk": "separate_pre_rmsnorm_bias_free_256_to_256",
     "patch_grounding_value": (
         "raw_shared_projected_image_position_content_no_value_projection"
     ),
@@ -131,7 +129,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
         "raw_task_grounded_difference_without_value_projection"
     ),
     "visual_transition_residual": (
-        "radial_cap_at_one_quarter_stopgrad_action_probe_rms"
+        "uncapped_bias_free_qko_attention_residual"
     ),
     "visual_transition_heads": 8,
     "procedure_heads": 8,
@@ -139,27 +137,39 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "procedure_attention": "single_global_causal_content_transformer",
     "procedure_position_encoding": "sampled_frame_ordinal_rope_qk_only",
     "procedure_value_path": (
-        "native_action_probe_plus_bounded_visual_transition_residual"
+        "native_action_probe_plus_uncapped_task_grounded_visual_transition"
     ),
     "query_count": 320,
     "routing_identity": "query_module_layer_rank_qk_only",
-    "core_slot_reader": "routing_qk_core_content_v",
+    "core_slot_reader": (
+        "routing_qk_normalized_core_key_raw_core_value_no_wv"
+    ),
     "procedure_slot_reader": (
-        "routing_plus_core_q_full_normalized_procedure_k_"
-        "raw_time_centered_procedure_v"
+        "routing_plus_normalized_core_q_rope_normalized_procedure_k_"
+        "raw_full_procedure_value_no_wv"
     ),
-    "core_procedure_first_interaction": "core_keyed_procedure_compiler_only",
+    "core_procedure_first_interaction": (
+        "strict_core_license_times_raw_procedure_program_in_compiler"
+    ),
     "slot_fusion": (
-        "procedure_content_times_one_plus_quarter_tanh_core_modulation"
+        "width512_bias_free_silu_core_basis_times_procedure_program"
     ),
-    "core_modulation_range": [0.75, 1.25],
+    "bilinear_hidden_width": 512,
     "fusion_heads": 8,
     "post_fusion_blocks": 1,
+    "post_fusion_slot_block": (
+        "zero_preserving_bias_free_residual_attention_ffn_"
+        "routing_qk_only_content_v_only"
+    ),
     "post_fusion_scale_contract": (
-        "direction_mixing_then_restore_prefusion_slot_rms"
+        "no_terminal_normalization_or_amplitude_restoration"
     ),
     "core_only_public_lora_delta": "exact_zero",
-    "constant_procedure_public_lora_delta": "exact_zero",
+    "procedure_only_public_lora_delta": "exact_zero",
+    "zero_procedure_public_lora_delta": "exact_zero",
+    "constant_nonzero_procedure": (
+        "preserved_as_valid_program_content_not_forced_to_identity"
+    ),
     "factor_head_bias": False,
     "factor_hidden_width": 256,
     "initialization_seed": 7,
@@ -167,7 +177,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
 
 
 def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
-    """Return the exact Recenter config payload, preserving frame chunking."""
+    """Return the exact Core-Program config payload, preserving frame chunking."""
 
     return {
         **_STATIC_WRITER_CONTRACT,
@@ -177,7 +187,7 @@ def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def validate_writer_dimensions(observed: Mapping[str, Any]) -> None:
-    """Reject constructor values outside the one canonical Recenter topology."""
+    """Reject constructor values outside the one canonical Core-Program topology."""
 
     changed = {
         name: (WRITER_DIMENSION_CONTRACT[name], observed.get(name))

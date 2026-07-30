@@ -23,12 +23,13 @@
 15. `docs/action_forecast_writer_loom_derivation.md`
 16. `docs/action_forecast_writer_loom_design.md`
 17. `docs/action_forecast_writer_recenter_design.md`
-18. `task_plan.md`
-19. `findings.md`
-20. `progress.md`
-21. `docs/concept.md`
-22. `docs/decisions_and_open_questions.md`
-23. `docs/novelty_and_landscape.md`
+18. `docs/action_forecast_writer_core_program_design.md`
+19. `task_plan.md`
+20. `findings.md`
+21. `progress.md`
+22. `docs/concept.md`
+23. `docs/decisions_and_open_questions.md`
+24. `docs/novelty_and_landscape.md`
 
 `docs/active_session_handoff.md`是当前跨session恢复入口，集中摘要研究证据链、
 v5失败证据、v5.1设计理由、运行状态和下一动作，但不覆盖架构或长期科学
@@ -46,89 +47,38 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 
 ## Current focused execution task
 
-owner于2026-07-30在Loom首段correct400仅为`79/106/105/112`且内部
-correspondence/confidence/gap缺少可靠锚点后，授权从第一性原理继续重设计和
-迭代。当前唯一canonical authority改为
-[`docs/action_forecast_writer_recenter_design.md`](docs/action_forecast_writer_recenter_design.md)；
-Loom推导与设计只作失败证据和provenance。
+owner于2026-07-30在Recenter首段correct400仅为`55/84/79/85`后授权继续按
+“根因证据→第一性原理重构→一小时训练→必要内部分析”的循环自主推进。
+当前唯一canonical authority为
+[`docs/action_forecast_writer_core_program_design.md`](docs/action_forecast_writer_core_program_design.md)；
+Recenter、Loom及更早设计只作失败证据与provenance。
 
-Recenter保留稳定text query、task-grounded patch evidence和v6 Semantic Core；
-恢复原生50-token suffix mean作为policy-native Action主干，只允许
-task-grounded视觉transition以Action RMS四分之一为径向上限作残差修正。单路
-causal Procedure进入新的Core-keyed compiler：Core先提供slot地址，value只读
-raw time-centered Procedure；Core仅作`[0.75,1.25]`乘性调制，slot mixer在
-混合方向后恢复输入RMS。constant/zero Procedure无论Core为何均产生identity，
-且不存在terminal normalization、Teacher/Policy gap、confidence、raw patch
-correspondence或Action/Effect局部配对。canonical参数量为`10,709,248`。
+Recenter的根因不是参数不更新或factor输出太弱，而是semantic-basis starvation：
+它删除raw Procedure的time-DC，又把Core降为slot address和窄幅标量调制，迫使
+模型仅从很小的centered AC Procedure同时重建任务语义方向与视频程序系数。
+constant Procedure被强制identity也错误删除了可用的公共高层程序。
 
-Recenter继续使用v6封存的task-complete fast-decay训练合同：GPU4–7、4 ranks、
-每rank long-first处理6 tasks、每task一条video和B20独立action queries、
-每macro覆盖24 tasks并只做一次AdamW update。Recenter已在真实105-frame视频
-上独立完成B20三macro profile：3/3 finite，后两步均值`25.808 queries/s`、
-`193.562 macro/hour`，峰值allocated/reserved约`76.99/83.64GB`；B16未
-触发。正式seed `20260722`下fresh0→1→exact-resume1→3也已通过，step1文件
-逐项hash不变，全部`10,709,248`个trainable参数在真实step1→3间发生变化。
-当前正式合同已seal为fresh macro0→200、每25 macro checkpoint；完成后固定
-测试macro50/100/150/200，不做checkpoint融合。
+新Core-Program Writer保留已有成功证据：稳定`Q_text`、`M+G`、v6 Semantic
+Core、原生50-token suffix mean Action、uncapped task-grounded transition和
+两层causal Procedure。compiler重新按必要职责构造：routing读取raw Core values
+形成semantic basis；`routing+Norm(Core slot)`读取完整raw Procedure values，
+不做time-centering；width512 bias-free bilinear
+`SiLU(Wc(Core))*Wp(Procedure)`严格要求两分支同时存在；zero-preserving slot
+block只允许routing进入Q/K、value/content只来自bilinear结果。Core-only、
+Procedure-only与zero Procedure均为identity，constant nonzero Procedure保留。
+精确trainable参数为`10,905,856`，相对corrected Source-SFT多约`5.91%`。
 
-v4、v5、v5.1、v5.2和v6均已完成所需根因或上限证据；旧架构与可执行配置只作
-provenance。v5.2 step900五臂
-`correct/same/wrong/shuffled/reversed=132/138/74/82/83`，证明Semantic Core
-与Causal Procedure可以同时通过视频语义和顺序行为门，但absolute不够。
+canonical源码、fresh config和schema已原位切换，不保留Recenter可执行兼容路径。
+当前下一动作是完成CPU验证与提交后，在GPU4–7独立做最长105-frame真实视频
+B20三macro profile、fresh0→1→exact-resume1→3和全参数gradient reachability；
+不能继承Recenter的profile。seal后fresh macro0→200、每25 checkpoint，并固定
+评测macro50/100/150/200的paired correct400，不做checkpoint融合。
 
-v6 task-complete fast-decay的single-checkpoint best为macro400=`143/400`，
-五臂`143/135/125/128/129`；续到macro600后显著下降。相同v6拓扑改用旧
-rank-rotating recipe时best为`121/400`，五臂`121/122/111/84/47`：顺序门显著
-增强，但absolute、breadth和wrong-video语义门下降。该对照证明训练粒度能调节
-Procedure→compiler增益，但简单恢复旧recipe不是答案。corrected mixed-task
-rank-128 Source-SFT的development best已封存为`109/400`；full-24与global-8
-都出现task能力漂移，后者没有提高上限。
-
-owner于2026-07-29按第一性原理批准的v7已经完成fresh macro0→400和机制
-检查。correct400为`82/106/114/120/101/114/115/106`
-（macro50→400），macro200五臂为`120/112/91/100/69`。它的顺序特异性强于
-v6，但absolute明显下降。内部证据显示`8×L` joint attention的熵达到理论均匀
-熵约`99.96%`、有效Action probes约`7.998/8`，没有形成选择性Action–Effect
-binding；同时fixed-Procedure只改变Core时effective-LoRA差异仅约
-`0.1–0.2%`，模型实际退化成Procedure-only。macro400仍未修复且性能下降，
-因此v7停止，不再续训。
-
-v8 Hierarchical Action–Effect + Core-Gated Procedure也已完成fresh
-macro0→400和机制检查。correct400八点最高为macro300=`125/400`，五臂
-`125/121/110/110/117`，没有达到v6 absolute，也只保留较弱视频margin。内部
-检查显示固定Effect改变Action时event L2仅约`8–10%`，固定Action改变Effect时
-约`147–300%`，EventRead熵约为理论均匀熵的`99.67%`。因此严格局部
-Action–Effect binding缺少信息墙内可识别依据：Action Expert probe只是冻结
-policy对当前画面的action hypothesis，并非造成相邻视觉变化的teacher action。
-v8停止，不再把8个probes压成effect-dominant单event。
-
-历史v10 authority为
-[`docs/action_forecast_writer_v10_design.md`](docs/action_forecast_writer_v10_design.md)
-定义的Evidence-Preserving Dual-Stream Writer。它恢复text-only task axis与
-v6 Semantic Set Core；8个稀疏Action probes形成保留raw mean的Action stream，
-task-grounded patch forward difference形成Visual-Effect stream，二者以
-`A0,V0,A1,V1,...`进入两层causal Procedure，不做strict multiplication、
-joint `8×L` softmax或EventRead。compiler先读Core，再让Core-conditioned
-query读取按Action/Effect分别中心化的Procedure；Procedure通过
-`256→512→(gamma,beta)`直接提供content并门控full-rank Core。所有线性层
-bias-free，结构保证`Procedure=0→public LoRA identity`，Core不能独自生成
-adapter。
-
-v10真实参数为`11,627,520`，相对corrected rank-128 Source-SFT多约12.9%；
-canonical源码/config原位切换到不兼容v10 schema，不保留v8/v9并行可执行
-路径。GPU4–7最长105-frame真实视频B20 profile与exact-resume通过后，正式
-identity-fresh task-complete fast-decay run已完成macro0→400。12点paired
-correct400为`95/103/84/89/82/90/96/96/89/96/97/91`，observed-best
-macro50=`103/400`。其五臂为`103/94/75/67/43`：same同档且wrong/shuffled/
-reversed行为门均通过，但absolute低于corrected Source-SFT `109`且距150为47。
-
-内部证据显示v10并非没有读取视频：Core保持frame-set顺序不变，Procedure差异
-完整传到effective LoRA/action，Procedure=0严格identity。但fixed Effect只变
-Action时的顺序差异远强于fixed Action只变Effect，Effect attention仍近均匀；
-Procedure-slot RMSNorm调制同时高增益放大同task不同正确视频的方差。训练loss
-继续下降而online/closed-loop best均停在macro50，因此同recipe不再续训。
-该“v10后暂停”边界先被owner对Loom的授权替换，Loom负结果后又由Recenter
-授权替换；不得再据此阻塞当前Recenter实验。
+关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
+single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe
+`121/122/111/84/47`；corrected mixed-task rank-128 Source-SFT `109/400`。
+v7、v8、v10、Loom和Recenter都已形成充分负证据，不得恢复其可执行路径或在其
+局部scale/gate上继续打补丁。
 
 focused AS硬门统一为single-checkpoint
 `correct400 >= max(150, corrected Source-SFT best+30)=150`。达到absolute后

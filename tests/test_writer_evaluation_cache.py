@@ -28,7 +28,8 @@ from ember.writer.evaluation_cache import (
 )
 from ember.writer.inference import (
     WRITER_ADAPTER_SCHEMA,
-    WRITER_EPISODE_EVIDENCE_V5_1,
+    WRITER_EPISODE_EVIDENCE_CORE_PROGRAM,
+    WRITER_EPISODE_EVIDENCE_WITH_REPLACEMENT,
     expected_writer_episode_evidence,
     validate_writer_episode_evidence,
 )
@@ -159,7 +160,7 @@ def test_cache_identity_decouples_rollout_replicas(tmp_path: Path) -> None:
     second = _contract(tmp_path / "second", replicas=6)
     assert first["writer_lora_cache"]["identity"]["generation_recipe"][
         "episode_evidence_schema"
-    ] == "ember_pi05_recenter_writer_episode_evidence_v1"
+    ] == WRITER_EPISODE_EVIDENCE_CORE_PROGRAM
     assert (
         first["writer_lora_cache"]["identity_sha256"]
         == second["writer_lora_cache"]["identity_sha256"]
@@ -224,7 +225,7 @@ def test_writer_generation_order_randomness_is_video_keyed(
         init_state_id=18,
         lora_sha256="7" * 64,
     )
-    assert first["schema_version"] == WRITER_EPISODE_EVIDENCE_V5_1
+    assert first["schema_version"] == WRITER_EPISODE_EVIDENCE_WITH_REPLACEMENT
     assert first["teacher_demo_index"] == repeated["teacher_demo_index"]
     assert first["teacher_video_selection_seed"] != repeated[
         "teacher_video_selection_seed"

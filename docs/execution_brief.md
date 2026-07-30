@@ -20,17 +20,21 @@ v8 Hierarchical Action–Effect + Core-Gated Procedure已经完成。correct400
 `8–10%` event差异，Effect变化贡献约`147–300%`，EventRead近均匀。它没有
 达到v6 absolute，也没有得到v5.2式视频margin，因此停止。
 
-当前唯一fresh方法为EMBER Writer v10：Evidence-Preserving Dual-Stream
+当前唯一canonical方法为EMBER Writer v10：Evidence-Preserving Dual-Stream
 Writer。完整需求、拓扑、参数预算和判定合同见
 [`docs/action_forecast_writer_v10_design.md`](action_forecast_writer_v10_design.md)。
 它不再把无真实配对标签的Action hypothesis与teacher visual effect强制绑定并
 压成单event，而是保留Action与Visual-Effect两个证据流，以
 `A0,V0,A1,V1,...`进入causal Procedure；Procedure直接提供LoRA content并门控
 full-rank Core，Core单独仍不能生成adapter。真实参数为`11,627,520`。
-canonical源码/config已原位切换到不兼容v10 schema。GPU4–7最长105-frame
-B20三macro finite，后两步约`26.38 queries/s`、`197.85 macros/hour`，
-峰值allocated/reserved约`77.01/83.65GB`；完成exact-resume后按task-complete
-fast-decay400从identity fresh训练约两小时，再多checkpoint选峰和做五臂。
+canonical源码/config已原位切换到不兼容v10 schema；B20 profile与
+exact-resume通过后，identity-fresh task-complete fast-decay macro0→400、
+12点paired correct400、best五臂和内部反事实均已完成。correct曲线为
+`95/103/84/89/82/90/96/96/89/96/97/91`，macro50 observed-best
+`103/400`；五臂`103/94/75/67/43`通过视频行为门，但absolute低于Source-SFT
+109且距150为47。内部显示Action-hypothesis变化主导、Effect读取近均匀且
+Procedure compiler高增益放大同task视频方差。owner要求v10完成后先暂停，
+当前不启动Loom、one-shot、RL或其它架构。
 
 外部专家复核后的第一轮诊断证明，shuffle的直接行为放大器位于per-image
 forecast之后的absolute-time Plan/Revision；但后续全面复审又确认它不是唯一
@@ -160,9 +164,9 @@ owner于2026-07-22将source-base正式训练改为从generic base fresh运行1,0
 - GPU4–7真实最长视频profile选择B20。B20时每macro为24
   videos/LoRAs、480 queries、24次functional forward、1次同步和1次AdamW；
   三步含105-frame视频且全部finite，step1→3 exact-resume通过。
-- 正式轨迹使用fast cosine decay400，从identity fresh运行约两小时至400 macro、
-  每25保存；用paired fixed correct400筛多个single-checkpoint候选，再对唯一
-  当前best做完整五臂与内部传递检查。
+- 正式fast cosine decay400轨迹已从identity fresh完成400 macro、每25保存；
+  12个paired correct400候选与macro50 best五臂/内部传递均已封存，不做
+  checkpoint融合或同recipe续训。
 - absolute达到预门后，对暂时best跑固定400
   correct/same/wrong/shuffled/reversed；要求same影响最小且correct明显优于
   wrong、shuffle、reverse。不通过则定位最早失效层后fresh迭代，不用

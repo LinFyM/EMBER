@@ -1,10 +1,12 @@
 # EMBER Writer v10：Evidence-Preserving Dual-Stream Writer
 
-状态（2026-07-30）：owner 已确认采用本设计。v10 已原位替换尚未提交、未正式
-训练的 v9 strict-binding 草案，成为下一条唯一 canonical Writer 路径；真实
-参数、B20最长视频profile和exact-resume均已通过，正式训练尚未启动。v8 及
-更早版本只由 Git、checkpoint 和实验文档保存 provenance，不保留并行可执行
-实现。
+状态（2026-07-30）：owner 已确认采用本设计。v10 已原位替换 v9
+strict-binding 草案，成为当前唯一 canonical Writer 路径；真实参数、
+B20最长视频profile、exact-resume、identity fresh macro0→400正式训练、
+12点paired correct400、observed-best五臂和内部反事实均已完成。结果为
+absolute失败、视频语义/顺序行为门通过；owner要求完成v10后暂停讨论，当前
+不续训、不改架构，也不启动后续候选。v8及更早版本只由Git、checkpoint和实验
+文档保存 provenance，不保留并行可执行实现。
 
 ## 1. 决策依据
 
@@ -399,4 +401,123 @@ same-task 与 correct 同档
 correct 显著优于 wrong / shuffled / reversed
 增益由多个tasks共同贡献
 独立RNG与video permutation复测成立
+```
+
+## 12. 正式结果与机制结论
+
+正式run在GPU4–7按上述合同从identity fresh完成macro0→400：
+
+```text
+optimizer updates              400
+one-video LoRA conditions    9,600
+action queries             192,000
+training wall             7,832.833 s
+```
+
+训练、gradient、24-task覆盖和long-first调度全程finite且完整；每个train task
+访问400次，并按无放回cycle覆盖teacher videos。12个single checkpoints的
+paired、每task 50 videos无放回correct400为：
+
+```text
+macro       25  50  75 100 150 200 225 250 300 325 350 400
+correct     95 103  84  89  82  90  96  96  89  96  97  91
+```
+
+observed-best是macro50=`103/400`，低于corrected Source-SFT best=`109`，
+距离absolute门`150`为47。它只显著高于macro75；其余checkpoint主要表现为
+success集合交换而不是共同上升。macro50逐task为：
+
+```text
+Long-1 / Long-2 / Goal-3 / Goal-6 / Object-1 / Object-3 / Spatial-1 / Spatial-3
+5      / 0      / 0      / 42     / 44       / 8        / 2         / 2
+```
+
+Goal-6与Object-1贡献`86/103`个成功；Long-2与Goal-3始终没有形成能力，
+Object-3从macro25的15降到macro50的8并在macro100后归零。训练loss的25-step
+均值从`1..25=.13424`持续降到`376..400=.09651`，但online validation
+functional loss在macro50达到全程最低`.131935`，其后只在
+`.13231–.13824`间波动。故本结果不是“右端仍上涨或只差更多updates”，而是
+训练目标继续拟合、held-task闭环能力已停止泛化。
+
+macro50正式五臂为：
+
+```text
+correct / same-task-other / wrong / shuffled / reversed
+103     / 94              / 75    / 67       / 43
+```
+
+相对correct的paired switches与双侧exact McNemar为：
+
+```text
+same       26 / 17   p=.22205
+wrong      52 / 24   p=.001762
+shuffled   51 / 15   p=1.01e-5
+reversed   68 /  8   p=5.63e-13
+```
+
+same与correct同档；wrong、shuffled、reversed三项门均通过且各有6个正向
+contributing tasks。因此v10的失败不是视频完全未进入LoRA或v4式无序旁路，
+而是correct adapter本身absolute与breadth不足。
+
+8个validation tasks各取1个reference的内部中位relative-L2为：
+
+```text
+condition   Core   Procedure  ProcSlots  eff.LoRA  policy action
+same       .0437     .4050      .5665     .2523       .0970
+wrong      .2029     .4087     1.2923     .8832       .1674
+shuffled   .0000     .0873     1.0922     .7391       .3481
+reversed   .0042     .0836     1.3456     .8718       .1922
+```
+
+Core对相同frame set的shuffle严格不变、对reverse近似不变，职责边界正确。
+固定correct Core只替换Procedure时几乎逐项复现全部LoRA/action差异；固定
+correct Procedure只替换Core时effective-LoRA中位差异仅
+`same/wrong/shuffled/reversed=.0030/.0116/.0000/.0016`。这只说明同一
+task下的视频依赖由Procedure控制；不能据此推断跨task的静态Core语义无用。
+将Procedure精确置零时raw/effective LoRA均严格回到identity。
+
+Action/Effect反事实揭示了更具体的失衡。固定correct Effect只改变Action时，
+shuffled/reversed effective-LoRA差异为`.6299/.8659`；固定correct Action只
+改变Effect时仅`.0808/.1004`。Visual-Effect attention熵为理论均匀熵的
+约`99.86%`（shuffled约`99.93%`），没有形成强task-token effect选择。v10
+因而主要依赖随frame变化的frozen-policy Action hypotheses产生顺序差异，
+而不是由Action和observed Effect共同形成稳定教学事件。
+
+compiler进一步把该方差高增益化：correct的Procedure slots RMS仅`.0145`，
+而Procedure生成的gated-Core RMS为`.1781`，平均比值约`14.39`；
+shuffled比值约`20.53`。modulation在读取Procedure slots前执行RMSNorm，
+所以“非零但很小”的Procedure证据不会自然减小adapter增益。与v5.2相比，
+same-task换正确视频时Procedure/effective-LoRA/action中位差异从
+`.0126/.1345/.0253`扩大到`.4050/.2523/.0970`。这给出了当前最直接的
+失败解释：v10同时放大了有用顺序信号和同task示范间的非等价方差，使每次
+macro抽到的新video产生更不一致的优化方向；强控制臂margin并未转化为更强
+correct policy。
+
+结论是v10在同一task-complete fast-decay合同下相对v6 best
+`143→103`的40点退步主要属于架构负结果，而不是评测、调度、OOM或训练未结束。
+它证伪了“只要完整保留Action并增强Procedure→Core compiler，就会同时提高
+absolute与特异性”的假设。该结论不自动采用任何下一架构；按owner要求在此
+暂停，等待共同讨论。
+
+主要证据：
+
+```text
+training root:
+/data/ymdai/outputs/ember/pi05_as_writer_v10_dualstream_taskcomplete_decay400_dev_r4_b20_seed7_s2400_5fd0a25_20260730
+
+training audit:
+/data/ymdai/outputs/ember/pi05_as_writer_v10_training_audit_macro400_5fd0a25_20260730.json
+SHA256 6701ec353433203ef89490f0fe6b179eefddaf9e304fd60c9800e204e70ff97f
+
+correct curve:
+/data/ymdai/outputs/ember/pi05_as_writer_v10_correct400_curve_paired_5fd0a25_20260730.json
+SHA256 6e9d97dcf31afdd7d867e4b3f66646db3efa68df552b625f5db2b3ba05012dfd
+
+five-arm:
+/data/ymdai/outputs/ember/pi05_as_writer_v10_single_checkpoint_macro0050_specificity400_paired_5fd0a25_20260730.json
+SHA256 a2dbcacdfcfbe4ba2a3a9010c4c28664b2ff8ce4530c532560a24e680474be6b
+
+internal:
+/data/ymdai/outputs/ember/pi05_as_writer_v10_single_checkpoint_macro0050_internal_specificity_refs1_5fd0a25_20260730/summary.json
+SHA256 df5b0271991b6ff95360b138dfe72dd7ab5daf34cc54383b92688acab539ec9f
 ```

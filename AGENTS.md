@@ -74,7 +74,7 @@ Action–Effect binding缺少信息墙内可识别依据：Action Expert probe�
 policy对当前画面的action hypothesis，并非造成相邻视觉变化的teacher action。
 v8停止，不再把8个probes压成effect-dominant单event。
 
-当前唯一fresh authority为
+当前唯一canonical authority为
 [`docs/action_forecast_writer_v10_design.md`](docs/action_forecast_writer_v10_design.md)
 定义的Evidence-Preserving Dual-Stream Writer。它恢复text-only task axis与
 v6 Semantic Set Core；8个稀疏Action probes形成保留raw mean的Action stream，
@@ -87,14 +87,21 @@ bias-free，结构保证`Procedure=0→public LoRA identity`，Core不能独自�
 adapter。
 
 v10真实参数为`11,627,520`，相对corrected rank-128 Source-SFT多约12.9%；
-这是owner允许的软预算提升，新增容量只用于Action phase保真和
-Core/Procedure融合。canonical源码/config原位切换到不兼容v10 schema，不保留
-v8/v9并行可执行路径。GPU4–7最长105-frame真实视频B20连续3个macro finite，
-后两步约`26.38 queries/s`、`197.85 macros/hour`，峰值allocated/reserved约
-`77.01/83.65GB`，故不触发B16。exact-resume通过后恢复正式teacher seed，
-从identity fresh按task-complete fast-decay400训练约两小时至macro400，每25
-保存；随后对多个single checkpoints做paired correct400选峰，再对best做正式
-五臂和内部传递检查。
+canonical源码/config原位切换到不兼容v10 schema，不保留v8/v9并行可执行
+路径。GPU4–7最长105-frame真实视频B20 profile与exact-resume通过后，正式
+identity-fresh task-complete fast-decay run已完成macro0→400。12点paired
+correct400为`95/103/84/89/82/90/96/96/89/96/97/91`，observed-best
+macro50=`103/400`。其五臂为`103/94/75/67/43`：same同档且wrong/shuffled/
+reversed行为门均通过，但absolute低于corrected Source-SFT `109`且距150为47。
+
+内部证据显示v10并非没有读取视频：Core保持frame-set顺序不变，Procedure差异
+完整传到effective LoRA/action，Procedure=0严格identity。但fixed Effect只变
+Action时的顺序差异远强于fixed Action只变Effect，Effect attention仍近均匀；
+Procedure-slot RMSNorm调制同时高增益放大同task不同正确视频的方差。训练loss
+继续下降而online/closed-loop best均停在macro50，因此同recipe不再续训。
+owner明确要求v10完成后先暂停讨论；不得自动启动Loom、one-shot、RL或其它
+架构实验。主worktree中的未跟踪Loom文档和隔离worktree草案保持原样，只有
+owner重新授权后才可处理。
 
 focused AS硬门统一为single-checkpoint
 `correct400 >= max(150, corrected Source-SFT best+30)=150`。达到absolute后

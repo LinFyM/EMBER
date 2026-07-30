@@ -1,4 +1,4 @@
-"""Canonical Semantic-Core + dual-stream Procedure PI05 Writer."""
+"""Canonical Task-Grounded Teacher–Policy Gap PI05 Writer."""
 
 from __future__ import annotations
 
@@ -12,11 +12,11 @@ from ember.writer.architecture import (
     LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS,
     validate_writer_dimensions,
 )
-from ember.writer.compiler import ProcedureContentCompiler
+from ember.writer.compiler import TeacherPolicyGapCompiler
+from ember.writer.relations import TeacherEventBuilder
 from ember.writer.temporal import (
-    CausalProcedureEncoder,
-    EvidencePreservingDualStream,
     LanguageSemanticCore,
+    SharedAxialProcedureEncoder,
 )
 from ember.writer.video_program import Pi05LanguageAxialEncoder
 
@@ -212,19 +212,20 @@ class CompleteLoRAWriter(torch.nn.Module):
             heads=semantic_core_heads,
             blocks=semantic_core_blocks,
         )
-        self.dual_stream = EvidencePreservingDualStream(
+        self.teacher_events = TeacherEventBuilder(
             width=program_width,
             heads=visual_effect_heads,
+            initialization_seed=initialization_seed + 1,
         )
-        self.procedure = CausalProcedureEncoder(
+        self.procedure = SharedAxialProcedureEncoder(
             width=program_width,
             heads=procedure_heads,
             blocks=procedure_blocks,
         )
-        self.compiler = ProcedureContentCompiler(
+        self.compiler = TeacherPolicyGapCompiler(
             width=program_width,
             heads=fusion_heads,
-            initialization_seed=initialization_seed + 1,
+            initialization_seed=initialization_seed + 2,
         )
         self.factor_heads = torch.nn.ModuleDict(
             {
@@ -303,7 +304,7 @@ class CompleteLoRAWriter(torch.nn.Module):
     def _pack_video_program(
         self,
         frame_evidence: torch.Tensor,
-        grounded_evidence: torch.Tensor,
+        visual_evidence: torch.Tensor,
         action_probes: torch.Tensor,
         frame_indices: torch.Tensor,
         offsets: tuple[int, ...],
@@ -316,7 +317,9 @@ class CompleteLoRAWriter(torch.nn.Module):
     ]:
         if (
             frame_evidence.ndim != 3
-            or grounded_evidence.shape != frame_evidence.shape
+            or visual_evidence.ndim != 3
+            or visual_evidence.shape[0] != frame_evidence.shape[0]
+            or visual_evidence.shape[1:] != (256, self.program_width)
             or action_probes.shape
             != (frame_evidence.shape[0], 8, self.program_width)
             or frame_indices.shape != (frame_evidence.shape[0],)
@@ -339,10 +342,10 @@ class CompleteLoRAWriter(torch.nn.Module):
             8,
             self.program_width,
         )
-        packed_grounded_evidence = grounded_evidence.new_zeros(
+        packed_visual_evidence = visual_evidence.new_zeros(
             batch,
             maximum,
-            grounded_evidence.shape[1],
+            256,
             self.program_width,
         )
         positions = torch.zeros(
@@ -368,37 +371,27 @@ class CompleteLoRAWriter(torch.nn.Module):
                     "sampled frame ordinals must start at zero and increase"
                 )
             packed_evidence[row, :length] = frame_evidence[left:right]
-            packed_grounded_evidence[row, :length] = grounded_evidence[left:right]
+            packed_visual_evidence[row, :length] = visual_evidence[left:right]
             packed_action_probes[row, :length] = action_probes[left:right]
             positions[row, :length] = active_positions
             valid_frames[row, :length] = True
         return (
             packed_evidence,
-            packed_grounded_evidence,
+            packed_visual_evidence,
             packed_action_probes,
             positions,
             valid_frames,
         )
 
-    def encode_task(
+    def _condition_ids(
         self,
-        policy: torch.nn.Module,
         frames: torch.Tensor,
         frame_indices: torch.Tensor,
-        video_offsets: torch.Tensor,
+        offsets: tuple[int, ...],
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
         task_span_mask: torch.Tensor,
-    ) -> tuple[
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-    ]:
-        offsets = self._validated_offsets(video_offsets, frames.shape[0])
+    ) -> torch.Tensor:
         conditions = len(offsets) - 1
         if (
             frames.ndim != 4
@@ -418,14 +411,46 @@ class CompleteLoRAWriter(torch.nn.Module):
             dtype=torch.long,
             device=frames.device,
         )
-        condition_ids = torch.repeat_interleave(
+        return torch.repeat_interleave(
             torch.arange(conditions, device=frames.device),
             lengths,
+        )
+
+    def encode_task(
+        self,
+        policy: torch.nn.Module,
+        frames: torch.Tensor,
+        frame_indices: torch.Tensor,
+        video_offsets: torch.Tensor,
+        language_tokens: torch.Tensor,
+        language_mask: torch.Tensor,
+        task_span_mask: torch.Tensor,
+    ) -> tuple[
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        dict[str, object],
+    ]:
+        offsets = self._validated_offsets(video_offsets, frames.shape[0])
+        condition_ids = self._condition_ids(
+            frames,
+            frame_indices,
+            offsets,
+            language_tokens,
+            language_mask,
+            task_span_mask,
         )
         (
             text_queries,
             frame_evidence,
             grounded_evidence,
+            visual_evidence,
             action_probes,
             valid_task_tokens,
         ) = self.semantic_encoder(
@@ -438,13 +463,13 @@ class CompleteLoRAWriter(torch.nn.Module):
         )
         (
             packed_evidence,
-            packed_grounded_evidence,
+            packed_visual_evidence,
             packed_action_probes,
             positions,
             valid_frames,
         ) = self._pack_video_program(
             frame_evidence,
-            grounded_evidence,
+            visual_evidence,
             action_probes,
             frame_indices,
             offsets,
@@ -455,33 +480,50 @@ class CompleteLoRAWriter(torch.nn.Module):
             valid_frames,
             valid_task_tokens,
         )
+        teacher_events, initial_confidence, relation_diagnostics = (
+            self.teacher_events(
+                text_queries,
+                packed_evidence,
+                packed_visual_evidence,
+                valid_frames,
+                valid_task_tokens,
+            )
+        )
         (
-            procedure_input,
-            procedure_positions,
-            valid_procedure,
-            procedure_stream_types,
-            _action_tokens,
-            _transition,
-        ) = self.dual_stream(
+            teacher_memory,
+            policy_memory,
+            teacher_confidence,
+            teacher_positions,
+            policy_positions,
+            valid_teacher,
+            valid_policy,
+            procedure_diagnostics,
+        ) = self.procedure(
+            teacher_events,
             packed_action_probes,
-            packed_grounded_evidence,
+            initial_confidence,
             positions,
             valid_frames,
-            valid_task_tokens,
         )
-        procedure_memory = self.procedure(
-            procedure_input,
-            procedure_positions,
-            valid_procedure,
-        )
+        diagnostics: dict[str, object] = {
+            "frame_attention": frame_attention,
+            "grounded_evidence": grounded_evidence,
+            "teacher_events": teacher_events,
+            "initial_teacher_confidence": initial_confidence,
+            "relations": relation_diagnostics,
+            "procedure": procedure_diagnostics,
+        }
         return (
             core_memory,
             valid_task_tokens,
-            procedure_memory,
-            procedure_positions,
-            valid_procedure,
-            procedure_stream_types,
-            frame_attention,
+            teacher_memory,
+            teacher_confidence,
+            teacher_positions,
+            valid_teacher,
+            policy_memory,
+            policy_positions,
+            valid_policy,
+            diagnostics,
         )
 
     def forward(
@@ -498,11 +540,14 @@ class CompleteLoRAWriter(torch.nn.Module):
         (
             core_memory,
             valid_core,
-            procedure_memory,
-            positions,
-            valid_frames,
-            stream_types,
-            _,
+            teacher_memory,
+            teacher_confidence,
+            teacher_positions,
+            valid_teacher,
+            policy_memory,
+            policy_positions,
+            valid_policy,
+            _diagnostics,
         ) = self.encode_task(
             policy,
             frames,
@@ -512,26 +557,40 @@ class CompleteLoRAWriter(torch.nn.Module):
             language_mask,
             task_span_mask,
         )
-        expert, action_in, action_out = self.compiler(
+        (
+            expert,
+            action_in,
+            action_out,
+            expert_scale,
+            action_in_scale,
+            action_out_scale,
+        ) = self.compiler(
             core_memory,
             valid_core,
-            procedure_memory,
-            positions,
-            valid_frames,
-            stream_types,
+            teacher_memory,
+            teacher_confidence,
+            teacher_positions,
+            valid_teacher,
+            policy_memory,
+            policy_positions,
+            valid_policy,
         )
         result: dict[str, torch.Tensor] = {}
         for item in self.tensor_specs:
             key, layer = self._decoding[item.name]
             if key.startswith("action_in_"):
                 source = action_in
+                source_scale = action_in_scale
             elif key.startswith("action_out_"):
                 source = action_out
+                source_scale = action_out_scale
             else:
                 if layer is None:
                     raise WriterModelError("expert LoRA output lost its layer")
                 source = expert[:, layer]
+                source_scale = expert_scale[:, layer]
             rows = self.factor_heads[key](source)
+            rows = rows * source_scale.to(rows.dtype)[..., None]
             generated = rows.transpose(-1, -2) if item.transpose_output else rows
             template = getattr(self, self._template_buffers[item.name])
             value = generated.to(dtype=template.dtype) + template[None]

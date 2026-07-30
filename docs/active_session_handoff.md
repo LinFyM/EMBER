@@ -3,53 +3,50 @@
 最后更新：2026-07-30 UTC。
 
 本文只保存当前运行状态、恢复入口和紧邻动作。当前fresh架构 authority 是
-`docs/action_forecast_writer_v10_design.md`；长期科学边界是 `AGENTS.md` 与
-`docs/execution_brief.md`；历史实验细节在 `findings.md`、`progress.md` 和 Git
-history。任何接手者都必须先只读复核现场，不能按本文快照重复启动进程。
+`docs/action_forecast_writer_loom_design.md`与
+`docs/action_forecast_writer_loom_derivation.md`；长期科学边界是 `AGENTS.md`
+与`docs/execution_brief.md`；历史实验细节在`findings.md`、`progress.md`和
+Git history。任何接手者都必须先只读复核现场，不能按本文快照重复启动进程。
 
 ## 1. 当前实时状态
 
-当前没有训练或评测进程。full-24与global-8两套corrected Source-SFT均已完成
-并封存；development observed-best仍是full-24 step400=`109/400`。
+owner已明确采用最终Loom并授权快速完成实现、一小时训练、四点correct400和
+最优点五臂/内部检查。唯一canonical Writer已原位切换为
+Task-Grounded Teacher–Policy Gap Writer；不保留v10平行可执行路径，schema
+fresh不兼容。精确trainable参数为`12,855,552`，位于设计预估
+`12.8M–13.3M`内。
 
-v8已完成identity fresh macro0→400和best五臂/内部检查，observed-best为
-macro300=`125/400`，五臂`125/121/110/110/117`。Action变化对event的影响仅
-约`8–10%`，Effect变化约`147–300%`，EventRead近均匀；v8停止并转为
-provenance。
+当前实现已通过全仓191项CPU测试。GPU4–7的B20真实profile已
+连续完成3个task-complete macro，第1步明确包含105-frame最长视频；三步
+`20.463/18.397/18.367s`，后两步约`26.112 queries/s`、
+`195.843 macro/hour`，峰值allocated/reserved为
+`77,566,232,064/83,732,987,904 bytes`。全部loss finite，B16未触发。
 
-owner批准的v10 Evidence-Preserving Dual-Stream Writer已经记录、原位实现并
-完成正式证据链。当前唯一canonical源码/config仍是不兼容v10；真实参数
-`11,627,520`，全仓192 tests、B20最长视频profile和exact-resume均已通过。
-正式identity-fresh task-complete fast-decay run已完成macro0→400，共
-`9,600`个视频LoRA conditions、`192,000`个action queries、约`7,832.8s`。
-
-12点paired correct400为：
+profile root为：
 
 ```text
-macro       25  50  75 100 150 200 225 250 300 325 350 400
-success     95 103  84  89  82  90  96  96  89  96  97  91
+/data/ymdai/outputs/ember/
+pi05_as_writer_loom_profile_b20_longseed172_r2_20260730
 ```
 
-observed-best macro50=`103/400`，低于corrected Source-SFT `109`且距硬门150
-为47。macro50五臂为`103/94/75/67/43`；same同档，correct相对wrong、
-shuffled、reversed均显著且各由6个tasks正向贡献，所以视频行为门通过，
-absolute与breadth失败。
+profile run-contract/metrics/summary文件SHA256依次为
+`0ab52249...9ebe`、`f04bb353...b17c`、`1ad61cf1...a066`。step1→3中
+Text/VL Meta、语义投影、patch grounding、Action投影、Core、Teacher Events、
+shared axial Procedure、gap compiler与factor heads均有真实参数更新；
+Action Meta的`618,496/626,688`参数发生可见位移，其余两个A矩阵在bf16短
+profile中未跨量化步，不据此宣称断梯度。
 
-内部检查确认Core对shuffle/reverse保持frame-set不变，fixed-Core
-Procedure-only完整复现LoRA/action差异，Procedure=0严格identity。但v10内
-fixed Effect/vary Action的shuffled/reversed LoRA差异为`.6299/.8659`，
-fixed Action/vary Effect仅`.0808/.1004`，Effect attention约`99.86%`
-uniform；同时correct Procedure slots RMS`.0145`经scale-insensitive
-RMSNorm调制形成`.1781` gated-Core RMS。同task换正确video时Procedure/
-effective-LoRA/action差异`.4050/.2523/.0970`，显著高于v5.2的
-`.0126/.1345/.0253`。当前最直接解释是Action-hypothesis主导且compiler
-同时放大有用顺序与同task示范方差，形成过度video-conditional、低breadth的
-adapter；不是视频未读入，也不是单纯updates不足。
-
-owner最新指令是完成v10后暂停。当前没有训练或评测进程，GPU4–7已释放；
-不得续训、修改canonical架构、启动Loom、one-shot或RL，等待owner共同讨论。
-main中两份未跟踪Loom文档和隔离Loom worktree中的未提交草案属于owner/当前
-session保留状态，不得删除、覆盖、提交或接入main，除非owner重新授权。
+独立fresh0→1→exact-resume1→3 smoke已经在正式teacher seed`20260722`下
+通过；step1 checkpoint全部文件未改写，task/video/query与LR schedule逐项
+匹配uninterrupted profile，最大mean-loss差`1.5891e-6`，最终3行metrics、
+72个视频条件和1,440个action queries均完整。首次smoke曾因加载期间并发修改
+config SHA而被合同校验正确拒绝，checkpoint本身没有损坏；稳定配置下重跑后
+问题消失。现在只需完成结构门复验、clean commit/push，再启动fresh macro0→200。
+正式段每25 macro保留checkpoint；结束后并行评测macro50/100/150/200，
+每卡一个checkpoint、correct400无放回。选出single-checkpoint observed-best
+后，用四卡并行补same-task-other/wrong/shuffled/reversed，并完成内部
+Teacher confidence、Teacher/Policy gap、effective LoRA与policy action传递
+分析。除GPU4–7外不得查询或使用其它GPU。
 
 v6 fast-decay已按owner后续要求从macro400 exact-resume到600。完整
 correct400曲线为：

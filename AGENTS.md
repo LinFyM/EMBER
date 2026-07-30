@@ -20,12 +20,14 @@
 12. `docs/action_forecast_writer_v7_design.md`
 13. `docs/action_forecast_writer_v8_design.md`
 14. `docs/action_forecast_writer_v10_design.md`
-15. `task_plan.md`
-16. `findings.md`
-17. `progress.md`
-18. `docs/concept.md`
-19. `docs/decisions_and_open_questions.md`
-20. `docs/novelty_and_landscape.md`
+15. `docs/action_forecast_writer_loom_derivation.md`
+16. `docs/action_forecast_writer_loom_design.md`
+17. `task_plan.md`
+18. `findings.md`
+19. `progress.md`
+20. `docs/concept.md`
+21. `docs/decisions_and_open_questions.md`
+22. `docs/novelty_and_landscape.md`
 
 `docs/active_session_handoff.md`是当前跨session恢复入口，集中摘要研究证据链、
 v5失败证据、v5.1设计理由、运行状态和下一动作，但不覆盖架构或长期科学
@@ -42,6 +44,32 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 任何单一 source base、训练 loss、smoke、局部 seen 结果或一个 Writer 阶段都不能单独触发长期 Goal complete。
 
 ## Current focused execution task
+
+owner于2026-07-30重新授权Loom实现、约一小时fresh训练、四个均匀checkpoint的
+fixed correct400选择，以及single-checkpoint observed-best的正式五臂和内部
+传递检查。当前唯一canonical authority改为
+[`docs/action_forecast_writer_loom_design.md`](docs/action_forecast_writer_loom_design.md)，
+其第一性原理推导记录在
+[`docs/action_forecast_writer_loom_derivation.md`](docs/action_forecast_writer_loom_derivation.md)；
+以下v4至v10内容只作Loom的证据背景。
+
+Loom从同一套套上Meta-LoRA的π0.5 states提取稳定text query、multimodal
+task-token states、显式task-grounded patch evidence、raw patch states和8个
+稀疏Action-Expert probes。Core保持frame-set不变；Teacher Procedure只由
+action-free语义关系和双向raw-patch correspondence形成带confidence的事件；
+Policy Procedure只由8个Action probes形成。两条Procedure使用共享权重但不同
+values的axial encoder。compiler依次读取Core、Teacher、Policy，以Teacher和
+Policy的有界差生成主factor content，Core只能作为受差值约束的小幅assist；
+任一可靠教学链断开时public LoRA保持identity。canonical Writer参数量为
+`12,855,552`。
+
+Loom继续使用v6封存的task-complete训练合同：GPU4–7、4 ranks、每rank
+long-first顺序处理6 tasks、每task一条video和B20独立action queries、每macro
+全局恰好覆盖24 tasks并只做一次AdamW update。最长105-frame真实视频连续3
+macro profile已经通过，稳态约`195.84 macro/hour`，峰值
+allocated/reserved约`77.57/83.73GB`，B16 fallback未触发。正式首段为fresh
+macro0→200、每25 macro保存checkpoint；训练完成后固定测试
+macro50/100/150/200，不做多checkpoint融合。
 
 v4、v5、v5.1、v5.2和v6均已完成所需根因或上限证据；旧架构与可执行配置只作
 provenance。v5.2 step900五臂
@@ -74,7 +102,7 @@ Action–Effect binding缺少信息墙内可识别依据：Action Expert probe�
 policy对当前画面的action hypothesis，并非造成相邻视觉变化的teacher action。
 v8停止，不再把8个probes压成effect-dominant单event。
 
-当前唯一canonical authority为
+历史v10 authority为
 [`docs/action_forecast_writer_v10_design.md`](docs/action_forecast_writer_v10_design.md)
 定义的Evidence-Preserving Dual-Stream Writer。它恢复text-only task axis与
 v6 Semantic Set Core；8个稀疏Action probes形成保留raw mean的Action stream，
@@ -99,9 +127,8 @@ reversed行为门均通过，但absolute低于corrected Source-SFT `109`且距15
 Action时的顺序差异远强于fixed Action只变Effect，Effect attention仍近均匀；
 Procedure-slot RMSNorm调制同时高增益放大同task不同正确视频的方差。训练loss
 继续下降而online/closed-loop best均停在macro50，因此同recipe不再续训。
-owner明确要求v10完成后先暂停讨论；不得自动启动Loom、one-shot、RL或其它
-架构实验。主worktree中的未跟踪Loom文档和隔离worktree草案保持原样，只有
-owner重新授权后才可处理。
+该“v10后暂停”边界已经被owner后续对Loom的明确授权替换；不得再据此阻塞
+当前Loom正式实验。
 
 focused AS硬门统一为single-checkpoint
 `correct400 >= max(150, corrected Source-SFT best+30)=150`。达到absolute后

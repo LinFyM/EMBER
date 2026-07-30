@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-最后更新：2026-07-29 UTC。
+最后更新：2026-07-30 UTC。
 
 本文件只保存尚未完成的长期闭环与当前执行顺序。历史实验过程见
 `findings.md`、`progress.md` 和 Git；实时进程见
@@ -39,6 +39,26 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
 - [x] evaluator 支持 cost-balanced dynamic queue、persistent model/env、
   Writer per-rollout LoRA、无放回 video schedule 与逐 row paired RNG evidence。
 - [x] v4/v5/v5.1 失败根因和 v5.2 五臂成功证据已封存；旧可执行路径已退役。
+
+## 当前执行：EMBER Loom
+
+- [x] 封存Loom第一性原理推导与最终设计：task-grounded Semantic Core、
+  teacher-visible Events、独立Policy-Imitation Procedure和Teacher–Policy
+  Gap compiler。
+- [x] 原位替换canonical Writer/config；fresh schema，不从旧Writer
+  checkpoint resume；精确参数`12,855,552`。
+- [x] 聚焦CPU合同验证与真实GPU4–7 B20最长105-frame三macro profile通过；
+  稳态约`195.843 macro/hour`，未触发B16。
+- [x] 完成独立fresh0→1→exact-resume1→3 smoke：step1文件未改写，
+  task/video/query/LR一致，最大mean-loss差`1.5891e-6`。
+- [x] 完成全仓191项CPU测试、compileall、diff check与architecture guard；
+  guard无hard violation、无parallel version/function family。
+- [ ] clean commit/push。
+- [ ] fresh task-complete macro0→200，每25 macro checkpoint。
+- [ ] paired、无放回correct400评测macro50/100/150/200，选择single best。
+- [ ] 最优点full400五臂与内部confidence/gap/LoRA/action传递分析。
+- [ ] 基于absolute、breadth、视频语义与顺序门决定是否进入第二训练段；在该
+  证据完成前不启动one-shot或RL。
 
 ## Phase C：v6 AS-Writer development
 

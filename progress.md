@@ -2029,3 +2029,20 @@ GPU范围和训练步长是当时快照；活动状态只取
   detached clean eval worktree完成全部正式评测，科学合同与结果未污染。
 - owner最新指令为“v10做完就先停下”。没有启动Loom、one-shot或RL；Loom
   相关未跟踪文档和隔离worktree中的未提交草案均保持原样，未接入main。
+
+## Loom canonical实现与正式启动门（2026-07-30）
+
+- owner后续明确授权Loom，因此v10后的暂停边界已解除。Loom原位替换唯一
+  canonical Writer/config；真实枚举参数为`12,855,552`，不从旧Writer
+  checkpoint resume。
+- 全仓191项CPU测试、compileall、diff check通过；architecture guard无
+  hard violation或parallel version/function family。GPU4–7的B20三macro最长视频profile
+  含105-frame条件，三步`20.463/18.397/18.367s`，稳态约
+  `26.112 queries/s`与`195.843 macro/hour`；峰值allocated/reserved为
+  `77,566,232,064/83,732,987,904 bytes`，B16未触发。
+- 正式seed`20260722`下fresh0→1→exact-resume1→3通过。step1 checkpoint
+  全文件未改写，task/video/query和LR逐步等于uninterrupted profile，最大
+  mean-loss差`1.5891e-6`。首次尝试因两次进程加载之间修改config文件而被
+  SHA合同正确拒绝，未污染checkpoint。
+- 正式首段封存为GPU4–7、task-complete B20、fresh macro0→200、每25 macro
+  checkpoint；结束后只比较single checkpoint 50/100/150/200，不做融合。

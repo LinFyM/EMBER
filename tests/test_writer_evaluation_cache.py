@@ -157,6 +157,9 @@ def _populate_writer_cache(
 def test_cache_identity_decouples_rollout_replicas(tmp_path: Path) -> None:
     first = _contract(tmp_path / "first", replicas=2)
     second = _contract(tmp_path / "second", replicas=6)
+    assert first["writer_lora_cache"]["identity"]["generation_recipe"][
+        "episode_evidence_schema"
+    ] == "ember_pi05_loom_writer_episode_evidence_v1"
     assert (
         first["writer_lora_cache"]["identity_sha256"]
         == second["writer_lora_cache"]["identity_sha256"]

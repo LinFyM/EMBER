@@ -6,12 +6,12 @@ import torch
 
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer.as_contract import writer_trainable_contract
-from ember.writer.compiler import ProcedureContentCompiler
+from ember.writer.compiler import TeacherPolicyGapCompiler
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
+from ember.writer.relations import TeacherEventBuilder
 from ember.writer.temporal import (
-    CausalProcedureEncoder,
-    EvidencePreservingDualStream,
     LanguageSemanticCore,
+    SharedAxialProcedureEncoder,
 )
 from ember.writer.video_program import TaskQueriedPatchGrounding
 
@@ -106,6 +106,7 @@ class _FakeSemanticEncoder(torch.nn.Module):
         torch.Tensor,
         torch.Tensor,
         torch.Tensor,
+        torch.Tensor,
     ]:
         counts = task_span_mask.sum(dim=1)
         maximum = int(counts.max())
@@ -124,7 +125,12 @@ class _FakeSemanticEncoder(torch.nn.Module):
         grounded = evidence + torch.cos(
             frame_value[:, None, None] * channels[None, None]
         ).expand(-1, maximum, -1)
-        return text, evidence, grounded, probes, valid
+        patch_axis = torch.linspace(-0.5, 0.5, 256)
+        visual = torch.sin(
+            frame_value[:, None, None] * channels[None, None]
+            + patch_axis[None, :, None]
+        )
+        return text, evidence, grounded, visual, probes, valid
 
 
 def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
@@ -183,9 +189,9 @@ def _inputs() -> tuple[torch.Tensor, ...]:
     return frames, frame_indices, offsets, tokens, masks, task_spans
 
 
-def test_v10_writer_parameter_budget_and_sparse_probe_contract_are_exact() -> None:
+def test_loom_writer_parameter_budget_and_sparse_probe_contract_are_exact() -> None:
     model, _ = _model()
-    assert sum(parameter.numel() for parameter in model.parameters()) == 11_627_520
+    assert sum(parameter.numel() for parameter in model.parameters()) == 12_855_552
     contract = writer_trainable_contract(
         model,
         torch.nn.Identity(),
@@ -193,7 +199,7 @@ def test_v10_writer_parameter_budget_and_sparse_probe_contract_are_exact() -> No
             Path(__file__).resolve().parents[1] / "configs/pi05_lora_v1.json"
         ),
     )
-    assert contract["parameter_count"] == 11_627_520
+    assert contract["parameter_count"] == 12_855_552
     assert contract["source_policy_trainable_parameter_count"] == 0
     expected = {
         "text_meta_lora": (model.semantic_encoder.text_meta_lora, 921_600),
@@ -216,9 +222,9 @@ def test_v10_writer_parameter_budget_and_sparse_probe_contract_are_exact() -> No
             model.semantic_encoder.interaction_projection,
             262_144,
         ),
-        "dual_stream": (model.dual_stream, 721_408),
-        "procedure": (model.procedure, 1_573_888),
-        "compiler": (model.compiler, 1_863_168),
+        "teacher_events": (model.teacher_events, 1_223_424),
+        "procedure": (model.procedure, 2_233_344),
+        "compiler": (model.compiler, 1_929_728),
         "factor_heads": (model.factor_heads, 2_179_072),
     }
     assert {
@@ -241,7 +247,7 @@ def test_v10_writer_parameter_budget_and_sparse_probe_contract_are_exact() -> No
     assert not model.semantic_encoder.fixed_suffix_noise.requires_grad
 
 
-def test_v10_writer_starts_at_exact_identity_template() -> None:
+def test_loom_writer_starts_at_exact_identity_template() -> None:
     model, template = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     output = model(*_inputs(), policy=torch.nn.Identity())
@@ -252,7 +258,7 @@ def test_v10_writer_starts_at_exact_identity_template() -> None:
         assert torch.equal(value[1], template[name])
 
 
-def test_v10_writer_becomes_video_conditioned_after_heads_open() -> None:
+def test_loom_writer_becomes_video_conditioned_after_heads_open() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     for head in model.factor_heads.values():
@@ -262,7 +268,7 @@ def test_v10_writer_becomes_video_conditioned_after_heads_open() -> None:
     assert not hasattr(model, "shared_lora")
 
 
-def test_v10_gradient_staging_reaches_both_branches_after_heads_open() -> None:
+def test_loom_gradient_staging_reaches_both_branches_after_heads_open() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
 
@@ -293,7 +299,7 @@ def test_v10_gradient_staging_reaches_both_branches_after_heads_open() -> None:
     )
     assert any(
         parameter.grad is not None and bool(torch.count_nonzero(parameter.grad))
-        for parameter in model.dual_stream.parameters()
+        for parameter in model.teacher_events.parameters()
     )
 
 
@@ -369,172 +375,86 @@ def test_language_core_preserves_mean_when_learned_residuals_are_zero() -> None:
     assert not bool(weights[..., 2].count_nonzero())
 
 
-def test_dual_stream_preserves_action_and_recomputes_visual_effect() -> None:
+def test_teacher_events_are_zero_for_identical_evidence_and_ignore_action() -> None:
     torch.manual_seed(19)
-    dual = EvidencePreservingDualStream(width=32, heads=4)
-    probes = torch.randn(1, 4, 8, 32, requires_grad=True)
-    grounded = torch.randn(1, 4, 3, 32, requires_grad=True)
-    positions = torch.tensor([[0, 5, 10, 0]])
-    valid_frames = torch.tensor([[True, True, True, False]])
-    valid_tokens = torch.tensor([[True, True, False]])
-    (
-        normal,
-        procedure_positions,
-        valid_procedure,
-        stream_types,
-        action_tokens,
-        transition,
-    ) = dual(
-        probes,
-        grounded,
-        positions,
+    builder = TeacherEventBuilder(width=32, heads=4, initialization_seed=7)
+    queries = torch.randn(1, 3, 32)
+    semantic = torch.randn(1, 1, 3, 32).expand(-1, 3, -1, -1).clone()
+    visual = torch.randn(1, 1, 256, 32).expand(-1, 3, -1, -1).clone()
+    valid_frames = torch.ones(1, 3, dtype=torch.bool)
+    valid_tokens = torch.ones(1, 3, dtype=torch.bool)
+    events, confidence, _ = builder(
+        queries,
+        semantic,
+        visual,
         valid_frames,
         valid_tokens,
     )
-    reordered = torch.cat((grounded[:, :3].flip(1), grounded[:, 3:]), dim=1)
-    (
-        reversed_output,
-        _,
-        _,
-        _,
-        reversed_action,
-        reversed_transition,
-    ) = dual(
-        probes,
-        reordered,
-        positions,
-        valid_frames,
-        valid_tokens,
-    )
-    assert torch.allclose(
-        transition[:, 0, :2],
-        grounded[:, 1, :2] - grounded[:, 0, :2],
-    )
-    assert not bool(transition[:, :, 2:].count_nonzero())
-    assert valid_procedure.tolist() == [[True, True, True, True, True, False, False]]
-    assert stream_types.tolist() == [[0, 1, 0, 1, 0, -1, -1]]
-    assert procedure_positions.tolist() == [[0, 5, 10, 15, 20, 10, 0]]
-    assert torch.allclose(
-        reversed_transition[:, 0, :2],
-        reordered[:, 1, :2] - reordered[:, 0, :2],
-    )
-    assert torch.allclose(action_tokens, reversed_action)
-    assert not torch.allclose(normal[:, 1:4:2], reversed_output[:, 1:4:2])
-    constant, _, _, _, constant_action, constant_transition = dual(
-        probes,
-        grounded[:, :1].expand_as(grounded),
-        positions,
-        valid_frames,
-        valid_tokens,
-    )
-    assert not bool(constant_transition.count_nonzero())
-    assert not bool(constant[:, 1::2].count_nonzero())
-    assert bool(constant_action[:, :3].count_nonzero())
-    zero_action, _, _, _, zero_action_tokens, _ = dual(
-        torch.zeros_like(probes),
-        grounded,
-        positions,
-        valid_frames,
-        valid_tokens,
-    )
-    assert not bool(zero_action_tokens.count_nonzero())
-    assert bool(zero_action[:, 1::2].count_nonzero())
-    normal.sum().backward()
-    assert grounded.grad is not None
-    assert bool(grounded.grad[:, :3, :2].count_nonzero())
-    assert probes.grad is not None
-    assert bool(probes.grad[:, :3].count_nonzero())
+    assert not bool(events.count_nonzero())
+    assert not bool(confidence.count_nonzero())
 
 
-def test_causal_procedure_preserves_prefix_and_uses_order() -> None:
+def test_shared_axial_procedure_is_causal_and_keeps_stream_values_separate() -> None:
     torch.manual_seed(23)
-    encoder = CausalProcedureEncoder(width=32, heads=4, blocks=3)
-    content = torch.randn(1, 6, 32)
-    changed_future = content.clone()
-    changed_future[:, 4:] = torch.randn_like(changed_future[:, 4:])
-    positions = torch.arange(6)[None]
-    valid = torch.ones(1, 6, dtype=torch.bool)
-    baseline = encoder(content, positions, valid)
-    future = encoder(changed_future, positions, valid)
-    reverse = encoder(content.flip(1), positions, valid)
-    assert torch.allclose(baseline[:, :4], future[:, :4], atol=1e-6, rtol=1e-5)
-    assert not torch.allclose(baseline, reverse)
-
-
-def test_routing_and_positions_cannot_create_lora_content_from_zero_values() -> None:
-    compiler = ProcedureContentCompiler(
-        width=32,
-        heads=4,
-        initialization_seed=7,
+    encoder = SharedAxialProcedureEncoder(width=32, heads=4, blocks=2)
+    teacher = torch.randn(1, 3, 8, 32)
+    changed_teacher = teacher.clone()
+    changed_teacher[:, 2] = torch.randn_like(changed_teacher[:, 2])
+    policy = torch.randn(1, 4, 8, 32)
+    confidence = torch.rand(1, 3, 8)
+    positions = torch.tensor([[0, 5, 10, 15]])
+    valid = torch.ones(1, 4, dtype=torch.bool)
+    baseline = encoder(teacher, policy, confidence, positions, valid)
+    changed = encoder(changed_teacher, policy, confidence, positions, valid)
+    assert torch.allclose(
+        baseline[0][:, :2],
+        changed[0][:, :2],
+        atol=1e-6,
+        rtol=1e-5,
     )
-    core = torch.randn(2, 7, 32)
-    procedure = torch.zeros(2, 5, 32)
-    valid_core = torch.ones(2, 7, dtype=torch.bool)
-    valid_procedure = torch.ones(2, 5, dtype=torch.bool)
-    stream_types = torch.tensor([[0, 1, 0, 1, 0], [0, 1, 0, 1, 0]])
-    positions = torch.tensor([[0, 5, 10, 15, 20], [0, 3, 8, 13, 21]])
-    output = compiler(
-        core,
-        valid_core,
-        procedure,
-        positions,
-        valid_procedure,
-        stream_types,
-    )
-    assert all(torch.count_nonzero(value) == 0 for value in output)
+    assert torch.equal(baseline[1], changed[1])
+    assert bool((baseline[2] <= confidence).all())
 
 
-def test_procedure_content_compiler_is_order_sensitive_without_core_value_path() -> None:
+def test_gap_compiler_requires_teacher_confidence_and_teacher_policy_gap() -> None:
     torch.manual_seed(29)
-    compiler = ProcedureContentCompiler(
+    compiler = TeacherPolicyGapCompiler(
         width=32,
         heads=4,
         initialization_seed=7,
     )
-    core = torch.randn(1, 9, 32)
-    valid_core = torch.ones(1, 9, dtype=torch.bool)
-    procedure = torch.randn(1, 5, 32)
-    positions = torch.arange(5)[None]
-    valid_procedure = torch.ones(1, 5, dtype=torch.bool)
-    stream_types = torch.tensor([[0, 1, 0, 1, 0]])
-    normal = compiler(
+    core = torch.randn(1, 5, 32)
+    valid_core = torch.ones(1, 5, dtype=torch.bool)
+    teacher = torch.randn(1, 3, 8, 32)
+    policy = torch.randn(1, 4, 8, 32)
+    teacher_positions = torch.tensor([[5, 15, 25]])
+    policy_positions = torch.tensor([[0, 10, 20, 30]])
+    valid_teacher = torch.ones(1, 3, dtype=torch.bool)
+    valid_policy = torch.ones(1, 4, dtype=torch.bool)
+    zero_confidence = compiler(
         core,
         valid_core,
-        procedure,
-        positions,
-        valid_procedure,
-        stream_types,
+        teacher,
+        torch.zeros(1, 3, 8),
+        teacher_positions,
+        valid_teacher,
+        policy,
+        policy_positions,
+        valid_policy,
     )
-    reverse = compiler(
+    assert all(
+        not bool(scale.count_nonzero())
+        for scale in zero_confidence[3:]
+    )
+    confident = compiler(
         core,
         valid_core,
-        procedure.flip(1),
-        positions,
-        valid_procedure,
-        stream_types,
+        teacher,
+        torch.ones(1, 3, 8),
+        teacher_positions,
+        valid_teacher,
+        policy,
+        policy_positions,
+        valid_policy,
     )
-    assert any(
-        not torch.allclose(left, right)
-        for left, right in zip(normal, reverse, strict=True)
-    )
-    zero = compiler(
-        core,
-        valid_core,
-        torch.zeros_like(procedure),
-        positions,
-        valid_procedure,
-        stream_types,
-    )
-    assert all(not bool(value.count_nonzero()) for value in zero)
-    changed_core = compiler(
-        core + torch.randn_like(core),
-        valid_core,
-        procedure,
-        positions,
-        valid_procedure,
-        stream_types,
-    )
-    assert any(
-        not torch.allclose(left, right)
-        for left, right in zip(normal, changed_core, strict=True)
-    )
+    assert any(bool(scale.count_nonzero()) for scale in confident[3:])

@@ -302,7 +302,7 @@ def build_writer_lora_cache_descriptor(
         "generator_worker_count": generator_worker_count,
         "generation_batch_size": generation_batch_size,
         "cache_key_algorithm": WRITER_LORA_VIDEO_KEY_ALGORITHM,
-        "episode_evidence_schema": "ember_pi05_writer_episode_evidence_v4",
+        "episode_evidence_schema": "ember_pi05_loom_writer_episode_evidence_v1",
         "request_order": WRITER_LORA_VIDEO_REQUEST_ORDER,
         "assignment": WRITER_LORA_ASSIGNMENT,
         "precision": "bfloat16",

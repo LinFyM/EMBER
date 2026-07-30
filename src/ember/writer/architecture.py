@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 
-V10_WRITER_PARAMETER_COUNT = 11_627_520
+LOOM_WRITER_PARAMETER_COUNT = 12_855_552
 ACTION_PROBE_POSITIONS = (0, 7, 14, 21, 28, 35, 42, 49)
 
 LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
@@ -54,10 +54,7 @@ WRITER_DIMENSION_CONTRACT = {
 }
 
 _STATIC_WRITER_CONTRACT: dict[str, Any] = {
-    "architecture": (
-        "pi05_evidence_preserving_dual_stream_"
-        "procedure_gated_core_writer_v10"
-    ),
+    "architecture": "pi05_task_grounded_teacher_policy_gap_writer_loom",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -124,58 +121,59 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "semantic_core_value_path": (
         "multimodal_task_token_plus_task_queried_patch_content"
     ),
-    "action_stream": (
-        "raw_eight_probe_mean_plus_zero_initialized_position_preserving_"
-        "centered_probe_phase_mixer"
+    "action_stream": "eight_sparse_probe_policy_imitation_value_memory",
+    "teacher_semantic_relation": (
+        "adjacent_task_grounded_midpoint_plus_difference_zero_at_no_change"
     ),
-    "action_phase_mixer": "bias_free_2048_to_256_zero_output_initialization",
-    "visual_effect_source": (
-        "forward_difference_of_task_queried_patch_evidence_"
-        "in_actual_arm_input_order"
+    "teacher_visual_relation": (
+        "bidirectional_patch_correspondence_same_grid_matched_displacement"
     ),
-    "visual_effect_interval": "frame_f_to_frame_f_plus_one",
-    "visual_effect_attention": (
-        "action_summary_query_to_task_token_visual_changes"
+    "teacher_relation_confidence": (
+        "bounded_change_times_task_relevance_times_mutual_match_times_"
+        "nonuniform_matcher_without_action_input"
     ),
-    "visual_effect_qk": (
-        "separate_pre_rmsnorm_bias_free_256_to_256"
+    "teacher_events": (
+        "three_deterministic_backbones_plus_five_learned_relation_events"
     ),
-    "visual_effect_value": (
-        "raw_forward_task_grounded_patch_change_no_value_projection"
-    ),
-    "visual_effect_output": "bias_free_256_to_256",
     "visual_effect_heads": 8,
     "procedure_heads": 8,
     "procedure_blocks": 2,
     "procedure_attention": (
-        "global_causal_pre_norm_over_interleaved_action_and_effect_tokens"
+        "shared_dual_stream_axial_local_slots_then_slotwise_causal_time"
     ),
     "procedure_position_encoding": (
-        "action_at_twice_frame_ordinal_effect_at_adjacent_ordinal_sum"
+        "action_at_twice_frame_ordinal_teacher_at_adjacent_ordinal_sum_qk_only"
     ),
     "procedure_value_path": (
-        "separate_action_hypothesis_and_visual_effect_evidence"
+        "strictly_separate_teacher_event_and_policy_imitation_memories"
     ),
     "procedure_initialization": "normal_nonzero",
     "query_count": 320,
     "routing_identity": "query_module_layer_rank_qk_only",
     "core_slot_reader": "routing_qk_core_content_v",
-    "procedure_slot_reader": (
-        "routing_plus_core_read_q_ordered_procedure_k_"
-        "separately_stream_centered_procedure_v"
+    "teacher_slot_reader": (
+        "routing_plus_core_q_teacher_procedure_kv_and_same_weight_confidence"
     ),
-    "core_procedure_modulation": (
-        "procedure_gated_bias_free_256_to512_to_gamma_beta_"
-        "with_full_rank_core_projection"
+    "policy_slot_reader": (
+        "routing_plus_core_plus_teacher_q_policy_imitation_kv"
     ),
-    "core_procedure_first_interaction": "lora_compiler_only",
+    "teacher_policy_gap": (
+        "separate_full_rank_alignment_rmsnorm_teacher_minus_policy"
+    ),
+    "adaptation_strength": (
+        "teacher_confidence_times_bounded_gap_magnitude"
+    ),
+    "core_procedure_first_interaction": "teacher_policy_gap_compiler_only",
     "slot_fusion": (
-        "procedure_content_plus_procedure_beta_plus_"
-        "bounded_procedure_gamma_times_core_content"
+        "gap_content_plus_gap_gated_core_support_then_content_only_coordination"
     ),
     "fusion_heads": 8,
     "post_fusion_blocks": 1,
-    "core_only_public_lora_delta": "exact_zero_by_structure",
+    "core_only_public_lora_delta": "exact_zero_when_confidence_or_gap_zero",
+    "action_only_public_lora_delta": "exact_zero_when_teacher_confidence_zero",
+    "final_factor_scale": (
+        "per_slot_confidence_times_gap_reapplied_after_factor_head"
+    ),
     "factor_head_bias": False,
     "factor_hidden_width": 256,
     "initialization_seed": 7,
@@ -183,7 +181,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
 
 
 def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
-    """Return the exact v10 config payload, preserving profiled frame chunking."""
+    """Return the exact Loom config payload, preserving frame chunking."""
 
     return {
         **_STATIC_WRITER_CONTRACT,
@@ -193,7 +191,7 @@ def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def validate_writer_dimensions(observed: Mapping[str, Any]) -> None:
-    """Reject constructor values outside the one canonical v10 topology."""
+    """Reject constructor values outside the one canonical Loom topology."""
 
     def normalized(name: str, value: Any) -> Any:
         if name == "action_probe_positions" and value is not None:

@@ -2575,3 +2575,18 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 
 - owner要求v10完成后暂停。Loom、其它架构、one-shot和RL均未启动；下一步是
   先共同讨论v10负结果，而不是自动实施候选。
+
+## Loom实现与启动前工程证据（2026-07-30）
+
+- 最终Loom不是在v10上继续放大同一Procedure，而是把teacher-visible
+  action-free事件与source-policy Action hypothesis分开编码，只让两者的
+  confidence-bounded gap成为LoRA主内容；Core只能提供受gap约束的小幅assist。
+  这直接针对v10“顺序门强但Action主导、示范方差被高增益放大”的证据。
+- Writer真实参数为`12,855,552`。最长105-frame视频下B20连续3 macro finite，
+  稳态`195.843 macro/hour`且峰值reserved约83.73GB，已经符合显存利用和
+  long-first task-complete合同，无需扫描B21或其它无意义中间档。
+- fresh0→1→resume1→3与uninterrupted profile的task/video/query/LR完全一致，
+  最大mean-loss差仅`1.5891e-6`；step1 checkpoint逐文件hash不变。由此可把
+  正式macro0→200的中断恢复视为已验证工程能力。
+- evaluator无需新增执行路径即可并行跑四个single checkpoints和五臂；
+  episode cache的遗留v4 provenance标签已改为Loom schema。

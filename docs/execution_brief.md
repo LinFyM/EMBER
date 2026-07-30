@@ -21,9 +21,11 @@ Core-Gated Procedure。完整需求、拓扑、参数预算和判定合同见
 每个Action anchor先独立读取task-token effects，再由Procedure-only EventRead
 将8个bound tokens聚合成一个高层event；Core以bounded multiplicative gate
 调制Procedure slots，同时保持`Procedure=0→LoRA identity`。v8真实参数为
-`10,706,176`。canonical源码/config已经原位切换到不兼容v8 schema；下一步是
-GPU4–7最长视频B20三macro profile和exact-resume，只有OOM或重复不稳定才直接
-降B16，随后保持task-complete fast-decay400从identity fresh训练。
+`10,706,176`。canonical源码/config已经原位切换到不兼容v8 schema。GPU4–7
+最长105-frame真实视频B20三macro finite，后两步约`27.46 queries/s`、
+`205.97 macros/hour`，峰值allocated/reserved约`77.04/83.66GB`；
+fresh0→1→resume3通过，故不触发B16。下一步保持task-complete
+fast-decay400从identity fresh训练首段200 macro。
 
 外部专家复核后的第一轮诊断证明，shuffle的直接行为放大器位于per-image
 forecast之后的absolute-time Plan/Revision；但后续全面复审又确认它不是唯一

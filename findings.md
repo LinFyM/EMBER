@@ -2465,3 +2465,19 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 完整authority为`docs/action_forecast_writer_v8_design.md`。首轮保持
   task-complete与fast decay400不变；B20必须重新live profile，OOM或重复不稳
   才直接降B16。
+
+## v8 B20真实profile与resume（2026-07-30）
+
+- GPU4–7均空闲、个人空间352GB后启动。B20连续3个完整macro finite；首步
+  task38/demo36明确为105 sampled frames。step wall为
+  `19.243/17.506/17.450s`，后两步均值`27.463 queries/s`、
+  `205.974 macros/hour`。
+- 峰值allocated/reserved为`77,035,771,904/83,655,393,280 bytes`。新结构
+  没有触发OOM或重复不稳，所以按预声明规则不测试B16。
+- 独立fresh0→1再resume1→3通过。step1所有文件大小、mtime和SHA未变化；
+  三步task/video/query/LR/cursor与uninterrupted profile相同，最大mean-loss
+  差`4.7951e-5`。
+- step1→3中hierarchical binder全部`590,848`参数变化，L2`.14898`；
+  binding/EventRead分别`328,448/262,400`参数全变化；Core modulation全部
+  `65,792`参数变化，L2`.05172`。Semantic Core、Procedure、compiler和factor
+  heads也全部可达。

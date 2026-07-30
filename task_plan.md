@@ -229,10 +229,11 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
 - [x] 全仓`192 passed`、Markdown link audit零缺失、`git diff --check`通过；
   architecture guard无hard violation、无parallel version/function family。
 - [ ] clean commit/push。
-- [ ] live核验GPU4–7和存储后，优先用B20跑最长105-frame真实视频连续3个
-  task-complete macros；只在OOM或重复不稳定时直接降B16。
-- [ ] 对选定batch完成fresh0→1、exact-resume1→3，并封存profile、梯度可达
-  与formal launch contract。
+- [x] live核验GPU4–7和存储后，B20完成最长105-frame真实视频连续3个
+  task-complete macros；全finite且稳态约205.97 macros/hour，不触发B16。
+- [x] B20完成fresh0→1、exact-resume1→3；step1未改写，任务/视频/query/LR/
+  cursor相同，binder/EventRead/Core gate和所有主模块梯度可达。
+- [ ] clean commit/push并完成formal launch前最后live preflight。
 - [ ] 保持task-complete、fast decay400和其余科学合同不变，从identity fresh
   训练0→200；paired correct400快速筛点，除明确下降外按证据决定是否续400。
 - [ ] 对single-checkpoint best做完整五臂和内部

@@ -204,7 +204,7 @@
     "budget_role": "fresh_v8_task_complete_fast_decay400_then_evidence_gated_absolute_and_specificity_iteration"
   },
   "profile_defaults": {
-    "status": "pending_v8_b20_live_profile",
+    "status": "sealed_v8_b20_live_profile",
     "expected_world_size": 4,
     "total_steps": 3,
     "per_rank_batch_size": 20,
@@ -216,7 +216,7 @@
     "selected_stop_step": 3
   },
   "profile_evidence": {
-    "status": "pending",
+    "status": "sealed_b20",
     "allowed_physical_gpu_ids": [
       4,
       5,
@@ -245,9 +245,59 @@
     ],
     "selection_rule": "try_b20_on_three_complete_macros_containing_real_105_frame_video_then_fallback_directly_to_b16_only_if_oom_or_repeated_instability",
     "rejected_candidates": [],
-    "selected": null,
-    "exact_resume_smoke": null,
-    "gradient_reachability": null,
+    "selected": {
+      "max_frames_per_encoder_call": 32,
+      "per_task_action_batch_size": 20,
+      "profile_optimizer_steps": 3,
+      "profile_global_action_queries": 1440,
+      "profile_global_video_conditions": 72,
+      "profile_wall_seconds": 55.150278859073296,
+      "step_seconds_max": [
+        19.24265494197607,
+        17.50606344710104,
+        17.449887515977025
+      ],
+      "steady_action_queries_per_second_mean_last_two": 27.463205916585575,
+      "steady_macro_updates_per_hour_mean_last_two": 205.9740443743918,
+      "max_cuda_allocated_bytes": 77035771904,
+      "max_cuda_reserved_bytes": 83655393280,
+      "all_steps_finite": true,
+      "all_four_ranks_completed": true,
+      "contains_real_105_frame_video": true,
+      "profile_root": "/data/ymdai/outputs/ember/pi05_as_writer_v8_profile_b20_hierae_r1_20260729",
+      "run_contract_sha256": "b2979238070279a4eeb5520f97de0f4c8ce5ed7ddca04d504f761cd787d47f16",
+      "metrics_sha256": "97cf0a4319dcc0454b635f377a34044a64e3437da40893e78b66e32a20220481",
+      "run_summary_sha256": "04ccaa7977ebcf048fef299f75738e5c7cdeffa3c69dc70a17adf751bb25abd6"
+    },
+    "exact_resume_smoke": {
+      "status": "pass_macro_boundary_state_and_scientific_trajectory",
+      "resume_boundary": 1,
+      "completed_step": 3,
+      "boundary_checkpoint_unchanged_after_resume": true,
+      "tasks_videos_queries_lr_and_cursors_identical_to_uninterrupted_profile": true,
+      "post_resume_cuda_bitwise_identity_required": false,
+      "maximum_mean_loss_absolute_difference_from_independent_uninterrupted_profile": 0.00004795100539922714,
+      "root": "/data/ymdai/outputs/ember/pi05_as_writer_v8_resume_smoke_b20_hierae_r1_20260729",
+      "run_contract_sha256": "b2979238070279a4eeb5520f97de0f4c8ce5ed7ddca04d504f761cd787d47f16",
+      "metrics_sha256": "2135872142c2bcabc427f6bac0d399dca8155518f5f8d7585516348591d7d662",
+      "run_summary_sha256": "30e5207f4822a2dfb158f5cdc9250d42ae03ee5401bd98b4684fc58351b8135b"
+    },
+    "gradient_reachability": {
+      "status": "pass_real_profile_step1_to_step3",
+      "action_effect_parameter_count": 590848,
+      "action_effect_changed_parameter_count": 590848,
+      "action_effect_parameter_l2_update": 0.14898398762499912,
+      "binding_parameter_count": 328448,
+      "binding_changed_parameter_count": 328448,
+      "binding_parameter_l2_update": 0.11380725139953568,
+      "event_read_parameter_count": 262400,
+      "event_read_changed_parameter_count": 262400,
+      "event_read_parameter_l2_update": 0.09614644089891615,
+      "core_modulation_parameter_count": 65792,
+      "core_modulation_changed_parameter_count": 65792,
+      "core_modulation_parameter_l2_update": 0.05171837079168759,
+      "all_required_v8_modules_changed": true
+    },
     "inference_profile": null
   },
   "specificity_gate": {
@@ -263,14 +313,14 @@
     "contrast_loss_allowed": false
   },
   "formal_run": {
-    "status": "pending_v8_live_profile",
+    "status": "sealed",
     "expected_world_size": 4,
     "total_steps": 2400,
     "per_rank_batch_size": 20,
     "checkpoint_steps": "every:25",
     "selected_stop_step": 200,
     "stage_stop_steps": "every:200",
-    "segment_definition": "fresh_v8_task_complete_fast_decay400_first_200_macro_updates_pending_live_profile",
+    "segment_definition": "fresh_v8_task_complete_fast_decay400_first_200_macro_updates_selected_from_live_b20_throughput",
     "first_segment_scale": {
       "macro_optimizer_updates": 200,
       "global_action_queries": 96000,

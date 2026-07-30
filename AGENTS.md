@@ -78,10 +78,12 @@ Action anchors和三层Causal Procedure，只修复两个实证瓶颈：
    identity。
 
 v8真实参数预算为`10,706,176`，相对rank-128 Source-SFT多约3.97%；所有新增
-参数都用于上述两个缺失接口。canonical源码/config已切到不兼容v8 schema，
-当前等待GPU4–7最长视频B20三macro profile与exact-resume；只在OOM或连续不稳
-时直接降B16。profile后保持task-complete与fast decay400，从identity fresh
-训练首段200 macro，以便让模型架构成为唯一科学变量。
+参数都用于上述两个缺失接口。canonical源码/config已切到不兼容v8 schema。
+GPU4–7最长105-frame真实视频B20连续3个macro finite，稳态约
+`27.46 queries/s`、`205.97 macros/hour`，峰值allocated/reserved约
+`77.04/83.66GB`；独立fresh0→1→resume3也通过，故不触发B16。当前正式合同
+保持task-complete与fast decay400，从identity fresh训练首段200 macro，使模型
+架构成为唯一科学变量。
 
 focused AS硬门统一为single-checkpoint
 `correct400 >= max(150, corrected Source-SFT best+30)=150`。达到absolute后

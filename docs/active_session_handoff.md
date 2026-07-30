@@ -13,11 +13,11 @@ history。任何接手者都必须先只读复核现场，不能按本文快照�
 并封存；development observed-best仍是full-24 step400=`109/400`。
 
 v7已完成identity fresh macro0→400及macro200五臂/内部检查，停止且转为
-provenance。当前唯一canonical源码/config已经原位切换到不兼容v8；聚焦CPU
-检查38项通过，尚未做v8 live profile、exact-resume或正式训练。紧邻动作是：
-完成全仓回归与clean/push，在GPU4–7上优先测试B20连续3个完整macro和最长
-105-frame视频；仅OOM/重复不稳定才降B16。随后做macro-boundary exact-resume，
-封存profile，再保持task-complete fast-decay400从identity fresh训练0→200。
+provenance。当前唯一canonical源码/config已经原位切换到不兼容v8；全仓192
+tests通过。GPU4–7上B20连续3个macro finite且首步包含105-frame最长视频，
+fresh0→1→resume3也通过，故不触发B16。profile config已封存；紧邻动作是
+clean/push后做一次live GPU/存储核验，再保持task-complete fast-decay400从
+identity fresh正式训练0→200。
 
 v6 fast-decay已按owner后续要求从macro400 exact-resume到600。完整
 correct400曲线为：
@@ -971,4 +971,22 @@ Core read
 没有additive Core residual；`D=0→event=0`、`Procedure=0→public LoRA identity`
 仍为结构硬约束。真实参数枚举为`10,706,176`：hierarchical binder
 `590,848`、Core-gated compiler`1,469,696`。活动config为
-`configs/pi05_as_writer_language_axial_v8.json`，当前profile状态为pending。
+`configs/pi05_as_writer_language_axial_v8.json`。B20 profile和exact-resume均
+已封存：
+
+```text
+profile root:
+/data/ymdai/outputs/ember/pi05_as_writer_v8_profile_b20_hierae_r1_20260729
+
+step wall: 19.243 / 17.506 / 17.450s
+steady:    27.463 queries/s, 205.974 macros/hour
+peak:      77,035,771,904 allocated / 83,655,393,280 reserved bytes
+
+resume root:
+/data/ymdai/outputs/ember/pi05_as_writer_v8_resume_smoke_b20_hierae_r1_20260729
+```
+
+resume step1未改写；task/video/query/LR/cursor完全一致，最大mean-loss绝对差
+`4.7951e-5`。binder`590,848/590,848`、binding/EventRead、Core modulation
+`65,792/65,792`及所有主模块在step1→3全部变化。formal状态已封存为B20、
+teacher seed`20260722`、fresh0→200、every25 checkpoint。

@@ -40,10 +40,10 @@ filename 或隐藏 normalization。
   独立读取task-grounded effects，8个bound tokens再聚合为每区间一个event；
   compiler以bounded Core gate乘性解释Procedure，同时保持
   `Procedure=0→LoRA identity`。
-- v8 已原位替换唯一 canonical Writer，参数`10,706,176`；当前先做GPU4–7
-  最长视频B20 profile和exact-resume，再保持task-complete fast-decay400从
-  identity fresh训练。最终仍以single-checkpoint `correct400>=150`及完整
-  五臂/内部因果门判定。
+- v8 已原位替换唯一 canonical Writer，参数`10,706,176`；GPU4–7最长105-frame
+  B20 profile与exact-resume已通过并封存，正式段保持task-complete
+  fast-decay400从identity fresh训练。最终仍以single-checkpoint
+  `correct400>=150`及完整五臂/内部因果门判定。
 - 当前 Writer 通过后才做 matched one-shot baseline，随后进入独立
   short-AS cold-start → pure-reward RL-Writer。
 

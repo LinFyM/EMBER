@@ -1974,3 +1974,17 @@ GPU范围和训练步长是当时快照；活动状态只取
 - 活动config为`configs/pi05_as_writer_language_axial_v8.json`，profile和
   formal状态均为pending。下一步是全仓回归/clean push，然后只在GPU4–7做
   B20三macro最长视频profile；失败才直接B16。
+
+## v8 B20 profile、resume与formal seal（2026-07-30）
+
+- live preflight：GPU4–7均0MiB/0%，无进程；个人`/data/ymdai`用量352GB，
+  总盘余量2744GB。GPU0–3未进入visible set。
+- B20 root完成3/3 macros，含105-frame最长视频；三步
+  `19.243/17.506/17.450s`，稳态`27.463 queries/s`、
+  `205.974 macros/hour`，峰值allocated/reserved
+  `77,035,771,904/83,655,393,280 bytes`。B16未触发。
+- 独立resume root完成fresh0→1→resume3；step1未改写，scientific cursor
+  全同，最大loss差`4.7951e-5`。全部binder和Core modulation参数以及所有主
+  模块step1→3均变化。
+- config已恢复正式teacher seed`20260722`并封存B20、fresh0→200、
+  every25 checkpoint；下一步是CPU复验、clean commit/push和正式launch。

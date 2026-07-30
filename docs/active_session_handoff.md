@@ -17,14 +17,39 @@ macro300=`125/400`，五臂`125/121/110/110/117`。Action变化对event的影响
 约`8–10%`，Effect变化约`147–300%`，EventRead近均匀；v8停止并转为
 provenance。
 
-owner批准的v10 Evidence-Preserving Dual-Stream Writer已经记录并原位实现。
-当前唯一canonical源码/config为不兼容v10；全仓192 tests通过。真实参数
-`11,627,520`。GPU4–7上B20连续3个macro finite且首步包含105-frame最长视频，
-后两步约`26.38 queries/s`、`197.85 macros/hour`，峰值约
-`77.01/83.65GB`；fresh0→1→resume3也通过，最大loss差`2.63e-6`，故不触发
-B16。profile config已恢复正式teacher seed并封存；紧邻动作是clean commit/
-push后做一次live GPU/存储核验，再按task-complete fast-decay400从identity
-fresh正式训练0→400（约两小时、每25 checkpoint）。
+owner批准的v10 Evidence-Preserving Dual-Stream Writer已经记录、原位实现并
+完成正式证据链。当前唯一canonical源码/config仍是不兼容v10；真实参数
+`11,627,520`，全仓192 tests、B20最长视频profile和exact-resume均已通过。
+正式identity-fresh task-complete fast-decay run已完成macro0→400，共
+`9,600`个视频LoRA conditions、`192,000`个action queries、约`7,832.8s`。
+
+12点paired correct400为：
+
+```text
+macro       25  50  75 100 150 200 225 250 300 325 350 400
+success     95 103  84  89  82  90  96  96  89  96  97  91
+```
+
+observed-best macro50=`103/400`，低于corrected Source-SFT `109`且距硬门150
+为47。macro50五臂为`103/94/75/67/43`；same同档，correct相对wrong、
+shuffled、reversed均显著且各由6个tasks正向贡献，所以视频行为门通过，
+absolute与breadth失败。
+
+内部检查确认Core对shuffle/reverse保持frame-set不变，fixed-Core
+Procedure-only完整复现LoRA/action差异，Procedure=0严格identity。但v10内
+fixed Effect/vary Action的shuffled/reversed LoRA差异为`.6299/.8659`，
+fixed Action/vary Effect仅`.0808/.1004`，Effect attention约`99.86%`
+uniform；同时correct Procedure slots RMS`.0145`经scale-insensitive
+RMSNorm调制形成`.1781` gated-Core RMS。同task换正确video时Procedure/
+effective-LoRA/action差异`.4050/.2523/.0970`，显著高于v5.2的
+`.0126/.1345/.0253`。当前最直接解释是Action-hypothesis主导且compiler
+同时放大有用顺序与同task示范方差，形成过度video-conditional、低breadth的
+adapter；不是视频未读入，也不是单纯updates不足。
+
+owner最新指令是完成v10后暂停。当前没有训练或评测进程，GPU4–7已释放；
+不得续训、修改canonical架构、启动Loom、one-shot或RL，等待owner共同讨论。
+main中两份未跟踪Loom文档和隔离Loom worktree中的未提交草案属于owner/当前
+session保留状态，不得删除、覆盖、提交或接入main，除非owner重新授权。
 
 v6 fast-decay已按owner后续要求从macro400 exact-resume到600。完整
 correct400曲线为：
@@ -1090,3 +1115,47 @@ Core content和factor heads在step1→3均全参数变化。
 fresh0→400、every25 checkpoint。预计192,000 action queries、9,600
 one-video conditions、16 checkpoints。正式run必须从包含本节与profile seal
 的clean、已push main启动；完成后评测多个single checkpoints，不做融合。
+
+## 22. v10正式结果与当前暂停点
+
+正式root与log：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v10_dualstream_taskcomplete_decay400_dev_r4_b20_seed7_s2400_5fd0a25_20260730
+
+/data/ymdai/logs/ember/
+pi05_as_writer_v10_dualstream_taskcomplete_decay400_dev_r4_b20_seed7_s2400_5fd0a25_20260730.log
+```
+
+macro0→400自然完成，`metrics.jsonl`连续1..400且finite；teacher-video cycle、
+24 tasks/macro、480 queries/macro、唯一一次DDP sync和rank内long-first均
+通过。correct400 curve、macro50五臂和内部结论已在本文第1节及v10 design
+第12节记录。恢复时直接使用以下证据，不得重复启动：
+
+```text
+training audit:
+/data/ymdai/outputs/ember/pi05_as_writer_v10_training_audit_macro400_5fd0a25_20260730.json
+
+correct curve:
+/data/ymdai/outputs/ember/pi05_as_writer_v10_correct400_curve_paired_5fd0a25_20260730.json
+
+five-arm:
+/data/ymdai/outputs/ember/pi05_as_writer_v10_single_checkpoint_macro0050_specificity400_paired_5fd0a25_20260730.json
+
+internal:
+/data/ymdai/outputs/ember/pi05_as_writer_v10_single_checkpoint_macro0050_internal_specificity_refs1_5fd0a25_20260730/summary.json
+```
+
+对应file SHA256依次为：
+
+```text
+6701ec353433203ef89490f0fe6b179eefddaf9e304fd60c9800e204e70ff97f
+6e9d97dcf31afdd7d867e4b3f66646db3efa68df552b625f5db2b3ba05012dfd
+a2dbcacdfcfbe4ba2a3a9010c4c28664b2ff8ce4530c532560a24e680474be6b
+df5b0271991b6ff95360b138dfe72dd7ab5daf34cc54383b92688acab539ec9f
+```
+
+当前终止条件来自owner明确指令，不是Goal达标：v10 absolute只有103，session
+Goal的150与SFT+30均未完成。保持Goal active但不继续自动执行；先与owner讨论
+架构/训练含义。

@@ -2515,3 +2515,63 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   最大mean-loss差`2.6332e-6`。Text/VL/Action Meta-LoRA、Core、Action phase、
   Visual Effect、Procedure、compiler modulation/Core content和factor heads
   全部参数发生更新。
+
+## v10正式训练、五臂与内部瓶颈（2026-07-30）
+
+- 正式identity-fresh task-complete fast-decay run完成macro0→400，共
+  `9,600`个one-video LoRA conditions、`192,000`个action queries、
+  `7,832.833s`。400行metrics全部finite，24 tasks每macro等权、rank内
+  long-first与teacher-video无放回cycle均通过。
+- 12点paired无放回correct400为
+  `25/50/75/100/150/200/225/250/300/325/350/400 =
+  95/103/84/89/82/90/96/96/89/96/97/91`。macro50 observed-best只有
+  `103/400`，低于corrected Source-SFT `109`，距absolute门150为47。
+  Goal-6/Object-1合计贡献`86/103`；Long-2与Goal-3为0，说明不是八个tasks
+  共同增强。
+- 训练loss的25-step均值从`.13424`持续降到`.09651`，但online validation
+  functional loss在macro50达到全程最低`.131935`，closed-loop右端也没有
+  上升。继续同recipe已不符合“尚未训练成熟”的证据门。
+- macro50五臂为`correct/same/wrong/shuffled/reversed=103/94/75/67/43`。
+  same的paired switches为`26/17,p=.2221`；correct相对后三臂为
+  `52/24,p=.001762`、`51/15,p=1.01e-5`、`68/8,p=5.63e-13`，且各有6个
+  正向tasks。v10通过视频语义和顺序行为门，absolute失败不能归因于v4式
+  shuffled旁路或Writer完全忽略视频。
+- 内部中位relative-L2从Core/Procedure/Procedure-slots/effective-LoRA/
+  policy-action依次为：
+
+  ```text
+  same      .0437 / .4050 / .5665 / .2523 / .0970
+  wrong     .2029 / .4087 / 1.292 / .8832 / .1674
+  shuffled  .0000 / .0873 / 1.092 / .7391 / .3481
+  reversed  .0042 / .0836 / 1.346 / .8718 / .1922
+  ```
+
+  same-frame-set顺序臂的Core保持不变；fixed-Core/vary-Procedure完整复现
+  LoRA/action差异，fixed-Procedure/vary-Core的LoRA差异最多仅wrong
+  `.0116`。Procedure精确置零时public LoRA严格identity，所以结构硬合同成立。
+- 在完整上下文中，fixed Effect/vary Action对shuffled/reversed产生
+  `.6299/.8659` effective-LoRA差异；fixed Action/vary Effect只有
+  `.0808/.1004`。Effect attention熵仍为理论均匀熵约`99.86%`。因此v10的
+  顺序特异性主要由frozen-policy Action-hypothesis变化驱动，而不是稳定的
+  Action+observed-Effect教学关系。
+- correct的Procedure slots RMS仅`.0145`，经RMSNorm调制后gated-Core RMS
+  达`.1781`，平均比值`14.39`；shuffled比值`20.53`。与v5.2相比，
+  same-task换正确video时Procedure/effective-LoRA/action差异从
+  `.0126/.1345/.0253`扩大到`.4050/.2523/.0970`。v10把正确顺序信号与
+  同task示范方差一起高增益放大，造成过度video-conditional、低breadth的
+  adapter；这比“Procedure信号仍太弱”更符合全部证据。
+- v10与v6使用同一task-complete fast-decay合同，却由v6 single-checkpoint
+  `143`降到`103`。这使架构差异成为40点退步的第一解释，并证伪“完整保留
+  Action再增强Procedure→Core compiler会自然兼得absolute与特异性”。它不
+  排除共享多任务优化本身仍有漂移问题，也不自动选定下一架构。
+- artifacts及SHA256：
+
+  ```text
+  training audit  6701ec353433203ef89490f0fe6b179eefddaf9e304fd60c9800e204e70ff97f
+  correct curve   6e9d97dcf31afdd7d867e4b3f66646db3efa68df552b625f5db2b3ba05012dfd
+  five-arm        a2dbcacdfcfbe4ba2a3a9010c4c28664b2ff8ce4530c532560a24e680474be6b
+  internal        df5b0271991b6ff95360b138dfe72dd7ab5daf34cc54383b92688acab539ec9f
+  ```
+
+- owner要求v10完成后暂停。Loom、其它架构、one-shot和RL均未启动；下一步是
+  先共同讨论v10负结果，而不是自动实施候选。

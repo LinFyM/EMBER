@@ -37,17 +37,17 @@ filename 或隐藏 normalization。
   attention约`99.96%`均匀，且Core对effective LoRA几乎无影响，因此停止。
 - v8 的strict Action–Effect binding已完成并停止：best仅`125/400`，event被
   Effect主导，不能把policy action hypothesis当作teacher实际action。
-- 当前唯一 fresh Writer authority 是
+- 当前唯一 canonical Writer authority 是
   [`v10`](docs/action_forecast_writer_v10_design.md)：独立保留Action
   hypothesis与Visual-Effect streams，以交错causal Procedure学习跨interval
   关系；Procedure提供LoRA content并门控full-rank Core，同时保持
   `Procedure=0→LoRA identity`。
-- v10 已原位替换唯一 canonical Writer，参数`11,627,520`；GPU4–7最长105-frame
-  B20 profile与exact-resume已通过并封存，正式段保持task-complete
-  fast-decay400从identity fresh训练约两小时。最终仍以single-checkpoint
-  `correct400>=150`及完整五臂/内部因果门判定。
-- 当前 Writer 通过后才做 matched one-shot baseline，随后进入独立
-  short-AS cold-start → pure-reward RL-Writer。
+- v10已完成identity-fresh macro0→400与12点paired correct400，observed-best
+  macro50仅`103/400`。其五臂`103/94/75/67/43`通过same/wrong/shuffled/
+  reversed行为门，但低于corrected Source-SFT `109`且未达150；内部显示
+  Action-hypothesis主导、高增益compiler和同task视频方差共同限制absolute。
+- owner要求v10完成后先暂停讨论。当前不续训、不启动候选Loom、matched
+  one-shot或RL-Writer；下一动作必须由讨论后的新授权确定。
 
 ## 硬约束
 

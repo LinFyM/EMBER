@@ -255,12 +255,19 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   `77.01/83.65GB`，B16未触发。
 - [x] 完成fresh0→1→exact-resume1→3；step1未改写，cursor/采样/LR完全一致，
   与独立连续run最大mean-loss差`2.63e-6`；正式teacher seed与profile已封存。
-- [ ] clean commit/push后从identity fresh按task-complete fast-decay400训练
-  约两小时至macro400，每25保存。
-- [ ] 对多个single checkpoints完成paired fixed correct400并选择observed-best；
-  不做checkpoint融合。
-- [ ] 对best完成correct/same/wrong/shuffled/reversed五臂和内部
+- [x] clean commit/push后从identity fresh按task-complete fast-decay400训练
+  至macro400，共`9,600`个one-video LoRA conditions、`192,000`个action
+  queries，约`7,832.8s`；每25保存。
+- [x] 对12个single checkpoints完成paired fixed correct400；曲线
+  `95/103/84/89/82/90/96/96/89/96/97/91`，observed-best为macro50
+  `103/400`，不做checkpoint融合。
+- [x] 对macro50完成五臂`103/94/75/67/43`和内部
   Text/Core→Action/Effect→Procedure→slots→effective-LoRA→policy检查。
+  same同档且wrong/shuffled/reversed行为门均通过，但absolute低于Source-SFT
+  `109`并距硬门150为47；Action主导、Effect近均匀读取和高增益compiler使
+  same-task视频方差被放大。v10判为absolute负结果。
+- [x] 按owner要求完成v10后暂停：不续训、不改canonical架构、不启动Loom、
+  one-shot或RL，等待共同讨论。
 
 ## Phase E：matched π0.5 action one-shot baseline
 

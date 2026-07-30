@@ -2004,3 +2004,28 @@ GPU范围和训练步长是当时快照；活动状态只取
 - config已恢复正式teacher seed`20260722`，封存task-complete B20、
   fast-decay400、fresh0→400、every25 checkpoint。紧邻动作是clean
   commit/push和正式两小时训练。
+
+## v10正式序列完成并按owner要求暂停（2026-07-30）
+
+- main `5fd0a25`上的v10正式run在GPU4–7从identity fresh自然完成
+  macro0→400；400行metrics finite，累计`9,600`个Writer视频条件、
+  `192,000`个action queries，wall约`7,832.8s`。训练与全部rollout进程均已
+  退出，GPU4–7释放。
+- 12个single checkpoints的paired、每task 50 teacher videos无放回
+  correct400为`95/103/84/89/82/90/96/96/89/96/97/91`；
+  observed-best是macro50=`103/400`，未使用checkpoint融合。
+- macro50五臂完整完成：`103/94/75/67/43`。same同档；
+  wrong/shuffled/reversed相对correct的exact p依次为
+  `.001762/1.01e-5/5.63e-13`，视频行为门通过，但absolute低于
+  corrected Source-SFT `109`且未达150。
+- refs1内部检查覆盖8/8 validation tasks。Core顺序不变、Procedure差异可完整
+  传到LoRA/action、Procedure=0严格identity；同时Action变化远强于Effect变化，
+  Effect attention近均匀，compiler将很小的Procedure slots通过RMSNorm调制为
+  高增益Core content。同task换正确video的Procedure/action方差也显著高于
+  v5.2，解释了强特异性与低absolute并存。
+- 中间因main存在owner写入、未跟踪的Loom文档，评测clean-worktree guard按
+  设计fail closed；失败调用未创建queue/run contract，输出和log已原样移入
+  `.codex/tmp/v10_dense_failed_clean_guard_20260730/`。随后从同一commit的
+  detached clean eval worktree完成全部正式评测，科学合同与结果未污染。
+- owner最新指令为“v10做完就先停下”。没有启动Loom、one-shot或RL；Loom
+  相关未跟踪文档和隔离worktree中的未提交草案均保持原样，未接入main。

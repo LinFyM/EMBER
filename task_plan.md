@@ -61,11 +61,12 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
 - [x] owner建立新的session-local Goal：持续按
   `第一性原理重构→约一小时训练→四checkpoint correct400→失败只做内部分析`
   循环推进；不做checkpoint融合。
-- [ ] main复验、clean commit/push。
-- [ ] GPU4–7真实105-frame B20三macro profile；仅在OOM/连续不稳定时退B16。
-- [ ] 正式seed fresh0→1→exact-resume1→3；核验task/video/query/LR/cursor与
+- [x] main复验、clean commit/push。
+- [x] GPU4–7真实105-frame B20三macro profile；3/3 finite、后两步均值
+  `25.808 queries/s`、`193.562 macro/hour`，B16未触发。
+- [x] 正式seed fresh0→1→exact-resume1→3；核验task/video/query/LR/cursor与
   Recenter全部关键模块gradient reachability，然后seal formal config。
-- [ ] fresh task-complete macro0→200，每25 macro checkpoint。
+- [ ] fresh task-complete macro0→200，每25 macro checkpoint（下一动作）。
 - [ ] paired、无放回correct400评测macro50/100/150/200，选择single best。
 - [ ] 一小时best若未达v5.2/v6同期`132–133`同档，不做行为级特异性rollout，
   只做Action/transition/Core/Procedure/compiler/LoRA/action反事实和per-task

@@ -2672,3 +2672,24 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   coordination不得用terminal RMSNorm抹掉幅度，且
   `Procedure read=0→public LoRA identity`。第一轮保持v6 fast-decay
   task-complete B20不变，以隔离模型架构贡献。
+
+## Recenter B20 profile与exact-resume证据（2026-07-30）
+
+- Recenter没有继承Loom的硬件或恢复证据。commit `93c7e32`在GPU4–7用
+  profile-only teacher seed `172`独立完成3个task-complete B20 macros；
+  首步实际覆盖task38/demo36的105个stride-5帧，3/3 finite。三步wall为
+  `20.5124/18.5473/18.6504s`，后两步均值为`25.8083 queries/s`和
+  `193.5619 macro/hour`；峰值allocated/reserved为
+  `76,989,294,080/83,644,907,520 bytes`，因此选择B20且不触发B16。
+- profile checkpoint step1→3的523个Writer参数名、全部`10,709,248`个
+  trainable scalars均变化；text/VL/Action Meta-LoRA、language projection、
+  patch grounding、interaction projection、Semantic Core、visual transition、
+  Procedure、compiler和factor heads均有真实functional-loss更新。
+- 正式teacher seed `20260722`的独立root先fresh到step1，再从完整macro边界
+  exact-resume到step3；metrics连续`1,2,3`，累计queries为
+  `480/960/1440`、video conditions为`24/48/72`，LR与cursor连续。resume后
+  step1的manifest、4个rank state、trainer和writer文件逐项SHA256不变，
+  validation/test action reads均为0。
+- 配置据此封存task-complete B20、fresh macro0→200、每25 macro checkpoint。
+  一小时规模为`4,800`个one-video LoRA conditions、`96,000`个action queries
+  和8个checkpoint；结束后只评测macro50/100/150/200的paired correct400。

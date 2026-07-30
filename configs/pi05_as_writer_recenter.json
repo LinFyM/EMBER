@@ -203,7 +203,7 @@
     "budget_role": "fresh_recenter_action_anchored_core_keyed_centered_procedure_task_complete_fast_decay400"
   },
   "profile_defaults": {
-    "status": "pending_recenter_live_profile",
+    "status": "sealed_b20",
     "expected_world_size": 4,
     "total_steps": 3,
     "per_rank_batch_size": 20,
@@ -215,7 +215,7 @@
     "selected_stop_step": 3
   },
   "profile_evidence": {
-    "status": "pending_recenter_live_profile",
+    "status": "sealed_b20",
     "allowed_physical_gpu_ids": [
       4,
       5,
@@ -250,9 +250,102 @@
       "steady_macro_updates_per_hour": 197.84550255699613
     },
     "rejected_candidates": [],
-    "selected": null,
-    "exact_resume_smoke": null,
-    "gradient_reachability": null,
+    "selected": {
+      "max_frames_per_encoder_call": 32,
+      "per_task_action_batch_size": 20,
+      "profile_optimizer_steps": 3,
+      "profile_global_action_queries": 1440,
+      "profile_global_video_conditions": 72,
+      "profile_wall_seconds": 58.73583725793287,
+      "step_seconds_max": [
+        20.51242965296842,
+        18.547257428057492,
+        18.650431629968807
+      ],
+      "steady_action_queries_per_second_mean_last_two": 25.808253412927773,
+      "steady_macro_updates_per_hour_mean_last_two": 193.56190059695828,
+      "max_cuda_allocated_bytes": 76989294080,
+      "max_cuda_reserved_bytes": 83644907520,
+      "all_steps_finite": true,
+      "all_four_ranks_completed": true,
+      "contains_real_105_frame_video": true,
+      "profile_root": "/data/ymdai/outputs/ember/pi05_as_writer_recenter_profile_b20_longseed172_93c7e32_20260730",
+      "run_contract_sha256": "d3d50a9cb558c2559695e6793a58c6f49e5cf136b1ae910924e5afafb7aa4e2d",
+      "metrics_sha256": "1adae35c3116c6a5c6183b3cb2de09bf1e46d95695a806a87192c0992660fc03",
+      "run_summary_sha256": "39fbe9301f98c806a806bbe9a9531f9bdfe605a03db8ae7d6620d7365bef709f"
+    },
+    "exact_resume_smoke": {
+      "status": "pass_fresh_step1_then_exact_resume_to_step3",
+      "root": "/data/ymdai/outputs/ember/pi05_as_writer_recenter_resume_b20_seed7_93c7e32_20260730",
+      "formal_teacher_video_seed": 20260722,
+      "fresh_stop_step": 1,
+      "resumed_stop_step": 3,
+      "completed_optimizer_steps": 3,
+      "metrics_rows": 3,
+      "metrics_steps": [
+        1,
+        2,
+        3
+      ],
+      "applied_learning_rates": [
+        0.0003,
+        0.00022749999999999997,
+        0.00008250000000000003
+      ],
+      "next_learning_rates": [
+        0.00022749999999999997,
+        0.00008250000000000003,
+        0.00001
+      ],
+      "cumulative_action_queries": [
+        480,
+        960,
+        1440
+      ],
+      "cumulative_video_conditions": [
+        24,
+        48,
+        72
+      ],
+      "all_steps_finite": true,
+      "test_action_reads": 0,
+      "validation_action_reads": 0,
+      "step1_checkpoint_files_unchanged_after_resume": true,
+      "step1_checkpoint_sha256": {
+        "manifest.json": "4fa93da92516622d3d21235a551980da15f523eb984422bd1bc7d9fdcb885e89",
+        "rank_00.pt": "59498c2faad43ca009c9037391ff21bf8b775ccb2fc5d8ca5943e8c082f129",
+        "rank_01.pt": "be64f5b61bb671b34f3725acb831b5158315373fcc6ec7e29e00fe0f4d7b0994",
+        "rank_02.pt": "f7dbb1d297eb15d2a7f9847b9f45e20744ad00cf9eafdb93e68532d18cc68e80",
+        "rank_03.pt": "ed9317f8bf20ccef8ca5803bac2090e26bcbb3332940ace0cd5d701ad228af78",
+        "trainer.pt": "cbb5a868e5f1f9bcdfbd80df770b8ca61f10c8d25fd22f97a576f51c7d15ccad",
+        "writer.pt": "7690d8e49e9fd214e44df98a446a75e569999a24e014e9df909d78aaeb2eef62"
+      },
+      "internal_contract_sha256": "910f5b4047557dff0f85f33fe0a0637fc370e73955f93d7348ca8a7211fdb11d",
+      "run_contract_sha256": "0bf5cbbfcc9af2328d5ee9bacab6ce925c748e551eaaab9a94e58a316d7f6d81",
+      "metrics_sha256": "6ea78209ed8f03e3db20124409532db2c32de49c74f00a78cf67f1e56fa5d85f",
+      "run_summary_sha256": "722c758ac2f0ff0d2bf175555f29d1a22d5bf68816a024fc0b3ad610d91f8bce",
+      "invocations_sha256": "be2d4528d3841647c59930c9770a2c570db48b051f4a278b119460e780fb40a4"
+    },
+    "gradient_reachability": {
+      "status": "pass_real_profile_step1_to_step3",
+      "comparison": "profile_checkpoint_step1_to_step3",
+      "writer_trainable_parameters": 10709248,
+      "changed_parameters": 10709248,
+      "all_trainable_parameters_changed": true,
+      "changed_parameters_by_module": {
+        "text_meta_lora": 921600,
+        "vl_meta_lora": 921600,
+        "action_meta_lora": 626688,
+        "language_projection": 524288,
+        "patch_grounding": 197120,
+        "interaction_projection": 262144,
+        "semantic_core": 1836544,
+        "visual_transition": 197120,
+        "procedure": 1573888,
+        "compiler": 1469184,
+        "factor_heads": 2179072
+      }
+    },
     "inference_profile": null
   },
   "specificity_gate": {
@@ -268,7 +361,7 @@
     "contrast_loss_allowed": false
   },
   "formal_run": {
-    "status": "pending_recenter_live_profile",
+    "status": "sealed",
     "expected_world_size": 4,
     "total_steps": 2400,
     "per_rank_batch_size": 20,

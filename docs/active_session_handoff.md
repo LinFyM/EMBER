@@ -41,17 +41,15 @@ correspondence、confidence、Teacher/Policy gap或双流Procedure。
 canonical实现、fresh配置和确定性结构测试已经完成；Loom-only
 `relations.py`已退役。全仓`196 passed`、compileall、diff check和architecture
 guard均通过；额外修复了zero transition反向NaN、zero/near-zero mixer梯度和
-bf16非二次幂constant Procedure伪残差。Recenter配置故意保持
-`pending_recenter_live_profile`，没有继承Loom的B20、resume或gradient
-evidence。主线复验并push后紧邻动作是：
+bf16非二次幂constant Procedure伪残差。Recenter没有继承Loom证据，而是在
+GPU4–7独立完成真实105-frame视频B20三macro profile和正式seed
+fresh0→1→exact-resume1→3；全部step finite、step1文件hash不变，
+`10,709,248/10,709,248`个trainable参数在step1→3间变化。配置已经seal。
+紧邻动作是：
 
 ```text
 GPU4–7 only
 → live preflight
-→ 真实105-frame视频 B20 三macro profile
-→ 若OOM/连续不稳定才直接回退B16
-→ 正式seed fresh1→exact-resume3
-→ seal config
 → fresh macro0→200，每25 macro checkpoint
 → paired correct400: macro50/100/150/200
 ```
@@ -1196,14 +1194,17 @@ Action mean，保留v6 Core与patch grounding，使用有界visual-transition re
 configs/pi05_as_writer_recenter.json
 ```
 
-该配置当前必须保持：
+该配置当前已封存：
 
 ```text
-profile_evidence.status = pending_recenter_live_profile
-formal_run.status       = pending_recenter_live_profile
+profile_evidence.status = sealed_b20
+formal_run.status       = sealed
 ```
 
-不得把Loom的B20 profile、exact-resume或gradient reachability复制成Recenter
-证据。实现commit merge/push后才做一次GPU4–7 live preflight；随后按第1节的
-B20→必要时B16、resume smoke、seal、macro0→200顺序推进。GPU0–3不得查询或
-使用。
+这是Recenter在commit `93c7e32`上的独立证据，不是复制Loom结果。B20连续
+3个完整macro均finite且含真实105-frame视频；后两步均值
+`25.808 queries/s`、`193.562 macro/hour`，峰值allocated/reserved为
+`76,989,294,080/83,644,907,520 bytes`，B16未触发。正式seed独立root完成
+fresh0→1→exact-resume1→3，metrics连续`1,2,3`且step1所有checkpoint文件
+hash不变；真实step1→3间全部`10,709,248`个trainable参数变化。下一步只在
+GPU4–7 live preflight后启动fresh macro0→200。GPU0–3不得查询或使用。

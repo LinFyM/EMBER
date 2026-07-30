@@ -63,10 +63,13 @@ correspondence或Action/Effect局部配对。canonical参数量为`10,709,248`�
 
 Recenter继续使用v6封存的task-complete fast-decay训练合同：GPU4–7、4 ranks、
 每rank long-first处理6 tasks、每task一条video和B20独立action queries、
-每macro覆盖24 tasks并只做一次AdamW update。Loom的B20/profile/resume证据
-不能继承；当前Recenter配置保持pending，必须先用真实105-frame视频完成B20
-三macro profile和fresh1→resume3，再seal正式首段macro0→200。B20失败时只
-回退B16。训练完成后固定测试macro50/100/150/200，不做checkpoint融合。
+每macro覆盖24 tasks并只做一次AdamW update。Recenter已在真实105-frame视频
+上独立完成B20三macro profile：3/3 finite，后两步均值`25.808 queries/s`、
+`193.562 macro/hour`，峰值allocated/reserved约`76.99/83.64GB`；B16未
+触发。正式seed `20260722`下fresh0→1→exact-resume1→3也已通过，step1文件
+逐项hash不变，全部`10,709,248`个trainable参数在真实step1→3间发生变化。
+当前正式合同已seal为fresh macro0→200、每25 macro checkpoint；完成后固定
+测试macro50/100/150/200，不做checkpoint融合。
 
 v4、v5、v5.1、v5.2和v6均已完成所需根因或上限证据；旧架构与可执行配置只作
 provenance。v5.2 step900五臂

@@ -2093,3 +2093,16 @@ GPU范围和训练步长是当时快照；活动状态只取
   guard只有既有大文件review提示，无hard violation，active source净删约
   1,100行。紧邻动作是clean commit/push；之后只在GPU4–7重新做Recenter
   B20/B16 profile和exact-resume，不继承Loom seal。
+
+## Recenter B20 profile、resume与formal seal（2026-07-30）
+
+- main已在`93c7e32`封存canonical Recenter实现。GPU4–7独立完成B20三macro
+  最长视频profile：包含真实105-frame条件，3/3 finite；后两步均值
+  `25.808 queries/s`、`193.562 macro/hour`，峰值allocated/reserved
+  `76.99/83.64GB`，B16未触发。
+- 正式seed `20260722`下fresh0→1→exact-resume1→3通过；metrics、LR、
+  task/video/query cursor连续，step1 checkpoint各文件hash在resume前后
+  完全不变，validation/test action reads为0。
+- profile step1→3间全部`10,709,248`个Writer参数变化，覆盖11个主模块组。
+  config现已恢复正式teacher seed并seal为B20、fresh macro0→200、每25 macro
+  checkpoint；紧邻动作是clean push后在GPU4–7启动约一小时正式段。

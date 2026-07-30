@@ -93,27 +93,36 @@ def test_language_axial_config_seals_architecture_and_information_wall() -> None
     assert config["information_wall"]["test_video_values_read"] == 0
     assert "state" in config["information_wall"]["writer_forbidden_inputs"]
     assert config["profile_defaults"]["expected_world_size"] == 4
-    assert config["profile_evidence"]["status"] == (
-        "pending_recenter_live_profile"
-    )
+    assert config["profile_defaults"]["status"] == "sealed_b20"
+    assert config["profile_evidence"]["status"] == "sealed_b20"
     assert config["profile_evidence"]["allowed_physical_gpu_ids"] == [4, 5, 6, 7]
     assert [
         row["per_task_action_batch_size"]
         for row in config["profile_evidence"]["candidates"]
     ] == [20, 16]
-    assert config["profile_evidence"]["selected"] is None
+    selected = config["profile_evidence"]["selected"]
+    assert selected["per_task_action_batch_size"] == 20
+    assert selected["all_steps_finite"] is True
+    assert selected["all_four_ranks_completed"] is True
+    assert selected["contains_real_105_frame_video"] is True
     assert [
         row["per_task_action_batch_size"]
         for row in config["profile_evidence"]["rejected_candidates"]
     ] == []
-    assert config["profile_evidence"]["gradient_reachability"] is None
+    reachability = config["profile_evidence"]["gradient_reachability"]
+    assert reachability["status"] == "pass_real_profile_step1_to_step3"
+    assert reachability["changed_parameters"] == 10_709_248
+    assert reachability["all_trainable_parameters_changed"] is True
     assert config["profile_evidence"]["inference_profile"] is None
     assert config["profile_evidence"]["teacher_videos_per_task_visit"] == 1
-    assert config["profile_evidence"]["exact_resume_smoke"] is None
+    resume = config["profile_evidence"]["exact_resume_smoke"]
+    assert resume["status"] == "pass_fresh_step1_then_exact_resume_to_step3"
+    assert resume["step1_checkpoint_files_unchanged_after_resume"] is True
+    assert resume["metrics_steps"] == [1, 2, 3]
     assert config["specificity_gate"]["status"] == "pending"
     assert config["optimization"]["scheduler"]["decay_steps"] == 400
     assert config["data"]["teacher_video_seed"] == 20260722
-    assert config["formal_run"]["status"] == "pending_recenter_live_profile"
+    assert config["formal_run"]["status"] == "sealed"
     assert config["formal_run"]["total_steps"] == 2400
     assert config["formal_run"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["selected_stop_step"] == 200
@@ -201,7 +210,11 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         resume=None,
         skip_data_sha=False,
     )
+    unsealed = copy.deepcopy(config)
+    unsealed["formal_run"]["status"] = "pending_recenter_live_profile"
     with pytest.raises(WriterModelError, match="not sealed"):
+        resolve_runtime(formal, unsealed, context)
+    with pytest.raises(WriterModelError, match="clean worktree"):
         resolve_runtime(formal, config, context)
     monkeypatch.setattr(
         "ember.writer.as_contract.git_state",
@@ -212,9 +225,7 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         },
     )
     formal.skip_data_sha = True
-    sealed = copy.deepcopy(config)
-    sealed["formal_run"]["status"] = "sealed"
-    assert resolve_runtime(formal, sealed, context) == (
+    assert resolve_runtime(formal, config, context) == (
         2400,
         20,
         tuple(range(25, 2401, 25)),

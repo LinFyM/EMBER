@@ -58,6 +58,23 @@ GPU4–7 only
 做正式五臂rollout；否则先做详细内部数值分析并重新定位根因。除GPU4–7外不得
 查询或使用其它GPU。
 
+Recenter首段正式launch合同：
+
+```text
+sealed config  commit 1ef4e08; configs/pi05_as_writer_recenter.json
+source policy  /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000
+data root      /data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a
+topology       physical GPU4–7; 4 DDP ranks; NUMA node1; B20; 2 workers/rank
+scale          fresh macro0→200; 4,800 videos; 96,000 queries; every25 checkpoint
+output         /data/ymdai/outputs/ember/pi05_as_writer_recenter_taskcomplete_decay400_dev_r4_b20_seed7_s2400_1ef4e08_20260730
+integrity      sealed manifest + exact sizes + HDF5 schema; no runtime full-data SHA
+storage        /data/ymdai 425.60GB before profile; projected profile/resume/formal/eval <8GB
+selection      paired correct400 at macro50/100/150/200; no checkpoint fusion
+```
+
+该root必须fresh且不存在；启动前再次只查询GPU4–7、核对500GB个人上限和
+clean/pushed Git状态。正式命令由run contract逐字段保存。
+
 v6 fast-decay已按owner后续要求从macro400 exact-resume到600。完整
 correct400曲线为：
 

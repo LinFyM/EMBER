@@ -2155,3 +2155,16 @@ GPU范围和训练步长是当时快照；活动状态只取
 - output为
   `/data/ymdai/outputs/ember/pi05_as_writer_core_program_taskcomplete_decay400_dev_r4_b20_seed7_s2400_d67d9f5_20260730`；
   启动前个人目录`433.62GB`，formal与四点correct400预计新增低于7GB。
+
+## Core-Program首段完成与correct400启动（2026-07-30）
+
+- fresh macro0→200自然完成：200行连续finite metrics、8个every25 checkpoint、
+  4,800个single-video LoRA conditions和96,000 action queries；training body
+  `3,858.26s`，last-50 steady约`25.742 queries/s`，终点loss`0.10119`。
+- 24 tasks每macro恰好各出现一次，DDP每macro一次同步；validation/test action
+  reads保持0。8个checkpoint manifest、trainer和四rank state均通过校验。
+- macro50/100/150/200现分别在GPU4/5/6/7并行做paired、无放回correct400；
+  每卡6 workers、4 Writer generators、generation batch8，全局long-first。
+  四个run均已完成prepare，绑定各自唯一raw checkpoint。
+- macro150首次launcher的source-run参数误填，合同校验在模型/GPU加载前拒绝；
+  删除508B空壳后已按正确source-base合同fresh重启，不影响其它三点。

@@ -88,6 +88,24 @@ numactl --cpunodebind=1 --membind=1 env \
   --stop-after-step 200 --num-workers 2 --log-every 10 --skip-data-sha
 ```
 
+该正式段已自然完成且审计通过：200行metrics严格连续、全部finite，8个
+every25 checkpoint完整；总计4,800个视频条件、96,000 queries，训练体
+`3858.26s`，steady last-50约`25.742 queries/s`。当前tmux
+`ember-core-program-correct400`正把macro50/100/150/200分别放在
+GPU4/5/6/7做paired、无放回correct400；每卡6个persistent workers、
+4个Writer generators、generation batch8，long-first队列。四个roots为：
+
+```text
+/data/ymdai/outputs/ember/pi05_as_writer_core_program_correct400_noreplacement_seed7_macro0050_7b5b1ba_20260730
+/data/ymdai/outputs/ember/pi05_as_writer_core_program_correct400_noreplacement_seed7_macro0100_7b5b1ba_20260730
+/data/ymdai/outputs/ember/pi05_as_writer_core_program_correct400_noreplacement_seed7_macro0150_7b5b1ba_20260730
+/data/ymdai/outputs/ember/pi05_as_writer_core_program_correct400_noreplacement_seed7_macro0200_7b5b1ba_20260730
+```
+
+macro150第一次launcher误填source-run，被合同门在模型/GPU加载前拒绝；仅有的
+508B copied config空壳已删除，随后以正确source-base合同fresh重启。其余三点
+未受影响；当前四个roots均已完成prepare并进入正式生成/rollout流程。
+
 ## 1. Recenter历史快照（整节已失效，不得执行其命令）
 
 owner在Loom macro50/100/150/200 correct400仅为`79/106/105/112`且内部

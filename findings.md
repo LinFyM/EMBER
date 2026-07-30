@@ -2723,3 +2723,8 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   task-video-query cursor、optimizer/scheduler和四rank RNG连续，旧macro1文件
   没有被重写，且validation/test action reads均为0。可以从identity启动正式
   macro0→200，不使用任何profile/smoke Writer权重。
+- 首段fresh macro0→200机械合同完整成立：200步finite、4,800视频条件、
+  96,000 queries、8个checkpoint，训练体约64.3分钟。online validation loss
+  在macro25/50/75/100/125/150/175/200为
+  `.13259/.13214/.13943/.13905/.13634/.13453/.13659/.13481`；该曲线不单调，
+  不能替代同一fixed correct400 panel选择。

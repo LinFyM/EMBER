@@ -64,8 +64,10 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   后两步约`25.871 queries/s`、`194.034 macro/hour`，选择B20。
 - [x] fresh0→1→exact-resume1→3通过；metrics/LR/task-video-query/RNG cursor
   连续，step1文件不变，全部523个trainable tensor可达；formal config已seal。
-- [ ] fresh task-complete macro0→200，每25 macro checkpoint。
-- [ ] paired、无放回correct400评测macro50/100/150/200，选择single best。
+- [x] fresh task-complete macro0→200完成：200行finite metrics、4,800 videos、
+  96,000 queries、8个every25 checkpoint，未从profile/smoke warm-start。
+- [ ] paired、无放回correct400正在GPU4–7并行评测macro50/100/150/200，
+  每卡一个single checkpoint。
 - [ ] 一小时best若未达v5.2/v6同期`132–133`同档，不做行为级特异性rollout，
   只做Action/transition/Core/Procedure/compiler/LoRA/action反事实和per-task
   gradient conflict分析后重构下一版；达到同档则默认续训第二小时。

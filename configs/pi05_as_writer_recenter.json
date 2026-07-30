@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_loom_as_writer_v1",
+  "schema_version": "ember_pi05_recenter_as_writer_v1",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {
@@ -50,7 +50,7 @@
     "test_video_values_read": 0
   },
   "writer": {
-    "architecture": "pi05_task_grounded_teacher_policy_gap_writer_loom",
+    "architecture": "pi05_action_anchored_core_keyed_centered_procedure_writer_recenter",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -97,19 +97,9 @@
     "activation_checkpointing": true,
     "action_horizon": 50,
     "padded_action_dim": 32,
-    "action_probe_positions": [
-      0,
-      7,
-      14,
-      21,
-      28,
-      35,
-      42,
-      49
-    ],
-    "action_expert_probe": "one_forward_eight_sparse_native_position_fixed_gaussian_suffix_at_t1",
+    "action_expert_probe": "one_forward_native_50_suffix_hidden_mean_fixed_gaussian_at_t1",
     "action_expert_action_out": false,
-    "action_probe_projection": "each_final_suffix_hidden_shared_bias_free_1024_to_256_no_mean",
+    "action_probe_projection": "mean_all_50_final_suffix_hidden_then_bias_free_1024_to_256",
     "program_width": 256,
     "semantic_core_aggregation": "stable_frame_mean_plus_text_selected_centered_frame_residual",
     "semantic_core_order_contract": "strict_frame_set_permutation_invariance_without_frame_position",
@@ -117,32 +107,31 @@
     "semantic_core_blocks": 2,
     "semantic_core_position_encoding": "task_token_ordinal_rope_qk_only_bidirectional",
     "semantic_core_value_path": "multimodal_task_token_plus_task_queried_patch_content",
-    "action_stream": "eight_sparse_probe_policy_imitation_value_memory",
-    "teacher_semantic_relation": "adjacent_task_grounded_midpoint_plus_difference_zero_at_no_change",
-    "teacher_visual_relation": "bidirectional_patch_correspondence_same_grid_matched_displacement",
-    "teacher_relation_confidence": "bounded_change_times_task_relevance_times_mutual_match_times_nonuniform_matcher_without_action_input",
-    "teacher_events": "three_deterministic_backbones_plus_five_learned_relation_events",
-    "visual_effect_heads": 8,
+    "visual_transition": "adjacent_task_grounded_patch_difference_recomputed_in_actual_order",
+    "visual_transition_key": "zero_preserving_rmsnorm_then_bias_free_projection",
+    "visual_transition_value": "raw_task_grounded_difference_without_value_projection",
+    "visual_transition_residual": "radial_cap_at_one_quarter_stopgrad_action_probe_rms",
+    "visual_transition_heads": 8,
     "procedure_heads": 8,
     "procedure_blocks": 2,
-    "procedure_attention": "shared_dual_stream_axial_local_slots_then_slotwise_causal_time",
-    "procedure_position_encoding": "action_at_twice_frame_ordinal_teacher_at_adjacent_ordinal_sum_qk_only",
-    "procedure_value_path": "strictly_separate_teacher_event_and_policy_imitation_memories",
-    "procedure_initialization": "normal_nonzero",
+    "procedure_attention": "single_global_causal_content_transformer",
+    "procedure_position_encoding": "sampled_frame_ordinal_rope_qk_only",
+    "procedure_value_path": "native_action_probe_plus_bounded_visual_transition_residual",
     "query_count": 320,
     "routing_identity": "query_module_layer_rank_qk_only",
     "core_slot_reader": "routing_qk_core_content_v",
-    "teacher_slot_reader": "routing_plus_core_q_teacher_procedure_kv_and_same_weight_confidence",
-    "policy_slot_reader": "routing_plus_core_plus_teacher_q_policy_imitation_kv",
-    "teacher_policy_gap": "separate_full_rank_alignment_rmsnorm_teacher_minus_policy",
-    "adaptation_strength": "teacher_confidence_times_bounded_gap_magnitude",
-    "core_procedure_first_interaction": "teacher_policy_gap_compiler_only",
-    "slot_fusion": "gap_content_plus_gap_gated_core_support_then_content_only_coordination",
+    "procedure_slot_reader": "routing_plus_core_q_full_normalized_procedure_k_raw_time_centered_procedure_v",
+    "core_procedure_first_interaction": "core_keyed_procedure_compiler_only",
+    "slot_fusion": "procedure_content_times_one_plus_quarter_tanh_core_modulation",
+    "core_modulation_range": [
+      0.75,
+      1.25
+    ],
     "fusion_heads": 8,
     "post_fusion_blocks": 1,
-    "core_only_public_lora_delta": "exact_zero_when_confidence_or_gap_zero",
-    "action_only_public_lora_delta": "exact_zero_when_teacher_confidence_zero",
-    "final_factor_scale": "per_slot_confidence_times_gap_reapplied_after_factor_head",
+    "post_fusion_scale_contract": "direction_mixing_then_restore_prefusion_slot_rms",
+    "core_only_public_lora_delta": "exact_zero",
+    "constant_procedure_public_lora_delta": "exact_zero",
     "factor_head_bias": false,
     "factor_hidden_width": 256,
     "initialization_seed": 7
@@ -211,10 +200,10 @@
       "decay_lr": 1e-05
     },
     "maximum_formal_wall_clock_minutes": null,
-    "budget_role": "fresh_loom_teacher_policy_gap_task_complete_fast_decay400_absolute_and_specificity_iteration"
+    "budget_role": "fresh_recenter_action_anchored_core_keyed_centered_procedure_task_complete_fast_decay400"
   },
   "profile_defaults": {
-    "status": "sealed_b20",
+    "status": "pending_recenter_live_profile",
     "expected_world_size": 4,
     "total_steps": 3,
     "per_rank_batch_size": 20,
@@ -226,7 +215,7 @@
     "selected_stop_step": 3
   },
   "profile_evidence": {
-    "status": "sealed_b20",
+    "status": "pending_recenter_live_profile",
     "allowed_physical_gpu_ids": [
       4,
       5,
@@ -261,64 +250,9 @@
       "steady_macro_updates_per_hour": 197.84550255699613
     },
     "rejected_candidates": [],
-    "selected": {
-      "max_frames_per_encoder_call": 32,
-      "per_task_action_batch_size": 20,
-      "profile_optimizer_steps": 3,
-      "profile_global_action_queries": 1440,
-      "profile_global_video_conditions": 72,
-      "profile_wall_seconds": 58.39838645607233,
-      "step_seconds_max": [
-        20.462906189030036,
-        18.396915464894846,
-        18.367157944943756
-      ],
-      "steady_action_queries_per_second_mean_last_two": 26.112466326852314,
-      "steady_macro_updates_per_hour_mean_last_two": 195.84349745139235,
-      "max_cuda_allocated_bytes": 77566232064,
-      "max_cuda_reserved_bytes": 83732987904,
-      "all_steps_finite": true,
-      "all_four_ranks_completed": true,
-      "contains_real_105_frame_video": true,
-      "profile_root": "/data/ymdai/outputs/ember/pi05_as_writer_loom_profile_b20_longseed172_r2_20260730",
-      "run_contract_sha256": "0ab522490cad2dc1ba9e5f6831b4021cecdbfad245b51555424b69aa40219ebe",
-      "metrics_sha256": "f04bb353427f7c88c673c6daa563ccd8ac103330a18d6ea4f1ae3df96e98b17c",
-      "run_summary_sha256": "1ad61cf163c509a500853e5b29a2f87a03744d60cd04b710ca0564b54e78a066"
-    },
-    "exact_resume_smoke": {
-      "status": "pass_fresh1_resume3",
-      "profile_root": "/data/ymdai/outputs/ember/pi05_as_writer_loom_resume_smoke_b20_formalseed_r2_20260730",
-      "teacher_video_seed": 20260722,
-      "fresh_stop_step": 1,
-      "resumed_stop_step": 3,
-      "contract_sha256": "ac7bd825b5fb4952176c6784c1781c25b230506c5272f7f9c0a23531a9266ac0",
-      "run_contract_file_sha256": "1f0d0e0434982ac7f977eb526580cca1bcca6275e1e0a7a573e136832b85d689",
-      "metrics_sha256": "16bf37a8ac87222590b262163267b4f4004646df2e7071675381176ae90e1c0b",
-      "run_summary_sha256": "15f62be46340a59fdf52b7744e13cd5112072398c48787b729da9eb50194e968",
-      "invocations_sha256": "fa883c0b1bcbb92e6577f2bfbeffb77c9aa44988a096527de7d8651481262c14",
-      "step1_checkpoint_files_unchanged": true,
-      "task_video_query_schedule_matches_uninterrupted": true,
-      "learning_rate_schedule_matches_uninterrupted": true,
-      "maximum_mean_loss_difference_vs_uninterrupted": 1.5891467531614634e-06,
-      "completed_optimizer_steps": 3,
-      "metrics_rows": 3,
-      "test_action_reads": 0,
-      "test_video_value_reads": 0
-    },
-    "gradient_reachability": {
-      "status": "pass_real_profile_step1_to_step3",
-      "text_meta_lora_changed_parameter_count": 921600,
-      "vl_meta_lora_changed_parameter_count": 921600,
-      "action_meta_lora_changed_parameter_count": 618496,
-      "language_projection_changed_parameter_count": 524288,
-      "patch_grounding_changed_parameter_count": 197120,
-      "interaction_projection_changed_parameter_count": 262144,
-      "semantic_core_changed_parameter_count": 1836544,
-      "teacher_events_changed_parameter_count": 1223424,
-      "procedure_changed_parameter_count": 2233344,
-      "compiler_changed_parameter_count": 1929728,
-      "factor_head_changed_parameter_count": 2179072
-    },
+    "selected": null,
+    "exact_resume_smoke": null,
+    "gradient_reachability": null,
     "inference_profile": null
   },
   "specificity_gate": {
@@ -334,14 +268,14 @@
     "contrast_loss_allowed": false
   },
   "formal_run": {
-    "status": "sealed",
+    "status": "pending_recenter_live_profile",
     "expected_world_size": 4,
     "total_steps": 2400,
     "per_rank_batch_size": 20,
     "checkpoint_steps": "every:25",
     "selected_stop_step": 200,
     "stage_stop_steps": "every:200",
-    "segment_definition": "fresh_loom_teacher_policy_gap_task_complete_fast_decay400_one_hour_macro200_selected_from_live_b20_profile",
+    "segment_definition": "fresh_recenter_action_anchored_core_keyed_centered_procedure_one_hour_macro200_after_live_profile",
     "one_hour_scale": {
       "macro_optimizer_updates": 200,
       "global_action_queries": 96000,

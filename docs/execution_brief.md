@@ -20,21 +20,27 @@ v8 Hierarchical Action–Effect + Core-Gated Procedure已经完成。correct400
 `8–10%` event差异，Effect变化贡献约`147–300%`，EventRead近均匀。它没有
 达到v6 absolute，也没有得到v5.2式视频margin，因此停止。
 
-当前唯一canonical方法为EMBER Writer v10：Evidence-Preserving Dual-Stream
-Writer。完整需求、拓扑、参数预算和判定合同见
-[`docs/action_forecast_writer_v10_design.md`](action_forecast_writer_v10_design.md)。
-它不再把无真实配对标签的Action hypothesis与teacher visual effect强制绑定并
-压成单event，而是保留Action与Visual-Effect两个证据流，以
-`A0,V0,A1,V1,...`进入causal Procedure；Procedure直接提供LoRA content并门控
-full-rank Core，Core单独仍不能生成adapter。真实参数为`11,627,520`。
-canonical源码/config已原位切换到不兼容v10 schema；B20 profile与
-exact-resume通过后，identity-fresh task-complete fast-decay macro0→400、
-12点paired correct400、best五臂和内部反事实均已完成。correct曲线为
-`95/103/84/89/82/90/96/96/89/96/97/91`，macro50 observed-best
-`103/400`；五臂`103/94/75/67/43`通过视频行为门，但absolute低于Source-SFT
-109且距150为47。内部显示Action-hypothesis变化主导、Effect读取近均匀且
-Procedure compiler高增益放大同task视频方差。owner要求v10完成后先暂停，
-当前不启动Loom、one-shot、RL或其它架构。
+v10随后完成，observed-best仅`103/400`；其五臂`103/94/75/67/43`通过行为
+方向门，但absolute低于Source-SFT。Loom首段macro50/100/150/200也只有
+`79/106/105/112`，内部correspondence/confidence/Teacher–Policy gap缺少
+信息墙内可靠锚点，因此停止。两者均只作provenance。
+
+当前唯一canonical方法为EMBER Recenter：Action-Anchored Core-Keyed Centered
+Procedure Writer。完整需求、拓扑、参数和判定合同见
+[`docs/action_forecast_writer_recenter_design.md`](action_forecast_writer_recenter_design.md)。
+它恢复原生50-token suffix mean Action主干，保留task-grounded patch evidence
+与v6 frame-set Core；visual transition只能以Action RMS的25%为上限作残差。
+单路causal Procedure作为唯一LoRA value，Core只参与slot寻址和
+`[0.75,1.25]`乘性调制；time-centering与amplitude-preserving slot mixer保证
+constant/zero Procedure回到identity，也不会用terminal normalization放大微小
+信号。真实参数为`10,709,248`。
+
+canonical源码/config已原位切换到fresh Recenter schema；Loom-only
+relations、dual Procedure和gap compiler已退役。当前配置保持pending，必须在
+GPU4–7重新完成105-frame B20 profile、exact-resume和gradient reachability，
+不能继承Loom seal。profile通过后才fresh训练macro0→200并评测
+macro50/100/150/200；在absolute达到同期有效架构水平前不做不必要的五臂
+rollout，也不启动one-shot或RL。
 
 外部专家复核后的第一轮诊断证明，shuffle的直接行为放大器位于per-image
 forecast之后的absolute-time Plan/Revision；但后续全面复审又确认它不是唯一
@@ -87,12 +93,13 @@ correct-video `127/400`，且best的reversed为`120/400`、与correct无显著�
 它因此只作provenance。
 
 当前fresh架构authority为
-[`docs/action_forecast_writer_v10_design.md`](action_forecast_writer_v10_design.md)。
-v10使用text-only task axis、multimodal evidence与task-queried patch evidence；
-Semantic Core对frame set置换不变，Action hypothesis和Visual Effect作为独立
-interleaved causal streams，直到Procedure内部才学习跨interval关系。compiler
-让Procedure提供content和`gamma/beta`，再选择性注入Core；公共宽度256、
-8 heads×32、factor hidden256，真实预算`11,627,520`。v8负结果与旧设计见
+[`docs/action_forecast_writer_recenter_design.md`](action_forecast_writer_recenter_design.md)。
+Recenter使用text-only task axis、multimodal evidence与task-queried patch
+evidence；Semantic Core对frame set置换不变，原生Action mean是Procedure
+主干，视觉变化只作有界残差。compiler先用Core寻址，再读取time-centered raw
+Procedure values，并在不改变slot RMS的前提下混合content；公共宽度256、
+8 heads×32、factor hidden256，真实预算`10,709,248`。Loom/v10负结果见对应
+设计和handoff；v8负结果与旧设计见
 [`docs/action_forecast_writer_v8_design.md`](action_forecast_writer_v8_design.md)；
 v7负结果与旧设计见
 [`docs/action_forecast_writer_v7_design.md`](action_forecast_writer_v7_design.md)；

@@ -1,12 +1,9 @@
 # EMBER Writer v10：Evidence-Preserving Dual-Stream Writer
 
-状态（2026-07-30）：owner 已确认采用本设计。v10 已原位替换 v9
-strict-binding 草案，成为当前唯一 canonical Writer 路径；真实参数、
-B20最长视频profile、exact-resume、identity fresh macro0→400正式训练、
-12点paired correct400、observed-best五臂和内部反事实均已完成。结果为
-absolute失败、视频语义/顺序行为门通过；owner要求完成v10后暂停讨论，当前
-不续训、不改架构，也不启动后续候选。v8及更早版本只由Git、checkpoint和实验
-文档保存 provenance，不保留并行可执行实现。
+状态（2026-07-30）：v10已完成全部正式证据并因absolute失败停止，本文只作
+provenance。当前唯一canonical authority为
+[`action_forecast_writer_recenter_design.md`](action_forecast_writer_recenter_design.md)；
+不得恢复v10/Recenter并行可执行路径。
 
 ## 1. 决策依据
 

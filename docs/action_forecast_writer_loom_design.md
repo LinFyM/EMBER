@@ -1,14 +1,13 @@
 # EMBER Loom：Task-Grounded Teacher–Policy Gap Writer
 
-状态（2026-07-30）：本文是 owner 与 side chat 在 v10 正式结果之后，从
-第一性原理和 v4/v5.2/v6/v7/v8/v10 完整证据链共同推导出的最终候选架构规格。
-它取代本文此前的 Action/Event 混合 Procedure 草案。
+状态（2026-07-30）：本文是历史Loom规格，只作provenance。Loom已实现并完成
+首段；macro50/100/150/200 correct400为`79/106/105/112`，内部
+correspondence/confidence/Teacher–Policy gap缺少信息墙内可靠锚点，因此停止。
+活动源码不再保留Loom路径。
 
-当前唯一 canonical 实现仍是
-[`action_forecast_writer_v10_design.md`](action_forecast_writer_v10_design.md)。
-Loom 尚未实现、训练或成为活动 authority；只有 owner 与主进程明确采用后，
-才应原位替换 canonical schema，并从 functional identity fresh 训练。不得从
-v10 checkpoint resume，也不得维护 v10/Loom 两条并行活动实现。
+当前唯一canonical设计为
+[`action_forecast_writer_recenter_design.md`](action_forecast_writer_recenter_design.md)。
+不得从Loom checkpoint resume，也不得恢复Loom/Recenter双路径。
 
 名称 **Loom** 表示：
 
@@ -1324,17 +1323,17 @@ supervision。为隔离架构贡献，第一轮可保持当前task-complete训�
 
 ## 18. 采用与生命周期
 
-当前结论：
+历史结论：
 
 ```text
 EMBER Loom
 = 逻辑闭合、可实现、可证伪的最终候选设计
 
 current canonical
-= completed v10 implementation and evidence
+= Recenter
 ```
 
-若主进程采用：
+Loom当时的采用步骤为：
 
 1. 先读本文与配套推导纪要；
 2. 原位替换canonical Writer，不保留并行版本；

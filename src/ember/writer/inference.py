@@ -59,8 +59,8 @@ from ember.writer.video_schedule import (
 )
 
 
-WRITER_ADAPTER_SCHEMA = "ember_pi05_loom_writer_eval_adapter_v1"
-RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_loom_rl_writer_eval_adapter_v1"
+WRITER_ADAPTER_SCHEMA = "ember_pi05_recenter_writer_eval_adapter_v1"
+RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_recenter_rl_writer_eval_adapter_v1"
 WRITER_ADAPTER_SCHEMAS = {WRITER_ADAPTER_SCHEMA, RL_WRITER_ADAPTER_SCHEMA}
 WRITER_VIDEO_CONDITIONS = {
     "correct",
@@ -72,7 +72,7 @@ WRITER_VIDEO_CONDITIONS = {
 }
 WRONG_VIDEO_CONDITIONS = {"cross_suite_wrong"}
 WRITER_EPISODE_EVIDENCE_V5_1 = "ember_pi05_writer_episode_evidence_v5_1"
-WRITER_EPISODE_EVIDENCE_LOOM = "ember_pi05_loom_writer_episode_evidence_v1"
+WRITER_EPISODE_EVIDENCE_RECENTER = "ember_pi05_recenter_writer_episode_evidence_v1"
 WRITER_GENERATION_SEED_SCHEDULE = (
     "sha256 first 63 bits of canonical JSON: ember_pi05_writer_generation_v5_1/"
     "frame_order/seed/suite/task_id/demo_index"
@@ -237,7 +237,7 @@ def expected_writer_episode_evidence(
     expected_schema = (
         WRITER_EPISODE_EVIDENCE_V5_1
         if sampling_mode == "with_replacement"
-        else WRITER_EPISODE_EVIDENCE_LOOM
+        else WRITER_EPISODE_EVIDENCE_RECENTER
     )
     if evidence_schema is None:
         evidence_schema = expected_schema
@@ -669,8 +669,8 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
         kind = str(evaluation_adapter.get("kind", "as_writer"))
         if kind == "rl_writer":
             raise WriterModelError(
-                "RL-Writer has not yet been trained under Core-Causal v5 and must "
-                "be retrained before evaluation"
+                "RL-Writer has not yet been retrained under canonical Recenter "
+                "and must be retrained before evaluation"
             )
         if kind != "as_writer":
             raise WriterModelError("unknown PI05 Writer evaluation kind")

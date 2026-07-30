@@ -1,4 +1,4 @@
-"""Multimodal semantic/visual evidence and sparse Action probes for EMBER Loom."""
+"""Multimodal evidence and native-horizon Action probes for EMBER Recenter."""
 
 from __future__ import annotations
 
@@ -157,7 +157,7 @@ class TaskQueriedPatchGrounding(torch.nn.Module):
 
 
 class Pi05LanguageAxialEncoder(torch.nn.Module):
-    """Produce Q_text, M+G, raw P, and eight sparse Action probes."""
+    """Produce Q_text, M+G, G, and one native-horizon Action probe per frame."""
 
     NATIVE_IMAGE_TOKENS = 256
 
@@ -176,7 +176,6 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         max_frames_per_encoder_call: int,
         action_horizon: int,
         padded_action_dim: int,
-        action_probe_positions: Sequence[int],
         initialization_seed: int,
         activation_checkpointing: bool,
     ) -> None:
@@ -206,19 +205,6 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         self.action_horizon = int(action_horizon)
         self.padded_action_dim = int(padded_action_dim)
         self.activation_checkpointing = bool(activation_checkpointing)
-        probe_positions = tuple(int(item) for item in action_probe_positions)
-        if (
-            len(probe_positions) != 8
-            or tuple(sorted(set(probe_positions))) != probe_positions
-            or probe_positions[0] < 0
-            or probe_positions[-1] >= action_horizon
-        ):
-            raise VideoProgramError("invalid sparse Action probe positions")
-        self.register_buffer(
-            "action_probe_positions",
-            torch.tensor(probe_positions, dtype=torch.long),
-            persistent=True,
-        )
         self.language_projection = torch.nn.Linear(
             image_width,
             program_width,
@@ -363,7 +349,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         text_queries: torch.Tensor,
         valid_task_tokens: torch.Tensor,
         maximum_task_tokens: int,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks
 
         bridge = core.paligemma_with_expert
@@ -409,21 +395,12 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             suffix_noise,
             timestep,
         )
-        probe_positions = self.action_probe_positions.to(device=suffix.device)
-        suffix = suffix.index_select(1, probe_positions)
-        suffix_padding = suffix_padding.index_select(1, probe_positions)
-        suffix_attention = suffix_attention.index_select(1, probe_positions)
         padding = torch.cat((prefix_padding, suffix_padding), dim=1)
         attention = torch.cat((prefix_attention, suffix_attention), dim=1)
         mask = core._prepare_attention_masks_4d(
             make_att_2d_masks(padding, attention)
         )
-        prefix_positions = torch.cumsum(prefix_padding, dim=1) - 1
-        suffix_positions = (
-            prefix_padding.sum(dim=1, dtype=torch.long)[:, None]
-            + probe_positions[None]
-        )
-        positions = torch.cat((prefix_positions, suffix_positions), dim=1)
+        positions = torch.cumsum(padding, dim=1) - 1
         target_dtype = language_model.layers[0].self_attn.q_proj.weight.dtype
         with (
             self.vl_meta_lora.installed(language_model),
@@ -454,21 +431,20 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             maximum_task_tokens,
         )
         task_evidence = self.language_projection(packed_language)
-        visual_evidence = self.language_projection(
+        patch_content = self.language_projection(
             prefix_hidden[:, : self.NATIVE_IMAGE_TOKENS]
         )
         grounded_evidence = self.patch_grounding(
             text_queries,
-            visual_evidence,
+            patch_content,
             valid_task_tokens,
         )
         semantic_evidence = task_evidence + grounded_evidence
-        action_probes = self.interaction_projection(suffix_hidden)
+        action_probe = self.interaction_projection(suffix_hidden.mean(dim=1))
         return (
             semantic_evidence,
             grounded_evidence,
-            visual_evidence,
-            action_probes,
+            action_probe,
         )
 
     def _validate_microbatch_hidden(
@@ -484,7 +460,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             or suffix_hidden.shape
             != (
                 frame_count,
-                self.action_probe_positions.numel(),
+                self.action_horizon,
                 self.expert_width,
             )
         ):
@@ -561,9 +537,8 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         torch.Tensor,
         torch.Tensor,
         torch.Tensor,
-        torch.Tensor,
     ]:
-        """Return Q_text, X, G, raw P, eight Action probes, and task mask."""
+        """Return Q_text, X=M+G, G, one Action probe, and task mask."""
 
         core, valid_task_tokens, _ = self._validate_forward_batch(
             policy,
@@ -599,7 +574,6 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
 
         semantic_evidence_rows = []
         grounded_evidence_rows = []
-        visual_evidence_rows = []
         action_probe_rows = []
         for start in range(0, frames.shape[0], self.max_frames_per_encoder_call):
             stop = min(start + self.max_frames_per_encoder_call, frames.shape[0])
@@ -621,33 +595,23 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             )
 
             if should_checkpoint:
-                (
-                    semantic_evidence,
-                    grounded_evidence,
-                    visual_evidence,
-                    action_probes,
-                ) = checkpoint(
+                semantic_evidence, grounded_evidence, action_probe = checkpoint(
                     invoke_frames,
                     *arguments,
                     use_reentrant=False,
                     preserve_rng_state=False,
                 )
             else:
-                (
-                    semantic_evidence,
-                    grounded_evidence,
-                    visual_evidence,
-                    action_probes,
-                ) = invoke_frames(*arguments)
+                semantic_evidence, grounded_evidence, action_probe = invoke_frames(
+                    *arguments
+                )
             semantic_evidence_rows.append(semantic_evidence)
             grounded_evidence_rows.append(grounded_evidence)
-            visual_evidence_rows.append(visual_evidence)
-            action_probe_rows.append(action_probes)
+            action_probe_rows.append(action_probe)
         return (
             text_queries,
             torch.cat(semantic_evidence_rows, dim=0),
             torch.cat(grounded_evidence_rows, dim=0),
-            torch.cat(visual_evidence_rows, dim=0),
             torch.cat(action_probe_rows, dim=0),
             valid_task_tokens,
         )

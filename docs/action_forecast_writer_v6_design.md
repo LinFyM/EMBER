@@ -3,8 +3,10 @@
 ## 1. 决策与版本定位
 
 owner 于 2026-07-28 确认采用本设计，并把原计划中的 v5.3 提升为 v6。
-这是当前 fresh Writer 架构和训练 authority。2026-07-28 owner 又明确要求
-v6 从 step0 直接采用 task-complete 多任务更新；因此本文早期曾记录的
+v6实验现已完成，本文只作provenance；当前authority为
+[`action_forecast_writer_recenter_design.md`](action_forecast_writer_recenter_design.md)。
+2026-07-28 owner 又明确要求v6从step0直接采用task-complete多任务更新；
+因此本文早期曾记录的
 “首版沿用 v5.2 one-task-per-rank update”已经失效，不再作为对照约束。
 
 v6 不是在 v5.2 上孤立增加一个视觉 transition 的小修订，而是同时完成三项

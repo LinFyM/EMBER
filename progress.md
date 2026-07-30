@@ -2065,18 +2065,31 @@ GPU范围和训练步长是当时快照；活动状态只取
   Teacher–Policy gap近常数、Teacher支配LoRA且same-video方差偏高。Loom据此
   作为科学non-pass停止，不继续修补或续训。
 
-## Recenter自主迭代启动（2026-07-30）
+## Recenter canonical实现与CPU合同（2026-07-30）
 
 - owner明确授权在同一session持续自主推进，已创建session-local Goal；目标为
   single-checkpoint correct400至少150或稳定接近且显著高于旧架构，达到
   absolute门后才做行为级视频特异性。
-- 当前第一轮设计为Action-anchored Recenter：恢复native 50-suffix mean
-  Action backbone，保留task-grounded transition受控修正、Semantic Core和
-  causal Procedure；compiler改为Core寻址、time-centered Procedure供值、
-  Core只作非零Procedure上的有界乘性调制。Loom matcher/confidence/events/
-  latent gap全部退役，不保留平行可执行路径。
-- 实现隔离在agent-owned worktree
-  `/data/ymdai/.codex/worktrees/EMBER-action-core-20260730`、
-  branch`codex/action-core-procedure-20260730`；主工作树只更新长期ledger。
-  第一轮保持v6 task-complete fast-decay B20训练合同，待实现验证后只用
-  GPU4–7做profile、resume、fresh macro0→200和四点correct400。
+- Loom首段四点correct400为`79/106/105/112`，内部gap/confidence/
+  correspondence缺少可靠锚点。按owner“不得打补丁、必须从根因重设计”的
+  要求，新增
+  `docs/action_forecast_writer_recenter_design.md`并把Loom降为provenance。
+- 唯一canonical源码已原位切换：恢复原生50-token Action mean，保留v6
+  Semantic Core，新增25%径向上限的task-grounded transition residual与单路
+  causal Procedure；compiler改为Core-keyed、time-centered raw Procedure
+  values和amplitude-preserving slot mixer。Loom-only `relations.py`、双
+  Procedure和gap compiler已退役，无平行可执行路径。
+- 活动fresh config为`configs/pi05_as_writer_recenter.json`，schema、checkpoint、
+  launch、eval adapter和episode evidence均切换为Recenter。Loom的profile/
+  resume/gradient evidence没有复制；profile与formal状态保持pending。
+- 精确参数枚举为`10,709,248`。确定性测试覆盖Core permutation、transition
+  cap、Action-zero无旁路、causality、constant Procedure identity、Core gate、
+  Procedure scale、step0 identity、staged gradient及零点finite backward。
+- 修复审查发现的zero-RMS反向NaN：transition分母直接使用mean-square，
+  diagnostic RMS detach；slot mixer用`torch.linalg.vector_norm`物理RMS及
+  零subgradient处理零输入。
+  targeted tests和全仓`196 passed`；额外覆盖bf16非2幂长度constant Procedure
+  精确零与near-zero mixer有界梯度。compileall和diff check通过，architecture
+  guard只有既有大文件review提示，无hard violation，active source净删约
+  1,100行。紧邻动作是clean commit/push；之后只在GPU4–7重新做Recenter
+  B20/B16 profile和exact-resume，不继承Loom seal。

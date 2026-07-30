@@ -1,4 +1,4 @@
-"""Semantic Core and shared axial Teacher/Policy Procedure encoding."""
+"""Semantic Core and Action-anchored causal Procedure for EMBER Recenter."""
 
 from __future__ import annotations
 
@@ -12,20 +12,8 @@ class VariableEpisodeInputError(ValueError):
     """Raised when a variable-length video-program batch violates its contract."""
 
 
-AxialProcedureOutput = tuple[
-    torch.Tensor,
-    torch.Tensor,
-    torch.Tensor,
-    torch.Tensor,
-    torch.Tensor,
-    torch.Tensor,
-    torch.Tensor,
-    dict[str, torch.Tensor],
-]
-
-
 class RMSNorm(torch.nn.Module):
-    """Small dtype-stable RMS normalization."""
+    """Small dtype-stable, zero-preserving RMS normalization."""
 
     def __init__(self, width: int, eps: float = 1e-6) -> None:
         super().__init__()
@@ -39,6 +27,18 @@ class RMSNorm(torch.nn.Module):
             value.to(torch.float32).square().mean(dim=-1, keepdim=True) + self.eps
         ).to(value.dtype)
         return value * scale * self.weight
+
+
+def tensor_mean_square(value: torch.Tensor) -> torch.Tensor:
+    """Return differentiable float32 mean-square without a zero sqrt."""
+
+    return value.to(torch.float32).square().mean(dim=-1, keepdim=True)
+
+
+def tensor_rms(value: torch.Tensor) -> torch.Tensor:
+    """Return a detached physical RMS for diagnostics and acceptance checks."""
+
+    return tensor_mean_square(value).detach().sqrt()
 
 
 def _apply_rope(value: torch.Tensor, positions: torch.Tensor) -> torch.Tensor:
@@ -268,326 +268,144 @@ class LanguageSemanticCore(torch.nn.Module):
         return content, weights
 
 
-class _RoutedContentAttention(torch.nn.Module):
-    """Self-attend with routing and positions restricted to Q/K."""
+class ActionAnchoredVisualTransitionFusion(torch.nn.Module):
+    """Use visible semantic change only as a bounded correction to Action."""
+
+    RESIDUAL_FRACTION = 0.25
+    RADIAL_EPS = 1e-12
 
     def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
-        if min(width, heads) <= 0 or width % heads or (width // heads) % 2:
-            raise VariableEpisodeInputError("invalid routed attention dimensions")
+        if min(width, heads) <= 0 or width % heads:
+            raise VariableEpisodeInputError("invalid visual-transition fusion")
         self.heads = int(heads)
-        self.norm = RMSNorm(width)
+        self.head_width = width // heads
+        self.probe_norm = RMSNorm(width)
+        self.transition_key_norm = RMSNorm(width)
         self.query = torch.nn.Linear(width, width, bias=False)
         self.key = torch.nn.Linear(width, width, bias=False)
-        self.value = torch.nn.Linear(width, width, bias=False)
         self.output = torch.nn.Linear(width, width, bias=False)
 
     def forward(
         self,
-        content: torch.Tensor,
-        routing: torch.Tensor,
-        valid_tokens: torch.Tensor,
-        *,
-        positions: torch.Tensor | None,
-        causal: bool,
-    ) -> torch.Tensor:
+        action_probe: torch.Tensor,
+        grounded_evidence: torch.Tensor,
+        valid_frames: torch.Tensor,
+        valid_task_tokens: torch.Tensor,
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
         if (
-            content.ndim != 3
-            or routing.shape != content.shape
-            or valid_tokens.shape != content.shape[:2]
-            or valid_tokens.dtype != torch.bool
-            or (positions is not None and positions.shape != content.shape[:2])
+            action_probe.ndim != 3
+            or grounded_evidence.ndim != 4
+            or grounded_evidence.shape[:2] != action_probe.shape[:2]
+            or grounded_evidence.shape[-1] != action_probe.shape[-1]
+            or action_probe.shape[-1] != self.heads * self.head_width
+            or valid_frames.shape != action_probe.shape[:2]
+            or valid_frames.dtype != torch.bool
+            or valid_task_tokens.shape
+            != (action_probe.shape[0], grounded_evidence.shape[2])
+            or valid_task_tokens.dtype != torch.bool
+            or not bool(valid_frames[:, 0].all())
+            or not bool(valid_task_tokens.any(dim=1).all())
         ):
-            raise VariableEpisodeInputError("invalid routed attention batch")
-        addressed = self.norm(content) + routing.to(content.dtype)
-        query = _split_heads(self.query(addressed), self.heads)
-        key = _split_heads(self.key(addressed), self.heads)
-        if positions is not None:
-            if positions.dtype != torch.long:
-                raise VariableEpisodeInputError("Procedure positions must be integral")
-            query = _apply_rope(query, positions)
-            key = _apply_rope(key, positions)
-        value = _split_heads(self.value(content), self.heads)
-        allowed = valid_tokens[:, None, None, :]
-        if causal:
-            tokens = content.shape[1]
-            causal_mask = torch.ones(
-                tokens,
-                tokens,
-                dtype=torch.bool,
-                device=content.device,
-            ).tril()
-            allowed = allowed & causal_mask[None, None]
+            raise VariableEpisodeInputError("invalid visual-transition batch")
+
+        batch, frames, task_tokens, width = grounded_evidence.shape
+        transition = torch.cat(
+            (
+                torch.zeros_like(grounded_evidence[:, :1]),
+                grounded_evidence[:, 1:] - grounded_evidence[:, :-1],
+            ),
+            dim=1,
+        )
+        active = valid_frames[:, :, None] & valid_task_tokens[:, None, :]
+        transition = transition.masked_fill(~active[..., None], 0.0)
+
+        query = self.query(self.probe_norm(action_probe)).reshape(
+            batch * frames,
+            1,
+            self.heads,
+            self.head_width,
+        ).transpose(1, 2)
+        key = self.key(self.transition_key_norm(transition)).reshape(
+            batch * frames,
+            task_tokens,
+            self.heads,
+            self.head_width,
+        ).transpose(1, 2)
+        value = transition.reshape(
+            batch * frames,
+            task_tokens,
+            self.heads,
+            self.head_width,
+        ).transpose(1, 2)
+        allowed = (
+            valid_task_tokens[:, None, :]
+            .expand(-1, frames, -1)
+            .reshape(batch * frames, task_tokens)
+        )
         attended = F.scaled_dot_product_attention(
             query,
             key,
             value,
-            attn_mask=allowed,
+            attn_mask=allowed[:, None, None, :],
             dropout_p=0.0,
             is_causal=False,
         )
-        output = content + self.output(_merge_heads(attended))
-        return output.masked_fill(~valid_tokens[..., None], 0.0)
-
-
-class _AxialProcedureBlock(torch.nn.Module):
-    """Apply local slot attention, causal time attention, then one FFN."""
-
-    SLOT_COUNT = 8
-
-    def __init__(self, *, width: int, heads: int) -> None:
-        super().__init__()
-        self.width = int(width)
-        self.local_attention = _RoutedContentAttention(
-            width=width,
-            heads=heads,
+        raw_residual = self.output(
+            attended.transpose(1, 2).reshape(batch, frames, width)
         )
-        self.temporal_attention = _RoutedContentAttention(
-            width=width,
-            heads=heads,
+        action_rms = tensor_rms(action_probe)
+        raw_residual_mean_square = tensor_mean_square(raw_residual)
+        raw_residual_rms = raw_residual_mean_square.detach().sqrt()
+        radial_cap = self.RESIDUAL_FRACTION * action_rms
+        residual_scale = radial_cap / torch.sqrt(
+            radial_cap.square()
+            + raw_residual_mean_square
+            + self.RADIAL_EPS
         )
-        self.ffn_norm = RMSNorm(width)
-        self.ffn = torch.nn.Sequential(
-            torch.nn.Linear(width, 4 * width, bias=False),
-            torch.nn.GELU(),
-            torch.nn.Linear(4 * width, width, bias=False),
+        bounded_residual = raw_residual * residual_scale.to(raw_residual.dtype)
+        bounded_residual = bounded_residual.masked_fill(
+            ~valid_frames[..., None],
+            0.0,
         )
-
-    def forward(
-        self,
-        content: torch.Tensor,
-        positions: torch.Tensor,
-        valid_times: torch.Tensor,
-        routing: torch.Tensor,
-    ) -> torch.Tensor:
-        expected_routing = (content.shape[0], self.SLOT_COUNT, self.width)
-        if (
-            content.ndim != 4
-            or content.shape[2:] != (self.SLOT_COUNT, self.width)
-            or positions.shape != content.shape[:2]
-            or positions.dtype != torch.long
-            or valid_times.shape != content.shape[:2]
-            or valid_times.dtype != torch.bool
-            or routing.shape != expected_routing
-        ):
-            raise VariableEpisodeInputError("invalid axial Procedure batch")
-        batch, times, slots, width = content.shape
-        value = content.masked_fill(~valid_times[..., None, None], 0.0)
-
-        local_content = value.reshape(batch * times, slots, width)
-        local_routing = routing[:, None].expand(
-            -1, times, -1, -1
-        ).reshape(
-            batch * times, slots, width
+        fused = (action_probe + bounded_residual).masked_fill(
+            ~valid_frames[..., None],
+            0.0,
         )
-        local_valid = valid_times.reshape(batch * times, 1).expand(-1, slots)
-        # Every local token has the same time position, so equal RoPE rotations
-        # would cancel in QK; slot and stream identities are the useful routing.
-        value = self.local_attention(
-            local_content,
-            local_routing,
-            local_valid,
-            positions=None,
-            causal=False,
-        ).reshape(batch, times, slots, width)
-
-        temporal_content = value.permute(0, 2, 1, 3).reshape(
-            batch * slots, times, width
-        )
-        temporal_routing = routing[:, :, None].expand(
-            -1, -1, times, -1
-        ).reshape(batch * slots, times, width)
-        temporal_positions = positions[:, None].expand(
-            -1, slots, -1
-        ).reshape(batch * slots, times)
-        temporal_valid = valid_times[:, None].expand(
-            -1, slots, -1
-        ).reshape(batch * slots, times)
-        value = self.temporal_attention(
-            temporal_content,
-            temporal_routing,
-            temporal_valid,
-            positions=temporal_positions,
-            causal=True,
-        ).reshape(batch, slots, times, width).permute(0, 2, 1, 3)
-
-        value = value + self.ffn(self.ffn_norm(value))
-        return value.masked_fill(~valid_times[..., None, None], 0.0)
+        diagnostics = {
+            "transition": transition,
+            "raw_residual": raw_residual,
+            "bounded_residual": bounded_residual,
+            "action_rms": action_rms,
+            "raw_residual_rms": raw_residual_rms,
+            "radial_cap": radial_cap,
+            "residual_scale": residual_scale,
+            "radial_cap_active": raw_residual_rms.gt(radial_cap),
+        }
+        return fused, diagnostics
 
 
-class SharedAxialProcedureEncoder(torch.nn.Module):
-    """Build separate Teacher and Policy memories with shared axial blocks."""
-
-    SLOT_COUNT = 8
+class CausalProcedureEncoder(torch.nn.Module):
+    """Keep one causally contextualized Procedure token per sampled frame."""
 
     def __init__(self, *, width: int, heads: int, blocks: int) -> None:
         super().__init__()
-        if (
-            min(width, heads, blocks) <= 0
-            or width % heads
-            or (width // heads) % 2
-        ):
-            raise VariableEpisodeInputError("invalid shared axial Procedure")
-        self.width = int(width)
-        self.teacher_input_norm = RMSNorm(width)
-        self.teacher_input = torch.nn.Linear(width, width, bias=False)
-        self.policy_input_norm = RMSNorm(width)
-        self.policy_input = torch.nn.Linear(width, width, bias=False)
-        self.slot_identity = torch.nn.Parameter(
-            torch.empty(self.SLOT_COUNT, width)
-        )
-        self.stream_identity = torch.nn.Parameter(torch.empty(2, width))
-        torch.nn.init.normal_(self.slot_identity, mean=0.0, std=0.02)
-        torch.nn.init.normal_(self.stream_identity, mean=0.0, std=0.02)
+        if blocks <= 0:
+            raise VariableEpisodeInputError("invalid causal Procedure encoder")
         self.blocks = torch.nn.ModuleList(
-            _AxialProcedureBlock(width=width, heads=heads)
+            RoPEContentBlock(width=width, heads=heads, causal=True)
             for _ in range(blocks)
         )
-        self.confidence_norm = RMSNorm(width)
-        self.confidence_head = torch.nn.Linear(width, 1, bias=False)
-
-    def _validate_inputs(
-        self,
-        teacher_events: torch.Tensor,
-        action_probes: torch.Tensor,
-        initial_confidence: torch.Tensor,
-        frame_positions: torch.Tensor,
-        valid_frames: torch.Tensor,
-    ) -> None:
-        if action_probes.ndim != 4:
-            raise VariableEpisodeInputError("invalid Policy Procedure inputs")
-        batch, frames, slots, width = action_probes.shape
-        content_layout = (
-            frames >= 2,
-            (slots, width) == (self.SLOT_COUNT, self.width),
-            teacher_events.shape
-            == (batch, frames - 1, self.SLOT_COUNT, self.width),
-            initial_confidence.shape == teacher_events.shape[:3],
-            initial_confidence.is_floating_point(),
-        )
-        if not all(content_layout):
-            raise VariableEpisodeInputError("invalid shared axial content")
-        sequence_layout = (
-            frame_positions.shape == action_probes.shape[:2],
-            frame_positions.dtype == torch.long,
-            valid_frames.shape == action_probes.shape[:2],
-            valid_frames.dtype == torch.bool,
-            bool(valid_frames[:, 0].all()),
-            not bool((valid_frames[:, 1:] & ~valid_frames[:, :-1]).any()),
-        )
-        if not all(sequence_layout):
-            raise VariableEpisodeInputError("invalid shared axial sequence")
-        active_intervals = valid_frames[:, 1:] & valid_frames[:, :-1]
-        if (
-            not bool(active_intervals.any(dim=1).all())
-            or bool(
-                (
-                    (frame_positions[:, 1:] <= frame_positions[:, :-1])
-                    & active_intervals
-                ).any()
-            )
-        ):
-            raise VariableEpisodeInputError("invalid Procedure frame order")
-        confidence_valid = torch.isfinite(initial_confidence)
-        confidence_valid &= initial_confidence.ge(0) & initial_confidence.le(1)
-        if not bool(confidence_valid.all()):
-            raise VariableEpisodeInputError("invalid initial Teacher confidence")
-        devices = {
-            teacher_events.device,
-            action_probes.device,
-            initial_confidence.device,
-            frame_positions.device,
-            valid_frames.device,
-        }
-        if len(devices) != 1:
-            raise VariableEpisodeInputError("shared axial inputs changed device")
-
-    def _routing(
-        self,
-        batch: int,
-        stream: int,
-        dtype: torch.dtype,
-    ) -> torch.Tensor:
-        routing = self.slot_identity + self.stream_identity[stream]
-        return routing.to(dtype=dtype)[None].expand(batch, -1, -1)
-
-    def _encode_stream(
-        self,
-        content: torch.Tensor,
-        positions: torch.Tensor,
-        valid_times: torch.Tensor,
-        *,
-        stream: int,
-        norm: torch.nn.Module,
-        projection: torch.nn.Module,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        projected = projection(norm(content)).masked_fill(
-            ~valid_times[..., None, None],
-            0.0,
-        )
-        memory = projected
-        routing = self._routing(content.shape[0], stream, projected.dtype)
-        for block in self.blocks:
-            memory = block(memory, positions, valid_times, routing)
-        return projected, memory
 
     def forward(
         self,
-        teacher_events: torch.Tensor,
-        action_probes: torch.Tensor,
-        initial_confidence: torch.Tensor,
-        frame_positions: torch.Tensor,
-        valid_frames: torch.Tensor,
-    ) -> AxialProcedureOutput:
-        """Return separate memories, confidence, positions, masks, and probes."""
-
-        self._validate_inputs(
-            teacher_events, action_probes, initial_confidence,
-            frame_positions, valid_frames,
-        )
-        valid_policy = valid_frames
-        valid_teacher = valid_frames[:, :-1] & valid_frames[:, 1:]
-        policy_positions = 2 * frame_positions
-        teacher_positions = frame_positions[:, :-1] + frame_positions[:, 1:]
-
-        teacher_input, teacher_memory = self._encode_stream(
-            teacher_events,
-            teacher_positions,
-            valid_teacher,
-            stream=0,
-            norm=self.teacher_input_norm,
-            projection=self.teacher_input,
-        )
-        policy_input, policy_memory = self._encode_stream(
-            action_probes,
-            policy_positions,
-            valid_policy,
-            stream=1,
-            norm=self.policy_input_norm,
-            projection=self.policy_input,
-        )
-
-        logits = self.confidence_head(self.confidence_norm(teacher_memory))
-        coherence = torch.sigmoid(logits.squeeze(-1)).masked_fill(
-            ~valid_teacher[..., None], 0.0
-        )
-        teacher_confidence = torch.where(
-            initial_confidence > 0,
-            initial_confidence * coherence.to(initial_confidence.dtype),
-            torch.zeros_like(initial_confidence),
-        ).masked_fill(~valid_teacher[..., None], 0.0)
-        diagnostics = {
-            "teacher_input": teacher_input,
-            "policy_input": policy_input,
-            "teacher_coherence": coherence,
-        }
-        return (
-            teacher_memory,
-            policy_memory,
-            teacher_confidence,
-            teacher_positions,
-            policy_positions,
-            valid_teacher,
-            valid_policy,
-            diagnostics,
-        )
+        content: torch.Tensor,
+        positions: torch.Tensor,
+        valid_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        if not bool(valid_mask[:, 0].all()):
+            raise VariableEpisodeInputError("Procedure must begin at frame zero")
+        value = content.masked_fill(~valid_mask[..., None], 0.0)
+        for block in self.blocks:
+            value = block(value, positions, valid_mask)
+        return value.masked_fill(~valid_mask[..., None], 0.0)

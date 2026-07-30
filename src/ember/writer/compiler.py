@@ -1,4 +1,4 @@
-"""Compile Core and Teacher–Policy Procedure gaps into routed LoRA slots."""
+"""Compile centered Procedure values with bounded Core modulation."""
 
 from __future__ import annotations
 
@@ -115,12 +115,11 @@ class CoreSlotReader(torch.nn.Module):
 
 
 class ProcedureSlotReader(torch.nn.Module):
-    """Read one owner-specific Procedure memory and expose its weights."""
-
-    SLOT_COUNT = 8
+    """Use Core-keyed attention to read raw time-centered Procedure values."""
 
     def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
+        self.core_norm = RMSNorm(width)
         self.memory_norm = RMSNorm(width)
         self.attention = ContentCrossAttention(
             width=width,
@@ -130,76 +129,105 @@ class ProcedureSlotReader(torch.nn.Module):
 
     def forward(
         self,
-        query: torch.Tensor,
-        memory: torch.Tensor,
+        routing: torch.Tensor,
+        core_slots: torch.Tensor,
+        procedure: torch.Tensor,
         positions: torch.Tensor,
-        valid_memory: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        if memory.ndim != 4 or query.ndim != 3:
-            raise VariableEpisodeInputError("invalid Procedure slot memory")
-        batch, steps, slots, width = memory.shape
+        valid_procedure: torch.Tensor,
+    ) -> tuple[
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+    ]:
         if (
-            slots != self.SLOT_COUNT
-            or positions.shape != (batch, steps)
+            procedure.ndim != 3
+            or routing.ndim != 3
+            or core_slots.shape != routing.shape
+            or procedure.shape[0] != routing.shape[0]
+            or procedure.shape[-1] != routing.shape[-1]
+            or positions.shape != procedure.shape[:2]
             or positions.dtype != torch.long
-            or valid_memory.shape != (batch, steps)
-            or valid_memory.dtype != torch.bool
-            or query.shape[0] != batch
-            or query.shape[-1] != width
-            or not bool(valid_memory.any(dim=1).all())
+            or valid_procedure.shape != procedure.shape[:2]
+            or valid_procedure.dtype != torch.bool
+            or not bool(valid_procedure.any(dim=1).all())
         ):
             raise VariableEpisodeInputError("invalid Procedure slot memory")
-        flat_memory = memory.reshape(batch, steps * slots, width)
-        flat_positions = (
-            positions[:, :, None]
-            .expand(batch, steps, slots)
-            .reshape(batch, steps * slots)
+        normalized_core = self.core_norm(core_slots)
+        mask = valid_procedure[..., None]
+        count = mask.sum(dim=1, keepdim=True).clamp_min(1)
+        procedure_float = procedure.to(torch.float32)
+        first_valid = valid_procedure.to(torch.long).argmax(dim=1)
+        reference = procedure_float.gather(
+            1,
+            first_valid[:, None, None].expand(-1, 1, procedure.shape[-1]),
         )
-        flat_valid = (
-            valid_memory[:, :, None]
-            .expand(batch, steps, slots)
-            .reshape(batch, steps * slots)
+        delta = (procedure_float - reference).masked_fill(~mask, 0.0)
+        delta_mean = delta.sum(dim=1, keepdim=True) / count.to(torch.float32)
+        centered = (delta - delta_mean).masked_fill(~mask, 0.0)
+        centered = centered.to(procedure.dtype)
+        slots, weights = self.attention(
+            routing + normalized_core,
+            self.memory_norm(procedure),
+            centered,
+            valid_procedure,
+            positions,
         )
-        content, weights = self.attention(
-            query,
-            self.memory_norm(flat_memory),
-            flat_memory,
-            flat_valid,
-            flat_positions,
-        )
-        return content, weights, flat_valid
+        return slots, normalized_core, centered, weights
 
 
-class ContentOnlySlotBlock(torch.nn.Module):
-    """Coordinate gap content while routing remains confined to Q/K."""
+class AmplitudePreservingSlotMixer(torch.nn.Module):
+    """Mix slot directions, then restore every slot's pre-mixer RMS."""
+
+    UNIT_FLOOR = 1e-6
 
     def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
+        if min(width, heads) <= 0 or width % heads:
+            raise VariableEpisodeInputError("invalid slot mixer")
+        self.heads = int(heads)
         self.attention_norm = RMSNorm(width)
         self.query = torch.nn.Linear(width, width, bias=False)
         self.key = torch.nn.Linear(width, width, bias=False)
         self.value = torch.nn.Linear(width, width, bias=False)
         self.output = torch.nn.Linear(width, width, bias=False)
-        self.heads = int(heads)
         self.ffn_norm = RMSNorm(width)
         self.ffn = torch.nn.Sequential(
             torch.nn.Linear(width, 4 * width, bias=False),
             torch.nn.GELU(),
             torch.nn.Linear(4 * width, width, bias=False),
         )
-        self.output_norm = RMSNorm(width)
+
+    @classmethod
+    def _unit_direction(
+        cls,
+        content: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        physical_rms = (
+            torch.linalg.vector_norm(
+                content.to(torch.float32),
+                dim=-1,
+                keepdim=True,
+            )
+            / math.sqrt(content.shape[-1])
+        )
+        direction = content / physical_rms.clamp_min(cls.UNIT_FLOOR).to(
+            content.dtype
+        )
+        return direction, physical_rms
 
     def forward(
         self,
         content: torch.Tensor,
         routing: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         if content.shape != routing.shape or content.ndim != 3:
-            raise VariableEpisodeInputError("invalid slot coordination batch")
-        addressed = self.attention_norm(content) + routing
+            raise VariableEpisodeInputError("invalid slot mixing batch")
+        direction, input_rms = self._unit_direction(content)
+        addressed = self.attention_norm(direction) + routing.to(direction.dtype)
         query = _split_heads(self.query(addressed), self.heads)
         key = _split_heads(self.key(addressed), self.heads)
-        value = _split_heads(self.value(content), self.heads)
+        value = _split_heads(self.value(direction), self.heads)
         weights = torch.softmax(
             torch.matmul(
                 query.to(torch.float32),
@@ -209,17 +237,20 @@ class ContentOnlySlotBlock(torch.nn.Module):
             dim=-1,
         )
         attended = torch.matmul(weights.to(value.dtype), value)
-        content = content + self.output(_merge_heads(attended))
-        content = content + self.ffn(self.ffn_norm(content))
-        return self.output_norm(content), weights
+        mixed = direction + self.output(_merge_heads(attended))
+        mixed = mixed + self.ffn(self.ffn_norm(mixed))
+        mixed_direction, _ = self._unit_direction(mixed)
+        output = mixed_direction * input_rms.to(mixed_direction.dtype)
+        return output, weights, input_rms
 
 
-class TeacherPolicyGapCompiler(torch.nn.Module):
-    """Compile a confidence-authorized Teacher–Policy gap into LoRA content."""
+class CoreKeyedProcedureCompiler(torch.nn.Module):
+    """Compile Procedure as value; let Core only address and boundedly modulate it."""
 
     EXPERT_LAYERS = 18
     RANK = 16
     QUERY_COUNT = EXPERT_LAYERS * RANK + 2 * RANK
+    CORE_MODULATION_FRACTION = 0.25
 
     def __init__(
         self,
@@ -227,17 +258,10 @@ class TeacherPolicyGapCompiler(torch.nn.Module):
         width: int,
         heads: int,
         initialization_seed: int,
-        gap_tau: float = 0.5,
     ) -> None:
         super().__init__()
-        if (
-            min(width, heads) <= 0
-            or width % heads
-            or (width // heads) % 2
-            or not math.isfinite(gap_tau)
-            or gap_tau <= 0.0
-        ):
-            raise VariableEpisodeInputError("invalid Teacher–Policy gap compiler")
+        if min(width, heads) <= 0 or width % heads or (width // heads) % 2:
+            raise VariableEpisodeInputError("invalid Core-keyed Procedure compiler")
         generator = torch.Generator(device="cpu").manual_seed(initialization_seed)
 
         def parameter(rows: int) -> torch.nn.Parameter:
@@ -245,26 +269,19 @@ class TeacherPolicyGapCompiler(torch.nn.Module):
             value.normal_(mean=0.0, std=0.02, generator=generator)
             return torch.nn.Parameter(value)
 
-        self.gap_tau = float(gap_tau)
         self.query_table = parameter(self.QUERY_COUNT)
         self.module_identity = parameter(3)
         self.layer_identity = parameter(self.EXPERT_LAYERS)
         self.rank_identity = parameter(self.RANK)
         self.routing_norm = RMSNorm(width)
         self.core_reader = CoreSlotReader(width=width, heads=heads)
-        self.core_query_norm = RMSNorm(width)
-        self.teacher_reader = ProcedureSlotReader(width=width, heads=heads)
-        self.teacher_query_norm = RMSNorm(width)
-        self.policy_reader = ProcedureSlotReader(width=width, heads=heads)
-        self.teacher_alignment = torch.nn.Linear(width, width, bias=False)
-        self.policy_alignment = torch.nn.Linear(width, width, bias=False)
-        self.teacher_alignment_norm = RMSNorm(width)
-        self.policy_alignment_norm = RMSNorm(width)
-        self.gap_norm = RMSNorm(width)
-        self.core_support = torch.nn.Linear(width, width, bias=False)
-        self.core_support_norm = RMSNorm(width)
+        self.procedure_reader = ProcedureSlotReader(width=width, heads=heads)
         self.core_gate = torch.nn.Linear(width, width, bias=False)
-        self.slot_coordination = ContentOnlySlotBlock(width=width, heads=heads)
+        torch.nn.init.zeros_(self.core_gate.weight)
+        self.slot_mixer = AmplitudePreservingSlotMixer(
+            width=width,
+            heads=heads,
+        )
 
     def _routing(self) -> torch.Tensor:
         expert = (
@@ -293,138 +310,43 @@ class TeacherPolicyGapCompiler(torch.nn.Module):
         return torch.cat((expert, action_in, action_out), dim=0)
 
     @staticmethod
-    def _validate_core(
+    def _validate_memories(
         core: torch.Tensor,
         valid_core: torch.Tensor,
+        procedure: torch.Tensor,
+        positions: torch.Tensor,
+        valid_procedure: torch.Tensor,
     ) -> None:
         if (
             core.ndim != 3
             or valid_core.shape != core.shape[:2]
             or valid_core.dtype != torch.bool
-            or not bool(valid_core.any(dim=1).all())
-        ):
-            raise VariableEpisodeInputError("invalid Core compiler memory")
-
-    @staticmethod
-    def _validate_procedure(
-        name: str,
-        memory: torch.Tensor,
-        positions: torch.Tensor,
-        valid_memory: torch.Tensor,
-        *,
-        batch: int,
-        width: int,
-    ) -> None:
-        if (
-            memory.ndim != 4
-            or memory.shape[0] != batch
-            or memory.shape[2] != ProcedureSlotReader.SLOT_COUNT
-            or memory.shape[-1] != width
-            or positions.shape != memory.shape[:2]
+            or procedure.ndim != 3
+            or positions.shape != procedure.shape[:2]
             or positions.dtype != torch.long
-            or valid_memory.shape != memory.shape[:2]
-            or valid_memory.dtype != torch.bool
-            or not bool(valid_memory.any(dim=1).all())
+            or valid_procedure.shape != procedure.shape[:2]
+            or valid_procedure.dtype != torch.bool
+            or core.shape[0] != procedure.shape[0]
+            or core.shape[-1] != procedure.shape[-1]
+            or not bool(valid_core.any(dim=1).all())
+            or not bool(valid_procedure.any(dim=1).all())
         ):
-            raise VariableEpisodeInputError(
-                f"invalid {name} Procedure compiler memory"
-            )
-
-    @classmethod
-    def _validate_memories(
-        cls,
-        core: torch.Tensor,
-        valid_core: torch.Tensor,
-        teacher: torch.Tensor,
-        teacher_confidence: torch.Tensor,
-        teacher_positions: torch.Tensor,
-        valid_teacher: torch.Tensor,
-        policy: torch.Tensor,
-        policy_positions: torch.Tensor,
-        valid_policy: torch.Tensor,
-    ) -> None:
-        cls._validate_core(core, valid_core)
-        batch, _, width = core.shape
-        cls._validate_procedure(
-            "Teacher",
-            teacher,
-            teacher_positions,
-            valid_teacher,
-            batch=batch,
-            width=width,
-        )
-        cls._validate_procedure(
-            "Policy",
-            policy,
-            policy_positions,
-            valid_policy,
-            batch=batch,
-            width=width,
-        )
-        if teacher_confidence.shape != teacher.shape[:3]:
-            raise VariableEpisodeInputError("invalid Teacher confidence shape")
-        active_confidence = teacher_confidence.masked_select(
-            valid_teacher[:, :, None].expand_as(teacher_confidence)
-        )
-        if (
-            not bool(torch.isfinite(active_confidence).all())
-            or bool((active_confidence < 0.0).any())
-            or bool((active_confidence > 1.0).any())
-        ):
-            raise VariableEpisodeInputError("invalid Teacher confidence")
-
-    def _teacher_read(
-        self,
-        query: torch.Tensor,
-        teacher: torch.Tensor,
-        teacher_confidence: torch.Tensor,
-        teacher_positions: torch.Tensor,
-        valid_teacher: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        slots, weights, _ = self.teacher_reader(
-            query,
-            teacher,
-            teacher_positions,
-            valid_teacher,
-        )
-        masked_confidence = teacher_confidence.masked_fill(
-            ~valid_teacher[:, :, None],
-            0.0,
-        )
-        flat_confidence = masked_confidence.reshape(
-            teacher.shape[0],
-            teacher.shape[1] * teacher.shape[2],
-        ).to(weights.dtype)
-        mean_weights = weights.mean(dim=1)
-        confidence = torch.einsum(
-            "bqm,bm->bq",
-            mean_weights,
-            flat_confidence,
-        )
-        return slots, confidence.clamp(0.0, 1.0), weights
+            raise VariableEpisodeInputError("invalid Core/Procedure compiler memory")
 
     def fused_slots(
         self,
         core: torch.Tensor,
         valid_core: torch.Tensor,
-        teacher: torch.Tensor,
-        teacher_confidence: torch.Tensor,
-        teacher_positions: torch.Tensor,
-        valid_teacher: torch.Tensor,
-        policy: torch.Tensor,
-        policy_positions: torch.Tensor,
-        valid_policy: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, dict[str, torch.Tensor]]:
+        procedure: torch.Tensor,
+        positions: torch.Tensor,
+        valid_procedure: torch.Tensor,
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
         self._validate_memories(
             core,
             valid_core,
-            teacher,
-            teacher_confidence,
-            teacher_positions,
-            valid_teacher,
-            policy,
-            policy_positions,
-            valid_policy,
+            procedure,
+            positions,
+            valid_procedure,
         )
         routing = self.routing_norm(self._routing())[None].expand(
             core.shape[0],
@@ -436,100 +358,57 @@ class TeacherPolicyGapCompiler(torch.nn.Module):
             core,
             valid_core,
         )
-        normalized_core = self.core_query_norm(core_slots)
-        teacher_query = routing + normalized_core
-        teacher_slots, confidence, teacher_attention = self._teacher_read(
-            teacher_query,
-            teacher,
-            teacher_confidence,
-            teacher_positions,
-            valid_teacher,
+        (
+            procedure_slots,
+            normalized_core,
+            centered_procedure,
+            procedure_attention,
+        ) = self.procedure_reader(
+            routing,
+            core_slots,
+            procedure,
+            positions,
+            valid_procedure,
         )
-        policy_query = (
-            routing
-            + normalized_core
-            + self.teacher_query_norm(teacher_slots)
+        core_modulation = self.CORE_MODULATION_FRACTION * torch.tanh(
+            self.core_gate(normalized_core)
         )
-        policy_slots, policy_attention, _ = self.policy_reader(
-            policy_query,
-            policy,
-            policy_positions,
-            valid_policy,
-        )
-        aligned_teacher = self.teacher_alignment_norm(
-            self.teacher_alignment(teacher_slots)
-        )
-        aligned_policy = self.policy_alignment_norm(
-            self.policy_alignment(policy_slots)
-        )
-        gap = aligned_teacher - aligned_policy
-        gap_rms = gap.to(torch.float32).square().mean(dim=-1).sqrt()
-        gap_strength = gap_rms / (gap_rms + self.gap_tau)
-        scales = confidence.to(gap_strength.dtype) * gap_strength
-
-        normalized_gap = self.gap_norm(gap)
-        core_support = self.core_support_norm(self.core_support(core_slots))
-        core_gate = torch.tanh(self.core_gate(normalized_gap))
-        assisted_gap = normalized_gap + core_gate * core_support
-        content, coordination_attention = self.slot_coordination(
-            assisted_gap,
+        core_gate = 1.0 + core_modulation
+        gated_procedure = procedure_slots * core_gate
+        content, slot_attention, pre_mixer_rms = self.slot_mixer(
+            gated_procedure,
             routing,
         )
         diagnostics = {
             "routing": routing,
             "core_slots": core_slots,
             "core_attention": core_attention,
-            "teacher_query": teacher_query,
-            "teacher_slots": teacher_slots,
-            "teacher_attention": teacher_attention,
-            "teacher_confidence": confidence,
-            "policy_query": policy_query,
-            "policy_slots": policy_slots,
-            "policy_attention": policy_attention,
-            "aligned_teacher": aligned_teacher,
-            "aligned_policy": aligned_policy,
-            "gap": gap,
-            "gap_rms": gap_rms,
-            "gap_strength": gap_strength,
-            "adaptation_scale": scales,
-            "normalized_gap": normalized_gap,
-            "core_support": core_support,
+            "procedure_centered": centered_procedure,
+            "procedure_slots": procedure_slots,
+            "procedure_attention": procedure_attention,
+            "core_modulation": core_modulation,
             "core_gate": core_gate,
-            "core_assisted_gap": assisted_gap,
-            "coordination_attention": coordination_attention,
+            "gated_procedure": gated_procedure,
+            "pre_mixer_rms": pre_mixer_rms,
+            "slot_attention": slot_attention,
             "fused_slots": content,
         }
-        return content, scales, diagnostics
+        return content, diagnostics
 
     def forward(
         self,
         core: torch.Tensor,
         valid_core: torch.Tensor,
-        teacher: torch.Tensor,
-        teacher_confidence: torch.Tensor,
-        teacher_positions: torch.Tensor,
-        valid_teacher: torch.Tensor,
-        policy: torch.Tensor,
-        policy_positions: torch.Tensor,
-        valid_policy: torch.Tensor,
-    ) -> tuple[
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-    ]:
-        content, scales, _ = self.fused_slots(
+        procedure: torch.Tensor,
+        positions: torch.Tensor,
+        valid_procedure: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        content, _ = self.fused_slots(
             core,
             valid_core,
-            teacher,
-            teacher_confidence,
-            teacher_positions,
-            valid_teacher,
-            policy,
-            policy_positions,
-            valid_policy,
+            procedure,
+            positions,
+            valid_procedure,
         )
         expert_stop = self.EXPERT_LAYERS * self.RANK
         batch = core.shape[0]
@@ -539,16 +418,8 @@ class TeacherPolicyGapCompiler(torch.nn.Module):
             self.RANK,
             -1,
         )
-        expert_scale = scales[:, :expert_stop].reshape(
-            batch,
-            self.EXPERT_LAYERS,
-            self.RANK,
-        )
         return (
             expert,
             content[:, expert_stop : expert_stop + self.RANK],
             content[:, -self.RANK :],
-            expert_scale,
-            scales[:, expert_stop : expert_stop + self.RANK],
-            scales[:, -self.RANK :],
         )

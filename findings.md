@@ -2576,6 +2576,32 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - owner要求v10完成后暂停。Loom、其它架构、one-shot和RL均未启动；下一步是
   先共同讨论v10负结果，而不是自动实施候选。
 
+## Loom负结果与Recenter根因级重设计（2026-07-30）
+
+- Loom首段macro50/100/150/200 paired correct400为
+  `79/106/105/112`，没有达到v5.2/v6同期水平。内部分析中raw-patch
+  correspondence、teacher confidence与Teacher–Policy gap没有形成可靠、
+  可解释的教学锚点；这与v7/v8已经证明的“Action Expert hypothesis不是
+  teacher真实相邻动作”一致。继续调confidence、gap scale或correspondence
+  权重属于围绕不可辨识变量打补丁，因此Loom停止。
+- Recenter从信息需求重新推导：Core保留v6 frame-set语义结构；Procedure以
+  已经验证过的原生50-token suffix mean Action为主干；task-grounded visual
+  transition只能以Action RMS的25%为上限作残差，不能形成effect-only旁路。
+- 新compiler只让Core提供slot地址和`[0.75,1.25]`乘性调制；LoRA主value来自
+  raw time-centered Procedure。slot mixer只混合单位方向，随后恢复输入slot
+  RMS，删除v10把微小Procedure提升到固定尺度的terminal normalization。
+- 结构硬合同为：任意Core下constant/zero Procedure均产生零compiler content；
+  Core不能单独生成adapter；Procedure按常数缩放时compiler content同尺度变化；
+  step0 public LoRA仍精确identity。
+- Recenter真实参数枚举为`10,709,248`，只比corrected rank-128 Source-SFT
+  `10,297,344`高约4.0%。删除Loom-only correspondence/confidence/gap后，
+  参数减少不是目标本身，而是不可辨识模块退出的结果。
+- 实现审查发现直接对zero mean-square开平方会在`D_0=0`和zero Procedure
+  mixer处产生非有限反向。最终径向分母直接使用mean-square；RMS只作detach
+  诊断。slot mixer使用`torch.linalg.vector_norm`定义的物理RMS（PyTorch在
+  零点采用零subgradient），只在归一化分母使用`1e-6`下限；zero-input输出和
+  梯度均精确零，near-zero梯度有界，常规尺度保持齐次。
+
 ## Loom实现与启动前工程证据（2026-07-30）
 
 - 最终Loom不是在v10上继续放大同一Procedure，而是把teacher-visible

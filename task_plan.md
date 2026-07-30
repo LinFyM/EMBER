@@ -40,34 +40,39 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   Writer per-rollout LoRA、无放回 video schedule 与逐 row paired RNG evidence。
 - [x] v4/v5/v5.1 失败根因和 v5.2 五臂成功证据已封存；旧可执行路径已退役。
 
-## 当前执行：第一性原理高性能 Writer 循环
+## 当前执行：EMBER Recenter
 
-- [x] Loom fresh macro0→200与四点paired correct400完成：
-  `79/106/105/112`，同recipe、同macro200比v6 fast-decay的`133`低21，
-  未通过一小时absolute门；没有继续第二小时，也没有运行行为级视频特异性臂。
-- [x] Loom observed-best macro200内部五条件反事实完成：raw patch matcher近
-  uniform且visual confidence约`1e-6`；Teacher–Policy gap在各条件近常数；
-  shuffled被semantic change magnitude赋予更高confidence/scale；Teacher支配
-  compiler、Core/Policy影响弱、same-task视频方差偏高。Loom因此不是“没读
-  视频”，而是把不可识别的变化和gap当作教学价值。
+- [x] 完成Loom首段和内部负证据：macro50/100/150/200 correct400为
+  `79/106/105/112`；correspondence/confidence/Teacher–Policy gap缺少可靠
+  锚点，因此停止且不围绕其scale打补丁。
+- [x] 从第一性原理封存Recenter设计：原生50-token Action mean主干、
+  task-grounded transition有界残差、单路causal Procedure、Core-keyed
+  time-centered compiler与amplitude-preserving slot mixer。
+- [x] 原位替换canonical Writer/config；退役Loom-only relations、双Procedure
+  和gap compiler；fresh schema，不从旧Writer checkpoint resume；精确参数
+  `10,709,248`。
+- [x] 为Core permutation、transition cap、Action-zero无旁路、causality、
+  constant Procedure identity、Core gate、Procedure scale、step0 identity和
+  staged gradient建立确定性合同测试。
+- [x] 完成targeted与全仓196项CPU测试，包括zero-RMS、near-zero和bf16
+  non-power-of-two constant Procedure回归。
+- [x] 完成compileall、diff check与architecture guard；guard只有既有大文件的
+  review提示，无hard violation，且active source净删约1,100行。
 - [x] owner建立新的session-local Goal：持续按
   `第一性原理重构→约一小时训练→四checkpoint correct400→失败只做内部分析`
-  循环推进；single-checkpoint absolute达到`150`或稳定接近且显著高于旧架构
-  后，才运行same/wrong/shuffled/reversed行为评测。
-- [ ] 原位退役Loom，封存并实现唯一canonical Recenter：
-  `Action-anchored + task-grounded transition correction + Core-keyed,
-  time-centered Procedure-value compiler`。不得修补Loom的matcher、
-  confidence或latent gap，也不得保留平行可执行路径。
-- [ ] 完成最短shape/mask/freeze/gradient/Core permutation/Procedure causal/
-  `Procedure read=0→identity`验证、architecture guard和全仓测试。
-- [ ] 只在GPU4–7完成B20最长视频三macro profile与fresh/resume smoke。
-- [ ] 保持v6已知有效的task-complete fast-decay训练合同，fresh macro0→200，
-  每25 macro checkpoint；并行评测50/100/150/200的paired correct400。
+  循环推进；不做checkpoint融合。
+- [ ] main复验、clean commit/push。
+- [ ] GPU4–7真实105-frame B20三macro profile；仅在OOM/连续不稳定时退B16。
+- [ ] 正式seed fresh0→1→exact-resume1→3；核验task/video/query/LR/cursor与
+  Recenter全部关键模块gradient reachability，然后seal formal config。
+- [ ] fresh task-complete macro0→200，每25 macro checkpoint。
+- [ ] paired、无放回correct400评测macro50/100/150/200，选择single best。
 - [ ] 一小时best若未达v5.2/v6同期`132–133`同档，不做行为级特异性rollout，
   只做Action/transition/Core/Procedure/compiler/LoRA/action反事实和per-task
   gradient conflict分析后重构下一版；达到同档则默认续训第二小时。
 - [ ] 第二小时达到`150`，或至少两个相邻checkpoint稳定`145+`且多task共同
   贡献，才对single-checkpoint winner补same/wrong/shuffled/reversed full400。
+- [ ] 在上述absolute与视频因果证据完成前不启动one-shot或RL。
 
 ## Phase C：v6 AS-Writer development
 

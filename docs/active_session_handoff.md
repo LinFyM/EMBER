@@ -2,20 +2,21 @@
 
 最后更新：2026-07-30 UTC。
 
-本文只保存当前运行状态、恢复入口和紧邻动作。Loom设计与推导现只作失败
-provenance；当前fresh架构正在按第一性原理封存为Recenter
-（Action-anchored、Core-keyed centered Procedure）。长期科学边界是
-`AGENTS.md`与`docs/execution_brief.md`；历史实验细节在`findings.md`、
-`progress.md`和Git history。任何接手者都必须先只读复核现场，不能按本文
-快照重复启动进程。
+本文只保存当前运行状态、恢复入口和紧邻动作。当前fresh架构 authority 是
+`docs/action_forecast_writer_recenter_design.md`；Loom设计与推导只作失败
+provenance。长期科学边界是`AGENTS.md`与`docs/execution_brief.md`；历史实验
+细节在`findings.md`、`progress.md`和Git history。任何接手者都必须先只读
+复核现场，不能按本文快照重复启动进程。
 
 ## 1. 当前实时状态
 
-owner已明确要求在当前session持续自主推进，session-local Goal已建立。唯一
-成功目标是提高EMBER single-checkpoint absolute：优先达到correct400
-`150`，或至少稳定接近、显著超过corrected Source-SFT和同期旧有效架构。
-视频特异性只用于证明性能确实由输入视频学习，不允许以牺牲absolute换取漂亮
-控制臂。循环固定为：
+owner在Loom macro50/100/150/200 correct400仅为`79/106/105/112`且内部
+correspondence/confidence/gap缺少可靠锚点后，授权继续从第一性原理重设计，
+而不是围绕Loom打补丁。唯一canonical Writer已原位切换为Recenter：
+Action-Anchored Core-Keyed Centered Procedure Writer。schema fresh不兼容，
+精确trainable参数为`10,709,248`。
+
+当前session-local Goal要求持续执行：
 
 ```text
 第一性原理重构
@@ -26,51 +27,38 @@ owner已明确要求在当前session持续自主推进，session-local Goal已�
 → 达150或稳定145+：才做winner四个额外视频特异性臂
 ```
 
-Loom正式fresh macro0→200和四点correct400已经全部完成：
+视频特异性只用于证明性能确实由输入视频学习，不允许以牺牲absolute换取漂亮
+控制臂，也不允许用checkpoint融合掩盖单点漂移。
+
+Recenter恢复v5.2/v6的原生50-token suffix mean Action主干，保留稳定
+task-query patch grounding与v6 Semantic Core；task-grounded transition只能
+以Action RMS四分之一为上限作残差修正。单路causal Procedure进入新的
+Core-keyed compiler：Core只提供slot地址和`[0.75,1.25]`乘性调制，value读取
+raw time-centered Procedure，slot mixer混合方向后恢复输入RMS。因此
+constant/zero Procedure无论Core为何都保持identity，不存在Loom的raw
+correspondence、confidence、Teacher/Policy gap或双流Procedure。
+
+canonical实现、fresh配置和确定性结构测试已经完成；Loom-only
+`relations.py`已退役。全仓`196 passed`、compileall、diff check和architecture
+guard均通过；额外修复了zero transition反向NaN、zero/near-zero mixer梯度和
+bf16非二次幂constant Procedure伪残差。Recenter配置故意保持
+`pending_recenter_live_profile`，没有继承Loom的B20、resume或gradient
+evidence。主线复验并push后紧邻动作是：
 
 ```text
-macro       50  100  150  200
-correct400  79  106  105  112
+GPU4–7 only
+→ live preflight
+→ 真实105-frame视频 B20 三macro profile
+→ 若OOM/连续不稳定才直接回退B16
+→ 正式seed fresh1→exact-resume3
+→ seal config
+→ fresh macro0→200，每25 macro checkpoint
+→ paired correct400: macro50/100/150/200
 ```
 
-训练wall`3,855.28s`、`4,800`视频条件、`96,000`action queries，机械完整且
-无OOM。macro200是右端observed-best，但同recipe、同macro200比v6
-fast-decay的`133`低21，相近一小时比v5.2的`132`低20；因此没有续第二小时。
-四个行为级特异性臂在生成任何cache/result前停止，没有运行环境rollout。
-
-macro200的内部五条件检查已完成且没有环境交互。Loom并非没读视频：Core顺序
-合同、Teacher差异传递、compiler replay和zero-Teacher identity都成立。
-真正根因是：
-
-- raw patch matcher近uniform、mutual consistency约随机，visual confidence
-  约`1e-6`；
-- shuffled的大相邻变化反而获得高于correct的teacher confidence和adaptation
-  scale；
-- Teacher–Policy latent近正交，gap strength在所有条件约`.73`，不是source
-  competence gap；
-- Teacher支配最终LoRA，Policy/Core影响弱，same-task视频方差仍偏高。
-
-所以Loom整体退役，不修matcher、confidence、scale或latent subtraction。
-当前写实现隔离在：
-
-```text
-worktree /data/ymdai/.codex/worktrees/EMBER-action-core-20260730
-branch   codex/action-core-procedure-20260730
-```
-
-新Recenter必须保留v5.2/v6已验证的`Q_text→patch`、Semantic Core、native
-Action value、task-grounded transition、causal Procedure、320 routing slots和
-full-width factors；恢复native 50-suffix mean Action主干，transition只作
-zero-preserving有界修正。compiler改为Core寻址、time-centered Procedure供给
-主要value、Core只对非零Procedure作identity-init有界乘性调制，并满足
-`Procedure read=0→public LoRA identity`。Loom raw correspondence、Events、
-confidence、独立Policy stream和Teacher–Policy gap全部从active code退役。
-
-紧邻动作是完成设计/实现/CPU验证，integrate到clean main并push；随后只在
-GPU4–7做B20最长105-frame三macro profile和fresh1→resume3。通过后保持v6
-task-complete fast-decay训练合同，fresh macro0→200、每25 checkpoint，并发
-评测50/100/150/200的correct400。正式GPU动作尚未启动；除GPU4–7外不得查询或
-使用其它GPU。
+选择single-checkpoint observed-best后，只有absolute达到同期有效架构水平才
+做正式五臂rollout；否则先做详细内部数值分析并重新定位根因。除GPU4–7外不得
+查询或使用其它GPU。
 
 v6 fast-decay已按owner后续要求从macro400 exact-resume到600。完整
 correct400曲线为：
@@ -110,7 +98,7 @@ shuffled/reversed的Procedure差异强烈传到effective LoRA/action，Core-only
 
 上述“对照完成后停下讨论”的旧边界已被owner后续v7授权覆盖。全部v6
 checkpoint、评测cache、rows、queue、logs和结果仍保留。v7通过absolute与机制
-门前不启动one-shot或RL。下文2–17节保留历史背景，18节是最新恢复入口。
+门前不启动one-shot或RL。下文2–22节保留历史背景，23节是最新恢复入口。
 
 v6 fresh task-complete 正式 run 已在 GPU4–7 从 macro0 完整训练到 macro400，
 训练和评测进程均已自然退出：
@@ -1180,3 +1168,42 @@ df5b0271991b6ff95360b138dfe72dd7ab5daf34cc54383b92688acab539ec9f
 当前终止条件来自owner明确指令，不是Goal达标：v10 absolute只有103，session
 Goal的150与SFT+30均未完成。保持Goal active但不继续自动执行；先与owner讨论
 架构/训练含义。
+
+## 23. Loom负证据与Recenter当前恢复入口
+
+owner后续授权Loom实现和一小时实验。Loom的macro50/100/150/200 paired
+correct400为：
+
+```text
+79 / 106 / 105 / 112
+```
+
+没有达到v5.2/v6同期水平，因此按owner约定未做昂贵五臂rollout，先完成内部
+数值分析。Teacher/Policy gap、raw-patch correspondence和teacher confidence
+没有获得可靠、可解释的教学锚点；该结果与v7/v8已经证明的Action–Effect局部
+不可辨识问题一致。Loom停止，不续训，不在其上调整confidence或gap scale。
+
+当前唯一canonical设计为：
+
+[`action_forecast_writer_recenter_design.md`](action_forecast_writer_recenter_design.md)
+
+活动源码删除Loom-only relations/dual Procedure/gap compiler，恢复原生50-token
+Action mean，保留v6 Core与patch grounding，使用有界visual-transition residual、
+单路causal Procedure和保留幅度的Core-keyed centered compiler。精确参数为
+`10,709,248`。活动配置为：
+
+```text
+configs/pi05_as_writer_recenter.json
+```
+
+该配置当前必须保持：
+
+```text
+profile_evidence.status = pending_recenter_live_profile
+formal_run.status       = pending_recenter_live_profile
+```
+
+不得把Loom的B20 profile、exact-resume或gradient reachability复制成Recenter
+证据。实现commit merge/push后才做一次GPU4–7 live preflight；随后按第1节的
+B20→必要时B16、resume smoke、seal、macro0→200顺序推进。GPU0–3不得查询或
+使用。

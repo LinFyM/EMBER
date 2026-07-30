@@ -37,17 +37,16 @@ filename 或隐藏 normalization。
   attention约`99.96%`均匀，且Core对effective LoRA几乎无影响，因此停止。
 - v8 的strict Action–Effect binding已完成并停止：best仅`125/400`，event被
   Effect主导，不能把policy action hypothesis当作teacher实际action。
+- v10 observed-best仅`103/400`；Loom首段四点也只有`79/106/105/112`，
+  Teacher/Policy gap和confidence缺少可靠锚点，均已停止并转为provenance。
 - 当前唯一 canonical Writer authority 是
-  [`v10`](docs/action_forecast_writer_v10_design.md)：独立保留Action
-  hypothesis与Visual-Effect streams，以交错causal Procedure学习跨interval
-  关系；Procedure提供LoRA content并门控full-rank Core，同时保持
-  `Procedure=0→LoRA identity`。
-- v10已完成identity-fresh macro0→400与12点paired correct400，observed-best
-  macro50仅`103/400`。其五臂`103/94/75/67/43`通过same/wrong/shuffled/
-  reversed行为门，但低于corrected Source-SFT `109`且未达150；内部显示
-  Action-hypothesis主导、高增益compiler和同task视频方差共同限制absolute。
-- owner要求v10完成后先暂停讨论。当前不续训、不启动候选Loom、matched
-  one-shot或RL-Writer；下一动作必须由讨论后的新授权确定。
+  [`Recenter`](docs/action_forecast_writer_recenter_design.md)：恢复原生
+  50-token Action mean，保留v6 Core，task-grounded transition只作25%有界
+  残差；Core-keyed compiler只读取time-centered raw Procedure values并保持
+  slot幅度，`constant/zero Procedure→LoRA identity`。
+- Recenter精确参数为`10,709,248`，fresh config当前等待GPU4–7 live B20/B16
+  profile与resume smoke；通过后训练macro0→200并评测四个均匀checkpoint。
+  在absolute达到同期有效架构水平前不做不必要的五臂rollout。
 
 ## 硬约束
 
@@ -60,7 +59,7 @@ filename 或隐藏 normalization。
   可执行路径已从工作树退役；provenance 只保留在 Git 历史与 evidence ledger。
 - 当前运行状态和下一动作只看
   [`docs/active_session_handoff.md`](docs/active_session_handoff.md)；架构与长期
-  科学合同分别看 v10 design、`AGENTS.md` 和 `docs/execution_brief.md`。
+  科学合同分别看 Recenter design、`AGENTS.md` 和`docs/execution_brief.md`。
 
 ## 阅读顺序
 
@@ -78,12 +77,15 @@ filename 或隐藏 normalization。
 12. `docs/action_forecast_writer_v7_design.md`
 13. `docs/action_forecast_writer_v8_design.md`
 14. `docs/action_forecast_writer_v10_design.md`
-15. `task_plan.md`
-16. `findings.md`
-17. `progress.md`
-18. `docs/concept.md`
-19. `docs/decisions_and_open_questions.md`
-20. `docs/novelty_and_landscape.md`
+15. `docs/action_forecast_writer_loom_derivation.md`
+16. `docs/action_forecast_writer_loom_design.md`
+17. `docs/action_forecast_writer_recenter_design.md`
+18. `task_plan.md`
+19. `findings.md`
+20. `progress.md`
+21. `docs/concept.md`
+22. `docs/decisions_and_open_questions.md`
+23. `docs/novelty_and_landscape.md`
 
 外部专家所需的 v4 结构、实验 aggregate、逐任务结果和根因证据集中在
 [`docs/action_forecast_writer_expert_consultation.md`](docs/action_forecast_writer_expert_consultation.md)

@@ -109,5 +109,5 @@ def validate_task_complete_topology(
         }
         if not candidates or batch_size not in candidates:
             raise WriterModelError(
-                "Loom profile batch is outside its declared hardware-friendly candidates"
+                "Recenter profile batch is outside its declared hardware-friendly candidates"
             )

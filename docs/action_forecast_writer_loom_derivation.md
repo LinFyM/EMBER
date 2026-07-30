@@ -1,15 +1,18 @@
 # EMBER Loom 推导纪要：从原材料、需求到 Teacher–Policy Gap
 
-状态（2026-07-30）：本文按实际讨论顺序，记录 owner 与 side chat 如何从
+状态（2026-07-30）：本文是历史推导provenance，按实际讨论顺序记录owner与
+side chat如何从
 信息墙内最基础的原材料出发，逐层定义 Core、Procedure 和 LoRA compiler 的
 需求，经历若干中间方案与纠正，再结合 v4/v5.2/v6/v7/v8/v10 的正式证据，
 收敛到：
 
 > **EMBER Loom: Task-Grounded Teacher–Policy Gap Writer**
 
-最终可实现规格以
-[`action_forecast_writer_loom_design.md`](action_forecast_writer_loom_design.md)
-为准。本文的职责不是重复一份模块手册，而是保存：
+Loom最终历史规格见
+[`action_forecast_writer_loom_design.md`](action_forecast_writer_loom_design.md)；
+当前canonical设计见
+[`action_forecast_writer_recenter_design.md`](action_forecast_writer_recenter_design.md)。
+本文的职责不是重复一份模块手册，而是保存：
 
 ```text
 问题是怎样提出的
@@ -19,8 +22,8 @@
 → 最终结构为何是现在的形式
 ```
 
-当前 canonical implementation 仍是已经完成实验的 v10。Loom 尚未实现或成为
-活动 authority；本文也不授权修改当前代码、配置、训练或评测状态。
+Loom已经实现并因首段与内部负证据停止；当前canonical implementation是
+Recenter。本文不再授权修改当前代码、配置、训练或评测状态。
 
 ---
 

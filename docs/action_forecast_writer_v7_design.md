@@ -2,7 +2,7 @@
 
 状态：2026-07-29 已实现、完成macro0→400并因joint pooling均匀退化和Core
 影响近零而停止；本文只作provenance。当前唯一canonical authority为
-[`action_forecast_writer_v8_design.md`](action_forecast_writer_v8_design.md)。
+[`action_forecast_writer_recenter_design.md`](action_forecast_writer_recenter_design.md)。
 v7代码/config已被原位替换，checkpoint和结果只通过Git、历史文档与实验
 artifact保留，不得恢复为并行可执行路径。
 

@@ -1,8 +1,9 @@
 # EMBER Writer v8：Hierarchical Action–Effect Event + Core-Gated Procedure
 
-状态：2026-07-29 canonical implementation authority。本文替换 v7 作为唯一活动
-Writer 拓扑；v7 文档、checkpoint 和评测只保留实验 provenance，不形成并行
-可执行路径。v8 使用不兼容 schema，从 functional identity fresh 训练。
+状态：2026-07-29 已完成并因event被Effect主导停止；本文只作provenance。
+当前canonical authority为
+[`action_forecast_writer_recenter_design.md`](action_forecast_writer_recenter_design.md)。
+不得恢复v8/Recenter并行可执行路径。
 
 ## 1. 为什么必须从 v7 继续修改
 

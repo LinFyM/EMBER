@@ -29,11 +29,11 @@ from ember.writer.as_sampling import (
 from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 
-AS_WRITER_CHECKPOINT_SCHEMA = "ember_pi05_loom_writer_checkpoint_v1"
+AS_WRITER_CHECKPOINT_SCHEMA = "ember_pi05_recenter_writer_checkpoint_v1"
 AS_WRITER_TRAINER_STATE_SCHEMA = (
-    "ember_pi05_loom_writer_trainer_state_v1"
+    "ember_pi05_recenter_writer_trainer_state_v1"
 )
-AS_WRITER_RANK_STATE_SCHEMA = "ember_pi05_loom_writer_rank_state_v1"
+AS_WRITER_RANK_STATE_SCHEMA = "ember_pi05_recenter_writer_rank_state_v1"
 
 
 def _rng_state(context: DistributedContext) -> dict[str, Any]:
@@ -355,7 +355,7 @@ def initialize_writer_phase(
             writer_record = manifest.get("files", {}).get("writer.safetensors", {})
             if (
                 training.get("schema_version")
-                != "ember_pi05_loom_as_writer_launch_v1"
+                != "ember_pi05_recenter_as_writer_launch_v1"
                 or training.get("stage", "development") != stage
                 or training.get("source") != dict(source)
                 or training.get("authorities") != dict(authorities)

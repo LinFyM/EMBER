@@ -5,8 +5,7 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 
-LOOM_WRITER_PARAMETER_COUNT = 12_855_552
-ACTION_PROBE_POSITIONS = (0, 7, 14, 21, 28, 35, 42, 49)
+RECENTER_WRITER_PARAMETER_COUNT = 10_709_248
 
 LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
     {
@@ -20,10 +19,9 @@ LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
         "max_frames_per_encoder_call",
         "action_horizon",
         "padded_action_dim",
-        "action_probe_positions",
         "semantic_core_heads",
         "semantic_core_blocks",
-        "visual_effect_heads",
+        "visual_transition_heads",
         "procedure_heads",
         "procedure_blocks",
         "fusion_heads",
@@ -43,10 +41,9 @@ WRITER_DIMENSION_CONTRACT = {
     "patch_grounding_heads": 8,
     "action_horizon": 50,
     "padded_action_dim": 32,
-    "action_probe_positions": ACTION_PROBE_POSITIONS,
     "semantic_core_heads": 8,
     "semantic_core_blocks": 2,
-    "visual_effect_heads": 8,
+    "visual_transition_heads": 8,
     "procedure_heads": 8,
     "procedure_blocks": 2,
     "fusion_heads": 8,
@@ -54,7 +51,9 @@ WRITER_DIMENSION_CONTRACT = {
 }
 
 _STATIC_WRITER_CONTRACT: dict[str, Any] = {
-    "architecture": "pi05_task_grounded_teacher_policy_gap_writer_loom",
+    "architecture": (
+        "pi05_action_anchored_core_keyed_centered_procedure_writer_recenter"
+    ),
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -81,7 +80,9 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "patch_grounding_attention": (
         "text_only_task_queries_to_each_frames_256_image_positions"
     ),
-    "patch_grounding_qk": "separate_pre_rmsnorm_bias_free_256_to_256",
+    "patch_grounding_qk": (
+        "separate_pre_rmsnorm_bias_free_256_to_256"
+    ),
     "patch_grounding_value": (
         "raw_shared_projected_image_position_content_no_value_projection"
     ),
@@ -98,13 +99,12 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "activation_checkpointing": True,
     "action_horizon": 50,
     "padded_action_dim": 32,
-    "action_probe_positions": list(ACTION_PROBE_POSITIONS),
     "action_expert_probe": (
-        "one_forward_eight_sparse_native_position_fixed_gaussian_suffix_at_t1"
+        "one_forward_native_50_suffix_hidden_mean_fixed_gaussian_at_t1"
     ),
     "action_expert_action_out": False,
     "action_probe_projection": (
-        "each_final_suffix_hidden_shared_bias_free_1024_to_256_no_mean"
+        "mean_all_50_final_suffix_hidden_then_bias_free_1024_to_256"
     ),
     "program_width": 256,
     "semantic_core_aggregation": (
@@ -121,59 +121,45 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "semantic_core_value_path": (
         "multimodal_task_token_plus_task_queried_patch_content"
     ),
-    "action_stream": "eight_sparse_probe_policy_imitation_value_memory",
-    "teacher_semantic_relation": (
-        "adjacent_task_grounded_midpoint_plus_difference_zero_at_no_change"
+    "visual_transition": (
+        "adjacent_task_grounded_patch_difference_recomputed_in_actual_order"
     ),
-    "teacher_visual_relation": (
-        "bidirectional_patch_correspondence_same_grid_matched_displacement"
+    "visual_transition_key": (
+        "zero_preserving_rmsnorm_then_bias_free_projection"
     ),
-    "teacher_relation_confidence": (
-        "bounded_change_times_task_relevance_times_mutual_match_times_"
-        "nonuniform_matcher_without_action_input"
+    "visual_transition_value": (
+        "raw_task_grounded_difference_without_value_projection"
     ),
-    "teacher_events": (
-        "three_deterministic_backbones_plus_five_learned_relation_events"
+    "visual_transition_residual": (
+        "radial_cap_at_one_quarter_stopgrad_action_probe_rms"
     ),
-    "visual_effect_heads": 8,
+    "visual_transition_heads": 8,
     "procedure_heads": 8,
     "procedure_blocks": 2,
-    "procedure_attention": (
-        "shared_dual_stream_axial_local_slots_then_slotwise_causal_time"
-    ),
-    "procedure_position_encoding": (
-        "action_at_twice_frame_ordinal_teacher_at_adjacent_ordinal_sum_qk_only"
-    ),
+    "procedure_attention": "single_global_causal_content_transformer",
+    "procedure_position_encoding": "sampled_frame_ordinal_rope_qk_only",
     "procedure_value_path": (
-        "strictly_separate_teacher_event_and_policy_imitation_memories"
+        "native_action_probe_plus_bounded_visual_transition_residual"
     ),
-    "procedure_initialization": "normal_nonzero",
     "query_count": 320,
     "routing_identity": "query_module_layer_rank_qk_only",
     "core_slot_reader": "routing_qk_core_content_v",
-    "teacher_slot_reader": (
-        "routing_plus_core_q_teacher_procedure_kv_and_same_weight_confidence"
+    "procedure_slot_reader": (
+        "routing_plus_core_q_full_normalized_procedure_k_"
+        "raw_time_centered_procedure_v"
     ),
-    "policy_slot_reader": (
-        "routing_plus_core_plus_teacher_q_policy_imitation_kv"
-    ),
-    "teacher_policy_gap": (
-        "separate_full_rank_alignment_rmsnorm_teacher_minus_policy"
-    ),
-    "adaptation_strength": (
-        "teacher_confidence_times_bounded_gap_magnitude"
-    ),
-    "core_procedure_first_interaction": "teacher_policy_gap_compiler_only",
+    "core_procedure_first_interaction": "core_keyed_procedure_compiler_only",
     "slot_fusion": (
-        "gap_content_plus_gap_gated_core_support_then_content_only_coordination"
+        "procedure_content_times_one_plus_quarter_tanh_core_modulation"
     ),
+    "core_modulation_range": [0.75, 1.25],
     "fusion_heads": 8,
     "post_fusion_blocks": 1,
-    "core_only_public_lora_delta": "exact_zero_when_confidence_or_gap_zero",
-    "action_only_public_lora_delta": "exact_zero_when_teacher_confidence_zero",
-    "final_factor_scale": (
-        "per_slot_confidence_times_gap_reapplied_after_factor_head"
+    "post_fusion_scale_contract": (
+        "direction_mixing_then_restore_prefusion_slot_rms"
     ),
+    "core_only_public_lora_delta": "exact_zero",
+    "constant_procedure_public_lora_delta": "exact_zero",
     "factor_head_bias": False,
     "factor_hidden_width": 256,
     "initialization_seed": 7,
@@ -181,7 +167,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
 
 
 def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
-    """Return the exact Loom config payload, preserving frame chunking."""
+    """Return the exact Recenter config payload, preserving frame chunking."""
 
     return {
         **_STATIC_WRITER_CONTRACT,
@@ -191,20 +177,12 @@ def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def validate_writer_dimensions(observed: Mapping[str, Any]) -> None:
-    """Reject constructor values outside the one canonical Loom topology."""
-
-    def normalized(name: str, value: Any) -> Any:
-        if name == "action_probe_positions" and value is not None:
-            return tuple(int(item) for item in value)
-        return value
+    """Reject constructor values outside the one canonical Recenter topology."""
 
     changed = {
-        name: (
-            WRITER_DIMENSION_CONTRACT[name],
-            normalized(name, observed.get(name)),
-        )
+        name: (WRITER_DIMENSION_CONTRACT[name], observed.get(name))
         for name in WRITER_DIMENSION_CONTRACT
-        if normalized(name, observed.get(name)) != WRITER_DIMENSION_CONTRACT[name]
+        if observed.get(name) != WRITER_DIMENSION_CONTRACT[name]
     }
     if changed:
         raise ValueError(f"invalid EMBER Writer dimensions: {changed}")

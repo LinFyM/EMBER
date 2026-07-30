@@ -35,7 +35,7 @@ from ember.writer.model import WriterModelError
 
 
 ROOT = Path(__file__).resolve().parents[1]
-AS_CONFIG = ROOT / "configs/pi05_as_writer_loom.json"
+AS_CONFIG = ROOT / "configs/pi05_as_writer_recenter.json"
 
 
 def _checkpoint(tmp_path: Path, contract_sha256: str) -> Path:

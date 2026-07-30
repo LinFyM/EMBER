@@ -40,14 +40,14 @@ canonical实现已在main `4769b36`完成并push；全仓`194 passed`。GPU4–7
 独立B20 profile已完成：首步包含真实105-frame视频，三步finite；后两步平均
 `25.871 queries/s`、`194.034 macro/hour`，峰值allocated/reserved为
 `76.99/83.64GB`，因此不触发B16。profile step1→3的523个trainable tensor
-全部变化且finite。
+全部变化且finite。正式seed独立fresh0→1→exact-resume1→3也已通过：
+metrics、LR、task/video/query cursor与四rank RNG连续，resume后step1全部
+checkpoint文件未变化，validation/test action reads为0。
 
 紧邻顺序：
 
 ```text
-fresh0→1→exact-resume1→3
-→ seal formal config
-→ fresh macro0→200, every25 checkpoint
+fresh macro0→200, every25 checkpoint
 → paired correct400 at macro50/100/150/200
 ```
 

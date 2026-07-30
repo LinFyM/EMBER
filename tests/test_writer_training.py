@@ -119,7 +119,12 @@ def test_core_program_config_seals_architecture_and_information_wall() -> None:
     ]
     assert config["profile_evidence"]["inference_profile"] is None
     assert config["profile_evidence"]["teacher_videos_per_task_visit"] == 1
-    assert config["profile_evidence"]["exact_resume_smoke"] is None
+    assert config["profile_evidence"]["exact_resume_smoke"]["status"] == (
+        "pass_fresh_step1_then_exact_resume_to_step3"
+    )
+    assert config["profile_evidence"]["exact_resume_smoke"][
+        "step1_checkpoint_files_unchanged_after_resume"
+    ]
     assert config["specificity_gate"]["status"] == "pending_absolute_gate"
     assert config["optimization"]["scheduler"]["decay_steps"] == 400
     assert config["data"]["teacher_video_seed"] == 20260722

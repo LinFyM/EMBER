@@ -262,7 +262,45 @@
       "profile_root": "/data/ymdai/outputs/ember/pi05_as_writer_core_program_profile_b20_longseed172_4769b36_20260730",
       "run_contract_sha256": "110a85c9d8866d1c596b3ad902b2df84c59cb3091c30b9beb4d43dc3c38c0600"
     },
-    "exact_resume_smoke": null,
+    "exact_resume_smoke": {
+      "status": "pass_fresh_step1_then_exact_resume_to_step3",
+      "root": "/data/ymdai/outputs/ember/pi05_as_writer_core_program_resume_b20_seed7_689c0bd_20260730",
+      "formal_teacher_video_seed": 20260722,
+      "fresh_stop_step": 1,
+      "resumed_stop_step": 3,
+      "completed_optimizer_steps": 3,
+      "metrics_steps": [
+        1,
+        2,
+        3
+      ],
+      "applied_learning_rates": [
+        0.0003,
+        0.00022749999999999997,
+        0.00008250000000000003
+      ],
+      "next_learning_rates": [
+        0.00022749999999999997,
+        0.00008250000000000003,
+        0.00001
+      ],
+      "cumulative_action_queries": [
+        480,
+        960,
+        1440
+      ],
+      "cumulative_video_conditions": [
+        24,
+        48,
+        72
+      ],
+      "all_steps_finite": true,
+      "validation_action_reads": 0,
+      "test_action_reads": 0,
+      "test_video_value_reads": 0,
+      "step1_checkpoint_files_unchanged_after_resume": true,
+      "run_contract_sha256": "175def6d91f4e7a025bdd9b238061eede64086bdee9f30325a8e9b003c917255"
+    },
     "gradient_reachability": {
       "status": "pass_real_profile_step1_to_step3",
       "comparison": "profile_checkpoint_step1_to_step3",

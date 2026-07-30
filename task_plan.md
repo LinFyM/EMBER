@@ -62,8 +62,8 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
 - [x] 集成canonical commit并push。
 - [x] GPU4–7最长105-frame B20三macro独立profile；真实覆盖105帧，
   后两步约`25.871 queries/s`、`194.034 macro/hour`，选择B20。
-- [ ] fresh0→1→exact-resume1→3并核验全部`10,905,856`参数gradient
-  reachability，随后seal formal config。
+- [x] fresh0→1→exact-resume1→3通过；metrics/LR/task-video-query/RNG cursor
+  连续，step1文件不变，全部523个trainable tensor可达；formal config已seal。
 - [ ] fresh task-complete macro0→200，每25 macro checkpoint。
 - [ ] paired、无放回correct400评测macro50/100/150/200，选择single best。
 - [ ] 一小时best若未达v5.2/v6同期`132–133`同档，不做行为级特异性rollout，

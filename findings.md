@@ -2719,3 +2719,7 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - step1→3间全部523个trainable tensor均有数值变化且保持finite；不是冻结、
   梯度断路或新增compiler未被functional loss触达。配置恢复formal seed后才做
   exact-resume smoke，profile checkpoint不会进入正式训练。
+- 正式seed的独立fresh0→1→resume1→3验证了完整checkpoint恢复：metrics/LR、
+  task-video-query cursor、optimizer/scheduler和四rank RNG连续，旧macro1文件
+  没有被重写，且validation/test action reads均为0。可以从identity启动正式
+  macro0→200，不使用任何profile/smoke Writer权重。

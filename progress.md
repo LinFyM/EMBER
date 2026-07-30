@@ -2137,3 +2137,12 @@ GPU范围和训练步长是当时快照；活动状态只取
   Meta-LoRA、Semantic Core、transition、Procedure、strict bilinear compiler
   和factor heads。配置已恢复正式teacher seed`20260722`；下一步为独立
   fresh0→1→exact-resume1→3 smoke。
+
+## Core-Program exact-resume与正式seal（2026-07-30）
+
+- 当前schema/commit的独立root先fresh到macro1，再从完整macro边界resume到3；
+  metrics严格为`1,2,3`，累计queries为`480/960/1440`、video conditions为
+  `24/48/72`，LR、task/video/query cursor和四rank RNG均连续。
+- resume前后macro1的manifest、Writer、trainer和四个rank state逐文件hash
+  不变；三步均finite，validation/test action reads保持0。配置现已封存B20、
+  formal teacher seed`20260722`、fresh macro0→200和every25 checkpoint。

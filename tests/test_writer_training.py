@@ -216,7 +216,25 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         resolve_runtime(formal, unsealed, context)
     sealed = copy.deepcopy(config)
     sealed["formal_run"]["status"] = "sealed"
+    monkeypatch.setattr(
+        "ember.writer.as_contract.git_state",
+        lambda _root: {
+            "dirty_paths": ["task-scoped-change"],
+            "commit": "local",
+            "origin_main": "remote",
+        },
+    )
     with pytest.raises(WriterModelError, match="clean worktree"):
+        resolve_runtime(formal, sealed, context)
+    monkeypatch.setattr(
+        "ember.writer.as_contract.git_state",
+        lambda _root: {
+            "dirty_paths": [],
+            "commit": "local",
+            "origin_main": "remote",
+        },
+    )
+    with pytest.raises(WriterModelError, match="must be pushed"):
         resolve_runtime(formal, sealed, context)
     monkeypatch.setattr(
         "ember.writer.as_contract.git_state",

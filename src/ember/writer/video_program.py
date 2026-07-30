@@ -1,4 +1,4 @@
-"""Task-aligned prefix evidence and sparse Action probes for the PI05 Writer."""
+"""Multimodal semantic/visual evidence and sparse Action probes for EMBER Loom."""
 
 from __future__ import annotations
 
@@ -9,9 +9,6 @@ from typing import Iterator, Sequence
 import torch
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
-
-from ember.writer.temporal import RMSNorm
-
 
 class VideoProgramError(RuntimeError):
     """Raised when the sealed teacher-video semantic interface changes."""
@@ -88,77 +85,8 @@ class MetaLoRAStack(torch.nn.Module):
                 handle.remove()
 
 
-class TaskQueriedPatchGrounding(torch.nn.Module):
-    """Read each frame's image positions with stable text-only task queries."""
-
-    NATIVE_IMAGE_TOKENS = 256
-
-    def __init__(self, *, width: int, heads: int) -> None:
-        super().__init__()
-        if min(width, heads) <= 0 or width % heads:
-            raise VideoProgramError("invalid task-queried patch grounding")
-        self.heads = int(heads)
-        self.head_width = width // heads
-        self.query_norm = RMSNorm(width)
-        self.patch_norm = RMSNorm(width)
-        self.query = torch.nn.Linear(width, width, bias=False)
-        self.key = torch.nn.Linear(width, width, bias=False)
-        self.output = torch.nn.Linear(width, width, bias=False)
-
-    def forward(
-        self,
-        task_queries: torch.Tensor,
-        patch_content: torch.Tensor,
-        valid_task_tokens: torch.Tensor,
-    ) -> torch.Tensor:
-        if (
-            task_queries.ndim != 3
-            or patch_content.ndim != 3
-            or task_queries.shape[0] != patch_content.shape[0]
-            or task_queries.shape[-1] != patch_content.shape[-1]
-            or task_queries.shape[-1] != self.heads * self.head_width
-            or patch_content.shape[1] != self.NATIVE_IMAGE_TOKENS
-            or valid_task_tokens.shape != task_queries.shape[:2]
-            or valid_task_tokens.dtype != torch.bool
-            or not bool(valid_task_tokens.any(dim=1).all())
-        ):
-            raise VideoProgramError("invalid task-query patch batch")
-        batch, task_tokens, width = task_queries.shape
-        patches = patch_content.shape[1]
-        query = self.query(self.query_norm(task_queries)).reshape(
-            batch,
-            task_tokens,
-            self.heads,
-            self.head_width,
-        ).transpose(1, 2)
-        key = self.key(self.patch_norm(patch_content)).reshape(
-            batch,
-            patches,
-            self.heads,
-            self.head_width,
-        ).transpose(1, 2)
-        value = patch_content.reshape(
-            batch,
-            patches,
-            self.heads,
-            self.head_width,
-        ).transpose(1, 2)
-        attended = F.scaled_dot_product_attention(
-            query,
-            key,
-            value,
-            dropout_p=0.0,
-            is_causal=False,
-        )
-        merged = attended.transpose(1, 2).reshape(batch, task_tokens, width)
-        return self.output(merged).masked_fill(
-            ~valid_task_tokens[..., None],
-            0.0,
-        )
-
-
-class Pi05LanguageAxialEncoder(torch.nn.Module):
-    """Produce stable task queries, aligned video evidence, and Action probes."""
+class Pi05LoomEncoder(torch.nn.Module):
+    """Expose existing multimodal task/image states and sparse Action probes."""
 
     NATIVE_IMAGE_TOKENS = 256
 
@@ -170,10 +98,8 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         image_width: int,
         expert_width: int,
         program_width: int,
-        text_meta_lora_rank: int,
         vl_meta_lora_rank: int,
         action_meta_lora_rank: int,
-        patch_grounding_heads: int,
         max_frames_per_encoder_call: int,
         action_horizon: int,
         padded_action_dim: int,
@@ -186,10 +112,8 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             image_width,
             expert_width,
             program_width,
-            text_meta_lora_rank,
             vl_meta_lora_rank,
             action_meta_lora_rank,
-            patch_grounding_heads,
             max_frames_per_encoder_call,
             action_horizon,
             padded_action_dim,
@@ -229,14 +153,6 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             expert_width,
             program_width,
             bias=False,
-        )
-        self.patch_grounding = TaskQueriedPatchGrounding(
-            width=program_width,
-            heads=patch_grounding_heads,
-        )
-        self.text_meta_lora = MetaLoRAStack(
-            paligemma_model.layers,
-            text_meta_lora_rank,
         )
         self.vl_meta_lora = MetaLoRAStack(
             paligemma_model.layers,
@@ -301,59 +217,6 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             hidden * task_span_mask[..., None],
         )
 
-    def _encode_text(
-        self,
-        core: torch.nn.Module,
-        language_tokens: torch.Tensor,
-        task_span_mask: torch.Tensor,
-        maximum_task_tokens: int,
-    ) -> torch.Tensor:
-        """Encode one video-invariant task-token coordinate system."""
-
-        from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks
-
-        bridge = core.paligemma_with_expert
-        language_model = bridge.paligemma.model.language_model
-        batch = language_tokens.shape[0]
-        text_tokens = torch.zeros(
-            batch,
-            maximum_task_tokens + 1,
-            dtype=language_tokens.dtype,
-            device=language_tokens.device,
-        )
-        text_padding = torch.zeros_like(text_tokens, dtype=torch.bool)
-        text_tokens[:, 0] = language_tokens[:, 0]
-        text_padding[:, 0] = True
-        for row in range(batch):
-            selected = language_tokens[row, task_span_mask[row]]
-            text_tokens[row, 1 : selected.numel() + 1] = selected
-            text_padding[row, 1 : selected.numel() + 1] = True
-        with torch.no_grad():
-            text_embeds = bridge.embed_language_tokens(text_tokens)
-        text_attention = torch.zeros_like(text_padding)
-        mask = core._prepare_attention_masks_4d(
-            make_att_2d_masks(text_padding, text_attention)
-        )
-        positions = torch.cumsum(text_padding, dim=1) - 1
-        target_dtype = language_model.layers[0].self_attn.q_proj.weight.dtype
-        with self.text_meta_lora.installed(language_model):
-            (text_hidden, suffix_hidden), _ = bridge.forward(
-                attention_mask=mask,
-                position_ids=positions,
-                past_key_values=None,
-                inputs_embeds=[text_embeds.to(target_dtype), None],
-                use_cache=False,
-                adarms_cond=[None, None],
-            )
-        if (
-            suffix_hidden is not None
-            or text_hidden.shape
-            != (batch, maximum_task_tokens + 1, self.image_width)
-        ):
-            raise VideoProgramError("PI05 text-only hidden layout changed")
-        projected = self.language_projection(text_hidden[:, 1:])
-        return projected.masked_fill(~text_padding[:, 1:, None], 0.0)
-
     def _encode_microbatch(
         self,
         core: torch.nn.Module,
@@ -361,8 +224,6 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
         task_span_mask: torch.Tensor,
-        text_queries: torch.Tensor,
-        valid_task_tokens: torch.Tensor,
         maximum_task_tokens: int,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks
@@ -459,18 +320,12 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             task_span_mask,
             maximum_task_tokens,
         )
-        multimodal_evidence = self.language_projection(packed_language)
-        patch_content = self.language_projection(
+        task_evidence = self.language_projection(packed_language)
+        visual_evidence = self.language_projection(
             prefix_hidden[:, : self.NATIVE_IMAGE_TOKENS]
         )
-        patch_evidence = self.patch_grounding(
-            text_queries,
-            patch_content,
-            valid_task_tokens,
-        )
-        evidence = multimodal_evidence + patch_evidence
         action_probes = self.interaction_projection(suffix_hidden)
-        return evidence, patch_evidence, action_probes
+        return task_evidence, visual_evidence, action_probes
 
     def _validate_forward_batch(
         self,
@@ -542,9 +397,8 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         torch.Tensor,
         torch.Tensor,
         torch.Tensor,
-        torch.Tensor,
     ]:
-        """Return text queries, Core evidence, Effect evidence, and probes."""
+        """Return multimodal task evidence, visual evidence, and Action probes."""
 
         core, valid_task_tokens, _ = self._validate_forward_batch(
             policy,
@@ -556,35 +410,13 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         )
         maximum_task_tokens = valid_task_tokens.shape[1]
 
-        def invoke_text(
-            token_values: torch.Tensor,
-            span_values: torch.Tensor,
-        ) -> torch.Tensor:
-            return self._encode_text(
-                core,
-                token_values,
-                span_values,
-                maximum_task_tokens,
-            )
-
         should_checkpoint = (
             self.activation_checkpointing
             and self.training
             and torch.is_grad_enabled()
         )
-        if should_checkpoint:
-            text_queries = checkpoint(
-                invoke_text,
-                language_tokens,
-                task_span_mask,
-                use_reentrant=False,
-                preserve_rng_state=False,
-            )
-        else:
-            text_queries = invoke_text(language_tokens, task_span_mask)
-
-        evidence_rows = []
-        patch_evidence_rows = []
+        task_evidence_rows = []
+        visual_evidence_rows = []
         action_probe_rows = []
         for start in range(0, frames.shape[0], self.max_frames_per_encoder_call):
             stop = min(start + self.max_frames_per_encoder_call, frames.shape[0])
@@ -595,8 +427,6 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
                 language_tokens.index_select(0, selected),
                 language_mask.index_select(0, selected),
                 task_span_mask.index_select(0, selected),
-                text_queries.index_select(0, selected),
-                valid_task_tokens.index_select(0, selected),
             )
 
             def invoke_frames(
@@ -604,8 +434,6 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
                 token_values: torch.Tensor,
                 mask_values: torch.Tensor,
                 span_values: torch.Tensor,
-                query_values: torch.Tensor,
-                valid_token_values: torch.Tensor,
             ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
                 return self._encode_microbatch(
                     core,
@@ -613,27 +441,26 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
                     token_values,
                     mask_values,
                     span_values,
-                    query_values,
-                    valid_token_values,
                     maximum_task_tokens,
                 )
 
             if should_checkpoint:
-                evidence, patch_evidence, action_probes = checkpoint(
+                task_evidence, visual_evidence, action_probes = checkpoint(
                     invoke_frames,
                     *arguments,
                     use_reentrant=False,
                     preserve_rng_state=False,
                 )
             else:
-                evidence, patch_evidence, action_probes = invoke_frames(*arguments)
-            evidence_rows.append(evidence)
-            patch_evidence_rows.append(patch_evidence)
+                task_evidence, visual_evidence, action_probes = invoke_frames(
+                    *arguments
+                )
+            task_evidence_rows.append(task_evidence)
+            visual_evidence_rows.append(visual_evidence)
             action_probe_rows.append(action_probes)
         return (
-            text_queries,
-            torch.cat(evidence_rows, dim=0),
-            torch.cat(patch_evidence_rows, dim=0),
+            torch.cat(task_evidence_rows, dim=0),
+            torch.cat(visual_evidence_rows, dim=0),
             torch.cat(action_probe_rows, dim=0),
             valid_task_tokens,
         )

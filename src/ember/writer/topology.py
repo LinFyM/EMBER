@@ -109,5 +109,5 @@ def validate_task_complete_topology(
         }
         if not candidates or batch_size not in candidates:
             raise WriterModelError(
-                "v8 profile batch is outside its declared hardware-friendly candidates"
+                "v10 profile batch is outside its declared hardware-friendly candidates"
             )

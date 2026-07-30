@@ -24,7 +24,7 @@ from ember.writer import as_step
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-CONFIG = REPO_ROOT / "configs/pi05_as_writer_language_axial_v8.json"
+CONFIG = REPO_ROOT / "configs/pi05_as_writer_language_axial_v10.json"
 OLD_RECIPE_CONFIG = (
     REPO_ROOT
     / "configs/pi05_as_writer_language_axial_v6_old_recipe_v1.json"
@@ -36,12 +36,13 @@ def test_language_axial_config_seals_architecture_and_information_wall() -> None
     writer = config["writer"]
     assert (
         writer["architecture"]
-        == "pi05_task_aligned_semantic_trajectory_action_effect_causal_program_procedure_content_compiler_v8"
+        == "pi05_evidence_preserving_dual_stream_procedure_gated_core_writer_v10"
     )
     assert writer["teacher_state_input"] is False
     assert writer["teacher_prompt"] == "Task: {cleaned_task};\nAction: "
     assert "same_image_language_prefix" in writer["multimodal_task_evidence"]
-    assert writer["stable_task_query"].startswith("valid_frame_mean")
+    assert writer["text_only_task_query"].startswith("frozen_gemma")
+    assert writer["text_meta_lora_rank"] == 4
     assert writer["patch_grounding_heads"] == 8
     assert "no_value_projection" in writer["patch_grounding_value"]
     assert writer["frame_batching_contract"].startswith("encode_one_video")
@@ -52,19 +53,19 @@ def test_language_axial_config_seals_architecture_and_information_wall() -> None
     assert writer["frame_stride"] == 5
     assert writer["max_frames_per_encoder_call"] == 32
     assert writer["action_probe_positions"] == [0, 7, 14, 21, 28, 35, 42, 49]
-    assert writer["semantic_core_aggregation"].startswith("parameter_free")
+    assert writer["semantic_core_aggregation"].startswith("stable_frame_mean")
     assert writer["semantic_core_blocks"] == 2
     assert writer["procedure_attention"] == (
-        "global_causal_pre_norm_with_valid_interval_mask"
+        "global_causal_pre_norm_over_interleaved_action_and_effect_tokens"
     )
-    assert writer["procedure_blocks"] == 3
-    assert writer["action_effect_heads"] == 8
-    assert "actual_arm_input_order" in writer["action_effect_source"]
-    assert "learned_bias_free_projection" in writer["action_effect_value"]
-    assert writer["action_effect_attention"].startswith("per_action_probe")
-    assert writer["action_effect_output"].startswith("eight_bound")
-    assert writer["core_procedure_modulation"].startswith("bounded_tanh")
-    assert writer["slot_fusion"].startswith("core_conditioned")
+    assert writer["procedure_blocks"] == 2
+    assert writer["visual_effect_heads"] == 8
+    assert "actual_arm_input_order" in writer["visual_effect_source"]
+    assert "no_value_projection" in writer["visual_effect_value"]
+    assert writer["visual_effect_attention"].startswith("action_summary")
+    assert writer["action_stream"].startswith("raw_eight_probe_mean")
+    assert writer["core_procedure_modulation"].startswith("procedure_gated")
+    assert writer["slot_fusion"].startswith("procedure_content")
     assert writer["post_fusion_blocks"] == 1
     assert writer["factor_hidden_width"] == 256
     assert writer_split_roles(config) == ("train",)
@@ -102,11 +103,11 @@ def test_language_axial_config_seals_architecture_and_information_wall() -> None
         "pass_macro_boundary"
     )
     assert config["profile_evidence"]["gradient_reachability"][
-        "action_effect_changed_parameter_count"
-    ] == 590848
+        "action_phase_changed_parameter_count"
+    ] == 524288
     assert config["profile_evidence"]["gradient_reachability"][
-        "core_modulation_changed_parameter_count"
-    ] == 65792
+        "procedure_modulation_changed_parameter_count"
+    ] == 393472
     assert config["profile_evidence"]["inference_profile"] is None
     assert config["profile_evidence"]["teacher_videos_per_task_visit"] == 1
     assert config["specificity_gate"]["status"] == "pending"
@@ -115,9 +116,9 @@ def test_language_axial_config_seals_architecture_and_information_wall() -> None
     assert config["formal_run"]["status"] == "sealed"
     assert config["formal_run"]["total_steps"] == 2400
     assert config["formal_run"]["per_rank_batch_size"] == 20
-    assert config["formal_run"]["selected_stop_step"] == 200
+    assert config["formal_run"]["selected_stop_step"] == 400
     assert config["formal_run"]["stage_stop_steps"] == "every:200"
-    assert config["formal_run"]["segment_definition"].startswith("fresh_v8")
+    assert config["formal_run"]["segment_definition"].startswith("fresh_v10")
     assert "without_runtime_full_data_sha" in config["formal_run"][
         "data_integrity_check"
     ]
@@ -201,7 +202,7 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         skip_data_sha=False,
     )
     pending = copy.deepcopy(config)
-    pending["formal_run"]["status"] = "pending_v8_live_profile"
+    pending["formal_run"]["status"] = "pending_v10_live_profile"
     with pytest.raises(WriterModelError, match="not sealed"):
         resolve_runtime(formal, pending, context)
     monkeypatch.setattr(
@@ -218,7 +219,7 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         20,
         tuple(range(25, 2401, 25)),
     )
-    assert formal.stop_after_step == 200
+    assert formal.stop_after_step == 400
 
 
 def test_single_video_schedule_is_reproducible_and_cycle_complete() -> None:

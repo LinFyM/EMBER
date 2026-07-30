@@ -233,12 +233,34 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   task-complete macros；全finite且稳态约205.97 macros/hour，不触发B16。
 - [x] B20完成fresh0→1、exact-resume1→3；step1未改写，任务/视频/query/LR/
   cursor相同，binder/EventRead/Core gate和所有主模块梯度可达。
-- [ ] clean commit/push并完成formal launch前最后live preflight。
-- [ ] 保持task-complete、fast decay400和其余科学合同不变，从identity fresh
-  训练0→200；paired correct400快速筛点，除明确下降外按证据决定是否续400。
-- [ ] 对single-checkpoint best做完整五臂和内部
-  per-probe-binding/EventRead/Core-gate/LoRA/action传递检查；达门或继续最早
-  瓶颈的下一项单变量迭代。
+- [x] clean commit/push后保持task-complete、fast decay400，从identity fresh
+  完成macro0→400；八点correct400的observed-best为macro300=`125/400`。
+- [x] macro300五臂为`125/121/110/110/117`；内部检查显示Action变化仅贡献
+  约`8–10%` event差异，Effect变化贡献约`147–300%`，EventRead近均匀。
+  strict local binding缺少teacher-action身份，v8停止。
+
+## Phase C4：v10 Evidence-Preserving Dual-Stream Writer
+
+- [x] 封存
+  [`docs/action_forecast_writer_v10_design.md`](docs/action_forecast_writer_v10_design.md)：
+  恢复text-only task axis；保留独立Action hypothesis与Visual-Effect streams；
+  interleaved causal Procedure；Procedure提供content并门控full-rank Core。
+- [x] 原位替换唯一canonical源码/config到不兼容v10 schema；删除尚未封存的
+  v9草案和v8 executable config，不保留strict binding/EventRead并行路径。
+- [x] 真实参数枚举`11,627,520`；全仓192 tests通过，覆盖Core置换不变、
+  dual-stream shape/mask/order、`D=0→Effect=0`、Action保留、
+  `Procedure=0→LoRA identity`、完整rank-16 target与freeze/gradient staging。
+- [x] GPU4–7最长105-frame B20连续3个macro finite；后两步约
+  `26.38 queries/s`、`197.85 macros/hour`，峰值allocated/reserved约
+  `77.01/83.65GB`，B16未触发。
+- [x] 完成fresh0→1→exact-resume1→3；step1未改写，cursor/采样/LR完全一致，
+  与独立连续run最大mean-loss差`2.63e-6`；正式teacher seed与profile已封存。
+- [ ] clean commit/push后从identity fresh按task-complete fast-decay400训练
+  约两小时至macro400，每25保存。
+- [ ] 对多个single checkpoints完成paired fixed correct400并选择observed-best；
+  不做checkpoint融合。
+- [ ] 对best完成correct/same/wrong/shuffled/reversed五臂和内部
+  Text/Core→Action/Effect→Procedure→slots→effective-LoRA→policy检查。
 
 ## Phase E：matched π0.5 action one-shot baseline
 

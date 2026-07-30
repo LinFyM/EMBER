@@ -1,9 +1,9 @@
 # EMBER focused active session handoff
 
-最后更新：2026-07-29 UTC。
+最后更新：2026-07-30 UTC。
 
-本文只保存当前运行状态、恢复入口和紧邻动作。下一fresh架构 authority 是
-`docs/action_forecast_writer_v8_design.md`；长期科学边界是 `AGENTS.md` 与
+本文只保存当前运行状态、恢复入口和紧邻动作。当前fresh架构 authority 是
+`docs/action_forecast_writer_v10_design.md`；长期科学边界是 `AGENTS.md` 与
 `docs/execution_brief.md`；历史实验细节在 `findings.md`、`progress.md` 和 Git
 history。任何接手者都必须先只读复核现场，不能按本文快照重复启动进程。
 
@@ -12,12 +12,19 @@ history。任何接手者都必须先只读复核现场，不能按本文快照�
 当前没有训练或评测进程。full-24与global-8两套corrected Source-SFT均已完成
 并封存；development observed-best仍是full-24 step400=`109/400`。
 
-v7已完成identity fresh macro0→400及macro200五臂/内部检查，停止且转为
-provenance。当前唯一canonical源码/config已经原位切换到不兼容v8；全仓192
-tests通过。GPU4–7上B20连续3个macro finite且首步包含105-frame最长视频，
-fresh0→1→resume3也通过，故不触发B16。profile config已封存；紧邻动作是
-clean/push后做一次live GPU/存储核验，再保持task-complete fast-decay400从
-identity fresh正式训练0→200。
+v8已完成identity fresh macro0→400和best五臂/内部检查，observed-best为
+macro300=`125/400`，五臂`125/121/110/110/117`。Action变化对event的影响仅
+约`8–10%`，Effect变化约`147–300%`，EventRead近均匀；v8停止并转为
+provenance。
+
+owner批准的v10 Evidence-Preserving Dual-Stream Writer已经记录并原位实现。
+当前唯一canonical源码/config为不兼容v10；全仓192 tests通过。真实参数
+`11,627,520`。GPU4–7上B20连续3个macro finite且首步包含105-frame最长视频，
+后两步约`26.38 queries/s`、`197.85 macros/hour`，峰值约
+`77.01/83.65GB`；fresh0→1→resume3也通过，最大loss差`2.63e-6`，故不触发
+B16。profile config已恢复正式teacher seed并封存；紧邻动作是clean commit/
+push后做一次live GPU/存储核验，再按task-complete fast-decay400从identity
+fresh正式训练0→400（约两小时、每25 checkpoint）。
 
 v6 fast-decay已按owner后续要求从macro400 exact-resume到600。完整
 correct400曲线为：
@@ -990,3 +997,96 @@ resume step1未改写；task/video/query/LR/cursor完全一致，最大mean-loss
 `4.7951e-5`。binder`590,848/590,848`、binding/EventRead、Core modulation
 `65,792/65,792`及所有主模块在step1→3全部变化。formal状态已封存为B20、
 teacher seed`20260722`、fresh0→200、every25 checkpoint。
+
+## 20. v8结果与停止理由
+
+v8 task-complete fast-decay400已完整训练并完成八点paired correct400：
+
+```text
+macro       50  100  150  200  250  300  350  400
+successes   90  110   82  110   90  125   98  115
+```
+
+single-checkpoint observed-best为macro300。其正式五臂为：
+
+```text
+correct / same / wrong / shuffled / reversed
+125     / 121  / 110   / 110      / 117
+```
+
+v8没有超过v6 best143，也没有恢复v5.2的强视频margin。内部检查进一步表明：
+
+```text
+fixed Effect, vary Action event relative-L2   ≈ 8–10%
+fixed Action, vary Effect event relative-L2   ≈ 147–300%
+Effect token attention entropy ratio          ≈ 97.79%
+EventRead attention entropy ratio             ≈ 99.67%
+effective Action anchors                      ≈ 7.95 / 8
+```
+
+所以问题不是新模块没有梯度，而是缺少局部Action–Effect身份：Action Expert
+probe是冻结source policy对当前画面的action hypothesis，视觉差分是未知teacher
+action造成的effect；信息墙内没有把二者逐interval一一配对的标签。strict
+binding/EventRead把已由v5.2/v6证明有效的Action证据压缩掉，输出被Effect主导。
+继续同架构训练没有根据，v8停止。
+
+## 21. v10设计、实现与profile封存
+
+v10完整authority为
+[`action_forecast_writer_v10_design.md`](action_forecast_writer_v10_design.md)。
+其最短拓扑为：
+
+```text
+text-only task axis
+├─ multimodal + task-queried patch evidence → permutation-invariant Core
+└─ 8 sparse Action probes → Action stream
+   task-queried patch forward difference → Visual-Effect stream
+   A0,V0,A1,V1,... → 2-layer causal Procedure
+
+CoreRead
+→ Core-conditioned ProcedureRead
+→ Procedure content + beta + tanh(gamma) × full-rank Core
+→ factor heads → complete rank-16 LoRA
+```
+
+删除joint `8×L` softmax、strict multiplication和EventRead；Action在`D=0`时
+仍保留，Effect在`D=0`时严格为零。Procedure值按Action/Effect分别沿时间
+中心化。compiler所有调制线性层bias-free，因此
+`Procedure=0→public LoRA identity`，Core不能独自生成adapter。
+
+真实module enumeration为`11,627,520`，全仓`192 passed`。
+
+GPU4–7 B20 profile：
+
+```text
+root:
+/data/ymdai/outputs/ember/
+pi05_as_writer_v10_profile_b20_dualstream_r1_20260730
+
+step wall              20.075 / 18.150 / 18.242 s
+steady queries/s       26.446 / 26.313
+steady macros/hour     198.346 / 197.345
+peak allocated         77,008,402,432 bytes
+peak reserved          83,653,296,128 bytes
+max sampled frames     105
+```
+
+三步全部finite、四rank完成，B16未触发。profile run-contract/metrics/summary
+file SHA256依次为：
+
+```text
+589fd5007e465c9eae9f546ea9eb6c04311e8ea9e188261dcc0c0cd8f7875f73
+8fe8cae1bb224ad64e27dcf3aea726b5d0b484f61259e39ec87963ac3872f520
+7cfa19871ac1539e9d8a72ff9a75e02d7a24aaed3499d43f44d9e787d8efce72
+```
+
+独立resume root从fresh0→1后exact-resume1→3；step1全部文件大小、mtime和
+SHA不变，三步task/video/query/LR/cursor与连续run相同，最大mean-loss差
+`2.6332e-6`。Text/VL/Action Meta-LoRA、Semantic Core、Action phase、
+Visual Effect、Procedure、Procedure reader、gamma/beta modulation、
+Core content和factor heads在step1→3均全参数变化。
+
+正式合同已恢复teacher seed`20260722`，B20、task-complete、fast decay400、
+fresh0→400、every25 checkpoint。预计192,000 action queries、9,600
+one-video conditions、16 checkpoints。正式run必须从包含本节与profile seal
+的clean、已push main启动；完成后评测多个single checkpoints，不做融合。

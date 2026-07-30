@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 
-V8_WRITER_PARAMETER_COUNT = 10_706_176
+V10_WRITER_PARAMETER_COUNT = 11_627_520
 ACTION_PROBE_POSITIONS = (0, 7, 14, 21, 28, 35, 42, 49)
 
 LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
@@ -13,6 +13,7 @@ LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
         "image_width",
         "expert_width",
         "program_width",
+        "text_meta_lora_rank",
         "vl_meta_lora_rank",
         "action_meta_lora_rank",
         "patch_grounding_heads",
@@ -22,7 +23,7 @@ LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
         "action_probe_positions",
         "semantic_core_heads",
         "semantic_core_blocks",
-        "action_effect_heads",
+        "visual_effect_heads",
         "procedure_heads",
         "procedure_blocks",
         "fusion_heads",
@@ -36,6 +37,7 @@ WRITER_DIMENSION_CONTRACT = {
     "image_width": 2048,
     "expert_width": 1024,
     "program_width": 256,
+    "text_meta_lora_rank": 4,
     "vl_meta_lora_rank": 4,
     "action_meta_lora_rank": 4,
     "patch_grounding_heads": 8,
@@ -44,17 +46,17 @@ WRITER_DIMENSION_CONTRACT = {
     "action_probe_positions": ACTION_PROBE_POSITIONS,
     "semantic_core_heads": 8,
     "semantic_core_blocks": 2,
-    "action_effect_heads": 8,
+    "visual_effect_heads": 8,
     "procedure_heads": 8,
-    "procedure_blocks": 3,
+    "procedure_blocks": 2,
     "fusion_heads": 8,
     "factor_hidden_width": 256,
 }
 
 _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "architecture": (
-        "pi05_task_aligned_semantic_trajectory_action_effect_"
-        "causal_program_procedure_content_compiler_v8"
+        "pi05_evidence_preserving_dual_stream_"
+        "procedure_gated_core_writer_v10"
     ),
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
@@ -70,23 +72,23 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     ),
     "image_width": 2048,
     "native_image_tokens": 256,
+    "text_only_task_query": (
+        "frozen_gemma_plus_rank4_text_meta_lora_task_span_hidden"
+    ),
+    "text_meta_lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
+    "text_meta_lora_rank": 4,
     "multimodal_task_evidence": (
         "final_norm_task_span_hidden_from_same_image_language_prefix"
     ),
     "shared_semantic_projection": "bias_free_2048_to_256",
-    "stable_task_query": (
-        "valid_frame_mean_of_multimodal_task_evidence_per_task_token"
-    ),
     "patch_grounding_attention": (
-        "stable_multimodal_task_queries_to_each_frames_256_image_positions"
+        "text_only_task_queries_to_each_frames_256_image_positions"
     ),
     "patch_grounding_qk": "separate_pre_rmsnorm_bias_free_256_to_256",
     "patch_grounding_value": (
         "raw_shared_projected_image_position_content_no_value_projection"
     ),
-    "patch_grounding_output": (
-        "bias_free_256_to_256_added_to_multimodal_task_token_evidence"
-    ),
+    "patch_grounding_output": "bias_free_256_to_256",
     "patch_grounding_heads": 8,
     "expert_width": 1024,
     "vl_meta_lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
@@ -109,7 +111,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     ),
     "program_width": 256,
     "semantic_core_aggregation": (
-        "parameter_free_valid_frame_mean_of_task_aligned_trajectory"
+        "stable_frame_mean_plus_text_selected_centered_frame_residual"
     ),
     "semantic_core_order_contract": (
         "strict_frame_set_permutation_invariance_without_frame_position"
@@ -122,51 +124,54 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "semantic_core_value_path": (
         "multimodal_task_token_plus_task_queried_patch_content"
     ),
-    "action_effect_source": (
-        "forward_difference_of_rms_normalized_task_aligned_trajectory_"
+    "action_stream": (
+        "raw_eight_probe_mean_plus_zero_initialized_position_preserving_"
+        "centered_probe_phase_mixer"
+    ),
+    "action_phase_mixer": "bias_free_2048_to_256_zero_output_initialization",
+    "visual_effect_source": (
+        "forward_difference_of_task_queried_patch_evidence_"
         "in_actual_arm_input_order"
     ),
-    "action_effect_interval": "frame_f_to_frame_f_plus_one",
-    "action_effect_attention": (
-        "per_action_probe_softmax_over_task_token_effects_then_"
-        "procedure_only_attention_pool_over_eight_bound_action_effects"
+    "visual_effect_interval": "frame_f_to_frame_f_plus_one",
+    "visual_effect_attention": (
+        "action_summary_query_to_task_token_visual_changes"
     ),
-    "action_effect_qk": (
-        "separate_pre_rmsnorm_bias_free_256_to_256_with_dedicated_"
-        "post_difference_transition_key_norm"
+    "visual_effect_qk": (
+        "separate_pre_rmsnorm_bias_free_256_to_256"
     ),
-    "action_effect_value": (
-        "learned_bias_free_projection_of_raw_forward_semantic_change_"
-        "modulated_by_nonzero_initialized_bias_free_action_feature_gate"
+    "visual_effect_value": (
+        "raw_forward_task_grounded_patch_change_no_value_projection"
     ),
-    "action_effect_output": (
-        "eight_bound_action_effects_then_one_procedure_only_high_level_"
-        "event_per_frame_interval"
-    ),
-    "action_effect_heads": 8,
+    "visual_effect_output": "bias_free_256_to_256",
+    "visual_effect_heads": 8,
     "procedure_heads": 8,
-    "procedure_blocks": 3,
-    "procedure_attention": "global_causal_pre_norm_with_valid_interval_mask",
+    "procedure_blocks": 2,
+    "procedure_attention": (
+        "global_causal_pre_norm_over_interleaved_action_and_effect_tokens"
+    ),
     "procedure_position_encoding": (
-        "one_dimensional_rope_on_interval_start_sampled_frame_ordinal_qk_only"
+        "action_at_twice_frame_ordinal_effect_at_adjacent_ordinal_sum"
     ),
     "procedure_value_path": (
-        "procedure_only_action_effect_event_no_action_or_core_residual"
+        "separate_action_hypothesis_and_visual_effect_evidence"
     ),
     "procedure_initialization": "normal_nonzero",
     "query_count": 320,
     "routing_identity": "query_module_layer_rank_qk_only",
     "core_slot_reader": "routing_qk_core_content_v",
     "procedure_slot_reader": (
-        "rmsnorm_routing_plus_core_read_q_ordered_procedure_content_v"
+        "routing_plus_core_read_q_ordered_procedure_k_"
+        "separately_stream_centered_procedure_v"
     ),
     "core_procedure_modulation": (
-        "bounded_tanh_core_slot_gate_multiplying_procedure_slot_content"
+        "procedure_gated_bias_free_256_to512_to_gamma_beta_"
+        "with_full_rank_core_projection"
     ),
     "core_procedure_first_interaction": "lora_compiler_only",
     "slot_fusion": (
-        "core_conditioned_procedure_readout_then_core_multiplicative_"
-        "modulation_then_one_content_only_post_fusion_block"
+        "procedure_content_plus_procedure_beta_plus_"
+        "bounded_procedure_gamma_times_core_content"
     ),
     "fusion_heads": 8,
     "post_fusion_blocks": 1,
@@ -178,7 +183,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
 
 
 def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
-    """Return the exact v8 config payload, preserving profiled frame chunking."""
+    """Return the exact v10 config payload, preserving profiled frame chunking."""
 
     return {
         **_STATIC_WRITER_CONTRACT,
@@ -188,7 +193,7 @@ def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def validate_writer_dimensions(observed: Mapping[str, Any]) -> None:
-    """Reject constructor values outside the one canonical v8 topology."""
+    """Reject constructor values outside the one canonical v10 topology."""
 
     def normalized(name: str, value: Any) -> Any:
         if name == "action_probe_positions" and value is not None:

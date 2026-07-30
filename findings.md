@@ -2481,3 +2481,37 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   binding/EventRead分别`328,448/262,400`参数全变化；Core modulation全部
   `65,792`参数变化，L2`.05172`。Semantic Core、Procedure、compiler和factor
   heads也全部可达。
+
+## v8正式结果与strict binding根因（2026-07-30）
+
+- macro50/100/150/200/250/300/350/400的paired correct400为
+  `90/110/82/110/90/125/98/115`；macro300 observed-best没有超过v6的143。
+- macro300五臂为`125/121/110/110/117`。absolute和视频margin均不够，不能把
+  shuffled/reversed略低本身当成成功。
+- 内部反事实显示fixed Effect时改变Action只带来约`8–10%` event relative-L2，
+  fixed Action时改变Effect带来约`147–300%`；Effect attention和EventRead
+  entropy ratio约`97.79%/99.67%`，有效Action anchors约`7.95/8`。
+- Action Expert probe是冻结policy的action hypothesis，不是teacher实际action；
+  相邻视觉变化由未知teacher action产生。信息墙内没有逐interval真实配对身份，
+  因此strict multiplication与8→1 EventRead把Action证据压缩成Effect-dominant
+  event。v8停止。
+
+## v10 Evidence-Preserving Dual-Stream实现与profile（2026-07-30）
+
+- v10恢复text-only task axis与v6 Semantic Set Core；8 sparse probes形成
+  Action stream，task-queried patch forward difference形成Visual-Effect
+  stream，二者按`A0,V0,A1,V1,...`进入两层causal Procedure。
+- compiler以Core-conditioned query读取按stream分别中心化的Procedure；
+  Procedure通过bias-free `256→512→gamma,beta`提供content并门控full-rank
+  Core。`D=0→Effect=0`但Action保留，`Procedure=0→LoRA identity`。
+- 真实参数`11,627,520`，全仓192 tests通过。GPU4–7 B20三macro包含105-frame
+  最长视频并全部finite；后两步`26.446/26.313 queries/s`、
+  `198.346/197.345 macros/hour`，峰值allocated/reserved
+  `77,008,402,432/83,653,296,128 bytes`。
+- Core/Procedure时序建模与LoRA compilation按职责拆为唯一canonical
+  `temporal.py`/`compiler.py`模块；architecture guard无hard violation、无
+  parallel version/function family，数值路径与参数命名不变。
+- fresh0→1→exact-resume1→3中step1未改写，task/video/query/LR/cursor一致，
+  最大mean-loss差`2.6332e-6`。Text/VL/Action Meta-LoRA、Core、Action phase、
+  Visual Effect、Procedure、compiler modulation/Core content和factor heads
+  全部参数发生更新。

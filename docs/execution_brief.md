@@ -1,6 +1,6 @@
 # EMBER Current Execution Brief
 
-状态：2026-07-29。共享 π0.5-LIBERO source base与corrected mixed-task
+状态：2026-07-30。共享 π0.5-LIBERO source base与corrected mixed-task
 rank-128 Source-SFT均已封存，后者development observed-best为`109/400`。
 v4、v5、v5.1、v5.2、v5.3和v6均已转为provenance。v6 single-checkpoint
 best为`143/400`，仍未达到focused absolute门150；task-complete与旧
@@ -15,17 +15,22 @@ fresh macro0→400。correct400曲线为
 fixed-Procedure只改变Core时effective-LoRA差异仅约`0.1–0.2%`。继续训练没有
 修复两个接口且absolute下降，因此v7停止。
 
-当前唯一fresh方法为EMBER Writer v8：Hierarchical Action–Effect Event +
-Core-Gated Procedure。完整需求、拓扑、参数预算和判定合同见
-[`docs/action_forecast_writer_v8_design.md`](action_forecast_writer_v8_design.md)。
-每个Action anchor先独立读取task-token effects，再由Procedure-only EventRead
-将8个bound tokens聚合成一个高层event；Core以bounded multiplicative gate
-调制Procedure slots，同时保持`Procedure=0→LoRA identity`。v8真实参数为
-`10,706,176`。canonical源码/config已经原位切换到不兼容v8 schema。GPU4–7
-最长105-frame真实视频B20三macro finite，后两步约`27.46 queries/s`、
-`205.97 macros/hour`，峰值allocated/reserved约`77.04/83.66GB`；
-fresh0→1→resume3通过，故不触发B16。下一步保持task-complete
-fast-decay400从identity fresh训练首段200 macro。
+v8 Hierarchical Action–Effect + Core-Gated Procedure已经完成。correct400
+最高为macro300=`125/400`，五臂`125/121/110/110/117`；Action变化只贡献约
+`8–10%` event差异，Effect变化贡献约`147–300%`，EventRead近均匀。它没有
+达到v6 absolute，也没有得到v5.2式视频margin，因此停止。
+
+当前唯一fresh方法为EMBER Writer v10：Evidence-Preserving Dual-Stream
+Writer。完整需求、拓扑、参数预算和判定合同见
+[`docs/action_forecast_writer_v10_design.md`](action_forecast_writer_v10_design.md)。
+它不再把无真实配对标签的Action hypothesis与teacher visual effect强制绑定并
+压成单event，而是保留Action与Visual-Effect两个证据流，以
+`A0,V0,A1,V1,...`进入causal Procedure；Procedure直接提供LoRA content并门控
+full-rank Core，Core单独仍不能生成adapter。真实参数为`11,627,520`。
+canonical源码/config已原位切换到不兼容v10 schema。GPU4–7最长105-frame
+B20三macro finite，后两步约`26.38 queries/s`、`197.85 macros/hour`，
+峰值allocated/reserved约`77.01/83.65GB`；完成exact-resume后按task-complete
+fast-decay400从identity fresh训练约两小时，再多checkpoint选峰和做五臂。
 
 外部专家复核后的第一轮诊断证明，shuffle的直接行为放大器位于per-image
 forecast之后的absolute-time Plan/Revision；但后续全面复审又确认它不是唯一
@@ -78,12 +83,14 @@ correct-video `127/400`，且best的reversed为`120/400`、与correct无显著�
 它因此只作provenance。
 
 当前fresh架构authority为
-[`docs/action_forecast_writer_v8_design.md`](action_forecast_writer_v8_design.md)。
-v8沿用同一次multimodal prefix产生的task-aligned semantic trajectory、
-frame-mean Core、8个Action anchors和三层causal Procedure；每个anchor独立
-读取语义变化，再做8→1 EventRead。Core-conditioned query之后新增bounded
-乘性Core gate，但不存在Core-only value path。公共宽度256、8 heads×32、
-factor hidden256，真实预算`10,706,176`。v7负结果与旧设计见
+[`docs/action_forecast_writer_v10_design.md`](action_forecast_writer_v10_design.md)。
+v10使用text-only task axis、multimodal evidence与task-queried patch evidence；
+Semantic Core对frame set置换不变，Action hypothesis和Visual Effect作为独立
+interleaved causal streams，直到Procedure内部才学习跨interval关系。compiler
+让Procedure提供content和`gamma/beta`，再选择性注入Core；公共宽度256、
+8 heads×32、factor hidden256，真实预算`11,627,520`。v8负结果与旧设计见
+[`docs/action_forecast_writer_v8_design.md`](action_forecast_writer_v8_design.md)；
+v7负结果与旧设计见
 [`docs/action_forecast_writer_v7_design.md`](action_forecast_writer_v7_design.md)；
 旧v6设计见
 [`docs/action_forecast_writer_v6_design.md`](action_forecast_writer_v6_design.md)；
@@ -148,21 +155,21 @@ owner于2026-07-22将source-base正式训练改为从generic base fresh运行1,0
   然后只做一次clip/AdamW/scheduler。video与action episode/chunk不要求配对，
   action只进functional behavior loss。
 - source base冻结，只有Writer更新。Writer不得看到action、proprio、reward、terminal、task ID、filename或隐藏stats。
-- v6原位替换v5.3活动schema/config，不保留平行runner。公开rank-16 LoRA仍为
-  76 tensors、`1,287,168` scalars；Writer参数`10,775,296`。
-- GPU4–7真实最长视频profile已拒绝B32/B24并选择B20。B20时每macro为24
+- v10原位替换v8活动schema/config，不保留平行runner。公开rank-16 LoRA仍为
+  76 tensors、`1,287,168` scalars；Writer参数`11,627,520`。
+- GPU4–7真实最长视频profile选择B20。B20时每macro为24
   videos/LoRAs、480 queries、24次functional forward、1次同步和1次AdamW；
   三步含105-frame视频且全部finite，step1→3 exact-resume通过。
-- 首个正式段使用fast cosine decay400，从identity fresh运行200 macro、
-  每25保存；先用paired fixed correct400筛single-checkpoint候选，再对唯一
+- 正式轨迹使用fast cosine decay400，从identity fresh运行约两小时至400 macro、
+  每25保存；用paired fixed correct400筛多个single-checkpoint候选，再对唯一
   当前best做完整五臂与内部传递检查。
 - absolute达到预门后，对暂时best跑固定400
   correct/same/wrong/shuffled/reversed；要求same影响最小且correct明显优于
   wrong、shuffle、reverse。不通过则定位最早失效层后fresh迭代，不用
   contrast/order loss。
-- 最终correct至少达到或接近`125/400`，目标逼近v4 shuffled `148/400`。
-  首段约一小时；除非absolute出现明确可信下降，否则平台、小幅波动或上涨都
-  默认续第二小时。第三段以后再由特异性、absolute和曲线共同决定。
+- focused absolute硬门为single-checkpoint correct400至少150且至少比
+  corrected Source-SFT best109高30。150不是自动停止点；还需满足五臂、
+  multi-task breadth和内部传递合同。
 
 ### RL-Writer
 

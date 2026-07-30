@@ -1988,3 +1988,19 @@ GPU范围和训练步长是当时快照；活动状态只取
   模块step1→3均变化。
 - config已恢复正式teacher seed`20260722`并封存B20、fresh0→200、
   every25 checkpoint；下一步是CPU复验、clean commit/push和正式launch。
+
+## v8完成并切换v10（2026-07-30）
+
+- v8 macro0→400正式训练与八点correct400完成；曲线
+  `90/110/82/110/90/125/98/115`，best macro300五臂
+  `125/121/110/110/117`。内部检查确认event被Effect主导，v8停止。
+- owner批准Evidence-Preserving Dual-Stream v10并创建session-local Goal。
+  `docs/action_forecast_writer_v10_design.md`、唯一canonical源码和不兼容v10
+  config已完成；尚未封存的v9草案与v8 executable config原位退役。
+- v10真实参数`11,627,520`；全仓192 tests与`git diff --check`通过。
+- GPU4–7 B20 profile三步finite且包含105-frame视频，后两步约
+  `26.38 queries/s`、`197.85 macros/hour`，峰值约`77.01/83.65GB`。
+  fresh0→1→resume3通过，最大loss差`2.63e-6`，所有新增路径梯度可达。
+- config已恢复正式teacher seed`20260722`，封存task-complete B20、
+  fast-decay400、fresh0→400、every25 checkpoint。紧邻动作是clean
+  commit/push和正式两小时训练。

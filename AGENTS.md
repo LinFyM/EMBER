@@ -19,12 +19,13 @@
 11. `docs/action_forecast_writer_v6_design.md`
 12. `docs/action_forecast_writer_v7_design.md`
 13. `docs/action_forecast_writer_v8_design.md`
-14. `task_plan.md`
-15. `findings.md`
-16. `progress.md`
-17. `docs/concept.md`
-18. `docs/decisions_and_open_questions.md`
-19. `docs/novelty_and_landscape.md`
+14. `docs/action_forecast_writer_v10_design.md`
+15. `task_plan.md`
+16. `findings.md`
+17. `progress.md`
+18. `docs/concept.md`
+19. `docs/decisions_and_open_questions.md`
+20. `docs/novelty_and_landscape.md`
 
 `docs/active_session_handoff.md`是当前跨session恢复入口，集中摘要研究证据链、
 v5失败证据、v5.1设计理由、运行状态和下一动作，但不覆盖架构或长期科学
@@ -64,26 +65,36 @@ binding；同时fixed-Procedure只改变Core时effective-LoRA差异仅约
 `0.1–0.2%`，模型实际退化成Procedure-only。macro400仍未修复且性能下降，
 因此v7停止，不再续训。
 
-当前唯一fresh authority提升为
-[`docs/action_forecast_writer_v8_design.md`](docs/action_forecast_writer_v8_design.md)
-定义的Hierarchical Action–Effect Event + Core-Gated Procedure。v8保留同一
-Task-Aligned Semantic Trajectory、frame-mean Semantic Core、8个原生稀疏
-Action anchors和三层Causal Procedure，只修复两个实证瓶颈：
+v8 Hierarchical Action–Effect + Core-Gated Procedure也已完成fresh
+macro0→400和机制检查。correct400八点最高为macro300=`125/400`，五臂
+`125/121/110/110/117`，没有达到v6 absolute，也只保留较弱视频margin。内部
+检查显示固定Effect改变Action时event L2仅约`8–10%`，固定Action改变Effect时
+约`147–300%`，EventRead熵约为理论均匀熵的`99.67%`。因此严格局部
+Action–Effect binding缺少信息墙内可识别依据：Action Expert probe只是冻结
+policy对当前画面的action hypothesis，并非造成相邻视觉变化的teacher action。
+v8停止，不再把8个probes压成effect-dominant单event。
 
-1. 每个Action anchor独立对`L`个task-grounded effects做softmax读取，得到8个
-   bound action–effect tokens；再由Procedure-only EventRead聚合成每区间一个
-   event，避免`8×L`全局竞争退化为均匀平均。
-2. Core除条件化Procedure query外，还用bounded tanh gate乘性调制Procedure
-   slots；没有additive Core residual，因此`Procedure=0`仍严格得到public LoRA
-   identity。
+当前唯一fresh authority为
+[`docs/action_forecast_writer_v10_design.md`](docs/action_forecast_writer_v10_design.md)
+定义的Evidence-Preserving Dual-Stream Writer。它恢复text-only task axis与
+v6 Semantic Set Core；8个稀疏Action probes形成保留raw mean的Action stream，
+task-grounded patch forward difference形成Visual-Effect stream，二者以
+`A0,V0,A1,V1,...`进入两层causal Procedure，不做strict multiplication、
+joint `8×L` softmax或EventRead。compiler先读Core，再让Core-conditioned
+query读取按Action/Effect分别中心化的Procedure；Procedure通过
+`256→512→(gamma,beta)`直接提供content并门控full-rank Core。所有线性层
+bias-free，结构保证`Procedure=0→public LoRA identity`，Core不能独自生成
+adapter。
 
-v8真实参数预算为`10,706,176`，相对rank-128 Source-SFT多约3.97%；所有新增
-参数都用于上述两个缺失接口。canonical源码/config已切到不兼容v8 schema。
-GPU4–7最长105-frame真实视频B20连续3个macro finite，稳态约
-`27.46 queries/s`、`205.97 macros/hour`，峰值allocated/reserved约
-`77.04/83.66GB`；独立fresh0→1→resume3也通过，故不触发B16。当前正式合同
-保持task-complete与fast decay400，从identity fresh训练首段200 macro，使模型
-架构成为唯一科学变量。
+v10真实参数为`11,627,520`，相对corrected rank-128 Source-SFT多约12.9%；
+这是owner允许的软预算提升，新增容量只用于Action phase保真和
+Core/Procedure融合。canonical源码/config原位切换到不兼容v10 schema，不保留
+v8/v9并行可执行路径。GPU4–7最长105-frame真实视频B20连续3个macro finite，
+后两步约`26.38 queries/s`、`197.85 macros/hour`，峰值allocated/reserved约
+`77.01/83.65GB`，故不触发B16。exact-resume通过后恢复正式teacher seed，
+从identity fresh按task-complete fast-decay400训练约两小时至macro400，每25
+保存；随后对多个single checkpoints做paired correct400选峰，再对best做正式
+五臂和内部传递检查。
 
 focused AS硬门统一为single-checkpoint
 `correct400 >= max(150, corrected Source-SFT best+30)=150`。达到absolute后

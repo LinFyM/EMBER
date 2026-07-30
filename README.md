@@ -35,14 +35,16 @@ filename 或隐藏 normalization。
 - v7 的 joint `8×L` Action–Effect pooling 已完成 macro0→400。它增强了
   reversed/shuffled 特异性，但single-checkpoint best只有`120/400`；内部
   attention约`99.96%`均匀，且Core对effective LoRA几乎无影响，因此停止。
+- v8 的strict Action–Effect binding已完成并停止：best仅`125/400`，event被
+  Effect主导，不能把policy action hypothesis当作teacher实际action。
 - 当前唯一 fresh Writer authority 是
-  [`v8`](docs/action_forecast_writer_v8_design.md)：每个稀疏Action anchor先
-  独立读取task-grounded effects，8个bound tokens再聚合为每区间一个event；
-  compiler以bounded Core gate乘性解释Procedure，同时保持
+  [`v10`](docs/action_forecast_writer_v10_design.md)：独立保留Action
+  hypothesis与Visual-Effect streams，以交错causal Procedure学习跨interval
+  关系；Procedure提供LoRA content并门控full-rank Core，同时保持
   `Procedure=0→LoRA identity`。
-- v8 已原位替换唯一 canonical Writer，参数`10,706,176`；GPU4–7最长105-frame
+- v10 已原位替换唯一 canonical Writer，参数`11,627,520`；GPU4–7最长105-frame
   B20 profile与exact-resume已通过并封存，正式段保持task-complete
-  fast-decay400从identity fresh训练。最终仍以single-checkpoint
+  fast-decay400从identity fresh训练约两小时。最终仍以single-checkpoint
   `correct400>=150`及完整五臂/内部因果门判定。
 - 当前 Writer 通过后才做 matched one-shot baseline，随后进入独立
   short-AS cold-start → pure-reward RL-Writer。
@@ -58,7 +60,7 @@ filename 或隐藏 normalization。
   可执行路径已从工作树退役；provenance 只保留在 Git 历史与 evidence ledger。
 - 当前运行状态和下一动作只看
   [`docs/active_session_handoff.md`](docs/active_session_handoff.md)；架构与长期
-  科学合同分别看 v8 design、`AGENTS.md` 和 `docs/execution_brief.md`。
+  科学合同分别看 v10 design、`AGENTS.md` 和 `docs/execution_brief.md`。
 
 ## 阅读顺序
 
@@ -75,12 +77,13 @@ filename 或隐藏 normalization。
 11. `docs/action_forecast_writer_v6_design.md`
 12. `docs/action_forecast_writer_v7_design.md`
 13. `docs/action_forecast_writer_v8_design.md`
-14. `task_plan.md`
-15. `findings.md`
-16. `progress.md`
-17. `docs/concept.md`
-18. `docs/decisions_and_open_questions.md`
-19. `docs/novelty_and_landscape.md`
+14. `docs/action_forecast_writer_v10_design.md`
+15. `task_plan.md`
+16. `findings.md`
+17. `progress.md`
+18. `docs/concept.md`
+19. `docs/decisions_and_open_questions.md`
+20. `docs/novelty_and_landscape.md`
 
 外部专家所需的 v4 结构、实验 aggregate、逐任务结果和根因证据集中在
 [`docs/action_forecast_writer_expert_consultation.md`](docs/action_forecast_writer_expert_consultation.md)

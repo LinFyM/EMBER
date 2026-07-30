@@ -2046,3 +2046,37 @@ GPU范围和训练步长是当时快照；活动状态只取
   SHA合同正确拒绝，未污染checkpoint。
 - 正式首段封存为GPU4–7、task-complete B20、fresh macro0→200、每25 macro
   checkpoint；结束后只比较single checkpoint 50/100/150/200，不做融合。
+
+## Loom正式首段、correct曲线与内部停止判定（2026-07-30）
+
+- main `1e5870f`上的Loom fresh macro0→200自然完成，wall`3,855.28s`、
+  `4,800`视频条件和`96,000`action queries，训练机械、task-complete覆盖、
+  checkpoint和online validation均完整。
+- macro50/100/150/200的paired无放回correct400为
+  `79/106/105/112`。每点400 rows、36/36 shards、无failure；macro200为
+  observed-best，但比同macro、同recipe v6的`133`低21，也比同期v5.2的
+  `132`低20，未触发第二小时。
+- owner要求先做内部数值分析且暂停rollout。已停止自动启动的四个特异性臂；
+  停止时cache=0、results不存在，未运行任何same/wrong/shuffled/reversed环境
+  rollout。
+- macro200内部五条件检查完成且没有环境交互：Core顺序合同、差异传递、
+  compiler replay和zero-Teacher identity均通过；同时matcher近uniform、
+  visual confidence近零、shuffled confidence/scale高于correct、
+  Teacher–Policy gap近常数、Teacher支配LoRA且same-video方差偏高。Loom据此
+  作为科学non-pass停止，不继续修补或续训。
+
+## Recenter自主迭代启动（2026-07-30）
+
+- owner明确授权在同一session持续自主推进，已创建session-local Goal；目标为
+  single-checkpoint correct400至少150或稳定接近且显著高于旧架构，达到
+  absolute门后才做行为级视频特异性。
+- 当前第一轮设计为Action-anchored Recenter：恢复native 50-suffix mean
+  Action backbone，保留task-grounded transition受控修正、Semantic Core和
+  causal Procedure；compiler改为Core寻址、time-centered Procedure供值、
+  Core只作非零Procedure上的有界乘性调制。Loom matcher/confidence/events/
+  latent gap全部退役，不保留平行可执行路径。
+- 实现隔离在agent-owned worktree
+  `/data/ymdai/.codex/worktrees/EMBER-action-core-20260730`、
+  branch`codex/action-core-procedure-20260730`；主工作树只更新长期ledger。
+  第一轮保持v6 task-complete fast-decay B20训练合同，待实现验证后只用
+  GPU4–7做profile、resume、fresh macro0→200和四点correct400。

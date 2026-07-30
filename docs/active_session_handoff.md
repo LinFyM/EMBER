@@ -2,51 +2,75 @@
 
 最后更新：2026-07-30 UTC。
 
-本文只保存当前运行状态、恢复入口和紧邻动作。当前fresh架构 authority 是
-`docs/action_forecast_writer_loom_design.md`与
-`docs/action_forecast_writer_loom_derivation.md`；长期科学边界是 `AGENTS.md`
-与`docs/execution_brief.md`；历史实验细节在`findings.md`、`progress.md`和
-Git history。任何接手者都必须先只读复核现场，不能按本文快照重复启动进程。
+本文只保存当前运行状态、恢复入口和紧邻动作。Loom设计与推导现只作失败
+provenance；当前fresh架构正在按第一性原理封存为Recenter
+（Action-anchored、Core-keyed centered Procedure）。长期科学边界是
+`AGENTS.md`与`docs/execution_brief.md`；历史实验细节在`findings.md`、
+`progress.md`和Git history。任何接手者都必须先只读复核现场，不能按本文
+快照重复启动进程。
 
 ## 1. 当前实时状态
 
-owner已明确采用最终Loom并授权快速完成实现、一小时训练、四点correct400和
-最优点五臂/内部检查。唯一canonical Writer已原位切换为
-Task-Grounded Teacher–Policy Gap Writer；不保留v10平行可执行路径，schema
-fresh不兼容。精确trainable参数为`12,855,552`，位于设计预估
-`12.8M–13.3M`内。
-
-当前实现已通过全仓191项CPU测试。GPU4–7的B20真实profile已
-连续完成3个task-complete macro，第1步明确包含105-frame最长视频；三步
-`20.463/18.397/18.367s`，后两步约`26.112 queries/s`、
-`195.843 macro/hour`，峰值allocated/reserved为
-`77,566,232,064/83,732,987,904 bytes`。全部loss finite，B16未触发。
-
-profile root为：
+owner已明确要求在当前session持续自主推进，session-local Goal已建立。唯一
+成功目标是提高EMBER single-checkpoint absolute：优先达到correct400
+`150`，或至少稳定接近、显著超过corrected Source-SFT和同期旧有效架构。
+视频特异性只用于证明性能确实由输入视频学习，不允许以牺牲absolute换取漂亮
+控制臂。循环固定为：
 
 ```text
-/data/ymdai/outputs/ember/
-pi05_as_writer_loom_profile_b20_longseed172_r2_20260730
+第一性原理重构
+→ 约一小时fresh训练
+→ 四个checkpoint paired correct400
+→ 未恢复同期旧架构：不做行为级特异性，只做详细内部/梯度分析后再重构
+→ 恢复或超过同期：续第二小时
+→ 达150或稳定145+：才做winner四个额外视频特异性臂
 ```
 
-profile run-contract/metrics/summary文件SHA256依次为
-`0ab52249...9ebe`、`f04bb353...b17c`、`1ad61cf1...a066`。step1→3中
-Text/VL Meta、语义投影、patch grounding、Action投影、Core、Teacher Events、
-shared axial Procedure、gap compiler与factor heads均有真实参数更新；
-Action Meta的`618,496/626,688`参数发生可见位移，其余两个A矩阵在bf16短
-profile中未跨量化步，不据此宣称断梯度。
+Loom正式fresh macro0→200和四点correct400已经全部完成：
 
-独立fresh0→1→exact-resume1→3 smoke已经在正式teacher seed`20260722`下
-通过；step1 checkpoint全部文件未改写，task/video/query与LR schedule逐项
-匹配uninterrupted profile，最大mean-loss差`1.5891e-6`，最终3行metrics、
-72个视频条件和1,440个action queries均完整。首次smoke曾因加载期间并发修改
-config SHA而被合同校验正确拒绝，checkpoint本身没有损坏；稳定配置下重跑后
-问题消失。现在只需完成结构门复验、clean commit/push，再启动fresh macro0→200。
-正式段每25 macro保留checkpoint；结束后并行评测macro50/100/150/200，
-每卡一个checkpoint、correct400无放回。选出single-checkpoint observed-best
-后，用四卡并行补same-task-other/wrong/shuffled/reversed，并完成内部
-Teacher confidence、Teacher/Policy gap、effective LoRA与policy action传递
-分析。除GPU4–7外不得查询或使用其它GPU。
+```text
+macro       50  100  150  200
+correct400  79  106  105  112
+```
+
+训练wall`3,855.28s`、`4,800`视频条件、`96,000`action queries，机械完整且
+无OOM。macro200是右端observed-best，但同recipe、同macro200比v6
+fast-decay的`133`低21，相近一小时比v5.2的`132`低20；因此没有续第二小时。
+四个行为级特异性臂在生成任何cache/result前停止，没有运行环境rollout。
+
+macro200的内部五条件检查已完成且没有环境交互。Loom并非没读视频：Core顺序
+合同、Teacher差异传递、compiler replay和zero-Teacher identity都成立。
+真正根因是：
+
+- raw patch matcher近uniform、mutual consistency约随机，visual confidence
+  约`1e-6`；
+- shuffled的大相邻变化反而获得高于correct的teacher confidence和adaptation
+  scale；
+- Teacher–Policy latent近正交，gap strength在所有条件约`.73`，不是source
+  competence gap；
+- Teacher支配最终LoRA，Policy/Core影响弱，same-task视频方差仍偏高。
+
+所以Loom整体退役，不修matcher、confidence、scale或latent subtraction。
+当前写实现隔离在：
+
+```text
+worktree /data/ymdai/.codex/worktrees/EMBER-action-core-20260730
+branch   codex/action-core-procedure-20260730
+```
+
+新Recenter必须保留v5.2/v6已验证的`Q_text→patch`、Semantic Core、native
+Action value、task-grounded transition、causal Procedure、320 routing slots和
+full-width factors；恢复native 50-suffix mean Action主干，transition只作
+zero-preserving有界修正。compiler改为Core寻址、time-centered Procedure供给
+主要value、Core只对非零Procedure作identity-init有界乘性调制，并满足
+`Procedure read=0→public LoRA identity`。Loom raw correspondence、Events、
+confidence、独立Policy stream和Teacher–Policy gap全部从active code退役。
+
+紧邻动作是完成设计/实现/CPU验证，integrate到clean main并push；随后只在
+GPU4–7做B20最长105-frame三macro profile和fresh1→resume3。通过后保持v6
+task-complete fast-decay训练合同，fresh macro0→200、每25 checkpoint，并发
+评测50/100/150/200的correct400。正式GPU动作尚未启动；除GPU4–7外不得查询或
+使用其它GPU。
 
 v6 fast-decay已按owner后续要求从macro400 exact-resume到600。完整
 correct400曲线为：

@@ -2590,3 +2590,59 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   正式macro0→200的中断恢复视为已验证工程能力。
 - evaluator无需新增执行路径即可并行跑四个single checkpoints和五臂；
   episode cache的遗留v4 provenance标签已改为Loom schema。
+
+## Loom一小时结果与内部根因（2026-07-30）
+
+- 正式Loom fresh macro0→200自然完成：200个task-complete updates、
+  `4,800`个one-video Writer条件、`96,000`个action queries，wall
+  `3,855.28s`，loss全程finite且未OOM。macro50/100/150/200的paired、
+  无放回correct400为`79/106/105/112`；macro200是右端observed-best，但
+  只比macro100/150净高`6/7`且paired不显著，主要成功集中在Goal-6、
+  Object-1、Object-3。
+- 相同task-complete fast-decay合同、相同macro200坐标下，Loom=`112`，
+  v6=`133`，差21；相近一小时的v5.2=`132`，Loom相对v5.2的paired
+  gained/lost为`32/52,p=.0375`。因此Loom没有通过一小时absolute门，不续训
+  第二小时，也不做行为级same/wrong/shuffled/reversed rollout。
+- macro200的8-task内部五条件检查全部finite、compiler replay误差0、
+  zero-Teacher-Events时memory/confidence/scale/LoRA严格为0。Core保持
+  same-frame-set顺序不变，Teacher Events的差异也能强烈传到LoRA/action；
+  所以失败不是Writer完全忽略视频或数值/工程故障。
+- Loom的核心新语义没有成立：
+  - raw-patch matcher entropy `.991755`，mutual consistency
+    `.0039218≈1/255`，visual confidence约`1.2e-6`，对应路径功能上近零；
+  - correct/shuffled semantic relation RMS为`.0625/.1694`，teacher
+    confidence约`.316/.455`，adaptation scale约`.232/.333`，即乱序大跳变
+    获得更高授权；
+  - Teacher–Policy aligned cosine在各条件仅约`.03–.10`，gap RMS约
+    `1.34–1.39`、gap strength约`.729–.736`，没有形成source competence gap；
+  - 固定Core/Policy只换Teacher时effective-LoRA差异可达`.208–1.097`，固定
+    Core/Teacher只换Policy多数order差异仅约`.020–.024`；Teacher支配
+    compiler；
+  - same-task换正确视频的effective-LoRA/action中位差为`.189/.071`，
+    高于v5.2的`.132/.039`和v6 fast-decay的`.069/.012`。
+- 根因不是某个confidence阈值，而是架构要求positive-only AS从无共同锚点的
+  visual Teacher latent与Action-Expert latent显式计算“能力差”，并学习一个
+  没有负例监督的教学可信度。修matcher、反转scale或增加gate仍保留不可识别
+  中央变量，因此Loom整体退役，不做局部补丁。
+
+## Recenter第一性原理重构决策（2026-07-30）
+
+- owner建立新的session-local Goal：持续执行
+  `根因重构→一小时训练→四checkpoint correct400→未恢复旧架构则只做内部
+  分析`循环；single-checkpoint达到`150`或稳定接近且多task共同贡献后，才做
+  行为级视频特异性rollout。视频特异性用于证明能力来自输入视频，不以牺牲
+  absolute为目标。
+- v7/v8的`120/125`相对v5.2 Action-only `132`和v6
+  Action+transition `143`证明：不能因Loom gap失败就删除Action value。
+  下一版的根原则是`Action-anchored, teacher-corrected Procedure`：
+  policy-native Action hidden是动态主干，task-grounded transition只能提供
+  zero-preserving、范数受控的修正。
+- Recenter保留v5.2/v6的稳定`Q_text→patch values`、frame-set Semantic Core、
+  causal Procedure、320 routing slots、rank16 public LoRA和full-width factor
+  heads；恢复已验证的native 50-suffix mean Action probe。删除Loom raw
+  matcher、3+5 Events、teacher confidence、Policy stream与latent gap。
+- compiler权力改为：Core先寻址，time-centered Procedure提供主要value；
+  Core只能对非零Procedure slot做identity-init的有界乘性调制；slot
+  coordination不得用terminal RMSNorm抹掉幅度，且
+  `Procedure read=0→public LoRA identity`。第一轮保持v6 fast-decay
+  task-complete B20不变，以隔离模型架构贡献。

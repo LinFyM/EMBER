@@ -55,6 +55,39 @@ fresh macro0→200, every25 checkpoint
 水平时只做内部反事实，不做昂贵视频控制臂；恢复后才按absolute趋势续训，并在
 达到`150/400`或稳定接近时做same/wrong/shuffled/reversed full400。
 
+Core-Program首段正式launch合同：
+
+```text
+sealed config  commit d67d9f5; configs/pi05_as_writer_core_program.json
+source policy  /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000
+data root      /data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a
+topology       physical GPU4–7; 4 DDP ranks; NUMA node1; B20; 2 workers/rank
+scale          fresh macro0→200; 4,800 videos; 96,000 queries; every25 checkpoint
+output         /data/ymdai/outputs/ember/pi05_as_writer_core_program_taskcomplete_decay400_dev_r4_b20_seed7_s2400_d67d9f5_20260730
+log            /data/ymdai/logs/ember/pi05_as_writer_core_program_taskcomplete_decay400_dev_r4_b20_seed7_s2400_d67d9f5_20260730.log
+integrity      sealed manifest + exact sizes + HDF5 schema; no runtime full-data SHA
+storage        /data/ymdai 433.62GB; projected formal + four eval roots <7GB
+selection      paired correct400 at macro50/100/150/200; no checkpoint fusion
+```
+
+正式命令：
+
+```bash
+numactl --cpunodebind=1 --membind=1 env \
+  PYTHONPATH=/data/ymdai/projects/EMBER/src \
+  CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4,5,6,7 \
+  OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false PYTHONUNBUFFERED=1 \
+  /data/ymdai/projects/EMBER/.venv/bin/torchrun \
+  --standalone --nproc-per-node=4 scripts/train_as_writer.py \
+  --config configs/pi05_as_writer_core_program.json --mode formal \
+  --source-run /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722 \
+  --checkpoint /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 \
+  --tokenizer-path /data/ymdai/ember_data/openpi/paligemma_tokenizer.model \
+  --data-root /data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a \
+  --output-dir /data/ymdai/outputs/ember/pi05_as_writer_core_program_taskcomplete_decay400_dev_r4_b20_seed7_s2400_d67d9f5_20260730 \
+  --stop-after-step 200 --num-workers 2 --log-every 10 --skip-data-sha
+```
+
 ## 1. Recenter历史快照（整节已失效，不得执行其命令）
 
 owner在Loom macro50/100/150/200 correct400仅为`79/106/105/112`且内部

@@ -2146,3 +2146,12 @@ GPU范围和训练步长是当时快照；活动状态只取
 - resume前后macro1的manifest、Writer、trainer和四个rank state逐文件hash
   不变；三步均finite，validation/test action reads保持0。配置现已封存B20、
   formal teacher seed`20260722`、fresh macro0→200和every25 checkpoint。
+
+## Core-Program首段正式launch合同（2026-07-30）
+
+- sealed config commit为`d67d9f5`；fresh identity、GPU4–7四rank、NUMA1、
+  B20、2 workers/rank，macro0→200，每25保存。首段精确消费4,800个
+  one-video LoRA conditions和96,000 action queries，不继承profile/smoke权重。
+- output为
+  `/data/ymdai/outputs/ember/pi05_as_writer_core_program_taskcomplete_decay400_dev_r4_b20_seed7_s2400_d67d9f5_20260730`；
+  启动前个人目录`433.62GB`，formal与四点correct400预计新增低于7GB。

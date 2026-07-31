@@ -2728,3 +2728,49 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   在macro25/50/75/100/125/150/175/200为
   `.13259/.13214/.13943/.13905/.13634/.13453/.13659/.13481`；该曲线不单调，
   不能替代同一fixed correct400 panel选择。
+
+## Core-Program correct400与内部根因（2026-07-30）
+
+- 四个paired、无放回fixed correct400均完成并通过严格审计：
+  macro50/100/150/200为`84/75/60/76`；逐task成功数依次为
+  `6/2/0/39/27/8/2/0`、`4/0/0/36/27/7/0/1`、
+  `2/1/0/43/10/4/0/0`、`8/0/0/40/15/12/1/0`。四点逐task
+  envelope仅`95`、episode union仅`127`，并非只需选择不同single checkpoint。
+- macro50相对v5.2 step900 `132`为gained/lost=`21/69`、
+  `p=3.88e-7`；相对v6同recipe macro200 `133`为`23/72`、
+  `p=4.76e-7`。这是明确absolute科学非通过，不续第二小时、不做行为级
+  same/wrong/shuffled/reversed rollout。
+- macro50的16条件非rollout检查显示，shuffled/reversed在Procedure的
+  relative-L2为`.571/.775`，但到effective LoRA仅`.0288/.0446`、policy
+  action仅`.00669/.00995`。Procedure DC/AC RMS为`.573/.284`；AC包含更强
+  顺序变化，但raw Procedure读取让DC主导。
+- constant Procedure LoRA范数约`59.3`，真实视频约`59.7`，说明raw DC几乎
+  决定全部输出幅度。bilinear、fused与effective-LoRA目标的Procedure/Core
+  每坐标gradient RMS约`.36`；实际Procedure方向的JVP cosine约`.94`且局部
+  ratio约1，排除简单数值断路，指向大DC基线和moving Core basis的结构压缩。
+- 结合Recenter约`85`与Core-Program约`84`，证据同时否定
+  `Core不得直接生成任何有用LoRA`和`Core×Procedure严格双必要`。v5.2能够同时
+  达到`132`及五臂`132/138/74/82/83`，直接证明Core prior与强视频因果可以
+  共存。
+
+## Prior–Innovation第一性原理重构与CPU验证（2026-07-30）
+
+- 新authority为
+  `docs/action_forecast_writer_prior_innovation_design.md`。LoRA生成被重新定义
+  为`stable semantic prior + ordered video innovation`，不是对
+  Core-Program增加gate/scale。
+- 保留v6成功上游；compiler以routing Q/K/V/O读取Core并RMSNorm成`B`，仅用
+  `B`查询保留DC语境与RoPE的raw Procedure keys，learned value只读取FP32
+  time-centered Procedure；`U`与`B`直接相加，再经routing只进Q/K的完整
+  Q/K/V/O residual slot block和final RMSNorm。
+- `Core=0`时query为零，均匀权重对centered value严格为零；
+  constant Procedure的innovation为零但Core prior保留。所有attention
+  projection正常非零初始化，只有factor-head final projection zero-init，
+  避免人为形成Core先学、Procedure后追。
+- 活动Core-Program config/schema/class全部原位退役；唯一fresh config为
+  `configs/pi05_as_writer_prior_innovation.json`，profile/formal/resume/
+  gradient evidence全部清零pending，不能继承旧checkpoint。
+- 精确参数为Writer`10,643,968`、compiler`1,403,904`。fresh独立验证：
+  全仓`195 passed in 16.13s`、compileall和diff check通过；architecture guard
+  为REVIEW但无hard violation，active source相对`a53c432`净增36行。GPU
+  B20、真实BF16、gradient reachability和exact-resume尚待当前schema独立完成。

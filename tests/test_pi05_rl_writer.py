@@ -222,7 +222,7 @@ def test_rl_writer_runtime_fails_before_loading_retired_feature_interface() -> N
         cpu_affinity=(0,),
     )
     args = Namespace(config=CONFIG, stage="development")
-    with pytest.raises(RewardProtocolError, match="raw-video Core-Program"):
+    with pytest.raises(RewardProtocolError, match="raw-video Prior-Innovation"):
         build_runtime(args, context)
 
 

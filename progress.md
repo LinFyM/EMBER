@@ -2168,3 +2168,30 @@ GPU范围和训练步长是当时快照；活动状态只取
   四个run均已完成prepare，绑定各自唯一raw checkpoint。
 - macro150首次launcher的source-run参数误填，合同校验在模型/GPU加载前拒绝；
   删除508B空壳后已按正确source-base合同fresh重启，不影响其它三点。
+
+## Core-Program评测完成与停止（2026-07-30）
+
+- macro50/100/150/200 fixed correct400全部完成，结果为`84/75/60/76`；四个
+  roots均为400 rows、8 tasks×50，全部50 teacher videos无放回恰好一次，
+  mapping和seed schedule完全相同，teacher action reads为0。
+- observed-best macro50相对v5.2 step900与v6 macro200分别净低48/49，
+  paired p值为`3.88e-7/4.76e-7`。按预定门停止Core-Program，不续训、不做
+  行为级视频控制。
+- GPU4–7完成macro50 refs2内部检查：16条件、无rollout/reward、validation
+  actions0、teacher states0。结果定位为compiler压缩强AC顺序信号和bilinear
+  梯度耦合，不是上游完全忽略视频。
+
+## Prior–Innovation canonical CPU实现（2026-07-30）
+
+- 新authority为
+  `docs/action_forecast_writer_prior_innovation_design.md`。唯一canonical
+  compiler已整体替换为Core semantic prior + centered Procedure innovation；
+  Core-Program config/schema/class退役，不保留并行执行路径。
+- 新fresh config为`configs/pi05_as_writer_prior_innovation.json`，所有profile、
+  resume、gradient和formal证据重置pending；不能继承旧硬件证据或checkpoint。
+- 精确Writer/compiler参数为`10,643,968/1,403,904`。focused不变量、全仓
+  `195 passed in 16.13s`、compileall、JSON、diff check全部通过；
+  architecture guard无hard violation。尚未使用GPU。
+- `/data/ymdai`当前占用约`438.61GB`，本轮profile、训练和四点correct400预计
+  新增`6–8GB`，低于500GB hard cap。紧邻动作是clean commit/push，然后只在
+  GPU4–7做最长105-frame B20三macro profile和exact-resume。

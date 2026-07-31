@@ -1,4 +1,4 @@
-"""Canonical Core semantic-license × raw video-program PI05 Writer."""
+"""Canonical semantic-prior + ordered-innovation PI05 Writer."""
 
 from __future__ import annotations
 
@@ -9,16 +9,16 @@ from typing import Mapping
 import torch
 
 from ember.writer.architecture import (
-    CORE_PROGRAM_WRITER_CONSTRUCTOR_KEYS,
+    PRIOR_INNOVATION_WRITER_CONSTRUCTOR_KEYS,
     validate_writer_dimensions,
 )
-from ember.writer.compiler import CoreProgramCompiler
+from ember.writer.compiler import PriorInnovationCompiler
 from ember.writer.temporal import (
     CausalProcedureEncoder,
     LanguageSemanticCore,
     TaskGroundedVisualTransitionFusion,
 )
-from ember.writer.video_program import Pi05CoreProgramEncoder
+from ember.writer.video_program import Pi05PriorInnovationEncoder
 
 
 class WriterModelError(RuntimeError):
@@ -156,7 +156,6 @@ class CompleteLoRAWriter(torch.nn.Module):
         procedure_heads: int,
         procedure_blocks: int,
         fusion_heads: int,
-        bilinear_hidden_width: int,
         factor_hidden_width: int,
         initialization_seed: int,
         activation_checkpointing: bool,
@@ -165,7 +164,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         constructor_values = locals()
         dimensions = {
             name: constructor_values[name]
-            for name in CORE_PROGRAM_WRITER_CONSTRUCTOR_KEYS
+            for name in PRIOR_INNOVATION_WRITER_CONSTRUCTOR_KEYS
             if name
             not in {
                 "max_frames_per_encoder_call",
@@ -176,9 +175,11 @@ class CompleteLoRAWriter(torch.nn.Module):
         try:
             validate_writer_dimensions(dimensions)
         except ValueError as error:
-            raise WriterModelError("invalid Core-Program Writer topology") from error
+            raise WriterModelError(
+                "invalid Prior-Innovation Writer topology"
+            ) from error
         if not tensor_specs or max_frames_per_encoder_call <= 0:
-            raise WriterModelError("invalid Core-Program Writer topology")
+            raise WriterModelError("invalid Prior-Innovation Writer topology")
         if set(template_state) != {item.name for item in tensor_specs}:
             raise WriterModelError("Writer LoRA template names changed")
         if (
@@ -190,7 +191,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             raise WriterModelError("public Writer LoRA rank changed")
         self.tensor_specs = tensor_specs
         self.program_width = int(program_width)
-        self.semantic_encoder = Pi05CoreProgramEncoder(
+        self.semantic_encoder = Pi05PriorInnovationEncoder(
             paligemma_model=paligemma_model,
             expert_model=expert_model,
             image_width=image_width,
@@ -220,10 +221,9 @@ class CompleteLoRAWriter(torch.nn.Module):
             heads=procedure_heads,
             blocks=procedure_blocks,
         )
-        self.compiler = CoreProgramCompiler(
+        self.compiler = PriorInnovationCompiler(
             width=program_width,
             heads=fusion_heads,
-            bilinear_hidden_width=bilinear_hidden_width,
             initialization_seed=initialization_seed + 1,
         )
         self.factor_heads = torch.nn.ModuleDict(

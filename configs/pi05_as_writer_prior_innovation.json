@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_core_program_as_writer_v1",
+  "schema_version": "ember_pi05_prior_innovation_as_writer_v1",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {
@@ -50,7 +50,7 @@
     "test_video_values_read": 0
   },
   "writer": {
-    "architecture": "pi05_core_semantic_license_raw_video_program_writer",
+    "architecture": "pi05_semantic_prior_ordered_procedure_innovation_writer",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -119,19 +119,20 @@
     "procedure_value_path": "native_action_probe_plus_uncapped_task_grounded_visual_transition",
     "query_count": 320,
     "routing_identity": "query_module_layer_rank_qk_only",
-    "core_slot_reader": "routing_qk_normalized_core_key_raw_core_value_no_wv",
-    "procedure_slot_reader": "routing_plus_normalized_core_q_rope_normalized_procedure_k_raw_full_procedure_value_no_wv",
-    "core_procedure_first_interaction": "strict_core_license_times_raw_procedure_program_in_compiler",
-    "slot_fusion": "width512_bias_free_silu_core_basis_times_procedure_program",
-    "bilinear_hidden_width": 512,
+    "core_slot_reader": "routing_query_normalized_core_key_raw_core_value_learned_bias_free_qkvo",
+    "semantic_prior": "rmsnorm_of_routed_raw_core_slot",
+    "procedure_time_centering": "fp32_masked_valid_frame_mean_then_cast_to_input_dtype",
+    "procedure_slot_reader": "semantic_prior_query_only_no_routing_rope_normalized_raw_procedure_key_learned_centered_procedure_value_bias_free_qkvo",
+    "core_procedure_first_interaction": "semantic_prior_queries_ordered_centered_procedure_innovation",
+    "slot_fusion": "direct_semantic_prior_plus_procedure_innovation",
     "fusion_heads": 8,
     "post_fusion_blocks": 1,
-    "post_fusion_slot_block": "zero_preserving_bias_free_residual_attention_ffn_routing_qk_only_content_v_only",
-    "post_fusion_scale_contract": "no_terminal_normalization_or_amplitude_restoration",
-    "core_only_public_lora_delta": "exact_zero",
+    "post_fusion_slot_block": "bias_free_full_qkvo_residual_attention_ffn_routing_qk_only_content_v_only_final_rmsnorm",
+    "post_fusion_scale_contract": "final_rmsnorm_stable_factor_head_interface_without_branch_scalar",
+    "core_only_public_lora_delta": "allowed_semantic_prior_contribution",
     "procedure_only_public_lora_delta": "exact_zero",
-    "zero_procedure_public_lora_delta": "exact_zero",
-    "constant_nonzero_procedure": "preserved_as_valid_program_content_not_forced_to_identity",
+    "zero_procedure_public_lora_delta": "semantic_prior_only",
+    "constant_nonzero_procedure": "zero_innovation_with_semantic_prior_preserved",
     "factor_head_bias": false,
     "factor_hidden_width": 256,
     "initialization_seed": 7
@@ -177,7 +178,7 @@
     "prefetch_factor": 2
   },
   "optimization": {
-    "method": "functional_pi05_core_program_positive_only",
+    "method": "functional_pi05_prior_innovation_positive_only",
     "seed": 7,
     "precision": "bfloat16",
     "source_policy": "final formal frozen raw policy",
@@ -200,10 +201,10 @@
       "decay_lr": 1e-05
     },
     "maximum_formal_wall_clock_minutes": null,
-    "budget_role": "fresh_core_program_task_complete_fast_decay400"
+    "budget_role": "fresh_prior_innovation_task_complete_fast_decay400"
   },
   "profile_defaults": {
-    "status": "sealed_b20",
+    "status": "pending_prior_innovation_live_profile",
     "expected_world_size": 4,
     "total_steps": 3,
     "per_rank_batch_size": 20,
@@ -215,7 +216,7 @@
     "selected_stop_step": 3
   },
   "profile_evidence": {
-    "status": "sealed_b20",
+    "status": "pending_prior_innovation_live_profile",
     "allowed_physical_gpu_ids": [
       4,
       5,
@@ -240,77 +241,9 @@
       }
     ],
     "selection_rule": "try_b20_on_three_complete_macros_containing_real_105_frame_video_then_fallback_directly_to_b16_only_if_oom_or_repeated_instability",
-    "selected": {
-      "max_frames_per_encoder_call": 32,
-      "per_task_action_batch_size": 20,
-      "profile_optimizer_steps": 3,
-      "profile_global_action_queries": 1440,
-      "profile_global_video_conditions": 72,
-      "profile_wall_seconds": 58.558228506939486,
-      "step_seconds_max": [
-        20.409351255046204,
-        18.519650959875435,
-        18.587367794010788
-      ],
-      "steady_action_queries_per_second_mean_last_two": 25.871202519657096,
-      "steady_macro_updates_per_hour_mean_last_two": 194.0340188974282,
-      "max_cuda_allocated_bytes": 76993247232,
-      "max_cuda_reserved_bytes": 83644907520,
-      "all_steps_finite": true,
-      "all_four_ranks_completed": true,
-      "contains_real_105_frame_video": true,
-      "profile_root": "/data/ymdai/outputs/ember/pi05_as_writer_core_program_profile_b20_longseed172_4769b36_20260730",
-      "run_contract_sha256": "110a85c9d8866d1c596b3ad902b2df84c59cb3091c30b9beb4d43dc3c38c0600"
-    },
-    "exact_resume_smoke": {
-      "status": "pass_fresh_step1_then_exact_resume_to_step3",
-      "root": "/data/ymdai/outputs/ember/pi05_as_writer_core_program_resume_b20_seed7_689c0bd_20260730",
-      "formal_teacher_video_seed": 20260722,
-      "fresh_stop_step": 1,
-      "resumed_stop_step": 3,
-      "completed_optimizer_steps": 3,
-      "metrics_steps": [
-        1,
-        2,
-        3
-      ],
-      "applied_learning_rates": [
-        0.0003,
-        0.00022749999999999997,
-        0.00008250000000000003
-      ],
-      "next_learning_rates": [
-        0.00022749999999999997,
-        0.00008250000000000003,
-        0.00001
-      ],
-      "cumulative_action_queries": [
-        480,
-        960,
-        1440
-      ],
-      "cumulative_video_conditions": [
-        24,
-        48,
-        72
-      ],
-      "all_steps_finite": true,
-      "validation_action_reads": 0,
-      "test_action_reads": 0,
-      "test_video_value_reads": 0,
-      "step1_checkpoint_files_unchanged_after_resume": true,
-      "run_contract_sha256": "175def6d91f4e7a025bdd9b238061eede64086bdee9f30325a8e9b003c917255"
-    },
-    "gradient_reachability": {
-      "status": "pass_real_profile_step1_to_step3",
-      "comparison": "profile_checkpoint_step1_to_step3",
-      "writer_trainable_parameters": 10905856,
-      "trainable_tensor_names": 523,
-      "changed_trainable_tensor_names": 523,
-      "changed_parameter_elements": 10841906,
-      "all_trainable_tensors_changed": true,
-      "all_trainable_tensors_finite": true
-    },
+    "selected": null,
+    "exact_resume_smoke": null,
+    "gradient_reachability": null,
     "inference_profile": null
   },
   "specificity_gate": {
@@ -326,14 +259,14 @@
     "contrast_loss_allowed": false
   },
   "formal_run": {
-    "status": "sealed",
+    "status": "pending_prior_innovation_live_profile",
     "expected_world_size": 4,
     "total_steps": 2400,
     "per_rank_batch_size": 20,
     "checkpoint_steps": "every:25",
     "selected_stop_step": 200,
     "stage_stop_steps": "every:200",
-    "segment_definition": "fresh_core_program_one_hour_macro200_after_live_profile",
+    "segment_definition": "fresh_prior_innovation_one_hour_macro200_after_live_profile",
     "one_hour_scale": {
       "macro_optimizer_updates": 200,
       "global_action_queries": 96000,

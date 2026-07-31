@@ -304,6 +304,30 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
 - [x] 按owner要求完成v10后暂停：不续训、不改canonical架构、不启动Loom、
   one-shot或RL，等待共同讨论。
 
+## Phase C5：Core-Program负结果与Prior–Innovation重构
+
+- [x] Core-Program fresh macro0→200训练合同完整成立；fixed correct400
+  `84/75/60/76`，四点逐task envelope仅`95`，不续训、不做行为级特异性。
+- [x] 对macro50完成无rollout内部数值分析：Procedure已有强顺序差异，但到
+  effective LoRA/action压缩两个数量级；raw DC主导readout、AC被压弱，
+  bilinear形成moving basis，Procedure/Core梯度比约`.36`。
+- [x] 从根因撤销strict double-necessity，封存
+  [`docs/action_forecast_writer_prior_innovation_design.md`](docs/action_forecast_writer_prior_innovation_design.md)：
+  Core提供稳定semantic prior，Core-only query读取time-centered Procedure
+  innovation，二者在固定slot坐标直接相加。
+- [x] 原位替换唯一canonical源码/config/schema；退役Core-Program活动config，
+  不保留兼容resume或并行compiler。
+- [x] 精确参数枚举Writer`10,643,968`、compiler`1,403,904`；全仓
+  `195 passed`、compileall、diff check通过，architecture guard无hard
+  violation。
+- [ ] clean commit/push。
+- [ ] 只在GPU4–7完成最长105-frame B20三macro profile、全参数
+  reachability与formal-seed exact-resume；不继承旧证据。
+- [ ] seal后fresh macro0→200、every25；固定评测50/100/150/200
+  correct400，不融合checkpoint。
+- [ ] 若恢复同期旧架构则按趋势续第二小时；否则只做内部传递诊断后整体重构。
+  仅在`>=150`或稳定接近且多task共同贡献后做行为级视频特异性。
+
 ## Phase E：matched π0.5 action one-shot baseline
 
 - [ ] 在看 outcome 前，每个 validation task 用固定 seed 从 50 episodes 中抽

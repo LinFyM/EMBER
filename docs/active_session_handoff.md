@@ -9,104 +9,83 @@
 `docs/execution_brief.md`。任何接手者都必须先只读复核现场，不能按历史快照
 重复启动进程。
 
-## 0. Core-Program当前恢复入口
+## 0. Prior–Innovation当前恢复入口
 
-Recenter fresh macro50/100/150/200 paired correct400为`55/84/79/85`，不仅
-低于v6 best `143/400`，所有tasks也都低于v6 best，Object-3明显坍塌。内部
-证据显示参数持续更新、factor幅度并不小；失败根因是time-centering删除raw
-Procedure DC、Core只剩窄幅调制，造成semantic-basis starvation，而非需要再
-调scale或延长同一recipe。
+Core-Program fresh macro50/100/150/200 paired correct400最终为
+`84/75/60/76`；四点逐task envelope仅`95`，相对v5.2 step900与v6
+macro200分别净低`48/49`。因此没有续训或做行为级视频控制。
 
-owner已授权从该根因继续第一性原理重构。唯一canonical Writer现切换为
-Core semantic license × raw video program：
+macro50的非rollout内部分析已经定位根因：
+
+```text
+shuffled/reversed Procedure relative-L2   .571 / .775
+effective-LoRA relative-L2                .0288 / .0446
+policy-action relative-L2                 .00669 / .00995
+Procedure/Core per-coordinate grad RMS    ~.36
+```
+
+Core/Action/transition/Procedure上游都能产生差异，JVP也证明compiler局部可表示
+这些方向；但raw Procedure DC主导readout，centered AC顺序信号被压缩，
+constant Procedure几乎复现真实视频LoRA幅度。strict bilinear使Procedure更新
+依赖随视频移动的Core basis。Core-Program与Recenter都约`85`，共同否定
+“Core不得直接提供有用LoRA”和“Core×Procedure严格双必要”两个公理。
+
+唯一canonical Writer已切换为
+[`docs/action_forecast_writer_prior_innovation_design.md`](action_forecast_writer_prior_innovation_design.md)
+定义的 Prior–Innovation：
 
 ```text
 保留 Q_text、M+G、v6 Semantic Core
 保留 native 50-suffix mean Action
-恢复 v6 uncapped task-grounded transition
-两层 causal Procedure保留完整raw time signal
-Core读出slot semantic basis
-Core-keyed query读取full raw Procedure
-width512 bias-free bilinear严格相乘
-zero-preserving slot block
-→ complete rank-16 public LoRA
+保留 uncapped task-grounded transition
+保留 two-layer causal Procedure
+
+routing Q/K/V/O read Core
+→ semantic prior B
+B-only query reads raw Procedure keys
+centered Procedure AC is the learned value
+→ ordered innovation U
+B + U
+→ routing-Q/K-only slot block + final RMSNorm
+→ rank16 public LoRA
 ```
 
-Core-only、Procedure-only、zero Procedure均严格identity；constant nonzero
-Procedure保留为可用程序。精确trainable参数为`10,905,856`。活动源码/config
-已原位切换到fresh schema；Recenter executable/config退役，不兼容resume。
+`Core=0→Procedure-only content=0`；constant Procedure只产生零innovation但
+保留Core prior。没有bilinear、AdaLN、learned scalar gate、manual scale或
+额外旁路。所有attention projections正常非零初始化，只有factor-head final
+projection zero-init。精确Writer/compiler参数为
+`10,643,968/1,403,904`。
 
-canonical实现已在main `4769b36`完成并push；全仓`194 passed`。GPU4–7
-独立B20 profile已完成：首步包含真实105-frame视频，三步finite；后两步平均
-`25.871 queries/s`、`194.034 macro/hour`，峰值allocated/reserved为
-`76.99/83.64GB`，因此不触发B16。profile step1→3的523个trainable tensor
-全部变化且finite。正式seed独立fresh0→1→exact-resume1→3也已通过：
-metrics、LR、task/video/query cursor与四rank RNG连续，resume后step1全部
-checkpoint文件未变化，validation/test action reads为0。
+活动源码/config/schema已原位切换；Core-Program config和兼容执行路径退役。
+CPU验证为全仓`195 passed`、compileall/diff check通过、architecture guard
+无hard violation。当前尚未提交，也尚未做任何Prior–Innovation GPU工作。
 
 紧邻顺序：
 
 ```text
-fresh macro0→200, every25 checkpoint
+clean commit + push
+→ GPU4–7 longest-105-frame B20 three-macro profile
+→ formal-seed fresh0→1→exact-resume1→3
+→ seal fresh macro0→200, every25
 → paired correct400 at macro50/100/150/200
 ```
 
-不得继承Recenter profile/resume证据；不得使用GPU0–3。首段未恢复同期v5.2/v6
-水平时只做内部反事实，不做昂贵视频控制臂；恢复后才按absolute趋势续训，并在
-达到`150/400`或稳定接近时做same/wrong/shuffled/reversed full400。
+不能继承Core-Program profile/resume/gradient证据；不得查询或使用GPU0–3。
+首段若未恢复同期v5.2/v6水平，只做内部反事实，不做昂贵视频控制臂；恢复后才
+按absolute趋势续训，并在达到`150/400`或稳定接近时做
+same/wrong/shuffled/reversed full400。
 
-Core-Program首段正式launch合同：
-
-```text
-sealed config  commit d67d9f5; configs/pi05_as_writer_core_program.json
-source policy  /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000
-data root      /data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a
-topology       physical GPU4–7; 4 DDP ranks; NUMA node1; B20; 2 workers/rank
-scale          fresh macro0→200; 4,800 videos; 96,000 queries; every25 checkpoint
-output         /data/ymdai/outputs/ember/pi05_as_writer_core_program_taskcomplete_decay400_dev_r4_b20_seed7_s2400_d67d9f5_20260730
-log            /data/ymdai/logs/ember/pi05_as_writer_core_program_taskcomplete_decay400_dev_r4_b20_seed7_s2400_d67d9f5_20260730.log
-integrity      sealed manifest + exact sizes + HDF5 schema; no runtime full-data SHA
-storage        /data/ymdai 433.62GB; projected formal + four eval roots <7GB
-selection      paired correct400 at macro50/100/150/200; no checkpoint fusion
-```
-
-正式命令：
-
-```bash
-numactl --cpunodebind=1 --membind=1 env \
-  PYTHONPATH=/data/ymdai/projects/EMBER/src \
-  CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4,5,6,7 \
-  OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false PYTHONUNBUFFERED=1 \
-  /data/ymdai/projects/EMBER/.venv/bin/torchrun \
-  --standalone --nproc-per-node=4 scripts/train_as_writer.py \
-  --config configs/pi05_as_writer_core_program.json --mode formal \
-  --source-run /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722 \
-  --checkpoint /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 \
-  --tokenizer-path /data/ymdai/ember_data/openpi/paligemma_tokenizer.model \
-  --data-root /data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a \
-  --output-dir /data/ymdai/outputs/ember/pi05_as_writer_core_program_taskcomplete_decay400_dev_r4_b20_seed7_s2400_d67d9f5_20260730 \
-  --stop-after-step 200 --num-workers 2 --log-every 10 --skip-data-sha
-```
-
-该正式段已自然完成且审计通过：200行metrics严格连续、全部finite，8个
-every25 checkpoint完整；总计4,800个视频条件、96,000 queries，训练体
-`3858.26s`，steady last-50约`25.742 queries/s`。当前tmux
-`ember-core-program-correct400`正把macro50/100/150/200分别放在
-GPU4/5/6/7做paired、无放回correct400；每卡6个persistent workers、
-4个Writer generators、generation batch8，long-first队列。四个roots为：
+当前活动配置：
 
 ```text
-/data/ymdai/outputs/ember/pi05_as_writer_core_program_correct400_noreplacement_seed7_macro0050_7b5b1ba_20260730
-/data/ymdai/outputs/ember/pi05_as_writer_core_program_correct400_noreplacement_seed7_macro0100_7b5b1ba_20260730
-/data/ymdai/outputs/ember/pi05_as_writer_core_program_correct400_noreplacement_seed7_macro0150_7b5b1ba_20260730
-/data/ymdai/outputs/ember/pi05_as_writer_core_program_correct400_noreplacement_seed7_macro0200_7b5b1ba_20260730
+configs/pi05_as_writer_prior_innovation.json
+source policy:
+/data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000
+data root:
+/data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a
 ```
 
-macro150第一次launcher误填source-run，被合同门在模型/GPU加载前拒绝；仅有的
-508B copied config空壳已删除，随后以正确source-base合同fresh重启。其余三点
-未受影响；当前四个roots均已完成prepare并进入正式生成/rollout流程。
-
-## 1. Recenter历史快照（整节已失效，不得执行其命令）
+## 1. Core-Program与Recenter历史快照（整节已失效，不得执行其命令）
 
 owner在Loom macro50/100/150/200 correct400仅为`79/106/105/112`且内部
 correspondence/confidence/gap缺少可靠锚点后，授权继续从第一性原理重设计，

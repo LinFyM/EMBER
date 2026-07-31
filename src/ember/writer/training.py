@@ -67,7 +67,7 @@ from ember.writer.data import (
     WriterTaskAuthority,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
-from ember.writer.architecture import CORE_PROGRAM_WRITER_CONSTRUCTOR_KEYS
+from ember.writer.architecture import PRIOR_INNOVATION_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.model import (
     CompleteLoRAWriter,
     WriterModelError,
@@ -151,7 +151,7 @@ def _build_writer(
     writer_config = {
         key: value
         for key, value in config["writer"].items()
-        if key in CORE_PROGRAM_WRITER_CONSTRUCTOR_KEYS
+        if key in PRIOR_INNOVATION_WRITER_CONSTRUCTOR_KEYS
     }
     bridge = policy.model.paligemma_with_expert
     writer = CompleteLoRAWriter(
@@ -748,7 +748,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_as_writer_core_program.json",
+        default=REPO_ROOT / "configs/pi05_as_writer_prior_innovation.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--source-run", type=Path, required=True)

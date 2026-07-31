@@ -5,9 +5,9 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 
-CORE_PROGRAM_WRITER_PARAMETER_COUNT = 10_905_856
+PRIOR_INNOVATION_WRITER_PARAMETER_COUNT = 10_643_968
 
-CORE_PROGRAM_WRITER_CONSTRUCTOR_KEYS = frozenset(
+PRIOR_INNOVATION_WRITER_CONSTRUCTOR_KEYS = frozenset(
     {
         "image_width",
         "expert_width",
@@ -25,7 +25,6 @@ CORE_PROGRAM_WRITER_CONSTRUCTOR_KEYS = frozenset(
         "procedure_heads",
         "procedure_blocks",
         "fusion_heads",
-        "bilinear_hidden_width",
         "factor_hidden_width",
         "initialization_seed",
         "activation_checkpointing",
@@ -48,12 +47,11 @@ WRITER_DIMENSION_CONTRACT = {
     "procedure_heads": 8,
     "procedure_blocks": 2,
     "fusion_heads": 8,
-    "bilinear_hidden_width": 512,
     "factor_hidden_width": 256,
 }
 
 _STATIC_WRITER_CONTRACT: dict[str, Any] = {
-    "architecture": "pi05_core_semantic_license_raw_video_program_writer",
+    "architecture": "pi05_semantic_prior_ordered_procedure_innovation_writer",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -142,33 +140,35 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "query_count": 320,
     "routing_identity": "query_module_layer_rank_qk_only",
     "core_slot_reader": (
-        "routing_qk_normalized_core_key_raw_core_value_no_wv"
+        "routing_query_normalized_core_key_raw_core_value_"
+        "learned_bias_free_qkvo"
+    ),
+    "semantic_prior": "rmsnorm_of_routed_raw_core_slot",
+    "procedure_time_centering": (
+        "fp32_masked_valid_frame_mean_then_cast_to_input_dtype"
     ),
     "procedure_slot_reader": (
-        "routing_plus_normalized_core_q_rope_normalized_procedure_k_"
-        "raw_full_procedure_value_no_wv"
+        "semantic_prior_query_only_no_routing_rope_normalized_raw_procedure_key_"
+        "learned_centered_procedure_value_bias_free_qkvo"
     ),
     "core_procedure_first_interaction": (
-        "strict_core_license_times_raw_procedure_program_in_compiler"
+        "semantic_prior_queries_ordered_centered_procedure_innovation"
     ),
-    "slot_fusion": (
-        "width512_bias_free_silu_core_basis_times_procedure_program"
-    ),
-    "bilinear_hidden_width": 512,
+    "slot_fusion": "direct_semantic_prior_plus_procedure_innovation",
     "fusion_heads": 8,
     "post_fusion_blocks": 1,
     "post_fusion_slot_block": (
-        "zero_preserving_bias_free_residual_attention_ffn_"
-        "routing_qk_only_content_v_only"
+        "bias_free_full_qkvo_residual_attention_ffn_"
+        "routing_qk_only_content_v_only_final_rmsnorm"
     ),
     "post_fusion_scale_contract": (
-        "no_terminal_normalization_or_amplitude_restoration"
+        "final_rmsnorm_stable_factor_head_interface_without_branch_scalar"
     ),
-    "core_only_public_lora_delta": "exact_zero",
+    "core_only_public_lora_delta": "allowed_semantic_prior_contribution",
     "procedure_only_public_lora_delta": "exact_zero",
-    "zero_procedure_public_lora_delta": "exact_zero",
+    "zero_procedure_public_lora_delta": "semantic_prior_only",
     "constant_nonzero_procedure": (
-        "preserved_as_valid_program_content_not_forced_to_identity"
+        "zero_innovation_with_semantic_prior_preserved"
     ),
     "factor_head_bias": False,
     "factor_hidden_width": 256,
@@ -177,7 +177,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
 
 
 def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
-    """Return the exact Core-Program config payload, preserving frame chunking."""
+    """Return the exact Prior-Innovation payload, preserving frame chunking."""
 
     return {
         **_STATIC_WRITER_CONTRACT,
@@ -187,7 +187,7 @@ def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def validate_writer_dimensions(observed: Mapping[str, Any]) -> None:
-    """Reject constructor values outside the one canonical Core-Program topology."""
+    """Reject values outside the one canonical Prior-Innovation topology."""
 
     changed = {
         name: (WRITER_DIMENSION_CONTRACT[name], observed.get(name))

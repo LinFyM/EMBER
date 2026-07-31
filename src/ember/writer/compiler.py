@@ -1,11 +1,10 @@
-"""Compile a semantic Core license with the full raw video Procedure program."""
+"""Compile a semantic Core prior plus an ordered Procedure innovation."""
 
 from __future__ import annotations
 
 import math
 
 import torch
-import torch.nn.functional as F
 
 from ember.writer.temporal import (
     RMSNorm,
@@ -16,21 +15,30 @@ from ember.writer.temporal import (
 )
 
 
-class RawValueCrossAttention(torch.nn.Module):
-    """Use learned Q/K/O addressing while preserving the memory as raw values."""
+class LearnedCrossAttention(torch.nn.Module):
+    """Bias-free learned Q/K/V/O cross-attention."""
 
-    def __init__(self, *, width: int, heads: int, rotary_keys: bool) -> None:
+    def __init__(
+        self,
+        *,
+        width: int,
+        heads: int,
+        rotary_keys: bool,
+        remove_uniform_value: bool,
+    ) -> None:
         super().__init__()
         if (
             min(width, heads) <= 0
             or width % heads
             or (rotary_keys and (width // heads) % 2)
         ):
-            raise VariableEpisodeInputError("invalid raw-value cross-attention")
+            raise VariableEpisodeInputError("invalid learned cross-attention")
         self.heads = int(heads)
         self.rotary_keys = bool(rotary_keys)
+        self.remove_uniform_value = bool(remove_uniform_value)
         self.query = torch.nn.Linear(width, width, bias=False)
         self.key = torch.nn.Linear(width, width, bias=False)
+        self.value = torch.nn.Linear(width, width, bias=False)
         self.output = torch.nn.Linear(width, width, bias=False)
 
     def forward(
@@ -51,7 +59,7 @@ class RawValueCrossAttention(torch.nn.Module):
             or valid_memory.dtype != torch.bool
             or not bool(valid_memory.any(dim=1).all())
         ):
-            raise VariableEpisodeInputError("invalid raw-value attention batch")
+            raise VariableEpisodeInputError("invalid learned attention batch")
         query = _split_heads(self.query(query_key), self.heads)
         key = _split_heads(self.key(memory_key), self.heads)
         if self.rotary_keys:
@@ -73,7 +81,7 @@ class RawValueCrossAttention(torch.nn.Module):
         elif memory_positions is not None:
             raise VariableEpisodeInputError("Core reader received positions")
 
-        value = _split_heads(memory_value, self.heads)
+        value = _split_heads(self.value(memory_value), self.heads)
         logits = torch.matmul(
             query.to(torch.float32),
             key.to(torch.float32).transpose(-1, -2),
@@ -84,125 +92,112 @@ class RawValueCrossAttention(torch.nn.Module):
             float("-inf"),
         )
         weights = torch.softmax(logits, dim=-1)
-        attended = torch.matmul(weights.to(value.dtype), value)
+        value_weights = weights
+        if self.remove_uniform_value:
+            uniform = valid_memory.to(torch.float32)
+            uniform = uniform / uniform.sum(dim=1, keepdim=True)
+            value_weights = value_weights - uniform[:, None, None, :]
+        attended = torch.matmul(value_weights.to(value.dtype), value)
         return self.output(_merge_heads(attended)), weights
 
 
-class CoreSlotReader(torch.nn.Module):
-    """Read raw semantic Core values into the routed public-LoRA slots."""
+class SemanticPriorReader(torch.nn.Module):
+    """Route raw semantic Core values into stable public-LoRA slot priors."""
 
     def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
         self.memory_norm = RMSNorm(width)
-        self.attention = RawValueCrossAttention(
+        self.attention = LearnedCrossAttention(
             width=width,
             heads=heads,
             rotary_keys=False,
+            remove_uniform_value=False,
         )
+        self.prior_norm = RMSNorm(width)
 
     def forward(
         self,
         routing: torch.Tensor,
         core: torch.Tensor,
         valid_core: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        return self.attention(
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        raw_prior, weights = self.attention(
             routing,
             self.memory_norm(core),
             core,
             valid_core,
         )
+        return self.prior_norm(raw_prior), raw_prior, weights
 
 
-class ProcedureSlotReader(torch.nn.Module):
-    """Use the Core-derived address to read the complete raw Procedure program."""
+class ProcedureInnovationReader(torch.nn.Module):
+    """Use only the semantic prior to read centered ordered Procedure values."""
 
     def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
-        self.core_norm = RMSNorm(width)
         self.memory_norm = RMSNorm(width)
-        self.attention = RawValueCrossAttention(
+        self.attention = LearnedCrossAttention(
             width=width,
             heads=heads,
             rotary_keys=True,
+            remove_uniform_value=True,
         )
+
+    @staticmethod
+    def center(
+        procedure: torch.Tensor,
+        valid_procedure: torch.Tensor,
+    ) -> torch.Tensor:
+        """Return an FP32 masked time-centered value cast back to input dtype."""
+
+        if (
+            procedure.ndim != 3
+            or valid_procedure.shape != procedure.shape[:2]
+            or valid_procedure.dtype != torch.bool
+            or not bool(valid_procedure.any(dim=1).all())
+        ):
+            raise VariableEpisodeInputError("invalid Procedure centering batch")
+        mask = valid_procedure[..., None]
+        value = procedure.to(torch.float32)
+        count = mask.sum(dim=1, keepdim=True).to(torch.float32)
+        mean = (value * mask).sum(dim=1, keepdim=True) / count
+        centered = (value - mean).masked_fill(~mask, 0.0)
+        return centered.to(procedure.dtype)
 
     def forward(
         self,
-        routing: torch.Tensor,
-        core_slots: torch.Tensor,
+        semantic_prior: torch.Tensor,
         procedure: torch.Tensor,
         positions: torch.Tensor,
         valid_procedure: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         if (
-            procedure.ndim != 3
-            or routing.ndim != 3
-            or core_slots.shape != routing.shape
-            or procedure.shape[0] != routing.shape[0]
-            or procedure.shape[-1] != routing.shape[-1]
+            semantic_prior.ndim != 3
+            or procedure.ndim != 3
+            or procedure.shape[0] != semantic_prior.shape[0]
+            or procedure.shape[-1] != semantic_prior.shape[-1]
             or positions.shape != procedure.shape[:2]
             or positions.dtype != torch.long
-            or valid_procedure.shape != procedure.shape[:2]
-            or valid_procedure.dtype != torch.bool
-            or not bool(valid_procedure.any(dim=1).all())
         ):
-            raise VariableEpisodeInputError("invalid Procedure slot memory")
-        normalized_core = self.core_norm(core_slots)
-        slots, weights = self.attention(
-            routing + normalized_core,
+            raise VariableEpisodeInputError("invalid Procedure innovation memory")
+        centered = self.center(procedure, valid_procedure)
+        innovation, weights = self.attention(
+            semantic_prior,
             self.memory_norm(procedure),
-            procedure,
+            centered,
             valid_procedure,
             positions,
         )
-        return slots, normalized_core, weights
+        return innovation, centered, weights
 
 
-class CoreProgramBilinearFusion(torch.nn.Module):
-    """Require both the semantic Core license and Procedure program."""
-
-    def __init__(self, *, width: int, hidden_width: int) -> None:
-        super().__init__()
-        if min(width, hidden_width) <= 0:
-            raise VariableEpisodeInputError("invalid Core-Program fusion")
-        self.core_projection = torch.nn.Linear(
-            width,
-            hidden_width,
-            bias=False,
-        )
-        self.program_projection = torch.nn.Linear(
-            width,
-            hidden_width,
-            bias=False,
-        )
-        self.output = torch.nn.Linear(hidden_width, width, bias=False)
-
-    def forward(
-        self,
-        normalized_core_slots: torch.Tensor,
-        procedure_slots: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        if (
-            normalized_core_slots.shape != procedure_slots.shape
-            or normalized_core_slots.ndim != 3
-        ):
-            raise VariableEpisodeInputError("invalid Core-Program slot fusion")
-        core_basis = F.silu(
-            self.core_projection(normalized_core_slots)
-        )
-        procedure_program = self.program_projection(procedure_slots)
-        fused = self.output(core_basis * procedure_program)
-        return fused, core_basis, procedure_program
-
-
-class ZeroPreservingSlotBlock(torch.nn.Module):
-    """Coordinate LoRA slots without letting routing enter their value content."""
+class PriorInnovationSlotBlock(torch.nn.Module):
+    """Coordinate formed slots while keeping routing out of value content."""
 
     def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
         if min(width, heads) <= 0 or width % heads:
-            raise VariableEpisodeInputError("invalid zero-preserving slot block")
+            raise VariableEpisodeInputError("invalid Prior-Innovation slot block")
         self.heads = int(heads)
         self.attention_norm = RMSNorm(width)
         self.query = torch.nn.Linear(width, width, bias=False)
@@ -215,6 +210,7 @@ class ZeroPreservingSlotBlock(torch.nn.Module):
             torch.nn.GELU(),
             torch.nn.Linear(4 * width, width, bias=False),
         )
+        self.output_norm = RMSNorm(width)
 
     def forward(
         self,
@@ -238,11 +234,11 @@ class ZeroPreservingSlotBlock(torch.nn.Module):
         attended = torch.matmul(weights.to(value.dtype), value)
         content = content + self.output(_merge_heads(attended))
         content = content + self.ffn(self.ffn_norm(content))
-        return content, weights
+        return self.output_norm(content), weights
 
 
-class CoreProgramCompiler(torch.nn.Module):
-    """Generate LoRA content only from a licensed raw Procedure program."""
+class PriorInnovationCompiler(torch.nn.Module):
+    """Generate LoRA slots from a semantic prior plus ordered innovation."""
 
     EXPERT_LAYERS = 18
     RANK = 16
@@ -253,16 +249,15 @@ class CoreProgramCompiler(torch.nn.Module):
         *,
         width: int,
         heads: int,
-        bilinear_hidden_width: int,
         initialization_seed: int,
     ) -> None:
         super().__init__()
         if (
-            min(width, heads, bilinear_hidden_width) <= 0
+            min(width, heads) <= 0
             or width % heads
             or (width // heads) % 2
         ):
-            raise VariableEpisodeInputError("invalid Core-Program compiler")
+            raise VariableEpisodeInputError("invalid Prior-Innovation compiler")
         generator = torch.Generator(device="cpu").manual_seed(initialization_seed)
 
         def parameter(rows: int) -> torch.nn.Parameter:
@@ -275,13 +270,12 @@ class CoreProgramCompiler(torch.nn.Module):
         self.layer_identity = parameter(self.EXPERT_LAYERS)
         self.rank_identity = parameter(self.RANK)
         self.routing_norm = RMSNorm(width)
-        self.core_reader = CoreSlotReader(width=width, heads=heads)
-        self.procedure_reader = ProcedureSlotReader(width=width, heads=heads)
-        self.bilinear_fusion = CoreProgramBilinearFusion(
+        self.core_reader = SemanticPriorReader(width=width, heads=heads)
+        self.procedure_reader = ProcedureInnovationReader(
             width=width,
-            hidden_width=bilinear_hidden_width,
+            heads=heads,
         )
-        self.slot_block = ZeroPreservingSlotBlock(
+        self.slot_block = PriorInnovationSlotBlock(
             width=width,
             heads=heads,
         )
@@ -356,37 +350,33 @@ class CoreProgramCompiler(torch.nn.Module):
             -1,
             -1,
         )
-        core_slots, core_attention = self.core_reader(
+        semantic_prior, raw_core_slots, core_attention = self.core_reader(
             routing,
             core,
             valid_core,
         )
-        (
-            procedure_slots,
-            normalized_core,
-            procedure_attention,
-        ) = self.procedure_reader(
+        innovation, centered_procedure, procedure_attention = (
+            self.procedure_reader(
+                semantic_prior,
+                procedure,
+                positions,
+                valid_procedure,
+            )
+        )
+        prior_plus_innovation = semantic_prior + innovation
+        content, slot_attention = self.slot_block(
+            prior_plus_innovation,
             routing,
-            core_slots,
-            procedure,
-            positions,
-            valid_procedure,
         )
-        fused, core_basis, procedure_program = self.bilinear_fusion(
-            normalized_core,
-            procedure_slots,
-        )
-        content, slot_attention = self.slot_block(fused, routing)
         diagnostics = {
             "routing": routing,
-            "core_slots": core_slots,
+            "raw_core_slots": raw_core_slots,
+            "semantic_prior": semantic_prior,
             "core_attention": core_attention,
-            "normalized_core_slots": normalized_core,
-            "procedure_slots": procedure_slots,
+            "centered_procedure": centered_procedure,
+            "procedure_innovation": innovation,
             "procedure_attention": procedure_attention,
-            "core_basis": core_basis,
-            "procedure_program": procedure_program,
-            "bilinear_slots": fused,
+            "prior_plus_innovation": prior_plus_innovation,
             "slot_attention": slot_attention,
             "fused_slots": content,
         }

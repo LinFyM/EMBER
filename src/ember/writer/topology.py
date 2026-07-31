@@ -109,5 +109,6 @@ def validate_task_complete_topology(
         }
         if not candidates or batch_size not in candidates:
             raise WriterModelError(
-                "Core-Program profile batch is outside its declared hardware-friendly candidates"
+                "Prior-Innovation profile batch is outside its declared "
+                "hardware-friendly candidates"
             )

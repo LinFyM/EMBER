@@ -24,19 +24,19 @@ from ember.writer import as_step
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-CONFIG = REPO_ROOT / "configs/pi05_as_writer_core_program.json"
+CONFIG = REPO_ROOT / "configs/pi05_as_writer_prior_innovation.json"
 OLD_RECIPE_CONFIG = (
     REPO_ROOT
     / "configs/pi05_as_writer_language_axial_v6_old_recipe_v1.json"
 )
 
 
-def test_core_program_config_seals_architecture_and_information_wall() -> None:
+def test_prior_innovation_config_seals_architecture_and_information_wall() -> None:
     config = load_writer_config(CONFIG)
     writer = config["writer"]
     assert (
         writer["architecture"]
-        == "pi05_core_semantic_license_raw_video_program_writer"
+        == "pi05_semantic_prior_ordered_procedure_innovation_writer"
     )
     assert writer["teacher_state_input"] is False
     assert writer["teacher_prompt"] == "Task: {cleaned_task};\nAction: "
@@ -67,19 +67,20 @@ def test_core_program_config_seals_architecture_and_information_wall() -> None:
     assert writer["procedure_value_path"].startswith(
         "native_action_probe_plus_uncapped"
     )
-    assert writer["core_slot_reader"].endswith("raw_core_value_no_wv")
-    assert writer["procedure_slot_reader"].endswith(
-        "raw_full_procedure_value_no_wv"
+    assert writer["core_slot_reader"].endswith("learned_bias_free_qkvo")
+    assert writer["semantic_prior"] == "rmsnorm_of_routed_raw_core_slot"
+    assert writer["procedure_time_centering"].startswith("fp32_masked")
+    assert writer["procedure_slot_reader"].startswith(
+        "semantic_prior_query_only_no_routing"
     )
-    assert writer["slot_fusion"].startswith("width512_bias_free")
-    assert writer["bilinear_hidden_width"] == 512
+    assert writer["slot_fusion"].startswith("direct_semantic_prior_plus")
     assert writer["post_fusion_scale_contract"].startswith(
-        "no_terminal_normalization"
+        "final_rmsnorm"
     )
-    assert writer["core_only_public_lora_delta"] == "exact_zero"
+    assert writer["core_only_public_lora_delta"].startswith("allowed")
     assert writer["procedure_only_public_lora_delta"] == "exact_zero"
-    assert writer["zero_procedure_public_lora_delta"] == "exact_zero"
-    assert writer["constant_nonzero_procedure"].startswith("preserved")
+    assert writer["zero_procedure_public_lora_delta"] == "semantic_prior_only"
+    assert writer["constant_nonzero_procedure"].startswith("zero_innovation")
     assert writer["post_fusion_blocks"] == 1
     assert writer["factor_hidden_width"] == 256
     assert writer_split_roles(config) == ("train",)
@@ -101,40 +102,28 @@ def test_core_program_config_seals_architecture_and_information_wall() -> None:
     assert config["information_wall"]["test_video_values_read"] == 0
     assert "state" in config["information_wall"]["writer_forbidden_inputs"]
     assert config["profile_defaults"]["expected_world_size"] == 4
-    assert config["profile_defaults"]["status"] == "sealed_b20"
-    assert config["profile_evidence"]["status"] == "sealed_b20"
+    assert config["profile_defaults"]["status"].startswith("pending")
+    assert config["profile_evidence"]["status"].startswith("pending")
     assert config["profile_evidence"]["allowed_physical_gpu_ids"] == [4, 5, 6, 7]
     assert [
         row["per_task_action_batch_size"]
         for row in config["profile_evidence"]["candidates"]
     ] == [20, 16]
-    assert config["profile_evidence"]["selected"][
-        "per_task_action_batch_size"
-    ] == 20
-    assert config["profile_evidence"]["selected"][
-        "contains_real_105_frame_video"
-    ]
-    assert config["profile_evidence"]["gradient_reachability"][
-        "all_trainable_tensors_changed"
-    ]
+    assert config["profile_evidence"]["selected"] is None
+    assert config["profile_evidence"]["gradient_reachability"] is None
     assert config["profile_evidence"]["inference_profile"] is None
     assert config["profile_evidence"]["teacher_videos_per_task_visit"] == 1
-    assert config["profile_evidence"]["exact_resume_smoke"]["status"] == (
-        "pass_fresh_step1_then_exact_resume_to_step3"
-    )
-    assert config["profile_evidence"]["exact_resume_smoke"][
-        "step1_checkpoint_files_unchanged_after_resume"
-    ]
+    assert config["profile_evidence"]["exact_resume_smoke"] is None
     assert config["specificity_gate"]["status"] == "pending_absolute_gate"
     assert config["optimization"]["scheduler"]["decay_steps"] == 400
     assert config["data"]["teacher_video_seed"] == 20260722
-    assert config["formal_run"]["status"] == "sealed"
+    assert config["formal_run"]["status"].startswith("pending")
     assert config["formal_run"]["total_steps"] == 2400
     assert config["formal_run"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["selected_stop_step"] == 200
     assert config["formal_run"]["stage_stop_steps"] == "every:200"
     assert config["formal_run"]["segment_definition"].startswith(
-        "fresh_core_program"
+        "fresh_prior_innovation"
     )
     assert "without_runtime_full_data_sha" in config["formal_run"][
         "data_integrity_check"
@@ -219,7 +208,7 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         skip_data_sha=False,
     )
     unsealed = copy.deepcopy(config)
-    unsealed["formal_run"]["status"] = "pending_core_program_live_profile"
+    unsealed["formal_run"]["status"] = "pending_prior_innovation_live_profile"
     with pytest.raises(WriterModelError, match="not sealed"):
         resolve_runtime(formal, unsealed, context)
     sealed = copy.deepcopy(config)
@@ -349,6 +338,7 @@ def test_retired_writer_configs_are_not_active() -> None:
         "pi05_as_writer_v1.json",
         "pi05_as_writer_v3_normal_only.json",
         "pi05_as_writer_recenter.json",
+        "pi05_as_writer_core_program.json",
     ):
         assert not (REPO_ROOT / "configs" / name).exists()
     with pytest.raises(WriterModelError, match="unsupported PI05 AS-Writer"):

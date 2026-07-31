@@ -24,12 +24,13 @@
 16. `docs/action_forecast_writer_loom_design.md`
 17. `docs/action_forecast_writer_recenter_design.md`
 18. `docs/action_forecast_writer_core_program_design.md`
-19. `task_plan.md`
-20. `findings.md`
-21. `progress.md`
-22. `docs/concept.md`
-23. `docs/decisions_and_open_questions.md`
-24. `docs/novelty_and_landscape.md`
+19. `docs/action_forecast_writer_prior_innovation_design.md`
+20. `task_plan.md`
+21. `findings.md`
+22. `progress.md`
+23. `docs/concept.md`
+24. `docs/decisions_and_open_questions.md`
+25. `docs/novelty_and_landscape.md`
 
 `docs/active_session_handoff.md`是当前跨session恢复入口，集中摘要研究证据链、
 v5失败证据、v5.1设计理由、运行状态和下一动作，但不覆盖架构或长期科学
@@ -50,29 +51,47 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 owner于2026-07-30在Recenter首段correct400仅为`55/84/79/85`后授权继续按
 “根因证据→第一性原理重构→一小时训练→必要内部分析”的循环自主推进。
 当前唯一canonical authority为
-[`docs/action_forecast_writer_core_program_design.md`](docs/action_forecast_writer_core_program_design.md)；
-Recenter、Loom及更早设计只作失败证据与provenance。
+[`docs/action_forecast_writer_prior_innovation_design.md`](docs/action_forecast_writer_prior_innovation_design.md)；
+Core-Program、Recenter、Loom及更早设计只作失败证据与provenance。
 
-Recenter的根因不是参数不更新或factor输出太弱，而是semantic-basis starvation：
-它删除raw Procedure的time-DC，又把Core降为slot address和窄幅标量调制，迫使
-模型仅从很小的centered AC Procedure同时重建任务语义方向与视频程序系数。
-constant Procedure被强制identity也错误删除了可用的公共高层程序。
+Core-Program在相同task-complete B20 fast-decay400训练合同下的
+macro50/100/150/200 fixed correct400为`84/75/60/76`，四点逐task envelope也
+只有`95`，显著低于v5.2同期`132`和v6同期`133`。macro50非rollout内部检查显示
+shuffled/reversed差异在Procedure已达`.571/.775`，却压缩到effective LoRA
+`.0288/.0446`和policy action`.00669/.00995`；constant Procedure几乎复现完整
+LoRA幅度，Procedure/Core每坐标梯度约`.36`。这否定了“Core和Procedure必须
+严格相乘才能产生任何LoRA”的公理：raw Procedure DC淹没AC顺序创新，bilinear
+又形成随视频变化的moving basis和耦合梯度；此前Recenter则因禁止Core直接内容
+而造成semantic-basis starvation。
 
-新Core-Program Writer保留已有成功证据：稳定`Q_text`、`M+G`、v6 Semantic
+Prior–Innovation Writer保留已有成功上游：稳定`Q_text`、`M+G`、v6 Semantic
 Core、原生50-token suffix mean Action、uncapped task-grounded transition和
-两层causal Procedure。compiler重新按必要职责构造：routing读取raw Core values
-形成semantic basis；`routing+Norm(Core slot)`读取完整raw Procedure values，
-不做time-centering；width512 bias-free bilinear
-`SiLU(Wc(Core))*Wp(Procedure)`严格要求两分支同时存在；zero-preserving slot
-block只允许routing进入Q/K、value/content只来自bilinear结果。Core-only、
-Procedure-only与zero Procedure均为identity，constant nonzero Procedure保留。
-精确trainable参数为`10,905,856`，相对corrected Source-SFT多约`5.91%`。
+两层causal Procedure。compiler整体重建为：
 
-canonical源码、fresh config和schema已原位切换，不保留Recenter可执行兼容路径。
-当前下一动作是完成CPU验证与提交后，在GPU4–7独立做最长105-frame真实视频
-B20三macro profile、fresh0→1→exact-resume1→3和全参数gradient reachability；
-不能继承Recenter的profile。seal后fresh macro0→200、每25 checkpoint，并固定
-评测macro50/100/150/200的paired correct400，不做checkpoint融合。
+```text
+routing以learned Q/K/V/O读取Core
+→ RMSNorm semantic prior B
+B作为唯一query读取Procedure：
+  key保留normalized raw Procedure DC/AC与RoPE
+  value只取FP32 time-centered Procedure innovation
+→ Z = B + innovation U
+→ routing仅进Q/K的residual slot block + final RMSNorm
+→ unchanged width256 factor heads → complete rank16 public LoRA
+```
+
+`Core=0→Procedure-only content=0`；constant Procedure只产生零innovation但
+保留Core prior。没有bilinear、AdaLN、learned scalar gate、manual branch
+scale或额外旁路。所有attention Q/K/V/O正常非零初始化，只有factor-head final
+projection为zero-init，因此step0 public LoRA仍为exact identity且第二次
+backward即可同时触达Core和Procedure。精确Writer参数为`10,643,968`。
+
+canonical源码、fresh config和schema已原位切换，不保留Core-Program可执行
+兼容路径。CPU全仓`195 passed`、compileall、diff check和architecture guard
+已通过，guard无hard violation。当前下一动作是在GPU4–7独立做最长105-frame
+真实视频B20三macro profile、fresh0→1→exact-resume1→3和全参数gradient
+reachability；不能继承Core-Program证据。seal后fresh macro0→200、每25
+checkpoint，并固定评测macro50/100/150/200 paired correct400，不做checkpoint
+融合，也不同时修改训练recipe。
 
 关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
 single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe

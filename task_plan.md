@@ -339,10 +339,11 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
 - [x] 精确参数`14,495,744`；step0 effective identity、38-target拓扑、
   target/rank坐标、FP32 Procedure centering、强共同方向QR稳定性和真实三步
   gradient staging均有CPU合同。
-- [ ] 全仓测试、compileall、JSON、diff和architecture guard最终复核后
+- [x] 全仓`196 passed`、compileall、JSON、diff和architecture guard复核后
   clean commit/push。
-- [ ] 只在GPU4–7完成最长105-frame B20三macro profile；若OOM或连续不稳定才
-  直接降B16，不扫描中间档。
+- [x] 只在GPU4–7完成最长105-frame B20三macro profile；三步finite，稳态约
+  `25.488 queries/s`、`191.159 macro/hour`，峰值约`77.07/83.65GB`，
+  B16未触发。
 - [ ] 正式teacher seed下fresh0→1→exact-resume1→3，验证全部新路径finite、
   可达且旧step1不被改写。
 - [ ] fresh macro0→200、every25；固定评测50/100/150/200 correct400。

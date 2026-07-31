@@ -53,16 +53,23 @@ step0 spectral scale为零，因此effective delta严格identity。精确参数�
 `14,495,744`。训练和推理始终是一条teacher video生成一套LoRA；不做
 multi-video平均。action queries继续与video同task但跨episode独立。
 
-活动源码/config/schema已原位切换；Prior config和兼容执行路径退役。CPU
-验证为全仓`195 passed`（加入FP32 Procedure centering回归后需重新确认）、
-compileall通过；当前尚未提交，也尚未使用GPU。
+活动源码/config/schema已原位切换；Prior config和兼容执行路径退役。
+canonical实现commit为`f8bbce6`且已push；全仓`196 passed`、compileall、
+JSON和diff check通过。
+
+GPU4–7独立最长视频B20 profile已通过：首步包含task38/demo36真实105个
+stride-5帧，三步均finite；后两步均值`25.488 queries/s`、
+`191.159 macro/hour`，峰值allocated/reserved为
+`77,074,980,864/83,649,101,824 bytes`，不触发B16。step1→3的530个
+trainable tensors中458个变化，compiler、factor/scale heads、Core、
+transition、Procedure和全部主Meta组均finite且可达；72个Action Meta-LoRA A
+因新增spectral scale→AdaLN→Meta-B分级zero-init在三步后尚未打开，配对B均已
+变化，正式训练会在后续step继续打开。
 
 紧邻顺序：
 
 ```text
-审计diff、更新authority并clean commit/push
-→ GPU4–7最长105-frame B20三macro profile
-→ formal-seed fresh0→1→exact-resume1→3
+formal-seed fresh0→1→exact-resume1→3
 → fresh macro0→200，every25保存
 → paired correct400 at macro50/100/150/200
 → winner内部rank/layer/video数值分析

@@ -109,26 +109,26 @@ def test_target_spectral_config_seals_architecture_and_information_wall() -> Non
     assert config["information_wall"]["test_video_values_read"] == 0
     assert "state" in config["information_wall"]["writer_forbidden_inputs"]
     assert config["profile_defaults"]["expected_world_size"] == 4
-    assert config["profile_defaults"]["status"] == "pending_target_spectral_profile"
-    assert config["profile_evidence"]["status"] == "pending_target_spectral_profile"
+    assert config["profile_defaults"]["status"] == "sealed_b20"
+    assert config["profile_evidence"]["status"] == "sealed_b20"
     assert config["profile_evidence"]["allowed_physical_gpu_ids"] == [4, 5, 6, 7]
     assert [
         row["per_task_action_batch_size"]
         for row in config["profile_evidence"]["candidates"]
     ] == [20, 16]
-    assert config["profile_evidence"]["selected"] is None
+    assert config["profile_evidence"]["selected"][
+        "per_task_action_batch_size"
+    ] == 20
     assert config["profile_evidence"]["gradient_reachability"]["status"] == (
-        "pending_target_spectral_profile"
+        "pass_all_major_modules_with_expected_staged_action_meta_lora_a_factors"
     )
     assert config["profile_evidence"]["inference_profile"] is None
     assert config["profile_evidence"]["teacher_videos_per_task_visit"] == 1
     assert config["profile_evidence"]["exact_resume_smoke"] is None
     assert config["specificity_gate"]["status"] == "pending_absolute_gate"
     assert config["optimization"]["scheduler"]["decay_steps"] == 400
-    assert config["data"]["teacher_video_seed"] == (
-        config["profile_evidence"]["profile_teacher_video_seed"]
-    )
-    assert config["formal_run"]["status"] == "pending_target_spectral_profile"
+    assert config["data"]["teacher_video_seed"] == 20260722
+    assert config["formal_run"]["status"] == "pending_target_spectral_exact_resume"
     assert config["formal_run"]["total_steps"] == 2400
     assert config["formal_run"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["selected_stop_step"] == 200

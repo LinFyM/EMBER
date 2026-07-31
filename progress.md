@@ -2236,3 +2236,15 @@ GPU范围和训练步长是当时快照；活动状态只取
   pending，不能继承Prior。
 - 下一步是完成全仓验证、clean commit/push，只在GPU4–7做最长视频B20 profile
   和exact-resume；通过后fresh macro0→200并评测四个single checkpoints。
+
+## Target-Spectral B20最长视频profile（2026-07-31）
+
+- main `f8bbce6`在GPU4–7以profile teacher seed172完成三个task-complete
+  B20 macros；首步包含task38/demo36真实105-frame条件，三步loss和gradient
+  均finite。
+- 后两步均值`25.488 queries/s`、`191.159 macro/hour`；峰值allocated/
+  reserved为`77,074,980,864/83,649,101,824 bytes`，因此B16不触发。
+- step1→3的530个trainable tensor中458个变化，所有主模块finite且变化。
+  唯一整组暂未变化的是72个Action Meta-LoRA A；这是spectral scale、
+  Procedure AdaLN与Meta-LoRA B连续zero-init造成的预期四步staging，配对B已
+  全部变化。配置已恢复formal seed，下一步做独立fresh0→1→exact-resume1→3。

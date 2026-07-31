@@ -74,8 +74,7 @@ validation/test action reads为0。523个trainable tensors中521个在step1→3
 紧邻顺序：
 
 ```text
-seal profile evidence + clean commit/push
-→ fresh formal macro0→200, every25
+formal fresh macro0→200 is running
 → paired correct400 at macro50/100/150/200
 ```
 
@@ -92,8 +91,14 @@ source policy:
 /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000
 data root:
 /data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a
-planned formal output:
-/data/ymdai/outputs/ember/pi05_as_writer_prior_innovation_taskcomplete_decay400_dev_r4_b20_seed7_s2400_<sealed-commit>_20260731
+formal tmux:
+ember-prior-innovation-m200
+formal sealed commit:
+807266b525b11ff8faa38979c6fdc209b1e81b7a
+formal output:
+/data/ymdai/outputs/ember/pi05_as_writer_prior_innovation_taskcomplete_decay400_dev_r4_b20_seed7_s2400_807266b_20260731
+formal log:
+/data/ymdai/logs/ember/pi05_as_writer_prior_innovation_taskcomplete_decay400_dev_r4_b20_seed7_s2400_807266b_20260731.log
 ```
 
 ## 1. Core-Program与Recenter历史快照（整节已失效，不得执行其命令）

@@ -91,9 +91,10 @@ canonical源码、fresh config和schema已原位切换，不保留Core-Program�
 也已通过：后两步约`25.818 queries/s`和`193.635 macro/hour`，峰值
 allocated/reserved约`76.99/83.64GB`；不触发B16。formal seed
 fresh0→1→exact-resume1→3连续，step1逐文件未改写，所有主模块finite且可达。
-当前下一动作是封存并push该证据，然后fresh macro0→200、每25 checkpoint，
-固定评测macro50/100/150/200 paired correct400；不做checkpoint融合，也不
-同时修改训练recipe。
+sealed commit `807266b`的fresh macro0→200已在tmux
+`ember-prior-innovation-m200`正式运行，每25 checkpoint；完成后固定评测
+macro50/100/150/200 paired correct400。不做checkpoint融合，也不同时修改
+训练recipe。
 
 关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
 single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe

@@ -2206,3 +2206,15 @@ GPU范围和训练步长是当时快照；活动状态只取
   信息墙读数均为0。所有主模块finite且可达。
 - config已恢复正式seed并seal为B20、fresh macro0→200、every25；下一步为
   clean push sealed evidence后，从identity启动约一小时正式段。
+
+## Prior–Innovation首段正式launch（2026-07-31）
+
+- sealed config commit为`807266b`；live preflight确认Git clean/pushed、
+  GPU4–7各约81.1GB free且无compute process，个人目录`439.39GB`，正式段及
+  四点correct400仍低于500GB hard cap。
+- tmux `ember-prior-innovation-m200`已从fresh identity启动：GPU4–7四rank、
+  NUMA1、B20、2 workers/rank、macro0→200、every25，精确预算4,800个
+  one-video conditions和96,000 action queries。
+- output为
+  `/data/ymdai/outputs/ember/pi05_as_writer_prior_innovation_taskcomplete_decay400_dev_r4_b20_seed7_s2400_807266b_20260731`；
+  首段完成后只做macro50/100/150/200 paired correct400，不融合checkpoint。

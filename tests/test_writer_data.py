@@ -70,36 +70,6 @@ def _sampler(
     )
 
 
-def _rank_rotating_sampler(
-    dataset: _DatasetStub,
-    *,
-    rank: int,
-    start_step: int,
-    stop_step: int,
-) -> MixedTaskBatchSampler:
-    schedule = TeacherVideoSchedule(
-        task_ids=(10, 20, 30, 40),
-        demo_indices=range(5),
-        seed=19,
-    )
-    return MixedTaskBatchSampler(
-        dataset,  # type: ignore[arg-type]
-        task_ids=(10, 20, 30, 40),
-        per_rank_batch_size=2,
-        start_step=start_step,
-        stop_step=stop_step,
-        rank=rank,
-        world_size=2,
-        seed=20260720,
-        tasks_per_rank_per_update=1,
-        video_schedule=schedule,
-        task_video_costs={
-            task_id: {demo_index: 1 for demo_index in range(5)}
-            for task_id in (10, 20, 30, 40)
-        },
-    )
-
-
 def test_task_complete_sampler_covers_every_task_and_runs_long_first() -> None:
     dataset, identity = _dataset()
     samplers = [
@@ -126,64 +96,6 @@ def test_task_complete_sampler_covers_every_task_and_runs_long_first() -> None:
                 assert {identity[row][0] for row in batch} == {task_id}
                 global_tasks.append(task_id)
         assert set(global_tasks) == {10, 20, 30, 40}
-
-
-def test_rank_rotating_sampler_reproduces_one_task_per_rank_recipe() -> None:
-    dataset, identity = _dataset()
-    samplers = [
-        _rank_rotating_sampler(
-            dataset,
-            rank=rank,
-            start_step=0,
-            stop_step=6,
-        )
-        for rank in range(2)
-    ]
-    rank_batches = [list(sampler) for sampler in samplers]
-
-    for cycle_start in (0, 2, 4):
-        cycle_tasks = set()
-        for step in range(cycle_start, cycle_start + 2):
-            assignments = samplers[0].assignments_for_step(step)
-            assert len(assignments) == 2
-            assert {visit for _, _, _, visit in assignments} == {
-                cycle_start // 2
-            }
-            for rank, microtask, task_id, _ in assignments:
-                assert microtask == 0
-                assert samplers[rank].tasks_for_step(step) == (task_id,)
-                assert {
-                    identity[row][0] for row in rank_batches[rank][step]
-                } == {task_id}
-                cycle_tasks.add(task_id)
-        assert cycle_tasks == {10, 20, 30, 40}
-
-    full = list(
-        _rank_rotating_sampler(
-            dataset,
-            rank=1,
-            start_step=0,
-            stop_step=6,
-        )
-    )
-    resumed = list(
-        _rank_rotating_sampler(
-            dataset,
-            rank=1,
-            start_step=3,
-            stop_step=6,
-        )
-    )
-    assert full[3:] == resumed
-    summary = samplers[0].consumed_identity_summary(0, 6)
-    assert summary["global_examples"] == 6 * 2 * 2
-    videos = samplers[0].video_schedule.consumed_identity_summary(
-        samplers[0],
-        0,
-        6,
-    )
-    assert videos["min_video_visits_per_task"] == 3
-    assert videos["max_video_visits_per_task"] == 3
 
 
 def test_mixed_task_sampler_resume_is_sample_exact() -> None:

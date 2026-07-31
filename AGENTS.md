@@ -50,8 +50,8 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 
 ## Current focused execution task
 
-当前session完成了v5.2 step900的400套correct-video LoRA生成与内部几何分析，
-没有启动rollout或正式训练。exact50 task-centered结果为：effective norm
+历史v5.2 step900的400套correct-video LoRA生成与内部几何分析已封存。exact50
+task-centered结果为：effective norm
 `140.441`、stable rank `1.01256`、top singular energy `99.0244%`、q/v energy
 `73.45/26.55%`、q/v跨层cosine`.962/.982`、视频中心化方差占sample energy
 `1.6655%`。fixed-gauge下q/v使用`15.83/15.92 of 16`个能量坐标，最大坐标仅
@@ -65,21 +65,25 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 mean-backed Semantic Core、未提前池化的Action×task-token-change axial Program
 Grid、38个真实policy targets、rank-last直接Program读取、coordinate mixer和
 coherent full-width factor heads；训练侧采用single-stage CP-24。它不依赖未来
-v5.2结果决定拓扑。
+v5.2结果决定拓扑。SPG canonical CPU实现已完成：精确参数`10,633,216`，
+Core/Program/compiler/CP-24职责已拆分，全仓`201 passed`且architecture guard无
+hard violation；真实B20 profile、resume seal和正式训练仍待执行。
 
-实现基线`799aa66`已把exact v5.2 topology接到mature full24 task-complete、B20、
-cost-balanced long-first与fast-decay400 recipe；最长105-frame三macro和formal-seed
-fresh0→1→exact-resume1→3已通过，精确参数`10,237,704`。但当前session没有创建
-正式run root、tmux或训练进程。下一session首先现场核验Git、存储和GPU4–7，
-然后才从identity fresh训练macro0→200并默认exact-resume到400，评测
-macro150/200/350/400 paired correct400；不得融合checkpoint。
+exact v5.2 topology × mature full24 task-complete/B20/cost-balanced long-first/
+fast-decay400正式训练已从clean frozen `60f4508`完成fresh macro0→400。精确参数
+`10,237,704`，共消费`192,000`条action queries和`9,600`个单视频条件，训练
+wall time `9695.13s`；macro400 train loss `.0963385`、grad norm `.104848`、
+functional validation loss `.136869`，全程finite且validation/test action读取为0。
+正式root为
+`/data/ymdai/outputs/ember/pi05_as_writer_v52_taskcomplete_decay400_formal_dev_r4_b20_seed7_60f4508_20260731`。
 
-新session完成强制仓库阅读与live preflight后，第一项动作仍是立即启动已经seal
-的v5.2 task-complete fresh macro0→200→400；这项结果用于补齐历史证据，但无论
-结果好坏都要实现并实验SPG。v5.2评测完成后做winner五臂与内部几何。SPG及其后
-每版先训练约一小时；只有absolute与同期有效旧架构同档或更好、或曲线显示明确
-续训价值，才开第二小时和昂贵行为特异性rollout，否则只做充分内部数值分析后
-从根因重新设计。
+当前正在tmux `ember-v52-candidates-60f4508`上用物理GPU4–7各负责一个checkpoint，
+并行评测macro150/200/350/400 paired correct400。四点完成后选择single-checkpoint
+winner，立即做四个控制臂、内部传递和exact50 LoRA几何；不得融合checkpoint。
+与此同时SPG进入干净commit staging的最长105-frame B20 profile、formal-seed
+exact-resume seal和fresh macro0→200一小时门。SPG及其后每版只有absolute与同期
+有效旧架构同档或更好、或曲线显示明确续训价值，才开第二小时和昂贵行为特异性
+rollout，否则只做充分内部数值分析后从根因重新设计。
 
 关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
 single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe

@@ -25,7 +25,7 @@ from ember.pi05_source_checkpoint import (
     write_json_atomic,
 )
 from ember.pi05_source_contract import append_jsonl
-from ember.writer.architecture import V52_WRITER_PARAMETER_COUNT
+from ember.writer.architecture import SPG_WRITER_PARAMETER_COUNT
 from ember.writer.as_config import (
     REPO_ROOT,
     authority_path,
@@ -38,7 +38,7 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 from ember.writer.topology import validate_task_complete_topology
 
 
-AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_v5_2_taskcomplete_as_writer_launch_v1"
+AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_semantic_program_grid_cp24_launch_v1"
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
 
@@ -138,6 +138,8 @@ def _validate_formal_runtime(
         raise WriterModelError(
             "formal AS-Writer launch requires GPU-local NUMA binding"
         )
+
+
 def resolve_runtime(
     args: argparse.Namespace,
     config: Mapping[str, Any],
@@ -145,8 +147,7 @@ def resolve_runtime(
 ) -> tuple[int, int, tuple[int, ...]]:
     if args.mode == "formal" and config["formal_run"].get("status") != "sealed":
         raise WriterModelError(
-            "formal AS-Writer config is not sealed from the live "
-            "v5.2 task-complete profile"
+            "formal AS-Writer config is not sealed from the live SPG profile"
         )
     source = config["formal_run"] if args.mode == "formal" else config["profile_defaults"]
     (
@@ -359,7 +360,7 @@ def inspect_feature_cache(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
     """Fail closed for retired pooled-feature callers."""
 
     raise WriterModelError(
-        "pooled PI05 Writer feature caches are retired; Core-Causal AS-Writer "
+        "pooled PI05 Writer feature caches are retired; SPG AS-Writer "
         "requires raw teacher video data"
     )
 
@@ -371,7 +372,7 @@ def writer_trainable_contract(
     parameter_count = sum(value.numel() for value in writer.parameters())
     if (
         not names
-        or parameter_count != V52_WRITER_PARAMETER_COUNT
+        or parameter_count != SPG_WRITER_PARAMETER_COUNT
         or any(parameter.requires_grad for parameter in policy.parameters())
     ):
         raise WriterModelError("AS-Writer freeze boundary changed")
@@ -405,6 +406,42 @@ def _contract_stop_step(
     return int(source.get("selected_stop_step", total_steps))
 
 
+def _cp24_runtime_contract(
+    context: DistributedContext,
+    *,
+    tasks_per_rank: int,
+    global_tasks: int,
+) -> dict[str, Any]:
+    distributed = context.world_size > 1
+    return {
+        "optimizer_gradient_accumulation": False,
+        "loss_reduction": "mean_within_each_task_then_equal_mean_across_all_tasks",
+        "task_gradient_collection": (
+            "six_rank_local_per_task_writer_gradients_without_ddp_backward"
+        ),
+        "task_gradients_per_rank_per_macro": tasks_per_rank,
+        "global_task_gradients_per_macro": global_tasks,
+        "distributed_full_task_gradient_matrix_materialized": False,
+        "gradient_task_id_allgathers_per_macro": 1 if distributed else 0,
+        "gradient_gram_exchange": (
+            "bounded_parameter_chunk_allgathers_for_full24_and_module_block_grams"
+        ),
+        "gradient_gram_chunk_elements": 1_048_576,
+        "gradient_gram_chunk_allgathers_per_macro": (
+            "runtime_enumerated_from_parameter_block_layout" if distributed else 0
+        ),
+        "gradient_direction_allreduces_per_macro": 1 if distributed else 0,
+        "gradient_weight_broadcasts_per_macro": 1 if distributed else 0,
+        "gradient_weight_authority_rank": 0,
+        "single_video_gradient_direction_sketch": (
+            "fixed_countsketch_32_per_task_per_parameter_block"
+        ),
+        "diagnostic_tensor_allgathers_per_macro": 1 if distributed else 0,
+        "ddp_no_sync_microtasks_per_macro": 0,
+        "ddp_gradient_synchronizations_per_macro": 0,
+    }
+
+
 def build_contract(
     *,
     args: argparse.Namespace,
@@ -429,13 +466,6 @@ def build_contract(
     tasks_per_rank = int(
         config["conditioning_training"]["tasks_per_rank_per_optimizer_update"]
     )
-    update_topology = str(
-        config["conditioning_training"].get(
-            "update_topology",
-            "task_complete_all_tasks",
-        )
-    )
-    task_complete = update_topology == "task_complete_all_tasks"
     global_tasks = context.world_size * tasks_per_rank
     global_queries = global_tasks * batch_size
     local = {
@@ -481,19 +511,13 @@ def build_contract(
             "world_size": context.world_size,
             "one_policy_cuda_process_per_rank": True,
             "extra_cuda_roles_on_any_rank": 0,
-            "ddp_object": "shared_writer_only",
-            "macro_step_axis": (
-                "complete_task_balanced_optimizer_update"
-                if task_complete
-                else "rank_rotating_task_balanced_optimizer_update"
-            ),
+            "ddp_object": "shared_writer_parameters_without_ddp_backward",
+            "macro_step_axis": "conflict_projected_full_task_optimizer_update",
             "tasks_per_rank_per_optimizer_update": tasks_per_rank,
             "global_tasks_per_optimizer_update": global_tasks,
             "task_assignment": (
                 "selected_video_frame_cost_balanced_groups_rotated_across_"
                 "physical_ranks_longest_task_first_within_each_rank"
-                if task_complete
-                else "seeded_global_task_permutations_across_rank_step_slots"
             ),
             "task_video_cost_sha256": video_data[
                 "sampled_frame_cost_sha256"
@@ -510,15 +534,10 @@ def build_contract(
             "actions_per_video_condition": batch_size,
             "action_video_assignment": "all_actions_share_single_video_lora",
             "logical_pairs_per_rank_per_macro": tasks_per_rank * batch_size,
-            "optimizer_gradient_accumulation": tasks_per_rank > 1,
-            "loss_reduction": (
-                "mean_within_each_task_then_equal_mean_across_all_tasks"
-                if task_complete
-                else "mean_rank_local_task_loss_then_ddp_mean_across_four_tasks"
-            ),
-            "ddp_no_sync_microtasks_per_macro": tasks_per_rank - 1,
-            "ddp_gradient_synchronizations_per_macro": (
-                1 if context.world_size > 1 else 0
+            **_cp24_runtime_contract(
+                context,
+                tasks_per_rank=tasks_per_rank,
+                global_tasks=global_tasks,
             ),
             "adamw_updates_per_macro": 1,
             "global_policy_samples_per_macro": global_queries,

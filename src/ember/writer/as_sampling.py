@@ -35,13 +35,7 @@ def _task_complete_batch_cycle(
         or not 0 <= start_step <= stop_step
         or not 0 <= rank < world_size
         or tasks_per_rank_per_update <= 0
-        or not (
-            len(task_ids) == world_size * tasks_per_rank_per_update
-            or (
-                tasks_per_rank_per_update == 1
-                and len(task_ids) % world_size == 0
-            )
-        )
+        or len(task_ids) != world_size * tasks_per_rank_per_update
     )
     if invalid:
         raise WriterModelError("invalid task-complete sampler")
@@ -100,14 +94,7 @@ def _task_complete_video_costs(
 
 
 class MixedTaskBatchSampler:
-    """Yield task-pure batches under one explicit multi-task update topology.
-
-    Task-complete updates contain every task once globally and use cost-balanced
-    long-first rank groups.  The historical update recipe instead assigns one
-    task to each rank and rotates a seeded permutation of all tasks across
-    consecutive global rank slots.  Both modes retain task-pure physical batches
-    and exact task-visit cursors.
-    """
+    """Yield all-task, task-pure, cost-balanced long-first macro batches."""
 
     _GROUP_SEED_TAG = 0xC057
 
@@ -151,12 +138,6 @@ class MixedTaskBatchSampler:
         self.world_size = world_size
         self.seed = seed
         self.tasks_per_rank_per_update = int(tasks_per_rank_per_update)
-        self.update_topology = (
-            "task_complete_all_tasks"
-            if len(self.task_ids)
-            == self.world_size * self.tasks_per_rank_per_update
-            else "rank_rotating_one_task_per_rank"
-        )
         self.episodes_per_task = episodes_per_task
         self.episode_rows = episode_rows
         self.video_schedule = video_schedule
@@ -182,10 +163,6 @@ class MixedTaskBatchSampler:
         ) * self.tasks_per_rank_per_update
 
     def _cost_balanced_groups(self, step: int) -> tuple[tuple[int, ...], ...]:
-        if self.update_topology != "task_complete_all_tasks":
-            raise WriterModelError(
-                "cost-balanced groups require task-complete updates"
-            )
         current_costs = {
             task_id: self.task_video_costs[task_id][
                 self.video_schedule.demo_for_task_visit(task_id, step)
@@ -238,15 +215,6 @@ class MixedTaskBatchSampler:
             raise WriterModelError("task-complete cost balancing failed")
         return result
 
-    def _task_visit_for_global_slot(self, slot: int) -> tuple[int, int]:
-        if slot < 0:
-            raise WriterModelError("global task slot must be non-negative")
-        task_visit, offset = divmod(slot, len(self.task_ids))
-        order = np.random.default_rng(
-            np.random.SeedSequence([self.seed, task_visit])
-        ).permutation(self.task_ids)
-        return int(order[offset]), task_visit
-
     def assignments_for_step(
         self,
         step: int,
@@ -255,17 +223,6 @@ class MixedTaskBatchSampler:
 
         if step < 0:
             raise WriterModelError("task assignment step must be non-negative")
-        if self.update_topology == "rank_rotating_one_task_per_rank":
-            return tuple(
-                (
-                    rank,
-                    0,
-                    *self._task_visit_for_global_slot(
-                        step * self.world_size + rank
-                    ),
-                )
-                for rank in range(self.world_size)
-            )
         groups = self._cost_balanced_groups(step)
         assignments: list[tuple[int, int, int, int]] = []
         for rank in range(self.world_size):

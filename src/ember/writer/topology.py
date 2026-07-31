@@ -69,7 +69,7 @@ def validate_task_complete_topology(
     batch_size: int,
     mode: str,
 ) -> None:
-    """Seal one of the two explicit AS-Writer update topologies."""
+    """Seal the canonical full-task SPG update topology."""
 
     if context.world_size != expected_world_size:
         raise WriterModelError(
@@ -87,28 +87,24 @@ def validate_task_complete_topology(
         int(training["teacher_videos_per_task_visit"]) != 1
         or tasks_per_rank * context.world_size != global_tasks
     )
-    if update_topology == "task_complete_all_tasks":
-        invalid = invalid_common or global_tasks != task_count
-    elif update_topology == "rank_rotating_one_task_per_rank":
-        invalid = (
-            invalid_common
-            or tasks_per_rank != 1
-            or global_tasks != context.world_size
-            or task_count % global_tasks != 0
-        )
-    else:
-        invalid = True
+    invalid = (
+        update_topology != "task_complete_all_tasks"
+        or invalid_common
+        or global_tasks != task_count
+    )
     if invalid:
         raise WriterModelError(
             "AS-Writer update topology differs from its declared contract"
         )
     if mode == "profile":
+        evidence = config.get("profile_evidence", {})
         candidates = {
-            int(item["per_task_action_batch_size"])
-            for item in config.get("profile_evidence", {}).get("candidates", [])
+            int(evidence[name]["per_task_action_batch_size"])
+            for name in ("primary_candidate", "oom_fallback_only")
+            if isinstance(evidence.get(name), Mapping)
         }
         if not candidates or batch_size not in candidates:
             raise WriterModelError(
-                "v5.2 profile batch is outside its declared "
+                "SPG profile batch is outside its declared "
                 "hardware-friendly candidates"
             )

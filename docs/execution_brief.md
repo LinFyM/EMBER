@@ -5,18 +5,20 @@
 当前下一整体架构设计为
 [`action_forecast_writer_semantic_program_grid_design.md`](action_forecast_writer_semantic_program_grid_design.md)。
 此前Coherent-Procedure/B-only residual提案已撤回，不得实现。
-main `799aa66`已恢复exact v5.2 topology并接入mature task-complete recipe，但
-正式训练尚未启动；当前无tmux、训练或rollout进程。
+exact v5.2 topology已从clean frozen `60f4508`完成mature task-complete
+fresh macro0→400正式训练：`192,000` action queries、`9,600`单视频条件、
+wall `9695.13s`，全程finite且validation/test action读取为0。当前tmux
+`ember-v52-candidates-60f4508`正用GPU4–7并行评测macro150/200/350/400
+paired correct400；尚无本轮行为结果，不得从functional loss推断closed-loop。
 
 本session已完成v5.2 step900的400套correct-video LoRA内部几何分析且零rollout。
 结果证明16个q/v坐标能量均匀、没有负向相消，近rank1来自建设性同向协作；
 强制正交/高rank的Target-Spectral为明确负结果。永久分析artifact及SHA见
 `docs/active_session_handoff.md`。
 
-新session完成强制阅读和live preflight后立即补齐
-`v5.2 topology × full24 task-complete fast-decay400`：fresh macro0→200并
-exact-resume到400，比较macro150/200/350/400 paired correct400，winner补正式
-五臂和内部几何。无论结果好坏，随后都实现SPG；以后每版新整体架构先一小时，
+四个v5.2候选完成后选择single-checkpoint winner，补正式五臂和内部几何。
+SPG canonical CPU实现已经完成并通过`201`项全仓测试，真实B20/profile/resume与
+性能训练尚未执行；以后每版新整体架构先一小时，
 达到同期有效旧架构水平或显示明确价值才续第二小时和行为五臂，否则只做充分
 内部分析后从根因重构。150只是里程碑，不是focused自动终点。以下在`## 1`
 之前的旧状态叙述只作历史背景，不得覆盖本节。

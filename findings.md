@@ -6,6 +6,42 @@
 `docs/action_forecast_writer_semantic_program_grid_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-07-31 v5.2 task-complete正式训练完成
+
+- clean frozen commit `60f4508`上的exact v5.2 topology完成fresh macro0→400；
+  Writer参数`10,237,704`，每macro 24 tasks等权、每task一条video/一套LoRA/B20，
+  共`192,000` action queries与`9,600`单视频条件。
+- 训练wall `9695.1329s`；macro400 functional train loss `.09633848`、grad norm
+  `.10484845`、LR `1.00045e-5`，functional validation loss `.13686878`。全程无
+  OOM/NaN，validation/test action读取为0；这些只证明训练合同，不预测行为。
+- macro150/200/350/400的paired correct400已各分配GPU4/5/6/7并行执行。候选
+  panel固定8 validation tasks×50 states、teacher demos每task 0..49无放回，
+  B-scale1且共用state/env/policy/video schedule；结果完成前不选择winner。
+
+## 2026-07-31 SPG独立复核与canonical实现
+
+- 逐层复核确认`A_f`与`G_(f+1)-G_f`共享interval `f→f+1`，local轴只在同一
+  interval内读Action与task-token change，temporal轴按每个语义列使用严格
+  causal mask；prefix/ragged测试锁定无未来帧泄漏。
+- Core保留v6式mean backbone与task-selected centered residual，完整task-token
+  容量且对frame permutation不变；Program不提前池化，38个真实policy targets
+  先于16个rank coordinates，target/rank/order/type identity只进入Q/K。
+- compiler用每个target/rank query直接读取完整Program，随后用标准axial
+  coordinate mixer允许必要分化，同时没有正交、谱均匀、scale gate、B-only
+  residual、terminal norm或第二套LoRA；八个factor heads零初始化保证step0严格
+  functional identity。
+- CP-24保留24-task等权完整macro。每task gradient先保存，确定性投影只修正负
+  pair，最后仍一次clip、一次AdamW；无冲突单元测试严格退化为原始full24 mean，
+  四rank用rank0权重广播和最终all-reduce保持同一更新。
+- 真实module enumeration为`10,633,216`：frontend `3,453,440`、Core
+  `1,836,544`、Program `1,837,568`、compiler `1,326,592`、factor heads
+  `2,179,072`。source policy trainable参数为0，public rank16仍是38 targets/
+  76 tensors/`1,287,168` scalars。
+- 全仓`201 passed in 26.18s`；shape、mask、Core permutation、Program prefix、
+  identity、freeze、gradient、CP world2和checkpoint schema均通过。architecture
+  guard为REVIEW但无hard violation。尚未做真实B20 profile、resume或性能实验，
+  因而这些是实现合同证据，不是科学结果。
+
 ## 2026-07-31 SPG整体架构定稿与持续迭代合同
 
 - Coherent-Procedure/B-only residual已撤回；它只是保守对照计划，不是owner要求

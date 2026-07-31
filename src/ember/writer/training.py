@@ -12,7 +12,6 @@ from typing import Any, Iterator, Mapping
 import torch
 import torch.distributed as dist
 from lerobot.optim.schedulers import CosineDecayWithWarmupSchedulerConfig
-from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader
 
 from ember.pi05_eval_contract import (
@@ -42,6 +41,11 @@ from ember.writer.checkpoint import (
     load_writer_checkpoint,
     save_writer_checkpoint,
 )
+from ember.writer.conflict_projection import (
+    FlatParameter,
+    parameter_layout,
+    synchronize_writer_state,
+)
 from ember.writer.as_contract import (
     REPO_ROOT,
     _broadcast_validation,
@@ -67,7 +71,7 @@ from ember.writer.data import (
     WriterTaskAuthority,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
-from ember.writer.architecture import LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
+from ember.writer.architecture import SEMANTIC_PROGRAM_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.model import (
     CompleteLoRAWriter,
     WriterModelError,
@@ -100,7 +104,6 @@ class WriterRuntime:
     policy: torch.nn.Module
     identity_state: dict[str, torch.Tensor]
     writer: CompleteLoRAWriter
-    wrapped_writer: torch.nn.Module
     optimizer: torch.optim.Optimizer
     scheduler: torch.optim.lr_scheduler.LRScheduler
     lora_contract: Any
@@ -115,6 +118,7 @@ class WriterRuntime:
     metrics_path: Path
     metrics_rows: int
     checkpoint_validation: OnlineWriterValidation | None
+    gradient_layout: tuple[FlatParameter, ...]
 
 
 @dataclass
@@ -151,7 +155,7 @@ def _build_writer(
     writer_config = {
         key: value
         for key, value in config["writer"].items()
-        if key in LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
+        if key in SEMANTIC_PROGRAM_WRITER_CONSTRUCTOR_KEYS
     }
     bridge = policy.model.paligemma_with_expert
     writer = CompleteLoRAWriter(
@@ -305,19 +309,6 @@ def _build_sampler_and_loader(
         ),
     )
     return sampler, schedule, loader
-
-
-def _wrap_writer(writer: CompleteLoRAWriter, context: DistributedContext) -> torch.nn.Module:
-    if context.world_size == 1:
-        return writer
-    return DistributedDataParallel(
-        writer,
-        device_ids=[context.local_rank],
-        output_device=context.local_rank,
-        broadcast_buffers=False,
-        find_unused_parameters=False,
-        static_graph=False,
-    )
 
 
 def _metrics_cursor(
@@ -531,7 +522,7 @@ def prepare_runtime(
         video_data=setup.contract["video_data"],
         tasks_per_rank_per_update=tasks_per_rank_per_update,
     )
-    wrapped = _wrap_writer(setup.writer, context)
+    synchronize_writer_state(setup.writer, context.world_size)
     setup.writer.train()
     video_store, processor, language_tokens = _build_condition_inputs(
         args=args,
@@ -579,7 +570,6 @@ def prepare_runtime(
         policy=setup.policy,
         identity_state=setup.identity_state,
         writer=setup.writer,
-        wrapped_writer=wrapped,
         optimizer=setup.optimizer,
         scheduler=setup.scheduler,
         lora_contract=setup.lora_contract,
@@ -594,6 +584,7 @@ def prepare_runtime(
         metrics_path=metrics_path,
         metrics_rows=metrics_rows,
         checkpoint_validation=checkpoint_validation,
+        gradient_layout=parameter_layout(setup.writer),
     )
 
 
@@ -748,7 +739,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_as_writer_language_axial_v5_2_taskcomplete_decay400_v1.json",
+        default=REPO_ROOT / "configs/pi05_as_writer_semantic_program_grid_cp24_decay400_v1.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--source-run", type=Path, required=True)

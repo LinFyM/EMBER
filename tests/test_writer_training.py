@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import copy
-from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -11,6 +10,7 @@ import torch
 
 from ember.pi05_source_checkpoint import DistributedContext, write_json_atomic
 from ember.writer.as_contract import (
+    build_contract,
     load_writer_config,
     parse_checkpoint_steps,
     reconcile_resume_contract,
@@ -19,6 +19,7 @@ from ember.writer.as_contract import (
     writer_split_roles,
 )
 from ember.writer.as_sampling import TeacherVideoSchedule
+from ember.writer.conflict_projection import FlatParameter
 from ember.writer.model import WriterModelError
 from ember.writer import as_step
 
@@ -26,7 +27,7 @@ from ember.writer import as_step
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = (
     REPO_ROOT
-    / "configs/pi05_as_writer_language_axial_v5_2_taskcomplete_decay400_v1.json"
+    / "configs/pi05_as_writer_semantic_program_grid_cp24_decay400_v1.json"
 )
 OLD_RECIPE_CONFIG = (
     REPO_ROOT
@@ -34,40 +35,34 @@ OLD_RECIPE_CONFIG = (
 )
 
 
-def test_v5_2_taskcomplete_config_seals_architecture_and_information_wall() -> None:
+def test_spg_cp24_config_seals_architecture_and_information_wall() -> None:
     config = load_writer_config(CONFIG)
     writer = config["writer"]
-    assert writer["architecture"] == (
-        "pi05_language_axial_patch_grounded_core_causal_"
-        "procedure_slot_fusion_v5_2"
-    )
+    assert writer["architecture"] == "pi05_semantic_program_grid_target_rank_compiler_v1"
     assert writer["teacher_state_input"] is False
     assert writer["teacher_prompt"] == "Task: {cleaned_task};\nAction: "
     assert writer["text_meta_lora_rank"] == 4
     assert writer["patch_grounding_heads"] == 8
-    assert "no_value_projection" in writer["patch_grounding_value"]
+    assert writer["patch_grounding_value"].startswith("raw_shared")
     assert writer["frame_batching_contract"].startswith("encode_one_video")
     assert writer["vl_meta_lora_rank"] == 4
     assert writer["action_meta_lora_rank"] == 4
     assert writer["action_horizon"] == 50
-    assert writer["query_count"] == 320
+    assert writer["target_count"] == 38
+    assert writer["public_rank"] == 16
     assert writer["frame_stride"] == 5
     assert writer["max_frames_per_encoder_call"] == 32
     assert writer["action_expert_probe"].startswith("one_forward_fixed")
     assert writer["interaction_reduction"].startswith("mean_50")
-    assert writer["frame_set_attention"].startswith("token_aligned")
-    assert writer["frame_attention_initial_lambda"] == 0.05
+    assert writer["semantic_core_frame_fusion"].startswith("mean_backbone")
     assert writer["semantic_core_blocks"] == 2
-    assert writer["procedure_attention"] == "global_causal_pre_norm_with_valid_mask"
-    assert writer["procedure_blocks"] == 2
-    assert writer["procedure_value_path"] == "raw_interaction_content_only"
-    assert writer["core_slot_reader"] == "routing_qk_core_content_v"
-    assert writer["procedure_slot_reader"].startswith(
-        "routing_plus_normalized_core"
-    )
-    assert writer["slot_fusion"].startswith("zero_initialized")
-    assert writer["post_fusion_blocks"] == 1
-    assert writer["factor_hidden_width"] == 216
+    assert writer["program_attention"].startswith("interval_local")
+    assert writer["program_blocks"] == 2
+    assert writer["program_value_path"].startswith("raw_content")
+    assert writer["core_target_reader"] == "target_qk_core_raw_value"
+    assert writer["program_coordinate_reader"].startswith("target_rank")
+    assert writer["coordinate_mixer"].startswith("rank_axis")
+    assert writer["factor_hidden_width"] == 256
     assert writer_split_roles(config) == ("train",)
     conditioning = config["conditioning_training"]
     assert conditioning["teacher_videos_per_task_visit"] == 1
@@ -82,39 +77,35 @@ def test_v5_2_taskcomplete_config_seals_architecture_and_information_wall() -> N
         "mean_within_task_then_equal_mean_over_24_tasks"
     )
     assert conditioning["policy_noise_contract"].startswith("one independent")
-    assert conditioning["ddp_gradient_sync"].startswith("first_five")
+    assert conditioning["ddp_gradient_sync"].startswith("none_during")
+    assert conditioning["gradient_composition"].startswith("deterministic_pcgrad")
+    assert conditioning["no_conflict_fallback"] == "exact_raw_full24_mean"
     assert config["information_wall"]["test_actions_read"] == 0
     assert config["information_wall"]["test_video_values_read"] == 0
     assert "state" in config["information_wall"]["writer_forbidden_inputs"]
     assert config["profile_defaults"]["expected_world_size"] == 4
-    assert config["profile_defaults"]["status"] in {
-        "pending_v5_2_b20_live_profile",
-        "sealed_v5_2_b20_live_profile",
-    }
-    assert config["profile_evidence"]["status"] in {
-        "pending_v5_2_b20_live_profile",
-        "sealed_v5_2_b20_live_profile",
-    }
+    assert config["profile_defaults"]["status"] == "pending_spg_b20_live_profile"
+    assert config["profile_evidence"]["status"] == "pending_spg_b20_live_profile"
     assert config["profile_evidence"]["allowed_physical_gpu_ids"] == [4, 5, 6, 7]
-    assert [
-        row["per_task_action_batch_size"]
-        for row in config["profile_evidence"]["candidates"]
-    ] == [20, 16]
+    assert config["profile_evidence"]["primary_candidate"][
+        "per_task_action_batch_size"
+    ] == 20
+    assert config["profile_evidence"]["oom_fallback_only"][
+        "per_task_action_batch_size"
+    ] == 16
     assert config["profile_evidence"]["inference_profile"] is None
     assert config["profile_evidence"]["teacher_videos_per_task_visit"] == 1
     assert config["specificity_gate"]["status"] == "pending_absolute_gate"
     assert config["optimization"]["scheduler"]["decay_steps"] == 400
-    assert config["data"]["teacher_video_seed"] == 20260722
-    assert config["formal_run"]["status"] in {
-        "pending_profile_and_resume_smoke",
-        "sealed",
-    }
+    assert config["data"]["teacher_video_seed"] == 172
+    assert config["profile_evidence"]["formal_teacher_video_seed_after_profile_seal"] == 20260722
+    assert config["formal_run"]["status"] == "pending_spg_b20_live_profile"
     assert config["formal_run"]["total_steps"] == 400
     assert config["formal_run"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["selected_stop_step"] == 200
     assert config["formal_run"]["stage_stop_steps"] == [200, 400]
     assert config["formal_run"]["segment_definition"].startswith(
-        "fresh_v5_2_taskcomplete"
+        "fresh_spg_cp24"
     )
     assert "without_runtime_full_data_sha" in config["formal_run"][
         "data_integrity_check"
@@ -199,7 +190,7 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         skip_data_sha=False,
     )
     unsealed = copy.deepcopy(config)
-    unsealed["formal_run"]["status"] = "pending_v5_2_live_profile"
+    unsealed["formal_run"]["status"] = "pending_spg_b20_live_profile"
     with pytest.raises(WriterModelError, match="not sealed"):
         resolve_runtime(formal, unsealed, context)
     sealed = copy.deepcopy(config)
@@ -239,6 +230,71 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         tuple(range(25, 401, 25)),
     )
     assert formal.stop_after_step == 200
+
+
+def test_spg_launch_contract_records_cp24_collectives_not_ddp_accumulation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = load_writer_config(CONFIG)
+    context = DistributedContext(
+        rank=0,
+        local_rank=0,
+        world_size=4,
+        device=torch.device("cuda:0"),
+        numa_node=1,
+        cpu_affinity=(48,),
+    )
+    monkeypatch.setattr(
+        "ember.writer.as_contract.git_state",
+        lambda _root: {"branch": "main", "commit": "a" * 40},
+    )
+
+    def gather_topology(output: list[object], local: object) -> None:
+        output[:] = [local, local, local, local]
+
+    monkeypatch.setattr(
+        "ember.writer.as_contract.dist.all_gather_object", gather_topology
+    )
+    args = argparse.Namespace(mode="profile", config=CONFIG, num_workers=2)
+    contract = build_contract(
+        args=args,
+        config=config,
+        context=context,
+        source={},
+        tokenizer={},
+        video_data={"sampled_frame_cost_sha256": "b" * 64},
+        data_validation={},
+        task_ids=tuple(range(24)),
+        trainable={},
+        total_steps=3,
+        batch_size=20,
+        batch_cycle=(20,),
+        checkpoint_steps=(1, 2, 3),
+        initialization={},
+    )
+    runtime = contract["runtime"]
+    assert runtime["optimizer_gradient_accumulation"] is False
+    assert runtime["loss_reduction"] == (
+        "mean_within_each_task_then_equal_mean_across_all_tasks"
+    )
+    assert runtime["task_gradients_per_rank_per_macro"] == 6
+    assert runtime["global_task_gradients_per_macro"] == 24
+    assert runtime["distributed_full_task_gradient_matrix_materialized"] is False
+    assert runtime["gradient_task_id_allgathers_per_macro"] == 1
+    assert runtime["gradient_gram_chunk_elements"] == 1_048_576
+    assert (
+        runtime["gradient_gram_chunk_allgathers_per_macro"]
+        == "runtime_enumerated_from_parameter_block_layout"
+    )
+    assert runtime["gradient_direction_allreduces_per_macro"] == 1
+    assert runtime["gradient_weight_broadcasts_per_macro"] == 1
+    assert runtime["gradient_weight_authority_rank"] == 0
+    assert runtime["single_video_gradient_direction_sketch"].startswith(
+        "fixed_countsketch_32"
+    )
+    assert runtime["diagnostic_tensor_allgathers_per_macro"] == 1
+    assert runtime["ddp_no_sync_microtasks_per_macro"] == 0
+    assert runtime["ddp_gradient_synchronizations_per_macro"] == 0
 
 
 def test_single_video_schedule_is_reproducible_and_cycle_complete() -> None:
@@ -336,23 +392,10 @@ def test_retired_writer_configs_are_not_active() -> None:
         load_writer_config(REPO_ROOT / "configs/pi05_as_writer_v2.json")
 
 
-def test_task_complete_step_scales_six_losses_and_syncs_only_last(
+def test_cp24_step_collects_task_gradients_and_updates_once(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     task_ids = (10, 20, 30, 40, 50, 60)
-
-    class Wrapped:
-        active = False
-        entries = 0
-
-        @contextmanager
-        def no_sync(self):
-            self.entries += 1
-            self.active = True
-            try:
-                yield
-            finally:
-                self.active = False
 
     class Sampler:
         per_rank_batch_size = 2
@@ -382,9 +425,8 @@ def test_task_complete_step_scales_six_losses_and_syncs_only_last(
     writer = torch.nn.Linear(1, 1, bias=False)
     with torch.no_grad():
         writer.weight.fill_(1.0)
-    wrapped = Wrapped()
     scheduler = Scheduler()
-    calls: list[tuple[bool, float, int]] = []
+    calls: list[int] = []
 
     def fake_pack(_runtime, *, task_id, teacher_demo, action_batch_size):
         return (task_id,), {
@@ -395,20 +437,18 @@ def test_task_complete_step_scales_six_losses_and_syncs_only_last(
         }
 
     def fake_differentiate(
-        runtime,
+        _runtime,
         packed,
         _policy_batch,
-        *,
-        loss_scale,
+        flat_gradient,
     ):
-        calls.append((wrapped.active, loss_scale, int(packed[0])))
-        contribution = torch.full_like(writer.weight, loss_scale)
-        writer.weight.grad = (
-            contribution
-            if writer.weight.grad is None
-            else writer.weight.grad + contribution
+        calls.append(int(packed[0]))
+        flat_gradient.fill_(1.0)
+        return (
+            torch.tensor(float(packed[0])),
+            {"ok": True},
+            flat_gradient,
         )
-        return torch.tensor(float(packed[0])), {"ok": True}
 
     captured: dict[str, object] = {}
 
@@ -425,14 +465,17 @@ def test_task_complete_step_scales_six_losses_and_syncs_only_last(
         config={
             "conditioning_training": {
                 "method": (
-                    "task_complete_single_video_multi_action_positive_"
-                    "functional_loss"
+                    "conflict_projected_task_complete_single_video_multi_"
+                    "action_positive_functional_loss"
                 )
             },
             "optimization": {
-                "optimizer": {"gradient_clip_norm": 1.0}
+                "seed": 7,
+                "optimizer": {"gradient_clip_norm": 1.0},
             },
         },
+        context=SimpleNamespace(device=torch.device("cpu"), world_size=1, rank=0),
+        task_ids=task_ids,
         tasks_per_rank_per_update=6,
         iterator=iter(
             {"task_id": torch.tensor([task_id, task_id])}
@@ -442,16 +485,66 @@ def test_task_complete_step_scales_six_losses_and_syncs_only_last(
         video_schedule=Schedule(),
         videos_per_task_visit=1,
         processor=SimpleNamespace(training_batch=lambda batch: batch),
-        wrapped_writer=wrapped,
         writer=writer,
+        gradient_layout=(
+            FlatParameter(
+                name="factor_heads.weight",
+                parameter=writer.weight,
+                start=0,
+                stop=1,
+                block="factor",
+            ),
+        ),
         policy=torch.nn.Identity(),
     )
     row = as_step.run_writer_step(runtime, step=0, started=0.0)
     assert row["optimizer_step"] == 1
-    assert wrapped.entries == 5
-    assert [active for active, _, _ in calls] == [True] * 5 + [False]
-    assert [task_id for _, _, task_id in calls] == list(task_ids)
-    assert all(scale == pytest.approx(1.0 / 6.0) for _, scale, _ in calls)
+    assert calls == list(task_ids)
     assert writer.weight.item() == pytest.approx(0.9)
     assert scheduler.steps == 1
     assert len(captured["records"]) == 6
+    assert captured["conflict_projection"]["no_conflict_exact_raw_mean"] is True
+
+
+def test_single_video_diagnostics_keep_all_task_losses_and_gradient_observables() -> None:
+    runtime = SimpleNamespace(
+        context=SimpleNamespace(device=torch.device("cpu"), world_size=1),
+    )
+    records = [
+        {"task_id": 20, "loss": 0.2},
+        {"task_id": 10, "loss": 0.1},
+    ]
+    assignments = [
+        {"task_id": 10, "teacher_demo_index": 3, "teacher_video_sampled_frames": 9},
+        {"task_id": 20, "teacher_demo_index": 4, "teacher_video_sampled_frames": 11},
+    ]
+    conflict = {
+        "task_ids": [10, 20],
+        "raw_gradient_gram": [[4.0, -1.0], [-1.0, 9.0]],
+        "projected_gradient_gram": [[5.0, 0.0], [0.0, 10.0]],
+        "raw_candidate_task_dots": [1.5, 4.0],
+        "projected_candidate_task_dots": [2.5, 5.0],
+    }
+    rows = as_step._global_single_video_diagnostics(
+        runtime,
+        records,
+        assignments,
+        conflict,
+        {
+            "core": torch.tensor([[20.0, 21.0], [10.0, 11.0]]),
+            "program": torch.tensor([[22.0, 23.0], [12.0, 13.0]]),
+        },
+    )
+    assert [row["task_id"] for row in rows] == [10, 20]
+    assert [row["functional_action_loss"] for row in rows] == pytest.approx(
+        [0.1, 0.2]
+    )
+    assert [row["raw_task_gradient_norm"] for row in rows] == pytest.approx(
+        [2.0, 3.0]
+    )
+    assert rows[0]["teacher_demo_index"] == 3
+    assert rows[1]["projected_task_dot_candidate_direction"] == 5.0
+    assert rows[0]["raw_task_gradient_direction_sketch"] == {
+        "core": [10.0, 11.0],
+        "program": [12.0, 13.0],
+    }

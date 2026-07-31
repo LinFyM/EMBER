@@ -12,9 +12,9 @@ from ember.writer.model import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_v5_2_taskcomplete_as_writer_v1"
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_semantic_program_grid_cp24_as_writer_v1"
 AS_WRITER_CONFIG_OVERLAY_SCHEMA = (
-    "ember_pi05_v5_2_taskcomplete_as_writer_recipe_overlay_v1"
+    "ember_pi05_semantic_program_grid_cp24_as_writer_recipe_overlay_v1"
 )
 AS_WRITER_STAGES = ("development", "final")
 
@@ -91,7 +91,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         or int(writer.get("max_frames_per_encoder_call", 0)) <= 0
     ):
         raise WriterModelError(
-            "sealed v5.2 Writer dimensions changed"
+            "sealed SPG Writer dimensions changed"
         )
     expected = expected_writer_contract(writer)
     if writer != expected:
@@ -103,7 +103,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
             if writer[key] != expected[key]
         )
         raise WriterModelError(
-            "v5.2 AS-Writer architecture changed; "
+            "SPG AS-Writer architecture changed; "
             f"missing={missing}, extra={extra}, changed={changed}"
         )
 
@@ -148,36 +148,23 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         raise WriterModelError("AS-Writer information wall changed")
 
     data = config.get("data", {})
-    update_topology = str(
-        config.get("conditioning_training", {}).get(
-            "update_topology",
-            "task_complete_all_tasks",
-        )
-    )
-    rank_rotating = update_topology == "rank_rotating_one_task_per_rank"
-    locality = "rank" if rank_rotating else "task"
     required = {
         "task_count": 24 if writer_stage(config) == "development" else 32,
         "demo_indices": [0, 49],
         "episodes_per_task": 50,
         "teacher_video_sampling": (
-            f"per_{locality}_"
-            "task_visit_deterministic_single_same_task_video_in_"
-            "no_replacement_cycles"
-            if rank_rotating
-            else "per_task_macro_visit_deterministic_single_same_task_video_in_"
+            "per_task_macro_visit_deterministic_single_same_task_video_in_"
             "no_replacement_cycles"
         ),
         "action_query_sampling": (
             "task-balanced deterministic no-replacement episode cycles"
         ),
         "video_action_pairing": (
-            "one task-video LoRA conditions the complete "
-            f"{'rank' if rank_rotating else 'task'}-local action batch"
+            "one task-video LoRA conditions the complete task-local action batch"
         ),
         "writer_generation_reuse": (
             "generate one task-video LoRA once then reuse it across the "
-            f"complete {'rank' if rank_rotating else 'task'}-local action batch"
+            "complete task-local action batch"
         ),
     }
     if any(data.get(name) != value for name, value in required.items()):
@@ -186,10 +173,12 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
 
 def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
     value = config.get("conditioning_training", {})
-    task_complete = {
+    expected = {
         "method": (
-            "task_complete_single_video_multi_action_positive_functional_loss"
+            "conflict_projected_task_complete_single_video_multi_action_"
+            "positive_functional_loss"
         ),
+        "update_topology": "task_complete_all_tasks",
         "writer_language_contract": (
             "correct_task_language_state_free_teacher_action_suffix"
         ),
@@ -213,45 +202,28 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
         "pair_loss_reduction": (
             "mean_within_task_then_equal_mean_over_24_tasks"
         ),
-        "task_loss_scale_before_backward": "one_sixth",
-        "ddp_gradient_sync": (
-            "first_five_microtasks_no_sync_sixth_single_sync"
+        "task_loss_scale_before_backward": (
+            "per_task_unscaled_then_global_projected_mean"
         ),
+            "ddp_gradient_sync": (
+                "none_during_task_gradients_then_bounded_parameter_chunk_"
+                "allgathers_for_full24_grams_rank0_weight_broadcast_and_one_"
+                "final_direction_allreduce"
+            ),
+            "gradient_composition": (
+                "deterministic_pcgrad_in_24x24_coefficient_space_then_mean"
+            ),
+            "single_video_gradient_direction_diagnostic": (
+                "fixed_countsketch_32_per_task_per_semantic_frontend_core_"
+                "program_compiler_factor_block"
+            ),
+        "no_conflict_fallback": "exact_raw_full24_mean",
+        "conflict_order": "seed_macro_and_task_deterministic_rotating",
         "optimizer_steps_per_macro_update": 1,
         "checkpoint_boundary": "complete_macro_optimizer_update_only",
         "normal_loss_weight": 1.0,
     }
-    rank_rotating = {
-        "method": "single_video_multi_action_positive_functional_loss",
-        "update_topology": "rank_rotating_one_task_per_rank",
-        "writer_language_contract": (
-            "correct_task_language_state_free_teacher_action_suffix"
-        ),
-        "policy_language_contract": "correct_action_query_task_language",
-        "action_query_batch_owner": (
-            "one physical action batch per rank with no optimizer gradient "
-            "accumulation"
-        ),
-        "task_assignment": (
-            "one task per rank per optimizer step with globally balanced task "
-            "rotation"
-        ),
-        "tasks_per_rank_per_optimizer_update": 1,
-        "global_tasks_per_optimizer_update": 4,
-        "teacher_videos_per_task_visit": 1,
-        "action_video_assignment": "all_actions_share_single_video_lora",
-        "logical_pair_batch": "per_rank_action_batch",
-        "policy_noise_contract": (
-            "one independent policy flow noise and time draw per action query"
-        ),
-        "pair_loss_reduction": "mean_over_rank_local_action_batch",
-        "task_loss_scale_before_backward": "one",
-        "ddp_gradient_sync": "one_synchronized_backward_per_optimizer_step",
-        "optimizer_steps_per_macro_update": 1,
-        "checkpoint_boundary": "complete_optimizer_update_only",
-        "normal_loss_weight": 1.0,
-    }
-    if value != task_complete and value != rank_rotating:
+    if value != expected:
         raise WriterModelError("AS-Writer conditioning contract changed")
 
 

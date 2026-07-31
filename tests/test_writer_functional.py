@@ -103,23 +103,36 @@ def test_detached_lora_gradient_bridge_backpropagates_exact_writer_gradient() ->
     writer = _writer(template)
     with torch.no_grad():
         writer.scale.fill_(0.01)
-    state = writer(
-        torch.randn(3, 5),
-        torch.randn(9, 4, 7),
-        torch.tensor([0, 9]),
+    language = torch.randn(3, 5)
+    video = torch.randn(9, 4, 7)
+    offsets = torch.tensor([0, 9])
+    batch = {"value": torch.ones(6, 3)}
+    direct_loss, _ = writer_functional_action_loss(
+        writer,
+        policy,
+        _contract(),
+        language_features=language,
+        video_features=video,
+        episode_offsets=offsets,
+        batch=batch,
     )
+    direct_gradient = torch.autograd.grad(direct_loss, writer.scale)[0]
+    state = writer(language, video, offsets)
     loss, details, gradients = functional_lora_loss_gradient(
         policy,
         state,
         _contract(),
-        batch={"value": torch.ones(6, 3)},
+        batch=batch,
     )
-    torch.autograd.backward(tuple(state.values()), tuple(gradients.values()))
+    bridged_gradient = torch.autograd.grad(
+        tuple(state.values()),
+        writer.scale,
+        grad_outputs=tuple(gradients[name] for name in state),
+    )
     assert details["loss"] == float(loss)
     assert all(parameter.grad is None for parameter in policy.parameters())
-    assert any(
-        parameter.grad is not None and bool(torch.isfinite(parameter.grad).all())
-        for parameter in writer.parameters()
+    assert torch.allclose(
+        bridged_gradient[0], direct_gradient, atol=1e-7, rtol=1e-6
     )
 
 

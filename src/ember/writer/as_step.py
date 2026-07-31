@@ -1,14 +1,21 @@
-"""One optimizer step for Core + Causal-Procedure AS-Writer training."""
+"""One conflict-projected macro update for SPG AS-Writer training."""
 
 from __future__ import annotations
 
+import math
 import time
-from contextlib import nullcontext
 from typing import TYPE_CHECKING, Any, Mapping
 
 import torch
+import torch.distributed as dist
 
 from ember.pi05_source_setup import reduce_max, reduce_mean
+from ember.writer.conflict_projection import (
+    assign_flat_gradient,
+    compose_distributed_conflict_projected_gradient,
+    flatten_task_gradient,
+    gradient_direction_sketches,
+)
 from ember.writer.functional import functional_lora_loss_gradient
 from ember.writer.model import WriterModelError
 
@@ -82,13 +89,10 @@ def _differentiate_conditions(
     runtime: WriterRuntime,
     packed: WriterCondition,
     policy_batch: Mapping[str, Any],
-    *,
-    loss_scale: float,
-) -> tuple[torch.Tensor, Mapping[str, Any]]:
-    if not 0.0 < loss_scale <= 1.0:
-        raise WriterModelError("invalid task-complete loss scale")
+    flat_gradient: torch.Tensor,
+) -> tuple[torch.Tensor, Mapping[str, Any], torch.Tensor]:
     with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-        generated = runtime.wrapped_writer(
+        generated = runtime.writer(
             *packed,
             policy=runtime.policy,
         )
@@ -99,11 +103,18 @@ def _differentiate_conditions(
             batch=policy_batch,
         )
     names = tuple(generated)
-    torch.autograd.backward(
+    parameter_gradients = torch.autograd.grad(
         tuple(generated[name] for name in names),
-        tuple(gradients[name] * loss_scale for name in names),
+        tuple(item.parameter for item in runtime.gradient_layout),
+        grad_outputs=tuple(gradients[name] for name in names),
+        allow_unused=True,
     )
-    return loss, detail
+    flat_gradient = flatten_task_gradient(
+        parameter_gradients,
+        runtime.gradient_layout,
+        output=flat_gradient,
+    )
+    return loss, detail, flat_gradient
 
 
 def _global_task_video_assignments(
@@ -136,37 +147,100 @@ def _global_task_video_assignments(
     return assignments
 
 
-def _step_metrics(
+def _global_single_video_diagnostics(
+    runtime: WriterRuntime,
+    records: list[dict[str, Any]],
+    assignments: list[dict[str, int]],
+    conflict_projection: Mapping[str, Any],
+    local_gradient_sketches: Mapping[str, torch.Tensor],
+) -> list[dict[str, Any]]:
+    """Retain per-task direction evidence for cross-macro video-noise analysis."""
+
+    block_names = tuple(sorted(local_gradient_sketches))
+    if not block_names:
+        raise WriterModelError("single-video diagnostics lost gradient sketches")
+    dimensions = int(local_gradient_sketches[block_names[0]].shape[1])
+    if dimensions <= 0 or any(
+        value.shape != (len(records), dimensions)
+        for value in local_gradient_sketches.values()
+    ):
+        raise WriterModelError("single-video gradient sketch shape changed")
+    local = torch.tensor(
+        [[float(record["task_id"]), float(record["loss"])] for record in records],
+        dtype=torch.float32,
+        device=runtime.context.device,
+    )
+    local = torch.cat(
+        [local, *(local_gradient_sketches[name] for name in block_names)],
+        dim=1,
+    )
+    if runtime.context.world_size == 1:
+        gathered = local
+    else:
+        gathered = torch.empty(
+            runtime.context.world_size * local.shape[0],
+            local.shape[1],
+            dtype=torch.float32,
+            device=runtime.context.device,
+        )
+        dist.all_gather_into_tensor(gathered, local.contiguous())
+    gathered = gathered.index_select(0, torch.argsort(gathered[:, 0]))
+    task_ids = [int(value) for value in gathered[:, 0].detach().cpu().tolist()]
+    expected = [int(value) for value in conflict_projection["task_ids"]]
+    if task_ids != expected:
+        raise WriterModelError("single-video diagnostics lost task ordering")
+    losses = gathered[:, 1].detach().cpu().tolist()
+    gathered_sketches = gathered[:, 2:].detach().cpu().reshape(
+        len(task_ids), len(block_names), dimensions
+    )
+    assignment_by_task = {int(row["task_id"]): row for row in assignments}
+    raw_gram = conflict_projection["raw_gradient_gram"]
+    projected_gram = conflict_projection["projected_gradient_gram"]
+    raw_dots = conflict_projection["raw_candidate_task_dots"]
+    projected_dots = conflict_projection["projected_candidate_task_dots"]
+    if (
+        len(assignment_by_task) != len(task_ids)
+        or any(len(value) != len(task_ids) for value in (raw_gram, projected_gram))
+        or len(raw_dots) != len(task_ids)
+        or len(projected_dots) != len(task_ids)
+    ):
+        raise WriterModelError("single-video diagnostics changed shape")
+    return [
+        {
+            "task_id": task_id,
+            "teacher_demo_index": int(assignment_by_task[task_id]["teacher_demo_index"]),
+            "teacher_video_sampled_frames": int(
+                assignment_by_task[task_id]["teacher_video_sampled_frames"]
+            ),
+            "functional_action_loss": float(losses[index]),
+            "raw_task_gradient_norm": math.sqrt(
+                max(float(raw_gram[index][index]), 0.0)
+            ),
+            "projected_task_gradient_norm": math.sqrt(
+                max(float(projected_gram[index][index]), 0.0)
+            ),
+            "raw_task_dot_candidate_direction": float(raw_dots[index]),
+            "projected_task_dot_candidate_direction": float(projected_dots[index]),
+            "raw_task_gradient_direction_sketch": {
+                block: gathered_sketches[index, block_index].tolist()
+                for block_index, block in enumerate(block_names)
+            },
+        }
+        for index, task_id in enumerate(task_ids)
+    ]
+
+
+def _throughput_and_exposure_metrics(
     runtime: WriterRuntime,
     *,
-    step: int,
-    started: float,
-    tick: float,
-    records: list[dict[str, Any]],
-    conditioning_mode: str,
+    completed: int,
+    global_queries_this_step: int,
+    global_tasks_this_step: int,
+    step_seconds: float,
     data_seconds: float,
-    grad_norm: torch.Tensor,
-    applied_lr: float,
+    started: float,
 ) -> dict[str, Any]:
-    completed = step + 1
-    step_seconds = reduce_max(time.monotonic() - tick, runtime.context)
-    local_queries = sum(int(record["observed_batch"]) for record in records)
-    global_queries_this_step = local_queries * runtime.context.world_size
-    global_tasks_this_step = len(records) * runtime.context.world_size
-    mean_loss = sum(float(record["loss"]) for record in records) / len(records)
     return {
-        "optimizer_step": completed,
-        "macro_optimizer_update": completed,
-        "conditioning_mode": conditioning_mode,
-        "writer_language_condition": "correct_task_language",
-        "policy_language_condition": "correct_action_query_task_language",
-        "mean_functional_action_loss": reduce_mean(mean_loss, runtime.context),
-        "gradient_norm_before_clip_max": reduce_max(
-            float(grad_norm),
-            runtime.context,
-        ),
-        "applied_lr": applied_lr,
-        "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
         "global_unique_action_queries": (
             completed
             * runtime.batch_size
@@ -191,9 +265,117 @@ def _step_metrics(
         "global_writer_video_conditions_this_step": global_tasks_this_step,
         "global_unique_writer_video_conditions_this_step": global_tasks_this_step,
         "global_tasks_this_step": global_tasks_this_step,
-        "global_task_video_assignments": _global_task_video_assignments(
+        "data_seconds_max": reduce_max(data_seconds, runtime.context),
+        "step_seconds_max": step_seconds,
+        "global_action_queries_per_second": global_queries_this_step / step_seconds,
+        "global_policy_pairs_per_second": global_queries_this_step / step_seconds,
+        "global_task_video_conditions_per_second": (
+            global_tasks_this_step / step_seconds
+        ),
+        "macro_updates_per_hour": 3600.0 / step_seconds,
+        "elapsed_seconds": time.monotonic() - started,
+        "max_cuda_allocated_bytes": int(
+            reduce_max(
+                torch.cuda.max_memory_allocated(runtime.context.device),
+                runtime.context,
+            )
+        ),
+        "max_cuda_reserved_bytes": int(
+            reduce_max(
+                torch.cuda.max_memory_reserved(runtime.context.device),
+                runtime.context,
+            )
+        ),
+    }
+
+
+def _gradient_step_metrics(
+    runtime: WriterRuntime,
+    conflict_projection: Mapping[str, Any],
+) -> dict[str, Any]:
+    return {
+        "optimizer_gradient_accumulation": False,
+        "task_gradient_collection": True,
+        "task_loss_scale": None,
+        "gradient_composition": conflict_projection,
+        "ddp_synchronizations_this_step": 0,
+        "gradient_gram_chunk_allgathers_this_step": int(
+            conflict_projection["gradient_gram_chunk_allgathers"]
+        ),
+        "gradient_task_id_allgathers_this_step": int(
+            conflict_projection["gradient_task_id_allgathers"]
+        ),
+        "gradient_direction_allreduces_this_step": int(
+            conflict_projection["gradient_direction_allreduces"]
+        ),
+        "gradient_weight_broadcasts_this_step": int(
+            conflict_projection["gradient_weight_broadcasts"]
+        ),
+        "gradient_collectives_this_step": int(
+            conflict_projection["gradient_collectives"]
+        ),
+        "diagnostic_tensor_allgathers_this_step": (
+            1 if runtime.context.world_size > 1 else 0
+        ),
+    }
+
+
+def _step_metrics(
+    runtime: WriterRuntime,
+    *,
+    step: int,
+    started: float,
+    tick: float,
+    records: list[dict[str, Any]],
+    conditioning_mode: str,
+    data_seconds: float,
+    grad_norm: torch.Tensor,
+    applied_lr: float,
+    conflict_projection: Mapping[str, Any],
+    local_gradient_sketches: Mapping[str, torch.Tensor],
+) -> dict[str, Any]:
+    completed = step + 1
+    step_seconds = reduce_max(time.monotonic() - tick, runtime.context)
+    local_queries = sum(int(record["observed_batch"]) for record in records)
+    global_queries_this_step = local_queries * runtime.context.world_size
+    global_tasks_this_step = len(records) * runtime.context.world_size
+    mean_loss = sum(float(record["loss"]) for record in records) / len(records)
+    assignments = _global_task_video_assignments(runtime, step)
+    single_video_diagnostics = _global_single_video_diagnostics(
+        runtime,
+        records,
+        assignments,
+        conflict_projection,
+        local_gradient_sketches,
+    )
+    return {
+        "optimizer_step": completed,
+        "macro_optimizer_update": completed,
+        "conditioning_mode": conditioning_mode,
+        "writer_language_condition": "correct_task_language",
+        "policy_language_condition": "correct_action_query_task_language",
+        "mean_functional_action_loss": reduce_mean(mean_loss, runtime.context),
+        "gradient_norm_before_clip_max": reduce_max(
+            float(grad_norm),
+            runtime.context,
+        ),
+        "applied_lr": applied_lr,
+        "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
+        **_throughput_and_exposure_metrics(
             runtime,
-            step,
+            completed=completed,
+            global_queries_this_step=global_queries_this_step,
+            global_tasks_this_step=global_tasks_this_step,
+            step_seconds=step_seconds,
+            data_seconds=data_seconds,
+            started=started,
+        ),
+        "global_task_video_assignments": assignments,
+        "single_video_condition_diagnostics": single_video_diagnostics,
+        "single_video_noise_observable": (
+            "per-task loss, exact gradient norm, candidate alignment, and "
+            "fixed 32-dimensional per-module CountSketch direction across "
+            "successive one-video macro visits"
         ),
         "rank0_task_ids": [int(record["task_id"]) for record in records],
         "rank0_conditions": [
@@ -217,38 +399,7 @@ def _step_metrics(
         "teacher_videos_per_task_visit": runtime.videos_per_task_visit,
         "local_policy_forward_calls_this_step": len(records),
         "policy_forward_calls_this_step": global_tasks_this_step,
-        "optimizer_gradient_accumulation": (
-            runtime.tasks_per_rank_per_update > 1
-        ),
-        "task_loss_scale": 1.0 / runtime.tasks_per_rank_per_update,
-        "ddp_synchronizations_this_step": (
-            1 if runtime.context.world_size > 1 else 0
-        ),
-        "data_seconds_max": reduce_max(data_seconds, runtime.context),
-        "step_seconds_max": step_seconds,
-        "global_action_queries_per_second": (
-            global_queries_this_step / step_seconds
-        ),
-        "global_policy_pairs_per_second": (
-            global_queries_this_step / step_seconds
-        ),
-        "global_task_video_conditions_per_second": (
-            global_tasks_this_step / step_seconds
-        ),
-        "macro_updates_per_hour": 3600.0 / step_seconds,
-        "elapsed_seconds": time.monotonic() - started,
-        "max_cuda_allocated_bytes": int(
-            reduce_max(
-                torch.cuda.max_memory_allocated(runtime.context.device),
-                runtime.context,
-            )
-        ),
-        "max_cuda_reserved_bytes": int(
-            reduce_max(
-                torch.cuda.max_memory_reserved(runtime.context.device),
-                runtime.context,
-            )
-        ),
+        **_gradient_step_metrics(runtime, conflict_projection),
     }
 
 
@@ -263,14 +414,20 @@ def run_writer_step(
     runtime.optimizer.zero_grad(set_to_none=True)
     training = runtime.config["conditioning_training"]
     mode = str(training["method"])
-    if mode not in {
-        "task_complete_single_video_multi_action_positive_functional_loss",
-        "single_video_multi_action_positive_functional_loss",
-    }:
+    if mode != (
+        "conflict_projected_task_complete_single_video_multi_action_"
+        "positive_functional_loss"
+    ):
         raise WriterModelError("unsupported AS-Writer conditioning mode")
     records: list[dict[str, Any]] = []
     data_seconds = 0.0
-    task_scale = 1.0 / runtime.tasks_per_rank_per_update
+    local_task_ids = []
+    local_gradients = torch.empty(
+        runtime.tasks_per_rank_per_update,
+        runtime.gradient_layout[-1].stop,
+        dtype=torch.float32,
+        device=runtime.context.device,
+    )
     for microtask in range(runtime.tasks_per_rank_per_update):
         data_tick = time.monotonic()
         batch = next(runtime.iterator)
@@ -295,19 +452,12 @@ def run_writer_step(
             action_batch_size=observed_batch,
         )
         policy_batch = runtime.processor.training_batch(batch)
-        should_sync = microtask + 1 == runtime.tasks_per_rank_per_update
-        sync_context = (
-            nullcontext()
-            if should_sync or not hasattr(runtime.wrapped_writer, "no_sync")
-            else runtime.wrapped_writer.no_sync()
+        loss, detail, task_gradient = _differentiate_conditions(
+            runtime,
+            packed,
+            policy_batch,
+            local_gradients[microtask],
         )
-        with sync_context:
-            loss, detail = _differentiate_conditions(
-                runtime,
-                packed,
-                policy_batch,
-                loss_scale=task_scale,
-            )
         if not bool(torch.isfinite(loss)):
             raise WriterModelError(
                 f"non-finite AS-Writer loss at step {step}, microtask {microtask}"
@@ -321,6 +471,28 @@ def run_writer_step(
                 "video_metrics": video_metrics,
             }
         )
+        local_task_ids.append(task_id)
+        if task_gradient.data_ptr() != local_gradients[microtask].data_ptr():
+            raise WriterModelError("task gradient lost its preallocated CP row")
+    direction, conflict_metrics = compose_distributed_conflict_projected_gradient(
+        torch.tensor(
+            local_task_ids,
+            dtype=torch.long,
+            device=runtime.context.device,
+        ),
+        local_gradients,
+        runtime.gradient_layout,
+        expected_task_ids=runtime.task_ids,
+        world_size=runtime.context.world_size,
+        rank=runtime.context.rank,
+        seed=int(runtime.config["optimization"]["seed"]),
+        macro_step=step,
+    )
+    local_gradient_sketches = gradient_direction_sketches(
+        local_gradients,
+        runtime.gradient_layout,
+    )
+    assign_flat_gradient(direction, runtime.gradient_layout)
     if any(parameter.grad is not None for parameter in runtime.policy.parameters()):
         raise WriterModelError("frozen PI05 source policy accumulated gradients")
     grad_norm = torch.nn.utils.clip_grad_norm_(
@@ -342,4 +514,6 @@ def run_writer_step(
         data_seconds=data_seconds,
         grad_norm=grad_norm,
         applied_lr=applied_lr,
+        conflict_projection=conflict_metrics,
+        local_gradient_sketches=local_gradient_sketches,
     )

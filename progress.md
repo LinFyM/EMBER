@@ -8,6 +8,34 @@ GPU范围和训练步长是当时快照；活动状态只取
 `docs/action_forecast_writer_semantic_program_grid_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-07-31 v5.2 task-complete macro400与候选启动
+
+- frozen worktree commit `60f4508`上的正式root自然完成macro400；run contract
+  SHA `152c0818...6088e`，run summary SHA `857f0111...ee66`，未提前截断或融合。
+- `400` macros消费`192,000` action queries、`9,600` teacher-video conditions；
+  wall `9695.1329s`，最后train/validation functional loss为
+  `.09633848/.13686878`，全程finite，validation/test action reads为0。
+- 一次live preflight确认main/origin/frozen均为clean `60f4508`、个人占用
+  `350,451,040,256` bytes；只查询GPU4–7，未触碰0–3。随后tmux
+  `ember-v52-candidates-60f4508`用GPU4/5/6/7分别启动macro150/200/350/400
+  correct400，四个launcher存活且命令显式B-scale1、without-replacement、
+  6 replicas/6 generators/batch16。
+
+## 2026-07-31 SPG canonical CPU实现
+
+- 独立写worktree `EMBER-spg-60f4508-20260731`已把canonical Writer切换为
+  Semantic Program Grid，并删除活动`temporal.py`/v5.2 320-slot执行路径；历史
+  与正在运行的v5.2由Git及独立frozen worktree保存。
+- 新owner边界为`video_program.py`证据前端、`semantic_program.py` Core/Program、
+  `program_compiler.py` target/rank compiler、`conflict_projection.py` CP-24，
+  `model.py`只负责编排与public LoRA合同。
+- 精确参数`10,633,216`；fresh incompatible schema/config为
+  `configs/pi05_as_writer_semantic_program_grid_cp24_decay400_v1.json`。
+- 全仓回归`201 passed in 26.18s`，`git diff --check`通过，architecture guard无
+  hard violation。当前配置临时使用teacher-video seed172，只为确保首个三macro
+  profile覆盖task38/demo36的最长105-frame视频；profile后必须改回formal seed
+  `20260722`，再在同一干净commit完成fresh/exact-resume seal。
+
 ## 2026-07-31 当前交接
 
 - main `799aa66`已恢复exact v5.2 topology并封存task-complete fast-decay400

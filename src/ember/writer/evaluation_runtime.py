@@ -71,7 +71,7 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
         del tokenizer_path
         if str(evaluation_adapter.get("kind", "as_writer")) != "as_writer":
             raise WriterModelError(
-                "RL-Writer must be retrained under Core-Causal v5 before evaluation"
+                "RL-Writer must be retrained under SPG before evaluation"
             )
         observed = inspect_as_writer_evaluation(
             config_path=Path(evaluation_adapter["config"]["path"]),

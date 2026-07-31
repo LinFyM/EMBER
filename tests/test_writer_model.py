@@ -2,15 +2,19 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 import torch
 
-from ember.pi05_lora import load_pi05_lora_contract
+from ember.pi05_lora import load_pi05_lora_contract, pi05_target_names
 from ember.writer.as_contract import writer_trainable_contract
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
-from ember.writer.temporal import (
-    CausalProcedureEncoder,
+from ember.writer.program_compiler import (
+    SemanticProgramError,
+    TargetRankProgramCompiler,
+)
+from ember.writer.semantic_program import (
     LanguageSemanticCore,
-    SlotNormalizedCoreProcedureCompiler,
+    SemanticProgramGrid,
 )
 from ember.writer.video_program import TaskQueriedPatchGrounding
 
@@ -99,7 +103,13 @@ class _FakeSemanticEncoder(torch.nn.Module):
         language_tokens: torch.Tensor,
         _language_mask: torch.Tensor,
         task_span_mask: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+    ]:
         counts = task_span_mask.sum(dim=1)
         maximum = int(counts.max())
         valid = torch.arange(maximum)[None] < counts[:, None]
@@ -109,7 +119,8 @@ class _FakeSemanticEncoder(torch.nn.Module):
         frame_value = image + language.index_select(0, frame_condition_ids)
         evidence = frame_value[:, None, None].expand(-1, maximum, 256).clone()
         interaction = frame_value[:, None].expand(-1, 256).clone()
-        return text, evidence, interaction, valid
+        grounded = evidence * 0.1
+        return text, evidence, grounded, interaction, valid
 
 
 def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
@@ -133,11 +144,10 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         padded_action_dim=32,
         semantic_core_heads=8,
         semantic_core_blocks=2,
-        frame_attention_initial_lambda=0.05,
-        procedure_heads=8,
-        procedure_blocks=2,
-        fusion_heads=8,
-        factor_hidden_width=216,
+        program_heads=8,
+        program_blocks=2,
+        compiler_heads=8,
+        factor_hidden_width=256,
         initialization_seed=7,
         activation_checkpointing=True,
     )
@@ -167,9 +177,9 @@ def _inputs() -> tuple[torch.Tensor, ...]:
     return frames, frame_indices, offsets, tokens, masks, task_spans
 
 
-def test_v5_2_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
+def test_spg_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
     model, _ = _model()
-    assert sum(parameter.numel() for parameter in model.parameters()) == 10_237_704
+    assert sum(parameter.numel() for parameter in model.parameters()) == 10_633_216
     contract = writer_trainable_contract(
         model,
         torch.nn.Identity(),
@@ -177,7 +187,7 @@ def test_v5_2_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
             Path(__file__).resolve().parents[1] / "configs/pi05_lora_v1.json"
         ),
     )
-    assert contract["parameter_count"] == 10_237_704
+    assert contract["parameter_count"] == 10_633_216
     assert contract["source_policy_trainable_parameter_count"] == 0
     expected = {
         "text_meta_lora": (model.semantic_encoder.text_meta_lora, 921_600),
@@ -191,15 +201,14 @@ def test_v5_2_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
             model.semantic_encoder.patch_grounding,
             197_120,
         ),
-        "frame_attention": (model.semantic_core.frame_attention, 262_664),
-        "semantic_core_blocks": (model.semantic_core.blocks, 1_573_888),
+        "semantic_core": (model.semantic_core, 1_836_544),
         "interaction_projection": (
             model.semantic_encoder.interaction_projection,
             262_144,
         ),
-        "procedure": (model.procedure, 1_573_888),
-        "compiler": (model.compiler, 1_535_232),
-        "factor_heads": (model.factor_heads, 1_838_592),
+        "semantic_program": (model.semantic_program, 1_837_568),
+        "compiler": (model.compiler, 1_326_592),
+        "factor_heads": (model.factor_heads, 2_179_072),
     }
     assert {
         name: sum(parameter.numel() for parameter in module.parameters())
@@ -210,7 +219,7 @@ def test_v5_2_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
     assert not model.semantic_encoder.fixed_suffix_noise.requires_grad
 
 
-def test_v5_2_writer_starts_at_exact_identity_template() -> None:
+def test_spg_writer_starts_at_exact_identity_template() -> None:
     model, template = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     output = model(*_inputs(), policy=torch.nn.Identity())
@@ -221,7 +230,17 @@ def test_v5_2_writer_starts_at_exact_identity_template() -> None:
         assert torch.equal(value[1], template[name])
 
 
-def test_v5_2_writer_becomes_video_conditioned_after_heads_open() -> None:
+def test_spg_target_ordinals_follow_sealed_policy_not_state_key_sort() -> None:
+    model, _ = _model()
+    observed = {}
+    for item in model.tensor_specs:
+        observed.setdefault(item.module, model._decoding[item.name][1])
+    assert tuple(
+        module for module, _ in sorted(observed.items(), key=lambda row: row[1])
+    ) == pi05_target_names()
+
+
+def test_spg_writer_becomes_video_conditioned_after_heads_open() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     for head in model.factor_heads.values():
@@ -231,7 +250,7 @@ def test_v5_2_writer_becomes_video_conditioned_after_heads_open() -> None:
     assert not hasattr(model, "shared_lora")
 
 
-def test_v5_2_gradient_staging_opens_only_intended_paths() -> None:
+def test_spg_gradient_staging_opens_all_major_paths_after_heads_open() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
 
@@ -252,24 +271,17 @@ def test_v5_2_gradient_staging_opens_only_intended_paths() -> None:
         torch.nn.init.normal_(head.network[-1].weight, std=0.01)
     second = model(*_inputs(), policy=torch.nn.Identity())
     sum(value.to(torch.float32).sum() for value in second.values()).backward()
-    assert model.compiler.modulation.weight.grad is not None
-    assert bool(torch.count_nonzero(model.compiler.modulation.weight.grad))
     assert any(
         parameter.grad is not None and bool(torch.count_nonzero(parameter.grad))
         for parameter in model.semantic_core.parameters()
     )
-    assert all(
-        parameter.grad is None or not bool(torch.count_nonzero(parameter.grad))
-        for parameter in model.procedure.parameters()
-    )
-
-    model.zero_grad(set_to_none=True)
-    torch.nn.init.normal_(model.compiler.modulation.weight, std=0.01)
-    third = model(*_inputs(), policy=torch.nn.Identity())
-    sum(value.to(torch.float32).sum() for value in third.values()).backward()
     assert any(
         parameter.grad is not None and bool(torch.count_nonzero(parameter.grad))
-        for parameter in model.procedure.parameters()
+        for parameter in model.semantic_program.parameters()
+    )
+    assert any(
+        parameter.grad is not None and bool(torch.count_nonzero(parameter.grad))
+        for parameter in model.compiler.parameters()
     )
 
 
@@ -303,7 +315,6 @@ def test_language_core_is_frame_permutation_invariant() -> None:
         width=32,
         heads=4,
         blocks=2,
-        frame_attention_initial_lambda=0.05,
     )
     text = torch.randn(2, 7, 32)
     evidence = torch.randn(2, 5, 7, 32)
@@ -320,87 +331,220 @@ def test_language_core_is_frame_permutation_invariant() -> None:
     assert torch.allclose(baseline, shuffled, atol=1e-5, rtol=1e-5)
 
 
-def test_causal_procedure_preserves_prefix_and_uses_order() -> None:
+def test_semantic_program_preserves_interval_prefix_and_uses_order() -> None:
     torch.manual_seed(23)
-    encoder = CausalProcedureEncoder(width=32, heads=4, blocks=2)
-    content = torch.randn(1, 6, 32)
-    changed_future = content.clone()
-    changed_future[:, 4:] = torch.randn_like(changed_future[:, 4:])
+    encoder = SemanticProgramGrid(width=32, heads=4, blocks=2)
+    grounded = torch.randn(1, 6, 4, 32)
+    action = torch.randn(1, 6, 32)
+    future_grounded = grounded.clone()
+    future_action = action.clone()
+    future_grounded[:, 4:] = torch.randn_like(future_grounded[:, 4:])
+    future_action[:, 4:] = torch.randn_like(future_action[:, 4:])
     positions = torch.arange(6)[None]
-    valid = torch.ones(1, 6, dtype=torch.bool)
-    baseline = encoder(content, positions, valid)
-    future = encoder(changed_future, positions, valid)
-    reverse = encoder(content.flip(1), positions, valid)
-    assert torch.allclose(baseline[:, :4], future[:, :4], atol=1e-6, rtol=1e-5)
+    valid_frames = torch.ones(1, 6, dtype=torch.bool)
+    valid_tokens = torch.ones(1, 4, dtype=torch.bool)
+    baseline = encoder(
+        grounded, action, positions, valid_frames, valid_tokens
+    )[0]
+    future = encoder(
+        future_grounded,
+        future_action,
+        positions,
+        valid_frames,
+        valid_tokens,
+    )[0]
+    reverse = encoder(
+        grounded.flip(1),
+        action.flip(1),
+        positions,
+        valid_frames,
+        valid_tokens,
+    )[0]
+    assert torch.allclose(baseline[:, :3], future[:, :3], atol=1e-6, rtol=1e-5)
     assert not torch.allclose(baseline, reverse)
 
 
+def test_semantic_program_aligns_action_with_following_patch_change() -> None:
+    encoder = SemanticProgramGrid(width=32, heads=4, blocks=1)
+    encoder.blocks = torch.nn.ModuleList()
+    grounded = torch.randn(1, 5, 3, 32)
+    action = torch.randn(1, 5, 32)
+    positions = torch.tensor([[0, 5, 10, 15, 17]])
+    valid_frames = torch.ones(1, 5, dtype=torch.bool)
+    valid_tokens = torch.tensor([[True, True, False]])
+    program, endpoints, valid_intervals, valid_semantics = encoder(
+        grounded,
+        action,
+        positions,
+        valid_frames,
+        valid_tokens,
+    )
+    assert torch.equal(program[:, :, 0], action[:, :-1])
+    assert torch.equal(
+        program[:, :, 1:3],
+        grounded[:, 1:, :2] - grounded[:, :-1, :2],
+    )
+    assert not bool(program[:, :, 3].count_nonzero())
+    assert torch.equal(endpoints, positions[:, 1:])
+    assert torch.equal(valid_intervals, torch.ones_like(valid_intervals))
+    assert torch.equal(valid_semantics, torch.tensor([[True, True, True, False]]))
+
+
+def test_program_identities_cannot_create_value_from_zero_content() -> None:
+    encoder = SemanticProgramGrid(width=32, heads=4, blocks=2)
+    grounded = torch.zeros(2, 6, 4, 32)
+    action = torch.zeros(2, 6, 32)
+    positions = torch.tensor(
+        [[0, 5, 10, 15, 20, 25], [0, 3, 8, 13, 21, 28]]
+    )
+    valid_frames = torch.ones(2, 6, dtype=torch.bool)
+    valid_tokens = torch.ones(2, 4, dtype=torch.bool)
+    output = encoder(
+        grounded, action, positions, valid_frames, valid_tokens
+    )[0]
+    assert torch.count_nonzero(output) == 0
+
+
 def test_routing_and_positions_cannot_create_lora_content_from_zero_values() -> None:
-    compiler = SlotNormalizedCoreProcedureCompiler(
+    compiler = TargetRankProgramCompiler(
         width=32,
         heads=4,
+        target_count=38,
+        rank=16,
         initialization_seed=7,
     )
     core = torch.zeros(2, 7, 32)
-    procedure = torch.zeros(2, 5, 32)
+    program = torch.zeros(2, 5, 8, 32)
     valid_core = torch.ones(2, 7, dtype=torch.bool)
-    valid_procedure = torch.ones(2, 5, dtype=torch.bool)
+    valid_intervals = torch.ones(2, 5, dtype=torch.bool)
+    valid_semantics = torch.ones(2, 8, dtype=torch.bool)
     positions = torch.tensor([[0, 5, 10, 15, 20], [0, 3, 8, 13, 21]])
     output = compiler(
         core,
         valid_core,
-        procedure,
+        program,
         positions,
-        valid_procedure,
+        valid_intervals,
+        valid_semantics,
     )
-    assert all(torch.count_nonzero(value) == 0 for value in output)
+    assert output.shape == (2, 38, 16, 32)
+    assert torch.count_nonzero(output) == 0
 
 
-def test_procedure_modulation_is_zero_at_init_then_order_sensitive_when_opened() -> None:
+def test_target_rank_compiler_reads_program_order_without_terminal_gate() -> None:
     torch.manual_seed(29)
-    compiler = SlotNormalizedCoreProcedureCompiler(
+    compiler = TargetRankProgramCompiler(
         width=32,
         heads=4,
+        target_count=38,
+        rank=16,
         initialization_seed=7,
     )
     core = torch.randn(1, 9, 32)
     valid_core = torch.ones(1, 9, dtype=torch.bool)
-    procedure = torch.randn(1, 5, 32)
+    program = torch.randn(1, 5, 10, 32)
     positions = torch.arange(5)[None]
-    valid_procedure = torch.ones(1, 5, dtype=torch.bool)
+    valid_intervals = torch.ones(1, 5, dtype=torch.bool)
+    valid_semantics = torch.ones(1, 10, dtype=torch.bool)
     baseline = compiler(
         core,
         valid_core,
-        procedure,
+        program,
         positions,
-        valid_procedure,
-    )
-    reversed_at_init = compiler(
-        core,
-        valid_core,
-        procedure.flip(1),
-        positions,
-        valid_procedure,
-    )
-    for left, right in zip(baseline, reversed_at_init, strict=True):
-        assert torch.equal(left, right)
-
-    torch.nn.init.normal_(compiler.modulation.weight, std=0.01)
-    normal = compiler(
-        core,
-        valid_core,
-        procedure,
-        positions,
-        valid_procedure,
+        valid_intervals,
+        valid_semantics,
     )
     reverse = compiler(
         core,
         valid_core,
-        procedure.flip(1),
+        program.flip(1),
         positions,
-        valid_procedure,
+        valid_intervals,
+        valid_semantics,
     )
-    assert any(
-        not torch.allclose(left, right)
-        for left, right in zip(normal, reverse, strict=True)
+    assert not torch.allclose(baseline, reverse)
+
+
+def test_program_and_compiler_ignore_ragged_padding_content() -> None:
+    torch.manual_seed(31)
+    encoder = SemanticProgramGrid(width=32, heads=4, blocks=2)
+    compiler = TargetRankProgramCompiler(
+        width=32,
+        heads=4,
+        target_count=38,
+        rank=16,
+        initialization_seed=7,
     )
+    grounded = torch.randn(1, 6, 4, 32)
+    action = torch.randn(1, 6, 32)
+    changed = grounded.clone()
+    changed_action = action.clone()
+    changed[:, 4:] = 100.0 * torch.randn_like(changed[:, 4:])
+    changed_action[:, 4:] = 100.0 * torch.randn_like(changed_action[:, 4:])
+    positions = torch.tensor([[0, 5, 10, 15, 0, 0]])
+    valid_frames = torch.tensor([[True, True, True, True, False, False]])
+    valid_tokens = torch.ones(1, 4, dtype=torch.bool)
+    baseline = encoder(
+        grounded, action, positions, valid_frames, valid_tokens
+    )
+    padded = encoder(
+        changed, changed_action, positions, valid_frames, valid_tokens
+    )
+    assert torch.equal(baseline[2], padded[2])
+    assert torch.allclose(baseline[0], padded[0], atol=2e-6, rtol=1e-5)
+
+    core = torch.randn(1, 7, 32)
+    valid_core = torch.ones(1, 7, dtype=torch.bool)
+    compiled_baseline = compiler(
+        core,
+        valid_core,
+        baseline[0],
+        baseline[1],
+        baseline[2],
+        baseline[3],
+    )
+    compiled_padded = compiler(
+        core,
+        valid_core,
+        padded[0],
+        padded[1],
+        padded[2],
+        padded[3],
+    )
+    assert torch.allclose(
+        compiled_baseline, compiled_padded, atol=2e-6, rtol=1e-5
+    )
+
+
+def test_target_rank_compiler_rejects_missing_content_and_float_endpoints() -> None:
+    compiler = TargetRankProgramCompiler(
+        width=32,
+        heads=4,
+        target_count=38,
+        rank=16,
+        initialization_seed=7,
+    )
+    core = torch.randn(1, 3, 32)
+    valid_core = torch.ones(1, 3, dtype=torch.bool)
+    program = torch.randn(1, 2, 3, 32)
+    endpoints = torch.tensor([[5, 10]])
+    valid_intervals = torch.ones(1, 2, dtype=torch.bool)
+    valid_semantics = torch.ones(1, 3, dtype=torch.bool)
+    with pytest.raises(SemanticProgramError, match="compiler memory"):
+        compiler(
+            core,
+            valid_core,
+            program,
+            endpoints.to(torch.float32),
+            valid_intervals,
+            valid_semantics,
+        )
+    with pytest.raises(SemanticProgramError, match="compiler memory"):
+        compiler(
+            core,
+            torch.zeros_like(valid_core),
+            program,
+            endpoints,
+            valid_intervals,
+            valid_semantics,
+        )

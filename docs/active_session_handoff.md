@@ -10,16 +10,17 @@
 
 ## 0. 新session恢复与持续推进合同
 
-当前没有训练、rollout或tmux。接手session在完整阅读根`AGENTS.md`规定的全部
-authority后，不得用额外讨论或重复工程仪式拖延，立即live核验Git、存储和物理
-GPU4–7，然后启动已经seal的exact v5.2 task-complete正式轨迹：
+强制authority、代码、Git历史和正式artifact审计已完成。exact v5.2
+task-complete正式训练已经完成；当前tmux `ember-v52-candidates-60f4508`在物理
+GPU4–7上分别评测macro150/200/350/400 paired correct400。输出root统一前缀为
+`/data/ymdai/outputs/ember/pi05_as_writer_v52_taskcomplete_decay400_correct400_`
+`noreplacement_seed7_macro*60f4508_20260731`。不得重复启动这些root。
 
 ```text
 config: configs/pi05_as_writer_language_axial_v5_2_taskcomplete_decay400_v1.json
-fresh identity macro0→200
-exact-resume macro200→400
+fresh identity macro0→400                 已完成
 every25 checkpoint
-paired correct400: macro150/200/350/400
+paired correct400: macro150/200/350/400    正在四卡并行
 single-checkpoint winner
 winner formal correct/same/wrong/shuffled/reversed 400
 winner internal Core/Procedure/LoRA/action/rank/layer/video analysis
@@ -29,12 +30,11 @@ winner internal Core/Procedure/LoRA/action/rank/layer/video analysis
 必须使用一条video生成一套LoRA，不融合checkpoint，不平均多video/LoRA。所有
 evaluator worker继续long-task-first；没有long shard后才领取其他task。
 
-v5.2训练挂起后，接手session要在不污染run的前提下完整审计仓库、Git历史、正式
-outputs和内部analysis，达到能够独立解释v1至Target-Spectral每版拓扑、训练合同、
-correct曲线、五臂、逐task漂移和内部传递的程度。然后独立复核SPG设计：
+仓库、Git历史、正式outputs与内部analysis的完整审计及SPG独立复核均已完成。
+SPG canonical CPU实现位于独立写worktree：
 
 ```text
-docs/action_forecast_writer_semantic_program_grid_design.md
+/data/ymdai/.codex/worktrees/EMBER-spg-60f4508-20260731
 ```
 
 无论v5.2新recipe结果好坏，都要实现并实验SPG。SPG及其后任何新整体架构都先
@@ -52,7 +52,29 @@ focused Goal不是机械`correct400>=150`。150只是里程碑；只要仍存在
 GPU只可使用物理4–7，0–3不得查询或进入visible set。4–7可按owner授权与他人
 共卡，但不得杀、暂停、重置或干扰其他进程。
 
-## 0.1 v5.2内部几何完成、正式训练未启动的封存快照
+## 0.1 v5.2正式训练完成与候选评测
+
+正式训练root：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v52_taskcomplete_decay400_formal_dev_r4_b20_seed7_60f4508_20260731
+```
+
+run contract SHA为
+`152c0818f3266e8abbc9ddeca1b07cc1128f32b5063d24f717dc818f1436088e`；
+macro0→400完成`400`行metrics、`192,000` action queries、`9,600`单视频条件，
+训练wall `9695.1329s`。macro400 train loss `.09633848`、grad norm `.10484845`、
+functional validation `.13686878`；这些不构成closed-loop证据。run summary SHA为
+`857f0111a3b52472662e3293a5e7b3dc094326eec47b4d665cd23378e6fdee66`。
+
+候选评测启动前现场核验main/origin/frozen均为clean `60f4508`，个人占用
+`350,451,040,256` bytes，低于500GB cap；GPU4–7仅GPU4有一项约978MiB外部进程，
+按owner共卡授权未干扰。四个candidate启动命令均显式CVD单卡、B-scale1、
+without-replacement、6 replicas、6 Writer generators、batch16与long-first dynamic
+queue。
+
+## 0.2 v5.2内部几何完成、正式训练前的封存快照
 
 v5.2实现基线commit为`799aa6676b7f94f337d019956366eb7f180ba83a`。
 它把exact v5.2 topology接到mature full24 task-complete、B20、
@@ -63,8 +85,8 @@ configs/pi05_as_writer_language_axial_v5_2_taskcomplete_decay400_v1.json
 ```
 
 精确Writer参数为`10,237,704`；最长105-frame三macro profile和formal-seed
-fresh0→1→exact-resume1→3已经通过。当前没有正式v5.2 task-complete run root、
-tmux、训练进程或rollout进程。
+fresh0→1→exact-resume1→3已经通过。以下“本session”叙述是正式训练前历史快照，
+不得覆盖上面的当前状态。
 
 本session实际完成了v5.2 step900正式validation 8 tasks×50 correct-video LoRA
 的重新生成与内部分析；没有创建LIBERO env，`rollout_shards_executed=0`。永久

@@ -28,7 +28,7 @@ from ember.writer.evaluation_cache import (
 )
 from ember.writer.inference import (
     WRITER_ADAPTER_SCHEMA,
-    WRITER_EPISODE_EVIDENCE_TARGET_SPECTRAL,
+    WRITER_EPISODE_EVIDENCE_V52,
     WRITER_EPISODE_EVIDENCE_WITH_REPLACEMENT,
     expected_writer_episode_evidence,
     validate_writer_episode_evidence,
@@ -160,7 +160,7 @@ def test_cache_identity_decouples_rollout_replicas(tmp_path: Path) -> None:
     second = _contract(tmp_path / "second", replicas=6)
     assert first["writer_lora_cache"]["identity"]["generation_recipe"][
         "episode_evidence_schema"
-    ] == WRITER_EPISODE_EVIDENCE_TARGET_SPECTRAL
+    ] == WRITER_EPISODE_EVIDENCE_V52
     assert (
         first["writer_lora_cache"]["identity_sha256"]
         == second["writer_lora_cache"]["identity_sha256"]

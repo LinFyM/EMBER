@@ -54,9 +54,9 @@ from ember.writer.model import CompleteLoRAWriter
 
 
 _CHECKPOINT_NAME = re.compile(r"update_([0-9]{8})")
-_TARGET_SPECTRAL_RETRAIN_REQUIRED = (
+_CANONICAL_AS_RETRAIN_REQUIRED = (
     "RL-Writer runtime is unavailable until it is rebuilt and retrained for "
-    "the canonical raw-video Target-Spectral Writer"
+    "the canonical raw-video v5.2 Writer"
 )
 
 
@@ -103,7 +103,7 @@ def _fresh_writer(
     device: torch.device,
 ) -> tuple[CompleteLoRAWriter, Any, dict[str, Any]]:
     del policy, config, device
-    raise RewardProtocolError(_TARGET_SPECTRAL_RETRAIN_REQUIRED)
+    raise RewardProtocolError(_CANONICAL_AS_RETRAIN_REQUIRED)
 
 
 def _optimizer(
@@ -245,7 +245,7 @@ def build_runtime(
     config = load_rl_writer_config(args.config.resolve())
     if args.stage != config["sealed_stage"]:
         raise RewardProtocolError("RL-Writer stage requires its own immutable config")
-    raise RewardProtocolError(_TARGET_SPECTRAL_RETRAIN_REQUIRED)
+    raise RewardProtocolError(_CANONICAL_AS_RETRAIN_REQUIRED)
     total, checkpoints = resolve_runtime(args, config, context)
     initial = _resume_update(args.resume)
     if not 0 <= initial < args.stop_after_update:

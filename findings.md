@@ -2855,3 +2855,18 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   full-rank正交替换它；应保留该公共主写入manifold，只把额外rank作为可选、
   zero-init的视频innovation容量。Target-Spectral只作负结果，不在其scale或
   gate上继续打补丁。
+
+## v5.2 × task-complete控制与LoRA几何纠偏（2026-07-31）
+
+- direct Source-SFT rank128的effective BA stable rank为`1.517`，第一奇异
+  方向能量约`76.47%`；v6为`1.0003/99.97%`。低有效rank不是Writer独有。
+- 以`||b_i a_i^T||_F^2`计，SFT q/v有效坐标为
+  `121.7/114.2 of128`，v6为`15.96/15.97 of16`；v6坐标能量反而更均匀。
+  v6 q/v rank-one pair cosine为`.716/.861`且负pair为0%，不是rank相消，
+  而是等强分量和跨层方向高度建设性同向。
+- A/B分量能量和符号受LoRA gauge影响，不能作为硬优化目标。可靠对照应使用
+  effective BA谱/范数、q/v与target/layer分配、跨层组织、视频中心化BA变化和
+  fixed-query/closed-loop action。
+- 当前最重要未识别单元是`v5.2 + task-complete fast-decay400`。活动实现
+  精确恢复v5.2参数`10,237,704`，不混入v6 transition或Target正交decoder；
+  训练仍为full24、B20、long-first、一次AdamW、every25、fresh到macro400。

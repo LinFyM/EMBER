@@ -355,7 +355,21 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   翻转q/v能量并造成极端layer不均；Core/Procedure和order传递保持工作。
 - [ ] 基于负结果重新设计：保留v6高增益、q-dominant、跨层协调公共主方向，
   把额外rank作为可选zero-init视频innovation；不得在Target-Spectral的
-  orthogonal scale/gate上打补丁或resume。owner讨论前不启动正式训练。
+  orthogonal scale/gate上打补丁或resume。
+
+## Phase C7：v5.2 × task-complete fast-decay因果格
+
+- [x] owner授权补齐此前缺失的`v5.2 + 新训练`单元；不得把v6的143直接归因
+  于模型拓扑。
+- [x] 在成熟long-first task-complete训练框架中原位恢复正式结果对应的v5.2
+  拓扑；参数`10,237,704`、step0 identity、信息墙和public rank16不变。
+- [x] fresh config固定B20、4 ranks×6 tasks、full24等权、LR
+  `3e-4`、warmup17、cosine decay400到`1e-5`、every25。
+- [ ] GPU4–7完成最长105-frame三macro profile和fresh0→1→resume1→3。
+- [ ] clean push后fresh macro0→200，再默认exact-resume到400。
+- [ ] 并行评测macro150/200/350/400 correct400；winner若在内部点，只补±25。
+- [ ] 对winner与旧v5.2/direct Source-SFT做有效BA谱、范数、q/v、layer/target、
+  视频中心化变化和policy action对照；达到absolute门后才补行为控制臂。
 
 ## Phase E：matched π0.5 action one-shot baseline
 

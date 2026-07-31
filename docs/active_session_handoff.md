@@ -1368,3 +1368,25 @@ formal_run.status       = sealed
 fresh0→1→exact-resume1→3，metrics连续`1,2,3`且step1所有checkpoint文件
 hash不变；真实step1→3间全部`10,709,248`个trainable参数变化。下一步只在
 GPU4–7 live preflight后启动fresh macro0→200。GPU0–3不得查询或使用。
+
+## 24. 当前恢复点：v5.2 × task-complete fast-decay
+
+owner在Target-Spectral负结果和统一LoRA几何复核后，授权先补齐最关键缺失
+因果格：原版v5.2拓扑使用v6成熟的新训练范式跑满约两小时。direct Source-SFT
+stable rank约`1.517`、v6约`1.0003`；但v6的16个代数坐标能量实际比SFT
+更均匀，且q/v分量高度建设性同向，并不存在主导rank负相关。Target-Spectral
+因此是错误地把低有效rank当成必须修复的病灶。
+
+活动源码已原位恢复commit `529da6b`对应的精确v5.2模型拓扑，同时保留当前
+成熟的full24 cost-balanced long-first sampler、task内mean/24-task等权、
+一次DDP sync/AdamW和macro-boundary resume。新config为：
+
+```text
+configs/pi05_as_writer_language_axial_v5_2_taskcomplete_decay400_v1.json
+```
+
+固定B20、4 ranks×6 tasks、LR `3e-4`、warmup17、cosine decay400到
+`1e-5`、every25；fresh macro0→200后默认resume到400。正式前还需GPU4–7
+最长105-frame三macro profile和fresh0→1→resume1→3。评测点为150/200/350/
+400，winner若为内部点再补±25；不做checkpoint融合。当前实现聚焦测试
+`41 passed`，全仓初轮仅剩一处已同步修正的RL错误消息测试。

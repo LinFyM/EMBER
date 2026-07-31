@@ -40,12 +40,13 @@ LoRA与policy action。失败因此不是上游没读teacher video，而是形�
 谱把更新写出source policy的高增益、q-dominant、跨层协调adaptation manifold。
 同task视频相对方差略升但绝对创新约低3倍；不能把分母缩小当作视频能力增强。
 
-当前源码仍是
-[`EMBER Target-Spectral Writer`](action_forecast_writer_target_spectral_design.md)
-的sealed负结果，仅待下一架构原位替换，不得resume。下一方案必须保留v6公共
-高增益主方向，把额外rank作为可选、zero-init的视频innovation容量，而不是用
-强制正交rank替换主方向。当前只允许使用GPU4–7中现场空闲设备做内部分析；
-暂时不启动正式训练，GPU0–3不得查询或使用。
+当前活动实验不是继续Target-Spectral，而是补齐唯一缺失的2×2因果格：
+`v5.2 topology + v6 task-complete fast-decay400 recipe`。模型精确恢复
+v5.2的patch-grounded Core、native Action mean、causal Procedure和320-slot
+AdaLN compiler，参数`10,237,704`；训练沿用4 ranks×6 tasks、full24等权、
+真实视频长度cost balance、rank内long-first、B20和每25 checkpoint。fresh
+macro0→200后默认exact-resume到400，候选150/200/350/400做paired correct400。
+只使用GPU4–7；GPU0–3不得查询或使用。Target-Spectral不得resume。
 
 外部专家复核后的第一轮诊断证明，shuffle的直接行为放大器位于per-image
 forecast之后的absolute-time Plan/Revision；但后续全面复审又确认它不是唯一

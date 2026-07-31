@@ -75,34 +75,26 @@ macro200的`.44%`升至`.65%`，绝对视频创新RMS反而约低3倍；不能�
 误写成视频学习增强。近rank1不是v6性能瓶颈的充分证据，Target-Spectral现只作
 负结果provenance，不得在其正交scale/gate上继续打补丁。
 
-当前源码仍封存在
-[`docs/action_forecast_writer_target_spectral_design.md`](docs/action_forecast_writer_target_spectral_design.md)
-定义的Target-Spectral Writer，直到下一架构决策原位替换；这不构成resume授权。
+owner现授权补齐缺失的因果格：把正式结果对应的原版v5.2模型拓扑恢复到成熟的
+full-24 task-complete、cost-balanced long-first、B20和fast-decay400训练框架，
+从identity fresh训练macro0→200→400。模型必须精确保持v5.2的
+`Q_text→patch values`、mean-anchored permutation-invariant Core、原生
+50-token suffix mean Action、两层causal Procedure、320 routing slots和
+Core-primary Procedure AdaLN compiler；不得混入v6 transition或
+Target-Spectral正交decoder。精确Writer参数为`10,237,704`。
 
-Target-Spectral保留v6已经验证的`Q_text`、`M+G`、Semantic Core、原生
-50-token suffix mean Action、uncapped task-grounded transition、两层causal
-Procedure和Core-primary Procedure AdaLN。只重构public-LoRA compiler：
+canonical fresh config为
+`configs/pi05_as_writer_language_axial_v5_2_taskcomplete_decay400_v1.json`。
+每macro仍为24 tasks各一条video/LoRA与B20独立action queries；4 ranks各处理
+6个按真实视频长度cost-balanced且rank内long-first的tasks，只做一次
+clip/AdamW/scheduler。checkpoint每25保存；正式比较点至少为macro150/200/
+350/400，必要时只补winner邻近±25点，不做checkpoint融合。
 
-```text
-Core/Procedure先形成38个真实policy-target states
-→ target-specific value-coordinate transforms
-→ 最后展开16个代数rank coordinates
-→ row-orthogonal A basis
-→ column-orthogonal U basis × 16 learned spectral scales
-→ complete rank16 public LoRA
-```
-
-模型可诚实选择effective rank1，但不能再复制16条相同A/B方向伪装rank16。
-step0 spectral scale为零，因此effective delta严格identity。精确Writer参数为
-`14,495,744`。canonical源码、fresh config和schema已原位切换，不兼容旧
-Writer checkpoint。
-
-训练和推理仍严格为一条teacher video生成一套LoRA；不得做多视频或多LoRA
-平均。action queries继续与video同task但跨episode独立。当前只允许利用物理
-GPU4–7中现场空闲的卡做内部分析；GPU0–3不得查询或使用，且暂时不得启动任何
-正式训练。下一架构必须保留v6已验证的高增益、q-dominant、跨层协调主写入
-manifold，把额外rank作为可选视频创新容量，而不是用16个强制正交方向替换
-主方向；具体设计在现有内部证据和owner讨论后再封存。
+训练和推理严格为一条teacher video生成一套LoRA；不得做多视频或多LoRA平均。
+action queries继续与video同task但跨episode独立。GPU仍只允许物理4–7，
+0–3不得查询或使用。owner已经解除此前“暂不正式训练”的临时边界；最长105-frame
+B20三macro、step0 identity、freeze/gradient和exact-resume通过后即可完成两小时
+正式轨迹。Target-Spectral只保留为负结果provenance，不得resume。
 
 关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
 single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe

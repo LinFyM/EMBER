@@ -109,6 +109,6 @@ def validate_task_complete_topology(
         }
         if not candidates or batch_size not in candidates:
             raise WriterModelError(
-                "Target-Spectral profile batch is outside its declared "
+                "v5.2 profile batch is outside its declared "
                 "hardware-friendly candidates"
             )

@@ -24,24 +24,25 @@ from ember.writer import as_step
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-CONFIG = REPO_ROOT / "configs/pi05_as_writer_target_spectral.json"
+CONFIG = (
+    REPO_ROOT
+    / "configs/pi05_as_writer_language_axial_v5_2_taskcomplete_decay400_v1.json"
+)
 OLD_RECIPE_CONFIG = (
     REPO_ROOT
     / "configs/pi05_as_writer_language_axial_v6_old_recipe_v1.json"
 )
 
 
-def test_target_spectral_config_seals_architecture_and_information_wall() -> None:
+def test_v5_2_taskcomplete_config_seals_architecture_and_information_wall() -> None:
     config = load_writer_config(CONFIG)
     writer = config["writer"]
-    assert (
-        writer["architecture"]
-        == "pi05_target_spectral_writer"
+    assert writer["architecture"] == (
+        "pi05_language_axial_patch_grounded_core_causal_"
+        "procedure_slot_fusion_v5_2"
     )
     assert writer["teacher_state_input"] is False
     assert writer["teacher_prompt"] == "Task: {cleaned_task};\nAction: "
-    assert "same_image_language_prefix" in writer["multimodal_task_evidence"]
-    assert writer["text_only_task_query"].startswith("frozen_gemma")
     assert writer["text_meta_lora_rank"] == 4
     assert writer["patch_grounding_heads"] == 8
     assert "no_value_projection" in writer["patch_grounding_value"]
@@ -49,47 +50,24 @@ def test_target_spectral_config_seals_architecture_and_information_wall() -> Non
     assert writer["vl_meta_lora_rank"] == 4
     assert writer["action_meta_lora_rank"] == 4
     assert writer["action_horizon"] == 50
-    assert writer["query_count"] == 38
+    assert writer["query_count"] == 320
     assert writer["frame_stride"] == 5
     assert writer["max_frames_per_encoder_call"] == 32
-    assert writer["action_expert_probe"].startswith("one_forward_native_50")
-    assert writer["action_probe_projection"].startswith("mean_all_50")
-    assert writer["semantic_core_aggregation"].startswith("stable_frame_mean")
+    assert writer["action_expert_probe"].startswith("one_forward_fixed")
+    assert writer["interaction_reduction"].startswith("mean_50")
+    assert writer["frame_set_attention"].startswith("token_aligned")
+    assert writer["frame_attention_initial_lambda"] == 0.05
     assert writer["semantic_core_blocks"] == 2
-    assert writer["procedure_attention"] == (
-        "single_global_causal_content_transformer"
-    )
+    assert writer["procedure_attention"] == "global_causal_pre_norm_with_valid_mask"
     assert writer["procedure_blocks"] == 2
-    assert writer["visual_transition_heads"] == 8
-    assert writer["visual_transition"].startswith("adjacent_task_grounded")
-    assert writer["visual_transition_value"].startswith("raw_task_grounded")
-    assert writer["visual_transition_residual"].startswith("uncapped")
-    assert writer["procedure_value_path"].startswith(
-        "native_action_probe_plus_uncapped"
-    )
-    assert writer["core_slot_reader"].endswith("learned_bias_free_qkvo")
-    assert writer["semantic_prior"] == "v6_core_primary_target_content"
-    assert writer["procedure_time_centering"].startswith("fp32_masked")
+    assert writer["procedure_value_path"] == "raw_interaction_content_only"
+    assert writer["core_slot_reader"] == "routing_qk_core_content_v"
     assert writer["procedure_slot_reader"].startswith(
-        "target_routing_plus_core_query"
+        "routing_plus_normalized_core"
     )
-    assert writer["slot_fusion"].startswith("zero_init_procedure_adaln")
-    assert writer["post_fusion_scale_contract"].startswith(
-        "final_rmsnorm"
-    )
-    assert writer["core_only_public_lora_delta"].startswith("allowed")
-    assert writer["procedure_only_public_lora_delta"].startswith(
-        "target_routed_teacher_procedure_beta_allowed"
-    )
-    assert writer["zero_procedure_public_lora_delta"] == (
-        "semantic_core_target_content"
-    )
-    assert writer["semantic_target_count"] == 38
-    assert writer["rank_semantic_queries"] is False
-    assert writer["rank_expansion"].startswith("after_complete")
-    assert writer["scale_head_count"] == 4
+    assert writer["slot_fusion"].startswith("zero_initialized")
     assert writer["post_fusion_blocks"] == 1
-    assert writer["factor_hidden_width"] == 256
+    assert writer["factor_hidden_width"] == 216
     assert writer_split_roles(config) == ("train",)
     conditioning = config["conditioning_training"]
     assert conditioning["teacher_videos_per_task_visit"] == 1
@@ -109,34 +87,34 @@ def test_target_spectral_config_seals_architecture_and_information_wall() -> Non
     assert config["information_wall"]["test_video_values_read"] == 0
     assert "state" in config["information_wall"]["writer_forbidden_inputs"]
     assert config["profile_defaults"]["expected_world_size"] == 4
-    assert config["profile_defaults"]["status"] == "sealed_b20"
-    assert config["profile_evidence"]["status"] == "sealed_b20"
+    assert config["profile_defaults"]["status"] in {
+        "pending_v5_2_b20_live_profile",
+        "sealed_v5_2_b20_live_profile",
+    }
+    assert config["profile_evidence"]["status"] in {
+        "pending_v5_2_b20_live_profile",
+        "sealed_v5_2_b20_live_profile",
+    }
     assert config["profile_evidence"]["allowed_physical_gpu_ids"] == [4, 5, 6, 7]
     assert [
         row["per_task_action_batch_size"]
         for row in config["profile_evidence"]["candidates"]
     ] == [20, 16]
-    assert config["profile_evidence"]["selected"][
-        "per_task_action_batch_size"
-    ] == 20
-    assert config["profile_evidence"]["gradient_reachability"]["status"] == (
-        "pass_all_major_modules_with_expected_staged_action_meta_lora_a_factors"
-    )
     assert config["profile_evidence"]["inference_profile"] is None
     assert config["profile_evidence"]["teacher_videos_per_task_visit"] == 1
-    assert config["profile_evidence"]["exact_resume_smoke"]["status"] == (
-        "pass_fresh_step1_then_exact_resume_to_step3"
-    )
     assert config["specificity_gate"]["status"] == "pending_absolute_gate"
     assert config["optimization"]["scheduler"]["decay_steps"] == 400
     assert config["data"]["teacher_video_seed"] == 20260722
-    assert config["formal_run"]["status"] == "sealed"
-    assert config["formal_run"]["total_steps"] == 2400
+    assert config["formal_run"]["status"] in {
+        "pending_profile_and_resume_smoke",
+        "sealed",
+    }
+    assert config["formal_run"]["total_steps"] == 400
     assert config["formal_run"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["selected_stop_step"] == 200
-    assert config["formal_run"]["stage_stop_steps"] == "every:200"
+    assert config["formal_run"]["stage_stop_steps"] == [200, 400]
     assert config["formal_run"]["segment_definition"].startswith(
-        "fresh_target_spectral"
+        "fresh_v5_2_taskcomplete"
     )
     assert "without_runtime_full_data_sha" in config["formal_run"][
         "data_integrity_check"
@@ -221,7 +199,7 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         skip_data_sha=False,
     )
     unsealed = copy.deepcopy(config)
-    unsealed["formal_run"]["status"] = "pending_target_spectral_live_profile"
+    unsealed["formal_run"]["status"] = "pending_v5_2_live_profile"
     with pytest.raises(WriterModelError, match="not sealed"):
         resolve_runtime(formal, unsealed, context)
     sealed = copy.deepcopy(config)
@@ -256,9 +234,9 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
     )
     formal.skip_data_sha = True
     assert resolve_runtime(formal, sealed, context) == (
-        2400,
+        400,
         20,
-        tuple(range(25, 2401, 25)),
+        tuple(range(25, 401, 25)),
     )
     assert formal.stop_after_step == 200
 

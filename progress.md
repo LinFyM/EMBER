@@ -2283,3 +2283,17 @@ GPU范围和训练步长是当时快照；活动状态只取
   compiler写入几何和functional-loss→closed-loop错位。当前暂不正式训练，
   只允许使用GPU4–7中现场空闲卡分析；下一步由owner讨论后封存保留v6主方向、
   仅增加可选视频innovation rank的架构。
+
+## v5.2 task-complete控制实现（2026-07-31）
+
+- owner解除临时训练暂停，要求先完成原版v5.2拓扑与成熟full24 fast-decay400
+  训练的两小时对照，再基于全部证据设计下一架构。
+- 当前main原位恢复v5.2 Core/Procedure/320-slot AdaLN compiler，删除
+  Target-Spectral-only compiler源码；保留现有cost-balanced long-first
+  task-complete训练、raw-video信息墙、checkpoint/resume与evaluator。
+- 新config固定B20、4 ranks×6 tasks、24 tasks/macro、480 queries/macro、
+  LR`3e-4`、warmup17、decay400到`1e-5`、every25、0→200→400。
+- 精确参数预算`10,237,704`；聚焦模型/训练/checkpoint/evaluator合同
+  `41 passed`，全仓首轮`188 passed/1 message-only failure`，该消息测试已
+  同步修正。architecture guard为REVIEW、无hard violation，active source
+  净删约609行。

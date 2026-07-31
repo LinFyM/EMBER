@@ -1,10 +1,9 @@
-"""Multimodal Core evidence and native-horizon video-program Action probes."""
+"""Language-aligned per-frame evidence for the PI05 v5.1 Writer."""
 
 from __future__ import annotations
 
 import math
 from contextlib import contextmanager
-from functools import partial
 from typing import Iterator, Sequence
 
 import torch
@@ -90,7 +89,7 @@ class MetaLoRAStack(torch.nn.Module):
 
 
 class TaskQueriedPatchGrounding(torch.nn.Module):
-    """Read real patch values onto a video-independent task-token axis."""
+    """Read per-frame image-position content with text-only task queries."""
 
     NATIVE_IMAGE_TOKENS = 256
 
@@ -121,6 +120,7 @@ class TaskQueriedPatchGrounding(torch.nn.Module):
             or patch_content.shape[1] != self.NATIVE_IMAGE_TOKENS
             or valid_task_tokens.shape != task_queries.shape[:2]
             or valid_task_tokens.dtype != torch.bool
+            or not bool(valid_task_tokens.any(dim=1).all())
         ):
             raise VideoProgramError("invalid task-query patch batch")
         batch, task_tokens, width = task_queries.shape
@@ -150,14 +150,15 @@ class TaskQueriedPatchGrounding(torch.nn.Module):
             dropout_p=0.0,
             is_causal=False,
         )
-        grounded = self.output(
-            attended.transpose(1, 2).reshape(batch, task_tokens, width)
+        merged = attended.transpose(1, 2).reshape(batch, task_tokens, width)
+        return self.output(merged).masked_fill(
+            ~valid_task_tokens[..., None],
+            0.0,
         )
-        return grounded.masked_fill(~valid_task_tokens[..., None], 0.0)
 
 
-class Pi05TargetSpectralEncoder(torch.nn.Module):
-    """Produce Q_text, M+G, G, and one native-horizon Action probe per frame."""
+class Pi05LanguageAxialEncoder(torch.nn.Module):
+    """Produce text queries, aligned video evidence, and Action-Expert probes."""
 
     NATIVE_IMAGE_TOKENS = 256
 
@@ -293,8 +294,6 @@ class Pi05TargetSpectralEncoder(torch.nn.Module):
         task_span_mask: torch.Tensor,
         maximum_task_tokens: int,
     ) -> torch.Tensor:
-        """Encode one video-independent task-token coordinate system."""
-
         from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks
 
         bridge = core.paligemma_with_expert
@@ -332,8 +331,11 @@ class Pi05TargetSpectralEncoder(torch.nn.Module):
             )
         if (
             suffix_hidden is not None
-            or text_hidden.shape
-            != (batch, maximum_task_tokens + 1, self.image_width)
+            or text_hidden.shape != (
+                batch,
+                maximum_task_tokens + 1,
+                self.image_width,
+            )
         ):
             raise VideoProgramError("PI05 text-only hidden layout changed")
         projected = self.language_projection(text_hidden[:, 1:])
@@ -349,7 +351,7 @@ class Pi05TargetSpectralEncoder(torch.nn.Module):
         text_queries: torch.Tensor,
         valid_task_tokens: torch.Tensor,
         maximum_task_tokens: int,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks
 
         bridge = core.paligemma_with_expert
@@ -417,12 +419,13 @@ class Pi05TargetSpectralEncoder(torch.nn.Module):
                 use_cache=False,
                 adarms_cond=[None, adarms],
             )
-        self._validate_microbatch_hidden(
-            prefix_hidden,
-            suffix_hidden,
-            prefix,
-            frames.shape[0],
-        )
+        if (
+            prefix_hidden.shape[:2] != prefix.shape[:2]
+            or prefix_hidden.shape[-1] != self.image_width
+            or suffix_hidden.shape
+            != (frames.shape[0], self.action_horizon, self.expert_width)
+        ):
+            raise VideoProgramError("PI05 semantic hidden layout changed")
 
         language_hidden = prefix_hidden[:, self.NATIVE_IMAGE_TOKENS :]
         packed_language = self._pack_hidden(
@@ -430,41 +433,18 @@ class Pi05TargetSpectralEncoder(torch.nn.Module):
             task_span_mask,
             maximum_task_tokens,
         )
-        task_evidence = self.language_projection(packed_language)
+        multimodal_evidence = self.language_projection(packed_language)
         patch_content = self.language_projection(
             prefix_hidden[:, : self.NATIVE_IMAGE_TOKENS]
         )
-        grounded_evidence = self.patch_grounding(
+        patch_evidence = self.patch_grounding(
             text_queries,
             patch_content,
             valid_task_tokens,
         )
-        semantic_evidence = task_evidence + grounded_evidence
-        action_probe = self.interaction_projection(suffix_hidden.mean(dim=1))
-        return (
-            semantic_evidence,
-            grounded_evidence,
-            action_probe,
-        )
-
-    def _validate_microbatch_hidden(
-        self,
-        prefix_hidden: torch.Tensor,
-        suffix_hidden: torch.Tensor,
-        prefix: torch.Tensor,
-        frame_count: int,
-    ) -> None:
-        if (
-            prefix_hidden.shape[:2] != prefix.shape[:2]
-            or prefix_hidden.shape[-1] != self.image_width
-            or suffix_hidden.shape
-            != (
-                frame_count,
-                self.action_horizon,
-                self.expert_width,
-            )
-        ):
-            raise VideoProgramError("PI05 semantic hidden layout changed")
+        evidence = multimodal_evidence + patch_evidence
+        interaction = self.interaction_projection(suffix_hidden.mean(dim=1))
+        return evidence, interaction
 
     def _validate_forward_batch(
         self,
@@ -531,14 +511,8 @@ class Pi05TargetSpectralEncoder(torch.nn.Module):
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
         task_span_mask: torch.Tensor,
-    ) -> tuple[
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-    ]:
-        """Return Q_text, X=M+G, G, one Action probe, and task mask."""
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Return aligned text/video evidence and one interaction per frame."""
 
         core, valid_task_tokens, _ = self._validate_forward_batch(
             policy,
@@ -550,17 +524,22 @@ class Pi05TargetSpectralEncoder(torch.nn.Module):
         )
         maximum_task_tokens = valid_task_tokens.shape[1]
 
+        def invoke_text(
+            token_values: torch.Tensor,
+            span_values: torch.Tensor,
+        ) -> torch.Tensor:
+            return self._encode_text(
+                core,
+                token_values,
+                span_values,
+                maximum_task_tokens,
+            )
+
         should_checkpoint = (
             self.activation_checkpointing
             and self.training
             and torch.is_grad_enabled()
         )
-        invoke_text = partial(
-            self._encode_text,
-            core,
-            maximum_task_tokens=maximum_task_tokens,
-        )
-
         if should_checkpoint:
             text_queries = checkpoint(
                 invoke_text,
@@ -572,9 +551,8 @@ class Pi05TargetSpectralEncoder(torch.nn.Module):
         else:
             text_queries = invoke_text(language_tokens, task_span_mask)
 
-        semantic_evidence_rows = []
-        grounded_evidence_rows = []
-        action_probe_rows = []
+        evidence_rows = []
+        interaction_rows = []
         for start in range(0, frames.shape[0], self.max_frames_per_encoder_call):
             stop = min(start + self.max_frames_per_encoder_call, frames.shape[0])
             rows = torch.arange(start, stop, device=frames.device)
@@ -588,30 +566,39 @@ class Pi05TargetSpectralEncoder(torch.nn.Module):
                 valid_task_tokens.index_select(0, selected),
             )
 
-            invoke_frames = partial(
-                self._encode_microbatch,
-                core,
-                maximum_task_tokens=maximum_task_tokens,
-            )
+            def invoke_frames(
+                frame_values: torch.Tensor,
+                token_values: torch.Tensor,
+                mask_values: torch.Tensor,
+                span_values: torch.Tensor,
+                query_values: torch.Tensor,
+                valid_token_values: torch.Tensor,
+            ) -> tuple[torch.Tensor, torch.Tensor]:
+                return self._encode_microbatch(
+                    core,
+                    frame_values,
+                    token_values,
+                    mask_values,
+                    span_values,
+                    query_values,
+                    valid_token_values,
+                    maximum_task_tokens,
+                )
 
             if should_checkpoint:
-                semantic_evidence, grounded_evidence, action_probe = checkpoint(
+                evidence, interaction = checkpoint(
                     invoke_frames,
                     *arguments,
                     use_reentrant=False,
                     preserve_rng_state=False,
                 )
             else:
-                semantic_evidence, grounded_evidence, action_probe = invoke_frames(
-                    *arguments
-                )
-            semantic_evidence_rows.append(semantic_evidence)
-            grounded_evidence_rows.append(grounded_evidence)
-            action_probe_rows.append(action_probe)
+                evidence, interaction = invoke_frames(*arguments)
+            evidence_rows.append(evidence)
+            interaction_rows.append(interaction)
         return (
             text_queries,
-            torch.cat(semantic_evidence_rows, dim=0),
-            torch.cat(grounded_evidence_rows, dim=0),
-            torch.cat(action_probe_rows, dim=0),
+            torch.cat(evidence_rows, dim=0),
+            torch.cat(interaction_rows, dim=0),
             valid_task_tokens,
         )

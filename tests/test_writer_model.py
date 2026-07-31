@@ -6,20 +6,11 @@ import torch
 
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer.as_contract import writer_trainable_contract
-from ember.writer.compiler import (
-    ProcedureTargetReader,
-    TargetSpectralCompiler,
-    TargetSlotBlock,
-)
-from ember.writer.model import (
-    CompleteLoRAWriter,
-    FactorHead,
-    build_lora_tensor_specs,
-)
+from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
 from ember.writer.temporal import (
     CausalProcedureEncoder,
     LanguageSemanticCore,
-    TaskGroundedVisualTransitionFusion,
+    SlotNormalizedCoreProcedureCompiler,
 )
 from ember.writer.video_program import TaskQueriedPatchGrounding
 
@@ -108,13 +99,7 @@ class _FakeSemanticEncoder(torch.nn.Module):
         language_tokens: torch.Tensor,
         _language_mask: torch.Tensor,
         task_span_mask: torch.Tensor,
-    ) -> tuple[
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-    ]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         counts = task_span_mask.sum(dim=1)
         maximum = int(counts.max())
         valid = torch.arange(maximum)[None] < counts[:, None]
@@ -122,15 +107,9 @@ class _FakeSemanticEncoder(torch.nn.Module):
         text = language[:, None, None].expand(-1, maximum, 256).clone()
         image = frames.to(torch.float32).mean(dim=(1, 2, 3))
         frame_value = image + language.index_select(0, frame_condition_ids)
-        channels = torch.linspace(0.01, 1.0, 256)
-        evidence = torch.sin(
-            frame_value[:, None, None] * channels[None, None]
-        ).expand(-1, maximum, -1).clone()
-        grounded = evidence + torch.cos(
-            frame_value[:, None, None] * channels[None, None]
-        ).expand(-1, maximum, -1)
-        action = torch.cos(frame_value[:, None] * channels[None])
-        return text, evidence, grounded, action, valid
+        evidence = frame_value[:, None, None].expand(-1, maximum, 256).clone()
+        interaction = frame_value[:, None].expand(-1, 256).clone()
+        return text, evidence, interaction, valid
 
 
 def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
@@ -154,11 +133,11 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         padded_action_dim=32,
         semantic_core_heads=8,
         semantic_core_blocks=2,
-        visual_transition_heads=8,
+        frame_attention_initial_lambda=0.05,
         procedure_heads=8,
         procedure_blocks=2,
         fusion_heads=8,
-        factor_hidden_width=256,
+        factor_hidden_width=216,
         initialization_seed=7,
         activation_checkpointing=True,
     )
@@ -188,9 +167,9 @@ def _inputs() -> tuple[torch.Tensor, ...]:
     return frames, frame_indices, offsets, tokens, masks, task_spans
 
 
-def test_target_spectral_writer_parameter_budget_and_native_probe_contract_are_exact() -> None:
+def test_v5_2_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
     model, _ = _model()
-    assert sum(parameter.numel() for parameter in model.parameters()) == 14_495_744
+    assert sum(parameter.numel() for parameter in model.parameters()) == 10_237_704
     contract = writer_trainable_contract(
         model,
         torch.nn.Identity(),
@@ -198,7 +177,7 @@ def test_target_spectral_writer_parameter_budget_and_native_probe_contract_are_e
             Path(__file__).resolve().parents[1] / "configs/pi05_lora_v1.json"
         ),
     )
-    assert contract["parameter_count"] == 14_495_744
+    assert contract["parameter_count"] == 10_237_704
     assert contract["source_policy_trainable_parameter_count"] == 0
     expected = {
         "text_meta_lora": (model.semantic_encoder.text_meta_lora, 921_600),
@@ -212,20 +191,15 @@ def test_target_spectral_writer_parameter_budget_and_native_probe_contract_are_e
             model.semantic_encoder.patch_grounding,
             197_120,
         ),
-        "semantic_core_set_fusion": (
-            model.semantic_core.semantic_set_fusion,
-            262_656,
-        ),
+        "frame_attention": (model.semantic_core.frame_attention, 262_664),
         "semantic_core_blocks": (model.semantic_core.blocks, 1_573_888),
         "interaction_projection": (
             model.semantic_encoder.interaction_projection,
             262_144,
         ),
-        "visual_transition": (model.visual_transition, 197_120),
         "procedure": (model.procedure, 1_573_888),
-        "compiler": (model.compiler, 4_992_512),
-        "factor_heads": (model.factor_heads, 2_179_072),
-        "scale_heads": (model.scale_heads, 263_168),
+        "compiler": (model.compiler, 1_535_232),
+        "factor_heads": (model.factor_heads, 1_838_592),
     }
     assert {
         name: sum(parameter.numel() for parameter in module.parameters())
@@ -234,88 +208,35 @@ def test_target_spectral_writer_parameter_budget_and_native_probe_contract_are_e
     assert model.semantic_encoder.fixed_suffix_noise.shape == (50, 32)
     assert "semantic_encoder.fixed_suffix_noise" in model.state_dict()
     assert not model.semantic_encoder.fixed_suffix_noise.requires_grad
-    assert not hasattr(model.semantic_encoder, "action_probe_positions")
-    assert model.compiler.procedure_reader.attention.value.in_features == 256
-    assert model.compiler.target_block.output_norm.weight.shape == (256,)
 
 
-def test_target_spectral_writer_starts_at_exact_identity_template() -> None:
+def test_v5_2_writer_starts_at_exact_identity_template() -> None:
     model, template = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     output = model(*_inputs(), policy=torch.nn.Identity())
     assert set(output) == set(template)
     for name, value in output.items():
         assert value.shape == (2, *template[name].shape)
-        assert torch.equal(value[0], value[1])
-        if ".lora_B." in name:
-            assert not bool(value.count_nonzero())
-        else:
-            gram = value[0].to(torch.float32) @ value[0].to(
-                torch.float32
-            ).transpose(0, 1)
-            diagonal = torch.diagonal(gram)
-            assert torch.allclose(
-                gram,
-                torch.diag(diagonal),
-                atol=2e-3,
-                rtol=2e-4,
-            )
+        assert torch.equal(value[0], template[name])
+        assert torch.equal(value[1], template[name])
 
 
-def test_target_spectral_writer_becomes_video_conditioned_after_heads_open() -> None:
+def test_v5_2_writer_becomes_video_conditioned_after_heads_open() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     for head in model.factor_heads.values():
         torch.nn.init.normal_(head.network[-1].weight, std=0.01)
-    for head in model.scale_heads.values():
-        torch.nn.init.normal_(head.network[-1].weight, std=0.01)
     output = model(*_inputs(), policy=torch.nn.Identity())
-    effective = []
-    for name, value in output.items():
-        if ".lora_A." not in name:
-            continue
-        paired = output[name.replace(".lora_A.", ".lora_B.")]
-        effective.append(paired.to(torch.float32) @ value.to(torch.float32))
-    assert any(not torch.equal(value[0], value[1]) for value in effective)
+    assert any(not torch.equal(value[0], value[1]) for value in output.values())
     assert not hasattr(model, "shared_lora")
 
 
-def test_target_spectral_gradient_staging_reaches_both_branches_and_transition() -> None:
+def test_v5_2_gradient_staging_opens_only_intended_paths() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
 
-    def backward() -> None:
-        output = model(*_inputs(), policy=torch.nn.Identity())
-        effective = []
-        for name, value in output.items():
-            if ".lora_A." not in name:
-                continue
-            paired = output[name.replace(".lora_A.", ".lora_B.")]
-            effective.append(paired.to(torch.float32) @ value.to(torch.float32))
-        sum(value.square().sum() + value.sum() for value in effective).backward()
-
-    def update() -> None:
-        with torch.no_grad():
-            for parameter in model.parameters():
-                if parameter.grad is not None:
-                    parameter.add_(parameter.grad, alpha=-1e-4)
-        model.zero_grad(set_to_none=True)
-
-    backward()
-    assert all(
-        head.network[-1].weight.grad is not None
-        and bool(torch.count_nonzero(head.network[-1].weight.grad))
-        for head in model.scale_heads.values()
-    )
-    assert all(
-        parameter.grad is None or not bool(torch.count_nonzero(parameter.grad))
-        for parameter in model.semantic_core.parameters()
-    )
-    update()
-
-    backward()
-    assert model.compiler.modulation.weight.grad is not None
-    assert bool(model.compiler.modulation.weight.grad.count_nonzero())
+    first = model(*_inputs(), policy=torch.nn.Identity())
+    sum(value.to(torch.float32).sum() for value in first.values()).backward()
     assert all(
         head.network[-1].weight.grad is not None
         and bool(torch.count_nonzero(head.network[-1].weight.grad))
@@ -323,50 +244,32 @@ def test_target_spectral_gradient_staging_reaches_both_branches_and_transition()
     )
     assert all(
         parameter.grad is None or not bool(torch.count_nonzero(parameter.grad))
+        for parameter in model.semantic_core.parameters()
+    )
+
+    model.zero_grad(set_to_none=True)
+    for head in model.factor_heads.values():
+        torch.nn.init.normal_(head.network[-1].weight, std=0.01)
+    second = model(*_inputs(), policy=torch.nn.Identity())
+    sum(value.to(torch.float32).sum() for value in second.values()).backward()
+    assert model.compiler.modulation.weight.grad is not None
+    assert bool(torch.count_nonzero(model.compiler.modulation.weight.grad))
+    assert any(
+        parameter.grad is not None and bool(torch.count_nonzero(parameter.grad))
+        for parameter in model.semantic_core.parameters()
+    )
+    assert all(
+        parameter.grad is None or not bool(torch.count_nonzero(parameter.grad))
         for parameter in model.procedure.parameters()
     )
-    update()
 
-    backward()
-    for module in (
-        model.semantic_core,
-        model.visual_transition,
-        model.procedure,
-        model.compiler,
-    ):
-        assert any(
-            parameter.grad is not None and bool(torch.count_nonzero(parameter.grad))
-            for parameter in module.parameters()
-        )
-
-
-def test_spectral_qr_stays_finite_under_strong_common_direction() -> None:
-    torch.manual_seed(22)
-    carrier = torch.eye(64, 16)
-    common = torch.randn(64, 1) @ torch.ones(1, 16)
-    raw_columns = carrier + 100.0 * common
-    columns = CompleteLoRAWriter._column_orthogonalize(raw_columns[None])
-    column_gram = columns.transpose(-1, -2) @ columns
-    assert bool(torch.isfinite(columns).all())
-    assert torch.allclose(
-        column_gram,
-        torch.eye(16)[None],
-        atol=2e-4,
-        rtol=2e-4,
-    )
-
-    raw_rows = raw_columns.transpose(0, 1)
-    rows = CompleteLoRAWriter._row_orthogonalize(
-        raw_rows[None],
-        torch.ones(1, 1),
-    )
-    row_gram = rows @ rows.transpose(-1, -2)
-    assert bool(torch.isfinite(rows).all())
-    assert torch.allclose(
-        row_gram,
-        torch.eye(16)[None],
-        atol=2e-4,
-        rtol=2e-4,
+    model.zero_grad(set_to_none=True)
+    torch.nn.init.normal_(model.compiler.modulation.weight, std=0.01)
+    third = model(*_inputs(), policy=torch.nn.Identity())
+    sum(value.to(torch.float32).sum() for value in third.values()).backward()
+    assert any(
+        parameter.grad is not None and bool(torch.count_nonzero(parameter.grad))
+        for parameter in model.procedure.parameters()
     )
 
 
@@ -400,15 +303,16 @@ def test_language_core_is_frame_permutation_invariant() -> None:
         width=32,
         heads=4,
         blocks=2,
+        frame_attention_initial_lambda=0.05,
     )
+    text = torch.randn(2, 7, 32)
     evidence = torch.randn(2, 5, 7, 32)
-    text_queries = torch.randn(2, 7, 32)
     valid_frames = torch.ones(2, 5, dtype=torch.bool)
     valid_tokens = torch.ones(2, 7, dtype=torch.bool)
-    baseline, _ = core(text_queries, evidence, valid_frames, valid_tokens)
+    baseline, _ = core(text, evidence, valid_frames, valid_tokens)
     permutation = torch.tensor([3, 0, 4, 1, 2])
     shuffled, _ = core(
-        text_queries,
+        text,
         evidence[:, permutation],
         valid_frames[:, permutation],
         valid_tokens,
@@ -416,229 +320,87 @@ def test_language_core_is_frame_permutation_invariant() -> None:
     assert torch.allclose(baseline, shuffled, atol=1e-5, rtol=1e-5)
 
 
-def test_language_core_preserves_mean_when_learned_residuals_are_zero() -> None:
-    torch.manual_seed(18)
-    core = LanguageSemanticCore(width=32, heads=4, blocks=1)
-    for module in core.modules():
-        if isinstance(module, torch.nn.Linear):
-            torch.nn.init.zeros_(module.weight)
-    torch.nn.init.eye_(core.semantic_set_fusion.mean.weight)
-    evidence = torch.randn(1, 4, 3, 32)
-    text_queries = torch.randn(1, 3, 32)
-    valid_frames = torch.tensor([[True, True, True, False]])
-    valid_tokens = torch.tensor([[True, True, False]])
-    output, weights = core(
-        text_queries,
-        evidence,
-        valid_frames,
-        valid_tokens,
-    )
-    expected = evidence[:, :3].mean(dim=1)
-    expected[:, 2] = 0
-    assert torch.allclose(output, expected)
-    assert output.shape == (1, 3, 32)
-    assert weights.shape == (1, 4, 4, 3)
-    assert not bool(output[:, 2].count_nonzero())
-    assert not bool(weights[..., 2].count_nonzero())
-
-
-def test_visual_transition_is_uncapped_and_recomputed_in_input_order() -> None:
-    torch.manual_seed(19)
-    fusion = TaskGroundedVisualTransitionFusion(width=32, heads=4)
-    action = torch.full((2, 4, 32), 1e-4)
-    grounded = 10.0 * torch.randn(2, 4, 5, 32)
-    valid_frames = torch.tensor(
-        [[True, True, True, True], [True, True, True, False]]
-    )
-    valid_tokens = torch.ones(2, 5, dtype=torch.bool)
-    fused, transition = fusion(
-        action,
-        grounded,
-        valid_frames,
-        valid_tokens,
-    )
-    assert torch.equal(
-        transition[:, 0],
-        torch.zeros_like(transition[:, 0]),
-    )
-    residual_rms = (fused - action).square().mean(dim=-1).sqrt()
-    action_rms = action.square().mean(dim=-1).sqrt()
-    assert bool((residual_rms[valid_frames] > 0.25 * action_rms[valid_frames]).any())
-    assert not bool(fused[1, 3].count_nonzero())
-
-    zero_action = torch.zeros_like(action)
-    zero_fused, _ = fusion(
-        zero_action,
-        grounded,
-        valid_frames,
-        valid_tokens,
-    )
-    assert bool(zero_fused[:, 1:].count_nonzero())
-
-
-def test_visual_transition_zero_first_delta_has_finite_backward() -> None:
-    torch.manual_seed(21)
-    fusion = TaskGroundedVisualTransitionFusion(width=32, heads=4)
-    action = torch.randn(2, 4, 32, requires_grad=True)
-    grounded = torch.randn(2, 4, 5, 32, requires_grad=True)
-    valid_frames = torch.ones(2, 4, dtype=torch.bool)
-    valid_tokens = torch.ones(2, 5, dtype=torch.bool)
-    fused, transition = fusion(
-        action,
-        grounded,
-        valid_frames,
-        valid_tokens,
-    )
-    assert not bool(transition[:, 0].count_nonzero())
-    fused[:, 0].sum().backward()
-    assert action.grad is not None and bool(torch.isfinite(action.grad).all())
-    assert grounded.grad is not None and bool(torch.isfinite(grounded.grad).all())
-    assert all(
-        parameter.grad is None or bool(torch.isfinite(parameter.grad).all())
-        for parameter in fusion.parameters()
-    )
-
-
-def test_causal_procedure_does_not_leak_future_content() -> None:
+def test_causal_procedure_preserves_prefix_and_uses_order() -> None:
     torch.manual_seed(23)
     encoder = CausalProcedureEncoder(width=32, heads=4, blocks=2)
-    content = torch.randn(1, 4, 32)
-    changed = content.clone()
-    changed[:, 3] = torch.randn_like(changed[:, 3])
-    positions = torch.tensor([[0, 5, 10, 15]])
-    valid = torch.ones(1, 4, dtype=torch.bool)
+    content = torch.randn(1, 6, 32)
+    changed_future = content.clone()
+    changed_future[:, 4:] = torch.randn_like(changed_future[:, 4:])
+    positions = torch.arange(6)[None]
+    valid = torch.ones(1, 6, dtype=torch.bool)
     baseline = encoder(content, positions, valid)
-    modified = encoder(changed, positions, valid)
-    assert torch.allclose(
-        baseline[:, :3],
-        modified[:, :3],
-        atol=1e-6,
-        rtol=1e-5,
-    )
+    future = encoder(changed_future, positions, valid)
+    reverse = encoder(content.flip(1), positions, valid)
+    assert torch.allclose(baseline[:, :4], future[:, :4], atol=1e-6, rtol=1e-5)
+    assert not torch.allclose(baseline, reverse)
 
 
-def _compiler(width: int = 32) -> TargetSpectralCompiler:
-    return TargetSpectralCompiler(
-        width=width,
+def test_routing_and_positions_cannot_create_lora_content_from_zero_values() -> None:
+    compiler = SlotNormalizedCoreProcedureCompiler(
+        width=32,
         heads=4,
         initialization_seed=7,
     )
-
-
-def test_compiler_is_target_first_and_rank_last() -> None:
-    torch.manual_seed(29)
-    compiler = _compiler()
-    core = torch.randn(2, 5, 32)
-    procedure = torch.randn(2, 4, 32)
-    valid_core = torch.ones(2, 5, dtype=torch.bool)
-    positions = torch.tensor([[0, 5, 10, 15], [0, 5, 10, 15]])
-    valid = torch.ones(2, 4, dtype=torch.bool)
-    slots, diagnostics = compiler.target_slots(
+    core = torch.zeros(2, 7, 32)
+    procedure = torch.zeros(2, 5, 32)
+    valid_core = torch.ones(2, 7, dtype=torch.bool)
+    valid_procedure = torch.ones(2, 5, dtype=torch.bool)
+    positions = torch.tensor([[0, 5, 10, 15, 20], [0, 3, 8, 13, 21]])
+    output = compiler(
         core,
         valid_core,
         procedure,
         positions,
-        valid,
+        valid_procedure,
     )
-    ranks = compiler(core, valid_core, procedure, positions, valid)
-    assert slots.shape == (2, 38, 32)
-    assert diagnostics["core_targets"].shape == (2, 38, 32)
-    assert diagnostics["procedure_targets"].shape == (2, 38, 32)
-    assert ranks.shape == (2, 38, 16, 32)
-    assert not torch.allclose(ranks[:, 0, 0], ranks[:, 1, 0])
-    assert not torch.allclose(ranks[:, 0, 0], ranks[:, 0, 1])
-    for reader in (compiler.core_reader, compiler.procedure_reader):
-        for projection in (
-            reader.attention.query,
-            reader.attention.key,
-            reader.attention.value,
-            reader.attention.output,
-        ):
-            assert projection.bias is None
-            assert bool(projection.weight.count_nonzero())
+    assert all(torch.count_nonzero(value) == 0 for value in output)
 
 
-def test_target_and_rank_coordinate_initialization_is_orthogonal() -> None:
-    torch.manual_seed(30)
-    compiler = _compiler()
-    identity = torch.eye(32)
-    target_gram = (
-        compiler.target_coordinates
-        @ compiler.target_coordinates.transpose(-1, -2)
+def test_procedure_modulation_is_zero_at_init_then_order_sensitive_when_opened() -> None:
+    torch.manual_seed(29)
+    compiler = SlotNormalizedCoreProcedureCompiler(
+        width=32,
+        heads=4,
+        initialization_seed=7,
     )
-    rank_gram = (
-        compiler.rank_coordinates
-        @ compiler.rank_coordinates.transpose(-1, -2)
-    )
-    assert torch.equal(target_gram, identity.expand_as(target_gram))
-    assert torch.equal(rank_gram, identity.expand_as(rank_gram))
-
-
-def test_bfloat16_procedure_centering_is_masked_finite_and_fp32_stable() -> None:
-    torch.manual_seed(31)
-    procedure = torch.randn(2, 5, 32, dtype=torch.bfloat16)
-    valid = torch.tensor(
-        [[True, True, True, False, False], [True, True, True, True, True]]
-    )
-    centered = ProcedureTargetReader.center(procedure, valid)
-    assert centered.dtype == torch.bfloat16
-    assert not bool(centered[0, 3:].count_nonzero())
-    assert bool(torch.isfinite(centered).all())
-    for row, length in enumerate((3, 5)):
-        assert torch.allclose(
-            centered[row, :length].to(torch.float32).mean(dim=0),
-            torch.zeros(32),
-            atol=3e-3,
-            rtol=0.0,
-        )
-
-
-def test_compiler_open_head_gradients_reach_core_and_centered_procedure() -> None:
-    torch.manual_seed(32)
-    compiler = _compiler()
-    core = torch.randn(1, 5, 32, requires_grad=True)
-    procedure = torch.randn(1, 4, 32, requires_grad=True)
-    torch.nn.init.normal_(compiler.modulation.weight, std=0.01)
-    ranks = compiler(
+    core = torch.randn(1, 9, 32)
+    valid_core = torch.ones(1, 9, dtype=torch.bool)
+    procedure = torch.randn(1, 5, 32)
+    positions = torch.arange(5)[None]
+    valid_procedure = torch.ones(1, 5, dtype=torch.bool)
+    baseline = compiler(
         core,
-        torch.ones(1, 5, dtype=torch.bool),
+        valid_core,
         procedure,
-        torch.tensor([[0, 5, 10, 15]]),
-        torch.ones(1, 4, dtype=torch.bool),
+        positions,
+        valid_procedure,
     )
-    head = FactorHead(32, 32, 8)
-    torch.nn.init.normal_(head.network[-1].weight, std=0.01)
-    head(ranks[:, 0]).square().sum().backward()
-    assert (
-        core.grad is not None
-        and bool(torch.isfinite(core.grad).all())
-        and bool(core.grad.count_nonzero())
+    reversed_at_init = compiler(
+        core,
+        valid_core,
+        procedure.flip(1),
+        positions,
+        valid_procedure,
     )
-    assert (
-        procedure.grad is not None
-        and bool(torch.isfinite(procedure.grad).all())
-        and bool(procedure.grad.count_nonzero())
-    )
-    assert all(
-        parameter.grad is None or bool(torch.isfinite(parameter.grad).all())
-        for parameter in compiler.parameters()
-    )
+    for left, right in zip(baseline, reversed_at_init, strict=True):
+        assert torch.equal(left, right)
 
-
-def test_target_block_keeps_routing_out_of_value_content() -> None:
-    torch.manual_seed(33)
-    block = TargetSlotBlock(width=32, heads=4)
-    routing = torch.randn(1, 6, 32)
-    zero = torch.zeros(1, 6, 32, requires_grad=True)
-    zero_output = block(zero, routing)
-    assert not bool(zero_output.count_nonzero())
-    zero_output.sum().backward()
-    assert zero.grad is not None
-    assert bool(torch.isfinite(zero.grad).all())
-
-    content = torch.randn(1, 6, 32)
-    first = block(content, routing)
-    second = block(content, routing + 0.25)
-    assert not torch.allclose(first, second)
-    assert hasattr(block, "output_norm")
-    assert not hasattr(block, "input_rms")
+    torch.nn.init.normal_(compiler.modulation.weight, std=0.01)
+    normal = compiler(
+        core,
+        valid_core,
+        procedure,
+        positions,
+        valid_procedure,
+    )
+    reverse = compiler(
+        core,
+        valid_core,
+        procedure.flip(1),
+        positions,
+        valid_procedure,
+    )
+    assert any(
+        not torch.allclose(left, right)
+        for left, right in zip(normal, reverse, strict=True)
+    )

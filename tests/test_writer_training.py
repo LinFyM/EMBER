@@ -124,11 +124,13 @@ def test_target_spectral_config_seals_architecture_and_information_wall() -> Non
     )
     assert config["profile_evidence"]["inference_profile"] is None
     assert config["profile_evidence"]["teacher_videos_per_task_visit"] == 1
-    assert config["profile_evidence"]["exact_resume_smoke"] is None
+    assert config["profile_evidence"]["exact_resume_smoke"]["status"] == (
+        "pass_fresh_step1_then_exact_resume_to_step3"
+    )
     assert config["specificity_gate"]["status"] == "pending_absolute_gate"
     assert config["optimization"]["scheduler"]["decay_steps"] == 400
     assert config["data"]["teacher_video_seed"] == 20260722
-    assert config["formal_run"]["status"] == "pending_target_spectral_exact_resume"
+    assert config["formal_run"]["status"] == "sealed"
     assert config["formal_run"]["total_steps"] == 2400
     assert config["formal_run"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["selected_stop_step"] == 200

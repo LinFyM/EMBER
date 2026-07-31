@@ -344,8 +344,9 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
 - [x] 只在GPU4–7完成最长105-frame B20三macro profile；三步finite，稳态约
   `25.488 queries/s`、`191.159 macro/hour`，峰值约`77.07/83.65GB`，
   B16未触发。
-- [ ] 正式teacher seed下fresh0→1→exact-resume1→3，验证全部新路径finite、
-  可达且旧step1不被改写。
+- [x] 正式teacher seed下fresh0→1→exact-resume1→3；steps/LR/query/video
+  cursor连续、全部finite、validation/test reads为0，step1七个文件逐项SHA
+  未改写。
 - [ ] fresh macro0→200、every25；固定评测50/100/150/200 correct400。
 - [ ] winner做无rollout rank/layer/video数值分析。只有single-checkpoint达到
   150，或稳定接近且显著超过同期v5.2/v6，才做行为级视频特异性。

@@ -270,14 +270,52 @@
       "profile_root": "/data/ymdai/outputs/ember/pi05_as_writer_target_spectral_profile_b20_longseed172_f8bbce6_20260731",
       "run_contract_sha256": "6312b7df7edafb4ac47cf07f52ea130c6054510407d365fa4f02731e5f0363b3"
     },
-    "exact_resume_smoke": null,
+    "exact_resume_smoke": {
+      "status": "pass_fresh_step1_then_exact_resume_to_step3",
+      "root": "/data/ymdai/outputs/ember/pi05_as_writer_target_spectral_resume_b20_seed7_c09278d_20260731",
+      "formal_teacher_video_seed": 20260722,
+      "fresh_stop_step": 1,
+      "resumed_stop_step": 3,
+      "completed_optimizer_steps": 3,
+      "metrics_steps": [
+        1,
+        2,
+        3
+      ],
+      "applied_learning_rates": [
+        0.0003,
+        0.00022749999999999997,
+        0.00008250000000000003
+      ],
+      "next_learning_rates": [
+        0.00022749999999999997,
+        0.00008250000000000003,
+        0.00001
+      ],
+      "cumulative_action_queries": [
+        480,
+        960,
+        1440
+      ],
+      "cumulative_video_conditions": [
+        24,
+        48,
+        72
+      ],
+      "all_steps_finite": true,
+      "validation_action_reads": 0,
+      "test_action_reads": 0,
+      "test_video_value_reads": 0,
+      "step1_checkpoint_files_unchanged_after_resume": true,
+      "run_contract_sha256": "194a24eb95cdc95f50c12d9e8e845c80ef1db407b6b4d5752b4283c3c787a79b"
+    },
     "gradient_reachability": {
       "status": "pass_all_major_modules_with_expected_staged_action_meta_lora_a_factors",
-      "comparison": "profile_checkpoint_step1_to_step3",
+      "comparison": "formal_seed_checkpoint_step1_to_step3",
       "writer_trainable_parameters": 14495744,
       "trainable_tensor_names": 530,
       "changed_trainable_tensor_names": 458,
-      "changed_parameter_elements": 13808706,
+      "changed_parameter_elements": 13866134,
       "all_major_modules_changed": true,
       "all_trainable_tensors_finite": true,
       "unchanged_tensor_names": "all_72_action_meta_lora_a_factors",
@@ -298,7 +336,7 @@
     "contrast_loss_allowed": false
   },
   "formal_run": {
-    "status": "pending_target_spectral_exact_resume",
+    "status": "sealed",
     "expected_world_size": 4,
     "total_steps": 2400,
     "per_rank_batch_size": 20,

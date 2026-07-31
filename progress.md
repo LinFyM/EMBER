@@ -2248,3 +2248,14 @@ GPU范围和训练步长是当时快照；活动状态只取
   唯一整组暂未变化的是72个Action Meta-LoRA A；这是spectral scale、
   Procedure AdaLN与Meta-LoRA B连续zero-init造成的预期四步staging，配对B已
   全部变化。配置已恢复formal seed，下一步做独立fresh0→1→exact-resume1→3。
+
+## Target-Spectral exact-resume与formal seal（2026-07-31）
+
+- formal seed `20260722`的独立root先fresh0→1，再从完整macro1恢复到3；
+  metrics严格为1/2/3，LR、task/video/query cursor、累计queries
+  `480/960/1440`和video conditions`24/48/72`连续且finite。
+- resume前后macro1的manifest、Writer、trainer和四rank state共七个文件SHA
+  完全不变；validation/test action reads和test video value reads均为0。
+- formal-seed step1→3同样为530个trainable tensors中458个变化，所有主模块
+  finite且可达；72个Action Meta-LoRA A按分级zero-init延迟，配对B已变化。
+  config现已seal为B20、fresh macro0→200、every25。

@@ -66,11 +66,16 @@ transition、Procedure和全部主Meta组均finite且可达；72个Action Meta-L
 因新增spectral scale→AdaLN→Meta-B分级zero-init在三步后尚未打开，配对B均已
 变化，正式训练会在后续step继续打开。
 
+formal teacher seed`20260722`下的独立root也已完成fresh0→1→exact-resume
+1→3：metrics、LR、task/video/query cursor连续，累计72 video conditions与
+1,440 queries；validation/test action reads和test video value reads均为0。
+resume前后macro1的manifest、Writer、trainer和四rank state共七个文件逐项SHA
+完全不变。
+
 紧邻顺序：
 
 ```text
-formal-seed fresh0→1→exact-resume1→3
-→ fresh macro0→200，every25保存
+fresh macro0→200，every25保存
 → paired correct400 at macro50/100/150/200
 → winner内部rank/layer/video数值分析
 ```

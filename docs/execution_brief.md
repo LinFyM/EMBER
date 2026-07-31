@@ -1,5 +1,22 @@
 # EMBER Current Execution Brief
 
+## 2026-07-31 current override
+
+当前canonical设计为
+[`action_forecast_writer_coherent_procedure_design.md`](action_forecast_writer_coherent_procedure_design.md)。
+main `799aa66`已恢复exact v5.2 topology并接入mature task-complete recipe，但
+正式训练尚未启动；当前无tmux、训练或rollout进程。
+
+本session已完成v5.2 step900的400套correct-video LoRA内部几何分析且零rollout。
+结果证明16个q/v坐标能量均匀、没有负向相消，近rank1来自建设性同向协作；
+强制正交/高rank的Target-Spectral为明确负结果。永久分析artifact及SHA见
+`docs/active_session_handoff.md`。
+
+新session首先补齐`v5.2 topology × full24 task-complete fast-decay400`：
+fresh macro0→200，默认resume到400，比较macro150/200/350/400的paired
+correct400。只有该结果才能判断v6 Visual Transition是否值得保留。以下在
+`## 1`之前的旧状态叙述只作历史背景，不得覆盖本节。
+
 状态：2026-07-31。共享 π0.5-LIBERO source base与corrected mixed-task
 rank-128 Source-SFT均已封存，后者development observed-best为`109/400`。
 当前可信架构标杆是v5.2与v6：v5.2 step900 single-checkpoint correct400为

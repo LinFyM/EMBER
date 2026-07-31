@@ -26,12 +26,13 @@
 18. `docs/action_forecast_writer_core_program_design.md`
 19. `docs/action_forecast_writer_prior_innovation_design.md`
 20. `docs/action_forecast_writer_target_spectral_design.md`
-21. `task_plan.md`
-22. `findings.md`
-23. `progress.md`
-24. `docs/concept.md`
-25. `docs/decisions_and_open_questions.md`
-26. `docs/novelty_and_landscape.md`
+21. `docs/action_forecast_writer_coherent_procedure_design.md`
+22. `task_plan.md`
+23. `findings.md`
+24. `progress.md`
+25. `docs/concept.md`
+26. `docs/decisions_and_open_questions.md`
+27. `docs/novelty_and_landscape.md`
 
 `docs/active_session_handoff.md`是当前跨session恢复入口，集中摘要研究证据链、
 v5失败证据、v5.1设计理由、运行状态和下一动作，但不覆盖架构或长期科学
@@ -49,54 +50,34 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 
 ## Current focused execution task
 
-owner授权继续按“根因证据→第一性原理重构→一小时训练→必要内部分析”的循环
-自主推进。Target-Spectral fresh macro50/100/150/200 fixed correct400已经完成，
-结果为`30/12/18/34`。四点均通过8 tasks×50 states、每task 50 teacher videos
-无放回、同一state/video/RNG配对和36/36 shards完整审计；这是真实scientific
-non-pass，不是OOM、评测错配或checkpoint损坏。observed-best macro200仅
-`34/400`，低于source base `48`、corrected Source-SFT `109`、v5.2 `132`、
-v6 `143`和focused门`150`，因此不得续训或补行为级控制臂。
+当前session完成了v5.2 step900的400套correct-video LoRA生成与内部几何分析，
+没有启动rollout或正式训练。exact50 task-centered结果为：effective norm
+`140.441`、stable rank `1.01256`、top singular energy `99.0244%`、q/v energy
+`73.45/26.55%`、q/v跨层cosine`.962/.982`、视频中心化方差占sample energy
+`1.6655%`。fixed-gauge下q/v使用`15.83/15.92 of 16`个能量坐标，最大坐标仅
+`7.09/6.84%`，负component pair为`0%`。因此近rank1来自16条建设性同向分量，
+不是能量失衡或负向相消；Target-Spectral强制高rank/正交已经以`34/400`证明
+有害，不能继续围绕rank、scale或gate打补丁。
 
-跨v6、Core-Program与Prior的LoRA复核曾把public rank-16近rank1、B列和跨层
-方向高度同向视为compiler病灶。Target-Spectral对照现已证明该判断不完整：
-它把stable rank从v6 macro200的`1.00017`提高到`3.3245`，把q/v跨层方向余弦
-从约`.968/.988`压到`.032/.066`，但correct从`133`降到`34`。同期有效LoRA
-范数从`94.71`降到`25.87`，q/v能量从`74.5%/25.5%`翻转为`39.0%/60.9%`，
-q/v layer-energy CV从`.047/.043`恶化为`1.294/.805`。16个同向component的
-建设性相加被正交合成取代，其理论`16/sqrt(16)=4×`增益损失与实测
-`94.71/25.87=3.66×`高度吻合。
+当前模型与训练决策统一由
+[`docs/action_forecast_writer_coherent_procedure_design.md`](docs/action_forecast_writer_coherent_procedure_design.md)
+负责。证据支持的canonical base是exact v5.2：`Q_text`、`M+G`、mean-anchored
+Semantic Core、native 50-suffix mean Action、两层causal Procedure、320 slots、
+Core-primary Procedure AdaLN和conventional coherent factor heads。v7/v8/v10、
+Loom、Recenter、Core-Program、Prior与Target-Spectral均只作负结果provenance。
 
-Target-Spectral训练loss在macro200为`.10023`，与v6 `.10043`几乎相同；上游
-Core、transition、Procedure、AdaLN及order counterfactual也与v6同量级，且
-wrong/shuffled/reversed差异能传到effective LoRA和fixed-query action。因此
-失败不在上游完全没读视频，而在新compiler生成了形式上更高rank、实际更小、
-跨层不协调且闭环off-manifold的更新。same-task视频中心化相对方差虽从v6
-macro200的`.44%`升至`.65%`，绝对视频创新RMS反而约低3倍；不能把分母缩小
-误写成视频学习增强。近rank1不是v6性能瓶颈的充分证据，Target-Spectral现只作
-负结果provenance，不得在其正交scale/gate上继续打补丁。
+实现基线`799aa66`已把exact v5.2 topology接到mature full24 task-complete、B20、
+cost-balanced long-first与fast-decay400 recipe；最长105-frame三macro和formal-seed
+fresh0→1→exact-resume1→3已通过，精确参数`10,237,704`。但当前session没有创建
+正式run root、tmux或训练进程。下一session首先现场核验Git、存储和GPU4–7，
+然后才从identity fresh训练macro0→200并默认exact-resume到400，评测
+macro150/200/350/400 paired correct400；不得融合checkpoint。
 
-owner现授权补齐缺失的因果格：把正式结果对应的原版v5.2模型拓扑恢复到成熟的
-full-24 task-complete、cost-balanced long-first、B20和fast-decay400训练框架，
-从identity fresh训练macro0→200→400。模型必须精确保持v5.2的
-`Q_text→patch values`、mean-anchored permutation-invariant Core、原生
-50-token suffix mean Action、两层causal Procedure、320 routing slots和
-Core-primary Procedure AdaLN compiler；不得混入v6 transition或
-Target-Spectral正交decoder。精确Writer参数为`10,237,704`。
-
-canonical fresh config为
-`configs/pi05_as_writer_language_axial_v5_2_taskcomplete_decay400_v1.json`。
-每macro仍为24 tasks各一条video/LoRA与B20独立action queries；4 ranks各处理
-6个按真实视频长度cost-balanced且rank内long-first的tasks，只做一次
-clip/AdamW/scheduler。checkpoint每25保存；正式比较点至少为macro150/200/
-350/400，必要时只补winner邻近±25点，不做checkpoint融合。
-
-训练和推理严格为一条teacher video生成一套LoRA；不得做多视频或多LoRA平均。
-action queries继续与video同task但跨episode独立。GPU仍只允许物理4–7，
-0–3不得查询或使用。main `62598d3`已完成最长105-frame B20三macro及formal-seed
-fresh0→1→exact-resume1→3；配置已seal。现场共卡吞吐约`142.074 macro/hour`，
-因此保持相同400-macro科学预算时body约169分钟，不得为机械凑两小时减少updates。
-下一动作是clean push后的fresh0→200→400正式轨迹。Target-Spectral只保留为
-负结果provenance，不得resume。
+该实验补齐`v5.2 topology × task-complete recipe`缺失因果格。只有其结果才能
+决定是否保留v6 Visual Transition。只有在上游视频差异存在、absolute仍成立且
+差异明确在B写出端被压弱时，才测试设计文档中的zero-init B-only video
+innovation residual；否则不新增模块。任务漂移若持续，先测逐模块24-task
+Gradient Gram，不能先验归咎full24或引入两阶段训练。
 
 关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
 single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe
@@ -116,12 +97,8 @@ short-AS-cold-start→pure-reward RL-Writer；不得把完整AS best冒充RL col
 start。focused闭环不自动继续final-32、test task-local RL、joint oracle或
 ViVLA。
 
-当前及后续GPU工作固定frame stride=5，只使用物理GPU 4、5、6、7；0–3不进入
-visible set。4–7即使已有他人进程也按owner授权共卡，但不得杀、暂停、重置或
-干扰。以推进效率为最高工程优先级：只保留直接防止无效实验、信息墙泄漏、OOM、
-错误冻结/LoRA schema或不可恢复checkpoint的最小校验。最短垂直路径通过
-shape/gradient/identity/freeze和一次resume smoke后立即进入真实GPU
-profile/训练；不得用广泛全仓测试、重复流程门槛或文档整理延迟可运行实验。
+GPU工作固定frame stride=5，只使用物理GPU4–7；0–3不进入visible set。
+4–7即使已有他人进程也可按owner授权共卡，但不得杀、暂停、重置或干扰。
 
 ## Data and split
 

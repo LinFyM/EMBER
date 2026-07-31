@@ -1,9 +1,26 @@
 # EMBER Findings
 
 阅读规则：本文是按日期追加的证据账本。历史段落里的“当前”“下一步”和GPU
-权限只描述其日期当时的状态，不覆盖后续owner决定。2026-07-27的活动状态以
-`docs/active_session_handoff.md`、`docs/action_forecast_writer_v5_design.md`
-和本文末尾最新段落为准；不得从早期段落恢复旧runner、旧架构或旧训练合同。
+权限只描述其日期当时的状态，不覆盖后续owner决定。活动状态以
+`docs/active_session_handoff.md`、
+`docs/action_forecast_writer_coherent_procedure_design.md`和本文顶部最新段落为准；
+不得从早期段落恢复旧runner、旧架构或旧训练合同。
+
+## 2026-07-31 v5.2 LoRA几何与架构收敛
+
+- exact v5.2 step900的400套correct-video LoRA已在零rollout条件下重新生成并
+  分析。effective norm `140.441`，stable rank `1.01256`，top singular energy
+  `99.0244%`，q/v能量`73.45/26.55%`，跨层BA cosine`.962/.982`。
+- q/v固定坐标使用`15.83/15.92 of 16`个能量坐标，最大坐标仅`7.09/6.84%`，
+  负component pair为0%。因此近rank1是建设性同向协作，不是能量不均或负相消。
+- same-task exact50中心化方差占sample energy `1.6655%`，其中`89.35%`是正交
+  方向变化；v5.2确实生成video-specific方向，而非只调共同scale。
+- Target-Spectral把rank强制抬高却降到`34/400`，因此正交、均匀奇异值和强制
+  使用全部rank均为负方向。Source-SFT与Writer的目标/参数化不同，不能逐项复制
+  Source-SFT的谱。
+- 当前最小充分模型是exact v5.2主干。唯一未识别变量是v6 Visual Transition，
+  必须先补v5.2×task-complete因果格再决定。设计authority见
+  `docs/action_forecast_writer_coherent_procedure_design.md`。
 
 ## 2026-07-21 当前 π0.5 协议与已验证事实
 

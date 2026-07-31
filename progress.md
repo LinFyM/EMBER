@@ -1,11 +1,25 @@
 # EMBER Progress Ledger
 
-最后更新：2026-07-27。
+最后更新：2026-07-31。
 
 阅读规则：本文按时间顺序保留真实执行状态。早期段落中的“当前”“下一步”、
 GPU范围和训练步长是当时快照；活动状态只取
-`docs/active_session_handoff.md`、`docs/action_forecast_writer_v5_1_proposal.md`
-和本文末尾最新段落，不能用旧快照覆盖后续owner决定。
+`docs/active_session_handoff.md`、
+`docs/action_forecast_writer_coherent_procedure_design.md`和本文顶部最新段落，
+不能用旧快照覆盖后续owner决定。
+
+## 2026-07-31 当前交接
+
+- main `799aa66`已恢复exact v5.2 topology并封存task-complete fast-decay400
+  config；最长视频B20 profile和fresh0→1→exact-resume1→3通过。
+- v5.2 step900的400套correct-video LoRA已完成生成和内部几何分析，未启动env
+  或rollout；永久analysis SHA256为
+  `9d816baadace851153415a06334efad6f9927bf334f014d5e8ae760be357e1af`。
+- 结论：v5.2 q/v 16坐标能量均匀、建设性同向，effective近rank1不是负相消；
+  其same-task视频创新明显高于v6既有估计。新设计已封存在
+  `docs/action_forecast_writer_coherent_procedure_design.md`。
+- 当前没有正式训练、rollout或tmux。v5.2 task-complete macro0→200→400属于
+  新session第一实验，本session未启动。
 
 ## 当前状态
 

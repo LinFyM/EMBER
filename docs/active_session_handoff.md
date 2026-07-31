@@ -3,14 +3,65 @@
 最后更新：2026-07-31 UTC。
 
 本文顶部保存当前运行状态、恢复入口和紧邻动作；后续编号章节是按时间保留的
-历史快照。当前可执行源码仍封存在
-`docs/action_forecast_writer_target_spectral_design.md`，但其首轮已形成充分
-负结果，不得resume；下一架构尚待结合内部证据重新封存。Prior–Innovation及
-更早设计只作失败provenance。长期科学边界是`AGENTS.md`与
-`docs/execution_brief.md`。任何接手者都必须先只读复核现场，不能按历史快照
-重复启动进程。
+历史快照。当前设计authority是
+`docs/action_forecast_writer_coherent_procedure_design.md`。长期科学边界是
+`AGENTS.md`与`docs/execution_brief.md`。任何接手者都必须先只读复核现场，
+不能按历史快照重复启动进程。
 
-## 0. Target-Spectral负结果与当前恢复入口
+## 0. 当前交接：v5.2内部几何完成，正式训练尚未启动
+
+v5.2实现基线commit为`799aa6676b7f94f337d019956366eb7f180ba83a`。
+它把exact v5.2 topology接到mature full24 task-complete、B20、
+cost-balanced long-first与fast-decay400 recipe；canonical config为：
+
+```text
+configs/pi05_as_writer_language_axial_v5_2_taskcomplete_decay400_v1.json
+```
+
+精确Writer参数为`10,237,704`；最长105-frame三macro profile和formal-seed
+fresh0→1→exact-resume1→3已经通过。当前没有正式v5.2 task-complete run root、
+tmux、训练进程或rollout进程。
+
+本session实际完成了v5.2 step900正式validation 8 tasks×50 correct-video LoRA
+的重新生成与内部分析；没有创建LIBERO env，`rollout_shards_executed=0`。永久
+保留的分析文件：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v5_2_step900_lora_geometry_529da6b_20260731/analysis.json
+```
+
+SHA256为
+`9d816baadace851153415a06334efad6f9927bf334f014d5e8ae760be357e1af`。
+关键结果：
+
+```text
+effective norm mean                              140.441
+stable rank / entropy rank                       1.01256 / 1.04467
+top singular energy                              99.0244%
+q / v energy                                     73.4476% / 26.5502%
+q / v cross-layer BA cosine                      .96211 / .98166
+same-task centered variance / sample energy      1.6655%
+video variation orthogonal / scale-like          89.35% / 10.65%
+q / v coordinate participation                   15.83 / 15.92 of 16
+q / v negative component pairs                   0% / 0%
+```
+
+所以v5.2的16个坐标不是能量失衡或负向相消；它们建设性同向地形成近rank1。
+Target-Spectral强制高rank/正交已得到`34/400`，证明不能把rank数本身当病灶。
+v5.2比v6保留更大的same-task视频创新，但Visual Transition与task-complete
+recipe仍然混杂，必须用缺失的v5.2新recipe cell判定。
+
+新session第一项且唯一预定正式实验：现场只读核验Git、存储、GPU4–7后，从
+identity fresh运行上述v5.2 config的macro0→200，默认exact-resume到400；
+评测macro150/200/350/400 paired correct400，不做checkpoint融合。当前session
+没有替新session启动它。GPU0–3不得查询或使用；GPU4–7可按owner授权共卡，但
+不得干扰他人进程。
+
+模型后续选择、条件式B-only video innovation和任务梯度诊断门全部见
+`docs/action_forecast_writer_coherent_procedure_design.md`。
+
+## 0A. Target-Spectral负结果历史快照（不得执行）
 
 Target-Spectral fresh macro0→200已自然完成：200个finite optimizer updates、
 4,800个single-video LoRA conditions、96,000个action queries和every25的8个

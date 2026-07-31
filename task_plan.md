@@ -1,11 +1,25 @@
 # EMBER Task Plan
 
-最后更新：2026-07-30 UTC。
+最后更新：2026-07-31 UTC。
 
 本文件只保存尚未完成的长期闭环与当前执行顺序。历史实验过程见
 `findings.md`、`progress.md` 和 Git；实时进程见
 `docs/active_session_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
 runner、split 或 GPU 权限。
+
+## 当前交接顺序（2026-07-31）
+
+- [x] 恢复exact v5.2 topology到mature task-complete/B20/long-first/
+  fast-decay400 config，并完成最长视频profile与exact-resume smoke。
+- [x] 对v5.2 step900重新生成400套correct-video LoRA并完成零rollout几何分析；
+  证明近rank1来自建设性coherence，不是坐标能量失衡或负向相消。
+- [x] 封存Coherent-Procedure设计和实验判定门。
+- [ ] 新session现场核验后才启动v5.2 task-complete fresh macro0→200→400。
+- [ ] 评测single-checkpoint macro150/200/350/400；不融合checkpoint。
+- [ ] 用结果判定v5.2与v6 Visual Transition；未有写出端压缩证据时不新增模块。
+
+当前session没有启动正式训练或rollout。实时入口只认
+`docs/active_session_handoff.md`。
 
 ## 长期完成定义
 

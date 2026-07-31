@@ -1,10 +1,9 @@
-"""Compile a semantic Core prior plus an ordered Procedure innovation."""
+"""Compile Core and teacher Procedure into addressed spectral LoRA factors."""
 
 from __future__ import annotations
 
-import math
-
 import torch
+import torch.nn.functional as F
 
 from ember.writer.temporal import (
     RMSNorm,
@@ -15,27 +14,19 @@ from ember.writer.temporal import (
 )
 
 
-class LearnedCrossAttention(torch.nn.Module):
-    """Bias-free learned Q/K/V/O cross-attention."""
+class ContentCrossAttention(torch.nn.Module):
+    """Cross-attend while routing and time affect Q/K, never memory values."""
 
-    def __init__(
-        self,
-        *,
-        width: int,
-        heads: int,
-        rotary_keys: bool,
-        remove_uniform_value: bool,
-    ) -> None:
+    def __init__(self, *, width: int, heads: int, rotary_keys: bool) -> None:
         super().__init__()
         if (
             min(width, heads) <= 0
             or width % heads
             or (rotary_keys and (width // heads) % 2)
         ):
-            raise VariableEpisodeInputError("invalid learned cross-attention")
+            raise VariableEpisodeInputError("invalid content cross-attention")
         self.heads = int(heads)
         self.rotary_keys = bool(rotary_keys)
-        self.remove_uniform_value = bool(remove_uniform_value)
         self.query = torch.nn.Linear(width, width, bias=False)
         self.key = torch.nn.Linear(width, width, bias=False)
         self.value = torch.nn.Linear(width, width, bias=False)
@@ -48,7 +39,7 @@ class LearnedCrossAttention(torch.nn.Module):
         memory_value: torch.Tensor,
         valid_memory: torch.Tensor,
         memory_positions: torch.Tensor | None = None,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    ) -> torch.Tensor:
         if (
             query_key.ndim != 3
             or memory_key.ndim != 3
@@ -59,7 +50,7 @@ class LearnedCrossAttention(torch.nn.Module):
             or valid_memory.dtype != torch.bool
             or not bool(valid_memory.any(dim=1).all())
         ):
-            raise VariableEpisodeInputError("invalid learned attention batch")
+            raise VariableEpisodeInputError("invalid content attention batch")
         query = _split_heads(self.query(query_key), self.heads)
         key = _split_heads(self.key(memory_key), self.heads)
         if self.rotary_keys:
@@ -80,67 +71,55 @@ class LearnedCrossAttention(torch.nn.Module):
             key = _apply_rope(key, memory_positions)
         elif memory_positions is not None:
             raise VariableEpisodeInputError("Core reader received positions")
-
         value = _split_heads(self.value(memory_value), self.heads)
-        logits = torch.matmul(
-            query.to(torch.float32),
-            key.to(torch.float32).transpose(-1, -2),
+        attended = F.scaled_dot_product_attention(
+            query,
+            key,
+            value,
+            attn_mask=valid_memory[:, None, None, :],
+            dropout_p=0.0,
+            is_causal=False,
         )
-        logits = logits / math.sqrt(query.shape[-1])
-        logits = logits.masked_fill(
-            ~valid_memory[:, None, None, :],
-            float("-inf"),
-        )
-        weights = torch.softmax(logits, dim=-1)
-        value_weights = weights
-        if self.remove_uniform_value:
-            uniform = valid_memory.to(torch.float32)
-            uniform = uniform / uniform.sum(dim=1, keepdim=True)
-            value_weights = value_weights - uniform[:, None, None, :]
-        attended = torch.matmul(value_weights.to(value.dtype), value)
-        return self.output(_merge_heads(attended)), weights
+        return self.output(_merge_heads(attended))
 
 
-class SemanticPriorReader(torch.nn.Module):
-    """Route raw semantic Core values into stable public-LoRA slot priors."""
+class CoreTargetReader(torch.nn.Module):
+    """Read task-semantic Core content into one slot per policy target."""
 
     def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
         self.memory_norm = RMSNorm(width)
-        self.attention = LearnedCrossAttention(
+        self.attention = ContentCrossAttention(
             width=width,
             heads=heads,
             rotary_keys=False,
-            remove_uniform_value=False,
         )
-        self.prior_norm = RMSNorm(width)
 
     def forward(
         self,
         routing: torch.Tensor,
         core: torch.Tensor,
         valid_core: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        raw_prior, weights = self.attention(
+    ) -> torch.Tensor:
+        return self.attention(
             routing,
             self.memory_norm(core),
             core,
             valid_core,
         )
-        return self.prior_norm(raw_prior), raw_prior, weights
 
 
-class ProcedureInnovationReader(torch.nn.Module):
-    """Use only the semantic prior to read centered ordered Procedure values."""
+class ProcedureTargetReader(torch.nn.Module):
+    """Read ordered teacher Procedure conditioned on the target's Core."""
 
     def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
+        self.core_norm = RMSNorm(width)
         self.memory_norm = RMSNorm(width)
-        self.attention = LearnedCrossAttention(
+        self.attention = ContentCrossAttention(
             width=width,
             heads=heads,
             rotary_keys=True,
-            remove_uniform_value=True,
         )
 
     @staticmethod
@@ -148,7 +127,7 @@ class ProcedureInnovationReader(torch.nn.Module):
         procedure: torch.Tensor,
         valid_procedure: torch.Tensor,
     ) -> torch.Tensor:
-        """Return an FP32 masked time-centered value cast back to input dtype."""
+        """Mask and time-center Procedure values in FP32."""
 
         if (
             procedure.ndim != 3
@@ -161,49 +140,41 @@ class ProcedureInnovationReader(torch.nn.Module):
         value = procedure.to(torch.float32)
         count = mask.sum(dim=1, keepdim=True).to(torch.float32)
         mean = (value * mask).sum(dim=1, keepdim=True) / count
-        centered = (value - mean).masked_fill(~mask, 0.0)
-        return centered.to(procedure.dtype)
+        return (value - mean).masked_fill(~mask, 0.0).to(procedure.dtype)
 
     def forward(
         self,
-        semantic_prior: torch.Tensor,
+        routing: torch.Tensor,
+        core_targets: torch.Tensor,
         procedure: torch.Tensor,
         positions: torch.Tensor,
         valid_procedure: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        if (
-            semantic_prior.ndim != 3
-            or procedure.ndim != 3
-            or procedure.shape[0] != semantic_prior.shape[0]
-            or procedure.shape[-1] != semantic_prior.shape[-1]
-            or positions.shape != procedure.shape[:2]
-            or positions.dtype != torch.long
-        ):
-            raise VariableEpisodeInputError("invalid Procedure innovation memory")
+        normalized_core = self.core_norm(core_targets)
         centered = self.center(procedure, valid_procedure)
-        innovation, weights = self.attention(
-            semantic_prior,
+        targets = self.attention(
+            routing + normalized_core,
             self.memory_norm(procedure),
             centered,
             valid_procedure,
             positions,
         )
-        return innovation, centered, weights
+        return targets, normalized_core, centered
 
 
-class PriorInnovationSlotBlock(torch.nn.Module):
-    """Coordinate formed slots while keeping routing out of value content."""
+class TargetSlotBlock(torch.nn.Module):
+    """Coordinate 38 semantic targets before algebraic rank expansion."""
 
     def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
-        if min(width, heads) <= 0 or width % heads:
-            raise VariableEpisodeInputError("invalid Prior-Innovation slot block")
-        self.heads = int(heads)
-        self.attention_norm = RMSNorm(width)
-        self.query = torch.nn.Linear(width, width, bias=False)
-        self.key = torch.nn.Linear(width, width, bias=False)
-        self.value = torch.nn.Linear(width, width, bias=False)
-        self.output = torch.nn.Linear(width, width, bias=False)
+        self.self_norm = RMSNorm(width)
+        self.self_attention = torch.nn.MultiheadAttention(
+            width,
+            heads,
+            dropout=0.0,
+            batch_first=True,
+            bias=False,
+        )
         self.ffn_norm = RMSNorm(width)
         self.ffn = torch.nn.Sequential(
             torch.nn.Linear(width, 4 * width, bias=False),
@@ -216,33 +187,50 @@ class PriorInnovationSlotBlock(torch.nn.Module):
         self,
         content: torch.Tensor,
         routing: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        if content.shape != routing.shape or content.ndim != 3:
-            raise VariableEpisodeInputError("invalid slot coordination batch")
-        addressed = self.attention_norm(content) + routing.to(content.dtype)
-        query = _split_heads(self.query(addressed), self.heads)
-        key = _split_heads(self.key(addressed), self.heads)
-        value = _split_heads(self.value(content), self.heads)
-        weights = torch.softmax(
-            torch.matmul(
-                query.to(torch.float32),
-                key.to(torch.float32).transpose(-1, -2),
-            )
-            / math.sqrt(query.shape[-1]),
-            dim=-1,
+    ) -> torch.Tensor:
+        addressed = self.self_norm(content) + routing
+        attended, _ = self.self_attention(
+            addressed,
+            addressed,
+            content,
+            need_weights=False,
         )
-        attended = torch.matmul(weights.to(value.dtype), value)
-        content = content + self.output(_merge_heads(attended))
+        content = content + attended
         content = content + self.ffn(self.ffn_norm(content))
-        return self.output_norm(content), weights
+        return self.output_norm(content)
 
 
-class PriorInnovationCompiler(torch.nn.Module):
-    """Generate LoRA slots from a semantic prior plus ordered innovation."""
+def _signed_permutation_bank(
+    count: int,
+    width: int,
+    generator: torch.Generator,
+) -> torch.Tensor:
+    """Return cheap deterministic orthogonal coordinate transforms."""
 
-    EXPERT_LAYERS = 18
+    bank = torch.zeros(count, width, width)
+    columns = torch.arange(width)
+    for index in range(count):
+        rows = torch.randperm(width, generator=generator)
+        signs = (
+            2
+            * torch.randint(
+                0,
+                2,
+                (width,),
+                generator=generator,
+                dtype=torch.int64,
+            )
+            - 1
+        ).to(bank.dtype)
+        bank[index, rows, columns] = signs
+    return bank
+
+
+class TargetSpectralCompiler(torch.nn.Module):
+    """Fuse 38 semantic targets, then expand them into 16 addressed ranks."""
+
+    TARGET_COUNT = 38
     RANK = 16
-    QUERY_COUNT = EXPERT_LAYERS * RANK + 2 * RANK
 
     def __init__(
         self,
@@ -252,59 +240,28 @@ class PriorInnovationCompiler(torch.nn.Module):
         initialization_seed: int,
     ) -> None:
         super().__init__()
-        if (
-            min(width, heads) <= 0
-            or width % heads
-            or (width // heads) % 2
-        ):
-            raise VariableEpisodeInputError("invalid Prior-Innovation compiler")
+        if min(width, heads) <= 0 or width % heads:
+            raise VariableEpisodeInputError("invalid target-spectral compiler")
         generator = torch.Generator(device="cpu").manual_seed(initialization_seed)
-
-        def parameter(rows: int) -> torch.nn.Parameter:
-            value = torch.empty(rows, width)
-            value.normal_(mean=0.0, std=0.02, generator=generator)
-            return torch.nn.Parameter(value)
-
-        self.query_table = parameter(self.QUERY_COUNT)
-        self.module_identity = parameter(3)
-        self.layer_identity = parameter(self.EXPERT_LAYERS)
-        self.rank_identity = parameter(self.RANK)
+        routing = torch.empty(self.TARGET_COUNT, width)
+        routing.normal_(mean=0.0, std=0.02, generator=generator)
+        self.target_routing = torch.nn.Parameter(routing)
         self.routing_norm = RMSNorm(width)
-        self.core_reader = SemanticPriorReader(width=width, heads=heads)
-        self.procedure_reader = ProcedureInnovationReader(
+        self.core_reader = CoreTargetReader(width=width, heads=heads)
+        self.procedure_reader = ProcedureTargetReader(
             width=width,
             heads=heads,
         )
-        self.slot_block = PriorInnovationSlotBlock(
-            width=width,
-            heads=heads,
+        self.procedure_norm = RMSNorm(width)
+        self.modulation = torch.nn.Linear(width, 2 * width, bias=False)
+        torch.nn.init.zeros_(self.modulation.weight)
+        self.target_block = TargetSlotBlock(width=width, heads=heads)
+        self.target_coordinates = torch.nn.Parameter(
+            _signed_permutation_bank(self.TARGET_COUNT, width, generator)
         )
-
-    def _routing(self) -> torch.Tensor:
-        expert = (
-            self.query_table[: self.EXPERT_LAYERS * self.RANK].reshape(
-                self.EXPERT_LAYERS,
-                self.RANK,
-                -1,
-            )
-            + self.module_identity[0]
-            + self.layer_identity[:, None]
-            + self.rank_identity[None]
-        ).reshape(self.EXPERT_LAYERS * self.RANK, -1)
-        action_in = (
-            self.query_table[
-                self.EXPERT_LAYERS * self.RANK :
-                self.EXPERT_LAYERS * self.RANK + self.RANK
-            ]
-            + self.module_identity[1]
-            + self.rank_identity
+        self.rank_coordinates = torch.nn.Parameter(
+            _signed_permutation_bank(self.RANK, width, generator)
         )
-        action_out = (
-            self.query_table[-self.RANK :]
-            + self.module_identity[2]
-            + self.rank_identity
-        )
-        return torch.cat((expert, action_in, action_out), dim=0)
 
     @staticmethod
     def _validate_memories(
@@ -328,9 +285,9 @@ class PriorInnovationCompiler(torch.nn.Module):
             or not bool(valid_core.any(dim=1).all())
             or not bool(valid_procedure.any(dim=1).all())
         ):
-            raise VariableEpisodeInputError("invalid Core/Procedure compiler memory")
+            raise VariableEpisodeInputError("invalid compiler memories")
 
-    def fused_slots(
+    def target_slots(
         self,
         core: torch.Tensor,
         valid_core: torch.Tensor,
@@ -345,42 +302,34 @@ class PriorInnovationCompiler(torch.nn.Module):
             positions,
             valid_procedure,
         )
-        routing = self.routing_norm(self._routing())[None].expand(
+        routing = self.routing_norm(self.target_routing)[None].expand(
             core.shape[0],
             -1,
             -1,
         )
-        semantic_prior, raw_core_slots, core_attention = self.core_reader(
+        core_targets = self.core_reader(routing, core, valid_core)
+        procedure_targets, normalized_core, centered = self.procedure_reader(
             routing,
-            core,
-            valid_core,
+            core_targets,
+            procedure,
+            positions,
+            valid_procedure,
         )
-        innovation, centered_procedure, procedure_attention = (
-            self.procedure_reader(
-                semantic_prior,
-                procedure,
-                positions,
-                valid_procedure,
-            )
-        )
-        prior_plus_innovation = semantic_prior + innovation
-        content, slot_attention = self.slot_block(
-            prior_plus_innovation,
-            routing,
-        )
-        diagnostics = {
+        gamma, beta = self.modulation(
+            self.procedure_norm(procedure_targets)
+        ).chunk(2, dim=-1)
+        fused = (1.0 + gamma) * normalized_core + beta
+        targets = self.target_block(fused, routing)
+        return targets, {
             "routing": routing,
-            "raw_core_slots": raw_core_slots,
-            "semantic_prior": semantic_prior,
-            "core_attention": core_attention,
-            "centered_procedure": centered_procedure,
-            "procedure_innovation": innovation,
-            "procedure_attention": procedure_attention,
-            "prior_plus_innovation": prior_plus_innovation,
-            "slot_attention": slot_attention,
-            "fused_slots": content,
+            "core_targets": core_targets,
+            "procedure_centered": centered,
+            "procedure_targets": procedure_targets,
+            "adaln_gamma": gamma,
+            "adaln_beta": beta,
+            "fused_targets": fused,
+            "target_slots": targets,
         }
-        return content, diagnostics
 
     def forward(
         self,
@@ -389,24 +338,21 @@ class PriorInnovationCompiler(torch.nn.Module):
         procedure: torch.Tensor,
         positions: torch.Tensor,
         valid_procedure: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        content, _ = self.fused_slots(
+    ) -> torch.Tensor:
+        targets, _ = self.target_slots(
             core,
             valid_core,
             procedure,
             positions,
             valid_procedure,
         )
-        expert_stop = self.EXPERT_LAYERS * self.RANK
-        batch = core.shape[0]
-        expert = content[:, :expert_stop].reshape(
-            batch,
-            self.EXPERT_LAYERS,
-            self.RANK,
-            -1,
+        addressed = torch.einsum(
+            "btw,twv->btv",
+            targets,
+            self.target_coordinates.to(targets.dtype),
         )
-        return (
-            expert,
-            content[:, expert_stop : expert_stop + self.RANK],
-            content[:, -self.RANK :],
+        return torch.einsum(
+            "btw,rwv->btrv",
+            addressed,
+            self.rank_coordinates.to(addressed.dtype),
         )

@@ -2218,3 +2218,21 @@ GPU范围和训练步长是当时快照；活动状态只取
 - output为
   `/data/ymdai/outputs/ember/pi05_as_writer_prior_innovation_taskcomplete_decay400_dev_r4_b20_seed7_s2400_807266b_20260731`；
   首段完成后只做macro50/100/150/200 paired correct400，不融合checkpoint。
+
+## Prior完成与Target-Spectral CPU实现（2026-07-31）
+
+- Prior formal macro0→200已自然完成；macro50/100/150/200 paired correct400
+  为`100/61/89/88`。没有启动第二小时或行为级视频控制。
+- 新authority为
+  `docs/action_forecast_writer_target_spectral_design.md`。唯一canonical
+  compiler已从320个rank-level semantic slots替换为38-target-first、
+  rank-last spectral compiler；Prior config/schema退役。
+- Target-Spectral Writer精确参数`14,495,744`。A/U采用FP32 reduced-QR并
+  固定R对角符号；已补强共同方向压力测试、effective-LoRA视频条件测试、
+  38-target拓扑guard、BF16输入的FP32 Procedure centering以及不手工开权重的
+  三步gradient staging。
+- 当前训练合同没有变化：一条video生成一套LoRA，action query跨episode；
+  full24等权、B20、一次AdamW。profile/resume/formal evidence全部重新置为
+  pending，不能继承Prior。
+- 下一步是完成全仓验证、clean commit/push，只在GPU4–7做最长视频B20 profile
+  和exact-resume；通过后fresh macro0→200并评测四个single checkpoints。

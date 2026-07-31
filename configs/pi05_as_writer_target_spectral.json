@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_prior_innovation_as_writer_v1",
+  "schema_version": "ember_pi05_target_spectral_as_writer_v1",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {
@@ -50,7 +50,7 @@
     "test_video_values_read": 0
   },
   "writer": {
-    "architecture": "pi05_semantic_prior_ordered_procedure_innovation_writer",
+    "architecture": "pi05_target_spectral_writer",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -117,22 +117,29 @@
     "procedure_attention": "single_global_causal_content_transformer",
     "procedure_position_encoding": "sampled_frame_ordinal_rope_qk_only",
     "procedure_value_path": "native_action_probe_plus_uncapped_task_grounded_visual_transition",
-    "query_count": 320,
-    "routing_identity": "query_module_layer_rank_qk_only",
+    "query_count": 38,
+    "routing_identity": "one_exact_policy_target_query_per_weight_matrix",
     "core_slot_reader": "routing_query_normalized_core_key_raw_core_value_learned_bias_free_qkvo",
-    "semantic_prior": "rmsnorm_of_routed_raw_core_slot",
+    "semantic_prior": "v6_core_primary_target_content",
     "procedure_time_centering": "fp32_masked_valid_frame_mean_then_cast_to_input_dtype",
-    "procedure_slot_reader": "semantic_prior_query_only_no_routing_rope_normalized_raw_procedure_key_learned_centered_procedure_value_bias_free_qkvo",
-    "core_procedure_first_interaction": "semantic_prior_queries_ordered_centered_procedure_innovation",
-    "slot_fusion": "direct_semantic_prior_plus_procedure_innovation",
+    "procedure_slot_reader": "target_routing_plus_core_query_rope_normalized_raw_procedure_key_centered_teacher_procedure_value_bias_free_qkvo",
+    "core_procedure_first_interaction": "core_target_queries_ordered_teacher_procedure_for_v6_adaln",
+    "slot_fusion": "zero_init_procedure_adaln_over_core_target_content",
     "fusion_heads": 8,
     "post_fusion_blocks": 1,
-    "post_fusion_slot_block": "bias_free_full_qkvo_residual_attention_ffn_routing_qk_only_content_v_only_final_rmsnorm",
+    "post_fusion_slot_block": "one_target_level_content_coordination_block_before_rank_expansion",
     "post_fusion_scale_contract": "final_rmsnorm_stable_factor_head_interface_without_branch_scalar",
-    "core_only_public_lora_delta": "allowed_semantic_prior_contribution",
-    "procedure_only_public_lora_delta": "exact_zero",
-    "zero_procedure_public_lora_delta": "semantic_prior_only",
-    "constant_nonzero_procedure": "zero_innovation_with_semantic_prior_preserved",
+    "core_only_public_lora_delta": "allowed_v6_semantic_core_contribution",
+    "procedure_only_public_lora_delta": "target_routed_teacher_procedure_beta_allowed_after_modulation_opens",
+    "zero_procedure_public_lora_delta": "semantic_core_target_content",
+    "constant_nonzero_procedure": "zero_centered_innovation_with_semantic_core_preserved",
+    "semantic_target_count": 38,
+    "rank_semantic_queries": false,
+    "target_coordinate_transform": "38_independent_trainable_orthogonal_initialized_256x256_value_maps",
+    "rank_coordinate_transform": "16_independent_trainable_orthogonal_initialized_256x256_value_maps",
+    "rank_expansion": "after_complete_core_procedure_target_fusion",
+    "lora_gauge": "row_orthogonal_A_column_orthogonal_U_and_learned_spectral_scales",
+    "scale_head_count": 4,
     "factor_head_bias": false,
     "factor_hidden_width": 256,
     "initialization_seed": 7
@@ -146,7 +153,7 @@
     ],
     "action_chunk_size": 50,
     "sampler_seed": 20260721,
-    "teacher_video_seed": 20260722,
+    "teacher_video_seed": 172,
     "teacher_video_sampling": "per_task_macro_visit_deterministic_single_same_task_video_in_no_replacement_cycles",
     "action_query_sampling": "task-balanced deterministic no-replacement episode cycles",
     "video_action_pairing": "one task-video LoRA conditions the complete task-local action batch",
@@ -178,7 +185,7 @@
     "prefetch_factor": 2
   },
   "optimization": {
-    "method": "functional_pi05_prior_innovation_positive_only",
+    "method": "functional_pi05_target_spectral_positive_only",
     "seed": 7,
     "precision": "bfloat16",
     "source_policy": "final formal frozen raw policy",
@@ -201,10 +208,10 @@
       "decay_lr": 1e-05
     },
     "maximum_formal_wall_clock_minutes": null,
-    "budget_role": "fresh_prior_innovation_task_complete_fast_decay400"
+    "budget_role": "fresh_target_spectral_task_complete_fast_decay400"
   },
   "profile_defaults": {
-    "status": "sealed_b20",
+    "status": "pending_target_spectral_profile",
     "expected_world_size": 4,
     "total_steps": 3,
     "per_rank_batch_size": 20,
@@ -216,7 +223,7 @@
     "selected_stop_step": 3
   },
   "profile_evidence": {
-    "status": "sealed_b20",
+    "status": "pending_target_spectral_profile",
     "allowed_physical_gpu_ids": [
       4,
       5,
@@ -241,81 +248,10 @@
       }
     ],
     "selection_rule": "try_b20_on_three_complete_macros_containing_real_105_frame_video_then_fallback_directly_to_b16_only_if_oom_or_repeated_instability",
-    "selected": {
-      "max_frames_per_encoder_call": 32,
-      "per_task_action_batch_size": 20,
-      "profile_optimizer_steps": 3,
-      "profile_global_action_queries": 1440,
-      "profile_global_video_conditions": 72,
-      "profile_wall_seconds": 58.537230593152344,
-      "step_seconds_max": [
-        20.292297302978113,
-        18.573561564087868,
-        18.609840085962787
-      ],
-      "steady_action_queries_per_second_mean_last_two": 25.817995967127272,
-      "steady_macro_updates_per_hour_mean_last_two": 193.63496975345453,
-      "max_cuda_allocated_bytes": 76987188224,
-      "max_cuda_reserved_bytes": 83644907520,
-      "all_steps_finite": true,
-      "all_four_ranks_completed": true,
-      "contains_real_105_frame_video": true,
-      "profile_root": "/data/ymdai/outputs/ember/pi05_as_writer_prior_innovation_profile_b20_longseed172_7b7abf1_20260731",
-      "run_contract_sha256": "930a4f63768ee424cff3e5fab8316bc19eaf100cfdbb78004f4ae4bf61240070"
-    },
-    "exact_resume_smoke": {
-      "status": "pass_fresh_step1_then_exact_resume_to_step3",
-      "root": "/data/ymdai/outputs/ember/pi05_as_writer_prior_innovation_resume_b20_seed7_7b7abf1_20260731",
-      "formal_teacher_video_seed": 20260722,
-      "fresh_stop_step": 1,
-      "resumed_stop_step": 3,
-      "completed_optimizer_steps": 3,
-      "metrics_steps": [
-        1,
-        2,
-        3
-      ],
-      "applied_learning_rates": [
-        0.0003,
-        0.00022749999999999997,
-        0.00008250000000000003
-      ],
-      "next_learning_rates": [
-        0.00022749999999999997,
-        0.00008250000000000003,
-        0.00001
-      ],
-      "cumulative_action_queries": [
-        480,
-        960,
-        1440
-      ],
-      "cumulative_video_conditions": [
-        24,
-        48,
-        72
-      ],
-      "all_steps_finite": true,
-      "validation_action_reads": 0,
-      "test_action_reads": 0,
-      "test_video_value_reads": 0,
-      "step1_checkpoint_files_unchanged_after_resume": true,
-      "run_contract_sha256": "ffa188885c69e290018d2a55174dad4842f73c3607319badba4beb9fdf248408"
-    },
+    "selected": null,
+    "exact_resume_smoke": null,
     "gradient_reachability": {
-      "status": "pass_all_modules_with_two_delayed_action_meta_lora_a_factors",
-      "comparison": "formal_seed_checkpoint_step1_to_step3",
-      "writer_trainable_parameters": 10643968,
-      "trainable_tensor_names": 523,
-      "changed_trainable_tensor_names": 521,
-      "changed_parameter_elements": 10488461,
-      "all_major_modules_changed": true,
-      "all_trainable_tensors_finite": true,
-      "unchanged_tensor_names": [
-        "semantic_encoder.action_meta_lora.adapters.5_k_proj.a",
-        "semantic_encoder.action_meta_lora.adapters.5_v_proj.a"
-      ],
-      "unchanged_factor_explanation": "paired_zero_initialized_b_factors_are_nonzero_and_finite_by_step3_but_the_induced_a_updates_remain_below_float32_resolution_in_this_three_step_smoke"
+      "status": "pending_target_spectral_profile"
     },
     "inference_profile": null
   },
@@ -332,14 +268,14 @@
     "contrast_loss_allowed": false
   },
   "formal_run": {
-    "status": "sealed",
+    "status": "pending_target_spectral_profile",
     "expected_world_size": 4,
     "total_steps": 2400,
     "per_rank_batch_size": 20,
     "checkpoint_steps": "every:25",
     "selected_stop_step": 200,
     "stage_stop_steps": "every:200",
-    "segment_definition": "fresh_prior_innovation_one_hour_macro200_after_live_profile",
+    "segment_definition": "fresh_target_spectral_one_hour_macro200_after_live_profile",
     "one_hour_scale": {
       "macro_optimizer_updates": 200,
       "global_action_queries": 96000,

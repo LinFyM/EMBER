@@ -94,7 +94,7 @@ def test_episode_evidence_seals_no_replacement_pairing() -> None:
     correct_rows = rows(correct)
     shuffled_rows = rows(shuffled)
     assert {row["schema_version"] for row in correct_rows} == {
-        "ember_pi05_prior_innovation_writer_episode_evidence_v1"
+        "ember_pi05_target_spectral_writer_episode_evidence_v1"
     }
     assert {row["teacher_video_sampling_mode"] for row in correct_rows} == {
         "without_replacement"

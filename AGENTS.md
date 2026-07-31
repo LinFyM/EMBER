@@ -25,12 +25,13 @@
 17. `docs/action_forecast_writer_recenter_design.md`
 18. `docs/action_forecast_writer_core_program_design.md`
 19. `docs/action_forecast_writer_prior_innovation_design.md`
-20. `task_plan.md`
-21. `findings.md`
-22. `progress.md`
-23. `docs/concept.md`
-24. `docs/decisions_and_open_questions.md`
-25. `docs/novelty_and_landscape.md`
+20. `docs/action_forecast_writer_target_spectral_design.md`
+21. `task_plan.md`
+22. `findings.md`
+23. `progress.md`
+24. `docs/concept.md`
+25. `docs/decisions_and_open_questions.md`
+26. `docs/novelty_and_landscape.md`
 
 `docs/active_session_handoff.md`是当前跨session恢复入口，集中摘要研究证据链、
 v5失败证据、v5.1设计理由、运行状态和下一动作，但不覆盖架构或长期科学
@@ -48,53 +49,45 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 
 ## Current focused execution task
 
-owner于2026-07-30在Recenter首段correct400仅为`55/84/79/85`后授权继续按
-“根因证据→第一性原理重构→一小时训练→必要内部分析”的循环自主推进。
-当前唯一canonical authority为
-[`docs/action_forecast_writer_prior_innovation_design.md`](docs/action_forecast_writer_prior_innovation_design.md)；
-Core-Program、Recenter、Loom及更早设计只作失败证据与provenance。
+owner授权继续按“根因证据→第一性原理重构→一小时训练→必要内部分析”的循环
+自主推进。Prior–Innovation fresh macro50/100/150/200 fixed correct400已经
+完成，结果为`100/61/89/88`，没有恢复v5.2 `132`或v6 `143`，因此没有续训
+或补行为控制臂。
 
-Core-Program在相同task-complete B20 fast-decay400训练合同下的
-macro50/100/150/200 fixed correct400为`84/75/60/76`，四点逐task envelope也
-只有`95`，显著低于v5.2同期`132`和v6同期`133`。macro50非rollout内部检查显示
-shuffled/reversed差异在Procedure已达`.571/.775`，却压缩到effective LoRA
-`.0288/.0446`和policy action`.00669/.00995`；constant Procedure几乎复现完整
-LoRA幅度，Procedure/Core每坐标梯度约`.36`。这否定了“Core和Procedure必须
-严格相乘才能产生任何LoRA”的公理：raw Procedure DC淹没AC顺序创新，bilinear
-又形成随视频变化的moving basis和耦合梯度；此前Recenter则因禁止Core直接内容
-而造成semantic-basis starvation。
+跨v6、Core-Program与Prior的LoRA复核定位了更稳定的compiler病灶：
+public rank-16 effective update长期接近rank1；B的16列近乎同向，18层q/v
+effective update也高度同向。同task视频不是只改变scale，但视频中心化方差仅占
+task/common LoRA平均能量约`0.3%`。当前唯一canonical authority因此切换为
+[`docs/action_forecast_writer_target_spectral_design.md`](docs/action_forecast_writer_target_spectral_design.md)
+定义的Target-Spectral Writer。
 
-Prior–Innovation Writer保留已有成功上游：稳定`Q_text`、`M+G`、v6 Semantic
-Core、原生50-token suffix mean Action、uncapped task-grounded transition和
-两层causal Procedure。compiler整体重建为：
+Target-Spectral保留v6已经验证的`Q_text`、`M+G`、Semantic Core、原生
+50-token suffix mean Action、uncapped task-grounded transition、两层causal
+Procedure和Core-primary Procedure AdaLN。只重构public-LoRA compiler：
 
 ```text
-routing以learned Q/K/V/O读取Core
-→ RMSNorm semantic prior B
-B作为唯一query读取Procedure：
-  key保留normalized raw Procedure DC/AC与RoPE
-  value只取FP32 time-centered Procedure innovation
-→ Z = B + innovation U
-→ routing仅进Q/K的residual slot block + final RMSNorm
-→ unchanged width256 factor heads → complete rank16 public LoRA
+Core/Procedure先形成38个真实policy-target states
+→ target-specific value-coordinate transforms
+→ 最后展开16个代数rank coordinates
+→ row-orthogonal A basis
+→ column-orthogonal U basis × 16 learned spectral scales
+→ complete rank16 public LoRA
 ```
 
-`Core=0→Procedure-only content=0`；constant Procedure只产生零innovation但
-保留Core prior。没有bilinear、AdaLN、learned scalar gate、manual branch
-scale或额外旁路。所有attention Q/K/V/O正常非零初始化，只有factor-head final
-projection为zero-init，因此step0 public LoRA仍为exact identity且第二次
-backward即可同时触达Core和Procedure。精确Writer参数为`10,643,968`。
+模型可诚实选择effective rank1，但不能再复制16条相同A/B方向伪装rank16。
+step0 spectral scale为零，因此effective delta严格identity。精确Writer参数为
+`14,495,744`。canonical源码、fresh config和schema已原位切换，不兼容旧
+Writer checkpoint。
 
-canonical源码、fresh config和schema已原位切换，不保留Core-Program可执行
-兼容路径。CPU全仓`195 passed`、compileall、diff check和architecture guard
-已通过，guard无hard violation。GPU4–7独立最长105-frame B20三macro profile
-也已通过：后两步约`25.818 queries/s`和`193.635 macro/hour`，峰值
-allocated/reserved约`76.99/83.64GB`；不触发B16。formal seed
-fresh0→1→exact-resume1→3连续，step1逐文件未改写，所有主模块finite且可达。
-sealed commit `807266b`的fresh macro0→200已在tmux
-`ember-prior-innovation-m200`正式运行，每25 checkpoint；完成后固定评测
-macro50/100/150/200 paired correct400。不做checkpoint融合，也不同时修改
-训练recipe。
+训练和推理都严格为一条teacher video生成一套LoRA；不得做多视频或多LoRA
+平均。action queries继续与teacher video同task但跨episode独立。首轮只改
+decoder，保持full-24 task-complete、每task一video/LoRA、B20、一次AdamW和
+fast decay400；不能同时改optimizer。必须先在GPU4–7独立完成最长105-frame
+三macro profile和formal-seed fresh0→1→exact-resume1→3，再从identity
+fresh训练macro0→200、每25保存。固定评测macro50/100/150/200 paired
+correct400，不融合checkpoint；winner补无rollout rank/layer/video数值分析。
+只有single-checkpoint达到150，或稳定接近且显著超过同期v5.2/v6，才补
+same/wrong/shuffled/reversed行为rollout。
 
 关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
 single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe

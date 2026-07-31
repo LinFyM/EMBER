@@ -1,104 +1,85 @@
 # EMBER focused active session handoff
 
-最后更新：2026-07-30 UTC。
+最后更新：2026-07-31 UTC。
 
 本文顶部保存当前运行状态、恢复入口和紧邻动作；后续编号章节是按时间保留的
 历史快照。当前fresh架构 authority 是
-`docs/action_forecast_writer_core_program_design.md`；Recenter、Loom及更早
-设计只作失败provenance。长期科学边界是`AGENTS.md`与
+`docs/action_forecast_writer_target_spectral_design.md`；Prior–Innovation及
+更早设计只作失败provenance。长期科学边界是`AGENTS.md`与
 `docs/execution_brief.md`。任何接手者都必须先只读复核现场，不能按历史快照
 重复启动进程。
 
-## 0. Prior–Innovation当前恢复入口
+## 0. Target-Spectral当前恢复入口
 
-Core-Program fresh macro50/100/150/200 paired correct400最终为
-`84/75/60/76`；四点逐task envelope仅`95`，相对v5.2 step900与v6
-macro200分别净低`48/49`。因此没有续训或做行为级视频控制。
+Prior–Innovation fresh macro50/100/150/200 paired correct400最终为
+`100/61/89/88`，没有恢复v5.2 `132`或v6 `143`，因此没有续训或做行为级
+视频控制。它进一步证明，仅改变Core/Procedure读法不能解决当前主要瓶颈。
 
-macro50的非rollout内部分析已经定位根因：
+跨v6、Core-Program和Prior的CPU复核把更稳定的结构病灶定位在public-LoRA
+编译端：
 
 ```text
-shuffled/reversed Procedure relative-L2   .571 / .775
-effective-LoRA relative-L2                .0288 / .0446
-policy-action relative-L2                 .00669 / .00995
-Procedure/Core per-coordinate grad RMS    ~.36
+v6 effective BA stable rank                1.00009→1.00028
+v6 q/v B-column cosine                     .9974量级
+v6跨层q/v effective-delta cosine           .969/.983+
+同task视频中心化方差 / mean-LoRA能量        ~0.30%
+视频方差中正交方向占比                     ~90.6%
 ```
 
-Core/Action/transition/Procedure上游都能产生差异，JVP也证明compiler局部可表示
-这些方向；但raw Procedure DC主导readout，centered AC顺序信号被压缩，
-constant Procedure几乎复现真实视频LoRA幅度。strict bilinear使Procedure更新
-依赖随视频移动的Core basis。Core-Program与Recenter都约`85`，共同否定
-“Core不得直接提供有用LoRA”和“Core×Procedure严格双必要”两个公理。
+视频不是只改变共同方向的scale；它产生了真实但很小的方向创新。直接塌缩主要
+发生在B的16列，且38个真实policy targets跨层共享近乎同一更新方向。因此当前
+第一实验只修复这一处，不同时改optimizer，避免把decoder与任务梯度冲突混为
+一谈。
 
 唯一canonical Writer已切换为
-[`docs/action_forecast_writer_prior_innovation_design.md`](action_forecast_writer_prior_innovation_design.md)
-定义的 Prior–Innovation：
+[`docs/action_forecast_writer_target_spectral_design.md`](action_forecast_writer_target_spectral_design.md)
+定义的 Target-Spectral：
 
 ```text
-保留 Q_text、M+G、v6 Semantic Core
-保留 native 50-suffix mean Action
-保留 uncapped task-grounded transition
-保留 two-layer causal Procedure
+v6 Q_text + M_f + G_f + Semantic Core
+native 50-suffix mean Action + teacher visual transition
+→ two-layer causal Procedure
 
-routing Q/K/V/O read Core
-→ semantic prior B
-B-only query reads raw Procedure keys
-centered Procedure AC is the learned value
-→ ordered innovation U
-B + U
-→ routing-Q/K-only slot block + final RMSNorm
-→ rank16 public LoRA
+Core/Procedure先形成38个真实policy-target states
+→ target-specific value-coordinate transforms
+→ 最后才展开16个代数rank coordinates
+→ row-orthogonal A basis
+→ column-orthogonal U basis × 16 learned spectral scales
+→ complete rank16 public LoRA
 ```
 
-`Core=0→Procedure-only content=0`；constant Procedure只产生零innovation但
-保留Core prior。没有bilinear、AdaLN、learned scalar gate、manual scale或
-额外旁路。所有attention projections正常非零初始化，只有factor-head final
-projection zero-init。精确Writer/compiler参数为
-`10,643,968/1,403,904`。
+该gauge允许模型诚实选择rank1，但不允许复制16条相同A/B方向伪装rank16。
+step0 spectral scale为零，因此effective delta严格identity。精确参数为
+`14,495,744`。训练和推理始终是一条teacher video生成一套LoRA；不做
+multi-video平均。action queries继续与video同task但跨episode独立。
 
-活动源码/config/schema已原位切换；Core-Program config和兼容执行路径退役。
-canonical实现commit为`7b7abf1`且已push；CPU验证为全仓`195 passed`、
-compileall/diff check通过、architecture guard无hard violation。
-
-GPU4–7独立最长视频B20 profile已通过：首步包含task38/demo36真实105个
-stride-5帧，三步finite；后两步均值`25.818 queries/s`、
-`193.635 macro/hour`，峰值allocated/reserved
-`76,987,188,224/83,644,907,520 bytes`，不触发B16。formal teacher seed
-`20260722`下fresh0→1→exact-resume1→3也通过：metrics、LR、
-task/video/query cursor连续，step1全部checkpoint文件逐项SHA未变化，
-validation/test action reads为0。523个trainable tensors中521个在step1→3
-发生数值变化，所有主模块均变化且finite；仅Action Meta-LoRA layer5 K/V的
-两个A因配对zero-init B刚打开、更新低于float32分辨率而未数值变化，配对B已
-非零，不能解释为断路。
+活动源码/config/schema已原位切换；Prior config和兼容执行路径退役。CPU
+验证为全仓`195 passed`（加入FP32 Procedure centering回归后需重新确认）、
+compileall通过；当前尚未提交，也尚未使用GPU。
 
 紧邻顺序：
 
 ```text
-formal fresh macro0→200 is running
+审计diff、更新authority并clean commit/push
+→ GPU4–7最长105-frame B20三macro profile
+→ formal-seed fresh0→1→exact-resume1→3
+→ fresh macro0→200，every25保存
 → paired correct400 at macro50/100/150/200
+→ winner内部rank/layer/video数值分析
 ```
 
-不能继承Core-Program profile/resume/gradient证据；不得查询或使用GPU0–3。
-首段若未恢复同期v5.2/v6水平，只做内部反事实，不做昂贵视频控制臂；恢复后才
-按absolute趋势续训，并在达到`150/400`或稳定接近时做
-same/wrong/shuffled/reversed full400。
+不能继承Prior profile/resume/gradient证据；不得查询或使用GPU0–3。首段若
+未达到`150/400`或至少稳定接近且显著超过同期v5.2/v6，只做内部反事实和必要
+Gradient Gram，不做昂贵视频控制臂。
 
-当前活动配置与待启动formal root：
+当前活动配置：
 
 ```text
-configs/pi05_as_writer_prior_innovation.json
+configs/pi05_as_writer_target_spectral.json
 source policy:
 /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000
 data root:
 /data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a
-formal tmux:
-ember-prior-innovation-m200
-formal sealed commit:
-807266b525b11ff8faa38979c6fdc209b1e81b7a
-formal output:
-/data/ymdai/outputs/ember/pi05_as_writer_prior_innovation_taskcomplete_decay400_dev_r4_b20_seed7_s2400_807266b_20260731
-formal log:
-/data/ymdai/logs/ember/pi05_as_writer_prior_innovation_taskcomplete_decay400_dev_r4_b20_seed7_s2400_807266b_20260731.log
 ```
 
 ## 1. Core-Program与Recenter历史快照（整节已失效，不得执行其命令）
@@ -1277,7 +1258,7 @@ df5b0271991b6ff95360b138dfe72dd7ab5daf34cc54383b92688acab539ec9f
 Goal的150与SFT+30均未完成。保持Goal active但不继续自动执行；先与owner讨论
 架构/训练含义。
 
-## 23. Loom负证据与Recenter当前恢复入口
+## 23. Loom负证据与Recenter历史恢复快照
 
 owner后续授权Loom实现和一小时实验。Loom的macro50/100/150/200 paired
 correct400为：
@@ -1291,7 +1272,7 @@ correct400为：
 没有获得可靠、可解释的教学锚点；该结果与v7/v8已经证明的Action–Effect局部
 不可辨识问题一致。Loom停止，不续训，不在其上调整confidence或gap scale。
 
-当前唯一canonical设计为：
+该历史阶段的canonical设计为：
 
 [`action_forecast_writer_recenter_design.md`](action_forecast_writer_recenter_design.md)
 

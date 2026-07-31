@@ -1,52 +1,51 @@
 # EMBER Current Execution Brief
 
-状态：2026-07-30。共享 π0.5-LIBERO source base与corrected mixed-task
+状态：2026-07-31。共享 π0.5-LIBERO source base与corrected mixed-task
 rank-128 Source-SFT均已封存，后者development observed-best为`109/400`。
-v4、v5、v5.1、v5.2、v5.3和v6均已转为provenance。v6 single-checkpoint
-best为`143/400`，仍未达到focused absolute门150；task-complete与旧
-rank-rotating recipe分别呈现“较高absolute但较弱order margin”和“较强order
-margin但较低absolute/wrong语义”的互补失败。
+当前可信架构标杆是v5.2与v6：v5.2 step900 single-checkpoint correct400为
+`132`，五臂`132/138/74/82/83`；v6 task-complete single-checkpoint best为
+`143`，五臂`143/135/125/128/129`。前者视频语义和顺序margin强，后者
+absolute更高但margin较弱；两者都未达到focused absolute门150。
 
-v7 Task-Aligned Semantic Trajectory + joint Action–Effect pooling已完成
-fresh macro0→400。correct400曲线为
-`82/106/114/120/101/114/115/106`，macro200五臂为
-`120/112/91/100/69`。它增强了时序破坏margin，但absolute低于v6。内部检查
-显示joint `8×L` attention约`99.96%`均匀、有效Action probes约`7.998/8`；
-fixed-Procedure只改变Core时effective-LoRA差异仅约`0.1–0.2%`。继续训练没有
-修复两个接口且absolute下降，因此v7停止。
+v7/v8/v10/Loom/Recenter/Core-Program/Prior–Innovation均已完成并作为负结果
+provenance。其关键correct400 best依次为`120/125/103/112/85/84/100`；
+Prior四点为`100/61/89/88`。这些结果共同说明：围绕Action–Effect binding、
+strict Core×Procedure双必要、DC/AC手工重分配或不同reader反复重构，均没有
+恢复v5.2/v6的absolute。
 
-v8 Hierarchical Action–Effect + Core-Gated Procedure已经完成。correct400
-最高为macro300=`125/400`，五臂`125/121/110/110/117`；Action变化只贡献约
-`8–10%` event差异，Effect变化贡献约`147–300%`，EventRead近均匀。它没有
-达到v6 absolute，也没有得到v5.2式视频margin，因此停止。
+最新跨架构LoRA复核定位了一个此前未正面处理的稳定瓶颈：v6/Core-Program/
+Prior的rank-16 effective update稳定秩都接近`1.000`，v6 q/v的B列余弦约
+`.9974`，跨18层effective-delta余弦约`.969/.983+`。同task视频确实产生
+方向创新，约`90.6%`的视频中心化方差位于正交方向，但其总能量仅为task/common
+LoRA主干约`0.30%`。因此当前最大直接问题不是上游完全没读视频，而是compiler
+把视频创新压在跨layer/rank共享的近rank-1写入通道里。
 
-v10随后完成，observed-best仅`103/400`；其五臂`103/94/75/67/43`通过行为
-方向门，但absolute低于Source-SFT。Loom首段macro50/100/150/200也只有
-`79/106/105/112`，内部correspondence/confidence/Teacher–Policy gap缺少
-信息墙内可靠锚点，因此停止。两者均只作provenance。
+当前唯一canonical方法为
+[`EMBER Target-Spectral Writer`](action_forecast_writer_target_spectral_design.md)。
+它保留v6已经验证的`Q_text + M_f + G_f`、Semantic Core、native
+50-suffix mean Action、teacher-video task-grounded transition和两层causal
+Procedure；只重构public-LoRA compiler：
 
-Recenter随后恢复native Action并限制视觉残差，但macro50/100/150/200仅为
-`55/84/79/85`。内部证据把根因定位为semantic-basis starvation：
-time-centering删除Procedure DC，Core又只剩寻址和窄幅调制，模型无法从小AC
-残差重建完整task semantic basis。它同样退役，不继续调cap/gate/scale。
+```text
+Core/Procedure → 38个真实policy targets
+→ target-specific value coordinates
+→ 最后展开16个rank coordinates
+→ row-orthogonal A、column-orthogonal U、16个learned spectral scales
+→ rank16 public LoRA
+```
 
-当前唯一canonical方法为EMBER Core-Program Writer。完整需求、拓扑、参数和
-判定合同见
-[`docs/action_forecast_writer_core_program_design.md`](action_forecast_writer_core_program_design.md)。
-它保留稳定task axis、v6 Semantic Core、native 50-suffix mean Action、
-uncapped task-grounded transition与两层causal Procedure。compiler先读取raw
-Core values形成slot semantic basis，再由Core-keyed query读取full raw
-Procedure values；width512 bias-free bilinear严格要求两者共同产生content，
-zero-preserving slot block不允许routing注入value。Core-only、
-Procedure-only与zero Procedure均为identity，constant nonzero Procedure保留。
-真实参数为`10,905,856`。
+模型允许诚实选择effective rank1，但不再允许16条A/B复制同一方向。Writer
+精确参数`14,495,744`，step0 effective delta严格identity。一条teacher video
+始终只生成一套LoRA；action queries与teacher video同task、跨episode独立；
+full24每task等权、B20和AdamW首轮保持不变。这样先隔离验证decoder根因，只有
+后续Gradient Gram确认任务冲突时才改变更新规则。
 
-canonical源码/config已原位切换到fresh Core-Program schema；Recenter与
-checkpoint-average executable均已退役，RL-Writer在按raw-video接口重建和重训
-前明确fail closed。当前配置保持pending，必须在GPU4–7重新完成105-frame B20
-profile、exact-resume和gradient reachability，不能继承Recenter seal。通过后
-才fresh训练macro0→200并评测macro50/100/150/200；只选择single checkpoint，
-在absolute达到同期有效架构水平前不做不必要的五臂rollout。
+canonical源码/config已原位切换到fresh Target-Spectral schema，旧Prior
+config退役。CPU合同通过后仍必须在GPU4–7重新完成105-frame B20 profile、
+exact-resume和gradient reachability，不能继承Prior seal。通过后fresh训练
+macro0→200并评测macro50/100/150/200，只选择single checkpoint。所有候选
+都做内部rank/layer/video数值分析；只有absolute达到`150`或稳定接近且显著
+超过同期v5.2/v6，才做same/wrong/shuffled/reversed rollout。
 
 外部专家复核后的第一轮诊断证明，shuffle的直接行为放大器位于per-image
 forecast之后的absolute-time Plan/Revision；但后续全面复审又确认它不是唯一
@@ -98,7 +97,7 @@ Procedure通过zero-init AdaLN调制Core slots，再经一个post-fusion slot bl
 correct-video `127/400`，且best的reversed为`120/400`、与correct无显著差异；
 它因此只作provenance。
 
-当前fresh架构authority为
+Core-Program历史设计见
 [`docs/action_forecast_writer_core_program_design.md`](action_forecast_writer_core_program_design.md)。
 Core-Program使用text-only task axis、multimodal evidence与task-queried patch
 evidence；Semantic Core对frame set置换不变，native Action mean与uncapped

@@ -156,7 +156,7 @@ class TaskQueriedPatchGrounding(torch.nn.Module):
         return grounded.masked_fill(~valid_task_tokens[..., None], 0.0)
 
 
-class Pi05PriorInnovationEncoder(torch.nn.Module):
+class Pi05TargetSpectralEncoder(torch.nn.Module):
     """Produce Q_text, M+G, G, and one native-horizon Action probe per frame."""
 
     NATIVE_IMAGE_TOKENS = 256

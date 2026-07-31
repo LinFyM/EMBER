@@ -5,9 +5,9 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 
-PRIOR_INNOVATION_WRITER_PARAMETER_COUNT = 10_643_968
+TARGET_SPECTRAL_WRITER_PARAMETER_COUNT = 14_495_744
 
-PRIOR_INNOVATION_WRITER_CONSTRUCTOR_KEYS = frozenset(
+TARGET_SPECTRAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
     {
         "image_width",
         "expert_width",
@@ -51,7 +51,7 @@ WRITER_DIMENSION_CONTRACT = {
 }
 
 _STATIC_WRITER_CONTRACT: dict[str, Any] = {
-    "architecture": "pi05_semantic_prior_ordered_procedure_innovation_writer",
+    "architecture": "pi05_target_spectral_writer",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -137,39 +137,53 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "procedure_value_path": (
         "native_action_probe_plus_uncapped_task_grounded_visual_transition"
     ),
-    "query_count": 320,
-    "routing_identity": "query_module_layer_rank_qk_only",
+    "query_count": 38,
+    "routing_identity": "one_exact_policy_target_query_per_weight_matrix",
     "core_slot_reader": (
         "routing_query_normalized_core_key_raw_core_value_"
         "learned_bias_free_qkvo"
     ),
-    "semantic_prior": "rmsnorm_of_routed_raw_core_slot",
+    "semantic_prior": "v6_core_primary_target_content",
     "procedure_time_centering": (
         "fp32_masked_valid_frame_mean_then_cast_to_input_dtype"
     ),
     "procedure_slot_reader": (
-        "semantic_prior_query_only_no_routing_rope_normalized_raw_procedure_key_"
-        "learned_centered_procedure_value_bias_free_qkvo"
+        "target_routing_plus_core_query_rope_normalized_raw_procedure_key_"
+        "centered_teacher_procedure_value_bias_free_qkvo"
     ),
     "core_procedure_first_interaction": (
-        "semantic_prior_queries_ordered_centered_procedure_innovation"
+        "core_target_queries_ordered_teacher_procedure_for_v6_adaln"
     ),
-    "slot_fusion": "direct_semantic_prior_plus_procedure_innovation",
+    "slot_fusion": "zero_init_procedure_adaln_over_core_target_content",
     "fusion_heads": 8,
     "post_fusion_blocks": 1,
     "post_fusion_slot_block": (
-        "bias_free_full_qkvo_residual_attention_ffn_"
-        "routing_qk_only_content_v_only_final_rmsnorm"
+        "one_target_level_content_coordination_block_before_rank_expansion"
     ),
     "post_fusion_scale_contract": (
         "final_rmsnorm_stable_factor_head_interface_without_branch_scalar"
     ),
-    "core_only_public_lora_delta": "allowed_semantic_prior_contribution",
-    "procedure_only_public_lora_delta": "exact_zero",
-    "zero_procedure_public_lora_delta": "semantic_prior_only",
-    "constant_nonzero_procedure": (
-        "zero_innovation_with_semantic_prior_preserved"
+    "core_only_public_lora_delta": "allowed_v6_semantic_core_contribution",
+    "procedure_only_public_lora_delta": (
+        "target_routed_teacher_procedure_beta_allowed_after_modulation_opens"
     ),
+    "zero_procedure_public_lora_delta": "semantic_core_target_content",
+    "constant_nonzero_procedure": (
+        "zero_centered_innovation_with_semantic_core_preserved"
+    ),
+    "semantic_target_count": 38,
+    "rank_semantic_queries": False,
+    "target_coordinate_transform": (
+        "38_independent_trainable_orthogonal_initialized_256x256_value_maps"
+    ),
+    "rank_coordinate_transform": (
+        "16_independent_trainable_orthogonal_initialized_256x256_value_maps"
+    ),
+    "rank_expansion": "after_complete_core_procedure_target_fusion",
+    "lora_gauge": (
+        "row_orthogonal_A_column_orthogonal_U_and_learned_spectral_scales"
+    ),
+    "scale_head_count": 4,
     "factor_head_bias": False,
     "factor_hidden_width": 256,
     "initialization_seed": 7,
@@ -177,7 +191,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
 
 
 def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
-    """Return the exact Prior-Innovation payload, preserving frame chunking."""
+    """Return the exact Target-Spectral payload, preserving frame chunking."""
 
     return {
         **_STATIC_WRITER_CONTRACT,
@@ -187,7 +201,7 @@ def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def validate_writer_dimensions(observed: Mapping[str, Any]) -> None:
-    """Reject values outside the one canonical Prior-Innovation topology."""
+    """Reject values outside the one canonical Target-Spectral topology."""
 
     changed = {
         name: (WRITER_DIMENSION_CONTRACT[name], observed.get(name))

@@ -39,7 +39,7 @@ from ember.writer.data import (
 )
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.lora_rollout import WriterLoRARolloutAdapter
-from ember.writer.architecture import PRIOR_INNOVATION_WRITER_CONSTRUCTOR_KEYS
+from ember.writer.architecture import TARGET_SPECTRAL_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.model import (
     CompleteLoRAWriter,
     WriterModelError,
@@ -54,8 +54,8 @@ from ember.writer.video_schedule import (
 )
 
 
-WRITER_ADAPTER_SCHEMA = "ember_pi05_prior_innovation_writer_eval_adapter_v1"
-RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_prior_innovation_rl_writer_eval_adapter_v1"
+WRITER_ADAPTER_SCHEMA = "ember_pi05_target_spectral_writer_eval_adapter_v1"
+RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_target_spectral_rl_writer_eval_adapter_v1"
 WRITER_ADAPTER_SCHEMAS = {WRITER_ADAPTER_SCHEMA, RL_WRITER_ADAPTER_SCHEMA}
 WRITER_VIDEO_CONDITIONS = {
     "correct",
@@ -67,10 +67,10 @@ WRITER_VIDEO_CONDITIONS = {
 }
 WRONG_VIDEO_CONDITIONS = {"cross_suite_wrong"}
 WRITER_EPISODE_EVIDENCE_WITH_REPLACEMENT = (
-    "ember_pi05_prior_innovation_writer_episode_evidence_with_replacement_v1"
+    "ember_pi05_target_spectral_writer_episode_evidence_with_replacement_v1"
 )
-WRITER_EPISODE_EVIDENCE_PRIOR_INNOVATION = (
-    "ember_pi05_prior_innovation_writer_episode_evidence_v1"
+WRITER_EPISODE_EVIDENCE_TARGET_SPECTRAL = (
+    "ember_pi05_target_spectral_writer_episode_evidence_v1"
 )
 WRITER_GENERATION_SEED_SCHEDULE = (
     "sha256 first 63 bits of canonical JSON: ember_pi05_writer_generation_v5_1/"
@@ -236,7 +236,7 @@ def expected_writer_episode_evidence(
     expected_schema = (
         WRITER_EPISODE_EVIDENCE_WITH_REPLACEMENT
         if sampling_mode == "with_replacement"
-        else WRITER_EPISODE_EVIDENCE_PRIOR_INNOVATION
+        else WRITER_EPISODE_EVIDENCE_TARGET_SPECTRAL
     )
     if evidence_schema is None:
         evidence_schema = expected_schema
@@ -633,7 +633,7 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
         kind = str(evaluation_adapter.get("kind", "as_writer"))
         if kind == "rl_writer":
             raise WriterModelError(
-                "RL-Writer requires canonical Prior-Innovation retraining"
+                "RL-Writer requires canonical Target-Spectral retraining"
             )
         if kind != "as_writer":
             raise WriterModelError("unknown PI05 Writer evaluation kind")
@@ -662,7 +662,7 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
         writer_values = {
             key: value
             for key, value in config["writer"].items()
-            if key in PRIOR_INNOVATION_WRITER_CONSTRUCTOR_KEYS
+            if key in TARGET_SPECTRAL_WRITER_CONSTRUCTOR_KEYS
         }
         bridge = policy.model.paligemma_with_expert
         writer = CompleteLoRAWriter(

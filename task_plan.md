@@ -323,10 +323,31 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
 - [x] canonical实现clean commit `7b7abf1`并push。
 - [x] 只在GPU4–7完成最长105-frame B20三macro profile、全参数
   reachability与formal-seed exact-resume；不继承旧证据。
-- [ ] seal后fresh macro0→200、every25；固定评测50/100/150/200
-  correct400，不融合checkpoint。
-- [ ] 若恢复同期旧架构则按趋势续第二小时；否则只做内部传递诊断后整体重构。
-  仅在`>=150`或稳定接近且多task共同贡献后做行为级视频特异性。
+- [x] seal后fresh macro0→200、every25；固定评测50/100/150/200
+  correct400为`100/61/89/88`，不融合checkpoint。
+- [x] 未恢复同期旧架构，未续第二小时、未做行为级视频特异性；跨架构内部分析
+  将最稳定瓶颈定位为B列、rank和跨层effective update塌缩。
+
+## Phase C6：Target-Spectral Writer
+
+- [x] 封存
+  [`docs/action_forecast_writer_target_spectral_design.md`](docs/action_forecast_writer_target_spectral_design.md)：
+  保留v6 Core/Procedure上游；把320个rank伪语义slots改为38个真实policy
+  targets，target-first融合、rank-last展开，并固定A/U spectral gauge。
+- [x] 唯一canonical源码/config/schema原位切换；Prior executable config退役，
+  不兼容旧Writer checkpoint。
+- [x] 精确参数`14,495,744`；step0 effective identity、38-target拓扑、
+  target/rank坐标、FP32 Procedure centering、强共同方向QR稳定性和真实三步
+  gradient staging均有CPU合同。
+- [ ] 全仓测试、compileall、JSON、diff和architecture guard最终复核后
+  clean commit/push。
+- [ ] 只在GPU4–7完成最长105-frame B20三macro profile；若OOM或连续不稳定才
+  直接降B16，不扫描中间档。
+- [ ] 正式teacher seed下fresh0→1→exact-resume1→3，验证全部新路径finite、
+  可达且旧step1不被改写。
+- [ ] fresh macro0→200、every25；固定评测50/100/150/200 correct400。
+- [ ] winner做无rollout rank/layer/video数值分析。只有single-checkpoint达到
+  150，或稳定接近且显著超过同期v5.2/v6，才做行为级视频特异性。
 
 ## Phase E：matched π0.5 action one-shot baseline
 

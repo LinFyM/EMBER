@@ -1,4 +1,4 @@
-"""Canonical semantic-prior + ordered-innovation PI05 Writer."""
+"""Canonical target-first spectral PI05 Writer."""
 
 from __future__ import annotations
 
@@ -9,16 +9,16 @@ from typing import Mapping
 import torch
 
 from ember.writer.architecture import (
-    PRIOR_INNOVATION_WRITER_CONSTRUCTOR_KEYS,
+    TARGET_SPECTRAL_WRITER_CONSTRUCTOR_KEYS,
     validate_writer_dimensions,
 )
-from ember.writer.compiler import PriorInnovationCompiler
+from ember.writer.compiler import TargetSpectralCompiler
 from ember.writer.temporal import (
     CausalProcedureEncoder,
     LanguageSemanticCore,
     TaskGroundedVisualTransitionFusion,
 )
-from ember.writer.video_program import Pi05PriorInnovationEncoder
+from ember.writer.video_program import Pi05TargetSpectralEncoder
 
 
 class WriterModelError(RuntimeError):
@@ -114,6 +114,13 @@ class FactorHead(torch.nn.Module):
         return self.network(value)
 
 
+class ScaleHead(FactorHead):
+    """Select effective components after both LoRA bases are formed."""
+
+    def __init__(self, input_width: int, hidden_width: int) -> None:
+        super().__init__(input_width, hidden_width, 1)
+
+
 class CompleteLoRAWriter(torch.nn.Module):
     """Map task language and one raw video to the sealed rank-16 task LoRA."""
 
@@ -132,6 +139,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         "action_out_a": 1024,
         "action_out_b": 32,
     }
+    SCALE_TYPES = ("q", "v", "action_in", "action_out")
 
     def __init__(
         self,
@@ -164,7 +172,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         constructor_values = locals()
         dimensions = {
             name: constructor_values[name]
-            for name in PRIOR_INNOVATION_WRITER_CONSTRUCTOR_KEYS
+            for name in TARGET_SPECTRAL_WRITER_CONSTRUCTOR_KEYS
             if name
             not in {
                 "max_frames_per_encoder_call",
@@ -176,10 +184,10 @@ class CompleteLoRAWriter(torch.nn.Module):
             validate_writer_dimensions(dimensions)
         except ValueError as error:
             raise WriterModelError(
-                "invalid Prior-Innovation Writer topology"
+                "invalid Target-Spectral Writer topology"
             ) from error
         if not tensor_specs or max_frames_per_encoder_call <= 0:
-            raise WriterModelError("invalid Prior-Innovation Writer topology")
+            raise WriterModelError("invalid Target-Spectral Writer topology")
         if set(template_state) != {item.name for item in tensor_specs}:
             raise WriterModelError("Writer LoRA template names changed")
         if (
@@ -191,7 +199,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             raise WriterModelError("public Writer LoRA rank changed")
         self.tensor_specs = tensor_specs
         self.program_width = int(program_width)
-        self.semantic_encoder = Pi05PriorInnovationEncoder(
+        self.semantic_encoder = Pi05TargetSpectralEncoder(
             paligemma_model=paligemma_model,
             expert_model=expert_model,
             image_width=image_width,
@@ -221,7 +229,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             heads=procedure_heads,
             blocks=procedure_blocks,
         )
-        self.compiler = PriorInnovationCompiler(
+        self.compiler = TargetSpectralCompiler(
             width=program_width,
             heads=fusion_heads,
             initialization_seed=initialization_seed + 1,
@@ -236,25 +244,118 @@ class CompleteLoRAWriter(torch.nn.Module):
                 for name, width in self.FACTOR_WIDTHS.items()
             }
         )
-        self._register_template_state(tensor_specs, template_state)
+        self.scale_heads = torch.nn.ModuleDict(
+            {
+                name: ScaleHead(program_width, factor_hidden_width)
+                for name in self.SCALE_TYPES
+            }
+        )
+        self._register_template_state(
+            tensor_specs,
+            template_state,
+            initialization_seed=initialization_seed + 2,
+        )
+
+    @staticmethod
+    def _row_orthogonalize(
+        value: torch.Tensor,
+        scale: torch.Tensor,
+    ) -> torch.Tensor:
+        """Fix the LoRA gauge with a stable differentiable FP32 QR."""
+
+        original_dtype = value.dtype
+        basis = CompleteLoRAWriter._column_orthogonalize(
+            value.to(torch.float32).transpose(-1, -2)
+        ).transpose(-1, -2)
+        return (basis * scale.to(torch.float32)).to(original_dtype)
+
+    @staticmethod
+    def _column_orthogonalize(value: torch.Tensor) -> torch.Tensor:
+        """Return a deterministic-sign orthonormal basis for the last columns."""
+
+        original_dtype = value.dtype
+        basis, triangular = torch.linalg.qr(
+            value.to(torch.float32),
+            mode="reduced",
+        )
+        signs = torch.diagonal(triangular, dim1=-2, dim2=-1).sign()
+        signs = torch.where(signs == 0, torch.ones_like(signs), signs).detach()
+        return (basis * signs.unsqueeze(-2)).to(original_dtype)
+
+    @staticmethod
+    def _column_carrier(
+        rows: int,
+        rank: int,
+        generator: torch.Generator,
+    ) -> torch.Tensor:
+        carrier = torch.zeros(rows, rank)
+        selected = torch.randperm(rows, generator=generator)[:rank]
+        signs = (
+            2
+            * torch.randint(
+                0,
+                2,
+                (rank,),
+                generator=generator,
+                dtype=torch.int64,
+            )
+            - 1
+        ).to(carrier.dtype)
+        carrier[selected, torch.arange(rank)] = signs
+        return carrier
 
     def _register_template_state(
         self,
         tensor_specs: tuple[LoraTensorSpec, ...],
         template_state: Mapping[str, torch.Tensor],
+        *,
+        initialization_seed: int,
     ) -> None:
         self._template_buffers: dict[str, str] = {}
+        self._a_scale_buffers: dict[str, str] = {}
+        self._u_carrier_buffers: dict[str, str] = {}
         self._decoding: dict[str, tuple[str, int | None]] = {}
         observed_heads: dict[str, int] = {}
         observed_layers: set[int] = set()
+        observed_modules: dict[int, set[int]] = {}
+        generator = torch.Generator(device="cpu").manual_seed(
+            initialization_seed
+        )
         for index, item in enumerate(tensor_specs):
             key, layer = self._decode_owner(item)
             observed_heads[key] = item.width
+            observed_modules.setdefault(item.module_index, set()).add(
+                item.factor_index
+            )
             if layer is not None:
                 observed_layers.add(layer)
             value = template_state[item.name].detach().contiguous()
             if item.factor_index == 1 and torch.count_nonzero(value):
                 raise WriterModelError("LoRA-B template must begin at physical zero")
+            if item.factor_index == 0:
+                scale = (
+                    value.to(torch.float32)
+                    .square()
+                    .sum(dim=-1)
+                    .mean()
+                    .sqrt()
+                    .reshape(1, 1)
+                )
+                value = self._row_orthogonalize(
+                    value[None],
+                    scale,
+                )[0].contiguous()
+                scale_name = f"a_scale_{index:03d}"
+                self.register_buffer(scale_name, scale, persistent=True)
+                self._a_scale_buffers[item.name] = scale_name
+            else:
+                carrier_name = f"u_carrier_{index:03d}"
+                self.register_buffer(
+                    carrier_name,
+                    self._column_carrier(item.width, item.rank, generator),
+                    persistent=True,
+                )
+                self._u_carrier_buffers[item.name] = carrier_name
             buffer_name = f"template_{index:03d}"
             self.register_buffer(buffer_name, value, persistent=True)
             self._template_buffers[item.name] = buffer_name
@@ -262,6 +363,11 @@ class CompleteLoRAWriter(torch.nn.Module):
         if (
             observed_heads != self.FACTOR_WIDTHS
             or observed_layers != set(range(self.EXPERT_LAYERS))
+            or observed_modules
+            != {
+                index: {0, 1}
+                for index in range(self.compiler.TARGET_COUNT)
+            }
         ):
             raise WriterModelError("sealed PI05 LoRA modules changed topology")
 
@@ -299,6 +405,10 @@ class CompleteLoRAWriter(torch.nn.Module):
         if not 0 <= layer < self.EXPERT_LAYERS:
             raise WriterModelError("PI05 task-LoRA layer is outside Action Expert")
         return f"{match.group(2)[0]}_{factor}", layer
+
+    @staticmethod
+    def _scale_type(key: str) -> str:
+        return key.removesuffix("_a").removesuffix("_b")
 
     def _pack_video_program(
         self,
@@ -524,7 +634,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             language_mask,
             task_span_mask,
         )
-        expert, action_in, action_out = self.compiler(
+        addressed_ranks = self.compiler(
             core_memory,
             valid_core,
             procedure_memory,
@@ -533,18 +643,26 @@ class CompleteLoRAWriter(torch.nn.Module):
         )
         result: dict[str, torch.Tensor] = {}
         for item in self.tensor_specs:
-            key, layer = self._decoding[item.name]
-            if key.startswith("action_in_"):
-                source = action_in
-            elif key.startswith("action_out_"):
-                source = action_out
-            else:
-                if layer is None:
-                    raise WriterModelError("expert LoRA output lost its layer")
-                source = expert[:, layer]
+            key, _layer = self._decoding[item.name]
+            source = addressed_ranks[:, item.module_index]
             rows = self.factor_heads[key](source)
-            generated = rows.transpose(-1, -2) if item.transpose_output else rows
             template = getattr(self, self._template_buffers[item.name])
-            value = generated.to(dtype=template.dtype) + template[None]
+            if item.factor_index == 0:
+                raw = rows.to(dtype=template.dtype) + template[None]
+                scale = getattr(self, self._a_scale_buffers[item.name])
+                value = self._row_orthogonalize(raw, scale)
+            else:
+                carrier = getattr(self, self._u_carrier_buffers[item.name])
+                raw_basis = (
+                    rows.transpose(-1, -2).to(dtype=carrier.dtype)
+                    + carrier[None]
+                )
+                basis = self._column_orthogonalize(raw_basis)
+                scales = self.scale_heads[self._scale_type(key)](
+                    source
+                ).squeeze(-1)
+                value = (basis.to(scales.dtype) * scales[:, None, :]).to(
+                    template.dtype
+                )
             result[item.name] = value[0] if core_memory.shape[0] == 1 else value
         return result

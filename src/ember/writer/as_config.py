@@ -12,9 +12,9 @@ from ember.writer.model import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_prior_innovation_as_writer_v1"
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_target_spectral_as_writer_v1"
 AS_WRITER_CONFIG_OVERLAY_SCHEMA = (
-    "ember_pi05_prior_innovation_as_writer_recipe_overlay_v1"
+    "ember_pi05_target_spectral_as_writer_recipe_overlay_v1"
 )
 AS_WRITER_STAGES = ("development", "final")
 
@@ -91,7 +91,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         or int(writer.get("max_frames_per_encoder_call", 0)) <= 0
     ):
         raise WriterModelError(
-            "sealed Prior-Innovation Writer dimensions changed"
+            "sealed Target-Spectral Writer dimensions changed"
         )
     expected = expected_writer_contract(writer)
     if writer != expected:
@@ -103,7 +103,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
             if writer[key] != expected[key]
         )
         raise WriterModelError(
-            "Prior-Innovation AS-Writer architecture changed; "
+            "Target-Spectral AS-Writer architecture changed; "
             f"missing={missing}, extra={extra}, changed={changed}"
         )
 

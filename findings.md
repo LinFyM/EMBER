@@ -2792,3 +2792,25 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   唯二未产生float32可见变化的是Action Meta-LoRA layer5 K/V的A；其配对
   zero-init B在step3已非零且finite，说明路径可达但三步内A的二阶更新低于
   float32分辨率。该事实透明封存，不冒充523/523。
+
+## Prior负结果、rank塌缩与Target-Spectral决策（2026-07-31）
+
+- Prior–Innovation fresh macro50/100/150/200 paired correct400为
+  `100/61/89/88`；observed-best仅100，显著低于v5.2 `132`与v6 `143`。
+  按预定门未续训、未补same/wrong/shuffled/reversed rollout。
+- CPU跨架构复核产物为
+  `/data/ymdai/outputs/ember/pi05_rank_layer_collapse_stability_cpu_20260731/analysis.json`
+  （SHA256
+  `d9d781bdaa8302e6dc12453ae666fd784bbac97d380db742f05a2a37117fec11`）。
+  v6从macro50到600的effective BA stable rank始终约`1.0001–1.0003`；
+  B列余弦约`.997–.999`，跨层q/v方向约`.969/.983+`，Core-Program和Prior
+  同样塌缩。
+- A行尚有明显差异，直接塌缩主因是B的16列近乎同向。same-task多视频的差异
+  约90.6%位于task-mean正交方向，不是纯scale；但全部视频方差只占mean-LoRA
+  能量约0.30%，说明上游视频创新被巨大的task/common写入主干淹没。
+- 新canonical Target-Spectral只修复该直接瓶颈：38个真实policy targets先
+  完成Core/Procedure融合，再展开16个rank coordinates；A/U分别保持row/column
+  正交，16个spectral scales决定实际有效rank。模型可以选择rank1，但不能
+  复制16个相同方向伪装rank16。
+- 首轮不同时改optimizer。full24漂移是否来自任务冲突，待decoder实验后以固定
+  macro的24-task Gradient Gram、cancellation和Adam候选伤害任务数判定。

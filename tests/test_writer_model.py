@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import inspect
 from pathlib import Path
 
 import torch
@@ -8,9 +7,9 @@ import torch
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer.as_contract import writer_trainable_contract
 from ember.writer.compiler import (
-    PriorInnovationCompiler,
-    PriorInnovationSlotBlock,
-    ProcedureInnovationReader,
+    ProcedureTargetReader,
+    TargetSpectralCompiler,
+    TargetSlotBlock,
 )
 from ember.writer.model import (
     CompleteLoRAWriter,
@@ -189,9 +188,9 @@ def _inputs() -> tuple[torch.Tensor, ...]:
     return frames, frame_indices, offsets, tokens, masks, task_spans
 
 
-def test_prior_innovation_writer_parameter_budget_and_native_probe_contract_are_exact() -> None:
+def test_target_spectral_writer_parameter_budget_and_native_probe_contract_are_exact() -> None:
     model, _ = _model()
-    assert sum(parameter.numel() for parameter in model.parameters()) == 10_643_968
+    assert sum(parameter.numel() for parameter in model.parameters()) == 14_495_744
     contract = writer_trainable_contract(
         model,
         torch.nn.Identity(),
@@ -199,7 +198,7 @@ def test_prior_innovation_writer_parameter_budget_and_native_probe_contract_are_
             Path(__file__).resolve().parents[1] / "configs/pi05_lora_v1.json"
         ),
     )
-    assert contract["parameter_count"] == 10_643_968
+    assert contract["parameter_count"] == 14_495_744
     assert contract["source_policy_trainable_parameter_count"] == 0
     expected = {
         "text_meta_lora": (model.semantic_encoder.text_meta_lora, 921_600),
@@ -224,8 +223,9 @@ def test_prior_innovation_writer_parameter_budget_and_native_probe_contract_are_
         ),
         "visual_transition": (model.visual_transition, 197_120),
         "procedure": (model.procedure, 1_573_888),
-        "compiler": (model.compiler, 1_403_904),
+        "compiler": (model.compiler, 4_992_512),
         "factor_heads": (model.factor_heads, 2_179_072),
+        "scale_heads": (model.scale_heads, 263_168),
     }
     assert {
         name: sum(parameter.numel() for parameter in module.parameters())
@@ -236,36 +236,86 @@ def test_prior_innovation_writer_parameter_budget_and_native_probe_contract_are_
     assert not model.semantic_encoder.fixed_suffix_noise.requires_grad
     assert not hasattr(model.semantic_encoder, "action_probe_positions")
     assert model.compiler.procedure_reader.attention.value.in_features == 256
-    assert model.compiler.slot_block.output_norm.weight.shape == (256,)
+    assert model.compiler.target_block.output_norm.weight.shape == (256,)
 
 
-def test_prior_innovation_writer_starts_at_exact_identity_template() -> None:
+def test_target_spectral_writer_starts_at_exact_identity_template() -> None:
     model, template = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     output = model(*_inputs(), policy=torch.nn.Identity())
     assert set(output) == set(template)
     for name, value in output.items():
         assert value.shape == (2, *template[name].shape)
-        assert torch.equal(value[0], template[name])
-        assert torch.equal(value[1], template[name])
+        assert torch.equal(value[0], value[1])
+        if ".lora_B." in name:
+            assert not bool(value.count_nonzero())
+        else:
+            gram = value[0].to(torch.float32) @ value[0].to(
+                torch.float32
+            ).transpose(0, 1)
+            diagonal = torch.diagonal(gram)
+            assert torch.allclose(
+                gram,
+                torch.diag(diagonal),
+                atol=2e-3,
+                rtol=2e-4,
+            )
 
 
-def test_prior_innovation_writer_becomes_video_conditioned_after_heads_open() -> None:
+def test_target_spectral_writer_becomes_video_conditioned_after_heads_open() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     for head in model.factor_heads.values():
         torch.nn.init.normal_(head.network[-1].weight, std=0.01)
+    for head in model.scale_heads.values():
+        torch.nn.init.normal_(head.network[-1].weight, std=0.01)
     output = model(*_inputs(), policy=torch.nn.Identity())
-    assert any(not torch.equal(value[0], value[1]) for value in output.values())
+    effective = []
+    for name, value in output.items():
+        if ".lora_A." not in name:
+            continue
+        paired = output[name.replace(".lora_A.", ".lora_B.")]
+        effective.append(paired.to(torch.float32) @ value.to(torch.float32))
+    assert any(not torch.equal(value[0], value[1]) for value in effective)
     assert not hasattr(model, "shared_lora")
 
 
-def test_prior_innovation_gradient_staging_reaches_both_branches_and_transition() -> None:
+def test_target_spectral_gradient_staging_reaches_both_branches_and_transition() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
 
-    first = model(*_inputs(), policy=torch.nn.Identity())
-    sum(value.to(torch.float32).sum() for value in first.values()).backward()
+    def backward() -> None:
+        output = model(*_inputs(), policy=torch.nn.Identity())
+        effective = []
+        for name, value in output.items():
+            if ".lora_A." not in name:
+                continue
+            paired = output[name.replace(".lora_A.", ".lora_B.")]
+            effective.append(paired.to(torch.float32) @ value.to(torch.float32))
+        sum(value.square().sum() + value.sum() for value in effective).backward()
+
+    def update() -> None:
+        with torch.no_grad():
+            for parameter in model.parameters():
+                if parameter.grad is not None:
+                    parameter.add_(parameter.grad, alpha=-1e-4)
+        model.zero_grad(set_to_none=True)
+
+    backward()
+    assert all(
+        head.network[-1].weight.grad is not None
+        and bool(torch.count_nonzero(head.network[-1].weight.grad))
+        for head in model.scale_heads.values()
+    )
+    assert all(
+        parameter.grad is None or not bool(torch.count_nonzero(parameter.grad))
+        for parameter in model.semantic_core.parameters()
+    )
+    update()
+
+    backward()
+    assert model.compiler.modulation.weight.grad is not None
+    assert bool(model.compiler.modulation.weight.grad.count_nonzero())
     assert all(
         head.network[-1].weight.grad is not None
         and bool(torch.count_nonzero(head.network[-1].weight.grad))
@@ -273,14 +323,11 @@ def test_prior_innovation_gradient_staging_reaches_both_branches_and_transition(
     )
     assert all(
         parameter.grad is None or not bool(torch.count_nonzero(parameter.grad))
-        for parameter in model.semantic_core.parameters()
+        for parameter in model.procedure.parameters()
     )
+    update()
 
-    model.zero_grad(set_to_none=True)
-    for head in model.factor_heads.values():
-        torch.nn.init.normal_(head.network[-1].weight, std=0.01)
-    second = model(*_inputs(), policy=torch.nn.Identity())
-    sum(value.to(torch.float32).sum() for value in second.values()).backward()
+    backward()
     for module in (
         model.semantic_core,
         model.visual_transition,
@@ -291,6 +338,36 @@ def test_prior_innovation_gradient_staging_reaches_both_branches_and_transition(
             parameter.grad is not None and bool(torch.count_nonzero(parameter.grad))
             for parameter in module.parameters()
         )
+
+
+def test_spectral_qr_stays_finite_under_strong_common_direction() -> None:
+    torch.manual_seed(22)
+    carrier = torch.eye(64, 16)
+    common = torch.randn(64, 1) @ torch.ones(1, 16)
+    raw_columns = carrier + 100.0 * common
+    columns = CompleteLoRAWriter._column_orthogonalize(raw_columns[None])
+    column_gram = columns.transpose(-1, -2) @ columns
+    assert bool(torch.isfinite(columns).all())
+    assert torch.allclose(
+        column_gram,
+        torch.eye(16)[None],
+        atol=2e-4,
+        rtol=2e-4,
+    )
+
+    raw_rows = raw_columns.transpose(0, 1)
+    rows = CompleteLoRAWriter._row_orthogonalize(
+        raw_rows[None],
+        torch.ones(1, 1),
+    )
+    row_gram = rows @ rows.transpose(-1, -2)
+    assert bool(torch.isfinite(rows).all())
+    assert torch.allclose(
+        row_gram,
+        torch.eye(16)[None],
+        atol=2e-4,
+        rtol=2e-4,
+    )
 
 
 def test_task_queried_patch_grounding_uses_patch_content_without_order_geometry() -> None:
@@ -440,50 +517,36 @@ def test_causal_procedure_does_not_leak_future_content() -> None:
     )
 
 
-def _compiler(width: int = 32) -> PriorInnovationCompiler:
-    return PriorInnovationCompiler(
+def _compiler(width: int = 32) -> TargetSpectralCompiler:
+    return TargetSpectralCompiler(
         width=width,
         heads=4,
         initialization_seed=7,
     )
 
 
-def test_compiler_core_zero_has_no_procedure_only_content_path() -> None:
+def test_compiler_is_target_first_and_rank_last() -> None:
     torch.manual_seed(29)
     compiler = _compiler()
-    core = torch.zeros(2, 5, 32)
+    core = torch.randn(2, 5, 32)
     procedure = torch.randn(2, 4, 32)
     valid_core = torch.ones(2, 5, dtype=torch.bool)
     positions = torch.tensor([[0, 5, 10, 15], [0, 5, 10, 15]])
     valid = torch.ones(2, 4, dtype=torch.bool)
-    slots, diagnostics = compiler.fused_slots(
+    slots, diagnostics = compiler.target_slots(
         core,
         valid_core,
         procedure,
         positions,
         valid,
     )
-    assert not bool(diagnostics["semantic_prior"].count_nonzero())
-    assert torch.allclose(
-        diagnostics["procedure_innovation"],
-        torch.zeros_like(diagnostics["procedure_innovation"]),
-        atol=1e-7,
-        rtol=0.0,
-    )
-    assert torch.allclose(
-        slots,
-        torch.zeros_like(slots),
-        atol=1e-5,
-        rtol=0.0,
-    )
-    assert tuple(
-        inspect.signature(compiler.procedure_reader.forward).parameters
-    ) == (
-        "semantic_prior",
-        "procedure",
-        "positions",
-        "valid_procedure",
-    )
+    ranks = compiler(core, valid_core, procedure, positions, valid)
+    assert slots.shape == (2, 38, 32)
+    assert diagnostics["core_targets"].shape == (2, 38, 32)
+    assert diagnostics["procedure_targets"].shape == (2, 38, 32)
+    assert ranks.shape == (2, 38, 16, 32)
+    assert not torch.allclose(ranks[:, 0, 0], ranks[:, 1, 0])
+    assert not torch.allclose(ranks[:, 0, 0], ranks[:, 0, 1])
     for reader in (compiler.core_reader, compiler.procedure_reader):
         for projection in (
             reader.attention.query,
@@ -495,47 +558,29 @@ def test_compiler_core_zero_has_no_procedure_only_content_path() -> None:
             assert bool(projection.weight.count_nonzero())
 
 
-def test_constant_procedure_has_zero_innovation_and_preserves_core_prior() -> None:
+def test_target_and_rank_coordinate_initialization_is_orthogonal() -> None:
     torch.manual_seed(30)
     compiler = _compiler()
-    core = torch.randn(1, 5, 32)
-    constant = torch.randn(1, 1, 32)
-    procedure = constant.expand(-1, 4, -1).clone()
-    constant_slots, diagnostics = compiler.fused_slots(
-        core,
-        torch.ones(1, 5, dtype=torch.bool),
-        procedure,
-        torch.tensor([[0, 5, 10, 15]]),
-        torch.ones(1, 4, dtype=torch.bool),
+    identity = torch.eye(32)
+    target_gram = (
+        compiler.target_coordinates
+        @ compiler.target_coordinates.transpose(-1, -2)
     )
-    zero_slots, zero_diagnostics = compiler.fused_slots(
-        core,
-        torch.ones(1, 5, dtype=torch.bool),
-        torch.zeros_like(procedure),
-        torch.tensor([[0, 5, 10, 15]]),
-        torch.ones(1, 4, dtype=torch.bool),
+    rank_gram = (
+        compiler.rank_coordinates
+        @ compiler.rank_coordinates.transpose(-1, -2)
     )
-    assert bool(diagnostics["semantic_prior"].count_nonzero())
-    assert not bool(diagnostics["centered_procedure"].count_nonzero())
-    assert not bool(diagnostics["procedure_innovation"].count_nonzero())
-    assert torch.equal(
-        diagnostics["semantic_prior"],
-        zero_diagnostics["semantic_prior"],
-    )
-    assert torch.equal(constant_slots, zero_slots)
-    assert bool(constant_slots.count_nonzero())
-    head = FactorHead(32, 32, 8)
-    torch.nn.init.normal_(head.network[-1].weight, std=0.01)
-    assert bool(head(constant_slots).count_nonzero())
+    assert torch.equal(target_gram, identity.expand_as(target_gram))
+    assert torch.equal(rank_gram, identity.expand_as(rank_gram))
 
 
-def test_bfloat16_non_power_of_two_procedure_centering_is_masked_and_finite() -> None:
+def test_bfloat16_procedure_centering_is_masked_finite_and_fp32_stable() -> None:
     torch.manual_seed(31)
     procedure = torch.randn(2, 5, 32, dtype=torch.bfloat16)
     valid = torch.tensor(
         [[True, True, True, False, False], [True, True, True, True, True]]
     )
-    centered = ProcedureInnovationReader.center(procedure, valid)
+    centered = ProcedureTargetReader.center(procedure, valid)
     assert centered.dtype == torch.bfloat16
     assert not bool(centered[0, 3:].count_nonzero())
     assert bool(torch.isfinite(centered).all())
@@ -553,7 +598,8 @@ def test_compiler_open_head_gradients_reach_core_and_centered_procedure() -> Non
     compiler = _compiler()
     core = torch.randn(1, 5, 32, requires_grad=True)
     procedure = torch.randn(1, 4, 32, requires_grad=True)
-    slots, _ = compiler.fused_slots(
+    torch.nn.init.normal_(compiler.modulation.weight, std=0.01)
+    ranks = compiler(
         core,
         torch.ones(1, 5, dtype=torch.bool),
         procedure,
@@ -562,7 +608,7 @@ def test_compiler_open_head_gradients_reach_core_and_centered_procedure() -> Non
     )
     head = FactorHead(32, 32, 8)
     torch.nn.init.normal_(head.network[-1].weight, std=0.01)
-    head(slots).square().sum().backward()
+    head(ranks[:, 0]).square().sum().backward()
     assert (
         core.grad is not None
         and bool(torch.isfinite(core.grad).all())
@@ -579,20 +625,20 @@ def test_compiler_open_head_gradients_reach_core_and_centered_procedure() -> Non
     )
 
 
-def test_slot_block_keeps_routing_out_of_value_content_and_normalizes_output() -> None:
+def test_target_block_keeps_routing_out_of_value_content() -> None:
     torch.manual_seed(33)
-    block = PriorInnovationSlotBlock(width=32, heads=4)
+    block = TargetSlotBlock(width=32, heads=4)
     routing = torch.randn(1, 6, 32)
     zero = torch.zeros(1, 6, 32, requires_grad=True)
-    zero_output, _ = block(zero, routing)
+    zero_output = block(zero, routing)
     assert not bool(zero_output.count_nonzero())
     zero_output.sum().backward()
     assert zero.grad is not None
     assert bool(torch.isfinite(zero.grad).all())
 
     content = torch.randn(1, 6, 32)
-    first, _ = block(content, routing)
-    second, _ = block(content, routing + 0.25)
+    first = block(content, routing)
+    second = block(content, routing + 0.25)
     assert not torch.allclose(first, second)
     assert hasattr(block, "output_norm")
     assert not hasattr(block, "input_rms")

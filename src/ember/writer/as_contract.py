@@ -25,7 +25,7 @@ from ember.pi05_source_checkpoint import (
     write_json_atomic,
 )
 from ember.pi05_source_contract import append_jsonl
-from ember.writer.architecture import PRIOR_INNOVATION_WRITER_PARAMETER_COUNT
+from ember.writer.architecture import TARGET_SPECTRAL_WRITER_PARAMETER_COUNT
 from ember.writer.as_config import (
     REPO_ROOT,
     authority_path,
@@ -38,7 +38,7 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 from ember.writer.topology import validate_task_complete_topology
 
 
-AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_prior_innovation_as_writer_launch_v1"
+AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_target_spectral_as_writer_launch_v1"
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
 
@@ -146,7 +146,7 @@ def resolve_runtime(
     if args.mode == "formal" and config["formal_run"].get("status") != "sealed":
         raise WriterModelError(
             "formal AS-Writer config is not sealed from the live "
-            "Prior-Innovation profile"
+            "Target-Spectral profile"
         )
     source = config["formal_run"] if args.mode == "formal" else config["profile_defaults"]
     (
@@ -371,7 +371,7 @@ def writer_trainable_contract(
     parameter_count = sum(value.numel() for value in writer.parameters())
     if (
         not names
-        or parameter_count != PRIOR_INNOVATION_WRITER_PARAMETER_COUNT
+        or parameter_count != TARGET_SPECTRAL_WRITER_PARAMETER_COUNT
         or any(parameter.requires_grad for parameter in policy.parameters())
     ):
         raise WriterModelError("AS-Writer freeze boundary changed")

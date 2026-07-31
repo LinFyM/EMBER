@@ -365,7 +365,8 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   拓扑；参数`10,237,704`、step0 identity、信息墙和public rank16不变。
 - [x] fresh config固定B20、4 ranks×6 tasks、full24等权、LR
   `3e-4`、warmup17、cosine decay400到`1e-5`、every25。
-- [ ] GPU4–7完成最长105-frame三macro profile和fresh0→1→resume1→3。
+- [x] GPU4–7完成最长105-frame三macro profile和formal-seed
+  fresh0→1→resume1→3；B20 finite、所有主模块可达，配置已seal。
 - [ ] clean push后fresh macro0→200，再默认exact-resume到400。
 - [ ] 并行评测macro150/200/350/400 correct400；winner若在内部点，只补±25。
 - [ ] 对winner与旧v5.2/direct Source-SFT做有效BA谱、范数、q/v、layer/target、

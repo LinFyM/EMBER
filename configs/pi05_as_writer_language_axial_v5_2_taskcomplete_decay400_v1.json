@@ -190,11 +190,11 @@
       "decay_steps": 400,
       "decay_lr": 0.00001
     },
-    "maximum_formal_wall_clock_minutes": 135,
-    "budget_role": "fresh_v5_2_task_complete_fast_decay400_two_hour_comparison"
+    "maximum_formal_wall_clock_minutes": 190,
+    "budget_role": "fresh_v5_2_task_complete_fast_decay400_same_400_macro_comparison_under_live_shared_gpu_throughput"
   },
   "profile_defaults": {
-    "status": "pending_v5_2_b20_live_profile",
+    "status": "sealed_v5_2_b20_live_profile",
     "expected_world_size": 4,
     "total_steps": 3,
     "per_rank_batch_size": 20,
@@ -206,7 +206,7 @@
     "selected_stop_step": 3
   },
   "profile_evidence": {
-    "status": "pending_v5_2_b20_live_profile",
+    "status": "sealed_v5_2_b20_live_profile",
     "allowed_physical_gpu_ids": [
       4,
       5,
@@ -231,9 +231,75 @@
       }
     ],
     "selection_rule": "try_b20_on_three_complete_macros_containing_real_105_frame_video_then_fallback_directly_to_b16_only_if_oom_or_repeated_instability",
-    "selected": null,
-    "exact_resume_smoke": null,
-    "gradient_reachability": null,
+    "selected": {
+      "max_frames_per_encoder_call": 32,
+      "per_task_action_batch_size": 20,
+      "profile_optimizer_steps": 3,
+      "profile_global_action_queries": 1440,
+      "profile_global_video_conditions": 72,
+      "profile_wall_seconds": 79.21825608005747,
+      "step_seconds_max": [
+        27.501828173175454,
+        25.33574487315491,
+        25.342118612024933
+      ],
+      "steady_action_queries_per_second_mean_last_two": 18.943182469916753,
+      "steady_macro_updates_per_hour_mean_last_two": 142.07386852437565,
+      "max_cuda_allocated_bytes": 76967302656,
+      "max_cuda_reserved_bytes": 83638616064,
+      "all_steps_finite": true,
+      "all_four_ranks_completed": true,
+      "contains_real_105_frame_video": true,
+      "live_cotenancy_note": "physical_gpus_4_and_6_had_unrelated_owner_authorized_cotenants_so_400_macros_are_estimated_at_about_169_body_minutes",
+      "profile_root": "/data/ymdai/outputs/ember/pi05_as_writer_v52_taskcomplete_profile_b20_seed172_62598d3_20260731",
+      "run_contract_sha256": "a0a85e0506924bf1f01679283d36be5308d6b439f81472659e3763ef6fafd69c"
+    },
+    "exact_resume_smoke": {
+      "status": "pass_fresh_step1_then_exact_resume_to_step3",
+      "root": "/data/ymdai/outputs/ember/pi05_as_writer_v52_taskcomplete_resume_smoke_b20_formalseed_62598d3_20260731",
+      "formal_teacher_video_seed": 20260722,
+      "fresh_stop_step": 1,
+      "resumed_stop_step": 3,
+      "completed_optimizer_steps": 3,
+      "metrics_steps": [
+        1,
+        2,
+        3
+      ],
+      "applied_learning_rates": [
+        0.0003,
+        0.00022749999999999997,
+        0.00008250000000000003
+      ],
+      "cumulative_action_queries": [
+        480,
+        960,
+        1440
+      ],
+      "cumulative_video_conditions": [
+        24,
+        48,
+        72
+      ],
+      "all_steps_finite": true,
+      "validation_action_reads": 0,
+      "test_action_reads": 0,
+      "test_video_value_reads": 0,
+      "step1_checkpoint_files_not_rewritten_after_resume": true,
+      "run_contract_sha256": "6fc7bbb51c366e1091401937435214a0118b5fe45165ee6e66776064617d2bd6"
+    },
+    "gradient_reachability": {
+      "status": "pass_all_major_modules_with_expected_short_horizon_action_meta_lora_a_staging",
+      "comparison": "formal_seed_checkpoint_step1_to_step3",
+      "writer_trainable_parameters": 10237704,
+      "trainable_tensor_names": 519,
+      "changed_trainable_tensor_names": 447,
+      "changed_parameter_elements": 9869064,
+      "all_major_modules_changed": true,
+      "all_trainable_tensors_finite": true,
+      "unchanged_tensor_names": "all_72_action_meta_lora_a_factors",
+      "unchanged_factor_explanation": "zero_initialized_action_meta_lora_b_and_bfloat16_short_profile_delay_a_updates_while_all_paired_b_factors_change; historical_v5_2_step100_to900_changes_all_72_a_factors"
+    },
     "inference_profile": null
   },
   "specificity_gate": {
@@ -249,7 +315,7 @@
     "contrast_loss_allowed": false
   },
   "formal_run": {
-    "status": "pending_profile_and_resume_smoke",
+    "status": "sealed",
     "expected_world_size": 4,
     "total_steps": 400,
     "per_rank_batch_size": 20,

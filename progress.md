@@ -2297,3 +2297,26 @@ GPU范围和训练步长是当时快照；活动状态只取
   `41 passed`，全仓首轮`188 passed/1 message-only failure`，该消息测试已
   同步修正。architecture guard为REVIEW、无hard violation，active source
   净删约609行。
+
+## v5.2 task-complete B20 profile与formal seal（2026-07-31）
+
+- main `62598d3`全仓fresh回归为`189 passed`；核心model/temporal/
+  video-program逐文件SHA与正式v5.2 commit `529da6b`完全一致，随后已push。
+- profile seed172在GPU4–7完成三个full24 macros；首步包含task38/demo36的
+  105 sampled frames。三步loss/gradient finite，峰值allocated/reserved为
+  `76,967,302,656/83,638,616,064 bytes`；B20通过，不触发B16。
+- 现场GPU4和6有未干扰的他人轻量进程；后两步均值`18.943 queries/s`、
+  `142.074 macro/hour`。因此相同400-macro科学预算在当前共卡吞吐下约需
+  169分钟body，formal wall上限如实放宽到190分钟，而不是偷偷减少updates。
+- 独立formal teacher seed `20260722`先fresh到macro1，再从完整checkpoint
+  exact-resume到3。metrics、LR、task/video/query cursor连续为`1/2/3`、
+  `480/960/1440 queries`和`24/48/72 videos`，validation/test action与test
+  video读取均为0。
+- formal-seed step1→3的519个trainable tensors中447个变化，Core、Procedure、
+  compiler、factor heads和三条semantic projection/Meta-LoRA主路径均可达；
+  72个Action Meta-LoRA A因zero-B与BF16短profile分级暂未量化变化，配对B全部
+  变化，且旧v5.2 step100→900证实72/72 A随后均变化。配置已seal为fresh
+  `0→200→400`、B20、every25。
+- 清理108个已核验无进程引用、可由评测重建的`writer_lora_cache`，删除约
+  `105.77GB`；正式result rows、contracts和checkpoints均保留。个人占用从
+  `453.12GB`降到`347.35GB`，这些缓存未进入回收站、只能重新生成。

@@ -92,9 +92,11 @@ clip/AdamW/scheduler。checkpoint每25保存；正式比较点至少为macro150/
 
 训练和推理严格为一条teacher video生成一套LoRA；不得做多视频或多LoRA平均。
 action queries继续与video同task但跨episode独立。GPU仍只允许物理4–7，
-0–3不得查询或使用。owner已经解除此前“暂不正式训练”的临时边界；最长105-frame
-B20三macro、step0 identity、freeze/gradient和exact-resume通过后即可完成两小时
-正式轨迹。Target-Spectral只保留为负结果provenance，不得resume。
+0–3不得查询或使用。main `62598d3`已完成最长105-frame B20三macro及formal-seed
+fresh0→1→exact-resume1→3；配置已seal。现场共卡吞吐约`142.074 macro/hour`，
+因此保持相同400-macro科学预算时body约169分钟，不得为机械凑两小时减少updates。
+下一动作是clean push后的fresh0→200→400正式轨迹。Target-Spectral只保留为
+负结果provenance，不得resume。
 
 关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
 single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe

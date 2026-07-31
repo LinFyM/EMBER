@@ -1390,3 +1390,12 @@ configs/pi05_as_writer_language_axial_v5_2_taskcomplete_decay400_v1.json
 最长105-frame三macro profile和fresh0→1→resume1→3。评测点为150/200/350/
 400，winner若为内部点再补±25；不做checkpoint融合。当前实现聚焦测试
 `41 passed`，全仓初轮仅剩一处已同步修正的RL错误消息测试。
+
+上述profile与resume门现已完成并seal：main `62598d3`全仓`189 passed`；
+seed172三macro包含105-frame、B20 finite，峰值allocated/reserved
+`76,967,302,656/83,638,616,064 bytes`。formal seed `20260722`独立
+fresh0→1→resume1→3后，metrics/LR/task/video/query cursor连续且所有主模块
+可达；正式配置已切换`formal_run.status=sealed`。当前共卡实测约
+`142.074 macro/hour`，所以400 macros约169分钟body；仍保持与v6相同更新数，
+不为凑两小时偷偷减少科学预算。下一动作是clean commit/push后在GPU4–7
+fresh启动macro0→200，再exact-resume到400，并评测150/200/350/400。

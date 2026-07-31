@@ -2870,3 +2870,14 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 当前最重要未识别单元是`v5.2 + task-complete fast-decay400`。活动实现
   精确恢复v5.2参数`10,237,704`，不混入v6 transition或Target正交decoder；
   训练仍为full24、B20、long-first、一次AdamW、every25、fresh到macro400。
+- 旧v5.2 step900与v6 macro400现存的相同16条件内部panel可严格配对：v5.2/
+  v6 correct-video effective BA norm均值为`142.338/109.311`；same-task
+  other-video BA absolute delta为`20.188/7.496`，其中v5.2在15/16条件更大；
+  fixed-query action RMS delta为`.04842/.00646`，v5.2在14/16更大。按两独立
+  视频估计的BA中心化能量约`1.251%/.2645%`。因此v5.2较强视频特异性已经
+  出现在gauge-invariant BA与policy action，不只是rollout噪声。
+- 旧v5.2正式LoRA cache已按仓库清理合同删除，故不能诚实补写其stable rank、
+  q/v layer分布或跨层方向；如未来必须补齐，只需从step900重新生成LoRA，
+  不需要rollout。新task-complete winner评测时应保留LoRA cache，直接完成
+  BA谱/norm、q/v/action、layer/target、50-video task-centered innovation和
+  fixed-query action对照；A/B coordinate只作同gauge次级诊断。

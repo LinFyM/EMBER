@@ -46,7 +46,9 @@ v5.2的patch-grounded Core、native Action mean、causal Procedure和320-slot
 AdaLN compiler，参数`10,237,704`；训练沿用4 ranks×6 tasks、full24等权、
 真实视频长度cost balance、rank内long-first、B20和每25 checkpoint。fresh
 macro0→200后默认exact-resume到400，候选150/200/350/400做paired correct400。
-只使用GPU4–7；GPU0–3不得查询或使用。Target-Spectral不得resume。
+main `62598d3`的105-frame B20 profile和formal-seed resume smoke均已通过，
+配置已seal；当前共卡吞吐折算400 macros约169分钟body。只使用GPU4–7；
+GPU0–3不得查询或使用。Target-Spectral不得resume。
 
 外部专家复核后的第一轮诊断证明，shuffle的直接行为放大器位于per-image
 forecast之后的absolute-time Plan/Revision；但后续全面复审又确认它不是唯一

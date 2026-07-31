@@ -102,22 +102,34 @@ def test_prior_innovation_config_seals_architecture_and_information_wall() -> No
     assert config["information_wall"]["test_video_values_read"] == 0
     assert "state" in config["information_wall"]["writer_forbidden_inputs"]
     assert config["profile_defaults"]["expected_world_size"] == 4
-    assert config["profile_defaults"]["status"].startswith("pending")
-    assert config["profile_evidence"]["status"].startswith("pending")
+    assert config["profile_defaults"]["status"] == "sealed_b20"
+    assert config["profile_evidence"]["status"] == "sealed_b20"
     assert config["profile_evidence"]["allowed_physical_gpu_ids"] == [4, 5, 6, 7]
     assert [
         row["per_task_action_batch_size"]
         for row in config["profile_evidence"]["candidates"]
     ] == [20, 16]
-    assert config["profile_evidence"]["selected"] is None
-    assert config["profile_evidence"]["gradient_reachability"] is None
+    assert config["profile_evidence"]["selected"][
+        "per_task_action_batch_size"
+    ] == 20
+    assert config["profile_evidence"]["selected"][
+        "contains_real_105_frame_video"
+    ] is True
+    assert config["profile_evidence"]["gradient_reachability"][
+        "all_major_modules_changed"
+    ] is True
+    assert config["profile_evidence"]["gradient_reachability"][
+        "all_trainable_tensors_finite"
+    ] is True
     assert config["profile_evidence"]["inference_profile"] is None
     assert config["profile_evidence"]["teacher_videos_per_task_visit"] == 1
-    assert config["profile_evidence"]["exact_resume_smoke"] is None
+    assert config["profile_evidence"]["exact_resume_smoke"][
+        "step1_checkpoint_files_unchanged_after_resume"
+    ] is True
     assert config["specificity_gate"]["status"] == "pending_absolute_gate"
     assert config["optimization"]["scheduler"]["decay_steps"] == 400
     assert config["data"]["teacher_video_seed"] == 20260722
-    assert config["formal_run"]["status"].startswith("pending")
+    assert config["formal_run"]["status"] == "sealed"
     assert config["formal_run"]["total_steps"] == 2400
     assert config["formal_run"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["selected_stop_step"] == 200

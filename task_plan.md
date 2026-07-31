@@ -320,8 +320,8 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
 - [x] 精确参数枚举Writer`10,643,968`、compiler`1,403,904`；全仓
   `195 passed`、compileall、diff check通过，architecture guard无hard
   violation。
-- [ ] clean commit/push。
-- [ ] 只在GPU4–7完成最长105-frame B20三macro profile、全参数
+- [x] canonical实现clean commit `7b7abf1`并push。
+- [x] 只在GPU4–7完成最长105-frame B20三macro profile、全参数
   reachability与formal-seed exact-resume；不继承旧证据。
 - [ ] seal后fresh macro0→200、every25；固定评测50/100/150/200
   correct400，不融合checkpoint。

@@ -87,11 +87,13 @@ backward即可同时触达Core和Procedure。精确Writer参数为`10,643,968`�
 
 canonical源码、fresh config和schema已原位切换，不保留Core-Program可执行
 兼容路径。CPU全仓`195 passed`、compileall、diff check和architecture guard
-已通过，guard无hard violation。当前下一动作是在GPU4–7独立做最长105-frame
-真实视频B20三macro profile、fresh0→1→exact-resume1→3和全参数gradient
-reachability；不能继承Core-Program证据。seal后fresh macro0→200、每25
-checkpoint，并固定评测macro50/100/150/200 paired correct400，不做checkpoint
-融合，也不同时修改训练recipe。
+已通过，guard无hard violation。GPU4–7独立最长105-frame B20三macro profile
+也已通过：后两步约`25.818 queries/s`和`193.635 macro/hour`，峰值
+allocated/reserved约`76.99/83.64GB`；不触发B16。formal seed
+fresh0→1→exact-resume1→3连续，step1逐文件未改写，所有主模块finite且可达。
+当前下一动作是封存并push该证据，然后fresh macro0→200、每25 checkpoint，
+固定评测macro50/100/150/200 paired correct400；不做checkpoint融合，也不
+同时修改训练recipe。
 
 关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
 single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe

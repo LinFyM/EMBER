@@ -2774,3 +2774,21 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   全仓`195 passed in 16.13s`、compileall和diff check通过；architecture guard
   为REVIEW但无hard violation，active source相对`a53c432`净增36行。GPU
   B20、真实BF16、gradient reachability和exact-resume尚待当前schema独立完成。
+
+## Prior–Innovation B20与exact-resume证据（2026-07-31）
+
+- GPU4–7以profile-only seed`172`完成B20三个task-complete macros；首步实际
+  覆盖task38/demo36的105个stride-5帧。三步wall为
+  `20.2923/18.5736/18.6098s`，后两步均值`25.8180 queries/s`、
+  `193.6350 macro/hour`，峰值allocated/reserved为
+  `76,987,188,224/83,644,907,520 bytes`，全finite且不触发B16。
+- 正式seed`20260722`的独立root先fresh0→1，再从step1 exact-resume到3；
+  metrics严格连续`1/2/3`，累计queries`480/960/1440`、video conditions
+  `24/48/72`，LR和task/video/query cursor连续。resume前后step1 manifest、
+  Writer、trainer与四rank state逐文件SHA完全相同；validation/test action
+  reads与test video value reads均为0。
+- step1→3的523个trainable tensors中521个数值变化，compiler、factor heads、
+  Semantic Core、transition、Procedure和全部主要Meta-LoRA组都finite且变化。
+  唯二未产生float32可见变化的是Action Meta-LoRA layer5 K/V的A；其配对
+  zero-init B在step3已非零且finite，说明路径可达但三步内A的二阶更新低于
+  float32分辨率。该事实透明封存，不冒充523/523。

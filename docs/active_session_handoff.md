@@ -57,16 +57,25 @@ projection zero-init。精确Writer/compiler参数为
 `10,643,968/1,403,904`。
 
 活动源码/config/schema已原位切换；Core-Program config和兼容执行路径退役。
-CPU验证为全仓`195 passed`、compileall/diff check通过、architecture guard
-无hard violation。当前尚未提交，也尚未做任何Prior–Innovation GPU工作。
+canonical实现commit为`7b7abf1`且已push；CPU验证为全仓`195 passed`、
+compileall/diff check通过、architecture guard无hard violation。
+
+GPU4–7独立最长视频B20 profile已通过：首步包含task38/demo36真实105个
+stride-5帧，三步finite；后两步均值`25.818 queries/s`、
+`193.635 macro/hour`，峰值allocated/reserved
+`76,987,188,224/83,644,907,520 bytes`，不触发B16。formal teacher seed
+`20260722`下fresh0→1→exact-resume1→3也通过：metrics、LR、
+task/video/query cursor连续，step1全部checkpoint文件逐项SHA未变化，
+validation/test action reads为0。523个trainable tensors中521个在step1→3
+发生数值变化，所有主模块均变化且finite；仅Action Meta-LoRA layer5 K/V的
+两个A因配对zero-init B刚打开、更新低于float32分辨率而未数值变化，配对B已
+非零，不能解释为断路。
 
 紧邻顺序：
 
 ```text
-clean commit + push
-→ GPU4–7 longest-105-frame B20 three-macro profile
-→ formal-seed fresh0→1→exact-resume1→3
-→ seal fresh macro0→200, every25
+seal profile evidence + clean commit/push
+→ fresh formal macro0→200, every25
 → paired correct400 at macro50/100/150/200
 ```
 
@@ -75,7 +84,7 @@ clean commit + push
 按absolute趋势续训，并在达到`150/400`或稳定接近时做
 same/wrong/shuffled/reversed full400。
 
-当前活动配置：
+当前活动配置与待启动formal root：
 
 ```text
 configs/pi05_as_writer_prior_innovation.json
@@ -83,6 +92,8 @@ source policy:
 /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000
 data root:
 /data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a
+planned formal output:
+/data/ymdai/outputs/ember/pi05_as_writer_prior_innovation_taskcomplete_decay400_dev_r4_b20_seed7_s2400_<sealed-commit>_20260731
 ```
 
 ## 1. Core-Program与Recenter历史快照（整节已失效，不得执行其命令）

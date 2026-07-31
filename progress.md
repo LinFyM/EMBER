@@ -2195,3 +2195,14 @@ GPU范围和训练步长是当时快照；活动状态只取
 - `/data/ymdai`当前占用约`438.61GB`，本轮profile、训练和四点correct400预计
   新增`6–8GB`，低于500GB hard cap。紧邻动作是clean commit/push，然后只在
   GPU4–7做最长105-frame B20三macro profile和exact-resume。
+
+## Prior–Innovation B20 profile与formal seal（2026-07-31）
+
+- main `7b7abf1`在GPU4–7完成独立最长105-frame B20三macro profile，全部
+  finite；稳态约`25.818 queries/s`、`193.635 macro/hour`，峰值
+  allocated/reserved约`76.99/83.64GB`，B16未触发。
+- 正式teacher seed下fresh0→1→resume1→3通过；step1逐文件SHA未改写，
+  metrics/LR/cursor/RNG连续，累计72 videos和1,440 queries，validation/test
+  信息墙读数均为0。所有主模块finite且可达。
+- config已恢复正式seed并seal为B20、fresh macro0→200、every25；下一步为
+  clean push sealed evidence后，从identity启动约一小时正式段。

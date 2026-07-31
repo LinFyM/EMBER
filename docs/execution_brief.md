@@ -13,18 +13,12 @@ Prior四点为`100/61/89/88`。这些结果共同说明：围绕Action–Effect 
 strict Core×Procedure双必要、DC/AC手工重分配或不同reader反复重构，均没有
 恢复v5.2/v6的absolute。
 
-最新跨架构LoRA复核定位了一个此前未正面处理的稳定瓶颈：v6/Core-Program/
-Prior的rank-16 effective update稳定秩都接近`1.000`，v6 q/v的B列余弦约
-`.9974`，跨18层effective-delta余弦约`.969/.983+`。同task视频确实产生
-方向创新，约`90.6%`的视频中心化方差位于正交方向，但其总能量仅为task/common
-LoRA主干约`0.30%`。因此当前最大直接问题不是上游完全没读视频，而是compiler
-把视频创新压在跨layer/rank共享的近rank-1写入通道里。
+Target-Spectral已完成对“近rank1是否为直接瓶颈”的干净反证。fresh
+macro50/100/150/200 correct400为`30/12/18/34`；四点配对、无放回和输出完整性
+审计通过。best `34`甚至低于source base `48`，因此不续训、不做行为级控制。
 
-当前唯一canonical方法为
-[`EMBER Target-Spectral Writer`](action_forecast_writer_target_spectral_design.md)。
-它保留v6已经验证的`Q_text + M_f + G_f`、Semantic Core、native
-50-suffix mean Action、teacher-video task-grounded transition和两层causal
-Procedure；只重构public-LoRA compiler：
+它保留v6完全相同的`Q_text + M_f + G_f`、Semantic Core、native 50-suffix
+mean Action、teacher-video transition和两层causal Procedure，只把compiler改为：
 
 ```text
 Core/Procedure → 38个真实policy targets
@@ -34,18 +28,24 @@ Core/Procedure → 38个真实policy targets
 → rank16 public LoRA
 ```
 
-模型允许诚实选择effective rank1，但不再允许16条A/B复制同一方向。Writer
-精确参数`14,495,744`，step0 effective delta严格identity。一条teacher video
-始终只生成一套LoRA；action queries与teacher video同task、跨episode独立；
-full24每task等权、B20和AdamW首轮保持不变。这样先隔离验证decoder根因，只有
-后续Gradient Gram确认任务冲突时才改变更新规则。
+Target-Spectral确实把effective stable rank从v6 m200的`1.00017`提高到
+`3.3245`，把q/v跨层方向余弦从约`.968/.988`降到`.032/.066`；但LoRA范数
+从`94.71`降到`25.87`，q/v能量从`74.5/25.5%`翻转到`39.0/60.9%`，层间能量
+CV从`.047/.043`恶化为`1.294/.805`。16个同向component的建设性增益被16个
+正交component的平方和合成取代，理论4倍幅度损失与实测`3.66×`一致。
 
-canonical源码/config已原位切换到fresh Target-Spectral schema，旧Prior
-config退役。CPU合同通过后仍必须在GPU4–7重新完成105-frame B20 profile、
-exact-resume和gradient reachability，不能继承Prior seal。通过后fresh训练
-macro0→200并评测macro50/100/150/200，只选择single checkpoint。所有候选
-都做内部rank/layer/video数值分析；只有absolute达到`150`或稳定接近且显著
-超过同期v5.2/v6，才做same/wrong/shuffled/reversed rollout。
+Target m200与v6 m200的train functional loss仍几乎相同（`.10023/.10043`）；
+内部Core/Procedure和order signal也相同，shuffle/reverse差异可传到effective
+LoRA与policy action。失败因此不是上游没读teacher video，而是形式上更健康的
+谱把更新写出source policy的高增益、q-dominant、跨层协调adaptation manifold。
+同task视频相对方差略升但绝对创新约低3倍；不能把分母缩小当作视频能力增强。
+
+当前源码仍是
+[`EMBER Target-Spectral Writer`](action_forecast_writer_target_spectral_design.md)
+的sealed负结果，仅待下一架构原位替换，不得resume。下一方案必须保留v6公共
+高增益主方向，把额外rank作为可选、zero-init的视频innovation容量，而不是用
+强制正交rank替换主方向。当前只允许使用GPU4–7中现场空闲设备做内部分析；
+暂时不启动正式训练，GPU0–3不得查询或使用。
 
 外部专家复核后的第一轮诊断证明，shuffle的直接行为放大器位于per-image
 forecast之后的absolute-time Plan/Revision；但后续全面复审又确认它不是唯一

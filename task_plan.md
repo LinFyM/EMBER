@@ -347,9 +347,15 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
 - [x] 正式teacher seed下fresh0→1→exact-resume1→3；steps/LR/query/video
   cursor连续、全部finite、validation/test reads为0，step1七个文件逐项SHA
   未改写。
-- [ ] fresh macro0→200、every25；固定评测50/100/150/200 correct400。
-- [ ] winner做无rollout rank/layer/video数值分析。只有single-checkpoint达到
-  150，或稳定接近且显著超过同期v5.2/v6，才做行为级视频特异性。
+- [x] fresh macro0→200、every25自然完成；固定评测50/100/150/200
+  correct400为`30/12/18/34`。四点完整审计通过，best低于source base、SFT、
+  v5.2和v6；未续训、未做行为级控制。
+- [x] macro200完成无rollout rank/layer/video与五条件内部分析。强制spectral
+  gauge把stable rank从约1提高到3.32，却把LoRA范数缩小3.66倍、打散跨层方向、
+  翻转q/v能量并造成极端layer不均；Core/Procedure和order传递保持工作。
+- [ ] 基于负结果重新设计：保留v6高增益、q-dominant、跨层协调公共主方向，
+  把额外rank作为可选zero-init视频innovation；不得在Target-Spectral的
+  orthogonal scale/gate上打补丁或resume。owner讨论前不启动正式训练。
 
 ## Phase E：matched π0.5 action one-shot baseline
 

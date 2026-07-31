@@ -2259,3 +2259,27 @@ GPU范围和训练步长是当时快照；活动状态只取
 - formal-seed step1→3同样为530个trainable tensors中458个变化，所有主模块
   finite且可达；72个Action Meta-LoRA A按分级zero-init延迟，配对B已变化。
   config现已seal为B20、fresh macro0→200、every25。
+
+## Target-Spectral训练、correct400与内部分析完成（2026-07-31）
+
+- sealed commit `aa9d89a`的fresh run自然完成macro0→200：200行finite metrics、
+  4,800个single-video conditions、96,000 queries、every25的8个完整checkpoint；
+  training body `3920.15s`，终点loss/grad为`.10023/.06443`，峰值allocated/
+  reserved约`77.08/83.65GB`。全部checkpoint manifest通过校验。
+- macro50/100/150/200在相同8×50 fixed states、每task teacher video无放回
+  0–49和同一RNG配对下得到`30/12/18/34`。macro200逐task为
+  `12/0/0/6/13/1/1/1`；31/34成功集中在三个tasks。独立审计确认四份结果、
+  36/36 shards、400 LoRA caches、worker return codes和hash链完整。
+- 按门停止行为评测与续训。CPU rank/layer/video分析完成，产物SHA256
+  `4d7dfc68efa84b9863b8a6d9b7d4ab717f529018992b6c316c06320631d10a89`；
+  Target m200 stable rank/norm为`3.3245/25.87`，v6 m200为
+  `1.00017/94.71`。Target q/v跨层余弦仅`.032/.066`、layer-energy CV高达
+  `1.294/.805`，确认强制正交拆散了v6高增益协调方向。
+- GPU4–6现场有他人进程，按owner要求没有挤占；只在空闲GPU7单卡完成16条件
+  non-rollout内部探针。首轮被旧probe字段`transition_norm`拦截，核对当前模型
+  后只把capture更新为`transition_key_norm`，原始复现随后成功。该故障仅影响
+  disposable instrumentation，不影响训练或正式correct400。
+- 内部结果证明Core/Procedure工作且order差异传到LoRA/action；失败集中在
+  compiler写入几何和functional-loss→closed-loop错位。当前暂不正式训练，
+  只允许使用GPU4–7中现场空闲卡分析；下一步由owner讨论后封存保留v6主方向、
+  仅增加可选视频innovation rank的架构。

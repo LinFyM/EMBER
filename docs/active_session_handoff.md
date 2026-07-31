@@ -3,13 +3,70 @@
 最后更新：2026-07-31 UTC。
 
 本文顶部保存当前运行状态、恢复入口和紧邻动作；后续编号章节是按时间保留的
-历史快照。当前fresh架构 authority 是
-`docs/action_forecast_writer_target_spectral_design.md`；Prior–Innovation及
+历史快照。当前可执行源码仍封存在
+`docs/action_forecast_writer_target_spectral_design.md`，但其首轮已形成充分
+负结果，不得resume；下一架构尚待结合内部证据重新封存。Prior–Innovation及
 更早设计只作失败provenance。长期科学边界是`AGENTS.md`与
 `docs/execution_brief.md`。任何接手者都必须先只读复核现场，不能按历史快照
 重复启动进程。
 
-## 0. Target-Spectral当前恢复入口
+## 0. Target-Spectral负结果与当前恢复入口
+
+Target-Spectral fresh macro0→200已自然完成：200个finite optimizer updates、
+4,800个single-video LoRA conditions、96,000个action queries和every25的8个
+完整checkpoint。macro50/100/150/200 paired correct400为：
+
+```text
+30 / 12 / 18 / 34
+```
+
+四点均为相同8 tasks×50 states、每task teacher demos 0–49无放回各一次、同一
+state/video/RNG配对；36/36 shards、400 LoRA caches、结果与run-summary hash均
+完整，worker无OOM/NaN/traceback。macro200虽名义6/8 tasks非零，但31/34个成功
+集中在Long-1、Goal-6和Object-1。它低于source base `48`、corrected Source-SFT
+`109`、v5.2 `132`、v6 `143`和门`150`，因此没有行为级same/wrong/shuffled/
+reversed rollout，也没有续第二小时。
+
+winner macro200的CPU rank/layer/video分析在：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_target_spectral_rank_layer_cpu_aa9d89a_20260731/analysis.json
+```
+
+无rollout五条件内部分析在：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_target_spectral_single_checkpoint_macro0200_internal_specificity_refs2_aa9d89a_20260731/summary.json
+```
+
+关键对照为：
+
+```text
+                              Target m200   v6 m200     v6 m400
+correct400                    34            133         143
+effective LoRA norm           25.87         94.71       108.91
+effective stable rank         3.3245        1.00017     1.00027
+q / v energy                  39.0/60.9%    74.5/25.5% 73.8/26.2%
+q / v layer-energy CV         1.294/.805    .047/.043   .063/.054
+q / v cross-layer cosine      .032/.066     .968/.988   .969/.985
+```
+
+Target-Spectral确实消除了伪rank16：约15.6/16个rank有非平凡scale，q/v stable
+rank为`1.96/4.66`，A行、B列和component近乎正交。但它同时拆散了v6中高增益、
+q-dominant、跨层协调的公共写入方向。16个同向component按16建设性相加，16个
+正交component只按sqrt(16)合成；理论4倍与实测v6/Target范数`3.66×`吻合。
+same-task视频相对中心化方差从v6 m200 `.44%`升至`.65%`，但因总LoRA大幅缩小，
+绝对视频创新RMS约低3倍。
+
+这不是上游失败：Target m200与v6 m200训练functional loss为`.10023/.10043`，
+Core/Procedure绝对量和shuffle/reverse order signal同量级。Target内部
+shuffle/reverse的Procedure-centered差异为`1.349/1.525`，到effective LoRA
+仍有`.302/.352`、到fixed-query policy action为`.0365/.0733`；固定正确Core
+只改变Procedure可复现这些差异，Core-only几乎不随顺序变化。它能“对视频敏感”，
+却把这种差异写进了闭环无效甚至破坏source skill的方向。近rank1因此不是v6
+性能瓶颈的充分证据，Target-Spectral只作负结果，不在其scale/gate上打补丁。
 
 Prior–Innovation fresh macro50/100/150/200 paired correct400最终为
 `100/61/89/88`，没有恢复v5.2 `132`或v6 `143`，因此没有续训或做行为级
@@ -31,9 +88,9 @@ v6跨层q/v effective-delta cosine           .969/.983+
 第一实验只修复这一处，不同时改optimizer，避免把decoder与任务梯度冲突混为
 一谈。
 
-唯一canonical Writer已切换为
+当前源码仍封存在
 [`docs/action_forecast_writer_target_spectral_design.md`](action_forecast_writer_target_spectral_design.md)
-定义的 Target-Spectral：
+定义的 Target-Spectral，直到下一架构决策原位替换；这不构成resume授权：
 
 ```text
 v6 Q_text + M_f + G_f + Semantic Core
@@ -75,14 +132,14 @@ resume前后macro1的manifest、Writer、trainer和四rank state共七个文件�
 紧邻顺序：
 
 ```text
-fresh macro0→200，every25保存
-→ paired correct400 at macro50/100/150/200
-→ winner内部rank/layer/video数值分析
+保留v6已验证的公共高增益主写入manifold
+→ 把额外rank定义为可选、zero-init的视频创新容量
+→ 用现有内部证据重新设计compiler与训练更新规则
+→ owner讨论后再封存下一fresh架构
 ```
 
-不能继承Prior profile/resume/gradient证据；不得查询或使用GPU0–3。首段若
-未达到`150/400`或至少稳定接近且显著超过同期v5.2/v6，只做内部反事实和必要
-Gradient Gram，不做昂贵视频控制臂。
+当前只可使用物理GPU4–7中现场空闲的卡做内部分析，暂时不得启动正式训练；
+不得查询或使用GPU0–3。Target-Spectral不得resume，也不做昂贵视频控制臂。
 
 当前活动配置：
 

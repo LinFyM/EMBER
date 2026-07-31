@@ -241,3 +241,21 @@ Meta/Core/Procedure/compiler/factor分块冲突。
 
 只有这些数据确认大量负冲突时，下一实验才采用单阶段Projected Full-24
 update；不会同时引入多video、same-episode、两阶段或checkpoint aggregation。
+
+## 10. 实验结论（2026-07-31）
+
+本设计已完成，不再是待验证proposal。macro50/100/150/200 paired correct400为
+`30/12/18/34`，best低于source base `48`以及v5.2/v6 `132/143`；评测完整性
+审计通过，因此不续训、不做行为级控制。
+
+结构目标本身达成：m200 effective stable rank为`3.3245`，q/v跨层方向余弦
+为`.032/.066`，A行与B列近乎正交。但这同时把v6 m200的有效LoRA范数
+`94.71`降到`25.87`，把q-dominant能量翻为v-dominant，并让layer-energy CV
+从`.047/.043`升到`1.294/.805`。16个同向component的建设性增益和跨层协调
+是v6有效adaptation manifold的一部分，不是纯粹无用的rank伪装。
+
+上游Core/Procedure与order传递没有失效，train functional loss也与v6同期
+几乎相同；失败是新compiler把局部action loss拟合成闭环off-manifold更新。
+因此“强制完整正交rank16”被否定，本设计退为负结果provenance。后续不得在
+本结构上调scale/gate；应恢复v6公共高增益主方向，只把额外rank作为可选、
+zero-init的视频innovation容量。

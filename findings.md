@@ -2814,3 +2814,44 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   复制16个相同方向伪装rank16。
 - 首轮不同时改optimizer。full24漂移是否来自任务冲突，待decoder实验后以固定
   macro的24-task Gradient Gram、cancellation和Adam候选伤害任务数判定。
+
+## Target-Spectral负结果与rank病灶纠正（2026-07-31）
+
+- fresh macro50/100/150/200 paired correct400为`30/12/18/34`。每份均为
+  8 tasks×50唯一states、每task demos 0–49无放回各一次，四点state/video/RNG
+  完全配对；36/36 shards、400唯一LoRA caches、worker和结果hash完整，没有
+  OOM、NaN、traceback或数据错配。best macro200低于source base `48`、
+  corrected Source-SFT `109`、v5.2 `132`、v6 `143`和门`150`，是真实严重
+  scientific non-pass，不续训也不做行为级控制。
+- CPU产物
+  `/data/ymdai/outputs/ember/pi05_as_writer_target_spectral_rank_layer_cpu_aa9d89a_20260731/analysis.json`
+  的SHA256为`4d7dfc68efa84b9863b8a6d9b7d4ab717f529018992b6c316c06320631d10a89`。
+  Target m200把effective stable rank提高到`3.3245`，q/v分别`1.964/4.655`；
+  约`15.62/16`个rank超过本模块最大scale的1%，A行和active B列coherence约
+  `6e-5/1e-4`，证明伪rank16确实被移除。
+- 但Target m200 effective LoRA norm仅`25.87`，v6 m200/m400为
+  `94.71/108.91`；q/v能量从v6 m200的`74.5/25.5%`翻为`39.0/60.9%`，
+  q/v layer-energy CV从`.047/.043`恶化到`1.294/.805`，跨层方向余弦从
+  `.968/.988`降到`.032/.066`。16个同向component按16建设性相加，正交
+  component只按sqrt(16)合成；理论4倍与实测范数比`3.66×`高度吻合。
+- same-task视频相对中心化方差从v6 m200 `.4425%`升至Target `.6465%`，其中
+  `98.2%`是task-mean正交方向；但按真实mean energy还原的视频变化RMS约
+  `2.02`，低于v6约`5.96`。所谓相对视频占比改善主要来自分母缩小，不是更强
+  的绝对视频写入。
+- Target与v6在macro200的train functional loss为`.10023/.10043`，online
+  validation loss也只差`.14020/.13751`，远不足以解释closed-loop
+  `34/133`。新decoder能拟合action chunks，却产生闭环off-manifold更新；
+  functional loss无法约束所需的跨层协调policy geometry。
+- 无rollout内部产物
+  `/data/ymdai/outputs/ember/pi05_as_writer_target_spectral_single_checkpoint_macro0200_internal_specificity_refs2_aa9d89a_20260731/summary.json`
+  的SHA256为`7ddd91577f01972dc243c0871cd772847207db1fccd29306ecf8b8142824446c`，
+  验证上游没有失效：shuffle/reverse在Procedure-centered为`1.349/1.525`，
+  到effective LoRA仍为`.302/.352`、fixed-query action为`.0365/.0733`。
+  fixed-correct-Core只改变Procedure复现这些差异，Core-only对顺序近乎不变；
+  wrong-video更产生`.427` LoRA和`.091` action差异。模型对视频很敏感，但差异
+  不一定有助于任务。
+- 因此“rank≈1就是v6性能瓶颈”被直接否定。v6的rank冗余同时承担了有用的
+  coherent gain、q-dominant分配、跨层协调和强共享归纳偏置。下一版不能强制
+  full-rank正交替换它；应保留该公共主写入manifold，只把额外rank作为可选、
+  zero-init的视频innovation容量。Target-Spectral只作负结果，不在其scale或
+  gate上继续打补丁。

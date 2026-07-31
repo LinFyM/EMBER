@@ -50,16 +50,34 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 ## Current focused execution task
 
 owner授权继续按“根因证据→第一性原理重构→一小时训练→必要内部分析”的循环
-自主推进。Prior–Innovation fresh macro50/100/150/200 fixed correct400已经
-完成，结果为`100/61/89/88`，没有恢复v5.2 `132`或v6 `143`，因此没有续训
-或补行为控制臂。
+自主推进。Target-Spectral fresh macro50/100/150/200 fixed correct400已经完成，
+结果为`30/12/18/34`。四点均通过8 tasks×50 states、每task 50 teacher videos
+无放回、同一state/video/RNG配对和36/36 shards完整审计；这是真实scientific
+non-pass，不是OOM、评测错配或checkpoint损坏。observed-best macro200仅
+`34/400`，低于source base `48`、corrected Source-SFT `109`、v5.2 `132`、
+v6 `143`和focused门`150`，因此不得续训或补行为级控制臂。
 
-跨v6、Core-Program与Prior的LoRA复核定位了更稳定的compiler病灶：
-public rank-16 effective update长期接近rank1；B的16列近乎同向，18层q/v
-effective update也高度同向。同task视频不是只改变scale，但视频中心化方差仅占
-task/common LoRA平均能量约`0.3%`。当前唯一canonical authority因此切换为
+跨v6、Core-Program与Prior的LoRA复核曾把public rank-16近rank1、B列和跨层
+方向高度同向视为compiler病灶。Target-Spectral对照现已证明该判断不完整：
+它把stable rank从v6 macro200的`1.00017`提高到`3.3245`，把q/v跨层方向余弦
+从约`.968/.988`压到`.032/.066`，但correct从`133`降到`34`。同期有效LoRA
+范数从`94.71`降到`25.87`，q/v能量从`74.5%/25.5%`翻转为`39.0%/60.9%`，
+q/v layer-energy CV从`.047/.043`恶化为`1.294/.805`。16个同向component的
+建设性相加被正交合成取代，其理论`16/sqrt(16)=4×`增益损失与实测
+`94.71/25.87=3.66×`高度吻合。
+
+Target-Spectral训练loss在macro200为`.10023`，与v6 `.10043`几乎相同；上游
+Core、transition、Procedure、AdaLN及order counterfactual也与v6同量级，且
+wrong/shuffled/reversed差异能传到effective LoRA和fixed-query action。因此
+失败不在上游完全没读视频，而在新compiler生成了形式上更高rank、实际更小、
+跨层不协调且闭环off-manifold的更新。same-task视频中心化相对方差虽从v6
+macro200的`.44%`升至`.65%`，绝对视频创新RMS反而约低3倍；不能把分母缩小
+误写成视频学习增强。近rank1不是v6性能瓶颈的充分证据，Target-Spectral现只作
+负结果provenance，不得在其正交scale/gate上继续打补丁。
+
+当前源码仍封存在
 [`docs/action_forecast_writer_target_spectral_design.md`](docs/action_forecast_writer_target_spectral_design.md)
-定义的Target-Spectral Writer。
+定义的Target-Spectral Writer，直到下一架构决策原位替换；这不构成resume授权。
 
 Target-Spectral保留v6已经验证的`Q_text`、`M+G`、Semantic Core、原生
 50-token suffix mean Action、uncapped task-grounded transition、两层causal
@@ -79,15 +97,12 @@ step0 spectral scale为零，因此effective delta严格identity。精确Writer�
 `14,495,744`。canonical源码、fresh config和schema已原位切换，不兼容旧
 Writer checkpoint。
 
-训练和推理都严格为一条teacher video生成一套LoRA；不得做多视频或多LoRA
-平均。action queries继续与teacher video同task但跨episode独立。首轮只改
-decoder，保持full-24 task-complete、每task一video/LoRA、B20、一次AdamW和
-fast decay400；不能同时改optimizer。必须先在GPU4–7独立完成最长105-frame
-三macro profile和formal-seed fresh0→1→exact-resume1→3，再从identity
-fresh训练macro0→200、每25保存。固定评测macro50/100/150/200 paired
-correct400，不融合checkpoint；winner补无rollout rank/layer/video数值分析。
-只有single-checkpoint达到150，或稳定接近且显著超过同期v5.2/v6，才补
-same/wrong/shuffled/reversed行为rollout。
+训练和推理仍严格为一条teacher video生成一套LoRA；不得做多视频或多LoRA
+平均。action queries继续与video同task但跨episode独立。当前只允许利用物理
+GPU4–7中现场空闲的卡做内部分析；GPU0–3不得查询或使用，且暂时不得启动任何
+正式训练。下一架构必须保留v6已验证的高增益、q-dominant、跨层协调主写入
+manifold，把额外rank作为可选视频创新容量，而不是用16个强制正交方向替换
+主方向；具体设计在现有内部证据和owner讨论后再封存。
 
 关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
 single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe

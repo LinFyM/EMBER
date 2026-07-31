@@ -3,12 +3,56 @@
 最后更新：2026-07-31 UTC。
 
 本文顶部保存当前运行状态、恢复入口和紧邻动作；后续编号章节是按时间保留的
-历史快照。当前设计authority是
-`docs/action_forecast_writer_coherent_procedure_design.md`。长期科学边界是
+历史快照。当前下一架构authority是
+`docs/action_forecast_writer_semantic_program_grid_design.md`。长期科学边界是
 `AGENTS.md`与`docs/execution_brief.md`。任何接手者都必须先只读复核现场，
 不能按历史快照重复启动进程。
 
-## 0. 当前交接：v5.2内部几何完成，正式训练尚未启动
+## 0. 新session恢复与持续推进合同
+
+当前没有训练、rollout或tmux。接手session在完整阅读根`AGENTS.md`规定的全部
+authority后，不得用额外讨论或重复工程仪式拖延，立即live核验Git、存储和物理
+GPU4–7，然后启动已经seal的exact v5.2 task-complete正式轨迹：
+
+```text
+config: configs/pi05_as_writer_language_axial_v5_2_taskcomplete_decay400_v1.json
+fresh identity macro0→200
+exact-resume macro200→400
+every25 checkpoint
+paired correct400: macro150/200/350/400
+single-checkpoint winner
+winner formal correct/same/wrong/shuffled/reversed 400
+winner internal Core/Procedure/LoRA/action/rank/layer/video analysis
+```
+
+正式科学尺度是400 macros，不因共卡导致wall-clock略超机械两小时而删减updates。
+必须使用一条video生成一套LoRA，不融合checkpoint，不平均多video/LoRA。所有
+evaluator worker继续long-task-first；没有long shard后才领取其他task。
+
+v5.2训练挂起后，接手session要在不污染run的前提下完整审计仓库、Git历史、正式
+outputs和内部analysis，达到能够独立解释v1至Target-Spectral每版拓扑、训练合同、
+correct曲线、五臂、逐task漂移和内部传递的程度。然后独立复核SPG设计：
+
+```text
+docs/action_forecast_writer_semantic_program_grid_design.md
+```
+
+无论v5.2新recipe结果好坏，都要实现并实验SPG。SPG及其后任何新整体架构都先
+fresh训练约一小时并做paired correct400：若未达到同期一小时v5.2/v6水平且无
+明确上升价值，不续第二小时、不做昂贵行为特异性，只做充分无rollout内部分析；
+若同档或更好、或趋势明确有价值，才exact-resume第二小时并在强single-checkpoint
+上做行为五臂。每个负结果都必须定位前向与训练的最早根因，再整体重构，禁止在
+失败结构上叠gate、scale、旁路或局部residual。
+
+focused Goal不是机械`correct400>=150`。150只是里程碑；只要仍存在task漂移、
+视频学习不足、跨层/跨rank退化、closed-loop off-manifold或可信改进空间，就持续
+执行“整体设计→一小时训练→评测/内部分析→续训或重构”。只有接手agent在其能力
+范围内已找不到可信提升空间，才允许停止并向owner汇报。
+
+GPU只可使用物理4–7，0–3不得查询或进入visible set。4–7可按owner授权与他人
+共卡，但不得杀、暂停、重置或干扰其他进程。
+
+## 0.1 v5.2内部几何完成、正式训练未启动的封存快照
 
 v5.2实现基线commit为`799aa6676b7f94f337d019956366eb7f180ba83a`。
 它把exact v5.2 topology接到mature full24 task-complete、B20、
@@ -58,10 +102,10 @@ identity fresh运行上述v5.2 config的macro0→200，默认exact-resume到400�
 没有替新session启动它。GPU0–3不得查询或使用；GPU4–7可按owner授权共卡，但
 不得干扰他人进程。
 
-模型后续选择、条件式B-only video innovation和任务梯度诊断门全部见
-`docs/action_forecast_writer_coherent_procedure_design.md`。
+本节末尾曾引用的Coherent-Procedure/B-only residual提案已经撤回；不得实现。
+当前下一架构只认`docs/action_forecast_writer_semantic_program_grid_design.md`。
 
-## 0A. Target-Spectral负结果历史快照（不得执行）
+## 0.2 Target-Spectral负结果历史快照（不得执行）
 
 Target-Spectral fresh macro0→200已自然完成：200个finite optimizer updates、
 4,800个single-video LoRA conditions、96,000个action queries和every25的8个

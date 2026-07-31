@@ -3,10 +3,23 @@
 阅读规则：本文是按日期追加的证据账本。历史段落里的“当前”“下一步”和GPU
 权限只描述其日期当时的状态，不覆盖后续owner决定。活动状态以
 `docs/active_session_handoff.md`、
-`docs/action_forecast_writer_coherent_procedure_design.md`和本文顶部最新段落为准；
+`docs/action_forecast_writer_semantic_program_grid_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
-## 2026-07-31 v5.2 LoRA几何与架构收敛
+## 2026-07-31 SPG整体架构定稿与持续迭代合同
+
+- Coherent-Procedure/B-only residual已撤回；它只是保守对照计划，不是owner要求
+  的整体架构。
+- 新SPG用mean-backed Semantic Core、未池化Action×task-token-change axial
+  Program Grid、38真实policy targets、rank-last Program read、target/rank axial
+  mixer和coherent full-width factor heads重建完整Writer。
+- SPG不等待v5.2新recipe结果决定拓扑。接手session先立即挂v5.2正式400-macro
+  轨迹，然后充分阅读仓库；无论v5.2好坏都实现SPG。
+- 后续每版整体架构先一小时；只有达到同期有效旧架构水平或显示明确续训价值才
+  开第二小时与行为五臂，否则做充分内部分析后从根因重构。150不是自动终点。
+- 设计authority为`docs/action_forecast_writer_semantic_program_grid_design.md`。
+
+## 2026-07-31 v5.2 LoRA几何
 
 - exact v5.2 step900的400套correct-video LoRA已在零rollout条件下重新生成并
   分析。effective norm `140.441`，stable rank `1.01256`，top singular energy
@@ -18,9 +31,8 @@
 - Target-Spectral把rank强制抬高却降到`34/400`，因此正交、均匀奇异值和强制
   使用全部rank均为负方向。Source-SFT与Writer的目标/参数化不同，不能逐项复制
   Source-SFT的谱。
-- 当前最小充分模型是exact v5.2主干。唯一未识别变量是v6 Visual Transition，
-  必须先补v5.2×task-complete因果格再决定。设计authority见
-  `docs/action_forecast_writer_coherent_procedure_design.md`。
+- v5.2×task-complete仍是必须立即完成的重要因果格，但不再决定是否设计SPG；
+  它为SPG和后续迭代提供最新强baseline与训练对照。
 
 ## 2026-07-21 当前 π0.5 协议与已验证事实
 

@@ -13,12 +13,20 @@ runner、split 或 GPU 权限。
   fast-decay400 config，并完成最长视频profile与exact-resume smoke。
 - [x] 对v5.2 step900重新生成400套correct-video LoRA并完成零rollout几何分析；
   证明近rank1来自建设性coherence，不是坐标能量失衡或负向相消。
-- [x] 封存Coherent-Procedure设计和实验判定门。
-- [ ] 新session现场核验后才启动v5.2 task-complete fresh macro0→200→400。
-- [ ] 评测single-checkpoint macro150/200/350/400；不融合checkpoint。
-- [ ] 用结果判定v5.2与v6 Visual Transition；未有写出端压缩证据时不新增模块。
+- [x] 撤回Coherent-Procedure/B-only residual，封存完整SPG模型与CP-24训练设计。
+- [ ] 新session完成强制阅读与现场核验后立即启动v5.2 task-complete fresh
+  macro0→200→400。
+- [ ] 评测single-checkpoint macro150/200/350/400；winner补正式五臂和内部
+  LoRA几何，不融合checkpoint。
+- [ ] v5.2 run挂起后充分阅读全部文档、代码、Git历史与正式outputs，形成完整
+  v1→SPG证据模型。
+- [ ] 无论v5.2结果好坏都实现SPG；每版新整体架构先一小时，只有达到同期有效
+  旧架构水平或显示明确续训价值才开第二小时和行为五臂。
+- [ ] 持续定位task漂移、视频学习和closed-loop off-manifold根因，禁止补丁式
+  gate/scale/bypass；150不是自动完成线。
 
-当前session没有启动正式训练或rollout。实时入口只认
+当前session没有启动正式训练或rollout。新session的focused Goal直到agent在其
+能力范围内找不到可信提升空间才可停止。实时入口只认
 `docs/active_session_handoff.md`。
 
 ## 长期完成定义

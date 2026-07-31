@@ -26,7 +26,7 @@
 18. `docs/action_forecast_writer_core_program_design.md`
 19. `docs/action_forecast_writer_prior_innovation_design.md`
 20. `docs/action_forecast_writer_target_spectral_design.md`
-21. `docs/action_forecast_writer_coherent_procedure_design.md`
+21. `docs/action_forecast_writer_semantic_program_grid_design.md`
 22. `task_plan.md`
 23. `findings.md`
 24. `progress.md`
@@ -59,12 +59,13 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 不是能量失衡或负向相消；Target-Spectral强制高rank/正交已经以`34/400`证明
 有害，不能继续围绕rank、scale或gate打补丁。
 
-当前模型与训练决策统一由
-[`docs/action_forecast_writer_coherent_procedure_design.md`](docs/action_forecast_writer_coherent_procedure_design.md)
-负责。证据支持的canonical base是exact v5.2：`Q_text`、`M+G`、mean-anchored
-Semantic Core、native 50-suffix mean Action、两层causal Procedure、320 slots、
-Core-primary Procedure AdaLN和conventional coherent factor heads。v7/v8/v10、
-Loom、Recenter、Core-Program、Prior与Target-Spectral均只作负结果provenance。
+下一整体模型与训练设计统一由
+[`docs/action_forecast_writer_semantic_program_grid_design.md`](docs/action_forecast_writer_semantic_program_grid_design.md)
+负责。先前Coherent-Procedure/B-only residual提案已撤回，不得实现。SPG固定为
+mean-backed Semantic Core、未提前池化的Action×task-token-change axial Program
+Grid、38个真实policy targets、rank-last直接Program读取、coordinate mixer和
+coherent full-width factor heads；训练侧采用single-stage CP-24。它不依赖未来
+v5.2结果决定拓扑。
 
 实现基线`799aa66`已把exact v5.2 topology接到mature full24 task-complete、B20、
 cost-balanced long-first与fast-decay400 recipe；最长105-frame三macro和formal-seed
@@ -73,11 +74,12 @@ fresh0→1→exact-resume1→3已通过，精确参数`10,237,704`。但当前se
 然后才从identity fresh训练macro0→200并默认exact-resume到400，评测
 macro150/200/350/400 paired correct400；不得融合checkpoint。
 
-该实验补齐`v5.2 topology × task-complete recipe`缺失因果格。只有其结果才能
-决定是否保留v6 Visual Transition。只有在上游视频差异存在、absolute仍成立且
-差异明确在B写出端被压弱时，才测试设计文档中的zero-init B-only video
-innovation residual；否则不新增模块。任务漂移若持续，先测逐模块24-task
-Gradient Gram，不能先验归咎full24或引入两阶段训练。
+新session完成强制仓库阅读与live preflight后，第一项动作仍是立即启动已经seal
+的v5.2 task-complete fresh macro0→200→400；这项结果用于补齐历史证据，但无论
+结果好坏都要实现并实验SPG。v5.2评测完成后做winner五臂与内部几何。SPG及其后
+每版先训练约一小时；只有absolute与同期有效旧架构同档或更好、或曲线显示明确
+续训价值，才开第二小时和昂贵行为特异性rollout，否则只做充分内部数值分析后
+从根因重新设计。
 
 关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
 single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe
@@ -85,12 +87,10 @@ single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe
 v7、v8、v10、Loom和Recenter都已形成充分负证据，不得恢复其可执行路径或在其
 局部scale/gate上继续打补丁。
 
-focused AS硬门统一为single-checkpoint
-`correct400 >= max(150, corrected Source-SFT best+30)=150`。达到absolute后
-还必须same≈correct、correct显著优于wrong/shuffled/reversed、多个tasks共同
-贡献、独立RNG/video permutation复测成立，且内部Core→Procedure→effective
-LoRA→policy action符合职责。达到150不是自动停止；未达到时也不能因少数略低
-checkpoint随意放弃，必须继续到真实瓶颈或当前recipe的充分负证据成立。
+`150`继续作为重要里程碑与强baseline参考，但不再是focused Goal的终点。
+即使超过150，只要内部仍有明确漏洞、task漂移、视频学习不足或可信改进方向，
+就继续按照“整体设计→一小时训练→评测/内部分析→续训或根因重构”循环推进。
+只有agent在其能力范围内已经找不到可信提升空间，才允许focused阶段停止。
 
 当前Writer通过后才做严格配对one-shot baseline与独立
 short-AS-cold-start→pure-reward RL-Writer；不得把完整AS best冒充RL cold

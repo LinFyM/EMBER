@@ -226,14 +226,34 @@ def _compile(writer: CompleteLoRAWriter, core: torch.Tensor, valid_core: torch.T
 
 
 def _decode(writer: CompleteLoRAWriter, coordinates: torch.Tensor) -> dict[str, Any]:
-    heads = {name: head(coordinates) for name, head in writer.factor_heads.items()}
+    head_rows: dict[str, list[tuple[int, torch.Tensor]]] = {
+        name: [] for name in writer.factor_heads
+    }
     factors, public = {}, {}
     for spec in writer.tensor_specs:
-        key, target = writer._decoding[spec.name]; rows = heads[key][:, target]
+        key, target = writer._decoding[spec.name]
+        # Match CompleteLoRAWriter.forward exactly: each real target owns one
+        # target-sized GEMM. A single [batch, 38, rank, width] GEMM is
+        # mathematically equivalent but not BF16 bit-equivalent on CUDA.
+        rows = writer.factor_heads[key](coordinates[:, target])
+        head_rows[key].append((target, rows))
         generated = rows.transpose(-1, -2) if spec.transpose_output else rows
         factors[spec.name] = generated
         public[spec.name] = generated.to(getattr(writer, writer._template_buffers[spec.name]).dtype) + getattr(writer, writer._template_buffers[spec.name])[None]
-    return {"heads": heads, "factors": factors, "public": public}
+    heads, head_target_indices = {}, {}
+    for key, values in head_rows.items():
+        values.sort(key=lambda item: item[0])
+        targets = tuple(target for target, _ in values)
+        if not values or len(targets) != len(set(targets)):
+            raise WriterModelError("factor-head target ownership changed")
+        heads[key] = torch.stack([value for _, value in values], dim=1)
+        head_target_indices[key] = targets
+    return {
+        "heads": heads,
+        "head_target_indices": head_target_indices,
+        "factors": factors,
+        "public": public,
+    }
 
 
 def _pack(value: torch.Tensor, offsets: Sequence[int]) -> tuple[torch.Tensor, torch.Tensor]:

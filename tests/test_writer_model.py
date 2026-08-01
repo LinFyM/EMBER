@@ -582,6 +582,17 @@ def test_internal_analyzer_recomputes_canonical_ap_path_and_counterfactuals() ->
         16,
         512,
     )
+    for key, targets in captured["decoded"]["head_target_indices"].items():
+        expected = tuple(
+            sorted(
+                target
+                for spec in model.tensor_specs
+                for owner, target in (model._decoding[spec.name],)
+                if owner == key
+            )
+        )
+        assert targets == expected
+        assert captured["decoded"]["heads"][key].shape[1] == len(expected)
     assert captured["parity"]["public"]["relative_l2"] <= 2e-5
     assert captured["parity"]["compiler_coordinates"]["relative_l2"] <= 2e-5
     assert captured["compiled"]["parity"]["core_read"]["relative_l2"] <= 2e-5

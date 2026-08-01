@@ -66,17 +66,28 @@ Change-only距full约`.2761/.2832`，固定完整key后结论不变；Effect缩�
 BA `.141/.289`变化，而Action/Change缩放最多`.008/.001`。AP的causal Program
 不是没形成动态，而是只被用作高熵K，真正写出的raw V由Effect DC垄断。
 
-预注册endpoint10的三组历史portable cache已全部自然完成：v5.2-old 64、v6-fast
-8×64、v6-old 64，共640套public LoRA；三份信息墙均为environment steps、validation/
-test action reads与test video reads全零。对应manifest file SHA为v5.2-old
-`ab158969...9de1`、v6-old `988ef3ee...4398`，v6-fast八点依次为
-`14086ba7...fbee`、`488989b2...7436`、`5dfb854d...b1fb`、`1d86b51f...492b`、
-`44367a8a...26f8`、`a53057ed...e989`、`ea47d859...564b`、`db47ab99...fd0a`。
-当前紧邻运行是18-checkpoint no-gradient formal关联审计。它只检验执行前5 action
-误差是否可作held monitor；未原封不动通过全局、family、recipe direction和逐task
-四重门前，不得进入loss、训练或checkpoint选择。
-之后根据AP中央职责失败与UCP raw/SERIAL训练交互，设计contextual-value职责完整的
-下一架构，并完成cycle-normalized randomized-group4受控因果格。后续不使用subagent。
+预注册endpoint10 formal已经从clean `0f92e35`自然完成：root为
+`/data/ymdai/outputs/ember/pi05_endpoint10_formal_18candidate_seed7_0f92e35_20260801_retry1`，
+18 candidates、9,216 rows、4 ranks、wall `1041.474s`，environment未构造、
+parameter gradients未计算、validation/test action读取均为0。run contract/rows/
+summary SHA分别为`edb7d3c...583b`、`7087999d...bd0`、`a4a489a3...c2ba`；
+association SHA为`d54435fe...f707`。
+
+主指标的全局Spearman为`.258398`，固定100,000次candidate-label permutation双侧
+`p=.298447`，预注册global门失败，因此all gate为false。family-demeaned pooled
+Pearson/Spearman为`.40360/.41090`，UCP/v5.2-new/v6-fast family Spearman为
+`1.0/.4/.45238`；两个recipe方向和逐task门也通过，但不能覆盖global失败。
+v6-fast macro200 correct133却是18点最差endpoint quality `-.128863`；v5.2-new
+macro200 correct91却是最好quality `-.120544`。endpoint10只保留为局部负诊断，
+禁止用于loss、训练或checkpoint选择。
+
+当前紧邻动作是在exact UCP上完成fresh raw-full24与cycle-normalized randomized-group4
+受控格，再实现contextual-value职责完整的CV-ADR。group4的longseed172真实105-frame
+B20、4-rank、18-update/3-cycle profile已通过：每cycle 24 tasks恰好一次，step6/12/18
+才推进scheduler，step2起frontend/Program/compiler/factor均finite可达；峰值
+allocated/reserved为`76,971,835,904/83,647,004,672` bytes。formal seed
+fresh0→1→resume1→3→7正在独立UCP worktree核验；未完成seal前不得启动fresh两臂。
+后续完全由主进程推进，不使用subagent。
 
 正式launch前的live seal已完成。longseed172真实105-frame B20三macro的step wall为
 `20.567/18.717/18.644s`，峰值allocated/reserved为
@@ -92,13 +103,9 @@ correct差值为`+7/-17/+21/-3`、best仅117→121且漂移未解，因此SERIAL
 recipe。后续若AP主路工作但仍漂移，必须做scheduler-only和去除cost-phase
 curriculum的cycle-normalized randomized group4，而不是整体处决旧架构思想。
 
-endpoint10 no-gradient诊断代码已在`544c0ef`/`2055a82`合入main并push；
-`CUDA_VISIBLE_DEVICES=`全仓`222 passed`。它强制exact ten-step sampler在autocast
-外运行、从sampler输入删除ACTION，并对候选配对、finite、sealed512与历史LoRA
-provenance fail-close。v5.2-old、v6-fast八点、v6-old共10个历史候选的真实GPU
-portable cache已经从三个clean frozen extension commit用四rank生成并核验，所有
-tmux自然退出；下一步只剩真实CUDA profile/parity和18-candidate四rank formal。
-endpoint metric在预声明关联门通过前不得进入训练。
+endpoint10诊断代码与portable historical overlay修复已在`0f92e35`合入main并push；
+正式数值与预注册关联裁决均已完成。global门失败是最终裁决，不再改阈值、候选、
+primary或用secondary救回；endpoint metric不得进入训练。
 
 ## 0A. 2026-08-01 UCP历史状态
 

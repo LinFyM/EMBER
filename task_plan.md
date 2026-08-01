@@ -109,8 +109,17 @@ runner、split 或 GPU 权限。
   覆盖主门。
 - [x] 从三个clean frozen历史extension commits生成并核验portable-v2 LoRA cache：
   v5.2-old 64、v6-fast 512、v6-old 64，信息墙全0；所有tmux自然退出。
-- [ ] 完成真实CUDA profile/parity与18-candidate四rank formal endpoint诊断；在强
-  关联门通过前只作no-gradient held monitor，不进入训练。
+- [x] 完成真实CUDA profile/parity与18-candidate四rank formal endpoint诊断：
+  9,216 rows，global Spearman `.258398`、permutation `p=.298447`，预注册all gate
+  失败；endpoint10永久只作负诊断，不进入训练、loss或checkpoint选择。
+- [x] 在独立UCP worktree实现fresh raw-full24 vs cycle-normalized randomized-group4
+  受控cell：task/query-keyed stateless policy noise/time、随机Latin group4、LR/beta/
+  decay/scheduler exposure composition、fresh checkpoint family与midcycle cursor，
+  聚焦测试`31 passed`。
+- [x] 完成group4 longseed172真实105-frame B20四卡18-update/3-cycle profile；每cycle
+  24 tasks恰好一次、step2起主块梯度可达、峰值reserved `83,647,004,672` bytes。
+- [ ] 完成group4正式seed 0→1→3→7与raw 0→1→3 exact-resume，seal两份fresh配置；
+  随后从同一clean main authority启动两臂受控正式训练和paired correct400。
 - [ ] 后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才开第二
   小时和行为五臂。
 - [ ] 持续定位task漂移、视频学习和closed-loop off-manifold根因，禁止补丁式

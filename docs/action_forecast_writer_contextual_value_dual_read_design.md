@@ -172,6 +172,11 @@ B20只在真实OOM或连续非有限时降B16，不扫描B17--B19/B21。
 randomized-group4共用task/query-keyed stateless policy noise/time；这保留UCP已有
 raw、未归一SERIAL和normalized group4三角，不拿CV-ADR替训练假设背书。
 
+endpoint10已经以全局Spearman`.258398`、100,000次permutation `p=.298447`失败
+预注册global门；尤其v6-fast macro200的correct133对应18点最差quality。故CV-ADR
+不能使用endpoint10选点或训练，candidate裁决仍只认paired closed-loop、breadth、
+gained/lost/Jaccard及Core→Program→BA→action传递。
+
 CV-ADR实现后首跑仍用raw-full24/B20/fast400、fresh macro0->200，评测
 50/100/150/200 paired correct400；它与AP raw只差K/V职责，优先识别topology。
 只有UCP normalized group4通过预注册absolute/breadth/drift/dynamic联合门，才把同一

@@ -6,6 +6,38 @@
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-01 Endpoint10负裁决与cycle-normalized受控格
+
+- endpoint10在任何结果生成前封存的18-candidate primary关联门已经原样执行。
+  clean `0f92e35` formal root产生9,216 rows，wall `1041.474s`；environment未构造、
+  parameter gradient未计算、validation/test action读取0。run contract/rows/summary/
+  association SHA为`edb7d3c...583b`、`7087999d...bd0`、`a4a489a3...c2ba`、
+  `d54435fe...f707`。
+- `quality=-rollout10_executed5_valid_normalized_mse`对correct400的全局Spearman仅
+  `.258398`；固定100,000次candidate-label permutation双侧`p=.298447`，所以
+  global gate和all gate失败。family-demeaned pooled Pearson/Spearman虽为
+  `.40360/.41090`，UCP/v5.2-new/v6-fast family Spearman为`1.0/.4/.45238`，
+  两个recipe direction与逐task中位`.16444`、6/8非负也通过，但预注册要求四门
+  全过，不能事后用局部门救回。
+- 跨架构错位不是小噪声：v6-fast macro200 closed-loop correct133却得到18点中最差
+  endpoint quality `-.128863`；v5.2-new macro200 correct91反而得到最好quality
+  `-.120544`。v5.2-old correct132的quality `-.120991`也仅略差于v5.2-new macro200。
+  ten-step teacher-action误差能追踪部分family内局部拟合，却不能识别共享source
+  policy的closed-loop有效流形；它永久只作负诊断，不能选checkpoint、改loss或训练。
+- exact UCP受控cell把fresh raw-full24与cycle-normalized randomized-group4绑定到
+  同一task/video/query exposure和task/query-keyed stateless policy noise/time。
+  group4用六个随机Latin phases各取4 tasks覆盖24 tasks；LR除6，Adam betas取
+  `(0.9^(1/6),0.95^(1/6))`，weight decay解六步乘积，scheduler只在cycle末推进。
+  这仍是完整update-operator bundle，不冒充单一Adam因素。
+- group4 longseed172真实profile完成18 updates/3 cycles：每cycle 24 tasks恰好一次、
+  每rank每cycle6 tasks，最大真实video 105 sampled frames，1,440 queries/72 one-video
+  conditions，所有数值finite；step0 identity只有factor梯度，step2起frontend、
+  Program、compiler、factor全部非零可达。峰值allocated/reserved为
+  `76,971,835,904/83,647,004,672` bytes，B20成立但显存余量很窄。
+- formal-seed exact-resume必须同时跨midcycle和cycle boundary验证optimizer bias、
+  LR/betas/decay、scheduler logical cursor、task/query/video/RNG cursor与旧payload不被
+  改写；通过前不启动两臂科学训练。
+
 ## 2026-08-01 AP-ADR门失败与key-only/raw-value根因
 
 - AP-ADR fresh macro50/100/150/200 paired correct400为`91/81/94/91`，breadth

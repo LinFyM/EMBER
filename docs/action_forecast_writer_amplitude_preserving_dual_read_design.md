@@ -432,6 +432,27 @@ full50/prefix10和ten-grid teacher-bridge flow MSE全部是secondary，不能替
 四点始终是`150/200/350/400`。候选总数仍为18，recipe direction仍使用macro150；
 该修正只让诊断绑定既有formal panel，不引入outcome-based候选选择。
 
+### 10.4 Endpoint10正式裁决
+
+clean `0f92e35`的四rank formal已完成18 candidates×sealed512 rows，共9,216 rows，
+wall `1041.474s`；未构造environment、未计算parameter gradient，validation/test
+action读取均为0。formal root为
+`/data/ymdai/outputs/ember/pi05_endpoint10_formal_18candidate_seed7_0f92e35_20260801_retry1`；
+run contract、rows、summary和association SHA分别为`edb7d3c...583b`、
+`7087999d...bd0`、`a4a489a3...c2ba`、`d54435fe...f707`。
+
+预注册primary的全局Spearman为`.258398`，固定100,000次permutation双侧
+`p=.298447`，因此global与all gate失败。family gate通过：UCP raw、v5.2-new、
+v6-fast Spearman为`1.0/.4/.45238`，pooled family-demeaned Pearson/Spearman为
+`.40360/.41090`；两个recipe direction和逐task gate也通过。但预注册合同要求
+四门全部通过，不能用这些局部正结果救回global失败。
+
+最强反例是v6-fast macro200：correct400为133，却有18 candidates中最差primary
+quality `-.128863`；v5.2-new macro200 correct仅91，却有最好quality `-.120544`。
+因此endpoint10可描述family内部局部拟合排序，但不能跨架构识别source policy的
+closed-loop有效流形。它永久只作负诊断，不选checkpoint、不改loss、不进入训练，
+也不再调整阈值、primary或候选集。
+
 ## 11. 实现前vertical path
 
 正式launch前最少必须通过：

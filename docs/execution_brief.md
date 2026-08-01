@@ -53,15 +53,23 @@ checkpoint correct差值为`+7/-17/+21/-3`且漂移继续。故update mechanics�
 时钟、long-first optimizer curriculum和topology，不得把v7/v8/v10/Loom等整版
 思想按fast/full24 aggregate一棒子打死。
 
-当前紧邻动作是完成预注册endpoint10的18-checkpoint no-gradient关联审计，再以
-AP职责失败和UCP raw/SERIAL动态写出差异共同决定下一整体架构及normalized
-randomized-group4受控训练格。endpoint未通过原封不动的四重门前，不进入训练、
-不选checkpoint、不修改loss。
+endpoint10的18-checkpoint formal no-gradient审计和预注册关联裁决均已完成。
+formal root含9,216 rows，wall `1041.474s`，environment/gradient/test-action读数均为0；
+association SHA为`d54435fe...f707`。全局Spearman仅`.258398`，100,000次固定
+permutation双侧`p=.298447`，故global gate与all gate失败。family-demeaned
+Pearson/Spearman `.40360/.41090`、两个recipe方向和6/8非负逐task相关不能救回
+global失败。endpoint10不进入训练、不选checkpoint、不修改loss。
 
-历史portable cache已从clean frozen commits完成：v5.2-old 64、v6-fast 512、
-v6-old 64，共640套public LoRA；三份run contract的信息墙读数全部为0，进程均自然
-退出。v5.2-new正式候选绑定既有paired correct400的macro150/200/350/400；文档中
-此前的50/100/150/200是任何endpoint数值生成前修正的文字错误，不改变18候选总数。
+这个失败本身提供了更强的off-manifold证据：v6-fast macro200 correct133却有18点
+最差endpoint quality `-.128863`，而v5.2-new macro200 correct91反而有最好quality
+`-.120544`。当前紧邻动作是exact UCP fresh raw-full24 vs cycle-normalized
+randomized-group4受控格，然后实现CV-ADR；不能让训练bundle替新架构背锅，也不能
+把架构aggregate替训练bundle定罪。
+
+group4 longest-video live profile已完成：4 ranks、B20、真实105 frames、18 updates/
+3完整cycles，每cycle恰好24 tasks，scheduler只在cycle边界推进，step2起所有主块
+梯度finite，峰值reserved `83,647,004,672` bytes。formal-seed exact-resume及fresh
+两臂正式训练尚未seal前不得跳过。
 
 ## 2026-08-01 UCP historical override
 

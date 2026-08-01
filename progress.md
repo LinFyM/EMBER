@@ -8,6 +8,31 @@ GPU范围和训练步长是当时快照；活动状态只取
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-01 Endpoint10负裁决与UCP normalized-group4 live profile
+
+- endpoint10 portable historical overlay在首个formal尝试暴露了v6-old历史config
+  provenance变化；该次在任何数值row生成前fail-close、未创建科学root。`0f92e35`
+  将overlay绑定portable provenance并完成profile，随后用全新retry1 root正式运行。
+- 四rank formal自然完成18 candidates×512 held rows=9,216 rows，wall
+  `1041.474s`，environment未构造、parameter gradient未计算、validation/test action
+  读取0。root为
+  `/data/ymdai/outputs/ember/pi05_endpoint10_formal_18candidate_seed7_0f92e35_20260801_retry1`；
+  run contract/rows/summary SHA为`edb7d3c...583b`、`7087999d...bd0`、
+  `a4a489a3...c2ba`。
+- 预注册关联analysis SHA为`d54435fe...f707`。global Spearman `.258398`、固定
+  100,000次permutation `p=.298447`，all gate失败；family、recipe direction和
+  per-task门通过但不得覆盖global失败。endpoint10封存为no-gradient负诊断，不进入
+  checkpoint选择、loss或训练。
+- 在隔离UCP worktree完成fresh raw-full24/cycle-normalized randomized-group4受控
+  实现：task/query-keyed stateless policy RNG、随机Latin六phase、LR/beta/decay
+  exposure composition、cycle-boundary scheduler、fresh checkpoint family、midcycle
+  cursor和per-block optimizer diagnostics；最新聚焦测试`31 passed`。
+- group4 longseed172四卡B20 profile自然完成18 updates/3完整cycles，wall
+  `72.455s`；每cycle 24 tasks恰好一次，最大真实teacher video 105 sampled frames，
+  1,440 queries/72 video conditions，step2起所有主块梯度finite可达。峰值
+  allocated/reserved `76,971,835,904/83,647,004,672` bytes；formal teacher seed已
+  恢复为`20260722`，正在核验0→1→3→7 exact-resume。
+
 ## 2026-08-01 AP-ADR正式裁决与endpoint10启动
 
 - AP-ADR四个paired correct400已完成：macro50/100/150/200为`91/81/94/91`，

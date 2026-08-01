@@ -97,11 +97,18 @@ contextual temporal keys时BA/action只变`.000521/.00194`。只保留Effect列�
 `causal contextual Program -> high-entropy key-only routing -> raw Effect-DC value`，
 不是whole Program无梯度，也不是视频前端无信号。
 
-下一步先完成预注册endpoint10的18-checkpoint no-gradient关联审计，同时把上述
-架构根因与UCP raw/SERIAL训练交互共同用于下一整体设计。不得把endpoint结果用于
-选checkpoint或改loss，除非它原封不动通过预注册的全局、family、recipe-direction
-和逐task四重门；不得因AP失败而跳过cycle-normalized randomized-group4的受控
-训练因果格。下一结构authority已经封存在
+预注册endpoint10的18-checkpoint no-gradient关联审计已经从clean `0f92e35`
+正式完成：18 candidates、9,216 rows、wall `1041.474s`，environment未构造、
+parameter gradients未计算、validation/test action读取均为0。主指标对correct400的
+全局Spearman仅`.25840`，100,000次固定permutation的双侧`p=.29845`，因此预注册
+四重门整体失败。family-demeaned Pearson/Spearman虽为`.40360/.41090`，两个recipe
+方向与逐task门也通过，但不能救回失败的global门。endpoint10只保留为局部
+functional-fit负诊断，禁止用于选checkpoint、改loss或进入训练；尤其v6-fast
+macro200以correct133得到18点中最差quality，而v5.2-new macro200以correct91得到
+最好quality，直接暴露跨架构closed-loop off-manifold错位。
+
+当前先在exact UCP上完成预注册fresh raw-full24与cycle-normalized randomized-group4
+受控训练格，再实现下一结构。不得因AP失败而跳过该训练因果格。下一结构authority已经封存在
 [`docs/action_forecast_writer_contextual_value_dual_read_design.md`](docs/action_forecast_writer_contextual_value_dual_read_design.md)：
 同一causal contextual Program直接承担K/V，保留mean-backed Core和独立dual reads；
 当前main在实现前仍只有AP一条可执行路径。
@@ -170,18 +177,26 @@ rank-gauge异常已经定位：raw A/B置换变化`.74184/.13602`，effective BA
 `1.299e-9`；bf16 fixed action的`.002047`差异来自rank求和次序，而非BA错误。
 sanity继续对finite和BA `2e-5` fail-close，action execution drift只作记录。
 
-下一训练反事实已经在main实现：冻结UCP拓扑和完整task/video/query exposure，
-改为每update全局4 tasks、六phase覆盖24 tasks的serial-4；LR按full24 cycle重复六次。它同时改变
+下一训练反事实冻结UCP拓扑和完整task/video/query exposure，改为每update全局4
+tasks、六phase覆盖24 tasks的serial-4；LR按full24 cycle重复六次。它同时改变
 AdamW/moment/weight-decay时钟，并把long-first变成真实optimizer curriculum，结果
 不能单因归为“消除梯度抵消”。clean `c4b85e8` refs2与exact50均已通过；exact50
 400 rows确认pooled same-video BA/action variance仅`.09008%/.01656%`。serial
 long-first重放的phase/cost Pearson为`-.8331`，task38始终phase0，必须审计真实
 optimizer curriculum。serial CPU合同为`233 passed`；clean detached `10a71a1`
 最长105-frame、B20、18 updates/3 cycles已通过，formal seed fresh0→1→resume1→3
-→跨cycle boundary到7也通过，step1/3文件不变。canonical config已seal；下一动作
-已执行：clean frozen `3db82df`从fresh identity启动1,200 updates，tmux
-`ember-ucp-serial4-3db82df`；首个六phase cycle合同健康。不得重复启动或从smoke
-续接；等待时准备300/600/900/1200 paired correct400与内部联合根因分析。
+→跨cycle boundary到7也通过，step1/3文件不变。clean frozen `3db82df`的正式
+1,200 updates已经自然完成；step300/600/900/1200 correct400为
+`89/100/121/107`，相对raw同曝光为`+7/-17/+21/-3`，best只提高4且漂移未解。
+
+当前受控cell使用同一exact UCP、同一task/video/query exposure和task/query-keyed
+stateless policy noise/time，对比fresh raw-full24与cycle-normalized randomized-group4。
+group4每update全局4 tasks、六个随机Latin phases覆盖24 tasks，LR除6，Adam betas和
+weight decay按六次更新复合到原一cycle，scheduler每cycle只推进一次；无冲突时不
+声称是架构收益。真实longseed172、105-frame、B20、4-rank、18-update/3-cycle
+profile已通过：每cycle 24 tasks恰好一次，step2起全部主块梯度可达，峰值
+allocated/reserved为`76,971,835,904/83,647,004,672` bytes。formal-seed exact-resume
+和fresh两臂正式训练尚未封存前不得启动科学比较。
 
 v7/v8/v10/Loom及后续历史不得整体判死。只能删除由内部反事实独立否定的局部
 机制；Action anchors、causal Procedure、双流、Core语义、target-first/rank-last

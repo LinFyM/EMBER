@@ -101,9 +101,13 @@ def _task_complete_video_costs(
 
 
 class MixedTaskBatchSampler:
-    """Yield task-pure batches from complete cost-balanced task cycles."""
+    """Yield task-pure batches from one sealed complete-task assignment."""
 
     _GROUP_SEED_TAG = 0xC057
+    _LATIN_GROUP_SEED_TAG = 0xC14C4
+    _LATIN_TAIL_SEED_TAG = 0x7A11
+    _LATIN_FORMAL_TASK_CYCLES = 200
+    _LATIN_FULL_CYCLES = 198
     _PHASE_STRATUM_SEED_TAG = 0x57A7
     _PHASE_JITTER_SEED_TAG = 0x9177
 
@@ -123,6 +127,7 @@ class MixedTaskBatchSampler:
         optimizer_updates_per_task_cycle: int = 1,
         video_schedule: TeacherVideoSchedule,
         task_video_costs: Mapping[int, Mapping[int, int]],
+        assignment_strategy: str = "cost_balanced_long_first",
     ) -> None:
         batch_cycle = _task_complete_batch_cycle(
             task_ids=task_ids,
@@ -152,6 +157,7 @@ class MixedTaskBatchSampler:
         self.optimizer_updates_per_task_cycle = int(
             optimizer_updates_per_task_cycle
         )
+        self.assignment_strategy = str(assignment_strategy)
         self.tasks_per_rank_per_cycle = (
             self.tasks_per_rank_per_update
             * self.optimizer_updates_per_task_cycle
@@ -165,6 +171,21 @@ class MixedTaskBatchSampler:
             video_schedule=video_schedule,
             task_video_costs=task_video_costs,
         )
+        if self.assignment_strategy not in {
+            "cost_balanced_long_first",
+            "randomized_latin_group4",
+        }:
+            raise WriterModelError("unsupported task assignment strategy")
+        if self.assignment_strategy == "randomized_latin_group4" and (
+            self.world_size != 4
+            or self.tasks_per_rank_per_update != 1
+            or self.optimizer_updates_per_task_cycle != 6
+            or len(self.task_ids) != 24
+            or self.stop_step
+            > self._LATIN_FORMAL_TASK_CYCLES
+            * self.optimizer_updates_per_task_cycle
+        ):
+            raise WriterModelError("invalid randomized Latin group4 sampler")
         self.episode_orders = {
             task_id: tuple(
                 int(value)
@@ -242,6 +263,81 @@ class MixedTaskBatchSampler:
             raise WriterModelError("task-complete cost balancing failed")
         return result
 
+    def _latin_task_matrix(
+        self, superblock: int, *, independent_tail: bool = False
+    ) -> np.ndarray:
+        """Return the pre-registered independent 6x4 task matrix."""
+
+        if superblock < 0:
+            raise WriterModelError("Latin superblock must be non-negative")
+        entropy = [self.seed, superblock, self._LATIN_GROUP_SEED_TAG]
+        if independent_tail:
+            entropy.append(self._LATIN_TAIL_SEED_TAG)
+        rng = np.random.default_rng(np.random.SeedSequence(entropy))
+        return rng.permutation(self.task_ids).reshape(6, 4, order="C")
+
+    def _randomized_latin_assignments(
+        self,
+        task_cycle: int,
+        phase: int,
+    ) -> tuple[tuple[int, int, int, int], ...]:
+        """Assign one randomized, phase-balanced task to every rank."""
+
+        if not 0 <= task_cycle < self._LATIN_FORMAL_TASK_CYCLES:
+            raise WriterModelError("Latin task cycle is outside the sealed cell")
+        if not 0 <= phase < 6:
+            raise WriterModelError("Latin task phase is outside the sealed cell")
+
+        if task_cycle < self._LATIN_FULL_CYCLES:
+            superblock, row_cycle = divmod(task_cycle, 6)
+            rng = np.random.default_rng(
+                np.random.SeedSequence(
+                    [self.seed, superblock, self._LATIN_GROUP_SEED_TAG]
+                )
+            )
+            matrix = rng.permutation(self.task_ids).reshape(6, 4, order="C")
+            positive_columns = {
+                int(value) for value in rng.permutation(4)[:2]
+            }
+
+            def assigned_phase(row: int, column: int) -> int:
+                sign = 1 if column in positive_columns else -1
+                return (row + sign * row_cycle) % 6
+
+        else:
+            superblock = self._LATIN_FULL_CYCLES // 6
+            matrix = self._latin_task_matrix(
+                superblock,
+                independent_tail=True,
+            )
+            reverse = task_cycle == self._LATIN_FULL_CYCLES + 1
+
+            def assigned_phase(row: int, column: int) -> int:
+                del column
+                return 5 - row if reverse else row
+
+        assignments = []
+        for row in range(6):
+            for column in range(4):
+                if assigned_phase(row, column) != phase:
+                    continue
+                rank = (
+                    column + task_cycle + (superblock % self.world_size)
+                ) % self.world_size
+                assignments.append(
+                    (rank, 0, int(matrix[row, column]), task_cycle)
+                )
+        assignments.sort()
+        if (
+            len(assignments) != self.world_size
+            or {rank for rank, _, _, _ in assignments}
+            != set(range(self.world_size))
+            or len({task_id for _, _, task_id, _ in assignments})
+            != self.world_size
+        ):
+            raise WriterModelError("randomized Latin group4 assignment failed")
+        return tuple(assignments)
+
     def assignments_for_step(
         self,
         step: int,
@@ -249,6 +345,8 @@ class MixedTaskBatchSampler:
         """Return ``(rank, microtask, task_id, task_visit)`` assignments."""
 
         task_cycle, phase = self.task_cycle_and_phase(step)
+        if self.assignment_strategy == "randomized_latin_group4":
+            return self._randomized_latin_assignments(task_cycle, phase)
         groups = self._cost_balanced_groups(task_cycle)
         assignments: list[tuple[int, int, int, int]] = []
         for rank in range(self.world_size):

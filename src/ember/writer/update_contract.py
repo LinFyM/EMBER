@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Mapping, Sequence
 
 from ember.pi05_source_checkpoint import DistributedContext
+from ember.writer.model import WriterModelError
 
 
 def _raw_full24_gradient_contract(
@@ -96,6 +97,32 @@ def _axis_key(serial4: bool, value: str) -> str:
     return f"{value}_per_optimizer_update" if serial4 else f"{value}_per_macro"
 
 
+def checkpoint_state_family(config: Mapping[str, Any]) -> str:
+    """Return the fail-closed optimizer/data/RNG checkpoint family."""
+
+    training = config["conditioning_training"]
+    topology = str(training["update_topology"])
+    task_query_keyed = (
+        training.get("policy_randomness_scheme")
+        == "task_query_keyed_stateless_policy_cuda_v1"
+    )
+    if topology == "task_complete_all_tasks":
+        return (
+            "ucp_task_query_keyed_rawfull24_v1"
+            if task_query_keyed
+            else "ucp_legacy_full24_v1"
+        )
+    if topology == "serial4_exposure_matched_six_phase_task_cycle":
+        return "ucp_legacy_serial4_v1"
+    if (
+        topology
+        == "cycle_normalized_randomized_group4_six_phase_task_cycle"
+        and task_query_keyed
+    ):
+        return "ucp_cycle_normalized_randomized_group4_v1"
+    raise WriterModelError("unsupported AS-Writer checkpoint state family")
+
+
 def build_update_runtime_contract(
     *,
     config: Mapping[str, Any],
@@ -113,13 +140,22 @@ def build_update_runtime_contract(
     tasks_per_rank = int(training["tasks_per_rank_per_optimizer_update"])
     global_tasks = context.world_size * tasks_per_rank
     videos_per_visit = int(training["teacher_videos_per_task_visit"])
-    serial4 = (
-        training["update_topology"]
-        == "serial4_exposure_matched_six_phase_task_cycle"
+    update_topology = str(training["update_topology"])
+    serial4 = update_topology in {
+        "serial4_exposure_matched_six_phase_task_cycle",
+        "cycle_normalized_randomized_group4_six_phase_task_cycle",
+    }
+    randomized_group4 = (
+        update_topology
+        == "cycle_normalized_randomized_group4_six_phase_task_cycle"
     )
     topology = (
         {
-            "optimizer_update_axis": "serial4_raw_mean_optimizer_update",
+            "optimizer_update_axis": (
+                "cycle_normalized_randomized_group4_raw_mean_optimizer_update"
+                if randomized_group4
+                else "serial4_raw_mean_optimizer_update"
+            ),
             "task_cycle_axis": "six_optimizer_updates_cover_full24_once",
             "optimizer_updates_per_task_cycle": 6,
             "total_task_cycles": total_steps // 6,
@@ -128,8 +164,13 @@ def build_update_runtime_contract(
             "tasks_per_rank_per_optimizer_update": tasks_per_rank,
             "global_tasks_per_optimizer_update": global_tasks,
             "task_assignment": (
-                "reuse_full24_cost_balanced_rank_rotation_per_task_cycle_then_"
-                "select_one_long_first_rank_column_per_phase"
+                "randomized_latin_group4_without_video_cost_input_phase_"
+                "balanced_over_six_cycle_superblocks_with_complementary_tail"
+                if randomized_group4
+                else (
+                    "reuse_full24_cost_balanced_rank_rotation_per_task_cycle_then_"
+                    "select_one_long_first_rank_column_per_phase"
+                )
             ),
             **serial4_gradient_contract(
                 context=context,
@@ -139,7 +180,22 @@ def build_update_runtime_contract(
             "adamw_updates_per_optimizer_update": 1,
             "scheduler_updates_per_task_cycle": 1,
             "scheduler_update_cadence": (
-                "after_phase5_only_lr_at_update_u_equals_full24_lr_floor_u_div_6"
+                "after_phase5_only_with_logical_cycle_lr_and_physical_lr_div_6"
+                if randomized_group4
+                else (
+                    "after_phase5_only_lr_at_update_u_equals_full24_lr_floor_u_div_6"
+                )
+            ),
+            **(
+                {
+                    "optimizer_cycle_normalization": dict(
+                        config["optimization"]["cycle_normalization"]
+                    ),
+                    "phase_cost_assignment_input": "none",
+                    "rank_local_long_first": "single_task_trivial_order",
+                }
+                if randomized_group4
+                else {}
             ),
             "checkpoint_axis": "completed_optimizer_update",
         }
@@ -165,6 +221,7 @@ def build_update_runtime_contract(
         "one_policy_cuda_process_per_rank": True,
         "extra_cuda_roles_on_any_rank": 0,
         "ddp_object": "rank_synchronized_shared_writer_without_ddp_backward",
+        "checkpoint_state_family": checkpoint_state_family(config),
         **topology,
         "task_video_cost_sha256": video_data["sampled_frame_cost_sha256"],
         "action_query_batch_size_per_task": batch_size,

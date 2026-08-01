@@ -69,7 +69,7 @@ def validate_task_complete_topology(
     batch_size: int,
     mode: str,
 ) -> None:
-    """Seal the complete-task-cycle AP-ADR update topology."""
+    """Seal a complete-task-cycle UCP update topology."""
 
     if context.world_size != expected_world_size:
         raise WriterModelError(
@@ -96,7 +96,10 @@ def validate_task_complete_topology(
         and updates_per_cycle == 1
         and global_tasks == task_count
     ) or (
-        update_topology == "serial4_exposure_matched_six_phase_task_cycle"
+        update_topology in {
+            "serial4_exposure_matched_six_phase_task_cycle",
+            "cycle_normalized_randomized_group4_six_phase_task_cycle",
+        }
         and updates_per_cycle == 6
         and tasks_per_rank == 1
         and global_tasks == 4
@@ -114,6 +117,6 @@ def validate_task_complete_topology(
         }
         if not candidates or batch_size not in candidates:
             raise WriterModelError(
-                "AP-ADR profile batch is outside its declared "
+                "UCP profile batch is outside its declared "
                 "hardware-friendly candidates"
             )

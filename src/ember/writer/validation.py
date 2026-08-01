@@ -1,4 +1,4 @@
-"""Evaluate AS-Writer diagnostics on the sealed validation-loss panel."""
+"""Evaluate AS-Writer checkpoints on the sealed validation functional-loss panel."""
 
 from __future__ import annotations
 
@@ -47,7 +47,7 @@ from ember.writer.data import (
     WriterTaskAuthority,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
-from ember.writer.architecture import AMPLITUDE_DUAL_READ_WRITER_CONSTRUCTOR_KEYS
+from ember.writer.architecture import UNIFIED_CAUSAL_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.model import (
     CompleteLoRAWriter,
     WriterModelError,
@@ -190,7 +190,7 @@ def _build_models(
     writer_values = {
         key: value
         for key, value in training["writer"].items()
-        if key in AMPLITUDE_DUAL_READ_WRITER_CONSTRUCTOR_KEYS
+        if key in UNIFIED_CAUSAL_WRITER_CONSTRUCTOR_KEYS
     }
     bridge = policy.model.paligemma_with_expert
     writer = CompleteLoRAWriter(
@@ -570,28 +570,14 @@ def evaluate(args: argparse.Namespace) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--diagnostic",
-        choices=("functional_loss", "endpoint10"),
-        default="functional_loss",
-        help="Use the historical functional loss or the no-gradient exact sampler diagnostic.",
-    )
-    parser.add_argument(
         "--panel-config",
         type=Path,
         default=REPO_ROOT
         / "configs/pi05_validation_functional_loss_panel_v1.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
-    parser.add_argument("--training-run", type=Path)
-    parser.add_argument("--checkpoints", type=Path, nargs="+")
-    parser.add_argument(
-        "--endpoint-candidate",
-        dest="endpoint_candidates",
-        action="append",
-        default=[],
-        metavar="FAMILY=EVALUATION_ROOT[::PORTABLE_MANIFEST]",
-        help="A formal correct400 run with a public-LoRA cache; repeat per candidate.",
-    )
+    parser.add_argument("--training-run", type=Path, required=True)
+    parser.add_argument("--checkpoints", type=Path, nargs="+", required=True)
     parser.add_argument("--source-run", type=Path, required=True)
     parser.add_argument("--source-checkpoint", type=Path, required=True)
     parser.add_argument("--tokenizer-path", type=Path, required=True)
@@ -604,6 +590,7 @@ def build_parser() -> argparse.ArgumentParser:
 def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
     for name in (
         "panel_config",
+        "training_run",
         "source_run",
         "source_checkpoint",
         "tokenizer_path",
@@ -611,19 +598,9 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
         "output_dir",
     ):
         setattr(args, name, getattr(args, name).resolve())
-    if args.diagnostic == "functional_loss":
-        if args.training_run is None or not args.checkpoints or args.endpoint_candidates:
-            raise WriterModelError(
-                "functional validation requires a training run and checkpoints only"
-            )
-        args.training_run = args.training_run.resolve()
-        args.checkpoints = tuple(path.resolve() for path in args.checkpoints)
-    elif args.training_run is not None or args.checkpoints or not args.endpoint_candidates:
-        raise WriterModelError(
-            "endpoint validation requires endpoint candidates and no Writer checkpoint"
-        )
+    args.checkpoints = tuple(path.resolve() for path in args.checkpoints)
     if args.mode == "formal" and args.max_groups_per_task is not None:
-        raise WriterModelError("formal Writer validation cannot truncate the panel")
+        raise WriterModelError("formal validation loss cannot truncate the panel")
     if args.max_groups_per_task is not None and not 0 < args.max_groups_per_task <= 8:
         raise WriterModelError("invalid validation loss profile group count")
     return args

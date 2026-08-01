@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_amplitude_preserving_dual_read_full24_as_writer_v1",
+  "schema_version": "ember_pi05_unified_causal_program_full24_as_writer_v1",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {
@@ -50,7 +50,7 @@
     "test_video_values_read": 0
   },
   "writer": {
-    "architecture": "pi05_amplitude_preserving_asymmetric_dual_read_v1",
+    "architecture": "pi05_unified_causal_program_target_rank_reader_v1",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -101,30 +101,22 @@
     "action_expert_action_out": false,
     "interaction_reduction": "mean_50_final_suffix_hidden_then_1024_to_256",
     "program_width": 256,
-    "semantic_core": "mean_X_plus_task_selected_centered_X_then_token_axis",
-    "semantic_core_frame_order": "none_strict_frame_set_permutation_invariant",
-    "semantic_core_heads": 8,
-    "semantic_core_blocks": 2,
-    "program_grid": "outgoing_native_Action_plus_endpoint_Effect_plus_patch_change",
-    "program_interval_alignment": "A_f_with_G_f_plus_1_and_G_f_plus_1_minus_G_f",
+    "program_grid": "interval_absolute_X_plus_native_Action_plus_task_patch_change",
+    "program_interval_alignment": "X_f_and_A_f_with_G_f_plus_1_minus_G_f",
     "program_terminal_policy": "F_minus_1_observed_outgoing_intervals_no_terminal_token",
     "program_temporal_ordinal": "interval_endpoint_sampled_frame_position",
     "program_heads": 8,
     "program_blocks": 2,
     "program_attention": "interval_local_then_column_causal_axial",
-    "program_identity_path": "normalized_type_semantic_and_ordinal_qk_only",
-    "program_key_path": "causal_axial_contextual_content",
-    "program_value_path": "raw_A_E_D_without_identity_or_terminal_norm",
+    "program_identity_path": "normalized_type_and_ordinal_qk_only",
+    "program_value_path": "raw_content_without_identity_or_terminal_norm",
     "target_count": 38,
     "public_rank": 16,
     "compiler_order": "sealed_policy_target_first_then_rank_last",
-    "core_reader": "38_target_only_raw_core_reads_broadcast_across_rank",
-    "program_coordinate_reader": "38x16_target_rank_reads_contextual_key_raw_value",
-    "reader_softmax": "independent_core_and_program_normalizers",
+    "program_coordinate_reader": "single_stage_normalized_target_rank_qk_raw_program_value",
     "coordinate_mixer": "none",
     "coordinate_identity_path": "normalized_target_and_rank_qk_only",
     "compiler_heads": 8,
-    "factor_input": "raw_core_program_concat_width512",
     "factor_head_bias": false,
     "factor_hidden_width": 256,
     "factor_final_projection": "exact_zero_initialization",
@@ -164,7 +156,7 @@
     "task_loss_scale_before_backward": "per_task_unscaled_then_exact_raw_full24_mean",
     "ddp_gradient_sync": "none_during_task_gradients_then_bounded_parameter_chunk_allgathers_for_exact_raw_full24_mean_and_read_only_grams",
     "gradient_composition": "exact_raw_equal_weight_full24_mean_without_projection",
-    "single_video_gradient_direction_diagnostic": "fixed_countsketch_32_per_task_per_semantic_frontend_core_program_compiler_factor_block",
+    "single_video_gradient_direction_diagnostic": "fixed_countsketch_32_per_task_per_semantic_frontend_program_compiler_factor_block",
     "optimizer_steps_per_macro_update": 1,
     "checkpoint_boundary": "complete_macro_optimizer_update_only",
     "normal_loss_weight": 1.0
@@ -174,7 +166,7 @@
     "prefetch_factor": 2
   },
   "optimization": {
-    "method": "functional_pi05_amplitude_dual_read_raw_full24_positive_only",
+    "method": "functional_pi05_unified_causal_program_raw_full24_positive_only",
     "seed": 7,
     "precision": "bfloat16",
     "source_policy": "final formal frozen raw policy",
@@ -197,7 +189,7 @@
       "decay_lr": 0.00001
     },
     "maximum_formal_wall_clock_minutes": 190,
-    "budget_role": "fresh_amplitude_dual_read_raw_full24_one_hour_then_evidence_gated_exact_resume"
+    "budget_role": "fresh_unified_causal_program_raw_full24_one_hour_then_evidence_gated_exact_resume"
   },
   "profile_defaults": {
     "status": "sealed_b20_after_live_105_frame_profile",
@@ -236,38 +228,37 @@
     },
     "selection_rule": "try_b20_on_three_complete_macros_containing_real_105_frame_video_then_fallback_directly_to_b16_only_if_oom_or_repeated_instability",
     "selected": {
-      "commit": "83065490bcf08e91c6f511cf2b921c7932d3ba1b",
+      "commit": "0d4c27114991c8887c4dd5479ec42fdd11fd63a3",
       "max_frames_per_encoder_call": 32,
       "per_task_action_batch_size": 20,
       "profile_optimizer_steps": 3,
       "profile_global_action_queries": 1440,
       "profile_global_video_conditions": 72,
-      "profile_wall_seconds": 58.98350688396022,
+      "profile_wall_seconds": 58.264967035036534,
       "step_seconds_max": [
-        20.56718597607687,
-        18.71667737606913,
-        18.644170708954334
+        20.393727556802332,
+        18.49370573973283,
+        18.504478682298213
       ],
-      "steady_action_queries_per_second_mean_last_two": 25.695444962585746,
-      "steady_macro_updates_per_hour_mean_last_two": 192.7158372193931,
-      "max_cuda_allocated_bytes": 77227462656,
-      "max_cuda_reserved_bytes": 83523272704,
+      "steady_action_queries_per_second_mean_last_two": 25.94722136743204,
+      "steady_macro_updates_per_hour_mean_last_two": 194.6041602557403,
+      "max_cuda_allocated_bytes": 77127082496,
+      "max_cuda_reserved_bytes": 83345014784,
       "all_steps_finite": true,
       "all_four_ranks_completed": true,
       "contains_real_105_frame_video": true,
       "all_main_blocks_gradient_reachable_after_identity_step": true,
-      "profile_root": "/data/ymdai/outputs/ember/pi05_as_writer_ap_adr_profile_b20_longseed172_r4_8306549_20260801",
-      "profile_config_overlay_sha256": "f63ec3b94657c60fac52a5845988a45279b9c522ff32e34690465807f42ae18d",
-      "profile_run_contract_payload_sha256": "77b0d777cf2920b1d2206f82339db45e353fc4c66e44839cda9f14df6aeebc94",
-      "profile_run_contract_sha256": "e8524f6c64acb5848a6ab38ea045d225e854aa3a1d440953d49d1f62aa77945a",
-      "profile_metrics_sha256": "5a8574852ea979d8be758b0816a1c8f77c9d72d9b3caa2d45f60b31a1448a2c7",
-      "profile_run_summary_sha256": "39b69bfad25efd52359b27b18b327cfcc93cb4952536d10cfcc12ce222129e03",
-      "profile_log_sha256": "7caf7351b7c95cda5eabf0483622128c98c21a311eaf5519521c8ab56a685d20"
+      "profile_root": "/data/ymdai/outputs/ember/pi05_as_writer_ucp_rawfull24_profile_b20_longseed172_r4_0d4c271_20260801",
+      "profile_config_overlay_sha256": "0af6662717bcf3e711fc6ea6d76e43aaead15c351b10c418b85f4502d6bd112c",
+      "profile_run_contract_payload_sha256": "49758fc363360d1d2b1b83ce5121a0f1370a64b377ac1eab148c29fa59fc496b",
+      "profile_run_contract_sha256": "3d375caa4bb6ae5abfc7f0821c1d6df5ba8659d512f9dc122935de18e7554ab6",
+      "profile_metrics_sha256": "06320db8319e5a36a39b7acb8ba2ce8ad5541f33a9416f94b2c77c6984a1dd24",
+      "profile_run_summary_sha256": "bc8e3e4eaad1b14097563d1a86d7aa443c314e9fbb33f7d34210fb977e8d1b18"
     },
     "exact_resume_smoke": {
       "status": "pass_fresh_step1_then_exact_resume_to_step3",
-      "commit": "83065490bcf08e91c6f511cf2b921c7932d3ba1b",
-      "root": "/data/ymdai/outputs/ember/pi05_as_writer_ap_adr_resume_smoke_b20_formalseed_r4_8306549_20260801",
+      "commit": "0d4c27114991c8887c4dd5479ec42fdd11fd63a3",
+      "root": "/data/ymdai/outputs/ember/pi05_as_writer_ucp_rawfull24_resume_smoke_b20_formalseed_r4_0d4c271_20260801",
       "formal_teacher_video_seed": 20260722,
       "fresh_stop_step": 1,
       "resumed_stop_step": 3,
@@ -278,19 +269,19 @@
         3
       ],
       "mean_functional_action_losses": [
-        0.15716790687292814,
-        0.15068584556380907,
-        0.1480922494083643
+        0.1536451062808434,
+        0.14930199459195137,
+        0.14946573631217083
       ],
       "gradient_norms_before_clip": [
-        0.009444392286241055,
-        0.014368036761879921,
-        0.10030180215835571
+        0.014274266548454762,
+        0.03883300721645355,
+        0.6549015641212463
       ],
       "step_seconds_max": [
-        19.533733709715307,
-        20.332029601559043,
-        19.38969458406791
+        19.474956930149347,
+        19.607646289281547,
+        19.129770929925144
       ],
       "applied_learning_rates": [
         0.0003,
@@ -307,30 +298,29 @@
         48,
         72
       ],
-      "gradient_gram_chunk_allgathers_each_step": 12,
-      "gradient_gram_chunk_cuda_synchronizations_each_step": 12,
+      "gradient_gram_chunk_allgathers_each_step": 10,
+      "gradient_gram_chunk_cuda_synchronizations_each_step": 10,
       "all_steps_finite": true,
       "all_main_blocks_gradient_reachable_after_identity_step": true,
       "validation_action_reads": 0,
       "test_action_reads": 0,
       "test_video_value_reads": 0,
       "step1_checkpoint_files_unchanged_after_resume": true,
-      "run_contract_payload_sha256": "a5a20f28f3ee602ec9f28a71cb349d682881b3405a7f21159b5802cc28b488b6",
-      "run_contract_file_sha256": "138b47f0347e492ddb6dc83607efdf54319b4bde2fab5c3192bcd03b9931e710",
-      "metrics_sha256": "d5dff6b9ecf2abe5ba86deb6a5598aab614997d79ac881ceeced038db06ed7b9",
-      "run_summary_sha256": "f9819dcfcb21890c191f633f96c9abae63077ab676d9aeb553f6c9e8c11b2564",
-      "step1_checkpoint_manifest_sha256": "8a7ceccd7f875635495f80d1d838b71ad0c9708a01e289341694fbe9f27a3cb9",
-      "step2_checkpoint_manifest_sha256": "cfb59067aee6f1b109e611619b30e728f4c1d7793996effa6865a1a413ffd1c0",
-      "step3_checkpoint_manifest_sha256": "779634d5daf27f66bcdee3281986f1ff6f69439fd3646bbbec70b1991ab836fe",
-      "fresh_log_sha256": "9b76f7cd3db37363e222cd1ead7fc320e40a6919ac9360425473593230ba981c",
-      "resume_log_sha256": "33e199530ffd6f92454fe5751dc2dcc29914e9587aab1432a32c1e09a8172aba"
+      "run_contract_payload_sha256": "284c1f51de8b0b1a06b42c133891b0f6ec127e9707b3faa5c9011d07aec603a5",
+      "run_contract_file_sha256": "31187bf9cde1df93d6b5eda8c2053b36a06ea86b4f2bde0a8615f97a5dc7d9d0",
+      "metrics_sha256": "84681e6367acb115ae7adad7ef5df3e34c0aea7dc88cc77ebf16b2688b743c2f",
+      "run_summary_sha256": "489ca5025aeabb807a90b111f4664d2d7b9f2acc1221ad2b5c2bc616382c0c5c",
+      "step1_checkpoint_manifest_sha256": "2ca42c686fbe759ffed447d9e90ecce32273bec69611b79fbd26d12028e5c6fb",
+      "step2_checkpoint_manifest_sha256": "810c8daf8465b1bce345615151da2363ed8fa233b1b3bf098980cc300f88df20",
+      "step3_checkpoint_manifest_sha256": "93faddab17d7da7bea2cf6057033396b6509e169278dc57f4be99f1a5f0f54f4",
+      "fresh_log_sha256": "75f20c3ab5a3624787f092cbd4cb0147bdc6babe92bc947ec1762373646ddfde",
+      "resume_log_sha256": "d58cb72783a7eadbeec72e538a7e0526f32549b4cf3d37ed28e38d07d296f0f6"
     },
     "gradient_reachability": {
       "status": "confirmed_after_identity_output_step",
       "first_nonzero_main_path_macro": 2,
       "finite_nonzero_blocks": [
         "semantic_frontend",
-        "core",
         "program",
         "compiler",
         "factor"
@@ -362,7 +352,7 @@
       200,
       400
     ],
-    "segment_definition": "fresh_ap_adr_raw_full24_macro0_to200_then_evidence_gated_exact_resume200_to400",
+    "segment_definition": "fresh_ucp_raw_full24_macro0_to200_then_evidence_gated_exact_resume200_to400",
     "one_hour_scale": {
       "macro_optimizer_updates": 200,
       "global_action_queries": 96000,

@@ -12,11 +12,26 @@ from ember.writer.model import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = (
-    "ember_pi05_amplitude_preserving_dual_read_full24_as_writer_v1"
-)
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_unified_causal_program_full24_as_writer_v1"
 AS_WRITER_CONFIG_OVERLAY_SCHEMA = (
-    "ember_pi05_amplitude_preserving_dual_read_full24_recipe_overlay_v1"
+    "ember_pi05_unified_causal_program_full24_as_writer_recipe_overlay_v1"
+)
+AS_WRITER_SERIAL4_CONFIG_SCHEMA = (
+    "ember_pi05_unified_causal_program_serial4_exposurematched_as_writer_v1"
+)
+AS_WRITER_SERIAL4_CONFIG_OVERLAY_SCHEMA = (
+    "ember_pi05_unified_causal_program_serial4_exposurematched_recipe_overlay_v1"
+)
+AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA = (
+    "ember_pi05_unified_causal_program_cycle_normalized_as_writer_v1"
+)
+AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA = (
+    "ember_pi05_unified_causal_program_cycle_normalized_recipe_overlay_v1"
+)
+AS_WRITER_CONFIG_SCHEMAS = (
+    AS_WRITER_CONFIG_SCHEMA,
+    AS_WRITER_SERIAL4_CONFIG_SCHEMA,
+    AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA,
 )
 AS_WRITER_STAGES = ("development", "final")
 
@@ -93,7 +108,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         or int(writer.get("max_frames_per_encoder_call", 0)) <= 0
     ):
         raise WriterModelError(
-            "sealed AP-ADR Writer dimensions changed"
+            "sealed UCP Writer dimensions changed"
         )
     expected = expected_writer_contract(writer)
     if writer != expected:
@@ -105,7 +120,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
             if writer[key] != expected[key]
         )
         raise WriterModelError(
-            "AP-ADR AS-Writer architecture changed; "
+            "UCP AS-Writer architecture changed; "
             f"missing={missing}, extra={extra}, changed={changed}"
         )
 
@@ -150,9 +165,20 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         raise WriterModelError("AS-Writer information wall changed")
 
     data = config.get("data", {})
+    update_topology = str(
+        config.get("conditioning_training", {}).get("update_topology", "")
+    )
     teacher_video_sampling = (
-        "per_task_macro_visit_deterministic_single_same_task_video_in_"
+        "per_task_cycle_visit_deterministic_single_same_task_video_in_"
         "no_replacement_cycles"
+        if update_topology in {
+            "serial4_exposure_matched_six_phase_task_cycle",
+            "cycle_normalized_randomized_group4_six_phase_task_cycle",
+        }
+        else (
+            "per_task_macro_visit_deterministic_single_same_task_video_in_"
+            "no_replacement_cycles"
+        )
     )
     required = {
         "task_count": 24 if writer_stage(config) == "development" else 32,
@@ -178,7 +204,7 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
 
 def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
     value = config.get("conditioning_training", {})
-    common = {
+    legacy_common = {
         "writer_language_contract": (
             "correct_task_language_state_free_teacher_action_suffix"
         ),
@@ -190,10 +216,24 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
             "one independent policy flow noise and time draw per action query"
         ),
         "single_video_gradient_direction_diagnostic": (
-            "fixed_countsketch_32_per_task_per_semantic_frontend_core_program_"
+            "fixed_countsketch_32_per_task_per_semantic_frontend_program_"
             "compiler_factor_block"
         ),
         "normal_loss_weight": 1.0,
+    }
+    task_query_common = {
+        **{
+            key: item
+            for key, item in legacy_common.items()
+            if key != "policy_noise_contract"
+        },
+        "policy_noise_contract": (
+            "one task-query-keyed stateless policy flow noise and time draw "
+            "per action query"
+        ),
+        "policy_randomness_scheme": (
+            "task_query_keyed_stateless_policy_cuda_v1"
+        ),
     }
     full24 = {
         "method": (
@@ -226,13 +266,166 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
         ),
         "optimizer_steps_per_macro_update": 1,
         "checkpoint_boundary": "complete_macro_optimizer_update_only",
-        **common,
+        **legacy_common,
     }
-    if value != full24:
+    serial4 = {
+        "method": (
+            "raw_serial4_exposure_matched_single_video_multi_action_"
+            "positive_functional_loss"
+        ),
+        "update_topology": "serial4_exposure_matched_six_phase_task_cycle",
+        "action_query_batch_owner": (
+            "one task-pure physical action batch per rank per optimizer update"
+        ),
+        "task_assignment": (
+            "six optimizer phases reuse one full24 cost-balanced rank rotation; "
+            "each phase selects one long-first task per rank and all six phases "
+            "cover every task exactly once"
+        ),
+        "tasks_per_rank_per_optimizer_update": 1,
+        "global_tasks_per_optimizer_update": 4,
+        "optimizer_updates_per_task_cycle": 6,
+        "scheduler_updates_per_task_cycle": 1,
+        "task_visit_axis": "zero_based_task_cycle_floor_optimizer_update_div_6",
+        "pair_loss_reduction": (
+            "mean_within_task_then_equal_raw_mean_over_selected_4_tasks"
+        ),
+        "task_loss_scale_before_backward": (
+            "per_task_unscaled_then_exact_raw_selected4_mean"
+        ),
+        "ddp_gradient_sync": (
+            "none_during_task_gradients_then_bounded_parameter_chunk_"
+            "allgathers_for_exact_raw_selected4_mean_and_read_only_4x4_grams"
+        ),
+        "gradient_composition": (
+            "exact_raw_equal_weight_selected4_mean_without_projection"
+        ),
+        "optimizer_steps_per_task_cycle": 6,
+        "scheduler_step_cadence": (
+            "once_after_each_six_optimizer_update_task_cycle"
+        ),
+        "checkpoint_boundary": "complete_optimizer_update_only",
+        **legacy_common,
+    }
+    task_query_raw = {
+        **{
+            key: item
+            for key, item in full24.items()
+            if key not in legacy_common and key != "method"
+        },
+        "method": (
+            "task_query_keyed_raw_task_complete_single_video_multi_action_"
+            "positive_functional_loss"
+        ),
+        **task_query_common,
+    }
+    randomized_group4 = {
+        "method": (
+            "cycle_normalized_randomized_group4_single_video_multi_action_"
+            "positive_functional_loss"
+        ),
+        "update_topology": (
+            "cycle_normalized_randomized_group4_six_phase_task_cycle"
+        ),
+        "action_query_batch_owner": (
+            "one task-pure physical action batch per rank per optimizer update"
+        ),
+        "task_assignment": (
+            "six randomized Latin phases each select four tasks without cost "
+            "input; every task appears once per cycle and phase-balanced over "
+            "six-cycle superblocks with sealed complementary tail"
+        ),
+        "tasks_per_rank_per_optimizer_update": 1,
+        "global_tasks_per_optimizer_update": 4,
+        "optimizer_updates_per_task_cycle": 6,
+        "scheduler_updates_per_task_cycle": 1,
+        "task_visit_axis": "zero_based_task_cycle_floor_optimizer_update_div_6",
+        "pair_loss_reduction": (
+            "mean_within_task_then_equal_raw_mean_over_selected_4_tasks"
+        ),
+        "task_loss_scale_before_backward": (
+            "per_task_unscaled_then_exact_raw_selected4_mean"
+        ),
+        "ddp_gradient_sync": (
+            "none_during_task_gradients_then_bounded_parameter_chunk_"
+            "allgathers_for_exact_raw_selected4_mean_and_read_only_4x4_grams"
+        ),
+        "gradient_composition": (
+            "exact_raw_equal_weight_selected4_mean_without_projection"
+        ),
+        "optimizer_steps_per_task_cycle": 6,
+        "scheduler_step_cadence": (
+            "once_after_each_six_optimizer_update_task_cycle"
+        ),
+        "checkpoint_boundary": "complete_optimizer_update_only",
+        **task_query_common,
+    }
+    if config.get("schema_version") == AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA:
+        expected = (
+            randomized_group4
+            if value.get("update_topology")
+            == "cycle_normalized_randomized_group4_six_phase_task_cycle"
+            else task_query_raw
+        )
+    else:
+        expected = (
+            serial4
+            if value.get("update_topology")
+            == "serial4_exposure_matched_six_phase_task_cycle"
+            else full24
+        )
+    if value != expected:
         raise WriterModelError("AS-Writer conditioning contract changed")
 
 
-def _load_recipe_overlay(config: Mapping[str, Any]) -> dict[str, Any]:
+def _validate_cycle_normalized_optimization(config: Mapping[str, Any]) -> None:
+    if config.get("schema_version") != AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA:
+        return
+    training = config["conditioning_training"]
+    optimizer = config.get("optimization", {}).get("optimizer", {})
+    scheduler = config.get("optimization", {}).get("scheduler", {})
+    normalization = config.get("optimization", {}).get("cycle_normalization", {})
+    group4 = (
+        training.get("update_topology")
+        == "cycle_normalized_randomized_group4_six_phase_task_cycle"
+    )
+    expected_divisor = 6 if group4 else 1
+    expected_betas = (
+        [0.9825931938526898, 0.9914875553891529]
+        if group4
+        else [0.9, 0.95]
+    )
+    expected_mode = (
+        "cycle_normalized_randomized_group4"
+        if group4
+        else "task_query_keyed_raw_reference"
+    )
+    invalid = (
+        optimizer.get("name") != "AdamW"
+        or optimizer.get("betas") != expected_betas
+        or optimizer.get("eps") != 1e-8
+        or optimizer.get("weight_decay") != 1e-4
+        or optimizer.get("gradient_clip_norm") != 1.0
+        or normalization.get("mode") != expected_mode
+        or normalization.get("optimizer_updates_per_task_cycle")
+        != expected_divisor
+        or normalization.get("lr_divisor") != expected_divisor
+        or normalization.get("reference_betas") != [0.9, 0.95]
+        or normalization.get("applied_betas") != expected_betas
+        or normalization.get("reference_weight_decay") != 1e-4
+        or normalization.get("scheduler_updates_per_task_cycle") != 1
+        or scheduler.get("optimizer_updates_per_scheduler_step")
+        != expected_divisor
+        or config.get("optimization", {}).get("optimizer_diagnostics")
+        != "per_owned_block_moment_parameter_and_actual_update_l2"
+    )
+    if invalid:
+        raise WriterModelError("cycle-normalized optimizer contract changed")
+
+
+def _load_recipe_overlay(
+    config: Mapping[str, Any], *, overlay_schema: str
+) -> dict[str, Any]:
     required = {
         "schema_version",
         "base_config",
@@ -260,9 +453,12 @@ def _load_recipe_overlay(config: Mapping[str, Any]) -> dict[str, Any]:
         raise WriterModelError("invalid AS-Writer recipe overlay")
     base = read_json(base_path)
     base.update({name: value for name, value in replacements.items()})
-    base["schema_version"] = AS_WRITER_CONFIG_SCHEMA
+    if overlay_schema == AS_WRITER_SERIAL4_CONFIG_OVERLAY_SCHEMA:
+        base["schema_version"] = AS_WRITER_SERIAL4_CONFIG_SCHEMA
+    elif overlay_schema == AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA:
+        base["schema_version"] = AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA
     base["_config_derivation"] = {
-        "overlay_schema": AS_WRITER_CONFIG_OVERLAY_SCHEMA,
+        "overlay_schema": overlay_schema,
         "base_config": str(base_path.relative_to(REPO_ROOT)),
         "base_sha256": config["base_sha256"],
     }
@@ -272,13 +468,18 @@ def _load_recipe_overlay(config: Mapping[str, Any]) -> dict[str, Any]:
 def load_writer_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     schema = config.get("schema_version")
-    if schema == AS_WRITER_CONFIG_OVERLAY_SCHEMA:
-        config = _load_recipe_overlay(config)
-    if config.get("schema_version") != AS_WRITER_CONFIG_SCHEMA:
+    if schema in {
+        AS_WRITER_CONFIG_OVERLAY_SCHEMA,
+        AS_WRITER_SERIAL4_CONFIG_OVERLAY_SCHEMA,
+        AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA,
+    }:
+        config = _load_recipe_overlay(config, overlay_schema=str(schema))
+    if config.get("schema_version") not in AS_WRITER_CONFIG_SCHEMAS:
         raise WriterModelError("unsupported PI05 AS-Writer config schema")
     writer_stage(config)
     _validate_authorities(config)
     _validate_protocol(config)
     _validate_information_wall(config)
     _validate_conditioning_training(config)
+    _validate_cycle_normalized_optimization(config)
     return config

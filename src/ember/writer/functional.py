@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+import hashlib
+import struct
+from contextlib import contextmanager
+from typing import Any, Iterator, Mapping, Sequence
 
 import torch
 
@@ -13,6 +16,74 @@ from ember.lora import (
     task_lora_state_dict,
 )
 from ember.writer.model import CompleteLoRAWriter, WriterModelError
+
+
+TASK_QUERY_POLICY_RNG_SCHEME = "task_query_keyed_stateless_policy_cuda_v1"
+
+
+def task_query_policy_rng_seed(
+    *,
+    optimization_seed: int,
+    task_id: int,
+    task_visit: int,
+    demo_indices: Sequence[int],
+    frame_indices: Sequence[int],
+) -> int:
+    """Derive one rank/phase-independent policy-noise seed from query identity."""
+
+    demos = tuple(int(value) for value in demo_indices)
+    frames = tuple(int(value) for value in frame_indices)
+    if (
+        optimization_seed < 0
+        or task_id < 0
+        or task_visit < 0
+        or not demos
+        or len(demos) != len(frames)
+        or any(value < 0 for value in (*demos, *frames))
+    ):
+        raise WriterModelError("invalid task-query policy randomness identity")
+    digest = hashlib.sha256()
+    digest.update(TASK_QUERY_POLICY_RNG_SCHEME.encode("ascii"))
+    digest.update(
+        struct.pack(
+            ">4Q",
+            int(optimization_seed),
+            int(task_id),
+            int(task_visit),
+            len(demos),
+        )
+    )
+    for demo_index, frame_index in zip(demos, frames, strict=True):
+        digest.update(struct.pack(">2Q", demo_index, frame_index))
+    return int.from_bytes(digest.digest()[:8], "big") & ((1 << 63) - 1)
+
+
+@contextmanager
+def scoped_policy_randomness(
+    seed: int | None,
+    device: torch.device | str | None,
+) -> Iterator[None]:
+    """Seed and restore only the policy forward's local CPU/CUDA generator."""
+
+    if seed is None:
+        yield
+        return
+    if seed < 0 or device is None:
+        raise WriterModelError("invalid scoped policy randomness request")
+    selected = torch.device(device)
+    if selected.type == "cuda":
+        index = selected.index
+        if index is None:
+            index = torch.cuda.current_device()
+        with torch.random.fork_rng(devices=[index], device_type="cuda"):
+            torch.cuda.default_generators[index].manual_seed(seed)
+            yield
+        return
+    if selected.type != "cpu":
+        raise WriterModelError("policy randomness device must be CPU or CUDA")
+    with torch.random.fork_rng(devices=[]):
+        torch.random.default_generator.manual_seed(seed)
+        yield
 
 
 def prepare_frozen_writer_policy(
@@ -69,6 +140,8 @@ def functional_lora_loss_gradient(
     contract: LoRAContract,
     *,
     batch: Mapping[str, Any],
+    policy_rng_seed: int | None = None,
+    policy_rng_device: torch.device | str | None = None,
 ) -> tuple[torch.Tensor, Mapping[str, Any], dict[str, torch.Tensor]]:
     """Differentiate one policy loss only through detached LoRA leaf tensors.
 
@@ -82,7 +155,8 @@ def functional_lora_loss_gradient(
     leaves = {
         name: value.detach().requires_grad_(True) for name, value in state.items()
     }
-    output = functional_lora_call(policy, leaves, contract, dict(batch))
+    with scoped_policy_randomness(policy_rng_seed, policy_rng_device):
+        output = functional_lora_call(policy, leaves, contract, dict(batch))
     if (
         not isinstance(output, tuple)
         or len(output) != 2

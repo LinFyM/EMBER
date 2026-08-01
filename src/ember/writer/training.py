@@ -69,7 +69,7 @@ from ember.writer.data import (
     WriterTaskAuthority,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
-from ember.writer.architecture import AMPLITUDE_DUAL_READ_WRITER_CONSTRUCTOR_KEYS
+from ember.writer.architecture import UNIFIED_CAUSAL_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.model import (
     CompleteLoRAWriter,
     WriterModelError,
@@ -84,6 +84,7 @@ from ember.writer.update_schedule import (
     build_exposure_scheduler,
     logical_task_cycle_steps,
 )
+from ember.writer.update_contract import checkpoint_state_family
 from ember.writer.run_summary import write_run_summary
 
 
@@ -158,7 +159,7 @@ def _build_writer(
     writer_config = {
         key: value
         for key, value in config["writer"].items()
-        if key in AMPLITUDE_DUAL_READ_WRITER_CONSTRUCTOR_KEYS
+        if key in UNIFIED_CAUSAL_WRITER_CONSTRUCTOR_KEYS
     }
     bridge = policy.model.paligemma_with_expert
     writer = CompleteLoRAWriter(
@@ -246,6 +247,7 @@ def _restore_training_state(
             )
         ),
         contract_sha256=contract_sha256,
+        checkpoint_state_family=checkpoint_state_family(config),
     )
     if loaded != initial_step:
         raise WriterModelError("AS-Writer resume path and state disagree")
@@ -298,6 +300,12 @@ def _build_sampler_and_loader(
         ),
         video_schedule=schedule,
         task_video_costs=task_video_costs,
+        assignment_strategy=(
+            "randomized_latin_group4"
+            if config["conditioning_training"]["update_topology"]
+            == "cycle_normalized_randomized_group4_six_phase_task_cycle"
+            else "cost_balanced_long_first"
+        ),
     )
     loader = DataLoader(
         dataset,
@@ -702,7 +710,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=(
             REPO_ROOT
-            / "configs/pi05_as_writer_amplitude_dual_read_full24_decay400_v1.json"
+            / "configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json"
         ),
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

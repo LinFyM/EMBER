@@ -16,9 +16,20 @@ from ember.writer.task_gradient import (
     flatten_task_gradient,
     gradient_direction_sketches,
 )
-from ember.writer.functional import functional_lora_loss_gradient
+from ember.writer.functional import (
+    TASK_QUERY_POLICY_RNG_SCHEME,
+    functional_lora_loss_gradient,
+    task_query_policy_rng_seed,
+)
 from ember.writer.model import WriterModelError
-from ember.writer.update_schedule import advance_scheduler_after_update
+from ember.writer.optimizer_diagnostics import (
+    capture_optimizer_parameters,
+    optimizer_state_metrics,
+)
+from ember.writer.update_schedule import (
+    advance_scheduler_after_update,
+    prepare_optimizer_update,
+)
 
 if TYPE_CHECKING:
     from ember.writer.training import WriterRuntime
@@ -100,6 +111,7 @@ def _differentiate_conditions(
     packed: WriterCondition,
     policy_batch: Mapping[str, Any],
     flat_gradient: torch.Tensor,
+    policy_rng_seed: int | None,
 ) -> tuple[torch.Tensor, Mapping[str, Any], torch.Tensor]:
     with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
         generated = runtime.writer(
@@ -111,6 +123,10 @@ def _differentiate_conditions(
             generated,
             runtime.lora_contract,
             batch=policy_batch,
+            policy_rng_seed=policy_rng_seed,
+            policy_rng_device=(
+                runtime.context.device if policy_rng_seed is not None else None
+            ),
         )
     names = tuple(generated)
     parameter_gradients = torch.autograd.grad(
@@ -125,6 +141,39 @@ def _differentiate_conditions(
         output=flat_gradient,
     )
     return loss, detail, flat_gradient
+
+
+def _policy_rng_seed_for_batch(
+    runtime: WriterRuntime,
+    batch: Mapping[str, Any],
+    *,
+    task_id: int,
+    task_visit: int,
+) -> int | None:
+    scheme = runtime.config["conditioning_training"].get(
+        "policy_randomness_scheme"
+    )
+    if scheme is None:
+        return None
+    if scheme != TASK_QUERY_POLICY_RNG_SCHEME:
+        raise WriterModelError("unsupported policy randomness scheme")
+    demo_indices = batch.get("demo_index")
+    frame_indices = batch.get("frame_index")
+    if (
+        not isinstance(demo_indices, torch.Tensor)
+        or not isinstance(frame_indices, torch.Tensor)
+        or demo_indices.ndim != 1
+        or frame_indices.shape != demo_indices.shape
+        or demo_indices.numel() != runtime.batch_size
+    ):
+        raise WriterModelError("action query lost immutable randomness identity")
+    return task_query_policy_rng_seed(
+        optimization_seed=int(runtime.config["optimization"]["seed"]),
+        task_id=task_id,
+        task_visit=task_visit,
+        demo_indices=demo_indices.detach().cpu().tolist(),
+        frame_indices=frame_indices.detach().cpu().tolist(),
+    )
 
 
 def _global_task_video_assignments(
@@ -346,7 +395,8 @@ def _step_metrics(
     conditioning_mode: str,
     data_seconds: float,
     grad_norm: torch.Tensor,
-    applied_lr: float,
+    optimizer_update: Mapping[str, Any],
+    optimizer_diagnostics: Mapping[str, Any] | None,
     gradient_composition: Mapping[str, Any],
     local_gradient_sketches: Mapping[str, torch.Tensor],
     scheduler_advanced: bool,
@@ -399,8 +449,38 @@ def _step_metrics(
             float(grad_norm),
             runtime.context,
         ),
-        "applied_lr": applied_lr,
+        "logical_lr": float(optimizer_update["logical_lr"]),
+        "applied_lr": float(optimizer_update["applied_lr"]),
+        "optimizer_lr_divisor": int(optimizer_update["lr_divisor"]),
+        "cycle_lr_integral": float(optimizer_update["applied_lr"])
+        * int(optimizer_update["lr_divisor"]),
+        "reference_weight_decay": float(
+            optimizer_update["reference_weight_decay"]
+        ),
+        "applied_weight_decay": float(
+            optimizer_update["applied_weight_decay"]
+        ),
+        "optimizer_cycle_normalization": str(optimizer_update["mode"]),
+        "policy_randomness_scheme": runtime.config["conditioning_training"].get(
+            "policy_randomness_scheme", "ambient_rank_cuda_stream"
+        ),
         "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
+        "next_logical_lr": float(runtime.scheduler.get_last_lr()[0]),
+        "gradient_clip_norm": float(
+            runtime.config["optimization"]["optimizer"]["gradient_clip_norm"]
+        ),
+        "gradient_clip_triggered": float(grad_norm)
+        > float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"]),
+        "gradient_clip_coefficient": min(
+            1.0,
+            float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"])
+            / (float(grad_norm) + 1e-6),
+        ),
+        **(
+            {"optimizer_diagnostics": dict(optimizer_diagnostics)}
+            if optimizer_diagnostics is not None
+            else {}
+        ),
         **_throughput_and_exposure_metrics(
             runtime,
             completed=completed,
@@ -429,6 +509,7 @@ def _step_metrics(
             {
                 "task_id": int(record["task_id"]),
                 "detail": record["detail"],
+                "policy_rng_seed": record["policy_rng_seed"],
             }
             for record in records
         ],
@@ -478,12 +559,19 @@ def _collect_task_gradients(
             teacher_demo=teacher_demo,
             action_batch_size=observed_batch,
         )
+        policy_rng_seed = _policy_rng_seed_for_batch(
+            runtime,
+            batch,
+            task_id=task_id,
+            task_visit=task_visit,
+        )
         policy_batch = runtime.processor.training_batch(batch)
         loss, detail, task_gradient = _differentiate_conditions(
             runtime,
             packed,
             policy_batch,
             local_gradients[microtask],
+            policy_rng_seed,
         )
         if not bool(torch.isfinite(loss)):
             raise WriterModelError(
@@ -496,6 +584,7 @@ def _collect_task_gradients(
                 "loss": float(loss.detach()),
                 "detail": detail,
                 "video_metrics": video_metrics,
+                "policy_rng_seed": policy_rng_seed,
             }
         )
         local_task_ids.append(task_id)
@@ -563,6 +652,8 @@ def run_writer_step(
     supported_modes = {
         "raw_task_complete_single_video_multi_action_positive_functional_loss",
         "raw_serial4_exposure_matched_single_video_multi_action_positive_functional_loss",
+        "task_query_keyed_raw_task_complete_single_video_multi_action_positive_functional_loss",
+        "cycle_normalized_randomized_group4_single_video_multi_action_positive_functional_loss",
     }
     if mode not in supported_modes:
         raise WriterModelError("unsupported AS-Writer conditioning mode")
@@ -583,8 +674,14 @@ def run_writer_step(
     )
     if not bool(torch.isfinite(grad_norm).detach()):
         raise WriterModelError(f"non-finite AS-Writer gradient at step {step}")
-    applied_lr = float(runtime.optimizer.param_groups[0]["lr"])
+    optimizer_update = prepare_optimizer_update(
+        runtime.optimizer,
+        runtime.scheduler,
+        runtime.config,
+    )
+    before = capture_optimizer_parameters(runtime)
     runtime.optimizer.step()
+    optimizer_diagnostics = optimizer_state_metrics(runtime, before)
     scheduler_advanced = advance_scheduler_after_update(
         runtime.scheduler,
         completed_optimizer_updates=step + 1,
@@ -601,7 +698,8 @@ def run_writer_step(
         conditioning_mode=mode,
         data_seconds=data_seconds,
         grad_norm=grad_norm,
-        applied_lr=applied_lr,
+        optimizer_update=optimizer_update,
+        optimizer_diagnostics=optimizer_diagnostics,
         gradient_composition=gradient_metrics,
         local_gradient_sketches=local_gradient_sketches,
         scheduler_advanced=scheduler_advanced,

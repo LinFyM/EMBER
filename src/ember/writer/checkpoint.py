@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import random
 import uuid
@@ -28,29 +29,93 @@ from ember.writer.as_sampling import (
 )
 from ember.writer.as_contract import AS_WRITER_LAUNCH_SCHEMA
 from ember.writer.model import CompleteLoRAWriter, WriterModelError
+from ember.writer.update_schedule import cycle_matched_weight_decay
 
 
 AS_WRITER_CHECKPOINT_SCHEMA = (
-    "ember_pi05_amplitude_preserving_dual_read_full24_checkpoint_v1"
+    "ember_pi05_unified_causal_program_full24_checkpoint_v1"
 )
 AS_WRITER_TRAINER_STATE_SCHEMA = (
-    "ember_pi05_amplitude_preserving_dual_read_full24_trainer_state_v1"
+    "ember_pi05_unified_causal_program_full24_trainer_state_v1"
 )
 AS_WRITER_RANK_STATE_SCHEMA = (
-    "ember_pi05_amplitude_preserving_dual_read_full24_rank_state_v1"
+    "ember_pi05_unified_causal_program_full24_rank_state_v1"
+)
+AS_WRITER_SERIAL4_CHECKPOINT_SCHEMA = (
+    "ember_pi05_unified_causal_program_serial4_exposurematched_checkpoint_v1"
+)
+AS_WRITER_SERIAL4_TRAINER_STATE_SCHEMA = (
+    "ember_pi05_unified_causal_program_serial4_exposurematched_trainer_state_v1"
+)
+AS_WRITER_SERIAL4_RANK_STATE_SCHEMA = (
+    "ember_pi05_unified_causal_program_serial4_exposurematched_rank_state_v1"
+)
+AS_WRITER_TASK_QUERY_RAW_CHECKPOINT_SCHEMA = (
+    "ember_pi05_unified_causal_program_task_query_rawfull24_checkpoint_v1"
+)
+AS_WRITER_TASK_QUERY_RAW_TRAINER_STATE_SCHEMA = (
+    "ember_pi05_unified_causal_program_task_query_rawfull24_trainer_state_v1"
+)
+AS_WRITER_TASK_QUERY_RAW_RANK_STATE_SCHEMA = (
+    "ember_pi05_unified_causal_program_task_query_rawfull24_rank_state_v1"
+)
+AS_WRITER_CYCLE_NORMALIZED_GROUP4_CHECKPOINT_SCHEMA = (
+    "ember_pi05_unified_causal_program_cycle_normalized_group4_checkpoint_v1"
+)
+AS_WRITER_CYCLE_NORMALIZED_GROUP4_TRAINER_STATE_SCHEMA = (
+    "ember_pi05_unified_causal_program_cycle_normalized_group4_trainer_state_v1"
+)
+AS_WRITER_CYCLE_NORMALIZED_GROUP4_RANK_STATE_SCHEMA = (
+    "ember_pi05_unified_causal_program_cycle_normalized_group4_rank_state_v1"
 )
 
 
 def _state_schemas(
     optimizer_updates_per_task_cycle: int,
+    checkpoint_state_family: str | None = None,
 ) -> tuple[str, str, str]:
-    if optimizer_updates_per_task_cycle == 1:
+    family = checkpoint_state_family or (
+        "ucp_legacy_full24_v1"
+        if optimizer_updates_per_task_cycle == 1
+        else "ucp_legacy_serial4_v1"
+    )
+    if (
+        optimizer_updates_per_task_cycle == 1
+        and family == "ucp_legacy_full24_v1"
+    ):
         return (
             AS_WRITER_CHECKPOINT_SCHEMA,
             AS_WRITER_TRAINER_STATE_SCHEMA,
             AS_WRITER_RANK_STATE_SCHEMA,
         )
-    raise WriterModelError("AP-ADR checkpoints require one optimizer update per macro")
+    if (
+        optimizer_updates_per_task_cycle == 6
+        and family == "ucp_legacy_serial4_v1"
+    ):
+        return (
+            AS_WRITER_SERIAL4_CHECKPOINT_SCHEMA,
+            AS_WRITER_SERIAL4_TRAINER_STATE_SCHEMA,
+            AS_WRITER_SERIAL4_RANK_STATE_SCHEMA,
+        )
+    if (
+        optimizer_updates_per_task_cycle == 1
+        and family == "ucp_task_query_keyed_rawfull24_v1"
+    ):
+        return (
+            AS_WRITER_TASK_QUERY_RAW_CHECKPOINT_SCHEMA,
+            AS_WRITER_TASK_QUERY_RAW_TRAINER_STATE_SCHEMA,
+            AS_WRITER_TASK_QUERY_RAW_RANK_STATE_SCHEMA,
+        )
+    if (
+        optimizer_updates_per_task_cycle == 6
+        and family == "ucp_cycle_normalized_randomized_group4_v1"
+    ):
+        return (
+            AS_WRITER_CYCLE_NORMALIZED_GROUP4_CHECKPOINT_SCHEMA,
+            AS_WRITER_CYCLE_NORMALIZED_GROUP4_TRAINER_STATE_SCHEMA,
+            AS_WRITER_CYCLE_NORMALIZED_GROUP4_RANK_STATE_SCHEMA,
+        )
+    raise WriterModelError("unsupported AS-Writer checkpoint task cycle")
 
 
 def _rng_state(context: DistributedContext) -> dict[str, Any]:
@@ -103,6 +168,7 @@ def _write_rank_state(
     tasks_per_rank_per_update: int,
     optimizer_updates_per_task_cycle: int,
     rank_state_schema: str,
+    checkpoint_state_family: str | None = None,
 ) -> None:
     task_cycle, task_cycle_phase = divmod(
         step, optimizer_updates_per_task_cycle
@@ -124,6 +190,11 @@ def _write_rank_state(
             "teacher_videos_per_task_visit": videos_per_task_visit,
             "tasks_per_rank_per_optimizer_update": tasks_per_rank_per_update,
             "optimizer_updates_per_task_cycle": optimizer_updates_per_task_cycle,
+            "checkpoint_state_family": checkpoint_state_family or (
+                "ucp_legacy_full24_v1"
+                if optimizer_updates_per_task_cycle == 1
+                else "ucp_legacy_serial4_v1"
+            ),
             "rng": saved_rng,
         },
         path,
@@ -154,11 +225,22 @@ def _write_shared_state(
     optimizer_updates_per_task_cycle = int(
         contract["runtime"].get("optimizer_updates_per_task_cycle", 1)
     )
+    checkpoint_state_family = str(
+        contract["runtime"].get(
+            "checkpoint_state_family",
+            (
+                "ucp_legacy_full24_v1"
+                if optimizer_updates_per_task_cycle == 1
+                else "ucp_legacy_serial4_v1"
+            ),
+        )
+    )
     task_cycle, task_cycle_phase = divmod(
         step, optimizer_updates_per_task_cycle
     )
     checkpoint_schema, trainer_state_schema, _ = _state_schemas(
-        optimizer_updates_per_task_cycle
+        optimizer_updates_per_task_cycle,
+        checkpoint_state_family,
     )
     scheduler_state = scheduler.state_dict()
     if int(scheduler_state.get("last_epoch", -1)) != task_cycle:
@@ -178,6 +260,7 @@ def _write_shared_state(
             "next_task_cycle": task_cycle,
             "next_task_cycle_phase": task_cycle_phase,
             "scheduler_logical_updates": task_cycle,
+            "checkpoint_state_family": checkpoint_state_family,
             "optimizer": optimizer.state_dict(),
             "scheduler": scheduler_state,
             "amp_scaler": {"enabled": False, "state": {}},
@@ -209,6 +292,7 @@ def _write_shared_state(
         "next_task_cycle_phase": task_cycle_phase,
         "scheduler_logical_updates": task_cycle,
         "optimizer_updates_per_task_cycle": optimizer_updates_per_task_cycle,
+        "checkpoint_state_family": checkpoint_state_family,
         "teacher_videos_per_task_visit": videos_per_task_visit,
     }
     files = {
@@ -272,8 +356,19 @@ def save_writer_checkpoint(
     optimizer_updates_per_task_cycle = int(
         contract["runtime"].get("optimizer_updates_per_task_cycle", 1)
     )
+    checkpoint_state_family = str(
+        contract["runtime"].get(
+            "checkpoint_state_family",
+            (
+                "ucp_legacy_full24_v1"
+                if optimizer_updates_per_task_cycle == 1
+                else "ucp_legacy_serial4_v1"
+            ),
+        )
+    )
     _, _, rank_state_schema = _state_schemas(
-        optimizer_updates_per_task_cycle
+        optimizer_updates_per_task_cycle,
+        checkpoint_state_family,
     )
     error = None
     try:
@@ -288,6 +383,7 @@ def save_writer_checkpoint(
             tasks_per_rank_per_update=tasks_per_rank_per_update,
             optimizer_updates_per_task_cycle=optimizer_updates_per_task_cycle,
             rank_state_schema=rank_state_schema,
+            checkpoint_state_family=checkpoint_state_family,
         )
     except Exception as caught:
         error = caught
@@ -341,7 +437,17 @@ def validate_writer_checkpoint_files(
     updates_per_cycle = int(
         manifest.get("consumed", {}).get("optimizer_updates_per_task_cycle", 1)
     )
-    checkpoint_schema, _, _ = _state_schemas(updates_per_cycle)
+    checkpoint_state_family = manifest.get("consumed", {}).get(
+        "checkpoint_state_family"
+    )
+    checkpoint_schema, _, _ = _state_schemas(
+        updates_per_cycle,
+        (
+            str(checkpoint_state_family)
+            if checkpoint_state_family is not None
+            else None
+        ),
+    )
     if (
         manifest.get("schema_version") != checkpoint_schema
         or manifest.get("contract_sha256") != contract_sha256
@@ -455,6 +561,7 @@ def _trainer_resume_cursor(
     trainer_state_schema: str,
     contract_sha256: str,
     optimizer_updates_per_task_cycle: int,
+    checkpoint_state_family: str,
 ) -> tuple[int, int, int]:
     next_step = int(trainer.get("next_step", -1))
     task_cycle, task_cycle_phase = divmod(
@@ -463,6 +570,15 @@ def _trainer_resume_cursor(
     serial4 = optimizer_updates_per_task_cycle > 1
     valid = (
         trainer.get("schema_version") == trainer_state_schema
+        and trainer.get(
+            "checkpoint_state_family",
+            (
+                checkpoint_state_family
+                if checkpoint_state_family.startswith("ucp_legacy_")
+                else ""
+            ),
+        )
+        == checkpoint_state_family
         and trainer.get("contract_sha256") == contract_sha256
         and int(trainer.get("metrics_rows", -1)) >= 0
         and int(
@@ -506,6 +622,7 @@ def _validate_rank_resume_cursor(
     optimizer_updates_per_task_cycle: int,
     sampler_seed: int,
     teacher_video_seed: int,
+    checkpoint_state_family: str,
 ) -> None:
     serial4 = optimizer_updates_per_task_cycle > 1
     expected = (
@@ -523,6 +640,7 @@ def _validate_rank_resume_cursor(
         task_cycle,
         sampler_seed,
         teacher_video_seed,
+        checkpoint_state_family,
     )
     actual = (
         int(rank_state["next_step"]),
@@ -551,6 +669,16 @@ def _validate_rank_resume_cursor(
         ),
         int(rank_state["sampler_seed"]),
         int(rank_state["teacher_video_seed"]),
+        str(
+            rank_state.get(
+                "checkpoint_state_family",
+                (
+                    checkpoint_state_family
+                    if checkpoint_state_family.startswith("ucp_legacy_")
+                    else ""
+                ),
+            )
+        ),
     )
     valid = (
         rank_state.get("schema_version") == rank_state_schema
@@ -561,6 +689,67 @@ def _validate_rank_resume_cursor(
     )
     if not valid:
         raise WriterModelError("Writer rank resume state changed")
+
+
+def _validate_cycle_normalized_optimizer_resume(
+    optimizer: torch.optim.Optimizer,
+    scheduler: torch.optim.lr_scheduler.LRScheduler,
+    *,
+    next_step: int,
+    task_cycle_phase: int,
+    checkpoint_state_family: str,
+) -> None:
+    if checkpoint_state_family.startswith("ucp_legacy_"):
+        return
+    group4 = (
+        checkpoint_state_family
+        == "ucp_cycle_normalized_randomized_group4_v1"
+    )
+    if not group4 and checkpoint_state_family != "ucp_task_query_keyed_rawfull24_v1":
+        raise WriterModelError("unknown cycle-normalized optimizer resume family")
+    expected_betas = (
+        (0.9825931938526898, 0.9914875553891529)
+        if group4
+        else (0.9, 0.95)
+    )
+    divisor = 6 if group4 else 1
+    logical_lrs = tuple(float(value) for value in scheduler.get_last_lr())
+    if len(logical_lrs) != len(optimizer.param_groups):
+        raise WriterModelError("optimizer resume lost logical LR groups")
+    for group, logical_lr in zip(
+        optimizer.param_groups, logical_lrs, strict=True
+    ):
+        expected_lr = (
+            logical_lr
+            if task_cycle_phase == 0
+            else logical_lr / divisor
+        )
+        if (
+            tuple(float(value) for value in group["betas"]) != expected_betas
+            or float(group["eps"]) != 1e-8
+            or not math.isclose(
+                float(group["lr"]), expected_lr, rel_tol=1e-12, abs_tol=1e-15
+            )
+        ):
+            raise WriterModelError("optimizer resume clock changed")
+        if task_cycle_phase != 0:
+            expected_weight_decay = cycle_matched_weight_decay(
+                logical_lr,
+                1e-4,
+                divisor,
+            )
+            if not math.isclose(
+                float(group["weight_decay"]),
+                expected_weight_decay,
+                rel_tol=1e-12,
+                abs_tol=1e-15,
+            ):
+                raise WriterModelError("optimizer resume decay clock changed")
+        for parameter in group["params"]:
+            state = optimizer.state.get(parameter, {})
+            step = state.get("step")
+            if step is None or int(step.item()) != next_step:
+                raise WriterModelError("optimizer resume bias cursor changed")
 
 
 def load_writer_checkpoint(
@@ -578,6 +767,7 @@ def load_writer_checkpoint(
     tasks_per_rank_per_update: int,
     optimizer_updates_per_task_cycle: int,
     contract_sha256: str,
+    checkpoint_state_family: str | None = None,
 ) -> tuple[int, dict[str, Any], int]:
     validation: list[Any] = [None]
     if context.is_main:
@@ -598,8 +788,14 @@ def load_writer_checkpoint(
         map_location=context.device,
         weights_only=False,
     )
+    resolved_checkpoint_state_family = checkpoint_state_family or (
+        "ucp_legacy_full24_v1"
+        if optimizer_updates_per_task_cycle == 1
+        else "ucp_legacy_serial4_v1"
+    )
     _, trainer_state_schema, rank_state_schema = _state_schemas(
-        optimizer_updates_per_task_cycle
+        optimizer_updates_per_task_cycle,
+        resolved_checkpoint_state_family,
     )
     next_step, task_cycle, task_cycle_phase = _trainer_resume_cursor(
         trainer,
@@ -607,6 +803,7 @@ def load_writer_checkpoint(
         trainer_state_schema=trainer_state_schema,
         contract_sha256=contract_sha256,
         optimizer_updates_per_task_cycle=optimizer_updates_per_task_cycle,
+        checkpoint_state_family=resolved_checkpoint_state_family,
     )
     writer.load_state_dict(
         load_file(str(checkpoint / "writer.safetensors"), device=str(context.device))
@@ -615,6 +812,13 @@ def load_writer_checkpoint(
     scheduler.load_state_dict(trainer["scheduler"])
     if int(scheduler.state_dict().get("last_epoch", -1)) != task_cycle:
         raise WriterModelError("Writer scheduler resume cursor changed")
+    _validate_cycle_normalized_optimizer_resume(
+        optimizer,
+        scheduler,
+        next_step=next_step,
+        task_cycle_phase=task_cycle_phase,
+        checkpoint_state_family=resolved_checkpoint_state_family,
+    )
     rank_state = torch.load(
         checkpoint / f"rank_{context.rank:02d}_state.pt",
         map_location="cpu",
@@ -636,6 +840,7 @@ def load_writer_checkpoint(
         optimizer_updates_per_task_cycle=optimizer_updates_per_task_cycle,
         sampler_seed=sampler_seed,
         teacher_video_seed=teacher_video_seed,
+        checkpoint_state_family=resolved_checkpoint_state_family,
     )
     return (
         next_step,

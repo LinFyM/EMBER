@@ -17,6 +17,16 @@
   SHA为
   `4d7479cb11d0bc6fc364bc02d5681503bb247cd411515f134f1526aed89f0fd7`/
   `68306aff90e973334ca5a972573725f7133a803386719089c5ab048c425a88c7`。
+- 严格同曝光汇总已封存在
+  `/data/ymdai/outputs/ember/pi05_as_writer_ucp_raw150_vs_serial900_matched_exposure_internal_audit_20260801`；
+  analysis/evidence/summary SHA分别为
+  `e8cdbc79049079017bb5a38681c746c79e17c60c7ee5a3b85977282efd6dc922`、
+  `b44cdec0f4a8de5b0f394cd8336047548864a5928306059b6a67ccd104a84859`、
+  `dbc660cd01ece2482feaf12d6f5e6e8a4b6e166c2b811cb84b7a2e9ef3cb688d`。
+  correct400为`100->121`，但`50 gained/29 lost`、breadth仍`5->5`且成功集合
+  Jaccard仅`.4733`。action centered variance的跨task均值被Object-3的
+  `5.7077%`强离群值主导；应以跨task中位数`.00837%->.01900%`和逐task行作
+  正式解释，不能把均值的`22.7x`写成普遍增益。
 - 同曝光训练更新粒度对视频动态写出有数量级影响。删除A/D、只保留absolute X时，
   raw→SERIAL的coordinates/effective-BA/fixed-action relative L2由
   `.1223/.0653/.01269`升到`.6244/.4184/.12999`；same-task 50-video centered

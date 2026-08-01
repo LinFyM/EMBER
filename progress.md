@@ -16,6 +16,10 @@ GPU范围和训练步长是当时快照；活动状态只取
   energy从`.1096%/.03230%`升到`.4865%/.7322%`。训练更新粒度因此被证明会
   决定视频动态信号能否穿过compiler到policy action；但四点同曝光correct差值
   `+7/-17/+21/-3`且漂移仍在，SERIAL不升级为默认recipe。
+- matched audit root已生成并核验，analysis/evidence/summary SHA为
+  `e8cdbc79...c922`/`b44cdec0...859`/`dbc660cd...88d`。严格配对行为为
+  `100->121`、`50 gained/29 lost`、breadth `5->5`、Jaccard `.4733`；action
+  方差均值由单一Object-3离群值主导，后续归因使用逐task和中位数。
 - AP-ADR canonical实现commit `8306549`已完成CPU回归与真实GPU vertical path。
   exact module count为`10,241,024`；105-frame B20三macro profile覆盖72套视频、
   1,440 queries，三步finite且所有五个主块在identity step后可达。峰值

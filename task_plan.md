@@ -90,8 +90,11 @@ runner、split 或 GPU 权限。
   全部通过；step1七个payload逐项不变，seal `7dffb6f`已push。
 - [ ] clean frozen `7dffb6f`的AP-ADR formal fresh macro0→200正在GPU4–7运行；
   完成后评测macro50/100/150/200 paired correct400并按一小时门裁决。
-- [ ] 完成18-candidate、sealed512、exact ten-step inference endpoint诊断；在强
-  关联门通过前只作no-gradient held monitor，不进入训练。
+- [x] endpoint10实现已合入`544c0ef`/`2055a82`：exact ten-step sampler无
+  autocast/ACTION输入，sealed512 pairing、finite和historical provenance均
+  fail-close；CPU全仓`222 passed`。
+- [ ] 生成历史portable-v2 LoRA cache，完成真实CUDA parity与18-candidate四rank
+  formal endpoint诊断；在强关联门通过前只作no-gradient held monitor，不进入训练。
 - [ ] 后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才开第二
   小时和行为五臂。
 - [ ] 持续定位task漂移、视频学习和closed-loop off-manifold根因，禁止补丁式

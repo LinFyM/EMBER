@@ -43,9 +43,13 @@ correct差值为`+7/-17/+21/-3`、best仅117→121且漂移未解，因此SERIAL
 recipe。后续若AP主路工作但仍漂移，必须做scheduler-only和去除cost-phase
 curriculum的cycle-normalized randomized group4，而不是整体处决旧架构思想。
 
-endpoint10 no-gradient诊断正在并行准备。现有8个cache候选覆盖sealed64；历史
-v5.2-old、v6-fast八点、v6-old共10个候选的cache-only扩展已在各自历史commit上
-完成，但GPU生成尚未启动。endpoint metric在预声明关联门通过前不得进入训练。
+endpoint10 no-gradient诊断代码已在`544c0ef`/`2055a82`合入main并push；
+`CUDA_VISIBLE_DEVICES=`全仓`222 passed`。它强制exact ten-step sampler在autocast
+外运行、从sampler输入删除ACTION，并对候选配对、finite、sealed512与历史LoRA
+provenance fail-close。现有8个cache候选覆盖sealed64；v5.2-old、v6-fast八点、
+v6-old共10个候选的cache-only扩展已在各自历史commit完成，但真实CUDA parity、
+历史GPU生成和四rank formal诊断尚未启动。endpoint metric在预声明关联门通过前
+不得进入训练。
 
 ## 0A. 2026-08-01 UCP历史状态
 

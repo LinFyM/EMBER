@@ -33,6 +33,11 @@ GPU范围和训练步长是当时快照；活动状态只取
   `/data/ymdai/outputs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801`、
   `/data/ymdai/logs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801.log`、
   `ember-ap-adr-formal-7dffb6f`。正式run不从profile/resume warm-start。
+- endpoint10 no-gradient held诊断已以`544c0ef`/`2055a82`集成main；职责拆为
+  candidate/pairing、historical provenance、result aggregation和唯一runtime，
+  未分叉Writer/evaluator。定向`52 passed`、隐藏全部CUDA的全仓`222 passed`；
+  真实CUDA sampler parity、portable-v2 cache生成和四rank formal run仍待AP首小时
+  训练与correct400评测释放GPU4--7后执行。
 
 ## 2026-08-01 SPG门失败、内部根因与UCP设计
 

@@ -22,9 +22,13 @@ GPU范围和训练步长是当时快照；活动状态只取
   修复后所有counterfactual保留B5 carrier、只改/抽row0，原阈值不放宽，真实refs1
   的Program→coordinates→factor→A/B→BA→action重算误差全部0。
 - refs1确认reader target/rank routing健康，wrong/order变化可传到BA/action；但固定
-  X只换A/D时BA约`1.4–2.4%`、action约`.5–.9%`，dynamic教学弱。零rollout
-  exact50现从clean detached `a4b06f5`在tmux
-  `ember-ucp-internal-exact50-a4b06f5`运行，只使用GPU4–7。
+  X只换A/D时BA约`1.4–2.4%`、action约`.5–.9%`，dynamic教学弱。
+- 首次exact50在rank1本地异常后进入旧NCCL gather并被600秒watchdog掩盖；其余
+  ranks仍在同一local compute阶段，schedule/长度审计排除正常长尾和collective
+  错序。失败root只含run contract，没有科学rows，四个本任务进程均已退出。
+- `874e5f1`实现reference级上下文与failure JSON、直接re-raise fail-fast，以及
+  analysis-only两小时Gloo控制组；训练/provenance protected owners未改。21个定向
+  测试通过，architecture guard无hard violation。下一步先新refs2，再新exact50。
 - 新建独立serial-4写worktree
   `/data/ymdai/.codex/worktrees/EMBER-ucp-serial4-a4b06f5-20260801`；冻结UCP模型，
   只实现六phase/24-task cycle和exposure-staircase LR训练反事实，尚未GPU profile

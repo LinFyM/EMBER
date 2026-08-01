@@ -9,10 +9,12 @@ train loss下降而held loss约`.131–.132`不改善，checkpoint间持续大�
 
 macro100 refs1内部纵向已在`a4b06f5`通过：保持五条件carrier batch后canonical
 recompute各层误差严格0；reader target/rank routing健康，但dynamic A/D到effective
-BA/action的影响远弱于absolute X。当前零rollout exact50在tmux
-`ember-ucp-internal-exact50-a4b06f5`运行，root为
-`/data/ymdai/outputs/ember/pi05_as_writer_ucp_rawfull24_macro0100_internal_exact50_seed7_a4b06f5_20260801`；
-只使用物理GPU4–7，不得重复启动或修改frozen worktree。
+BA/action的影响远弱于absolute X。首次零rollout exact50 root
+`/data/ymdai/outputs/ember/pi05_as_writer_ucp_rawfull24_macro0100_internal_exact50_seed7_a4b06f5_20260801`
+在rank1本地异常后被旧NCCL错误传播路径掩盖，只保留run contract，没有科学rows。
+`874e5f1`已改为reference级fail-fast artifact和analysis-only两小时Gloo控制组；当前
+没有活动GPU进程。下一步先在新root跑refs2，再在另一新root重跑exact50；不得复用
+失败root或修改其frozen worktree。
 
 下一训练反事实冻结UCP拓扑，只改update granularity：四rank每update各1 task，
 六phase重建同一full24 cost-balanced cycle；1,200 updates等于200 task visits、
@@ -53,8 +55,8 @@ fresh0→1→exact-resume1→3逐文件不变且cursor连续，config现已seal�
 v7/v8/v10/Loom及后续低分只证明“架构×当时fast task-complete recipe”失败。
 只有全局binder、早event pooling、无监督confidence/gap、DC删除、strict bilinear、
 高增益gate和强制谱等被内部反事实独立否定；anchors、causal Procedure、双流、
-Core语义和target-first/rank-last仍可复用。当前活动进程和下一训练反事实就是
-本节开头记录的exact50与serial-4；不得重复启动。150只是里程碑，不是focused
+Core语义和target-first/rank-last仍可复用。当前下一分析和训练反事实就是本节
+开头记录的refs2→exact50与serial-4；不得复用失败root。150只是里程碑，不是focused
 自动终点。以下在`## 1`之前的旧状态叙述
 只作历史背景，不得覆盖本节。
 

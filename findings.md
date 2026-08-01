@@ -50,12 +50,19 @@
   同B5 canonical parity为0，排除Writer状态突变和owner遗漏。修复保留B5 carrier、
   只改/抽row0，所有消融也保持同batch；没有放宽`2e-5`阈值。新refs1真实运行的
   Program、coordinates、factor、A/B、BA和action重算误差全部严格0。
-- 所以serial-4是有判别力但非预设成功的下一实验。支持full24聚合根因必须同时
-  看到selected4方向保留能量显著高于约5%、single-checkpoint breadth/Jaccard
-  改善、envelope gap缩小、A/D→BA/action和same-video innovation不下降，并由多个
-  tasks共同提高closed-loop。若只有order margin提高而absolute下降，就是重演
-  v6-old；若loss下降但行为不涨，应转向surrogate/off-manifold；若A/D贡献仍只有
-  2–5%，应降低聚合解释并重审UCP职责。
+- 首次exact50没有形成科学负结果：rank1在本地reference阶段先异常，旧代码捕获后
+  进入首个NCCL all-gather，而其余rank仍在local compute；600秒watchdog掩盖了
+  原异常。精确schedule确认每condition无放回覆盖50 demos、sampled 17–68 frames，
+  排除缺视频、非法长度和正常负载长尾。`874e5f1`改为reference级上下文、failure
+  JSON与直接re-raise，并把成功同步交给两小时Gloo控制组；必须由新refs2恢复原始
+  trace，不能从该失败root推断UCP内部几何。
+- 所以serial-4是有判别力但非预设成功的下一实验。四个近正交等norm梯度的mean
+  energy基线本来就是`1/4=25%`，远高于full24的`1/24=4.17%`；因此selected4 Gram
+  ratio上升只是干预生效的mechanical check，不能单独支持聚合根因。真正支持必须
+  同时看到single-checkpoint breadth/Jaccard改善、envelope gap缩小、A/D→BA/action
+  和same-video innovation不下降，并由多个tasks共同提高closed-loop。若只有order
+  margin提高而absolute下降，就是重演v6-old；若loss下降但行为不涨，应转向
+  surrogate/off-manifold；若A/D贡献仍只有2–5%，应降低聚合解释并重审UCP职责。
 
 - SPG macro50/100/150/200 paired correct400为`97/115/77/100`。envelope union
   为162，但best single point只有115；macro100→150 lost51/gained13，之后又

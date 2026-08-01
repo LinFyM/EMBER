@@ -63,20 +63,24 @@ same/wrong/shuffled/reversed的final Program→effective BA→fixed action relat
 只改A/D时effective BA仅`.014/.021/.024/.024`，说明dynamic teaching仍弱；
 LoRA norm约`59.5`，q/v跨层cosine约`.917/.923`。
 
-当前唯一活动GPU进程是零rollout exact50内部分析，不得重复启动或修改其frozen
-worktree：
+首次exact50零rollout内部分析已经作为工程失败封存；当前没有需要继承的GPU进程。
+不得复用该output root或修改其frozen worktree：
 
 ```text
-tmux    ember-ucp-internal-exact50-a4b06f5
 commit  a4b06f5dc9f0a5c0fbd75739d7dde2b10e4e2504
 frozen  /data/ymdai/.codex/worktrees/EMBER-ucp-analysis-ref1-a4b06f5-20260801
 root    /data/ymdai/outputs/ember/pi05_as_writer_ucp_rawfull24_macro0100_internal_exact50_seed7_a4b06f5_20260801
 log     /data/ymdai/logs/ember/pi05_as_writer_ucp_rawfull24_macro0100_internal_exact50_seed7_a4b06f5_20260801.log
 ```
 
-launch前只查询GPU4–7，四卡均空闲，个人占用`371,230,907,676` bytes；当前四rank
-分别只驻留物理GPU4–7。它计算8 tasks×50 references、五种video conditions和完整
-counterfactual，rollout数为0。
+rank1在进入首个seal collective前发生了本地异常；旧代码把异常吞成字符串后等待
+仍在计算的其余ranks，最终NCCL 600秒watchdog只留下二次timeout。sequence和
+精确video schedule审计排除了collective错序、缺视频与正常负载长尾；该root只有
+run contract，不产生任何科学结果。commit `874e5f1`把reference异常补齐
+rank/task/reference上下文并立即落盘、直接re-raise，由torchrun fail-fast；成功
+路径先原子写rank rows，再用analysis-only两小时Gloo控制组协调，失败路径不做
+可能遮盖原trace的process-group cleanup。下一步必须先用全新refs2 root复现或通过，
+再用另一全新root重跑exact50。
 SPG macro50/100/150/200 correct400为`97/115/77/100`，不续第二小时。SPG
 Program本身对same/wrong/shuffled/reversed有`.967/1.186/1.193/1.202` relative
 L2，但target/rank reader近均匀，差异到effective BA压成
@@ -131,8 +135,9 @@ fresh0→1后exact-resume1→3完成；step1 manifest、Writer、trainer与四�
 `.014274/.038833/.654902`，LR与data/RNG cursor连续。run contract/metrics/summary
 SHA为`31187bf9...7d9d0`、`84681e63...3c2f`、`489ca502...c0c5c`。
 
-紧邻动作是让exact50自然完成，同时完成serial-4的一条canonical sampler/step/
-scheduler路径、CPU合同测试、最长视频B20 profile和fresh/exact-resume。serial-4
+紧邻动作是从clean pushed commit做refs2 fail-fast真实验证、定位并修正exact50首个
+异常，然后重跑exact50；同时完成serial-4的一条canonical sampler/step/scheduler
+路径、CPU合同测试、最长视频B20 profile和fresh/exact-resume。serial-4
 严格用`cycle,phase=divmod(update,6)`重建同一full24 cost-balanced cycle；六更新
 覆盖24 tasks，LR在同cycle六次保持不变。禁止naive连续warmup102/decay2400。
 profile/resume通过后才从fresh identity启动1,200 updates，并评测

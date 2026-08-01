@@ -353,6 +353,11 @@ moment update变成六次，后五组梯度也在已更新参数上计算。不�
 恢复absolute、dynamic写出和稳定breadth，再把责任转向UCP表达与functional
 surrogate；只有证据随后单独指向LR时，才另做full24 slow2000。
 
+selected4 raw-mean energy ratio不能当成功指标：四个近正交等norm梯度的机械基线
+就是`1/4=25%`，而full24是`1/24=4.17%`。它只验证干预确实减少了同次聚合项数。
+聚合解释必须由跨cycle参数行为、A/D条件innovation、single-checkpoint breadth、
+envelope gap和closed-loop共同支持。
+
 ## 7. 实现边界与初始化
 
 - 新文件按职责分为Program和target/rank reader；`model.py`只编排生命周期；

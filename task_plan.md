@@ -51,8 +51,12 @@ runner、split 或 GPU 权限。
   不做五臂。
 - [x] 完成macro100 refs1内部纵向和CUDA batch-shape诊断；保持B5 carrier后
   canonical重算各层严格一致，reader路由健康，但dynamic A/D写出仅约2–5%。
-- [ ] 让当前`a4b06f5` frozen exact50零rollout内部分析自然完成，封存逐task
-  same-video variance、Program→BA→action、消融和有效LoRA几何。
+- [x] 定位首次`a4b06f5` exact50失败为rank1本地异常被NCCL gather掩盖；失败root
+  只有run contract。实现reference上下文、rank failure artifact、torchrun
+  fail-fast和analysis-only Gloo控制组，不修改训练protected owners。
+- [ ] 从clean pushed修复commit先跑全新refs2以暴露/修正真实rank1异常，再用另一
+  全新root完成exact50，封存逐task same-video variance、Program→BA→action、消融
+  和有效LoRA几何。
 - [ ] 在独立write worktree完成UCP exposure-matched serial-4单路径实现：六phase
   重建同一full24 cycle，LR按cycle阶梯重复；完成CPU合同、最长105-frame B20、
   fresh/exact-resume vertical path后才formal launch。

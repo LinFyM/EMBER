@@ -353,10 +353,24 @@ moment update变成六次，后五组梯度也在已更新参数上计算。不�
 恢复absolute、dynamic写出和稳定breadth，再把责任转向UCP表达与functional
 surrogate；只有证据随后单独指向LR时，才另做full24 slow2000。
 
+还有一个必须显式报告的顺序混杂：full24里long-first只决定同一参数点上的计算
+先后，而serial-4每个phase之间发生AdamW，所以长视频task更常在cycle早期、短视频
+task更常在后期。若per-task改善与phase ordinal或视频长度强相关，应优先解释为
+optimizer curriculum，而不是task-gradient cancellation被解决；不能为消除这个
+混杂而违反已批准的long-first合同，只能用metrics和结果相关性识别它。
+
 selected4 raw-mean energy ratio不能当成功指标：四个近正交等norm梯度的机械基线
 就是`1/4=25%`，而full24是`1/24=4.17%`。它只验证干预确实减少了同次聚合项数。
 聚合解释必须由跨cycle参数行为、A/D条件innovation、single-checkpoint breadth、
 envelope gap和closed-loop共同支持。
+
+canonical实现已完成：`cycle,phase=divmod(update,6)`、selected4 exact raw mean、
+4×4只读Gram、logical-cycle scheduler、fresh serial config/checkpoint/trainer/rank
+schemas和midcycle cursor均在原训练入口内实现，没有第二runner或第二Writer路径。
+formal checkpoint/stage stop必须为完整cycle边界；profile/formal teacher-video seed
+分别为`172/20260722`。全仓CPU回归`233 passed`，architecture guard无hard
+violation；正式配置仍保持`pending_live_profile`，必须先完成真实105-frame B20和
+fresh/exact-resume seal。
 
 ## 7. 实现边界与初始化
 

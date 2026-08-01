@@ -69,6 +69,18 @@
   和same-video innovation不下降，并由多个tasks共同提高closed-loop。若只有order
   margin提高而absolute下降，就是重演v6-old；若loss下降但行为不涨，应转向
   surrogate/off-manifold；若A/D贡献仍只有2–5%，应降低聚合解释并重审UCP职责。
+- serial-4实现按`cycle,phase=divmod(update,6)`逐项重建raw-full24的task、video、
+  action-query和rank内顺序；1,200 updates仍是200 visits/task、4,800 videos和
+  96,000 queries，LR只在phase5后推进。因此它隔离的是update-granularity bundle，
+  不是纯“梯度抵消”：每cycle同时增加到6次clip/AdamW/weight decay/bias-correction/
+  moment update，后续phase也在新参数点求梯度。另因每组按视频长度long-first，
+  phase0长期先于phase5更新，计算顺序变成真实optimizer curriculum；若收益按
+  phase/长度集中，必须降低聚合解释。4×4 Gram看不到跨phase20个task冲突，约25%
+  retention只作mechanical manipulation check。
+- clean `c4b85e8` refs2已经以8 tasks×2 references完整通过，16 rows均finite，
+  analysis/summary SHA为`e0757f55...cc48`/`c7a42eae...da41`；随后同commit的
+  exact50零rollout分析已封存clean provenance并在GPU4–7运行。失败root、refs2与
+  exact50各自独立，不能互相覆盖。
 
 - SPG macro50/100/150/200 paired correct400为`97/115/77/100`。envelope union
   为162，但best single point只有115；macro100→150 lost51/gained13，之后又

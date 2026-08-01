@@ -100,12 +100,19 @@ raw-full24实现历史worktree为：
 head 0d4c27114991c8887c4dd5479ec42fdd11fd63a3
 ```
 
-exposure-matched serial-4只在独立写worktree实现，当前尚未formal launch：
+exposure-matched serial-4已从独立写worktree集成main，当前尚未formal launch：
 
 ```text
 /data/ymdai/.codex/worktrees/EMBER-ucp-serial4-a4b06f5-20260801
 branch codex/ucp-serial4-exposurematched
+main commits ccdf21f / 92548ed
 ```
+
+实现用六phase精确重建同一full24 task/video/query exposure与rank内long-first顺序；
+LR按cycle重复六次，fresh serial config/checkpoint/rank schemas及midcycle resume cursor
+不兼容旧full24。formal checkpoint/stage边界强制整除6，profile/formal teacher-video
+seed明确为`172/20260722`。全仓`233 passed`，architecture guard无hard violation；
+尚未做GPU profile、resume smoke或formal launch。
 
 Unified Causal Program canonical CPU实现已经完成：统一`X/A/outgoing D` causal
 grid、单级normalized target/rank raw-value reader、无Core add/mixer；训练为严格raw
@@ -141,9 +148,10 @@ fresh0→1后exact-resume1→3完成；step1 manifest、Writer、trainer与四�
 `.014274/.038833/.654902`，LR与data/RNG cursor连续。run contract/metrics/summary
 SHA为`31187bf9...7d9d0`、`84681e63...3c2f`、`489ca502...c0c5c`。
 
-紧邻动作是提交上述rank-gauge数学/低精度执行边界，从新frozen commit验证refs2，
-然后以另一root重跑exact50；同时完成serial-4的一条canonical sampler/step/scheduler
-路径、CPU合同测试、最长视频B20 profile和fresh/exact-resume。serial-4
+clean `c4b85e8` refs2已通过；同commit exact50当前由tmux
+`ember-ucp-internal-exact50-c4b85e8`运行，root为
+`/data/ymdai/outputs/ember/pi05_as_writer_ucp_rawfull24_macro0100_internal_exact50_v2_seed7_c4b85e8_20260801`。
+等待时完成serial-4最长视频B20 profile和fresh/exact-resume。serial-4
 严格用`cycle,phase=divmod(update,6)`重建同一full24 cost-balanced cycle；六更新
 覆盖24 tasks，LR在同cycle六次保持不变。禁止naive连续warmup102/decay2400。
 profile/resume通过后才从fresh identity启动1,200 updates，并评测

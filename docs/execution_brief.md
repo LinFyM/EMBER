@@ -17,15 +17,21 @@ BA/action的影响远弱于absolute X。首次零rollout exact50 root
 torchrun立即收割其他ranks。instrumented `e47ffe8`证明raw A/B改变
 `.74184/.13602`，effective BA relative L2仅`1.299e-9`，而bf16 fixed action因
 rank-reduction顺序改变产生`.002047` execution drift。sanity现只对finite与BA
-`2e-5` fail-close，action drift保留为实际诊断，不伪称bf16位级gauge不变。当前
-没有活动GPU进程。下一步从新clean root验证refs2，再用另一root重跑exact50；不得
-复用失败root或修改frozen worktree。
+`2e-5` fail-close，action drift保留为实际诊断，不伪称bf16位级gauge不变。clean
+`c4b85e8` refs2已经完整通过：8 tasks×2 references共16 rows、四rank各4，无
+failure artifact。随后同一frozen commit已启动exact50，root为
+`/data/ymdai/outputs/ember/pi05_as_writer_ucp_rawfull24_macro0100_internal_exact50_v2_seed7_c4b85e8_20260801`，
+tmux为`ember-ucp-internal-exact50-c4b85e8`；run contract封存400 references、
+4 ranks、0 rollouts和clean protected-path provenance。不得复用失败root或修改
+frozen worktree。
 
 下一训练反事实冻结UCP拓扑，只改update granularity：四rank每update各1 task，
 六phase重建同一full24 cost-balanced cycle；1,200 updates等于200 task visits、
 4,800 videos和96,000 queries。LR严格满足
-`LR_serial(u)=LR_full24(floor(u/6))`；不是连续warmup102/decay2400。实现worktree为
-`/data/ymdai/.codex/worktrees/EMBER-ucp-serial4-a4b06f5-20260801`，尚未formal launch。
+`LR_serial(u)=LR_full24(floor(u/6))`；不是连续warmup102/decay2400。实现已以
+`ccdf21f/92548ed`集成main；fresh serial config/checkpoint/rank schemas、midcycle
+cursor、cycle-boundary scheduler及formal `%6` fail-close均通过，全仓
+`233 passed`。它尚未真实B20 profile、resume seal或formal launch。
 
 当前下一整体架构设计为
 [`action_forecast_writer_unified_causal_program_design.md`](action_forecast_writer_unified_causal_program_design.md)。

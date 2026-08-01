@@ -112,11 +112,13 @@ rank-gauge异常已经定位：raw A/B置换变化`.74184/.13602`，effective BA
 `1.299e-9`；bf16 fixed action的`.002047`差异来自rank求和次序，而非BA错误。
 sanity继续对finite和BA `2e-5` fail-close，action execution drift只作记录。
 
-下一训练反事实冻结UCP拓扑和完整task/video/query exposure，改为每update全局4
-tasks、六phase覆盖24 tasks的serial-4；LR按full24 cycle重复六次。它同时改变
+下一训练反事实已经在main实现：冻结UCP拓扑和完整task/video/query exposure，
+改为每update全局4 tasks、六phase覆盖24 tasks的serial-4；LR按full24 cycle重复六次。它同时改变
 AdamW/moment/weight-decay时钟，并把long-first变成真实optimizer curriculum，结果
 不能单因归为“消除梯度抵消”。先从新clean analyzer commit完成refs2与exact50，
-再对serial-4完成B20 profile/resume seal并fresh训练1,200 updates。
+再对serial-4完成B20 profile/resume seal并fresh训练1,200 updates。clean
+`c4b85e8` refs2已通过，exact50现由frozen worktree运行；serial CPU合同为
+`233 passed`，尚未GPU seal或formal launch。
 
 v7/v8/v10/Loom及后续历史不得整体判死。只能删除由内部反事实独立否定的局部
 机制；Action anchors、causal Procedure、双流、Core语义、target-first/rank-last

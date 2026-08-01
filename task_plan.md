@@ -58,11 +58,15 @@ runner、split 或 GPU 权限。
   sanity失败，并验证failure artifact与torchrun立即收割；加入BA/action/raw A/B
   判别量；确认BA误差仅`1.299e-9`、bf16 action drift为`.002047`，修正错误的
   位级动作硬门而保持BA `2e-5` fail-close。
-- [ ] 用新clean root验证refs2通过，再用另一新root完成exact50，封存
-  逐task same-video variance、Program→BA→action、消融和有效LoRA几何。
-- [ ] 在独立write worktree完成UCP exposure-matched serial-4单路径实现：六phase
-  重建同一full24 cycle，LR按cycle阶梯重复；完成CPU合同、最长105-frame B20、
-  fresh/exact-resume vertical path后才formal launch。
+- [x] 用新clean `c4b85e8` root验证refs2通过；四rank共16 rows、无failure，随后
+  用另一root启动exact50并封存clean provenance。
+- [ ] 完成exact50，封存逐task same-video variance、Program→BA→action、消融和
+  有效LoRA几何。
+- [x] 在独立write worktree完成并集成UCP exposure-matched serial-4单路径：六phase
+  重建同一full24 cycle，LR按cycle阶梯重复；全仓`233 passed`，fresh incompatible
+  config/checkpoint及midcycle cursor通过，architecture guard无hard violation。
+- [ ] 完成serial-4最长105-frame B20 profile和fresh/exact-resume vertical path，
+  真实封存配置后才formal launch。
 - [ ] serial-4从fresh identity运行1,200 optimizer updates；评测
   300/600/900/1200 paired correct400，并同时比较breadth、envelope gap、A/D写出、
   selected4 Gram、task漂移和functional surrogate错位。

@@ -35,10 +35,15 @@ GPU范围和训练步长是当时快照；活动状态只取
   `1.299e-9`；唯一超阈的是bf16 factorized policy action `.002047`，其rank求和
   顺序随置换改变。修复保留finite和BA `2e-5`硬门、记录action execution drift，
   没有放宽数学函数合同；20项相关CPU测试通过，architecture guard无hard violation。
-- 新建独立serial-4写worktree
-  `/data/ymdai/.codex/worktrees/EMBER-ucp-serial4-a4b06f5-20260801`；冻结UCP模型，
-  只实现六phase/24-task cycle和exposure-staircase LR训练反事实，尚未GPU profile
-  或formal launch。
+- clean `c4b85e8`新refs2已自然完成：8 validation tasks×2 references共16 rows、
+  四rank各4 rows，无failure artifact；analysis/summary SHA为
+  `e0757f55...cc48`/`c7a42eae...da41`。同一frozen commit随后启动exact50，
+  run contract封存400 references、4 ranks、0 rollouts及protected-path provenance。
+- serial-4已由独立write worktree集成到main `ccdf21f/92548ed`：六phase精确重建
+  同一full24 exposure，LR按cycle重复六次，fresh config/checkpoint/rank schemas和
+  midcycle cursor完整；formal边界强制整除6，profile/formal video seed分别明确为
+  `172/20260722`。全仓`233 passed`、compile/diff通过，architecture guard无hard
+  violation；尚未GPU profile、resume seal或formal launch。
 - UCP live seal完成：detached `0d4c271`上最长105-frame、B20、四rank三macro
   连续通过，step wall `20.394/18.494/18.504s`，峰值allocated/reserved
   `77,127,082,496/83,345,014,784` bytes；72个视频条件、1,440 queries和全部

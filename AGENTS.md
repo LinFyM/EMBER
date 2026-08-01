@@ -56,10 +56,12 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 
 ## Current focused execution task
 
-2026-08-01 current override：当前可执行canonical Writer仍为
-[`docs/action_forecast_writer_amplitude_preserving_dual_read_design.md`](docs/action_forecast_writer_amplitude_preserving_dual_read_design.md)。
-以下直到`## Data and split`的UCP/SPG叙述只作紧邻历史证据，不得覆盖本段或恢复
-退役可执行路径。
+2026-08-01 current override：当前唯一可执行canonical Writer临时恢复为exact UCP，
+只用于fresh raw-full24与cycle-normalized randomized-group4受控训练格；运行面与
+封存`b52cb54`逐blob一致。AP-ADR和endpoint10可执行路径已退役，历史证据由Git、
+文档与正式artifact保留；下一结构authority仍为
+[`docs/action_forecast_writer_contextual_value_dual_read_design.md`](docs/action_forecast_writer_contextual_value_dual_read_design.md)。
+以下AP结果是紧邻负证据，不得恢复其runner或误写成当前canonical。
 
 AP-ADR精确参数`10,241,024`，保留mean-backed permutation-invariant Semantic
 Core、outgoing raw `[A_f,G_(f+1),G_(f+1)-G_f]` Program、独立target-only Core
@@ -111,7 +113,7 @@ macro200以correct133得到18点中最差quality，而v5.2-new macro200以correc
 受控训练格，再实现下一结构。不得因AP失败而跳过该训练因果格。下一结构authority已经封存在
 [`docs/action_forecast_writer_contextual_value_dual_read_design.md`](docs/action_forecast_writer_contextual_value_dual_read_design.md)：
 同一causal contextual Program直接承担K/V，保留mean-backed Core和独立dual reads；
-当前main在实现前仍只有AP一条可执行路径。
+当前main在实现前只保留UCP这一条临时受控运行路径。
 
 同曝光UCP raw macro150与SERIAL step900内部对照确认：SERIAL把删除A/D后的
 BA/action变化从`.0653/.01269`提高到`.4184/.12999`，所以update granularity
@@ -195,8 +197,10 @@ group4每update全局4 tasks、六个随机Latin phases覆盖24 tasks，LR除6�
 weight decay按六次更新复合到原一cycle，scheduler每cycle只推进一次；无冲突时不
 声称是架构收益。真实longseed172、105-frame、B20、4-rank、18-update/3-cycle
 profile已通过：每cycle 24 tasks恰好一次，step2起全部主块梯度可达，峰值
-allocated/reserved为`76,971,835,904/83,647,004,672` bytes。formal-seed exact-resume
-和fresh两臂正式训练尚未封存前不得启动科学比较。
+allocated/reserved为`76,971,835,904/83,647,004,672` bytes。group4 formal-seed
+fresh0→1→resume1→3→7与raw fresh0→1→resume1→3均已通过；两臂cycle0 teacher-video
+assignments一致、checkpoint未改写、配置已seal。下一步从clean pushed commit建立
+frozen worktree后依次启动科学比较；全程不使用subagent。
 
 v7/v8/v10/Loom及后续历史不得整体判死。只能删除由内部反事实独立否定的局部
 机制；Action anchors、causal Procedure、双流、Core语义、target-first/rank-last

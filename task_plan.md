@@ -118,14 +118,18 @@ runner、split 或 GPU 权限。
   聚焦测试`31 passed`。
 - [x] 完成group4 longseed172真实105-frame B20四卡18-update/3-cycle profile；每cycle
   24 tasks恰好一次、step2起主块梯度可达、峰值reserved `83,647,004,672` bytes。
-- [ ] 完成group4正式seed 0→1→3→7与raw 0→1→3 exact-resume，seal两份fresh配置；
-  随后从同一clean main authority启动两臂受控正式训练和paired correct400。
+- [x] 完成group4正式seed 0→1→3→7与raw 0→1→3 exact-resume；cycle0 teacher-video
+  assignments逐项一致，step1/3未改写，scheduler/cursor连续，两份fresh配置已seal。
+- [x] 将封存`b52cb54` UCP运行面逐blob恢复为唯一canonical；退役AP/endpoint可执行
+  路径，聚焦`107 passed`、compileall/JSON/diff check通过。
+- [ ] 从同一clean pushed authority的frozen worktree依次启动两臂正式训练，完成
+  同一paired correct400 panel与预注册recipe×architecture裁决。
 - [ ] 后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才开第二
   小时和行为五臂。
 - [ ] 持续定位task漂移、视频学习和closed-loop off-manifold根因，禁止补丁式
   gate/scale/bypass；150不是自动完成线。
 
-当前AP-ADR实现与实时状态只认
+当前UCP受控格实现与实时状态只认
 `docs/active_session_handoff.md`。
 
 ## 长期完成定义

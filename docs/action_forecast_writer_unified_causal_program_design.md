@@ -1,10 +1,16 @@
 # Unified Causal Program Writer 设计
 
-**状态：2026-08-01 raw-full24结果完成，exposure-matched serial-4反事实authority**
+**状态：2026-08-01 raw-full24与serial-4结果完成；cycle-normalized group4受控格已seal、待formal**
 
 本文负责 Semantic Program Grid（SPG）一小时门失败后的下一条 canonical
 AS-Writer 路径。它不是把 v7、v8、v10、Loom 或后续版本整体判死后重新命名，
 而是把历史证据拆成“局部机制 × 训练合同”后，只替换已经定位到的最早失效接口。
+
+当前UCP恢复为唯一可执行路径只服务于训练受控格，不代表撤销AP的局部根因或放弃
+CV-ADR。封存`b52cb54`已完成group4 B20/105-frame profile、formal-seed
+fresh0→1→resume1→3→7和raw fresh0→1→resume1→3；`85a82cb`把同一运行面逐blob
+恢复到canonical并退役AP/endpoint runner。两份fresh config现已seal，下一步是在
+同一clean frozen authority下依次训练、用相同paired correct400裁决。
 
 ## 1. 当前证据与结论边界
 

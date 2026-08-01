@@ -8,6 +8,25 @@ GPU范围和训练步长是当时快照；活动状态只取
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-01 UCP控制seal与canonical恢复
+
+- group4 formal-seed exact-resume root
+  `/data/ymdai/outputs/ember/pi05_as_writer_ucp_group4_formalseed_resume_smoke_r4_wip_20260801_retry1`
+  已完成0→1→3→7；raw root
+  `/data/ymdai/outputs/ember/pi05_as_writer_ucp_rawfull24_formalseed_resume_smoke_r4_wip_20260801`
+  已完成0→1→3。两者checkpoint均未被resume改写，cycle0 teacher-video mapping逐项
+  相同，所有loss/gradient/LR/cursor finite且validation/test reads为0。
+- group4与raw config已分别seal为fresh update0→1200和macro0→200、every150/25。
+  UCP精确参数`7,683,328`。封存实现commit为`b52cb54`，canonical restoration
+  `85a82cb`逐blob复原同一运行面并退役AP/endpoint runner。
+- 聚焦13个测试文件共`107 passed in 17.30s`；compileall、JSON、diff check通过。
+  architecture guard的hard项均来自封存UCP既有owner相对AP树重新出现，active source
+  实际净减1,061行。为保持正式控制与profile/resume精确一致，本轮不做launch前
+  重构；该例外及CV-ADR原位替换/不复制路径的移除合同已写入authority。
+- 当前没有需要继承的训练、评测或tmux进程。下一动作是把本authority clean push，
+  建立detached frozen worktree，只做一次GPU4–7与storage live preflight后依次启动
+  fresh raw与group4正式训练；后续所有工作由主进程亲自完成，不使用subagent。
+
 ## 2026-08-01 Endpoint10负裁决与UCP normalized-group4 live profile
 
 - endpoint10 portable historical overlay在首个formal尝试暴露了v6-old历史config

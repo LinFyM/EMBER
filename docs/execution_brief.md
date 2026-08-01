@@ -1,10 +1,31 @@
 # EMBER Current Execution Brief
 
+## 2026-08-01 UCP controlled-cell live authority
+
+当前唯一可执行Writer临时恢复为exact UCP，以完成fresh raw-full24与
+cycle-normalized randomized-group4配对受控格；AP-ADR与endpoint10运行路径已退役，
+其负结果、内部根因和正式rows仍由文档、Git与artifact保存。UCP运行面与封存
+`b52cb54`逐blob一致，canonical restoration commit为`85a82cb`；下一架构仍是
+CV-ADR，不能把这次控制恢复误写成回退研究方向。
+
+group4最长105-frame B20 profile和formal-seed fresh0→1→resume1→3→7均通过；raw
+formal-seed fresh0→1→resume1→3也通过。两臂cycle0的task/video assignments一致，
+policy noise/time改为task/query-keyed stateless identity；group4按六个随机Latin
+phase覆盖24 tasks，LR/beta/weight decay按cycle复合且scheduler只在cycle边界推进。
+两份fresh config均已seal，下一动作是在clean pushed authority的frozen worktree中
+依次启动正式两臂并用同一paired correct400 panel比较。后续不使用subagent。
+
+结构门相对AP树报告UCP既有的大函数/测试越界，但active source净减少1,061行，且
+本次没有在封存UCP上新增训练逻辑。正式受控格要求与已通过profile/resume的代码精确
+一致，因此不在launch前重构这些既有owner；CV-ADR必须原位替换同一canonical路径，
+不得复制runner或保留AP兼容分支。
+
 ## 2026-08-01 AP-ADR result and root-cause override
 
-当前main唯一可执行Writer仍由
+AP-ADR最后一版执行设计由
 [`action_forecast_writer_amplitude_preserving_dual_read_design.md`](action_forecast_writer_amplitude_preserving_dual_read_design.md)
-保存，但其formal结果已经封存为负，不再训练或resume。下一架构authority为
+保存，但其formal结果已经封存为负，不再训练或resume，当前树也不再保留该runner。
+下一架构authority为
 [`action_forecast_writer_contextual_value_dual_read_design.md`](action_forecast_writer_contextual_value_dual_read_design.md)，
 尚未实现。AP精确参数`10,241,024`；mean-backed permutation-invariant Core提供稳定语义
 carrier，outgoing `[A_f,G_(f+1),G_(f+1)-G_f]`保留raw Program amplitude，38个
@@ -68,8 +89,8 @@ randomized-group4受控格，然后实现CV-ADR；不能让训练bundle替新架
 
 group4 longest-video live profile已完成：4 ranks、B20、真实105 frames、18 updates/
 3完整cycles，每cycle恰好24 tasks，scheduler只在cycle边界推进，step2起所有主块
-梯度finite，峰值reserved `83,647,004,672` bytes。formal-seed exact-resume及fresh
-两臂正式训练尚未seal前不得跳过。
+梯度finite，峰值reserved `83,647,004,672` bytes。group4与raw formal-seed
+exact-resume均已通过，两份fresh config已经seal；正式训练尚未启动。
 
 ## 2026-08-01 UCP historical override
 

@@ -3,7 +3,9 @@
 最后更新：2026-08-01 UTC。
 
 本文顶部保存当前运行状态、恢复入口和紧邻动作；后续编号章节是按时间保留的
-历史快照。当前可执行实现仍是已经封存负结果的AP-ADR；下一架构authority是
+历史快照。当前唯一可执行Writer已临时恢复为exact UCP，只用于fresh raw-full24
+与cycle-normalized randomized-group4受控训练格；AP-ADR和endpoint10可执行路径已
+退役，由Git与正式artifact保留。下一架构authority仍是
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`。长期科学边界是
 `AGENTS.md`与`docs/execution_brief.md`。任何接手者都必须先只读复核现场，
 不能按历史快照重复启动进程。
@@ -85,8 +87,17 @@ macro200 correct91却是最好quality `-.120544`。endpoint10只保留为局部�
 受控格，再实现contextual-value职责完整的CV-ADR。group4的longseed172真实105-frame
 B20、4-rank、18-update/3-cycle profile已通过：每cycle 24 tasks恰好一次，step6/12/18
 才推进scheduler，step2起frontend/Program/compiler/factor均finite可达；峰值
-allocated/reserved为`76,971,835,904/83,647,004,672` bytes。formal seed
-fresh0→1→resume1→3→7正在独立UCP worktree核验；未完成seal前不得启动fresh两臂。
+allocated/reserved为`76,971,835,904/83,647,004,672` bytes。
+
+两份formal-seed exact-resume现均已通过并seal。group4 root为
+`/data/ymdai/outputs/ember/pi05_as_writer_ucp_group4_formalseed_resume_smoke_r4_wip_20260801_retry1`，
+完成fresh0→1→resume1→3→resume3→7；step1/3文件未改写、cycle0覆盖24 tasks恰好
+一次、scheduler只在step6推进。raw root为
+`/data/ymdai/outputs/ember/pi05_as_writer_ucp_rawfull24_formalseed_resume_smoke_r4_wip_20260801`，
+完成fresh0→1→resume1→3，三次完整full24更新共1,440 queries/72 videos。两臂cycle0
+的24个teacher-video assignments逐项一致，validation/test action reads均为0。
+封存实现commit为`b52cb54`；`85a82cb`把该运行面逐blob恢复为main唯一canonical，
+同时删除AP/endpoint runner。聚焦回归`107 passed`，compileall/JSON/diff check通过。
 后续完全由主进程推进，不使用subagent。
 
 正式launch前的live seal已完成。longseed172真实105-frame B20三macro的step wall为

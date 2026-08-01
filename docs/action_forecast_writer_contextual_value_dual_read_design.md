@@ -172,6 +172,12 @@ B20只在真实OOM或连续非有限时降B16，不扫描B17--B19/B21。
 randomized-group4共用task/query-keyed stateless policy noise/time；这保留UCP已有
 raw、未归一SERIAL和normalized group4三角，不拿CV-ADR替训练假设背书。
 
+截至2026-08-01，group4最长105-frame B20 profile、formal-seed
+fresh0→1→resume1→3→7和raw fresh0→1→resume1→3均已通过，两臂cycle0的24个
+teacher-video assignments逐项一致，配置已seal。canonical UCP恢复commit为
+`85a82cb`；正式两臂尚未启动。只有完成相同paired correct400后，才能按预注册证据
+决定CV-ADR是否仍先用raw或迁移normalized group4，不能根据smoke/profile选择recipe。
+
 endpoint10已经以全局Spearman`.258398`、100,000次permutation `p=.298447`失败
 预注册global门；尤其v6-fast macro200的correct133对应18点最差quality。故CV-ADR
 不能使用endpoint10选点或训练，candidate裁决仍只认paired closed-loop、breadth、

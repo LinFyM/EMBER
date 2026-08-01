@@ -6,6 +6,30 @@
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-01 UCP exact-resume seal与canonical控制恢复
+
+- group4 formal-seed root完成fresh0→1→resume1→3→resume3→7；step1与step3
+  checkpoint payload在后续resume后size/mtime/SHA均未变化，cycle0六phase覆盖
+  24 tasks恰好一次，scheduler只在step6推进，Adam state逻辑步为1/3/6/7。
+  raw formal-seed root完成fresh0→1→resume1→3，三次完整full24更新覆盖72个
+  one-video conditions和1,440 queries。两臂cycle0的24个teacher-video assignments
+  逐项一致，validation/test action reads均为0。
+- group4 run-contract/metrics/summary SHA为`7456739f...795e`、
+  `1d2f64c...c08e`、`fbd335d1...a67d`；raw对应为`5b3d4dfc...312d`、
+  `f3b8191e...3536`、`eac4eb17...bd34`。两份config的`formal_run.status`均为
+  `sealed`；group轴1200 updates=200 cycles，raw轴200 macros，候选分别是
+  300/600/900/1200和50/100/150/200。
+- group4只消除了固定cost-phase curriculum并按六步复合LR/beta/weight decay、
+  cycle-boundary scheduler；它仍有六次参数重线性化、clip/Adam、phase order和
+  selected4噪声。因此该格识别的是完整update-operator bundle，不把结果伪装成
+  单独Adam、batch size或task平均的因果效应。
+- `85a82cb`把封存`b52cb54`的UCP运行面逐blob恢复为唯一canonical，并删除AP、
+  endpoint及其仅实现测试；正式负证据仍由Git/artifact保留。聚焦回归`107 passed`，
+  compileall、四份JSON和diff check通过。architecture guard相对AP报告UCP既有的
+  大函数/测试越界，但active source净减1,061行；正式控制必须保持与已profile/
+  resume的UCP位级源码一致，故本轮记录为cohesive scientific-control例外，不在
+  launch前重构。CV-ADR必须原位替换同一owner，不能复制runner或保留兼容分支。
+
 ## 2026-08-01 Endpoint10负裁决与cycle-normalized受控格
 
 - endpoint10在任何结果生成前封存的18-candidate primary关联门已经原样执行。

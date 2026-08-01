@@ -110,7 +110,9 @@ GPU范围和训练步长是当时快照；活动状态只取
   后提交/push，再用新frozen authority fresh跑真正fast400两臂。
 - 独立CV-ADR worktree已提交`b2bc70c`：真实参数`10,241,024`，四config保持
   profile pending，focused `159 passed in 26.32s`，compileall/diff/config loader
-  与architecture guard通过；没有推送，也没有启动GPU profile/formal。
+  与architecture guard通过；实现rebase到`cfc2ad1`后又完成全仓
+  `225 passed in 39.31s`及四config未压缩schedule解析。没有推送，也没有启动GPU
+  profile/formal。
 - autoscaled-decay200 raw已自然完成macro200：wall `3892.039s`、96,000 queries、
   4,800 videos、200行finite、信息墙读取0，四候选checkpoint完整。四条correct400
   已在GPU4/5/6/7全部自然完成；每条400 states、36/36 long-first shards、0 failure。

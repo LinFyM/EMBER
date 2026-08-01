@@ -176,8 +176,9 @@ B20只在真实OOM或连续非有限时降B16，不扫描B17--B19/B21。
 
 截至本次实现seal，shape、mask、identity、freeze、causal/permutation、主要模块
 gradient、checkpoint/update/evaluator schema及内部分析parity的focused回归共
-`159`项通过；`compileall`、config loader与diff check通过。这里不把CPU/合成验证
-冒充第12项真实profile，第12项仍明确pending。
+`159`项通过。随后实现rebase到`cfc2ad1`的fail-closed schedule authority，全仓
+CPU回归`225 passed in 39.31s`；`compileall`、四个CV config loader与diff check
+通过。这里不把CPU/合成验证冒充第12项真实profile，第12项仍明确pending。
 
 ## 9. 架构与recipe的执行顺序
 

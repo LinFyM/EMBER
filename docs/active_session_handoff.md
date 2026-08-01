@@ -10,7 +10,24 @@
 
 ## 0. 2026-08-01 UCP当前状态与紧邻动作
 
-v5.2 task-complete与SPG一小时实验均已完成，当前没有活动训练、评测或tmux。
+v5.2 task-complete与SPG一小时实验均已完成。UCP macro0→200正式训练当前活动，
+不得按本节重复启动：
+
+```text
+tmux    ember-ucp-formal-c94f1c6
+commit  c94f1c6bb6479625c6c4ffb1a3b28e3fba7730c1
+frozen  /data/ymdai/.codex/worktrees/EMBER-ucp-formal-c94f1c6-20260801
+root    /data/ymdai/outputs/ember/pi05_as_writer_ucp_rawfull24_decay400_formal_dev_r4_b20_seed7_c94f1c6_20260801
+log     /data/ymdai/logs/ember/pi05_as_writer_ucp_rawfull24_decay400_formal_dev_r4_b20_seed7_c94f1c6_20260801.log
+```
+
+run-contract payload/file SHA为`b372fb8f...d13807`/`832a7ba4...9c628a`，config
+SHA为`c8202053...2cf12`。launch前main/origin/frozen均clean同commit；只查询
+GPU4–7且四卡均空闲，个人占用`366,057,157,099` bytes，预计新增低于2GB，远低于
+500GB上限。首macro已完成：loss`.1536451`、grad-before-clip`.0142743`、LR
+`1.6667e-5`、wall`19.319s`；24 tasks唯一、480 queries、24 one-video conditions、
+24 policy forwards，rank内long-first，10个gradient chunks均有completion与CUDA
+sync，四个CUDA rank分别存活在GPU4–7。
 SPG macro50/100/150/200 correct400为`97/115/77/100`，不续第二小时。SPG
 Program本身对same/wrong/shuffled/reversed有`.967/1.186/1.193/1.202` relative
 L2，但target/rank reader近均匀，差异到effective BA压成
@@ -59,9 +76,10 @@ fresh0→1后exact-resume1→3完成；step1 manifest、Writer、trainer与四�
 `.014274/.038833/.654902`，LR与data/RNG cursor连续。run contract/metrics/summary
 SHA为`31187bf9...7d9d0`、`84681e63...3c2f`、`489ca502...c0c5c`。
 
-紧邻动作是提交profile/resume seal并push，从新的clean detached commit创建独立
-formal worktree，只查询/使用GPU4–7 fresh启动macro0→200 gate；不得从profile或
-smoke warm-start。
+紧邻动作是让上述fresh formal自然运行到macro200，期间不修改frozen worktree、
+不从profile/smoke warm-start、不建立额外watcher。完成后用相同paired panel并行
+评测macro50/100/150/200 correct400，按absolute、breadth、task轮换和内部
+Program→coordinate→BA→action证据决定第二小时、训练单变量反事实或整体重构。
 
 历史架构审计必须按组件×recipe解释：v7以后所有正式负结果都使用同一fast
 task-complete recipe，没有old recipe反事实。只能删除已被内部机制证据独立否定

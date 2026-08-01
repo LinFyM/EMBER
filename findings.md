@@ -49,6 +49,24 @@
   old-recipe反事实。可独立否定的是近均匀binder、早event pooling、无监督
   confidence/gap、DC删除、strict bilinear、高增益gate和强制谱；anchors、causal
   Procedure、双流、Core语义与target-first/rank-last不能整体判死。
+- Git blob复核进一步确认：v7、v8、v10、Loom、Recenter、Core-Program、Prior和
+  Target-Spectral八个正式训练commit的`as_step.py`与`as_sampling.py`分别完全同
+  blob，正式root也共享同一source checkpoint、4-rank、full24等权、B20和fast400
+  合同。因而不同aggregate不能反推出这些思想在其他更新粒度下也失败。
+- 局部归因按强度分层：v7否定的是Core不进value的近均匀global binder，不是多
+  Action anchors；v8否定的是过早`8→1` event pooling，不是Action/Effect双流；
+  v10五臂`103/94/75/67/43`证明因果路径可工作，失败集中在tiny Procedure经
+  RMSNorm/AdaLN放大13–20倍和breadth崩溃，因此其双流思想最值得保留；Loom的
+  confidence/gap缺监督锚点，不会由recipe自动修复；Recenter的DC删除、strict
+  Core-Program bilinear和Target-Spectral强制正交已有跨内部量的结构性反证；
+  Prior-Innovation只证明手工硬分解失败，稳定semantic prior加软innovation仍未被
+  单独否定。
+- 如果UCP证明Program→coordinate→BA→action传递健康但absolute/breadth仍弱，
+  下一步应先冻结拓扑做更新粒度单变量反事实，而不是立刻再改架构。最干净候选是
+  `4 tasks/update × 1200 updates`：与full24 macro200同为4,800 videos和96,000
+  queries；按task exposure把warmup17/decay400映射为102/2400 updates。随后才把
+  full24-slow2000作为独立scheduler变量；不得把4-task和slow scheduler重新混成
+  一个“old recipe”结论。
 - 下一UCP把absolute `X=M+G`、native Action和outgoing patch change放入统一
   causal Program；normalized target/rank单级直接读raw values，删除独立Core
   add、target-Core first hop和跨target mixer。训练用raw full24、stratified B20、

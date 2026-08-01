@@ -10,6 +10,12 @@ GPU范围和训练步长是当时快照；活动状态只取
 
 ## 2026-08-01 SPG门失败、内部根因与UCP设计
 
+- UCP live seal以`c94f1c6`提交并push；新的detached formal worktree只读加载该
+  commit，fresh macro0→200已在tmux `ember-ucp-formal-c94f1c6`启动。run root为
+  `pi05_as_writer_ucp_rawfull24_decay400_formal_dev_r4_b20_seed7_c94f1c6_20260801`。
+- 首macro wall`19.319s`，loss/grad/LR为`.153645/.014274/1.6667e-5`；严格24
+  tasks、480 queries、24单视频条件、rank内long-first，10组raw-gradient
+  allgather/completion/CUDA sync对应。四个rank仅驻留GPU4–7，训练继续到200。
 - UCP live seal完成：detached `0d4c271`上最长105-frame、B20、四rank三macro
   连续通过，step wall `20.394/18.494/18.504s`，峰值allocated/reserved
   `77,127,082,496/83,345,014,784` bytes；72个视频条件、1,440 queries和全部

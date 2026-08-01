@@ -302,6 +302,15 @@ mean/average-task energy ratio和CountSketch跨macro方向诊断，但candidate 
 只有内部主路径工作但视频innovation随LR过快消失时，才做同拓扑slow2000
 counterfactual。不能先验把slow scheduler当作视频因果解法。
 
+如果UCP内部主路径、target/rank routing、effective BA和fixed-query action均健康，
+但single-checkpoint correct400仍发生明显task轮换或breadth不足，优先冻结拓扑做
+更新粒度单变量反事实：每次更新4 tasks、运行1,200 updates，仍是4,800条单视频
+条件和96,000 action queries，与full24 macro200完全匹配。task exposure轴上把
+warmup17 macros映射为102 updates、decay400映射为2,400 updates；保持B20、
+one-video、task内mean、四task等权和相同source/split。这个实验只改变optimizer
+更新粒度，不与slow scheduler混合。只有粒度结果仍指向LR时，才另做full24
+slow2000。若UCP上游或compiler本身失效，则不运行这个control。
+
 ## 7. 实现边界与初始化
 
 - 新文件按职责分为Program和target/rank reader；`model.py`只编排生命周期；

@@ -44,9 +44,9 @@ runner、split 或 GPU 权限。
 - [x] 完成shape/mask/identity/freeze/gradient/resume和最长105-frame B20 profile；
   三macro峰值reserved约77.62GiB，formal-seed fresh0→1→exact-resume1→3逐文件
   不变，选择B20。
-- [ ] 提交并push UCP live seal，从新的clean detached commit建立formal frozen
-  worktree，fresh启动macro0→200；不得从profile/smoke warm-start。
-- [ ] 从clean frozen commit fresh训练macro0→200，评测50/100/150/200 paired
+- [x] 提交并push UCP live seal `c94f1c6`，从新的clean detached commit建立formal
+  frozen worktree并fresh启动macro0→200；首macro合同健康，未从smoke warm-start。
+- [ ] 完成当前clean frozen `c94f1c6` fresh macro0→200，评测50/100/150/200 paired
   correct400并按breadth、漂移、视频传递和LoRA几何决定续训或下一根因重构。
 - [ ] 后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才开第二
   小时和行为五臂。

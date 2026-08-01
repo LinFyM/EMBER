@@ -2,6 +2,13 @@
 
 ## 2026-08-01 current override
 
+UCP正式macro0→200当前从clean detached `c94f1c6` fresh运行，tmux为
+`ember-ucp-formal-c94f1c6`，root为
+`/data/ymdai/outputs/ember/pi05_as_writer_ucp_rawfull24_decay400_formal_dev_r4_b20_seed7_c94f1c6_20260801`。
+首macro的24-task/B20/one-video/raw-mean/long-first/10-chunk同步合同已通过；不得
+重复启动或修改formal frozen worktree。完成后评测50/100/150/200 paired
+correct400。
+
 当前下一整体架构设计为
 [`action_forecast_writer_unified_causal_program_design.md`](action_forecast_writer_unified_causal_program_design.md)。
 exact v5.2 task-complete已以候选`51/91/106/120`和winner五臂

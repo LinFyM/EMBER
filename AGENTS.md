@@ -106,9 +106,10 @@ fresh0→1→exact-resume1→3也已通过，step1全部checkpoint payload逐字
 
 v7/v8/v10/Loom及后续历史不得整体判死。只能删除由内部反事实独立否定的局部
 机制；Action anchors、causal Procedure、双流、Core语义、target-first/rank-last
-等与fast task-complete recipe混杂的组件仍可在职责完整的新结构中复用。当前没有
-活动训练、评测或tmux；下一动作是提交profile/resume seal，从该clean commit创建
-新的detached frozen worktree，并在GPU4–7 fresh启动UCP macro0→200一小时门。
+等与fast task-complete recipe混杂的组件仍可在职责完整的新结构中复用。clean
+`c94f1c6`的detached formal worktree现正由tmux `ember-ucp-formal-c94f1c6`只在
+GPU4–7 fresh运行macro0→200；首macro合同健康。不得重复启动或修改frozen
+worktree；完成后评测50/100/150/200 paired correct400。
 
 关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
 single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe

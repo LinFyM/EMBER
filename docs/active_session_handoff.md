@@ -4,11 +4,50 @@
 
 本文顶部保存当前运行状态、恢复入口和紧邻动作；后续编号章节是按时间保留的
 历史快照。当前下一架构authority是
-`docs/action_forecast_writer_unified_causal_program_design.md`。长期科学边界是
+`docs/action_forecast_writer_amplitude_preserving_dual_read_design.md`。长期科学边界是
 `AGENTS.md`与`docs/execution_brief.md`。任何接手者都必须先只读复核现场，
 不能按历史快照重复启动进程。
 
-## 0. 2026-08-01 UCP当前状态与紧邻动作
+## 0. 2026-08-01 AP-ADR当前状态与紧邻动作
+
+当前唯一formal训练是Amplitude-Preserving Asymmetric Dual Read Writer的fresh
+首小时；不得重复启动、不得从profile/smoke续接，也不得让main后续改动污染其
+frozen源码：
+
+```text
+commit  7dffb6f7faa98e049d2cb6bc2410fbfc5d1bf0a9
+frozen  /data/ymdai/.codex/worktrees/EMBER-ap-adr-formal-7dffb6f-20260801
+root    /data/ymdai/outputs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801
+log     /data/ymdai/logs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801.log
+tmux    ember-ap-adr-formal-7dffb6f
+```
+
+合同为4 ranks、仅物理GPU4–7、NUMA node1、B20、每macro 24 tasks恰好一次、
+每task一条video生成一套rank16 LoRA、task内20条独立query先mean再task等权、
+raw full24 mean、一次clip/AdamW/scheduler、fresh macro0→200、every25 checkpoint。
+精确Writer参数`10,241,024`；source policy trainable参数0；validation/test action
+gradient与test video读取均为0。首小时候选固定评测macro50/100/150/200 paired
+correct400；是否resume到400只由absolute、breadth、趋势和内部主路径裁决。
+
+正式launch前的live seal已完成。longseed172真实105-frame B20三macro的step wall为
+`20.567/18.717/18.644s`，峰值allocated/reserved为
+`77,227,462,656/83,523,272,704` bytes；step2起semantic frontend、Core、Program、
+compiler、factor全部非零可达。formal seed fresh0→1→exact-resume1→3通过，step1
+全部7个payload的size、mtime和SHA逐项未变；seal commit `7dffb6f`已push。
+
+UCP raw macro150 exact50也已补齐并与SERIAL step900严格匹配150次/task exposure。
+raw→SERIAL时，删除A/D的BA/action影响由`.0653/.01269`升到
+`.4184/.12999`，same-video variance/sample energy由`.1096%/.03230%`升到
+`.4865%/.7322%`，证明update granularity强烈控制动态视频信号写出。但四点
+correct差值为`+7/-17/+21/-3`、best仅117→121且漂移未解，因此SERIAL不是默认
+recipe。后续若AP主路工作但仍漂移，必须做scheduler-only和去除cost-phase
+curriculum的cycle-normalized randomized group4，而不是整体处决旧架构思想。
+
+endpoint10 no-gradient诊断正在并行准备。现有8个cache候选覆盖sealed64；历史
+v5.2-old、v6-fast八点、v6-old共10个候选的cache-only扩展已在各自历史commit上
+完成，但GPU生成尚未启动。endpoint metric在预声明关联门通过前不得进入训练。
+
+## 0A. 2026-08-01 UCP历史状态
 
 v5.2 task-complete、SPG、UCP raw-full24和serial-4同曝光正式训练均已完成。
 serial-4训练已自然退出，不得重复启动或修改其frozen worktree：

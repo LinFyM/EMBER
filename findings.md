@@ -3,8 +3,47 @@
 阅读规则：本文是按日期追加的证据账本。历史段落里的“当前”“下一步”和GPU
 权限只描述其日期当时的状态，不覆盖后续owner决定。活动状态以
 `docs/active_session_handoff.md`、
-`docs/action_forecast_writer_unified_causal_program_design.md`和本文顶部最新段落为准；
+`docs/action_forecast_writer_amplitude_preserving_dual_read_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
+
+## 2026-08-01 同曝光recipe根因与AP-ADR启动
+
+- UCP raw-full24 macro150的exact50已经从clean `b4207d2`自然完成：8 validation
+  tasks × 50 references、每row五种视频条件、四rank各100 rows、0 rollout且信息墙
+  读取0。analysis/summary SHA为
+  `bc6e46209e6ffd9bb50ba0671ff63f5a7c03117c40e2ec6e4ea3c935fa8dba5b`/
+  `cbe3760085e179561dd8aec33a89d2a1828d6d2e80b941c119d8479ff9600de4`。
+  它与SERIAL step900严格匹配每task 150次video exposure；SERIAL analysis/summary
+  SHA为
+  `4d7479cb11d0bc6fc364bc02d5681503bb247cd411515f134f1526aed89f0fd7`/
+  `68306aff90e973334ca5a972573725f7133a803386719089c5ab048c425a88c7`。
+- 同曝光训练更新粒度对视频动态写出有数量级影响。删除A/D、只保留absolute X时，
+  raw→SERIAL的coordinates/effective-BA/fixed-action relative L2由
+  `.1223/.0653/.01269`升到`.6244/.4184/.12999`；same-task 50-video centered
+  variance/sample energy由BA/action `.1096%/.03230%`升到
+  `.4865%/.7322%`，且BA视频变化的orthogonal fraction由`89.27%`升到`92.24%`。
+  shuffled条件下固定X只换A/D的BA/action变化也由`.0336/.00682`升到
+  `.1484/.04165`。因此full24一次平均确实会削弱UCP动态教学，而不是“架构根本
+  不看视频”。
+- 但SERIAL不是普适解：四个同曝光correct400差值
+  `raw→SERIAL = +7/-17/+21/-3`，best只由117升到121，breadth和checkpoint漂移
+  都未改善。150-exposure逐task从`[7,0,1,27,32,33,0,0]`变为
+  `[25,0,0,36,38,21,1,0]`，四task上升但Object-3下降12，成功task集合仍轮换。
+  结论是update-mechanics决定“视频创新能否写到action”，同时也会重排task能力；
+  后续必须联合设计topology、scheduler、moment/clip时钟和去除long-first phase
+  curriculum的grouped recipe，不能只把架构或full24单独定罪。
+- 下一canonical Writer为Amplitude-Preserving Asymmetric Dual Read（AP-ADR），
+  authority在`docs/action_forecast_writer_amplitude_preserving_dual_read_design.md`。
+  它保留v5.2可证的mean-backed Semantic Core和coherent heads；Program使用outgoing
+  `[A_f,G_(f+1),G_(f+1)-G_f]` raw values，38个target-only Core reads与38×16
+  target/rank Program reads各自softmax，最后直接concat512生成A/B。没有terminal
+  norm、AdaLN/gate/global mixer、谱约束或第二套LoRA。真实参数`10,241,024`。
+- AP-ADR最长105-frame B20三macro profile通过：三步
+  `20.567/18.717/18.644s`，峰值allocated/reserved
+  `77,227,462,656/83,523,272,704` bytes；step2起semantic frontend、Core、
+  Program、compiler、factor全部非零可达。formal seed fresh0→1→exact-resume1→3
+  也通过，step1七个payload的size/mtime/SHA逐项不变。profile/resume seal已在
+  `7dffb6f` push；正式首小时从fresh identity启动macro0→200，不继承smoke。
 
 ## 2026-08-01 SPG一小时门、架构×recipe与UCP根因结论
 

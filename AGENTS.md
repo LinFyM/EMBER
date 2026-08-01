@@ -31,12 +31,13 @@
     `git show 35fb28f:docs/action_forecast_writer_coherent_procedure_design.md`读取）
 22. `docs/action_forecast_writer_semantic_program_grid_design.md`
 23. `docs/action_forecast_writer_unified_causal_program_design.md`
-24. `task_plan.md`
-25. `findings.md`
-26. `progress.md`
-27. `docs/concept.md`
-28. `docs/decisions_and_open_questions.md`
-29. `docs/novelty_and_landscape.md`
+24. `docs/action_forecast_writer_amplitude_preserving_dual_read_design.md`
+25. `task_plan.md`
+26. `findings.md`
+27. `progress.md`
+28. `docs/concept.md`
+29. `docs/decisions_and_open_questions.md`
+30. `docs/novelty_and_landscape.md`
 
 `docs/active_session_handoff.md`是当前跨session恢复入口，集中摘要研究证据链、
 v5失败证据、v5.1设计理由、运行状态和下一动作，但不覆盖架构或长期科学
@@ -53,6 +54,37 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 任何单一 source base、训练 loss、smoke、局部 seen 结果或一个 Writer 阶段都不能单独触发长期 Goal complete。
 
 ## Current focused execution task
+
+2026-08-01 current override：canonical Writer与训练authority已经切换为
+[`docs/action_forecast_writer_amplitude_preserving_dual_read_design.md`](docs/action_forecast_writer_amplitude_preserving_dual_read_design.md)。
+以下直到`## Data and split`的UCP/SPG叙述只作紧邻历史证据，不得覆盖本段或恢复
+退役可执行路径。
+
+AP-ADR精确参数`10,241,024`，保留mean-backed permutation-invariant Semantic
+Core、outgoing raw `[A_f,G_(f+1),G_(f+1)-G_f]` Program、独立target-only Core
+reads、38×16 target/rank Program reads和conventional coherent factor heads；
+删除terminal normalization/AdaLN/gate、global mixer、谱约束和第二套LoRA。
+最长105-frame B20三macro与formal-seed fresh0→1→exact-resume1→3已通过，step1
+全部payload逐项未改写；live seal commit为`7dffb6f`。
+
+当前唯一formal run从clean detached `7dffb6f` fresh identity运行macro0→200：
+
+```text
+tmux   ember-ap-adr-formal-7dffb6f
+frozen /data/ymdai/.codex/worktrees/EMBER-ap-adr-formal-7dffb6f-20260801
+root   /data/ymdai/outputs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801
+log    /data/ymdai/logs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801.log
+```
+
+不得重复启动、不得从smoke warm-start。结束后评测macro50/100/150/200 paired
+correct400，再按absolute、breadth、趋势、漂移和Core→Program→BA→action证据决定
+是否resume到400。
+
+同曝光UCP raw macro150与SERIAL step900内部对照确认：SERIAL把删除A/D后的
+BA/action变化从`.0653/.01269`提高到`.4184/.12999`，所以update granularity
+真实控制视频动态写出；但四点correct差值`+7/-17/+21/-3`且漂移未解，SERIAL不
+是默认recipe。v7/v8/v10/Loom等仍只否定已有内部反事实定位的局部接口，所有与
+full24/B20/fast400混杂的可复用思想继续保留为条件反事实。
 
 exact v5.2 topology在mature task-complete recipe上的缺失因果格已经完整封存。
 macro150/200/350/400 paired correct400为`51/91/106/120`；single-checkpoint

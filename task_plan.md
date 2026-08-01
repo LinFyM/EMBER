@@ -77,14 +77,27 @@ runner、split 或 GPU 权限。
 - [x] serial-4从clean frozen `3db82df` fresh identity完成1,200 optimizer updates；
   96,000 queries/4,800 videos/200 cycles与raw-full24逐项同曝光，8个checkpoint和
   信息墙合同完整。
-- [ ] step300/600/900/1200 paired correct400已分别在GPU4/5/6/7运行；完成后比较
-  breadth、envelope gap、A/D写出、selected4 Gram、task漂移和surrogate错位。
+- [x] serial step300/600/900/1200 paired correct400完成，为
+  `89/100/121/107`；同曝光raw为`82/117/100/110`，差值
+  `+7/-17/+21/-3`，best仅+4且漂移未解。
+- [x] 补齐raw macro150与SERIAL step900 exact50同曝光内部对照；SERIAL将
+  x-only→full BA/action差异从`.0653/.01269`提高到`.4184/.12999`，证明
+  update granularity强烈控制视频动态写出，但task能力仍轮换。
+- [x] 独立复核、实现并集成AP-ADR；精确参数`10,241,024`，保留mean-backed
+  Core、outgoing A/E/D raw Program、独立Core/Program reads和coherent heads，
+  删除terminal amplifier、global mixer、谱约束与并行旧路径。
+- [x] AP-ADR最长105-frame B20三macro、formal-seed fresh0→1→exact-resume1→3
+  全部通过；step1七个payload逐项不变，seal `7dffb6f`已push。
+- [ ] clean frozen `7dffb6f`的AP-ADR formal fresh macro0→200正在GPU4–7运行；
+  完成后评测macro50/100/150/200 paired correct400并按一小时门裁决。
+- [ ] 完成18-candidate、sealed512、exact ten-step inference endpoint诊断；在强
+  关联门通过前只作no-gradient held monitor，不进入训练。
 - [ ] 后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才开第二
   小时和行为五臂。
 - [ ] 持续定位task漂移、视频学习和closed-loop off-manifold根因，禁止补丁式
   gate/scale/bypass；150不是自动完成线。
 
-当前UCP实现与实时状态只认
+当前AP-ADR实现与实时状态只认
 `docs/active_session_handoff.md`。
 
 ## 长期完成定义

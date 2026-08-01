@@ -5,8 +5,30 @@
 阅读规则：本文按时间顺序保留真实执行状态。早期段落中的“当前”“下一步”、
 GPU范围和训练步长是当时快照；活动状态只取
 `docs/active_session_handoff.md`、
-`docs/action_forecast_writer_unified_causal_program_design.md`和本文顶部最新段落，
+`docs/action_forecast_writer_amplitude_preserving_dual_read_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
+
+## 2026-08-01 AP-ADR live seal与正式首小时
+
+- UCP raw macro150 exact50已补齐，与SERIAL step900构成严格150-exposure内部
+  对照。raw→SERIAL的`x_only`相对full effective-BA/action变化从
+  `.0653/.01269`升到`.4184/.12999`；same-video centered variance/sample
+  energy从`.1096%/.03230%`升到`.4865%/.7322%`。训练更新粒度因此被证明会
+  决定视频动态信号能否穿过compiler到policy action；但四点同曝光correct差值
+  `+7/-17/+21/-3`且漂移仍在，SERIAL不升级为默认recipe。
+- AP-ADR canonical实现commit `8306549`已完成CPU回归与真实GPU vertical path。
+  exact module count为`10,241,024`；105-frame B20三macro profile覆盖72套视频、
+  1,440 queries，三步finite且所有五个主块在identity step后可达。峰值
+  allocated/reserved为`77,227,462,656/83,523,272,704` bytes。
+- formal seed root先fresh0→1，再exact-resume1→3；三行loss/grad/LR/cursor连续，
+  step1 manifest、Writer、trainer和四rank state的size/mtime/SHA均未改变。
+  seal commit `7dffb6f`已push。
+- clean detached `7dffb6f`已从fresh identity启动AP-ADR raw-full24/fast首小时
+  macro0→200；frozen worktree、root、log和tmux分别为
+  `/data/ymdai/.codex/worktrees/EMBER-ap-adr-formal-7dffb6f-20260801`、
+  `/data/ymdai/outputs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801`、
+  `/data/ymdai/logs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801.log`、
+  `ember-ap-adr-formal-7dffb6f`。正式run不从profile/resume warm-start。
 
 ## 2026-08-01 SPG门失败、内部根因与UCP设计
 

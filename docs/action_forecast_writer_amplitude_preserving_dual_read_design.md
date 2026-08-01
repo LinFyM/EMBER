@@ -496,3 +496,41 @@ v10式失败；absolute高而Program不起作用仍是v4/UCP式失败。
 任何后续改动都必须重新回答：需求、现有组件为什么不足、最小缺口、
 历史证据、预期内部量变化和如何证伪。不允许在失败checkpoint上临时堆
 gate、scale、bypass、confidence、谱约束或第二套LoRA。
+
+## 15. 实现与live seal
+
+canonical实现于`8306549`集成main，真实module enumeration为`10,241,024`；
+source policy trainable参数0，public 76 tensors/38 targets/rank16与step0 identity
+合同全部通过。受影响的Writer/model/training/evaluation focused回归为`67 passed`，
+实现worktree的完整相关回归为`203 passed`，architecture gate无hard violation。
+
+GPU4–7、NUMA node1上的longseed172真实profile完成三macro：
+
+```text
+root  /data/ymdai/outputs/ember/pi05_as_writer_ap_adr_profile_b20_longseed172_r4_8306549_20260801
+steps 20.567 / 18.717 / 18.644 seconds
+peak  77,227,462,656 allocated / 83,523,272,704 reserved bytes
+data  72 one-video conditions / 1,440 independent queries
+```
+
+首macro真实包含task38/demo36的105 sampled frames；每步24 unique tasks且rank内
+long-first。identity step只有zero-final factor路径有梯度，step2起semantic
+frontend、Core、Program、compiler和factor全部finite非零，符合预声明生命周期。
+
+formal teacher seed`20260722`另在同一frozen commit完成fresh0→1，再从step1
+exact-resume到3。三步loss为`.157168/.150686/.148092`，gradient norm为
+`.009444/.014368/.100302`；step1 manifest、Writer、trainer和四rank state的
+size、mtime与SHA在resume后逐项不变。seal commit `7dffb6f`已push。
+
+正式首小时从clean detached `7dffb6f` fresh identity启动macro0→200，未继承
+任何profile/smoke权重：
+
+```text
+tmux   ember-ap-adr-formal-7dffb6f
+frozen /data/ymdai/.codex/worktrees/EMBER-ap-adr-formal-7dffb6f-20260801
+root   /data/ymdai/outputs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801
+log    /data/ymdai/logs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801.log
+```
+
+前四macro合同健康：每步24 tasks、480 queries、24条teacher videos，全部finite，
+step2起五个主块可达。后续main改动不得影响这个frozen run。

@@ -31,8 +31,10 @@ GPU范围和训练步长是当时快照；活动状态只取
   测试通过，architecture guard无hard violation。
 - 新refs2在`libero_spatial task3/reference1`精确复现rank-gauge sanity失败，
   failure JSON保留原trace且torchrun立即终止其余ranks，验证fail-fast合同。旧错误
-  尚未证明是BA/action数值误差还是raw factor未变化；`8f8716b`加入四组实际判别量，
-  下一root据此根治，不直接放宽阈值。
+  经`e47ffe8`判别为raw A/B确实改变`.74184/.13602`且effective BA保持到
+  `1.299e-9`；唯一超阈的是bf16 factorized policy action `.002047`，其rank求和
+  顺序随置换改变。修复保留finite和BA `2e-5`硬门、记录action execution drift，
+  没有放宽数学函数合同；20项相关CPU测试通过，architecture guard无hard violation。
 - 新建独立serial-4写worktree
   `/data/ymdai/.codex/worktrees/EMBER-ucp-serial4-a4b06f5-20260801`；冻结UCP模型，
   只实现六phase/24-task cycle和exposure-staircase LR训练反事实，尚未GPU profile

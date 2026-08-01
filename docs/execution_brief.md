@@ -14,9 +14,12 @@ BA/action的影响远弱于absolute X。首次零rollout exact50 root
 在rank1本地异常后被旧NCCL错误传播路径掩盖，只保留run contract，没有科学rows。
 `874e5f1`已改为reference级fail-fast artifact和analysis-only两小时Gloo控制组。
 新refs2随后精确复现`libero_spatial task3/reference1`的rank-gauge sanity失败，
-torchrun立即收割其他ranks；`8f8716b`把BA/action/raw-factor判别量加入异常。当前
-没有活动GPU进程。下一步新root取得具体误差后根治，再重跑exact50；不得复用失败
-root或修改frozen worktree，也不得先验放宽`2e-5`。
+torchrun立即收割其他ranks。instrumented `e47ffe8`证明raw A/B改变
+`.74184/.13602`，effective BA relative L2仅`1.299e-9`，而bf16 fixed action因
+rank-reduction顺序改变产生`.002047` execution drift。sanity现只对finite与BA
+`2e-5` fail-close，action drift保留为实际诊断，不伪称bf16位级gauge不变。当前
+没有活动GPU进程。下一步从新clean root验证refs2，再用另一root重跑exact50；不得
+复用失败root或修改frozen worktree。
 
 下一训练反事实冻结UCP拓扑，只改update granularity：四rank每update各1 task，
 六phase重建同一full24 cost-balanced cycle；1,200 updates等于200 task visits、

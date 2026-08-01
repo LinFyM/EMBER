@@ -56,8 +56,12 @@
   排除缺视频、非法长度和正常负载长尾。`874e5f1`改为reference级上下文、failure
   JSON与直接re-raise，并把成功同步交给两小时Gloo控制组。新refs2恢复出原始错误：
   rank1的`libero_spatial task3/reference1`在rank-gauge sanity失败，其他ranks被
-  torchrun立即收割。`8f8716b`继续记录BA/action/raw A/B实际误差；在这些值出现前
-  不能把它判成数值容差或实现错误，更不能从失败root推断UCP内部几何。
+  torchrun立即收割。instrumented `e47ffe8`给出raw A/B relative L2
+  `.74184/.13602`，effective BA却仅`1.299e-9`、max absolute`7.45e-9`；说明同一
+  rank置换的数学函数严格保持。fixed action relative L2为`.002047`、cosine
+  `.9999978`，来自两段bf16 LoRA的rank-reduction顺序改变，而不是BA实现错误。
+  因此sanity仍对finite和BA `2e-5` fail-close，同时把实际bf16 action drift作为
+  诊断记录，不再要求错误的位级函数等价。失败root仍不能冒充UCP科学几何。
 - 所以serial-4是有判别力但非预设成功的下一实验。四个近正交等norm梯度的mean
   energy基线本来就是`1/4=25%`，远高于full24的`1/24=4.17%`；因此selected4 Gram
   ratio上升只是干预生效的mechanical check，不能单独支持聚合根因。真正支持必须

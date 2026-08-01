@@ -285,6 +285,9 @@ def summarize_records(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         result["per_task"][key] = task
     result["factor_gauge_caveat"] = (
         "raw factor/public A/B coordinates are gauge-dependent; effective BA and "
-        "fixed-query action are primary functional evidence"
+        "canonical fixed-query action are primary functional evidence. A rank "
+        "gauge permutation preserves mathematical BA but can change the "
+        "factorized bf16 reduction order, so its action drift is a measured "
+        "low-precision execution effect rather than the gauge sanity gate"
     )
     return result

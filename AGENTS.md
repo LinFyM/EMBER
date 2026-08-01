@@ -104,12 +104,23 @@ macro profile已通过：step wall `20.394/18.494/18.504s`，峰值allocated/res
 全finite，step2起四个主块梯度可达。canonical formal seed的
 fresh0→1→exact-resume1→3也已通过，step1全部checkpoint payload逐字节不变。
 
+UCP raw-full24 formal macro50/100/150/200 paired correct400已经封存为
+`82/117/100/110`；union169、single best117且能力持续轮换，故不resume到400、
+不做五臂。macro100 refs1证明reader路由和order/wrong差异可达BA/action，但固定X
+只换A/D时BA与action变化仅约`2–5%/.5–.9%`，dynamic教学弱。exact50 analyzer的
+rank-gauge异常已经定位：raw A/B置换变化`.74184/.13602`，effective BA误差仅
+`1.299e-9`；bf16 fixed action的`.002047`差异来自rank求和次序，而非BA错误。
+sanity继续对finite和BA `2e-5` fail-close，action execution drift只作记录。
+
+下一训练反事实冻结UCP拓扑和完整task/video/query exposure，改为每update全局4
+tasks、六phase覆盖24 tasks的serial-4；LR按full24 cycle重复六次。它同时改变
+AdamW/moment/weight-decay时钟，并把long-first变成真实optimizer curriculum，结果
+不能单因归为“消除梯度抵消”。先从新clean analyzer commit完成refs2与exact50，
+再对serial-4完成B20 profile/resume seal并fresh训练1,200 updates。
+
 v7/v8/v10/Loom及后续历史不得整体判死。只能删除由内部反事实独立否定的局部
 机制；Action anchors、causal Procedure、双流、Core语义、target-first/rank-last
-等与fast task-complete recipe混杂的组件仍可在职责完整的新结构中复用。clean
-`c94f1c6`的detached formal worktree现正由tmux `ember-ucp-formal-c94f1c6`只在
-GPU4–7 fresh运行macro0→200；首macro合同健康。不得重复启动或修改frozen
-worktree；完成后评测50/100/150/200 paired correct400。
+等与fast task-complete recipe混杂的组件仍可在职责完整的新结构中复用。
 
 关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
 single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe

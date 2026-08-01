@@ -421,6 +421,8 @@ gradient chunk gather/completion/sync连续。正式root与hash由config的
 - target/rank-centered coordinate content energy；
 - target identity permutation与真实38-target映射；
 - rank permutation是否只作gauge-compatible coordinate置换而不改变完整BA函数；
+  该硬门检查finite与effective BA，而canonical bf16两段LoRA会因rank求和次序改变
+  产生小量action execution drift，必须记录但不得误要求位级不变；
 - full、X-only、dynamic-only、A-only、D-only；
 - fixed X/vary A,D和fixed A,D/vary X；
 - 每类attention mass、raw RMS、coordinate/BA/action贡献。

@@ -177,8 +177,14 @@ def aggregate_numeric_records(records: Sequence[Any]) -> dict[str, Any]:
 
     if not records:
         raise WriterModelError("cannot aggregate empty UCP records")
-    if all(isinstance(record, Mapping) for record in records):
-        keys = set.intersection(*(set(record) for record in records))
+    mapping_flags = [isinstance(record, Mapping) for record in records]
+    if any(mapping_flags) and not all(mapping_flags):
+        raise WriterModelError("UCP summary record changed mapping type")
+    if all(mapping_flags):
+        key_sets = [set(record) for record in records]
+        if any(keys != key_sets[0] for keys in key_sets[1:]):
+            raise WriterModelError("UCP summary records changed key set")
+        keys = key_sets[0]
         result = {}
         for key in sorted(keys):
             nested = aggregate_numeric_records([record[key] for record in records])
@@ -191,14 +197,17 @@ def aggregate_numeric_records(records: Sequence[Any]) -> dict[str, Any]:
         for record in records
     ):
         return _numeric_summary(np.asarray(records, dtype=np.float64))
-    if all(isinstance(record, (list, tuple)) for record in records):
+    sequence_flags = [isinstance(record, (list, tuple)) for record in records]
+    if any(sequence_flags) and not all(sequence_flags):
+        raise WriterModelError("UCP summary record changed sequence type")
+    if all(sequence_flags):
+        if any(len(record) != len(records[0]) for record in records):
+            raise WriterModelError("UCP summary numeric vector changed length")
         try:
             values = np.asarray(records, dtype=np.float64)
         except (TypeError, ValueError):
             return {}
-        if values.ndim >= 2 and all(
-            len(record) == len(records[0]) for record in records
-        ):
+        if values.ndim >= 2:
             return _numeric_summary(values)
     return {}
 
@@ -245,10 +254,13 @@ def summarize_records(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     )
     counterfactual_keys = (
         "type_ablations", "fixed_x_vary_a_d", "fixed_a_d_vary_x",
-        "dynamic_scale", "canonical_recompute", "target_identity_permutation",
+        "dynamic_scale", "variant_recompute", "target_identity_permutation",
         "rank_gauge_permutation",
     )
     result = _condition_summary(rows, metric_stages)
+    result["canonical_program_parity"] = aggregate_numeric_records([
+        row["canonical_program_parity"] for row in rows
+    ])
     result["counterfactuals"] = {
         key: aggregate_numeric_records([row[key] for row in rows])
         for key in counterfactual_keys
@@ -262,6 +274,9 @@ def summarize_records(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
             "global_task_id": task_id,
             "references": len(selected),
             "same_task_video_variance": _variance_summary(selected),
+            "canonical_program_parity": aggregate_numeric_records([
+                row["canonical_program_parity"] for row in selected
+            ]),
             "counterfactuals": {
                 name: aggregate_numeric_records([row[name] for row in selected])
                 for name in counterfactual_keys

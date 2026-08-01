@@ -16,6 +16,32 @@ from lerobot.utils.constants import (
 from ember.lora import copy_task_lora_state_
 from ember.pi05_processing import Pi05LiberoProcessor
 from ember.writer.data import WriterTaskAuthority, _camera
+from ember.writer.ucp_analysis import validate_canonical_program_parity
+
+
+def canonical_program_parity(
+    writer: Any,
+    packed_x: torch.Tensor,
+    packed_g: torch.Tensor,
+    packed_action: torch.Tensor,
+    positions: torch.Tensor,
+    valid_frames: torch.Tensor,
+    valid_tokens: torch.Tensor,
+    reconstructed: tuple[
+        torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor,
+    ],
+) -> dict[str, Any]:
+    """Execute actual semantic_program+compiler and validate reconstruction."""
+
+    with torch.inference_mode():
+        canonical = writer.semantic_program(
+            packed_x, packed_g, packed_action, positions,
+            valid_frames, valid_tokens,
+        )
+        coordinates, _ = writer.compiler.compile_with_diagnostics(*canonical)
+        return validate_canonical_program_parity(
+            (*canonical, coordinates), reconstructed,
+        )
 
 
 def policy_action(

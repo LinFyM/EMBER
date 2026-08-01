@@ -79,7 +79,11 @@ from ember.writer.ucp_analysis_summary import (
     validate_finite_tree,
     validate_rank_payloads,
 )
-from ember.writer.ucp_analysis_runtime import fixed_policy_query, policy_action
+from ember.writer.ucp_analysis_runtime import (
+    canonical_program_parity,
+    fixed_policy_query,
+    policy_action,
+)
 from ember.writer.validation import _build_models
 
 
@@ -234,8 +238,7 @@ def _routing_diagnostics(
 ) -> dict[str, Any]:
     selected = slice(0, 1)
     target_permutation = torch.roll(torch.arange(
-        writer.compiler.target_count, device=device,
-    ), -1)
+        writer.compiler.target_count, device=device), -1)
     target_variant = _variant_result(
         **shared, initial=encoded["initial"][selected],
         endpoints=encoded["endpoints"][selected],
@@ -244,8 +247,7 @@ def _routing_diagnostics(
         target_permutation=target_permutation,
     )
     rank_permutation = torch.roll(torch.arange(
-        writer.PUBLIC_LORA_RANK, device=device,
-    ), -1)
+        writer.PUBLIC_LORA_RANK, device=device), -1)
     gauge_state, per_target = rank_gauge_permute(
         writer, full["public"], rank_permutation,
     )
@@ -257,16 +259,14 @@ def _routing_diagnostics(
     )
     ba_error = effective_ba_error(writer, full["public"], gauge_state)
     action_error = relative_metrics(full["action"], gauge_action)
-    action_error["max_absolute_error"] = float(
-        (full["action"].float() - gauge_action.float()).abs().max()
-    )
+    action_error["max_absolute_error"] = float((
+        full["action"].float() - gauge_action.float()
+    ).abs().max())
     raw_a = mapping_metrics(full["public"], gauge_state, select="a")
     raw_b = mapping_metrics(full["public"], gauge_state, select="b")
     if (
-        ba_error["relative_l2"] > 2e-5
-        or action_error["relative_l2"] > 2e-5
-        or raw_a["relative_l2"] == 0
-        or raw_b["relative_l2"] == 0
+        ba_error["relative_l2"] > 2e-5 or action_error["relative_l2"] > 2e-5
+        or raw_a["relative_l2"] == 0 or raw_b["relative_l2"] == 0
     ):
         raise WriterModelError("rank gauge permutation violated its sanity contract")
     target_comparison = _variant_comparison(writer, full, target_variant)
@@ -283,9 +283,10 @@ def _routing_diagnostics(
             "definition": "permute target identities; retain real 38-target decode slots",
             "permutation": target_permutation.cpu().tolist(),
             "real_target_decode_mapping": target_mapping,
-            "relative_to_canonical": {key: target_comparison[key] for key in (
-                "coordinates", "effective_ba", "policy_action",
-            )},
+            "relative_to_canonical": {
+                key: target_comparison[key]
+                for key in ("coordinates", "effective_ba", "policy_action")
+            },
         },
         "rank_gauge_permutation": {
             "definition": "same permutation of each public A row and B column",
@@ -348,6 +349,11 @@ def _encode_reference(
             blocks, final, coordinates, attention = _run_program(
                 writer, initial, endpoints, valid_intervals, valid_semantics,
             )
+            canonical_parity = canonical_program_parity(
+                writer, packed_x, packed_g, packed_action, positions,
+                valid_frames, valid_tokens,
+                (final, endpoints, valid_intervals, valid_semantics, coordinates),
+            )
             factors, public = decode_coordinates(writer, coordinates)
     finally:
         handle.remove()
@@ -380,7 +386,8 @@ def _encode_reference(
         "valid_intervals": valid_intervals, "valid_semantics": valid_semantics,
         "blocks": blocks, "final": final, "coordinates": coordinates,
         "attention": attention, "factor_states": factor_states, "states": states,
-        "actions": actions, "prepared": prepared, "query_identity": query_identity,
+        "canonical_program_parity": canonical_parity, "actions": actions,
+        "prepared": prepared, "query_identity": query_identity,
         "action_seed": action_seed,
     }
 
@@ -406,9 +413,9 @@ def _counterfactual_diagnostics(
                  "factor": encoded["factor_states"][0],
                  "coordinates": encoded["coordinates"][0],
                  "action": encoded["actions"][0]}
-    canonical_recompute = _variant_comparison(writer, canonical, full)
+    variant_recompute = _variant_comparison(writer, canonical, full)
     if any(
-        canonical_recompute[key]["relative_l2"] > 2e-5
+        variant_recompute[key]["relative_l2"] > 2e-5
         for key in (
             "coordinates", "factor", "public_a", "public_b", "effective_ba",
             "policy_action",
@@ -473,7 +480,7 @@ def _counterfactual_diagnostics(
         "type_ablations": ablations,
         **fixed_streams,
         "dynamic_scale": scales,
-        "canonical_recompute": canonical_recompute,
+        "variant_recompute": variant_recompute,
         **routing,
     }
 
@@ -502,10 +509,9 @@ def probe_reference(
         "reference_ordinal": init_state_id,
         "conditions": encoded["input_rows"],
         "comparisons_to_correct": matched["comparisons"],
-        "reader_attention": matched["readers"],
-        "coordinate_routing": matched["coordinates"],
+        "reader_attention": matched["readers"], "coordinate_routing": matched["coordinates"],
         "lora_geometry": matched["geometry"],
-        **counterfactuals,
+        "canonical_program_parity": encoded["canonical_program_parity"], **counterfactuals,
         "fixed_policy_query": encoded["query_identity"],
         "fixed_policy_action_seed": encoded["action_seed"],
         "information_wall": {

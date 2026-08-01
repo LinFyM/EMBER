@@ -13,7 +13,11 @@ import torch
 import torch.nn.functional as F
 
 from ember.writer.model import CompleteLoRAWriter, WriterModelError
-from ember.writer.ucp_geometry import gram_geometry
+from ember.writer.ucp_geometry import (
+    aggregate_effective_ba_spectra,
+    component_coordinate_geometry,
+    effective_ba_spectra,
+)
 from ember.writer.semantic_program import apply_two_axis_rope, split_heads
 
 CONDITIONS = (
@@ -261,6 +265,50 @@ def build_initial_program(
     )
     valid = valid_intervals[:, :, None] & valid_semantics[:, None]
     return program.masked_fill(~valid[..., None], 0), endpoint_positions, valid_intervals, valid_semantics
+
+
+def validate_canonical_program_parity(
+    canonical: tuple[
+        torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor,
+    ],
+    reconstructed: tuple[
+        torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor,
+    ],
+    *,
+    tolerance: float = 2e-5,
+) -> dict[str, Any]:
+    """Prove manual diagnostics reconstruct the actual semantic_program owner."""
+
+    (
+        canonical_final, canonical_endpoints, canonical_intervals,
+        canonical_semantics, canonical_coordinates,
+    ) = canonical
+    final, endpoints, intervals, semantics, coordinates = reconstructed
+    final_metrics = relative_metrics(canonical_final, final)
+    final_metrics["max_absolute_error"] = float(
+        (canonical_final.float() - final.float()).abs().max()
+    )
+    coordinate_metrics = relative_metrics(canonical_coordinates, coordinates)
+    coordinate_metrics["max_absolute_error"] = float(
+        (canonical_coordinates.float() - coordinates.float()).abs().max()
+    )
+    mismatch = {
+        "endpoint_mismatch_count": int((canonical_endpoints != endpoints).sum()),
+        "valid_interval_mismatch_count": int((canonical_intervals != intervals).sum()),
+        "valid_semantic_mismatch_count": int((canonical_semantics != semantics).sum()),
+    }
+    if (
+        max(final_metrics["relative_l2"], coordinate_metrics["relative_l2"])
+        > tolerance
+        or any(value != 0 for value in mismatch.values())
+    ):
+        raise WriterModelError("manual UCP reconstruction differs from semantic_program")
+    return {
+        "final_program": final_metrics,
+        "coordinates": coordinate_metrics,
+        **mismatch,
+        "relative_l2_tolerance": tolerance,
+    }
 
 
 def resample_intervals(value: torch.Tensor, length: int) -> torch.Tensor:
@@ -568,35 +616,68 @@ def lora_geometry(writer: CompleteLoRAWriter, state: Mapping[str, torch.Tensor])
     }
     kind_gram = {name: torch.zeros_like(gram) for name in kind_energy}
     kind_b_gram = {name: torch.zeros_like(gram) for name in kind_energy}
+    kind_spectra: dict[str, list[Mapping[str, float | int]]] = {
+        name: [] for name in kind_energy
+    }
     pairs = _lora_pairs(writer)
-    for module, names in pairs.items():
-        a, b = state[names["a"]].double().cpu(), state[names["b"]].double().cpu()
+    factors = {
+        module: (
+            state[names["a"]].double().cpu(), state[names["b"]].double().cpu(),
+        )
+        for module, names in pairs.items()
+    }
+    target_spectra = effective_ba_spectra(factors)
+    for module in pairs:
+        a, b = factors[module]
         component = (b.T @ b) * (a @ a.T)
+        spectrum = target_spectra[module]
         gram += component
         b_gram += b.T @ b
-        energy = float(component.sum())
+        energy = float(spectrum["effective_ba_energy"])
         kind = _module_kind(module)
         kind_energy[kind] += energy
         kind_module_energy[kind].append(energy)
         kind_gram[kind] += component
         kind_b_gram[kind] += b.T @ b
+        kind_spectra[kind].append(spectrum)
     total_effective = sum(kind_energy.values())
-    overall = gram_geometry(
+    overall_spectrum = aggregate_effective_ba_spectra(list(target_spectra.values()))
+    by_kind_spectrum = {
+        kind: aggregate_effective_ba_spectra(values)
+        for kind, values in kind_spectra.items()
+    }
+    component_geometry = component_coordinate_geometry(
         gram, b_gram, [energy for values in kind_module_energy.values() for energy in values],
     )
-    by_kind = {
-        kind: gram_geometry(kind_gram[kind], kind_b_gram[kind], values)
+    by_kind_component = {
+        kind: component_coordinate_geometry(
+            kind_gram[kind], kind_b_gram[kind], values,
+        )
         for kind, values in kind_module_energy.items()
     }
     return {
-        **overall,
+        **overall_spectrum,
         "q_v_action_energy_ratio": {key: value / max(total_effective, 1e-24) for key, value in kind_energy.items()},
-        "per_target_energy_cv_overall": overall["layer_energy_cv"],
-        "per_layer_energy_cv": overall["layer_energy_cv"],
-        "per_layer_energy_cv_by_kind": {
-            kind: value["layer_energy_cv"] for kind, value in by_kind.items()
+        "effective_ba_spectrum_definition": (
+            "reduced-QR singular energy of each real target BA=B@A, followed "
+            "by the historical unweighted target mean for rank statistics"
+        ),
+        "per_target_effective_ba_spectrum": target_spectra,
+        "per_kind_effective_ba_spectrum": by_kind_spectrum,
+        "rank_coordinate_component_gram": {
+            **component_geometry,
+            "definition": (
+                "cross-target rank-coordinate component Gram; participation and "
+                "component/B-column cosine only; never an effective-BA rank spectrum"
+            ),
         },
-        "per_kind_geometry": by_kind,
+        "per_kind_rank_coordinate_component_gram": by_kind_component,
+        "per_target_energy_cv_overall": component_geometry["layer_energy_cv"],
+        "per_layer_energy_cv": component_geometry["layer_energy_cv"],
+        "per_layer_energy_cv_by_kind": {
+            kind: value["layer_energy_cv"]
+            for kind, value in by_kind_component.items()
+        },
         "cross_layer_effective_ba_cosine": cross_layer_cosine(writer, state),
         "public_a_rms": mapping_metrics(state, state, select="a")["reference_rms"],
         "public_b_rms": mapping_metrics(state, state, select="b")["reference_rms"],

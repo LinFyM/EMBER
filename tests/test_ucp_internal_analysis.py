@@ -29,6 +29,7 @@ from ember.writer.ucp_analysis import (
     resample_intervals,
     type_ablation,
     validate_analysis_provenance,
+    validate_canonical_program_parity,
     variance_metrics,
 )
 from ember.writer.ucp_analysis_runtime import fixed_policy_query
@@ -42,6 +43,10 @@ from ember.writer.data import WriterTaskAuthority
 from ember.writer.model import LoraTensorSpec, WriterModelError
 from ember.writer.program_compiler import FactorHead, TargetRankProgramReader
 from ember.writer.semantic_program import UnifiedCausalProgram
+from ember.writer.ucp_geometry import (
+    component_coordinate_geometry,
+    effective_ba_spectrum,
+)
 
 
 def test_initial_program_uses_outgoing_grounded_change() -> None:
@@ -163,16 +168,19 @@ def test_effective_geometry_uses_functional_ba_not_raw_factor_sign() -> None:
     assert geometry["effective_lora_norm"] == pytest.approx(
         effective_metrics(writer, right, right)["reference_l2"], rel=1e-6,
     )
-    assert 1 <= geometry["stable_rank"] <= 16
-    assert sum(geometry["coordinate_energy_participation"]) == pytest.approx(1.0)
+    assert 1 <= geometry["stable_rank_mean"] <= 16
+    assert sum(geometry["rank_coordinate_component_gram"][
+        "coordinate_energy_participation"
+    ]) == pytest.approx(1.0)
     assert sum(geometry["q_v_action_energy_ratio"].values()) == pytest.approx(1.0)
     assert all(value > 0 for value in geometry["q_v_action_energy_ratio"].values())
     for kind in ("q", "v", "action"):
-        detail = geometry["per_kind_geometry"][kind]
-        assert sum(detail["coordinate_energy_participation"]) == pytest.approx(1.0)
-        assert 1 <= detail["stable_rank"] <= 16
-        assert detail["rank90"] <= detail["rank99"] <= 16
-        assert detail["layer_energy_cv"] >= 0
+        spectrum = geometry["per_kind_effective_ba_spectrum"][kind]
+        component = geometry["per_kind_rank_coordinate_component_gram"][kind]
+        assert 1 <= spectrum["stable_rank_mean"] <= 16
+        assert spectrum["rank90_mean"] <= spectrum["rank99_mean"] <= 16
+        assert sum(component["coordinate_energy_participation"]) == pytest.approx(1.0)
+        assert component["layer_energy_cv"] >= 0
         assert kind in geometry["per_layer_energy_cv_by_kind"]
     variance = effective_variance(writer, [left, right])
     assert variance["centered_variance_over_sample_energy"] > 0
@@ -198,6 +206,67 @@ def test_metric_and_interval_helpers_are_shape_strict() -> None:
     dynamic_only = type_ablation(program, "dynamic_only")
     assert torch.count_nonzero(x_only[:, :, 2:]) == 0
     assert torch.count_nonzero(dynamic_only[:, :, :2]) == 0
+
+
+def test_effective_ba_spectrum_is_not_component_coordinate_gram_rank() -> None:
+    a = torch.eye(2)
+    b_rank_one = torch.tensor([[1., 1.], [0., 0.]])
+    component_gram = (b_rank_one.T @ b_rank_one) * (a @ a.T)
+    component = component_coordinate_geometry(
+        component_gram, b_rank_one.T @ b_rank_one, [2.0],
+    )
+    rank_one = effective_ba_spectrum(a, b_rank_one)
+    rank_two = effective_ba_spectrum(a, torch.eye(2))
+
+    assert torch.linalg.matrix_rank(component_gram) == 2
+    assert rank_one["stable_rank"] == pytest.approx(1.0)
+    assert rank_one["effective_ba_energy"] == pytest.approx(
+        float((b_rank_one @ a).square().sum())
+    )
+    assert rank_one["rank99"] == 1
+    assert rank_two["stable_rank"] == pytest.approx(2.0)
+    assert "stable_rank" not in component
+
+
+def test_canonical_semantic_program_matches_manual_reconstruction() -> None:
+    torch.manual_seed(21)
+    owner = UnifiedCausalProgram(
+        width=32, heads=4, blocks=2, initialization_seed=7,
+    ).eval()
+    compiler = TargetRankProgramReader(
+        width=32, heads=4, target_count=38, rank=16, initialization_seed=9,
+    ).eval()
+    absolute = torch.randn(2, 5, 3, 32)
+    grounded = torch.randn_like(absolute)
+    action = torch.randn(2, 5, 32)
+    positions = torch.tensor([[0, 5, 10, 15, 20], [0, 5, 10, 15, 0]])
+    valid_frames = torch.tensor([
+        [True, True, True, True, True], [True, True, True, True, False],
+    ])
+    valid_tokens = torch.tensor([[True, True, True], [True, False, True]])
+    with torch.inference_mode():
+        canonical = owner(
+            absolute, grounded, action, positions, valid_frames, valid_tokens,
+        )
+        canonical_coordinates = compiler(*canonical)
+        value, endpoints, intervals, semantics = build_initial_program(
+            absolute, grounded, action, positions, valid_frames, valid_tokens,
+        )
+        for block in owner.blocks:
+            value = block(value, endpoints, intervals, semantics)
+        coordinates = compiler(value, endpoints, intervals, semantics)
+    proof = analysis_runtime.canonical_program_parity(
+        SimpleNamespace(semantic_program=owner, compiler=compiler),
+        absolute, grounded, action, positions, valid_frames, valid_tokens,
+        (value, endpoints, intervals, semantics, coordinates),
+    )
+    assert proof["final_program"]["relative_l2"] == 0
+    assert proof["endpoint_mismatch_count"] == 0
+    with pytest.raises(WriterModelError, match="semantic_program"):
+        validate_canonical_program_parity(
+            (*canonical, canonical_coordinates),
+            (value + .1, endpoints, intervals, semantics, coordinates),
+        )
 
 
 def test_fixed_stream_counterfactual_preserves_dynamic_change_contract() -> None:
@@ -266,11 +335,18 @@ def _summary_row(reference: int, scale: float = 1.0) -> dict[str, object]:
     }
     stages = (*STAGES, "factor_output", "public_a", "public_b", "effective_ba", "policy_action")
     geometry = {
-        "stable_rank": 1.2, "coordinate_energy_participation": [.25] * 4,
+        "stable_rank_mean": 1.2,
+        "rank_coordinate_component_gram": {
+            "coordinate_energy_participation": [.25] * 4,
+        },
         "q_v_action_energy_ratio": {"q": .5, "v": .3, "action": .2},
         "cross_layer_effective_ba_cosine": {"q": .9, "v": .8},
-        "per_kind_geometry": {
-            kind: {"stable_rank": 1.1, "layer_energy_cv": .2,
+        "per_kind_effective_ba_spectrum": {
+            kind: {"stable_rank_mean": 1.1, "rank90_mean": 1.0}
+            for kind in ("q", "v", "action")
+        },
+        "per_kind_rank_coordinate_component_gram": {
+            kind: {"layer_energy_cv": .2,
                    "coordinate_energy_participation": [.25] * 4}
             for kind in ("q", "v", "action")
         },
@@ -289,6 +365,12 @@ def _summary_row(reference: int, scale: float = 1.0) -> dict[str, object]:
             for condition in CONDITIONS
         },
         "lora_geometry": {condition: geometry for condition in CONDITIONS},
+        "canonical_program_parity": {
+            "final_program": metric, "coordinates": metric,
+            "endpoint_mismatch_count": 0,
+            "valid_interval_mismatch_count": 0,
+            "valid_semantic_mismatch_count": 0,
+        },
         "same_task_video_variance": {
             "effective_ba": {"estimable": True, "centered_variance": .2},
             "fixed_policy_action": {"estimable": True, "centered_variance": .3},
@@ -297,7 +379,7 @@ def _summary_row(reference: int, scale: float = 1.0) -> dict[str, object]:
         "fixed_x_vary_a_d": {"correct": variant},
         "fixed_a_d_vary_x": {"correct": variant},
         "dynamic_scale": {"0.5": {"relative_to_scale1": variant}},
-        "canonical_recompute": variant,
+        "variant_recompute": variant,
         "target_identity_permutation": {"relative_to_canonical": variant},
         "rank_gauge_permutation": {
             "public_a": metric, "effective_ba_numerical_error": metric,
@@ -312,6 +394,10 @@ def test_recursive_summary_retains_nested_geometry_and_all_counterfactuals() -> 
     ])
     assert direct["nested"]["value"]["mean"] == pytest.approx(2.0)
     assert direct["vector"]["mean"] == pytest.approx([2.0, 4.0])
+    with pytest.raises(WriterModelError, match="key set"):
+        aggregate_numeric_records([{"value": 1.0}, {"value": 2.0, "lost": 3.0}])
+    with pytest.raises(WriterModelError, match="vector changed length"):
+        aggregate_numeric_records([[1.0], [1.0, 2.0]])
 
     summary = summarize_records([_summary_row(0), _summary_row(1, 2.0)])
     action = summary["conditions"]["same_task_other"]["policy_action"]
@@ -319,15 +405,27 @@ def test_recursive_summary_retains_nested_geometry_and_all_counterfactuals() -> 
     assert summary["coordinate_routing"]["correct"][
         "target_centered_energy_ratio"
     ]["mean"] == pytest.approx(.1)
-    q_geometry = summary["lora_geometry"]["correct"]["per_kind_geometry"]["q"]
-    assert q_geometry["stable_rank"]["mean"] == pytest.approx(1.1)
-    assert q_geometry["coordinate_energy_participation"]["mean"] == pytest.approx([.25] * 4)
+    q_spectrum = summary["lora_geometry"]["correct"][
+        "per_kind_effective_ba_spectrum"
+    ]["q"]
+    q_component = summary["lora_geometry"]["correct"][
+        "per_kind_rank_coordinate_component_gram"
+    ]["q"]
+    assert q_spectrum["stable_rank_mean"]["mean"] == pytest.approx(1.1)
+    assert q_component["coordinate_energy_participation"]["mean"] == pytest.approx([.25] * 4)
     assert set(summary["counterfactuals"]) == {
         "type_ablations", "fixed_x_vary_a_d", "fixed_a_d_vary_x",
-        "dynamic_scale", "canonical_recompute", "target_identity_permutation",
+        "dynamic_scale", "variant_recompute", "target_identity_permutation",
         "rank_gauge_permutation",
     }
     task = summary["per_task"]["libero_spatial:task_00"]
+    assert summary["canonical_program_parity"]["endpoint_mismatch_count"]["max"] == 0
+    assert summary["canonical_program_parity"]["coordinates"][
+        "relative_l2"
+    ]["mean"] == pytest.approx(.3)
+    assert task["canonical_program_parity"]["final_program"][
+        "relative_l2"
+    ]["mean"] == pytest.approx(.3)
     assert task["same_task_video_variance"]["effective_ba"]["estimable"] is True
     assert task["counterfactuals"]["fixed_x_vary_a_d"]["correct"][
         "policy_action"

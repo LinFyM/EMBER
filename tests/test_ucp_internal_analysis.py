@@ -553,6 +553,125 @@ def test_real_variant_program_compiler_factor_forward_uses_inference_autocast(
         torch.testing.assert_close(first["public"][name], second["public"][name])
 
 
+def test_variant_result_keeps_carrier_batch_and_selects_one_reference_row(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    script = _load_analysis_script()
+    writer = _variant_writer()
+    batch, intervals, columns, width = 5, 3, 5, 32
+    blocks = [
+        torch.stack([
+            torch.full((intervals, columns, width), float(row + 1))
+            for row in range(batch)
+        ])
+    ]
+    final = blocks[-1].clone()
+    coordinates = torch.stack([
+        torch.full((38, 16, width), float(row + 1))
+        for row in range(batch)
+    ])
+    attention = torch.full(
+        (batch, 4, 38 * 16, intervals * columns),
+        1.0 / (intervals * columns),
+    )
+    monkeypatch.setattr(
+        script, "_run_program",
+        lambda *_args, **_kwargs: (blocks, final, coordinates, attention),
+    )
+    monkeypatch.setattr(script, "validate_lora_state", lambda *_args: None)
+    monkeypatch.setattr(
+        script, "policy_action",
+        lambda **_kwargs: torch.arange(14, dtype=torch.float32).reshape(2, 7),
+    )
+    valid_intervals = torch.ones(batch, intervals, dtype=torch.bool)
+    valid_semantics = torch.ones(batch, columns, dtype=torch.bool)
+    result = script._variant_result(
+        writer=writer, policy=SimpleNamespace(), processor=SimpleNamespace(),
+        prepared={}, identity={}, lora=None, seed=7,
+        initial=torch.zeros(batch, intervals, columns, width),
+        endpoints=torch.arange(intervals).repeat(batch, 1),
+        valid_intervals=valid_intervals, valid_semantics=valid_semantics,
+        device=torch.device("cpu"), selected_row=3,
+    )
+
+    assert result["coordinates"].shape == (38, 16, width)
+    assert float(result["coordinates"].mean()) == pytest.approx(4.0)
+    assert result["block_rms"] == pytest.approx([4.0])
+    assert (
+        result["reader"]["x_mass"]
+        + result["reader"]["a_mass"]
+        + result["reader"]["d_mass"]
+    ) == pytest.approx(1.0)
+
+
+def test_counterfactuals_preserve_five_condition_carrier_batch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    script = _load_analysis_script()
+    batch, intervals, columns, width = 5, 3, 5, 4
+    initial = torch.arange(
+        batch * intervals * columns * width, dtype=torch.float32,
+    ).reshape(batch, intervals, columns, width)
+    endpoints = torch.arange(intervals).repeat(batch, 1)
+    valid_intervals = torch.ones(batch, intervals, dtype=torch.bool)
+    valid_semantics = torch.ones(batch, columns, dtype=torch.bool)
+    calls = []
+
+    def fake_variant_result(**kwargs: object) -> dict[str, object]:
+        calls.append({
+            key: kwargs[key].clone()
+            for key in (
+                "initial", "endpoints", "valid_intervals", "valid_semantics",
+            )
+        })
+        return {
+            "program": torch.ones(2), "coordinates": torch.ones(2),
+            "factor": {"value": torch.ones(2)},
+            "public": {"value": torch.ones(2)},
+            "action": torch.ones(2), "reader": {},
+            "coordinate_summary": {}, "geometry": {},
+        }
+
+    zero_metrics = {
+        key: {"relative_l2": 0.0}
+        for key in (
+            "program", "coordinates", "factor", "public_a", "public_b",
+            "effective_ba", "policy_action",
+        )
+    }
+    monkeypatch.setattr(script, "_variant_result", fake_variant_result)
+    monkeypatch.setattr(
+        script, "_variant_comparison", lambda *_args, **_kwargs: zero_metrics,
+    )
+    monkeypatch.setattr(
+        script, "_routing_diagnostics", lambda **_kwargs: {},
+    )
+    encoded = {
+        "initial": initial, "endpoints": endpoints,
+        "valid_intervals": valid_intervals,
+        "valid_semantics": valid_semantics,
+        "prepared": {}, "action_seed": 7,
+        "states": [{"value": torch.ones(2)}],
+        "factor_states": [{"value": torch.ones(2)}],
+        "coordinates": torch.ones(batch, 2),
+        "actions": [torch.ones(2)],
+    }
+    script._counterfactual_diagnostics(
+        writer=SimpleNamespace(), policy=SimpleNamespace(),
+        processor=SimpleNamespace(), identity={}, lora=None,
+        device=torch.device("cpu"), encoded=encoded,
+    )
+
+    assert len(calls) == 17
+    assert any(not torch.equal(call["initial"][0], initial[0]) for call in calls[1:])
+    for call in calls:
+        assert call["initial"].shape[0] == batch
+        assert torch.equal(call["initial"][1:], initial[1:])
+        assert torch.equal(call["endpoints"], endpoints)
+        assert torch.equal(call["valid_intervals"], valid_intervals)
+        assert torch.equal(call["valid_semantics"], valid_semantics)
+
+
 def test_finalize_broadcasts_main_failure_without_barrier(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:

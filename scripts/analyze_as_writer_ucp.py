@@ -187,7 +187,10 @@ def _variant_result(
     initial: torch.Tensor, endpoints: torch.Tensor, valid_intervals: torch.Tensor,
     valid_semantics: torch.Tensor, device: torch.device,
     target_permutation: torch.Tensor | None = None,
+    selected_row: int = 0,
 ) -> dict[str, Any]:
+    if not 0 <= selected_row < initial.shape[0]:
+        raise WriterModelError("invalid UCP variant result row")
     with torch.inference_mode(), torch.autocast(
         device_type=device.type, dtype=torch.bfloat16,
         enabled=device.type in {"cpu", "cuda"},
@@ -197,22 +200,35 @@ def _variant_result(
             target_permutation,
         )
         factors, public = decode_coordinates(writer, coordinates)
-    state = split_state(public, 0)
+    state = split_state(public, selected_row)
     validate_lora_state(state, lora)
     action = policy_action(
         policy=policy, processor=processor, prepared=prepared, state=state,
         identity=identity, lora=lora, seed=seed, device=device,
     )
+    row = slice(selected_row, selected_row + 1)
+    valid_grid = (
+        valid_intervals[selected_row, :, None]
+        & valid_semantics[selected_row, None, :]
+    )
     return {
-        "program": program_signature(final[0], valid_intervals[0], valid_semantics[0]),
-        "coordinates": coordinates[0].float(),
-        "factor": split_state(factors, 0),
+        "program": program_signature(
+            final[selected_row], valid_intervals[selected_row],
+            valid_semantics[selected_row],
+        ),
+        "coordinates": coordinates[selected_row].float(),
+        "factor": split_state(factors, selected_row),
         "public": state,
         "action": action,
-        "reader": reader_attention_summary(attention, valid_intervals, valid_semantics),
-        "coordinate_summary": coordinate_summary(coordinates[0]),
+        "reader": reader_attention_summary(
+            attention[row], valid_intervals[row], valid_semantics[row],
+        ),
+        "coordinate_summary": coordinate_summary(coordinates[selected_row]),
         "geometry": lora_geometry(writer, state),
-        "block_rms": [float(torch.sqrt(block.float().square().mean())) for block in blocks],
+        "block_rms": [
+            float(torch.sqrt(block[selected_row][valid_grid].float().square().mean()))
+            for block in blocks
+        ],
     }
 
 
@@ -236,14 +252,13 @@ def _routing_diagnostics(
     lora: Any, device: torch.device, encoded: Mapping[str, Any],
     shared: Mapping[str, Any], full: Mapping[str, Any],
 ) -> dict[str, Any]:
-    selected = slice(0, 1)
     target_permutation = torch.roll(torch.arange(
         writer.compiler.target_count, device=device), -1)
     target_variant = _variant_result(
-        **shared, initial=encoded["initial"][selected],
-        endpoints=encoded["endpoints"][selected],
-        valid_intervals=encoded["valid_intervals"][selected],
-        valid_semantics=encoded["valid_semantics"][selected],
+        **shared, initial=encoded["initial"],
+        endpoints=encoded["endpoints"],
+        valid_intervals=encoded["valid_intervals"],
+        valid_semantics=encoded["valid_semantics"],
         target_permutation=target_permutation,
     )
     rank_permutation = torch.roll(torch.arange(
@@ -397,17 +412,16 @@ def _counterfactual_diagnostics(
     processor: Pi05LiberoProcessor, identity: Mapping[str, torch.Tensor],
     lora: Any, device: torch.device, encoded: Mapping[str, Any],
 ) -> dict[str, Any]:
-    selected = slice(0, 1)
     shared = {
         "writer": writer, "policy": policy, "processor": processor,
         "prepared": encoded["prepared"], "identity": identity, "lora": lora,
         "seed": encoded["action_seed"], "device": device,
     }
     full = _variant_result(
-        **shared, initial=encoded["initial"][selected],
-        endpoints=encoded["endpoints"][selected],
-        valid_intervals=encoded["valid_intervals"][selected],
-        valid_semantics=encoded["valid_semantics"][selected],
+        **shared, initial=encoded["initial"],
+        endpoints=encoded["endpoints"],
+        valid_intervals=encoded["valid_intervals"],
+        valid_semantics=encoded["valid_semantics"],
     )
     canonical = {**full, "public": encoded["states"][0],
                  "factor": encoded["factor_states"][0],
@@ -436,12 +450,22 @@ def _counterfactual_diagnostics(
         "reader": full["reader"], "coordinate_summary": full["coordinate_summary"],
         "geometry": full["geometry"],
     }}
+    initial = encoded["initial"]
+
+    def carrier_with_reference(candidate: torch.Tensor) -> torch.Tensor:
+        if candidate.shape != initial[0:1].shape:
+            raise WriterModelError("UCP counterfactual reference shape changed")
+        carrier = initial.clone()
+        carrier[0:1] = candidate
+        return carrier
+
     for name in ("x_only", "dynamic_only", "a_only", "d_only"):
+        candidate = carrier_with_reference(type_ablation(initial[0:1], name))
         value = _variant_result(
-            **shared, initial=type_ablation(encoded["initial"][selected], name),
-            endpoints=encoded["endpoints"][selected],
-            valid_intervals=encoded["valid_intervals"][selected],
-            valid_semantics=encoded["valid_semantics"][selected],
+            **shared, initial=candidate,
+            endpoints=encoded["endpoints"],
+            valid_intervals=encoded["valid_intervals"],
+            valid_semantics=encoded["valid_semantics"],
         )
         ablations[name] = {
             "relative_to_full": _variant_comparison(writer, full, value),
@@ -449,7 +473,6 @@ def _counterfactual_diagnostics(
             "coordinate_summary": value["coordinate_summary"],
             "geometry": value["geometry"],
         }
-    initial = encoded["initial"]
     task_tokens = (initial.shape[2] - 1) // 2
     fixed_streams = {}
     for output_key, fixed in (
@@ -457,26 +480,27 @@ def _counterfactual_diagnostics(
     ):
         comparisons = {}
         for row, condition in enumerate(CONDITIONS):
-            candidate = fixed_stream_counterfactual(
+            candidate = carrier_with_reference(fixed_stream_counterfactual(
                 initial, encoded["valid_intervals"], row, fixed=fixed,
-            )
+            ))
             value = _variant_result(
                 **shared, initial=candidate,
-                endpoints=encoded["endpoints"][selected],
-                valid_intervals=encoded["valid_intervals"][selected],
-                valid_semantics=encoded["valid_semantics"][selected],
+                endpoints=encoded["endpoints"],
+                valid_intervals=encoded["valid_intervals"],
+                valid_semantics=encoded["valid_semantics"],
             )
             comparisons[condition] = _variant_comparison(writer, full, value)
         fixed_streams[output_key] = comparisons
     scales = {}
     for scale in (.5, 1.0, 2.0):
-        candidate = initial[selected].clone()
+        candidate = initial[0:1].clone()
         candidate[:, :, task_tokens:] *= scale
+        candidate = carrier_with_reference(candidate)
         value = full if scale == 1 else _variant_result(
             **shared, initial=candidate,
-            endpoints=encoded["endpoints"][selected],
-            valid_intervals=encoded["valid_intervals"][selected],
-            valid_semantics=encoded["valid_semantics"][selected],
+            endpoints=encoded["endpoints"],
+            valid_intervals=encoded["valid_intervals"],
+            valid_semantics=encoded["valid_semantics"],
         )
         scales[str(scale)] = {
             "relative_to_scale1": _variant_comparison(writer, full, value),

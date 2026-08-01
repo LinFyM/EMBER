@@ -1,12 +1,35 @@
 # EMBER Progress Ledger
 
-最后更新：2026-07-31。
+最后更新：2026-08-01。
 
 阅读规则：本文按时间顺序保留真实执行状态。早期段落中的“当前”“下一步”、
 GPU范围和训练步长是当时快照；活动状态只取
 `docs/active_session_handoff.md`、
 `docs/action_forecast_writer_semantic_program_grid_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
+
+## 2026-08-01 v5.2正式评测、五臂与内部分析封存
+
+- paired correct400候选macro150/200/350/400完成，为`51/91/106/120`；选择
+  single-checkpoint macro400，不做checkpoint融合。
+- macro400正式五臂完成：`120/109/107/111/124`。逐task、逐suite、gained/lost
+  state和严格pairing审计封存；四个控制臂都没有证明correct的行为优势。
+- exact50 LoRA几何与五条件Core/Procedure/BA/fixed-action反事实完成；数值顺序
+  信号可下传，但same-task视频方差缩至sample energy的`.6844%`且方向未与行为
+  收益对齐。v5.2新recipe cell因此完成并停止，不再训练或评测。
+
+## 2026-08-01 SPG最长profile与CP通信修复
+
+- 初始最长profile macro1完成后，macro2在CP Gram交换处stall；只终止本任务
+  tmux，未触碰任何外部进程。最小NCCL/Gram probe健康，逐phase trace把故障定位
+  为分块all-gather仅入队、缺少逐chunk CUDA completion boundary。
+- canonical CP实现加入每CUDA Gram chunk的stream completion，并记录
+  all-gather/sync计数；CPU/Gloo路径保持0 sync。修复后原始105-frame/B20 profile
+  三macro连续通过，step wall `20.536/18.578/18.546s`，峰值reserved
+  `83,529,556,160` bytes。
+- 72个单视频条件、1,440 queries全finite；每步24 tasks唯一且long-first，
+  macro2起所有五个主块梯度可达。下一步是同一干净commit上的formal-seed
+  fresh0→1→exact-resume1→3，不从profile warm-start。
 
 ## 2026-07-31 v5.2 task-complete macro400与候选启动
 

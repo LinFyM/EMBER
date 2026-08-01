@@ -134,6 +134,7 @@ def test_bounded_cp_composition_matches_sorted_reference_on_one_rank() -> None:
     ):
         assert bounded_metrics[key] == reference_metrics[key]
     assert bounded_metrics["gradient_gram_chunk_allgathers"] == 0
+    assert bounded_metrics["gradient_gram_chunk_cuda_synchronizations"] == 0
     assert bounded_metrics["distributed_full_gradient_materialized"] is False
 
 
@@ -226,6 +227,7 @@ def test_bounded_cp_composition_matches_reference_across_two_ranks(
             "raw_gradient_gram"
         ]
         assert output["metrics"]["gradient_gram_chunk_allgathers"] == 2
+        assert output["metrics"]["gradient_gram_chunk_cuda_synchronizations"] == 0
         assert output["metrics"]["gradient_weight_broadcasts"] == 1
         assert output["metrics"]["gradient_weight_authority_rank"] == 0
         assert output["metrics"]["gathered_task_ids"] == [7, 3, 11, 5]

@@ -277,6 +277,17 @@ def _distributed_gradient_grams(
                     device=local_gradients.device,
                 )
                 dist.all_gather_into_tensor(gathered_chunk, local_chunk)
+                # NCCL's synchronous Python API only guarantees that work is
+                # enqueued on the CUDA stream.  Without an explicit device
+                # completion boundary, faster ranks can queue every bounded
+                # chunk while a co-scheduled rank has not entered the first
+                # Gram exchange, leaving persistent NCCL kernels starved.  A
+                # per-chunk stream wait makes the memory bound real and keeps
+                # all ranks on the same collective under shared-GPU load.
+                if local_gradients.is_cuda:
+                    torch.cuda.current_stream(
+                        local_gradients.device
+                    ).synchronize()
             contribution = gathered_chunk @ gathered_chunk.T
             block_gram.add_(contribution)
             del contribution, gathered_chunk, local_chunk
@@ -535,6 +546,11 @@ def compose_distributed_conflict_projected_gradient(
             for _, start, stop in _contiguous_block_ranges(layout)
         )
         if world_size > 1
+        else 0
+    )
+    metrics["gradient_gram_chunk_cuda_synchronizations"] = (
+        metrics["gradient_gram_chunk_allgathers"]
+        if local_gradients.is_cuda
         else 0
     )
     metrics["gradient_task_id_allgathers"] = 1 if world_size > 1 else 0

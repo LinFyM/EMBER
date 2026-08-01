@@ -1,6 +1,6 @@
 # EMBER focused active session handoff
 
-最后更新：2026-07-31 UTC。
+最后更新：2026-08-01 UTC。
 
 本文顶部保存当前运行状态、恢复入口和紧邻动作；后续编号章节是按时间保留的
 历史快照。当前下一架构authority是
@@ -8,10 +8,100 @@
 `AGENTS.md`与`docs/execution_brief.md`。任何接手者都必须先只读复核现场，
 不能按历史快照重复启动进程。
 
-## 0. 新session恢复与持续推进合同
+## 0. 2026-08-01当前状态与紧邻动作
+
+v5.2 task-complete训练、四候选、winner五臂、exact50 LoRA几何和五条件内部传递
+已经全部完成；当前没有需要继承的v5.2训练或评测。candidate correct400为
+`51/91/106/120`，macro400 winner五臂为`120/109/107/111/124`。本轮没有行为
+视频特异性；内部虽确认顺序变化传到effective BA与policy action，但same-task
+视频中心化方差只占sample energy的`.6844%`，且方向未与闭环收益对齐。
+
+SPG独立写worktree仍为：
+
+```text
+/data/ymdai/.codex/worktrees/EMBER-spg-60f4508-20260731
+```
+
+canonical实现精确参数`10,633,216`。最长105-frame、B20、四rank的三宏步profile
+已在CP通信完成性修复后稳定通过，step wall为
+`20.5359/18.5778/18.5461s`，峰值allocated/reserved为
+`77,203,449,344/83,529,556,160` bytes。72个视频条件、1,440 queries均finite，
+每步24 tasks唯一、rank内long-first，macro2起五个主模块都有有限非零梯度。
+
+profile root与三项seal为：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_spg_cp24_profile_b20_longseed172_sync_v2_7c1b9fc_20260801
+run contract  f4787296e57c1c31f6a011e8e6b3b37e6704b198ef8ea613cf26b607fa87ca17
+metrics       b70d7b2920139235c11a1e3028e18cda29416745f7235d8fc84eb3c87eee6c78
+run summary   74f3d35eb7a1eae5c901bdac4ea2ca539a51bd38413b1d01d46a74569b34d672
+```
+
+首次profile的macro2在共卡条件下stall。phase trace证明NCCL的同步Python接口只
+保证all-gather排入CUDA stream，快rank可排入全部bounded chunks而慢rank尚未进入
+首chunk。canonical修复在每个CUDA Gram chunk后形成显式stream completion
+boundary，并记录all-gather/sync计数；它不改变Gram、PCGrad或optimizer数学。
+
+紧邻且唯一应启动的验证是：把当前代码、配置和文档提交为同一干净commit，在
+formal teacher seed `20260722`上fresh0→1，再从step1 exact-resume到3；fresh与
+resume之间不得编辑worktree。通过后把resume evidence写入config并再次提交，
+fast-forward main、push origin/main，再从该clean commit的detached frozen
+worktree fresh启动SPG macro0→200。不得从profile/smoke warm-start。
+
+GPU只可查询和使用物理4–7；0–3不得查询或进入visible set。4–7可按owner授权
+共卡，但不得杀、暂停、重置或干扰其他进程。
+
+## 0.1 v5.2最终正式证据
+
+正式训练root：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v52_taskcomplete_decay400_formal_dev_r4_b20_seed7_60f4508_20260731
+```
+
+macro150/200/350/400逐task分别为：
+
+```text
+macro150  5/0/0/31/12/1/0/2
+macro200  20/0/0/35/24/9/1/2
+macro350  23/0/0/18/33/31/0/1
+macro400  33/0/0/30/25/32/0/0
+```
+
+winner五臂逐task为：
+
+```text
+Long-1    33/31/20/23/27
+Long-2     0/ 0/ 2/ 0/ 0
+Goal-3     0/ 0/ 0/ 0/ 0
+Goal-6    30/29/37/31/37
+Object-1  25/24/14/21/22
+Object-3  32/24/33/34/35
+Spatial-1  0/ 1/ 1/ 0/ 2
+Spatial-3  0/ 0/ 0/ 2/ 1
+```
+
+严格paired分析、exact50 geometry和完整内部传递分别封存在：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v52_taskcomplete_decay400_winner_five_arm_paired_seed7_macro0400_60f4508_20260731/analysis.json
+pi05_as_writer_v52_taskcomplete_decay400_winner_lora_geometry_correct_macro0400_v2_60f4508_20260801/analysis.json
+pi05_as_writer_v52_taskcomplete_decay400_winner_internal_specificity_macro0400_refs2_v4_60f4508_20260801/
+```
+
+exact50 effective norm/stable rank/top energy为
+`113.5185/1.000305/99.9699%`，q/v/action energy为
+`72.701/27.269/.030%`，q/v跨层cosine`.9723/.9837`。functional validation在
+macro200更优而behavior到macro400继续上升，且checkpoint间出现明显task轮换；
+不得把functional loss作为closed-loop选择器，也不得继续同一v5.2 recipe。
+
+## 0.3 2026-07-31历史恢复合同（不得按此重复启动）
 
 强制authority、代码、Git历史和正式artifact审计已完成。exact v5.2
-task-complete正式训练已经完成；当前tmux `ember-v52-candidates-60f4508`在物理
+task-complete正式训练已经完成；当时tmux `ember-v52-candidates-60f4508`在物理
 GPU4–7上分别评测macro150/200/350/400 paired correct400。输出root统一前缀为
 `/data/ymdai/outputs/ember/pi05_as_writer_v52_taskcomplete_decay400_correct400_`
 `noreplacement_seed7_macro*60f4508_20260731`。不得重复启动这些root。
@@ -20,7 +110,7 @@ GPU4–7上分别评测macro150/200/350/400 paired correct400。输出root统一
 config: configs/pi05_as_writer_language_axial_v5_2_taskcomplete_decay400_v1.json
 fresh identity macro0→400                 已完成
 every25 checkpoint
-paired correct400: macro150/200/350/400    正在四卡并行
+paired correct400: macro150/200/350/400    当时正在四卡并行
 single-checkpoint winner
 winner formal correct/same/wrong/shuffled/reversed 400
 winner internal Core/Procedure/LoRA/action/rank/layer/video analysis
@@ -52,7 +142,7 @@ focused Goal不是机械`correct400>=150`。150只是里程碑；只要仍存在
 GPU只可使用物理4–7，0–3不得查询或进入visible set。4–7可按owner授权与他人
 共卡，但不得杀、暂停、重置或干扰其他进程。
 
-## 0.1 v5.2正式训练完成与候选评测
+## 0.4 v5.2正式训练与候选启动历史快照
 
 正式训练root：
 

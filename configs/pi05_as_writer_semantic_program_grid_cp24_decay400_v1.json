@@ -136,7 +136,7 @@
     ],
     "action_chunk_size": 50,
     "sampler_seed": 20260721,
-    "teacher_video_seed": 172,
+    "teacher_video_seed": 20260722,
     "teacher_video_sampling": "per_task_macro_visit_deterministic_single_same_task_video_in_no_replacement_cycles",
     "action_query_sampling": "task-balanced deterministic no-replacement episode cycles",
     "video_action_pairing": "one task-video LoRA conditions the complete task-local action batch",
@@ -199,7 +199,7 @@
     "budget_role": "fresh_semantic_program_grid_cp24_one_hour_then_evidence_gated_exact_resume"
   },
   "profile_defaults": {
-    "status": "pending_spg_b20_live_profile",
+    "status": "sealed_b20_after_live_105_frame_profile",
     "expected_world_size": 4,
     "total_steps": 3,
     "per_rank_batch_size": 20,
@@ -211,7 +211,7 @@
     "selected_stop_step": 3
   },
   "profile_evidence": {
-    "status": "pending_spg_b20_live_profile",
+    "status": "sealed_b20_after_live_105_frame_profile",
     "allowed_physical_gpu_ids": [
       4,
       5,
@@ -234,9 +234,43 @@
       "per_task_action_batch_size": 16
     },
     "selection_rule": "try_b20_on_three_complete_macros_containing_real_105_frame_video_then_fallback_directly_to_b16_only_if_oom_or_repeated_instability",
-    "selected": null,
+    "selected": {
+      "max_frames_per_encoder_call": 32,
+      "per_task_action_batch_size": 20,
+      "profile_optimizer_steps": 3,
+      "profile_global_action_queries": 1440,
+      "profile_global_video_conditions": 72,
+      "profile_wall_seconds": 58.7080145557411,
+      "step_seconds_max": [
+        20.53590745292604,
+        18.577799974940717,
+        18.546132448129356
+      ],
+      "steady_action_queries_per_second_mean_last_two": 25.85934829318927,
+      "steady_macro_updates_per_hour_mean_last_two": 193.94511219891956,
+      "max_cuda_allocated_bytes": 77203449344,
+      "max_cuda_reserved_bytes": 83529564160,
+      "all_steps_finite": true,
+      "all_four_ranks_completed": true,
+      "contains_real_105_frame_video": true,
+      "all_main_blocks_gradient_reachable_after_identity_step": true,
+      "profile_root": "/data/ymdai/outputs/ember/pi05_as_writer_spg_cp24_profile_b20_longseed172_sync_v2_7c1b9fc_20260801",
+      "profile_run_contract_sha256": "f4787296e57c1c31f6a011e8e6b3b37e6704b198ef8ea613cf26b607fa87ca17",
+      "profile_metrics_sha256": "b70d7b2920139235c11a1e3028e18cda29416745f7235d8fc84eb3c87eee6c78",
+      "profile_run_summary_sha256": "74f3d35eb7a1eae5c901bdac4ea2ca539a51bd38413b1d01d46a74569b34d672"
+    },
     "exact_resume_smoke": null,
-    "gradient_reachability": null,
+    "gradient_reachability": {
+      "status": "confirmed_after_identity_output_step",
+      "first_nonzero_main_path_macro": 2,
+      "finite_nonzero_blocks": [
+        "semantic_frontend",
+        "core",
+        "program",
+        "compiler",
+        "factor"
+      ]
+    },
     "inference_profile": null
   },
   "specificity_gate": {
@@ -252,7 +286,7 @@
     "contrast_loss_allowed": false
   },
   "formal_run": {
-    "status": "pending_spg_b20_live_profile",
+    "status": "pending_exact_resume_smoke_after_b20_profile_seal",
     "expected_world_size": 4,
     "total_steps": 400,
     "per_rank_batch_size": 20,

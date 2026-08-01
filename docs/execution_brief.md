@@ -1,24 +1,25 @@
 # EMBER Current Execution Brief
 
-## 2026-07-31 current override
+## 2026-08-01 current override
 
 当前下一整体架构设计为
 [`action_forecast_writer_semantic_program_grid_design.md`](action_forecast_writer_semantic_program_grid_design.md)。
-此前Coherent-Procedure/B-only residual提案已撤回，不得实现。
-exact v5.2 topology已从clean frozen `60f4508`完成mature task-complete
-fresh macro0→400正式训练：`192,000` action queries、`9,600`单视频条件、
-wall `9695.13s`，全程finite且validation/test action读取为0。当前tmux
-`ember-v52-candidates-60f4508`正用GPU4–7并行评测macro150/200/350/400
-paired correct400；尚无本轮行为结果，不得从functional loss推断closed-loop。
+此前Coherent-Procedure/B-only residual提案已撤回，不得实现。exact v5.2
+task-complete的macro150/200/350/400 correct400为`51/91/106/120`；macro400
+winner五臂为`120/109/107/111/124`。它只覆盖4/8 tasks，reversed高于correct；
+内部顺序差异虽可传到effective LoRA/action，却没有与闭环收益对齐。same-task
+中心化方差/sample energy仅`.6844%`，低于旧v5.2的`1.6655%`。本轮v5.2已封存，
+不得resume或重复评测。
 
-本session已完成v5.2 step900的400套correct-video LoRA内部几何分析且零rollout。
-结果证明16个q/v坐标能量均匀、没有负向相消，近rank1来自建设性同向协作；
-强制正交/高rank的Target-Spectral为明确负结果。永久分析artifact及SHA见
-`docs/active_session_handoff.md`。
+SPG canonical实现参数`10,633,216`；最长105-frame B20四卡三宏步profile已经
+通过，step wall `20.536/18.578/18.546s`，峰值reserved `83.53GB`，五个主模块
+从macro2起全部梯度可达。CP-24实测negative pair fraction约`.35–.41`。首次
+profile暴露的共卡NCCL chunk入队stall已通过逐chunk CUDA completion boundary
+修复，且同一最长profile重跑稳定；该修复不改变CP数学。
 
-四个v5.2候选完成后选择single-checkpoint winner，补正式五臂和内部几何。
-SPG canonical CPU实现已经完成并通过`201`项全仓测试，真实B20/profile/resume与
-性能训练尚未执行；以后每版新整体架构先一小时，
+当前紧邻动作是在同一clean commit和formal seed上完成fresh0→1→exact-resume1→3，
+seal后push origin/main，再从detached frozen worktree fresh训练SPG macro0→200。
+以后每版新整体架构先一小时，
 达到同期有效旧架构水平或显示明确价值才续第二小时和行为五臂，否则只做充分
 内部分析后从根因重构。150只是里程碑，不是focused自动终点。以下在`## 1`
 之前的旧状态叙述只作历史背景，不得覆盖本节。

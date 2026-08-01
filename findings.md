@@ -6,6 +6,43 @@
 `docs/action_forecast_writer_semantic_program_grid_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-01 v5.2 task-complete闭环结论
+
+- macro150/200/350/400 paired correct400为`51/91/106/120`；winner macro400
+  每task为`33/0/0/30/25/32/0/0`，只有4/8 tasks非零。checkpoint间不是共同
+  单调增长：Long-6和Object-1从macro200后回落，Object-3上升，Spatial两task
+  回到0，能力轮换仍在。
+- winner五臂correct/same/wrong/shuffled/reversed为`120/109/107/111/124`；
+  reversed反而高于correct，五臂breadth均未证明正确视频的额外闭环收益。因此
+  本轮v5.2没有行为视频特异性，不能因absolute高于source base就宣称教学成立。
+- exact50 correct几何的effective norm/stable rank/top energy为
+  `113.5185/1.000305/99.9699%`，q/v/action能量为
+  `72.701/27.269/.030%`，q/v跨层cosine`.9723/.9837`；16坐标仍建设性参与。
+- same-task centered variance/sample energy只有`.6844%`，低于旧v5.2的
+  `1.6655%`，但其中约`91.22%`仍是orthogonal-direction变化。五条件内部反事实
+  确认Procedure差异传到effective BA和fixed-query action；失败不是数值链路
+  完全断开，而是变化方向没有与closed-loop收益对齐。
+- functional validation在macro200更优而behavior继续涨到macro400；微小参数
+  位移伴随大量gained/lost states。当前证据降低“只需继续训练/放大视频信号”的
+  可信度，优先支持functional surrogate与有效policy manifold错位、task轮换和
+  单视频条件创新缩弱。
+
+## 2026-08-01 SPG B20与CP-24现场证据
+
+- 最长105-frame、B20、四rank的三完整macro profile在CP通信修复后连续完成：
+  `20.5359/18.5778/18.5461s`，1,440 queries、72 videos全finite；峰值
+  allocated/reserved为`77.20/83.53GB`。
+- 原始profile的macro1完成后，macro2在共卡条件下长时间无进展。逐phase trace
+  证明NCCL同步Python调用只把bounded Gram all-gather排入CUDA stream；快rank可
+  排入全部13 chunks而慢rank尚未进入首chunk，故“分块”没有形成完成边界。
+- canonical修复是在每个CUDA Gram chunk后显式同步当前stream；CPU/Gloo不走
+  该路径。修复不改变Gram、projection或optimizer数学，只保证所有rank在同一
+  bounded collective上前进。原始最长profile重跑随后稳定通过。
+- 三macro negative pair fraction为`.4058/.3514/.4058`，raw/projected cosine
+  `.8410/.9426/.9689`；macro2起frontend/Core/Program/compiler/factor梯度均
+  finite非零。真实task负冲突存在，但只有正式checkpoint漂移曲线才能判断CP-24
+  是否解决科学问题；工程profile不能冒充closed-loop收益。
+
 ## 2026-07-31 v5.2 task-complete正式训练完成
 
 - clean frozen commit `60f4508`上的exact v5.2 topology完成fresh macro0→400；
@@ -14,9 +51,9 @@
 - 训练wall `9695.1329s`；macro400 functional train loss `.09633848`、grad norm
   `.10484845`、LR `1.00045e-5`，functional validation loss `.13686878`。全程无
   OOM/NaN，validation/test action读取为0；这些只证明训练合同，不预测行为。
-- macro150/200/350/400的paired correct400已各分配GPU4/5/6/7并行执行。候选
-  panel固定8 validation tasks×50 states、teacher demos每task 0..49无放回，
-  B-scale1且共用state/env/policy/video schedule；结果完成前不选择winner。
+- macro150/200/350/400的paired panel固定8 validation tasks×50 states、teacher
+  demos每task0..49无放回，B-scale1且共用state/env/policy/video schedule；
+  最终结果与机制结论见上方2026-08-01段。
 
 ## 2026-07-31 SPG独立复核与canonical实现
 
@@ -37,10 +74,10 @@
   `1,836,544`、Program `1,837,568`、compiler `1,326,592`、factor heads
   `2,179,072`。source policy trainable参数为0，public rank16仍是38 targets/
   76 tensors/`1,287,168` scalars。
-- 全仓`201 passed in 26.18s`；shape、mask、Core permutation、Program prefix、
+- 初始实现全仓`201 passed in 26.18s`；shape、mask、Core permutation、Program prefix、
   identity、freeze、gradient、CP world2和checkpoint schema均通过。architecture
-  guard为REVIEW但无hard violation。尚未做真实B20 profile、resume或性能实验，
-  因而这些是实现合同证据，不是科学结果。
+  guard为REVIEW但无hard violation。真实B20 profile后续结果见上方2026-08-01段；
+  fresh/exact-resume与性能实验在本段时间点仍未执行。
 
 ## 2026-07-31 SPG整体架构定稿与持续迭代合同
 

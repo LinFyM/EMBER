@@ -1,13 +1,13 @@
 # EMBER Task Plan
 
-最后更新：2026-07-31 UTC。
+最后更新：2026-08-01 UTC。
 
 本文件只保存尚未完成的长期闭环与当前执行顺序。历史实验过程见
 `findings.md`、`progress.md` 和 Git；实时进程见
 `docs/active_session_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
 runner、split 或 GPU 权限。
 
-## 当前交接顺序（2026-07-31）
+## 当前交接顺序（2026-08-01）
 
 - [x] 恢复exact v5.2 topology到mature task-complete/B20/long-first/
   fast-decay400 config，并完成最长视频profile与exact-resume smoke。
@@ -16,20 +16,24 @@ runner、split 或 GPU 权限。
 - [x] 撤回Coherent-Procedure/B-only residual，封存完整SPG模型与CP-24训练设计。
 - [x] 新session完成全部authority、代码、Git历史和正式artifact审计，并从独立
   frozen `60f4508` worktree启动v5.2 task-complete fresh macro0→400。
-- [ ] 评测single-checkpoint macro150/200/350/400；winner补正式五臂和内部
-  LoRA几何，不融合checkpoint。
+- [x] v5.2 macro150/200/350/400 paired correct400完成，为
+  `51/91/106/120`；winner macro400五臂`120/109/107/111/124`，exact50几何和
+  Core→Procedure→LoRA→action内部传递完成，不融合checkpoint。
 - [x] v5.2 run挂起后充分阅读全部文档、代码、Git历史与正式outputs，形成完整
   v1→SPG证据模型。
 - [x] 独立复核并实现canonical SPG+CP-24；精确参数`10,633,216`，全仓
   `201 passed`，architecture guard无hard violation。
-- [ ] 按干净commit staging完成SPG最长105-frame B20四卡profile、formal-seed
-  fresh0→1→exact-resume1→3，再seal并启动fresh macro0→200一小时先验门。
+- [x] SPG最长105-frame B20四卡三macro profile通过；定位并修复共卡NCCL
+  chunk只入队导致的CP-24 starvation，修复后step为
+  `20.536/18.578/18.546s`且全部主模块梯度可达。
+- [ ] 在同一干净commit和formal seed完成fresh0→1→exact-resume1→3，再seal、
+  fast-forward main、push并从frozen worktree启动fresh macro0→200一小时先验门。
 - [ ] SPG及后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才
   开第二小时和行为五臂。
 - [ ] 持续定位task漂移、视频学习和closed-loop off-manifold根因，禁止补丁式
   gate/scale/bypass；150不是自动完成线。
 
-当前v5.2正式训练与随后评测的实时状态只认
+当前SPG resume seal与随后正式训练的实时状态只认
 `docs/active_session_handoff.md`。
 
 ## 长期完成定义

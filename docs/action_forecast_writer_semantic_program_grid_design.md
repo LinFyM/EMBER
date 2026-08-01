@@ -1,9 +1,9 @@
 # EMBER Semantic Program Grid Writer（SPG）
 
-状态：2026-07-31 已完成独立复核与canonical CPU实现；真实B20四卡profile、
-fresh/exact-resume和正式训练尚未执行。当前精确参数为`10,633,216`，全仓201项
-CPU测试与两进程分布式CP回归通过；architecture guard为REVIEW且无hard
-violation。这些只证明实现合同，不构成性能证据。
+状态：2026-08-01 已完成独立复核、canonical实现和最长105-frame B20四卡三宏步
+profile；fresh/exact-resume seal与正式训练尚未执行。当前精确参数为
+`10,633,216`。profile的72个单视频条件、1,440条action queries全finite，
+macro2起全部主模块梯度可达；这些仍只证明实现/容量合同，不构成性能证据。
 
 本文取代已撤回的Coherent-Procedure/B-only residual提案。SPG不是v5.2或v6的
 局部补丁，也不等待v5.2 task-complete结果才决定拓扑。它基于v1至
@@ -269,11 +269,17 @@ CP-24严格退化为当前full24均值。
 冲突已消失”。实现只长期保留每rank六个local task gradients，通过跨rank通信在
 macro boundary形成全24-task统计，不建立第二optimizer或跨macro gradient state。
 为避免B20后再物化`24×P`全局梯度，每次只all-gather最多`1,048,576`个参数坐标
-并累加full/block Gram；投影系数在`24×24`空间求解。为避免不同GPU在PCGrad
+并累加full/block Gram；每个NCCL chunk在进入下一chunk前显式等待当前CUDA
+stream完成。2026-08-01的共卡phase trace证明Python同步collective调用只保证
+work入队：没有这个completion boundary时，快rank可连续排入全部13个chunk，
+而慢rank尚未进入首个Gram exchange，形成持续NCCL starvation。显式等待后同一
+最长profile连续三macro完成，因此这是一项分块通信完成性合同，不改变CP数学。
+投影系数在`24×24`空间求解。为避免不同GPU在PCGrad
 零点附近发生浮点分支分歧，由rank0广播最终24个系数，各rank再以本地六条梯度
 形成加权方向并做一次sum all-reduce。该tiny broadcast只统一数值authority，
 不改变投影定义；无冲突时权重严格为`1/24`，因此与原full24 mean是同一更新。
-正式profile仍须验证真实峰值和吞吐。
+正式日志记录chunk all-gather和CUDA completion次数，两者在四卡CUDA路径必须
+相等；CPU/Gloo路径completion计数为0。
 
 它不是两阶段训练、gradient accumulation recipe、task-local optimizer、
 loss-based task reweight、checkpoint融合、多视频或多LoRA平均。额外记录但不
@@ -315,6 +321,18 @@ semantic frontend `3,453,440`、mean-backed Core `1,836,544`、两层Program
 `1,837,568`、target/rank compiler `1,326,592`、八个factor heads
 `2,179,072`。低于早期约11.0M估算来自Program/compiler的raw-value attention
 不另设value projection，而不是缩窄width、heads或factor hidden。
+
+2026-08-01最长真实105-frame B20 profile root为
+`/data/ymdai/outputs/ember/pi05_as_writer_spg_cp24_profile_b20_longseed172_sync_v2_7c1b9fc_20260801`。
+三步wall为`20.5359/18.5778/18.5461s`，稳态约`25.859` queries/s、
+`193.945` macros/hour；峰值allocated/reserved为
+`77,203,449,344/83,529,556,160` bytes。每步24个唯一tasks、每task一条video/
+一套LoRA/B20，rank内真实视频长度long-first。negative cosine pair fraction为
+`.4058/.3514/.4058`，raw/projected cosine为`.8410/.9426/.9689`；macro2的
+frontend/Core/Program/compiler/factor mean gradient norms分别为
+`.007706/.003975/.002049/.003736/.129495`。因此CP确实看见task冲突，且SPG
+主路径在identity输出层离开零点后全部可达；是否改善closed-loop漂移仍必须由
+正式checkpoint曲线证伪。
 
 ### 9.1 实现owner与生命周期
 

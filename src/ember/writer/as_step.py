@@ -302,6 +302,9 @@ def _gradient_step_metrics(
         "gradient_gram_chunk_allgathers_this_step": int(
             conflict_projection["gradient_gram_chunk_allgathers"]
         ),
+        "gradient_gram_chunk_cuda_synchronizations_this_step": int(
+            conflict_projection["gradient_gram_chunk_cuda_synchronizations"]
+        ),
         "gradient_task_id_allgathers_this_step": int(
             conflict_projection["gradient_task_id_allgathers"]
         ),

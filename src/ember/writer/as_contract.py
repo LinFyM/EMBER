@@ -424,11 +424,15 @@ def _cp24_runtime_contract(
         "distributed_full_task_gradient_matrix_materialized": False,
         "gradient_task_id_allgathers_per_macro": 1 if distributed else 0,
         "gradient_gram_exchange": (
-            "bounded_parameter_chunk_allgathers_for_full24_and_module_block_grams"
+            "bounded_parameter_chunk_allgathers_with_per_chunk_cuda_completion_"
+            "for_full24_and_module_block_grams"
         ),
         "gradient_gram_chunk_elements": 1_048_576,
         "gradient_gram_chunk_allgathers_per_macro": (
             "runtime_enumerated_from_parameter_block_layout" if distributed else 0
+        ),
+        "gradient_gram_chunk_cuda_synchronizations_per_macro": (
+            "one_per_runtime_enumerated_chunk_allgather" if distributed else 0
         ),
         "gradient_direction_allreduces_per_macro": 1 if distributed else 0,
         "gradient_weight_broadcasts_per_macro": 1 if distributed else 0,

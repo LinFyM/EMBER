@@ -50,14 +50,15 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 
 ## Current focused execution task
 
-历史v5.2 step900的400套correct-video LoRA生成与内部几何分析已封存。exact50
-task-centered结果为：effective norm
-`140.441`、stable rank `1.01256`、top singular energy `99.0244%`、q/v energy
-`73.45/26.55%`、q/v跨层cosine`.962/.982`、视频中心化方差占sample energy
-`1.6655%`。fixed-gauge下q/v使用`15.83/15.92 of 16`个能量坐标，最大坐标仅
-`7.09/6.84%`，负component pair为`0%`。因此近rank1来自16条建设性同向分量，
-不是能量失衡或负向相消；Target-Spectral强制高rank/正交已经以`34/400`证明
-有害，不能继续围绕rank、scale或gate打补丁。
+exact v5.2 topology在mature task-complete recipe上的缺失因果格已经完整封存。
+macro150/200/350/400 paired correct400为`51/91/106/120`；single-checkpoint
+winner macro400的correct/same/wrong/shuffled/reversed为
+`120/109/107/111/124`。它只覆盖4/8 tasks，reversed高于correct，因此没有正式
+行为视频特异性。内部分析确认顺序和视频变化确实从Procedure传到effective
+LoRA及fixed-query action，但这种数值差异没有与闭环收益对齐；task-complete
+recipe还把same-task视频中心化方差从旧v5.2的`1.6655%`压到`0.6844%`。当前
+病灶优先指向functional surrogate与source-policy closed-loop有效流形错位、
+task能力轮换和条件创新缩弱，而不是上游完全没读视频。
 
 下一整体模型与训练设计统一由
 [`docs/action_forecast_writer_semantic_program_grid_design.md`](docs/action_forecast_writer_semantic_program_grid_design.md)
@@ -65,25 +66,16 @@ task-centered结果为：effective norm
 mean-backed Semantic Core、未提前池化的Action×task-token-change axial Program
 Grid、38个真实policy targets、rank-last直接Program读取、coordinate mixer和
 coherent full-width factor heads；训练侧采用single-stage CP-24。它不依赖未来
-v5.2结果决定拓扑。SPG canonical CPU实现已完成：精确参数`10,633,216`，
-Core/Program/compiler/CP-24职责已拆分，全仓`201 passed`且architecture guard无
-hard violation；真实B20 profile、resume seal和正式训练仍待执行。
-
-exact v5.2 topology × mature full24 task-complete/B20/cost-balanced long-first/
-fast-decay400正式训练已从clean frozen `60f4508`完成fresh macro0→400。精确参数
-`10,237,704`，共消费`192,000`条action queries和`9,600`个单视频条件，训练
-wall time `9695.13s`；macro400 train loss `.0963385`、grad norm `.104848`、
-functional validation loss `.136869`，全程finite且validation/test action读取为0。
-正式root为
-`/data/ymdai/outputs/ember/pi05_as_writer_v52_taskcomplete_decay400_formal_dev_r4_b20_seed7_60f4508_20260731`。
-
-当前正在tmux `ember-v52-candidates-60f4508`上用物理GPU4–7各负责一个checkpoint，
-并行评测macro150/200/350/400 paired correct400。四点完成后选择single-checkpoint
-winner，立即做四个控制臂、内部传递和exact50 LoRA几何；不得融合checkpoint。
-与此同时SPG进入干净commit staging的最长105-frame B20 profile、formal-seed
-exact-resume seal和fresh macro0→200一小时门。SPG及其后每版只有absolute与同期
-有效旧架构同档或更好、或曲线显示明确续训价值，才开第二小时和昂贵行为特异性
-rollout，否则只做充分内部数值分析后从根因重新设计。
+v5.2结果决定拓扑。SPG canonical实现精确参数为`10,633,216`。最长真实
+105-frame、B20、四rank的三完整macro profile已通过：step wall为
+`20.536/18.578/18.546s`，峰值allocated/reserved为`77.20/83.53GB`，72个
+单视频条件和1,440条queries全finite，macro2起frontend/Core/Program/compiler/
+factor全部有非零有限梯度。CP-24实测negative pair fraction约`.35–.41`，不是
+先验故事。首次profile同时暴露共卡时NCCL bounded all-gather只入队、不能保证
+每chunk完成的stall；phase trace定位后，canonical实现为每个CUDA Gram chunk
+增加显式stream completion boundary，原始最长profile随后连续三macro稳定通过。
+下一实际动作是在同一干净commit和formal seed上完成fresh0→1→exact-resume1→3，
+再seal并fresh启动macro0→200一小时门。
 
 关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
 single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe

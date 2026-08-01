@@ -103,7 +103,8 @@ def test_spg_cp24_config_seals_architecture_and_information_wall() -> None:
     assert config["optimization"]["scheduler"]["decay_steps"] == 400
     assert config["data"]["teacher_video_seed"] == 20260722
     assert config["profile_evidence"]["formal_teacher_video_seed_after_profile_seal"] == 20260722
-    assert config["formal_run"]["status"] == "sealed_ready_for_fresh_macro0_to200"
+    assert config["formal_run"]["status"] == "sealed"
+    assert config["formal_run"]["launch_state"] == "ready_for_fresh_macro0_to200"
     resume = config["profile_evidence"]["exact_resume_smoke"]
     assert resume["status"] == "pass_fresh_step1_then_exact_resume_to_step3"
     assert resume["formal_teacher_video_seed"] == 20260722

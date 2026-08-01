@@ -346,7 +346,8 @@
     "contrast_loss_allowed": false
   },
   "formal_run": {
-    "status": "sealed_ready_for_fresh_macro0_to200",
+    "status": "sealed",
+    "launch_state": "ready_for_fresh_macro0_to200",
     "expected_world_size": 4,
     "total_steps": 400,
     "per_rank_batch_size": 20,

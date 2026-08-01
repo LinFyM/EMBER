@@ -31,6 +31,7 @@ from ember.writer.endpoint_provenance import (
     EndpointLoRAEntry,
     _expected_generation_descriptor,
     _portable_cache_entries,
+    _resolve_generation_training_config,
     _validate_generation_git_and_config,
     _validate_generation_hdf5,
     _validated_payload,
@@ -246,6 +247,50 @@ def test_portable_generation_git_config_and_descriptor_are_pinned(
     run["git"]["dirty_paths"] = ["src/ember/writer/model.py"]
     with pytest.raises(WriterModelError, match="Git authority"):
         _validate_generation_git_and_config(run, contract)
+
+
+def test_portable_v6_recipe_overlay_resolves_only_its_pinned_git_base(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    base = {
+        "schema_version": "ember_pi05_language_axial_as_writer_v6",
+        "base_config": None,
+        "writer": {
+            "teacher_prompt": "predict the action",
+            "max_frames_per_encoder_call": 32,
+            "frame_stride": 5,
+            "camera_dataset": "obs/agentview_rgb",
+            "camera_transform": "libero_opengl_rotate_180_chw_uint8",
+            "include_final_frame": True,
+        },
+    }
+    blob = json.dumps(base).encode()
+    overlay = {
+        "schema_version": (
+            "ember_pi05_language_axial_as_writer_recipe_overlay_v1"
+        ),
+        "base_config": "configs/pi05_as_writer_language_axial_v6.json",
+        "base_sha256": hashlib.sha256(blob).hexdigest(),
+        "replace": {
+            "data": {},
+            "conditioning_training": {},
+            "optimization": {},
+            "profile_defaults": {},
+            "profile_evidence": {},
+            "formal_run": {},
+        },
+    }
+    run = {"git": {"constructor_commit": "1" * 40}}
+    monkeypatch.setattr(
+        endpoint_provenance, "_git_blob_bytes", lambda *_args: blob
+    )
+    resolved = _resolve_generation_training_config(run, overlay)
+    assert resolved["writer"] == base["writer"]
+    assert _expected_generation_descriptor(resolved)["video"]["frame_stride"] == 5
+
+    changed = {**overlay, "base_sha256": "0" * 64}
+    with pytest.raises(WriterModelError, match="recipe base changed"):
+        _resolve_generation_training_config(run, changed)
 
 
 def test_portable_hdf5_authority_is_metadata_only_and_fail_closed() -> None:

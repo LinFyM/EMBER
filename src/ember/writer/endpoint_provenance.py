@@ -41,6 +41,17 @@ PORTABLE_INFORMATION_WALL = {
     "test_video_value_reads": 0,
     "environment_steps": 0,
 }
+PORTABLE_V6_RECIPE_OVERLAY_SCHEMA = (
+    "ember_pi05_language_axial_as_writer_recipe_overlay_v1"
+)
+PORTABLE_V6_RECIPE_REPLACEMENTS = {
+    "data",
+    "conditioning_training",
+    "optimization",
+    "profile_defaults",
+    "profile_evidence",
+    "formal_run",
+}
 
 
 @dataclass(frozen=True)
@@ -219,6 +230,59 @@ def _validate_generation_git_and_config(
     return payload
 
 
+def _resolve_generation_training_config(
+    run: Mapping[str, Any],
+    payload: Mapping[str, Any],
+) -> Mapping[str, Any]:
+    """Resolve the one sealed historical v6 recipe overlay from Git blobs."""
+
+    if isinstance(payload.get("writer"), Mapping):
+        return payload
+    replacements = payload.get("replace")
+    relative = str(payload.get("base_config", ""))
+    relative_path = PurePosixPath(relative)
+    constructor = str(run.get("git", {}).get("constructor_commit", ""))
+    if (
+        payload.get("schema_version") != PORTABLE_V6_RECIPE_OVERLAY_SCHEMA
+        or set(payload)
+        != {"schema_version", "base_config", "base_sha256", "replace"}
+        or not isinstance(replacements, Mapping)
+        or set(replacements) != PORTABLE_V6_RECIPE_REPLACEMENTS
+        or relative_path.is_absolute()
+        or not relative
+        or ".." in relative_path.parts
+        or not relative.startswith("configs/")
+        or relative_path.suffix != ".json"
+    ):
+        raise WriterModelError(
+            "portable endpoint generation recipe overlay changed"
+        )
+    blob = _git_blob_bytes(constructor, relative)
+    if hashlib.sha256(blob).hexdigest() != payload.get("base_sha256"):
+        raise WriterModelError(
+            "portable endpoint generation recipe base changed"
+        )
+    try:
+        base = json.loads(blob)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise WriterModelError(
+            "portable endpoint generation recipe base is not JSON"
+        ) from error
+    if (
+        not isinstance(base, Mapping)
+        or base.get("schema_version")
+        != "ember_pi05_language_axial_as_writer_v6"
+        or not isinstance(base.get("writer"), Mapping)
+        or base.get("base_config") is not None
+    ):
+        raise WriterModelError(
+            "portable endpoint generation recipe base changed"
+        )
+    resolved = dict(base)
+    resolved.update({name: value for name, value in replacements.items()})
+    return resolved
+
+
 def _resolve_portable_generation_run(
     manifest_path: Path,
     manifest: Mapping[str, Any],
@@ -317,6 +381,7 @@ def _validate_generation_descriptor(
     contract: Mapping[str, Any],
 ) -> None:
     config_payload = _validate_generation_git_and_config(run, contract)
+    config_payload = _resolve_generation_training_config(run, config_payload)
     descriptor = _expected_generation_descriptor(config_payload)
     if (
         run.get("generation_descriptor") != descriptor

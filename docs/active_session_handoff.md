@@ -46,8 +46,14 @@ SHA256 bfd580d46305d87fdfbdd1f593eecaf49b599fa328584f63dc8d3027dcf30993
 
 main工作树已把raw/group4的formal total分别纠正为`400/2400`，停止点仍为
 `200/1200`，并在config loader加入fail-closed校验：logical total不得短于sealed
-decay；group4还必须保持updates-per-cycle整除。该修改现在须完成验证、commit和
-push，随后从新clean frozen authority依次fresh启动
+decay；group4还必须保持updates-per-cycle整除。commit `e1299db`已push，但从其
+frozen worktree做的首次true-fast400 launch在任何output/video/query前被runtime
+拒绝：overlay的`stage_stop_steps`仍为旧`[200]/[1200]`，没有以total结束。失败log为
+`/data/ymdai/logs/ember/pi05_as_writer_ucp_taskquery_rawfull24_truefast400_formal_dev_r4_b20_seed7_e1299db_20260801.log`；tmux已退出、output root不存在、没有checkpoint。
+
+当前最窄修复把stage stops补为`[200,400]/[1200,2400]`，loader新增最终total、
+selected stop、排序、cycle整除校验，并新增直接`resolve_runtime`回归；定向
+`25 passed`。该修改须验证、commit和push，随后从新clean frozen authority依次fresh启动
 真正fast400 raw与group4，不能resume当前消融root。CV-ADR实现已隔离在clean本地
 commit `b2bc70c`，只有完成这组训练因果格后才集成、做真实B20/profile/resume和formal。
 后续全部由主进程单独推进，不使用subagent。

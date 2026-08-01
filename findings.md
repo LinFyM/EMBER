@@ -8,6 +8,14 @@
 
 ## 2026-08-01 UCP formal scheduler自动缩放合同偏差
 
+- `e1299db`已修正formal total并push，但第一次true-fast400 launch在output root
+  创建前由runtime拒绝：raw/group4 overlay的`stage_stop_steps`仍残留旧的一小时
+  `[200]/[1200]`，而parser正确要求列表以formal total `400/2400`结束。所有ranks在
+  video/query读取前退出，没有checkpoint或科学数据；这不是训练不稳定。
+- 最窄修复为`[200,400]/[1200,2400]`，并把stage stops非空、严格排序、包含selected
+  stop、最终等于total、全部cycle整除加入loader fail-close。新增测试直接走formal
+  `resolve_runtime`而不只加载config，定向`25 passed`；新正式run必须换clean commit、
+  frozen worktree、root和log。
 - task-query raw control从clean frozen `1a09e71`按sealed overlay的
   `total_steps=200, stop=200, decay_steps=400`启动。逐步LR审计发现macro150
   实际为`5.4093e-5`；真正400-step cosine在同点应约`2.1049e-4`。LeRobot

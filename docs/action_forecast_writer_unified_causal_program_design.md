@@ -413,6 +413,10 @@ scheduler消融，不能与group4做operator因果比较。
 cycle含6 updates，必须是`total_steps=2400, selected_stop_after_step=1200`。loader
 必须拒绝logical total短于sealed decay或group更新数不整除cycle的formal config。
 真正fast400两臂都从纠正后clean commit fresh identity启动，不得resume误缩放root。
+阶段边界也属于同一合同：raw必须是`stage_stop_steps=[200,400]`，group4必须是
+`[1200,2400]`；selected stop必须在列表内，最后一项必须等于formal total。第一次
+纠偏launch正是在创建output root前被旧单点列表fail-closed，证明不能只在loader
+检查scheduler total而忽略runtime stage parser。
 
 误缩放raw的正式paired correct400已经完成：macro50/100/150/200为
 `81/72/107/78`，single-checkpoint observed-best是macro150。其breadth为8，但逐task

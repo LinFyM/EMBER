@@ -10,6 +10,11 @@ GPU范围和训练步长是当时快照；活动状态只取
 
 ## 2026-08-01 UCP scheduler合同纠偏与CV-ADR实现冻结
 
+- scheduler-total修复`e1299db`已push。其首次true-fast400 launch在创建output root
+  前被formal runtime fail-closed：stage stops仍是旧`[200]/[1200]`而没有覆盖
+  total400/2400；0 video/query、0 checkpoint。现已修正为
+  `[200,400]/[1200,2400]`并把完整stage合同移入loader，直接formal runtime回归后
+  `25 passed`。下一步从新commit和全新root fresh启动。
 - frozen `1a09e71`的task-query raw control已fresh启动并持续finite；root为
   `/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_decay400_control_formal_dev_r4_b20_seed7_1a09e71_20260801`。
 - live LR审计发现formal total200触发LeRobot把配置的decay400自动压到200；

@@ -19,6 +19,13 @@ loader fail-close要求formal logical total不少于scheduler decay。定向
 `24 passed`。现在提交/push修复，并从新的clean frozen
 authority依次fresh运行真正fast400 raw/group4。
 
+`e1299db`上的首次true-fast400 fresh launch没有进入模型/data初始化：formal runtime
+发现task-query overlay的`stage_stop_steps=[200]`没有以新的`total=400`结束并
+fail-closed；group4同样残留`[1200]`。没有output root、checkpoint、video/query
+消费或科学结果。修复为raw `[200,400]`、group4 `[1200,2400]`，并在config loader
+验证完整stage合同；新增直接formal `resolve_runtime`测试后定向`25 passed`。必须
+从下一clean pushed commit的新root重启，不能复用失败尝试。
+
 CV-ADR已在独立worktree完成canonical实现并本地提交为`b2bc70c`；真实参数
 `10,241,024`，focused `159 passed`且architecture guard无hard violation。
 它的真实B20/profile/resume仍pending，未推送、未启动formal；训练recipe只由

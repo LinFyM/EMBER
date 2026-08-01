@@ -135,7 +135,7 @@
       "per_rank_batch_size": 20,
       "checkpoint_steps": "every:25",
       "selected_stop_step": 200,
-      "stage_stop_steps": [200],
+      "stage_stop_steps": [200, 400],
       "segment_definition": "fresh_ucp_task_query_keyed_raw_reference_macro0_to200",
       "one_hour_scale": {
         "optimizer_updates": 200,

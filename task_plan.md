@@ -128,6 +128,8 @@ runner、split 或 GPU 权限。
 - [ ] 提交并push formal scheduler fail-close与corrected total=400/2400；从新
   frozen authority fresh顺序完成真正fast400 raw/group4及同一paired correct400，
   再做预注册recipe×architecture裁决。
+  - `e1299db`已完成total修复；首次launch在data前暴露旧stage stops未覆盖total。
+    stage合同修复与直接runtime回归完成，须再commit/push后换全新root启动。
 - [x] 在独立worktree实现CV-ADR canonical路径并提交`b2bc70c`；参数
   `10,241,024`、focused `159 passed`、结构门无hard violation，formal configs
   在真实B20/profile/resume前保持pending。

@@ -435,6 +435,13 @@ def _validate_formal_schedule(config: Mapping[str, Any]) -> None:
     total_updates = int(formal.get("total_steps", 0))
     selected_stop = int(formal.get("selected_stop_step", 0))
     decay_steps = int(scheduler.get("decay_steps", 0))
+    try:
+        stage_stops = tuple(int(value) for value in formal["stage_stop_steps"])
+    except (KeyError, TypeError, ValueError) as error:
+        raise WriterModelError(
+            "formal AS-Writer runtime would auto-scale or truncate its "
+            "sealed scheduler"
+        ) from error
     if (
         updates_per_cycle <= 0
         or total_updates <= 0
@@ -442,6 +449,17 @@ def _validate_formal_schedule(config: Mapping[str, Any]) -> None:
         or total_updates // updates_per_cycle < decay_steps
         or selected_stop <= 0
         or selected_stop > total_updates
+        or selected_stop % updates_per_cycle
+        or not stage_stops
+        or stage_stops != tuple(sorted(set(stage_stops)))
+        or stage_stops[-1] != total_updates
+        or selected_stop not in stage_stops
+        or any(
+            stop <= 0
+            or stop > total_updates
+            or stop % updates_per_cycle
+            for stop in stage_stops
+        )
     ):
         raise WriterModelError(
             "formal AS-Writer runtime would auto-scale or truncate its "

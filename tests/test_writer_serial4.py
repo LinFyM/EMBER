@@ -448,6 +448,8 @@ def test_cycle_normalized_configs_and_checkpoint_families_fail_closed() -> None:
     )
     assert raw["formal_run"]["total_steps"] == 400
     assert group4["formal_run"]["total_steps"] == 2400
+    assert raw["formal_run"]["stage_stop_steps"] == [200, 400]
+    assert group4["formal_run"]["stage_stop_steps"] == [1200, 2400]
     assert logical_task_cycle_steps(
         raw, raw["formal_run"]["total_steps"]
     ) == 400
@@ -458,6 +460,10 @@ def test_cycle_normalized_configs_and_checkpoint_families_fail_closed() -> None:
     compressed["formal_run"]["total_steps"] = 200
     with pytest.raises(WriterModelError, match="would auto-scale"):
         _validate_formal_schedule(compressed)
+    truncated = copy.deepcopy(raw)
+    truncated["formal_run"]["stage_stop_steps"] = [200]
+    with pytest.raises(WriterModelError, match="would auto-scale"):
+        _validate_formal_schedule(truncated)
     raw_resume = raw["profile_evidence"]["exact_resume_smoke"]
     assert raw_resume["step1_payloads_unchanged_after_resume"] is True
     assert raw_resume[
@@ -502,6 +508,48 @@ def test_cycle_normalized_configs_and_checkpoint_families_fail_closed() -> None:
     assert launch["phase_cost_assignment_input"] == "none"
     assert launch["rank_local_long_first"] == "single_task_trivial_order"
     assert launch["optimizer_cycle_normalization"]["lr_divisor"] == 6
+
+
+def test_cycle_normalized_formal_runtime_keeps_two_stage_total(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "ember.writer.as_contract.git_state",
+        lambda _root: {
+            "dirty_paths": [],
+            "commit": "sealed",
+            "origin_main": "sealed",
+        },
+    )
+    context = DistributedContext(
+        rank=0,
+        local_rank=0,
+        world_size=4,
+        device=torch.device("cpu"),
+        numa_node=1,
+        cpu_affinity=(38,),
+    )
+    for path, expected_total, expected_stop, interval in (
+        (TASK_QUERY_RAW_CONFIG, 400, 200, 25),
+        (GROUP4_CONFIG, 2400, 1200, 150),
+    ):
+        args = argparse.Namespace(
+            mode="formal",
+            total_steps=None,
+            batch_size=None,
+            checkpoint_steps=None,
+            stop_after_step=None,
+            resume=None,
+            skip_data_sha=True,
+        )
+        config = load_writer_config(path)
+        total, batch, checkpoints = resolve_runtime(args, config, context)
+        assert (total, batch, args.stop_after_step) == (
+            expected_total,
+            20,
+            expected_stop,
+        )
+        assert checkpoints == tuple(range(interval, expected_total + 1, interval))
 
 
 def _optimizer_and_scheduler(config: dict) -> tuple[torch.optim.Optimizer, object]:

@@ -56,6 +56,15 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 
 ## Current focused execution task
 
+2026-08-01 launch-boundary override：scheduler修复commit `e1299db`已push；首个
+true-fast400 launch在创建output root或读取任何video/query前由formal runtime
+fail-closed，因为task-query/group4 overlays的`stage_stop_steps`仍是旧的一小时单点
+`[200]/[1200]`，没有覆盖新的total `400/2400`。失败log保留，训练tmux已退出且
+没有checkpoint或科学数据。最窄修复将stage stops改为`[200,400]`和
+`[1200,2400]`，config loader同时校验selected stop、最终total、严格排序和cycle
+整除；新增真实`resolve_runtime`回归，定向`25 passed`。提交/push后必须用新SHA、
+新frozen worktree和全新root重新fresh启动，不得复用失败log/root。
+
 2026-08-01 live scheduler override：新UCP raw对照overlay把formal
 `total_steps`误写为一小时停止点`200`，触发LeRobot cosine scheduler把sealed
 `warmup17 + decay400`自动缩放成`warmup8 + decay200`。clean frozen

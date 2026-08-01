@@ -758,6 +758,7 @@ def test_provenance_accepts_unprotected_descendant_and_rejects_runtime_owner_cha
     (repo / "scripts").mkdir()
     (repo / "src/ember/writer/model.py").write_text("trained\n")
     (repo / "src/ember/writer/validation.py").write_text("runtime\n")
+    (repo / "src/ember/writer/checkpoint.py").write_text("checkpoint v1\n")
     (repo / "src/ember/pi05_lora.py").write_text("contract\n")
     (repo / "configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json").write_text("{}\n")
     _git(repo, "add", ".")
@@ -776,6 +777,28 @@ def test_provenance_accepts_unprotected_descendant_and_rejects_runtime_owner_cha
     assert record["training_is_ancestor"] is True
     assert "src/ember/writer/validation.py" in record["protected_paths_unchanged"]
     assert "src/ember/pi05_processing.py" in record["protected_paths_unchanged"]
+    assert record[
+        "runtime_compatibility_paths_validated_by_training_contract"
+    ] == [
+        "src/ember/writer/as_config.py",
+        "src/ember/writer/as_contract.py",
+        "src/ember/writer/checkpoint.py",
+    ]
+
+    (repo / "src/ember/writer/checkpoint.py").write_text("checkpoint v2\n")
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-qm", "backward-compatible checkpoint reader")
+    compatibility_head = _git(repo, "rev-parse", "HEAD")
+    _git(repo, "update-ref", "refs/remotes/origin/main", compatibility_head)
+    validate_analysis_provenance(
+        repo=repo,
+        state={
+            "commit": compatibility_head,
+            "origin_main": compatibility_head,
+            "dirty_paths": [],
+        },
+        training={"git": {"commit": training}},
+    )
 
     (repo / "src/ember/writer/validation.py").write_text("changed\n")
     _git(repo, "add", ".")

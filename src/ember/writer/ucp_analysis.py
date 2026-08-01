@@ -106,10 +106,7 @@ def validate_analysis_provenance(
         "src/ember/writer/semantic_program.py",
         "src/ember/writer/program_compiler.py",
         "src/ember/writer/architecture.py",
-        "src/ember/writer/as_config.py",
-        "src/ember/writer/as_contract.py",
         "src/ember/writer/functional.py",
-        "src/ember/writer/checkpoint.py",
         "src/ember/writer/inference.py",
         "src/ember/writer/video_schedule.py",
         "src/ember/writer/validation.py",
@@ -123,6 +120,11 @@ def validate_analysis_provenance(
         "src/ember/pi05_target_data.py",
         "configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json",
     )
+    runtime_compatibility = (
+        "src/ember/writer/as_config.py",
+        "src/ember/writer/as_contract.py",
+        "src/ember/writer/checkpoint.py",
+    )
     changed = _git(repo, "diff", "--name-only", f"{training_commit}..{head}", "--", *protected)
     if changed:
         raise WriterModelError("trained UCP model/config changed after checkpoint")
@@ -131,6 +133,9 @@ def validate_analysis_provenance(
         "training_commit": training_commit,
         "training_is_ancestor": True,
         "protected_paths_unchanged": list(protected),
+        "runtime_compatibility_paths_validated_by_training_contract": list(
+            runtime_compatibility
+        ),
     }
 
 

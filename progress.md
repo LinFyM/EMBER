@@ -16,10 +16,21 @@ GPU范围和训练步长是当时快照；活动状态只取
   Δheld→Δcorrect仅`+.120`；逐task去均值后held→success仅`-.055`。因此held
   loss降级为finite/局部拟合诊断，candidate选择继续只认paired correct400、
   breadth、gained/lost/Jaccard和effective BA/action传递。
-- serial-4 formal已安全到step900，900行连续finite metrics和
-  `150/300/450/600/750/900`六个checkpoint完整；对应held loss为
-  `.132407/.131304/.133484/.132973/.130352/.132508`。训练仍在原tmux自然推进到
-  1200；这些held起伏不作行为预判。
+- surrogate审计正式root为
+  `/data/ymdai/outputs/ember/pi05_as_writer_functional_surrogate_closedloop_audit_seed7_20260801`；
+  analysis SHA `91eaabed...12a`，120个输入SHA及44个strict paired panels复验通过。
+  post-v5能力审计analysis SHA为`406b9098...80e`：扩展24 candidates的四架构
+  envelope union/intersection为`246/110`，全部checkpoint intersection仅5；低分
+  架构仍保存独有能力，不能整体判死。
+- serial-4 formal已自然完成step1200：1,200行finite metrics、8个checkpoint、
+  96,000 queries、4,800 videos、200 task cycles，wall `4197.076s`，信息墙读取0。
+  held loss八点为
+  `.132407/.131304/.133484/.132973/.130352/.132508/.132237/.132918`，不作行为
+  预选。4,800条raw→serial exposure逐项匹配，replay SHA为`d406f2f1...80cc`。
+- step300/600/900/1200 paired correct400已分别启动在GPU4/5/6/7；四个launcher和
+  24个Writer generation workers存活，prepared contract均为400 states、36个
+  long-first shards、6 replicas/6 generators且teacher action reads=0。tmux为
+  `ember-ucp-serial4-correct400-3db82df`。
 - UCP exact50在clean frozen `c4b85e8`自然完成：8 tasks×50 references共400
   rows、四rank各100、reference0..49完整、0 rollouts、无failure。pooled
   same-task effective-BA/fixed-action centered variance/sample energy为

@@ -16,12 +16,20 @@
   held→success仅`-.055`。重复checkpoint不满足独立样本假设，但SPG
   `100→150`、UCP `100→150`的held改善/行为下降与v5.2-new `200→400`的held
   恶化/行为上升构成直接反例。held functional loss只能做finite和局部拟合诊断，
-  不能选择closed-loop checkpoint、解释task漂移或否定整版架构。
+  不能选择closed-loop checkpoint、解释task漂移或否定整版架构。正式analysis
+  SHA为`91eaabed...12a`，120个输入文件和44个correct400 panel已复验。
 - v5.2-new、SPG、UCP和v6-fast四个single-checkpoint winner在同一paired panel
   上的成功集合union为193、intersection为51；各自仍有不被另外三者覆盖的
-  `18/6/9/13`个成功state。把所有这些架构/候选checkpoint合并看，union达到236。
+  `18/6/9/13`个成功state。主20候选union为236；把v6延长到macro600后的扩展24
+  候选union为246，而全部checkpoint intersection仅5。post-v5正式审计analysis
+  SHA为`406b9098...80e`。
   这不授权checkpoint融合，但证明低aggregate版本仍可能保存真实独有能力；历史
   回顾必须定位局部失效接口和recipe依赖，不能按总分把整版结构一棒子打死。
+- serial-4 formal从clean frozen `3db82df`自然完成1,200 updates/200完整cycles，
+  wall `4197.076s`，96,000 queries和4,800 videos与raw-full24完全同曝光。1200行
+  metrics、8个checkpoint、全部finite与信息墙读取0已核验；raw microtask→serial
+  phase的4,800 assignments逐项匹配，replay SHA为`d406f2f1...80cc`。八个held
+  loss在`.13035–.13348`间轮换，不据此预判closed-loop。
 - UCP最长105-frame B20现场profile连续三macro通过，峰值reserved约77.62GiB；
   每步24 tasks、480 queries、24套单视频LoRA，step2起Program全链梯度可达。
   formal-seed fresh0→1→exact-resume1→3的step1 payload逐文件不变，证明新的raw

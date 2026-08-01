@@ -10,22 +10,39 @@
 
 ## 0. 2026-08-01 UCP当前状态与紧邻动作
 
-v5.2 task-complete、SPG和UCP raw-full24一小时实验均已完成。当前必须继承一条
-健康的serial-4正式训练，不得重复启动或修改其frozen worktree：
+v5.2 task-complete、SPG、UCP raw-full24和serial-4同曝光正式训练均已完成。
+serial-4训练已自然退出，不得重复启动或修改其frozen worktree：
 
 ```text
 commit  3db82dfd3b42f6b424790ef19716013ac1cf4fce
 frozen  /data/ymdai/.codex/worktrees/EMBER-ucp-serial4-formal-3db82df-20260801
-tmux    ember-ucp-serial4-3db82df
 root    /data/ymdai/outputs/ember/pi05_as_writer_ucp_serial4_exposurematched_decay400_formal_dev_r4_b20_seed7_3db82df_20260801
 log     /data/ymdai/logs/ember/pi05_as_writer_ucp_serial4_exposurematched_decay400_formal_dev_r4_b20_seed7_3db82df_20260801.log
 ```
 
-fresh训练已到step900：900行连续finite metrics，checkpoint
-`150/300/450/600/750/900`完整，held loss依次为
-`.132407/.131304/.133484/.132973/.130352/.132508`。下一动作是让同一进程自然完成
-step1200，严格封存后并行评测step300/600/900/1200 paired correct400；held loss
-不作候选预选。serial-4 profile/resume seal已完成且不得重复。
+fresh训练完成1,200 optimizer updates/200完整cycles，wall `4197.076s`；严格等于
+raw-full24的96,000 queries、4,800单视频条件和每task 200 visits。1200行metrics
+连续finite，8个150-step checkpoint均通过manifest完整性校验，validation/test
+action读取及test video value读取均为0。raw→serial的4,800个rank/task/visit/demo/
+sampled-frame assignment逐项一致，normalized replay SHA为`d406f2f1...80cc`。
+held loss在step150..1200为
+`.132407/.131304/.133484/.132973/.130352/.132508/.132237/.132918`，不作候选预选。
+
+当前必须继承四条active paired correct400评测；均在tmux
+`ember-ucp-serial4-correct400-3db82df`，使用同一8 tasks×50 states panel、
+without-replacement videos、dynamic long-first 36 shards、6 persistent replicas和
+6 Writer generators：
+
+```text
+step0300 -> GPU4 -> /data/ymdai/outputs/ember/pi05_as_writer_ucp_serial4_exposurematched_decay400_correct400_noreplacement_seed7_step0300_3db82df_20260801
+step0600 -> GPU5 -> /data/ymdai/outputs/ember/pi05_as_writer_ucp_serial4_exposurematched_decay400_correct400_noreplacement_seed7_step0600_3db82df_20260801
+step0900 -> GPU6 -> /data/ymdai/outputs/ember/pi05_as_writer_ucp_serial4_exposurematched_decay400_correct400_noreplacement_seed7_step0900_3db82df_20260801
+step1200 -> GPU7 -> /data/ymdai/outputs/ember/pi05_as_writer_ucp_serial4_exposurematched_decay400_correct400_noreplacement_seed7_step1200_3db82df_20260801
+```
+
+四个launcher与24个Writer workers已确认存活、prepared contracts各为400 states且
+teacher action读取0；当前在生成四套400-entry LoRA cache。下一动作是等待四条自然
+完成，严格核验400 rows及pairing，再运行candidate-curve和raw-vs-serial同曝光分析。
 
 以下UCP raw-full24 formal只作已完成provenance，不得按本节重复启动：
 

@@ -72,10 +72,11 @@ runner、split 或 GPU 权限。
 - [x] 完成跨v5.2/SPG/UCP/v6新旧recipe的strict surrogate审计；确认同一held panel
   无法选择closed-loop checkpoint或追踪逐task漂移，并把历史结论分成局部机制否定、
   recipe混杂和现有证据不可识别三层。
-- [ ] serial-4已从clean frozen `3db82df` fresh identity运行1,200 optimizer updates；
-  首cycle合同健康。完成后评测
-  300/600/900/1200 paired correct400，并同时比较breadth、envelope gap、A/D写出、
-  selected4 Gram、task漂移和functional surrogate错位。
+- [x] serial-4从clean frozen `3db82df` fresh identity完成1,200 optimizer updates；
+  96,000 queries/4,800 videos/200 cycles与raw-full24逐项同曝光，8个checkpoint和
+  信息墙合同完整。
+- [ ] step300/600/900/1200 paired correct400已分别在GPU4/5/6/7运行；完成后比较
+  breadth、envelope gap、A/D写出、selected4 Gram、task漂移和surrogate错位。
 - [ ] 后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才开第二
   小时和行为五臂。
 - [ ] 持续定位task漂移、视频学习和closed-loop off-manifold根因，禁止补丁式

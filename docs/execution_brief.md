@@ -29,7 +29,7 @@ correct norm/stable rank/top energy为`59.108/1.00319/99.714%`。analysis/summar
 SHA为`a6e40cd6...25a8`/`386a04f5...acaa`。旧tmux已自然退出；不得复用失败root
 或修改frozen worktree。
 
-下一训练反事实冻结UCP拓扑，只改update granularity：四rank每update各1 task，
+训练反事实冻结UCP拓扑，只改update granularity：四rank每update各1 task，
 六phase重建同一full24 cost-balanced cycle；1,200 updates等于200 task visits、
 4,800 videos和96,000 queries。LR严格满足
 `LR_serial(u)=LR_full24(floor(u/6))`；不是连续warmup102/decay2400。实现已以
@@ -39,22 +39,34 @@ cursor、cycle-boundary scheduler及formal `%6` fail-close均通过，全仓
 已自然完成：3个cycle各覆盖24 tasks，首update真实读入105 sampled frames，峰值
 allocated/reserved为`76,971,835,904/83,647,004,672` bytes。formal seed又完成
 fresh0→1、resume1→3、resume3→7；step1/3全部文件SHA不变，前6 phase覆盖24
-unique tasks，scheduler只在step6推进且step7使用下一LR。config已seal；下一动作是
-已从clean frozen `3db82df`的fresh identity启动1,200 updates，不从smoke续接。
-tmux为`ember-ucp-serial4-3db82df`，正式root为
+unique tasks，scheduler只在step6推进且step7使用下一LR。config已seal；随后已从
+clean frozen `3db82df` fresh identity完成1,200 updates，不从smoke续接。正式root为
 `/data/ymdai/outputs/ember/pi05_as_writer_ucp_serial4_exposurematched_decay400_formal_dev_r4_b20_seed7_3db82df_20260801`。
-首cycle已确认24 unique tasks、rank内long-first、四rank cost-balanced、finite和信息墙
-读取计数0；不得重复启动。
+训练wall `4197.076s`，1,200行metrics、8个150-step checkpoint、96,000 queries、
+4,800 videos、200 cycles全部完整；validation/test action读取0。训练tmux已自然退出，
+不得重复启动。
 
-当前训练已安全到step900：900行连续finite metrics，六个150-step checkpoint完整；
-held loss在step150..900为
-`.132407/.131304/.133484/.132973/.130352/.132508`。这些值不用于提前选择candidate。
+held loss在step150..1200为
+`.132407/.131304/.133484/.132973/.130352/.132508/.132237/.132918`；不用于提前
+选择candidate。step300/600/900/1200四个paired correct400现已分别在GPU4/5/6/7
+启动，tmux为`ember-ucp-serial4-correct400-3db82df`；四个prepared contract均为
+400 states、36个long-first dynamic shards、6 replicas/6 Writer generators，
+teacher action读取0。当前只等待自然完成，不得重复启动。
+
 严格跨曲线审计确认七条正式run共用同一512-row held panel manifest
 `53cbf9e...a3a8`；主20点按架构去均值后的held→correct相关反而为
 Pearson/Spearman `+.462/+.644`，相邻Δheld→Δcorrect仅`+.120`，逐task去均值后
 held→success仅`-.055`。因此functional loss只作finite和teacher-state局部拟合
 诊断；closed-loop裁决必须使用paired correct400、breadth、gained/lost/Jaccard及
 effective BA/action方向传递。
+
+该审计已封存到
+`/data/ymdai/outputs/ember/pi05_as_writer_functional_surrogate_closedloop_audit_seed7_20260801/analysis.json`
+（SHA256 `91eaabed...12a`）；120个输入文件和44个correct400 panels均经脚本复验。
+post-v5能力审计另封存在
+`/data/ymdai/outputs/ember/pi05_as_writer_postv5_recipe_confounded_capability_audit_seed7_20260801/analysis.json`
+（SHA256 `406b9098...80e`）：扩展24 checkpoints的四架构envelope union为246，而全部
+checkpoint共同成功仅5 states，进一步禁止按aggregate整体处决历史结构。
 
 当前下一整体架构设计为
 [`action_forecast_writer_unified_causal_program_design.md`](action_forecast_writer_unified_causal_program_design.md)。

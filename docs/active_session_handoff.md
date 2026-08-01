@@ -10,10 +10,24 @@
 
 ## 0. 2026-08-01 UCP当前状态与紧邻动作
 
-v5.2 task-complete、SPG和UCP raw-full24一小时实验均已完成；当前没有需要继承的
-训练、评测或tmux进程。serial-4 profile/resume seal也已完成，下一动作是在新clean
-commit上fresh启动正式1,200 updates。UCP formal只作已完成provenance，不得按本节
-重复启动：
+v5.2 task-complete、SPG和UCP raw-full24一小时实验均已完成。当前必须继承一条
+健康的serial-4正式训练，不得重复启动或修改其frozen worktree：
+
+```text
+commit  3db82dfd3b42f6b424790ef19716013ac1cf4fce
+frozen  /data/ymdai/.codex/worktrees/EMBER-ucp-serial4-formal-3db82df-20260801
+tmux    ember-ucp-serial4-3db82df
+root    /data/ymdai/outputs/ember/pi05_as_writer_ucp_serial4_exposurematched_decay400_formal_dev_r4_b20_seed7_3db82df_20260801
+log     /data/ymdai/logs/ember/pi05_as_writer_ucp_serial4_exposurematched_decay400_formal_dev_r4_b20_seed7_3db82df_20260801.log
+```
+
+fresh训练已到step900：900行连续finite metrics，checkpoint
+`150/300/450/600/750/900`完整，held loss依次为
+`.132407/.131304/.133484/.132973/.130352/.132508`。下一动作是让同一进程自然完成
+step1200，严格封存后并行评测step300/600/900/1200 paired correct400；held loss
+不作候选预选。serial-4 profile/resume seal已完成且不得重复。
+
+以下UCP raw-full24 formal只作已完成provenance，不得按本节重复启动：
 
 ```text
 commit  c94f1c6bb6479625c6c4ffb1a3b28e3fba7730c1

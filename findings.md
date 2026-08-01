@@ -8,6 +8,20 @@
 
 ## 2026-08-01 SPG一小时门、架构×recipe与UCP根因结论
 
+- 严格surrogate审计确认七条训练曲线的512-row held panel manifest完全相同，
+  SHA256为`53cbf9e...a3a8`；主20个正式候选的held loss→correct描述性
+  Pearson/Spearman为`+.346/+.484`，按架构去均值后为`+.462/+.644`，held
+  loss→breadth为`-.501`。16个相邻checkpoint差分中train25/held/norm对
+  Δcorrect的Pearson仅`+.031/+.120/-.347`；逐`architecture×task`去均值后
+  held→success仅`-.055`。重复checkpoint不满足独立样本假设，但SPG
+  `100→150`、UCP `100→150`的held改善/行为下降与v5.2-new `200→400`的held
+  恶化/行为上升构成直接反例。held functional loss只能做finite和局部拟合诊断，
+  不能选择closed-loop checkpoint、解释task漂移或否定整版架构。
+- v5.2-new、SPG、UCP和v6-fast四个single-checkpoint winner在同一paired panel
+  上的成功集合union为193、intersection为51；各自仍有不被另外三者覆盖的
+  `18/6/9/13`个成功state。把所有这些架构/候选checkpoint合并看，union达到236。
+  这不授权checkpoint融合，但证明低aggregate版本仍可能保存真实独有能力；历史
+  回顾必须定位局部失效接口和recipe依赖，不能按总分把整版结构一棒子打死。
 - UCP最长105-frame B20现场profile连续三macro通过，峰值reserved约77.62GiB；
   每步24 tasks、480 queries、24套单视频LoRA，step2起Program全链梯度可达。
   formal-seed fresh0→1→exact-resume1→3的step1 payload逐文件不变，证明新的raw

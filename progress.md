@@ -10,6 +10,16 @@ GPU范围和训练步长是当时快照；活动状态只取
 
 ## 2026-08-01 SPG门失败、内部根因与UCP设计
 
+- 完成跨v5.2/SPG/UCP/v6新旧recipe的strict functional-surrogate审计：七条曲线
+  共用同一512-row held manifest（SHA256 `53cbf9e...a3a8`）。主20点held→correct
+  在按架构去均值后反而为Pearson/Spearman `+.462/+.644`，相邻checkpoint的
+  Δheld→Δcorrect仅`+.120`；逐task去均值后held→success仅`-.055`。因此held
+  loss降级为finite/局部拟合诊断，candidate选择继续只认paired correct400、
+  breadth、gained/lost/Jaccard和effective BA/action传递。
+- serial-4 formal已安全到step900，900行连续finite metrics和
+  `150/300/450/600/750/900`六个checkpoint完整；对应held loss为
+  `.132407/.131304/.133484/.132973/.130352/.132508`。训练仍在原tmux自然推进到
+  1200；这些held起伏不作行为预判。
 - UCP exact50在clean frozen `c4b85e8`自然完成：8 tasks×50 references共400
   rows、四rank各100、reference0..49完整、0 rollouts、无failure。pooled
   same-task effective-BA/fixed-action centered variance/sample energy为

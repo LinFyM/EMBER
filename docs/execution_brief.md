@@ -46,6 +46,16 @@ tmux为`ember-ucp-serial4-3db82df`，正式root为
 首cycle已确认24 unique tasks、rank内long-first、四rank cost-balanced、finite和信息墙
 读取计数0；不得重复启动。
 
+当前训练已安全到step900：900行连续finite metrics，六个150-step checkpoint完整；
+held loss在step150..900为
+`.132407/.131304/.133484/.132973/.130352/.132508`。这些值不用于提前选择candidate。
+严格跨曲线审计确认七条正式run共用同一512-row held panel manifest
+`53cbf9e...a3a8`；主20点按架构去均值后的held→correct相关反而为
+Pearson/Spearman `+.462/+.644`，相邻Δheld→Δcorrect仅`+.120`，逐task去均值后
+held→success仅`-.055`。因此functional loss只作finite和teacher-state局部拟合
+诊断；closed-loop裁决必须使用paired correct400、breadth、gained/lost/Jaccard及
+effective BA/action方向传递。
+
 当前下一整体架构设计为
 [`action_forecast_writer_unified_causal_program_design.md`](action_forecast_writer_unified_causal_program_design.md)。
 exact v5.2 task-complete已以候选`51/91/106/120`和winner五臂

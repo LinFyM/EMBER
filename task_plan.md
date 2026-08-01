@@ -69,6 +69,9 @@ runner、split 或 GPU 权限。
 - [x] 完成serial-4最长105-frame B20 profile：18 updates/3完整cycles、B20 finite、
   task38/demo36真实105 sampled frames；formal seed fresh0→1→resume1→3→跨cycle
   boundary到7，step1/3文件不变、scheduler/cursor连续，canonical config已seal。
+- [x] 完成跨v5.2/SPG/UCP/v6新旧recipe的strict surrogate审计；确认同一held panel
+  无法选择closed-loop checkpoint或追踪逐task漂移，并把历史结论分成局部机制否定、
+  recipe混杂和现有证据不可识别三层。
 - [ ] serial-4已从clean frozen `3db82df` fresh identity运行1,200 optimizer updates；
   首cycle合同健康。完成后评测
   300/600/900/1200 paired correct400，并同时比较breadth、envelope gap、A/D写出、

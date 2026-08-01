@@ -52,6 +52,26 @@ v6 的干净 slow/fast task-complete scheduler 对照进一步表明：
 因此 slow scheduler 可能保留更多视频差异，但没有 absolute 优势；首版新架构
 不能把 slow2000 与拓扑同时锁死后再把结果归因于结构。
 
+严格 surrogate 审计又排除了“用 held functional loss 代替 closed-loop 来裁决
+架构”的做法。v5.2-new、SPG、UCP、v6-fast/slow、v5.2-old 和 v6-old 使用的
+online held panel 完全相同，均为8 tasks×8 videos×8 queries，manifest SHA256
+`53cbf9e74cec9cf7a96ac435e092ff036410f08bed0b9d10d89b1b34ae8ea3a8`。在20个
+正式主候选上，held loss→correct 的描述性 Pearson/Spearman 反而为
+`+.346/+.484`；按架构去均值后为`+.462/+.644`，held loss→breadth 为`-.501`。
+16个相邻checkpoint的一阶差分中，train25/held/norm 对下一次correct变化的
+Pearson仅`+.031/+.120/-.347`；逐`architecture×task`去均值后的held→success
+也只有`-.055`。这些重复checkpoint不能当独立因果样本，但方向和直接反例一致：
+SPG `100→150`、UCP `100→150`都是held略改善而correct显著下降，v5.2-new
+`200→400`则held恶化而correct上升。
+
+所以 functional surrogate 只保留三项职责：检查finite、识别粗粒度训练退化、
+描述teacher-state上的局部拟合；它不再承担checkpoint selector、架构裁判或task
+漂移指标。正式选择必须依赖严格paired correct400、breadth、gained/lost、成功
+集合Jaccard和Program/Core→effective BA→fixed action方向传递。尤其old→new使
+v5.2与v6的held都改善，却让closed-loop分别`-81/+16`，进一步说明recipe改变的
+是topology对条件innovation和source-policy有效流形的利用，而非统一提高同一个
+可由held loss观测的目标。
+
 所有 v7、v8、v10、Loom、Recenter、Core-Program、Prior-Innovation 和
 Target-Spectral 正式负结果都使用 full24/B20/one-video/fast400；没有 old-recipe
 反事实。当前只允许以下强度的历史结论：

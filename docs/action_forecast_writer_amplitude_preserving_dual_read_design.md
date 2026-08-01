@@ -1,7 +1,7 @@
 # Amplitude-Preserving Asymmetric Dual-Read Writer 设计
 
-**状态：2026-08-01 canonical CPU实现完成；live B20 profile/resume待执行；
-SERIAL-4 exact50已完成，同exposure raw-full24 macro150 exact50对照运行中**
+**状态：2026-08-01 canonical实现、live B20/profile-resume与fresh macro0→200
+均已完成；macro50/100/150/200 paired correct400正在正式评测**
 
 本文负责 Unified Causal Program（UCP）raw-full24 和 exposure-matched
 SERIAL-4 都未通过一小时门后的下一条 canonical AS-Writer 路径。
@@ -124,6 +124,14 @@ closed-loop收益。
 
 AP-ADR复用的是上述尚未被单独否定的能力，不是恢复任一整版旧
 实现。
+
+Git blob与formal artifact复核确认，上述八个post-v5 run的`as_step.py`、
+`as_sampling.py`和launcher完全相同，且都只跑过full24/B20/fast400；没有任何
+matched alternate-recipe cell。历史long-first仅发生在一次24-task聚合更新内部，
+不是optimizer curriculum，不能与后来的六phase SERIAL混写。Prior-Innovation的
+局部因果证据最弱，只能判完整组合失败。受控复核顺序固定为单-cycle
+update-operator replay→有证据才跑cycle-normalized randomized group4→只有mean
+Action被定位为容量瓶颈才移植8 anchors，不整套恢复旧实现。
 
 ## 3. 最终需要表达的计算
 
@@ -574,5 +582,18 @@ root   /data/ymdai/outputs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal
 log    /data/ymdai/logs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801.log
 ```
 
-前四macro合同健康：每步24 tasks、480 queries、24条teacher videos，全部finite，
-step2起五个主块可达。后续main改动不得影响这个frozen run。
+正式训练自然完成200 macro，run summary为96,000 queries、4,800 one-video
+conditions、每task 4,000 queries/200 visits、wall `3898.217s`；200行metrics全部
+finite，validation/test action读取与test video读取为0。macro50/100/150/200的
+paired correct400已分别挂在GPU4/5/6/7，tmux
+`ember-ap-adr-correct400-7dffb6f`；四个prepared合同均为400 states、50 videos
+无放回、36 long-first shards、6 replicas/6 Writer generators。训练tmux已自然
+退出，后续main改动不得影响frozen checkpoint或评测。
+
+同曝光macro175优化动力学进一步限定Program小梯度：AP最后25步Program raw
+gradient仅为UCP的`.856%`，但Adam update RMS和累计位移仍为UCP的`71.18%/85.42%`，
+所以whole-block starvation不成立。最窄风险是两层temporal Q/K的二阶矩只有Adam
+eps的`13.5–17.1%`、累计位移约UCP的`18–26%`；当前只能标记
+`temporal Q/K→contextual key→ProgramReader K`局部routing-key starvation，必须由
+trained-vs-initial key、attention和BA/action反事实结合closed-loop证伪，不能仅凭
+参数梯度宣判架构。

@@ -33,6 +33,20 @@ GPU范围和训练步长是当时快照；活动状态只取
   `/data/ymdai/outputs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801`、
   `/data/ymdai/logs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801.log`、
   `ember-ap-adr-formal-7dffb6f`。正式run不从profile/resume warm-start。
+- 该fresh run已自然完成macro200并退出：96,000 queries、4,800 one-video
+  conditions、200 cycles、wall `3898.217s`，所有metrics/checkpoints/信息墙计数
+  完整。macro50/100/150/200 paired correct400已分别在GPU4/5/6/7启动，tmux
+  `ember-ap-adr-correct400-7dffb6f`；四卡各有6个Writer generator并已生成prepared
+  contract，teacher action reads=0。
+- AP macro175与UCP raw macro175同曝光module-dynamics只读审计完成。AP Program
+  raw gradient虽仅为UCP约`.856%`，Adam update/cumulative displacement仍达
+  `71.18%/85.42%`，whole-block starvation被排除；剩余最窄风险是eps-limited
+  temporal Q/K routing。analysis/summary SHA为`1ee02ff2...5a0`/`c4c79189...1fc`。
+- post-v5×recipe审计完成并复核30项primary evidence SHA。八个formal架构共享完全
+  相同的full24/B20/fast400 step/sampler/launcher blobs，无一拥有matched alternate
+  recipe；历史long-first不是optimizer phase。封存analysis/summary SHA为
+  `a53f528c...b229`/`f481f37e...2442`，后续只做update-operator replay、证据门后的
+  normalized randomized group4和条件化8-Action-anchor transplant，不整套重跑旧架构。
 - endpoint10 no-gradient held诊断已以`544c0ef`/`2055a82`集成main；职责拆为
   candidate/pairing、historical provenance、result aggregation和唯一runtime，
   未分叉Writer/evaluator。定向`52 passed`、隐藏全部CUDA的全仓`222 passed`；

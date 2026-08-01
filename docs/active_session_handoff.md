@@ -10,16 +10,15 @@
 
 ## 0. 2026-08-01 AP-ADR当前状态与紧邻动作
 
-当前唯一formal训练是Amplitude-Preserving Asymmetric Dual Read Writer的fresh
-首小时；不得重复启动、不得从profile/smoke续接，也不得让main后续改动污染其
-frozen源码：
+Amplitude-Preserving Asymmetric Dual Read Writer的fresh首小时已经自然完成；
+不得重复启动、不得从profile/smoke续接，也不得让main后续改动污染其frozen源码：
 
 ```text
 commit  7dffb6f7faa98e049d2cb6bc2410fbfc5d1bf0a9
 frozen  /data/ymdai/.codex/worktrees/EMBER-ap-adr-formal-7dffb6f-20260801
 root    /data/ymdai/outputs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801
 log     /data/ymdai/logs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801.log
-tmux    ember-ap-adr-formal-7dffb6f
+tmux    已自然退出
 ```
 
 合同为4 ranks、仅物理GPU4–7、NUMA node1、B20、每macro 24 tasks恰好一次、
@@ -28,6 +27,22 @@ raw full24 mean、一次clip/AdamW/scheduler、fresh macro0→200、every25 chec
 精确Writer参数`10,241,024`；source policy trainable参数0；validation/test action
 gradient与test video读取均为0。首小时候选固定评测macro50/100/150/200 paired
 correct400；是否resume到400只由absolute、breadth、趋势和内部主路径裁决。
+
+实际完成200 optimizer steps/200 cycles、96,000 queries、4,800 one-video
+conditions、每task 4,000 queries/200 visits，wall `3898.217s`；所有200行finite，
+validation/test action读取与test video读取为0。四个paired correct400已经启动：
+
+```text
+tmux     ember-ap-adr-correct400-7dffb6f
+macro50  GPU4  ...macro0050_7dffb6f_20260801
+macro100 GPU5  ...macro0100_7dffb6f_20260801
+macro150 GPU6  ...macro0150_7dffb6f_20260801
+macro200 GPU7  ...macro0200_7dffb6f_20260801
+```
+
+四个prepared合同均为8 tasks×50 states、correct videos无放回、36 long-first
+shards、6 replicas/6 Writer generators，teacher action读取0。启动确认时四个
+controller与每卡6个Writer generator均存活；等待自然完成，不得重启或另建runner。
 
 正式launch前的live seal已完成。longseed172真实105-frame B20三macro的step wall为
 `20.567/18.717/18.644s`，峰值allocated/reserved为

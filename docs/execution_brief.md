@@ -11,18 +11,20 @@ target-only Core reads与38×16 target/rank Program reads独立归一化后直�
 套LoRA。
 
 105-frame、B20、4-rank三macro profile和formal-seed fresh0→1→exact-resume1→3
-已通过；step1全部payload逐项不变，profile/resume seal `7dffb6f`已push。当前从
-clean detached `7dffb6f` fresh identity运行raw-full24/fast macro0→200：
+已通过；step1全部payload逐项不变，profile/resume seal `7dffb6f`已push。clean
+detached `7dffb6f`的raw-full24/fast fresh macro0→200已经自然完成：
 
 ```text
-tmux   ember-ap-adr-formal-7dffb6f
+tmux   已自然退出，不得重复启动
 root   /data/ymdai/outputs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801
 log    /data/ymdai/logs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801.log
 frozen /data/ymdai/.codex/worktrees/EMBER-ap-adr-formal-7dffb6f-20260801
 ```
 
-不得重复启动或从smoke续接。完成后评测macro50/100/150/200 paired correct400；
-只有absolute/breadth/趋势或内部主路证据达到一小时门才resume到400。
+run summary为200 steps/200 cycles、96,000 queries、4,800 one-video conditions、
+wall `3898.217s`，信息墙读取0。macro50/100/150/200 paired correct400已经分别在
+GPU4/5/6/7启动，tmux `ember-ap-adr-correct400-7dffb6f`；只有四点absolute、
+breadth、趋势和内部主路证据达到一小时门才resume到400。
 
 新的同曝光证据把架构和recipe责任进一步拆开：UCP raw macro150→SERIAL step900
 将x-only相对full的BA/action变化从`.0653/.01269`提高到`.4184/.12999`，但四个

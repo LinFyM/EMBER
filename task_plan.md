@@ -88,8 +88,10 @@ runner、split 或 GPU 权限。
   删除terminal amplifier、global mixer、谱约束与并行旧路径。
 - [x] AP-ADR最长105-frame B20三macro、formal-seed fresh0→1→exact-resume1→3
   全部通过；step1七个payload逐项不变，seal `7dffb6f`已push。
-- [ ] clean frozen `7dffb6f`的AP-ADR formal fresh macro0→200正在GPU4–7运行；
-  完成后评测macro50/100/150/200 paired correct400并按一小时门裁决。
+- [x] clean frozen `7dffb6f`的AP-ADR formal fresh macro0→200自然完成：200 cycles、
+  96,000 queries、4,800 one-video conditions、wall `3898.217s`，信息墙读取0。
+- [ ] macro50/100/150/200 paired correct400已分别在GPU4/5/6/7启动；核验四个
+  400-row panel、逐task/breadth/gained-lost后按一小时门裁决。
 - [x] endpoint10实现已合入`544c0ef`/`2055a82`：exact ten-step sampler无
   autocast/ACTION输入，sealed512 pairing、finite和historical provenance均
   fail-close；CPU全仓`222 passed`。

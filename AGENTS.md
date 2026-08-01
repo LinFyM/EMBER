@@ -67,18 +67,21 @@ reads、38×16 target/rank Program reads和conventional coherent factor heads；
 最长105-frame B20三macro与formal-seed fresh0→1→exact-resume1→3已通过，step1
 全部payload逐项未改写；live seal commit为`7dffb6f`。
 
-当前唯一formal run从clean detached `7dffb6f` fresh identity运行macro0→200：
+clean detached `7dffb6f`的fresh首小时已经自然完成macro0→200：
 
 ```text
-tmux   ember-ap-adr-formal-7dffb6f
+tmux   已自然退出，不得重复启动
 frozen /data/ymdai/.codex/worktrees/EMBER-ap-adr-formal-7dffb6f-20260801
 root   /data/ymdai/outputs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801
 log    /data/ymdai/logs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801.log
 ```
 
-不得重复启动、不得从smoke warm-start。结束后评测macro50/100/150/200 paired
-correct400，再按absolute、breadth、趋势、漂移和Core→Program→BA→action证据决定
-是否resume到400。
+run summary确认200 optimizer steps/200 cycles、96,000 queries、4,800 one-video
+conditions、每task 4,000 queries/200 visits，wall `3898.217s`；validation/test
+action读取和test video读取均为0。macro50/100/150/200的paired correct400已分别
+挂在GPU4/5/6/7，tmux `ember-ap-adr-correct400-7dffb6f`；每臂400 states、50 videos
+无放回、36 long-first shards、6 persistent replicas/6 Writer generators。等待自然
+完成后按absolute、breadth、漂移和Core→Program→BA→action证据裁决，不得预先resume。
 
 同曝光UCP raw macro150与SERIAL step900内部对照确认：SERIAL把删除A/D后的
 BA/action变化从`.0653/.01269`提高到`.4184/.12999`，所以update granularity

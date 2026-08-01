@@ -54,6 +54,38 @@
   Program、compiler、factor全部非零可达。formal seed fresh0→1→exact-resume1→3
   也通过，step1七个payload的size/mtime/SHA逐项不变。profile/resume seal已在
   `7dffb6f` push；正式首小时从fresh identity启动macro0→200，不继承smoke。
+- AP-ADR fresh首小时随后自然完成macro0→200：200 cycles、96,000 queries、4,800
+  one-video conditions、每task 4,000 queries/200 visits，wall `3898.217s`；200行
+  metrics全部finite，validation/test action和test video读取均为0。macro50/100/
+  150/200 paired correct400已分别在GPU4/5/6/7启动，四个prepared合同均为400
+  states、correct videos无放回、36 long-first shards和6 replicas/6 generators。
+- 同曝光macro175的模块动力学审计排除了“AP整个Program没训练”的粗解释：最后
+  25步Program raw gradient L2仅为UCP的`.856%`，但Adam bias-corrected update RMS
+  与累计位移仍为UCP的`71.18%/85.42%`。小梯度主要来自AP只用axial stack生成K、
+  raw A/E/D直接走V的职责差异，不是full24额外抵消；AP/UCP Program mean-energy
+  retention在末窗仍为`.859/.881`。
+- 风险可进一步局部到temporal Q/K：其`sqrt(v)/Adam eps`只有`.135–.171`，累计
+  位移仅约UCP的`18–26%`，而temporal output、local Q/K、ProgramReader、target/rank
+  identities、Core和factor均有实质位移。因此最早候选接口是
+  `temporal Q/K→contextual key→ProgramReader K/softmax`，但这还不是功能失败结论；
+  必须用trained-vs-initial/time-permuted keys、attention routing和BA/action sensitivity
+  与closed-loop共同判定。审计analysis/summary SHA为
+  `1ee02ff2d2daf47dd76f8606d2c7de910cb7e11599848d2ba19faeada585c5a0`/
+  `c4c79189e72470803fb1454d9b5388f8893a793d93ad574e7c0446232bac11fc`。
+- post-v5×recipe正式只读审计又复核了八个formal commit：v7/v8/v10/Loom/
+  Recenter/Core-Program/Prior/Target-Spectral的`as_step.py`、`as_sampling.py`和launcher
+  blob逐项相同，全部只跑过full24/B20/fast400，没有matched alternate recipe。
+  历史long-first只改变同一次24-task聚合中的rank内累加顺序，不是optimizer
+  curriculum；SERIAL才首次把它变成六个真实optimizer phases。因此aggregate只可
+  判定“架构×bundle”失败。Prior-Innovation局部因果证据尤其弱；可直接删除的仍只
+  是global binder、早期8→1 pooling、terminal amplifier、无锚confidence/gap、硬删
+  DC、strict product和强制谱。analysis/summary SHA为
+  `a53f528ccf29931de415c1f52d058ed03897c4c6bf3e512c22bbd5066c45b229`/
+  `f481f37e60669376e1876cda48d5a6e524303ca2289ce0da7987b2267ae62442`。
+- 受控复核优先级因此固定为：先做无rollout的单-cycle update-operator replay，拆分
+  raw mean、六次Adam clock与phase order；只有replay稳定支持才跑cycle-normalized
+  randomized group4一小时；只有当前mean Action被内部定位为容量瓶颈，才在
+  amplitude-preserving canonical路径移植8个Action anchors，不恢复v7/v8 binder。
 
 ## 2026-08-01 SPG一小时门、架构×recipe与UCP根因结论
 

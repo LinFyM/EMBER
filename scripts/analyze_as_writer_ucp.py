@@ -19,14 +19,8 @@ import time
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-import h5py
-import numpy as np
 import torch
 import torch.distributed as dist
-from lerobot.utils.constants import (
-    OBS_LANGUAGE_ATTENTION_MASK,
-    OBS_LANGUAGE_TOKENS,
-)
 from safetensors.torch import load_file
 
 from ember.lora import copy_task_lora_state_, validate_lora_state
@@ -48,7 +42,7 @@ from ember.pi05_source_checkpoint import (
 from ember.pi05_source_setup import initialize_distributed, load_stats
 from ember.pi05_target_data import SUITE_ORDER
 from ember.writer.as_config import load_writer_config
-from ember.writer.data import RawTeacherVideoStore, WriterTaskAuthority, _camera
+from ember.writer.data import RawTeacherVideoStore, WriterTaskAuthority
 from ember.writer.inference import (
     expected_writer_episode_evidence,
     inspect_as_writer_evaluation,
@@ -58,27 +52,34 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 from ember.writer.ucp_analysis import (
     CONDITIONS,
     COUNTERFACTUAL_CONTRACT,
-    STAGES,
     build_initial_program,
+    compile_with_target_identity_permutation,
     coordinate_summary,
     decode_coordinates,
+    effective_ba_error,
     effective_metrics,
     effective_variance,
-    fixed_sequence,
+    fixed_stream_counterfactual,
     lora_geometry,
     mapping_metrics,
     pack_flat,
     program_signature,
+    rank_gauge_permute,
     reader_attention,
     reader_attention_summary,
     relative_metrics,
-    resample_intervals,
     split_state,
-    summarize_records,
     type_ablation,
     validate_analysis_provenance,
     variance_metrics,
 )
+from ember.writer.ucp_analysis_summary import (
+    matched_diagnostics,
+    summarize_records,
+    validate_finite_tree,
+    validate_rank_payloads,
+)
+from ember.writer.ucp_analysis_runtime import fixed_policy_query, policy_action
 from ember.writer.validation import _build_models
 
 
@@ -110,71 +111,31 @@ def parse_args() -> argparse.Namespace:
     return result
 
 
-def policy_action(
-    *, policy: torch.nn.Module, processor: Pi05LiberoProcessor,
-    prepared: Mapping[str, torch.Tensor], state: Mapping[str, torch.Tensor],
-    identity: Mapping[str, torch.Tensor], lora: Any, seed: int, device: torch.device,
-) -> torch.Tensor:
-    copy_task_lora_state_(policy, state, lora)
-    generator = torch.Generator(device="cpu").manual_seed(seed)
-    noise = torch.randn(
-        1, int(policy.model.config.chunk_size), int(policy.model.config.max_action_dim),
-        generator=generator, dtype=torch.float32,
-    ).to(device)
-    with torch.inference_mode(), torch.autocast(
-        device_type=device.type, dtype=torch.bfloat16, enabled=device.type == "cuda",
-    ):
-        value = policy.predict_action_chunk(dict(prepared), noise=noise)
-    copy_task_lora_state_(policy, identity, lora)
-    return processor.unnormalize_action(value).detach()
-
-
-def fixed_policy_query(
-    authority: WriterTaskAuthority,
-    processor: Pi05LiberoProcessor,
-    device: torch.device,
-) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
-    """Read observation-only demo0/frame0; the ``actions`` dataset is never opened."""
-
-    with h5py.File(authority.path, "r") as handle:
-        obs = handle["data/demo_0/obs"]
-        base_array = np.asarray(obs["agentview_rgb"][0])
-        wrist_array = np.asarray(obs["eye_in_hand_rgb"][0])
-        state_array = np.concatenate((np.asarray(obs["ee_states"][0], dtype=np.float32), np.asarray(obs["gripper_states"][0], dtype=np.float32)))
-    base = torch.from_numpy(_camera(base_array))[None].to(device, dtype=torch.float32).div_(255)
-    wrist = torch.from_numpy(_camera(wrist_array))[None].to(device, dtype=torch.float32).div_(255)
-    states = torch.from_numpy(state_array)[None].to(device)
-    tokens, masks = processor._tokenize_prompts(states, [authority.language])
-    identity = {
-        "demo_index": 0,
-        "frame_index": 0,
-        "observation_only": True,
-        "actions_dataset_opened": False,
-        "base_sha256": hashlib.sha256(np.ascontiguousarray(base_array)).hexdigest(),
-        "wrist_sha256": hashlib.sha256(np.ascontiguousarray(wrist_array)).hexdigest(),
-        "state_sha256": hashlib.sha256(np.ascontiguousarray(state_array)).hexdigest(),
-    }
-    return {
-        "observation.images.base_0_rgb": base,
-        "observation.images.left_wrist_0_rgb": wrist,
-        OBS_LANGUAGE_TOKENS: tokens,
-        OBS_LANGUAGE_ATTENTION_MASK: masks,
-    }, identity
-
-
 def _run_program(
     writer: CompleteLoRAWriter,
     initial: torch.Tensor,
     endpoints: torch.Tensor,
     valid_intervals: torch.Tensor,
     valid_semantics: torch.Tensor,
+    target_permutation: torch.Tensor | None = None,
 ) -> tuple[list[torch.Tensor], torch.Tensor, torch.Tensor, torch.Tensor]:
     blocks, value = [], initial
     for block in writer.semantic_program.blocks:
         value = block(value, endpoints, valid_intervals, valid_semantics)
         blocks.append(value)
-    coordinates, _ = writer.compiler.compile_with_diagnostics(value, endpoints, valid_intervals, valid_semantics)
-    attention = reader_attention(writer, value, endpoints, valid_intervals, valid_semantics)
+    if target_permutation is None:
+        coordinates, _ = writer.compiler.compile_with_diagnostics(
+            value, endpoints, valid_intervals, valid_semantics,
+        )
+    else:
+        coordinates = compile_with_target_identity_permutation(
+            writer, value, endpoints, valid_intervals, valid_semantics,
+            target_permutation,
+        )
+    attention = reader_attention(
+        writer, value, endpoints, valid_intervals, valid_semantics,
+        target_permutation,
+    )
     return blocks, value, coordinates, attention
 
 
@@ -215,48 +176,23 @@ def _condition_inputs(
     return frame_batches, index_batches, rows
 
 
-def _stage_signatures(
-    *, row: int, valid_task_tokens: torch.Tensor, valid_frames: torch.Tensor,
-    q_text: torch.Tensor, packed_m: torch.Tensor, packed_g: torch.Tensor,
-    packed_x: torch.Tensor, packed_raw_action: torch.Tensor, packed_action: torch.Tensor,
-    initial: torch.Tensor, blocks: Sequence[torch.Tensor], final: torch.Tensor,
-    valid_intervals: torch.Tensor, valid_semantics: torch.Tensor,
-    coordinates: torch.Tensor,
-) -> dict[str, torch.Tensor]:
-    token_valid = valid_task_tokens[row]
-    frame_valid = valid_frames[row]
-    interval_valid = valid_intervals[row]
-    semantic_valid = valid_semantics[row]
-    result = {
-        "q_text": q_text[row, token_valid].float(),
-        "multimodal_m": fixed_sequence(packed_m[row, :, token_valid], frame_valid),
-        "grounded_g": fixed_sequence(packed_g[row, :, token_valid], frame_valid),
-        "absolute_x": fixed_sequence(packed_x[row, :, token_valid], frame_valid),
-        "raw_action": fixed_sequence(packed_raw_action[row], frame_valid),
-        "action_probe": fixed_sequence(packed_action[row], frame_valid),
-        "coordinates": coordinates[row].float(),
-    }
-    values = (("initial", initial[row]), ("program_block_1", blocks[0][row]), ("program_block_2", blocks[1][row]), ("final", final[row]))
-    for name, value in values:
-        result[f"{name}_program" if name == "initial" else name] = program_signature(value, interval_valid, semantic_valid)
-        if name in {"initial", "final"}:
-            for kind in ("x", "a", "d"):
-                result[f"{name}_{kind}"] = program_signature(value, interval_valid, semantic_valid, kind=kind)
-    result["final_program"] = result.pop("final")
-    return result
-
-
 def _variant_result(
     *, writer: CompleteLoRAWriter, policy: torch.nn.Module,
     processor: Pi05LiberoProcessor, prepared: Mapping[str, torch.Tensor],
     identity: Mapping[str, torch.Tensor], lora: Any, seed: int,
     initial: torch.Tensor, endpoints: torch.Tensor, valid_intervals: torch.Tensor,
     valid_semantics: torch.Tensor, device: torch.device,
+    target_permutation: torch.Tensor | None = None,
 ) -> dict[str, Any]:
-    blocks, final, coordinates, attention = _run_program(
-        writer, initial, endpoints, valid_intervals, valid_semantics,
-    )
-    factors, public = decode_coordinates(writer, coordinates)
+    with torch.inference_mode(), torch.autocast(
+        device_type=device.type, dtype=torch.bfloat16,
+        enabled=device.type in {"cpu", "cuda"},
+    ):
+        blocks, final, coordinates, attention = _run_program(
+            writer, initial, endpoints, valid_intervals, valid_semantics,
+            target_permutation,
+        )
+        factors, public = decode_coordinates(writer, coordinates)
     state = split_state(public, 0)
     validate_lora_state(state, lora)
     action = policy_action(
@@ -288,6 +224,80 @@ def _variant_comparison(
         "effective_ba": effective_metrics(writer, reference["public"], candidate["public"]),
         "policy_action": relative_metrics(reference["action"], candidate["action"]),
     }
+
+
+def _routing_diagnostics(
+    *, writer: CompleteLoRAWriter, policy: torch.nn.Module,
+    processor: Pi05LiberoProcessor, identity: Mapping[str, torch.Tensor],
+    lora: Any, device: torch.device, encoded: Mapping[str, Any],
+    shared: Mapping[str, Any], full: Mapping[str, Any],
+) -> dict[str, Any]:
+    selected = slice(0, 1)
+    target_permutation = torch.roll(torch.arange(
+        writer.compiler.target_count, device=device,
+    ), -1)
+    target_variant = _variant_result(
+        **shared, initial=encoded["initial"][selected],
+        endpoints=encoded["endpoints"][selected],
+        valid_intervals=encoded["valid_intervals"][selected],
+        valid_semantics=encoded["valid_semantics"][selected],
+        target_permutation=target_permutation,
+    )
+    rank_permutation = torch.roll(torch.arange(
+        writer.PUBLIC_LORA_RANK, device=device,
+    ), -1)
+    gauge_state, per_target = rank_gauge_permute(
+        writer, full["public"], rank_permutation,
+    )
+    validate_lora_state(gauge_state, lora)
+    gauge_action = policy_action(
+        policy=policy, processor=processor, prepared=encoded["prepared"],
+        state=gauge_state, identity=identity, lora=lora,
+        seed=encoded["action_seed"], device=device,
+    )
+    ba_error = effective_ba_error(writer, full["public"], gauge_state)
+    action_error = relative_metrics(full["action"], gauge_action)
+    action_error["max_absolute_error"] = float(
+        (full["action"].float() - gauge_action.float()).abs().max()
+    )
+    raw_a = mapping_metrics(full["public"], gauge_state, select="a")
+    raw_b = mapping_metrics(full["public"], gauge_state, select="b")
+    if (
+        ba_error["relative_l2"] > 2e-5
+        or action_error["relative_l2"] > 2e-5
+        or raw_a["relative_l2"] == 0
+        or raw_b["relative_l2"] == 0
+    ):
+        raise WriterModelError("rank gauge permutation violated its sanity contract")
+    target_comparison = _variant_comparison(writer, full, target_variant)
+    target_mapping = {}
+    for spec in writer.tensor_specs:
+        target = str(writer._decoding[spec.name][1])
+        if target in target_mapping and target_mapping[target] != spec.module:
+            raise WriterModelError("real target decode mapping is not unique")
+        target_mapping[target] = spec.module
+    if len(target_mapping) != writer.compiler.target_count:
+        raise WriterModelError("real target decode mapping is incomplete")
+    return {
+        "target_identity_permutation": {
+            "definition": "permute target identities; retain real 38-target decode slots",
+            "permutation": target_permutation.cpu().tolist(),
+            "real_target_decode_mapping": target_mapping,
+            "relative_to_canonical": {key: target_comparison[key] for key in (
+                "coordinates", "effective_ba", "policy_action",
+            )},
+        },
+        "rank_gauge_permutation": {
+            "definition": "same permutation of each public A row and B column",
+            "permutation": rank_permutation.cpu().tolist(),
+            "relative_l2_tolerance": 2e-5,
+            "public_a": raw_a, "public_b": raw_b,
+            "effective_ba_numerical_error": ba_error,
+            "fixed_policy_action_numerical_error": action_error,
+            "per_real_target_raw_change": per_target,
+        },
+    }
+
 
 def _encode_reference(
     *, task: Mapping[str, Any], init_state_id: int,
@@ -375,69 +385,6 @@ def _encode_reference(
     }
 
 
-def _matched_diagnostics(
-    writer: CompleteLoRAWriter, encoded: Mapping[str, Any]
-) -> dict[str, Any]:
-    signatures = [
-        _stage_signatures(
-            row=row, valid_task_tokens=encoded["valid_tokens"],
-            valid_frames=encoded["valid_frames"], q_text=encoded["q_text"],
-            packed_m=encoded["packed_m"], packed_g=encoded["packed_g"],
-            packed_x=encoded["packed_x"],
-            packed_raw_action=encoded["packed_raw"],
-            packed_action=encoded["packed_action"],
-            initial=encoded["initial"], blocks=encoded["blocks"],
-            final=encoded["final"], valid_intervals=encoded["valid_intervals"],
-            valid_semantics=encoded["valid_semantics"],
-            coordinates=encoded["coordinates"],
-        )
-        for row in range(len(CONDITIONS))
-    ]
-    comparisons = {}
-    for row, condition in enumerate(CONDITIONS):
-        comparisons[condition] = {
-            stage: relative_metrics(signatures[0][stage], signatures[row][stage])
-            for stage in STAGES
-        }
-        comparisons[condition].update({
-            "factor_output": mapping_metrics(
-                encoded["factor_states"][0], encoded["factor_states"][row]
-            ),
-            "public_a": mapping_metrics(
-                encoded["states"][0], encoded["states"][row], select="a"
-            ),
-            "public_b": mapping_metrics(
-                encoded["states"][0], encoded["states"][row], select="b"
-            ),
-            "effective_ba": effective_metrics(
-                writer, encoded["states"][0], encoded["states"][row]
-            ),
-            "policy_action": relative_metrics(
-                encoded["actions"][0], encoded["actions"][row]
-            ),
-        })
-    readers = {
-        condition: reader_attention_summary(
-            encoded["attention"][row : row + 1],
-            encoded["valid_intervals"][row : row + 1],
-            encoded["valid_semantics"][row : row + 1],
-        )
-        for row, condition in enumerate(CONDITIONS)
-    }
-    return {
-        "comparisons": comparisons,
-        "readers": readers,
-        "coordinates": {
-            condition: coordinate_summary(encoded["coordinates"][row])
-            for row, condition in enumerate(CONDITIONS)
-        },
-        "geometry": {
-            condition: lora_geometry(writer, encoded["states"][row])
-            for row, condition in enumerate(CONDITIONS)
-        },
-    }
-
-
 def _counterfactual_diagnostics(
     *, writer: CompleteLoRAWriter, policy: torch.nn.Module,
     processor: Pi05LiberoProcessor, identity: Mapping[str, torch.Tensor],
@@ -454,6 +401,23 @@ def _counterfactual_diagnostics(
         endpoints=encoded["endpoints"][selected],
         valid_intervals=encoded["valid_intervals"][selected],
         valid_semantics=encoded["valid_semantics"][selected],
+    )
+    canonical = {**full, "public": encoded["states"][0],
+                 "factor": encoded["factor_states"][0],
+                 "coordinates": encoded["coordinates"][0],
+                 "action": encoded["actions"][0]}
+    canonical_recompute = _variant_comparison(writer, canonical, full)
+    if any(
+        canonical_recompute[key]["relative_l2"] > 2e-5
+        for key in (
+            "coordinates", "factor", "public_a", "public_b", "effective_ba",
+            "policy_action",
+        )
+    ):
+        raise WriterModelError("full counterfactual recompute changed canonical LoRA")
+    routing = _routing_diagnostics(
+        writer=writer, policy=policy, processor=processor, identity=identity,
+        lora=lora, device=device, encoded=encoded, shared=shared, full=full,
     )
     ablations = {"full": {
         "reader": full["reader"], "coordinate_summary": full["coordinate_summary"],
@@ -474,21 +438,23 @@ def _counterfactual_diagnostics(
         }
     initial = encoded["initial"]
     task_tokens = (initial.shape[2] - 1) // 2
-    correct_count = int(encoded["valid_intervals"][0].sum())
-    fixed_x = {}
-    for row, condition in enumerate(CONDITIONS):
-        candidate = initial[0:1].clone()
-        count = int(encoded["valid_intervals"][row].sum())
-        candidate[0, :correct_count, task_tokens:] = resample_intervals(
-            initial[row, :count, task_tokens:], correct_count,
-        )
-        value = _variant_result(
-            **shared, initial=candidate,
-            endpoints=encoded["endpoints"][selected],
-            valid_intervals=encoded["valid_intervals"][selected],
-            valid_semantics=encoded["valid_semantics"][selected],
-        )
-        fixed_x[condition] = _variant_comparison(writer, full, value)
+    fixed_streams = {}
+    for output_key, fixed in (
+        ("fixed_x_vary_a_d", "x"), ("fixed_a_d_vary_x", "a_d"),
+    ):
+        comparisons = {}
+        for row, condition in enumerate(CONDITIONS):
+            candidate = fixed_stream_counterfactual(
+                initial, encoded["valid_intervals"], row, fixed=fixed,
+            )
+            value = _variant_result(
+                **shared, initial=candidate,
+                endpoints=encoded["endpoints"][selected],
+                valid_intervals=encoded["valid_intervals"][selected],
+                valid_semantics=encoded["valid_semantics"][selected],
+            )
+            comparisons[condition] = _variant_comparison(writer, full, value)
+        fixed_streams[output_key] = comparisons
     scales = {}
     for scale in (.5, 1.0, 2.0):
         candidate = initial[selected].clone()
@@ -505,8 +471,10 @@ def _counterfactual_diagnostics(
         }
     return {
         "type_ablations": ablations,
-        "fixed_x_vary_a_d": fixed_x,
+        **fixed_streams,
         "dynamic_scale": scales,
+        "canonical_recompute": canonical_recompute,
+        **routing,
     }
 
 
@@ -523,7 +491,7 @@ def probe_reference(
         authority=authority, policy=policy, writer=writer, identity=identity,
         lora=lora, tokenizer=tokenizer, processor=processor, device=device,
     )
-    matched = _matched_diagnostics(writer, encoded)
+    matched = matched_diagnostics(writer, encoded)
     counterfactuals = _counterfactual_diagnostics(
         writer=writer, policy=policy, processor=processor, identity=identity,
         lora=lora, device=device, encoded=encoded,
@@ -630,10 +598,16 @@ def _publish_run_contract(
             "host": socket.gethostname(), "command": list(os.sys.argv),
             "git": payload["state"], "provenance": payload["provenance"],
             "analysis_code": {
-                "entrypoint": str(Path(__file__).resolve()),
-                "entrypoint_sha256": sha256_file(Path(__file__).resolve()),
-                "metric_owner": str(args.repo / "src/ember/writer/ucp_analysis.py"),
-                "metric_owner_sha256": sha256_file(args.repo / "src/ember/writer/ucp_analysis.py"),
+                "files": {
+                    relative: sha256_file(args.repo / relative)
+                    for relative in (
+                        "scripts/analyze_as_writer_ucp.py",
+                        "src/ember/writer/ucp_analysis.py",
+                        "src/ember/writer/ucp_analysis_runtime.py",
+                        "src/ember/writer/ucp_analysis_summary.py",
+                        "src/ember/writer/ucp_geometry.py",
+                    )
+                },
             },
             "config": {"path": str(args.config), "sha256": sha256_file(args.config)},
             "training_run": {"path": str(args.training_run), "contract_sha256": canonical_hash(training)},
@@ -689,15 +663,27 @@ def _seal_local_rows(
     local_results: Sequence[Mapping[str, Any]],
     failure: str | None,
 ) -> None:
+    if failure is None:
+        try:
+            validate_finite_tree(local_results, f"rank_{context.rank}")
+        except Exception as error:
+            failure = repr(error)
     statuses: list[Any] = [None] * context.world_size
     dist.all_gather_object(statuses, {"rank": context.rank, "error": failure})
     errors = [status for status in statuses if status["error"]]
     if errors:
         raise WriterModelError(f"UCP analysis rank failure: {errors}")
-    write_json_atomic(args.output_dir / f"rows_rank_{context.rank:02d}.json", {
-        "rank": context.rank, "rows": list(local_results),
-    })
-    barrier(context)
+    write_failure = None
+    try:
+        write_json_atomic(args.output_dir / f"rows_rank_{context.rank:02d}.json", {
+            "rank": context.rank, "rows": list(local_results),
+        })
+    except Exception as error:
+        write_failure = repr(error)
+    dist.all_gather_object(statuses, {"rank": context.rank, "error": write_failure})
+    errors = [status for status in statuses if status["error"]]
+    if errors:
+        raise WriterModelError(f"UCP analysis rank write failure: {errors}")
 
 
 def _finalize_results(
@@ -706,28 +692,32 @@ def _finalize_results(
     *,
     started: float,
 ) -> None:
-    if not context.is_main:
-        barrier(context)
-        return
-    rows = []
-    for rank in range(context.world_size):
-        rows.extend(read_json(args.output_dir / f"rows_rank_{rank:02d}.json")["rows"])
-    rows.sort(key=lambda row: (int(row["global_task_id"]), int(row["reference_ordinal"])))
-    if len(rows) != 8 * args.references_per_task:
-        raise WriterModelError("UCP analysis lost task/reference rows")
-    result = {
-        "schema_version": RESULT_SCHEMA, "rows": rows,
-        "summary": summarize_records(rows), "task_count": 8,
-        "references_per_task": args.references_per_task,
-        "conditions": list(CONDITIONS), "rollouts": 0,
-        "wall_seconds": time.monotonic() - started,
-        "run_contract_sha256": canonical_hash(
-            read_json(args.output_dir / "run_contract.json")
-        ),
-    }
-    write_json_atomic(args.output_dir / "analysis.json", result)
-    write_json_atomic(args.output_dir / "summary.json", result["summary"])
-    barrier(context)
+    status: Any = None
+    if context.is_main:
+        try:
+            payloads = []
+            for rank in range(context.world_size):
+                payloads.append(read_json(
+                    args.output_dir / f"rows_rank_{rank:02d}.json"
+                ))
+            rows = validate_rank_payloads(payloads, args.references_per_task)
+            result = {
+                "schema_version": RESULT_SCHEMA, "rows": rows,
+                "summary": summarize_records(rows), "task_count": 8,
+                "references_per_task": args.references_per_task,
+                "conditions": list(CONDITIONS), "rollouts": 0,
+                "wall_seconds": time.monotonic() - started,
+                "run_contract_sha256": canonical_hash(
+                    read_json(args.output_dir / "run_contract.json")
+                ),
+            }
+            validate_finite_tree(result)
+            write_json_atomic(args.output_dir / "analysis.json", result)
+            write_json_atomic(args.output_dir / "summary.json", result["summary"])
+            status = {"ok": True}
+        except Exception as error:
+            status = {"error": repr(error)}
+    _broadcast(context, status)
 
 
 def main() -> None:
@@ -790,10 +780,12 @@ def main() -> None:
         failure = repr(error)
     finally:
         store.close()
-    _seal_local_rows(args, context, local_results, failure)
-    _finalize_results(args, context, started=started)
-    if dist.is_initialized():
-        dist.destroy_process_group()
+    try:
+        _seal_local_rows(args, context, local_results, failure)
+        _finalize_results(args, context, started=started)
+    finally:
+        if dist.is_initialized():
+            dist.destroy_process_group()
 
 
 if __name__ == "__main__":

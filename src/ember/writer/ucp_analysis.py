@@ -13,6 +13,7 @@ import torch
 import torch.nn.functional as F
 
 from ember.writer.model import CompleteLoRAWriter, WriterModelError
+from ember.writer.ucp_geometry import gram_geometry
 from ember.writer.semantic_program import apply_two_axis_rope, split_heads
 
 CONDITIONS = (
@@ -44,14 +45,27 @@ STAGES = (
 COUNTERFACTUAL_CONTRACT = {
     "type_ablations": ["full", "x_only", "dynamic_only", "a_only", "d_only"],
     "fixed_x_vary_a_d": (
-        "hold correct X and its endpoint grid; linearly resample each "
-        "condition's A/D intervals to the correct interval count"
+        "hold correct X and endpoint grid; interpolate A intervals separately; "
+        "resample cumulative G-change trajectory then re-difference D so total "
+        "change is conserved; preserve same-length A/D exactly"
+    ),
+    "fixed_a_d_vary_x": (
+        "hold correct A/D and its endpoint grid; linearly resample each "
+        "condition's X intervals to the correct interval count"
     ),
     "dynamic_scale": {
         "values": [0.5, 1.0, 2.0],
         "scaled_values": "A and D before both Program blocks",
         "fixed_values": "correct-video X",
     },
+    "target_identity_permutation": (
+        "deterministically permute identities assigned to target query slots; "
+        "retain the real 38-target coordinate-to-public-LoRA decode mapping"
+    ),
+    "rank_gauge_permutation": (
+        "apply one deterministic permutation to every public A row and the "
+        "matching B column; raw factors change while complete BA stays invariant"
+    ),
 }
 
 
@@ -93,8 +107,16 @@ def validate_analysis_provenance(
         "src/ember/writer/functional.py",
         "src/ember/writer/checkpoint.py",
         "src/ember/writer/inference.py",
+        "src/ember/writer/video_schedule.py",
+        "src/ember/writer/validation.py",
         "src/ember/writer/data.py",
+        "src/ember/lora.py",
         "src/ember/pi05_lora.py",
+        "src/ember/pi05_eval_contract.py",
+        "src/ember/pi05_processing.py",
+        "src/ember/pi05_source_checkpoint.py",
+        "src/ember/pi05_source_setup.py",
+        "src/ember/pi05_target_data.py",
         "configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json",
     )
     changed = _git(repo, "diff", "--name-only", f"{training_commit}..{head}", "--", *protected)
@@ -250,18 +272,75 @@ def resample_intervals(value: torch.Tensor, length: int) -> torch.Tensor:
     return flat.reshape(length, *value.shape[1:]).to(value.dtype)
 
 
+def fixed_stream_counterfactual(
+    initial: torch.Tensor,
+    valid_intervals: torch.Tensor,
+    row: int,
+    *,
+    fixed: str,
+) -> torch.Tensor:
+    """Put one resampled condition stream on the correct-video endpoint grid."""
+
+    if initial.ndim != 4 or valid_intervals.shape != initial.shape[:2]:
+        raise WriterModelError("invalid UCP fixed-stream counterfactual")
+    if not 0 <= row < initial.shape[0] or fixed not in {"x", "a_d"}:
+        raise WriterModelError("invalid UCP fixed-stream selector")
+    task_tokens = (initial.shape[2] - 1) // 2
+    if initial.shape[2] != task_tokens * 2 + 1:
+        raise WriterModelError("invalid UCP Program column count")
+    correct_count = int(valid_intervals[0].sum())
+    condition_count = int(valid_intervals[row].sum())
+    if correct_count <= 0 or condition_count <= 0:
+        raise WriterModelError("empty UCP fixed-stream counterfactual")
+    candidate = initial[0:1].clone()
+    if condition_count == correct_count:
+        columns = slice(task_tokens, None) if fixed == "x" else slice(0, task_tokens)
+        candidate[0, :correct_count, columns] = initial[
+            row, :condition_count, columns
+        ]
+    elif fixed == "a_d":
+        candidate[0, :correct_count, :task_tokens] = resample_intervals(
+            initial[row, :condition_count, :task_tokens], correct_count,
+        )
+    else:
+        action = initial[row, :condition_count, task_tokens : task_tokens + 1]
+        change = initial[row, :condition_count, task_tokens + 1 :]
+        trajectory = torch.cat((torch.zeros_like(change[:1]), change.cumsum(0)))
+        candidate[0, :correct_count, task_tokens : task_tokens + 1] = (
+            resample_intervals(action, correct_count)
+        )
+        resampled = resample_intervals(trajectory, correct_count + 1)
+        candidate[0, :correct_count, task_tokens + 1 :] = (
+            resampled[1:] - resampled[:-1]
+        )
+    return candidate
+
+
 def reader_attention(
     writer: CompleteLoRAWriter,
     program: torch.Tensor,
     endpoint_positions: torch.Tensor,
     valid_intervals: torch.Tensor,
     valid_semantics: torch.Tensor,
+    target_permutation: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Recompute only the reader probability matrix from its canonical Q/K path."""
 
     compiler = writer.compiler
     batch, intervals, columns, width = program.shape
-    target = compiler.target_identity_norm(compiler.target_identity)
+    target_identity = compiler.target_identity
+    if target_permutation is not None:
+        if (
+            target_permutation.shape != (compiler.target_count,)
+            or target_permutation.dtype != torch.long
+            or sorted(target_permutation.cpu().tolist())
+            != list(range(compiler.target_count))
+        ):
+            raise WriterModelError("invalid target identity permutation")
+        target_identity = target_identity.index_select(
+            0, target_permutation.to(target_identity.device)
+        )
+    target = compiler.target_identity_norm(target_identity)
     rank = compiler.rank_identity_norm(compiler.rank_identity)
     query_key = (target[:, None] + rank[None]).reshape(1, -1, width).expand(batch, -1, -1)
     flat = program.reshape(batch, intervals * columns, width)
@@ -280,6 +359,50 @@ def reader_attention(
     valid = (valid_intervals[:, :, None] & valid_semantics[:, None]).reshape(batch, -1)
     logits = logits.masked_fill(~valid[:, None, None], float("-inf"))
     return logits.softmax(dim=-1).detach()
+
+
+def compile_with_target_identity_permutation(
+    writer: CompleteLoRAWriter,
+    program: torch.Tensor,
+    endpoint_positions: torch.Tensor,
+    valid_intervals: torch.Tensor,
+    valid_semantics: torch.Tensor,
+    permutation: torch.Tensor,
+) -> torch.Tensor:
+    """Change only identities assigned to real target slots, never their decode map."""
+
+    compiler = writer.compiler
+    if permutation.shape != (compiler.target_count,) or permutation.dtype != torch.long:
+        raise WriterModelError("invalid target identity permutation")
+    if sorted(permutation.cpu().tolist()) != list(range(compiler.target_count)):
+        raise WriterModelError("target identity permutation is not bijective")
+    batch, intervals, columns, width = program.shape
+    target = compiler.target_identity_norm(
+        compiler.target_identity.index_select(0, permutation.to(program.device))
+    )
+    rank = compiler.rank_identity_norm(compiler.rank_identity)
+    query = (target[:, None] + rank[None]).reshape(
+        1, compiler.target_count * compiler.rank, width
+    ).expand(batch, -1, -1)
+    flat = program.reshape(batch, intervals * columns, width)
+    valid = (valid_intervals[:, :, None] & valid_semantics[:, None]).reshape(
+        batch, intervals * columns
+    )
+    first = endpoint_positions[:, :, None].expand(
+        batch, intervals, columns
+    ).reshape(batch, -1)
+    second = torch.arange(columns, device=program.device)[None, None].expand(
+        batch, intervals, columns
+    ).reshape(batch, -1)
+    types = compiler._type_identity(columns).to(program.dtype)
+    memory_identity = types[None, None].expand(
+        batch, intervals, columns, width
+    ).reshape_as(flat)
+    return compiler.reader(
+        query, compiler.program_norm(flat), flat, valid,
+        memory_qk_identity=memory_identity,
+        first_positions=first, second_positions=second,
+    ).reshape(batch, compiler.target_count, compiler.rank, width)
 
 
 def reader_attention_summary(
@@ -337,6 +460,36 @@ def _lora_pairs(writer: CompleteLoRAWriter) -> dict[str, dict[str, str]]:
     return dict(result)
 
 
+def rank_gauge_permute(
+    writer: CompleteLoRAWriter,
+    state: Mapping[str, torch.Tensor],
+    permutation: torch.Tensor,
+) -> tuple[dict[str, torch.Tensor], dict[str, dict[str, dict[str, float]]]]:
+    """Apply the same rank permutation to every public A row and B column."""
+
+    rank = writer.PUBLIC_LORA_RANK
+    if (
+        permutation.shape != (rank,)
+        or permutation.dtype != torch.long
+        or sorted(permutation.cpu().tolist()) != list(range(rank))
+    ):
+        raise WriterModelError("invalid public LoRA rank gauge permutation")
+    result = {name: value.detach().clone() for name, value in state.items()}
+    changes = {}
+    for module, names in _lora_pairs(writer).items():
+        a, b = state[names["a"]], state[names["b"]]
+        if a.shape[0] != rank or b.shape[1] != rank:
+            raise WriterModelError("public LoRA rank axis changed")
+        index = permutation.to(a.device)
+        result[names["a"]] = a.index_select(0, index)
+        result[names["b"]] = b.index_select(1, index.to(b.device))
+        changes[module] = {
+            "public_a": relative_metrics(a, result[names["a"]]),
+            "public_b": relative_metrics(b, result[names["b"]]),
+        }
+    return result, changes
+
+
 def _module_kind(module: str) -> str:
     if module.endswith("q_proj"):
         return "q"
@@ -380,12 +533,41 @@ def effective_metrics(
     }
 
 
+def effective_ba_error(
+    writer: CompleteLoRAWriter,
+    reference: Mapping[str, torch.Tensor],
+    candidate: Mapping[str, torch.Tensor],
+) -> dict[str, float]:
+    """Direct numerical error between complete public BA functions."""
+
+    difference = reference_energy = 0.0
+    maximum = 0.0
+    count = 0
+    for names in _lora_pairs(writer).values():
+        left = reference[names["b"]].float() @ reference[names["a"]].float()
+        right = candidate[names["b"]].float() @ candidate[names["a"]].float()
+        delta = right - left
+        difference += float(delta.square().sum())
+        reference_energy += float(left.square().sum())
+        maximum = max(maximum, float(delta.abs().max()))
+        count += delta.numel()
+    return {
+        "relative_l2": math.sqrt(difference / max(reference_energy, 1e-24)),
+        "difference_rms": math.sqrt(difference / max(count, 1)),
+        "max_absolute_error": maximum,
+    }
+
+
 def lora_geometry(writer: CompleteLoRAWriter, state: Mapping[str, torch.Tensor]) -> dict[str, Any]:
     rank = writer.PUBLIC_LORA_RANK
     gram = torch.zeros(rank, rank, dtype=torch.float64)
     b_gram = torch.zeros_like(gram)
-    module_energy: dict[str, float] = {}
     kind_energy = {name: 0.0 for name in ("q", "v", "action")}
+    kind_module_energy: dict[str, list[float]] = {
+        name: [] for name in ("q", "v", "action")
+    }
+    kind_gram = {name: torch.zeros_like(gram) for name in kind_energy}
+    kind_b_gram = {name: torch.zeros_like(gram) for name in kind_energy}
     pairs = _lora_pairs(writer)
     for module, names in pairs.items():
         a, b = state[names["a"]].double().cpu(), state[names["b"]].double().cpu()
@@ -393,41 +575,28 @@ def lora_geometry(writer: CompleteLoRAWriter, state: Mapping[str, torch.Tensor])
         gram += component
         b_gram += b.T @ b
         energy = float(component.sum())
-        module_energy[module] = energy
-        kind_energy[_module_kind(module)] += energy
-    eigen = torch.linalg.eigvalsh(gram).clamp_min(0).flip(0)
-    spectral_total, spectral_top = float(eigen.sum()), float(eigen[0])
-    probabilities = eigen / max(spectral_total, 1e-24)
-    cumulative = probabilities.cumsum(0)
-    diagonal = gram.diag().clamp_min(0)
-    component_cosine = gram / torch.sqrt(diagonal[:, None] * diagonal[None]).clamp_min(1e-24)
-    b_diagonal = b_gram.diag().clamp_min(0)
-    b_cosine = b_gram / torch.sqrt(b_diagonal[:, None] * b_diagonal[None]).clamp_min(1e-24)
-    upper = torch.triu(torch.ones(rank, rank, dtype=torch.bool), diagonal=1)
-    layer_values = np.asarray(list(module_energy.values()), dtype=np.float64)
+        kind = _module_kind(module)
+        kind_energy[kind] += energy
+        kind_module_energy[kind].append(energy)
+        kind_gram[kind] += component
+        kind_b_gram[kind] += b.T @ b
     total_effective = sum(kind_energy.values())
-    if (
-        spectral_total <= 0
-        or spectral_top <= 0
-        or total_effective <= 0
-        or not np.isfinite(layer_values).all()
-    ):
-        raise WriterModelError("UCP effective LoRA geometry is degenerate")
+    overall = gram_geometry(
+        gram, b_gram, [energy for values in kind_module_energy.values() for energy in values],
+    )
+    by_kind = {
+        kind: gram_geometry(kind_gram[kind], kind_b_gram[kind], values)
+        for kind, values in kind_module_energy.items()
+    }
     return {
-        "effective_lora_norm": math.sqrt(max(total_effective, 0.0)),
-        "stable_rank": spectral_total / max(spectral_top, 1e-24),
-        "entropy_effective_rank": float(torch.exp(-(probabilities * probabilities.clamp_min(1e-30).log()).sum())),
-        "top_singular_energy": spectral_top / max(spectral_total, 1e-24),
-        "rank90": int(torch.searchsorted(cumulative, torch.tensor(.9, dtype=cumulative.dtype))) + 1,
-        "rank99": int(torch.searchsorted(cumulative, torch.tensor(.99, dtype=cumulative.dtype))) + 1,
-        "coordinate_energy_participation": (diagonal / diagonal.sum().clamp_min(1e-24)).tolist(),
-        "active_coordinates_1e6": int((diagonal / diagonal.sum().clamp_min(1e-24) > 1e-6).sum()),
-        "component_pair_cosine_mean": float(component_cosine[upper].mean()),
-        "component_negative_pair_fraction": float((component_cosine[upper] < 0).float().mean()),
-        "b_column_cosine_mean": float(b_cosine[upper].mean()),
-        "b_column_negative_fraction": float((b_cosine[upper] < 0).float().mean()),
+        **overall,
         "q_v_action_energy_ratio": {key: value / max(total_effective, 1e-24) for key, value in kind_energy.items()},
-        "per_layer_energy_cv": float(layer_values.std() / max(layer_values.mean(), 1e-24)),
+        "per_target_energy_cv_overall": overall["layer_energy_cv"],
+        "per_layer_energy_cv": overall["layer_energy_cv"],
+        "per_layer_energy_cv_by_kind": {
+            kind: value["layer_energy_cv"] for kind, value in by_kind.items()
+        },
+        "per_kind_geometry": by_kind,
         "cross_layer_effective_ba_cosine": cross_layer_cosine(writer, state),
         "public_a_rms": mapping_metrics(state, state, select="a")["reference_rms"],
         "public_b_rms": mapping_metrics(state, state, select="b")["reference_rms"],
@@ -474,12 +643,21 @@ def split_state(state: Mapping[str, torch.Tensor], row: int) -> dict[str, torch.
     return {name: value[row].detach() for name, value in state.items()}
 
 
-def variance_metrics(values: Sequence[torch.Tensor]) -> dict[str, float]:
+def variance_metrics(values: Sequence[torch.Tensor]) -> dict[str, Any]:
     tensor = torch.stack([value.float().reshape(-1) for value in values])
     sample = float(tensor.square().sum(dim=1).mean())
     mean = float(tensor.mean(dim=0).square().sum())
+    if len(values) < 2:
+        return {
+            "videos": len(values), "estimable": False,
+            "sample_energy": sample, "task_mean_energy": mean,
+            "centered_variance": None,
+            "centered_variance_over_sample_energy": None,
+            "centered_variance_over_task_mean_energy": None,
+        }
     centered = max(sample - mean, 0.0)
     return {
+        "videos": len(values), "estimable": True,
         "centered_variance": centered,
         "sample_energy": sample,
         "task_mean_energy": mean,
@@ -490,7 +668,7 @@ def variance_metrics(values: Sequence[torch.Tensor]) -> dict[str, float]:
 
 def effective_variance(
     writer: CompleteLoRAWriter, states: Sequence[Mapping[str, torch.Tensor]]
-) -> dict[str, float]:
+) -> dict[str, Any]:
     size = len(states)
     gram = np.empty((size, size), dtype=np.float64)
     for left in range(size):
@@ -499,13 +677,23 @@ def effective_variance(
                 writer, states[left], states[right]
             )
     sample, mean = float(np.diag(gram).mean()), float(gram.mean())
+    if size < 2:
+        return {
+            "videos": size, "estimable": False,
+            "sample_energy": sample, "task_mean_energy": mean,
+            "centered_variance": None,
+            "centered_variance_over_sample_energy": None,
+            "centered_variance_over_task_mean_energy": None,
+            "scale_like_video_variance_fraction": None,
+            "orthogonal_direction_video_variance_fraction": None,
+        }
     centered = max(sample - mean, 0.0)
     row_mean = gram.mean(axis=1)
     delta_energy = np.diag(gram) - 2 * row_mean + mean
     scale_energy = np.square(row_mean - mean) / max(mean, 1e-24)
     mean_scale = float(np.maximum(scale_energy, 0).mean())
     return {
-        "videos": size,
+        "videos": size, "estimable": True,
         "centered_variance": centered,
         "sample_energy": sample,
         "task_mean_energy": mean,
@@ -516,93 +704,3 @@ def effective_variance(
             float(np.maximum(delta_energy - scale_energy, 0).mean()), 0.0
         ) / max(centered, 1e-24),
     }
-
-
-def _aggregate_scalars(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    keys = sorted(
-        key
-        for key in set.intersection(*(set(record) for record in records))
-        if all(
-            isinstance(record[key], (int, float)) and not isinstance(record[key], bool)
-            for record in records
-        )
-    )
-    return {
-        key: {
-            "mean": float(np.mean([record[key] for record in records])),
-            "median": float(np.median([record[key] for record in records])),
-            "min": float(np.min([record[key] for record in records])),
-            "max": float(np.max([record[key] for record in records])),
-        }
-        for key in keys
-    }
-
-
-def summarize_records(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    result: dict[str, Any] = {
-        "conditions": {},
-        "reader_attention": {},
-        "lora_geometry": {},
-        "per_task": {},
-    }
-    metric_stages = (*STAGES, "factor_output", "public_a", "public_b", "effective_ba", "policy_action")
-    for condition in CONDITIONS:
-        result["conditions"][condition] = {}
-        for stage in metric_stages:
-            records = [row["comparisons_to_correct"][condition][stage] for row in rows]
-            result["conditions"][condition][stage] = {
-                metric: {
-                    "mean": float(np.mean([record[metric] for record in records])),
-                    "median": float(np.median([record[metric] for record in records])),
-                    "min": float(np.min([record[metric] for record in records])),
-                    "max": float(np.max([record[metric] for record in records])),
-                }
-                for metric in ("relative_l2", "cosine")
-            }
-        result["reader_attention"][condition] = _aggregate_scalars(
-            [row["reader_attention"][condition] for row in rows]
-        )
-        result["lora_geometry"][condition] = _aggregate_scalars(
-            [row["lora_geometry"][condition] for row in rows]
-        )
-    for task_id in sorted({int(row["global_task_id"]) for row in rows}):
-        selected = [row for row in rows if int(row["global_task_id"]) == task_id]
-        key = f"{selected[0]['suite']}:task_{int(selected[0]['task_id']):02d}"
-        result["per_task"][key] = {
-            "global_task_id": task_id,
-            "references": len(selected),
-            "conditions": {
-                condition: {
-                    stage: {
-                        "mean_relative_l2": float(np.mean([
-                            row["comparisons_to_correct"][condition][stage]["relative_l2"]
-                            for row in selected
-                        ])),
-                        "mean_cosine": float(np.mean([
-                            row["comparisons_to_correct"][condition][stage]["cosine"]
-                            for row in selected
-                        ])),
-                    }
-                    for stage in metric_stages
-                }
-                for condition in CONDITIONS
-            },
-            "same_task_video_variance": selected[0].get("same_task_video_variance"),
-            "reader_attention": {
-                condition: _aggregate_scalars(
-                    [row["reader_attention"][condition] for row in selected]
-                )
-                for condition in CONDITIONS
-            },
-            "lora_geometry": {
-                condition: _aggregate_scalars(
-                    [row["lora_geometry"][condition] for row in selected]
-                )
-                for condition in CONDITIONS
-            },
-        }
-    result["factor_gauge_caveat"] = (
-        "raw factor/public A/B coordinates are gauge-dependent; effective BA and "
-        "fixed-query action are primary functional evidence"
-    )
-    return result

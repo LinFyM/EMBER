@@ -57,6 +57,12 @@ RUN_SCHEMA = "ember_as_writer_internal_analysis_run_v1"
 RESULT_SCHEMA = "ember_as_writer_internal_analysis_v1"
 ARCHITECTURE = "pi05_amplitude_preserving_asymmetric_dual_read_v1"
 PARITY_TOLERANCE = 2e-5
+# Explicit softmax/weighted-value reconstruction and CUDA BF16 SDPA are two
+# mathematically equivalent attention implementations, but they round at
+# different points.  One BF16 unit roundoff is the narrow numerical contract
+# for diagnostics that reconstruct SDPA weights; canonical Writer, compiler,
+# and public-LoRA parity retain the strict tolerance above.
+ATTENTION_PARITY_TOLERANCE = 8e-3
 PROTECTED = (
     "src/ember/writer/model.py", "src/ember/writer/video_program.py",
     "src/ember/writer/semantic_core.py", "src/ember/writer/semantic_program.py",
@@ -70,6 +76,18 @@ def _parity(name: str, reference: torch.Tensor, candidate: torch.Tensor) -> dict
     value = relative_metrics(reference, candidate)
     if value["relative_l2"] > PARITY_TOLERANCE:
         raise WriterModelError(f"internal-analysis {name} parity failed: {value}")
+    return value
+
+
+def _attention_parity(
+    name: str, reference: torch.Tensor, candidate: torch.Tensor
+) -> dict[str, float]:
+    value = relative_metrics(reference, candidate)
+    value["tolerance"] = ATTENTION_PARITY_TOLERANCE
+    if value["relative_l2"] > ATTENTION_PARITY_TOLERANCE:
+        raise WriterModelError(
+            f"internal-analysis {name} BF16 SDPA parity failed: {value}"
+        )
     return value
 
 
@@ -107,7 +125,9 @@ def _program_block(block: Any, content: torch.Tensor, endpoints: torch.Tensor, i
         weights, rebuilt = _raw_attention(module, args, kwargs)
         diagnostics[name] = {
             **probability_summary(weights, args[1]),
-            "output_parity": _parity(f"Program {name} attention", rebuilt, module(*args, **kwargs)),
+            "output_parity": _attention_parity(
+                f"Program {name} attention", rebuilt, module(*args, **kwargs)
+            ),
         }
     return output, diagnostics
 
@@ -193,7 +213,14 @@ def _compile(writer: CompleteLoRAWriter, core: torch.Tensor, valid_core: torch.T
     pq = apply_two_axis_rope(pq, zeros, zeros); pk = apply_two_axis_rope(pk, first, second)
     program_weights = _weights(pq, pk, valid[:, None, None])
     program_rebuilt = compiler.program_reader.output(merge_heads(program_weights @ split_heads(flat_value, compiler.program_reader.heads))).reshape_as(diagnostic["program_read"])
-    parity = {"core_read": _parity("Core reader", diagnostic["core_read"], core_rebuilt), "program_read": _parity("Program reader", diagnostic["program_read"], program_rebuilt)}
+    parity = {
+        "core_read": _attention_parity(
+            "Core reader", diagnostic["core_read"], core_rebuilt
+        ),
+        "program_read": _attention_parity(
+            "Program reader", diagnostic["program_read"], program_rebuilt
+        ),
+    }
     attention = {"core": probability_summary(core_weights, torch.ones(b, compiler.target_count, dtype=torch.bool, device=core.device)), "program": attention_summary(program_weights, program["valid_intervals"], program["valid_semantics"]), "program_target_rank_routing": routing_centered_energy(program_weights, compiler.target_count, compiler.rank)}
     return {"coordinates": coordinates, "diagnostic": diagnostic, "attention": attention, "parity": parity}
 

@@ -8,7 +8,12 @@ import pytest
 import torch
 
 from ember.writer.data import WriterTaskAuthority
-from ember.writer.internal_analysis import fixed_policy_query
+from ember.writer.internal_analysis import (
+    ATTENTION_PARITY_TOLERANCE,
+    _attention_parity,
+    _parity,
+    fixed_policy_query,
+)
 from ember.writer.internal_metrics import CONDITIONS, attention_summary, routing_centered_energy, validate_finite_tree
 from ember.writer.internal_results import lpt_assignment, summarize_rows, validate_rank_payloads
 from ember.writer.model import WriterModelError
@@ -112,3 +117,19 @@ def test_fixed_policy_query_reads_observations_only(tmp_path: Path) -> None:
 def test_result_finite_gate_rejects_nested_nonfinite() -> None:
     with pytest.raises(WriterModelError, match="non-finite"):
         validate_finite_tree({"a": [{"b": float("nan")}]})
+
+
+def test_bf16_sdpa_parity_tolerance_is_narrowly_scoped() -> None:
+    reference = torch.ones(1024)
+    within_bf16_roundoff = reference.clone()
+    within_bf16_roundoff[::2] += ATTENTION_PARITY_TOLERANCE
+    with pytest.raises(WriterModelError, match="parity failed"):
+        _parity("strict", reference, within_bf16_roundoff)
+    accepted = _attention_parity("attention", reference, within_bf16_roundoff)
+    assert accepted["relative_l2"] < ATTENTION_PARITY_TOLERANCE
+    assert accepted["tolerance"] == ATTENTION_PARITY_TOLERANCE
+
+    outside_bf16_roundoff = reference.clone()
+    outside_bf16_roundoff[::2] += 2 * ATTENTION_PARITY_TOLERANCE
+    with pytest.raises(WriterModelError, match="BF16 SDPA parity failed"):
+        _attention_parity("attention", reference, outside_bf16_roundoff)

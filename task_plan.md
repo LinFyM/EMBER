@@ -28,8 +28,10 @@ runner、split 或 GPU 权限。
   `20.536/18.578/18.546s`且全部主模块梯度可达。
 - [x] 同一clean `f6d4876`和formal seed完成fresh0→1→exact-resume1→3；step1
   文件bitwise不变，三步metrics/LR/cursor连续，CP chunk gather/sync严格对应。
-- [ ] 提交resume seal、fast-forward main、push，并从最终frozen worktree fresh
-  启动macro0→200一小时先验门。
+- [x] resume seal已提交并push；从最终clean `79fb7ee` frozen worktree fresh启动
+  macro0→200，首macro的24-task/B20/long-first/CP同步合同通过。
+- [ ] 让SPG自然完成macro200，评测macro50/100/150/200 paired correct400；按
+  absolute、breadth、趋势与内部主路径证据决定是否exact-resume到400。
 - [ ] SPG及后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才
   开第二小时和行为五臂。
 - [ ] 持续定位task漂移、视频学习和closed-loop off-manifold根因，禁止补丁式

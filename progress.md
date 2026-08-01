@@ -33,6 +33,9 @@ GPU范围和训练步长是当时快照；活动状态只取
   状态文件与manifest在resume后哈希不变，metrics三行连续，72 videos/1,440
   queries、LR、task/video/RNG cursor和信息墙均核验。下一步提交seal并从最终
   frozen commit fresh启动macro0→200，不从profile/smoke warm-start。
+- resume seal已push至`79fb7ee`；detached frozen worktree的正式fresh0→200已在
+  tmux `ember-spg-cp24-79fb7ee`启动。首macro `19.431s`，24 tasks/480 queries/
+  24 videos、B20、long-first、4 CUDA ranks和CP `13 gather=13 sync`全部通过。
 
 ## 2026-07-31 v5.2 task-complete macro400与候选启动
 

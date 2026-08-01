@@ -1,10 +1,9 @@
 # EMBER Semantic Program Grid Writer（SPG）
 
 状态：2026-08-01 已完成独立复核、canonical实现、最长105-frame B20四卡三宏步
-profile及formal-seed fresh/exact-resume seal；正式训练尚未执行。当前精确参数
-为`10,633,216`。两次三宏步验证的72个单视频条件、1,440条action queries均
-finite，macro2起全部主模块梯度可达；这些仍只证明实现/容量/恢复合同，不构成
-性能证据。
+profile及formal-seed fresh/exact-resume seal；正式fresh macro0→200正在pushed
+clean `79fb7ee`的frozen worktree运行。当前精确参数为`10,633,216`。首个正式
+macro已验证24-task/B20/one-video/CP同步合同，但尚无checkpoint行为性能证据。
 
 本文取代已撤回的Coherent-Procedure/B-only residual提案。SPG不是v5.2或v6的
 局部补丁，也不等待v5.2 task-complete结果才决定拓扑。它基于v1至

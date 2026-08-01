@@ -46,6 +46,10 @@
   哈希不变，三步loss`.152172/.147053/.154108`、gradient norm
   `.031343/.072098/.192859`、chunk gather/sync均`13/13`。恢复合同完整，但同样
   不构成行为证据。
+- pushed clean `79fb7ee`的正式fresh0→200已挂起。首macro loss/grad/LR为
+  `.152172/.031343/1.6667e-5`，step wall`19.431s`；raw conflict negative pair
+  fraction`.3804`，candidate负task由4投影为0。这里只证明正式run与profile合同
+  一致，不提前推断macro50行为。
 
 ## 2026-07-31 v5.2 task-complete正式训练完成
 

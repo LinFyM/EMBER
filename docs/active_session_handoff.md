@@ -61,9 +61,42 @@ step1 manifest     3a0fe8106ab6fb88dfe310079aef4f7df197dec4f79c578c9d27cf5e6a715
 step3 manifest     e2d8369c3db7927d3b0a360eefb845643a250cecbeb87bc3f5affbc5edd0617d
 ```
 
-紧邻动作是提交resume seal、fast-forward main、push origin/main，再从最终clean
-commit的detached frozen worktree fresh启动SPG macro0→200。不得从profile或
-smoke warm-start。
+resume seal已提交并push；`HEAD=origin/main=79fb7ee2bfa191438dd5e83642fe16b499e90e58`。
+SPG正式fresh macro0→200当前正在以下frozen worktree/tmux/root运行：
+
+```text
+worktree  /data/ymdai/.codex/worktrees/EMBER-spg-formal-79fb7ee-20260801
+tmux      ember-spg-cp24-79fb7ee
+root      /data/ymdai/outputs/ember/pi05_as_writer_spg_cp24_decay400_formal_dev_r4_b20_seed7_79fb7ee_20260801
+log       /data/ymdai/logs/ember/pi05_as_writer_spg_cp24_decay400_formal_dev_r4_b20_seed7_79fb7ee_20260801.log
+```
+
+exact command为：
+
+```bash
+numactl --cpunodebind=1 --membind=1 env \
+  PYTHONPATH=/data/ymdai/.codex/worktrees/EMBER-spg-formal-79fb7ee-20260801/src \
+  PYTHONUNBUFFERED=1 CUDA_DEVICE_ORDER=PCI_BUS_ID \
+  CUDA_VISIBLE_DEVICES=4,5,6,7 OMP_NUM_THREADS=1 \
+  /data/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=4 \
+  scripts/train_as_writer.py \
+  --config configs/pi05_as_writer_semantic_program_grid_cp24_decay400_v1.json \
+  --mode formal \
+  --source-run /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722 \
+  --checkpoint /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 \
+  --tokenizer-path /data/ymdai/ember_data/openpi/paligemma_tokenizer.model \
+  --data-root /data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a \
+  --output-dir /data/ymdai/outputs/ember/pi05_as_writer_spg_cp24_decay400_formal_dev_r4_b20_seed7_79fb7ee_20260801 \
+  --total-steps 400 --stop-after-step 200 --checkpoint-steps every:25 \
+  --batch-size 20 --num-workers 2 --log-every 1 --skip-data-sha
+```
+
+launch preflight只查询GPU4–7；四卡均空闲，个人占用`359,735,353,342` bytes，
+config SHA为`097ed082f27955d9193c6fb4efe376a7f011d8050eabd0d362499c31d4f796a0`。
+四个rank分别占GPU4/5/6/7且无额外CUDA角色。首macro为`19.431s`、loss
+`.152172`、grad norm`.031343`、LR`1.6667e-5`；24 tasks/480 queries/24 videos
+合同、rank内long-first和`13 gather=13 CUDA completion`均通过。让它自然到
+macro200；随后评测macro50/100/150/200 paired correct400。
 
 GPU只可查询和使用物理4–7；0–3不得查询或进入visible set。4–7可按owner授权
 共卡，但不得杀、暂停、重置或干扰其他进程。

@@ -76,9 +76,15 @@ factor全部有非零有限梯度。CP-24实测negative pair fraction约`.35–.
 增加显式stream completion boundary，原始最长profile随后连续三macro稳定通过。
 formal seed `20260722`的fresh0→1→exact-resume1→3也已通过：step1全部checkpoint
 文件在resume后bitwise不变，三步loss/gradient/LR/cursor连续，13次chunk gather与
-13次CUDA completion逐步相等，validation/test action与video读取为0。下一实际
-动作是提交这份resume seal、fast-forward main并push origin/main，然后从该clean
-commit的detached frozen worktree fresh启动macro0→200一小时门。
+13次CUDA completion逐步相等，validation/test action与video读取为0。
+
+SPG正式fresh macro0→200已从pushed clean `79fb7ee`的detached frozen worktree
+挂起，tmux为`ember-spg-cp24-79fb7ee`。首个完整macro已通过：`19.431s`，loss
+`.152172`、grad norm`.031343`、24 tasks各一次、480 queries、24套单视频LoRA，
+每rank真实帧长long-first；CP raw negative pair fraction `.3804`，candidate负task
+从投影前4降到投影后0，13次chunk gather与13次CUDA completion相等。让该run
+自然到macro200并保存every25 checkpoints；随后正式评测macro50/100/150/200
+paired correct400，不从profile/smoke warm-start，不融合checkpoint。
 
 关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
 single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe

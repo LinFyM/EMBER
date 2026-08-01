@@ -54,8 +54,10 @@
   进入首个NCCL all-gather，而其余rank仍在local compute；600秒watchdog掩盖了
   原异常。精确schedule确认每condition无放回覆盖50 demos、sampled 17–68 frames，
   排除缺视频、非法长度和正常负载长尾。`874e5f1`改为reference级上下文、failure
-  JSON与直接re-raise，并把成功同步交给两小时Gloo控制组；必须由新refs2恢复原始
-  trace，不能从该失败root推断UCP内部几何。
+  JSON与直接re-raise，并把成功同步交给两小时Gloo控制组。新refs2恢复出原始错误：
+  rank1的`libero_spatial task3/reference1`在rank-gauge sanity失败，其他ranks被
+  torchrun立即收割。`8f8716b`继续记录BA/action/raw A/B实际误差；在这些值出现前
+  不能把它判成数值容差或实现错误，更不能从失败root推断UCP内部几何。
 - 所以serial-4是有判别力但非预设成功的下一实验。四个近正交等norm梯度的mean
   energy基线本来就是`1/4=25%`，远高于full24的`1/24=4.17%`；因此selected4 Gram
   ratio上升只是干预生效的mechanical check，不能单独支持聚合根因。真正支持必须

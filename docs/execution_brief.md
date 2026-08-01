@@ -12,9 +12,11 @@ recompute各层误差严格0；reader target/rank routing健康，但dynamic A/D
 BA/action的影响远弱于absolute X。首次零rollout exact50 root
 `/data/ymdai/outputs/ember/pi05_as_writer_ucp_rawfull24_macro0100_internal_exact50_seed7_a4b06f5_20260801`
 在rank1本地异常后被旧NCCL错误传播路径掩盖，只保留run contract，没有科学rows。
-`874e5f1`已改为reference级fail-fast artifact和analysis-only两小时Gloo控制组；当前
-没有活动GPU进程。下一步先在新root跑refs2，再在另一新root重跑exact50；不得复用
-失败root或修改其frozen worktree。
+`874e5f1`已改为reference级fail-fast artifact和analysis-only两小时Gloo控制组。
+新refs2随后精确复现`libero_spatial task3/reference1`的rank-gauge sanity失败，
+torchrun立即收割其他ranks；`8f8716b`把BA/action/raw-factor判别量加入异常。当前
+没有活动GPU进程。下一步新root取得具体误差后根治，再重跑exact50；不得复用失败
+root或修改frozen worktree，也不得先验放宽`2e-5`。
 
 下一训练反事实冻结UCP拓扑，只改update granularity：四rank每update各1 task，
 六phase重建同一full24 cost-balanced cycle；1,200 updates等于200 task visits、

@@ -28,7 +28,11 @@ GPU范围和训练步长是当时快照；活动状态只取
   错序。失败root只含run contract，没有科学rows，四个本任务进程均已退出。
 - `874e5f1`实现reference级上下文与failure JSON、直接re-raise fail-fast，以及
   analysis-only两小时Gloo控制组；训练/provenance protected owners未改。21个定向
-  测试通过，architecture guard无hard violation。下一步先新refs2，再新exact50。
+  测试通过，architecture guard无hard violation。
+- 新refs2在`libero_spatial task3/reference1`精确复现rank-gauge sanity失败，
+  failure JSON保留原trace且torchrun立即终止其余ranks，验证fail-fast合同。旧错误
+  尚未证明是BA/action数值误差还是raw factor未变化；`8f8716b`加入四组实际判别量，
+  下一root据此根治，不直接放宽阈值。
 - 新建独立serial-4写worktree
   `/data/ymdai/.codex/worktrees/EMBER-ucp-serial4-a4b06f5-20260801`；冻结UCP模型，
   只实现六phase/24-task cycle和exposure-staircase LR训练反事实，尚未GPU profile

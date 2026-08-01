@@ -79,8 +79,10 @@ rank1在进入首个seal collective前发生了本地异常；旧代码把异常
 run contract，不产生任何科学结果。commit `874e5f1`把reference异常补齐
 rank/task/reference上下文并立即落盘、直接re-raise，由torchrun fail-fast；成功
 路径先原子写rank rows，再用analysis-only两小时Gloo控制组协调，失败路径不做
-可能遮盖原trace的process-group cleanup。下一步必须先用全新refs2 root复现或通过，
-再用另一全新root重跑exact50。
+可能遮盖原trace的process-group cleanup。新refs2已精确定位原异常为rank1的
+`libero_spatial task3/reference1` rank-gauge sanity失败；torchrun立即终止其余
+ranks。`8f8716b`进一步把BA/action/raw A/B四组实际误差写入异常。下一步从新clean
+root复现一次取得判别量，再决定是数值容差还是gauge实现错误，不能直接放宽阈值。
 SPG macro50/100/150/200 correct400为`97/115/77/100`，不续第二小时。SPG
 Program本身对same/wrong/shuffled/reversed有`.967/1.186/1.193/1.202` relative
 L2，但target/rank reader近均匀，差异到effective BA压成
@@ -135,7 +137,7 @@ fresh0→1后exact-resume1→3完成；step1 manifest、Writer、trainer与四�
 `.014274/.038833/.654902`，LR与data/RNG cursor连续。run contract/metrics/summary
 SHA为`31187bf9...7d9d0`、`84681e63...3c2f`、`489ca502...c0c5c`。
 
-紧邻动作是从clean pushed commit做refs2 fail-fast真实验证、定位并修正exact50首个
+紧邻动作是从clean pushed `8f8716b`做instrumented refs2、修正rank-gauge首个
 异常，然后重跑exact50；同时完成serial-4的一条canonical sampler/step/scheduler
 路径、CPU合同测试、最长视频B20 profile和fresh/exact-resume。serial-4
 严格用`cycle,phase=divmod(update,6)`重建同一full24 cost-balanced cycle；六更新

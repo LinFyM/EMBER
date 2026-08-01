@@ -1,13 +1,13 @@
-"""Single-source declarative contract for the canonical SPG Writer."""
+"""Single-source declarative contract for the Unified Causal Program Writer."""
 
 from __future__ import annotations
 
 from typing import Any, Mapping
 
 
-SPG_WRITER_PARAMETER_COUNT = 10_633_216
+UNIFIED_CAUSAL_WRITER_PARAMETER_COUNT = 7_683_328
 
-SEMANTIC_PROGRAM_WRITER_CONSTRUCTOR_KEYS = frozenset(
+UNIFIED_CAUSAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
     {
         "image_width",
         "expert_width",
@@ -19,8 +19,6 @@ SEMANTIC_PROGRAM_WRITER_CONSTRUCTOR_KEYS = frozenset(
         "max_frames_per_encoder_call",
         "action_horizon",
         "padded_action_dim",
-        "semantic_core_heads",
-        "semantic_core_blocks",
         "program_heads",
         "program_blocks",
         "compiler_heads",
@@ -40,8 +38,6 @@ WRITER_DIMENSION_CONTRACT = {
     "patch_grounding_heads": 8,
     "action_horizon": 50,
     "padded_action_dim": 32,
-    "semantic_core_heads": 8,
-    "semantic_core_blocks": 2,
     "program_heads": 8,
     "program_blocks": 2,
     "compiler_heads": 8,
@@ -49,7 +45,7 @@ WRITER_DIMENSION_CONTRACT = {
 }
 
 _STATIC_WRITER_CONTRACT: dict[str, Any] = {
-    "architecture": "pi05_semantic_program_grid_target_rank_compiler_v1",
+    "architecture": "pi05_unified_causal_program_target_rank_reader_v1",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -61,7 +57,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "task_token_alignment": "text_and_multimodal_ids_identical_by_construction",
     "image_width": 2048,
     "native_image_tokens": 256,
-    "multimodal_core_value": "M_plus_task_queried_patch_G",
+    "absolute_semantic_value": "X_f_equals_M_f_plus_task_queried_patch_G_f",
     "shared_language_projection": "bias_free_2048_to_256",
     "patch_grounding_attention": "per_frame_Q_text_to_256_raw_patch_values",
     "patch_grounding_qk": "separate_pre_rmsnorm_bias_free_256_to_256",
@@ -83,26 +79,21 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "action_expert_action_out": False,
     "interaction_reduction": "mean_50_final_suffix_hidden_then_1024_to_256",
     "program_width": 256,
-    "semantic_core_frame_fusion": "mean_backbone_plus_task_selected_centered_residual",
-    "semantic_core_frame_order": "permutation_invariant",
-    "semantic_core_heads": 8,
-    "semantic_core_blocks": 2,
-    "semantic_core_position_encoding": "task_token_ordinal_rope_qk_only",
-    "program_grid": "interval_Action_plus_task_token_patch_change",
-    "program_interval_alignment": "A_f_with_G_f_plus_1_minus_G_f",
+    "program_grid": "interval_absolute_X_plus_native_Action_plus_task_patch_change",
+    "program_interval_alignment": "X_f_and_A_f_with_G_f_plus_1_minus_G_f",
+    "program_terminal_policy": "F_minus_1_observed_outgoing_intervals_no_terminal_token",
     "program_temporal_ordinal": "interval_endpoint_sampled_frame_position",
     "program_heads": 8,
     "program_blocks": 2,
     "program_attention": "interval_local_then_column_causal_axial",
-    "program_identity_path": "frame_type_and_token_ordinal_qk_only",
+    "program_identity_path": "normalized_type_and_ordinal_qk_only",
     "program_value_path": "raw_content_without_identity_or_terminal_norm",
     "target_count": 38,
     "public_rank": 16,
     "compiler_order": "sealed_policy_target_first_then_rank_last",
-    "core_target_reader": "target_qk_core_raw_value",
-    "program_coordinate_reader": "target_rank_core_qk_program_raw_value",
-    "coordinate_mixer": "rank_axis_then_target_axis_raw_value_residual",
-    "coordinate_identity_path": "target_and_rank_qk_only",
+    "program_coordinate_reader": "single_stage_normalized_target_rank_qk_raw_program_value",
+    "coordinate_mixer": "none",
+    "coordinate_identity_path": "normalized_target_and_rank_qk_only",
     "compiler_heads": 8,
     "factor_head_bias": False,
     "factor_hidden_width": 256,
@@ -112,7 +103,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
 
 
 def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
-    """Return exact SPG payload while preserving profiled frame chunking."""
+    """Return exact UCP payload while preserving profiled frame chunking."""
 
     return {
         **_STATIC_WRITER_CONTRACT,
@@ -122,7 +113,7 @@ def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def validate_writer_dimensions(observed: Mapping[str, Any]) -> None:
-    """Reject constructor values outside the canonical SPG topology."""
+    """Reject constructor values outside the canonical UCP topology."""
 
     changed = {
         name: (WRITER_DIMENSION_CONTRACT[name], observed.get(name))
@@ -130,4 +121,4 @@ def validate_writer_dimensions(observed: Mapping[str, Any]) -> None:
         if observed.get(name) != WRITER_DIMENSION_CONTRACT[name]
     }
     if changed:
-        raise ValueError(f"invalid EMBER SPG Writer dimensions: {changed}")
+        raise ValueError(f"invalid EMBER UCP Writer dimensions: {changed}")

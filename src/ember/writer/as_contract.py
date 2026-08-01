@@ -25,7 +25,7 @@ from ember.pi05_source_checkpoint import (
     write_json_atomic,
 )
 from ember.pi05_source_contract import append_jsonl
-from ember.writer.architecture import SPG_WRITER_PARAMETER_COUNT
+from ember.writer.architecture import UNIFIED_CAUSAL_WRITER_PARAMETER_COUNT
 from ember.writer.as_config import (
     REPO_ROOT,
     authority_path,
@@ -38,7 +38,7 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 from ember.writer.topology import validate_task_complete_topology
 
 
-AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_semantic_program_grid_cp24_launch_v1"
+AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_unified_causal_program_full24_launch_v1"
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
 
@@ -147,7 +147,7 @@ def resolve_runtime(
 ) -> tuple[int, int, tuple[int, ...]]:
     if args.mode == "formal" and config["formal_run"].get("status") != "sealed":
         raise WriterModelError(
-            "formal AS-Writer config is not sealed from the live SPG profile"
+            "formal AS-Writer config is not sealed from the live UCP profile"
         )
     source = config["formal_run"] if args.mode == "formal" else config["profile_defaults"]
     (
@@ -360,7 +360,7 @@ def inspect_feature_cache(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
     """Fail closed for retired pooled-feature callers."""
 
     raise WriterModelError(
-        "pooled PI05 Writer feature caches are retired; SPG AS-Writer "
+        "pooled PI05 Writer feature caches are retired; UCP AS-Writer "
         "requires raw teacher video data"
     )
 
@@ -372,7 +372,7 @@ def writer_trainable_contract(
     parameter_count = sum(value.numel() for value in writer.parameters())
     if (
         not names
-        or parameter_count != SPG_WRITER_PARAMETER_COUNT
+        or parameter_count != UNIFIED_CAUSAL_WRITER_PARAMETER_COUNT
         or any(parameter.requires_grad for parameter in policy.parameters())
     ):
         raise WriterModelError("AS-Writer freeze boundary changed")
@@ -406,7 +406,7 @@ def _contract_stop_step(
     return int(source.get("selected_stop_step", total_steps))
 
 
-def _cp24_runtime_contract(
+def _raw_full24_runtime_contract(
     context: DistributedContext,
     *,
     tasks_per_rank: int,
@@ -416,16 +416,16 @@ def _cp24_runtime_contract(
     return {
         "optimizer_gradient_accumulation": False,
         "loss_reduction": "mean_within_each_task_then_equal_mean_across_all_tasks",
-        "task_gradient_collection": (
-            "six_rank_local_per_task_writer_gradients_without_ddp_backward"
-        ),
+        "task_gradient_collection": "six_rank_local_per_task_writer_gradients_without_ddp_backward",
         "task_gradients_per_rank_per_macro": tasks_per_rank,
         "global_task_gradients_per_macro": global_tasks,
         "distributed_full_task_gradient_matrix_materialized": False,
         "gradient_task_id_allgathers_per_macro": 1 if distributed else 0,
+        "gradient_composition": "exact_raw_equal_weight_full24_mean_without_projection",
+        "gradient_projection": "none",
         "gradient_gram_exchange": (
             "bounded_parameter_chunk_allgathers_with_per_chunk_cuda_completion_"
-            "for_full24_and_module_block_grams"
+            "for_exact_raw_mean_full24_and_module_block_grams"
         ),
         "gradient_gram_chunk_elements": 1_048_576,
         "gradient_gram_chunk_allgathers_per_macro": (
@@ -434,9 +434,6 @@ def _cp24_runtime_contract(
         "gradient_gram_chunk_cuda_synchronizations_per_macro": (
             "one_per_runtime_enumerated_chunk_allgather" if distributed else 0
         ),
-        "gradient_direction_allreduces_per_macro": 1 if distributed else 0,
-        "gradient_weight_broadcasts_per_macro": 1 if distributed else 0,
-        "gradient_weight_authority_rank": 0,
         "single_video_gradient_direction_sketch": (
             "fixed_countsketch_32_per_task_per_parameter_block"
         ),
@@ -515,8 +512,8 @@ def build_contract(
             "world_size": context.world_size,
             "one_policy_cuda_process_per_rank": True,
             "extra_cuda_roles_on_any_rank": 0,
-            "ddp_object": "shared_writer_parameters_without_ddp_backward",
-            "macro_step_axis": "conflict_projected_full_task_optimizer_update",
+            "ddp_object": "rank_synchronized_shared_writer_without_ddp_backward",
+            "macro_step_axis": "raw_mean_full_task_optimizer_update",
             "tasks_per_rank_per_optimizer_update": tasks_per_rank,
             "global_tasks_per_optimizer_update": global_tasks,
             "task_assignment": (
@@ -538,7 +535,7 @@ def build_contract(
             "actions_per_video_condition": batch_size,
             "action_video_assignment": "all_actions_share_single_video_lora",
             "logical_pairs_per_rank_per_macro": tasks_per_rank * batch_size,
-            **_cp24_runtime_contract(
+            **_raw_full24_runtime_contract(
                 context,
                 tasks_per_rank=tasks_per_rank,
                 global_tasks=global_tasks,

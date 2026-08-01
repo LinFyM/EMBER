@@ -31,7 +31,7 @@ from ember.writer.model import WriterModelError
 ROOT = Path(__file__).resolve().parents[1]
 AS_CONFIG = (
     ROOT
-    / "configs/pi05_as_writer_semantic_program_grid_cp24_decay400_v1.json"
+    / "configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json"
 )
 
 

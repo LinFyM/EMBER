@@ -26,13 +26,17 @@
 18. `docs/action_forecast_writer_core_program_design.md`
 19. `docs/action_forecast_writer_prior_innovation_design.md`
 20. `docs/action_forecast_writer_target_spectral_design.md`
-21. `docs/action_forecast_writer_semantic_program_grid_design.md`
-22. `task_plan.md`
-23. `findings.md`
-24. `progress.md`
-25. `docs/concept.md`
-26. `docs/decisions_and_open_questions.md`
-27. `docs/novelty_and_landscape.md`
+21. historical `docs/action_forecast_writer_coherent_procedure_design.md` from
+    commit `35fb28f`（current tree中已由后续authority取代；用
+    `git show 35fb28f:docs/action_forecast_writer_coherent_procedure_design.md`读取）
+22. `docs/action_forecast_writer_semantic_program_grid_design.md`
+23. `docs/action_forecast_writer_unified_causal_program_design.md`
+24. `task_plan.md`
+25. `findings.md`
+26. `progress.md`
+27. `docs/concept.md`
+28. `docs/decisions_and_open_questions.md`
+29. `docs/novelty_and_landscape.md`
 
 `docs/active_session_handoff.md`是当前跨session恢复入口，集中摘要研究证据链、
 v5失败证据、v5.1设计理由、运行状态和下一动作，但不覆盖架构或长期科学
@@ -60,31 +64,47 @@ recipe还把same-task视频中心化方差从旧v5.2的`1.6655%`压到`0.6844%`�
 病灶优先指向functional surrogate与source-policy closed-loop有效流形错位、
 task能力轮换和条件创新缩弱，而不是上游完全没读视频。
 
-下一整体模型与训练设计统一由
-[`docs/action_forecast_writer_semantic_program_grid_design.md`](docs/action_forecast_writer_semantic_program_grid_design.md)
-负责。先前Coherent-Procedure/B-only residual提案已撤回，不得实现。SPG固定为
-mean-backed Semantic Core、未提前池化的Action×task-token-change axial Program
-Grid、38个真实policy targets、rank-last直接Program读取、coordinate mixer和
-coherent full-width factor heads；训练侧采用single-stage CP-24。它不依赖未来
-v5.2结果决定拓扑。SPG canonical实现精确参数为`10,633,216`。最长真实
-105-frame、B20、四rank的三完整macro profile已通过：step wall为
-`20.536/18.578/18.546s`，峰值allocated/reserved为`77.20/83.53GB`，72个
-单视频条件和1,440条queries全finite，macro2起frontend/Core/Program/compiler/
-factor全部有非零有限梯度。CP-24实测negative pair fraction约`.35–.41`，不是
-先验故事。首次profile同时暴露共卡时NCCL bounded all-gather只入队、不能保证
-每chunk完成的stall；phase trace定位后，canonical实现为每个CUDA Gram chunk
-增加显式stream completion boundary，原始最长profile随后连续三macro稳定通过。
-formal seed `20260722`的fresh0→1→exact-resume1→3也已通过：step1全部checkpoint
-文件在resume后bitwise不变，三步loss/gradient/LR/cursor连续，13次chunk gather与
-13次CUDA completion逐步相等，validation/test action与video读取为0。
+SPG canonical实现精确参数为`10,633,216`，最长真实105-frame B20 profile、
+fresh0→1→exact-resume1→3和formal macro0→200均已完成。macro50/100/150/200
+paired correct400为`97/115/77/100`，一小时门失败，不续到400，也不做昂贵五臂。
+checkpoint envelope union为162但single point best只有115；macro100→150
+lost51/gained13，随后又反向轮换。train functional loss在24 tasks上都改善，
+held functional loss和closed-loop不跟随。
 
-SPG正式fresh macro0→200已从pushed clean `79fb7ee`的detached frozen worktree
-挂起，tmux为`ember-spg-cp24-79fb7ee`。首个完整macro已通过：`19.431s`，loss
-`.152172`、grad norm`.031343`、24 tasks各一次、480 queries、24套单视频LoRA，
-每rank真实帧长long-first；CP raw negative pair fraction `.3804`，candidate负task
-从投影前4降到投影后0，13次chunk gather与13次CUDA completion相等。让该run
-自然到macro200并保存every25 checkpoints；随后正式评测macro50/100/150/200
-paired correct400，不从profile/smoke warm-start，不融合checkpoint。
+SPG不是上游Program失败。macro100 refs2反事实中same/wrong/shuffled/reversed的
+Program relative L2为`.967/1.186/1.193/1.202`，到Program coordinates为
+`.355/.715/.627/.658`，再到effective BA只剩`.066/.221/.116/.116`。固定Core、
+只改变Program仍保留order差异。最早病灶是compiler路由同质化：CoreReader entropy
+`.999992`、target-centered attention energy `3.9e-5`，ProgramReader target/rank
+centered routing约`4–5e-5`；exact50 LoRA几乎严格rank1且B columns相同。独立Core
+加法旁路和跨target/rank mixer共同把强视频Program写成共享方向。CP-24 projected/
+raw cosine约`.983`、norm约`1.25×`；raw full24 mean末段只保留平均单task gradient
+energy的`4.79%`，说明投影能消负pair但不能恢复近正交task innovations。
+
+下一canonical模型与训练设计统一由
+[`docs/action_forecast_writer_unified_causal_program_design.md`](docs/action_forecast_writer_unified_causal_program_design.md)
+负责。它把未中心化absolute `X_f=M_f+G_f`、native Action `A_f`和正确outgoing
+change `G_(f+1)-G_f`放入同一个causal axial Program；删除独立Core value旁路、
+target-Core first hop和global coordinate mixer；归一化target/rank identities后
+由38×16 coordinates单级读取raw Program，再使用conventional coherent heads。
+训练恢复raw full24 mean，保留Gram诊断但不投影；B20改为边缘仍uniform-row的
+20-strata随机jitter，以降低单task update的过程覆盖方差；首版保持fast-decay400，
+不把slow2000与拓扑同时混入。
+
+UCP canonical实现已在独立write worktree完成：唯一Program路径为
+`[X_f, A_f, G_(f+1)-G_f]`，唯一compiler为单级38×16 raw-value reader；旧SPG
+Core add/global mixer和CP投影均已从active executable path删除。真实module
+enumeration为`7,683,328`参数；step0 identity、causal prefix、outgoing alignment、
+target/rank routing、零内容不造值、raw full24 mean和20-strata exact-resume等CPU
+合同已通过，全仓`203 passed`。fresh config为
+`configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json`，当前仍明确
+标记pending live profile，不能据此启动formal。
+
+v7/v8/v10/Loom及后续历史不得整体判死。只能删除由内部反事实独立否定的局部
+机制；Action anchors、causal Procedure、双流、Core语义、target-first/rank-last
+等与fast task-complete recipe混杂的组件仍可在职责完整的新结构中复用。当前没有
+活动训练、评测或tmux。下一动作是提交并冻结UCP实现，只查询GPU4–7完成最长
+105-frame B20 profile、fresh0→1→exact-resume1→3，再seal并进入一小时formal gate。
 
 关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
 single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe

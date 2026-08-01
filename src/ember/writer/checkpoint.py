@@ -31,13 +31,13 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 
 AS_WRITER_CHECKPOINT_SCHEMA = (
-    "ember_pi05_semantic_program_grid_cp24_checkpoint_v1"
+    "ember_pi05_unified_causal_program_full24_checkpoint_v1"
 )
 AS_WRITER_TRAINER_STATE_SCHEMA = (
-    "ember_pi05_semantic_program_grid_cp24_trainer_state_v1"
+    "ember_pi05_unified_causal_program_full24_trainer_state_v1"
 )
 AS_WRITER_RANK_STATE_SCHEMA = (
-    "ember_pi05_semantic_program_grid_cp24_rank_state_v1"
+    "ember_pi05_unified_causal_program_full24_rank_state_v1"
 )
 
 

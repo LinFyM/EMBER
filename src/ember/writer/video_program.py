@@ -1,4 +1,4 @@
-"""Language-aligned evidence streams for the Semantic Program Grid Writer."""
+"""Language-aligned evidence streams for the Unified Causal Program Writer."""
 
 from __future__ import annotations
 

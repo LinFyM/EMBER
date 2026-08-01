@@ -27,7 +27,7 @@ from ember.writer import as_step
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = (
     REPO_ROOT
-    / "configs/pi05_as_writer_semantic_program_grid_cp24_decay400_v1.json"
+    / "configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json"
 )
 OLD_RECIPE_CONFIG = (
     REPO_ROOT
@@ -35,10 +35,10 @@ OLD_RECIPE_CONFIG = (
 )
 
 
-def test_spg_cp24_config_seals_architecture_and_information_wall() -> None:
+def test_ucp_full24_config_seals_architecture_and_information_wall() -> None:
     config = load_writer_config(CONFIG)
     writer = config["writer"]
-    assert writer["architecture"] == "pi05_semantic_program_grid_target_rank_compiler_v1"
+    assert writer["architecture"] == "pi05_unified_causal_program_target_rank_reader_v1"
     assert writer["teacher_state_input"] is False
     assert writer["teacher_prompt"] == "Task: {cleaned_task};\nAction: "
     assert writer["text_meta_lora_rank"] == 4
@@ -54,14 +54,15 @@ def test_spg_cp24_config_seals_architecture_and_information_wall() -> None:
     assert writer["max_frames_per_encoder_call"] == 32
     assert writer["action_expert_probe"].startswith("one_forward_fixed")
     assert writer["interaction_reduction"].startswith("mean_50")
-    assert writer["semantic_core_frame_fusion"].startswith("mean_backbone")
-    assert writer["semantic_core_blocks"] == 2
+    assert writer["absolute_semantic_value"].startswith("X_f_equals")
+    assert not any(key.startswith("semantic_core") for key in writer)
     assert writer["program_attention"].startswith("interval_local")
     assert writer["program_blocks"] == 2
     assert writer["program_value_path"].startswith("raw_content")
-    assert writer["core_target_reader"] == "target_qk_core_raw_value"
-    assert writer["program_coordinate_reader"].startswith("target_rank")
-    assert writer["coordinate_mixer"].startswith("rank_axis")
+    assert writer["program_grid"].startswith("interval_absolute_X")
+    assert writer["program_terminal_policy"].startswith("F_minus_1")
+    assert writer["program_coordinate_reader"].startswith("single_stage")
+    assert writer["coordinate_mixer"] == "none"
     assert writer["factor_hidden_width"] == 256
     assert writer_split_roles(config) == ("train",)
     conditioning = config["conditioning_training"]
@@ -78,17 +79,22 @@ def test_spg_cp24_config_seals_architecture_and_information_wall() -> None:
     )
     assert conditioning["policy_noise_contract"].startswith("one independent")
     assert conditioning["ddp_gradient_sync"].startswith("none_during")
-    assert conditioning["gradient_composition"].startswith("deterministic_pcgrad")
-    assert conditioning["no_conflict_fallback"] == "exact_raw_full24_mean"
+    assert conditioning["gradient_composition"] == (
+        "exact_raw_equal_weight_full24_mean_without_projection"
+    )
+    assert "no_conflict_fallback" not in conditioning
+    assert "exact normalized-progress strata" in config["data"][
+        "action_query_sampling"
+    ]
     assert config["information_wall"]["test_actions_read"] == 0
     assert config["information_wall"]["test_video_values_read"] == 0
     assert "state" in config["information_wall"]["writer_forbidden_inputs"]
     assert config["profile_defaults"]["expected_world_size"] == 4
     assert config["profile_defaults"]["status"] == (
-        "sealed_b20_after_live_105_frame_profile"
+        "pending_live_b20_105_frame_profile"
     )
     assert config["profile_evidence"]["status"] == (
-        "sealed_b20_after_live_105_frame_profile"
+        "pending_live_b20_105_frame_profile"
     )
     assert config["profile_evidence"]["allowed_physical_gpu_ids"] == [4, 5, 6, 7]
     assert config["profile_evidence"]["primary_candidate"][
@@ -103,21 +109,16 @@ def test_spg_cp24_config_seals_architecture_and_information_wall() -> None:
     assert config["optimization"]["scheduler"]["decay_steps"] == 400
     assert config["data"]["teacher_video_seed"] == 20260722
     assert config["profile_evidence"]["formal_teacher_video_seed_after_profile_seal"] == 20260722
-    assert config["formal_run"]["status"] == "sealed"
-    assert config["formal_run"]["launch_state"] == "ready_for_fresh_macro0_to200"
-    resume = config["profile_evidence"]["exact_resume_smoke"]
-    assert resume["status"] == "pass_fresh_step1_then_exact_resume_to_step3"
-    assert resume["formal_teacher_video_seed"] == 20260722
-    assert resume["completed_optimizer_steps"] == 3
-    assert resume["step1_checkpoint_files_unchanged_after_resume"] is True
-    assert resume["gradient_gram_chunk_allgathers_each_step"] == 13
-    assert resume["gradient_gram_chunk_cuda_synchronizations_each_step"] == 13
+    assert config["formal_run"]["status"] == "pending_live_profile"
+    assert config["formal_run"]["launch_state"].startswith("blocked_until")
+    assert config["profile_evidence"]["selected"] is None
+    assert config["profile_evidence"]["exact_resume_smoke"] is None
     assert config["formal_run"]["total_steps"] == 400
     assert config["formal_run"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["selected_stop_step"] == 200
     assert config["formal_run"]["stage_stop_steps"] == [200, 400]
     assert config["formal_run"]["segment_definition"].startswith(
-        "fresh_spg_cp24"
+        "fresh_ucp_raw_full24"
     )
     assert "without_runtime_full_data_sha" in config["formal_run"][
         "data_integrity_check"
@@ -202,7 +203,7 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         skip_data_sha=False,
     )
     unsealed = copy.deepcopy(config)
-    unsealed["formal_run"]["status"] = "pending_spg_b20_live_profile"
+    unsealed["formal_run"]["status"] = "pending_live_profile"
     with pytest.raises(WriterModelError, match="not sealed"):
         resolve_runtime(formal, unsealed, context)
     sealed = copy.deepcopy(config)
@@ -244,7 +245,7 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
     assert formal.stop_after_step == 200
 
 
-def test_spg_launch_contract_records_cp24_collectives_not_ddp_accumulation(
+def test_ucp_launch_contract_records_raw_mean_collectives_not_ddp_accumulation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     config = load_writer_config(CONFIG)
@@ -298,9 +299,12 @@ def test_spg_launch_contract_records_cp24_collectives_not_ddp_accumulation(
         runtime["gradient_gram_chunk_allgathers_per_macro"]
         == "runtime_enumerated_from_parameter_block_layout"
     )
-    assert runtime["gradient_direction_allreduces_per_macro"] == 1
-    assert runtime["gradient_weight_broadcasts_per_macro"] == 1
-    assert runtime["gradient_weight_authority_rank"] == 0
+    assert runtime["gradient_composition"] == (
+        "exact_raw_equal_weight_full24_mean_without_projection"
+    )
+    assert runtime["gradient_projection"] == "none"
+    assert "gradient_direction_allreduces_per_macro" not in runtime
+    assert "gradient_weight_broadcasts_per_macro" not in runtime
     assert runtime["single_video_gradient_direction_sketch"].startswith(
         "fixed_countsketch_32"
     )

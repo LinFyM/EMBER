@@ -69,7 +69,7 @@ def validate_task_complete_topology(
     batch_size: int,
     mode: str,
 ) -> None:
-    """Seal the canonical full-task SPG update topology."""
+    """Seal the canonical raw-mean full-task UCP update topology."""
 
     if context.world_size != expected_world_size:
         raise WriterModelError(
@@ -105,6 +105,6 @@ def validate_task_complete_topology(
         }
         if not candidates or batch_size not in candidates:
             raise WriterModelError(
-                "SPG profile batch is outside its declared "
+                "UCP profile batch is outside its declared "
                 "hardware-friendly candidates"
             )

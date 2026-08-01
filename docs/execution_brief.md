@@ -3,31 +3,40 @@
 ## 2026-08-01 current override
 
 当前下一整体架构设计为
-[`action_forecast_writer_semantic_program_grid_design.md`](action_forecast_writer_semantic_program_grid_design.md)。
-此前Coherent-Procedure/B-only residual提案已撤回，不得实现。exact v5.2
-task-complete的macro150/200/350/400 correct400为`51/91/106/120`；macro400
-winner五臂为`120/109/107/111/124`。它只覆盖4/8 tasks，reversed高于correct；
-内部顺序差异虽可传到effective LoRA/action，却没有与闭环收益对齐。same-task
-中心化方差/sample energy仅`.6844%`，低于旧v5.2的`1.6655%`。本轮v5.2已封存，
-不得resume或重复评测。
+[`action_forecast_writer_unified_causal_program_design.md`](action_forecast_writer_unified_causal_program_design.md)。
+exact v5.2 task-complete已以候选`51/91/106/120`和winner五臂
+`120/109/107/111/124`封存，不resume。SPG canonical macro0→200也已完成；
+macro50/100/150/200 paired correct400为`97/115/77/100`，一小时门失败，
+不续到400、不跑五臂。
 
-SPG canonical实现参数`10,633,216`；最长105-frame B20四卡三宏步profile已经
-通过，step wall `20.536/18.578/18.546s`，峰值reserved `83.53GB`，五个主模块
-从macro2起全部梯度可达。CP-24实测negative pair fraction约`.35–.41`。首次
-profile暴露的共卡NCCL chunk入队stall已通过逐chunk CUDA completion boundary
-修复，且同一最长profile重跑稳定；该修复不改变CP数学。
+SPG内部证明Program不是断路：same/wrong/shuffled/reversed的Program relative L2
+为`.967/1.186/1.193/1.202`，但到effective BA压到
+`.066/.221/.116/.116`。CoreReader entropy `.999992`，ProgramReader的target/rank
+centered routing只有约`4–5e-5`；exact50 LoRA几乎严格rank1且B columns相同。
+最早失败是`std=.02` identity被normalized Core淹没、独立Core加法旁路和global
+coordinate mixer造成target/rank同质化，不是Program没看视频。
 
-formal seed `20260722`的fresh0→1→exact-resume1→3已在clean `f6d4876`通过；
-step1文件resume后逐项bitwise不变，三步loss/gradient/LR/cursor连续，每步13次
-Gram all-gather与13次CUDA completion相等，信息墙读取为0。当前紧邻动作是提交
-这份seal并push origin/main。SPG现已从pushed clean `79fb7ee`的detached frozen
-worktree fresh训练macro0→200；tmux `ember-spg-cp24-79fb7ee`，首macro
-`19.431s`且24-task/B20/one-video/CP同步合同全部通过。让它自然运行到200，随后
-评测macro50/100/150/200 paired correct400。
-以后每版新整体架构先一小时，
-达到同期有效旧架构水平或显示明确价值才续第二小时和行为五臂，否则只做充分
-内部分析后从根因重构。150只是里程碑，不是focused自动终点。以下在`## 1`
-之前的旧状态叙述只作历史背景，不得覆盖本节。
+训练端同样是根因的一部分。CP projected/raw cosine约`.983`且主要把norm放大
+约`1.25×`；raw full24 mean末段只保留平均单task gradient energy的`4.79%`，
+投影不能恢复非负但近正交的task innovations。B20长期无偏，但4,800个task
+visits中`6.44%`漏掉至少一个五等分进度区间，单visit phase TV均值`.1756`。
+
+Unified Causal Program canonical实现把absolute `X_f=M_f+G_f`、native `A_f`和正确
+outgoing `G_(f+1)-G_f`放在同一个causal axial Program中；删除独立Core旁路、
+target-Core first hop和跨target/rank mixer；normalized target/rank identities
+单级直接读取raw Program。训练恢复raw full24 mean并保留只读Gram，B20使用
+边缘仍uniform-row的20-strata随机jitter降低过程覆盖方差；首版保持fast400，
+不同时混入slow2000。真实参数`7,683,328`，全仓无GPU回归`203 passed`；fresh
+config/checkpoint/eval schemas已经替换旧SPG active path，但formal保持pending，
+直到真实105-frame B20与exact-resume seal完成。
+
+v7/v8/v10/Loom及后续低分只证明“架构×当时fast task-complete recipe”失败。
+只有全局binder、早event pooling、无监督confidence/gap、DC删除、strict bilinear、
+高增益gate和强制谱等被内部反事实独立否定；anchors、causal Procedure、双流、
+Core语义和target-first/rank-last仍可复用。当前没有活动训练、评测或tmux。紧邻
+动作是提交并冻结UCP实现，只在GPU4–7完成最长视频B20 profile与exact-resume，
+再seal并按统一一小时门正式训练。150只是里程碑，不是focused自动终点。以下在`## 1`之前的旧状态叙述
+只作历史背景，不得覆盖本节。
 
 状态：2026-07-31。共享 π0.5-LIBERO source base与corrected mixed-task
 rank-128 Source-SFT均已封存，后者development observed-best为`109/400`。

@@ -1,4 +1,4 @@
-"""Target-first, rank-last compiler for the Semantic Program Grid Writer."""
+"""Single-stage target/rank reader for the Unified Causal Program."""
 
 from __future__ import annotations
 
@@ -7,7 +7,6 @@ import torch.nn.functional as F
 
 from ember.writer.semantic_program import (
     RMSNorm,
-    RawValueSelfAttention,
     SemanticProgramError,
     apply_two_axis_rope,
     merge_heads,
@@ -16,7 +15,7 @@ from ember.writer.semantic_program import (
 
 
 class RawValueCrossAttention(torch.nn.Module):
-    """Cross-attend with learned Q/K/O and physical memory content as V."""
+    """Cross-attend with learned Q/K/O and physical Program content as V."""
 
     def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
@@ -34,9 +33,9 @@ class RawValueCrossAttention(torch.nn.Module):
         memory_value: torch.Tensor,
         valid_memory: torch.Tensor,
         *,
-        memory_qk_identity: torch.Tensor | None = None,
-        first_positions: torch.Tensor | None = None,
-        second_positions: torch.Tensor | None = None,
+        memory_qk_identity: torch.Tensor,
+        first_positions: torch.Tensor,
+        second_positions: torch.Tensor,
     ) -> torch.Tensor:
         if (
             query_key.ndim != 3
@@ -46,31 +45,23 @@ class RawValueCrossAttention(torch.nn.Module):
             or query_key.shape[-1] != memory_key.shape[-1]
             or valid_memory.shape != memory_key.shape[:2]
             or valid_memory.dtype != torch.bool
+            or memory_qk_identity.shape != memory_key.shape
+            or first_positions.shape != memory_key.shape[:2]
+            or second_positions.shape != memory_key.shape[:2]
+            or first_positions.dtype != torch.long
+            or second_positions.dtype != torch.long
             or not bool(valid_memory.any(dim=1).all())
         ):
             raise SemanticProgramError("invalid raw-value cross-attention batch")
-        if memory_qk_identity is not None:
-            if memory_qk_identity.shape != memory_key.shape:
-                raise SemanticProgramError("cross-attention identity shape changed")
-            memory_key = memory_key + memory_qk_identity
         query = split_heads(self.query(query_key), self.heads)
-        key = split_heads(self.key(memory_key), self.heads)
-        using_positions = first_positions is not None or second_positions is not None
-        if using_positions:
-            if (
-                first_positions is None
-                or second_positions is None
-                or first_positions.shape != memory_key.shape[:2]
-                or second_positions.shape != memory_key.shape[:2]
-                or first_positions.dtype != torch.long
-                or second_positions.dtype != torch.long
-            ):
-                raise SemanticProgramError("invalid two-axis Program positions")
-            zeros = torch.zeros(
-                query_key.shape[:2], dtype=torch.long, device=query_key.device
-            )
-            query = apply_two_axis_rope(query, zeros, zeros)
-            key = apply_two_axis_rope(key, first_positions, second_positions)
+        key = split_heads(
+            self.key(memory_key + memory_qk_identity), self.heads
+        )
+        query_positions = torch.zeros(
+            query_key.shape[:2], dtype=torch.long, device=query_key.device
+        )
+        query = apply_two_axis_rope(query, query_positions, query_positions)
+        key = apply_two_axis_rope(key, first_positions, second_positions)
         value = split_heads(memory_value, self.heads)
         attended = F.scaled_dot_product_attention(
             query,
@@ -83,81 +74,10 @@ class RawValueCrossAttention(torch.nn.Module):
         return self.output(merge_heads(attended))
 
 
-class CoordinateMixer(torch.nn.Module):
-    """Coordinate rank and target axes without imposing spectral geometry."""
+class TargetRankProgramReader(torch.nn.Module):
+    """Let each real policy target/rank coordinate read the full Program once."""
 
-    def __init__(self, *, width: int, heads: int) -> None:
-        super().__init__()
-        self.rank_attention = RawValueSelfAttention(
-            width=width, heads=heads, causal=False
-        )
-        self.target_attention = RawValueSelfAttention(
-            width=width, heads=heads, causal=False
-        )
-        self.ffn_norm = RMSNorm(width)
-        self.ffn = torch.nn.Sequential(
-            torch.nn.Linear(width, 4 * width, bias=False),
-            torch.nn.GELU(),
-            torch.nn.Linear(4 * width, width, bias=False),
-        )
-
-    def forward(
-        self,
-        content: torch.Tensor,
-        target_identity: torch.Tensor,
-        rank_identity: torch.Tensor,
-    ) -> torch.Tensor:
-        if (
-            content.ndim != 4
-            or target_identity.shape != (content.shape[1], content.shape[-1])
-            or rank_identity.shape != (content.shape[2], content.shape[-1])
-        ):
-            raise SemanticProgramError("invalid target/rank coordinate batch")
-        batch, targets, ranks, width = content.shape
-        valid_rank = torch.ones(
-            batch * targets, ranks, dtype=torch.bool, device=content.device
-        )
-        rank_positions = torch.arange(
-            ranks, dtype=torch.long, device=content.device
-        )[None].expand(batch * targets, -1)
-        rank_qk = (target_identity[:, None] + rank_identity[None]).to(content.dtype)
-        rank_qk = rank_qk[None].expand(batch, -1, -1, -1).reshape(
-            batch * targets, ranks, width
-        )
-        ranked = content.reshape(batch * targets, ranks, width)
-        ranked = ranked + self.rank_attention(
-            ranked,
-            valid_rank,
-            positions=rank_positions,
-            qk_identity=rank_qk,
-        )
-        content = ranked.reshape(batch, targets, ranks, width)
-
-        targeted = content.permute(0, 2, 1, 3).reshape(
-            batch * ranks, targets, width
-        )
-        valid_target = torch.ones(
-            batch * ranks, targets, dtype=torch.bool, device=content.device
-        )
-        target_positions = torch.arange(
-            targets, dtype=torch.long, device=content.device
-        )[None].expand(batch * ranks, -1)
-        target_qk = (rank_identity[:, None] + target_identity[None]).to(content.dtype)
-        target_qk = target_qk[None].expand(batch, -1, -1, -1).reshape(
-            batch * ranks, targets, width
-        )
-        targeted = targeted + self.target_attention(
-            targeted,
-            valid_target,
-            positions=target_positions,
-            qk_identity=target_qk,
-        )
-        content = targeted.reshape(batch, ranks, targets, width).permute(0, 2, 1, 3)
-        return content + self.ffn(self.ffn_norm(content))
-
-
-class TargetRankProgramCompiler(torch.nn.Module):
-    """Read Core per target, then Program independently per target/rank."""
+    TYPE_COUNT = 3
 
     def __init__(
         self,
@@ -170,7 +90,7 @@ class TargetRankProgramCompiler(torch.nn.Module):
     ) -> None:
         super().__init__()
         if min(width, heads, target_count, rank) <= 0 or width % heads:
-            raise SemanticProgramError("invalid target/rank compiler dimensions")
+            raise SemanticProgramError("invalid target/rank reader dimensions")
         self.target_count = int(target_count)
         self.rank = int(rank)
         generator = torch.Generator(device="cpu").manual_seed(initialization_seed)
@@ -182,59 +102,59 @@ class TargetRankProgramCompiler(torch.nn.Module):
 
         self.target_identity = identity(target_count)
         self.rank_identity = identity(rank)
-        self.program_type_identity = identity(2)
-        self.core_norm = RMSNorm(width)
-        self.core_reader = RawValueCrossAttention(width=width, heads=heads)
-        self.target_core_norm = RMSNorm(width)
+        self.program_type_identity = identity(self.TYPE_COUNT)
+        self.target_identity_norm = RMSNorm(width)
+        self.rank_identity_norm = RMSNorm(width)
+        self.program_type_identity_norm = RMSNorm(width)
         self.program_norm = RMSNorm(width)
-        self.program_reader = RawValueCrossAttention(width=width, heads=heads)
-        self.coordinate_mixer = CoordinateMixer(width=width, heads=heads)
+        self.reader = RawValueCrossAttention(width=width, heads=heads)
+
+    @staticmethod
+    def _task_tokens(columns: int) -> int:
+        if columns < 3 or (columns - 1) % 2:
+            raise SemanticProgramError("reader Program column topology changed")
+        return (columns - 1) // 2
+
+    def _type_identity(self, columns: int) -> torch.Tensor:
+        task_tokens = self._task_tokens(columns)
+        identities = self.program_type_identity_norm(
+            self.program_type_identity
+        )
+        return torch.cat(
+            (
+                identities[0:1].expand(task_tokens, -1),
+                identities[1:2],
+                identities[2:3].expand(task_tokens, -1),
+            ),
+            dim=0,
+        )
 
     def compile_with_diagnostics(
         self,
-        core: torch.Tensor,
-        valid_core: torch.Tensor,
         program: torch.Tensor,
         endpoint_positions: torch.Tensor,
         valid_intervals: torch.Tensor,
         valid_semantics: torch.Tensor,
     ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
         if (
-            core.ndim != 3
-            or valid_core.shape != core.shape[:2]
-            or valid_core.dtype != torch.bool
-            or program.ndim != 4
-            or program.shape[0] != core.shape[0]
-            or program.shape[-1] != core.shape[-1]
+            program.ndim != 4
             or endpoint_positions.shape != program.shape[:2]
             or endpoint_positions.dtype != torch.long
             or valid_intervals.shape != program.shape[:2]
             or valid_intervals.dtype != torch.bool
             or valid_semantics.shape != (program.shape[0], program.shape[2])
             or valid_semantics.dtype != torch.bool
-            or core.shape[1] == 0
             or program.shape[1] == 0
-            or program.shape[2] < 2
-            or not bool(valid_core.any(dim=1).all())
             or not bool(valid_intervals.any(dim=1).all())
-            or not bool(valid_semantics[:, 0].all())
         ):
-            raise SemanticProgramError("invalid target/rank compiler memory")
+            raise SemanticProgramError("invalid target/rank Program memory")
         batch, intervals, columns, width = program.shape
-        target_routing = self.target_identity[None].expand(batch, -1, -1)
-        target_core = self.core_reader(
-            target_routing,
-            self.core_norm(core),
-            core,
-            valid_core,
-        )
-
-        normalized_target_core = self.target_core_norm(target_core)
-        query = (
-            self.target_identity[:, None]
-            + self.rank_identity[None]
-            + normalized_target_core[:, :, None]
-        ).reshape(batch, self.target_count * self.rank, width)
+        self._task_tokens(columns)
+        target_identity = self.target_identity_norm(self.target_identity)
+        rank_identity = self.rank_identity_norm(self.rank_identity)
+        query = (target_identity[:, None] + rank_identity[None]).reshape(
+            1, self.target_count * self.rank, width
+        ).expand(batch, -1, -1)
         flat_program = program.reshape(batch, intervals * columns, width)
         valid_program = (
             valid_intervals[:, :, None] & valid_semantics[:, None]
@@ -247,56 +167,38 @@ class TargetRankProgramCompiler(torch.nn.Module):
         )[None, None].expand(batch, intervals, columns).reshape(
             batch, intervals * columns
         )
-        type_identity = torch.cat(
-            (
-                self.program_type_identity[:1],
-                self.program_type_identity[1:2].expand(columns - 1, -1),
-            ),
-            dim=0,
-        )
+        type_identity = self._type_identity(columns).to(program.dtype)
         memory_identity = type_identity[None, None].expand(
             batch, intervals, columns, width
         ).reshape(batch, intervals * columns, width)
-        program_coordinates = self.program_reader(
+        coordinates = self.reader(
             query,
             self.program_norm(flat_program),
             flat_program,
             valid_program,
-            memory_qk_identity=memory_identity.to(flat_program.dtype),
+            memory_qk_identity=memory_identity,
             first_positions=first_positions,
             second_positions=second_positions,
         ).reshape(batch, self.target_count, self.rank, width)
-        fused = target_core[:, :, None] + program_coordinates
-        mixed = self.coordinate_mixer(
-            fused,
-            self.target_identity,
-            self.rank_identity,
-        )
-        return mixed, {
-            "target_core": target_core,
-            "program_coordinates": program_coordinates,
-            "fused_coordinates": fused,
-            "mixed_coordinates": mixed,
+        return coordinates, {
+            "coordinate_query": query,
+            "coordinates": coordinates,
         }
 
     def forward(
         self,
-        core: torch.Tensor,
-        valid_core: torch.Tensor,
         program: torch.Tensor,
         endpoint_positions: torch.Tensor,
         valid_intervals: torch.Tensor,
         valid_semantics: torch.Tensor,
     ) -> torch.Tensor:
-        content, _ = self.compile_with_diagnostics(
-            core,
-            valid_core,
+        coordinates, _ = self.compile_with_diagnostics(
             program,
             endpoint_positions,
             valid_intervals,
             valid_semantics,
         )
-        return content
+        return coordinates
 
 
 class FactorHead(torch.nn.Module):

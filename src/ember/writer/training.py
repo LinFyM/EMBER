@@ -71,7 +71,7 @@ from ember.writer.data import (
     WriterTaskAuthority,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
-from ember.writer.architecture import SEMANTIC_PROGRAM_WRITER_CONSTRUCTOR_KEYS
+from ember.writer.architecture import UNIFIED_CAUSAL_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.model import (
     CompleteLoRAWriter,
     WriterModelError,
@@ -155,7 +155,7 @@ def _build_writer(
     writer_config = {
         key: value
         for key, value in config["writer"].items()
-        if key in SEMANTIC_PROGRAM_WRITER_CONSTRUCTOR_KEYS
+        if key in UNIFIED_CAUSAL_WRITER_CONSTRUCTOR_KEYS
     }
     bridge = policy.model.paligemma_with_expert
     writer = CompleteLoRAWriter(
@@ -739,7 +739,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_as_writer_semantic_program_grid_cp24_decay400_v1.json",
+        default=(
+            REPO_ROOT
+            / "configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json"
+        ),
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--source-run", type=Path, required=True)

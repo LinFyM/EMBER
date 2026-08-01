@@ -5,8 +5,39 @@
 阅读规则：本文按时间顺序保留真实执行状态。早期段落中的“当前”“下一步”、
 GPU范围和训练步长是当时快照；活动状态只取
 `docs/active_session_handoff.md`、
-`docs/action_forecast_writer_semantic_program_grid_design.md`和本文顶部最新段落，
+`docs/action_forecast_writer_unified_causal_program_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
+
+## 2026-08-01 SPG门失败、内部根因与UCP设计
+
+- UCP canonical CPU实现完成：`[X_f,A_f,G_(f+1)-G_f]`两层causal axial Program，
+  单级normalized target/rank raw-value reader，无独立Core add和global mixer。
+  semantic frontend/Program/reader/factor参数分别为
+  `3,453,440/1,838,592/212,224/2,179,072`，总计`7,683,328`。
+- CP active path已删除；每macro仍逐task求梯度并严格组成raw full24等权mean，
+  overall和semantic_frontend/program/compiler/factor Gram仅作诊断。B20每visit覆盖
+  全20个normalized-progress strata，episode边缘仍由permutation+jitter保持均匀。
+- fresh config/checkpoint/evaluation schema均不兼容旧SPG；step0 identity、causal
+  prefix、outgoing alignment、target/rank置换、padding、raw gradient world1/2和
+  sampler exact resume通过；`CUDA_VISIBLE_DEVICES=''`全仓`203 passed`。
+- 当前仍没有GPU训练、评测或tmux；config formal状态为pending，下一步只在GPU4–7
+  做真实最长视频profile和fresh/resume seal。
+
+- SPG fresh macro0→200完成，macro50/100/150/200 correct400为
+  `97/115/77/100`；按一小时门停止，不resume、不跑五臂。
+- 四候选exact50几何、candidate gained/lost、Gradient Gram/energy和macro100
+  refs2内部反事实完成。Program对order和wrong-video有强差异，但CoreReader与
+  ProgramReader几乎不区分target/rank，最终LoRA近严格rank1/B-column相同；最早
+  失效接口锁定为compiler，而非evidence extraction。
+- 审计v5.2/v6 old/new及v6 slow/fast后，降低“full24或scheduler单独解释一切”
+  的置信度；CP能消负pair但不能恢复近正交task innovations，functional loss与
+  closed-loop仍错位。
+- 完成现有B20前200 macros的96,000-query phase audit；长期无偏但单task visit
+  覆盖方差可观，支持无偏20-strata estimator作为训练联合设计，而非新监督。
+- 新write worktree
+  `/data/ymdai/.codex/worktrees/EMBER-unified-program-534064a-20260801`已从clean
+  `534064a`创建；设计authority为
+  `docs/action_forecast_writer_unified_causal_program_design.md`。
 
 ## 2026-08-01 v5.2正式评测、五臂与内部分析封存
 

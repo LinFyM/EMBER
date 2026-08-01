@@ -4,11 +4,53 @@
 
 本文顶部保存当前运行状态、恢复入口和紧邻动作；后续编号章节是按时间保留的
 历史快照。当前下一架构authority是
-`docs/action_forecast_writer_semantic_program_grid_design.md`。长期科学边界是
+`docs/action_forecast_writer_unified_causal_program_design.md`。长期科学边界是
 `AGENTS.md`与`docs/execution_brief.md`。任何接手者都必须先只读复核现场，
 不能按历史快照重复启动进程。
 
-## 0. 2026-08-01当前状态与紧邻动作
+## 0. 2026-08-01 UCP当前状态与紧邻动作
+
+v5.2 task-complete与SPG一小时实验均已完成，当前没有活动训练、评测或tmux。
+SPG macro50/100/150/200 correct400为`97/115/77/100`，不续第二小时。SPG
+Program本身对same/wrong/shuffled/reversed有`.967/1.186/1.193/1.202` relative
+L2，但target/rank reader近均匀，差异到effective BA压成
+`.066/.221/.116/.116`；same-task video variance/sample energy从macro50
+`.419%`降到macro200`.210%`。CP投影解决负pair但没有解决task轮换。
+
+下一write worktree为：
+
+```text
+/data/ymdai/.codex/worktrees/EMBER-unified-program-534064a-20260801
+branch codex/unified-causal-program
+base   534064a361531d80ae121179450d5c490d199c5d
+```
+
+Unified Causal Program canonical CPU实现已经完成：统一`X/A/outgoing D` causal
+grid、单级normalized target/rank raw-value reader、无Core add/mixer；训练为严格raw
+full24 mean并使用无偏20-strata B20。真实参数`7,683,328`，全仓`203 passed`；step0
+identity、causal prefix、outgoing alignment、target/rank routing、零内容不造值和
+raw-gradient/sampler exact resume合同均通过。canonical config为
+`configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json`，formal状态
+仍为pending live profile。
+
+紧邻动作是提交并冻结当前实现，只查询GPU4–7完成最长105-frame B20三macro、
+fresh0→1→exact-resume1→3与主要模块finite gradient，再seal formal config并从新的
+clean frozen commit启动macro0→200 gate。
+
+历史架构审计必须按组件×recipe解释：v7以后所有正式负结果都使用同一fast
+task-complete recipe，没有old recipe反事实。只能删除已被内部机制证据独立否定
+的局部模块，不能把anchors、causal Procedure、双流或target-first/rank-last整体
+判死。
+
+UCP phase-estimator audit：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_action_query_phase_variance_macro0200_seed7_20260801/analysis.json
+SHA256 636c3072e59e7ca1df04ad438c0a837de1dcc515e6f370639519ebcbdb875c2f
+```
+
+## 0A. SPG launch历史快照（已完成，不得按本节重启）
 
 v5.2 task-complete训练、四候选、winner五臂、exact50 LoRA几何和五条件内部传递
 已经全部完成；当前没有需要继承的v5.2训练或评测。candidate correct400为
@@ -62,7 +104,8 @@ step3 manifest     e2d8369c3db7927d3b0a360eefb845643a250cecbeb87bc3f5affbc5edd06
 ```
 
 resume seal已提交并push；`HEAD=origin/main=79fb7ee2bfa191438dd5e83642fe16b499e90e58`。
-SPG正式fresh macro0→200当前正在以下frozen worktree/tmux/root运行：
+SPG正式fresh macro0→200当时从以下frozen worktree/tmux/root运行；现已完成且tmux
+结束，以下只保存provenance：
 
 ```text
 worktree  /data/ymdai/.codex/worktrees/EMBER-spg-formal-79fb7ee-20260801
@@ -93,10 +136,10 @@ numactl --cpunodebind=1 --membind=1 env \
 
 launch preflight只查询GPU4–7；四卡均空闲，个人占用`359,735,353,342` bytes，
 config SHA为`097ed082f27955d9193c6fb4efe376a7f011d8050eabd0d362499c31d4f796a0`。
-四个rank分别占GPU4/5/6/7且无额外CUDA角色。首macro为`19.431s`、loss
+当时四个rank分别占GPU4/5/6/7且无额外CUDA角色。首macro为`19.431s`、loss
 `.152172`、grad norm`.031343`、LR`1.6667e-5`；24 tasks/480 queries/24 videos
-合同、rank内long-first和`13 gather=13 CUDA completion`均通过。让它自然到
-macro200；随后评测macro50/100/150/200 paired correct400。
+合同、rank内long-first和`13 gather=13 CUDA completion`均通过。该run后来完成到
+macro200并评测macro50/100/150/200为`97/115/77/100`，不得重复启动。
 
 GPU只可查询和使用物理4–7；0–3不得查询或进入visible set。4–7可按owner授权
 共卡，但不得杀、暂停、重置或干扰其他进程。

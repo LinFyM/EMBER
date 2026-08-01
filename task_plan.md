@@ -30,14 +30,26 @@ runner、split 或 GPU 权限。
   文件bitwise不变，三步metrics/LR/cursor连续，CP chunk gather/sync严格对应。
 - [x] resume seal已提交并push；从最终clean `79fb7ee` frozen worktree fresh启动
   macro0→200，首macro的24-task/B20/long-first/CP同步合同通过。
-- [ ] 让SPG自然完成macro200，评测macro50/100/150/200 paired correct400；按
-  absolute、breadth、趋势与内部主路径证据决定是否exact-resume到400。
-- [ ] SPG及后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才
-  开第二小时和行为五臂。
+- [x] SPG macro0→200与四个paired correct400完成：`97/115/77/100`；一小时门
+  失败，不续到400、不做五臂。
+- [x] 完成SPG exact50四候选几何、macro100 refs2分层反事实、24-task gradient
+  coherence和checkpoint drift分析；最早失败定位为compiler routing同质化，
+  CP-24无法恢复近正交task innovation。
+- [x] 按组件×recipe重审v7/v8/v10/Loom/Recenter/Core-Program/Prior/Target-
+  Spectral；只封存局部强负机制，不整体判死与fast recipe混杂的架构思想。
+- [x] 封存Unified Causal Program设计authority和现有B20 phase-variance审计。
+- [x] 实现UCP canonical路径、raw full24 Gram诊断和无偏20-strata B20；删除旧SPG
+  Core add/global mixer与CP投影active path。真实参数`7,683,328`，全仓
+  `203 passed`，fresh formal config保持pending live profile。
+- [ ] 完成shape/mask/identity/freeze/gradient/resume和最长105-frame B20 profile。
+- [ ] 从clean frozen commit fresh训练macro0→200，评测50/100/150/200 paired
+  correct400并按breadth、漂移、视频传递和LoRA几何决定续训或下一根因重构。
+- [ ] 后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才开第二
+  小时和行为五臂。
 - [ ] 持续定位task漂移、视频学习和closed-loop off-manifold根因，禁止补丁式
   gate/scale/bypass；150不是自动完成线。
 
-当前SPG正式训练的实时状态只认
+当前UCP实现与实时状态只认
 `docs/active_session_handoff.md`。
 
 ## 长期完成定义

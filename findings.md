@@ -3,8 +3,51 @@
 阅读规则：本文是按日期追加的证据账本。历史段落里的“当前”“下一步”和GPU
 权限只描述其日期当时的状态，不覆盖后续owner决定。活动状态以
 `docs/active_session_handoff.md`、
-`docs/action_forecast_writer_semantic_program_grid_design.md`和本文顶部最新段落为准；
+`docs/action_forecast_writer_unified_causal_program_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
+
+## 2026-08-01 SPG一小时门、架构×recipe与UCP根因结论
+
+- UCP真实实现证明删除Core/mixer并不需要用新的硬瓶颈补位：单一raw-value
+  Program→38×16 reader→coherent heads可以在`7,683,328`参数内完整生成全部public
+  A/B，step0逐tensor严格identity；target/rank/type identities在零Program上不能
+  造值，交换identity只交换对应coordinates。
+- raw full24实现按全局task ID确定性排序，在world1/world2与rank/task排列变化下
+  得到bitwise一致方向；没有projection、weight broadcast或direction allreduce。
+  24×24 overall/block Gram、candidate dots和CountSketch不参与优化权重。
+- 20-strata B20对每个task visit使用20个不同episodes、完整strata permutation和
+  stratum内deterministic jitter；长期episode内row边缘近均匀，exact resume不需
+  新cursor。它是估计器方差实验，不是语义phase监督。
+
+- SPG macro50/100/150/200 paired correct400为`97/115/77/100`。envelope union
+  为162，但best single point只有115；macro100→150 lost51/gained13，之后又
+  反向轮换。它不续第二小时，也不做正式五臂。
+- macro100 refs2证明Program不是断路：same/wrong/shuffled/reversed的Program
+  relative L2为`.967/1.186/1.193/1.202`，到Program coordinates为
+  `.355/.715/.627/.658`，到effective BA只剩`.066/.221/.116/.116`。固定Core、
+  只改Program仍保留order差异。
+- 最早失败是compiler同质化：CoreReader entropy`.999992`且target-centered
+  attention energy`3.9e-5`；ProgramReader target/rank-centered routing约
+  `4–5e-5`；coordinate centered content约`1e-5`。exact50 stable rank约
+  `1.000001`、B columns近相同，same-video variance从m50`.419%`降到m200
+  `.210%`。这不是Target-Spectral式低norm，而是identity被Core淹没、Core加法
+  旁路和global mixer把强Program写成共享方向。
+- SPG raw full24 mean保留平均单task gradient energy约`5.74%`，末25 macros
+  `4.79%`；CP提高到`9.53%/6.99%`但仍丢失大多数非负近正交innovation。
+  projected/raw cosine约`.983`且主要放大norm约`1.25×`；negative-pair投影没有
+  解决drift，下一版恢复raw mean。
+- 精确重建96,000条query：长期phase均值`.50015`，但4,800个task visits中
+  `6.44%`漏至少一个五等分progress bin，单visit TV均值`.1756`、最大`.5`。
+  20-strata随机permutation+jitter保持每条episode query边缘uniform，只作方差
+  缩减，不把progress当语义阶段。
+- v7/v8/v10/Loom及后续正式结果全部来自同一full24/B20/fast400 recipe，没有
+  old-recipe反事实。可独立否定的是近均匀binder、早event pooling、无监督
+  confidence/gap、DC删除、strict bilinear、高增益gate和强制谱；anchors、causal
+  Procedure、双流、Core语义与target-first/rank-last不能整体判死。
+- 下一UCP把absolute `X=M+G`、native Action和outgoing patch change放入统一
+  causal Program；normalized target/rank单级直接读raw values，删除独立Core
+  add、target-Core first hop和跨target mixer。训练用raw full24、stratified B20、
+  fast400首段；不同时混入slow2000。
 
 ## 2026-08-01 v5.2 task-complete闭环结论
 

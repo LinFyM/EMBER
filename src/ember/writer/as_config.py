@@ -12,9 +12,9 @@ from ember.writer.model import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_semantic_program_grid_cp24_as_writer_v1"
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_unified_causal_program_full24_as_writer_v1"
 AS_WRITER_CONFIG_OVERLAY_SCHEMA = (
-    "ember_pi05_semantic_program_grid_cp24_as_writer_recipe_overlay_v1"
+    "ember_pi05_unified_causal_program_full24_as_writer_recipe_overlay_v1"
 )
 AS_WRITER_STAGES = ("development", "final")
 
@@ -91,7 +91,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         or int(writer.get("max_frames_per_encoder_call", 0)) <= 0
     ):
         raise WriterModelError(
-            "sealed SPG Writer dimensions changed"
+            "sealed UCP Writer dimensions changed"
         )
     expected = expected_writer_contract(writer)
     if writer != expected:
@@ -103,7 +103,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
             if writer[key] != expected[key]
         )
         raise WriterModelError(
-            "SPG AS-Writer architecture changed; "
+            "UCP AS-Writer architecture changed; "
             f"missing={missing}, extra={extra}, changed={changed}"
         )
 
@@ -157,7 +157,9 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
             "no_replacement_cycles"
         ),
         "action_query_sampling": (
-            "task-balanced deterministic no-replacement episode cycles"
+            "task-balanced deterministic no-replacement episode cycles with "
+            "per-visit exact normalized-progress strata permutation and "
+            "deterministic within-stratum jitter"
         ),
         "video_action_pairing": (
             "one task-video LoRA conditions the complete task-local action batch"
@@ -175,7 +177,7 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
     value = config.get("conditioning_training", {})
     expected = {
         "method": (
-            "conflict_projected_task_complete_single_video_multi_action_"
+            "raw_task_complete_single_video_multi_action_"
             "positive_functional_loss"
         ),
         "update_topology": "task_complete_all_tasks",
@@ -203,22 +205,19 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
             "mean_within_task_then_equal_mean_over_24_tasks"
         ),
         "task_loss_scale_before_backward": (
-            "per_task_unscaled_then_global_projected_mean"
+            "per_task_unscaled_then_exact_raw_full24_mean"
         ),
-            "ddp_gradient_sync": (
-                "none_during_task_gradients_then_bounded_parameter_chunk_"
-                "allgathers_for_full24_grams_rank0_weight_broadcast_and_one_"
-                "final_direction_allreduce"
-            ),
-            "gradient_composition": (
-                "deterministic_pcgrad_in_24x24_coefficient_space_then_mean"
-            ),
-            "single_video_gradient_direction_diagnostic": (
-                "fixed_countsketch_32_per_task_per_semantic_frontend_core_"
-                "program_compiler_factor_block"
-            ),
-        "no_conflict_fallback": "exact_raw_full24_mean",
-        "conflict_order": "seed_macro_and_task_deterministic_rotating",
+        "ddp_gradient_sync": (
+            "none_during_task_gradients_then_bounded_parameter_chunk_"
+            "allgathers_for_exact_raw_full24_mean_and_read_only_grams"
+        ),
+        "gradient_composition": (
+            "exact_raw_equal_weight_full24_mean_without_projection"
+        ),
+        "single_video_gradient_direction_diagnostic": (
+            "fixed_countsketch_32_per_task_per_semantic_frontend_program_"
+            "compiler_factor_block"
+        ),
         "optimizer_steps_per_macro_update": 1,
         "checkpoint_boundary": "complete_macro_optimizer_update_only",
         "normal_loss_weight": 1.0,

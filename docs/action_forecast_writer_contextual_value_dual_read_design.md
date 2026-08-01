@@ -187,14 +187,19 @@ raw、未归一SERIAL和normalized group4三角，不拿CV-ADR替训练假设背
 
 截至2026-08-01，group4最长105-frame B20 profile、formal-seed
 fresh0→1→resume1→3→7和raw fresh0→1→resume1→3均已通过，两臂cycle0的24个
-teacher-video assignments逐项一致，配置已seal。canonical UCP恢复commit为
-`1a09e713a462d84dc0b5bb0a3cee92617b86c361`。raw-full24正式control已从该
-frozen commit fresh启动0→200，root为
-`pi05_as_writer_ucp_taskquery_rawfull24_decay400_control_formal_dev_r4_b20_seed7_1a09e71_20260801`；
-本次实现seal时已健康越过macro100并保存25/50/75/100。为避免两臂争用GPU，
-normalized group4将在raw自然完成后从同一frozen commit顺序启动。只有完成相同
-paired correct400后，才能按预注册证据决定CV-ADR是否仍先用raw或迁移normalized
-group4，不能根据smoke/profile或单一functional loss选择recipe。
+teacher-video assignments逐项一致。首个task/query raw正式root后来发现formal
+total误写为一小时stop，实际scheduler被自动压成decay200；其correct400为
+`81/72/107/78`，best macro150后又lost43/gained14。这个cell只证明过快衰减没有
+稳定UCP，不能与group4组成operator pair，也不能拿来选择CV recipe。
+
+scheduler与stage边界已经在clean `cfc2ad1`修复为raw
+`total400/stop200/stages[200,400]`、group4
+`total2400/stop1200/stages[1200,2400]`并fail-closed。true-fast400 raw现从该
+frozen commit fresh运行；前两macro已确认24 tasks/24 videos/480 queries、四rank
+cost-balanced long-first、真实warmup17和完整主路径finite可达。normalized group4
+只在raw训练及paired correct400完成后顺序启动。只有两臂都完成相同panel，才能按
+预注册证据决定CV-ADR是否仍先用raw或迁移normalized group4；不能根据smoke/profile、
+autoscaled cell或单一functional loss选择recipe。
 
 endpoint10已经以全局Spearman`.258398`、100,000次permutation `p=.298447`失败
 预注册global门；尤其v6-fast macro200的correct133对应18点最差quality。故CV-ADR

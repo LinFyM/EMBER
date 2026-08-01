@@ -40,8 +40,12 @@ runner、split 或 GPU 权限。
 - [x] 封存Unified Causal Program设计authority和现有B20 phase-variance审计。
 - [x] 实现UCP canonical路径、raw full24 Gram诊断和无偏20-strata B20；删除旧SPG
   Core add/global mixer与CP投影active path。真实参数`7,683,328`，全仓
-  `203 passed`，fresh formal config保持pending live profile。
-- [ ] 完成shape/mask/identity/freeze/gradient/resume和最长105-frame B20 profile。
+  `203 passed`；fresh formal config先保持pending，由下一项live evidence解封。
+- [x] 完成shape/mask/identity/freeze/gradient/resume和最长105-frame B20 profile；
+  三macro峰值reserved约77.62GiB，formal-seed fresh0→1→exact-resume1→3逐文件
+  不变，选择B20。
+- [ ] 提交并push UCP live seal，从新的clean detached commit建立formal frozen
+  worktree，fresh启动macro0→200；不得从profile/smoke warm-start。
 - [ ] 从clean frozen commit fresh训练macro0→200，评测50/100/150/200 paired
   correct400并按breadth、漂移、视频传递和LoRA几何决定续训或下一根因重构。
 - [ ] 后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才开第二

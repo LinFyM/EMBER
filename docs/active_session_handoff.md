@@ -17,12 +17,12 @@ L2，但target/rank reader近均匀，差异到effective BA压成
 `.066/.221/.116/.116`；same-task video variance/sample energy从macro50
 `.419%`降到macro200`.210%`。CP投影解决负pair但没有解决task轮换。
 
-下一write worktree为：
+UCP实现worktree当前为：
 
 ```text
 /data/ymdai/.codex/worktrees/EMBER-unified-program-534064a-20260801
 branch codex/unified-causal-program
-base   534064a361531d80ae121179450d5c490d199c5d
+head   0d4c27114991c8887c4dd5479ec42fdd11fd63a3
 ```
 
 Unified Causal Program canonical CPU实现已经完成：统一`X/A/outgoing D` causal
@@ -30,12 +30,38 @@ grid、单级normalized target/rank raw-value reader、无Core add/mixer；训�
 full24 mean并使用无偏20-strata B20。真实参数`7,683,328`，全仓`203 passed`；step0
 identity、causal prefix、outgoing alignment、target/rank routing、零内容不造值和
 raw-gradient/sampler exact resume合同均通过。canonical config为
-`configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json`，formal状态
-仍为pending live profile。
+`configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json`，现已seal为
+B20 fresh macro0→200 formal authority。
 
-紧邻动作是提交并冻结当前实现，只查询GPU4–7完成最长105-frame B20三macro、
-fresh0→1→exact-resume1→3与主要模块finite gradient，再seal formal config并从新的
-clean frozen commit启动macro0→200 gate。
+最长105-frame profile root为：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_ucp_rawfull24_profile_b20_longseed172_r4_0d4c271_20260801
+```
+
+task38/demo36的105 sampled frames已真实进入step1。三macro wall为
+`20.394/18.494/18.504s`，峰值allocated/reserved为
+`77,127,082,496/83,345,014,784` bytes；每步严格24 tasks、480 queries、24
+one-video conditions，所有metric与checkpoint finite，step2起四个主块梯度非零。
+run contract/metrics/summary SHA分别为`3d375caa...554ab6`、
+`06320db8...1dd24`、`bc8e3e4e...d1b18`。
+
+formal-seed exact-resume root为：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_ucp_rawfull24_resume_smoke_b20_formalseed_r4_0d4c271_20260801
+```
+
+fresh0→1后exact-resume1→3完成；step1 manifest、Writer、trainer与四个rank state
+逐SHA不变，三步loss为`.153645/.149302/.149466`，grad-before-clip为
+`.014274/.038833/.654902`，LR与data/RNG cursor连续。run contract/metrics/summary
+SHA为`31187bf9...7d9d0`、`84681e63...3c2f`、`489ca502...c0c5c`。
+
+紧邻动作是提交profile/resume seal并push，从新的clean detached commit创建独立
+formal worktree，只查询/使用GPU4–7 fresh启动macro0→200 gate；不得从profile或
+smoke warm-start。
 
 历史架构审计必须按组件×recipe解释：v7以后所有正式负结果都使用同一fast
 task-complete recipe，没有old recipe反事实。只能删除已被内部机制证据独立否定

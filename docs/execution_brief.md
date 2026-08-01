@@ -27,15 +27,17 @@ target-Core first hop和跨target/rank mixer；normalized target/rank identities
 单级直接读取raw Program。训练恢复raw full24 mean并保留只读Gram，B20使用
 边缘仍uniform-row的20-strata随机jitter降低过程覆盖方差；首版保持fast400，
 不同时混入slow2000。真实参数`7,683,328`，全仓无GPU回归`203 passed`；fresh
-config/checkpoint/eval schemas已经替换旧SPG active path，但formal保持pending，
-直到真实105-frame B20与exact-resume seal完成。
+config/checkpoint/eval schemas已经替换旧SPG active path。真实105-frame B20三
+macro已在`0d4c271` frozen code上完成，step wall
+`20.394/18.494/18.504s`，峰值reserved约77.62GiB；formal-seed
+fresh0→1→exact-resume1→3逐文件不变且cursor连续，config现已seal。
 
 v7/v8/v10/Loom及后续低分只证明“架构×当时fast task-complete recipe”失败。
 只有全局binder、早event pooling、无监督confidence/gap、DC删除、strict bilinear、
 高增益gate和强制谱等被内部反事实独立否定；anchors、causal Procedure、双流、
 Core语义和target-first/rank-last仍可复用。当前没有活动训练、评测或tmux。紧邻
-动作是提交并冻结UCP实现，只在GPU4–7完成最长视频B20 profile与exact-resume，
-再seal并按统一一小时门正式训练。150只是里程碑，不是focused自动终点。以下在`## 1`之前的旧状态叙述
+动作是提交该现场seal、从新的clean detached worktree只用GPU4–7 fresh启动
+macro0→200，再按统一一小时门正式训练和评测。150只是里程碑，不是focused自动终点。以下在`## 1`之前的旧状态叙述
 只作历史背景，不得覆盖本节。
 
 状态：2026-07-31。共享 π0.5-LIBERO source base与corrected mixed-task

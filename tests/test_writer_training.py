@@ -91,10 +91,10 @@ def test_ucp_full24_config_seals_architecture_and_information_wall() -> None:
     assert "state" in config["information_wall"]["writer_forbidden_inputs"]
     assert config["profile_defaults"]["expected_world_size"] == 4
     assert config["profile_defaults"]["status"] == (
-        "pending_live_b20_105_frame_profile"
+        "sealed_b20_after_live_105_frame_profile"
     )
     assert config["profile_evidence"]["status"] == (
-        "pending_live_b20_105_frame_profile"
+        "sealed_b20_after_live_105_frame_profile"
     )
     assert config["profile_evidence"]["allowed_physical_gpu_ids"] == [4, 5, 6, 7]
     assert config["profile_evidence"]["primary_candidate"][
@@ -109,10 +109,16 @@ def test_ucp_full24_config_seals_architecture_and_information_wall() -> None:
     assert config["optimization"]["scheduler"]["decay_steps"] == 400
     assert config["data"]["teacher_video_seed"] == 20260722
     assert config["profile_evidence"]["formal_teacher_video_seed_after_profile_seal"] == 20260722
-    assert config["formal_run"]["status"] == "pending_live_profile"
-    assert config["formal_run"]["launch_state"].startswith("blocked_until")
-    assert config["profile_evidence"]["selected"] is None
-    assert config["profile_evidence"]["exact_resume_smoke"] is None
+    assert config["formal_run"]["status"] == "sealed"
+    assert config["formal_run"]["launch_state"] == "ready_for_fresh_macro0_to200"
+    selected = config["profile_evidence"]["selected"]
+    assert selected["per_task_action_batch_size"] == 20
+    assert selected["contains_real_105_frame_video"] is True
+    assert selected["all_main_blocks_gradient_reachable_after_identity_step"] is True
+    resume = config["profile_evidence"]["exact_resume_smoke"]
+    assert resume["completed_optimizer_steps"] == 3
+    assert resume["metrics_steps"] == [1, 2, 3]
+    assert resume["step1_checkpoint_files_unchanged_after_resume"] is True
     assert config["formal_run"]["total_steps"] == 400
     assert config["formal_run"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["selected_stop_step"] == 200

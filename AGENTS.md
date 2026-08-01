@@ -97,14 +97,18 @@ Core add/global mixer和CP投影均已从active executable path删除。真实mo
 enumeration为`7,683,328`参数；step0 identity、causal prefix、outgoing alignment、
 target/rank routing、零内容不造值、raw full24 mean和20-strata exact-resume等CPU
 合同已通过，全仓`203 passed`。fresh config为
-`configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json`，当前仍明确
-标记pending live profile，不能据此启动formal。
+`configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json`，现已seal为
+B20 formal authority。独立`0d4c271` frozen worktree上的真实最长105-frame三
+macro profile已通过：step wall `20.394/18.494/18.504s`，峰值allocated/reserved
+`77,127,082,496/83,345,014,784` bytes，72套video conditions和1,440 queries
+全finite，step2起四个主块梯度可达。canonical formal seed的
+fresh0→1→exact-resume1→3也已通过，step1全部checkpoint payload逐字节不变。
 
 v7/v8/v10/Loom及后续历史不得整体判死。只能删除由内部反事实独立否定的局部
 机制；Action anchors、causal Procedure、双流、Core语义、target-first/rank-last
 等与fast task-complete recipe混杂的组件仍可在职责完整的新结构中复用。当前没有
-活动训练、评测或tmux。下一动作是提交并冻结UCP实现，只查询GPU4–7完成最长
-105-frame B20 profile、fresh0→1→exact-resume1→3，再seal并进入一小时formal gate。
+活动训练、评测或tmux；下一动作是提交profile/resume seal，从该clean commit创建
+新的detached frozen worktree，并在GPU4–7 fresh启动UCP macro0→200一小时门。
 
 关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
 single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe

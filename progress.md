@@ -10,6 +10,14 @@ GPU范围和训练步长是当时快照；活动状态只取
 
 ## 2026-08-01 SPG门失败、内部根因与UCP设计
 
+- UCP live seal完成：detached `0d4c271`上最长105-frame、B20、四rank三macro
+  连续通过，step wall `20.394/18.494/18.504s`，峰值allocated/reserved
+  `77,127,082,496/83,345,014,784` bytes；72个视频条件、1,440 queries和全部
+  checkpoint finite，step2起frontend/Program/reader/factor梯度均可达。
+- canonical formal seed fresh0→1→exact-resume1→3通过；step1七个文件SHA不变，
+  metrics/LR/task-video-query/RNG cursor连续，10个gradient chunks逐项
+  gather/completion/CUDA sync。config已seal B20；下一步从新clean commit fresh
+  启动macro0→200，不从smoke续训。
 - UCP canonical CPU实现完成：`[X_f,A_f,G_(f+1)-G_f]`两层causal axial Program，
   单级normalized target/rank raw-value reader，无独立Core add和global mixer。
   semantic frontend/Program/reader/factor参数分别为
@@ -20,8 +28,8 @@ GPU范围和训练步长是当时快照；活动状态只取
 - fresh config/checkpoint/evaluation schema均不兼容旧SPG；step0 identity、causal
   prefix、outgoing alignment、target/rank置换、padding、raw gradient world1/2和
   sampler exact resume通过；`CUDA_VISIBLE_DEVICES=''`全仓`203 passed`。
-- 当前仍没有GPU训练、评测或tmux；config formal状态为pending，下一步只在GPU4–7
-  做真实最长视频profile和fresh/resume seal。
+- 当前没有活动训练、评测或tmux；下一步提交现场seal并从新frozen commit只在
+  GPU4–7启动formal macro0→200。
 
 - SPG fresh macro0→200完成，macro50/100/150/200 correct400为
   `97/115/77/100`；按一小时门停止，不resume、不跑五臂。

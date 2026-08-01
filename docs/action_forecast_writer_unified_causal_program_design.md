@@ -320,8 +320,25 @@ Program `1,838,592`、single-stage target/rank reader `212,224`、八个factor h
 不是为了机械压参数；public LoRA仍完整生成1,287,168个rank16 scalars。
 
 canonical config为
-`configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json`。在live
-105-frame profile与exact resume完成前，它必须保持pending formal状态。
+`configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json`。live
+105-frame B20 profile与formal-seed exact resume已经完成，config现已seal为
+fresh macro0→200 formal authority。
+
+现场profile使用独立detached `0d4c271` frozen worktree和只改变
+`teacher_video_seed: 20260722→172`的临时overlay。真实最长task38/demo36共105个
+stride-5 frames在step1实际进入rank1首个microtask；三个完整macro均严格覆盖
+24 tasks、480 queries和24套单视频LoRA。step wall为
+`20.394/18.494/18.504s`，峰值allocated/reserved为
+`77,127,082,496/83,345,014,784` bytes，loss、梯度、LR、Writer和optimizer均
+finite。zero-init使step1只有factor梯度非零；step2起semantic frontend、Program、
+reader和factor四块均finite且非零，符合identity输出层先打开主路径的预期。
+
+同一代码、canonical formal seed随后fresh运行0→1并从step1 exact-resume到3。
+step1的manifest、Writer、trainer和四份rank state在resume后SHA逐项不变；三步
+metric、LR、20-strata query cursor、teacher-video cursor、24-task覆盖和10组
+gradient chunk gather/completion/sync连续。正式root与hash由config的
+`profile_evidence`封存。因此B20被选择；只有后续真实OOM或连续非有限才允许直接
+降B16。
 
 ## 8. 最短vertical path
 

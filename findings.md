@@ -8,6 +8,11 @@
 
 ## 2026-08-01 SPG一小时门、架构×recipe与UCP根因结论
 
+- UCP最长105-frame B20现场profile连续三macro通过，峰值reserved约77.62GiB；
+  每步24 tasks、480 queries、24套单视频LoRA，step2起Program全链梯度可达。
+  formal-seed fresh0→1→exact-resume1→3的step1 payload逐文件不变，证明新的raw
+  full24/20-strata状态、optimizer、scheduler与每rank cursor可精确恢复。B20因此
+  seal；这个smoke只证明工程合同，不预测closed-loop表现。
 - UCP真实实现证明删除Core/mixer并不需要用新的硬瓶颈补位：单一raw-value
   Program→38×16 reader→coherent heads可以在`7,683,328`参数内完整生成全部public
   A/B，step0逐tensor严格identity；target/rank/type identities在零Program上不能

@@ -378,7 +378,18 @@ def _paired_diagnostics(writer: CompleteLoRAWriter, captured: Mapping[str, Any],
         vf = captured["valid_frames"][row : row + 1]; vt = captured["valid_tokens"][row : row + 1]
         frame = captured["core"]["frame_attention"][row : row + 1].permute(0, 1, 3, 2)
         program = {name: value[row : row + 1] for name, value in captured["program"].items() if isinstance(value, torch.Tensor)}
-        reader = _compile(writer, captured["core"]["final"][row : row + 1], vt, program)
+        device = captured["core"]["final"].device
+        with torch.autocast(
+            device_type=device.type,
+            dtype=torch.bfloat16,
+            enabled=device.type == "cuda",
+        ):
+            reader = _compile(
+                writer,
+                captured["core"]["final"][row : row + 1],
+                vt,
+                program,
+            )
         attention[condition] = {"core_frame": probability_summary(frame, vt), "compiler": reader["attention"]}
     return {"comparisons": comparisons, "attention": attention, "program_blocks_five_condition_batch": captured["program"]["attention"]}
 
@@ -428,7 +439,21 @@ def _condition_capture(task: Mapping[str, Any], reference: int, adapters: Mappin
     for value in frames: offsets.append(offsets[-1] + value.shape[0])
     language = [str(task["language"])] * len(CONDITIONS); tokens, masks, spans = tokenizer(language)
     copy_task_lora_state_(policy, identity, lora)
-    captured = capture_writer(writer, policy, torch.cat(frames), torch.cat(indices), torch.tensor(offsets, dtype=torch.long, device=device), tokens, masks, spans)
+    with torch.autocast(
+        device_type=device.type,
+        dtype=torch.bfloat16,
+        enabled=device.type == "cuda",
+    ):
+        captured = capture_writer(
+            writer,
+            policy,
+            torch.cat(frames),
+            torch.cat(indices),
+            torch.tensor(offsets, dtype=torch.long, device=device),
+            tokens,
+            masks,
+            spans,
+        )
     return captured, metadata
 
 
@@ -439,7 +464,13 @@ def probe_reference(task: Mapping[str, Any], reference: int, adapters: Mapping[s
     states = [_state(captured["decoded"]["public"], row) for row in range(len(CONDITIONS))]
     for state in states: validate_lora_state(state, lora)
     actions = [policy_action(policy, processor, prepared, state, identity, lora, seed, device) for state in states]
-    matched = _paired_diagnostics(writer, captured, actions); variants = counterfactual_states(writer, captured)
+    matched = _paired_diagnostics(writer, captured, actions)
+    with torch.autocast(
+        device_type=device.type,
+        dtype=torch.bfloat16,
+        enabled=device.type == "cuda",
+    ):
+        variants = counterfactual_states(writer, captured)
     variant_actions = {name: policy_action(policy, processor, prepared, value["public"], identity, lora, seed, device) for name, value in variants.items()}
     reference_variant = variants["full"]; reference_action = variant_actions["full"]
     counterfactuals = {name: {"relative_to_full": _comparison(writer, reference_variant, value, reference_action, variant_actions[name]), "geometry": lora_geometry(writer, value["public"]), "compiler_attention": value["attention"]} for name, value in variants.items()}

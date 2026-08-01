@@ -414,14 +414,20 @@ def _counterfactual_diagnostics(
                  "coordinates": encoded["coordinates"][0],
                  "action": encoded["actions"][0]}
     variant_recompute = _variant_comparison(writer, canonical, full)
-    if any(
-        variant_recompute[key]["relative_l2"] > 2e-5
-        for key in (
-            "coordinates", "factor", "public_a", "public_b", "effective_ba",
-            "policy_action",
+    recompute_keys = (
+        "coordinates", "factor", "public_a", "public_b", "effective_ba",
+        "policy_action",
+    )
+    offenders = {
+        key: variant_recompute[key]
+        for key in recompute_keys
+        if variant_recompute[key]["relative_l2"] > 2e-5
+    }
+    if offenders:
+        raise WriterModelError(
+            "full counterfactual recompute changed canonical LoRA: "
+            f"{offenders}"
         )
-    ):
-        raise WriterModelError("full counterfactual recompute changed canonical LoRA")
     routing = _routing_diagnostics(
         writer=writer, policy=policy, processor=processor, identity=identity,
         lora=lora, device=device, encoded=encoded, shared=shared, full=full,

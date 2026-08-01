@@ -375,14 +375,32 @@ def counterfactual_states(writer: CompleteLoRAWriter, captured: Mapping[str, Any
     for names in (("A",), ("E",), ("D",), ("A", "E"), ("A", "D"), ("E", "D"), ("A", "E", "D")):
         selected = torch.zeros_like(raw)
         for name in names: selected[:, :, slices[name]] = raw[:, :, slices[name]]
+        label = "+".join(names)
+        if names == ("A", "E", "D"):
+            if not torch.equal(selected, raw):
+                raise WriterModelError("A+E+D identity reconstruction changed raw Program")
+            # Identity interventions must use the one canonical production
+            # forward.  Re-running CUDA BF16 SDPA can differ by one rounding
+            # unit even when every mathematical input is unchanged; treating
+            # that numerical replay as a scientific counterfactual would add
+            # implementation noise to an intervention whose definition is
+            # exactly the full model.
+            variants[f"aed/{label}"] = full
+            variants[f"aed_fixed_key/{label}"] = full
+            continue
         rebuilt = _program_pipeline(writer, selected, row(p["endpoints"]), row(p["valid_intervals"]), row(p["valid_semantics"]))
-        label = "+".join(names); variants[f"aed/{label}"] = _variant(writer, row(core), row(valid), rebuilt)
+        variants[f"aed/{label}"] = _variant(writer, row(core), row(valid), rebuilt)
         fixed_key = {**rebuilt, "key": row(p["key"])}; variants[f"aed_fixed_key/{label}"] = _variant(writer, row(core), row(valid), fixed_key)
     for name, selected_slice in slices.items():
         for scale in (0.5, 1.0, 2.0):
             scaled = raw.clone(); scaled[:, :, selected_slice] *= scale
-            rebuilt = _program_pipeline(writer, scaled, row(p["endpoints"]), row(p["valid_intervals"]), row(p["valid_semantics"]))
-            variants[f"scale/{name}/{scale:g}"] = _variant(writer, row(core), row(valid), rebuilt)
+            if scale == 1.0:
+                if not torch.equal(scaled, raw):
+                    raise WriterModelError(f"scale/{name}/1 identity changed raw Program")
+                variants[f"scale/{name}/{scale:g}"] = full
+            else:
+                rebuilt = _program_pipeline(writer, scaled, row(p["endpoints"]), row(p["valid_intervals"]), row(p["valid_semantics"]))
+                variants[f"scale/{name}/{scale:g}"] = _variant(writer, row(core), row(valid), rebuilt)
     for carrier in ("no_mean", "no_centered"):
         changed = _core_pipeline(writer, row(captured["q"]), row(captured["x"]), row(captured["valid_frames"]), row(valid), carrier)
         variants[f"core_carrier/{carrier}"] = _variant(writer, changed["final"], row(valid), program_row(0))

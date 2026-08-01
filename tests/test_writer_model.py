@@ -621,7 +621,20 @@ def test_internal_analyzer_recomputes_canonical_ap_path_and_counterfactuals() ->
         "temporal_keys/order_permuted",
     }
     assert required <= set(variants)
-    for name in ("aed/A+E+D", "scale/A/1", "scale/E/1", "scale/D/1"):
+    for name in (
+        "aed/A+E+D",
+        "aed_fixed_key/A+E+D",
+        "scale/A/1",
+        "scale/E/1",
+        "scale/D/1",
+    ):
+        assert torch.equal(
+            variants["full"]["coordinates"], variants[name]["coordinates"]
+        )
+        assert all(
+            torch.equal(variants["full"]["public"][key], variants[name]["public"][key])
+            for key in variants["full"]["public"]
+        )
         assert effective_metrics(
             model, variants["full"]["public"], variants[name]["public"]
         )["relative_l2"] <= 2e-5

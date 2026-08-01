@@ -2,12 +2,23 @@
 
 ## 2026-08-01 current override
 
-UCP正式macro0→200当前从clean detached `c94f1c6` fresh运行，tmux为
-`ember-ucp-formal-c94f1c6`，root为
-`/data/ymdai/outputs/ember/pi05_as_writer_ucp_rawfull24_decay400_formal_dev_r4_b20_seed7_c94f1c6_20260801`。
-首macro的24-task/B20/one-video/raw-mean/long-first/10-chunk同步合同已通过；不得
-重复启动或修改formal frozen worktree。完成后评测50/100/150/200 paired
-correct400。
+UCP raw-full24正式macro0→200及四个paired correct400已经完成；不得重复启动。
+macro50/100/150/200为`82/117/100/110`，union为169，single best只有117；
+train loss下降而held loss约`.131–.132`不改善，checkpoint间持续大幅gained/lost。
+因此不resume到400、不做五臂。
+
+macro100 refs1内部纵向已在`a4b06f5`通过：保持五条件carrier batch后canonical
+recompute各层误差严格0；reader target/rank routing健康，但dynamic A/D到effective
+BA/action的影响远弱于absolute X。当前零rollout exact50在tmux
+`ember-ucp-internal-exact50-a4b06f5`运行，root为
+`/data/ymdai/outputs/ember/pi05_as_writer_ucp_rawfull24_macro0100_internal_exact50_seed7_a4b06f5_20260801`；
+只使用物理GPU4–7，不得重复启动或修改frozen worktree。
+
+下一训练反事实冻结UCP拓扑，只改update granularity：四rank每update各1 task，
+六phase重建同一full24 cost-balanced cycle；1,200 updates等于200 task visits、
+4,800 videos和96,000 queries。LR严格满足
+`LR_serial(u)=LR_full24(floor(u/6))`；不是连续warmup102/decay2400。实现worktree为
+`/data/ymdai/.codex/worktrees/EMBER-ucp-serial4-a4b06f5-20260801`，尚未formal launch。
 
 当前下一整体架构设计为
 [`action_forecast_writer_unified_causal_program_design.md`](action_forecast_writer_unified_causal_program_design.md)。
@@ -42,10 +53,9 @@ fresh0→1→exact-resume1→3逐文件不变且cursor连续，config现已seal�
 v7/v8/v10/Loom及后续低分只证明“架构×当时fast task-complete recipe”失败。
 只有全局binder、早event pooling、无监督confidence/gap、DC删除、strict bilinear、
 高增益gate和强制谱等被内部反事实独立否定；anchors、causal Procedure、双流、
-Core语义和target-first/rank-last仍可复用。当前活动进程就是本节开头记录的
-UCP frozen formal macro0→200；不得重复启动。训练自然结束后按统一一小时门
-正式评测并据证据选择续训、训练粒度反事实或整体重构。150只是里程碑，不是
-focused自动终点。以下在`## 1`之前的旧状态叙述
+Core语义和target-first/rank-last仍可复用。当前活动进程和下一训练反事实就是
+本节开头记录的exact50与serial-4；不得重复启动。150只是里程碑，不是focused
+自动终点。以下在`## 1`之前的旧状态叙述
 只作历史背景，不得覆盖本节。
 
 状态：2026-07-31。共享 π0.5-LIBERO source base与corrected mixed-task

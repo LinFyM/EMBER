@@ -10,12 +10,25 @@ GPU范围和训练步长是当时快照；活动状态只取
 
 ## 2026-08-01 SPG门失败、内部根因与UCP设计
 
-- UCP live seal以`c94f1c6`提交并push；新的detached formal worktree只读加载该
-  commit，fresh macro0→200已在tmux `ember-ucp-formal-c94f1c6`启动。run root为
-  `pi05_as_writer_ucp_rawfull24_decay400_formal_dev_r4_b20_seed7_c94f1c6_20260801`。
-- 首macro wall`19.319s`，loss/grad/LR为`.153645/.014274/1.6667e-5`；严格24
-  tasks、480 queries、24单视频条件、rank内long-first，10组raw-gradient
-  allgather/completion/CUDA sync对应。四个rank仅驻留GPU4–7，训练继续到200。
+- UCP raw-full24 frozen `c94f1c6` fresh macro0→200自然完成，96,000 queries、
+  4,800 videos和全部25-step checkpoints完整；四候选paired correct400为
+  `82/117/100/110`。union169远高于single best117，breadth与成功集合持续轮换；
+  一小时门失败，不resume到400、不跑五臂。
+- candidate curve和drift analyzer均fail-close通过。train loss持续下降而held
+  `.131–.132`不改善；四候选raw mean只保留约`4.06–5.64%`平均task-gradient
+  energy，支持但尚不独证“full24抹掉task innovation”。
+- UCP内部analyzer在main提交`7385ff3/4837673/0ab3212/2d4b03c/a4b06f5`完成并push。
+  初次CUDA refs1揭示B5 canonical与B1 recompute的shape-dependent BF16数值漂移；
+  修复后所有counterfactual保留B5 carrier、只改/抽row0，原阈值不放宽，真实refs1
+  的Program→coordinates→factor→A/B→BA→action重算误差全部0。
+- refs1确认reader target/rank routing健康，wrong/order变化可传到BA/action；但固定
+  X只换A/D时BA约`1.4–2.4%`、action约`.5–.9%`，dynamic教学弱。零rollout
+  exact50现从clean detached `a4b06f5`在tmux
+  `ember-ucp-internal-exact50-a4b06f5`运行，只使用GPU4–7。
+- 新建独立serial-4写worktree
+  `/data/ymdai/.codex/worktrees/EMBER-ucp-serial4-a4b06f5-20260801`；冻结UCP模型，
+  只实现六phase/24-task cycle和exposure-staircase LR训练反事实，尚未GPU profile
+  或formal launch。
 - UCP live seal完成：detached `0d4c271`上最长105-frame、B20、四rank三macro
   连续通过，step wall `20.394/18.494/18.504s`，峰值allocated/reserved
   `77,127,082,496/83,345,014,784` bytes；72个视频条件、1,440 queries和全部

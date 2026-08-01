@@ -46,8 +46,19 @@ runner、split 或 GPU 权限。
   不变，选择B20。
 - [x] 提交并push UCP live seal `c94f1c6`，从新的clean detached commit建立formal
   frozen worktree并fresh启动macro0→200；首macro合同健康，未从smoke warm-start。
-- [ ] 完成当前clean frozen `c94f1c6` fresh macro0→200，评测50/100/150/200 paired
-  correct400并按breadth、漂移、视频传递和LoRA几何决定续训或下一根因重构。
+- [x] 完成clean frozen `c94f1c6` fresh macro0→200和50/100/150/200 paired
+  correct400：`82/117/100/110`；union169、single best117，门失败，不续到400、
+  不做五臂。
+- [x] 完成macro100 refs1内部纵向和CUDA batch-shape诊断；保持B5 carrier后
+  canonical重算各层严格一致，reader路由健康，但dynamic A/D写出仅约2–5%。
+- [ ] 让当前`a4b06f5` frozen exact50零rollout内部分析自然完成，封存逐task
+  same-video variance、Program→BA→action、消融和有效LoRA几何。
+- [ ] 在独立write worktree完成UCP exposure-matched serial-4单路径实现：六phase
+  重建同一full24 cycle，LR按cycle阶梯重复；完成CPU合同、最长105-frame B20、
+  fresh/exact-resume vertical path后才formal launch。
+- [ ] serial-4从fresh identity运行1,200 optimizer updates；评测
+  300/600/900/1200 paired correct400，并同时比较breadth、envelope gap、A/D写出、
+  selected4 Gram、task漂移和functional surrogate错位。
 - [ ] 后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才开第二
   小时和行为五臂。
 - [ ] 持续定位task漂移、视频学习和closed-loop off-manifold根因，禁止补丁式

@@ -10,11 +10,10 @@
 
 ## 0. 2026-08-01 UCP当前状态与紧邻动作
 
-v5.2 task-complete与SPG一小时实验均已完成。UCP macro0→200正式训练当前活动，
-不得按本节重复启动：
+v5.2 task-complete、SPG和UCP raw-full24一小时实验均已完成；当前没有需要继承的
+训练或rollout评测。UCP formal只作已完成provenance，不得按本节重复启动：
 
 ```text
-tmux    ember-ucp-formal-c94f1c6
 commit  c94f1c6bb6479625c6c4ffb1a3b28e3fba7730c1
 frozen  /data/ymdai/.codex/worktrees/EMBER-ucp-formal-c94f1c6-20260801
 root    /data/ymdai/outputs/ember/pi05_as_writer_ucp_rawfull24_decay400_formal_dev_r4_b20_seed7_c94f1c6_20260801
@@ -22,24 +21,80 @@ log     /data/ymdai/logs/ember/pi05_as_writer_ucp_rawfull24_decay400_formal_dev_
 ```
 
 run-contract payload/file SHA为`b372fb8f...d13807`/`832a7ba4...9c628a`，config
-SHA为`c8202053...2cf12`。launch前main/origin/frozen均clean同commit；只查询
-GPU4–7且四卡均空闲，个人占用`366,057,157,099` bytes，预计新增低于2GB，远低于
-500GB上限。首macro已完成：loss`.1536451`、grad-before-clip`.0142743`、LR
-`1.6667e-5`、wall`19.319s`；24 tasks唯一、480 queries、24 one-video conditions、
-24 policy forwards，rank内long-first，10个gradient chunks均有completion与CUDA
-sync，四个CUDA rank分别存活在GPU4–7。
+SHA为`c8202053...2cf12`。fresh macro0→200自然完成，耗时约64.48分钟，共
+96,000 queries、4,800个task-video visits；validation/test action gradient和读取
+均为0。所有25-step checkpoint完整。
+
+paired correct400为：
+
+```text
+macro50 / 100 / 150 / 200 = 82 / 117 / 100 / 110
+```
+
+single winner是macro100，但四点union为169，比best高52；三次相邻转移的
+gained/lost为`64/29`、`18/35`、`39/29`。breadth nonzero为`7/7/5/7`，top2
+贡献为`61.0/66.7/65.0/62.7%`，Spatial始终近零。train loss持续下降而held
+functional loss维持`.131–.132`。因此一小时门失败，不resume到400、不做五臂。
+正式curve与drift为：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_ucp_rawfull24_decay400_candidate_curve_seed7_c94f1c6_20260801/analysis.json
+SHA256 6462e6532791df98803db4d7af65ec71755e6cfd4de2bd093d98a136fdf4fc25
+drift_analysis.json
+SHA256 084b3a100a514eefcb99d29f688a942603eba512e046115a1a5d4c03e3db6675
+```
+
+macro100 refs1内部纵向验证已经在analysis commit `a4b06f5`完成。原诊断失败不是
+模型状态变化，而是canonical B5与recompute B1触发CUDA BF16 batch-shape数值路径
+差异；修复后保持五条件carrier batch、只改/抽row0，原`2e-5` fail-close未放宽，
+Program、coordinates、factor、public A/B、effective BA和action全部重算误差0。
+refs1 root与analysis SHA为：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_ucp_rawfull24_macro0100_internal_ref1_seed7_a4b06f5_20260801
+analysis.json SHA256 8cef65bcd1b3f386fb43af9521119125114818bf6aa7c14cfd895de5d791b470
+```
+
+reader target/rank centered energy为`.240/.117`，所以SPG同质化已消失；
+same/wrong/shuffled/reversed的final Program→effective BA→fixed action relative L2
+为`.190/.492/.352/.447 → .040/.190/.065/.107 → .014/.067/.016/.030`。但固定X
+只改A/D时effective BA仅`.014/.021/.024/.024`，说明dynamic teaching仍弱；
+LoRA norm约`59.5`，q/v跨层cosine约`.917/.923`。
+
+当前唯一活动GPU进程是零rollout exact50内部分析，不得重复启动或修改其frozen
+worktree：
+
+```text
+tmux    ember-ucp-internal-exact50-a4b06f5
+commit  a4b06f5dc9f0a5c0fbd75739d7dde2b10e4e2504
+frozen  /data/ymdai/.codex/worktrees/EMBER-ucp-analysis-ref1-a4b06f5-20260801
+root    /data/ymdai/outputs/ember/pi05_as_writer_ucp_rawfull24_macro0100_internal_exact50_seed7_a4b06f5_20260801
+log     /data/ymdai/logs/ember/pi05_as_writer_ucp_rawfull24_macro0100_internal_exact50_seed7_a4b06f5_20260801.log
+```
+
+launch前只查询GPU4–7，四卡均空闲，个人占用`371,230,907,676` bytes；当前四rank
+分别只驻留物理GPU4–7。它计算8 tasks×50 references、五种video conditions和完整
+counterfactual，rollout数为0。
 SPG macro50/100/150/200 correct400为`97/115/77/100`，不续第二小时。SPG
 Program本身对same/wrong/shuffled/reversed有`.967/1.186/1.193/1.202` relative
 L2，但target/rank reader近均匀，差异到effective BA压成
 `.066/.221/.116/.116`；same-task video variance/sample energy从macro50
 `.419%`降到macro200`.210%`。CP投影解决负pair但没有解决task轮换。
 
-UCP实现worktree当前为：
+raw-full24实现历史worktree为：
 
 ```text
 /data/ymdai/.codex/worktrees/EMBER-unified-program-534064a-20260801
-branch codex/unified-causal-program
-head   0d4c27114991c8887c4dd5479ec42fdd11fd63a3
+head 0d4c27114991c8887c4dd5479ec42fdd11fd63a3
+```
+
+exposure-matched serial-4只在独立写worktree实现，当前尚未formal launch：
+
+```text
+/data/ymdai/.codex/worktrees/EMBER-ucp-serial4-a4b06f5-20260801
+branch codex/ucp-serial4-exposurematched
 ```
 
 Unified Causal Program canonical CPU实现已经完成：统一`X/A/outgoing D` causal
@@ -76,10 +131,12 @@ fresh0→1后exact-resume1→3完成；step1 manifest、Writer、trainer与四�
 `.014274/.038833/.654902`，LR与data/RNG cursor连续。run contract/metrics/summary
 SHA为`31187bf9...7d9d0`、`84681e63...3c2f`、`489ca502...c0c5c`。
 
-紧邻动作是让上述fresh formal自然运行到macro200，期间不修改frozen worktree、
-不从profile/smoke warm-start、不建立额外watcher。完成后用相同paired panel并行
-评测macro50/100/150/200 correct400，按absolute、breadth、task轮换和内部
-Program→coordinate→BA→action证据决定第二小时、训练单变量反事实或整体重构。
+紧邻动作是让exact50自然完成，同时完成serial-4的一条canonical sampler/step/
+scheduler路径、CPU合同测试、最长视频B20 profile和fresh/exact-resume。serial-4
+严格用`cycle,phase=divmod(update,6)`重建同一full24 cost-balanced cycle；六更新
+覆盖24 tasks，LR在同cycle六次保持不变。禁止naive连续warmup102/decay2400。
+profile/resume通过后才从fresh identity启动1,200 updates，并评测
+300/600/900/1200；不得从raw-full24 checkpoint warm-start。
 
 历史架构审计必须按组件×recipe解释：v7以后所有正式负结果都使用同一fast
 task-complete recipe，没有old recipe反事实。只能删除已被内部机制证据独立否定

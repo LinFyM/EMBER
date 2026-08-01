@@ -1,6 +1,6 @@
 # Unified Causal Program Writer 设计
 
-**状态：2026-08-01 implementation authority**
+**状态：2026-08-01 raw-full24结果完成，exposure-matched serial-4反事实authority**
 
 本文负责 Semantic Program Grid（SPG）一小时门失败后的下一条 canonical
 AS-Writer 路径。它不是把 v7、v8、v10、Loom 或后续版本整体判死后重新命名，
@@ -302,14 +302,56 @@ mean/average-task energy ratio和CountSketch跨macro方向诊断，但candidate 
 只有内部主路径工作但视频innovation随LR过快消失时，才做同拓扑slow2000
 counterfactual。不能先验把slow scheduler当作视频因果解法。
 
-如果UCP内部主路径、target/rank routing、effective BA和fixed-query action均健康，
-但single-checkpoint correct400仍发生明显task轮换或breadth不足，优先冻结拓扑做
-更新粒度单变量反事实：每次更新4 tasks、运行1,200 updates，仍是4,800条单视频
-条件和96,000 action queries，与full24 macro200完全匹配。task exposure轴上把
-warmup17 macros映射为102 updates、decay400映射为2,400 updates；保持B20、
-one-video、task内mean、四task等权和相同source/split。这个实验只改变optimizer
-更新粒度，不与slow scheduler混合。只有粒度结果仍指向LR时，才另做full24
-slow2000。若UCP上游或compiler本身失效，则不运行这个control。
+raw-full24 UCP 的四个paired correct400为`82/117/100/110`，best macro100之后
+回落。四点union为`169`，比single best高`52`；50→100、100→150、150→200分别
+gained/lost `64/29`、`18/35`、`39/29`。train loss继续从约`.116`降到`.101`，
+held functional loss却维持`.131–.132`。因此一小时门失败且不续第二小时、不做
+五臂，但存在很强的checkpoint能力轮换。
+
+macro100 refs1真实内部纵向路径通过严格fail-close：五条件batch的canonical重算
+在Program、coordinates、factor、public A/B、effective BA和fixed action上均为
+bitwise相同；reader target/rank centered energy为`.240/.117`，不是SPG的
+`1e-5`级同质化。same/wrong/shuffled/reversed从final Program到effective BA再到
+fixed action的relative L2分别为：
+
+```text
+Program       .190 / .492 / .352 / .447
+effective BA  .040 / .190 / .065 / .107
+fixed action  .014 / .067 / .016 / .030
+```
+
+但当前写出主要依赖absolute `X`：固定X只替换A/D时，四个条件的effective BA
+只变`.014/.021/.024/.024`，action只变`.005/.006/.007/.009`；删除全部dynamic
+A/D后effective BA仅变`.049`、action`.011`。correct LoRA norm约`59.5`，q/v
+跨层cosine约`.917/.923`，低于v6的高增益coherent流形。这个组合证据既排除
+“UCP compiler断路”，也没有证明UCP结构已经充分；它精确支持先测full24是否把
+task-specific dynamic innovation平均掉。
+
+下一反事实冻结全部UCP topology、参数、B20、video/query/RNG和信息墙，只改变
+optimizer/update granularity：令`cycle, phase = divmod(update, 6)`。每个cycle先
+生成与raw-full24完全相同的cost-balanced四个rank组和rank rotation；每组六个
+tasks仍按真实视频长度long-first，phase只取每rank的第phase项。因此每次全局4
+tasks等权，六次更新恰好覆盖24 tasks，且每个task的`task_visit=cycle`。1,200
+optimizer updates正好对应200 task cycles、4,800条单视频条件和96,000 action
+queries。
+
+LR必须按task exposure严格阶梯匹配：
+
+```text
+LR_serial(update) = LR_rawfull24(floor(update / 6))
+```
+
+实现上仍构造原`warmup17 + decay400` logical-cycle scheduler，只在每个第六次
+optimizer update结束后推进一次；同一cycle的六次AdamW使用完全相同LR。禁止把
+它写成连续`warmup102 + decay2400`，因为那会在一个cycle内部取六个不同LR，尤其
+会改变warmup早期的实际尺度。每150 updates保存，对应cycle25；候选
+300/600/900/1200对应cycle50/100/150/200。
+
+这个反事实的不可约变量是完整更新粒度：每cycle从一次clip/AdamW/weight-decay/
+moment update变成六次，后五组梯度也在已更新参数上计算。不能把结果进一步冒充
+“batch size”“Adam moment”或“累计LR”某一个子因素的单独因果效应。若它仍不能
+恢复absolute、dynamic写出和稳定breadth，再把责任转向UCP表达与functional
+surrogate；只有证据随后单独指向LR时，才另做full24 slow2000。
 
 ## 7. 实现边界与初始化
 

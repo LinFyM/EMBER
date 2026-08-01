@@ -24,6 +24,39 @@
   stratum内deterministic jitter；长期episode内row边缘近均匀，exact resume不需
   新cursor。它是估计器方差实验，不是语义phase监督。
 
+- UCP raw-full24 macro50/100/150/200 paired correct400为
+  `82/117/100/110`；breadth nonzero `7/7/5/7`，top2任务贡献
+  `61.0/66.7/65.0/62.7%`，Spatial两任务始终近零。四checkpoint union为169，
+  比single best117高52；三次相邻转移分别gained/lost
+  `64/29`、`18/35`、`39/29`。这不是共同单调学习，而是明显能力轮换。
+- trailing25 train functional loss从macro50约`.1157`持续降到macro200
+  `.1006`，held panel则为`.13090/.13144/.13132/.13244`。m100 raw full24 mean
+  只保留平均task-gradient energy的`5.26%`；四候选约
+  `5.64/5.26/4.06/4.48%`。functional surrogate改善、closed-loop回落和约95%
+  task innovation在平均中消失同时成立，但尚不能把二者写成唯一因果链。
+- macro100 refs1证明UCP没有重演SPG compiler同质化：reader entropy约`.9541`，
+  target/rank-centered attention energy`.240/.117`，coordinate对应量
+  `.158/.0396`。wrong/shuffle/reverse的final Program relative L2
+  `.492/.352/.447`传到coordinates`.253/.100/.159`、effective BA
+  `.190/.0649/.107`和fixed action`.0674/.0157/.0298`。路由和视频信号均真实
+  可达。
+- 但显式dynamic教学仍弱：`x_only`相对full只改变effective BA`.0489`、action
+  `.0111`；固定X只替换A/D时，wrong/shuffle/reverse BA仅
+  `.0208/.0240/.0241`，action`.0062/.0065/.0094`。正确LoRA norm约`59.50`、
+  stable rank`1.0031`、top energy`99.72%`、跨层q/v cosine`.917/.923`；不是
+  Target-Spectral低norm/正交坍缩，却比v6高增益coherent流形弱。
+- 初次refs1诊断把canonical五条件B5切成recompute B1，CUDA BF16不同batch shape
+  导致coordinates约`.2%`系统漂移。四rank模式一致且误差在factor/policy前出现；
+  同B5 canonical parity为0，排除Writer状态突变和owner遗漏。修复保留B5 carrier、
+  只改/抽row0，所有消融也保持同batch；没有放宽`2e-5`阈值。新refs1真实运行的
+  Program、coordinates、factor、A/B、BA和action重算误差全部严格0。
+- 所以serial-4是有判别力但非预设成功的下一实验。支持full24聚合根因必须同时
+  看到selected4方向保留能量显著高于约5%、single-checkpoint breadth/Jaccard
+  改善、envelope gap缩小、A/D→BA/action和same-video innovation不下降，并由多个
+  tasks共同提高closed-loop。若只有order margin提高而absolute下降，就是重演
+  v6-old；若loss下降但行为不涨，应转向surrogate/off-manifold；若A/D贡献仍只有
+  2–5%，应降低聚合解释并重审UCP职责。
+
 - SPG macro50/100/150/200 paired correct400为`97/115/77/100`。envelope union
   为162，但best single point只有115；macro100→150 lost51/gained13，之后又
   反向轮换。它不续第二小时，也不做正式五臂。
@@ -61,12 +94,25 @@
   Core-Program bilinear和Target-Spectral强制正交已有跨内部量的结构性反证；
   Prior-Innovation只证明手工硬分解失败，稳定semantic prior加软innovation仍未被
   单独否定。
+- 更细的内部反事实限定了这些结论：v7 binder entropy`.99963`、有效anchors
+  `7.998/8`且Core→BA仅`.001–.002`，所以不能靠serial更新补回缺失的Core value；
+  v8 Effect/EventRead entropy`.978/.9967`且固定Effect换Action只产生约
+  `.085–.103` event变化，而固定Action换Effect达`1.46–2.95`，否定的是Effect
+  dominance和过早pooling。v10在同一full24-fast下仍有五臂
+  `103/94/75/67/43`，直接反证“full24必然消灭时序特异性”，但其Procedure RMS
+  `.0145`被末端放大`14–20×`，所以absolute失败仍有独立结构根因。
+- Prior-Innovation的LoRA norm从m50到m200为`76.1→99.95`、跨层q/v cosine约
+  `.97/.98`，coherent高增益本身健康；same-task centered variance/task-mean energy
+  却只有`.052–.058%`。它没有隔离prior、innovation reader、final mixer与full24
+  聚合，因此是历史上最符合“共享prior被保留、条件innovation被平均掉”的候选，
+  而不是已经被整体否定的思想。
 - 如果UCP证明Program→coordinate→BA→action传递健康但absolute/breadth仍弱，
   下一步应先冻结拓扑做更新粒度单变量反事实，而不是立刻再改架构。最干净候选是
   `4 tasks/update × 1200 updates`：与full24 macro200同为4,800 videos和96,000
-  queries；按task exposure把warmup17/decay400映射为102/2400 updates。随后才把
-  full24-slow2000作为独立scheduler变量；不得把4-task和slow scheduler重新混成
-  一个“old recipe”结论。
+  queries；LR按`LR_serial(u)=LR_full24(floor(u/6))`做六update一档的严格
+  exposure staircase。连续warmup102/decay2400会在同cycle引入六个不同LR，
+  不是所需反事实。随后才把full24-slow2000作为独立scheduler变量；不得把4-task
+  和slow scheduler重新混成一个“old recipe”结论。
 - 下一UCP把absolute `X=M+G`、native Action和outgoing patch change放入统一
   causal Program；normalized target/rank单级直接读raw values，删除独立Core
   add、target-Core first hop和跨target mixer。训练用raw full24、stratified B20、

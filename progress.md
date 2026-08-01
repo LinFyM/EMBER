@@ -31,6 +31,11 @@ GPU范围和训练步长是当时快照；活动状态只取
   24个Writer generation workers存活，prepared contract均为400 states、36个
   long-first shards、6 replicas/6 generators且teacher action reads=0。tmux为
   `ember-ucp-serial4-correct400-3db82df`。
+- 完成architecture×training mechanics只读审计并封存167个输入SHA；analysis
+  SHA为`c910a933...e521`。v6 old/new-slow对齐B20、video/query与exposure LR后，
+  一阶LR integral仍差`6.0069×`，visits100→150参数路径cosine仅`.0493`、Adam
+  exp_avg cosine`.0331`；更新粒度同时改变累计步长、重线性化、moment、clip与WD，
+  不能再缩写成“full24梯度抵消”。
 - UCP exact50在clean frozen `c4b85e8`自然完成：8 tasks×50 references共400
   rows、四rank各100、reference0..49完整、0 rollouts、无failure。pooled
   same-task effective-BA/fixed-action centered variance/sample energy为

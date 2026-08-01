@@ -72,6 +72,8 @@ runner、split 或 GPU 权限。
 - [x] 完成跨v5.2/SPG/UCP/v6新旧recipe的strict surrogate审计；确认同一held panel
   无法选择closed-loop checkpoint或追踪逐task漂移，并把历史结论分成局部机制否定、
   recipe混杂和现有证据不可识别三层。
+- [x] 完成architecture×training mechanics审计；量化old/full24的6×LR integral、
+  Adam记忆、clip/WD/重线性化差异和v6 matched参数路径，明确它仍是多因素bundle。
 - [x] serial-4从clean frozen `3db82df` fresh identity完成1,200 optimizer updates；
   96,000 queries/4,800 videos/200 cycles与raw-full24逐项同曝光，8个checkpoint和
   信息墙合同完整。

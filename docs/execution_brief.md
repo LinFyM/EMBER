@@ -68,6 +68,14 @@ post-v5能力审计另封存在
 （SHA256 `406b9098...80e`）：扩展24 checkpoints的四架构envelope union为246，而全部
 checkpoint共同成功仅5 states，进一步禁止按aggregate整体处决历史结构。
 
+训练mechanics审计封存在
+`/data/ymdai/outputs/ember/pi05_as_writer_architecture_training_mechanics_audit_seed7_20260801/analysis.json`
+（SHA256 `c910a933...e521`）。旧recipe每完整24-task exposure做六次mean4同LR更新，
+新full24只做一次mean24；实测累计一阶LR系数约差`6.0069×`，并同步改变Adam
+记忆、clip、WD和groups2–6的参数重线性化。v6 old/new-slow在B20、video/query与
+exposure LR对齐后，visits100→150参数路径cosine仍仅`.0493`。故serial结果只能
+解释完整update-mechanics bundle，不能单因归为梯度抵消或task batch size。
+
 当前下一整体架构设计为
 [`action_forecast_writer_unified_causal_program_design.md`](action_forecast_writer_unified_causal_program_design.md)。
 exact v5.2 task-complete已以候选`51/91/106/120`和winner五臂

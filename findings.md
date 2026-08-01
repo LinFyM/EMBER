@@ -30,6 +30,13 @@
   metrics、8个checkpoint、全部finite与信息墙读取0已核验；raw microtask→serial
   phase的4,800 assignments逐项匹配，replay SHA为`d406f2f1...80cc`。八个held
   loss在`.13035–.13348`间轮换，不据此预判closed-loop。
+- architecture×training mechanics正式审计（analysis SHA `c910a933...e521`）确认
+  old→full24不是简单的tasks/update开关：每完整exposure旧recipe做六次同LR
+  mean4更新，一阶LR integral约为新mean24的`6.0069×`；Adam记忆保留变为
+  `.9^6/.95^6=.5314/.7351`，并多做五次重线性化、clip和WD。最干净的v6
+  old/new-slow虽然B20、视频序列、query和exposure-phase LR对齐，visits100→150
+  参数路径cosine仍仅`.0493`，endpoint exp_avg cosine`.0331`。所以训练更新几何
+  是真实根因bundle，但现有数据不能把aggregate、步长、moment、clip或顺序单独定罪。
 - UCP最长105-frame B20现场profile连续三macro通过，峰值reserved约77.62GiB；
   每步24 tasks、480 queries、24套单视频LoRA，step2起Program全链梯度可达。
   formal-seed fresh0→1→exact-resume1→3的step1 payload逐文件不变，证明新的raw

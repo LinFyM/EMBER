@@ -72,6 +72,34 @@ v5.2与v6的held都改善，却让closed-loop分别`-81/+16`，进一步说明re
 是topology对条件innovation和source-policy有效流形的利用，而非统一提高同一个
 可由held loss观测的目标。
 
+训练机械审计进一步把old/new bundle量化到optimizer时钟。最干净的同topology格是
+v6-old B20 slow12000与v6-full24 B20 slow2000：前150次每task teacher-video
+`(demo, sampled frames)`逐项相同、query构造相同，visit150边界LR也相同。旧配方
+每完整24-task exposure却做六次`mean4→clip→AdamW`，新配方只做一次
+`mean24→clip→AdamW`。冻结参数、vanilla SGD的一阶近似下，旧cycle系数约为
+`-6η mean24`而新cycle为`-η mean24`；实测visit150六个旧LR之和与新LR比为
+`5.999553×`，前150 exposures累计比为`6.006864×`。Adam `(β1,β2)=(.9,.95)`
+在旧cycle后的保留率是`(.531441,.735092)`，新cycle仍为`(.9,.95)`；旧groups
+2–6还在依次更新后的参数点重新线性化，clip和weight decay也各执行六次。
+
+这不是纯尺度解释：v6 old/new-slow在visits100→150的Writer更新方向cosine只有
+`.049269`，路径norm为`9.5723/3.3109`；所有主要模块方向都接近正交，endpoint
+Adam exp_avg/exp_avg_sq cosine为`.0331/.5637`，clip触发为`21/1`。因此已识别的是
+“聚合+重线性化+optimizer memory/clip/WD clock”真实改变basin；尚未识别哪个子项
+单独负责行为差异。任何serial收益都不能冒充“减少梯度抵消”，任何serial失败也
+不能单独否定small-task updates。正式artifact为：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_architecture_training_mechanics_audit_seed7_20260801/analysis.json
+SHA256 c910a9335473d5a6da155db9afd4b9b1ab4ca2104f6a1da133c7e6857520e521
+```
+
+现有最小未填因果格是v5.2 full24/B20/slow2000，以及v6 old-rank-rotating/B20/
+fast-exposure scheduler；只有serial closed-loop和内部结果表明这些格仍能改变决策时
+才启动。`β→(.9^6,.95^6)` exposure-memory control与v5.2 old B21→B20更靠后，
+不能同时混入下一版架构。
+
 所有 v7、v8、v10、Loom、Recenter、Core-Program、Prior-Innovation 和
 Target-Spectral 正式负结果都使用 full24/B20/one-video/fast400；没有 old-recipe
 反事实。当前只允许以下强度的历史结论：

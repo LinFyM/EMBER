@@ -6,6 +6,60 @@
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-01 UCP formal scheduler自动缩放合同偏差
+
+- task-query raw control从clean frozen `1a09e71`按sealed overlay的
+  `total_steps=200, stop=200, decay_steps=400`启动。逐步LR审计发现macro150
+  实际为`5.4093e-5`；真正400-step cosine在同点应约`2.1049e-4`。LeRobot
+  `CosineDecayWithWarmupSchedulerConfig.build`会在训练总逻辑步小于decay时自动
+  把warmup/decay从`17/400`压成`8/200`。因此该root只能称
+  `configured-decay400/autoscaled-decay200`，不得作为fast400证据。
+- 根因是新control overlays把一小时stop误写成scheduler的formal total：raw
+  `200`、group4 `1200 updates=200 cycles`；基础UCP和CV-ADR合同原本正确地使用
+  `total=400/2400, stop=200/1200`。既有测试又固定用400逻辑步构造scheduler，
+  没走正式config total路径，因而漏检。
+- 当前raw不被中止；它自然完成后保留为task/query/video/noise一致的autoscaled-decay200
+  scheduler ablation，并正式评测50/100/150/200。错误group4不会启动。最窄修复
+  把两份formal total恢复为400/2400，并在config loader新增
+  `logical_total >= decay_steps` fail-close；定向24项回归通过。随后从fresh
+  identity重跑真正fast400 raw/group4配对，不能把本次发现调试成偏好结果。
+- CV-ADR canonical实现已在隔离branch提交为`b2bc70c`：同一contextual Program
+  同时作K/V、mean-backed Core与target/rank dual read，精确参数`10,241,024`；
+  focused `159 passed`且architecture guard无hard violation。真实B20/profile/
+  resume仍pending，且在UCP正确受控格完成前不推送或正式训练。
+- autoscaled-decay200 raw现已自然完成200 cycles：96,000 queries、4,800个
+  one-video conditions、wall `3892.039s`，200行全部finite，信息墙读取0；唯一clip
+  在macro5，后续没有连续非有限或OOM。macro50/100/150/200的train loss为
+  `.11826/.11069/.10848/.10726`，held loss为
+  `.13509/.13118/.13078/.13154`，后两者仍不能代替closed-loop选择。
+- LR缩短主要截断位移，并未使task方向稳定。当前Writer参数段长度
+  `50→100/100→150/150→200 = 2.348/1.084/.349`；历史fast400 UCP为
+  `2.911/2.252/1.734`，但相邻段方向cosine两者都只有约`.13-.24`。raw mean保留的
+  平均task-gradient energy从macro50的`9.05%`降至macro200的`4.22%`，已经贴近
+  24个等norm正交方向的`1/24=4.17%`；pairwise negative fraction升至`51.81%`，
+  但整体candidate direction对24 tasks仍`0`个负点，所以这不是CP式“均值伤害多数
+  task”的证据，而是共同方向极小、task innovation近正交的证据。
+- 同一task相邻one-video/query visit的32维梯度CountSketch cosine也从前50步四个
+  block均值`.218-.248`降到后50步`.0094-.0173`，晚期几乎由条件噪声主导。旧
+  fast400的晚期范围`.073-.127`，但同时混杂ambient policy RNG；只有纠偏后的
+  task/query-keyed true-fast400 raw完成后，才能把这部分差异严格归给scheduler。
+- 四个正式paired correct400为`81/72/107/78`，observed-best macro150；四个panel
+  都是400 rows、36/36 long-first shards、0 failure并严格paired。macro150逐task为
+  Long `16/1`、Goal `1/28`、Object `27/32`、Spatial `1/1`，breadth8但只有四个task
+  达到至少5 successes，top2为`60/107=56.1%`。它低于旧UCP raw117、SERIAL121和
+  v5.2/v6强点，不续训、不做五臂。
+- 50→100、100→150、150→200分别gained/lost `28/37`、`54/19`、`14/43`，成功集合
+  Jaccard `.4037/.4206/.5289`。effective BA mean norm单调到macro150后仅
+  `45.34/50.00/52.94/51.92`，但correct剧烈轮换；macro150→200的参数位移只有
+  `.349`且第一moment cosine仍近零量级，微小更新足以跨closed-loop阈值，不支持
+  “只看LoRA norm”或“更快衰减即可稳定能力”。
+- 正式candidate analysis为
+  `/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_configdecay400_runtime200_candidate_curve_seed7_1a09e71_20260801/analysis.json`，
+  SHA256 `bfd580d46305d87fdfbdd1f593eecaf49b599fa328584f63dc8d3027dcf30993`。
+  analyzer仅兼容已sealed的`selected_task_count=24`与overlay解析，仍完整复用旧UCP的
+  panel/cache/shard/checkpoint/Gram/几何校验；不能把本cell与旧ambient-RNG fast400
+  直接冒充纯scheduler因果比较。
+
 ## 2026-08-01 UCP exact-resume seal与canonical控制恢复
 
 - group4 formal-seed root完成fresh0→1→resume1→3→resume3→7；step1与step3

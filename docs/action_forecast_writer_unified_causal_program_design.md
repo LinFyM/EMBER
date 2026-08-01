@@ -1,6 +1,6 @@
 # Unified Causal Program Writer 设计
 
-**状态：2026-08-01 raw-full24与serial-4结果完成；cycle-normalized group4受控格已seal、待formal**
+**状态：2026-08-01 raw-full24与serial-4结果完成；新受控格发现formal scheduler自动缩放，纠偏中**
 
 本文负责 Semantic Program Grid（SPG）一小时门失败后的下一条 canonical
 AS-Writer 路径。它不是把 v7、v8、v10、Loom 或后续版本整体判死后重新命名，
@@ -9,8 +9,10 @@ AS-Writer 路径。它不是把 v7、v8、v10、Loom 或后续版本整体判死
 当前UCP恢复为唯一可执行路径只服务于训练受控格，不代表撤销AP的局部根因或放弃
 CV-ADR。封存`b52cb54`已完成group4 B20/105-frame profile、formal-seed
 fresh0→1→resume1→3→7和raw fresh0→1→resume1→3；`85a82cb`把同一运行面逐blob
-恢复到canonical并退役AP/endpoint runner。两份fresh config现已seal，下一步是在
-同一clean frozen authority下依次训练、用相同paired correct400裁决。
+恢复到canonical并退役AP/endpoint runner。随后新增的task/query-keyed raw/group4
+overlay中，formal训练总步数被错误写成停止点，触发scheduler自动缩放；本次raw只作
+decay200消融，group4尚未启动。纠正后的两份config必须从新clean frozen authority
+fresh训练，再用相同paired correct400裁决。
 
 ## 1. 当前证据与结论边界
 
@@ -399,6 +401,28 @@ mean/average-task energy ratio和CountSketch跨macro方向诊断，但candidate 
 
 只有内部主路径工作但视频innovation随LR过快消失时，才做同拓扑slow2000
 counterfactual。不能先验把slow scheduler当作视频因果解法。
+
+formal实现有一个必须fail-closed的边界：一小时门的`selected_stop_after_step`不能
+替代scheduler构造所用的总训练尺度。LeRobot scheduler会在runtime logical total
+小于`decay_steps`时自动按比例缩短warmup和decay。新task/query-keyed raw overlay曾
+误写`formal.total_steps=200`，因而实际执行`warmup8 + decay200`而不是配置名暗示的
+`warmup17 + decay400`；macro25/50/100/150的正式LR逐点验证了这一点。该run只能作为
+scheduler消融，不能与group4做operator因果比较。
+
+纠正后的raw必须是`total_steps=400, selected_stop_after_step=200`；group4每logical
+cycle含6 updates，必须是`total_steps=2400, selected_stop_after_step=1200`。loader
+必须拒绝logical total短于sealed decay或group更新数不整除cycle的formal config。
+真正fast400两臂都从纠正后clean commit fresh identity启动，不得resume误缩放root。
+
+误缩放raw的正式paired correct400已经完成：macro50/100/150/200为
+`81/72/107/78`，single-checkpoint observed-best是macro150。其breadth为8，但逐task
+只有Long `16/1`、Goal `1/28`、Object `27/32`、Spatial `1/1`，top2贡献
+`60/107=56.1%`；absolute仍低于旧UCP raw117和SERIAL121。三次checkpoint转移的
+gained/lost为`28/37`、`54/19`、`14/43`，成功集合Jaccard仅
+`.404/.421/.529`。macro150→200在LR已接近floor时仍丢失43 states，effective BA
+mean norm只从`52.94`变到`51.92`，不是单纯norm坍缩。该cell不续训、不做五臂；
+它只证明过快衰减没有解决UCP漂移，不能与旧ambient-RNG fast400做单因素scheduler
+归因。正式candidate analysis SHA256为`bfd580d4...0993`。
 
 raw-full24 UCP 的四个paired correct400为`82/117/100/110`，best macro100之后
 回落。四点union为`169`，比single best高`52`；50→100、100→150、150→200分别

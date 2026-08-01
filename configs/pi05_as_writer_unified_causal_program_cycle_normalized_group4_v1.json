@@ -153,7 +153,7 @@
       "status": "sealed",
       "launch_state": "ready_for_fresh_update0_to1200",
       "expected_world_size": 4,
-      "total_steps": 1200,
+      "total_steps": 2400,
       "per_rank_batch_size": 20,
       "checkpoint_steps": "every:150",
       "selected_stop_step": 1200,

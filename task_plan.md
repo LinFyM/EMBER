@@ -122,8 +122,17 @@ runner、split 或 GPU 权限。
   assignments逐项一致，step1/3未改写，scheduler/cursor连续，两份fresh配置已seal。
 - [x] 将封存`b52cb54` UCP运行面逐blob恢复为唯一canonical；退役AP/endpoint可执行
   路径，聚焦`107 passed`、compileall/JSON/diff check通过。
-- [ ] 从同一clean pushed authority的frozen worktree依次启动两臂正式训练，完成
-  同一paired correct400 panel与预注册recipe×architecture裁决。
+- [x] task-query raw `configured-decay400/autoscaled200`及50/100/150/200 paired
+  correct400完成：`81/72/107/78`；best macro150后lost43/gained14，不续训、不做
+  五臂，只封存为scheduler ablation（analysis SHA `bfd580d4...0993`）。
+- [ ] 提交并push formal scheduler fail-close与corrected total=400/2400；从新
+  frozen authority fresh顺序完成真正fast400 raw/group4及同一paired correct400，
+  再做预注册recipe×architecture裁决。
+- [x] 在独立worktree实现CV-ADR canonical路径并提交`b2bc70c`；参数
+  `10,241,024`、focused `159 passed`、结构门无hard violation，formal configs
+  在真实B20/profile/resume前保持pending。
+- [ ] 将CV-ADR集成到最终control authority，完成105-frame B20/profile/resume；
+  根据正确UCP控制选择raw或group4并执行一小时先验门。
 - [ ] 后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才开第二
   小时和行为五臂。
 - [ ] 持续定位task漂移、视频学习和closed-loop off-manifold根因，禁止补丁式

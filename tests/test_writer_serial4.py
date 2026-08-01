@@ -16,6 +16,7 @@ from ember.pi05_source_checkpoint import (
 from ember.writer.as_config import (
     AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA,
     AS_WRITER_SERIAL4_CONFIG_SCHEMA,
+    _validate_formal_schedule,
     load_writer_config,
 )
 from ember.writer.as_contract import (
@@ -445,6 +446,18 @@ def test_cycle_normalized_configs_and_checkpoint_families_fail_closed() -> None:
     assert group4["formal_run"]["launch_state"] == (
         "ready_for_fresh_update0_to1200"
     )
+    assert raw["formal_run"]["total_steps"] == 400
+    assert group4["formal_run"]["total_steps"] == 2400
+    assert logical_task_cycle_steps(
+        raw, raw["formal_run"]["total_steps"]
+    ) == 400
+    assert logical_task_cycle_steps(
+        group4, group4["formal_run"]["total_steps"]
+    ) == 400
+    compressed = copy.deepcopy(raw)
+    compressed["formal_run"]["total_steps"] = 200
+    with pytest.raises(WriterModelError, match="would auto-scale"):
+        _validate_formal_schedule(compressed)
     raw_resume = raw["profile_evidence"]["exact_resume_smoke"]
     assert raw_resume["step1_payloads_unchanged_after_resume"] is True
     assert raw_resume[
@@ -475,11 +488,11 @@ def test_cycle_normalized_configs_and_checkpoint_families_fail_closed() -> None:
         config=group4,
         context=type("Context", (), {"world_size": 4})(),
         video_data={"sampled_frame_cost_sha256": "b" * 64},
-        total_steps=1200,
+        total_steps=2400,
         stop_step=1200,
         batch_size=20,
         batch_cycle=(20,),
-        checkpoint_steps=tuple(range(150, 1201, 150)),
+        checkpoint_steps=tuple(range(150, 2401, 150)),
         num_workers=2,
         rank_topology=({}, {}, {}, {}),
     )
@@ -497,7 +510,11 @@ def _optimizer_and_scheduler(config: dict) -> tuple[torch.optim.Optimizer, objec
         [parameter], lr=float(config["optimization"]["scheduler"]["peak_lr"])
     )
     scheduler = build_exposure_scheduler(
-        optimizer, config["optimization"]["scheduler"], 400
+        optimizer,
+        config["optimization"]["scheduler"],
+        logical_task_cycle_steps(
+            config, config["formal_run"]["total_steps"]
+        ),
     )
     return optimizer, scheduler
 

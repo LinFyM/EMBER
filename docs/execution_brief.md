@@ -1,5 +1,29 @@
 # EMBER Current Execution Brief
 
+## 2026-08-01 UCP formal scheduler contract override
+
+frozen `1a09e71`上的task-query raw control已经fresh自然完成macro200，但live LR
+审计发现其sealed overlay把一小时stop误写成formal total：
+`total_steps=200, decay_steps=400`触发LeRobot自动把warmup/decay从`17/400`压成
+`8/200`。macro150实测LR为`5.4093e-5`，而未压缩fast400应约`2.1049e-4`。
+所以当前root虽沿用`decay400`文件名，科学上只能作为
+`configured-decay400/autoscaled-decay200` scheduler ablation；不得写成fast400。
+
+该run完成96,000 queries、4,800 one-video conditions、wall `3892.039s`，200行
+finite且信息墙读取0。50/100/150/200 paired correct400全部完成，为
+`81/72/107/78`；macro150 breadth8但随后lost43/gained14，不续训、不做五臂。
+candidate analysis SHA为`bfd580d4...0993`。原计划从同一`1a09e71`启动的group4
+取消，因为它只会匹配错误的autoscaled-decay200 schedule。最窄修复是
+把raw/group4 formal total恢复为`400/2400`、stop仍为`200/1200`，并在config
+loader fail-close要求formal logical total不少于scheduler decay。定向
+`24 passed`。现在提交/push修复，并从新的clean frozen
+authority依次fresh运行真正fast400 raw/group4。
+
+CV-ADR已在独立worktree完成canonical实现并本地提交为`b2bc70c`；真实参数
+`10,241,024`，focused `159 passed`且architecture guard无hard violation。
+它的真实B20/profile/resume仍pending，未推送、未启动formal；训练recipe只由
+纠偏后的UCP受控格决定。后续完全不使用subagent。
+
 ## 2026-08-01 UCP controlled-cell live authority
 
 当前唯一可执行Writer临时恢复为exact UCP，以完成fresh raw-full24与

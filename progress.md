@@ -8,6 +8,35 @@ GPU范围和训练步长是当时快照；活动状态只取
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-01 UCP scheduler合同纠偏与CV-ADR实现冻结
+
+- frozen `1a09e71`的task-query raw control已fresh启动并持续finite；root为
+  `/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_decay400_control_formal_dev_r4_b20_seed7_1a09e71_20260801`。
+- live LR审计发现formal total200触发LeRobot把配置的decay400自动压到200；
+  macro150实测LR`5.4093e-5`而未压缩合同应约`2.1049e-4`。该run自然完成后只作
+  autoscaled200 scheduler ablation，原group4不启动。
+- main已在最窄config边界把raw/group4 formal total改为400/2400，并加入loader
+  fail-close，禁止formal逻辑总步少于decay；`tests/test_writer_training.py`与
+  `tests/test_writer_serial4.py`共`24 passed`。待当前run和其paired correct400完成
+  后提交/push，再用新frozen authority fresh跑真正fast400两臂。
+- 独立CV-ADR worktree已提交`b2bc70c`：真实参数`10,241,024`，四config保持
+  profile pending，focused `159 passed in 26.32s`，compileall/diff/config loader
+  与architecture guard通过；没有推送，也没有启动GPU profile/formal。
+- autoscaled-decay200 raw已自然完成macro200：wall `3892.039s`、96,000 queries、
+  4,800 videos、200行finite、信息墙读取0，四候选checkpoint完整。四条correct400
+  已在GPU4/5/6/7全部自然完成；每条400 states、36/36 long-first shards、0 failure。
+  macro50/100/150/200为`81/72/107/78`，macro150 breadth8但随后lost43/gained14，
+  所以不续训、不做五臂。
+- 训练内部量确认LR缩短压低位移但没有消除方向轮换：三段参数长度为
+  `2.348/1.084/.349`，macro200 raw-mean task-gradient energy retention为`4.22%`，
+  同task相邻条件梯度的晚期CountSketch cosine仅`.009-.017`。这些量将在真正
+  task/query-keyed fast400 raw完成后做严格scheduler配对，当前不与旧ambient-RNG
+  UCP混作单因结论。
+- candidate analyzer先后对新增`selected_task_count=24`和overlay config解析
+  fail-closed，兼容层逐项验证后完整通过；analysis SHA为`bfd580d4...0993`。三次
+  checkpoint转移gained/lost=`28/37,54/19,14/43`，Jaccard=
+  `.4037/.4206/.5289`，BA mean norm=`45.34/50.00/52.94/51.92`。
+
 ## 2026-08-01 UCP控制seal与canonical恢复
 
 - group4 formal-seed exact-resume root

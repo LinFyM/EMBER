@@ -56,6 +56,26 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 
 ## Current focused execution task
 
+2026-08-01 live scheduler override：新UCP raw对照overlay把formal
+`total_steps`误写为一小时停止点`200`，触发LeRobot cosine scheduler把sealed
+`warmup17 + decay400`自动缩放成`warmup8 + decay200`。clean frozen
+`1a09e71`上的raw run已自然完成macro200：96,000 queries、4,800 videos、wall
+`3892.039s`、200行finite且信息墙读取0。macro50/100/150/200 paired correct400已
+全部自然完成，为`81/72/107/78`；observed-best macro150虽有8/8 nonzero breadth，
+但只有107且随后lost43/gained14回落29点，故不做五臂。该结果必须明确标记为
+`configured-decay400/runtime-autoscaled-decay200` scheduler消融，禁止冒充
+fast400。其root为
+`/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_decay400_control_formal_dev_r4_b20_seed7_1a09e71_20260801`，
+训练与四条评测tmux均已自然退出。candidate analysis为
+`/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_configdecay400_runtime200_candidate_curve_seed7_1a09e71_20260801/analysis.json`，
+SHA256 `bfd580d4...0993`。错误total下的group4不得启动。
+
+main已把raw/group4 formal total纠正为`400/2400`且保持stop为`200/1200`，并在
+config loader加入logical-total不得短于sealed decay的fail-closed校验。现在完成
+验证后commit/push，从新clean frozen authority依次fresh运行真正fast400
+raw和group4；不得从当前消融root resume。CV-ADR实现暂存于隔离clean commit
+`b2bc70c`，训练因果格完成后再集成和profile。后续推进暂停所有subagent使用。
+
 2026-08-01 current override：当前唯一可执行canonical Writer临时恢复为exact UCP，
 只用于fresh raw-full24与cycle-normalized randomized-group4受控训练格；运行面与
 封存`b52cb54`逐blob一致。AP-ADR和endpoint10可执行路径已退役，历史证据由Git、

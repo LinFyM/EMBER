@@ -423,6 +423,32 @@ def _validate_cycle_normalized_optimization(config: Mapping[str, Any]) -> None:
         raise WriterModelError("cycle-normalized optimizer contract changed")
 
 
+def _validate_formal_schedule(config: Mapping[str, Any]) -> None:
+    """Reject formal runs that would silently compress the sealed LR schedule."""
+
+    formal = config.get("formal_run", {})
+    scheduler = config.get("optimization", {}).get("scheduler", {})
+    training = config.get("conditioning_training", {})
+    updates_per_cycle = int(
+        training.get("optimizer_updates_per_task_cycle", 1)
+    )
+    total_updates = int(formal.get("total_steps", 0))
+    selected_stop = int(formal.get("selected_stop_step", 0))
+    decay_steps = int(scheduler.get("decay_steps", 0))
+    if (
+        updates_per_cycle <= 0
+        or total_updates <= 0
+        or total_updates % updates_per_cycle
+        or total_updates // updates_per_cycle < decay_steps
+        or selected_stop <= 0
+        or selected_stop > total_updates
+    ):
+        raise WriterModelError(
+            "formal AS-Writer runtime would auto-scale or truncate its "
+            "sealed scheduler"
+        )
+
+
 def _load_recipe_overlay(
     config: Mapping[str, Any], *, overlay_schema: str
 ) -> dict[str, Any]:
@@ -482,4 +508,5 @@ def load_writer_config(path: Path) -> dict[str, Any]:
     _validate_information_wall(config)
     _validate_conditioning_training(config)
     _validate_cycle_normalized_optimization(config)
+    _validate_formal_schedule(config)
     return config

@@ -10,6 +10,48 @@
 `AGENTS.md`与`docs/execution_brief.md`。任何接手者都必须先只读复核现场，
 不能按历史快照重复启动进程。
 
+## 0-current. UCP formal scheduler合同纠偏
+
+新建的UCP task/query-keyed raw对照overlay在formal中误把“一小时停止点”同时写成
+`total_steps=200`。LeRobot cosine scheduler在训练总步数小于配置的
+`decay_steps=400`时会自动缩放为`warmup8 + decay200`；正式metrics中的
+macro25/50/100/150 LR与该缩放曲线逐点一致。因此下列已自然完成的run只能解释为
+`configured-decay400 / runtime-autoscaled-decay200` scheduler消融，禁止称为
+fast-decay400，也禁止拿它与尚未启动的group4构成正式operator pair：
+
+```text
+commit  1a09e713a462d84dc0b5bb0a3cee92617b86c361
+frozen  /data/ymdai/.codex/worktrees/EMBER-ucp-control-formal-1a09e71-20260801
+root    /data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_decay400_control_formal_dev_r4_b20_seed7_1a09e71_20260801
+log     /data/ymdai/logs/ember/pi05_as_writer_ucp_taskquery_rawfull24_decay400_control_formal_dev_r4_b20_seed7_1a09e71_20260801.log
+tmux    已自然退出（原名ember-ucp-control-raw-1a09e71）
+```
+
+该run完成200 cycles、96,000 queries、4,800 one-video conditions，wall
+`3892.039s`，200行全部finite且信息墙读取0；其余UCP topology、raw-full24、B20、
+teacher-video/query和task/query-keyed functional randomness合同均有效。macro50/
+100/150/200的同一paired correct400已全部自然完成，为`81/72/107/78`；四条均为
+400 rows、36/36 shards、0 failure，训练与评测tmux均已退出。macro150是
+observed-best且breadth8，但150→200为gained/lost `14/43`，回落29点；不续训、不做
+五臂。candidate artifact为：
+
+```text
+/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_configdecay400_runtime200_candidate_curve_seed7_1a09e71_20260801/analysis.json
+SHA256 bfd580d46305d87fdfbdd1f593eecaf49b599fa328584f63dc8d3027dcf30993
+```
+
+三次转移gained/lost为`28/37`、`54/19`、`14/43`，Jaccard为
+`.4037/.4206/.5289`；BA mean norm为`45.34/50.00/52.94/51.92`。这说明更快LR
+衰减截短了位移，却没有消除能力轮换。不得用错误total启动group4。
+
+main工作树已把raw/group4的formal total分别纠正为`400/2400`，停止点仍为
+`200/1200`，并在config loader加入fail-closed校验：logical total不得短于sealed
+decay；group4还必须保持updates-per-cycle整除。该修改现在须完成验证、commit和
+push，随后从新clean frozen authority依次fresh启动
+真正fast400 raw与group4，不能resume当前消融root。CV-ADR实现已隔离在clean本地
+commit `b2bc70c`，只有完成这组训练因果格后才集成、做真实B20/profile/resume和formal。
+后续全部由主进程单独推进，不使用subagent。
+
 ## 0. 2026-08-01 AP-ADR结果、内部根因与紧邻动作
 
 Amplitude-Preserving Asymmetric Dual Read Writer的fresh首小时已经自然完成；

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass
 
 import pytest
@@ -70,6 +71,56 @@ def _sampler(
     )
 
 
+def _phase_dataset(
+    *, rows_per_episode: int = 100
+) -> tuple[_DatasetStub, dict[int, tuple[int, int]]]:
+    rows: dict[int, dict[int, tuple[int, ...]]] = {10: {}}
+    identity: dict[int, tuple[int, int]] = {}
+    frame_index: list[tuple[int, int, int]] = []
+    flat = 0
+    for demo_index in range(50):
+        episode_rows = tuple(range(flat, flat + rows_per_episode))
+        rows[10][demo_index] = episode_rows
+        identity.update(
+            {
+                row: (demo_index, offset)
+                for offset, row in enumerate(episode_rows)
+            }
+        )
+        frame_index.extend(
+            (10, demo_index, offset) for offset in range(rows_per_episode)
+        )
+        flat += rows_per_episode
+    return _DatasetStub(rows, tuple(frame_index)), identity
+
+
+def _phase_sampler(
+    dataset: _DatasetStub,
+    *,
+    seed: int = 20260801,
+    start_step: int = 0,
+    stop_step: int = 40,
+) -> MixedTaskBatchSampler:
+    schedule = TeacherVideoSchedule(
+        task_ids=(10,),
+        demo_indices=range(50),
+        seed=19,
+    )
+    return MixedTaskBatchSampler(
+        dataset,  # type: ignore[arg-type]
+        task_ids=(10,),
+        per_rank_batch_size=20,
+        start_step=start_step,
+        stop_step=stop_step,
+        rank=0,
+        world_size=1,
+        seed=seed,
+        tasks_per_rank_per_update=1,
+        video_schedule=schedule,
+        task_video_costs={10: {demo_index: 1 for demo_index in range(50)}},
+    )
+
+
 def test_task_complete_sampler_covers_every_task_and_runs_long_first() -> None:
     dataset, identity = _dataset()
     samplers = [
@@ -105,6 +156,77 @@ def test_mixed_task_sampler_resume_is_sample_exact() -> None:
     resumed = list(_sampler(dataset, rank=1, start_step=3, stop_step=9))
 
     assert prefix + resumed == full
+
+
+def test_phase_strata_cover_batch_and_change_episode_mapping_by_visit() -> None:
+    dataset, identity = _phase_dataset()
+    sampler = _phase_sampler(dataset)
+
+    strata_by_visit = []
+    for task_visit in range(12):
+        strata = sampler._phase_strata_for_task_visit(10, task_visit)
+        demos = tuple(
+            sampler._episode_for_task_visit(10, task_visit, batch_offset)[0]
+            for batch_offset in range(20)
+        )
+        strata_by_visit.append(strata)
+        assert set(strata) == set(range(20))
+        assert len(set(demos)) == 20
+
+    assert len(set(strata_by_visit)) == len(strata_by_visit)
+    first_batch = list(_phase_sampler(dataset, stop_step=1))[0]
+    assert len({identity[row][0] for row in first_batch}) == 20
+    assert first_batch == [
+        sampler._sample_for_task_visit(10, 0, batch_offset)
+        for batch_offset in range(20)
+    ]
+
+
+def test_phase_stratified_schedule_is_seeded_and_exactly_resumable() -> None:
+    dataset, _ = _phase_dataset()
+    first = _phase_sampler(dataset, stop_step=30)
+    second = _phase_sampler(dataset, stop_step=30)
+    changed = _phase_sampler(dataset, seed=20260802, stop_step=30)
+
+    full = list(first)
+    assert full == list(second)
+    assert full != list(changed)
+    assert list(_phase_sampler(dataset, stop_step=11)) + list(
+        _phase_sampler(dataset, start_step=11, stop_step=30)
+    ) == full
+    assert first.consumed_identity_summary(0, 30) == _phase_sampler(
+        dataset,
+        start_step=11,
+        stop_step=30,
+    ).consumed_identity_summary(0, 30)
+    assert (
+        first.consumed_identity_summary(0, 30)["identity_sha256"]
+        != changed.consumed_identity_summary(0, 30)["identity_sha256"]
+    )
+
+
+def test_phase_stratified_episode_marginals_are_uniform_with_real_jitter() -> None:
+    dataset, identity = _phase_dataset(rows_per_episode=100)
+    sampler = _phase_sampler(dataset, stop_step=2_000)
+    frames_by_demo: dict[int, list[int]] = defaultdict(list)
+
+    for task_visit in range(2_000):
+        for batch_offset in range(20):
+            row = sampler._sample_for_task_visit(10, task_visit, batch_offset)
+            demo_index, frame = identity[row]
+            frames_by_demo[demo_index].append(frame)
+
+    fixed_bin_centers = {5 * stratum + 2 for stratum in range(20)}
+    for frames in frames_by_demo.values():
+        assert len(frames) == 800
+        quartiles = [
+            sum(lower <= frame < lower + 25 for frame in frames) / len(frames)
+            for lower in (0, 25, 50, 75)
+        ]
+        assert all(abs(fraction - 0.25) < 0.07 for fraction in quartiles)
+        assert min(frames) < 5
+        assert max(frames) >= 95
+        assert any(frame not in fixed_bin_centers for frame in frames)
 
 
 def test_task_complete_sampler_rejects_variable_batch_cycles() -> None:

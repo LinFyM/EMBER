@@ -97,6 +97,8 @@ class MixedTaskBatchSampler:
     """Yield all-task, task-pure, cost-balanced long-first macro batches."""
 
     _GROUP_SEED_TAG = 0xC057
+    _PHASE_STRATUM_SEED_TAG = 0x57A7
+    _PHASE_JITTER_SEED_TAG = 0x9177
 
     def __init__(
         self,
@@ -281,20 +283,57 @@ class MixedTaskBatchSampler:
         demo_index = self.episode_orders[task_id][episode_offset]
         return demo_index, episode_cycle
 
+    def _phase_strata_for_task_visit(
+        self, task_id: int, task_visit: int
+    ) -> tuple[int, ...]:
+        """Assign every normalized episode-progress stratum exactly once."""
+
+        return tuple(
+            int(value)
+            for value in np.random.default_rng(
+                np.random.SeedSequence(
+                    [
+                        self.seed,
+                        task_id,
+                        task_visit,
+                        self._PHASE_STRATUM_SEED_TAG,
+                    ]
+                )
+            ).permutation(self.per_rank_batch_size)
+        )
+
     def _sample_for_task_visit(
-        self, task_id: int, task_visit: int, batch_offset: int
+        self,
+        task_id: int,
+        task_visit: int,
+        batch_offset: int,
+        *,
+        phase_stratum: int | None = None,
     ) -> int:
-        demo_index, episode_cycle = self._episode_for_task_visit(
+        demo_index, _ = self._episode_for_task_visit(
             task_id, task_visit, batch_offset
         )
         rows = self.episode_rows[task_id][demo_index]
-        row_offset = int(
+        stratum = (
+            self._phase_strata_for_task_visit(task_id, task_visit)[batch_offset]
+            if phase_stratum is None
+            else phase_stratum
+        )
+        jitter = float(
             np.random.default_rng(
                 np.random.SeedSequence(
-                    [self.seed, task_id, demo_index, episode_cycle, 0xF4A]
+                    [
+                        self.seed,
+                        task_id,
+                        task_visit,
+                        stratum,
+                        self._PHASE_JITTER_SEED_TAG,
+                    ]
                 )
-            ).integers(len(rows))
+            ).random()
         )
+        phase = (stratum + jitter) / self.per_rank_batch_size
+        row_offset = min(int(np.floor(phase * len(rows))), len(rows) - 1)
         return rows[row_offset]
 
     def coverage_for_steps(
@@ -339,9 +378,15 @@ class MixedTaskBatchSampler:
                 task_id,
                 task_visit,
             ) in self.assignments_for_step(step):
+                phase_strata = self._phase_strata_for_task_visit(
+                    task_id, task_visit
+                )
                 for batch_offset in range(self.batch_size_for_step(step)):
                     row = self._sample_for_task_visit(
-                        task_id, task_visit, batch_offset
+                        task_id,
+                        task_visit,
+                        batch_offset,
+                        phase_stratum=phase_strata[batch_offset],
                     )
                     row_task, demo_index, frame = frame_index[row]
                     if row_task != task_id:
@@ -389,9 +434,15 @@ class MixedTaskBatchSampler:
             ) in self.assignments_for_step(step):
                 if rank != self.rank:
                     continue
+                phase_strata = self._phase_strata_for_task_visit(
+                    task_id, task_visit
+                )
                 yield [
                     self._sample_for_task_visit(
-                        task_id, task_visit, batch_offset
+                        task_id,
+                        task_visit,
+                        batch_offset,
+                        phase_stratum=phase_strata[batch_offset],
                     )
                     for batch_offset in range(self.batch_size_for_step(step))
                 ]

@@ -38,6 +38,9 @@ GPU范围和训练步长是当时快照；活动状态只取
   未分叉Writer/evaluator。定向`52 passed`、隐藏全部CUDA的全仓`222 passed`；
   真实CUDA sampler parity、portable-v2 cache生成和四rank formal run仍待AP首小时
   训练与correct400评测释放GPU4--7后执行。
+- 在看到任何endpoint结果前已预注册唯一primary为executed-first5 valid normalized
+  action `quality=-MSE`；18-candidate全局/within-family/task级关联门和v5.2、v6
+  两个等曝光recipe方向均已写入AP authority。secondary metrics不得救回失败主门。
 
 ## 2026-08-01 SPG门失败、内部根因与UCP设计
 

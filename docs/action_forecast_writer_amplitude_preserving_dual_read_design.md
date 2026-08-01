@@ -374,7 +374,42 @@ noise。不做CP-24投影：SPG已经证明消除negative pair不会自动恢复
 
 不使用held functional loss选checkpoint或覆盖closed-loop门。新的ten-step
 endpoint metric在通过预声明no-gradient关联门之前不进训练；即使通过，
-首先也只作held monitor，需要另行验证精硯gradient方向和显存可行性。
+首先也只作held monitor，需要另行验证精确gradient方向和显存可行性。
+
+### 10.3 Endpoint10预注册关联门
+
+在任何endpoint数值生成前，候选和判据固定如下：
+
+- `v5.2-new` macro50/100/150/200；
+- UCP raw macro50/100/150/200；
+- v6-fast macro50/100/150/200/250/300/350/400；
+- v5.2-old step900；
+- v6-old step900。
+
+共18个single checkpoints；每个都必须使用同一paired correct400 state/video/RNG
+authority和sealed512 validation rows。endpoint sampler固定正式rollout的无autocast
+exact ten-step Euler，输入batch删除ACTION；teacher action只作为no-gradient误差
+target。主指标唯一固定为
+`quality = -rollout10_executed5_valid_normalized_mse`，因为正式policy每次只执行前5步。
+full50/prefix10和ten-grid teacher-bridge flow MSE全部是secondary，不能替代主指标
+通过门。
+
+主指标成为可信held monitor必须同时满足：
+
+1. 18候选task-balanced quality对correct400的Spearman `rho >= .45`；以sealed
+   panel payload SHA派生固定seed、做100,000次candidate-label permutation的双侧
+   `p <= .05`；
+2. 对三个多checkpoint family分别去family均值后合并，Pearson和Spearman都
+   `>= .30`，且三个family各自Spearman同号为正、至少两个`>= .30`；
+3. 两个150-video/task等曝光recipe方向都正确：v5.2-old step900必须优于
+   v5.2-new macro150，v6-fast macro150必须优于v6-old step900；
+4. 按8个validation tasks分别计算跨候选Spearman，其中位数`> 0`且至少6/8
+   non-negative，防止一个suite或易task单独制造aggregate相关。
+
+若任一条失败，endpoint10只保留为负诊断，不能选checkpoint、改loss或进入训练。
+即使全部通过，也先只记录AP及后续模型的held monitor；在把它用于gradient前，
+还必须另做prospective checkpoint排序复验、精确gradient方向审计和B20显存验证。
+不得按结果调整阈值、改主指标或用secondary metric救回失败门。
 
 ## 11. 实现前vertical path
 

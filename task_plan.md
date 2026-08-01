@@ -93,6 +93,9 @@ runner、split 或 GPU 权限。
 - [x] endpoint10实现已合入`544c0ef`/`2055a82`：exact ten-step sampler无
   autocast/ACTION输入，sealed512 pairing、finite和historical provenance均
   fail-close；CPU全仓`222 passed`。
+- [x] 在生成任何endpoint数值前预注册executed-first5主指标、18-candidate
+  global/within-family/per-task关联门及两个matched-recipe方向；secondary不能
+  覆盖主门。
 - [ ] 生成历史portable-v2 LoRA cache，完成真实CUDA parity与18-candidate四rank
   formal endpoint诊断；在强关联门通过前只作no-gradient held monitor，不进入训练。
 - [ ] 后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才开第二

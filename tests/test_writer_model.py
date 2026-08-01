@@ -7,6 +7,8 @@ import torch
 
 from ember.pi05_lora import load_pi05_lora_contract, pi05_target_names
 from ember.writer.as_contract import writer_trainable_contract
+from ember.writer.internal_analysis import capture_writer, counterfactual_states
+from ember.writer.internal_metrics import effective_metrics, rank_gauge_permute
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
 from ember.writer.program_compiler import AsymmetricDualReader, SemanticProgramError
 from ember.writer.semantic_core import MeanBackedSemanticCore
@@ -115,6 +117,33 @@ class _FakeSemanticEncoder(torch.nn.Module):
         return text, evidence, grounded, action, valid
 
 
+class _AnalysisSemanticEncoder(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.interaction_projection = torch.nn.Linear(1024, 256, bias=False)
+
+    def forward(
+        self,
+        _policy: torch.nn.Module,
+        frames: torch.Tensor,
+        frame_condition_ids: torch.Tensor,
+        language_tokens: torch.Tensor,
+        _language_mask: torch.Tensor,
+        task_span_mask: torch.Tensor,
+    ) -> tuple[torch.Tensor, ...]:
+        counts = task_span_mask.sum(dim=1)
+        maximum = int(counts.max())
+        valid = torch.arange(maximum)[None] < counts[:, None]
+        language = language_tokens.float().mean(dim=1)
+        query = language[:, None, None].expand(-1, maximum, 256).clone()
+        image = frames.float().mean(dim=(1, 2, 3))
+        content = image + language.index_select(0, frame_condition_ids)
+        evidence = content[:, None, None].expand(-1, maximum, 256).clone()
+        grounded = 0.1 * evidence
+        raw_action = content[:, None].expand(-1, 1024).clone()
+        return query, evidence, grounded, self.interaction_projection(raw_action), valid
+
+
 def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
     torch.manual_seed(3)
     template = _template()
@@ -162,6 +191,17 @@ def _inputs() -> tuple[torch.Tensor, ...]:
         ]
     )
     return frames, frame_indices, offsets, tokens, masks, task_spans
+
+
+def _analysis_inputs() -> tuple[torch.Tensor, ...]:
+    frames = torch.arange(10 * 3 * 4 * 4, dtype=torch.int64).remainder(255).to(torch.uint8)
+    frames = frames.reshape(10, 3, 4, 4)
+    indices = torch.tensor([0, 5] * 5, dtype=torch.long)
+    offsets = torch.arange(0, 11, 2, dtype=torch.long)
+    tokens = torch.tensor([[1, 10, 11, 12, 0]] * 5, dtype=torch.long)
+    masks = tokens.ne(0)
+    spans = torch.tensor([[False, True, True, True, False]] * 5)
+    return frames, indices, offsets, tokens, masks, spans
 
 
 def test_ap_adr_parameter_budget_and_module_enumeration_are_exact() -> None:
@@ -519,3 +559,85 @@ def test_dual_reader_rejects_missing_content_and_float_endpoints() -> None:
             torch.zeros_like(intervals),
             semantics,
         )
+
+
+def test_internal_analyzer_recomputes_canonical_ap_path_and_counterfactuals() -> None:
+    model, _ = _model()
+    model.semantic_encoder = _AnalysisSemanticEncoder()
+    for head in model.factor_heads.values():
+        torch.nn.init.normal_(head.network[-1].weight, std=0.002)
+    model.eval()
+    captured = capture_writer(
+        model,
+        torch.nn.Identity(),
+        *_analysis_inputs(),
+    )
+    assert captured["a_raw"].shape == (5, 2, 1024)
+    assert captured["a"].shape == (5, 2, 256)
+    assert captured["program"]["value"].shape[2] == 7
+    assert captured["compiled"]["coordinates"].shape == (5, 38, 16, 512)
+    assert captured["parity"]["public"]["relative_l2"] <= 2e-5
+    assert captured["compiled"]["parity"]["core_read"]["relative_l2"] <= 2e-5
+    assert captured["compiled"]["parity"]["program_read"]["relative_l2"] <= 2e-5
+    for block in captured["program"]["attention"]:
+        assert block["interval_local"]["probability_sum_error_max"] < 1e-5
+        assert block["semantic_column_causal"]["probability_sum_error_max"] < 1e-5
+
+    variants = counterfactual_states(model, captured)
+    required = {
+        "full",
+        "core_only",
+        "program_only",
+        "aed/A",
+        "aed/E",
+        "aed/D",
+        "aed/A+E+D",
+        "aed_fixed_key/A",
+        "scale/A/0.5",
+        "scale/A/1",
+        "scale/A/2",
+        "core_carrier/no_mean",
+        "core_carrier/no_centered",
+        "identity/target",
+        "identity/rank",
+        "temporal_keys/order_permuted",
+    }
+    assert required <= set(variants)
+    for name in ("aed/A+E+D", "scale/A/1", "scale/E/1", "scale/D/1"):
+        assert effective_metrics(
+            model, variants["full"]["public"], variants[name]["public"]
+        )["relative_l2"] <= 2e-5
+    assert any(
+        effective_metrics(
+            model,
+            variants["full"]["public"],
+            variants[name]["public"],
+        )["relative_l2"]
+        > 1e-6
+        for name in ("core_only", "program_only", "aed/A", "identity/target")
+    )
+    authority = variants["full"]["temporal_key_authority"]
+    assert authority["initialization_keys"]["status"] == "unsupported"
+    assert authority["initialization_keys"]["fail_closed"] is True
+    assert len(authority["trained_program_state_sha256"]) == 64
+    for name in ("full", "temporal_keys/order_permuted"):
+        routing = variants[name]["attention"]["program_target_rank_routing"]
+        assert routing["target_centered_energy"] >= 0
+        assert routing["rank_centered_energy"] >= 0
+
+
+def test_internal_analyzer_public_rank_gauge_preserves_effective_ba() -> None:
+    model, template = _model()
+    generator = torch.Generator().manual_seed(91)
+    state = {
+        name: value + 0.01 * torch.randn(value.shape, generator=generator)
+        for name, value in template.items()
+    }
+    permutation = torch.roll(torch.arange(16), -1)
+    permuted, changes = rank_gauge_permute(model, state, permutation)
+    assert effective_metrics(model, state, permuted)["relative_l2"] < 2e-5
+    assert all(
+        value["public_a"]["relative_l2"] > 0
+        and value["public_b"]["relative_l2"] > 0
+        for value in changes.values()
+    )

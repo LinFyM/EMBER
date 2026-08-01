@@ -1,4 +1,4 @@
-"""Unified absolute-state, Action, and change causal Program."""
+"""Outgoing Action, endpoint Effect, and change Program for AP-ADR."""
 
 from __future__ import annotations
 
@@ -9,11 +9,11 @@ import torch.nn.functional as F
 
 
 class SemanticProgramError(ValueError):
-    """Raised when variable-length semantic-program tensors violate contract."""
+    """Raised when variable-length semantic Program tensors violate contract."""
 
 
 class RMSNorm(torch.nn.Module):
-    """Small dtype-stable RMS normalization."""
+    """Small dtype-stable RMS normalization used only on Q/K paths."""
 
     def __init__(self, width: int, eps: float = 1e-6) -> None:
         super().__init__()
@@ -42,7 +42,7 @@ def merge_heads(value: torch.Tensor) -> torch.Tensor:
 
 
 def apply_rope(value: torch.Tensor, positions: torch.Tensor) -> torch.Tensor:
-    """Apply one-dimensional RoPE to ``[B,H,T,D]`` Q/K tensors."""
+    """Apply one-dimensional RoPE to a Q/K tensor."""
 
     width = value.shape[-1]
     if width % 2 or positions.shape != (value.shape[0], value.shape[2]):
@@ -68,7 +68,7 @@ def apply_two_axis_rope(
     first_positions: torch.Tensor,
     second_positions: torch.Tensor,
 ) -> torch.Tensor:
-    """Apply independent RoPE halves for interval and semantic-column axes."""
+    """Apply independent RoPE halves for interval and semantic axes."""
 
     width = value.shape[-1]
     if width % 4:
@@ -84,7 +84,7 @@ def apply_two_axis_rope(
 
 
 class RawValueSelfAttention(torch.nn.Module):
-    """Self-attend with normalized content and identities in Q/K, raw V."""
+    """Contextualize keys with normalized Q/K while keeping physical raw V."""
 
     def __init__(self, *, width: int, heads: int, causal: bool) -> None:
         super().__init__()
@@ -142,8 +142,8 @@ class RawValueSelfAttention(torch.nn.Module):
         )
 
 
-class UnifiedProgramBlock(torch.nn.Module):
-    """Reason within each causal interval, then along each semantic column."""
+class OutgoingProgramBlock(torch.nn.Module):
+    """Attend within A/E/D intervals, then causally along each semantic column."""
 
     TYPE_COUNT = 3
 
@@ -174,21 +174,29 @@ class UnifiedProgramBlock(torch.nn.Module):
         )
 
     @staticmethod
-    def _task_tokens(columns: int) -> int:
+    def task_token_count(columns: int) -> int:
         if columns < 3 or (columns - 1) % 2:
-            raise SemanticProgramError("Unified Program column topology changed")
+            raise SemanticProgramError("outgoing Program column topology changed")
         return (columns - 1) // 2
 
     def _column_identity(self, columns: int) -> torch.Tensor:
-        task_tokens = self._task_tokens(columns)
-        identities = self.type_identity_norm(self.type_identity)
+        task_tokens = self.task_token_count(columns)
+        identity = self.type_identity_norm(self.type_identity)
         return torch.cat(
             (
-                identities[0:1].expand(task_tokens, -1),
-                identities[1:2],
-                identities[2:3].expand(task_tokens, -1),
+                identity[0:1],
+                identity[1:2].expand(task_tokens, -1),
+                identity[2:3].expand(task_tokens, -1),
             ),
             dim=0,
+        )
+
+    @classmethod
+    def _semantic_ordinals(cls, columns: int, device: torch.device) -> torch.Tensor:
+        task_tokens = cls.task_token_count(columns)
+        token_ordinals = torch.arange(task_tokens, dtype=torch.long, device=device)
+        return torch.cat(
+            (torch.zeros(1, dtype=torch.long, device=device), token_ordinals, token_ordinals)
         )
 
     def forward(
@@ -208,23 +216,22 @@ class UnifiedProgramBlock(torch.nn.Module):
             or valid_semantics.dtype != torch.bool
             or not bool(valid_intervals.any(dim=1).all())
         ):
-            raise SemanticProgramError("invalid unified causal Program batch")
+            raise SemanticProgramError("invalid outgoing causal Program batch")
         batch, intervals, columns, width = content.shape
-        task_tokens = self._task_tokens(columns)
+        task_tokens = self.task_token_count(columns)
         if (
-            not bool(valid_semantics[:, :task_tokens].any(dim=1).all())
-            or not bool(valid_semantics[:, task_tokens].all())
+            not bool(valid_semantics[:, 0].all())
+            or not bool(valid_semantics[:, 1 : 1 + task_tokens].any(dim=1).all())
         ):
-            raise SemanticProgramError("Unified Program lost absolute or Action value")
+            raise SemanticProgramError("outgoing Program lost Action or Effect value")
         valid_grid = valid_intervals[:, :, None] & valid_semantics[:, None]
-        identities = self._column_identity(columns).to(content.dtype)
+        identity = self._column_identity(columns).to(content.dtype)
+        ordinals = self._semantic_ordinals(columns, content.device)
 
         local_content = content.reshape(batch * intervals, columns, width)
         local_valid = valid_grid.reshape(batch * intervals, columns)
-        local_positions = torch.arange(
-            columns, dtype=torch.long, device=content.device
-        )[None].expand(batch * intervals, -1)
-        local_identity = identities[None].expand(batch * intervals, -1, -1)
+        local_positions = ordinals[None].expand(batch * intervals, -1)
+        local_identity = identity[None].expand(batch * intervals, -1, -1)
         local_delta = self.local_attention(
             local_content,
             local_valid,
@@ -233,8 +240,7 @@ class UnifiedProgramBlock(torch.nn.Module):
         )
         content = (local_content + local_delta).reshape(
             batch, intervals, columns, width
-        )
-        content = content.masked_fill(~valid_grid[..., None], 0.0)
+        ).masked_fill(~valid_grid[..., None], 0.0)
 
         temporal_content = content.permute(0, 2, 1, 3).reshape(
             batch * columns, intervals, width
@@ -245,7 +251,7 @@ class UnifiedProgramBlock(torch.nn.Module):
         temporal_positions = endpoint_positions[:, None].expand(
             batch, columns, intervals
         ).reshape(batch * columns, intervals)
-        temporal_identity = identities[None, :, None].expand(
+        temporal_identity = identity[None, :, None].expand(
             batch, columns, intervals, width
         ).reshape(batch * columns, intervals, width)
         temporal_delta = self.temporal_attention(
@@ -261,8 +267,8 @@ class UnifiedProgramBlock(torch.nn.Module):
         return content.masked_fill(~valid_grid[..., None], 0.0)
 
 
-class UnifiedCausalProgram(torch.nn.Module):
-    """Build interval-aligned ``absolute X + Action + outgoing change D``."""
+class OutgoingSemanticProgram(torch.nn.Module):
+    """Build raw outgoing A/E/D values and separate causal contextual keys."""
 
     def __init__(
         self,
@@ -274,9 +280,9 @@ class UnifiedCausalProgram(torch.nn.Module):
     ) -> None:
         super().__init__()
         if blocks <= 0:
-            raise SemanticProgramError("Unified Program needs axial blocks")
+            raise SemanticProgramError("Semantic Program needs axial blocks")
         self.blocks = torch.nn.ModuleList(
-            UnifiedProgramBlock(
+            OutgoingProgramBlock(
                 width=width,
                 heads=heads,
                 initialization_seed=initialization_seed + index,
@@ -286,42 +292,41 @@ class UnifiedCausalProgram(torch.nn.Module):
 
     def forward(
         self,
-        absolute_evidence: torch.Tensor,
         grounded_evidence: torch.Tensor,
         action_probe: torch.Tensor,
         frame_positions: torch.Tensor,
         valid_frames: torch.Tensor,
         valid_task_tokens: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+    ]:
         if (
-            absolute_evidence.ndim != 4
-            or grounded_evidence.shape != absolute_evidence.shape
+            grounded_evidence.ndim != 4
             or action_probe.shape
-            != (*absolute_evidence.shape[:2], absolute_evidence.shape[-1])
-            or frame_positions.shape != absolute_evidence.shape[:2]
+            != (*grounded_evidence.shape[:2], grounded_evidence.shape[-1])
+            or frame_positions.shape != grounded_evidence.shape[:2]
             or frame_positions.dtype != torch.long
-            or valid_frames.shape != absolute_evidence.shape[:2]
+            or valid_frames.shape != grounded_evidence.shape[:2]
             or valid_frames.dtype != torch.bool
             or valid_task_tokens.shape
-            != (absolute_evidence.shape[0], absolute_evidence.shape[2])
+            != (grounded_evidence.shape[0], grounded_evidence.shape[2])
             or valid_task_tokens.dtype != torch.bool
             or bool((valid_frames.sum(dim=1) < 2).any())
         ):
-            raise SemanticProgramError("invalid Unified Program evidence")
+            raise SemanticProgramError("invalid outgoing Semantic Program evidence")
         valid_intervals = valid_frames[:, :-1] & valid_frames[:, 1:]
         endpoint_positions = frame_positions[:, 1:]
-        changes = grounded_evidence[:, 1:] - grounded_evidence[:, :-1]
-        program = torch.cat(
-            (
-                absolute_evidence[:, :-1],
-                action_probe[:, :-1, None],
-                changes,
-            ),
-            dim=2,
+        effects = grounded_evidence[:, 1:]
+        changes = effects - grounded_evidence[:, :-1]
+        raw_value = torch.cat(
+            (action_probe[:, :-1, None], effects, changes), dim=2
         )
         valid_semantics = torch.cat(
             (
-                valid_task_tokens,
                 torch.ones(
                     valid_task_tokens.shape[0],
                     1,
@@ -329,16 +334,24 @@ class UnifiedCausalProgram(torch.nn.Module):
                     device=valid_task_tokens.device,
                 ),
                 valid_task_tokens,
+                valid_task_tokens,
             ),
             dim=1,
         )
         valid_grid = valid_intervals[:, :, None] & valid_semantics[:, None]
-        program = program.masked_fill(~valid_grid[..., None], 0.0)
+        raw_value = raw_value.masked_fill(~valid_grid[..., None], 0.0)
+        contextual_key = raw_value
         for block in self.blocks:
-            program = block(
-                program,
+            contextual_key = block(
+                contextual_key,
                 endpoint_positions,
                 valid_intervals,
                 valid_semantics,
             )
-        return program, endpoint_positions, valid_intervals, valid_semantics
+        return (
+            contextual_key,
+            raw_value,
+            endpoint_positions,
+            valid_intervals,
+            valid_semantics,
+        )

@@ -31,22 +31,13 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 
 AS_WRITER_CHECKPOINT_SCHEMA = (
-    "ember_pi05_unified_causal_program_full24_checkpoint_v1"
+    "ember_pi05_amplitude_preserving_dual_read_full24_checkpoint_v1"
 )
 AS_WRITER_TRAINER_STATE_SCHEMA = (
-    "ember_pi05_unified_causal_program_full24_trainer_state_v1"
+    "ember_pi05_amplitude_preserving_dual_read_full24_trainer_state_v1"
 )
 AS_WRITER_RANK_STATE_SCHEMA = (
-    "ember_pi05_unified_causal_program_full24_rank_state_v1"
-)
-AS_WRITER_SERIAL4_CHECKPOINT_SCHEMA = (
-    "ember_pi05_unified_causal_program_serial4_exposurematched_checkpoint_v1"
-)
-AS_WRITER_SERIAL4_TRAINER_STATE_SCHEMA = (
-    "ember_pi05_unified_causal_program_serial4_exposurematched_trainer_state_v1"
-)
-AS_WRITER_SERIAL4_RANK_STATE_SCHEMA = (
-    "ember_pi05_unified_causal_program_serial4_exposurematched_rank_state_v1"
+    "ember_pi05_amplitude_preserving_dual_read_full24_rank_state_v1"
 )
 
 
@@ -59,13 +50,7 @@ def _state_schemas(
             AS_WRITER_TRAINER_STATE_SCHEMA,
             AS_WRITER_RANK_STATE_SCHEMA,
         )
-    if optimizer_updates_per_task_cycle == 6:
-        return (
-            AS_WRITER_SERIAL4_CHECKPOINT_SCHEMA,
-            AS_WRITER_SERIAL4_TRAINER_STATE_SCHEMA,
-            AS_WRITER_SERIAL4_RANK_STATE_SCHEMA,
-        )
-    raise WriterModelError("unsupported AS-Writer checkpoint task cycle")
+    raise WriterModelError("AP-ADR checkpoints require one optimizer update per macro")
 
 
 def _rng_state(context: DistributedContext) -> dict[str, Any]:

@@ -31,7 +31,7 @@ from ember.writer.model import WriterModelError
 ROOT = Path(__file__).resolve().parents[1]
 AS_CONFIG = (
     ROOT
-    / "configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json"
+    / "configs/pi05_as_writer_amplitude_dual_read_full24_decay400_v1.json"
 )
 
 
@@ -70,6 +70,28 @@ def test_as_writer_checkpoint_verifies_every_file_before_pickle_load(
     assert manifest["consumed"]["next_step"] == 3
     (checkpoint / "trainer_state.pt").write_bytes(b"changed")
     with pytest.raises(WriterModelError, match="checkpoint file changed"):
+        validate_writer_checkpoint_files(
+            checkpoint, world_size=1, contract_sha256=contract
+        )
+
+
+def test_ap_adr_checkpoint_schema_is_fresh_and_rejects_ucp_manifest(
+    tmp_path: Path,
+) -> None:
+    assert AS_WRITER_CHECKPOINT_SCHEMA == (
+        "ember_pi05_amplitude_preserving_dual_read_full24_checkpoint_v1"
+    )
+    contract = "b" * 64
+    checkpoint = _checkpoint(tmp_path, contract)
+    manifest = read_json(checkpoint / "checkpoint_manifest.json")
+    manifest["schema_version"] = (
+        "ember_pi05_unified_causal_program_full24_checkpoint_v1"
+    )
+    payload = dict(manifest)
+    payload.pop("canonical_payload_sha256")
+    manifest["canonical_payload_sha256"] = canonical_hash(payload)
+    write_json_atomic(checkpoint / "checkpoint_manifest.json", manifest)
+    with pytest.raises(WriterModelError, match="manifest changed"):
         validate_writer_checkpoint_files(
             checkpoint, world_size=1, contract_sha256=contract
         )

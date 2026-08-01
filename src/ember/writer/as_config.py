@@ -12,19 +12,11 @@ from ember.writer.model import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_unified_causal_program_full24_as_writer_v1"
+AS_WRITER_CONFIG_SCHEMA = (
+    "ember_pi05_amplitude_preserving_dual_read_full24_as_writer_v1"
+)
 AS_WRITER_CONFIG_OVERLAY_SCHEMA = (
-    "ember_pi05_unified_causal_program_full24_as_writer_recipe_overlay_v1"
-)
-AS_WRITER_SERIAL4_CONFIG_SCHEMA = (
-    "ember_pi05_unified_causal_program_serial4_exposurematched_as_writer_v1"
-)
-AS_WRITER_SERIAL4_CONFIG_OVERLAY_SCHEMA = (
-    "ember_pi05_unified_causal_program_serial4_exposurematched_recipe_overlay_v1"
-)
-AS_WRITER_CONFIG_SCHEMAS = (
-    AS_WRITER_CONFIG_SCHEMA,
-    AS_WRITER_SERIAL4_CONFIG_SCHEMA,
+    "ember_pi05_amplitude_preserving_dual_read_full24_recipe_overlay_v1"
 )
 AS_WRITER_STAGES = ("development", "final")
 
@@ -101,7 +93,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         or int(writer.get("max_frames_per_encoder_call", 0)) <= 0
     ):
         raise WriterModelError(
-            "sealed UCP Writer dimensions changed"
+            "sealed AP-ADR Writer dimensions changed"
         )
     expected = expected_writer_contract(writer)
     if writer != expected:
@@ -113,7 +105,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
             if writer[key] != expected[key]
         )
         raise WriterModelError(
-            "UCP AS-Writer architecture changed; "
+            "AP-ADR AS-Writer architecture changed; "
             f"missing={missing}, extra={extra}, changed={changed}"
         )
 
@@ -158,17 +150,9 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         raise WriterModelError("AS-Writer information wall changed")
 
     data = config.get("data", {})
-    update_topology = str(
-        config.get("conditioning_training", {}).get("update_topology", "")
-    )
     teacher_video_sampling = (
-        "per_task_cycle_visit_deterministic_single_same_task_video_in_"
+        "per_task_macro_visit_deterministic_single_same_task_video_in_"
         "no_replacement_cycles"
-        if update_topology == "serial4_exposure_matched_six_phase_task_cycle"
-        else (
-            "per_task_macro_visit_deterministic_single_same_task_video_in_"
-            "no_replacement_cycles"
-        )
     )
     required = {
         "task_count": 24 if writer_stage(config) == "development" else 32,
@@ -206,7 +190,7 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
             "one independent policy flow noise and time draw per action query"
         ),
         "single_video_gradient_direction_diagnostic": (
-            "fixed_countsketch_32_per_task_per_semantic_frontend_program_"
+            "fixed_countsketch_32_per_task_per_semantic_frontend_core_program_"
             "compiler_factor_block"
         ),
         "normal_loss_weight": 1.0,
@@ -244,58 +228,11 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
         "checkpoint_boundary": "complete_macro_optimizer_update_only",
         **common,
     }
-    serial4 = {
-        "method": (
-            "raw_serial4_exposure_matched_single_video_multi_action_"
-            "positive_functional_loss"
-        ),
-        "update_topology": "serial4_exposure_matched_six_phase_task_cycle",
-        "action_query_batch_owner": (
-            "one task-pure physical action batch per rank per optimizer update"
-        ),
-        "task_assignment": (
-            "six optimizer phases reuse one full24 cost-balanced rank rotation; "
-            "each phase selects one long-first task per rank and all six phases "
-            "cover every task exactly once"
-        ),
-        "tasks_per_rank_per_optimizer_update": 1,
-        "global_tasks_per_optimizer_update": 4,
-        "optimizer_updates_per_task_cycle": 6,
-        "scheduler_updates_per_task_cycle": 1,
-        "task_visit_axis": "zero_based_task_cycle_floor_optimizer_update_div_6",
-        "pair_loss_reduction": (
-            "mean_within_task_then_equal_raw_mean_over_selected_4_tasks"
-        ),
-        "task_loss_scale_before_backward": (
-            "per_task_unscaled_then_exact_raw_selected4_mean"
-        ),
-        "ddp_gradient_sync": (
-            "none_during_task_gradients_then_bounded_parameter_chunk_"
-            "allgathers_for_exact_raw_selected4_mean_and_read_only_4x4_grams"
-        ),
-        "gradient_composition": (
-            "exact_raw_equal_weight_selected4_mean_without_projection"
-        ),
-        "optimizer_steps_per_task_cycle": 6,
-        "scheduler_step_cadence": (
-            "once_after_each_six_optimizer_update_task_cycle"
-        ),
-        "checkpoint_boundary": "complete_optimizer_update_only",
-        **common,
-    }
-    expected = (
-        serial4
-        if value.get("update_topology")
-        == "serial4_exposure_matched_six_phase_task_cycle"
-        else full24
-    )
-    if value != expected:
+    if value != full24:
         raise WriterModelError("AS-Writer conditioning contract changed")
 
 
-def _load_recipe_overlay(
-    config: Mapping[str, Any], *, overlay_schema: str
-) -> dict[str, Any]:
+def _load_recipe_overlay(config: Mapping[str, Any]) -> dict[str, Any]:
     required = {
         "schema_version",
         "base_config",
@@ -323,10 +260,9 @@ def _load_recipe_overlay(
         raise WriterModelError("invalid AS-Writer recipe overlay")
     base = read_json(base_path)
     base.update({name: value for name, value in replacements.items()})
-    if overlay_schema == AS_WRITER_SERIAL4_CONFIG_OVERLAY_SCHEMA:
-        base["schema_version"] = AS_WRITER_SERIAL4_CONFIG_SCHEMA
+    base["schema_version"] = AS_WRITER_CONFIG_SCHEMA
     base["_config_derivation"] = {
-        "overlay_schema": overlay_schema,
+        "overlay_schema": AS_WRITER_CONFIG_OVERLAY_SCHEMA,
         "base_config": str(base_path.relative_to(REPO_ROOT)),
         "base_sha256": config["base_sha256"],
     }
@@ -336,12 +272,9 @@ def _load_recipe_overlay(
 def load_writer_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     schema = config.get("schema_version")
-    if schema in {
-        AS_WRITER_CONFIG_OVERLAY_SCHEMA,
-        AS_WRITER_SERIAL4_CONFIG_OVERLAY_SCHEMA,
-    }:
-        config = _load_recipe_overlay(config, overlay_schema=str(schema))
-    if config.get("schema_version") not in AS_WRITER_CONFIG_SCHEMAS:
+    if schema == AS_WRITER_CONFIG_OVERLAY_SCHEMA:
+        config = _load_recipe_overlay(config)
+    if config.get("schema_version") != AS_WRITER_CONFIG_SCHEMA:
         raise WriterModelError("unsupported PI05 AS-Writer config schema")
     writer_stage(config)
     _validate_authorities(config)

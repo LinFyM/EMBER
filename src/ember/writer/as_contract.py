@@ -25,7 +25,7 @@ from ember.pi05_source_checkpoint import (
     write_json_atomic,
 )
 from ember.pi05_source_contract import append_jsonl
-from ember.writer.architecture import UNIFIED_CAUSAL_WRITER_PARAMETER_COUNT
+from ember.writer.architecture import AMPLITUDE_DUAL_READ_WRITER_PARAMETER_COUNT
 from ember.writer.as_config import (
     REPO_ROOT,
     authority_path,
@@ -39,7 +39,9 @@ from ember.writer.topology import validate_task_complete_topology
 from ember.writer.update_contract import build_update_runtime_contract
 
 
-AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_unified_causal_program_full24_launch_v1"
+AS_WRITER_LAUNCH_SCHEMA = (
+    "ember_pi05_amplitude_preserving_dual_read_full24_launch_v1"
+)
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
 
@@ -162,7 +164,7 @@ def resolve_runtime(
 ) -> tuple[int, int, tuple[int, ...]]:
     if args.mode == "formal" and config["formal_run"].get("status") != "sealed":
         raise WriterModelError(
-            "formal AS-Writer config is not sealed from the live UCP profile"
+            "formal AS-Writer config is not sealed from the live AP-ADR profile"
         )
     source = config["formal_run"] if args.mode == "formal" else config["profile_defaults"]
     (
@@ -375,7 +377,7 @@ def inspect_feature_cache(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
     """Fail closed for retired pooled-feature callers."""
 
     raise WriterModelError(
-        "pooled PI05 Writer feature caches are retired; UCP AS-Writer "
+        "pooled PI05 Writer feature caches are retired; AP-ADR AS-Writer "
         "requires raw teacher video data"
     )
 
@@ -387,7 +389,7 @@ def writer_trainable_contract(
     parameter_count = sum(value.numel() for value in writer.parameters())
     if (
         not names
-        or parameter_count != UNIFIED_CAUSAL_WRITER_PARAMETER_COUNT
+        or parameter_count != AMPLITUDE_DUAL_READ_WRITER_PARAMETER_COUNT
         or any(parameter.requires_grad for parameter in policy.parameters())
     ):
         raise WriterModelError("AS-Writer freeze boundary changed")

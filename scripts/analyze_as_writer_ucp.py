@@ -286,7 +286,18 @@ def _routing_diagnostics(
         ba_error["relative_l2"] > 2e-5 or action_error["relative_l2"] > 2e-5
         or raw_a["relative_l2"] == 0 or raw_b["relative_l2"] == 0
     ):
-        raise WriterModelError("rank gauge permutation violated its sanity contract")
+        raise WriterModelError(
+            "rank gauge permutation violated its sanity contract: "
+            + json.dumps(
+                {
+                    "effective_ba_numerical_error": ba_error,
+                    "fixed_policy_action_numerical_error": action_error,
+                    "public_a": raw_a,
+                    "public_b": raw_b,
+                },
+                sort_keys=True,
+            )
+        )
     target_comparison = _variant_comparison(writer, full, target_variant)
     target_mapping = {}
     for spec in writer.tensor_specs:

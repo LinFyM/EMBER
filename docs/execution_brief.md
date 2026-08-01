@@ -42,9 +42,10 @@ fresh0→1→exact-resume1→3逐文件不变且cursor连续，config现已seal�
 v7/v8/v10/Loom及后续低分只证明“架构×当时fast task-complete recipe”失败。
 只有全局binder、早event pooling、无监督confidence/gap、DC删除、strict bilinear、
 高增益gate和强制谱等被内部反事实独立否定；anchors、causal Procedure、双流、
-Core语义和target-first/rank-last仍可复用。当前没有活动训练、评测或tmux。紧邻
-动作是提交该现场seal、从新的clean detached worktree只用GPU4–7 fresh启动
-macro0→200，再按统一一小时门正式训练和评测。150只是里程碑，不是focused自动终点。以下在`## 1`之前的旧状态叙述
+Core语义和target-first/rank-last仍可复用。当前活动进程就是本节开头记录的
+UCP frozen formal macro0→200；不得重复启动。训练自然结束后按统一一小时门
+正式评测并据证据选择续训、训练粒度反事实或整体重构。150只是里程碑，不是
+focused自动终点。以下在`## 1`之前的旧状态叙述
 只作历史背景，不得覆盖本节。
 
 状态：2026-07-31。共享 π0.5-LIBERO source base与corrected mixed-task

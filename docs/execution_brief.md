@@ -19,11 +19,15 @@ torchrun立即收割其他ranks。instrumented `e47ffe8`证明raw A/B改变
 rank-reduction顺序改变产生`.002047` execution drift。sanity现只对finite与BA
 `2e-5` fail-close，action drift保留为实际诊断，不伪称bf16位级gauge不变。clean
 `c4b85e8` refs2已经完整通过：8 tasks×2 references共16 rows、四rank各4，无
-failure artifact。随后同一frozen commit已启动exact50，root为
+failure artifact。随后同一frozen commit的exact50也已自然完成，root为
 `/data/ymdai/outputs/ember/pi05_as_writer_ucp_rawfull24_macro0100_internal_exact50_v2_seed7_c4b85e8_20260801`，
-tmux为`ember-ucp-internal-exact50-c4b85e8`；run contract封存400 references、
-4 ranks、0 rollouts和clean protected-path provenance。不得复用失败root或修改
-frozen worktree。
+400 rows严格覆盖8 tasks×reference0..49、四rank各100 rows、0 rollouts且无failure。
+pooled same-task effective-BA/fixed-action centered variance占sample energy仅
+`.09008%/.01656%`；same/wrong/shuffled/reversed的Program→BA→action为
+`.215/.499/.356/.440 → .043/.187/.063/.105 → .0138/.0636/.0153/.0325`。
+correct norm/stable rank/top energy为`59.108/1.00319/99.714%`。analysis/summary
+SHA为`a6e40cd6...25a8`/`386a04f5...acaa`。旧tmux已自然退出；不得复用失败root
+或修改frozen worktree。
 
 下一训练反事实冻结UCP拓扑，只改update granularity：四rank每update各1 task，
 六phase重建同一full24 cost-balanced cycle；1,200 updates等于200 task visits、
@@ -31,7 +35,12 @@ frozen worktree。
 `LR_serial(u)=LR_full24(floor(u/6))`；不是连续warmup102/decay2400。实现已以
 `ccdf21f/92548ed`集成main；fresh serial config/checkpoint/rank schemas、midcycle
 cursor、cycle-boundary scheduler及formal `%6` fail-close均通过，全仓
-`233 passed`。它尚未真实B20 profile、resume seal或formal launch。
+`233 passed`。clean detached `10a71a1`的最长视频seed172 18-update B20 profile
+已自然完成：3个cycle各覆盖24 tasks，首update真实读入105 sampled frames，峰值
+allocated/reserved为`76,971,835,904/83,647,004,672` bytes。formal seed又完成
+fresh0→1、resume1→3、resume3→7；step1/3全部文件SHA不变，前6 phase覆盖24
+unique tasks，scheduler只在step6推进且step7使用下一LR。config已seal；下一动作是
+从新clean detached commit fresh identity训练1,200 updates，不从smoke续接。
 
 当前下一整体架构设计为
 [`action_forecast_writer_unified_causal_program_design.md`](action_forecast_writer_unified_causal_program_design.md)。
@@ -70,6 +79,11 @@ Core语义和target-first/rank-last仍可复用。当前下一分析和训练反
 开头记录的refs2→exact50与serial-4；不得复用失败root。150只是里程碑，不是focused
 自动终点。以下在`## 1`之前的旧状态叙述
 只作历史背景，不得覆盖本节。
+
+匹配每task 150次video exposure的正式2×2审计进一步支持该边界：v5.2 old/new
+为`132/51`，v6 old/new为`95/111`，recipe effect=`-81/+16`、描述性
+difference-in-differences=`97`。它仍混杂optimizer/scheduler/AdamW时钟，不能
+归因给单一recipe开关；但足以禁止把任何fast-task-complete低分整版架构判死。
 
 状态：2026-07-31。共享 π0.5-LIBERO source base与corrected mixed-task
 rank-128 Source-SFT均已封存，后者development observed-best为`109/400`。

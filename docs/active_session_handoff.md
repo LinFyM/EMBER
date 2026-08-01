@@ -11,7 +11,9 @@
 ## 0. 2026-08-01 UCP当前状态与紧邻动作
 
 v5.2 task-complete、SPG和UCP raw-full24一小时实验均已完成；当前没有需要继承的
-训练或rollout评测。UCP formal只作已完成provenance，不得按本节重复启动：
+训练、评测或tmux进程。serial-4 profile/resume seal也已完成，下一动作是在新clean
+commit上fresh启动正式1,200 updates。UCP formal只作已完成provenance，不得按本节
+重复启动：
 
 ```text
 commit  c94f1c6bb6479625c6c4ffb1a3b28e3fba7730c1
@@ -103,9 +105,9 @@ head 0d4c27114991c8887c4dd5479ec42fdd11fd63a3
 exposure-matched serial-4已从独立写worktree集成main，当前尚未formal launch：
 
 ```text
-/data/ymdai/.codex/worktrees/EMBER-ucp-serial4-a4b06f5-20260801
-branch codex/ucp-serial4-exposurematched
-main commits ccdf21f / 92548ed
+frozen /data/ymdai/.codex/worktrees/EMBER-ucp-serial4-10a71a1-20260801
+head   10a71a148001a8d257017c6b4bfa20f2b0c11ac0
+main commits ccdf21f / 92548ed / 10a71a1 docs authority
 ```
 
 实现用六phase精确重建同一full24 task/video/query exposure与rank内long-first顺序；
@@ -148,19 +150,48 @@ fresh0→1后exact-resume1→3完成；step1 manifest、Writer、trainer与四�
 `.014274/.038833/.654902`，LR与data/RNG cursor连续。run contract/metrics/summary
 SHA为`31187bf9...7d9d0`、`84681e63...3c2f`、`489ca502...c0c5c`。
 
-clean `c4b85e8` refs2已通过；同commit exact50当前由tmux
-`ember-ucp-internal-exact50-c4b85e8`运行，root为
+clean `c4b85e8` refs2与exact50均已自然完成；exact50 root为
 `/data/ymdai/outputs/ember/pi05_as_writer_ucp_rawfull24_macro0100_internal_exact50_v2_seed7_c4b85e8_20260801`。
-等待时完成serial-4最长视频B20 profile和fresh/exact-resume。serial-4
+它严格包含8 tasks×50 references=400 rows、四rank各100、0 rollouts且无failure；
+analysis/summary SHA为`a6e40cd6...25a8`/`386a04f5...acaa`。pooled same-task
+effective-BA/fixed-action centered variance/sample energy为`.09008%/.01656%`，
+确认dynamic教学弱遍及八task。旧exact50 tmux已自然退出。
+
+serial-4最长105-frame B20 profile已从clean detached `10a71a1`自然完成：
+
+```text
+root /data/ymdai/outputs/ember/pi05_as_writer_ucp_serial4_profile_b20_longseed172_r4_10a71a1_20260801
+log  /data/ymdai/logs/ember/pi05_as_writer_ucp_serial4_profile_b20_longseed172_r4_10a71a1_20260801.log
+```
+
+profile共18 updates=3完整cycles，checkpoint为`1,3,5,6,7,12,18`；首update实际
+包含task38/demo36的105 sampled frames。每cycle恰好24 unique tasks，1,440 queries/
+72 videos，峰值allocated/reserved为`76,971,835,904/83,647,004,672` bytes，全部
+finite且step2起四个主模块梯度可达。run contract/metrics/summary SHA为
+`a24c015e...13fa1`/`031f2e31...5995`/`ec44cfd8...103`。
+
+formal seed smoke也已完成：fresh0→1、resume1→3、resume3→7；step1与step3全部
+checkpoint文件在后续resume后逐项SHA不变，metrics phase为`0..5,0`，前六步覆盖
+24 unique tasks，scheduler只在step6推进且step7使用`.0002275`。root为
+`/data/ymdai/outputs/ember/pi05_as_writer_ucp_serial4_resume_smoke_b20_formalseed_r4_10a71a1_20260801`，
+run contract/metrics/summary SHA为`2c350077...0c28`/`3d09ac35...6cd`/
+`eb2c880a...9fdb`。旧profile/resume tmux均已自然退出。serial-4
 严格用`cycle,phase=divmod(update,6)`重建同一full24 cost-balanced cycle；六更新
 覆盖24 tasks，LR在同cycle六次保持不变。禁止naive连续warmup102/decay2400。
-profile/resume通过后才从fresh identity启动1,200 updates，并评测
+canonical config现已seal；从新clean detached commit、fresh identity启动1,200
+updates，并评测
 300/600/900/1200；不得从raw-full24 checkpoint warm-start。
 
 历史架构审计必须按组件×recipe解释：v7以后所有正式负结果都使用同一fast
 task-complete recipe，没有old recipe反事实。只能删除已被内部机制证据独立否定
 的局部模块，不能把anchors、causal Procedure、双流或target-first/rank-last整体
 判死。
+
+匹配每task 150次video exposure的正式审计为v5.2 old/new=`132/51`、v6
+old/new=`95/111`，recipe effect=`-81/+16`、描述性DiD=`97`；该反差支持强
+architecture×training-bundle交互，但optimizer/scheduler/AdamW时钟仍混杂。
+serial long-first重放中visit phase与sampled-frame cost Pearson=`-.8331`，task38
+始终phase0，结果必须同时按phase/cost审计。
 
 UCP phase-estimator audit：
 

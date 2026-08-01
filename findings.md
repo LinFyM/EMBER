@@ -77,10 +77,27 @@
   phase0长期先于phase5更新，计算顺序变成真实optimizer curriculum；若收益按
   phase/长度集中，必须降低聚合解释。4×4 Gram看不到跨phase20个task冲突，约25%
   retention只作mechanical manipulation check。
+- raw-full24 200 cycles的4,800个真实video cost重放确认该curriculum很强：visit
+  phase与sampled frames Pearson=`-.8331`，24-task mean相关=`-.8734`；phase0..5
+  平均sampled frames为`64.62/41.05/32.42/28.88/25.73/20.88`，task38始终在
+  phase0。serial结果必须按phase/cost共同审计。
+- serial-4 live seal通过而未触发B16 fallback：最长105-frame、B20、18 updates/
+  3 cycles全部finite，峰值allocated/reserved为`76,971,835,904/83,647,004,672`
+  bytes；formal seed fresh0→1→resume1→3→resume3→7保持step1/3全部文件不变，
+  cycle0六phase恰好覆盖24 tasks，step6才推进scheduler、step7使用下一LR。它只
+  证明工程和状态合同成立，不预告closed-loop结果。
 - clean `c4b85e8` refs2已经以8 tasks×2 references完整通过，16 rows均finite，
   analysis/summary SHA为`e0757f55...cc48`/`c7a42eae...da41`；随后同commit的
-  exact50零rollout分析已封存clean provenance并在GPU4–7运行。失败root、refs2与
-  exact50各自独立，不能互相覆盖。
+  exact50零rollout分析自然完成。8 tasks×50 references共400 rows、四rank各100，
+  reference0..49完整且无failure；analysis/summary SHA为
+  `a6e40cd6...25a8`/`386a04f5...acaa`。
+- exact50 pooled same-task effective-BA/fixed-action centered variance/sample
+  energy仅`.09008%/.01656%`。same/wrong/shuffled/reversed的Program→BA→action
+  relative L2为`.215/.499/.356/.440 → .043/.187/.063/.105 →
+  .0138/.0636/.0153/.0325`；固定X只换A/D时wrong/order BA仅约`2.1–2.5%`、
+  action约`.55–.58%`。八task BA centered ratio均仅`.0520–.1568%`，所以dynamic
+  教学弱是task-wide结论，不是refs2抽样误差。correct norm/stable rank/top
+  singular energy为`59.108/1.00319/99.714%`。
 
 - SPG macro50/100/150/200 paired correct400为`97/115/77/100`。envelope union
   为162，但best single point只有115；macro100→150 lost51/gained13，之后又
@@ -119,6 +136,11 @@
   Core-Program bilinear和Target-Spectral强制正交已有跨内部量的结构性反证；
   Prior-Innovation只证明手工硬分解失败，稳定semantic prior加软innovation仍未被
   单独否定。
+- 匹配每task 150次video visit的正式2×2对照给出v5.2 old/new=`132/51`、v6
+  old/new=`95/111`，recipe effect=`-81/+16`、描述性DiD=`97`；paired switch为
+  v5.2 old-only/new-only=`90/9`、v6=`19/35`。这是强architecture×training-bundle
+  交互，但optimizer count、scheduler phase和AdamW/moment时钟仍未匹配，不能把
+  97冒充某个单开关的因果量。
 - 更细的内部反事实限定了这些结论：v7 binder entropy`.99963`、有效anchors
   `7.998/8`且Core→BA仅`.001–.002`，所以不能靠serial更新补回缺失的Core value；
   v8 Effect/EventRead entropy`.978/.9967`且固定Effect换Action只产生约
@@ -131,6 +153,12 @@
   却只有`.052–.058%`。它没有隔离prior、innovation reader、final mixer与full24
   聚合，因此是历史上最符合“共享prior被保留、条件innovation被平均掉”的候选，
   而不是已经被整体否定的思想。
+- 历史重访优先级必须以serial证据为条件，而不是按旧总分翻案：首先考虑保幅的
+  v10双流/interleaved Procedure和Prior的软prior+target-local innovation；其次是
+  保留grid、不早池化的Action anchors/局部关系；再后是target-first/rank-last配
+  conventional coherent heads。Loom无锚点gap、exact Recenter、strict
+  Core-Program和强制正交不能因换recipe自动恢复，除非先出现其失效内部量被修复的
+  可识别证据。
 - 如果UCP证明Program→coordinate→BA→action传递健康但absolute/breadth仍弱，
   下一步应先冻结拓扑做更新粒度单变量反事实，而不是立刻再改架构。最干净候选是
   `4 tasks/update × 1200 updates`：与full24 macro200同为4,800 videos和96,000

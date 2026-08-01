@@ -115,14 +115,20 @@ sanity继续对finite和BA `2e-5` fail-close，action execution drift只作记�
 下一训练反事实已经在main实现：冻结UCP拓扑和完整task/video/query exposure，
 改为每update全局4 tasks、六phase覆盖24 tasks的serial-4；LR按full24 cycle重复六次。它同时改变
 AdamW/moment/weight-decay时钟，并把long-first变成真实optimizer curriculum，结果
-不能单因归为“消除梯度抵消”。先从新clean analyzer commit完成refs2与exact50，
-再对serial-4完成B20 profile/resume seal并fresh训练1,200 updates。clean
-`c4b85e8` refs2已通过，exact50现由frozen worktree运行；serial CPU合同为
-`233 passed`，尚未GPU seal或formal launch。
+不能单因归为“消除梯度抵消”。clean `c4b85e8` refs2与exact50均已通过；exact50
+400 rows确认pooled same-video BA/action variance仅`.09008%/.01656%`。serial
+long-first重放的phase/cost Pearson为`-.8331`，task38始终phase0，必须审计真实
+optimizer curriculum。serial CPU合同为`233 passed`；clean detached `10a71a1`
+最长105-frame、B20、18 updates/3 cycles已通过，formal seed fresh0→1→resume1→3
+→跨cycle boundary到7也通过，step1/3文件不变。canonical config已seal；下一动作
+是从新clean detached commit fresh训练1,200 updates，不能从smoke续接。
 
 v7/v8/v10/Loom及后续历史不得整体判死。只能删除由内部反事实独立否定的局部
 机制；Action anchors、causal Procedure、双流、Core语义、target-first/rank-last
 等与fast task-complete recipe混杂的组件仍可在职责完整的新结构中复用。
+匹配150次video exposure时v5.2 old/new=`132/51`而v6 old/new=`95/111`，描述性
+DiD=`97`；这进一步证明强architecture×training-bundle交互，但不识别单一recipe
+成分。
 
 关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
 single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe

@@ -10,6 +10,24 @@ GPU范围和训练步长是当时快照；活动状态只取
 
 ## 2026-08-01 SPG门失败、内部根因与UCP设计
 
+- UCP exact50在clean frozen `c4b85e8`自然完成：8 tasks×50 references共400
+  rows、四rank各100、reference0..49完整、0 rollouts、无failure。pooled
+  same-task effective-BA/fixed-action centered variance/sample energy为
+  `.09008%/.01656%`；Program的same/wrong/shuffled/reversed差异仍明显，到BA/action
+  后大幅压弱。analysis/summary SHA为`a6e40cd6...25a8`/`386a04f5...acaa`。
+- observed-best与匹配150次video exposure的v5.2×v6审计均确认强
+  architecture×recipe交互；匹配点recipe effect为`-81/+16`、描述性DiD=`97`。
+  结论只覆盖训练bundle，不把v7以后与fast recipe混杂的思想整体判死。
+- serial-4的long-first optimizer curriculum已量化：4,800 visits中phase与sampled
+  frames Pearson=`-.8331`，task mean相关=`-.8734`，task38始终phase0。
+- clean detached main `10a71a1`的最长seed172 B20 profile已自然完成：18 updates、
+  3个完整cycles、每cycle 24 unique tasks、1,440 queries/72 videos，真实105-frame
+  视频进入首update；峰值allocated/reserved为`76,971,835,904/83,647,004,672`
+  bytes，全部finite，step2起四个主模块梯度可达。
+- formal seed fresh0→1→resume1→3→resume3→7通过；step1与step3全部checkpoint
+  文件在后续resume后SHA不变，cycle/phase为`0:0..5,1:0`，step6才推进scheduler，
+  step7 LR从`.0003`变为`.0002275`。canonical serial config已seal，formal必须从
+  新commit fresh identity启动1,200 updates，不能续接smoke。
 - UCP raw-full24 frozen `c94f1c6` fresh macro0→200自然完成，96,000 queries、
   4,800 videos和全部25-step checkpoints完整；四候选paired correct400为
   `82/117/100/110`。union169远高于single best117，breadth与成功集合持续轮换；

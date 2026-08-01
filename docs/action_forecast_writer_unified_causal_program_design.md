@@ -21,6 +21,28 @@ AS-Writer 路径。它不是把 v7、v8、v10、Loom 或后续版本整体判死
 exposure、scheduler，v5.2 还混杂 B21/B20。它只证明 architecture × recipe
 interaction 很大，不能把“新训练一定更好”或“某个 topology 整体无效”写成结论。
 
+匹配每task恰好150次teacher-video visit后，交互更强而不是消失：v5.2 old
+step900为`132`，task-complete macro150仅`51`，paired old-only/new-only为
+`90/9`；v6 old step900为`95`，task-complete macro150为`111`，old-only/
+new-only为`19/35`。两条recipe effect分别为`-81/+16`，描述性difference-in-
+differences为`97`。v5.2两格仍有B21/B20导致的`75,600/72,000`query差异，且四格
+optimizer update数、scheduler phase与AdamW/moment时钟没有匹配，所以这证明的是
+强烈的架构×训练bundle交互，不识别某个单独recipe成分。正式审计artifact为：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_v52_v6_recipe_matched_exposure_seed7_20260801/analysis.json
+SHA256 cb54bdfa4ccbfa3e82471d05d4be3ff1e4bfb23f22eafad9bb1b41c197749369
+```
+
+旧/new内部panel还把交互定位到Procedure之后：v5.2 old shuffled/reversed的
+Procedure relative L2只有`.0393/.0589`，但effective BA为`.7400/1.0346`、
+action为`.0953/.1902`；task-complete winner的上游Procedure差异并未消失，
+下游BA/action响应却约弱3–5倍。v6 old到task-complete也呈同方向压弱，只是v6
+task-complete absolute反而提高。因此不能把新recipe概括为“没读顺序”，更准确的
+待检验机制是compiler/function侧对条件innovation的利用随topology和optimizer
+轨迹共同变化。
+
 v6 的干净 slow/fast task-complete scheduler 对照进一步表明：
 
 - slow-decay2000 在 macro200 为 129，五臂 `129/131/108/111/105`；
@@ -43,6 +65,28 @@ Target-Spectral 正式负结果都使用 full24/B20/one-video/fast400；没有 o
   rank-last 和 target-local read。
 - Prior-Innovation 的手工 prior/innovation 职责分解是中等负证据；Core prior 或
   centered innovation 作为非强制组成并未被单独否定。
+
+逐版证据边界进一步收紧为：v7只否定entropy `.99963`且Core→BA约
+`.1–.2%`的global binder/Core-query-only接口，不否定8个Action anchors；v8只
+否定Effect主导且过早`8→1`的single-event bottleneck，不否定Action/Effect双流；
+v10五臂`103/94/75/67/43`反而证明同一full24-fast也能学到顺序特异性，强负证据
+是把Procedure RMS `.0145`经RMSNorm/AdaLN放大约`14–20×`，不是interleaved
+双流本身。Loom的matcher接近`1/255`随机互选、confidence/gap无条件分离，说明
+这些无锚点变量不会仅靠换recipe自然可识别，但teacher-visible relation与policy
+Action软比较仍未被否定。Recenter只能联合否定“删Procedure DC且禁止Core value”，
+不能分别否定centering或Core carrier；Core-Program只否定strict bilinear作为唯一
+factor content；Prior-Innovation没有branch反事实，且coherent norm健康、video
+centered energy仅`.052–.058%`，是最符合“条件innovation被训练bundle压弱”的
+历史候选之一。Target-Spectral明确否定强制正交高rank，但不否定target-first/
+rank-last配conventional coherent heads。
+
+因此serial-4之后的历史重访不是恢复整版旧代码。若serial-4先证明dynamic
+innovation、breadth或漂移确实随update粒度改善，优先级为：保幅的v10式双流/
+interleaved Procedure；软semantic prior+target-local innovation；不早池化的
+Action anchors与局部关系；最后是target-first/rank-last加常规coherent heads。
+每个候选先跑50 exposure cycles并用其既有内部失效量作先验门；Loom无锚点gap、
+exact Recenter、strict Core-Program和正交Target-Spectral不因一次recipe结果自动
+复活。
 
 ### 1.2 SPG 一小时门与最早失效接口
 
@@ -327,6 +371,23 @@ A/D后effective BA仅变`.049`、action`.011`。correct LoRA norm约`59.5`，q/v
 “UCP compiler断路”，也没有证明UCP结构已经充分；它精确支持先测full24是否把
 task-specific dynamic innovation平均掉。
 
+随后完成的exact50把refs1结论提升为每个validation task全部50条video的证据。
+400 rows完整、每task reference ordinal `0..49`恰好一次、0 rollouts；pooled
+same-task effective-BA centered variance/sample energy仅`.09008%`，fixed-query
+action仅`.01656%`。八task BA比例范围`.0520–.1568%`，虽有约`74.8–92.9%`
+变化位于task-mean正交方向，但绝对条件能量很小。same/wrong/shuffled/reversed的
+Program→BA→action relative L2为
+`.215/.499/.356/.440 → .043/.187/.063/.105 → .0138/.0636/.0153/.0325`；
+固定X只换A/D时wrong/shuffled/reversed的BA约`.0223/.0248/.0213`、action均约
+`.0055–.0058`。correct LoRA norm/stable rank/top singular energy为
+`59.108/1.00319/99.714%`，q/v能量约`81.16/18.83%`。因此dynamic教学弱不是refs2
+小样本偶然。artifact SHA为：
+
+```text
+analysis.json a6e40cd64dd9d0af6e648b7f746c42c3929cde6d520664cafb9c5afada5825a8
+summary.json  386a04f51b56a27ae680f341885a912f7f364d7ebbf281f18876c7743836acaa
+```
+
 下一反事实冻结全部UCP topology、参数、B20、video/query/RNG和信息墙，只改变
 optimizer/update granularity：令`cycle, phase = divmod(update, 6)`。每个cycle先
 生成与raw-full24完全相同的cost-balanced四个rank组和rank rotation；每组六个
@@ -359,6 +420,13 @@ task更常在后期。若per-task改善与phase ordinal或视频长度强相关�
 optimizer curriculum，而不是task-gradient cancellation被解决；不能为消除这个
 混杂而违反已批准的long-first合同，只能用metrics和结果相关性识别它。
 
+这个混杂不是理论上的小量：用raw-full24正式200 cycles的4,800个真实video
+cost重放同一serial分组，visit-level phase ordinal与sampled-frame cost的Pearson
+为`-.8331`，24个task的mean phase与mean cost为`-.8734`；phase0..5平均sampled
+frames依次为`64.62/41.05/32.42/28.88/25.73/20.88`。最长task38在200 cycles中
+始终位于phase0，mean sampled frames=`84.42`。因此后续per-task改善必须同时对
+phase/cost做相关性审计，不能把serial结果单因归为减少同次梯度平均。
+
 selected4 raw-mean energy ratio不能当成功指标：四个近正交等norm梯度的机械基线
 就是`1/4=25%`，而full24是`1/24=4.17%`。它只验证干预确实减少了同次聚合项数。
 聚合解释必须由跨cycle参数行为、A/D条件innovation、single-checkpoint breadth、
@@ -369,8 +437,12 @@ canonical实现已完成：`cycle,phase=divmod(update,6)`、selected4 exact raw 
 schemas和midcycle cursor均在原训练入口内实现，没有第二runner或第二Writer路径。
 formal checkpoint/stage stop必须为完整cycle边界；profile/formal teacher-video seed
 分别为`172/20260722`。全仓CPU回归`233 passed`，architecture guard无hard
-violation；正式配置仍保持`pending_live_profile`，必须先完成真实105-frame B20和
-fresh/exact-resume seal。
+violation。clean detached `10a71a1`上的live seal现已完成：18-update B20 profile
+覆盖3个完整cycles，首update真实包含105 sampled frames，峰值allocated/reserved
+为`76,971,835,904/83,647,004,672` bytes，全部finite；formal seed又完成
+fresh0→1、resume1→3、resume3→7。step1/3全部checkpoint文件保持不变，前六phase
+覆盖24 unique tasks，scheduler仅在phase5后推进。canonical config已seal，正式run
+必须从后续新clean detached commit的fresh identity开始，不能续接smoke。
 
 ## 7. 实现边界与初始化
 

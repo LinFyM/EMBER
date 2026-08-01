@@ -28,6 +28,11 @@ GPU范围和训练步长是当时快照；活动状态只取
   文件在后续resume后SHA不变，cycle/phase为`0:0..5,1:0`，step6才推进scheduler，
   step7 LR从`.0003`变为`.0002275`。canonical serial config已seal，formal必须从
   新commit fresh identity启动1,200 updates，不能续接smoke。
+- seal commit `3db82df`已push，clean frozen worktree已fresh启动serial-4 formal
+  update0→1200；tmux `ember-ucp-serial4-3db82df`，root为
+  `/data/ymdai/outputs/ember/pi05_as_writer_ucp_serial4_exposurematched_decay400_formal_dev_r4_b20_seed7_3db82df_20260801`。
+  首cycle六phase覆盖24 unique tasks；rank内frames单调long-first，四rank总frames
+  `207/216/206/204`；step2起四主块梯度可达、全部finite、信息墙读取计数0。
 - UCP raw-full24 frozen `c94f1c6` fresh macro0→200自然完成，96,000 queries、
   4,800 videos和全部25-step checkpoints完整；四候选paired correct400为
   `82/117/100/110`。union169远高于single best117，breadth与成功集合持续轮换；

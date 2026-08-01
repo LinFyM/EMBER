@@ -40,7 +40,11 @@ cursor、cycle-boundary scheduler及formal `%6` fail-close均通过，全仓
 allocated/reserved为`76,971,835,904/83,647,004,672` bytes。formal seed又完成
 fresh0→1、resume1→3、resume3→7；step1/3全部文件SHA不变，前6 phase覆盖24
 unique tasks，scheduler只在step6推进且step7使用下一LR。config已seal；下一动作是
-从新clean detached commit fresh identity训练1,200 updates，不从smoke续接。
+已从clean frozen `3db82df`的fresh identity启动1,200 updates，不从smoke续接。
+tmux为`ember-ucp-serial4-3db82df`，正式root为
+`/data/ymdai/outputs/ember/pi05_as_writer_ucp_serial4_exposurematched_decay400_formal_dev_r4_b20_seed7_3db82df_20260801`。
+首cycle已确认24 unique tasks、rank内long-first、四rank cost-balanced、finite和信息墙
+读取计数0；不得重复启动。
 
 当前下一整体架构设计为
 [`action_forecast_writer_unified_causal_program_design.md`](action_forecast_writer_unified_causal_program_design.md)。

@@ -121,7 +121,9 @@ long-first重放的phase/cost Pearson为`-.8331`，task38始终phase0，必须�
 optimizer curriculum。serial CPU合同为`233 passed`；clean detached `10a71a1`
 最长105-frame、B20、18 updates/3 cycles已通过，formal seed fresh0→1→resume1→3
 →跨cycle boundary到7也通过，step1/3文件不变。canonical config已seal；下一动作
-是从新clean detached commit fresh训练1,200 updates，不能从smoke续接。
+已执行：clean frozen `3db82df`从fresh identity启动1,200 updates，tmux
+`ember-ucp-serial4-3db82df`；首个六phase cycle合同健康。不得重复启动或从smoke
+续接；等待时准备300/600/900/1200 paired correct400与内部联合根因分析。
 
 v7/v8/v10/Loom及后续历史不得整体判死。只能删除由内部反事实独立否定的局部
 机制；Action anchors、causal Procedure、双流、Core语义、target-first/rank-last

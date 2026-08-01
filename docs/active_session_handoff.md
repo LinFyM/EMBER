@@ -178,9 +178,42 @@ run contract/metrics/summary SHA为`2c350077...0c28`/`3d09ac35...6cd`/
 `eb2c880a...9fdb`。旧profile/resume tmux均已自然退出。serial-4
 严格用`cycle,phase=divmod(update,6)`重建同一full24 cost-balanced cycle；六更新
 覆盖24 tasks，LR在同cycle六次保持不变。禁止naive连续warmup102/decay2400。
-canonical config现已seal；从新clean detached commit、fresh identity启动1,200
-updates，并评测
-300/600/900/1200；不得从raw-full24 checkpoint warm-start。
+canonical config现已seal。seal commit `3db82df`已push并建立clean frozen
+worktree；fresh identity正式0→1,200当前由tmux
+`ember-ucp-serial4-3db82df`运行，不得重复启动或从raw-full24/smoke warm-start：
+
+```text
+frozen /data/ymdai/.codex/worktrees/EMBER-ucp-serial4-formal-3db82df-20260801
+root   /data/ymdai/outputs/ember/pi05_as_writer_ucp_serial4_exposurematched_decay400_formal_dev_r4_b20_seed7_3db82df_20260801
+log    /data/ymdai/logs/ember/pi05_as_writer_ucp_serial4_exposurematched_decay400_formal_dev_r4_b20_seed7_3db82df_20260801.log
+config SHA256 e6a604a5bab0e4656c54db2c2fc35608fc55199b42cf22202e5a030f50053cab
+run contract SHA256 995f248ae322f7a1b1fef6a11f18b3c7e7a4da8a9471db62b8a4ec8ea68e404b
+```
+
+确切命令：
+
+```bash
+numactl --cpunodebind=1 --membind=1 env \
+  PYTHONPATH=/data/ymdai/.codex/worktrees/EMBER-ucp-serial4-formal-3db82df-20260801/src \
+  CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4,5,6,7 \
+  OMP_NUM_THREADS=1 TOKENIZERS_PARALLELISM=false PYTHONUNBUFFERED=1 \
+  /data/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=4 \
+  scripts/train_as_writer.py \
+  --config configs/pi05_as_writer_unified_causal_program_serial4_exposurematched_v1.json \
+  --mode formal \
+  --source-run /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722 \
+  --checkpoint /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 \
+  --tokenizer-path /data/ymdai/ember_data/openpi/paligemma_tokenizer.model \
+  --data-root /data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a \
+  --output-dir /data/ymdai/outputs/ember/pi05_as_writer_ucp_serial4_exposurematched_decay400_formal_dev_r4_b20_seed7_3db82df_20260801 \
+  --total-steps 2400 --stop-after-step 1200 --checkpoint-steps every:150 \
+  --batch-size 20 --num-workers 2 --log-every 1 --skip-data-sha
+```
+
+首个完整cycle已确认六phase覆盖24 unique tasks；四rank frames总cost为
+`207/216/206/204`且rank内严格long-first；每步4 videos/80 queries，step2起四个
+主模块梯度可达，全部finite，信息墙读取计数0。训练完成后评测
+300/600/900/1200 paired correct400。
 
 历史架构审计必须按组件×recipe解释：v7以后所有正式负结果都使用同一fast
 task-complete recipe，没有old recipe反事实。只能删除已被内部机制证据独立否定

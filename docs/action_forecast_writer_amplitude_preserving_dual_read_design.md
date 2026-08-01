@@ -1,7 +1,8 @@
 # Amplitude-Preserving Asymmetric Dual-Read Writer 设计
 
-**状态：2026-08-01 canonical实现、live B20/profile-resume与fresh macro0→200
-均已完成；macro50/100/150/200 paired correct400正在正式评测**
+**状态：2026-08-01 canonical实现、live B20/profile-resume、fresh macro0→200和
+四候选评测均已完成；correct为`91/81/94/91`，一小时门失败。修复后内部反事实
+直接否定当前key-only contextual Program/raw-value接口；不resume、不做五臂。**
 
 本文负责 Unified Causal Program（UCP）raw-full24 和 exposure-matched
 SERIAL-4 都未通过一小时门后的下一条 canonical AS-Writer 路径。
@@ -395,7 +396,7 @@ endpoint metric在通过预声明no-gradient关联门之前不进训练；即使
 
 在任何endpoint数值生成前，候选和判据固定如下：
 
-- `v5.2-new` macro50/100/150/200；
+- `v5.2-new` macro150/200/350/400；
 - UCP raw macro50/100/150/200；
 - v6-fast macro50/100/150/200/250/300/350/400；
 - v5.2-old step900；
@@ -425,6 +426,11 @@ full50/prefix10和ten-grid teacher-bridge flow MSE全部是secondary，不能替
 即使全部通过，也先只记录AP及后续模型的held monitor；在把它用于gradient前，
 还必须另做prospective checkpoint排序复验、精确gradient方向审计和B20显存验证。
 不得按结果调整阈值、改主指标或用secondary metric救回失败门。
+
+候选表在任何endpoint数值生成前做过一次文字合同修正：v5.2-new原误写为
+`50/100/150/200`，但该formal实验按预先批准合同实际做paired correct400并封存的
+四点始终是`150/200/350/400`。候选总数仍为18，recipe direction仍使用macro150；
+该修正只让诊断绑定既有formal panel，不引入outcome-based候选选择。
 
 ## 11. 实现前vertical path
 
@@ -597,3 +603,52 @@ eps的`13.5–17.1%`、累计位移约UCP的`18–26%`；当前只能标记
 `temporal Q/K→contextual key→ProgramReader K`局部routing-key starvation，必须由
 trained-vs-initial key、attention和BA/action反事实结合closed-loop证伪，不能仅凭
 参数梯度宣判架构。
+
+## 16. 正式一小时裁决与最早失效接口
+
+四个paired correct400最终为：
+
+| macro | correct | breadth | per-task |
+|---:|---:|---:|---|
+| 50 | 91 | 6 | `[7,0,1,26,30,26,0,1]` |
+| 100 | 81 | 6 | `[13,0,2,33,28,4,1,0]` |
+| 150 | 94 | 5 | `[18,1,0,37,29,9,0,0]` |
+| 200 | 91 | 7 | `[19,1,2,31,33,3,0,2]` |
+
+相邻点gained/lost为`33/43`、`36/23`、`25/28`，没有多个task共同稳定增长；
+best94也显著低于UCP raw117、SERIAL121和v6-fast同期。故不进入第二小时、不做
+五臂。这个结果判的是`AP topology x raw-full24/fast`组合；以下反事实才负责把
+架构责任进一步局部化。
+
+PI05 sampler会永久把attention backend从SDPA切为eager。该副作用不进入训练，
+正式evaluator也先生成全部Writer cache再rollout，但会污染交错Writer capture和
+action probe的内部analyzer。`5d93af3`加入scoped backend restore后，8个validation
+tasks的逐层、effective BA、fixed action重放误差全部严格为0。最终root的
+analysis/summary SHA为`d42fc4eb...bc2b`/`f2c572c5...e682`。
+
+修复后跨task均值为：
+
+| 干预/条件 | Program block2 relL2 | Program read relL2 | BA relL2 | action relL2 |
+|---|---:|---:|---:|---:|
+| same-task-other | 1.1051 | .03210 | .03005 | .01668 |
+| wrong | 1.3069 | .15185 | .14540 | .02926 |
+| shuffled | .09066 | .02790 | .002689 | .002200 |
+| reversed | .07112 | .03787 | .003903 | .002160 |
+| temporal contextual keys reversed | -- | -- | .000521 | .001944 |
+
+ProgramReader normalized entropy约`.9037`、top mass约`.0106`。Contextual Program
+形成了强same/wrong变化和可测order变化，却几乎只通过高熵attention权重影响输出。
+A/E/D raw value反事实进一步给出决定性定位：Effect-only距full BA仅`.00821`，
+Action-only/Change-only距full为`.2761/.2832`；固定full key后数值仍为
+`.2789/.2827`。Effect缩放0.5/2带来BA `.141/.289`变化，Action或Change缩放最多
+`.008/.001`。所以当前中央职责错误是：causal axial stack只拥有K，raw value中的
+Effect DC直接垄断写入。它不是temporal Q/K简单幅度不足，不能通过放大、gate或
+B residual修补。
+
+同时，Core-only距full BA/action`.283/.228`，Program-only距full`.961/.494`；
+两路都必要。删除Core mean会改变BA`.834`，删除centered residual只变`.0128`，
+mean-backed semantic carrier仍应保留。下一整体结构的最小职责变化是让causal
+contextual Program本身成为target/rank reader的value content，同时保留独立Core
+read、coherent factor heads和信息墙；它不同于SPG的Core加法/global mixer，也不同
+于UCP取消Core carrier的单流。该结构必须另立fresh schema并重新通过一小时门，
+不能在AP checkpoint上热补。

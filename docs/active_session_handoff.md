@@ -3,12 +3,12 @@
 最后更新：2026-08-01 UTC。
 
 本文顶部保存当前运行状态、恢复入口和紧邻动作；后续编号章节是按时间保留的
-历史快照。当前下一架构authority是
-`docs/action_forecast_writer_amplitude_preserving_dual_read_design.md`。长期科学边界是
+历史快照。当前可执行实现仍是已经封存负结果的AP-ADR；下一架构authority是
+`docs/action_forecast_writer_contextual_value_dual_read_design.md`。长期科学边界是
 `AGENTS.md`与`docs/execution_brief.md`。任何接手者都必须先只读复核现场，
 不能按历史快照重复启动进程。
 
-## 0. 2026-08-01 AP-ADR当前状态与紧邻动作
+## 0. 2026-08-01 AP-ADR结果、内部根因与紧邻动作
 
 Amplitude-Preserving Asymmetric Dual Read Writer的fresh首小时已经自然完成；
 不得重复启动、不得从profile/smoke续接，也不得让main后续改动污染其frozen源码：
@@ -30,19 +30,53 @@ correct400；是否resume到400只由absolute、breadth、趋势和内部主路�
 
 实际完成200 optimizer steps/200 cycles、96,000 queries、4,800 one-video
 conditions、每task 4,000 queries/200 visits，wall `3898.217s`；所有200行finite，
-validation/test action读取与test video读取为0。四个paired correct400已经启动：
+validation/test action读取与test video读取为0。四个paired correct400已经完成：
 
 ```text
-tmux     ember-ap-adr-correct400-7dffb6f
-macro50  GPU4  ...macro0050_7dffb6f_20260801
-macro100 GPU5  ...macro0100_7dffb6f_20260801
-macro150 GPU6  ...macro0150_7dffb6f_20260801
-macro200 GPU7  ...macro0200_7dffb6f_20260801
+macro50/100/150/200 correct = 91 / 81 / 94 / 91
+breadth                      = 6 / 6 / 5 / 7
+winner macro150 per task     = [18,1,0,37,29,9,0,0]
 ```
 
-四个prepared合同均为8 tasks×50 states、correct videos无放回、36 long-first
-shards、6 replicas/6 Writer generators，teacher action读取0。启动确认时四个
-controller与每卡6个Writer generator均存活；等待自然完成，不得重启或另建runner。
+四个panel均为8 tasks×50 states、correct videos无放回、36 long-first shards、
+6 replicas/6 Writer generators，teacher action读取0，paired authority一致。相邻点
+gained/lost为`33/43`、`36/23`、`25/28`，没有共同单调增长；best94明显低于同期
+UCP raw117、SERIAL121和v6-fast约133。一小时门失败，不resume到400、不做五臂。
+
+macro150内部分析的最终有效root为：
+
+```text
+commit  5d93af39a7724587205e714baa5fc92b2658ea47
+root    /data/ymdai/outputs/ember/pi05_as_writer_ap_adr_rawfull24_macro0150_internal_refs1_v10_5d93af3_20260801
+analysis SHA d42fc4eb6694031a6a709bb10a7b82fced04cd2a6090109fc42b7d4a3a98bc2b
+summary  SHA f2c572c54a37b0bd6c983322b7ae13018497822300b86de4e0c34c689846e682
+```
+
+此前refs1重放中的约5% `Q_text`漂移已定位为分析器工程污染：PI05 recursive
+sampler会永久把language/expert attention backend从SDPA改成eager。训练functional
+forward不调用sampler，正式evaluator又在rollout前先完成全部Writer cache生成，故
+正式训练与correct400不受影响。`5d93af3`保存/恢复backend并加入回归测试；新root的
+8/8 tasks逐层、effective BA、fixed-action重放误差全部严格0，checkpoint未改变。
+
+有效根因跨8 tasks一致：same-task的`program_raw/block2/program_read/BA/action`
+relative L2为`.9188/1.1051/.03210/.03005/.01668`；shuffled/reversed的block2仍为
+`.09066/.07112`，到BA仅`.002689/.003903`。反转valid contextual temporal keys
+只改变BA/action `.000521/.001944`。Effect-only距full BA仅`.008208`，Action-only/
+Change-only距full约`.2761/.2832`，固定完整key后结论不变；Effect缩放0.5/2造成
+BA `.141/.289`变化，而Action/Change缩放最多`.008/.001`。AP的causal Program
+不是没形成动态，而是只被用作高熵K，真正写出的raw V由Effect DC垄断。
+
+预注册endpoint10的三组历史portable cache已全部自然完成：v5.2-old 64、v6-fast
+8×64、v6-old 64，共640套public LoRA；三份信息墙均为environment steps、validation/
+test action reads与test video reads全零。对应manifest file SHA为v5.2-old
+`ab158969...9de1`、v6-old `988ef3ee...4398`，v6-fast八点依次为
+`14086ba7...fbee`、`488989b2...7436`、`5dfb854d...b1fb`、`1d86b51f...492b`、
+`44367a8a...26f8`、`a53057ed...e989`、`ea47d859...564b`、`db47ab99...fd0a`。
+当前紧邻运行是18-checkpoint no-gradient formal关联审计。它只检验执行前5 action
+误差是否可作held monitor；未原封不动通过全局、family、recipe direction和逐task
+四重门前，不得进入loss、训练或checkpoint选择。
+之后根据AP中央职责失败与UCP raw/SERIAL训练交互，设计contextual-value职责完整的
+下一架构，并完成cycle-normalized randomized-group4受控因果格。后续不使用subagent。
 
 正式launch前的live seal已完成。longseed172真实105-frame B20三macro的step wall为
 `20.567/18.717/18.644s`，峰值allocated/reserved为
@@ -61,10 +95,10 @@ curriculum的cycle-normalized randomized group4，而不是整体处决旧架构
 endpoint10 no-gradient诊断代码已在`544c0ef`/`2055a82`合入main并push；
 `CUDA_VISIBLE_DEVICES=`全仓`222 passed`。它强制exact ten-step sampler在autocast
 外运行、从sampler输入删除ACTION，并对候选配对、finite、sealed512与历史LoRA
-provenance fail-close。现有8个cache候选覆盖sealed64；v5.2-old、v6-fast八点、
-v6-old共10个候选的cache-only扩展已在各自历史commit完成，但真实CUDA parity、
-历史GPU生成和四rank formal诊断尚未启动。endpoint metric在预声明关联门通过前
-不得进入训练。
+provenance fail-close。v5.2-old、v6-fast八点、v6-old共10个历史候选的真实GPU
+portable cache已经从三个clean frozen extension commit用四rank生成并核验，所有
+tmux自然退出；下一步只剩真实CUDA profile/parity和18-candidate四rank formal。
+endpoint metric在预声明关联门通过前不得进入训练。
 
 ## 0A. 2026-08-01 UCP历史状态
 

@@ -5,8 +5,33 @@
 阅读规则：本文按时间顺序保留真实执行状态。早期段落中的“当前”“下一步”、
 GPU范围和训练步长是当时快照；活动状态只取
 `docs/active_session_handoff.md`、
-`docs/action_forecast_writer_amplitude_preserving_dual_read_design.md`和本文顶部最新段落，
+`docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
+
+## 2026-08-01 AP-ADR正式裁决与endpoint10启动
+
+- AP-ADR四个paired correct400已完成：macro50/100/150/200为`91/81/94/91`，
+  breadth`6/6/5/7`，winner macro150逐task`[18,1,0,37,29,9,0,0]`。四点无可信
+  上升趋势且持续gained/lost，一小时门失败；未resume到400，未启动五臂。
+- 定位并修复PI05 recursive sampler永久切换attention backend造成的内部分析污染。
+  `5d93af3`已push，定向`22 passed`；修复后macro150 refs1在8 tasks上逐层、
+  effective BA、fixed action严格零误差重放，checkpoint文件均未变化。
+- 有效AP内部root的analysis/summary SHA为`d42fc4eb...bc2b`/
+  `f2c572c5...e682`。same-task上游Program变化`.919-1.105`到reader只剩`.0321`；
+  temporal key反转对BA仅`.000521`。Effect-only距full BA`.00821`，A-only/D-only
+  约`.276/.283`，固定full key仍相同，故中央失败是key-only contextual Program
+  配raw Effect-dominant value，不是whole Program starvation。
+- endpoint10三组历史portable cache已从clean frozen extension commits用四rank自然
+  完成：v5.2-old 64、v6-fast 8×64、v6-old 64，共640套public LoRA；wall分别
+  `9.874/77.036/9.949s`，environment/action/test-video读取全0，tmux均已退出。
+  v5.2-old/v6-old manifest file SHA为`ab158969...9de1`/`988ef3ee...4398`；v6-fast
+  八点为`14086ba7...fbee`、`488989b2...7436`、`5dfb854d...b1fb`、
+  `1d86b51f...492b`、`44367a8a...26f8`、`a53057ed...e989`、
+  `ea47d859...564b`、`db47ab99...fd0a`。
+- 在任何endpoint数值生成前修正候选表的文字错误：v5.2-new正式、paired
+  correct400候选是macro150/200/350/400，不是50/100/150/200；候选总数仍为18，
+  recipe方向仍比较macro150，因此不构成outcome selection。下一步是真实CUDA
+  profile/parity与18-candidate formal no-gradient诊断。
 
 ## 2026-08-01 AP-ADR live seal与正式首小时
 

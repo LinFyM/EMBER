@@ -32,12 +32,13 @@
 22. `docs/action_forecast_writer_semantic_program_grid_design.md`
 23. `docs/action_forecast_writer_unified_causal_program_design.md`
 24. `docs/action_forecast_writer_amplitude_preserving_dual_read_design.md`
-25. `task_plan.md`
-26. `findings.md`
-27. `progress.md`
-28. `docs/concept.md`
-29. `docs/decisions_and_open_questions.md`
-30. `docs/novelty_and_landscape.md`
+25. `docs/action_forecast_writer_contextual_value_dual_read_design.md`
+26. `task_plan.md`
+27. `findings.md`
+28. `progress.md`
+29. `docs/concept.md`
+30. `docs/decisions_and_open_questions.md`
+31. `docs/novelty_and_landscape.md`
 
 `docs/active_session_handoff.md`是当前跨session恢复入口，集中摘要研究证据链、
 v5失败证据、v5.1设计理由、运行状态和下一动作，但不覆盖架构或长期科学
@@ -55,7 +56,7 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 
 ## Current focused execution task
 
-2026-08-01 current override：canonical Writer与训练authority已经切换为
+2026-08-01 current override：当前可执行canonical Writer仍为
 [`docs/action_forecast_writer_amplitude_preserving_dual_read_design.md`](docs/action_forecast_writer_amplitude_preserving_dual_read_design.md)。
 以下直到`## Data and split`的UCP/SPG叙述只作紧邻历史证据，不得覆盖本段或恢复
 退役可执行路径。
@@ -78,10 +79,32 @@ log    /data/ymdai/logs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_de
 
 run summary确认200 optimizer steps/200 cycles、96,000 queries、4,800 one-video
 conditions、每task 4,000 queries/200 visits，wall `3898.217s`；validation/test
-action读取和test video读取均为0。macro50/100/150/200的paired correct400已分别
-挂在GPU4/5/6/7，tmux `ember-ap-adr-correct400-7dffb6f`；每臂400 states、50 videos
-无放回、36 long-first shards、6 persistent replicas/6 Writer generators。等待自然
-完成后按absolute、breadth、漂移和Core→Program→BA→action证据裁决，不得预先resume。
+action读取和test video读取均为0。macro50/100/150/200 paired correct400已经完成，
+为`91/81/94/91`，breadth为`6/6/5/7`；single winner macro150只有94，且相邻点
+gained/lost为`33/43`、`36/23`、`25/28`，故一小时门失败，不resume到400、不做
+五臂。低aggregate不能整体否定AP复用的Core或dual-read思想，但已经直接否定
+当前`contextual Program只作K、raw A/E/D直接作V`这一中央职责。
+
+修复分析器中PI05 sampler把attention backend从SDPA永久改为eager的生命周期污染后，
+macro150 refs1在8/8 tasks上实现逐层、effective BA和fixed-action严格零误差重放；
+修复commit为`5d93af3`。有效内部结果的analysis/summary SHA为
+`d42fc4eb...bc2b`/`f2c572c5...e682`。same-task raw Program与第二层contextual
+Program relative L2为`.919/1.105`，到Program read/BA/action却只剩
+`.0321/.0301/.0167`；shuffled/reversed到BA仅`.00269/.00390`。反转valid
+contextual temporal keys时BA/action只变`.000521/.00194`。只保留Effect列即可
+在8/8 tasks重建full BA（平均差`.00821`），只保留Action或Change则约差
+`.276/.283`；固定full key后结论不变。最早失效接口因此是
+`causal contextual Program -> high-entropy key-only routing -> raw Effect-DC value`，
+不是whole Program无梯度，也不是视频前端无信号。
+
+下一步先完成预注册endpoint10的18-checkpoint no-gradient关联审计，同时把上述
+架构根因与UCP raw/SERIAL训练交互共同用于下一整体设计。不得把endpoint结果用于
+选checkpoint或改loss，除非它原封不动通过预注册的全局、family、recipe-direction
+和逐task四重门；不得因AP失败而跳过cycle-normalized randomized-group4的受控
+训练因果格。下一结构authority已经封存在
+[`docs/action_forecast_writer_contextual_value_dual_read_design.md`](docs/action_forecast_writer_contextual_value_dual_read_design.md)：
+同一causal contextual Program直接承担K/V，保留mean-backed Core和独立dual reads；
+当前main在实现前仍只有AP一条可执行路径。
 
 同曝光UCP raw macro150与SERIAL step900内部对照确认：SERIAL把删除A/D后的
 BA/action变化从`.0653/.01269`提高到`.4184/.12999`，所以update granularity

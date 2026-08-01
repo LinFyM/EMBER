@@ -1,10 +1,12 @@
 # EMBER Current Execution Brief
 
-## 2026-08-01 AP-ADR current override
+## 2026-08-01 AP-ADR result and root-cause override
 
-当前canonical AS-Writer和唯一formal训练由
+当前main唯一可执行Writer仍由
 [`action_forecast_writer_amplitude_preserving_dual_read_design.md`](action_forecast_writer_amplitude_preserving_dual_read_design.md)
-负责。精确参数`10,241,024`；mean-backed permutation-invariant Core提供稳定语义
+保存，但其formal结果已经封存为负，不再训练或resume。下一架构authority为
+[`action_forecast_writer_contextual_value_dual_read_design.md`](action_forecast_writer_contextual_value_dual_read_design.md)，
+尚未实现。AP精确参数`10,241,024`；mean-backed permutation-invariant Core提供稳定语义
 carrier，outgoing `[A_f,G_(f+1),G_(f+1)-G_f]`保留raw Program amplitude，38个
 target-only Core reads与38×16 target/rank Program reads独立归一化后直接concat
 生成coherent A/B。没有terminal RMSNorm/AdaLN/gate、global mixer、谱约束或第二
@@ -22,9 +24,27 @@ frozen /data/ymdai/.codex/worktrees/EMBER-ap-adr-formal-7dffb6f-20260801
 ```
 
 run summary为200 steps/200 cycles、96,000 queries、4,800 one-video conditions、
-wall `3898.217s`，信息墙读取0。macro50/100/150/200 paired correct400已经分别在
-GPU4/5/6/7启动，tmux `ember-ap-adr-correct400-7dffb6f`；只有四点absolute、
-breadth、趋势和内部主路证据达到一小时门才resume到400。
+wall `3898.217s`，信息墙读取0。macro50/100/150/200 paired correct400为
+`91/81/94/91`，breadth`6/6/5/7`；winner macro150逐task为
+`[18,1,0,37,29,9,0,0]`。四点持续大幅gained/lost且best低于UCP raw 117、
+SERIAL 121、v6-fast同期约133，因此不resume、不做五臂。
+
+macro150 refs1内部分析先暴露并修复了一个仅影响交错分析器的工程污染：上游PI05
+recursive sampler会把language/expert attention config永久设为`eager`，导致第一次
+Writer capture使用SDPA、动作probe后的capture使用eager。训练从不调用sampler，
+正式evaluator又先完成全部Writer cache再rollout，故既有训练/correct400不受影响。
+`5d93af3`把backend生命周期封装并加入回归测试；修复后8个task逐层、BA和action
+严格零误差重放，checkpoint均未变化。
+
+有效analysis/summary SHA为`d42fc4eb...bc2b`/`f2c572c5...e682`。same-task
+`program_raw -> block2 -> program_read -> BA -> action`变化为
+`.919 -> 1.105 -> .0321 -> .0301 -> .0167`；shuffled/reversed的Program上游仍变
+`.091/.071`，到BA只剩`.00269/.00390`。只反转contextual temporal keys的BA/action
+变化为`.000521/.00194`。A/E/D反事实在8/8 tasks一致：Effect-only距full BA仅
+`.00821`，Action-only/Change-only距full约`.276/.283`，固定full key后相同。
+Program whole-block有训练位移，但它只控制近均匀寻址；raw Effect DC才是实际value。
+因此当前AP key-only/raw-value接口被直接否定，Core carrier、separate readers和
+post-v5其它recipe混杂组件不能随整版aggregate一并判死。
 
 新的同曝光证据把架构和recipe责任进一步拆开：UCP raw macro150→SERIAL step900
 将x-only相对full的BA/action变化从`.0653/.01269`提高到`.4184/.12999`，但四个
@@ -32,6 +52,16 @@ checkpoint correct差值为`+7/-17/+21/-3`且漂移继续。故update mechanics�
 控制视频创新写出，却不是单独的性能解；后续必须联合分析scheduler、Adam/clip
 时钟、long-first optimizer curriculum和topology，不得把v7/v8/v10/Loom等整版
 思想按fast/full24 aggregate一棒子打死。
+
+当前紧邻动作是完成预注册endpoint10的18-checkpoint no-gradient关联审计，再以
+AP职责失败和UCP raw/SERIAL动态写出差异共同决定下一整体架构及normalized
+randomized-group4受控训练格。endpoint未通过原封不动的四重门前，不进入训练、
+不选checkpoint、不修改loss。
+
+历史portable cache已从clean frozen commits完成：v5.2-old 64、v6-fast 512、
+v6-old 64，共640套public LoRA；三份run contract的信息墙读数全部为0，进程均自然
+退出。v5.2-new正式候选绑定既有paired correct400的macro150/200/350/400；文档中
+此前的50/100/150/200是任何endpoint数值生成前修正的文字错误，不改变18候选总数。
 
 ## 2026-08-01 UCP historical override
 

@@ -90,16 +90,27 @@ runner、split 或 GPU 权限。
   全部通过；step1七个payload逐项不变，seal `7dffb6f`已push。
 - [x] clean frozen `7dffb6f`的AP-ADR formal fresh macro0→200自然完成：200 cycles、
   96,000 queries、4,800 one-video conditions、wall `3898.217s`，信息墙读取0。
-- [ ] macro50/100/150/200 paired correct400已分别在GPU4/5/6/7启动；核验四个
-  400-row panel、逐task/breadth/gained-lost后按一小时门裁决。
+- [x] macro50/100/150/200 paired correct400完成，为`91/81/94/91`，breadth
+  `6/6/5/7`；winner macro150仅94且四点持续能力轮换，一小时门失败，不resume、
+  不做五臂。
+- [x] 修复PI05 action sampler永久切换attention backend造成的内部分析重放污染；
+  `5d93af3`后8-task refs1逐层/BA/action严格零误差重放。AP根因定位为contextual
+  Program只作高熵K、raw Effect DC主导V：Effect-only距full BA仅`.82%`，反转
+  temporal keys仅改变BA `.052%`。
+- [x] 封存下一整体CV-ADR设计：保留mean-backed Core与separate dual reads，删除
+  Program key/raw-value二轨，让同一causal contextual Program直接作为K/V；无新
+  gate/scale/loss，预期参数不变，fresh schema。实现前先完成UCP normalized
+  randomized-group4训练因果格。
 - [x] endpoint10实现已合入`544c0ef`/`2055a82`：exact ten-step sampler无
   autocast/ACTION输入，sealed512 pairing、finite和historical provenance均
   fail-close；CPU全仓`222 passed`。
 - [x] 在生成任何endpoint数值前预注册executed-first5主指标、18-candidate
   global/within-family/per-task关联门及两个matched-recipe方向；secondary不能
   覆盖主门。
-- [ ] 生成历史portable-v2 LoRA cache，完成真实CUDA parity与18-candidate四rank
-  formal endpoint诊断；在强关联门通过前只作no-gradient held monitor，不进入训练。
+- [x] 从三个clean frozen历史extension commits生成并核验portable-v2 LoRA cache：
+  v5.2-old 64、v6-fast 512、v6-old 64，信息墙全0；所有tmux自然退出。
+- [ ] 完成真实CUDA profile/parity与18-candidate四rank formal endpoint诊断；在强
+  关联门通过前只作no-gradient held monitor，不进入训练。
 - [ ] 后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才开第二
   小时和行为五臂。
 - [ ] 持续定位task漂移、视频学习和closed-loop off-manifold根因，禁止补丁式

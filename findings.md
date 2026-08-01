@@ -3,8 +3,47 @@
 阅读规则：本文是按日期追加的证据账本。历史段落里的“当前”“下一步”和GPU
 权限只描述其日期当时的状态，不覆盖后续owner决定。活动状态以
 `docs/active_session_handoff.md`、
-`docs/action_forecast_writer_amplitude_preserving_dual_read_design.md`和本文顶部最新段落为准；
+`docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
+
+## 2026-08-01 AP-ADR门失败与key-only/raw-value根因
+
+- AP-ADR fresh macro50/100/150/200 paired correct400为`91/81/94/91`，breadth
+  `6/6/5/7`；winner macro150逐task`[18,1,0,37,29,9,0,0]`，top2占
+  `66/94=70.2%`。相邻checkpoint gained/lost为`33/43`、`36/23`、`25/28`，
+  correct没有右端上升且task能力持续轮换；不resume、不做五臂。held functional
+  loss`.13275/.13579/.13096/.13204`和BA norm`55.81/68.85/70.51/65.20`均不追踪
+  closed-loop，进一步反驳用低action loss或单一LoRA幅度选点。
+- 首轮内部分析暴露约5% `Q_text`重放漂移。最小复现证明Writer重复编码本身bitwise
+  稳定，而调用PI05 `sample_actions`即使使用identity LoRA也会永久把language/expert
+  `_attn_implementation`从`sdpa`改成`eager`；没有named buffer变化。AS训练和正式
+  evaluator分别不调用sampler、或先完成全部Writer cache再rollout，因此训练和正式
+  correct400不受污染，只有交错capture/action的内部analyzer受影响。`5d93af3`以
+  scoped lifecycle保存/恢复backend，定向`22 passed`，新root 8/8 tasks逐层、BA、
+  action严格零误差重放。
+- 有效refs1 root为
+  `/data/ymdai/outputs/ember/pi05_as_writer_ap_adr_rawfull24_macro0150_internal_refs1_v10_5d93af3_20260801`；
+  analysis/summary SHA为`d42fc4eb...bc2b`/`f2c572c5...e682`。same-task的
+  `program_raw -> block2 -> program_read -> BA -> fixed action` relative L2为
+  `.9188 -> 1.1051 -> .03210 -> .03005 -> .01668`；wrong为上游`1.3069`到
+  `.1518/.1454/.02926`，而shuffled/reversed从block2`.09066/.07112`被压到BA
+  `.002689/.003903`。顺序动态最早死在compiler read，而非video frontend或axial
+  Program。
+- 直接反转valid contextual temporal keys，保持Core、raw A/E/D、mask和position
+  不变，BA/action只变`.000521/.001944`，8 tasks的BA范围仅
+  `.000464-.000566`。ProgramReader entropy约`.904`，top mass约`.0106`；contextual
+  stack对输出几乎只有微弱寻址权。
+- A/E/D是“只保留所列value”的反事实。Effect-only在8/8 tasks重建full BA，平均
+  relative L2`.008208`；Action-only/Change-only则为`.27610/.28320`，固定full
+  contextual key后仍为`.27889/.28275`。Effect缩放0.5/2使BA变`.14099/.28910`，
+  Action缩放最多`.00802`、Change最多`.00105`。因此raw Effect DC垄断V是直接
+  证据，不是从aggregate反推；它重演的是v8已局部否定的Effect dominance，但发生
+  在更晚的ProgramReader value接口，不等于否定Action evidence、Core或双reader。
+- Core-only相对full BA/action差`.283/.228`，Program不是形式零分支；Program-only
+  差`.961/.494`，mean-backed Core仍是共同semantic carrier。删除Core centered
+  residual仅改变BA`.0128`，删除Core mean改变`.834`，与Recenter的semantic-basis
+  starvation证据一致。下一架构应保留Core mean和separate reads，同时让causal
+  contextual Program作为真实value content，而不是再加gate/scale/residual。
 
 ## 2026-08-01 同曝光recipe根因与AP-ADR启动
 

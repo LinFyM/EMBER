@@ -10,7 +10,52 @@
 `AGENTS.md`与`docs/execution_brief.md`。任何接手者都必须先只读复核现场，
 不能按历史快照重复启动进程。
 
-## 0-current. UCP formal scheduler合同纠偏
+## 0-current. UCP true-fast400完成，normalized-group4正式运行中
+
+clean frozen `cfc2ad1`的task/query-keyed UCP raw已经按真实
+`warmup17 + decay400`从fresh identity完成前200/400 logical cycles；不得重复启动：
+
+```text
+commit  cfc2ad14612f7c28bb5bdc48c307bd525077d3c0
+frozen  /data/ymdai/.codex/worktrees/EMBER-ucp-taskquery-fast400-cfc2ad1-20260801
+root    /data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_truefast400_formal_dev_r4_b20_seed7_cfc2ad1_20260801
+tmux    已自然退出
+```
+
+训练完成200 cycles、96,000 queries、4,800 one-video conditions，wall
+`3884.255s`，全部finite且信息墙读取0。macro50/100/150/200 paired correct400为
+`89/71/82/117`；winner macro200 breadth7、仅4 tasks达到至少5次成功、top2占
+`62.39%`，未达到125强五臂门，因此不做五臂。candidate analysis SHA为
+`7b7d9822780a741b43b8567609dd89bd31489fd2e2c837c4d27baae50e885dd3`。
+
+与输入完全一致的autoscaled-decay200严格配对后，相同步scheduler effect为
+`+8/-1/-25/+39`；autoscaled macro150=107与true macro200=117仍只有81个共同
+success、26/36个各自独有，Jaccard `.5664`。scheduler主要延后并重排峰值，没有
+提高UCP single-checkpoint ceiling或解决漂移。跨日程Writer delta norm从step25
+`1.571`增到step200 `4.370`，Adam一阶moment cosine从`.597`降到`.354`，true-fast
+末段相邻参数位移cosine降到`.121/.077/.031`，证明这不是同一路径上的简单步长。
+paired interaction analysis SHA为
+`81eca3ccb88a7c77f3af6f7a12a2d141e9e1580e30ae06c040a7644eaa6bab7e`。
+
+同一frozen authority的cycle-normalized randomized-group4现正fresh正式运行：
+
+```text
+config  configs/pi05_as_writer_unified_causal_program_cycle_normalized_group4_v1.json
+root    /data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_cycle_normalized_group4_truefast400_formal_dev_r4_b20_seed7_cfc2ad1_20260801
+log     /data/ymdai/logs/ember/pi05_as_writer_ucp_taskquery_cycle_normalized_group4_truefast400_formal_dev_r4_b20_seed7_cfc2ad1_20260801.log
+tmux    ember-ucp-tq-g4-tf400-cfc2ad1
+scale   0->1200 physical updates = 0->200 complete 24-task cycles
+```
+
+首cycle六phase与raw cycle0逐task使用相同teacher demo和sampled-frame count，恰好
+24 tasks、24 videos和480 queries；scheduler只在phase5后推进，step2起frontend、
+Program、compiler和factor均finite可达，0 OOM/clip。完成后固定评测physical
+step300/600/900/1200（cycle50/100/150/200）的同一paired correct400，再裁决
+raw×group4；不得按train/held loss提前选择。CV-ADR隔离分支最新rebase/verification
+commit为`3798994`，只有operator裁决后才集成、做105-frame B20 profile/resume和
+formal。后续全部由主进程执行，暂停subagent使用。
+
+## 0-prior. UCP formal scheduler合同纠偏
 
 新建的UCP task/query-keyed raw对照overlay在formal中误把“一小时停止点”同时写成
 `total_steps=200`。LeRobot cosine scheduler在训练总步数小于配置的

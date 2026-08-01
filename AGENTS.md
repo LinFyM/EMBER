@@ -56,6 +56,21 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 
 ## Current focused execution task
 
+2026-08-01 current live override：clean frozen `cfc2ad1`的task/query-keyed UCP
+true-fast400 raw已经fresh完成前200/400 cycles，macro50/100/150/200 paired
+correct400为`89/71/82/117`。winner macro200 breadth7、仅4 tasks达到5次成功，
+不达125强五臂门，故不做五臂；candidate与scheduler-interaction analysis SHA为
+`7b7d9822...dd3`和`81eca3cc...ab7e`。与autoscaled-decay200严格配对说明更慢
+scheduler延后并重排峰值，但没有提高UCP single-checkpoint ceiling或解决漂移。
+
+同一frozen `cfc2ad1`的cycle-normalized randomized-group4已fresh正式启动，root为
+`/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_cycle_normalized_group4_truefast400_formal_dev_r4_b20_seed7_cfc2ad1_20260801`，
+tmux为`ember-ucp-tq-g4-tf400-cfc2ad1`。首cycle与raw逐task teacher demo/frame
+count一致，24 tasks/24 videos/480 queries，scheduler只在cycle边界推进，全部主路径
+finite。完成后固定评测physical step300/600/900/1200并裁决raw×group4；不得按
+train/held loss预选。CV-ADR保持在隔离clean commit `3798994`，operator裁决后才
+集成/profile/resume/formal。后续推进暂停所有subagent使用。
+
 2026-08-01 launch-boundary override：scheduler修复commit `e1299db`已push；首个
 true-fast400 launch在创建output root或读取任何video/query前由formal runtime
 fail-closed，因为task-query/group4 overlays的`stage_stop_steps`仍是旧的一小时单点

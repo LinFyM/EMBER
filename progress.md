@@ -8,6 +8,38 @@ GPU范围和训练步长是当时快照；活动状态只取
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-01 UCP true-fast400裁决与normalized-group4正式运行
+
+- clean frozen `cfc2ad1`的task/query-keyed UCP raw已按真实
+  `warmup17 + decay400`从fresh identity完成前200/400 cycles：96,000 queries、
+  4,800 one-video conditions、wall `3884.255s`，所有训练量finite且信息墙读取0。
+  macro50/100/150/200 paired correct400为`89/71/82/117`；winner macro200
+  breadth7、仅4 tasks达到至少5次成功、top2占`62.39%`，未达到125强五臂门，
+  因此不做same/wrong/shuffled/reversed。
+- 同一输入的autoscaled-decay200与true-fast400在相同步的严格paired差为
+  `+8/-1/-25/+39`。最接近峰值的autoscaled macro150=107与true macro200=117
+  仍有26/36个各自独有成功状态，Jaccard仅`.5664`；慢日程主要把能力峰推迟并
+  重新分配task，没有提高single-checkpoint ceiling或解决漂移。
+- 参数与optimizer审计证明两条scheduler不是沿同一直线走不同距离：跨日程Writer
+  delta norm由step25的`1.571`增到step200的`4.370`，Adam一阶moment cosine由
+  `.597`降到`.354`；true-fast相邻25-cycle位移方向cosine末段降到
+  `.121/.077/.031`。full24 mean晚期只保留约`4.72%` task-gradient energy，
+  但raw candidate对task平均为负的比例很低，主要矛盾是近正交conditional
+  innovation没有稳定共同方向，而非CP式投影可修复的多数task直接受害。
+- candidate与scheduler交互analysis SHA分别为`7b7d9822...dd3`与
+  `81eca3cc...ab7e`。四条评测逐row state/video/env/policy RNG prefix严格匹配；
+  static evaluator contract SHA为`6e0b8b2d...be387`。
+- 预注册的cycle-normalized randomized-group4已经从同一clean frozen `cfc2ad1`
+  fresh正式启动。root为
+  `/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_cycle_normalized_group4_truefast400_formal_dev_r4_b20_seed7_cfc2ad1_20260801`，
+  tmux为`ember-ucp-tq-g4-tf400-cfc2ad1`。首个六phase cycle与raw cycle0逐task使用
+  完全相同的teacher demo和sampled-frame count，恰好24 tasks/24 videos/480
+  queries；scheduler只在cycle边界推进，step2起全部主模块梯度finite，0 OOM/clip。
+  训练完成后固定评测cycle50/100/150/200，不根据train/held loss提前选点。
+- CV-ADR保持隔离在clean branch/worktree，最新rebase/verification commit为
+  `3798994`；在group4裁决前不集成、不启动GPU。后续全部由主进程执行，暂停
+  subagent使用。
+
 ## 2026-08-01 UCP scheduler合同纠偏与CV-ADR实现冻结
 
 - scheduler-total修复`e1299db`已push。其首次true-fast400 launch在创建output root

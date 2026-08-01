@@ -1,6 +1,6 @@
 # Unified Causal Program Writer 设计
 
-**状态：2026-08-01 raw-full24与serial-4结果完成；新受控格发现formal scheduler自动缩放，纠偏中**
+**状态：2026-08-01 true-fast400 raw完成；cycle-normalized group4正式运行中**
 
 本文负责 Semantic Program Grid（SPG）一小时门失败后的下一条 canonical
 AS-Writer 路径。它不是把 v7、v8、v10、Loom 或后续版本整体判死后重新命名，
@@ -9,10 +9,14 @@ AS-Writer 路径。它不是把 v7、v8、v10、Loom 或后续版本整体判死
 当前UCP恢复为唯一可执行路径只服务于训练受控格，不代表撤销AP的局部根因或放弃
 CV-ADR。封存`b52cb54`已完成group4 B20/105-frame profile、formal-seed
 fresh0→1→resume1→3→7和raw fresh0→1→resume1→3；`85a82cb`把同一运行面逐blob
-恢复到canonical并退役AP/endpoint runner。随后新增的task/query-keyed raw/group4
-overlay中，formal训练总步数被错误写成停止点，触发scheduler自动缩放；本次raw只作
-decay200消融，group4尚未启动。纠正后的两份config必须从新clean frozen authority
-fresh训练，再用相同paired correct400裁决。
+恢复到canonical并退役AP/endpoint runner。task/query-keyed raw的
+configured-decay400/runtime-autoscaled200消融为`81/72/107/78`；修正formal total
+和stage边界后，clean `cfc2ad1` true-fast400 raw为`89/71/82/117`。scheduler让
+macro200提高39但没有抬高UCP ceiling、解决breadth或消除task轮换，且参数/Adam
+轨迹持续旋转，不能当作训练解。当前同一`cfc2ad1`的cycle-normalized randomized-
+group4已fresh正式启动；首cycle与raw逐task teacher video/frame count一致，完成后
+用cycle50/100/150/200同一paired correct400裁决。CV-ADR在隔离worktree等待该
+operator结果，不能让训练bundle替架构背锅，也不能用架构aggregate替recipe定罪。
 
 ## 1. 当前证据与结论边界
 

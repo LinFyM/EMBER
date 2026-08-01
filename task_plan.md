@@ -125,14 +125,20 @@ runner、split 或 GPU 权限。
 - [x] task-query raw `configured-decay400/autoscaled200`及50/100/150/200 paired
   correct400完成：`81/72/107/78`；best macro150后lost43/gained14，不续训、不做
   五臂，只封存为scheduler ablation（analysis SHA `bfd580d4...0993`）。
-- [ ] 提交并push formal scheduler fail-close与corrected total=400/2400；从新
-  frozen authority fresh顺序完成真正fast400 raw/group4及同一paired correct400，
-  再做预注册recipe×architecture裁决。
-  - `e1299db`已完成total修复；首次launch在data前暴露旧stage stops未覆盖total。
-    stage合同修复与直接runtime回归完成，须再commit/push后换全新root启动。
-- [x] 在独立worktree实现CV-ADR canonical路径并提交`b2bc70c`；参数
-  `10,241,024`、focused `159 passed`、结构门无hard violation，formal configs
-  在真实B20/profile/resume前保持pending。
+- [x] 提交并push formal scheduler fail-close与corrected total=400/2400；从clean
+  `cfc2ad1` fresh完成真正fast400 raw及50/100/150/200 paired correct400：
+  `89/71/82/117`。winner macro200只有117、breadth7且仅4 tasks达到5次成功，
+  不做五臂；candidate/scheduler-interaction SHA分别为
+  `7b7d9822...dd3`/`81eca3cc...ab7e`。
+- [ ] 同一frozen `cfc2ad1`的cycle-normalized randomized-group4 formal正在
+  fresh运行0→1200 updates（200 cycles）；首cycle与raw的24个teacher-video
+  assignments逐项相同，24 tasks/24 videos/480 queries、scheduler边界、B20和
+  全主路径finite合同均已通过。完成后评测cycle50/100/150/200的paired correct400，
+  再做预注册raw×group4裁决。
+- [x] 在独立worktree实现CV-ADR canonical路径；参数`10,241,024`、完整CPU回归
+  `225 passed`、结构门无hard violation。分支已rebase到当前authority并以
+  `3798994`记录复验；formal configs在group4裁决及真实B20/profile/resume前保持
+  pending，不提前集成或启动GPU。
 - [ ] 将CV-ADR集成到最终control authority，完成105-frame B20/profile/resume；
   根据正确UCP控制选择raw或group4并执行一小时先验门。
 - [ ] 后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才开第二

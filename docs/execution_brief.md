@@ -1,5 +1,34 @@
 # EMBER Current Execution Brief
 
+## 2026-08-01 UCP true-fast400 result and group4 live authority
+
+clean frozen `cfc2ad1`的task/query-keyed raw-full24已按真实
+`warmup17 + decay400`完成fresh前200/400 cycles；96,000 queries、4,800 videos、
+wall `3884.255s`，全部finite且信息墙读取0。macro50/100/150/200 paired
+correct400为`89/71/82/117`。macro200是single winner，但breadth7、仅4 tasks达到
+5次成功且top2占`62.39%`，未达到125强五臂门，不做same/wrong/shuffled/reversed。
+candidate analysis SHA为`7b7d9822...dd3`。
+
+与autoscaled-decay200的同输入严格配对显示，相同步差为`+8/-1/-25/+39`；
+autoscaled macro150=107与true macro200=117的success集合Jaccard也只有`.5664`。
+更慢scheduler把峰值延后并重排task，没有提高UCP ceiling或解决漂移。参数、Adam
+moment与逐段位移方向持续分叉；paired scheduler analysis SHA为`81eca3cc...ab7e`。
+这组证据禁止把scheduler解释为统一“更稳”或“更好”，也禁止用held functional
+loss代替closed-loop裁决。
+
+预注册cycle-normalized randomized-group4已从同一clean frozen `cfc2ad1` fresh
+正式启动。root为
+`/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_cycle_normalized_group4_truefast400_formal_dev_r4_b20_seed7_cfc2ad1_20260801`，
+tmux为`ember-ucp-tq-g4-tf400-cfc2ad1`。合同是4 ranks、仅物理GPU4--7、B20、
+每6个phase恰好覆盖24 tasks/24 videos/480 queries、每phase logical LR/6、每cycle
+一次scheduler；physical step300/600/900/1200对应cycle50/100/150/200候选。
+首cycle已确认与raw cycle0逐task teacher demo/frame count一致，全部主路径finite、
+0 OOM/clip。完成后用同一paired correct400裁决operator。
+
+CV-ADR保持隔离在最新clean commit `3798994`，尚未集成或启动GPU。若group4没有
+共同提高absolute、breadth或视频innovation传递，则CV先用raw；若group4形成强的
+多task共同收益，才把该operator迁入CV。后续暂停所有subagent使用。
+
 ## 2026-08-01 UCP formal scheduler contract override
 
 frozen `1a09e71`上的task-query raw control已经fresh自然完成macro200，但live LR

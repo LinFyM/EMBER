@@ -6,6 +6,53 @@
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-01 UCP true-fast400 scheduler裁决与normalized-group4启动
+
+- clean frozen `cfc2ad1`的task/query-keyed UCP raw从fresh identity自然完成前
+  200/400 logical cycles：96,000 queries、4,800 one-video conditions、wall
+  `3884.255s`，200行全部finite，validation/test action和test video读取0。
+  runtime保持真实`warmup17 + decay400`，候选50/100/150/200的LR精确为
+  `.000289394/.000258333/.000211540/.000156139`。
+- 四个严格paired correct400为`89/71/82/117`；single winner macro200逐task为
+  Long `9/3`、Goal `1/39`、Object `34/29`、Spatial `0/2`。breadth nonzero为7，
+  但只有4 tasks达到至少5次成功，top2为`73/117=62.39%`。150→200虽共同得到
+  44、只丢9且Jaccard `.5794`，absolute仍只回到旧UCP raw的117，不达到125强
+  五臂门；不做same/wrong/shuffled/reversed。
+- 与输入完全一致的autoscaled-decay200消融做同一步严格配对后，scheduler effect
+  为`+8/-1/-25/+39`，不是统一性能提升。autoscaled macro150的107与true-fast
+  macro200的117最接近，但成功集合仍为81 both、26 autoscaled-only、36 true-only，
+  Jaccard仅`.5664`；更慢日程主要把能力峰推迟并重新分配task，而没有提高UCP
+  single-checkpoint ceiling或解决漂移。
+- 两条run的前200 cycle逐步task/video/query identity和8个checkpoint累计identity
+  完全相同；四个evaluation panel的state、video ordinal、env seed和policy RNG
+  prefix也逐row相同。cross-run evaluator static contract SHA为
+  `6e0b8b2d...be387`。原candidate的intra-run evaluator hash保留训练run/config
+  provenance，本来就应不同；scheduler analyzer先fail-close后改为只剔除明确的
+  treatment provenance，没有放宽实际row pairing。
+- true-fast不是简单把同一方向走远。autoscaled→true的Writer delta norm从step25
+  `1.571`增到step200 `4.370`，Adam一阶moment cosine从`.597`降到`.354`；同输入
+  25-step更新方向cosine从`.758`降到`.249`。true-fast最后四段参数位移仍为
+  `1.576/1.380/1.266/1.136`，相邻段cosine降到`.121/.077/.031`，即持续沿强烈
+  旋转路径移动；autoscaled末段则已缩到`.136`。
+- 更慢LR确实保留了部分条件梯度稳定性：最后50 cycle同task相邻visit的四块
+  CountSketch cosine由autoscaled `.009-.017`提高到true-fast `.083-.114`；但
+  full24 mean的平均task-gradient energy retention仍仅`4.72%`，接近正交24方向的
+  `1/24=4.17%`。pairwise negative很多，而raw candidate对task为负的均值仅`.02`，
+  所以主要问题仍是共同方向很小、conditional innovation近正交，不是CP式均值
+  直接伤害多数task。held loss在两条轨迹几乎相同且不追踪correct。
+- true-fast candidate analysis为
+  `/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_truefast400_candidate_curve_seed7_cfc2ad1_20260801/analysis.json`
+  （SHA `7b7d9822780a741b43b8567609dd89bd31489fd2e2c837c4d27baae50e885dd3`）；
+  paired scheduler interaction为
+  `/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_runtime200_vs_truefast400_scheduler_interaction_seed7_cfc2ad1_20260801/analysis.json`
+  （SHA `81eca3ccb88a7c77f3af6f7a12a2d141e9e1580e30ae06c040a7644eaa6bab7e`）。
+- 预注册下一格cycle-normalized randomized-group4现已从同一clean frozen
+  `cfc2ad1` fresh启动。首个六phase cycle恰好覆盖24 tasks、24 videos和480 queries；
+  按task排序后的teacher demo与sampled-frame count和raw cycle0逐项完全相同。
+  scheduler只在phase5后推进，每phase LR为logical LR/6，step2起frontend、Program、
+  compiler、factor均finite可达；0 clip/OOM，峰值reserved约`83.63GB`。正式结果
+  完成前不据train loss预判operator优劣。
+
 ## 2026-08-01 UCP formal scheduler自动缩放合同偏差
 
 - `e1299db`已修正formal total并push，但第一次true-fast400 launch在output root

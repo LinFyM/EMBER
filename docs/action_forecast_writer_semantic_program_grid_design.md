@@ -1,9 +1,10 @@
 # EMBER Semantic Program Grid Writer（SPG）
 
-状态：2026-08-01 已完成独立复核、canonical实现和最长105-frame B20四卡三宏步
-profile；fresh/exact-resume seal与正式训练尚未执行。当前精确参数为
-`10,633,216`。profile的72个单视频条件、1,440条action queries全finite，
-macro2起全部主模块梯度可达；这些仍只证明实现/容量合同，不构成性能证据。
+状态：2026-08-01 已完成独立复核、canonical实现、最长105-frame B20四卡三宏步
+profile及formal-seed fresh/exact-resume seal；正式训练尚未执行。当前精确参数
+为`10,633,216`。两次三宏步验证的72个单视频条件、1,440条action queries均
+finite，macro2起全部主模块梯度可达；这些仍只证明实现/容量/恢复合同，不构成
+性能证据。
 
 本文取代已撤回的Coherent-Procedure/B-only residual提案。SPG不是v5.2或v6的
 局部补丁，也不等待v5.2 task-complete结果才决定拓扑。它基于v1至
@@ -333,6 +334,12 @@ frontend/Core/Program/compiler/factor mean gradient norms分别为
 `.007706/.003975/.002049/.003736/.129495`。因此CP确实看见task冲突，且SPG
 主路径在identity输出层离开零点后全部可达；是否改善closed-loop漂移仍必须由
 正式checkpoint曲线证伪。
+
+formal seed `20260722`另在clean `f6d4876`上完成fresh0→1，再从step1原位
+exact-resume到3。step1六个状态文件和manifest全部bitwise不变，metrics、LR、
+task/video/query/RNG cursor连续；三步loss为`.152172/.147053/.154108`，每步
+13次Gram chunk gather与13次CUDA completion相等。该smoke checkpoint不进入
+正式训练。
 
 ### 9.1 实现owner与生命周期
 

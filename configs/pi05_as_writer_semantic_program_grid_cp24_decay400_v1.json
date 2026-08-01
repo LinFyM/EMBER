@@ -259,7 +259,67 @@
       "profile_metrics_sha256": "b70d7b2920139235c11a1e3028e18cda29416745f7235d8fc84eb3c87eee6c78",
       "profile_run_summary_sha256": "74f3d35eb7a1eae5c901bdac4ea2ca539a51bd38413b1d01d46a74569b34d672"
     },
-    "exact_resume_smoke": null,
+    "exact_resume_smoke": {
+      "status": "pass_fresh_step1_then_exact_resume_to_step3",
+      "commit": "f6d487635abdaf3bd5039df667e20f8730bb2110",
+      "root": "/data/ymdai/outputs/ember/pi05_as_writer_spg_cp24_resume_smoke_b20_formalseed_f6d4876_20260801",
+      "formal_teacher_video_seed": 20260722,
+      "fresh_stop_step": 1,
+      "resumed_stop_step": 3,
+      "completed_optimizer_steps": 3,
+      "metrics_steps": [
+        1,
+        2,
+        3
+      ],
+      "mean_functional_action_losses": [
+        0.152172377333045,
+        0.14705341029912233,
+        0.1541083917642633
+      ],
+      "gradient_norms_before_clip": [
+        0.0313427671790123,
+        0.0720977634191513,
+        0.19285909831523895
+      ],
+      "step_seconds_max": [
+        19.46615928504616,
+        19.83052440127358,
+        19.245251124724746
+      ],
+      "applied_learning_rates": [
+        0.0003,
+        0.00022749999999999997,
+        0.00008250000000000003
+      ],
+      "cumulative_action_queries": [
+        480,
+        960,
+        1440
+      ],
+      "cumulative_video_conditions": [
+        24,
+        48,
+        72
+      ],
+      "gradient_gram_chunk_allgathers_each_step": 13,
+      "gradient_gram_chunk_cuda_synchronizations_each_step": 13,
+      "all_steps_finite": true,
+      "all_main_blocks_gradient_reachable_after_identity_step": true,
+      "validation_action_reads": 0,
+      "test_action_reads": 0,
+      "test_video_value_reads": 0,
+      "step1_checkpoint_files_unchanged_after_resume": true,
+      "run_contract_payload_sha256": "d9d1b16dec2ada727a79ec565a819adae2a0903a72a1c80d95a3d01c649e42cb",
+      "run_contract_file_sha256": "f07ac8ebf6132bced4946d93561b57b588d6fc664ed1918eaf8f3dd823aeedbf",
+      "metrics_sha256": "d04b2dfb40d5183a34aa742220acb3f4a94ff9428684976e8c23b55e772affea",
+      "run_summary_sha256": "c27e11c07194e6b72d32baa025f4e71ea525780f3252361c47559f0d022a2ffe",
+      "step1_checkpoint_manifest_sha256": "3a0fe8106ab6fb88dfe310079aef4f7df197dec4f79c578c9d27cf5e6a715b07",
+      "step2_checkpoint_manifest_sha256": "60da57383f8626363ef3a8a9be4d1f6c1950e573d8d014b37655eb8e3e6b19bc",
+      "step3_checkpoint_manifest_sha256": "e2d8369c3db7927d3b0a360eefb845643a250cecbeb87bc3f5affbc5edd0617d",
+      "fresh_log_sha256": "caef425ccbda6cf6f4f4a2aef56cec7ae7cbb0328358c3688611efb433e0a142",
+      "resume_log_sha256": "8de71d5cae208bb4d5d52250769c238d29308d4ef4477e0801ce443b07fb4072"
+    },
     "gradient_reachability": {
       "status": "confirmed_after_identity_output_step",
       "first_nonzero_main_path_macro": 2,
@@ -286,7 +346,7 @@
     "contrast_loss_allowed": false
   },
   "formal_run": {
-    "status": "pending_exact_resume_smoke_after_b20_profile_seal",
+    "status": "sealed_ready_for_fresh_macro0_to200",
     "expected_world_size": 4,
     "total_steps": 400,
     "per_rank_batch_size": 20,

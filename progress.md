@@ -28,8 +28,11 @@ GPU范围和训练步长是当时快照；活动状态只取
   三macro连续通过，step wall `20.536/18.578/18.546s`，峰值reserved
   `83,529,556,160` bytes。
 - 72个单视频条件、1,440 queries全finite；每步24 tasks唯一且long-first，
-  macro2起所有五个主块梯度可达。下一步是同一干净commit上的formal-seed
-  fresh0→1→exact-resume1→3，不从profile warm-start。
+  macro2起所有五个主块梯度可达。
+- clean `f6d4876`上的formal-seed fresh0→1→exact-resume1→3已完成；step1六个
+  状态文件与manifest在resume后哈希不变，metrics三行连续，72 videos/1,440
+  queries、LR、task/video/RNG cursor和信息墙均核验。下一步提交seal并从最终
+  frozen commit fresh启动macro0→200，不从profile/smoke warm-start。
 
 ## 2026-07-31 v5.2 task-complete macro400与候选启动
 

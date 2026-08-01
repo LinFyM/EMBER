@@ -103,9 +103,14 @@ def test_spg_cp24_config_seals_architecture_and_information_wall() -> None:
     assert config["optimization"]["scheduler"]["decay_steps"] == 400
     assert config["data"]["teacher_video_seed"] == 20260722
     assert config["profile_evidence"]["formal_teacher_video_seed_after_profile_seal"] == 20260722
-    assert config["formal_run"]["status"] == (
-        "pending_exact_resume_smoke_after_b20_profile_seal"
-    )
+    assert config["formal_run"]["status"] == "sealed_ready_for_fresh_macro0_to200"
+    resume = config["profile_evidence"]["exact_resume_smoke"]
+    assert resume["status"] == "pass_fresh_step1_then_exact_resume_to_step3"
+    assert resume["formal_teacher_video_seed"] == 20260722
+    assert resume["completed_optimizer_steps"] == 3
+    assert resume["step1_checkpoint_files_unchanged_after_resume"] is True
+    assert resume["gradient_gram_chunk_allgathers_each_step"] == 13
+    assert resume["gradient_gram_chunk_cuda_synchronizations_each_step"] == 13
     assert config["formal_run"]["total_steps"] == 400
     assert config["formal_run"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["selected_stop_step"] == 200

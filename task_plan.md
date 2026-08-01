@@ -26,14 +26,16 @@ runner、split 或 GPU 权限。
 - [x] SPG最长105-frame B20四卡三macro profile通过；定位并修复共卡NCCL
   chunk只入队导致的CP-24 starvation，修复后step为
   `20.536/18.578/18.546s`且全部主模块梯度可达。
-- [ ] 在同一干净commit和formal seed完成fresh0→1→exact-resume1→3，再seal、
-  fast-forward main、push并从frozen worktree启动fresh macro0→200一小时先验门。
+- [x] 同一clean `f6d4876`和formal seed完成fresh0→1→exact-resume1→3；step1
+  文件bitwise不变，三步metrics/LR/cursor连续，CP chunk gather/sync严格对应。
+- [ ] 提交resume seal、fast-forward main、push，并从最终frozen worktree fresh
+  启动macro0→200一小时先验门。
 - [ ] SPG及后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才
   开第二小时和行为五臂。
 - [ ] 持续定位task漂移、视频学习和closed-loop off-manifold根因，禁止补丁式
   gate/scale/bypass；150不是自动完成线。
 
-当前SPG resume seal与随后正式训练的实时状态只认
+当前SPG正式训练的实时状态只认
 `docs/active_session_handoff.md`。
 
 ## 长期完成定义

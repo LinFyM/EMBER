@@ -17,8 +17,11 @@ SPG canonical实现参数`10,633,216`；最长105-frame B20四卡三宏步profil
 profile暴露的共卡NCCL chunk入队stall已通过逐chunk CUDA completion boundary
 修复，且同一最长profile重跑稳定；该修复不改变CP数学。
 
-当前紧邻动作是在同一clean commit和formal seed上完成fresh0→1→exact-resume1→3，
-seal后push origin/main，再从detached frozen worktree fresh训练SPG macro0→200。
+formal seed `20260722`的fresh0→1→exact-resume1→3已在clean `f6d4876`通过；
+step1文件resume后逐项bitwise不变，三步loss/gradient/LR/cursor连续，每步13次
+Gram all-gather与13次CUDA completion相等，信息墙读取为0。当前紧邻动作是提交
+这份seal并push origin/main，再从最终detached frozen worktree fresh训练SPG
+macro0→200。
 以后每版新整体架构先一小时，
 达到同期有效旧架构水平或显示明确价值才续第二小时和行为五臂，否则只做充分
 内部分析后从根因重构。150只是里程碑，不是focused自动终点。以下在`## 1`

@@ -74,8 +74,11 @@ factor全部有非零有限梯度。CP-24实测negative pair fraction约`.35–.
 先验故事。首次profile同时暴露共卡时NCCL bounded all-gather只入队、不能保证
 每chunk完成的stall；phase trace定位后，canonical实现为每个CUDA Gram chunk
 增加显式stream completion boundary，原始最长profile随后连续三macro稳定通过。
-下一实际动作是在同一干净commit和formal seed上完成fresh0→1→exact-resume1→3，
-再seal并fresh启动macro0→200一小时门。
+formal seed `20260722`的fresh0→1→exact-resume1→3也已通过：step1全部checkpoint
+文件在resume后bitwise不变，三步loss/gradient/LR/cursor连续，13次chunk gather与
+13次CUDA completion逐步相等，validation/test action与video读取为0。下一实际
+动作是提交这份resume seal、fast-forward main并push origin/main，然后从该clean
+commit的detached frozen worktree fresh启动macro0→200一小时门。
 
 关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
 single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe

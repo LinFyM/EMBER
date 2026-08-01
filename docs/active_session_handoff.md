@@ -43,11 +43,27 @@ run summary   74f3d35eb7a1eae5c901bdac4ea2ca539a51bd38413b1d01d46a74569b34d672
 首chunk。canonical修复在每个CUDA Gram chunk后形成显式stream completion
 boundary，并记录all-gather/sync计数；它不改变Gram、PCGrad或optimizer数学。
 
-紧邻且唯一应启动的验证是：把当前代码、配置和文档提交为同一干净commit，在
-formal teacher seed `20260722`上fresh0→1，再从step1 exact-resume到3；fresh与
-resume之间不得编辑worktree。通过后把resume evidence写入config并再次提交，
-fast-forward main、push origin/main，再从该clean commit的detached frozen
-worktree fresh启动SPG macro0→200。不得从profile/smoke warm-start。
+formal teacher seed `20260722`的fresh0→1→exact-resume1→3已经在clean
+`f6d487635abdaf3bd5039df667e20f8730bb2110`上通过。三步loss为
+`.152172/.147053/.154108`，gradient norm为`.031343/.072098/.192859`，wall为
+`19.466/19.831/19.245s`；每步13次Gram chunk all-gather与13次CUDA completion
+严格对应。step1的manifest、Writer、trainer和四rank state在resume后哈希逐项
+不变，metrics连续3行、invocations明确为fresh与resume两段，validation/test
+action和video读取均为0。root与主要seal为：
+
+```text
+/data/ymdai/outputs/ember/
+pi05_as_writer_spg_cp24_resume_smoke_b20_formalseed_f6d4876_20260801
+run contract file  f07ac8ebf6132bced4946d93561b57b588d6fc664ed1918eaf8f3dd823aeedbf
+metrics            d04b2dfb40d5183a34aa742220acb3f4a94ff9428684976e8c23b55e772affea
+run summary        c27e11c07194e6b72d32baa025f4e71ea525780f3252361c47559f0d022a2ffe
+step1 manifest     3a0fe8106ab6fb88dfe310079aef4f7df197dec4f79c578c9d27cf5e6a715b07
+step3 manifest     e2d8369c3db7927d3b0a360eefb845643a250cecbeb87bc3f5affbc5edd0617d
+```
+
+紧邻动作是提交resume seal、fast-forward main、push origin/main，再从最终clean
+commit的detached frozen worktree fresh启动SPG macro0→200。不得从profile或
+smoke warm-start。
 
 GPU只可查询和使用物理4–7；0–3不得查询或进入visible set。4–7可按owner授权
 共卡，但不得杀、暂停、重置或干扰其他进程。

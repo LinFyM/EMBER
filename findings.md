@@ -42,6 +42,10 @@
   `.8410/.9426/.9689`；macro2起frontend/Core/Program/compiler/factor梯度均
   finite非零。真实task负冲突存在，但只有正式checkpoint漂移曲线才能判断CP-24
   是否解决科学问题；工程profile不能冒充closed-loop收益。
+- clean `f6d4876`上的formal-seed fresh0→1→exact-resume1→3通过；step1全部文件
+  哈希不变，三步loss`.152172/.147053/.154108`、gradient norm
+  `.031343/.072098/.192859`、chunk gather/sync均`13/13`。恢复合同完整，但同样
+  不构成行为证据。
 
 ## 2026-07-31 v5.2 task-complete正式训练完成
 

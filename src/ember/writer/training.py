@@ -41,7 +41,7 @@ from ember.writer.checkpoint import (
     load_writer_checkpoint,
     save_writer_checkpoint,
 )
-from ember.writer.conflict_projection import (
+from ember.writer.task_gradient import (
     FlatParameter,
     parameter_layout,
     synchronize_writer_state,

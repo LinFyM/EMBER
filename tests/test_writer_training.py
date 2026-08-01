@@ -19,7 +19,7 @@ from ember.writer.as_contract import (
     writer_split_roles,
 )
 from ember.writer.as_sampling import TeacherVideoSchedule
-from ember.writer.conflict_projection import FlatParameter
+from ember.writer.task_gradient import FlatParameter
 from ember.writer.model import WriterModelError
 from ember.writer import as_step
 
@@ -404,7 +404,7 @@ def test_retired_writer_configs_are_not_active() -> None:
         load_writer_config(REPO_ROOT / "configs/pi05_as_writer_v2.json")
 
 
-def test_cp24_step_collects_task_gradients_and_updates_once(
+def test_raw_full_task_step_collects_task_gradients_and_updates_once(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     task_ids = (10, 20, 30, 40, 50, 60)
@@ -477,8 +477,8 @@ def test_cp24_step_collects_task_gradients_and_updates_once(
         config={
             "conditioning_training": {
                 "method": (
-                    "conflict_projected_task_complete_single_video_multi_"
-                    "action_positive_functional_loss"
+                    "raw_task_complete_single_video_multi_action_"
+                    "positive_functional_loss"
                 )
             },
             "optimization": {
@@ -515,7 +515,10 @@ def test_cp24_step_collects_task_gradients_and_updates_once(
     assert writer.weight.item() == pytest.approx(0.9)
     assert scheduler.steps == 1
     assert len(captured["records"]) == 6
-    assert captured["conflict_projection"]["no_conflict_exact_raw_mean"] is True
+    composition = captured["gradient_composition"]
+    assert composition["schema_version"] == "ember_raw_full_task_gradient_v1"
+    assert composition["raw_mean_to_average_task_energy_ratio"] == pytest.approx(1.0)
+    assert "projected_gradient_gram" not in composition
 
 
 def test_single_video_diagnostics_keep_all_task_losses_and_gradient_observables() -> None:
@@ -530,20 +533,20 @@ def test_single_video_diagnostics_keep_all_task_losses_and_gradient_observables(
         {"task_id": 10, "teacher_demo_index": 3, "teacher_video_sampled_frames": 9},
         {"task_id": 20, "teacher_demo_index": 4, "teacher_video_sampled_frames": 11},
     ]
-    conflict = {
+    composition = {
         "task_ids": [10, 20],
         "raw_gradient_gram": [[4.0, -1.0], [-1.0, 9.0]],
-        "projected_gradient_gram": [[5.0, 0.0], [0.0, 10.0]],
         "raw_candidate_task_dots": [1.5, 4.0],
-        "projected_candidate_task_dots": [2.5, 5.0],
     }
     rows = as_step._global_single_video_diagnostics(
         runtime,
         records,
         assignments,
-        conflict,
+        composition,
         {
-            "core": torch.tensor([[20.0, 21.0], [10.0, 11.0]]),
+            "semantic_frontend": torch.tensor(
+                [[20.0, 21.0], [10.0, 11.0]]
+            ),
             "program": torch.tensor([[22.0, 23.0], [12.0, 13.0]]),
         },
     )
@@ -555,8 +558,9 @@ def test_single_video_diagnostics_keep_all_task_losses_and_gradient_observables(
         [2.0, 3.0]
     )
     assert rows[0]["teacher_demo_index"] == 3
-    assert rows[1]["projected_task_dot_candidate_direction"] == 5.0
+    assert rows[1]["raw_task_dot_candidate_direction"] == 4.0
+    assert "projected_task_dot_candidate_direction" not in rows[1]
     assert rows[0]["raw_task_gradient_direction_sketch"] == {
-        "core": [10.0, 11.0],
         "program": [12.0, 13.0],
+        "semantic_frontend": [10.0, 11.0],
     }

@@ -22,6 +22,7 @@ def _task_complete_batch_cycle(
     rank: int,
     world_size: int,
     tasks_per_rank_per_update: int,
+    optimizer_updates_per_task_cycle: int,
 ) -> tuple[int, ...]:
     cycle = tuple(
         int(value)
@@ -35,7 +36,13 @@ def _task_complete_batch_cycle(
         or not 0 <= start_step <= stop_step
         or not 0 <= rank < world_size
         or tasks_per_rank_per_update <= 0
-        or len(task_ids) != world_size * tasks_per_rank_per_update
+        or optimizer_updates_per_task_cycle <= 0
+        or len(task_ids)
+        != (
+            world_size
+            * tasks_per_rank_per_update
+            * optimizer_updates_per_task_cycle
+        )
     )
     if invalid:
         raise WriterModelError("invalid task-complete sampler")
@@ -94,7 +101,7 @@ def _task_complete_video_costs(
 
 
 class MixedTaskBatchSampler:
-    """Yield all-task, task-pure, cost-balanced long-first macro batches."""
+    """Yield task-pure batches from complete cost-balanced task cycles."""
 
     _GROUP_SEED_TAG = 0xC057
     _PHASE_STRATUM_SEED_TAG = 0x57A7
@@ -113,6 +120,7 @@ class MixedTaskBatchSampler:
         world_size: int,
         seed: int,
         tasks_per_rank_per_update: int,
+        optimizer_updates_per_task_cycle: int = 1,
         video_schedule: TeacherVideoSchedule,
         task_video_costs: Mapping[int, Mapping[int, int]],
     ) -> None:
@@ -125,6 +133,7 @@ class MixedTaskBatchSampler:
             rank=rank,
             world_size=world_size,
             tasks_per_rank_per_update=tasks_per_rank_per_update,
+            optimizer_updates_per_task_cycle=optimizer_updates_per_task_cycle,
         )
         episode_rows, episodes_per_task = _task_complete_episode_rows(
             dataset,
@@ -140,6 +149,13 @@ class MixedTaskBatchSampler:
         self.world_size = world_size
         self.seed = seed
         self.tasks_per_rank_per_update = int(tasks_per_rank_per_update)
+        self.optimizer_updates_per_task_cycle = int(
+            optimizer_updates_per_task_cycle
+        )
+        self.tasks_per_rank_per_cycle = (
+            self.tasks_per_rank_per_update
+            * self.optimizer_updates_per_task_cycle
+        )
         self.episodes_per_task = episodes_per_task
         self.episode_rows = episode_rows
         self.video_schedule = video_schedule
@@ -164,15 +180,24 @@ class MixedTaskBatchSampler:
             self.stop_step - self.start_step
         ) * self.tasks_per_rank_per_update
 
-    def _cost_balanced_groups(self, step: int) -> tuple[tuple[int, ...], ...]:
+    def task_cycle_and_phase(self, step: int) -> tuple[int, int]:
+        """Map one optimizer update to its complete-task cycle and phase."""
+
+        if step < 0:
+            raise WriterModelError("task assignment step must be non-negative")
+        return divmod(step, self.optimizer_updates_per_task_cycle)
+
+    def _cost_balanced_groups(self, task_cycle: int) -> tuple[tuple[int, ...], ...]:
         current_costs = {
             task_id: self.task_video_costs[task_id][
-                self.video_schedule.demo_for_task_visit(task_id, step)
+                self.video_schedule.demo_for_task_visit(task_id, task_cycle)
             ]
             for task_id in self.task_ids
         }
         tie_order = np.random.default_rng(
-            np.random.SeedSequence([self.seed, step, self._GROUP_SEED_TAG])
+            np.random.SeedSequence(
+                [self.seed, task_cycle, self._GROUP_SEED_TAG]
+            )
         ).permutation(self.task_ids)
         tie_rank = {int(task_id): index for index, task_id in enumerate(tie_order)}
         ordered = sorted(
@@ -181,12 +206,12 @@ class MixedTaskBatchSampler:
         )
         groups: list[list[int]] = [[] for _ in range(self.world_size)]
         loads = [0] * self.world_size
-        rank_offset = (self.seed + step) % self.world_size
+        rank_offset = (self.seed + task_cycle) % self.world_size
         for task_id in ordered:
             candidates = [
                 rank
                 for rank, group in enumerate(groups)
-                if len(group) < self.tasks_per_rank_per_update
+                if len(group) < self.tasks_per_rank_per_cycle
             ]
             rank = min(
                 candidates,
@@ -210,7 +235,7 @@ class MixedTaskBatchSampler:
             for group in groups
         )
         if (
-            any(len(group) != self.tasks_per_rank_per_update for group in result)
+            any(len(group) != self.tasks_per_rank_per_cycle for group in result)
             or set().union(*(set(group) for group in result))
             != set(self.task_ids)
         ):
@@ -223,15 +248,16 @@ class MixedTaskBatchSampler:
     ) -> tuple[tuple[int, int, int, int], ...]:
         """Return ``(rank, microtask, task_id, task_visit)`` assignments."""
 
-        if step < 0:
-            raise WriterModelError("task assignment step must be non-negative")
-        groups = self._cost_balanced_groups(step)
+        task_cycle, phase = self.task_cycle_and_phase(step)
+        groups = self._cost_balanced_groups(task_cycle)
         assignments: list[tuple[int, int, int, int]] = []
         for rank in range(self.world_size):
-            group = (rank + step) % self.world_size
+            group = (rank + task_cycle) % self.world_size
+            left = phase * self.tasks_per_rank_per_update
+            right = left + self.tasks_per_rank_per_update
             assignments.extend(
-                (rank, microtask, task_id, step)
-                for microtask, task_id in enumerate(groups[group])
+                (rank, microtask, task_id, task_cycle)
+                for microtask, task_id in enumerate(groups[group][left:right])
             )
         return tuple(assignments)
 
@@ -241,7 +267,7 @@ class MixedTaskBatchSampler:
         *,
         rank: int | None = None,
     ) -> tuple[int, ...]:
-        """Return long-first tasks for one rank in a complete macro update."""
+        """Return long-first selected tasks for one rank and optimizer update."""
 
         selected_rank = self.rank if rank is None else rank
         if step < 0 or not 0 <= selected_rank < self.world_size:

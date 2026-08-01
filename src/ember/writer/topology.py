@@ -69,7 +69,7 @@ def validate_task_complete_topology(
     batch_size: int,
     mode: str,
 ) -> None:
-    """Seal the canonical raw-mean full-task UCP update topology."""
+    """Seal a complete-task-cycle UCP update topology."""
 
     if context.world_size != expected_world_size:
         raise WriterModelError(
@@ -83,16 +83,25 @@ def validate_task_complete_topology(
     update_topology = str(
         training.get("update_topology", "task_complete_all_tasks")
     )
+    updates_per_cycle = int(
+        training.get("optimizer_updates_per_task_cycle", 1)
+    )
     invalid_common = (
         int(training["teacher_videos_per_task_visit"]) != 1
         or tasks_per_rank * context.world_size != global_tasks
+        or global_tasks * updates_per_cycle != task_count
     )
-    invalid = (
-        update_topology != "task_complete_all_tasks"
-        or invalid_common
-        or global_tasks != task_count
+    supported = (
+        update_topology == "task_complete_all_tasks"
+        and updates_per_cycle == 1
+        and global_tasks == task_count
+    ) or (
+        update_topology == "serial4_exposure_matched_six_phase_task_cycle"
+        and updates_per_cycle == 6
+        and tasks_per_rank == 1
+        and global_tasks == 4
     )
-    if invalid:
+    if invalid_common or not supported:
         raise WriterModelError(
             "AS-Writer update topology differs from its declared contract"
         )

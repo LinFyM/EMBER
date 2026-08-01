@@ -39,6 +39,33 @@ AS_WRITER_TRAINER_STATE_SCHEMA = (
 AS_WRITER_RANK_STATE_SCHEMA = (
     "ember_pi05_unified_causal_program_full24_rank_state_v1"
 )
+AS_WRITER_SERIAL4_CHECKPOINT_SCHEMA = (
+    "ember_pi05_unified_causal_program_serial4_exposurematched_checkpoint_v1"
+)
+AS_WRITER_SERIAL4_TRAINER_STATE_SCHEMA = (
+    "ember_pi05_unified_causal_program_serial4_exposurematched_trainer_state_v1"
+)
+AS_WRITER_SERIAL4_RANK_STATE_SCHEMA = (
+    "ember_pi05_unified_causal_program_serial4_exposurematched_rank_state_v1"
+)
+
+
+def _state_schemas(
+    optimizer_updates_per_task_cycle: int,
+) -> tuple[str, str, str]:
+    if optimizer_updates_per_task_cycle == 1:
+        return (
+            AS_WRITER_CHECKPOINT_SCHEMA,
+            AS_WRITER_TRAINER_STATE_SCHEMA,
+            AS_WRITER_RANK_STATE_SCHEMA,
+        )
+    if optimizer_updates_per_task_cycle == 6:
+        return (
+            AS_WRITER_SERIAL4_CHECKPOINT_SCHEMA,
+            AS_WRITER_SERIAL4_TRAINER_STATE_SCHEMA,
+            AS_WRITER_SERIAL4_RANK_STATE_SCHEMA,
+        )
+    raise WriterModelError("unsupported AS-Writer checkpoint task cycle")
 
 
 def _rng_state(context: DistributedContext) -> dict[str, Any]:
@@ -89,12 +116,20 @@ def _write_rank_state(
     saved_rng: Mapping[str, Any],
     videos_per_task_visit: int,
     tasks_per_rank_per_update: int,
+    optimizer_updates_per_task_cycle: int,
+    rank_state_schema: str,
 ) -> None:
+    task_cycle, task_cycle_phase = divmod(
+        step, optimizer_updates_per_task_cycle
+    )
     torch.save(
         {
-            "schema_version": AS_WRITER_RANK_STATE_SCHEMA,
+            "schema_version": rank_state_schema,
             "next_step": step,
             "next_data_step": step * tasks_per_rank_per_update,
+            "next_task_cycle": task_cycle,
+            "next_task_cycle_phase": task_cycle_phase,
+            "scheduler_logical_updates": task_cycle,
             "rank": context.rank,
             "world_size": context.world_size,
             "per_rank_batch_size": sampler.per_rank_batch_size,
@@ -103,6 +138,7 @@ def _write_rank_state(
             "teacher_video_seed": video_schedule.seed,
             "teacher_videos_per_task_visit": videos_per_task_visit,
             "tasks_per_rank_per_optimizer_update": tasks_per_rank_per_update,
+            "optimizer_updates_per_task_cycle": optimizer_updates_per_task_cycle,
             "rng": saved_rng,
         },
         path,
@@ -130,6 +166,18 @@ def _write_shared_state(
     tasks_per_rank_per_update = int(
         contract["runtime"]["tasks_per_rank_per_optimizer_update"]
     )
+    optimizer_updates_per_task_cycle = int(
+        contract["runtime"].get("optimizer_updates_per_task_cycle", 1)
+    )
+    task_cycle, task_cycle_phase = divmod(
+        step, optimizer_updates_per_task_cycle
+    )
+    checkpoint_schema, trainer_state_schema, _ = _state_schemas(
+        optimizer_updates_per_task_cycle
+    )
+    scheduler_state = scheduler.state_dict()
+    if int(scheduler_state.get("last_epoch", -1)) != task_cycle:
+        raise WriterModelError("AS-Writer scheduler exposure cursor changed")
     data_stop_step = step
     save_file(
         {
@@ -140,10 +188,13 @@ def _write_shared_state(
     )
     torch.save(
         {
-            "schema_version": AS_WRITER_TRAINER_STATE_SCHEMA,
+            "schema_version": trainer_state_schema,
             "next_step": step,
+            "next_task_cycle": task_cycle,
+            "next_task_cycle_phase": task_cycle_phase,
+            "scheduler_logical_updates": task_cycle,
             "optimizer": optimizer.state_dict(),
-            "scheduler": scheduler.state_dict(),
+            "scheduler": scheduler_state,
             "amp_scaler": {"enabled": False, "state": {}},
             "contract_sha256": canonical_hash(contract),
             "metrics_rows": metrics_rows,
@@ -169,6 +220,10 @@ def _write_shared_state(
         "max_action_episodes_per_task": max(map(len, coverage.values())),
         "next_step": step,
         "next_data_step": step * tasks_per_rank_per_update,
+        "next_task_cycle": task_cycle,
+        "next_task_cycle_phase": task_cycle_phase,
+        "scheduler_logical_updates": task_cycle,
+        "optimizer_updates_per_task_cycle": optimizer_updates_per_task_cycle,
         "teacher_videos_per_task_visit": videos_per_task_visit,
     }
     files = {
@@ -179,7 +234,7 @@ def _write_shared_state(
         for path in sorted(value for value in temporary.rglob("*") if value.is_file())
     }
     manifest = {
-        "schema_version": AS_WRITER_CHECKPOINT_SCHEMA,
+        "schema_version": checkpoint_schema,
         "contract_sha256": canonical_hash(contract),
         "consumed": consumed,
         "files": files,
@@ -229,6 +284,12 @@ def save_writer_checkpoint(
     tasks_per_rank_per_update = int(
         contract["runtime"]["tasks_per_rank_per_optimizer_update"]
     )
+    optimizer_updates_per_task_cycle = int(
+        contract["runtime"].get("optimizer_updates_per_task_cycle", 1)
+    )
+    _, _, rank_state_schema = _state_schemas(
+        optimizer_updates_per_task_cycle
+    )
     error = None
     try:
         _write_rank_state(
@@ -240,6 +301,8 @@ def save_writer_checkpoint(
             saved_rng=saved_rng,
             videos_per_task_visit=videos_per_task_visit,
             tasks_per_rank_per_update=tasks_per_rank_per_update,
+            optimizer_updates_per_task_cycle=optimizer_updates_per_task_cycle,
+            rank_state_schema=rank_state_schema,
         )
     except Exception as caught:
         error = caught
@@ -290,8 +353,12 @@ def validate_writer_checkpoint_files(
         *(f"rank_{rank:02d}_state.pt" for rank in range(world_size)),
     }
     files = manifest.get("files", {})
+    updates_per_cycle = int(
+        manifest.get("consumed", {}).get("optimizer_updates_per_task_cycle", 1)
+    )
+    checkpoint_schema, _, _ = _state_schemas(updates_per_cycle)
     if (
-        manifest.get("schema_version") != AS_WRITER_CHECKPOINT_SCHEMA
+        manifest.get("schema_version") != checkpoint_schema
         or manifest.get("contract_sha256") != contract_sha256
         or canonical_hash(payload) != digest
         or not isinstance(files, dict)
@@ -359,8 +426,7 @@ def initialize_writer_phase(
             cursor = int(manifest.get("consumed", {}).get("next_step", -1))
             writer_record = manifest.get("files", {}).get("writer.safetensors", {})
             if (
-                training.get("schema_version")
-                != AS_WRITER_LAUNCH_SCHEMA
+                training.get("schema_version") != AS_WRITER_LAUNCH_SCHEMA
                 or training.get("stage", "development") != stage
                 or training.get("source") != dict(source)
                 or training.get("authorities") != dict(authorities)
@@ -397,6 +463,121 @@ def initialize_writer_phase(
     return dict(validation[0])
 
 
+def _trainer_resume_cursor(
+    trainer: Mapping[str, Any],
+    manifest: Mapping[str, Any],
+    *,
+    trainer_state_schema: str,
+    contract_sha256: str,
+    optimizer_updates_per_task_cycle: int,
+) -> tuple[int, int, int]:
+    next_step = int(trainer.get("next_step", -1))
+    task_cycle, task_cycle_phase = divmod(
+        next_step, optimizer_updates_per_task_cycle
+    )
+    serial4 = optimizer_updates_per_task_cycle > 1
+    valid = (
+        trainer.get("schema_version") == trainer_state_schema
+        and trainer.get("contract_sha256") == contract_sha256
+        and int(trainer.get("metrics_rows", -1)) >= 0
+        and int(
+            trainer.get("next_task_cycle", -1 if serial4 else task_cycle)
+        )
+        == task_cycle
+        and int(
+            trainer.get(
+                "next_task_cycle_phase", -1 if serial4 else task_cycle_phase
+            )
+        )
+        == task_cycle_phase
+        and int(
+            trainer.get(
+                "scheduler_logical_updates", -1 if serial4 else task_cycle
+            )
+        )
+        == task_cycle
+        and int(manifest.get("consumed", {}).get("next_step", -1))
+        == next_step
+    )
+    if not valid:
+        raise WriterModelError("Writer resume contract changed")
+    return next_step, task_cycle, task_cycle_phase
+
+
+def _validate_rank_resume_cursor(
+    rank_state: Mapping[str, Any],
+    manifest: Mapping[str, Any],
+    *,
+    checkpoint: Path,
+    context: DistributedContext,
+    rank_state_schema: str,
+    next_step: int,
+    task_cycle: int,
+    task_cycle_phase: int,
+    per_rank_batch_size: int,
+    per_rank_batch_cycle: tuple[int, ...],
+    videos_per_task_visit: int,
+    tasks_per_rank_per_update: int,
+    optimizer_updates_per_task_cycle: int,
+    sampler_seed: int,
+    teacher_video_seed: int,
+) -> None:
+    serial4 = optimizer_updates_per_task_cycle > 1
+    expected = (
+        next_step,
+        context.rank,
+        context.world_size,
+        per_rank_batch_size,
+        per_rank_batch_cycle,
+        videos_per_task_visit,
+        tasks_per_rank_per_update,
+        optimizer_updates_per_task_cycle,
+        next_step * tasks_per_rank_per_update,
+        task_cycle,
+        task_cycle_phase,
+        task_cycle,
+        sampler_seed,
+        teacher_video_seed,
+    )
+    actual = (
+        int(rank_state["next_step"]),
+        int(rank_state["rank"]),
+        int(rank_state["world_size"]),
+        int(rank_state["per_rank_batch_size"]),
+        tuple(int(value) for value in rank_state.get("per_rank_batch_cycle", ())),
+        int(rank_state.get("teacher_videos_per_task_visit", -1)),
+        int(rank_state.get("tasks_per_rank_per_optimizer_update", -1)),
+        int(
+            rank_state.get(
+                "optimizer_updates_per_task_cycle", -1 if serial4 else 1
+            )
+        ),
+        int(rank_state.get("next_data_step", -1)),
+        int(rank_state.get("next_task_cycle", -1 if serial4 else task_cycle)),
+        int(
+            rank_state.get(
+                "next_task_cycle_phase", -1 if serial4 else task_cycle_phase
+            )
+        ),
+        int(
+            rank_state.get(
+                "scheduler_logical_updates", -1 if serial4 else task_cycle
+            )
+        ),
+        int(rank_state["sampler_seed"]),
+        int(rank_state["teacher_video_seed"]),
+    )
+    valid = (
+        rank_state.get("schema_version") == rank_state_schema
+        and actual == expected
+        and checkpoint.name == f"step_{next_step:08d}"
+        and int(manifest.get("consumed", {}).get("next_data_step", -1))
+        == expected[8]
+    )
+    if not valid:
+        raise WriterModelError("Writer rank resume state changed")
+
+
 def load_writer_checkpoint(
     *,
     checkpoint: Path,
@@ -410,6 +591,7 @@ def load_writer_checkpoint(
     per_rank_batch_cycle: tuple[int, ...],
     videos_per_task_visit: int,
     tasks_per_rank_per_update: int,
+    optimizer_updates_per_task_cycle: int,
     contract_sha256: str,
 ) -> tuple[int, dict[str, Any], int]:
     validation: list[Any] = [None]
@@ -431,58 +613,47 @@ def load_writer_checkpoint(
         map_location=context.device,
         weights_only=False,
     )
-    if (
-        trainer.get("schema_version") != AS_WRITER_TRAINER_STATE_SCHEMA
-        or trainer.get("contract_sha256") != contract_sha256
-        or int(trainer.get("metrics_rows", -1)) < 0
-        or int(validation[0].get("consumed", {}).get("next_step", -1))
-        != int(trainer.get("next_step", -2))
-    ):
-        raise WriterModelError("Writer resume contract changed")
+    _, trainer_state_schema, rank_state_schema = _state_schemas(
+        optimizer_updates_per_task_cycle
+    )
+    next_step, task_cycle, task_cycle_phase = _trainer_resume_cursor(
+        trainer,
+        validation[0],
+        trainer_state_schema=trainer_state_schema,
+        contract_sha256=contract_sha256,
+        optimizer_updates_per_task_cycle=optimizer_updates_per_task_cycle,
+    )
     writer.load_state_dict(
         load_file(str(checkpoint / "writer.safetensors"), device=str(context.device))
     )
     optimizer.load_state_dict(trainer["optimizer"])
     scheduler.load_state_dict(trainer["scheduler"])
+    if int(scheduler.state_dict().get("last_epoch", -1)) != task_cycle:
+        raise WriterModelError("Writer scheduler resume cursor changed")
     rank_state = torch.load(
         checkpoint / f"rank_{context.rank:02d}_state.pt",
         map_location="cpu",
         weights_only=False,
     )
-    expected = (
-        int(trainer["next_step"]),
-        context.rank,
-        context.world_size,
-        per_rank_batch_size,
-        per_rank_batch_cycle,
-        videos_per_task_visit,
-        tasks_per_rank_per_update,
-        int(trainer["next_step"]) * tasks_per_rank_per_update,
-        sampler_seed,
-        teacher_video_seed,
+    _validate_rank_resume_cursor(
+        rank_state,
+        validation[0],
+        checkpoint=checkpoint,
+        context=context,
+        rank_state_schema=rank_state_schema,
+        next_step=next_step,
+        task_cycle=task_cycle,
+        task_cycle_phase=task_cycle_phase,
+        per_rank_batch_size=per_rank_batch_size,
+        per_rank_batch_cycle=per_rank_batch_cycle,
+        videos_per_task_visit=videos_per_task_visit,
+        tasks_per_rank_per_update=tasks_per_rank_per_update,
+        optimizer_updates_per_task_cycle=optimizer_updates_per_task_cycle,
+        sampler_seed=sampler_seed,
+        teacher_video_seed=teacher_video_seed,
     )
-    actual = (
-        int(rank_state["next_step"]),
-        int(rank_state["rank"]),
-        int(rank_state["world_size"]),
-        int(rank_state["per_rank_batch_size"]),
-        tuple(int(value) for value in rank_state.get("per_rank_batch_cycle", ())),
-        int(rank_state.get("teacher_videos_per_task_visit", -1)),
-        int(rank_state.get("tasks_per_rank_per_optimizer_update", -1)),
-        int(rank_state.get("next_data_step", -1)),
-        int(rank_state["sampler_seed"]),
-        int(rank_state["teacher_video_seed"]),
-    )
-    if (
-        rank_state.get("schema_version") != AS_WRITER_RANK_STATE_SCHEMA
-        or actual != expected
-        or checkpoint.name != f"step_{expected[0]:08d}"
-        or int(validation[0].get("consumed", {}).get("next_data_step", -1))
-        != expected[7]
-    ):
-        raise WriterModelError("Writer rank resume state changed")
     return (
-        int(trainer["next_step"]),
+        next_step,
         rank_state["rng"],
         int(trainer["metrics_rows"]),
     )

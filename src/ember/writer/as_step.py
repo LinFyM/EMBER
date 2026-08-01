@@ -18,6 +18,7 @@ from ember.writer.task_gradient import (
 )
 from ember.writer.functional import functional_lora_loss_gradient
 from ember.writer.model import WriterModelError
+from ember.writer.update_schedule import advance_scheduler_after_update
 
 if TYPE_CHECKING:
     from ember.writer.training import WriterRuntime
@@ -41,6 +42,15 @@ def _batch_task_id(batch: Mapping[str, Any]) -> int:
     if unique.numel() != 1:
         raise WriterModelError("one AS-Writer rank received multiple tasks")
     return int(unique.item())
+
+
+def _optimizer_updates_per_task_cycle(runtime: WriterRuntime) -> int:
+    value = int(
+        getattr(runtime.sampler, "optimizer_updates_per_task_cycle", 1)
+    )
+    if value <= 0:
+        raise WriterModelError("invalid optimizer-update task cycle")
+    return value
 
 
 def _pack_raw_conditions(
@@ -233,6 +243,7 @@ def _throughput_and_exposure_metrics(
     data_seconds: float,
     started: float,
 ) -> dict[str, Any]:
+    updates_per_cycle = _optimizer_updates_per_task_cycle(runtime)
     return {
         "global_unique_action_queries": (
             completed
@@ -265,7 +276,17 @@ def _throughput_and_exposure_metrics(
         "global_task_video_conditions_per_second": (
             global_tasks_this_step / step_seconds
         ),
-        "macro_updates_per_hour": 3600.0 / step_seconds,
+        "optimizer_updates_per_hour": 3600.0 / step_seconds,
+        "task_cycles_per_hour": (
+            3600.0
+            / step_seconds
+            / updates_per_cycle
+        ),
+        **(
+            {"macro_updates_per_hour": 3600.0 / step_seconds}
+            if updates_per_cycle == 1
+            else {}
+        ),
         "elapsed_seconds": time.monotonic() - started,
         "max_cuda_allocated_bytes": int(
             reduce_max(
@@ -328,8 +349,11 @@ def _step_metrics(
     applied_lr: float,
     gradient_composition: Mapping[str, Any],
     local_gradient_sketches: Mapping[str, torch.Tensor],
+    scheduler_advanced: bool,
 ) -> dict[str, Any]:
     completed = step + 1
+    updates_per_cycle = _optimizer_updates_per_task_cycle(runtime)
+    task_cycle, task_cycle_phase = divmod(step, updates_per_cycle)
     step_seconds = reduce_max(time.monotonic() - tick, runtime.context)
     local_queries = sum(int(record["observed_batch"]) for record in records)
     global_queries_this_step = local_queries * runtime.context.world_size
@@ -343,9 +367,30 @@ def _step_metrics(
         gradient_composition,
         local_gradient_sketches,
     )
+    cursor_metrics = {
+        "optimizer_update": completed,
+        "task_cycle": task_cycle,
+        "task_cycle_phase": task_cycle_phase,
+        "task_cycle_completed": (
+            task_cycle_phase
+            == updates_per_cycle - 1
+        ),
+        "completed_task_cycles": (
+            completed // updates_per_cycle
+        ),
+        "optimizer_updates_per_task_cycle": (
+            updates_per_cycle
+        ),
+        "scheduler_advanced_this_update": scheduler_advanced,
+        "scheduler_logical_updates": (
+            completed // updates_per_cycle
+        ),
+    }
+    if updates_per_cycle == 1:
+        cursor_metrics["macro_optimizer_update"] = completed
     return {
         "optimizer_step": completed,
-        "macro_optimizer_update": completed,
+        **cursor_metrics,
         "conditioning_mode": conditioning_mode,
         "writer_language_condition": "correct_task_language",
         "policy_language_condition": "correct_action_query_task_language",
@@ -398,25 +443,12 @@ def _step_metrics(
     }
 
 
-def run_writer_step(
-    runtime: WriterRuntime,
-    step: int,
-    started: float,
-) -> dict[str, Any]:
-    """Run one optimizer update under the configured task assignment."""
-
-    tick = time.monotonic()
-    runtime.optimizer.zero_grad(set_to_none=True)
-    training = runtime.config["conditioning_training"]
-    mode = str(training["method"])
-    if mode != (
-        "raw_task_complete_single_video_multi_action_"
-        "positive_functional_loss"
-    ):
-        raise WriterModelError("unsupported AS-Writer conditioning mode")
+def _collect_task_gradients(
+    runtime: WriterRuntime, step: int
+) -> tuple[list[dict[str, Any]], float, list[int], torch.Tensor]:
     records: list[dict[str, Any]] = []
     data_seconds = 0.0
-    local_task_ids = []
+    local_task_ids: list[int] = []
     local_gradients = torch.empty(
         runtime.tasks_per_rank_per_update,
         runtime.gradient_layout[-1].stop,
@@ -469,6 +501,27 @@ def run_writer_step(
         local_task_ids.append(task_id)
         if task_gradient.data_ptr() != local_gradients[microtask].data_ptr():
             raise WriterModelError("task gradient lost its preallocated row")
+    return records, data_seconds, local_task_ids, local_gradients
+
+
+def _compose_selected_gradient(
+    runtime: WriterRuntime,
+    *,
+    step: int,
+    local_task_ids: list[int],
+    local_gradients: torch.Tensor,
+) -> tuple[dict[str, Any], Mapping[str, torch.Tensor]]:
+    selected_task_ids = (
+        tuple(
+            sorted(
+                task_id
+                for _, _, task_id, _
+                in runtime.sampler.assignments_for_step(step)
+            )
+        )
+        if hasattr(runtime.sampler, "assignments_for_step")
+        else runtime.task_ids
+    )
     direction, gradient_metrics = compose_distributed_raw_mean_gradient(
         torch.tensor(
             local_task_ids,
@@ -477,15 +530,51 @@ def run_writer_step(
         ),
         local_gradients,
         runtime.gradient_layout,
-        expected_task_ids=runtime.task_ids,
+        expected_task_ids=selected_task_ids,
         world_size=runtime.context.world_size,
         rank=runtime.context.rank,
     )
+    gradient_metrics["selected_task_count"] = len(selected_task_ids)
+    if _optimizer_updates_per_task_cycle(runtime) > 1:
+        gradient_metrics[
+            "orthogonal_equal_norm_mean_to_task_energy_reference"
+        ] = 1.0 / len(selected_task_ids)
+        gradient_metrics["energy_ratio_interpretation"] = (
+            "selected4_manipulation_check_only_not_scientific_success"
+        )
     local_gradient_sketches = gradient_direction_sketches(
         local_gradients,
         runtime.gradient_layout,
     )
     assign_flat_gradient(direction, runtime.gradient_layout)
+    return gradient_metrics, local_gradient_sketches
+
+
+def run_writer_step(
+    runtime: WriterRuntime,
+    step: int,
+    started: float,
+) -> dict[str, Any]:
+    """Run one optimizer update under the configured task assignment."""
+
+    tick = time.monotonic()
+    runtime.optimizer.zero_grad(set_to_none=True)
+    mode = str(runtime.config["conditioning_training"]["method"])
+    supported_modes = {
+        "raw_task_complete_single_video_multi_action_positive_functional_loss",
+        "raw_serial4_exposure_matched_single_video_multi_action_positive_functional_loss",
+    }
+    if mode not in supported_modes:
+        raise WriterModelError("unsupported AS-Writer conditioning mode")
+    records, data_seconds, local_task_ids, local_gradients = (
+        _collect_task_gradients(runtime, step)
+    )
+    gradient_metrics, local_gradient_sketches = _compose_selected_gradient(
+        runtime,
+        step=step,
+        local_task_ids=local_task_ids,
+        local_gradients=local_gradients,
+    )
     if any(parameter.grad is not None for parameter in runtime.policy.parameters()):
         raise WriterModelError("frozen PI05 source policy accumulated gradients")
     grad_norm = torch.nn.utils.clip_grad_norm_(
@@ -496,7 +585,13 @@ def run_writer_step(
         raise WriterModelError(f"non-finite AS-Writer gradient at step {step}")
     applied_lr = float(runtime.optimizer.param_groups[0]["lr"])
     runtime.optimizer.step()
-    runtime.scheduler.step()
+    scheduler_advanced = advance_scheduler_after_update(
+        runtime.scheduler,
+        completed_optimizer_updates=step + 1,
+        optimizer_updates_per_task_cycle=(
+            _optimizer_updates_per_task_cycle(runtime)
+        ),
+    )
     return _step_metrics(
         runtime,
         step=step,
@@ -509,4 +604,5 @@ def run_writer_step(
         applied_lr=applied_lr,
         gradient_composition=gradient_metrics,
         local_gradient_sketches=local_gradient_sketches,
+        scheduler_advanced=scheduler_advanced,
     )

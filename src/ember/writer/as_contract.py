@@ -36,6 +36,7 @@ from ember.writer.as_config import (
 from ember.writer.data import FunctionalQueryDataset, WriterTaskAuthority
 from ember.writer.model import CompleteLoRAWriter, WriterModelError
 from ember.writer.topology import validate_task_complete_topology
+from ember.writer.update_contract import build_update_runtime_contract
 
 
 AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_unified_causal_program_full24_launch_v1"
@@ -406,43 +407,6 @@ def _contract_stop_step(
     return int(source.get("selected_stop_step", total_steps))
 
 
-def _raw_full24_runtime_contract(
-    context: DistributedContext,
-    *,
-    tasks_per_rank: int,
-    global_tasks: int,
-) -> dict[str, Any]:
-    distributed = context.world_size > 1
-    return {
-        "optimizer_gradient_accumulation": False,
-        "loss_reduction": "mean_within_each_task_then_equal_mean_across_all_tasks",
-        "task_gradient_collection": "six_rank_local_per_task_writer_gradients_without_ddp_backward",
-        "task_gradients_per_rank_per_macro": tasks_per_rank,
-        "global_task_gradients_per_macro": global_tasks,
-        "distributed_full_task_gradient_matrix_materialized": False,
-        "gradient_task_id_allgathers_per_macro": 1 if distributed else 0,
-        "gradient_composition": "exact_raw_equal_weight_full24_mean_without_projection",
-        "gradient_projection": "none",
-        "gradient_gram_exchange": (
-            "bounded_parameter_chunk_allgathers_with_per_chunk_cuda_completion_"
-            "for_exact_raw_mean_full24_and_module_block_grams"
-        ),
-        "gradient_gram_chunk_elements": 1_048_576,
-        "gradient_gram_chunk_allgathers_per_macro": (
-            "runtime_enumerated_from_parameter_block_layout" if distributed else 0
-        ),
-        "gradient_gram_chunk_cuda_synchronizations_per_macro": (
-            "one_per_runtime_enumerated_chunk_allgather" if distributed else 0
-        ),
-        "single_video_gradient_direction_sketch": (
-            "fixed_countsketch_32_per_task_per_parameter_block"
-        ),
-        "diagnostic_tensor_allgathers_per_macro": 1 if distributed else 0,
-        "ddp_no_sync_microtasks_per_macro": 0,
-        "ddp_gradient_synchronizations_per_macro": 0,
-    }
-
-
 def build_contract(
     *,
     args: argparse.Namespace,
@@ -461,14 +425,6 @@ def build_contract(
     initialization: Mapping[str, Any],
 ) -> dict[str, Any]:
     contract_stop_step = _contract_stop_step(args, config, total_steps)
-    videos_per_task_visit = int(
-        config["conditioning_training"]["teacher_videos_per_task_visit"]
-    )
-    tasks_per_rank = int(
-        config["conditioning_training"]["tasks_per_rank_per_optimizer_update"]
-    )
-    global_tasks = context.world_size * tasks_per_rank
-    global_queries = global_tasks * batch_size
     local = {
         "rank": context.rank,
         "local_rank": context.local_rank,
@@ -508,51 +464,18 @@ def build_contract(
             else {}
         ),
         "task_ids": list(task_ids),
-        "runtime": {
-            "world_size": context.world_size,
-            "one_policy_cuda_process_per_rank": True,
-            "extra_cuda_roles_on_any_rank": 0,
-            "ddp_object": "rank_synchronized_shared_writer_without_ddp_backward",
-            "macro_step_axis": "raw_mean_full_task_optimizer_update",
-            "tasks_per_rank_per_optimizer_update": tasks_per_rank,
-            "global_tasks_per_optimizer_update": global_tasks,
-            "task_assignment": (
-                "selected_video_frame_cost_balanced_groups_rotated_across_"
-                "physical_ranks_longest_task_first_within_each_rank"
-            ),
-            "task_video_cost_sha256": video_data[
-                "sampled_frame_cost_sha256"
-            ],
-            "action_query_batch_size_per_task": batch_size,
-            "action_query_batch_size_per_rank_per_macro": (
-                tasks_per_rank * batch_size
-            ),
-            "per_rank_unique_action_query_cycle": list(batch_cycle),
-            "teacher_videos_per_task_visit": videos_per_task_visit,
-            "writer_video_conditions_per_rank_per_macro": (
-                tasks_per_rank * videos_per_task_visit
-            ),
-            "actions_per_video_condition": batch_size,
-            "action_video_assignment": "all_actions_share_single_video_lora",
-            "logical_pairs_per_rank_per_macro": tasks_per_rank * batch_size,
-            **_raw_full24_runtime_contract(
-                context,
-                tasks_per_rank=tasks_per_rank,
-                global_tasks=global_tasks,
-            ),
-            "adamw_updates_per_macro": 1,
-            "global_policy_samples_per_macro": global_queries,
-            "local_policy_functional_forwards_per_macro": tasks_per_rank,
-            "global_policy_functional_forwards_per_macro": global_tasks,
-            "writer_conditions_per_rank_per_macro": (
-                tasks_per_rank * videos_per_task_visit
-            ),
-            "total_steps": total_steps,
-            "selected_stop_step": contract_stop_step,
-            "checkpoint_steps": list(checkpoint_steps),
-            "num_workers_per_rank": args.num_workers,
-            "rank_topology": topology,
-        },
+        "runtime": build_update_runtime_contract(
+            config=config,
+            context=context,
+            video_data=video_data,
+            total_steps=total_steps,
+            stop_step=contract_stop_step,
+            batch_size=batch_size,
+            batch_cycle=batch_cycle,
+            checkpoint_steps=checkpoint_steps,
+            num_workers=args.num_workers,
+            rank_topology=topology,
+        ),
         "trainable": dict(trainable),
         "software": _software_versions(),
     }

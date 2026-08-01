@@ -11,7 +11,6 @@ from typing import Any, Iterator, Mapping
 
 import torch
 import torch.distributed as dist
-from lerobot.optim.schedulers import CosineDecayWithWarmupSchedulerConfig
 from torch.utils.data import DataLoader
 
 from ember.pi05_eval_contract import (
@@ -26,7 +25,6 @@ from ember.pi05_source_checkpoint import (
     barrier,
     canonical_hash,
     restore_rng,
-    write_json_atomic,
 )
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.pi05_source_setup import (
@@ -82,6 +80,11 @@ from ember.writer.online_validation import (
     evaluate_online_writer_checkpoint,
     prepare_online_writer_validation,
 )
+from ember.writer.update_schedule import (
+    build_exposure_scheduler,
+    logical_task_cycle_steps,
+)
+from ember.writer.run_summary import write_run_summary
 
 
 @dataclass
@@ -173,19 +176,6 @@ def _build_writer(
     )
 
 
-def _make_scheduler(
-    optimizer: torch.optim.Optimizer,
-    config: Mapping[str, Any],
-    total_steps: int,
-) -> torch.optim.lr_scheduler.LRScheduler:
-    return CosineDecayWithWarmupSchedulerConfig(
-        num_warmup_steps=int(config["warmup_steps"]),
-        num_decay_steps=int(config["decay_steps"]),
-        peak_lr=float(config["peak_lr"]),
-        decay_lr=float(config["decay_lr"]),
-    ).build(optimizer, total_steps)
-
-
 def _build_trainable_models(
     *,
     config: Mapping[str, Any],
@@ -213,8 +203,10 @@ def _build_trainable_models(
         eps=float(optimizer_config["eps"]),
         weight_decay=float(optimizer_config["weight_decay"]),
     )
-    scheduler = _make_scheduler(
-        optimizer, config["optimization"]["scheduler"], total_steps
+    scheduler = build_exposure_scheduler(
+        optimizer,
+        config["optimization"]["scheduler"],
+        logical_task_cycle_steps(config, total_steps),
     )
     return policy, writer, lora, optimizer, scheduler, trainable, identity
 
@@ -248,6 +240,11 @@ def _restore_training_state(
         per_rank_batch_cycle=batch_cycle,
         videos_per_task_visit=videos_per_task_visit,
         tasks_per_rank_per_update=tasks_per_rank_per_update,
+        optimizer_updates_per_task_cycle=int(
+            config["conditioning_training"].get(
+                "optimizer_updates_per_task_cycle", 1
+            )
+        ),
         contract_sha256=contract_sha256,
     )
     if loaded != initial_step:
@@ -294,6 +291,11 @@ def _build_sampler_and_loader(
         world_size=context.world_size,
         seed=int(config["data"]["sampler_seed"]),
         tasks_per_rank_per_update=tasks_per_rank_per_update,
+        optimizer_updates_per_task_cycle=int(
+            config["conditioning_training"].get(
+                "optimizer_updates_per_task_cycle", 1
+            )
+        ),
         video_schedule=schedule,
         task_video_costs=task_video_costs,
     )
@@ -652,48 +654,7 @@ def run_steps(runtime: WriterRuntime) -> None:
             _run_checkpoint_validation(runtime, completed)
     barrier(runtime.context)
     if runtime.context.is_main:
-        stop = runtime.args.stop_after_step
-        summary = {
-            "schema_version": "ember_pi05_as_writer_run_summary_v1",
-            "contract_sha256": runtime.contract_sha256,
-            "completed_optimizer_steps": stop,
-            "requested_optimizer_steps": runtime.total_steps,
-            "stopped_early_for_profile": (
-                runtime.args.mode == "profile" and stop < runtime.total_steps
-            ),
-            "selected_stage_stop": (
-                runtime.args.mode == "formal" and stop < runtime.total_steps
-            ),
-            "metrics_rows": runtime.metrics_rows,
-            "wall_seconds": time.monotonic() - started,
-            "final_checkpoint": str(
-                runtime.args.output_dir / "checkpoints" / f"step_{stop:08d}"
-            )
-            if stop in runtime.checkpoint_steps
-            else None,
-            "train_tasks": len(runtime.task_ids),
-            "teacher_action_episodes_available": len(runtime.task_ids) * 50,
-            "global_policy_samples": (
-                stop
-                * runtime.context.world_size
-                * runtime.batch_size
-                * runtime.tasks_per_rank_per_update
-            ),
-            "global_writer_video_conditions": (
-                stop
-                * runtime.context.world_size
-                * runtime.videos_per_task_visit
-                * runtime.tasks_per_rank_per_update
-            ),
-            "test_action_reads": 0,
-            "test_video_value_reads": 0,
-        }
-        if writer_stage(runtime.config) == "final":
-            summary["validation_action_episodes_available"] = 400
-            summary["validation_video_episodes_available"] = 400
-        else:
-            summary["validation_action_reads"] = 0
-        write_json_atomic(runtime.args.output_dir / "run_summary.json", summary)
+        write_run_summary(runtime, started=started)
 
 
 def train(args: argparse.Namespace) -> None:

@@ -1,6 +1,28 @@
 # EMBER Current Execution Brief
 
-## 2026-08-01 UCP true-fast400 result and group4 live authority
+## 2026-08-01 task/query RNG-v2 correction authority
+
+UCP task/query randomness v1只锁定CUDA Gaussian flow noise，遗漏了LeRobot PI05在
+CPU default generator上采样的Beta flow timestep。step0 identity下，RAW与GROUP4
+四个重叠task具有完全相同action rows、teacher video/frame和derived query seed，
+却在换rank后产生不同source-policy loss，直接证实time仍依赖ambient rank/order RNG。
+因此原GROUP4正式进程已正常停止在physical step307/51 complete cycles；root、
+metrics和step150/300 checkpoint只保留invalid-contract provenance，禁止resume、
+评测或形成operator结论。
+
+当前canonical修复把CPU与指定CUDA generator共同fork/seed/restore，randomness
+scheme及cycle-normalized config/checkpoint family/state schemas升v2。RAW/GROUP4
+formal config在真实跨rank/phase identity manipulation和exact-resume重新seal前
+fail-closed。完成CPU验证和push后，从新frozen authority、全新root fresh重跑两臂。
+CV-ADR继续隔离等待有效operator cell；后续不使用subagent。
+
+边界：autoscaled200与true-fast400 RAW的rank/task/microtask顺序完全相同，cycle0
+loss/sketch也逐项相同，所以既有scheduler interaction仍是同一ambient-time stream下
+的matched比较。其absolute分数只表示RNG-v1实现bundle，不能证明stateless
+task/query noise+time，也不能与改变rank/phase顺序的GROUP4比较。历史本来使用
+ambient RNG的recipe不整体作废；失效的是新v1合同和由它支持的跨顺序归因。
+
+## 2026-08-01 UCP true-fast400 RNG-v1 observed bundle
 
 clean frozen `cfc2ad1`的task/query-keyed raw-full24已按真实
 `warmup17 + decay400`完成fresh前200/400 cycles；96,000 queries、4,800 videos、
@@ -16,17 +38,18 @@ moment与逐段位移方向持续分叉；paired scheduler analysis SHA为`81eca
 这组证据禁止把scheduler解释为统一“更稳”或“更好”，也禁止用held functional
 loss代替closed-loop裁决。
 
-预注册cycle-normalized randomized-group4已从同一clean frozen `cfc2ad1` fresh
-正式启动。root为
+预注册cycle-normalized randomized-group4曾从同一clean frozen `cfc2ad1` fresh
+启动。root为
 `/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_cycle_normalized_group4_truefast400_formal_dev_r4_b20_seed7_cfc2ad1_20260801`，
-tmux为`ember-ucp-tq-g4-tf400-cfc2ad1`。合同是4 ranks、仅物理GPU4--7、B20、
+原tmux为`ember-ucp-tq-g4-tf400-cfc2ad1`，现已退出。合同原计划是4 ranks、仅物理GPU4--7、B20、
 每6个phase恰好覆盖24 tasks/24 videos/480 queries、每phase logical LR/6、每cycle
 一次scheduler；physical step300/600/900/1200对应cycle50/100/150/200候选。
 首cycle已确认与raw cycle0逐task teacher demo/frame count一致，全部主路径finite、
-0 OOM/clip。完成后用同一paired correct400裁决operator。
+0 OOM/clip，但CPU timestep合同错误使其不能进入correct400或operator裁决。
 
-CV-ADR保持隔离在最新clean commit `3798994`，尚未集成或启动GPU。若group4没有
-共同提高absolute、breadth或视频innovation传递，则CV先用raw；若group4形成强的
+CV-ADR保持隔离在最新clean commit `3798994`，尚未集成或启动GPU。待RNG-v2
+operator结果：若group4没有共同提高absolute、breadth或视频innovation传递，则CV
+先用raw；若group4形成强的
 多task共同收益，才把该operator迁入CV。后续暂停所有subagent使用。
 
 ## 2026-08-01 UCP formal scheduler contract override

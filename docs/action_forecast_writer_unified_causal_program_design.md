@@ -1,6 +1,6 @@
 # Unified Causal Program Writer 设计
 
-**状态：2026-08-01 true-fast400 raw完成；cycle-normalized group4正式运行中**
+**状态：2026-08-01 task/query RNG-v1失效；GROUP4已停，CPU+CUDA v2待重封存**
 
 本文负责 Semantic Program Grid（SPG）一小时门失败后的下一条 canonical
 AS-Writer 路径。它不是把 v7、v8、v10、Loom 或后续版本整体判死后重新命名，
@@ -9,13 +9,18 @@ AS-Writer 路径。它不是把 v7、v8、v10、Loom 或后续版本整体判死
 当前UCP恢复为唯一可执行路径只服务于训练受控格，不代表撤销AP的局部根因或放弃
 CV-ADR。封存`b52cb54`已完成group4 B20/105-frame profile、formal-seed
 fresh0→1→resume1→3→7和raw fresh0→1→resume1→3；`85a82cb`把同一运行面逐blob
-恢复到canonical并退役AP/endpoint runner。task/query-keyed raw的
+恢复到canonical并退役AP/endpoint runner。随后审计证明该所谓task/query-keyed
+合同只固定CUDA Gaussian noise，遗漏CPU Beta flow timestep；因此旧profile/resume
+只证明shape、显存、cursor和相同rank/order可重复，不能证明跨rank/phase随机身份。
+task/query RNG-v1 raw的
 configured-decay400/runtime-autoscaled200消融为`81/72/107/78`；修正formal total
 和stage边界后，clean `cfc2ad1` true-fast400 raw为`89/71/82/117`。scheduler让
 macro200提高39但没有抬高UCP ceiling、解决breadth或消除task轮换，且参数/Adam
-轨迹持续旋转，不能当作训练解。当前同一`cfc2ad1`的cycle-normalized randomized-
-group4已fresh正式启动；首cycle与raw逐task teacher video/frame count一致，完成后
-用cycle50/100/150/200同一paired correct400裁决。CV-ADR在隔离worktree等待该
+轨迹持续旋转，不能当作训练解。原`cfc2ad1` cycle-normalized randomized-group4
+已在step307正常停止并标记invalid-contract，禁止评测/resume。canonical修复将CPU
+time与CUDA noise共同按query锁定，并通过fresh v2 config/checkpoint schema阻断旧状态；
+重新profile/resume后，从identity重跑RAW/GROUP4，再用cycle50/100/150/200同一
+paired correct400裁决。CV-ADR在隔离worktree等待该
 operator结果，不能让训练bundle替架构背锅，也不能用架构aggregate替recipe定罪。
 
 ## 1. 当前证据与结论边界

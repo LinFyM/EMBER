@@ -10,7 +10,53 @@
 `AGENTS.md`与`docs/execution_brief.md`。任何接手者都必须先只读复核现场，
 不能按历史快照重复启动进程。
 
-## 0-current. UCP true-fast400完成，normalized-group4正式运行中
+## 0-current. task/query RNG-v1失效，GROUP4已停，CPU+CUDA v2重封存中
+
+当前没有需要继承的训练、评测或tmux进程。原GROUP4正式进程已正常Ctrl-C停止；
+不得恢复：
+
+```text
+commit       cfc2ad14612f7c28bb5bdc48c307bd525077d3c0
+root         /data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_cycle_normalized_group4_truefast400_formal_dev_r4_b20_seed7_cfc2ad1_20260801
+final state  307 metrics rows / optimizer step307 / 51 complete task cycles
+checkpoints  step150, step300
+summary      absent (interrupted)
+status       invalid_rng_v1_operator_contract; retain only, no resume/eval
+tmux         exited
+```
+
+根因已定位到policy functional forward的随机生命周期，而不是数据sampler。RNG-v1
+`scoped_policy_randomness`只fork/seed指定CUDA generator；但已安装LeRobot PI05的
+`sample_beta`通过CPU `torch.distributions.Beta.sample`生成flow timestep，再搬到
+CUDA。于是Gaussian noise按task/query固定，而time仍消费`seed+rank`的ambient CPU
+stream。step0 public LoRA严格identity，选取RAW/GROUP4重叠的tasks 12/14/34/37做
+离线重建，action row IDs、demo IDs、frame IDs、teacher video及derived query seed
+全部逐项相同；RAW/GROUP4 loss却为：
+
+```text
+task12  .1528247595  vs .1052939072
+task14  .1260546446  vs .1250408590
+task34  .0992577970  vs .1143911630
+task37  .1338744909  vs .1788422614
+```
+
+四个task在两operator间换rank，这正是ambient CPU time暴露出来的预期方式。旧RAW
+autoscaled与true-fast保持相同rank/task/microtask顺序，cycle0 row/loss/sketch逐项
+相同，因此二者scheduler差仍可作为同一ambient-time stream下的matched比较；但
+两条run都没有实现所声明的task/query-keyed noise+time，且任何改变rank/phase顺序的
+RAW×GROUP4比较均不成立。旧GROUP4 smoke与formal首row相同也只说明ambient stream
+在相同rank/order下可重复，不证明跨顺序stateless。
+
+当前最窄修复把CPU default generator和指定CUDA generator放在同一fork scope内，
+用同一个task/query seed初始化并在forward后恢复；scheme升为
+`task_query_keyed_stateless_policy_cpu_cuda_v2`，cycle-normalized config schema、
+RAW/GROUP4 checkpoint family以及shared/trainer/rank schema全部升v2。两份formal
+config现为blocked，旧v1 checkpoint必须fail-closed。紧邻动作是：完成CPU全回归并
+push；从新frozen worktree在GPU4--7做一次跨rank/phase identity manipulation和
+fresh/exact-resume；重新seal后从全新root依次fresh运行RAW与GROUP4。CV-ADR保持隔离，
+等正确operator cell裁决后再集成。后续全部由主进程执行，不使用subagent。
+
+## 0-rng-v1. UCP true-fast400 observed bundle与已失效GROUP4启动快照
 
 clean frozen `cfc2ad1`的task/query-keyed UCP raw已经按真实
 `warmup17 + decay400`从fresh identity完成前200/400 logical cycles；不得重复启动：
@@ -37,23 +83,24 @@ success、26/36个各自独有，Jaccard `.5664`。scheduler主要延后并重�
 paired interaction analysis SHA为
 `81eca3ccb88a7c77f3af6f7a12a2d141e9e1580e30ae06c040a7644eaa6bab7e`。
 
-同一frozen authority的cycle-normalized randomized-group4现正fresh正式运行：
+同一frozen authority的cycle-normalized randomized-group4曾fresh正式运行，现已因
+上述RNG-v1合同偏差停止，以下仅保留启动provenance：
 
 ```text
 config  configs/pi05_as_writer_unified_causal_program_cycle_normalized_group4_v1.json
 root    /data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_cycle_normalized_group4_truefast400_formal_dev_r4_b20_seed7_cfc2ad1_20260801
 log     /data/ymdai/logs/ember/pi05_as_writer_ucp_taskquery_cycle_normalized_group4_truefast400_formal_dev_r4_b20_seed7_cfc2ad1_20260801.log
-tmux    ember-ucp-tq-g4-tf400-cfc2ad1
+tmux    已退出（原名ember-ucp-tq-g4-tf400-cfc2ad1）
 scale   0->1200 physical updates = 0->200 complete 24-task cycles
 ```
 
 首cycle六phase与raw cycle0逐task使用相同teacher demo和sampled-frame count，恰好
 24 tasks、24 videos和480 queries；scheduler只在phase5后推进，step2起frontend、
-Program、compiler和factor均finite可达，0 OOM/clip。完成后固定评测physical
-step300/600/900/1200（cycle50/100/150/200）的同一paired correct400，再裁决
-raw×group4；不得按train/held loss提前选择。CV-ADR隔离分支最新rebase/verification
-commit为`3798994`，只有operator裁决后才集成、做105-frame B20 profile/resume和
-formal。后续全部由主进程执行，暂停subagent使用。
+Program、compiler和factor均finite可达，0 OOM/clip；这些并不能
+覆盖CPU timestep合同错误。该root禁止评测/resume，待RNG-v2 fresh配对重跑。
+CV-ADR隔离分支最新rebase/verification commit为`3798994`，只有正确operator裁决后
+才集成、做105-frame B20 profile/resume和formal。后续全部由主进程执行，暂停
+subagent使用。
 
 ## 0-prior. UCP formal scheduler合同纠偏
 
@@ -74,7 +121,8 @@ tmux    已自然退出（原名ember-ucp-control-raw-1a09e71）
 
 该run完成200 cycles、96,000 queries、4,800 one-video conditions，wall
 `3892.039s`，200行全部finite且信息墙读取0；其余UCP topology、raw-full24、B20、
-teacher-video/query和task/query-keyed functional randomness合同均有效。macro50/
+teacher-video/query合同有效，但task/query functional randomness遗漏CPU Beta time。
+macro50/
 100/150/200的同一paired correct400已全部自然完成，为`81/72/107/78`；四条均为
 400 rows、36/36 shards、0 failure，训练与评测tmux均已退出。macro150是
 observed-best且breadth8，但150→200为gained/lost `14/43`，回落29点；不续训、不做

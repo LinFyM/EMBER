@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_unified_causal_program_cycle_normalized_recipe_overlay_v1",
+  "schema_version": "ember_pi05_unified_causal_program_cycle_normalized_recipe_overlay_v2",
   "base_config": "configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json",
   "base_sha256": "c820205325755a8cca527814aa95ffab9107eaf3f8a41ba605f0110934a2cf12",
   "replace": {
@@ -33,7 +33,7 @@
       "action_video_assignment": "all_actions_share_single_video_lora",
       "logical_pair_batch": "per_task_action_batch",
       "policy_noise_contract": "one task-query-keyed stateless policy flow noise and time draw per action query",
-      "policy_randomness_scheme": "task_query_keyed_stateless_policy_cuda_v1",
+      "policy_randomness_scheme": "task_query_keyed_stateless_policy_cpu_cuda_v2",
       "pair_loss_reduction": "mean_within_task_then_equal_raw_mean_over_selected_4_tasks",
       "task_loss_scale_before_backward": "per_task_unscaled_then_exact_raw_selected4_mean",
       "ddp_gradient_sync": "none_during_task_gradients_then_bounded_parameter_chunk_allgathers_for_exact_raw_selected4_mean_and_read_only_4x4_grams",
@@ -81,7 +81,7 @@
       "budget_role": "fresh_ucp_cycle_normalized_randomized_group4_200_cycle_control"
     },
     "profile_defaults": {
-      "status": "sealed_b20_after_live_105_frame_three_cycle_and_exact_resume_profile",
+      "status": "b20_capacity_retained_pending_cpu_cuda_v2_rng_reseal",
       "expected_world_size": 4,
       "total_steps": 18,
       "per_rank_batch_size": 20,
@@ -89,7 +89,7 @@
       "selected_stop_step": 6
     },
     "profile_evidence": {
-      "status": "sealed_b20_after_live_105_frame_three_cycle_and_exact_resume_profile",
+      "status": "b20_capacity_retained_pending_cpu_cuda_v2_rng_reseal",
       "allowed_physical_gpu_ids": [4, 5, 6, 7],
       "fixed_frame_stride": 5,
       "teacher_videos_per_task_visit": 1,
@@ -132,7 +132,8 @@
         "profile_run_summary_sha256": "f37552eafe29db1587e48d82acfcd2db820cb1831700da2406ce3ea5d029ee36"
       },
       "exact_resume_smoke": {
-        "status": "pass_fresh_step1_resume_to3_then_cross_cycle_boundary_to7",
+        "status": "invalidated_rng_v1_evidence_pending_cpu_cuda_v2_manipulation_and_exact_resume",
+        "rng_v1_contract_invalidated": true,
         "implementation_commit": "04491b0ac9815635ebedbb46151f7948c0c59e7f",
         "root": "/data/ymdai/outputs/ember/pi05_as_writer_ucp_group4_formalseed_resume_smoke_r4_wip_20260801_retry1",
         "log": "/data/ymdai/logs/ember/pi05_as_writer_ucp_group4_formalseed_resume_smoke_r4_wip_20260801_retry2.log",
@@ -150,8 +151,8 @@
       "inference_profile": null
     },
     "formal_run": {
-      "status": "sealed",
-      "launch_state": "ready_for_fresh_update0_to1200",
+      "status": "blocked_pending_cpu_cuda_v2_rng_reseal",
+      "launch_state": "blocked_pending_cpu_cuda_v2_manipulation_and_exact_resume",
       "expected_world_size": 4,
       "total_steps": 2400,
       "per_rank_batch_size": 20,

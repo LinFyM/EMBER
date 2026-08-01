@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -358,6 +359,51 @@ def test_task_query_policy_rng_is_phase_independent_and_restores_outer_rng(
     assert torch.equal(direct, first[2]["x"])
 
 
+def test_cuda_policy_rng_keys_cpu_time_and_cuda_noise_and_restores_both(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Exercise the CUDA branch without requiring a physical CUDA device."""
+
+    cuda_generator = torch.Generator()
+
+    @contextmanager
+    def fake_fork_rng(*, devices: list[int], device_type: str):
+        assert devices == [0]
+        assert device_type == "cuda"
+        cpu_state = torch.get_rng_state().clone()
+        cuda_state = cuda_generator.get_state().clone()
+        try:
+            yield
+        finally:
+            torch.set_rng_state(cpu_state)
+            cuda_generator.set_state(cuda_state)
+
+    monkeypatch.setattr(torch.random, "fork_rng", fake_fork_rng)
+    monkeypatch.setattr(torch.cuda, "default_generators", (cuda_generator,))
+
+    torch.random.default_generator.manual_seed(101)
+    cuda_generator.manual_seed(202)
+    outer_cpu = torch.get_rng_state().clone()
+    outer_cuda = cuda_generator.get_state().clone()
+    with scoped_policy_randomness(303, torch.device("cuda:0")):
+        first_time = torch.rand(4)
+        first_noise = torch.rand(4, generator=cuda_generator)
+    assert torch.equal(torch.get_rng_state(), outer_cpu)
+    assert torch.equal(cuda_generator.get_state(), outer_cuda)
+
+    torch.random.default_generator.manual_seed(404)
+    cuda_generator.manual_seed(505)
+    changed_outer_cpu = torch.get_rng_state().clone()
+    changed_outer_cuda = cuda_generator.get_state().clone()
+    with scoped_policy_randomness(303, torch.device("cuda:0")):
+        second_time = torch.rand(4)
+        second_noise = torch.rand(4, generator=cuda_generator)
+    assert torch.equal(torch.get_rng_state(), changed_outer_cpu)
+    assert torch.equal(cuda_generator.get_state(), changed_outer_cuda)
+    assert torch.equal(first_time, second_time)
+    assert torch.equal(first_noise, second_noise)
+
+
 def test_cycle_normalized_optimizer_matches_lr_decay_and_moment_clock() -> None:
     raw_config = load_writer_config(TASK_QUERY_RAW_CONFIG)
     group_config = load_writer_config(GROUP4_CONFIG)
@@ -438,13 +484,17 @@ def test_cycle_normalized_configs_and_checkpoint_families_fail_closed() -> None:
     group4 = load_writer_config(GROUP4_CONFIG)
     assert raw["schema_version"] == AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA
     assert group4["schema_version"] == AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA
-    assert raw["formal_run"]["status"] == "sealed"
-    assert raw["formal_run"]["launch_state"] == (
-        "ready_for_fresh_macro0_to200"
+    assert raw["formal_run"]["status"] == (
+        "blocked_pending_cpu_cuda_v2_rng_reseal"
     )
-    assert group4["formal_run"]["status"] == "sealed"
+    assert raw["formal_run"]["launch_state"] == (
+        "blocked_pending_cpu_cuda_v2_manipulation_and_exact_resume"
+    )
+    assert group4["formal_run"]["status"] == (
+        "blocked_pending_cpu_cuda_v2_rng_reseal"
+    )
     assert group4["formal_run"]["launch_state"] == (
-        "ready_for_fresh_update0_to1200"
+        "blocked_pending_cpu_cuda_v2_manipulation_and_exact_resume"
     )
     assert raw["formal_run"]["total_steps"] == 400
     assert group4["formal_run"]["total_steps"] == 2400
@@ -477,18 +527,22 @@ def test_cycle_normalized_configs_and_checkpoint_families_fail_closed() -> None:
         "step1_and_step3_payloads_unchanged_after_resume"
     ] is True
     assert group_resume["scheduler_logical_updates_after_step7"] == 1
-    assert checkpoint_state_family(raw) == "ucp_task_query_keyed_rawfull24_v1"
+    assert checkpoint_state_family(raw) == "ucp_task_query_keyed_rawfull24_v2"
     assert checkpoint_state_family(group4) == (
-        "ucp_cycle_normalized_randomized_group4_v1"
+        "ucp_cycle_normalized_randomized_group4_v2"
     )
     assert _state_schemas(1, checkpoint_state_family(raw))[0] != (
         _state_schemas(1)[0]
     )
     assert _state_schemas(6, checkpoint_state_family(group4)) == (
         AS_WRITER_CYCLE_NORMALIZED_GROUP4_CHECKPOINT_SCHEMA,
-        "ember_pi05_unified_causal_program_cycle_normalized_group4_trainer_state_v1",
+        "ember_pi05_unified_causal_program_cycle_normalized_group4_trainer_state_v2",
         AS_WRITER_CYCLE_NORMALIZED_GROUP4_RANK_STATE_SCHEMA,
     )
+    with pytest.raises(WriterModelError, match="unsupported"):
+        _state_schemas(1, "ucp_task_query_keyed_rawfull24_v1")
+    with pytest.raises(WriterModelError, match="unsupported"):
+        _state_schemas(6, "ucp_cycle_normalized_randomized_group4_v1")
 
     launch = build_update_runtime_contract(
         config=group4,
@@ -503,7 +557,7 @@ def test_cycle_normalized_configs_and_checkpoint_families_fail_closed() -> None:
         rank_topology=({}, {}, {}, {}),
     )
     assert launch["checkpoint_state_family"] == (
-        "ucp_cycle_normalized_randomized_group4_v1"
+        "ucp_cycle_normalized_randomized_group4_v2"
     )
     assert launch["phase_cost_assignment_input"] == "none"
     assert launch["rank_local_long_first"] == "single_task_trivial_order"
@@ -543,6 +597,9 @@ def test_cycle_normalized_formal_runtime_keeps_two_stage_total(
             skip_data_sha=True,
         )
         config = load_writer_config(path)
+        with pytest.raises(WriterModelError, match="not sealed"):
+            resolve_runtime(args, config, context)
+        config["formal_run"]["status"] = "sealed"
         total, batch, checkpoints = resolve_runtime(args, config, context)
         assert (total, batch, args.stop_after_step) == (
             expected_total,

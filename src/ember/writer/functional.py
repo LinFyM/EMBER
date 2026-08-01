@@ -18,7 +18,9 @@ from ember.lora import (
 from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 
-TASK_QUERY_POLICY_RNG_SCHEME = "task_query_keyed_stateless_policy_cuda_v1"
+TASK_QUERY_POLICY_RNG_SCHEME = (
+    "task_query_keyed_stateless_policy_cpu_cuda_v2"
+)
 
 
 def task_query_policy_rng_seed(
@@ -63,7 +65,13 @@ def scoped_policy_randomness(
     seed: int | None,
     device: torch.device | str | None,
 ) -> Iterator[None]:
-    """Seed and restore only the policy forward's local CPU/CUDA generator."""
+    """Seed and restore the policy forward's local CPU and CUDA generators.
+
+    PI05 samples flow noise on the policy device but samples its Beta flow
+    timestep through the CPU default generator before moving it to the device.
+    A CUDA policy therefore requires both generators to be keyed by the same
+    task/query identity.
+    """
 
     if seed is None:
         yield
@@ -76,6 +84,7 @@ def scoped_policy_randomness(
         if index is None:
             index = torch.cuda.current_device()
         with torch.random.fork_rng(devices=[index], device_type="cuda"):
+            torch.random.default_generator.manual_seed(seed)
             torch.cuda.default_generators[index].manual_seed(seed)
             yield
         return

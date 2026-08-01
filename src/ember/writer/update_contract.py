@@ -104,11 +104,11 @@ def checkpoint_state_family(config: Mapping[str, Any]) -> str:
     topology = str(training["update_topology"])
     task_query_keyed = (
         training.get("policy_randomness_scheme")
-        == "task_query_keyed_stateless_policy_cuda_v1"
+        == "task_query_keyed_stateless_policy_cpu_cuda_v2"
     )
     if topology == "task_complete_all_tasks":
         return (
-            "ucp_task_query_keyed_rawfull24_v1"
+            "ucp_task_query_keyed_rawfull24_v2"
             if task_query_keyed
             else "ucp_legacy_full24_v1"
         )
@@ -119,7 +119,7 @@ def checkpoint_state_family(config: Mapping[str, Any]) -> str:
         == "cycle_normalized_randomized_group4_six_phase_task_cycle"
         and task_query_keyed
     ):
-        return "ucp_cycle_normalized_randomized_group4_v1"
+        return "ucp_cycle_normalized_randomized_group4_v2"
     raise WriterModelError("unsupported AS-Writer checkpoint state family")
 
 

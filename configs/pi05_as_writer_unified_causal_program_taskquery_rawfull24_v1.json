@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_unified_causal_program_cycle_normalized_recipe_overlay_v1",
+  "schema_version": "ember_pi05_unified_causal_program_cycle_normalized_recipe_overlay_v2",
   "base_config": "configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json",
   "base_sha256": "c820205325755a8cca527814aa95ffab9107eaf3f8a41ba605f0110934a2cf12",
   "replace": {
@@ -16,7 +16,7 @@
       "action_video_assignment": "all_actions_share_single_video_lora",
       "logical_pair_batch": "per_task_action_batch",
       "policy_noise_contract": "one task-query-keyed stateless policy flow noise and time draw per action query",
-      "policy_randomness_scheme": "task_query_keyed_stateless_policy_cuda_v1",
+      "policy_randomness_scheme": "task_query_keyed_stateless_policy_cpu_cuda_v2",
       "pair_loss_reduction": "mean_within_task_then_equal_mean_over_24_tasks",
       "task_loss_scale_before_backward": "per_task_unscaled_then_exact_raw_full24_mean",
       "ddp_gradient_sync": "none_during_task_gradients_then_bounded_parameter_chunk_allgathers_for_exact_raw_full24_mean_and_read_only_grams",
@@ -63,7 +63,7 @@
       "budget_role": "fresh_ucp_task_query_keyed_raw_reference_200_cycle_control"
     },
     "profile_defaults": {
-      "status": "sealed_b20_after_inherited_longest_video_and_live_task_query_rng_resume_profile",
+      "status": "b20_capacity_retained_pending_cpu_cuda_v2_rng_reseal",
       "expected_world_size": 4,
       "total_steps": 3,
       "per_rank_batch_size": 20,
@@ -71,7 +71,7 @@
       "selected_stop_step": 1
     },
     "profile_evidence": {
-      "status": "sealed_b20_after_inherited_longest_video_and_live_task_query_rng_resume_profile",
+      "status": "b20_capacity_retained_pending_cpu_cuda_v2_rng_reseal",
       "allowed_physical_gpu_ids": [4, 5, 6, 7],
       "fixed_frame_stride": 5,
       "teacher_videos_per_task_visit": 1,
@@ -107,7 +107,7 @@
         "all_steps_finite": true,
         "all_four_ranks_completed": true,
         "each_macro_covers_all_24_tasks_exactly_once": true,
-        "policy_randomness_scheme": "task_query_keyed_stateless_policy_cuda_v1",
+        "policy_randomness_scheme": "task_query_keyed_stateless_policy_cuda_v1_invalidated_by_unkeyed_cpu_beta_time",
         "root": "/data/ymdai/outputs/ember/pi05_as_writer_ucp_rawfull24_formalseed_resume_smoke_r4_wip_20260801",
         "log": "/data/ymdai/logs/ember/pi05_as_writer_ucp_rawfull24_formalseed_resume_smoke_r4_wip_20260801.log",
         "command_sha256": "5042eed69b1d6b11b6bf357284f306577c443bfa2f8d02e28a72b28a3a087002",
@@ -116,7 +116,8 @@
         "run_summary_sha256": "eac4eb17b6377463294255e15212018b1ce797a1bdcadad67a8db4695da4bd34"
       },
       "exact_resume_smoke": {
-        "status": "pass_fresh_step1_then_exact_resume_to_step3",
+        "status": "invalidated_rng_v1_evidence_pending_cpu_cuda_v2_manipulation_and_exact_resume",
+        "rng_v1_contract_invalidated": true,
         "implementation_commit": "04491b0ac9815635ebedbb46151f7948c0c59e7f",
         "step1_snapshot_sha256": "aa8910876fe793a8c418d11adb998daba9de7eccc0922be0389ad51df19fbc7f",
         "step1_payloads_unchanged_after_resume": true,
@@ -128,8 +129,8 @@
       "inference_profile": null
     },
     "formal_run": {
-      "status": "sealed",
-      "launch_state": "ready_for_fresh_macro0_to200",
+      "status": "blocked_pending_cpu_cuda_v2_rng_reseal",
+      "launch_state": "blocked_pending_cpu_cuda_v2_manipulation_and_exact_resume",
       "expected_world_size": 4,
       "total_steps": 400,
       "per_rank_batch_size": 20,

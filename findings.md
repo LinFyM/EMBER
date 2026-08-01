@@ -6,7 +6,30 @@
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
-## 2026-08-01 UCP true-fast400 scheduler裁决与normalized-group4启动
+## 2026-08-01 task/query RNG-v1根因与operator cell失效
+
+- `scoped_policy_randomness`的CUDA分支只seed指定CUDA generator；安装版LeRobot
+  PI05的Gaussian flow noise在CUDA采样，但Beta flow timestep经CPU
+  `torch.distributions.Beta.sample`生成后才搬到device。所谓v1 stateless合同因此
+  实际是`query-keyed CUDA noise + rank/order-keyed ambient CPU time`。
+- step0 public LoRA严格identity，Writer topology/operator不可能影响source-policy
+  functional loss。离线重建确认RAW/GROUP4共同tasks 12/14/34/37的action row IDs、
+  demo/frame IDs、teacher video长度和derived query seed逐项相同；loss仍从
+  `.152825/.126055/.099258/.133874`变为
+  `.105294/.125041/.114391/.178842`。四task恰好换rank，构成直接因果诊断。
+- GROUP4 formal已正常停止于307 updates/51 complete cycles；root、metrics、
+  step150/300 checkpoints保留，但没有run summary，且禁止resume/eval。该run不能
+  识别update operator，继续消耗到1200只会扩大无效证据。
+- RAW autoscaled与true-fast保持相同rank/task/microtask顺序，cycle0 rows/loss/sketch
+  完全相同；故scheduler差仍是同一ambient-time stream下的matched comparison。
+  但两条absolute只属于RNG-v1实现bundle，不能声称真正query-keyed time，也不能
+  与换rank/phase的GROUP4比较。旧ambient recipes不整体失效；被推翻的是新v1合同。
+- 最窄职责完整修复是同一fork scope内同时seed/restore CPU default与指定CUDA
+  generator，不改数据、信息墙、模型或loss。randomness scheme、cycle-normalized
+  config schema、RAW/GROUP4 checkpoint family和shared/trainer/rank schema全部升v2，
+  旧checkpoint必须fail-closed。formal在真实manipulation/resume重封存前保持blocked。
+
+## 2026-08-01 UCP true-fast400 scheduler裁决与normalized-group4启动（RNG-v1快照）
 
 - clean frozen `cfc2ad1`的task/query-keyed UCP raw从fresh identity自然完成前
   200/400 logical cycles：96,000 queries、4,800 one-video conditions、wall

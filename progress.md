@@ -8,7 +8,25 @@ GPU范围和训练步长是当时快照；活动状态只取
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
 
-## 2026-08-01 UCP true-fast400裁决与normalized-group4正式运行
+## 2026-08-01 task/query RNG-v2纠偏与旧GROUP4停止
+
+- 审计policy forward随机源后确认RNG-v1遗漏CPU Beta flow timestep：CUDA Gaussian
+  noise按query固定，time仍跟随rank-local ambient CPU stream。step0 identity的四个
+  跨rank重叠task在rows/video/seed完全一致时loss显著不同，根因已由实现与观测双证。
+- 对唯一属于本任务的tmux发送Ctrl-C，GROUP4正常停止在physical step307、51 complete
+  cycles；本训练进程/tmux均退出。root、307行metrics、step150/300 checkpoints保留
+  为invalid-contract provenance，无summary，不resume、不评测。
+- main正在实施CPU+CUDA RNG-v2：同一scope共同fork/seed/restore，升级randomness
+  scheme、cycle-normalized config与task-query checkpoint schemas。两份formal config
+  已fail-closed为pending reseal；旧v1 checkpoint不能被新family接受。
+- 定向CPU回归当前`19 passed`，新增无需物理GPU的CUDA-branch测试同时验证CPU time、
+  CUDA noise可重复且外层两个generator均恢复。下一步是全回归、commit/push，再用
+  新frozen worktree在GPU4--7完成真实manipulation/resume并fresh重跑两臂。
+- 既有RAW autoscaled-vs-true scheduler pair因rank/task/microtask顺序相同仍可作为
+  同一ambient stream下的匹配scheduler比较；其absolute只保留为RNG-v1 bundle结果。
+  CV-ADR继续隔离等待有效operator裁决；后续不使用subagent。
+
+## 2026-08-01 UCP true-fast400裁决与normalized-group4正式运行（RNG-v1快照）
 
 - clean frozen `cfc2ad1`的task/query-keyed UCP raw已按真实
   `warmup17 + decay400`从fresh identity完成前200/400 cycles：96,000 queries、

@@ -130,11 +130,19 @@ runner、split 或 GPU 权限。
   `89/71/82/117`。winner macro200只有117、breadth7且仅4 tasks达到5次成功，
   不做五臂；candidate/scheduler-interaction SHA分别为
   `7b7d9822...dd3`/`81eca3cc...ab7e`。
-- [ ] 同一frozen `cfc2ad1`的cycle-normalized randomized-group4 formal正在
-  fresh运行0→1200 updates（200 cycles）；首cycle与raw的24个teacher-video
-  assignments逐项相同，24 tasks/24 videos/480 queries、scheduler边界、B20和
-  全主路径finite合同均已通过。完成后评测cycle50/100/150/200的paired correct400，
-  再做预注册raw×group4裁决。
+- [x] 审计task/query RNG-v1并定位真实合同偏差：CUDA Gaussian noise按query锁定，
+  但LeRobot PI05 Beta flow timestep仍从ambient CPU generator采样。step0 identity的
+  四个跨rank重叠task在action rows/video/seed完全一致时loss仍改变，直接证伪跨
+  rank/phase stateless合同。
+- [x] 正常停止`cfc2ad1` GROUP4 formal于physical step307/51 complete cycles；保留
+  metrics与step150/300 checkpoint为invalid-contract provenance，禁止resume/eval。
+- [ ] 完成CPU+CUDA task/query RNG-v2修复：同时fork/seed/restore两个generator，
+  升级config、checkpoint family及三类state schema，完成CPU全回归并commit/push。
+- [ ] 从新frozen authority仅在GPU4--7完成跨rank/phase identity manipulation与
+  fresh/exact-resume重新seal；B20容量证据可继承，但正式状态在此之前fail-closed。
+- [ ] 从全新root和fresh identity重跑RNG-v2 RAW及cycle-normalized GROUP4，固定评测
+  cycle50/100/150/200 paired correct400，再做预注册operator裁决。v1 RAW absolute
+  只作observed bundle，v1 GROUP4不进入裁决。
 - [x] 在独立worktree实现CV-ADR canonical路径；参数`10,241,024`、完整CPU回归
   `225 passed`、结构门无hard violation。分支已rebase到当前authority并以
   `3798994`记录复验；formal configs在group4裁决及真实B20/profile/resume前保持

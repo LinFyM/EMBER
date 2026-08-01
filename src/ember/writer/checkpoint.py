@@ -51,22 +51,22 @@ AS_WRITER_SERIAL4_RANK_STATE_SCHEMA = (
     "ember_pi05_unified_causal_program_serial4_exposurematched_rank_state_v1"
 )
 AS_WRITER_TASK_QUERY_RAW_CHECKPOINT_SCHEMA = (
-    "ember_pi05_unified_causal_program_task_query_rawfull24_checkpoint_v1"
+    "ember_pi05_unified_causal_program_task_query_rawfull24_checkpoint_v2"
 )
 AS_WRITER_TASK_QUERY_RAW_TRAINER_STATE_SCHEMA = (
-    "ember_pi05_unified_causal_program_task_query_rawfull24_trainer_state_v1"
+    "ember_pi05_unified_causal_program_task_query_rawfull24_trainer_state_v2"
 )
 AS_WRITER_TASK_QUERY_RAW_RANK_STATE_SCHEMA = (
-    "ember_pi05_unified_causal_program_task_query_rawfull24_rank_state_v1"
+    "ember_pi05_unified_causal_program_task_query_rawfull24_rank_state_v2"
 )
 AS_WRITER_CYCLE_NORMALIZED_GROUP4_CHECKPOINT_SCHEMA = (
-    "ember_pi05_unified_causal_program_cycle_normalized_group4_checkpoint_v1"
+    "ember_pi05_unified_causal_program_cycle_normalized_group4_checkpoint_v2"
 )
 AS_WRITER_CYCLE_NORMALIZED_GROUP4_TRAINER_STATE_SCHEMA = (
-    "ember_pi05_unified_causal_program_cycle_normalized_group4_trainer_state_v1"
+    "ember_pi05_unified_causal_program_cycle_normalized_group4_trainer_state_v2"
 )
 AS_WRITER_CYCLE_NORMALIZED_GROUP4_RANK_STATE_SCHEMA = (
-    "ember_pi05_unified_causal_program_cycle_normalized_group4_rank_state_v1"
+    "ember_pi05_unified_causal_program_cycle_normalized_group4_rank_state_v2"
 )
 
 
@@ -99,7 +99,7 @@ def _state_schemas(
         )
     if (
         optimizer_updates_per_task_cycle == 1
-        and family == "ucp_task_query_keyed_rawfull24_v1"
+        and family == "ucp_task_query_keyed_rawfull24_v2"
     ):
         return (
             AS_WRITER_TASK_QUERY_RAW_CHECKPOINT_SCHEMA,
@@ -108,7 +108,7 @@ def _state_schemas(
         )
     if (
         optimizer_updates_per_task_cycle == 6
-        and family == "ucp_cycle_normalized_randomized_group4_v1"
+        and family == "ucp_cycle_normalized_randomized_group4_v2"
     ):
         return (
             AS_WRITER_CYCLE_NORMALIZED_GROUP4_CHECKPOINT_SCHEMA,
@@ -703,9 +703,12 @@ def _validate_cycle_normalized_optimizer_resume(
         return
     group4 = (
         checkpoint_state_family
-        == "ucp_cycle_normalized_randomized_group4_v1"
+        == "ucp_cycle_normalized_randomized_group4_v2"
     )
-    if not group4 and checkpoint_state_family != "ucp_task_query_keyed_rawfull24_v1":
+    if (
+        not group4
+        and checkpoint_state_family != "ucp_task_query_keyed_rawfull24_v2"
+    ):
         raise WriterModelError("unknown cycle-normalized optimizer resume family")
     expected_betas = (
         (0.9825931938526898, 0.9914875553891529)

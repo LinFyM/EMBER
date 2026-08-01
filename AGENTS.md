@@ -56,19 +56,43 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 
 ## Current focused execution task
 
-2026-08-01 current live override：clean frozen `cfc2ad1`的task/query-keyed UCP
+2026-08-01 RNG-v2 current override：`cfc2ad1`的task/query RNG-v1合同存在已证实的
+实现偏差。EMBER只在CUDA generator上按query seed固定Gaussian flow noise；LeRobot
+PI05的Beta flow timestep由CPU default generator采样，因此仍随rank和local microtask
+顺序变化。step0 public LoRA严格identity时，RAW与GROUP4中四个重叠task的action rows、
+teacher demo/frame、query seed均逐项相同，但loss分别为
+`.152825/.126055/.099258/.133874`和`.105294/.125041/.114391/.178842`；四个task在
+两operator间恰好换rank，直接证明CPU timestep没有被query identity锁定。
+
+GROUP4正式root已由owner进程正常Ctrl-C停止在physical step307/51 complete cycles；
+tmux与本训练进程均已退出。root、metrics及step150/300 checkpoints保留为
+`invalid_rng_v1_operator_contract` provenance，禁止resume、评测或形成RAW×GROUP4
+结论。当前代码把CPU timestep与指定CUDA noise共同fork/seed/restore，randomness
+scheme、cycle-normalized config和task-query checkpoint family/state schema全部升为
+v2；两份formal config在真实GPU manipulation与exact-resume重新seal前必须
+fail-closed。随后从fresh identity、全新root重跑RAW和GROUP4；不得续接任何v1
+checkpoint。CV-ADR继续隔离等待正确operator cell。后续推进暂停所有subagent使用。
+
+RNG-v1结果边界：RAW autoscaled200与true-fast400使用相同rank/task/microtask顺序，
+其cycle0逐项loss/sketch完全相同，所以二者scheduler差仍是同一ambient-time stream下
+的matched scheduler比较；两条absolute结果只作为该实现bundle的observed provenance。
+它们不能证明真正task/query-keyed随机合同，也不能与改变rank/phase顺序的GROUP4做
+operator因果比较。历史ambient-RNG recipe本来就把随机流作为bundle的一部分，不因
+本偏差整体作废；被否定的是stateless task/query identity及由此声称的跨顺序隔离。
+
+2026-08-01 superseded RNG-v1 snapshot：clean frozen `cfc2ad1`的UCP
 true-fast400 raw已经fresh完成前200/400 cycles，macro50/100/150/200 paired
 correct400为`89/71/82/117`。winner macro200 breadth7、仅4 tasks达到5次成功，
 不达125强五臂门，故不做五臂；candidate与scheduler-interaction analysis SHA为
 `7b7d9822...dd3`和`81eca3cc...ab7e`。与autoscaled-decay200严格配对说明更慢
 scheduler延后并重排峰值，但没有提高UCP single-checkpoint ceiling或解决漂移。
 
-同一frozen `cfc2ad1`的cycle-normalized randomized-group4已fresh正式启动，root为
+同一frozen `cfc2ad1`的cycle-normalized randomized-group4曾fresh启动，root为
 `/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_cycle_normalized_group4_truefast400_formal_dev_r4_b20_seed7_cfc2ad1_20260801`，
-tmux为`ember-ucp-tq-g4-tf400-cfc2ad1`。首cycle与raw逐task teacher demo/frame
+原tmux为`ember-ucp-tq-g4-tf400-cfc2ad1`，现已退出。首cycle与raw逐task teacher demo/frame
 count一致，24 tasks/24 videos/480 queries，scheduler只在cycle边界推进，全部主路径
-finite。完成后固定评测physical step300/600/900/1200并裁决raw×group4；不得按
-train/held loss预选。CV-ADR保持在隔离clean commit `3798994`，operator裁决后才
+finite，但后续确认其CPU Beta timestep未按query固定，故该run不得评测或裁决。
+CV-ADR保持在隔离clean commit `3798994`，正确operator裁决后才
 集成/profile/resume/formal。后续推进暂停所有subagent使用。
 
 2026-08-01 launch-boundary override：scheduler修复commit `e1299db`已push；首个

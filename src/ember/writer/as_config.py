@@ -23,10 +23,10 @@ AS_WRITER_SERIAL4_CONFIG_OVERLAY_SCHEMA = (
     "ember_pi05_unified_causal_program_serial4_exposurematched_recipe_overlay_v1"
 )
 AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA = (
-    "ember_pi05_unified_causal_program_cycle_normalized_as_writer_v1"
+    "ember_pi05_unified_causal_program_cycle_normalized_as_writer_v2"
 )
 AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA = (
-    "ember_pi05_unified_causal_program_cycle_normalized_recipe_overlay_v1"
+    "ember_pi05_unified_causal_program_cycle_normalized_recipe_overlay_v2"
 )
 AS_WRITER_CONFIG_SCHEMAS = (
     AS_WRITER_CONFIG_SCHEMA,
@@ -232,7 +232,7 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
             "per action query"
         ),
         "policy_randomness_scheme": (
-            "task_query_keyed_stateless_policy_cuda_v1"
+            "task_query_keyed_stateless_policy_cpu_cuda_v2"
         ),
     }
     full24 = {

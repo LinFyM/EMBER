@@ -63,6 +63,13 @@ candidate-negative tasks很少。这支持“近正交innovation在平均中被�
 clip时钟与由long-first引入的frame-cost/optimizer-age curriculum，因此不作为
 下一架构的默认recipe。
 
+事后按真实metrics进一步缩小bundle：到150 exposures时raw/serial LR integral为
+`.037808/.226848`，严格`6x`；raw 150步clip触发0次，SERIAL全部1,200步只触发3次
+且都在cycle20前。`weight_decay=1e-4`对应两轨累计纯decay收缩差仅约`1.9e-5`。
+所以clip/decay仍是合同差异，却缺乏解释后期`6--10x`动态写出变化的量级；剩余
+主要候选是六倍Adam moment/bias-correction与参数重线性化、以及phase-cost
+curriculum。后续normalized group4必须针对这些量，而不是笼统声称“小task更新”。
+
 但SERIAL-4 step900 exact50迫使一个重要修正：它没有解决absolute/breadth，
 却确实改变了视频动态从Program到函数的传递。与raw UCP winner macro100
 的exact50相比：

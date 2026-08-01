@@ -86,6 +86,11 @@
   old/new-slow虽然B20、视频序列、query和exposure-phase LR对齐，visits100→150
   参数路径cosine仍仅`.0493`，endpoint exp_avg cosine`.0331`。所以训练更新几何
   是真实根因bundle，但现有数据不能把aggregate、步长、moment、clip或顺序单独定罪。
+- 真实触发频率进一步降低了clip/WD解释：匹配150 exposures时raw/serial LR sum为
+  `.037808/.226848`；raw 150步没有clip，SERIAL 1,200步仅3次gradient norm超过1，
+  且都发生在cycle20前。额外weight-decay累计收缩差约`1.9e-5`。因此后期动态
+  写出差异更可信地指向六倍Adam/moment/重线性化时钟和phase-cost curriculum；
+  normalized randomized group4必须同时消除LR积分和固定long-first phase年龄。
 - UCP最长105-frame B20现场profile连续三macro通过，峰值reserved约77.62GiB；
   每步24 tasks、480 queries、24套单视频LoRA，step2起Program全链梯度可达。
   formal-seed fresh0→1→exact-resume1→3的step1 payload逐文件不变，证明新的raw

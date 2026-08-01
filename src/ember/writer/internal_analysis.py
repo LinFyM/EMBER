@@ -593,7 +593,13 @@ def probe_reference(task: Mapping[str, Any], reference: int, adapters: Mapping[s
         repeated, repeated_metadata = _condition_capture(task, reference, adapters, store, tokenizer, policy, writer, identity, lora, device)
         repeated_state = _state(repeated["decoded"]["public"], 0); repeated_action = policy_action(policy, processor, prepared, repeated_state, identity, lora, seed, device)
         state_error = effective_ba_error(writer, states[0], repeated_state); action_error = relative_metrics(actions[0], repeated_action)
-        if repeated_metadata != metadata or state_error["relative_l2"] > PARITY_TOLERANCE or action_error["relative_l2"] > PARITY_TOLERANCE: raise WriterModelError("internal-analysis deterministic replay failed")
+        metadata_equal = repeated_metadata == metadata
+        if not metadata_equal or state_error["relative_l2"] > PARITY_TOLERANCE or action_error["relative_l2"] > PARITY_TOLERANCE:
+            raise WriterModelError(
+                "internal-analysis deterministic replay failed: "
+                f"metadata_equal={metadata_equal}, effective_ba={state_error}, "
+                f"fixed_policy_action={action_error}"
+            )
         replay_result = {"executed": True, "effective_ba": state_error, "fixed_policy_action": action_error}
     row = {
         "global_task_id": int(task["global_task_id"]), "suite": str(task["suite"]), "task_id": int(task["task_id"]), "reference_ordinal": reference,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import h5py
 import numpy as np
@@ -12,6 +13,8 @@ from ember.writer.internal_analysis import (
     ATTENTION_PARITY_TOLERANCE,
     _attention_parity,
     _parity,
+    _policy_attention_backends,
+    _preserve_policy_attention_backends,
     fixed_policy_query,
 )
 from ember.writer.internal_metrics import CONDITIONS, attention_summary, routing_centered_energy, validate_finite_tree
@@ -133,3 +136,38 @@ def test_bf16_sdpa_parity_tolerance_is_narrowly_scoped() -> None:
     outside_bf16_roundoff[::2] += 2 * ATTENTION_PARITY_TOLERANCE
     with pytest.raises(WriterModelError, match="BF16 SDPA parity failed"):
         _attention_parity("attention", reference, outside_bf16_roundoff)
+
+
+def test_policy_attention_backend_mutation_is_scoped_to_action_probe() -> None:
+    language_config = SimpleNamespace(_attn_implementation="sdpa")
+    expert_config = SimpleNamespace(_attn_implementation="sdpa")
+    policy = SimpleNamespace(
+        model=SimpleNamespace(
+            paligemma_with_expert=SimpleNamespace(
+                paligemma=SimpleNamespace(
+                    model=SimpleNamespace(
+                        language_model=SimpleNamespace(config=language_config)
+                    )
+                ),
+                gemma_expert=SimpleNamespace(
+                    model=SimpleNamespace(config=expert_config)
+                ),
+            )
+        )
+    )
+    assert _policy_attention_backends(policy) == {
+        "language": "sdpa",
+        "expert": "sdpa",
+    }
+    with _preserve_policy_attention_backends(policy) as before:
+        assert before == {"language": "sdpa", "expert": "sdpa"}
+        language_config._attn_implementation = "eager"
+        expert_config._attn_implementation = "eager"
+        assert _policy_attention_backends(policy) == {
+            "language": "eager",
+            "expert": "eager",
+        }
+    assert _policy_attention_backends(policy) == {
+        "language": "sdpa",
+        "expert": "sdpa",
+    }

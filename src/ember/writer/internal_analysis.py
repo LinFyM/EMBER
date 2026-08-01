@@ -10,6 +10,7 @@ import os
 import socket
 import subprocess
 import time
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -63,13 +64,12 @@ PARITY_TOLERANCE = 2e-5
 # for diagnostics that reconstruct SDPA weights; canonical Writer, compiler,
 # and public-LoRA parity retain the strict tolerance above.
 ATTENTION_PARITY_TOLERANCE = 8e-3
-# Repeating the same production CUDA BF16 Writer/policy forward is not
-# bitwise deterministic on this A100 stack.  Treat the observed replay as a
-# measured numerical floor, not as a semantic counterfactual.  The ceiling is
-# deliberately the same one-BF16-unit envelope as explicit SDPA diagnostics;
-# metadata still has to match exactly and every scientific row records the
-# actual stage/BA/action drift.
-NUMERICAL_REPLAY_TOLERANCE = ATTENTION_PARITY_TOLERANCE
+# Production replay stays on the backend that a fresh training/evaluation
+# process uses for Writer generation.  The upstream PI05 recursive sampler
+# temporarily forces eager attention, so policy probes must restore the prior
+# backend before another Writer capture.  With that lifecycle sealed, replay
+# retains the same strict tolerance as canonical public-LoRA parity.
+REPLAY_TOLERANCE = PARITY_TOLERANCE
 PROTECTED = (
     "src/ember/writer/model.py", "src/ember/writer/video_program.py",
     "src/ember/writer/semantic_core.py", "src/ember/writer/semantic_program.py",
@@ -525,13 +525,48 @@ def fixed_policy_query(authority: WriterTaskAuthority, processor: Pi05LiberoProc
     return {"observation.images.base_0_rgb": base, "observation.images.left_wrist_0_rgb": wrist, OBS_LANGUAGE_TOKENS: tokens, OBS_LANGUAGE_ATTENTION_MASK: masks}, identity
 
 
+def _policy_attention_backends(policy: torch.nn.Module) -> dict[str, str]:
+    try:
+        bridge = policy.model.paligemma_with_expert
+        language = bridge.paligemma.model.language_model.config
+        expert = bridge.gemma_expert.model.config
+        result = {
+            "language": str(language._attn_implementation),
+            "expert": str(expert._attn_implementation),
+        }
+    except (AttributeError, TypeError) as error:
+        raise WriterModelError("PI05 attention backend authority changed") from error
+    if any(value not in {"eager", "sdpa"} for value in result.values()):
+        raise WriterModelError(f"unsupported PI05 attention backend: {result}")
+    return result
+
+
+@contextmanager
+def _preserve_policy_attention_backends(
+    policy: torch.nn.Module,
+) -> Any:
+    """Contain PI05 sampler's eager-attention config mutation to one probe."""
+
+    bridge = policy.model.paligemma_with_expert
+    language = bridge.paligemma.model.language_model.config
+    expert = bridge.gemma_expert.model.config
+    before = _policy_attention_backends(policy)
+    try:
+        yield before
+    finally:
+        language._attn_implementation = before["language"]
+        expert._attn_implementation = before["expert"]
+        if _policy_attention_backends(policy) != before:
+            raise WriterModelError("PI05 attention backend restore failed")
+
+
 def policy_action(policy: torch.nn.Module, processor: Pi05LiberoProcessor, prepared: Mapping[str, torch.Tensor], state: Mapping[str, torch.Tensor], identity: Mapping[str, torch.Tensor], lora: Any, seed: int, device: torch.device) -> torch.Tensor:
     identity_sha = lora_state_sha256(identity)
     if lora_state_sha256(task_lora_state_dict(policy)) != identity_sha: raise WriterModelError("source policy LoRA was not identity before fixed query")
     copy_task_lora_state_(policy, state, lora)
     noise = torch.randn(1, int(policy.model.config.chunk_size), int(policy.model.config.max_action_dim), generator=torch.Generator(device="cpu").manual_seed(seed), dtype=torch.float32).to(device)
     try:
-        with torch.inference_mode(), torch.autocast(device_type=device.type, dtype=torch.bfloat16, enabled=device.type == "cuda"):
+        with _preserve_policy_attention_backends(policy), torch.inference_mode(), torch.autocast(device_type=device.type, dtype=torch.bfloat16, enabled=device.type == "cuda"):
             value = policy.predict_action_chunk(dict(prepared), noise=noise, num_steps=10)
     finally:
         copy_task_lora_state_(policy, identity, lora)
@@ -573,6 +608,7 @@ def _condition_capture(task: Mapping[str, Any], reference: int, adapters: Mappin
 
 
 def probe_reference(task: Mapping[str, Any], reference: int, adapters: Mapping[str, Mapping[str, Any]], store: RawTeacherVideoStore, authority: WriterTaskAuthority, tokenizer: Pi05TeacherPrefixTokenizer, processor: Pi05LiberoProcessor, policy: torch.nn.Module, writer: CompleteLoRAWriter, identity: Mapping[str, torch.Tensor], lora: Any, device: torch.device, *, replay: bool) -> tuple[dict[str, Any], dict[str, torch.Tensor], torch.Tensor]:
+    capture_backends = _policy_attention_backends(policy)
     captured, metadata = _condition_capture(task, reference, adapters, store, tokenizer, policy, writer, identity, lora, device)
     prepared, query_identity = fixed_policy_query(authority, processor, device)
     seed = int.from_bytes(hashlib.sha256(json.dumps(["as_writer_fixed_action", int(task["global_task_id"])], separators=(",", ":")).encode()).digest()[:8], "big") & ((1 << 63) - 1)
@@ -613,20 +649,20 @@ def probe_reference(task: Mapping[str, Any], reference: int, adapters: Mapping[s
         metadata_equal = repeated_metadata == metadata
         if (
             not metadata_equal
-            or stage_errors[worst_stage]["relative_l2"] > NUMERICAL_REPLAY_TOLERANCE
-            or state_error["relative_l2"] > NUMERICAL_REPLAY_TOLERANCE
-            or action_error["relative_l2"] > NUMERICAL_REPLAY_TOLERANCE
+            or stage_errors[worst_stage]["relative_l2"] > REPLAY_TOLERANCE
+            or state_error["relative_l2"] > REPLAY_TOLERANCE
+            or action_error["relative_l2"] > REPLAY_TOLERANCE
         ):
             raise WriterModelError(
-                "internal-analysis production numerical replay exceeded its "
-                f"BF16 envelope: metadata_equal={metadata_equal}, "
+                "internal-analysis strict production replay failed: "
+                f"metadata_equal={metadata_equal}, "
                 f"worst_stage={worst_stage}:{stage_errors[worst_stage]}, "
                 f"effective_ba={state_error}, fixed_policy_action={action_error}"
             )
         replay_result = {
             "executed": True,
-            "classification": "production_cuda_bf16_numerical_floor",
-            "tolerance": NUMERICAL_REPLAY_TOLERANCE,
+            "classification": "strict_replay_with_policy_backend_restored",
+            "tolerance": REPLAY_TOLERANCE,
             "metadata_exact": metadata_equal,
             "stage_errors": stage_errors,
             "worst_stage": worst_stage,
@@ -639,6 +675,13 @@ def probe_reference(task: Mapping[str, Any], reference: int, adapters: Mapping[s
         "lora_geometry": {condition: lora_geometry(writer, state) for condition, state in zip(CONDITIONS, states, strict=True)},
         "counterfactuals": counterfactuals, "temporal_key_counterfactual": temporal_keys, "rank_gauge": {"permutation": permutation.cpu().tolist(), "raw_changes": raw_changes, "effective_ba_error": gauge_error, "fixed_policy_action_error": relative_metrics(actions[0], gauge_action)},
         "fixed_policy_query": query_identity, "fixed_policy_action_seed": seed, "deterministic_replay": replay_result,
+        "attention_backend_lifecycle": {
+            "writer_capture": capture_backends,
+            "pi05_recursive_sampler_temporarily_forces_eager": True,
+            "restored_after_each_fixed_policy_action": (
+                _policy_attention_backends(policy) == capture_backends
+            ),
+        },
         "information_wall": {"teacher_action_values_read": 0, "teacher_state_values_sent_to_writer": 0, "teacher_reward_or_terminal_values_read": 0, "policy_query_observation_state_sent_to_writer": 0},
     }
     validate_finite_tree(row)

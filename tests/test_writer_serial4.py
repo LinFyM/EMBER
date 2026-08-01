@@ -19,6 +19,8 @@ from ember.writer.as_config import (
 )
 from ember.writer.as_contract import (
     AS_WRITER_LAUNCH_SCHEMA,
+    _validate_formal_runtime,
+    parse_checkpoint_steps,
     resolve_runtime,
 )
 from ember.writer.as_sampling import MixedTaskBatchSampler, TeacherVideoSchedule
@@ -29,6 +31,7 @@ from ember.writer.checkpoint import (
     _write_shared_state,
     load_writer_checkpoint,
 )
+from ember.writer.model import WriterModelError
 from ember.writer.task_gradient import FlatParameter, compose_raw_mean_gradient
 from ember.writer.update_schedule import (
     advance_scheduler_after_update,
@@ -333,6 +336,10 @@ def test_serial4_config_and_profile_axis_are_fresh_and_fail_closed() -> None:
         config["data"]["teacher_video_seed"],
     ) == (20260721, 20260722)
     assert (
+        config["profile_evidence"]["profile_teacher_video_seed"],
+        config["profile_evidence"]["formal_teacher_video_seed_after_profile_seal"],
+    ) == (172, 20260722)
+    assert (
         config["optimization"]["scheduler"]["warmup_steps"],
         config["optimization"]["scheduler"]["decay_steps"],
     ) == (17, 400)
@@ -347,6 +354,33 @@ def test_serial4_config_and_profile_axis_are_fresh_and_fail_closed() -> None:
         900,
         1200,
     ]
+
+
+def test_serial4_formal_boundaries_must_complete_task_cycles() -> None:
+    config = load_writer_config(SERIAL_CONFIG)
+    config["formal_run"] = copy.deepcopy(config["formal_run"])
+    config["formal_run"].update({
+        "status": "sealed",
+        "checkpoint_steps": [149, 1200, 2400],
+    })
+    checkpoints = parse_checkpoint_steps(
+        config["formal_run"]["checkpoint_steps"], 2400,
+    )
+    context = DistributedContext(
+        rank=0, local_rank=0, world_size=4, device=torch.device("cpu"),
+        numa_node=1, cpu_affinity=(48,),
+    )
+    with pytest.raises(WriterModelError, match="boundaries must complete"):
+        _validate_formal_runtime(
+            argparse.Namespace(resume=Path("checkpoint")),
+            config,
+            context,
+            total_steps=2400,
+            batch_size=20,
+            checkpoint_steps=checkpoints,
+            default_stop=1200,
+            stop_step=1200,
+        )
 
 
 def test_serial4_midcycle_checkpoint_restores_data_and_scheduler_cursor(

@@ -85,6 +85,8 @@
       "global_tasks_per_optimizer_update": 4,
       "optimizer_updates_per_task_cycle": 6,
       "required_longest_real_stride5_video_frames": 105,
+      "profile_teacher_video_seed": 172,
+      "formal_teacher_video_seed_after_profile_seal": 20260722,
       "primary_candidate": {
         "max_frames_per_encoder_call": 32,
         "per_task_action_batch_size": 20

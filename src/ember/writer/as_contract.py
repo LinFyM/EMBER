@@ -120,6 +120,20 @@ def _validate_formal_runtime(
         formal.get("stage_stop_steps", [default_stop]),
         total_steps,
     )
+    updates_per_cycle = int(
+        config["conditioning_training"].get(
+            "optimizer_updates_per_task_cycle", 1,
+        )
+    )
+    if updates_per_cycle > 1 and any(
+        value % updates_per_cycle
+        for value in (
+            total_steps, default_stop, stop_step, *checkpoint_steps, *stage_stops,
+        )
+    ):
+        raise WriterModelError(
+            "formal serial AS-Writer boundaries must complete task cycles"
+        )
     invalid_schedule = (
         observed != expected
         or any(value not in checkpoint_steps for value in stage_stops)

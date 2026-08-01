@@ -679,10 +679,19 @@ def test_finalize_broadcasts_main_failure_without_barrier(
     args = SimpleNamespace(output_dir=tmp_path, references_per_task=1)
     context = SimpleNamespace(is_main=True, world_size=1, device=torch.device("cpu"))
     monkeypatch.setattr(
-        script, "barrier", lambda *_args: pytest.fail("finalize used barrier"),
+        "ember.writer.ucp_analysis_run.dist.barrier",
+        lambda *_args, **_kwargs: pytest.fail("finalize used barrier"),
     )
     with pytest.raises(WriterModelError, match="rows_rank_00"):
-        script._finalize_results(args, context, started=0.0)
+        script.finalize_results(
+            output_dir=args.output_dir,
+            context=context,
+            references_per_task=args.references_per_task,
+            conditions=script.CONDITIONS,
+            result_schema=script.RESULT_SCHEMA,
+            started=0.0,
+            control_group=object(),
+        )
 
 
 def test_fixed_policy_query_never_opens_hdf5_actions(

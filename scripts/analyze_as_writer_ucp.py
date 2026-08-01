@@ -20,7 +20,6 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 import torch
-import torch.distributed as dist
 from safetensors.torch import load_file
 
 from ember.lora import copy_task_lora_state_, validate_lora_state
@@ -33,7 +32,6 @@ from ember.pi05_eval_contract import (
 )
 from ember.pi05_processing import Pi05LiberoProcessor, Pi05TeacherPrefixTokenizer
 from ember.pi05_source_checkpoint import (
-    barrier,
     canonical_hash,
     read_json,
     sha256_file,
@@ -73,16 +71,21 @@ from ember.writer.ucp_analysis import (
     validate_analysis_provenance,
     variance_metrics,
 )
-from ember.writer.ucp_analysis_summary import (
-    matched_diagnostics,
-    summarize_records,
-    validate_finite_tree,
-    validate_rank_payloads,
-)
+from ember.writer.ucp_analysis_summary import matched_diagnostics
 from ember.writer.ucp_analysis_runtime import (
     canonical_program_parity,
     fixed_policy_query,
     policy_action,
+)
+from ember.writer.ucp_analysis_run import (
+    broadcast_value,
+    control_barrier,
+    control_group_contract,
+    create_control_group,
+    destroy_process_groups,
+    finalize_results,
+    record_local_failure,
+    seal_local_rows,
 )
 from ember.writer.validation import _build_models
 
@@ -573,20 +576,12 @@ def _task_records(config: Mapping[str, Any], data_root: Path) -> tuple[dict[str,
     return tuple(rows)
 
 
-def _broadcast(context: Any, value: Any) -> Any:
-    payload = [value if context.is_main else None]
-    if context.world_size > 1:
-        dist.broadcast_object_list(payload, src=0, device=context.device)
-    if isinstance(payload[0], Mapping) and "error" in payload[0]:
-        raise WriterModelError(str(payload[0]["error"]))
-    return payload[0]
-
-
 def _inspect_authority_payload(
     args: argparse.Namespace,
     context: Any,
     authorities: Any,
     task_keys: Sequence[tuple[str, int]],
+    control_group: Any,
 ) -> dict[str, Any]:
     payload: Any = None
     if context.is_main:
@@ -618,13 +613,14 @@ def _inspect_authority_payload(
             }
         except Exception as error:
             payload = {"error": repr(error)}
-    return _broadcast(context, payload)
+    return broadcast_value(context, payload, control_group=control_group)
 
 
 def _publish_run_contract(
     args: argparse.Namespace,
     context: Any,
     payload: Mapping[str, Any],
+    control_group: Any,
 ) -> None:
     if context.is_main:
         args.output_dir.mkdir(parents=True)
@@ -640,6 +636,7 @@ def _publish_run_contract(
                         "scripts/analyze_as_writer_ucp.py",
                         "src/ember/writer/ucp_analysis.py",
                         "src/ember/writer/ucp_analysis_runtime.py",
+                        "src/ember/writer/ucp_analysis_run.py",
                         "src/ember/writer/ucp_analysis_summary.py",
                         "src/ember/writer/ucp_geometry.py",
                     )
@@ -652,12 +649,13 @@ def _publish_run_contract(
             "conditions": list(CONDITIONS), "references_per_task": args.references_per_task,
             "video_seed": args.video_seed, "video_sampling_mode": "without_replacement",
             "world_size": context.world_size, "physical_gpu_ids": [4, 5, 6, 7],
+            "distributed_control": control_group_contract(),
             "rollouts": 0, "teacher_action_values_read": 0,
             "teacher_state_values_sent_to_writer": 0,
             "fixed_policy_query": "validation HDF5 observation-only demo0/frame0 after Writer LoRA generation",
             "counterfactual_contract": COUNTERFACTUAL_CONTRACT,
         })
-    barrier(context)
+    control_barrier(context, control_group)
 
 
 def _analyze_local_tasks(
@@ -674,12 +672,21 @@ def _analyze_local_tasks(
             continue
         task_rows, correct_states, correct_actions = [], [], []
         for reference in range(args.references_per_task):
-            row, state, action = probe_reference(
-                task=task, init_state_id=reference, adapters=adapters, store=store,
-                authority=authority_by_id[int(task["global_task_id"])],
-                policy=policy, writer=writer, identity=identity, lora=lora,
-                tokenizer=tokenizer, processor=processor, device=context.device,
-            )
+            try:
+                row, state, action = probe_reference(
+                    task=task, init_state_id=reference, adapters=adapters, store=store,
+                    authority=authority_by_id[int(task["global_task_id"])],
+                    policy=policy, writer=writer, identity=identity, lora=lora,
+                    tokenizer=tokenizer, processor=processor, device=context.device,
+                )
+            except Exception as error:
+                raise WriterModelError(
+                    "UCP analysis reference failed: "
+                    f"rank={context.rank}, suite={task['suite']}, "
+                    f"task_id={task['task_id']}, "
+                    f"global_task_id={task['global_task_id']}, "
+                    f"reference_ordinal={reference}"
+                ) from error
             task_rows.append(row)
             correct_states.append(state)
             correct_actions.append(action)
@@ -693,69 +700,6 @@ def _analyze_local_tasks(
     return local_results
 
 
-def _seal_local_rows(
-    args: argparse.Namespace,
-    context: Any,
-    local_results: Sequence[Mapping[str, Any]],
-    failure: str | None,
-) -> None:
-    if failure is None:
-        try:
-            validate_finite_tree(local_results, f"rank_{context.rank}")
-        except Exception as error:
-            failure = repr(error)
-    statuses: list[Any] = [None] * context.world_size
-    dist.all_gather_object(statuses, {"rank": context.rank, "error": failure})
-    errors = [status for status in statuses if status["error"]]
-    if errors:
-        raise WriterModelError(f"UCP analysis rank failure: {errors}")
-    write_failure = None
-    try:
-        write_json_atomic(args.output_dir / f"rows_rank_{context.rank:02d}.json", {
-            "rank": context.rank, "rows": list(local_results),
-        })
-    except Exception as error:
-        write_failure = repr(error)
-    dist.all_gather_object(statuses, {"rank": context.rank, "error": write_failure})
-    errors = [status for status in statuses if status["error"]]
-    if errors:
-        raise WriterModelError(f"UCP analysis rank write failure: {errors}")
-
-
-def _finalize_results(
-    args: argparse.Namespace,
-    context: Any,
-    *,
-    started: float,
-) -> None:
-    status: Any = None
-    if context.is_main:
-        try:
-            payloads = []
-            for rank in range(context.world_size):
-                payloads.append(read_json(
-                    args.output_dir / f"rows_rank_{rank:02d}.json"
-                ))
-            rows = validate_rank_payloads(payloads, args.references_per_task)
-            result = {
-                "schema_version": RESULT_SCHEMA, "rows": rows,
-                "summary": summarize_records(rows), "task_count": 8,
-                "references_per_task": args.references_per_task,
-                "conditions": list(CONDITIONS), "rollouts": 0,
-                "wall_seconds": time.monotonic() - started,
-                "run_contract_sha256": canonical_hash(
-                    read_json(args.output_dir / "run_contract.json")
-                ),
-            }
-            validate_finite_tree(result)
-            write_json_atomic(args.output_dir / "analysis.json", result)
-            write_json_atomic(args.output_dir / "summary.json", result["summary"])
-            status = {"ok": True}
-        except Exception as error:
-            status = {"error": repr(error)}
-    _broadcast(context, status)
-
-
 def main() -> None:
     args = parse_args()
     if args.repo != Path(__file__).resolve().parents[1]:
@@ -764,6 +708,7 @@ def main() -> None:
     visible = os.environ.get("CUDA_VISIBLE_DEVICES", "").split(",")
     if context.world_size != 4 or visible != ["4", "5", "6", "7"]:
         raise WriterModelError("canonical UCP analysis requires four ranks on physical GPUs4-7")
+    control_group = create_control_group(context)
     if args.training_run != args.checkpoint.parent.parent:
         raise WriterModelError("analysis checkpoint crossed its declared training run")
     config = load_writer_config(args.config)
@@ -773,8 +718,10 @@ def main() -> None:
         args.repo / "configs/pi05_target_evaluation_v1.json", args.repo,
     )
     task_keys = resolve_role_task_keys(authorities.protocol, "validation")
-    payload = _inspect_authority_payload(args, context, authorities, task_keys)
-    _publish_run_contract(args, context, payload)
+    payload = _inspect_authority_payload(
+        args, context, authorities, task_keys, control_group,
+    )
+    _publish_run_contract(args, context, payload, control_group)
     source, training = payload["source"], payload["training"]
     tasks = _task_records(config, args.data_root)
     task_authorities = tuple(
@@ -804,7 +751,6 @@ def main() -> None:
     )
     started = time.monotonic()
     local_results: list[dict[str, Any]] = []
-    failure = None
     try:
         local_results = _analyze_local_tasks(
             args=args, context=context, tasks=tasks, adapters=payload["adapters"],
@@ -812,16 +758,24 @@ def main() -> None:
             writer=writer, identity=identity, lora=lora, tokenizer=tokenizer,
             processor=processor,
         )
+        seal_local_rows(
+            args.output_dir, context, local_results, control_group,
+        )
+        finalize_results(
+            output_dir=args.output_dir,
+            context=context,
+            references_per_task=args.references_per_task,
+            conditions=CONDITIONS,
+            result_schema=RESULT_SCHEMA,
+            started=started,
+            control_group=control_group,
+        )
     except Exception as error:
-        failure = repr(error)
+        record_local_failure(args.output_dir, context.rank, error)
+        raise
     finally:
         store.close()
-    try:
-        _seal_local_rows(args, context, local_results, failure)
-        _finalize_results(args, context, started=started)
-    finally:
-        if dist.is_initialized():
-            dist.destroy_process_group()
+    destroy_process_groups(control_group)
 
 
 if __name__ == "__main__":

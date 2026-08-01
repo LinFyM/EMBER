@@ -246,17 +246,23 @@ def _pack(value: torch.Tensor, offsets: Sequence[int]) -> tuple[torch.Tensor, to
 
 @torch.inference_mode()
 def capture_writer(writer: CompleteLoRAWriter, policy: torch.nn.Module, frames: torch.Tensor, indices: torch.Tensor, offsets_tensor: torch.Tensor, tokens: torch.Tensor, masks: torch.Tensor, spans: torch.Tensor) -> dict[str, Any]:
-    captured: dict[str, list[Any]] = {name: [] for name in ("encoder", "core", "program", "raw_action")}
+    captured: dict[str, list[Any]] = {
+        name: [] for name in ("encoder", "core", "program", "compiler", "raw_action")
+    }
     handles = [
         writer.semantic_encoder.register_forward_hook(lambda _m, _a, out: captured["encoder"].append(out)),
         writer.semantic_core.register_forward_hook(lambda _m, _a, out: captured["core"].append(out)),
         writer.semantic_program.register_forward_hook(lambda _m, _a, out: captured["program"].append(out)),
+        writer.compiler.register_forward_hook(lambda _m, _a, out: captured["compiler"].append(out)),
         writer.semantic_encoder.interaction_projection.register_forward_pre_hook(lambda _m, args: captured["raw_action"].append(args[0].detach())),
     ]
     try: canonical = writer(frames, indices, offsets_tensor, tokens, masks, spans, policy=policy)
     finally:
         for handle in handles: handle.remove()
-    if any(len(captured[name]) != 1 for name in ("encoder", "core", "program")) or not captured["raw_action"]:
+    if any(
+        len(captured[name]) != 1
+        for name in ("encoder", "core", "program", "compiler")
+    ) or not captured["raw_action"]:
         raise WriterModelError("internal-analysis Writer hooks changed")
     offsets = writer._validated_offsets(offsets_tensor, frames.shape[0])
     q, x, g, action, valid_tokens = captured["encoder"][0]
@@ -268,13 +274,41 @@ def capture_writer(writer: CompleteLoRAWriter, policy: torch.nn.Module, frames: 
     program = _program_pipeline(writer, *raw)
     observed_core, observed_frame_attention = captured["core"][0]
     observed_program = captured["program"][0]
+    observed_coordinates = captured["compiler"][0]
     parity = {"core": _parity("Core final", observed_core, core["final"]), "frame_attention": _parity("frame attention", observed_frame_attention, core["frame_attention"]), "program_key": _parity("Program key", observed_program[0], program["key"]), "program_value": _parity("Program value", observed_program[1], program["value"])}
     if not all(torch.equal(a, b) for a, b in zip(observed_program[2:], (program["endpoints"], program["valid_intervals"], program["valid_semantics"]), strict=True)):
         raise WriterModelError("Program endpoint/mask parity failed")
-    compiled = _compile(writer, core["final"], valid_tokens, program); decoded = _decode(writer, compiled["coordinates"])
+    # The production tensors, not a second BF16 attention pass, own every
+    # downstream scientific metric.  Keep reconstructed intermediates for
+    # diagnostics while anchoring the compiler and counterfactuals to the
+    # single canonical Writer forward above.
+    core["recomputed_final"] = core["final"]
+    core["recomputed_frame_attention"] = core["frame_attention"]
+    core["final"] = observed_core
+    core["frame_attention"] = observed_frame_attention
+    program["recomputed_key"] = program["key"]
+    program["recomputed_value"] = program["value"]
+    program["key"] = observed_program[0]
+    program["value"] = observed_program[1]
+    compiled = _compile(writer, core["final"], valid_tokens, program)
+    parity["compiler_coordinates"] = _attention_parity(
+        "compiler coordinates", observed_coordinates, compiled["coordinates"]
+    )
+    compiled["recomputed_coordinates"] = compiled["coordinates"]
+    compiled["coordinates"] = observed_coordinates
+    decoded = _decode(writer, compiled["coordinates"])
     parity["public"] = mapping_metrics(canonical, decoded["public"])
-    parity["public"]["max_tensor_relative_l2"] = max(relative_metrics(canonical[name], decoded["public"][name])["relative_l2"] for name in canonical)
-    if parity["public"]["max_tensor_relative_l2"] > PARITY_TOLERANCE: raise WriterModelError("canonical public decode parity failed")
+    per_tensor = {
+        name: relative_metrics(canonical[name], decoded["public"][name])
+        for name in canonical
+    }
+    worst_name = max(per_tensor, key=lambda name: per_tensor[name]["relative_l2"])
+    parity["public"]["max_tensor_relative_l2"] = per_tensor[worst_name]["relative_l2"]
+    if parity["public"]["max_tensor_relative_l2"] > PARITY_TOLERANCE:
+        raise WriterModelError(
+            f"canonical public decode parity failed for {worst_name}: "
+            f"{per_tensor[worst_name]}"
+        )
     return {"q": q, "m": packed_x - packed_g, "g": packed_g, "x": packed_x, "a_raw": packed_raw, "a": packed_action, "positions": positions, "valid_frames": valid_frames, "valid_tokens": valid_tokens, "core": core, "program": program, "compiled": compiled, "decoded": decoded, "canonical": canonical, "parity": parity}
 
 
@@ -297,7 +331,16 @@ def counterfactual_states(writer: CompleteLoRAWriter, captured: Mapping[str, Any
     core = captured["core"]["final"]; valid = captured["valid_tokens"]; p = captured["program"]
     def program_row(index: int, *, key: torch.Tensor | None = None, value: torch.Tensor | None = None) -> dict[str, torch.Tensor]:
         return {"key": row(p["key"] if key is None else key, index), "value": row(p["value"] if value is None else value, index), "endpoints": row(p["endpoints"], index), "valid_intervals": row(p["valid_intervals"], index), "valid_semantics": row(p["valid_semantics"], index)}
-    full = _variant(writer, row(core), row(valid), program_row(0)); variants = {"full": full}
+    recomputed_full = _variant(writer, row(core), row(valid), program_row(0))
+    full = _variant(
+        writer,
+        row(core),
+        row(valid),
+        program_row(0),
+        coordinates=row(captured["compiled"]["coordinates"]),
+    )
+    full["attention"] = recomputed_full["attention"]
+    variants = {"full": full}
     permuted_key = row(p["key"]).clone(); interval_count = int(row(p["valid_intervals"]).sum())
     permuted_key[:, :interval_count] = permuted_key[:, :interval_count].flip(1)
     variants["temporal_keys/order_permuted"] = _variant(writer, row(core), row(valid), program_row(0, key=permuted_key))

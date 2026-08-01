@@ -576,7 +576,14 @@ def test_internal_analyzer_recomputes_canonical_ap_path_and_counterfactuals() ->
     assert captured["a"].shape == (5, 2, 256)
     assert captured["program"]["value"].shape[2] == 7
     assert captured["compiled"]["coordinates"].shape == (5, 38, 16, 512)
+    assert captured["compiled"]["recomputed_coordinates"].shape == (
+        5,
+        38,
+        16,
+        512,
+    )
     assert captured["parity"]["public"]["relative_l2"] <= 2e-5
+    assert captured["parity"]["compiler_coordinates"]["relative_l2"] <= 2e-5
     assert captured["compiled"]["parity"]["core_read"]["relative_l2"] <= 2e-5
     assert captured["compiled"]["parity"]["program_read"]["relative_l2"] <= 2e-5
     for block in captured["program"]["attention"]:

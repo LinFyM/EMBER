@@ -1,33 +1,24 @@
 from __future__ import annotations
 
 import json
+from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 import torch
-from safetensors.torch import save_file
+from lerobot.utils.constants import ACTION
 
-from ember.lora import (
-    LORA_A_SUFFIX,
-    LORA_B_SUFFIX,
-    LoRATarget,
-    SmolVLALoRAContract,
-    canonical_contract_sha256,
-    lora_state_sha256,
-)
-from ember.pi05_source_checkpoint import canonical_hash, sha256_file, write_json_atomic
+import ember.writer.endpoint_runtime as endpoint_runtime
+from ember.pi05_source_checkpoint import canonical_hash, write_json_atomic
 from ember.writer.endpoint_validation import (
     ENDPOINT_NOISE_SCHEMA,
     INFERENCE_TIMES,
     METRICS,
-    PORTABLE_CACHE_SCHEMA,
     SEALED_PANEL_PAYLOAD_SHA256,
-    EndpointLoRAEntry,
+    EndpointCandidate,
     _candidate_task_map,
-    _portable_cache_entries,
-    _verify_lora_entry,
-    _validated_payload,
+    _validate_correct400_pairing,
     endpoint_metric_rows,
     endpoint_noise,
     endpoint_noise_seed,
@@ -36,8 +27,12 @@ from ember.writer.endpoint_validation import (
     parse_endpoint_candidate_specs,
 )
 from ember.writer.endpoint_runtime import (
+    _broadcast_rank_zero_validation,
+    _predict_and_teacher_bridge,
+    _task_authorities,
     _teacher_bridge_grid_losses,
     _validate_device_scope,
+    _validate_endpoint_output_rows,
 )
 from ember.writer.model import WriterModelError
 from ember.writer.validation import finalize_args
@@ -53,6 +48,66 @@ def _row(**overrides: int) -> dict[str, int]:
     }
     result.update(overrides)
     return result
+
+
+def _candidate(candidate_id: str, family: str, cursor: int) -> EndpointCandidate:
+    pairing = {"panel": "paired"}
+    return EndpointCandidate(
+        family=family,
+        candidate_id=candidate_id,
+        checkpoint_cursor=cursor,
+        correct400=0,
+        task_breadth=0,
+        correct400_per_task=(),
+        outcome_pairing_payload=pairing,
+        outcome_pairing_sha256=canonical_hash(pairing),
+        evaluation_root=Path("/tmp") / candidate_id,
+        run_contract_file_sha256="1" * 64,
+        run_contract_sha256="2" * 64,
+        results_file_sha256="3" * 64,
+        cache_manifest_file_sha256="4" * 64,
+        entries={},
+    )
+
+
+def _panel_row(ordinal: int, video_group: int) -> dict[str, int]:
+    return {
+        "ordinal": ordinal,
+        "global_task_id": 1,
+        "video_group": video_group,
+        "teacher_demo_index": video_group,
+        "query_ordinal": 0,
+        "action_demo_index": video_group + 10,
+        "action_frame_index": 3,
+        "dataset_row_index": ordinal,
+        "policy_noise_seed": 7,
+    }
+
+
+def _output_row(
+    candidate: EndpointCandidate,
+    panel_row: dict[str, int],
+) -> dict[str, object]:
+    return {
+        **panel_row,
+        "candidate_id": candidate.candidate_id,
+        "family": candidate.family,
+        "checkpoint_cursor": candidate.checkpoint_cursor,
+        "endpoint_noise_seed": endpoint_noise_seed(
+            SEALED_PANEL_PAYLOAD_SHA256, panel_row
+        ),
+        "suite": "libero_spatial",
+        "suite_task_id": 1,
+        "group_wall_seconds": 0.1,
+        "rank": 0,
+        "metrics": {
+            name: {
+                "mse": 1.0,
+                "per_action_dimension_mse": [1.0] * 7,
+            }
+            for name in METRICS
+        },
+    }
 
 
 def test_endpoint_schedule_and_noise_are_exact_row_addressed_cpu_float32() -> None:
@@ -154,6 +209,17 @@ def test_teacher_bridge_control_uses_the_exact_ten_point_grid() -> None:
     assert value.shape == (2, 50, 7)
     assert float(value[0, 0, 0]) == pytest.approx(sum(INFERENCE_TIMES) / 10)
 
+    policy.model.forward = lambda *_args: torch.full(
+        (2, 50, 32), float("inf")
+    )
+    with pytest.raises(WriterModelError, match="flow prediction"):
+        _teacher_bridge_grid_losses(
+            policy,
+            batch,
+            torch.zeros((2, 50, 7)),
+            torch.zeros((2, 50, 32)),
+        )
+
 
 def test_exact_endpoint_wrapper_forces_ten_steps_and_no_grad() -> None:
     class Policy:
@@ -170,6 +236,211 @@ def test_exact_endpoint_wrapper_forces_ten_steps_and_no_grad() -> None:
     )
     assert value.shape == (2, 50, 7)
     assert not value.requires_grad
+
+
+def test_recursive_sampler_and_teacher_bridge_keep_distinct_precision_and_inputs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    autocast_active = False
+    observations: list[tuple[str, bool]] = []
+
+    @contextmanager
+    def fake_autocast(**kwargs):
+        nonlocal autocast_active
+        assert kwargs["enabled"] is True
+        assert not autocast_active
+        autocast_active = True
+        try:
+            yield
+        finally:
+            autocast_active = False
+
+    class Policy:
+        def predict_action_chunk(self, batch, *, noise, num_steps):
+            observations.append(("sampler", autocast_active))
+            assert ACTION not in batch
+            assert not torch.is_grad_enabled()
+            assert num_steps == 10
+            return torch.zeros((noise.shape[0], 50, 7))
+
+    def fake_bridge(_policy, batch, teacher, _noise):
+        observations.append(("teacher_bridge", autocast_active))
+        assert ACTION not in batch
+        assert not torch.is_grad_enabled()
+        return torch.zeros_like(teacher)
+
+    monkeypatch.setattr(endpoint_runtime.torch, "autocast", fake_autocast)
+    monkeypatch.setattr(
+        endpoint_runtime, "_teacher_bridge_grid_losses", fake_bridge
+    )
+    teacher = torch.zeros((2, 50, 7))
+    predicted, grid = _predict_and_teacher_bridge(
+        Policy(),
+        {ACTION: teacher, "observation": torch.zeros(2, 1)},
+        teacher,
+        torch.zeros((2, 50, 32)),
+        torch.device("cuda"),
+    )
+    assert observations == [("sampler", False), ("teacher_bridge", True)]
+    assert predicted.shape == grid.shape == teacher.shape
+
+
+def test_endpoint_finite_contract_rejects_noise_prediction_teacher_and_grid(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        torch,
+        "randn",
+        lambda *_args, **_kwargs: torch.full((50, 32), float("nan")),
+    )
+    with pytest.raises(WriterModelError, match="noise is non-finite"):
+        endpoint_noise(SEALED_PANEL_PAYLOAD_SHA256, (_row(),))
+
+    class Policy:
+        def predict_action_chunk(self, _batch, *, noise, num_steps):
+            assert num_steps == 10
+            return torch.full((noise.shape[0], 50, 7), float("inf"))
+
+    with pytest.raises(WriterModelError, match="predicted action chunk"):
+        exact_endpoint_actions(
+            Policy(), {}, torch.zeros((1, 50, 32), dtype=torch.float32)
+        )
+
+    value = torch.zeros((1, 50, 7))
+    padding = torch.zeros((1, 50), dtype=torch.bool)
+    for position, label in ((0, "predicted"), (1, "teacher"), (2, "grid")):
+        tensors = [value.clone(), value.clone(), value.clone()]
+        tensors[position][0, 0, 0] = float("nan")
+        with pytest.raises(WriterModelError, match=label):
+            endpoint_metric_rows(
+                tensors[0], tensors[1], padding, tensors[2]
+            )
+
+
+def test_endpoint_output_panel_is_exact_complete_and_profile_truncated() -> None:
+    candidates = (
+        _candidate("v52_step00000001", "v52", 1),
+        _candidate("v6_step00000002", "v6", 2),
+    )
+    panel_rows = [_panel_row(0, 0), _panel_row(1, 1)]
+    manifest = {"rows": panel_rows}
+    rows = [_output_row(candidate, panel_rows[0]) for candidate in candidates]
+    assert _validate_endpoint_output_rows(rows, candidates, manifest, 1) == 2
+
+    with pytest.raises(WriterModelError, match="duplicated"):
+        _validate_endpoint_output_rows(
+            [rows[0], dict(rows[0])], candidates, manifest, 1
+        )
+    wrong_cursor = dict(rows[1])
+    wrong_cursor["checkpoint_cursor"] = 99
+    with pytest.raises(WriterModelError, match="candidate identity"):
+        _validate_endpoint_output_rows(
+            [rows[0], wrong_cursor], candidates, manifest, 1
+        )
+    nonfinite = dict(rows[1])
+    nonfinite["metrics"] = {
+        **rows[1]["metrics"],
+        METRICS[0]: {
+            "mse": float("nan"),
+            "per_action_dimension_mse": [1.0] * 7,
+        },
+    }
+    with pytest.raises(WriterModelError, match="non-finite"):
+        _validate_endpoint_output_rows(
+            [rows[0], nonfinite], candidates, manifest, 1
+        )
+
+
+def test_single_rank_profile_skips_distributed_broadcast(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        endpoint_runtime.dist,
+        "broadcast_object_list",
+        lambda *_args, **_kwargs: pytest.fail("single rank called broadcast"),
+    )
+    _broadcast_rank_zero_validation(
+        [{"validated": True}],
+        SimpleNamespace(world_size=1, is_main=True),
+    )
+
+
+def test_nonmain_hdf5_authority_uses_size_without_rehashing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    task_ids = (1, 3, 11, 13, 23, 26, 31, 32)
+    data_root = tmp_path / "data"
+    data_root.mkdir()
+    rows = []
+    for task_id in task_ids:
+        path = data_root / f"task_{task_id}.hdf5"
+        path.write_bytes(bytes([task_id]) * 3)
+        rows.append(
+            {
+                "global_task_id": task_id,
+                "language": f"task {task_id}",
+                "hdf5": {
+                    "relative_path": path.name,
+                    "bytes": 3,
+                    "sha256": "a" * 64,
+                },
+            }
+        )
+    write_json_atomic(
+        tmp_path / "target.json",
+        {
+            "summary": {"roles": {"validation": list(task_ids)}},
+            "tasks": rows,
+        },
+    )
+    panel = {
+        "authorities": {
+            "target_data_manifest": {"path": "target.json"}
+        }
+    }
+    calls = 0
+
+    def fake_sha256(_path):
+        nonlocal calls
+        calls += 1
+        return "a" * 64
+
+    monkeypatch.setattr(endpoint_runtime, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(endpoint_runtime, "sha256_file", fake_sha256)
+    tasks = _task_authorities(
+        panel, data_root, verify_sha256=False
+    )
+    assert len(tasks) == 8
+    assert calls == 0
+    _task_authorities(panel, data_root, verify_sha256=True)
+    assert calls == 8
+
+
+def test_correct400_pairing_rejects_policy_or_video_schedule_drift() -> None:
+    contract = {
+        "rng": {"inference_seed": 7},
+        "policy": {"num_inference_steps": 10, "replan_steps": 5},
+        "tasks": [
+            {
+                "suite": "libero_spatial",
+                "task_id": 1,
+                "init_state_ids": list(range(50)),
+            }
+        ],
+        "adapter": {
+            "video_schedule": {
+                "sampling_mode": "without_replacement",
+                "seed": 7,
+            }
+        },
+    }
+    reference, digest = _validate_correct400_pairing(contract, None)
+    assert digest == canonical_hash(reference)
+    changed = json.loads(json.dumps(contract))
+    changed["adapter"]["video_schedule"]["seed"] = 8
+    with pytest.raises(WriterModelError, match="paired correct400"):
+        _validate_correct400_pairing(changed, reference)
 
 
 def test_candidate_specs_and_task_video_pairing_fail_closed(tmp_path: Path) -> None:
@@ -285,135 +556,3 @@ def test_endpoint_device_scope_never_accepts_physical_gpus_zero_to_three(
     assert _validate_device_scope(
         SimpleNamespace(mode="profile"), SimpleNamespace(world_size=1)
     ) == (4,)
-
-def test_payload_and_portable_cache_information_wall_fail_closed(tmp_path: Path) -> None:
-    payload = {"schema_version": "example_v1", "value": 3}
-    payload["canonical_payload_sha256"] = canonical_hash(payload)
-    path = tmp_path / "payload.json"
-    write_json_atomic(path, payload)
-    assert _validated_payload(path, "example_v1")["value"] == 3
-    payload["value"] = 4
-    write_json_atomic(path, payload)
-    with pytest.raises(WriterModelError, match="artifact changed"):
-        _validated_payload(path, "example_v1")
-
-    evaluation = tmp_path / "evaluation"
-    evaluation.mkdir()
-    write_json_atomic(evaluation / "run_contract.json", {})
-    write_json_atomic(evaluation / "results.json", {})
-    lora = SmolVLALoRAContract(
-        targets=(LoRATarget("proj", 2, 2),), rank=1, alpha=1, dropout=0.0, identity_seed=7
-    )
-    contract = {
-        "contract_sha256": "1" * 64,
-        "adapter": {
-            "training_run": {"git_commit": "4" * 40},
-            "checkpoint": {
-                "cursor": 10,
-                "manifest_file_sha256": "2" * 64,
-                "writer_state_sha256": "3" * 64,
-            }
-        },
-    }
-    portable = {
-        "schema_version": PORTABLE_CACHE_SCHEMA,
-        "candidate": {
-            "evaluation_root": str(evaluation),
-            "run_contract_file_sha256": sha256_file(evaluation / "run_contract.json"),
-            "run_contract_sha256": contract["contract_sha256"],
-            "results_file_sha256": sha256_file(evaluation / "results.json"),
-            "adapter_sha256": canonical_hash(contract["adapter"]),
-            "writer_constructor_git_commit": "4" * 40,
-        },
-        "panel_manifest_payload_sha256": SEALED_PANEL_PAYLOAD_SHA256,
-        "lora_contract_sha256": canonical_contract_sha256(lora),
-        "information_wall": {
-            "validation_action_values_read_during_generation": 0,
-            "test_action_reads": 0,
-            "test_video_value_reads": 0,
-        },
-        "entries": [
-            {
-                "global_task_id": task_id,
-                "teacher_demo_index": demo,
-                "lora_file": {
-                    "path": f"loras/{task_id}_{demo}.safetensors",
-                    "bytes": 10,
-                    "sha256": str(task_id) * 64,
-                },
-                "lora_state_sha256": str(demo) * 64,
-                "generation_evidence": {
-                    "language_global_task_id": task_id,
-                    "video_global_task_id": task_id,
-                    "teacher_demo_index": demo,
-                    "condition": "correct",
-                    "writer_checkpoint_cursor": 10,
-                    "writer_checkpoint_manifest_sha256": "2" * 64,
-                    "writer_state_sha256": "3" * 64,
-                    "lora_sha256": str(demo) * 64,
-                },
-            }
-            for task_id, demo in ((1, 4), (3, 5))
-        ],
-    }
-    portable["canonical_payload_sha256"] = canonical_hash(portable)
-    portable_path = tmp_path / "portable.json"
-    write_json_atomic(portable_path, portable)
-    entries, _manifest_sha = _portable_cache_entries(
-        portable_path,
-        evaluation,
-        contract,
-        {(1, 4), (3, 5)},
-        lora,
-    )
-    assert set(entries) == {(1, 4), (3, 5)}
-
-    portable.pop("canonical_payload_sha256")
-    portable["information_wall"][
-        "validation_action_values_read_during_generation"
-    ] = 1
-    portable["canonical_payload_sha256"] = canonical_hash(portable)
-    write_json_atomic(portable_path, portable)
-    with pytest.raises(WriterModelError, match="authority changed"):
-        _portable_cache_entries(
-            portable_path,
-            evaluation,
-            contract,
-            {(1, 4), (3, 5)},
-            lora,
-        )
-
-
-def test_public_lora_tensor_hashes_and_state_hash_fail_closed(tmp_path: Path) -> None:
-    lora = SmolVLALoRAContract(
-        targets=(LoRATarget("proj", 2, 2),),
-        rank=1,
-        alpha=1,
-        dropout=0.0,
-        identity_seed=7,
-    )
-    state = {
-        "proj" + LORA_A_SUFFIX: torch.tensor([[1.0, 2.0]]),
-        "proj" + LORA_B_SUFFIX: torch.tensor([[3.0], [4.0]]),
-    }
-    path = tmp_path / "lora.safetensors"
-    save_file(state, str(path))
-    entry = EndpointLoRAEntry(
-        path=path,
-        bytes=path.stat().st_size,
-        file_sha256=sha256_file(path),
-        state_sha256=lora_state_sha256(state),
-    )
-    loaded = _verify_lora_entry(entry, lora, torch.device("cpu"))
-    assert lora_state_sha256(loaded) == entry.state_sha256
-    with pytest.raises(WriterModelError, match="state changed"):
-        _verify_lora_entry(
-            EndpointLoRAEntry(
-                path=entry.path,
-                bytes=entry.bytes,
-                file_sha256=entry.file_sha256,
-                state_sha256="0" * 64,
-            ),
-            lora,
-            torch.device("cpu"),
-        )

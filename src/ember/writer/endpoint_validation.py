@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 import torch
+from lerobot.utils.constants import ACTION
 from safetensors.torch import load_file
 
 from ember.lora import (
@@ -27,16 +28,25 @@ from ember.pi05_source_checkpoint import (
     read_json,
     sha256_file,
 )
+from ember.writer.endpoint_provenance import (
+    PORTABLE_CACHE_SCHEMA,
+    PORTABLE_EXTENSION_PATHS,
+    PORTABLE_GENERATION_RUN_SCHEMA,
+    PORTABLE_INFORMATION_WALL,
+    SEALED_PANEL_PAYLOAD_SHA256,
+    EndpointLoRAEntry,
+    _expected_generation_descriptor,
+    _portable_cache_entries,
+    _validate_generation_git_and_config,
+    _validate_portable_generation_run,
+    _validated_payload,
+)
 from ember.writer.model import WriterModelError
 
 
-ENDPOINT_RUN_SCHEMA = "ember_pi05_endpoint_validation_run_v1"
-ENDPOINT_SUMMARY_SCHEMA = "ember_pi05_endpoint_validation_summary_v1"
-PORTABLE_CACHE_SCHEMA = "ember_pi05_endpoint_public_lora_cache_v1"
+ENDPOINT_RUN_SCHEMA = "ember_pi05_endpoint_validation_run_v2"
+ENDPOINT_SUMMARY_SCHEMA = "ember_pi05_endpoint_validation_summary_v2"
 ENDPOINT_NOISE_SCHEMA = "ember_pi05_inference_consistent_surrogate_v1"
-SEALED_PANEL_PAYLOAD_SHA256 = (
-    "97ba7b95c48124858f01b50a1400172ad69eae62e7796f54357caed140174b4d"
-)
 INFERENCE_TIMES = tuple(1.0 - step / 10.0 for step in range(10))
 METRICS = (
     "rollout10_executed5_valid_normalized_mse",
@@ -49,20 +59,15 @@ SUITES = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
 
 
 @dataclass(frozen=True)
-class EndpointLoRAEntry:
-    path: Path
-    bytes: int
-    file_sha256: str
-    state_sha256: str
-
-
-@dataclass(frozen=True)
 class EndpointCandidate:
     family: str
     candidate_id: str
     checkpoint_cursor: int
     correct400: int
     task_breadth: int
+    correct400_per_task: tuple[Mapping[str, Any], ...]
+    outcome_pairing_payload: Mapping[str, Any]
+    outcome_pairing_sha256: str
     evaluation_root: Path
     run_contract_file_sha256: str
     run_contract_sha256: str
@@ -77,6 +82,10 @@ class EndpointCandidate:
             "checkpoint_cursor": self.checkpoint_cursor,
             "correct400": self.correct400,
             "task_breadth": self.task_breadth,
+            "correct400_per_task": [
+                dict(row) for row in self.correct400_per_task
+            ],
+            "outcome_pairing_sha256": self.outcome_pairing_sha256,
             "evaluation_root": str(self.evaluation_root),
             "run_contract_file_sha256": self.run_contract_file_sha256,
             "run_contract_sha256": self.run_contract_sha256,
@@ -89,6 +98,11 @@ def endpoint_schedule(num_steps: int = 10) -> tuple[tuple[float, ...], float]:
     if num_steps != 10:
         raise WriterModelError("endpoint diagnostic requires exactly ten Euler steps")
     return INFERENCE_TIMES, -0.1
+
+
+def _require_finite_tensor(label: str, value: torch.Tensor) -> None:
+    if not isinstance(value, torch.Tensor) or not bool(torch.isfinite(value).all()):
+        raise WriterModelError(f"endpoint diagnostic {label} is non-finite")
 
 
 def endpoint_noise_seed(
@@ -120,7 +134,9 @@ def endpoint_noise(
         seeds.append(seed)
     if not tensors:
         raise WriterModelError("endpoint diagnostic received an empty query group")
-    return torch.stack(tensors), tuple(seeds)
+    noise = torch.stack(tensors)
+    _require_finite_tensor("noise", noise)
+    return noise, tuple(seeds)
 
 
 def exact_endpoint_actions(
@@ -128,13 +144,24 @@ def exact_endpoint_actions(
     batch: Mapping[str, torch.Tensor],
     noise: torch.Tensor,
 ) -> torch.Tensor:
-    """Call the pinned PI05 recursive sampler under a strict no-grad contract."""
+    """Call the pinned PI05 recursive sampler under the formal-rollout contract.
 
+    Formal LIBERO rollout invokes ``predict_action_chunk`` with inference mode
+    but without autocast.  The caller must preserve that precision boundary;
+    the separate teacher-bridge control may use functional-forward autocast.
+    """
+
+    if ACTION in batch:
+        raise WriterModelError(
+            "endpoint recursive sampler received teacher actions"
+        )
+    _require_finite_tensor("noise", noise)
     with torch.inference_mode():
         value = policy.predict_action_chunk(dict(batch), noise=noise, num_steps=10)
     expected = (int(noise.shape[0]), 50, 7)
     if tuple(value.shape) != expected or value.requires_grad:
         raise WriterModelError("PI05 endpoint sampler output contract changed")
+    _require_finite_tensor("predicted action chunk", value)
     return value
 
 
@@ -144,8 +171,12 @@ def _masked_row_mse(values: torch.Tensor, mask: torch.Tensor) -> tuple[torch.Ten
     counts = mask.sum(dim=1)
     if bool((counts <= 0).any()):
         raise WriterModelError("endpoint metric has a row without valid actions")
+    _require_finite_tensor("metric aggregation input", values)
     per_dimension = (values * mask[..., None]).sum(dim=1) / counts[:, None]
-    return per_dimension.mean(dim=1), per_dimension
+    per_row = per_dimension.mean(dim=1)
+    _require_finite_tensor("per-dimension metric", per_dimension)
+    _require_finite_tensor("per-row metric", per_row)
+    return per_row, per_dimension
 
 
 def endpoint_metric_rows(
@@ -162,7 +193,11 @@ def endpoint_metric_rows(
         or grid_flow_losses.shape != predicted.shape
     ):
         raise WriterModelError("endpoint output, teacher, padding, or grid shape changed")
+    _require_finite_tensor("predicted action chunk", predicted)
+    _require_finite_tensor("teacher action chunk", teacher)
+    _require_finite_tensor("teacher-bridge grid", grid_flow_losses)
     squared = (predicted.float() - teacher.float()).square()
+    _require_finite_tensor("squared action error", squared)
     valid = ~action_is_pad.bool()
     positions = torch.arange(50, device=valid.device)[None]
     masks = {
@@ -198,20 +233,12 @@ def endpoint_metric_rows(
     return tuple(result)
 
 
-def _validated_payload(path: Path, schema: str) -> dict[str, Any]:
-    payload = read_json(path)
-    digest = payload.get("canonical_payload_sha256")
-    unhashed = {
-        key: value
-        for key, value in payload.items()
-        if key != "canonical_payload_sha256"
-    }
-    if payload.get("schema_version") != schema or canonical_hash(unhashed) != digest:
-        raise WriterModelError(f"endpoint artifact changed: {path}")
-    return payload
 
 
-def _validate_results(root: Path, contract: Mapping[str, Any]) -> tuple[int, int, str]:
+def _validate_results(
+    root: Path,
+    contract: Mapping[str, Any],
+) -> tuple[int, int, tuple[Mapping[str, Any], ...], str]:
     path = root / "results.json"
     results = read_json(path)
     rows = results.get("rows", [])
@@ -230,6 +257,22 @@ def _validate_results(root: Path, contract: Mapping[str, Any]) -> tuple[int, int
     ]
     successes = sum(bool(row.get("success")) for row in rows)
     per_task = results.get("per_task", [])
+    mutable_counts: dict[tuple[str, int], list[int]] = {}
+    for row in rows:
+        key = (str(row.get("suite")), int(row.get("task_id", -1)))
+        counts = mutable_counts.setdefault(key, [0, 0])
+        counts[0] += 1
+        counts[1] += int(bool(row.get("success")))
+    task_counts = {
+        key: (counts[0], counts[1]) for key, counts in mutable_counts.items()
+    }
+    reported = {
+        (str(row.get("suite")), int(row.get("task_id", -1))): (
+            int(row.get("episodes", -1)),
+            int(row.get("successes", -1)),
+        )
+        for row in per_task
+    }
     valid = (
         results.get("schema_version") == "ember_pi05_target_eval_results_v1"
         and results.get("contract_sha256") == contract["contract_sha256"]
@@ -240,12 +283,59 @@ def _validate_results(root: Path, contract: Mapping[str, Any]) -> tuple[int, int
         and len(keys) == len(set(keys)) == 400
         and int(results.get("overall", {}).get("successes", -1)) == successes
         and int(results.get("overall", {}).get("episodes", -1)) == 400
-        and len(per_task) == 8
+        and len(per_task) == len(reported) == 8
+        and reported == task_counts
     )
     if not valid:
         raise WriterModelError(f"endpoint candidate results changed: {root}")
-    breadth = sum(int(row.get("successes", 0)) > 0 for row in per_task)
-    return successes, breadth, sha256_file(path)
+    outcomes = tuple(
+        {
+            "global_task_id": SUITES.index(suite) * 10 + task_id,
+            "suite": suite,
+            "task_id": task_id,
+            "episodes": episodes,
+            "successes": task_successes,
+        }
+        for (suite, task_id), (episodes, task_successes) in sorted(
+            reported.items(),
+            key=lambda item: (SUITES.index(item[0][0]), item[0][1]),
+        )
+    )
+    breadth = sum(int(row["successes"]) > 0 for row in outcomes)
+    return successes, breadth, outcomes, sha256_file(path)
+
+
+def _correct400_pairing_payload(
+    contract: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Return the outcome fields that must be identical across candidates."""
+
+    return {
+        "rng": dict(contract["rng"]),
+        "policy": dict(contract["policy"]),
+        "tasks": [
+            {
+                "suite": str(row["suite"]),
+                "task_id": int(row["task_id"]),
+                "init_state_ids": list(map(int, row["init_state_ids"])),
+            }
+            for row in contract["tasks"]
+        ],
+        "video_schedule": dict(contract["adapter"]["video_schedule"]),
+    }
+
+
+def _validate_correct400_pairing(
+    contract: Mapping[str, Any],
+    reference: Mapping[str, Any] | None,
+) -> tuple[dict[str, Any], str]:
+    payload = _correct400_pairing_payload(contract)
+    digest = canonical_hash(payload)
+    if reference is not None and payload != reference:
+        raise WriterModelError(
+            "endpoint candidates do not share one paired correct400 panel"
+        )
+    return payload, digest
 
 
 def _candidate_task_map(
@@ -516,81 +606,7 @@ def _full_cache_entries(
         )
     return selected, sha256_file(manifest_path)
 
-def _portable_cache_entries(
-    manifest_path: Path,
-    evaluation_root: Path,
-    contract: Mapping[str, Any],
-    panel_keys: set[tuple[int, int]],
-    lora: Any,
-) -> tuple[dict[tuple[int, int], EndpointLoRAEntry], str]:
-    """Load 64 public LoRAs emitted by the checkpoint's historical code.
 
-    The manifest pins the observed correct400 run, its exact adapter, the
-    originating Writer commit, the sealed panel, and per-entry generation
-    evidence.  It therefore carries tensors across Git history without ever
-    instantiating a retired Writer in the current process.
-    """
-
-    manifest = _validated_payload(manifest_path, PORTABLE_CACHE_SCHEMA)
-    candidate = manifest.get("candidate", {})
-    wall = manifest.get("information_wall", {})
-    if (
-        Path(str(candidate.get("evaluation_root", ""))).resolve() != evaluation_root
-        or candidate.get("run_contract_file_sha256")
-        != sha256_file(evaluation_root / "run_contract.json")
-        or candidate.get("run_contract_sha256") != contract["contract_sha256"]
-        or candidate.get("results_file_sha256")
-        != sha256_file(evaluation_root / "results.json")
-        or candidate.get("adapter_sha256")
-        != canonical_hash(dict(contract["adapter"]))
-        or candidate.get("writer_constructor_git_commit")
-        != contract["adapter"].get("training_run", {}).get("git_commit")
-        or manifest.get("panel_manifest_payload_sha256") != SEALED_PANEL_PAYLOAD_SHA256
-        or manifest.get("lora_contract_sha256") != canonical_contract_sha256(lora)
-        or wall
-        != {
-            "validation_action_values_read_during_generation": 0,
-            "test_action_reads": 0,
-            "test_video_value_reads": 0,
-        }
-    ):
-        raise WriterModelError("portable endpoint cache authority changed")
-    selected = {}
-    checkpoint = contract["adapter"]["checkpoint"]
-    for row in manifest.get("entries", []):
-        key = (
-            int(row.get("global_task_id", -1)),
-            int(row.get("teacher_demo_index", -1)),
-        )
-        evidence = row.get("generation_evidence", {})
-        file_record = row.get("lora_file", {})
-        path = (manifest_path.parent / str(file_record.get("path", ""))).resolve()
-        valid = (
-            key in panel_keys
-            and key not in selected
-            and path.is_relative_to(manifest_path.parent.resolve())
-            and int(evidence.get("language_global_task_id", -1)) == key[0]
-            and int(evidence.get("video_global_task_id", -2)) == key[0]
-            and int(evidence.get("teacher_demo_index", -1)) == key[1]
-            and evidence.get("condition") == "correct"
-            and int(evidence.get("writer_checkpoint_cursor", -1))
-            == int(checkpoint["cursor"])
-            and evidence.get("writer_checkpoint_manifest_sha256")
-            == checkpoint["manifest_file_sha256"]
-            and evidence.get("writer_state_sha256") == checkpoint["writer_state_sha256"]
-            and evidence.get("lora_sha256") == row.get("lora_state_sha256")
-        )
-        if not valid:
-            raise WriterModelError("portable endpoint cache entry changed")
-        selected[key] = EndpointLoRAEntry(
-            path=path,
-            bytes=int(file_record.get("bytes", -1)),
-            file_sha256=str(file_record.get("sha256", "")),
-            state_sha256=str(row.get("lora_state_sha256", "")),
-        )
-    if set(selected) != panel_keys:
-        raise WriterModelError("portable endpoint cache does not cover the sealed panel")
-    return selected, sha256_file(manifest_path)
 
 
 def _verify_lora_entry(
@@ -606,6 +622,8 @@ def _verify_lora_entry(
         raise WriterModelError(f"endpoint public LoRA file changed: {entry.path}")
     state = load_file(str(entry.path), device=str(device))
     validate_lora_state(state, lora)
+    for name, value in state.items():
+        _require_finite_tensor(f"public LoRA tensor {name}", value)
     if lora_state_sha256(state) != entry.state_sha256:
         raise WriterModelError(f"endpoint public LoRA state changed: {entry.path}")
     return state
@@ -655,7 +673,19 @@ def _load_candidates(
         (int(row["global_task_id"]), int(row["teacher_demo_index"]))
         for row in manifest["rows"]
     }
+    panel_conditions = {
+        (int(row["global_task_id"]), int(row["teacher_demo_index"])): int(
+            row["video_group"]
+        )
+        for row in manifest["rows"]
+    }
+    if set(panel_conditions) != panel_keys:
+        raise WriterModelError(
+            "endpoint sealed panel repeats a teacher-video condition"
+        )
     candidates = []
+    shared_pairing_payload: Mapping[str, Any] | None = None
+    shared_pairing_sha256: str | None = None
     for family, root, portable in specs:
         contract_path = root / "run_contract.json"
         contract = load_run_contract(contract_path)
@@ -667,14 +697,33 @@ def _load_candidates(
             data_root,
             panel_tasks,
         )
-        correct400, breadth, results_sha = _validate_results(root, contract)
+        pairing_payload, pairing_sha256 = _validate_correct400_pairing(
+            contract, shared_pairing_payload
+        )
+        if shared_pairing_payload is None:
+            shared_pairing_payload = pairing_payload
+            shared_pairing_sha256 = pairing_sha256
+        elif pairing_sha256 != shared_pairing_sha256:
+            raise WriterModelError(
+                "endpoint candidates do not share one paired correct400 panel"
+            )
+        correct400, breadth, outcomes, results_sha = _validate_results(
+            root, contract
+        )
         if portable is None:
             entries, cache_sha = _full_cache_entries(
                 root, contract, task_map, panel_keys, lora
             )
         else:
             entries, cache_sha = _portable_cache_entries(
-                portable, root, contract, panel_keys, lora
+                portable,
+                root,
+                contract,
+                panel_conditions,
+                lora,
+                family,
+                correct400,
+                breadth,
             )
         if verify_files:
             for entry in entries.values():
@@ -687,6 +736,9 @@ def _load_candidates(
                 checkpoint_cursor=cursor,
                 correct400=correct400,
                 task_breadth=breadth,
+                correct400_per_task=outcomes,
+                outcome_pairing_payload=pairing_payload,
+                outcome_pairing_sha256=pairing_sha256,
                 evaluation_root=root,
                 run_contract_file_sha256=sha256_file(contract_path),
                 run_contract_sha256=str(contract["contract_sha256"]),

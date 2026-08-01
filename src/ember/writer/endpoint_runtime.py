@@ -10,7 +10,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-import numpy as np
 import torch
 import torch.distributed as dist
 from lerobot.utils.constants import (
@@ -42,18 +41,20 @@ from ember.writer.data import FunctionalQueryDataset, WriterTaskAuthority
 from ember.writer.endpoint_validation import (
     ENDPOINT_NOISE_SCHEMA,
     ENDPOINT_RUN_SCHEMA,
-    ENDPOINT_SUMMARY_SCHEMA,
     INFERENCE_TIMES,
-    METRICS,
     SEALED_PANEL_PAYLOAD_SHA256,
-    SUITES,
     EndpointCandidate,
     _load_candidates,
+    _require_finite_tensor,
     _verify_lora_entry,
     endpoint_metric_rows,
     endpoint_noise,
     exact_endpoint_actions,
     parse_endpoint_candidate_specs,
+)
+from ember.writer.endpoint_results import (
+    _aggregate,
+    _validate_endpoint_output_rows,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.model import WriterModelError
@@ -113,6 +114,8 @@ def _teacher_bridge_grid_losses(
     teacher: torch.Tensor,
     noise: torch.Tensor,
 ) -> torch.Tensor:
+    _require_finite_tensor("teacher action chunk", teacher)
+    _require_finite_tensor("noise", noise)
     images, image_masks = policy._preprocess_images(dict(batch))  # noqa: SLF001
     tokens = batch[OBS_LANGUAGE_TOKENS]
     masks = batch[OBS_LANGUAGE_ATTENTION_MASK]
@@ -128,8 +131,46 @@ def _teacher_bridge_grid_losses(
         value = policy.model.forward(
             images, image_masks, tokens, masks, actions, noise, times
         )
+        if (
+            value.ndim != 3
+            or value.shape[:2] != teacher.shape[:2]
+            or value.shape[-1] < 7
+        ):
+            raise WriterModelError("endpoint teacher-bridge output shape changed")
+        _require_finite_tensor("teacher-bridge flow prediction", value)
         losses.append(value[:, :, :7].float())
-    return torch.stack(losses).mean(dim=0)
+    grid = torch.stack(losses).mean(dim=0)
+    _require_finite_tensor("teacher-bridge grid", grid)
+    return grid
+
+
+def _predict_and_teacher_bridge(
+    policy: Any,
+    batch: Mapping[str, torch.Tensor],
+    teacher: torch.Tensor,
+    noise: torch.Tensor,
+    device: torch.device,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Evaluate the rollout sampler and functional control at their own precision.
+
+    ``pi05_evaluation.rollout_shard`` runs recursive action prediction only
+    under inference mode, with no autocast.  The teacher bridge is instead a
+    direct functional-forward control and intentionally retains the bf16 CUDA
+    autocast used by functional training and validation.
+    """
+
+    policy_batch = {key: value for key, value in batch.items() if key != ACTION}
+    with torch.inference_mode():
+        predicted = exact_endpoint_actions(policy, policy_batch, noise)
+        with torch.autocast(
+            device_type=device.type,
+            dtype=torch.bfloat16,
+            enabled=device.type == "cuda",
+        ):
+            grid = _teacher_bridge_grid_losses(
+                policy, policy_batch, teacher, noise
+            )
+    return predicted, grid
 
 
 def _endpoint_group(
@@ -150,17 +191,12 @@ def _endpoint_group(
     padding = raw["action_is_pad"].to(device=device, dtype=torch.bool)
     cpu_noise, seeds = endpoint_noise(panel_sha, rows)
     noise = cpu_noise.to(device=device)
-    with (
-        batched_lora.activate([state] * len(rows)),
-        torch.inference_mode(),
-        torch.autocast(
-            device_type=device.type,
-            dtype=torch.bfloat16,
-            enabled=device.type == "cuda",
-        ),
-    ):
-        predicted = exact_endpoint_actions(policy, prepared, noise)
-        grid = _teacher_bridge_grid_losses(policy, prepared, teacher, noise)
+    _require_finite_tensor("teacher action chunk", teacher)
+    _require_finite_tensor("noise", noise)
+    with batched_lora.activate([state] * len(rows)):
+        predicted, grid = _predict_and_teacher_bridge(
+            policy, prepared, teacher, noise, device
+        )
     metrics = endpoint_metric_rows(predicted, teacher, padding, grid)
     return tuple(
         {**metric, "endpoint_noise_seed": seed}
@@ -171,6 +207,8 @@ def _endpoint_group(
 def _task_authorities(
     panel: Mapping[str, Any],
     data_root: Path,
+    *,
+    verify_sha256: bool,
 ) -> tuple[WriterTaskAuthority, ...]:
     target = read_json(
         REPO_ROOT
@@ -186,7 +224,10 @@ def _task_authorities(
             raise WriterModelError("endpoint validation HDF5 escaped its data root")
         if (
             path.stat().st_size != int(row["hdf5"]["bytes"])
-            or sha256_file(path) != row["hdf5"]["sha256"]
+            or (
+                verify_sha256
+                and sha256_file(path) != row["hdf5"]["sha256"]
+            )
         ):
             raise WriterModelError("endpoint validation HDF5 authority changed")
         tasks.append(
@@ -201,97 +242,6 @@ def _task_authorities(
     if len(tasks) != 8:
         raise WriterModelError("endpoint validation did not resolve eight tasks")
     return tuple(sorted(tasks, key=lambda task: task.task_id))
-
-
-def _aggregate(
-    rows: Sequence[Mapping[str, Any]],
-    candidates: Sequence[EndpointCandidate],
-) -> dict[str, Any]:
-    records = []
-    for candidate in candidates:
-        selected = [
-            row
-            for row in rows
-            if row["candidate_id"] == candidate.candidate_id
-        ]
-        per_task = {}
-        for task_id in sorted(
-            {int(row["global_task_id"]) for row in selected}
-        ):
-            task_rows = [
-                row
-                for row in selected
-                if int(row["global_task_id"]) == task_id
-            ]
-            metric_rows = {}
-            for name in METRICS:
-                values = np.asarray(
-                    [row["metrics"][name]["mse"] for row in task_rows],
-                    dtype=np.float64,
-                )
-                dimensions = np.asarray(
-                    [
-                        row["metrics"][name]["per_action_dimension_mse"]
-                        for row in task_rows
-                    ],
-                    dtype=np.float64,
-                )
-                metric_rows[name] = {
-                    "mse": float(values.mean()),
-                    "quality": float(-values.mean()),
-                    "per_action_dimension_mse": dimensions.mean(axis=0).tolist(),
-                }
-            per_task[str(task_id)] = {
-                "rows": len(task_rows),
-                "suite": task_rows[0]["suite"],
-                "metrics": metric_rows,
-            }
-        aggregate = {}
-        for name in METRICS:
-            task_values = np.asarray(
-                [row["metrics"][name]["mse"] for row in per_task.values()],
-                dtype=np.float64,
-            )
-            task_dimensions = np.asarray(
-                [
-                    row["metrics"][name]["per_action_dimension_mse"]
-                    for row in per_task.values()
-                ],
-                dtype=np.float64,
-            )
-            aggregate[name] = {
-                "mse": float(task_values.mean()),
-                "quality": float(-task_values.mean()),
-                "per_action_dimension_mse": task_dimensions.mean(axis=0).tolist(),
-            }
-        per_suite = {}
-        for suite in SUITES:
-            suite_tasks = [
-                row for row in per_task.values() if row["suite"] == suite
-            ]
-            per_suite[suite] = {
-                name: float(
-                    np.mean(
-                        [row["metrics"][name]["mse"] for row in suite_tasks]
-                    )
-                )
-                for name in METRICS
-            }
-        records.append(
-            {
-                **candidate.record(),
-                "rows": len(selected),
-                "aggregate": aggregate,
-                "per_suite": per_suite,
-                "per_task": per_task,
-            }
-        )
-    return {
-        "schema_version": ENDPOINT_SUMMARY_SCHEMA,
-        "metrics": list(METRICS),
-        "primary_metric": METRICS[0],
-        "candidates": records,
-    }
 
 
 def _publish_contract(
@@ -326,6 +276,10 @@ def _publish_contract(
             "source": source,
             "tokenizer": tokenizer,
             "candidates": [candidate.record() for candidate in candidates],
+            "correct400_pairing": {
+                "payload": dict(candidates[0].outcome_pairing_payload),
+                "canonical_payload_sha256": candidates[0].outcome_pairing_sha256,
+            },
             "schedule": {
                 "times": list(INFERENCE_TIMES),
                 "dt": -0.1,
@@ -422,6 +376,25 @@ def _local_rows(
     return output_rows
 
 
+def _broadcast_rank_zero_validation(
+    validation: list[Any],
+    context: Any,
+) -> None:
+    """Share rank-zero cache validation only when a process group exists."""
+
+    if context.world_size == 1:
+        if not context.is_main:
+            raise WriterModelError(
+                "single-rank endpoint profile has no main process"
+            )
+        return
+    if not dist.is_available() or not dist.is_initialized():
+        raise WriterModelError(
+            "multi-rank endpoint diagnostic has no process group"
+        )
+    dist.broadcast_object_list(validation, src=0, device=context.device)
+
+
 def _load_endpoint_assets(args: Any, context: Any) -> _EndpointAssets:
     panel = load_validation_loss_panel(args.panel_config)
     authorities = load_evaluation_authorities(
@@ -435,7 +408,48 @@ def _load_endpoint_assets(args: Any, context: Any) -> _EndpointAssets:
         evaluation_mode="formal",
     )
     tokenizer = inspect_tokenizer(authorities, args.tokenizer_path)
-    tasks = _task_authorities(panel, args.data_root)
+    task_validation: list[Any] = [None]
+    tasks: tuple[WriterTaskAuthority, ...] | None = None
+    if context.is_main:
+        try:
+            tasks = _task_authorities(
+                panel,
+                args.data_root,
+                verify_sha256=True,
+            )
+            task_validation[0] = [
+                {
+                    "task_id": task.task_id,
+                    "path": str(task.path),
+                    "bytes": task.expected_bytes,
+                }
+                for task in tasks
+            ]
+        except Exception as error:
+            task_validation[0] = {"error": repr(error)}
+    _broadcast_rank_zero_validation(task_validation, context)
+    if isinstance(task_validation[0], Mapping) and task_validation[0].get(
+        "error"
+    ):
+        raise WriterModelError(str(task_validation[0]["error"]))
+    if tasks is None:
+        tasks = _task_authorities(
+            panel,
+            args.data_root,
+            verify_sha256=False,
+        )
+        observed = [
+            {
+                "task_id": task.task_id,
+                "path": str(task.path),
+                "bytes": task.expected_bytes,
+            }
+            for task in tasks
+        ]
+        if observed != task_validation[0]:
+            raise WriterModelError(
+                "endpoint validation rank-local HDF5 authority changed"
+            )
     dataset = FunctionalQueryDataset(
         tasks, demo_indices=range(50), action_chunk_size=50
     )
@@ -471,7 +485,7 @@ def _load_endpoint_assets(args: Any, context: Any) -> _EndpointAssets:
                 ]
             except Exception as error:
                 validation[0] = {"error": repr(error)}
-        dist.broadcast_object_list(validation, src=0, device=context.device)
+        _broadcast_rank_zero_validation(validation, context)
         if isinstance(validation[0], Mapping) and validation[0].get("error"):
             raise WriterModelError(str(validation[0]["error"]))
         candidates = _load_candidates(
@@ -483,6 +497,10 @@ def _load_endpoint_assets(args: Any, context: Any) -> _EndpointAssets:
             args.data_root,
             False,
         )
+        if [candidate.record() for candidate in candidates] != validation[0]:
+            raise WriterModelError(
+                "endpoint candidate authority differs across ranks"
+            )
         return _EndpointAssets(
             panel=panel,
             authorities=authorities,
@@ -525,6 +543,7 @@ def _finalize_output(
     args: Any,
     context: Any,
     candidates: Sequence[EndpointCandidate],
+    manifest: Mapping[str, Any],
     started: float,
 ) -> dict[str, Any]:
     combined = []
@@ -533,10 +552,12 @@ def _finalize_output(
             read_json(args.output_dir / f"rank_{rank:02d}_rows.json")["rows"]
         )
     combined.sort(key=lambda row: (row["candidate_id"], int(row["ordinal"])))
-    groups = args.max_groups_per_task or 8
-    expected_rows = len(candidates) * 8 * groups * 8
-    if len(combined) != expected_rows:
-        raise WriterModelError("endpoint diagnostic output panel is incomplete")
+    expected_rows = _validate_endpoint_output_rows(
+        combined,
+        candidates,
+        manifest,
+        args.max_groups_per_task,
+    )
     summary = _aggregate(combined, candidates)
     summary.update(
         {
@@ -603,7 +624,11 @@ def evaluate_endpoint(args: Any) -> None:
         barrier(context)
         if context.is_main:
             summary = _finalize_output(
-                args, context, assets.candidates, started
+                args,
+                context,
+                assets.candidates,
+                assets.manifest,
+                started,
             )
             print(json.dumps(summary, sort_keys=True), flush=True)
     finally:

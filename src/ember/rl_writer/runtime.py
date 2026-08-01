@@ -56,7 +56,7 @@ from ember.writer.model import CompleteLoRAWriter
 _CHECKPOINT_NAME = re.compile(r"update_([0-9]{8})")
 _CANONICAL_AS_RETRAIN_REQUIRED = (
     "RL-Writer runtime is unavailable until it is rebuilt and retrained for "
-    "the canonical raw-video Unified Causal Program Writer"
+    "the canonical raw-video CV-ADR Writer"
 )
 
 

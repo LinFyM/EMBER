@@ -27,7 +27,7 @@ from ember.writer import as_step
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = (
     REPO_ROOT
-    / "configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json"
+    / "configs/pi05_as_writer_contextual_value_dual_read_full24_decay400_v1.json"
 )
 OLD_RECIPE_CONFIG = (
     REPO_ROOT
@@ -35,10 +35,10 @@ OLD_RECIPE_CONFIG = (
 )
 
 
-def test_ucp_full24_config_seals_architecture_and_information_wall() -> None:
+def test_cvadr_full24_config_seals_architecture_and_information_wall() -> None:
     config = load_writer_config(CONFIG)
     writer = config["writer"]
-    assert writer["architecture"] == "pi05_unified_causal_program_target_rank_reader_v1"
+    assert writer["architecture"] == "pi05_contextual_value_asymmetric_dual_read_v1"
     assert writer["teacher_state_input"] is False
     assert writer["teacher_prompt"] == "Task: {cleaned_task};\nAction: "
     assert writer["text_meta_lora_rank"] == 4
@@ -55,13 +55,17 @@ def test_ucp_full24_config_seals_architecture_and_information_wall() -> None:
     assert writer["action_expert_probe"].startswith("one_forward_fixed")
     assert writer["interaction_reduction"].startswith("mean_50")
     assert writer["absolute_semantic_value"].startswith("X_f_equals")
-    assert not any(key.startswith("semantic_core") for key in writer)
+    assert writer["semantic_core"].startswith("mean_X_plus")
+    assert writer["semantic_core_frame_order"].startswith("none_strict")
+    assert writer["semantic_core_blocks"] == 2
     assert writer["program_attention"].startswith("interval_local")
     assert writer["program_blocks"] == 2
-    assert writer["program_value_path"].startswith("raw_content")
-    assert writer["program_grid"].startswith("interval_absolute_X")
+    assert writer["program_memory_path"].startswith("single_causal")
+    assert writer["program_value_path"].startswith("same_single_contextual")
+    assert writer["program_grid"].startswith("outgoing_native_Action")
     assert writer["program_terminal_policy"].startswith("F_minus_1")
-    assert writer["program_coordinate_reader"].startswith("single_stage")
+    assert writer["program_coordinate_reader"].startswith("38x16_target_rank")
+    assert writer["core_reader"].startswith("38_target_only")
     assert writer["coordinate_mixer"] == "none"
     assert writer["factor_hidden_width"] == 256
     assert writer_split_roles(config) == ("train",)
@@ -91,10 +95,10 @@ def test_ucp_full24_config_seals_architecture_and_information_wall() -> None:
     assert "state" in config["information_wall"]["writer_forbidden_inputs"]
     assert config["profile_defaults"]["expected_world_size"] == 4
     assert config["profile_defaults"]["status"] == (
-        "sealed_b20_after_live_105_frame_profile"
+        "pending_cvadr_live_105_frame_profile"
     )
     assert config["profile_evidence"]["status"] == (
-        "sealed_b20_after_live_105_frame_profile"
+        "pending_cvadr_live_105_frame_profile"
     )
     assert config["profile_evidence"]["allowed_physical_gpu_ids"] == [4, 5, 6, 7]
     assert config["profile_evidence"]["primary_candidate"][
@@ -109,22 +113,16 @@ def test_ucp_full24_config_seals_architecture_and_information_wall() -> None:
     assert config["optimization"]["scheduler"]["decay_steps"] == 400
     assert config["data"]["teacher_video_seed"] == 20260722
     assert config["profile_evidence"]["formal_teacher_video_seed_after_profile_seal"] == 20260722
-    assert config["formal_run"]["status"] == "sealed"
-    assert config["formal_run"]["launch_state"] == "ready_for_fresh_macro0_to200"
-    selected = config["profile_evidence"]["selected"]
-    assert selected["per_task_action_batch_size"] == 20
-    assert selected["contains_real_105_frame_video"] is True
-    assert selected["all_main_blocks_gradient_reachable_after_identity_step"] is True
-    resume = config["profile_evidence"]["exact_resume_smoke"]
-    assert resume["completed_optimizer_steps"] == 3
-    assert resume["metrics_steps"] == [1, 2, 3]
-    assert resume["step1_checkpoint_files_unchanged_after_resume"] is True
+    assert config["formal_run"]["status"] == "pending_profile"
+    assert config["formal_run"]["launch_state"].startswith("blocked_until")
+    assert config["profile_evidence"]["selected"] is None
+    assert config["profile_evidence"]["exact_resume_smoke"] is None
     assert config["formal_run"]["total_steps"] == 400
     assert config["formal_run"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["selected_stop_step"] == 200
     assert config["formal_run"]["stage_stop_steps"] == [200, 400]
     assert config["formal_run"]["segment_definition"].startswith(
-        "fresh_ucp_raw_full24"
+        "fresh_cvadr_raw_full24"
     )
     assert "without_runtime_full_data_sha" in config["formal_run"][
         "data_integrity_check"
@@ -251,7 +249,7 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
     assert formal.stop_after_step == 200
 
 
-def test_ucp_launch_contract_records_raw_mean_collectives_not_ddp_accumulation(
+def test_cvadr_launch_contract_records_raw_mean_collectives_not_ddp_accumulation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     config = load_writer_config(CONFIG)

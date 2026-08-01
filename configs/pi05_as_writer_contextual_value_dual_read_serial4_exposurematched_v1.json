@@ -1,0 +1,180 @@
+{
+  "schema_version": "ember_pi05_contextual_value_dual_read_serial4_exposurematched_recipe_overlay_v1",
+  "base_config": "configs/pi05_as_writer_contextual_value_dual_read_full24_decay400_v1.json",
+  "base_sha256": "fc1dd96a296ec9a683bb655a61f7b22d77c63de7625e94a08d4371ee1754297f",
+  "replace": {
+    "data": {
+      "task_count": 24,
+      "episodes_per_task": 50,
+      "demo_indices": [
+        0,
+        49
+      ],
+      "action_chunk_size": 50,
+      "sampler_seed": 20260721,
+      "teacher_video_seed": 20260722,
+      "teacher_video_sampling": "per_task_cycle_visit_deterministic_single_same_task_video_in_no_replacement_cycles",
+      "action_query_sampling": "task-balanced deterministic no-replacement episode cycles with per-visit exact normalized-progress strata permutation and deterministic within-stratum jitter",
+      "video_action_pairing": "one task-video LoRA conditions the complete task-local action batch",
+      "writer_generation_reuse": "generate one task-video LoRA once then reuse it across the complete task-local action batch",
+      "max_open_files_per_worker": 8,
+      "video_open_files_per_rank": 2
+    },
+    "conditioning_training": {
+      "method": "raw_serial4_exposure_matched_single_video_multi_action_positive_functional_loss",
+      "update_topology": "serial4_exposure_matched_six_phase_task_cycle",
+      "writer_language_contract": "correct_task_language_state_free_teacher_action_suffix",
+      "policy_language_contract": "correct_action_query_task_language",
+      "action_query_batch_owner": "one task-pure physical action batch per rank per optimizer update",
+      "task_assignment": "six optimizer phases reuse one full24 cost-balanced rank rotation; each phase selects one long-first task per rank and all six phases cover every task exactly once",
+      "tasks_per_rank_per_optimizer_update": 1,
+      "global_tasks_per_optimizer_update": 4,
+      "optimizer_updates_per_task_cycle": 6,
+      "scheduler_updates_per_task_cycle": 1,
+      "task_visit_axis": "zero_based_task_cycle_floor_optimizer_update_div_6",
+      "teacher_videos_per_task_visit": 1,
+      "action_video_assignment": "all_actions_share_single_video_lora",
+      "logical_pair_batch": "per_task_action_batch",
+      "policy_noise_contract": "one independent policy flow noise and time draw per action query",
+      "pair_loss_reduction": "mean_within_task_then_equal_raw_mean_over_selected_4_tasks",
+      "task_loss_scale_before_backward": "per_task_unscaled_then_exact_raw_selected4_mean",
+      "ddp_gradient_sync": "none_during_task_gradients_then_bounded_parameter_chunk_allgathers_for_exact_raw_selected4_mean_and_read_only_4x4_grams",
+      "gradient_composition": "exact_raw_equal_weight_selected4_mean_without_projection",
+      "single_video_gradient_direction_diagnostic": "fixed_countsketch_32_per_task_per_semantic_frontend_core_program_compiler_factor_block",
+      "optimizer_steps_per_task_cycle": 6,
+      "scheduler_step_cadence": "once_after_each_six_optimizer_update_task_cycle",
+      "checkpoint_boundary": "complete_optimizer_update_only",
+      "normal_loss_weight": 1.0
+    },
+    "optimization": {
+      "method": "functional_pi05_contextual_value_dual_read_serial4_exposurematched_positive_only",
+      "seed": 7,
+      "precision": "bfloat16",
+      "source_policy": "final formal frozen raw policy",
+      "normalization": "frozen filtered-LIBERO-90 source normalization",
+      "optimizer": {
+        "name": "AdamW",
+        "betas": [
+          0.9,
+          0.95
+        ],
+        "eps": 1E-8,
+        "weight_decay": 0.0001,
+        "gradient_clip_norm": 1.0
+      },
+      "scheduler": {
+        "kind": "cosine_decay_with_warmup",
+        "step_axis": "completed_full24_task_cycle",
+        "optimizer_updates_per_scheduler_step": 6,
+        "peak_lr": 0.0003,
+        "warmup_steps": 17,
+        "decay_steps": 400,
+        "decay_lr": 0.00001
+      },
+      "maximum_formal_wall_clock_minutes": 190,
+      "budget_role": "cvadr_serial4_update_operator_control_not_selected_for_formal_training"
+    },
+    "profile_defaults": {
+      "status": "pending_cvadr_serial4_control_profile",
+      "expected_world_size": 4,
+      "total_steps": 18,
+      "per_rank_batch_size": 20,
+      "checkpoint_steps": [
+        1,
+        3,
+        5,
+        6,
+        7,
+        12,
+        18
+      ],
+      "selected_stop_step": 18
+    },
+    "profile_evidence": {
+      "status": "pending_cvadr_serial4_control_profile",
+      "allowed_physical_gpu_ids": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "fixed_frame_stride": 5,
+      "teacher_videos_per_task_visit": 1,
+      "tasks_per_rank_per_optimizer_update": 1,
+      "global_tasks_per_optimizer_update": 4,
+      "optimizer_updates_per_task_cycle": 6,
+      "required_longest_real_stride5_video_frames": 105,
+      "profile_teacher_video_seed": 172,
+      "formal_teacher_video_seed_after_profile_seal": 20260722,
+      "primary_candidate": {
+        "max_frames_per_encoder_call": 32,
+        "per_task_action_batch_size": 20
+      },
+      "oom_fallback_only": {
+        "max_frames_per_encoder_call": 32,
+        "per_task_action_batch_size": 16
+      },
+      "selection_rule": "profile three complete six-phase task cycles at B20 and fall directly to B16 only after real OOM or repeated instability",
+      "selected": null,
+      "exact_resume_smoke": null,
+      "gradient_reachability": {
+        "status": "pending_cvadr_vertical_path",
+        "first_nonzero_main_path_update": null,
+        "finite_nonzero_blocks": [
+          "semantic_frontend",
+          "core",
+          "program",
+          "compiler",
+          "factor"
+        ]
+      },
+      "inference_profile": null
+    },
+    "formal_run": {
+      "status": "control_only_not_sealed",
+      "launch_state": "blocked_unless_serial4_is_explicitly_selected_by_update_operator_evidence",
+      "expected_world_size": 4,
+      "total_steps": 2400,
+      "per_rank_batch_size": 20,
+      "checkpoint_steps": "every:150",
+      "selected_stop_step": 1200,
+      "stage_stop_steps": [
+        1200,
+        2400
+      ],
+      "segment_definition": "fresh_cvadr_serial4_optimizer_update0_to1200_equals_task_cycle0_to200_then_evidence_gated_exact_resume_to2400",
+      "one_hour_scale": {
+        "optimizer_updates": 1200,
+        "task_cycles": 200,
+        "global_action_queries": 96000,
+        "one_video_conditions": 4800,
+        "policy_functional_forwards": 4800,
+        "retained_checkpoints": 8,
+        "candidate_optimizer_updates": [
+          300,
+          600,
+          900,
+          1200
+        ],
+        "candidate_task_cycles": [
+          50,
+          100,
+          150,
+          200
+        ],
+        "online_validation_action_queries_per_checkpoint": 512
+      },
+      "two_hour_scale": {
+        "optimizer_updates": 2400,
+        "task_cycles": 400,
+        "global_action_queries": 192000,
+        "one_video_conditions": 9600,
+        "policy_functional_forwards": 9600,
+        "retained_checkpoints": 16,
+        "online_validation_action_queries_per_checkpoint": 512
+      },
+      "data_integrity_check": "sealed_manifest_plus_exact_file_size_and_hdf5_schema_without_runtime_full_data_sha",
+      "continuation_gate": "resume_to2400_only_when_one_hour_absolute_breadth_trend_or_internal_path_justifies_continuation"
+    }
+  }
+}

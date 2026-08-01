@@ -1,13 +1,13 @@
-"""Single-source declarative contract for the Unified Causal Program Writer."""
+"""Single-source declarative contract for the canonical CV-ADR Writer."""
 
 from __future__ import annotations
 
 from typing import Any, Mapping
 
 
-UNIFIED_CAUSAL_WRITER_PARAMETER_COUNT = 7_683_328
+CONTEXTUAL_VALUE_WRITER_PARAMETER_COUNT = 10_241_024
 
-UNIFIED_CAUSAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
+CONTEXTUAL_VALUE_WRITER_CONSTRUCTOR_KEYS = frozenset(
     {
         "image_width",
         "expert_width",
@@ -19,6 +19,8 @@ UNIFIED_CAUSAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
         "max_frames_per_encoder_call",
         "action_horizon",
         "padded_action_dim",
+        "semantic_core_heads",
+        "semantic_core_blocks",
         "program_heads",
         "program_blocks",
         "compiler_heads",
@@ -38,6 +40,8 @@ WRITER_DIMENSION_CONTRACT = {
     "patch_grounding_heads": 8,
     "action_horizon": 50,
     "padded_action_dim": 32,
+    "semantic_core_heads": 8,
+    "semantic_core_blocks": 2,
     "program_heads": 8,
     "program_blocks": 2,
     "compiler_heads": 8,
@@ -45,7 +49,7 @@ WRITER_DIMENSION_CONTRACT = {
 }
 
 _STATIC_WRITER_CONTRACT: dict[str, Any] = {
-    "architecture": "pi05_unified_causal_program_target_rank_reader_v1",
+    "architecture": "pi05_contextual_value_asymmetric_dual_read_v1",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -79,22 +83,31 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "action_expert_action_out": False,
     "interaction_reduction": "mean_50_final_suffix_hidden_then_1024_to_256",
     "program_width": 256,
-    "program_grid": "interval_absolute_X_plus_native_Action_plus_task_patch_change",
-    "program_interval_alignment": "X_f_and_A_f_with_G_f_plus_1_minus_G_f",
+    "semantic_core": "mean_X_plus_task_selected_centered_X_then_token_axis",
+    "semantic_core_frame_order": "none_strict_frame_set_permutation_invariant",
+    "semantic_core_heads": 8,
+    "semantic_core_blocks": 2,
+    "program_grid": "outgoing_native_Action_plus_endpoint_Effect_plus_patch_change",
+    "program_interval_alignment": "A_f_with_G_f_plus_1_and_G_f_plus_1_minus_G_f",
     "program_terminal_policy": "F_minus_1_observed_outgoing_intervals_no_terminal_token",
     "program_temporal_ordinal": "interval_endpoint_sampled_frame_position",
     "program_heads": 8,
     "program_blocks": 2,
     "program_attention": "interval_local_then_column_causal_axial",
-    "program_identity_path": "normalized_type_and_ordinal_qk_only",
-    "program_value_path": "raw_content_without_identity_or_terminal_norm",
+    "program_identity_path": "normalized_type_semantic_and_ordinal_qk_only",
+    "program_memory_path": "single_causal_axial_contextual_A_E_D_content",
+    "program_key_path": "rmsnorm_of_single_contextual_program_plus_qk_identity",
+    "program_value_path": "same_single_contextual_program_without_terminal_norm",
     "target_count": 38,
     "public_rank": 16,
     "compiler_order": "sealed_policy_target_first_then_rank_last",
-    "program_coordinate_reader": "single_stage_normalized_target_rank_qk_raw_program_value",
+    "core_reader": "38_target_only_raw_core_reads_broadcast_across_rank",
+    "program_coordinate_reader": "38x16_target_rank_reads_single_contextual_program_as_KV",
+    "reader_softmax": "independent_core_and_program_normalizers",
     "coordinate_mixer": "none",
     "coordinate_identity_path": "normalized_target_and_rank_qk_only",
     "compiler_heads": 8,
+    "factor_input": "raw_core_program_concat_width512",
     "factor_head_bias": False,
     "factor_hidden_width": 256,
     "factor_final_projection": "exact_zero_initialization",
@@ -103,7 +116,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
 
 
 def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
-    """Return exact UCP payload while preserving profiled frame chunking."""
+    """Return the exact CV-ADR payload while preserving frame chunking."""
 
     return {
         **_STATIC_WRITER_CONTRACT,
@@ -113,7 +126,7 @@ def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def validate_writer_dimensions(observed: Mapping[str, Any]) -> None:
-    """Reject constructor values outside the canonical UCP topology."""
+    """Reject constructor values outside the canonical CV-ADR topology."""
 
     changed = {
         name: (WRITER_DIMENSION_CONTRACT[name], observed.get(name))
@@ -121,4 +134,4 @@ def validate_writer_dimensions(observed: Mapping[str, Any]) -> None:
         if observed.get(name) != WRITER_DIMENSION_CONTRACT[name]
     }
     if changed:
-        raise ValueError(f"invalid EMBER UCP Writer dimensions: {changed}")
+        raise ValueError(f"invalid EMBER CV-ADR Writer dimensions: {changed}")

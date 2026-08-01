@@ -108,18 +108,18 @@ def checkpoint_state_family(config: Mapping[str, Any]) -> str:
     )
     if topology == "task_complete_all_tasks":
         return (
-            "ucp_task_query_keyed_rawfull24_v2"
+            "cvadr_task_query_keyed_rawfull24_v2"
             if task_query_keyed
-            else "ucp_legacy_full24_v1"
+            else "cvadr_legacy_full24_v1"
         )
     if topology == "serial4_exposure_matched_six_phase_task_cycle":
-        return "ucp_legacy_serial4_v1"
+        return "cvadr_legacy_serial4_v1"
     if (
         topology
         == "cycle_normalized_randomized_group4_six_phase_task_cycle"
         and task_query_keyed
     ):
-        return "ucp_cycle_normalized_randomized_group4_v2"
+        return "cvadr_cycle_normalized_randomized_group4_v2"
     raise WriterModelError("unsupported AS-Writer checkpoint state family")
 
 

@@ -61,15 +61,15 @@ from ember.writer.update_contract import (
 ROOT = Path(__file__).resolve().parents[1]
 SERIAL_CONFIG = (
     ROOT
-    / "configs/pi05_as_writer_unified_causal_program_serial4_exposurematched_v1.json"
+    / "configs/pi05_as_writer_contextual_value_dual_read_serial4_exposurematched_v1.json"
 )
 TASK_QUERY_RAW_CONFIG = (
     ROOT
-    / "configs/pi05_as_writer_unified_causal_program_taskquery_rawfull24_v1.json"
+    / "configs/pi05_as_writer_contextual_value_dual_read_taskquery_rawfull24_v1.json"
 )
 GROUP4_CONFIG = (
     ROOT
-    / "configs/pi05_as_writer_unified_causal_program_cycle_normalized_group4_v1.json"
+    / "configs/pi05_as_writer_contextual_value_dual_read_cycle_normalized_group4_v1.json"
 )
 
 
@@ -484,14 +484,10 @@ def test_cycle_normalized_configs_and_checkpoint_families_fail_closed() -> None:
     group4 = load_writer_config(GROUP4_CONFIG)
     assert raw["schema_version"] == AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA
     assert group4["schema_version"] == AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA
-    assert raw["formal_run"]["status"] == "sealed"
-    assert raw["formal_run"]["launch_state"] == (
-        "ready_for_fresh_rng_v2_macro0_to200"
-    )
-    assert group4["formal_run"]["status"] == "sealed"
-    assert group4["formal_run"]["launch_state"] == (
-        "ready_for_fresh_rng_v2_update0_to1200"
-    )
+    assert raw["formal_run"]["status"] == "pending_profile"
+    assert raw["formal_run"]["launch_state"].startswith("blocked_until")
+    assert group4["formal_run"]["status"] == "pending_profile"
+    assert group4["formal_run"]["launch_state"].startswith("blocked_until")
     assert raw["formal_run"]["total_steps"] == 400
     assert group4["formal_run"]["total_steps"] == 2400
     assert raw["formal_run"]["stage_stop_steps"] == [200, 400]
@@ -510,35 +506,28 @@ def test_cycle_normalized_configs_and_checkpoint_families_fail_closed() -> None:
     truncated["formal_run"]["stage_stop_steps"] = [200]
     with pytest.raises(WriterModelError, match="would auto-scale"):
         _validate_formal_schedule(truncated)
-    raw_resume = raw["profile_evidence"]["exact_resume_smoke"]
-    assert raw_resume["step1_payloads_unchanged_after_resume"] is True
-    assert raw_resume[
-        "raw_and_group4_cycle0_teacher_video_map_equal_for_all_24_tasks"
-    ] is True
-    assert raw_resume[
-        "raw_and_group4_task_query_rows_equal_by_stateless_sampler_contract"
-    ] is True
-    group_resume = group4["profile_evidence"]["exact_resume_smoke"]
-    assert group_resume[
-        "step1_and_step3_payloads_unchanged_after_resume"
-    ] is True
-    assert group_resume["scheduler_logical_updates_after_step7"] == 1
-    assert checkpoint_state_family(raw) == "ucp_task_query_keyed_rawfull24_v2"
+    assert raw["profile_evidence"]["exact_resume_smoke"] is None
+    assert group4["profile_evidence"]["exact_resume_smoke"] is None
+    assert checkpoint_state_family(raw) == "cvadr_task_query_keyed_rawfull24_v2"
     assert checkpoint_state_family(group4) == (
-        "ucp_cycle_normalized_randomized_group4_v2"
+        "cvadr_cycle_normalized_randomized_group4_v2"
     )
     assert _state_schemas(1, checkpoint_state_family(raw))[0] != (
         _state_schemas(1)[0]
     )
     assert _state_schemas(6, checkpoint_state_family(group4)) == (
         AS_WRITER_CYCLE_NORMALIZED_GROUP4_CHECKPOINT_SCHEMA,
-        "ember_pi05_unified_causal_program_cycle_normalized_group4_trainer_state_v2",
+        "ember_pi05_contextual_value_dual_read_cycle_normalized_group4_trainer_state_v2",
         AS_WRITER_CYCLE_NORMALIZED_GROUP4_RANK_STATE_SCHEMA,
     )
     with pytest.raises(WriterModelError, match="unsupported"):
         _state_schemas(1, "ucp_task_query_keyed_rawfull24_v1")
     with pytest.raises(WriterModelError, match="unsupported"):
         _state_schemas(6, "ucp_cycle_normalized_randomized_group4_v1")
+    with pytest.raises(WriterModelError, match="unsupported"):
+        _state_schemas(1, "cvadr_task_query_keyed_rawfull24_v1")
+    with pytest.raises(WriterModelError, match="unsupported"):
+        _state_schemas(6, "cvadr_cycle_normalized_randomized_group4_v1")
 
     launch = build_update_runtime_contract(
         config=group4,
@@ -553,7 +542,7 @@ def test_cycle_normalized_configs_and_checkpoint_families_fail_closed() -> None:
         rank_topology=({}, {}, {}, {}),
     )
     assert launch["checkpoint_state_family"] == (
-        "ucp_cycle_normalized_randomized_group4_v2"
+        "cvadr_cycle_normalized_randomized_group4_v2"
     )
     assert launch["phase_cost_assignment_input"] == "none"
     assert launch["rank_local_long_first"] == "single_task_trivial_order"
@@ -592,11 +581,11 @@ def test_cycle_normalized_formal_runtime_keeps_two_stage_total(
             resume=None,
             skip_data_sha=True,
         )
-        config = load_writer_config(path)
+        config = copy.deepcopy(load_writer_config(path))
         blocked = copy.deepcopy(config)
-        blocked["formal_run"]["status"] = "pending"
         with pytest.raises(WriterModelError, match="not sealed"):
             resolve_runtime(args, blocked, context)
+        config["formal_run"]["status"] = "sealed"
         total, batch, checkpoints = resolve_runtime(args, config, context)
         assert (total, batch, args.stop_after_step) == (
             expected_total,
@@ -746,7 +735,7 @@ def test_serial4_selected4_raw_mean_has_4x4_gram_and_25pct_reference() -> None:
 def test_serial4_config_and_profile_axis_are_fresh_and_fail_closed() -> None:
     config = load_writer_config(SERIAL_CONFIG)
     full24 = load_writer_config(
-        ROOT / "configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json"
+        ROOT / "configs/pi05_as_writer_contextual_value_dual_read_full24_decay400_v1.json"
     )
     context = DistributedContext(
         rank=0,

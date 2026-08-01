@@ -157,11 +157,14 @@ rank-128 Source-SFT均已封存，后者development observed-best为`109/400`。
 `143`，五臂`143/135/125/128/129`。前者视频语义和顺序margin强，后者
 absolute更高但margin较弱；两者都未达到focused absolute门150。
 
-v7/v8/v10/Loom/Recenter/Core-Program/Prior–Innovation均已完成并作为负结果
-provenance。其关键correct400 best依次为`120/125/103/112/85/84/100`；
-Prior四点为`100/61/89/88`。这些结果共同说明：围绕Action–Effect binding、
-strict Core×Procedure双必要、DC/AC手工重分配或不同reader反复重构，均没有
-恢复v5.2/v6的absolute。
+v7/v8/v10/Loom/Recenter/Core-Program/Prior–Innovation均已完成，并作为各自
+“架构×当时fast task-complete recipe”的负结果provenance，而不是对整版思想
+的独立否定。其关键correct400 best依次为`120/125/103/112/85/84/100`；
+Prior四点为`100/61/89/88`。这些结果说明上述具体组合没有恢复v5.2/v6的
+absolute；其中只有近均匀global binder、早event pooling、无监督confidence/
+gap、联合删除DC、strict bilinear、高增益末端放大和强制谱等被内部证据局部
+否定。Action anchors、双流、局部关系、Core语义与target-first/rank-last仍需
+结合训练合同判断。
 
 Target-Spectral已完成对“近rank1是否为直接瓶颈”的干净反证。fresh
 macro50/100/150/200 correct400为`30/12/18/34`；四点配对、无放回和输出完整性

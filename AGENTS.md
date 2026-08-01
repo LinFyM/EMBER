@@ -167,8 +167,10 @@ DiD=`97`；这进一步证明强architecture×training-bundle交互，但不识�
 关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
 single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe
 `121/122/111/84/47`；corrected mixed-task rank-128 Source-SFT `109/400`。
-v7、v8、v10、Loom和Recenter都已形成充分负证据，不得恢复其可执行路径或在其
-局部scale/gate上继续打补丁。
+v7、v8、v10、Loom和Recenter各自在当时训练bundle下已经形成正式负结果，旧版
+可执行路径不得整套恢复，也不得在原失败checkpoint上继续堆局部scale/gate补丁；
+但这不构成对整版思想的独立否定。只有被内部反事实直接定位的接口可以删除，
+其余组件必须继续按架构×recipe混杂处理，并可在职责完整、受控的整体设计中复核。
 
 `150`继续作为重要里程碑与强baseline参考，但不再是focused Goal的终点。
 即使超过150，只要内部仍有明确漏洞、task漂移、视频学习不足或可信改进方向，

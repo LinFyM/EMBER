@@ -96,8 +96,12 @@ def test_ap_adr_full24_config_seals_architecture_and_information_wall() -> None:
     assert config["information_wall"]["test_video_values_read"] == 0
     assert "state" in config["information_wall"]["writer_forbidden_inputs"]
     assert config["profile_defaults"]["expected_world_size"] == 4
-    assert config["profile_defaults"]["status"] == "pending_ap_adr_b20_live_profile"
-    assert config["profile_evidence"]["status"] == "pending_ap_adr_b20_live_profile"
+    assert config["profile_defaults"]["status"] == (
+        "sealed_b20_after_live_105_frame_profile"
+    )
+    assert config["profile_evidence"]["status"] == (
+        "sealed_b20_after_live_105_frame_profile"
+    )
     assert config["profile_evidence"]["allowed_physical_gpu_ids"] == [4, 5, 6, 7]
     assert config["profile_evidence"]["primary_candidate"][
         "per_task_action_batch_size"
@@ -111,12 +115,22 @@ def test_ap_adr_full24_config_seals_architecture_and_information_wall() -> None:
     assert config["optimization"]["scheduler"]["decay_steps"] == 400
     assert config["data"]["teacher_video_seed"] == 20260722
     assert config["profile_evidence"]["formal_teacher_video_seed_after_profile_seal"] == 20260722
-    assert config["formal_run"]["status"] == "pending_ap_adr_b20_live_profile"
+    assert config["formal_run"]["status"] == "sealed"
     assert config["formal_run"]["launch_state"] == (
-        "blocked_until_profile_and_resume_seal"
+        "ready_for_fresh_macro0_to200"
     )
-    assert config["profile_evidence"]["selected"] is None
-    assert config["profile_evidence"]["exact_resume_smoke"] is None
+    assert config["profile_evidence"]["selected"][
+        "per_task_action_batch_size"
+    ] == 20
+    assert config["profile_evidence"]["selected"][
+        "contains_real_105_frame_video"
+    ] is True
+    assert config["profile_evidence"]["exact_resume_smoke"]["status"] == (
+        "pass_fresh_step1_then_exact_resume_to_step3"
+    )
+    assert config["profile_evidence"]["exact_resume_smoke"][
+        "step1_checkpoint_files_unchanged_after_resume"
+    ] is True
     assert config["formal_run"]["total_steps"] == 400
     assert config["formal_run"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["selected_stop_step"] == 200

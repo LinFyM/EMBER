@@ -200,7 +200,7 @@
     "budget_role": "fresh_amplitude_dual_read_raw_full24_one_hour_then_evidence_gated_exact_resume"
   },
   "profile_defaults": {
-    "status": "pending_ap_adr_b20_live_profile",
+    "status": "sealed_b20_after_live_105_frame_profile",
     "expected_world_size": 4,
     "total_steps": 3,
     "per_rank_batch_size": 20,
@@ -212,7 +212,7 @@
     "selected_stop_step": 3
   },
   "profile_evidence": {
-    "status": "pending_ap_adr_b20_live_profile",
+    "status": "sealed_b20_after_live_105_frame_profile",
     "allowed_physical_gpu_ids": [
       4,
       5,
@@ -235,9 +235,107 @@
       "per_task_action_batch_size": 16
     },
     "selection_rule": "try_b20_on_three_complete_macros_containing_real_105_frame_video_then_fallback_directly_to_b16_only_if_oom_or_repeated_instability",
-    "selected": null,
-    "exact_resume_smoke": null,
-    "gradient_reachability": null,
+    "selected": {
+      "commit": "83065490bcf08e91c6f511cf2b921c7932d3ba1b",
+      "max_frames_per_encoder_call": 32,
+      "per_task_action_batch_size": 20,
+      "profile_optimizer_steps": 3,
+      "profile_global_action_queries": 1440,
+      "profile_global_video_conditions": 72,
+      "profile_wall_seconds": 58.98350688396022,
+      "step_seconds_max": [
+        20.56718597607687,
+        18.71667737606913,
+        18.644170708954334
+      ],
+      "steady_action_queries_per_second_mean_last_two": 25.695444962585746,
+      "steady_macro_updates_per_hour_mean_last_two": 192.7158372193931,
+      "max_cuda_allocated_bytes": 77227462656,
+      "max_cuda_reserved_bytes": 83523272704,
+      "all_steps_finite": true,
+      "all_four_ranks_completed": true,
+      "contains_real_105_frame_video": true,
+      "all_main_blocks_gradient_reachable_after_identity_step": true,
+      "profile_root": "/data/ymdai/outputs/ember/pi05_as_writer_ap_adr_profile_b20_longseed172_r4_8306549_20260801",
+      "profile_config_overlay_sha256": "f63ec3b94657c60fac52a5845988a45279b9c522ff32e34690465807f42ae18d",
+      "profile_run_contract_payload_sha256": "77b0d777cf2920b1d2206f82339db45e353fc4c66e44839cda9f14df6aeebc94",
+      "profile_run_contract_sha256": "e8524f6c64acb5848a6ab38ea045d225e854aa3a1d440953d49d1f62aa77945a",
+      "profile_metrics_sha256": "5a8574852ea979d8be758b0816a1c8f77c9d72d9b3caa2d45f60b31a1448a2c7",
+      "profile_run_summary_sha256": "39b69bfad25efd52359b27b18b327cfcc93cb4952536d10cfcc12ce222129e03",
+      "profile_log_sha256": "7caf7351b7c95cda5eabf0483622128c98c21a311eaf5519521c8ab56a685d20"
+    },
+    "exact_resume_smoke": {
+      "status": "pass_fresh_step1_then_exact_resume_to_step3",
+      "commit": "83065490bcf08e91c6f511cf2b921c7932d3ba1b",
+      "root": "/data/ymdai/outputs/ember/pi05_as_writer_ap_adr_resume_smoke_b20_formalseed_r4_8306549_20260801",
+      "formal_teacher_video_seed": 20260722,
+      "fresh_stop_step": 1,
+      "resumed_stop_step": 3,
+      "completed_optimizer_steps": 3,
+      "metrics_steps": [
+        1,
+        2,
+        3
+      ],
+      "mean_functional_action_losses": [
+        0.15716790687292814,
+        0.15068584556380907,
+        0.1480922494083643
+      ],
+      "gradient_norms_before_clip": [
+        0.009444392286241055,
+        0.014368036761879921,
+        0.10030180215835571
+      ],
+      "step_seconds_max": [
+        19.533733709715307,
+        20.332029601559043,
+        19.38969458406791
+      ],
+      "applied_learning_rates": [
+        0.0003,
+        0.00022749999999999997,
+        0.00008250000000000003
+      ],
+      "cumulative_action_queries": [
+        480,
+        960,
+        1440
+      ],
+      "cumulative_video_conditions": [
+        24,
+        48,
+        72
+      ],
+      "gradient_gram_chunk_allgathers_each_step": 12,
+      "gradient_gram_chunk_cuda_synchronizations_each_step": 12,
+      "all_steps_finite": true,
+      "all_main_blocks_gradient_reachable_after_identity_step": true,
+      "validation_action_reads": 0,
+      "test_action_reads": 0,
+      "test_video_value_reads": 0,
+      "step1_checkpoint_files_unchanged_after_resume": true,
+      "run_contract_payload_sha256": "a5a20f28f3ee602ec9f28a71cb349d682881b3405a7f21159b5802cc28b488b6",
+      "run_contract_file_sha256": "138b47f0347e492ddb6dc83607efdf54319b4bde2fab5c3192bcd03b9931e710",
+      "metrics_sha256": "d5dff6b9ecf2abe5ba86deb6a5598aab614997d79ac881ceeced038db06ed7b9",
+      "run_summary_sha256": "f9819dcfcb21890c191f633f96c9abae63077ab676d9aeb553f6c9e8c11b2564",
+      "step1_checkpoint_manifest_sha256": "8a7ceccd7f875635495f80d1d838b71ad0c9708a01e289341694fbe9f27a3cb9",
+      "step2_checkpoint_manifest_sha256": "cfb59067aee6f1b109e611619b30e728f4c1d7793996effa6865a1a413ffd1c0",
+      "step3_checkpoint_manifest_sha256": "779634d5daf27f66bcdee3281986f1ff6f69439fd3646bbbec70b1991ab836fe",
+      "fresh_log_sha256": "9b76f7cd3db37363e222cd1ead7fc320e40a6919ac9360425473593230ba981c",
+      "resume_log_sha256": "33e199530ffd6f92454fe5751dc2dcc29914e9587aab1432a32c1e09a8172aba"
+    },
+    "gradient_reachability": {
+      "status": "confirmed_after_identity_output_step",
+      "first_nonzero_main_path_macro": 2,
+      "finite_nonzero_blocks": [
+        "semantic_frontend",
+        "core",
+        "program",
+        "compiler",
+        "factor"
+      ]
+    },
     "inference_profile": null
   },
   "specificity_gate": {
@@ -253,8 +351,8 @@
     "contrast_loss_allowed": false
   },
   "formal_run": {
-    "status": "pending_ap_adr_b20_live_profile",
-    "launch_state": "blocked_until_profile_and_resume_seal",
+    "status": "sealed",
+    "launch_state": "ready_for_fresh_macro0_to200",
     "expected_world_size": 4,
     "total_steps": 400,
     "per_rank_batch_size": 20,

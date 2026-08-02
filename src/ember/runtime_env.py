@@ -16,6 +16,7 @@ from typing import Any
 
 
 BDDL_VERSION = "1.0.1"
+LEROBOT_VERSION = "0.6.0"
 ROBOSUITE_VERSION = "1.4.0"
 ROBOSUITE_DEFAULT_FILE_LOGGING = 'FILE_LOGGING_LEVEL = "DEBUG"'
 ROBOSUITE_PRIVATE_MACROS = '''"""EMBER override for robosuite 1.4.0 shared-/tmp compatibility."""
@@ -50,19 +51,22 @@ def _require_distribution(
     return metadata_path
 
 
-def _remove_duplicate_bddl_metadata(site_packages: Path) -> bool:
-    metadata_path = _require_distribution(site_packages, "bddl", BDDL_VERSION)
-    duplicate_path = site_packages / f"bddl-{BDDL_VERSION}.egg-info"
+def _remove_duplicate_metadata(
+    site_packages: Path, distribution: str, version: str
+) -> bool:
+    metadata_path = _require_distribution(site_packages, distribution, version)
+    duplicate_path = site_packages / f"{distribution}-{version}.egg-info"
     if not duplicate_path.exists():
         return False
     if not duplicate_path.is_file():
         raise RuntimeEnvironmentError(
-            f"Expected malformed BDDL metadata to be a file: {duplicate_path}"
+            f"Expected malformed {distribution} metadata to be a file: "
+            f"{duplicate_path}"
         )
     if duplicate_path.read_bytes() != metadata_path.read_bytes():
         raise RuntimeEnvironmentError(
-            "BDDL duplicate metadata does not match the installed distribution; "
-            "refusing to remove it"
+            f"{distribution} duplicate metadata does not match the installed "
+            "distribution; refusing to remove it"
         )
     duplicate_path.unlink()
     return True
@@ -102,7 +106,12 @@ def repair_runtime_environment(site_packages: Path) -> dict[str, bool]:
             f"site-packages directory does not exist: {site_packages}"
         )
     return {
-        "bddl_metadata_removed": _remove_duplicate_bddl_metadata(site_packages),
+        "bddl_metadata_removed": _remove_duplicate_metadata(
+            site_packages, "bddl", BDDL_VERSION
+        ),
+        "lerobot_metadata_removed": _remove_duplicate_metadata(
+            site_packages, "lerobot", LEROBOT_VERSION
+        ),
         "robosuite_override_created": _install_robosuite_private_macros(
             site_packages
         ),

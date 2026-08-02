@@ -28,6 +28,17 @@ class RuntimeEnvironmentRepairTest(unittest.TestCase):
             bddl_metadata.read_text(encoding="utf-8"), encoding="utf-8"
         )
 
+        lerobot_metadata = (
+            self.site_packages / "lerobot-0.6.0.dist-info" / "METADATA"
+        )
+        lerobot_metadata.parent.mkdir()
+        lerobot_metadata.write_text(
+            _metadata("lerobot", "0.6.0"), encoding="utf-8"
+        )
+        (self.site_packages / "lerobot-0.6.0.egg-info").write_text(
+            lerobot_metadata.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+
         robosuite_metadata = (
             self.site_packages / "robosuite-1.4.0.dist-info" / "METADATA"
         )
@@ -48,9 +59,24 @@ class RuntimeEnvironmentRepairTest(unittest.TestCase):
         first = repair_runtime_environment(self.site_packages)
         second = repair_runtime_environment(self.site_packages)
 
-        self.assertEqual(first, {"bddl_metadata_removed": True, "robosuite_override_created": True})
-        self.assertEqual(second, {"bddl_metadata_removed": False, "robosuite_override_created": False})
+        self.assertEqual(
+            first,
+            {
+                "bddl_metadata_removed": True,
+                "lerobot_metadata_removed": True,
+                "robosuite_override_created": True,
+            },
+        )
+        self.assertEqual(
+            second,
+            {
+                "bddl_metadata_removed": False,
+                "lerobot_metadata_removed": False,
+                "robosuite_override_created": False,
+            },
+        )
         self.assertFalse((self.site_packages / "bddl-1.0.1.egg-info").exists())
+        self.assertFalse((self.site_packages / "lerobot-0.6.0.egg-info").exists())
         override = self.site_packages / "robosuite" / "macros_private.py"
         self.assertIn("_macros.FILE_LOGGING_LEVEL = None", override.read_text())
 

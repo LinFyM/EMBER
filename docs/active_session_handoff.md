@@ -31,6 +31,12 @@ clean detached commit和fresh identity启动macro0→200，checkpoint every25，
 评测50/100/150/200 correct400。不得从profile/resume warm-start；若RAW弱或含混，
 相同CV topology补做GROUP4。后续不使用subagent。
 
+`50ac8ee`首次formal命令在创建output root前被fail-close拒绝，因为config把
+`formal_run.status`写成描述性seal字符串，而runtime只接受canonical枚举`sealed`。
+四rank一致退出、GPU已释放，失败log仅作guard provenance，无metrics/checkpoint/
+科学数据。修复只改该枚举与精确测试；正式运行改用新的post-fix frozen commit及
+全新retry root/log。
+
 ## 0-current. UCP operator格封存，CV-ADR已成为canonical
 
 UCP RNG-v2 RAW和cycle-normalized randomized-GROUP4均从fresh identity完成相同

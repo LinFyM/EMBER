@@ -189,7 +189,7 @@
       "inference_profile": null
     },
     "formal_run": {
-      "status": "sealed_ready_for_fresh_macro0_to200",
+      "status": "sealed",
       "launch_state": "ready_from_clean_detached_postseal_commit",
       "expected_world_size": 4,
       "total_steps": 400,

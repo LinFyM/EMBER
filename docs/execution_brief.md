@@ -15,6 +15,11 @@ profile/resume metrics SHA为`9a3b490c...f0b11`/`55366fc4...94028`。RAW config�
 跑0→200，不得warm-start。50/100/150/200 correct400决定续训；RAW弱或含混时必须
 以相同CV topology补做GROUP4，后续不使用subagent。
 
+首次`50ac8ee` formal启动在output root创建前被contract guard拒绝：runtime要求
+`formal_run.status == "sealed"`，描述性seal字符串不合法。无模型/data初始化、metrics
+或checkpoint；失败log保留。修复仅恢复canonical枚举并收紧测试，正式科学轨迹使用
+新的clean commit和全新retry root/log。
+
 ## 2026-08-02 UCP operator裁决完成，CV-ADR集成
 
 RNG-v2 matched200控制格已经封存：RAW correct400=`72/87/86/89`，normalized

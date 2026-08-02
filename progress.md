@@ -20,6 +20,9 @@ GPU范围和训练步长是当时快照；活动状态只取
   `9a3b490c...f0b11`/`55366fc4...94028`。
 - RAW config已seal为ready。下一步从本次post-seal clean detached commit fresh启动
   macro0→200、every25 checkpoint；profile/smoke权重不进入科学轨迹。
+- `50ac8ee`首次formal启动在output root创建前由fail-close拒绝：描述性status不等于
+  runtime要求的canonical `sealed`。无metrics/checkpoint/科学数据；失败log保留，
+  config与测试原位修正后使用全新retry root。
 
 ## 2026-08-02 UCP operator格闭环并集成CV-ADR
 

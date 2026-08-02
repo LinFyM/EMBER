@@ -484,7 +484,7 @@ def test_cycle_normalized_configs_and_checkpoint_families_fail_closed() -> None:
     group4 = load_writer_config(GROUP4_CONFIG)
     assert raw["schema_version"] == AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA
     assert group4["schema_version"] == AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA
-    assert raw["formal_run"]["status"] == "sealed_ready_for_fresh_macro0_to200"
+    assert raw["formal_run"]["status"] == "sealed"
     assert raw["formal_run"]["launch_state"] == (
         "ready_from_clean_detached_postseal_commit"
     )
@@ -587,10 +587,17 @@ def test_cycle_normalized_formal_runtime_keeps_two_stage_total(
             skip_data_sha=True,
         )
         config = copy.deepcopy(load_writer_config(path))
-        blocked = copy.deepcopy(config)
-        with pytest.raises(WriterModelError, match="not sealed"):
-            resolve_runtime(args, blocked, context)
-        config["formal_run"]["status"] = "sealed"
+        if path == TASK_QUERY_RAW_CONFIG:
+            assert config["formal_run"]["status"] == "sealed"
+            blocked = copy.deepcopy(config)
+            blocked["formal_run"]["status"] = "pending_profile"
+            with pytest.raises(WriterModelError, match="not sealed"):
+                resolve_runtime(args, blocked, context)
+        else:
+            assert config["formal_run"]["status"] == "pending_profile"
+            with pytest.raises(WriterModelError, match="not sealed"):
+                resolve_runtime(args, config, context)
+            config["formal_run"]["status"] = "sealed"
         total, batch, checkpoints = resolve_runtime(args, config, context)
         assert (total, batch, args.stop_after_step) == (
             expected_total,

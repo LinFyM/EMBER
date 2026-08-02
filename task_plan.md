@@ -8,6 +8,22 @@
 `docs/a100_to_bgr_migration_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
 runner、split、路径或 GPU 权限。
 
+## Post-seal A100研究窗口（2026-08-02 19:18 UTC起）
+
+- [x] owner重新授权约十小时GPU4--7研究窗口；以`f9a144c`为迁移封存基线，创建外部
+  delta ledger与独立`codex/postseal-target-bound`写worktree。
+- [x] 完整复核CV-ADR、historical Coherent-Procedure与Target-Bound设计；判定首项
+  真实证伪应保持mean-backed Core，并让task/Core语义在38 targets和A/E/D私有时序
+  读取之前进入，而不是再加gate/scale或硬task-ID experts。
+- [x] 将远端Target-Bound实现`b260a57`无冲突移植到`f9a144c`，得到`fbbb784`。
+- [ ] 恢复frozen Python/CUDA环境，完成必要focused CPU vertical path并立即push。
+- [ ] 只对GPU4--7做一次live preflight；完成longest105 B20三cycle、fresh/exact resume。
+- [ ] fresh0→200、每25保存；paired correct400评测50/100/150/200，报告breadth/churn。
+- [ ] 按absolute与task累积趋势决定是否续到400；无论结果都分析Core/task routing、
+  A/E/D→BA/action、task-gradient共享与functional/closed-loop错位。
+- [ ] 根据最早失效接口做至多当前窗口可完整证伪的整体迭代；最迟03:45 UTC停止新GPU
+  工作，push全部代码/文档并封存post-seal增量清单。
+
 ## A100清理与BGR迁移准备（2026-08-02）
 
 - [x] 核验EMBER/MemLLM Git、工作区、tmux和训练/评测进程；没有活动实验需要继承。

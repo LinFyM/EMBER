@@ -62,6 +62,28 @@ CV-ADR 又提供了更早的局部定位：
 三个物理角色必须保留到 rank coordinate 才联合；训练估计器必须在不减少 B20
 query breadth 的前提下降低可消除的 flow-time 方差。
 
+### 2.1 post-seal复核：它是否真的提供task条件分工
+
+24-task梯度近正交且late factor block约占94%能量，说明“一次full24平均”不是完整
+根因：不同task已经提出不同请求，但共享写出路径可能无法把它们稳定保存在同一参数
+点。可泛化的解决方案又不能是24个task-ID hard experts；Writer只允许从language和
+video推断task语义，validation/test必须能组合复用。
+
+本版的最小可证伪task-routing机制是：language/video形成的mean-backed Core先生成
+每个真实target的`C_t`，`C_t`随后进入该target每个interval的Effect/Change地址、三路
+temporal Q/K以及每个rank的最终读地址。因而task语义不只在末端与全局Program相加，
+而是改变真实value被选择和传递的整条activation path；相关task可以因相近Core共享
+读取，不同task可以形成不同target/role activation。video A/E/D仍是V，Core不能凭空
+制造动态内容。
+
+这不等于已经解决参数共存：evidence reader、temporal blocks、rank reader和factor
+heads仍共享权重。首跑必须记录target/role activation与task-gradient block Gram，并
+检验checkpoint gained/lost是否从轮换变为多task累计。若Core地址明显task-specific，
+但factor-head梯度仍近正交且success继续轮换，则本版只解决了activation routing，
+没有解决shared generator容量/优化；下一整体设计才有证据把Core语义提升为factor
+计算的soft basis selection。首跑前不先加MoE、gate或bank，因为现有Target-Bound已是
+更简单且职责完整的条件路径，尚未被真实B20/closed-loop证伪。
+
 ## 3. 选择与被拒绝的相邻方案
 
 选择 **target-bound、role-preserving causal Program**：38 个真实 target 先读

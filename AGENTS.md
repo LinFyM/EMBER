@@ -2,10 +2,13 @@
 
 ## Authority and current override
 
-本文件和`docs/execution_brief.md`是长期实验authority。2026-08-02 owner因A100主机
-即将到期暂停所有新训练、评测、GPU profile和架构设计；当前只允许清理、迁移准备、
-只读验证、路径可移植性修复、文档与Git交付。迁移本身由后续智能体执行；迁移完成后
-也必须得到owner新的实验授权，不能从历史计划自动launch。
+本文件和`docs/execution_brief.md`是长期实验authority。2026-08-02 19:18 UTC owner在
+迁移已经由另一session启动后，重新授权约十小时A100 post-seal研究窗口：允许在既有
+信息墙、split与GPU4--7边界内恢复环境、设计/实现架构、profile、训练、评测和内部
+分析。必须以`f9a144c`为迁移封存基线，把全部新增Git提交和外部artifact登记为可供
+迁移智能体二次同步的delta；关键代码优先push。约`2026-08-03 05:18 UTC`后不得再
+启动或继续GPU工作，操作上最迟`03:45 UTC`冻结新实验并完成封存。迁移本身仍由后续
+智能体执行，且这次临时授权不自动延续到BGR。
 
 当前跨session入口：
 
@@ -49,31 +52,27 @@
 31. `docs/decisions_and_open_questions.md`
 32. `docs/novelty_and_landscape.md`
 
-恢复Target-Bound时还必须先fetch
-`origin/codex/target-bound-role-program`并完整阅读该分支的
-`docs/action_forecast_writer_target_bound_role_program_design.md`。它在main上没有
-可执行并行版本；历史由Git保存。
+本post-seal分支已把Target-Bound实现移植到`f9a144c`之后；修改或运行前仍必须完整
+阅读`docs/action_forecast_writer_target_bound_role_program_design.md`。历史CV实现
+由Git和frozen artifacts保存，不保留可执行并行版本。
 
 旧SmolVLA、70/10/10、Phase A–F、flat task-local RL和flat Writer-RL路径已退役，
 不得恢复为活动实现，也不得混入MemLLM。
 
 ## Current focused task
 
-- 完成A100清理、BGR迁移handoff、路径可移植性、环境freeze、Git commit/push和
-  final read-only verification。
-- 当前没有需要继承的训练、评测、torchrun或tmux。
-- EMBER迁移准备前`main=origin/main=f0b123f20f531baf4bfc5c6f75eb96af27f33ac1`；
-  迁移准备提交应成为新的实时`origin/main`。
-- Target-Bound CPU实现已push到远端commit
-  `b260a57a94dc21bd3446b212bfa42f71b037ce13`；没有B20 profile、resume、训练或
-  rollout，不得写成已实验架构。
-- A100辅助worktree、本地实验branches与obsolete stash已在完整bundle验证后清除。
-- frozen source step1000已移除rejected EMA和optimizer/DDP/scheduler训练态；selected
-  raw policy、trainer state和manifest保留。它是下游inference/source asset，不再是
-  source-SFT exact-resume包。
-- owner明确不迁移A100 Codex；sessions、auth、cache、worktree不是authority。
-
-迁移完成和owner重新授权前，不得启动任何下一实验。长期Goal保持未完成。
+- 在临时post-seal窗口中，先验证Target-Bound是否把task/Core语义条件真正传入38个
+  target与A/E/D私有时序写出，并检验这种条件分工能否同时改善absolute、breadth、
+  视频因果性和checkpoint漂移；根据首小时paired correct400与内部证据决定续训或
+  整体根因迭代。
+- 只使用物理GPU4--7；不得查询或触碰GPU0--3，不得干扰他人进程。
+- 迁移封存基线是`main=origin/main=f9a144c94e71bb44373d7247ed0fded2ed835305`；
+  post-seal实现分支为`codex/postseal-target-bound`，全部新提交和runtime roots必须
+  登记在`/data/ymdai/migration_manifests/ember_postseal_20260802/`。
+- frozen source step1000仍是下游inference/source asset，不支持source-SFT exact
+  resume。A100 Codex、venv、cache与worktree仍不迁移。
+- 到期前停止所有GPU进程、push关键代码与文档，并向迁移智能体提供精确delta；长期
+  Goal保持未完成，这次授权不自动授予BGR实验权限。
 
 ## Long-term objective
 

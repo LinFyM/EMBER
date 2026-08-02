@@ -1,32 +1,32 @@
 # EMBER Current Execution Brief
 
-更新时间：2026-08-02。本文是操作层authority；科研结果取
+更新时间：2026-08-02 19:18 UTC。本文是操作层authority；科研结果取
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bgr_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
 ## 1. 当前操作状态
 
-- A100即将到期，owner已暂停新训练、评测、GPU profile和下一架构设计。
-- 当前无EMBER/MemLLM训练、评测、torchrun或tmux需要继承。
-- 当前允许：清理、迁移准备、只读hash/manifest检查、路径可移植性、CPU回归、文档、
-  Git commit/push。
-- 当前不允许：Target-Bound B20 profile、exact resume、formal训练、rollout、重跑旧
-  smoke，或利用迁移窗口开始新的架构设计。
-- 迁移完成后必须由owner重新授权；本文件不自动授予BGR GPU使用权。
+- owner已于`2026-08-02 19:18 UTC`开放约十小时post-seal研究窗口；允许Target-Bound
+  及其根因迭代的最短CPU vertical path、GPU4--7 B20 profile/resume、formal训练、
+  paired rollout与内部分析。
+- 效率优先：不重复全仓仪式、全量hash或无关旧smoke；只做会改变实验可信度的shape、
+  identity、freeze、causal、gradient、OOM、resume检查。
+- 新代码先push，外部roots逐项登记到post-seal delta ledger；最迟`03:45 UTC`冻结新
+  GPU实验并完成封存，约`05:18 UTC`后不得继续运行。
+- 这次临时授权不自动授予BGR GPU使用权。
 
 ## 2. Canonical Git state
 
 迁移准备前EMBER：
 
 ```text
-main/origin-main = f0b123f20f531baf4bfc5c6f75eb96af27f33ac1
-current canonical implementation = CV-ADR
-Target-Bound remote branch commit = b260a57a94dc21bd3446b212bfa42f71b037ce13
+post-seal baseline main/origin-main = f9a144c94e71bb44373d7247ed0fded2ed835305
+current experiment branch = codex/postseal-target-bound
+initial port commit = fbbb784 (b260a57 rebased by cherry-pick onto f9a144c)
 ```
 
-本次迁移准备提交会成为新的`origin/main`。Target-Bound只在远端feature branch，
-没有合并到main；它完成CPU vertical path但没有GPU实验。A100本地只保留main一个
-worktree/branch，历史refs由完整bundle保存。
+`f9a144c`是另一迁移session已经封存的基线，不回写其内容。post-seal分支与所有新
+artifact作为第二批增量交付；Target-Bound在重新验证前仍只算CPU实现，不算实验结果。
 
 迁移后默认动作：clone GitHub main、fetch Target-Bound远端分支、核验commit；不要
 复制`.git`或恢复所有Codex refs。路径可移植性提交应先rebase/merge到Target-Bound，

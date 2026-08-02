@@ -1,23 +1,29 @@
 # EMBER Active Session Handoff
 
-更新时间：2026-08-02。本文只记录迁回 BGR 前的当前真相。历史执行流水仍在
+更新时间：2026-08-02 19:18 UTC。本文只记录迁回 BGR 前的当前真相。历史执行流水仍在
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
 ## 1. 当前边界
 
-- owner 因 A100 主机即将到期，已暂停新的训练、评测、GPU profile和新架构设计；
-  当前任务只做清理与迁移准备。
+- owner在迁移由另一session启动后重新开放约十小时A100 post-seal研究窗口，允许在
+  原信息墙/split/安全合同和物理GPU4--7边界内继续架构、训练、评测与分析。窗口以
+  `2026-08-02 19:18 UTC`起算，约`2026-08-03 05:18 UTC`硬停；操作上最迟`03:45 UTC`
+  冻结新实验，为二次迁移留出时间。
+- 已迁移封存基线为`f9a144c`；本轮所有Git与artifact都是post-seal delta，外部登记根
+  为`/data/ymdai/migration_manifests/ember_postseal_20260802/`。迁移仍由另一session
+  执行，本session不修改其现有副本，只提供增量清单。
 - 当前没有需要继承的 EMBER/MemLLM 训练、评测、torchrun 或 tmux 进程。
-- EMBER `main` 的科研 authority 是 CV-ADR 最终封存，迁移准备前
-  `HEAD=origin/main=f0b123f20f531baf4bfc5c6f75eb96af27f33ac1`。
+- EMBER迁移封存时`main=origin/main=f9a144c94e71bb44373d7247ed0fded2ed835305`；
+  Target-Bound已移植到独立`codex/postseal-target-bound`写worktree，首个移植commit
+  为`fbbb784`，尚未产生GPU实验结论。
 - Target-Bound Role-Preserving Program 已在远端分支
   `origin/codex/target-bound-role-program`实现，commit
   `b260a57a94dc21bd3446b212bfa42f71b037ce13`。它只完成 CPU shape、identity、
   causality、gradient、checkpoint 等结构验证；没有做 B20 profile、resume、训练或
   rollout。不得把它写成实验结果。
-- 所有辅助 worktree、本地实验 branch 和旧 stash 已在完整 Git bundle 验证后删除；
-  `main`是唯一在 A100 上保留的本地 checkout。Target-Bound仍由远端分支保存。
+- cleanup时期的辅助worktree已删除；本轮新建的唯一写worktree是
+  `/data/ymdai/worktrees/EMBER-postseal-target-bound`，只服务本轮增量。
 - 迁移步骤、路径映射、资产分流和新 Codex 接手顺序统一看
   [`a100_to_bgr_migration_handoff.md`](a100_to_bgr_migration_handoff.md)。
 

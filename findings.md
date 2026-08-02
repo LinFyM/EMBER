@@ -6,6 +6,20 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-02 Post-seal条件分工假设
+
+- 现有证据证明Writer能区分task/video并生成不同LoRA，但没有证明24项能力能在同一
+  参数点稳定共存。full24 task gradients近正交、factor heads约占94%能量，说明问题
+  更像共享写出器无法稳定容纳条件创新，而不是普遍负梯度冲突。
+- 可泛化的“任务分工”不能使用被禁止的task ID或24个硬experts；语言/Core必须生成
+  soft semantic address，让相关任务共享计算、不同任务形成不同activation/write
+  paths。视频则提供A/E/D具体教学内容。
+- Target-Bound满足这一假设的第一半：Core先决定38 target reads，并进入每个target的
+  A/E/D读取地址；它仍共享temporal/reader/factor参数，所以只是可证伪候选，不是已解
+  决方案。首小时必须同时看多task共同增长、success-set churn、分块task-gradient与
+  video→BA/action传递；若factor端仍吞掉条件差异，下一整体重构应直接让semantic
+  carrier决定factor计算路径，而不是增加局部gate或scale。
+
 ## 2026-08-02 A100清理与迁移证据分级
 
 - `/data/ymdai`从约`430,784,090,112`降至EMBER提交前快照`229,312,688,128`

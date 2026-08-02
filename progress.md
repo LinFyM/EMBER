@@ -8,6 +8,20 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-02 19:18 UTC Post-seal研究窗口重新开放
+
+- owner在迁移由另一session运行期间，重新授权约十小时A100研究；GPU边界仍严格为
+  物理4--7，要求关键代码先上云、所有新增artifact形成二次迁移delta。
+- 以`f9a144c`为封存基线建立
+  `/data/ymdai/migration_manifests/ember_postseal_20260802/`，并创建独立
+  `codex/postseal-target-bound` worktree。
+- 主进程完整复核CV-ADR、historical Coherent-Procedure与Target-Bound authority。
+  第一实验选择Target-Bound：task/Core语义先绑定38个真实targets，A/E/D保留private
+  causal value到rank read；它尚不能被宣称解决shared factor-head互扰，该项由正式
+  task breadth/churn与分块梯度证伪。
+- `b260a57`已移植到post-seal基线为`fbbb784`；环境从lock恢复中，尚未查询GPU或启动
+  profile、训练、评测。
+
 ## 2026-08-02 A100清理与BGR迁移准备
 
 - 核验EMBER pre-cleanup `main=origin/main=f0b123f`、MemLLM

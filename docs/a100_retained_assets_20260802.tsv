@@ -1,0 +1,21 @@
+project	source_path	allocated_bytes	transfer_class	target_logical_path	verification
+EMBER	git@github.com:LinFyM/EMBER.git	0	github	BGR EMBER repo	origin/main plus migration handoff commit
+EMBER	origin/codex/target-bound-role-program	0	github	remote feature branch	b260a57a94dc21bd3446b212bfa42f71b037ce13
+EMBER	/data/ymdai/migration_manifests/git_bundles/ember_all_refs_pre_migration_cleanup_20260802.bundle	6149402	ssh-archive	BGR manifest root/git_bundles	sha256 c78fb94d0c2bafe460b4d269925c619250d72fdcda1018548b6a3a458aa44ec7
+EMBER	/data/ymdai/outputs/ember	102850465792	ssh-required	EMBER_OUTPUT_ROOT	formal roots and internal checkpoint manifests
+EMBER	/data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722	9354506240	ssh-required	EMBER_OUTPUT_ROOT/pi05_source_base_v1_seed7_1k_e2cc238_20260722	policy sha256 60ea7ee898629321cf34522e5f0e45f4f1c2659c5f5dbc7b02ed9eb46a8cdf36
+EMBER	/data/ymdai/outputs/ember/pi05_writer_feature_cache_v2_development32_raw_e4c19f9_b32_20260722	17994743808	ssh-required	EMBER_OUTPUT_ROOT/pi05_writer_feature_cache_v2_development32_raw_e4c19f9_b32_20260722	cache manifest and task file sizes
+EMBER	/data/ymdai/logs/ember	439922688	ssh-required	EMBER_LOG_ROOT	file count and size
+EMBER	/data/ymdai/ember_data/openpi/paligemma_tokenizer.model	4268032	ssh-required	EMBER_TOKENIZER	sha256 8986bb4f423f07f8c7f70d0dbe3526fb2316056c17bae71b1ea975e77a168fc6
+EMBER	/data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a	100443860992	dedupe-then-ssh-or-download	EMBER_DATA_ROOT	revision f13aa24a3da8c43c7225569f28c562979fa0e35a plus sealed manifest size schema
+EMBER	/data/ymdai/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6	426569728	ssh-or-exact-download	EMBER_ASSET_ROOT	revision 0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 files 586 file-list sha256 721aa2484de396be5267e936f115ddd5f03ffd12e0849cc1cd05bb17454996b9
+EMBER	A100 environment removed after verification	0	rebuild-required	new repo .venv	uv sync --frozen and CPU tests
+EMBER	lerobot/pi05_base	14467239936	redownload-if-needed	BGR model cache	revision 7de663972b7817d2c4cf2d84c821153dfea772e9 model sha256 0eb11ca9587678c1d2ef8cf32807c29f8ce53a2bfdfc1aa4a4c96f16fca59b0f
+MemLLM	git@github.com:LinFyM/Episodic-Memory-Chatbot.git	0	github	BGR MemLLM repo	live origin/main containing migration handoff; edc549d4e4ad9cc36584aa9bcc1f84b55e8f40af is pre-doc scientific point; seven archive tags
+MemLLM	/data/ymdai/migration_manifests/git_bundles/memllm_all_refs_pre_cleanup_20260722.bundle	144653789	ssh-archive	BGR manifest root/git_bundles	sha256 feef0e906842bb6f2a092a4bfbdb3cddb0653fbd346cb510715fec8b43ca7656
+MemLLM	/data/ymdai/memllm_migration_20260708/data0/user/ymdai/LLM_memory	16123052032	ssh-required	/data0/user/ymdai/LLM_memory	data README hashes and symlink targets
+MemLLM	/data/ymdai/memllm_migration_20260708/data1/user/ymdai/memllm_dense_ttt	2847649792	ssh-required	/data1/user/ymdai/memllm_dense_ttt	data README hashes and retained result roots
+MemLLM	A100 environment removed after owner stopped its consumer	0	rebuild-required	new MemLLM venv	pinned freeze and CPU tests
+Both	/data/ymdai/migration_manifests	151117824	ssh-required	BGR_MANIFEST_ROOT	SHA256SUMS and bundle verification; snapshot before final Git commit
+Host	/data/ymdai/.codex	4008456192	do-not-transfer	new Codex install	reauthenticate and read Git handoffs
+Host	/data/ymdai/cat-pr	764076032	review-not-in-default-plan	owner decision required	ambiguous unrelated tree

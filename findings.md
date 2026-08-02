@@ -2,9 +2,41 @@
 
 阅读规则：本文是按日期追加的证据账本。历史段落里的“当前”“下一步”和GPU
 权限只描述其日期当时的状态，不覆盖后续owner决定。活动状态以
-`docs/active_session_handoff.md`、
-`docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落为准；
+`docs/a100_to_bgr_migration_handoff.md`、`docs/active_session_handoff.md`和本文顶部
+最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
+
+## 2026-08-02 A100清理与迁移证据分级
+
+- `/data/ymdai`从约`430,784,090,112`降至EMBER提交前快照`229,312,688,128`
+  allocated bytes，净释放`201,471,401,984` bytes。删除集中于可再生Writer/eval
+  LoRA caches、profile/
+  smoke/resume、退役SmolVLA outputs/numeric数据、rejected source EMA/optimizer
+  state、superseded cache、generic base、已验证完毕的EMBER/MemLLM venv与package
+  cache和owner明确不迁移的Codex archive；每批外部manifest均保留精确路径、bytes
+  和理由。
+- 原4.28GB`ember_assets`被初步误判为全退役后，原始contract tests暴露
+  site-packages `hf-libero` assets symlink断裂。根因确认后只按
+  `lerobot/libero-assets@0b3ea86...`恢复586文件/426.57MB，四个原始失败测试通过；
+  其余约3.86GB旧cache/revision仍删除。该回归说明迁移必须单列simulation assets，
+  不能把“旧SmolVLA资产”与当前LIBERO runtime资产合并分类。
+- frozen source checkpoint的selected raw policy SHA仍为
+  `60ea7ee898629321cf34522e5f0e45f4f1c2659c5f5dbc7b02ed9eb46a8cdf36`，formal
+  inspector可加载；清理改变的是训练resume能力，不改变下游source inference身份。
+- 没有进一步裁剪74.9GB formal checkpoints。现有核心未解问题正是task drift、能力
+  轮换和架构×recipe混杂；非winner checkpoint提供不可再生的参数轨迹和内部几何，
+  只留winner会破坏用户要求的根因分析。
+- 406个complete evaluation roots在LoRA cache删除后合计约1.1GB，仍保留raw rows、
+  results、queue、run contract和launcher completion；小容量换来严格paired复核能力。
+- canonical feature cache v2约17.99GB虽可重算，但生成成本高且是当前32-task前端唯一
+  cache，故归为SSH迁移而非垃圾。generic`pi05_base`已有精确HF revision/weight hash，
+  且frozen source policy自包含，故归为BGR按需重下。
+- MemLLM此前已完成系统清理；本轮不删除其19GB retained tree，因为模型revision未
+  完全锁定，23个results roots又是压缩后的唯一正/负证据。仅venv列为重建。
+- A100 Codex不迁移：archived sessions已删除，当前session/auth/cache不进入默认包。
+  必要状态已写入Git handoff、formal artifacts和migration manifests。
+- 历史docs中26个已不存在output路径均为按计划删除的profile/resume/cache或通配
+  前缀，不是formal rows/checkpoints丢失；后续agent不得因此重跑工程smoke。
 
 ## 2026-08-02 CV-ADR GROUP4正式行为与阶段暂停根因
 

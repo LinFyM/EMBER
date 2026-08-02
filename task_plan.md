@@ -4,8 +4,36 @@
 
 本文件只保存尚未完成的长期闭环与当前执行顺序。历史实验过程见
 `findings.md`、`progress.md` 和 Git；实时进程见
-`docs/active_session_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
-runner、split 或 GPU 权限。
+`docs/active_session_handoff.md`；迁移状态见
+`docs/a100_to_bgr_migration_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
+runner、split、路径或 GPU 权限。
+
+## A100清理与BGR迁移准备（2026-08-02）
+
+- [x] 核验EMBER/MemLLM Git、工作区、tmux和训练/评测进程；没有活动实验需要继承。
+- [x] 创建并验证EMBER 138-ref全量bundle；复验MemLLM 186-ref历史bundle与SHA。
+- [x] 清理52个Writer LoRA caches、138个profile/smoke/resume/WIP roots、退役
+  SmolVLA outputs/numeric数据、旧feature cache、endpoint LoRA tensors、reseal/
+  capacity roots和Codex archive；每批有外部manifest与SHA。
+- [x] 定向测试发现active `hf-libero`的simulation-assets symlink依赖原
+  `ember_assets`；按精确HF revision只恢复426.57MB必需snapshot，原4.28GB多余缓存/
+  revision不恢复，4个原始contract失败测试重新通过。
+- [x] 将source step1000精简为selected raw policy inference asset；保留policy、
+  trainer state和manifest，formal inspector通过，明确不再支持source exact resume。
+- [x] 删除可按精确revision重下的generic `lerobot/pi05_base`，封存revision、bytes和
+  SHA；LIBERO exact dataset、tokenizer、formal outputs与feature cache v2保留。
+- [x] 保守保留60个正式checkpoint roots和406个complete evaluation roots；它们是
+  task漂移、checkpoint轮换和架构×recipe混杂的唯一证据，不只留winner。
+- [x] 封存EMBER/MemLLM完整dependency freeze；验证后删除EMBER venv/package cache；
+  owner关闭MemLLM venv消费者后也删除其7.60GB环境，两者都列为BGR重建项。
+- [x] 删除55个clean辅助worktree、36个本地实验branch和obsolete stash；历史由
+  bundle保存，Target-Bound仍在GitHub远端分支。
+- [x] 评测preflight支持`EMBER_STORAGE_ROOT`，不再写死`/data/ymdai`；定向测试通过。
+- [x] 重写README、AGENTS、active handoff和execution brief，新增迁移handoff与机器
+  可读资产表；A100 Codex不迁移，新Codex从Git authority接手。
+- [x] 完成最终全量验证、cleanup manifest总SHA、Git commit/push与两repo状态核验。
+
+迁移由后续智能体执行。本计划不授权跨机写入或迁移后GPU实验。
 
 ## 当前交接顺序（2026-08-02）
 

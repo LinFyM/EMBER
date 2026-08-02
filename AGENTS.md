@@ -1,585 +1,239 @@
 # EMBER Repository Instructions
 
-## Authority
+## Authority and current override
 
-本文件和 `docs/execution_brief.md` 是当前活动 authority。2026-07-21 generic π0.5 feasibility 已结束；其后 owner 明确批准继续完整 EMBER 主线，并以本文件记录的共享 π0.5-LIBERO source base、one-video Writer 和 test-task training 口径替换此前“结果后停止”的临时边界。
+本文件和`docs/execution_brief.md`是长期实验authority。2026-08-02 owner因A100主机
+即将到期暂停所有新训练、评测、GPU profile和架构设计；当前只允许清理、迁移准备、
+只读验证、路径可移植性修复、文档与Git交付。迁移本身由后续智能体执行；迁移完成后
+也必须得到owner新的实验授权，不能从历史计划自动launch。
 
-修改代码、数据、split、模型或实验状态前，完整阅读：
+当前跨session入口：
 
-1. `README.md`
+1. `docs/a100_to_bgr_migration_handoff.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. `docs/action_forecast_writer_expert_consultation.md`
-5. `docs/action_forecast_writer_design.md`
-6. `docs/action_forecast_writer_v4_root_cause.md`
-7. `docs/action_forecast_writer_v5_design.md`
-8. `docs/action_forecast_writer_v5_1_proposal.md`
-9. `docs/action_forecast_writer_v5_2_design.md`
-10. `docs/action_forecast_writer_v5_3_design.md`
-11. `docs/action_forecast_writer_v6_design.md`
-12. `docs/action_forecast_writer_v7_design.md`
-13. `docs/action_forecast_writer_v8_design.md`
-14. `docs/action_forecast_writer_v10_design.md`
-15. `docs/action_forecast_writer_loom_derivation.md`
-16. `docs/action_forecast_writer_loom_design.md`
-17. `docs/action_forecast_writer_recenter_design.md`
-18. `docs/action_forecast_writer_core_program_design.md`
-19. `docs/action_forecast_writer_prior_innovation_design.md`
-20. `docs/action_forecast_writer_target_spectral_design.md`
-21. historical `docs/action_forecast_writer_coherent_procedure_design.md` from
-    commit `35fb28f`（current tree中已由后续authority取代；用
-    `git show 35fb28f:docs/action_forecast_writer_coherent_procedure_design.md`读取）
-22. `docs/action_forecast_writer_semantic_program_grid_design.md`
-23. `docs/action_forecast_writer_unified_causal_program_design.md`
-24. `docs/action_forecast_writer_amplitude_preserving_dual_read_design.md`
-25. `docs/action_forecast_writer_contextual_value_dual_read_design.md`
-26. `task_plan.md`
-27. `findings.md`
-28. `progress.md`
-29. `docs/concept.md`
-30. `docs/decisions_and_open_questions.md`
-31. `docs/novelty_and_landscape.md`
 
-`docs/active_session_handoff.md`是当前跨session恢复入口，集中摘要研究证据链、
-v5失败证据、v5.1设计理由、运行状态和下一动作，但不覆盖架构或长期科学
-authority；focused AS/RL完成或其不再承担跨session恢复作用时应更新或删除。
+修改代码、数据、split、模型或实验状态前，主进程必须完整读到EOF：
 
-旧 `docs/expert_plan.md`、SmolVLA/70-10-10 runner/config/checkpoint 和
-Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 provenance；不得恢复为
-活动路径，不得依赖或混入 MemLLM。
+1. `README.md`
+2. `docs/a100_to_bgr_migration_handoff.md`
+3. `docs/active_session_handoff.md`
+4. `docs/execution_brief.md`
+5. `docs/action_forecast_writer_expert_consultation.md`
+6. `docs/action_forecast_writer_design.md`
+7. `docs/action_forecast_writer_v4_root_cause.md`
+8. `docs/action_forecast_writer_v5_design.md`
+9. `docs/action_forecast_writer_v5_1_proposal.md`
+10. `docs/action_forecast_writer_v5_2_design.md`
+11. `docs/action_forecast_writer_v5_3_design.md`
+12. `docs/action_forecast_writer_v6_design.md`
+13. `docs/action_forecast_writer_v7_design.md`
+14. `docs/action_forecast_writer_v8_design.md`
+15. `docs/action_forecast_writer_v10_design.md`
+16. `docs/action_forecast_writer_loom_derivation.md`
+17. `docs/action_forecast_writer_loom_design.md`
+18. `docs/action_forecast_writer_recenter_design.md`
+19. `docs/action_forecast_writer_core_program_design.md`
+20. `docs/action_forecast_writer_prior_innovation_design.md`
+21. `docs/action_forecast_writer_target_spectral_design.md`
+22. historical coherent-procedure authority from commit`35fb28f`：
+    `git show 35fb28f:docs/action_forecast_writer_coherent_procedure_design.md`
+23. `docs/action_forecast_writer_semantic_program_grid_design.md`
+24. `docs/action_forecast_writer_unified_causal_program_design.md`
+25. `docs/action_forecast_writer_amplitude_preserving_dual_read_design.md`
+26. `docs/action_forecast_writer_contextual_value_dual_read_design.md`
+27. `task_plan.md`
+28. `findings.md`
+29. `progress.md`
+30. `docs/concept.md`
+31. `docs/decisions_and_open_questions.md`
+32. `docs/novelty_and_landscape.md`
 
-## Active objective
+恢复Target-Bound时还必须先fetch
+`origin/codex/target-bound-role-program`并完整阅读该分支的
+`docs/action_forecast_writer_target_bound_role_program_design.md`。它在main上没有
+可执行并行版本；历史由Git保存。
 
-以 generic `lerobot/pi05_base` 为起点，先在与目标 LIBERO-40 specification 无 exact semantic/composition 重合的 LIBERO-90 source tasks 上做联合 action-SFT，得到并冻结一个共享、多任务、语言条件的 π0.5-LIBERO source base；随后在固定 24 train / 8 validation / 8 test 目标 split 上完成 AS-Writer、RL-Writer、Source-SFT、seen/wrong-video 机制对照、合并 32 source 后的单 seed 重训和 zero-interaction test；再直接在 8 个 test tasks 上把三种 task-local LoRA RL initialization 训练到各自最佳，最后用 8 个 test tasks × 50 action episodes 联合训练一个 privileged shared-LoRA oracle。ViVLA-style matched baseline 和 source-only outer learning 只在核心闭环之后有时间再做。
+旧SmolVLA、70/10/10、Phase A–F、flat task-local RL和flat Writer-RL路径已退役，
+不得恢复为活动实现，也不得混入MemLLM。
 
-任何单一 source base、训练 loss、smoke、局部 seen 结果或一个 Writer 阶段都不能单独触发长期 Goal complete。
+## Current focused task
 
-## Current focused execution task
+- 完成A100清理、BGR迁移handoff、路径可移植性、环境freeze、Git commit/push和
+  final read-only verification。
+- 当前没有需要继承的训练、评测、torchrun或tmux。
+- EMBER迁移准备前`main=origin/main=f0b123f20f531baf4bfc5c6f75eb96af27f33ac1`；
+  迁移准备提交应成为新的实时`origin/main`。
+- Target-Bound CPU实现已push到远端commit
+  `b260a57a94dc21bd3446b212bfa42f71b037ce13`；没有B20 profile、resume、训练或
+  rollout，不得写成已实验架构。
+- A100辅助worktree、本地实验branches与obsolete stash已在完整bundle验证后清除。
+- frozen source step1000已移除rejected EMA和optimizer/DDP/scheduler训练态；selected
+  raw policy、trainer state和manifest保留。它是下游inference/source asset，不再是
+  source-SFT exact-resume包。
+- owner明确不迁移A100 Codex；sessions、auth、cache、worktree不是authority。
 
-2026-08-02 owner暂停override：CV-ADR同topology normalized randomized-GROUP4已从
-clean frozen `51c0ba5`/fresh identity自然完成1200 updates=200 cycles、96,000
-queries、4,800 one-video conditions，wall`4944.554s`，all finite、1 clip、
-validation/test action reads为0。cycle50/100/150/200 paired correct400为
-`82/77/73/110`，RAW为`76/111/99/117`；GROUP4四点均值`85.5<100.75`、single
-winner`110<117`，不做五臂。winner逐task`10/0/0/41/38/15/2/4`、breadth6、
-top2`71.82%`；四点union150/intersection32/envelope gap40，漂移未解。
+迁移完成和owner重新授权前，不得启动任何下一实验。长期Goal保持未完成。
 
-GROUP4相对source base保留42/48、gain68、lose6，RAW保留34、gain83、lose14；它更
-保守但没有共同学到更多新能力。endpoint effective BA norm`72.04`还高于RAW
-`64.28`，held functional loss略低却closed-loop更差，排除简单loss/norm collapse。
-factor仍占约94%梯度能量；selected4负pair约`.44--.46`但candidate-negative updates
-后段近零，CP-24仍无根因依据。cycle200 exact50已完成400 rows、五种真实frame-order
-forward、0 rollout、信息墙读取0且无rank failure。相对RAW，GROUP4把A+D collective、
-remove-A、remove-D职责门从`8/1/5 of 8`压到`0/0/0`；对应effective BA mean relative
-L2为`.06744→.01882`、`.02050→.00981`、`.05417→.01533`，fixed-action为
-`.03613→.00483`、`.01091→.00264`、`.03356→.00446`。memory reversal BA也从
-`.00607→.00311`，same-task BA centered variance/sample energy从`.10494%→.09672%`。
-effective norm反而`64.24→72.06`、stable rank都约`1.008`，所以GROUP4产生更大、更
-coherent但更static/off-manifold的写入，不是gain/rank collapse。正式internal原始
-analysis、职责audit和RAW×GROUP4 compare file SHA为`f99d7cb1...86f6`、
-`9725f010...b292`、`a9f1e615...329f`；后二者canonical SHA为
-`dc01dd97...5141`/`2dc9ee29...5f4d`。
+## Long-term objective
 
-owner明确要求本阶段训练、correct400和GPU内部分析自然完成后暂停汇报。Target-Bound
-Role-Preserving Program只在隔离feature branch完成CPU实现/结构验证，commit
-`b260a57a94dc21bd3446b212bfa42f71b037ce13`已push；不得在本阶段
-启动其B20 profile、resume、训练或评测，也不得在汇报前开始另一轮整体设计。最终
-exact50封存后必须核验GPU4--7、本任务进程和tmux均为空，更新文档、commit/push后
-暂停；长期Goal保持active而非complete。所有后续推进继续禁止subagent。
+从generic`lerobot/pi05_base`出发，在过滤后的LIBERO-90 source tasks上训练并冻结
+共享π0.5-LIBERO source base；随后在固定24 train / 8 validation / 8 test开发split
+上完成AS-Writer、RL-Writer、Source-SFT、视频因果对照与方法选择，最终合并32 source
+并做zero-interaction test、test-task local RL和privileged direct-action oracle。
 
-下方同日“live”文字是较早运行快照，只保留provenance，不能覆盖本override。
+focused AS-Writer追求的是同一single checkpoint同时具备：
 
-2026-08-02 CV-ADR live override：RAW已从fresh identity自然完成macro0→400，恰好
-400 metrics/cycles、192,000 action queries、9,600 one-video conditions；每25 macro
-checkpoint完整，all finite、0 clip，validation/test action reads为0。末macro loss/
-gradient/LR为`.0979283/.0915952/1.00045e-5`。训练tmux已自然退出，当前没有需要
-继承的训练进程。
+- 高绝对closed-loop性能；
+- 多task breadth与低checkpoint能力轮换；
+- teacher-video语义与时序因果性；
+- same-task跨video鲁棒性；
+- Core/Procedure到effective LoRA再到policy action的有效传递；
+- coherent、高增益、闭环有效而非形式漂亮的LoRA几何。
 
-首小时paired correct400在50/100/150/200为`76/111/99/117`。macro200是右端best、
-breadth6、top2占`57.26%`，但相邻success Jaccard仍只有`.450/.522/.511`。与完全
-相同RNG-v2 RAW recipe、task/video/query曝光及evaluation panel的UCP相比，CV四点
-均提高`+4/+24/+13/+28`；macro200净增益由多保留9个source successes和多获得19个
-新successes共同构成，因此CV bundle有真实架构价值，不能按117 aggregate整体否定。
+达到某个aggregate不自动停止；训练loss、smoke、单一checkpoint或漂亮五臂margin也
+不能单独宣告成功。
 
-macro200 exact50同时限定该结论：Core-only/Program-only距full effective BA为
-`.6059/.8119`，ProgramRead/CoreRead RMS比均值`1.021`，Effect-only距full`.0674`，
-证明AP Effect旁路已修复且双路有效；但remove-A只在1/8 tasks达门、remove-D为5/8，
-contextual-memory order干预在0/8达2% BA，same-task BA centered/sample仅`.1049%`，
-固定action中位仅`.00856%`。真实shuffled/reversed完整forward仍在8/8 tasks到达BA；
-不得把“上游重排有效”和“reader近set-like”混成单一顺序结论。LoRA norm`64.24`、
-stable rank`1.0072`，失败不是Target-Spectral式增益坍缩。
+## Current scientific boundary
 
-full400动力学进一步降低了CP负投影和“低LR会自然停止漂移”解释：step100--400的
-global raw-mean candidate-negative tasks均为0，但pairwise negative fraction仍约
-`.36--.50`；第二小时同task单视频梯度的task-mean能量只占`.26--.49%`，相邻余弦
-`.024--.041`，约`99.5--99.7%`为centered波动。factor block占晚期task-gradient
-energy约`93.6--94.0%`；50-macro参数段即使在低LR仍近正交或为负；16个held
-functional losses始终在`.13055--.13399`。这说明functional surrogate、高方差
-条件估计与closed-loop阈值错位仍是联合根因，现有证据尚未分离teacher video、B20
-query与PI05 flow-noise三种噪声。
+正式四格五臂：
 
-第二小时250/300/350/400 paired correct400已完成为`77/69/80/82`；八点曲线
-`76/111/99/117/77/69/80/82`的single winner保持macro200。200→250为
-`16 gained/56 lost`，后段LoRA norm不降反升，证明不是成熟度不足或增益坍缩；RAW
-不做五臂。正式curve SHA为`fb75464f...ec90a`，canonical payload
-`bd4f43d4...ce909`。
+| architecture × recipe | correct | same | wrong | shuffled | reversed |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| v5.2 old | 132 | 138 | 74 | 82 | 83 |
+| v5.2 task-complete | 120 | 109 | 107 | 111 | 124 |
+| v6 old | 121 | 122 | 111 | 84 | 47 |
+| v6 fast task-complete | 143 | 135 | 125 | 128 | 129 |
 
-matched macro200/400梯度方差分解已完成：`lora/action` centered/sample为
-`.6858/.8127`，video主效应仅`.1211%/.1060%`且0/24 tasks主导，query约
-`48.59%/49.53%`，flow与query×flow合计约`48.78%/48.50%`。macro400的task-mean
-energy只有macro200的`.492`，Program task-mean跨checkpoint余弦`.431`；24/24 tasks
-匹配functional loss继续下降、中位delta`-.00411`，但correct400从117跌到82。
-visit397--399对macro400是刚曝光的train条件、对macro200尚未曝光，故该下降不能
-冒充held generalization；它与独立held functional loss横盘合起来，说明模型继续
-拟合train surrogate/recency而闭环退化。因此teacher-video抽样不是late旋转主因；
-弱video-conditioned gradient、query/flow主导的低SNR与surrogate/closed-loop错位
-才是联合根因。paired SHA为
-`ad7d6e06...44eb96a`。
+task-complete在v5.2与v6上都压弱Procedure→BA/action和顺序margin，但absolute分别
+下降和上升；旧recipe增强动态写出也增强task旋转。post-v5各架构与recipe混杂，不能
+因低分整体判死，也不能退回旧recipe。
 
-同topology GROUP4 mechanics vertical path已从clean detached `f6cf775`只用GPU4--7
-完成并seal。longseed172的18 updates/3 cycles每cycle覆盖24 tasks恰好一次，包含
-`task38/demo36=105` sampled frames，B20峰值allocated/reserved为
-`76,945,014,784/77,370,228,736` bytes，wall`73.196s`，all finite、0 clip/OOM；
-step2起Semantic Frontend/Core/Program/compiler均17/17可达，factor为18/18。
-formal seed fresh0→1→exact-resume1→3→7也通过：step1/3 payload未被改写，7行
-metrics、3段invocation连续，首cycle 24 tasks各一次，scheduler只在update6推进，
-step7 cursor为cycle1/phase1，validation/test action reads为0。
+最新CV-ADR RAW correct400完整曲线为
+`76/111/99/117/77/69/80/82`；GROUP4为`82/77/73/110`。两者都未解决漂移，
+GROUP4使写入更大、更coherent但更static。matched gradient分析中video主效应约
+`.1%`，query/flow噪声主导，functional loss与closed-loop发生明确错位。详细数值、
+artifact roots和hash只取`docs/active_session_handoff.md`。
 
-post-seal authority `51c0ba5`已push；当前唯一活动训练是同topology GROUP4从clean
-detached `51c0ba5` fresh运行update0→1200。tmux为
-`ember-cvadr-group4-m1200-51c0ba5`，root为
-`/data/ymdai/outputs/ember/pi05_as_writer_cvadr_group4_taskcomplete_decay400_formal_dev_r4_b20_seed7_51c0ba5_20260802`，
-log为
-`/data/ymdai/logs/ember/pi05_as_writer_cvadr_group4_taskcomplete_decay400_formal_dev_r4_b20_seed7_51c0ba5_20260802.log`。
-launch config/脚本SHA为`a8dd6c83...da79`/`bd7d3210...4082`，run-contract file/
-canonical payload SHA为`14e728bc...9b4c`/`72b263f2...6c9`。live preflight只查询
-GPU4--7：四卡各8MiB且无进程、个人用量`424,594,886,656` bytes；首cycle恰好
-24 tasks/24 videos/480 queries，每update四task各一套LoRA和B20，scheduler只在
-update6推进，update1--41 finite、0 clip，step2起五主块可达，信息墙读取0。必须让
-该run自然到1200；只有该recipe反事实完成后才能拒绝CV架构。所有推进只由主进程
-完成，不使用subagent。
-
-2026-08-02 joint root-cause override：四个selected winner五臂逐row重验为v5.2-old
-`132/138/74/82/83`、v5.2-task-complete `120/109/107/111/124`、v6-old
-`121/122/111/84/47`、v6-task-complete `143/135/125/128/129`。task-complete在
-两架构上都压缩顺序margin和Procedure→effective BA/action transfer，但correct
-absolute effect为`-12/+22`；matched 150-video-visits仍为`-81/+16`。old每cycle
-六次Adam恢复更强slots/AdaLN/动态写出却继续task轮换，新full24也没有解决漂移。
-因此后续必须联合设计semantic carrier、causal write gain与single-video噪声下的
-optimizer path；不得把post-v5低分架构整体判死，也不得退回old recipe或加固定scale。
-正式审计SHA为`98371337...2efa`，后续仍完全不使用subagent。
-
-逐task/全曲线override：matched150时v5.2 task-complete相对old的source-retention/
-new-gain变化为`-10/-71`，v6为`-1/+17`且8/8 tasks非零；但v6 selected +22几乎
-全由Object task3的+24贡献，Object1/Goal6虽correct `46/36`却只有`1/1`与`-1/2`
-shuffled/reversed margin。Visual Transition和Procedure顺序响应仍大，信号在
-BA/action端被压弱。因此保留v6 semantic/transition bundle为正证据，只把当前
-reader/compiler职责列为待重构；逐task/curve SHA为`611c9330...c5a1`/
-`bf5a4609...1770`。
-
-2026-08-02 CV-ADR live seal override：clean detached `ff57a9f`只在物理GPU4--7
-完成teacher-seed172最长真实视频B20三完整macro profile；首macro的
-`task38/demo36`为105 sampled frames，四rank每macro各6个cost-balanced long-first
-tasks，全局24 tasks/24 videos/480 queries。三步wall为
-`20.698/18.777/18.737s`，峰值allocated/reserved为
-`77,227,462,656/83,523,272,704` bytes，无OOM、NaN、clip或信息墙读取；精确参数
-`10,241,024`，source policy trainable参数为0。step1起semantic frontend、Core、
-Program、compiler和factor均finite可达。
-
-同一canonical formal seed另从fresh identity完成macro0→1，再从完整step1
-exact-resume到3；step1全部7个文件的SHA、size和纳秒mtime逐项不变，metrics恰好3行、
-invocations恰好2次，cursor到`next_step=3,next_data_step=18,next_task_cycle=3`。
-profile/resume root分别为`pi05_as_writer_cvadr_rawfull24_profile_b20_longseed172_r4_ff57a9f_20260802`
-和`pi05_as_writer_cvadr_rawfull24_formalseed_resume_b20_r4_ff57a9f_20260802`；metrics SHA为
-`9a3b490c...f0b11`/`55366fc4...94028`。canonical RAW config已seal，下一实际动作是
-从本次仅含config/docs seal的新clean detached commit fresh启动macro0→200、每25保存，
-评测50/100/150/200 paired correct400。profile/smoke权重不得warm-start；若RAW弱或含混，
-同一CV topology必须补做GROUP4后才可拒绝架构。后续不使用subagent。
-
-首次post-seal formal启动在任何output root、模型或数据状态创建前被runtime guard拒绝：
-`formal_run.status`必须精确为`sealed`，不能使用描述性seal字符串。失败只留下log，
-无checkpoint/metrics/科学数据；当前config与测试已改为canonical枚举，正式重试必须使用
-新的post-fix clean commit、全新retry root/log。
-
-修复commit `254ade4`已push并从clean detached frozen worktree成功fresh启动正式RAW
-macro0→200；tmux为`ember-cvadr-raw-m200-254ade4`，root为
-`/data/ymdai/outputs/ember/pi05_as_writer_cvadr_rawfull24_taskcomplete_decay400_formal_dev_r4_b20_seed7_254ade4_20260802_retry1`。
-start event为formal/resume0/stop200，首macro 24 unique tasks、24 videos、480 queries，
-四rank frame cost `207/216/206/204`且rank内strict long-first；loss/LR/gradient finite、
-0 clip。必须让该tmux自然完成，不得在训练中改写其frozen code/config/root。
-
-2026-08-02 live override：UCP RNG-v2 RAW×cycle-normalized randomized-GROUP4
-受控格已经完整结束。matched cycle50/100/150/200 correct400分别为
-RAW `72/87/86/89`、GROUP4 `77/76/66/100`；GROUP4 endpoint只增11，但四点均值
-从`83.5`降到`79.75`、winner top2集中度从`60.67%`升到`74%`，四点累计只有
-2/8 tasks上升、5/8下降。GROUP4把single-best envelope gap从60缩到34，却没有
-消除task轮换，且absolute/breadth预注册行为门失败。因此默认训练仍为RAW；不得
-把GROUP4迁移成CV-ADR默认，也不得做UCP GROUP4五臂。
-
-exact50同一task/video/query panel进一步定位operator作用：删除A/D后，RAW与
-GROUP4的effective BA relative L2为`.058999/.013291`，fixed action为
-`.017173/.005888`；固定X后shuffled BA为`.028069/.009288`、reversed BA为
-`.025026/.009092`。GROUP4在上述六个逐task诊断中只有fixed-action的一个Spatial
-task高于RAW，而该task closed-loop为0；8/8 tasks的A/D→BA均被GROUP4压弱。reader
-从RAW的X/D/A mass `.434/.522/.044`移到GROUP4的`.560/.405/.035`。LoRA norm并未
-坍缩（`59.42→63.70`），但stable rank更贴近1（`1.0066→1.0021`），所以更coherent
-并不等于更有用。正式operator/exact50 analysis SHA分别为`97c70dd...a6e0`和
-`7201364a...11fd`；结论只归属于GROUP4耦合bundle，不能拆成单一group、Adam、clip
-或relinearization因果量。
-
-UCP RAW的漂移、functional-surrogate错位和noise-basin敏感性仍成立：RAW四点
-union149而best89；RNG-v1/v2只改CPU Beta timestep identity便使曲线从
-`89/71/82/117`变成`72/87/86/89`，但该单seed对照不证明v1优越。full24和GROUP4
-task-gradient pair均约42--43%为负，而各自mean candidate实际伤害的task极少；
-CP式负投影不是当前根因。
-
-当前canonical Writer已经在merge `b97960f`切到CV-ADR：mean-backed Semantic Core，
-outgoing A/E/D causal Program，同一contextual Program同时作为normalized K和raw V，
-target-only Core read与38×16 target/rank Program read，八个coherent factor heads；
-精确参数`10,241,024`。旧UCP可执行config/专用analyzer已退役，Git与frozen artifact
-保留provenance。全仓CPU回归`226 passed`、compileall和四config loader通过。
-当前无活动训练、评测或tmux；下一动作是只用物理GPU4--7完成CV-ADR最长105-frame
-B20三macro profile和formal-seed fresh0→1→exact-resume1→3，封存后从fresh identity
-启动RAW macro0→200一小时门。若CV RAW弱或含混，必须在同一CV topology补做GROUP4
-后才可拒绝架构；后续完全由主进程推进，不使用subagent。
-
-2026-08-01 RNG-v2 current override：CPU+CUDA task/query randomness修复已经在
-`dae13bf`实现并push；CPU default与指定CUDA generator现在共同fork/seed/restore，
-randomness scheme、cycle-normalized config、task-query checkpoint family及
-shared/trainer/rank schemas均为fresh-incompatible v2。完整CPU回归`241 passed`。
-仅物理GPU4--7的两条B20真实fresh/resume reseal均完成。
-
-RAW fresh0→1→exact-resume1→3每macro覆盖24 tasks恰好一次、共1,440 queries/72
-one-video conditions；GROUP4 fresh0→1→3→跨cycle边界到7，cycle0六phase恰好覆盖
-24 tasks，scheduler只在phase5后推进。两者all finite、主要模块梯度可达、信息墙读取0，
-step1及GROUP4 step3 payload逐SHA/size/mtime未改写。跨rank操纵把tasks12/14/34/37
-分别从GROUP4 ranks `2/3/0/1`换到RAW ranks `1/0/3/0`，四个functional losses仍逐位
-相等为`.0845656544/.1445673406/.1301287264/.1523376107`，raw task-gradient norm也
-逐位相等；CountSketch最大绝对差`5.82e-11`。这直接封存
-`task_query_keyed_stateless_policy_cpu_cuda_v2`，两份formal config重新seal。
-
-clean pushed authority `55faeeb`的RNG-v2 RAW已从fresh identity自然完成0→200；
-首macro 24 tasks各一次，四rank frame-cost总和`207/216/206/204`且rank内
-long-first，480 queries/24 videos，loss、gradient和LR finite，step2起四个主要块
-均可达，无OOM或contract mismatch。root为
-`/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_rngv2_truefast400_formal_dev_r4_b20_seed7_55faeeb_20260801`。
-正式结果与当前GROUP4状态以上述live override为准；不得续接任何v1 checkpoint。
-
-RNG-v1 GROUP4正式root已正常停止在physical step307/51 complete cycles；root、metrics
-及step150/300 checkpoints只作`invalid_rng_v1_operator_contract` provenance，禁止
-resume、评测或形成RAW×GROUP4结论。RNG-v1 step0 identity下四个换rank task即使
-rows/video/query seed相同仍改变loss，根因是CPU Beta flow timestep未按query锁定。
-
-RNG-v1结果边界：RAW autoscaled200与true-fast400使用相同rank/task/microtask顺序，
-其cycle0逐项loss/sketch完全相同，所以二者scheduler差仍是同一ambient-time stream下
-的matched scheduler比较；两条absolute结果只作为该实现bundle的observed provenance。
-它们不能证明真正task/query-keyed随机合同，也不能与改变rank/phase顺序的GROUP4做
-operator因果比较。历史ambient-RNG recipe本来就把随机流作为bundle的一部分，不因
-本偏差整体作废；被否定的是stateless task/query identity及由此声称的跨顺序隔离。
-
-2026-08-01 superseded RNG-v1 snapshot：clean frozen `cfc2ad1`的UCP
-true-fast400 raw已经fresh完成前200/400 cycles，macro50/100/150/200 paired
-correct400为`89/71/82/117`。winner macro200 breadth7、仅4 tasks达到5次成功，
-不达125强五臂门，故不做五臂；candidate与scheduler-interaction analysis SHA为
-`7b7d9822...dd3`和`81eca3cc...ab7e`。与autoscaled-decay200严格配对说明更慢
-scheduler延后并重排峰值，但没有提高UCP single-checkpoint ceiling或解决漂移。
-
-同一frozen `cfc2ad1`的cycle-normalized randomized-group4曾fresh启动，root为
-`/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_cycle_normalized_group4_truefast400_formal_dev_r4_b20_seed7_cfc2ad1_20260801`，
-原tmux为`ember-ucp-tq-g4-tf400-cfc2ad1`，现已退出。首cycle与raw逐task teacher demo/frame
-count一致，24 tasks/24 videos/480 queries，scheduler只在cycle边界推进，全部主路径
-finite，但后续确认其CPU Beta timestep未按query固定，故该run不得评测或裁决。
-CV-ADR保持在隔离的RNG-v2 rebase/verification snapshot `ed21244`，正确operator裁决后才
-集成/profile/resume/formal。后续推进暂停所有subagent使用。
-
-2026-08-01 launch-boundary override：scheduler修复commit `e1299db`已push；首个
-true-fast400 launch在创建output root或读取任何video/query前由formal runtime
-fail-closed，因为task-query/group4 overlays的`stage_stop_steps`仍是旧的一小时单点
-`[200]/[1200]`，没有覆盖新的total `400/2400`。失败log保留，训练tmux已退出且
-没有checkpoint或科学数据。最窄修复将stage stops改为`[200,400]`和
-`[1200,2400]`，config loader同时校验selected stop、最终total、严格排序和cycle
-整除；新增真实`resolve_runtime`回归，定向`25 passed`。提交/push后必须用新SHA、
-新frozen worktree和全新root重新fresh启动，不得复用失败log/root。
-
-2026-08-01 live scheduler override：新UCP raw对照overlay把formal
-`total_steps`误写为一小时停止点`200`，触发LeRobot cosine scheduler把sealed
-`warmup17 + decay400`自动缩放成`warmup8 + decay200`。clean frozen
-`1a09e71`上的raw run已自然完成macro200：96,000 queries、4,800 videos、wall
-`3892.039s`、200行finite且信息墙读取0。macro50/100/150/200 paired correct400已
-全部自然完成，为`81/72/107/78`；observed-best macro150虽有8/8 nonzero breadth，
-但只有107且随后lost43/gained14回落29点，故不做五臂。该结果必须明确标记为
-`configured-decay400/runtime-autoscaled-decay200` scheduler消融，禁止冒充
-fast400。其root为
-`/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_decay400_control_formal_dev_r4_b20_seed7_1a09e71_20260801`，
-训练与四条评测tmux均已自然退出。candidate analysis为
-`/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_configdecay400_runtime200_candidate_curve_seed7_1a09e71_20260801/analysis.json`，
-SHA256 `bfd580d4...0993`。错误total下的group4不得启动。
-
-main已把raw/group4 formal total纠正为`400/2400`且保持stop为`200/1200`，并在
-config loader加入logical-total不得短于sealed decay的fail-closed校验。现在完成
-验证后commit/push，从新clean frozen authority依次fresh运行真正fast400
-raw和group4；不得从当前消融root resume。CV-ADR实现暂存于隔离clean commit
-`b2bc70c`，训练因果格完成后再集成和profile。后续推进暂停所有subagent使用。
-
-2026-08-01 current override：当前唯一可执行canonical Writer临时恢复为exact UCP，
-只用于fresh raw-full24与cycle-normalized randomized-group4受控训练格；运行面与
-封存`b52cb54`逐blob一致。AP-ADR和endpoint10可执行路径已退役，历史证据由Git、
-文档与正式artifact保留；下一结构authority仍为
-[`docs/action_forecast_writer_contextual_value_dual_read_design.md`](docs/action_forecast_writer_contextual_value_dual_read_design.md)。
-以下AP结果是紧邻负证据，不得恢复其runner或误写成当前canonical。
-
-AP-ADR精确参数`10,241,024`，保留mean-backed permutation-invariant Semantic
-Core、outgoing raw `[A_f,G_(f+1),G_(f+1)-G_f]` Program、独立target-only Core
-reads、38×16 target/rank Program reads和conventional coherent factor heads；
-删除terminal normalization/AdaLN/gate、global mixer、谱约束和第二套LoRA。
-最长105-frame B20三macro与formal-seed fresh0→1→exact-resume1→3已通过，step1
-全部payload逐项未改写；live seal commit为`7dffb6f`。
-
-clean detached `7dffb6f`的fresh首小时已经自然完成macro0→200：
-
-```text
-tmux   已自然退出，不得重复启动
-frozen /data/ymdai/.codex/worktrees/EMBER-ap-adr-formal-7dffb6f-20260801
-root   /data/ymdai/outputs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801
-log    /data/ymdai/logs/ember/pi05_as_writer_ap_adr_rawfull24_decay400_formal_dev_r4_b20_seed7_7dffb6f_20260801.log
-```
-
-run summary确认200 optimizer steps/200 cycles、96,000 queries、4,800 one-video
-conditions、每task 4,000 queries/200 visits，wall `3898.217s`；validation/test
-action读取和test video读取均为0。macro50/100/150/200 paired correct400已经完成，
-为`91/81/94/91`，breadth为`6/6/5/7`；single winner macro150只有94，且相邻点
-gained/lost为`33/43`、`36/23`、`25/28`，故一小时门失败，不resume到400、不做
-五臂。低aggregate不能整体否定AP复用的Core或dual-read思想，但已经直接否定
-当前`contextual Program只作K、raw A/E/D直接作V`这一中央职责。
-
-修复分析器中PI05 sampler把attention backend从SDPA永久改为eager的生命周期污染后，
-macro150 refs1在8/8 tasks上实现逐层、effective BA和fixed-action严格零误差重放；
-修复commit为`5d93af3`。有效内部结果的analysis/summary SHA为
-`d42fc4eb...bc2b`/`f2c572c5...e682`。same-task raw Program与第二层contextual
-Program relative L2为`.919/1.105`，到Program read/BA/action却只剩
-`.0321/.0301/.0167`；shuffled/reversed到BA仅`.00269/.00390`。反转valid
-contextual temporal keys时BA/action只变`.000521/.00194`。只保留Effect列即可
-在8/8 tasks重建full BA（平均差`.00821`），只保留Action或Change则约差
-`.276/.283`；固定full key后结论不变。最早失效接口因此是
-`causal contextual Program -> high-entropy key-only routing -> raw Effect-DC value`，
-不是whole Program无梯度，也不是视频前端无信号。
-
-预注册endpoint10的18-checkpoint no-gradient关联审计已经从clean `0f92e35`
-正式完成：18 candidates、9,216 rows、wall `1041.474s`，environment未构造、
-parameter gradients未计算、validation/test action读取均为0。主指标对correct400的
-全局Spearman仅`.25840`，100,000次固定permutation的双侧`p=.29845`，因此预注册
-四重门整体失败。family-demeaned Pearson/Spearman虽为`.40360/.41090`，两个recipe
-方向与逐task门也通过，但不能救回失败的global门。endpoint10只保留为局部
-functional-fit负诊断，禁止用于选checkpoint、改loss或进入训练；尤其v6-fast
-macro200以correct133得到18点中最差quality，而v5.2-new macro200以correct91得到
-最好quality，直接暴露跨架构closed-loop off-manifold错位。
-
-当前先在exact UCP上完成预注册fresh raw-full24与cycle-normalized randomized-group4
-受控训练格，再实现下一结构。不得因AP失败而跳过该训练因果格。下一结构authority已经封存在
-[`docs/action_forecast_writer_contextual_value_dual_read_design.md`](docs/action_forecast_writer_contextual_value_dual_read_design.md)：
-同一causal contextual Program直接承担K/V，保留mean-backed Core和独立dual reads；
-当前main在实现前只保留UCP这一条临时受控运行路径。
-
-同曝光UCP raw macro150与SERIAL step900内部对照确认：SERIAL把删除A/D后的
-BA/action变化从`.0653/.01269`提高到`.4184/.12999`，所以update granularity
-真实控制视频动态写出；但四点correct差值`+7/-17/+21/-3`且漂移未解，SERIAL不
-是默认recipe。v7/v8/v10/Loom等仍只否定已有内部反事实定位的局部接口，所有与
-full24/B20/fast400混杂的可复用思想继续保留为条件反事实。
-
-exact v5.2 topology在mature task-complete recipe上的缺失因果格已经完整封存。
-macro150/200/350/400 paired correct400为`51/91/106/120`；single-checkpoint
-winner macro400的correct/same/wrong/shuffled/reversed为
-`120/109/107/111/124`。它只覆盖4/8 tasks，reversed高于correct，因此没有正式
-行为视频特异性。内部分析确认顺序和视频变化确实从Procedure传到effective
-LoRA及fixed-query action，但这种数值差异没有与闭环收益对齐；task-complete
-recipe还把same-task视频中心化方差从旧v5.2的`1.6655%`压到`0.6844%`。当前
-病灶优先指向functional surrogate与source-policy closed-loop有效流形错位、
-task能力轮换和条件创新缩弱，而不是上游完全没读视频。
-
-SPG canonical实现精确参数为`10,633,216`，最长真实105-frame B20 profile、
-fresh0→1→exact-resume1→3和formal macro0→200均已完成。macro50/100/150/200
-paired correct400为`97/115/77/100`，一小时门失败，不续到400，也不做昂贵五臂。
-checkpoint envelope union为162但single point best只有115；macro100→150
-lost51/gained13，随后又反向轮换。train functional loss在24 tasks上都改善，
-held functional loss和closed-loop不跟随。
-
-SPG不是上游Program失败。macro100 refs2反事实中same/wrong/shuffled/reversed的
-Program relative L2为`.967/1.186/1.193/1.202`，到Program coordinates为
-`.355/.715/.627/.658`，再到effective BA只剩`.066/.221/.116/.116`。固定Core、
-只改变Program仍保留order差异。最早病灶是compiler路由同质化：CoreReader entropy
-`.999992`、target-centered attention energy `3.9e-5`，ProgramReader target/rank
-centered routing约`4–5e-5`；exact50 LoRA几乎严格rank1且B columns相同。独立Core
-加法旁路和跨target/rank mixer共同把强视频Program写成共享方向。CP-24 projected/
-raw cosine约`.983`、norm约`1.25×`；raw full24 mean末段只保留平均单task gradient
-energy的`4.79%`，说明投影能消负pair但不能恢复近正交task innovations。
-
-下一canonical模型与训练设计统一由
-[`docs/action_forecast_writer_unified_causal_program_design.md`](docs/action_forecast_writer_unified_causal_program_design.md)
-负责。它把未中心化absolute `X_f=M_f+G_f`、native Action `A_f`和正确outgoing
-change `G_(f+1)-G_f`放入同一个causal axial Program；删除独立Core value旁路、
-target-Core first hop和global coordinate mixer；归一化target/rank identities后
-由38×16 coordinates单级读取raw Program，再使用conventional coherent heads。
-训练恢复raw full24 mean，保留Gram诊断但不投影；B20改为边缘仍uniform-row的
-20-strata随机jitter，以降低单task update的过程覆盖方差；首版保持fast-decay400，
-不把slow2000与拓扑同时混入。
-
-UCP canonical实现已在独立write worktree完成：唯一Program路径为
-`[X_f, A_f, G_(f+1)-G_f]`，唯一compiler为单级38×16 raw-value reader；旧SPG
-Core add/global mixer和CP投影均已从active executable path删除。真实module
-enumeration为`7,683,328`参数；step0 identity、causal prefix、outgoing alignment、
-target/rank routing、零内容不造值、raw full24 mean和20-strata exact-resume等CPU
-合同已通过，全仓`203 passed`。fresh config为
-`configs/pi05_as_writer_unified_causal_program_full24_decay400_v1.json`，现已seal为
-B20 formal authority。独立`0d4c271` frozen worktree上的真实最长105-frame三
-macro profile已通过：step wall `20.394/18.494/18.504s`，峰值allocated/reserved
-`77,127,082,496/83,345,014,784` bytes，72套video conditions和1,440 queries
-全finite，step2起四个主块梯度可达。canonical formal seed的
-fresh0→1→exact-resume1→3也已通过，step1全部checkpoint payload逐字节不变。
-
-UCP raw-full24 formal macro50/100/150/200 paired correct400已经封存为
-`82/117/100/110`；union169、single best117且能力持续轮换，故不resume到400、
-不做五臂。macro100 refs1证明reader路由和order/wrong差异可达BA/action，但固定X
-只换A/D时BA与action变化仅约`2–5%/.5–.9%`，dynamic教学弱。exact50 analyzer的
-rank-gauge异常已经定位：raw A/B置换变化`.74184/.13602`，effective BA误差仅
-`1.299e-9`；bf16 fixed action的`.002047`差异来自rank求和次序，而非BA错误。
-sanity继续对finite和BA `2e-5` fail-close，action execution drift只作记录。
-
-下一训练反事实冻结UCP拓扑和完整task/video/query exposure，改为每update全局4
-tasks、六phase覆盖24 tasks的serial-4；LR按full24 cycle重复六次。它同时改变
-AdamW/moment/weight-decay时钟，并把long-first变成真实optimizer curriculum，结果
-不能单因归为“消除梯度抵消”。clean `c4b85e8` refs2与exact50均已通过；exact50
-400 rows确认pooled same-video BA/action variance仅`.09008%/.01656%`。serial
-long-first重放的phase/cost Pearson为`-.8331`，task38始终phase0，必须审计真实
-optimizer curriculum。serial CPU合同为`233 passed`；clean detached `10a71a1`
-最长105-frame、B20、18 updates/3 cycles已通过，formal seed fresh0→1→resume1→3
-→跨cycle boundary到7也通过，step1/3文件不变。clean frozen `3db82df`的正式
-1,200 updates已经自然完成；step300/600/900/1200 correct400为
-`89/100/121/107`，相对raw同曝光为`+7/-17/+21/-3`，best只提高4且漂移未解。
-
-当前受控cell使用同一exact UCP、同一task/video/query exposure和task/query-keyed
-stateless policy noise/time，对比fresh raw-full24与cycle-normalized randomized-group4。
-group4每update全局4 tasks、六个随机Latin phases覆盖24 tasks，LR除6，Adam betas和
-weight decay按六次更新复合到原一cycle，scheduler每cycle只推进一次；无冲突时不
-声称是架构收益。真实longseed172、105-frame、B20、4-rank、18-update/3-cycle
-profile已通过：每cycle 24 tasks恰好一次，step2起全部主块梯度可达，峰值
-allocated/reserved为`76,971,835,904/83,647,004,672` bytes。group4 formal-seed
-fresh0→1→resume1→3→7与raw fresh0→1→resume1→3均已通过；两臂cycle0 teacher-video
-assignments一致、checkpoint未改写、配置已seal。下一步从clean pushed commit建立
-frozen worktree后依次启动科学比较；全程不使用subagent。
-
-v7/v8/v10/Loom及后续历史不得整体判死。只能删除由内部反事实独立否定的局部
-机制；Action anchors、causal Procedure、双流、Core语义、target-first/rank-last
-等与fast task-complete recipe混杂的组件仍可在职责完整的新结构中复用。
-匹配150次video exposure时v5.2 old/new=`132/51`而v6 old/new=`95/111`，描述性
-DiD=`97`；这进一步证明强architecture×training-bundle交互，但不识别单一recipe
-成分。
-
-关键历史基线仍为：v5.2五臂`132/138/74/82/83`；v6 task-complete
-single-checkpoint best及五臂`143/135/125/128/129`；v6 old recipe
-`121/122/111/84/47`；corrected mixed-task rank-128 Source-SFT `109/400`。
-v7、v8、v10、Loom和Recenter各自在当时训练bundle下已经形成正式负结果，旧版
-可执行路径不得整套恢复，也不得在原失败checkpoint上继续堆局部scale/gate补丁；
-但这不构成对整版思想的独立否定。只有被内部反事实直接定位的接口可以删除，
-其余组件必须继续按架构×recipe混杂处理，并可在职责完整、受控的整体设计中复核。
-
-`150`继续作为重要里程碑与强baseline参考，但不再是focused Goal的终点。
-即使超过150，只要内部仍有明确漏洞、task漂移、视频学习不足或可信改进方向，
-就继续按照“整体设计→一小时训练→评测/内部分析→续训或根因重构”循环推进。
-只有agent在其能力范围内已经找不到可信提升空间，才允许focused阶段停止。
-
-当前Writer通过后才做严格配对one-shot baseline与独立
-short-AS-cold-start→pure-reward RL-Writer；不得把完整AS best冒充RL cold
-start。focused闭环不自动继续final-32、test task-local RL、joint oracle或
-ViVLA。
-
-GPU工作固定frame stride=5，只使用物理GPU4–7；0–3不进入visible set。
-4–7即使已有他人进程也可按owner授权共卡，但不得杀、暂停、重置或干扰。
+当前下一候选Target-Bound的设计目标是38 real targets先绑定Core，A/E/D保留private
+causal channels直到rank read；它仍是待证伪假设。迁移后首轮只能在owner授权下执行
+`CPU regression → live BGR preflight → longest105 B20 → exact resume → fresh0→200 →
+50/100/150/200 correct400`。
 
 ## Data and split
 
-- 目标 benchmark 为 `libero_spatial`、`libero_object`、`libero_goal`、`libero_10`，共 40 tasks。
-- 活动 development split 已封存在 `configs/libero_24_8_8_v1/`：每 suite 6 train / 2 validation / 2 test，总计 24/8/8；不得按 outcome 改 task IDs。
-- validation 完成方法选择后，将 8 validation tasks 合入 source，形成最终 32 source / 8 test，并从规定初态重训已选方法。
-- shared source-base corpus 来自 LIBERO-90。完整3600-pair specification-only
-  audit已在看新policy outcome前封存：排除19个与目标40 exact
-  semantic/composition重合的source tasks，保留71个active tasks。task44
-  （`turn on the stove`）和task77
-  （`pick up the book and place it in the back compartment of the caddy`）只是
-  其中两项；不得把audit误写成尚待完成，也不得按outcome重开source IDs。
-- source base 使用过滤后每个 active LIBERO-90 task 的全部 50 条成功 teacher episodes。不得使用 `pi05_libero`，因为它已读过目标 40 tasks actions。
-- source-base action/state normalization 只从过滤后的 LIBERO-90 source actions/states 计算并冻结；所有下游方法共用，validation/test 不单独重算。
+- 目标benchmark为`libero_spatial`、`libero_object`、`libero_goal`、`libero_10`，
+  共40 tasks。
+- development split封存在`configs/libero_24_8_8_v1/`：每suite 6 train / 2
+  validation / 2 test，总计24/8/8；不得按outcome改task IDs。
+- validation选定方法后才合并为32 source / 8 test并从规定初态重训。
+- LIBERO-90与目标40的3,600-pair specification-only audit已封存：排除19个exact
+  semantic/composition重合source tasks，保留71 active tasks；不得按结果重开。
+- source base使用每个active source task全部50条成功teacher episodes。不得使用
+  已读过目标40 actions的`pi05_libero`。
+- normalization只从过滤后的LIBERO-90 source actions/states计算并冻结，所有下游
+  方法共享；validation/test不得重算。
 
-## Common frozen source base
+## Information wall and Writer contract
 
-活动文档中的 frozen π0.5-LIBERO source base 统一指：
+- Writer输入固定为task language + exactly one action-hidden teacher video。
+- Writer不得读取teacher action、proprio、reward、terminal、task ID、filename、
+  object pose或隐藏normalization；source actions只进入AS functional loss。
+- 每task每次读取一条teacher video并生成一套完整rank-16 public LoRA；不做多video
+  平均、多LoRA平均、checkpoint融合或第二套LoRA。
+- frame stride固定5；保持Q/M/G、Action probe、Core/Program及真实38-target public
+  topology的信息墙。任何改变必须有新的设计authority。
+- template A/zero B保证step0 functional identity；frozen source policy不得有
+  trainable parameters。
 
-```text
-generic lerobot/pi05_base
-→ 在过滤后的 LIBERO-90 source tasks × 每 task 50 条成功 episodes 上联合 action-SFT
-→ 得到共享、多任务、语言条件的 π0.5-LIBERO policy
-→ 若训练 recipe 使用 source LoRA，先 merge 成 base
-→ 冻结，作为所有后续方法的共同起点
-```
+## AS training contract
 
-- 先调研官方/成熟 π0.5 fine-tuning 与 LoRA 实现，不自行猜 targets 或 runner 参数。
-- source base 不追求高 ceiling；用全部目标 40 tasks 的小型快速 screen 确认它已开始在该 benchmark 上产生跨多个 task 的部分真实成功，不能只靠一个易 task 的 aggregate。这里不要求每个 task 已有高成功率。generic π0.5 的 `0/400` 只作原始校准，新 source base 必须另测。
-- owner 于 2026-07-22 将 source-base 正式训练锁定为从 generic base fresh 运行 1,000 optimizer steps；不续接已停止且无 checkpoint 的旧 30k attempt。历史非focused阶段的约120分钟guardrail保留为其原实验合同；当前v5.1 AS/RL按上述focused authority分段探索，不受该旧guardrail限制。
-- source base 冻结后，AS-Writer、RL-Writer、Source-SFT、三臂 task-local RL、联合 target-action oracle 和 ViVLA-style baseline（若做）均从它开始。
-- 下游只保留一个活动 LoRA 空间；不得叠加未 merge 的 shared source adapter。
+- development在24 train tasks上做task-complete宏步；每task一条video、一套LoRA、
+  B20条同task跨episode独立action queries，先task内mean再24-task等权。
+- 每macro/cycle的optimizer语义由该架构sealed config决定；一次-Adam full24、
+  SERIAL/GROUP4等不能互相冒充。无冲突时的projected更新必须严格退化为raw mean。
+- 不读取validation/test actions产生梯度；video与action query不得用same-episode
+  pairing制造低层捷径。
+- 一小时门：fresh约0→200、每25保存，paired correct400评测50/100/150/200；只有
+  absolute/breadth/趋势/内部路径有充分理由才exact-resume第二小时。
+- checkpoint选择只认single-checkpoint paired closed-loop结果；functional loss和
+  内部几何只作机制证据。
 
-## Writer and source baselines
+失败后先定位evidence extraction、Core、Procedure、fusion/compiler、optimizer或
+functional surrogate的最早失效接口。禁止用scalar gate、全局scale、B-only residual、
+static bypass、confidence、强制正交/rank diversity、multi-video或checkpoint融合救
+一个失败checkpoint。
 
-- 核心固定为 `task language + exactly one action-hidden teaching video -> shared Writer -> complete task-specific LoRA`。
-- Writer 不得接收 action、proprio、reward、terminal、task ID、filename 或隐藏 normalization；source actions 只能进入 AS functional loss。
-- `Action-Supervised Writer (AS-Writer)`：development在24 train tasks上做上述task-complete宏步；每个task只读1条teacher video并生成1套one-shot LoRA，`B_a`条独立同task action queries在该LoRA下各计算一次functional loss、先task内求均值，再让24 tasks等权。下一次macro访问该task时换一条video；video与action episode/chunk不要求同episode配对。frozen source base只通过functional LoRA forward参与，更新Writer。
-- 历史task-local RL的总预算合同不影响当前focused v6 AS/RL，但每个新增训练段仍须通过当前证据门。
-- `Reward-Trained Writer (RL-Writer)` 是独立路线：按当前 focused task 从新架构规定初态做短、task-balanced AS cold start，直到24个development-train tasks各在官方random-reset rollout中至少成功一次，再关闭action数据入口并跨source tasks做纯reward训练；它不从完整AS-Writer best继续，cold-start消耗必须完整报告。
-- RL-Writer rollout 使用 LIBERO 官方随机 reset/BDDL 初态；不使用 `.pruned_init`。只用官方 env reward/success，不从 object pose 等内部状态手工构造 privileged shaping。
-- `Source-SFT` 是在同一 frozen source base 上、跨 24 development train tasks fresh训练的一套 shared rank-128 LoRA，test 不看 held video/action。physical batch必须混合tasks，以`task→episode→chunk`分层均匀采样并做task-balanced loss，不得让rank固定为单一task。v6确认后默认重训并根据validation找最佳；它和AS-Writer不要求机械匹配optimizer steps或consumed examples，但必须报告训练数据、steps、GPU-hours、参数量和搜索上限。
-- 所有方法共享同一frozen source base、normalization和policy接口，但不再机械要求相同trainable参数化或LoRA rank。Writer继续生成sealed rank-16 public task LoRA；capacity-matched Source-SFT可使用rank128，其10,297,344个trainable参数用于约束Writer本体参数预算。各方法的targets/rank/alpha/dropout与identity初始化都必须显式报告。
+## Baselines and later stages
 
-## Seen and video-causality evidence
+- frozen source base、AS-Writer、Source-SFT及后续RL路线共享同一source policy、
+  normalization和policy接口。
+- corrected mixed-task Source-SFT使用shared rank-128 LoRA，observed-best`109/400`；
+  其参数预算约束Writer但不要求机械相同steps/examples。
+- RL-Writer若恢复，必须从架构规定的短、task-balanced AS cold start开始，之后关闭
+  action入口做纯reward；不得从完整AS best继续，也不得用`.pruned_init`训练。
+- task-local RL、final32、test、joint oracle和ViVLA均不因focused Writer结果自动
+  获得launch authority。
+- direct target-action oracle是privileged shared multi-task reference，不是同信息墙
+  baseline，且必须在其他方法结果封存后进行。
 
-- 必须增加 source/seen-task performance comparison；seen panel 在看 outcome 前按 specification 预声明并覆盖四 suites，不用它替代 validation/test。
-- 必须做 wrong-video control：evaluation task、正确 language、init state、policy RNG 均不变，只把 Writer 输入换成另一 suite 的 teacher video。
-- 对 AS-Writer 和可用的 RL-Writer均报告 source base、correct-video LoRA、cross-suite wrong-video LoRA；核心视频特异性量是 correct-video 与 wrong-video 的差异，而不是只看两者是否各自高于 base。
-- zero-interaction held evaluation 每个 rollout 从正确 task 的 50 条 teacher videos 随机抽一条；不得挑最好视频。
+## Evaluation and video causality
 
-## Final retraining and zero-interaction test
+- official π0.5/LIBERO preprocessing保持：render256、model224、两相机180° rotate、
+  state/action 7维、10 flow steps、执行前5 actions后replan、dummy settling10、成功即
+  终止、suite horizons 220/280/300/520。
+- zero-interaction evaluation每rollout从正确task的50条teacher videos无放回取一条；
+  不挑最好video。
+- correct/same-task-other/cross-suite-wrong/shuffled/reversed必须严格配对state、policy
+  RNG、video ordinal等字段；shuffled/reversed需对真实输入帧重排后完整forward。
+- evaluator使用cost-balanced dynamic queue、long-first和persistent model/env；不用
+  静态task/GPU分配或dummy显存占用。
+- 报告aggregate、per-task、per-suite、gained/lost、breadth、能力轮换和内部
+  Core→Program→effective BA→fixed-action传递。raw A/B gauge符号不是跨模型正式结论。
 
-- development 只先跑一个 training seed。AS-Writer、RL-Writer（若成立）和 Source-SFT 在 24 train / 8 validation 上选定配置后，合并成 32 source tasks，从规定初态各自重训一次。
-- 在打开最终 test 前先完成 final seen-task comparison。
-- zero-interaction test 统一比较新的 frozen source base、Source-SFT、AS-Writer、RL-Writer（若成立）及 correct/wrong-video controls。旧 generic base `0/400` 不可冒充新 source base 结果。
-- 旧 test 已做 generic/source-base feasibility audit，owner 明确不把这视为阻塞；不得再以“untouched test”异议停止推进。
+## Host, paths and GPU
 
-## Test-only task-local RL
+- A100时期的“只用物理GPU4–7”不适用于BGR。迁移后必须获取新的owner设备边界并
+  live检查GPU ownership、telemetry、进程、CUDA、storage和峰值预算。
+- 不得reset、kill、pause或干扰他人进程；共享设备只在owner明确授权时使用。
+- BGR不得依赖A100绝对路径或500GB旧cap。设置`EMBER_STORAGE_ROOT`与owner给出的
+  `EMBER_STORAGE_CAP_BYTES`供preflight容量检查；source、checkpoint、tokenizer、
+  data、output继续通过CLI显式传入。
+- `hf-libero` simulation assets是当前runtime依赖；迁移精确
+  `lerobot/libero-assets@0b3ea86...`或在BGR按同revision重下，不能保留指向A100的
+  site-packages绝对symlink；用`EMBER_LIBERO_ASSETS_ROOT`指向BGR snapshot。
+- 历史config、run contract和analysis中的`/data/ymdai`是provenance，不批量改写。
+- 具体BGR数据盘映射、rsync staging和MemLLM symlink看迁移handoff。
 
-- task-local RL 不在 validation 上预训练、预冻结或选择算法；在最终 test 阶段打开后，直接把每个 test task 当作 adaptation training domain，在该 task 上调优并训练到 reward/性能曲线接近最佳。
-- 三臂为：source base + functionally identity LoRA、AS-Writer LoRA、RL-Writer LoRA。RL-Writer路线失败时如实缺席，不伪造。
-- 每个 `(task, adaptation seed)` 开始时随机选一条该 task teacher video；AS/RL Writer 两臂使用同一条并固定生成的初始化 LoRA，随后只原位更新该 LoRA。
-- 三臂使用相同 task、env/policy seed schedules、官方随机 BDDL 初态序列、相同 RL 实现和可比的调优/资源上限；保存完整 optimizer、worker RNG、seed schedule、interaction cursor 与 exact-resume state。
-- adaptation、调参和 checkpoint 选择可使用该 test task 的官方随机-reset reward rollouts；固定 50 `.pruned_init` states 只作训练分离的 fresh evaluation，仍执行 dummy settling、suite horizon 和成功即终止。
+## Checkpoint, artifacts and evidence
 
-## Privileged direct-action oracle
+- checkpoint必须含Writer/model、optimizer、scheduler/scaler、sampler/cursor、每rank/
+  worker RNG和完整schema；fresh incompatible架构不得误载旧checkpoint。
+- smoke只证明load、shape、freeze、gradient、OOM、resume和环境，不解释性能。
+- formal结果必须保留run contract、checkpoint manifest、metrics、raw rows、aggregate、
+  completion和必要analysis；screen/profile/smoke不得冒充formal。
+- 不比较未严格配对的不同state/video/RNG panel，不把不同估计器百分比写成严格倍数。
+- 当前保留60个正式checkpoint roots是训练漂移证据；不得在迁移时只留winner。
+- cleanup删除清单位于A100
+  `/data/ymdai/migration_manifests/a100_cleanup_20260802`；历史文档中的已删profile路径
+  不表示正式artifact损坏。
 
-- direct target-action baseline 不是 task-local per-task LoRA。
-- 在三臂 RL 和无 action 方法结果封存后，从同一 frozen source base 出发，使用 8 个 test tasks、每 task 全部 50 条 action episodes，联合训练一套 shared multi-task LoRA；第一轮只做完整 50/task，不做 action-budget 曲线。
-- 它是 privileged oracle/reference，不属于与 EMBER 同信息墙的主 baseline，也不得反向修改前面方法。
+## Engineering and Git
 
-## Evaluation and efficiency
+- 一个canonical Writer path；替换行为时旧实现由Git/frozen artifact保存，不保留
+  executable parallel version。
+- 先检查现有owner和contract，再新增模块、抽象、runner或fallback。非平凡结构变化
+  使用code-architecture-gate。
+- 保持main clean、任务diff聚焦；不得提交checkpoint、cache、dataset或大binary。
+- 正式run需frozen worktree；并发写实现需独立worktree；不得让两个writer重叠写。
+- meaningful状态更新`docs/active_session_handoff.md`、`docs/execution_brief.md`、对应
+  design、`task_plan.md`、`findings.md`、`progress.md`并commit/push。
+- A100 pre-cleanup全refs bundle只作灾难恢复；BGR默认从GitHub clone，不批量恢复
+  Codex refs或旧local branches。
 
-- official π0.5/LIBERO preprocessing 保持：render 256、model 224、两相机 180° rotate、state/action 7维、10 flow steps、执行前 5 actions后重规划、dummy settling 10、成功即终止、suite horizons 220/280/300/520。
-- generic feasibility 已证明固定“一 task/一 GPU”会被两个 horizon-520 tasks拖尾；新 evaluator 必须先调研其他成熟项目，并按预计 `episodes × horizon` 做 cost-balanced state shards、动态任务队列和持久 model/env，而不是静态 task/GPU。
-- Writer每 rollout LoRA 不同时，真实 profile batched functional LoRA 与每卡统一 1/2/3 个 policy replicas；选择有效 rollouts/s 最优且稳定的方案。所有卡使用相同 CUDA process count，GPU0 不得额外堆 controller/server/model。
-- batch 8→16 只带来约 0.9% per-episode 提升，不能把继续堆同 adapter batch 当作唯一优化。
-- 训练最多使用 8 张 A100 80GB，一卡一 DDP rank 为默认；用真实数据尽量利用显存并平均预留约 10GB。评估只优化有效 rollout/s，不用 dummy tensors填显存。
-- 任何 GPU launch 前实时检查 GPU owner/telemetry、进程拓扑、CUDA/runtime、storage 和 `/data/ymdai` 500GB cap；不得干扰无关进程。
+## Migration verification
 
-## Engineering, evidence, and delivery
-
-- 只保留一条 canonical π0.5 path；不恢复旧 runner，不新增平行版本、bank、geometry、shared update subspace、residual escape 或额外 shared trainable adapter。
-- smoke 只检查 load、shape、gradient、冻结对象、OOM、resume 和环境；不解释小分母性能。
-- checkpoint 保存 model/Writer/LoRA、optimizer、scheduler/scaler、sampler/data cursor、每 rank/worker RNG、env seed schedule、interaction cursor、step、episode和consumed-data state。
-- 等待下载、训练或 rollout 时推进不污染运行的后续代码、文档、hash和离线验证；精度细节不改变科学结论时效率优先。
-- meaningful state 后更新 `task_plan.md`、`findings.md`、`progress.md`，验证、commit、push。核心闭环完成前不要停在只写脚手架或只报告单一 smoke。
-- optional ViVLA-style matched reproduction 和 source-only outer learning 只在核心结果之后有时间再做，不阻塞长期 Goal complete。
+迁移智能体必须按`docs/a100_to_bgr_migration_handoff.md`完成：Git/bundle hashes、
+source policy/tokenizer hashes、formal manifests、MemLLM hashes、路径/symlink、环境
+重建和CPU tests。不得复制venv或Codex auth。迁移成功后先向owner报告，再等待新的
+实验authority。

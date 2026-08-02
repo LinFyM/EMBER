@@ -4,9 +4,45 @@
 
 阅读规则：本文按时间顺序保留真实执行状态。早期段落中的“当前”“下一步”、
 GPU范围和训练步长是当时快照；活动状态只取
-`docs/active_session_handoff.md`、
-`docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落，
+`docs/a100_to_bgr_migration_handoff.md`、`docs/active_session_handoff.md`和本文顶部
+最新段落，
 不能用旧快照覆盖后续owner决定。
+
+## 2026-08-02 A100清理与BGR迁移准备
+
+- 核验EMBER pre-cleanup `main=origin/main=f0b123f`、MemLLM
+  `main=origin/main=edc549d4`，两repo工作区clean；无训练、评测、torchrun或tmux。
+- 创建EMBER 138-ref recovery bundle并验证，SHA
+  `c78fb94d...44ec7`；MemLLM 186-ref bundle复验SHA`feef0e90...a7656`。
+- 分批清理并留下精确外部ledger：52个Writer LoRA caches 55.39GB、138个operation
+  roots 27.98GB、退役SmolVLA outputs/numeric及旧asset cache约50.90GB、source
+  rejected EMA/optimizer state约
+  24.48GB、superseded/endpoint caches约2.83GB、reseal/capacity roots约1.00GB、
+  generic base14.47GB和Codex archive5.65GB。
+- `test_pi05_eval_contract`随后发现`hf-libero`的active assets symlink被上述asset清理
+  误伤。只恢复`lerobot/libero-assets`精确revision`0b3ea86...`的586文件/426.57MB；
+  file-list SHA`721aa248...96b9`，原4个失败测试复跑全过，旧额外cache不恢复。
+- source step1000保留9.35GB selected raw policy、trainer state和原manifest；formal
+  inspector验证policy SHA`60ea7ee8...df36`。该资产改为inference-only，不再可
+  exact-resume source训练。
+- outputs由约214.53GB降至102.85GB；writer LoRA cache和endpoint LoRA tensor均为0。
+  60个formal checkpoint roots约74.9GB、406个complete eval roots约1.1GB、CV exact50
+  和endpoint10正式负证据全部保留。
+- 删除55个clean辅助worktree和全部本地实验branches/stash；A100只留main checkout。
+  Target-Bound commit`b260a57`仍在GitHub远端，所有旧refs另由bundle保存。
+- 用`uv pip freeze`封存EMBER 171行、MemLLM 73行环境；分别SHA
+  `ee072580...0956`/`9fda882d...24d3`。全仓验证完成后删除EMBER 9.74GB venv和
+  可重建uv/Hugging Face caches；owner随后关闭MemLLM venv消费者，复核只有另一用户
+  `/data/pcpan`环境的`nvitop`仍在运行且未触碰，于是也删除7.60GB MemLLM venv及其
+  ignored workspace link。两个环境均不进入迁移。
+- `src/ember/pi05_eval/launcher.py`增加`EMBER_STORAGE_ROOT`，使BGR容量preflight不
+  依赖`/data/ymdai`；targeted pytest通过。
+- 新增`docs/a100_to_bgr_migration_handoff.md`和机器可读资产表，重写README、AGENTS、
+  active handoff、execution brief；明确GitHub/SSH/重下载分流、MemLLM反向路径映射、
+  no-Codex migration和新agent接手顺序。
+- simulation-assets原始4个回归、相关20个launcher/contract tests、EMBER全仓pytest和
+  compileall均通过后才删除A100专用EMBER venv；cleanup `SHA256SUMS`全项复验通过，
+  其自身SHA为`338f8a0b...7173a`。
 
 ## 2026-08-02 CV-ADR GROUP4正式控制完成与阶段交接
 

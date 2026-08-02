@@ -48,12 +48,18 @@ def prepare_libero_config(config_dir: Path) -> dict[str, str]:
     if package is None or package.origin is None:
         raise Pi05EvaluationError("installed LIBERO package cannot be located")
     benchmark_root = Path(package.origin).resolve().parent / "libero"
+    configured_assets = os.environ.get("EMBER_LIBERO_ASSETS_ROOT")
+    assets_root = (
+        Path(configured_assets).expanduser().resolve()
+        if configured_assets
+        else benchmark_root / "assets"
+    )
     paths = {
         "benchmark_root": str(benchmark_root),
         "bddl_files": str(benchmark_root / "bddl_files"),
         "init_states": str(benchmark_root / "init_files"),
         "datasets": str(benchmark_root.parent / "datasets"),
-        "assets": str(benchmark_root / "assets"),
+        "assets": str(assets_root),
     }
     for name in ("benchmark_root", "bddl_files", "init_states", "assets"):
         if not Path(paths[name]).exists():

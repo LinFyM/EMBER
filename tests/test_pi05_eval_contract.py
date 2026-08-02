@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from ember.pi05_assets import Pi05EvaluationError
+from ember.pi05_assets import Pi05EvaluationError, prepare_libero_config
 from ember.pi05_eval_contract import (
     build_run_contract,
     inspect_installed_target_tasks,
@@ -66,6 +66,16 @@ def test_evaluation_authorities_and_roles_are_sealed() -> None:
         ("libero_10", 7),
     )
     assert authorities.normalization["authority"]["validation_or_test_numeric_reads"] == 0
+
+
+def test_libero_config_accepts_a_host_local_assets_root(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assets_root = tmp_path / "libero-assets"
+    assets_root.mkdir()
+    monkeypatch.setenv("EMBER_LIBERO_ASSETS_ROOT", str(assets_root))
+    paths = prepare_libero_config(tmp_path / "libero-config")
+    assert paths["assets"] == str(assets_root.resolve())
 
 
 def test_installed_target_contract_seals_bddl_and_fixed_states(tmp_path: Path) -> None:

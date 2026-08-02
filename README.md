@@ -1,7 +1,7 @@
 # EMBER
 
-EMBER 研究能否把一条没有目标机器人 action 标注的教学视频，一次性编译成
-能让 frozen VLA 完成对应任务的完整 task-specific LoRA：
+EMBER研究能否把一条没有目标机器人action标注的教学视频，一次性编译成能让
+frozen VLA完成对应任务的完整task-specific LoRA：
 
 ```text
 task language + exactly one action-hidden teaching video
@@ -10,88 +10,95 @@ task language + exactly one action-hidden teaching video
                     -> frozen π0.5-LIBERO source policy
 ```
 
-Writer 只在 rollout 前运行一次；policy 随后依据实时 observation/state 闭环
-执行。Writer 不读取 teacher action、proprio、reward、terminal、task ID、
-filename 或隐藏 normalization。
+Writer只在rollout前运行一次；policy随后依据实时observation/state闭环执行。
+Writer不读取teacher action、proprio、reward、terminal、task ID、filename或隐藏
+normalization。
 
-## 当前主线
+## 当前状态
 
-- 共同起点是 generic `lerobot/pi05_base`，不是读过目标 LIBERO-40 actions 的
-  `pi05_libero`。
-- LIBERO-90 与目标 LIBERO-40 的 3,600-pair specification-only audit 已封存：
-  排除 19 个 exact semantic/composition 重合 source tasks，在余下 71 tasks ×
-  每 task 50 条成功 teacher episodes 上联合 action-SFT，并冻结共享
-  π0.5-LIBERO source base。
-- 目标 benchmark 是 LIBERO-Spatial/Object/Goal/Long 共 40 tasks。固定
-  development split 为每 suite 6 train / 2 validation / 2 test，总计
-  24/8/8；方法选定后合并成 32 source / 8 test。
-- v4 的 `shuffled=148/400 > correct=109/400` 暴露了低层
-  phase/translation 旁路；v5 虽在内部形成顺序表征，却没有把它稳定传到
-  effective LoRA/action。v5.2 首次同时通过 wrong/shuffled/reversed 行为门，
-  step900 五臂为 `132/138/74/82/83`，但 absolute 与跨 task 稳定性仍不够。
-- v6 已完成 task-complete/old-recipe、fast-decay、五臂和内部传递上限证据；
-  single-checkpoint best 为 `143/400`。corrected mixed-task rank-128
-  Source-SFT development best 已封存为 `109/400`。
-- v7 的 joint `8×L` Action–Effect pooling 已完成 macro0→400。它增强了
-  reversed/shuffled 特异性，但single-checkpoint best只有`120/400`；内部
-  attention约`99.96%`均匀，且Core对effective LoRA几乎无影响，因此停止。
-- v8 的strict Action–Effect binding已完成并停止：best仅`125/400`，event被
-  Effect主导，不能把policy action hypothesis当作teacher实际action。
-- v10 observed-best仅`103/400`；Loom首段四点也只有`79/106/105/112`，
-  Teacher/Policy gap和confidence缺少可靠锚点，均已停止并转为provenance。
-- Recenter首段四点进一步只有`55/84/79/85`；time-centering删除Procedure
-  DC、Core只剩窄幅调制，形成semantic-basis starvation，因此同样退役。
-- 当前唯一 canonical Writer authority 是
-  [`Core-Program`](docs/action_forecast_writer_core_program_design.md)：保留
-  v6 Core、native 50-token Action mean、uncapped transition和full raw causal
-  Procedure；Core提供slot semantic basis，Procedure提供program coefficients，
-  通过width512 strict bilinear共同生成LoRA content。
-- Core-Program精确参数为`10,905,856`，fresh config当前等待GPU4–7 live B20
-  profile与resume smoke；通过后训练macro0→200并评测四个均匀checkpoint。
-  只选择single checkpoint；checkpoint-average已退役，RL-Writer在新raw-video
-  接口重建并重训前明确fail closed。
+2026-08-02因A100主机即将到期，新的训练、评测和架构设计已暂停。当前没有活动
+EMBER/MemLLM训练、评测或tmux。项目正在迁回BGR；迁移操作由后续智能体执行，本
+checkout只负责清理和形成可验证交接。
 
-## 硬约束
+- `main`保留已封存的CV-ADR canonical实现和证据。
+- Target-Bound Role-Preserving Program已在远端分支
+  `origin/codex/target-bound-role-program`实现到CPU vertical path，commit
+  `b260a57a94dc21bd3446b212bfa42f71b037ce13`；尚未做任何GPU profile、训练或rollout。
+- 当前科研结论、下一实验边界看
+  [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
+- A100清理、Git/SSH/重下载分流、BGR路径映射和新Codex接手步骤看
+  [`docs/a100_to_bgr_migration_handoff.md`](docs/a100_to_bgr_migration_handoff.md)。
 
-- 当前 focused GPU 工作只使用物理 GPU4–7；GPU0–3 不进入 visible set。
-- frame stride 固定为 5；正式 LIBERO preprocessing、horizon、dummy settling、
-  success termination 与 frozen normalization 不变。
-- 不使用 bank、geometry、shared update subspace、residual escape、额外 shared
-  adapter 或 MemLLM。
-- 旧 SmolVLA、70/10/10、Phase A–F、flat task-local RL 和 flat Writer-RL
-  可执行路径已从工作树退役；provenance 只保留在 Git 历史与 evidence ledger。
-- 当前运行状态和下一动作只看
-  [`docs/active_session_handoff.md`](docs/active_session_handoff.md)；架构与长期
-  科学合同分别看 Core-Program design、`AGENTS.md` 和
-  `docs/execution_brief.md`。
+## 研究基线与最新结论
+
+- 共同起点是generic `lerobot/pi05_base`，不是读过目标LIBERO-40 actions的
+  `pi05_libero`。LIBERO-90 specification-only audit排除了19个与目标40 exact
+  semantic/composition重合的source tasks；71 tasks×50成功episodes用于共享
+  source-base action-SFT。
+- 目标benchmark为LIBERO-Spatial/Object/Goal/Long共40 tasks。固定development
+  split是24 train / 8 validation / 8 test；不得按结果改变task IDs。
+- frozen π0.5-LIBERO source base约`48/400`；corrected mixed-task rank-128
+  Source-SFT observed-best为`109/400`。
+- v5.2旧recipe的single winner五臂为`132/138/74/82/83`，是当前最好的视频
+  特异性形态；v6 fast task-complete winner为`143/135/125/128/129`，absolute最高
+  但视频margin弱。
+- recipe互换后两者并不呈同向变化：v5.2 task-complete为
+  `120/109/107/111/124`，v6 old recipe为`121/122/111/84/47`。task-complete在两
+  架构上都压弱动态写出，但correct absolute分别下降和上升，故架构与训练方式必须
+  联合分析，不能把post-v5设计一棒子判死，也不能简单退回旧recipe。
+- 最新CV-ADR RAW完整correct400曲线为
+  `76/111/99/117/77/69/80/82`，normalized GROUP4为`82/77/73/110`。两者均未解决
+  task漂移；matched梯度分析显示video主效应约`.1%`，query/flow噪声主导，functional
+  surrogate继续改善时closed-loop会退化。
+- Target-Bound的下一目标是在真实38-target拓扑中保留Core semantic carrier和
+  private Action/Effect/Change causal channels，同时不破坏coherent高增益LoRA几何。
+  它仍是假设，不是已验证结果。
+
+## 不变合同
+
+- one teacher video生成一套完整rank-16 LoRA；不平均多video、多LoRA或checkpoint。
+- frame stride固定为5；正式LIBERO preprocessing、horizon、dummy settling、成功
+  终止和frozen normalization不变。
+- validation/test actions不产生Writer梯度；test数据边界由`AGENTS.md`管理。
+- 不使用teacher action/state/reward作为Writer输入，不增加额外shared adapter、
+  bank、checkpoint fusion或静态旁路。
+- GPU设备范围必须以owner迁移后重新给出的BGR authority为准；A100时期的GPU4–7
+  约束不能自动复制到另一台机器。
+- sealed历史config和artifact contract中的旧绝对路径是provenance，不应原位改写；
+  新运行通过CLI显式传入source/checkpoint/tokenizer/data/output路径。
+
+## 环境与路径
+
+本仓库使用`pyproject.toml`和`uv.lock`重建环境，不迁移`.venv`。评测preflight的
+个人容量根可通过环境变量设置：
+
+```bash
+export EMBER_STORAGE_ROOT=/path/to/bgr/user/root
+export EMBER_STORAGE_CAP_BYTES=REPLACE_WITH_OWNER_CAP
+export EMBER_LIBERO_ASSETS_ROOT=/path/to/libero-assets/revision
+```
+
+训练与评测入口继续要求显式资产路径：
+
+```text
+scripts/train_as_writer.py
+scripts/evaluate_pi05.py
+```
+
+完整BGR映射和恢复校验在迁移handoff中。
 
 ## 阅读顺序
 
-1. `AGENTS.md`
-2. `docs/active_session_handoff.md`
-3. `docs/execution_brief.md`
-4. `docs/action_forecast_writer_expert_consultation.md`
-5. `docs/action_forecast_writer_design.md`
-6. `docs/action_forecast_writer_v4_root_cause.md`
-7. `docs/action_forecast_writer_v5_design.md`
-8. `docs/action_forecast_writer_v5_1_proposal.md`
-9. `docs/action_forecast_writer_v5_2_design.md`
-10. `docs/action_forecast_writer_v5_3_design.md`
-11. `docs/action_forecast_writer_v6_design.md`
-12. `docs/action_forecast_writer_v7_design.md`
-13. `docs/action_forecast_writer_v8_design.md`
-14. `docs/action_forecast_writer_v10_design.md`
-15. `docs/action_forecast_writer_loom_derivation.md`
-16. `docs/action_forecast_writer_loom_design.md`
-17. `docs/action_forecast_writer_recenter_design.md`
-18. `docs/action_forecast_writer_core_program_design.md`
-19. `task_plan.md`
-20. `findings.md`
-21. `progress.md`
-22. `docs/concept.md`
-23. `docs/decisions_and_open_questions.md`
-24. `docs/novelty_and_landscape.md`
+在只读了解或迁移时先读：
 
-外部专家所需的 v4 结构、实验 aggregate、逐任务结果和根因证据集中在
-[`docs/action_forecast_writer_expert_consultation.md`](docs/action_forecast_writer_expert_consultation.md)
-与 [`docs/action_forecast_writer_v4_root_cause.md`](docs/action_forecast_writer_v4_root_cause.md)。
+1. `AGENTS.md`
+2. `docs/a100_to_bgr_migration_handoff.md`
+3. `docs/active_session_handoff.md`
+4. `docs/execution_brief.md`
+5. `docs/action_forecast_writer_contextual_value_dual_read_design.md`
+6. 远端Target-Bound分支的
+   `docs/action_forecast_writer_target_bound_role_program_design.md`
+7. `findings.md`与`progress.md`
+
+改变实验状态前仍必须完整阅读`AGENTS.md`列出的全部authority文件；这里的短顺序
+不能替代该要求。

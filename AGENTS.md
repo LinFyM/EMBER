@@ -80,6 +80,16 @@ long-first、loss/gradient/LR finite、0 clip，五块Adam step精确连续。�
 250/300/350/400；若仍弱或轮换，必须做同topology normalized GROUP4后才可否定
 架构。所有推进继续只由主进程完成，不使用subagent。
 
+2026-08-02 joint root-cause override：四个selected winner五臂逐row重验为v5.2-old
+`132/138/74/82/83`、v5.2-task-complete `120/109/107/111/124`、v6-old
+`121/122/111/84/47`、v6-task-complete `143/135/125/128/129`。task-complete在
+两架构上都压缩顺序margin和Procedure→effective BA/action transfer，但correct
+absolute effect为`-12/+22`；matched 150-video-visits仍为`-81/+16`。old每cycle
+六次Adam恢复更强slots/AdaLN/动态写出却继续task轮换，新full24也没有解决漂移。
+因此后续必须联合设计semantic carrier、causal write gain与single-video噪声下的
+optimizer path；不得把post-v5低分架构整体判死，也不得退回old recipe或加固定scale。
+正式审计SHA为`98371337...2efa`，后续仍完全不使用subagent。
+
 2026-08-02 CV-ADR live seal override：clean detached `ff57a9f`只在物理GPU4--7
 完成teacher-seed172最长真实视频B20三完整macro profile；首macro的
 `task38/demo36`为105 sampled frames，四rank每macro各6个cost-balanced long-first

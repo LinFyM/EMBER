@@ -8,6 +8,22 @@ GPU范围和训练步长是当时快照；活动状态只取
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-02 v5.2×v6 recipe/video-causality联合审计
+
+- 新建只读正式审计root
+  `pi05_as_writer_v52_v6_recipe_video_causality_audit_seed7_20260802`，逐行重验四个
+  architecture×recipe cell的五臂、source base配对、16-row内部传递、matched
+  exposure和v6参数/Adam动力学。analysis SHA256为
+  `98371337e2cf1f7cec09d04e81445b419fc21c654fe173cb081a4b5e63092efa`，canonical
+  payload为`6d9262f8595bfcd3eeb93c3a4808091386cd29c29ef37c8abf0fc374d8b421cd`。
+- 初版验证器错误地要求实际消耗的policy-noise列表全等；成功早停会截短该列表。
+  已删除并重建本轮刚生成、完全可再生的错误两文件root；修正版验证同一seed schedule
+  的公共前缀，四cell、source和全部五臂均为400/400一致。
+- 审计确认task-complete在v5.2/v6上都压弱Procedure→LoRA/action和顺序behavior
+  margin，但correct absolute分别下降/上升；old六倍Adam路径也同时放大视频写出与
+  task旋转。因此后续整体设计必须联合处理semantic carrier、causal write gain、
+  single-video噪声和optimizer clock，不能单边归咎架构或full24平均。
+
 ## 2026-08-02 CV-ADR一小时结果、exact50与第二小时启动
 
 - RAW macro0→200自然完成：200 macros、96,000 queries、4,800 teacher videos、

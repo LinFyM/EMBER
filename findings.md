@@ -6,6 +6,39 @@
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-02 v5.2×v6架构—训练—视频因果联合审计
+
+- 四个selected single-checkpoint五臂重新从正式400-row artifacts逐行核验：v5.2-old
+  `132/138/74/82/83`、v5.2-task-complete `120/109/107/111/124`、v6-old
+  `121/122/111/84/47`、v6-task-complete `143/135/125/128/129`。全部cell内
+  state/env/policy seed schedule和video ordinal严格配对；提前终止导致保存的noise
+  列表长度不同，但400/400公共前缀一致，不能误判为panel不配对。
+- task-complete在两种架构上都压低顺序behavior margin：v5.2 correct-shuffled/
+  reversed从`50/49`降到`9/-4`，v6从`37/74`降到`15/14`。但correct absolute的
+  winner effect符号相反：v5.2为`-12`，v6为`+22`。在严格matched 150-video-visits
+  截面上符号仍相反：v5.2 `132→51=-81`、v6 `95→111=+16`，描述性DiD为97；这
+  证明强architecture×recipe-bundle交互，不识别某一个recipe成分。
+- 16-row内部forward把共享变化定位到Procedure之后：shuffled/reversed的normalized
+  centered Procedure在old/task-complete间基本保持同量级，v5.2为
+  `1.234/1.556→1.241/1.541`，v6为`1.194/1.470→1.335/1.493`；但
+  Procedure→effective-LoRA transfer降到old的v5.2 `.354/.262`、v6
+  `.518/.416`，Procedure→fixed-action降到`.449/.338`与`.503/.354`。因此新recipe
+  没有首先删除上游顺序表示，而是在compiler/LoRA/action共适应处系统压弱条件增益。
+- old winner的Core、Procedure、slots和AdaLN gamma/beta绝对RMS普遍更大；例如
+  v5.2 gamma `.842→.278`、slots `.164→.0431`，v6 gamma `.601→.266`、slots
+  `.349→.0460`。这不是“放大就好”：old v6 absolute仅121且仍轮换；matched exposure
+  中old每task-cycle执行6次Adam，两个50-visit段与task-complete的参数位移余弦只有
+  `.086/.047`，Procedure为`.013/.028`，Adam一阶moment余弦在150 visits仅`.015`。
+- 与source base 48个成功state严格配对后，四winner保留`39/30/43/39`，同时获得
+  `93/90/78/104`个新成功。v6-task-complete的143主要来自更多新能力且未比v5.2-old
+  多遗忘source；v6-old保留最多source却不是absolute best。故不能把差异简化为
+  “旧recipe保能力、新recipe遗忘”或相反。
+- 根因约束是联合的：full24/task-complete倾向较低的条件写入增益并没有消除task
+  churn；old serial/rank-rotating恢复时序写出但以六倍Adam路径、强放大和旋转为代价。
+  后续不得一棒子否定v7/v8/Loom等与fast task-complete混杂的思想；只保留其被内部
+  反事实单独否定的模块。正式审计analysis SHA为`98371337...2efa`，canonical payload
+  `6d9262f8...21cd`。
+
 ## 2026-08-02 CV-ADR一小时门、内部职责与architecture×recipe因果
 
 - CV-ADR RAW macro50/100/150/200 paired correct400为`76/111/99/117`；winner

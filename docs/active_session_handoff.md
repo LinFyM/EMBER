@@ -53,6 +53,33 @@ cost约`209--216`且rank内long-first，loss`.1010/.1014`、gradient`.1040/.1253
 same-RAW architecture audit`a4b1b03f...8c47`；UCP recipe source-preservation audit
 `b43fe53f...01ff`。后续仍完全由主进程推进，不使用subagent。
 
+## 0-root. v5.2×v6架构—recipe—视频因果的联合边界
+
+owner提醒的核心混杂已形成逐row正式审计。selected winner五臂为：
+
+```text
+cell                    correct same wrong shuffled reversed
+v5.2 old                    132  138    74       82       83
+v5.2 task-complete          120  109   107      111      124
+v6 old                      121  122   111       84       47
+v6 task-complete            143  135   125      128      129
+```
+
+task-complete在两种架构上都把shuffled/reversed margin压到约14以内，但absolute
+对v5.2为负、对v6为正；matched 150-video-visits比较仍为`-81/+16`，所以这不是
+checkpoint选择假象，也不能拆成单一训练或模型主效应。内部normalized Procedure
+顺序差异仍接近old，而Procedure→effective BA/action transfer普遍只剩old约
+`26--58%/20--56%`。最早共享收缩位于Procedure之后的slots/AdaLN/compiler写入；
+old路径每task-cycle有6次Adam并形成近正交参数轨迹，能恢复动态增益却仍漂移。
+
+source base逐state配对又排除了简单遗忘故事：v5.2-old/v5.2-new/v6-old/v6-new分别
+保留source `39/30/43/39 of 48`，获得新成功`93/90/78/104`。因此下一整体EMBER
+必须同时保留mean-backed semantic carrier、可传到effective LoRA/action的causal
+Program和在单视频噪声下不过度旋转的优化路径。v7/v8/Loom等只能按被单独反事实
+否定的组件裁决，不能因其与task-complete混杂而整体判死。审计root为
+`/data/ymdai/outputs/ember/pi05_as_writer_v52_v6_recipe_video_causality_audit_seed7_20260802`，
+analysis SHA`98371337...2efa`、canonical payload`6d9262f8...21cd`。
+
 ## 0-history. CV-ADR B20/profile/resume seal与首小时启动
 
 clean detached `ff57a9f`已只用物理GPU4--7完成两条真实mechanics证据：

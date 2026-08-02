@@ -20,6 +20,17 @@ macro200内部结果同时给出保留/否定边界：Core-only和Program-only�
 raw Effect value。第二小时只判别成熟度；若仍失败，最早未满足职责是有序Program
 内容到target/rank read及高噪声训练operator的共同接口，不得用scalar gate/scale修补。
 
+跨v5.2/v6的2×2正式审计进一步收紧本文的recipe解释。task-complete在两种架构上
+都保留约相同的normalized Procedure顺序差异，却把shuffled/reversed的
+Procedure→effective-LoRA transfer压到old的`.26--.58`、Procedure→action压到
+`.34--.50`左右；selected behavior margin也在两种架构上一致收缩。但correct
+absolute分别`132→120`和`121→143`，matched 150-video-visits effect仍为
+`-81/+16`。所以CV若失败，不能只怪RAW/full24，也不能直接恢复old recipe：old每
+cycle六次Adam形成近正交、更大幅的参数路径，同时恢复条件写出和能力轮换。下一结构
+必须把causal Program内容与一个有界但不被full24稀释的conventional写入接口共同
+设计；这是一项整体职责重构，不授权事后添加固定scale。联合审计SHA为
+`98371337...2efa`。
+
 本文负责AP-ADR一小时门失败后的下一整体AS-Writer结构。它同时服从两条已经独立
 成立的事实：
 

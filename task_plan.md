@@ -174,6 +174,10 @@ runner、split 或 GPU 权限。
   SERIAL cycle150同时改善source retention与新能力但到200回落；CV macro200的
   `+28`由多保留9个source successes和多获得19个新successes共同构成。由此拒绝
   “optimizer gain只会破坏旧能力”和“CV增益只是遗忘更多”两个简单解释。
+- [x] 完成v5.2/v6 old×task-complete五臂、source retention、内部传递与matched
+  optimizer dynamics联合审计：新recipe在两架构上都压弱Procedure→BA/action与
+  顺序margin，却对absolute产生`-12/+22`的相反winner effect；因此后续按
+  architecture×training整体根因裁决，不整体否定与recipe混杂的post-v5思想。
 - [ ] CV-ADR RAW已从step200 exact-resume到400；完成后固定评测250/300/350/400，
   与前四点合并裁决single checkpoint、task drift和source retention。若第二小时
   仍弱或轮换，必须同topology补做normalized GROUP4，不能把recipe混杂成架构否定。

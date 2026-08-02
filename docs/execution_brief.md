@@ -1,5 +1,23 @@
 # EMBER Current Execution Brief
 
+## 2026-08-02 v5.2×v6 joint architecture/training root cause
+
+正式2×2审计确认两件事必须同时成立。第一，task-complete在v5.2和v6上都把
+shuffled/reversed behavior margin以及Procedure→effective LoRA/action transfer明显
+压弱，尽管normalized Procedure顺序差异仍在；最早共享收缩位于Procedure之后。
+第二，它对correct absolute的作用随架构改变：selected winner为v5.2 `132→120`、
+v6 `121→143`，matched 150-video-visits仍为`132→51`和`95→111`。因此后续不得
+把新recipe称为普遍更好/更坏，也不得把post-v5结构在fast task-complete下的低分整体
+当成架构思想失效。
+
+old recipe每task-cycle执行六次Adam，matched参数段方向几乎与task-complete正交；它
+提高slots/AdaLN/LoRA动态增益，却没有解决task轮换或absolute。task-complete降低该
+增益，同样没有解决漂移。source配对也显示四winner保留旧能力和获得新能力的关系
+不单调。当前设计硬约束因此是：稳定semantic carrier、causal Program到effective
+LoRA/action的有效增益、single-video高噪声下不旋转的optimizer path必须联合设计。
+正式analysis SHA为`98371337...2efa`；后续仍先完成CV-ADR RAW 400和同topology
+GROUP4控制，再作整体重构，不使用subagent。
+
 ## 2026-08-02 CV-ADR RAW一小时裁决与活动第二小时
 
 CV-ADR RAW macro0→200及四个paired correct400已完成：50/100/150/200为

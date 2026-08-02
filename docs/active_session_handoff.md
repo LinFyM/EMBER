@@ -13,10 +13,13 @@
 - 已迁移封存基线为`f9a144c`；本轮所有Git与artifact都是post-seal delta，外部登记根
   为`/data/ymdai/migration_manifests/ember_postseal_20260802/`。迁移仍由另一session
   执行，本session不修改其现有副本，只提供增量清单。
-- 当前没有需要继承的 EMBER/MemLLM 训练、评测、torchrun 或 tmux 进程。
-- EMBER迁移封存时`main=origin/main=f9a144c94e71bb44373d7247ed0fded2ed835305`；
-  Target-Bound已移植到独立`codex/postseal-target-bound`写worktree，首个移植commit
-  为`fbbb784`，尚未产生GPU实验结论。
+- 当前活动实验是Target-Bound首小时正式训练：tmux`ember_tb_formal_cfd26df`，四个
+  torchrun ranks只在物理GPU4--7，fresh macro0→200。精确root/log列在本节下方和
+  post-seal delta ledger；MemLLM没有活动实验。
+- EMBER迁移封存基线为`f9a144c94e71bb44373d7247ed0fded2ed835305`；当前
+  `main=origin/main=cfd26df63d08f29d8bfaac58f585387134ed680b`，Target-Bound
+  已成为这一post-seal窗口的canonical实现，写分支仍为
+  `codex/postseal-target-bound`。
 - Target-Bound Role-Preserving Program 已在远端分支
   `origin/codex/target-bound-role-program`实现，commit
   `b260a57a94dc21bd3446b212bfa42f71b037ce13`。它只完成 CPU shape、identity、
@@ -29,8 +32,15 @@
   config中尚未更新的`pending_profile`状态fail-close；该root无checkpoint/metrics，
   不属于科学结果。profile evidence已写入sealed config并通过27项定向回归；正式run
   必须从新commit、新root fresh启动。
-- 当前尚无Target-Bound closed-loop结果；首小时结束后评测50/100/150/200，不从
-  smoke warm-start，不自动续第二小时。
+- clean frozen`cfd26df`已于20:01:34 UTC从fresh identity启动正式0→200。前两个
+  macro均为24 tasks、24 videos、480 B20 queries，cost-balanced/long-first；loss
+  `.15404→.15159`，无clip/OOM/nonfinite，第二macro五个主block均非零可达，source
+  policy trainable=0且validation/test action optimizer reads=0。首小时结束后评测
+  50/100/150/200，不从smoke warm-start，不自动续第二小时。
+- formal root：
+  `/data/ymdai/outputs/ember/pi05_as_writer_targetbound_postseal_rawfull24_decay400_formal_r4_b20_seed7_cfd26df_20260802`；
+  log：
+  `/data/ymdai/logs/ember/pi05_as_writer_targetbound_postseal_rawfull24_decay400_formal_r4_b20_seed7_cfd26df_20260802.log`。
 - 迁移步骤、路径映射、资产分流和新 Codex 接手顺序统一看
   [`a100_to_bgr_migration_handoff.md`](a100_to_bgr_migration_handoff.md)。
 
@@ -144,8 +154,8 @@ analysis SHA256：
 
 ## 4. 当前代码与下一实验边界
 
-`main`保持CV-ADR canonical path，便于解释所有已封存artifact。Target-Bound分支从
-`51c0ba5`独立实现，核心职责为：
+`main`现为clean pushed`cfd26df` Target-Bound canonical path；CV-ADR由Git与frozen
+artifacts保存。核心职责为：
 
 - 38个真实policy targets先读Core；
 - target-bound地读取Action、Effect与Change；
@@ -154,18 +164,15 @@ analysis SHA256：
 - identities只进入Q/K，raw evidence进入V；
 - conventional factor heads保持coherent near-rank1高增益，不加谱/正交约束。
 
-迁移并由owner重新授权实验后，下一步不是重新设计或重跑旧profile，而是：
+当前A100临时授权窗口的紧邻动作是：
 
-1. 从GitHub恢复`main`和`origin/codex/target-bound-role-program`；
-2. 将本次main上的路径可移植性提交rebase/merge到Target-Bound分支；
-3. 现场确认BGR GPU和数据路径，仅在获批设备上做最长105-frame B20 profile；
-4. 验证fresh0→1→exact-resume1→3；
-5. 若vertical path健康，从fresh identity训练首小时cycle0→200，评测
-   50/100/150/200 paired correct400；
-6. 只按absolute、breadth、趋势、漂移和内部A/E/D→BA→action传递决定第二小时。
+1. 让当前fresh macro0→200自然完成；
+2. 在GPU4--7一张卡一个checkpoint并发评测50/100/150/200 paired correct400；
+3. 只按absolute、breadth、趋势、漂移和内部A/E/D→BA→action传递决定
+   exact-resume第二小时或整体根因迭代；
+4. 最迟03:45 UTC停止新GPU工作并封存/push全部增量。
 
-不得从A100上的smoke/profile权重warm-start；不得自动启动。Target-Bound的完整设计
-在远端分支文件：
+不得从smoke/profile权重warm-start。Target-Bound的完整设计在main文件：
 `docs/action_forecast_writer_target_bound_role_program_design.md`。
 
 ## 5. 迁移时必须保留的EMBER科学资产

@@ -16,9 +16,9 @@
 - 这次临时授权不自动授予BGR GPU使用权。
 
 longest105三macro和fresh/exact-resume vertical path已通过。首次formal在GPU计算前因
-旧config仍为`pending_profile`而fail-close；不是OOM或训练失败。当前正在把live evidence
-写入sealed config、更新overlay SHA并push origin/main；随后只从全新root fresh启动，
-不复用失败root。
+旧config仍为`pending_profile`而fail-close；不是OOM或训练失败。live evidence已经
+seal并push为`cfd26df`。clean frozen`cfd26df`于20:01:34 UTC从全新root fresh启动
+macro0→200；前两个macro的24-task/B20/long-first、finite梯度与信息墙合同已通过。
 
 ## 2. Canonical Git state
 
@@ -28,10 +28,12 @@ longest105三macro和fresh/exact-resume vertical path已通过。首次formal在
 post-seal baseline main/origin-main = f9a144c94e71bb44373d7247ed0fded2ed835305
 current experiment branch = codex/postseal-target-bound
 initial port commit = fbbb784 (b260a57 rebased by cherry-pick onto f9a144c)
+current main/origin-main = cfd26df63d08f29d8bfaac58f585387134ed680b
 ```
 
 `f9a144c`是另一迁移session已经封存的基线，不回写其内容。post-seal分支与所有新
-artifact作为第二批增量交付；Target-Bound在重新验证前仍只算CPU实现，不算实验结果。
+artifact作为第二批增量交付；Target-Bound已有profile/resume和活动正式训练证据，
+但在paired closed-loop结果出来前仍不能宣称有效。
 
 迁移后默认动作：clone GitHub main、fetch Target-Bound远端分支、核验commit；不要
 复制`.git`或恢复所有Codex refs。路径可移植性提交应先rebase/merge到Target-Bound，
@@ -98,27 +100,21 @@ v5.2/v6的old/task-complete四格又证明recipe作用依赖架构。不得把po
 整体判死、不得简单退回old six-update，也不得恢复CP-24、gate、scale、rank loss、
 multi-video或checkpoint fusion作为默认解。
 
-## 5. Next experiment after migration and explicit authorization
+## 5. Current Target-Bound experiment
 
-候选：Target-Bound Role-Preserving Program。完整design只在远端分支：
+Target-Bound Role-Preserving Program的完整design已在main：
 
 ```text
-origin/codex/target-bound-role-program
 docs/action_forecast_writer_target_bound_role_program_design.md
 ```
 
-执行顺序固定：
+当前执行顺序固定：
 
-1. 核验BGR Git、data、source、tokenizer、output root和新GPU authority；
-2. 合入main上的`EMBER_STORAGE_ROOT`路径修复并跑CPU regression；
-3. 从clean frozen commit建立独立formal worktree；
-4. 只在owner授权设备上做最长105-frame、4-rank、B20真实profile；
-5. fresh identity 0→1，再exact-resume1→3；
-6. 通过shape、identity、freeze、causality、gradient、OOM和resume后，fresh训练
-   cycle0→200、every25 checkpoint；
-7. paired correct400评测50/100/150/200；
-8. 根据absolute、breadth、右端趋势、task churn和A/E/D→effective BA→action传递
-   决定是否第二小时；不机械按150停止。
+1. 当前fresh cycle0→200、every25 checkpoint自然完成；
+2. paired correct400评测50/100/150/200；
+3. 根据absolute、breadth、右端趋势、task churn和A/E/D→effective BA→action传递
+   决定是否第二小时；不机械按150停止；
+4. 窗口结束前停止GPU进程并把代码、文档与artifact delta交给迁移session。
 
 profile/smoke root必须全新，不得使用A100上的smoke权重或正式output路径。B20只有
 真实OOM或连续非有限才降，不扫描B17–B19/B21。

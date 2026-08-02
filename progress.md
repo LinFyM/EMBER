@@ -31,6 +31,13 @@ GPU范围和训练步长是当时快照；活动状态只取
   `formal_run.status=pending_profile`正确拒绝；失败root无metrics/checkpoint。已把live
   evidence写入base config、更新两个overlay SHA并通过27项定向回归，下一调用使用新
   commit与全新root。
+- sealed live evidence提交`cfd26df`已push并成为`main=origin/main`。从clean detached
+  frozen worktree于20:01:34 UTC启动正式fresh macro0→200；tmux
+  `ember_tb_formal_cfd26df`，只用GPU4--7、4 ranks、B20、every25。
+- start contract为11,092,224 Writer参数、source trainable=0。前两个macro各完整覆盖
+  24 tasks、24条single videos和480 independent queries，rank内long-first且跨rank
+  cost-balanced；loss`.15404/.15159`、reserved约77.77GiB、无clip/OOM/nonfinite。
+  第二macroSemantic Frontend/Core/Program/compiler/factor五block均finite/nonzero。
 
 ## 2026-08-02 A100清理与BGR迁移准备
 

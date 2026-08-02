@@ -149,8 +149,8 @@ runner、split 或 GPU 权限。
   cycle-AUC、single-best breadth、success-set churn/envelope gap、逐task/phase-cost
   方向及A/D→BA→action传递共同决定；含混时CV首跑保留更简单RAW。
 - [x] 在独立worktree实现CV-ADR canonical路径；参数`10,241,024`、完整CPU回归
-  `225 passed`、结构门无hard violation。分支已rebase到当前authority并以
-  `3798994`记录复验；formal configs在group4裁决及真实B20/profile/resume前保持
+  `226 passed`、结构门无hard violation。分支已rebase到`8dfe6ed` authority，
+  RNG-v2 rebase/verification snapshot为`ed21244`；formal configs在group4裁决及真实B20/profile/resume前保持
   pending，不提前集成或启动GPU。
 - [ ] 将CV-ADR集成到最终control authority，完成105-frame B20/profile/resume；
   根据正确UCP控制选择raw或group4并执行一小时先验门。

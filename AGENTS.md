@@ -91,11 +91,29 @@ query与PI05 flow-noise三种噪声。
 不做五臂。正式curve SHA为`fb75464f...ec90a`，canonical payload
 `bd4f43d4...ce909`。
 
-当前唯一活动实验是tmux `ember-cvadr-gradient-variance-254ade4`：在相同train
-visit397--399 panel上对macro200/400做24-task video/query/flow与Gaussian/Beta-time
-梯度方差分解，零rollout、零optimizer update。之后先完成同topology GROUP4真实B20
-profile/resume seal，再fresh运行0→1200；只有该recipe反事实完成后才能拒绝CV架构。
-所有推进只由主进程完成，不使用subagent。
+matched macro200/400梯度方差分解已完成：`lora/action` centered/sample为
+`.6858/.8127`，video主效应仅`.1211%/.1060%`且0/24 tasks主导，query约
+`48.59%/49.53%`，flow与query×flow合计约`48.78%/48.50%`。macro400的task-mean
+energy只有macro200的`.492`，Program task-mean跨checkpoint余弦`.431`；24/24 tasks
+匹配functional loss继续下降、中位delta`-.00411`，但correct400从117跌到82。
+visit397--399对macro400是刚曝光的train条件、对macro200尚未曝光，故该下降不能
+冒充held generalization；它与独立held functional loss横盘合起来，说明模型继续
+拟合train surrogate/recency而闭环退化。因此teacher-video抽样不是late旋转主因；
+弱video-conditioned gradient、query/flow主导的低SNR与surrogate/closed-loop错位
+才是联合根因。paired SHA为
+`ad7d6e06...44eb96a`。
+
+同topology GROUP4 mechanics vertical path已从clean detached `f6cf775`只用GPU4--7
+完成并seal。longseed172的18 updates/3 cycles每cycle覆盖24 tasks恰好一次，包含
+`task38/demo36=105` sampled frames，B20峰值allocated/reserved为
+`76,945,014,784/77,370,228,736` bytes，wall`73.196s`，all finite、0 clip/OOM；
+step2起Semantic Frontend/Core/Program/compiler均17/17可达，factor为18/18。
+formal seed fresh0→1→exact-resume1→3→7也通过：step1/3 payload未被改写，7行
+metrics、3段invocation连续，首cycle 24 tasks各一次，scheduler只在update6推进，
+step7 cursor为cycle1/phase1，validation/test action reads为0。当前无活动训练、评测
+或tmux；下一动作是提交post-seal authority并从新的clean frozen commit fresh运行
+0→1200。只有该recipe反事实完成后才能拒绝CV架构。所有推进只由主进程完成，不使用
+subagent。
 
 2026-08-02 joint root-cause override：四个selected winner五臂逐row重验为v5.2-old
 `132/138/74/82/83`、v5.2-task-complete `120/109/107/111/124`、v6-old

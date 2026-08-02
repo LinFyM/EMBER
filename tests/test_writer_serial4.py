@@ -488,8 +488,10 @@ def test_cycle_normalized_configs_and_checkpoint_families_fail_closed() -> None:
     assert raw["formal_run"]["launch_state"] == (
         "ready_from_clean_detached_postseal_commit"
     )
-    assert group4["formal_run"]["status"] == "pending_profile"
-    assert group4["formal_run"]["launch_state"].startswith("blocked_until")
+    assert group4["formal_run"]["status"] == "sealed"
+    assert group4["formal_run"]["launch_state"] == (
+        "ready_from_clean_detached_postseal_commit"
+    )
     assert raw["formal_run"]["total_steps"] == 400
     assert group4["formal_run"]["total_steps"] == 2400
     assert raw["formal_run"]["stage_stop_steps"] == [200, 400]
@@ -512,7 +514,14 @@ def test_cycle_normalized_configs_and_checkpoint_families_fail_closed() -> None:
     assert raw["profile_evidence"]["exact_resume_smoke"][
         "step1_all_payload_sha_size_mtime_unchanged"
     ] is True
-    assert group4["profile_evidence"]["exact_resume_smoke"] is None
+    group4_resume = group4["profile_evidence"]["exact_resume_smoke"]
+    assert group4_resume is not None
+    assert group4_resume[
+        "step1_and_step3_all_payload_sha_size_mtime_unchanged"
+    ] is True
+    assert group4_resume["metrics_rows"] == 7
+    assert group4_resume["invocations"] == 3
+    assert group4_resume["scheduler_logical_updates"] == 1
     assert checkpoint_state_family(raw) == "cvadr_task_query_keyed_rawfull24_v2"
     assert checkpoint_state_family(group4) == (
         "cvadr_cycle_normalized_randomized_group4_v2"
@@ -587,17 +596,11 @@ def test_cycle_normalized_formal_runtime_keeps_two_stage_total(
             skip_data_sha=True,
         )
         config = copy.deepcopy(load_writer_config(path))
-        if path == TASK_QUERY_RAW_CONFIG:
-            assert config["formal_run"]["status"] == "sealed"
-            blocked = copy.deepcopy(config)
-            blocked["formal_run"]["status"] = "pending_profile"
-            with pytest.raises(WriterModelError, match="not sealed"):
-                resolve_runtime(args, blocked, context)
-        else:
-            assert config["formal_run"]["status"] == "pending_profile"
-            with pytest.raises(WriterModelError, match="not sealed"):
-                resolve_runtime(args, config, context)
-            config["formal_run"]["status"] = "sealed"
+        assert config["formal_run"]["status"] == "sealed"
+        blocked = copy.deepcopy(config)
+        blocked["formal_run"]["status"] = "pending_profile"
+        with pytest.raises(WriterModelError, match="not sealed"):
+            resolve_runtime(args, blocked, context)
         total, batch, checkpoints = resolve_runtime(args, config, context)
         assert (total, batch, args.stop_after_step) == (
             expected_total,

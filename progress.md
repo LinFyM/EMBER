@@ -28,9 +28,18 @@ GPU范围和训练步长是当时快照；活动状态只取
   不做五臂，正式进入同topology GROUP4因果格。
 - 创建只读matched gradient diagnostic：macro200/400共用visit397--399，按24 tasks
   分解3 video×3 B20 query×3 paired flow及3 Gaussian×3 Beta time，零rollout/update。
-  tmux为`ember-cvadr-gradient-variance-254ade4`，4 ranks已在GPU4--7健康运行。
-- 从clean detached `f6cf775`准备GROUP4 longseed172 18-update/3-cycle profile与
-  formal-seed fresh0→1→3→7 exact-resume；诊断结束前不并发占GPU。
+  两端已自然完成；analysis SHA为`1727f014...e7656f9`/`61a13978...db40520`。
+- 生成严格matched pair artifact：video梯度主效应约`.1%`且0/24 tasks主导，query/
+  flow主导；macro400 task-mean能量下降而随机能量不降。visit397--399对macro400
+  是刚曝光的train条件，对macro200尚未曝光；24/24 loss改善只说明train surrogate/
+  recency拟合加强，不能冒充held泛化，而correct400崩落。pair SHA为
+  `ad7d6e06...44eb96a`、canonical`d21c2cfc...d38b08`。
+- 从clean detached `f6cf775`仅用GPU4--7完成GROUP4 longseed172 18-update/3-cycle
+  B20 profile：每cycle 24 tasks各一次，包含`task38/demo36=105` frames，峰值
+  allocated/reserved `76,945,014,784/77,370,228,736` bytes，all finite、0 clip/OOM。
+- formal-seed fresh0→1→exact-resume1→3→7通过；step1/3逐文件SHA/size/mtime未改写，
+  首cycle与scheduler/cursor连续。profile/resume metrics SHA为
+  `f8afb6ae...d90a`/`53cf0718...9de`，config已seal，当前无活动进程。
 
 ## 2026-08-02 v5.2×v6 recipe/video-causality联合审计
 

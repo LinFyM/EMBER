@@ -6,6 +6,57 @@
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-02 CV-ADR GROUP4 B20/profile/resume seal
+
+- 从clean detached `f6cf775`仅用GPU4--7完成18-update/3-cycle B20 profile；每cycle
+  24 tasks各一次，共1,440 queries/72 one-video conditions。最长真实video为
+  `task38/demo36=105` sampled frames，wall`73.196s`，峰值allocated/reserved为
+  `76,945,014,784/77,370,228,736` bytes，全程finite、0 clip/OOM，信息墙读取0。
+- factor从update1可达；identity-zero输出解除后，Semantic Frontend、Core、Program、
+  compiler在updates2--18全部finite/nonzero。精确Writer参数`10,241,024`，frozen
+  source policy trainable参数为0。
+- canonical formal seed另做fresh0→1、exact-resume1→3、exact-resume3→7；step1与
+  step3的全部payload SHA/size/mtime未被后续resume改写。7行metrics和3段invocation
+  连续，首cycle 24 tasks各一次，scheduler只在update6推进，最终cursor为
+  `next_step/data_step=7`、`cycle1/phase1`，validation/test action reads为0。
+- profile/resume metrics SHA为`f8afb6ae...d90a`/`53cf0718...9de`；combined log SHA
+  `2048cbc0...d4ff`。该vertical path只解除正式运行阻塞，不是科学performance证据；
+  正式GROUP4必须从post-seal clean commit与fresh identity运行0→1200。
+
+## 2026-08-02 CV-ADR macro200/400 matched梯度方差根因
+
+- 固定24个train tasks、visit397--399、3 teacher videos、3个独立phase-stratified
+  B20 query batches、3个paired flow draws，并在固定video/query上另做3 Gaussian×3
+  Beta-time；每checkpoint共792个梯度、15,840个functional samples、72条teacher
+  videos，零optimizer update/rollout，validation/test action reads为0。macro200/400
+  原始analysis SHA分别为`1727f014...e7656f9`/`61a13978...db40520`，逐样本身份与
+  CountSketch严格配对。
+- `lora/action`的centered/sample从macro200的`.68581`升到macro400的`.81268`；
+  video主效应只占`.001211/.001060`，24 tasks中没有一个以video或其interaction为
+  主导，且18/24进一步下降。同期query为`.48588/.49530`、flow为
+  `.21611/.21780`、query×flow为`.27171/.26715`。Writer各块结论相同：video
+  中位只约`.10--.61%`，query/flow及其交互支配局部更新方向。
+- macro200→400的`lora/action` matched单样本梯度余弦仍为`.84331`，exact norm
+  ratio为`.92335`；但task-mean方向余弦仅`.61715`、task-mean energy ratio仅
+  `.49189`，centered energy ratio为`1.02546`。Program更早发生职责旋转：其
+  task-mean余弦仅`.43053`，而video effect余弦`.45218`且能量ratio`.56113`。
+  因此末端持续追逐相似的高方差action surrogate，上游教学方向和有用video分量却
+  在改变/缩小。
+- 完全匹配的33个sample loss在24/24 tasks上都从macro200继续下降；逐task中位
+  delta的中位为`-.004112`，与此同时correct400从117降到82。visit397--399对
+  macro400是刚曝光的train条件、对macro200尚未曝光，所以下降不能冒充held
+  generalization；它与独立held functional loss横盘合起来，证明模型继续拟合train
+  surrogate/recency而闭环退化，不能再用更低action loss解释为能力成熟化。
+- 根因边界因此调整为：teacher-video抽样不是late梯度旋转的主要随机源，但极小的
+  video-conditioned gradient本身证明当前教学路径太弱；query差异包含真实跨episode
+  状态/action覆盖，不能当成噪声删除；Gaussian/Beta flow估计方差是可减少但尚未
+  证明能改善闭环的训练成分。下一步仍完成同topology GROUP4反事实，再联合重构
+  target-bound causal Program、末端compiler职责和无偏低方差functional估计器，
+  不做多视频/LoRA平均或固定scale/gate。
+- paired analysis SHA为`ad7d6e06...44eb96a`，canonical payload为
+  `d21c2cfc...d38b08`；全部向量比较受固定128维CountSketch估计边界约束，exact
+  full-gradient仅保留norm而非vector。
+
 ## 2026-08-02 CV-ADR full400行为负裁决与训练动力学
 
 - RAW从fresh identity到macro400自然完成：400 cycles、192,000 action queries、

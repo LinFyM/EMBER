@@ -53,11 +53,26 @@ macro200=`117`。200→250发生`16 gained/56 lost`，此后低LR只缩短参数
 LoRA增益坍缩。正式八点curve SHA为`fb75464f...ec90a`、canonical payload
 `bd4f43d4...ce909`。RAW不做五臂，进入同topology GROUP4控制。
 
-活动tmux `ember-cvadr-gradient-variance-254ade4`正在相同visit397--399 train条件上对
-macro200 winner与macro400 collapsed endpoint分别分解teacher-video、B20 query、
-paired flow以及Gaussian/Beta-time梯度方差；每checkpoint 24 tasks×33 gradients，
-零rollout/optimizer update。GROUP4 profile/resume已在独立clean `f6cf775` worktree
-静态准备，诊断退出后才使用GPU4--7。后续不使用subagent。
+macro200/400 matched方差诊断已经自然结束。`lora/action` centered/sample为
+`.6858/.8127`，其中video主效应仅`.1211%/.1060%`且0/24 tasks主导；query为
+`48.59%/49.53%`，flow与query×flow合计约`48.78%/48.50%`。macro400的task-mean
+energy只有macro200的`.492`，但centered energy为`1.025`、exact gradient norm为
+`.923`；Program task-mean跨checkpoint余弦仅`.431`。完全匹配的functional loss在
+24/24 tasks继续下降、中位delta`-.00411`，而correct400从117跌到82。visit397--399
+对macro400是刚曝光的train条件、对macro200尚未曝光，故不能把下降写成held
+generalization；结合独立held functional loss横盘，它证明train surrogate/recency
+拟合继续加强而闭环退化。因此根因不是teacher-video抽样噪声、LoRA norm坍缩或训练
+未成熟，而是弱video-conditioned梯度、query/flow主导的late低SNR和surrogate/闭环
+错位共同作用。pair analysis SHA为
+`ad7d6e06...44eb96a`，canonical payload`d21c2cfc...d38b08`。
+
+同topology GROUP4最长105-frame B20 profile/resume已从独立clean `f6cf775` worktree
+只用GPU4--7完成并seal。18 updates/3 cycles每cycle覆盖24 tasks各一次，最长
+`task38/demo36=105` frames，峰值allocated/reserved
+`76,945,014,784/77,370,228,736` bytes，all finite、0 clip/OOM；formal seed
+fresh0→1→exact-resume1→3→7连续，step1/3未被改写，scheduler/cursor跨cycle正确。
+当前无活动进程；提交post-seal authority后从新的clean frozen commit和fresh identity
+运行0→1200。后续不使用subagent。
 
 UCP source-preservation审计还表明SERIAL cycle150可同时提高旧source retention和
 新能力、但cycle200回落；GROUP4保留更多source却压弱动态。故不能把训练归结为

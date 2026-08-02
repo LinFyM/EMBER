@@ -2,7 +2,8 @@
 
 **状态：2026-08-02 已集成为canonical，参数10,241,024。RAW八点correct400为
 `76/111/99/117/77/69/80/82`，single winner保持macro200；第二小时没有成熟化，
-不做五臂。macro200/400 matched梯度方差分解运行中，随后做同topology GROUP4。**
+不做五臂。macro200/400 matched梯度方差已完成，同topology GROUP4 B20/105-frame
+profile与formal-seed exact-resume已经seal，待fresh 0→1200正式recipe反事实。**
 
 ## 0. Formal evidence override
 
@@ -28,6 +29,21 @@ functional losses横盘于`.13055--.13399`。因此full24 candidate并未直接�
 task不足以说明优化稳定，CP投影也不会修复高方差条件估计或functional/closed-loop
 错位。正式250/300/350/400为`77/69/80/82`，macro200→250立即lost56/gained16；
 后段LoRA norm不降反升，故是闭环能力轮换/off-manifold，不是训练不足或增益坍缩。
+
+固定visit397--399的matched方差分解进一步识别了上述centered变化的来源。
+`lora/action`在macro200/400的video主效应仅占centered energy
+`.1211%/.1060%`，0/24 tasks由video或其interaction主导；query占
+`48.59%/49.53%`，flow与query×flow合计`48.78%/48.50%`。macro400 task-mean
+energy降为macro200的`.492`，centered energy保持`1.025`，Program task-mean方向
+余弦只有`.431`。同时24/24 tasks的匹配functional loss继续下降，中位delta
+`-.00411`。但visit397--399对macro400是刚曝光的train条件、对macro200尚未曝光，
+这个下降不能冒充held generalization；结合独立held functional loss横盘，它只证明
+train surrogate/recency拟合继续加强而closed loop退化。所以单条teacher video的
+随机选择不是晚期参数旋转主因，但video对局部训练方向几乎没有控制力本身就是架构
+失败；真正的训练问题是query/flow主导的低SNR与closed-loop错位。后续训练估计器
+可以研究保持B20边缘分布的无偏flow方差降低，
+但不得删除真实query多样性、固定query过拟合或平均多video/LoRA。正式pair SHA为
+`ad7d6e06...44eb96a`。
 
 跨v5.2/v6的2×2正式审计进一步收紧本文的recipe解释。task-complete在两种架构上
 都保留约相同的normalized Procedure顺序差异，却把shuffled/reversed的

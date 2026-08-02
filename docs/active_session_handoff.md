@@ -9,7 +9,7 @@
 `AGENTS.md`与`docs/execution_brief.md`。任何接手者都必须先只读复核现场，不能按
 历史快照重复启动进程。后续完全由主进程推进，不使用subagent。
 
-## 0-live. CV-ADR RAW full400负裁决，matched梯度方差分解运行中
+## 0-live. CV-ADR RAW full400负裁决，GROUP4 mechanics已seal待formal
 
 RAW macro0→200已自然完成：96,000 queries、4,800 one-video conditions、wall
 `3916.79s`，all finite、0 clip。paired correct400为：
@@ -60,21 +60,49 @@ correct400   76  111   99  117   77   69   80   82
 `69.93/69.29`，所以闭环崩落不是LoRA norm坍缩。第二小时没有成熟化，RAW行为门失败，
 不做五臂；同topology normalized GROUP4现在是拒绝该架构前必须完成的recipe控制。
 
-当前唯一需要继承的进程是只读matched gradient-variance诊断：
+matched gradient-variance诊断已经自然结束。两端固定相同visit397--399、24 train
+tasks、每task 3 videos×3 B20 query batches×3 paired flow，并在固定video/query上
+另做3 Gaussian×3 Beta-time；每checkpoint 792 gradients、15,840 functional
+samples、72 videos，零rollout/update与validation/test action reads。
+
+`lora/action`的centered/sample从macro200的`.68581`升到macro400的`.81268`；video
+主效应仅`.1211%/.1060%`、0/24 tasks主导，query为`48.59%/49.53%`，flow和
+query×flow合计`48.78%/48.50%`。macro400 task-mean energy只有macro200的`.492`，
+centered energy保持`1.025`；Program task-mean跨checkpoint余弦仅`.431`。匹配
+functional loss却在24/24 tasks继续下降、中位delta`-.00411`，而行为从117跌到82。
+visit397--399对macro400是刚曝光的train条件、对macro200尚未曝光，因此下降不能
+当作held generalization；结合独立held functional loss横盘，它说明train
+surrogate/recency拟合仍在加强而闭环退化。这将teacher-video抽样从late rotation
+主因降权，同时把“video对局部训练方向几乎无控制力”、query/flow低SNR和
+functional/closed-loop错位并列为最早根因。
+
+正式诊断证据：
 
 ```text
-tmux  ember-cvadr-gradient-variance-254ade4
-code  254ade404c064bb78aaa95e421f8a91db3caa9f6
-ckpt  macro200 -> macro400（相同train visit397/398/399条件panel）
-root  /data/ymdai/outputs/ember/pi05_as_writer_cvadr_macro{0200,0400}_gradient_variance_components_train24_matched397_399_seed7_254ade4_20260802
-log   /data/ymdai/logs/ember/pi05_as_writer_cvadr_gradient_variance_pair_matched397_399_seed7_254ade4_20260802.log
+macro200 SHA 1727f014c26e9dc8ed72dda211be11749675178f3e6f016baa9c83ee4e7656f9
+macro400 SHA 61a1397852c3267c5ca4a32ae04441e2fe4fb85b3d0de89837c3e4e6cdb40520
+pair SHA     ad7d6e06b8a3f315bc4a8a07567e63da8646b110fd1141f78da35bc4644eb96a
+canonical    d21c2cfc929e2293f0c45aa60889ab42e7ec837a73cc988ee1d7857c5ed38b08
 ```
 
-每checkpoint对24 train tasks做3 video×3 phase-stratified B20 query×3 matched flow
-及固定video/query的3 Gaussian×3 Beta-time分解，共33 gradients/task；零rollout、零
-optimizer update、validation/test action reads为0。完成后先裁决video/query/flow
-方差来源，再运行已在独立`f6cf775` worktree准备好的CV GROUP4最长105-frame B20
-profile和formal-seed 0→1→3→7 exact-resume，seal后fresh正式0→1200。
+GROUP4 mechanics vertical path已自然结束并seal，没有需要继承的活动进程：
+
+```text
+code  f6cf775987ca687496ccf505a2af1f93212beef1
+profile /data/ymdai/outputs/ember/pi05_as_writer_cvadr_group4_profile_b20_longseed172_r4_f6cf775_20260802
+resume  /data/ymdai/outputs/ember/pi05_as_writer_cvadr_group4_formalseed_resume_b20_r4_f6cf775_20260802
+log   /data/ymdai/logs/ember/pi05_as_writer_cvadr_group4_profile_resume_b20_r4_f6cf775_20260802.log
+```
+
+longseed172的18 updates/3 complete cycles每cycle都让24 tasks各出现一次；最长真实
+video为`task38/demo36=105` sampled frames，1,440 queries/72 one-video conditions，
+wall`73.196s`，峰值allocated/reserved为`76,945,014,784/77,370,228,736` bytes，
+all finite、0 clip/OOM。formal seed fresh0→1、resume1→3、resume3→7也完成：step1/3
+逐文件SHA/size/mtime未改变，7行metrics、3次invocation连续；首cycle 24 tasks各一次，
+scheduler只在update6推进，step7进入cycle1/phase1，信息墙读取0。profile/resume
+metrics SHA分别为`f8afb6ae...d90a`/`53cf0718...9de`，combined log SHA为
+`2048cbc0...d4ff`。canonical config已seal；提交/push后从新clean frozen commit与
+fresh identity正式运行0→1200，smoke权重不得warm-start。
 
 正式证据：full400 candidate curve SHA`fb75464f...ec90a`、canonical payload
 `bd4f43d4...ce909`；首小时curve SHA`71cbd02d...33dc3`；exact50 raw analysis/summary

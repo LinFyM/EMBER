@@ -186,9 +186,13 @@ runner、split 或 GPU 权限。
   CP负投影与低LR自然止漂移解释。
 - [x] 完成250/300/350/400 paired correct400=`77/69/80/82`；八点winner保持
   macro200=`117`，200→250 lost56/gained16，LoRA norm不坍缩。RAW不做五臂。
-- [ ] 运行macro200/400固定visit397--399的24-task video/query/flow梯度方差分解；
-  随后完成CV GROUP4最长105-frame B20 profile、formal-seed exact resume和fresh
-  0→1200正式控制，不能把RAW负结果混成架构否定。
+- [x] 完成macro200/400固定visit397--399的24-task video/query/flow梯度方差分解：
+  video主效应约`.1%`且0/24主导，query/flow支配；macro400 task-mean SNR继续下降，
+  24/24刚曝光train条件的matched functional loss改善但held loss横盘、闭环崩落。
+- [x] 完成CV GROUP4最长105-frame B20 profile与formal-seed fresh0→1→3→7 exact
+  resume；B20 finite、cursor/scheduler连续、step1/3未改写，canonical config已seal。
+- [ ] 从post-seal clean frozen commit与fresh identity运行GROUP4 0→1200正式控制，
+  不能把RAW负结果混成架构否定。
 - [ ] 后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才开第二
   小时和行为五臂。
 - [ ] 持续定位task漂移、视频学习和closed-loop off-manifold根因，禁止补丁式

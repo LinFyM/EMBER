@@ -9,10 +9,12 @@ VENV_DIR="${UV_PROJECT_ENVIRONMENT:-${ROOT}/.venv}"
 
 export UV_PROJECT_ENVIRONMENT="${VENV_DIR}"
 export UV_CACHE_DIR="${EMBER_CACHE_ROOT}/uv"
-export UV_LINK_MODE=hardlink
+export UV_LINK_MODE="${UV_LINK_MODE:-hardlink}"
 
 cd "${ROOT}"
-"${UV_BIN}" venv --python "${PYTHON_BIN}" --allow-existing "${VENV_DIR}"
+if [[ ! -x "${VENV_DIR}/bin/python" ]]; then
+  "${UV_BIN}" venv --python "${PYTHON_BIN}" "${VENV_DIR}"
+fi
 "${UV_BIN}" pip install --python "${VENV_DIR}/bin/python" cmake==3.31.6 ziglang==0.16.0
 
 export PATH="${VENV_DIR}/bin:${PATH}"

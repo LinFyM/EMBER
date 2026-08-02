@@ -484,8 +484,10 @@ def test_cycle_normalized_configs_and_checkpoint_families_fail_closed() -> None:
     group4 = load_writer_config(GROUP4_CONFIG)
     assert raw["schema_version"] == AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA
     assert group4["schema_version"] == AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA
-    assert raw["formal_run"]["status"] == "pending_profile"
-    assert raw["formal_run"]["launch_state"].startswith("blocked_until")
+    assert raw["formal_run"]["status"] == "sealed_ready_for_fresh_macro0_to200"
+    assert raw["formal_run"]["launch_state"] == (
+        "ready_from_clean_detached_postseal_commit"
+    )
     assert group4["formal_run"]["status"] == "pending_profile"
     assert group4["formal_run"]["launch_state"].startswith("blocked_until")
     assert raw["formal_run"]["total_steps"] == 400
@@ -506,7 +508,10 @@ def test_cycle_normalized_configs_and_checkpoint_families_fail_closed() -> None:
     truncated["formal_run"]["stage_stop_steps"] = [200]
     with pytest.raises(WriterModelError, match="would auto-scale"):
         _validate_formal_schedule(truncated)
-    assert raw["profile_evidence"]["exact_resume_smoke"] is None
+    assert raw["profile_evidence"]["exact_resume_smoke"] is not None
+    assert raw["profile_evidence"]["exact_resume_smoke"][
+        "step1_all_payload_sha_size_mtime_unchanged"
+    ] is True
     assert group4["profile_evidence"]["exact_resume_smoke"] is None
     assert checkpoint_state_family(raw) == "cvadr_task_query_keyed_rawfull24_v2"
     assert checkpoint_state_family(group4) == (

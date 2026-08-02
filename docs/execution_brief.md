@@ -1,5 +1,20 @@
 # EMBER Current Execution Brief
 
+## 2026-08-02 CV-ADR live profile/resume seal
+
+CV-ADR canonical参数`10,241,024`已在clean detached `ff57a9f`通过GPU4--7真实
+B20 vertical path。teacher-seed172三macro首轮包含`task38/demo36=105` sampled
+frames；每macro全局24 tasks、24 one-video LoRAs、480 independent queries，rank内
+long-first。三步wall `20.698/18.777/18.737s`，峰值allocated/reserved
+`77,227,462,656/83,523,272,704` bytes，无OOM/非有限/clip；step1后五个主块均可达。
+
+formal seed fresh0→1→exact-resume1→3也通过：step1七个payload逐SHA/size/纳秒mtime
+不变，3行metrics和2次invocation连续，最终cursor为step3/data18/cycle3；信息墙读取0。
+profile/resume metrics SHA为`9a3b490c...f0b11`/`55366fc4...94028`。RAW config已经
+解除profile blocker；下一步只能从post-seal clean detached commit和fresh identity
+跑0→200，不得warm-start。50/100/150/200 correct400决定续训；RAW弱或含混时必须
+以相同CV topology补做GROUP4，后续不使用subagent。
+
 ## 2026-08-02 UCP operator裁决完成，CV-ADR集成
 
 RNG-v2 matched200控制格已经封存：RAW correct400=`72/87/86/89`，normalized

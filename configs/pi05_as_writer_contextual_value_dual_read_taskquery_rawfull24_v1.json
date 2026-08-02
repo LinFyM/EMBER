@@ -72,7 +72,7 @@
       "budget_role": "fresh_cvadr_task_query_keyed_raw_reference_200_cycle_one_hour_then_evidence_gated_resume"
     },
     "profile_defaults": {
-      "status": "pending_cvadr_b20_105_frame_profile_and_exact_resume",
+      "status": "sealed_cvadr_b20_105_frame_profile_and_exact_resume",
       "expected_world_size": 4,
       "total_steps": 3,
       "per_rank_batch_size": 20,
@@ -84,7 +84,7 @@
       "selected_stop_step": 3
     },
     "profile_evidence": {
-      "status": "pending_cvadr_b20_105_frame_profile_and_exact_resume",
+      "status": "sealed_cvadr_b20_105_frame_profile_and_exact_resume",
       "allowed_physical_gpu_ids": [
         4,
         5,
@@ -108,11 +108,76 @@
         "per_task_action_batch_size": 16
       },
       "selection_rule": "profile_b20_on_three_complete_macros_including_real_105_frame_video_then_fallback_directly_to_b16_only_after_real_oom_or_repeated_nonfinite",
-      "selected": null,
-      "exact_resume_smoke": null,
+      "selected": {
+        "code_commit": "ff57a9f1c274a223c181d31da1486c4ef39efa2e",
+        "preseal_config_sha256": "dded8e5cf050f566972cfec498da190991f640d7ff7cafceb407b41ca44f36ef",
+        "profile_overlay_sha256": "476ca2bbdb46fc3959fcb5ba5ce251b924c3a9a7476d67c34b91575e964c4bae",
+        "output_root": "/data/ymdai/outputs/ember/pi05_as_writer_cvadr_rawfull24_profile_b20_longseed172_r4_ff57a9f_20260802",
+        "run_contract_sha256": "87ebf69620d54d79f165cf6c074c32d90d1e69ef2decb719beb9a62955fff624",
+        "canonical_contract_sha256": "8b7666f84bbec664c10bf09f9a888c2604601d8875d61990ce888d9a94b0826b",
+        "metrics_sha256": "9a3b490c809e9a729fff4b0bdc0db0e44a8b0ef31f922305c3ebb3bc2ecf0b11",
+        "summary_sha256": "e36cfa66ed5ef88b8a35c0db46a9865b8bca6efc36e4b6970006b4fd09030bfc",
+        "checkpoint3_manifest_sha256": "d73efbf91207633b8975c81e6e361f40634e2ea2e033990711e124e55010672b",
+        "log_sha256": "3cefe0920180840c01286e77c27ff1e0d4f38a977ad1b5b0de379fb28346752e",
+        "world_size": 4,
+        "max_frames_per_encoder_call": 32,
+        "per_task_action_batch_size": 20,
+        "longest_real_stride5_video": {
+          "task_id": 38,
+          "teacher_demo_index": 36,
+          "sampled_frames": 105
+        },
+        "complete_macros": 3,
+        "global_action_queries": 1440,
+        "one_video_conditions": 72,
+        "step_seconds_max": [
+          20.698003434110433,
+          18.776691729202867,
+          18.737376304809004
+        ],
+        "mean_functional_action_loss": [
+          0.15404415720452866,
+          0.15137144457548857,
+          0.1445964112256964
+        ],
+        "max_cuda_allocated_bytes": 77227462656,
+        "max_cuda_reserved_bytes": 83523272704,
+        "all_finite": true,
+        "oom": false,
+        "validation_action_reads": 0,
+        "test_action_reads": 0
+      },
+      "exact_resume_smoke": {
+        "output_root": "/data/ymdai/outputs/ember/pi05_as_writer_cvadr_rawfull24_formalseed_resume_b20_r4_ff57a9f_20260802",
+        "fresh_segment": "macro0_to1",
+        "resume_segment": "macro1_to3",
+        "run_contract_sha256": "69b293c26ff98aecaec1995c9284704f194f1bee3cede2a48713d40559dca6f5",
+        "canonical_contract_sha256": "68fbc962bda1e39d1cfa62d2d65e27bf2cc9dd0bee65dea731bbbffaa4f49a9a",
+        "metrics_sha256": "55366fc41ce518c9085c4857064731cae5e22208b16a355b2064a7de4fb94028",
+        "summary_sha256": "1251d7a9a4235c79cc8840dde9a161a692c6debc42c94cad47954968dfab9e8f",
+        "step1_manifest_sha256": "b5ac667441fa04747e07fd5d035095bd5bb683e039b294b6efe35a0faa250c62",
+        "step3_manifest_sha256": "3123e1d13705553ff243b73ad0b03cc09e5886a98a9bad94f4421a77b873be97",
+        "fresh_log_sha256": "b1fadf8a9b6ca164a1cc52f73bf9f1494ba8aa5216efda0e068b4d46c4fc10ee",
+        "resume_log_sha256": "2df67e15138e3457cc8a55cf950e39f859eaca6ba8130bb05d14e24ec0be2e24",
+        "step1_all_payload_sha_size_mtime_unchanged": true,
+        "metrics_rows": 3,
+        "invocations": 2,
+        "next_step": 3,
+        "next_data_step": 18,
+        "next_task_cycle": 3,
+        "scheduler_logical_updates": 3,
+        "min_video_visits_per_task": 3,
+        "max_video_visits_per_task": 3,
+        "min_unique_videos_per_task": 3,
+        "max_unique_videos_per_task": 3,
+        "all_finite": true,
+        "validation_action_reads": 0,
+        "test_action_reads": 0
+      },
       "gradient_reachability": {
-        "status": "pending_cvadr_vertical_path",
-        "first_nonzero_main_path_macro": null,
+        "status": "sealed_finite_reachable_after_identity_update",
+        "first_nonzero_main_path_macro": 1,
+        "macro_indexing": "zero_based_task_cycle; optimizer update 2",
         "finite_nonzero_blocks": [
           "semantic_frontend",
           "core",
@@ -124,8 +189,8 @@
       "inference_profile": null
     },
     "formal_run": {
-      "status": "pending_profile",
-      "launch_state": "blocked_until_cvadr_profile_and_resume_seal",
+      "status": "sealed_ready_for_fresh_macro0_to200",
+      "launch_state": "ready_from_clean_detached_postseal_commit",
       "expected_world_size": 4,
       "total_steps": 400,
       "per_rank_batch_size": 20,

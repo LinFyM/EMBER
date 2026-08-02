@@ -9,6 +9,28 @@
 `AGENTS.md`与`docs/execution_brief.md`。任何接手者都必须先只读复核现场，不能按
 历史快照重复启动进程。后续完全由主进程推进，不使用subagent。
 
+## 0-live. CV-ADR B20/profile/resume已seal，等待fresh一小时门
+
+clean detached `ff57a9f`已只用物理GPU4--7完成两条真实mechanics证据：
+
+- teacher seed172三完整macro profile精确覆盖24 tasks/24 videos/480 queries每macro，
+  rank1首项`task38/demo36=105` sampled frames，B20无OOM；三步wall
+  `20.698/18.777/18.737s`，峰值allocated/reserved
+  `77,227,462,656/83,523,272,704` bytes；step1起五个主块全可达；
+- canonical formal seed fresh0→1→exact-resume1→3，step1七个payload的SHA/size/纳秒
+  mtime全部不变，metrics=3、invocations=2，最终cursor
+  `next_step=3,next_data_step=18,next_task_cycle=3`；validation/test action reads为0。
+
+profile root为
+`/data/ymdai/outputs/ember/pi05_as_writer_cvadr_rawfull24_profile_b20_longseed172_r4_ff57a9f_20260802`，
+resume root为
+`/data/ymdai/outputs/ember/pi05_as_writer_cvadr_rawfull24_formalseed_resume_b20_r4_ff57a9f_20260802`。
+对应metrics SHA256为`9a3b490c...f0b11`和`55366fc4...94028`，resume step1 manifest
+保持`b5ac6674...50c62`。canonical RAW config已写入完整seal；紧邻动作是从post-seal
+clean detached commit和fresh identity启动macro0→200，checkpoint every25，随后固定
+评测50/100/150/200 correct400。不得从profile/resume warm-start；若RAW弱或含混，
+相同CV topology补做GROUP4。后续不使用subagent。
+
 ## 0-current. UCP operator格封存，CV-ADR已成为canonical
 
 UCP RNG-v2 RAW和cycle-normalized randomized-GROUP4均从fresh identity完成相同
@@ -72,13 +94,12 @@ GROUP4 exact50 analysis SHA256 57760475d3483df9fa98fb5b4cff4021ce21be1f79fcdc840
 CV-ADR已在merge `b97960f`进入main：参数`10,241,024`，同一contextual A/E/D
 Program同时承担K/V，独立target-only Core read和38×16 target/rank Program read；
 不存在旧UCP runtime switch或raw Effect value旁路。全仓`226 passed`、compileall和
-四config loader通过。2026-08-02 05:26 UTC复核时无训练、评测、tmux或残留本任务
-CUDA进程。紧邻动作是建立clean frozen CV worktree，只查询/使用物理GPU4--7完成：
+四config loader通过。下列05:26 UTC快照已经由上面的live seal取代：
 
-1. teacher seed172最长105-frame、B20、三完整RAW macros profile；
-2. formal seed20260722 fresh0→1→exact-resume1→3，验证checkpoint不改写；
-3. seal config、commit/push；
-4. fresh RAW macro0→200，评测50/100/150/200 correct400。
+1. teacher seed172最长105-frame、B20、三完整RAW macros profile；已完成；
+2. formal seed20260722 fresh0→1→exact-resume1→3；已完成；
+3. seal config、commit/push；当前动作；
+4. fresh RAW macro0→200，评测50/100/150/200 correct400；下一动作。
 
 若CV RAW弱或含混，必须在相同CV topology下补做normalized GROUP4，不能把架构和
 recipe重新混成一个负结论；若RAW强则按门exact-resume到400。

@@ -8,6 +8,19 @@ GPU范围和训练步长是当时快照；活动状态只取
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-02 CV-ADR B20/profile/resume seal
+
+- 从clean detached `ff57a9f`只用GPU4--7完成teacher-seed172三macro profile；
+  首macro含`task38/demo36=105` sampled frames，每宏步24 tasks/24 videos/480 queries，
+  三步wall `20.698/18.777/18.737s`，峰值allocated/reserved
+  `77,227,462,656/83,523,272,704` bytes，无OOM、非有限或信息墙读取。
+- 另用canonical formal seed fresh0→1并exact-resume1→3。step1七文件bitwise、size和
+  纳秒mtime均未改变；3行metrics、2次invocation、scheduler/cursor连续，step1起全部
+  五个主块梯度可达。profile/resume metrics SHA为
+  `9a3b490c...f0b11`/`55366fc4...94028`。
+- RAW config已seal为ready。下一步从本次post-seal clean detached commit fresh启动
+  macro0→200、every25 checkpoint；profile/smoke权重不进入科学轨迹。
+
 ## 2026-08-02 UCP operator格闭环并集成CV-ADR
 
 - normalized GROUP4自然完成1200 updates/200 cycles、96,000 queries、4,800

@@ -1,7 +1,8 @@
 # Contextual-Value Asymmetric Dual-Read Writer 设计
 
-**状态：2026-08-02 已集成为canonical，参数10,241,024、全仓226 passed；真实B20
-profile、exact-resume和正式训练仍待完成。**
+**状态：2026-08-02 已集成为canonical，参数10,241,024、全仓226 passed；真实
+teacher-seed172最长105-frame B20三macro与formal-seed fresh0→1→exact-resume1→3
+均已通过并seal。下一步从post-seal clean detached commit fresh训练macro0→200。**
 
 本文负责AP-ADR一小时门失败后的下一整体AS-Writer结构。它同时服从两条已经独立
 成立的事实：

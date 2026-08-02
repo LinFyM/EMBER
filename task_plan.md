@@ -158,8 +158,11 @@ runner、split 或 GPU 权限。
 - [x] 在独立worktree实现并以merge `b97960f`集成CV-ADR canonical路径；参数
   `10,241,024`、完整CPU回归`226 passed`、结构门无hard violation；旧UCP executable
   path已退役，历史由Git/artifact保存。
-- [ ] 完成CV-ADR teacher-seed172最长105-frame B20三macro profile与formal-seed
-  fresh0→1→exact-resume1→3，封存RAW config并从clean frozen authority启动一小时门。
+- [x] 完成CV-ADR teacher-seed172最长105-frame B20三macro profile与formal-seed
+  fresh0→1→exact-resume1→3；真实105帧、B20、五主块可达、step1七文件不改写，
+  RAW config已解除profile blocker。
+- [ ] 从post-seal clean frozen authority与fresh identity启动CV-ADR RAW macro0→200；
+  每25保存，不从profile/smoke warm-start。
 - [ ] CV-ADR RAW评测macro50/100/150/200 correct400；弱或含混时同topology补做
   normalized GROUP4后才拒绝架构，强则exact-resume第二小时。
 - [ ] 后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才开第二

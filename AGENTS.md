@@ -56,6 +56,25 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 
 ## Current focused execution task
 
+2026-08-02 CV-ADR live seal override：clean detached `ff57a9f`只在物理GPU4--7
+完成teacher-seed172最长真实视频B20三完整macro profile；首macro的
+`task38/demo36`为105 sampled frames，四rank每macro各6个cost-balanced long-first
+tasks，全局24 tasks/24 videos/480 queries。三步wall为
+`20.698/18.777/18.737s`，峰值allocated/reserved为
+`77,227,462,656/83,523,272,704` bytes，无OOM、NaN、clip或信息墙读取；精确参数
+`10,241,024`，source policy trainable参数为0。step1起semantic frontend、Core、
+Program、compiler和factor均finite可达。
+
+同一canonical formal seed另从fresh identity完成macro0→1，再从完整step1
+exact-resume到3；step1全部7个文件的SHA、size和纳秒mtime逐项不变，metrics恰好3行、
+invocations恰好2次，cursor到`next_step=3,next_data_step=18,next_task_cycle=3`。
+profile/resume root分别为`pi05_as_writer_cvadr_rawfull24_profile_b20_longseed172_r4_ff57a9f_20260802`
+和`pi05_as_writer_cvadr_rawfull24_formalseed_resume_b20_r4_ff57a9f_20260802`；metrics SHA为
+`9a3b490c...f0b11`/`55366fc4...94028`。canonical RAW config已seal，下一实际动作是
+从本次仅含config/docs seal的新clean detached commit fresh启动macro0→200、每25保存，
+评测50/100/150/200 paired correct400。profile/smoke权重不得warm-start；若RAW弱或含混，
+同一CV topology必须补做GROUP4后才可拒绝架构。后续不使用subagent。
+
 2026-08-02 live override：UCP RNG-v2 RAW×cycle-normalized randomized-GROUP4
 受控格已经完整结束。matched cycle50/100/150/200 correct400分别为
 RAW `72/87/86/89`、GROUP4 `77/76/66/100`；GROUP4 endpoint只增11，但四点均值

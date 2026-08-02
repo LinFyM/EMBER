@@ -6,6 +6,20 @@
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-02 CV-ADR mechanics seal
+
+- teacher-seed172 B20三macro在四rank上真实覆盖最长105-frame视频；稳态约
+  `18.74--18.78s/macro`、约`25.6 queries/s`，峰值reserved `83.52GB` decimal，
+  没有真实OOM或降到B16的依据。
+- functional identity使macro0只有factor head直接有梯度；完成第一次B更新后，
+  macro1/2的semantic frontend、Core、Program、compiler、factor全部finite非零。
+  这是zero-B identity的预期链式可达，不是上游永久死亡。
+- formal seed exact-resume保持step1全部7文件SHA/size/mtime不变，task/video/query、
+  scheduler与cursor连续；因此正式run可从fresh identity开始，并在完整macro边界恢复。
+- 三个早期macro的task-gradient negative-pair约`.42/.31/.35`，而candidate-negative
+  tasks为`4/1/3`。它再次说明负pair值得记录但不能直接等同task漂移根因；闭环判据仍需
+  macro50--200 correct400与逐task迁移。
+
 ## 2026-08-02 UCP RAW×GROUP4最终裁决与CV-ADR边界
 
 - RNG-v2 normalized GROUP4完成1200 updates/200 cycles，correct400

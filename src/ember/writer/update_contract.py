@@ -102,20 +102,20 @@ def checkpoint_state_family(config: Mapping[str, Any]) -> str:
 
     training = config["conditioning_training"]
     topology = str(training["update_topology"])
-    target_bound_role = (
+    semantic_factor_basis = (
         config.get("writer", {}).get("architecture")
-        == "pi05_target_bound_role_preserving_program_v1"
+        == "pi05_semantic_factor_basis_program_v1"
     )
     task_query_keyed = (
         training.get("policy_randomness_scheme")
         == "task_query_keyed_stateless_policy_cpu_cuda_v2"
     )
     if topology == "task_complete_all_tasks":
-        if target_bound_role:
+        if semantic_factor_basis:
             return (
-                "target_bound_role_task_query_keyed_rawfull24_v1"
+                "semantic_factor_basis_task_query_keyed_rawfull24_v1"
                 if task_query_keyed
-                else "target_bound_role_rawfull24_v1"
+                else "semantic_factor_basis_rawfull24_v1"
             )
         return (
             "cvadr_task_query_keyed_rawfull24_v2"
@@ -129,10 +129,6 @@ def checkpoint_state_family(config: Mapping[str, Any]) -> str:
         == "cycle_normalized_randomized_group4_six_phase_task_cycle"
         and task_query_keyed
     ):
-        if target_bound_role:
-            return (
-                "target_bound_role_cycle_normalized_randomized_group4_v1"
-            )
         return "cvadr_cycle_normalized_randomized_group4_v2"
     raise WriterModelError("unsupported AS-Writer checkpoint state family")
 

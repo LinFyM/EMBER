@@ -342,3 +342,20 @@ fresh0→1→exact-resume1→3保持同一contract/cursor/scheduler/RNG，三步
 role完全主导；held loss下降而closed-loop持续下降；task breadth收窄且checkpoint
 success集合持续轮换。失败后必须定位最早接口并替换完整职责，不在本模型上加gate、
 scale、旁路或额外loss。
+
+## 9. 2026-08-02 首小时正式裁决
+
+RAW task-query full24 fresh0→200完成`96,000` action queries和`4,800` single-video
+conditions，全部finite，validation/test action gradient reads为0。paired correct400
+曲线为`75/120/90/110`（macro50/100/150/200），winner macro100仍低于v6同期
+macro200的133，且`m100→m200` gained/lost states为`22/32`，没有共同累积或右端
+趋势，因此不进入第二小时，也不做昂贵五臂。
+
+该结果只否定“提前target绑定和private role histories足以解决task共存”，不否定
+它的动态路径。macro100 refs1中remove-A/remove-D/memory-reversal均为`8/8` tasks
+通过预注册门，mean BA relative L2为`.38865/.12374/.06850`；Core-only/Program-only
+到full BA为`.83840/.58622`。same/wrong/shuffled/reversed视频变化也传到BA和fixed
+action。结合factor仍占约`90--95%`梯度能量、连续task-condition factor cosine约
+`.151`，最早未闭合接口转移到shared factor generator的条件能力共存。下一canonical
+候选为`docs/action_forecast_writer_semantic_factor_basis_design.md`，历史Target-Bound
+由commit`cfd26df`和正式artifact保留。

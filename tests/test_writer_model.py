@@ -173,6 +173,7 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         program_blocks=2,
         compiler_heads=8,
         factor_hidden_width=256,
+        factor_basis_count=4,
         initialization_seed=7,
         activation_checkpointing=True,
     )
@@ -210,7 +211,7 @@ def _analysis_inputs() -> tuple[torch.Tensor, ...]:
 
 def test_target_bound_role_parameter_budget_and_modules_are_exact() -> None:
     model, _ = _model()
-    assert sum(parameter.numel() for parameter in model.parameters()) == 11_092_224
+    assert sum(parameter.numel() for parameter in model.parameters()) == 11_159_296
     contract = writer_trainable_contract(
         model,
         torch.nn.Identity(),
@@ -218,7 +219,7 @@ def test_target_bound_role_parameter_budget_and_modules_are_exact() -> None:
             Path(__file__).resolve().parents[1] / "configs/pi05_lora_v1.json"
         ),
     )
-    assert contract["parameter_count"] == 11_092_224
+    assert contract["parameter_count"] == 11_159_296
     assert contract["source_policy_trainable_parameter_count"] == 0
     expected = {
         "text_meta_lora": (model.semantic_encoder.text_meta_lora, 921_600),
@@ -233,6 +234,7 @@ def test_target_bound_role_parameter_budget_and_modules_are_exact() -> None:
         "semantic_core": (model.semantic_core, 1_836_544),
         "semantic_program": (model.semantic_program, 1_641_216),
         "compiler": (model.compiler, 409_088),
+        "factor_router": (model.factor_router, 67_072),
         "factor_heads": (model.factor_heads, 3_751_936),
     }
     assert {
@@ -264,7 +266,7 @@ def test_target_ordinals_follow_sealed_policy_and_writer_becomes_conditioned() -
     ) == pi05_target_names()
     model.semantic_encoder = _FakeSemanticEncoder()
     for head in model.factor_heads.values():
-        torch.nn.init.normal_(head.network[-1].weight, std=0.01)
+        torch.nn.init.normal_(head.output.weight, std=0.01)
     output = model(*_inputs(), policy=torch.nn.Identity())
     assert any(not torch.equal(value[0], value[1]) for value in output.values())
     assert not hasattr(model, "shared_lora")
@@ -276,8 +278,8 @@ def test_gradient_staging_reaches_core_program_readers_and_frontend() -> None:
     first = model(*_inputs(), policy=torch.nn.Identity())
     sum(value.to(torch.float32).sum() for value in first.values()).backward()
     assert all(
-        head.network[-1].weight.grad is not None
-        and bool(torch.count_nonzero(head.network[-1].weight.grad))
+        head.output.weight.grad is not None
+        and bool(torch.count_nonzero(head.output.weight.grad))
         for head in model.factor_heads.values()
     )
     for module in (model.semantic_core, model.semantic_program, model.compiler):
@@ -288,10 +290,15 @@ def test_gradient_staging_reaches_core_program_readers_and_frontend() -> None:
 
     model.zero_grad(set_to_none=True)
     for head in model.factor_heads.values():
-        torch.nn.init.normal_(head.network[-1].weight, std=0.01)
+        torch.nn.init.normal_(head.output.weight, std=0.01)
     second = model(*_inputs(), policy=torch.nn.Identity())
     sum(value.to(torch.float32).sum() for value in second.values()).backward()
-    for module in (model.semantic_core, model.semantic_program, model.compiler):
+    for module in (
+        model.semantic_core,
+        model.semantic_program,
+        model.compiler,
+        model.factor_router,
+    ):
         assert any(
             parameter.grad is not None
             and torch.isfinite(parameter.grad).all()
@@ -669,7 +676,7 @@ def test_internal_analyzer_recomputes_target_bound_role_path() -> None:
     model, _ = _model()
     model.semantic_encoder = _AnalysisSemanticEncoder()
     for head in model.factor_heads.values():
-        torch.nn.init.normal_(head.network[-1].weight, std=0.002)
+        torch.nn.init.normal_(head.output.weight, std=0.002)
     model.eval()
     captured = capture_writer(
         model,
@@ -680,6 +687,13 @@ def test_internal_analyzer_recomputes_target_bound_role_path() -> None:
     assert captured["a"].shape == (5, 2, 256)
     assert captured["program"]["memory"].shape == (5, 38, 1, 3, 256)
     assert captured["compiled"]["coordinates"].shape == (5, 38, 16, 1024)
+    assert captured["decoded"]["routing"].shape == (5, 38, 16, 4)
+    assert torch.allclose(
+        captured["decoded"]["routing"].sum(dim=-1),
+        torch.full((5, 38, 16), 4.0),
+        atol=1e-5,
+        rtol=1e-5,
+    )
     assert captured["compiled"]["recomputed_coordinates"].shape == (
         5,
         38,

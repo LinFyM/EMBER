@@ -39,7 +39,7 @@ from ember.writer.data import (
 )
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.lora_rollout import WriterLoRARolloutAdapter
-from ember.writer.architecture import TARGET_BOUND_ROLE_WRITER_CONSTRUCTOR_KEYS
+from ember.writer.architecture import SEMANTIC_FACTOR_BASIS_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.model import (
     CompleteLoRAWriter,
     WriterModelError,
@@ -54,7 +54,7 @@ from ember.writer.video_schedule import (
 )
 
 
-WRITER_ADAPTER_SCHEMA = "ember_pi05_target_bound_role_program_writer_eval_adapter_v1"
+WRITER_ADAPTER_SCHEMA = "ember_pi05_semantic_factor_basis_writer_eval_adapter_v1"
 RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_v5_2_taskcomplete_rl_writer_eval_adapter_v1"
 WRITER_ADAPTER_SCHEMAS = {WRITER_ADAPTER_SCHEMA, RL_WRITER_ADAPTER_SCHEMA}
 WRITER_VIDEO_CONDITIONS = {
@@ -67,10 +67,10 @@ WRITER_VIDEO_CONDITIONS = {
 }
 WRONG_VIDEO_CONDITIONS = {"cross_suite_wrong"}
 WRITER_EPISODE_EVIDENCE_WITH_REPLACEMENT = (
-    "ember_pi05_target_bound_role_episode_evidence_with_replacement_v1"
+    "ember_pi05_semantic_factor_basis_episode_evidence_with_replacement_v1"
 )
 WRITER_EPISODE_EVIDENCE_CV = (
-    "ember_pi05_target_bound_role_episode_evidence_v1"
+    "ember_pi05_semantic_factor_basis_episode_evidence_v1"
 )
 WRITER_GENERATION_SEED_SCHEDULE = (
     "sha256 first 63 bits of canonical JSON: ember_pi05_writer_generation_v5_1/"
@@ -633,7 +633,7 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
         kind = str(evaluation_adapter.get("kind", "as_writer"))
         if kind == "rl_writer":
             raise WriterModelError(
-                "RL-Writer requires retraining for the canonical target-bound Writer"
+                "RL-Writer requires retraining for the canonical factor-basis Writer"
             )
         if kind != "as_writer":
             raise WriterModelError("unknown PI05 Writer evaluation kind")
@@ -662,7 +662,7 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
         writer_values = {
             key: value
             for key, value in config["writer"].items()
-            if key in TARGET_BOUND_ROLE_WRITER_CONSTRUCTOR_KEYS
+            if key in SEMANTIC_FACTOR_BASIS_WRITER_CONSTRUCTOR_KEYS
         }
         bridge = policy.model.paligemma_with_expert
         writer = CompleteLoRAWriter(

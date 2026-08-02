@@ -259,7 +259,7 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
         "config": {
             "path": str(
                 ROOT
-                / "configs/pi05_as_writer_target_bound_role_program_taskquery_rawfull24_v1.json"
+                / "configs/pi05_as_writer_semantic_factor_basis_taskquery_rawfull24_v1.json"
             ),
             "sha256": "b" * 64,
         },

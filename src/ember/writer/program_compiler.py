@@ -1,4 +1,4 @@
-"""Target-first Core and role-preserving Program compiler."""
+"""Target-first Program compiler and semantic factor-basis decoder."""
 
 from __future__ import annotations
 
@@ -258,21 +258,80 @@ class TargetBoundRoleCompiler(torch.nn.Module):
         return coordinates
 
 
-class FactorHead(torch.nn.Module):
-    """Decode one unnormalized Core/Program coordinate into a LoRA factor row."""
+class SemanticFactorRouter(torch.nn.Module):
+    """Use target Core only as a Q/K address over shared factor value bases."""
 
-    def __init__(self, input_width: int, hidden_width: int, output_width: int) -> None:
+    def __init__(
+        self,
+        *,
+        width: int,
+        basis_count: int,
+        initialization_seed: int,
+    ) -> None:
         super().__init__()
-        if min(input_width, hidden_width, output_width) <= 0:
-            raise SemanticProgramError("invalid LoRA factor-head dimensions")
-        self.network = torch.nn.Sequential(
-            torch.nn.Linear(input_width, hidden_width, bias=False),
-            torch.nn.GELU(),
-            torch.nn.Linear(hidden_width, output_width, bias=False),
-        )
-        torch.nn.init.zeros_(self.network[-1].weight)
+        if min(width, basis_count) <= 0:
+            raise SemanticProgramError("invalid semantic factor router dimensions")
+        self.width = int(width)
+        self.basis_count = int(basis_count)
+        self.core_norm = RMSNorm(width)
+        self.query = torch.nn.Linear(width, width, bias=False)
+        generator = torch.Generator(device="cpu").manual_seed(initialization_seed)
+        keys = torch.empty(basis_count, width)
+        keys.normal_(mean=0.0, std=0.02, generator=generator)
+        self.basis_key = torch.nn.Parameter(keys)
+        self.basis_norm = RMSNorm(width)
 
-    def forward(self, value: torch.Tensor) -> torch.Tensor:
-        if value.ndim < 3:
-            raise SemanticProgramError("factor head lost its rank dimension")
-        return self.network(value)
+    def forward(self, target_core: torch.Tensor) -> torch.Tensor:
+        if target_core.ndim < 3 or target_core.shape[-1] != self.width:
+            raise SemanticProgramError("semantic factor router lost target Core")
+        query = self.query(self.core_norm(target_core))
+        key = self.basis_norm(self.basis_key).to(query.dtype)
+        logits = torch.matmul(query, key.transpose(-1, -2)) / self.width**0.5
+        # Sum=basis_count makes the uniform route an exact unit-amplitude basis
+        # partition instead of shrinking the conventional hidden representation.
+        return torch.softmax(logits.float(), dim=-1).to(logits.dtype) * self.basis_count
+
+
+class SemanticFactorHead(torch.nn.Module):
+    """Decode a coordinate through Core-selected, evidence-valued factor bases."""
+
+    def __init__(
+        self,
+        input_width: int,
+        hidden_width: int,
+        output_width: int,
+        basis_count: int,
+    ) -> None:
+        super().__init__()
+        if (
+            min(input_width, hidden_width, output_width, basis_count) <= 0
+            or hidden_width % basis_count
+        ):
+            raise SemanticProgramError("invalid semantic factor-head dimensions")
+        self.basis_count = int(basis_count)
+        basis_width = hidden_width // basis_count
+        self.value_bases = torch.nn.ModuleList(
+            torch.nn.Linear(input_width, basis_width, bias=False)
+            for _ in range(basis_count)
+        )
+        self.output = torch.nn.Linear(hidden_width, output_width, bias=False)
+        torch.nn.init.zeros_(self.output.weight)
+
+    def forward(
+        self,
+        value: torch.Tensor,
+        routing: torch.Tensor,
+    ) -> torch.Tensor:
+        if (
+            value.ndim < 3
+            or routing.shape != (*value.shape[:-1], self.basis_count)
+        ):
+            raise SemanticProgramError("factor head lost rank or semantic routing")
+        hidden = torch.cat(
+            tuple(
+                F.gelu(layer(value)) * routing[..., index : index + 1]
+                for index, layer in enumerate(self.value_bases)
+            ),
+            dim=-1,
+        )
+        return self.output(hidden)

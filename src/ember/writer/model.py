@@ -1,4 +1,4 @@
-"""Canonical target-bound role-preserving PI05 Writer."""
+"""Canonical semantic factor-basis PI05 Writer."""
 
 from __future__ import annotations
 
@@ -9,7 +9,8 @@ import torch
 
 from ember.pi05_lora import pi05_target_names
 from ember.writer.program_compiler import (
-    FactorHead,
+    SemanticFactorHead,
+    SemanticFactorRouter,
     TargetBoundRoleCompiler,
 )
 from ember.writer.semantic_core import MeanBackedSemanticCore
@@ -129,6 +130,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         program_blocks: int,
         compiler_heads: int,
         factor_hidden_width: int,
+        factor_basis_count: int,
         initialization_seed: int,
         activation_checkpointing: bool,
     ) -> None:
@@ -154,8 +156,9 @@ class CompleteLoRAWriter(torch.nn.Module):
             or program_blocks != 2
             or compiler_heads != 8
             or factor_hidden_width != 256
+            or factor_basis_count != 4
         ):
-            raise WriterModelError("invalid target-bound role Writer topology")
+            raise WriterModelError("invalid semantic factor-basis Writer topology")
         self.tensor_specs = tensor_specs
         self.program_width = int(program_width)
         self.semantic_encoder = Pi05SemanticEvidenceEncoder(
@@ -192,12 +195,18 @@ class CompleteLoRAWriter(torch.nn.Module):
             blocks=program_blocks,
             initialization_seed=initialization_seed + 1,
         )
+        self.factor_router = SemanticFactorRouter(
+            width=program_width,
+            basis_count=factor_basis_count,
+            initialization_seed=initialization_seed + 4,
+        )
         self.factor_heads = torch.nn.ModuleDict(
             {
-                name: FactorHead(
+                name: SemanticFactorHead(
                     4 * program_width,
                     factor_hidden_width,
                     width,
+                    factor_basis_count,
                 )
                 for name, width in self.FACTOR_WIDTHS.items()
             }
@@ -467,11 +476,12 @@ class CompleteLoRAWriter(torch.nn.Module):
             endpoint_positions,
             valid_intervals,
         )
+        routing = self.factor_router(coordinates[..., : self.program_width])
         result: dict[str, torch.Tensor] = {}
         for item in self.tensor_specs:
             key, target_index = self._decoding[item.name]
             source = coordinates[:, target_index]
-            rows = self.factor_heads[key](source)
+            rows = self.factor_heads[key](source, routing[:, target_index])
             generated = rows.transpose(-1, -2) if item.transpose_output else rows
             template = getattr(self, self._template_buffers[item.name])
             value = generated.to(dtype=template.dtype) + template[None]

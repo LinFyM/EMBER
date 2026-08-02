@@ -12,11 +12,11 @@ from ember.writer.model import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-TARGET_BOUND_ROLE_CONFIG_SCHEMA = (
-    "ember_pi05_target_bound_role_program_as_writer_v1"
+SEMANTIC_FACTOR_BASIS_CONFIG_SCHEMA = (
+    "ember_pi05_semantic_factor_basis_as_writer_v1"
 )
-TARGET_BOUND_ROLE_CONFIG_OVERLAY_SCHEMA = (
-    "ember_pi05_target_bound_role_program_recipe_overlay_v1"
+SEMANTIC_FACTOR_BASIS_CONFIG_OVERLAY_SCHEMA = (
+    "ember_pi05_semantic_factor_basis_recipe_overlay_v1"
 )
 AS_WRITER_CONFIG_SCHEMA = "ember_pi05_contextual_value_dual_read_full24_as_writer_v1"
 AS_WRITER_CONFIG_OVERLAY_SCHEMA = (
@@ -35,7 +35,7 @@ AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA = (
     "ember_pi05_contextual_value_dual_read_cycle_normalized_recipe_overlay_v2"
 )
 AS_WRITER_CONFIG_SCHEMAS = (
-    TARGET_BOUND_ROLE_CONFIG_SCHEMA,
+    SEMANTIC_FACTOR_BASIS_CONFIG_SCHEMA,
     AS_WRITER_CONFIG_SCHEMA,
     AS_WRITER_SERIAL4_CONFIG_SCHEMA,
     AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA,
@@ -385,7 +385,7 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
     randomized_group4 = _randomized_group4_conditioning(task_query_common)
     if config.get("schema_version") in {
         AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA,
-        TARGET_BOUND_ROLE_CONFIG_SCHEMA,
+        SEMANTIC_FACTOR_BASIS_CONFIG_SCHEMA,
     }:
         expected = (
             randomized_group4
@@ -414,7 +414,7 @@ def _validate_cycle_normalized_optimization(config: Mapping[str, Any]) -> None:
         config.get("schema_version")
         not in {
             AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA,
-            TARGET_BOUND_ROLE_CONFIG_SCHEMA,
+            SEMANTIC_FACTOR_BASIS_CONFIG_SCHEMA,
         }
         or "cycle_normalization" not in config.get("optimization", {})
     ):
@@ -539,8 +539,8 @@ def _load_recipe_overlay(
         base["schema_version"] = AS_WRITER_SERIAL4_CONFIG_SCHEMA
     elif overlay_schema == AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA:
         base["schema_version"] = AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA
-    elif overlay_schema == TARGET_BOUND_ROLE_CONFIG_OVERLAY_SCHEMA:
-        base["schema_version"] = TARGET_BOUND_ROLE_CONFIG_SCHEMA
+    elif overlay_schema == SEMANTIC_FACTOR_BASIS_CONFIG_OVERLAY_SCHEMA:
+        base["schema_version"] = SEMANTIC_FACTOR_BASIS_CONFIG_SCHEMA
     base["_config_derivation"] = {
         "overlay_schema": overlay_schema,
         "base_config": str(base_path.relative_to(REPO_ROOT)),
@@ -553,7 +553,7 @@ def load_writer_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     schema = config.get("schema_version")
     if schema in {
-        TARGET_BOUND_ROLE_CONFIG_OVERLAY_SCHEMA,
+        SEMANTIC_FACTOR_BASIS_CONFIG_OVERLAY_SCHEMA,
         AS_WRITER_CONFIG_OVERLAY_SCHEMA,
         AS_WRITER_SERIAL4_CONFIG_OVERLAY_SCHEMA,
         AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA,

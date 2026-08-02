@@ -23,6 +23,11 @@ GPU范围和训练步长是当时快照；活动状态只取
 - `50ac8ee`首次formal启动在output root创建前由fail-close拒绝：描述性status不等于
   runtime要求的canonical `sealed`。无metrics/checkpoint/科学数据；失败log保留，
   config与测试原位修正后使用全新retry root。
+- 修复commit `254ade4`已push；clean detached retry从fresh identity成功进入formal
+  0→200。首macro 24 unique tasks/24 videos/480 queries，rank cost
+  `207/216/206/204`且strict long-first，formal LR/loss/gradient finite、0 clip。
+- step25 checkpoint与512-row held functional panel已完成；CV held`.13332`，同recipe
+  RNG-v2 UCP held`.13181`。训练继续运行，correct400等macro200释放GPU后启动。
 
 ## 2026-08-02 UCP operator格闭环并集成CV-ADR
 

@@ -37,6 +37,22 @@ clean detached commit和fresh identity启动macro0→200，checkpoint every25，
 科学数据。修复只改该枚举与精确测试；正式运行改用新的post-fix frozen commit及
 全新retry root/log。
 
+canonical修复commit `254ade4`已push；新的detached frozen worktree成功通过formal
+guard并从fresh identity启动0→200。当前必须继承的唯一训练是：
+
+```text
+tmux  ember-cvadr-raw-m200-254ade4
+root  /data/ymdai/outputs/ember/pi05_as_writer_cvadr_rawfull24_taskcomplete_decay400_formal_dev_r4_b20_seed7_254ade4_20260802_retry1
+log   /data/ymdai/logs/ember/pi05_as_writer_cvadr_rawfull24_taskcomplete_decay400_formal_dev_r4_b20_seed7_254ade4_20260802_retry1.log
+code  254ade404c064bb78aaa95e421f8a91db3caa9f6
+```
+
+首macro为formal/resume0/stop200，24 unique tasks、24 videos、480 queries；四rank
+frame cost `207/216/206/204`且rank内strict long-first，0 clip、all finite。
+step25 checkpoint与512-row held panel已完成，CV/UCP-RNG-v2 held loss为
+`.13332/.13181`，因此不以surrogate改善预判闭环。必须让训练自然到200，随后按已
+固定的四卡launcher评测50/100/150/200 paired correct400。
+
 ## 0-current. UCP operator格封存，CV-ADR已成为canonical
 
 UCP RNG-v2 RAW和cycle-normalized randomized-GROUP4均从fresh identity完成相同

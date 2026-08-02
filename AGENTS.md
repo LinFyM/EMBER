@@ -80,6 +80,13 @@ profile/resume root分别为`pi05_as_writer_cvadr_rawfull24_profile_b20_longseed
 无checkpoint/metrics/科学数据；当前config与测试已改为canonical枚举，正式重试必须使用
 新的post-fix clean commit、全新retry root/log。
 
+修复commit `254ade4`已push并从clean detached frozen worktree成功fresh启动正式RAW
+macro0→200；tmux为`ember-cvadr-raw-m200-254ade4`，root为
+`/data/ymdai/outputs/ember/pi05_as_writer_cvadr_rawfull24_taskcomplete_decay400_formal_dev_r4_b20_seed7_254ade4_20260802_retry1`。
+start event为formal/resume0/stop200，首macro 24 unique tasks、24 videos、480 queries，
+四rank frame cost `207/216/206/204`且rank内strict long-first；loss/LR/gradient finite、
+0 clip。必须让该tmux自然完成，不得在训练中改写其frozen code/config/root。
+
 2026-08-02 live override：UCP RNG-v2 RAW×cycle-normalized randomized-GROUP4
 受控格已经完整结束。matched cycle50/100/150/200 correct400分别为
 RAW `72/87/86/89`、GROUP4 `77/76/66/100`；GROUP4 endpoint只增11，但四点均值

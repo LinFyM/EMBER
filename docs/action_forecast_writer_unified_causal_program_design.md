@@ -1,6 +1,6 @@
 # Unified Causal Program Writer 设计
 
-**状态：2026-08-02 CPU+CUDA task/query RNG-v2已重封存；RAW fresh 0→200运行中**
+**状态：2026-08-02 RNG-v2 RAW 72/87/86/89负结果封存；GROUP4 fresh运行中**
 
 本文负责 Semantic Program Grid（SPG）一小时门失败后的下一条 canonical
 AS-Writer 路径。它不是把 v7、v8、v10、Loom 或后续版本整体判死后重新命名，
@@ -22,9 +22,11 @@ time与CUDA noise共同按query锁定，并通过fresh v2 config/checkpoint sche
 `dae13bf`的CPU全回归`241 passed`；RAW 0→1→3和GROUP4 0→1→3→7真实B20
 fresh/resume均已完成。tasks12/14/34/37跨operator换rank后，functional loss和raw
 task-gradient norm逐位相等，CountSketch最大绝对差仅`5.82e-11`，因此v2正式config
-已重新seal。clean `55faeeb`的RAW已从fresh identity正式运行0→200；首macro合同
-健康。完成后用cycle50/100/150/200同一paired correct400评测，再从新root运行
-GROUP4并裁决。CV-ADR在隔离worktree等待该
+已重新seal。clean `55faeeb`的RAW fresh0→200及四个correct400已经完成，结果为
+`72/87/86/89`，四点union149、single-best89、envelope gap60；训练loss下降、held
+不动且LoRA norm上升，absolute与漂移门均失败。预注册GROUP4已从runtime tree完全
+相同的clean pushed `8dfe6ed`新frozen/root fresh启动，完成后用cycle50/100/150/200
+同一paired correct400裁决。CV-ADR在隔离worktree等待该
 operator结果，不能让训练bundle替架构背锅，也不能用架构aggregate替recipe定罪。
 
 ## 1. 当前证据与结论边界

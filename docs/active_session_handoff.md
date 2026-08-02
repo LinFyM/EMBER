@@ -10,7 +10,81 @@
 `AGENTS.md`与`docs/execution_brief.md`。任何接手者都必须先只读复核现场，
 不能按历史快照重复启动进程。
 
-## 0-current. CPU+CUDA RNG-v2已重封存，RAW fresh正式运行中
+## 0-current. RNG-v2 RAW负结果封存，GROUP4 fresh正式运行中
+
+RNG-v2 RAW已经自然完成200 cycles、96,000 action queries、4,800 one-video
+conditions，wall `3878.963s`，200行metrics全部finite、0 clip、validation/test
+action gradient reads与test video reads均为0。四个formal correct400 root均为36个
+complete shards、400 rows、0 failures，严格state/video/env/policy pairing与每task
+50 teacher videos无放回合同已由candidate analyzer重验。
+
+```text
+macro/cycle        50   100   150   200
+correct400         72    87    86    89
+breadth nonzero     4     6     6     6
+breadth >=5         3     4     4     4
+top2 share       72.2% 66.7% 61.6% 60.7%
+```
+
+winner macro200逐task为Long `14/1`、Goal `0/26`、Object `28/19`、Spatial
+`1/0`。相邻checkpoint gained/lost/Jaccard为`45/30/.359`、`28/29/.504`、
+`27/24/.549`；四点union `149`、single best `89`、envelope gap `60`。train
+trailing25 loss从`.116947`降到`.100267`，held functional loss始终约
+`.130--.1315`，effective BA mean norm从`45.89`升到`59.36`。因此RAW既没有
+absolute，也没有稳定性；失败不是简单undertraining、低norm或CP可修复的多数task
+负向冲突。正式analysis：
+
+```text
+/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_rngv2_truefast400_candidate_curve_seed7_55faeeb_20260801/analysis.json
+SHA256 0f8545b115c91bde06e20a142079c7dd00c0628bb40845090176f2e0ecab3462
+```
+
+当前唯一活动进程是预注册GROUP4 fresh update0→1200：
+
+```text
+commit  8dfe6ed6c098b8dbdb21bc84db79c84c2c90116a
+frozen  /data/ymdai/.codex/worktrees/EMBER-ucp-rngv2-group4-8dfe6ed-20260802
+config  configs/pi05_as_writer_unified_causal_program_cycle_normalized_group4_v1.json
+root    /data/ymdai/outputs/ember/pi05_as_writer_ucp_cycle_normalized_group4_rngv2_truefast400_formal_dev_r4_b20_seed7_8dfe6ed_20260802
+log     /data/ymdai/logs/ember/pi05_as_writer_ucp_cycle_normalized_group4_rngv2_truefast400_formal_dev_r4_b20_seed7_8dfe6ed_20260802.log
+tmux    ember-ucp-rngv2-g4-tf400-8dfe6ed
+scale   fresh update0->1200 / 200 complete task cycles / formal total2400 / every150
+```
+
+精确launch command是：
+
+```bash
+env PYTHONPATH=/data/ymdai/.codex/worktrees/EMBER-ucp-rngv2-group4-8dfe6ed-20260802/src \
+  CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4,5,6,7 \
+  OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false \
+  numactl --cpunodebind=1 --membind=1 \
+  /data/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=4 \
+  scripts/train_as_writer.py \
+  --config configs/pi05_as_writer_unified_causal_program_cycle_normalized_group4_v1.json \
+  --mode formal \
+  --source-run /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722 \
+  --checkpoint /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 \
+  --tokenizer-path /data/ymdai/ember_data/openpi/paligemma_tokenizer.model \
+  --data-root /data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a \
+  --output-dir /data/ymdai/outputs/ember/pi05_as_writer_ucp_cycle_normalized_group4_rngv2_truefast400_formal_dev_r4_b20_seed7_8dfe6ed_20260802 \
+  --total-steps 2400 --stop-after-step 1200 --checkpoint-steps every:150 \
+  --batch-size 20 --num-workers 2 --log-every 1 --skip-data-sha
+```
+
+launch preflight只查询物理GPU4--7：四卡均空闲、个人占用
+`404,948,226,048` bytes，root/log/tmux此前不存在。RAW的`55faeeb`启动后
+origin/main因结果文档前进到`8dfe6ed`；从旧frozen fresh启动的第一次GROUP4被
+exact-origin guard在模型/data初始化前拒绝，失败log为
+`/data/ymdai/logs/ember/pi05_as_writer_ucp_cycle_normalized_group4_rngv2_truefast400_formal_dev_r4_b20_seed7_55faeeb_20260801.log`，没有checkpoint或科学数据。
+`55faeeb→8dfe6ed`只改authority docs；`src/`、`scripts/`、`configs/` tree ID分别
+严格同为`28229285...`、`f0ce646d...`、`7ebfb229...`，所以新run与RAW使用完全相同
+runtime/config代码。当前已越过首5个完整cycle；每cycle均为6 phases、24 unique
+tasks、24 videos、480 queries，scheduler只在phase5推进，loss/gradient/LR finite、
+0 clip，峰值allocated/reserved为`76,972,270,080/83,634,421,760` bytes，信息墙
+读取正确。完成后评测physical300/600/900/1200，并按已冻结endpoint、AUC、
+breadth、churn、phase/cost和内部传递联合裁决。CV-ADR继续隔离，后续不使用subagent。
+
+## 0-raw-launch-snapshot. CPU+CUDA RNG-v2已重封存，RAW fresh正式启动
 
 当前需要继承且只允许自然运行的进程是RNG-v2 RAW 0→200：
 

@@ -56,6 +56,31 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 
 ## Current focused execution task
 
+2026-08-02 live override：RNG-v2 RAW已经自然完成前200/400 cycles及四个严格
+paired correct400。macro50/100/150/200为`72/87/86/89`，single winner是
+macro200；逐task为Long `14/1`、Goal `0/26`、Object `28/19`、Spatial `1/0`，
+breadth nonzero为6、仅4 tasks达到5次成功、top2占`54/89=60.67%`。相邻
+gained/lost/Jaccard为`45/30/.359`、`28/29/.504`、`27/24/.549`；四点union
+`149`比single best高`60`，所以漂移仍然严重。train trailing25 loss从`.11695`
+降至`.10027`，held loss维持`.13015--.13146`，effective BA mean norm从
+`45.89`升至`59.36`，低absolute不是简单loss、训练时长或LoRA幅度不足。
+fail-closed candidate analysis为
+`/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_rngv2_truefast400_candidate_curve_seed7_55faeeb_20260801/analysis.json`
+（SHA256 `0f8545b1...3462`）。RAW不resume、不做五臂。
+
+预注册的RNG-v2 GROUP4当前从fresh identity运行update0→1200。首次尝试因RAW启动后
+origin/main前进两个纯文档commit，被formal exact-origin guard在模型/data初始化前
+拒绝；失败log保留且没有checkpoint或科学数据。`55faeeb→8dfe6ed`的`src/`、
+`scripts/`、`configs/` tree ID逐项完全相同，故从current pushed `8dfe6ed`建立新
+detached frozen worktree并用全新root启动：tmux
+`ember-ucp-rngv2-g4-tf400-8dfe6ed`，root
+`/data/ymdai/outputs/ember/pi05_as_writer_ucp_cycle_normalized_group4_rngv2_truefast400_formal_dev_r4_b20_seed7_8dfe6ed_20260802`。
+只使用物理GPU4--7，一卡一rank；首5个完整cycle均为6 phases、24 unique tasks、
+24 videos、480 queries，scheduler只在phase5推进，all finite、0 clip、信息墙正确。
+完成后固定评测physical300/600/900/1200（cycle
+50/100/150/200）并执行已冻结operator裁决。CV-ADR继续隔离；后续完全暂停
+subagent使用。
+
 2026-08-01 RNG-v2 current override：CPU+CUDA task/query randomness修复已经在
 `dae13bf`实现并push；CPU default与指定CUDA generator现在共同fork/seed/restore，
 randomness scheme、cycle-normalized config、task-query checkpoint family及
@@ -71,14 +96,12 @@ step1及GROUP4 step3 payload逐SHA/size/mtime未改写。跨rank操纵把tasks12
 逐位相等；CountSketch最大绝对差`5.82e-11`。这直接封存
 `task_query_keyed_stateless_policy_cpu_cuda_v2`，两份formal config重新seal。
 
-clean pushed authority `55faeeb`的RNG-v2 RAW已从fresh identity正式启动，tmux
-`ember-ucp-rngv2-raw-tf400-55faeeb`当前运行0→200；首macro 24 tasks各一次，四rank
-frame-cost总和`207/216/206/204`且rank内long-first，480 queries/24 videos，loss、
-gradient和LR finite，step2起四个主要块均可达，无OOM或contract mismatch。root为
+clean pushed authority `55faeeb`的RNG-v2 RAW已从fresh identity自然完成0→200；
+首macro 24 tasks各一次，四rank frame-cost总和`207/216/206/204`且rank内
+long-first，480 queries/24 videos，loss、gradient和LR finite，step2起四个主要块
+均可达，无OOM或contract mismatch。root为
 `/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_rngv2_truefast400_formal_dev_r4_b20_seed7_55faeeb_20260801`。
-自然完成后评测cycle50/100/150/200，再从全新root fresh运行GROUP4 update0→1200并
-做同一paired correct400及预注册operator裁决；不得续接任何v1 checkpoint。CV-ADR
-继续隔离等待正确operator cell。后续推进暂停所有subagent使用。
+正式结果与当前GROUP4状态以上述live override为准；不得续接任何v1 checkpoint。
 
 RNG-v1 GROUP4正式root已正常停止在physical step307/51 complete cycles；root、metrics
 及step150/300 checkpoints只作`invalid_rng_v1_operator_contract` provenance，禁止

@@ -1,5 +1,25 @@
 # EMBER Current Execution Brief
 
+## 2026-08-02 RNG-v2 RAW formal result and GROUP4 live authority
+
+RNG-v2 RAW前200/400 cycles和四个paired correct400均已自然完成。50/100/150/200
+为`72/87/86/89`；winner macro200逐task Long `14/1`、Goal `0/26`、Object
+`28/19`、Spatial `1/0`，breadth6、>=5 breadth4、top2 `54/89=60.67%`。
+相邻gained/lost/Jaccard为`45/30/.359`、`28/29/.504`、`27/24/.549`；四点
+union149比best89高60。train loss下降、held约`.130--.1315`不动且BA norm上升，
+因此RAW低分同时是closed-loop错位和task轮换，不是简单训练不足或幅度坍缩。
+candidate analysis SHA256为`0f8545b1...3462`，不resume、不做五臂。
+
+预注册GROUP4现从clean pushed `8dfe6ed`的detached frozen worktree fresh运行
+update0→1200，tmux `ember-ucp-rngv2-g4-tf400-8dfe6ed`，root为
+`/data/ymdai/outputs/ember/pi05_as_writer_ucp_cycle_normalized_group4_rngv2_truefast400_formal_dev_r4_b20_seed7_8dfe6ed_20260802`。
+旧`55faeeb`首次GROUP4尝试只因origin/main已前进两个文档commit被formal guard
+拒绝，没有模型/data初始化或科学数据；两commit之间`src/scripts/configs` tree完全
+相同，故新root仍是与RAW runtime相同的operator treatment。完成后固定评测cycle
+50/100/150/200并按预注册联合门裁决。首5 cycles已确认每cycle完整覆盖24 tasks、
+scheduler只在phase5推进、all finite、0 clip、信息墙正确；CV-ADR继续隔离，完全
+暂停subagent使用。
+
 ## 2026-08-01 task/query RNG-v2 sealed authority
 
 UCP task/query randomness v1只锁定CUDA Gaussian flow noise，遗漏LeRobot PI05的

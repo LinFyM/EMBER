@@ -8,6 +8,24 @@ GPU范围和训练步长是当时快照；活动状态只取
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-02 RNG-v2 RAW正式负结果与GROUP4启动
+
+- RAW自然完成200 cycles、96,000 queries、4,800 videos、wall`3878.963s`；全部
+  finite、0 clip、信息墙读取正确。四个formal correct400均400 rows/36 shards/0
+  failures并通过严格pairing/cache/checkpoint重验，50/100/150/200=`72/87/86/89`。
+- winner macro200 breadth6、>=5 breadth4、top2占60.67%；相邻churn
+  `45/30`、`28/29`、`27/24`，Jaccard`.359/.504/.549`，四点union149相对best89
+  的gap为60。train loss下降、held不动、BA norm上升，故不resume、不做五臂。
+  candidate analysis SHA256为`0f8545b1...3462`。
+- 旧`55faeeb`GROUP4 fresh尝试被exact-origin guard在初始化前拒绝，因为RAW launch
+  后main只增加了两个文档commit；失败log保留、无checkpoint/科学数据。验证
+  `55faeeb→8dfe6ed`的`src/scripts/configs` tree逐项相同后，建立clean detached
+  `8dfe6ed` frozen worktree并从新root启动GROUP4 update0→1200。
+- 活动tmux为`ember-ucp-rngv2-g4-tf400-8dfe6ed`，只用物理GPU4--7一卡一rank；
+  首5个完整cycles逐次覆盖24 unique tasks、24 videos、480 queries，scheduler只在
+  phase5推进，all finite、0 clip、信息墙正确。完成后固定评测physical300/600/900/
+  1200并执行预注册operator裁决。CV-ADR继续隔离，后续不使用subagent。
+
 ## 2026-08-02 RNG-v2 RAW fresh正式启动
 
 - seal authority `55faeeb`已push，并建立clean detached frozen worktree。一次live

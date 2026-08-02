@@ -143,8 +143,9 @@ runner、split 或 GPU 权限。
   0→1→3→7 fresh/exact-resume及跨rank manipulation；四task loss/gradient逐位相等，
   CountSketch最大差`5.82e-11`，两份formal config重新seal。
 - [ ] 从全新root和fresh identity重跑RNG-v2 RAW及cycle-normalized GROUP4，固定评测
-  cycle50/100/150/200 paired correct400，再做预注册operator裁决。RAW已从clean
-  `55faeeb`正式启动且首macro健康；v1 RAW只作observed bundle，v1 GROUP4不进入裁决。
+  cycle50/100/150/200 paired correct400，再做预注册operator裁决。RAW已完成并封存
+  `72/87/86/89`负结果；GROUP4已从runtime tree相同的clean `8dfe6ed`新frozen/root
+  fresh启动update0→1200。v1 RAW只作observed bundle，v1 GROUP4不进入裁决。
 - [x] 在RNG-v2 closed-loop outcome前冻结operator裁决层次：cycle200 endpoint与四点
   cycle-AUC、single-best breadth、success-set churn/envelope gap、逐task/phase-cost
   方向及A/D→BA→action传递共同决定；含混时CV首跑保留更简单RAW。

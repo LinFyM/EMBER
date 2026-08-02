@@ -6,6 +6,26 @@
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-02 RNG-v2 RAW闭环负结果与训练机制
+
+- RAW macro50/100/150/200 correct400=`72/87/86/89`；winner仅89，breadth6但只有
+  4 tasks>=5，top2占60.67%。四点union149相对single-best gap60，相邻Jaccard
+  `.359/.504/.549`，task漂移远大于3点aggregate表象。
+- train trailing25 loss`.11695→.10027`，held loss约`.130--.1315`，effective BA
+  mean norm`45.89→59.36`。因此增加曝光、继续压低functional loss或全局放大LoRA
+  都没有证据；功能surrogate与closed-loop有效流形错位仍是主要候选。
+- checkpoint处full24 task-gradient energy retention为`6.62/5.23/4.67/4.77%`，
+  pairwise negative约`38.0/45.3/48.2/49.3%`，但raw mean candidate-negative tasks
+  仅`2/0/0/0`。负pair很多并不表示mean方向即时伤害多数task；主要现象是近正交
+  conditional innovation被24-task mean稀释，所以CP式负投影不具备根因依据。
+- Writer相邻50-cycle位移方向cosine仅`.232/.122`，Adam一阶moment相邻checkpoint
+  cosine为`.081/.027/.059`，与success churn共同证明轨迹持续旋转。正式analysis文件
+  SHA256为`0f8545b115c91bde06e20a142079c7dd00c0628bb40845090176f2e0ecab3462`。
+- GROUP4仍是必要对照：若四组serial relinearization/Adam adaptivity也不能共同提高
+  endpoint/AUC/breadth与动态传递，就应降低“full24一次平均”解释并把重点转回
+  UCP职责和surrogate manifold；若改善只随phase/cost，则优先解释为long-first
+  optimizer curriculum，不能冒充通用operator收益。
+
 ## 2026-08-01 task/query RNG-v2真实重封存
 
 - `dae13bf`把CPU default和指定CUDA generator共同fork/seed/restore，scheme、

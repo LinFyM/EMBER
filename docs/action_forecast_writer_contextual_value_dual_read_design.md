@@ -119,10 +119,13 @@ AP macro150中raw/block1/block2 Program RMS约`.20/.61/1.88`。这个增长在AP
 1. ProgramRead远大于CoreRead，重演v10式动态支配；
 2. optimizer把P压回近零，Core独占写入。
 
-因此每步记录raw P、每block P、CoreRead、ProgramRead、concat和factor的RMS、梯度、
-Adam `sqrt(v)/eps`与累计位移。首小时内部门要求多个task上ProgramRead/CoreRead RMS
-处在有限、非单边坍缩的宽区间，并由反事实证明两路都必要；不通过时重构block职责，
-不得事后加固定scale或gate。
+因此训练热路径每次optimizer update按owner记录梯度、Adam
+`sqrt(v)/eps`和相对fresh identity的累计参数位移；raw P、每block P、CoreRead、
+ProgramRead、concat与factor的RMS则在候选checkpoint上由canonical内部分析按task、
+video condition完整重建。不得为了逐step激活日志再做额外Writer前向或保留大tensor，
+因为那会改变正式B20的显存与吞吐合同。首小时内部门要求多个task上
+ProgramRead/CoreRead RMS处在有限、非单边坍缩的宽区间，并由反事实证明两路都
+必要；不通过时重构block职责，不得事后加固定scale或gate。
 
 ## 7. 参数和代码边界
 

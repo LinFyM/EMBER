@@ -7,7 +7,12 @@ from typing import Any, Mapping, Sequence
 
 from ember.lora import canonical_contract_sha256
 from ember.pi05_lora import load_pi05_lora_contract
-from ember.pi05_source_checkpoint import canonical_hash, read_json, sha256_file
+from ember.pi05_source_checkpoint import (
+    canonical_hash,
+    read_json,
+    sha256_file,
+    source_reference_matches,
+)
 from ember.reward.protocol import RewardProtocolError
 from ember.rl_writer.checkpoint import validate_rl_writer_checkpoint_files
 from ember.rl_writer.contract import (
@@ -68,7 +73,7 @@ def _inspect_training_checkpoint(
         and training.get("stage") == stage
         and training.get("branch") in RL_WRITER_BRANCHES
         and training.get("config_sha256") == sha256_file(config_path)
-        and training.get("source") == dict(source)
+        and source_reference_matches(training.get("source"), source)
         and training.get("authorities") == config["authorities"]
         and training.get("information_wall") == config["information_wall"]
         and [int(row["global_task_id"]) for row in training.get("tasks", [])]

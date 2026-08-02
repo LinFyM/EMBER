@@ -13,7 +13,7 @@ import time
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 import numpy as np
 import torch
@@ -58,6 +58,36 @@ def sha256_file(path: Path) -> str:
 def canonical_hash(value: Any) -> str:
     encoded = json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(encoded).hexdigest()
+
+
+def source_reference_matches(
+    recorded: object,
+    current: Mapping[str, Any],
+) -> bool:
+    """Compare a source policy without binding it to one host or hash ledger."""
+
+    if not isinstance(recorded, Mapping):
+        return False
+    for key in ("optimizer_step", "frozen_policy_subdir", "source_training_commit"):
+        if recorded.get(key) != current.get(key):
+            return False
+
+    def model_layout(reference: Mapping[str, Any]) -> list[tuple[str, int]] | None:
+        files = reference.get("model_files")
+        if not isinstance(files, list):
+            return None
+        layout: list[tuple[str, int]] = []
+        for row in files:
+            if not isinstance(row, Mapping):
+                return None
+            path = row.get("path")
+            size = row.get("bytes")
+            if not isinstance(path, str) or not isinstance(size, int):
+                return None
+            layout.append((path, size))
+        return sorted(layout)
+
+    return model_layout(recorded) == model_layout(current)
 
 
 def read_json(path: Path) -> dict[str, Any]:

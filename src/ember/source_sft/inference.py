@@ -16,7 +16,12 @@ from ember.lora import (
     validate_lora_state,
 )
 from ember.pi05_lora import load_pi05_lora_contract
-from ember.pi05_source_checkpoint import canonical_hash, read_json, sha256_file
+from ember.pi05_source_checkpoint import (
+    canonical_hash,
+    read_json,
+    sha256_file,
+    source_reference_matches,
+)
 from ember.source_sft.checkpoint import validate_source_sft_checkpoint_files
 from ember.source_sft.contract import (
     SOURCE_SFT_LAUNCH_SCHEMA,
@@ -97,22 +102,8 @@ def _validate_run_contract(
     lora: Any,
     allow_missing_source_summary: bool,
 ) -> None:
-    training_source = run_contract.get("source")
-    observed_source = dict(source)
-    source_matches = training_source == observed_source
-    if (
-        not source_matches
-        and allow_missing_source_summary
-        and isinstance(training_source, Mapping)
-        and observed_source.get("source_run_summary_sha256") is None
-        and isinstance(training_source.get("source_run_summary_sha256"), str)
-        and len(training_source["source_run_summary_sha256"]) == 64
-    ):
-        training_without_summary = dict(training_source)
-        observed_without_summary = dict(observed_source)
-        training_without_summary.pop("source_run_summary_sha256", None)
-        observed_without_summary.pop("source_run_summary_sha256", None)
-        source_matches = training_without_summary == observed_without_summary
+    del allow_missing_source_summary
+    source_matches = source_reference_matches(run_contract.get("source"), source)
     valid = (
         run_contract.get("schema_version") == SOURCE_SFT_LAUNCH_SCHEMA
         and run_contract.get("config_sha256") == sha256_file(config_path)

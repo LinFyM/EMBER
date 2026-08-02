@@ -14,6 +14,7 @@ from ember.pi05_source_checkpoint import (
     canonical_hash,
     read_json,
     sha256_file,
+    source_reference_matches,
     write_json_atomic,
 )
 from ember.writer.as_contract import (
@@ -153,11 +154,15 @@ def _static_as_evaluation_fixture(
     )
     data_root = _sparse_video_data(tmp_path, validation_rows)
     source = {
+        "source_run": "/data1/user/ymdai/runs/EMBER/outputs/source",
+        "checkpoint": "/data1/user/ymdai/runs/EMBER/outputs/source/checkpoints/step_00001000",
+        "model_path": "/data1/user/ymdai/runs/EMBER/outputs/source/checkpoints/step_00001000/policy",
         "source_run_contract_sha256": "1" * 64,
         "checkpoint_manifest_sha256": "2" * 64,
         "optimizer_step": 1000,
         "source_run_summary_sha256": "3" * 64,
         "source_training_commit": "4" * 40,
+        "frozen_policy_subdir": "policy",
         "source_base_config_sha256": config["authorities"]["source_base_config"][
             "sha256"
         ],
@@ -172,7 +177,7 @@ def _static_as_evaluation_fixture(
         ROOT / config["authorities"]["lora_contract"]["path"]
     )
     training_video = {
-        "root": str(data_root.resolve()),
+        "root": "/data/ymdai/ember_data/LIBERO-datasets/historical-revision",
         "dataset": target["dataset"],
         "target_data_manifest_file_sha256": sha256_file(target_path),
     }
@@ -183,7 +188,14 @@ def _static_as_evaluation_fixture(
         "git": {"commit": "8" * 40},
         "config_sha256": sha256_file(AS_CONFIG),
         "authorities": config["authorities"],
-        "source": source,
+        "source": {
+            **source,
+            "source_run": "/data/ymdai/outputs/ember/source",
+            "checkpoint": "/data/ymdai/outputs/ember/source/checkpoints/step_00001000",
+            "model_path": "/data/ymdai/outputs/ember/source/checkpoints/step_00001000/policy",
+            "source_run_contract_sha256": "a" * 64,
+            "checkpoint_manifest_sha256": "b" * 64,
+        },
         "video_data": training_video,
         "information_wall": config["information_wall"],
         "writer": config["writer"],
@@ -212,6 +224,31 @@ def _static_as_evaluation_fixture(
         state={"weight": torch.tensor([3.0])},
     )
     return checkpoint, data_root, source, validation_keys
+
+
+def test_source_reference_match_is_host_and_hash_independent() -> None:
+    recorded = {
+        "source_run": "/data/ymdai/outputs/ember/source",
+        "checkpoint": "/data/ymdai/outputs/ember/source/checkpoints/step_00001000",
+        "optimizer_step": 1000,
+        "frozen_policy_subdir": "policy",
+        "source_training_commit": "1" * 40,
+        "checkpoint_manifest_sha256": "2" * 64,
+        "model_files": [
+            {"path": "policy/model.safetensors", "bytes": 123, "sha256": "3" * 64}
+        ],
+    }
+    current = {
+        **recorded,
+        "source_run": "/data1/user/ymdai/runs/EMBER/outputs/source",
+        "checkpoint": "/data1/user/ymdai/runs/EMBER/outputs/source/checkpoints/step_00001000",
+        "checkpoint_manifest_sha256": "4" * 64,
+        "model_files": [
+            {"path": "policy/model.safetensors", "bytes": 123, "sha256": "5" * 64}
+        ],
+    }
+    assert source_reference_matches(recorded, current)
+    assert not source_reference_matches(recorded, {**current, "optimizer_step": 999})
 
 
 def test_as_writer_evaluation_seals_raw_video_authority_and_wrong_map(

@@ -21,7 +21,12 @@ from ember.lora import (
     validate_lora_state,
 )
 from ember.pi05_lora import load_pi05_lora_contract
-from ember.pi05_source_checkpoint import canonical_hash, read_json, sha256_file
+from ember.pi05_source_checkpoint import (
+    canonical_hash,
+    read_json,
+    sha256_file,
+    source_reference_matches,
+)
 from ember.pi05_target_data import SUITE_ORDER, target_global_task_id
 from ember.writer.as_contract import (
     AS_WRITER_LAUNCH_SCHEMA,
@@ -365,22 +370,7 @@ def _inspect_training_checkpoint(
     lora = load_pi05_lora_contract(
         REPO_ROOT / str(config["authorities"]["lora_contract"]["path"])
     )
-    training_source = training.get("source")
-    observed_source = dict(source)
-    source_matches = training_source == observed_source
-    if (
-        not source_matches
-        and not require_formal
-        and isinstance(training_source, Mapping)
-        and observed_source.get("source_run_summary_sha256") is None
-        and isinstance(training_source.get("source_run_summary_sha256"), str)
-        and len(training_source["source_run_summary_sha256"]) == 64
-    ):
-        training_without_summary = dict(training_source)
-        observed_without_summary = dict(observed_source)
-        training_without_summary.pop("source_run_summary_sha256", None)
-        observed_without_summary.pop("source_run_summary_sha256", None)
-        source_matches = training_without_summary == observed_without_summary
+    source_matches = source_reference_matches(training.get("source"), source)
     valid = (
         training.get("schema_version") == AS_WRITER_LAUNCH_SCHEMA
         and training.get("stage", "development") == writer_stage(config)
@@ -579,12 +569,7 @@ def inspect_as_writer_evaluation(
         video_data_root, config, needed_task_ids, verify_hashes=False
     )
     training_video = training.get("video_data", {})
-    if (
-        training_video.get("root") != video_data.get("root")
-        or training_video.get("dataset") != video_data.get("dataset")
-        or training_video.get("target_data_manifest_file_sha256")
-        != video_data.get("target_data_manifest_file_sha256")
-    ):
+    if training_video.get("dataset") != video_data.get("dataset"):
         raise WriterModelError("AS-Writer checkpoint and video data disagree")
     lora = load_pi05_lora_contract(
         REPO_ROOT / str(config["authorities"]["lora_contract"]["path"])

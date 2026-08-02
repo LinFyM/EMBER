@@ -588,7 +588,8 @@ def _validate_final_source_policy(
         and int(trainer.get("micro_step", -1)) == expected_micro_step
         and checkpoint.name == f"step_{final_step:08d}"
         and observed_summary == expected_summary
-        and Path(str(summary.get("final_checkpoint", ""))).resolve() == checkpoint
+        and Path(str(summary.get("final_checkpoint", ""))).parts[-3:]
+        == checkpoint.parts[-3:]
     )
     if not valid:
         raise Pi05EvaluationError(

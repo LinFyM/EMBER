@@ -56,38 +56,40 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 
 ## Current focused execution task
 
-2026-08-02 live override：RNG-v2 RAW已经自然完成前200/400 cycles及四个严格
-paired correct400。macro50/100/150/200为`72/87/86/89`，single winner是
-macro200；逐task为Long `14/1`、Goal `0/26`、Object `28/19`、Spatial `1/0`，
-breadth nonzero为6、仅4 tasks达到5次成功、top2占`54/89=60.67%`。相邻
-gained/lost/Jaccard为`45/30/.359`、`28/29/.504`、`27/24/.549`；四点union
-`149`比single best高`60`，所以漂移仍然严重。train trailing25 loss从`.11695`
-降至`.10027`，held loss维持`.13015--.13146`，effective BA mean norm从
-`45.89`升至`59.36`，低absolute不是简单loss、训练时长或LoRA幅度不足。
-fail-closed candidate analysis为
-`/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_rngv2_truefast400_candidate_curve_seed7_55faeeb_20260801/analysis.json`
-（SHA256 `0f8545b1...3462`）。RAW不resume、不做五臂。
+2026-08-02 live override：UCP RNG-v2 RAW×cycle-normalized randomized-GROUP4
+受控格已经完整结束。matched cycle50/100/150/200 correct400分别为
+RAW `72/87/86/89`、GROUP4 `77/76/66/100`；GROUP4 endpoint只增11，但四点均值
+从`83.5`降到`79.75`、winner top2集中度从`60.67%`升到`74%`，四点累计只有
+2/8 tasks上升、5/8下降。GROUP4把single-best envelope gap从60缩到34，却没有
+消除task轮换，且absolute/breadth预注册行为门失败。因此默认训练仍为RAW；不得
+把GROUP4迁移成CV-ADR默认，也不得做UCP GROUP4五臂。
 
-RAW RNG-v1/v2只读审计保持topology、optimizer、LR、全部task/video/query assignments
-不变，只改变CPU Beta timestep的随机身份；四点由`89/71/82/117`变为
-`72/87/86/89`，matched task-gradient sketch余弦中位仅`.163--.193`。这是单个
-seed7 noise realization下的optimizer-basin敏感性，不证明v1更优，也不能据此做
-seed-general结论；analysis SHA为`ff6acdf8...b82`。
+exact50同一task/video/query panel进一步定位operator作用：删除A/D后，RAW与
+GROUP4的effective BA relative L2为`.058999/.013291`，fixed action为
+`.017173/.005888`；固定X后shuffled BA为`.028069/.009288`、reversed BA为
+`.025026/.009092`。GROUP4在上述六个逐task诊断中只有fixed-action的一个Spatial
+task高于RAW，而该task closed-loop为0；8/8 tasks的A/D→BA均被GROUP4压弱。reader
+从RAW的X/D/A mass `.434/.522/.044`移到GROUP4的`.560/.405/.035`。LoRA norm并未
+坍缩（`59.42→63.70`），但stable rank更贴近1（`1.0066→1.0021`），所以更coherent
+并不等于更有用。正式operator/exact50 analysis SHA分别为`97c70dd...a6e0`和
+`7201364a...11fd`；结论只归属于GROUP4耦合bundle，不能拆成单一group、Adam、clip
+或relinearization因果量。
 
-预注册的RNG-v2 GROUP4当前从fresh identity运行update0→1200。首次尝试因RAW启动后
-origin/main前进两个纯文档commit，被formal exact-origin guard在模型/data初始化前
-拒绝；失败log保留且没有checkpoint或科学数据。`55faeeb→8dfe6ed`的`src/`、
-`scripts/`、`configs/` tree ID逐项完全相同，故从current pushed `8dfe6ed`建立新
-detached frozen worktree并用全新root启动：tmux
-`ember-ucp-rngv2-g4-tf400-8dfe6ed`，root
-`/data/ymdai/outputs/ember/pi05_as_writer_ucp_cycle_normalized_group4_rngv2_truefast400_formal_dev_r4_b20_seed7_8dfe6ed_20260802`。
-只使用物理GPU4--7，一卡一rank；update271/45 complete cycles的live snapshot仍为
-每cycle 6 phases、24 unique tasks、24 videos、480 queries，scheduler只在phase5
-推进，all finite；step150 held validation完整。已有13次clip（4.8%，最小`.653`），
-最终必须作为完整GROUP4 operator bundle按task/phase/cost报告，不能隐去。
-完成后固定评测physical300/600/900/1200（cycle
-50/100/150/200）并执行已冻结operator裁决。CV-ADR继续隔离；后续完全暂停
-subagent使用。
+UCP RAW的漂移、functional-surrogate错位和noise-basin敏感性仍成立：RAW四点
+union149而best89；RNG-v1/v2只改CPU Beta timestep identity便使曲线从
+`89/71/82/117`变成`72/87/86/89`，但该单seed对照不证明v1优越。full24和GROUP4
+task-gradient pair均约42--43%为负，而各自mean candidate实际伤害的task极少；
+CP式负投影不是当前根因。
+
+当前canonical Writer已经在merge `b97960f`切到CV-ADR：mean-backed Semantic Core，
+outgoing A/E/D causal Program，同一contextual Program同时作为normalized K和raw V，
+target-only Core read与38×16 target/rank Program read，八个coherent factor heads；
+精确参数`10,241,024`。旧UCP可执行config/专用analyzer已退役，Git与frozen artifact
+保留provenance。全仓CPU回归`226 passed`、compileall和四config loader通过。
+当前无活动训练、评测或tmux；下一动作是只用物理GPU4--7完成CV-ADR最长105-frame
+B20三macro profile和formal-seed fresh0→1→exact-resume1→3，封存后从fresh identity
+启动RAW macro0→200一小时门。若CV RAW弱或含混，必须在同一CV topology补做GROUP4
+后才可拒绝架构；后续完全由主进程推进，不使用subagent。
 
 2026-08-01 RNG-v2 current override：CPU+CUDA task/query randomness修复已经在
 `dae13bf`实现并push；CPU default与指定CUDA generator现在共同fork/seed/restore，

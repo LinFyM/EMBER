@@ -1,7 +1,7 @@
 # Contextual-Value Asymmetric Dual-Read Writer 设计
 
-**状态：2026-08-01 canonical实现与focused CPU验证完成；真实B20 profile、
-exact-resume和正式训练仍待完成。**
+**状态：2026-08-02 已集成为canonical，参数10,241,024、全仓226 passed；真实B20
+profile、exact-resume和正式训练仍待完成。**
 
 本文负责AP-ADR一小时门失败后的下一整体AS-Writer结构。它同时服从两条已经独立
 成立的事实：
@@ -186,37 +186,35 @@ family fail-closed。这里不把CPU/合成验证冒充第12项真实profile，�
 
 ## 9. 架构与recipe的执行顺序
 
-训练根因先在exact UCP上完成已经预注册的受控格：fresh raw与cycle-normalized
-randomized-group4共用task/query-keyed stateless policy noise/time；这保留UCP已有
-raw、未归一SERIAL和normalized group4三角，不拿CV-ADR替训练假设背书。
+训练根因已经在exact UCP上完成预注册受控格。RNG-v2 RAW与cycle-normalized
+randomized-GROUP4共用task/query-keyed stateless CPU time/CUDA noise、相同200
+task visits和paired panel；correct400分别为`72/87/86/89`与`77/76/66/100`。
+GROUP4 endpoint增11但四点均值下降3.75、winner top2集中到74%，四点累计只有2/8
+tasks上升、5/8下降。它把success envelope gap从60缩到34，却没有达到absolute/
+breadth行为门，也没有消除task轮换。
 
-截至2026-08-01，group4最长105-frame B20 profile、formal-seed
-fresh0→1→resume1→3→7和raw fresh0→1→resume1→3均已通过，两臂cycle0的24个
-teacher-video assignments逐项一致。首个task/query raw正式root后来发现formal
-total误写为一小时stop，实际scheduler被自动压成decay200；其correct400为
-`81/72/107/78`，best macro150后又lost43/gained14。这个cell只证明过快衰减没有
-稳定UCP，不能与group4组成operator pair，也不能拿来选择CV recipe。
+matched exact50进一步证明normalized GROUP4不是中性operator：相对RAW，删除A/D的
+effective BA变化从`.058999`降到`.013291`，fixed-X shuffled/reversed BA从
+`.028069/.025026`降到`.009288/.009092`，8/8 tasks一致。reader X/D/A mass
+从`.434/.522/.044`转到`.560/.405/.035`。LoRA norm`59.42→63.70`、stable rank
+`1.0066→1.0021`，即更coherent但更static，不是增益坍缩。唯一GROUP4 action异常
+来自一个closed-loop 0-success task。operator/exact SHA为
+`97c70dd...a6e0`/`7201364a...11fd`。
 
-scheduler与stage边界已经在clean `cfc2ad1`修复为raw
-`total400/stop200/stages[200,400]`、group4
-`total2400/stop1200/stages[1200,2400]`并fail-closed。true-fast400 raw现从该
-frozen commit fresh运行；前两macro已确认24 tasks/24 videos/480 queries、四rank
-cost-balanced long-first、真实warmup17和完整主路径finite可达。normalized group4
-只在raw训练及paired correct400完成后顺序启动。只有两臂都完成相同panel，才能按
-预注册证据决定CV-ADR是否仍先用raw或迁移normalized group4；不能根据smoke/profile、
-autoscaled cell或单一functional loss选择recipe。
+所以CV-ADR首跑仍用RAW：这使AP→CV只改变已经被直接否定的K/V职责，优先识别
+topology。GROUP4保留为同topology fallback，而不是默认；如果CV RAW弱或含混，
+必须再跑CV GROUP4后才可拒绝架构。旧未归一SERIAL仍只说明六倍optimizer gain可
+放大动态和off-manifold方向，不能直接迁移。
 
 endpoint10已经以全局Spearman`.258398`、100,000次permutation `p=.298447`失败
 预注册global门；尤其v6-fast macro200的correct133对应18点最差quality。故CV-ADR
 不能使用endpoint10选点或训练，candidate裁决仍只认paired closed-loop、breadth、
 gained/lost/Jaccard及Core→Program→BA→action传递。
 
-CV-ADR的四个config与fresh schema已经实现，但在真实profile前保持
-`formal_contract.state=pending`。首跑仍用raw-full24/B20/fast400、fresh
-macro0->200，评测
-50/100/150/200 paired correct400；它与AP raw只差K/V职责，优先识别topology。
-只有UCP normalized group4通过预注册absolute/breadth/drift/dynamic联合门，才把同一
-recipe迁移到CV-ADR；否则CV-ADR不因UCP训练负结果被否定，继续按raw结果判断架构。
+CV-ADR四个fresh schema config已经随merge `b97960f`进入main；旧UCP config与专用
+analyzer退役。真实profile前formal仍pending。首跑用raw-full24/B20/fast400、fresh
+macro0→200，评测50/100/150/200 paired correct400；不能根据smoke、held loss或
+内部漂亮数值提前裁决。
 
 raw第二小时门为：best至少与UCP/SERIAL的`117/121`同档且由多个task贡献，并且右端
 趋势或内部Program主路明确；默认强续训仍要求`>=125`、breadth`>=6`且top2不过度

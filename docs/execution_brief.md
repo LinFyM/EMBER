@@ -1,5 +1,34 @@
 # EMBER Current Execution Brief
 
+## 2026-08-02 UCP operator裁决完成，CV-ADR集成
+
+RNG-v2 matched200控制格已经封存：RAW correct400=`72/87/86/89`，normalized
+GROUP4=`77/76/66/100`。GROUP4 endpoint +11但四点均值`83.5→79.75`，winner
+top2集中度`60.67%→74%`，累计只有2/8 tasks上升、5/8下降；drift envelope
+`60→34`只是较小改善，single-checkpoint absolute/breadth门失败。故CV-ADR首跑
+保留RAW；只有CV RAW本身弱或含混时，才在同一topology补做GROUP4。
+
+paired exact50把行为结果连接到内部路径。GROUP4相对RAW将A/D移除后的BA变化从
+`.058999`压到`.013291`，fixed-X shuffled/reversed BA从`.028069/.025026`压到
+`.009288/.009092`；8/8 tasks方向一致。reader X/D/A mass从
+`.434/.522/.044`变成`.560/.405/.035`。LoRA norm反而`59.42→63.70`，stable rank
+`1.0066→1.0021`；因此normalized GROUP4产生更coherent但更static的写入，不是
+Target-Spectral式增益坍缩，也没有恢复视频因果。fixed-action表面上的GROUP4异常
+只来自一个closed-loop 0-success Spatial task，不能当作有用信号。
+
+operator与exact50 analysis SHA分别为`97c70dd...a6e0`和`7201364a...11fd`。
+full24/GROUP4均有约42--43% task-gradient负pair，但mean candidate几乎不直接伤害
+task；CP-24不是根因。RNG-v1/v2单time-noise identity又能显著改写checkpoint曲线，
+所以后续训练分析必须同时处理surrogate错位、noise-basin敏感性和架构写值职责，
+不能只围绕task平均或模型结构单边解释。
+
+merge `b97960f`已将CV-ADR设为唯一canonical Writer：mean-backed Core、causal
+contextual A/E/D Program、同一Program作K/V、target-only Core read、38×16
+Program read和八个coherent heads，参数`10,241,024`。旧UCP config/analyzer已退役，
+Git/artifact保留历史。全仓`226 passed`、compileall、四config loader通过。下一动作
+是GPU4--7最长105-frame B20/profile/resume seal，然后fresh RAW 0→200一小时门；
+后续不使用subagent。
+
 ## 2026-08-02 RAW noise sensitivity and GROUP4 clip boundary
 
 只把CPU Beta flow timestep从ambient rank/order stream改成task/query keyed，保持

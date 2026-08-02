@@ -142,22 +142,26 @@ runner、split 或 GPU 权限。
 - [x] 从`dae13bf` frozen authority仅在GPU4--7完成RAW 0→1→3与GROUP4
   0→1→3→7 fresh/exact-resume及跨rank manipulation；四task loss/gradient逐位相等，
   CountSketch最大差`5.82e-11`，两份formal config重新seal。
-- [ ] 从全新root和fresh identity重跑RNG-v2 RAW及cycle-normalized GROUP4，固定评测
-  cycle50/100/150/200 paired correct400，再做预注册operator裁决。RAW已完成并封存
-  `72/87/86/89`负结果；GROUP4已从runtime tree相同的clean `8dfe6ed`新frozen/root
-  fresh启动update0→1200。v1 RAW只作observed bundle，v1 GROUP4不进入裁决。
+- [x] 从全新root和fresh identity完成RNG-v2 RAW与cycle-normalized GROUP4，固定
+  cycle50/100/150/200 paired correct400为`72/87/86/89`与`77/76/66/100`；
+  行为门false，GROUP4不迁移为CV默认。v1 RAW只作observed bundle，v1 GROUP4不进入
+  裁决。
+- [x] 完成RAW/GROUP4 matched cycle200 exact50：GROUP4将A/D→BA从`.058999`压到
+  `.013291`且8/8 tasks一致，唯一fixed-action反向异常来自0-success task；paired
+  analysis SHA为`7201364a...11fd`。
 - [x] 在RNG-v2 closed-loop outcome前冻结operator裁决层次：cycle200 endpoint与四点
   cycle-AUC、single-best breadth、success-set churn/envelope gap、逐task/phase-cost
   方向及A/D→BA→action传递共同决定；含混时CV首跑保留更简单RAW。
 - [x] 完成RAW RNG-v1/v2单变量训练噪声审计：仅CPU Beta timestep identity变化即使
   四点曲线差`-17/+16/+4/-28`、matched梯度草图余弦中位降至`.163--.193`；将其
   定位为optimizer-basin敏感性而非v1优越性或seed-general估计。
-- [x] 在独立worktree实现CV-ADR canonical路径；参数`10,241,024`、完整CPU回归
-  `226 passed`、结构门无hard violation。分支已rebase到`8dfe6ed` authority，
-  RNG-v2 rebase/verification snapshot为`ed21244`；formal configs在group4裁决及真实B20/profile/resume前保持
-  pending，不提前集成或启动GPU。
-- [ ] 将CV-ADR集成到最终control authority，完成105-frame B20/profile/resume；
-  根据正确UCP控制选择raw或group4并执行一小时先验门。
+- [x] 在独立worktree实现并以merge `b97960f`集成CV-ADR canonical路径；参数
+  `10,241,024`、完整CPU回归`226 passed`、结构门无hard violation；旧UCP executable
+  path已退役，历史由Git/artifact保存。
+- [ ] 完成CV-ADR teacher-seed172最长105-frame B20三macro profile与formal-seed
+  fresh0→1→exact-resume1→3，封存RAW config并从clean frozen authority启动一小时门。
+- [ ] CV-ADR RAW评测macro50/100/150/200 correct400；弱或含混时同topology补做
+  normalized GROUP4后才拒绝架构，强则exact-resume第二小时。
 - [ ] 后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才开第二
   小时和行为五臂。
 - [ ] 持续定位task漂移、视频学习和closed-loop off-manifold根因，禁止补丁式

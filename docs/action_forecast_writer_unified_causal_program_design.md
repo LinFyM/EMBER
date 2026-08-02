@@ -1,33 +1,29 @@
 # Unified Causal Program Writer 设计
 
-**状态：2026-08-02 RNG-v2 RAW 72/87/86/89负结果封存；GROUP4 fresh运行中**
+**状态：2026-08-02 RNG-v2 RAW/GROUP4控制格与exact50封存；UCP executable退役**
 
 本文负责 Semantic Program Grid（SPG）一小时门失败后的下一条 canonical
 AS-Writer 路径。它不是把 v7、v8、v10、Loom 或后续版本整体判死后重新命名，
 而是把历史证据拆成“局部机制 × 训练合同”后，只替换已经定位到的最早失效接口。
 
-当前UCP恢复为唯一可执行路径只服务于训练受控格，不代表撤销AP的局部根因或放弃
-CV-ADR。封存`b52cb54`已完成group4 B20/105-frame profile、formal-seed
-fresh0→1→resume1→3→7和raw fresh0→1→resume1→3；`85a82cb`把同一运行面逐blob
-恢复到canonical并退役AP/endpoint runner。随后审计证明该所谓task/query-keyed
-合同只固定CUDA Gaussian noise，遗漏CPU Beta flow timestep；因此旧profile/resume
-只证明shape、显存、cursor和相同rank/order可重复，不能证明跨rank/phase随机身份。
-task/query RNG-v1 raw的
-configured-decay400/runtime-autoscaled200消融为`81/72/107/78`；修正formal total
-和stage边界后，clean `cfc2ad1` true-fast400 raw为`89/71/82/117`。scheduler让
-macro200提高39但没有抬高UCP ceiling、解决breadth或消除task轮换，且参数/Adam
-轨迹持续旋转，不能当作训练解。原`cfc2ad1` cycle-normalized randomized-group4
-已在step307正常停止并标记invalid-contract，禁止评测/resume。canonical修复将CPU
-time与CUDA noise共同按query锁定，并通过fresh v2 config/checkpoint schema阻断旧状态。
-`dae13bf`的CPU全回归`241 passed`；RAW 0→1→3和GROUP4 0→1→3→7真实B20
-fresh/resume均已完成。tasks12/14/34/37跨operator换rank后，functional loss和raw
-task-gradient norm逐位相等，CountSketch最大绝对差仅`5.82e-11`，因此v2正式config
-已重新seal。clean `55faeeb`的RAW fresh0→200及四个correct400已经完成，结果为
-`72/87/86/89`，四点union149、single-best89、envelope gap60；训练loss下降、held
-不动且LoRA norm上升，absolute与漂移门均失败。预注册GROUP4已从runtime tree完全
-相同的clean pushed `8dfe6ed`新frozen/root fresh启动，完成后用cycle50/100/150/200
-同一paired correct400裁决。CV-ADR在隔离worktree等待该
-operator结果，不能让训练bundle替架构背锅，也不能用架构aggregate替recipe定罪。
+UCP曾恢复为唯一可执行路径只服务于训练受控格，并不撤销AP局部根因。RNG-v1审计
+确认旧task/query合同遗漏CPU Beta flow timestep；`dae13bf`随后把CPU time与CUDA
+noise共同按query锁定，并用fresh v2 config/checkpoint schema阻断旧状态。跨rank
+manipulation使tasks12/14/34/37的loss、gradient norm逐位相等，CountSketch最大差
+`5.82e-11`，因此后续RAW/GROUP4为有效matched operator cell。
+
+最终RNG-v2 RAW与normalized GROUP4 correct400分别为`72/87/86/89`和
+`77/76/66/100`。GROUP4 endpoint增11但四点均值下降3.75、winner top2集中到74%、
+累计5/8 tasks受损；drift gap从60降到34仍未消除轮换，预注册行为门失败。paired
+exact50又确认GROUP4将A/D移除后的BA变化从`.058999`压到`.013291`，8/8 tasks
+一致；reader从X/D/A `.434/.522/.044`转为`.560/.405/.035`。norm上升且stable rank
+更接近1，说明它生成更coherent但更static的写入，而不是解决视频学习。
+
+operator/exact50 analysis SHA为`97c70dd...a6e0`/`7201364a...11fd`。UCP因此在
+merge `b97960f`退役全部可执行config与专用analyzer；本文件、Git、frozen worktree
+和正式artifact继续保存provenance。CV-ADR首跑保留RAW；如果CV RAW弱或含混，仍须
+同topology补做GROUP4后才能拒绝架构，不能让训练bundle替架构背锅，也不能用架构
+aggregate替recipe定罪。
 
 ## 1. 当前证据与结论边界
 

@@ -8,6 +8,23 @@ GPU范围和训练步长是当时快照；活动状态只取
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-02 UCP operator格闭环并集成CV-ADR
+
+- normalized GROUP4自然完成1200 updates/200 cycles、96,000 queries、4,800
+  videos、wall`4906.16s`，16次clip、all finite。四个paired correct400为
+  `77/76/66/100`；与RAW `72/87/86/89`联合裁决后，行为门false，不做五臂。
+- 封存operator audit：GROUP4 drift envelope gap34低于RAW60，但AUC、task support
+  和winner集中度更差，不能迁移为默认。analysis SHA256 `97c70dd...a6e0`。
+- 顺序完成GROUP4与RAW exact50，每臂8 tasks×50 videos、五conditions、400 rows、
+  zero rollout。RAW/GROUP4 analysis SHA为`9704b9fd...4067`/
+  `57760475...c52`，paired audit SHA为`7201364a...11fd`；panel SHA
+  `222f4e7d...9394`。结果确认GROUP4把A/D→BA压到RAW约22.5%，且唯一action异常
+  是0-success task。
+- merge `b97960f`把CV-ADR设为唯一canonical实现，旧UCP可执行config和专用analyzer
+  退役。参数`10,241,024`；全仓`226 passed in 30.51s`，compileall、diff check和
+  四config loader通过。当前无活动训练/评测/tmux；下一步为CV最长105-frame B20
+  profile和formal-seed exact resume，后续不使用subagent。
+
 ## 2026-08-02 RAW随机训练噪声审计与GROUP4中段健康
 
 - 完成UCP RAW RNG-v1/v2只读paired审计：除CPU Beta flow timestep identity外，

@@ -6,6 +6,32 @@
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-02 UCP RAW×GROUP4最终裁决与CV-ADR边界
+
+- RNG-v2 normalized GROUP4完成1200 updates/200 cycles，correct400
+  `77/76/66/100`；RAW为`72/87/86/89`。GROUP4 endpoint增11但四点均值降3.75，
+  winner top2集中到74%，四点累计2 tasks上升、5 tasks下降。它改善部分success-set
+  重叠，却没有达到absolute/breadth行为门，故不迁移为CV默认。
+- GROUP4累计16次clip/1200（1.33%，最小`.653`），与frame cost几乎无关。
+  full24和selected4的negative pair都约42--43%，而mean candidate实际负task很少；
+  结果不支持“full24负冲突是漂移根因”，也不能把GROUP4拆成单一Adam或group因果量。
+- paired exact50中，RAW→GROUP4的`x_only` BA变化为`.058999→.013291`，action
+  `.017173→.005888`；fixed-X shuffled/reversed BA为
+  `.028069/.025026→.009288/.009092`，8/8 tasks均压弱。GROUP4 reader把mass从
+  X/D/A `.434/.522/.044`改成`.560/.405/.035`，明确转向absolute X。
+- GROUP4 effective norm比RAW更大（`63.70` vs `59.42`）、stable rank更接近1
+  （`1.0021` vs `1.0066`），故视频写出减弱不是norm/rank collapse。GROUP4 fixed
+  action的高均值来自一个closed-loop 0-success Spatial task；median比RAW更小，
+  证明“大action变化”可完全off-manifold。
+- exact50同一8×50 panel、五个真实frame-order forward、零rollout、信息墙全通过。
+  operator/exact analysis SHA为`97c70dd...a6e0`/`7201364a...11fd`；RAW/GROUP4
+  原始analysis SHA为`9704b9fd...4067`/`57760475...c52`。
+- 架构×recipe根因因此更精确：normalized group updates不会自动解决漂移，还会把
+  UCP弱动态路径进一步压向X；旧未归一SERIAL能放大动态但也放大off-manifold方向。
+  CV-ADR必须让contextual Program直接成为value，使有用视频动态不依赖六倍optimizer
+  gain。若CV RAW失败，仍需同topology GROUP4复核；若BA/action传递成立而闭环弱，
+  下一根因转向functional surrogate与source-policy有效流形。
+
 ## 2026-08-02 UCP RAW训练噪声实现敏感性
 
 - RNG-v1与RNG-v2 RAW保持Writer topology、optimizer、LR、rank/task顺序、全部

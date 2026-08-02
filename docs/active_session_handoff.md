@@ -9,7 +9,64 @@
 `AGENTS.md`与`docs/execution_brief.md`。任何接手者都必须先只读复核现场，不能按
 历史快照重复启动进程。后续完全由主进程推进，不使用subagent。
 
-## 0-live. CV-ADR RAW full400负裁决，GROUP4 mechanics已seal待formal
+## 0-live. CV-ADR GROUP4阶段封存与owner暂停
+
+GROUP4 cycle200/step1200 exact50五条件内部分析已自然完成；root为
+`/data/ymdai/outputs/ember/pi05_as_writer_cvadr_group4_cycle0200_step1200_internal_exact50_seed7_51c0ba5_20260802`，
+400 Cartesian rows、五种真实frame-order forward、0 rollout、信息墙读取0、四rank
+均无failure。tmux `ember-cvadr-group4-m200-internal-51c0ba5`已自然退出；GPU4--7
+均为6--8MiB、0%且无compute process，本任务也无训练/评测/tmux。不得启动任何下一
+profile、训练或rollout；owner要求在此处暂停汇报。
+
+exact50相对RAW的A+D collective、remove-A、remove-D职责门从`8/1/5 of 8`降为
+`0/0/0`；effective BA mean relative L2为`.06744→.01882`、`.02050→.00981`、
+`.05417→.01533`，fixed-action为`.03613→.00483`、`.01091→.00264`、
+`.03356→.00446`。contextual-memory reversal BA从`.00607→.00311`，shuffled/
+reversed BA从`.04614/.02653→.02341/.01882`，fixed-action从
+`.05484/.01539→.00686/.00517`。same-task BA centered variance/sample energy
+`.10494%→.09672%`。effective norm却`64.24→72.06`，stable rank均约`1.008`，
+ProgramRead/CoreRead RMS `1.021→1.168`：GROUP4没有缺Program幅度，而是把A/D、顺序
+和video variation压成更static的coherent write。原始analysis file SHA
+`f99d7cb1...86f6`，职责audit file/canonical`9725f010...b292`/
+`dc01dd97...5141`，RAW×GROUP4 compare file/canonical`a9f1e615...329f`/
+`2dc9ee29...5f4d`。
+
+GROUP4正式训练已自然完成，不存在需resume的训练状态：
+
+```text
+code   51c0ba5eedd148e91c6845772e2ab7e82f0a53ec
+root   /data/ymdai/outputs/ember/pi05_as_writer_cvadr_group4_taskcomplete_decay400_formal_dev_r4_b20_seed7_51c0ba5_20260802
+final  checkpoints/step_00001200
+wall   4944.554245355073s
+data   200 cycles / 1200 updates / 96000 queries / 4800 one-video conditions
+```
+
+cycle50/100/150/200 paired correct400为`82/77/73/110`，同topology RAW为
+`76/111/99/117`。GROUP4 winner逐task为`10/0/0/41/38/15/2/4`，breadth6、top2
+`71.82%`；四点均值低于RAW 15.25、winner低7，按门不做五臂。四点success union150、
+intersection32、envelope gap40，task漂移没有解决。相对source base，GROUP4保留42、
+gain68、lose6；RAW保留34、gain83、lose14，所以GROUP4是更保守而非共同增长。
+
+训练动力学artifact确认factor持续占约94%梯度能量、held functional loss横盘，
+GROUP4参数段约为RAW`.41--.67`长度但方向余弦仅`.08--.41`。endpoint effective BA
+norm为`72.04`、高于RAW`64.28`却行为更差，排除简单增益坍缩。correct curve artifact
+file/canonical SHA为`54cd40e5...a985`/`e5b00932...ba6`；training dynamics和参数
+interaction canonical SHA为`92470478...219b`/`c6ce55c4...015c`。
+curve producer的canonical是在JSON把integer keys正规化为字符串前计算，reload后为
+`16afe12e...b5f`；这不是row变更。后续audit同时锁定exact file SHA、producer claim
+与reload canonical，不能直接把二者不等误判为artifact污染。
+
+Target-Bound Role-Preserving Program保存在隔离branch
+`codex/target-bound-role-program`，已以commit
+`b260a57a94dc21bd3446b212bfa42f71b037ce13` push；参数`11,092,224`，CPU受影响测试
+`49 passed`、
+compileall通过、architecture guard无hard violation。它没有做GPU profile、exact
+resume或正式训练，也尚未替换main的canonical CV-ADR。上述operator证据把它的首次
+训练固定为task-query RAW full24；Latin Beta仍未通过matched variance diagnostic，
+不得进入canonical config。owner要求在本阶段证据闭合后先汇报，因此下一session才能
+现场复核并决定是否启动。后续仍不使用subagent。
+
+## 0-history. CV-ADR RAW full400负裁决与GROUP4启动快照
 
 RAW macro0→200已自然完成：96,000 queries、4,800 one-video conditions、wall
 `3916.79s`，all finite、0 clip。paired correct400为：
@@ -103,6 +160,27 @@ scheduler只在update6推进，step7进入cycle1/phase1，信息墙读取0。pro
 metrics SHA分别为`f8afb6ae...d90a`/`53cf0718...9de`，combined log SHA为
 `2048cbc0...d4ff`。canonical config已seal；提交/push后从新clean frozen commit与
 fresh identity正式运行0→1200，smoke权重不得warm-start。
+
+post-seal `51c0ba5`已经push并从clean detached worktree启动科学轨迹：
+
+```text
+tmux   ember-cvadr-group4-m1200-51c0ba5
+code   51c0ba5eedd148e91c6845772e2ab7e82f0a53ec
+root   /data/ymdai/outputs/ember/pi05_as_writer_cvadr_group4_taskcomplete_decay400_formal_dev_r4_b20_seed7_51c0ba5_20260802
+log    /data/ymdai/logs/ember/pi05_as_writer_cvadr_group4_taskcomplete_decay400_formal_dev_r4_b20_seed7_51c0ba5_20260802.log
+config SHA   a8dd6c833f52bb716b014d6d71a14d8f8423f8b02d514fc915be03684b38da79
+launcher SHA bd7d3210a5ae5621c34d1a4771c67bd5540b846e5238d22b5de7a925e6494082
+contract SHA 14e728bcd1f1ade879f199f788b559f2c3ee5a9f071e0040baccf0b54d799b4c
+canonical    72b263f2c6b19745b7958001c27ad074044e6d070304667a2a17a879eec756c9
+```
+
+live preflight时main/origin/frozen均为同一clean commit；只查询GPU4--7，四卡各8MiB、
+无进程、温度30--34°C，个人用量`424,594,886,656` bytes，首段预计约1.1GB。start
+event为formal/fresh/stop1200，Writer参数`10,241,024`且source policy trainable为0。
+首cycle六phase恰好覆盖24 tasks、24 one-video conditions、480 queries；每update四个
+task各一套LoRA、B20和一次policy forward，scheduler只在update6推进。update1--41
+all finite、0 clip，update2起五主块可达，validation/test action reads为0。必须让
+该tmux自然完成；当前origin不得因文档commit前进，以免破坏后续exact-resume guard。
 
 正式证据：full400 candidate curve SHA`fb75464f...ec90a`、canonical payload
 `bd4f43d4...ce909`；首小时curve SHA`71cbd02d...33dc3`；exact50 raw analysis/summary

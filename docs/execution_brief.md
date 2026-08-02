@@ -1,5 +1,41 @@
 # EMBER Current Execution Brief
 
+## 2026-08-02 CV-ADR GROUP4控制完成与owner暂停边界
+
+同topology normalized randomized-GROUP4已从clean frozen `51c0ba5`和fresh identity
+自然完成：1200 optimizer updates=200 task cycles、96,000 queries、4,800 one-video
+conditions、wall`4944.554s`，all finite、1 clip、信息墙读取0。cycle50/100/150/200
+paired correct400为`82/77/73/110`，RAW为`76/111/99/117`；GROUP4四点均值
+`85.5<100.75`、winner `110<117`，不做五臂。GROUP4 winner breadth6但top2占
+`71.82%`，四点union150/intersection32/envelope gap40，task漂移没有解决。
+
+GROUP4相对source base保留42/48、gain68、lose6；RAW保留34、gain83、lose14。
+因此它只是更保守，不是多task共同稳定增长。其endpoint effective BA norm均值
+`72.04`还高于RAW `64.28`，held loss略低但closed loop更差；问题是写入方向/职责与
+有效policy manifold，而不是单纯norm或functional loss。selected4负pair约
+`.44--.46`但candidate-negative updates后段近零，factor仍占约94%梯度能量；不能
+恢复CP-24或把pairwise负余弦当作漂移根因。
+
+cycle200 exact50最终确认GROUP4把动态职责继续压弱：A+D collective、remove-A、
+remove-D预注册门从RAW `8/1/5 of 8`降到`0/0/0`；effective BA mean relative L2
+`.06744→.01882/.02050→.00981/.05417→.01533`，fixed-action
+`.03613→.00483/.01091→.00264/.03356→.00446`。memory reversal BA
+`.00607→.00311`，same-task BA variance/sample energy`.10494%→.09672%`。
+effective norm反而`64.24→72.06`、stable rank同为约`1.008`，ProgramRead/CoreRead
+RMS`1.021→1.168`：问题是更static/off-manifold的职责方向，不是LoRA幅度、rank或
+Program read坍缩。paired compare canonical SHA为`2dc9ee29...5f4d`。
+
+该结果与UCP同topology GROUP4负控制一起否定normalized四task六相位作为默认训练法。
+它不证明post-v5结构整体无效，也不能把old recipe拆成“六次Adam”单因果：old尚包含
+未归一六倍LR/Adam path和顺序放大，强视频写出与task rotation一起出现。下一整体
+结构必须在一次-Adam RAW full24下，把target semantic在动态池化前绑定，并让A/E/D
+到rank端保持private value职责；不能靠固定scale、旧gain或checkpoint融合。
+
+owner要求本阶段训练、correct400和GPU内部分析全部结束后暂停汇报。Target-Bound
+Role-Preserving Program已在隔离branch完成CPU实现并以
+`b260a57a94dc21bd3446b212bfa42f71b037ce13` push，但没有GPU profile/resume/training；
+本阶段禁止启动下一架构工作。全部推进仍不使用subagent。
+
 ## 2026-08-02 v5.2×v6 joint architecture/training root cause
 
 正式2×2审计确认两件事必须同时成立。第一，task-complete在v5.2和v6上都把
@@ -71,8 +107,11 @@ generalization；结合独立held functional loss横盘，它证明train surroga
 `task38/demo36=105` frames，峰值allocated/reserved
 `76,945,014,784/77,370,228,736` bytes，all finite、0 clip/OOM；formal seed
 fresh0→1→exact-resume1→3→7连续，step1/3未被改写，scheduler/cursor跨cycle正确。
-当前无活动进程；提交post-seal authority后从新的clean frozen commit和fresh identity
-运行0→1200。后续不使用subagent。
+post-seal `51c0ba5`已push并从新的clean frozen worktree/fresh identity启动0→1200；
+tmux `ember-cvadr-group4-m1200-51c0ba5`，root为
+`pi05_as_writer_cvadr_group4_taskcomplete_decay400_formal_dev_r4_b20_seed7_51c0ba5_20260802`。
+首cycle 24 tasks/24 videos/480 queries，scheduler仅update6推进；update1--41 finite、
+0 clip且五主块可达，信息墙读取0。必须自然完成，后续不使用subagent。
 
 UCP source-preservation审计还表明SERIAL cycle150可同时提高旧source retention和
 新能力、但cycle200回落；GROUP4保留更多source却压弱动态。故不能把训练归结为

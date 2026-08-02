@@ -2,10 +2,38 @@
 
 **状态：2026-08-02 已集成为canonical，参数10,241,024。RAW八点correct400为
 `76/111/99/117/77/69/80/82`，single winner保持macro200；第二小时没有成熟化，
-不做五臂。macro200/400 matched梯度方差已完成，同topology GROUP4 B20/105-frame
-profile与formal-seed exact-resume已经seal，待fresh 0→1200正式recipe反事实。**
+不做五臂。同topology GROUP4已完整训练并评测为`82/77/73/110`，同样失败且不做
+五臂；exact50 recipe职责对照是本阶段最后GPU工作。owner要求其封存后暂停汇报，
+不再启动下一架构。**
 
-## 0. Formal evidence override
+## 0-current. GROUP4 recipe裁决
+
+normalized randomized-GROUP4与RAW匹配200 task cycles、每task 200条one-video曝光和
+4,000 queries；4,800个`(cycle,task)` demo/frame三元组逐项相同。它的correct400
+曲线`82/77/73/110`相对RAW为`+6/-34/-26/-7`，四点均值低15.25；winner仍只有
+breadth6且top2占71.82%。success union150/intersection32/envelope gap40，说明六次
+normalized selected4重线性化没有停止能力轮换。
+
+GROUP4保留更多source success（42 vs RAW 34）但获得更少新success（68 vs83），
+endpoint LoRA norm更大（72.04 vs64.28）却行为更差；held loss也不能预测行为。
+因此它不是gain collapse，也不是一个可同时保留旧能力、学习新能力和恢复视频写出
+的operator。selected4负pair很多而candidate-negative update近零，再次降低CP投影
+解释。exact50进一步给出直接职责否定：A+D collective、remove-A、remove-D的门从
+RAW `8/1/5 of 8`全部变成GROUP4 `0/0/0`；effective BA mean relative L2分别
+`.06744→.01882`、`.02050→.00981`、`.05417→.01533`，contextual-memory reversal
+`.00607→.00311`。same-task BA centered variance/sample energy也从`.10494%`降到
+`.09672%`。GROUP4 effective norm更高（`72.06 vs64.24`）、stable rank同为约
+`1.008`，且ProgramRead/CoreRead RMS从`1.021`升到`1.168`，说明不是Program幅度或
+LoRA gain坍缩，而是A/D与顺序内容不再决定最终写入。职责audit/paired compare
+canonical SHA为`dc01dd97...5141`/`2dc9ee29...5f4d`。
+
+本设计作为CV-ADR topology已形成充分负证据：RAW有相对UCP的架构增益，但absolute、
+视频职责和后期稳定性不足；GROUP4既未补足，也不能替架构背锅。后续结构可保留
+mean-backed Core、显式change和dual necessity证据，但必须把target semantic提前到
+动态读取、为A/E/D保留private value职责，并在RAW full24下工作；不得继续给CV增加
+gate、scale、旁路或局部residual。
+
+## 0-history. Formal RAW evidence override
 
 CV-ADR与UCP RNG-v2 RAW在训练recipe、task/video/query exposure和paired evaluation
 panel上严格相同。CV四个候选相对UCP为`+4/+24/+13/+28`；macro200的+28同时包含

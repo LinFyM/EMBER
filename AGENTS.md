@@ -56,6 +56,39 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 
 ## Current focused execution task
 
+2026-08-02 owner暂停override：CV-ADR同topology normalized randomized-GROUP4已从
+clean frozen `51c0ba5`/fresh identity自然完成1200 updates=200 cycles、96,000
+queries、4,800 one-video conditions，wall`4944.554s`，all finite、1 clip、
+validation/test action reads为0。cycle50/100/150/200 paired correct400为
+`82/77/73/110`，RAW为`76/111/99/117`；GROUP4四点均值`85.5<100.75`、single
+winner`110<117`，不做五臂。winner逐task`10/0/0/41/38/15/2/4`、breadth6、
+top2`71.82%`；四点union150/intersection32/envelope gap40，漂移未解。
+
+GROUP4相对source base保留42/48、gain68、lose6，RAW保留34、gain83、lose14；它更
+保守但没有共同学到更多新能力。endpoint effective BA norm`72.04`还高于RAW
+`64.28`，held functional loss略低却closed-loop更差，排除简单loss/norm collapse。
+factor仍占约94%梯度能量；selected4负pair约`.44--.46`但candidate-negative updates
+后段近零，CP-24仍无根因依据。cycle200 exact50已完成400 rows、五种真实frame-order
+forward、0 rollout、信息墙读取0且无rank failure。相对RAW，GROUP4把A+D collective、
+remove-A、remove-D职责门从`8/1/5 of 8`压到`0/0/0`；对应effective BA mean relative
+L2为`.06744→.01882`、`.02050→.00981`、`.05417→.01533`，fixed-action为
+`.03613→.00483`、`.01091→.00264`、`.03356→.00446`。memory reversal BA也从
+`.00607→.00311`，same-task BA centered variance/sample energy从`.10494%→.09672%`。
+effective norm反而`64.24→72.06`、stable rank都约`1.008`，所以GROUP4产生更大、更
+coherent但更static/off-manifold的写入，不是gain/rank collapse。正式internal原始
+analysis、职责audit和RAW×GROUP4 compare file SHA为`f99d7cb1...86f6`、
+`9725f010...b292`、`a9f1e615...329f`；后二者canonical SHA为
+`dc01dd97...5141`/`2dc9ee29...5f4d`。
+
+owner明确要求本阶段训练、correct400和GPU内部分析自然完成后暂停汇报。Target-Bound
+Role-Preserving Program只在隔离feature branch完成CPU实现/结构验证，commit
+`b260a57a94dc21bd3446b212bfa42f71b037ce13`已push；不得在本阶段
+启动其B20 profile、resume、训练或评测，也不得在汇报前开始另一轮整体设计。最终
+exact50封存后必须核验GPU4--7、本任务进程和tmux均为空，更新文档、commit/push后
+暂停；长期Goal保持active而非complete。所有后续推进继续禁止subagent。
+
+下方同日“live”文字是较早运行快照，只保留provenance，不能覆盖本override。
+
 2026-08-02 CV-ADR live override：RAW已从fresh identity自然完成macro0→400，恰好
 400 metrics/cycles、192,000 action queries、9,600 one-video conditions；每25 macro
 checkpoint完整，all finite、0 clip，validation/test action reads为0。末macro loss/
@@ -110,10 +143,21 @@ visit397--399对macro400是刚曝光的train条件、对macro200尚未曝光，�
 step2起Semantic Frontend/Core/Program/compiler均17/17可达，factor为18/18。
 formal seed fresh0→1→exact-resume1→3→7也通过：step1/3 payload未被改写，7行
 metrics、3段invocation连续，首cycle 24 tasks各一次，scheduler只在update6推进，
-step7 cursor为cycle1/phase1，validation/test action reads为0。当前无活动训练、评测
-或tmux；下一动作是提交post-seal authority并从新的clean frozen commit fresh运行
-0→1200。只有该recipe反事实完成后才能拒绝CV架构。所有推进只由主进程完成，不使用
-subagent。
+step7 cursor为cycle1/phase1，validation/test action reads为0。
+
+post-seal authority `51c0ba5`已push；当前唯一活动训练是同topology GROUP4从clean
+detached `51c0ba5` fresh运行update0→1200。tmux为
+`ember-cvadr-group4-m1200-51c0ba5`，root为
+`/data/ymdai/outputs/ember/pi05_as_writer_cvadr_group4_taskcomplete_decay400_formal_dev_r4_b20_seed7_51c0ba5_20260802`，
+log为
+`/data/ymdai/logs/ember/pi05_as_writer_cvadr_group4_taskcomplete_decay400_formal_dev_r4_b20_seed7_51c0ba5_20260802.log`。
+launch config/脚本SHA为`a8dd6c83...da79`/`bd7d3210...4082`，run-contract file/
+canonical payload SHA为`14e728bc...9b4c`/`72b263f2...6c9`。live preflight只查询
+GPU4--7：四卡各8MiB且无进程、个人用量`424,594,886,656` bytes；首cycle恰好
+24 tasks/24 videos/480 queries，每update四task各一套LoRA和B20，scheduler只在
+update6推进，update1--41 finite、0 clip，step2起五主块可达，信息墙读取0。必须让
+该run自然到1200；只有该recipe反事实完成后才能拒绝CV架构。所有推进只由主进程
+完成，不使用subagent。
 
 2026-08-02 joint root-cause override：四个selected winner五臂逐row重验为v5.2-old
 `132/138/74/82/83`、v5.2-task-complete `120/109/107/111/124`、v6-old

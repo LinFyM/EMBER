@@ -8,6 +8,36 @@ GPU范围和训练步长是当时快照；活动状态只取
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-02 CV-ADR GROUP4正式控制完成与阶段交接
+
+- frozen `51c0ba5` GROUP4自然完成1200 updates/200 cycles、96,000 queries、4,800
+  one-video conditions，wall`4944.554s`，all finite、1 clip、validation/test action
+  reads为0；final checkpoint为step1200。
+- 四个paired correct400已完成且0 error：cycle50/100/150/200=`82/77/73/110`。
+  observed-best single checkpoint为cycle200/step1200；逐task
+  `10/0/0/41/38/15/2/4`，breadth6、top2`71.82%`。同topology RAW为
+  `76/111/99/117`，GROUP4四点均值低15.25、winner低7；按门不做五臂。
+- 封存correct400 curve artifact，analysis/canonical SHA为
+  `54cd40e5...a985`/`e5b00932...ba6`。GROUP4四点union150、intersection32、
+  envelope gap40，漂移继续；相对source保留42、gain68、lose6，表现为更保守而非
+  共同增长。
+- 完成training dynamics与RAW参数交互审计；analysis/canonical SHA分别为
+  `56b206f6...4563`/`92470478...219b`和
+  `81c64e7b...119`/`c6ce55c4...015c`。held loss与closed loop错位、factor持续占
+  约94%梯度能量、GROUP4参数段较短却与RAW低余弦。
+- 完成cycle200 exact50：400 rows、五条件真实frame-order forward、0 rollout、四rank
+  无failure。A+D/remove-A/remove-D职责门从RAW `8/1/5`降到GROUP4 `0/0/0`，same-task
+  BA variance略降，norm却`64.24→72.06`；封存职责audit与RAW×GROUP4 compare，file/
+  canonical SHA分别`9725f010...b292`/`dc01dd97...5141`和
+  `a9f1e615...329f`/`2dc9ee29...5f4d`。
+- 最后一项GPU工作自然退出；GPU4--7为6--8MiB且无compute process，本任务无活动
+  训练、评测或tmux。Target-Bound未做profile/resume/training。
+- Target-Bound现有CPU实现已作为隔离feature commit
+  `b260a57a94dc21bd3446b212bfa42f71b037ce13` push；49个受影响测试与compileall通过，
+  main仍保持CV-ADR canonical，没有合并或运行该分支。
+- owner暂停边界：上述winner exact50完成并封存后，不启动Target-Bound/SPG或任何
+  下一架构GPU profile/训练；只完成CPU对照、文档、Git和无活动进程核验后汇报。
+
 ## 2026-08-02 CV-ADR full400八点负裁决与matched方差诊断
 
 - frozen `254ade4`的RAW从step200 exact-resume到400自然结束；累计400 cycles、
@@ -40,6 +70,10 @@ GPU范围和训练步长是当时快照；活动状态只取
 - formal-seed fresh0→1→exact-resume1→3→7通过；step1/3逐文件SHA/size/mtime未改写，
   首cycle与scheduler/cursor连续。profile/resume metrics SHA为
   `f8afb6ae...d90a`/`53cf0718...9de`，config已seal，当前无活动进程。
+- post-seal `51c0ba5`已push；live preflight只查GPU4--7，四卡各8MiB无进程，个人
+  用量`424,594,886,656` bytes，root/log/tmux均全新。现已从fresh identity启动
+  GROUP4 0→1200，tmux `ember-cvadr-group4-m1200-51c0ba5`。首cycle恰好24 tasks/
+  24 videos/480 queries；updates1--41 finite、0 clip，scheduler/cursor和信息墙正确。
 
 ## 2026-08-02 v5.2×v6 recipe/video-causality联合审计
 

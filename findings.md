@@ -6,6 +6,57 @@
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-02 CV-ADR GROUP4正式行为与阶段暂停根因
+
+- clean frozen `51c0ba5`的normalized randomized-GROUP4自然完成1200 physical
+  updates/200 task cycles、96,000 queries、4,800 one-video conditions，wall
+  `4944.554s`；每25 cycle checkpoint、scheduler、cursor和信息墙合同完整，all
+  finite、全程仅1次clip。与RAW逐`(cycle,task)`核验的4,800个task-visit/demo/frame
+  三元组全部相同。
+- cycle50/100/150/200 paired correct400为`82/77/73/110`，同topology RAW为
+  `76/111/99/117`；GROUP4四点均值`85.5`低于RAW `100.75`，只在首点`+6`，其后
+  `-34/-26/-7`。winner cycle200逐task为`10/0/0/41/38/15/2/4`，breadth6、top2
+  占`71.82%`；没有达到150、v6-new 143或v5.2-old 132，不做五臂。
+- GROUP4相邻success-set Jaccard仅`.445/.429/.500`，四点union150、intersection32、
+  single-best envelope gap40；能力轮换未消失。它相对source base保留42/48、gain68、
+  lose6，而RAW winner保留34/48、gain83、lose14：GROUP4更保守，却没有同时学到更多
+  新能力，也不是“避免遗忘便解决漂移”。
+- GROUP4 held functional loss在cycle50/100/150/200为
+  `.13013/.13287/.13193/.13125`，末段train loss继续下降；behavior却
+  `82→77→73→110`。effective BA norm均值为`69.65/63.56/78.56/72.04`，endpoint
+  大于RAW `64.28`但闭环更差，排除简单loss或LoRA gain collapse解释。
+- selected4负pair约`.442→.464`但global candidate-negative updates后段近零；factor
+  梯度能量约`93.2--96.2%`。GROUP4参数段只有RAW约`.41--.67`长度，匹配段方向余弦
+  compiler/Core/factor/Program均仅`.08--.41`，说明normalized六次重线性化仍进入
+  不同盆地，却没有恢复稳定的有用conditional update。
+- cycle200 exact50完成400 rows、五条件真实frame-order forward、0 rollout与信息墙
+  读取0。A+D collective、remove-A、remove-D职责门从RAW `8/1/5 of 8`变成GROUP4
+  `0/0/0`；effective BA mean relative L2
+  `.06744→.01882/.02050→.00981/.05417→.01533`，fixed-action
+  `.03613→.00483/.01091→.00264/.03356→.00446`。memory reversal BA
+  `.00607→.00311`，shuffled/reversed BA`.04614/.02653→.02341/.01882`且action
+  `.05484/.01539→.00686/.00517`，确认信号最迟在BA→action端再次被压弱。
+- same-task BA centered variance/sample energy`.10494%→.09672%`；GROUP4 effective
+  norm却`72.06>64.24`、stable rank都约`1.008`、component pair cosine
+  `.650→.777`、B-column cosine`.968→.978`、ProgramRead/CoreRead RMS
+  `1.021→1.168`。因此normalized GROUP4形成的是更大、更coherent但更static的写入，
+  不是Target-Spectral式gain/rank collapse，也不是Program分支幅度不足。
+- exact50原始analysis file SHA`f99d7cb1...86f6`；职责audit file/canonical
+  `9725f010...b292`/`dc01dd97...5141`；RAW×GROUP4 compare file/canonical
+  `a9f1e615...329f`/`2dc9ee29...5f4d`。
+- correct-curve producer在JSON integer-key正规化前写入canonical claim
+  `e5b00932...ba6`，reload canonical为`16afe12e...b5f`；职责audit以exact file SHA
+  `54cd40e5...a985`和两个表示同时fail-closed验证，属于serialization provenance而非
+  科学row变化。
+- operator裁决因此已经否定“只把24-task更新切成六个normalized四task Adam便可同时
+  修复absolute、漂移和视频写出”。该bundle不能拆成单一Adam、grouping或phase因果；
+  但结合UCP同方向负结果，normalized GROUP4不再是下一架构默认。old recipe的强视频
+  写出更可能依赖未归一六倍optimizer gain及其路径放大，而该成分同时带来task rotation；
+  后续必须让架构在RAW full24下自身保持target-bound动态职责，而不能靠旧gain或固定scale。
+- owner要求本阶段所有训练、correct400和GPU内部分析结束后暂停。Target-Bound
+  Role-Preserving Program只在隔离分支完成CPU实现/结构验证，尚未profile、resume或
+  训练；当前阶段不得启动下一GPU工作。
+
 ## 2026-08-02 CV-ADR GROUP4 B20/profile/resume seal
 
 - 从clean detached `f6cf775`仅用GPU4--7完成18-update/3-cycle B20 profile；每cycle

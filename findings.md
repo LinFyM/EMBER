@@ -6,6 +6,25 @@
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-01 task/query RNG-v2真实重封存
+
+- `dae13bf`把CPU default和指定CUDA generator共同fork/seed/restore，scheme、
+  cycle-normalized config、RAW/GROUP4 checkpoint family与shared/trainer/rank state
+  schemas均fresh-incompatible升v2；完整CPU回归`241 passed`。
+- RAW B20 fresh0→1→exact-resume1→3完成三次full24宏步，共1,440 queries/72
+  one-video conditions；GROUP4 fresh0→1→3→7完成首个24-task cycle并跨越边界，
+  scheduler只在phase5后推进。两者all finite、主要模块梯度可达、信息墙读取0；
+  resume没有改写step1或GROUP4 step3 payload。
+- 跨rank/phase操纵把tasks12/14/34/37从GROUP4 ranks `2/3/0/1`换到RAW ranks
+  `1/0/3/0`。同demo/frame/action row/query seed下，两臂loss逐位相等为
+  `.0845656544/.1445673406/.1301287264/.1523376107`，raw task-gradient norm也
+  逐位相等；CountSketch最大绝对差`5.82e-11`。因此v2确实实现跨rank/order的
+  task/query随机身份，而非只在相同ambient stream复现。
+- RAW run-contract/metrics SHA为`31f2edea...c038`/`a6c41cd2...7cdc`；GROUP4为
+  `8b691d48...cee4`/`a8c55ee1...94cd`。旧105-frame profile继续只承担B20容量证据；
+  v2真实reseal最大82 frames。两份formal config现可从fresh identity启动，v1
+  checkpoint仍严格拒绝。
+
 ## 2026-08-01 task/query RNG-v1根因与operator cell失效
 
 - `scoped_policy_randomness`的CUDA分支只seed指定CUDA generator；安装版LeRobot

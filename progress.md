@@ -8,6 +8,21 @@ GPU范围和训练步长是当时快照；活动状态只取
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-01 task/query RNG-v2重封存完成
+
+- `dae13bf`已实现并push CPU+CUDA共同按task/query seed的随机scope；完整CPU回归
+  `241 passed`，JSON和compileall通过。两份v2 config/checkpoint family与state
+  schemas均fresh incompatible，旧v1 checkpoint继续fail-closed。
+- detached frozen `dae13bf`上仅用物理GPU4--7完成RAW B20 fresh0→1→resume1→3和
+  GROUP4 B20 fresh0→1→3→7。all finite、主要模块梯度可达、信息墙读取0，完整cycle/
+  scheduler/cursor与checkpoint不改写合同均通过。
+- tasks12/14/34/37在两operator间跨rank重排后，四个functional losses和raw task
+  gradient norms逐位相等；CountSketch最大绝对差`5.82e-11`。两份formal config已
+  重新seal为fresh RAW 0→200与GROUP4 0→1200。
+- 当前无活动训练、评测或tmux。下一动作是提交/push reseal authority，建立新clean
+  formal frozen worktree，live preflight后从全新root启动RNG-v2 RAW；随后GROUP4与
+  paired correct400。CV-ADR继续隔离；后续不使用subagent。
+
 ## 2026-08-01 task/query RNG-v2纠偏与旧GROUP4停止
 
 - 审计policy forward随机源后确认RNG-v1遗漏CPU Beta flow timestep：CUDA Gaussian

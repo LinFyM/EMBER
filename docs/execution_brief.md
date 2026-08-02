@@ -1,20 +1,24 @@
 # EMBER Current Execution Brief
 
-## 2026-08-01 task/query RNG-v2 correction authority
+## 2026-08-01 task/query RNG-v2 sealed authority
 
-UCP task/query randomness v1只锁定CUDA Gaussian flow noise，遗漏了LeRobot PI05在
-CPU default generator上采样的Beta flow timestep。step0 identity下，RAW与GROUP4
-四个重叠task具有完全相同action rows、teacher video/frame和derived query seed，
-却在换rank后产生不同source-policy loss，直接证实time仍依赖ambient rank/order RNG。
-因此原GROUP4正式进程已正常停止在physical step307/51 complete cycles；root、
-metrics和step150/300 checkpoint只保留invalid-contract provenance，禁止resume、
-评测或形成operator结论。
+UCP task/query randomness v1只锁定CUDA Gaussian flow noise，遗漏LeRobot PI05的
+CPU Beta flow timestep；原RNG-v1 GROUP4已停在307 updates/51 cycles，只保留
+invalid-contract provenance。`dae13bf`已把CPU与指定CUDA generator共同
+fork/seed/restore，并把scheme、config/checkpoint family和state schemas升为
+fresh-incompatible v2；CPU全回归`241 passed`。
 
-当前canonical修复把CPU与指定CUDA generator共同fork/seed/restore，randomness
-scheme及cycle-normalized config/checkpoint family/state schemas升v2。RAW/GROUP4
-formal config在真实跨rank/phase identity manipulation和exact-resume重新seal前
-fail-closed。完成CPU验证和push后，从新frozen authority、全新root fresh重跑两臂。
-CV-ADR继续隔离等待有效operator cell；后续不使用subagent。
+仅物理GPU4--7的B20真实reseal已经完成。RAW fresh0→1→resume1→3每macro完整覆盖
+24 tasks；GROUP4 fresh0→1→3→7跨过首cycle边界且scheduler只在phase5推进。所有量
+finite、主模块梯度可达、信息墙读取0，resume未改写既有checkpoint payload。更关键的
+跨rank操纵将tasks12/14/34/37在两operator间换rank，四个functional losses与raw
+task-gradient norm仍逐位相等；CountSketch只有`5.82e-11`跨卡浮点差。这封存
+`task_query_keyed_stateless_policy_cpu_cuda_v2`，两份formal config重新seal。
+
+当前没有活动训练、评测或tmux。提交/push本reseal authority后，从新clean frozen
+SHA和全新root依次fresh运行RNG-v2 RAW 0→200与GROUP4 0→1200，再以同一paired
+cycle50/100/150/200 correct400裁决operator。CV-ADR继续隔离等待有效cell；后续不
+使用subagent。
 
 边界：autoscaled200与true-fast400 RAW的rank/task/microtask顺序完全相同，cycle0
 loss/sketch也逐项相同，所以既有scheduler interaction仍是同一ambient-time stream下

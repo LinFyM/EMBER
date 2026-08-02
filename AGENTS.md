@@ -56,22 +56,30 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 
 ## Current focused execution task
 
-2026-08-01 RNG-v2 current override：`cfc2ad1`的task/query RNG-v1合同存在已证实的
-实现偏差。EMBER只在CUDA generator上按query seed固定Gaussian flow noise；LeRobot
-PI05的Beta flow timestep由CPU default generator采样，因此仍随rank和local microtask
-顺序变化。step0 public LoRA严格identity时，RAW与GROUP4中四个重叠task的action rows、
-teacher demo/frame、query seed均逐项相同，但loss分别为
-`.152825/.126055/.099258/.133874`和`.105294/.125041/.114391/.178842`；四个task在
-两operator间恰好换rank，直接证明CPU timestep没有被query identity锁定。
+2026-08-01 RNG-v2 current override：CPU+CUDA task/query randomness修复已经在
+`dae13bf`实现并push；CPU default与指定CUDA generator现在共同fork/seed/restore，
+randomness scheme、cycle-normalized config、task-query checkpoint family及
+shared/trainer/rank schemas均为fresh-incompatible v2。完整CPU回归`241 passed`。
+仅物理GPU4--7的两条B20真实fresh/resume reseal均完成且当前无训练、评测或tmux进程。
 
-GROUP4正式root已由owner进程正常Ctrl-C停止在physical step307/51 complete cycles；
-tmux与本训练进程均已退出。root、metrics及step150/300 checkpoints保留为
-`invalid_rng_v1_operator_contract` provenance，禁止resume、评测或形成RAW×GROUP4
-结论。当前代码把CPU timestep与指定CUDA noise共同fork/seed/restore，randomness
-scheme、cycle-normalized config和task-query checkpoint family/state schema全部升为
-v2；两份formal config在真实GPU manipulation与exact-resume重新seal前必须
-fail-closed。随后从fresh identity、全新root重跑RAW和GROUP4；不得续接任何v1
-checkpoint。CV-ADR继续隔离等待正确operator cell。后续推进暂停所有subagent使用。
+RAW fresh0→1→exact-resume1→3每macro覆盖24 tasks恰好一次、共1,440 queries/72
+one-video conditions；GROUP4 fresh0→1→3→跨cycle边界到7，cycle0六phase恰好覆盖
+24 tasks，scheduler只在phase5后推进。两者all finite、主要模块梯度可达、信息墙读取0，
+step1及GROUP4 step3 payload逐SHA/size/mtime未改写。跨rank操纵把tasks12/14/34/37
+分别从GROUP4 ranks `2/3/0/1`换到RAW ranks `1/0/3/0`，四个functional losses仍逐位
+相等为`.0845656544/.1445673406/.1301287264/.1523376107`，raw task-gradient norm也
+逐位相等；CountSketch最大绝对差`5.82e-11`。这直接封存
+`task_query_keyed_stateless_policy_cpu_cuda_v2`，两份formal config重新seal。
+
+下一动作从新的clean pushed authority和全新root依次fresh重跑RNG-v2 RAW
+macro0→200与GROUP4 update0→1200，再对cycle50/100/150/200做同一paired correct400
+及预注册operator裁决；不得续接任何v1 checkpoint。CV-ADR继续隔离等待正确operator
+cell。后续推进暂停所有subagent使用。
+
+RNG-v1 GROUP4正式root已正常停止在physical step307/51 complete cycles；root、metrics
+及step150/300 checkpoints只作`invalid_rng_v1_operator_contract` provenance，禁止
+resume、评测或形成RAW×GROUP4结论。RNG-v1 step0 identity下四个换rank task即使
+rows/video/query seed相同仍改变loss，根因是CPU Beta flow timestep未按query锁定。
 
 RNG-v1结果边界：RAW autoscaled200与true-fast400使用相同rank/task/microtask顺序，
 其cycle0逐项loss/sketch完全相同，所以二者scheduler差仍是同一ambient-time stream下

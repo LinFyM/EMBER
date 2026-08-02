@@ -136,10 +136,12 @@ runner、split 或 GPU 权限。
   rank/phase stateless合同。
 - [x] 正常停止`cfc2ad1` GROUP4 formal于physical step307/51 complete cycles；保留
   metrics与step150/300 checkpoint为invalid-contract provenance，禁止resume/eval。
-- [ ] 完成CPU+CUDA task/query RNG-v2修复：同时fork/seed/restore两个generator，
-  升级config、checkpoint family及三类state schema，完成CPU全回归并commit/push。
-- [ ] 从新frozen authority仅在GPU4--7完成跨rank/phase identity manipulation与
-  fresh/exact-resume重新seal；B20容量证据可继承，但正式状态在此之前fail-closed。
+- [x] 完成CPU+CUDA task/query RNG-v2修复：同时fork/seed/restore两个generator，
+  升级config、checkpoint family及三类state schema；`dae13bf`已push，CPU全回归
+  `241 passed`。
+- [x] 从`dae13bf` frozen authority仅在GPU4--7完成RAW 0→1→3与GROUP4
+  0→1→3→7 fresh/exact-resume及跨rank manipulation；四task loss/gradient逐位相等，
+  CountSketch最大差`5.82e-11`，两份formal config重新seal。
 - [ ] 从全新root和fresh identity重跑RNG-v2 RAW及cycle-normalized GROUP4，固定评测
   cycle50/100/150/200 paired correct400，再做预注册operator裁决。v1 RAW absolute
   只作observed bundle，v1 GROUP4不进入裁决。

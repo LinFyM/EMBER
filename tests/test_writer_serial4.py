@@ -484,17 +484,13 @@ def test_cycle_normalized_configs_and_checkpoint_families_fail_closed() -> None:
     group4 = load_writer_config(GROUP4_CONFIG)
     assert raw["schema_version"] == AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA
     assert group4["schema_version"] == AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA
-    assert raw["formal_run"]["status"] == (
-        "blocked_pending_cpu_cuda_v2_rng_reseal"
-    )
+    assert raw["formal_run"]["status"] == "sealed"
     assert raw["formal_run"]["launch_state"] == (
-        "blocked_pending_cpu_cuda_v2_manipulation_and_exact_resume"
+        "ready_for_fresh_rng_v2_macro0_to200"
     )
-    assert group4["formal_run"]["status"] == (
-        "blocked_pending_cpu_cuda_v2_rng_reseal"
-    )
+    assert group4["formal_run"]["status"] == "sealed"
     assert group4["formal_run"]["launch_state"] == (
-        "blocked_pending_cpu_cuda_v2_manipulation_and_exact_resume"
+        "ready_for_fresh_rng_v2_update0_to1200"
     )
     assert raw["formal_run"]["total_steps"] == 400
     assert group4["formal_run"]["total_steps"] == 2400
@@ -597,9 +593,10 @@ def test_cycle_normalized_formal_runtime_keeps_two_stage_total(
             skip_data_sha=True,
         )
         config = load_writer_config(path)
+        blocked = copy.deepcopy(config)
+        blocked["formal_run"]["status"] = "pending"
         with pytest.raises(WriterModelError, match="not sealed"):
-            resolve_runtime(args, config, context)
-        config["formal_run"]["status"] = "sealed"
+            resolve_runtime(args, blocked, context)
         total, batch, checkpoints = resolve_runtime(args, config, context)
         assert (total, batch, args.stop_after_step) == (
             expected_total,

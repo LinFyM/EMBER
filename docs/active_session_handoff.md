@@ -10,10 +10,10 @@
 `AGENTS.md`与`docs/execution_brief.md`。任何接手者都必须先只读复核现场，
 不能按历史快照重复启动进程。
 
-## 0-current. task/query RNG-v1失效，GROUP4已停，CPU+CUDA v2重封存中
+## 0-current. CPU+CUDA RNG-v2已重封存，fresh正式operator cell待启动
 
-当前没有需要继承的训练、评测或tmux进程。原GROUP4正式进程已正常Ctrl-C停止；
-不得恢复：
+当前没有需要继承的训练、评测或tmux进程。原RNG-v1 GROUP4正式进程已正常
+Ctrl-C停止；不得恢复：
 
 ```text
 commit       cfc2ad14612f7c28bb5bdc48c307bd525077d3c0
@@ -26,35 +26,51 @@ tmux         exited
 ```
 
 根因已定位到policy functional forward的随机生命周期，而不是数据sampler。RNG-v1
-`scoped_policy_randomness`只fork/seed指定CUDA generator；但已安装LeRobot PI05的
-`sample_beta`通过CPU `torch.distributions.Beta.sample`生成flow timestep，再搬到
-CUDA。于是Gaussian noise按task/query固定，而time仍消费`seed+rank`的ambient CPU
-stream。step0 public LoRA严格identity，选取RAW/GROUP4重叠的tasks 12/14/34/37做
-离线重建，action row IDs、demo IDs、frame IDs、teacher video及derived query seed
-全部逐项相同；RAW/GROUP4 loss却为：
+只fork/seed指定CUDA generator，遗漏了LeRobot PI05在CPU default generator采样的
+Beta flow timestep。`dae13bf269a8eeb906371c4ecac1de4e1f915998`已将CPU time与
+指定CUDA noise共同fork/seed/restore，并把scheme、cycle-normalized config、
+checkpoint family和shared/trainer/rank schemas全部升为fresh-incompatible v2。
+完整CPU回归`241 passed`，JSON与compileall通过。
+
+从detached frozen `dae13bf`仅在物理GPU4--7完成两条B20真实reseal：
 
 ```text
-task12  .1528247595  vs .1052939072
-task14  .1260546446  vs .1250408590
-task34  .0992577970  vs .1143911630
-task37  .1338744909  vs .1788422614
+RAW root
+/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_rngv2_reseal_r4_b20_seed7_dae13bf_20260801
+run contract 31f2edea090fcfad67623f22f42788ba5c655813d73d8c577a928a244e99c038
+metrics      a6c41cd2ba39c0e76e50e98a630edf7e52bc1bc9cce3a0b63d3afa14c6c87cdc
+
+GROUP4 root
+/data/ymdai/outputs/ember/pi05_as_writer_ucp_cycle_normalized_group4_rngv2_reseal_r4_b20_seed7_dae13bf_20260801
+run contract 8b691d481044a2849bab48f6913a9416e671c1c4b8df2a1bdf013b8fdc10cee4
+metrics      a8c55ee1d3ad2f50886ce94ead0d377d24f10d46582c80d1f77f09c0cb4e94cd
 ```
 
-四个task在两operator间换rank，这正是ambient CPU time暴露出来的预期方式。旧RAW
-autoscaled与true-fast保持相同rank/task/microtask顺序，cycle0 row/loss/sketch逐项
-相同，因此二者scheduler差仍可作为同一ambient-time stream下的matched比较；但
-两条run都没有实现所声明的task/query-keyed noise+time，且任何改变rank/phase顺序的
-RAW×GROUP4比较均不成立。旧GROUP4 smoke与formal首row相同也只说明ambient stream
-在相同rank/order下可重复，不证明跨顺序stateless。
+RAW完成fresh0→1→exact-resume1→3，三macro均覆盖24 tasks恰好一次，共1,440
+queries/72 videos；GROUP4完成fresh0→1→3→7，cycle0六phase覆盖24 tasks一次，
+scheduler只在phase5后推进。两者all finite、主要模块梯度可达、validation/test action
+reads为0；RAW step1与GROUP4 step1/3 payload在resume后逐SHA/size/mtime不变。
 
-当前最窄修复把CPU default generator和指定CUDA generator放在同一fork scope内，
-用同一个task/query seed初始化并在forward后恢复；scheme升为
-`task_query_keyed_stateless_policy_cpu_cuda_v2`，cycle-normalized config schema、
-RAW/GROUP4 checkpoint family以及shared/trainer/rank schema全部升v2。两份formal
-config现为blocked，旧v1 checkpoint必须fail-closed。紧邻动作是：完成CPU全回归并
-push；从新frozen worktree在GPU4--7做一次跨rank/phase identity manipulation和
-fresh/exact-resume；重新seal后从全新root依次fresh运行RAW与GROUP4。CV-ADR保持隔离，
-等正确operator cell裁决后再集成。后续全部由主进程执行，不使用subagent。
+关键跨rank操纵把tasks12/14/34/37从GROUP4 ranks `2/3/0/1`换到RAW ranks
+`1/0/3/0`。同demo/frame/row/query seed下，四个loss在两operator间逐位相等：
+
+```text
+task12  .0845656543970108
+task14  .1445673406124115
+task34  .1301287263631821
+task37  .1523376107215881
+```
+
+四个raw task-gradient norm也逐位相等；compiler/Program/Semantic Frontend的
+CountSketch精确相等，factor最大绝对差`5.820766e-11`（相对峰值`1.003116e-6`），
+仅属跨卡浮点差。GROUP4既有105-frame profile仍负责容量/shape证据；v2 reseal实际
+最大82 frames。两份formal config现重新seal，旧v1 checkpoint继续fail-closed。
+
+紧邻动作是先把reseal authority提交并push，从该新SHA建立clean detached formal
+worktree；做一次live preflight后，从fresh identity和全新root依次运行RNG-v2 RAW
+macro0→200、GROUP4 update0→1200。固定评测cycle50/100/150/200 paired correct400，
+再做预注册operator裁决。CV-ADR保持隔离等待结果。后续全部由主进程执行，不使用
+subagent。
 
 ## 0-rng-v1. UCP true-fast400 observed bundle与已失效GROUP4启动快照
 

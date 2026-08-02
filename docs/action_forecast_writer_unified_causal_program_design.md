@@ -1,6 +1,6 @@
 # Unified Causal Program Writer 设计
 
-**状态：2026-08-01 task/query RNG-v1失效；GROUP4已停，CPU+CUDA v2待重封存**
+**状态：2026-08-01 CPU+CUDA task/query RNG-v2已重封存；fresh operator cell待运行**
 
 本文负责 Semantic Program Grid（SPG）一小时门失败后的下一条 canonical
 AS-Writer 路径。它不是把 v7、v8、v10、Loom 或后续版本整体判死后重新命名，
@@ -18,9 +18,12 @@ configured-decay400/runtime-autoscaled200消融为`81/72/107/78`；修正formal 
 macro200提高39但没有抬高UCP ceiling、解决breadth或消除task轮换，且参数/Adam
 轨迹持续旋转，不能当作训练解。原`cfc2ad1` cycle-normalized randomized-group4
 已在step307正常停止并标记invalid-contract，禁止评测/resume。canonical修复将CPU
-time与CUDA noise共同按query锁定，并通过fresh v2 config/checkpoint schema阻断旧状态；
-重新profile/resume后，从identity重跑RAW/GROUP4，再用cycle50/100/150/200同一
-paired correct400裁决。CV-ADR在隔离worktree等待该
+time与CUDA noise共同按query锁定，并通过fresh v2 config/checkpoint schema阻断旧状态。
+`dae13bf`的CPU全回归`241 passed`；RAW 0→1→3和GROUP4 0→1→3→7真实B20
+fresh/resume均已完成。tasks12/14/34/37跨operator换rank后，functional loss和raw
+task-gradient norm逐位相等，CountSketch最大绝对差仅`5.82e-11`，因此v2正式config
+已重新seal。下一步从新pushed frozen authority与全新root从identity重跑RAW/GROUP4，
+再用cycle50/100/150/200同一paired correct400裁决。CV-ADR在隔离worktree等待该
 operator结果，不能让训练bundle替架构背锅，也不能用架构aggregate替recipe定罪。
 
 ## 1. 当前证据与结论边界

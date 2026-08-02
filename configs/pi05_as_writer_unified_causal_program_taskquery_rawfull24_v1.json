@@ -63,7 +63,7 @@
       "budget_role": "fresh_ucp_task_query_keyed_raw_reference_200_cycle_control"
     },
     "profile_defaults": {
-      "status": "b20_capacity_retained_pending_cpu_cuda_v2_rng_reseal",
+      "status": "sealed_b20_after_cpu_cuda_v2_cross_rank_manipulation_and_exact_resume",
       "expected_world_size": 4,
       "total_steps": 3,
       "per_rank_batch_size": 20,
@@ -71,7 +71,7 @@
       "selected_stop_step": 1
     },
     "profile_evidence": {
-      "status": "b20_capacity_retained_pending_cpu_cuda_v2_rng_reseal",
+      "status": "sealed_b20_after_cpu_cuda_v2_cross_rank_manipulation_and_exact_resume",
       "allowed_physical_gpu_ids": [4, 5, 6, 7],
       "fixed_frame_stride": 5,
       "teacher_videos_per_task_visit": 1,
@@ -96,7 +96,7 @@
         "max_cuda_reserved_bytes": 83345014784
       },
       "selected": {
-        "implementation_commit": "04491b0ac9815635ebedbb46151f7948c0c59e7f",
+        "implementation_commit": "dae13bf269a8eeb906371c4ecac1de4e1f915998",
         "profile_optimizer_updates": 3,
         "profile_task_cycles": 3,
         "profile_global_action_queries": 1440,
@@ -107,30 +107,41 @@
         "all_steps_finite": true,
         "all_four_ranks_completed": true,
         "each_macro_covers_all_24_tasks_exactly_once": true,
-        "policy_randomness_scheme": "task_query_keyed_stateless_policy_cuda_v1_invalidated_by_unkeyed_cpu_beta_time",
-        "root": "/data/ymdai/outputs/ember/pi05_as_writer_ucp_rawfull24_formalseed_resume_smoke_r4_wip_20260801",
-        "log": "/data/ymdai/logs/ember/pi05_as_writer_ucp_rawfull24_formalseed_resume_smoke_r4_wip_20260801.log",
-        "command_sha256": "5042eed69b1d6b11b6bf357284f306577c443bfa2f8d02e28a72b28a3a087002",
-        "run_contract_sha256": "5b3d4dfc1e362921987a910ea0c5a4fc4da1050933d86f677d3edd71f2be312d",
-        "metrics_sha256": "f3b8191ea75e2577c8ca5ebbb32ed1b76a882db8dab49ef8caae0bebff0b3536",
-        "run_summary_sha256": "eac4eb17b6377463294255e15212018b1ce797a1bdcadad67a8db4695da4bd34"
+        "all_main_blocks_gradient_reachable_after_identity_step": true,
+        "policy_randomness_scheme": "task_query_keyed_stateless_policy_cpu_cuda_v2",
+        "root": "/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_rngv2_reseal_r4_b20_seed7_dae13bf_20260801",
+        "log": "/data/ymdai/logs/ember/pi05_as_writer_ucp_taskquery_rawfull24_rngv2_reseal_r4_b20_seed7_dae13bf_20260801.log",
+        "invocations_sha256": "5b83b494d76b2b11aff1537f9670b7e151dd745f7e87a42c3b6185f2af96cb1f",
+        "log_sha256": "b9812c1ff408ee738ed6a96c700b736770fbd64017d82827b05e45b93f40ecce",
+        "run_contract_sha256": "31f2edea090fcfad67623f22f42788ba5c655813d73d8c577a928a244e99c038",
+        "metrics_sha256": "a6c41cd2ba39c0e76e50e98a630edf7e52bc1bc9cce3a0b63d3afa14c6c87cdc",
+        "run_summary_sha256": "34cf2703e29188e57816542ff1384a9a377fd83aa3d39e3673c60501a1f173bf"
       },
       "exact_resume_smoke": {
-        "status": "invalidated_rng_v1_evidence_pending_cpu_cuda_v2_manipulation_and_exact_resume",
+        "status": "pass_fresh_step1_then_exact_resume_to_step3_with_cross_rank_rng_v2_manipulation",
         "rng_v1_contract_invalidated": true,
-        "implementation_commit": "04491b0ac9815635ebedbb46151f7948c0c59e7f",
-        "step1_snapshot_sha256": "aa8910876fe793a8c418d11adb998daba9de7eccc0922be0389ad51df19fbc7f",
+        "implementation_commit": "dae13bf269a8eeb906371c4ecac1de4e1f915998",
+        "policy_randomness_scheme": "task_query_keyed_stateless_policy_cpu_cuda_v2",
+        "step1_snapshot_sha256": "651c213f61a7ec9f4c4c689e133ba211f25d2cbacba8683bde8f384008c775c5",
         "step1_payloads_unchanged_after_resume": true,
         "raw_and_group4_cycle0_teacher_video_map_equal_for_all_24_tasks": true,
         "raw_and_group4_task_query_rows_equal_by_stateless_sampler_contract": true,
+        "cross_rank_phase0_tasks": [12, 14, 34, 37],
+        "raw_task_ranks": {"12": 1, "14": 0, "34": 3, "37": 0},
+        "group4_task_ranks": {"12": 2, "14": 3, "34": 0, "37": 1},
+        "cross_rank_functional_losses": {"12": 0.0845656543970108, "14": 0.1445673406124115, "34": 0.13012872636318207, "37": 0.15233761072158813},
+        "cross_rank_losses_bitwise_equal": true,
+        "cross_rank_gradient_norms_bitwise_equal": true,
+        "cross_rank_countsketch_max_absolute_difference": 5.820766091346741e-11,
+        "cross_rank_countsketch_max_relative_to_peak": 1.00311580307e-6,
         "validation_action_reads": 0,
         "test_action_reads": 0
       },
       "inference_profile": null
     },
     "formal_run": {
-      "status": "blocked_pending_cpu_cuda_v2_rng_reseal",
-      "launch_state": "blocked_pending_cpu_cuda_v2_manipulation_and_exact_resume",
+      "status": "sealed",
+      "launch_state": "ready_for_fresh_rng_v2_macro0_to200",
       "expected_world_size": 4,
       "total_steps": 400,
       "per_rank_batch_size": 20,

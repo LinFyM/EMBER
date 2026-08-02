@@ -1,4 +1,4 @@
-"""Language-aligned evidence streams for the Unified Causal Program Writer."""
+"""Language-aligned evidence streams for the CV-ADR Writer."""
 
 from __future__ import annotations
 

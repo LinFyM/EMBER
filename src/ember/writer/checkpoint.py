@@ -33,40 +33,40 @@ from ember.writer.update_schedule import cycle_matched_weight_decay
 
 
 AS_WRITER_CHECKPOINT_SCHEMA = (
-    "ember_pi05_unified_causal_program_full24_checkpoint_v1"
+    "ember_pi05_contextual_value_dual_read_full24_checkpoint_v1"
 )
 AS_WRITER_TRAINER_STATE_SCHEMA = (
-    "ember_pi05_unified_causal_program_full24_trainer_state_v1"
+    "ember_pi05_contextual_value_dual_read_full24_trainer_state_v1"
 )
 AS_WRITER_RANK_STATE_SCHEMA = (
-    "ember_pi05_unified_causal_program_full24_rank_state_v1"
+    "ember_pi05_contextual_value_dual_read_full24_rank_state_v1"
 )
 AS_WRITER_SERIAL4_CHECKPOINT_SCHEMA = (
-    "ember_pi05_unified_causal_program_serial4_exposurematched_checkpoint_v1"
+    "ember_pi05_contextual_value_dual_read_serial4_exposurematched_checkpoint_v1"
 )
 AS_WRITER_SERIAL4_TRAINER_STATE_SCHEMA = (
-    "ember_pi05_unified_causal_program_serial4_exposurematched_trainer_state_v1"
+    "ember_pi05_contextual_value_dual_read_serial4_exposurematched_trainer_state_v1"
 )
 AS_WRITER_SERIAL4_RANK_STATE_SCHEMA = (
-    "ember_pi05_unified_causal_program_serial4_exposurematched_rank_state_v1"
+    "ember_pi05_contextual_value_dual_read_serial4_exposurematched_rank_state_v1"
 )
 AS_WRITER_TASK_QUERY_RAW_CHECKPOINT_SCHEMA = (
-    "ember_pi05_unified_causal_program_task_query_rawfull24_checkpoint_v2"
+    "ember_pi05_contextual_value_dual_read_task_query_rawfull24_checkpoint_v2"
 )
 AS_WRITER_TASK_QUERY_RAW_TRAINER_STATE_SCHEMA = (
-    "ember_pi05_unified_causal_program_task_query_rawfull24_trainer_state_v2"
+    "ember_pi05_contextual_value_dual_read_task_query_rawfull24_trainer_state_v2"
 )
 AS_WRITER_TASK_QUERY_RAW_RANK_STATE_SCHEMA = (
-    "ember_pi05_unified_causal_program_task_query_rawfull24_rank_state_v2"
+    "ember_pi05_contextual_value_dual_read_task_query_rawfull24_rank_state_v2"
 )
 AS_WRITER_CYCLE_NORMALIZED_GROUP4_CHECKPOINT_SCHEMA = (
-    "ember_pi05_unified_causal_program_cycle_normalized_group4_checkpoint_v2"
+    "ember_pi05_contextual_value_dual_read_cycle_normalized_group4_checkpoint_v2"
 )
 AS_WRITER_CYCLE_NORMALIZED_GROUP4_TRAINER_STATE_SCHEMA = (
-    "ember_pi05_unified_causal_program_cycle_normalized_group4_trainer_state_v2"
+    "ember_pi05_contextual_value_dual_read_cycle_normalized_group4_trainer_state_v2"
 )
 AS_WRITER_CYCLE_NORMALIZED_GROUP4_RANK_STATE_SCHEMA = (
-    "ember_pi05_unified_causal_program_cycle_normalized_group4_rank_state_v2"
+    "ember_pi05_contextual_value_dual_read_cycle_normalized_group4_rank_state_v2"
 )
 
 
@@ -75,13 +75,13 @@ def _state_schemas(
     checkpoint_state_family: str | None = None,
 ) -> tuple[str, str, str]:
     family = checkpoint_state_family or (
-        "ucp_legacy_full24_v1"
+        "cvadr_legacy_full24_v1"
         if optimizer_updates_per_task_cycle == 1
-        else "ucp_legacy_serial4_v1"
+        else "cvadr_legacy_serial4_v1"
     )
     if (
         optimizer_updates_per_task_cycle == 1
-        and family == "ucp_legacy_full24_v1"
+        and family == "cvadr_legacy_full24_v1"
     ):
         return (
             AS_WRITER_CHECKPOINT_SCHEMA,
@@ -90,7 +90,7 @@ def _state_schemas(
         )
     if (
         optimizer_updates_per_task_cycle == 6
-        and family == "ucp_legacy_serial4_v1"
+        and family == "cvadr_legacy_serial4_v1"
     ):
         return (
             AS_WRITER_SERIAL4_CHECKPOINT_SCHEMA,
@@ -99,7 +99,7 @@ def _state_schemas(
         )
     if (
         optimizer_updates_per_task_cycle == 1
-        and family == "ucp_task_query_keyed_rawfull24_v2"
+        and family == "cvadr_task_query_keyed_rawfull24_v2"
     ):
         return (
             AS_WRITER_TASK_QUERY_RAW_CHECKPOINT_SCHEMA,
@@ -108,7 +108,7 @@ def _state_schemas(
         )
     if (
         optimizer_updates_per_task_cycle == 6
-        and family == "ucp_cycle_normalized_randomized_group4_v2"
+        and family == "cvadr_cycle_normalized_randomized_group4_v2"
     ):
         return (
             AS_WRITER_CYCLE_NORMALIZED_GROUP4_CHECKPOINT_SCHEMA,
@@ -191,9 +191,9 @@ def _write_rank_state(
             "tasks_per_rank_per_optimizer_update": tasks_per_rank_per_update,
             "optimizer_updates_per_task_cycle": optimizer_updates_per_task_cycle,
             "checkpoint_state_family": checkpoint_state_family or (
-                "ucp_legacy_full24_v1"
+                "cvadr_legacy_full24_v1"
                 if optimizer_updates_per_task_cycle == 1
-                else "ucp_legacy_serial4_v1"
+                else "cvadr_legacy_serial4_v1"
             ),
             "rng": saved_rng,
         },
@@ -229,9 +229,9 @@ def _write_shared_state(
         contract["runtime"].get(
             "checkpoint_state_family",
             (
-                "ucp_legacy_full24_v1"
+                "cvadr_legacy_full24_v1"
                 if optimizer_updates_per_task_cycle == 1
-                else "ucp_legacy_serial4_v1"
+                else "cvadr_legacy_serial4_v1"
             ),
         )
     )
@@ -360,9 +360,9 @@ def save_writer_checkpoint(
         contract["runtime"].get(
             "checkpoint_state_family",
             (
-                "ucp_legacy_full24_v1"
+                "cvadr_legacy_full24_v1"
                 if optimizer_updates_per_task_cycle == 1
-                else "ucp_legacy_serial4_v1"
+                else "cvadr_legacy_serial4_v1"
             ),
         )
     )
@@ -574,7 +574,7 @@ def _trainer_resume_cursor(
             "checkpoint_state_family",
             (
                 checkpoint_state_family
-                if checkpoint_state_family.startswith("ucp_legacy_")
+                if checkpoint_state_family.startswith("cvadr_legacy_")
                 else ""
             ),
         )
@@ -674,7 +674,7 @@ def _validate_rank_resume_cursor(
                 "checkpoint_state_family",
                 (
                     checkpoint_state_family
-                    if checkpoint_state_family.startswith("ucp_legacy_")
+                    if checkpoint_state_family.startswith("cvadr_legacy_")
                     else ""
                 ),
             )
@@ -699,15 +699,15 @@ def _validate_cycle_normalized_optimizer_resume(
     task_cycle_phase: int,
     checkpoint_state_family: str,
 ) -> None:
-    if checkpoint_state_family.startswith("ucp_legacy_"):
+    if checkpoint_state_family.startswith("cvadr_legacy_"):
         return
     group4 = (
         checkpoint_state_family
-        == "ucp_cycle_normalized_randomized_group4_v2"
+        == "cvadr_cycle_normalized_randomized_group4_v2"
     )
     if (
         not group4
-        and checkpoint_state_family != "ucp_task_query_keyed_rawfull24_v2"
+        and checkpoint_state_family != "cvadr_task_query_keyed_rawfull24_v2"
     ):
         raise WriterModelError("unknown cycle-normalized optimizer resume family")
     expected_betas = (
@@ -792,9 +792,9 @@ def load_writer_checkpoint(
         weights_only=False,
     )
     resolved_checkpoint_state_family = checkpoint_state_family or (
-        "ucp_legacy_full24_v1"
+        "cvadr_legacy_full24_v1"
         if optimizer_updates_per_task_cycle == 1
-        else "ucp_legacy_serial4_v1"
+        else "cvadr_legacy_serial4_v1"
     )
     _, trainer_state_schema, rank_state_schema = _state_schemas(
         optimizer_updates_per_task_cycle,

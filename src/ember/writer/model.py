@@ -1,4 +1,4 @@
-"""Canonical Unified Causal Program PI05 Writer."""
+"""Canonical Contextual-Value Asymmetric Dual-Read PI05 Writer."""
 
 from __future__ import annotations
 
@@ -9,10 +9,11 @@ import torch
 
 from ember.pi05_lora import pi05_target_names
 from ember.writer.program_compiler import (
+    ContextualValueDualReader,
     FactorHead,
-    TargetRankProgramReader,
 )
-from ember.writer.semantic_program import UnifiedCausalProgram
+from ember.writer.semantic_core import MeanBackedSemanticCore
+from ember.writer.semantic_program import OutgoingSemanticProgram
 from ember.writer.video_program import Pi05SemanticEvidenceEncoder
 
 
@@ -122,6 +123,8 @@ class CompleteLoRAWriter(torch.nn.Module):
         max_frames_per_encoder_call: int,
         action_horizon: int,
         padded_action_dim: int,
+        semantic_core_heads: int,
+        semantic_core_blocks: int,
         program_heads: int,
         program_blocks: int,
         compiler_heads: int,
@@ -145,12 +148,14 @@ class CompleteLoRAWriter(torch.nn.Module):
             or patch_grounding_heads != 8
             or action_horizon != 50
             or padded_action_dim != 32
+            or semantic_core_heads != 8
+            or semantic_core_blocks != 2
             or program_heads != 8
             or program_blocks != 2
             or compiler_heads != 8
             or factor_hidden_width != 256
         ):
-            raise WriterModelError("invalid Unified Causal Program Writer topology")
+            raise WriterModelError("invalid CV-ADR Writer topology")
         self.tensor_specs = tensor_specs
         self.program_width = int(program_width)
         self.semantic_encoder = Pi05SemanticEvidenceEncoder(
@@ -169,13 +174,18 @@ class CompleteLoRAWriter(torch.nn.Module):
             initialization_seed=initialization_seed,
             activation_checkpointing=activation_checkpointing,
         )
-        self.semantic_program = UnifiedCausalProgram(
+        self.semantic_core = MeanBackedSemanticCore(
+            width=program_width,
+            heads=semantic_core_heads,
+            blocks=semantic_core_blocks,
+        )
+        self.semantic_program = OutgoingSemanticProgram(
             width=program_width,
             heads=program_heads,
             blocks=program_blocks,
             initialization_seed=initialization_seed + 1,
         )
-        self.compiler = TargetRankProgramReader(
+        self.compiler = ContextualValueDualReader(
             width=program_width,
             heads=compiler_heads,
             target_count=len(pi05_target_names()),
@@ -185,7 +195,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         self.factor_heads = torch.nn.ModuleDict(
             {
                 name: FactorHead(
-                    program_width,
+                    2 * program_width,
                     factor_hidden_width,
                     width,
                 )
@@ -340,6 +350,8 @@ class CompleteLoRAWriter(torch.nn.Module):
         torch.Tensor,
         torch.Tensor,
         torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
     ]:
         offsets = self._validated_offsets(video_offsets, frames.shape[0])
         conditions = len(offsets) - 1
@@ -366,7 +378,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             lengths,
         )
         (
-            _text_queries,
+            text_queries,
             frame_evidence,
             grounded_evidence,
             action_probes,
@@ -392,13 +404,18 @@ class CompleteLoRAWriter(torch.nn.Module):
             frame_indices,
             offsets,
         )
+        core_memory, _frame_attention = self.semantic_core(
+            text_queries,
+            packed_evidence,
+            valid_frames,
+            valid_task_tokens,
+        )
         (
-            program_memory,
+            program,
             endpoint_positions,
             valid_intervals,
             valid_semantics,
         ) = self.semantic_program(
-            packed_evidence,
             packed_grounded,
             packed_actions,
             positions,
@@ -406,7 +423,9 @@ class CompleteLoRAWriter(torch.nn.Module):
             valid_task_tokens,
         )
         return (
-            program_memory,
+            core_memory,
+            valid_task_tokens,
+            program,
             endpoint_positions,
             valid_intervals,
             valid_semantics,
@@ -424,7 +443,9 @@ class CompleteLoRAWriter(torch.nn.Module):
         policy: torch.nn.Module,
     ) -> dict[str, torch.Tensor]:
         (
-            program_memory,
+            core_memory,
+            valid_core,
+            program,
             endpoint_positions,
             valid_intervals,
             valid_semantics,
@@ -438,7 +459,9 @@ class CompleteLoRAWriter(torch.nn.Module):
             task_span_mask,
         )
         coordinates = self.compiler(
-            program_memory,
+            core_memory,
+            valid_core,
+            program,
             endpoint_positions,
             valid_intervals,
             valid_semantics,
@@ -451,5 +474,5 @@ class CompleteLoRAWriter(torch.nn.Module):
             generated = rows.transpose(-1, -2) if item.transpose_output else rows
             template = getattr(self, self._template_buffers[item.name])
             value = generated.to(dtype=template.dtype) + template[None]
-            result[item.name] = value[0] if program_memory.shape[0] == 1 else value
+            result[item.name] = value[0] if core_memory.shape[0] == 1 else value
         return result

@@ -1,6 +1,7 @@
 # Contextual-Value Asymmetric Dual-Read Writer 设计
 
-**状态：2026-08-01 evidence-sealed design authority；尚未实现、profile或训练。**
+**状态：2026-08-01 canonical实现与focused CPU验证完成；真实B20 profile、
+exact-resume和正式训练仍待完成。**
 
 本文负责AP-ADR一小时门失败后的下一整体AS-Writer结构。它同时服从两条已经独立
 成立的事实：
@@ -118,16 +119,20 @@ AP macro150中raw/block1/block2 Program RMS约`.20/.61/1.88`。这个增长在AP
 1. ProgramRead远大于CoreRead，重演v10式动态支配；
 2. optimizer把P压回近零，Core独占写入。
 
-因此每步记录raw P、每block P、CoreRead、ProgramRead、concat和factor的RMS、梯度、
-Adam `sqrt(v)/eps`与累计位移。首小时内部门要求多个task上ProgramRead/CoreRead RMS
-处在有限、非单边坍缩的宽区间，并由反事实证明两路都必要；不通过时重构block职责，
-不得事后加固定scale或gate。
+因此训练热路径每次optimizer update按owner记录梯度、Adam
+`sqrt(v)/eps`和相对fresh identity的累计参数位移；raw P、每block P、CoreRead、
+ProgramRead、concat与factor的RMS则在候选checkpoint上由canonical内部分析按task、
+video condition完整重建。不得为了逐step激活日志再做额外Writer前向或保留大tensor，
+因为那会改变正式B20的显存与吞吐合同。首小时内部门要求多个task上
+ProgramRead/CoreRead RMS处在有限、非单边坍缩的宽区间，并由反事实证明两路都
+必要；不通过时重构block职责，不得事后加固定scale或gate。
 
 ## 7. 参数和代码边界
 
-CV-ADR不新增parameterized module，预期真实参数仍为AP的`10,241,024`：
+CV-ADR已在独立写worktree实现为fresh incompatible schema。真实module
+enumeration为`10,241,024`，与设计预算精确一致：
 
-| owner | expected parameters |
+| owner | enumerated parameters |
 |---|---:|
 | Meta-LoRA frontend | 2,469,888 |
 | evidence projections | 983,552 |
@@ -137,15 +142,21 @@ CV-ADR不新增parameterized module，预期真实参数仍为AP的`10,241,024`�
 | coherent factor heads | 2,703,360 |
 | **total** | **10,241,024** |
 
-真实实现后必须重新enumerate，不能把预期值冒充实测。代码owner保持：
+代码owner保持：
 
+- `semantic_core.py`：mean-backed、task-selected centered Core；
 - `semantic_program.py`：raw A/E/D、causal axial P；
 - `program_compiler.py`：单一P的Core/Program dual read；
 - `model.py`：只编排，不保存旧AP可选分支；
 - `architecture.py`/config/checkpoint schemas：fresh incompatible authority；
-- `internal_analysis.py`：只保留与新canonical路径严格parity的诊断。
+- `internal_path.py`：canonical路径重建、K/V parity和结构反事实；
+- `internal_analysis.py`：task/probe/runtime编排；
+- `internal_metrics.py`/`internal_results.py`：纯指标与分布式结果封存。
 
-历史AP由Git/frozen artifact保存；main不保留runtime switch、version enum或并行runner。
+历史UCP/AP由Git与frozen control worktree/artifact保存；CV canonical tree不保留
+runtime switch、version enum、UCP专用分析器或并行runner。结构门复核结果为
+`hard_violations=[]`；新路径owner分别为635/494行，整个active-source diff相对
+`1a09e71`净减少779行。
 
 ## 8. 最短vertical path
 
@@ -166,6 +177,13 @@ CV-ADR不新增parameterized module，预期真实参数仍为AP的`10,241,024`�
 
 B20只在真实OOM或连续非有限时降B16，不扫描B17--B19/B21。
 
+截至本次实现seal，shape、mask、identity、freeze、causal/permutation、主要模块
+gradient、checkpoint/update/evaluator schema及内部分析parity的focused回归共
+`159`项通过。随后实现rebase到`8dfe6ed`的RNG-v2与fail-closed schedule authority，
+全仓CPU回归`226 passed in 35.56s`；`compileall`、四个CV config loader与diff
+check通过。task-query RAW/GROUP4使用fresh-incompatible v2 family，旧CV RNG-v1
+family fail-closed。这里不把CPU/合成验证冒充第12项真实profile，第12项仍明确pending。
+
 ## 9. 架构与recipe的执行顺序
 
 训练根因先在exact UCP上完成已经预注册的受控格：fresh raw与cycle-normalized
@@ -174,16 +192,28 @@ raw、未归一SERIAL和normalized group4三角，不拿CV-ADR替训练假设背
 
 截至2026-08-01，group4最长105-frame B20 profile、formal-seed
 fresh0→1→resume1→3→7和raw fresh0→1→resume1→3均已通过，两臂cycle0的24个
-teacher-video assignments逐项一致，配置已seal。canonical UCP恢复commit为
-`85a82cb`；正式两臂尚未启动。只有完成相同paired correct400后，才能按预注册证据
-决定CV-ADR是否仍先用raw或迁移normalized group4，不能根据smoke/profile选择recipe。
+teacher-video assignments逐项一致。首个task/query raw正式root后来发现formal
+total误写为一小时stop，实际scheduler被自动压成decay200；其correct400为
+`81/72/107/78`，best macro150后又lost43/gained14。这个cell只证明过快衰减没有
+稳定UCP，不能与group4组成operator pair，也不能拿来选择CV recipe。
+
+scheduler与stage边界已经在clean `cfc2ad1`修复为raw
+`total400/stop200/stages[200,400]`、group4
+`total2400/stop1200/stages[1200,2400]`并fail-closed。true-fast400 raw现从该
+frozen commit fresh运行；前两macro已确认24 tasks/24 videos/480 queries、四rank
+cost-balanced long-first、真实warmup17和完整主路径finite可达。normalized group4
+只在raw训练及paired correct400完成后顺序启动。只有两臂都完成相同panel，才能按
+预注册证据决定CV-ADR是否仍先用raw或迁移normalized group4；不能根据smoke/profile、
+autoscaled cell或单一functional loss选择recipe。
 
 endpoint10已经以全局Spearman`.258398`、100,000次permutation `p=.298447`失败
 预注册global门；尤其v6-fast macro200的correct133对应18点最差quality。故CV-ADR
 不能使用endpoint10选点或训练，candidate裁决仍只认paired closed-loop、breadth、
 gained/lost/Jaccard及Core→Program→BA→action传递。
 
-CV-ADR实现后首跑仍用raw-full24/B20/fast400、fresh macro0->200，评测
+CV-ADR的四个config与fresh schema已经实现，但在真实profile前保持
+`formal_contract.state=pending`。首跑仍用raw-full24/B20/fast400、fresh
+macro0->200，评测
 50/100/150/200 paired correct400；它与AP raw只差K/V职责，优先识别topology。
 只有UCP normalized group4通过预注册absolute/breadth/drift/dynamic联合门，才把同一
 recipe迁移到CV-ADR；否则CV-ADR不因UCP训练负结果被否定，继续按raw结果判断架构。

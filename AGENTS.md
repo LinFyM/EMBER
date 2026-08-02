@@ -135,7 +135,7 @@ scheduler延后并重排峰值，但没有提高UCP single-checkpoint ceiling或
 原tmux为`ember-ucp-tq-g4-tf400-cfc2ad1`，现已退出。首cycle与raw逐task teacher demo/frame
 count一致，24 tasks/24 videos/480 queries，scheduler只在cycle边界推进，全部主路径
 finite，但后续确认其CPU Beta timestep未按query固定，故该run不得评测或裁决。
-CV-ADR保持在隔离clean commit `3798994`，正确operator裁决后才
+CV-ADR保持在隔离的RNG-v2 rebase/verification snapshot `ed21244`，正确operator裁决后才
 集成/profile/resume/formal。后续推进暂停所有subagent使用。
 
 2026-08-01 launch-boundary override：scheduler修复commit `e1299db`已push；首个

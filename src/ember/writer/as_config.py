@@ -12,21 +12,21 @@ from ember.writer.model import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_unified_causal_program_full24_as_writer_v1"
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_contextual_value_dual_read_full24_as_writer_v1"
 AS_WRITER_CONFIG_OVERLAY_SCHEMA = (
-    "ember_pi05_unified_causal_program_full24_as_writer_recipe_overlay_v1"
+    "ember_pi05_contextual_value_dual_read_full24_as_writer_recipe_overlay_v1"
 )
 AS_WRITER_SERIAL4_CONFIG_SCHEMA = (
-    "ember_pi05_unified_causal_program_serial4_exposurematched_as_writer_v1"
+    "ember_pi05_contextual_value_dual_read_serial4_exposurematched_as_writer_v1"
 )
 AS_WRITER_SERIAL4_CONFIG_OVERLAY_SCHEMA = (
-    "ember_pi05_unified_causal_program_serial4_exposurematched_recipe_overlay_v1"
+    "ember_pi05_contextual_value_dual_read_serial4_exposurematched_recipe_overlay_v1"
 )
 AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA = (
-    "ember_pi05_unified_causal_program_cycle_normalized_as_writer_v2"
+    "ember_pi05_contextual_value_dual_read_cycle_normalized_as_writer_v2"
 )
 AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA = (
-    "ember_pi05_unified_causal_program_cycle_normalized_recipe_overlay_v2"
+    "ember_pi05_contextual_value_dual_read_cycle_normalized_recipe_overlay_v2"
 )
 AS_WRITER_CONFIG_SCHEMAS = (
     AS_WRITER_CONFIG_SCHEMA,
@@ -108,7 +108,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         or int(writer.get("max_frames_per_encoder_call", 0)) <= 0
     ):
         raise WriterModelError(
-            "sealed UCP Writer dimensions changed"
+            "sealed CV-ADR Writer dimensions changed"
         )
     expected = expected_writer_contract(writer)
     if writer != expected:
@@ -120,7 +120,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
             if writer[key] != expected[key]
         )
         raise WriterModelError(
-            "UCP AS-Writer architecture changed; "
+            "CV-ADR AS-Writer architecture changed; "
             f"missing={missing}, extra={extra}, changed={changed}"
         )
 
@@ -216,7 +216,7 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
             "one independent policy flow noise and time draw per action query"
         ),
         "single_video_gradient_direction_diagnostic": (
-            "fixed_countsketch_32_per_task_per_semantic_frontend_program_"
+            "fixed_countsketch_32_per_task_per_semantic_frontend_core_program_"
             "compiler_factor_block"
         ),
         "normal_loss_weight": 1.0,

@@ -37,15 +37,17 @@ def _task_gradients() -> dict[int, torch.Tensor]:
     }
 
 
-def test_parameter_layout_owns_exact_ucp_blocks() -> None:
+def test_parameter_layout_owns_exact_cvadr_blocks() -> None:
     writer = torch.nn.Module()
     writer.semantic_encoder = torch.nn.Linear(1, 1)
+    writer.semantic_core = torch.nn.Linear(1, 1)
     writer.semantic_program = torch.nn.Linear(1, 1)
     writer.compiler = torch.nn.Linear(1, 1)
     writer.factor_heads = torch.nn.Linear(1, 1)
     layout = parameter_layout(writer)
     assert {item.block for item in layout} == {
         "semantic_frontend",
+        "core",
         "program",
         "compiler",
         "factor",

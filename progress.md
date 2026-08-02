@@ -118,8 +118,8 @@ GPU范围和训练步长是当时快照；活动状态只取
   完全相同的teacher demo和sampled-frame count，恰好24 tasks/24 videos/480
   queries；scheduler只在cycle边界推进，step2起全部主模块梯度finite，0 OOM/clip。
   训练完成后固定评测cycle50/100/150/200，不根据train/held loss提前选点。
-- CV-ADR保持隔离在clean branch/worktree，最新rebase/verification commit为
-  `3798994`；在group4裁决前不集成、不启动GPU。后续全部由主进程执行，暂停
+- CV-ADR保持隔离在clean branch/worktree，RNG-v2 rebase/verification snapshot为
+  `ed21244`；在group4裁决前不集成、不启动GPU。后续全部由主进程执行，暂停
   subagent使用。
 
 ## 2026-08-01 UCP scheduler合同纠偏与CV-ADR实现冻结
@@ -138,9 +138,12 @@ GPU范围和训练步长是当时快照；活动状态只取
   fail-close，禁止formal逻辑总步少于decay；`tests/test_writer_training.py`与
   `tests/test_writer_serial4.py`共`24 passed`。待当前run和其paired correct400完成
   后提交/push，再用新frozen authority fresh跑真正fast400两臂。
-- 独立CV-ADR worktree已提交`b2bc70c`：真实参数`10,241,024`，四config保持
+- 独立CV-ADR worktree已提交：真实参数`10,241,024`，四config保持
   profile pending，focused `159 passed in 26.32s`，compileall/diff/config loader
-  与architecture guard通过；没有推送，也没有启动GPU profile/formal。
+  与architecture guard通过；实现随后rebase到当前`8dfe6ed` authority，并在
+  `ed21244` snapshot上完成全仓`226 passed in 35.56s`、compileall、四config
+  loader及diff check。没有推送，也没有启动GPU
+  profile/formal。
 - autoscaled-decay200 raw已自然完成macro200：wall `3892.039s`、96,000 queries、
   4,800 videos、200行finite、信息墙读取0，四候选checkpoint完整。四条correct400
   已在GPU4/5/6/7全部自然完成；每条400 states、36/36 long-first shards、0 failure。

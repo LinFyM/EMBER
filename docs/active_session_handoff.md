@@ -237,7 +237,7 @@ scale   0->1200 physical updates = 0->200 complete 24-task cycles
 24 tasks、24 videos和480 queries；scheduler只在phase5后推进，step2起frontend、
 Program、compiler和factor均finite可达，0 OOM/clip；这些并不能
 覆盖CPU timestep合同错误。该root禁止评测/resume，待RNG-v2 fresh配对重跑。
-CV-ADR隔离分支最新rebase/verification commit为`3798994`，只有正确operator裁决后
+CV-ADR隔离分支的RNG-v2 rebase/verification snapshot为`ed21244`，只有正确operator裁决后
 才集成、做105-frame B20 profile/resume和formal。后续全部由主进程执行，暂停
 subagent使用。
 

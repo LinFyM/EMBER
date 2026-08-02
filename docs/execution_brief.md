@@ -89,7 +89,7 @@ loss代替closed-loop裁决。
 首cycle已确认与raw cycle0逐task teacher demo/frame count一致，全部主路径finite、
 0 OOM/clip，但CPU timestep合同错误使其不能进入correct400或operator裁决。
 
-CV-ADR保持隔离在最新clean commit `3798994`，尚未集成或启动GPU。待RNG-v2
+CV-ADR保持隔离在RNG-v2 rebase/verification snapshot `ed21244`，尚未集成或启动GPU。待RNG-v2
 operator结果：若group4没有共同提高absolute、breadth或视频innovation传递，则CV
 先用raw；若group4形成强的
 多task共同收益，才把该operator迁入CV。后续暂停所有subagent使用。

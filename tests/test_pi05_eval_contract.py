@@ -2,12 +2,18 @@ from __future__ import annotations
 
 import copy
 import json
+import sys
 from dataclasses import replace
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
-from ember.pi05_assets import Pi05EvaluationError, prepare_libero_config
+from ember.pi05_assets import (
+    Pi05EvaluationError,
+    configure_libero_runtime_assets,
+    prepare_libero_config,
+)
 from ember.pi05_eval_contract import (
     build_run_contract,
     inspect_installed_target_tasks,
@@ -76,6 +82,23 @@ def test_libero_config_accepts_a_host_local_assets_root(
     monkeypatch.setenv("EMBER_LIBERO_ASSETS_ROOT", str(assets_root))
     paths = prepare_libero_config(tmp_path / "libero-config")
     assert paths["assets"] == str(assets_root.resolve())
+
+
+def test_libero_runtime_uses_the_contract_asset_snapshot(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assets_root = tmp_path / "libero-assets"
+    assets_root.mkdir()
+    package = ModuleType("libero")
+    runtime = ModuleType("libero.libero")
+    runtime._assets_path_cache = None
+    package.libero = runtime
+    monkeypatch.setitem(sys.modules, "libero", package)
+    monkeypatch.setitem(sys.modules, "libero.libero", runtime)
+
+    configure_libero_runtime_assets(assets_root)
+
+    assert runtime._assets_path_cache == str(assets_root.resolve())
 
 
 def test_installed_target_contract_seals_bddl_and_fixed_states(tmp_path: Path) -> None:

@@ -9,7 +9,7 @@
 `AGENTS.md`与`docs/execution_brief.md`。任何接手者都必须先只读复核现场，不能按
 历史快照重复启动进程。后续完全由主进程推进，不使用subagent。
 
-## 0-live. CV-ADR RAW第二小时正在exact-resume
+## 0-live. CV-ADR RAW full400完成，四候选correct400运行中
 
 RAW macro0→200已自然完成：96,000 queries、4,800 one-video conditions、wall
 `3916.79s`，all finite、0 clip。paired correct400为：
@@ -33,25 +33,41 @@ macro200 exact50已完成400 Cartesian rows、五种真实frame-order forward、
 contextualized的Program memory仅`.00607`且0/8达门。same-task BA variance
 `.10494%`，fixed-action中位`.00856%`。因此CV整体接口有价值，但动态教学仍不充分。
 
-预封存一小时门授权继续成熟度判别。当前唯一需要继承的进程是：
+预封存一小时门授权的第二小时已自然完成。正式root从identity到macro400恰好产生
+400行metrics、192,000 queries和9,600 one-video conditions；每25 checkpoint均
+存在，all finite、0 clip，末macro loss/gradient/LR为
+`.0979283/.0915952/1.00045e-5`。训练tmux已自然退出，当前没有训练进程。
+
+完整400-cycle动力学审计给出新的根因边界：候选step100--400的global raw-mean
+candidate-negative tasks全部为0，虽pairwise negative fraction仍约`.36--.50`；
+late factor block占task-gradient energy约`93.6--94.0%`。同task one-video梯度在
+第二小时只有`.26--.49%` task-mean energy，`.024--.041`相邻余弦，约
+`99.5--99.7%`是centered波动；低LR下50-macro参数段方向仍近正交或为负。16个held
+functional losses仅在`.13055--.13399`内横盘。因此CP负投影不是当前主解，fast
+decay也没有使条件学习方向稳定；但这份观测尚未把video、query和PI05 flow-noise
+分离。
+
+当前唯一需要继承的进程是四候选paired correct400 evaluator：
 
 ```text
-tmux  ember-cvadr-raw-formal-resume200to400-254ade4
+tmux  ember-cvadr-raw-candidates2-254ade4
 code  254ade404c064bb78aaa95e421f8a91db3caa9f6
-root  /data/ymdai/outputs/ember/pi05_as_writer_cvadr_rawfull24_taskcomplete_decay400_formal_dev_r4_b20_seed7_254ade4_20260802_retry1
-log   /data/ymdai/logs/ember/pi05_as_writer_cvadr_rawfull24_taskcomplete_decay400_formal_dev_r4_b20_seed7_254ade4_20260802_retry1_resume200to400.log
-resume /data/ymdai/outputs/ember/pi05_as_writer_cvadr_rawfull24_taskcomplete_decay400_formal_dev_r4_b20_seed7_254ade4_20260802_retry1/checkpoints/step_00000200
+train /data/ymdai/outputs/ember/pi05_as_writer_cvadr_rawfull24_taskcomplete_decay400_formal_dev_r4_b20_seed7_254ade4_20260802_retry1
+eval  /data/ymdai/outputs/ember/pi05_as_writer_cvadr_rawfull24_taskcomplete_decay400_correct400_noreplacement_seed7_macro{0250,0300,0350,0400}_254ade4_20260802
+log   /data/ymdai/logs/ember/pi05_as_writer_cvadr_rawfull24_taskcomplete_decay400_secondhour_correct400_controller_254ade4_20260802.log
 ```
 
-首两个恢复宏步201/202各恰好24 tasks、24 videos、480 queries；四rank sampled-frame
-cost约`209--216`且rank内long-first，loss`.1010/.1014`、gradient`.1040/.1253`、
-0 clip，LR与五块Adam step精确连续。只允许其自然到400；随后评测250/300/350/400。
-若第二小时仍弱/轮换，不做五臂，转入同topology normalized GROUP4正式控制。
+250/300/350/400分别只用物理GPU4/5/6/7；每个root固定400 states、8 tasks×50、
+correct video无放回、36个long-first shards、6 persistent replicas和6 Writer generators。
+四root的run contract已核验，teacher action reads为0。完成后先验证各400 rows、配对
+字段和失败数，再与50/100/150/200合并选择single checkpoint。若第二小时仍弱/轮换，
+不做五臂，转入同topology normalized GROUP4正式控制。
 
 正式证据：candidate curve SHA`71cbd02d...33dc3`；exact50 raw analysis/summary
 `b60f6ed4...0407`/`5f1df44e...4a56`；responsibility audit`2aec024f...9cb9`；
 same-RAW architecture audit`a4b1b03f...8c47`；UCP recipe source-preservation audit
-`b43fe53f...01ff`。后续仍完全由主进程推进，不使用subagent。
+`b43fe53f...01ff`。full400 dynamics analysis SHA为`7289eef4...7a4f`，canonical
+payload为`82ed1026...9f40`。后续仍完全由主进程推进，不使用subagent。
 
 ## 0-root. v5.2×v6架构—recipe—视频因果的联合边界
 

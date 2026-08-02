@@ -25,7 +25,7 @@ semantic/transition bundle能在新recipe下较早获得广能力；不可接受
 Procedure→LoRA/action接口把时序收益压掉并在后期轮换。逐task/curve SHA为
 `611c9330...c5a1`/`bf5a4609...1770`。
 
-## 2026-08-02 CV-ADR RAW一小时裁决与活动第二小时
+## 2026-08-02 CV-ADR RAW full400与活动候选评测
 
 CV-ADR RAW macro0→200及四个paired correct400已完成：50/100/150/200为
 `76/111/99/117`。macro200右端best、breadth6、top2占`57.26%`，但相邻能力仍明显
@@ -36,10 +36,20 @@ CV-ADR RAW macro0→200及四个paired correct400已完成：50/100/150/200为
 exact50证明Core/Program都不可删除、Program/Core读幅平衡且Effect-only旁路已消失；
 但Action只在1/8 tasks达到预注册门、D为5/8，contextual-memory order为0/8，
 same-video BA variance仅`.1049%`、固定action中位`.00856%`。因此117不是成功，只是
-“值得成熟度判别”。RAW已从同一frozen `254ade4` step200 exact-resume到400；活动
-tmux `ember-cvadr-raw-formal-resume200to400-254ade4`，沿用正式root，首两个恢复宏步
-合同健康。完成后评测250/300/350/400；强single checkpoint才做五臂，弱/含混则
-同topology补做normalized GROUP4。后续不使用subagent。
+“值得成熟度判别”。RAW已从同一frozen `254ade4`自然exact-resume到400：400 cycles、
+192,000 queries、9,600 videos、every25 checkpoints、all finite、0 clip，训练进程
+已退出。
+
+full400动力学显示step100--400的global raw-mean candidate-negative tasks均为0，
+但pairwise negative fraction仍约`.36--.50`；late factor梯度能量占
+`93.6--94.0%`。第二小时同task one-video梯度约`99.5--99.7%`是centered波动，
+相邻余弦`.024--.041`；低LR下50-macro参数段仍近正交/为负，held functional loss
+在`.13055--.13399`横盘。故CP负投影与“decay会自然止漂移”均被降权，下一步必须
+分离teacher-video、B20 query与flow-noise估计方差。
+
+活动tmux `ember-cvadr-raw-candidates2-254ade4`正把250/300/350/400四个paired
+correct400分别固定到GPU4/5/6/7。完成后合并八点选择single checkpoint；强模型才做
+五臂，弱/含混则同topology补做normalized GROUP4。后续不使用subagent。
 
 UCP source-preservation审计还表明SERIAL cycle150可同时提高旧source retention和
 新能力、但cycle200回落；GROUP4保留更多source却压弱动态。故不能把训练归结为

@@ -8,6 +8,23 @@ GPU范围和训练步长是当时快照；活动状态只取
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-02 CV-ADR full400完成并启动四候选correct400
+
+- frozen `254ade4`的RAW从step200 exact-resume到400自然结束；累计400 cycles、
+  192,000 queries、9,600 one-video conditions，metrics连续、every25 checkpoints
+  完整、all finite、0 clip，训练tmux自然退出。
+- 生成full400 training-dynamics artifact；analysis SHA256为
+  `7289eef422a4021c9cd57504d90cb83ef27a34f132a61336c9007d4d000d7a4f`，canonical
+  payload为`82ed1026a6a82657bbb43bb4a45b1c06f6a146b5ad3cf07e7f13d4e8e1990f40`。
+  它确认late global mean无candidate-negative task，但条件梯度约99.5% centered、
+  参数段方向仍不稳定，held functional loss横盘。
+- live preflight确认main/origin、frozen worktree、assets、四checkpoint、新root、存储
+  和GPU4--7；`/data/ymdai`约418.77GB，预计峰值低于500GB。未查询GPU0--3。
+- tmux `ember-cvadr-raw-candidates2-254ade4`已把macro250/300/350/400 paired
+  correct400分别固定到物理GPU4/5/6/7；每root为8 tasks×50、correct video无放回、
+  dynamic long-first、6 persistent replicas/6 Writer generators。完成后合并八点，
+  弱/轮换则进入同topology GROUP4，不提前做五臂。
+
 ## 2026-08-02 v5.2×v6 recipe/video-causality联合审计
 
 - 新建只读正式审计root

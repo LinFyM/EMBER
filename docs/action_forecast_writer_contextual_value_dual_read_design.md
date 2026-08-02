@@ -1,9 +1,9 @@
 # Contextual-Value Asymmetric Dual-Read Writer 设计
 
-**状态：2026-08-02 已集成为canonical，参数10,241,024。RAW macro0→200与
-50/100/150/200 correct400已完成为`76/111/99/117`；macro200 exact50确认双路和
-contextual value有效，但Action/order reader与same-video函数方差仍弱。当前同root
-exact-resume到400，之后评测250/300/350/400；弱/含混时做同topology GROUP4。**
+**状态：2026-08-02 已集成为canonical，参数10,241,024。RAW macro0→400已自然
+完成；50/100/150/200 correct400为`76/111/99/117`，macro200 exact50确认双路和
+contextual value有效，但Action/order reader与same-video函数方差仍弱。当前正在
+评测250/300/350/400；弱/含混时做同topology GROUP4。**
 
 ## 0. Formal evidence override
 
@@ -19,6 +19,15 @@ macro200内部结果同时给出保留/否定边界：Core-only和Program-only�
 `.1049%`、fixed-action中位`.00856%`。所以不能宣称已解决视频教学，也不能退回AP
 raw Effect value。第二小时只判别成熟度；若仍失败，最早未满足职责是有序Program
 内容到target/rank read及高噪声训练operator的共同接口，不得用scalar gate/scale修补。
+
+macro200→400成熟度段已完整结束。step100--400的global full24 raw-mean direction
+没有candidate-negative task，但约`.36--.50` task-pair仍为负；late factor head占
+task-gradient energy约`93.6--94.0%`。第二小时同task one-video梯度仅
+`.26--.49%`属于task mean，约`99.5--99.7%`为centered变化，相邻余弦
+`.024--.041`；即使LR降到`1.0e-5`，相邻50-macro参数段方向仍不稳定。16个held
+functional losses横盘于`.13055--.13399`。因此full24 candidate并未直接伤害任一
+task不足以说明优化稳定，CP投影也不会修复高方差条件估计或functional/closed-loop
+错位。正式行为结论仍等待250/300/350/400配对曲线。
 
 跨v5.2/v6的2×2正式审计进一步收紧本文的recipe解释。task-complete在两种架构上
 都保留约相同的normalized Procedure顺序差异，却把shuffled/reversed的
@@ -248,13 +257,13 @@ endpoint10已经以全局Spearman`.258398`、100,000次permutation `p=.298447`�
 gained/lost/Jaccard及Core→Program→BA→action传递。
 
 CV-ADR四个fresh schema config已经随merge `b97960f`进入main；旧UCP config与专用
-analyzer退役。真实profile前formal仍pending。首跑用raw-full24/B20/fast400、fresh
-macro0→200，评测50/100/150/200 paired correct400；不能根据smoke、held loss或
-内部漂亮数值提前裁决。
+analyzer退役。真实B20最长视频profile、formal-seed exact resume和RAW fresh
+macro0→400均已完成；首小时50/100/150/200已评测，第二小时250/300/350/400正在
+配对评测。不能根据held loss或内部漂亮数值提前裁决。
 
 raw第二小时门为：best至少与UCP/SERIAL的`117/121`同档且由多个task贡献，并且右端
 趋势或内部Program主路明确；默认强续训仍要求`>=125`、breadth`>=6`且top2不过度
-集中。达到门才exact-resume到400；强single checkpoint才跑五臂。
+集中。该门已授权并完成exact-resume到400；强single checkpoint才跑五臂。
 
 ## 10. 内部成功与直接失败条件
 

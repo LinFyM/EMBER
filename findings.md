@@ -6,6 +6,29 @@
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-02 CV-ADR full400训练动力学与当前行为门
+
+- RAW从fresh identity到macro400自然完成：400 cycles、192,000 action queries、
+  9,600 one-video conditions、16个every25 checkpoints，all finite、0 clip；末macro
+  loss/gradient/LR为`.0979283/.0915952/1.00045e-5`，信息墙action reads为0。
+- 候选step100--400的global raw-mean candidate-negative tasks均为0，然而task-pair
+  negative fraction仍约`.36--.50`，full24 mean只保留约`4.1--5.6%`单task梯度
+  energy。这降低“负冲突投影会解决漂移”的解释：pairwise负余弦并不等于global
+  candidate伤害task。
+- late factor head占task-gradient energy约`93.6--94.0%`；Program仅约`.15%`、Core
+  `.75--.82%`、compiler约`1.45--1.50%`。这不是上游无梯度，但说明functional
+  surrogate的局部优化几乎由最终factor owner支配。
+- 同task连续one-video条件的task-mean/sample energy在第一/第二小时分别约
+  `.92--1.96%`/`.26--.49%`，第二小时centered比例升到`99.51--99.74%`，相邻余弦
+  仅`.0236--.0406`。这个量混合teacher video、B20 query和PI05 flow-noise，不能
+  直接命名为video噪声；下一受控审计必须分离三者。
+- 50-macro参数段虽随LR显著缩短，Core/Program/frontend后半相邻方向仍多次为负或
+  近零；16个held functional loss仅在`.13055--.13399`内横盘。故fast decay减小
+  位移幅度，却没有证明能力方向稳定；低functional loss也仍不能预测closed loop。
+- full400 dynamics analysis SHA为`7289eef4...7a4f`，canonical payload
+  `82ed1026...9f40`。250/300/350/400 paired correct400正在四张GPU独立运行；只有
+  合并八点后才能判别第二小时是成熟、停滞还是继续轮换。
+
 ## 2026-08-02 v5.2×v6架构—训练—视频因果联合审计
 
 - 四个selected single-checkpoint五臂重新从正式400-row artifacts逐行核验：v5.2-old

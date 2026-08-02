@@ -56,11 +56,16 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 
 ## Current focused execution task
 
-2026-08-02 CV-ADR formal evidence override：RAW macro0→200已自然完成，paired
-correct400在50/100/150/200为`76/111/99/117`。macro200是右端best、breadth6、
-top2占`57.26%`，但相邻success Jaccard仍只有`.450/.522/.511`。与完全相同
-RNG-v2 RAW recipe、task/video/query曝光及evaluation panel的UCP相比，CV四点均
-提高`+4/+24/+13/+28`；macro200净增益由多保留9个source successes和多获得19个
+2026-08-02 CV-ADR live override：RAW已从fresh identity自然完成macro0→400，恰好
+400 metrics/cycles、192,000 action queries、9,600 one-video conditions；每25 macro
+checkpoint完整，all finite、0 clip，validation/test action reads为0。末macro loss/
+gradient/LR为`.0979283/.0915952/1.00045e-5`。训练tmux已自然退出，当前没有需要
+继承的训练进程。
+
+首小时paired correct400在50/100/150/200为`76/111/99/117`。macro200是右端best、
+breadth6、top2占`57.26%`，但相邻success Jaccard仍只有`.450/.522/.511`。与完全
+相同RNG-v2 RAW recipe、task/video/query曝光及evaluation panel的UCP相比，CV四点
+均提高`+4/+24/+13/+28`；macro200净增益由多保留9个source successes和多获得19个
 新successes共同构成，因此CV bundle有真实架构价值，不能按117 aggregate整体否定。
 
 macro200 exact50同时限定该结论：Core-only/Program-only距full effective BA为
@@ -71,14 +76,21 @@ contextual-memory order干预在0/8达2% BA，same-task BA centered/sample仅`.1
 不得把“上游重排有效”和“reader近set-like”混成单一顺序结论。LoRA norm`64.24`、
 stable rank`1.0072`，失败不是Target-Spectral式增益坍缩。
 
-预封存门据此授权同一root从step200 exact-resume到400，但不授权五臂。当前唯一活动
-训练tmux为`ember-cvadr-raw-formal-resume200to400-254ade4`，frozen commit
-`254ade404c064bb78aaa95e421f8a91db3caa9f6`，root为
-`/data/ymdai/outputs/ember/pi05_as_writer_cvadr_rawfull24_taskcomplete_decay400_formal_dev_r4_b20_seed7_254ade4_20260802_retry1`。
-首两个恢复宏步201/202已验证24 tasks/24 videos/480 queries、cost-balanced
-long-first、loss/gradient/LR finite、0 clip，五块Adam step精确连续。完成后固定评测
-250/300/350/400；若仍弱或轮换，必须做同topology normalized GROUP4后才可否定
-架构。所有推进继续只由主进程完成，不使用subagent。
+full400动力学进一步降低了CP负投影和“低LR会自然停止漂移”解释：step100--400的
+global raw-mean candidate-negative tasks均为0，但pairwise negative fraction仍约
+`.36--.50`；第二小时同task单视频梯度的task-mean能量只占`.26--.49%`，相邻余弦
+`.024--.041`，约`99.5--99.7%`为centered波动。factor block占晚期task-gradient
+energy约`93.6--94.0%`；50-macro参数段即使在低LR仍近正交或为负；16个held
+functional losses始终在`.13055--.13399`。这说明functional surrogate、高方差
+条件估计与closed-loop阈值错位仍是联合根因，现有证据尚未分离teacher video、B20
+query与PI05 flow-noise三种噪声。
+
+当前唯一活动实验是四个single checkpoints的paired correct400：tmux
+`ember-cvadr-raw-candidates2-254ade4`把250/300/350/400分别固定到物理GPU4/5/6/7，
+每臂8 tasks×50 states、correct video无放回、dynamic long-first、persistent
+policy/env。完成后与前四点合并裁决single checkpoint、breadth和能力轮换；若仍弱或
+轮换，不做五臂，必须做同topology normalized GROUP4后才可否定架构。所有推进只由
+主进程完成，不使用subagent。
 
 2026-08-02 joint root-cause override：四个selected winner五臂逐row重验为v5.2-old
 `132/138/74/82/83`、v5.2-task-complete `120/109/107/111/124`、v6-old

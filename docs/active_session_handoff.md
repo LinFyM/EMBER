@@ -24,6 +24,12 @@
   rollout。不得把它写成实验结果。
 - cleanup时期的辅助worktree已删除；本轮新建的唯一写worktree是
   `/data/ymdai/worktrees/EMBER-postseal-target-bound`，只服务本轮增量。
+- Target-Bound真实longest105 B20三macro和formal-seed exact resume已通过；代码/config
+  authority为`e8fb96c`。formal fresh0→200已于`2026-08-02 19:53:46 UTC`在tmux
+  `ember_tb_formal_e8fb96c`启动，root为
+  `/data/ymdai/outputs/ember/pi05_as_writer_targetbound_postseal_rawfull24_decay400_formal_r4_b20_seed7_e8fb96c_20260802`。
+- 当前尚无Target-Bound closed-loop结果；首小时结束后评测50/100/150/200，不从
+  smoke warm-start，不自动续第二小时。
 - 迁移步骤、路径映射、资产分流和新 Codex 接手顺序统一看
   [`a100_to_bgr_migration_handoff.md`](a100_to_bgr_migration_handoff.md)。
 

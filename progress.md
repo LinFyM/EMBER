@@ -21,6 +21,13 @@ GPU范围和训练步长是当时快照；活动状态只取
   task breadth/churn与分块梯度证伪。
 - `b260a57`已移植到post-seal基线为`fbbb784`；环境从lock恢复中，尚未查询GPU或启动
   profile、训练、评测。
+- 环境按`uv.lock`恢复；缺失系统C++编译器只用便携CMake/Zig完成`hf-egl-probe`构建，
+  不改变依赖。显式`EMBER_LIBERO_ASSETS_ROOT`后48项聚焦回归全过。
+- 首个普通formal-seed三macro虽健康但max95 frames，未冒充105合同；新增并push只改
+  teacher schedule seed的profile overlay`e8fb96c`。真正seed172 profile首macro
+  max105，三macrowall59.07s、峰值reserved83,506,495,488 bytes、五主block梯度可达。
+- 正式seed fresh0→1→exact-resume1→3通过；三步loss`.15404/.15141/.14509`、cursor/
+  scheduler/RNG连续。`e8fb96c` formal fresh0→200于19:53:46 UTC启动，尚无行为结果。
 
 ## 2026-08-02 A100清理与BGR迁移准备
 

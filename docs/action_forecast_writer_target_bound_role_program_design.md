@@ -1,11 +1,11 @@
 # Target-Bound Role-Preserving Program Writer
 
-状态：2026-08-02 设计与实现 authority。canonical tensor path、fresh config /
-checkpoint schema、step0 identity、causal/private-role mechanics 和内部重建路径已
-实现。CV-ADR GROUP4训练operator裁决已完成并选择task-query RAW full24；但owner
-要求本阶段GPU实验封存后暂停，因此最长105-frame B20 profile、exact resume与正式
-训练均明确未运行。本文不得反向改变已封存的CV-ADR frozen run，也不得被解释成
-已验证的新架构结果。
+状态：2026-08-02 post-seal实验中。canonical tensor path、fresh config/checkpoint
+schema、step0 identity、causal/private-role mechanics和内部重建路径已实现；移植后
+48项聚焦CPU回归通过。真实longest105-frame B20四卡三macro通过，formal-seed
+fresh0→1→exact-resume1→3通过；frozen`e8fb96c`已fresh启动macro0→200。尚无
+closed-loop结果，不得把profile/resume写成架构有效性证据。本文不得反向改变已封存
+CV-ADR frozen run。
 
 ## 1. 目标、非目标与证据边界
 
@@ -316,6 +316,13 @@ frozen analyzer，不要求新main执行历史模型。
 teacher-video schedule seed改为已验证能在首macro选择真实105-frame video的`172`；
 正式训练和exact-resume仍使用task-query RAW config及正式seed`20260722`。不得把
 普通formal-seed三macro中偶然出现的较短视频冒充第10项。
+
+第10项现已由frozen`e8fb96c`完成：seed172首macro真实max105 frames，三macro各覆盖
+24 tasks×B20，wall`59.07s`，峰值CUDA reserved`83,506,495,488` bytes；五个主block
+在identity lifecycle后均finite/nonzero，无OOM/clip/nonfinite。随后正式seed
+fresh0→1→exact-resume1→3保持同一contract/cursor/scheduler/RNG，三步loss
+`.15404/.15141/.14509`连续，validation/test action reads均为0。该证据只解封formal，
+不解释性能。
 
 首小时保存cycle50/100/150/200并做同一paired correct400。内部预注册预测：
 

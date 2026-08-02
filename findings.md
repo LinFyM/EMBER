@@ -19,6 +19,10 @@
   决方案。首小时必须同时看多task共同增长、success-set churn、分块task-gradient与
   video→BA/action传递；若factor端仍吞掉条件差异，下一整体重构应直接让semantic
   carrier决定factor计算路径，而不是增加局部gate或scale。
+- longest105/profile只给出可训练性，不给出条件分工成功：macro3五个block梯度均非零，
+  但factor仍占早期task-gradient energy约97%，符合zero-init后逐层解冻的早期生命周期。
+  必须在成熟checkpoint再判断这种集中是否持续；不能用三步值提前判死，也不能把
+  “所有模块可达”误写为task漂移已解决。
 
 ## 2026-08-02 A100清理与迁移证据分级
 

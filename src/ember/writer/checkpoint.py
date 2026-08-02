@@ -28,94 +28,18 @@ from ember.writer.as_sampling import (
     TeacherVideoSchedule,
 )
 from ember.writer.as_contract import AS_WRITER_LAUNCH_SCHEMA
+from ember.writer.checkpoint_schema import (
+    AS_WRITER_CHECKPOINT_SCHEMA,
+    AS_WRITER_CYCLE_NORMALIZED_GROUP4_CHECKPOINT_SCHEMA,
+    AS_WRITER_CYCLE_NORMALIZED_GROUP4_RANK_STATE_SCHEMA,
+    AS_WRITER_RANK_STATE_SCHEMA,
+    AS_WRITER_SERIAL4_CHECKPOINT_SCHEMA,
+    AS_WRITER_SERIAL4_RANK_STATE_SCHEMA,
+    TARGET_BOUND_ROLE_TASK_QUERY_RAW_CHECKPOINT_SCHEMA,
+    state_schemas as _state_schemas,
+)
 from ember.writer.model import CompleteLoRAWriter, WriterModelError
 from ember.writer.update_schedule import cycle_matched_weight_decay
-
-
-AS_WRITER_CHECKPOINT_SCHEMA = (
-    "ember_pi05_contextual_value_dual_read_full24_checkpoint_v1"
-)
-AS_WRITER_TRAINER_STATE_SCHEMA = (
-    "ember_pi05_contextual_value_dual_read_full24_trainer_state_v1"
-)
-AS_WRITER_RANK_STATE_SCHEMA = (
-    "ember_pi05_contextual_value_dual_read_full24_rank_state_v1"
-)
-AS_WRITER_SERIAL4_CHECKPOINT_SCHEMA = (
-    "ember_pi05_contextual_value_dual_read_serial4_exposurematched_checkpoint_v1"
-)
-AS_WRITER_SERIAL4_TRAINER_STATE_SCHEMA = (
-    "ember_pi05_contextual_value_dual_read_serial4_exposurematched_trainer_state_v1"
-)
-AS_WRITER_SERIAL4_RANK_STATE_SCHEMA = (
-    "ember_pi05_contextual_value_dual_read_serial4_exposurematched_rank_state_v1"
-)
-AS_WRITER_TASK_QUERY_RAW_CHECKPOINT_SCHEMA = (
-    "ember_pi05_contextual_value_dual_read_task_query_rawfull24_checkpoint_v2"
-)
-AS_WRITER_TASK_QUERY_RAW_TRAINER_STATE_SCHEMA = (
-    "ember_pi05_contextual_value_dual_read_task_query_rawfull24_trainer_state_v2"
-)
-AS_WRITER_TASK_QUERY_RAW_RANK_STATE_SCHEMA = (
-    "ember_pi05_contextual_value_dual_read_task_query_rawfull24_rank_state_v2"
-)
-AS_WRITER_CYCLE_NORMALIZED_GROUP4_CHECKPOINT_SCHEMA = (
-    "ember_pi05_contextual_value_dual_read_cycle_normalized_group4_checkpoint_v2"
-)
-AS_WRITER_CYCLE_NORMALIZED_GROUP4_TRAINER_STATE_SCHEMA = (
-    "ember_pi05_contextual_value_dual_read_cycle_normalized_group4_trainer_state_v2"
-)
-AS_WRITER_CYCLE_NORMALIZED_GROUP4_RANK_STATE_SCHEMA = (
-    "ember_pi05_contextual_value_dual_read_cycle_normalized_group4_rank_state_v2"
-)
-
-
-def _state_schemas(
-    optimizer_updates_per_task_cycle: int,
-    checkpoint_state_family: str | None = None,
-) -> tuple[str, str, str]:
-    family = checkpoint_state_family or (
-        "cvadr_legacy_full24_v1"
-        if optimizer_updates_per_task_cycle == 1
-        else "cvadr_legacy_serial4_v1"
-    )
-    if (
-        optimizer_updates_per_task_cycle == 1
-        and family == "cvadr_legacy_full24_v1"
-    ):
-        return (
-            AS_WRITER_CHECKPOINT_SCHEMA,
-            AS_WRITER_TRAINER_STATE_SCHEMA,
-            AS_WRITER_RANK_STATE_SCHEMA,
-        )
-    if (
-        optimizer_updates_per_task_cycle == 6
-        and family == "cvadr_legacy_serial4_v1"
-    ):
-        return (
-            AS_WRITER_SERIAL4_CHECKPOINT_SCHEMA,
-            AS_WRITER_SERIAL4_TRAINER_STATE_SCHEMA,
-            AS_WRITER_SERIAL4_RANK_STATE_SCHEMA,
-        )
-    if (
-        optimizer_updates_per_task_cycle == 1
-        and family == "cvadr_task_query_keyed_rawfull24_v2"
-    ):
-        return (
-            AS_WRITER_TASK_QUERY_RAW_CHECKPOINT_SCHEMA,
-            AS_WRITER_TASK_QUERY_RAW_TRAINER_STATE_SCHEMA,
-            AS_WRITER_TASK_QUERY_RAW_RANK_STATE_SCHEMA,
-        )
-    if (
-        optimizer_updates_per_task_cycle == 6
-        and family == "cvadr_cycle_normalized_randomized_group4_v2"
-    ):
-        return (
-            AS_WRITER_CYCLE_NORMALIZED_GROUP4_CHECKPOINT_SCHEMA,
-            AS_WRITER_CYCLE_NORMALIZED_GROUP4_TRAINER_STATE_SCHEMA,
-            AS_WRITER_CYCLE_NORMALIZED_GROUP4_RANK_STATE_SCHEMA,
-        )
-    raise WriterModelError("unsupported AS-Writer checkpoint task cycle")
 
 
 def _rng_state(context: DistributedContext) -> dict[str, Any]:
@@ -699,15 +623,23 @@ def _validate_cycle_normalized_optimizer_resume(
     task_cycle_phase: int,
     checkpoint_state_family: str,
 ) -> None:
-    if checkpoint_state_family.startswith("cvadr_legacy_"):
+    if checkpoint_state_family.startswith("cvadr_legacy_") or (
+        checkpoint_state_family == "target_bound_role_rawfull24_v1"
+    ):
         return
     group4 = (
-        checkpoint_state_family
-        == "cvadr_cycle_normalized_randomized_group4_v2"
+        checkpoint_state_family in {
+            "cvadr_cycle_normalized_randomized_group4_v2",
+            "target_bound_role_cycle_normalized_randomized_group4_v1",
+        }
     )
     if (
         not group4
-        and checkpoint_state_family != "cvadr_task_query_keyed_rawfull24_v2"
+        and checkpoint_state_family
+        not in {
+            "cvadr_task_query_keyed_rawfull24_v2",
+            "target_bound_role_task_query_keyed_rawfull24_v1",
+        }
     ):
         raise WriterModelError("unknown cycle-normalized optimizer resume family")
     expected_betas = (

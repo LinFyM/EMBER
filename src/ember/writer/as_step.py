@@ -127,6 +127,9 @@ def _differentiate_conditions(
             policy_rng_device=(
                 runtime.context.device if policy_rng_seed is not None else None
             ),
+            flow_time_sampling_scheme=runtime.config[
+                "conditioning_training"
+            ].get("policy_flow_time_sampling_scheme"),
         )
     names = tuple(generated)
     parameter_gradients = torch.autograd.grad(

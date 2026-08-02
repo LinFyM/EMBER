@@ -7,12 +7,16 @@ import torch
 
 from ember.pi05_lora import load_pi05_lora_contract, pi05_target_names
 from ember.writer.as_contract import writer_trainable_contract
-from ember.writer.internal_analysis import capture_writer, counterfactual_states
+from ember.writer.internal_analysis import (
+    _paired_diagnostics,
+    capture_writer,
+    counterfactual_states,
+)
 from ember.writer.internal_metrics import effective_metrics, rank_gauge_permute
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
-from ember.writer.program_compiler import ContextualValueDualReader, SemanticProgramError
+from ember.writer.program_compiler import SemanticProgramError, TargetBoundRoleCompiler
 from ember.writer.semantic_core import MeanBackedSemanticCore
-from ember.writer.semantic_program import OutgoingSemanticProgram
+from ember.writer.semantic_program import TargetBoundRoleProgram
 from ember.writer.video_program import TaskQueriedPatchGrounding
 
 
@@ -204,9 +208,9 @@ def _analysis_inputs() -> tuple[torch.Tensor, ...]:
     return frames, indices, offsets, tokens, masks, spans
 
 
-def test_cvadr_parameter_budget_and_module_enumeration_are_exact() -> None:
+def test_target_bound_role_parameter_budget_and_modules_are_exact() -> None:
     model, _ = _model()
-    assert sum(parameter.numel() for parameter in model.parameters()) == 10_241_024
+    assert sum(parameter.numel() for parameter in model.parameters()) == 11_092_224
     contract = writer_trainable_contract(
         model,
         torch.nn.Identity(),
@@ -214,7 +218,7 @@ def test_cvadr_parameter_budget_and_module_enumeration_are_exact() -> None:
             Path(__file__).resolve().parents[1] / "configs/pi05_lora_v1.json"
         ),
     )
-    assert contract["parameter_count"] == 10_241_024
+    assert contract["parameter_count"] == 11_092_224
     assert contract["source_policy_trainable_parameter_count"] == 0
     expected = {
         "text_meta_lora": (model.semantic_encoder.text_meta_lora, 921_600),
@@ -227,9 +231,9 @@ def test_cvadr_parameter_budget_and_module_enumeration_are_exact() -> None:
             262_144,
         ),
         "semantic_core": (model.semantic_core, 1_836_544),
-        "semantic_program": (model.semantic_program, 1_838_592),
+        "semantic_program": (model.semantic_program, 1_641_216),
         "compiler": (model.compiler, 409_088),
-        "factor_heads": (model.factor_heads, 2_703_360),
+        "factor_heads": (model.factor_heads, 3_751_936),
     }
     assert {
         name: sum(parameter.numel() for parameter in module.parameters())
@@ -239,7 +243,7 @@ def test_cvadr_parameter_budget_and_module_enumeration_are_exact() -> None:
     assert not model.semantic_encoder.fixed_suffix_noise.requires_grad
 
 
-def test_cvadr_starts_at_exact_public_lora_identity() -> None:
+def test_target_bound_role_starts_at_exact_public_lora_identity() -> None:
     model, template = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     output = model(*_inputs(), policy=torch.nn.Identity())
@@ -335,9 +339,17 @@ def test_semantic_core_is_strictly_frame_set_permutation_invariant() -> None:
     assert torch.allclose(baseline, permuted, atol=2e-6, rtol=1e-5)
 
 
-def test_outgoing_program_preserves_causal_prefix_and_uses_order() -> None:
+def _target_context(
+    batch: int,
+    targets: int,
+    width: int,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    return torch.randn(batch, targets, width), torch.randn(batch, targets, width)
+
+
+def test_target_role_program_preserves_core_conditional_prefix_and_uses_order() -> None:
     torch.manual_seed(23)
-    program = OutgoingSemanticProgram(
+    program = TargetBoundRoleProgram(
         width=32, heads=4, blocks=2, initialization_seed=7
     )
     grounded = torch.randn(1, 6, 4, 32)
@@ -349,51 +361,74 @@ def test_outgoing_program_preserves_causal_prefix_and_uses_order() -> None:
     positions = torch.arange(6)[None]
     valid_frames = torch.ones(1, 6, dtype=torch.bool)
     valid_tokens = torch.ones(1, 4, dtype=torch.bool)
-    baseline = program(grounded, action, positions, valid_frames, valid_tokens)[0]
+    target_query, target_core = _target_context(1, 5, 32)
+    arguments = (valid_frames, valid_tokens, target_query, target_core)
+    baseline = program(grounded, action, positions, *arguments)[0]
     future = program(
-        future_grounded, future_action, positions, valid_frames, valid_tokens
+        future_grounded, future_action, positions, *arguments
     )[0]
     reverse = program(
-        grounded.flip(1), action.flip(1), positions, valid_frames, valid_tokens
+        grounded.flip(1), action.flip(1), positions, *arguments
     )[0]
-    assert torch.allclose(baseline[:, :3], future[:, :3], atol=1e-6, rtol=1e-5)
+    assert baseline.shape == (1, 5, 5, 3, 32)
+    assert torch.allclose(baseline[:, :, :3], future[:, :, :3], atol=1e-6, rtol=1e-5)
     assert not torch.allclose(baseline, reverse)
 
 
-def test_outgoing_program_aligns_action_endpoint_effect_and_change() -> None:
-    program = OutgoingSemanticProgram(
+class _CaptureEvidenceReader(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.memories: list[torch.Tensor] = []
+
+    def forward(
+        self,
+        address: torch.Tensor,
+        memory: torch.Tensor,
+        valid_task_tokens: torch.Tensor,
+        _role_identity: torch.Tensor,
+    ) -> torch.Tensor:
+        self.memories.append(memory.detach().clone())
+        mask = valid_task_tokens[:, None, :, None]
+        mean = memory.masked_fill(~mask, 0.0).sum(dim=2)
+        mean = mean / mask.sum(dim=2).clamp_min(1)
+        return mean[:, None].expand_as(address)
+
+
+def test_target_role_program_aligns_action_endpoint_effect_and_change() -> None:
+    program = TargetBoundRoleProgram(
         width=32, heads=4, blocks=1, initialization_seed=7
     )
     program.blocks = torch.nn.ModuleList()
+    capture = _CaptureEvidenceReader()
+    program.evidence_reader = capture
     grounded = torch.randn(1, 5, 3, 32)
     action = torch.randn(1, 5, 32)
     positions = torch.tensor([[0, 5, 10, 15, 17]])
     valid_frames = torch.ones(1, 5, dtype=torch.bool)
     valid_tokens = torch.tensor([[True, True, False]])
-    memory, endpoints, valid_intervals, valid_semantics = program(
-        grounded, action, positions, valid_frames, valid_tokens
+    target_query, target_core = _target_context(1, 4, 32)
+    memory, endpoints, valid_intervals = program(
+        grounded,
+        action,
+        positions,
+        valid_frames,
+        valid_tokens,
+        target_query,
+        target_core,
     )
-    assert torch.equal(memory[:, :, 0], action[:, :-1])
-    assert torch.equal(memory[:, :, 1:3], grounded[:, 1:, :2])
-    assert not bool(memory[:, :, 3].count_nonzero())
-    assert torch.equal(
-        memory[:, :, 4:6], grounded[:, 1:, :2] - grounded[:, :-1, :2]
-    )
-    assert not bool(memory[:, :, 6].count_nonzero())
+    assert torch.equal(memory[:, :, :, 0], action[:, None, :-1].expand(-1, 4, -1, -1))
+    assert torch.equal(capture.memories[0], grounded[:, 1:])
+    assert torch.equal(capture.memories[1], grounded[:, 1:] - grounded[:, :-1])
     assert torch.equal(endpoints, positions[:, 1:])
     assert torch.equal(valid_intervals, torch.ones_like(valid_intervals))
-    assert torch.equal(
-        valid_semantics,
-        torch.tensor([[True, True, True, False, True, True, False]]),
-    )
 
 
-def _dual_reader(
+def _compiler(
     width: int = 32,
     targets: int = 38,
     rank: int = 16,
-) -> ContextualValueDualReader:
-    return ContextualValueDualReader(
+) -> TargetBoundRoleCompiler:
+    return TargetBoundRoleCompiler(
         width=width,
         heads=4,
         target_count=targets,
@@ -413,7 +448,9 @@ def test_identities_cannot_create_core_program_or_coordinate_values() -> None:
         valid_tokens,
     )[0]
     assert not bool(core_value.count_nonzero())
-    program = OutgoingSemanticProgram(
+    compiler = _compiler()
+    target_query, target_core = compiler.read_target_core(core_value, valid_tokens)
+    program = TargetBoundRoleProgram(
         width=32, heads=4, blocks=2, initialization_seed=7
     )
     grounded = torch.zeros(2, 6, 4, 32)
@@ -421,27 +458,35 @@ def test_identities_cannot_create_core_program_or_coordinate_values() -> None:
     positions = torch.tensor(
         [[0, 5, 10, 15, 20, 25], [0, 3, 8, 13, 21, 28]]
     )
-    memory = program(grounded, action, positions, valid_frames, valid_tokens)
+    memory = program(
+        grounded,
+        action,
+        positions,
+        valid_frames,
+        valid_tokens,
+        target_query,
+        target_core,
+    )
     assert not bool(memory[0].count_nonzero())
-    coordinates = _dual_reader()(core_value, valid_tokens, *memory)
-    assert coordinates.shape == (2, 38, 16, 64)
+    coordinates = compiler(target_query, target_core, *memory)
+    assert coordinates.shape == (2, 38, 16, 128)
     assert not bool(coordinates.count_nonzero())
 
 
-def test_dual_reader_has_target_only_core_and_target_rank_program_reads() -> None:
+def test_compiler_has_target_core_and_private_target_rank_role_reads() -> None:
     torch.manual_seed(37)
-    reader = _dual_reader(targets=5, rank=4)
+    reader = _compiler(targets=5, rank=4)
     core = torch.randn(1, 3, 32)
     valid_core = torch.ones(1, 3, dtype=torch.bool)
-    program = torch.randn(1, 4, 7, 32)
+    target_query, target_core = reader.read_target_core(core, valid_core)
+    program = torch.randn(1, 5, 4, 3, 32)
     endpoints = torch.arange(4)[None]
     intervals = torch.ones(1, 4, dtype=torch.bool)
-    semantics = torch.ones(1, 7, dtype=torch.bool)
     baseline, diagnostics = reader.compile_with_diagnostics(
-        core, valid_core, program, endpoints, intervals, semantics
+        target_query, target_core, program, endpoints, intervals
     )
     assert diagnostics["core_read"].shape == (1, 5, 32)
-    assert diagnostics["program_read"].shape == (1, 5, 4, 32)
+    assert diagnostics["role_read"].shape == (1, 5, 4, 3, 32)
     assert torch.equal(
         baseline[..., :32],
         diagnostics["core_read"][:, :, None].expand(-1, -1, 4, -1),
@@ -450,10 +495,12 @@ def test_dual_reader_has_target_only_core_and_target_rank_program_reads() -> Non
     assert not hasattr(reader, "mixer")
 
     target_swap = torch.tensor([1, 0, 2, 3, 4])
-    with torch.no_grad():
-        reader.target_identity.copy_(reader.target_identity[target_swap])
     target_permuted = reader(
-        core, valid_core, program, endpoints, intervals, semantics
+        target_query[:, target_swap],
+        target_core[:, target_swap],
+        program[:, target_swap],
+        endpoints,
+        intervals,
     )
     assert torch.allclose(
         target_permuted, baseline[:, target_swap], atol=1e-6, rtol=1e-5
@@ -462,7 +509,11 @@ def test_dual_reader_has_target_only_core_and_target_rank_program_reads() -> Non
     with torch.no_grad():
         reader.rank_identity.copy_(reader.rank_identity[rank_swap])
     both_permuted = reader(
-        core, valid_core, program, endpoints, intervals, semantics
+        target_query[:, target_swap],
+        target_core[:, target_swap],
+        program[:, target_swap],
+        endpoints,
+        intervals,
     )
     assert torch.allclose(
         both_permuted,
@@ -472,41 +523,75 @@ def test_dual_reader_has_target_only_core_and_target_rank_program_reads() -> Non
     )
 
 
-def test_program_reader_accepts_one_contextual_memory_for_keys_and_values() -> None:
-    torch.manual_seed(41)
-    reader = _dual_reader(targets=3, rank=2)
+def test_private_rank_reads_reach_each_role_without_value_cross_talk() -> None:
+    torch.manual_seed(39)
+    reader = _compiler(width=32, targets=3, rank=2)
     core = torch.randn(1, 4, 32)
     valid_core = torch.ones(1, 4, dtype=torch.bool)
-    program = torch.randn(1, 5, 7, 32)
+    target_query, target_core = reader.read_target_core(core, valid_core)
+    program = torch.randn(
+        1, 3, 5, 3, 32, requires_grad=True
+    )
+    coordinates = reader(
+        target_query,
+        target_core,
+        program,
+        torch.arange(5)[None],
+        torch.ones(1, 5, dtype=torch.bool),
+    )
+    for role in range(3):
+        left = 32 * (role + 1)
+        selected = coordinates[..., left : left + 32].square().sum()
+        gradient = torch.autograd.grad(
+            selected,
+            program,
+            retain_graph=role < 2,
+        )[0]
+        assert torch.isfinite(gradient).all()
+        assert bool(gradient[..., role, :].count_nonzero())
+        assert not bool(
+            gradient[
+                ...,
+                [other for other in range(3) if other != role],
+                :,
+            ].count_nonzero()
+        )
+
+
+def test_role_readers_accept_one_contextual_memory_for_keys_and_values() -> None:
+    torch.manual_seed(41)
+    reader = _compiler(targets=3, rank=2)
+    core = torch.randn(1, 4, 32)
+    valid_core = torch.ones(1, 4, dtype=torch.bool)
+    target_query, target_core = reader.read_target_core(core, valid_core)
+    program = torch.randn(1, 3, 5, 3, 32)
     endpoints = torch.arange(5)[None]
     intervals = torch.ones(1, 5, dtype=torch.bool)
-    semantics = torch.ones(1, 7, dtype=torch.bool)
     first = reader.compile_with_diagnostics(
-        core, valid_core, program, endpoints, intervals, semantics
-    )[1]["program_read"]
+        target_query, target_core, program, endpoints, intervals
+    )[1]["role_read"]
     changed = reader.compile_with_diagnostics(
-        core, valid_core, 2.0 * program, endpoints, intervals, semantics
-    )[1]["program_read"]
+        target_query, target_core, 2.0 * program, endpoints, intervals
+    )[1]["role_read"]
     assert not torch.allclose(changed, first)
     with pytest.raises(TypeError):
         reader.compile_with_diagnostics(
-            core,
-            valid_core,
+            target_query,
+            target_core,
             program,
             torch.randn_like(program),
             endpoints,
             intervals,
-            semantics,
         )
 
 
 def test_core_program_and_reader_ignore_ragged_padding_content() -> None:
     torch.manual_seed(43)
     core = MeanBackedSemanticCore(width=32, heads=4, blocks=2)
-    program = OutgoingSemanticProgram(
+    program = TargetBoundRoleProgram(
         width=32, heads=4, blocks=2, initialization_seed=7
     )
-    reader = _dual_reader()
+    reader = _compiler()
     text = torch.randn(1, 4, 32)
     evidence = torch.randn(1, 6, 4, 32)
     grounded = torch.randn(1, 6, 4, 32)
@@ -522,51 +607,65 @@ def test_core_program_and_reader_ignore_ragged_padding_content() -> None:
     valid_tokens = torch.ones(1, 4, dtype=torch.bool)
     base_core = core(text, evidence, valid_frames, valid_tokens)[0]
     padded_core = core(text, changed_evidence, valid_frames, valid_tokens)[0]
+    base_query, base_target_core = reader.read_target_core(base_core, valid_tokens)
+    padded_query, padded_target_core = reader.read_target_core(
+        padded_core, valid_tokens
+    )
     base_program = program(
-        grounded, action, positions, valid_frames, valid_tokens
+        grounded,
+        action,
+        positions,
+        valid_frames,
+        valid_tokens,
+        base_query,
+        base_target_core,
     )
     padded_program = program(
-        changed_grounded, changed_action, positions, valid_frames, valid_tokens
+        changed_grounded,
+        changed_action,
+        positions,
+        valid_frames,
+        valid_tokens,
+        padded_query,
+        padded_target_core,
     )
     assert torch.allclose(base_core, padded_core, atol=2e-6, rtol=1e-5)
     assert torch.allclose(base_program[0], padded_program[0], atol=2e-6, rtol=1e-5)
     assert torch.allclose(
-        reader(base_core, valid_tokens, *base_program),
-        reader(padded_core, valid_tokens, *padded_program),
+        reader(base_query, base_target_core, *base_program),
+        reader(padded_query, padded_target_core, *padded_program),
         atol=2e-6,
         rtol=1e-5,
     )
 
 
-def test_dual_reader_rejects_missing_content_and_float_endpoints() -> None:
-    reader = _dual_reader()
+def test_role_compiler_rejects_missing_content_and_float_endpoints() -> None:
+    reader = _compiler()
     core = torch.randn(1, 2, 32)
     valid_core = torch.ones(1, 2, dtype=torch.bool)
-    program = torch.randn(1, 2, 3, 32)
+    target_query, target_core = reader.read_target_core(core, valid_core)
+    program = torch.randn(1, 38, 2, 3, 32)
     endpoints = torch.tensor([[5, 10]])
     intervals = torch.ones(1, 2, dtype=torch.bool)
-    semantics = torch.ones(1, 3, dtype=torch.bool)
-    with pytest.raises(SemanticProgramError, match="dual-reader memory"):
+    with pytest.raises(SemanticProgramError, match="role compiler memory"):
         reader(
-            core,
-            valid_core,
+            target_query,
+            target_core,
             program,
             endpoints.to(torch.float32),
             intervals,
-            semantics,
         )
-    with pytest.raises(SemanticProgramError, match="dual-reader memory"):
+    with pytest.raises(SemanticProgramError, match="role compiler memory"):
         reader(
-            core,
-            valid_core,
+            target_query,
+            target_core,
             program,
             endpoints,
             torch.zeros_like(intervals),
-            semantics,
         )
 
 
-def test_internal_analyzer_recomputes_canonical_cvadr_path() -> None:
+def test_internal_analyzer_recomputes_target_bound_role_path() -> None:
     model, _ = _model()
     model.semantic_encoder = _AnalysisSemanticEncoder()
     for head in model.factor_heads.values():
@@ -579,13 +678,13 @@ def test_internal_analyzer_recomputes_canonical_cvadr_path() -> None:
     )
     assert captured["a_raw"].shape == (5, 2, 1024)
     assert captured["a"].shape == (5, 2, 256)
-    assert captured["program"]["memory"].shape[2] == 7
-    assert captured["compiled"]["coordinates"].shape == (5, 38, 16, 512)
+    assert captured["program"]["memory"].shape == (5, 38, 1, 3, 256)
+    assert captured["compiled"]["coordinates"].shape == (5, 38, 16, 1024)
     assert captured["compiled"]["recomputed_coordinates"].shape == (
         5,
         38,
         16,
-        512,
+        1024,
     )
     for key, targets in captured["decoded"]["head_target_indices"].items():
         expected = tuple(
@@ -601,52 +700,32 @@ def test_internal_analyzer_recomputes_canonical_cvadr_path() -> None:
     assert captured["parity"]["public"]["relative_l2"] <= 2e-5
     assert captured["parity"]["compiler_coordinates"]["relative_l2"] <= 2e-5
     assert captured["compiled"]["parity"]["core_read"]["relative_l2"] <= 2e-5
-    assert captured["compiled"]["parity"]["program_read"]["relative_l2"] <= 2e-5
+    assert captured["compiled"]["parity"]["role_read"]["relative_l2"] <= 2e-5
     for block in captured["program"]["attention"]:
-        assert block["interval_local"]["probability_sum_error_max"] < 1e-5
-        assert (
-            block["semantic_column_causal"]["probability_sum_error_max"]
-            < 1e-5
-        )
+        assert block["probability_sum_error_max"] < 1e-5
 
     variants = counterfactual_states(model, captured)
     required = {
         "full",
-        "core_only",
-        "program_only",
-        "aed/A",
-        "aed/E",
-        "aed/D",
-        "aed/A+E+D",
-        "scale/A/0.5",
-        "scale/A/1",
-        "scale/A/2",
+        "coordinate/core_only",
+        "coordinate/program_only",
+        "program_role/remove_A",
+        "program_role/remove_E",
+        "program_role/remove_D",
+        "program_role/A_only",
+        "program_role/E_only",
+        "program_role/D_only",
+        "program_input/remove_A",
+        "program_input/remove_E",
+        "program_input/remove_D",
+        "action_router/zero",
         "core_carrier/no_mean",
         "core_carrier/no_centered",
         "identity/target",
         "identity/rank",
-        "program_memory/order_permuted",
+        "program_memory/order_reversed",
     }
     assert required <= set(variants)
-    for name in (
-        "aed/A+E+D",
-        "scale/A/1",
-        "scale/E/1",
-        "scale/D/1",
-    ):
-        assert torch.equal(
-            variants["full"]["coordinates"], variants[name]["coordinates"]
-        )
-        assert all(
-            torch.equal(
-                variants["full"]["public"][key],
-                variants[name]["public"][key],
-            )
-            for key in variants["full"]["public"]
-        )
-        assert effective_metrics(
-            model, variants["full"]["public"], variants[name]["public"]
-        )["relative_l2"] <= 2e-5
     assert any(
         effective_metrics(
             model,
@@ -654,15 +733,40 @@ def test_internal_analyzer_recomputes_canonical_cvadr_path() -> None:
             variants[name]["public"],
         )["relative_l2"]
         > 1e-6
-        for name in ("core_only", "program_only", "aed/A", "identity/target")
+        for name in (
+            "coordinate/core_only",
+            "coordinate/program_only",
+            "program_role/remove_A",
+            "program_input/remove_D",
+            "identity/target",
+        )
     )
     authority = variants["full"]["program_memory_authority"]
-    assert "same contextual Program tensor" in authority["key_value_coupling"]
+    assert "private softmax" in authority["key_value_coupling"]
     assert len(authority["trained_program_state_sha256"]) == 64
-    for name in ("full", "program_memory/order_permuted"):
+    for name in ("full", "program_memory/order_reversed"):
         routing = variants[name]["attention"]["program_target_rank_routing"]
-        assert routing["target_centered_energy"] >= 0
-        assert routing["rank_centered_energy"] >= 0
+        assert set(routing) == {"A", "E", "D"}
+        assert all(
+            value["target_centered_energy"] >= 0
+            and value["rank_centered_energy"] >= 0
+            for value in routing.values()
+        )
+    paired = _paired_diagnostics(
+        model,
+        captured,
+        [torch.randn(1, 5, 7) for _ in range(5)],
+    )
+    assert set(paired["comparisons"]) == {
+        "correct",
+        "same_task_other",
+        "cross_suite_wrong",
+        "shuffled",
+        "reversed",
+    }
+    assert "memory_to_role_read" in paired["comparisons"]["reversed"][
+        "change_retention"
+    ]
 
 
 def test_internal_analyzer_public_rank_gauge_preserves_effective_ba() -> None:

@@ -1,4 +1,4 @@
-"""Canonical Contextual-Value Asymmetric Dual-Read PI05 Writer."""
+"""Canonical target-bound role-preserving PI05 Writer."""
 
 from __future__ import annotations
 
@@ -9,11 +9,11 @@ import torch
 
 from ember.pi05_lora import pi05_target_names
 from ember.writer.program_compiler import (
-    ContextualValueDualReader,
     FactorHead,
+    TargetBoundRoleCompiler,
 )
 from ember.writer.semantic_core import MeanBackedSemanticCore
-from ember.writer.semantic_program import OutgoingSemanticProgram
+from ember.writer.semantic_program import TargetBoundRoleProgram
 from ember.writer.video_program import Pi05SemanticEvidenceEncoder
 
 
@@ -155,7 +155,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             or compiler_heads != 8
             or factor_hidden_width != 256
         ):
-            raise WriterModelError("invalid CV-ADR Writer topology")
+            raise WriterModelError("invalid target-bound role Writer topology")
         self.tensor_specs = tensor_specs
         self.program_width = int(program_width)
         self.semantic_encoder = Pi05SemanticEvidenceEncoder(
@@ -179,23 +179,23 @@ class CompleteLoRAWriter(torch.nn.Module):
             heads=semantic_core_heads,
             blocks=semantic_core_blocks,
         )
-        self.semantic_program = OutgoingSemanticProgram(
-            width=program_width,
-            heads=program_heads,
-            blocks=program_blocks,
-            initialization_seed=initialization_seed + 1,
-        )
-        self.compiler = ContextualValueDualReader(
+        self.compiler = TargetBoundRoleCompiler(
             width=program_width,
             heads=compiler_heads,
             target_count=len(pi05_target_names()),
             rank=self.PUBLIC_LORA_RANK,
             initialization_seed=initialization_seed + 3,
         )
+        self.semantic_program = TargetBoundRoleProgram(
+            width=program_width,
+            heads=program_heads,
+            blocks=program_blocks,
+            initialization_seed=initialization_seed + 1,
+        )
         self.factor_heads = torch.nn.ModuleDict(
             {
                 name: FactorHead(
-                    2 * program_width,
+                    4 * program_width,
                     factor_hidden_width,
                     width,
                 )
@@ -351,7 +351,6 @@ class CompleteLoRAWriter(torch.nn.Module):
         torch.Tensor,
         torch.Tensor,
         torch.Tensor,
-        torch.Tensor,
     ]:
         offsets = self._validated_offsets(video_offsets, frames.shape[0])
         conditions = len(offsets) - 1
@@ -410,25 +409,29 @@ class CompleteLoRAWriter(torch.nn.Module):
             valid_frames,
             valid_task_tokens,
         )
+        target_query, target_core = self.compiler.read_target_core(
+            core_memory,
+            valid_task_tokens,
+        )
         (
             program,
             endpoint_positions,
             valid_intervals,
-            valid_semantics,
         ) = self.semantic_program(
             packed_grounded,
             packed_actions,
             positions,
             valid_frames,
             valid_task_tokens,
+            target_query,
+            target_core,
         )
         return (
-            core_memory,
-            valid_task_tokens,
+            target_query,
+            target_core,
             program,
             endpoint_positions,
             valid_intervals,
-            valid_semantics,
         )
 
     def forward(
@@ -443,12 +446,11 @@ class CompleteLoRAWriter(torch.nn.Module):
         policy: torch.nn.Module,
     ) -> dict[str, torch.Tensor]:
         (
-            core_memory,
-            valid_core,
+            target_query,
+            target_core,
             program,
             endpoint_positions,
             valid_intervals,
-            valid_semantics,
         ) = self.encode_task(
             policy,
             frames,
@@ -459,12 +461,11 @@ class CompleteLoRAWriter(torch.nn.Module):
             task_span_mask,
         )
         coordinates = self.compiler(
-            core_memory,
-            valid_core,
+            target_query,
+            target_core,
             program,
             endpoint_positions,
             valid_intervals,
-            valid_semantics,
         )
         result: dict[str, torch.Tensor] = {}
         for item in self.tensor_specs:
@@ -474,5 +475,5 @@ class CompleteLoRAWriter(torch.nn.Module):
             generated = rows.transpose(-1, -2) if item.transpose_output else rows
             template = getattr(self, self._template_buffers[item.name])
             value = generated.to(dtype=template.dtype) + template[None]
-            result[item.name] = value[0] if core_memory.shape[0] == 1 else value
+            result[item.name] = value[0] if target_core.shape[0] == 1 else value
         return result

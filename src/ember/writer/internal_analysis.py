@@ -1,4 +1,4 @@
-"""Canonical no-rollout internal analysis for the current CV-ADR AS-Writer."""
+"""Canonical no-rollout analysis for the Target-Bound Role AS-Writer."""
 
 from __future__ import annotations
 
@@ -60,17 +60,17 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 from ember.writer.validation import _build_models
 
 
-RUN_SCHEMA = "ember_as_writer_internal_analysis_run_v1"
-RESULT_SCHEMA = "ember_as_writer_internal_analysis_v1"
-ARCHITECTURE = "pi05_contextual_value_asymmetric_dual_read_v1"
+RUN_SCHEMA = "ember_target_bound_role_internal_analysis_run_v1"
+RESULT_SCHEMA = "ember_target_bound_role_internal_analysis_v1"
+ARCHITECTURE = "pi05_target_bound_role_preserving_program_v1"
 PROTECTED = (
     "src/ember/writer/model.py", "src/ember/writer/video_program.py",
     "src/ember/writer/semantic_core.py", "src/ember/writer/semantic_program.py",
     "src/ember/writer/program_compiler.py", "src/ember/writer/architecture.py",
+    "src/ember/writer/internal_compiler.py",
     "src/ember/writer/functional.py", "src/ember/lora.py", "src/ember/pi05_lora.py",
-    "configs/pi05_as_writer_contextual_value_dual_read_full24_decay400_v1.json",
-    "configs/pi05_as_writer_contextual_value_dual_read_taskquery_rawfull24_v1.json",
-    "configs/pi05_as_writer_contextual_value_dual_read_cycle_normalized_group4_v1.json",
+    "configs/pi05_as_writer_target_bound_role_program_full24_decay400_v1.json",
+    "configs/pi05_as_writer_target_bound_role_program_taskquery_rawfull24_v1.json",
 )
 
 
@@ -88,8 +88,14 @@ def _comparison(writer: CompleteLoRAWriter, reference: Mapping[str, Any], candid
 
 def _signature(captured: Mapping[str, Any], row: int) -> dict[str, torch.Tensor]:
     vf = captured["valid_frames"][row]; vt = captured["valid_tokens"][row]
-    vi = captured["program"]["valid_intervals"][row]; vs = captured["program"]["valid_semantics"][row]
-    grid = vf[:, None] & vt[None]; program_grid = vi[:, None] & vs[None]
+    vi = captured["program"]["valid_intervals"][row]
+    grid = vf[:, None] & vt[None]
+    program_value = captured["program"]["memory"][row]
+    program_grid = vi[None, :, None].expand(program_value.shape[:-1])
+    role_read = captured["compiled"]["diagnostic"]["role_read"][row]
+    role_grid = torch.ones(
+        role_read.shape[:-1], dtype=torch.bool, device=role_read.device
+    )
     result = {
         "q_text": fixed_sequence(captured["q"][row], vt),
         "multimodal_m": fixed_sequence(captured["m"][row], grid),
@@ -106,8 +112,11 @@ def _signature(captured: Mapping[str, Any], row: int) -> dict[str, torch.Tensor]
         "program_memory": fixed_sequence(
             captured["program"]["memory"][row], program_grid
         ),
+        "target_query": captured["compiled"]["diagnostic"][
+            "target_query"
+        ][row].float(),
         "core_read": captured["compiled"]["diagnostic"]["core_read"][row].float(),
-        "program_read": captured["compiled"]["diagnostic"]["program_read"][row].float(),
+        "role_read": fixed_sequence(role_read, role_grid),
         "coordinates": captured["compiled"]["coordinates"][row].float(),
     }
     for index, value in enumerate(captured["core"]["blocks"], 1): result[f"core_block_{index}"] = fixed_sequence(value[row], vt)
@@ -125,7 +134,7 @@ def _paired_diagnostics(writer: CompleteLoRAWriter, captured: Mapping[str, Any],
         heads = _state(captured["decoded"]["heads"], row); factor = _state(captured["decoded"]["factors"], row); public = _state(captured["decoded"]["public"], row)
         effective = effective_metrics(writer, reference_public, public)
         action = relative_metrics(actions[0], actions[row])
-        chain = [stages["program_raw"]["relative_l2"], stages["program_memory"]["relative_l2"], stages["program_read"]["relative_l2"], effective["relative_l2"], action["relative_l2"]]
+        chain = [stages["program_raw"]["relative_l2"], stages["program_memory"]["relative_l2"], stages["role_read"]["relative_l2"], effective["relative_l2"], action["relative_l2"]]
         comparisons[condition] = {
             "stages": stages, "factor_heads": mapping_metrics(reference_heads, heads), "factor": mapping_metrics(reference_factor, factor),
             "public_a": mapping_metrics(reference_public, public, select="a"),
@@ -133,8 +142,8 @@ def _paired_diagnostics(writer: CompleteLoRAWriter, captured: Mapping[str, Any],
             "effective_ba": effective, "fixed_policy_action": action,
             "change_retention": {
                 "raw_to_memory": change_retention(chain[0], chain[1]),
-                "memory_to_program_read": change_retention(chain[1], chain[2]),
-                "program_read_to_ba": change_retention(chain[2], chain[3]),
+                "memory_to_role_read": change_retention(chain[1], chain[2]),
+                "role_read_to_ba": change_retention(chain[2], chain[3]),
                 "ba_to_action": change_retention(chain[3], chain[4]),
             },
         }
@@ -273,7 +282,7 @@ def probe_reference(task: Mapping[str, Any], reference: int, adapters: Mapping[s
     variant_actions = {name: policy_action(policy, processor, prepared, value["public"], identity, lora, seed, device) for name, value in variants.items()}
     reference_variant = variants["full"]; reference_action = variant_actions["full"]
     counterfactuals = {name: {"relative_to_full": _comparison(writer, reference_variant, value, reference_action, variant_actions[name]), "geometry": lora_geometry(writer, value["public"]), "compiler_attention": value["attention"]} for name, value in variants.items()}
-    memory_permuted = counterfactuals["program_memory/order_permuted"]
+    memory_permuted = counterfactuals["program_memory/order_reversed"]
     program_memory_counterfactual = {
         **reference_variant["program_memory_authority"],
         "trained": {
@@ -287,9 +296,9 @@ def probe_reference(task: Mapping[str, Any], reference: int, adapters: Mapping[s
                 reference_action, reference_action
             ),
         },
-        "order_permuted": {
+        "order_reversed": {
             "program_reader_routing": variants[
-                "program_memory/order_permuted"
+                "program_memory/order_reversed"
             ]["attention"]["program_target_rank_routing"],
             "effective_ba_relative_to_trained": memory_permuted[
                 "relative_to_full"
@@ -367,7 +376,7 @@ def _provenance(repo: Path, state: Mapping[str, Any], training: Mapping[str, Any
     if subprocess.run(["git", "merge-base", "--is-ancestor", training_commit, head], cwd=repo).returncode:
         raise WriterModelError("analysis code is not descended from training code")
     changed = subprocess.run(["git", "diff", "--name-only", f"{training_commit}..{head}", "--", *PROTECTED], cwd=repo, text=True, capture_output=True, check=True).stdout.strip()
-    if changed: raise WriterModelError(f"trained CV-ADR topology changed after checkpoint: {changed}")
+    if changed: raise WriterModelError(f"trained target-bound-role topology changed after checkpoint: {changed}")
     return {"analysis_commit": head, "training_commit": training_commit, "training_is_ancestor": True, "protected_paths_unchanged": list(PROTECTED)}
 
 
@@ -420,6 +429,7 @@ def _publish(args: argparse.Namespace, payload: Mapping[str, Any], *, rank: int,
             "scripts/analyze_as_writer.py",
             "src/ember/writer/internal_analysis.py",
             "src/ember/writer/internal_path.py",
+            "src/ember/writer/internal_compiler.py",
             "src/ember/writer/internal_metrics.py",
             "src/ember/writer/internal_results.py",
         )
@@ -462,12 +472,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv); repo = Path(__file__).resolve().parents[3]
     allowed_configs = {
-        repo / "configs/pi05_as_writer_contextual_value_dual_read_taskquery_rawfull24_v1.json",
-        repo / "configs/pi05_as_writer_contextual_value_dual_read_cycle_normalized_group4_v1.json",
+        repo / "configs/pi05_as_writer_target_bound_role_program_full24_decay400_v1.json",
+        repo / "configs/pi05_as_writer_target_bound_role_program_taskquery_rawfull24_v1.json",
     }
     if args.repo != repo or args.config not in allowed_configs:
         raise WriterModelError(
-            "internal-analysis checkout/config is not canonical CV-ADR"
+            "internal-analysis checkout/config is not canonical target-bound-role"
         )
     context = initialize_distributed(); visible = os.environ.get("CUDA_VISIBLE_DEVICES", "").split(",")
     if context.world_size != 4 or visible != ["4", "5", "6", "7"]: raise WriterModelError("formal internal analysis requires four ranks on physical GPUs4-7")

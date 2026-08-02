@@ -3,6 +3,7 @@ from __future__ import annotations
 from ember.pi05_source_checkpoint import canonical_hash
 from ember.writer.inference import (
     WRITER_ADAPTER_SCHEMA,
+    WRITER_EPISODE_EVIDENCE_CV,
     _task_video_mapping,
     expected_writer_episode_evidence,
 )
@@ -94,7 +95,7 @@ def test_episode_evidence_seals_no_replacement_pairing() -> None:
     correct_rows = rows(correct)
     shuffled_rows = rows(shuffled)
     assert {row["schema_version"] for row in correct_rows} == {
-        "ember_pi05_contextual_value_dual_read_episode_evidence_v1"
+        WRITER_EPISODE_EVIDENCE_CV
     }
     assert {row["teacher_video_sampling_mode"] for row in correct_rows} == {
         "without_replacement"

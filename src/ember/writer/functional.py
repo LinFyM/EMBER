@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import struct
 from contextlib import contextmanager
+from types import MethodType
 from typing import Any, Iterator, Mapping, Sequence
 
 import torch
@@ -20,6 +21,9 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 TASK_QUERY_POLICY_RNG_SCHEME = (
     "task_query_keyed_stateless_policy_cpu_cuda_v2"
+)
+LATIN_BETA_TIME_SAMPLING_SCHEME = (
+    "task_query_keyed_randomized_latin_beta15_time_v1"
 )
 
 
@@ -95,6 +99,61 @@ def scoped_policy_randomness(
         yield
 
 
+def _latin_beta15_time(
+    model: torch.nn.Module,
+    batch_size: int,
+    device: torch.device | str,
+) -> torch.Tensor:
+    """Sample one randomized Latin stratum per exact Beta(1.5, 1) query."""
+
+    config = getattr(model, "config", None)
+    if (
+        batch_size <= 0
+        or config is None
+        or float(config.time_sampling_beta_alpha) != 1.5
+        or float(config.time_sampling_beta_beta) != 1.0
+        or float(config.time_sampling_scale) != 0.999
+        or float(config.time_sampling_offset) != 0.001
+    ):
+        raise WriterModelError("Latin flow-time sampler lost PI05 Beta contract")
+    jitter = torch.rand(batch_size, dtype=torch.float32, device="cpu")
+    uniform = (
+        torch.arange(batch_size, dtype=torch.float32) + jitter
+    ) / float(batch_size)
+    permutation = torch.randperm(batch_size)
+    beta = uniform.index_select(0, permutation).pow(2.0 / 3.0)
+    time = beta * float(config.time_sampling_scale)
+    time = time + float(config.time_sampling_offset)
+    return time.to(dtype=torch.float32, device=device)
+
+
+@contextmanager
+def scoped_policy_flow_time_sampling(
+    policy: torch.nn.Module,
+    scheme: str | None,
+) -> Iterator[None]:
+    """Temporarily replace only PI05 flow-time sampling, never policy code."""
+
+    if scheme is None:
+        yield
+        return
+    if scheme != LATIN_BETA_TIME_SAMPLING_SCHEME:
+        raise WriterModelError("unsupported policy flow-time sampling scheme")
+    model = getattr(policy, "model", None)
+    if model is None or not callable(getattr(model, "sample_time", None)):
+        raise WriterModelError("policy has no scoped PI05 flow-time owner")
+    had_instance_value = "sample_time" in vars(model)
+    previous_instance_value = vars(model).get("sample_time")
+    model.sample_time = MethodType(_latin_beta15_time, model)
+    try:
+        yield
+    finally:
+        if had_instance_value:
+            model.sample_time = previous_instance_value
+        else:
+            delattr(model, "sample_time")
+
+
 def prepare_frozen_writer_policy(
     policy: torch.nn.Module,
     contract: LoRAContract,
@@ -151,6 +210,7 @@ def functional_lora_loss_gradient(
     batch: Mapping[str, Any],
     policy_rng_seed: int | None = None,
     policy_rng_device: torch.device | str | None = None,
+    flow_time_sampling_scheme: str | None = None,
 ) -> tuple[torch.Tensor, Mapping[str, Any], dict[str, torch.Tensor]]:
     """Differentiate one policy loss only through detached LoRA leaf tensors.
 
@@ -165,7 +225,8 @@ def functional_lora_loss_gradient(
         name: value.detach().requires_grad_(True) for name, value in state.items()
     }
     with scoped_policy_randomness(policy_rng_seed, policy_rng_device):
-        output = functional_lora_call(policy, leaves, contract, dict(batch))
+        with scoped_policy_flow_time_sampling(policy, flow_time_sampling_scheme):
+            output = functional_lora_call(policy, leaves, contract, dict(batch))
     if (
         not isinstance(output, tuple)
         or len(output) != 2

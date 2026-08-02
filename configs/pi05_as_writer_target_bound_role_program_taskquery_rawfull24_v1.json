@@ -1,0 +1,75 @@
+{
+  "schema_version": "ember_pi05_target_bound_role_program_recipe_overlay_v1",
+  "base_config": "configs/pi05_as_writer_target_bound_role_program_full24_decay400_v1.json",
+  "base_sha256": "05f6d4f6c5ee7dd04fb123533379f74baaa13ef1297b558b55754cc0d0769961",
+  "replace": {
+    "conditioning_training": {
+      "method": "task_query_keyed_raw_task_complete_single_video_multi_action_positive_functional_loss",
+      "update_topology": "task_complete_all_tasks",
+      "writer_language_contract": "correct_task_language_state_free_teacher_action_suffix",
+      "policy_language_contract": "correct_action_query_task_language",
+      "action_query_batch_owner": "six sequential task-pure physical action batches per rank per macro optimizer update",
+      "task_assignment": "every macro optimizer update covers all 24 tasks exactly once globally with six cost-balanced long-first tasks per rank",
+      "tasks_per_rank_per_optimizer_update": 6,
+      "global_tasks_per_optimizer_update": 24,
+      "teacher_videos_per_task_visit": 1,
+      "action_video_assignment": "all_actions_share_single_video_lora",
+      "logical_pair_batch": "per_task_action_batch",
+      "policy_noise_contract": "one task-query-keyed stateless policy flow noise and time draw per action query",
+      "policy_randomness_scheme": "task_query_keyed_stateless_policy_cpu_cuda_v2",
+      "pair_loss_reduction": "mean_within_task_then_equal_mean_over_24_tasks",
+      "task_loss_scale_before_backward": "per_task_unscaled_then_exact_raw_full24_mean",
+      "ddp_gradient_sync": "none_during_task_gradients_then_bounded_parameter_chunk_allgathers_for_exact_raw_full24_mean_and_read_only_grams",
+      "gradient_composition": "exact_raw_equal_weight_full24_mean_without_projection",
+      "single_video_gradient_direction_diagnostic": "fixed_countsketch_32_per_task_per_semantic_frontend_core_program_compiler_factor_block",
+      "optimizer_steps_per_macro_update": 1,
+      "checkpoint_boundary": "complete_macro_optimizer_update_only",
+      "normal_loss_weight": 1.0
+    },
+    "optimization": {
+      "method": "functional_pi05_target_bound_role_program_task_query_keyed_raw_full24_positive_only",
+      "seed": 7,
+      "precision": "bfloat16",
+      "source_policy": "final formal frozen raw policy",
+      "normalization": "frozen filtered-LIBERO-90 source normalization",
+      "optimizer": {
+        "name": "AdamW",
+        "betas": [
+          0.9,
+          0.95
+        ],
+        "eps": 1E-8,
+        "weight_decay": 0.0001,
+        "gradient_clip_norm": 1.0
+      },
+      "scheduler": {
+        "kind": "cosine_decay_with_warmup",
+        "step_axis": "completed_full24_task_cycle",
+        "optimizer_updates_per_scheduler_step": 1,
+        "peak_lr": 0.0003,
+        "warmup_steps": 17,
+        "decay_steps": 400,
+        "decay_lr": 0.00001
+      },
+      "cycle_normalization": {
+        "mode": "task_query_keyed_raw_reference",
+        "optimizer_updates_per_task_cycle": 1,
+        "lr_divisor": 1,
+        "reference_betas": [
+          0.9,
+          0.95
+        ],
+        "applied_betas": [
+          0.9,
+          0.95
+        ],
+        "reference_weight_decay": 0.0001,
+        "scheduler_updates_per_task_cycle": 1,
+        "weight_decay_composition": "one_raw_adamw_decay_per_complete_task_cycle"
+      },
+      "optimizer_diagnostics": "per_owned_block_moment_parameter_and_actual_update_l2",
+      "maximum_formal_wall_clock_minutes": 190,
+      "budget_role": "fresh_target_bound_role_program_task_query_keyed_raw_reference_200_cycle_one_hour_then_evidence_gated_resume"
+    }
+  }
+}

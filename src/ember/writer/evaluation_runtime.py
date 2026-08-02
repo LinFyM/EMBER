@@ -71,7 +71,7 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
         del tokenizer_path
         if str(evaluation_adapter.get("kind", "as_writer")) != "as_writer":
             raise WriterModelError(
-                "RL-Writer must be retrained under CV-ADR before evaluation"
+                "cached rollout requires a canonical AS-Writer adapter"
             )
         observed = inspect_as_writer_evaluation(
             config_path=Path(evaluation_adapter["config"]["path"]),

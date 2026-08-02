@@ -69,7 +69,7 @@ from ember.writer.data import (
     WriterTaskAuthority,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
-from ember.writer.architecture import CONTEXTUAL_VALUE_WRITER_CONSTRUCTOR_KEYS
+from ember.writer.architecture import TARGET_BOUND_ROLE_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.model import (
     CompleteLoRAWriter,
     WriterModelError,
@@ -159,7 +159,7 @@ def _build_writer(
     writer_config = {
         key: value
         for key, value in config["writer"].items()
-        if key in CONTEXTUAL_VALUE_WRITER_CONSTRUCTOR_KEYS
+        if key in TARGET_BOUND_ROLE_WRITER_CONSTRUCTOR_KEYS
     }
     bridge = policy.model.paligemma_with_expert
     writer = CompleteLoRAWriter(
@@ -710,7 +710,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=(
             REPO_ROOT
-            / "configs/pi05_as_writer_contextual_value_dual_read_full24_decay400_v1.json"
+            / "configs/pi05_as_writer_target_bound_role_program_taskquery_rawfull24_v1.json"
         ),
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

@@ -1,4 +1,4 @@
-"""Contextual outgoing Action, endpoint Effect, and change Program for CV-ADR."""
+"""Target-bound, role-preserving Action/Effect/Change causal Program."""
 
 from __future__ import annotations
 
@@ -142,27 +142,83 @@ class RawValueSelfAttention(torch.nn.Module):
         )
 
 
-class OutgoingProgramBlock(torch.nn.Module):
-    """Attend within A/E/D intervals, then causally along each semantic column."""
+class TargetRoleEvidenceReader(torch.nn.Module):
+    """Read raw task-token evidence after target and Action are known."""
 
-    TYPE_COUNT = 3
-
-    def __init__(
-        self,
-        *,
-        width: int,
-        heads: int,
-        initialization_seed: int,
-    ) -> None:
+    def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
-        generator = torch.Generator(device="cpu").manual_seed(initialization_seed)
-        identity = torch.empty(self.TYPE_COUNT, width)
-        identity.normal_(mean=0.0, std=0.02, generator=generator)
-        self.type_identity = torch.nn.Parameter(identity)
-        self.type_identity_norm = RMSNorm(width)
-        self.local_attention = RawValueSelfAttention(
-            width=width, heads=heads, causal=False
+        if min(width, heads) <= 0 or width % heads or (width // heads) % 2:
+            raise SemanticProgramError("invalid target-role evidence reader")
+        self.heads = int(heads)
+        self.memory_norm = RMSNorm(width)
+        self.query = torch.nn.Linear(width, width, bias=False)
+        self.key = torch.nn.Linear(width, width, bias=False)
+        self.output = torch.nn.Linear(width, width, bias=False)
+
+    def forward(
+        self,
+        address: torch.Tensor,
+        memory: torch.Tensor,
+        valid_task_tokens: torch.Tensor,
+        role_identity: torch.Tensor,
+    ) -> torch.Tensor:
+        if (
+            address.ndim != 4
+            or memory.ndim != 4
+            or address.shape[0] != memory.shape[0]
+            or address.shape[2] != memory.shape[1]
+            or address.shape[-1] != memory.shape[-1]
+            or valid_task_tokens.shape != (memory.shape[0], memory.shape[2])
+            or valid_task_tokens.dtype != torch.bool
+            or role_identity.shape != (memory.shape[-1],)
+            or not bool(valid_task_tokens.any(dim=1).all())
+        ):
+            raise SemanticProgramError("invalid target-bound role evidence")
+        batch, targets, intervals, width = address.shape
+        task_tokens = memory.shape[2]
+        rows = batch * targets * intervals
+        query_content = address + role_identity
+        query = split_heads(
+            self.query(query_content.reshape(rows, 1, width)), self.heads
         )
+        query_positions = torch.zeros(
+            rows, 1, dtype=torch.long, device=memory.device
+        )
+        query = apply_rope(query, query_positions)
+
+        expanded = memory[:, None].expand(
+            batch, targets, intervals, task_tokens, width
+        ).reshape(rows, task_tokens, width)
+        key_content = self.memory_norm(expanded) + role_identity
+        key = split_heads(self.key(key_content), self.heads)
+        positions = torch.arange(
+            task_tokens, dtype=torch.long, device=memory.device
+        )[None].expand(rows, -1)
+        key = apply_rope(key, positions)
+        value = split_heads(expanded, self.heads)
+        valid = valid_task_tokens[:, None, None].expand(
+            batch, targets, intervals, task_tokens
+        ).reshape(rows, task_tokens)
+        attended = F.scaled_dot_product_attention(
+            query,
+            key,
+            value,
+            attn_mask=valid[:, None, None, :],
+            dropout_p=0.0,
+            is_causal=False,
+        )
+        return self.output(merge_heads(attended)).reshape(
+            batch, targets, intervals, width
+        )
+
+
+class CausalRoleProgramBlock(torch.nn.Module):
+    """Contextualize each target-role column without mixing role values."""
+
+    ROLE_COUNT = 3
+
+    def __init__(self, *, width: int, heads: int) -> None:
+        super().__init__()
         self.temporal_attention = RawValueSelfAttention(
             width=width, heads=heads, causal=True
         )
@@ -173,102 +229,57 @@ class OutgoingProgramBlock(torch.nn.Module):
             torch.nn.Linear(4 * width, width, bias=False),
         )
 
-    @staticmethod
-    def task_token_count(columns: int) -> int:
-        if columns < 3 or (columns - 1) % 2:
-            raise SemanticProgramError("outgoing Program column topology changed")
-        return (columns - 1) // 2
-
-    def _column_identity(self, columns: int) -> torch.Tensor:
-        task_tokens = self.task_token_count(columns)
-        identity = self.type_identity_norm(self.type_identity)
-        return torch.cat(
-            (
-                identity[0:1],
-                identity[1:2].expand(task_tokens, -1),
-                identity[2:3].expand(task_tokens, -1),
-            ),
-            dim=0,
-        )
-
-    @classmethod
-    def _semantic_ordinals(cls, columns: int, device: torch.device) -> torch.Tensor:
-        task_tokens = cls.task_token_count(columns)
-        token_ordinals = torch.arange(task_tokens, dtype=torch.long, device=device)
-        return torch.cat(
-            (torch.zeros(1, dtype=torch.long, device=device), token_ordinals, token_ordinals)
-        )
-
     def forward(
         self,
         content: torch.Tensor,
         endpoint_positions: torch.Tensor,
         valid_intervals: torch.Tensor,
-        valid_semantics: torch.Tensor,
+        qk_identity: torch.Tensor,
     ) -> torch.Tensor:
         if (
-            content.ndim != 4
-            or endpoint_positions.shape != content.shape[:2]
+            content.ndim != 5
+            or content.shape[3] != self.ROLE_COUNT
+            or endpoint_positions.shape != (content.shape[0], content.shape[2])
             or endpoint_positions.dtype != torch.long
-            or valid_intervals.shape != content.shape[:2]
+            or valid_intervals.shape != endpoint_positions.shape
             or valid_intervals.dtype != torch.bool
-            or valid_semantics.shape != (content.shape[0], content.shape[2])
-            or valid_semantics.dtype != torch.bool
+            or qk_identity.shape
+            != (content.shape[0], content.shape[1], self.ROLE_COUNT, content.shape[-1])
             or not bool(valid_intervals.any(dim=1).all())
         ):
-            raise SemanticProgramError("invalid outgoing causal Program batch")
-        batch, intervals, columns, width = content.shape
-        task_tokens = self.task_token_count(columns)
-        if (
-            not bool(valid_semantics[:, 0].all())
-            or not bool(valid_semantics[:, 1 : 1 + task_tokens].any(dim=1).all())
-        ):
-            raise SemanticProgramError("outgoing Program lost Action or Effect value")
-        valid_grid = valid_intervals[:, :, None] & valid_semantics[:, None]
-        identity = self._column_identity(columns).to(content.dtype)
-        ordinals = self._semantic_ordinals(columns, content.device)
-
-        local_content = content.reshape(batch * intervals, columns, width)
-        local_valid = valid_grid.reshape(batch * intervals, columns)
-        local_positions = ordinals[None].expand(batch * intervals, -1)
-        local_identity = identity[None].expand(batch * intervals, -1, -1)
-        local_delta = self.local_attention(
-            local_content,
-            local_valid,
-            positions=local_positions,
-            qk_identity=local_identity,
+            raise SemanticProgramError("invalid target-role causal Program")
+        batch, targets, intervals, roles, width = content.shape
+        sequences = content.permute(0, 1, 3, 2, 4).reshape(
+            batch * targets * roles, intervals, width
         )
-        content = (local_content + local_delta).reshape(
-            batch, intervals, columns, width
-        ).masked_fill(~valid_grid[..., None], 0.0)
-
-        temporal_content = content.permute(0, 2, 1, 3).reshape(
-            batch * columns, intervals, width
+        positions = endpoint_positions[:, None, None].expand(
+            batch, targets, roles, intervals
+        ).reshape(batch * targets * roles, intervals)
+        valid = valid_intervals[:, None, None].expand(
+            batch, targets, roles, intervals
+        ).reshape(batch * targets * roles, intervals)
+        identity = qk_identity[:, :, :, None].expand(
+            batch, targets, roles, intervals, width
+        ).reshape(batch * targets * roles, intervals, width)
+        sequences = sequences + self.temporal_attention(
+            sequences,
+            valid,
+            positions=positions,
+            qk_identity=identity,
         )
-        temporal_valid = valid_grid.permute(0, 2, 1).reshape(
-            batch * columns, intervals
+        sequences = sequences + self.ffn(self.ffn_norm(sequences))
+        result = sequences.reshape(batch, targets, roles, intervals, width).permute(
+            0, 1, 3, 2, 4
         )
-        temporal_positions = endpoint_positions[:, None].expand(
-            batch, columns, intervals
-        ).reshape(batch * columns, intervals)
-        temporal_identity = identity[None, :, None].expand(
-            batch, columns, intervals, width
-        ).reshape(batch * columns, intervals, width)
-        temporal_delta = self.temporal_attention(
-            temporal_content,
-            temporal_valid,
-            positions=temporal_positions,
-            qk_identity=temporal_identity,
+        return result.masked_fill(
+            ~valid_intervals[:, None, :, None, None], 0.0
         )
-        content = (temporal_content + temporal_delta).reshape(
-            batch, columns, intervals, width
-        ).permute(0, 2, 1, 3)
-        content = content + self.ffn(self.ffn_norm(content))
-        return content.masked_fill(~valid_grid[..., None], 0.0)
 
 
-class OutgoingSemanticProgram(torch.nn.Module):
-    """Build one causal contextual A/E/D Program used as both reader K and V."""
+class TargetBoundRoleProgram(torch.nn.Module):
+    """Build separate target-bound causal Action, Effect, and Change streams."""
+
+    ROLE_COUNT = 3
 
     def __init__(
         self,
@@ -280,14 +291,17 @@ class OutgoingSemanticProgram(torch.nn.Module):
     ) -> None:
         super().__init__()
         if blocks <= 0:
-            raise SemanticProgramError("Semantic Program needs axial blocks")
+            raise SemanticProgramError("target-bound Program needs causal blocks")
+        generator = torch.Generator(device="cpu").manual_seed(initialization_seed)
+        identity = torch.empty(self.ROLE_COUNT, width)
+        identity.normal_(mean=0.0, std=0.02, generator=generator)
+        self.role_identity = torch.nn.Parameter(identity)
+        self.role_identity_norm = RMSNorm(width)
+        self.core_norm = RMSNorm(width)
+        self.action_norm = RMSNorm(width)
+        self.evidence_reader = TargetRoleEvidenceReader(width=width, heads=heads)
         self.blocks = torch.nn.ModuleList(
-            OutgoingProgramBlock(
-                width=width,
-                heads=heads,
-                initialization_seed=initialization_seed + index,
-            )
-            for index in range(blocks)
+            CausalRoleProgramBlock(width=width, heads=heads) for _ in range(blocks)
         )
 
     def forward(
@@ -297,7 +311,9 @@ class OutgoingSemanticProgram(torch.nn.Module):
         frame_positions: torch.Tensor,
         valid_frames: torch.Tensor,
         valid_task_tokens: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        target_query: torch.Tensor,
+        target_core: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         if (
             grounded_evidence.ndim != 4
             or action_probe.shape
@@ -309,36 +325,48 @@ class OutgoingSemanticProgram(torch.nn.Module):
             or valid_task_tokens.shape
             != (grounded_evidence.shape[0], grounded_evidence.shape[2])
             or valid_task_tokens.dtype != torch.bool
+            or target_query.ndim != 3
+            or target_core.shape != target_query.shape
+            or target_query.shape[0] != grounded_evidence.shape[0]
+            or target_query.shape[-1] != grounded_evidence.shape[-1]
             or bool((valid_frames.sum(dim=1) < 2).any())
         ):
-            raise SemanticProgramError("invalid outgoing Semantic Program evidence")
+            raise SemanticProgramError("invalid target-bound Program evidence")
+        batch, frames, _tokens, width = grounded_evidence.shape
+        targets = target_query.shape[1]
+        intervals = frames - 1
         valid_intervals = valid_frames[:, :-1] & valid_frames[:, 1:]
         endpoint_positions = frame_positions[:, 1:]
         effects = grounded_evidence[:, 1:]
         changes = effects - grounded_evidence[:, :-1]
-        program = torch.cat(
-            (action_probe[:, :-1, None], effects, changes), dim=2
+        actions = action_probe[:, :-1]
+        roles = self.role_identity_norm(self.role_identity).to(actions.dtype)
+        address = (
+            target_query[:, :, None]
+            + self.core_norm(target_core)[:, :, None]
+            + self.action_norm(actions)[:, None]
         )
-        valid_semantics = torch.cat(
-            (
-                torch.ones(
-                    valid_task_tokens.shape[0],
-                    1,
-                    dtype=torch.bool,
-                    device=valid_task_tokens.device,
-                ),
-                valid_task_tokens,
-                valid_task_tokens,
-            ),
-            dim=1,
+        effect_read = self.evidence_reader(
+            address, effects, valid_task_tokens, roles[1]
         )
-        valid_grid = valid_intervals[:, :, None] & valid_semantics[:, None]
-        program = program.masked_fill(~valid_grid[..., None], 0.0)
+        change_read = self.evidence_reader(
+            address, changes, valid_task_tokens, roles[2]
+        )
+        action_value = actions[:, None].expand(batch, targets, intervals, width)
+        program = torch.stack((action_value, effect_read, change_read), dim=3)
+        program = program.masked_fill(
+            ~valid_intervals[:, None, :, None, None], 0.0
+        )
+        temporal_identity = (
+            target_query[:, :, None]
+            + self.core_norm(target_core)[:, :, None]
+            + roles[None, None]
+        )
         for block in self.blocks:
             program = block(
                 program,
                 endpoint_positions,
                 valid_intervals,
-                valid_semantics,
+                temporal_identity,
             )
-        return program, endpoint_positions, valid_intervals, valid_semantics
+        return program, endpoint_positions, valid_intervals

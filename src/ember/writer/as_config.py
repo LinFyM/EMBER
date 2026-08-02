@@ -12,6 +12,12 @@ from ember.writer.model import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+TARGET_BOUND_ROLE_CONFIG_SCHEMA = (
+    "ember_pi05_target_bound_role_program_as_writer_v1"
+)
+TARGET_BOUND_ROLE_CONFIG_OVERLAY_SCHEMA = (
+    "ember_pi05_target_bound_role_program_recipe_overlay_v1"
+)
 AS_WRITER_CONFIG_SCHEMA = "ember_pi05_contextual_value_dual_read_full24_as_writer_v1"
 AS_WRITER_CONFIG_OVERLAY_SCHEMA = (
     "ember_pi05_contextual_value_dual_read_full24_as_writer_recipe_overlay_v1"
@@ -29,6 +35,7 @@ AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA = (
     "ember_pi05_contextual_value_dual_read_cycle_normalized_recipe_overlay_v2"
 )
 AS_WRITER_CONFIG_SCHEMAS = (
+    TARGET_BOUND_ROLE_CONFIG_SCHEMA,
     AS_WRITER_CONFIG_SCHEMA,
     AS_WRITER_SERIAL4_CONFIG_SCHEMA,
     AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA,
@@ -108,7 +115,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         or int(writer.get("max_frames_per_encoder_call", 0)) <= 0
     ):
         raise WriterModelError(
-            "sealed CV-ADR Writer dimensions changed"
+            "sealed target-bound-role Writer dimensions changed"
         )
     expected = expected_writer_contract(writer)
     if writer != expected:
@@ -120,7 +127,7 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
             if writer[key] != expected[key]
         )
         raise WriterModelError(
-            "CV-ADR AS-Writer architecture changed; "
+            "target-bound-role AS-Writer architecture changed; "
             f"missing={missing}, extra={extra}, changed={changed}"
         )
 
@@ -202,9 +209,8 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         raise WriterModelError("AS-Writer sampling contract changed")
 
 
-def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
-    value = config.get("conditioning_training", {})
-    legacy_common = {
+def _conditioning_common(*, task_query_keyed: bool) -> dict[str, Any]:
+    common: dict[str, Any] = {
         "writer_language_contract": (
             "correct_task_language_state_free_teacher_action_suffix"
         ),
@@ -221,25 +227,24 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
         ),
         "normal_loss_weight": 1.0,
     }
-    task_query_common = {
-        **{
-            key: item
-            for key, item in legacy_common.items()
-            if key != "policy_noise_contract"
-        },
-        "policy_noise_contract": (
+    if task_query_keyed:
+        common["policy_noise_contract"] = (
             "one task-query-keyed stateless policy flow noise and time draw "
             "per action query"
-        ),
-        "policy_randomness_scheme": (
+        )
+        common["policy_randomness_scheme"] = (
             "task_query_keyed_stateless_policy_cpu_cuda_v2"
-        ),
-    }
-    full24 = {
-        "method": (
-            "raw_task_complete_single_video_multi_action_"
-            "positive_functional_loss"
-        ),
+        )
+    return common
+
+
+def _full24_conditioning(
+    common: Mapping[str, Any],
+    *,
+    method: str,
+) -> dict[str, Any]:
+    return {
+        "method": method,
         "update_topology": "task_complete_all_tasks",
         "action_query_batch_owner": (
             "six sequential task-pure physical action batches per rank per "
@@ -266,9 +271,12 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
         ),
         "optimizer_steps_per_macro_update": 1,
         "checkpoint_boundary": "complete_macro_optimizer_update_only",
-        **legacy_common,
+        **common,
     }
-    serial4 = {
+
+
+def _serial4_conditioning(common: Mapping[str, Any]) -> dict[str, Any]:
+    return {
         "method": (
             "raw_serial4_exposure_matched_single_video_multi_action_"
             "positive_functional_loss"
@@ -305,21 +313,14 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
             "once_after_each_six_optimizer_update_task_cycle"
         ),
         "checkpoint_boundary": "complete_optimizer_update_only",
-        **legacy_common,
+        **common,
     }
-    task_query_raw = {
-        **{
-            key: item
-            for key, item in full24.items()
-            if key not in legacy_common and key != "method"
-        },
-        "method": (
-            "task_query_keyed_raw_task_complete_single_video_multi_action_"
-            "positive_functional_loss"
-        ),
-        **task_query_common,
-    }
-    randomized_group4 = {
+
+
+def _randomized_group4_conditioning(
+    common: Mapping[str, Any],
+) -> dict[str, Any]:
+    return {
         "method": (
             "cycle_normalized_randomized_group4_single_video_multi_action_"
             "positive_functional_loss"
@@ -358,14 +359,44 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
             "once_after_each_six_optimizer_update_task_cycle"
         ),
         "checkpoint_boundary": "complete_optimizer_update_only",
-        **task_query_common,
+        **common,
     }
-    if config.get("schema_version") == AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA:
+
+
+def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
+    value = config.get("conditioning_training", {})
+    legacy_common = _conditioning_common(task_query_keyed=False)
+    task_query_common = _conditioning_common(task_query_keyed=True)
+    full24 = _full24_conditioning(
+        legacy_common,
+        method=(
+            "raw_task_complete_single_video_multi_action_"
+            "positive_functional_loss"
+        ),
+    )
+    task_query_raw = _full24_conditioning(
+        task_query_common,
+        method=(
+            "task_query_keyed_raw_task_complete_single_video_multi_action_"
+            "positive_functional_loss"
+        ),
+    )
+    serial4 = _serial4_conditioning(legacy_common)
+    randomized_group4 = _randomized_group4_conditioning(task_query_common)
+    if config.get("schema_version") in {
+        AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA,
+        TARGET_BOUND_ROLE_CONFIG_SCHEMA,
+    }:
         expected = (
             randomized_group4
             if value.get("update_topology")
             == "cycle_normalized_randomized_group4_six_phase_task_cycle"
-            else task_query_raw
+            else (
+                task_query_raw
+                if value.get("policy_randomness_scheme")
+                == "task_query_keyed_stateless_policy_cpu_cuda_v2"
+                else full24
+            )
         )
     else:
         expected = (
@@ -379,7 +410,14 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
 
 
 def _validate_cycle_normalized_optimization(config: Mapping[str, Any]) -> None:
-    if config.get("schema_version") != AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA:
+    if (
+        config.get("schema_version")
+        not in {
+            AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA,
+            TARGET_BOUND_ROLE_CONFIG_SCHEMA,
+        }
+        or "cycle_normalization" not in config.get("optimization", {})
+    ):
         return
     training = config["conditioning_training"]
     optimizer = config.get("optimization", {}).get("optimizer", {})
@@ -501,6 +539,8 @@ def _load_recipe_overlay(
         base["schema_version"] = AS_WRITER_SERIAL4_CONFIG_SCHEMA
     elif overlay_schema == AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA:
         base["schema_version"] = AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA
+    elif overlay_schema == TARGET_BOUND_ROLE_CONFIG_OVERLAY_SCHEMA:
+        base["schema_version"] = TARGET_BOUND_ROLE_CONFIG_SCHEMA
     base["_config_derivation"] = {
         "overlay_schema": overlay_schema,
         "base_config": str(base_path.relative_to(REPO_ROOT)),
@@ -513,6 +553,7 @@ def load_writer_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     schema = config.get("schema_version")
     if schema in {
+        TARGET_BOUND_ROLE_CONFIG_OVERLAY_SCHEMA,
         AS_WRITER_CONFIG_OVERLAY_SCHEMA,
         AS_WRITER_SERIAL4_CONFIG_OVERLAY_SCHEMA,
         AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA,

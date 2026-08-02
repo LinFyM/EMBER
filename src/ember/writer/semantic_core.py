@@ -1,4 +1,4 @@
-"""Permutation-invariant mean-backed Semantic Core for CV-ADR."""
+"""Permutation-invariant mean-backed Semantic Core for the canonical Writer."""
 
 from __future__ import annotations
 

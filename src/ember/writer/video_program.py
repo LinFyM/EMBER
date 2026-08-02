@@ -1,4 +1,4 @@
-"""Language-aligned evidence streams for the CV-ADR Writer."""
+"""Language-aligned evidence streams shared by the canonical Writer."""
 
 from __future__ import annotations
 

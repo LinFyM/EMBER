@@ -25,6 +25,7 @@ from ember.pi05_source_checkpoint import (
     sha256_file,
     write_json_atomic,
 )
+from ember.writer.inference import WRITER_EPISODE_EVIDENCE_CV
 from ember.writer.model import WriterModelError
 
 
@@ -302,9 +303,7 @@ def build_writer_lora_cache_descriptor(
         "generator_worker_count": generator_worker_count,
         "generation_batch_size": generation_batch_size,
         "cache_key_algorithm": WRITER_LORA_VIDEO_KEY_ALGORITHM,
-        "episode_evidence_schema": (
-            "ember_pi05_contextual_value_dual_read_episode_evidence_v1"
-        ),
+        "episode_evidence_schema": WRITER_EPISODE_EVIDENCE_CV,
         "request_order": WRITER_LORA_VIDEO_REQUEST_ORDER,
         "assignment": WRITER_LORA_ASSIGNMENT,
         "precision": "bfloat16",

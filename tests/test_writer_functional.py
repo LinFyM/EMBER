@@ -1,14 +1,69 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import torch
 
 from ember.lora import LoRATarget, SmolVLALoRAContract, lora_state_sha256
 from ember.writer.functional import (
+    LATIN_BETA_TIME_SAMPLING_SCHEME,
     functional_lora_loss_gradient,
     prepare_frozen_writer_policy,
+    scoped_policy_flow_time_sampling,
+    scoped_policy_randomness,
     writer_functional_action_loss,
     writer_success_weighted_flow_loss,
 )
+
+
+class _FlowModel(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.config = SimpleNamespace(
+            time_sampling_beta_alpha=1.5,
+            time_sampling_beta_beta=1.0,
+            time_sampling_scale=0.999,
+            time_sampling_offset=0.001,
+        )
+
+    def sample_time(self, batch_size: int, device: torch.device | str) -> torch.Tensor:
+        return torch.full((batch_size,), -1.0, device=device)
+
+
+class _FlowPolicy(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.model = _FlowModel()
+
+
+def test_latin_beta_time_is_exactly_stratified_replayed_and_scoped() -> None:
+    policy = _FlowPolicy()
+    torch.manual_seed(101)
+    with scoped_policy_randomness(303, torch.device("cpu")):
+        with scoped_policy_flow_time_sampling(
+            policy, LATIN_BETA_TIME_SAMPLING_SCHEME
+        ):
+            first = policy.model.sample_time(20, torch.device("cpu"))
+    after = torch.rand(4)
+
+    torch.manual_seed(101)
+    expected_after = torch.rand(4)
+    with scoped_policy_randomness(303, torch.device("cpu")):
+        with scoped_policy_flow_time_sampling(
+            policy, LATIN_BETA_TIME_SAMPLING_SCHEME
+        ):
+            second = policy.model.sample_time(20, torch.device("cpu"))
+    beta = (first - 0.001) / 0.999
+    uniform = beta.pow(1.5)
+    strata = torch.floor(20 * uniform).to(torch.long).sort().values
+    assert torch.equal(first, second)
+    assert torch.equal(strata, torch.arange(20))
+    assert bool(((first >= 0.001) & (first <= 1.0)).all())
+    assert torch.equal(after, expected_after)
+    assert torch.equal(
+        policy.model.sample_time(2, torch.device("cpu")),
+        torch.full((2,), -1.0),
+    )
 
 
 class _LossPolicy(torch.nn.Module):

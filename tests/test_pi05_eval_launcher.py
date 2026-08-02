@@ -91,6 +91,24 @@ def test_gpu_preflight_queries_only_explicit_devices(
     assert any(call[0] == "df" and call[-1] == str(tmp_path.resolve()) for call in calls)
 
 
+def test_storage_root_requires_explicit_host_configuration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("EMBER_STORAGE_ROOT", raising=False)
+    with pytest.raises(Pi05EvaluationError, match="EMBER_STORAGE_ROOT must be set"):
+        runtime_launcher._storage_root()
+
+
+def test_storage_cap_requires_explicit_host_configuration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("EMBER_STORAGE_CAP_BYTES", raising=False)
+    with pytest.raises(
+        Pi05EvaluationError, match="EMBER_STORAGE_CAP_BYTES must be set"
+    ):
+        runtime_launcher._storage_cap_bytes()
+
+
 def test_writer_generation_batch_size_accepts_measured_positive_values() -> None:
     module = _launcher_module()
     assert module._positive_int("100") == 100

@@ -7,6 +7,7 @@ PYTHON_BIN="${EMBER_BASE_PYTHON:-/usr/bin/python3}"
 VENV_DIR="${UV_PROJECT_ENVIRONMENT:-${ROOT}/.venv}"
 : "${EMBER_CACHE_ROOT:?Set EMBER_CACHE_ROOT to a storage-backed cache directory}"
 
+export UV_PROJECT_ENVIRONMENT="${VENV_DIR}"
 export UV_CACHE_DIR="${EMBER_CACHE_ROOT}/uv"
 export UV_LINK_MODE=hardlink
 

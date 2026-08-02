@@ -17,12 +17,16 @@ from ember.pi05_assets import Pi05EvaluationError
 def _storage_root() -> Path:
     """Return the host-local root used for the personal storage cap."""
 
-    configured = os.environ.get("EMBER_STORAGE_ROOT", "/data/ymdai")
+    configured = os.environ.get("EMBER_STORAGE_ROOT")
+    if not configured:
+        raise Pi05EvaluationError("EMBER_STORAGE_ROOT must be set")
     return Path(configured).expanduser().resolve()
 
 
 def _storage_cap_bytes() -> int:
-    configured = os.environ.get("EMBER_STORAGE_CAP_BYTES", "500000000000")
+    configured = os.environ.get("EMBER_STORAGE_CAP_BYTES")
+    if not configured:
+        raise Pi05EvaluationError("EMBER_STORAGE_CAP_BYTES must be set")
     try:
         cap = int(configured)
     except ValueError as error:

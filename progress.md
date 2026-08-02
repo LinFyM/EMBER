@@ -1,12 +1,27 @@
 # EMBER Progress Ledger
 
-最后更新：2026-08-01。
+最后更新：2026-08-02。
 
 阅读规则：本文按时间顺序保留真实执行状态。早期段落中的“当前”“下一步”、
 GPU范围和训练步长是当时快照；活动状态只取
 `docs/active_session_handoff.md`、
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
+
+## 2026-08-02 RNG-v2 RAW fresh正式启动
+
+- seal authority `55faeeb`已push，并建立clean detached frozen worktree。一次live
+  preflight确认GPU4--7空闲健康、个人占用`399,218,013,812` bytes、全部资产存在、
+  output/tmux无冲突；未查询GPU0--3。
+- RNG-v2 RAW已从fresh identity启动macro0→200；tmux
+  `ember-ucp-rngv2-raw-tf400-55faeeb`，root/log与精确命令记录在active handoff。
+  四rank各占物理GPU4--7一张，没有额外CUDA role。
+- 首macro完整覆盖24 train tasks一次，24 teacher videos/480 queries；四rank sampled-
+  frame总和`207/216/206/204`且rank内严格long-first。loss/gradient/LR finite，
+  step2起Semantic Frontend、Program、compiler、factor全部非零可达；信息墙与source
+  freeze正确，0 OOM/NaN/contract mismatch。
+- 让RAW自然完成后固定评测50/100/150/200，再运行GROUP4；当前不并发第二个GPU
+  workload。CV-ADR继续隔离，后续不使用subagent。
 
 ## 2026-08-01 task/query RNG-v2重封存完成
 

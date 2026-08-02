@@ -15,10 +15,13 @@ finite、主模块梯度可达、信息墙读取0，resume未改写既有checkpo
 task-gradient norm仍逐位相等；CountSketch只有`5.82e-11`跨卡浮点差。这封存
 `task_query_keyed_stateless_policy_cpu_cuda_v2`，两份formal config重新seal。
 
-当前没有活动训练、评测或tmux。提交/push本reseal authority后，从新clean frozen
-SHA和全新root依次fresh运行RNG-v2 RAW 0→200与GROUP4 0→1200，再以同一paired
-cycle50/100/150/200 correct400裁决operator。CV-ADR继续隔离等待有效cell；后续不
-使用subagent。
+clean pushed `55faeeb`的RNG-v2 RAW已从fresh identity正式运行0→200，tmux为
+`ember-ucp-rngv2-raw-tf400-55faeeb`，root为
+`/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_rngv2_truefast400_formal_dev_r4_b20_seed7_55faeeb_20260801`。
+首macro 24 tasks/24 videos/480 queries，cost-balanced long-first，loss/gradient/LR
+finite，step2起四个主要模块均可达，信息墙合同正确。自然完成后评测
+cycle50/100/150/200；随后从全新root fresh跑GROUP4 0→1200并裁决operator。CV-ADR
+继续隔离等待有效cell；后续不使用subagent。
 
 边界：autoscaled200与true-fast400 RAW的rank/task/microtask顺序完全相同，cycle0
 loss/sketch也逐项相同，所以既有scheduler interaction仍是同一ambient-time stream下

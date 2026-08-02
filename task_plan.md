@@ -143,8 +143,8 @@ runner、split 或 GPU 权限。
   0→1→3→7 fresh/exact-resume及跨rank manipulation；四task loss/gradient逐位相等，
   CountSketch最大差`5.82e-11`，两份formal config重新seal。
 - [ ] 从全新root和fresh identity重跑RNG-v2 RAW及cycle-normalized GROUP4，固定评测
-  cycle50/100/150/200 paired correct400，再做预注册operator裁决。v1 RAW absolute
-  只作observed bundle，v1 GROUP4不进入裁决。
+  cycle50/100/150/200 paired correct400，再做预注册operator裁决。RAW已从clean
+  `55faeeb`正式启动且首macro健康；v1 RAW只作observed bundle，v1 GROUP4不进入裁决。
 - [x] 在独立worktree实现CV-ADR canonical路径；参数`10,241,024`、完整CPU回归
   `225 passed`、结构门无hard violation。分支已rebase到当前authority并以
   `3798994`记录复验；formal configs在group4裁决及真实B20/profile/resume前保持

@@ -60,7 +60,7 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 `dae13bf`实现并push；CPU default与指定CUDA generator现在共同fork/seed/restore，
 randomness scheme、cycle-normalized config、task-query checkpoint family及
 shared/trainer/rank schemas均为fresh-incompatible v2。完整CPU回归`241 passed`。
-仅物理GPU4--7的两条B20真实fresh/resume reseal均完成且当前无训练、评测或tmux进程。
+仅物理GPU4--7的两条B20真实fresh/resume reseal均完成。
 
 RAW fresh0→1→exact-resume1→3每macro覆盖24 tasks恰好一次、共1,440 queries/72
 one-video conditions；GROUP4 fresh0→1→3→跨cycle边界到7，cycle0六phase恰好覆盖
@@ -71,10 +71,14 @@ step1及GROUP4 step3 payload逐SHA/size/mtime未改写。跨rank操纵把tasks12
 逐位相等；CountSketch最大绝对差`5.82e-11`。这直接封存
 `task_query_keyed_stateless_policy_cpu_cuda_v2`，两份formal config重新seal。
 
-下一动作从新的clean pushed authority和全新root依次fresh重跑RNG-v2 RAW
-macro0→200与GROUP4 update0→1200，再对cycle50/100/150/200做同一paired correct400
-及预注册operator裁决；不得续接任何v1 checkpoint。CV-ADR继续隔离等待正确operator
-cell。后续推进暂停所有subagent使用。
+clean pushed authority `55faeeb`的RNG-v2 RAW已从fresh identity正式启动，tmux
+`ember-ucp-rngv2-raw-tf400-55faeeb`当前运行0→200；首macro 24 tasks各一次，四rank
+frame-cost总和`207/216/206/204`且rank内long-first，480 queries/24 videos，loss、
+gradient和LR finite，step2起四个主要块均可达，无OOM或contract mismatch。root为
+`/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_rngv2_truefast400_formal_dev_r4_b20_seed7_55faeeb_20260801`。
+自然完成后评测cycle50/100/150/200，再从全新root fresh运行GROUP4 update0→1200并
+做同一paired correct400及预注册operator裁决；不得续接任何v1 checkpoint。CV-ADR
+继续隔离等待正确operator cell。后续推进暂停所有subagent使用。
 
 RNG-v1 GROUP4正式root已正常停止在physical step307/51 complete cycles；root、metrics
 及step150/300 checkpoints只作`invalid_rng_v1_operator_contract` provenance，禁止

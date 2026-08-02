@@ -1,6 +1,6 @@
 # EMBER focused active session handoff
 
-最后更新：2026-08-01 UTC。
+最后更新：2026-08-02 UTC。
 
 本文顶部保存当前运行状态、恢复入口和紧邻动作；后续编号章节是按时间保留的
 历史快照。当前唯一可执行Writer已临时恢复为exact UCP，只用于fresh raw-full24
@@ -10,10 +10,50 @@
 `AGENTS.md`与`docs/execution_brief.md`。任何接手者都必须先只读复核现场，
 不能按历史快照重复启动进程。
 
-## 0-current. CPU+CUDA RNG-v2已重封存，fresh正式operator cell待启动
+## 0-current. CPU+CUDA RNG-v2已重封存，RAW fresh正式运行中
 
-当前没有需要继承的训练、评测或tmux进程。原RNG-v1 GROUP4正式进程已正常
-Ctrl-C停止；不得恢复：
+当前需要继承且只允许自然运行的进程是RNG-v2 RAW 0→200：
+
+```text
+commit  55faeebac280ee47e56cf1164b5f223eb2167518
+frozen  /data/ymdai/.codex/worktrees/EMBER-ucp-rngv2-formal-55faeeb-20260801
+config  configs/pi05_as_writer_unified_causal_program_taskquery_rawfull24_v1.json
+root    /data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_rngv2_truefast400_formal_dev_r4_b20_seed7_55faeeb_20260801
+log     /data/ymdai/logs/ember/pi05_as_writer_ucp_taskquery_rawfull24_rngv2_truefast400_formal_dev_r4_b20_seed7_55faeeb_20260801.log
+tmux    ember-ucp-rngv2-raw-tf400-55faeeb
+scale   fresh macro0->200 / formal total400 / every25
+```
+
+精确launch command是：
+
+```bash
+env PYTHONPATH=/data/ymdai/.codex/worktrees/EMBER-ucp-rngv2-formal-55faeeb-20260801/src \
+  CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4,5,6,7 \
+  OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false \
+  numactl --cpunodebind=1 --membind=1 \
+  /data/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=4 \
+  scripts/train_as_writer.py \
+  --config configs/pi05_as_writer_unified_causal_program_taskquery_rawfull24_v1.json \
+  --mode formal \
+  --source-run /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722 \
+  --checkpoint /data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 \
+  --tokenizer-path /data/ymdai/ember_data/openpi/paligemma_tokenizer.model \
+  --data-root /data/ymdai/ember_data/LIBERO-datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a \
+  --output-dir /data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_rngv2_truefast400_formal_dev_r4_b20_seed7_55faeeb_20260801 \
+  --total-steps 400 --stop-after-step 200 --checkpoint-steps every:25 \
+  --batch-size 20 --num-workers 2 --log-every 1 --skip-data-sha
+```
+
+launch前main/origin/frozen均clean `55faeeb`；GPU4--7各4MiB、0%且无compute
+process，个人占用`399,218,013,812` bytes，root/tmux不存在，全部资产存在。四rank
+现各占一张物理GPU4--7；首macro wall`19.318s`，24 train tasks各一次、24 videos、
+480 queries，四rank frame-cost总和`207/216/206/204`且rank内严格long-first。
+loss `.154044`、grad-before-clip `.013343`、LR `1.6667e-5`均finite；step2起
+Semantic Frontend、Program、compiler与factor均非零可达。run contract只允许train
+actions/videos，validation action monitor无梯度，test reads为0；0 OOM/NaN/contract
+mismatch。继续让其自然运行，不增加watcher，不启动并发GROUP4。
+
+原RNG-v1 GROUP4正式进程已正常Ctrl-C停止；不得恢复：
 
 ```text
 commit       cfc2ad14612f7c28bb5bdc48c307bd525077d3c0
@@ -66,11 +106,9 @@ CountSketch精确相等，factor最大绝对差`5.820766e-11`（相对峰值`1.0
 仅属跨卡浮点差。GROUP4既有105-frame profile仍负责容量/shape证据；v2 reseal实际
 最大82 frames。两份formal config现重新seal，旧v1 checkpoint继续fail-closed。
 
-紧邻动作是先把reseal authority提交并push，从该新SHA建立clean detached formal
-worktree；做一次live preflight后，从fresh identity和全新root依次运行RNG-v2 RAW
-macro0→200、GROUP4 update0→1200。固定评测cycle50/100/150/200 paired correct400，
-再做预注册operator裁决。CV-ADR保持隔离等待结果。后续全部由主进程执行，不使用
-subagent。
+紧邻动作是等待RAW自然完成并固定评测cycle50/100/150/200 paired correct400；随后
+从同一frozen authority、全新root fresh运行GROUP4 update0→1200，再做预注册operator
+裁决。CV-ADR保持隔离等待结果。后续全部由主进程执行，不使用subagent。
 
 ## 0-rng-v1. UCP true-fast400 observed bundle与已失效GROUP4启动快照
 

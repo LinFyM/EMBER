@@ -68,6 +68,12 @@ fail-closed candidate analysis为
 `/data/ymdai/outputs/ember/pi05_as_writer_ucp_taskquery_rawfull24_rngv2_truefast400_candidate_curve_seed7_55faeeb_20260801/analysis.json`
 （SHA256 `0f8545b1...3462`）。RAW不resume、不做五臂。
 
+RAW RNG-v1/v2只读审计保持topology、optimizer、LR、全部task/video/query assignments
+不变，只改变CPU Beta timestep的随机身份；四点由`89/71/82/117`变为
+`72/87/86/89`，matched task-gradient sketch余弦中位仅`.163--.193`。这是单个
+seed7 noise realization下的optimizer-basin敏感性，不证明v1更优，也不能据此做
+seed-general结论；analysis SHA为`ff6acdf8...b82`。
+
 预注册的RNG-v2 GROUP4当前从fresh identity运行update0→1200。首次尝试因RAW启动后
 origin/main前进两个纯文档commit，被formal exact-origin guard在模型/data初始化前
 拒绝；失败log保留且没有checkpoint或科学数据。`55faeeb→8dfe6ed`的`src/`、
@@ -75,8 +81,10 @@ origin/main前进两个纯文档commit，被formal exact-origin guard在模型/d
 detached frozen worktree并用全新root启动：tmux
 `ember-ucp-rngv2-g4-tf400-8dfe6ed`，root
 `/data/ymdai/outputs/ember/pi05_as_writer_ucp_cycle_normalized_group4_rngv2_truefast400_formal_dev_r4_b20_seed7_8dfe6ed_20260802`。
-只使用物理GPU4--7，一卡一rank；首5个完整cycle均为6 phases、24 unique tasks、
-24 videos、480 queries，scheduler只在phase5推进，all finite、0 clip、信息墙正确。
+只使用物理GPU4--7，一卡一rank；update271/45 complete cycles的live snapshot仍为
+每cycle 6 phases、24 unique tasks、24 videos、480 queries，scheduler只在phase5
+推进，all finite；step150 held validation完整。已有13次clip（4.8%，最小`.653`），
+最终必须作为完整GROUP4 operator bundle按task/phase/cost报告，不能隐去。
 完成后固定评测physical300/600/900/1200（cycle
 50/100/150/200）并执行已冻结operator裁决。CV-ADR继续隔离；后续完全暂停
 subagent使用。

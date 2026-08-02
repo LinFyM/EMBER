@@ -1,5 +1,20 @@
 # EMBER Current Execution Brief
 
+## 2026-08-02 RAW noise sensitivity and GROUP4 clip boundary
+
+只把CPU Beta flow timestep从ambient rank/order stream改成task/query keyed，保持
+UCP RAW topology、optimizer、LR、全部task/video/query assignments不变，四点
+correct400便从`89/71/82/117`变成`72/87/86/89`；matched task-gradient
+CountSketch余弦中位仅`.163--.193`。这说明当前functional optimizer轨迹存在强
+训练噪声盆地敏感性，不说明v1实现更优，也不是多seed方差估计。正式analysis SHA为
+`ff6acdf8...b82`；后续架构/recipe结论必须区分确定性合同、单次noise realization
+和seed-general机制。
+
+GROUP4在update271/45 complete cycles的live snapshot仍all finite，step150 held
+validation完整；但已有13次clip（4.8%，最小系数`.653`）。clip是selected4
+relinearization算子的内生处理，最终与phase/task/cost一起报告，不能把本格缩写成
+单一Adam clock treatment。
+
 ## 2026-08-02 RNG-v2 RAW formal result and GROUP4 live authority
 
 RNG-v2 RAW前200/400 cycles和四个paired correct400均已自然完成。50/100/150/200

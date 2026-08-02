@@ -149,6 +149,9 @@ runner、split 或 GPU 权限。
 - [x] 在RNG-v2 closed-loop outcome前冻结operator裁决层次：cycle200 endpoint与四点
   cycle-AUC、single-best breadth、success-set churn/envelope gap、逐task/phase-cost
   方向及A/D→BA→action传递共同决定；含混时CV首跑保留更简单RAW。
+- [x] 完成RAW RNG-v1/v2单变量训练噪声审计：仅CPU Beta timestep identity变化即使
+  四点曲线差`-17/+16/+4/-28`、matched梯度草图余弦中位降至`.163--.193`；将其
+  定位为optimizer-basin敏感性而非v1优越性或seed-general估计。
 - [x] 在独立worktree实现CV-ADR canonical路径；参数`10,241,024`、完整CPU回归
   `225 passed`、结构门无hard violation。分支已rebase到当前authority并以
   `3798994`记录复验；formal configs在group4裁决及真实B20/profile/resume前保持

@@ -6,6 +6,24 @@
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-02 UCP RAW训练噪声实现敏感性
+
+- RNG-v1与RNG-v2 RAW保持Writer topology、optimizer、LR、rank/task顺序、全部
+  `4,800`条task/video assignments和`96,000` queries一致；唯一functional变化是
+  CPU Beta flow timestep从ambient rank/order stream加入task/query keyed
+  fork-seed-restore。四点correct400却从`89/71/82/117`变为`72/87/86/89`，差值
+  `-17/+16/+4/-28`，不是统一平移。
+- 对全部`4,800`个matched task visits，四块32维CountSketch梯度余弦中位数仅
+  `.163--.193`，负余弦比例`.224--.324`；前3--5 updates仍多为`.92--.998`，到
+  update10已经明显分叉。每task loss绝对差中位`.01423`。因此一次合法的flow-time
+  noise identity变化会快速导向不同optimizer basin，当前训练动力学本身高度
+  noise-sensitive。
+- 该对照只有一个seed7 realization，不能证明ambient CPU RNG“更好”，也不能把
+  v1的高endpoint当作可复现收益；v1缺少跨rank/order identity，仍不能用于
+  RAW×GROUP4 operator归因。正式analysis/summary SHA分别为
+  `ff6acdf8...b82`/`34988d5f...d80f`，canonical payload SHA为
+  `5dba4218...fc4`。
+
 ## 2026-08-02 RNG-v2 RAW闭环负结果与训练机制
 
 - RAW macro50/100/150/200 correct400=`72/87/86/89`；winner仅89，breadth6但只有

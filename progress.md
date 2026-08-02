@@ -8,6 +8,18 @@ GPU范围和训练步长是当时快照；活动状态只取
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-02 RAW随机训练噪声审计与GROUP4中段健康
+
+- 完成UCP RAW RNG-v1/v2只读paired审计：除CPU Beta flow timestep identity外，
+  topology、optimizer、schedule、task/video/query和eval panel均匹配；correct400
+  曲线差`-17/+16/+4/-28`，matched per-task梯度草图余弦中位仅`.163--.193`。
+  结果证明optimizer basin对训练噪声实现敏感，但不是seed-general估计，也不恢复
+  v1跨operator效力。analysis SHA256为`ff6acdf8...b82`。
+- GROUP4在一份live snapshot已到physical update271/45 complete cycles；step150
+  checkpoint和512-row held validation完整，loss/gradient/LR finite。累计13次clip
+  （4.8%，最小coefficient`.653`），故最终裁决会把clip、task、phase与cost共同纳入
+  完整operator bundle，不把GROUP4冒充单一Adam/relinearization因果量。
+
 ## 2026-08-02 RNG-v2 RAW正式负结果与GROUP4启动
 
 - RAW自然完成200 cycles、96,000 queries、4,800 videos、wall`3878.963s`；全部

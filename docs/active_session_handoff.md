@@ -39,6 +39,14 @@ absolute，也没有稳定性；失败不是简单undertraining、低norm或CP�
 SHA256 0f8545b115c91bde06e20a142079c7dd00c0628bb40845090176f2e0ecab3462
 ```
 
+只读RNG-v1/v2训练噪声审计又确认：保持topology、optimizer、LR、全部task/video/
+query assignments不变，仅把CPU Beta timestep从ambient stream纳入task/query keyed
+scope，四点便由`89/71/82/117`变成`72/87/86/89`，matched task-gradient sketch
+余弦中位仅`.163--.193`。这属于单个seed7 noise-realization的optimizer-basin
+敏感性证据，不授权恢复v1，也不估计seed-general均值。artifact为
+`/data/ymdai/outputs/ember/pi05_as_writer_ucp_rng_v1_v2_training_noise_sensitivity_seed7_20260802/analysis.json`
+（SHA256 `ff6acdf8...b82`）。
+
 当前唯一活动进程是预注册GROUP4 fresh update0→1200：
 
 ```text
@@ -78,10 +86,13 @@ exact-origin guard在模型/data初始化前拒绝，失败log为
 `/data/ymdai/logs/ember/pi05_as_writer_ucp_cycle_normalized_group4_rngv2_truefast400_formal_dev_r4_b20_seed7_55faeeb_20260801.log`，没有checkpoint或科学数据。
 `55faeeb→8dfe6ed`只改authority docs；`src/`、`scripts/`、`configs/` tree ID分别
 严格同为`28229285...`、`f0ce646d...`、`7ebfb229...`，所以新run与RAW使用完全相同
-runtime/config代码。当前已越过首5个完整cycle；每cycle均为6 phases、24 unique
-tasks、24 videos、480 queries，scheduler只在phase5推进，loss/gradient/LR finite、
-0 clip，峰值allocated/reserved为`76,972,270,080/83,634,421,760` bytes，信息墙
-读取正确。完成后评测physical300/600/900/1200，并按已冻结endpoint、AUC、
+runtime/config代码。当前在一份update271/45 complete cycles的live snapshot中，
+每cycle均为6 phases、24 unique tasks、24 videos、480 queries，scheduler只在
+phase5推进，loss/gradient/LR finite；step150 checkpoint和512-row held validation
+完整。累计13次clip（4.8%，最小coefficient`.653`），属于operator treatment本身，
+最终必须按task/phase/cost报告，不能隐去。峰值allocated/reserved为
+`76,988,739,072/83,634,421,760` bytes，信息墙读取正确。完成后评测
+physical300/600/900/1200，并按已冻结endpoint、AUC、
 breadth、churn、phase/cost和内部传递联合裁决。CV-ADR继续隔离，后续不使用subagent。
 
 ## 0-raw-launch-snapshot. CPU+CUDA RNG-v2已重封存，RAW fresh正式启动

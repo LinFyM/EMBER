@@ -87,7 +87,11 @@ def source_reference_matches(
             layout.append((path, size))
         return sorted(layout)
 
-    return model_layout(recorded) == model_layout(current)
+    recorded_layout = model_layout(recorded)
+    current_layout = model_layout(current)
+    if recorded_layout is None or current_layout is None:
+        return dict(recorded) == dict(current)
+    return recorded_layout == current_layout
 
 
 def read_json(path: Path) -> dict[str, Any]:

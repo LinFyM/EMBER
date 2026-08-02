@@ -9,7 +9,7 @@
 `AGENTS.md`与`docs/execution_brief.md`。任何接手者都必须先只读复核现场，不能按
 历史快照重复启动进程。后续完全由主进程推进，不使用subagent。
 
-## 0-live. CV-ADR RAW full400完成，四候选correct400运行中
+## 0-live. CV-ADR RAW full400负裁决，matched梯度方差分解运行中
 
 RAW macro0→200已自然完成：96,000 queries、4,800 one-video conditions、wall
 `3916.79s`，all finite、0 clip。paired correct400为：
@@ -47,23 +47,37 @@ functional losses仅在`.13055--.13399`内横盘。因此CP负投影不是当前
 decay也没有使条件学习方向稳定；但这份观测尚未把video、query和PI05 flow-noise
 分离。
 
-当前唯一需要继承的进程是四候选paired correct400 evaluator：
+第二小时四个paired correct400已经正式完成，八点完整曲线为：
 
 ```text
-tmux  ember-cvadr-raw-candidates2-254ade4
-code  254ade404c064bb78aaa95e421f8a91db3caa9f6
-train /data/ymdai/outputs/ember/pi05_as_writer_cvadr_rawfull24_taskcomplete_decay400_formal_dev_r4_b20_seed7_254ade4_20260802_retry1
-eval  /data/ymdai/outputs/ember/pi05_as_writer_cvadr_rawfull24_taskcomplete_decay400_correct400_noreplacement_seed7_macro{0250,0300,0350,0400}_254ade4_20260802
-log   /data/ymdai/logs/ember/pi05_as_writer_cvadr_rawfull24_taskcomplete_decay400_secondhour_correct400_controller_254ade4_20260802.log
+macro        50  100  150  200  250  300  350  400
+correct400   76  111   99  117   77   69   80   82
 ```
 
-250/300/350/400分别只用物理GPU4/5/6/7；每个root固定400 states、8 tasks×50、
-correct video无放回、36个long-first shards、6 persistent replicas和6 Writer generators。
-四root的run contract已核验，teacher action reads为0。完成后先验证各400 rows、配对
-字段和失败数，再与50/100/150/200合并选择single checkpoint。若第二小时仍弱/轮换，
-不做五臂，转入同topology normalized GROUP4正式控制。
+八候选共3,200 rows严格配对且0 error，single winner保持macro200。200→250立即
+`16 gained/56 lost/Jaccard=.459`，250→400也只在`69--82`间轮换；macro400虽breadth7，
+仍只有四个tasks达到5次成功。effective BA norm从macro200均值`64.28`升到250/400的
+`69.93/69.29`，所以闭环崩落不是LoRA norm坍缩。第二小时没有成熟化，RAW行为门失败，
+不做五臂；同topology normalized GROUP4现在是拒绝该架构前必须完成的recipe控制。
 
-正式证据：candidate curve SHA`71cbd02d...33dc3`；exact50 raw analysis/summary
+当前唯一需要继承的进程是只读matched gradient-variance诊断：
+
+```text
+tmux  ember-cvadr-gradient-variance-254ade4
+code  254ade404c064bb78aaa95e421f8a91db3caa9f6
+ckpt  macro200 -> macro400（相同train visit397/398/399条件panel）
+root  /data/ymdai/outputs/ember/pi05_as_writer_cvadr_macro{0200,0400}_gradient_variance_components_train24_matched397_399_seed7_254ade4_20260802
+log   /data/ymdai/logs/ember/pi05_as_writer_cvadr_gradient_variance_pair_matched397_399_seed7_254ade4_20260802.log
+```
+
+每checkpoint对24 train tasks做3 video×3 phase-stratified B20 query×3 matched flow
+及固定video/query的3 Gaussian×3 Beta-time分解，共33 gradients/task；零rollout、零
+optimizer update、validation/test action reads为0。完成后先裁决video/query/flow
+方差来源，再运行已在独立`f6cf775` worktree准备好的CV GROUP4最长105-frame B20
+profile和formal-seed 0→1→3→7 exact-resume，seal后fresh正式0→1200。
+
+正式证据：full400 candidate curve SHA`fb75464f...ec90a`、canonical payload
+`bd4f43d4...ce909`；首小时curve SHA`71cbd02d...33dc3`；exact50 raw analysis/summary
 `b60f6ed4...0407`/`5f1df44e...4a56`；responsibility audit`2aec024f...9cb9`；
 same-RAW architecture audit`a4b1b03f...8c47`；UCP recipe source-preservation audit
 `b43fe53f...01ff`。full400 dynamics analysis SHA为`7289eef4...7a4f`，canonical

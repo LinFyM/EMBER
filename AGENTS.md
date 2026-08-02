@@ -85,12 +85,17 @@ functional losses始终在`.13055--.13399`。这说明functional surrogate、高
 条件估计与closed-loop阈值错位仍是联合根因，现有证据尚未分离teacher video、B20
 query与PI05 flow-noise三种噪声。
 
-当前唯一活动实验是四个single checkpoints的paired correct400：tmux
-`ember-cvadr-raw-candidates2-254ade4`把250/300/350/400分别固定到物理GPU4/5/6/7，
-每臂8 tasks×50 states、correct video无放回、dynamic long-first、persistent
-policy/env。完成后与前四点合并裁决single checkpoint、breadth和能力轮换；若仍弱或
-轮换，不做五臂，必须做同topology normalized GROUP4后才可否定架构。所有推进只由
-主进程完成，不使用subagent。
+第二小时250/300/350/400 paired correct400已完成为`77/69/80/82`；八点曲线
+`76/111/99/117/77/69/80/82`的single winner保持macro200。200→250为
+`16 gained/56 lost`，后段LoRA norm不降反升，证明不是成熟度不足或增益坍缩；RAW
+不做五臂。正式curve SHA为`fb75464f...ec90a`，canonical payload
+`bd4f43d4...ce909`。
+
+当前唯一活动实验是tmux `ember-cvadr-gradient-variance-254ade4`：在相同train
+visit397--399 panel上对macro200/400做24-task video/query/flow与Gaussian/Beta-time
+梯度方差分解，零rollout、零optimizer update。之后先完成同topology GROUP4真实B20
+profile/resume seal，再fresh运行0→1200；只有该recipe反事实完成后才能拒绝CV架构。
+所有推进只由主进程完成，不使用subagent。
 
 2026-08-02 joint root-cause override：四个selected winner五臂逐row重验为v5.2-old
 `132/138/74/82/83`、v5.2-task-complete `120/109/107/111/124`、v6-old

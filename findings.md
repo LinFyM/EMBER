@@ -6,7 +6,7 @@
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
-## 2026-08-02 CV-ADR full400训练动力学与当前行为门
+## 2026-08-02 CV-ADR full400行为负裁决与训练动力学
 
 - RAW从fresh identity到macro400自然完成：400 cycles、192,000 action queries、
   9,600 one-video conditions、16个every25 checkpoints，all finite、0 clip；末macro
@@ -25,9 +25,17 @@
 - 50-macro参数段虽随LR显著缩短，Core/Program/frontend后半相邻方向仍多次为负或
   近零；16个held functional loss仅在`.13055--.13399`内横盘。故fast decay减小
   位移幅度，却没有证明能力方向稳定；低functional loss也仍不能预测closed loop。
-- full400 dynamics analysis SHA为`7289eef4...7a4f`，canonical payload
-  `82ed1026...9f40`。250/300/350/400 paired correct400正在四张GPU独立运行；只有
-  合并八点后才能判别第二小时是成熟、停滞还是继续轮换。
+- 250/300/350/400 paired correct400为`77/69/80/82`；完整八点
+  `76/111/99/117/77/69/80/82`的single winner保持macro200。200→250发生
+  `16 gained/56 lost/Jaccard=.459`；400虽breadth7，仍只有4 tasks达到5 successes。
+  第二小时是崩落与继续轮换，不是成熟化，因此不做五臂。
+- macro200/250/400的effective BA norm均值为`64.28/69.93/69.29`，行为下降时
+  LoRA幅度反而增加；这排除Target-Spectral式gain collapse，却支持functional更新
+  离开source policy有效闭环流形。full400 dynamics SHA为`7289eef4...7a4f`；八点
+  curve SHA为`fb75464f...ec90a`、canonical payload`bd4f43d4...ce909`。
+- 仅凭跨macro梯度草图不能把99.5% centered命名为video噪声。当前matched诊断固定
+  visit397--399和checkpoint以外全部条件，分别测video/query/flow及Gaussian/time；
+  结果出来前不先验采用time strata、增大B或多视频平均。
 
 ## 2026-08-02 v5.2×v6架构—训练—视频因果联合审计
 

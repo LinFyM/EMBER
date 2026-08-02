@@ -8,7 +8,7 @@ GPU范围和训练步长是当时快照；活动状态只取
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
 
-## 2026-08-02 CV-ADR full400完成并启动四候选correct400
+## 2026-08-02 CV-ADR full400八点负裁决与matched方差诊断
 
 - frozen `254ade4`的RAW从step200 exact-resume到400自然结束；累计400 cycles、
   192,000 queries、9,600 one-video conditions，metrics连续、every25 checkpoints
@@ -20,10 +20,17 @@ GPU范围和训练步长是当时快照；活动状态只取
   参数段方向仍不稳定，held functional loss横盘。
 - live preflight确认main/origin、frozen worktree、assets、四checkpoint、新root、存储
   和GPU4--7；`/data/ymdai`约418.77GB，预计峰值低于500GB。未查询GPU0--3。
-- tmux `ember-cvadr-raw-candidates2-254ade4`已把macro250/300/350/400 paired
-  correct400分别固定到物理GPU4/5/6/7；每root为8 tasks×50、correct video无放回、
-  dynamic long-first、6 persistent replicas/6 Writer generators。完成后合并八点，
-  弱/轮换则进入同topology GROUP4，不提前做五臂。
+- macro250/300/350/400的4个正式correct400均自然完成、0 error，为
+  `77/69/80/82`。完整八点winner仍是macro200=`117`；formal analysis SHA256
+  `fb75464fca28ef01d764579b32eba98836b6dbe53288188fe2a44424d57ec90a`，canonical
+  payload`bd4f43d417db52326ec81d4f45820d4920da5d3a9b02175f628425082ccce909`。
+- 200→250 lost56/gained16，后段能力未恢复，且effective BA norm没有坍缩；RAW
+  不做五臂，正式进入同topology GROUP4因果格。
+- 创建只读matched gradient diagnostic：macro200/400共用visit397--399，按24 tasks
+  分解3 video×3 B20 query×3 paired flow及3 Gaussian×3 Beta time，零rollout/update。
+  tmux为`ember-cvadr-gradient-variance-254ade4`，4 ranks已在GPU4--7健康运行。
+- 从clean detached `f6cf775`准备GROUP4 longseed172 18-update/3-cycle profile与
+  formal-seed fresh0→1→3→7 exact-resume；诊断结束前不并发占GPU。
 
 ## 2026-08-02 v5.2×v6 recipe/video-causality联合审计
 

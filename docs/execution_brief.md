@@ -15,10 +15,10 @@
   GPU实验并完成封存，约`05:18 UTC`后不得继续运行。
 - 这次临时授权不自动授予BGR GPU使用权。
 
-当前运行：frozen`e8fb96c`、4 ranks、GPU4--7、B20、RAW full24，fresh macro0→200，
-tmux`ember_tb_formal_e8fb96c`。longest105三macro和fresh/exact-resume vertical path已
-通过；正式root/log精确路径见`docs/active_session_handoff.md`及外部post-seal ledger。
-训练完成前不修改frozen worktree，不启动并行GPU workload。
+longest105三macro和fresh/exact-resume vertical path已通过。首次formal在GPU计算前因
+旧config仍为`pending_profile`而fail-close；不是OOM或训练失败。当前正在把live evidence
+写入sealed config、更新overlay SHA并push origin/main；随后只从全新root fresh启动，
+不复用失败root。
 
 ## 2. Canonical Git state
 

@@ -201,7 +201,7 @@
     "budget_role": "fresh_target_bound_role_program_raw_full24_one_hour_then_evidence_gated_exact_resume"
   },
   "profile_defaults": {
-    "status": "pending_target_bound_role_live_105_frame_profile",
+    "status": "sealed_target_bound_role_live_105_frame_b20_profile",
     "expected_world_size": 4,
     "total_steps": 3,
     "per_rank_batch_size": 20,
@@ -213,7 +213,7 @@
     "selected_stop_step": 3
   },
   "profile_evidence": {
-    "status": "pending_target_bound_role_live_105_frame_profile",
+    "status": "sealed_target_bound_role_live_105_frame_b20_profile",
     "allowed_physical_gpu_ids": [
       4,
       5,
@@ -236,11 +236,27 @@
       "per_task_action_batch_size": 16
     },
     "selection_rule": "try_b20_on_three_complete_macros_containing_real_105_frame_video_then_fallback_directly_to_b16_only_if_oom_or_repeated_instability",
-    "selected": null,
-    "exact_resume_smoke": null,
+    "selected": {
+      "max_frames_per_encoder_call": 32,
+      "per_task_action_batch_size": 20,
+      "world_size": 4,
+      "completed_macros": 3,
+      "longest_sampled_frames": 105,
+      "max_cuda_reserved_bytes": 83506495488,
+      "wall_seconds": 59.065377085935324,
+      "commit": "e8fb96c072a9214fb9a5e1cb8e9cd9b4e39ab51b",
+      "profile_root": "/data/ymdai/outputs/ember/pi05_as_writer_targetbound_postseal_long105_profile_r4_b20_seed172_e8fb96c_20260802"
+    },
+    "exact_resume_smoke": {
+      "status": "passed_fresh0to1_exact_resume1to3",
+      "completed_macros": 3,
+      "contract_sha256": "e11a0256cb952af880f3f144e5f0b7a59634a46194041985c9d677a6a219f8c4",
+      "commit": "e8fb96c072a9214fb9a5e1cb8e9cd9b4e39ab51b",
+      "root": "/data/ymdai/outputs/ember/pi05_as_writer_targetbound_postseal_formalseed_resume_r4_b20_seed7_e8fb96c_20260802"
+    },
     "gradient_reachability": {
-      "status": "pending_target_bound_role_vertical_path",
-      "first_nonzero_main_path_macro": null,
+      "status": "sealed_finite_nonzero_after_identity_lifecycle",
+      "first_nonzero_main_path_macro": 2,
       "finite_nonzero_blocks": [
         "semantic_frontend",
         "core",
@@ -264,8 +280,8 @@
     "contrast_loss_allowed": false
   },
   "formal_run": {
-    "status": "pending_profile",
-    "launch_state": "blocked_until_target_bound_role_profile_and_resume_seal",
+    "status": "sealed",
+    "launch_state": "authorized_postseal_after_long105_b20_and_exact_resume",
     "expected_world_size": 4,
     "total_steps": 400,
     "per_rank_batch_size": 20,

@@ -3,9 +3,10 @@
 状态：2026-08-02 post-seal实验中。canonical tensor path、fresh config/checkpoint
 schema、step0 identity、causal/private-role mechanics和内部重建路径已实现；移植后
 48项聚焦CPU回归通过。真实longest105-frame B20四卡三macro通过，formal-seed
-fresh0→1→exact-resume1→3通过；frozen`e8fb96c`已fresh启动macro0→200。尚无
-closed-loop结果，不得把profile/resume写成架构有效性证据。本文不得反向改变已封存
-CV-ADR frozen run。
+fresh0→1→exact-resume1→3通过；这些live evidence现已写入sealed config。首次formal
+调用在任何模型加载/macro前被旧`pending_profile`状态fail-close，形成零数据失败root；
+新seal从全新root fresh重启。尚无closed-loop结果，不得把profile/resume写成架构
+有效性证据。本文不得反向改变已封存CV-ADR frozen run。
 
 ## 1. 目标、非目标与证据边界
 

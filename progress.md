@@ -27,7 +27,10 @@ GPU范围和训练步长是当时快照；活动状态只取
   teacher schedule seed的profile overlay`e8fb96c`。真正seed172 profile首macro
   max105，三macrowall59.07s、峰值reserved83,506,495,488 bytes、五主block梯度可达。
 - 正式seed fresh0→1→exact-resume1→3通过；三步loss`.15404/.15141/.14509`、cursor/
-  scheduler/RNG连续。`e8fb96c` formal fresh0→200于19:53:46 UTC启动，尚无行为结果。
+  scheduler/RNG连续。`e8fb96c` formal调用于19:53:46 UTC在任何模型加载/macro前被
+  `formal_run.status=pending_profile`正确拒绝；失败root无metrics/checkpoint。已把live
+  evidence写入base config、更新两个overlay SHA并通过27项定向回归，下一调用使用新
+  commit与全新root。
 
 ## 2026-08-02 A100清理与BGR迁移准备
 

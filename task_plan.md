@@ -18,8 +18,8 @@ runner、split、路径或 GPU 权限。
 - [x] 将远端Target-Bound实现`b260a57`无冲突移植到`f9a144c`，得到`fbbb784`。
 - [x] 恢复frozen Python/CUDA环境，完成48项focused CPU vertical path并立即push。
 - [x] 只对GPU4--7做一次live preflight；完成longest105 B20三cycle、fresh/exact resume。
-- [ ] fresh0→200、每25保存；已从frozen`e8fb96c`正式启动，完成后paired correct400
-  评测50/100/150/200并报告breadth/churn。
+- [ ] fresh0→200、每25保存；首次调用因旧pending状态在计算前fail-close，live seal已
+  通过27项回归；从新commit/new root fresh重启后评测50/100/150/200。
 - [ ] 按absolute与task累积趋势决定是否续到400；无论结果都分析Core/task routing、
   A/E/D→BA/action、task-gradient共享与functional/closed-loop错位。
 - [ ] 根据最早失效接口做至多当前窗口可完整证伪的整体迭代；最迟03:45 UTC停止新GPU

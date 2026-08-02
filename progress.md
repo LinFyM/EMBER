@@ -2997,3 +2997,16 @@ GPU范围和训练步长是当时快照；活动状态只取
 - 清理108个已核验无进程引用、可由评测重建的`writer_lora_cache`，删除约
   `105.77GB`；正式result rows、contracts和checkpoints均保留。个人占用从
   `453.12GB`降到`347.35GB`，这些缓存未进入回收站、只能重新生成。
+
+## Post-seal Target-Bound完成与Semantic Factor-Basis launch（2026-08-02）
+
+- Target-Bound formal macro0→200、四个paired correct400=`75/120/90/110`和winner
+  macro100 refs1内部分析均已完成；按一小时门停止，不resume、不做五臂。
+- 基于最早失效接口完成Semantic Factor-Basis canonical替换，commit`e87363f`已push；
+  参数11,159,296，55项聚焦回归通过。longest105 B20三macro及formal-seed
+  fresh0→1/exact-resume1→3通过后，seal commit`f5ddfe3`已push至实验分支和main。
+- 22:37:45 UTC从clean detached`f5ddfe3`和fresh identity启动formal macro0→200：
+  tmux`ember_sfb_formal_f5ddfe3`，GPU4--7 DDP4、NUMA1、B20、every25。前3 macro
+  loss为`.15404/.15159/.14764`，macro2起五主block梯度可达，无clip/OOM/nonfinite。
+  output/log及后续评测root逐项登记在
+  `/data/ymdai/migration_manifests/ember_postseal_20260802/assets.tsv`。

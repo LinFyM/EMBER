@@ -122,6 +122,14 @@ formal前只做聚焦 vertical path：shape/value provenance、route normalizati
 identity、freeze、staged gradients、最长105-frame B20三macro与fresh/resume。首小时
 fresh0→200后在同一paired panel评测50/100/150/200。
 
+正式启动前的live vertical path已在`e87363f`完成：最长真实105-frame视频、4 ranks、
+B20连续三macro耗时60.15秒，峰值reserved显存83,508,592,640 bytes；macro1按严格
+identity生命周期只有factor可达，macro2起semantic frontend、Core、Program、compiler
+和factor五块梯度均finite/nonzero。formal seed的fresh0→1再exact-resume1→3完成到
+macro3，合同`0495a071...`保持不变，1,440 queries、72条单视频条件，validation/test
+action reads均为0。因此封存B20并授权fresh0→200；这些证据只证明运行合同和主路径，
+不预判closed-loop结果。
+
 ## 5. 可证伪内部预测
 
 1. route在不同task/target间应出现非零 centered energy，不能长期完全uniform；同时不应

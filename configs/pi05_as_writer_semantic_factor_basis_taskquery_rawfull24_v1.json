@@ -1,7 +1,7 @@
 {
   "schema_version": "ember_pi05_semantic_factor_basis_recipe_overlay_v1",
   "base_config": "configs/pi05_as_writer_semantic_factor_basis_full24_decay400_v1.json",
-  "base_sha256": "e8113375e4df786a9cae2a65204e200561240acf5f91860cfc10be9e7b33c6e0",
+  "base_sha256": "6a5ea54aa9f60cd33db43c24dd3b43c5e3342e5c738a4acbd522593fb5708076",
   "replace": {
     "conditioning_training": {
       "method": "task_query_keyed_raw_task_complete_single_video_multi_action_positive_functional_loss",

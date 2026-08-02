@@ -527,6 +527,35 @@ selected4 raw-mean energy ratio不能当成功指标：四个近正交等norm梯
 聚合解释必须由跨cycle参数行为、A/D条件innovation、single-checkpoint breadth、
 envelope gap和closed-loop共同支持。
 
+### 6.4 RAW×GROUP4 outcome前冻结的裁决估计量
+
+RNG-v2 closed-loop outcome产生前，operator裁决固定为下列层次，不能在看到某个
+高点后只换成对该点有利的指标：
+
+1. cycle50/100/150/200四个checkpoint逐点使用相同400-row panel；主训练效应是
+   cycle200 endpoint差和四点cycle-AUC（四个correct count的等权均值）。逐点报告
+   paired gained/lost、exact McNemar与8个task effect，不能把重复checkpoint当成
+   独立样本。
+2. single-checkpoint deployability仍报告各臂observed-best，但同时报告best的
+   breadth、达到至少5次成功的task数、top2贡献、逐task净变化；一个task的尖峰不能
+   证明operator改善。
+3. 稳定性固定报告相邻checkpoint success-set Jaccard、gained+lost churn、四点
+   union与single-best之差，以及每task随cycle的方向；不能用envelope替代single
+   checkpoint。
+4. 机制层按同cycle比较参数位移、Adam moment、同task跨visit CountSketch、block
+   Gram、candidate-negative tasks和raw-mean energy。selected4约25%的机械energy
+   retention不算收益。GROUP4逐task变化还必须和mean phase ordinal、sampled-frame
+   cost相关，分离真实update-granularity效应与long-first optimizer curriculum。
+5. 只有GROUP4在endpoint/AUC与single-best上不牺牲absolute，并由多个task共同净增，
+   或absolute实质持平但breadth/churn和A/D→BA→action传递同时明确改善，才把该operator
+   迁移到CV-ADR。若absolute、稳定性和视频写出相互冲突或证据含混，默认保留更简单的
+   RAW作为CV首跑；这不是宣称GROUP4无效，而是避免把6倍AdamW时钟和强phase/cost
+   curriculum在未识别时带入新拓扑。
+
+所有显著性量只描述这一个固定panel；最终结论必须同时由effect size、逐task方向和
+内部传递支持。functional train/held loss、LoRA norm或某个Gram指标不得覆盖
+closed-loop主裁决。
+
 canonical实现已完成：`cycle,phase=divmod(update,6)`、selected4 exact raw mean、
 4×4只读Gram、logical-cycle scheduler、fresh serial config/checkpoint/trainer/rank
 schemas和midcycle cursor均在原训练入口内实现，没有第二runner或第二Writer路径。

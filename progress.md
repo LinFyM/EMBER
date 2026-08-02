@@ -22,6 +22,10 @@ GPU范围和训练步长是当时快照；活动状态只取
   freeze正确，0 OOM/NaN/contract mismatch。
 - 让RAW自然完成后固定评测50/100/150/200，再运行GROUP4；当前不并发第二个GPU
   workload。CV-ADR继续隔离，后续不使用subagent。
+- 在任何RNG-v2 correct400 outcome出现前，已把RAW×GROUP4裁决冻结为cycle200
+  endpoint、四点cycle-AUC、single-best breadth、相邻success churn/envelope gap、
+  逐task phase/cost混杂和A/D→BA→action传递的联合证据；含混时不把6倍AdamW时钟与
+  length curriculum迁入CV。functional loss或机械25% selected4 energy不能改写裁决。
 
 ## 2026-08-01 task/query RNG-v2重封存完成
 

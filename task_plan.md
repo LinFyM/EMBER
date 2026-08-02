@@ -145,6 +145,9 @@ runner、split 或 GPU 权限。
 - [ ] 从全新root和fresh identity重跑RNG-v2 RAW及cycle-normalized GROUP4，固定评测
   cycle50/100/150/200 paired correct400，再做预注册operator裁决。RAW已从clean
   `55faeeb`正式启动且首macro健康；v1 RAW只作observed bundle，v1 GROUP4不进入裁决。
+- [x] 在RNG-v2 closed-loop outcome前冻结operator裁决层次：cycle200 endpoint与四点
+  cycle-AUC、single-best breadth、success-set churn/envelope gap、逐task/phase-cost
+  方向及A/D→BA→action传递共同决定；含混时CV首跑保留更简单RAW。
 - [x] 在独立worktree实现CV-ADR canonical路径；参数`10,241,024`、完整CPU回归
   `225 passed`、结构门无hard violation。分支已rebase到当前authority并以
   `3798994`记录复验；formal configs在group4裁决及真实B20/profile/resume前保持

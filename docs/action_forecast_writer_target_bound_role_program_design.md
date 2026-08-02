@@ -311,6 +311,12 @@ frozen analyzer，不要求新main执行历史模型。
 9. checkpoint与fresh0→1→exact-resume1→3；
 10. 最长105-frame真实video、4 ranks、B20连续完整task cycle无OOM/nonfinite。
 
+最长视频profile使用专用sealed overlay
+`configs/pi05_as_writer_target_bound_role_program_long105_profile_v1.json`，它只把
+teacher-video schedule seed改为已验证能在首macro选择真实105-frame video的`172`；
+正式训练和exact-resume仍使用task-query RAW config及正式seed`20260722`。不得把
+普通formal-seed三macro中偶然出现的较短视频冒充第10项。
+
 首小时保存cycle50/100/150/200并做同一paired correct400。内部预注册预测：
 
 - compiler Action mass不再有定义，因为A/E/D使用private normalizers；

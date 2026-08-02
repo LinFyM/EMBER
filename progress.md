@@ -23,6 +23,11 @@ GPU范围和训练步长是当时快照；活动状态只取
   margin，但correct absolute分别下降/上升；old六倍Adam路径也同时放大视频写出与
   task旋转。因此后续整体设计必须联合处理semantic carrier、causal write gain、
   single-video噪声和optimizer clock，不能单边归咎架构或full24平均。
+- 追加逐task transfer审计和完整checkpoint-curve/source-retention审计；analysis
+  SHA为`611c9330...c5a1`与`bf5a4609...1770`。matched150显示v5.2 recipe effect由
+  source retention -10与new gains -71构成，v6则为-1/+17；selected v6 +22又被
+  Object task3单项+24主导。由此将“v6与task-complete相容”限定为早期较广语义
+  acquisition，不误写成漂移或视频因果已经解决。
 
 ## 2026-08-02 CV-ADR一小时结果、exact50与第二小时启动
 

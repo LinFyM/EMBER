@@ -178,6 +178,9 @@ runner、split 或 GPU 权限。
   optimizer dynamics联合审计：新recipe在两架构上都压弱Procedure→BA/action与
   顺序margin，却对absolute产生`-12/+22`的相反winner effect；因此后续按
   architecture×training整体根因裁决，不整体否定与recipe混杂的post-v5思想。
+- [x] 将联合审计展开到逐task内部transfer与全部历史checkpoint：v6 matched150的
+  recipe收益为source retention -1/new gain +17，但selected +22被Object task3
+  单项+24主导；保留v6语义/transition bundle证据，明确重构下游reader/compiler。
 - [ ] CV-ADR RAW已从step200 exact-resume到400；完成后固定评测250/300/350/400，
   与前四点合并裁决single checkpoint、task drift和source retention。若第二小时
   仍弱或轮换，必须同topology补做normalized GROUP4，不能把recipe混杂成架构否定。

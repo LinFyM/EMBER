@@ -38,6 +38,22 @@
   后续不得一棒子否定v7/v8/Loom等与fast task-complete混杂的思想；只保留其被内部
   反事实单独否定的模块。正式审计analysis SHA为`98371337...2efa`，canonical payload
   `6d9262f8...21cd`。
+- matched 150-visits的source分解比winner比较更具解释力：v5.2 task-complete相对old
+  同时少保留10个source success、少获得71个新success；v6 task-complete只少保留1个，
+  却多获得17个新success，且当时8/8 tasks非零。因此v6 bundle与新recipe的相容性
+  是“低动态增益下仍能取得较广语义能力”，不是单纯遗忘率差异；Visual Transition、
+  mean-backed Core和256 factor width仍混杂，不能单独归因。
+- selected v6 `121→143`的净+22又几乎全部来自Object task3的+24，Goal task6为-5、
+  Spatial task1为-2；143最强的Object1/Goal6 correct为`46/36`，shuffled/reversed
+  margin仅`1/1`和`-1/2`。这证明后期高aggregate仍是能力轮换和语义性帮助，不是
+  breadth+causality共同改善。其Visual Transition与Procedure order response仍大，
+  但Object1到BA/action只剩约`.12/.008`与`.13/.005`，最早断点仍在写出端。
+- 全曲线state envelope也未显示某recipe普遍稳定：v5.2-old/new、v6-old/new的
+  union-minus-single-best分别`93/42/37/77`，相邻mean Jaccard约
+  `.453/.454/.527/.586`；网格和终点不同，只作描述性证据。score与source retention
+  关系弱/不一致，而与非source新gain近单调，说明functional训练主要移动闭环阈值，
+  并未保存固定的task能力集合。逐task/曲线审计SHA为
+  `611c9330...c5a1`/`bf5a4609...1770`。
 
 ## 2026-08-02 CV-ADR一小时门、内部职责与architecture×recipe因果
 

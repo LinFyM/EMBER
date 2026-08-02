@@ -31,6 +31,14 @@ cycle六次Adam形成近正交、更大幅的参数路径，同时恢复条件�
 设计；这是一项整体职责重构，不授权事后添加固定scale。联合审计SHA为
 `98371337...2efa`。
 
+逐task审计又排除了“v6高分证明当前compiler已正确”的解释。matched150时v6-new
+相对v6-old的+16由source retention -1和new gain +17构成、8/8 tasks非零，说明v6
+语义/transition bundle值得保留；但selected +22几乎全由Object task3的+24主导，
+Object1/Goal6的顺序margin接近零。它们的Visual Transition和Procedure order response
+仍大而BA/action很小，故下一版若需要重构，应把mean-backed Core和显式visual change
+作为可复用证据，把当前set-like target/rank reader与写出接口作为待替换owner；不能
+把Visual Transition本身判死。逐taskanalysis SHA为`611c9330...c5a1`。
+
 本文负责AP-ADR一小时门失败后的下一整体AS-Writer结构。它同时服从两条已经独立
 成立的事实：
 

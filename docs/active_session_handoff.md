@@ -80,6 +80,15 @@ Program和在单视频噪声下不过度旋转的优化路径。v7/v8/Loom等只
 `/data/ymdai/outputs/ember/pi05_as_writer_v52_v6_recipe_video_causality_audit_seed7_20260802`，
 analysis SHA`98371337...2efa`、canonical payload`6d9262f8...21cd`。
 
+matched150的source decomposition进一步显示：v5.2 task-complete相对old为
+retained-source `-10`、new-gains `-71`；v6为`-1/+17`且8/8 tasks当时非零。因此
+v6的mean-backed Core/Visual Transition/256-wide factor bundle确实与新recipe更
+相容，但三项仍混杂。到selected macro400，v6相对old的+22又几乎全由Object task3
+的+24提供；Object1/Goal6虽有`46/36` correct，shuffled/reversed margin只有
+`1/1`和`-1/2`。Visual Transition和Procedure内部顺序响应未消失，Object1到
+BA/action却仅约`.12/.008`与`.13/.005`，故不得删除transition思想，必须重构其
+下游写入职责。逐task与curve审计SHA为`611c9330...c5a1`、`bf5a4609...1770`。
+
 ## 0-history. CV-ADR B20/profile/resume seal与首小时启动
 
 clean detached `ff57a9f`已只用物理GPU4--7完成两条真实mechanics证据：

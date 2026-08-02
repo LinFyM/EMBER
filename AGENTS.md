@@ -90,6 +90,14 @@ absolute effect为`-12/+22`；matched 150-video-visits仍为`-81/+16`。old每cy
 optimizer path；不得把post-v5低分架构整体判死，也不得退回old recipe或加固定scale。
 正式审计SHA为`98371337...2efa`，后续仍完全不使用subagent。
 
+逐task/全曲线override：matched150时v5.2 task-complete相对old的source-retention/
+new-gain变化为`-10/-71`，v6为`-1/+17`且8/8 tasks非零；但v6 selected +22几乎
+全由Object task3的+24贡献，Object1/Goal6虽correct `46/36`却只有`1/1`与`-1/2`
+shuffled/reversed margin。Visual Transition和Procedure顺序响应仍大，信号在
+BA/action端被压弱。因此保留v6 semantic/transition bundle为正证据，只把当前
+reader/compiler职责列为待重构；逐task/curve SHA为`611c9330...c5a1`/
+`bf5a4609...1770`。
+
 2026-08-02 CV-ADR live seal override：clean detached `ff57a9f`只在物理GPU4--7
 完成teacher-seed172最长真实视频B20三完整macro profile；首macro的
 `task38/demo36`为105 sampled frames，四rank每macro各6个cost-balanced long-first

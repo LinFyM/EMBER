@@ -18,6 +18,13 @@ LoRA/action的有效增益、single-video高噪声下不旋转的optimizer path�
 正式analysis SHA为`98371337...2efa`；后续仍先完成CV-ADR RAW 400和同topology
 GROUP4控制，再作整体重构，不使用subagent。
 
+逐task补审说明v6的+22 winner effect被Object task3单项+24主导，最强Object1/Goal6
+几乎无顺序margin；但matched150时v6 task-complete相对old只少保留1个source success、
+多获得17个新success并覆盖8/8 tasks，而v5.2为-10/-71。可保留的证据因此是v6
+semantic/transition bundle能在新recipe下较早获得广能力；不可接受的是当前
+Procedure→LoRA/action接口把时序收益压掉并在后期轮换。逐task/curve SHA为
+`611c9330...c5a1`/`bf5a4609...1770`。
+
 ## 2026-08-02 CV-ADR RAW一小时裁决与活动第二小时
 
 CV-ADR RAW macro0→200及四个paired correct400已完成：50/100/150/200为

@@ -8,6 +8,26 @@ GPU范围和训练步长是当时快照；活动状态只取
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-02 CV-ADR一小时结果、exact50与第二小时启动
+
+- RAW macro0→200自然完成：200 macros、96,000 queries、4,800 teacher videos、
+  wall`3916.79s`，全部finite、0 clip、信息墙读取0。paired correct400
+  50/100/150/200=`76/111/99/117`；macro200为右端best但仍有明显task churn。
+- candidate curve analysis SHA256为`71cbd02d...33dc3`（canonical payload
+  `b6684ccd...41a34`）。同RAW architecture audit SHA256为
+  `a4b1b03f...8c47`；UCP三recipe source-preservation audit为
+  `b43fe53f...01ff`。两个审计都严格核验曝光与evaluation pairing。
+- exact50完成8 tasks×50 videos×五种真实frame order、400 Cartesian rows、0
+  rollout/0 failure，全部信息墙和checkpoint不改写合同通过。raw analysis、summary
+  SHA为`b60f6ed4...0407`/`5f1df44e...4a56`；compact responsibility audit为
+  `2aec024f...9cb9`。结果同时确认Core/Program必要和Action/order reader仍弱。
+- 根据预封存一小时门，已从同一frozen `254ade4` step200 exact-resume到400。
+  活动tmux为`ember-cvadr-raw-formal-resume200to400-254ade4`，沿用正式root；log为
+  `/data/ymdai/logs/ember/pi05_as_writer_cvadr_rawfull24_taskcomplete_decay400_formal_dev_r4_b20_seed7_254ade4_20260802_retry1_resume200to400.log`。
+  首两个恢复宏步201/202各覆盖24 tasks/24 videos/480 queries，loss约`.1010/.1014`、
+  gradient`.1040/.1253`、0 clip；四rank只在GPU4--7、cost-balanced long-first，
+  五个参数块Adam step均精确续到201/202。完成后评测250/300/350/400。
+
 ## 2026-08-02 CV-ADR B20/profile/resume seal
 
 - 从clean detached `ff57a9f`只用GPU4--7完成teacher-seed172三macro profile；

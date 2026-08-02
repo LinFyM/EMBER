@@ -1,5 +1,26 @@
 # EMBER Current Execution Brief
 
+## 2026-08-02 CV-ADR RAW一小时裁决与活动第二小时
+
+CV-ADR RAW macro0→200及四个paired correct400已完成：50/100/150/200为
+`76/111/99/117`。macro200右端best、breadth6、top2占`57.26%`，但相邻能力仍明显
+轮换。与完全同recipe/exposure/panel的UCP RAW相比四点均提高
+`+4/+24/+13/+28`；macro200的+28同时来自多保留9个source successes和多获得19个
+新successes，所以架构bundle有效，不是用遗忘换aggregate。
+
+exact50证明Core/Program都不可删除、Program/Core读幅平衡且Effect-only旁路已消失；
+但Action只在1/8 tasks达到预注册门、D为5/8，contextual-memory order为0/8，
+same-video BA variance仅`.1049%`、固定action中位`.00856%`。因此117不是成功，只是
+“值得成熟度判别”。RAW已从同一frozen `254ade4` step200 exact-resume到400；活动
+tmux `ember-cvadr-raw-formal-resume200to400-254ade4`，沿用正式root，首两个恢复宏步
+合同健康。完成后评测250/300/350/400；强single checkpoint才做五臂，弱/含混则
+同topology补做normalized GROUP4。后续不使用subagent。
+
+UCP source-preservation审计还表明SERIAL cycle150可同时提高旧source retention和
+新能力、但cycle200回落；GROUP4保留更多source却压弱动态。故不能把训练归结为
+“大步只遗忘”或“分组即稳定”。当前根因是semantic carrier/causal innovation职责
+与单视频高噪声下update gain、Adam时钟、重线性化和closed-loop阈值的联合问题。
+
 ## 2026-08-02 CV-ADR live profile/resume seal
 
 CV-ADR canonical参数`10,241,024`已在clean detached `ff57a9f`通过GPU4--7真实

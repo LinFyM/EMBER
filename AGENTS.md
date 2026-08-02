@@ -56,6 +56,30 @@ Phase A–F 可执行路径已从工作树退役，只由 Git 历史保存 prove
 
 ## Current focused execution task
 
+2026-08-02 CV-ADR formal evidence override：RAW macro0→200已自然完成，paired
+correct400在50/100/150/200为`76/111/99/117`。macro200是右端best、breadth6、
+top2占`57.26%`，但相邻success Jaccard仍只有`.450/.522/.511`。与完全相同
+RNG-v2 RAW recipe、task/video/query曝光及evaluation panel的UCP相比，CV四点均
+提高`+4/+24/+13/+28`；macro200净增益由多保留9个source successes和多获得19个
+新successes共同构成，因此CV bundle有真实架构价值，不能按117 aggregate整体否定。
+
+macro200 exact50同时限定该结论：Core-only/Program-only距full effective BA为
+`.6059/.8119`，ProgramRead/CoreRead RMS比均值`1.021`，Effect-only距full`.0674`，
+证明AP Effect旁路已修复且双路有效；但remove-A只在1/8 tasks达门、remove-D为5/8，
+contextual-memory order干预在0/8达2% BA，same-task BA centered/sample仅`.1049%`，
+固定action中位仅`.00856%`。真实shuffled/reversed完整forward仍在8/8 tasks到达BA；
+不得把“上游重排有效”和“reader近set-like”混成单一顺序结论。LoRA norm`64.24`、
+stable rank`1.0072`，失败不是Target-Spectral式增益坍缩。
+
+预封存门据此授权同一root从step200 exact-resume到400，但不授权五臂。当前唯一活动
+训练tmux为`ember-cvadr-raw-formal-resume200to400-254ade4`，frozen commit
+`254ade404c064bb78aaa95e421f8a91db3caa9f6`，root为
+`/data/ymdai/outputs/ember/pi05_as_writer_cvadr_rawfull24_taskcomplete_decay400_formal_dev_r4_b20_seed7_254ade4_20260802_retry1`。
+首两个恢复宏步201/202已验证24 tasks/24 videos/480 queries、cost-balanced
+long-first、loss/gradient/LR finite、0 clip，五块Adam step精确连续。完成后固定评测
+250/300/350/400；若仍弱或轮换，必须做同topology normalized GROUP4后才可否定
+架构。所有推进继续只由主进程完成，不使用subagent。
+
 2026-08-02 CV-ADR live seal override：clean detached `ff57a9f`只在物理GPU4--7
 完成teacher-seed172最长真实视频B20三完整macro profile；首macro的
 `task38/demo36`为105 sampled frames，四rank每macro各6个cost-balanced long-first

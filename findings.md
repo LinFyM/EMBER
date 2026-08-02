@@ -6,6 +6,43 @@
 `docs/action_forecast_writer_contextual_value_dual_read_design.md`和本文顶部最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-02 CV-ADR一小时门、内部职责与architecture×recipe因果
+
+- CV-ADR RAW macro50/100/150/200 paired correct400为`76/111/99/117`；winner
+  macro200逐task为`23/0/0/34/25/33/1/1`，breadth6、四个tasks>=10、top2
+  `57.26%`。相邻gained/lost为`53/18`、`27/39`、`44/26`，Jaccard
+  `.450/.522/.511`，所以右端回升没有解决能力轮换。
+- 与RNG-v2 UCP RAW做严格同recipe、同task/video/query曝光和同evaluation
+  state/video/RNG panel比较，CV四点全部提高`+4/+24/+13/+28`。macro200的净增益
+  分解为多保留9个source successes、再多获得19个非source successes；四候选
+  envelope也从UCP149升到CV168。这证明mean-backed Core+contextual-value dual
+  read作为整体在RAW下有真实架构价值，但不能把增益拆归某一个子模块。
+- macro200 exact50中Core-only/Program-only距full effective BA为`.6059/.8119`，
+  ProgramRead/CoreRead RMS比均值`1.021`，Effect-only距full BA/action
+  `.06744/.03613`；CV修复了AP的Effect-only旁路且没有v10式单路放大。actual
+  shuffled/reversed完整forward到BA为`.04614/.02653`，8/8 tasks均超过1%。
+- 动态主路仍未过门：删除Action只在1/8 tasks达到5%-BA/2%-action门，删除D为
+  5/8；只逆序已经contextualized的Program memory、固定Core/mask/position后BA仅
+  `.00607`，0/8 tasks达到2%。这说明真实帧重排会改变上游P并传到BA，但下游reader
+  对有序contextual states仍近似set reader，二者不能混写成“完全无顺序信号”。
+- same-task 50-video effective-BA centered/sample energy均值仅`.10494%`，固定action
+  中位仅`.00856%`；action均值被Object task3单一`.03678`异常值支配。LoRA norm
+  `64.24`、stable rank`1.0072`、top energy`99.40%`、16坐标全活跃且负component
+  pair为0，排除Target-Spectral式增益/协调坍缩，却不证明视频差异具有闭环作用。
+- 同一UCP topology的source-preservation配对审计显示：RAW/GROUP4/SERIAL winner
+  分别保留source `25/42/40 of 48`，得分`89/100/121`；SERIAL cycle150相对GROUP4
+  cycle150同时多保留13、获得42个新successes，但cycle200回落107。高optimizer
+  gain并非只破坏旧能力，normalized GROUP4也并非天然稳定；真正问题是条件路径
+  co-adaptation、更新增益/时钟和closed-loop阈值共同造成的旋转。
+- RAW每次full24更新只保留平均单task梯度能量约`4.5--5.5%`；同task连续one-video
+  梯度约`98--99%`是centered noise，task-mean能量仅`.8--1.9%`。但mean candidate
+  很少直接伤害task，所以CP负投影不成立。当前最可信联合解释是：架构必须提供
+  稳定semantic carrier与可写出的causal innovation，训练operator又必须让二者
+  在单视频高噪声下共同适配，而不能靠RAW稀释动态或SERIAL六倍增益持续旋转。
+- 这些结果授权RAW exact-resume第二小时，因为117与UCP/SERIAL低锚同档、右端best、
+  多task贡献且架构干预在四点一致为正；它不授权五臂，也不取消同topology GROUP4
+  控制。只有macro250--400闭环曲线才能判断成熟度还是继续轮换。
+
 ## 2026-08-02 CV-ADR mechanics seal
 
 - teacher-seed172 B20三macro在四rank上真实覆盖最长105-frame视频；稳态约

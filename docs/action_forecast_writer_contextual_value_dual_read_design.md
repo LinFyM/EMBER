@@ -1,8 +1,24 @@
 # Contextual-Value Asymmetric Dual-Read Writer 设计
 
-**状态：2026-08-02 已集成为canonical，参数10,241,024、全仓226 passed；真实
-teacher-seed172最长105-frame B20三macro与formal-seed fresh0→1→exact-resume1→3
-均已通过并seal。下一步从post-seal clean detached commit fresh训练macro0→200。**
+**状态：2026-08-02 已集成为canonical，参数10,241,024。RAW macro0→200与
+50/100/150/200 correct400已完成为`76/111/99/117`；macro200 exact50确认双路和
+contextual value有效，但Action/order reader与same-video函数方差仍弱。当前同root
+exact-resume到400，之后评测250/300/350/400；弱/含混时做同topology GROUP4。**
+
+## 0. Formal evidence override
+
+CV-ADR与UCP RNG-v2 RAW在训练recipe、task/video/query exposure和paired evaluation
+panel上严格相同。CV四个候选相对UCP为`+4/+24/+13/+28`；macro200的+28同时包含
+多保留9个source successes和多获得19个新successes。因此本设计作为整体通过
+“架构路径有真实价值”判别，但117 absolute与明显task churn不构成成功。
+
+macro200内部结果同时给出保留/否定边界：Core-only和Program-only距full BA分别
+`.6059/.8119`，ProgramRead/CoreRead RMS比均值`1.021`，Effect-only距full`.0674`；
+保留mean-backed Core、contextual Program value和dual read。删除Action只在1/8 tasks
+达到预注册门、删除D为5/8，contextual-memory order为0/8；same-task BA variance
+`.1049%`、fixed-action中位`.00856%`。所以不能宣称已解决视频教学，也不能退回AP
+raw Effect value。第二小时只判别成熟度；若仍失败，最早未满足职责是有序Program
+内容到target/rank read及高噪声训练operator的共同接口，不得用scalar gate/scale修补。
 
 本文负责AP-ADR一小时门失败后的下一整体AS-Writer结构。它同时服从两条已经独立
 成立的事实：

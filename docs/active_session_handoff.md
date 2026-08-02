@@ -9,7 +9,51 @@
 `AGENTS.md`与`docs/execution_brief.md`。任何接手者都必须先只读复核现场，不能按
 历史快照重复启动进程。后续完全由主进程推进，不使用subagent。
 
-## 0-live. CV-ADR B20/profile/resume已seal，等待fresh一小时门
+## 0-live. CV-ADR RAW第二小时正在exact-resume
+
+RAW macro0→200已自然完成：96,000 queries、4,800 one-video conditions、wall
+`3916.79s`，all finite、0 clip。paired correct400为：
+
+```text
+macro                    50   100   150   200
+CV-ADR RAW               76   111    99   117
+same-recipe UCP RAW      72    87    86    89
+CV minus UCP             +4   +24   +13   +28
+```
+
+macro200逐task`23/0/0/34/25/33/1/1`，breadth6、top2`57.26%`。四点仍有
+`53/18`、`27/39`、`44/26` gained/lost和约`.45--.52` Jaccard。严格matched
+architecture audit确认两模型全部task/video/query曝光及evaluation state/video/RNG
+相同；macro200增益分解为多保留9个source successes与多获得19个新successes。
+
+macro200 exact50已完成400 Cartesian rows、五种真实frame-order forward、0 rollout、
+0 failure。核心结果为：Core-only/Program-only距full BA`.6059/.8119`，Effect-only
+`.06744`，ProgramRead/CoreRead RMS比`1.021`；actual shuffled/reversed BA
+`.04614/.02653`。但remove-A只在1/8 tasks达门、remove-D为5/8，反转已经
+contextualized的Program memory仅`.00607`且0/8达门。same-task BA variance
+`.10494%`，fixed-action中位`.00856%`。因此CV整体接口有价值，但动态教学仍不充分。
+
+预封存一小时门授权继续成熟度判别。当前唯一需要继承的进程是：
+
+```text
+tmux  ember-cvadr-raw-formal-resume200to400-254ade4
+code  254ade404c064bb78aaa95e421f8a91db3caa9f6
+root  /data/ymdai/outputs/ember/pi05_as_writer_cvadr_rawfull24_taskcomplete_decay400_formal_dev_r4_b20_seed7_254ade4_20260802_retry1
+log   /data/ymdai/logs/ember/pi05_as_writer_cvadr_rawfull24_taskcomplete_decay400_formal_dev_r4_b20_seed7_254ade4_20260802_retry1_resume200to400.log
+resume /data/ymdai/outputs/ember/pi05_as_writer_cvadr_rawfull24_taskcomplete_decay400_formal_dev_r4_b20_seed7_254ade4_20260802_retry1/checkpoints/step_00000200
+```
+
+首两个恢复宏步201/202各恰好24 tasks、24 videos、480 queries；四rank sampled-frame
+cost约`209--216`且rank内long-first，loss`.1010/.1014`、gradient`.1040/.1253`、
+0 clip，LR与五块Adam step精确连续。只允许其自然到400；随后评测250/300/350/400。
+若第二小时仍弱/轮换，不做五臂，转入同topology normalized GROUP4正式控制。
+
+正式证据：candidate curve SHA`71cbd02d...33dc3`；exact50 raw analysis/summary
+`b60f6ed4...0407`/`5f1df44e...4a56`；responsibility audit`2aec024f...9cb9`；
+same-RAW architecture audit`a4b1b03f...8c47`；UCP recipe source-preservation audit
+`b43fe53f...01ff`。后续仍完全由主进程推进，不使用subagent。
+
+## 0-history. CV-ADR B20/profile/resume seal与首小时启动
 
 clean detached `ff57a9f`已只用物理GPU4--7完成两条真实mechanics证据：
 

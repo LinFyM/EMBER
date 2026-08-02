@@ -1,13 +1,13 @@
 # EMBER Task Plan
 
-最后更新：2026-08-01 UTC。
+最后更新：2026-08-02 UTC。
 
 本文件只保存尚未完成的长期闭环与当前执行顺序。历史实验过程见
 `findings.md`、`progress.md` 和 Git；实时进程见
 `docs/active_session_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
 runner、split 或 GPU 权限。
 
-## 当前交接顺序（2026-08-01）
+## 当前交接顺序（2026-08-02）
 
 - [x] 恢复exact v5.2 topology到mature task-complete/B20/long-first/
   fast-decay400 config，并完成最长视频profile与exact-resume smoke。
@@ -163,8 +163,20 @@ runner、split 或 GPU 权限。
   RAW config已解除profile blocker。
 - [x] 从post-fix clean frozen `254ade4`与fresh identity启动CV-ADR RAW macro0→200；
   tmux健康、首macro合同通过，每25保存，未从profile/smoke warm-start。
-- [ ] CV-ADR RAW评测macro50/100/150/200 correct400；弱或含混时同topology补做
-  normalized GROUP4后才拒绝架构，强则exact-resume第二小时。
+- [x] CV-ADR RAW macro0→200及paired correct400完成：50/100/150/200为
+  `76/111/99/117`，macro200为右端best、breadth6、top2占`57.26%`；与完全相同
+  RAW recipe/exposure/panel的UCP相比四点均为正增益`+4/+24/+13/+28`。
+- [x] 完成CV-ADR macro200 exact50和34项结构反事实。Core-only/Program-only距
+  full BA为`.606/.812`，Effect-only距full`.0674`，证明双路与新contextual value
+  都真实工作；但remove-A只在1/8 tasks达门、contextual-memory order在0/8达门，
+  same-task BA variance仅`.1049%`，固定action中位仅`.00856%`。
+- [x] 完成UCP RAW/GROUP4/SERIAL source-capability配对审计及UCP→CV同RAW架构审计：
+  SERIAL cycle150同时改善source retention与新能力但到200回落；CV macro200的
+  `+28`由多保留9个source successes和多获得19个新successes共同构成。由此拒绝
+  “optimizer gain只会破坏旧能力”和“CV增益只是遗忘更多”两个简单解释。
+- [ ] CV-ADR RAW已从step200 exact-resume到400；完成后固定评测250/300/350/400，
+  与前四点合并裁决single checkpoint、task drift和source retention。若第二小时
+  仍弱或轮换，必须同topology补做normalized GROUP4，不能把recipe混杂成架构否定。
 - [ ] 后续每版整体架构只有达到同期有效旧架构水平或显示明确续训价值才开第二
   小时和行为五臂。
 - [ ] 持续定位task漂移、视频学习和closed-loop off-manifold根因，禁止补丁式

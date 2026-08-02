@@ -1,10 +1,11 @@
-"""Canonical no-rollout analysis for the Target-Bound Role AS-Writer."""
+"""Canonical no-rollout analysis for the Semantic Factor-Basis AS-Writer."""
 
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import math
 import os
 import socket
 import subprocess

@@ -197,6 +197,11 @@ runs/outputs/pi05_as_writer_semfactor_vr_bci_correct400_noreplacement_seed7_macr
   后，scalar sum=`21`、BF16 matmul finite及第二次all-reduce在10.5秒内全部通过。
   因此BCI A40 launcher与代码现同时显式/fail-fast要求SHM transport；第二root同样
   aborted且禁止resume。
+- clean `eaa8bce`随后在精确空闲拓扑`gpu02:1,2,3,4,5,7`完成两次collective sum21、
+  all-rank CUDA-ready、NCCL与run-contract发布，证明两层多卡根因均已越过；进入step0
+  后由`as_step.py`一份退役的重复method白名单拒绝新Direction Store method。canonical
+  `as_config.py`此前已完整验证该conditioning合同，因此修复是删除第二份字符串白名单，
+  让step owner只执行已验证合同；该root无metric/checkpoint，不跨commit resume。
 
 ## 1. 当前边界
 

@@ -671,15 +671,6 @@ def run_writer_step(
     tick = time.monotonic()
     runtime.optimizer.zero_grad(set_to_none=True)
     mode = str(runtime.config["conditioning_training"]["method"])
-    supported_modes = {
-        "raw_task_complete_single_video_multi_action_positive_functional_loss",
-        "raw_serial4_exposure_matched_single_video_multi_action_positive_functional_loss",
-        "task_query_keyed_raw_task_complete_single_video_multi_action_positive_functional_loss",
-        "variance_reduced_task_query_keyed_raw_task_complete_single_video_multi_action_positive_functional_loss",
-        "cycle_normalized_randomized_group4_single_video_multi_action_positive_functional_loss",
-    }
-    if mode not in supported_modes:
-        raise WriterModelError("unsupported AS-Writer conditioning mode")
     records, data_seconds, local_task_ids, local_gradients = (
         _collect_task_gradients(runtime, step)
     )

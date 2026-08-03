@@ -498,6 +498,7 @@ def test_retired_writer_configs_are_not_active() -> None:
     [
         "raw_task_complete_single_video_multi_action_positive_functional_loss",
         "variance_reduced_task_query_keyed_raw_task_complete_single_video_multi_action_positive_functional_loss",
+        "task_query_keyed_independent_microbatched_raw_task_complete_single_video_multi_action_positive_functional_loss",
     ],
 )
 def test_raw_full_task_step_collects_task_gradients_and_updates_once(

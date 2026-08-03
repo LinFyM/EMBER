@@ -44,6 +44,10 @@
   本次漏传`NCCL_P2P_DISABLE=1`后600秒超时；同六卡补回后sum21与BF16 finite两次
   collective在10.5秒通过。因此需要的是host-specific transport fail-fast，不是扩大
   collective timeout或改变Writer batch。
+- 两层多卡修复后的首次step0失败定位为纯应用dispatch重复所有权：config owner已严格
+  接受并逐字段验证Direction Store conditioning，但step owner又维护一份历史method
+  字符串白名单并拒绝新method。该名单不控制任何算法分支，只是重复防御；正确修复是
+  删除它，而不是再同步第六份字符串或增加fallback。
 
 ## 2026-08-03 BCI VR正式裁决与functional/closed-loop错位
 

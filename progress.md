@@ -41,6 +41,10 @@ GPU范围和训练步长是当时快照；活动状态只取
   NCCL2.28 direct P2P/CUMEM 600秒hang。相同`gpu02:0--5`六卡显式
   `NCCL_P2P_DISABLE=1`后，sum21、BF16 finite与两次all-reduce 10.5秒通过。代码和
   `AGENTS.md`现都要求BCI多卡SHM fail-fast，不依赖`.env.local`偶然source。
+- clean `eaa8bce`在新空闲六卡`1,2,3,4,5,7`再次以9.2秒通过sum21/BF16 collective，
+  随后完整越过ready rendezvous、NCCL和run-contract发布。step0唯一失败是
+  `as_step.py`退役重复method白名单未列入Direction Store；`as_config.py`已经拥有完整
+  canonical conditioning验证，故删除第二名单并把新method加入真实step聚焦测试。
 
 ## 2026-08-03 BCI VR正式训练、rollout与阶段暂停
 

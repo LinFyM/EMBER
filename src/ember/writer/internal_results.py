@@ -7,6 +7,7 @@ import time
 import traceback
 from collections import defaultdict
 from datetime import timedelta
+from math import ceil
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -22,22 +23,39 @@ CONTROL_TIMEOUT = timedelta(hours=3)
 FAILURE_SCHEMA = "ember_as_writer_internal_analysis_failure_v1"
 
 
-def lpt_assignment(cost_by_task: Mapping[int, int], world_size: int = 4) -> dict[int, list[int]]:
-    """Assign exactly two of eight whole tasks per rank by deterministic LPT."""
+def lpt_assignment(
+    cost_by_task: Mapping[int, int],
+    *,
+    world_size: int,
+) -> dict[int, list[int]]:
+    """Assign eight whole tasks across the explicit distributed topology."""
 
-    if world_size != 4 or len(cost_by_task) != 8 or any(value <= 0 for value in cost_by_task.values()):
+    if (
+        len(cost_by_task) != 8
+        or not 1 <= world_size <= len(cost_by_task)
+        or any(value <= 0 for value in cost_by_task.values())
+    ):
         raise WriterModelError("internal-analysis LPT contract changed")
     result = {rank: [] for rank in range(world_size)}
     loads = [0] * world_size
+    maximum_tasks_per_rank = ceil(len(cost_by_task) / world_size)
     for task_id, cost in sorted(cost_by_task.items(), key=lambda item: (-item[1], item[0])):
         rank = min(
-            (value for value in range(world_size) if len(result[value]) < 2),
+            (
+                value
+                for value in range(world_size)
+                if len(result[value]) < maximum_tasks_per_rank
+            ),
             key=lambda value: (loads[value], value),
         )
         result[rank].append(task_id)
         loads[rank] += cost
-    if any(len(tasks) != 2 for tasks in result.values()):
-        raise WriterModelError("internal-analysis LPT lost two-task rank ownership")
+    if (
+        any(not tasks for tasks in result.values())
+        or any(len(tasks) > maximum_tasks_per_rank for tasks in result.values())
+        or {task for tasks in result.values() for task in tasks} != set(cost_by_task)
+    ):
+        raise WriterModelError("internal-analysis LPT lost rank/task ownership")
     return result
 
 

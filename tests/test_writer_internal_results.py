@@ -40,7 +40,10 @@ def _row(task: int, reference: int) -> dict:
 
 
 def test_lpt_and_four_rank_cartesian_sealing_are_exact() -> None:
-    assignment = lpt_assignment({task: (task + 1) * 10 for task in range(8)})
+    assignment = lpt_assignment(
+        {task: (task + 1) * 10 for task in range(8)},
+        world_size=4,
+    )
     assert set(assignment) == {0, 1, 2, 3}
     assert all(len(value) == 2 for value in assignment.values())
     assert {value for values in assignment.values() for value in values} == set(range(8))
@@ -60,6 +63,16 @@ def test_lpt_and_four_rank_cartesian_sealing_are_exact() -> None:
     payloads[0]["rows"][0]["conditions"][0]["condition"] = "reversed"
     with pytest.raises(WriterModelError, match="pairing"):
         validate_rank_payloads(payloads, 3)
+
+
+def test_lpt_six_rank_topology_has_complete_rank_and_task_ownership() -> None:
+    assignment = lpt_assignment(
+        {task: (task + 1) * 10 for task in range(8)},
+        world_size=6,
+    )
+    assert set(assignment) == set(range(6))
+    assert sorted(len(value) for value in assignment.values()) == [1, 1, 1, 1, 2, 2]
+    assert {value for values in assignment.values() for value in values} == set(range(8))
 
 
 def test_attention_summary_supports_batched_aed_programs() -> None:

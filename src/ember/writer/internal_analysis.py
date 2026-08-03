@@ -436,7 +436,13 @@ def _task_costs(tasks: Sequence[Mapping[str, Any]], adapters: Mapping[str, Mappi
     return result
 
 
-def _inspect(args: argparse.Namespace, authorities: Any, task_keys: Sequence[tuple[str, int]]) -> dict[str, Any]:
+def _inspect(
+    args: argparse.Namespace,
+    authorities: Any,
+    task_keys: Sequence[tuple[str, int]],
+    *,
+    world_size: int,
+) -> dict[str, Any]:
     if args.output_dir.exists(): raise WriterModelError("internal-analysis output root already exists")
     config = load_writer_config(args.config); training = read_json(args.training_run / "run_contract.json")
     if args.training_run != args.checkpoint.parent.parent or config["writer"]["architecture"] != ARCHITECTURE or training["config_sha256"] != sha256_file(args.config):
@@ -445,7 +451,8 @@ def _inspect(args: argparse.Namespace, authorities: Any, task_keys: Sequence[tup
     tokenizer = inspect_tokenizer(authorities, args.tokenizer_path)
     adapters = {condition: inspect_as_writer_evaluation(config_path=args.config, checkpoint=args.checkpoint, video_data_root=args.data_root, source=source, task_keys=task_keys, video_condition=condition, video_seed=args.video_seed, require_formal=True, video_sampling_mode="without_replacement") for condition in CONDITIONS}
     tasks, task_authorities = _task_records(args.repo, config, args.data_root, adapters)
-    costs = _task_costs(tasks, adapters, args.references_per_task); assignment = lpt_assignment(costs)
+    costs = _task_costs(tasks, adapters, args.references_per_task)
+    assignment = lpt_assignment(costs, world_size=world_size)
     checkpoint_hashes = {name: sha256_file(args.checkpoint / name) for name in ("checkpoint_manifest.json", "writer.safetensors")}
     return {"git": state, "provenance": _provenance(args.repo, state, training), "config": config, "training": training, "source": source, "tokenizer": tokenizer, "adapters": adapters, "tasks": tasks, "task_authorities": task_authorities, "task_costs": costs, "assignment": assignment, "checkpoint_hashes": checkpoint_hashes}
 
@@ -512,7 +519,13 @@ def main(argv: Sequence[str] | None = None) -> None:
     group = create_control_group(context.world_size); authorities = load_evaluation_authorities(repo / "configs/pi05_target_evaluation_v1.json", repo); task_keys = resolve_role_task_keys(authorities.protocol, "validation")
     inspected: Any = None
     if context.is_main:
-        try: inspected = _inspect(args, authorities, task_keys)
+        try:
+            inspected = _inspect(
+                args,
+                authorities,
+                task_keys,
+                world_size=context.world_size,
+            )
         except Exception as error: inspected = {"error": repr(error)}
     payload = broadcast(inspected, rank=context.rank, world_size=context.world_size, group=group); _publish(args, payload, rank=context.rank, world_size=context.world_size, group=group)
     policy, writer, lora, identity = _build_models(training=payload["training"], source=payload["source"], context=context)

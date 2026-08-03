@@ -79,7 +79,7 @@
       "budget_role": "variance_reduced_long105_b20_exact_resume_profile"
     },
     "profile_defaults": {
-      "status": "pending_variance_reduced_live_105_frame_b20_profile",
+      "status": "sealed_variance_reduced_live_105_frame_b20_profile",
       "expected_world_size": 4,
       "total_steps": 3,
       "per_rank_batch_size": 20,
@@ -87,7 +87,7 @@
       "selected_stop_step": 3
     },
     "profile_evidence": {
-      "status": "pending_variance_reduced_live_profile",
+      "status": "sealed_variance_reduced_live_105_frame_b20_profile",
       "allowed_physical_gpu_ids": [4, 5, 6, 7],
       "fixed_frame_stride": 5,
       "teacher_videos_per_task_visit": 1,
@@ -105,9 +105,35 @@
         "per_task_action_batch_size": 16
       },
       "selection_rule": "use_b20_unless_real_oom_or_repeated_nonfinite",
-      "selected": null,
-      "exact_resume_smoke": null,
-      "gradient_reachability": null,
+      "selected": {
+        "max_frames_per_encoder_call": 32,
+        "per_task_action_batch_size": 20,
+        "world_size": 4,
+        "completed_macros": 3,
+        "longest_sampled_frames": 105,
+        "max_cuda_reserved_bytes": 83508592640,
+        "wall_seconds": 60.82766066631302,
+        "commit": "50662a842cfa5c6e0a4356587ea73ea95e1ff521",
+        "profile_root": "/data/ymdai/outputs/ember/pi05_as_writer_semfactor_vr_postseal_long105_profile_r4_b20_seed172_50662a8_20260803"
+      },
+      "exact_resume_smoke": {
+        "status": "passed_fresh0to1_exact_resume1to3",
+        "completed_macros": 3,
+        "contract_sha256": "5111fa16b2b1db875ae80d79113516bfb8c853f76508b16979f4c7f9de558921",
+        "commit": "50662a842cfa5c6e0a4356587ea73ea95e1ff521",
+        "root": "/data/ymdai/outputs/ember/pi05_as_writer_semfactor_vr_postseal_formalseed_resume_r4_b20_seed7_50662a8_20260803"
+      },
+      "gradient_reachability": {
+        "status": "sealed_finite_nonzero_after_identity_lifecycle",
+        "first_nonzero_main_path_macro": 2,
+        "finite_nonzero_blocks": [
+          "semantic_frontend",
+          "core",
+          "program",
+          "compiler",
+          "factor"
+        ]
+      },
       "inference_profile": null
     }
   }

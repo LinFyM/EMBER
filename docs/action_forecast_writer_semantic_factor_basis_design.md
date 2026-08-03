@@ -144,3 +144,33 @@ action reads均为0。因此封存B20并授权fresh0→200；这些证据只证�
    轮换，或absolute通过更static的Core-only路径获得，则“共享soft factor basis能解决条件
    共存”被否定。失败后重审functional estimator/closed-loop manifold，不给本模型追加
    entropy loss、load-balance loss、gate、scale或旁路。
+
+## 6. 正式结果与裁决（2026-08-03）
+
+clean frozen `f5ddfe3`从functional identity完成400个macro、192,000 action queries、
+9,600条single-video conditions和16个every25 checkpoints；全部finite、0 clip，
+validation/test action reads为0。paired correct400完整曲线为：
+
+```text
+macro 50/100/150/200/250/300/350/400
+      69/ 91/118/127/117/ 81/126/120
+```
+
+single winner仍是macro200=`127`，未超过v5.2-old `132`或v6-fast `143`。第二小时没有
+成熟化：200→250 gained/lost=`19/29`，250→300=`16/52`，300→350=`60/15`，
+350→400=`20/26`；八点成功集合union=`193`、intersection=`39`，相对single-best的
+envelope gap=`66`。因此不做昂贵行为五臂，macro200既有五条件内部分析继续作为本版
+机制authority。
+
+结构假设只得到部分支持。macro200 route的task-centered/sample energy为`.2171`，
+task均值route pair relative-L2中位`.6049`，且A/E/D、causal-memory、Core-only和
+Program-only反事实证明完整视频路径到达effective BA/action；这说明Writer确实能学到
+task-conditioned factor routing。与此同时晚期factor占task-gradient energy约
+`96.9%`，351--400的24-task mean只保留单task能量`.0420`，同task相邻CountSketch
+余弦降到`-.0099`，raw mean candidate-negative tasks仍为0。Adam一阶moment的相邻
+50-macro余弦约`+.011/+.024/-.001/-.033`，而二阶moment余弦约`.915--.945`。
+
+裁决是：soft factor bases改善了早期共同增长和task条件分工，但没有稳定训练方向，也
+没有提高single-checkpoint上限；不能再给router追加entropy、basis数、gate或scale来救
+该checkpoint。最早剩余问题转向functional estimator的高方差，以及functional action
+目标与closed-loop有效policy流形的错位。

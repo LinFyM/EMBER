@@ -164,7 +164,12 @@ def test_variance_reduced_recipe_changes_only_functional_sampling_contract() -> 
     assert reduced["optimization"]["scheduler"] == raw["optimization"][
         "scheduler"
     ]
-    assert reduced["formal_run"]["status"] == "pending_profile"
+    assert reduced["formal_run"]["status"] == (
+        "profile_passed_formal_training_not_started"
+    )
+    assert reduced["formal_run"]["launch_state"] == (
+        "deferred_to_bgr_owner_authorization_after_migration"
+    )
 
 
 def test_v6_recipe_overlay_is_provenance_not_an_active_writer_path() -> None:

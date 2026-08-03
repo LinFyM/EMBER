@@ -3025,3 +3025,42 @@ GPU范围和训练步长是当时快照；活动状态只取
   `/data/ymdai/logs/ember/pi05_as_writer_semfactor_postseal_resume200to400_r4_b20_seed7_f5ddfe3_20260803.log`。
 - 等待评测期间完成variance-reduced estimator实现、18项focused测试和design，
   commit`1d04ae5`已push到branch与main；尚未使用GPU，不构成效果证据。
+
+## Semantic Factor-Basis第二小时与A100 GPU封存（2026-08-03）
+
+- frozen`f5ddfe3`从macro200 exact-resume到400正常结束；完整run为400 macros、
+  192,000 queries、9,600 single-video conditions、16个every25 checkpoints，all
+  finite、0 clip、validation/test action reads为0。
+- GPU4/5/6/7并行完成macro250/300/350/400的400-row paired correct；结果为
+  `117/81/126/120`，全部worker return code0。结合首小时，single winner仍是
+  macro200=`127`；未过strong absolute门，不做正式五臂。
+- evaluator第一次prepare因清理后的LIBERO site-packages assets symlink不存在而在GPU
+  前退出；四个root没有rollout。补入已封存
+  `EMBER_LIBERO_ASSETS_ROOT=/data/ymdai/ember_assets/datasets/libero-assets/0b3ea86...`
+  后从空root重启，四卡各6 persistent workers正常完成。该问题不影响任何科学row。
+- 训练metrics与checkpoint状态完成CPU drift审计：后半段task mean能量约`4.2%`、
+  candidate-negative tasks为0、factor约占`97%`，Adam一阶moment跨50-macro近正交、
+  二阶moment高度稳定；结果写入`findings.md`与SFB design。
+- VR首个profile在macro前发现mode字符串未接入`as_step`；`50662a8`用一行runtime接线
+  和参数化回归修复，4个focused tests通过并push远端分支。失败root/log已删除。
+- 修复后longest105 B20三macro通过；formal seed另行fresh0→1再exact-resume1→3。
+  retained roots：
+
+```text
+/data/ymdai/outputs/ember/pi05_as_writer_semfactor_vr_postseal_long105_profile_r4_b20_seed172_50662a8_20260803
+/data/ymdai/outputs/ember/pi05_as_writer_semfactor_vr_postseal_formalseed_resume_r4_b20_seed7_50662a8_20260803
+```
+
+- 02:42 UTC后停止全部A100 GPU工作。剩余动作仅为config evidence seal、Git/doc push、
+  post-seal migration ledger更新与无进程只读核验；不启动VR fresh0→200。
+
+## Post-seal迁移增量封存（2026-08-03）
+
+- 将`docs/a100_to_bgr_migration_handoff.md`提升为最终双阶段迁移authority：原封存集
+  不重传，第二次同步只取post-seal ledger的`must-transfer`行。
+- `/data/ymdai/migration_manifests/ember_postseal_20260802/assets.tsv`已补齐所有正式
+  root的实时bytes；34个必迁对象合计`16,483,938,529` bytes，逐项存在且尺寸一致。
+- 12个新增formal correct400 root均重新核验为400 rows；VR profile/resume明确列为
+  do-not-transfer/debug-only，代码和配置只经Git迁移。本窗口没有MemLLM新增资产。
+- 聚焦回归为3 passed；两份VR JSON可解析，Git diff无空白错误。live tmux为空，
+  没有EMBER训练、评测或GPU分析进程。

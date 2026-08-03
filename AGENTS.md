@@ -63,19 +63,20 @@
 
 ## Current focused task
 
-- Semantic Factor-Basis首小时correct400为`69/91/118/127`；macro200 breadth8，
-  50→200 gained/lost=`68/10`，但150→200仍为`38/29`。其右端趋势、全task breadth
-  与已证内部路径通过第二小时门；当前从同一root exact-resume macro200→400。
-- variance-reduced functional estimator已在commit`1d04ae5`实现并push，但尚无GPU
-  profile或训练结果；只有SFB第二小时裁决完成后才决定是否运行，不能冒充有效方法。
+- Semantic Factor-Basis完整correct400曲线为
+  `69/91/118/127/117/81/126/120`；single winner仍是macro200=`127`，八点
+  success union=`193`、single envelope gap=`66`，没有解决漂移或超过v6。
+- variance-reduced functional estimator的实现与mode接线修复已push到`50662a8`；
+  longest105 B20与formal-seed fresh0→1/exact-resume1→3通过。matched前三步只给出
+  小幅正机制证据，尚无0→200训练或closed-loop结果，不得写成有效方法。
 - 只使用物理GPU4--7；不得查询或触碰GPU0--3，不得干扰他人进程。
 - 迁移封存基线是`f9a144c94e71bb44373d7247ed0fded2ed835305`；当前写分支为
   `codex/variance-reduced-functional-estimator`，全部新提交和runtime roots必须
   登记在`/data/ymdai/migration_manifests/ember_postseal_20260802/`。
 - frozen source step1000仍是下游inference/source asset，不支持source-SFT exact
   resume。A100 Codex、venv、cache与worktree仍不迁移。
-- 到期前停止所有GPU进程、push关键代码与文档，并向迁移智能体提供精确delta；长期
-  Goal保持未完成，这次授权不自动授予BGR实验权限。
+- 本A100窗口的GPU工作已停止；当前只做Git/文档/迁移delta封存。长期Goal保持未完成，
+  BGR上的VR fresh0→200必须等待owner重新授予实验与设备权限。
 
 ## Long-term objective
 
@@ -218,7 +219,9 @@ static bypass、confidence、强制正交/rank diversity、multi-video或checkpo
 - formal结果必须保留run contract、checkpoint manifest、metrics、raw rows、aggregate、
   completion和必要analysis；screen/profile/smoke不得冒充formal。
 - 不比较未严格配对的不同state/video/RNG panel，不把不同估计器百分比写成严格倍数。
-- 当前保留60个正式checkpoint roots是训练漂移证据；不得在迁移时只留winner。
+- 原迁移封存保留60个正式checkpoint roots；post-seal又新增Target-Bound与SFB两个
+  正式训练root和12个正式correct400 roots。它们共同构成训练漂移证据，迁移时不得
+  只留winner。
 - cleanup删除清单位于A100
   `/data/ymdai/migration_manifests/a100_cleanup_20260802`；历史文档中的已删profile路径
   不表示正式artifact损坏。

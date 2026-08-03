@@ -1,6 +1,6 @@
 # EMBER Current Execution Brief
 
-更新时间：2026-08-03 00:35 UTC。本文是操作层authority；科研结果取
+更新时间：2026-08-03 03:05 UTC。本文是操作层authority；科研结果取
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bgr_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
@@ -11,15 +11,15 @@
   paired rollout与内部分析。
 - 效率优先：不重复全仓仪式、全量hash或无关旧smoke；只做会改变实验可信度的shape、
   identity、freeze、causal、gradient、OOM、resume检查。
-- 新代码先push，外部roots逐项登记到post-seal delta ledger；最迟`03:45 UTC`冻结新
-  GPU实验并完成封存，约`05:18 UTC`后不得继续运行。
+- 新代码先push，外部roots逐项登记到post-seal delta ledger；本窗口GPU工作已于
+  `02:42 UTC`停止，当前只做文档、Git和迁移增量封存。
 - 这次临时授权不自动授予BGR GPU使用权。
 
 Target-Bound已完成首小时与四点correct400=`75/120/90/110`，不续训；内部反事实证明
 其视频路径到达BA/action，剩余瓶颈定位到shared factor conditional coexistence。
-Semantic Factor-Basis首小时和四点correct400=`69/91/118/127`已完成；macro200
-breadth8且右端持续上升，但相邻checkpoint仍明显换手。它已通过第二小时门，clean
-frozen`f5ddfe3`于00:32:58 UTC从同一root exact-resume macro200→400。
+Semantic Factor-Basis完整correct400为`69/91/118/127/117/81/126/120`；single
+winner仍是macro200，第二小时出现显著跌落与恢复，未提高上限。VR estimator的
+longest105 B20与fresh/exact-resume vertical path通过，但没有formal训练或rollout。
 
 ## 2. Canonical Git state
 
@@ -29,12 +29,12 @@ frozen`f5ddfe3`于00:32:58 UTC从同一root exact-resume macro200→400。
 post-seal baseline main/origin-main = f9a144c94e71bb44373d7247ed0fded2ed835305
 current experiment branch = codex/variance-reduced-functional-estimator
 Target-Bound formal commit = cfd26df63d08f29d8bfaac58f585387134ed680b
-current main/origin-main = 1d04ae5
+latest pushed implementation commit = 50662a842cfa5c6e0a4356587ea73ea95e1ff521
 ```
 
 `f9a144c`是另一迁移session已经封存的基线，不回写其内容。post-seal分支与所有新
 artifact作为第二批增量交付；Target-Bound已封存为负结果。Semantic Factor-Basis
-首小时显示共同增长但尚未超过v6 best，也没有解决checkpoint换手，不能宣称成功。
+显示task routing有效但没有超过v6 best，也没有解决checkpoint换手，不能宣称成功。
 
 迁移后默认动作：clone GitHub main并核验`f5ddfe3`或其后续交接commit；需要历史时再
 fetch实验分支，不复制`.git`或恢复所有Codex refs。BGR重建环境和路径映射后先运行
@@ -101,6 +101,18 @@ v5.2/v6的old/task-complete四格又证明recipe作用依赖架构。不得把po
 整体判死、不得简单退回old six-update，也不得恢复CP-24、gate、scale、rank loss、
 multi-video或checkpoint fusion作为默认解。
 
+Semantic Factor-Basis的八点correct400为：
+
+```text
+69 / 91 / 118 / 127 / 117 / 81 / 126 / 120
+```
+
+八点success union=`193`而single-best=`127`；250→300 lost52、300→350 gained60。
+后半段raw mean对24 tasks均非负，但保留能量约`4.2%`，factor占约`97%`，Adam一阶
+moment每50 macros近正交。这同时降低“CP负投影”“只加task router”和“继续降低LR”
+三种解释。SFB保留为canonical结构证据，formal estimator/closed-loop错位成为下一
+训练假设。
+
 ## 5. Current Semantic Factor-Basis experiment
 
 Semantic Factor-Basis的完整design已在main：
@@ -111,13 +123,15 @@ docs/action_forecast_writer_semantic_factor_basis_design.md
 
 当前执行顺序固定：
 
-1. 当前exact-resume macro200→400、every25 checkpoint自然完成；
-2. paired correct400评测250/300/350/400并选择single winner；
-3. 根据absolute、breadth、task churn及内部路径决定五臂、variance-reduced对照或停止；
-4. 窗口结束前停止GPU进程并把代码、文档与artifact delta交给迁移session。
+1. 不再在A100启动训练、评测或GPU分析；
+2. 最终代码/文档及34个post-seal `must-transfer` roots已形成Git与增量台账交付；
+3. BGR环境、路径和GPU边界核验后等待owner重新授权；
+4. 获授权后只从fresh identity运行VR 0→200，并评测50/100/150/200 correct400。
 
 下一候选`docs/action_forecast_writer_variance_reduced_functional_estimator_design.md`及代码
-已在`1d04ae5`push；尚无GPU证据，不能写成已验证训练方法。
+在`50662a8`。longest105 B20和fresh/exact-resume通过；matched前三步梯度energy
+retention`.11346→.13255`、same-task cosine`.26439→.29206`。没有0→200或closed-loop
+证据，不能写成已验证训练方法。
 
 profile/smoke root必须全新，不得使用A100上的smoke权重或正式output路径。B20只有
 真实OOM或连续非有限才降，不扫描B17–B19/B21。
@@ -178,8 +192,9 @@ A100上的NUMA node1和物理GPU4–7只是历史合同，不得复制到BGR。
 - formal run保留config、command、commit、parameter count、macros/videos/queries、
   wall/GPU-hours、checkpoint curve、per-task、五臂（若过门）、internal analysis、
   root cause和retain/reject。
-- `/data/ymdai/outputs/ember`当前保留60个checkpoint roots和406个complete eval roots；
-  它们用于训练漂移与架构×recipe审计，迁移时不能只留winner。
+- 原封存保留60个checkpoint roots和406个complete eval roots；post-seal新增2个正式
+  训练root和12个formal correct400 roots。它们用于训练漂移与架构×recipe审计，
+  迁移时不能只留winner。
 - writer/eval LoRA caches、profile/resume、reseal和退役SmolVLA已按manifest清理；历史
   文档引用已删工程root不是重新运行指令。
 - 不提交checkpoint、dataset、cache或大binary。formal artifacts经SSH迁移，源码和

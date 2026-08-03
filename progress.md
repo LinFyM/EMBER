@@ -1,12 +1,37 @@
 # EMBER Progress Ledger
 
-最后更新：2026-08-02。
+最后更新：2026-08-03。
 
 阅读规则：本文按时间顺序保留真实执行状态。早期段落中的“当前”“下一步”、
 GPU范围和训练步长是当时快照；活动状态只取
 `docs/a100_to_bci_migration_handoff.md`、`docs/active_session_handoff.md`和本文顶部
 最新段落，
 不能用旧快照覆盖后续owner决定。
+
+## 2026-08-03 BCI VR正式训练、rollout与阶段暂停
+
+- formal teacher seed fail-close修复提交/push为`d9130c9`，并重新核验clean
+  `HEAD=origin/main`、gpu01/gpu02进程与ownership、`/data1`独立quota、source/data/
+  tokenizer/assets和全新retry1 root。gpu01八卡均有他人任务；gpu02只选空闲
+  0/1/2/3/4/7，5/6从未触碰。
+- retry1从fresh identity完成macro0→200，wall`6619.670s`；200 finite rows、
+  96,000 queries、4,800 videos、8 checkpoints、0 clip、0 validation/test action
+  reads。64/64 checkpoint payload与8个held panel完整性复验通过，训练自然停在预注册
+  stage stop200，没有resume到400。
+- A40 evaluator先以8-rollout smoke确认r3 fresh-cache路径；复用不同generator-count
+  cache的尝试被manifest fail-close，未启动worker、没有科学row。正式采用3 GPUs/panel、
+  3 replicas/GPU、3 generators/GPU、generation batch4；live显存保持在46GB卡内。
+- 两批并行完成macro50/100与150/200正式correct400，只用gpu02空闲六卡；四个root均
+  400 rows、42 shards、9 workers return0、无放回teacher demo与hash审计通过。曲线为
+  `76/88/126/107`，breadth=`7/4/7/5`，single winner macro150=126。
+- 完成全部预注册分析：success union/intersection=`158/49`、150→200 gained/lost=
+  `21/40`；相对SFB同点delta=`+7/-3/+8/-20`。全200步matched gradient稳定性只
+  微幅、分阶段改善；macro200 held loss最好却closed-loop下降，正式把根因转向
+  functional surrogate与closed-loop有效流形错位。
+- 正式root、逐task、paired gained/lost、mechanism与hash写入active handoff、execution
+  brief、VR design、findings和task plan。owner要求rollout与全部分析后先暂停；当前
+  无EMBER tmux/worker或本方GPU占用，不续训、不做五臂、不启动下一方法，等待owner
+  继续指示。长期single-checkpoint `>150` Goal未完成。
 
 ## 2026-08-03 BCI接管与六卡VR工程profile
 

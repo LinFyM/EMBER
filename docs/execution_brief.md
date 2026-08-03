@@ -1,12 +1,14 @@
 # EMBER Current Execution Brief
 
-更新时间：2026-08-03 08:36 UTC。本文是操作层authority；科研结果取
+更新时间：2026-08-03 12:00 UTC。本文是操作层authority；科研结果取
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
 ## 0. 当前BCI运行事实（覆盖下文旧A100操作细节）
 
-- repo：`/data1/user/ymdai/projects/EMBER`；既有EMBER环境会自动装载BCI本地路径。
+- repo：`/data1/user/ymdai/projects/EMBER`，Python环境为项目`.venv`。模型、data、
+  tokenizer、checkpoint和output由CLI显式传入；`EMBER_STORAGE_ROOT`、容量上限与
+  `EMBER_LIBERO_ASSETS_ROOT`也必须在进程环境显式设置，不能依赖`.env.local`猜测。
 - A40正式配置：
   `configs/pi05_as_writer_semantic_factor_basis_variance_reduced_long105_profile_v1.json`，
   6 ranks×4 tasks、16-frame encoder microbatch、logical B20、policy microbatch2，
@@ -19,13 +21,15 @@
 - 四卡迁移验收后，六卡logical-B20冻结profile在clean pushed`391f183`完成
   fresh0→1/exact-resume1→3；峰值allocated/reserved为
   `34,970,270,720/47,108,325,376` bytes，最长105帧，合同`31ea4bc9...55de0`。
-- profile checkpoint不得warm-start。下一研究动作是VR fresh 0→200及
-  50/100/150/200 paired correct400。
+- profile checkpoint没有warm-start到formal。有效VR fresh 0→200和
+  50/100/150/200 paired correct400均已完成，曲线为`76/88/126/107`。
 - `6f18499`首次formal因A40 overlay误保留profile seed`172`而在首个checkpoint前停止；
   10个partial宏步只作aborted审计，禁止resume/评测。修复与fail-close回归通过后，
   必须从新clean pushed commit和全新retry1 root重新fresh启动。
 - 详细运行证据和精确指标见`docs/active_session_handoff.md`第0节。下文所有
   `/data/ymdai`、A100 GPU4--7和“BCI尚未验收”描述仅是历史状态。
+- owner要求本轮rollout与全部分析完成后先暂停。当前没有EMBER tmux、worker或本方
+  GPU占用；恢复前不启动下一架构、训练、评测或GPU分析。
 
 ## 1. 当前操作状态
 
@@ -37,12 +41,15 @@
 - A100窗口GPU工作已于`02:42 UTC`停止；其delta ledger只作历史provenance。
 - owner已另行授予BCI研究权限：每次比较`gpu01`/`gpu02`，只用空闲卡、合计最多6张，
   不干扰他人；当前推进不使用subagent。
+- BCI VR正式训练、四点rollout、完整性与漂移分析已完成；当前按owner要求处于可交接
+  暂停点，长期`>150`目标未完成。
 
 Target-Bound已完成首小时与四点correct400=`75/120/90/110`，不续训；内部反事实证明
 其视频路径到达BA/action，剩余瓶颈定位到shared factor conditional coexistence。
 Semantic Factor-Basis完整correct400为`69/91/118/127/117/81/126/120`；single
-winner仍是macro200，第二小时出现显著跌落与恢复，未提高上限。VR estimator的
-longest105 B20与fresh/exact-resume vertical path通过，但没有formal训练或rollout。
+winner仍是macro200，第二小时出现显著跌落与恢复，未提高上限。VR estimator正式
+correct400为`76/88/126/107`，single winner126仍低于SFB127和v6-fast143；breadth
+`7/4/7/5`且150→200 gained/lost=`21/40`，同样没有解决漂移。
 
 ## 2. Canonical Git state
 
@@ -52,16 +59,15 @@ longest105 B20与fresh/exact-resume vertical path通过，但没有formal训练�
 post-seal baseline main/origin-main = f9a144c94e71bb44373d7247ed0fded2ed835305
 current BCI write branch = codex/bci-continuation
 Target-Bound formal commit = cfd26df63d08f29d8bfaac58f585387134ed680b
-latest pushed implementation commit = 50662a842cfa5c6e0a4356587ea73ea95e1ff521
+BCI VR formal code commit = d9130c9fbe0d68b6a83c1a356f51f7a684845275
 ```
 
 `f9a144c`是另一迁移session已经封存的基线，不回写其内容。post-seal分支与所有新
 artifact作为第二批增量交付；Target-Bound已封存为负结果。Semantic Factor-Basis
 显示task routing有效但没有超过v6 best，也没有解决checkpoint换手，不能宣称成功。
 
-迁移已完成；BCI环境、路径、assets、source checkpoint、四卡训练/评测和六卡collective
-均已核验。当前分支先完成microbatch实现的CPU回归、提交与冻结profile重放，再进入
-fresh formal训练。
+迁移已完成；BCI环境、路径、assets、source checkpoint、四卡验收、六卡collective、
+logical-B20冻结profile、formal训练和四点评测均已核验。当前只做结果封存与暂停交接。
 
 ## 3. Canonical assets
 
@@ -69,10 +75,10 @@ fresh formal训练。
 
 ```text
 source run:
-/data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722
+/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722
 
 source checkpoint:
-/data/ymdai/outputs/ember/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000
+/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000
 
 selected raw policy SHA256:
 60ea7ee898629321cf34522e5f0e45f4f1c2659c5f5dbc7b02ed9eb46a8cdf36
@@ -88,14 +94,21 @@ frozen source asset，但不能exact-resume source training。
 tokenizer SHA256:
 8986bb4f423f07f8c7f70d0dbe3526fb2316056c17bae71b1ea975e77a168fc6
 
+tokenizer path:
+/data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model
+
 LIBERO dataset revision:
 f13aa24a3da8c43c7225569f28c562979fa0e35a
+
+LIBERO dataset path:
+/data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a
 
 canonical feature cache:
 pi05_writer_feature_cache_v2_development32_raw_e4c19f9_b32_20260722
 
 LIBERO simulation assets:
 lerobot/libero-assets@0b3ea86be5fe169d0fd036ae63d1070ec09e90f6
+/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6
 586 files; file-list SHA256 721aa2484de396be5267e936f115ddd5f03ffd12e0849cc1cd05bb17454996b9
 ```
 
@@ -136,7 +149,21 @@ moment每50 macros近正交。这同时降低“CP负投影”“只加task rout
 三种解释。SFB保留为canonical结构证据，formal estimator/closed-loop错位成为下一
 训练假设。
 
-## 5. Current Semantic Factor-Basis experiment
+Variance-Reduced estimator的正式四点correct400为：
+
+```text
+76 / 88 / 126 / 107
+```
+
+四点均值`99.25`低于ordinary SFB同期`101.25`；single winner macro150=`126`，
+比严格门151少25。breadth=`7/4/7/5`，四点union/intersection=`158/49`，150→200
+gained/lost=`21/40`。全200步matched same-task CountSketch cosine只提高`.00263`
+（factor`.00510`），energy retention只提高`.00191`且分阶段反复；macro200 held
+functional loss改善到`.12915`时closed-loop反而降到107并比SFB同点少20。正式拒绝
+“可约flow Monte Carlo方差是主要根因”，下一设计边界转为functional action surrogate
+与source-policy closed-loop有效流形错位。
+
+## 5. Current Writer state and pause
 
 Semantic Factor-Basis的完整design已在main：
 
@@ -149,19 +176,19 @@ docs/action_forecast_writer_semantic_factor_basis_design.md
 1. 不再在A100启动训练、评测或GPU分析；
 2. 最终代码/文档及34个post-seal `must-transfer` roots已形成Git与增量台账交付；
 3. logical-B20六卡profile已从clean pushed commit重放并seal；
-4. 只从fresh identity运行VR 0→200，并评测50/100/150/200 correct400。
+4. VR fresh 0→200、四点correct400与全部预注册分析已完成并负裁决；
+5. 当前按owner要求暂停，等待其查看状态后再决定新的training-target design。
 
-下一候选`docs/action_forecast_writer_variance_reduced_functional_estimator_design.md`及代码
-在`50662a8`。longest105 B20和fresh/exact-resume通过；matched前三步梯度energy
-retention`.11346→.13255`、same-task cosine`.26439→.29206`。没有0→200或closed-loop
-证据，不能写成已验证训练方法。
+VR的设计、BCI适配和正式负结果统一见
+`docs/action_forecast_writer_variance_reduced_functional_estimator_design.md`。不得续训
+该root到400、不得做五臂，也不得从其checkpoint warm-start下一方法。
 
 profile/smoke root必须全新，不得使用A100上的smoke权重或正式output路径。B20只有
 真实OOM或连续非有限才降，不扫描B17–B19/B21。
 
 ## 6. Formal training contract
 
-除非Target-Bound design在结果前更新authority，否则：
+owner恢复研究并封存新的training-target design前，下列通用合同保持：
 
 - one teacher video → one complete rank-16 LoRA；
 - frame stride=5；
@@ -218,8 +245,9 @@ A100上的NUMA node1和物理GPU4–7只是历史合同，不得复制到BCI。
 - 原封存保留60个checkpoint roots和406个complete eval roots；post-seal新增2个正式
   训练root和12个formal correct400 roots。它们用于训练漂移与架构×recipe审计，
   迁移时不能只留winner。
-- writer/eval LoRA caches、profile/resume、reseal和退役SmolVLA已按manifest清理；历史
-  文档引用已删工程root不是重新运行指令。
+- A100历史writer/eval LoRA caches、profile/resume、reseal和退役SmolVLA已按manifest
+  清理；本轮四个BCI formal eval root仍保留各自cache与完整结果，当前暂停交接不做
+  额外cleanup。历史文档引用已删工程root不是重新运行指令。
 - 不提交checkpoint、dataset、cache或大binary。formal artifacts经SSH迁移，源码和
   文档经GitHub迁移。
 
@@ -236,6 +264,5 @@ meaningful状态更新：
 - `findings.md`
 - `progress.md`
 
-commit只含任务相关改动并push。A100 Codex不迁移；新Codex从Git文档、formal
-artifacts和migration manifests接手。迁移完成前与owner恢复授权前，停止在无GPU
-作业状态。
+commit只含任务相关改动并push。A100 Codex不迁移；后续session从Git文档、formal
+artifacts和migration manifests接手。owner结束本次阶段前，保持无GPU作业状态。

@@ -6,8 +6,9 @@
 AS-Writer training, not the Writer architecture or its information wall.
 Longest-105 B20 and fresh/exact-resume vertical paths pass at `50662a8`; the BCI
 six-rank logical-B20/policy-microbatch2 path is now sealed from clean pushed
-commit `391f183`. No formal 0→200 training or closed-loop evaluation has been
-run.
+commit `391f183`. Formal BCI 0→200 training and the pre-registered four paired
+correct400 panels are complete. The curve is `76/88/126/107`; the estimator is
+rejected as a solution to task drift and must not be resumed to 400.
 
 ## Question
 
@@ -153,3 +154,64 @@ canonical overlay now uses `20260722`; config validation fails closed whenever
 a sealed formal configuration differs from
 `formal_teacher_video_seed_after_profile_seal`. The valid 0→200 experiment must
 restart from a new root and fresh identity.
+
+## Formal BCI result and verdict (2026-08-03)
+
+The valid fresh run used clean pushed commit `d9130c9`, formal teacher-video
+seed `20260722`, six ranks with four tasks each, logical B20 split into B2
+policy microbatches, and the unchanged full24 raw-mean optimizer contract:
+
+```text
+runs/outputs/pi05_as_writer_semfactor_vr_bci_rawfull24_decay400_formal_r6_b20_micro2_seed7_formalvideo20260722_retry1_20260803
+```
+
+It completed exactly 200 finite optimizer steps, 96,000 logical action
+queries, 4,800 one-video conditions, and eight every-25 checkpoints in
+`6619.670s`. There were zero clips, zero source-policy trainable parameters,
+and zero validation/test action reads. All 64 checkpoint payload size and SHA
+checks passed. The run contract SHA256 is
+`0f9ed99dd0d97994ebc0331c24f3d4ede4fa3a04ded5dff7fd14de2de013599a`.
+
+The four formal correct400 panels were fully paired to one another and to the
+ordinary SFB panels on state, teacher video, environment seed, policy seed,
+and the complete policy-noise prefix. Each panel has 400 unique rows, 42/42
+complete shards, nine zero-return workers, and exactly one use of teacher demos
+0--49 per validation task. Results were:
+
+| macro | correct | breadth | per-task successes |
+| ---: | ---: | ---: | --- |
+| 50 | 76 | 7 | `3/1/0/37/29/4/1/1` |
+| 100 | 88 | 4 | `4/0/0/37/25/22/0/0` |
+| 150 | 126 | 7 | `4/2/1/41/42/34/0/2` |
+| 200 | 107 | 5 | `8/0/0/39/33/24/0/3` |
+
+The task order is Long-1/2, Goal-3/6, Object-1/3, Spatial-1/3. Success-set
+gained/lost counts were `30/18`, `49/11`, and `21/40` across adjacent panels.
+The four-panel union/intersection was `158/49`, leaving an envelope gap of 32.
+The best checkpoint, macro150=126, was 25 successes short of the strict 151
+gate, one below the ordinary SFB winner, and 17 below the v6-fast winner.
+
+Against ordinary SFB at the same checkpoints, paired score deltas were
+`+7/-3/+8/-20` with gained/lost counts `23/16`, `18/21`, `33/25`, and
+`21/41`. The estimator did not provide a consistent closed-loop advantage.
+Its best checkpoint still had real value relative to the frozen source base
+(`83/5` gained/lost), but it was `27/44` against v6-fast macro400.
+
+Across all 200 matched training steps, VR changed successive same-task
+all-block CountSketch cosine by only `+0.002634` and factor-only cosine by
+`+0.005104`. Raw mean-to-task energy retention changed by `+0.001914` and
+factor retention by `+0.001121`; the 51--100 interval was directionally worse,
+and late 151--200 energy retention was not improved. These effects are small
+and phase-dependent, not material stabilization.
+
+The decisive mismatch is at macro200: held functional loss improved to
+`.129146` versus ordinary SFB `.131776`, while paired closed-loop score fell to
+107 versus 127. The held loss was also the best of the four VR checkpoints even
+though the score had dropped 19 from macro150. Task-transition held-loss versus
+success-change Spearman correlation was only `.263`. The formal result rejects
+reducible flow Monte Carlo variance as the primary cause of task rotation and
+moves the earliest remaining failure interface to the functional action
+surrogate versus the source-policy closed-loop effective manifold.
+
+Per the owner-requested pause, no 200→400 resume, five-arm panel, new
+architecture, or replacement training target is launched from this verdict.

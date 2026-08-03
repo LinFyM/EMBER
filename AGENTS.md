@@ -15,6 +15,8 @@
 microbatch、梯度累积、activation checkpoint、精度或必要的模型分片适配，不能直接照搬
 A100 80GB配置；任何适配不得悄悄改变sealed scientific contract。不得reset、kill、pause
 或干扰他人进程。owner当前还明确要求推进过程中不使用subagent，直至owner另行解除。
+2026-08-03完成本轮VR正式训练、四点rollout与全部预注册分析后，owner要求先暂停并
+汇报现状；因此当前不得自动启动下一架构、训练、评测或GPU分析，直到owner继续指示。
 
 当前跨session入口：
 
@@ -72,12 +74,20 @@ A100 80GB配置；任何适配不得悄悄改变sealed scientific contract。不
 - Semantic Factor-Basis完整correct400曲线为
   `69/91/118/127/117/81/126/120`；single winner仍是macro200=`127`，八点
   success union=`193`、single envelope gap=`66`，没有解决漂移或超过v6。
-- variance-reduced functional estimator的实现与mode接线修复已push到`50662a8`；
-  longest105 B20与formal-seed fresh0→1/exact-resume1→3通过。matched前三步只给出
-  小幅正机制证据，尚无0→200训练或closed-loop结果，不得写成有效方法。BCI上已用
-  6 ranks×4 tasks、逻辑B20、policy microbatch2完成未冻结工程profile与
-  fresh0→1/exact-resume1→3；必须在代码提交后重放，不能把dirty-worktree结果当作
-  formal seal。
+- variance-reduced functional estimator已从fresh identity在BCI完成macro0→200；
+  correct400曲线为`76/88/126/107`，breadth=`7/4/7/5`，single winner是
+  macro150=`126`。四点success union/intersection=`158/49`、single envelope
+  gap=`32`；150→200 gained/lost=`21/40`。它既没有超过SFB winner`127`、v6-fast
+  winner`143`或严格门`>150`，也没有解决checkpoint能力轮换，正式裁决为负。
+- 有效训练commit为`d9130c9`：200 finite macros、96,000 logical queries、4,800
+  one-video conditions、8个checkpoint、0 clip、validation/test action reads=0；
+  64/64 checkpoint payload hash通过。VR相对普通SFB的全200步same-task CountSketch
+  cosine只提高`.00263`（factor`.00510`），raw mean/sample energy retention只提高
+  `.00191`，且分阶段反复，不是material稳定化。
+- macro200 held functional loss由SFB`.13178`改善为VR`.12915`，paired correct却
+  `127→107`；当前最可信最早失效接口已转向functional action surrogate与
+  source-policy closed-loop有效流形错位。不要继续增加SFB basis/router、降低LR或
+  单独修补同一Monte Carlo estimator；下一步需先形成完整training-target design。
 - 旧A100“只使用物理GPU4--7”的边界已退役；当前只按上文BCI设备授权使用
   `gpu01`/`gpu02`的实时空闲卡，跨节点合计最多6张。
 - 迁移封存基线是`f9a144c94e71bb44373d7247ed0fded2ed835305`；当前BCI写分支为
@@ -87,7 +97,8 @@ A100 80GB配置；任何适配不得悄悄改变sealed scientific contract。不
 - frozen source step1000仍是下游inference/source asset，不支持source-SFT exact
   resume。A100 Codex、venv、cache与worktree仍不迁移。
 - A100窗口的GPU工作已停止；BCI上的环境恢复、profile、训练和评测已获owner授权。
-  迁移与46GB适配验证通过后，可继续VR fresh0→200及后续有证据支持的实验。
+  迁移与46GB适配验证、VR训练、四点rollout和分析均已完成；当前按owner要求暂停，
+  没有活动EMBER tmux、worker或占用GPU，长期Goal仍未完成。
 - 当前最低科研目标是同一single checkpoint的paired correct aggregate严格超过
   `150/400`，并在达到后继续追求更高absolute、breadth和视频因果性；不得用多
   checkpoint、挑video或违反信息墙的方法过门。
@@ -136,9 +147,11 @@ Target-Bound correct曲线`75/120/90/110`仍漂移，但内部remove-A/remove-D/
 memory-reversal均`8/8` tasks达门，说明动态路径已工作而shared factor共存仍失败。
 Semantic Factor-Basis完整曲线`69/91/118/127/117/81/126/120`较Target-Bound形成
 更可信共同累积，但相邻checkpoint仍大量换手且晚期CountSketch梯度稳定性没有改善。
-下一候选只改变functional Monte Carlo estimator：
-exact-Beta Latin time加随机antithetic Gaussian noise；架构、objective期望、B20、
-full24 raw mean和optimizer保持不变。
+variance-reduced estimator只改变exact-Beta Latin time与随机antithetic Gaussian
+noise，保持架构、objective期望、B20、full24 raw mean和optimizer不变；其正式曲线
+`76/88/126/107`与微小、非持续的机制改善共同否定“可约flow Monte Carlo方差是主要
+漂移根因”。下一候选必须重做functional/training target与closed-loop有效流形的对应
+设计；当前只记录边界，不在owner暂停期间实现或launch。
 
 ## Data and split
 

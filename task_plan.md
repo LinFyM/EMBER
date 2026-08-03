@@ -27,10 +27,14 @@ runner、split、路径或 GPU 权限。
   96,000 queries、every25、1.5GiB峰值预算、fresh root、tmux/log、启动与resume门。
 - [x] 首次formal在checkpoint前发现A40 overlay误保留profile teacher seed`172`并安全
   停止；修回正式`20260722`、新增sealed seed fail-close，partial root禁止resume/评测。
-- [ ] 从fresh identity正式训练VR 0→200、every25；严格配对评测
-  50/100/150/200 correct400并联合分析absolute、breadth、换手和梯度稳定性。
-- [ ] 根据证据继续训练或设计下一架构/训练目标，直到同一single checkpoint
-  correct严格超过`150/400`并尽可能提高；不使用subagent、checkpoint融合或信息捷径。
+- [x] 从fresh identity完成VR 0→200、every25；200步/96,000 queries/4,800 videos、
+  8 checkpoints和全部hash/信息墙门通过。严格配对correct400为
+  `76/88/126/107`，breadth=`7/4/7/5`，single winner126；四点漂移与matched
+  VR→SFB机制/held-loss分析完成，正式负裁决，不续到400、不做五臂。
+- [ ] 长期Goal仍是同一single checkpoint correct严格超过`150/400`并尽可能提高。
+  当前按owner要求在rollout和全部分析后暂停；恢复后先设计functional action
+  surrogate与source-policy closed-loop有效流形对齐的新training target，不复用VR
+  checkpoint、不使用subagent、checkpoint融合或信息捷径。
 
 ## Post-seal A100研究窗口（2026-08-02 19:18 UTC起）
 

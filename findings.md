@@ -6,6 +6,48 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-03 BCI VR正式裁决与functional/closed-loop错位
+
+- clean pushed`d9130c9`的有效VR root从fresh identity完成macro0→200：200个finite
+  optimizer steps、96,000 logical queries、4,800 single-video conditions、wall
+  `6619.670s`、0 clip、validation/test action reads=0。8个checkpoint的64/64 payload
+  size/SHA通过，8个held functional panels各512 rows。错误teacher seed的旧10-macro
+  root仍是aborted合同事件，不进入任何性能或机制数值。
+- A40正式evaluator profile使用3 replicas/GPU与generation batch4；macro50/100/150/200
+  各400 unique rows、42/42 shards、9/9 workers return0、每task teacher demos 0--49
+  无放回各一次。四点间以及对应ordinary SFB panel的state/video/env/policy RNG均
+  400/400严格配对。correct400曲线为`76/88/126/107`，breadth=`7/4/7/5`。
+- macro50/100/150/200逐task（Long-1/2、Goal-3/6、Object-1/3、Spatial-1/3）为
+  `3/1/0/37/29/4/1/1`、`4/0/0/37/25/22/0/0`、
+  `4/2/1/41/42/34/0/2`、`8/0/0/39/33/24/0/3`。macro100的净增长主要来自
+  Object-3而breadth掉到4；macro150到200又在Object-1/3分别丢9/10，说明aggregate
+  变化仍由task换手驱动，而不是共同成熟。
+- 相邻success-set gained/lost为`30/18`、`49/11`、`21/40`，Jaccard为
+  `.5472/.5620/.5850`；50→200为`44/13`。四点union/intersection=`158/49`，
+  single envelope gap=`32`。VR的四点union低于SFB同期169，但这是少发现能力与更低
+  single score共同造成，不能写成已解决漂移。
+- VR相对matched SFB同点delta为`+7/-3/+8/-20`，gained/lost依次
+  `23/16`、`18/21`、`33/25`、`21/41`；前三点小幅来回，macro200明确更差。
+  VR winner macro150相对source base为`83/5`，说明Writer仍提供真实新能力；相对
+  v6-fast macro400为`27/44`，净少17。single winner126低于SFB127、v6-fast143和
+  strict gate151，不构成新方法上限。
+- 与ordinary SFB完全matched的前200步中，VR全段same-task successive all-block/
+  factor CountSketch cosine只提高`.002634/.005104`，raw/factor mean-energy retention
+  只提高`.001914/.001121`。分段all-block delta为
+  `+.00721/-.01307/+.00663/+.00986`；51--100反向，151--200 raw retention还
+  `-.000205`。因此早期三步正信号没有扩展成material、持续的梯度稳定化。
+- VR held functional loss在50/100/150/200为
+  `.130928/.133013/.130568/.129146`；macro200是四点最低，且优于SFB同点
+  `.131776`，但closed-loop从126跌至107并比SFB少20。逐task绝对loss与成功的高相关
+  主要反映固有任务难度；24个相邻task的loss改善与success变化Spearman仅`.263`。
+  这是本轮最直接的surrogate/closed-loop错位，不支持继续靠同一functional MSE的
+  Monte Carlo修补解决控制性能。
+- 正式拒绝“可约flow time/noise方差是task漂移主要根因”。SFB路由与
+  Core/Program→effective LoRA/action路径证据仍保留，但下一最早失效接口升级为
+  functional action surrogate与source-policy closed-loop有效流形错位。恢复研究时应
+  先整体设计新的training target与fresh证伪合同；不得继续增加basis/router、降低LR、
+  续训VR到400、跑五臂或warm-start该checkpoint。owner要求本轮分析后先暂停。
+
 ## 2026-08-03 BCI 46GB逻辑B20适配
 
 - 迁移资产、环境、source policy、tokenizer、LIBERO assets和历史formal roots均已在

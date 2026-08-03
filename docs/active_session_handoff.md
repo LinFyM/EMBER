@@ -1,13 +1,15 @@
 # EMBER Active Session Handoff
 
-更新时间：2026-08-03 08:36 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
+更新时间：2026-08-03 12:00 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
 ## 0. BCI运行交接（优先于下文旧A100操作描述）
 
-- EMBER已迁至`/data1/user/ymdai/projects/EMBER`。进入既有环境后，BCI数据、
-  tokenizer、LIBERO assets、source checkpoint和输出路径会自动生效；不要再把
+- EMBER已迁至`/data1/user/ymdai/projects/EMBER`并使用项目`.venv`。source、data、
+  tokenizer、checkpoint和output继续由CLI显式传入；每次进程还需显式设置
+  `EMBER_STORAGE_ROOT=/data1/user/ymdai`、owner容量上限和项目内
+  `EMBER_LIBERO_ASSETS_ROOT`，不能假定`.env.local`自动提供这些值。不要再把
   `/data/ymdai`绝对路径写入新命令或新artifact。
 - 当前VR A40配置是
   `configs/pi05_as_writer_semantic_factor_basis_variance_reduced_long105_profile_v1.json`；
@@ -108,11 +110,68 @@ CUDA_VISIBLE_DEVICES=0,1,2,3,4,7 torchrun --standalone --nproc-per-node=6 \
   exact-resume同一root到400；任何合同改变都fresh。profile和失败启动root不得作为
   resume来源。
 
+### 0.2 BCI VR 0→200正式结果与阶段暂停
+
+- 有效训练从clean pushed`d9130c9`和fresh identity自然完成到预注册stage stop200。
+  canonical root仍为0.1节所列retry1 root；contract SHA256=
+  `0f9ed99d...13599a`，config SHA256=`333e4d6a...044492`。200个macro严格对应
+  optimizer step1--200，累计96,000 logical action queries、4,800 one-video
+  conditions、48,000 physical B2 forwards，wall=`6619.670s`；all finite、0 clip、
+  source trainable=0，validation/test action reads=0。8个every25 checkpoints的
+  64/64 payload size与SHA均复验通过，8个512-row held functional panels完整。
+- 在每次live GPU/quota preflight后，只使用`gpu02`物理0/1/2/3/4/7；5/6上他人进程
+  从未触碰。A40 evaluator采用3 GPUs/panel、3 persistent replicas/GPU、3 Writer
+  generators/GPU、generation batch4；正式root为：
+
+```text
+runs/outputs/pi05_as_writer_semfactor_vr_bci_correct400_noreplacement_seed7_macro0050_d9130c9_20260803
+runs/outputs/pi05_as_writer_semfactor_vr_bci_correct400_noreplacement_seed7_macro0100_d9130c9_20260803
+runs/outputs/pi05_as_writer_semfactor_vr_bci_correct400_noreplacement_seed7_macro0150_d9130c9_20260803
+runs/outputs/pi05_as_writer_semfactor_vr_bci_correct400_noreplacement_seed7_macro0200_d9130c9_20260803
+```
+
+  四个root均为400 unique rows、42/42 complete shards、9/9 workers return0；每task
+  50 states和teacher demos 0--49各一次，results/launcher-completion hash均通过。
+  checkpoint之间以及各自ordinary SFB comparator的state、teacher video、env/policy
+  RNG均400/400配对；成功提前终止只缩短noise数组，公共前缀逐项相同。
+- paired correct400曲线与逐task结果如下；task列顺序为Long-1/2、Goal-3/6、
+  Object-1/3、Spatial-1/3：
+
+| macro | correct | breadth | per-task successes |
+| ---: | ---: | ---: | --- |
+| 50 | 76 | 7 | `3/1/0/37/29/4/1/1` |
+| 100 | 88 | 4 | `4/0/0/37/25/22/0/0` |
+| 150 | 126 | 7 | `4/2/1/41/42/34/0/2` |
+| 200 | 107 | 5 | `8/0/0/39/33/24/0/3` |
+
+  single winner为macro150=`126`，比严格最低通过分151少25、比v6-fast winner143少17，
+  也未超过ordinary SFB winner127。相邻gained/lost为50→100=`30/18`、
+  100→150=`49/11`、150→200=`21/40`；四点success union/intersection=`158/49`，
+  single envelope gap=`32`。breadth在`7/4/7/5`之间切换，VR没有解决task漂移。
+- 对同点ordinary SFB的paired delta为`+7/-3/+8/-20`；对应gained/lost为
+  `23/16`、`18/21`、`33/25`、`21/41`。macro200下降覆盖7/8 tasks，只有
+  Object-1和Spatial-3略升。VR winner150相对source base gained/lost=`83/5`，说明
+  Writer产生真实新能力；相对v6-fast macro400为`27/44`，没有形成新上限。
+- 与ordinary SFB完全matched的前200步诊断中，VR仅把same-task successive all-block
+  CountSketch cosine平均提高`.002634`、factor提高`.005104`，raw mean/sample energy
+  retention提高`.001914`、factor提高`.001121`；51--100段方向cosine反而更差，
+  151--200段energy retention也没有改善。这个效应小、分阶段反复，不构成material
+  gradient stabilization。
+- held functional loss在macro200达到VR四点最好`.129146`，且优于同点SFB
+  `.131776`，但closed-loop同时从VR macro150的126跌到107、并比SFB macro200少20。
+  逐task loss与绝对成功的相关性主要反映任务难度；24个相邻task变化的Spearman仅
+  `.263`。因此正式拒绝“可约flow Monte Carlo方差是主要漂移根因”，把最早剩余接口
+  升级为functional action surrogate与source-policy closed-loop有效流形错位。
+- owner要求在四点rollout与全部分析完成后先暂停。当前无EMBER tmux、训练/eval
+  worker或本方GPU占用；不续到400、不做五臂、不启动下一架构/训练目标，等待owner
+  看完本次状态后继续指示。长期`>150` Goal仍未完成。
+
 ## 1. 当前边界
 
 - owner已授权在当前BCI上继续环境适配、架构/训练设计、profile、正式训练、严格配对
   评测和内部分析；目标是缓解task漂移，并使同一single checkpoint的correct aggregate
-  严格超过`150/400`后继续提高。推进期间不使用subagent。
+  严格超过`150/400`后继续提高。推进期间不使用subagent；本轮VR完成后的当前操作
+  状态由0.2节owner暂停覆盖。
 - 当前写分支为`codex/bci-continuation`，BCI新增输出只写项目`runs/`，证据写
   `evidence/`。下列A100窗口、旧分支和`/data/ymdai`只保留历史provenance。
 - owner在迁移由另一session启动后重新开放约十小时A100 post-seal研究窗口，允许在
@@ -150,10 +209,8 @@ CUDA_VISIBLE_DEVICES=0,1,2,3,4,7 torchrun --standalone --nproc-per-node=6 \
   `/data/ymdai/logs/ember/pi05_as_writer_semfactor_postseal_resume200to400_r4_b20_seed7_f5ddfe3_20260803.log`。
 - variance-reduced estimator保持SFB拓扑、objective期望、B20/full24/optimizer不变，
   只对flow time做exact-Beta Latin分层并对Gaussian noise做随机antithetic pairing。
-  runtime mode接线修复已在`50662a8`push。longest105 B20三macro和formal-seed
-  fresh0→1/exact-resume1→3均通过；matched前三步task-mean energy retention
-  `.11346→.13255`、same-task cosine`.26439→.29206`。这只是小幅机制正证据，尚无
-  fresh0→200或closed-loop结果。
+  BCI正式0→200与四点correct400=`76/88/126/107`均已完成；机制改善小且非持续，
+  held functional loss与closed-loop在macro200明确错位，方法已负裁决，不续到400。
 - 迁移步骤、路径映射、资产分流和新 Codex 接手顺序统一看
   [`a100_to_bci_migration_handoff.md`](a100_to_bci_migration_handoff.md)。
 
@@ -310,17 +367,14 @@ artifacts保存，VR只替换训练估计器，不建立并行模型。核心职
 - Core只以Q/K地址选择四个factor value bases，所有value仍来自完整Core/A/E/D；
 - factor heads保持coherent near-rank1高增益，不加谱/正交/entropy约束。
 
-当前A100临时授权窗口已经完成；BCI上的紧邻动作是：
-
-1. 从clean、pushed、与`origin/main`一致的sealed commit启动formal；
-2. 从fresh identity运行VR macro0→200、every25，并评测
-   50/100/150/200 paired correct400；profile checkpoint不得warm-start；
-3. 若VR显著提高梯度稳定性却不提高absolute/breadth，则把主要根因转向functional
-   action surrogate与source-policy closed-loop有效流形错位，而不是继续给SFB加路由。
+当前A100临时授权窗口、BCI VR 0→200和四点正式评测均已完成；紧邻动作是owner阶段
+暂停。恢复后若继续，必须先为functional action surrogate与source-policy closed-loop
+有效流形错位形成新的完整training-target design和fresh合同，而不是继续给SFB加路由、
+增加basis或复用VR checkpoint。
 
 不得从smoke/profile权重warm-start。当前完整设计为
-`docs/action_forecast_writer_semantic_factor_basis_design.md`，下一训练假设为
-`docs/action_forecast_writer_variance_reduced_functional_estimator_design.md`；
+`docs/action_forecast_writer_semantic_factor_basis_design.md`；VR设计及其正式负结果在
+`docs/action_forecast_writer_variance_reduced_functional_estimator_design.md`。
 Target-Bound设计与正式负结果保留在Git、该文档和post-seal artifacts中。
 
 ## 5. 迁移时必须保留的EMBER科学资产

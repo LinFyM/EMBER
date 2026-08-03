@@ -23,6 +23,8 @@ runner、split、路径或 GPU 权限。
 - [x] 实现提交/push为`391f183`；从clean pushed commit重放同一最长路径与
   exact-resume并seal。一次setup stall未复现，最小collective和原命令重试均通过；
   profile checkpoint不得warm-start。
+- [x] 预注册BCI VR formal launch contract：fresh 0→200、六卡、logical B20/B2、
+  96,000 queries、every25、1.5GiB峰值预算、fresh root、tmux/log、启动与resume门。
 - [ ] 从fresh identity正式训练VR 0→200、every25；严格配对评测
   50/100/150/200 correct400并联合分析absolute、breadth、换手和梯度稳定性。
 - [ ] 根据证据继续训练或设计下一架构/训练目标，直到同一single checkpoint

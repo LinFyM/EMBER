@@ -53,6 +53,52 @@
   不能伪称软件根因。formal fresh0→200不读取profile权重，launch保留live timeout与
   进程/GPU监控。
 
+### 0.1 BCI VR fresh 0→200 formal launch contract
+
+- canonical workspace为`/data1/user/ymdai/projects/EMBER`；launch必须使用包含本段
+  记录的clean commit，且现场核验`HEAD == origin/main`。分支名不改变run identity，
+  精确branch/commit由自动`run_contract.json`记录。
+- sealed config为
+  `configs/pi05_as_writer_semantic_factor_basis_variance_reduced_long105_profile_v1.json`，
+  当前SHA256=`3cc82d2a...d5ad6`。source step1000 manifest SHA256=
+  `c236cb2d...cd6bf`，tokenizer SHA256=`8986bb4f...8fc6`；source selected raw policy
+  identity仍取sealed manifest的`60ea7ee8...df36`。data root为项目内迁移核验后的
+  filtered LIBERO数据；launch执行sealed size/schema检查并按合同跳过重复全量SHA。
+- output root固定为
+  `/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_as_writer_semfactor_vr_bci_rawfull24_decay400_formal_r6_b20_micro2_seed7_20260803`；
+  启动前必须不存在。log固定为
+  `/data1/user/ymdai/projects/EMBER/runs/logs/ember_vr_bci_rawfull24_r6_b20_micro2_seed7_20260803.log`，
+  tmux固定为`ember_vr_bci_r6_b20_seed7_20260803`。
+- 规模为fresh macro0→200：96,000 logical action queries、4,800 one-video conditions、
+  48,000 physical B2 policy forwards、8个every25 checkpoints。6-rank DDP每rank 4 tasks，
+  logical B20、full24 raw mean、一次clip/AdamW/scheduler不变；profile checkpoint绝不
+  warm-start。estimated peak新增容量按1.5GiB计；2026-08-03 08:03 UTC `/data1`
+  personal quota为`256,638,532/1,073,741,824 KiB`，共享余量86TiB。
+- exact inner command固定为：
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,7 torchrun --standalone --nproc-per-node=6 \
+  scripts/train_as_writer.py \
+  --config configs/pi05_as_writer_semantic_factor_basis_variance_reduced_long105_profile_v1.json \
+  --mode formal \
+  --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 \
+  --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 \
+  --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model \
+  --data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a \
+  --output-dir runs/outputs/pi05_as_writer_semfactor_vr_bci_rawfull24_decay400_formal_r6_b20_micro2_seed7_20260803 \
+  --skip-data-sha
+```
+
+- GPU assignment不是永久保留：launch前重新比较`gpu01`/`gpu02`，只在六张目标卡仍
+  candidate时使用上式；若设备集合变化则先更新实际`CUDA_VISIBLE_DEVICES`与现场记录。
+  `.venv` activation提供`NCCL_P2P_DISABLE=1`。启动后监控commit/root/device、invocation、
+  metrics推进、finite/clip/OOM、quota和他人进程；15分钟内无invocation/start则只停止
+  本方进程组并保留证据。
+- formal自然完成后只评测single checkpoints 50/100/150/200的paired correct400；不
+  根据loss挑点、不融合checkpoint。只有absolute/breadth/trend/internal path过门才
+  exact-resume同一root到400；任何合同改变都fresh。profile和失败启动root不得作为
+  resume来源。
+
 ## 1. 当前边界
 
 - owner已授权在当前BCI上继续环境适配、架构/训练设计、profile、正式训练、严格配对

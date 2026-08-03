@@ -29,6 +29,10 @@ GPU范围和训练步长是当时快照；活动状态只取
 - 首次frozen resume在第二invocation前出现一次15分钟stall并只终止本方进程；同六卡
   object-collective探针和同一原命令重试随后通过。没有足够证据改代码，记录为未归因
   transient；formal仍fresh启动并保留live timeout/进程监控。
+- BCI fresh formal 0→200 launch contract已预注册到active handoff：固定项目内
+  source/tokenizer/data/output/log、6-rank full24 logical-B20、96,000 queries、8个
+  checkpoints和1.5GiB峰值预算；启动只等待最终clean `HEAD=origin/main`及live GPU
+  preflight，不从profile warm-start。
 
 ## 2026-08-02 19:18 UTC Post-seal研究窗口重新开放
 

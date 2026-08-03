@@ -182,7 +182,7 @@ def test_bci_variance_reduced_profile_preserves_b20_across_six_ranks() -> None:
     assert config["profile_defaults"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["expected_world_size"] == 6
     assert config["formal_run"]["per_rank_batch_size"] == 20
-    assert config["formal_run"]["status"] == "pending_profile"
+    assert config["formal_run"]["status"] == "sealed"
     assert config["conditioning_training"][
         "tasks_per_rank_per_optimizer_update"
     ] == 4
@@ -195,6 +195,12 @@ def test_bci_variance_reduced_profile_preserves_b20_across_six_ranks() -> None:
         "per_task_action_batch_size": 20,
         "functional_policy_microbatch_size": 2,
     }
+    assert config["profile_evidence"]["selected"] == config[
+        "profile_evidence"
+    ]["primary_candidate"]
+    assert config["profile_evidence"]["exact_resume_smoke"]["status"] == (
+        "passed_clean_pushed_commit_fresh0_to1_exact_resume1_to3"
+    )
     context = DistributedContext(
         rank=0,
         local_rank=0,

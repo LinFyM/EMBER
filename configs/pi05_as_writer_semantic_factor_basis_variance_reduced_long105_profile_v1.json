@@ -80,7 +80,7 @@
       "budget_role": "variance_reduced_bci_a40_effective_b20_policy_microbatch2_profile"
     },
     "profile_defaults": {
-      "status": "pending_frozen_replay_after_engineering_profile_pass",
+      "status": "sealed_bci_a40_46g_r6_effective_b20_microbatch2_profile",
       "expected_world_size": 6,
       "total_steps": 3,
       "per_rank_batch_size": 20,
@@ -88,7 +88,7 @@
       "selected_stop_step": 3
     },
     "profile_evidence": {
-      "status": "pending_frozen_replay_after_engineering_profile_pass",
+      "status": "passed_bci_a40_46g_r6_effective_b20_microbatch2_profile",
       "fixed_frame_stride": 5,
       "teacher_videos_per_task_visit": 1,
       "tasks_per_rank_per_optimizer_update": 4,
@@ -107,8 +107,34 @@
         "functional_policy_microbatch_size": 1
       },
       "selection_rule": "preserve logical B20 and full-B20 variance-reduced draws; use policy microbatch2 on six BCI A40 ranks, then microbatch1 only on measured OOM",
-      "selected": null,
-      "exact_resume_smoke": null,
+      "selected": {
+        "max_frames_per_encoder_call": 16,
+        "per_task_action_batch_size": 20,
+        "functional_policy_microbatch_size": 2
+      },
+      "exact_resume_smoke": {
+        "status": "passed_clean_pushed_commit_fresh0_to1_exact_resume1_to3",
+        "implementation_commit": "391f1834a296e5ca7d7328875cbad940fc43f33d",
+        "root": "runs/acceptance/ember_bci_vr_effective_b20_micro2_r6_profile_391f183_20260803T0735Z/train",
+        "contract_sha256": "31ea4bc9a65ca0805ea3a49e7a33d07b40fe84e680df26607512d9e248455de0",
+        "physical_gpu_count": 6,
+        "tasks_per_rank": 4,
+        "global_tasks_per_macro": 24,
+        "logical_batch_size_per_task": 20,
+        "functional_policy_microbatch_size": 2,
+        "global_logical_queries_per_macro": 480,
+        "global_physical_policy_forwards_per_macro": 240,
+        "longest_real_stride5_video_frames": 105,
+        "step_seconds": [33.514284100034274, 32.050396559992805, 31.32593358901795],
+        "step_losses": [0.1574149721612533, 0.15241796678553024, 0.14856369017312923],
+        "peak_cuda_allocated_bytes": 34970270720,
+        "peak_cuda_reserved_bytes": 47108325376,
+        "completed_queries": 1440,
+        "completed_video_conditions": 72,
+        "validation_action_reads": 0,
+        "test_action_reads": 0,
+        "step3_checkpoint_payload_sha256": "2b50bafd54747c6b769c062b1b37a85e618c60a4eda16c63b9792e913e2618f7"
+      },
       "engineering_profile": {
         "status": "passed_dirty_worktree_not_formal_seal",
         "root": "runs/acceptance/ember_bci_vr_effective_b20_micro2_r6_profile_20260803T1600/train",
@@ -125,6 +151,13 @@
         "peak_cuda_reserved_bytes": 47108325376,
         "contract_sha256": "57185f9cb4ecb5d1a67bca03f915b6af559689ad552ee023a356b5e83badc89d",
         "next_gate": "repeat_from_clean_pushed_commit_before_seal"
+      },
+      "resume_transport_observation": {
+        "status": "single_unattributed_setup_collective_stall_not_reproduced",
+        "first_retry": "no_second_invocation_after_15_minutes_then_own_process_group_terminated",
+        "focused_probe": "six_rank_nccl_all_gather_object_and_broadcast_object_list_passed",
+        "original_command_retry": "passed_exact_resume1_to3",
+        "formal_boundary": "fresh0_to200_does_not_resume_profile_weights; retain timeout_and_live_monitoring"
       },
       "gradient_reachability": {
         "status": "sealed_finite_nonzero_after_identity_lifecycle",
@@ -148,8 +181,8 @@
       }
     },
     "formal_run": {
-      "status": "pending_profile",
-      "launch_state": "bci_owner_authorized_pending_frozen_profile_replay",
+      "status": "sealed",
+      "launch_state": "bci_owner_authorized_fresh0_to200_after_clean_profile_seal",
       "expected_world_size": 6,
       "total_steps": 400,
       "per_rank_batch_size": 20,

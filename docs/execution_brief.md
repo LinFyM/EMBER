@@ -1,6 +1,6 @@
 # EMBER Current Execution Brief
 
-更新时间：2026-08-03 07:25 UTC。本文是操作层authority；科研结果取
+更新时间：2026-08-03 08:04 UTC。本文是操作层authority；科研结果取
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
@@ -15,10 +15,10 @@
   四卡collective、fresh训练、exact resume和8-rollout Writer评测均已实跑通过。
 - 评测不再递归扫描整个个人目录或执行旧个人容量硬门；只检查目标文件系统余量和
   本次选择的GPU。
-- 四卡迁移验收后，六卡logical-B20工程profile与fresh/exact-resume已通过；峰值
-  allocated/reserved为`34,970,270,208/47,108,325,376` bytes。该次运行来自未提交
-  worktree，只授权冻结重放，不授权formal warm-start。
-- 下一研究动作是从clean pushed commit重放profile，然后VR fresh 0→200及
+- 四卡迁移验收后，六卡logical-B20冻结profile在clean pushed`391f183`完成
+  fresh0→1/exact-resume1→3；峰值allocated/reserved为
+  `34,970,270,720/47,108,325,376` bytes，最长105帧，合同`31ea4bc9...55de0`。
+- profile checkpoint不得warm-start。下一研究动作是VR fresh 0→200及
   50/100/150/200 paired correct400。
 - 详细运行证据和精确指标见`docs/active_session_handoff.md`第0节。下文所有
   `/data/ymdai`、A100 GPU4--7和“BCI尚未验收”描述仅是历史状态。
@@ -144,7 +144,7 @@ docs/action_forecast_writer_semantic_factor_basis_design.md
 
 1. 不再在A100启动训练、评测或GPU分析；
 2. 最终代码/文档及34个post-seal `must-transfer` roots已形成Git与增量台账交付；
-3. 从clean pushed BCI commit重放logical-B20六卡profile并seal；
+3. logical-B20六卡profile已从clean pushed commit重放并seal；
 4. 只从fresh identity运行VR 0→200，并评测50/100/150/200 correct400。
 
 下一候选`docs/action_forecast_writer_variance_reduced_functional_estimator_design.md`及代码

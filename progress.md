@@ -23,6 +23,12 @@ GPU范围和训练步长是当时快照；活动状态只取
   `34,970,270,208/47,108,325,376` bytes，五主block从macro2起finite/nonzero，
   validation/test action reads为0。由于不是frozen commit，下一步是提交/push后重放，
   不从该checkpoint继续formal。
+- 23项focused、226项全仓回归与结构守卫通过；实现提交/push为`391f183`。clean frozen
+  profile重新完成fresh0→1与exact-resume1→3，contract`31ea4bc9...55de0`、峰值
+  allocated/reserved`34,970,270,720/47,108,325,376` bytes，正式seal条件满足。
+- 首次frozen resume在第二invocation前出现一次15分钟stall并只终止本方进程；同六卡
+  object-collective探针和同一原命令重试随后通过。没有足够证据改代码，记录为未归因
+  transient；formal仍fresh启动并保留live timeout/进程监控。
 
 ## 2026-08-02 19:18 UTC Post-seal研究窗口重新开放
 

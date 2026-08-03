@@ -23,6 +23,14 @@
 - 十个microbatch的LoRA叶梯度改为FP32累加后一次cast，避免BF16逐次求和把新的舍入
   噪声混入本来要验证的variance-reduction假设。该改变不修改随机样本、loss权重或
   optimizer语义。
+- clean pushed`391f183`冻结重放确认上述适配：三步峰值active allocated约34.97GB，
+  exact-resume后所有五主block可达，step3封存1440 queries/72 videos且没有
+  validation/test action读取。dirty与clean step1 loss一致到记录精度；FP32累加只在
+  后续非零深层梯度形成轻微预期数值差异。
+- 第一次frozen resume在invocation前卡住15分钟；共享内存、P2P-disable和socket正常，
+  同六卡object collectives最小探针以及完全相同resume命令随后均通过。证据不足以把
+  原因归到代码、checkpoint或NCCL中的某一层，故不添加fallback或修改科学路径；只把
+  它保留为一次性runtime风险并要求formal live监控。
 
 ## 2026-08-02 Post-seal条件分工假设
 

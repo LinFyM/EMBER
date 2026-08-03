@@ -20,8 +20,9 @@ runner、split、路径或 GPU 权限。
   microbatch与6 ranks×4 tasks拓扑；23项focused CPU测试通过。
 - [x] 未冻结工程profile完成fresh0→1/exact-resume1→3；峰值allocated/reserved约
   `34.97/47.11GB`，三步finite，五主block从macro2起可达。
-- [ ] 提交并push当前实现；从clean pushed commit重放同一最长路径与exact-resume，
-  然后seal config，工程profile checkpoint不得warm-start。
+- [x] 实现提交/push为`391f183`；从clean pushed commit重放同一最长路径与
+  exact-resume并seal。一次setup stall未复现，最小collective和原命令重试均通过；
+  profile checkpoint不得warm-start。
 - [ ] 从fresh identity正式训练VR 0→200、every25；严格配对评测
   50/100/150/200 correct400并联合分析absolute、breadth、换手和梯度稳定性。
 - [ ] 根据证据继续训练或设计下一架构/训练目标，直到同一single checkpoint

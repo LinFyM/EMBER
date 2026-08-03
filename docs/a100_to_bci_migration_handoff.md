@@ -1,7 +1,7 @@
 # A100 → BCI Migration Handoff
 
 状态：2026-08-03最终迁移authority。本文交给后续迁移智能体；本session不执行跨机
-迁移，也不在BGR创建、覆盖或删除文件。
+迁移，也不在BCI创建、覆盖或删除文件。
 
 ## 0. 2026-08-03 post-seal增量：必须做第二次同步
 
@@ -35,7 +35,7 @@ winner。variance-reduced estimator仅完成longest105 B20与fresh/exact-resume�
 
 ### 0.1 Git增量
 
-在BGR执行`git fetch origin`后，以实时`origin/main`为canonical；它必须包含本文、
+在BCI执行`git fetch origin`后，以实时`origin/main`为canonical；它必须包含本文、
 Semantic Factor-Basis和VR estimator，并满足：
 
 ```bash
@@ -48,8 +48,8 @@ git merge-base --is-ancestor 50662a842cfa5c6e0a4356587ea73ea95e1ff521 origin/mai
 
 ### 0.2 正式artifact增量
 
-先把整个`ember_postseal_20260802/`小目录同步到BGR manifest root，再由BGR从
-`assets.tsv`生成精确文件列表。以下命令只展示安全形状；`A100_HOST`、staging和BGR
+先把整个`ember_postseal_20260802/`小目录同步到BCI manifest root，再由BCI从
+`assets.tsv`生成精确文件列表。以下命令只展示安全形状；`A100_HOST`、staging和BCI
 目标路径必须由迁移智能体按现场填写：
 
 ```bash
@@ -72,8 +72,8 @@ rsync -aH -r --partial --info=progress2 --protect-args \
 ```
 
 然后只把staging中的`outputs/ember/`合并到`$EMBER_OUTPUT_ROOT/`，把
-`logs/ember/`合并到`$EMBER_LOG_ROOT/`；不用`--delete`，不覆盖来源不明的BGR文件。
-同一staging和命令可安全重跑。完成后逐行确认34个`must-transfer`源对象在BGR映射后
+`logs/ember/`合并到`$EMBER_LOG_ROOT/`；不用`--delete`，不覆盖来源不明的BCI文件。
+同一staging和命令可安全重跑。完成后逐行确认34个`must-transfer`源对象在BCI映射后
 存在，正式correct roots各有400 rows，训练root的checkpoint/manifest可读。无需重新
 复制原封存的整个122GB树，也不需要为本增量重算全量数据hash。
 
@@ -86,11 +86,11 @@ rsync -aH -r --partial --info=progress2 --protect-args \
    internal analysis、logs、tokenizer、LIBERO simulation assets及必要feature cache完整；
 3. MemLLM保留的data/model/result树和科学hash完整；
 4. 新环境从锁文件或pinned freeze重建，不复制A100 venv；
-5. BGR上的路径由新host-local映射管理，历史sealed artifacts不被改写；
+5. BCI上的路径由新host-local映射管理，历史sealed artifacts不被改写；
 6. 新Codex不依赖A100会话、memory、auth或worktree即可准确接手；
 7. 未经owner重新授权，不启动Target-Bound或任何GPU实验。
 
-禁止把整个`/data/ymdai`盲目rsync到BGR，也禁止对既有BGR目录使用`--delete`。所有
+禁止把整个`/data/ymdai`盲目rsync到BCI，也禁止对既有BCI目录使用`--delete`。所有
 传输先进入明确的`.incoming-20260802` staging目录，验证后再切换。不得覆盖来源不明、
 dirty或仍被消费的旧服务器资产。
 
@@ -106,7 +106,7 @@ MemLLM scientific main before migration docs: edc549d4e4ad9cc36584aa9bcc1f84b55e
 
 迁移文档/路径可移植性提交会在上述EMBER main之上形成；迁移智能体应以实时
 `origin/main`为准，并核验本文件存在。当前没有EMBER/MemLLM训练、评测、torchrun或
-tmux。不要把A100的GPU4–7约束自动复制到BGR；目标机设备边界必须重新获取authority。
+tmux。不要把A100的GPU4–7约束自动复制到BCI；目标机设备边界必须重新获取authority。
 
 原迁移封存、post-seal研究重启前的主要占用（allocated bytes）：
 
@@ -114,7 +114,7 @@ tmux。不要把A100的GPU4–7约束自动复制到BGR；目标机设备边界�
 | --- | ---: | --- |
 | `/data/ymdai` | 229,312,688,128 | EMBER提交前最终快照；Git/Codex活动会带来小幅变化 |
 | `/data/ymdai/outputs/ember` | 102,850,465,792 | SSH迁移；正式证据 |
-| `/data/ymdai/ember_data` | 100,448,129,024 | 主要是LIBERO数据；先查BGR是否已有 |
+| `/data/ymdai/ember_data` | 100,448,129,024 | 主要是LIBERO数据；先查BCI是否已有 |
 | `/data/ymdai/ember_assets` | 426,569,728 | 当前LIBERO simulation assets；SSH或精确重下 |
 | `/data/ymdai/logs/ember` | 439,922,688 | SSH迁移 |
 | `/data/ymdai/memllm_migration_20260708` | 18,970,701,824 | SSH迁移 |
@@ -186,7 +186,7 @@ MemLLM bundle：
 SHA256 feef0e906842bb6f2a092a4bfbdb3cddb0653fbd346cb510715fec8b43ca7656
 ```
 
-在BGR只需先执行`git bundle verify BUNDLE_PATH`。不要批量恢复`refs/codex/*`；需要某
+在BCI只需先执行`git bundle verify BUNDLE_PATH`。不要批量恢复`refs/codex/*`；需要某
 个历史commit时再从bundle按SHA或明确ref fetch到`refs/archive/a100/*`，避免污染
 canonical branches。
 
@@ -221,7 +221,7 @@ source checkpoint已精简为frozen inference asset：raw `policy/`、trainer_st
 manifest保留；rejected EMA及训练resume state已删除。它能继续做下游Writer训练与
 评测，但不能exact-resume source-SFT step1000。
 
-推荐从BGR拉取，变量值必须由迁移智能体先核验：
+推荐从BCI拉取，变量值必须由迁移智能体先核验：
 
 ```bash
 export A100_HOST='REPLACE_ME'
@@ -250,7 +250,7 @@ Hugging Face: yifengzhu-hf/LIBERO-datasets
 revision: f13aa24a3da8c43c7225569f28c562979fa0e35a
 ```
 
-BGR很可能已有LIBERO资产。先核对revision目录、sealed manifest、文件大小和HDF5
+BCI很可能已有LIBERO资产。先核对revision目录、sealed manifest、文件大小和HDF5
 schema；一致则不传。若没有，网络下载和SSH二选一，但必须锁定上述revision。不要
 通过文件名相似就复用，也不要运行结果驱动的数据修补。
 
@@ -266,14 +266,14 @@ file-list SHA256: 721aa2484de396be5267e936f115ddd5f03ffd12e0849cc1cd05bb17454996
 ```
 
 它是当前`hf-libero` runtime必需资产，不是退役SmolVLA cache。体积仅426.57MB，默认
-可SSH迁移；也可按上述revision重下并用file list校验。BGR安装后不要保留指向A100
-`/data/ymdai/ember_assets`的绝对symlink；设置`EMBER_LIBERO_ASSETS_ROOT`指向BGR
+可SSH迁移；也可按上述revision重下并用file list校验。BCI安装后不要保留指向A100
+`/data/ymdai/ember_assets`的绝对symlink；设置`EMBER_LIBERO_ASSETS_ROOT`指向BCI
 实际snapshot。代码仍兼容package-local assets作为默认。
 
 MemLLM的Qwen/BGE理论上可重下，但revision未被足够精确地锁定；默认随19GB
 MemLLM物理树SSH迁移并校验checkpoint hashes，比重下更稳。
 
-### 3.4 在BGR重建/下载，不迁移
+### 3.4 在BCI重建/下载，不迁移
 
 - EMBER `.venv`、MemLLM venv；
 - `.cache`、uv/pip/Hugging Face cache、`.nvm`、`.codex-cli`、VS Code server、
@@ -301,11 +301,11 @@ config SHA256: 367869712a2847c27e95c431ecb03f17bec4eee01a63995e2fb2d91940752b53
 - `.codex/tmp`内少量旧prereg/scratch未因容量而冒险删除；不默认迁移。科研决定已在
   Git文档和正式output中封存。
 
-## 4. BGR路径策略
+## 4. BCI路径策略
 
 ### 4.1 EMBER
 
-不要假设BGR有`/data/ymdai`。迁移智能体应先检查`/data0/user/ymdai`和
+不要假设BCI有`/data/ymdai`。迁移智能体应先检查`/data0/user/ymdai`和
 `/data1/user/ymdai`的容量、现有资产和权限，再选一个逻辑根，例如：
 
 ```bash
@@ -336,13 +336,13 @@ CLI显式传入：
 ```
 
 不要改写历史`run_contract.json`、analysis或sealed config中的A100绝对路径；那些是
-provenance。新命令使用BGR实际路径。若某个旧analyzer错误地把provenance路径当活动
+provenance。新命令使用BCI实际路径。若某个旧analyzer错误地把provenance路径当活动
 输入，应在新Git提交中增加显式CLI override，而不是批量sed artifacts或创建假的
 顶层`/data/ymdai`。
 
 ### 4.2 MemLLM反向映射
 
-A100物理树有意保留了旧BGR相对布局。应按两个明确子树分别迁回，而不是把外层
+A100物理树有意保留了旧BCI相对布局。应按两个明确子树分别迁回，而不是把外层
 `memllm_migration_20260708`原样嵌套：
 
 ```text
@@ -357,7 +357,7 @@ BCI:
 /data1/user/ymdai/memllm_dense_ttt/...
 ```
 
-先传到同盘`.incoming-20260802`，核验后再与目标合并。不要覆盖旧BGR上未知的
+先传到同盘`.incoming-20260802`，核验后再与目标合并。不要覆盖旧BCI上未知的
 `LLM_memory`或`memllm_dense_ttt`内容。clone MemLLM repo后重建ignored symlinks：
 
 | workspace link | BCI target |
@@ -369,7 +369,7 @@ BCI:
 | `data/dsom_runs` | `/data1/user/ymdai/memllm_dense_ttt/dsom_runs` |
 | `data/lora_runs` | `/data1/user/ymdai/memllm_dense_ttt/lora_runs` |
 | `data/migration_manifests` | 迁移智能体选定的manifest root |
-| `venv` | 新建BGR venv；不能指向A100路径 |
+| `venv` | 新建BCI venv；不能指向A100路径 |
 
 在创建symlink前逐个执行`test ! -e LINK && test ! -L LINK`或人工审查现有target；不要
 使用会无条件覆盖的`ln -sfn`。
@@ -414,7 +414,7 @@ BCI NVIDIA driver必须支持PyTorch CUDA 12.8 runtime。A100系统toolkit 12.4�
 4. 记录最终`du -s -B1 /data/ymdai`及各传输根大小；
 5. 验证cleanup目录`SHA256SUMS`；该文件自身SHA见第2节。
 
-### 6.2 BGR落地
+### 6.2 BCI落地
 
 1. 核验destination free space和existing assets，先去重；
 2. clone repos，核验Git commits/branches/tags；
@@ -446,7 +446,7 @@ c236cb2d92e5e9b859a6266c059a685d715d4bc129fb8cb5f36f60b6351cd6bf
 
 ## 7. 新Codex如何接手
 
-不迁移A100 Codex。BGR上重新安装、重新认证，然后：
+不迁移A100 Codex。BCI上重新安装、重新认证，然后：
 
 1. clone EMBER与MemLLM，不恢复A100 session或auth文件；
 2. EMBER先读`AGENTS.md`、本文、`docs/active_session_handoff.md`、
@@ -455,7 +455,7 @@ c236cb2d92e5e9b859a6266c059a685d715d4bc129fb8cb5f36f60b6351cd6bf
    `docs/current/restart_status.md`和`data/README.md`；MemLLM仍暂停；
 4. 核验main已包含`50662a8`及本文；Target-Bound分支仅作历史审计，不自动merge或
    launch；
-5. 用BGR现场替换host-local路径变量，绝不依赖本文件中的示例盘符；
+5. 用BCI现场替换host-local路径变量，绝不依赖本文件中的示例盘符；
 6. 向owner报告Git、assets、hash、环境和无活动GPU作业状态，等待恢复实验authority。
 
 旧Codex对话、sessions、memories和Codex-generated refs都不是科学authority；本次已把
@@ -480,7 +480,7 @@ pull latest origin/main
 -> root-cause gate
 ```
 
-已有A100 profile/smoke只能证明可运行，不得warm-start BGR正式训练，也不能冒充性能
+已有A100 profile/smoke只能证明可运行，不得warm-start BCI正式训练，也不能冒充性能
 证据。该实验必须同时检查single-checkpoint absolute、task breadth、状态换手和梯度
 方向稳定性；只有形成强single winner后才进入视频五臂。本迁移handoff本身不授予任何
 实验或GPU启动权限。

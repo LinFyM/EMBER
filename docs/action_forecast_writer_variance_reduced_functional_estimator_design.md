@@ -4,10 +4,10 @@
 
 2026-08-03 post-seal candidate. This changes the stochastic estimator used by
 AS-Writer training, not the Writer architecture or its information wall.
-Longest-105 B20 and fresh/exact-resume vertical paths pass at `50662a8`; a BCI
-six-rank logical-B20/policy-microbatch2 engineering replay also passes, but it
-used an uncommitted worktree and therefore is not sealed evidence. No formal
-0→200 training or closed-loop evaluation has been run.
+Longest-105 B20 and fresh/exact-resume vertical paths pass at `50662a8`; the BCI
+six-rank logical-B20/policy-microbatch2 path is now sealed from clean pushed
+commit `391f183`. No formal 0→200 training or closed-loop evaluation has been
+run.
 
 ## Question
 
@@ -129,3 +129,16 @@ completed fresh `0→1` and exact resume `1→3`. All three macros covered 24 ta
 from macro2 and no validation/test actions were read. Because the source was
 dirty, the result is only a sizing/mechanics pass; the identical vertical path
 must be replayed from a clean pushed commit before formal launch.
+
+That replay passed from clean pushed `391f183` at
+`runs/acceptance/ember_bci_vr_effective_b20_micro2_r6_profile_391f183_20260803T0735Z/train`.
+Fresh `0→1` and exact resume `1→3` retained contract
+`31ea4bc9a65ca0805ea3a49e7a33d07b40fe84e680df26607512d9e248455de0`;
+step times were `33.514/32.050/31.326s`, peak allocated/reserved was
+`34,970,270,720/47,108,325,376` bytes, and step3 sealed 1,440 queries/72 videos
+with all five main blocks reachable after the identity lifecycle and zero
+validation/test action reads. One first resume attempt stalled before its
+invocation record; a same-six-rank object-collective probe and the unchanged
+resume command both subsequently passed. This remains an unattributed transient
+runtime observation, not a verified code defect; retained live monitoring is
+required for formal startup and any later resume.

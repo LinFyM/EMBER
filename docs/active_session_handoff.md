@@ -1,6 +1,6 @@
 # EMBER Active Session Handoff
 
-更新时间：2026-08-03 07:25 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
+更新时间：2026-08-03 08:04 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
@@ -39,6 +39,19 @@
   `34,970,270,208/47,108,325,376` bytes，五个主block从macro2起finite/nonzero，
   validation/test action reads为0，step1/2/3 checkpoint齐全。由于运行时源码未提交，
   这里只算工程证据；提交后必须fresh重放0→1与exact-resume1→3再seal。
+- 实现经23项focused、226项全仓CPU回归、compileall和architecture guard无hard
+  violation后提交/push为`391f183`。同一logical-B20配置随后从clean pushed commit在
+  `runs/acceptance/ember_bci_vr_effective_b20_micro2_r6_profile_391f183_20260803T0735Z/train`
+  完成fresh0→1与exact-resume1→3：三步`33.514/32.050/31.326s`，loss
+  `.157415/.152418/.148564`，峰值allocated/reserved
+  `34,970,270,720/47,108,325,376` bytes；最长105帧、1440 queries、72 videos、
+  五主block从macro2起finite/nonzero、validation/test action reads为0。contract为
+  `31ea4bc9...55de0`，step3 payload为`2b50bafd...618f7`，profile已seal。
+- 第一次frozen resume尝试在第二条invocation前出现一次15分钟setup collective卡死；
+  只终止本方进程。随后相同六卡`all_gather_object`/`broadcast_object_list`最小探针
+  通过，同一原命令重试也完整通过，因此目前只能标记为未复现的一次性runtime观察，
+  不能伪称软件根因。formal fresh0→200不读取profile权重，launch保留live timeout与
+  进程/GPU监控。
 
 ## 1. 当前边界
 
@@ -244,11 +257,10 @@ artifacts保存，VR只替换训练估计器，不建立并行模型。核心职
 
 当前A100临时授权窗口已经完成；BCI上的紧邻动作是：
 
-1. 完成BCI microbatch实现、focused/full CPU回归并commit/push；
-2. 从clean pushed commit重放最长路径fresh0→1及exact-resume1→3，seal profile；
-3. 从fresh identity运行VR macro0→200、every25，并评测
+1. 从clean、pushed、与`origin/main`一致的sealed commit启动formal；
+2. 从fresh identity运行VR macro0→200、every25，并评测
    50/100/150/200 paired correct400；profile checkpoint不得warm-start；
-4. 若VR显著提高梯度稳定性却不提高absolute/breadth，则把主要根因转向functional
+3. 若VR显著提高梯度稳定性却不提高absolute/breadth，则把主要根因转向functional
    action surrogate与source-policy closed-loop有效流形错位，而不是继续给SFB加路由。
 
 不得从smoke/profile权重warm-start。当前完整设计为

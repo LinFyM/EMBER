@@ -29,6 +29,10 @@ CONFIG = (
     REPO_ROOT
     / "configs/pi05_as_writer_semantic_factor_basis_taskquery_rawfull24_v1.json"
 )
+VARIANCE_REDUCED_CONFIG = (
+    REPO_ROOT
+    / "configs/pi05_as_writer_semantic_factor_basis_variance_reduced_v1.json"
+)
 OLD_RECIPE_CONFIG = (
     REPO_ROOT
     / "configs/pi05_as_writer_language_axial_v6_old_recipe_v1.json"
@@ -136,6 +140,31 @@ def test_target_bound_role_config_seals_architecture_and_information_wall() -> N
     assert "without_runtime_full_data_sha" in config["formal_run"][
         "data_integrity_check"
     ]
+
+
+def test_variance_reduced_recipe_changes_only_functional_sampling_contract() -> None:
+    raw = load_writer_config(CONFIG)
+    reduced = load_writer_config(VARIANCE_REDUCED_CONFIG)
+    assert reduced["writer"] == raw["writer"]
+    assert reduced["data"] == raw["data"]
+    training = reduced["conditioning_training"]
+    assert training["update_topology"] == "task_complete_all_tasks"
+    assert training["gradient_composition"] == (
+        "exact_raw_equal_weight_full24_mean_without_projection"
+    )
+    assert training["policy_flow_time_sampling_scheme"].endswith(
+        "latin_beta15_time_v1"
+    )
+    assert training["policy_flow_noise_sampling_scheme"].endswith(
+        "antithetic_gaussian_v1"
+    )
+    assert reduced["optimization"]["optimizer"] == raw["optimization"][
+        "optimizer"
+    ]
+    assert reduced["optimization"]["scheduler"] == raw["optimization"][
+        "scheduler"
+    ]
+    assert reduced["formal_run"]["status"] == "pending_profile"
 
 
 def test_v6_recipe_overlay_is_provenance_not_an_active_writer_path() -> None:

@@ -2,18 +2,22 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
+import pytest
 import torch
 
 from ember.lora import LoRATarget, SmolVLALoRAContract, lora_state_sha256
 from ember.writer.functional import (
+    ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME,
     LATIN_BETA_TIME_SAMPLING_SCHEME,
     functional_lora_loss_gradient,
     prepare_frozen_writer_policy,
+    scoped_policy_flow_noise_sampling,
     scoped_policy_flow_time_sampling,
     scoped_policy_randomness,
     writer_functional_action_loss,
     writer_success_weighted_flow_loss,
 )
+from ember.writer.model import WriterModelError
 
 
 class _FlowModel(torch.nn.Module):
@@ -28,6 +32,11 @@ class _FlowModel(torch.nn.Module):
 
     def sample_time(self, batch_size: int, device: torch.device | str) -> torch.Tensor:
         return torch.full((batch_size,), -1.0, device=device)
+
+    def sample_noise(
+        self, shape: tuple[int, ...], device: torch.device | str
+    ) -> torch.Tensor:
+        return torch.full(shape, -1.0, device=device)
 
 
 class _FlowPolicy(torch.nn.Module):
@@ -63,6 +72,35 @@ def test_latin_beta_time_is_exactly_stratified_replayed_and_scoped() -> None:
     assert torch.equal(
         policy.model.sample_time(2, torch.device("cpu")),
         torch.full((2,), -1.0),
+    )
+
+
+def test_antithetic_gaussian_noise_is_zero_mean_replayed_and_scoped() -> None:
+    policy = _FlowPolicy()
+    torch.manual_seed(101)
+    with scoped_policy_randomness(303, torch.device("cpu")):
+        with scoped_policy_flow_noise_sampling(
+            policy, ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME
+        ):
+            first = policy.model.sample_noise((20, 5, 7), torch.device("cpu"))
+    after = torch.rand(4)
+
+    torch.manual_seed(101)
+    expected_after = torch.rand(4)
+    with scoped_policy_randomness(303, torch.device("cpu")):
+        with scoped_policy_flow_noise_sampling(
+            policy, ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME
+        ):
+            second = policy.model.sample_noise((20, 5, 7), torch.device("cpu"))
+            with pytest.raises(WriterModelError, match="positive even batch"):
+                policy.model.sample_noise((19, 5, 7), torch.device("cpu"))
+    assert torch.equal(first, second)
+    assert torch.allclose(first.sum(dim=0), torch.zeros(5, 7), atol=1e-6)
+    assert bool(torch.isfinite(first).all())
+    assert torch.equal(after, expected_after)
+    assert torch.equal(
+        policy.model.sample_noise((2, 3), torch.device("cpu")),
+        torch.full((2, 3), -1.0),
     )
 
 

@@ -130,6 +130,9 @@ def _differentiate_conditions(
             flow_time_sampling_scheme=runtime.config[
                 "conditioning_training"
             ].get("policy_flow_time_sampling_scheme"),
+            flow_noise_sampling_scheme=runtime.config[
+                "conditioning_training"
+            ].get("policy_flow_noise_sampling_scheme"),
         )
     names = tuple(generated)
     parameter_gradients = torch.autograd.grad(

@@ -145,7 +145,7 @@
     },
     "formal_run": {
       "status": "sealed",
-      "launch_state": "authorized_bgr_after_a40_f16_b2_and_exact_resume",
+      "launch_state": "bgr_runtime_accepted_owner_authorization_required_for_formal_research",
       "expected_world_size": 4,
       "total_steps": 400,
       "per_rank_batch_size": 2,

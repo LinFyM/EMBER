@@ -1,6 +1,6 @@
 # EMBER Active Session Handoff
 
-更新时间：2026-08-03 08:04 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
+更新时间：2026-08-03 08:36 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
@@ -52,23 +52,32 @@
   通过，同一原命令重试也完整通过，因此目前只能标记为未复现的一次性runtime观察，
   不能伪称软件根因。formal fresh0→200不读取profile权重，launch保留live timeout与
   进程/GPU监控。
+- commit`6f18499`的首次BCI formal在macro10前发现配置仍使用longest105 profile专用
+  `teacher_video_seed=172`，而同一配置的sealed字段及ordinary SFB正式基线都要求
+  formal seed`20260722`。本方在任何checkpoint前主动终止，六张卡完整释放；partial
+  root和log只作aborted合同审计，禁止resume、评测或性能引用。修复把实际seed切回
+  `20260722`，并在config loader增加sealed formal seed不一致即fail-close的回归门。
+  root内`aborted_contract_incident.json`记录10 rows/0 checkpoint及四份证据hash，文件
+  SHA256=`9d5d03b8...cf9907`。
 
-### 0.1 BCI VR fresh 0→200 formal launch contract
+### 0.1 BCI VR fresh 0→200 formal retry1 launch contract
 
 - canonical workspace为`/data1/user/ymdai/projects/EMBER`；launch必须使用包含本段
   记录的clean commit，且现场核验`HEAD == origin/main`。分支名不改变run identity，
   精确branch/commit由自动`run_contract.json`记录。
 - sealed config为
   `configs/pi05_as_writer_semantic_factor_basis_variance_reduced_long105_profile_v1.json`，
-  当前SHA256=`3cc82d2a...d5ad6`。source step1000 manifest SHA256=
+  当前SHA256=`333e4d6a...044492`，实际`teacher_video_seed=20260722`并由loader与
+  `formal_teacher_video_seed_after_profile_seal`强制一致。source step1000 manifest SHA256=
   `c236cb2d...cd6bf`，tokenizer SHA256=`8986bb4f...8fc6`；source selected raw policy
   identity仍取sealed manifest的`60ea7ee8...df36`。data root为项目内迁移核验后的
   filtered LIBERO数据；launch执行sealed size/schema检查并按合同跳过重复全量SHA。
 - output root固定为
-  `/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_as_writer_semfactor_vr_bci_rawfull24_decay400_formal_r6_b20_micro2_seed7_20260803`；
+  `/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_as_writer_semfactor_vr_bci_rawfull24_decay400_formal_r6_b20_micro2_seed7_formalvideo20260722_retry1_20260803`；
   启动前必须不存在。log固定为
-  `/data1/user/ymdai/projects/EMBER/runs/logs/ember_vr_bci_rawfull24_r6_b20_micro2_seed7_20260803.log`，
-  tmux固定为`ember_vr_bci_r6_b20_seed7_20260803`。
+  `/data1/user/ymdai/projects/EMBER/runs/logs/ember_vr_bci_rawfull24_r6_b20_micro2_seed7_formalvideo20260722_retry1_20260803.log`，
+  tmux固定为`ember_vr_bci_r6_b20_seed7_retry1_20260803`。错误seed的旧root/log原位
+  保留并明确禁止作为retry输入。
 - 规模为fresh macro0→200：96,000 logical action queries、4,800 one-video conditions、
   48,000 physical B2 policy forwards、8个every25 checkpoints。6-rank DDP每rank 4 tasks，
   logical B20、full24 raw mean、一次clip/AdamW/scheduler不变；profile checkpoint绝不
@@ -85,7 +94,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3,4,7 torchrun --standalone --nproc-per-node=6 \
   --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 \
   --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model \
   --data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a \
-  --output-dir runs/outputs/pi05_as_writer_semfactor_vr_bci_rawfull24_decay400_formal_r6_b20_micro2_seed7_20260803 \
+  --output-dir runs/outputs/pi05_as_writer_semfactor_vr_bci_rawfull24_decay400_formal_r6_b20_micro2_seed7_formalvideo20260722_retry1_20260803 \
   --skip-data-sha
 ```
 

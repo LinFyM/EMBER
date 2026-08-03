@@ -31,6 +31,11 @@
   同六卡object collectives最小探针以及完全相同resume命令随后均通过。证据不足以把
   原因归到代码、checkpoint或NCCL中的某一层，故不添加fallback或修改科学路径；只把
   它保留为一次性runtime风险并要求formal live监控。
+- BCI首次formal暴露了一个独立于CUDA适配的科学合同错误：longest105 overlay的实际
+  teacher seed仍是profile专用`172`，而sealed字段和ordinary SFB comparator均要求
+  `20260722`。task IDs相同但teacher demos逐项不同，故此前按宏步对比的梯度稳定性
+  不能称为matched estimator效应。该run在macro10、首checkpoint前停止；修复后loader
+  对sealed seed一致性fail-close，后续只从全新identity比较。
 
 ## 2026-08-02 Post-seal条件分工假设
 

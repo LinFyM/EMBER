@@ -9,6 +9,7 @@ import pytest
 import torch
 
 from ember.pi05_source_checkpoint import DistributedContext, write_json_atomic
+from ember.writer.as_config import _validate_formal_schedule
 from ember.writer.as_contract import (
     build_contract,
     load_writer_config,
@@ -183,6 +184,11 @@ def test_bci_variance_reduced_profile_preserves_b20_across_six_ranks() -> None:
     assert config["formal_run"]["expected_world_size"] == 6
     assert config["formal_run"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["status"] == "sealed"
+    assert config["data"]["teacher_video_seed"] == 20260722
+    assert config["data"]["teacher_video_seed"] == config[
+        "profile_evidence"
+    ]["formal_teacher_video_seed_after_profile_seal"]
+    assert config["profile_evidence"]["profile_teacher_video_seed"] == 172
     assert config["conditioning_training"][
         "tasks_per_rank_per_optimizer_update"
     ] == 4
@@ -219,6 +225,18 @@ def test_bci_variance_reduced_profile_preserves_b20_across_six_ranks() -> None:
         skip_data_sha=False,
     )
     assert resolve_runtime(profile, config, context) == (3, 20, (1, 2, 3))
+
+
+def test_sealed_formal_config_rejects_the_profile_teacher_video_seed() -> None:
+    config = load_writer_config(BCI_VARIANCE_REDUCED_CONFIG)
+    config["data"]["teacher_video_seed"] = config["profile_evidence"][
+        "profile_teacher_video_seed"
+    ]
+    with pytest.raises(
+        WriterModelError,
+        match="retained its profile teacher-video seed",
+    ):
+        _validate_formal_schedule(config)
 
 
 def test_v6_recipe_overlay_is_provenance_not_an_active_writer_path() -> None:

@@ -25,6 +25,8 @@ runner、split、路径或 GPU 权限。
   profile checkpoint不得warm-start。
 - [x] 预注册BCI VR formal launch contract：fresh 0→200、六卡、logical B20/B2、
   96,000 queries、every25、1.5GiB峰值预算、fresh root、tmux/log、启动与resume门。
+- [x] 首次formal在checkpoint前发现A40 overlay误保留profile teacher seed`172`并安全
+  停止；修回正式`20260722`、新增sealed seed fail-close，partial root禁止resume/评测。
 - [ ] 从fresh identity正式训练VR 0→200、every25；严格配对评测
   50/100/150/200 correct400并联合分析absolute、breadth、换手和梯度稳定性。
 - [ ] 根据证据继续训练或设计下一架构/训练目标，直到同一single checkpoint

@@ -142,3 +142,14 @@ invocation record; a same-six-rank object-collective probe and the unchanged
 resume command both subsequently passed. This remains an unattributed transient
 runtime observation, not a verified code defect; retained live monitoring is
 required for formal startup and any later resume.
+
+The first BCI formal launch from `6f18499` exposed a contract error before the
+first checkpoint: the A40 longest-video overlay still set the profile-only
+teacher-video seed `172`, although its own sealed field and the ordinary SFB
+formal comparator require `20260722`. The process was stopped after 10 finite
+macros and all owned GPUs were released. That partial root is aborted evidence
+only and must not be resumed, evaluated, or cited as method performance. The
+canonical overlay now uses `20260722`; config validation fails closed whenever
+a sealed formal configuration differs from
+`formal_teacher_video_seed_after_profile_seal`. The valid 0→200 experiment must
+restart from a new root and fresh identity.

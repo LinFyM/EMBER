@@ -538,6 +538,19 @@ def _validate_formal_schedule(config: Mapping[str, Any]) -> None:
     """Reject formal runs that would silently compress the sealed LR schedule."""
 
     formal = config.get("formal_run", {})
+    profile = config.get("profile_evidence", {})
+    sealed_teacher_seed = profile.get(
+        "formal_teacher_video_seed_after_profile_seal"
+    )
+    if (
+        formal.get("status") == "sealed"
+        and sealed_teacher_seed is not None
+        and int(config.get("data", {}).get("teacher_video_seed", -1))
+        != int(sealed_teacher_seed)
+    ):
+        raise WriterModelError(
+            "formal AS-Writer retained its profile teacher-video seed"
+        )
     scheduler = config.get("optimization", {}).get("scheduler", {})
     training = config.get("conditioning_training", {})
     updates_per_cycle = int(

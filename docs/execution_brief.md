@@ -1,6 +1,6 @@
 # EMBER Current Execution Brief
 
-更新时间：2026-08-03 08:04 UTC。本文是操作层authority；科研结果取
+更新时间：2026-08-03 08:36 UTC。本文是操作层authority；科研结果取
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
@@ -10,6 +10,7 @@
 - A40正式配置：
   `configs/pi05_as_writer_semantic_factor_basis_variance_reduced_long105_profile_v1.json`，
   6 ranks×4 tasks、16-frame encoder microbatch、logical B20、policy microbatch2，
+  formal teacher-video seed固定`20260722`且loader与sealed profile字段强制一致；
   不固定物理GPU编号。
 - `NCCL_P2P_DISABLE=1`由EMBER环境自动设置，以规避gpu02直接P2P collective挂死；
   四卡collective、fresh训练、exact resume和8-rollout Writer评测均已实跑通过。
@@ -20,6 +21,9 @@
   `34,970,270,720/47,108,325,376` bytes，最长105帧，合同`31ea4bc9...55de0`。
 - profile checkpoint不得warm-start。下一研究动作是VR fresh 0→200及
   50/100/150/200 paired correct400。
+- `6f18499`首次formal因A40 overlay误保留profile seed`172`而在首个checkpoint前停止；
+  10个partial宏步只作aborted审计，禁止resume/评测。修复与fail-close回归通过后，
+  必须从新clean pushed commit和全新retry1 root重新fresh启动。
 - 详细运行证据和精确指标见`docs/active_session_handoff.md`第0节。下文所有
   `/data/ymdai`、A100 GPU4--7和“BCI尚未验收”描述仅是历史状态。
 

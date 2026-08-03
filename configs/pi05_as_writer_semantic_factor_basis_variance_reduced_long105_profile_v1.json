@@ -9,7 +9,7 @@
       "demo_indices": [0, 49],
       "action_chunk_size": 50,
       "sampler_seed": 20260721,
-      "teacher_video_seed": 172,
+      "teacher_video_seed": 20260722,
       "teacher_video_sampling": "per_task_macro_visit_deterministic_single_same_task_video_in_no_replacement_cycles",
       "action_query_sampling": "task-balanced deterministic no-replacement episode cycles with per-visit exact normalized-progress strata permutation and deterministic within-stratum jitter",
       "video_action_pairing": "one task-video LoRA conditions the complete task-local action batch",

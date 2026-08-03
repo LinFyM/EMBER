@@ -33,6 +33,14 @@ GPU范围和训练步长是当时快照；活动状态只取
   source/tokenizer/data/output/log、6-rank full24 logical-B20、96,000 queries、8个
   checkpoints和1.5GiB峰值预算；启动只等待最终clean `HEAD=origin/main`及live GPU
   preflight，不从profile warm-start。
+- commit`6f18499`首次formal通过Git/GPU/storage/start门并完成10个finite宏步，但现场
+  matched审计发现longest105 A40 overlay把profile专用teacher seed`172`误带进sealed
+  formal；正式基线与配置自述要求`20260722`。在首个checkpoint前只终止本方tmux，
+  GPU0/1/2/3/4/7均释放，5/6他人任务未受影响；该partial root禁止resume/评测。
+  10-row/0-checkpoint incident marker SHA256为`9d5d03b8...cf9907`。
+- actual teacher seed已修回`20260722`，config loader新增sealed seed一致性fail-close，
+  23项training/functional focused回归通过。retry1使用全新root/log/tmux并需重新走
+  clean pushed commit、双节点live GPU preflight与fresh identity门。
 
 ## 2026-08-02 19:18 UTC Post-seal研究窗口重新开放
 

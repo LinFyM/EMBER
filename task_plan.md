@@ -5,8 +5,27 @@
 本文件只保存尚未完成的长期闭环与当前执行顺序。历史实验过程见
 `findings.md`、`progress.md` 和 Git；实时进程见
 `docs/active_session_handoff.md`；迁移状态见
-`docs/a100_to_bgr_migration_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
+`docs/a100_to_bci_migration_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
 runner、split、路径或 GPU 权限。
+
+## 当前BCI接管与VR推进（2026-08-03）
+
+- [x] 完整阅读authority、迁移handoff、架构/recipe设计、代码与历史证据；核清
+  data/model/tokenizer/source checkpoint、formal outputs、环境与simulation assets。
+- [x] 核验A100→BCI迁移清单、hash、223项旧环境CPU回归和四卡训练/评测验收；新资产
+  统一位于项目`data/`、`models/`、`runs/`和`evidence/`。
+- [x] 实时比较`gpu01`/`gpu02`；首轮仅`gpu02`的0/1/2/3/4/7空闲，六卡collective
+  通过，未触碰有他人任务的卡。
+- [x] 在不改变逻辑B20、full24 raw mean或优化器合同的前提下，实现policy B2物理
+  microbatch与6 ranks×4 tasks拓扑；23项focused CPU测试通过。
+- [x] 未冻结工程profile完成fresh0→1/exact-resume1→3；峰值allocated/reserved约
+  `34.97/47.11GB`，三步finite，五主block从macro2起可达。
+- [ ] 提交并push当前实现；从clean pushed commit重放同一最长路径与exact-resume，
+  然后seal config，工程profile checkpoint不得warm-start。
+- [ ] 从fresh identity正式训练VR 0→200、every25；严格配对评测
+  50/100/150/200 correct400并联合分析absolute、breadth、换手和梯度稳定性。
+- [ ] 根据证据继续训练或设计下一架构/训练目标，直到同一single checkpoint
+  correct严格超过`150/400`并尽可能提高；不使用subagent、checkpoint融合或信息捷径。
 
 ## Post-seal A100研究窗口（2026-08-02 19:18 UTC起）
 
@@ -39,7 +58,7 @@ runner、split、路径或 GPU 权限。
   `must-transfer`增量清单；迁移后由owner重新授权才运行VR fresh0→200与
   50/100/150/200 paired correct400。
 
-## A100清理与BGR迁移准备（2026-08-02）
+## A100清理与BCI迁移准备（2026-08-02）
 
 - [x] 核验EMBER/MemLLM Git、工作区、tmux和训练/评测进程；没有活动实验需要继承。
 - [x] 创建并验证EMBER 138-ref全量bundle；复验MemLLM 186-ref历史bundle与SHA。
@@ -57,7 +76,7 @@ runner、split、路径或 GPU 权限。
   并登记post-seal新增2个正式训练root和12个formal correct400 roots；它们是task
   漂移、checkpoint轮换和架构×recipe混杂的唯一证据，不只留winner。
 - [x] 封存EMBER/MemLLM完整dependency freeze；验证后删除EMBER venv/package cache；
-  owner关闭MemLLM venv消费者后也删除其7.60GB环境，两者都列为BGR重建项。
+  owner关闭MemLLM venv消费者后也删除其7.60GB环境，两者都列为BCI重建项。
 - [x] 删除55个clean辅助worktree、36个本地实验branch和obsolete stash；历史由
   bundle保存，Target-Bound仍在GitHub远端分支。
 - [x] 评测preflight支持`EMBER_STORAGE_ROOT`，不再写死`/data/ymdai`；定向测试通过。
@@ -681,8 +700,9 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
 ## 每次 GPU 运行前
 
 - [ ] 只读核验 workspace/branch/HEAD/origin/status、现有进程和输出根。
-- [ ] 只查询并只使用物理 GPU4–7；GPU0–3 不进入命令。
-- [ ] 检查 `/data/ymdai` 当前占用、峰值新增量与 500GB hard cap。
+- [ ] 实时比较`gpu01`与`gpu02`，只用空闲卡且合计最多6张；记录owner/进程/显存/
+  利用率，不reset、kill、pause或干扰他人。
+- [ ] 检查目标`/data1`个人quota、项目占用、峰值新增量和共享filesystem余量。
 - [ ] 封存 exact command、config/model/data paths、output root、process topology、
   checkpoint cadence、停止与继续判据。
 - [ ] 正式昂贵 run 前做 live GPU preflight；不杀、暂停、reset 或干扰他人进程。

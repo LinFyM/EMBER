@@ -4,9 +4,25 @@
 
 阅读规则：本文按时间顺序保留真实执行状态。早期段落中的“当前”“下一步”、
 GPU范围和训练步长是当时快照；活动状态只取
-`docs/a100_to_bgr_migration_handoff.md`、`docs/active_session_handoff.md`和本文顶部
+`docs/a100_to_bci_migration_handoff.md`、`docs/active_session_handoff.md`和本文顶部
 最新段落，
 不能用旧快照覆盖后续owner决定。
+
+## 2026-08-03 BCI接管与六卡VR工程profile
+
+- owner授权在`gpu01`/`gpu02`实时空闲卡上继续EMBER，跨两节点最多6张；目标是缓解
+  task漂移并让同一single checkpoint correct严格超过150，当前禁止subagent。
+- 完整读取34项authority与Target-Bound/SFB设计，核验项目树、迁移hash、环境、quota、
+  source checkpoint、tokenizer、LIBERO assets和历史结果。现场`gpu01`全忙，`gpu02`
+  0/1/2/3/4/7空闲；只用这六卡完成NCCL/BF16 smoke。
+- 当前分支`codex/bci-continuation`实现logical B20/policy microbatch2和6 ranks×4 tasks；
+  full-B20 keyed Latin/antithetic draws、task mean、full24 raw mean与一次AdamW保持不变。
+  23项focused回归通过。
+- 未提交源码上的工程profile完成fresh0→1、exact-resume1→3；每步24 tasks、480
+  logical queries、240 physical forwards，峰值allocated/reserved为
+  `34,970,270,208/47,108,325,376` bytes，五主block从macro2起finite/nonzero，
+  validation/test action reads为0。由于不是frozen commit，下一步是提交/push后重放，
+  不从该checkpoint继续formal。
 
 ## 2026-08-02 19:18 UTC Post-seal研究窗口重新开放
 
@@ -39,7 +55,7 @@ GPU范围和训练步长是当时快照；活动状态只取
   cost-balanced；loss`.15404/.15159`、reserved约77.77GiB、无clip/OOM/nonfinite。
   第二macroSemantic Frontend/Core/Program/compiler/factor五block均finite/nonzero。
 
-## 2026-08-02 A100清理与BGR迁移准备
+## 2026-08-02 A100清理与BCI迁移准备
 
 - 核验EMBER pre-cleanup `main=origin/main=f0b123f`、MemLLM
   `main=origin/main=edc549d4`，两repo工作区clean；无训练、评测、torchrun或tmux。
@@ -66,9 +82,9 @@ GPU范围和训练步长是当时快照；活动状态只取
   可重建uv/Hugging Face caches；owner随后关闭MemLLM venv消费者，复核只有另一用户
   `/data/pcpan`环境的`nvitop`仍在运行且未触碰，于是也删除7.60GB MemLLM venv及其
   ignored workspace link。两个环境均不进入迁移。
-- `src/ember/pi05_eval/launcher.py`增加`EMBER_STORAGE_ROOT`，使BGR容量preflight不
+- `src/ember/pi05_eval/launcher.py`增加`EMBER_STORAGE_ROOT`，使BCI容量preflight不
   依赖`/data/ymdai`；targeted pytest通过。
-- 新增`docs/a100_to_bgr_migration_handoff.md`和机器可读资产表，重写README、AGENTS、
+- 新增`docs/a100_to_bci_migration_handoff.md`和机器可读资产表，重写README、AGENTS、
   active handoff、execution brief；明确GitHub/SSH/重下载分流、MemLLM反向路径映射、
   no-Codex migration和新agent接手顺序。
 - simulation-assets原始4个回归、相关20个launcher/contract tests、EMBER全仓pytest和
@@ -3056,7 +3072,7 @@ GPU范围和训练步长是当时快照；活动状态只取
 
 ## Post-seal迁移增量封存（2026-08-03）
 
-- 将`docs/a100_to_bgr_migration_handoff.md`提升为最终双阶段迁移authority：原封存集
+- 将`docs/a100_to_bci_migration_handoff.md`提升为最终双阶段迁移authority：原封存集
   不重传，第二次同步只取post-seal ledger的`must-transfer`行。
 - `/data/ymdai/migration_manifests/ember_postseal_20260802/assets.tsv`已补齐所有正式
   root的实时bytes；34个必迁对象合计`16,483,938,529` bytes，逐项存在且尺寸一致。

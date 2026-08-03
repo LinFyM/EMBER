@@ -16,18 +16,18 @@ normalization。
 
 ## 当前状态
 
-EMBER已经迁回BGR，BGR A40上的四卡collective、Writer fresh训练、exact resume和
-多卡评测入口均已完成运行验收。当前没有活动的EMBER训练、评测或tmux；新的正式研究
-应从本项目目录启动，并遵守`AGENTS.md`和当前owner授权。
+EMBER已经迁回BCI。四卡collective、Writer fresh训练、exact resume和多卡评测入口
+已完成迁移验收；随后六张A40上保持逻辑B20、以policy microbatch2完成了VR Writer
+的未冻结工程profile与exact-resume。正式研究必须从本项目目录、clean pushed commit
+和fresh identity启动，并遵守`AGENTS.md`和当前owner授权。
 
-- `main`保留已封存的CV-ADR canonical实现和证据。
-- Target-Bound Role-Preserving Program已在远端分支
-  `origin/codex/target-bound-role-program`实现到CPU vertical path，commit
-  `b260a57a94dc21bd3446b212bfa42f71b037ce13`；尚未做任何GPU profile、训练或rollout。
+- `main`保留迁移封存历史；当前BCI写分支为`codex/bci-continuation`。
+- Target-Bound和Semantic Factor-Basis正式结果已经封存；SFB完整correct400曲线为
+  `69/91/118/127/117/81/126/120`，single winner仍为macro200=`127`，未解决task漂移。
 - 当前科研结论、下一实验边界看
   [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
-- A100清理、Git/SSH/重下载分流、BGR路径映射和新Codex接手步骤看
-  [`docs/a100_to_bgr_migration_handoff.md`](docs/a100_to_bgr_migration_handoff.md)。
+- A100清理、Git/SSH/重下载分流、BCI路径映射和新Codex接手步骤看
+  [`docs/a100_to_bci_migration_handoff.md`](docs/a100_to_bci_migration_handoff.md)。
 
 ## 研究基线与最新结论
 
@@ -62,14 +62,14 @@ EMBER已经迁回BGR，BGR A40上的四卡collective、Writer fresh训练、exac
 - validation/test actions不产生Writer梯度；test数据边界由`AGENTS.md`管理。
 - 不使用teacher action/state/reward作为Writer输入，不增加额外shared adapter、
   bank、checkpoint fusion或静态旁路。
-- GPU设备范围必须以owner迁移后重新给出的BGR authority为准；A100时期的GPU4–7
+- GPU设备范围必须以owner迁移后重新给出的BCI authority为准；A100时期的GPU4–7
   约束不能自动复制到另一台机器。
 - sealed历史config和artifact contract中的旧绝对路径是provenance，不应原位改写；
   新运行通过CLI显式传入source/checkpoint/tokenizer/data/output路径。
 
-## BGR目录、环境与路径
+## BCI目录、环境与路径
 
-BGR上的canonical入口是`/data1/user/ymdai/projects/EMBER`。代码和项目资产按项目
+BCI上的canonical入口是`/data1/user/ymdai/projects/EMBER`。代码和项目资产按项目
 归并，不再从个人目录顶层按资源类型拆分：
 
 ```text
@@ -82,14 +82,14 @@ EMBER/
 └── .cache/     # 本项目可重建缓存
 ```
 
-进入仓库后执行`source .venv/bin/activate`即可自动加载`.env.local`中的BGR本地路径，
+进入仓库后执行`source .venv/bin/activate`即可自动加载`.env.local`中的BCI本地路径，
 不需要逐项手工设置。环境仍由`pyproject.toml`和`uv.lock`约束，必要时可运行
 `scripts/bootstrap_env.sh`原位校验或修复。
 
 评测preflight的项目容量根也可显式覆盖：
 
 ```bash
-export EMBER_STORAGE_ROOT=/path/to/bgr/EMBER
+export EMBER_STORAGE_ROOT=/path/to/bci/EMBER
 export EMBER_STORAGE_CAP_BYTES=REPLACE_WITH_OWNER_CAP
 export EMBER_LIBERO_ASSETS_ROOT=/path/to/libero-assets/revision
 ```
@@ -101,14 +101,14 @@ scripts/train_as_writer.py
 scripts/evaluate_pi05.py
 ```
 
-完整BGR映射和恢复校验在迁移handoff中。
+完整BCI映射和恢复校验在迁移handoff中。
 
 ## 阅读顺序
 
 在只读了解或迁移时先读：
 
 1. `AGENTS.md`
-2. `docs/a100_to_bgr_migration_handoff.md`
+2. `docs/a100_to_bci_migration_handoff.md`
 3. `docs/active_session_handoff.md`
 4. `docs/execution_brief.md`
 5. `docs/action_forecast_writer_contextual_value_dual_read_design.md`

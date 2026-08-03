@@ -116,7 +116,7 @@
     },
     "formal_run": {
       "status": "profile_passed_formal_training_not_started",
-      "launch_state": "deferred_to_bgr_owner_authorization_after_migration",
+      "launch_state": "deferred_to_bci_owner_authorization_after_migration",
       "expected_world_size": 4,
       "total_steps": 400,
       "per_rank_batch_size": 20,

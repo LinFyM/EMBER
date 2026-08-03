@@ -2,9 +2,27 @@
 
 阅读规则：本文是按日期追加的证据账本。历史段落里的“当前”“下一步”和GPU
 权限只描述其日期当时的状态，不覆盖后续owner决定。活动状态以
-`docs/a100_to_bgr_migration_handoff.md`、`docs/active_session_handoff.md`和本文顶部
+`docs/a100_to_bci_migration_handoff.md`、`docs/active_session_handoff.md`和本文顶部
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
+
+## 2026-08-03 BCI 46GB逻辑B20适配
+
+- 迁移资产、环境、source policy、tokenizer、LIBERO assets和历史formal roots均已在
+  BCI项目树中核验；`/data1`个人quota约1TiB、当前个人占用约244GiB，足以容纳下一
+  VR formal root，但每次launch仍须重查易变quota和预计峰值。
+- 不能把A100 B20直接改成A40 B2：那会把VR estimator、action-query暴露量和训练
+  objective同时改变。当前适配只把同一个逻辑B20的frozen-policy forward切成十个B2，
+  并从同一keyed full-B20 Latin/antithetic draws切片；一套视频LoRA、task内mean、
+  full24等权与一次optimizer update保持不变。
+- 六卡把24 tasks机械分为4 tasks/rank。工程profile每macro仍是480 logical queries，
+  物理forward增至240；三步约`33.97/31.69/31.24s`，峰值active allocated约34.97GB。
+  resume后的reserved达47.11/47.70GB，说明allocator缓存余量很窄，但不是47.11GB
+  同时活跃张量；冻结重放仍必须覆盖最长105-frame与exact-resume，不能只据一次
+  no-OOM宣告稳定。
+- 十个microbatch的LoRA叶梯度改为FP32累加后一次cast，避免BF16逐次求和把新的舍入
+  噪声混入本来要验证的variance-reduction假设。该改变不修改随机样本、loss权重或
+  optimizer语义。
 
 ## 2026-08-02 Post-seal条件分工假设
 
@@ -48,7 +66,7 @@
   results、queue、run contract和launcher completion；小容量换来严格paired复核能力。
 - canonical feature cache v2约17.99GB虽可重算，但生成成本高且是当前32-task前端唯一
   cache，故归为SSH迁移而非垃圾。generic`pi05_base`已有精确HF revision/weight hash，
-  且frozen source policy自包含，故归为BGR按需重下。
+  且frozen source policy自包含，故归为BCI按需重下。
 - MemLLM此前已完成系统清理；本轮不删除其19GB retained tree，因为模型revision未
   完全锁定，23个results roots又是压缩后的唯一正/负证据。仅venv列为重建。
 - A100 Codex不迁移：archived sessions已删除，当前session/auth/cache不进入默认包。

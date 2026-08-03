@@ -134,6 +134,9 @@ def _latin_beta15_time(
 def scoped_policy_flow_time_sampling(
     policy: torch.nn.Module,
     scheme: str | None,
+    *,
+    logical_batch_size: int | None = None,
+    batch_offset: int = 0,
 ) -> Iterator[None]:
     """Temporarily replace only PI05 flow-time sampling, never policy code."""
 
@@ -147,7 +150,25 @@ def scoped_policy_flow_time_sampling(
         raise WriterModelError("policy has no scoped PI05 flow-time owner")
     had_instance_value = "sample_time" in vars(model)
     previous_instance_value = vars(model).get("sample_time")
-    model.sample_time = MethodType(_latin_beta15_time, model)
+    if logical_batch_size is None:
+        sampler = _latin_beta15_time
+    else:
+        if logical_batch_size <= 0 or not 0 <= batch_offset < logical_batch_size:
+            raise WriterModelError("invalid logical flow-time microbatch")
+
+        def sampler(
+            owner: torch.nn.Module,
+            batch_size: int,
+            device: torch.device | str,
+        ) -> torch.Tensor:
+            stop = batch_offset + batch_size
+            if batch_size <= 0 or stop > logical_batch_size:
+                raise WriterModelError("flow-time microbatch exceeds logical batch")
+            return _latin_beta15_time(
+                owner, logical_batch_size, device
+            )[batch_offset:stop]
+
+    model.sample_time = MethodType(sampler, model)
     try:
         yield
     finally:
@@ -185,6 +206,9 @@ def _antithetic_gaussian_noise(
 def scoped_policy_flow_noise_sampling(
     policy: torch.nn.Module,
     scheme: str | None,
+    *,
+    logical_batch_size: int | None = None,
+    batch_offset: int = 0,
 ) -> Iterator[None]:
     """Temporarily replace only PI05 flow-noise sampling."""
 
@@ -198,7 +222,31 @@ def scoped_policy_flow_noise_sampling(
         raise WriterModelError("policy has no scoped PI05 flow-noise owner")
     had_instance_value = "sample_noise" in vars(model)
     previous_instance_value = vars(model).get("sample_noise")
-    model.sample_noise = MethodType(_antithetic_gaussian_noise, model)
+    if logical_batch_size is None:
+        sampler = _antithetic_gaussian_noise
+    else:
+        if logical_batch_size <= 0 or not 0 <= batch_offset < logical_batch_size:
+            raise WriterModelError("invalid logical flow-noise microbatch")
+
+        def sampler(
+            owner: torch.nn.Module,
+            shape: Sequence[int],
+            device: torch.device | str,
+        ) -> torch.Tensor:
+            dimensions = tuple(int(value) for value in shape)
+            if not dimensions:
+                raise WriterModelError("flow-noise microbatch lost batch dimension")
+            stop = batch_offset + dimensions[0]
+            if dimensions[0] <= 0 or stop > logical_batch_size:
+                raise WriterModelError("flow-noise microbatch exceeds logical batch")
+            full = _antithetic_gaussian_noise(
+                owner,
+                (logical_batch_size, *dimensions[1:]),
+                device,
+            )
+            return full[batch_offset:stop]
+
+    model.sample_noise = MethodType(sampler, model)
     try:
         yield
     finally:
@@ -256,6 +304,108 @@ def writer_functional_action_loss(
     return output
 
 
+def _functional_microbatch_contract(
+    batch: Mapping[str, Any],
+    policy_microbatch_size: int | None,
+    *,
+    policy_rng_seed: int | None,
+    flow_time_sampling_scheme: str | None,
+    flow_noise_sampling_scheme: str | None,
+) -> tuple[int, int]:
+    batch_sizes = {
+        int(value.shape[0])
+        for value in batch.values()
+        if isinstance(value, torch.Tensor) and value.ndim > 0
+    }
+    if len(batch_sizes) != 1:
+        raise WriterModelError("functional policy batch has inconsistent leading axes")
+    logical_batch_size = batch_sizes.pop()
+    microbatch_size = (
+        logical_batch_size
+        if policy_microbatch_size is None
+        else policy_microbatch_size
+    )
+    if not 0 < microbatch_size <= logical_batch_size:
+        raise WriterModelError("invalid functional policy microbatch size")
+    if microbatch_size < logical_batch_size and (
+        flow_time_sampling_scheme != LATIN_BETA_TIME_SAMPLING_SCHEME
+        or flow_noise_sampling_scheme != ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME
+        or policy_rng_seed is None
+    ):
+        raise WriterModelError(
+            "policy microbatching requires keyed variance-reduced randomness"
+        )
+    return logical_batch_size, microbatch_size
+
+
+def _functional_microbatch_gradient(
+    policy: torch.nn.Module,
+    state: Mapping[str, torch.Tensor],
+    contract: LoRAContract,
+    batch: Mapping[str, Any],
+    *,
+    start: int,
+    stop: int,
+    logical_batch_size: int,
+    physical_microbatching: bool,
+    policy_rng_seed: int | None,
+    policy_rng_device: torch.device | str | None,
+    flow_time_sampling_scheme: str | None,
+    flow_noise_sampling_scheme: str | None,
+) -> tuple[torch.Tensor, Mapping[str, Any], dict[str, torch.Tensor]]:
+    leaves = {
+        name: value.detach().requires_grad_(True)
+        for name, value in state.items()
+    }
+    microbatch = {
+        name: (
+            value[start:stop]
+            if isinstance(value, torch.Tensor)
+            and value.ndim > 0
+            and value.shape[0] == logical_batch_size
+            else value
+        )
+        for name, value in batch.items()
+    }
+    random_batch_size = logical_batch_size if physical_microbatching else None
+    with scoped_policy_randomness(policy_rng_seed, policy_rng_device):
+        with scoped_policy_flow_noise_sampling(
+            policy,
+            flow_noise_sampling_scheme,
+            logical_batch_size=random_batch_size,
+            batch_offset=start,
+        ):
+            with scoped_policy_flow_time_sampling(
+                policy,
+                flow_time_sampling_scheme,
+                logical_batch_size=random_batch_size,
+                batch_offset=start,
+            ):
+                output = functional_lora_call(policy, leaves, contract, microbatch)
+    if (
+        not isinstance(output, tuple)
+        or len(output) != 2
+        or not isinstance(output[0], torch.Tensor)
+        or output[0].ndim != 0
+        or not isinstance(output[1], Mapping)
+    ):
+        raise WriterModelError("functional policy did not return a scalar loss")
+    names = tuple(leaves)
+    gradients = torch.autograd.grad(
+        output[0], tuple(leaves[name] for name in names)
+    )
+    if any(not bool(torch.isfinite(value).all()) for value in gradients):
+        raise WriterModelError("functional policy produced non-finite LoRA gradients")
+    return (
+        output[0].detach(),
+        output[1],
+        {
+            name: gradient.detach()
+            for name, gradient in zip(names, gradients, strict=True)
+        },
+    )
+
+
 def functional_lora_loss_gradient(
     policy: torch.nn.Module,
     state: Mapping[str, torch.Tensor],
@@ -266,6 +416,7 @@ def functional_lora_loss_gradient(
     policy_rng_device: torch.device | str | None = None,
     flow_time_sampling_scheme: str | None = None,
     flow_noise_sampling_scheme: str | None = None,
+    policy_microbatch_size: int | None = None,
 ) -> tuple[torch.Tensor, Mapping[str, Any], dict[str, torch.Tensor]]:
     """Differentiate one policy loss only through detached LoRA leaf tensors.
 
@@ -276,36 +427,97 @@ def functional_lora_loss_gradient(
 
     if any(parameter.requires_grad for parameter in policy.parameters()):
         raise WriterModelError("functional LoRA gradient received a trainable policy")
-    leaves = {
-        name: value.detach().requires_grad_(True) for name, value in state.items()
-    }
-    with scoped_policy_randomness(policy_rng_seed, policy_rng_device):
-        with scoped_policy_flow_noise_sampling(
-            policy, flow_noise_sampling_scheme
-        ):
-            with scoped_policy_flow_time_sampling(
-                policy, flow_time_sampling_scheme
-            ):
-                output = functional_lora_call(
-                    policy, leaves, contract, dict(batch)
-                )
-    if (
-        not isinstance(output, tuple)
-        or len(output) != 2
-        or not isinstance(output[0], torch.Tensor)
-        or output[0].ndim != 0
-        or not isinstance(output[1], Mapping)
-    ):
-        raise WriterModelError("functional policy did not return a scalar loss")
-    names = tuple(leaves)
-    gradients = torch.autograd.grad(output[0], tuple(leaves[name] for name in names))
-    if any(not bool(torch.isfinite(value).all()) for value in gradients):
-        raise WriterModelError("functional policy produced non-finite LoRA gradients")
-    return (
-        output[0].detach(),
-        output[1],
-        {name: gradient.detach() for name, gradient in zip(names, gradients, strict=True)},
+    logical_batch_size, microbatch_size = _functional_microbatch_contract(
+        batch,
+        policy_microbatch_size,
+        policy_rng_seed=policy_rng_seed,
+        flow_time_sampling_scheme=flow_time_sampling_scheme,
+        flow_noise_sampling_scheme=flow_noise_sampling_scheme,
     )
+
+    names = tuple(state)
+    gradient_sum = {
+        name: torch.zeros_like(
+            value,
+            dtype=(
+                torch.float32
+                if value.dtype in {torch.bfloat16, torch.float16}
+                else value.dtype
+            ),
+            memory_format=torch.preserve_format,
+        )
+        for name, value in state.items()
+    }
+    loss_sum: torch.Tensor | None = None
+    detail_sum: dict[str, Any] = {}
+    for start in range(0, logical_batch_size, microbatch_size):
+        stop = min(start + microbatch_size, logical_batch_size)
+        weight = (stop - start) / logical_batch_size
+        loss, details, gradients = _functional_microbatch_gradient(
+            policy,
+            state,
+            contract,
+            batch,
+            start=start,
+            stop=stop,
+            logical_batch_size=logical_batch_size,
+            physical_microbatching=microbatch_size < logical_batch_size,
+            policy_rng_seed=policy_rng_seed,
+            policy_rng_device=policy_rng_device,
+            flow_time_sampling_scheme=flow_time_sampling_scheme,
+            flow_noise_sampling_scheme=flow_noise_sampling_scheme,
+        )
+        weighted_loss = loss.to(dtype=torch.float32) * weight
+        loss_sum = (
+            weighted_loss
+            if loss_sum is None
+            else loss_sum + weighted_loss
+        )
+        for name in names:
+            gradient_sum[name].add_(
+                gradients[name].to(dtype=gradient_sum[name].dtype),
+                alpha=weight,
+            )
+        _accumulate_policy_details(detail_sum, details, weight)
+    if loss_sum is None:
+        raise WriterModelError("functional policy microbatch loop was empty")
+    return (
+        loss_sum,
+        detail_sum,
+        {
+            name: gradient.to(dtype=state[name].dtype)
+            for name, gradient in gradient_sum.items()
+        },
+    )
+
+
+def _accumulate_policy_details(
+    destination: dict[str, Any],
+    source: Mapping[str, Any],
+    weight: float,
+) -> None:
+    """Weight scalar/list PI05 diagnostics across physical microbatches."""
+
+    for name, value in source.items():
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            destination[name] = float(destination.get(name, 0.0)) + float(value) * weight
+            continue
+        if isinstance(value, list) and all(
+            isinstance(item, (int, float)) and not isinstance(item, bool)
+            for item in value
+        ):
+            previous = destination.setdefault(name, [0.0] * len(value))
+            if not isinstance(previous, list) or len(previous) != len(value):
+                raise WriterModelError("policy microbatch diagnostic shape changed")
+            destination[name] = [
+                float(left) + float(right) * weight
+                for left, right in zip(previous, value, strict=True)
+            ]
+            continue
+        if name in destination and destination[name] != value:
+            raise WriterModelError("policy microbatch diagnostic value changed")
+        destination[name] = value
+
 
 def writer_success_weighted_flow_loss(
     writer: CompleteLoRAWriter,

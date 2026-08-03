@@ -262,19 +262,24 @@ def _full24_conditioning(
     common: Mapping[str, Any],
     *,
     method: str,
+    tasks_per_rank: int = 6,
 ) -> dict[str, Any]:
+    task_words = {4: "four", 6: "six"}
+    if tasks_per_rank not in task_words:
+        raise WriterModelError("unsupported full24 tasks-per-rank topology")
+    task_word = task_words[tasks_per_rank]
     return {
         "method": method,
         "update_topology": "task_complete_all_tasks",
         "action_query_batch_owner": (
-            "six sequential task-pure physical action batches per rank per "
-            "macro optimizer update"
+            f"{task_word} sequential task-pure physical action batches per "
+            "rank per macro optimizer update"
         ),
         "task_assignment": (
             "every macro optimizer update covers all 24 tasks exactly once "
-            "globally with six cost-balanced long-first tasks per rank"
+            f"globally with {task_word} cost-balanced long-first tasks per rank"
         ),
-        "tasks_per_rank_per_optimizer_update": 6,
+        "tasks_per_rank_per_optimizer_update": tasks_per_rank,
         "global_tasks_per_optimizer_update": 24,
         "pair_loss_reduction": (
             "mean_within_task_then_equal_mean_over_24_tasks"
@@ -385,6 +390,21 @@ def _randomized_group4_conditioning(
 
 def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
     value = config.get("conditioning_training", {})
+    profile_world_size = int(
+        config.get("profile_defaults", {}).get("expected_world_size", 4)
+    )
+    formal_world_size = int(
+        config.get("formal_run", {}).get(
+            "expected_world_size", profile_world_size
+        )
+    )
+    if (
+        profile_world_size != formal_world_size
+        or formal_world_size not in {4, 6}
+        or 24 % formal_world_size
+    ):
+        raise WriterModelError("unsupported full24 world-size topology")
+    tasks_per_rank = 24 // formal_world_size
     legacy_common = _conditioning_common(task_query_keyed=False)
     task_query_common = _conditioning_common(task_query_keyed=True)
     full24 = _full24_conditioning(
@@ -393,6 +413,7 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
             "raw_task_complete_single_video_multi_action_"
             "positive_functional_loss"
         ),
+        tasks_per_rank=tasks_per_rank,
     )
     task_query_raw = _full24_conditioning(
         task_query_common,
@@ -400,6 +421,7 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
             "task_query_keyed_raw_task_complete_single_video_multi_action_"
             "positive_functional_loss"
         ),
+        tasks_per_rank=tasks_per_rank,
     )
     variance_reduced_raw = _full24_conditioning(
         _variance_reduced_conditioning_common(),
@@ -407,6 +429,7 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
             "variance_reduced_task_query_keyed_raw_task_complete_single_"
             "video_multi_action_positive_functional_loss"
         ),
+        tasks_per_rank=tasks_per_rank,
     )
     serial4 = _serial4_conditioning(legacy_common)
     randomized_group4 = _randomized_group4_conditioning(task_query_common)
@@ -468,6 +491,15 @@ def _validate_cycle_normalized_optimization(config: Mapping[str, Any]) -> None:
         if group4
         else "task_query_keyed_raw_reference"
     )
+    formal_batch_size = int(
+        config.get("formal_run", {}).get("per_rank_batch_size", 0)
+    )
+    policy_microbatch_size = int(
+        config.get("optimization", {}).get(
+            "functional_policy_microbatch_size", formal_batch_size
+        )
+    )
+    microbatching = policy_microbatch_size < formal_batch_size
     invalid = (
         optimizer.get("name") != "AdamW"
         or optimizer.get("betas") != expected_betas
@@ -486,6 +518,17 @@ def _validate_cycle_normalized_optimization(config: Mapping[str, Any]) -> None:
         != expected_divisor
         or config.get("optimization", {}).get("optimizer_diagnostics")
         != "per_owned_block_moment_parameter_and_actual_update_l2"
+        or not 0 < policy_microbatch_size <= formal_batch_size
+        or (
+            microbatching
+            and training.get("policy_flow_time_sampling_scheme")
+            != "task_query_keyed_randomized_latin_beta15_time_v1"
+        )
+        or (
+            microbatching
+            and training.get("policy_flow_noise_sampling_scheme")
+            != "task_query_keyed_randomized_antithetic_gaussian_v1"
+        )
     )
     if invalid:
         raise WriterModelError("cycle-normalized optimizer contract changed")

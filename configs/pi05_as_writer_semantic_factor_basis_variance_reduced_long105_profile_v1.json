@@ -1,7 +1,7 @@
 {
   "schema_version": "ember_pi05_semantic_factor_basis_recipe_overlay_v1",
-  "base_config": "configs/pi05_as_writer_semantic_factor_basis_full24_decay400_bgr_a40_v1.json",
-  "base_sha256": "dbe95b7daf75856f8e96bb1bfb70acc1ae76b518281e39f2b13c42cb44912f10",
+  "base_config": "configs/pi05_as_writer_semantic_factor_basis_full24_decay400_bci_a40_v1.json",
+  "base_sha256": "4648192c1c9709556cd475ed1692759cddc1e174cd568506f2cee5878c69fddd",
   "replace": {
     "data": {
       "task_count": 24,
@@ -22,9 +22,9 @@
       "update_topology": "task_complete_all_tasks",
       "writer_language_contract": "correct_task_language_state_free_teacher_action_suffix",
       "policy_language_contract": "correct_action_query_task_language",
-      "action_query_batch_owner": "six sequential task-pure physical action batches per rank per macro optimizer update",
-      "task_assignment": "every macro optimizer update covers all 24 tasks exactly once globally with six cost-balanced long-first tasks per rank",
-      "tasks_per_rank_per_optimizer_update": 6,
+      "action_query_batch_owner": "four sequential task-pure physical action batches per rank per macro optimizer update",
+      "task_assignment": "every macro optimizer update covers all 24 tasks exactly once globally with four cost-balanced long-first tasks per rank",
+      "tasks_per_rank_per_optimizer_update": 4,
       "global_tasks_per_optimizer_update": 24,
       "teacher_videos_per_task_visit": 1,
       "action_video_assignment": "all_actions_share_single_video_lora",
@@ -75,52 +75,56 @@
         "weight_decay_composition": "one_raw_adamw_decay_per_complete_task_cycle"
       },
       "optimizer_diagnostics": "per_owned_block_moment_parameter_and_actual_update_l2",
+      "functional_policy_microbatch_size": 2,
       "maximum_formal_wall_clock_minutes": 190,
-      "budget_role": "variance_reduced_bgr_a40_f16_b2_exact_resume_profile"
+      "budget_role": "variance_reduced_bci_a40_effective_b20_policy_microbatch2_profile"
     },
     "profile_defaults": {
-      "status": "sealed_bgr_a40_46g_r4_f16_b2_profile",
-      "expected_world_size": 4,
+      "status": "pending_frozen_replay_after_engineering_profile_pass",
+      "expected_world_size": 6,
       "total_steps": 3,
-      "per_rank_batch_size": 2,
+      "per_rank_batch_size": 20,
       "checkpoint_steps": [1, 2, 3],
       "selected_stop_step": 3
     },
     "profile_evidence": {
-      "status": "sealed_bgr_a40_46g_r4_f16_b2_profile",
+      "status": "pending_frozen_replay_after_engineering_profile_pass",
       "fixed_frame_stride": 5,
       "teacher_videos_per_task_visit": 1,
-      "tasks_per_rank_per_optimizer_update": 6,
+      "tasks_per_rank_per_optimizer_update": 4,
       "global_tasks_per_optimizer_update": 24,
       "required_longest_real_stride5_video_frames": 105,
       "profile_teacher_video_seed": 172,
       "formal_teacher_video_seed_after_profile_seal": 20260722,
       "primary_candidate": {
         "max_frames_per_encoder_call": 16,
-        "per_task_action_batch_size": 2
+        "per_task_action_batch_size": 20,
+        "functional_policy_microbatch_size": 2
       },
       "oom_fallback_only": {
         "max_frames_per_encoder_call": 8,
-        "per_task_action_batch_size": 2
+        "per_task_action_batch_size": 20,
+        "functional_policy_microbatch_size": 1
       },
-      "selection_rule": "use_16_frame_microbatches_with_b2_on_bgr_a40_46g_then_fallback_to_8_frames_only_on_measured_oom",
-      "selected": {
-        "max_frames_per_encoder_call": 16,
-        "per_task_action_batch_size": 2,
-        "world_size": 4,
-        "completed_macros": 2,
-        "longest_sampled_frames": 105,
-        "max_cuda_reserved_bytes": 44853886976,
-        "wall_seconds": 55.048777336021885,
-        "commit": "ecd7dd85f6afed2e42a21e604a107116eee566e9",
-        "profile_root": "/data1/user/ymdai/projects/EMBER/runs/acceptance/ember_bgr_gpu_acceptance_20260803T1232/train"
-      },
-      "exact_resume_smoke": {
-        "status": "passed_fresh0to1_exact_resume1to2",
-        "completed_macros": 2,
-        "contract_sha256": "0ad61a85b48358748d72030643b7c5ceaa62893d689b1b90310be77ebdb5e23f",
-        "commit": "ecd7dd85f6afed2e42a21e604a107116eee566e9",
-        "root": "/data1/user/ymdai/projects/EMBER/runs/acceptance/ember_bgr_gpu_acceptance_20260803T1232/train"
+      "selection_rule": "preserve logical B20 and full-B20 variance-reduced draws; use policy microbatch2 on six BCI A40 ranks, then microbatch1 only on measured OOM",
+      "selected": null,
+      "exact_resume_smoke": null,
+      "engineering_profile": {
+        "status": "passed_dirty_worktree_not_formal_seal",
+        "root": "runs/acceptance/ember_bci_vr_effective_b20_micro2_r6_profile_20260803T1600/train",
+        "physical_gpu_count": 6,
+        "logical_batch_size_per_task": 20,
+        "functional_policy_microbatch_size": 2,
+        "tasks_per_rank": 4,
+        "global_tasks_per_macro": 24,
+        "global_logical_queries_per_macro": 480,
+        "global_physical_policy_forwards_per_macro": 240,
+        "fresh_then_exact_resume": "0_to_1_then_1_to_3",
+        "step_seconds": [33.97304070100654, 31.685636601003353, 31.240227151021827],
+        "peak_cuda_allocated_bytes": 34970270208,
+        "peak_cuda_reserved_bytes": 47108325376,
+        "contract_sha256": "57185f9cb4ecb5d1a67bca03f915b6af559689ad552ee023a356b5e83badc89d",
+        "next_gate": "repeat_from_clean_pushed_commit_before_seal"
       },
       "gradient_reachability": {
         "status": "sealed_finite_nonzero_after_identity_lifecycle",
@@ -134,38 +138,40 @@
         ]
       },
       "inference_profile": {
-        "status": "passed_bgr_four_gpu_writer_smoke",
+        "status": "passed_bci_four_gpu_writer_smoke",
         "physical_gpu_count": 4,
         "episodes": 8,
         "successes": 1,
         "evaluation_wall_seconds": 257.4394247531891,
         "contract_sha256": "05cf942730abf428359a7af24a7a9a3f862d6168e16d58c14c7a229dd26cbbe3",
-        "run_summary": "/data1/user/ymdai/projects/EMBER/runs/acceptance/ember_bgr_gpu_acceptance_20260803T1232/eval_writer_validation/run_summary.json"
+        "run_summary": "/data1/user/ymdai/projects/EMBER/runs/acceptance/ember_bci_gpu_acceptance_20260803T1232/eval_writer_validation/run_summary.json"
       }
     },
     "formal_run": {
-      "status": "sealed",
-      "launch_state": "bgr_runtime_accepted_owner_authorization_required_for_formal_research",
-      "expected_world_size": 4,
+      "status": "pending_profile",
+      "launch_state": "bci_owner_authorized_pending_frozen_profile_replay",
+      "expected_world_size": 6,
       "total_steps": 400,
-      "per_rank_batch_size": 2,
+      "per_rank_batch_size": 20,
       "checkpoint_steps": "every:25",
       "selected_stop_step": 200,
       "stage_stop_steps": [200, 400],
       "segment_definition": "fresh_semantic_factor_basis_raw_full24_macro0_to200_then_evidence_gated_exact_resume200_to400",
       "one_hour_scale": {
         "macro_optimizer_updates": 200,
-        "global_action_queries": 9600,
+        "global_action_queries": 96000,
         "one_video_conditions": 4800,
-        "policy_functional_forwards": 4800,
+        "logical_policy_functional_forwards": 4800,
+        "physical_policy_forward_microbatches": 48000,
         "retained_checkpoints": 8,
         "online_validation_action_queries_per_checkpoint": 512
       },
       "two_hour_scale": {
         "macro_optimizer_updates": 400,
-        "global_action_queries": 19200,
+        "global_action_queries": 192000,
         "one_video_conditions": 9600,
-        "policy_functional_forwards": 9600,
+        "logical_policy_functional_forwards": 9600,
+        "physical_policy_forward_microbatches": 96000,
         "retained_checkpoints": 16,
         "online_validation_action_queries_per_checkpoint": 512
       },

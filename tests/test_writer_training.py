@@ -33,6 +33,10 @@ VARIANCE_REDUCED_CONFIG = (
     REPO_ROOT
     / "configs/pi05_as_writer_semantic_factor_basis_variance_reduced_v1.json"
 )
+BCI_VARIANCE_REDUCED_CONFIG = (
+    REPO_ROOT
+    / "configs/pi05_as_writer_semantic_factor_basis_variance_reduced_long105_profile_v1.json"
+)
 OLD_RECIPE_CONFIG = (
     REPO_ROOT
     / "configs/pi05_as_writer_language_axial_v6_old_recipe_v1.json"
@@ -168,8 +172,47 @@ def test_variance_reduced_recipe_changes_only_functional_sampling_contract() -> 
         "profile_passed_formal_training_not_started"
     )
     assert reduced["formal_run"]["launch_state"] == (
-        "deferred_to_bgr_owner_authorization_after_migration"
+        "deferred_to_bci_owner_authorization_after_migration"
     )
+
+
+def test_bci_variance_reduced_profile_preserves_b20_across_six_ranks() -> None:
+    config = load_writer_config(BCI_VARIANCE_REDUCED_CONFIG)
+    assert config["profile_defaults"]["expected_world_size"] == 6
+    assert config["profile_defaults"]["per_rank_batch_size"] == 20
+    assert config["formal_run"]["expected_world_size"] == 6
+    assert config["formal_run"]["per_rank_batch_size"] == 20
+    assert config["formal_run"]["status"] == "pending_profile"
+    assert config["conditioning_training"][
+        "tasks_per_rank_per_optimizer_update"
+    ] == 4
+    assert config["conditioning_training"][
+        "global_tasks_per_optimizer_update"
+    ] == 24
+    assert config["optimization"]["functional_policy_microbatch_size"] == 2
+    assert config["profile_evidence"]["primary_candidate"] == {
+        "max_frames_per_encoder_call": 16,
+        "per_task_action_batch_size": 20,
+        "functional_policy_microbatch_size": 2,
+    }
+    context = DistributedContext(
+        rank=0,
+        local_rank=0,
+        world_size=6,
+        device=torch.device("cpu"),
+        numa_node=0,
+        cpu_affinity=(0,),
+    )
+    profile = argparse.Namespace(
+        mode="profile",
+        total_steps=None,
+        batch_size=None,
+        checkpoint_steps=None,
+        stop_after_step=None,
+        resume=None,
+        skip_data_sha=False,
+    )
+    assert resolve_runtime(profile, config, context) == (3, 20, (1, 2, 3))
 
 
 def test_v6_recipe_overlay_is_provenance_not_an_active_writer_path() -> None:

@@ -4,8 +4,10 @@
 
 2026-08-03 post-seal candidate. This changes the stochastic estimator used by
 AS-Writer training, not the Writer architecture or its information wall.
-Longest-105 B20 and fresh/exact-resume vertical paths pass at `50662a8`; no
-formal 0→200 training or closed-loop evaluation has been run.
+Longest-105 B20 and fresh/exact-resume vertical paths pass at `50662a8`; a BCI
+six-rank logical-B20/policy-microbatch2 engineering replay also passes, but it
+used an uncommitted worktree and therefore is not sealed evidence. No formal
+0→200 training or closed-loop evaluation has been run.
 
 ## Question
 
@@ -72,7 +74,7 @@ but reject this estimator and revisit the complete training/functional target.
 ## Execution gate
 
 Run only the shortest real vertical path: targeted CPU tests, longest-105-frame
-B20 fresh 0→1 and exact resume 1→3 on four ranks, then fresh 0→200 with
+B20 fresh 0→1 and exact resume 1→3 on six BCI ranks, then fresh 0→200 with
 checkpoints every 25. Evaluate paired correct400 at 50/100/150/200. Continue to
 400 only if absolute performance, breadth, right-edge trend, or internal
 gradient stabilization supplies positive evidence.
@@ -105,5 +107,25 @@ assignments, mean raw-full24 gradient-energy retention changed
 `.26439→.29206` (factor-only `.27354→.29758`). This is small, directionally
 positive mechanism evidence, not proof of improved drift or closed-loop
 performance. The next valid experiment is fresh `0→200` followed by paired
-correct400 at `50/100/150/200`; it is deferred to BGR and requires new owner GPU
-authorization after migration.
+correct400 at `50/100/150/200`.
+
+## BCI 46GB adaptation evidence (2026-08-03)
+
+The BCI port keeps each task's logical B20 estimator intact. One generated LoRA
+is reused while the frozen-policy functional forward is sliced into ten B2
+microbatches. Each slice regenerates and selects its exact portion of the keyed
+full-B20 Latin-time and antithetic-noise draws; losses and LoRA-leaf gradients
+are sample-weighted back to the same task mean. Gradient accumulation is FP32
+for BF16/FP16 leaves and casts once at the bridge boundary. Six ranks own four
+tasks each, so the global update remains the exact equal-weight full24 raw mean
+with one clip, AdamW, and scheduler update.
+
+The provisional engineering root
+`runs/acceptance/ember_bci_vr_effective_b20_micro2_r6_profile_20260803T1600/train`
+completed fresh `0→1` and exact resume `1→3`. All three macros covered 24 tasks,
+480 logical queries and 240 physical forwards. Step times were
+`33.973/31.686/31.240s`; peak CUDA allocated/reserved was
+`34,970,270,208/47,108,325,376` bytes. Main-path gradients were finite/nonzero
+from macro2 and no validation/test actions were read. Because the source was
+dirty, the result is only a sizing/mechanics pass; the identical vertical path
+must be replayed from a clean pushed commit before formal launch.

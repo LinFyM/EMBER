@@ -133,6 +133,9 @@ def _differentiate_conditions(
             flow_noise_sampling_scheme=runtime.config[
                 "conditioning_training"
             ].get("policy_flow_noise_sampling_scheme"),
+            policy_microbatch_size=runtime.config["optimization"].get(
+                "functional_policy_microbatch_size"
+            ),
         )
     names = tuple(generated)
     parameter_gradients = torch.autograd.grad(
@@ -299,6 +302,14 @@ def _throughput_and_exposure_metrics(
     started: float,
 ) -> dict[str, Any]:
     updates_per_cycle = _optimizer_updates_per_task_cycle(runtime)
+    policy_microbatch_size = int(
+        runtime.config["optimization"].get(
+            "functional_policy_microbatch_size", runtime.batch_size
+        )
+    )
+    physical_forwards_per_task = math.ceil(
+        runtime.batch_size / policy_microbatch_size
+    )
     return {
         "global_unique_action_queries": (
             completed
@@ -319,6 +330,11 @@ def _throughput_and_exposure_metrics(
             * runtime.context.world_size
         ),
         "global_policy_functional_forwards": completed * global_tasks_this_step,
+        "functional_policy_microbatch_size": policy_microbatch_size,
+        "physical_policy_forwards_per_task": physical_forwards_per_task,
+        "global_physical_policy_forwards_this_step": (
+            global_tasks_this_step * physical_forwards_per_task
+        ),
         "global_unique_action_queries_this_step": global_queries_this_step,
         "global_policy_samples_this_step": global_queries_this_step,
         "global_writer_video_conditions_this_step": global_tasks_this_step,

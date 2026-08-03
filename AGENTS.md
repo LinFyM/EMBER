@@ -7,19 +7,25 @@
 信息墙、split与GPU4--7边界内恢复环境、设计/实现架构、profile、训练、评测和内部
 分析。必须以`f9a144c`为迁移封存基线，把全部新增Git提交和外部artifact登记为可供
 迁移智能体二次同步的delta；关键代码优先push。约`2026-08-03 05:18 UTC`后不得再
-启动或继续GPU工作，操作上最迟`03:45 UTC`冻结新实验并完成封存。迁移本身仍由后续
-智能体执行，且这次临时授权不自动延续到BGR。
+启动或继续A100 GPU工作，操作上最迟`03:45 UTC`冻结新实验并完成封存。
+
+2026-08-03，owner已明确授权在当前BCI服务器继续推进EMBER：可使用计算节点
+`gpu01`和`gpu02`（owner口语中的GPU01/GPU02），每次先实时检查两节点GPU ownership、进程、利用率和显存，
+只使用空闲卡，跨两节点合计最多同时使用6张。当前单卡约46GB显存，必须先profile并通过
+microbatch、梯度累积、activation checkpoint、精度或必要的模型分片适配，不能直接照搬
+A100 80GB配置；任何适配不得悄悄改变sealed scientific contract。不得reset、kill、pause
+或干扰他人进程。owner当前还明确要求推进过程中不使用subagent，直至owner另行解除。
 
 当前跨session入口：
 
-1. `docs/a100_to_bgr_migration_handoff.md`
+1. `docs/a100_to_bci_migration_handoff.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 
 修改代码、数据、split、模型或实验状态前，主进程必须完整读到EOF：
 
 1. `README.md`
-2. `docs/a100_to_bgr_migration_handoff.md`
+2. `docs/a100_to_bci_migration_handoff.md`
 3. `docs/active_session_handoff.md`
 4. `docs/execution_brief.md`
 5. `docs/action_forecast_writer_expert_consultation.md`
@@ -68,15 +74,23 @@
   success union=`193`、single envelope gap=`66`，没有解决漂移或超过v6。
 - variance-reduced functional estimator的实现与mode接线修复已push到`50662a8`；
   longest105 B20与formal-seed fresh0→1/exact-resume1→3通过。matched前三步只给出
-  小幅正机制证据，尚无0→200训练或closed-loop结果，不得写成有效方法。
-- 只使用物理GPU4--7；不得查询或触碰GPU0--3，不得干扰他人进程。
-- 迁移封存基线是`f9a144c94e71bb44373d7247ed0fded2ed835305`；当前写分支为
-  `codex/variance-reduced-functional-estimator`，全部新提交和runtime roots必须
-  登记在`/data/ymdai/migration_manifests/ember_postseal_20260802/`。
+  小幅正机制证据，尚无0→200训练或closed-loop结果，不得写成有效方法。BCI上已用
+  6 ranks×4 tasks、逻辑B20、policy microbatch2完成未冻结工程profile与
+  fresh0→1/exact-resume1→3；必须在代码提交后重放，不能把dirty-worktree结果当作
+  formal seal。
+- 旧A100“只使用物理GPU4--7”的边界已退役；当前只按上文BCI设备授权使用
+  `gpu01`/`gpu02`的实时空闲卡，跨节点合计最多6张。
+- 迁移封存基线是`f9a144c94e71bb44373d7247ed0fded2ed835305`；当前BCI写分支为
+  `codex/bci-continuation`。A100 post-seal ledger只作迁移provenance；BCI新增runtime
+  roots统一留在本项目`runs/`，迁移/验收证据留在`evidence/`，不得写回旧
+  `/data/ymdai`。
 - frozen source step1000仍是下游inference/source asset，不支持source-SFT exact
   resume。A100 Codex、venv、cache与worktree仍不迁移。
-- 本A100窗口的GPU工作已停止；当前只做Git/文档/迁移delta封存。长期Goal保持未完成，
-  BGR上的VR fresh0→200必须等待owner重新授予实验与设备权限。
+- A100窗口的GPU工作已停止；BCI上的环境恢复、profile、训练和评测已获owner授权。
+  迁移与46GB适配验证通过后，可继续VR fresh0→200及后续有证据支持的实验。
+- 当前最低科研目标是同一single checkpoint的paired correct aggregate严格超过
+  `150/400`，并在达到后继续追求更高absolute、breadth和视频因果性；不得用多
+  checkpoint、挑video或违反信息墙的方法过门。
 
 ## Long-term objective
 
@@ -120,9 +134,9 @@ artifact roots和hash只取`docs/active_session_handoff.md`。
 
 Target-Bound correct曲线`75/120/90/110`仍漂移，但内部remove-A/remove-D/
 memory-reversal均`8/8` tasks达门，说明动态路径已工作而shared factor共存仍失败。
-Semantic Factor-Basis曲线`69/91/118/127`较Target-Bound形成更可信共同累积，
-macro200全8 tasks非零，但相邻checkpoint仍大量换手且晚期CountSketch梯度稳定性
-没有改善。它正按门续到400。下一候选只改变functional Monte Carlo estimator：
+Semantic Factor-Basis完整曲线`69/91/118/127/117/81/126/120`较Target-Bound形成
+更可信共同累积，但相邻checkpoint仍大量换手且晚期CountSketch梯度稳定性没有改善。
+下一候选只改变functional Monte Carlo estimator：
 exact-Beta Latin time加随机antithetic Gaussian noise；架构、objective期望、B20、
 full24 raw mean和optimizer保持不变。
 
@@ -199,17 +213,18 @@ static bypass、confidence、强制正交/rank diversity、multi-video或checkpo
 
 ## Host, paths and GPU
 
-- A100时期的“只用物理GPU4–7”不适用于BGR。迁移后必须获取新的owner设备边界并
+- A100时期的“只用物理GPU4–7”不适用于BCI。当前owner设备边界为
+  `gpu01`与`gpu02`的实时空闲卡、跨节点合计最多6张；每次运行前仍必须
   live检查GPU ownership、telemetry、进程、CUDA、storage和峰值预算。
 - 不得reset、kill、pause或干扰他人进程；共享设备只在owner明确授权时使用。
-- BGR不得依赖A100绝对路径或500GB旧cap。设置`EMBER_STORAGE_ROOT`与owner给出的
+- BCI不得依赖A100绝对路径或500GB旧cap。设置`EMBER_STORAGE_ROOT`与owner给出的
   `EMBER_STORAGE_CAP_BYTES`供preflight容量检查；source、checkpoint、tokenizer、
   data、output继续通过CLI显式传入。
 - `hf-libero` simulation assets是当前runtime依赖；迁移精确
-  `lerobot/libero-assets@0b3ea86...`或在BGR按同revision重下，不能保留指向A100的
-  site-packages绝对symlink；用`EMBER_LIBERO_ASSETS_ROOT`指向BGR snapshot。
+  `lerobot/libero-assets@0b3ea86...`或在BCI按同revision重下，不能保留指向A100的
+  site-packages绝对symlink；用`EMBER_LIBERO_ASSETS_ROOT`指向BCI snapshot。
 - 历史config、run contract和analysis中的`/data/ymdai`是provenance，不批量改写。
-- 具体BGR数据盘映射、rsync staging和MemLLM symlink看迁移handoff。
+- 具体BCI数据盘映射、rsync staging和MemLLM symlink看迁移handoff。
 
 ## Checkpoint, artifacts and evidence
 
@@ -236,12 +251,12 @@ static bypass、confidence、强制正交/rank diversity、multi-video或checkpo
 - 正式run需frozen worktree；并发写实现需独立worktree；不得让两个writer重叠写。
 - meaningful状态更新`docs/active_session_handoff.md`、`docs/execution_brief.md`、对应
   design、`task_plan.md`、`findings.md`、`progress.md`并commit/push。
-- A100 pre-cleanup全refs bundle只作灾难恢复；BGR默认从GitHub clone，不批量恢复
+- A100 pre-cleanup全refs bundle只作灾难恢复；BCI默认从GitHub clone，不批量恢复
   Codex refs或旧local branches。
 
 ## Migration verification
 
-迁移智能体必须按`docs/a100_to_bgr_migration_handoff.md`完成：Git/bundle hashes、
+迁移智能体必须按`docs/a100_to_bci_migration_handoff.md`完成：Git/bundle hashes、
 source policy/tokenizer hashes、formal manifests、MemLLM hashes、路径/symlink、环境
 重建和CPU tests。不得复制venv或Codex auth。迁移成功后先向owner报告，再等待新的
 实验authority。

@@ -15,7 +15,10 @@ def _raw_full24_gradient_contract(
     return {
         "optimizer_gradient_accumulation": False,
         "loss_reduction": "mean_within_each_task_then_equal_mean_across_all_tasks",
-        "task_gradient_collection": "six_rank_local_per_task_writer_gradients_without_ddp_backward",
+        "task_gradient_collection": (
+            f"{tasks_per_rank}_rank_local_per_task_writer_gradients_without_"
+            "ddp_backward"
+        ),
         "task_gradients_per_rank_per_macro": tasks_per_rank,
         "global_task_gradients_per_macro": global_tasks,
         "distributed_full_task_gradient_matrix_materialized": False,
@@ -133,23 +136,14 @@ def checkpoint_state_family(config: Mapping[str, Any]) -> str:
     raise WriterModelError("unsupported AS-Writer checkpoint state family")
 
 
-def build_update_runtime_contract(
-    *,
+def _update_topology_contract(
     config: Mapping[str, Any],
     context: DistributedContext,
-    video_data: Mapping[str, Any],
     total_steps: int,
-    stop_step: int,
-    batch_size: int,
-    batch_cycle: Sequence[int],
-    checkpoint_steps: Sequence[int],
-    num_workers: int,
-    rank_topology: Sequence[Mapping[str, Any]],
-) -> dict[str, Any]:
+    tasks_per_rank: int,
+    global_tasks: int,
+) -> tuple[bool, dict[str, Any]]:
     training = config["conditioning_training"]
-    tasks_per_rank = int(training["tasks_per_rank_per_optimizer_update"])
-    global_tasks = context.world_size * tasks_per_rank
-    videos_per_visit = int(training["teacher_videos_per_task_visit"])
     update_topology = str(training["update_topology"])
     serial4 = update_topology in {
         "serial4_exposure_matched_six_phase_task_cycle",
@@ -226,6 +220,50 @@ def build_update_runtime_contract(
             "adamw_updates_per_macro": 1,
         }
     )
+    return serial4, topology
+
+
+def _policy_microbatch_contract(
+    config: Mapping[str, Any], batch_size: int
+) -> dict[str, int]:
+    microbatch_size = int(
+        config["optimization"].get(
+            "functional_policy_microbatch_size", batch_size
+        )
+    )
+    return {
+        "functional_policy_microbatch_size": microbatch_size,
+        "physical_policy_forwards_per_task": (
+            batch_size + microbatch_size - 1
+        )
+        // microbatch_size,
+    }
+
+
+def build_update_runtime_contract(
+    *,
+    config: Mapping[str, Any],
+    context: DistributedContext,
+    video_data: Mapping[str, Any],
+    total_steps: int,
+    stop_step: int,
+    batch_size: int,
+    batch_cycle: Sequence[int],
+    checkpoint_steps: Sequence[int],
+    num_workers: int,
+    rank_topology: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    training = config["conditioning_training"]
+    tasks_per_rank = int(training["tasks_per_rank_per_optimizer_update"])
+    global_tasks = context.world_size * tasks_per_rank
+    videos_per_visit = int(training["teacher_videos_per_task_visit"])
+    serial4, topology = _update_topology_contract(
+        config,
+        context,
+        total_steps,
+        tasks_per_rank,
+        global_tasks,
+    )
     return {
         "world_size": context.world_size,
         "one_policy_cuda_process_per_rank": True,
@@ -235,6 +273,7 @@ def build_update_runtime_contract(
         **topology,
         "task_video_cost_sha256": video_data["sampled_frame_cost_sha256"],
         "action_query_batch_size_per_task": batch_size,
+        **_policy_microbatch_contract(config, batch_size),
         _axis_key(serial4, "action_query_batch_size_per_rank"): (
             tasks_per_rank * batch_size
         ),

@@ -104,6 +104,44 @@ def test_antithetic_gaussian_noise_is_zero_mean_replayed_and_scoped() -> None:
     )
 
 
+def test_variance_reduced_microbatch_slices_reconstruct_full_draws() -> None:
+    policy = _FlowPolicy()
+    with scoped_policy_randomness(303, torch.device("cpu")):
+        with scoped_policy_flow_time_sampling(
+            policy, LATIN_BETA_TIME_SAMPLING_SCHEME
+        ):
+            full_time = policy.model.sample_time(20, torch.device("cpu"))
+        with scoped_policy_flow_noise_sampling(
+            policy, ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME
+        ):
+            full_noise = policy.model.sample_noise((20, 5), torch.device("cpu"))
+
+    time_chunks = []
+    noise_chunks = []
+    for offset in range(0, 20, 2):
+        with scoped_policy_randomness(303, torch.device("cpu")):
+            with scoped_policy_flow_time_sampling(
+                policy,
+                LATIN_BETA_TIME_SAMPLING_SCHEME,
+                logical_batch_size=20,
+                batch_offset=offset,
+            ):
+                time_chunks.append(
+                    policy.model.sample_time(2, torch.device("cpu"))
+                )
+            with scoped_policy_flow_noise_sampling(
+                policy,
+                ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME,
+                logical_batch_size=20,
+                batch_offset=offset,
+            ):
+                noise_chunks.append(
+                    policy.model.sample_noise((2, 5), torch.device("cpu"))
+                )
+    assert torch.equal(torch.cat(time_chunks), full_time)
+    assert torch.equal(torch.cat(noise_chunks), full_noise)
+
+
 class _LossPolicy(torch.nn.Module):
     def __init__(self) -> None:
         super().__init__()
@@ -120,6 +158,28 @@ class _LossPolicy(torch.nn.Module):
             return per_sample, {"loss": float(per_sample.mean().detach())}
         loss = per_sample.mean()
         return loss, {"loss": float(loss.detach())}
+
+
+class _RandomLossPolicy(_LossPolicy):
+    def __init__(self) -> None:
+        super().__init__()
+        self.model = _FlowModel()
+
+    def forward(
+        self,
+        batch: dict[str, torch.Tensor],
+        reduction: str = "mean",
+    ) -> tuple[torch.Tensor, dict[str, object]]:
+        del reduction
+        value = self.projection(batch["value"])
+        noise = self.model.sample_noise(value.shape, value.device)
+        time = self.model.sample_time(value.shape[0], value.device)
+        losses = (value - noise * time[:, None]).square()
+        loss = losses.mean()
+        return loss, {
+            "loss": float(loss.detach()),
+            "loss_per_dim": losses.mean(dim=0).detach().tolist(),
+        }
 
 
 def _contract() -> SmolVLALoRAContract:
@@ -227,6 +287,69 @@ def test_detached_lora_gradient_bridge_backpropagates_exact_writer_gradient() ->
     assert torch.allclose(
         bridged_gradient[0], direct_gradient, atol=1e-7, rtol=1e-6
     )
+
+
+def test_microbatched_functional_gradient_preserves_logical_b20_estimator() -> None:
+    policy = _RandomLossPolicy()
+    template = prepare_frozen_writer_policy(policy, _contract())
+    writer = _writer(template)
+    with torch.no_grad():
+        writer.scale.fill_(0.01)
+    state = writer(torch.randn(3, 5), torch.randn(9, 4, 7), torch.tensor([0, 9]))
+    batch = {"value": torch.randn(20, 3)}
+    common = {
+        "policy_rng_seed": 303,
+        "policy_rng_device": torch.device("cpu"),
+        "flow_time_sampling_scheme": LATIN_BETA_TIME_SAMPLING_SCHEME,
+        "flow_noise_sampling_scheme": ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME,
+    }
+    full_loss, full_details, full_gradients = functional_lora_loss_gradient(
+        policy,
+        state,
+        _contract(),
+        batch=batch,
+        **common,
+    )
+    micro_loss, micro_details, micro_gradients = functional_lora_loss_gradient(
+        policy,
+        state,
+        _contract(),
+        batch=batch,
+        policy_microbatch_size=2,
+        **common,
+    )
+    assert torch.allclose(micro_loss, full_loss, atol=1e-7, rtol=1e-6)
+    assert micro_details["loss"] == pytest.approx(full_details["loss"])
+    assert micro_details["loss_per_dim"] == pytest.approx(
+        full_details["loss_per_dim"]
+    )
+    assert set(micro_gradients) == set(full_gradients)
+    for name in full_gradients:
+        assert torch.allclose(
+            micro_gradients[name],
+            full_gradients[name],
+            atol=1e-7,
+            rtol=1e-6,
+        )
+
+
+def test_functional_gradient_rejects_zero_microbatch() -> None:
+    policy = _RandomLossPolicy()
+    template = prepare_frozen_writer_policy(policy, _contract())
+    writer = _writer(template)
+    state = writer(torch.randn(3, 5), torch.randn(9, 4, 7), torch.tensor([0, 9]))
+    with pytest.raises(WriterModelError, match="invalid functional policy microbatch"):
+        functional_lora_loss_gradient(
+            policy,
+            state,
+            _contract(),
+            batch={"value": torch.randn(20, 3)},
+            policy_rng_seed=303,
+            policy_rng_device=torch.device("cpu"),
+            flow_time_sampling_scheme=LATIN_BETA_TIME_SAMPLING_SCHEME,
+            flow_noise_sampling_scheme=ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME,
+            policy_microbatch_size=0,
+        )
 
 
 def test_success_weighted_flow_loss_weights_episodes_equally() -> None:

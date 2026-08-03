@@ -1,4 +1,4 @@
-# A100 → BGR Migration Handoff
+# A100 → BCI Migration Handoff
 
 状态：2026-08-03最终迁移authority。本文交给后续迁移智能体；本session不执行跨机
 迁移，也不在BGR创建、覆盖或删除文件。
@@ -54,11 +54,11 @@ git merge-base --is-ancestor 50662a842cfa5c6e0a4356587ea73ea95e1ff521 origin/mai
 
 ```bash
 export A100_HOST='REPLACE_ME'
-export BGR_STAGE='/absolute/path/.incoming-20260803'
-export POSTSEAL_LEDGER="$BGR_MANIFEST_ROOT/ember_postseal_20260802/assets.tsv"
-export POSTSEAL_LIST="$BGR_STAGE/ember-postseal-must-transfer.txt"
+export BCI_STAGE='/absolute/path/.incoming-20260803'
+export POSTSEAL_LEDGER="$BCI_MANIFEST_ROOT/ember_postseal_20260802/assets.tsv"
+export POSTSEAL_LIST="$BCI_STAGE/ember-postseal-must-transfer.txt"
 
-mkdir -p "$BGR_STAGE/postseal-data-ymdai"
+mkdir -p "$BCI_STAGE/postseal-data-ymdai"
 awk -F '\t' 'NR > 1 && $7 == "must-transfer" {
   path = $1
   sub("^/data/ymdai/", "", path)
@@ -68,7 +68,7 @@ awk -F '\t' 'NR > 1 && $7 == "must-transfer" {
 rsync -aH -r --partial --info=progress2 --protect-args \
   --files-from="$POSTSEAL_LIST" \
   "$A100_HOST:/data/ymdai/" \
-  "$BGR_STAGE/postseal-data-ymdai/"
+  "$BCI_STAGE/postseal-data-ymdai/"
 ```
 
 然后只把staging中的`outputs/ember/`合并到`$EMBER_OUTPUT_ROOT/`，把
@@ -200,7 +200,7 @@ canonical branches。
 | `/data/ymdai/logs/ember/` | 0.44GB | `$EMBER_LOG_ROOT/` | 正式运行日志 |
 | `/data/ymdai/ember_data/openpi/` | 4.3MB | `$EMBER_TOKENIZER_ROOT/` | 精确tokenizer |
 | `/data/ymdai/ember_assets/` | 0.43GB | `$EMBER_ASSET_ROOT/` | active LIBERO simulation assets |
-| `/data/ymdai/migration_manifests/` | 0.15GB | `$BGR_MANIFEST_ROOT/` | bundles、deletion ledger、freeze |
+| `/data/ymdai/migration_manifests/` | 0.15GB | `$BCI_MANIFEST_ROOT/` | bundles、deletion ledger、freeze |
 | `/data/ymdai/memllm_migration_20260708/` | 18.97GB | 见MemLLM反向映射 | 唯一data/model/result树 |
 
 EMBER outputs中两个最关键资产：
@@ -225,12 +225,12 @@ manifest保留；rejected EMA及训练resume state已删除。它能继续做下
 
 ```bash
 export A100_HOST='REPLACE_ME'
-export BGR_STAGE='/absolute/path/.incoming-20260802'
+export BCI_STAGE='/absolute/path/.incoming-20260802'
 
-mkdir -p "$BGR_STAGE/outputs/ember"
+mkdir -p "$BCI_STAGE/outputs/ember"
 rsync -aH --partial --info=progress2 --protect-args \
   "$A100_HOST:/data/ymdai/outputs/ember/" \
-  "$BGR_STAGE/outputs/ember/"
+  "$BCI_STAGE/outputs/ember/"
 ```
 
 对logs、tokenizer、simulation assets、manifests和MemLLM使用独立显式命令。不要把
@@ -348,19 +348,19 @@ A100物理树有意保留了旧BGR相对布局。应按两个明确子树分别�
 ```text
 A100:
 /data/ymdai/memllm_migration_20260708/data0/user/ymdai/LLM_memory/...
-BGR:
+BCI:
 /data0/user/ymdai/LLM_memory/...
 
 A100:
 /data/ymdai/memllm_migration_20260708/data1/user/ymdai/memllm_dense_ttt/...
-BGR:
+BCI:
 /data1/user/ymdai/memllm_dense_ttt/...
 ```
 
 先传到同盘`.incoming-20260802`，核验后再与目标合并。不要覆盖旧BGR上未知的
 `LLM_memory`或`memllm_dense_ttt`内容。clone MemLLM repo后重建ignored symlinks：
 
-| workspace link | BGR target |
+| workspace link | BCI target |
 | --- | --- |
 | `assets` | `/data0/user/ymdai/LLM_memory/memllm_mainline_ignored_artifact_archive_20260620_1415/data/mlp_memory` |
 | `data/benchmarks` | `/data0/user/ymdai/LLM_memory/memllm_mainline_ignored_artifact_archive_20260620_1415/data/benchmarks` |
@@ -401,7 +401,7 @@ peft`0.19.1`、faiss-cpu`1.14.3`、sentence-transformers`5.5.0`。其
 `requirements.txt`只有宽松范围，优先根据pinned freeze新建环境，再以repo tests
 校验。不要复制7.6GB venv；其shebang和解释器路径绑定A100。
 
-BGR NVIDIA driver必须支持PyTorch CUDA 12.8 runtime。A100系统toolkit 12.4不是要
+BCI NVIDIA driver必须支持PyTorch CUDA 12.8 runtime。A100系统toolkit 12.4不是要
 复制的环境组件。
 
 ## 6. 验证顺序
@@ -451,7 +451,7 @@ c236cb2d92e5e9b859a6266c059a685d715d4bc129fb8cb5f36f60b6351cd6bf
 1. clone EMBER与MemLLM，不恢复A100 session或auth文件；
 2. EMBER先读`AGENTS.md`、本文、`docs/active_session_handoff.md`、
    `docs/execution_brief.md`；改变实验状态前完整读完`AGENTS.md`要求的authority；
-3. MemLLM先读`AGENTS.md`、`docs/current/a100_to_bgr_migration.md`、
+3. MemLLM先读`AGENTS.md`、`docs/current/a100_to_bci_migration.md`、
    `docs/current/restart_status.md`和`data/README.md`；MemLLM仍暂停；
 4. 核验main已包含`50662a8`及本文；Target-Bound分支仅作历史审计，不自动merge或
    launch；
@@ -472,7 +472,7 @@ functional estimator：
 ```text
 pull latest origin/main
 -> CPU focused regression
--> BGR live GPU/storage preflight
+-> BCI live GPU/storage preflight
 -> longest-105-frame B20 profile
 -> fresh0→1→exact-resume1→3
 -> fresh macro0→200

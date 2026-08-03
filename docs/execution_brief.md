@@ -1,23 +1,27 @@
 # EMBER Current Execution Brief
 
-更新时间：2026-08-03 04:50 UTC。本文是操作层authority；科研结果取
-`docs/active_session_handoff.md`，迁移取`docs/a100_to_bgr_migration_handoff.md`，
+更新时间：2026-08-03 07:25 UTC。本文是操作层authority；科研结果取
+`docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
-## 0. 当前BGR运行事实（覆盖下文旧A100操作细节）
+## 0. 当前BCI运行事实（覆盖下文旧A100操作细节）
 
-- repo：`/data1/user/ymdai/projects/EMBER`；既有EMBER环境会自动装载BGR本地路径。
+- repo：`/data1/user/ymdai/projects/EMBER`；既有EMBER环境会自动装载BCI本地路径。
 - A40正式配置：
   `configs/pi05_as_writer_semantic_factor_basis_variance_reduced_long105_profile_v1.json`，
-  4 ranks、16-frame microbatch、batch 2、不固定物理GPU编号。
+  6 ranks×4 tasks、16-frame encoder microbatch、logical B20、policy microbatch2，
+  不固定物理GPU编号。
 - `NCCL_P2P_DISABLE=1`由EMBER环境自动设置，以规避gpu02直接P2P collective挂死；
   四卡collective、fresh训练、exact resume和8-rollout Writer评测均已实跑通过。
 - 评测不再递归扫描整个个人目录或执行旧个人容量硬门；只检查目标文件系统余量和
   本次选择的GPU。
-- 验收profile/smoke不得warm-start后续正式研究。下一研究动作仍是VR fresh 0→200
-  及50/100/150/200 paired correct400，由新的研究session按owner当时的GPU要求启动。
+- 四卡迁移验收后，六卡logical-B20工程profile与fresh/exact-resume已通过；峰值
+  allocated/reserved为`34,970,270,208/47,108,325,376` bytes。该次运行来自未提交
+  worktree，只授权冻结重放，不授权formal warm-start。
+- 下一研究动作是从clean pushed commit重放profile，然后VR fresh 0→200及
+  50/100/150/200 paired correct400。
 - 详细运行证据和精确指标见`docs/active_session_handoff.md`第0节。下文所有
-  `/data/ymdai`、A100 GPU4--7、B20和“BGR尚未验收”描述仅是历史状态。
+  `/data/ymdai`、A100 GPU4--7和“BCI尚未验收”描述仅是历史状态。
 
 ## 1. 当前操作状态
 
@@ -26,9 +30,9 @@
   paired rollout与内部分析。
 - 效率优先：不重复全仓仪式、全量hash或无关旧smoke；只做会改变实验可信度的shape、
   identity、freeze、causal、gradient、OOM、resume检查。
-- 新代码先push，外部roots逐项登记到post-seal delta ledger；本窗口GPU工作已于
-  `02:42 UTC`停止，当前只做文档、Git和迁移增量封存。
-- 这次临时授权不自动授予BGR GPU使用权。
+- A100窗口GPU工作已于`02:42 UTC`停止；其delta ledger只作历史provenance。
+- owner已另行授予BCI研究权限：每次比较`gpu01`/`gpu02`，只用空闲卡、合计最多6张，
+  不干扰他人；当前推进不使用subagent。
 
 Target-Bound已完成首小时与四点correct400=`75/120/90/110`，不续训；内部反事实证明
 其视频路径到达BA/action，剩余瓶颈定位到shared factor conditional coexistence。
@@ -42,7 +46,7 @@ longest105 B20与fresh/exact-resume vertical path通过，但没有formal训练�
 
 ```text
 post-seal baseline main/origin-main = f9a144c94e71bb44373d7247ed0fded2ed835305
-current experiment branch = codex/variance-reduced-functional-estimator
+current BCI write branch = codex/bci-continuation
 Target-Bound formal commit = cfd26df63d08f29d8bfaac58f585387134ed680b
 latest pushed implementation commit = 50662a842cfa5c6e0a4356587ea73ea95e1ff521
 ```
@@ -51,9 +55,9 @@ latest pushed implementation commit = 50662a842cfa5c6e0a4356587ea73ea95e1ff521
 artifact作为第二批增量交付；Target-Bound已封存为负结果。Semantic Factor-Basis
 显示task routing有效但没有超过v6 best，也没有解决checkpoint换手，不能宣称成功。
 
-迁移后默认动作：clone GitHub main并核验`f5ddfe3`或其后续交接commit；需要历史时再
-fetch实验分支，不复制`.git`或恢复所有Codex refs。BGR重建环境和路径映射后先运行
-聚焦CPU回归，owner重新授权前不启动GPU实验。
+迁移已完成；BCI环境、路径、assets、source checkpoint、四卡训练/评测和六卡collective
+均已核验。当前分支先完成microbatch实现的CPU回归、提交与冻结profile重放，再进入
+fresh formal训练。
 
 ## 3. Canonical assets
 
@@ -91,7 +95,7 @@ lerobot/libero-assets@0b3ea86be5fe169d0fd036ae63d1070ec09e90f6
 586 files; file-list SHA256 721aa2484de396be5267e936f115ddd5f03ffd12e0849cc1cd05bb17454996b9
 ```
 
-BGR路径和容量上限不得从A100字符串猜测；先设置`EMBER_STORAGE_ROOT`与owner给出的
+BCI路径和容量上限不得从A100字符串猜测；先设置`EMBER_STORAGE_ROOT`与owner给出的
 `EMBER_STORAGE_CAP_BYTES`，再由CLI显式传入source/checkpoint/tokenizer/data/output，
 并用`EMBER_LIBERO_ASSETS_ROOT`指向精确simulation snapshot。历史sealed artifacts中的
 旧绝对路径不改写。
@@ -140,8 +144,8 @@ docs/action_forecast_writer_semantic_factor_basis_design.md
 
 1. 不再在A100启动训练、评测或GPU分析；
 2. 最终代码/文档及34个post-seal `must-transfer` roots已形成Git与增量台账交付；
-3. BGR环境、路径和GPU边界核验后等待owner重新授权；
-4. 获授权后只从fresh identity运行VR 0→200，并评测50/100/150/200 correct400。
+3. 从clean pushed BCI commit重放logical-B20六卡profile并seal；
+4. 只从fresh identity运行VR 0→200，并评测50/100/150/200 correct400。
 
 下一候选`docs/action_forecast_writer_variance_reduced_functional_estimator_design.md`及代码
 在`50662a8`。longest105 B20和fresh/exact-resume通过；matched前三步梯度energy
@@ -186,7 +190,7 @@ mean。
 不用raw A/B gauge符号做跨模型结论。每task报告Core、Program、compiler、factor、
 effective BA与action，定位最早失效接口。
 
-## 8. Launch preflight on BGR
+## 8. Launch preflight on BCI
 
 每个expensive formal run只做一次live preflight并记录：
 
@@ -194,13 +198,13 @@ effective BA与action，定位最早失效接口。
 2. frozen worktree commit与sealed config/command；
 3. owner新授权的GPU IDs、进程、显存、温度和CUDA runtime；
 4. 不查询或触碰未授权GPU；
-5. BGR个人storage root、容量上限和预计峰值；
+5. BCI个人storage root、独立quota和预计峰值；
 6. source、checkpoint、tokenizer、data root存在且identity正确；
 7. output root此前不存在；tmux/log名称无冲突；
 8. DDP ranks与`CUDA_VISIBLE_DEVICES`只包含获批设备；
 9. 不干扰他人进程。
 
-A100上的NUMA node1和物理GPU4–7只是历史合同，不得复制到BGR。
+A100上的NUMA node1和物理GPU4–7只是历史合同，不得复制到BCI。
 
 ## 9. Evidence and retention
 
@@ -220,7 +224,7 @@ A100上的NUMA node1和物理GPU4–7只是历史合同，不得复制到BGR。
 meaningful状态更新：
 
 - `AGENTS.md`
-- `docs/a100_to_bgr_migration_handoff.md`
+- `docs/a100_to_bci_migration_handoff.md`
 - `docs/active_session_handoff.md`
 - 本文件
 - 对应architecture design

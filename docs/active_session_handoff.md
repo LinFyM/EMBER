@@ -1,18 +1,20 @@
 # EMBER Active Session Handoff
 
-更新时间：2026-08-03 04:50 UTC。本文只记录迁回 BGR 前后的当前真相。历史执行流水仍在
+更新时间：2026-08-03 07:25 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0. BGR运行交接（优先于下文旧A100操作描述）
+## 0. BCI运行交接（优先于下文旧A100操作描述）
 
-- EMBER已迁至`/data1/user/ymdai/projects/EMBER`。进入既有环境后，BGR数据、
+- EMBER已迁至`/data1/user/ymdai/projects/EMBER`。进入既有环境后，BCI数据、
   tokenizer、LIBERO assets、source checkpoint和输出路径会自动生效；不要再把
   `/data/ymdai`绝对路径写入新命令或新artifact。
-- canonical A40配置是
+- 当前VR A40配置是
   `configs/pi05_as_writer_semantic_factor_basis_variance_reduced_long105_profile_v1.json`；
-  它使用4 ranks、16-frame encoder microbatch和per-rank batch 2，不固定物理GPU编号。
-- BGR四卡验收已完成：NCCL/BF16 collective通过，真实Writer fresh 0→1通过，
+  它使用6 ranks×4 tasks、16-frame encoder microbatch、逻辑B20和policy microbatch2，
+  不固定物理GPU编号。一个LoRA仍读取完整B20随机样本，只把frozen-policy forward
+  切成10个B2并按样本数加权；full24 raw mean、一次AdamW与scheduler合同不变。
+- BCI四卡迁移验收已完成：NCCL/BF16 collective通过，真实Writer fresh 0→1通过，
   exact resume 1→2通过，最长真实视频105帧，峰值CUDA reserved
   `44,853,886,976` bytes；随后8/8 validation smoke rollouts完成并聚合。
 - 当前torch/NCCL在gpu02直接P2P传输会挂死；EMBER环境已自动设置
@@ -20,15 +22,31 @@
 - 评测preflight已移除对整个个人目录的递归`du`和个人容量硬门，只保留快速文件系统
   余量及所选GPU现场检查。不要恢复全目录扫描或A100的固定GPU4--7约束。
 - 验收root为
-  `/data1/user/ymdai/projects/EMBER/runs/acceptance/ember_bgr_gpu_acceptance_20260803T1232`；
+  `/data1/user/ymdai/projects/EMBER/runs/acceptance/ember_bci_gpu_acceptance_20260803T1232`；
   迁移证据在
   `/data1/user/ymdai/projects/EMBER/evidence/migration/20260803/gpu-acceptance/`。
   这些profile/smoke checkpoint只证明运行链路，后续VR正式实验仍须fresh identity，
   不得从验收权重warm-start。
 - 验收结束后无EMBER训练、评测worker或tmux进程，四张验收GPU均已释放。
+- owner现授权每次实时比较`gpu01`与`gpu02`，只用空闲卡且总数最多6张。2026-08-03
+  07:00 UTC附近快照中`gpu01`八卡均忙，`gpu02`的0/1/2/3/4/7空闲，因此工程profile
+  只使用这六卡；5/6有他人任务且从未触碰。该分配是易变快照，每次launch必须重查。
+- 六卡NCCL/BF16 smoke通过；未冻结工程profile在
+  `runs/acceptance/ember_bci_vr_effective_b20_micro2_r6_profile_20260803T1600/train`。
+  fresh0→1再exact-resume1→3完成；每步24 tasks、480 logical queries、240 physical
+  forwards，三步wall为`33.973/31.686/31.240s`，loss为
+  `.157415/.152420/.148585`。峰值allocated/reserved为
+  `34,970,270,208/47,108,325,376` bytes，五个主block从macro2起finite/nonzero，
+  validation/test action reads为0，step1/2/3 checkpoint齐全。由于运行时源码未提交，
+  这里只算工程证据；提交后必须fresh重放0→1与exact-resume1→3再seal。
 
 ## 1. 当前边界
 
+- owner已授权在当前BCI上继续环境适配、架构/训练设计、profile、正式训练、严格配对
+  评测和内部分析；目标是缓解task漂移，并使同一single checkpoint的correct aggregate
+  严格超过`150/400`后继续提高。推进期间不使用subagent。
+- 当前写分支为`codex/bci-continuation`，BCI新增输出只写项目`runs/`，证据写
+  `evidence/`。下列A100窗口、旧分支和`/data/ymdai`只保留历史provenance。
 - owner在迁移由另一session启动后重新开放约十小时A100 post-seal研究窗口，允许在
   原信息墙/split/安全合同和物理GPU4--7边界内继续架构、训练、评测与分析。窗口以
   `2026-08-02 19:18 UTC`起算，约`2026-08-03 05:18 UTC`硬停；操作上最迟`03:45 UTC`
@@ -39,8 +57,7 @@
 - 本A100研究窗口的训练、评测、内部分析和GPU profile均已结束；当前没有需要继承的
   tmux、torchrun、评测worker或GPU实验。MemLLM同样没有活动实验。
 - EMBER迁移封存基线为`f9a144c94e71bb44373d7247ed0fded2ed835305`；Semantic
-  Factor-Basis仍是canonical Writer，当前交付分支为
-  `codex/variance-reduced-functional-estimator`，最新已push实现commit为`50662a8`。
+  Factor-Basis仍是canonical Writer；A100最后push的VR实现commit为`50662a8`。
 - Target-Bound Role-Preserving Program 已在远端分支
   `origin/codex/target-bound-role-program`实现，commit
   `b260a57a94dc21bd3446b212bfa42f71b037ce13`。它只完成 CPU shape、identity、
@@ -70,7 +87,7 @@
   `.11346→.13255`、same-task cosine`.26439→.29206`。这只是小幅机制正证据，尚无
   fresh0→200或closed-loop结果。
 - 迁移步骤、路径映射、资产分流和新 Codex 接手顺序统一看
-  [`a100_to_bgr_migration_handoff.md`](a100_to_bgr_migration_handoff.md)。
+  [`a100_to_bci_migration_handoff.md`](a100_to_bci_migration_handoff.md)。
 
 ## 2. 最新 closed-loop 结论
 
@@ -225,11 +242,11 @@ artifacts保存，VR只替换训练估计器，不建立并行模型。核心职
 - Core只以Q/K地址选择四个factor value bases，所有value仍来自完整Core/A/E/D；
 - factor heads保持coherent near-rank1高增益，不加谱/正交/entropy约束。
 
-当前A100临时授权窗口已经完成并停止GPU工作。迁移后的紧邻动作是：
+当前A100临时授权窗口已经完成；BCI上的紧邻动作是：
 
-1. 由迁移agent按post-seal ledger增量同步`f9a144c`之后的Git和formal artifacts；
-2. 在BGR核验新路径、环境、LIBERO assets和owner的新GPU边界；
-3. 只有owner重新授权后，才从fresh identity运行VR macro0→200、every25，并评测
+1. 完成BCI microbatch实现、focused/full CPU回归并commit/push；
+2. 从clean pushed commit重放最长路径fresh0→1及exact-resume1→3，seal profile；
+3. 从fresh identity运行VR macro0→200、every25，并评测
    50/100/150/200 paired correct400；profile checkpoint不得warm-start；
 4. 若VR显著提高梯度稳定性却不提高absolute/breadth，则把主要根因转向functional
    action surrogate与source-policy closed-loop有效流形错位，而不是继续给SFB加路由。
@@ -266,12 +283,12 @@ provenance，不表示artifact损坏，也不授权重跑。精确删除清单�
 ## 6. 新Codex接手顺序
 
 本机Codex sessions、archive、auth、cache和worktree不迁移；它们不是authority。
-新Codex在BGR上应先：
+新Codex在BCI上应先：
 
 1. 核验Git HEAD、origin、工作区和迁移资产hash；
 2. 完整阅读`AGENTS.md`要求的authority文件；
 3. 优先读本文件、迁移handoff、`docs/execution_brief.md`、CV与Target-Bound设计；
-4. 检查BGR实际路径并设置`EMBER_STORAGE_ROOT`、owner cap及
+4. 检查BCI实际路径并设置`EMBER_STORAGE_ROOT`、owner cap及
    `EMBER_LIBERO_ASSETS_ROOT`，所有source/checkpoint/tokenizer/data/output路径继续
    通过CLI显式传入；
 5. 在owner恢复实验授权前保持无GPU作业状态。

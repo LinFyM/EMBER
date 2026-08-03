@@ -205,7 +205,7 @@
     "budget_role": "fresh_semantic_factor_basis_raw_full24_one_hour_then_evidence_gated_exact_resume"
   },
   "profile_defaults": {
-    "status": "bgr_a40_46g_revalidation_pending",
+    "status": "bci_a40_46g_revalidation_pending",
     "expected_world_size": 4,
     "total_steps": 3,
     "per_rank_batch_size": 2,
@@ -217,7 +217,7 @@
     "selected_stop_step": 3
   },
   "profile_evidence": {
-    "status": "bgr_a40_46g_revalidation_pending",
+    "status": "bci_a40_46g_revalidation_pending",
     "fixed_frame_stride": 5,
     "teacher_videos_per_task_visit": 1,
     "tasks_per_rank_per_optimizer_update": 6,
@@ -233,7 +233,7 @@
       "max_frames_per_encoder_call": 8,
       "per_task_action_batch_size": 2
     },
-    "selection_rule": "use_16_frame_microbatches_with_b2_on_bgr_a40_46g_then_fallback_to_8_frames_only_on_measured_oom",
+    "selection_rule": "use_16_frame_microbatches_with_b2_on_bci_a40_46g_then_fallback_to_8_frames_only_on_measured_oom",
     "selected": null,
     "exact_resume_smoke": null,
     "gradient_reachability": {
@@ -263,7 +263,7 @@
   },
   "formal_run": {
     "status": "sealed",
-    "launch_state": "bgr_a40_revalidation_required_before_formal_launch",
+    "launch_state": "bci_a40_revalidation_required_before_formal_launch",
     "expected_world_size": 4,
     "total_steps": 400,
     "per_rank_batch_size": 2,

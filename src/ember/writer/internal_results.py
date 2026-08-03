@@ -109,23 +109,31 @@ def record_failure(output_dir: Path, rank: int, error: BaseException) -> None:
 
 
 def validate_rank_payloads(
-    payloads: Sequence[Mapping[str, Any]], references_per_task: int
+    payloads: Sequence[Mapping[str, Any]],
+    references_per_task: int,
+    *,
+    world_size: int,
 ) -> list[dict[str, Any]]:
-    """Require the exact four-rank, 8-task Cartesian panel."""
+    """Require the exact distributed 8-task Cartesian panel."""
 
-    if len(payloads) != 4 or not 1 <= references_per_task <= 50:
+    if (
+        len(payloads) != world_size
+        or not 1 <= world_size <= 8
+        or not 1 <= references_per_task <= 50
+    ):
         raise WriterModelError("internal-analysis rank payload count changed")
     rows: list[dict[str, Any]] = []
     owned: set[int] = set()
+    maximum_tasks_per_rank = ceil(8 / world_size)
     for expected_rank, payload in enumerate(payloads):
         task_ids = [int(value) for value in payload.get("assigned_task_ids", [])]
         local = list(payload.get("rows", []))
         if (
             int(payload.get("rank", -1)) != expected_rank
-            or len(task_ids) != 2
-            or len(set(task_ids)) != 2
+            or not 1 <= len(task_ids) <= maximum_tasks_per_rank
+            or len(set(task_ids)) != len(task_ids)
             or owned.intersection(task_ids)
-            or len(local) != 2 * references_per_task
+            or len(local) != len(task_ids) * references_per_task
             or any(int(row.get("global_task_id", -1)) not in task_ids for row in local)
         ):
             raise WriterModelError("internal-analysis rank ownership changed")
@@ -193,7 +201,11 @@ def finalize(
     if rank == 0:
         try:
             payloads = [read_json(output_dir / f"rows_rank_{value:02d}.json") for value in range(world_size)]
-            rows = validate_rank_payloads(payloads, references_per_task)
+            rows = validate_rank_payloads(
+                payloads,
+                references_per_task,
+                world_size=world_size,
+            )
             summary = summarize_rows(rows)
             result = {
                 "schema_version": result_schema,

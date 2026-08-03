@@ -55,14 +55,14 @@ def test_lpt_and_four_rank_cartesian_sealing_are_exact() -> None:
         }
         for rank, tasks in assignment.items()
     ]
-    rows = validate_rank_payloads(payloads, 3)
+    rows = validate_rank_payloads(payloads, 3, world_size=4)
     assert len(rows) == 24
     summary = summarize_rows(rows)
     assert summary["tasks"] == 8
     assert summary["global_numeric"]["metric"]["relative_l2"]["count"] == 24
     payloads[0]["rows"][0]["conditions"][0]["condition"] = "reversed"
     with pytest.raises(WriterModelError, match="pairing"):
-        validate_rank_payloads(payloads, 3)
+        validate_rank_payloads(payloads, 3, world_size=4)
 
 
 def test_lpt_six_rank_topology_has_complete_rank_and_task_ownership() -> None:
@@ -73,6 +73,17 @@ def test_lpt_six_rank_topology_has_complete_rank_and_task_ownership() -> None:
     assert set(assignment) == set(range(6))
     assert sorted(len(value) for value in assignment.values()) == [1, 1, 1, 1, 2, 2]
     assert {value for values in assignment.values() for value in values} == set(range(8))
+    payloads = [
+        {
+            "rank": rank,
+            "assigned_task_ids": tasks,
+            "rows": [_row(task, reference) for task in tasks for reference in range(2)],
+        }
+        for rank, tasks in assignment.items()
+    ]
+    rows = validate_rank_payloads(payloads, 2, world_size=6)
+    assert len(rows) == 16
+    assert {row["global_task_id"] for row in rows} == set(range(8))
 
 
 def test_attention_summary_supports_batched_aed_programs() -> None:

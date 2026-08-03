@@ -50,10 +50,11 @@ A100 80GB配置；任何适配不得悄悄改变sealed scientific contract。不
   设备并完成本地构造，通过不依赖NCCL的all-rank ready rendezvous后才建立NCCL
   process group；不得让快rank提前创建NCCL等待仍在构造的慢rank。process group建立
   后，各rank的collective类型、shape、顺序和次数必须严格对称。
-- 多卡任务分配必须显式读取本次实际`world_size`并为每个rank生成ownership记录，不得
-  保留4卡/8卡等历史默认值后再由launcher要求另一拓扑。整任务LPT或动态队列都必须
-  覆盖全部rank与全部task；卡数变化至少用聚焦分配测试和真实目标规模验证，不能靠减少
-  卡数绕过缺失rank。
+- 多卡任务分配和结果封存必须显式读取本次实际`world_size`并为每个rank生成ownership
+  记录，不得保留4卡/8卡等历史默认值后再由launcher要求另一拓扑。整任务LPT或动态
+  队列必须覆盖全部rank与全部task，最终聚合必须按实际ownership推导每rank行数；卡数
+  变化至少用聚焦分配/Cartesian sealing测试和真实目标规模验证，不能靠减少卡数绕过
+  缺失rank。
 - timeout/heartbeat覆盖只允许作为一次性诊断，用来区分慢初始化与真实collective
   deadlock，不得进入canonical launcher、formal config或长期文档命令。根因修复必须
   用原始失败规模重放，并至少通过真实finite step和exact-resume边界。

@@ -191,6 +191,12 @@ runs/outputs/pi05_as_writer_semfactor_vr_bci_correct400_noreplacement_seed7_macr
   根因修复为延后NCCL生命周期：rank先完成local policy/Writer/optimizer CUDA构造，
   经独立FileStore all-rank-ready rendezvous后才允许任何rank建process group；不得让
   快rank提前创建NCCL，也不得用放宽heartbeat或timeout封口。
+- `78d8b4f`重放确认生命周期修复后，六rank统一进入`SeqNum=1/ALLREDUCE/Numel=1`，
+  随后暴露BCI迁移期已裁决的第二层transport合同：显式launch漏传
+  `NCCL_P2P_DISABLE=1`，direct P2P/CUMEM在600秒超时。相同`gpu02:0--5`六卡加该变量
+  后，scalar sum=`21`、BF16 matmul finite及第二次all-reduce在10.5秒内全部通过。
+  因此BCI A40 launcher与代码现同时显式/fail-fast要求SHM transport；第二root同样
+  aborted且禁止resume。
 
 ## 1. 当前边界
 

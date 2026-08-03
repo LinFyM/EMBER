@@ -39,6 +39,17 @@ def initialize_distributed(
     if not 0 <= local_rank < torch.cuda.device_count():
         raise Pi05SourceTrainingError("LOCAL_RANK is outside visible CUDA devices")
     torch.cuda.set_device(local_rank)
+    hostname = os.uname().nodename.split(".", 1)[0].lower()
+    if (
+        world_size > 1
+        and hostname in {"gpu01", "gpu02", "bci-gpu01", "bci-gpu02"}
+        and torch.cuda.get_device_name(local_rank) == "NVIDIA A40"
+        and os.environ.get("NCCL_P2P_DISABLE") != "1"
+    ):
+        raise Pi05SourceTrainingError(
+            "BCI A40 multi-GPU requires explicit NCCL_P2P_DISABLE=1; "
+            "NCCL 2.28 direct P2P/CUMEM is a reproduced transport hang"
+        )
     numa_node = cuda_numa_node(local_rank)
     cpu_affinity = bind_current_process_to_cuda_numa(local_rank)
     if require_numa and (numa_node is None or not cpu_affinity):

@@ -36,6 +36,11 @@ GPU范围和训练步长是当时快照；活动状态只取
   rank-local source CUDA构造，失败root已停止且不resume。按owner要求不使用timeout/
   watchdog覆盖，改为各rank本地policy/Writer/optimizer构造完成并经非NCCL all-rank
   ready rendezvous后才初始化NCCL，再以原六卡B20/longest105规模重放根因修复。
+- `78d8b4f`重放不再出现无active-collective heartbeat，而是在六rank对称
+  `SeqNum=1/ALLREDUCE/Numel=1`处暴露explicit launch漏传BCI已知transport合同：A40+
+  NCCL2.28 direct P2P/CUMEM 600秒hang。相同`gpu02:0--5`六卡显式
+  `NCCL_P2P_DISABLE=1`后，sum21、BF16 finite与两次all-reduce 10.5秒通过。代码和
+  `AGENTS.md`现都要求BCI多卡SHM fail-fast，不依赖`.env.local`偶然source。
 
 ## 2026-08-03 BCI VR正式训练、rollout与阶段暂停
 

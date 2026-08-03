@@ -268,6 +268,7 @@ def build_update_runtime_contract(
             "out_of_band_all_rank_cuda_ready_rendezvous_then_nccl_"
             "before_first_distributed_collective"
         ),
+        "nccl_transport": "bci_a40_shm_with_direct_p2p_disabled",
         "ddp_object": "rank_synchronized_shared_writer_without_ddp_backward",
         "checkpoint_state_family": checkpoint_state_family(config),
         **topology,

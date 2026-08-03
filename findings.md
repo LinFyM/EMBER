@@ -39,6 +39,11 @@
   stuck且`only active collectives: 0`。因此正确边界是先用非NCCL ready rendezvous
   确认所有rank完成本地policy/Writer/optimizer构造，再统一创建NCCL；增加heartbeat
   timeout只能掩盖生命周期错误，不能作为canonical修复。
+- lifecycle修复重放又把剩余失败精确下沉到真实`SeqNum=1` scalar all-reduce：这台
+  BCI A40/NCCL2.28的direct P2P/CUMEM已在迁移验收中证实会hang，而显式SHM路径稳定。
+  本次漏传`NCCL_P2P_DISABLE=1`后600秒超时；同六卡补回后sum21与BF16 finite两次
+  collective在10.5秒通过。因此需要的是host-specific transport fail-fast，不是扩大
+  collective timeout或改变Writer batch。
 
 ## 2026-08-03 BCI VR正式裁决与functional/closed-loop错位
 

@@ -42,6 +42,10 @@ A100 80GB配置；任何适配不得悄悄改变sealed scientific contract。不
 - 多卡并行故障必须先按rank、device、process-group生命周期、collective序列、CUDA
   初始化和I/O/NUMA层定位根因；不得用盲目重试、增加timeout、关闭NCCL watchdog、
   heartbeat环境变量或减少科学batch来掩盖可复现故障。
+- BCI `gpu01`/`gpu02`的A40与当前NCCL 2.28组合已复现direct P2P/CUMEM collective
+  hang，稳定合同是显式`NCCL_P2P_DISABLE=1`并走SHM transport。所有BCI多卡launcher
+  必须显式传入且代码fail-fast核验，不能依赖`.env.local`被偶然source；这不是通用到
+  其他主机的默认设置，迁移或升级NCCL/driver后须用最小collective重新裁决。
 - 耗时的rank-local CUDA模型/optimizer构造必须与NCCL生命周期分离：各rank先绑定唯一
   设备并完成本地构造，通过不依赖NCCL的all-rank ready rendezvous后才建立NCCL
   process group；不得让快rank提前创建NCCL等待仍在构造的慢rank。process group建立

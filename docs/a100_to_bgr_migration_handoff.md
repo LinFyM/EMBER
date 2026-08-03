@@ -1,7 +1,81 @@
 # A100 → BGR Migration Handoff
 
-状态：2026-08-02迁移准备authority。本文交给后续迁移智能体；本session不执行跨机
+状态：2026-08-03最终迁移authority。本文交给后续迁移智能体；本session不执行跨机
 迁移，也不在BGR创建、覆盖或删除文件。
+
+## 0. 2026-08-03 post-seal增量：必须做第二次同步
+
+2026-08-02原迁移封存完成后，owner临时重新开放了一个A100研究窗口。因此迁移智能体
+即使已经同步过原封存集，也必须再做一次本节规定的增量同步。当前所有训练、评测、
+profile和内部GPU分析均已结束，没有需要继承的进程；不要迁移A100 Codex、venv、
+cache或worktree。
+
+唯一机器可读增量authority为：
+
+```text
+/data/ymdai/migration_manifests/ember_postseal_20260802/assets.tsv
+/data/ymdai/migration_manifests/ember_postseal_20260802/README.md
+```
+
+`assets.tsv`当前有34行`must-transfer`，源端合计`16,483,938,529` bytes。它们包括：
+
+- Target-Bound fresh0→200正式训练、4个paired correct400、winner内部分析及日志；
+- Semantic Factor-Basis fresh0→400正式训练、8个paired correct400、macro200内部分析、
+  training-dynamics分析及日志。
+
+Semantic Factor-Basis完整correct400为
+`69/91/118/127/117/81/126/120`，winner仍是macro200。Target-Bound为
+`75/120/90/110`，winner为macro100。两者均是需要保留的漂移/架构证据，不能只迁
+winner。variance-reduced estimator仅完成longest105 B20与fresh/exact-resume垂直
+验证，没有0→200或rollout；其profile、smoke和日志标为`do-not-transfer`或
+`debug-only`，只通过Git迁移实现、配置和结论。
+
+本窗口没有新增MemLLM代码、模型、数据或结果；MemLLM仍只按原2026-08-02封存清单
+迁移，不需要第二批科研artifact同步。
+
+### 0.1 Git增量
+
+在BGR执行`git fetch origin`后，以实时`origin/main`为canonical；它必须包含本文、
+Semantic Factor-Basis和VR estimator，并满足：
+
+```bash
+git merge-base --is-ancestor 50662a842cfa5c6e0a4356587ea73ea95e1ff521 origin/main
+```
+
+需要逐commit审计时再fetch
+`origin/codex/variance-reduced-functional-estimator`。不要复制A100 worktree或`.git`，
+也不要恢复所有Codex refs。
+
+### 0.2 正式artifact增量
+
+先把整个`ember_postseal_20260802/`小目录同步到BGR manifest root，再由BGR从
+`assets.tsv`生成精确文件列表。以下命令只展示安全形状；`A100_HOST`、staging和BGR
+目标路径必须由迁移智能体按现场填写：
+
+```bash
+export A100_HOST='REPLACE_ME'
+export BGR_STAGE='/absolute/path/.incoming-20260803'
+export POSTSEAL_LEDGER="$BGR_MANIFEST_ROOT/ember_postseal_20260802/assets.tsv"
+export POSTSEAL_LIST="$BGR_STAGE/ember-postseal-must-transfer.txt"
+
+mkdir -p "$BGR_STAGE/postseal-data-ymdai"
+awk -F '\t' 'NR > 1 && $7 == "must-transfer" {
+  path = $1
+  sub("^/data/ymdai/", "", path)
+  print path
+}' "$POSTSEAL_LEDGER" > "$POSTSEAL_LIST"
+
+rsync -aH -r --partial --info=progress2 --protect-args \
+  --files-from="$POSTSEAL_LIST" \
+  "$A100_HOST:/data/ymdai/" \
+  "$BGR_STAGE/postseal-data-ymdai/"
+```
+
+然后只把staging中的`outputs/ember/`合并到`$EMBER_OUTPUT_ROOT/`，把
+`logs/ember/`合并到`$EMBER_LOG_ROOT/`；不用`--delete`，不覆盖来源不明的BGR文件。
+同一staging和命令可安全重跑。完成后逐行确认34个`must-transfer`源对象在BGR映射后
+存在，正式correct roots各有400 rows，训练root的checkpoint/manifest可读。无需重新
+复制原封存的整个122GB树，也不需要为本增量重算全量数据hash。
 
 ## 1. 完成定义与安全边界
 
@@ -34,7 +108,7 @@ MemLLM scientific main before migration docs: edc549d4e4ad9cc36584aa9bcc1f84b55e
 `origin/main`为准，并核验本文件存在。当前没有EMBER/MemLLM训练、评测、torchrun或
 tmux。不要把A100的GPU4–7约束自动复制到BGR；目标机设备边界必须重新获取authority。
 
-清理后主要占用（allocated bytes）：
+原迁移封存、post-seal研究重启前的主要占用（allocated bytes）：
 
 | 路径 | bytes | 处置 |
 | --- | ---: | --- |
@@ -78,9 +152,10 @@ correction ledger和586-file hash list在cleanup manifest目录。
 cleanup总清单为`a100_cleanup_20260802/SHA256SUMS`，自身SHA256为
 `338f8a0b4d7e9a1a16c788fb307cff15c02ab3baa81aa1838059ecb25a87173a`。
 
-历史文档若引用已删除profile/resume/cache root，不表示正式evidence损坏。保留的
-60个checkpoint roots约74.9GB和406个complete evaluation roots约1.1GB是task漂移、
-checkpoint轮换及架构×recipe复核证据，故有意没有“只留winner”。
+历史文档若引用已删除profile/resume/cache root，不表示正式evidence损坏。原封存的
+60个checkpoint roots和406个complete evaluation roots，再加本节post-seal的2个
+正式训练root与12个正式correct400 root，是task漂移、checkpoint轮换及架构×recipe
+复核证据，故有意没有“只留winner”。
 
 ## 3. 资产分流总表
 
@@ -378,8 +453,8 @@ c236cb2d92e5e9b859a6266c059a685d715d4bc129fb8cb5f36f60b6351cd6bf
    `docs/execution_brief.md`；改变实验状态前完整读完`AGENTS.md`要求的authority；
 3. MemLLM先读`AGENTS.md`、`docs/current/a100_to_bgr_migration.md`、
    `docs/current/restart_status.md`和`data/README.md`；MemLLM仍暂停；
-4. 检查Target-Bound远端分支，但不要自动merge或launch；先把main上的路径可移植性
-   提交rebase/merge进去；
+4. 核验main已包含`50662a8`及本文；Target-Bound分支仅作历史审计，不自动merge或
+   launch；
 5. 用BGR现场替换host-local路径变量，绝不依赖本文件中的示例盘符；
 6. 向owner报告Git、assets、hash、环境和无活动GPU作业状态，等待恢复实验authority。
 
@@ -388,20 +463,24 @@ c236cb2d92e5e9b859a6266c059a685d715d4bc129fb8cb5f36f60b6351cd6bf
 
 ## 8. 迁移后的科研起点
 
-迁移成功且owner重新授权后，首个候选是Target-Bound Role-Preserving Program，
-不是重跑CV、SPG或旧profile。顺序为：
+迁移成功且owner重新授权后，首个候选不再是Target-Bound。Target-Bound已正式完成并
+以`75/120/90/110`拒绝第二小时；Semantic Factor-Basis也已完成400 macros并以
+`69/91/118/127/117/81/126/120`证明task routing有效但漂移未解。下一项最小可证伪
+实验是在不改SFB拓扑、目标期望和full24 operator的前提下正式测试variance-reduced
+functional estimator：
 
 ```text
-merge/rebase portability change
--> target branch CPU regression
+pull latest origin/main
+-> CPU focused regression
 -> BGR live GPU/storage preflight
 -> longest-105-frame B20 profile
 -> fresh0→1→exact-resume1→3
--> fresh cycle0→200
+-> fresh macro0→200
 -> paired correct400 at 50/100/150/200
 -> root-cause gate
 ```
 
-它必须同时追求single-checkpoint absolute、task breadth、低漂移、视频特异性和
-Core/Program→effective BA→policy action传递。达到一个分数不自动停止；但本迁移
-handoff本身不授予任何实验启动权限。
+已有A100 profile/smoke只能证明可运行，不得warm-start BGR正式训练，也不能冒充性能
+证据。该实验必须同时检查single-checkpoint absolute、task breadth、状态换手和梯度
+方向稳定性；只有形成强single winner后才进入视频五臂。本迁移handoff本身不授予任何
+实验或GPU启动权限。

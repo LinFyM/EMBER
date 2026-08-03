@@ -2,9 +2,10 @@
 
 ## Status
 
-2026-08-02 post-seal candidate. This changes the stochastic estimator used by
-AS-Writer training, not the Writer architecture or its information wall. It is
-unprofiled and untrained until live evidence below is recorded.
+2026-08-03 post-seal candidate. This changes the stochastic estimator used by
+AS-Writer training, not the Writer architecture or its information wall.
+Longest-105 B20 and fresh/exact-resume vertical paths pass at `50662a8`; no
+formal 0→200 training or closed-loop evaluation has been run.
 
 ## Question
 
@@ -75,3 +76,34 @@ B20 fresh 0→1 and exact resume 1→3 on four ranks, then fresh 0→200 with
 checkpoints every 25. Evaluate paired correct400 at 50/100/150/200. Continue to
 400 only if absolute performance, breadth, right-edge trend, or internal
 gradient stabilization supplies positive evidence.
+
+## Live vertical-path evidence (2026-08-03)
+
+The retained implementation commit is `50662a8`. The one-line runtime mode
+routing omission found by the first real launch was fixed with a focused
+regression; 4 relevant tests pass. A fresh longest-105-frame run then completed
+three full24 macros on four ranks at B20 in `60.83s`, with peak CUDA reserved
+memory `83,508,592,640` bytes, zero clipping/non-finite values, all five main
+blocks reachable after the identity lifecycle, and no validation/test action
+reads. Root:
+
+```text
+/data/ymdai/outputs/ember/pi05_as_writer_semfactor_vr_postseal_long105_profile_r4_b20_seed172_50662a8_20260803
+```
+
+The formal seed separately completed fresh `0→1` then exact resume `1→3`, with
+continuous macro/checkpoint/cursor state and contract
+`5111fa16b2b1db875ae80d79113516bfb8c853f76508b16979f4c7f9de558921`:
+
+```text
+/data/ymdai/outputs/ember/pi05_as_writer_semfactor_vr_postseal_formalseed_resume_r4_b20_seed7_50662a8_20260803
+```
+
+Against the ordinary SFB formal-seed vertical path with identical task/video
+assignments, mean raw-full24 gradient-energy retention changed
+`.11346→.13255`; same-task successive CountSketch cosine changed
+`.26439→.29206` (factor-only `.27354→.29758`). This is small, directionally
+positive mechanism evidence, not proof of improved drift or closed-loop
+performance. The next valid experiment is fresh `0→200` followed by paired
+correct400 at `50/100/150/200`; it is deferred to BGR and requires new owner GPU
+authorization after migration.

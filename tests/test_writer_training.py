@@ -164,7 +164,12 @@ def test_variance_reduced_recipe_changes_only_functional_sampling_contract() -> 
     assert reduced["optimization"]["scheduler"] == raw["optimization"][
         "scheduler"
     ]
-    assert reduced["formal_run"]["status"] == "pending_profile"
+    assert reduced["formal_run"]["status"] == (
+        "profile_passed_formal_training_not_started"
+    )
+    assert reduced["formal_run"]["launch_state"] == (
+        "deferred_to_bgr_owner_authorization_after_migration"
+    )
 
 
 def test_v6_recipe_overlay_is_provenance_not_an_active_writer_path() -> None:
@@ -453,8 +458,16 @@ def test_retired_writer_configs_are_not_active() -> None:
         load_writer_config(REPO_ROOT / "configs/pi05_as_writer_v2.json")
 
 
+@pytest.mark.parametrize(
+    "conditioning_method",
+    [
+        "raw_task_complete_single_video_multi_action_positive_functional_loss",
+        "variance_reduced_task_query_keyed_raw_task_complete_single_video_multi_action_positive_functional_loss",
+    ],
+)
 def test_raw_full_task_step_collects_task_gradients_and_updates_once(
     monkeypatch: pytest.MonkeyPatch,
+    conditioning_method: str,
 ) -> None:
     task_ids = (10, 20, 30, 40, 50, 60)
 
@@ -527,10 +540,7 @@ def test_raw_full_task_step_collects_task_gradients_and_updates_once(
         scheduler=scheduler,
         config={
             "conditioning_training": {
-                "method": (
-                    "raw_task_complete_single_video_multi_action_"
-                    "positive_functional_loss"
-                )
+                "method": conditioning_method,
             },
             "optimization": {
                 "seed": 7,

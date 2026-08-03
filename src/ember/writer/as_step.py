@@ -659,6 +659,7 @@ def run_writer_step(
         "raw_task_complete_single_video_multi_action_positive_functional_loss",
         "raw_serial4_exposure_matched_single_video_multi_action_positive_functional_loss",
         "task_query_keyed_raw_task_complete_single_video_multi_action_positive_functional_loss",
+        "variance_reduced_task_query_keyed_raw_task_complete_single_video_multi_action_positive_functional_loss",
         "cycle_normalized_randomized_group4_single_video_multi_action_positive_functional_loss",
     }
     if mode not in supported_modes:

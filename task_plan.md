@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-最后更新：2026-08-02 UTC。
+最后更新：2026-08-03 UTC。
 
 本文件只保存尚未完成的长期闭环与当前执行顺序。历史实验过程见
 `findings.md`、`progress.md` 和 Git；实时进程见
@@ -25,12 +25,19 @@ runner、split、路径或 GPU 权限。
   而不是视频路径断路。
 - [x] 完整实现Semantic Factor-Basis并push`e87363f`；11,159,296参数、55项聚焦
   回归、longest105 B20三macro及fresh0→1/exact-resume1→3均通过，seal为`f5ddfe3`。
-- [ ] clean frozen`f5ddfe3`正在fresh0→200、每25保存；完成后在GPU4--7一张卡一个
-  checkpoint并行评测50/100/150/200 paired correct400。
-- [ ] 按absolute、task breadth/churn与factor routing→BA/action传递决定是否续到400；
-  若失败，直接重审functional estimator与closed-loop manifold，不给失败模型加
-  entropy/gate/scale等补丁。
-- [ ] 最迟03:45 UTC停止新GPU工作，push全部代码/文档并封存post-seal增量清单。
+- [x] clean frozen`f5ddfe3`完成fresh0→200；paired correct400为
+  `69/91/118/127`，macro200 breadth8，50→200 gained/lost=`68/10`，但
+  150→200仍为`38/29`。
+- [x] 同一root exact-resume 200→400并并发评测250/300/350/400；完整曲线
+  `69/91/118/127/117/81/126/120`，single winner仍为macro200，第二小时明确轮换。
+- [x] 在不替换SFB架构的前提下实现variance-reduced functional estimator；mode接线
+  修复与回归commit为`50662a8`，只改变exact-marginal flow time/noise批内依赖。
+- [x] 完成VR longest105 B20三macro与formal-seed fresh0→1/exact-resume1→3；matched
+  早期梯度稳定性小幅改善，但尚无fresh0→200或closed-loop证据。
+- [x] 02:42 UTC停止全部GPU工作；不在剩余窗口启动无法完成paired评测的新训练。
+- [x] 封存并交付最终代码/文档及34行、16,483,938,529 bytes post-seal
+  `must-transfer`增量清单；迁移后由owner重新授权才运行VR fresh0→200与
+  50/100/150/200 paired correct400。
 
 ## A100清理与BGR迁移准备（2026-08-02）
 
@@ -46,8 +53,9 @@ runner、split、路径或 GPU 权限。
   trainer state和manifest，formal inspector通过，明确不再支持source exact resume。
 - [x] 删除可按精确revision重下的generic `lerobot/pi05_base`，封存revision、bytes和
   SHA；LIBERO exact dataset、tokenizer、formal outputs与feature cache v2保留。
-- [x] 保守保留60个正式checkpoint roots和406个complete evaluation roots；它们是
-  task漂移、checkpoint轮换和架构×recipe混杂的唯一证据，不只留winner。
+- [x] 保守保留原封存60个正式checkpoint roots和406个complete evaluation roots，
+  并登记post-seal新增2个正式训练root和12个formal correct400 roots；它们是task
+  漂移、checkpoint轮换和架构×recipe混杂的唯一证据，不只留winner。
 - [x] 封存EMBER/MemLLM完整dependency freeze；验证后删除EMBER venv/package cache；
   owner关闭MemLLM venv消费者后也删除其7.60GB环境，两者都列为BGR重建项。
 - [x] 删除55个clean辅助worktree、36个本地实验branch和obsolete stash；历史由

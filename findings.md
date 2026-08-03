@@ -3887,3 +3887,60 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   梯度均finite/nonzero。formal seed fresh0→1再exact-resume1→3保持合同
   `0495a071...`，累计1,440 queries/72 videos且validation/test action reads为0。
   这些只授权`f5ddfe3` fresh0→200，不构成性能结论。
+
+## Semantic Factor-Basis首小时与续训门（2026-08-03）
+
+- fresh macro50/100/150/200的paired correct400为`69/91/118/127`，breadth为
+  `7/7/6/8`。macro200逐task为Long-1/2=`13/2`、Goal-3/6=`1/44`、
+  Object-1/3=`31/32`、Spatial-1/3=`3/1`；不是单一task独占，但主要能力仍集中在
+  Goal-6和两个Object tasks。
+- success-set相邻换手为50→100 `37/15`、100→150 `46/19`、150→200
+  `38/29`；50→200为`68/10`。因此SFB相对Target-Bound确实形成更可信的共同累积，
+  但没有消除短期能力轮换。
+- macro200相对Target-Bound macro200 paired gained/lost=`40/23`，净增17；相对
+  Target-Bound observed-best macro100为`34/27`，只净增7。SFB是有作用的条件分工，
+  不是架构统治。
+- macro200内部route task-centered/sample energy为`.2171`，task均值路由pair
+  relative-L2中位`.6049`；A/E/D移除、memory reversal、Core-only和Program-only
+  均证实主路径工作。与此同时晚期factor gradient share升至`.95045`、同task相邻
+  CountSketch cosine降至`.06595`、task-mean/sample降至`.01292`。行为改善与该
+  sketch稳定性没有一一对应，不能仅凭内部指标否定续训。
+- 由于absolute接近v6同期、右端持续上涨、breadth到8且内部路径成立，按预注册门
+  exact-resume 200→400；不能因未到150机械停止。下一候选variance-reduced estimator
+  只检验flow Monte Carlo噪声，代码commit`1d04ae5`尚无GPU结论。
+
+## Semantic Factor-Basis第二小时、漂移根因与VR垂直路径（2026-08-03）
+
+- SFB 400-macro完整paired correct400曲线为
+  `69/91/118/127/117/81/126/120`，single winner仍是macro200。第二小时相邻
+  gained/lost为`19/29`、`16/52`、`60/15`、`20/26`；八点success union/intersection
+  为`193/39`，single-best envelope gap=`66`。继续成熟化没有提高单点性能，反而给出
+  本轮最强的checkpoint能力轮换证据。
+- macro200相对source base gained/lost=`84/5`，所以SFB不是无效模型；相对v5.2-old
+  `49/54`、v6-fast macro200 `33/39`、v6-fast macro400 `27/43`，没有形成新的上限。
+  macro350达到126但与macro200 gained/lost=`31/32`、Jaccard`.6013`，相同aggregate
+  不能冒充相同能力。
+- 后半段201--250/251--300/301--350/351--400的raw full24 mean energy retention为
+  `.04443/.04285/.04219/.04203`，candidate-negative tasks全部为0，factor share为
+  `.9586/.9660/.9685/.9691`；同task successive CountSketch cosine从`.0676`降到
+  `.0461/.0106/-.0099`。这更接近24个近正交条件方向加高方差sample，而不是负冲突。
+- 相邻50-macro Adam一阶moment余弦在第二小时为`.0114/.0237/-.0014/-.0334`，二阶
+  moment余弦却为`.9145/.9237/.9334/.9448`。优化器的尺度归纳稳定，方向持续轮换；
+  降LR只缩短参数位移，未建立共同task方向。SFB router参数自身改变量很小且多段反向，
+  不能再靠增加basis、entropy、gate或scale解释。
+- 因absolute未达到strong门且winner仍为已有macro200，不新增1600个五臂rollout；
+  macro200 refs1已证明route和A/E/D→BA→action工作，足以把最早剩余接口转到训练
+  estimator/surrogate，而不是重复内部GPU分析。
+- VR estimator首个真实launch暴露config method未接入`as_step`合法mode的一行工程
+  缺口；它发生在首macro前，无训练结果。`50662a8`修复并增加参数化回归，4个focused
+  tests通过且代码已push。
+- 修复后的longest105 DDP4 B20三macro wall=`60.83s`、peak reserved
+  `83,508,592,640` bytes，all finite、0 clip；formal seed fresh0→1/exact-resume1→3
+  完成1,440 queries/72 videos，validation/test action reads为0。与普通SFB完全相同
+  task/video assignments的前三步相比，mean gradient-energy retention
+  `.11346→.13255`，same-task cosine`.26439→.29206`，factor-only
+  `.27354→.29758`。这是小幅、方向正确的机制证据，分母仅三步，不支持性能宣称。
+- 当前最可信下一证伪是VR fresh0→200后paired correct400。若梯度稳定性显著提高但
+  absolute/breadth仍不提高，则主要根因应升级为functional action surrogate与
+  source-policy closed-loop有效流形错位；若稳定性也不提高，则拒绝该estimator，
+  回到完整training target设计，而不是继续修补SFB。

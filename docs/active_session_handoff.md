@@ -1,6 +1,6 @@
 # EMBER Active Session Handoff
 
-更新时间：2026-08-02 22:38 UTC。本文只记录迁回 BGR 前的当前真相。历史执行流水仍在
+更新时间：2026-08-03 03:05 UTC。本文只记录迁回 BGR 前的当前真相。历史执行流水仍在
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
@@ -13,13 +13,11 @@
 - 已迁移封存基线为`f9a144c`；本轮所有Git与artifact都是post-seal delta，外部登记根
   为`/data/ymdai/migration_manifests/ember_postseal_20260802/`。迁移仍由另一session
   执行，本session不修改其现有副本，只提供增量清单。
-- 当前活动实验是Semantic Factor-Basis首小时正式训练：tmux
-  `ember_sfb_formal_f5ddfe3`，四个torchrun ranks只在物理GPU4--7，fresh
-  macro0→200。精确root/log列在本节下方和post-seal delta ledger；MemLLM没有活动
-  实验。
-- EMBER迁移封存基线为`f9a144c94e71bb44373d7247ed0fded2ed835305`；当前
-  `main=origin/main=f5ddfe381ac959a019535c470d9de9dfe4c2a3e4`，Semantic
-  Factor-Basis是canonical实现，写分支为`codex/semantic-factor-basis`。
+- 本A100研究窗口的训练、评测、内部分析和GPU profile均已结束；当前没有需要继承的
+  tmux、torchrun、评测worker或GPU实验。MemLLM同样没有活动实验。
+- EMBER迁移封存基线为`f9a144c94e71bb44373d7247ed0fded2ed835305`；Semantic
+  Factor-Basis仍是canonical Writer，当前交付分支为
+  `codex/variance-reduced-functional-estimator`，最新已push实现commit为`50662a8`。
 - Target-Bound Role-Preserving Program 已在远端分支
   `origin/codex/target-bound-role-program`实现，commit
   `b260a57a94dc21bd3446b212bfa42f71b037ce13`。它只完成 CPU shape、identity、
@@ -35,10 +33,19 @@
   11,159,296。`e87363f`的longest105 B20三macro及formal-seed fresh0→1/
   exact-resume1→3均通过，五个主block从macro2起finite/nonzero；seal/push commit为
   `f5ddfe3`。
-- clean frozen`f5ddfe3`已于22:37:45 UTC从fresh identity启动0→200、every25；不从
-  profile/smoke warm-start，不自动续第二小时。formal root：
+- clean frozen`f5ddfe3`从fresh identity完成0→400、every25；不从profile/smoke
+  warm-start。完整paired correct400为`69/91/118/127/117/81/126/120`，single
+  winner仍是macro200。八点success union/intersection=`193/39`、single envelope
+  gap=`66`；250→300 lost52、300→350 gained60，第二小时明确证明能力轮换而非成熟化。
+  formal root：
   `/data/ymdai/outputs/ember/pi05_as_writer_semfactor_postseal_rawfull24_decay400_formal_r4_b20_seed7_f5ddfe3_20260802`；log：
-  `/data/ymdai/logs/ember/pi05_as_writer_semfactor_postseal_rawfull24_decay400_formal_r4_b20_seed7_f5ddfe3_20260802.log`。
+  `/data/ymdai/logs/ember/pi05_as_writer_semfactor_postseal_resume200to400_r4_b20_seed7_f5ddfe3_20260803.log`。
+- variance-reduced estimator保持SFB拓扑、objective期望、B20/full24/optimizer不变，
+  只对flow time做exact-Beta Latin分层并对Gaussian noise做随机antithetic pairing。
+  runtime mode接线修复已在`50662a8`push。longest105 B20三macro和formal-seed
+  fresh0→1/exact-resume1→3均通过；matched前三步task-mean energy retention
+  `.11346→.13255`、same-task cosine`.26439→.29206`。这只是小幅机制正证据，尚无
+  fresh0→200或closed-loop结果。
 - 迁移步骤、路径映射、资产分流和新 Codex 接手顺序统一看
   [`a100_to_bgr_migration_handoff.md`](a100_to_bgr_migration_handoff.md)。
 
@@ -150,10 +157,42 @@ canonical root：
 analysis SHA256：
 `98371337e2cf1f7cec09d04e81445b419fc21c654fe173cb081a4b5e63092efa`。
 
+### 3.1 Semantic Factor-Basis最终裁决
+
+完整曲线与逐task（Long-1/2、Goal-3/6、Object-1/3、Spatial-1/3）为：
+
+| macro | correct | per-task |
+| ---: | ---: | --- |
+| 50 | 69 | `3/1/0/39/17/7/1/1` |
+| 100 | 91 | `7/0/1/38/26/15/2/2` |
+| 150 | 118 | `14/1/0/40/32/28/3/0` |
+| 200 | 127 | `13/2/1/44/31/32/3/1` |
+| 250 | 117 | `14/1/0/42/30/27/1/2` |
+| 300 | 81 | `12/0/1/42/17/9/0/0` |
+| 350 | 126 | `22/0/1/40/33/29/0/1` |
+| 400 | 120 | `20/0/1/43/23/32/1/0` |
+
+macro200相对source base paired gained/lost=`84/5`，证明Writer提供真实新能力；相对
+v5.2-old为`49/54`、v6-fast macro200为`33/39`，没有提高现有上限。后半段
+raw-full24 candidate-negative tasks始终为0，但gradient energy retention从
+201--250的`.04443`降到351--400的`.04203`，factor share从`.9586`升到`.9691`，
+same-task successive cosine从`.0676`降到`-.0099`。相邻checkpoint Adam一阶moment
+近正交而二阶moment高度稳定，说明主要现象是条件方向/functional sample持续轮换，
+不是全局mean即时伤害某些task，也不是scale统计失控。
+
+macro200既有内部root仍是本版winner机制authority：
+
+```text
+/data/ymdai/outputs/ember/pi05_as_writer_semfactor_postseal_macro0200_internal_refs1_seed7_18d3e89_20260802
+```
+
+它证明route与A/E/D→BA→action工作，但task routing只部分解决shared-factor共存。由于
+absolute未达到strong门，第二小时不新增same/wrong/shuffled/reversed 1600个rollout。
+
 ## 4. 当前代码与下一实验边界
 
-`main`现为clean pushed`f5ddfe3` Semantic Factor-Basis canonical path；
-Target-Bound/CV-ADR由Git与frozen artifacts保存。核心职责为：
+Semantic Factor-Basis仍是canonical Writer path；Target-Bound/CV-ADR由Git与frozen
+artifacts保存，VR只替换训练估计器，不建立并行模型。核心职责为：
 
 - 38个真实policy targets先读Core；
 - target-bound地读取Action、Effect与Change；
@@ -163,17 +202,19 @@ Target-Bound/CV-ADR由Git与frozen artifacts保存。核心职责为：
 - Core只以Q/K地址选择四个factor value bases，所有value仍来自完整Core/A/E/D；
 - factor heads保持coherent near-rank1高增益，不加谱/正交/entropy约束。
 
-当前A100临时授权窗口的紧邻动作是：
+当前A100临时授权窗口已经完成并停止GPU工作。迁移后的紧邻动作是：
 
-1. 让当前Semantic Factor-Basis fresh macro0→200自然完成；
-2. 在GPU4--7一张卡一个checkpoint并发评测50/100/150/200 paired correct400；
-3. 只按absolute、breadth、趋势、漂移和内部A/E/D→BA→action传递决定
-   exact-resume第二小时或整体根因迭代；
-4. 最迟03:45 UTC停止新GPU工作并封存/push全部增量。
+1. 由迁移agent按post-seal ledger增量同步`f9a144c`之后的Git和formal artifacts；
+2. 在BGR核验新路径、环境、LIBERO assets和owner的新GPU边界；
+3. 只有owner重新授权后，才从fresh identity运行VR macro0→200、every25，并评测
+   50/100/150/200 paired correct400；profile checkpoint不得warm-start；
+4. 若VR显著提高梯度稳定性却不提高absolute/breadth，则把主要根因转向functional
+   action surrogate与source-policy closed-loop有效流形错位，而不是继续给SFB加路由。
 
 不得从smoke/profile权重warm-start。当前完整设计为
-`docs/action_forecast_writer_semantic_factor_basis_design.md`；Target-Bound设计与正式
-负结果保留在Git、该文档和post-seal artifacts中。
+`docs/action_forecast_writer_semantic_factor_basis_design.md`，下一训练假设为
+`docs/action_forecast_writer_variance_reduced_functional_estimator_design.md`；
+Target-Bound设计与正式负结果保留在Git、该文档和post-seal artifacts中。
 
 ## 5. 迁移时必须保留的EMBER科学资产
 
@@ -185,9 +226,10 @@ Target-Bound/CV-ADR由Git与frozen artifacts保存。核心职责为：
   source-SFT resume包。
 - canonical feature cache v2：
   `/data/ymdai/outputs/ember/pi05_writer_feature_cache_v2_development32_raw_e4c19f9_b32_20260722`。
-- `/data/ymdai/outputs/ember`中保留的60个正式/历史训练checkpoint roots、406个完成
-  evaluation roots及内部analysis。它们是训练漂移与架构×recipe复核的唯一证据，
-  不能只迁winner。
+- 原迁移封存的60个正式/历史训练checkpoint roots、406个完成evaluation roots，
+  加上post-seal的2个正式训练root、12个formal correct400 roots及内部analysis。
+  它们是训练漂移与架构×recipe复核的唯一证据，不能只迁winner；精确增量只取
+  `/data/ymdai/migration_manifests/ember_postseal_20260802/assets.tsv`。
 - `/data/ymdai/logs/ember`、tokenizer、精确revision的426.57MB LIBERO simulation
   assets和`/data/ymdai/migration_manifests`。
 

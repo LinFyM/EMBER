@@ -1,6 +1,6 @@
 # EMBER Current Execution Brief
 
-更新时间：2026-08-02 19:18 UTC。本文是操作层authority；科研结果取
+更新时间：2026-08-02 22:38 UTC。本文是操作层authority；科研结果取
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bgr_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
@@ -15,10 +15,11 @@
   GPU实验并完成封存，约`05:18 UTC`后不得继续运行。
 - 这次临时授权不自动授予BGR GPU使用权。
 
-longest105三macro和fresh/exact-resume vertical path已通过。首次formal在GPU计算前因
-旧config仍为`pending_profile`而fail-close；不是OOM或训练失败。live evidence已经
-seal并push为`cfd26df`。clean frozen`cfd26df`于20:01:34 UTC从全新root fresh启动
-macro0→200；前两个macro的24-task/B20/long-first、finite梯度与信息墙合同已通过。
+Target-Bound已完成首小时与四点correct400=`75/120/90/110`，不续训；内部反事实证明
+其视频路径到达BA/action，剩余瓶颈定位到shared factor conditional coexistence。
+Semantic Factor-Basis的longest105 B20三macro和fresh/exact-resume vertical path已
+通过并seal为`f5ddfe3`。clean frozen`f5ddfe3`于22:37:45 UTC从全新root fresh启动
+macro0→200。
 
 ## 2. Canonical Git state
 
@@ -26,18 +27,18 @@ macro0→200；前两个macro的24-task/B20/long-first、finite梯度与信息�
 
 ```text
 post-seal baseline main/origin-main = f9a144c94e71bb44373d7247ed0fded2ed835305
-current experiment branch = codex/postseal-target-bound
-initial port commit = fbbb784 (b260a57 rebased by cherry-pick onto f9a144c)
-current main/origin-main = cfd26df63d08f29d8bfaac58f585387134ed680b
+current experiment branch = codex/semantic-factor-basis
+Target-Bound formal commit = cfd26df63d08f29d8bfaac58f585387134ed680b
+current main/origin-main = f5ddfe381ac959a019535c470d9de9dfe4c2a3e4
 ```
 
 `f9a144c`是另一迁移session已经封存的基线，不回写其内容。post-seal分支与所有新
-artifact作为第二批增量交付；Target-Bound已有profile/resume和活动正式训练证据，
-但在paired closed-loop结果出来前仍不能宣称有效。
+artifact作为第二批增量交付；Target-Bound已封存为负结果，Semantic Factor-Basis
+目前只有运行合同证据，paired closed-loop结果出来前不能宣称有效。
 
-迁移后默认动作：clone GitHub main、fetch Target-Bound远端分支、核验commit；不要
-复制`.git`或恢复所有Codex refs。路径可移植性提交应先rebase/merge到Target-Bound，
-再运行其CPU回归。
+迁移后默认动作：clone GitHub main并核验`f5ddfe3`或其后续交接commit；需要历史时再
+fetch实验分支，不复制`.git`或恢复所有Codex refs。BGR重建环境和路径映射后先运行
+聚焦CPU回归，owner重新授权前不启动GPU实验。
 
 ## 3. Canonical assets
 
@@ -100,20 +101,20 @@ v5.2/v6的old/task-complete四格又证明recipe作用依赖架构。不得把po
 整体判死、不得简单退回old six-update，也不得恢复CP-24、gate、scale、rank loss、
 multi-video或checkpoint fusion作为默认解。
 
-## 5. Current Target-Bound experiment
+## 5. Current Semantic Factor-Basis experiment
 
-Target-Bound Role-Preserving Program的完整design已在main：
+Semantic Factor-Basis的完整design已在main：
 
 ```text
-docs/action_forecast_writer_target_bound_role_program_design.md
+docs/action_forecast_writer_semantic_factor_basis_design.md
 ```
 
 当前执行顺序固定：
 
-1. 当前fresh cycle0→200、every25 checkpoint自然完成；
+1. 当前fresh macro0→200、every25 checkpoint自然完成；
 2. paired correct400评测50/100/150/200；
-3. 根据absolute、breadth、右端趋势、task churn和A/E/D→effective BA→action传递
-   决定是否第二小时；不机械按150停止；
+3. 根据absolute、breadth、右端趋势、task churn及factor routing/A/E/D→effective
+   BA→action传递决定是否第二小时；不机械按150停止；
 4. 窗口结束前停止GPU进程并把代码、文档与artifact delta交给迁移session。
 
 profile/smoke root必须全新，不得使用A100上的smoke权重或正式output路径。B20只有

@@ -1,7 +1,7 @@
 {
-  "schema_version": "ember_pi05_target_bound_role_program_recipe_overlay_v1",
-  "base_config": "configs/pi05_as_writer_target_bound_role_program_full24_decay400_v1.json",
-  "base_sha256": "37099732fcbcef1001aa16fdbecaf98349a899a5bfbe91730965314a46b8a578",
+  "schema_version": "ember_pi05_semantic_factor_basis_recipe_overlay_v1",
+  "base_config": "configs/pi05_as_writer_semantic_factor_basis_full24_decay400_v1.json",
+  "base_sha256": "6a5ea54aa9f60cd33db43c24dd3b43c5e3342e5c738a4acbd522593fb5708076",
   "replace": {
     "conditioning_training": {
       "method": "task_query_keyed_raw_task_complete_single_video_multi_action_positive_functional_loss",
@@ -27,7 +27,7 @@
       "normal_loss_weight": 1.0
     },
     "optimization": {
-      "method": "functional_pi05_target_bound_role_program_task_query_keyed_raw_full24_positive_only",
+      "method": "functional_pi05_semantic_factor_basis_task_query_keyed_raw_full24_positive_only",
       "seed": 7,
       "precision": "bfloat16",
       "source_policy": "final formal frozen raw policy",
@@ -69,7 +69,7 @@
       },
       "optimizer_diagnostics": "per_owned_block_moment_parameter_and_actual_update_l2",
       "maximum_formal_wall_clock_minutes": 190,
-      "budget_role": "fresh_target_bound_role_program_task_query_keyed_raw_reference_200_cycle_one_hour_then_evidence_gated_resume"
+      "budget_role": "fresh_semantic_factor_basis_task_query_keyed_raw_reference_200_cycle_one_hour_then_evidence_gated_resume"
     }
   }
 }

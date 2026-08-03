@@ -12,11 +12,11 @@ from ember.writer.model import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-TARGET_BOUND_ROLE_CONFIG_SCHEMA = (
-    "ember_pi05_target_bound_role_program_as_writer_v1"
+SEMANTIC_FACTOR_BASIS_CONFIG_SCHEMA = (
+    "ember_pi05_semantic_factor_basis_as_writer_v1"
 )
-TARGET_BOUND_ROLE_CONFIG_OVERLAY_SCHEMA = (
-    "ember_pi05_target_bound_role_program_recipe_overlay_v1"
+SEMANTIC_FACTOR_BASIS_CONFIG_OVERLAY_SCHEMA = (
+    "ember_pi05_semantic_factor_basis_recipe_overlay_v1"
 )
 AS_WRITER_CONFIG_SCHEMA = "ember_pi05_contextual_value_dual_read_full24_as_writer_v1"
 AS_WRITER_CONFIG_OVERLAY_SCHEMA = (
@@ -35,7 +35,7 @@ AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA = (
     "ember_pi05_contextual_value_dual_read_cycle_normalized_recipe_overlay_v2"
 )
 AS_WRITER_CONFIG_SCHEMAS = (
-    TARGET_BOUND_ROLE_CONFIG_SCHEMA,
+    SEMANTIC_FACTOR_BASIS_CONFIG_SCHEMA,
     AS_WRITER_CONFIG_SCHEMA,
     AS_WRITER_SERIAL4_CONFIG_SCHEMA,
     AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA,
@@ -238,6 +238,26 @@ def _conditioning_common(*, task_query_keyed: bool) -> dict[str, Any]:
     return common
 
 
+def _variance_reduced_conditioning_common() -> dict[str, Any]:
+    common = _conditioning_common(task_query_keyed=True)
+    common.update(
+        {
+            "policy_noise_contract": (
+                "task-query-keyed randomized Latin exact Beta time strata "
+                "and randomized antithetic exact Gaussian flow noise within "
+                "each even task action batch"
+            ),
+            "policy_flow_time_sampling_scheme": (
+                "task_query_keyed_randomized_latin_beta15_time_v1"
+            ),
+            "policy_flow_noise_sampling_scheme": (
+                "task_query_keyed_randomized_antithetic_gaussian_v1"
+            ),
+        }
+    )
+    return common
+
+
 def _full24_conditioning(
     common: Mapping[str, Any],
     *,
@@ -381,21 +401,31 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
             "positive_functional_loss"
         ),
     )
+    variance_reduced_raw = _full24_conditioning(
+        _variance_reduced_conditioning_common(),
+        method=(
+            "variance_reduced_task_query_keyed_raw_task_complete_single_"
+            "video_multi_action_positive_functional_loss"
+        ),
+    )
     serial4 = _serial4_conditioning(legacy_common)
     randomized_group4 = _randomized_group4_conditioning(task_query_common)
     if config.get("schema_version") in {
         AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA,
-        TARGET_BOUND_ROLE_CONFIG_SCHEMA,
+        SEMANTIC_FACTOR_BASIS_CONFIG_SCHEMA,
     }:
         expected = (
             randomized_group4
             if value.get("update_topology")
             == "cycle_normalized_randomized_group4_six_phase_task_cycle"
             else (
-                task_query_raw
-                if value.get("policy_randomness_scheme")
-                == "task_query_keyed_stateless_policy_cpu_cuda_v2"
+                variance_reduced_raw
+                if value.get("policy_flow_noise_sampling_scheme")
+                == "task_query_keyed_randomized_antithetic_gaussian_v1"
                 else full24
+                if value.get("policy_randomness_scheme")
+                != "task_query_keyed_stateless_policy_cpu_cuda_v2"
+                else task_query_raw
             )
         )
     else:
@@ -414,7 +444,7 @@ def _validate_cycle_normalized_optimization(config: Mapping[str, Any]) -> None:
         config.get("schema_version")
         not in {
             AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA,
-            TARGET_BOUND_ROLE_CONFIG_SCHEMA,
+            SEMANTIC_FACTOR_BASIS_CONFIG_SCHEMA,
         }
         or "cycle_normalization" not in config.get("optimization", {})
     ):
@@ -539,8 +569,8 @@ def _load_recipe_overlay(
         base["schema_version"] = AS_WRITER_SERIAL4_CONFIG_SCHEMA
     elif overlay_schema == AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA:
         base["schema_version"] = AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA
-    elif overlay_schema == TARGET_BOUND_ROLE_CONFIG_OVERLAY_SCHEMA:
-        base["schema_version"] = TARGET_BOUND_ROLE_CONFIG_SCHEMA
+    elif overlay_schema == SEMANTIC_FACTOR_BASIS_CONFIG_OVERLAY_SCHEMA:
+        base["schema_version"] = SEMANTIC_FACTOR_BASIS_CONFIG_SCHEMA
     base["_config_derivation"] = {
         "overlay_schema": overlay_schema,
         "base_config": str(base_path.relative_to(REPO_ROOT)),
@@ -553,7 +583,7 @@ def load_writer_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     schema = config.get("schema_version")
     if schema in {
-        TARGET_BOUND_ROLE_CONFIG_OVERLAY_SCHEMA,
+        SEMANTIC_FACTOR_BASIS_CONFIG_OVERLAY_SCHEMA,
         AS_WRITER_CONFIG_OVERLAY_SCHEMA,
         AS_WRITER_SERIAL4_CONFIG_OVERLAY_SCHEMA,
         AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA,

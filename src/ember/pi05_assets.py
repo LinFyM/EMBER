@@ -70,6 +70,19 @@ def prepare_libero_config(config_dir: Path) -> dict[str, str]:
     return paths
 
 
+def configure_libero_runtime_assets(assets_root: Path) -> None:
+    """Point hf-libero's runtime asset lookup at the sealed local snapshot."""
+
+    resolved = assets_root.expanduser().resolve()
+    if not resolved.is_dir():
+        raise Pi05EvaluationError(f"missing LIBERO assets: {resolved}")
+    from libero import libero as libero_runtime
+
+    if not hasattr(libero_runtime, "_assets_path_cache"):
+        raise Pi05EvaluationError("installed LIBERO has no runtime asset cache owner")
+    libero_runtime._assets_path_cache = str(resolved)
+
+
 def _suite_languages(protocol: dict[str, Any], config_dir: Path) -> dict[str, dict[int, str]]:
     prepare_libero_config(config_dir)
     from libero.libero import benchmark

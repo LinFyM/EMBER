@@ -1,13 +1,13 @@
-"""Single-source contract for the target-bound role-preserving Writer."""
+"""Single-source contract for the semantic factor-basis Writer."""
 
 from __future__ import annotations
 
 from typing import Any, Mapping
 
 
-TARGET_BOUND_ROLE_WRITER_PARAMETER_COUNT = 11_092_224
+SEMANTIC_FACTOR_BASIS_WRITER_PARAMETER_COUNT = 11_159_296
 
-TARGET_BOUND_ROLE_WRITER_CONSTRUCTOR_KEYS = frozenset(
+SEMANTIC_FACTOR_BASIS_WRITER_CONSTRUCTOR_KEYS = frozenset(
     {
         "image_width",
         "expert_width",
@@ -25,6 +25,7 @@ TARGET_BOUND_ROLE_WRITER_CONSTRUCTOR_KEYS = frozenset(
         "program_blocks",
         "compiler_heads",
         "factor_hidden_width",
+        "factor_basis_count",
         "initialization_seed",
         "activation_checkpointing",
     }
@@ -46,10 +47,11 @@ WRITER_DIMENSION_CONTRACT = {
     "program_blocks": 2,
     "compiler_heads": 8,
     "factor_hidden_width": 256,
+    "factor_basis_count": 4,
 }
 
 _STATIC_WRITER_CONTRACT: dict[str, Any] = {
-    "architecture": "pi05_target_bound_role_preserving_program_v1",
+    "architecture": "pi05_semantic_factor_basis_program_v1",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -104,19 +106,23 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "core_reader": "38_target_raw_core_reads_before_dynamic_binding",
     "program_coordinate_reader": "38x16_private_Action_Effect_Change_history_reads",
     "reader_softmax": "independent_core_Action_Effect_Change_normalizers",
-    "coordinate_mixer": "none",
+    "coordinate_mixer": "shared_target_core_soft_factor_basis_selection",
     "coordinate_identity_path": "normalized_target_and_rank_qk_only",
     "compiler_heads": 8,
     "factor_input": "raw_target_core_Action_Effect_Change_concat_width1024",
     "factor_head_bias": False,
     "factor_hidden_width": 256,
+    "factor_basis_count": 4,
+    "factor_basis_width": 64,
+    "factor_router": "shared_target_core_qk_only_four_basis_softmax_mean_one",
+    "factor_value_path": "four_independent_coordinate_value_bases_concat_width256",
     "factor_final_projection": "exact_zero_initialization",
     "initialization_seed": 7,
 }
 
 
 def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
-    """Return the exact target-bound payload while preserving frame chunking."""
+    """Return the exact factor-basis payload while preserving frame chunking."""
 
     return {
         **_STATIC_WRITER_CONTRACT,
@@ -126,7 +132,7 @@ def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def validate_writer_dimensions(observed: Mapping[str, Any]) -> None:
-    """Reject constructor values outside the canonical target-bound topology."""
+    """Reject constructor values outside the canonical factor-basis topology."""
 
     changed = {
         name: (WRITER_DIMENSION_CONTRACT[name], observed.get(name))
@@ -134,4 +140,4 @@ def validate_writer_dimensions(observed: Mapping[str, Any]) -> None:
         if observed.get(name) != WRITER_DIMENSION_CONTRACT[name]
     }
     if changed:
-        raise ValueError(f"invalid EMBER target-bound Writer dimensions: {changed}")
+        raise ValueError(f"invalid EMBER semantic factor-basis dimensions: {changed}")

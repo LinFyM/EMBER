@@ -1,6 +1,6 @@
 # EMBER Active Session Handoff
 
-更新时间：2026-08-02 19:18 UTC。本文只记录迁回 BGR 前的当前真相。历史执行流水仍在
+更新时间：2026-08-02 22:38 UTC。本文只记录迁回 BGR 前的当前真相。历史执行流水仍在
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
@@ -13,34 +13,32 @@
 - 已迁移封存基线为`f9a144c`；本轮所有Git与artifact都是post-seal delta，外部登记根
   为`/data/ymdai/migration_manifests/ember_postseal_20260802/`。迁移仍由另一session
   执行，本session不修改其现有副本，只提供增量清单。
-- 当前活动实验是Target-Bound首小时正式训练：tmux`ember_tb_formal_cfd26df`，四个
-  torchrun ranks只在物理GPU4--7，fresh macro0→200。精确root/log列在本节下方和
-  post-seal delta ledger；MemLLM没有活动实验。
+- 当前活动实验是Semantic Factor-Basis首小时正式训练：tmux
+  `ember_sfb_formal_f5ddfe3`，四个torchrun ranks只在物理GPU4--7，fresh
+  macro0→200。精确root/log列在本节下方和post-seal delta ledger；MemLLM没有活动
+  实验。
 - EMBER迁移封存基线为`f9a144c94e71bb44373d7247ed0fded2ed835305`；当前
-  `main=origin/main=cfd26df63d08f29d8bfaac58f585387134ed680b`，Target-Bound
-  已成为这一post-seal窗口的canonical实现，写分支仍为
-  `codex/postseal-target-bound`。
+  `main=origin/main=f5ddfe381ac959a019535c470d9de9dfe4c2a3e4`，Semantic
+  Factor-Basis是canonical实现，写分支为`codex/semantic-factor-basis`。
 - Target-Bound Role-Preserving Program 已在远端分支
   `origin/codex/target-bound-role-program`实现，commit
   `b260a57a94dc21bd3446b212bfa42f71b037ce13`。它只完成 CPU shape、identity、
   causality、gradient、checkpoint 等结构验证；没有做 B20 profile、resume、训练或
   rollout。不得把它写成实验结果。
-- cleanup时期的辅助worktree已删除；本轮新建的唯一写worktree是
-  `/data/ymdai/worktrees/EMBER-postseal-target-bound`，只服务本轮增量。
-- Target-Bound真实longest105 B20三macro和formal-seed exact resume已通过；live
-  evidence最初来自`e8fb96c`。19:53:46的首次formal调用在任何模型加载/macro前被
-  config中尚未更新的`pending_profile`状态fail-close；该root无checkpoint/metrics，
-  不属于科学结果。profile evidence已写入sealed config并通过27项定向回归；正式run
-  必须从新commit、新root fresh启动。
-- clean frozen`cfd26df`已于20:01:34 UTC从fresh identity启动正式0→200。前两个
-  macro均为24 tasks、24 videos、480 B20 queries，cost-balanced/long-first；loss
-  `.15404→.15159`，无clip/OOM/nonfinite，第二macro五个主block均非零可达，source
-  policy trainable=0且validation/test action optimizer reads=0。首小时结束后评测
-  50/100/150/200，不从smoke warm-start，不自动续第二小时。
-- formal root：
-  `/data/ymdai/outputs/ember/pi05_as_writer_targetbound_postseal_rawfull24_decay400_formal_r4_b20_seed7_cfd26df_20260802`；
-  log：
-  `/data/ymdai/logs/ember/pi05_as_writer_targetbound_postseal_rawfull24_decay400_formal_r4_b20_seed7_cfd26df_20260802.log`。
+- Target-Bound已完成fresh0→200；macro50/100/150/200 paired correct400为
+  `75/120/90/110`，winner macro100仍明显轮换，因此不续训、不做行为五臂。winner
+  refs1证明remove-A、remove-D、causal-memory reversal均8/8过门，Core-only与
+  Program-only都不能复现full BA；视频主路径真实到达BA/action，最早剩余失败接口是
+  shared factor conditional coexistence。
+- Semantic Factor-Basis只替换这一接口：Core以Q/K软选择四个unit-mean factor value
+  bases，完整Core/A/E/D仍作为value；不加task ID、gate、scale或额外loss。精确参数
+  11,159,296。`e87363f`的longest105 B20三macro及formal-seed fresh0→1/
+  exact-resume1→3均通过，五个主block从macro2起finite/nonzero；seal/push commit为
+  `f5ddfe3`。
+- clean frozen`f5ddfe3`已于22:37:45 UTC从fresh identity启动0→200、every25；不从
+  profile/smoke warm-start，不自动续第二小时。formal root：
+  `/data/ymdai/outputs/ember/pi05_as_writer_semfactor_postseal_rawfull24_decay400_formal_r4_b20_seed7_f5ddfe3_20260802`；log：
+  `/data/ymdai/logs/ember/pi05_as_writer_semfactor_postseal_rawfull24_decay400_formal_r4_b20_seed7_f5ddfe3_20260802.log`。
 - 迁移步骤、路径映射、资产分流和新 Codex 接手顺序统一看
   [`a100_to_bgr_migration_handoff.md`](a100_to_bgr_migration_handoff.md)。
 
@@ -154,26 +152,28 @@ analysis SHA256：
 
 ## 4. 当前代码与下一实验边界
 
-`main`现为clean pushed`cfd26df` Target-Bound canonical path；CV-ADR由Git与frozen
-artifacts保存。核心职责为：
+`main`现为clean pushed`f5ddfe3` Semantic Factor-Basis canonical path；
+Target-Bound/CV-ADR由Git与frozen artifacts保存。核心职责为：
 
 - 38个真实policy targets先读Core；
 - target-bound地读取Action、Effect与Change；
 - A/E/D使用private causal temporal channels和private rank reads；
 - 16 rank coordinates最后展开；
 - identities只进入Q/K，raw evidence进入V；
-- conventional factor heads保持coherent near-rank1高增益，不加谱/正交约束。
+- Core只以Q/K地址选择四个factor value bases，所有value仍来自完整Core/A/E/D；
+- factor heads保持coherent near-rank1高增益，不加谱/正交/entropy约束。
 
 当前A100临时授权窗口的紧邻动作是：
 
-1. 让当前fresh macro0→200自然完成；
+1. 让当前Semantic Factor-Basis fresh macro0→200自然完成；
 2. 在GPU4--7一张卡一个checkpoint并发评测50/100/150/200 paired correct400；
 3. 只按absolute、breadth、趋势、漂移和内部A/E/D→BA→action传递决定
    exact-resume第二小时或整体根因迭代；
 4. 最迟03:45 UTC停止新GPU工作并封存/push全部增量。
 
-不得从smoke/profile权重warm-start。Target-Bound的完整设计在main文件：
-`docs/action_forecast_writer_target_bound_role_program_design.md`。
+不得从smoke/profile权重warm-start。当前完整设计为
+`docs/action_forecast_writer_semantic_factor_basis_design.md`；Target-Bound设计与正式
+负结果保留在Git、该文档和post-seal artifacts中。
 
 ## 5. 迁移时必须保留的EMBER科学资产
 

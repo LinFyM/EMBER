@@ -18,13 +18,19 @@ runner、split、路径或 GPU 权限。
 - [x] 将远端Target-Bound实现`b260a57`无冲突移植到`f9a144c`，得到`fbbb784`。
 - [x] 恢复frozen Python/CUDA环境，完成48项focused CPU vertical path并立即push。
 - [x] 只对GPU4--7做一次live preflight；完成longest105 B20三cycle、fresh/exact resume。
-- [ ] clean frozen`cfd26df`已从fresh identity启动0→200、每25保存；前两macro
-  24-task/B20/long-first、finite与五block梯度可达合同健康。完成后并行评测
-  50/100/150/200。
-- [ ] 按absolute与task累积趋势决定是否续到400；无论结果都分析Core/task routing、
-  A/E/D→BA/action、task-gradient共享与functional/closed-loop错位。
-- [ ] 根据最早失效接口做至多当前窗口可完整证伪的整体迭代；最迟03:45 UTC停止新GPU
-  工作，push全部代码/文档并封存post-seal增量清单。
+- [x] Target-Bound clean frozen`cfd26df`完成fresh0→200并并行评测
+  50/100/150/200 correct400=`75/120/90/110`；不续到400、不做昂贵五臂。
+- [x] winner macro100内部反事实证明A、D、causal memory、Core与Program均传到
+  effective BA/action；最早剩余失败接口定位为shared factor conditional coexistence，
+  而不是视频路径断路。
+- [x] 完整实现Semantic Factor-Basis并push`e87363f`；11,159,296参数、55项聚焦
+  回归、longest105 B20三macro及fresh0→1/exact-resume1→3均通过，seal为`f5ddfe3`。
+- [ ] clean frozen`f5ddfe3`正在fresh0→200、每25保存；完成后在GPU4--7一张卡一个
+  checkpoint并行评测50/100/150/200 paired correct400。
+- [ ] 按absolute、task breadth/churn与factor routing→BA/action传递决定是否续到400；
+  若失败，直接重审functional estimator与closed-loop manifold，不给失败模型加
+  entropy/gate/scale等补丁。
+- [ ] 最迟03:45 UTC停止新GPU工作，push全部代码/文档并封存post-seal增量清单。
 
 ## A100清理与BGR迁移准备（2026-08-02）
 

@@ -1,7 +1,7 @@
 {
-  "schema_version": "ember_pi05_target_bound_role_program_recipe_overlay_v1",
-  "base_config": "configs/pi05_as_writer_target_bound_role_program_full24_decay400_v1.json",
-  "base_sha256": "37099732fcbcef1001aa16fdbecaf98349a899a5bfbe91730965314a46b8a578",
+  "schema_version": "ember_pi05_semantic_factor_basis_recipe_overlay_v1",
+  "base_config": "configs/pi05_as_writer_semantic_factor_basis_full24_decay400_v1.json",
+  "base_sha256": "6a5ea54aa9f60cd33db43c24dd3b43c5e3342e5c738a4acbd522593fb5708076",
   "replace": {
     "data": {
       "task_count": 24,

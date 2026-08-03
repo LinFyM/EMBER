@@ -202,14 +202,13 @@ def _decode(
     writer: CompleteLoRAWriter,
     coordinates: torch.Tensor,
 ) -> dict[str, Any]:
-    head_rows: dict[str, list[tuple[int, torch.Tensor]]] = {
-        name: [] for name in writer.factor_heads
-    }
+    routing = writer.factor_router(coordinates[..., : writer.program_width])
+    head_rows = {name: [] for name in writer.factor_heads}
     factors: dict[str, torch.Tensor] = {}
     public: dict[str, torch.Tensor] = {}
     for spec in writer.tensor_specs:
         key, target = writer._decoding[spec.name]
-        rows = writer.factor_heads[key](coordinates[:, target])
+        rows = writer.factor_heads[key](coordinates[:, target], routing[:, target])
         head_rows[key].append((target, rows))
         generated = rows.transpose(-1, -2) if spec.transpose_output else rows
         factors[spec.name] = generated
@@ -227,6 +226,7 @@ def _decode(
     return {
         "heads": heads,
         "head_target_indices": head_target_indices,
+        "routing": routing,
         "factors": factors,
         "public": public,
     }
@@ -505,6 +505,7 @@ def _variant(
     decoded = _decode(writer, compiled["coordinates"])
     return {
         "coordinates": compiled["coordinates"][0],
+        "routing": decoded["routing"][0],
         "factor": _state(decoded["factors"], 0),
         "public": _state(decoded["public"], 0),
         "heads": {

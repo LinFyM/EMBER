@@ -35,7 +35,6 @@ from ember.writer.checkpoint_schema import (
     AS_WRITER_RANK_STATE_SCHEMA,
     AS_WRITER_SERIAL4_CHECKPOINT_SCHEMA,
     AS_WRITER_SERIAL4_RANK_STATE_SCHEMA,
-    TARGET_BOUND_ROLE_TASK_QUERY_RAW_CHECKPOINT_SCHEMA,
     state_schemas as _state_schemas,
 )
 from ember.writer.model import CompleteLoRAWriter, WriterModelError
@@ -624,7 +623,10 @@ def _validate_cycle_normalized_optimizer_resume(
     checkpoint_state_family: str,
 ) -> None:
     if checkpoint_state_family.startswith("cvadr_legacy_") or (
-        checkpoint_state_family == "target_bound_role_rawfull24_v1"
+        checkpoint_state_family in {
+            "target_bound_role_rawfull24_v1",
+            "semantic_factor_basis_rawfull24_v1",
+        }
     ):
         return
     group4 = (
@@ -639,6 +641,7 @@ def _validate_cycle_normalized_optimizer_resume(
         not in {
             "cvadr_task_query_keyed_rawfull24_v2",
             "target_bound_role_task_query_keyed_rawfull24_v1",
+            "semantic_factor_basis_task_query_keyed_rawfull24_v1",
         }
     ):
         raise WriterModelError("unknown cycle-normalized optimizer resume family")

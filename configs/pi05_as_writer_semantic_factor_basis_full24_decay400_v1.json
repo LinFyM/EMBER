@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_target_bound_role_program_as_writer_v1",
+  "schema_version": "ember_pi05_semantic_factor_basis_as_writer_v1",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {
@@ -50,7 +50,7 @@
     "test_video_values_read": 0
   },
   "writer": {
-    "architecture": "pi05_target_bound_role_preserving_program_v1",
+    "architecture": "pi05_semantic_factor_basis_program_v1",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -122,12 +122,16 @@
     "core_reader": "38_target_raw_core_reads_before_dynamic_binding",
     "program_coordinate_reader": "38x16_private_Action_Effect_Change_history_reads",
     "reader_softmax": "independent_core_Action_Effect_Change_normalizers",
-    "coordinate_mixer": "none",
+    "coordinate_mixer": "shared_target_core_soft_factor_basis_selection",
     "coordinate_identity_path": "normalized_target_and_rank_qk_only",
     "compiler_heads": 8,
     "factor_input": "raw_target_core_Action_Effect_Change_concat_width1024",
     "factor_head_bias": false,
     "factor_hidden_width": 256,
+    "factor_basis_count": 4,
+    "factor_basis_width": 64,
+    "factor_router": "shared_target_core_qk_only_four_basis_softmax_mean_one",
+    "factor_value_path": "four_independent_coordinate_value_bases_concat_width256",
     "factor_final_projection": "exact_zero_initialization",
     "initialization_seed": 7
   },
@@ -175,7 +179,7 @@
     "prefetch_factor": 2
   },
   "optimization": {
-    "method": "functional_pi05_target_bound_role_program_raw_full24_positive_only",
+    "method": "functional_pi05_semantic_factor_basis_raw_full24_positive_only",
     "seed": 7,
     "precision": "bfloat16",
     "source_policy": "final formal frozen raw policy",
@@ -198,10 +202,10 @@
       "decay_lr": 0.00001
     },
     "maximum_formal_wall_clock_minutes": 190,
-    "budget_role": "fresh_target_bound_role_program_raw_full24_one_hour_then_evidence_gated_exact_resume"
+    "budget_role": "fresh_semantic_factor_basis_raw_full24_one_hour_then_evidence_gated_exact_resume"
   },
   "profile_defaults": {
-    "status": "sealed_target_bound_role_live_105_frame_b20_profile",
+    "status": "sealed_semantic_factor_basis_live_105_frame_b20_profile",
     "expected_world_size": 4,
     "total_steps": 3,
     "per_rank_batch_size": 20,
@@ -213,7 +217,7 @@
     "selected_stop_step": 3
   },
   "profile_evidence": {
-    "status": "sealed_target_bound_role_live_105_frame_b20_profile",
+    "status": "sealed_semantic_factor_basis_live_105_frame_b20_profile",
     "allowed_physical_gpu_ids": [
       4,
       5,
@@ -242,17 +246,17 @@
       "world_size": 4,
       "completed_macros": 3,
       "longest_sampled_frames": 105,
-      "max_cuda_reserved_bytes": 83506495488,
-      "wall_seconds": 59.065377085935324,
-      "commit": "e8fb96c072a9214fb9a5e1cb8e9cd9b4e39ab51b",
-      "profile_root": "/data/ymdai/outputs/ember/pi05_as_writer_targetbound_postseal_long105_profile_r4_b20_seed172_e8fb96c_20260802"
+      "max_cuda_reserved_bytes": 83508592640,
+      "wall_seconds": 60.148868922144175,
+      "commit": "e87363fa39fbc13a74cd870fea30a3e47377c5cf",
+      "profile_root": "/data/ymdai/outputs/ember/pi05_as_writer_semfactor_postseal_long105_profile_r4_b20_seed172_e87363f_20260802"
     },
     "exact_resume_smoke": {
       "status": "passed_fresh0to1_exact_resume1to3",
       "completed_macros": 3,
-      "contract_sha256": "e11a0256cb952af880f3f144e5f0b7a59634a46194041985c9d677a6a219f8c4",
-      "commit": "e8fb96c072a9214fb9a5e1cb8e9cd9b4e39ab51b",
-      "root": "/data/ymdai/outputs/ember/pi05_as_writer_targetbound_postseal_formalseed_resume_r4_b20_seed7_e8fb96c_20260802"
+      "contract_sha256": "0495a0719016dcdb924108f90ba2c6acf624234a4b9a2885f94a305b20713340",
+      "commit": "e87363fa39fbc13a74cd870fea30a3e47377c5cf",
+      "root": "/data/ymdai/outputs/ember/pi05_as_writer_semfactor_postseal_formalseed_resume_r4_b20_seed7_e87363f_20260802"
     },
     "gradient_reachability": {
       "status": "sealed_finite_nonzero_after_identity_lifecycle",
@@ -291,7 +295,7 @@
       200,
       400
     ],
-    "segment_definition": "fresh_target_bound_role_raw_full24_macro0_to200_then_evidence_gated_exact_resume200_to400",
+    "segment_definition": "fresh_semantic_factor_basis_raw_full24_macro0_to200_then_evidence_gated_exact_resume200_to400",
     "one_hour_scale": {
       "macro_optimizer_updates": 200,
       "global_action_queries": 96000,

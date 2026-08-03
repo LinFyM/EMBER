@@ -25,6 +25,9 @@ TASK_QUERY_POLICY_RNG_SCHEME = (
 LATIN_BETA_TIME_SAMPLING_SCHEME = (
     "task_query_keyed_randomized_latin_beta15_time_v1"
 )
+ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME = (
+    "task_query_keyed_randomized_antithetic_gaussian_v1"
+)
 
 
 def task_query_policy_rng_seed(
@@ -154,6 +157,57 @@ def scoped_policy_flow_time_sampling(
             delattr(model, "sample_time")
 
 
+def _antithetic_gaussian_noise(
+    model: torch.nn.Module,
+    shape: Sequence[int],
+    device: torch.device | str,
+) -> torch.Tensor:
+    """Sample exact-standard-normal marginals in randomized antithetic pairs."""
+
+    dimensions = tuple(int(value) for value in shape)
+    if not dimensions or dimensions[0] <= 0 or dimensions[0] % 2:
+        raise WriterModelError(
+            "antithetic policy flow noise requires a positive even batch"
+        )
+    half = torch.normal(
+        mean=0.0,
+        std=1.0,
+        size=(dimensions[0] // 2, *dimensions[1:]),
+        dtype=torch.float32,
+        device=device,
+    )
+    paired = torch.cat((half, -half), dim=0)
+    permutation = torch.randperm(dimensions[0], device=device)
+    return paired.index_select(0, permutation)
+
+
+@contextmanager
+def scoped_policy_flow_noise_sampling(
+    policy: torch.nn.Module,
+    scheme: str | None,
+) -> Iterator[None]:
+    """Temporarily replace only PI05 flow-noise sampling."""
+
+    if scheme is None:
+        yield
+        return
+    if scheme != ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME:
+        raise WriterModelError("unsupported policy flow-noise sampling scheme")
+    model = getattr(policy, "model", None)
+    if model is None or not callable(getattr(model, "sample_noise", None)):
+        raise WriterModelError("policy has no scoped PI05 flow-noise owner")
+    had_instance_value = "sample_noise" in vars(model)
+    previous_instance_value = vars(model).get("sample_noise")
+    model.sample_noise = MethodType(_antithetic_gaussian_noise, model)
+    try:
+        yield
+    finally:
+        if had_instance_value:
+            model.sample_noise = previous_instance_value
+        else:
+            delattr(model, "sample_noise")
+
+
 def prepare_frozen_writer_policy(
     policy: torch.nn.Module,
     contract: LoRAContract,
@@ -211,6 +265,7 @@ def functional_lora_loss_gradient(
     policy_rng_seed: int | None = None,
     policy_rng_device: torch.device | str | None = None,
     flow_time_sampling_scheme: str | None = None,
+    flow_noise_sampling_scheme: str | None = None,
 ) -> tuple[torch.Tensor, Mapping[str, Any], dict[str, torch.Tensor]]:
     """Differentiate one policy loss only through detached LoRA leaf tensors.
 
@@ -225,8 +280,15 @@ def functional_lora_loss_gradient(
         name: value.detach().requires_grad_(True) for name, value in state.items()
     }
     with scoped_policy_randomness(policy_rng_seed, policy_rng_device):
-        with scoped_policy_flow_time_sampling(policy, flow_time_sampling_scheme):
-            output = functional_lora_call(policy, leaves, contract, dict(batch))
+        with scoped_policy_flow_noise_sampling(
+            policy, flow_noise_sampling_scheme
+        ):
+            with scoped_policy_flow_time_sampling(
+                policy, flow_time_sampling_scheme
+            ):
+                output = functional_lora_call(
+                    policy, leaves, contract, dict(batch)
+                )
     if (
         not isinstance(output, tuple)
         or len(output) != 2

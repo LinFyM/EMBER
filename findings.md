@@ -3864,3 +3864,26 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   不需要rollout。新task-complete winner评测时应保留LoRA cache，直接完成
   BA谱/norm、q/v/action、layer/target、50-video task-centered innovation和
   fixed-query action对照；A/B coordinate只作同gauge次级诊断。
+
+## Post-seal Target-Bound裁决与Semantic Factor-Basis（2026-08-02）
+
+- Target-Bound fresh macro0→200的paired correct400曲线为`75/120/90/110`。
+  macro50→100 gained/lost=`56/11`，100→150=`11/41`，150→200=`31/11`；
+  winner macro100 breadth7但top2占67.5%，没有解决single-checkpoint能力轮换，故
+  不续到400、不做昂贵行为五臂。
+- winner macro100的8-task refs1不是“视频没传下去”：remove-A、remove-D和causal
+  program-memory reversal均8/8过门，mean effective-BA relative L2分别
+  `.38865/.12374/.06850`；Core-only与Program-only距full BA为`.83840/.58622`。
+  correct→wrong/shuffled/reversed的BA差异为`.35971/.12228/.18813`，fixed action
+  为`.27665/.15314/.24187`。最早剩余结构失败因此位于已工作Program之后的shared
+  factor conditional coexistence，而不是evidence/Core/Procedure断路。
+- Semantic Factor-Basis保持Target-Bound的38-target-first、private A/E/D causal
+  channels和rank-last读取，只把八个共享factor MLP改为同一个Core Q/K router软选择
+  四个独立value bases；route均值固定为1以不缩小hidden amplitude，keys不进入value。
+  没有task ID、gate、global scale、entropy/load-balance loss或谱约束。精确参数
+  `11,159,296`，source trainable为0。
+- `e87363f`完成55项聚焦回归；最长105-frame、DDP4、B20三macro wall60.15秒，峰值
+  reserved 83,508,592,640 bytes。macro2起frontend/Core/Program/compiler/factor五块
+  梯度均finite/nonzero。formal seed fresh0→1再exact-resume1→3保持合同
+  `0495a071...`，累计1,440 queries/72 videos且validation/test action reads为0。
+  这些只授权`f5ddfe3` fresh0→200，不构成性能结论。

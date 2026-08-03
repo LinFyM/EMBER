@@ -1,10 +1,11 @@
-"""Canonical no-rollout analysis for the Target-Bound Role AS-Writer."""
+"""Canonical no-rollout analysis for the Semantic Factor-Basis AS-Writer."""
 
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import math
 import os
 import socket
 import subprocess
@@ -60,23 +61,24 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 from ember.writer.validation import _build_models
 
 
-RUN_SCHEMA = "ember_target_bound_role_internal_analysis_run_v1"
-RESULT_SCHEMA = "ember_target_bound_role_internal_analysis_v1"
-ARCHITECTURE = "pi05_target_bound_role_preserving_program_v1"
+RUN_SCHEMA = "ember_semantic_factor_basis_internal_analysis_run_v1"
+RESULT_SCHEMA = "ember_semantic_factor_basis_internal_analysis_v1"
+ARCHITECTURE = "pi05_semantic_factor_basis_program_v1"
 PROTECTED = (
     "src/ember/writer/model.py", "src/ember/writer/video_program.py",
     "src/ember/writer/semantic_core.py", "src/ember/writer/semantic_program.py",
     "src/ember/writer/program_compiler.py", "src/ember/writer/architecture.py",
     "src/ember/writer/internal_compiler.py",
     "src/ember/writer/functional.py", "src/ember/lora.py", "src/ember/pi05_lora.py",
-    "configs/pi05_as_writer_target_bound_role_program_full24_decay400_v1.json",
-    "configs/pi05_as_writer_target_bound_role_program_taskquery_rawfull24_v1.json",
+    "configs/pi05_as_writer_semantic_factor_basis_full24_decay400_v1.json",
+    "configs/pi05_as_writer_semantic_factor_basis_taskquery_rawfull24_v1.json",
 )
 
 
 def _comparison(writer: CompleteLoRAWriter, reference: Mapping[str, Any], candidate: Mapping[str, Any], reference_action: torch.Tensor, candidate_action: torch.Tensor) -> dict[str, Any]:
     return {
         "coordinates": relative_metrics(reference["coordinates"], candidate["coordinates"]),
+        "factor_routing": relative_metrics(reference["routing"], candidate["routing"]),
         "factor_heads": mapping_metrics(reference["heads"], candidate["heads"]),
         "factor": mapping_metrics(reference["factor"], candidate["factor"]),
         "public_a": mapping_metrics(reference["public"], candidate["public"], select="a"),
@@ -118,10 +120,37 @@ def _signature(captured: Mapping[str, Any], row: int) -> dict[str, torch.Tensor]
         "core_read": captured["compiled"]["diagnostic"]["core_read"][row].float(),
         "role_read": fixed_sequence(role_read, role_grid),
         "coordinates": captured["compiled"]["coordinates"][row].float(),
+        "factor_routing": captured["decoded"]["routing"][row].float(),
     }
     for index, value in enumerate(captured["core"]["blocks"], 1): result[f"core_block_{index}"] = fixed_sequence(value[row], vt)
     for index, value in enumerate(captured["program"]["blocks"], 1): result[f"program_block_{index}"] = fixed_sequence(value[row], program_grid)
     return result
+
+
+def _factor_routing_summary(routing: torch.Tensor) -> dict[str, Any]:
+    """Report semantic specialization without treating route keys as values."""
+
+    probability = routing.float() / routing.shape[-1]
+    mean = probability.mean(dim=(0, 1))
+    entropy = -(probability.clamp_min(1e-12).log() * probability).sum(dim=-1)
+    target_centered = probability - probability.mean(dim=0, keepdim=True)
+    rank_centered = probability - probability.mean(dim=1, keepdim=True)
+    energy = probability.square().mean().clamp_min(1e-12)
+    return {
+        "mean_probability": mean.tolist(),
+        "normalized_entropy_mean": float(
+            (entropy / math.log(probability.shape[-1])).mean()
+        ),
+        "target_centered_energy_ratio": float(
+            target_centered.square().mean() / energy
+        ),
+        "rank_centered_energy_ratio": float(
+            rank_centered.square().mean() / energy
+        ),
+        "alpha_min": float(routing.min()),
+        "alpha_max": float(routing.max()),
+        "per_target_probability": probability.mean(dim=1).tolist(),
+    }
 
 
 @torch.inference_mode()
@@ -353,6 +382,10 @@ def probe_reference(task: Mapping[str, Any], reference: int, adapters: Mapping[s
     row = {
         "global_task_id": int(task["global_task_id"]), "suite": str(task["suite"]), "task_id": int(task["task_id"]), "reference_ordinal": reference,
         "conditions": metadata, **matched, "canonical_parity": captured["parity"],
+        "factor_routing": {
+            condition: _factor_routing_summary(captured["decoded"]["routing"][index])
+            for index, condition in enumerate(CONDITIONS)
+        },
         "lora_geometry": {condition: lora_geometry(writer, state) for condition, state in zip(CONDITIONS, states, strict=True)},
         "counterfactuals": counterfactuals, "program_memory_counterfactual": program_memory_counterfactual, "rank_gauge": {"permutation": permutation.cpu().tolist(), "raw_changes": raw_changes, "effective_ba_error": gauge_error, "fixed_policy_action_error": relative_metrics(actions[0], gauge_action)},
         "fixed_policy_query": query_identity, "fixed_policy_action_seed": seed, "deterministic_replay": replay_result,
@@ -472,12 +505,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv); repo = Path(__file__).resolve().parents[3]
     allowed_configs = {
-        repo / "configs/pi05_as_writer_target_bound_role_program_full24_decay400_v1.json",
-        repo / "configs/pi05_as_writer_target_bound_role_program_taskquery_rawfull24_v1.json",
+        repo / "configs/pi05_as_writer_semantic_factor_basis_full24_decay400_v1.json",
+        repo / "configs/pi05_as_writer_semantic_factor_basis_taskquery_rawfull24_v1.json",
     }
     if args.repo != repo or args.config not in allowed_configs:
         raise WriterModelError(
-            "internal-analysis checkout/config is not canonical target-bound-role"
+            "internal-analysis checkout/config is not canonical semantic factor-basis"
         )
     context = initialize_distributed(); visible = os.environ.get("CUDA_VISIBLE_DEVICES", "").split(",")
     if context.world_size != 4 or visible != ["4", "5", "6", "7"]: raise WriterModelError("formal internal analysis requires four ranks on physical GPUs4-7")

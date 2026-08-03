@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from ember.libero_evaluation import sha256_file
-from ember.pi05_assets import Pi05EvaluationError
+from ember.pi05_assets import Pi05EvaluationError, configure_libero_runtime_assets
 
 
 class PersistentTaskEnvironmentPool:
@@ -20,6 +20,7 @@ class PersistentTaskEnvironmentPool:
         *,
         physical_gpu_id: int,
     ) -> None:
+        configure_libero_runtime_assets(Path(contract["libero_paths"]["assets"]))
         from libero.libero import benchmark
 
         if physical_gpu_id < 0:

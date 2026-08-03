@@ -264,6 +264,10 @@ def build_update_runtime_contract(
         "world_size": context.world_size,
         "one_policy_cuda_process_per_rank": True,
         "extra_cuda_roles_on_any_rank": 0,
+        "process_group_initialization": (
+            "out_of_band_all_rank_cuda_ready_rendezvous_then_nccl_"
+            "before_first_distributed_collective"
+        ),
         "ddp_object": "rank_synchronized_shared_writer_without_ddp_backward",
         "checkpoint_state_family": checkpoint_state_family(config),
         **topology,

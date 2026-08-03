@@ -34,6 +34,11 @@
   `37,355,776`；尚无真实profile或行为结果。证伪重点是固定route下store内部方向是否
   稳定、success churn是否下降及single checkpoint能否严格超过150；若完整独立stores
   仍不超过v6-fast143，不通过增加stores、改K或gate修补。
+- 首次clean六卡profile暴露的是process-group生命周期工程缺口，而不是Direction Store
+  数值失败：NCCL在rank-local大模型CUDA构造前已启动，480秒后六rank均报告watchdog
+  stuck且`only active collectives: 0`。因此正确边界是先用非NCCL ready rendezvous
+  确认所有rank完成本地policy/Writer/optimizer构造，再统一创建NCCL；增加heartbeat
+  timeout只能掩盖生命周期错误，不能作为canonical修复。
 
 ## 2026-08-03 BCI VR正式裁决与functional/closed-loop错位
 

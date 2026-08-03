@@ -202,12 +202,13 @@ def _broadcast_validation(
     context: DistributedContext, operation: Any
 ) -> dict[str, Any]:
     payload: list[Any] = [None]
-    if context.is_main:
+    collective_ready = context.world_size > 1 and dist.is_initialized()
+    if context.is_main or not collective_ready:
         try:
             payload[0] = operation()
         except Exception as error:
             payload[0] = {"error": repr(error)}
-    if context.world_size > 1:
+    if collective_ready:
         dist.broadcast_object_list(payload, src=0, device=context.device)
     if payload[0].get("error"):
         raise WriterModelError(payload[0]["error"])

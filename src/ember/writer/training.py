@@ -28,6 +28,7 @@ from ember.pi05_source_checkpoint import (
 )
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.pi05_source_setup import (
+    initialize_deferred_process_group,
     initialize_distributed,
     load_policy,
     load_stats,
@@ -439,6 +440,10 @@ def _prepare_setup(
         source_config=authorities.source_base_config,
         total_steps=total_steps,
     )
+    initialize_deferred_process_group(
+        context,
+        rendezvous_root=args.output_dir.parent,
+    )
     initialization = initialize_writer_phase(
         args.initialize_writer_checkpoint, context, writer_stage(config), source,
         config["authorities"], config["writer"], writer,
@@ -666,7 +671,10 @@ def run_steps(runtime: WriterRuntime) -> None:
 
 
 def train(args: argparse.Namespace) -> None:
-    context = initialize_distributed(require_numa=args.mode == "formal")
+    context = initialize_distributed(
+        require_numa=args.mode == "formal",
+        defer_process_group=True,
+    )
     runtime: WriterRuntime | None = None
     try:
         runtime = prepare_runtime(args, context)

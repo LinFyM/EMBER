@@ -185,6 +185,12 @@ runs/outputs/pi05_as_writer_semfactor_vr_bci_correct400_noreplacement_seed7_macr
 - 下一执行顺序是clean commit/push、live BCI GPU preflight、longest105六卡
   fresh0→1/exact-resume1→3、封存formal seed、fresh0→200和四点paired correct400；
   不复用VR checkpoint或Latin/antithetic estimator。
+- clean `7b13b6c`首次六卡profile在训练循环前复现NCCL 480秒heartbeat失败；六rank日志
+  均明确`only active collectives: 0`，且当时只有rank-local source CUDA构造在运行，
+  不是Direction Store collective、OOM或科学non-pass。该root已停止且禁止resume。
+  根因修复为延后NCCL生命周期：rank先完成local policy/Writer/optimizer CUDA构造，
+  经独立FileStore all-rank-ready rendezvous后才允许任何rank建process group；不得让
+  快rank提前创建NCCL，也不得用放宽heartbeat或timeout封口。
 
 ## 1. 当前边界
 

@@ -24,7 +24,11 @@ from ember.writer.topology import bind_current_process_to_cuda_numa, cuda_numa_n
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
-def initialize_distributed(*, require_numa: bool = False) -> DistributedContext:
+def initialize_distributed(
+    *,
+    require_numa: bool = False,
+    defer_process_group: bool = False,
+) -> DistributedContext:
     if not torch.cuda.is_available():
         raise Pi05SourceTrainingError("PI05 source training requires CUDA")
     import os
@@ -39,7 +43,7 @@ def initialize_distributed(*, require_numa: bool = False) -> DistributedContext:
     cpu_affinity = bind_current_process_to_cuda_numa(local_rank)
     if require_numa and (numa_node is None or not cpu_affinity):
         raise Pi05SourceTrainingError("formal PI05 training requires GPU-local NUMA affinity")
-    if world_size > 1:
+    if world_size > 1 and not defer_process_group:
         dist.init_process_group(backend="nccl")
     return DistributedContext(
         rank=rank,
@@ -49,6 +53,46 @@ def initialize_distributed(*, require_numa: bool = False) -> DistributedContext:
         numa_node=numa_node,
         cpu_affinity=cpu_affinity,
     )
+
+
+def initialize_deferred_process_group(
+    context: DistributedContext,
+    *,
+    rendezvous_root: Path,
+) -> None:
+    """Rendezvous outside NCCL, then start NCCL at collective-ready state."""
+
+    if context.world_size <= 1:
+        return
+    if dist.is_initialized():
+        raise Pi05SourceTrainingError(
+            "deferred NCCL process group was initialized before local CUDA setup"
+        )
+    import os
+    import re
+    from datetime import timedelta
+
+    run_id = os.environ.get("TORCHELASTIC_RUN_ID", "")
+    master_port = os.environ.get("MASTER_PORT", "")
+    if not run_id or not master_port:
+        raise Pi05SourceTrainingError(
+            "deferred NCCL setup requires one torchrun rendezvous identity"
+        )
+    token = re.sub(r"[^A-Za-z0-9_.-]", "_", f"{run_id}-{master_port}")
+    rendezvous_root.mkdir(parents=True, exist_ok=True)
+    ready_path = rendezvous_root / f".rank-local-cuda-ready-{token}"
+    store = dist.FileStore(str(ready_path), context.world_size)
+    store.set(f"rank-{context.rank}", b"ready")
+    store.wait(
+        [f"rank-{rank}" for rank in range(context.world_size)],
+        timedelta(minutes=30),
+    )
+    dist.init_process_group(backend="nccl")
+    dist.barrier(device_ids=[context.local_rank])
+    del store
+    if context.is_main:
+        ready_path.unlink(missing_ok=True)
+    dist.barrier(device_ids=[context.local_rank])
 
 
 def seed_everything(seed: int, context: DistributedContext) -> None:

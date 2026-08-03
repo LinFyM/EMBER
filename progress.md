@@ -31,6 +31,11 @@ GPU范围和训练步长是当时快照；活动状态只取
   leaf-gradient parity、六rank topology和fresh checkpoint family共61项focused CPU
   测试通过。architecture guard无hard violation；下一步只做clean pushed最长105-frame
   fresh/exact-resume GPU profile，不从VR checkpoint warm-start。
+- clean `7b13b6c`首次六卡profile在任何active collective或训练step前触发NCCL 480秒
+  heartbeat；六rank均报告`only active collectives: 0`。现场显存/进程证明耗时段是
+  rank-local source CUDA构造，失败root已停止且不resume。按owner要求不使用timeout/
+  watchdog覆盖，改为各rank本地policy/Writer/optimizer构造完成并经非NCCL all-rank
+  ready rendezvous后才初始化NCCL，再以原六卡B20/longest105规模重放根因修复。
 
 ## 2026-08-03 BCI VR正式训练、rollout与阶段暂停
 

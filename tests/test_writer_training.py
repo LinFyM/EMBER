@@ -367,6 +367,9 @@ def test_target_bound_role_launch_records_raw_mean_collectives_not_ddp_accumulat
     assert runtime["checkpoint_state_family"] == (
         "semantic_direction_store_task_query_keyed_rawfull24_v1"
     )
+    assert runtime["process_group_initialization"].startswith(
+        "out_of_band_all_rank_cuda_ready"
+    )
     assert runtime["optimizer_gradient_accumulation"] is False
     assert runtime["loss_reduction"] == (
         "mean_within_each_task_then_equal_mean_across_all_tasks"

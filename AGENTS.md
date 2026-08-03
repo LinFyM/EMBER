@@ -37,6 +37,21 @@ A100 80GB配置；任何适配不得悄悄改变sealed scientific contract。不
 - 当聚焦测试、真实vertical path和正式实验能直接给出证据时，不增加额外中间层或
   “以防万一”的验证流程。发现问题按其实际层定位，修复后只重跑受影响的最短证据链。
 
+## Multi-GPU reliability boundary
+
+- 多卡并行故障必须先按rank、device、process-group生命周期、collective序列、CUDA
+  初始化和I/O/NUMA层定位根因；不得用盲目重试、增加timeout、关闭NCCL watchdog、
+  heartbeat环境变量或减少科学batch来掩盖可复现故障。
+- 耗时的rank-local CUDA模型/optimizer构造必须与NCCL生命周期分离：各rank先绑定唯一
+  设备并完成本地构造，通过不依赖NCCL的all-rank ready rendezvous后才建立NCCL
+  process group；不得让快rank提前创建NCCL等待仍在构造的慢rank。process group建立
+  后，各rank的collective类型、shape、顺序和次数必须严格对称。
+- timeout/heartbeat覆盖只允许作为一次性诊断，用来区分慢初始化与真实collective
+  deadlock，不得进入canonical launcher、formal config或长期文档命令。根因修复必须
+  用原始失败规模重放，并至少通过真实finite step和exact-resume边界。
+- 只终止本项目本次启动且PID/设备已明确的进程；不得用模糊进程名、全用户kill或设备
+  reset处理多卡错误，也不得影响共享节点上的他人进程。
+
 当前跨session入口：
 
 1. `docs/a100_to_bci_migration_handoff.md`

@@ -27,8 +27,17 @@ runner、split、路径或 GPU 权限。
   fresh0→1/exact-resume1→3通过，峰值reserved`43.893GiB`，无需改变logical B20、
   full24 raw mean或一次AdamW。根治rank-local构造与NCCL生命周期错位，并封存BCI
   A40/NCCL2.28显式SHM transport fail-fast到代码和`AGENTS.md`。
-- [ ] 从fresh identity训练0→200并评测50/100/150/200 paired correct400；依据
-  absolute/breadth/churn和store内部机制证据决定续到400或重构下一方向。
+- [x] clean pushed`91feeef`从fresh identity完成0→200：200 finite macros、96,000
+  queries、4,800 videos、8 checkpoints；四点paired correct400为
+  `129/107/120/129`，breadth=`7/7/7/5`。macro50以同分更高breadth成为single
+  winner129，未超过v6-fast143或严格门151，不续到400、不做五臂。
+- [x] 完成macro50 refs1五条件内部分析：固定route和A/E/Core→BA/action路径成立，
+  但same-task Program relative-L2 `.93377`到factor/BA只剩`.01935/.03242`；16个
+  active rank坐标的stable rank仅`1.000043`、首奇异值能量`.999957`。正式拒绝“只靠
+  独立完整factor stores解决漂移”，定位到Program→public A/B的多维方向形成失败。
+- [x] 根修复六卡内部分析的历史4-rank假设：任务LPT分配与最终Cartesian sealing均绑定
+  实际`world_size`，clean`a115b06`六rank/8-task/5-condition真实分析完整封存；规则写入
+  `AGENTS.md`。当前无GPU工作，按owner要求暂停讨论。
 
 - [x] 完整阅读authority、迁移handoff、架构/recipe设计、代码与历史证据；核清
   data/model/tokenizer/source checkpoint、formal outputs、环境与simulation assets。

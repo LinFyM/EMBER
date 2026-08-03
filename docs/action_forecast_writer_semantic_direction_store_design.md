@@ -1,8 +1,9 @@
 # Semantic Direction Store Writer
 
-状态：2026-08-03 BCI fresh候选设计authority；canonical实现、train24 center
-authority、聚焦CPU合同及clean六卡longest105 fresh/exact-resume profile已完成并
-封存，尚未做正式0→200或rollout，不得写成有效方法。本文在ordinary Semantic Factor-Basis完整0→400和
+状态：2026-08-03 BCI正式负裁决；canonical实现、train24 center authority、聚焦CPU
+合同、clean六卡profile、fresh 0→200、四点paired correct400及winner内部分析均已
+完成。曲线为`129/107/120/129`，没有超过v6-fast `143`或严格目标`>150`，也没有解决
+checkpoint能力轮换。本文在ordinary Semantic Factor-Basis完整0→400和
 variance-reduced estimator 0→200均完成负裁决后建立。实现时原位替换canonical
 factor router/head；历史SFB只由Git、frozen config和正式artifact保存，不保留可执行
 并行架构。
@@ -311,3 +312,51 @@ success集合继续大幅轮换，或store内部梯度仍近正交，则“facto
 主要缺口”被否定；下一步应改变训练目标或更上游的条件表示，而不是增加stores、改K、
 加入load-balance或在失败checkpoint上加gate/scale。若absolute提高但视频路径退化，
 则这是language-conditioned static adaptation，不是合格EMBER结果。
+
+## 9. 正式结果与裁决
+
+clean pushed `91feeef`从fresh identity完成macro0→200：200个finite optimizer
+steps、96,000 logical action queries、4,800 one-video conditions、8个every25
+checkpoints，wall=`6619.255s`；0 clip、0 OOM、0 validation/test action reads，峰值
+CUDA reserved=`39,806,042,112` bytes。训练保持logical B20、physical B2、full24 raw
+mean和formal video seed`20260722`，未复用profile、VR或SFB权重。
+
+严格配对correct400结果如下，task顺序为Long-1/2、Goal-3/6、Object-1/3、
+Spatial-1/3：
+
+| macro | correct | breadth | per-task successes |
+| ---: | ---: | ---: | --- |
+| 50 | 129 | 7 | `7/2/0/42/45/31/1/1` |
+| 100 | 107 | 7 | `5/1/1/37/37/22/0/4` |
+| 150 | 120 | 7 | `9/2/0/40/40/26/2/1` |
+| 200 | 129 | 5 | `10/0/0/38/41/36/0/4` |
+
+macro50与200并列aggregate winner，但50的breadth为7而200只有5，故唯一选择macro50。
+相邻gained/lost为`17/39`、`43/30`、`27/18`；四点success union/intersection=
+`174/65`，single envelope gap=`45`。相对SFB同点，Direction Store在macro50提高60，
+说明独立方向存储显著改善早期acquisition；但后续先跌22再恢复，最终仍低于v6-fast
+143和严格最低目标151，因此没有解决task drift，也没有依据续到400或运行五臂。
+
+macro50 refs1内部分析覆盖8 validation tasks、correct/same/wrong/shuffled/reversed五条件，
+0 rollout。八个task的ordered top2数组均不同（`1,5`与`5,1`是同一无序组合），route
+跨video固定；shared0/1/2-store
+task-pair的step133 factor-gradient cosine均值为`-.00043/.00664/.02249`，证明store
+ownership能局部隔离梯度，但store内部仍近正交。
+
+视频差异从Program到最终LoRA发生强压缩。same-task-other条件下Program memory、factor、
+effective BA的mean relative-L2依次为`.93377/.01935/.03242`；shuffled为
+`.81049/.04731/.07193`，reversed为`.93086/.09808/.15963`。A/E与Core mean carrier
+都能到达BA/action，remove-D、centered-Core residual和program order reversal相对较弱；
+所以动态路径并未断路，最早失败位于Program之后的factor/LoRA编译几何。
+
+决定性几何证据是：16个rank坐标虽全部active，correct-video effective LoRA norm均值
+`43.86494`，但rank90/rank99均为`1`、stable rank=`1.000043`、entropy effective
+rank=`1.000371`、首奇异值能量=`.999957`、B-column cosine=`.999971`，所有coordinate
+component负pair比例为0。与SFB macro200相比，Direction Store的same/wrong/shuffled/
+reversed factor与BA相对变化更小；两者又都近rank1。固定语义地址解决了参数所有权，
+却没有让16个public rank坐标形成多维功能方向，完整stores仍共同写向几乎同一B方向。
+
+因此正式拒绝“只要给不同task独立完整factor参数存储就能解决漂移”。下一候选若由
+owner授权，应从根源重构Program到public A/B的多维方向形成与组合，使rank坐标承担
+不同、可闭环使用的功能子空间；不得继续搜索K、center、top-k、route权重、加store、
+scale/gate或Direction Store专用辅助loss。当前所有GPU工作已停止，等待owner讨论。

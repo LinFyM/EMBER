@@ -1,6 +1,6 @@
 # EMBER Active Session Handoff
 
-更新时间：2026-08-03 12:00 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
+更新时间：2026-08-03 18:05 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
@@ -179,10 +179,11 @@ runs/outputs/pi05_as_writer_semfactor_vr_bci_correct400_noreplacement_seed7_macr
   `docs/action_forecast_writer_semantic_direction_store_design.md`：frozen text-only
   language anchor只用24 train languages建立8个固定semantic centers；每task稳定等权
   top2，每个store拥有完整独立1024→256→factor-width参数。完整Core/A/E/D仍是唯一
-  factor value，Writer实际参数37,355,776。canonical实现、24-train-language center
-  authority与61项focused CPU合同已完成；clean六卡profile也已通过，但尚无正式训练或
-  rollout，不能写成效果结论。
-- 下一执行顺序是从sealed formal seed`20260722`和clean origin-main fresh0→200，再做
+  factor value，Writer实际参数37,355,776。在进入formal前，canonical实现、
+  24-train-language center authority、61项focused CPU合同与clean六卡profile已完成；
+  当时尚无效果结论。
+- 当时封存的下一执行顺序是从sealed formal seed`20260722`和clean origin-main
+  fresh0→200，再做
   50/100/150/200四点paired correct400；不复用profile/VR checkpoint或
   Latin/antithetic estimator。
 - clean `7b13b6c`首次六卡profile在训练循环前复现NCCL 480秒heartbeat失败；六rank日志
@@ -209,12 +210,67 @@ runs/outputs/pi05_as_writer_semfactor_vr_bci_correct400_noreplacement_seed7_macr
   validation/test action reads=0且无clip/OOM。step2起五个主块全部finite/nonzero；
   配置现切回formal seed`20260722`并seal，正式run必须fresh identity。
 
+### 0.4 Semantic Direction Store正式结果、内部裁决与当前暂停
+
+- clean pushed`91feeef`从fresh identity在`gpu02:0--5`完成macro0→200。canonical
+  root为
+  `/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_as_writer_direction_store_bci_rawfull24_decay400_formal_r6_b20_micro2_seed7_formalvideo20260722_91feeef_20260803`。
+  200个macro累计96,000 logical action queries、4,800 one-video conditions、8个
+  every25 checkpoints，wall=`6619.255s`；all finite、0 clip/OOM、0 validation/test
+  action reads，峰值CUDA reserved=`39,806,042,112` bytes。profile/VR/SFB权重均未
+  warm-start。
+- 只用live preflight后`gpu02`六张空闲卡完成macro50/100/150/200的strict paired
+  correct400；gpu01持续有他人任务，gpu02:6有他人进程且从未触碰。四个root依次为：
+
+```text
+runs/outputs/pi05_as_writer_direction_store_bci_correct400_noreplacement_seed7_macro0050_91feeef_20260803
+runs/outputs/pi05_as_writer_direction_store_bci_correct400_noreplacement_seed7_macro0100_91feeef_20260803
+runs/outputs/pi05_as_writer_direction_store_bci_correct400_noreplacement_seed7_macro0150_91feeef_20260803
+runs/outputs/pi05_as_writer_direction_store_bci_correct400_noreplacement_seed7_macro0200_91feeef_20260803
+```
+
+  state、teacher demo和policy RNG公共前缀全部严格配对，0 retry/failure。task顺序为
+  Long-1/2、Goal-3/6、Object-1/3、Spatial-1/3：
+
+| macro | correct | breadth | per-task successes |
+| ---: | ---: | ---: | --- |
+| 50 | 129 | 7 | `7/2/0/42/45/31/1/1` |
+| 100 | 107 | 7 | `5/1/1/37/37/22/0/4` |
+| 150 | 120 | 7 | `9/2/0/40/40/26/2/1` |
+| 200 | 129 | 5 | `10/0/0/38/41/36/0/4` |
+
+  macro50与200同分，按更高breadth和更早成本选macro50为唯一winner。相邻gained/lost=
+  `17/39,43/30,27/18`，四点union/intersection=`174/65`、single envelope gap45。
+  相比SFB macro50提高60，但未超过v6-fast143或严格门151，且后续仍明显换手，因此不
+  续到400、不做五臂。
+- step133的task-pair梯度分层显示shared0/1/2 stores的factor cosine均值为
+  `-.00043/.00664/.02249`：fixed semantic stores局部化了干扰，但store内部仍近正交。
+- winner macro50的完整refs1五条件内部分析成功root为
+  `runs/outputs/pi05_as_writer_direction_store_bci_macro0050_internal_refs1_seed7_retry2_a115b06_20260803`。
+  8 tasks的ordered top2数组均不同（其中`1,5`与`5,1`是同一无序组合），且route跨
+  video固定；same-task-other的Program/factor/
+  effective-BA relative-L2为`.93377/.01935/.03242`，shuffled为
+  `.81049/.04731/.07193`，reversed为`.93086/.09808/.15963`。A/E与Core mean
+  carrier均传到BA/action，动态路径没有断路，但其差异在compiler后被强压缩。
+- 全部16个rank坐标active，effective LoRA norm均值`43.86494`，但rank90/rank99均为
+  1、stable rank=`1.000043`、entropy rank=`1.000371`、top singular energy=
+  `.999957`、B-column cosine=`.999971`。Direction Store改善了早期acquisition和参数
+  ownership，却仍把public rank16写成几乎同一B方向；正式拒绝
+  “factor parameter coexistence是主要完整根因”。
+- 内部分析首次重放暴露assignment隐藏4-rank默认，第二次暴露final seal固定4 payload/
+  每rank2 tasks。`f82c7cd`与`a115b06`分别把LPT ownership和Cartesian sealing绑定
+  实际`world_size`；8项定向测试及clean六卡真实规模均通过。该根修与BCI transport/
+  process-group生命周期规则均写入`AGENTS.md`并push到branch/main。
+- owner要求rollout和全部分析后暂停了解现状。当前正式训练、四点rollout与winner内部
+  分析均结束；没有EMBER训练/eval/analysis进程或本方GPU占用。不得启动下一架构、
+  training target或GPU工作，等待owner明确继续指示；长期`>150` Goal仍未完成。
+
 ## 1. 当前边界
 
-- owner已授权在当前BCI上继续环境适配、架构/训练设计、profile、正式训练、严格配对
+- owner此前授权在当前BCI上继续环境适配、架构/训练设计、profile、正式训练、严格配对
   评测和内部分析；目标是缓解task漂移，并使同一single checkpoint的correct aggregate
-  严格超过`150/400`后继续提高。推进期间不使用subagent；本轮VR完成后的旧暂停已由
-  0.3节owner恢复授权覆盖。
+  严格超过`150/400`后继续提高。Direction Store rollout与全部内部分析完成后，owner
+  最新边界是先暂停了解现状；当前不得自动启动下一实验。推进期间仍不使用subagent。
 - 当前写分支为`codex/bci-continuation`，BCI新增输出只写项目`runs/`，证据写
   `evidence/`。下列A100窗口、旧分支和`/data/ymdai`只保留历史provenance。
 - owner在迁移由另一session启动后重新开放约十小时A100 post-seal研究窗口，允许在

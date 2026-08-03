@@ -1,6 +1,6 @@
 # EMBER Current Execution Brief
 
-更新时间：2026-08-03 12:00 UTC。本文是操作层authority；科研结果取
+更新时间：2026-08-03 18:05 UTC。本文是操作层authority；科研结果取
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
@@ -17,6 +17,9 @@
 - BCI A40/NCCL2.28必须由launcher显式设置`NCCL_P2P_DISABLE=1`走SHM，并由代码
   fail-fast，不能依赖`.env.local`。rank-local CUDA构造完成非NCCL ready rendezvous后
   才建立process group；六卡collective、fresh训练和exact resume均已实跑通过。
+- 多卡analysis的任务ownership和最终result sealing必须读取实际`world_size`；
+  `f82c7cd`/`a115b06`已消除历史4-rank默认，并在6 ranks、8 tasks、5 conditions真实
+  规模通过。不得通过少用卡绕开缺失rank。
 - 评测不再递归扫描整个个人目录或执行旧个人容量硬门；只检查目标文件系统余量和
   本次选择的GPU。
 - 四卡迁移验收后，六卡logical-B20冻结profile在clean pushed`391f183`完成
@@ -24,14 +27,17 @@
   `34,970,270,720/47,108,325,376` bytes，最长105帧，合同`31ea4bc9...55de0`。
 - profile checkpoint没有warm-start到formal。有效VR fresh 0→200和
   50/100/150/200 paired correct400均已完成，曲线为`76/88/126/107`。
+- Direction Store clean`91feeef`也已完成fresh0→200与四点paired correct400，曲线
+  `129/107/120/129`；winner macro50=129、breadth7，低于v6-fast143和严格门151。
 - `6f18499`首次formal因A40 overlay误保留profile seed`172`而在首个checkpoint前停止；
   10个partial宏步只作aborted审计，禁止resume/评测。修复与fail-close回归通过后，
   必须从新clean pushed commit和全新retry1 root重新fresh启动。
 - 详细运行证据和精确指标见`docs/active_session_handoff.md`第0节。下文所有
   `/data/ymdai`、A100 GPU4--7和“BCI尚未验收”描述仅是历史状态。
-- owner曾要求本轮rollout与全部分析后暂停，随后已恢复推进授权：保持one-shot，取消
-  Writer参数量上限，优先重构条件生成方向存储/组合并允许配套训练修改。仍不使用
-  subagent；效率优先，不重复全量hash或无关旧artifact扫描。
+- owner在VR结果后恢复推进：保持one-shot，取消Writer参数量上限，优先重构条件生成
+  方向存储/组合并允许配套训练修改。Direction Store rollout与全部分析现已完成，
+  owner最新边界是再次暂停了解现状。仍不使用subagent；效率优先，不重复全量hash或
+  无关旧artifact扫描。
 
 ## 1. 当前操作状态
 
@@ -43,10 +49,11 @@
 - A100窗口GPU工作已于`02:42 UTC`停止；其delta ledger只作历史provenance。
 - owner已另行授予BCI研究权限：每次比较`gpu01`/`gpu02`，只用空闲卡、合计最多6张，
   不干扰他人；当前推进不使用subagent。
-- BCI VR正式训练、四点rollout、完整性与漂移分析已完成并负裁决；owner已解除阶段
-  暂停。Semantic Direction Store实现、train24 center authority与61项聚焦CPU合同
-  已完成；clean pushed`1d0507e`六卡longest105 fresh0→1/exact-resume1→3通过，配置
-  已seal。下一步从clean origin-main fresh0→200；长期`>150`目标未完成。
+- BCI VR与Semantic Direction Store的正式训练、四点rollout、完整性和内部分析均已
+  完成。Direction Store曲线`129/107/120/129`，四点union/intersection=`174/65`、
+  envelope gap45，漂移仍在；winner内部有效LoRA stable rank仅`1.000043`，首奇异值
+  能量`.999957`。owner最新要求在rollout和全部分析后暂停；当前不启动下一实验，
+  长期`>150`目标未完成。
 
 Target-Bound已完成首小时与四点correct400=`75/120/90/110`，不续训；内部反事实证明
 其视频路径到达BA/action，剩余瓶颈定位到shared factor conditional coexistence。
@@ -64,6 +71,8 @@ post-seal baseline main/origin-main = f9a144c94e71bb44373d7247ed0fded2ed835305
 current BCI write branch = codex/bci-continuation
 Target-Bound formal commit = cfd26df63d08f29d8bfaac58f585387134ed680b
 BCI VR formal code commit = d9130c9fbe0d68b6a83c1a356f51f7a684845275
+Direction Store formal code commit = 91feeef
+six-rank internal-analysis final fix = a115b06
 ```
 
 `f9a144c`是另一迁移session已经封存的基线，不回写其内容。post-seal分支与所有新
@@ -167,7 +176,20 @@ functional loss改善到`.12915`时closed-loop反而降到107并比SFB同点少2
 “可约flow Monte Carlo方差是主要根因”，下一设计边界转为functional action surrogate
 与source-policy closed-loop有效流形错位。
 
-## 5. Current Writer state and next candidate
+Semantic Direction Store的正式四点correct400为：
+
+```text
+129 / 107 / 120 / 129
+```
+
+macro50与200同分，按breadth`7 vs 5`选择50为single winner。四点
+union/intersection=`174/65`，相邻gained/lost=`17/39,43/30,27/18`；早期比SFB
+macro50高60，但没有超过v6-fast143或严格门151。winner内部route与Core/Program/A/E
+路径均工作，真正失败发生在多维功能写出：16个rank坐标全部active却stable rank仅
+`1.000043`、top singular energy`.999957`、B-column cosine`.999971`。独立stores
+解决了参数所有权，未解决public A/B几乎共线的生成几何，正式负裁决且不续到400。
+
+## 5. Current Writer state and pause boundary
 
 Semantic Factor-Basis的完整design已在main：
 
@@ -184,8 +206,8 @@ docs/action_forecast_writer_semantic_factor_basis_design.md
 5. owner已恢复推进；新设计为frozen language semantic top2八个full-capacity
    direction stores，authority见
    `docs/action_forecast_writer_semantic_direction_store_design.md`；
-6. canonical替换、center authority与focused CPU合同已完成；做clean六卡longest105
-   fresh0→1/exact-resume1→3，封存formal seed后fresh0→200和paired correct400。
+6. canonical替换、profile、fresh0→200、四点paired correct400和winner refs1均已完成；
+7. 当前在owner要求的结果后暂停边界，不启动下一架构、training target或GPU分析。
 
 VR的设计、BCI适配和正式负结果统一见
 `docs/action_forecast_writer_variance_reduced_functional_estimator_design.md`。不得续训

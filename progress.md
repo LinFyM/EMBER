@@ -8,6 +8,40 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-03 Semantic Direction Store正式裁决、六卡分析与暂停
+
+- clean pushed`91feeef`在`gpu02:0--5`从fresh identity自然完成macro0→200：200个
+  finite rows、96,000 logical queries、4,800 one-video conditions、8 checkpoints，
+  wall`6619.255s`；0 clip/OOM、0 validation/test action reads，峰值reserved
+  `39,806,042,112` bytes。logical B20/physical B2、full24 raw mean和formal seed均未改。
+- 四个严格配对correct400均为400 unique rows、无失败，曲线
+  `129/107/120/129`，breadth=`7/7/7/5`。逐task依次为
+  `7/2/0/42/45/31/1/1`、`5/1/1/37/37/22/0/4`、
+  `9/2/0/40/40/26/2/1`、`10/0/0/38/41/36/0/4`。
+  macro50与200同分，按breadth选择macro50；仍低于v6-fast143和严格门151。
+- 相邻gained/lost=`17/39,43/30,27/18`，四点union/intersection=`174/65`、single
+  envelope gap45。Direction Store相对SFB macro50提高60，证明独立store显著改善早期
+  acquisition；但后续跌落与恢复、breadth晚期收缩说明task漂移未解，按门不续400。
+- step133按task-pair共享0/1/2 stores分层的factor-gradient cosine均值为
+  `-.00043/.00664/.02249`：store ownership局部隔离梯度，但store内部仍近正交。
+- macro50 refs1五条件内部分析显示route跨video固定；8 validation tasks的ordered
+  top2数组均不同，但`1,5`与`5,1`是同一无序组合。same-task-other的
+  Program/factor/effective-BA relative-L2为
+  `.93377/.01935/.03242`；A/E与Core mean carrier均能到达BA/action，动态路径未断。
+- 16个rank坐标全部active，但effective LoRA stable rank=`1.000043`、entropy rank
+  `1.000371`、top singular energy=`.999957`、B-column cosine=`.999971`；完整独立
+  stores仍共同写入近同一B方向。正式负裁决parameter-store-only假设，下一根因位于
+  Program到public A/B的多维功能方向形成与组合。
+- 内部分析最初暴露两处历史4-rank假设：LPT assignment缺省4 ranks，以及final seal
+  强制4 payload/每rank2 tasks。`f82c7cd`与`a115b06`分别改为实际`world_size`驱动
+  ownership和Cartesian sealing；8项定向测试及clean六卡真实8-task×5-condition运行
+  均通过，成功root为
+  `runs/outputs/pi05_as_writer_direction_store_bci_macro0050_internal_refs1_seed7_retry2_a115b06_20260803`。
+  原失败roots保留工程诊断，不混入科学结果。
+- 多卡根修规则已写入`AGENTS.md`并push到branch/main。正式训练、四点rollout和全部
+  当前假设所需内部分析均已结束；本方GPU进程已退出。按owner要求在此暂停，不启动
+  下一架构、训练目标或rollout，等待讨论。
+
 ## 2026-08-03 owner恢复推进与Semantic Direction Store设计
 
 - owner确认继续严格one-shot，取消Writer参数量软上限，要求优先重构条件生成方向

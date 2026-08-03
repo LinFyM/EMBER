@@ -6,6 +6,44 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-03 Semantic Direction Store正式负裁决
+
+- clean `91feeef`的fresh0→200严格保持one-shot、logical B20/physical B2、full24 raw
+  mean、96,000 queries与4,800 videos。correct400为`129/107/120/129`，breadth
+  `7/7/7/5`；macro50和200同为129，但50覆盖7 tasks、200只覆盖5，故single winner
+  选50。该结果较SFB macro50的69显著更高，证明稳定语义地址下的独立完整stores能
+  加快早期能力获取，但没有超过v6-fast143或严格目标151。
+- 相邻success churn为gained/lost `17/39`、`43/30`、`27/18`，四点union174、
+  intersection65、single envelope gap45。能力仍集中于Goal-6和两个Object tasks，
+  macro200又丢失Goal-3、Long-2、Spatial-1，parameter ownership没有产生稳定共同成熟。
+- 固定route本身按设计工作：8 validation tasks的ordered top2数组均不同，但`1,5`与
+  `5,1`是同一无序组合；同task五条件的store IDs/weights不变。共享0/1/2 stores的
+  task-pair factor-gradient
+  cosine均值`-.00043/.00664/.02249`，说明semantic storage确实提供了一定局部化，
+  但同store内的条件梯度仍没有形成稳定共同方向。
+- 内部纵向把失败定位到compiler：same-task-other使Program memory相对变化`.93377`，
+  到factor/effective BA仅`.01935/.03242`；shuffled为`.81049/.04731/.07193`，
+  reversed为`.93086/.09808/.15963`。remove-A、remove-E、Core-only、Program-only和
+  Core-mean反事实都能改变BA/action，所以视频、Core与Program不是断路，而是其差异
+  在写成public LoRA时被强烈压缩。
+- nominal rank16并未形成16维功能写入：全部坐标active且能量近均匀，但correct-video
+  effective BA的rank90/rank99均为1，stable rank=`1.000043`、entropy effective
+  rank=`1.000371`、top singular energy=`.999957`、B-column cosine=`.999971`，无负
+  component pairs。SFB macro200同样stable rank`1.000048`、top energy`.999952`；
+  Direction Store改变了参数所有权，却延续同一近rank1公共B方向。
+- Direction Store相对SFB确实把factor/BA的same/wrong/shuffled/reversed变化进一步
+  压小，但fixed-query action变化反而更大；这说明不能仅用LoRA相对差幅度预测行为，
+  也不改变核心谱证据：当前缺少的是多个可独立承担闭环功能的public A/B方向，而不是
+  再加store、调K/center/top-k或放大scalar。
+- 因此“shared factor parameter coexistence是主要漂移根因”只获得早期acquisition的
+  部分支持，作为完整解释被正式拒绝。下一架构若获授权，应重构Program语义/时序状态
+  如何组合成多维、非共线且仍coherent的A/B子空间；方法核心仍需适用于后续reward
+  gradient，不能靠LIBERO桶、AS辅助loss或checkpoint融合修当前panel。
+- 六卡内部分析还暴露两处独立于模型的拓扑硬编码：assignment默认4 ranks，seal固定
+  接收4 payload/每rank2 tasks。`f82c7cd`和`a115b06`分别把任务ownership与结果
+  Cartesian sealing绑定实际`world_size`；8项定向测试和clean六rank正式规模均通过。
+  这是可变卡数的根修，不以减少GPU数绕开缺失rank，长期规则已写入`AGENTS.md`。
+
 ## 2026-08-03 Semantic Direction Store设计决策
 
 - owner已解除阶段暂停，保持严格one-shot并取消Writer参数量软上限；新容量必须对应

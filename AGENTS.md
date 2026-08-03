@@ -20,6 +20,8 @@ A100 80GB配置；任何适配不得悄悄改变sealed scientific contract。不
 重构条件生成方向的存储与组合，并允许配套修改训练方式。仍须服从实时BCI设备边界、
 最多6张空闲卡、信息墙、single-checkpoint裁决和不使用subagent的要求。效率优先，
 只保留会改变实验可信度的聚焦检查，不用重复全量hash或无关旧artifact复核拖慢推进。
+Semantic Direction Store正式训练、四点rollout和winner全部内部分析完成后，owner最新
+要求先暂停了解推进现状；没有owner新指示前不得启动下一架构、训练、评测或GPU分析。
 
 ## Efficiency and validation boundary
 
@@ -55,6 +57,10 @@ A100 80GB配置；任何适配不得悄悄改变sealed scientific contract。不
   队列必须覆盖全部rank与全部task，最终聚合必须按实际ownership推导每rank行数；卡数
   变化至少用聚焦分配/Cartesian sealing测试和真实目标规模验证，不能靠减少卡数绕过
   缺失rank。
+- Direction Store内部分析已在`f82c7cd`/`a115b06`根修并实证上述合同：6 ranks必须
+  生成6份ownership，8 tasks按实际LPT分配，final seal接收实际6个payload并验证
+  `8 tasks × 5 conditions × refs` Cartesian覆盖。以后新增多卡分析不得复制rank数或
+  每rank task数常量，必须从运行context和ownership唯一推导。
 - timeout/heartbeat覆盖只允许作为一次性诊断，用来区分慢初始化与真实collective
   deadlock，不得进入canonical launcher、formal config或长期文档命令。根因修复必须
   用原始失败规模重放，并至少通过真实finite step和exact-resume边界。
@@ -115,6 +121,22 @@ A100 80GB配置；任何适配不得悄悄改变sealed scientific contract。不
 
 ## Current focused task
 
+- Semantic Direction Store已从clean`91feeef`完成fresh0→200与四点严格配对
+  correct400：`129/107/120/129`，breadth=`7/7/7/5`。macro50与200同分但前者breadth
+  更高，single winner选macro50=`129`；仍低于v6-fast143和严格目标`>150`，不续400。
+- 四点success union/intersection=`174/65`、single envelope gap45，相邻gained/lost
+  `17/39,43/30,27/18`，checkpoint能力轮换未解。它相对SFB macro50提高60，说明完整
+  独立stores改善早期acquisition，但不能写成解决task drift。
+- macro50 refs1确认固定语义route、A/E/Core/Program到BA/action路径都工作；然而
+  same-task Program relative-L2 `.93377`到factor/BA只剩`.01935/.03242`。全部16个
+  rank坐标虽active，effective LoRA stable rank仅`1.000043`、首奇异值能量`.999957`、
+  B-column cosine`.999971`。当前最早结构瓶颈是Program→public A/B的多维方向形成，
+  不是继续增加store、调K/route或放大scalar。
+- 六卡内部分析的assignment与final sealing已由`f82c7cd`/`a115b06`绑定实际
+  `world_size`并在真实6-rank、8-task、5-condition规模通过；多卡长期规则见上文。
+- owner要求完成rollout和全部分析后先暂停了解现状。当前不启动下一架构、训练目标、
+  训练、评测或GPU分析，等待owner明确继续指示；长期Goal仍未完成。
+
 - Semantic Factor-Basis完整correct400曲线为
   `69/91/118/127/117/81/126/120`；single winner仍是macro200=`127`，八点
   success union=`193`、single envelope gap=`66`，没有解决漂移或超过v6。
@@ -130,13 +152,13 @@ A100 80GB配置；任何适配不得悄悄改变sealed scientific contract。不
   `.00191`，且分阶段反复，不是material稳定化。
 - macro200 held functional loss由SFB`.13178`改善为VR`.12915`，paired correct却
   `127→107`；这再次证明functional loss不能选择closed-loop checkpoint，但不能单独
-  解释task漂移。当前主线是SFB已学会activation routing、shared factor却仍占约97%
-  梯度能量且方向持续轮换的parameter coexistence缺口。
-- owner已取消Writer参数量软上限并维持one-shot。下一canonical候选为
+  解释task漂移。当时由此打开shared factor parameter-coexistence假设；该假设随后已由
+  Direction Store正式实验作出上文所述部分支持但总体负裁决。
+- owner已取消Writer参数量软上限并维持one-shot。最近裁决的canonical候选为
   `docs/action_forecast_writer_semantic_direction_store_design.md`：冻结task-language
   语义地址固定选择top2完整容量direction stores，完整Core/A/E/D只作为value；目标是
-  让不同task方向拥有独立参数存储并可由language组合。实现、train24 center authority
-  与61项聚焦CPU合同已完成；尚无真实profile、训练或rollout，不得写成效果结果。
+  让不同task方向拥有独立参数存储并可由language组合。实现、profile、formal训练、
+  四点rollout和winner内部分析均已完成并按上述结果负裁决。
 - 旧A100“只使用物理GPU4--7”的边界已退役；当前只按上文BCI设备授权使用
   `gpu01`/`gpu02`的实时空闲卡，跨节点合计最多6张。
 - 迁移封存基线是`f9a144c94e71bb44373d7247ed0fded2ed835305`；当前BCI写分支为
@@ -145,9 +167,8 @@ A100 80GB配置；任何适配不得悄悄改变sealed scientific contract。不
   `/data/ymdai`。
 - frozen source step1000仍是下游inference/source asset，不支持source-SFT exact
   resume。A100 Codex、venv、cache与worktree仍不迁移。
-- A100窗口的GPU工作已停止；BCI上的环境恢复、profile、训练和评测已获owner授权。
-  迁移与46GB适配验证、VR训练、四点rollout和分析均已完成；owner已解除阶段暂停，
-  当前从新设计开始继续推进，长期Goal仍未完成。
+- A100窗口的GPU工作已停止；BCI迁移、46GB适配、VR与Direction Store的训练、rollout
+  和分析均已完成。当前执行边界重新收敛为owner要求的结果后暂停，长期Goal仍未完成。
 - 当前最低科研目标是同一single checkpoint的paired correct aggregate严格超过
   `150/400`，并在达到后继续追求更高absolute、breadth和视频因果性；不得用多
   checkpoint、挑video或违反信息墙的方法过门。

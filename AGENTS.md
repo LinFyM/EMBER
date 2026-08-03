@@ -46,12 +46,13 @@
 25. `docs/action_forecast_writer_amplitude_preserving_dual_read_design.md`
 26. `docs/action_forecast_writer_contextual_value_dual_read_design.md`
 27. `docs/action_forecast_writer_semantic_factor_basis_design.md`
-28. `task_plan.md`
-29. `findings.md`
-30. `progress.md`
-31. `docs/concept.md`
-32. `docs/decisions_and_open_questions.md`
-33. `docs/novelty_and_landscape.md`
+28. `docs/action_forecast_writer_variance_reduced_functional_estimator_design.md`
+29. `task_plan.md`
+30. `findings.md`
+31. `progress.md`
+32. `docs/concept.md`
+33. `docs/decisions_and_open_questions.md`
+34. `docs/novelty_and_landscape.md`
 
 本post-seal分支已完成Target-Bound裁决并打开Semantic Factor-Basis；修改或运行前
 仍必须完整阅读Target-Bound与Semantic Factor-Basis两份design。历史CV/Target-Bound
@@ -62,13 +63,14 @@
 
 ## Current focused task
 
-- Target-Bound首小时correct400为`75/120/90/110`，没有达到续训门；但其A/E/D、
-  memory reversal、Core与Program均已证实到达effective BA/action。当前实现并验证
-  Semantic Factor-Basis，使Core软选择共享factor参数子空间，直接检验条件能力共存、
-  absolute、breadth和checkpoint漂移。
+- Semantic Factor-Basis首小时correct400为`69/91/118/127`；macro200 breadth8，
+  50→200 gained/lost=`68/10`，但150→200仍为`38/29`。其右端趋势、全task breadth
+  与已证内部路径通过第二小时门；当前从同一root exact-resume macro200→400。
+- variance-reduced functional estimator已在commit`1d04ae5`实现并push，但尚无GPU
+  profile或训练结果；只有SFB第二小时裁决完成后才决定是否运行，不能冒充有效方法。
 - 只使用物理GPU4--7；不得查询或触碰GPU0--3，不得干扰他人进程。
 - 迁移封存基线是`f9a144c94e71bb44373d7247ed0fded2ed835305`；当前写分支为
-  `codex/semantic-factor-basis`，全部新提交和runtime roots必须
+  `codex/variance-reduced-functional-estimator`，全部新提交和runtime roots必须
   登记在`/data/ymdai/migration_manifests/ember_postseal_20260802/`。
 - frozen source step1000仍是下游inference/source asset，不支持source-SFT exact
   resume。A100 Codex、venv、cache与worktree仍不迁移。
@@ -117,9 +119,11 @@ artifact roots和hash只取`docs/active_session_handoff.md`。
 
 Target-Bound correct曲线`75/120/90/110`仍漂移，但内部remove-A/remove-D/
 memory-reversal均`8/8` tasks达门，说明动态路径已工作而shared factor共存仍失败。
-当前候选Semantic Factor-Basis用Core软选择四个等容量factor value subspaces；按
-`CPU regression → longest105 B20 → exact resume → fresh0→200 → 50/100/150/200
-correct400`证伪。
+Semantic Factor-Basis曲线`69/91/118/127`较Target-Bound形成更可信共同累积，
+macro200全8 tasks非零，但相邻checkpoint仍大量换手且晚期CountSketch梯度稳定性
+没有改善。它正按门续到400。下一候选只改变functional Monte Carlo estimator：
+exact-Beta Latin time加随机antithetic Gaussian noise；架构、objective期望、B20、
+full24 raw mean和optimizer保持不变。
 
 ## Data and split
 

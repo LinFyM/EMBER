@@ -1,6 +1,6 @@
 # EMBER Current Execution Brief
 
-更新时间：2026-08-02 22:38 UTC。本文是操作层authority；科研结果取
+更新时间：2026-08-03 00:35 UTC。本文是操作层authority；科研结果取
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bgr_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
@@ -17,9 +17,9 @@
 
 Target-Bound已完成首小时与四点correct400=`75/120/90/110`，不续训；内部反事实证明
 其视频路径到达BA/action，剩余瓶颈定位到shared factor conditional coexistence。
-Semantic Factor-Basis的longest105 B20三macro和fresh/exact-resume vertical path已
-通过并seal为`f5ddfe3`。clean frozen`f5ddfe3`于22:37:45 UTC从全新root fresh启动
-macro0→200。
+Semantic Factor-Basis首小时和四点correct400=`69/91/118/127`已完成；macro200
+breadth8且右端持续上升，但相邻checkpoint仍明显换手。它已通过第二小时门，clean
+frozen`f5ddfe3`于00:32:58 UTC从同一root exact-resume macro200→400。
 
 ## 2. Canonical Git state
 
@@ -27,14 +27,14 @@ macro0→200。
 
 ```text
 post-seal baseline main/origin-main = f9a144c94e71bb44373d7247ed0fded2ed835305
-current experiment branch = codex/semantic-factor-basis
+current experiment branch = codex/variance-reduced-functional-estimator
 Target-Bound formal commit = cfd26df63d08f29d8bfaac58f585387134ed680b
-current main/origin-main = f5ddfe381ac959a019535c470d9de9dfe4c2a3e4
+current main/origin-main = 1d04ae5
 ```
 
 `f9a144c`是另一迁移session已经封存的基线，不回写其内容。post-seal分支与所有新
-artifact作为第二批增量交付；Target-Bound已封存为负结果，Semantic Factor-Basis
-目前只有运行合同证据，paired closed-loop结果出来前不能宣称有效。
+artifact作为第二批增量交付；Target-Bound已封存为负结果。Semantic Factor-Basis
+首小时显示共同增长但尚未超过v6 best，也没有解决checkpoint换手，不能宣称成功。
 
 迁移后默认动作：clone GitHub main并核验`f5ddfe3`或其后续交接commit；需要历史时再
 fetch实验分支，不复制`.git`或恢复所有Codex refs。BGR重建环境和路径映射后先运行
@@ -111,11 +111,13 @@ docs/action_forecast_writer_semantic_factor_basis_design.md
 
 当前执行顺序固定：
 
-1. 当前fresh macro0→200、every25 checkpoint自然完成；
-2. paired correct400评测50/100/150/200；
-3. 根据absolute、breadth、右端趋势、task churn及factor routing/A/E/D→effective
-   BA→action传递决定是否第二小时；不机械按150停止；
+1. 当前exact-resume macro200→400、every25 checkpoint自然完成；
+2. paired correct400评测250/300/350/400并选择single winner；
+3. 根据absolute、breadth、task churn及内部路径决定五臂、variance-reduced对照或停止；
 4. 窗口结束前停止GPU进程并把代码、文档与artifact delta交给迁移session。
+
+下一候选`docs/action_forecast_writer_variance_reduced_functional_estimator_design.md`及代码
+已在`1d04ae5`push；尚无GPU证据，不能写成已验证训练方法。
 
 profile/smoke root必须全新，不得使用A100上的smoke权重或正式output路径。B20只有
 真实OOM或连续非有限才降，不扫描B17–B19/B21。

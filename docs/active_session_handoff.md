@@ -1,6 +1,6 @@
 # EMBER Active Session Handoff
 
-更新时间：2026-08-02 22:38 UTC。本文只记录迁回 BGR 前的当前真相。历史执行流水仍在
+更新时间：2026-08-03 00:35 UTC。本文只记录迁回 BGR 前的当前真相。历史执行流水仍在
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
@@ -13,13 +13,13 @@
 - 已迁移封存基线为`f9a144c`；本轮所有Git与artifact都是post-seal delta，外部登记根
   为`/data/ymdai/migration_manifests/ember_postseal_20260802/`。迁移仍由另一session
   执行，本session不修改其现有副本，只提供增量清单。
-- 当前活动实验是Semantic Factor-Basis首小时正式训练：tmux
-  `ember_sfb_formal_f5ddfe3`，四个torchrun ranks只在物理GPU4--7，fresh
-  macro0→200。精确root/log列在本节下方和post-seal delta ledger；MemLLM没有活动
-  实验。
+- 当前活动实验是Semantic Factor-Basis第二小时exact resume：tmux
+  `ember_sfb_resume400_f5ddfe3`，四个torchrun ranks只在物理GPU4--7，从同一root
+  macro200→400。精确root/log列在本节下方和post-seal delta ledger；MemLLM没有
+  活动实验。
 - EMBER迁移封存基线为`f9a144c94e71bb44373d7247ed0fded2ed835305`；当前
-  `main=origin/main=f5ddfe381ac959a019535c470d9de9dfe4c2a3e4`，Semantic
-  Factor-Basis是canonical实现，写分支为`codex/semantic-factor-basis`。
+  `main=origin/main=1d04ae5`，Semantic Factor-Basis仍是canonical Writer，写分支为
+  `codex/variance-reduced-functional-estimator`。
 - Target-Bound Role-Preserving Program 已在远端分支
   `origin/codex/target-bound-role-program`实现，commit
   `b260a57a94dc21bd3446b212bfa42f71b037ce13`。它只完成 CPU shape、identity、
@@ -36,9 +36,14 @@
   exact-resume1→3均通过，五个主block从macro2起finite/nonzero；seal/push commit为
   `f5ddfe3`。
 - clean frozen`f5ddfe3`已于22:37:45 UTC从fresh identity启动0→200、every25；不从
-  profile/smoke warm-start，不自动续第二小时。formal root：
+  profile/smoke warm-start。首小时paired correct400为`69/91/118/127`，macro200
+  breadth8；50→200 gained/lost=`68/10`，但150→200仍有`38/29`换手。该结果与内部
+  路径、右端趋势共同通过第二小时门，00:32:58 UTC exact-resume 200→400。formal root：
   `/data/ymdai/outputs/ember/pi05_as_writer_semfactor_postseal_rawfull24_decay400_formal_r4_b20_seed7_f5ddfe3_20260802`；log：
-  `/data/ymdai/logs/ember/pi05_as_writer_semfactor_postseal_rawfull24_decay400_formal_r4_b20_seed7_f5ddfe3_20260802.log`。
+  `/data/ymdai/logs/ember/pi05_as_writer_semfactor_postseal_resume200to400_r4_b20_seed7_f5ddfe3_20260803.log`。
+- commit`1d04ae5`已实现并push下一候选variance-reduced estimator：保持SFB拓扑、
+  objective期望、B20/full24/optimizer不变，只对flow time做exact-Beta Latin分层并对
+  Gaussian noise做随机antithetic pairing。18项focused测试通过，但尚未profile或训练。
 - 迁移步骤、路径映射、资产分流和新 Codex 接手顺序统一看
   [`a100_to_bgr_migration_handoff.md`](a100_to_bgr_migration_handoff.md)。
 
@@ -152,7 +157,7 @@ analysis SHA256：
 
 ## 4. 当前代码与下一实验边界
 
-`main`现为clean pushed`f5ddfe3` Semantic Factor-Basis canonical path；
+`main`现为clean pushed`1d04ae5` Semantic Factor-Basis canonical path；
 Target-Bound/CV-ADR由Git与frozen artifacts保存。核心职责为：
 
 - 38个真实policy targets先读Core；
@@ -165,10 +170,10 @@ Target-Bound/CV-ADR由Git与frozen artifacts保存。核心职责为：
 
 当前A100临时授权窗口的紧邻动作是：
 
-1. 让当前Semantic Factor-Basis fresh macro0→200自然完成；
-2. 在GPU4--7一张卡一个checkpoint并发评测50/100/150/200 paired correct400；
-3. 只按absolute、breadth、趋势、漂移和内部A/E/D→BA→action传递决定
-   exact-resume第二小时或整体根因迭代；
+1. 让当前Semantic Factor-Basis exact-resume macro200→400自然完成；
+2. 并发评测250/300/350/400中有信息量的paired correct400并选single winner；
+3. 结合task churn和内部A/E/D→BA→action传递决定是否还来得及运行variance-reduced
+   vertical path，不能因一个高aggregate忽略漂移；
 4. 最迟03:45 UTC停止新GPU工作并封存/push全部增量。
 
 不得从smoke/profile权重warm-start。当前完整设计为

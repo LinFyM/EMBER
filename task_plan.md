@@ -25,11 +25,15 @@ runner、split、路径或 GPU 权限。
   而不是视频路径断路。
 - [x] 完整实现Semantic Factor-Basis并push`e87363f`；11,159,296参数、55项聚焦
   回归、longest105 B20三macro及fresh0→1/exact-resume1→3均通过，seal为`f5ddfe3`。
-- [ ] clean frozen`f5ddfe3`正在fresh0→200、每25保存；完成后在GPU4--7一张卡一个
-  checkpoint并行评测50/100/150/200 paired correct400。
-- [ ] 按absolute、task breadth/churn与factor routing→BA/action传递决定是否续到400；
-  若失败，直接重审functional estimator与closed-loop manifold，不给失败模型加
-  entropy/gate/scale等补丁。
+- [x] clean frozen`f5ddfe3`完成fresh0→200；paired correct400为
+  `69/91/118/127`，macro200 breadth8，50→200 gained/lost=`68/10`，但
+  150→200仍为`38/29`。
+- [ ] 右端趋势与内部路径通过第二小时门；同一root正在exact-resume 200→400，随后
+  并发评测250/300/350/400并选single winner。
+- [x] 在不替换SFB架构的前提下实现variance-reduced functional estimator并push
+  `1d04ae5`；只改变exact-marginal flow time/noise批内依赖，尚无GPU证据。
+- [ ] SFB第二小时裁决后，按剩余窗口决定是否运行variance-reduced最短B20/resume与
+  fresh首小时；若不运行，明确作为BGR待证伪候选交接。
 - [ ] 最迟03:45 UTC停止新GPU工作，push全部代码/文档并封存post-seal增量清单。
 
 ## A100清理与BGR迁移准备（2026-08-02）

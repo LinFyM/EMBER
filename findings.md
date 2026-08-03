@@ -3887,3 +3887,24 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   梯度均finite/nonzero。formal seed fresh0→1再exact-resume1→3保持合同
   `0495a071...`，累计1,440 queries/72 videos且validation/test action reads为0。
   这些只授权`f5ddfe3` fresh0→200，不构成性能结论。
+
+## Semantic Factor-Basis首小时与续训门（2026-08-03）
+
+- fresh macro50/100/150/200的paired correct400为`69/91/118/127`，breadth为
+  `7/7/6/8`。macro200逐task为Long-1/2=`13/2`、Goal-3/6=`1/44`、
+  Object-1/3=`31/32`、Spatial-1/3=`3/1`；不是单一task独占，但主要能力仍集中在
+  Goal-6和两个Object tasks。
+- success-set相邻换手为50→100 `37/15`、100→150 `46/19`、150→200
+  `38/29`；50→200为`68/10`。因此SFB相对Target-Bound确实形成更可信的共同累积，
+  但没有消除短期能力轮换。
+- macro200相对Target-Bound macro200 paired gained/lost=`40/23`，净增17；相对
+  Target-Bound observed-best macro100为`34/27`，只净增7。SFB是有作用的条件分工，
+  不是架构统治。
+- macro200内部route task-centered/sample energy为`.2171`，task均值路由pair
+  relative-L2中位`.6049`；A/E/D移除、memory reversal、Core-only和Program-only
+  均证实主路径工作。与此同时晚期factor gradient share升至`.95045`、同task相邻
+  CountSketch cosine降至`.06595`、task-mean/sample降至`.01292`。行为改善与该
+  sketch稳定性没有一一对应，不能仅凭内部指标否定续训。
+- 由于absolute接近v6同期、右端持续上涨、breadth到8且内部路径成立，按预注册门
+  exact-resume 200→400；不能因未到150机械停止。下一候选variance-reduced estimator
+  只检验flow Monte Carlo噪声，代码commit`1d04ae5`尚无GPU结论。

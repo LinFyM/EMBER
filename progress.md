@@ -3010,3 +3010,18 @@ GPU范围和训练步长是当时快照；活动状态只取
   loss为`.15404/.15159/.14764`，macro2起五主block梯度可达，无clip/OOM/nonfinite。
   output/log及后续评测root逐项登记在
   `/data/ymdai/migration_manifests/ember_postseal_20260802/assets.tsv`。
+
+## Semantic Factor-Basis首小时评测与第二小时启动（2026-08-03）
+
+- fresh0→200自然完成：200 finite macros、96,000 queries、4,800 single-video
+  conditions、8个every25 checkpoints；无OOM/nonfinite/clip，validation/test action
+  reads保持0。
+- GPU4--7各负责一个checkpoint，6 persistent workers/card完成相同paired、无放回
+  correct400；macro50/100/150/200为`69/91/118/127`，全部36/36 shards和400 rows。
+- macro200 breadth8、50→200 gained/lost=`68/10`，但150→200仍有`38/29`换手；结合
+  内部task routing及A/E/D→BA/action路径证据，通过第二小时门。
+- 00:32:58 UTC从frozen`f5ddfe3`和原root step200 exact-resume到400；tmux
+  `ember_sfb_resume400_f5ddfe3`，log为
+  `/data/ymdai/logs/ember/pi05_as_writer_semfactor_postseal_resume200to400_r4_b20_seed7_f5ddfe3_20260803.log`。
+- 等待评测期间完成variance-reduced estimator实现、18项focused测试和design，
+  commit`1d04ae5`已push到branch与main；尚未使用GPU，不构成效果证据。

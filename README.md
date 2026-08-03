@@ -16,9 +16,9 @@ normalization。
 
 ## 当前状态
 
-2026-08-02因A100主机即将到期，新的训练、评测和架构设计已暂停。当前没有活动
-EMBER/MemLLM训练、评测或tmux。项目正在迁回BGR；迁移操作由后续智能体执行，本
-checkout只负责清理和形成可验证交接。
+EMBER已经迁回BGR，BGR A40上的四卡collective、Writer fresh训练、exact resume和
+多卡评测入口均已完成运行验收。当前没有活动的EMBER训练、评测或tmux；新的正式研究
+应从本项目目录启动，并遵守`AGENTS.md`和当前owner授权。
 
 - `main`保留已封存的CV-ADR canonical实现和证据。
 - Target-Bound Role-Preserving Program已在远端分支
@@ -67,13 +67,29 @@ checkout只负责清理和形成可验证交接。
 - sealed历史config和artifact contract中的旧绝对路径是provenance，不应原位改写；
   新运行通过CLI显式传入source/checkpoint/tokenizer/data/output路径。
 
-## 环境与路径
+## BGR目录、环境与路径
 
-本仓库使用`pyproject.toml`和`uv.lock`重建环境，不迁移`.venv`。评测preflight的
-个人容量根可通过环境变量设置：
+BGR上的canonical入口是`/data1/user/ymdai/projects/EMBER`。代码和项目资产按项目
+归并，不再从个人目录顶层按资源类型拆分：
+
+```text
+EMBER/
+├── data/       # datasets与LIBERO simulation assets
+├── models/     # tokenizer及独立模型资产
+├── runs/       # 训练、评测、checkpoint、日志与运行验收
+├── evidence/   # 迁移清单与验收证据
+├── .venv/      # 本项目Python环境
+└── .cache/     # 本项目可重建缓存
+```
+
+进入仓库后执行`source .venv/bin/activate`即可自动加载`.env.local`中的BGR本地路径，
+不需要逐项手工设置。环境仍由`pyproject.toml`和`uv.lock`约束，必要时可运行
+`scripts/bootstrap_env.sh`原位校验或修复。
+
+评测preflight的项目容量根也可显式覆盖：
 
 ```bash
-export EMBER_STORAGE_ROOT=/path/to/bgr/user/root
+export EMBER_STORAGE_ROOT=/path/to/bgr/EMBER
 export EMBER_STORAGE_CAP_BYTES=REPLACE_WITH_OWNER_CAP
 export EMBER_LIBERO_ASSETS_ROOT=/path/to/libero-assets/revision
 ```

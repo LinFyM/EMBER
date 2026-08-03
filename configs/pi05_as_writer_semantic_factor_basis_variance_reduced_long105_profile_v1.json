@@ -113,14 +113,14 @@
         "max_cuda_reserved_bytes": 44853886976,
         "wall_seconds": 55.048777336021885,
         "commit": "ecd7dd85f6afed2e42a21e604a107116eee566e9",
-        "profile_root": "/data1/user/ymdai/runs/EMBER/acceptance/ember_bgr_gpu_acceptance_20260803T1232/train"
+        "profile_root": "/data1/user/ymdai/projects/EMBER/runs/acceptance/ember_bgr_gpu_acceptance_20260803T1232/train"
       },
       "exact_resume_smoke": {
         "status": "passed_fresh0to1_exact_resume1to2",
         "completed_macros": 2,
         "contract_sha256": "0ad61a85b48358748d72030643b7c5ceaa62893d689b1b90310be77ebdb5e23f",
         "commit": "ecd7dd85f6afed2e42a21e604a107116eee566e9",
-        "root": "/data1/user/ymdai/runs/EMBER/acceptance/ember_bgr_gpu_acceptance_20260803T1232/train"
+        "root": "/data1/user/ymdai/projects/EMBER/runs/acceptance/ember_bgr_gpu_acceptance_20260803T1232/train"
       },
       "gradient_reachability": {
         "status": "sealed_finite_nonzero_after_identity_lifecycle",
@@ -140,7 +140,7 @@
         "successes": 1,
         "evaluation_wall_seconds": 257.4394247531891,
         "contract_sha256": "05cf942730abf428359a7af24a7a9a3f862d6168e16d58c14c7a229dd26cbbe3",
-        "run_summary": "/data1/user/ymdai/runs/EMBER/acceptance/ember_bgr_gpu_acceptance_20260803T1232/eval_writer_validation/run_summary.json"
+        "run_summary": "/data1/user/ymdai/projects/EMBER/runs/acceptance/ember_bgr_gpu_acceptance_20260803T1232/eval_writer_validation/run_summary.json"
       }
     },
     "formal_run": {

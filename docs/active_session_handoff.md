@@ -20,9 +20,9 @@
 - 评测preflight已移除对整个个人目录的递归`du`和个人容量硬门，只保留快速文件系统
   余量及所选GPU现场检查。不要恢复全目录扫描或A100的固定GPU4--7约束。
 - 验收root为
-  `/data1/user/ymdai/runs/EMBER/acceptance/ember_bgr_gpu_acceptance_20260803T1232`；
+  `/data1/user/ymdai/projects/EMBER/runs/acceptance/ember_bgr_gpu_acceptance_20260803T1232`；
   迁移证据在
-  `/data1/user/ymdai/evidence/migration/EMBER/20260803/gpu-acceptance/`。
+  `/data1/user/ymdai/projects/EMBER/evidence/migration/20260803/gpu-acceptance/`。
   这些profile/smoke checkpoint只证明运行链路，后续VR正式实验仍须fresh identity，
   不得从验收权重warm-start。
 - 验收结束后无EMBER训练、评测worker或tmux进程，四张验收GPU均已释放。

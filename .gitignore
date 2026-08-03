@@ -4,12 +4,16 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 .venv/
+.cache/
 .env.local
 *.log
 wandb/
 outputs/
 checkpoints/
 data/
+models/
+runs/
+evidence/
 *.ckpt
 *.pt
 *.pth

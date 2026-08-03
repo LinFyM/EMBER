@@ -156,9 +156,9 @@ def _static_as_evaluation_fixture(
     )
     data_root = _sparse_video_data(tmp_path, validation_rows)
     source = {
-        "source_run": "/data1/user/ymdai/runs/EMBER/outputs/source",
-        "checkpoint": "/data1/user/ymdai/runs/EMBER/outputs/source/checkpoints/step_00001000",
-        "model_path": "/data1/user/ymdai/runs/EMBER/outputs/source/checkpoints/step_00001000/policy",
+        "source_run": "/data1/user/ymdai/projects/EMBER/runs/outputs/source",
+        "checkpoint": "/data1/user/ymdai/projects/EMBER/runs/outputs/source/checkpoints/step_00001000",
+        "model_path": "/data1/user/ymdai/projects/EMBER/runs/outputs/source/checkpoints/step_00001000/policy",
         "source_run_contract_sha256": "1" * 64,
         "checkpoint_manifest_sha256": "2" * 64,
         "optimizer_step": 1000,
@@ -242,8 +242,8 @@ def test_source_reference_match_is_host_and_hash_independent() -> None:
     }
     current = {
         **recorded,
-        "source_run": "/data1/user/ymdai/runs/EMBER/outputs/source",
-        "checkpoint": "/data1/user/ymdai/runs/EMBER/outputs/source/checkpoints/step_00001000",
+        "source_run": "/data1/user/ymdai/projects/EMBER/runs/outputs/source",
+        "checkpoint": "/data1/user/ymdai/projects/EMBER/runs/outputs/source/checkpoints/step_00001000",
         "checkpoint_manifest_sha256": "4" * 64,
         "model_files": [
             {"path": "policy/model.safetensors", "bytes": 123, "sha256": "5" * 64}

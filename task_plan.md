@@ -8,7 +8,25 @@
 `docs/a100_to_bci_migration_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
 runner、split、路径或 GPU 权限。
 
-## 当前BCI接管与VR推进（2026-08-03）
+## 当前BCI Semantic Direction Store推进（2026-08-03）
+
+- [x] owner解除VR结果后的阶段暂停：继续one-shot，取消Writer参数量软上限，优先
+  重构条件生成方向的存储/组合，允许配套修改训练；继续禁用subagent并保持效率优先。
+- [x] 重新按内部证据区分task drift与functional-loss不可预测性：后者不能单独解释
+  漂移；SFB的核心缺口是已学会activation routing，但约97%梯度仍进入共享factor且
+  方向持续轮换。
+- [x] 完成`Semantic Direction Store Writer`设计authority：frozen text-only semantic
+  anchor在24 train languages上建立8个固定centers，每task稳定top2；每store拥有完整
+  1024→256→factor-width input/output参数，预计Writer为37,355,776参数。保持完整
+  Core/A/E/D value、one-shot、single LoRA与信息墙。
+- [x] 原位替换canonical SFB factor path，不保留并行架构；增加BCI B2切片可重建的
+  keyed independent Beta/Gaussian sampler，退役VR estimator的活动配置。
+- [x] 建立仅基于24 train language的center authority；完成route、独立W_out、sparse
+  gradient、identity、freeze、B20/B2 parity与fresh/resume聚焦验证。
+- [ ] live比较`gpu01`/`gpu02`后用最多6张空闲卡做longest105真实profile；OOM时只调
+  frame encoder microbatch，保持logical B20、full24 raw mean与一次AdamW不变。
+- [ ] 从fresh identity训练0→200并评测50/100/150/200 paired correct400；依据
+  absolute/breadth/churn和store内部机制证据决定续到400或重构下一方向。
 
 - [x] 完整阅读authority、迁移handoff、架构/recipe设计、代码与历史证据；核清
   data/model/tokenizer/source checkpoint、formal outputs、环境与simulation assets。
@@ -31,10 +49,8 @@ runner、split、路径或 GPU 权限。
   8 checkpoints和全部hash/信息墙门通过。严格配对correct400为
   `76/88/126/107`，breadth=`7/4/7/5`，single winner126；四点漂移与matched
   VR→SFB机制/held-loss分析完成，正式负裁决，不续到400、不做五臂。
-- [ ] 长期Goal仍是同一single checkpoint correct严格超过`150/400`并尽可能提高。
-  当前按owner要求在rollout和全部分析后暂停；恢复后先设计functional action
-  surrogate与source-policy closed-loop有效流形对齐的新training target，不复用VR
-  checkpoint、不使用subagent、checkpoint融合或信息捷径。
+- [ ] 长期Goal仍是同一single checkpoint correct严格超过`150/400`并尽可能提高；
+  不复用VR checkpoint、不使用subagent、checkpoint融合、挑video或信息捷径。
 
 ## Post-seal A100研究窗口（2026-08-02 19:18 UTC起）
 

@@ -86,6 +86,15 @@ SEMANTIC_FACTOR_BASIS_TASK_QUERY_RAW_TRAINER_STATE_SCHEMA = (
 SEMANTIC_FACTOR_BASIS_TASK_QUERY_RAW_RANK_STATE_SCHEMA = (
     "ember_pi05_semantic_factor_basis_task_query_rawfull24_rank_state_v1"
 )
+SEMANTIC_DIRECTION_STORE_TASK_QUERY_RAW_CHECKPOINT_SCHEMA = (
+    "ember_pi05_semantic_direction_store_task_query_rawfull24_checkpoint_v1"
+)
+SEMANTIC_DIRECTION_STORE_TASK_QUERY_RAW_TRAINER_STATE_SCHEMA = (
+    "ember_pi05_semantic_direction_store_task_query_rawfull24_trainer_state_v1"
+)
+SEMANTIC_DIRECTION_STORE_TASK_QUERY_RAW_RANK_STATE_SCHEMA = (
+    "ember_pi05_semantic_direction_store_task_query_rawfull24_rank_state_v1"
+)
 
 
 _FAMILIES = {
@@ -142,6 +151,12 @@ _FAMILIES = {
         SEMANTIC_FACTOR_BASIS_TASK_QUERY_RAW_CHECKPOINT_SCHEMA,
         SEMANTIC_FACTOR_BASIS_TASK_QUERY_RAW_TRAINER_STATE_SCHEMA,
         SEMANTIC_FACTOR_BASIS_TASK_QUERY_RAW_RANK_STATE_SCHEMA,
+    ),
+    "semantic_direction_store_task_query_keyed_rawfull24_v1": (
+        1,
+        SEMANTIC_DIRECTION_STORE_TASK_QUERY_RAW_CHECKPOINT_SCHEMA,
+        SEMANTIC_DIRECTION_STORE_TASK_QUERY_RAW_TRAINER_STATE_SCHEMA,
+        SEMANTIC_DIRECTION_STORE_TASK_QUERY_RAW_RANK_STATE_SCHEMA,
     ),
 }
 

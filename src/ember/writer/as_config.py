@@ -12,11 +12,11 @@ from ember.writer.model import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-SEMANTIC_FACTOR_BASIS_CONFIG_SCHEMA = (
-    "ember_pi05_semantic_factor_basis_as_writer_v1"
+SEMANTIC_DIRECTION_STORE_CONFIG_SCHEMA = (
+    "ember_pi05_semantic_direction_store_as_writer_v1"
 )
-SEMANTIC_FACTOR_BASIS_CONFIG_OVERLAY_SCHEMA = (
-    "ember_pi05_semantic_factor_basis_recipe_overlay_v1"
+SEMANTIC_DIRECTION_STORE_CONFIG_OVERLAY_SCHEMA = (
+    "ember_pi05_semantic_direction_store_recipe_overlay_v1"
 )
 AS_WRITER_CONFIG_SCHEMA = "ember_pi05_contextual_value_dual_read_full24_as_writer_v1"
 AS_WRITER_CONFIG_OVERLAY_SCHEMA = (
@@ -35,7 +35,7 @@ AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA = (
     "ember_pi05_contextual_value_dual_read_cycle_normalized_recipe_overlay_v2"
 )
 AS_WRITER_CONFIG_SCHEMAS = (
-    SEMANTIC_FACTOR_BASIS_CONFIG_SCHEMA,
+    SEMANTIC_DIRECTION_STORE_CONFIG_SCHEMA,
     AS_WRITER_CONFIG_SCHEMA,
     AS_WRITER_SERIAL4_CONFIG_SCHEMA,
     AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA,
@@ -258,6 +258,28 @@ def _variance_reduced_conditioning_common() -> dict[str, Any]:
     return common
 
 
+def _independent_microbatched_conditioning_common() -> dict[str, Any]:
+    """Keep ordinary independent B20 draws invariant under physical slicing."""
+
+    common = _conditioning_common(task_query_keyed=True)
+    common.update(
+        {
+            "policy_noise_contract": (
+                "task-query-keyed independent exact Beta time and independent "
+                "Gaussian flow noise generated for logical B20 then sliced "
+                "without replacement into physical microbatches"
+            ),
+            "policy_flow_time_sampling_scheme": (
+                "task_query_keyed_independent_beta15_time_v1"
+            ),
+            "policy_flow_noise_sampling_scheme": (
+                "task_query_keyed_independent_gaussian_v1"
+            ),
+        }
+    )
+    return common
+
+
 def _full24_conditioning(
     common: Mapping[str, Any],
     *,
@@ -431,12 +453,19 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
         ),
         tasks_per_rank=tasks_per_rank,
     )
+    direction_store_raw = _full24_conditioning(
+        _independent_microbatched_conditioning_common(),
+        method=(
+            "task_query_keyed_independent_microbatched_raw_task_complete_"
+            "single_video_multi_action_positive_functional_loss"
+        ),
+        tasks_per_rank=tasks_per_rank,
+    )
     serial4 = _serial4_conditioning(legacy_common)
     randomized_group4 = _randomized_group4_conditioning(task_query_common)
-    if config.get("schema_version") in {
-        AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA,
-        SEMANTIC_FACTOR_BASIS_CONFIG_SCHEMA,
-    }:
+    if config.get("schema_version") == SEMANTIC_DIRECTION_STORE_CONFIG_SCHEMA:
+        expected = direction_store_raw
+    elif config.get("schema_version") == AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA:
         expected = (
             randomized_group4
             if value.get("update_topology")
@@ -467,7 +496,7 @@ def _validate_cycle_normalized_optimization(config: Mapping[str, Any]) -> None:
         config.get("schema_version")
         not in {
             AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA,
-            SEMANTIC_FACTOR_BASIS_CONFIG_SCHEMA,
+            SEMANTIC_DIRECTION_STORE_CONFIG_SCHEMA,
         }
         or "cycle_normalization" not in config.get("optimization", {})
     ):
@@ -521,13 +550,20 @@ def _validate_cycle_normalized_optimization(config: Mapping[str, Any]) -> None:
         or not 0 < policy_microbatch_size <= formal_batch_size
         or (
             microbatching
-            and training.get("policy_flow_time_sampling_scheme")
-            != "task_query_keyed_randomized_latin_beta15_time_v1"
-        )
-        or (
-            microbatching
-            and training.get("policy_flow_noise_sampling_scheme")
-            != "task_query_keyed_randomized_antithetic_gaussian_v1"
+            and (
+                training.get("policy_flow_time_sampling_scheme"),
+                training.get("policy_flow_noise_sampling_scheme"),
+            )
+            not in {
+                (
+                    "task_query_keyed_randomized_latin_beta15_time_v1",
+                    "task_query_keyed_randomized_antithetic_gaussian_v1",
+                ),
+                (
+                    "task_query_keyed_independent_beta15_time_v1",
+                    "task_query_keyed_independent_gaussian_v1",
+                ),
+            }
         )
     )
     if invalid:
@@ -609,6 +645,8 @@ def _load_recipe_overlay(
         "profile_evidence",
         "formal_run",
     }
+    if overlay_schema == SEMANTIC_DIRECTION_STORE_CONFIG_OVERLAY_SCHEMA:
+        allowed_replacements.add("writer")
     base_path = (REPO_ROOT / str(config.get("base_config", ""))).resolve()
     if (
         set(config) != required
@@ -625,13 +663,64 @@ def _load_recipe_overlay(
         base["schema_version"] = AS_WRITER_SERIAL4_CONFIG_SCHEMA
     elif overlay_schema == AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA:
         base["schema_version"] = AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA
-    elif overlay_schema == SEMANTIC_FACTOR_BASIS_CONFIG_OVERLAY_SCHEMA:
-        base["schema_version"] = SEMANTIC_FACTOR_BASIS_CONFIG_SCHEMA
+    elif overlay_schema == SEMANTIC_DIRECTION_STORE_CONFIG_OVERLAY_SCHEMA:
+        base["schema_version"] = SEMANTIC_DIRECTION_STORE_CONFIG_SCHEMA
     base["_config_derivation"] = {
         "overlay_schema": overlay_schema,
         "base_config": str(base_path.relative_to(REPO_ROOT)),
         "base_sha256": config["base_sha256"],
     }
+    if overlay_schema == SEMANTIC_DIRECTION_STORE_CONFIG_OVERLAY_SCHEMA:
+        writer = dict(base.get("writer", {}))
+        if set(writer) != {
+            "architecture",
+            "frame_stride",
+            "max_frames_per_encoder_call",
+            "direction_store_centers_path",
+            "direction_store_centers_sha256",
+        } or writer.get("architecture") != "pi05_semantic_direction_store_program_v1":
+            raise WriterModelError("invalid semantic direction-store config surface")
+        centers_path = (
+            REPO_ROOT / str(writer.pop("direction_store_centers_path", ""))
+        ).resolve()
+        expected_centers_sha256 = str(
+            writer.pop("direction_store_centers_sha256", "")
+        )
+        if (
+            not centers_path.is_relative_to(REPO_ROOT.resolve())
+            or not centers_path.is_file()
+            or sha256_file(centers_path) != expected_centers_sha256
+        ):
+            raise WriterModelError("semantic direction-store centers changed")
+        centers = read_json(centers_path)
+        if (
+            centers.get("schema_version")
+            != "ember_pi05_semantic_direction_store_centers_v1"
+            or centers.get("fit")
+            != {
+                "task_roles": ["train"],
+                "task_count": 24,
+                "seed": 7,
+                "method": "spherical_kmeans",
+                "store_count": 8,
+                "anchor": "train24_mean_centered_frozen_base_text_task_span_mean_l2",
+            }
+        ):
+            raise WriterModelError("semantic direction-store center contract changed")
+        base["writer"] = expected_writer_contract(
+            {
+                "frame_stride": writer["frame_stride"],
+                "max_frames_per_encoder_call": writer[
+                    "max_frames_per_encoder_call"
+                ],
+                "direction_store_centers": centers.get("centers"),
+                "direction_anchor_mean": centers.get("anchor_mean"),
+            }
+        )
+        base["_config_derivation"]["direction_store_centers"] = {
+            "path": str(centers_path.relative_to(REPO_ROOT)),
+            "sha256": expected_centers_sha256,
+        }
     return base
 
 
@@ -639,7 +728,7 @@ def load_writer_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     schema = config.get("schema_version")
     if schema in {
-        SEMANTIC_FACTOR_BASIS_CONFIG_OVERLAY_SCHEMA,
+        SEMANTIC_DIRECTION_STORE_CONFIG_OVERLAY_SCHEMA,
         AS_WRITER_CONFIG_OVERLAY_SCHEMA,
         AS_WRITER_SERIAL4_CONFIG_OVERLAY_SCHEMA,
         AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA,

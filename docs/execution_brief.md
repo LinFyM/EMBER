@@ -28,8 +28,9 @@
   必须从新clean pushed commit和全新retry1 root重新fresh启动。
 - 详细运行证据和精确指标见`docs/active_session_handoff.md`第0节。下文所有
   `/data/ymdai`、A100 GPU4--7和“BCI尚未验收”描述仅是历史状态。
-- owner要求本轮rollout与全部分析完成后先暂停。当前没有EMBER tmux、worker或本方
-  GPU占用；恢复前不启动下一架构、训练、评测或GPU分析。
+- owner曾要求本轮rollout与全部分析后暂停，随后已恢复推进授权：保持one-shot，取消
+  Writer参数量上限，优先重构条件生成方向存储/组合并允许配套训练修改。仍不使用
+  subagent；效率优先，不重复全量hash或无关旧artifact扫描。
 
 ## 1. 当前操作状态
 
@@ -41,8 +42,9 @@
 - A100窗口GPU工作已于`02:42 UTC`停止；其delta ledger只作历史provenance。
 - owner已另行授予BCI研究权限：每次比较`gpu01`/`gpu02`，只用空闲卡、合计最多6张，
   不干扰他人；当前推进不使用subagent。
-- BCI VR正式训练、四点rollout、完整性与漂移分析已完成；当前按owner要求处于可交接
-  暂停点，长期`>150`目标未完成。
+- BCI VR正式训练、四点rollout、完整性与漂移分析已完成并负裁决；owner已解除阶段
+  暂停。Semantic Direction Store实现、train24 center authority与61项聚焦CPU合同
+  已完成，等待clean六卡longest105 profile，长期`>150`目标未完成。
 
 Target-Bound已完成首小时与四点correct400=`75/120/90/110`，不续训；内部反事实证明
 其视频路径到达BA/action，剩余瓶颈定位到shared factor conditional coexistence。
@@ -67,7 +69,7 @@ artifact作为第二批增量交付；Target-Bound已封存为负结果。Semant
 显示task routing有效但没有超过v6 best，也没有解决checkpoint换手，不能宣称成功。
 
 迁移已完成；BCI环境、路径、assets、source checkpoint、四卡验收、六卡collective、
-logical-B20冻结profile、formal训练和四点评测均已核验。当前只做结果封存与暂停交接。
+logical-B20冻结profile、formal训练和四点评测均已核验。当前恢复架构/训练研究。
 
 ## 3. Canonical assets
 
@@ -163,7 +165,7 @@ functional loss改善到`.12915`时closed-loop反而降到107并比SFB同点少2
 “可约flow Monte Carlo方差是主要根因”，下一设计边界转为functional action surrogate
 与source-policy closed-loop有效流形错位。
 
-## 5. Current Writer state and pause
+## 5. Current Writer state and next candidate
 
 Semantic Factor-Basis的完整design已在main：
 
@@ -177,7 +179,11 @@ docs/action_forecast_writer_semantic_factor_basis_design.md
 2. 最终代码/文档及34个post-seal `must-transfer` roots已形成Git与增量台账交付；
 3. logical-B20六卡profile已从clean pushed commit重放并seal；
 4. VR fresh 0→200、四点correct400与全部预注册分析已完成并负裁决；
-5. 当前按owner要求暂停，等待其查看状态后再决定新的training-target design。
+5. owner已恢复推进；新设计为frozen language semantic top2八个full-capacity
+   direction stores，authority见
+   `docs/action_forecast_writer_semantic_direction_store_design.md`；
+6. canonical替换、center authority与focused CPU合同已完成；做clean六卡longest105
+   fresh0→1/exact-resume1→3，封存formal seed后fresh0→200和paired correct400。
 
 VR的设计、BCI适配和正式负结果统一见
 `docs/action_forecast_writer_variance_reduced_functional_estimator_design.md`。不得续训

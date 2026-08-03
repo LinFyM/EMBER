@@ -15,8 +15,27 @@
 microbatch、梯度累积、activation checkpoint、精度或必要的模型分片适配，不能直接照搬
 A100 80GB配置；任何适配不得悄悄改变sealed scientific contract。不得reset、kill、pause
 或干扰他人进程。owner当前还明确要求推进过程中不使用subagent，直至owner另行解除。
-2026-08-03完成本轮VR正式训练、四点rollout与全部预注册分析后，owner要求先暂停并
-汇报现状；因此当前不得自动启动下一架构、训练、评测或GPU分析，直到owner继续指示。
+2026-08-03完成本轮VR正式训练、四点rollout与全部预注册分析后，owner曾要求暂停并
+汇报现状；随后owner已恢复持续推进授权：保持one-shot，取消Writer参数量上限，优先
+重构条件生成方向的存储与组合，并允许配套修改训练方式。仍须服从实时BCI设备边界、
+最多6张空闲卡、信息墙、single-checkpoint裁决和不使用subagent的要求。效率优先，
+只保留会改变实验可信度的聚焦检查，不用重复全量hash或无关旧artifact复核拖慢推进。
+
+## Efficiency and validation boundary
+
+- 本项目默认效率优先。不得把大量防御性校验、重复hash、全仓/全个人目录扫描、历史
+  artifact复核或与当前假设无关的测试当作推进前置仪式。
+- 同一不可变输入或同一实验阶段已经核验过的事实不重复核验；优先读取现成manifest、
+  run contract和定向指标。只有authority首次建立/改变、正式checkpoint封存或实际
+  发现身份冲突时才补做对应hash。
+- 代码验证只覆盖本次改动的shape、identity/freeze、信息墙、梯度可达性、随机样本等价、
+  OOM/finite和resume等真实合同；不为弱指标、科学负结果或纯理论风险新增大而泛的
+  fallback、test harness或旁路实现。
+- GPU启动前的必要现场检查仍保留：设备ownership/进程、显存与健康、适用storage
+  quota和预计峰值；正式run仍保留config/checkpoint身份、clean代码、finite/OOM、
+  exact-resume及结果完整性。这些检查每个状态边界做一次，不在轮询中反复重跑。
+- 当聚焦测试、真实vertical path和正式实验能直接给出证据时，不增加额外中间层或
+  “以防万一”的验证流程。发现问题按其实际层定位，修复后只重跑受影响的最短证据链。
 
 当前跨session入口：
 
@@ -55,12 +74,13 @@ A100 80GB配置；任何适配不得悄悄改变sealed scientific contract。不
 26. `docs/action_forecast_writer_contextual_value_dual_read_design.md`
 27. `docs/action_forecast_writer_semantic_factor_basis_design.md`
 28. `docs/action_forecast_writer_variance_reduced_functional_estimator_design.md`
-29. `task_plan.md`
-30. `findings.md`
-31. `progress.md`
-32. `docs/concept.md`
-33. `docs/decisions_and_open_questions.md`
-34. `docs/novelty_and_landscape.md`
+29. `docs/action_forecast_writer_semantic_direction_store_design.md`
+30. `task_plan.md`
+31. `findings.md`
+32. `progress.md`
+33. `docs/concept.md`
+34. `docs/decisions_and_open_questions.md`
+35. `docs/novelty_and_landscape.md`
 
 本post-seal分支已完成Target-Bound裁决并打开Semantic Factor-Basis；修改或运行前
 仍必须完整阅读Target-Bound与Semantic Factor-Basis两份design。历史CV/Target-Bound
@@ -85,9 +105,14 @@ A100 80GB配置；任何适配不得悄悄改变sealed scientific contract。不
   cosine只提高`.00263`（factor`.00510`），raw mean/sample energy retention只提高
   `.00191`，且分阶段反复，不是material稳定化。
 - macro200 held functional loss由SFB`.13178`改善为VR`.12915`，paired correct却
-  `127→107`；当前最可信最早失效接口已转向functional action surrogate与
-  source-policy closed-loop有效流形错位。不要继续增加SFB basis/router、降低LR或
-  单独修补同一Monte Carlo estimator；下一步需先形成完整training-target design。
+  `127→107`；这再次证明functional loss不能选择closed-loop checkpoint，但不能单独
+  解释task漂移。当前主线是SFB已学会activation routing、shared factor却仍占约97%
+  梯度能量且方向持续轮换的parameter coexistence缺口。
+- owner已取消Writer参数量软上限并维持one-shot。下一canonical候选为
+  `docs/action_forecast_writer_semantic_direction_store_design.md`：冻结task-language
+  语义地址固定选择top2完整容量direction stores，完整Core/A/E/D只作为value；目标是
+  让不同task方向拥有独立参数存储并可由language组合。实现、train24 center authority
+  与61项聚焦CPU合同已完成；尚无真实profile、训练或rollout，不得写成效果结果。
 - 旧A100“只使用物理GPU4--7”的边界已退役；当前只按上文BCI设备授权使用
   `gpu01`/`gpu02`的实时空闲卡，跨节点合计最多6张。
 - 迁移封存基线是`f9a144c94e71bb44373d7247ed0fded2ed835305`；当前BCI写分支为
@@ -97,8 +122,8 @@ A100 80GB配置；任何适配不得悄悄改变sealed scientific contract。不
 - frozen source step1000仍是下游inference/source asset，不支持source-SFT exact
   resume。A100 Codex、venv、cache与worktree仍不迁移。
 - A100窗口的GPU工作已停止；BCI上的环境恢复、profile、训练和评测已获owner授权。
-  迁移与46GB适配验证、VR训练、四点rollout和分析均已完成；当前按owner要求暂停，
-  没有活动EMBER tmux、worker或占用GPU，长期Goal仍未完成。
+  迁移与46GB适配验证、VR训练、四点rollout和分析均已完成；owner已解除阶段暂停，
+  当前从新设计开始继续推进，长期Goal仍未完成。
 - 当前最低科研目标是同一single checkpoint的paired correct aggregate严格超过
   `150/400`，并在达到后继续追求更高absolute、breadth和视频因果性；不得用多
   checkpoint、挑video或违反信息墙的方法过门。

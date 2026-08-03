@@ -6,6 +6,35 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-03 Semantic Direction Store设计决策
+
+- owner已解除阶段暂停，保持严格one-shot并取消Writer参数量软上限；新容量必须对应
+  合理职责。owner同时明确functional loss很早已知不能预测rollout，后续应以模型
+  内部表示、方向存储和组合证据解释task漂移，不能把held-loss错位本身冒充新根因。
+- SFB不是没续第二小时：完整曲线为`69/91/118/127/117/81/126/120`。八点
+  union=`193`、single best=`127`，macro200与350 gained/lost=`31/32`；结合factor
+  share约`97%`、task-mean energy约`4.2%`和一阶moment轮换，最直接缺口是共享factor
+  参数不能稳定共存不同task生成方向，而不是路由/视频主路径完全没工作。
+- 新候选不用task ID、learned video gate或一task一专家。exact language额外经过无
+  Meta-LoRA的frozen text-only forward形成checkpoint/video invariant semantic anchor；
+  只用24 train languages做8-center spherical k-means，每task固定等权top2。
+- 每个direction store拥有八个完整`1024→256→factor_width` heads及独立final
+  `W_out`；同task的38 targets×16 ranks共享top2 stores，具体LoRA value仍全部来自
+  `Z=[Core,A,E,D]`。预计参数`37,355,776`，新增约26.2M均属于独立方向存储。
+- 首跑保持RAW full24/B20/fast-decay400，避免同时混入load-balance、expert重权、
+  gradient projection或新loss。BCI只新增B2切片可重建的keyed independent
+  Beta/Gaussian sampler，不复用已负裁决的Latin/antithetic VR estimator。
+- owner进一步明确方法应从根因出发并尽量不特化于AS统一梯度下降。Direction Store的
+  正式主张因此限定为objective-agnostic参数所有权与组合；train24均值、K=8、B20/B2
+  只是当前domain/runtime配置。若失败不得继续调route小技巧，须回到条件表示、完整
+  decoder参数化或credit assignment。
+- canonical实现与train24-only center authority已完成：raw anchor先减train24公共
+  均值再归一化，seed7 spherical k-means两轮收敛；primary/top2访问计数为
+  `5/7/6/1/2/1/1/1`与`7/11/6/4/4/5/3/8`。61项focused CPU合同通过，实际参数
+  `37,355,776`；尚无真实profile或行为结果。证伪重点是固定route下store内部方向是否
+  稳定、success churn是否下降及single checkpoint能否严格超过150；若完整独立stores
+  仍不超过v6-fast143，不通过增加stores、改K或gate修补。
+
 ## 2026-08-03 BCI VR正式裁决与functional/closed-loop错位
 
 - clean pushed`d9130c9`的有效VR root从fresh identity完成macro0→200：200个finite

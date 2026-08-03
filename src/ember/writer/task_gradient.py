@@ -35,7 +35,7 @@ def _parameter_block(name: str) -> str:
         ("semantic_core.", "core"),
         ("semantic_program.", "program"),
         ("compiler.", "compiler"),
-        ("factor_router.", "factor"),
+        ("direction_router.", "factor"),
         ("factor_heads.", "factor"),
     ):
         if name.startswith(prefix):

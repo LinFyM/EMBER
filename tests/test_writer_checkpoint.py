@@ -27,7 +27,7 @@ from ember.writer.checkpoint import (
     validate_writer_checkpoint_files,
 )
 from ember.writer.checkpoint_schema import (
-    SEMANTIC_FACTOR_BASIS_TASK_QUERY_RAW_CHECKPOINT_SCHEMA,
+    SEMANTIC_DIRECTION_STORE_TASK_QUERY_RAW_CHECKPOINT_SCHEMA,
 )
 from ember.writer.inference import inspect_as_writer_evaluation
 from ember.writer.model import WriterModelError
@@ -37,16 +37,16 @@ from ember.writer.update_contract import checkpoint_state_family
 ROOT = Path(__file__).resolve().parents[1]
 AS_CONFIG = (
     ROOT
-    / "configs/pi05_as_writer_semantic_factor_basis_taskquery_rawfull24_v1.json"
+    / "configs/pi05_as_writer_semantic_direction_store_full24_decay400_bci_v1.json"
 )
 
 
-def test_target_bound_role_uses_fresh_incompatible_checkpoint_family() -> None:
+def test_direction_store_uses_fresh_incompatible_checkpoint_family() -> None:
     config = load_writer_config(AS_CONFIG)
     family = checkpoint_state_family(config)
-    assert family == "semantic_factor_basis_task_query_keyed_rawfull24_v1"
+    assert family == "semantic_direction_store_task_query_keyed_rawfull24_v1"
     assert _state_schemas(1, family)[0] == (
-        SEMANTIC_FACTOR_BASIS_TASK_QUERY_RAW_CHECKPOINT_SCHEMA
+        SEMANTIC_DIRECTION_STORE_TASK_QUERY_RAW_CHECKPOINT_SCHEMA
     )
     with pytest.raises(WriterModelError, match="unsupported"):
         _state_schemas(1, "cvadr_task_query_keyed_rawfull24_v1")

@@ -166,12 +166,32 @@ runs/outputs/pi05_as_writer_semfactor_vr_bci_correct400_noreplacement_seed7_macr
   worker或本方GPU占用；不续到400、不做五臂、不启动下一架构/训练目标，等待owner
   看完本次状态后继续指示。长期`>150` Goal仍未完成。
 
+### 0.3 owner恢复推进与Semantic Direction Store
+
+- owner随后已解除上述阶段暂停：继续严格one-shot，取消Writer参数量软上限，优先
+  重构条件生成方向的存储/组合，并允许配套修改训练方式；仍不使用subagent。推进以
+  效率优先，只做shape、信息墙、identity、freeze、gradient、OOM、resume和正式结果
+  所需的聚焦检查，不重复全量hash或无关历史扫描。
+- 当前不再把“held functional loss不能预测rollout”本身称为task漂移根因。更直接的
+  内部边界是SFB route已task-conditioned，而shared factor仍占约97% gradient energy、
+  task mean只保留约4.2%条件能量且一阶方向持续轮换。
+- 新设计authority为
+  `docs/action_forecast_writer_semantic_direction_store_design.md`：frozen text-only
+  language anchor只用24 train languages建立8个固定semantic centers；每task稳定等权
+  top2，每个store拥有完整独立1024→256→factor-width参数。完整Core/A/E/D仍是唯一
+  factor value，Writer实际参数37,355,776。canonical实现、24-train-language center
+  authority与61项focused CPU合同已完成；尚无真实profile、训练或rollout，不能写成
+  效果结论。
+- 下一执行顺序是clean commit/push、live BCI GPU preflight、longest105六卡
+  fresh0→1/exact-resume1→3、封存formal seed、fresh0→200和四点paired correct400；
+  不复用VR checkpoint或Latin/antithetic estimator。
+
 ## 1. 当前边界
 
 - owner已授权在当前BCI上继续环境适配、架构/训练设计、profile、正式训练、严格配对
   评测和内部分析；目标是缓解task漂移，并使同一single checkpoint的correct aggregate
-  严格超过`150/400`后继续提高。推进期间不使用subagent；本轮VR完成后的当前操作
-  状态由0.2节owner暂停覆盖。
+  严格超过`150/400`后继续提高。推进期间不使用subagent；本轮VR完成后的旧暂停已由
+  0.3节owner恢复授权覆盖。
 - 当前写分支为`codex/bci-continuation`，BCI新增输出只写项目`runs/`，证据写
   `evidence/`。下列A100窗口、旧分支和`/data/ymdai`只保留历史provenance。
 - owner在迁移由另一session启动后重新开放约十小时A100 post-seal研究窗口，允许在
@@ -356,21 +376,24 @@ absolute未达到strong门，第二小时不新增same/wrong/shuffled/reversed 1
 
 ## 4. 当前代码与下一实验边界
 
-Semantic Factor-Basis仍是canonical Writer path；Target-Bound/CV-ADR由Git与frozen
-artifacts保存，VR只替换训练估计器，不建立并行模型。核心职责为：
+Semantic Direction Store已原位替换为canonical Writer path；历史SFB、Target-Bound、
+CV-ADR与VR由Git、frozen config和artifacts保存，不保留并行活动模型。核心职责为：
 
 - 38个真实policy targets先读Core；
 - target-bound地读取Action、Effect与Change；
 - A/E/D使用private causal temporal channels和private rank reads；
 - 16 rank coordinates最后展开；
 - identities只进入Q/K，raw evidence进入V；
-- Core只以Q/K地址选择四个factor value bases，所有value仍来自完整Core/A/E/D；
+- frozen language anchor减去train24均值后固定等权选择top2/8 stores；
+- 每个store独立拥有八个完整factor input/output heads，所有value仍来自完整Core/A/E/D；
 - factor heads保持coherent near-rank1高增益，不加谱/正交/entropy约束。
 
-当前A100临时授权窗口、BCI VR 0→200和四点正式评测均已完成；紧邻动作是owner阶段
-暂停。恢复后若继续，必须先为functional action surrogate与source-policy closed-loop
-有效流形错位形成新的完整training-target design和fresh合同，而不是继续给SFB加路由、
-增加basis或复用VR checkpoint。
+当前A100临时授权窗口、BCI VR 0→200和四点正式评测均已完成。owner已恢复推进并
+取消Writer参数量上限；紧邻候选不是继续给SFB加窄basis，而是用固定language语义地址
+组合完整独立factor direction stores。设计见
+`docs/action_forecast_writer_semantic_direction_store_design.md`；实现必须fresh schema，
+当前fresh schema、37,355,776参数、center authority和focused CPU合同已完成，不复用
+VR checkpoint或estimator。
 
 不得从smoke/profile权重warm-start。当前完整设计为
 `docs/action_forecast_writer_semantic_factor_basis_design.md`；VR设计及其正式负结果在

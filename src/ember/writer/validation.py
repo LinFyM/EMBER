@@ -47,7 +47,7 @@ from ember.writer.data import (
     WriterTaskAuthority,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
-from ember.writer.architecture import SEMANTIC_FACTOR_BASIS_WRITER_CONSTRUCTOR_KEYS
+from ember.writer.architecture import SEMANTIC_DIRECTION_STORE_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.model import (
     CompleteLoRAWriter,
     WriterModelError,
@@ -190,7 +190,7 @@ def _build_models(
     writer_values = {
         key: value
         for key, value in training["writer"].items()
-        if key in SEMANTIC_FACTOR_BASIS_WRITER_CONSTRUCTOR_KEYS
+        if key in SEMANTIC_DIRECTION_STORE_WRITER_CONSTRUCTOR_KEYS
     }
     bridge = policy.model.paligemma_with_expert
     writer = CompleteLoRAWriter(
@@ -410,7 +410,7 @@ def _publish_run_contract(
             "data_validation": data_validation,
             "information_wall": panel["information_wall"],
             "world_size": context.world_size,
-            "physical_gpu_limit": [4, 5, 6, 7],
+            "visible_gpu_ids": os.environ.get("CUDA_VISIBLE_DEVICES", "").split(","),
             "max_groups_per_task": args.max_groups_per_task,
         },
     )

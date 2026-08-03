@@ -642,6 +642,7 @@ def _validate_cycle_normalized_optimizer_resume(
             "cvadr_task_query_keyed_rawfull24_v2",
             "target_bound_role_task_query_keyed_rawfull24_v1",
             "semantic_factor_basis_task_query_keyed_rawfull24_v1",
+            "semantic_direction_store_task_query_keyed_rawfull24_v1",
         }
     ):
         raise WriterModelError("unknown cycle-normalized optimizer resume family")

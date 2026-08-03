@@ -28,15 +28,7 @@ from ember.writer import as_step
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = (
     REPO_ROOT
-    / "configs/pi05_as_writer_semantic_factor_basis_taskquery_rawfull24_v1.json"
-)
-VARIANCE_REDUCED_CONFIG = (
-    REPO_ROOT
-    / "configs/pi05_as_writer_semantic_factor_basis_variance_reduced_v1.json"
-)
-BCI_VARIANCE_REDUCED_CONFIG = (
-    REPO_ROOT
-    / "configs/pi05_as_writer_semantic_factor_basis_variance_reduced_long105_profile_v1.json"
+    / "configs/pi05_as_writer_semantic_direction_store_full24_decay400_bci_v1.json"
 )
 OLD_RECIPE_CONFIG = (
     REPO_ROOT
@@ -44,10 +36,10 @@ OLD_RECIPE_CONFIG = (
 )
 
 
-def test_target_bound_role_config_seals_architecture_and_information_wall() -> None:
+def test_direction_store_config_seals_architecture_and_information_wall() -> None:
     config = load_writer_config(CONFIG)
     writer = config["writer"]
-    assert writer["architecture"] == "pi05_semantic_factor_basis_program_v1"
+    assert writer["architecture"] == "pi05_semantic_direction_store_program_v1"
     assert writer["teacher_state_input"] is False
     assert writer["teacher_prompt"] == "Task: {cleaned_task};\nAction: "
     assert writer["text_meta_lora_rank"] == 4
@@ -60,7 +52,7 @@ def test_target_bound_role_config_seals_architecture_and_information_wall() -> N
     assert writer["target_count"] == 38
     assert writer["public_rank"] == 16
     assert writer["frame_stride"] == 5
-    assert writer["max_frames_per_encoder_call"] == 32
+    assert writer["max_frames_per_encoder_call"] == 16
     assert writer["action_expert_probe"].startswith("one_forward_fixed")
     assert writer["interaction_reduction"].startswith("mean_50")
     assert writer["absolute_semantic_value"].startswith("X_f_equals")
@@ -75,10 +67,12 @@ def test_target_bound_role_config_seals_architecture_and_information_wall() -> N
     assert writer["program_terminal_policy"].startswith("F_minus_1")
     assert writer["program_coordinate_reader"].startswith("38x16_private")
     assert writer["core_reader"].startswith("38_target_raw")
-    assert writer["coordinate_mixer"].startswith("shared_target_core")
-    assert writer["factor_basis_count"] == 4
-    assert writer["factor_basis_width"] == 64
-    assert writer["factor_router"].endswith("softmax_mean_one")
+    assert writer["coordinate_mixer"].startswith("fixed_task_language_top2")
+    assert writer["direction_store_count"] == 8
+    assert writer["direction_store_top_k"] == 2
+    assert len(writer["direction_store_centers"]) == 8
+    assert all(len(center) == 2048 for center in writer["direction_store_centers"])
+    assert len(writer["direction_anchor_mean"]) == 2048
     assert writer["factor_hidden_width"] == 256
     assert writer_split_roles(config) == ("train",)
     conditioning = config["conditioning_training"]
@@ -87,13 +81,13 @@ def test_target_bound_role_config_seals_architecture_and_information_wall() -> N
         conditioning["logical_pair_batch"]
         == "per_task_action_batch"
     )
-    assert conditioning["tasks_per_rank_per_optimizer_update"] == 6
+    assert conditioning["tasks_per_rank_per_optimizer_update"] == 4
     assert conditioning["global_tasks_per_optimizer_update"] == 24
     assert conditioning["action_video_assignment"] == "all_actions_share_single_video_lora"
     assert conditioning["pair_loss_reduction"] == (
         "mean_within_task_then_equal_mean_over_24_tasks"
     )
-    assert conditioning["policy_noise_contract"].startswith("one task-query-keyed")
+    assert conditioning["policy_noise_contract"].startswith("task-query-keyed independent")
     assert conditioning["ddp_gradient_sync"].startswith("none_during")
     assert conditioning["gradient_composition"] == (
         "exact_raw_equal_weight_full24_mean_without_projection"
@@ -105,89 +99,62 @@ def test_target_bound_role_config_seals_architecture_and_information_wall() -> N
     assert config["information_wall"]["test_actions_read"] == 0
     assert config["information_wall"]["test_video_values_read"] == 0
     assert "state" in config["information_wall"]["writer_forbidden_inputs"]
-    assert config["profile_defaults"]["expected_world_size"] == 4
-    assert config["profile_defaults"]["status"] == (
-        "sealed_semantic_factor_basis_live_105_frame_b20_profile"
-    )
-    assert config["profile_evidence"]["status"] == (
-        "sealed_semantic_factor_basis_live_105_frame_b20_profile"
-    )
-    assert config["profile_evidence"]["allowed_physical_gpu_ids"] == [4, 5, 6, 7]
+    assert config["profile_defaults"]["expected_world_size"] == 6
+    assert config["profile_defaults"]["status"].endswith("profile_pending")
+    assert config["profile_evidence"]["status"] == "pending"
     assert config["profile_evidence"]["primary_candidate"][
         "per_task_action_batch_size"
     ] == 20
     assert config["profile_evidence"]["oom_fallback_only"][
         "per_task_action_batch_size"
-    ] == 16
+    ] == 20
     assert config["profile_evidence"]["inference_profile"] is None
     assert config["profile_evidence"]["teacher_videos_per_task_visit"] == 1
     assert config["specificity_gate"]["status"] == "pending_absolute_gate"
     assert config["optimization"]["scheduler"]["decay_steps"] == 400
-    assert config["data"]["teacher_video_seed"] == 20260722
+    assert config["data"]["teacher_video_seed"] == 172
     assert config["profile_evidence"]["formal_teacher_video_seed_after_profile_seal"] == 20260722
-    assert config["formal_run"]["status"] == "sealed"
-    assert config["formal_run"]["launch_state"].startswith("authorized_postseal")
-    assert config["profile_evidence"]["selected"]["per_task_action_batch_size"] == 20
-    assert config["profile_evidence"]["selected"]["longest_sampled_frames"] == 105
-    assert config["profile_evidence"]["exact_resume_smoke"]["status"] == (
-        "passed_fresh0to1_exact_resume1to3"
-    )
-    assert config["profile_evidence"]["gradient_reachability"][
-        "first_nonzero_main_path_macro"
-    ] == 2
+    assert config["formal_run"]["status"] == "pending_profile"
+    assert config["profile_evidence"]["selected"] is None
+    assert config["profile_evidence"]["exact_resume_smoke"] is None
     assert config["formal_run"]["total_steps"] == 400
     assert config["formal_run"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["selected_stop_step"] == 200
     assert config["formal_run"]["stage_stop_steps"] == [200, 400]
     assert config["formal_run"]["segment_definition"].startswith(
-        "fresh_semantic_factor_basis_raw_full24"
+        "fresh_semantic_direction_store_raw_full24"
     )
     assert "without_runtime_full_data_sha" in config["formal_run"][
         "data_integrity_check"
     ]
 
 
-def test_variance_reduced_recipe_changes_only_functional_sampling_contract() -> None:
-    raw = load_writer_config(CONFIG)
-    reduced = load_writer_config(VARIANCE_REDUCED_CONFIG)
-    assert reduced["writer"] == raw["writer"]
-    assert reduced["data"] == raw["data"]
-    training = reduced["conditioning_training"]
+def test_direction_store_keeps_raw_full24_with_sliceable_independent_b20() -> None:
+    config = load_writer_config(CONFIG)
+    training = config["conditioning_training"]
     assert training["update_topology"] == "task_complete_all_tasks"
     assert training["gradient_composition"] == (
         "exact_raw_equal_weight_full24_mean_without_projection"
     )
     assert training["policy_flow_time_sampling_scheme"].endswith(
-        "latin_beta15_time_v1"
+        "independent_beta15_time_v1"
     )
     assert training["policy_flow_noise_sampling_scheme"].endswith(
-        "antithetic_gaussian_v1"
+        "independent_gaussian_v1"
     )
-    assert reduced["optimization"]["optimizer"] == raw["optimization"][
-        "optimizer"
-    ]
-    assert reduced["optimization"]["scheduler"] == raw["optimization"][
-        "scheduler"
-    ]
-    assert reduced["formal_run"]["status"] == (
-        "profile_passed_formal_training_not_started"
-    )
-    assert reduced["formal_run"]["launch_state"] == (
-        "deferred_to_bci_owner_authorization_after_migration"
-    )
+    assert config["optimization"]["functional_policy_microbatch_size"] == 2
 
 
-def test_bci_variance_reduced_profile_preserves_b20_across_six_ranks() -> None:
-    config = load_writer_config(BCI_VARIANCE_REDUCED_CONFIG)
+def test_bci_direction_store_profile_preserves_b20_across_six_ranks() -> None:
+    config = load_writer_config(CONFIG)
     assert config["profile_defaults"]["expected_world_size"] == 6
     assert config["profile_defaults"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["expected_world_size"] == 6
     assert config["formal_run"]["per_rank_batch_size"] == 20
-    assert config["formal_run"]["status"] == "sealed"
-    assert config["data"]["teacher_video_seed"] == 20260722
+    assert config["formal_run"]["status"] == "pending_profile"
     assert config["data"]["teacher_video_seed"] == config[
         "profile_evidence"
-    ]["formal_teacher_video_seed_after_profile_seal"]
+    ]["profile_teacher_video_seed"]
     assert config["profile_evidence"]["profile_teacher_video_seed"] == 172
     assert config["conditioning_training"][
         "tasks_per_rank_per_optimizer_update"
@@ -201,12 +168,7 @@ def test_bci_variance_reduced_profile_preserves_b20_across_six_ranks() -> None:
         "per_task_action_batch_size": 20,
         "functional_policy_microbatch_size": 2,
     }
-    assert config["profile_evidence"]["selected"] == config[
-        "profile_evidence"
-    ]["primary_candidate"]
-    assert config["profile_evidence"]["exact_resume_smoke"]["status"] == (
-        "passed_clean_pushed_commit_fresh0_to1_exact_resume1_to3"
-    )
+    assert config["profile_evidence"]["selected"] is None
     context = DistributedContext(
         rank=0,
         local_rank=0,
@@ -228,7 +190,8 @@ def test_bci_variance_reduced_profile_preserves_b20_across_six_ranks() -> None:
 
 
 def test_sealed_formal_config_rejects_the_profile_teacher_video_seed() -> None:
-    config = load_writer_config(BCI_VARIANCE_REDUCED_CONFIG)
+    config = load_writer_config(CONFIG)
+    config["formal_run"]["status"] = "sealed"
     config["data"]["teacher_video_seed"] = config["profile_evidence"][
         "profile_teacher_video_seed"
     ]
@@ -256,14 +219,14 @@ def test_checkpoint_schedule_and_cursor_are_fail_closed() -> None:
         parse_checkpoint_steps("every:4", 6)
 
 
-def test_profile_and_formal_runtime_require_four_symmetric_ranks(
+def test_profile_and_formal_runtime_require_six_symmetric_ranks(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     config = load_writer_config(CONFIG)
     context = DistributedContext(
         rank=0,
         local_rank=0,
-        world_size=4,
+        world_size=6,
         device=torch.device("cpu"),
         numa_node=0,
         cpu_affinity=(0,),
@@ -286,7 +249,8 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
     b16 = copy.copy(profile)
     b16.batch_size = 16
     b16.stop_after_step = None
-    assert resolve_runtime(b16, config, context) == (3, 16, (1, 2, 3))
+    with pytest.raises(WriterModelError, match="hardware-friendly"):
+        resolve_runtime(b16, config, context)
     invalid_batch = copy.copy(profile)
     invalid_batch.batch_size = 19
     invalid_batch.stop_after_step = None
@@ -305,7 +269,7 @@ def test_profile_and_formal_runtime_require_four_symmetric_ranks(
         numa_node=0,
         cpu_affinity=(0,),
     )
-    with pytest.raises(WriterModelError, match="exactly 4"):
+    with pytest.raises(WriterModelError, match="exactly 6"):
         resolve_runtime(profile, config, wrong_world)
     formal = argparse.Namespace(
         mode="formal",
@@ -366,7 +330,7 @@ def test_target_bound_role_launch_records_raw_mean_collectives_not_ddp_accumulat
     context = DistributedContext(
         rank=0,
         local_rank=0,
-        world_size=4,
+        world_size=6,
         device=torch.device("cuda:0"),
         numa_node=1,
         cpu_affinity=(48,),
@@ -377,7 +341,7 @@ def test_target_bound_role_launch_records_raw_mean_collectives_not_ddp_accumulat
     )
 
     def gather_topology(output: list[object], local: object) -> None:
-        output[:] = [local, local, local, local]
+        output[:] = [local, local, local, local, local, local]
 
     monkeypatch.setattr(
         "ember.writer.as_contract.dist.all_gather_object", gather_topology
@@ -401,13 +365,13 @@ def test_target_bound_role_launch_records_raw_mean_collectives_not_ddp_accumulat
     )
     runtime = contract["runtime"]
     assert runtime["checkpoint_state_family"] == (
-        "semantic_factor_basis_task_query_keyed_rawfull24_v1"
+        "semantic_direction_store_task_query_keyed_rawfull24_v1"
     )
     assert runtime["optimizer_gradient_accumulation"] is False
     assert runtime["loss_reduction"] == (
         "mean_within_each_task_then_equal_mean_across_all_tasks"
     )
-    assert runtime["task_gradients_per_rank_per_macro"] == 6
+    assert runtime["task_gradients_per_rank_per_macro"] == 4
     assert runtime["global_task_gradients_per_macro"] == 24
     assert runtime["distributed_full_task_gradient_matrix_materialized"] is False
     assert runtime["gradient_task_id_allgathers_per_macro"] == 1

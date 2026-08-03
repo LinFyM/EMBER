@@ -1,4 +1,4 @@
-"""Canonical no-rollout analysis for the Semantic Factor-Basis AS-Writer."""
+"""Canonical no-rollout analysis for the Semantic Direction-Store AS-Writer."""
 
 from __future__ import annotations
 
@@ -49,10 +49,10 @@ from ember.writer.internal_path import (
     PARITY_TOLERANCE,
     REPLAY_TOLERANCE,
     _compile,
-    _state,
     capture_writer,
     counterfactual_states,
 )
+from ember.writer.internal_decode import state_row as _state
 from ember.writer.internal_results import (
     CONTROL_TIMEOUT, barrier, broadcast, create_control_group, finalize,
     lpt_assignment, record_failure, seal_rank_rows,
@@ -61,24 +61,28 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 from ember.writer.validation import _build_models
 
 
-RUN_SCHEMA = "ember_semantic_factor_basis_internal_analysis_run_v1"
-RESULT_SCHEMA = "ember_semantic_factor_basis_internal_analysis_v1"
-ARCHITECTURE = "pi05_semantic_factor_basis_program_v1"
+RUN_SCHEMA = "ember_semantic_direction_store_internal_analysis_run_v1"
+RESULT_SCHEMA = "ember_semantic_direction_store_internal_analysis_v1"
+ARCHITECTURE = "pi05_semantic_direction_store_program_v1"
 PROTECTED = (
     "src/ember/writer/model.py", "src/ember/writer/video_program.py",
     "src/ember/writer/semantic_core.py", "src/ember/writer/semantic_program.py",
     "src/ember/writer/program_compiler.py", "src/ember/writer/architecture.py",
     "src/ember/writer/internal_compiler.py",
     "src/ember/writer/functional.py", "src/ember/lora.py", "src/ember/pi05_lora.py",
-    "configs/pi05_as_writer_semantic_factor_basis_full24_decay400_v1.json",
-    "configs/pi05_as_writer_semantic_factor_basis_taskquery_rawfull24_v1.json",
+    "configs/pi05_as_writer_semantic_direction_store_full24_decay400_bci_v1.json",
 )
 
 
 def _comparison(writer: CompleteLoRAWriter, reference: Mapping[str, Any], candidate: Mapping[str, Any], reference_action: torch.Tensor, candidate_action: torch.Tensor) -> dict[str, Any]:
     return {
         "coordinates": relative_metrics(reference["coordinates"], candidate["coordinates"]),
-        "factor_routing": relative_metrics(reference["routing"], candidate["routing"]),
+        "direction_store_weights": relative_metrics(
+            reference["store_weights"], candidate["store_weights"]
+        ),
+        "direction_store_ids_equal": bool(
+            torch.equal(reference["store_indices"], candidate["store_indices"])
+        ),
         "factor_heads": mapping_metrics(reference["heads"], candidate["heads"]),
         "factor": mapping_metrics(reference["factor"], candidate["factor"]),
         "public_a": mapping_metrics(reference["public"], candidate["public"], select="a"),
@@ -120,36 +124,24 @@ def _signature(captured: Mapping[str, Any], row: int) -> dict[str, torch.Tensor]
         "core_read": captured["compiled"]["diagnostic"]["core_read"][row].float(),
         "role_read": fixed_sequence(role_read, role_grid),
         "coordinates": captured["compiled"]["coordinates"][row].float(),
-        "factor_routing": captured["decoded"]["routing"][row].float(),
+        "task_anchor": captured["task_anchor"][row].float(),
+        "direction_store_weights": captured["decoded"]["store_weights"][row].float(),
     }
     for index, value in enumerate(captured["core"]["blocks"], 1): result[f"core_block_{index}"] = fixed_sequence(value[row], vt)
     for index, value in enumerate(captured["program"]["blocks"], 1): result[f"program_block_{index}"] = fixed_sequence(value[row], program_grid)
     return result
 
 
-def _factor_routing_summary(routing: torch.Tensor) -> dict[str, Any]:
-    """Report semantic specialization without treating route keys as values."""
+def _direction_store_summary(
+    indices: torch.Tensor,
+    weights: torch.Tensor,
+) -> dict[str, Any]:
+    """Report the fixed language route without treating it as generated value."""
 
-    probability = routing.float() / routing.shape[-1]
-    mean = probability.mean(dim=(0, 1))
-    entropy = -(probability.clamp_min(1e-12).log() * probability).sum(dim=-1)
-    target_centered = probability - probability.mean(dim=0, keepdim=True)
-    rank_centered = probability - probability.mean(dim=1, keepdim=True)
-    energy = probability.square().mean().clamp_min(1e-12)
     return {
-        "mean_probability": mean.tolist(),
-        "normalized_entropy_mean": float(
-            (entropy / math.log(probability.shape[-1])).mean()
-        ),
-        "target_centered_energy_ratio": float(
-            target_centered.square().mean() / energy
-        ),
-        "rank_centered_energy_ratio": float(
-            rank_centered.square().mean() / energy
-        ),
-        "alpha_min": float(routing.min()),
-        "alpha_max": float(routing.max()),
-        "per_target_probability": probability.mean(dim=1).tolist(),
+        "store_indices": indices.to(dtype=torch.long, device="cpu").tolist(),
+        "store_weights": weights.float().cpu().tolist(),
+        "weight_sum": float(weights.float().sum()),
     }
 
 
@@ -382,8 +374,11 @@ def probe_reference(task: Mapping[str, Any], reference: int, adapters: Mapping[s
     row = {
         "global_task_id": int(task["global_task_id"]), "suite": str(task["suite"]), "task_id": int(task["task_id"]), "reference_ordinal": reference,
         "conditions": metadata, **matched, "canonical_parity": captured["parity"],
-        "factor_routing": {
-            condition: _factor_routing_summary(captured["decoded"]["routing"][index])
+        "direction_store_routing": {
+            condition: _direction_store_summary(
+                captured["decoded"]["store_indices"][index],
+                captured["decoded"]["store_weights"][index],
+            )
             for index, condition in enumerate(CONDITIONS)
         },
         "lora_geometry": {condition: lora_geometry(writer, state) for condition, state in zip(CONDITIONS, states, strict=True)},
@@ -471,7 +466,7 @@ def _publish(args: argparse.Namespace, payload: Mapping[str, Any], *, rank: int,
             "analysis_code": {name: sha256_file(args.repo / name) for name in files}, "config": {"path": str(args.config), "sha256": sha256_file(args.config)},
             "training_run": {"path": str(args.training_run), "contract_sha256": canonical_hash(payload["training"])}, "checkpoint": {"path": str(args.checkpoint), **payload["checkpoint_hashes"]},
             "source": payload["source"], "tokenizer": payload["tokenizer"], "conditions": list(CONDITIONS), "adapter_sha256": {name: canonical_hash(value) for name, value in payload["adapters"].items()}, "references_per_task": args.references_per_task,
-            "video_seed": args.video_seed, "video_sampling": "without_replacement", "world_size": world_size, "physical_gpu_ids": [4, 5, 6, 7], "task_costs": payload["task_costs"], "task_assignment": payload["assignment"], "task_assignment_sha256": canonical_hash({"costs": payload["task_costs"], "assignment": payload["assignment"]}),
+            "video_seed": args.video_seed, "video_sampling": "without_replacement", "world_size": world_size, "visible_gpu_ids": os.environ.get("CUDA_VISIBLE_DEVICES", "").split(","), "task_costs": payload["task_costs"], "task_assignment": payload["assignment"], "task_assignment_sha256": canonical_hash({"costs": payload["task_costs"], "assignment": payload["assignment"]}),
             "distributed_control": {"backend": "gloo", "timeout_seconds": int(CONTROL_TIMEOUT.total_seconds())}, "rollouts": 0, "teacher_action_values_read": 0, "teacher_state_values_sent_to_writer": 0, "fixed_policy_query": "validation HDF5 observation-only demo0/frame0 after Writer LoRA generation",
         })
     barrier(world_size, group)
@@ -505,15 +500,15 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv); repo = Path(__file__).resolve().parents[3]
     allowed_configs = {
-        repo / "configs/pi05_as_writer_semantic_factor_basis_full24_decay400_v1.json",
-        repo / "configs/pi05_as_writer_semantic_factor_basis_taskquery_rawfull24_v1.json",
+        repo / "configs/pi05_as_writer_semantic_direction_store_full24_decay400_bci_v1.json",
     }
     if args.repo != repo or args.config not in allowed_configs:
         raise WriterModelError(
-            "internal-analysis checkout/config is not canonical semantic factor-basis"
+            "internal-analysis checkout/config is not canonical semantic direction-store"
         )
     context = initialize_distributed(); visible = os.environ.get("CUDA_VISIBLE_DEVICES", "").split(",")
-    if context.world_size != 4 or visible != ["4", "5", "6", "7"]: raise WriterModelError("formal internal analysis requires four ranks on physical GPUs4-7")
+    if context.world_size != 6 or len(visible) != 6 or len(set(visible)) != 6:
+        raise WriterModelError("formal internal analysis requires six explicit BCI GPUs")
     group = create_control_group(context.world_size); authorities = load_evaluation_authorities(repo / "configs/pi05_target_evaluation_v1.json", repo); task_keys = resolve_role_task_keys(authorities.protocol, "validation")
     inspected: Any = None
     if context.is_main:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -102,7 +103,7 @@ def _online_contract(
         "policy_and_writer_reused_in_process": True,
         "optimizer_updates": 0,
         "parameter_gradients_computed": False,
-        "physical_gpu_limit": [4, 5, 6, 7],
+        "visible_gpu_ids": os.environ.get("CUDA_VISIBLE_DEVICES", "").split(","),
     }
 
 

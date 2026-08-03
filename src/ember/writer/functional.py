@@ -28,6 +28,12 @@ LATIN_BETA_TIME_SAMPLING_SCHEME = (
 ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME = (
     "task_query_keyed_randomized_antithetic_gaussian_v1"
 )
+INDEPENDENT_BETA_TIME_SAMPLING_SCHEME = (
+    "task_query_keyed_independent_beta15_time_v1"
+)
+INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME = (
+    "task_query_keyed_independent_gaussian_v1"
+)
 
 
 def task_query_policy_rng_seed(
@@ -130,6 +136,30 @@ def _latin_beta15_time(
     return time.to(dtype=torch.float32, device=device)
 
 
+def _independent_beta15_time(
+    model: torch.nn.Module,
+    batch_size: int,
+    device: torch.device | str,
+) -> torch.Tensor:
+    """Sample independent exact Beta(1.5, 1) flow times on the CPU RNG."""
+
+    config = getattr(model, "config", None)
+    if (
+        batch_size <= 0
+        or config is None
+        or float(config.time_sampling_beta_alpha) != 1.5
+        or float(config.time_sampling_beta_beta) != 1.0
+        or float(config.time_sampling_scale) != 0.999
+        or float(config.time_sampling_offset) != 0.001
+    ):
+        raise WriterModelError("independent flow-time sampler lost PI05 Beta contract")
+    uniform = torch.rand(batch_size, dtype=torch.float32, device="cpu")
+    beta = uniform.pow(2.0 / 3.0)
+    time = beta * float(config.time_sampling_scale)
+    time = time + float(config.time_sampling_offset)
+    return time.to(dtype=torch.float32, device=device)
+
+
 @contextmanager
 def scoped_policy_flow_time_sampling(
     policy: torch.nn.Module,
@@ -143,15 +173,20 @@ def scoped_policy_flow_time_sampling(
     if scheme is None:
         yield
         return
-    if scheme != LATIN_BETA_TIME_SAMPLING_SCHEME:
+    samplers = {
+        LATIN_BETA_TIME_SAMPLING_SCHEME: _latin_beta15_time,
+        INDEPENDENT_BETA_TIME_SAMPLING_SCHEME: _independent_beta15_time,
+    }
+    if scheme not in samplers:
         raise WriterModelError("unsupported policy flow-time sampling scheme")
+    full_sampler = samplers[scheme]
     model = getattr(policy, "model", None)
     if model is None or not callable(getattr(model, "sample_time", None)):
         raise WriterModelError("policy has no scoped PI05 flow-time owner")
     had_instance_value = "sample_time" in vars(model)
     previous_instance_value = vars(model).get("sample_time")
     if logical_batch_size is None:
-        sampler = _latin_beta15_time
+        sampler = full_sampler
     else:
         if logical_batch_size <= 0 or not 0 <= batch_offset < logical_batch_size:
             raise WriterModelError("invalid logical flow-time microbatch")
@@ -164,7 +199,7 @@ def scoped_policy_flow_time_sampling(
             stop = batch_offset + batch_size
             if batch_size <= 0 or stop > logical_batch_size:
                 raise WriterModelError("flow-time microbatch exceeds logical batch")
-            return _latin_beta15_time(
+            return full_sampler(
                 owner, logical_batch_size, device
             )[batch_offset:stop]
 
@@ -202,6 +237,26 @@ def _antithetic_gaussian_noise(
     return paired.index_select(0, permutation)
 
 
+def _independent_gaussian_noise(
+    model: torch.nn.Module,
+    shape: Sequence[int],
+    device: torch.device | str,
+) -> torch.Tensor:
+    """Sample independent standard-normal PI05 flow noise."""
+
+    del model
+    dimensions = tuple(int(value) for value in shape)
+    if not dimensions or dimensions[0] <= 0:
+        raise WriterModelError("independent policy flow noise requires a batch")
+    return torch.normal(
+        mean=0.0,
+        std=1.0,
+        size=dimensions,
+        dtype=torch.float32,
+        device=device,
+    )
+
+
 @contextmanager
 def scoped_policy_flow_noise_sampling(
     policy: torch.nn.Module,
@@ -215,15 +270,20 @@ def scoped_policy_flow_noise_sampling(
     if scheme is None:
         yield
         return
-    if scheme != ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME:
+    samplers = {
+        ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME: _antithetic_gaussian_noise,
+        INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME: _independent_gaussian_noise,
+    }
+    if scheme not in samplers:
         raise WriterModelError("unsupported policy flow-noise sampling scheme")
+    full_sampler = samplers[scheme]
     model = getattr(policy, "model", None)
     if model is None or not callable(getattr(model, "sample_noise", None)):
         raise WriterModelError("policy has no scoped PI05 flow-noise owner")
     had_instance_value = "sample_noise" in vars(model)
     previous_instance_value = vars(model).get("sample_noise")
     if logical_batch_size is None:
-        sampler = _antithetic_gaussian_noise
+        sampler = full_sampler
     else:
         if logical_batch_size <= 0 or not 0 <= batch_offset < logical_batch_size:
             raise WriterModelError("invalid logical flow-noise microbatch")
@@ -239,7 +299,7 @@ def scoped_policy_flow_noise_sampling(
             stop = batch_offset + dimensions[0]
             if dimensions[0] <= 0 or stop > logical_batch_size:
                 raise WriterModelError("flow-noise microbatch exceeds logical batch")
-            full = _antithetic_gaussian_noise(
+            full = full_sampler(
                 owner,
                 (logical_batch_size, *dimensions[1:]),
                 device,
@@ -327,13 +387,23 @@ def _functional_microbatch_contract(
     )
     if not 0 < microbatch_size <= logical_batch_size:
         raise WriterModelError("invalid functional policy microbatch size")
+    keyed_sliceable_pairs = {
+        (
+            LATIN_BETA_TIME_SAMPLING_SCHEME,
+            ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME,
+        ),
+        (
+            INDEPENDENT_BETA_TIME_SAMPLING_SCHEME,
+            INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
+        ),
+    }
     if microbatch_size < logical_batch_size and (
-        flow_time_sampling_scheme != LATIN_BETA_TIME_SAMPLING_SCHEME
-        or flow_noise_sampling_scheme != ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME
+        (flow_time_sampling_scheme, flow_noise_sampling_scheme)
+        not in keyed_sliceable_pairs
         or policy_rng_seed is None
     ):
         raise WriterModelError(
-            "policy microbatching requires keyed variance-reduced randomness"
+            "policy microbatching requires keyed sliceable randomness"
         )
     return logical_batch_size, microbatch_size
 

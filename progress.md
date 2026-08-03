@@ -8,6 +8,30 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-03 owner恢复推进与Semantic Direction Store设计
+
+- owner确认继续严格one-shot，取消Writer参数量软上限，要求优先重构条件生成方向
+  如何存储/组合，必要时配套修改训练；仍禁止subagent，并要求减少无关hash/防御性
+  扫描，以聚焦验证和真实实验效率优先。
+- 重新核验clean branch`codex/bci-continuation`、HEAD/origin-main=`02ce673`及canonical
+  SFB/VR代码。未启动GPU、训练或rollout。
+- 完成新authority
+  `docs/action_forecast_writer_semantic_direction_store_design.md`：frozen task-language
+  anchor固定top2八个full-capacity direction stores，完整Core/A/E/D只进value，预计
+  Writer参数37,355,776；首跑保持RAW full24/B20和现有optimizer。
+- owner补充长期可迁移性要求：架构机制需能在reward gradient下成立，AS sampler与
+  LIBERO固定常数不得冒充方法；已写入design的objective-agnostic边界和失败后禁调项。
+- 已原位替换SFB router/head，不保留parallel model/runner；Writer实际参数
+  `37,355,776`。frozen text-only anchor移出activation-checkpoint重算，完整Core/A/E/D
+  继续作为value；B20 keyed independent Beta/Gaussian可由B2×10逐slice精确重建。
+- 仅用24 train languages建立center authority：减去raw-anchor train24均值后，seed7
+  spherical k-means两轮收敛，primary/top2计数为`5/7/6/1/2/1/1/1`与
+  `7/11/6/4/4/5/3/8`。当前center固定，不再调K/seed/route权重。
+- shape、route、identity/freeze、selected-store gradient、信息墙、B20/B2 loss与LoRA
+  leaf-gradient parity、六rank topology和fresh checkpoint family共61项focused CPU
+  测试通过。architecture guard无hard violation；下一步只做clean pushed最长105-frame
+  fresh/exact-resume GPU profile，不从VR checkpoint warm-start。
+
 ## 2026-08-03 BCI VR正式训练、rollout与阶段暂停
 
 - formal teacher seed fail-close修复提交/push为`d9130c9`，并重新核验clean

@@ -1,4 +1,4 @@
-"""Target-first Program compiler and semantic factor-basis decoder."""
+"""Target-first Program compiler and semantic direction-store decoder."""
 
 from __future__ import annotations
 
@@ -258,80 +258,115 @@ class TargetBoundRoleCompiler(torch.nn.Module):
         return coordinates
 
 
-class SemanticFactorRouter(torch.nn.Module):
-    """Use target Core only as a Q/K address over shared factor value bases."""
+class SemanticDirectionRouter(torch.nn.Module):
+    """Select two fixed semantic stores from a frozen language anchor."""
 
     def __init__(
         self,
+        centers: torch.Tensor,
         *,
-        width: int,
-        basis_count: int,
-        initialization_seed: int,
+        anchor_mean: torch.Tensor,
+        top_k: int,
     ) -> None:
         super().__init__()
-        if min(width, basis_count) <= 0:
-            raise SemanticProgramError("invalid semantic factor router dimensions")
-        self.width = int(width)
-        self.basis_count = int(basis_count)
-        self.core_norm = RMSNorm(width)
-        self.query = torch.nn.Linear(width, width, bias=False)
-        generator = torch.Generator(device="cpu").manual_seed(initialization_seed)
-        keys = torch.empty(basis_count, width)
-        keys.normal_(mean=0.0, std=0.02, generator=generator)
-        self.basis_key = torch.nn.Parameter(keys)
-        self.basis_norm = RMSNorm(width)
+        if (
+            centers.ndim != 2
+            or min(centers.shape) <= 0
+            or top_k != 2
+            or centers.shape[0] <= top_k
+            or anchor_mean.shape != (centers.shape[1],)
+            or not bool(torch.isfinite(centers).all())
+            or not bool(torch.isfinite(anchor_mean).all())
+        ):
+            raise SemanticProgramError("invalid semantic direction centers")
+        normalized = F.normalize(centers.to(torch.float32), dim=-1)
+        if not bool(torch.isfinite(normalized).all()):
+            raise SemanticProgramError("invalid normalized direction centers")
+        self.store_count = int(centers.shape[0])
+        self.anchor_width = int(centers.shape[1])
+        self.top_k = int(top_k)
+        self.register_buffer("centers", normalized.contiguous(), persistent=True)
+        self.register_buffer(
+            "anchor_mean",
+            anchor_mean.to(torch.float32).contiguous(),
+            persistent=True,
+        )
 
-    def forward(self, target_core: torch.Tensor) -> torch.Tensor:
-        if target_core.ndim < 3 or target_core.shape[-1] != self.width:
-            raise SemanticProgramError("semantic factor router lost target Core")
-        query = self.query(self.core_norm(target_core))
-        key = self.basis_norm(self.basis_key).to(query.dtype)
-        logits = torch.matmul(query, key.transpose(-1, -2)) / self.width**0.5
-        # Sum=basis_count makes the uniform route an exact unit-amplitude basis
-        # partition instead of shrinking the conventional hidden representation.
-        return torch.softmax(logits.float(), dim=-1).to(logits.dtype) * self.basis_count
+    def forward(self, anchor: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        if (
+            anchor.ndim != 2
+            or anchor.shape[-1] != self.anchor_width
+        ):
+            raise SemanticProgramError("semantic direction route lost task anchor")
+        normalized = F.normalize(
+            anchor.to(torch.float32) - self.anchor_mean,
+            dim=-1,
+        )
+        indices = torch.topk(
+            normalized @ self.centers.transpose(0, 1),
+            k=self.top_k,
+            dim=-1,
+            largest=True,
+            sorted=True,
+        ).indices
+        weights = torch.full(
+            indices.shape,
+            1.0 / self.top_k,
+            dtype=anchor.dtype,
+            device=anchor.device,
+        )
+        return indices, weights
 
 
-class SemanticFactorHead(torch.nn.Module):
-    """Decode a coordinate through Core-selected, evidence-valued factor bases."""
+class SemanticDirectionStoreHead(torch.nn.Module):
+    """Decode coordinates with complete, independently owned factor stores."""
 
     def __init__(
         self,
         input_width: int,
         hidden_width: int,
         output_width: int,
-        basis_count: int,
+        store_count: int,
     ) -> None:
         super().__init__()
-        if (
-            min(input_width, hidden_width, output_width, basis_count) <= 0
-            or hidden_width % basis_count
-        ):
-            raise SemanticProgramError("invalid semantic factor-head dimensions")
-        self.basis_count = int(basis_count)
-        basis_width = hidden_width // basis_count
-        self.value_bases = torch.nn.ModuleList(
-            torch.nn.Linear(input_width, basis_width, bias=False)
-            for _ in range(basis_count)
+        if min(input_width, hidden_width, output_width, store_count) <= 0:
+            raise SemanticProgramError("invalid direction-store factor dimensions")
+        self.input_width = int(input_width)
+        self.hidden_width = int(hidden_width)
+        self.output_width = int(output_width)
+        self.store_count = int(store_count)
+        self.input_weight = torch.nn.Parameter(
+            torch.empty(store_count, hidden_width, input_width)
         )
-        self.output = torch.nn.Linear(hidden_width, output_width, bias=False)
-        torch.nn.init.zeros_(self.output.weight)
+        self.output_weight = torch.nn.Parameter(
+            torch.zeros(store_count, output_width, hidden_width)
+        )
+        for weight in self.input_weight:
+            torch.nn.init.kaiming_uniform_(weight, a=5**0.5)
 
     def forward(
         self,
         value: torch.Tensor,
-        routing: torch.Tensor,
+        store_indices: torch.Tensor,
+        store_weights: torch.Tensor,
     ) -> torch.Tensor:
         if (
-            value.ndim < 3
-            or routing.shape != (*value.shape[:-1], self.basis_count)
+            value.ndim != 3
+            or value.shape[-1] != self.input_width
+            or store_indices.ndim != 2
+            or store_indices.shape[0] != value.shape[0]
+            or store_weights.shape != store_indices.shape
+            or store_indices.dtype != torch.long
         ):
-            raise SemanticProgramError("factor head lost rank or semantic routing")
-        hidden = torch.cat(
-            tuple(
-                F.gelu(layer(value)) * routing[..., index : index + 1]
-                for index, layer in enumerate(self.value_bases)
-            ),
-            dim=-1,
+            raise SemanticProgramError("factor head lost semantic direction route")
+        selected_input = self.input_weight[store_indices]
+        hidden = F.gelu(
+            torch.einsum("bri,bkhi->bkrh", value, selected_input)
         )
-        return self.output(hidden)
+        selected_output = self.output_weight[store_indices]
+        output = torch.einsum(
+            "bkrh,bkoh->bkro",
+            hidden,
+            selected_output,
+        )
+        return torch.einsum("bk,bkro->bro", store_weights, output)

@@ -8,6 +8,8 @@ import torch
 from ember.lora import LoRATarget, SmolVLALoRAContract, lora_state_sha256
 from ember.writer.functional import (
     ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME,
+    INDEPENDENT_BETA_TIME_SAMPLING_SCHEME,
+    INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
     LATIN_BETA_TIME_SAMPLING_SCHEME,
     functional_lora_loss_gradient,
     prepare_frozen_writer_policy,
@@ -289,7 +291,23 @@ def test_detached_lora_gradient_bridge_backpropagates_exact_writer_gradient() ->
     )
 
 
-def test_microbatched_functional_gradient_preserves_logical_b20_estimator() -> None:
+@pytest.mark.parametrize(
+    ("time_scheme", "noise_scheme"),
+    (
+        (
+            LATIN_BETA_TIME_SAMPLING_SCHEME,
+            ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME,
+        ),
+        (
+            INDEPENDENT_BETA_TIME_SAMPLING_SCHEME,
+            INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
+        ),
+    ),
+)
+def test_microbatched_functional_gradient_preserves_logical_b20_estimator(
+    time_scheme: str,
+    noise_scheme: str,
+) -> None:
     policy = _RandomLossPolicy()
     template = prepare_frozen_writer_policy(policy, _contract())
     writer = _writer(template)
@@ -300,8 +318,8 @@ def test_microbatched_functional_gradient_preserves_logical_b20_estimator() -> N
     common = {
         "policy_rng_seed": 303,
         "policy_rng_device": torch.device("cpu"),
-        "flow_time_sampling_scheme": LATIN_BETA_TIME_SAMPLING_SCHEME,
-        "flow_noise_sampling_scheme": ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME,
+        "flow_time_sampling_scheme": time_scheme,
+        "flow_noise_sampling_scheme": noise_scheme,
     }
     full_loss, full_details, full_gradients = functional_lora_loss_gradient(
         policy,

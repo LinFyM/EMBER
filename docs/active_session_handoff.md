@@ -180,11 +180,11 @@ runs/outputs/pi05_as_writer_semfactor_vr_bci_correct400_noreplacement_seed7_macr
   language anchor只用24 train languages建立8个固定semantic centers；每task稳定等权
   top2，每个store拥有完整独立1024→256→factor-width参数。完整Core/A/E/D仍是唯一
   factor value，Writer实际参数37,355,776。canonical实现、24-train-language center
-  authority与61项focused CPU合同已完成；尚无真实profile、训练或rollout，不能写成
-  效果结论。
-- 下一执行顺序是clean commit/push、live BCI GPU preflight、longest105六卡
-  fresh0→1/exact-resume1→3、封存formal seed、fresh0→200和四点paired correct400；
-  不复用VR checkpoint或Latin/antithetic estimator。
+  authority与61项focused CPU合同已完成；clean六卡profile也已通过，但尚无正式训练或
+  rollout，不能写成效果结论。
+- 下一执行顺序是从sealed formal seed`20260722`和clean origin-main fresh0→200，再做
+  50/100/150/200四点paired correct400；不复用profile/VR checkpoint或
+  Latin/antithetic estimator。
 - clean `7b13b6c`首次六卡profile在训练循环前复现NCCL 480秒heartbeat失败；六rank日志
   均明确`only active collectives: 0`，且当时只有rank-local source CUDA构造在运行，
   不是Direction Store collective、OOM或科学non-pass。该root已停止且禁止resume。
@@ -202,6 +202,12 @@ runs/outputs/pi05_as_writer_semfactor_vr_bci_correct400_noreplacement_seed7_macr
   后由`as_step.py`一份退役的重复method白名单拒绝新Direction Store method。canonical
   `as_config.py`此前已完整验证该conditioning合同，因此修复是删除第二份字符串白名单，
   让step owner只执行已验证合同；该root无metric/checkpoint，不跨commit resume。
+- clean pushed`1d0507e`最终在`gpu02:0--5`完成fresh0→1和exact-resume1→3，contract
+  `749773d8...8fd6`。三步`33.451/31.823/31.025s`，loss
+  `.150377/.152492/.142434`，最长105帧，峰值allocated/reserved
+  `35,827,363,840/47,129,296,896` bytes；1,440 queries、72 one-video conditions，
+  validation/test action reads=0且无clip/OOM。step2起五个主块全部finite/nonzero；
+  配置现切回formal seed`20260722`并seal，正式run必须fresh identity。
 
 ## 1. 当前边界
 

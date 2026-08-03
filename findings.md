@@ -48,6 +48,14 @@
   接受并逐字段验证Direction Store conditioning，但step owner又维护一份历史method
   字符串白名单并拒绝新method。该名单不控制任何算法分支，只是重复防御；正确修复是
   删除它，而不是再同步第六份字符串或增加fallback。
+- 删除重复guard的clean pushed`1d0507e`最终越过完整真实vertical path：fresh0→1、
+  exact-resume1→3、longest105和三份完整checkpoint均通过，六卡每macro仍严格是24 tasks、
+  480 logical B20 queries和240个B2 physical forwards。峰值reserved约`43.893GiB`，证明
+  37.36M Writer在46GB A40上无需改变科学batch或拆分模型即可训练。
+- zero-output identity使macro1只有factor output梯度是预期生命周期；macro2起semantic
+  frontend/Core/Program/compiler/factor五块全部finite/nonzero，macro3继续增长。该证据
+  只证明固定route的完整stores可训练和梯度可达，不证明factor coexistence假设或
+  closed-loop改善；后者只由fresh正式checkpoint的paired rollout裁决。
 
 ## 2026-08-03 BCI VR正式裁决与functional/closed-loop错位
 

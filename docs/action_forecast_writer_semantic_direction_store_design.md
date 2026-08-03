@@ -1,8 +1,8 @@
 # Semantic Direction Store Writer
 
 状态：2026-08-03 BCI fresh候选设计authority；canonical实现、train24 center
-authority与61项聚焦CPU合同已完成，尚未做真实profile、训练或rollout，不得写成
-有效方法。本文在ordinary Semantic Factor-Basis完整0→400和
+authority、聚焦CPU合同及clean六卡longest105 fresh/exact-resume profile已完成并
+封存，尚未做正式0→200或rollout，不得写成有效方法。本文在ordinary Semantic Factor-Basis完整0→400和
 variance-reduced estimator 0→200均完成负裁决后建立。实现时原位替换canonical
 factor router/head；历史SFB只由Git、frozen config和正式artifact保存，不保留可执行
 并行架构。
@@ -262,13 +262,24 @@ centers更直接检验当前假设，故作为第一候选。
 9. keyed independent B20一次forward与B2×10在samples/loss/LoRA-leaf gradient上相符；
 10. fresh0→1、exact-resume1→3与最长105-frame真实六卡macro通过。
 
-前九项及fresh checkpoint family的CPU合同已通过；第十项必须由clean pushed commit
-在BCI空闲卡上完成。center authority由frozen source policy对24条train language做
+十项均已通过。第十项由clean pushed`1d0507e`在`gpu02`六张现场空闲A40上完成：
+fresh0→1再exact-resume1→3，三步为`33.451/31.823/31.025s`，峰值CUDA
+allocated/reserved=`35,827,363,840/47,129,296,896` bytes，最长真实视频105帧，
+1,440 logical queries、720个B2 physical forwards和72个one-video conditions全部完成。
+step1按zero-output identity只打开factor output；step2起semantic frontend、Core、
+Program、compiler和factor五块均finite/nonzero。contract为`749773d8...8fd6`；profile
+checkpoint只作工程证据，正式训练必须fresh。
+
+多卡可靠性同时按根因封存：耗时rank-local CUDA构造在非NCCL ready rendezvous前完成，
+之后才对称建立process group；BCI A40/NCCL2.28显式`NCCL_P2P_DISABLE=1`走已复现稳定
+SHM路径并由代码fail-fast，不能用timeout/watchdog覆盖或依赖`.env.local`偶然source。
+
+center authority由frozen source policy对24条train language做
 text-only forward后建立；减去train24 raw-anchor均值再归一化，seed7 spherical
 k-means两轮收敛。primary/top2访问计数分别为`5/7/6/1/2/1/1/1`与
 `7/11/6/4/4/5/3/8`，当前不再调K、seed或centers。
 
-只运行与上述新职责直接相关的focused测试、compile和真实vertical path；不重复全量
+profile后配置已切回formal teacher-video seed`20260722`并seal fresh0→200。只运行与上述新职责直接相关的focused测试、compile和真实vertical path；不重复全量
 artifact hash、历史root扫描或无关旧回归。
 
 ## 8. 首小时裁决与内部预测

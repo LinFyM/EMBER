@@ -23,8 +23,10 @@ runner、split、路径或 GPU 权限。
   keyed independent Beta/Gaussian sampler，退役VR estimator的活动配置。
 - [x] 建立仅基于24 train language的center authority；完成route、独立W_out、sparse
   gradient、identity、freeze、B20/B2 parity与fresh/resume聚焦验证。
-- [ ] live比较`gpu01`/`gpu02`后用最多6张空闲卡做longest105真实profile；OOM时只调
-  frame encoder microbatch，保持logical B20、full24 raw mean与一次AdamW不变。
+- [x] live比较`gpu01`/`gpu02`后用`gpu02:0--5`六张空闲卡完成longest105真实profile；
+  fresh0→1/exact-resume1→3通过，峰值reserved`43.893GiB`，无需改变logical B20、
+  full24 raw mean或一次AdamW。根治rank-local构造与NCCL生命周期错位，并封存BCI
+  A40/NCCL2.28显式SHM transport fail-fast到代码和`AGENTS.md`。
 - [ ] 从fresh identity训练0→200并评测50/100/150/200 paired correct400；依据
   absolute/breadth/churn和store内部机制证据决定续到400或重构下一方向。
 

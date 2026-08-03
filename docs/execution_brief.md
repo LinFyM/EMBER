@@ -9,13 +9,14 @@
 - repo：`/data1/user/ymdai/projects/EMBER`，Python环境为项目`.venv`。模型、data、
   tokenizer、checkpoint和output由CLI显式传入；`EMBER_STORAGE_ROOT`、容量上限与
   `EMBER_LIBERO_ASSETS_ROOT`也必须在进程环境显式设置，不能依赖`.env.local`猜测。
-- A40正式配置：
-  `configs/pi05_as_writer_semantic_factor_basis_variance_reduced_long105_profile_v1.json`，
+- 当前A40正式候选配置：
+  `configs/pi05_as_writer_semantic_direction_store_full24_decay400_bci_v1.json`，
   6 ranks×4 tasks、16-frame encoder microbatch、logical B20、policy microbatch2，
   formal teacher-video seed固定`20260722`且loader与sealed profile字段强制一致；
   不固定物理GPU编号。
-- `NCCL_P2P_DISABLE=1`由EMBER环境自动设置，以规避gpu02直接P2P collective挂死；
-  四卡collective、fresh训练、exact resume和8-rollout Writer评测均已实跑通过。
+- BCI A40/NCCL2.28必须由launcher显式设置`NCCL_P2P_DISABLE=1`走SHM，并由代码
+  fail-fast，不能依赖`.env.local`。rank-local CUDA构造完成非NCCL ready rendezvous后
+  才建立process group；六卡collective、fresh训练和exact resume均已实跑通过。
 - 评测不再递归扫描整个个人目录或执行旧个人容量硬门；只检查目标文件系统余量和
   本次选择的GPU。
 - 四卡迁移验收后，六卡logical-B20冻结profile在clean pushed`391f183`完成
@@ -44,7 +45,8 @@
   不干扰他人；当前推进不使用subagent。
 - BCI VR正式训练、四点rollout、完整性与漂移分析已完成并负裁决；owner已解除阶段
   暂停。Semantic Direction Store实现、train24 center authority与61项聚焦CPU合同
-  已完成，等待clean六卡longest105 profile，长期`>150`目标未完成。
+  已完成；clean pushed`1d0507e`六卡longest105 fresh0→1/exact-resume1→3通过，配置
+  已seal。下一步从clean origin-main fresh0→200；长期`>150`目标未完成。
 
 Target-Bound已完成首小时与四点correct400=`75/120/90/110`，不续训；内部反事实证明
 其视频路径到达BA/action，剩余瓶颈定位到shared factor conditional coexistence。

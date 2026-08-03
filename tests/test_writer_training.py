@@ -100,8 +100,8 @@ def test_direction_store_config_seals_architecture_and_information_wall() -> Non
     assert config["information_wall"]["test_video_values_read"] == 0
     assert "state" in config["information_wall"]["writer_forbidden_inputs"]
     assert config["profile_defaults"]["expected_world_size"] == 6
-    assert config["profile_defaults"]["status"].endswith("profile_pending")
-    assert config["profile_evidence"]["status"] == "pending"
+    assert config["profile_defaults"]["status"].startswith("sealed_bci_a40")
+    assert config["profile_evidence"]["status"].startswith("passed_bci_a40")
     assert config["profile_evidence"]["primary_candidate"][
         "per_task_action_batch_size"
     ] == 20
@@ -112,11 +112,18 @@ def test_direction_store_config_seals_architecture_and_information_wall() -> Non
     assert config["profile_evidence"]["teacher_videos_per_task_visit"] == 1
     assert config["specificity_gate"]["status"] == "pending_absolute_gate"
     assert config["optimization"]["scheduler"]["decay_steps"] == 400
-    assert config["data"]["teacher_video_seed"] == 172
+    assert config["data"]["teacher_video_seed"] == 20260722
     assert config["profile_evidence"]["formal_teacher_video_seed_after_profile_seal"] == 20260722
-    assert config["formal_run"]["status"] == "pending_profile"
-    assert config["profile_evidence"]["selected"] is None
-    assert config["profile_evidence"]["exact_resume_smoke"] is None
+    assert config["formal_run"]["status"] == "sealed"
+    assert config["profile_evidence"]["selected"] == config[
+        "profile_evidence"
+    ]["primary_candidate"]
+    assert config["profile_evidence"]["exact_resume_smoke"]["status"].startswith(
+        "passed_clean_pushed_commit"
+    )
+    assert config["profile_evidence"]["gradient_reachability"][
+        "first_nonzero_full_path_macro"
+    ] == 2
     assert config["formal_run"]["total_steps"] == 400
     assert config["formal_run"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["selected_stop_step"] == 200
@@ -145,16 +152,16 @@ def test_direction_store_keeps_raw_full24_with_sliceable_independent_b20() -> No
     assert config["optimization"]["functional_policy_microbatch_size"] == 2
 
 
-def test_bci_direction_store_profile_preserves_b20_across_six_ranks() -> None:
+def test_bci_direction_store_seal_preserves_b20_across_six_ranks() -> None:
     config = load_writer_config(CONFIG)
     assert config["profile_defaults"]["expected_world_size"] == 6
     assert config["profile_defaults"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["expected_world_size"] == 6
     assert config["formal_run"]["per_rank_batch_size"] == 20
-    assert config["formal_run"]["status"] == "pending_profile"
+    assert config["formal_run"]["status"] == "sealed"
     assert config["data"]["teacher_video_seed"] == config[
         "profile_evidence"
-    ]["profile_teacher_video_seed"]
+    ]["formal_teacher_video_seed_after_profile_seal"]
     assert config["profile_evidence"]["profile_teacher_video_seed"] == 172
     assert config["conditioning_training"][
         "tasks_per_rank_per_optimizer_update"
@@ -168,7 +175,9 @@ def test_bci_direction_store_profile_preserves_b20_across_six_ranks() -> None:
         "per_task_action_batch_size": 20,
         "functional_policy_microbatch_size": 2,
     }
-    assert config["profile_evidence"]["selected"] is None
+    assert config["profile_evidence"]["selected"] == config[
+        "profile_evidence"
+    ]["primary_candidate"]
     context = DistributedContext(
         rank=0,
         local_rank=0,

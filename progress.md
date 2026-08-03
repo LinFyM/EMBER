@@ -45,6 +45,15 @@ GPU范围和训练步长是当时快照；活动状态只取
   随后完整越过ready rendezvous、NCCL和run-contract发布。step0唯一失败是
   `as_step.py`退役重复method白名单未列入Direction Store；`as_config.py`已经拥有完整
   canonical conditioning验证，故删除第二名单并把新method加入真实step聚焦测试。
+- 重复guard修复经16项step聚焦测试后提交/push为`1d0507e`。live重查选择
+  `gpu02:0--5`六张空闲A40，显式SHM transport；fresh0→1再exact-resume1→3完整通过，
+  contract`749773d8...8fd6`，三步`33.451/31.823/31.025s`、loss
+  `.150377/.152492/.142434`，峰值allocated/reserved
+  `35,827,363,840/47,129,296,896` bytes，无OOM/clip。
+- profile覆盖105-frame真实视频、1,440 logical queries、720个B2 physical forwards和
+  72个one-video conditions；validation/test action reads均为0。step1按identity只打开
+  factor output，step2起五个主块全部finite/nonzero。配置已恢复formal seed`20260722`、
+  选择B20/B2并seal fresh0→200；profile权重不进入正式轨迹。
 
 ## 2026-08-03 BCI VR正式训练、rollout与阶段暂停
 

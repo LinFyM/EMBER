@@ -23,19 +23,6 @@ def _storage_root() -> Path:
     return Path(configured).expanduser().resolve()
 
 
-def _storage_cap_bytes() -> int:
-    configured = os.environ.get("EMBER_STORAGE_CAP_BYTES")
-    if not configured:
-        raise Pi05EvaluationError("EMBER_STORAGE_CAP_BYTES must be set")
-    try:
-        cap = int(configured)
-    except ValueError as error:
-        raise Pi05EvaluationError("EMBER_STORAGE_CAP_BYTES must be an integer") from error
-    if cap <= 0:
-        raise Pi05EvaluationError("EMBER_STORAGE_CAP_BYTES must be positive")
-    return cap
-
-
 def gpu_preflight(physical_gpu_ids: Sequence[int]) -> dict[str, Any]:
     """Record storage, CUDA runtime, GPU telemetry, and co-scheduled processes."""
 
@@ -50,14 +37,6 @@ def gpu_preflight(physical_gpu_ids: Sequence[int]) -> dict[str, Any]:
         raise Pi05EvaluationError("PI05 evaluation preflight GPU selection is invalid")
     nvidia_selection = ",".join(str(value) for value in selected_indices)
     storage_root = _storage_root()
-    personal_bytes = int(
-        subprocess.run(
-            ["du", "-sb", str(storage_root)],
-            check=True,
-            text=True,
-            capture_output=True,
-        ).stdout.split()[0]
-    )
     data_capacity = subprocess.run(
         [
             "df",
@@ -137,8 +116,7 @@ def gpu_preflight(physical_gpu_ids: Sequence[int]) -> dict[str, Any]:
         "torch": torch.__version__,
         "cuda_runtime": torch.version.cuda,
         "storage_root": str(storage_root),
-        "personal_bytes": personal_bytes,
-        "personal_cap_bytes": _storage_cap_bytes(),
+        "storage_accounting": "filesystem_capacity_only_no_recursive_personal_scan",
         "data_filesystem": {
             "size": int(data_capacity[0]),
             "used": int(data_capacity[1]),

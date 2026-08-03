@@ -61,13 +61,10 @@ def test_gpu_preflight_queries_only_explicit_devices(
 ) -> None:
     calls: list[list[str]] = []
     monkeypatch.setenv("EMBER_STORAGE_ROOT", str(tmp_path))
-    monkeypatch.setenv("EMBER_STORAGE_CAP_BYTES", "123456")
 
     def run(command, **kwargs):
         del kwargs
         calls.append(list(command))
-        if command[0] == "du":
-            return SimpleNamespace(stdout=f"100 {tmp_path}\n")
         if command[0] == "df":
             return SimpleNamespace(stdout="size used avail pcent target\n1000 100 900 10% /data\n")
         if "--query-gpu" in " ".join(command):
@@ -83,11 +80,13 @@ def test_gpu_preflight_queries_only_explicit_devices(
     observed = runtime_launcher.gpu_preflight((4, 7))
     gpu_calls = [call for call in calls if call[0] == "nvidia-smi"]
     assert observed["storage_root"] == str(tmp_path.resolve())
-    assert observed["personal_cap_bytes"] == 123456
+    assert observed["storage_accounting"] == (
+        "filesystem_capacity_only_no_recursive_personal_scan"
+    )
     assert observed["physical_gpu_ids"] == [4, 7]
     assert len(gpu_calls) == 2
     assert all(call[1:3] == ["-i", "4,7"] for call in gpu_calls)
-    assert ["du", "-sb", str(tmp_path.resolve())] in calls
+    assert not any(call[0] == "du" for call in calls)
     assert any(call[0] == "df" and call[-1] == str(tmp_path.resolve()) for call in calls)
 
 
@@ -97,16 +96,6 @@ def test_storage_root_requires_explicit_host_configuration(
     monkeypatch.delenv("EMBER_STORAGE_ROOT", raising=False)
     with pytest.raises(Pi05EvaluationError, match="EMBER_STORAGE_ROOT must be set"):
         runtime_launcher._storage_root()
-
-
-def test_storage_cap_requires_explicit_host_configuration(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.delenv("EMBER_STORAGE_CAP_BYTES", raising=False)
-    with pytest.raises(
-        Pi05EvaluationError, match="EMBER_STORAGE_CAP_BYTES must be set"
-    ):
-        runtime_launcher._storage_cap_bytes()
 
 
 def test_writer_generation_batch_size_accepts_measured_positive_values() -> None:

@@ -663,16 +663,6 @@ def _start_workers_locked(output_dir: Path, *, resume: bool) -> dict[str, Any]:
                 contract["writer_lora_cache"]["estimated_peak_new_bytes"]
             )
     preflight["projected_new_bytes"] = projected_new_bytes
-    preflight["projected_personal_peak_bytes"] = (
-        int(preflight["personal_bytes"]) + projected_new_bytes
-    )
-    if (
-        preflight["projected_personal_peak_bytes"]
-        >= preflight["personal_cap_bytes"]
-    ):
-        raise Pi05EvaluationError(
-            "PI05 evaluation would exceed the 500GB personal storage cap"
-        )
     worker_ids = _worker_ids(
         int(contract["parallel"]["replicas_per_gpu"]), physical_gpu_ids
     )

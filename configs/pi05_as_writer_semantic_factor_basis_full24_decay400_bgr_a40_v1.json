@@ -1,0 +1,296 @@
+{
+  "schema_version": "ember_pi05_semantic_factor_basis_as_writer_v1",
+  "sealed_stage": "development",
+  "authorities": {
+    "target_data_manifest": {
+      "path": "configs/pi05_target_data_v1/manifest.json",
+      "sha256": "1b28547f6080a35fdf23ebae021407da15bfe4af367b0b1791042945d91b049d"
+    },
+    "evaluation_config": {
+      "path": "configs/pi05_target_evaluation_v1.json",
+      "sha256": "5bb0a5ca4604f126cc4bcdd29c9a7a4d17403a8f3ee7161d8afdfeccbb2c488c"
+    },
+    "lora_contract": {
+      "path": "configs/pi05_lora_v1.json",
+      "sha256": "03828ca9cd23dbb013dcb841df5f0bd72678ff155fcad004703aba3a4bdd8656"
+    },
+    "source_base_config": {
+      "path": "configs/pi05_source_base_v1.json",
+      "sha256": "7455fc59c67ca39f7c70b1296d2f1dc98f070bfda869bb0535bf5a9e91e04cc6"
+    },
+    "tokenizer_manifest": {
+      "path": "configs/libero_24_8_8_v1/pi05_tokenizer_manifest.json",
+      "sha256": "948bf1ec1f2768833bead66b2e829154e3304c1c09fe9c48813a79f06e47426c"
+    }
+  },
+  "information_wall": {
+    "writer_input": "task language plus exactly one raw action-hidden teacher video at inference",
+    "writer_forbidden_inputs": [
+      "action",
+      "proprio",
+      "state",
+      "reward",
+      "terminal",
+      "task_id",
+      "filename",
+      "hidden_normalization",
+      "policy_outcome"
+    ],
+    "action_owner": "frozen functional behavior loss only",
+    "development_action_split_roles": [
+      "train"
+    ],
+    "development_video_split_roles": [
+      "train"
+    ],
+    "validation_actions_read_by_training_optimizer": 0,
+    "validation_action_queries_per_checkpoint_monitor": 512,
+    "validation_action_gradient": false,
+    "test_actions_read": 0,
+    "test_video_values_read": 0
+  },
+  "writer": {
+    "architecture": "pi05_semantic_factor_basis_program_v1",
+    "generated_adapter": "complete_pi05_task_specific_rank16_lora",
+    "camera_dataset": "obs/agentview_rgb",
+    "camera_transform": "libero_opengl_rotate_180_chw_uint8",
+    "frame_stride": 5,
+    "include_final_frame": true,
+    "teacher_prompt": "Task: {cleaned_task};\nAction: ",
+    "teacher_state_input": false,
+    "task_span_extraction": "authoritative_full_prompt_sentencepiece_piece_offsets",
+    "text_branch_input": "bos_plus_exact_authoritative_task_span_ids_without_template",
+    "task_token_alignment": "text_and_multimodal_ids_identical_by_construction",
+    "image_width": 2048,
+    "native_image_tokens": 256,
+    "absolute_semantic_value": "X_f_equals_M_f_plus_task_queried_patch_G_f",
+    "shared_language_projection": "bias_free_2048_to_256",
+    "patch_grounding_attention": "per_frame_Q_text_to_256_raw_patch_values",
+    "patch_grounding_qk": "separate_pre_rmsnorm_bias_free_256_to_256",
+    "patch_grounding_value": "raw_shared_projected_image_position_content",
+    "patch_grounding_output": "bias_free_256_to_256",
+    "patch_grounding_heads": 8,
+    "expert_width": 1024,
+    "text_meta_lora_targets": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj"
+    ],
+    "text_meta_lora_rank": 4,
+    "vl_meta_lora_targets": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj"
+    ],
+    "vl_meta_lora_rank": 4,
+    "action_meta_lora_targets": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj"
+    ],
+    "action_meta_lora_rank": 4,
+    "max_frames_per_encoder_call": 16,
+    "frame_batching_contract": "encode_one_video_with_unpadded_memory_safety_chunks",
+    "activation_checkpointing": true,
+    "action_horizon": 50,
+    "padded_action_dim": 32,
+    "action_expert_probe": "one_forward_fixed_persistent_gaussian_suffix_at_t1",
+    "action_expert_action_out": false,
+    "interaction_reduction": "mean_50_final_suffix_hidden_then_1024_to_256",
+    "program_width": 256,
+    "semantic_core": "mean_X_plus_task_selected_centered_X_then_token_axis",
+    "semantic_core_frame_order": "none_strict_frame_set_permutation_invariant",
+    "semantic_core_heads": 8,
+    "semantic_core_blocks": 2,
+    "program_grid": "38_target_bound_outgoing_Action_Effect_Change_role_streams",
+    "program_interval_alignment": "A_f_with_G_f_plus_1_and_G_f_plus_1_minus_G_f",
+    "program_terminal_policy": "F_minus_1_observed_outgoing_intervals_no_terminal_token",
+    "program_temporal_ordinal": "interval_endpoint_sampled_frame_position",
+    "program_heads": 8,
+    "program_blocks": 2,
+    "program_attention": "target_action_conditioned_E_D_reads_then_private_role_causal",
+    "program_identity_path": "target_role_token_and_ordinal_qk_only",
+    "program_memory_path": "separate_target_bound_causal_A_E_D_raw_value_streams",
+    "program_key_path": "normalized_role_content_plus_qk_only_identity",
+    "program_value_path": "raw_physical_role_content_without_identity",
+    "target_count": 38,
+    "public_rank": 16,
+    "compiler_order": "sealed_policy_target_first_then_rank_last",
+    "core_reader": "38_target_raw_core_reads_before_dynamic_binding",
+    "program_coordinate_reader": "38x16_private_Action_Effect_Change_history_reads",
+    "reader_softmax": "independent_core_Action_Effect_Change_normalizers",
+    "coordinate_mixer": "shared_target_core_soft_factor_basis_selection",
+    "coordinate_identity_path": "normalized_target_and_rank_qk_only",
+    "compiler_heads": 8,
+    "factor_input": "raw_target_core_Action_Effect_Change_concat_width1024",
+    "factor_head_bias": false,
+    "factor_hidden_width": 256,
+    "factor_basis_count": 4,
+    "factor_basis_width": 64,
+    "factor_router": "shared_target_core_qk_only_four_basis_softmax_mean_one",
+    "factor_value_path": "four_independent_coordinate_value_bases_concat_width256",
+    "factor_final_projection": "exact_zero_initialization",
+    "initialization_seed": 7
+  },
+  "data": {
+    "task_count": 24,
+    "episodes_per_task": 50,
+    "demo_indices": [
+      0,
+      49
+    ],
+    "action_chunk_size": 50,
+    "sampler_seed": 20260721,
+    "teacher_video_seed": 20260722,
+    "teacher_video_sampling": "per_task_macro_visit_deterministic_single_same_task_video_in_no_replacement_cycles",
+    "action_query_sampling": "task-balanced deterministic no-replacement episode cycles with per-visit exact normalized-progress strata permutation and deterministic within-stratum jitter",
+    "video_action_pairing": "one task-video LoRA conditions the complete task-local action batch",
+    "writer_generation_reuse": "generate one task-video LoRA once then reuse it across the complete task-local action batch",
+    "max_open_files_per_worker": 8,
+    "video_open_files_per_rank": 2
+  },
+  "conditioning_training": {
+    "method": "raw_task_complete_single_video_multi_action_positive_functional_loss",
+    "update_topology": "task_complete_all_tasks",
+    "writer_language_contract": "correct_task_language_state_free_teacher_action_suffix",
+    "policy_language_contract": "correct_action_query_task_language",
+    "action_query_batch_owner": "six sequential task-pure physical action batches per rank per macro optimizer update",
+    "task_assignment": "every macro optimizer update covers all 24 tasks exactly once globally with six cost-balanced long-first tasks per rank",
+    "tasks_per_rank_per_optimizer_update": 6,
+    "global_tasks_per_optimizer_update": 24,
+    "teacher_videos_per_task_visit": 1,
+    "action_video_assignment": "all_actions_share_single_video_lora",
+    "logical_pair_batch": "per_task_action_batch",
+    "policy_noise_contract": "one independent policy flow noise and time draw per action query",
+    "pair_loss_reduction": "mean_within_task_then_equal_mean_over_24_tasks",
+    "task_loss_scale_before_backward": "per_task_unscaled_then_exact_raw_full24_mean",
+    "ddp_gradient_sync": "none_during_task_gradients_then_bounded_parameter_chunk_allgathers_for_exact_raw_full24_mean_and_read_only_grams",
+    "gradient_composition": "exact_raw_equal_weight_full24_mean_without_projection",
+    "single_video_gradient_direction_diagnostic": "fixed_countsketch_32_per_task_per_semantic_frontend_core_program_compiler_factor_block",
+    "optimizer_steps_per_macro_update": 1,
+    "checkpoint_boundary": "complete_macro_optimizer_update_only",
+    "normal_loss_weight": 1.0
+  },
+  "loader": {
+    "num_workers_per_rank": 2,
+    "prefetch_factor": 2
+  },
+  "optimization": {
+    "method": "functional_pi05_semantic_factor_basis_raw_full24_positive_only",
+    "seed": 7,
+    "precision": "bfloat16",
+    "source_policy": "final formal frozen raw policy",
+    "normalization": "frozen filtered-LIBERO-90 source normalization",
+    "optimizer": {
+      "name": "AdamW",
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "eps": 1E-8,
+      "weight_decay": 0.0001,
+      "gradient_clip_norm": 1.0
+    },
+    "scheduler": {
+      "kind": "cosine_decay_with_warmup",
+      "peak_lr": 0.0003,
+      "warmup_steps": 17,
+      "decay_steps": 400,
+      "decay_lr": 0.00001
+    },
+    "maximum_formal_wall_clock_minutes": 190,
+    "budget_role": "fresh_semantic_factor_basis_raw_full24_one_hour_then_evidence_gated_exact_resume"
+  },
+  "profile_defaults": {
+    "status": "bgr_a40_46g_revalidation_pending",
+    "expected_world_size": 4,
+    "total_steps": 3,
+    "per_rank_batch_size": 2,
+    "checkpoint_steps": [
+      1,
+      2,
+      3
+    ],
+    "selected_stop_step": 3
+  },
+  "profile_evidence": {
+    "status": "bgr_a40_46g_revalidation_pending",
+    "fixed_frame_stride": 5,
+    "teacher_videos_per_task_visit": 1,
+    "tasks_per_rank_per_optimizer_update": 6,
+    "global_tasks_per_optimizer_update": 24,
+    "required_longest_real_stride5_video_frames": 105,
+    "profile_teacher_video_seed": 172,
+    "formal_teacher_video_seed_after_profile_seal": 20260722,
+    "primary_candidate": {
+      "max_frames_per_encoder_call": 16,
+      "per_task_action_batch_size": 2
+    },
+    "oom_fallback_only": {
+      "max_frames_per_encoder_call": 8,
+      "per_task_action_batch_size": 2
+    },
+    "selection_rule": "use_16_frame_microbatches_with_b2_on_bgr_a40_46g_then_fallback_to_8_frames_only_on_measured_oom",
+    "selected": null,
+    "exact_resume_smoke": null,
+    "gradient_reachability": {
+      "status": "sealed_finite_nonzero_after_identity_lifecycle",
+      "first_nonzero_main_path_macro": 2,
+      "finite_nonzero_blocks": [
+        "semantic_frontend",
+        "core",
+        "program",
+        "compiler",
+        "factor"
+      ]
+    },
+    "inference_profile": null
+  },
+  "specificity_gate": {
+    "status": "pending_absolute_gate",
+    "internal_before_rollout": true,
+    "conditions": [
+      "correct",
+      "same_task_other",
+      "cross_suite_wrong",
+      "shuffled",
+      "reversed"
+    ],
+    "contrast_loss_allowed": false
+  },
+  "formal_run": {
+    "status": "sealed",
+    "launch_state": "bgr_a40_revalidation_required_before_formal_launch",
+    "expected_world_size": 4,
+    "total_steps": 400,
+    "per_rank_batch_size": 2,
+    "checkpoint_steps": "every:25",
+    "selected_stop_step": 200,
+    "stage_stop_steps": [
+      200,
+      400
+    ],
+    "segment_definition": "fresh_semantic_factor_basis_raw_full24_macro0_to200_then_evidence_gated_exact_resume200_to400",
+    "one_hour_scale": {
+      "macro_optimizer_updates": 200,
+      "global_action_queries": 9600,
+      "one_video_conditions": 4800,
+      "policy_functional_forwards": 4800,
+      "retained_checkpoints": 8,
+      "online_validation_action_queries_per_checkpoint": 512
+    },
+    "two_hour_scale": {
+      "macro_optimizer_updates": 400,
+      "global_action_queries": 19200,
+      "one_video_conditions": 9600,
+      "policy_functional_forwards": 9600,
+      "retained_checkpoints": 16,
+      "online_validation_action_queries_per_checkpoint": 512
+    },
+    "data_integrity_check": "sealed_manifest_plus_exact_file_size_and_hdf5_schema_without_runtime_full_data_sha",
+    "continuation_gate": "resume_to400_only_when_one_hour_absolute_breadth_trend_or_internal_path_justifies_continuation"
+  }
+}

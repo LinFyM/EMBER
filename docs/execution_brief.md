@@ -1,8 +1,23 @@
 # EMBER Current Execution Brief
 
-更新时间：2026-08-03 03:05 UTC。本文是操作层authority；科研结果取
+更新时间：2026-08-03 04:50 UTC。本文是操作层authority；科研结果取
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bgr_migration_handoff.md`，
 长期边界取`AGENTS.md`。
+
+## 0. 当前BGR运行事实（覆盖下文旧A100操作细节）
+
+- repo：`/data1/user/ymdai/projects/EMBER`；既有EMBER环境会自动装载BGR本地路径。
+- A40正式配置：
+  `configs/pi05_as_writer_semantic_factor_basis_variance_reduced_long105_profile_v1.json`，
+  4 ranks、16-frame microbatch、batch 2、不固定物理GPU编号。
+- `NCCL_P2P_DISABLE=1`由EMBER环境自动设置，以规避gpu02直接P2P collective挂死；
+  四卡collective、fresh训练、exact resume和8-rollout Writer评测均已实跑通过。
+- 评测不再递归扫描整个个人目录或执行旧个人容量硬门；只检查目标文件系统余量和
+  本次选择的GPU。
+- 验收profile/smoke不得warm-start后续正式研究。下一研究动作仍是VR fresh 0→200
+  及50/100/150/200 paired correct400，由新的研究session按owner当时的GPU要求启动。
+- 详细运行证据和精确指标见`docs/active_session_handoff.md`第0节。下文所有
+  `/data/ymdai`、A100 GPU4--7、B20和“BGR尚未验收”描述仅是历史状态。
 
 ## 1. 当前操作状态
 

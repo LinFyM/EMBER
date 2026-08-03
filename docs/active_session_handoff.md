@@ -1,8 +1,31 @@
 # EMBER Active Session Handoff
 
-更新时间：2026-08-03 03:05 UTC。本文只记录迁回 BGR 前的当前真相。历史执行流水仍在
+更新时间：2026-08-03 04:50 UTC。本文只记录迁回 BGR 前后的当前真相。历史执行流水仍在
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
+
+## 0. BGR运行交接（优先于下文旧A100操作描述）
+
+- EMBER已迁至`/data1/user/ymdai/projects/EMBER`。进入既有环境后，BGR数据、
+  tokenizer、LIBERO assets、source checkpoint和输出路径会自动生效；不要再把
+  `/data/ymdai`绝对路径写入新命令或新artifact。
+- canonical A40配置是
+  `configs/pi05_as_writer_semantic_factor_basis_variance_reduced_long105_profile_v1.json`；
+  它使用4 ranks、16-frame encoder microbatch和per-rank batch 2，不固定物理GPU编号。
+- BGR四卡验收已完成：NCCL/BF16 collective通过，真实Writer fresh 0→1通过，
+  exact resume 1→2通过，最长真实视频105帧，峰值CUDA reserved
+  `44,853,886,976` bytes；随后8/8 validation smoke rollouts完成并聚合。
+- 当前torch/NCCL在gpu02直接P2P传输会挂死；EMBER环境已自动设置
+  `NCCL_P2P_DISABLE=1`使用稳定的共享内存传输。无需在每条命令里重复设置。
+- 评测preflight已移除对整个个人目录的递归`du`和个人容量硬门，只保留快速文件系统
+  余量及所选GPU现场检查。不要恢复全目录扫描或A100的固定GPU4--7约束。
+- 验收root为
+  `/data1/user/ymdai/runs/EMBER/acceptance/ember_bgr_gpu_acceptance_20260803T1232`；
+  迁移证据在
+  `/data1/user/ymdai/evidence/migration/EMBER/20260803/gpu-acceptance/`。
+  这些profile/smoke checkpoint只证明运行链路，后续VR正式实验仍须fresh identity，
+  不得从验收权重warm-start。
+- 验收结束后无EMBER训练、评测worker或tmux进程，四张验收GPU均已释放。
 
 ## 1. 当前边界
 

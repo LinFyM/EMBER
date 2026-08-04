@@ -6,6 +6,17 @@
 
 ## 0. 当前BCI运行事实（覆盖下文旧A100操作细节）
 
+- Task-Grounded Progress formal已exact-resume到cycle2并完成第二轮strict correct400。
+  cycle2 train为49/96 successes、21 active-credit tasks、two finite epochs、完整checkpoint/
+  双ledger与0 watchdog/OOM；held correct=`102`、breadth4，低于cycle1=`104`。cycle1→2
+  gained/lost=`15/17`，Object-1`31→26`、Object-3`19→22`且无新task coverage，故同root
+  cycle4/8现已禁止。GPU均已释放。
+- cycle2 paired/LoRA/参数分块分析位于
+  `runs/outputs/pi05_task_grounded_progress_credit_cycle002_bci_correct400_noreplacement_seed7_56a167d_20260805/paired_to_cycle1_and_as125_analysis.json`。
+  gained/lost的LoRA变化幅度与norm增长不可区分、stable rank不变；但Adam后factor每参数
+  位移只约visual的2倍，不能仅凭raw gradient直接冻结decoder。下一动作是固定panel参数
+  hybrid因果分解；结果前不实现basis freeze、policy anchor或新composer。
+
 - Task-Relative Flow-Credit Writer的binary-only阶段已完成并负裁决。AS侧恢复唯一v6
   Writer做fresh独立cold start；reward侧保留成功和失败executed prefixes，以同task K4
   leave-one-out binary advantage、per-sample old/current CFM ratio、positive PPO与

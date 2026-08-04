@@ -4,7 +4,36 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：cycle1 paired correct400完成，下一步exact-resume到cycle2
+## 0.0 当前状态：cycle2负裁决，停止4/8并先做参数hybrid因果分解
+
+- formal root
+  `runs/outputs/pi05_task_grounded_progress_credit_writer_formal_as125_r6_k4_nmc4_e2_c8_retry1_30977b5_20260805`
+  已在原sealed`gpu01:1,2,3|4,5,7` 3+3 topology exact-resume到cycle2。第二cycle为
+  49/96 successes、16 mixed、5 all-failure semantic、3 all-success与21 active-credit
+  tasks；两epoch finite、observer grad0、完整checkpoint/双ledger、0 watchdog/OOM，
+  peak reserved`19,457,376,256` bytes。formal summary保持`next_cycle=2`，但科学裁决
+  已禁止继续4/8。
+- cycle2 strict correct400 root为
+  `runs/outputs/pi05_task_grounded_progress_credit_cycle002_bci_correct400_noreplacement_seed7_56a167d_20260805`：
+  400 rows、success102、breadth4、逐task`11/0/0/43/26/22/0/0`。相对cycle1=104
+  gained/lost/retained/both-fail=`15/17/87/281`，全部state/video/env seed与共同noise
+  prefix严格配对。Object-1`31→26`、Object-3`19→22`，其余净0；没有共同积累或新task
+  coverage。
+- AS125/cycle1/cycle2 success=`97/104/102`，union/intersection=`128/79`、single
+  envelope gap24。cycle1→2 effective BA relative-L2/cosine/norm ratio中位=
+  `.01493/.999894/1.00214`；gained/lost变化幅度`.014725/.014724`与norm增长几乎相同，
+  stable rank仍约`1.000016`。同recipe续训正式负裁决，不得resume cycle4/8。
+- Writer权重分块显示raw factor gradient大不等于Adam后数百倍位移：cycle1→2
+  delta-L2/sqrtN为semantic`1.13e-5`、visual`6.29e-6`、procedure`9.33e-6`、compiler
+  `1.13e-5`、factor input/output`1.25e-5/1.24e-5`。所以当前下一步不是直接冻结factor，
+  而是在固定train-task/video/action panel上把AS125→cycle2分解成factor-output basis与
+  upstream composition两套hybrid，先测它们到effective BA/action的实际贡献。之后只选择
+  basis freeze、全task policy-distance anchor或显式basis/coefficients重构之一。
+- 完整cycle2裁决在
+  `runs/outputs/pi05_task_grounded_progress_credit_cycle002_bci_correct400_noreplacement_seed7_56a167d_20260805/paired_to_cycle1_and_as125_analysis.json`。
+  当前`gpu01`评测卡已释放且无EMBER进程；新GPU动作仍须live比较两节点、最多6张空闲卡。
+
+### 已封存的AS125→cycle1证据链
 
 - 同一fresh v6 AS root已从step100 exact-resume到125：累计60,000 logical queries、
   3,000 one-video conditions和125个finite full24 macros；本段wall`806.928s`，0

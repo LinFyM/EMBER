@@ -144,16 +144,24 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 
 ## Current focused task
 
+- Task-Grounded Semantic Progress Credit已完成同一formal root cycle1/2及两轮strict
+  correct400。AS125/cycle1/cycle2=`97/104/102`，breadth=`5/4/4`；cycle1→2
+  gained/lost=`15/17`，Object-1`31→26`、Object-3`19→22`且无新task coverage，
+  因而同recipe续训轴正式负裁决，禁止resume cycle4/8。完整结果取
+  `docs/action_forecast_writer_task_grounded_progress_credit_design.md`第16节与cycle2
+  eval root的`paired_to_cycle1_and_as125_analysis.json`。当前唯一允许的下一科学动作是
+  固定train-task/video/action panel参数hybrid因果分解；结果前不得直接冻结decoder、
+  加policy anchor或实现新basis/coefficients composer，更不得同时修改这些变量。
 - Task-Relative Flow-Credit Writer的binary-only阶段已按
   `docs/action_forecast_writer_relative_flow_credit_design.md`完成并负裁决：它恢复历史
   single-checkpoint最强且时序路径已验证的v6 Writer做独立AS cold start，随后永久关闭
   teacher action入口，但24 train tasks的official random-reset binary reward与同task
-  K4 leave-one-out仍无法覆盖全任务。当前唯一活动authority已切换为
+  K4 leave-one-out仍无法覆盖全任务。随后method authority切换为
   `docs/action_forecast_writer_task_grounded_progress_credit_design.md`：先用冻结AS125
   semantic encoder从task language、action-hidden teacher首尾内容变化与rollout自身
   首尾agentview构造start-relative semantic potential，完成预注册只读机制门后才决定
-  是否训练；不得恢复旧success-filtered Writer-RL、flat task-local RL、Target-Owned或
-  Direction Store活动路径。
+  是否训练；该方法现已按第16节完成并负裁决。不得恢复旧success-filtered Writer-RL、
+  flat task-local RL、Target-Owned或Direction Store活动路径。
 - canonical实现已原位替换旧RL路径：success与failure executed prefixes均保留；正
   advantage用PPO clip，负advantage用SPO pullback；Nmc4、full24等权、最多6 ranks、
   deferred NCCL和完整cycle exact-resume。source policy与normalization冻结，Writer输入
@@ -224,8 +232,8 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   stable rank中位均约`1.000017`，B-column cosine均约`.99884`，因此cycle1主要是在
   既有近rank1方向上做小幅task-dependent调节，没有解决LoRA几何或task drift。由于仅
   完成2次full24 optimizer update、held aggregate未下降且19/24 train tasks有credit，
-  现授权同一formal root exact-resume `1→2`后重跑同一correct400；若仍只在单task换手或
-  breadth不恢复，则停止该续训轴并重做condition-to-policy接口，不盲目续到4/8。
+  当时只授权同一formal root exact-resume `1→2`后重跑同一correct400；该动作现已完成并
+  由本节首条的cycle2负裁决覆盖，不得把这条历史授权解释成继续4/8。
 - AS50→75首次resume因所选物理卡对应rank形成`4+2` NUMA分布，而root已封存`3+3`
   topology，被resume contract在模型训练前正确拒绝；无metrics或checkpoint写入。随后在
   同一节点改用满足原`3+3` rank topology的六张空闲卡，原命令完成step75。正式

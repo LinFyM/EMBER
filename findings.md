@@ -6,6 +6,32 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-05 Progress-Credit cycle2负裁决与参数位移重解释
+
+- 同一formal root从cycle1 exact-resume到2，第二cycle得到49/96 train successes、16
+  mixed、5 all-failure semantic、3 all-success与21 active-credit tasks。两epoch ratio/
+  gradient finite、observer grad0、完整checkpoint/双ledger、0 watchdog/OOM；训练健康
+  不能替代held rollout。
+- cycle2 strict correct400=`102`、breadth4，逐task为
+  `11/0/0/43/26/22/0/0`。相对cycle1=`104`严格paired gained/lost/retained/both-fail=
+  `15/17/87/281`，`p=.8601`；Object-1净丢5、Object-3净增3，其余task净0，没有新task
+  coverage。AS125/cycle1/cycle2 union/intersection=`128/79`、single envelope gap24，
+  正式证明第二cycle继续换手而不累积；不得续4/8。
+- cycle1→2的effective BA relative-L2/cosine/norm-ratio中位为
+  `.01493/.999894/1.00214`，stable rank仍约`1.000016`。gained与lost state的变化幅度
+  `.014725/.014724`、norm ratio`1.004994/1.004876`几乎相同；Object两task norm都增但
+  成功一降一升。LoRA确实改变，却没有沿closed-loop正负结果分离，禁止再诉诸scale/rank。
+- 同task更新仍主要是task-mean：cycle1→2的mean-energy fraction为`.9659--.9920`，
+  Object-1/3 mean-update cosine`.97996`。这与任务内demo本应共享语义并不矛盾，因此
+  不能单独写成“Writer忽略视频”；它与能力换手和outcome不对齐共同说明现有composer
+  没把内容credit累积为稳定policy方向。
+- raw梯度的factor/visual比约405，但Adam后cycle1→2每参数位移只约2倍：
+  delta-L2/sqrtN为semantic`1.13e-5`、visual`6.29e-6`、procedure`9.33e-6`、compiler
+  `1.13e-5`、factor-input/output`1.25e-5/1.24e-5`。factor-output相对L2`.00556`主要
+  因zero-init后基准norm小；不能仅凭raw grad直接冻结decoder。下一步先做参数hybrid
+  固定panel因果分解，再在basis freeze、policy-distance anchor与显式basis/coefficients
+  之间选择一个新变量。
+
 ## 2026-08-05 Progress-Credit cycle1 strict correct400与LoRA裁决
 
 - AS125 baseline与formal cycle1在同一400-row、无放回correct panel完成，correct=

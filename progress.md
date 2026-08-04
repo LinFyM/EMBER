@@ -8,6 +8,25 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-05 Progress-Credit cycle2训练、rollout与续训轴停止
+
+- 在live空闲`gpu01:1,2,3,4,5,7`、原sealed 3+3 NUMA topology上从同一formal
+  cycle1 exact-resume到2。第二cycle完成96 rollout、24,501 actions、49 successes、
+  16 mixed、5 all-failure semantic、3 all-success与21 active-credit tasks；two-epoch
+  wall`2056.376s`、peak reserved`19,457,376,256` bytes，完整checkpoint/双ledger、
+  0 watchdog/OOM。训练结束后六卡释放。
+- live复查后用`gpu01:4,5,7`完成cycle2 strict correct400：400 rows、42 shards、
+  success102、wall`1486.017s`，0 error/retry；Writer cache400/400且rollout结束后三卡均
+  回到14MiB。结果root为
+  `runs/outputs/pi05_task_grounded_progress_credit_cycle002_bci_correct400_noreplacement_seed7_56a167d_20260805`。
+- 相对cycle1严格paired gained/lost=`15/17`、breadth`4→4`，逐task从
+  `11/0/0/43/31/19/0/0`变为`11/0/0/43/26/22/0/0`。无新coverage且Object能力换手，
+  按预注册门停止同root cycle4/8。
+- 400对LoRA与Writer权重分析封存在cycle2 root的
+  `paired_to_cycle1_and_as125_analysis.json`：gained/lost更新幅度与norm增长不可区分，
+  near-rank1不变；Adam后factor每参数位移仅约为visual的2倍，故下一步先做固定panel
+  参数hybrid分解，不按raw gradient直接冻结decoder，也不加scale/rank修补。
+
 ## 2026-08-05 Progress-Credit cycle1 paired correct400完成
 
 - live检查后在`gpu01`并行使用两组互斥卡：1/2/3评AS125，4/5/7评formal cycle1；

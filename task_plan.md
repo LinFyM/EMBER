@@ -8,7 +8,7 @@
 `docs/a100_to_bci_migration_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
 runner、split、路径或 GPU 权限。
 
-## 当前Task-Relative Flow-Credit推进（2026-08-04）
+## 当前Progress-Credit裁决与condition-to-policy分解（2026-08-05）
 
 - [x] 复核历史RL：确认旧PI05 Writer-RL只是success-filtered executed-prefix BC，没有
   failure、advantage、old/current ratio或trust region；不得恢复或改名复用。
@@ -74,10 +74,16 @@ runner、split、路径或 GPU 权限。
 - [x] 同一strict panel完成AS125 baseline与cycle1 correct400：`97→104`，gained/lost=
   `22/15`、breadth=`5→4`；净增集中Object-1，Spatial-1失去唯一成功。400对effective
   BA只变化`.01677`且near-rank1几何不变，不能宣称task drift已解。
-- [ ] live preflight后从同一formal checkpoint exact-resume cycle1→2，保持两epoch、
-  task/video schedule、3+3 topology与全部信息墙；随后重跑同一strict correct400。
-- [ ] 若cycle2改善仍集中单task或breadth不恢复，停止本续训轴并重做condition-to-policy
-  结构；只有跨task共同积累才续到4/8。长期single-checkpoint strict`>150/400`不变。
+- [x] live preflight后从同一formal checkpoint exact-resume cycle1→2，保持两epoch、
+  task/video schedule、3+3 topology与全部信息墙；cycle2为49/96 train successes、
+  21 active-credit tasks，完整checkpoint/双ledger且0 watchdog/OOM。
+- [x] 同一strict correct400完成cycle2=`102`、breadth4；相对cycle1 gained/lost=
+  `15/17`，Object-1`31→26`、Object-3`19→22`且无新task coverage。按预注册门停止
+  cycle4/8，同recipe续训轴负裁决。
+- [ ] 在固定train-task/video/action panel上做AS125/cycle2参数hybrid因果分解，区分
+  factor-output policy basis与上游condition composition对effective BA/action更新的贡献；
+  先裁决再选择冻结basis、全task policy-distance anchor或新basis/coefficients接口，
+  不同时改多个变量。长期single-checkpoint strict`>150/400`不变。
 
 ## 历史BCI Policy-Target-Owned Factor推进（2026-08-04）
 

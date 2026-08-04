@@ -1,6 +1,6 @@
 # Task-Grounded Semantic Progress Credit Writer 设计
 
-状态：**2026-08-05只读与Writer-update profile门均通过；正式run已封存为fresh AS125、首段stop1。**
+状态：**2026-08-05正式cycle1/2与两轮strict correct400均完成；同recipe续训轴负裁决，禁止续4/8。**
 
 本设计接续`docs/action_forecast_writer_relative_flow_credit_design.md`的binary-only负裁决。
 它不把RL当作绕过LoRA质量问题的替代路线，而是专门修复已经定位到的最早接口：
@@ -348,3 +348,45 @@ cycle1只有两次full24 optimizer update，19/24 train tasks有真实credit，h
 `1→2`，随后重跑同一strict correct400。只有跨task共同积累、breadth恢复才允许继续4/8；
 若cycle2仍只在Object等单task换手，或breadth继续不恢复，则停止该续训轴并把最早失败
 接口归回condition-to-policy组合，不用更多cycle掩盖结构问题。
+
+## 16. Formal cycle2最终裁决
+
+同一clean`30977b5` formal root已按原3+3 NUMA topology、K4、Nmc4、two epochs从
+cycle1 exact-resume到cycle2。第二cycle得到49/96 train successes、16 mixed、5
+all-failure semantic、3 all-success和21 active-credit tasks；两轮ratio finite、observer
+gradient为0、positive clip仅第二轮`.000131`，完整cycle2 checkpoint、双ledger、0
+watchdog/OOM。该训练健康只证明实现，没有提供held性能结论。
+
+cycle2在与AS125/cycle1完全相同的strict、无放回correct400 panel得到`102/400`、
+breadth4。三点逐task（Long-1/2、Goal-3/6、Object-1/3、Spatial-1/3）为：
+
+```text
+AS125   10 / 0 / 0 / 43 / 24 / 19 / 1 / 0
+cycle1  11 / 0 / 0 / 43 / 31 / 19 / 0 / 0
+cycle2  11 / 0 / 0 / 43 / 26 / 22 / 0 / 0
+```
+
+cycle1→cycle2 gained/lost/retained/both-fail=`15/17/87/281`，exact two-sided
+`p=.8601`。没有新task获得coverage，Object-1丢5而Object-3增3，明确是能力换手而非
+跨task累积。AS125/cycle1/cycle2 success union/intersection=`128/79`，single envelope
+gap24；存在互补状态，但同一Writer没有把它们累积起来。
+
+400对effective BA的cycle1→2变化中位`.01493`、cosine`.999894`、norm ratio
+`1.00214`；stable rank仍为`1.000016→1.000016`。gained与lost state的relative-L2中位
+分别`.014725/.014724`，norm ratio分别`1.004994/1.004876`，无法区分正负闭环结果。
+Object-1与Object-3的task-mean更新方向余弦`.97996`，两者norm都增加，但成功数一减一增；
+Spatial-1更新更大且继续收缩，却没有恢复唯一成功。故不得再用scale、norm或谱解释。
+
+raw block gradient虽然由factor heads主导，但Adam后的每参数实际位移没有数百倍差距：
+cycle1→2的delta-L2/sqrt(parameter-count)依次约为semantic`1.13e-5`、visual`6.29e-6`、
+procedure`9.33e-6`、compiler`1.13e-5`、factor-input`1.25e-5`、factor-output`1.24e-5`。
+factor output相对L2大主要因为它从zero-init AS后的基准norm很小。这个结果否定“只看raw
+gradient就直接冻结整个decoder”的充分性；冻结basis或加policy anchor前必须先做固定
+panel的参数hybrid因果分解。
+
+正式裁决：本方法接受“action-free progress observer可提供有内容的all-failure credit”
+和“flow-ratio可把closed-loop credit传到Writer”，但拒绝“现有condition composer能随
+更多cycle共同累积能力”。同root不得续cycle4/8。该负结果不否定RL或IL→RL混合；下一步
+先把AS125→cycle2变化分解为factor output basis与上游condition composition的独立/组合
+贡献，再决定是冻结监督阶段学得的policy tangent basis、增加全task policy-distance
+约束，还是重构显式basis/coefficients接口。不能同时修改这些变量。

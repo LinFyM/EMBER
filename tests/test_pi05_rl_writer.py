@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 import torch
 
+from ember.rl_writer import loop as rl_loop
 from ember.pi05_source_checkpoint import DistributedContext, canonical_hash, sha256_file
 from ember.pi05_source_contract import reconcile_metrics
 from ember.reward import rollout as reward_rollout
@@ -45,6 +46,9 @@ def test_flow_credit_config_closes_actions_and_keeps_both_outcomes() -> None:
     assert config["algorithm"]["task_advantage"] == "leave_one_out_binary_return"
     assert config["information_wall"]["teacher_action_reads_after_coldstart"] == 0
     assert config["parallel"]["maximum_world_size"] == 6
+    assert config["parallel"]["credit_collective_readiness"].startswith(
+        "shared_filestore_all_rank_ready"
+    )
     assert config["formal_run"]["status"].startswith("pending")
 
 
@@ -123,6 +127,38 @@ def test_torchrun_local_rank_maps_to_the_physical_egl_device(
     monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "GPU-a,GPU-b")
     with pytest.raises(WriterModelError, match="numeric physical GPU"):
         visible_physical_cuda_index(0)
+
+
+def test_credit_collective_waits_for_rank_local_backward(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    events: list[str] = []
+
+    class Store:
+        def set(self, key: str, value: bytes) -> None:
+            events.append(f"set:{key}")
+
+        def wait(self, keys: list[str], timeout: object) -> None:
+            events.append("wait:" + ",".join(keys))
+
+    monkeypatch.setattr(rl_loop.dist, "FileStore", lambda *_: Store())
+    monkeypatch.setattr(
+        rl_loop.dist,
+        "all_reduce",
+        lambda *_args, **_kwargs: events.append("all_reduce"),
+    )
+    writer = torch.nn.Linear(3, 2)
+    for parameter in writer.parameters():
+        parameter.grad = torch.ones_like(parameter)
+    runtime = Namespace(
+        args=Namespace(output_dir=tmp_path),
+        context=DistributedContext(0, 0, 2, torch.device("cpu")),
+        writer=writer,
+    )
+
+    rl_loop._all_reduce_writer_gradients(runtime, cycle=3, epoch=1)
+
+    assert events == ["set:rank-0", "wait:rank-0,rank-1", "all_reduce"]
 
 
 def test_flow_credit_information_wall_fails_closed(tmp_path: Path) -> None:

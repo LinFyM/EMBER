@@ -62,6 +62,10 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   外部runtime（尤其`MUJOCO_EGL_DEVICE_ID`）必须解析
   `CUDA_VISIBLE_DEVICES[LOCAL_RANK]`并把映射写入run contract；不得直接把local rank当
   物理卡号，否则非连续选卡会误触未授权或他人占用GPU。
+- outcome决定的rank-local长计算（如只有mixed-reward task才做的credit反向）不得让快
+  rank提前enqueue NCCL collective。每个collective阶段必须先用非NCCL all-rank ready
+  rendezvous确认本地计算全部结束，再让所有rank按同序进入collective；不得用增大或关闭
+  watchdog heartbeat掩盖负载不均造成的提前入场。
 - 多卡任务分配和结果封存必须显式读取本次实际`world_size`并为每个rank生成ownership
   记录，不得保留4卡/8卡等历史默认值后再由launcher要求另一拓扑。整任务LPT或动态
   队列必须覆盖全部rank与全部task，最终聚合必须按实际ownership推导每rank行数；卡数

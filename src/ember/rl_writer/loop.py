@@ -7,6 +7,7 @@ import json
 import math
 import time
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Any, Mapping, Sequence
 
 import torch
@@ -47,15 +48,40 @@ class TaskCycleReplay:
     reward_sum: float
 
 
-def _all_reduce_writer_gradients(runtime: RLWriterRuntime) -> None:
+def _rank_local_credit_ready(
+    runtime: RLWriterRuntime, *, cycle: int, epoch: int
+) -> tuple[Any, Any] | tuple[None, None]:
+    if runtime.context.world_size <= 1:
+        return None, None
+    path = runtime.args.output_dir / (
+        f".rank-local-credit-ready-cycle-{cycle:08d}-epoch-{epoch:04d}"
+    )
+    store = dist.FileStore(str(path), runtime.context.world_size)
+    store.set(f"rank-{runtime.context.rank}", b"ready")
+    store.wait(
+        [f"rank-{rank}" for rank in range(runtime.context.world_size)],
+        timedelta(minutes=30),
+    )
+    return store, path
+
+
+def _all_reduce_writer_gradients(
+    runtime: RLWriterRuntime, *, cycle: int, epoch: int
+) -> None:
     gradients = []
     for parameter in runtime.writer.parameters():
         if parameter.grad is None:
             parameter.grad = torch.zeros_like(parameter)
         gradients.append(parameter.grad)
     flat = torch.cat([gradient.reshape(-1) for gradient in gradients])
+    ready_store, ready_path = _rank_local_credit_ready(
+        runtime, cycle=cycle, epoch=epoch
+    )
     if runtime.context.world_size > 1:
         dist.all_reduce(flat, op=dist.ReduceOp.SUM)
+    del ready_store
+    if runtime.context.is_main and ready_path is not None:
+        ready_path.unlink(missing_ok=True)
     offset = 0
     for gradient in gradients:
         count = gradient.numel()
@@ -434,7 +460,7 @@ def _learning_epochs(
                     totals[name] = max(totals[name], observed[name])
                 else:
                     totals[name] += observed[name]
-        _all_reduce_writer_gradients(runtime)
+        _all_reduce_writer_gradients(runtime, cycle=cycle, epoch=epoch)
         grad_norm = torch.nn.utils.clip_grad_norm_(
             runtime.writer.parameters(),
             float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"]),

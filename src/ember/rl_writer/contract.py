@@ -98,6 +98,8 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         or int(policy.get("replan_steps", -1)) != 5
         or int(parallel.get("maximum_world_size", -1)) != 6
         or int(parallel.get("global_tasks_per_outer_cycle", -1)) != 24
+        or parallel.get("credit_collective_readiness")
+        != "shared_filestore_all_rank_ready_after_local_backward_before_each_nccl_gradient_sum"
     ):
         raise RewardProtocolError("Flow-Credit information or execution wall changed")
 

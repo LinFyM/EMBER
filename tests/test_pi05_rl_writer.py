@@ -27,6 +27,12 @@ from ember.rl_writer.contract import (
     reward_tasks,
     schedule_summary,
 )
+from ember.rl_writer.progress_credit import (
+    PROGRESS_DIAGNOSTIC_ROW_SCHEMA,
+    binary_first_progress_advantages,
+    semantic_progress_utilities,
+    summarize_progress_diagnostic,
+)
 from ember.rl_writer.training import build_parser
 from ember.writer.as_sampling import TeacherVideoSchedule
 from ember.writer.model import WriterModelError
@@ -43,13 +49,16 @@ def test_flow_credit_config_closes_actions_and_keeps_both_outcomes() -> None:
     assert config["algorithm"]["rollouts_per_task_condition"] == 4
     assert config["algorithm"]["flow_mc_samples"] == 4
     assert config["algorithm"]["retain_success_and_failure_prefixes"] is True
-    assert config["algorithm"]["task_advantage"] == "leave_one_out_binary_return"
+    assert config["algorithm"]["task_advantage"] == (
+        "binary_loo_mixed_zero_all_success_semantic_loo_all_failure"
+    )
+    assert config["algorithm"]["semantic_encoder_frozen_after_coldstart"] is True
     assert config["information_wall"]["teacher_action_reads_after_coldstart"] == 0
     assert config["parallel"]["maximum_world_size"] == 6
     assert config["parallel"]["credit_collective_readiness"].startswith(
         "shared_filestore_all_rank_ready"
     )
-    assert config["formal_run"]["status"].startswith("pending")
+    assert config["formal_run"]["status"].startswith("blocked")
 
 
 def test_full24_schedule_is_exact_and_horizon_balanced_for_bci_topologies() -> None:
@@ -170,23 +179,113 @@ def test_flow_credit_information_wall_fails_closed(tmp_path: Path) -> None:
         load_rl_writer_config(path)
 
 
-def test_profile_runtime_uses_actual_divisor_world_size() -> None:
+def test_diagnostic_runtime_is_read_only_and_profile_stays_blocked() -> None:
     config = load_rl_writer_config(CONFIG)
     context = DistributedContext(0, 0, 6, torch.device("cpu"), 0, (0,))
     args = Namespace(
         stage="development",
-        mode="profile",
+        mode="diagnostic",
         total_cycles=None,
         checkpoint_cycles=None,
         stop_after_cycle=None,
         learning_epochs=None,
         resume=None,
     )
-    assert resolve_runtime(args, config, context) == (1, (1,), 2)
+    assert resolve_runtime(args, config, context) == (1, (1,), 0)
     assert args.stop_after_cycle == 1
     invalid = DistributedContext(0, 0, 5, torch.device("cpu"), 0, (0,))
     with pytest.raises(RewardProtocolError, match="divide train24"):
         resolve_runtime(args, config, invalid)
+    args.mode = "profile"
+    args.stop_after_cycle = None
+    with pytest.raises(RewardProtocolError, match="awaits the read-only gate"):
+        resolve_runtime(args, config, context)
+
+
+def test_semantic_progress_projection_and_binary_precedence() -> None:
+    teacher_start = torch.zeros((2, 3))
+    teacher_goal = torch.tensor([[1.0, 0, 0], [0, 2.0, 0]])
+    starts = torch.zeros((3, 2, 3))
+    terminals = torch.stack(
+        (
+            teacher_goal,
+            -teacher_goal,
+            teacher_goal * 0.5,
+        )
+    )
+    utilities, energy = semantic_progress_utilities(
+        teacher_start,
+        teacher_goal,
+        starts,
+        terminals,
+        epsilon=1e-6,
+    )
+    torch.testing.assert_close(energy, torch.tensor([1.0, 4.0]))
+    torch.testing.assert_close(
+        utilities, torch.tensor([1.0, -1.0, 0.5]), atol=2e-6, rtol=0
+    )
+
+    mixed, mode = binary_first_progress_advantages(
+        torch.tensor([1.0, 0.0, 1.0, 0.0]),
+        torch.tensor([-1.0, 1.0, -1.0, 1.0]),
+    )
+    assert mode == "mixed_binary"
+    torch.testing.assert_close(
+        mixed, torch.tensor([2 / 3, -2 / 3, 2 / 3, -2 / 3])
+    )
+    all_success, mode = binary_first_progress_advantages(
+        torch.ones(4), torch.arange(4, dtype=torch.float32)
+    )
+    assert mode == "all_success_zero"
+    assert not bool(all_success.any())
+    all_failure, mode = binary_first_progress_advantages(
+        torch.zeros(4), torch.tensor([0.0, 0.1, 0.2, 0.3])
+    )
+    assert mode == "all_failure_semantic"
+    torch.testing.assert_close(
+        all_failure,
+        torch.tensor([-0.2, -0.06666667, 0.06666667, 0.2]),
+    )
+
+
+def test_progress_diagnostic_gates_are_joint_and_pre_registered() -> None:
+    config = load_rl_writer_config(CONFIG)
+    task_ids = list(range(21)) + [36, 38, 39]
+    rows = []
+    for ordinal, task_id in enumerate(task_ids):
+        if ordinal < 14:
+            success_count = 3 if ordinal < 2 else 2
+        elif ordinal < 19:
+            success_count = 4
+        else:
+            success_count = 0
+        for cursor in range(4):
+            success = cursor < success_count
+            utility = 0.8 + 0.02 * cursor if success else 0.1 * cursor
+            rows.append(
+                {
+                    "schema_version": PROGRESS_DIAGNOSTIC_ROW_SCHEMA,
+                    "global_task_id": task_id,
+                    "rollout_cursor": cursor,
+                    "success": success,
+                    "utility_correct": utility,
+                    "utility_wrong": utility - 0.4,
+                    "utility_shuffled": utility - 0.3,
+                    "utility_reversed": utility - 0.5,
+                    "teacher_change_energy": 1.0,
+                    "observer_repeat_max_abs": 0.0,
+                    "pixel_change_rms": (0.2, 0.4, 0.1, 0.3)[cursor],
+                }
+            )
+    result = summarize_progress_diagnostic(
+        rows,
+        gates=config["progress_credit"]["diagnostic_gates"],
+    )
+    assert result["successes"] == 50
+    assert result["mixed_tasks"] == 14
+    assert result["all_success_tasks"] == result["all_failure_tasks"] == 5
+    assert result["passed"]
+    assert all(result["gates"].values())
 
 
 def test_metrics_reconcile_on_complete_cycle_cursor(tmp_path: Path) -> None:
@@ -253,7 +352,7 @@ def test_inference_recomputes_full24_checkpoint_schedule(
         "information_wall": config["information_wall"],
         "tasks": [task.__dict__ for task in tasks],
         "trainable": {
-            "object": "shared_task_relative_reward_trained_writer_only",
+            "object": "shared_task_grounded_progress_credit_writer_downstream_only",
             "coldstart_teacher_action_phase_closed": True,
         },
         "runtime": {"world_size": 6, "checkpoint_cycles": [1]},

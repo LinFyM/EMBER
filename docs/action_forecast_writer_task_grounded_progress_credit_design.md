@@ -152,6 +152,8 @@ correct/wrong/shuffled/reversed counterfactual utility和必要的pixel-change n
 
 以下门在看到新utility前预注册，全部通过才允许Writer-update profile：
 
+0. **paired K4身份门**：同一AS125确定性重放必须保持50/96 successes、14 mixed、
+   5 all-success和5 all-failure；否则先裁决environment/policy pairing，不能解释utility。
 1. **finite/content门**：24/24 correct teacher directions finite，且每task总teacher
    change energy严格大于`1e-6`；重复同输入forward的utility绝对差不超过`1e-5`。
 2. **binary agreement门**：step125的mixed tasks中，至少`10/14`满足success mean
@@ -255,4 +257,3 @@ novelty只有在机制门和正式结果成立后才能主张。
 5. 若任一预注册门失败，封存负结果并重新分析，不启动Writer update；
 6. 全部门通过后才实现/运行一个全新Writer-update profile；
 7. profile再决定formal训练预算和paired correct400评测。
-

@@ -44,6 +44,13 @@
   agreement、all-failure dispersion、correct/wrong/shuffled/reversed与pixel nuisance五门
   全过后，才允许新的Writer-update profile。不得恢复normalized-video-time、teacher
   action/privileged state、LIBERO特化规则或从任何profile checkpoint续训。
+- 只读实现已原位接入唯一`train_rl_writer.py --mode diagnostic`：fresh incompatible
+  config/schema、rollout起点/真实terminal agentview retention、冻结semantic encoder、
+  correct/wrong/shuffled/reversed utility、6-rank ownership与联合gate seal均已完成。
+  diagnostic路径固定0 optimizer updates、0 Writer backward、0 checkpoint；未过门前
+  `profile/formal`由config contract拒绝。聚焦reward/RL及evaluation相关CPU回归合计
+  `23+53 passed`，compileall通过，architecture guard无hard violation；尚无GPU utility
+  结果或性能结论。
 
 ### 已封存的step0--100证据链
 

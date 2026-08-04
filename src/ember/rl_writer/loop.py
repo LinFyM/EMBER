@@ -48,6 +48,17 @@ class TaskCycleReplay:
     reward_sum: float
 
 
+@dataclass
+class CollectedTaskTrajectories:
+    task: RewardTask
+    demo_index: int
+    adapter_sha256: str
+    frames: torch.Tensor
+    frame_indices: torch.Tensor
+    state: dict[str, torch.Tensor]
+    trajectories: list[RewardTrajectory]
+
+
 def _rank_local_credit_ready(
     runtime: RLWriterRuntime, *, cycle: int, epoch: int
 ) -> tuple[Any, Any] | tuple[None, None]:
@@ -106,6 +117,7 @@ def _writer_state(
     indices = frame_indices.to(device, non_blocking=True)
     offsets = torch.tensor([0, frames.shape[0]], dtype=torch.long, device=device)
     runtime.writer.train(train)
+    runtime.writer.semantic_encoder.eval()
     context = torch.enable_grad() if train else torch.inference_mode()
     with context, torch.autocast(device_type="cuda", dtype=torch.bfloat16):
         state = runtime.writer(
@@ -225,11 +237,11 @@ def _old_loss_matrix(
     return result
 
 
-def _install_and_collect(
+def collect_task_trajectories(
     runtime: RLWriterRuntime,
     task: RewardTask,
     cycle: int,
-) -> TaskCycleReplay:
+) -> CollectedTaskTrajectories:
     demo = runtime.video_schedule.demo_for_task_visit(task.global_task_id, cycle)
     video = runtime.video_store.load(task.global_task_id, demo)
     frames = torch.from_numpy(video.frames)
@@ -277,7 +289,7 @@ def _install_and_collect(
         )
         row = {
             **trajectory.ledger_row(),
-            "schema_version": "ember_pi05_task_relative_flow_credit_rollout_v2",
+            "schema_version": str(runtime.config["algorithm"]["rollout_schema"]),
             "failure_replay_retained": True,
             "producer_rank": runtime.context.rank,
             "outer_cycle": cycle,
@@ -288,6 +300,24 @@ def _install_and_collect(
             runtime.args.output_dir, f"task_{task.global_task_id:03d}", row
         )
         trajectories.append(trajectory)
+    return CollectedTaskTrajectories(
+        task=task,
+        demo_index=demo,
+        adapter_sha256=adapter_sha,
+        frames=frames,
+        frame_indices=frame_indices,
+        state=state,
+        trajectories=trajectories,
+    )
+
+
+def _install_and_collect(
+    runtime: RLWriterRuntime,
+    task: RewardTask,
+    cycle: int,
+) -> TaskCycleReplay:
+    collected = collect_task_trajectories(runtime, task, cycle)
+    trajectories = collected.trajectories
     batch, episode_ids, successes = complete_trajectory_batch(
         trajectories, torch.device("cpu")
     )
@@ -295,7 +325,7 @@ def _install_and_collect(
     old_losses = (
         _old_loss_matrix(
             runtime,
-            state=state,
+            state=collected.state,
             batch=batch,
             task=task,
             cycle=cycle,
@@ -305,10 +335,10 @@ def _install_and_collect(
     )
     return TaskCycleReplay(
         task=task,
-        demo_index=demo,
-        adapter_sha256=adapter_sha,
-        frames=frames,
-        frame_indices=frame_indices,
+        demo_index=collected.demo_index,
+        adapter_sha256=collected.adapter_sha256,
+        frames=collected.frames,
+        frame_indices=collected.frame_indices,
         batch=batch,
         episode_ids=episode_ids,
         successes=successes,
@@ -441,6 +471,7 @@ def _learning_epochs(
     rows = []
     for epoch in range(runtime.learning_epochs):
         runtime.writer.train()
+        runtime.writer.semantic_encoder.eval()
         runtime.optimizer.zero_grad(set_to_none=True)
         totals = {
             "objective": 0.0,
@@ -575,7 +606,7 @@ def _publish_summary(runtime: RLWriterRuntime) -> None:
         write_json_atomic(
             runtime.args.output_dir / "run_summary.json",
             {
-                "schema_version": "ember_pi05_task_relative_flow_credit_summary_v2",
+                "schema_version": "ember_pi05_task_grounded_progress_credit_summary_v1",
                 "contract_sha256": runtime.contract_sha256,
                 "complete": runtime.next_cycle == runtime.total_cycles,
                 "next_cycle": runtime.next_cycle,

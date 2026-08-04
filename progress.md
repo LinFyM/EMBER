@@ -16,6 +16,12 @@ GPU范围和训练步长是当时快照；活动状态只取
   Action-Expert interaction的teacher/rollout首尾内容delta构造bounded potential；先跑
   预注册只读五门，未过门不得启动Writer更新。mixed binary信用不变、all-success为0，
   仅all-failure允许semantic LOO；profile仍必须从AS125 fresh且不得续权重。
+- canonical实现已升为fresh progress-credit schema并接入同一launcher的只读
+  `diagnostic`模式：rollout只额外保留旋转后agentview起点/terminal RGB，observer永久
+  冻结且不接收action/proprio；六rank payload联合计算paired K4、content、binary
+  agreement、all-failure dispersion、三种视频反事实与pixel nuisance门。diagnostic固定
+  0 optimizer/backward/checkpoint，profile/formal当前fail-close。23项reward/RL与53项
+  evaluation/model聚焦回归通过，compileall通过，architecture guard无hard violation。
 
 - 同一AS root从step100 exact-resume到125：60,000累计queries、3,000 videos、125
   finite macros，segment wall`806.928s`；step125 checkpoint、metrics125 rows与summary

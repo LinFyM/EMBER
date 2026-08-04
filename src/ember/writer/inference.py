@@ -40,7 +40,7 @@ from ember.writer.video_schedule import (
 
 
 WRITER_ADAPTER_SCHEMA = "ember_pi05_v6_relative_flow_writer_eval_adapter_v1"
-RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_task_relative_flow_credit_eval_adapter_v2"
+RL_WRITER_ADAPTER_SCHEMA = "ember_pi05_task_grounded_progress_credit_eval_adapter_v1"
 WRITER_ADAPTER_SCHEMAS = {WRITER_ADAPTER_SCHEMA, RL_WRITER_ADAPTER_SCHEMA}
 WRITER_VIDEO_CONDITIONS = {
     "correct",

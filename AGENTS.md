@@ -191,6 +191,11 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   Writer梯度。若过门，AS125 semantic encoder与source policy永久冻结，只训练Writer
   下游Core/Procedure/compiler/factor；mixed binary保持旧LOO、all-success零梯度、仅
   all-failure使用bounded semantic utility LOO。profile权重仍禁止续训。
+- canonical config/schema与同一`train_rl_writer.py --mode diagnostic`只读路径已实现；
+  diagnostic只保存96-row utility evidence、0 optimizer/backward/checkpoint，`profile`与
+  `formal`在机制门封存前fail-close。observer只从trajectory显式保留的起点/terminal
+  agentview读取RGB，public action replay和proprio不进入其forward。下一步是clean commit
+  后的live A40最小vertical path与完整AS125 K4只读裁决，不是Writer update。
 - step50首次credit阶段因outcome-skewed rank-local反向耗时不均，让0-mixed快rank提前
   enqueue NCCL all-reduce并被480秒watchdog终止；96条pre-update ledger仍完整但没有
   参数更新。`e5bca71`在每轮本地反向后增加独立FileStore all-rank-ready，再统一进入

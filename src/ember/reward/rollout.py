@@ -72,6 +72,17 @@ def _flow_noise(
     ).to(device=device)
 
 
+def _agentview_uint8(observation: Mapping[str, Any]) -> torch.Tensor:
+    """Copy only the rotated third-person RGB used by the progress observer."""
+
+    value = np.asarray(observation.get("agentview_image"))
+    if value.ndim != 3 or value.shape[-1] != 3 or value.dtype != np.uint8:
+        raise RewardProtocolError("LIBERO progress observer lost agentview RGB")
+    return torch.from_numpy(
+        np.ascontiguousarray(value[::-1, ::-1].transpose(2, 0, 1))
+    )
+
+
 class RandomResetEnvironmentPool:
     """Lazily retain one raw LIBERO environment per task without init-state access."""
 
@@ -142,6 +153,8 @@ class RewardTrajectory:
     observations: tuple[dict[str, torch.Tensor], ...]
     action_chunks: tuple[torch.Tensor, ...]
     valid_action_steps: tuple[int, ...]
+    progress_start_frame: torch.Tensor | None = None
+    progress_terminal_frame: torch.Tensor | None = None
 
     def ledger_row(self) -> dict[str, Any]:
         return {
@@ -237,6 +250,8 @@ def _trajectory_result(
     observations: Sequence[dict[str, torch.Tensor]],
     action_chunks: Sequence[torch.Tensor],
     valid_action_steps: Sequence[int],
+    progress_start_frame: torch.Tensor | None = None,
+    progress_terminal_frame: torch.Tensor | None = None,
 ) -> RewardTrajectory:
     return RewardTrajectory(
         suite=suite,
@@ -255,6 +270,8 @@ def _trajectory_result(
         observations=tuple(observations),
         action_chunks=tuple(action_chunks),
         valid_action_steps=tuple(valid_action_steps),
+        progress_start_frame=progress_start_frame,
+        progress_terminal_frame=progress_terminal_frame,
     )
 
 
@@ -350,6 +367,7 @@ def collect_randomized_reward_trajectory(
         dummy=dummy,
         steps=dummy_settling_steps,
     )
+    progress_start_frame = _agentview_uint8(observation)
 
     policy.reset()
     observations: list[dict[str, torch.Tensor]] = []
@@ -395,6 +413,7 @@ def collect_randomized_reward_trajectory(
 
     if not initial_observation_sha256:
         raise RewardProtocolError("PI05 reward trajectory made no policy observation")
+    progress_terminal_frame = _agentview_uint8(observation)
     if not success and not retain_failure_replay:
         observations.clear()
         action_chunks.clear()
@@ -416,6 +435,8 @@ def collect_randomized_reward_trajectory(
         observations=observations,
         action_chunks=action_chunks,
         valid_action_steps=valid_action_steps,
+        progress_start_frame=progress_start_frame,
+        progress_terminal_frame=progress_terminal_frame,
     )
 
 

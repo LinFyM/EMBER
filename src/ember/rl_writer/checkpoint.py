@@ -28,9 +28,9 @@ from ember.writer.as_sampling import TeacherVideoSchedule
 from ember.writer.model import CompleteLoRAWriter
 
 
-RL_WRITER_CHECKPOINT_SCHEMA = "ember_pi05_task_relative_flow_credit_checkpoint_v2"
-RL_WRITER_TRAINER_SCHEMA = "ember_pi05_task_relative_flow_credit_trainer_state_v2"
-RL_WRITER_RANK_SCHEMA = "ember_pi05_task_relative_flow_credit_rank_state_v2"
+RL_WRITER_CHECKPOINT_SCHEMA = "ember_pi05_task_grounded_progress_credit_checkpoint_v1"
+RL_WRITER_TRAINER_SCHEMA = "ember_pi05_task_grounded_progress_credit_trainer_state_v1"
+RL_WRITER_RANK_SCHEMA = "ember_pi05_task_grounded_progress_credit_rank_state_v1"
 
 
 def _rng_state(context: DistributedContext) -> dict[str, Any]:
@@ -214,7 +214,7 @@ def _publish_checkpoint(
     write_json_atomic(
         output_dir / "latest_checkpoint.json",
         {
-            "schema_version": "ember_pi05_task_relative_flow_credit_latest_v2",
+            "schema_version": "ember_pi05_task_grounded_progress_credit_latest_v1",
             "next_cycle": next_cycle,
             "path": str(final),
             "checkpoint_manifest_sha256": sha256_file(

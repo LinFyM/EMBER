@@ -158,6 +158,13 @@ def test_random_reset_rollout_settles_then_executes_five_step_replans() -> None:
     assert [event for event, _ in env.events[12:]] == ["policy"] * 7
     assert trajectory.success and trajectory.steps == 7
     assert trajectory.valid_action_steps == (5, 2)
+    assert trajectory.progress_start_frame is not None
+    assert trajectory.progress_terminal_frame is not None
+    assert trajectory.progress_start_frame.dtype == torch.uint8
+    assert trajectory.progress_terminal_frame.dtype == torch.uint8
+    assert not torch.equal(
+        trajectory.progress_start_frame, trajectory.progress_terminal_frame
+    )
     assert len(trajectory.policy_noise_seeds) == 2
     assert policy.num_steps == [10, 10]
     assert not torch.equal(policy.noises[0], policy.noises[1])

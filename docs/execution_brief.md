@@ -32,6 +32,11 @@
   都只读纯task language和旋转后agentview RGB，以task-token patch evidence和固定
   Action-Expert interaction的首尾内容delta计算bounded potential。mixed binary信用不变，
   all-success为0，仅all-failure使用semantic LOO；Writer部署输入和one-shot合同不变。
+- canonical config已升为fresh progress-credit schema，唯一launcher新增`diagnostic`模式。
+  它只做同一AS125 K4 rollout与utility/counterfactual seal，明确写入0 optimizer、0
+  backward、0 checkpoint；`profile/formal`当前均fail-close。CPU聚焦合同`23+53 passed`、
+  compileall通过且architecture guard无hard violation；下一操作是clean commit后先做
+  live GPU最小vertical path，再做完整六卡只读K4。
 
 - Policy-Target-Owned Factor本轮已完成并负裁决；此前暂停已由owner解除。其源码不再
   是canonical活动路径，历史结果只由Git、artifact与design authority保留；不能resume

@@ -53,6 +53,10 @@ runner、split、路径或 GPU 权限。
   rollout首尾内容delta建立bounded start-relative potential；mixed binary优先、
   all-success零梯度、仅all-failure semantic LOO。禁止normalized-video-time、teacher
   action、privileged state和LIBERO特化规则。
+- [x] 原位实现fresh incompatible config/schema与唯一launcher的`diagnostic`模式：显式
+  保留rollout起点/terminal agentview，冻结AS125 semantic encoder，计算correct/wrong/
+  shuffled/reversed utility并按实际world size封存；0 optimizer/backward/checkpoint，
+  未过门前profile/formal fail-close。聚焦CPU合同`23+53 passed`且architecture无hard。
 - [ ] 先做只读机制profile，要求success/failure有方向一致的分离、all-failure task内有
   非退化相对次序、correct优于wrong/shuffled/reversed且pixel/长度/帧ordinal不能单独
   预测score；过门后才允许Writer更新与paired screen/correct400，长期single-checkpoint

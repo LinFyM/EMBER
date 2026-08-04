@@ -121,13 +121,29 @@ def _optimizer(
     writer: CompleteLoRAWriter, config: Mapping[str, Any]
 ) -> torch.optim.Optimizer:
     values = config["optimization"]["optimizer"]
+    parameters = [value for value in writer.parameters() if value.requires_grad]
+    if not parameters:
+        raise RewardProtocolError("progress-credit Writer has no trainable downstream")
     return torch.optim.AdamW(
-        writer.parameters(),
+        parameters,
         lr=float(config["optimization"]["learning_rate"]),
         betas=tuple(values["betas"]),
         eps=float(values["eps"]),
         weight_decay=float(values["weight_decay"]),
     )
+
+
+def _prepare_progress_optimizer(
+    writer: CompleteLoRAWriter,
+    coldstart: Mapping[str, Any],
+    config: Mapping[str, Any],
+) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LRScheduler]:
+    if coldstart.get("mode") != "writer_weight_warm_start":
+        raise RewardProtocolError("Flow-Credit requires an independent AS cold start")
+    for parameter in writer.semantic_encoder.parameters():
+        parameter.requires_grad_(False)
+    optimizer = _optimizer(writer, config)
+    return optimizer, torch.optim.lr_scheduler.LambdaLR(optimizer, lambda _: 1.0)
 
 
 def rank_ledger_summary(runtime: RLWriterRuntime, next_cycle: int) -> dict[str, Any]:
@@ -348,10 +364,30 @@ def _publish_runtime_contract(
     learning_epochs: int,
     libero_paths: Mapping[str, Any],
 ) -> tuple[dict[str, Any], str]:
+    trainable_names = sorted(
+        name for name, value in models.writer.named_parameters() if value.requires_grad
+    )
+    frozen_observer_names = sorted(
+        f"semantic_encoder.{name}"
+        for name, value in models.writer.semantic_encoder.named_parameters()
+        if not value.requires_grad
+    )
     trainable = {
         **models.trainable,
-        "object": "shared_task_relative_reward_trained_writer_only",
+        "object": "shared_task_grounded_progress_credit_writer_downstream_only",
         "coldstart_teacher_action_phase_closed": True,
+        "semantic_encoder_frozen": True,
+        "rl_trainable_parameter_count": sum(
+            value.numel() for value in models.writer.parameters() if value.requires_grad
+        ),
+        "rl_trainable_parameter_name_count": len(trainable_names),
+        "rl_trainable_parameter_names_sha256": canonical_hash(trainable_names),
+        "progress_observer_parameter_count": sum(
+            value.numel() for value in models.writer.semantic_encoder.parameters()
+        ),
+        "progress_observer_parameter_names_sha256": canonical_hash(
+            frozen_observer_names
+        ),
     }
     contract = build_contract(
         args=args,
@@ -412,10 +448,9 @@ def build_runtime(
         models.writer,
         str(models.trainable["lora_contract_sha256"]),
     )
-    if coldstart.get("mode") != "writer_weight_warm_start":
-        raise RewardProtocolError("Flow-Credit requires an independent AS cold start")
-    optimizer = _optimizer(models.writer, config)
-    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda _: 1.0)
+    optimizer, scheduler = _prepare_progress_optimizer(
+        models.writer, coldstart, config
+    )
     paths = _prepare_libero_paths(args, context)
 
     tasks = reward_tasks(config)

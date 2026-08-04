@@ -29,8 +29,8 @@ from ember.writer.topology import visible_physical_cuda_index
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RL_WRITER_CONFIG_SCHEMA = "ember_pi05_task_relative_flow_credit_writer_v2"
-RL_WRITER_LAUNCH_SCHEMA = "ember_pi05_task_relative_flow_credit_launch_v2"
+RL_WRITER_CONFIG_SCHEMA = "ember_pi05_task_grounded_progress_credit_writer_v1"
+RL_WRITER_LAUNCH_SCHEMA = "ember_pi05_task_grounded_progress_credit_launch_v1"
 _SCHEDULE_TAG = 0xF10C0ED
 
 
@@ -61,46 +61,71 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
     environment = config.get("environment", {})
     policy = config.get("policy", {})
     parallel = config.get("parallel", {})
-    if (
-        config.get("sealed_stage") != "development"
-        or wall.get("writer_input")
-        != "pure task language plus exactly one action-hidden teacher video"
-        or wall.get("development_reward_split_roles") != ["train"]
-        or wall.get("development_video_split_roles") != ["train"]
-        or any(
-            int(wall.get(name, -1)) != 0
-            for name in (
-                "teacher_action_reads_after_coldstart",
-                "validation_reward_reads",
-                "validation_action_reads",
-                "test_reward_reads",
-                "test_action_reads",
-                "fixed_pruned_init_reads",
-            )
-        )
-        or algorithm.get("name")
-        != "task_relative_on_policy_fpo_plus_writer_v1"
-        or int(algorithm.get("rollouts_per_task_condition", -1)) != 4
-        or int(algorithm.get("flow_mc_samples", -1)) != 4
-        or algorithm.get("task_advantage") != "leave_one_out_binary_return"
-        or algorithm.get("retain_success_and_failure_prefixes") is not True
-        or algorithm.get("executed_action_prefix_only") is not True
-        or algorithm.get("gradient_synchronization")
-        != "full24_equal_task_manual_sum_after_local_backward"
-        or algorithm.get("teacher_actions", True) is not False
-        or algorithm.get("critic", True) is not False
-        or environment.get("official_random_bddl_reset") is not True
-        or environment.get("fixed_pruned_init_states") is not False
-        or int(environment.get("dummy_settling_steps", -1)) != 10
-        or environment.get("horizons") != SUITE_HORIZONS
-        or int(policy.get("chunk_size", -1)) != 50
-        or int(policy.get("num_inference_steps", -1)) != 10
-        or int(policy.get("replan_steps", -1)) != 5
-        or int(parallel.get("maximum_world_size", -1)) != 6
-        or int(parallel.get("global_tasks_per_outer_cycle", -1)) != 24
-        or parallel.get("credit_collective_readiness")
-        != "shared_filestore_all_rank_ready_after_local_backward_before_each_nccl_gradient_sum"
-    ):
+    observed = {
+        "stage": config.get("sealed_stage"),
+        "writer_input": wall.get("writer_input"),
+        "reward_roles": wall.get("development_reward_split_roles"),
+        "video_roles": wall.get("development_video_split_roles"),
+        "observer_input": wall.get("progress_observer_input"),
+        "algorithm": algorithm.get("name"),
+        "rollouts": int(algorithm.get("rollouts_per_task_condition", -1)),
+        "flow_mc": int(algorithm.get("flow_mc_samples", -1)),
+        "advantage": algorithm.get("task_advantage"),
+        "rollout_schema": algorithm.get("rollout_schema"),
+        "freeze_observer": algorithm.get("semantic_encoder_frozen_after_coldstart"),
+        "retain_both": algorithm.get("retain_success_and_failure_prefixes"),
+        "executed_only": algorithm.get("executed_action_prefix_only"),
+        "gradient_sync": algorithm.get("gradient_synchronization"),
+        "teacher_actions": algorithm.get("teacher_actions", True),
+        "critic": algorithm.get("critic", True),
+        "random_reset": environment.get("official_random_bddl_reset"),
+        "fixed_states": environment.get("fixed_pruned_init_states"),
+        "settling": int(environment.get("dummy_settling_steps", -1)),
+        "horizons": environment.get("horizons"),
+        "chunk": int(policy.get("chunk_size", -1)),
+        "inference_steps": int(policy.get("num_inference_steps", -1)),
+        "replan": int(policy.get("replan_steps", -1)),
+        "max_world": int(parallel.get("maximum_world_size", -1)),
+        "global_tasks": int(parallel.get("global_tasks_per_outer_cycle", -1)),
+        "credit_ready": parallel.get("credit_collective_readiness"),
+    }
+    expected = {
+        "stage": "development",
+        "writer_input": "pure task language plus exactly one action-hidden teacher video",
+        "reward_roles": ["train"],
+        "video_roles": ["train"],
+        "observer_input": "pure task language plus teacher and rollout agentview RGB only",
+        "algorithm": "task_grounded_semantic_progress_fpo_plus_writer_v1",
+        "rollouts": 4,
+        "flow_mc": 4,
+        "advantage": "binary_loo_mixed_zero_all_success_semantic_loo_all_failure",
+        "rollout_schema": "ember_pi05_task_grounded_progress_credit_rollout_v1",
+        "freeze_observer": True,
+        "retain_both": True,
+        "executed_only": True,
+        "gradient_sync": "full24_equal_task_manual_sum_after_local_backward",
+        "teacher_actions": False,
+        "critic": False,
+        "random_reset": True,
+        "fixed_states": False,
+        "settling": 10,
+        "horizons": SUITE_HORIZONS,
+        "chunk": 50,
+        "inference_steps": 10,
+        "replan": 5,
+        "max_world": 6,
+        "global_tasks": 24,
+        "credit_ready": "shared_filestore_all_rank_ready_after_local_backward_before_each_nccl_gradient_sum",
+    }
+    zero_reads = (
+        "teacher_action_reads_after_coldstart",
+        "validation_reward_reads",
+        "validation_action_reads",
+        "test_reward_reads",
+        "test_action_reads",
+        "fixed_pruned_init_reads",
+    )
+    if observed != expected or any(int(wall.get(name, -1)) != 0 for name in zero_reads):
         raise RewardProtocolError("Flow-Credit information or execution wall changed")
 
 
@@ -110,6 +135,26 @@ def load_rl_writer_config(path: Path) -> dict[str, Any]:
         raise RewardProtocolError("unsupported task-relative Flow-Credit config")
     _validate_authorities(config)
     _validate_information_wall(config)
+    progress = config.get("progress_credit", {})
+    if (
+        progress.get("observer")
+        != "as125_frozen_writer_semantic_encoder_task_patch_plus_fixed_action_expert_interaction"
+        or progress.get("teacher_frames") != "real_first_and_real_last"
+        or progress.get("rollout_frames")
+        != "post_settling_start_and_true_terminal"
+        or progress.get("normalization") != "per_component_rms"
+        or progress.get("projection")
+        != "teacher_change_energy_weighted_cosine_times_clipped_relative_magnitude"
+        or progress.get("episode_utility")
+        != "terminal_start_relative_content_projection"
+        or progress.get("counterfactuals") != ["wrong", "shuffled", "reversed"]
+        or min(
+            float(progress.get("normalization_epsilon", 0)),
+            float(progress.get("projection_epsilon", 0)),
+        )
+        <= 0
+    ):
+        raise RewardProtocolError("task-grounded progress credit contract changed")
     tasks = reward_tasks(config)
     if len(tasks) != 24 or {task.split_role for task in tasks} != {"train"}:
         raise RewardProtocolError("Flow-Credit development task split changed")
@@ -238,16 +283,28 @@ def resolve_runtime(
         raise RewardProtocolError("only development Flow-Credit is authorized")
     if context.world_size not in {1, 2, 3, 4, 6}:
         raise RewardProtocolError("Flow-Credit world size must divide train24 and be <=6")
-    source = config["formal_run"] if args.mode == "formal" else config["profile_defaults"]
-    if args.mode == "formal" and source.get("status") != "sealed":
-        raise RewardProtocolError("formal Flow-Credit awaits the live profile seal")
+    sources = {
+        "diagnostic": config["diagnostic_defaults"],
+        "profile": config["profile_defaults"],
+        "formal": config["formal_run"],
+    }
+    source = sources[args.mode]
+    expected_status = "sealed_read_only" if args.mode == "diagnostic" else "sealed"
+    if source.get("status") != expected_status:
+        message = (
+            "progress-credit profile awaits the read-only gate"
+            if args.mode == "profile"
+            else "formal Flow-Credit awaits the live profile seal"
+        )
+        raise RewardProtocolError(message)
     total = int(args.total_cycles or source["total_cycles"])
     checkpoints = _checkpoint_cycles(
         args.checkpoint_cycles or source["checkpoint_cycles"], total
     )
     stop = int(args.stop_after_cycle or total)
     epochs = int(args.learning_epochs or source["learning_epochs"])
-    if not 0 < stop <= total or stop not in checkpoints or not 1 <= epochs <= 4:
+    valid_epochs = epochs == 0 if args.mode == "diagnostic" else 1 <= epochs <= 4
+    if not 0 < stop <= total or stop not in checkpoints or not valid_epochs:
         raise RewardProtocolError("invalid Flow-Credit segment or learning epochs")
     if args.mode == "formal":
         expected = (
@@ -321,6 +378,7 @@ def build_contract(
         "data": dict(config["data"]),
         "optimization": dict(config["optimization"]),
         "rng": dict(config["rng"]),
+        "progress_credit": dict(config["progress_credit"]),
         "tasks": [task.__dict__ for task in tasks],
         "trainable": dict(trainable),
         "runtime": {

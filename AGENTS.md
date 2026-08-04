@@ -20,8 +20,10 @@ A100 80GB配置；任何适配不得悄悄改变sealed scientific contract。不
 重构条件生成方向的存储与组合，并允许配套修改训练方式。仍须服从实时BCI设备边界、
 最多6张空闲卡、信息墙、single-checkpoint裁决和不使用subagent的要求。效率优先，
 只保留会改变实验可信度的聚焦检查，不用重复全量hash或无关旧artifact复核拖慢推进。
-Semantic Direction Store正式训练、四点rollout和winner全部内部分析完成后，owner最新
-要求先暂停了解推进现状；没有owner新指示前不得启动下一架构、训练、评测或GPU分析。
+Semantic Direction Store正式训练、四点rollout和winner全部内部分析完成后owner曾
+要求暂停；2026-08-04 owner已明确恢复长期推进，并要求后续科学问题自行深入分析，
+无需为中间判断请求确认。该授权允许继续设计、实现、profile、正式训练、严格配对评测
+和内部分析，但不改变上述设备、信息墙、single-checkpoint、不使用subagent与安全边界。
 
 ## Efficiency and validation boundary
 
@@ -105,12 +107,13 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 27. `docs/action_forecast_writer_semantic_factor_basis_design.md`
 28. `docs/action_forecast_writer_variance_reduced_functional_estimator_design.md`
 29. `docs/action_forecast_writer_semantic_direction_store_design.md`
-30. `task_plan.md`
-31. `findings.md`
-32. `progress.md`
-33. `docs/concept.md`
-34. `docs/decisions_and_open_questions.md`
-35. `docs/novelty_and_landscape.md`
+30. `docs/action_forecast_writer_target_owned_factor_design.md`
+31. `task_plan.md`
+32. `findings.md`
+33. `progress.md`
+34. `docs/concept.md`
+35. `docs/decisions_and_open_questions.md`
+36. `docs/novelty_and_landscape.md`
 
 本post-seal分支已完成Target-Bound裁决并打开Semantic Factor-Basis；修改或运行前
 仍必须完整阅读Target-Bound与Semantic Factor-Basis两份design。历史CV/Target-Bound
@@ -120,6 +123,23 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 不得恢复为活动实现，也不得混入MemLLM。
 
 ## Current focused task
+
+- 当前canonical候选是Policy-Target-Owned Factor Writer。两套direct rank-128
+  Source-SFT复核证明near-rank1不是根因；更稳定的差异是SFT在policy targets间形成
+  可复现的层能量与方向专门化，而Direction Store/SFB把q/v各层硬压为近同向、近均匀
+  模板。精确证据和禁调项见
+  `docs/action_forecast_writer_target_owned_factor_design.md`。
+- 新架构保留Target-Bound Core/private A/E/D/rank-last路径，76个public A/B tensors
+  各自拥有完整bias-free`1024→256→width`head；不加rank/正交/层能量loss、SFT teacher、
+  task-ID或static bypass。Writer参数合同`47,857,920`，AS与后续reward gradient共享
+  同一参数化。
+- 活动源码/config/schema/internal analysis已原位替换Direction Store，旧实现只由
+  Git/frozen artifacts保存。CPU/config聚焦合同已通过；尚无A40 profile、formal或
+  rollout结果。下一步必须clean commit/push并live选择最多六张空闲A40，完成
+  longest105、logical B20/B2、fresh0→1/exact-resume1→3后才可fresh0→200。
+- 正式首段保持full24 raw mean、B20、fast-decay400、每25保存；paired评测
+  50/100/150/200。不得从Direction Store checkpoint warm-start，不得强制SFT几何或
+  用functional loss选择checkpoint；长期single-checkpoint correct严格超过150仍未完成。
 
 - Semantic Direction Store已从clean`91feeef`完成fresh0→200与四点严格配对
   correct400：`129/107/120/129`，breadth=`7/7/7/5`。macro50与200同分但前者breadth
@@ -134,8 +154,8 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   不是继续增加store、调K/route或放大scalar。
 - 六卡内部分析的assignment与final sealing已由`f82c7cd`/`a115b06`绑定实际
   `world_size`并在真实6-rank、8-task、5-condition规模通过；多卡长期规则见上文。
-- owner要求完成rollout和全部分析后先暂停了解现状。当前不启动下一架构、训练目标、
-  训练、评测或GPU分析，等待owner明确继续指示；长期Goal仍未完成。
+- Direction Store阶段的暂停已由2026-08-04新授权解除；上述结果只作负裁决和新设计
+  证据，不能恢复其active router/store或checkpoint。
 
 - Semantic Factor-Basis完整correct400曲线为
   `69/91/118/127/117/81/126/120`；single winner仍是macro200=`127`，八点

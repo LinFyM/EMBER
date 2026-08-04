@@ -1,14 +1,13 @@
-"""Single-source contract for the semantic direction-store Writer."""
+"""Single-source contract for the policy-target-owned Writer."""
 
 from __future__ import annotations
 
-import math
 from typing import Any, Mapping
 
 
-SEMANTIC_DIRECTION_STORE_WRITER_PARAMETER_COUNT = 37_355_776
+TARGET_OWNED_FACTOR_WRITER_PARAMETER_COUNT = 47_857_920
 
-SEMANTIC_DIRECTION_STORE_WRITER_CONSTRUCTOR_KEYS = frozenset(
+TARGET_OWNED_FACTOR_WRITER_CONSTRUCTOR_KEYS = frozenset(
     {
         "image_width",
         "expert_width",
@@ -26,10 +25,6 @@ SEMANTIC_DIRECTION_STORE_WRITER_CONSTRUCTOR_KEYS = frozenset(
         "program_blocks",
         "compiler_heads",
         "factor_hidden_width",
-        "direction_store_count",
-        "direction_store_top_k",
-        "direction_store_centers",
-        "direction_anchor_mean",
         "initialization_seed",
         "activation_checkpointing",
     }
@@ -51,12 +46,10 @@ WRITER_DIMENSION_CONTRACT = {
     "program_blocks": 2,
     "compiler_heads": 8,
     "factor_hidden_width": 256,
-    "direction_store_count": 8,
-    "direction_store_top_k": 2,
 }
 
 _STATIC_WRITER_CONTRACT: dict[str, Any] = {
-    "architecture": "pi05_semantic_direction_store_program_v1",
+    "architecture": "pi05_target_owned_factor_program_v1",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -111,37 +104,32 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "core_reader": "38_target_raw_core_reads_before_dynamic_binding",
     "program_coordinate_reader": "38x16_private_Action_Effect_Change_history_reads",
     "reader_softmax": "independent_core_Action_Effect_Change_normalizers",
-    "coordinate_mixer": "fixed_task_language_top2_complete_direction_stores",
+    "coordinate_mixer": "none_policy_target_owned_factor_decode",
     "coordinate_identity_path": "normalized_target_and_rank_qk_only",
     "compiler_heads": 8,
     "factor_input": "raw_target_core_Action_Effect_Change_concat_width1024",
     "factor_head_bias": False,
     "factor_hidden_width": 256,
-    "direction_store_count": 8,
-    "direction_store_top_k": 2,
-    "direction_route_anchor": "train24_mean_centered_frozen_base_text_task_span_mean_l2",
-    "direction_route_fit": "train24_language_only_seed7_spherical_kmeans",
-    "direction_route_weights": "fixed_equal_top2",
-    "factor_value_path": "top2_complete_independent_1024_256_output_direction_stores",
+    "factor_parameter_ownership": "one_complete_independent_head_per_public_lora_tensor",
+    "factor_head_count": 76,
+    "factor_value_path": "target_coordinate_to_private_1024_256_output_head",
     "factor_final_projection": "exact_zero_initialization",
     "initialization_seed": 7,
 }
 
 
 def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
-    """Return the exact direction-store payload while preserving route data."""
+    """Return the exact target-owned payload."""
 
     return {
         **_STATIC_WRITER_CONTRACT,
         "frame_stride": writer["frame_stride"],
         "max_frames_per_encoder_call": writer["max_frames_per_encoder_call"],
-        "direction_store_centers": writer["direction_store_centers"],
-        "direction_anchor_mean": writer["direction_anchor_mean"],
     }
 
 
 def validate_writer_dimensions(observed: Mapping[str, Any]) -> None:
-    """Reject constructor values outside the canonical direction-store topology."""
+    """Reject constructor values outside the canonical target-owned topology."""
 
     changed = {
         name: (WRITER_DIMENSION_CONTRACT[name], observed.get(name))
@@ -149,23 +137,4 @@ def validate_writer_dimensions(observed: Mapping[str, Any]) -> None:
         if observed.get(name) != WRITER_DIMENSION_CONTRACT[name]
     }
     if changed:
-        raise ValueError(f"invalid EMBER semantic direction-store dimensions: {changed}")
-    centers = observed.get("direction_store_centers")
-    anchor_mean = observed.get("direction_anchor_mean")
-    if (
-        not isinstance(centers, list)
-        or len(centers) != WRITER_DIMENSION_CONTRACT["direction_store_count"]
-        or any(
-            not isinstance(center, list)
-            or len(center) != WRITER_DIMENSION_CONTRACT["image_width"]
-            or any(not math.isfinite(float(value)) for value in center)
-            for center in centers
-        )
-    ):
-        raise ValueError("invalid EMBER semantic direction-store centers")
-    if (
-        not isinstance(anchor_mean, list)
-        or len(anchor_mean) != WRITER_DIMENSION_CONTRACT["image_width"]
-        or any(not math.isfinite(float(value)) for value in anchor_mean)
-    ):
-        raise ValueError("invalid EMBER semantic direction-store anchor mean")
+        raise ValueError(f"invalid EMBER target-owned dimensions: {changed}")

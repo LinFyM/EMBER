@@ -1,12 +1,37 @@
 # EMBER Progress Ledger
 
-最后更新：2026-08-03。
+最后更新：2026-08-04。
 
 阅读规则：本文按时间顺序保留真实执行状态。早期段落中的“当前”“下一步”、
 GPU范围和训练步长是当时快照；活动状态只取
 `docs/a100_to_bci_migration_handoff.md`、`docs/active_session_handoff.md`和本文顶部
 最新段落，
 不能用旧快照覆盖后续owner决定。
+
+## 2026-08-04 owner恢复推进与Policy-Target-Owned Factor实现
+
+- owner明确授权恢复长期目标，后续科学问题自行深入分析并继续，不为中间判断再次
+  请求确认；仍不使用subagent。当前先完成设计/实现，尚未启动GPU或新formal run。
+- CPU直接读取两套现有rank-128 Source-SFT step400，按gauge-invariant `BA`复核谱与
+  target/layer能量。两套SFT均由q-dominant低秩更新主导，但层能量profile高度稳定且
+  异质：q/v profile Pearson`.9931/.9904`、rank correlation均`.9835`、对应target BA
+  cosine`.8450/.8529`。该证据把问题从“增加effective rank”改写为“解除factor
+  decoder跨policy-target硬共享”。
+- 新authority为
+  `docs/action_forecast_writer_target_owned_factor_design.md`。保留Target-Bound的
+  mean-backed Core、private A/E/D causal Program、38-target/16-rank reader；每个公开
+  A/B tensor使用独立完整`1024→256→width`head。没有task store、frozen route、谱/正交
+  loss、SFT teacher或static bypass，未来reward gradient可复用同一架构。
+- 唯一canonical路径已原位替换：Direction Router/Store Head、frozen task-anchor
+  forward及其专用internal字段/测试退役；training/eval/checkpoint/internal analysis
+  继续复用原owner并切到fresh schema/config。活动源码相对HEAD净减少334行，不保留
+  parallel runner或compatibility resume。
+- 预期并由模型合同锁定Writer总参数`47,857,920`，其中76个target-owned factor heads
+  `40,517,632`。compileall、config loader/fresh checkpoint family、89项Writer tests和
+  显式BCI assets环境下52项聚焦model/config/eval tests全部通过。
+- 下一步是完成authority更新、clean commit/push，然后按live GPU与quota preflight
+  选择`gpu01`或`gpu02`最多六张空闲卡，重做longest105 B20/B2三macro与exact-resume；
+  profile通过前不启动formal，也不继承Direction Store checkpoint。
 
 ## 2026-08-03 Semantic Direction Store正式裁决、六卡分析与暂停
 

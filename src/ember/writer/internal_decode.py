@@ -9,22 +9,18 @@ import torch
 from ember.writer.model import CompleteLoRAWriter, WriterModelError
 
 
-def decode_direction_stores(
+def decode_target_owned_factors(
     writer: CompleteLoRAWriter,
     coordinates: torch.Tensor,
-    task_anchor: torch.Tensor,
 ) -> dict[str, Any]:
-    """Replay the canonical direction-store decode while retaining stages."""
+    """Replay the canonical target-owned decode while retaining stages."""
 
-    store_indices, store_weights = writer.direction_router(task_anchor)
-    head_rows = {name: [] for name in writer.factor_heads}
+    head_rows = {name: [] for name in writer.FACTOR_WIDTHS}
     factors: dict[str, torch.Tensor] = {}
     public: dict[str, torch.Tensor] = {}
-    for spec in writer.tensor_specs:
+    for spec, head in zip(writer.tensor_specs, writer.factor_heads, strict=True):
         key, target = writer._decoding[spec.name]
-        rows = writer.factor_heads[key](
-            coordinates[:, target], store_indices, store_weights
-        )
+        rows = head(coordinates[:, target])
         head_rows[key].append((target, rows))
         generated = rows.transpose(-1, -2) if spec.transpose_output else rows
         factors[spec.name] = generated
@@ -42,8 +38,6 @@ def decode_direction_stores(
     return {
         "heads": heads,
         "head_target_indices": head_target_indices,
-        "store_indices": store_indices,
-        "store_weights": store_weights,
         "factors": factors,
         "public": public,
     }

@@ -25,7 +25,7 @@ from ember.pi05_source_checkpoint import (
     write_json_atomic,
 )
 from ember.pi05_source_contract import append_jsonl
-from ember.writer.architecture import SEMANTIC_DIRECTION_STORE_WRITER_PARAMETER_COUNT
+from ember.writer.architecture import TARGET_OWNED_FACTOR_WRITER_PARAMETER_COUNT
 from ember.writer.as_config import (
     REPO_ROOT,
     authority_path,
@@ -39,7 +39,7 @@ from ember.writer.topology import validate_task_complete_topology
 from ember.writer.update_contract import build_update_runtime_contract
 
 
-AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_semantic_direction_store_launch_v1"
+AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_target_owned_factor_launch_v1"
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
 
@@ -388,7 +388,7 @@ def writer_trainable_contract(
     parameter_count = sum(value.numel() for value in writer.parameters())
     if (
         not names
-        or parameter_count != SEMANTIC_DIRECTION_STORE_WRITER_PARAMETER_COUNT
+        or parameter_count != TARGET_OWNED_FACTOR_WRITER_PARAMETER_COUNT
         or any(parameter.requires_grad for parameter in policy.parameters())
     ):
         raise WriterModelError("AS-Writer freeze boundary changed")

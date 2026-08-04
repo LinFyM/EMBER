@@ -1,10 +1,23 @@
 # EMBER Current Execution Brief
 
-更新时间：2026-08-03 18:05 UTC。本文是操作层authority；科研结果取
+更新时间：2026-08-04 UTC。本文是操作层authority；科研结果取
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
 ## 0. 当前BCI运行事实（覆盖下文旧A100操作细节）
+
+- owner已恢复推进；当前canonical候选为
+  `configs/pi05_as_writer_target_owned_factor_full24_decay400_bci_v1.json`，架构
+  `pi05_target_owned_factor_program_v1`。76个public A/B tensors各自拥有完整factor
+  head，Writer参数`47,857,920`；旧Direction Store config仅作frozen provenance，
+  当前代码不能resume其checkpoint。
+- 新架构CPU/config/internal路径已完成，尚未做A40 profile或formal。profile必须fresh，
+  先live比较`gpu01/gpu02`并使用最多六张空闲卡；保持logical B20、policy B2、full24
+  raw mean、formal seed`20260722`与一次AdamW。最长105、fresh0→1及exact-resume1→3
+  全部通过且config写回seal后，才可fresh0→200。
+- 新方法不以high rank为目标。direct SFT复核显示有效参考同样低秩，但跨layer/target
+  方向与能量稳定异质；新head ownership允许这种专门化自然学习，不加正交/rank/SFT
+  distillation，也不依赖当前AS objective，后续reward gradient可复用。
 
 - repo：`/data1/user/ymdai/projects/EMBER`，Python环境为项目`.venv`。模型、data、
   tokenizer、checkpoint和output由CLI显式传入；`EMBER_STORAGE_ROOT`、容量上限与

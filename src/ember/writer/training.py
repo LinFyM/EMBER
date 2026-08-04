@@ -70,7 +70,7 @@ from ember.writer.data import (
     WriterTaskAuthority,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
-from ember.writer.architecture import SEMANTIC_DIRECTION_STORE_WRITER_CONSTRUCTOR_KEYS
+from ember.writer.architecture import TARGET_OWNED_FACTOR_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.model import (
     CompleteLoRAWriter,
     WriterModelError,
@@ -160,7 +160,7 @@ def _build_writer(
     writer_config = {
         key: value
         for key, value in config["writer"].items()
-        if key in SEMANTIC_DIRECTION_STORE_WRITER_CONSTRUCTOR_KEYS
+        if key in TARGET_OWNED_FACTOR_WRITER_CONSTRUCTOR_KEYS
     }
     bridge = policy.model.paligemma_with_expert
     writer = CompleteLoRAWriter(
@@ -718,7 +718,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=(
             REPO_ROOT
-            / "configs/pi05_as_writer_semantic_direction_store_full24_decay400_bci_v1.json"
+            / "configs/pi05_as_writer_target_owned_factor_full24_decay400_bci_v1.json"
         ),
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

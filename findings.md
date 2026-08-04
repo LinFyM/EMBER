@@ -6,6 +6,39 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-04 direct SFT几何复核与Policy-Target-Owned Factor决策
+
+- direct Source-SFT并不要求高effective rank。旧八rank correct122与corrected mixed-task
+  correct109的step400 LoRA总norm为`34.4132/35.7362`，38-target mean stable rank为
+  `1.5054/1.5169`，energy-weighted top-singular share为`.9229/.9056`。总能量中
+  q占`.9390/.9249`，而q mean stable rank只有`1.1420/1.1571`；action heads虽rank较高，
+  但只占约`.2%`能量。因此Writer的near-rank1只能作为诊断，不能作为漂移根因。
+- SFT与Writer真正不同的是跨policy-target组织。两套SFT的q/v cross-layer effective-BA
+  cosine约为0，layer-energy CV=`.705/.937`与`.707/1.052`，top-4层占q/v能量
+  `46--59%`；Direction Store/SFB的跨层余弦`.93--.97`、CV`.03--.14`、top-4仅
+  `23--27%`，即后者把各层写成几乎同向且均匀的模板。
+- SFT层专门化不是随机初始化噪声。old/corrected两套独立recipe的q/v energy-profile
+  Pearson为`.99306/.99040`，layer-norm Spearman均`.98349`；q top-4 layers完全一致，
+  v重合3/4。对应target BA cosine均值`.84497/.85290`。action-trained闭环参考因此稳定
+  表现为“target内低秩、target间异质”。
+- 历史所有post-v6 canonical decoders都只有8个factor-family heads。Target-Bound让
+  target先读Core/Program，SFB让target选择hidden basis，Direction Store按task拆完整
+  heads，但每个head内部仍由18个q或v layers共享`W_in/W_out`。尤其zero-init final
+  projection打开时，多layer functional gradients先在同一`W_out`聚合；这是此前从未
+  单独解除的parameter-ownership边界。
+- 新设计不强迫SFT几何。76个public A/B tensors各自拥有完整
+  `1024→256→tensor_width`head；不同heads可自然学成同向，也可专门化。没有谱、正交、
+  rank、层能量loss，没有SFT权重/方向初始化，也没有shared-carrier/innovation手工分解，
+  因而不重演correct34的Target-Spectral或既往prior/innovation变体。
+- 该ownership只依赖base-policy LoRA topology，task/video条件仍全部来自连续
+  `Z=[Core,A,E,D]`；没有task-ID、LIBERO语义桶或static LoRA bank。AS functional
+  gradient和未来rollout reward都可训练同一参数化。完整head而非只拆`W_out`用于首个
+  根因实验，避免negative result仍被shared hidden transform混淆。
+- canonical替换后的理论/实测目标参数为`47,857,920`：factor heads`40,517,632`，其余
+  Writer`7,340,288`。旧Direction Router、八stores和额外frozen task-anchor forward
+  已从active代码退役；Git/frozen config/artifacts保留历史。89项Writer tests及52项
+  config/model/eval focused tests通过，当前尚无A40 profile或closed-loop结果。
+
 ## 2026-08-03 Semantic Direction Store正式负裁决
 
 - clean `91feeef`的fresh0→200严格保持one-shot、logical B20/physical B2、full24 raw

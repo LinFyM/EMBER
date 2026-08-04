@@ -10,7 +10,7 @@ import torch
 from ember.lora import lora_state_sha256
 from ember.writer.internal_compiler import compile_program as _compile
 from ember.writer.internal_decode import (
-    decode_direction_stores as _decode,
+    decode_target_owned_factors as _decode,
     program_row as _program_row,
     state_row as _state,
     tensor_row as _row,
@@ -323,7 +323,7 @@ def capture_writer(
         spans,
     )
     offsets = writer._validated_offsets(offsets_tensor, frames.shape[0])
-    query, x, grounded, action, valid_tokens, task_anchor = captured["encoder"][0]
+    query, x, grounded, action, valid_tokens = captured["encoder"][0]
     packed_x, packed_grounded, packed_action, positions, valid_frames = (
         writer._pack_video_program(
             x, grounded, action, indices, offsets
@@ -389,7 +389,7 @@ def capture_writer(
     )
     compiled["recomputed_coordinates"] = compiled["coordinates"]
     compiled["coordinates"] = captured["compiler"][0]
-    decoded = _decode(writer, compiled["coordinates"], task_anchor)
+    decoded = _decode(writer, compiled["coordinates"])
     parity["public"] = mapping_metrics(canonical, decoded["public"])
     per_tensor = {
         name: relative_metrics(canonical[name], decoded["public"][name])
@@ -414,7 +414,6 @@ def capture_writer(
         "positions": positions,
         "valid_frames": valid_frames,
         "valid_tokens": valid_tokens,
-        "task_anchor": task_anchor,
         "core": core,
         "program": program,
         "compiled": compiled,
@@ -426,7 +425,6 @@ def capture_writer(
 
 def _variant(
     writer: CompleteLoRAWriter,
-    task_anchor: torch.Tensor,
     core: torch.Tensor,
     valid_core: torch.Tensor,
     program: Mapping[str, torch.Tensor],
@@ -447,11 +445,9 @@ def _variant(
         if coordinates is None
         else {"coordinates": coordinates}
     )
-    decoded = _decode(writer, compiled["coordinates"], task_anchor)
+    decoded = _decode(writer, compiled["coordinates"])
     return {
         "coordinates": compiled["coordinates"][0],
-        "store_indices": decoded["store_indices"][0],
-        "store_weights": decoded["store_weights"][0],
         "factor": _state(decoded["factors"], 0),
         "public": _state(decoded["public"], 0),
         "heads": {
@@ -496,7 +492,6 @@ def _reverse_valid_intervals(
 
 def _coordinate_variants(
     writer: CompleteLoRAWriter,
-    task_anchor: torch.Tensor,
     core: torch.Tensor,
     valid_core: torch.Tensor,
     base_program: Mapping[str, torch.Tensor],
@@ -507,7 +502,6 @@ def _coordinate_variants(
     return {
         "coordinate/core_only": _variant(
             writer,
-            task_anchor,
             _row(core),
             _row(valid_core),
             base_program,
@@ -521,7 +515,6 @@ def _coordinate_variants(
         ),
         "coordinate/program_only": _variant(
             writer,
-            task_anchor,
             _row(core),
             _row(valid_core),
             base_program,
@@ -538,7 +531,6 @@ def _coordinate_variants(
 
 def _program_role_variants(
     writer: CompleteLoRAWriter,
-    task_anchor: torch.Tensor,
     core: torch.Tensor,
     valid_core: torch.Tensor,
     program: Mapping[str, Any],
@@ -550,7 +542,6 @@ def _program_role_variants(
     variants = {
         "program_memory/order_reversed": _variant(
             writer,
-            task_anchor,
             _row(core),
             _row(valid_core),
             _program_row(program, 0, memory=reversed_memory),
@@ -561,7 +552,6 @@ def _program_role_variants(
         removed[..., role, :] = 0
         variants[f"program_role/remove_{name}"] = _variant(
             writer,
-            task_anchor,
             _row(core),
             _row(valid_core),
             _program_row(program, 0, memory=removed),
@@ -570,7 +560,6 @@ def _program_role_variants(
         selected[..., role, :] = memory[..., role, :]
         variants[f"program_role/{name}_only"] = _variant(
             writer,
-            task_anchor,
             _row(core),
             _row(valid_core),
             _program_row(program, 0, memory=selected),
@@ -580,7 +569,6 @@ def _program_role_variants(
 
 def _program_input_variants(
     writer: CompleteLoRAWriter,
-    task_anchor: torch.Tensor,
     captured: Mapping[str, Any],
     core: torch.Tensor,
     valid_core: torch.Tensor,
@@ -603,7 +591,6 @@ def _program_input_variants(
         )
         variants[f"program_input/remove_{name}"] = _variant(
             writer,
-            task_anchor,
             _row(core),
             _row(valid_core),
             _program_row(program, 0, raw=changed, memory=contextual),
@@ -619,7 +606,6 @@ def _program_input_variants(
     )
     variants["action_router/zero"] = _variant(
         writer,
-        task_anchor,
         _row(core),
         _row(valid_core),
         {
@@ -633,7 +619,6 @@ def _program_input_variants(
 
 def _condition_variants(
     writer: CompleteLoRAWriter,
-    task_anchor: torch.Tensor,
     core: torch.Tensor,
     valid_core: torch.Tensor,
     program: Mapping[str, Any],
@@ -643,14 +628,12 @@ def _condition_variants(
     for index, condition in enumerate(CONDITIONS):
         variants[f"fixed_core/{condition}"] = _variant(
             writer,
-            task_anchor,
             _row(core),
             _row(valid_core),
             _program_row(program, index),
         )
         variants[f"fixed_program/{condition}"] = _variant(
             writer,
-            task_anchor,
             _row(core, index),
             _row(valid_core, index),
             base_program,
@@ -660,7 +643,6 @@ def _condition_variants(
 
 def _carrier_identity_variants(
     writer: CompleteLoRAWriter,
-    task_anchor: torch.Tensor,
     captured: Mapping[str, Any],
     core: torch.Tensor,
     valid_core: torch.Tensor,
@@ -677,7 +659,7 @@ def _carrier_identity_variants(
             carrier,
         )
         variants[f"core_carrier/{carrier}"] = _variant(
-            writer, task_anchor, changed["final"], _row(valid_core), base_program
+            writer, changed["final"], _row(valid_core), base_program
         )
     target_permutation = torch.roll(
         torch.arange(writer.compiler.target_count, device=core.device), -1
@@ -687,7 +669,6 @@ def _carrier_identity_variants(
     )
     variants["identity/target"] = _variant(
         writer,
-        task_anchor,
         _row(core),
         _row(valid_core),
         base_program,
@@ -695,7 +676,6 @@ def _carrier_identity_variants(
     )
     variants["identity/rank"] = _variant(
         writer,
-        task_anchor,
         _row(core),
         _row(valid_core),
         base_program,
@@ -715,14 +695,12 @@ def counterfactual_states(
     core = captured["core"]["final"]
     valid_core = captured["valid_tokens"]
     program = captured["program"]
-    task_anchor = _row(captured["task_anchor"])
     base_program = _program_row(program, 0)
     recomputed = _variant(
-        writer, task_anchor, _row(core), _row(valid_core), base_program
+        writer, _row(core), _row(valid_core), base_program
     )
     full = _variant(
         writer,
-        task_anchor,
         _row(core),
         _row(valid_core),
         base_program,
@@ -732,25 +710,25 @@ def counterfactual_states(
     variants = {"full": full}
     variants.update(
         _coordinate_variants(
-            writer, task_anchor, core, valid_core, base_program, full
+            writer, core, valid_core, base_program, full
         )
     )
     variants.update(
-        _program_role_variants(writer, task_anchor, core, valid_core, program)
+        _program_role_variants(writer, core, valid_core, program)
     )
     variants.update(
         _program_input_variants(
-            writer, task_anchor, captured, core, valid_core, program
+            writer, captured, core, valid_core, program
         )
     )
     variants.update(
         _condition_variants(
-            writer, task_anchor, core, valid_core, program, base_program
+            writer, core, valid_core, program, base_program
         )
     )
     variants.update(
         _carrier_identity_variants(
-            writer, task_anchor, captured, core, valid_core, base_program
+            writer, captured, core, valid_core, base_program
         )
     )
     if lora_state_sha256(writer.semantic_program.state_dict()) != state_sha256:

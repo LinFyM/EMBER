@@ -1,4 +1,4 @@
-"""Canonical semantic direction-store PI05 Writer."""
+"""Canonical policy-target-owned PI05 Writer."""
 
 from __future__ import annotations
 
@@ -9,8 +9,7 @@ import torch
 
 from ember.pi05_lora import pi05_target_names
 from ember.writer.program_compiler import (
-    SemanticDirectionRouter,
-    SemanticDirectionStoreHead,
+    TargetOwnedFactorHead,
     TargetBoundRoleCompiler,
 )
 from ember.writer.semantic_core import MeanBackedSemanticCore
@@ -22,15 +21,13 @@ class WriterModelError(RuntimeError):
     """Raised when the Writer input or sealed LoRA contract is inconsistent."""
 
 
-def _validate_direction_store_topology(
+def _validate_target_owned_topology(
     tensor_specs: tuple[LoraTensorSpec, ...],
     template_state: Mapping[str, torch.Tensor],
     paligemma_model: torch.nn.Module,
     expert_model: torch.nn.Module,
     dimensions: Mapping[str, int],
-    direction_store_centers: list[list[float]],
-    direction_anchor_mean: list[float],
-) -> tuple[torch.Tensor, torch.Tensor]:
+) -> None:
     """Validate the one canonical Writer topology without branching per field."""
 
     expected = {
@@ -49,11 +46,9 @@ def _validate_direction_store_topology(
         "program_blocks": 2,
         "compiler_heads": 8,
         "factor_hidden_width": 256,
-        "direction_store_count": 8,
-        "direction_store_top_k": 2,
     }
     if dict(dimensions) != expected:
-        raise WriterModelError("invalid semantic direction-store Writer dimensions")
+        raise WriterModelError("invalid target-owned Writer dimensions")
     valid_modules = (
         tensor_specs
         and set(template_state) == {item.name for item in tensor_specs}
@@ -61,18 +56,8 @@ def _validate_direction_store_topology(
         and len(expert_model.layers) == 18
         and {item.rank for item in tensor_specs} == {16}
     )
-    try:
-        centers = torch.as_tensor(direction_store_centers, dtype=torch.float32)
-        anchor_mean = torch.as_tensor(direction_anchor_mean, dtype=torch.float32)
-    except (TypeError, ValueError) as error:
-        raise WriterModelError("invalid semantic direction-store route data") from error
-    if (
-        not valid_modules
-        or centers.shape != (8, 2048)
-        or anchor_mean.shape != (2048,)
-    ):
-        raise WriterModelError("invalid semantic direction-store Writer topology")
-    return centers, anchor_mean
+    if not valid_modules:
+        raise WriterModelError("invalid target-owned Writer topology")
 
 
 @dataclass(frozen=True)
@@ -183,15 +168,11 @@ class CompleteLoRAWriter(torch.nn.Module):
         program_blocks: int,
         compiler_heads: int,
         factor_hidden_width: int,
-        direction_store_count: int,
-        direction_store_top_k: int,
-        direction_store_centers: list[list[float]],
-        direction_anchor_mean: list[float],
         initialization_seed: int,
         activation_checkpointing: bool,
     ) -> None:
         super().__init__()
-        centers, anchor_mean = _validate_direction_store_topology(
+        _validate_target_owned_topology(
             tensor_specs,
             template_state,
             paligemma_model,
@@ -212,11 +193,7 @@ class CompleteLoRAWriter(torch.nn.Module):
                 "program_blocks": program_blocks,
                 "compiler_heads": compiler_heads,
                 "factor_hidden_width": factor_hidden_width,
-                "direction_store_count": direction_store_count,
-                "direction_store_top_k": direction_store_top_k,
             },
-            direction_store_centers,
-            direction_anchor_mean,
         )
         self.tensor_specs = tensor_specs
         self.program_width = int(program_width)
@@ -254,21 +231,13 @@ class CompleteLoRAWriter(torch.nn.Module):
             blocks=program_blocks,
             initialization_seed=initialization_seed + 1,
         )
-        self.direction_router = SemanticDirectionRouter(
-            centers,
-            anchor_mean=anchor_mean,
-            top_k=direction_store_top_k,
-        )
-        self.factor_heads = torch.nn.ModuleDict(
-            {
-                name: SemanticDirectionStoreHead(
-                    4 * program_width,
-                    factor_hidden_width,
-                    width,
-                    direction_store_count,
-                )
-                for name, width in self.FACTOR_WIDTHS.items()
-            }
+        self.factor_heads = torch.nn.ModuleList(
+            TargetOwnedFactorHead(
+                4 * program_width,
+                factor_hidden_width,
+                item.width,
+            )
+            for item in tensor_specs
         )
         self._register_template_state(tensor_specs, template_state)
 
@@ -348,7 +317,6 @@ class CompleteLoRAWriter(torch.nn.Module):
         torch.Tensor,
         torch.Tensor,
         torch.Tensor,
-        torch.Tensor,
     ]:
         batch = len(offsets) - 1
         lengths = tuple(right - left for left, right in zip(offsets, offsets[1:]))
@@ -420,7 +388,6 @@ class CompleteLoRAWriter(torch.nn.Module):
         torch.Tensor,
         torch.Tensor,
         torch.Tensor,
-        torch.Tensor,
     ]:
         offsets = self._validated_offsets(video_offsets, frames.shape[0])
         conditions = len(offsets) - 1
@@ -452,7 +419,6 @@ class CompleteLoRAWriter(torch.nn.Module):
             grounded_evidence,
             action_probes,
             valid_task_tokens,
-            task_anchor,
         ) = self.semantic_encoder(
             policy,
             frames,
@@ -503,7 +469,6 @@ class CompleteLoRAWriter(torch.nn.Module):
             program,
             endpoint_positions,
             valid_intervals,
-            task_anchor,
         )
 
     def forward(
@@ -523,7 +488,6 @@ class CompleteLoRAWriter(torch.nn.Module):
             program,
             endpoint_positions,
             valid_intervals,
-            task_anchor,
         ) = self.encode_task(
             policy,
             frames,
@@ -540,12 +504,11 @@ class CompleteLoRAWriter(torch.nn.Module):
             endpoint_positions,
             valid_intervals,
         )
-        store_indices, store_weights = self.direction_router(task_anchor)
         result: dict[str, torch.Tensor] = {}
-        for item in self.tensor_specs:
-            key, target_index = self._decoding[item.name]
+        for item, head in zip(self.tensor_specs, self.factor_heads, strict=True):
+            _key, target_index = self._decoding[item.name]
             source = coordinates[:, target_index]
-            rows = self.factor_heads[key](source, store_indices, store_weights)
+            rows = head(source)
             generated = rows.transpose(-1, -2) if item.transpose_output else rows
             template = getattr(self, self._template_buffers[item.name])
             value = generated.to(dtype=template.dtype) + template[None]

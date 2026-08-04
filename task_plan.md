@@ -1,12 +1,40 @@
 # EMBER Task Plan
 
-最后更新：2026-08-03 UTC。
+最后更新：2026-08-04 UTC。
 
 本文件只保存尚未完成的长期闭环与当前执行顺序。历史实验过程见
 `findings.md`、`progress.md` 和 Git；实时进程见
 `docs/active_session_handoff.md`；迁移状态见
 `docs/a100_to_bci_migration_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
 runner、split、路径或 GPU 权限。
+
+## 当前BCI Policy-Target-Owned Factor推进（2026-08-04）
+
+- [x] owner恢复长期`>150`目标，要求科学问题自行深入分析后继续推进，不再为中间判断
+  请求确认；继续禁用subagent、保持one-shot与效率优先。
+- [x] 重新分析两套direct rank-128 Source-SFT step400的effective LoRA：两者同样以
+  q-dominant低秩更新为主，排除“Writer near-rank1本身导致漂移”。
+- [x] 确认SFT的policy-target specialization跨配方稳定：q/v layer-energy profile
+  Pearson=`.9931/.9904`、rank correlation均`.9835`，对应target BA cosine均值
+  `.8450/.8529`；而Direction Store的q/v跨层余弦`.93--.97`、能量近uniform。
+- [x] 封存
+  [`docs/action_forecast_writer_target_owned_factor_design.md`](docs/action_forecast_writer_target_owned_factor_design.md)：
+  保留Target-Bound Core/private A-E-D/rank-read，删除task Direction Store；76个公开
+  A/B tensors各自拥有完整bias-free`1024→256→width`head，不加正交/rank/energy约束。
+  机制与AS objective解耦，后续可直接由rollout reward训练。
+- [x] 原位替换唯一canonical Writer、config/schema/checkpoint/inference/internal
+  decode路径；删除只服务Direction Store的额外frozen text-anchor forward和专用测试，
+  不保留并行模型/runner。精确参数预算预期`47,857,920`。
+- [x] compileall、config/fresh checkpoint family和89项Writer focused tests通过；
+  architecture diff净减少334行，无新增hard signal。环境完整评测合同在显式加载
+  `.env.local`资产路径后52/52通过。
+- [ ] 更新当前authority并clean commit/push；随后实时比较`gpu01`/`gpu02`，在最多六张
+  空闲A40上完成longest105、logical B20/B2、fresh0→1/exact-resume1→3 profile。
+- [ ] profile封存后从fresh identity训练0→200、每25保存；严格配对评测
+  50/100/150/200 correct400，并以absolute、breadth、gained/lost和层/target几何决定
+  是否续到400。
+- [ ] winner完成五条件内部分析；只有correct严格超过150且不是static/video-insensitive
+  捷径才进入下一阶段，未通过则按预注册最早失效接口继续根因迭代。
 
 ## 当前BCI Semantic Direction Store推进（2026-08-03）
 

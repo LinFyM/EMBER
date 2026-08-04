@@ -320,42 +320,6 @@ class Pi05SemanticEvidenceEncoder(torch.nn.Module):
         positions = torch.cumsum(text_padding, dim=1) - 1
         return text_embeds, mask, positions, text_padding[:, 1:]
 
-    def _encode_task_anchor(
-        self,
-        core: torch.nn.Module,
-        text_embeds: torch.Tensor,
-        mask: torch.Tensor,
-        positions: torch.Tensor,
-        valid: torch.Tensor,
-    ) -> torch.Tensor:
-        """Read one frozen, checkpoint-invariant language routing anchor."""
-
-        bridge = core.paligemma_with_expert
-        language_model = bridge.paligemma.model.language_model
-        target_dtype = language_model.layers[0].self_attn.q_proj.weight.dtype
-        with torch.no_grad():
-            (base_hidden, base_suffix), _ = bridge.forward(
-                attention_mask=mask,
-                position_ids=positions,
-                past_key_values=None,
-                inputs_embeds=[text_embeds.to(target_dtype), None],
-                use_cache=False,
-                adarms_cond=[None, None],
-            )
-        if (
-            base_suffix is not None
-            or base_hidden.shape
-            != (valid.shape[0], valid.shape[1] + 1, self.image_width)
-        ):
-            raise VideoProgramError("PI05 frozen text anchor layout changed")
-        anchor = (
-            base_hidden[:, 1:].to(torch.float32)
-            .masked_fill(~valid[..., None], 0.0)
-            .sum(dim=1)
-            .div(valid.sum(dim=1, keepdim=True).to(torch.float32))
-        )
-        return F.normalize(anchor, dim=-1)
-
     def _encode_text(
         self,
         core: torch.nn.Module,
@@ -560,8 +524,8 @@ class Pi05SemanticEvidenceEncoder(torch.nn.Module):
         maximum_task_tokens: int,
         *,
         checkpoint_enabled: bool,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Keep the frozen route outside trainable text recomputation."""
+    ) -> torch.Tensor:
+        """Encode the task language through the trainable Meta-LoRA path."""
 
         text_embeds, text_mask, text_positions, text_valid = (
             self._prepare_text_branch(
@@ -571,10 +535,6 @@ class Pi05SemanticEvidenceEncoder(torch.nn.Module):
                 maximum_task_tokens,
             )
         )
-        task_anchor = self._encode_task_anchor(
-            core, text_embeds, text_mask, text_positions, text_valid
-        )
-
         def invoke_text(
             embed_values: torch.Tensor,
             mask_values: torch.Tensor,
@@ -590,7 +550,7 @@ class Pi05SemanticEvidenceEncoder(torch.nn.Module):
             )
 
         arguments = (text_embeds, text_mask, text_positions, text_valid)
-        text_queries = (
+        return (
             checkpoint(
                 invoke_text,
                 *arguments,
@@ -600,7 +560,6 @@ class Pi05SemanticEvidenceEncoder(torch.nn.Module):
             if checkpoint_enabled
             else invoke_text(*arguments)
         )
-        return text_queries, task_anchor
 
     def forward(
         self,
@@ -611,7 +570,6 @@ class Pi05SemanticEvidenceEncoder(torch.nn.Module):
         language_mask: torch.Tensor,
         task_span_mask: torch.Tensor,
     ) -> tuple[
-        torch.Tensor,
         torch.Tensor,
         torch.Tensor,
         torch.Tensor,
@@ -634,7 +592,7 @@ class Pi05SemanticEvidenceEncoder(torch.nn.Module):
             and self.training
             and torch.is_grad_enabled()
         )
-        text_queries, task_anchor = self._encode_language_condition(
+        text_queries = self._encode_language_condition(
             core,
             language_tokens,
             task_span_mask,
@@ -695,5 +653,4 @@ class Pi05SemanticEvidenceEncoder(torch.nn.Module):
             torch.cat(grounded_rows, dim=0),
             torch.cat(interaction_rows, dim=0),
             valid_task_tokens,
-            task_anchor,
         )

@@ -105,17 +105,17 @@ def checkpoint_state_family(config: Mapping[str, Any]) -> str:
 
     training = config["conditioning_training"]
     topology = str(training["update_topology"])
-    semantic_direction_store = (
+    target_owned_factor = (
         config.get("writer", {}).get("architecture")
-        == "pi05_semantic_direction_store_program_v1"
+        == "pi05_target_owned_factor_program_v1"
     )
     task_query_keyed = (
         training.get("policy_randomness_scheme")
         == "task_query_keyed_stateless_policy_cpu_cuda_v2"
     )
     if topology == "task_complete_all_tasks":
-        if semantic_direction_store and task_query_keyed:
-            return "semantic_direction_store_task_query_keyed_rawfull24_v1"
+        if target_owned_factor and task_query_keyed:
+            return "target_owned_factor_task_query_keyed_rawfull24_v1"
         return (
             "cvadr_task_query_keyed_rawfull24_v2"
             if task_query_keyed

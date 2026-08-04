@@ -1,8 +1,32 @@
 # EMBER Active Session Handoff
 
-更新时间：2026-08-03 18:05 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
+更新时间：2026-08-04 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
+
+## 0.0 当前恢复状态：Policy-Target-Owned Factor
+
+- owner已解除Direction Store分析后的暂停，授权继续长期single-checkpoint
+  `correct>150/400`目标，并要求后续科学问题自行深入分析后推进；仍保持strict
+  one-shot、不使用subagent、效率优先及每次live选择`gpu01/gpu02`空闲卡（总数最多6）。
+- 重新复核两套direct rank-128 Source-SFT step400证明near-rank1不是根因。旧/修正SFT
+  的q/v layer-energy profile跨recipe Pearson=`.9931/.9904`、rank correlation均
+  `.9835`，对应target BA cosine均值`.8450/.8529`；它们稳定表现为target内低秩、
+  target间异质。相反Direction Store的q/v跨层余弦`.93--.97`且能量近uniform。
+- 新canonical authority为
+  [`action_forecast_writer_target_owned_factor_design.md`](action_forecast_writer_target_owned_factor_design.md)：
+  保留Target-Bound Core/private A-E-D/rank reader，删除按task路由的Direction Stores；
+  76个公开A/B tensors各自拥有完整bias-free`1024→256→width`head。没有rank/正交/层能量
+  约束、SFT teacher、task-ID或static bypass；同一架构可由AS gradient或未来reward
+  gradient训练。
+- 活动代码/config/schema/internal analysis已原位切换到
+  `pi05_target_owned_factor_program_v1`；旧Direction Router、stores及额外frozen
+  text-anchor forward退役并只由Git/frozen artifacts保存。精确参数合同为
+  `47,857,920`；89项Writer tests和显式BCI assets下52项聚焦tests通过。
+- 当前没有启动新GPU进程，也没有profile/formal/rollout结果。下一操作是完成clean
+  commit/push后live比较两节点，按最多六张空闲A40重做longest105、logical B20/B2、
+  fresh0→1/exact-resume1→3。profile通过后才允许fresh0→200；不继承Direction Store
+  Writer/optimizer/checkpoint。
 
 ## 0. BCI运行交接（优先于下文旧A100操作描述）
 

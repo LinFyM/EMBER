@@ -1,4 +1,4 @@
-"""Canonical no-rollout analysis for the Semantic Direction-Store AS-Writer."""
+"""Canonical no-rollout analysis for the target-owned-factor AS-Writer."""
 
 from __future__ import annotations
 
@@ -61,28 +61,22 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 from ember.writer.validation import _build_models
 
 
-RUN_SCHEMA = "ember_semantic_direction_store_internal_analysis_run_v1"
-RESULT_SCHEMA = "ember_semantic_direction_store_internal_analysis_v1"
-ARCHITECTURE = "pi05_semantic_direction_store_program_v1"
+RUN_SCHEMA = "ember_target_owned_factor_internal_analysis_run_v1"
+RESULT_SCHEMA = "ember_target_owned_factor_internal_analysis_v1"
+ARCHITECTURE = "pi05_target_owned_factor_program_v1"
 PROTECTED = (
     "src/ember/writer/model.py", "src/ember/writer/video_program.py",
     "src/ember/writer/semantic_core.py", "src/ember/writer/semantic_program.py",
     "src/ember/writer/program_compiler.py", "src/ember/writer/architecture.py",
     "src/ember/writer/internal_compiler.py",
     "src/ember/writer/functional.py", "src/ember/lora.py", "src/ember/pi05_lora.py",
-    "configs/pi05_as_writer_semantic_direction_store_full24_decay400_bci_v1.json",
+    "configs/pi05_as_writer_target_owned_factor_full24_decay400_bci_v1.json",
 )
 
 
 def _comparison(writer: CompleteLoRAWriter, reference: Mapping[str, Any], candidate: Mapping[str, Any], reference_action: torch.Tensor, candidate_action: torch.Tensor) -> dict[str, Any]:
     return {
         "coordinates": relative_metrics(reference["coordinates"], candidate["coordinates"]),
-        "direction_store_weights": relative_metrics(
-            reference["store_weights"], candidate["store_weights"]
-        ),
-        "direction_store_ids_equal": bool(
-            torch.equal(reference["store_indices"], candidate["store_indices"])
-        ),
         "factor_heads": mapping_metrics(reference["heads"], candidate["heads"]),
         "factor": mapping_metrics(reference["factor"], candidate["factor"]),
         "public_a": mapping_metrics(reference["public"], candidate["public"], select="a"),
@@ -124,25 +118,10 @@ def _signature(captured: Mapping[str, Any], row: int) -> dict[str, torch.Tensor]
         "core_read": captured["compiled"]["diagnostic"]["core_read"][row].float(),
         "role_read": fixed_sequence(role_read, role_grid),
         "coordinates": captured["compiled"]["coordinates"][row].float(),
-        "task_anchor": captured["task_anchor"][row].float(),
-        "direction_store_weights": captured["decoded"]["store_weights"][row].float(),
     }
     for index, value in enumerate(captured["core"]["blocks"], 1): result[f"core_block_{index}"] = fixed_sequence(value[row], vt)
     for index, value in enumerate(captured["program"]["blocks"], 1): result[f"program_block_{index}"] = fixed_sequence(value[row], program_grid)
     return result
-
-
-def _direction_store_summary(
-    indices: torch.Tensor,
-    weights: torch.Tensor,
-) -> dict[str, Any]:
-    """Report the fixed language route without treating it as generated value."""
-
-    return {
-        "store_indices": indices.to(dtype=torch.long, device="cpu").tolist(),
-        "store_weights": weights.float().cpu().tolist(),
-        "weight_sum": float(weights.float().sum()),
-    }
 
 
 @torch.inference_mode()
@@ -374,13 +353,6 @@ def probe_reference(task: Mapping[str, Any], reference: int, adapters: Mapping[s
     row = {
         "global_task_id": int(task["global_task_id"]), "suite": str(task["suite"]), "task_id": int(task["task_id"]), "reference_ordinal": reference,
         "conditions": metadata, **matched, "canonical_parity": captured["parity"],
-        "direction_store_routing": {
-            condition: _direction_store_summary(
-                captured["decoded"]["store_indices"][index],
-                captured["decoded"]["store_weights"][index],
-            )
-            for index, condition in enumerate(CONDITIONS)
-        },
         "lora_geometry": {condition: lora_geometry(writer, state) for condition, state in zip(CONDITIONS, states, strict=True)},
         "counterfactuals": counterfactuals, "program_memory_counterfactual": program_memory_counterfactual, "rank_gauge": {"permutation": permutation.cpu().tolist(), "raw_changes": raw_changes, "effective_ba_error": gauge_error, "fixed_policy_action_error": relative_metrics(actions[0], gauge_action)},
         "fixed_policy_query": query_identity, "fixed_policy_action_seed": seed, "deterministic_replay": replay_result,
@@ -507,11 +479,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv); repo = Path(__file__).resolve().parents[3]
     allowed_configs = {
-        repo / "configs/pi05_as_writer_semantic_direction_store_full24_decay400_bci_v1.json",
+        repo / "configs/pi05_as_writer_target_owned_factor_full24_decay400_bci_v1.json",
     }
     if args.repo != repo or args.config not in allowed_configs:
         raise WriterModelError(
-            "internal-analysis checkout/config is not canonical semantic direction-store"
+            "internal-analysis checkout/config is not canonical target-owned factor"
         )
     context = initialize_distributed(); visible = os.environ.get("CUDA_VISIBLE_DEVICES", "").split(",")
     if context.world_size != 6 or len(visible) != 6 or len(set(visible)) != 6:

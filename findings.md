@@ -6,6 +6,33 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-05 AS125与binary-only Flow-Credit负裁决
+
+- 同一fresh v6 AS root exact-resume100→125，累计60,000 queries、3,000 one-video
+  conditions、125 finite full24 macros；本段wall`806.928s`，step125 checkpoint完整，
+  0 OOM/clip与0 validation/test action reads。第一次resume漏传sealed`--num-workers 0`
+  而在step101前fail-close，未污染训练状态；补齐CLI后原root完成。
+- step125 K4为50/96 successes、19/24 coverage、14 mixed、5 all-success、5
+  all-failure；suite success=`11/20/12/7`、coverage=`5/6/5/3`。相对step100严格配对
+  gained/lost/retained/both-fail=`10/12/40/34`，task5/29新获coverage，全失败为
+  task4/20/36/38/39。task36/38/39在五个K4点均0/4，不能再假设同一AS自然补齐门。
+- 两轮profile credit ratio=`[.98710,1.01237]`/`[.76458,1.10147]`、grad=
+  `.03615/.05310`、clip0，peak reserved=`40,338,718,720` bytes，完整cycle1 checkpoint
+  与0 watchdog；工程健康不等于binary reward对全任务有credit，profile权重弃用。
+- step100/125内部审计48/48 rows，wall`194.743s`、peak reserved`19,306,381,312`
+  bytes，0 target-action/validation/test reads。norm中位`99.18→109.11`，stable rank
+  `1.000176→1.000262`，但video energy`.1300%→.1154%`、demo1 BA
+  `.0475→.0448`、fixed-action demo`.0101→.0086`均未增强；BA/action churn仍
+  `.536/.138`。
+- 全24任务success变化与video-energy变化Spearman=`-.521,p=.0090`，与BA churn
+  `=.416,p=.0430`。新增coverage task5/29的video-energy中位`.1154%`，持续全失败组
+  `.2101%`；后者demo1 BA差异`.0681`、churn`.5851`也更大。条件差异存在且更大，却
+  不知道朝哪个policy方向有效，是比rank/scale/存储容量更早的失败接口。
+- binary-only Task-Relative Flow-Credit正式负裁决，不启动formal RL、不续AS150。
+  下一候选必须以teacher-video内容中的语义状态变化给failure trajectory排序，并保持
+  binary success最高优先级；不得恢复v4 normalized-video-progress时钟或使用teacher
+  action、privileged state、任务特化dense reward。
+
 ## 2026-08-04 v6 cold-start四点LoRA与video-to-action审计
 
 - clean`2b775f0`完成step25/50/75/100×24 train tasks正式内部审计，96/96 rows、

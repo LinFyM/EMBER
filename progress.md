@@ -1,12 +1,32 @@
 # EMBER Progress Ledger
 
-最后更新：2026-08-04。
+最后更新：2026-08-05。
 
 阅读规则：本文按时间顺序保留真实执行状态。早期段落中的“当前”“下一步”、
 GPU范围和训练步长是当时快照；活动状态只取
 `docs/a100_to_bci_migration_handoff.md`、`docs/active_session_handoff.md`和本文顶部
 最新段落，
 不能用旧快照覆盖后续owner决定。
+
+## 2026-08-05 AS125、K4、两点内部审计与binary-only负裁决
+
+- 同一AS root从step100 exact-resume到125：60,000累计queries、3,000 videos、125
+  finite macros，segment wall`806.928s`；step125 checkpoint、metrics125 rows与summary
+  完整，0 OOM/clip和0 validation/test action reads。首次命令漏传`--num-workers 0`
+  被resume contract在step101前拒绝；补齐完整命令后成功，未产生污染checkpoint。
+- live比较两节点后在`gpu01:1,2,3,4,5,7`完成step125 K4 profile，root为
+  `runs/outputs/pi05_rl_writer_relative_flow_profile_from_v6_macro125_r6_bci_6fe4e52_20260805`。
+  96 rollouts、24,600 actions、50 successes、19/24 coverage、14 mixed；相对step100
+  gained/lost/retained/both-fail=`10/12/40/34`，静态身份与共同noise prefix严格一致。
+- 两epoch ratio/grad finite、clip0；实际mixed负载不均下两轮FileStore ready→NCCL顺序
+  正常，完整cycle1 checkpoint、0 watchdog。profile GPU自然释放，权重禁止续训。
+- 同一clean commit完成step100/125两点内部审计：48 rows、6 rank payloads、wall
+  `194.743s`、peak reserved`19,306,381,312` bytes、0 target-action/validation/test reads。
+  norm增大但video/action条件差异不增；success变化与video-energy变化显著负相关，持续
+  全失败tasks反而变化更大。binary-only Flow-Credit据此负裁决，不续AS150或formal RL。
+- 下一步先设计并profile teacher-video语义状态变化credit；必须对全失败trajectory给出
+  content-grounded相对次序，同时证明score不由轨迹长度或teacher帧ordinal时钟解释。
+  只有机制门通过才做Writer update与paired closed-loop评测，长期`>150`目标不变。
 
 ## 2026-08-04 Policy-Target-Owned Factor训练、rollout、内部分析与暂停
 

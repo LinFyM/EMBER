@@ -1,27 +1,32 @@
 # EMBER Current Execution Brief
 
-更新时间：2026-08-04 UTC。本文是操作层authority；科研结果取
+更新时间：2026-08-05 UTC。本文是操作层authority；科研结果取
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
 ## 0. 当前BCI运行事实（覆盖下文旧A100操作细节）
 
-- 当前操作主线已切换到Task-Relative Flow-Credit Writer。AS侧恢复唯一v6 Writer并做
-  fresh独立cold start；reward侧不再做success-filtered self-imitation，而是保留成功和
-  失败executed prefixes，用同task K4 leave-one-out binary advantage、per-sample
-  old/current CFM ratio、positive PPO与negative SPO更新Writer。精确科研合同见
+- Task-Relative Flow-Credit Writer的binary-only阶段已完成并负裁决。AS侧恢复唯一v6
+  Writer做fresh独立cold start；reward侧保留成功和失败executed prefixes，以同task K4
+  leave-one-out binary advantage、per-sample old/current CFM ratio、positive PPO与
+  negative SPO做健康profile，但24-task coverage始终未过。当前操作主线是先封存
+  teacher-video内容型failure credit的新authority和只读机制门；精确历史合同见
   `docs/action_forecast_writer_relative_flow_credit_design.md`。
 - BCI A40六卡AS profile和独立exact-resume已通过：logical B20/B2、最长105帧、三步
   `33.464/30.886/30.977s`，峰值allocated/reserved
   `34,948,858,880/44,816,138,240` bytes；fresh0→1/resume1→3保持1,440 queries、72
   videos与五主block可达。sealed config为
   `configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json`。
-- fresh AS同一root已完成0→100：100个full24宏步、48,000 queries、2,400 one-shot
-  videos、0 OOM/clip，step100原子checkpoint见第0.1/0.2节。canonical step100 reward
-  profile完成96条pre-update K4 rollout：52 successes、17/24 tasks至少一次成功、11个
-  mixed tasks；aggregate继续上升但coverage从step75的18回落17。正式RL不启动，任何RL
-  profile checkpoint均不得当作cold start继续；下一正式动作是四点LoRA/视频到action
-  内部审计。
+- fresh AS同一root已完成0→125：125个full24宏步、60,000 queries、3,000 one-shot
+  videos、0 OOM/clip，step125原子checkpoint完整。五点K4 success=
+  `25/38/47/52/50`、coverage=`12/14/18/17/19`；step125有14 mixed、5 all-success、5
+  all-failure，相对step100 gained/lost=`10/12`。task36/38/39五点始终0/4，binary-only
+  24-task exit gate正式未过；任何RL profile checkpoint均不得当作cold start继续。
+- step100/125两点内部审计显示norm继续增大，但video energy、demo间BA与fixed-action
+  demo差异都未增强；success变化与video-energy变化Spearman=`-.521,p=.0090`，持续
+  全失败组反而具有更大的条件差异。下一操作不是续AS或启动binary-only formal RL，
+  而是先封存teacher-video内容型失败轨迹credit的设计和只读机制诊断；禁止normalized
+  video-time时钟、teacher action、privileged state或LIBERO特化reward。
 
 - Policy-Target-Owned Factor本轮已完成并负裁决；此前暂停已由owner解除。其源码不再
   是canonical活动路径，历史结果只由Git、artifact与design authority保留；不能resume

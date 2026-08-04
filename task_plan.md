@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-最后更新：2026-08-04 UTC。
+最后更新：2026-08-05 UTC。
 
 本文件只保存尚未完成的长期闭环与当前执行顺序。历史实验过程见
 `findings.md`、`progress.md` 和 Git；实时进程见
@@ -42,10 +42,17 @@ runner、split、路径或 GPU 权限。
 - [x] 完成AS step25/50/75/100的96-row真实BA谱、rank/能量、same-video与固定action
   审计：near-rank1为历史复核，video能量约`.13%`平台且失败tasks变化不更小；order到
   action路径有效。拒绝rank/scale/store小改，正式RL仍受coverage门约束。
-- [ ] exact-resume同一AS root 100→125并重做严格K4；只在24-task reward support过门后
-  seal正式Relative-Flow recipe，否则继续裁决cold-start/credit而不继承profile update。
-- [ ] coverage与内部条件写出证据支持后seal正式recipe，做两个outer cycles与paired
-  screen/correct400，持续以single checkpoint strict`>150/400`为最低成功门。
+- [x] exact-resume同一AS root 100→125并重做严格K4：50/96 success、19/24 coverage、
+  14 mixed；相对step100 gained/lost=`10/12`，task5/29新获coverage但5个task仍全失败。
+- [x] 完成step100/125两点条件写出审计：norm继续增大但video-energy和demo→action差异
+  不增；success变化与video-energy变化显著负相关，binary-only Flow-Credit正式负裁决，
+  不继承profile update、不续AS150、不启动formal outer cycles。
+- [ ] 封存task-grounded、policy-aware的teacher-video内容credit设计：只用action-hidden
+  teacher video与rollout observations比较语义状态变化，binary success词典序优先；禁止
+  normalized-video-time、teacher action、privileged state和LIBERO特化规则。
+- [ ] 先做只读机制profile，要求success/failure有方向一致的分离、all-failure task内有
+  非退化相对次序、长度/帧ordinal不能单独预测score；过门后才允许Writer更新与paired
+  screen/correct400，长期single-checkpoint strict`>150/400`不变。
 
 ## 历史BCI Policy-Target-Owned Factor推进（2026-08-04）
 

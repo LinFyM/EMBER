@@ -1,12 +1,48 @@
 # EMBER Active Session Handoff
 
-更新时间：2026-08-04 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
+更新时间：2026-08-05 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：AS已到step100但coverage回落17/24，先审计LoRA条件写出
+## 0.0 当前状态：AS125仍只有19/24 coverage，binary-only credit负裁决
 
-- owner已恢复持续推进并要求科学/工程问题自行深入分析。当前唯一活动方法为
+- 同一fresh v6 AS root已从step100 exact-resume到125：累计60,000 logical queries、
+  3,000 one-video conditions和125个finite full24 macros；本段wall`806.928s`，0
+  OOM/clip、0 validation/test action reads，完整checkpoint为
+  `checkpoints/step_00000125`。第一次resume命令漏传sealed`--num-workers 0`，在step101
+  前被contract拒绝且未写metrics/checkpoint；补齐完整CLI后原root正常完成。
+- step125 reward profile root为
+  `runs/outputs/pi05_rl_writer_relative_flow_profile_from_v6_macro125_r6_bci_6fe4e52_20260805`：
+  96条K4 ledger、24,600 actions、50 successes、19/24 coverage、14 mixed、5
+  all-success、5 all-failure；suite success spatial/object/goal/libero10=`11/20/12/7`，
+  coverage=`5/6/5/3`。全失败task=`4/20/36/38/39`。相对step100严格配对静态身份和共同
+  policy-noise prefix全部一致，gained/lost/retained/both-fail=`10/12/40/34`；task5/29
+  新获coverage且没有旧coverage完全掉出，但24-task门仍未过。
+- 五点K4 success=`25/38/47/52/50`、coverage=`12/14/18/17/19`。task36/38/39在全部
+  五点均0/4；task4在25/50有成功后连续归零，task20在50/75有成功后连续归零。因此
+  继续同一AS轴没有足够依据，binary-only正式RL不启动，所有profile cycle1权重弃用。
+- step125两epoch ratio范围=`[.98710,1.01237]`与`[.76458,1.10147]`，mean近1、clip均0、
+  grad norm=`.03615/.05310`，peak reserved=`40,338,718,720` bytes；两轮FileStore
+  all-rank-ready、完整cycle1 checkpoint和0 watchdog/OOM/nonfinite。实现健康不改变
+  科学coverage负裁决。
+- clean`6fe4e52`上的step100/125两点内部审计root为
+  `runs/outputs/pi05_as_writer_v6_relative_flow_coldstart_internal_audit_step100_125_r6_6fe4e52_20260805`：
+  48/48 rows、6 rank payloads、wall`194.743s`、peak reserved`19,306,381,312` bytes，
+  0 target-action/validation/test reads。norm中位`99.18→109.11`，但same-task video
+  energy`.1300%→.1154%`、demo1 BA差异`.0475→.0448`、fixed-action demo差异
+  `.0101→.0086`均未增强；BA/action churn仍为`.536/.138`。
+- 全24任务中success变化与video-energy变化Spearman=`-.521,p=.0090`，与BA churn
+  `=.416,p=.0430`。新增coverage task5/29的step125 video-energy中位`.1154%`，持续
+  全失败组反而`.2101%`；后者demo1 BA差异和churn也更大。现有Writer不是不会生成差异，
+  而是binary reward无法为失败轨迹判别这些差异是否朝teacher所示目标状态推进。
+- 下一活动阶段是设计并先诊断task-grounded、policy-aware的teacher-video内容credit：
+  只比较teacher与rollout的语义状态变化，为同为binary failure的轨迹提供相对次序；
+  binary success保持最高优先级。不得恢复v4式normalized-video-progress时钟、读取teacher
+  action/privileged state、加入LIBERO任务特化规则或直接跳到未经机制门的正式训练。
+
+### 已封存的step0--100证据链
+
+- owner已恢复持续推进并要求科学/工程问题自行深入分析。当时唯一活动方法为
   `docs/action_forecast_writer_relative_flow_credit_design.md`：恢复v6条件生成路径做
   fresh独立AS cold start，随后关闭teacher action入口，以full24 official random-reset
   reward、同task K4 leave-one-out advantage和per-CFM-sample PPO/SPO ratio训练Writer。

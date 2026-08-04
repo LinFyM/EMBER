@@ -137,12 +137,13 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 
 ## Current focused task
 
-- 当前唯一活动方法是Task-Relative Flow-Credit Writer，authority为
-  `docs/action_forecast_writer_relative_flow_credit_design.md`。它恢复历史single
-  checkpoint最强且时序路径已验证的v6 Writer作为独立AS cold start，随后永久关闭
-  teacher action入口，用24 train tasks的official random-reset binary reward、同task
-  K4 leave-one-out advantage和per-CFM-sample old/current ratio训练Writer。不得恢复旧
-  success-filtered Writer-RL、flat task-local RL、Target-Owned或Direction Store活动路径。
+- Task-Relative Flow-Credit Writer的binary-only阶段已按
+  `docs/action_forecast_writer_relative_flow_credit_design.md`完成并负裁决：它恢复历史
+  single-checkpoint最强且时序路径已验证的v6 Writer做独立AS cold start，随后永久关闭
+  teacher action入口，但24 train tasks的official random-reset binary reward与同task
+  K4 leave-one-out仍无法覆盖全任务。当前活动工作是先封存teacher-video内容型failure
+  credit的新design authority和只读机制门，再决定是否训练；不得恢复旧success-filtered
+  Writer-RL、flat task-local RL、Target-Owned或Direction Store活动路径。
 - canonical实现已原位替换旧RL路径：success与failure executed prefixes均保留；正
   advantage用PPO clip，负advantage用SPO pullback；Nmc4、full24等权、最多6 ranks、
   deferred NCCL和完整cycle exact-resume。source policy与normalization冻结，Writer输入
@@ -152,14 +153,15 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   `34,948,858,880/44,816,138,240` bytes，0 OOM/clip。独立fresh0→1再exact-resume1→3
   通过，累计1,440 queries/72 videos，五个主block到step3均可达，source trainable=0。
 - sealed AS config是`configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json`；同一
-  fresh root已exact-resume到macro100，共48,000 queries/2,400 videos。step100的K4
-  pre-update ledger为52/96 successes、17/24 task coverage、11 mixed；相对step75严格
-  配对gained/lost=`14/9`，aggregate净增5但task20失去coverage，breadth从18回落17，
-  尚未过24-task门。正式RL不得启动，也不得从任一reward-profile checkpoint继续。
-- step25/50/75/100的success=`25/38/47/52`，coverage=`12/14/18/17`：AS总成功数上升不等于
-  task drift或条件写出质量已解决。下一步先完成同一v6 cold-start四点LoRA真`BA`谱、
-  能量、同task跨video方向和固定action传递审计，再结合K4 coverage决定续AS、正式
-  Relative-Flow RL、v5.2同credit对照或条件生成架构重构；不以functional loss裁决。
+  fresh root已exact-resume到macro125，共60,000 queries/3,000 videos、125个finite
+  full24 macros，0 OOM/clip和0 validation/test action reads。step100→125首次启动因
+  漏传sealed CLI `--num-workers 0`在step101前被contract拒绝且没有写入训练状态；补全
+  exact命令后原root正常完成。这不是代码、namespace或checkpoint身份故障。
+- step25/50/75/100/125的K4 success=`25/38/47/52/50`，coverage=`12/14/18/17/19`。
+  step125为14 mixed、5 all-success、5 all-failure；相对step100严格配对
+  gained/lost=`10/12`，新增覆盖task5/29且没有旧coverage完全掉出。长期全失败task
+  36/38/39五点均为0/4，task4与20又在早期成功后晚期归零。24-task binary-credit门仍
+  未过，binary-only正式RL不得启动，也不得从任一reward-profile checkpoint继续。
 - 上述四点内部审计已在clean`2b775f0`完成96/96 Cartesian rows：effective LoRA norm
   中位数=`53.40/80.37/93.17/99.18`，stable rank=`1.000028/1.000055/1.000153/
   1.000176`，same-task五video centered/sample energy=`.0813%/.1309%/.1333%/.1300%`。
@@ -168,8 +170,17 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   (`.0634>.0405`)，排除“只需放大视频差异”；reversed/shuffled到fixed action中位
   relative-L2=`.0498/.0474`又证明时序路径未断。
 - AS checkpoint BA/action相邻中位churn从50的`1.116/.187`降至100的`.608/.142`，仍有
-  大量能力轮换。正式RL继续受24-task coverage门约束；下一步只续同一AS root
-  macro100→125并重做严格K4，不从profile update继承，也不先造rank/scale/store trick。
+  大量能力轮换。新增step100/125审计显示norm中位`99.18→109.11`，但same-task video
+  energy`.1300%→.1154%`、demo1 BA差异`.0475→.0448`、fixed-action demo差异
+  `.0101→.0086`均未增强；BA/action churn仍为`.536/.138`。24-task成功数变化与video
+  energy变化Spearman=`-.521,p=.0090`，与BA churn=`.416,p=.0430`。持续全失败组的
+  video变化和demo间BA差异反而更大，正式否定“继续放大条件差异即可获得正确LoRA”。
+- step125 binary profile完整收集96 rollout/24,600 actions并完成两轮finite credit：
+  ratio范围=`[.9871,1.0124]`与`[.7646,1.1015]`、grad norm=`.0361/.0531`、0 clip，
+  peak reserved=`40,338,718,720` bytes，完整cycle1 checkpoint与0 watchdog。该健康
+  profile只证明实现，不改变coverage负裁决。下一活动设计必须让全失败轨迹也获得
+  teacher-video内容约束的相对credit，同时避免恢复normalized-video-time时钟、target
+  action、privileged state或LIBERO特化reward；binary success保留最高优先级。
 - step50首次credit阶段因outcome-skewed rank-local反向耗时不均，让0-mixed快rank提前
   enqueue NCCL all-reduce并被480秒watchdog终止；96条pre-update ledger仍完整但没有
   参数更新。`e5bca71`在每轮本地反向后增加独立FileStore all-rank-ready，再统一进入

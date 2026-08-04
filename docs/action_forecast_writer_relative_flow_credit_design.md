@@ -320,3 +320,29 @@ source overfitting；correct升但wrong同升属于video identifiability。四�
   tasks，task-local LOO在它们上没有credit，不能违规跳过coverage门。下一段只续同一AS
   100→125后重做K4；若coverage支持则进入正式reward，若继续停滞再裁决v5.2同credit或
   更根本的credit/exploration重构，而不是另做rank/scale/store小改版。
+
+## 15. AS125与binary-only Flow-Credit负裁决（2026-08-05）
+
+- 同一fresh AS root exact-resume100→125后累计60,000 queries、3,000 one-video
+  conditions和125个finite full24 macros；step125 checkpoint完整，0 OOM/clip与0
+  validation/test action reads。首次resume因漏传sealed`--num-workers 0`在step101前
+  fail-close且未写训练状态，补齐完整CLI后原root正常完成。
+- step125 K4为50/96 successes、19/24 coverage、14 mixed、5 all-success、5
+  all-failure。相对step100严格配对gained/lost/retained/both-fail=`10/12/40/34`；新增
+  coverage为task5/29，持续全失败为task4/20/36/38/39。task36/38/39在
+  step25/50/75/100/125全部0/4，因此24-task binary reward support不是靠继续同一AS
+  就可合理预期获得。
+- profile仍完成两轮真实credit并封存：ratio=`[.98710,1.01237]`与
+  `[.76458,1.10147]`、grad norm=`.03615/.05310`、clip均0、peak reserved
+  `40,338,718,720` bytes，完整cycle1 checkpoint、0 watchdog/OOM/nonfinite。该证据只
+  验证实现；cycle1 Writer权重继续禁止继承。
+- step100/125的48-row内部审计显示norm中位`99.18→109.11`，但video energy
+  `.1300%→.1154%`、demo1 BA差异`.0475→.0448`、fixed-action demo差异
+  `.0101→.0086`均未增强；BA/action churn为`.536/.138`。全24任务success变化与
+  video-energy变化Spearman=`-.521,p=.0090`，与BA churn=`.416,p=.0430`。持续全失败
+  组的video energy、demo间BA差异和churn均不小，进一步否定rank/scale/差异放大解释。
+- 因此本设计的binary-only形式正式负裁决，不启动formal outer cycles，也不继续AS150。
+  下一方法必须在不读teacher action、privileged state或任务特化规则的前提下，让同为
+  binary failure的trajectory按teacher-video所示语义状态变化获得相对credit；binary
+  success保持最高优先级。历史v4已证明normalized-video-progress易退化为时钟，后续
+  设计不得把teacher帧ordinal或rollout长度本身作为value。

@@ -10,6 +10,13 @@ GPU范围和训练步长是当时快照；活动状态只取
 
 ## 2026-08-05 AS125、K4、两点内部审计与binary-only负裁决
 
+- 已封存下一阶段design
+  `docs/action_forecast_writer_task_grounded_progress_credit_design.md`。它永久冻结AS125
+  semantic encoder作为action-free progress observer，用task-grounded patch和固定
+  Action-Expert interaction的teacher/rollout首尾内容delta构造bounded potential；先跑
+  预注册只读五门，未过门不得启动Writer更新。mixed binary信用不变、all-success为0，
+  仅all-failure允许semantic LOO；profile仍必须从AS125 fresh且不得续权重。
+
 - 同一AS root从step100 exact-resume到125：60,000累计queries、3,000 videos、125
   finite macros，segment wall`806.928s`；step125 checkpoint、metrics125 rows与summary
   完整，0 OOM/clip和0 validation/test action reads。首次命令漏传`--num-workers 0`

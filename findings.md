@@ -8,6 +8,13 @@
 
 ## 2026-08-05 AS125与binary-only Flow-Credit负裁决
 
+- 后续design已封存为
+  `docs/action_forecast_writer_task_grounded_progress_credit_design.md`。最小新假设不是增加
+  LoRA差异，而是冻结AS125 semantic encoder，把teacher首尾task-grounded内容变化作为
+  方向，把rollout自身首尾变化作为位移，从而只给all-failure K4提供bounded相对信用。
+  mixed binary与all-success行为保持不变；在只读binary agreement、failure dispersion、
+  视频反事实和非pixel捷径门完成前不允许Writer更新。
+
 - 同一fresh v6 AS root exact-resume100→125，累计60,000 queries、3,000 one-video
   conditions、125 finite full24 macros；本段wall`806.928s`，step125 checkpoint完整，
   0 OOM/clip与0 validation/test action reads。第一次resume漏传sealed`--num-workers 0`

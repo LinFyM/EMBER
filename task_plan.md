@@ -47,12 +47,16 @@ runner、split、路径或 GPU 权限。
 - [x] 完成step100/125两点条件写出审计：norm继续增大但video-energy和demo→action差异
   不增；success变化与video-energy变化显著负相关，binary-only Flow-Credit正式负裁决，
   不继承profile update、不续AS150、不启动formal outer cycles。
-- [ ] 封存task-grounded、policy-aware的teacher-video内容credit设计：只用action-hidden
-  teacher video与rollout observations比较语义状态变化，binary success词典序优先；禁止
-  normalized-video-time、teacher action、privileged state和LIBERO特化规则。
+- [x] 封存
+  [`docs/action_forecast_writer_task_grounded_progress_credit_design.md`](docs/action_forecast_writer_task_grounded_progress_credit_design.md)：
+  冻结AS125 semantic encoder，以task-token patch/Action-Expert interaction的teacher与
+  rollout首尾内容delta建立bounded start-relative potential；mixed binary优先、
+  all-success零梯度、仅all-failure semantic LOO。禁止normalized-video-time、teacher
+  action、privileged state和LIBERO特化规则。
 - [ ] 先做只读机制profile，要求success/failure有方向一致的分离、all-failure task内有
-  非退化相对次序、长度/帧ordinal不能单独预测score；过门后才允许Writer更新与paired
-  screen/correct400，长期single-checkpoint strict`>150/400`不变。
+  非退化相对次序、correct优于wrong/shuffled/reversed且pixel/长度/帧ordinal不能单独
+  预测score；过门后才允许Writer更新与paired screen/correct400，长期single-checkpoint
+  strict`>150/400`不变。
 
 ## 历史BCI Policy-Target-Owned Factor推进（2026-08-04）
 

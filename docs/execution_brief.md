@@ -9,9 +9,9 @@
 - Task-Relative Flow-Credit Writer的binary-only阶段已完成并负裁决。AS侧恢复唯一v6
   Writer做fresh独立cold start；reward侧保留成功和失败executed prefixes，以同task K4
   leave-one-out binary advantage、per-sample old/current CFM ratio、positive PPO与
-  negative SPO做健康profile，但24-task coverage始终未过。当前操作主线是先封存
-  teacher-video内容型failure credit的新authority和只读机制门；精确历史合同见
-  `docs/action_forecast_writer_relative_flow_credit_design.md`。
+  negative SPO做健康profile，但24-task coverage始终未过。当前操作主线已切换到
+  `docs/action_forecast_writer_task_grounded_progress_credit_design.md`；binary阶段精确
+  历史合同见`docs/action_forecast_writer_relative_flow_credit_design.md`。
 - BCI A40六卡AS profile和独立exact-resume已通过：logical B20/B2、最长105帧、三步
   `33.464/30.886/30.977s`，峰值allocated/reserved
   `34,948,858,880/44,816,138,240` bytes；fresh0→1/resume1→3保持1,440 queries、72
@@ -25,8 +25,13 @@
 - step100/125两点内部审计显示norm继续增大，但video energy、demo间BA与fixed-action
   demo差异都未增强；success变化与video-energy变化Spearman=`-.521,p=.0090`，持续
   全失败组反而具有更大的条件差异。下一操作不是续AS或启动binary-only formal RL，
-  而是先封存teacher-video内容型失败轨迹credit的设计和只读机制诊断；禁止normalized
-  video-time时钟、teacher action、privileged state或LIBERO特化reward。
+  而是按已封存设计实现并运行只读内容型credit诊断；禁止normalized video-time时钟、
+  teacher action、privileged state或LIBERO特化reward。只读五门未全部通过前禁止Writer
+  update或formal RL。
+- 新设计复用并永久冻结AS125 semantic encoder作为progress observer：teacher与rollout
+  都只读纯task language和旋转后agentview RGB，以task-token patch evidence和固定
+  Action-Expert interaction的首尾内容delta计算bounded potential。mixed binary信用不变，
+  all-success为0，仅all-failure使用semantic LOO；Writer部署输入和one-shot合同不变。
 
 - Policy-Target-Owned Factor本轮已完成并负裁决；此前暂停已由owner解除。其源码不再
   是canonical活动路径，历史结果只由Git、artifact与design authority保留；不能resume

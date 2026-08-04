@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：AS125仍只有19/24 coverage，binary-only credit负裁决
+## 0.0 当前状态：AS125 binary-only负裁决，内容型credit design已封存
 
 - 同一fresh v6 AS root已从step100 exact-resume到125：累计60,000 logical queries、
   3,000 one-video conditions和125个finite full24 macros；本段wall`806.928s`，0
@@ -35,10 +35,15 @@
   `=.416,p=.0430`。新增coverage task5/29的step125 video-energy中位`.1154%`，持续
   全失败组反而`.2101%`；后者demo1 BA差异和churn也更大。现有Writer不是不会生成差异，
   而是binary reward无法为失败轨迹判别这些差异是否朝teacher所示目标状态推进。
-- 下一活动阶段是设计并先诊断task-grounded、policy-aware的teacher-video内容credit：
-  只比较teacher与rollout的语义状态变化，为同为binary failure的轨迹提供相对次序；
-  binary success保持最高优先级。不得恢复v4式normalized-video-progress时钟、读取teacher
-  action/privileged state、加入LIBERO任务特化规则或直接跳到未经机制门的正式训练。
+- 下一authority已封存为
+  `docs/action_forecast_writer_task_grounded_progress_credit_design.md`。它冻结AS125
+  `semantic_encoder`，以task-token grounded patch与固定Action-Expert interaction组成
+  teacher首尾内容方向，再用rollout自身首尾变化计算bounded start-relative potential。
+  mixed task仍只用binary LOO、all-success零梯度，仅all-failure允许semantic LOO。
+- 当前只授权重放AS125 K4的只读机制诊断：24-task teacher direction、mixed-task binary
+  agreement、all-failure dispersion、correct/wrong/shuffled/reversed与pixel nuisance五门
+  全过后，才允许新的Writer-update profile。不得恢复normalized-video-time、teacher
+  action/privileged state、LIBERO特化规则或从任何profile checkpoint续训。
 
 ### 已封存的step0--100证据链
 

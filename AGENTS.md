@@ -121,12 +121,13 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 29. `docs/action_forecast_writer_semantic_direction_store_design.md`
 30. `docs/action_forecast_writer_target_owned_factor_design.md`
 31. `docs/action_forecast_writer_relative_flow_credit_design.md`
-32. `task_plan.md`
-33. `findings.md`
-34. `progress.md`
-35. `docs/concept.md`
-36. `docs/decisions_and_open_questions.md`
-37. `docs/novelty_and_landscape.md`
+32. `docs/action_forecast_writer_task_grounded_progress_credit_design.md`
+33. `task_plan.md`
+34. `findings.md`
+35. `progress.md`
+36. `docs/concept.md`
+37. `docs/decisions_and_open_questions.md`
+38. `docs/novelty_and_landscape.md`
 
 本post-seal分支已完成Target-Bound裁决并打开Semantic Factor-Basis；修改或运行前
 仍必须完整阅读Target-Bound与Semantic Factor-Basis两份design。历史CV/Target-Bound
@@ -141,9 +142,12 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   `docs/action_forecast_writer_relative_flow_credit_design.md`完成并负裁决：它恢复历史
   single-checkpoint最强且时序路径已验证的v6 Writer做独立AS cold start，随后永久关闭
   teacher action入口，但24 train tasks的official random-reset binary reward与同task
-  K4 leave-one-out仍无法覆盖全任务。当前活动工作是先封存teacher-video内容型failure
-  credit的新design authority和只读机制门，再决定是否训练；不得恢复旧success-filtered
-  Writer-RL、flat task-local RL、Target-Owned或Direction Store活动路径。
+  K4 leave-one-out仍无法覆盖全任务。当前唯一活动authority已切换为
+  `docs/action_forecast_writer_task_grounded_progress_credit_design.md`：先用冻结AS125
+  semantic encoder从task language、action-hidden teacher首尾内容变化与rollout自身
+  首尾agentview构造start-relative semantic potential，完成预注册只读机制门后才决定
+  是否训练；不得恢复旧success-filtered Writer-RL、flat task-local RL、Target-Owned或
+  Direction Store活动路径。
 - canonical实现已原位替换旧RL路径：success与failure executed prefixes均保留；正
   advantage用PPO clip，负advantage用SPO pullback；Nmc4、full24等权、最多6 ranks、
   deferred NCCL和完整cycle exact-resume。source policy与normalization冻结，Writer输入
@@ -181,6 +185,12 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   profile只证明实现，不改变coverage负裁决。下一活动设计必须让全失败轨迹也获得
   teacher-video内容约束的相对credit，同时避免恢复normalized-video-time时钟、target
   action、privileged state或LIBERO特化reward；binary success保留最高优先级。
+- Task-Grounded Semantic Progress Credit已封存为fresh incompatible下一阶段。只读门固定
+  检查24/24 teacher内容非退化、mixed-task success/failure一致性、all-failure task内
+  dispersion、correct优于wrong/shuffled/reversed和非pixel捷径；任一失败都不得启动
+  Writer梯度。若过门，AS125 semantic encoder与source policy永久冻结，只训练Writer
+  下游Core/Procedure/compiler/factor；mixed binary保持旧LOO、all-success零梯度、仅
+  all-failure使用bounded semantic utility LOO。profile权重仍禁止续训。
 - step50首次credit阶段因outcome-skewed rank-local反向耗时不均，让0-mixed快rank提前
   enqueue NCCL all-reduce并被480秒watchdog终止；96条pre-update ledger仍完整但没有
   参数更新。`e5bca71`在每轮本地反向后增加独立FileStore all-rank-ready，再统一进入

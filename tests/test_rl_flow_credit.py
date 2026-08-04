@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 import torch
 
+from ember.reward.protocol import RewardProtocolError
 from ember.rl_writer.flow_credit import (
     leave_one_out_binary_advantages,
     task_relative_aspo_loss,
@@ -58,3 +59,36 @@ def test_flow_credit_averages_chunks_inside_each_episode() -> None:
     assert abs(float(current.grad[0, 0] + current.grad[0, 1])) == pytest.approx(
         abs(float(current.grad[0, 2]))
     )
+
+
+def test_flow_credit_accepts_centered_semantic_advantages_for_all_failure() -> None:
+    current = torch.full((1, 4), 0.2, requires_grad=True)
+    loss, metrics = task_relative_aspo_loss(
+        current,
+        current.detach().clone(),
+        torch.arange(4),
+        torch.zeros(4),
+        task_advantages=torch.tensor([-0.2, -0.1, 0.1, 0.2]),
+        clip_epsilon=0.05,
+        loss_value_clip=20.0,
+        log_ratio_clip=5.0,
+    )
+    loss.backward()
+    assert bool((current.grad[0, :2] < 0).all())
+    assert bool((current.grad[0, 2:] > 0).all())
+    assert metrics.positive_episodes == metrics.negative_episodes == 2
+
+
+def test_flow_credit_rejects_noncentered_explicit_advantages() -> None:
+    current = torch.full((1, 4), 0.2, requires_grad=True)
+    with pytest.raises(RewardProtocolError, match="advantages changed contract"):
+        task_relative_aspo_loss(
+            current,
+            current.detach().clone(),
+            torch.arange(4),
+            torch.zeros(4),
+            task_advantages=torch.ones(4),
+            clip_epsilon=0.05,
+            loss_value_clip=20.0,
+            log_ratio_clip=5.0,
+        )

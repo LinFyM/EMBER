@@ -159,6 +159,8 @@ def test_credit_collective_waits_for_rank_local_backward(
     writer = torch.nn.Linear(3, 2)
     for parameter in writer.parameters():
         parameter.grad = torch.ones_like(parameter)
+    writer.bias.requires_grad_(False)
+    writer.bias.grad = None
     runtime = Namespace(
         args=Namespace(output_dir=tmp_path),
         context=DistributedContext(0, 0, 2, torch.device("cpu")),
@@ -168,6 +170,7 @@ def test_credit_collective_waits_for_rank_local_backward(
     rl_loop._all_reduce_writer_gradients(runtime, cycle=3, epoch=1)
 
     assert events == ["set:rank-0", "wait:rank-0,rank-1", "all_reduce"]
+    assert writer.bias.grad is None
 
 
 def test_flow_credit_information_wall_fails_closed(tmp_path: Path) -> None:
@@ -179,7 +182,7 @@ def test_flow_credit_information_wall_fails_closed(tmp_path: Path) -> None:
         load_rl_writer_config(path)
 
 
-def test_diagnostic_runtime_is_read_only_and_profile_stays_blocked() -> None:
+def test_diagnostic_is_read_only_profile_is_sealed_and_formal_stays_blocked() -> None:
     config = load_rl_writer_config(CONFIG)
     context = DistributedContext(0, 0, 6, torch.device("cpu"), 0, (0,))
     args = Namespace(
@@ -198,7 +201,10 @@ def test_diagnostic_runtime_is_read_only_and_profile_stays_blocked() -> None:
         resolve_runtime(args, config, invalid)
     args.mode = "profile"
     args.stop_after_cycle = None
-    with pytest.raises(RewardProtocolError, match="awaits the read-only gate"):
+    assert resolve_runtime(args, config, context) == (1, (1,), 2)
+    args.mode = "formal"
+    args.stop_after_cycle = None
+    with pytest.raises(RewardProtocolError, match="awaits the live profile seal"):
         resolve_runtime(args, config, context)
 
 

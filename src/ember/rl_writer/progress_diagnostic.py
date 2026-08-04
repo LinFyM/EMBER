@@ -9,7 +9,6 @@ from typing import Any, Sequence
 
 import torch
 
-from ember.lora import copy_task_lora_state_
 from ember.pi05_source_checkpoint import barrier, read_json, write_json_atomic
 from ember.pi05_source_setup import reduce_max
 from ember.reward.protocol import RewardProtocolError, RewardTask
@@ -20,6 +19,10 @@ from ember.rl_writer.progress_credit import (
     normalized_progress_components,
     semantic_progress_utilities,
     summarize_progress_diagnostic,
+)
+from ember.rl_writer.progress_observer import (
+    encode_progress_components,
+    rollout_endpoint_frames,
 )
 from ember.rl_writer.runtime import RLWriterRuntime
 from ember.writer.inference import (
@@ -43,39 +46,21 @@ def _wrong_video_tasks(tasks: Sequence[RewardTask]) -> dict[int, int]:
 
 
 def _encode_components(
-    runtime: RLWriterRuntime,
-    task: RewardTask,
-    frames: torch.Tensor,
+    runtime: RLWriterRuntime, task: RewardTask, frames: torch.Tensor
 ) -> torch.Tensor:
-    if frames.ndim != 4 or frames.shape[1] != 3 or frames.dtype != torch.uint8:
-        raise RewardProtocolError("progress diagnostic frame batch changed")
-    copy_task_lora_state_(
-        runtime.policy, runtime.identity_state, runtime.lora_contract
+    return encode_progress_components(
+        writer=runtime.writer,
+        policy=runtime.policy,
+        identity_state=runtime.identity_state,
+        lora_contract=runtime.lora_contract,
+        tokenizer=runtime.tokenizer,
+        task=task,
+        frames=frames,
+        device=runtime.context.device,
+        normalization_epsilon=float(
+            runtime.config["progress_credit"]["normalization_epsilon"]
+        ),
     )
-    tokens, masks, spans = runtime.tokenizer([task.language])
-    device = runtime.context.device
-    values = frames.to(device, non_blocking=True)
-    condition_ids = torch.zeros(values.shape[0], dtype=torch.long, device=device)
-    runtime.writer.semantic_encoder.eval()
-    runtime.policy.eval()
-    with torch.inference_mode(), torch.autocast(
-        device_type="cuda", dtype=torch.bfloat16
-    ):
-        _, _, grounded, interactions, valid = runtime.writer.semantic_encoder(
-            runtime.policy,
-            values,
-            condition_ids,
-            tokens,
-            masks,
-            spans,
-        )
-        packed = normalized_progress_components(
-            grounded,
-            interactions,
-            valid,
-            epsilon=float(runtime.config["progress_credit"]["normalization_epsilon"]),
-        )
-    return packed.detach().float().cpu()
 
 
 def _pixel_change_rms(start: torch.Tensor, terminal: torch.Tensor) -> float:
@@ -118,17 +103,7 @@ def _teacher_frame_bank(
 
 
 def _rollout_frame_bank(collected: CollectedTaskTrajectories) -> torch.Tensor:
-    frames = []
-    for trajectory in collected.trajectories:
-        if (
-            trajectory.progress_start_frame is None
-            or trajectory.progress_terminal_frame is None
-        ):
-            raise RewardProtocolError("progress diagnostic lost rollout endpoint RGB")
-        frames.extend(
-            (trajectory.progress_start_frame, trajectory.progress_terminal_frame)
-        )
-    return torch.stack(frames)
+    return rollout_endpoint_frames(collected.trajectories)
 
 
 def _counterfactual_utilities(

@@ -8,6 +8,19 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-05 Task-Grounded Semantic Progress只读门通过
+
+- clean`c483497`在live空闲`gpu01:1,2,3,4,5,7`完成AS125严格配对只读诊断；96
+  rollouts、24,600 actions、50 successes，14/5/5 outcome分组及96/96身份与旧profile
+  一致。0 optimizer/backward/checkpoint，wall`401.874s`，peak reserved
+  `19,289,604,096` bytes，GPU自然释放。
+- mixed agreement=`13/14`、pair AUC=`.8913`；五个all-failure utility range均`>.12`；
+  correct对wrong/shuffled/reversed胜率=`1/.88/1`，failure utility与pixel Spearman
+  `=.5564`。全部预注册门通过，profile gate已开放，formal继续fail-close。
+- canonical Writer-update路径已接入binary-first显式advantages和冻结observer：mixed
+  精确保持binary LOO、all-success零、all-failure semantic LOO。下一步是从AS125 fresh
+  运行一个不可续训的full24 K4/Nmc4 two-epoch profile并裁决梯度/NCCL/A40合同。
+
 ## 2026-08-05 AS125、K4、两点内部审计与binary-only负裁决
 
 - 已封存下一阶段design

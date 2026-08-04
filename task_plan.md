@@ -57,10 +57,12 @@ runner、split、路径或 GPU 权限。
   保留rollout起点/terminal agentview，冻结AS125 semantic encoder，计算correct/wrong/
   shuffled/reversed utility并按实际world size封存；0 optimizer/backward/checkpoint，
   未过门前profile/formal fail-close。聚焦CPU合同`23+53 passed`且architecture无hard。
-- [ ] 先做只读机制profile，要求success/failure有方向一致的分离、all-failure task内有
-  非退化相对次序、correct优于wrong/shuffled/reversed且pixel/长度/帧ordinal不能单独
-  预测score；过门后才允许Writer更新与paired screen/correct400，长期single-checkpoint
-  strict`>150/400`不变。
+- [x] 完成AS125严格配对六卡只读机制裁决：50/96 outcomes逐项复现，mixed agreement
+  `13/14`、pair AUC`.8913`，五个all-failure task均有非退化utility，三种视频反事实和
+  pixel nuisance门全部通过；0 optimizer/backward/checkpoint。
+- [ ] 从AS125 fresh运行一个不可续训的full24 K4/Nmc4 two-epoch Writer-update profile，
+  验证冻结前端、all-failure finite梯度覆盖、五下游主block、ratio/NCCL/A40显存；通过后
+  才seal formal预算并进入paired correct400，长期single-checkpoint strict`>150/400`不变。
 
 ## 历史BCI Policy-Target-Owned Factor推进（2026-08-04）
 

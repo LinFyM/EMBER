@@ -6,6 +6,18 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-05 Task-Grounded Semantic Progress只读机制裁决
+
+- clean`c483497`六卡只读诊断严格复现AS125的50/96 successes、14 mixed、5
+  all-success与5 all-failure，96/96 rollout identity/outcome一致；0 optimizer、0 Writer
+  backward、0 checkpoint。mixed success utility高于failure为`13/14`，同task pair
+  AUC=`.8913`。
+- task4/20/36/38/39的utility range=`.1228/.5712/.3338/.2554/.2371`；successful
+  rollout上correct优于wrong/shuffled/reversed比例=`1/.88/1`，all-failure组对三反事实
+  比例均为1；failure utility与pixel-change Spearman=`.5564`。预注册联合门全部通过。
+- 该证据接受冻结AS125 observer作为all-failure相对credit，不接受Writer性能已改善。
+  下一步只做一个AS125-fresh、不可续训的two-epoch工程profile；formal仍未授权。
+
 ## 2026-08-05 AS125与binary-only Flow-Credit负裁决
 
 - 后续design已封存为

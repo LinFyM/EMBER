@@ -185,17 +185,18 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   profile只证明实现，不改变coverage负裁决。下一活动设计必须让全失败轨迹也获得
   teacher-video内容约束的相对credit，同时避免恢复normalized-video-time时钟、target
   action、privileged state或LIBERO特化reward；binary success保留最高优先级。
-- Task-Grounded Semantic Progress Credit已封存为fresh incompatible下一阶段。只读门固定
-  检查24/24 teacher内容非退化、mixed-task success/failure一致性、all-failure task内
-  dispersion、correct优于wrong/shuffled/reversed和非pixel捷径；任一失败都不得启动
-  Writer梯度。若过门，AS125 semantic encoder与source policy永久冻结，只训练Writer
-  下游Core/Procedure/compiler/factor；mixed binary保持旧LOO、all-success零梯度、仅
-  all-failure使用bounded semantic utility LOO。profile权重仍禁止续训。
-- canonical config/schema与同一`train_rl_writer.py --mode diagnostic`只读路径已实现；
-  diagnostic只保存96-row utility evidence、0 optimizer/backward/checkpoint，`profile`与
-  `formal`在机制门封存前fail-close。observer只从trajectory显式保留的起点/terminal
-  agentview读取RGB，public action replay和proprio不进入其forward。下一步是clean commit
-  后的live A40最小vertical path与完整AS125 K4只读裁决，不是Writer update。
+- Task-Grounded Semantic Progress Credit只读机制裁决已在clean`c483497`、AS125与严格
+  配对K4上通过全部预注册门：50/96 successes、14 mixed、5 all-success、5 all-failure，
+  mixed agreement=`13/14`、同task success/failure AUC=`.8913`；五个all-failure utility
+  range=`.1228/.5712/.3338/.2554/.2371`。successful rollout的correct分别优于wrong/
+  shuffled/reversed比例=`1/.88/1`，对应margin中位=`.4889/.3557/1.6208`；all-failure
+  utility与pixel-change Spearman=`.5564`。96/96旧profile身份与outcome严格一致，0
+  optimizer/backward/checkpoint，不能把该证据冒充Writer性能改善。
+- canonical profile现只授权一个从AS125 fresh复制、不可续训的full24 K4/Nmc4/two-epoch
+  Writer-update工程profile。AS125 semantic encoder与source policy永久冻结；mixed逐项
+  保持旧binary LOO、all-success零梯度、仅all-failure用bounded semantic LOO。profile
+  必须验证至少4个all-failure task产生finite gradient、五个Writer下游主block可达、
+  ratio/NCCL/A40显存健康；通过后才封存formal预算，formal仍为fail-close。
 - step50首次credit阶段因outcome-skewed rank-local反向耗时不均，让0-mixed快rank提前
   enqueue NCCL all-reduce并被480秒watchdog终止；96条pre-update ledger仍完整但没有
   参数更新。`e5bca71`在每轮本地反向后增加独立FileStore all-rank-ready，再统一进入

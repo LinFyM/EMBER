@@ -28,7 +28,15 @@ from ember.reward.rollout import (
 )
 from ember.rl_writer.checkpoint import save_rl_writer_checkpoint
 from ember.rl_writer.contract import cycle_assignments
-from ember.rl_writer.flow_credit import task_relative_aspo_loss
+from ember.rl_writer.flow_credit import (
+    generated_lora_gradient_norm,
+    task_relative_aspo_loss,
+)
+from ember.rl_writer.progress_credit import (
+    binary_first_progress_advantages,
+    write_task_progress_credit_once,
+)
+from ember.rl_writer.progress_observer import observe_correct_teacher_progress
 from ember.rl_writer.runtime import RLWriterRuntime, rank_ledger_summary
 
 
@@ -42,6 +50,9 @@ class TaskCycleReplay:
     batch: dict[str, torch.Tensor]
     episode_ids: torch.Tensor
     successes: torch.Tensor
+    utilities: torch.Tensor
+    advantages: torch.Tensor
+    credit_mode: str
     old_losses: torch.Tensor | None
     rollout_count: int
     environment_actions: int
@@ -81,6 +92,8 @@ def _all_reduce_writer_gradients(
 ) -> None:
     gradients = []
     for parameter in runtime.writer.parameters():
+        if not parameter.requires_grad:
+            continue
         if parameter.grad is None:
             parameter.grad = torch.zeros_like(parameter)
         gradients.append(parameter.grad)
@@ -321,7 +334,27 @@ def _install_and_collect(
     batch, episode_ids, successes = complete_trajectory_batch(
         trajectories, torch.device("cpu")
     )
-    mixed = bool(successes.min() != successes.max())
+    utilities = torch.zeros_like(successes)
+    if not bool(successes.any()):
+        utilities, _ = observe_correct_teacher_progress(
+            writer=runtime.writer,
+            policy=runtime.policy,
+            identity_state=runtime.identity_state,
+            lora_contract=runtime.lora_contract,
+            tokenizer=runtime.tokenizer,
+            task=task,
+            teacher_frames=collected.frames,
+            trajectories=trajectories,
+            device=runtime.context.device,
+            normalization_epsilon=float(
+                runtime.config["progress_credit"]["normalization_epsilon"]
+            ),
+            projection_epsilon=float(
+                runtime.config["progress_credit"]["projection_epsilon"]
+            ),
+        )
+    advantages, credit_mode = binary_first_progress_advantages(successes, utilities)
+    active = bool(advantages.count_nonzero())
     old_losses = (
         _old_loss_matrix(
             runtime,
@@ -330,8 +363,19 @@ def _install_and_collect(
             task=task,
             cycle=cycle,
         )
-        if mixed
+        if active
         else None
+    )
+    write_task_progress_credit_once(
+        output_dir=runtime.args.output_dir,
+        producer_rank=runtime.context.rank,
+        outer_cycle=cycle,
+        global_task_id=task.global_task_id,
+        teacher_demo_index=collected.demo_index,
+        successes=successes,
+        utilities=utilities,
+        advantages=advantages,
+        credit_mode=credit_mode,
     )
     return TaskCycleReplay(
         task=task,
@@ -342,6 +386,9 @@ def _install_and_collect(
         batch=batch,
         episode_ids=episode_ids,
         successes=successes,
+        utilities=utilities,
+        advantages=advantages,
+        credit_mode=credit_mode,
         old_losses=old_losses,
         rollout_count=len(trajectories),
         environment_actions=sum(value.steps for value in trajectories),
@@ -364,6 +411,9 @@ def _task_epoch_backward(
             "ratio_max": -math.inf,
             "positive_clipped": 0.0,
             "positive_count": 0.0,
+            "active_credit_tasks": 0.0,
+            "all_failure_semantic_tasks": 0.0,
+            "all_failure_nonzero_lora_grad_tasks": 0.0,
         }
     generated = _writer_state(
         runtime,
@@ -423,6 +473,7 @@ def _task_epoch_backward(
                 old[None],
                 episode_ids,
                 replay.successes,
+                task_advantages=replay.advantages,
                 clip_epsilon=float(algorithm["clip_epsilon"]),
                 loss_value_clip=float(algorithm["loss_value_clip"]),
                 log_ratio_clip=float(algorithm["log_ratio_clip"]),
@@ -441,10 +492,9 @@ def _task_epoch_backward(
                     float(algorithm["log_ratio_clip"]),
                 )
             )
-            advantage = (
-                (replay.successes.numel() * replay.successes - replay.successes.sum())
-                / (replay.successes.numel() - 1)
-            )[replay.episode_ids[start:stop]].to(ratio.device)
+            advantage = replay.advantages[
+                replay.episode_ids[start:stop]
+            ].to(ratio.device)
             totals["objective"] += metrics.objective
             totals["ratio_sum"] += float(ratio.sum())
             totals["ratio_count"] += float(ratio.numel())
@@ -456,10 +506,37 @@ def _task_epoch_backward(
             totals["positive_count"] += float((advantage > 0).sum())
             del sliced, noise, flow_time, current, old, ratio, advantage, loss
     state_gradients = tuple(proxy[name].grad for name in generated)
-    if any(value is None for value in state_gradients):
-        raise RewardProtocolError("Flow-Credit generated LoRA gradient is incomplete")
+    generated_lora_grad_norm = generated_lora_gradient_norm(state_gradients)
     torch.autograd.backward(tuple(generated.values()), state_gradients)
+    semantic = replay.credit_mode == "all_failure_semantic"
+    totals["active_credit_tasks"] = 1.0
+    totals["all_failure_semantic_tasks"] = float(semantic)
+    totals["all_failure_nonzero_lora_grad_tasks"] = float(
+        semantic and generated_lora_grad_norm > 0
+    )
     return totals
+
+
+def _writer_block_gradient_norms(runtime: RLWriterRuntime) -> dict[str, float]:
+    result = {}
+    for name in (
+        "semantic_core",
+        "visual_transition",
+        "procedure",
+        "compiler",
+        "factor_heads",
+    ):
+        module = getattr(runtime.writer, name)
+        squared = sum(
+            float(parameter.grad.detach().float().square().sum())
+            for parameter in module.parameters()
+            if parameter.requires_grad and parameter.grad is not None
+        )
+        value = math.sqrt(squared)
+        if not math.isfinite(value):
+            raise RewardProtocolError("non-finite Writer block gradient")
+        result[name] = value
+    return result
 
 
 def _learning_epochs(
@@ -467,7 +544,7 @@ def _learning_epochs(
     replays: Sequence[TaskCycleReplay],
     *,
     cycle: int,
-) -> list[dict[str, float]]:
+) -> list[dict[str, Any]]:
     rows = []
     for epoch in range(runtime.learning_epochs):
         runtime.writer.train()
@@ -481,6 +558,9 @@ def _learning_epochs(
             "ratio_max": -math.inf,
             "positive_clipped": 0.0,
             "positive_count": 0.0,
+            "active_credit_tasks": 0.0,
+            "all_failure_semantic_tasks": 0.0,
+            "all_failure_nonzero_lora_grad_tasks": 0.0,
         }
         for replay in replays:
             observed = _task_epoch_backward(runtime, replay, cycle=cycle)
@@ -492,8 +572,18 @@ def _learning_epochs(
                 else:
                     totals[name] += observed[name]
         _all_reduce_writer_gradients(runtime, cycle=cycle, epoch=epoch)
+        if any(
+            parameter.grad is not None
+            for parameter in runtime.writer.semantic_encoder.parameters()
+        ):
+            raise RewardProtocolError("frozen progress observer received a gradient")
+        block_grad_norms = _writer_block_gradient_norms(runtime)
         grad_norm = torch.nn.utils.clip_grad_norm_(
-            runtime.writer.parameters(),
+            (
+                parameter
+                for parameter in runtime.writer.parameters()
+                if parameter.requires_grad
+            ),
             float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"]),
         )
         if not bool(torch.isfinite(grad_norm)):
@@ -512,6 +602,9 @@ def _learning_epochs(
                 totals["ratio_count"],
                 totals["positive_clipped"],
                 totals["positive_count"],
+                totals["active_credit_tasks"],
+                totals["all_failure_semantic_tasks"],
+                totals["all_failure_nonzero_lora_grad_tasks"],
             ],
             dtype=torch.float64,
             device=runtime.context.device,
@@ -536,6 +629,11 @@ def _learning_epochs(
                 "positive_clip_fraction": (
                     float(sums[3]) / float(sums[4]) if float(sums[4]) else 0.0
                 ),
+                "active_credit_tasks": int(sums[5]),
+                "all_failure_semantic_tasks": int(sums[6]),
+                "all_failure_nonzero_generated_lora_gradient_tasks": int(sums[7]),
+                "writer_block_gradient_norms_before_clip": block_grad_norms,
+                "progress_observer_gradient_tensors": 0,
                 "ratio_samples": int(ratio_count),
                 "grad_norm_before_clip": float(grad_norm),
             }
@@ -554,6 +652,12 @@ def _global_cycle_metrics(
             sum(replay.environment_actions for replay in replays),
             sum(int(replay.successes.sum()) for replay in replays),
             sum(replay.reward_sum for replay in replays),
+            sum(replay.credit_mode == "mixed_binary" for replay in replays),
+            sum(
+                replay.credit_mode == "all_failure_semantic"
+                and replay.old_losses is not None
+                for replay in replays
+            ),
             sum(replay.old_losses is not None for replay in replays),
         ],
         dtype=torch.float64,
@@ -567,6 +671,8 @@ def _global_cycle_metrics(
         "global_successes": int(local[2]),
         "global_reward_sum": float(local[3]),
         "global_mixed_outcome_tasks": int(local[4]),
+        "global_all_failure_semantic_tasks": int(local[5]),
+        "global_credit_tasks": int(local[6]),
         "learning_epochs": [dict(row) for row in epoch_rows],
     }
 

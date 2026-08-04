@@ -183,7 +183,7 @@
     "learning_epochs": 0
   },
   "profile_defaults": {
-    "status": "blocked_until_read_only_mechanism_passes",
+    "status": "sealed",
     "total_cycles": 1,
     "checkpoint_cycles": [1],
     "learning_epochs": 2

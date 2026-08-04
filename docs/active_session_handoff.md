@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：AS125 binary-only负裁决，内容型credit design已封存
+## 0.0 当前状态：内容型credit只读门通过，fresh Writer-update profile已授权
 
 - 同一fresh v6 AS root已从step100 exact-resume到125：累计60,000 logical queries、
   3,000 one-video conditions和125个finite full24 macros；本段wall`806.928s`，0
@@ -40,17 +40,20 @@
   `semantic_encoder`，以task-token grounded patch与固定Action-Expert interaction组成
   teacher首尾内容方向，再用rollout自身首尾变化计算bounded start-relative potential。
   mixed task仍只用binary LOO、all-success零梯度，仅all-failure允许semantic LOO。
-- 当前只授权重放AS125 K4的只读机制诊断：24-task teacher direction、mixed-task binary
-  agreement、all-failure dispersion、correct/wrong/shuffled/reversed与pixel nuisance五门
-  全过后，才允许新的Writer-update profile。不得恢复normalized-video-time、teacher
-  action/privileged state、LIBERO特化规则或从任何profile checkpoint续训。
-- 只读实现已原位接入唯一`train_rl_writer.py --mode diagnostic`：fresh incompatible
-  config/schema、rollout起点/真实terminal agentview retention、冻结semantic encoder、
-  correct/wrong/shuffled/reversed utility、6-rank ownership与联合gate seal均已完成。
-  diagnostic路径固定0 optimizer updates、0 Writer backward、0 checkpoint；未过门前
-  `profile/formal`由config contract拒绝。聚焦reward/RL及evaluation相关CPU回归合计
-  `23+53 passed`，compileall通过，architecture guard无hard violation；尚无GPU utility
-  结果或性能结论。
+- clean`c483497`六卡只读root为
+  `runs/outputs/pi05_task_grounded_progress_credit_diagnostic_as125_r6_c483497_20260805`：
+  96 rollouts/24,600 actions、50 successes、14 mixed、5 all-success、5 all-failure，
+  wall`401.874s`、peak reserved`19,289,604,096` bytes。96/96旧step125 profile身份、
+  policy-noise与outcome逐项一致；0 optimizer update、0 Writer backward、0 checkpoint。
+- 全部预注册门通过：mixed agreement=`13/14`、同task pair AUC=`.8913`；task4/20/36/
+  38/39 utility range=`.1228/.5712/.3338/.2554/.2371`；successful rollout的correct对
+  wrong/shuffled/reversed胜率=`1/.88/1`、margin中位=`.4889/.3557/1.6208`；all-failure
+  utility与pixel-change Spearman=`.5564`。这只证明observer可作credit，不证明LoRA性能
+  已提高。
+- canonical实现现允许一个从AS125 fresh复制、不可续训的full24 K4/Nmc4/two-epoch
+  Writer-update profile。mixed binary逐项不变、all-success为0、仅all-failure做semantic
+  LOO；observer/source永久冻结。profile需通过至少4个all-failure task finite gradient、
+  五下游主block、ratio/NCCL与A40显存门；formal仍fail-close。
 
 ### 已封存的step0--100证据链
 

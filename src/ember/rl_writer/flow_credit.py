@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
+from typing import Sequence
 
 import torch
 
@@ -19,6 +21,19 @@ class FlowCreditMetrics:
     positive_episodes: int
     negative_episodes: int
     zero_episodes: int
+
+
+def generated_lora_gradient_norm(
+    gradients: Sequence[torch.Tensor | None],
+) -> float:
+    if any(value is None for value in gradients):
+        raise RewardProtocolError("Flow-Credit generated LoRA gradient is incomplete")
+    value = math.sqrt(
+        sum(float(item.detach().float().square().sum()) for item in gradients)
+    )
+    if not math.isfinite(value):
+        raise RewardProtocolError("non-finite generated LoRA credit gradient")
+    return value
 
 
 def leave_one_out_binary_advantages(successes: torch.Tensor) -> torch.Tensor:
@@ -68,6 +83,7 @@ def task_relative_aspo_loss(
     episode_ids: torch.Tensor,
     successes: torch.Tensor,
     *,
+    task_advantages: torch.Tensor | None = None,
     clip_epsilon: float,
     loss_value_clip: float,
     log_ratio_clip: float,
@@ -93,10 +109,16 @@ def task_relative_aspo_loss(
         or min(loss_value_clip, log_ratio_clip) <= 0
     ):
         raise RewardProtocolError("invalid task-relative FPO loss inputs")
-    advantages = leave_one_out_binary_advantages(successes).to(
-        device=current_losses.device,
-        dtype=current_losses.dtype,
-    )
+    binary_advantages = leave_one_out_binary_advantages(successes)
+    advantages = (
+        binary_advantages if task_advantages is None else task_advantages
+    ).to(device=current_losses.device, dtype=current_losses.dtype)
+    if (
+        advantages.shape != successes.shape
+        or not bool(torch.isfinite(advantages).all())
+        or abs(float(advantages.sum())) > 1e-5
+    ):
+        raise RewardProtocolError("task-relative advantages changed contract")
     if episode_ids.device != current_losses.device:
         episode_ids = episode_ids.to(current_losses.device)
     old = old_losses.to(current_losses.device, current_losses.dtype)

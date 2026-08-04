@@ -1,6 +1,6 @@
 # Task-Grounded Semantic Progress Credit Writer 设计
 
-状态：**2026-08-05 design authority；先做只读机制裁决，尚未授权Writer更新或正式训练。**
+状态：**2026-08-05只读机制门已全部通过；授权一个fresh Writer-update profile，正式训练仍未授权。**
 
 本设计接续`docs/action_forecast_writer_relative_flow_credit_design.md`的binary-only负裁决。
 它不把RL当作绕过LoRA质量问题的替代路线，而是专门修复已经定位到的最早接口：
@@ -257,3 +257,24 @@ novelty只有在机制门和正式结果成立后才能主张。
 5. 若任一预注册门失败，封存负结果并重新分析，不启动Writer update；
 6. 全部门通过后才实现/运行一个全新Writer-update profile；
 7. profile再决定formal训练预算和paired correct400评测。
+
+## 13. 只读机制裁决与profile授权
+
+clean`c483497`上的六卡只读root为
+`runs/outputs/pi05_task_grounded_progress_credit_diagnostic_as125_r6_c483497_20260805`。
+它严格重放AS125的96条K4身份，得到50 successes、14 mixed、5 all-success与5
+all-failure；旧profile的task/cursor、env/policy seed、初态、demo、LoRA及outcome逐项
+一致。运行写入0 optimizer update、0 Writer backward与0 checkpoint，wall
+`401.874s`，峰值reserved`19,289,604,096` bytes。
+
+全部预注册门通过：mixed success均值高于failure为`13/14`，同task pair AUC=`.8913`；
+task4/20/36/38/39的utility range分别为`.1228/.5712/.3338/.2554/.2371`；successful
+rollout上correct优于wrong/shuffled/reversed比例=`1/.88/1`，margin中位
+=`.4889/.3557/1.6208`；all-failure utility与raw pixel-change Spearman=`.5564`。
+此外20条all-failure rollout上correct优于三反事实比例均为1，说明信号不只由已有成功
+样本支撑。
+
+该结果只接受“冻结AS125语义前端可提供有内容、task/video特异且非纯pixel的相对
+progress credit”，不接受“Writer LoRA已经改善”。现在只授权一个从AS125 fresh进入的
+full24、K4、Nmc4、two-epoch profile；profile checkpoint禁止续训。profile通过冻结、
+梯度覆盖、ratio、NCCL与A40显存门后，才新增formal seal与训练预算。

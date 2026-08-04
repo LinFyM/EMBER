@@ -24,19 +24,19 @@
   24-task exit gate正式未过；任何RL profile checkpoint均不得当作cold start继续。
 - step100/125两点内部审计显示norm继续增大，但video energy、demo间BA与fixed-action
   demo差异都未增强；success变化与video-energy变化Spearman=`-.521,p=.0090`，持续
-  全失败组反而具有更大的条件差异。下一操作不是续AS或启动binary-only formal RL，
-  而是按已封存设计实现并运行只读内容型credit诊断；禁止normalized video-time时钟、
-  teacher action、privileged state或LIBERO特化reward。只读五门未全部通过前禁止Writer
-  update或formal RL。
+  全失败组反而具有更大的条件差异。已据此禁止续AS与binary-only formal RL，也禁止
+  normalized video-time时钟、teacher action、privileged state或LIBERO特化reward。
 - 新设计复用并永久冻结AS125 semantic encoder作为progress observer：teacher与rollout
   都只读纯task language和旋转后agentview RGB，以task-token patch evidence和固定
   Action-Expert interaction的首尾内容delta计算bounded potential。mixed binary信用不变，
   all-success为0，仅all-failure使用semantic LOO；Writer部署输入和one-shot合同不变。
-- canonical config已升为fresh progress-credit schema，唯一launcher新增`diagnostic`模式。
-  它只做同一AS125 K4 rollout与utility/counterfactual seal，明确写入0 optimizer、0
-  backward、0 checkpoint；`profile/formal`当前均fail-close。CPU聚焦合同`23+53 passed`、
-  compileall通过且architecture guard无hard violation；下一操作是clean commit后先做
-  live GPU最小vertical path，再做完整六卡只读K4。
+- clean`c483497`六卡只读机制诊断已严格复现AS125的50/96 successes与14/5/5 outcome
+  分组，mixed agreement=`13/14`、pair AUC=`.8913`，五个all-failure utility range均
+  `>.12`；correct对wrong/shuffled/reversed胜率=`1/.88/1`，pixel Spearman=`.5564`。
+  96/96 rollout身份逐项一致，0 optimizer/backward/checkpoint，全部预注册门通过。
+- canonical profile现在只开放一个从AS125 fresh进入的full24 K4/Nmc4 two-epoch工程
+  profile，验证冻结observer、语义all-failure梯度覆盖、ratio/NCCL与A40显存；profile
+  权重禁止续训。formal仍fail-close，必须等profile证据封存后再定预算。
 
 - Policy-Target-Owned Factor本轮已完成并负裁决；此前暂停已由owner解除。其源码不再
   是canonical活动路径，历史结果只由Git、artifact与design authority保留；不能resume

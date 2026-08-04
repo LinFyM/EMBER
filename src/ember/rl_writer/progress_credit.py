@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 import numpy as np
 import torch
 
+from ember.pi05_source_checkpoint import canonical_hash, read_json, write_json_atomic
 from ember.reward.protocol import RewardProtocolError
 from ember.rl_writer.flow_credit import leave_one_out_binary_advantages
 
@@ -18,6 +20,41 @@ PROGRESS_DIAGNOSTIC_ROW_SCHEMA = (
 PROGRESS_DIAGNOSTIC_RESULT_SCHEMA = (
     "ember_pi05_task_grounded_progress_credit_diagnostic_result_v1"
 )
+
+
+def write_task_progress_credit_once(
+    *,
+    output_dir: Path,
+    producer_rank: int,
+    outer_cycle: int,
+    global_task_id: int,
+    teacher_demo_index: int,
+    successes: torch.Tensor,
+    utilities: torch.Tensor,
+    advantages: torch.Tensor,
+    credit_mode: str,
+) -> None:
+    path = (
+        output_dir
+        / "progress_credit"
+        / f"cycle_{outer_cycle:08d}"
+        / f"task_{global_task_id:03d}.json"
+    )
+    payload = {
+        "schema_version": "ember_pi05_task_grounded_progress_credit_task_v1",
+        "producer_rank": producer_rank,
+        "outer_cycle": outer_cycle,
+        "global_task_id": global_task_id,
+        "teacher_demo_index": teacher_demo_index,
+        "successes": [bool(value) for value in successes],
+        "semantic_utilities": [float(value) for value in utilities],
+        "advantages": [float(value) for value in advantages],
+        "credit_mode": credit_mode,
+    }
+    if path.is_file() and canonical_hash(read_json(path)) != canonical_hash(payload):
+        raise RewardProtocolError("replayed task-grounded progress credit changed")
+    if not path.is_file():
+        write_json_atomic(path, payload)
 
 
 def normalized_progress_components(

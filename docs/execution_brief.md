@@ -67,6 +67,52 @@
   owner已再次授权继续推进并要求遇到科学问题自行深入分析。仍不使用subagent；效率
   优先，不重复全量hash或无关旧artifact扫描。
 
+### 0.1 v6 Relative-Flow AS fresh 0→25 launch contract
+
+- canonical workspace为`/data1/user/ymdai/projects/EMBER`，branch为
+  `codex/bci-continuation`，实现commit为`b75cb19`；实际launch snapshot必须是包含本段
+  的clean commit且与`origin/main`一致，精确HEAD由自动`run_contract.json`记录。
+- sealed config为`configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json`；source
+  是既有formal raw step1000，tokenizer/data/assets均取本文第3节canonical BCI路径。
+  fresh identity，不传`--resume`或`--initialize-writer-checkpoint`，profile权重不得进入。
+- 首段scale为25个full24 macros：12,000 logical queries、600 one-shot video conditions、
+  6,000 physical B2 frozen-policy forwards，step25保存完整checkpoint。formal总schedule仍
+  是400、every25；本次只执行sealed selected stop25，不缩短scheduler或数据量。
+- output root固定为
+  `runs/outputs/pi05_as_writer_v6_relative_flow_coldstart_formal_r6_b20_seed7_b75cb19_20260804`，
+  启动前必须不存在；log固定为
+  `runs/logs/pi05_as_writer_v6_relative_flow_coldstart_formal_r6_b20_seed7_b75cb19_20260804.log`，
+  tmux为`ember_v6_rf_as_s25_b75cb19_20260804`。单checkpoint实测约133MB，完整400-step
+  root按3GiB峰值预留，首段低于0.5GiB；2026-08-04 live `/data1` quota为
+  `283,087,724/1,073,741,824 KiB`，容量充分。
+- live设备裁决为gpu01八卡均有cyzhao进程，gpu02物理0/6有yfwang进程；只选
+  `gpu02:1,2,3,4,5,7`六张空闲A40，DDP6、每rank 4 tasks，显式
+  `NCCL_P2P_DISABLE=1`，rank按物理GPU自动绑定NUMA0/1。launch前再做一次短现场复核；
+  任一所选卡被占用即不启动并重新选择，不挤占。
+- exact inner command为：
+
+```bash
+PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID \
+CUDA_VISIBLE_DEVICES=1,2,3,4,5,7 NCCL_P2P_DISABLE=1 \
+OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false \
+EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 \
+EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 \
+.venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_as_writer.py \
+  --config configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json \
+  --mode formal \
+  --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 \
+  --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 \
+  --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model \
+  --data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a \
+  --output-dir runs/outputs/pi05_as_writer_v6_relative_flow_coldstart_formal_r6_b20_seed7_b75cb19_20260804 \
+  --num-workers 0 --log-every 1 --skip-data-sha
+```
+
+- 监控finite/OOM、每macro 24 tasks/480 unique queries/24 videos、teacher seed20260722、
+  source trainable=0和写入边界。无step25完整checkpoint的partial root不得resume或用于
+  coverage；正常step25后只允许同合同exact-resume。cold-start选择不看validation/test
+  outcome，下一步只读24-train official random-reset K4 pre-update coverage。
+
 ## 1. 当前操作状态
 
 - owner已于`2026-08-02 19:18 UTC`开放约十小时post-seal研究窗口；允许Target-Bound

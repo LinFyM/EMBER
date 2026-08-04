@@ -35,6 +35,7 @@ from ember.pi05_source_setup import (
     seed_everything,
 )
 from ember.writer.as_step import run_writer_step
+from ember.writer.as_config import resolve_mode_config
 from ember.writer.checkpoint import (
     initialize_writer_phase,
     load_writer_checkpoint,
@@ -488,7 +489,9 @@ def _prepare_setup(
 def prepare_runtime(
     args: argparse.Namespace, context: DistributedContext
 ) -> WriterRuntime:
-    config = load_writer_config(args.config.resolve())
+    config = resolve_mode_config(
+        load_writer_config(args.config.resolve()), args.mode
+    )
     total_steps, batch_size, checkpoint_steps = resolve_runtime(args, config, context)
     batch_cycle = (batch_size,)
     tasks_per_rank_per_update = int(

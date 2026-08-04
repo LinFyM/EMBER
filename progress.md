@@ -29,9 +29,14 @@ GPU范围和训练步长是当时快照；活动状态只取
 - 预期并由模型合同锁定Writer总参数`47,857,920`，其中76个target-owned factor heads
   `40,517,632`。compileall、config loader/fresh checkpoint family、89项Writer tests和
   显式BCI assets环境下52项聚焦model/config/eval tests全部通过。
-- 下一步是完成authority更新、clean commit/push，然后按live GPU与quota preflight
-  选择`gpu01`或`gpu02`最多六张空闲卡，重做longest105 B20/B2三macro与exact-resume；
-  profile通过前不启动formal，也不继承Direction Store checkpoint。
+- 实现与authority已由`20479d3`clean commit/push到branch/main。live比较后选择
+  `gpu02:1,2,3,4,5,7`六张空闲A40；formal-seed fresh0→1工程smoke finite，loss
+  `.150377`、单步`32.668s`、峰值allocated/reserved`33.325/38.729GiB`，480 queries、
+  24 conditions均完整。但实际最长只有82帧，故只保留工程证据，不冒充longest105。
+- 根因是profile mode没有消费配置中已声明的profile seed172。canonical runtime现按
+  mode在内存中解析有效teacher seed并写入run contract，磁盘formal seed始终保持
+  `20260722`；24项受影响聚焦测试通过。下一步从新root重做真实longest105
+  fresh0→1/exact-resume1→3，profile通过前不启动formal，也不继承任何smoke权重。
 
 ## 2026-08-03 Semantic Direction Store正式裁决、六卡分析与暂停
 

@@ -62,6 +62,24 @@ def writer_split_roles(config: Mapping[str, Any]) -> tuple[str, ...]:
     return ("train", "validation")
 
 
+def resolve_mode_config(
+    config: Mapping[str, Any], mode: str
+) -> dict[str, Any]:
+    """Resolve the declared profile seed without mutating the formal config."""
+
+    if mode not in {"profile", "formal"}:
+        raise WriterModelError("unsupported PI05 AS-Writer runtime mode")
+    resolved = dict(config)
+    resolved["data"] = dict(config["data"])
+    if mode == "profile":
+        profile_seed = config.get("profile_evidence", {}).get(
+            "profile_teacher_video_seed"
+        )
+        if profile_seed is not None:
+            resolved["data"]["teacher_video_seed"] = int(profile_seed)
+    return resolved
+
+
 def _validate_authorities(config: Mapping[str, Any]) -> None:
     authorities = config.get("authorities", {})
     required = {

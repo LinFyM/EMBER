@@ -9,7 +9,7 @@ import pytest
 import torch
 
 from ember.pi05_source_checkpoint import DistributedContext, write_json_atomic
-from ember.writer.as_config import _validate_formal_schedule
+from ember.writer.as_config import _validate_formal_schedule, resolve_mode_config
 from ember.writer.as_contract import (
     build_contract,
     load_writer_config,
@@ -198,6 +198,19 @@ def test_sealed_formal_config_rejects_the_profile_teacher_video_seed() -> None:
         match="retained its profile teacher-video seed",
     ):
         _validate_formal_schedule(config)
+
+
+def test_runtime_mode_resolves_profile_seed_without_mutating_formal_config() -> None:
+    config = load_writer_config(CONFIG)
+    formal_seed = config["data"]["teacher_video_seed"]
+    profile_seed = config["profile_evidence"]["profile_teacher_video_seed"]
+
+    profile = resolve_mode_config(config, "profile")
+    formal = resolve_mode_config(config, "formal")
+
+    assert profile["data"]["teacher_video_seed"] == profile_seed == 172
+    assert formal["data"]["teacher_video_seed"] == formal_seed == 20260722
+    assert config["data"]["teacher_video_seed"] == formal_seed
 
 
 def test_v6_recipe_overlay_is_provenance_not_an_active_writer_path() -> None:

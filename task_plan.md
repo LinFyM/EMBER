@@ -28,8 +28,12 @@ runner、split、路径或 GPU 权限。
 - [x] compileall、config/fresh checkpoint family和89项Writer focused tests通过；
   architecture diff净减少334行，无新增hard signal。环境完整评测合同在显式加载
   `.env.local`资产路径后52/52通过。
-- [ ] 更新当前authority并clean commit/push；随后实时比较`gpu01`/`gpu02`，在最多六张
-  空闲A40上完成longest105、logical B20/B2、fresh0→1/exact-resume1→3 profile。
+- [x] authority与canonical替换以`20479d3`clean commit/push；live六卡formal-seed
+  fresh0→1工程smoke finite且显存通过，但最长仅82帧，已明确不冒充longest105。
+- [x] 根修profile/formal seed切换：磁盘config固定formal seed20260722，profile mode
+  自动解析声明的seed172并写入run contract，不再手工改seed；24项聚焦测试通过。
+- [ ] 实时重查`gpu01`/`gpu02`，在最多六张空闲A40上从新root完成longest105、logical
+  B20/B2、fresh0→1/exact-resume1→3 profile。
 - [ ] profile封存后从fresh identity训练0→200、每25保存；严格配对评测
   50/100/150/200 correct400，并以absolute、breadth、gained/lost和层/target几何决定
   是否续到400。

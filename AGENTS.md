@@ -40,6 +40,10 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   exact-resume及结果完整性。这些检查每个状态边界做一次，不在轮询中反复重跑。
 - 当聚焦测试、真实vertical path和正式实验能直接给出证据时，不增加额外中间层或
   “以防万一”的验证流程。发现问题按其实际层定位，修复后只重跑受影响的最短证据链。
+- 正式Writer config在磁盘上始终保留formal teacher-video seed；`--mode profile`必须
+  由canonical runtime从`profile_evidence.profile_teacher_video_seed`解析有效seed并
+  写入run contract，禁止为profile手工来回改正式seed。profile/formal切换后不得复用
+  另一模式的checkpoint或输出root。
 
 ## Multi-GPU reliability boundary
 
@@ -134,9 +138,10 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   task-ID或static bypass。Writer参数合同`47,857,920`，AS与后续reward gradient共享
   同一参数化。
 - 活动源码/config/schema/internal analysis已原位替换Direction Store，旧实现只由
-  Git/frozen artifacts保存。CPU/config聚焦合同已通过；尚无A40 profile、formal或
-  rollout结果。下一步必须clean commit/push并live选择最多六张空闲A40，完成
-  longest105、logical B20/B2、fresh0→1/exact-resume1→3后才可fresh0→200。
+  Git/frozen artifacts保存。实现commit`20479d3`已push；formal-seed六卡fresh0→1
+  工程smoke finite且峰值reserved`38.729GiB`，但最长只有82帧，不能冒充longest105。
+  runtime现按mode自动解析profile seed172且不改磁盘formal seed；下一步必须从新root
+  完成longest105、logical B20/B2、fresh0→1/exact-resume1→3后才可fresh0→200。
 - 正式首段保持full24 raw mean、B20、fast-decay400、每25保存；paired评测
   50/100/150/200。不得从Direction Store checkpoint warm-start，不得强制SFT几何或
   用functional loss选择checkpoint；长期single-checkpoint correct严格超过150仍未完成。

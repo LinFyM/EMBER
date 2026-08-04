@@ -37,7 +37,9 @@
 - canonical替换后的理论/实测目标参数为`47,857,920`：factor heads`40,517,632`，其余
   Writer`7,340,288`。旧Direction Router、八stores和额外frozen task-anchor forward
   已从active代码退役；Git/frozen config/artifacts保留历史。89项Writer tests及52项
-  config/model/eval focused tests通过，当前尚无A40 profile或closed-loop结果。
+  config/model/eval focused tests通过。首次六卡formal-seed fresh0→1证明B20/B2与显存
+  健康，但最长仅82帧，不能作为longest105 profile或closed-loop证据；mode-specific
+  profile seed现由runtime自动解析，避免再次污染formal config。
 
 ## 2026-08-03 Semantic Direction Store正式负裁决
 

@@ -1,4 +1,4 @@
-"""Construction and exact-resume state for the PI05 RL-Writer runtime."""
+"""Construction and exact-resume state for task-relative Flow-Credit Writer."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from ember.pi05_eval_contract import (
     inspect_tokenizer,
     load_evaluation_authorities,
 )
-from ember.pi05_processing import Pi05LiberoProcessor
+from ember.pi05_processing import Pi05LiberoProcessor, Pi05TeacherPrefixTokenizer
 from ember.pi05_source_checkpoint import (
     DistributedContext,
     barrier,
@@ -29,35 +29,36 @@ from ember.pi05_source_checkpoint import (
     write_json_atomic,
 )
 from ember.pi05_source_contract import reconcile_metrics
-from ember.pi05_source_setup import load_policy, load_stats, seed_everything
+from ember.pi05_source_setup import (
+    initialize_deferred_process_group,
+    load_policy,
+    load_stats,
+    seed_everything,
+)
 from ember.reward.ledger import InteractionCursors
 from ember.reward.protocol import RewardProtocolError, RewardTask
 from ember.reward.rollout import RandomResetEnvironmentPool
-from ember.rl_writer.checkpoint import (
-    load_rl_writer_checkpoint,
-    restore_rng,
-)
+from ember.rl_writer.checkpoint import load_rl_writer_checkpoint, restore_rng
 from ember.rl_writer.contract import (
     REPO_ROOT,
     authority_path,
     build_contract,
+    cycle_assignments,
     load_rl_writer_config,
     publish_contract,
     resolve_runtime,
     reward_tasks,
-    task_for_update,
 )
-from ember.writer.as_contract import inspect_feature_cache, load_writer_config
+from ember.writer.as_config import writer_stage
+from ember.writer.as_contract import inspect_video_data, load_writer_config
 from ember.writer.as_sampling import TeacherVideoSchedule
-from ember.writer.feature_cache import WriterFeatureStore
+from ember.writer.checkpoint import initialize_writer_phase
+from ember.writer.data import RawTeacherVideoStore, WriterTaskAuthority
 from ember.writer.model import CompleteLoRAWriter
+from ember.writer.training import build_writer
 
 
-_CHECKPOINT_NAME = re.compile(r"update_([0-9]{8})")
-_CANONICAL_AS_RETRAIN_REQUIRED = (
-    "RL-Writer runtime is unavailable until it is rebuilt and retrained for "
-    "the canonical raw-video CV-ADR Writer"
-)
+_CHECKPOINT_NAME = re.compile(r"cycle_([0-9]{8})")
 
 
 @dataclass
@@ -65,20 +66,25 @@ class RLWriterRuntime:
     args: argparse.Namespace
     context: DistributedContext
     config: dict[str, Any]
+    as_config: dict[str, Any]
     tasks: tuple[RewardTask, ...]
+    task_authorities: dict[int, WriterTaskAuthority]
     writer: CompleteLoRAWriter
     policy: torch.nn.Module
     processor: Pi05LiberoProcessor
-    feature_store: WriterFeatureStore
+    tokenizer: Pi05TeacherPrefixTokenizer
+    video_store: RawTeacherVideoStore
     video_schedule: TeacherVideoSchedule
     optimizer: torch.optim.Optimizer
     scheduler: torch.optim.lr_scheduler.LRScheduler
     lora_contract: Any
+    identity_state: dict[str, torch.Tensor]
     contract: dict[str, Any]
     contract_sha256: str
-    total_updates: int
-    checkpoint_updates: tuple[int, ...]
-    next_update: int
+    total_cycles: int
+    checkpoint_cycles: tuple[int, ...]
+    learning_epochs: int
+    next_cycle: int
     cursors: InteractionCursors
     successes: int
     reward_sum: float
@@ -88,22 +94,26 @@ class RLWriterRuntime:
     env_pool: RandomResetEnvironmentPool
 
 
-def _resume_update(path: Path | None) -> int:
+@dataclass(frozen=True)
+class _LocalWriterModels:
+    authorities: Any
+    source: dict[str, Any]
+    tokenizer_record: dict[str, Any]
+    as_config: dict[str, Any]
+    policy: torch.nn.Module
+    writer: CompleteLoRAWriter
+    lora_contract: Any
+    trainable: dict[str, Any]
+    identity_state: dict[str, torch.Tensor]
+
+
+def _resume_cycle(path: Path | None) -> int:
     if path is None:
         return 0
     match = _CHECKPOINT_NAME.fullmatch(path.name)
     if match is None:
-        raise RewardProtocolError("RL-Writer resume path is not an update checkpoint")
+        raise RewardProtocolError("Flow-Credit resume path is not a cycle checkpoint")
     return int(match.group(1))
-
-
-def _fresh_writer(
-    policy: torch.nn.Module,
-    config: Mapping[str, Any],
-    device: torch.device,
-) -> tuple[CompleteLoRAWriter, Any, dict[str, Any]]:
-    del policy, config, device
-    raise RewardProtocolError(_CANONICAL_AS_RETRAIN_REQUIRED)
 
 
 def _optimizer(
@@ -112,55 +122,62 @@ def _optimizer(
     values = config["optimization"]["optimizer"]
     return torch.optim.AdamW(
         writer.parameters(),
-        lr=float(config["optimization"]["profile_learning_rate"]),
+        lr=float(config["optimization"]["learning_rate"]),
         betas=tuple(values["betas"]),
         eps=float(values["eps"]),
         weight_decay=float(values["weight_decay"]),
     )
 
 
-def rank_ledger_summary(runtime: RLWriterRuntime, next_update: int) -> dict[str, Any]:
+def rank_ledger_summary(runtime: RLWriterRuntime, next_cycle: int) -> dict[str, Any]:
     digest = hashlib.sha256()
     actions = 0
     successes = 0
     reward_sum = 0.0
-    rollouts = int(runtime.config["algorithm"]["rollouts_per_task_update"])
-    for update in range(next_update):
-        task, cycle, _ = task_for_update(
+    rollouts = int(runtime.config["algorithm"]["rollouts_per_task_condition"])
+    local_rollouts = 0
+    for cycle in range(next_cycle):
+        assigned = cycle_assignments(
             runtime.tasks,
             world_size=runtime.context.world_size,
-            rank=runtime.context.rank,
-            update=update,
+            cycle=cycle,
             seed=int(runtime.config["data"]["task_schedule_seed"]),
-        )
-        for offset in range(rollouts):
-            cursor = cycle * rollouts + offset
-            path = (
-                runtime.args.output_dir
-                / "rollouts"
-                / f"task_{task.global_task_id:03d}"
-                / f"rollout_{cursor:08d}.json"
-            )
-            if not path.is_file():
-                raise RewardProtocolError(
-                    f"RL-Writer ledger prefix has a gap: {task.global_task_id}/{cursor}"
+        )[runtime.context.rank]
+        for task in assigned:
+            for offset in range(rollouts):
+                cursor = cycle * rollouts + offset
+                path = (
+                    runtime.args.output_dir
+                    / "rollouts"
+                    / f"task_{task.global_task_id:03d}"
+                    / f"rollout_{cursor:08d}.json"
                 )
-            row = read_json(path)
-            expected = (runtime.context.rank, update, task.global_task_id, cursor)
-            observed = (
-                int(row.get("producer_rank", -1)),
-                int(row.get("update", -1)),
-                int(row.get("global_task_id", -1)),
-                int(row.get("rollout_cursor", -1)),
-            )
-            if observed != expected:
-                raise RewardProtocolError("RL-Writer ledger schedule changed")
-            digest.update(bytes.fromhex(sha256_file(path)))
-            actions += int(row["steps"])
-            successes += int(bool(row["success"]))
-            reward_sum += float(row["reward_sum"])
+                if not path.is_file():
+                    raise RewardProtocolError(
+                        f"Flow-Credit ledger prefix gap: {task.global_task_id}/{cursor}"
+                    )
+                row = read_json(path)
+                expected = (
+                    runtime.context.rank,
+                    cycle,
+                    task.global_task_id,
+                    cursor,
+                )
+                observed = (
+                    int(row.get("producer_rank", -1)),
+                    int(row.get("outer_cycle", -1)),
+                    int(row.get("global_task_id", -1)),
+                    int(row.get("rollout_cursor", -1)),
+                )
+                if observed != expected:
+                    raise RewardProtocolError("Flow-Credit ledger schedule changed")
+                digest.update(bytes.fromhex(sha256_file(path)))
+                actions += int(row["steps"])
+                successes += int(bool(row["success"]))
+                reward_sum += float(row["reward_sum"])
+                local_rollouts += 1
     return {
-        "rollout_cursor": next_update * rollouts,
+        "rollout_cursor": local_rollouts,
         "environment_action_cursor": actions,
         "successes": successes,
         "reward_sum": reward_sum,
@@ -188,11 +205,50 @@ def _prepare_libero_paths(
     return values[0]
 
 
+def _broadcast_main(
+    context: DistributedContext, callback: Any
+) -> dict[str, Any]:
+    payload: list[Any] = [None]
+    if context.is_main:
+        try:
+            payload[0] = {"value": callback()}
+        except Exception as error:
+            payload[0] = {"error": repr(error)}
+    if context.world_size > 1:
+        dist.broadcast_object_list(payload, src=0, device=context.device)
+    if payload[0].get("error"):
+        raise RewardProtocolError(payload[0]["error"])
+    return dict(payload[0]["value"])
+
+
+def _task_authorities(
+    config: Mapping[str, Any], data_root: Path
+) -> dict[int, WriterTaskAuthority]:
+    target = read_json(authority_path(config, "target_data_manifest"))
+    result = {}
+    for row in target.get("tasks", []):
+        if row.get("split_role") != "train":
+            continue
+        task_id = int(row["global_task_id"])
+        path = (data_root / str(row["hdf5"]["relative_path"])).resolve()
+        if not path.is_relative_to(data_root):
+            raise RewardProtocolError("Flow-Credit video path escaped data root")
+        result[task_id] = WriterTaskAuthority(
+            task_id=task_id,
+            language=str(row["language"]),
+            path=path,
+            expected_bytes=int(row["hdf5"]["bytes"]),
+        )
+    if len(result) != 24:
+        raise RewardProtocolError("Flow-Credit video authorities changed")
+    return result
+
+
 def _restore_runtime(runtime: RLWriterRuntime, initial: int) -> RLWriterRuntime:
     expected_rows = 0
     if runtime.args.resume is not None:
         ledger = rank_ledger_summary(runtime, initial)
-        update, cursors, rng, expected_rows, counters = load_rl_writer_checkpoint(
+        cycle, cursors, rng, expected_rows, counters = load_rl_writer_checkpoint(
             checkpoint=runtime.args.resume,
             context=runtime.context,
             writer=runtime.writer,
@@ -201,13 +257,14 @@ def _restore_runtime(runtime: RLWriterRuntime, initial: int) -> RLWriterRuntime:
             contract_sha256=runtime.contract_sha256,
             tasks=runtime.tasks,
             task_schedule_seed=int(runtime.config["data"]["task_schedule_seed"]),
-            rollouts_per_task_update=int(
-                runtime.config["algorithm"]["rollouts_per_task_update"]
+            rollouts_per_task=int(
+                runtime.config["algorithm"]["rollouts_per_task_condition"]
             ),
             video_schedule=runtime.video_schedule,
             ledger_summary=ledger,
+            learning_epochs=runtime.learning_epochs,
         )
-        runtime.next_update = update
+        runtime.next_cycle = cycle
         runtime.cursors = cursors
         runtime.successes = int(counters["successes"])
         runtime.reward_sum = float(counters["reward_sum"])
@@ -221,7 +278,7 @@ def _restore_runtime(runtime: RLWriterRuntime, initial: int) -> RLWriterRuntime:
                     runtime.metrics_path,
                     initial,
                     expected_rows,
-                    cursor_key="next_update",
+                    cursor_key="next_cycle",
                 )
             }
         except Exception as error:
@@ -239,20 +296,12 @@ def _restore_runtime(runtime: RLWriterRuntime, initial: int) -> RLWriterRuntime:
     return runtime
 
 
-def build_runtime(
-    args: argparse.Namespace, context: DistributedContext
-) -> RLWriterRuntime:
-    config = load_rl_writer_config(args.config.resolve())
-    if args.stage != config["sealed_stage"]:
-        raise RewardProtocolError("RL-Writer stage requires its own immutable config")
-    raise RewardProtocolError(_CANONICAL_AS_RETRAIN_REQUIRED)
-    total, checkpoints = resolve_runtime(args, config, context)
-    initial = _resume_update(args.resume)
-    if not 0 <= initial < args.stop_after_update:
-        raise RewardProtocolError("RL-Writer resume cursor is outside this segment")
-    seed_everything(int(config["optimization"]["seed"]), context)
-
-    paths = _prepare_libero_paths(args, context)
+def _load_local_writer_models(
+    args: argparse.Namespace,
+    context: DistributedContext,
+    config: Mapping[str, Any],
+) -> _LocalWriterModels:
+    """Load policy and Writer before NCCL claims the selected devices."""
 
     authorities = load_evaluation_authorities(
         authority_path(config, "evaluation_config"), REPO_ROOT
@@ -260,29 +309,61 @@ def build_runtime(
     source = inspect_source_checkpoint(
         authorities, args.source_run, args.checkpoint, evaluation_mode="formal"
     )
-    tokenizer = inspect_tokenizer(authorities, args.tokenizer_path)
-    tasks = reward_tasks(config, stage=args.stage)
-    task_ids = tuple(task.global_task_id for task in tasks)
+    tokenizer_record = inspect_tokenizer(authorities, args.tokenizer_path)
     as_config = load_writer_config(authority_path(config, "as_writer_config"))
-    cache = inspect_feature_cache(args.feature_cache, as_config, source, task_ids)
+    if writer_stage(as_config) != "development":
+        raise RewardProtocolError("Flow-Credit cold start is not development AS")
     policy = load_policy(
         Path(source["model_path"]), authorities.source_base_config, context.device
     )
-    writer, lora, trainable = _fresh_writer(policy, config, context.device)
-    optimizer = _optimizer(writer, config)
-    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda _: 1.0)
+    writer, lora, trainable, identity = build_writer(as_config, policy)
+    writer.to(context.device)
+    return _LocalWriterModels(
+        authorities=authorities,
+        source=source,
+        tokenizer_record=tokenizer_record,
+        as_config=as_config,
+        policy=policy,
+        writer=writer,
+        lora_contract=lora,
+        trainable=trainable,
+        identity_state=identity,
+    )
+
+
+def _publish_runtime_contract(
+    *,
+    args: argparse.Namespace,
+    context: DistributedContext,
+    config: Mapping[str, Any],
+    models: _LocalWriterModels,
+    coldstart: Mapping[str, Any],
+    video_data: Mapping[str, Any],
+    tasks: tuple[RewardTask, ...],
+    total_cycles: int,
+    checkpoint_cycles: tuple[int, ...],
+    learning_epochs: int,
+    libero_paths: Mapping[str, Any],
+) -> tuple[dict[str, Any], str]:
+    trainable = {
+        **models.trainable,
+        "object": "shared_task_relative_reward_trained_writer_only",
+        "coldstart_teacher_action_phase_closed": True,
+    }
     contract = build_contract(
         args=args,
         config=config,
         context=context,
-        source=source,
-        tokenizer=tokenizer,
-        feature_cache=cache,
+        source=models.source,
+        tokenizer=models.tokenizer_record,
+        coldstart=coldstart,
+        video_data=video_data,
         tasks=tasks,
         trainable=trainable,
-        total_updates=total,
-        checkpoint_updates=checkpoints,
-        libero_paths=paths,
+        total_cycles=total_cycles,
+        checkpoint_cycles=checkpoint_cycles,
+        learning_epochs=learning_epochs,
+        libero_paths=libero_paths,
     )
     contract_sha = publish_contract(
         output_dir=args.output_dir,
@@ -297,54 +378,123 @@ def build_runtime(
                 "source_run": str(args.source_run),
                 "source_checkpoint": str(args.checkpoint),
                 "tokenizer": str(args.tokenizer_path),
-                "feature_cache": str(args.feature_cache),
+                "video_data_root": str(args.data_root),
+                "coldstart_checkpoint": str(args.coldstart_checkpoint),
             },
         )
     barrier(context)
+    return contract, contract_sha
+
+
+def build_runtime(
+    args: argparse.Namespace, context: DistributedContext
+) -> RLWriterRuntime:
+    config = load_rl_writer_config(args.config.resolve())
+    total, checkpoints, learning_epochs = resolve_runtime(args, config, context)
+    initial = _resume_cycle(args.resume)
+    if not 0 <= initial < args.stop_after_cycle:
+        raise RewardProtocolError("Flow-Credit resume cursor is outside this segment")
+    seed_everything(int(config["optimization"]["seed"]), context)
+    models = _load_local_writer_models(args, context, config)
+    initialize_deferred_process_group(
+        context, rendezvous_root=args.output_dir.parent
+    )
+    coldstart = initialize_writer_phase(
+        args.coldstart_checkpoint,
+        context,
+        "development",
+        models.source,
+        models.as_config["authorities"],
+        models.as_config["writer"],
+        models.writer,
+        str(models.trainable["lora_contract_sha256"]),
+    )
+    if coldstart.get("mode") != "writer_weight_warm_start":
+        raise RewardProtocolError("Flow-Credit requires an independent AS cold start")
+    optimizer = _optimizer(models.writer, config)
+    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda _: 1.0)
+    paths = _prepare_libero_paths(args, context)
+
+    tasks = reward_tasks(config)
+    task_ids = tuple(task.global_task_id for task in tasks)
+    video_data = _broadcast_main(
+        context,
+        lambda: inspect_video_data(
+            args.data_root,
+            models.as_config,
+            task_ids,
+            verify_hashes=False,
+        ),
+    )
+    task_authorities = _task_authorities(config, args.data_root)
+    contract, contract_sha = _publish_runtime_contract(
+        args=args,
+        context=context,
+        config=config,
+        models=models,
+        coldstart=coldstart,
+        video_data=video_data,
+        tasks=tasks,
+        total_cycles=total,
+        checkpoint_cycles=checkpoints,
+        learning_epochs=learning_epochs,
+        libero_paths=paths,
+    )
 
     video_schedule = TeacherVideoSchedule(
         task_ids=task_ids,
         demo_indices=range(50),
         seed=int(config["data"]["teacher_video_seed"]),
     )
-    feature_store = WriterFeatureStore(
-        args.feature_cache,
-        task_ids=task_ids,
-        expected_extraction_sha256=str(cache["extraction_sha256"]),
-        max_cached_tasks=4,
-        expected_dim=int(as_config["writer"]["vision_feature_dim"]),
-        expected_spatial_tokens=int(as_config["writer"]["vision_spatial_tokens"]),
-        expected_run_contract_file_sha256=str(cache["run_contract_file_sha256"]),
-        expected_manifest_file_sha256=str(cache["cache_manifest_file_sha256"]),
-    )
     processor = Pi05LiberoProcessor(
         load_stats(
-            authorities.source_base_config,
-            authorities.source_base_config["data"]["active_task_ids"],
+            models.authorities.source_base_config,
+            models.authorities.source_base_config["data"]["active_task_ids"],
         ),
         args.tokenizer_path,
-        int(authorities.source_base_config["features"]["tokenizer_max_length"]),
+        int(models.authorities.source_base_config["features"]["tokenizer_max_length"]),
         str(context.device),
     )
+    tokenizer = Pi05TeacherPrefixTokenizer(
+        args.tokenizer_path,
+        int(models.authorities.source_base_config["features"]["tokenizer_max_length"]),
+        str(context.device),
+    )
+    tasks_per_rank = len(tasks) // context.world_size
     runtime = RLWriterRuntime(
         args=args,
         context=context,
         config=config,
+        as_config=models.as_config,
         tasks=tasks,
-        writer=writer,
-        policy=policy,
+        task_authorities=task_authorities,
+        writer=models.writer,
+        policy=models.policy,
         processor=processor,
-        feature_store=feature_store,
+        tokenizer=tokenizer,
+        video_store=RawTeacherVideoStore(
+            tuple(task_authorities.values()),
+            frame_stride=int(models.as_config["writer"]["frame_stride"]),
+            max_open_files=max(2, tasks_per_rank),
+        ),
         video_schedule=video_schedule,
         optimizer=optimizer,
         scheduler=scheduler,
-        lora_contract=lora,
+        lora_contract=models.lora_contract,
+        identity_state=models.identity_state,
         contract=contract,
         contract_sha256=contract_sha,
-        total_updates=total,
-        checkpoint_updates=checkpoints,
-        next_update=initial,
-        cursors=InteractionCursors(initial, initial, 0),
+        total_cycles=total,
+        checkpoint_cycles=checkpoints,
+        learning_epochs=learning_epochs,
+        next_cycle=initial,
+        cursors=InteractionCursors(
+            initial
+            * tasks_per_rank
+            * int(config["algorithm"]["rollouts_per_task_condition"]),
+            0,
+            initial * learning_epochs,
+        ),
         successes=0,
         reward_sum=0.0,
         wall_nanoseconds=0,

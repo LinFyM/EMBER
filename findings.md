@@ -4182,3 +4182,24 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   absolute/breadth仍不提高，则主要根因应升级为functional action surrogate与
   source-policy closed-loop有效流形错位；若稳定性也不提高，则拒绝该estimator，
   回到完整training target设计，而不是继续修补SFB。
+
+## Task-Relative Flow-Credit设计与BCI AS profile（2026-08-04）
+
+- 历史PI05 Writer-RL不是policy gradient：它只保留成功rollout，再把自身成功的
+  executed action prefix当监督目标做flow regression；没有failure、advantage、
+  old/current ratio或trust region。其correct/wrong=`94/87`，不能作为“RL已经试过”
+  拒绝真实reward credit，也不能恢复为活动路径。
+- direct SFT的effective BA也接近低秩，因此“Writer LoRA near-rank1”不是漂移根因。
+  Target-Owned已解除跨layer硬同向却只得99；最早剩余接口是condition如何获得对真实
+  closed-loop occupancy有符号、且跨随机query可累积的policy-aware credit。
+- 当前实验用同task K4 binary reward构造leave-one-out advantage。全成/全败task严格
+  零梯度，避免无相对证据时制造更新；成功和失败executed prefixes均进入逐CFM sample
+  old/current ratio，正项PPO clip、负项SPO pullback。functional loss只承担ratio估计，
+  其数值仍不用于checkpoint选择。
+- v6 fresh AS在A40六卡保持A100逻辑数据量：每macro 24 tasks、每task B20，共480
+  unique queries和24 one-shot videos；B2只是物理切片。16-frame chunk覆盖105帧视频，
+  峰值reserved`44.816GB`，距离46GB卡仍有有限但可运行余量，不需要减少B20或改科学
+  目标。独立exact-resume证明该结论不只成立于单段profile。
+- step1只有factor梯度不是上游断路，而是template-A/zero-B的预期staging；step2开始
+  semantic/Core/compiler可达，step3 Program也非零。后续若reward梯度近零，必须结合
+  nonzero-advantage task数和ratio证据判断，不能把AS step1现象误诊为结构断路。

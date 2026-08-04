@@ -44,6 +44,7 @@ def validate_random_reset_row(row: Mapping[str, Any]) -> None:
     seeds = row.get("policy_noise_seeds")
     initial = str(row.get("initial_observation_sha256", ""))
     valid = row.get("valid_action_steps")
+    retained = bool(row.get("failure_replay_retained", False))
     if (
         row.get("official_random_reset") is not True
         or row.get("fixed_init_state_id", "sentinel") is not None
@@ -58,8 +59,11 @@ def validate_random_reset_row(row: Mapping[str, Any]) -> None:
         or not isinstance(valid, list)
         or any(not 0 < int(value) <= 5 for value in valid)
         or int(row.get("action_chunk_count", -1)) != len(valid)
-        or (bool(row.get("success")) and len(valid) != len(seeds))
-        or (not bool(row.get("success")) and valid)
+        or (
+            (bool(row.get("success")) or retained)
+            and len(valid) != len(seeds)
+        )
+        or (not bool(row.get("success")) and not retained and valid)
         or int(row.get("steps", -1)) < 0
     ):
         raise RewardProtocolError("random-reset reward ledger row changed")

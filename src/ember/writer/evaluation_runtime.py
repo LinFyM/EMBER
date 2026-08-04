@@ -24,12 +24,11 @@ from ember.writer.evaluation_cache import (
 )
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.inference import (
-    FrozenWriterTaskAdapter,
-    PreparedWriterLoRA,
     expected_writer_episode_evidence,
     inspect_as_writer_evaluation,
     validate_writer_episode_evidence,
 )
+from ember.writer.live_adapter import FrozenWriterTaskAdapter, PreparedWriterLoRA
 from ember.writer.lora_rollout import WriterLoRARolloutAdapter
 from ember.writer.model import WriterModelError
 
@@ -69,28 +68,36 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
         cache_contract: Mapping[str, Any],
     ) -> None:
         del tokenizer_path
-        if str(evaluation_adapter.get("kind", "as_writer")) != "as_writer":
-            raise WriterModelError(
-                "cached rollout requires a canonical AS-Writer adapter"
-            )
-        observed = inspect_as_writer_evaluation(
-            config_path=Path(evaluation_adapter["config"]["path"]),
-            checkpoint=Path(evaluation_adapter["checkpoint"]["path"]),
-            video_data_root=Path(evaluation_adapter["video_data"]["root"]),
-            source=source,
-            task_keys=task_keys,
-            video_condition=str(evaluation_adapter["video_condition"]),
-            video_seed=int(evaluation_adapter["video_schedule"]["seed"]),
-            video_sampling_mode=str(
-                evaluation_adapter["video_schedule"]["sampling_mode"]
-            )
-            if "sampling_mode" in evaluation_adapter["video_schedule"]
-            else None,
-            require_formal=require_formal,
-        )
+        kind = str(evaluation_adapter.get("kind", "as_writer"))
+        common = {
+            "config_path": Path(evaluation_adapter["config"]["path"]),
+            "checkpoint": Path(evaluation_adapter["checkpoint"]["path"]),
+            "video_data_root": Path(evaluation_adapter["video_data"]["root"]),
+            "source": source,
+            "task_keys": task_keys,
+            "video_condition": str(evaluation_adapter["video_condition"]),
+            "video_seed": int(evaluation_adapter["video_schedule"]["seed"]),
+            "video_sampling_mode": (
+                str(evaluation_adapter["video_schedule"]["sampling_mode"])
+                if "sampling_mode" in evaluation_adapter["video_schedule"]
+                else None
+            ),
+            "require_formal": require_formal,
+        }
+        if kind == "as_writer":
+            observed = inspect_as_writer_evaluation(**common)
+            config = load_writer_config(Path(observed["config"]["path"]))
+        elif kind == "rl_writer":
+            from ember.rl_writer.contract import authority_path, load_rl_writer_config
+            from ember.rl_writer.inference import inspect_rl_writer_evaluation
+
+            observed = inspect_rl_writer_evaluation(**common)
+            rl_config = load_rl_writer_config(Path(observed["config"]["path"]))
+            config = load_writer_config(authority_path(rl_config, "as_writer_config"))
+        else:
+            raise WriterModelError("cached rollout requires a canonical Writer adapter")
         if observed != dict(evaluation_adapter):
             raise WriterModelError("PI05 Writer evaluation artifacts changed after prepare")
-        config = load_writer_config(Path(observed["config"]["path"]))
         lora = load_pi05_lora_contract(
             REPO_ROOT / str(config["authorities"]["lora_contract"]["path"])
         )

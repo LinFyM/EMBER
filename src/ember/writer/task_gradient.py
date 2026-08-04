@@ -33,7 +33,8 @@ def _parameter_block(name: str) -> str:
         return "semantic_frontend"
     for prefix, block in (
         ("semantic_core.", "core"),
-        ("semantic_program.", "program"),
+        ("visual_transition.", "program"),
+        ("procedure.", "program"),
         ("compiler.", "compiler"),
         ("factor_heads.", "factor"),
     ):

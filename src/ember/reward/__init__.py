@@ -19,6 +19,7 @@ from ember.reward.protocol import (
     update_seed,
 )
 from ember.reward.rollout import (
+    complete_trajectory_batch,
     RandomResetEnvironmentPool,
     RewardTrajectory,
     collect_randomized_reward_trajectory,
@@ -30,6 +31,7 @@ __all__ = [
     "InteractionCursors",
     "RewardTask",
     "RewardTrajectory",
+    "complete_trajectory_batch",
     "RandomResetEnvironmentPool",
     "collect_randomized_reward_trajectory",
     "environment_seed",

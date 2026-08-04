@@ -112,12 +112,13 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 28. `docs/action_forecast_writer_variance_reduced_functional_estimator_design.md`
 29. `docs/action_forecast_writer_semantic_direction_store_design.md`
 30. `docs/action_forecast_writer_target_owned_factor_design.md`
-31. `task_plan.md`
-32. `findings.md`
-33. `progress.md`
-34. `docs/concept.md`
-35. `docs/decisions_and_open_questions.md`
-36. `docs/novelty_and_landscape.md`
+31. `docs/action_forecast_writer_relative_flow_credit_design.md`
+32. `task_plan.md`
+33. `findings.md`
+34. `progress.md`
+35. `docs/concept.md`
+36. `docs/decisions_and_open_questions.md`
+37. `docs/novelty_and_landscape.md`
 
 本post-seal分支已完成Target-Bound裁决并打开Semantic Factor-Basis；修改或运行前
 仍必须完整阅读Target-Bound与Semantic Factor-Basis两份design。历史CV/Target-Bound
@@ -127,6 +128,28 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 不得恢复为活动实现，也不得混入MemLLM。
 
 ## Current focused task
+
+- 当前唯一活动方法是Task-Relative Flow-Credit Writer，authority为
+  `docs/action_forecast_writer_relative_flow_credit_design.md`。它恢复历史single
+  checkpoint最强且时序路径已验证的v6 Writer作为独立AS cold start，随后永久关闭
+  teacher action入口，用24 train tasks的official random-reset binary reward、同task
+  K4 leave-one-out advantage和per-CFM-sample old/current ratio训练Writer。不得恢复旧
+  success-filtered Writer-RL、flat task-local RL、Target-Owned或Direction Store活动路径。
+- canonical实现已原位替换旧RL路径：success与failure executed prefixes均保留；正
+  advantage用PPO clip，负advantage用SPO pullback；Nmc4、full24等权、最多6 ranks、
+  deferred NCCL和完整cycle exact-resume。source policy与normalization冻结，Writer输入
+  仍只有task language + exactly one action-hidden teacher video。
+- v6 AS A40六卡profile已通过：logical B20、policy B2、16-frame encoder chunk、最长
+  105帧；三步约`33.46/30.89/30.98s`，峰值allocated/reserved
+  `34,948,858,880/44,816,138,240` bytes，0 OOM/clip。独立fresh0→1再exact-resume1→3
+  通过，累计1,440 queries/72 videos，五个主block到step3均可达，source trainable=0。
+- sealed AS config是`configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json`；下一步
+  从clean pushed origin/main与fresh identity正式训练到macro25，再用canonical reward
+  cycle的K4 pre-update ledger做24-train-task random-reset coverage与RL最长失败/两epoch
+  profile。coverage不过则只续同一AS root下一个25-step段，不从历史best warm-start。
+- 长期目标仍是同一single checkpoint strict correct`>150/400`且越高越好；未完成前
+  不因loss、训练reward、内部几何或单一screen停止。当前GPU无EMBER进程；每次launch
+  仍实时比较`gpu01/gpu02`并只用最多6张空闲卡。
 
 - Policy-Target-Owned Factor已完成正式负裁决。clean`34be4a0`从fresh identity完成
   macro0→200；50/100/150/200严格配对correct400=`99/76/86/68`，breadth=
@@ -141,8 +164,9 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   policy-target parameter sharing作为task drift主要根因。当前最早接口是视频条件如何
   获得policy-aware、闭环有效、跨随机query可累积的credit，而不是继续增加head、调
   layer gate/scale、强制SFT profile或加入监督专用辅助loss。
-- 本轮训练、四点rollout和全部分析已结束，GPU已释放。按owner要求当前暂停，不启动
-  下一架构、训练或评测；长期single-checkpoint correct严格超过150仍未完成。精确
+- 本轮训练、四点rollout和全部分析已结束，GPU已释放。该次暂停随后已由owner解除；
+  Target-Owned只保留为负结果，不再是活动实现。长期single-checkpoint correct严格
+  超过150仍未完成。精确
   roots、曲线、几何和禁调项取`docs/active_session_handoff.md`与
   `docs/action_forecast_writer_target_owned_factor_design.md`。
 

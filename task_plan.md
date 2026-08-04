@@ -8,7 +8,26 @@
 `docs/a100_to_bci_migration_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
 runner、split、路径或 GPU 权限。
 
-## 当前BCI Policy-Target-Owned Factor推进（2026-08-04）
+## 当前Task-Relative Flow-Credit推进（2026-08-04）
+
+- [x] 复核历史RL：确认旧PI05 Writer-RL只是success-filtered executed-prefix BC，没有
+  failure、advantage、old/current ratio或trust region；不得恢复或改名复用。
+- [x] 封存task-relative flow-credit design：fresh v6 AS cold start，随后teacher action
+  永久关闭；full24、K4 official random resets、task-local LOO advantage、Nmc4、PPO正项
+  与SPO负项，Writer-only update。
+- [x] 原位恢复唯一v6 Writer并替换canonical RL/checkpoint/evaluator；删除Target-Owned、
+  flat task-local与旧RL并行活动路径。210项全仓分组回归与architecture hard gate通过。
+- [x] 在live空闲`gpu02:1,2,3,4,5,7`完成longest105 AS profile：logical B20/B2，峰值
+  allocated/reserved`34,948,858,880/44,816,138,240` bytes，三步finite、0 OOM/clip。
+- [x] 独立fresh0→1/exact-resume1→3通过；1,440 queries、72 videos、五主block到step3
+  可达、source policy trainable=0；AS config已seal。
+- [ ] clean commit/push至origin main，从fresh identity运行AS 0→25。
+- [ ] 用canonical reward cycle的pre-update K4 ledger做24 train task coverage；不过则只
+  exact-resume同一AS root到下一25-step边界，通过则冻结coldstart并永久关闭action data。
+- [ ] 完成最长failure、Nmc4、两epoch RL profile；机制通过后做两个outer cycles与paired
+  screen/correct400，持续以single checkpoint strict`>150/400`为最低成功门。
+
+## 历史BCI Policy-Target-Owned Factor推进（2026-08-04）
 
 - [x] owner恢复长期`>150`目标，要求科学问题自行深入分析后继续推进，不再为中间判断
   请求确认；继续禁用subagent、保持one-shot与效率优先。

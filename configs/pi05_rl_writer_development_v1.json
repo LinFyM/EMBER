@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_rl_writer_v1",
+  "schema_version": "ember_pi05_task_relative_flow_credit_writer_v2",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {
@@ -11,12 +11,8 @@
       "sha256": "5bb0a5ca4604f126cc4bcdd29c9a7a4d17403a8f3ee7161d8afdfeccbb2c488c"
     },
     "as_writer_config": {
-      "path": "configs/pi05_as_writer_v2.json",
-      "sha256": "34c5a1f822a5817a25d0ee2bb4cd779c28ca63f5d573bad2f36a16a945734b7a"
-    },
-    "feature_cache_config": {
-      "path": "configs/pi05_writer_feature_cache_v2.json",
-      "sha256": "3dc3557d65c1f28e1f144e12a8b3a2a8aee77df753f81565c49c9257ea6f396c"
+      "path": "configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json",
+      "sha256": "c9aebb9fdaf79706b0c6bb2359479820a7df14b284e61ff476f42833e898eb1a"
     },
     "lora_contract": {
       "path": "configs/pi05_lora_v1.json",
@@ -45,40 +41,32 @@
     "reward_owner": "official LIBERO random-reset binary reward/success only",
     "development_reward_split_roles": ["train"],
     "development_video_split_roles": ["train"],
+    "teacher_action_reads_after_coldstart": 0,
     "validation_reward_reads": 0,
     "validation_action_reads": 0,
     "test_reward_reads": 0,
     "test_action_reads": 0,
     "fixed_pruned_init_reads": 0
   },
-  "branches": {
-    "zero_as_warmup": {
-      "writer_initialization": "fresh random Writer with functionally identity generated LoRA",
-      "teacher_action_queries": 0,
-      "starts_reward_cursor_at_zero": true
-    },
-    "micro_as_warmup": {
-      "status": "blocked_until_complete_zero-branch_no-signal_evidence",
-      "writer_initialization": "fresh same-seed Writer; never load an AS-Writer checkpoint",
-      "teacher_action_queries": 24,
-      "coverage": "exactly one independently sampled action chunk per development-train task",
-      "starts_reward_cursor_at_zero": true,
-      "matched_reward_schedule_with_zero_branch": true
-    }
-  },
   "algorithm": {
-    "name": "on_policy_binary_success_filtered_executed_prefix_flow_regression",
+    "name": "task_relative_on_policy_fpo_plus_writer_v1",
     "reward": "official_binary_task_success",
-    "rollouts_per_task_update": 1,
-    "replay_epochs": 1,
-    "reward_replay_chunk_batch_size": 8,
-    "gradient_synchronization": "ordered_manual_sum_after_local_backward",
-    "episode_weighting": "equal_successful_episode",
+    "rollouts_per_task_condition": 4,
+    "task_advantage": "leave_one_out_binary_return",
+    "flow_mc_samples": 4,
+    "reward_replay_chunk_batch_size": 2,
+    "clip_epsilon": 0.05,
+    "loss_value_clip": 20.0,
+    "log_ratio_clip": 5.0,
+    "positive_objective": "per_cfm_sample_ppo_clip",
+    "negative_objective": "per_cfm_sample_spo_pullback",
+    "episode_weighting": "equal_episode_then_equal_task",
+    "gradient_synchronization": "full24_equal_task_manual_sum_after_local_backward",
+    "retain_success_and_failure_prefixes": true,
     "executed_action_prefix_only": true,
     "teacher_actions": false,
     "critic": false,
-    "exact_action_log_probability": false,
-    "external_exploration_adapter": false,
+    "pose_or_progress_shaping": false,
     "generated_lora_in_place_updates": false
   },
   "environment": {
@@ -98,7 +86,6 @@
   "policy": {
     "precision": "bfloat16",
     "chunk_size": 50,
-    "n_action_steps": 10,
     "num_inference_steps": 10,
     "replan_steps": 5,
     "action_dim": 7,
@@ -110,12 +97,14 @@
     "task_count": 24,
     "episodes_per_task": 50,
     "demo_indices": [0, 49],
-    "teacher_video_seed": 20260724,
-    "teacher_video_sampling": "one independent no-replacement video per task visit",
-    "task_schedule_seed": 20260725
+    "teacher_video_seed": 20260804,
+    "teacher_video_sampling": "one no-replacement same-task video per outer cycle",
+    "task_schedule_seed": 20260805,
+    "task_assignment": "seeded horizon-balanced long-first full24"
   },
   "optimization": {
     "seed": 7,
+    "learning_rate": 0.00001,
     "optimizer": {
       "name": "AdamW",
       "betas": [0.9, 0.95],
@@ -123,54 +112,37 @@
       "weight_decay": 0.0,
       "gradient_clip_norm": 1.0
     },
-    "profile_learning_rate": 1e-05,
-    "scheduler": "constant_after_successful_optimizer_updates_only"
+    "scheduler": "constant_per_complete_full24_learning_epoch"
   },
   "rng": {
-    "environment_seed_root": 320260724,
-    "policy_noise_seed_root": 1320260724,
-    "update_seed_root": 2320260724,
-    "schedule_excludes": ["arm", "rank", "worker", "queue_order", "outcome"]
+    "environment_seed_root": 320260804,
+    "policy_noise_seed_root": 1320260804,
+    "flow_credit_seed_root": 2320260804,
+    "schedule_excludes": ["rank", "worker", "queue_order", "outcome"]
   },
   "parallel": {
-    "world_size": 8,
+    "maximum_world_size": 6,
+    "allowed_world_sizes": [1, 2, 3, 4, 6],
+    "global_tasks_per_outer_cycle": 24,
     "policy_processes_per_gpu": 1,
-    "gpu0_extra_cuda_processes": 0,
     "persistent_policy": true,
     "persistent_task_environment_pool": true,
-    "task_schedule": "seeded no-replacement full cycles; 24 tasks give three updates per cycle"
+    "task_schedule": "every outer cycle covers every train task exactly once"
   },
   "profile_defaults": {
-    "total_updates": 3,
-    "checkpoint_updates": [3],
-    "complete_task_cycles": 1
+    "status": "pending_live_bci_a40_longest_failure_profile",
+    "total_cycles": 1,
+    "checkpoint_cycles": [1],
+    "learning_epochs": 2
   },
   "formal_run": {
-    "status": "sealed",
-    "expected_world_size": 8,
-    "total_updates": 120,
-    "checkpoint_updates": [3, 6, 12, 24, 36, 54, 72, 96, 120],
-    "initial_evidence_stop_update": 12,
-    "negative_closure_rollouts_per_task": 40,
-    "maximum_wall_clock_minutes": 120,
-    "budget_role": "guardrail_not_target",
-    "profile_evidence": {
-      "run_root": "pi05_rl_writer_zero_profile_cycle1_r3_manualsync_20260722",
-      "full_task_cycles": 1,
-      "rollouts": 24,
-      "successes": 7,
-      "environment_actions": 7167,
-      "optimizer_updates": 3,
-      "wall_seconds_max_rank": 133.47137033,
-      "max_cuda_reserved_bytes": 40842035200,
-      "run_contract_sha256": "487fee45921d4f4a2c01c443c27e7515889f664ac6fa8a44a86afcd6b2e74d28",
-      "checkpoint_manifest_sha256": "2a27f673f2675addbc54f239d9289930014ac071ab632b530a5c998b37538c95"
-    },
-    "selection_rule": "profile rollout/update throughput first; use fixed cheap reward-coverage screens and full-cycle curves to choose sparse checkpoints; zero branch must complete first; stop on saturation or at the guardrail and record budget-censored undertraining without automatic extension"
+    "status": "pending_live_profile_coldstart_and_clean_commit",
+    "launch_state": "blocked_until_profile_and_train24_coldstart_coverage_exit",
+    "selection_rule": "seal epoch count and horizon from A40 memory, wall time, nonzero task count, ratio range and clip fraction before rollout outcome selection"
   },
   "checkpointing": {
     "atomic_publish": true,
-    "checkpoint_only_between_reset_episodes": true,
-    "retained_state": "Writer, optimizer, scheduler, per-rank RNG, task/video schedule, rollout/environment-action/optimizer cursors, ledger prefix, metrics cursor, hashes"
+    "checkpoint_only_after_complete_full24_outer_cycle": true,
+    "retained_state": "Writer, optimizer, scheduler, per-rank RNG, task/video schedule, rollout/environment-action/optimizer cursors, success+failure ledger prefix, metrics cursor and hashes"
   }
 }

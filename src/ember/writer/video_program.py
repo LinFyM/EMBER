@@ -1,4 +1,4 @@
-"""Language-aligned evidence streams shared by the canonical Writer."""
+"""Language-aligned per-frame evidence for the canonical PI05 v6 Writer."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import torch
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
 
-from ember.writer.semantic_program import RMSNorm
+from ember.writer.temporal import RMSNorm
 
 
 class VideoProgramError(RuntimeError):
@@ -157,8 +157,8 @@ class TaskQueriedPatchGrounding(torch.nn.Module):
         )
 
 
-class Pi05SemanticEvidenceEncoder(torch.nn.Module):
-    """Produce Q_text, X, grounded G, and native Action-Expert probes."""
+class Pi05LanguageAxialEncoder(torch.nn.Module):
+    """Produce text queries, aligned video evidence, and Action-Expert probes."""
 
     NATIVE_IMAGE_TOKENS = 256
 
@@ -287,16 +287,17 @@ class Pi05SemanticEvidenceEncoder(torch.nn.Module):
             hidden * task_span_mask[..., None],
         )
 
-    def _prepare_text_branch(
+    def _encode_text(
         self,
         core: torch.nn.Module,
         language_tokens: torch.Tensor,
         task_span_mask: torch.Tensor,
         maximum_task_tokens: int,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> torch.Tensor:
         from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks
 
         bridge = core.paligemma_with_expert
+        language_model = bridge.paligemma.model.language_model
         batch = language_tokens.shape[0]
         text_tokens = torch.zeros(
             batch,
@@ -318,20 +319,6 @@ class Pi05SemanticEvidenceEncoder(torch.nn.Module):
             make_att_2d_masks(text_padding, text_attention)
         )
         positions = torch.cumsum(text_padding, dim=1) - 1
-        return text_embeds, mask, positions, text_padding[:, 1:]
-
-    def _encode_text(
-        self,
-        core: torch.nn.Module,
-        text_embeds: torch.Tensor,
-        mask: torch.Tensor,
-        positions: torch.Tensor,
-        valid: torch.Tensor,
-    ) -> torch.Tensor:
-        """Run the trainable Meta-LoRA text path used as generated value."""
-
-        bridge = core.paligemma_with_expert
-        language_model = bridge.paligemma.model.language_model
         target_dtype = language_model.layers[0].self_attn.q_proj.weight.dtype
         with self.text_meta_lora.installed(language_model):
             (text_hidden, suffix_hidden), _ = bridge.forward(
@@ -345,14 +332,14 @@ class Pi05SemanticEvidenceEncoder(torch.nn.Module):
         if (
             suffix_hidden is not None
             or text_hidden.shape != (
-                valid.shape[0],
-                valid.shape[1] + 1,
+                batch,
+                maximum_task_tokens + 1,
                 self.image_width,
             )
         ):
             raise VideoProgramError("PI05 text-only hidden layout changed")
         projected = self.language_projection(text_hidden[:, 1:])
-        return projected.masked_fill(~valid[..., None], 0.0)
+        return projected.masked_fill(~text_padding[:, 1:, None], 0.0)
 
     def _encode_microbatch(
         self,
@@ -516,51 +503,6 @@ class Pi05SemanticEvidenceEncoder(torch.nn.Module):
         )
         return core, valid_task_tokens, task_counts
 
-    def _encode_language_condition(
-        self,
-        core: torch.nn.Module,
-        language_tokens: torch.Tensor,
-        task_span_mask: torch.Tensor,
-        maximum_task_tokens: int,
-        *,
-        checkpoint_enabled: bool,
-    ) -> torch.Tensor:
-        """Encode the task language through the trainable Meta-LoRA path."""
-
-        text_embeds, text_mask, text_positions, text_valid = (
-            self._prepare_text_branch(
-                core,
-                language_tokens,
-                task_span_mask,
-                maximum_task_tokens,
-            )
-        )
-        def invoke_text(
-            embed_values: torch.Tensor,
-            mask_values: torch.Tensor,
-            position_values: torch.Tensor,
-            valid_values: torch.Tensor,
-        ) -> torch.Tensor:
-            return self._encode_text(
-                core,
-                embed_values,
-                mask_values,
-                position_values,
-                valid_values,
-            )
-
-        arguments = (text_embeds, text_mask, text_positions, text_valid)
-        return (
-            checkpoint(
-                invoke_text,
-                *arguments,
-                use_reentrant=False,
-                preserve_rng_state=False,
-            )
-            if checkpoint_enabled
-            else invoke_text(*arguments)
-        )
-
     def forward(
         self,
         policy: torch.nn.Module,
@@ -576,7 +518,7 @@ class Pi05SemanticEvidenceEncoder(torch.nn.Module):
         torch.Tensor,
         torch.Tensor,
     ]:
-        """Return Q_text, X, grounded G, Action probe, and token validity."""
+        """Return text, Core evidence, patch evidence, and per-frame probes."""
 
         core, valid_task_tokens, _ = self._validate_forward_batch(
             policy,
@@ -587,21 +529,36 @@ class Pi05SemanticEvidenceEncoder(torch.nn.Module):
             task_span_mask,
         )
         maximum_task_tokens = valid_task_tokens.shape[1]
+
+        def invoke_text(
+            token_values: torch.Tensor,
+            span_values: torch.Tensor,
+        ) -> torch.Tensor:
+            return self._encode_text(
+                core,
+                token_values,
+                span_values,
+                maximum_task_tokens,
+            )
+
         should_checkpoint = (
             self.activation_checkpointing
             and self.training
             and torch.is_grad_enabled()
         )
-        text_queries = self._encode_language_condition(
-            core,
-            language_tokens,
-            task_span_mask,
-            maximum_task_tokens,
-            checkpoint_enabled=should_checkpoint,
-        )
+        if should_checkpoint:
+            text_queries = checkpoint(
+                invoke_text,
+                language_tokens,
+                task_span_mask,
+                use_reentrant=False,
+                preserve_rng_state=False,
+            )
+        else:
+            text_queries = invoke_text(language_tokens, task_span_mask)
 
         evidence_rows = []
-        grounded_rows = []
+        patch_evidence_rows = []
         interaction_rows = []
         for start in range(0, frames.shape[0], self.max_frames_per_encoder_call):
             stop = min(start + self.max_frames_per_encoder_call, frames.shape[0])
@@ -636,21 +593,21 @@ class Pi05SemanticEvidenceEncoder(torch.nn.Module):
                 )
 
             if should_checkpoint:
-                evidence, grounded, interaction = checkpoint(
+                evidence, patch_evidence, interaction = checkpoint(
                     invoke_frames,
                     *arguments,
                     use_reentrant=False,
                     preserve_rng_state=False,
                 )
             else:
-                evidence, grounded, interaction = invoke_frames(*arguments)
+                evidence, patch_evidence, interaction = invoke_frames(*arguments)
             evidence_rows.append(evidence)
-            grounded_rows.append(grounded)
+            patch_evidence_rows.append(patch_evidence)
             interaction_rows.append(interaction)
         return (
             text_queries,
             torch.cat(evidence_rows, dim=0),
-            torch.cat(grounded_rows, dim=0),
+            torch.cat(patch_evidence_rows, dim=0),
             torch.cat(interaction_rows, dim=0),
             valid_task_tokens,
         )

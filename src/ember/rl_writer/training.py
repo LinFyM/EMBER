@@ -1,4 +1,4 @@
-"""Eight-rank zero-action-warmup PI05 Reward-Trained Writer training."""
+"""Task-relative on-policy Flow-Credit Writer training."""
 
 from __future__ import annotations
 
@@ -10,12 +10,15 @@ import torch.distributed as dist
 
 from ember.pi05_source_setup import initialize_distributed
 from ember.rl_writer.contract import REPO_ROOT
-from ember.rl_writer.loop import run_updates
+from ember.rl_writer.loop import run_cycles
 from ember.rl_writer.runtime import RLWriterRuntime, build_runtime
 
 
 def train(args: argparse.Namespace) -> None:
-    context = initialize_distributed(require_numa=args.mode == "formal")
+    context = initialize_distributed(
+        require_numa=args.mode == "formal",
+        defer_process_group=True,
+    )
     runtime: RLWriterRuntime | None = None
     try:
         runtime = build_runtime(args, context)
@@ -25,19 +28,19 @@ def train(args: argparse.Namespace) -> None:
                     {
                         "event": "start",
                         "contract_sha256": runtime.contract_sha256,
-                        "branch": args.branch,
-                        "next_update": runtime.next_update,
-                        "stop_after_update": args.stop_after_update,
+                        "next_cycle": runtime.next_cycle,
+                        "stop_after_cycle": args.stop_after_cycle,
                         "trainable": runtime.contract["trainable"],
                     },
                     sort_keys=True,
                 ),
                 flush=True,
             )
-        run_updates(runtime)
+        run_cycles(runtime)
     finally:
         if runtime is not None:
             runtime.env_pool.close()
+            runtime.video_store.close()
         if dist.is_initialized():
             dist.destroy_process_group()
 
@@ -50,21 +53,18 @@ def build_parser() -> argparse.ArgumentParser:
         default=REPO_ROOT / "configs/pi05_rl_writer_development_v1.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
-    parser.add_argument("--stage", choices=("development", "final"), required=True)
-    parser.add_argument(
-        "--branch",
-        choices=("micro_as_warmup", "zero_as_warmup"),
-        required=True,
-    )
+    parser.add_argument("--stage", choices=("development",), required=True)
     parser.add_argument("--source-run", type=Path, required=True)
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--tokenizer-path", type=Path, required=True)
-    parser.add_argument("--feature-cache", type=Path, required=True)
+    parser.add_argument("--data-root", type=Path, required=True)
+    parser.add_argument("--coldstart-checkpoint", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--resume", type=Path)
-    parser.add_argument("--total-updates", type=int)
-    parser.add_argument("--stop-after-update", type=int)
-    parser.add_argument("--checkpoint-updates", type=str)
+    parser.add_argument("--total-cycles", type=int)
+    parser.add_argument("--stop-after-cycle", type=int)
+    parser.add_argument("--checkpoint-cycles", type=str)
+    parser.add_argument("--learning-epochs", type=int)
     return parser
 
 
@@ -74,7 +74,8 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
         "source_run",
         "checkpoint",
         "tokenizer_path",
-        "feature_cache",
+        "data_root",
+        "coldstart_checkpoint",
         "output_dir",
     ):
         setattr(args, name, getattr(args, name).resolve())

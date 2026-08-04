@@ -138,7 +138,7 @@ def test_writer_prepare_arguments_are_all_or_none() -> None:
     rl_empty = argparse.Namespace(
         rl_writer_config=None,
         rl_writer_checkpoint=None,
-        rl_writer_feature_cache=None,
+        rl_writer_video_data_root=None,
         rl_writer_video_condition=None,
     )
     assert module._rl_writer_requested(rl_empty) is False
@@ -157,7 +157,7 @@ def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
         writer_video_condition=None,
         rl_writer_config=None,
         rl_writer_checkpoint=None,
-        rl_writer_feature_cache=None,
+        rl_writer_video_data_root=None,
         rl_writer_video_condition=None,
         source_sft_config=None,
         source_sft_checkpoint=None,
@@ -174,7 +174,7 @@ def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
         writer_video_condition="correct",
         rl_writer_config=None,
         rl_writer_checkpoint=None,
-        rl_writer_feature_cache=None,
+        rl_writer_video_data_root=None,
         rl_writer_video_condition=None,
         source_sft_config=Path("source_sft.json"),
         source_sft_checkpoint=Path("source-sft-step"),
@@ -189,7 +189,7 @@ def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
     as_and_rl.writer_video_condition = "correct"
     as_and_rl.rl_writer_config = Path("rl.json")
     as_and_rl.rl_writer_checkpoint = Path("rl-update")
-    as_and_rl.rl_writer_feature_cache = Path("cache")
+    as_and_rl.rl_writer_video_data_root = Path("videos")
     as_and_rl.rl_writer_video_condition = "correct"
     with pytest.raises(Pi05EvaluationError, match="mutually exclusive"):
         module._adapter_requests(as_and_rl)

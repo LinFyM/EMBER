@@ -3272,3 +3272,29 @@ GPU范围和训练步长是当时快照；活动状态只取
   do-not-transfer/debug-only，代码和配置只经Git迁移。本窗口没有MemLLM新增资产。
 - 聚焦回归为3 passed；两份VR JSON可解析，Git diff无空白错误。live tmux为空，
   没有EMBER训练、评测或GPU分析进程。
+
+## Task-Relative Flow-Credit实现与AS profile seal（2026-08-04）
+
+- owner恢复持续推进并要求中间问题自行深入分析。复核历史RL后建立
+  `docs/action_forecast_writer_relative_flow_credit_design.md`：恢复唯一v6 Writer做
+  独立AS cold start，随后关闭teacher action，以K4 LOO advantage、Nmc4逐sample ratio、
+  PPO正项和SPO负项做Writer-only reward训练。
+- 原位替换`src/ember/rl_writer/*`、reward replay与evaluator接线；删除旧final/task-local
+  config和success-only活动路径。新增`flow_credit.py`为唯一数学owner；Writer live
+  rollout生成从大而混杂的inference authority文件拆到`live_adapter.py`。architecture
+  guard无hard violation。
+- 聚焦RL/reward/evaluator 43项通过；全仓为避免同进程累计内存峰值拆为135项和75项，
+  合计210项全部通过。v6 identity/freeze/schema、K4 advantage、正负梯度符号、failure
+  replay、实际world-size assignment与checkpoint resume均覆盖。
+- live检查：`gpu01`八卡均有cyzhao进程；`gpu02`物理0和6由yfwang占用，1/2/3/4/5/7
+  空闲。仅使用后六卡完成
+  `runs/outputs/pi05_as_writer_v6_relative_flow_coldstart_profile_r6_bci_20260804`：三步
+  `33.464/30.886/30.977s`，峰值allocated/reserved
+  `34,948,858,880/44,816,138,240` bytes，最长105帧、0 OOM/clip。
+- 独立root
+  `runs/outputs/pi05_as_writer_v6_relative_flow_coldstart_resume_smoke_r6_bci_20260804`
+  fresh0→1再exact-resume1→3；合同`1d2290ea...d457a87`，metrics 1/2/3、累计1,440
+  queries/72 videos、0 validation/test action reads。六卡随后自然释放。
+- config已seal为fresh0→400、every25、首段stop25；profile checkpoint禁止warm-start。
+  下一步是clean commit/push后正式fresh0→25，再用canonical reward cycle的pre-update
+  K4 ledger做24-task coverage与最长failure/two-epoch profile。

@@ -6,10 +6,24 @@
 
 ## 0. 当前BCI运行事实（覆盖下文旧A100操作细节）
 
-- Policy-Target-Owned Factor本轮已完成并负裁决；当前操作状态是按owner要求暂停，不
-  启动新架构、训练或评测。canonical源码仍为
-  `pi05_target_owned_factor_program_v1`，只用于保留当前实验authority；不能resume历史
-  Direction Store checkpoint，正式step200也没有依据续到400。
+- 当前操作主线已切换到Task-Relative Flow-Credit Writer。AS侧恢复唯一v6 Writer并做
+  fresh独立cold start；reward侧不再做success-filtered self-imitation，而是保留成功和
+  失败executed prefixes，用同task K4 leave-one-out binary advantage、per-sample
+  old/current CFM ratio、positive PPO与negative SPO更新Writer。精确科研合同见
+  `docs/action_forecast_writer_relative_flow_credit_design.md`。
+- BCI A40六卡AS profile和独立exact-resume已通过：logical B20/B2、最长105帧、三步
+  `33.464/30.886/30.977s`，峰值allocated/reserved
+  `34,948,858,880/44,816,138,240` bytes；fresh0→1/resume1→3保持1,440 queries、72
+  videos与五主block可达。sealed config为
+  `configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json`。
+- 下一正式动作是clean pushed origin/main上的fresh AS 0→25；随后以canonical reward
+  cycle的pre-update K4 ledger检查24 train tasks random-reset coverage，并同时完成最长
+  failure、Nmc4、两learning-epoch RL profile。GPU启动前重新比较两节点；当前无EMBER
+  GPU进程，gpu02物理0/6的他人进程从未触碰。
+
+- Policy-Target-Owned Factor本轮已完成并负裁决；此前暂停已由owner解除。其源码不再
+  是canonical活动路径，历史结果只由Git、artifact与design authority保留；不能resume
+  其step200或历史Direction Store checkpoint。
 - clean`34be4a0`的fresh0→200完成200次full24 update、96,000 queries、4,800 videos、
   8 checkpoints；wall`6678.957s`，峰值allocated/reserved`33.696/38.729GiB`，0
   clip/OOM和0 validation/test action reads。四点paired correct400=`99/76/86/68`，
@@ -24,7 +38,7 @@
   tokenizer、checkpoint和output由CLI显式传入；`EMBER_STORAGE_ROOT`、容量上限与
   `EMBER_LIBERO_ASSETS_ROOT`也必须在进程环境显式设置，不能依赖`.env.local`猜测。
 - 当前A40正式候选配置：
-  `configs/pi05_as_writer_target_owned_factor_full24_decay400_bci_v1.json`，
+  `configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json`，
   6 ranks×4 tasks、16-frame encoder microbatch、logical B20、policy microbatch2，
   formal teacher-video seed固定`20260722`且loader与sealed profile字段强制一致；
   不固定物理GPU编号。

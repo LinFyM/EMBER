@@ -30,6 +30,7 @@ from ember.reward.protocol import (
     update_seed,
 )
 from ember.reward.rollout import (
+    complete_trajectory_batch,
     RewardTrajectory,
     collect_randomized_reward_trajectory,
     successful_trajectory_batch,
@@ -164,7 +165,7 @@ def test_random_reset_rollout_settles_then_executes_five_step_replans() -> None:
     assert trajectory.ledger_row()["dummy_settling_steps"] == 10
 
 
-def _trajectory(valid: tuple[int, ...]) -> RewardTrajectory:
+def _trajectory(valid: tuple[int, ...], *, success: bool = True) -> RewardTrajectory:
     observations = tuple(
         {
             OBS_LANGUAGE_TOKENS: torch.ones((1, 2), dtype=torch.long),
@@ -181,7 +182,7 @@ def _trajectory(valid: tuple[int, ...]) -> RewardTrajectory:
         rollout_cursor=5,
         env_seed=7,
         policy_seed_root=11,
-        success=True,
+        success=success,
         steps=sum(valid),
         reward_sum=1.0,
         dummy_settling_steps=10,
@@ -201,6 +202,17 @@ def test_success_batch_preserves_exact_executed_prefixes() -> None:
     assert batch["executed_action_steps"].tolist() == [5, 2, 4]
     assert batch["action_is_pad"].sum(dim=1).tolist() == [45, 48, 46]
     assert episode_ids.tolist() == [0, 0, 1]
+
+
+def test_complete_batch_retains_failure_prefixes_and_binary_outcomes() -> None:
+    batch, episode_ids, successes = complete_trajectory_batch(
+        (_trajectory((5, 2)), _trajectory((5,), success=False)),
+        torch.device("cpu"),
+    )
+    assert batch[ACTION].shape == (3, 50, 7)
+    assert batch["executed_action_steps"].tolist() == [5, 2, 5]
+    assert episode_ids.tolist() == [0, 0, 1]
+    assert successes.tolist() == [1.0, 0.0]
 
 
 class _LossModel(torch.nn.Module):

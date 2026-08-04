@@ -4,7 +4,35 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：Policy-Target-Owned Factor已负裁决并暂停
+## 0.0 当前状态：Task-Relative Flow-Credit进入正式cold-start前封存
+
+- owner已恢复持续推进并要求科学/工程问题自行深入分析。当前唯一活动方法为
+  `docs/action_forecast_writer_relative_flow_credit_design.md`：恢复v6条件生成路径做
+  fresh独立AS cold start，随后关闭teacher action入口，以full24 official random-reset
+  reward、同task K4 leave-one-out advantage和per-CFM-sample PPO/SPO ratio训练Writer。
+  one-shot、信息墙、single checkpoint、不使用subagent和最多6张live空闲A40不变。
+- canonical源码已原位完成替换：旧success-only self-imitation、flat task-local RL、
+  Target-Owned与Direction Store活动实现均退役；success/failure executed prefixes、
+  deterministic Nmc4 flow credit、实际world-size full24 assignment、deferred NCCL、完整
+  cycle checkpoint/resume和raw-video evaluator接线已落在唯一Writer/RL路径。聚焦
+  RL/reward/eval 43项通过；全仓按内存边界拆为135+75项，合计210项通过。
+- v6 AS profile root为
+  `runs/outputs/pi05_as_writer_v6_relative_flow_coldstart_profile_r6_bci_20260804`：6 ranks×4
+  tasks、logical B20、policy microbatch2、16-frame chunk，三步wall
+  `33.464/30.886/30.977s`，峰值allocated/reserved
+  `34,948,858,880/44,816,138,240` bytes，最长105帧、0 OOM/clip、0 validation/test
+  action reads。step1按zero-init只有factor梯度，step3五个声明主block均finite/nonzero。
+- 独立resume root为
+  `runs/outputs/pi05_as_writer_v6_relative_flow_coldstart_resume_smoke_r6_bci_20260804`：fresh
+  0→1再exact-resume1→3，合同`1d2290ea...d457a87`不变，metrics严格1/2/3、累计
+  1,440 queries与72 one-shot videos，source policy trainable=0。profile结束后
+  `gpu02:1,2,3,4,5,7`已自然回到10--11MiB；0和6始终属于其他用户且未触碰。
+- AS config已seal为fresh 0→400、every25、首段stop25；下一步在clean pushed
+  origin/main上fresh 0→25。随后用canonical reward cycle的pre-update K4 ledger同时做
+  24-train-task coverage和最长failure/two-epoch RL profile；若coverage未全过，只从同一
+  AS root exact-resume到下一个25-step边界，不借历史macro400或任何best checkpoint。
+
+## 0.0a 历史裁决：Policy-Target-Owned Factor已负裁决
 
 - owner授权下的本轮架构、profile、fresh正式训练、四点rollout和全部预注册内部分析
   已完成；按owner此前要求，现在暂停，不启动下一架构、训练或评测。长期

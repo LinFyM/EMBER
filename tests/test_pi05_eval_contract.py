@@ -259,7 +259,7 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
         "config": {
             "path": str(
                 ROOT
-                / "configs/pi05_as_writer_target_owned_factor_full24_decay400_bci_v1.json"
+                / "configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json"
             ),
             "sha256": "b" * 64,
         },

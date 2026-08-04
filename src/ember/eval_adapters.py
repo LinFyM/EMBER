@@ -36,7 +36,7 @@ def rl_writer_requested(args: Any) -> bool:
         (
             args.rl_writer_config,
             args.rl_writer_checkpoint,
-            args.rl_writer_feature_cache,
+            args.rl_writer_video_data_root,
             args.rl_writer_video_condition,
         ),
         "RL-Writer",
@@ -64,7 +64,7 @@ def paired_writer_identity(adapter: Mapping[str, Any]) -> dict[str, Any]:
 
     data_key = {
         "as_writer": "video_data",
-        "rl_writer": "feature_cache",
+        "rl_writer": "video_data",
     }.get(str(adapter.get("kind")))
     if data_key is None or data_key not in adapter:
         raise Pi05EvaluationError(
@@ -119,30 +119,31 @@ def inspect_rl_writer_adapter(
     *,
     config_path: Path,
     checkpoint: Path,
-    feature_cache: Path,
+    video_data_root: Path,
     source: Mapping[str, Any],
     tasks: Sequence[Any],
     video_condition: str,
     video_seed: int,
+    video_sampling_mode: str,
     require_formal: bool,
 ) -> dict[str, Any]:
     from ember.reward.protocol import RewardProtocolError
     from ember.rl_writer.inference import inspect_rl_writer_evaluation
-    from ember.writer.feature_cache import FeatureCacheError
     from ember.writer.model import WriterModelError
 
     try:
         return inspect_rl_writer_evaluation(
             config_path=config_path,
             checkpoint=checkpoint,
-            feature_cache=feature_cache,
+            video_data_root=video_data_root,
             source=source,
             task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
             video_condition=video_condition,
             video_seed=video_seed,
+            video_sampling_mode=video_sampling_mode,
             require_formal=require_formal,
         )
-    except (FeatureCacheError, RewardProtocolError, WriterModelError) as error:
+    except (RewardProtocolError, WriterModelError) as error:
         raise Pi05EvaluationError(str(error)) from error
 
 
@@ -194,7 +195,7 @@ def load_evaluation_adapter(
         FrozenSourceSFTAdapter(**common)
         return None
     from ember.writer.evaluation_runtime import FrozenCachedWriterTaskAdapter
-    from ember.writer.inference import FrozenWriterTaskAdapter
+    from ember.writer.live_adapter import FrozenWriterTaskAdapter
 
     common["tokenizer_path"] = Path(contract["tokenizer"]["path"])
     if writer_generation:

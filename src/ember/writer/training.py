@@ -71,7 +71,7 @@ from ember.writer.data import (
     WriterTaskAuthority,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
-from ember.writer.architecture import TARGET_OWNED_FACTOR_WRITER_CONSTRUCTOR_KEYS
+from ember.writer.architecture import LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.model import (
     CompleteLoRAWriter,
     WriterModelError,
@@ -144,7 +144,7 @@ class WriterSetup:
     contract_sha256: str
 
 
-def _build_writer(
+def build_writer(
     config: Mapping[str, Any], policy: torch.nn.Module
 ) -> tuple[
     CompleteLoRAWriter,
@@ -161,7 +161,7 @@ def _build_writer(
     writer_config = {
         key: value
         for key, value in config["writer"].items()
-        if key in TARGET_OWNED_FACTOR_WRITER_CONSTRUCTOR_KEYS
+        if key in LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
     }
     bridge = policy.model.paligemma_with_expert
     writer = CompleteLoRAWriter(
@@ -196,7 +196,7 @@ def _build_trainable_models(
     dict[str, torch.Tensor],
 ]:
     policy = load_policy(Path(source["model_path"]), source_config, context.device)
-    writer, lora, trainable, identity = _build_writer(config, policy)
+    writer, lora, trainable, identity = build_writer(config, policy)
     writer.to(context.device)
     optimizer_config = config["optimization"]["optimizer"]
     optimizer = torch.optim.AdamW(
@@ -721,7 +721,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=(
             REPO_ROOT
-            / "configs/pi05_as_writer_target_owned_factor_full24_decay400_bci_v1.json"
+            / "configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json"
         ),
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

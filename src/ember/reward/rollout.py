@@ -317,8 +317,9 @@ def collect_randomized_reward_trajectory(
     dummy_action: Sequence[float],
     action_execution_horizon: int,
     num_inference_steps: int,
+    retain_failure_replay: bool = False,
 ) -> RewardTrajectory:
-    """Collect one seeded BDDL-reset trajectory, retaining replay only on success."""
+    """Collect one seeded BDDL-reset trajectory with optional failure replay."""
 
     dummy = _validate_rollout_contract(
         policy=policy,
@@ -385,7 +386,7 @@ def collect_randomized_reward_trajectory(
 
     if not initial_observation_sha256:
         raise RewardProtocolError("PI05 reward trajectory made no policy observation")
-    if not success:
+    if not success and not retain_failure_replay:
         observations.clear()
         action_chunks.clear()
         valid_action_steps.clear()
@@ -447,3 +448,54 @@ def successful_trajectory_batch(
         [episode for episode, _, _, _ in chunks], dtype=torch.long, device=device
     )
     return batch, episode_ids
+
+
+def complete_trajectory_batch(
+    trajectories: Sequence[RewardTrajectory], device: torch.device
+) -> tuple[dict[str, torch.Tensor], torch.Tensor, torch.Tensor]:
+    """Collate successful and failed on-policy prefixes for relative credit."""
+
+    if len(trajectories) < 2 or any(
+        not trajectory.observations
+        or len(trajectory.observations) != len(trajectory.action_chunks)
+        or len(trajectory.observations) != len(trajectory.valid_action_steps)
+        for trajectory in trajectories
+    ):
+        raise RewardProtocolError("relative flow credit requires complete replay")
+    chunks = [
+        (episode, observation, action, valid)
+        for episode, trajectory in enumerate(trajectories)
+        for observation, action, valid in zip(
+            trajectory.observations,
+            trajectory.action_chunks,
+            trajectory.valid_action_steps,
+            strict=True,
+        )
+    ]
+    keys = set(chunks[0][1])
+    if any(set(observation) != keys for _, observation, _, _ in chunks):
+        raise RewardProtocolError("PI05 relative replay observation keys changed")
+    batch = {
+        key: torch.cat([observation[key] for _, observation, _, _ in chunks]).to(device)
+        for key in sorted(keys)
+    }
+    actions = torch.cat([action for _, _, action, _ in chunks]).to(device)
+    valid = torch.tensor(
+        [count for _, _, _, count in chunks], dtype=torch.long, device=device
+    )
+    if actions.ndim != 3 or bool((valid <= 0).any()) or bool((valid > actions.shape[1]).any()):
+        raise RewardProtocolError("PI05 relative replay executed prefix is invalid")
+    batch[ACTION] = actions
+    batch["executed_action_steps"] = valid
+    batch["action_is_pad"] = (
+        torch.arange(actions.shape[1], device=device)[None] >= valid[:, None]
+    )
+    episode_ids = torch.tensor(
+        [episode for episode, _, _, _ in chunks], dtype=torch.long, device=device
+    )
+    successes = torch.tensor(
+        [trajectory.success for trajectory in trajectories],
+        dtype=torch.float32,
+        device=device,
+    )
+    return batch, episode_ids, successes

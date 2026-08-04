@@ -8,6 +8,20 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-05 Progress-Credit cycle1 paired correct400完成
+
+- live检查后在`gpu01`并行使用两组互斥卡：1/2/3评AS125，4/5/7评formal cycle1；
+  每组3 replicas/GPU、3 Writer generators/GPU、batch4。两面板各400 rows、42 shards，
+  wall`1470.979/1487.315s`，无OOM/失败/重试，完成后六卡自然释放。
+- AS125/cycle1 correct=`97/104`，严格paired gained/lost=`22/15`、breadth=`5/4`。
+  Object-1从24升31贡献全部净增，Spatial-1从1降0；其余task净变化为0或+1，不能写成
+  broad improvement。
+- CPU只读分析覆盖400对LoRA和1,520个target谱样本：effective BA变化中位`.01677`、
+  cosine`.999860`；top-1 energy与stable rank几乎不变，仍为near-rank1。分析已封存在
+  cycle1 eval root的`paired_to_as125_analysis.json`。
+- 裁决为仅续同一formal root cycle1→2，再用同一strict panel复评；不改config、K/Nmc、
+  两epoch、task/video schedule或3+3 topology，不按train reward或+7直接续4/8。
+
 ## 2026-08-05 Progress-Credit formal首次失败与ready根修
 
 - clean`bc4ff60`在`gpu01:1,2,3,4,5,7`启动AS125-fresh formal0→1。96 rollout和24

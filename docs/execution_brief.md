@@ -42,8 +42,11 @@
   隔离CUDA长尾而形成rank seq18/17分裂，600秒watchdog终止；0 update/metrics/checkpoint，
   失败root禁止resume/评测。新合同为每rank先CUDA synchronize，再写launch-unique原子
   marker，6/6可见后才进NCCL；clean/pushed`30977b5`已在全新retry1 root完成原96-rollout/
-  two-epoch重放、2次finite update、完整cycle1 checkpoint和0 watchdog/OOM。下一步只做
-  AS125 baseline/cycle1 strict correct400；closed-loop结果出来前不得resume cycle2。
+  two-epoch重放、2次finite update、完整cycle1 checkpoint和0 watchdog/OOM。
+- 同一strict correct400已完成：AS125/cycle1=`97/104`，gained/lost=`22/15`，breadth=
+  `5/4`；净增集中Object-1且Spatial-1失去唯一成功。effective BA变化中位`.01677`、
+  cosine`.999860`，stable rank和B-column coherence基本不变。当前只允许同一root按sealed
+  3+3 topology exact-resume `cycle1→2`，随后重跑同一correct400；不得因+7直接跳到4/8。
 
 - Policy-Target-Owned Factor本轮已完成并负裁决；此前暂停已由owner解除。其源码不再
   是canonical活动路径，历史结果只由Git、artifact与design authority保留；不能resume

@@ -6,6 +6,23 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-05 Progress-Credit cycle1 strict correct400与LoRA裁决
+
+- AS125 baseline与formal cycle1在同一400-row、无放回correct panel完成，correct=
+  `97/104`，gained/lost/retained/both-fail=`22/15/82/281`；全部state、teacher video、
+  env seed与共同policy-noise prefix配对。discordant exact two-sided `p=.3240`。
+- 逐task（Long-1/2、Goal-3/6、Object-1/3、Spatial-1/3）从
+  `10/0/0/43/24/19/1/0`变为`11/0/0/43/31/19/0/0`。breadth从5降4，净增7几乎全由
+  Object-1贡献，Spatial-1丢失唯一成功；cycle1产生真实闭环影响，但未解决能力换手。
+- 400对相同输入的effective BA relative-L2中位`.01677`、cosine`.999860`、norm ratio
+  `.99965`。1,520个target谱样本的top-1 energy中位均`.999983`、stable rank均约
+  `1.000017`；B-column cosine`.998846/.998840`。RL没有解除near-rank1结构，主要在
+  既有coherent manifold上做小幅task-dependent调节。
+- 该低秩结果不能单独否定方法：历史Target-Spectral已证明强制升rank会伤害性能。
+  cycle1只有2次full24 update且held aggregate净升，19/24 train tasks有credit，因此
+  最小下一证伪是同root exact-resume到cycle2并复评；若仍只有单task净增或breadth不恢复，
+  则拒绝本续训轴并把失败接口归回condition-to-policy组合，而不是盲目续4/8。
+
 ## 2026-08-05 Progress-Credit formal ready竞态与根修
 
 - 首次AS125-fresh formal0→1完整生成96 rollout和24 task credit，14 mixed、5

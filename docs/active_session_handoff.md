@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：formal cycle1完成，等待AS125严格配对rollout
+## 0.0 当前状态：cycle1 paired correct400完成，下一步exact-resume到cycle2
 
 - 同一fresh v6 AS root已从step100 exact-resume到125：累计60,000 logical queries、
   3,000 one-video conditions和125个finite full24 macros；本段wall`806.928s`，0
@@ -84,8 +84,23 @@
   rank各16 rollout/4 progress-credit双ledger及96条全覆盖。
 - 相对失败root，95/96 rollout字节一致；唯一task28/cursor1保持同初态/seed/LoRA/成功
   outcome，但成功终止从76步变83步，多7 actions。24个progress-credit文件完全一致，
-  这是已封存的成功终止边界微扰，不改变credit或formal裁决。下一步先用同一strict panel
-  评测AS125 baseline与cycle1 correct400；评测前不exact-resume cycle2。
+  这是已封存的成功终止边界微扰，不改变credit或formal裁决。
+- strict correct400已用`gpu01:1,2,3`评AS125、`gpu01:4,5,7`评cycle1并行完成；两个root
+  分别为`runs/outputs/pi05_as_writer_v6_coldstart_as125_bci_correct400_noreplacement_seed7_df413de_20260805`
+  与`runs/outputs/pi05_task_grounded_progress_credit_cycle001_bci_correct400_noreplacement_seed7_df413de_20260805`。
+  两边均为400 unique rows、同state/video/env seed与共同policy-noise prefix，correct=
+  `97/104`，gained/lost/retained/both-fail=`22/15/82/281`，breadth=`5/4`。
+- 逐task（Long-1/2、Goal-3/6、Object-1/3、Spatial-1/3）为AS125
+  `10/0/0/43/24/19/1/0`、cycle1`11/0/0/43/31/19/0/0`。净增7集中于Object-1；
+  Spatial-1丢失唯一成功，discordant exact two-sided `p=.3240`，不能写成task drift已解。
+- 400对LoRA内部分析显示effective BA relative-L2中位`.01677`、方向余弦`.999860`、
+  norm ratio`.99965`。1,520个target谱样本中AS/cycle1 top-1 energy中位均`.999983`、
+  stable rank均约`1.000017`，B-column cosine`.998846/.998840`。更新有闭环作用但没有
+  改变near-rank1结构，主要是条件相关的小幅方向/幅度微调。
+- 当前裁决：cycle1仅有2次full24 optimizer update，held aggregate净升且19/24 train
+  tasks实际有credit，故只exact-resume同一formal root `1→2`，科学合同、两epoch、任务/
+  视频schedule与3+3拓扑不变；cycle2再跑同一correct400。若改善仍集中单task或breadth
+  不恢复，则不续4/8，回到condition-to-policy结构。当前GPU已释放且无EMBER进程。
 
 ### 已封存的step0--100证据链
 

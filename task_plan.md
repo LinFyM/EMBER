@@ -71,8 +71,13 @@ runner、split、路径或 GPU 权限。
 - [x] clean/pushed`30977b5`用全新root完成原96-rollout/two-epoch formal fresh0→1：两轮
   6/6 CUDA-complete markers、2 finite updates、完整双ledger checkpoint、0 watchdog/
   OOM；5/5 all-failure梯度与五block可达，observer grad0。
-- [ ] 在同一strict panel评测AS125 baseline与cycle1 correct400，再按absolute、breadth和
-  gained/lost决定是否resume2/4/8。长期single-checkpoint strict`>150/400`不变。
+- [x] 同一strict panel完成AS125 baseline与cycle1 correct400：`97→104`，gained/lost=
+  `22/15`、breadth=`5→4`；净增集中Object-1，Spatial-1失去唯一成功。400对effective
+  BA只变化`.01677`且near-rank1几何不变，不能宣称task drift已解。
+- [ ] live preflight后从同一formal checkpoint exact-resume cycle1→2，保持两epoch、
+  task/video schedule、3+3 topology与全部信息墙；随后重跑同一strict correct400。
+- [ ] 若cycle2改善仍集中单task或breadth不恢复，停止本续训轴并重做condition-to-policy
+  结构；只有跨task共同积累才续到4/8。长期single-checkpoint strict`>150/400`不变。
 
 ## 历史BCI Policy-Target-Owned Factor推进（2026-08-04）
 

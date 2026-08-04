@@ -218,8 +218,14 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   cycle1 checkpoint、0 watchdog/OOM，peak reserved`19,455,279,104` bytes。5/5
   all-failure task均有LoRA梯度，五个下游block可达且observer grad0；六rank各16 rollout/
   4 progress-credit双ledger通过checkpoint validator。profile或失败root权重仍禁止进入。
-  下一步先严格配对AS125 baseline与cycle1 correct400，再决定是否exact-resume到2；不得
-  按train reward或工程健康提前续训。
+- AS125 baseline与formal cycle1已在同一strict correct400 panel完成：`97→104`，
+  gained/lost=`22/15`，breadth=`5→4`；净增7几乎全部来自Object-1的`24→31`，Spatial-1
+  丢失唯一成功。400对effective BA的变化中位仅`.01677`、余弦`.999860`；AS/cycle1
+  stable rank中位均约`1.000017`，B-column cosine均约`.99884`，因此cycle1主要是在
+  既有近rank1方向上做小幅task-dependent调节，没有解决LoRA几何或task drift。由于仅
+  完成2次full24 optimizer update、held aggregate未下降且19/24 train tasks有credit，
+  现授权同一formal root exact-resume `1→2`后重跑同一correct400；若仍只在单task换手或
+  breadth不恢复，则停止该续训轴并重做condition-to-policy接口，不盲目续到4/8。
 - AS50→75首次resume因所选物理卡对应rank形成`4+2` NUMA分布，而root已封存`3+3`
   topology，被resume contract在模型训练前正确拒绝；无metrics或checkpoint写入。随后在
   同一节点改用满足原`3+3` rank topology的六张空闲卡，原命令完成step75。正式

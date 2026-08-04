@@ -326,3 +326,25 @@ formal固定从AS125重新fresh，6 ranks、K4、Nmc4、two epochs，总上限8 
 的paired correct400、breadth和task gained/lost，再决定是否exact-resume到2/4/8。
 profile checkpoint永久禁止续训或评测。formal checkpoint另绑定每rank rollout与
 progress-credit双ledger前缀；任何续段不得改变两epoch、task/video schedule或拓扑。
+
+## 15. Formal cycle1 paired correct400与cycle2裁决
+
+AS125 baseline与clean formal cycle1已在同一strict、无放回correct400 panel完成；两边
+state、teacher demo、env seed及共同policy-noise prefix逐行一致。AS125/cycle1 correct=
+`97/104`，gained/lost/retained/both-fail=`22/15/82/281`，breadth=`5/4`。逐task
+（Long-1/2、Goal-3/6、Object-1/3、Spatial-1/3）为
+`10/0/0/43/24/19/1/0`与`11/0/0/43/31/19/0/0`；净增7集中Object-1，Spatial-1失去
+唯一成功，discordant exact two-sided `p=.3240`。因此接受“cycle1产生真实闭环影响”，
+不接受“task drift或breadth已改善”。
+
+400对同输入LoRA的effective BA relative-L2中位`.01677`、方向余弦`.999860`、norm
+ratio`.99965`。抽样1,520个target/arm的top-1 energy中位均`.999983`，stable rank均约
+`1.000017`，B-column cosine为`.998846/.998840`。cycle1没有解除v6 near-rank1结构，
+主要在既有coherent写入manifold上做小幅task-dependent方向/幅度调节。这一事实不触发
+强制谱或正交；历史Target-Spectral已经否定“升rank本身即可提升correct”。
+
+cycle1只有两次full24 optimizer update，19/24 train tasks有真实credit，held aggregate
+没有下降。因此最小下一证伪是保持全部sealed合同，从同一formal checkpoint exact-resume
+`1→2`，随后重跑同一strict correct400。只有跨task共同积累、breadth恢复才允许继续4/8；
+若cycle2仍只在Object等单task换手，或breadth继续不恢复，则停止该续训轴并把最早失败
+接口归回condition-to-policy组合，不用更多cycle掩盖结构问题。

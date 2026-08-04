@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：step75 coverage升至18/24，AS准备exact-resume到100
+## 0.0 当前状态：AS已到step100但coverage回落17/24，先审计LoRA条件写出
 
 - owner已恢复持续推进并要求科学/工程问题自行深入分析。当前唯一活动方法为
   `docs/action_forecast_writer_relative_flow_credit_design.md`：恢复v6条件生成路径做
@@ -29,9 +29,11 @@
   `gpu02:1,2,3,4,5,7`已自然回到10--11MiB；0和6始终属于其他用户且未触碰。
 - 正式AS root
   `runs/outputs/pi05_as_writer_v6_relative_flow_coldstart_formal_r6_b20_seed7_b75cb19_20260804`
-  已完成fresh0→25并两次exact-resume到75：累计36,000 queries、1,800 videos、75个finite
-  macros、0 OOM/clip，三个segment wall=`810.991/816.191/805.356s`，完整checkpoint=
-  `checkpoints/step_00000075`。这是独立v6 cold start，不含profile或历史权重。
+  已完成fresh0→25并三次exact-resume到100：累计48,000 queries、2,400 videos、100个
+  finite macros、0 OOM/clip，四个segment wall=
+  `810.991/816.191/805.356/805.085s`，完整checkpoint=`checkpoints/step_00000100`。
+  这是独立v6 cold start，不含profile或历史权重；24 tasks各2,000 queries、100次video
+  visits并覆盖全部50条video。
 - 有效reward profile root为
   `runs/outputs/pi05_rl_writer_relative_flow_profile_from_v6_macro025_r6_bci_retry2_6ff7599_20260804`：
   96条K4 ledgers、28,085 actions、25 successes、12/24 task success coverage、9 mixed、
@@ -66,9 +68,22 @@
 - AS50→75首次resume选择的物理卡形成`4+2` NUMA rank分布，与root封存的`3+3`不符，
   因而在训练前被resume contract正确fail-close，没有metrics/checkpoint。改用同节点
   `1,2,3,4,5,7`保持原`3+3` topology后完成；这不是科学负结果或代码故障。
-- 下一步只从上述AS step75 exact-resume同root到step100，再以新的pre-update K4 cycle
-  重做coverage。不得借历史macro400/best或reward checkpoint，也不得按outcome改变task
-  或seed合同。
+- step100 reward profile root为
+  `runs/outputs/pi05_rl_writer_relative_flow_profile_from_v6_macro100_r6_bci_4fff21c_20260805`：
+  96条K4 ledgers、24,275 actions、52 successes、17/24 task coverage、11 mixed、6
+  all-success、7 all-failure；suite success spatial/object/goal/libero10=`14/19/13/6`，
+  coverage=`4/6/4/3`。相对step75的task/cursor、env seed、初态、policy seed、teacher demo
+  和共同noise prefix均严格一致，gained/lost/retained/both-fail=`14/9/38/35`；task20
+  失去coverage，没有新task进入，故success`47→52`不能解释为breadth单调积累。
+- step100两epoch ratio范围=`[.98452,1.00771]`与`[.88801,1.06045]`，positive clip均0，
+  grad norm=`.02535/.02563`，峰值reserved=`45,183,139,840` bytes；两轮finite update、
+  完整cycle1 checkpoint、0 watchdog/OOM/nonfinite。该checkpoint仍只作profile，正式RL
+  不启动。
+- owner已强调先从LoRA生成质量与模型内部条件传递理解问题，且RL不是默认答案。下一步
+  对同一AS step25/50/75/100做24-train-task真`BA`谱/能量/跨video方向审计，并在按split
+  结构固定的8-task面板上测固定观测、固定policy noise的action传递；不读target action，
+  不用functional loss选点。审计后才裁决续AS、正式Relative-Flow RL、v5.2同credit
+  对照或条件生成重构；不得借历史best或reward checkpoint warm-start。
 - 本轮根修RL环境池未绑定sealed asset cache，以及非连续选卡时把local rank误当物理EGL
   card的问题；有效run contract已记录physical GPU=`1,2,3,4,5,7`。相关长期规则已写入
   `AGENTS.md`，诊断root不进入科研结论。

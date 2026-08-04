@@ -3338,3 +3338,19 @@ GPU范围和训练步长是当时快照；活动状态只取
 - 两epoch ratio为`[.97777,1.02659]`/`[.91171,1.08119]`，positive clip=`0/.000247`、
   grad=`.03184/.02709`；rank mixed=`3/1/4/1/3/1`，0 watchdog并保存完整cycle1
   checkpoint，peak reserved=`40,340,815,872` bytes。下一步只续AS step75→100。
+
+## Task-Relative Flow-Credit AS100与内部审计切换（2026-08-04）
+
+- 同一正式AS root exact-resume75→100完成：100 metrics rows、48,000 queries、2,400
+  videos、step100完整checkpoint，segment wall=`805.085s`，0 OOM/clip/nonfinite，六卡
+  自然释放。24 train tasks各2,000 queries、100 visits、50 unique videos。
+- step100 K4 pre-update为52/96 success、17/24 coverage、11 mixed、6 all-success、7
+  all-failure；24,275 environment actions。相对step75严格配对gained/lost/retained/
+  both-fail=`14/9/38/35`，共同noise prefix无差异；task20失去coverage且没有新task进入。
+- 两epochratio=`[.98452,1.00771]`/`[.88801,1.06045]`、clip均0、grad=
+  `.02535/.02563`，peak reserved=`45,183,139,840` bytes；两轮finite、完整cycle1、0
+  watchdog。coverage失败，profile checkpoint不续、正式RL不启动。
+- owner允许IL/RL自主选择但要求先理解LoRA质量。新增聚焦内部审计入口
+  `scripts/analyze_relative_flow_coldstart.py`：24 train tasks×demo0--4×AS四点测真BA谱、
+  rank-coordinate energy与video variance；按split结构固定8-task面板测固定action传递，
+  0 target-action/validation/test reads。先做真实profile，封存后再据结果裁决下一方法。

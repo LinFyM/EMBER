@@ -268,3 +268,28 @@ source overfitting；correct升但wrong同升属于video identifiability。四�
 - AS resume首次因物理选卡产生`4+2` NUMA rank分布而与root封存的`3+3` topology不符，
   在训练前被合同正确拒绝；保持原`3+3` rank topology后完成。该事件不改变科研样本，
   也不构成重启或放宽合同的理由。下一段只从AS step75 exact-resume到100。
+
+## 13. step100 coverage回落与条件写出审计（2026-08-04）
+
+- 同一fresh AS root exact-resume75→100后累计48,000 queries、2,400 one-video conditions
+  与100个finite full24 macros，0 OOM/clip；最后segment wall=`805.085s`。24 tasks均为
+  2,000 queries、100 video visits和50/50 unique videos，A40适配没有减少训练数据量或
+  optimizer宏步语义。
+- K4 pre-update为52/96 successes、17/24 coverage、11 mixed、6 all-success、7
+  all-failure。相对step75严格配对gained/lost/retained/both-fail=`14/9/38/35`，共同
+  noise prefix 96/96一致；task20失去coverage且没有新task进入。success轨迹
+  `25/38/47/52`虽上升，coverage`12/14/18/17`已否定breadth单调成熟解释。
+- 两epoch ratio=`[.98452,1.00771]`/`[.88801,1.06045]`、positive clip均0、grad=
+  `.02535/.02563`，两轮finite、完整cycle1 checkpoint和0 watchdog，说明credit机制
+  可运行；但coverage exit失败，所以不启动正式RL，也不继承profile更新。
+- owner随后明确：应优先理解Writer生成LoRA的rank、能量、条件差异与policy有效传递，
+  RL可以使用但不能成为绕过LoRA质量问题的默认答案。因此在下一25-step AS segment前
+  插入只读内部审计：全部24 train tasks固定demo0--4，比较step25/50/75/100的真实`BA`
+  spectrum、rank-coordinate energy和same-task video variance；另按每suite首/尾train
+  task预先固定8-task面板，用demo0 frame0 observation、相同policy noise测identity、
+  other-demo、reversed与shuffled的fixed-action传递。该审计读取0条target action，
+  不使用functional loss或validation/test结果，不改变cold-start checkpoint与数据合同。
+- 审计与K4共同裁决下一步：若LoRA条件方向随AS成熟且action传递改善但coverage只是一次
+  换手，可续同一AS轴；若有mixed reward却条件方向仍落不进action有效子空间，才进入
+  Relative-Flow RL；若v6仍保持近rank1、高B-column相似与弱video传递，则优先v5.2同credit
+  对照或重构condition-to-policy存储/组合。禁止仅凭aggregate52或健康ratio选择RL。

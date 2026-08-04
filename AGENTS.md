@@ -152,10 +152,14 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   `34,948,858,880/44,816,138,240` bytes，0 OOM/clip。独立fresh0→1再exact-resume1→3
   通过，累计1,440 queries/72 videos，五个主block到step3均可达，source trainable=0。
 - sealed AS config是`configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json`；同一
-  fresh root已exact-resume到macro75，共36,000 queries/1,800 videos。step75的K4
-  pre-update ledger为47/96 successes、18/24 task coverage、13 mixed；相对step50严格
-  配对gained/lost=`21/12`，coverage净增4但task4失去coverage，尚未过24-task门。下一步
-  只续同一AS root macro75→100，不从历史best或reward-profile checkpoint warm-start。
+  fresh root已exact-resume到macro100，共48,000 queries/2,400 videos。step100的K4
+  pre-update ledger为52/96 successes、17/24 task coverage、11 mixed；相对step75严格
+  配对gained/lost=`14/9`，aggregate净增5但task20失去coverage，breadth从18回落17，
+  尚未过24-task门。正式RL不得启动，也不得从任一reward-profile checkpoint继续。
+- step25/50/75/100的success=`25/38/47/52`，coverage=`12/14/18/17`：AS总成功数上升不等于
+  task drift或条件写出质量已解决。下一步先完成同一v6 cold-start四点LoRA真`BA`谱、
+  能量、同task跨video方向和固定action传递审计，再结合K4 coverage决定续AS、正式
+  Relative-Flow RL、v5.2同credit对照或条件生成架构重构；不以functional loss裁决。
 - step50首次credit阶段因outcome-skewed rank-local反向耗时不均，让0-mixed快rank提前
   enqueue NCCL all-reduce并被480秒watchdog终止；96条pre-update ledger仍完整但没有
   参数更新。`e5bca71`在每轮本地反向后增加独立FileStore all-rank-ready，再统一进入

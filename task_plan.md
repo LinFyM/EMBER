@@ -36,9 +36,13 @@ runner、split、路径或 GPU 权限。
 - [x] exact-resume同一AS root 50→75；累计36,000 queries/1,800 videos、75 finite macros。
 - [x] step75 K4严格配对得到47/96 success、18/24 coverage、13 mixed；相对step50
   gained/lost=`21/12`，coverage净增4但task4换出，门仍未过。两epoch profile完整且0 watchdog。
-- [ ] exact-resume同一AS root 75→100，再用新K4 pre-update ledger重做24-task coverage；
-  通过后冻结coldstart并永久关闭action data。
-- [ ] coverage通过并seal正式recipe后做两个outer cycles与paired
+- [x] exact-resume同一AS root 75→100；累计48,000 queries/2,400 videos。step100 K4为
+  52/96 success、17/24 coverage、11 mixed，相对step75 gained/lost=`14/9`且task20换出；
+  aggregate上升但breadth回落，正式RL不启动。
+- [ ] 对AS step25/50/75/100做24-task真实BA谱、rank/能量、同task跨video方向审计，并在
+  split结构预定8-task面板测固定action传递；结合K4裁决续AS、正式RL、v5.2 credit对照
+  或condition-to-policy架构重构。
+- [ ] coverage与内部条件写出证据支持后seal正式recipe，做两个outer cycles与paired
   screen/correct400，持续以single checkpoint strict`>150/400`为最低成功门。
 
 ## 历史BCI Policy-Target-Owned Factor推进（2026-08-04）

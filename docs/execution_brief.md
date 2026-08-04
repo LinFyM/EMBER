@@ -16,11 +16,12 @@
   `34,948,858,880/44,816,138,240` bytes；fresh0→1/resume1→3保持1,440 queries、72
   videos与五主block可达。sealed config为
   `configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json`。
-- fresh AS同一root已完成0→75：75个full24宏步、36,000 queries、1,800 one-shot
-  videos、0 OOM/clip，step75原子checkpoint见第0.1/0.2节。canonical step75 reward
-  profile完成96条pre-update K4 rollout：47 successes、18/24 tasks至少一次成功、13个
-  mixed tasks，coverage仍未过。下一正式动作是从同一AS root exact-resume75→100；不得
-  把任何RL profile checkpoint当成正式cold start继续训练。
+- fresh AS同一root已完成0→100：100个full24宏步、48,000 queries、2,400 one-shot
+  videos、0 OOM/clip，step100原子checkpoint见第0.1/0.2节。canonical step100 reward
+  profile完成96条pre-update K4 rollout：52 successes、17/24 tasks至少一次成功、11个
+  mixed tasks；aggregate继续上升但coverage从step75的18回落17。正式RL不启动，任何RL
+  profile checkpoint均不得当作cold start继续；下一正式动作是四点LoRA/视频到action
+  内部审计。
 
 - Policy-Target-Owned Factor本轮已完成并负裁决；此前暂停已由owner解除。其源码不再
   是canonical活动路径，历史结果只由Git、artifact与design authority保留；不能resume
@@ -159,7 +160,17 @@ EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-asset
   `4/6/5/3`，object已6/6，主要余缺在spatial与libero10。
 - 两epoch ratio=`[.9778,1.0266]`/`[.9117,1.0812]`，positive clip=`0/.000247`，
   grad=`.03184/.02709`，max reserved=`40,340,815,872` bytes；0 watchdog并封存完整
-  cycle1 checkpoint。coverage仍未过，下一段只从AS step75续到100。
+  cycle1 checkpoint。coverage仍未过。
+- AS同root已继续75→100，累计48,000 queries/2,400 videos、100 finite macros，segment
+  wall=`805.085s`，step100 checkpoint完整。step100 profile root为
+  `runs/outputs/pi05_rl_writer_relative_flow_profile_from_v6_macro100_r6_bci_4fff21c_20260805`，
+  contract=`61078e53...a1a2`：52/96 success、17/24 coverage、11 mixed、6 all-success、
+  7 all-failure，24,275 actions。相对step75严格配对gained/lost/retained/both-fail=
+  `14/9/38/35`，task20失去coverage且没有新coverage；suite coverage=`4/6/4/3`。
+- step100两epochratio=`[.98452,1.00771]`/`[.88801,1.06045]`，clip均0、grad=
+  `.02535/.02563`、max reserved=`45,183,139,840` bytes，完整cycle1、0 watchdog/OOM。
+  当前先跑step25/50/75/100 LoRA真谱、能量、跨video方向与固定action传递审计；审计前
+  不续AS、不启正式RL。
 
 ## 1. 当前操作状态
 

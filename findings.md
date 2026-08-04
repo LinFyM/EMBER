@@ -6,6 +6,27 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-04 Task-Relative Flow-Credit AS100：aggregate升、breadth回落
+
+- 同一fresh v6 AS cold-start root从step75 exact-resume到100，累计48,000 logical
+  queries、2,400 one-video conditions与100个finite full24 updates；最后segment
+  wall=`805.085s`，step100 checkpoint完整，0 OOM/clip和0 validation/test action reads。
+  24 tasks各2,000 queries、100 video visits并覆盖全部50条视频，A40适配没有缩减原
+  logical训练量。
+- step100 K4为52/96 successes、17/24 task coverage、11 mixed、6 all-success、7
+  all-failure；suite success spatial/object/goal/libero10=`14/19/13/6`，coverage=
+  `4/6/4/3`。全失败task为`4/5/20/29/36/38/39`。
+- 相对step75的96对task/cursor、env seed、初态hash、policy seed、teacher demo与共同
+  policy-noise prefix严格一致；gained/lost/retained/both-fail=`14/9/38/35`。task20
+  失去coverage且没有新task获得coverage。success`47→52`与完整轨迹`25/38/47/52`
+  不能掩盖coverage`12/14/18/17`，所以AS成熟化并非task breadth单调增长，task换手未解。
+- credit两epochratio=`[.98452,1.00771]`/`[.88801,1.06045]`、positive clip均0、grad=
+  `.02535/.02563`，max reserved=`45,183,139,840` bytes；完整cycle1 checkpoint、0
+  watchdog/OOM/nonfinite。机制健康不等于应启动RL；coverage exit失败，profile更新弃用。
+- owner要求把判断重新落到LoRA生成质量与模型内部条件传递。下一证据链固定比较同一AS
+  四点真实BA rank/energy、跨video方向与fixed-action传递，并与direct SFT已知stable
+  rank约1.52及v5.2较强视频特异性对照；不再用functional loss替代closed-loop结果。
+
 ## 2026-08-04 Task-Relative Flow-Credit AS75与breadth积累
 
 - 同一fresh v6 AS cold-start root从step50 exact-resume到75，累计36,000 logical

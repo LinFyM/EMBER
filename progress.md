@@ -17,7 +17,13 @@ GPU范围和训练步长是当时快照；活动状态只取
   错峰下可靠提供一次性all-rank barrier；不是OOM、transport、task ownership或科学负结果。
 - canonical代码已改成CUDA synchronize→本次torchrun唯一session/cycle/epoch原子rank
   markers→NCCL。相同输出目录连续两次真实六卡新session探针均6/6 markers、sum21，
-  旧session marker没有污染重启。待聚焦测试、clean commit/push后用全新root重放原规模。
+  旧session marker没有污染重启。
+- clean/pushed`30977b5`随后在`gpu01:1,2,3,4,5,7`用全新retry1 root完成原96-rollout/
+  two-epoch formal重放。两轮均严格经过6/6 markers再NCCL，2 finite updates、完整cycle1
+  checkpoint、0 watchdog/OOM；wall`2125.726s`、peak reserved`19,455,279,104` bytes。
+- 5/5 all-failure task LoRA梯度非零，五block可达、observer grad0；六rank双ledger通过
+  validator。GPU自然释放。下一动作是AS125 baseline/cycle1 strict paired correct400，
+  不在评测前resume cycle2。
 
 ## 2026-08-05 Task-Grounded Semantic Progress Writer profile通过
 

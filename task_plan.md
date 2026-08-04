@@ -68,9 +68,11 @@ runner、split、路径或 GPU 权限。
   checkpoint。定位为CUDA完成语义和临时store生命周期竞态，不以timeout或少卡绕过。
 - [x] 根修为CUDA synchronize→launch-unique/cycle/epoch原子rank markers→NCCL；同一输出
   目录连续两个新torchrun session的真实六卡探针均6/6 markers、sum21，旧marker不污染。
-- [ ] clean commit/push后用全新root原96-rollout/two-epoch规模重放formal fresh0→1；
-  完成双ledger checkpoint后，在同一strict panel评测AS125 baseline与cycle1 correct400，
-  再按absolute、breadth和gained/lost决定是否resume2/4/8。长期strict`>150/400`不变。
+- [x] clean/pushed`30977b5`用全新root完成原96-rollout/two-epoch formal fresh0→1：两轮
+  6/6 CUDA-complete markers、2 finite updates、完整双ledger checkpoint、0 watchdog/
+  OOM；5/5 all-failure梯度与五block可达，observer grad0。
+- [ ] 在同一strict panel评测AS125 baseline与cycle1 correct400，再按absolute、breadth和
+  gained/lost决定是否resume2/4/8。长期single-checkpoint strict`>150/400`不变。
 
 ## 历史BCI Policy-Target-Owned Factor推进（2026-08-04）
 

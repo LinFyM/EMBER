@@ -41,8 +41,9 @@
   checkpoints`1/2/4/8`。首次fresh0→1在完整96 rollout后因旧`FileStore` ready无法可靠
   隔离CUDA长尾而形成rank seq18/17分裂，600秒watchdog终止；0 update/metrics/checkpoint，
   失败root禁止resume/评测。新合同为每rank先CUDA synchronize，再写launch-unique原子
-  marker，6/6可见后才进NCCL；两次真实六卡新session探针均完成sum21。须在clean/pushed
-  commit和全新root原规模重放成功后，才做AS125 baseline/cycle1 strict correct400。
+  marker，6/6可见后才进NCCL；clean/pushed`30977b5`已在全新retry1 root完成原96-rollout/
+  two-epoch重放、2次finite update、完整cycle1 checkpoint和0 watchdog/OOM。下一步只做
+  AS125 baseline/cycle1 strict correct400；closed-loop结果出来前不得resume cycle2。
 
 - Policy-Target-Owned Factor本轮已完成并负裁决；此前暂停已由owner解除。其源码不再
   是canonical活动路径，历史结果只由Git、artifact与design authority保留；不能resume
@@ -71,7 +72,8 @@
 - reward credit的outcome-dependent本地反向必须先显式完成本rank CUDA工作，再以本次
   torchrun唯一session的per-rank原子marker做非NCCL rendezvous；实际world-size全部marker
   可见后才统一进入gradient sum。不得恢复临时`FileStore`单文件barrier、增大watchdog或
-  减少科学batch。当前最小六卡探针已过，原96-rollout/two-epoch正式规模仍待重放裁决。
+  减少科学batch。最小六卡探针和原96-rollout/two-epoch正式规模均已通过；checkpoint
+  必须保留每rank rollout/progress-credit双ledger，后续resume仍沿用launch-unique session。
 - 多卡analysis的任务ownership和最终result sealing必须读取实际`world_size`；
   `f82c7cd`/`a115b06`已消除历史4-rank默认，并在6 ranks、8 tasks、5 conditions真实
   规模通过。不得通过少用卡绕开缺失rank。

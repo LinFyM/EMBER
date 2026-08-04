@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：内容型credit profile通过，formal首次启动暴露ready竞态
+## 0.0 当前状态：formal cycle1完成，等待AS125严格配对rollout
 
 - 同一fresh v6 AS root已从step100 exact-resume到125：累计60,000 logical queries、
   3,000 one-video conditions和125个finite full24 macros；本段wall`806.928s`，0
@@ -72,9 +72,20 @@
   每rank先CUDA synchronize，再以torchrun唯一session/cycle/epoch写原子rank marker，
   6/6 marker可见后才进入NCCL；marker不在run内删除。相同root连续两个新session的真实
   六卡探针均得到6/6 marker和all-reduce sum21，旧session未污染重启。
-- 下一步只从clean/pushed修复commit与全新formal root原规模重放fresh0→1；必须先得到
-  两轮finite update、完整双ledger checkpoint与0 watchdog，再做AS125 baseline/cycle1
-  strict correct400。profile checkpoint仍永久禁止进入formal。
+- clean/pushed`30977b5`的全新retry1正式root为
+  `runs/outputs/pi05_task_grounded_progress_credit_writer_formal_as125_r6_k4_nmc4_e2_c8_retry1_30977b5_20260805`，
+  contract=`129c49d9...26c8`。两轮分别形成6/6 CUDA-complete marker后才进入NCCL，完成
+  2次finite update、完整cycle1 checkpoint与0 watchdog/OOM；wall`2125.726s`、peak
+  reserved`19,455,279,104` bytes。50/96 successes、14 mixed、5 all-success、5
+  all-failure与机制诊断一致。
+- 两epoch ratio=`[.99077,1.02504]`与`[.77339,1.09274]`、grad norm=
+  `.03635/.05018`、clip0；5/5 all-failure task有nonzero generated-LoRA gradient，五个
+  downstream block均可达，observer grad=0。checkpoint validator确认next_cycle1、6个
+  rank各16 rollout/4 progress-credit双ledger及96条全覆盖。
+- 相对失败root，95/96 rollout字节一致；唯一task28/cursor1保持同初态/seed/LoRA/成功
+  outcome，但成功终止从76步变83步，多7 actions。24个progress-credit文件完全一致，
+  这是已封存的成功终止边界微扰，不改变credit或formal裁决。下一步先用同一strict panel
+  评测AS125 baseline与cycle1 correct400；评测前不exact-resume cycle2。
 
 ### 已封存的step0--100证据链
 

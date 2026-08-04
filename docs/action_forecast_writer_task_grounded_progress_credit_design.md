@@ -273,6 +273,11 @@ NCCL。marker在run内保留，新launch使用新session隔离旧状态。相同
 binary credit、K4/Nmc4、task等权或optimizer；正式接受仍要求全新root重放原96-rollout、
 two-epoch规模并产生finite update、双ledger checkpoint和exact-resume证据。
 
+clean/pushed`30977b5`已完成该原规模重放：epoch0/1分别形成6/6 marker后进入NCCL，
+2次finite update、完整cycle1 checkpoint、0 watchdog/OOM，六rank rollout/progress-credit
+双ledger通过validator。该证据接受新的collective入场合同；它仍不证明Writer性能提高，
+因此下一裁决保持为AS125 baseline与cycle1 strict paired correct400，结果前不续cycle2。
+
 ## 13. 只读机制裁决与profile授权
 
 clean`c483497`上的六卡只读root为

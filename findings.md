@@ -20,6 +20,19 @@
   相同输出目录连续两个六卡新session探针都得到6/6 marker与sum21。该证据仍只是最小
   collective门，必须用原96-rollout/two-epoch规模和完整checkpoint/exact-resume裁决。
 
+### 原失败规模正式重放
+
+- clean/pushed`30977b5`从AS125 fresh在全新retry1 root完成cycle1：96 rollout、24,600
+  actions、50 successes，14 mixed、5 all-success、5 all-failure。epoch0/1均先形成6/6
+  CUDA-complete marker再进入NCCL，2次finite update、0 watchdog/OOM，wall`2125.726s`、
+  peak reserved`19.455GB`。
+- 两epoch ratio=`.99077--1.02504`/`.77339--1.09274`、grad=`.03635/.05018`、clip0；
+  5/5 all-failure task有nonzero LoRA gradient，五下游block可达，observer grad0。
+  checkpoint validator确认6 rank各16 rollout/4 progress-credit双ledger和96条全覆盖。
+- 相对失败root只复现既有task28成功终止边界微扰：同一成功从76步变83步；其余95条
+  rollout字节一致，24 credit文件完全一致。工程根修成立，但Writer性能尚未由closed-loop
+  证明；先比较AS125 baseline/cycle1 strict correct400，不按train success续训。
+
 ## 2026-08-05 Task-Grounded Semantic Progress Writer profile
 
 - clean`84d856c`从AS125 fresh完成一个full24 K4/Nmc4 two-epoch profile：50/96 successes、

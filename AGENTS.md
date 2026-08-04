@@ -213,9 +213,13 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 - canonical修复改为每rank先CUDA synchronize，再按本次torchrun唯一session/cycle/epoch
   写原子rank marker，6/6可见后才进入NCCL；marker不在run内竞态删除。相同输出目录连续
   两个新torchrun session的六卡真实探针都完成6/6 marker和all-reduce sum21，旧session
-  marker没有污染重启。仍须从clean/pushed commit与全新root重放原96-rollout/two-epoch
-  失败规模，并以finite update、完整checkpoint和exact-resume作最终工程裁决；不得用
-  timeout、少卡或减少K/Nmc替代该重放。
+  marker没有污染重启。clean/pushed`30977b5`已在全新retry1 root重放原96-rollout/
+  two-epoch规模：两轮分别形成6/6 marker后才进入NCCL，完成2次finite update、完整
+  cycle1 checkpoint、0 watchdog/OOM，peak reserved`19,455,279,104` bytes。5/5
+  all-failure task均有LoRA梯度，五个下游block可达且observer grad0；六rank各16 rollout/
+  4 progress-credit双ledger通过checkpoint validator。profile或失败root权重仍禁止进入。
+  下一步先严格配对AS125 baseline与cycle1 correct400，再决定是否exact-resume到2；不得
+  按train reward或工程健康提前续训。
 - AS50→75首次resume因所选物理卡对应rank形成`4+2` NUMA分布，而root已封存`3+3`
   topology，被resume contract在模型训练前正确拒绝；无metrics或checkpoint写入。随后在
   同一节点改用满足原`3+3` rank topology的六张空闲卡，原命令完成step75。正式

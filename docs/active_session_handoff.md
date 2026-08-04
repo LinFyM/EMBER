@@ -4,37 +4,46 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前恢复状态：Policy-Target-Owned Factor
+## 0.0 当前状态：Policy-Target-Owned Factor已负裁决并暂停
 
-- owner已解除Direction Store分析后的暂停，授权继续长期single-checkpoint
-  `correct>150/400`目标，并要求后续科学问题自行深入分析后推进；仍保持strict
-  one-shot、不使用subagent、效率优先及每次live选择`gpu01/gpu02`空闲卡（总数最多6）。
-- 重新复核两套direct rank-128 Source-SFT step400证明near-rank1不是根因。旧/修正SFT
-  的q/v layer-energy profile跨recipe Pearson=`.9931/.9904`、rank correlation均
-  `.9835`，对应target BA cosine均值`.8450/.8529`；它们稳定表现为target内低秩、
-  target间异质。相反Direction Store的q/v跨层余弦`.93--.97`且能量近uniform。
-- 新canonical authority为
-  [`action_forecast_writer_target_owned_factor_design.md`](action_forecast_writer_target_owned_factor_design.md)：
-  保留Target-Bound Core/private A-E-D/rank reader，删除按task路由的Direction Stores；
-  76个公开A/B tensors各自拥有完整bias-free`1024→256→width`head。没有rank/正交/层能量
-  约束、SFT teacher、task-ID或static bypass；同一架构可由AS gradient或未来reward
-  gradient训练。
-- 活动代码/config/schema/internal analysis已原位切换到
-  `pi05_target_owned_factor_program_v1`；旧Direction Router、stores及额外frozen
-  text-anchor forward退役并只由Git/frozen artifacts保存。精确参数合同为
-  `47,857,920`；89项Writer tests和显式BCI assets下52项聚焦tests通过。
-- 实现commit`20479d3`已push到branch/main。live选择`gpu02:1,2,3,4,5,7`完成一次
-  formal-seed fresh0→1工程smoke：loss`.150377`、step`32.668s`、峰值CUDA
-  allocated/reserved`33.325/38.729GiB`，但最长视频仅82帧，因此不算longest105
-  profile，也不继续resume。根因是profile mode未消费已声明seed172；runtime现按mode
-  自动解析有效seed并写入run contract，磁盘formal seed保持`20260722`；该smoke不继承
-  到后续profile/formal，也不加载任何Direction Store checkpoint。
-- clean`e03e61b`的真正profile现已在同六卡完成：seed172首步包含105帧，三步
-  `34.249/32.273/31.187s`、loss`.150377/.152275/.140054`，峰值CUDA
-  allocated/reserved`33.695/43.936GiB`；1,440 queries、72 conditions、0 clip/OOM，
-  step2起五主块finite/nonzero。contract`bbb8b26c...dca8`在fresh/resume间不变。
-  config已seal B20/B2、formal seed20260722和fresh0→200；下一步是正式launch preflight，
-  profile checkpoint绝不作为warm start。
+- owner授权下的本轮架构、profile、fresh正式训练、四点rollout和全部预注册内部分析
+  已完成；按owner此前要求，现在暂停，不启动下一架构、训练或评测。长期
+  single-checkpoint `correct>150/400`目标未完成；strict one-shot、不使用subagent、
+  效率优先和每次live选择`gpu01/gpu02`最多6张空闲卡的边界继续有效。
+- clean pushed`34be4a0`在frozen worktree从fresh identity完成macro0→200：200次
+  full24 update、96,000 logical queries、4,800 one-video conditions、8 checkpoints，
+  wall`6678.957s`；0 clip/OOM、峰值allocated/reserved`33.696/38.729GiB`、0
+  validation/test action reads。正式root为
+  `runs/outputs/pi05_as_writer_target_owned_factor_bci_rawfull24_decay400_formal_r6_b20_micro2_seed7_formalvideo20260722_34be4a0_20260804T051244Z`，runtime contract
+  `6af3b4fe...904b`；profile或历史Writer权重均未进入。
+- 50/100/150/200 strict paired correct400=`99/76/86/68`，breadth=`6/6/7/5`；逐task
+  为`9/0/1/44/38/6/1/0`、`5/0/4/33/28/2/0/4`、
+  `7/0/1/26/39/10/1/2`、`7/0/0/31/27/2/1/0`。相邻gained/lost=
+  `15/38,35/25,18/36`，union/intersection=`136/37`、envelope gap37。winner
+  macro50=99，低于Direction Store129和v6-fast143；Long-2四点全0，故不续400。
+  四个sealed roots为
+  `runs/outputs/pi05_as_writer_target_owned_factor_bci_correct400_noreplacement_seed7_macro{050,100,150,200}_34be4a0_20260804`；每个root均有400 unique rows、42 shards、
+  9 workers exit0、50个teacher demos/task且无retry/adoption。
+- macro50 refs1内部root为
+  `runs/outputs/pi05_as_writer_target_owned_factor_bci_macro050_internal_refs1_seed7_34be4a0_20260804`：
+  六rank、8 tasks、correct/same/wrong/shuffled/reversed完整，wall`100.864s`，0 rollout、
+  0信息墙违规、strict replay/rank gauge/checkpoint unchanged全通过。分析完成后六张GPU
+  自然释放。
+- 76 heads确实解除旧policy-target硬共享：q/v cross-layer effective-BA cosine从
+  Direction Store`.9319/.9666`降到`-.00011/-.00030`。但correct LoRA norm均值仅
+  `19.0257`，layer-energy CV=`1.9607`，q/v top-4占`.7329/.8529`，比直接SFT的
+  `.464--.469/.544--.589`更过度集中；action heads能量占比仅`.000085`。
+- same-task Program/factor/BA/action relative-L2为
+  `.90933/.05842/.09119/.03161`：独立heads把BA差异放大，却没有写入等比例的
+  policy-action有效方向。A/E、Core mean、Core-only、Program-only和memory reversal
+  都能到BA/action，动态路径未断。高分Goal-6/Object-1对视频很不敏感，最敏感的
+  Object-3只有6/50，也说明condition dependence没有与competence绑定。
+- factor承担单task梯度能量中位数`69.25%`，24-task median cosine`.0040`、负pair
+  `.4457`、full24能量保留`.0484`。CountSketch里task identity只解释factor方向方差
+  `.0168`（随机基线约`.0048`），同task+demo隔50 macros的重现余弦仅`.0046`。
+  正式拒绝policy-target sharing作为主要task-drift根因；最早剩余接口更新为
+  condition-to-policy credit缺少稳定、闭环有效、跨随机query可累积的task/video方向。
+  下一轮不得继续加heads、layer gate/scale、强制SFT profile或监督专用trick。
 
 ## 0. BCI运行交接（优先于下文旧A100操作描述）
 

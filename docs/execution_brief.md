@@ -6,21 +6,19 @@
 
 ## 0. 当前BCI运行事实（覆盖下文旧A100操作细节）
 
-- owner已恢复推进；当前canonical候选为
-  `configs/pi05_as_writer_target_owned_factor_full24_decay400_bci_v1.json`，架构
-  `pi05_target_owned_factor_program_v1`。76个public A/B tensors各自拥有完整factor
-  head，Writer参数`47,857,920`；旧Direction Store config仅作frozen provenance，
-  当前代码不能resume其checkpoint。
-- 新架构CPU/config/internal路径与`20479d3`push已完成。六卡formal-seed fresh0→1
-  工程smoke finite但最长仅82帧，不能冒充profile。profile必须从新root fresh，先live
-  比较`gpu01/gpu02`并使用最多六张空闲卡；保持logical B20、policy B2、full24 raw mean
-  与一次AdamW。磁盘config固定formal seed`20260722`，profile runtime自动采用声明的
-  seed172。clean`e03e61b`的最长105 fresh0→1及exact-resume1→3已全部通过：峰值
-  reserved`43.936GiB`、step2起五主块finite/nonzero；config现已seal fresh0→200。
-  正式run必须使用新root/fresh identity，不能读取profile checkpoint。
-- 新方法不以high rank为目标。direct SFT复核显示有效参考同样低秩，但跨layer/target
-  方向与能量稳定异质；新head ownership允许这种专门化自然学习，不加正交/rank/SFT
-  distillation，也不依赖当前AS objective，后续reward gradient可复用。
+- Policy-Target-Owned Factor本轮已完成并负裁决；当前操作状态是按owner要求暂停，不
+  启动新架构、训练或评测。canonical源码仍为
+  `pi05_target_owned_factor_program_v1`，只用于保留当前实验authority；不能resume历史
+  Direction Store checkpoint，正式step200也没有依据续到400。
+- clean`34be4a0`的fresh0→200完成200次full24 update、96,000 queries、4,800 videos、
+  8 checkpoints；wall`6678.957s`，峰值allocated/reserved`33.696/38.729GiB`，0
+  clip/OOM和0 validation/test action reads。四点paired correct400=`99/76/86/68`，
+  breadth=`6/6/7/5`，union/intersection=`136/37`；winner99低于Direction Store129与
+  v6-fast143，不续400。
+- macro50五条件内部分析证明76 heads已把q/v跨层BA余弦从`.932/.967`降到约0，但
+  LoRA层能量过度集中、norm下降，Program差异扩大的BA未变成闭环有效action方向。
+  训练内部factor task梯度近随机正交且同task+demo不稳定重现；最新根因边界是
+  condition-to-policy credit，而不是继续增加head、强制rank/SFT几何或调gate/scale。
 
 - repo：`/data1/user/ymdai/projects/EMBER`，Python环境为项目`.venv`。模型、data、
   tokenizer、checkpoint和output由CLI显式传入；`EMBER_STORAGE_ROOT`、容量上限与
@@ -65,11 +63,10 @@
 - A100窗口GPU工作已于`02:42 UTC`停止；其delta ledger只作历史provenance。
 - owner已另行授予BCI研究权限：每次比较`gpu01`/`gpu02`，只用空闲卡、合计最多6张，
   不干扰他人；当前推进不使用subagent。
-- BCI VR与Semantic Direction Store的正式训练、四点rollout、完整性和内部分析均已
-  完成。Direction Store曲线`129/107/120/129`，四点union/intersection=`174/65`、
-  envelope gap45，漂移仍在；winner内部有效LoRA stable rank仅`1.000043`，首奇异值
-  能量`.999957`。当前Target-Owned Factor最长105 profile及resume已seal，下一操作为
-  fresh0→200与四点paired rollout；长期`>150`目标未完成。
+- BCI VR、Semantic Direction Store和Policy-Target-Owned Factor的正式训练、四点
+  rollout、完整性与winner内部分析均已完成。Target-Owned曲线`99/76/86/68`，低于
+  Direction Store`129/107/120/129`；它修复跨layer硬同向却没有修复task换手或闭环
+  credit。当前无EMBER GPU进程；下一操作等待owner讨论，长期`>150`目标未完成。
 
 Target-Bound已完成首小时与四点correct400=`75/120/90/110`，不续训；内部反事实证明
 其视频路径到达BA/action，剩余瓶颈定位到shared factor conditional coexistence。
@@ -89,6 +86,7 @@ Target-Bound formal commit = cfd26df63d08f29d8bfaac58f585387134ed680b
 BCI VR formal code commit = d9130c9fbe0d68b6a83c1a356f51f7a684845275
 Direction Store formal code commit = 91feeef
 six-rank internal-analysis final fix = a115b06
+Target-Owned Factor formal code commit = 34be4a0b8804f9d0c9f64d66af2f4bf8327f59e9
 ```
 
 `f9a144c`是另一迁移session已经封存的基线，不回写其内容。post-seal分支与所有新
@@ -205,12 +203,26 @@ macro50高60，但没有超过v6-fast143或严格门151。winner内部route与Co
 `1.000043`、top singular energy`.999957`、B-column cosine`.999971`。独立stores
 解决了参数所有权，未解决public A/B几乎共线的生成几何，正式负裁决且不续到400。
 
-## 5. Current Writer state and pause boundary
-
-Semantic Factor-Basis的完整design已在main：
+Policy-Target-Owned Factor的正式四点correct400为：
 
 ```text
-docs/action_forecast_writer_semantic_factor_basis_design.md
+99 / 76 / 86 / 68
+```
+
+breadth=`6/6/7/5`，union/intersection=`136/37`，相邻gained/lost=
+`15/38,35/25,18/36`。76个tensor heads确实把q/v跨层BA余弦降到约0，却把q/v
+top-4能量集中到`.733/.853`，correct LoRA norm降至`19.03`。same Program变化`.909`
+到BA`.091`但action只`.032`；factor的24-task gradient cosine`.0040`、负pair`.4457`，
+相同task+demo方向也不稳定重现。因此policy-target硬共享只是旧几何的原因，不是task
+漂移主因；当前最早接口是condition-to-policy credit没有形成闭环有效、可累积的
+task/video方向。
+
+## 5. Current Writer state and pause boundary
+
+最新完整design与负裁决已在main：
+
+```text
+docs/action_forecast_writer_target_owned_factor_design.md
 ```
 
 当前执行顺序固定：
@@ -219,10 +231,10 @@ docs/action_forecast_writer_semantic_factor_basis_design.md
 2. 最终代码/文档及34个post-seal `must-transfer` roots已形成Git与增量台账交付；
 3. logical-B20六卡profile已从clean pushed commit重放并seal；
 4. VR fresh 0→200、四点correct400与全部预注册分析已完成并负裁决；
-5. owner已恢复推进；新设计为frozen language semantic top2八个full-capacity
-   direction stores，authority见
-   `docs/action_forecast_writer_semantic_direction_store_design.md`；
-6. canonical替换、profile、fresh0→200、四点paired correct400和winner refs1均已完成；
+5. Direction Store canonical替换、profile、fresh0→200、四点rollout和winner分析已
+   完成并负裁决；
+6. Target-Owned Factor的canonical替换、longest105 profile、fresh0→200、四点paired
+   correct400和winner五条件分析也已完成并负裁决；
 7. 当前在owner要求的结果后暂停边界，不启动下一架构、training target或GPU分析。
 
 VR的设计、BCI适配和正式负结果统一见

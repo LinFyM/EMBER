@@ -128,24 +128,23 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 
 ## Current focused task
 
-- 当前canonical候选是Policy-Target-Owned Factor Writer。两套direct rank-128
-  Source-SFT复核证明near-rank1不是根因；更稳定的差异是SFT在policy targets间形成
-  可复现的层能量与方向专门化，而Direction Store/SFB把q/v各层硬压为近同向、近均匀
-  模板。精确证据和禁调项见
+- Policy-Target-Owned Factor已完成正式负裁决。clean`34be4a0`从fresh identity完成
+  macro0→200；50/100/150/200严格配对correct400=`99/76/86/68`，breadth=
+  `6/6/7/5`，union/intersection=`136/37`。winner macro50=99低于Direction Store129、
+  v6-fast143和严格门151；不得续400或从任一checkpoint warm-start下一方法。
+- macro50五条件内部分析证明76个完整heads真实解除跨policy-target硬共享：q/v跨层
+  effective-BA cosine从Direction Store`.932/.967`降到约0。但LoRA norm均值仅
+  `19.03`，q/v top-4能量占`.733/.853`，比direct SFT更过度集中；Program差异扩大到
+  BA后没有形成等比例action变化。因此不得把漂亮的异质LoRA几何写成方法有效。
+- 200步内部梯度显示factor占单task能量`69.25%`，24-task median cosine`.0040`、
+  负pair`.4457`、full24能量保留`.0484`；相同task+demo的方向不稳定重现。正式拒绝
+  policy-target parameter sharing作为task drift主要根因。当前最早接口是视频条件如何
+  获得policy-aware、闭环有效、跨随机query可累积的credit，而不是继续增加head、调
+  layer gate/scale、强制SFT profile或加入监督专用辅助loss。
+- 本轮训练、四点rollout和全部分析已结束，GPU已释放。按owner要求当前暂停，不启动
+  下一架构、训练或评测；长期single-checkpoint correct严格超过150仍未完成。精确
+  roots、曲线、几何和禁调项取`docs/active_session_handoff.md`与
   `docs/action_forecast_writer_target_owned_factor_design.md`。
-- 新架构保留Target-Bound Core/private A/E/D/rank-last路径，76个public A/B tensors
-  各自拥有完整bias-free`1024→256→width`head；不加rank/正交/层能量loss、SFT teacher、
-  task-ID或static bypass。Writer参数合同`47,857,920`，AS与后续reward gradient共享
-  同一参数化。
-- 活动源码/config/schema/internal analysis已原位替换Direction Store，旧实现只由
-  Git/frozen artifacts保存。实现commit`20479d3`已push；formal-seed六卡fresh0→1
-  工程smoke finite且峰值reserved`38.729GiB`，但最长只有82帧，不能冒充longest105。
-  runtime根修`e03e61b`后，六卡seed172 longest105、logical B20/B2、fresh0→1与
-  exact-resume1→3均通过；峰值reserved`43.936GiB`，step2起五主块finite/nonzero。
-  config已封存formal seed20260722与fresh0→200授权，profile权重不得进入正式轨迹。
-- 正式首段保持full24 raw mean、B20、fast-decay400、每25保存；paired评测
-  50/100/150/200。不得从Direction Store checkpoint warm-start，不得强制SFT几何或
-  用functional loss选择checkpoint；长期single-checkpoint correct严格超过150仍未完成。
 
 - Semantic Direction Store已从clean`91feeef`完成fresh0→200与四点严格配对
   correct400：`129/107/120/129`，breadth=`7/7/7/5`。macro50与200同分但前者breadth
@@ -246,8 +245,11 @@ Semantic Factor-Basis完整曲线`69/91/118/127/117/81/126/120`较Target-Bound�
 variance-reduced estimator只改变exact-Beta Latin time与随机antithetic Gaussian
 noise，保持架构、objective期望、B20、full24 raw mean和optimizer不变；其正式曲线
 `76/88/126/107`与微小、非持续的机制改善共同否定“可约flow Monte Carlo方差是主要
-漂移根因”。下一候选必须重做functional/training target与closed-loop有效流形的对应
-设计；当前只记录边界，不在owner暂停期间实现或launch。
+漂移根因”。Direction Store曲线`129/107/120/129`改善early acquisition但未解漂移。
+Target-Owned Factor又以`99/76/86/68`证明：解除policy-target硬共享可修复跨层同向
+几何，却不能让条件差异落入闭环有效方向。下一候选必须重做condition-to-policy
+credit与closed-loop有效流形的对应设计；当前只记录边界，不在owner暂停期间实现或
+launch。
 
 ## Data and split
 

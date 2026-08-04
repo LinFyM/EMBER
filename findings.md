@@ -6,6 +6,43 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-04 Policy-Target-Owned Factor正式负裁决
+
+- clean`34be4a0`的fresh0→200完整执行200次full24 update、96,000 queries、4,800
+  one-video conditions和8个checkpoints，wall`6678.957s`；0 clip/OOM、0
+  validation/test action reads，峰值allocated/reserved`33.696/38.729GiB`。
+- 严格配对correct400为`99/76/86/68`，breadth=`6/6/7/5`。逐task依次为
+  `9/0/1/44/38/6/1/0`、`5/0/4/33/28/2/0/4`、
+  `7/0/1/26/39/10/1/2`、`7/0/0/31/27/2/1/0`；Long-2四点全0。相邻
+  gained/lost=`15/38,35/25,18/36`，四点union/intersection=`136/37`、envelope
+  gap37。winner macro50=99低于Direction Store129与v6-fast143，故不续400。
+- 76个完整独立heads按设计真正打破了跨层硬同向：macro50 q/v cross-layer BA cosine
+  为`-.00011/-.00030`，而Direction Store是`.9319/.9666`。但correct LoRA norm均值
+  只有`19.0257`，layer-energy CV=`1.9607`，q/v top-4能量占比`.7329/.8529`；SFT为
+  `.464--.469/.544--.589`。新模型不是没有specialize，而是过度集中到少数晚层，且
+  action heads能量仅`.0085%`。
+- condition差异从Program到BA的保留明显高于Direction Store，却没有形成等比例action
+  变化：same-task的Program/factor/BA/action relative-L2为
+  `.90933/.05842/.09119/.03161`，旧模型为
+  `.93377/.01935/.03242/.09114`。shuffled为`.86344/.11074/.16155/.09462`，
+  reversed为`.96389/.17011/.24736/.12914`。A/E、Core mean、Core-only、Program-only
+  与memory reversal仍全可达，故失败不是动态路径断路，而是写出的异质BA大多不在
+  policy闭环有效方向上。
+- rollout成功也不随video sensitivity增加：Goal-6/Object-1为`44/38`，内部fixed-query
+  same/wrong变化很小；Object-3的condition/action变化最大却只有`6/50`。这说明模型
+  学会了input-dependent写出，但“变化”与“competence”仍未绑定。
+- factor承担单task梯度能量中位数`69.25%`，24-task median cosine`.0040`、负pair
+  `.4457`，full24平均后只保留`.0484`能量，近`1/24`随机正交水平。CountSketch中
+  task identity仅解释factor方向方差`.0168`（随机基线约`.0048`），相同task+demo
+  隔50 macros重现的中位cosine仅`.0046`；控制task后的demo解释率不超过有限样本基线。
+  这是per-condition内部credit缺少稳定task/video特征的直接证据，不是用functional
+  loss替代rollout。
+- 76个head `W_out`的macro50→100 cosine/relative-L2为`.7909/.855`，100→150为
+  `.8911/.529`，150→200为`.9422/.364`；参数逐渐稳定时closed-loop仍继续跌落并换手。
+  正式拒绝“policy-target参数共享是主要漂移根因”。下一根因是视频条件如何获得
+  policy-aware、闭环有用、跨随机action query可累积的credit；不得继续加heads、层
+  gate/scale、强制SFT profile或监督专用trick。本轮GPU、rollout和分析结束后暂停。
+
 ## 2026-08-04 direct SFT几何复核与Policy-Target-Owned Factor决策
 
 - direct Source-SFT并不要求高effective rank。旧八rank correct122与corrected mixed-task

@@ -35,11 +35,18 @@ runner、split、路径或 GPU 权限。
 - [x] 实时重查后在`gpu02:1,2,3,4,5,7`完成clean seed172 longest105、logical B20/B2、
   fresh0→1/exact-resume1→3；峰值reserved`43.936GiB`，step2起五主块finite/nonzero，
   config已恢复formal seed20260722并seal，profile权重不进入正式轨迹。
-- [ ] profile封存后从fresh identity训练0→200、每25保存；严格配对评测
-  50/100/150/200 correct400，并以absolute、breadth、gained/lost和层/target几何决定
-  是否续到400。
-- [ ] winner完成五条件内部分析；只有correct严格超过150且不是static/video-insensitive
-  捷径才进入下一阶段，未通过则按预注册最早失效接口继续根因迭代。
+- [x] profile封存后从fresh identity完成0→200、每25保存；50/100/150/200严格配对
+  correct400=`99/76/86/68`，breadth=`6/6/7/5`，union/intersection=`136/37`，
+  envelope gap37。winner macro50=99，低于Direction Store129、v6-fast143和门151，
+  按预注册判据不续400。
+- [x] winner完成六卡refs1五条件内部分析。76 heads已把q/v跨层BA余弦降到约0，证明
+  policy-target ownership生效；但层能量过度集中、LoRA norm下降，Program差异扩大的
+  BA没有转成等比例action差异。完整训练梯度又显示factor task directions近随机正交，
+  同task+demo没有稳定重现。正式拒绝policy-target sharing为主要根因。
+- [x] 按owner此前要求，在本轮rollout与全部分析封存后暂停；不启动下一架构、训练或
+  评测。下一讨论边界是重构condition-to-policy credit，使video条件获得policy-aware、
+  闭环有用且可由AS或未来reward共同训练的累积方向，而不是继续加head/gate/scale或
+  强制SFT几何。
 
 ## 当前BCI Semantic Direction Store推进（2026-08-03）
 

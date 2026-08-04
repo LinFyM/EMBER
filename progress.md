@@ -8,6 +8,38 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-04 Policy-Target-Owned Factor训练、rollout、内部分析与暂停
+
+- profile与authority封存commit为`34be4a0`。正式launch live比较两节点后只使用
+  `gpu02:1,2,3,4,5,7`，在detached clean worktree从fresh identity完成macro0→200；
+  root为
+  `runs/outputs/pi05_as_writer_target_owned_factor_bci_rawfull24_decay400_formal_r6_b20_micro2_seed7_formalvideo20260722_34be4a0_20260804T051244Z`。
+- 200 steps/200 task cycles、96,000 logical queries、4,800 one-video conditions、
+  8 every25 checkpoints均完整；wall`6678.957s`、0 clip/OOM、峰值
+  allocated/reserved`33.696/38.729GiB`，0 validation/test action reads。runtime
+  contract为`6af3b4fe...904b`，profile或其他Writer权重均未进入。
+- 50/100/150/200四个strict paired correct400全部完成：每root 400 unique rows、
+  42 shards、9 workers exit0、每task 50个teacher demos无放回且无retry/adoption。
+  曲线`99/76/86/68`，breadth=`6/6/7/5`；逐task为
+  `9/0/1/44/38/6/1/0`、`5/0/4/33/28/2/0/4`、
+  `7/0/1/26/39/10/1/2`、`7/0/0/31/27/2/1/0`。相邻gained/lost=
+  `15/38,35/25,18/36`，union/intersection=`136/37`，envelope gap37。winner50=99
+  明显低于Direction Store129和v6-fast143，按门不续400。
+- macro50 refs1五条件内部分析在live空闲的同六卡完成，wall`100.864s`；6份rank rows、
+  8 tasks、5 conditions、strict replay、rank gauge、checkpoint unchanged和信息墙全通过，
+  0 rollout。root为
+  `runs/outputs/pi05_as_writer_target_owned_factor_bci_macro050_internal_refs1_seed7_34be4a0_20260804`，
+  contract`7a45a2c2...e77868c`；GPU随后自然释放。
+- q/v跨层BA余弦降为`-.00011/-.00030`，证明76 heads的policy-target ownership真实
+  生效；但LoRA norm仅`19.0257`、layer CV`1.9607`、q/v top-4能量
+  `.7329/.8529`，比Source-SFT更过度集中。same Program→factor→BA→action为
+  `.90933→.05842→.09119→.03161`：差异写出增强但policy action利用下降。
+- 完整200步梯度显示factor占单task能量`69.25%`，task pair cosine`.0040`、负pair
+  `.4457`、full24能量保留`.0484`；相同task+demo的CountSketch重现余弦仅`.0046`。
+  由此把最早失败接口更新为condition-to-policy credit缺少可重复task/video方向，正式
+  否定policy-target sharing作为主要根因。按owner要求，rollout与全部分析结束后暂停，
+  不启动下一架构、训练或评测，等待讨论；长期`>150` Goal仍未完成。
+
 ## 2026-08-04 owner恢复推进与Policy-Target-Owned Factor实现
 
 - owner明确授权恢复长期目标，后续科学问题自行深入分析并继续，不为中间判断再次

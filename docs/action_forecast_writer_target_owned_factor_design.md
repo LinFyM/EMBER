@@ -190,3 +190,76 @@ analysis。原位替换：
 
 不新增第二套model、runner或evaluator。历史Direction Store config可以作为不可由当前
 schema加载的provenance保留；需要复现时使用其frozen Git commit。
+
+## 8. BCI正式结果与裁决（2026-08-04）
+
+clean pushed `34be4a0` 的fresh正式轨迹在`gpu02:1,2,3,4,5,7`完成macro0→200：
+200次full24 optimizer update、96,000 logical queries、4,800个one-video conditions、
+8个every25 checkpoints，wall为`6678.957s`。全程finite、0 clip/OOM，峰值
+allocated/reserved为`33.696/38.729GiB`，validation/test action reads均为0。正式root为
+`runs/outputs/pi05_as_writer_target_owned_factor_bci_rawfull24_decay400_formal_r6_b20_micro2_seed7_formalvideo20260722_34be4a0_20260804T051244Z`；profile或历史Writer权重均未进入。
+
+四个严格配对、teacher-video无放回的correct400结果为：
+
+| macro | correct | breadth | Long-1/2, Goal-3/6, Object-1/3, Spatial-1/3 |
+| ---: | ---: | ---: | --- |
+| 50 | 99 | 6 | `9/0/1/44/38/6/1/0` |
+| 100 | 76 | 6 | `5/0/4/33/28/2/0/4` |
+| 150 | 86 | 7 | `7/0/1/26/39/10/1/2` |
+| 200 | 68 | 5 | `7/0/0/31/27/2/1/0` |
+
+相邻gained/lost/retained为`15/38/61`、`35/25/51`、`18/36/50`；四点
+success union/intersection=`136/37`，single envelope gap=`37`。macro50是唯一absolute
+winner，但仍低于Direction Store `129`、v6-fast `143`和严格门`>150`；Long-2四点
+始终为0。故不exact-resume到400，也不运行五臂closed-loop。
+
+### 8.1 ownership预测成立，但没有转化为闭环能力
+
+macro50六卡refs1五条件内部分析完整覆盖8 tasks，0 rollout、0信息墙违规。独立heads
+确实解除旧硬共享：correct q/v跨层effective-BA cosine从Direction Store的
+`.9319/.9666`变为`-.00011/-.00030`，head输出权重的同类跨层中位余弦也约为0。
+因此本实验不是“拆头没有生效”。
+
+但学习到的层组织比直接SFT更极端而非更有效：correct mean effective LoRA norm仅
+`19.0257`（Direction Store `43.8649`，两套SFT `34.4132/35.7362`），layer-energy
+CV=`1.9607`；q/v top-4层占能量`.7329/.8529`，而两套SFT约为
+`.464--.469/.544--.589`。q主要挤到layers `14/8/10/13`，v主要挤到
+`14/15/16/13`；直接SFT的q top-4稳定包含`10/5/8/6`，说明Writer只部分找到正确
+policy-target区域并过度集中到晚层。action input/output heads总能量占比仅
+`.000085`，约比SFT的`.2%`再低一个数量级以上。effective BA仍近rank1
+（stable rank=`1.000329`、top singular energy=`.999675`），但依据SFT复核这不是单独
+根因。
+
+独立heads提高了条件差异写出，却没有提高行为有效性。same-task-other的Program
+memory、factor、effective BA和fixed-query action mean relative-L2依次为
+`.90933/.05842/.09119/.03161`；Direction Store对应为
+`.93377/.01935/.03242/.09114`。shuffled为`.86344/.11074/.16155/.09462`，reversed为
+`.96389/.17011/.24736/.12914`。也就是BA差异扩大约2--3倍，但相同固定policy query的
+action变化没有同比扩大，same-task甚至更小。A/E、Core mean、Core-only、Program-only
+和memory reversal反事实均能到达BA/action，路径没有断；新增差异主要落在policy不敏感
+或低收益方向。逐task也没有“越video-sensitive越成功”的关系：Goal-6/Object-1得到
+`44/38`个成功却只有很小的same/wrong action变化，最敏感的Object-3只有`6/50`。
+
+### 8.2 最早剩余失败接口是condition-to-policy credit
+
+200步梯度内部结构解释了为什么更多head容量没有累积为共同成熟。factor block承担
+单task梯度能量中位数的`69.25%`，但其24-task median pair cosine仅`.0040`、负pair
+比例`.4457`，full24 raw mean只保留平均单task能量的`.0484`，接近随机正交信号的
+`1/24`。固定32维CountSketch中，task identity对factor方向方差只解释`.0168`，其中
+有限样本随机基线约`.0048`；同task同一teacher demo隔50 macros重现时中位方向余弦
+仅`.0046`。按task控制后的demo分组解释率`.237--.240`不高于其有限样本基线约`.246`。
+这不是再次用validation functional loss替代rollout，而是直接说明进入Writer各层的
+per-condition credit几乎没有稳定、可重复的task/video方向。
+
+head参数仍持续换向：同一76个`W_out`从macro50→100的中位cosine/relative-L2为
+`.7909/.855`，100→150为`.8911/.529`，150→200为`.9422/.364`；同期closed-loop
+`99→76→86→68`且task持续换手。后期参数方向逐渐稳定也没有恢复性能，排除“只要再给
+独立heads时间就会自然超过门”的依据。
+
+因此正式拒绝“跨policy-target参数硬共享是task drift的主要根因”。它确实造成旧
+Writer跨层同向、uniform的几何，但解除后只得到过度集中的异质LoRA，early acquisition
+和absolute反而下降。下一轮不能继续增加head、调层权重、加scale/gate、强制SFT几何或
+用rank/正交loss修补；应从根源重构**视频条件如何获得policy-aware、闭环有用且跨采样
+可累积的credit**。合理方法边界仍须同时支持AS gradient与未来rollout reward，而不是
+依赖LIBERO task桶、监督loss专用辅助目标或checkpoint融合。本轮按owner要求在rollout
+与全部分析完成后暂停，不启动下一架构或训练。

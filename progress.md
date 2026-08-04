@@ -3311,3 +3311,17 @@ GPU范围和训练步长是当时快照；活动状态只取
   `45,183,139,840` bytes。ratio/clip/grad机制健康，完整cycle1 checkpoint仅作profile。
 - 六卡自然释放。下一步从同一AS root和step25 checkpoint exact-resume到step50，再用
   新的pre-update K4 ledger裁决coverage。
+
+## Task-Relative Flow-Credit AS50与credit collective根修（2026-08-04）
+
+- 同一正式AS root以合同兼容代码resume从step25续到50；累计50 rows、24,000 queries、
+  1,200 videos，segment wall`816.191s`，step50 checkpoint完整，0 OOM/clip。
+- step50首次K4 run完成96条pre-update ledger：38 successes、14/24 coverage、10 mixed、
+  4 all-success、10 all-failure。相对step25严格配对gained/lost/retained=`19/6/19`，
+  coverage`12→14`；总体上升但task5/16失去coverage，门仍未过。
+- 首次run在credit阶段因0-mixed rank提前进入NCCL sum触发480秒watchdog；96条ledger
+  保留，但无update/checkpoint。`e5bca71`加入每epoch独立FileStore all-rank-ready，
+  聚焦回归25项通过并push到branch/main。
+- 原六卡、96 rollout、两epoch规模retry完成；96/96 rollout JSON与失败run字节级一致，
+  两epoch finite、完整cycle1 checkpoint、0 watchdog/traceback。wall`1465.939s`、
+  peak reserved`40,342,913,024` bytes。六卡自然释放；下一步只续AS step50→75。

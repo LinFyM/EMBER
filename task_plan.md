@@ -27,7 +27,13 @@ runner、split、路径或 GPU 权限。
   12/24 tasks有success，coverage未过；9 mixed tasks提供非零credit。
 - [x] 完成最长failure、Nmc4、两epoch RL profile；ratio/clip/grad健康，峰值reserved
   45,183,139,840 bytes。修复asset runtime binding和physical EGL card mapping。
-- [ ] exact-resume同一AS root 25→50，再用新K4 pre-update ledger重做24-task coverage；
+- [x] exact-resume同一AS root 25→50；累计24,000 queries/1,200 videos，step50完整。
+- [x] step50 K4严格配对得到38/96 success、14/24 coverage、10 mixed；相对step25
+  gained/lost=`19/6`，净积累但仍有task换手，coverage未过。
+- [x] 根修outcome-skewed local credit使快rank提前进入NCCL的问题：每epoch先用独立
+  FileStore all-rank-ready。原六卡96-rollout两epoch重放，96/96 ledger字节级一致、
+  finite更新/完整checkpoint/0 watchdog。
+- [ ] exact-resume同一AS root 50→75，再用新K4 pre-update ledger重做24-task coverage；
   通过后冻结coldstart并永久关闭action data。
 - [ ] coverage通过并seal正式recipe后做两个outer cycles与paired
   screen/correct400，持续以single checkpoint strict`>150/400`为最低成功门。

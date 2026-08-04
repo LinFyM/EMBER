@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：step25 reward coverage失败，AS准备exact-resume到50
+## 0.0 当前状态：step50 coverage仍未过门，AS准备exact-resume到75
 
 - owner已恢复持续推进并要求科学/工程问题自行深入分析。当前唯一活动方法为
   `docs/action_forecast_writer_relative_flow_credit_design.md`：恢复v6条件生成路径做
@@ -29,16 +29,32 @@
   `gpu02:1,2,3,4,5,7`已自然回到10--11MiB；0和6始终属于其他用户且未触碰。
 - 正式AS root
   `runs/outputs/pi05_as_writer_v6_relative_flow_coldstart_formal_r6_b20_seed7_b75cb19_20260804`
-  已完成fresh0→25：12,000 queries、600 videos、wall`810.991s`、0 OOM/clip，完整
-  checkpoint=`checkpoints/step_00000025`。这是独立v6 cold start，不含profile或历史权重。
+  已完成fresh0→25并exact-resume25→50：累计24,000 queries、1,200 videos、50个finite
+  macros、0 OOM/clip，两个segment wall=`810.991/816.191s`，完整checkpoint=
+  `checkpoints/step_00000050`。这是独立v6 cold start，不含profile或历史权重。
 - 有效reward profile root为
   `runs/outputs/pi05_rl_writer_relative_flow_profile_from_v6_macro025_r6_bci_retry2_6ff7599_20260804`：
   96条K4 ledgers、28,085 actions、25 successes、12/24 task success coverage、9 mixed、
   3 all-success、12 all-failure；coverage失败。两epoch ratio/clip/grad健康，峰值reserved
   `45,183,139,840` bytes，说明机制与A40负载通过，但其cycle1 checkpoint禁止作为正式
   reward cold start继续。
-- 下一步只从上述AS step25 exact-resume同root到step50，再以新的pre-update K4 cycle
-  重做coverage。不得借历史macro400/best，也不得按本次outcome改变task或seed合同。
+- step50有效reward profile为
+  `runs/outputs/pi05_rl_writer_relative_flow_profile_from_v6_macro050_r6_bci_retry1_e5bca71_20260804`：
+  96条K4 ledgers、25,878 actions、38 successes、14/24 task coverage、10 mixed、4
+  all-success、10 all-failure；suite success spatial/object/goal/libero10=`9/12/11/6`，
+  coverage=`4/4/4/2`，仍未过门。相对step25的96个task/cursor，env seed、初态hash、
+  policy seed、teacher demo和共同noise prefix全部严格一致；gained/lost/retained=
+  `19/6/19`，coverage`12→14`，说明总体积累同时仍有task换手。
+- step50首次profile的96条pre-update ledger与上述有效root逐文件字节级一致，但其
+  outcome-skewed local credit耗时使0-mixed rank提前进入NCCL all-reduce，480秒后被
+  watchdog终止，没有metrics/checkpoint。`e5bca71`加入每epoch本地反向后的独立
+  FileStore all-rank-ready；在原六卡、96 rollout、两epoch规模重放后完成finite更新和
+  cycle1 checkpoint，0 watchdog/traceback。两epoch ratio范围=`[.9905,1.0094]`和
+  `[.8555,1.0559]`，clip=`0/0`，grad norm=`.02872/.02697`，峰值reserved
+  `40,342,913,024` bytes。
+- 下一步只从上述AS step50 exact-resume同root到step75，再以新的pre-update K4 cycle
+  重做coverage。不得借历史macro400/best或reward checkpoint，也不得按outcome改变task
+  或seed合同。
 - 本轮根修RL环境池未绑定sealed asset cache，以及非连续选卡时把local rank误当物理EGL
   card的问题；有效run contract已记录physical GPU=`1,2,3,4,5,7`。相关长期规则已写入
   `AGENTS.md`，诊断root不进入科研结论。

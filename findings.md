@@ -6,6 +6,28 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-04 Task-Relative Flow-Credit AS50与collective根修
+
+- 同一fresh v6 AS cold-start root从step25 exact-resume到50，累计24,000 logical
+  queries、1,200 one-video conditions和50个finite full24 updates；step50 checkpoint
+  完整，source仍冻结，validation/test action reads均0。
+- step50的96条official-random-reset K4 rollout得到38 successes、14/24 task coverage、
+  10 mixed、4 all-success、10 all-failure；suite success spatial/object/goal/libero10=
+  `9/12/11/6`，coverage=`4/4/4/2`。相对step25的96个task/cursor，env seed、初态hash、
+  policy seed、teacher demo和共同noise prefix全部一致；gained/lost/retained/both-fail=
+  `19/6/19/52`，success`25→38`、coverage`12→14`。
+- 净增长说明AS25→50仍在获得可闭环能力，不应因step25未过门而提前停止；但task5/16
+  失去coverage、任务9/19/25/29/36--39持续全失败，能力轮换与long-horizon breadth仍是
+  核心问题。因此继续按预注册cold-start轴到75，而不是用aggregate上升放宽门。
+- 首次step50 credit run的96条rollout完整，但rank3恰为0 mixed tasks，较慢rank提前约
+  10分钟进入NCCL gradient sum，最终触发480秒watchdog；没有optimizer update或
+  checkpoint。这是outcome-skewed rank-local compute与collective入场时序不对称，不是
+  reward科学负结果，也不是用timeout可修的transport问题。
+- `e5bca71`在每epoch本地反向后加入独立FileStore all-rank-ready，再允许NCCL sum。
+  原六卡/96-rollout/两epoch重放中，96/96 JSON与失败run字节级相同，38 successes不变；
+  两epoch ratio/grad finite、完整cycle1 checkpoint、0 watchdog/traceback，峰值reserved
+  `40,342,913,024` bytes。由此确认修复只约束process topology，不改变采样或credit。
+
 ## 2026-08-04 Policy-Target-Owned Factor正式负裁决
 
 - clean`34be4a0`的fresh0→200完整执行200次full24 update、96,000 queries、4,800

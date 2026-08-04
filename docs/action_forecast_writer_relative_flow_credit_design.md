@@ -225,3 +225,25 @@ source overfitting；correct升但wrong同升属于video identifiability。四�
 - runtime根修不改变算法：每rank显式绑定sealed LIBERO assets，并把torchrun local rank
   映射到真实physical EGL device。有效run的24×4 ledger、failure retention、信息墙和
   physical GPU topology均完整。下一段为同一AS root exact-resume25→50。
+
+## 11. step50 reward profile裁决与collective根修（2026-08-04）
+
+- 同一fresh AS root exact-resume25→50后累计24,000 queries与1,200 one-video
+  conditions，0 OOM/clip。K4 pre-update得到38/96 successes、14/24 task coverage、
+  10 mixed、4 all-success、10 all-failure，仍未达到第6节24-task exit gate。
+- 与step25的96个task/cursor严格共享env seed、初态hash、policy seed、teacher demo及
+  共同policy-noise prefix；gained/lost/retained=`19/6/19`，success`25→38`、coverage
+  `12→14`。这是真实净积累，但task5/16失去coverage且10个tasks仍全失败，不能将总体
+  上升解释成漂移已解决。
+- 首次step50 profile在rollout后暴露纯工程故障：不同rank的mixed-task数量为
+  outcome-dependent，0-mixed快rank先enqueue NCCL gradient sum，而慢rank仍进行Nmc4
+  本地反向；480秒watchdog终止进程。增加timeout或关闭watchdog会掩盖错误collective
+  生命周期，不能作为修复。
+- canonical修复在每个learning epoch完成本地反向后使用独立FileStore all-rank-ready，
+  所有rank ready后才按同序进入NCCL sum。原六卡、96 rollout、两epoch规模重放中，
+  96/96 rollout JSON与失败run字节级一致；两epoch均finite、完整cycle1 checkpoint、
+  0 watchdog，证明只改变collective入场时序而没有改变scientific sample或objective。
+- A40峰值reserved降至`40,342,913,024` bytes；两epoch ratio范围
+  `[.9905,1.0094]`/`[.8555,1.0559]`、positive clip均0、grad norm
+  `.02872/.02697`。coverage仍失败，因此该checkpoint仍只作profile，下一段只从AS
+  step50 exact-resume到75。

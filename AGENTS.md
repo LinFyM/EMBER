@@ -151,10 +151,17 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   105帧；三步约`33.46/30.89/30.98s`，峰值allocated/reserved
   `34,948,858,880/44,816,138,240` bytes，0 OOM/clip。独立fresh0→1再exact-resume1→3
   通过，累计1,440 queries/72 videos，五个主block到step3均可达，source trainable=0。
-- sealed AS config是`configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json`；下一步
-  从clean pushed origin/main与fresh identity正式训练到macro25，再用canonical reward
-  cycle的K4 pre-update ledger做24-train-task random-reset coverage与RL最长失败/两epoch
-  profile。coverage不过则只续同一AS root下一个25-step段，不从历史best warm-start。
+- sealed AS config是`configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json`；同一
+  fresh root已exact-resume到macro50，共24,000 queries/1,200 videos。step50的K4
+  pre-update ledger为38/96 successes、14/24 task coverage、10 mixed，较step25严格
+  配对净增13次success与2个coverage task，但仍未过24-task门；下一步只续同一AS root
+  macro50→75，不从历史best或reward-profile checkpoint warm-start。
+- step50首次credit阶段因outcome-skewed rank-local反向耗时不均，让0-mixed快rank提前
+  enqueue NCCL all-reduce并被480秒watchdog终止；96条pre-update ledger仍完整但没有
+  参数更新。`e5bca71`在每轮本地反向后增加独立FileStore all-rank-ready，再统一进入
+  NCCL；原六卡/96-rollout/两epoch规模重放完成，96/96 rollout JSON字节级不变，38
+  successes、两轮finite update、完整cycle1 checkpoint、0 watchdog，峰值reserved
+  `40,342,913,024` bytes。该修复只改变collective入场时序，不改变科学数据或credit。
 - 长期目标仍是同一single checkpoint strict correct`>150/400`且越高越好；未完成前
   不因loss、训练reward、内部几何或单一screen停止。当前GPU无EMBER进程；每次launch
   仍实时比较`gpu01/gpu02`并只用最多6张空闲卡。

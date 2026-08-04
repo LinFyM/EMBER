@@ -16,11 +16,11 @@
   `34,948,858,880/44,816,138,240` bytes；fresh0→1/resume1→3保持1,440 queries、72
   videos与五主block可达。sealed config为
   `configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json`。
-- fresh AS 0→25已在clean pushed commit上完成：25个full24宏步、12,000 queries、600
-  one-shot videos、wall`810.991s`、0 OOM/clip，原子checkpoint见第0.1节。canonical
-  reward profile也已完成96条pre-update K4 rollout：25 successes，但只有12/24 tasks至少
-  一次成功、9个mixed tasks，coverage未过。下一正式动作是从同一AS root exact-resume
-  25→50；不得把本次RL profile checkpoint当成正式cold start继续训练。
+- fresh AS同一root已完成0→50：50个full24宏步、24,000 queries、1,200 one-shot
+  videos、0 OOM/clip，step50原子checkpoint见第0.1/0.2节。canonical step50 reward
+  profile完成96条pre-update K4 rollout：38 successes、14/24 tasks至少一次成功、10个
+  mixed tasks，coverage仍未过。下一正式动作是从同一AS root exact-resume50→75；不得
+  把任何RL profile checkpoint当成正式cold start继续训练。
 
 - Policy-Target-Owned Factor本轮已完成并负裁决；此前暂停已由owner解除。其源码不再
   是canonical活动路径，历史结果只由Git、artifact与design authority保留；不能resume
@@ -46,6 +46,9 @@
 - BCI A40/NCCL2.28必须由launcher显式设置`NCCL_P2P_DISABLE=1`走SHM，并由代码
   fail-fast，不能依赖`.env.local`。rank-local CUDA构造完成非NCCL ready rendezvous后
   才建立process group；六卡collective、fresh训练和exact resume均已实跑通过。
+- reward credit的outcome-dependent本地反向结束后也必须先经独立FileStore all-rank-ready，
+  再统一进入NCCL gradient sum。`e5bca71`已在原六卡96-rollout两epoch失败规模上重放：
+  rollout 96/96字节级不变、两轮finite update、完整cycle1 checkpoint且0 watchdog。
 - 多卡analysis的任务ownership和最终result sealing必须读取实际`world_size`；
   `f82c7cd`/`a115b06`已消除历史4-rank默认，并在6 ranks、8 tasks、5 conditions真实
   规模通过。不得通过少用卡绕开缺失rank。
@@ -114,7 +117,7 @@ EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-asset
   coverage；正常step25后只允许同合同exact-resume。cold-start选择不看validation/test
   outcome，下一步只读24-train official random-reset K4 pre-update coverage。
 
-### 0.2 step25 reward profile裁决与下一段
+### 0.2 step25/50 reward profile裁决与下一段
 
 - AS root已完成step25，contract=`ad7ba631...b3d1`，`metrics_rows=25`、
   `global_policy_samples=12000`、`global_writer_video_conditions=600`，最终checkpoint为
@@ -132,6 +135,18 @@ EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-asset
 - 启动时修复了两个真实多卡runtime缺口：RL环境池必须绑定sealed LIBERO asset cache；
   `MUJOCO_EGL_DEVICE_ID`必须取`CUDA_VISIBLE_DEVICES[LOCAL_RANK]`的物理卡号。前两个失败/
   中止root没有参数更新，只作工程诊断；后者的15条ledger不得进入科研比较。
+- AS随后从同一step25 checkpoint exact-resume到50，合同仍为`ad7ba631...b3d1`；累计
+  `metrics_rows=50`、24,000 queries、1,200 videos，step50 checkpoint完整。step50有效
+  reward profile root为
+  `runs/outputs/pi05_rl_writer_relative_flow_profile_from_v6_macro050_r6_bci_retry1_e5bca71_20260804`，
+  contract=`f8552406...698c`：96 rollouts、25,878 actions、38 successes、14/24 coverage、
+  10 mixed、4 all-success、10 all-failure。相对step25严格配对gained/lost/retained=
+  `19/6/19`，coverage`12→14`；任务7/15/20/34新获得success，5/16失去coverage。
+- 首次step50 run在96条ledger后因0-mixed rank提前进入NCCL credit sum而触发480秒
+  watchdog，未产生update。`e5bca71`用每epoch独立FileStore ready rendezvous根修；原
+  规模重放的96条JSON与失败run逐文件一致，完成两epoch、cycle1 checkpoint和summary，
+  0 watchdog。ratio=`[.9905,1.0094]`/`[.8555,1.0559]`，clip均0，grad=
+  `.02872/.02697`，max reserved=`40,342,913,024` bytes。下一段只从AS step50续到75。
 
 ## 1. 当前操作状态
 
@@ -146,7 +161,7 @@ EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-asset
 - BCI VR、Semantic Direction Store和Policy-Target-Owned Factor的正式训练、四点
   rollout、完整性与winner内部分析均已完成。Target-Owned曲线`99/76/86/68`，低于
   Direction Store`129/107/120/129`；它修复跨layer硬同向却没有修复task换手或闭环
-  credit。当前无EMBER GPU进程；下一操作等待owner讨论，长期`>150`目标未完成。
+  credit。当前活动路径为上述Relative-Flow cold-start门控，长期`>150`目标未完成。
 
 Target-Bound已完成首小时与四点correct400=`75/120/90/110`，不续训；内部反事实证明
 其视频路径到达BA/action，剩余瓶颈定位到shared factor conditional coexistence。

@@ -25,6 +25,7 @@ from ember.pi05_source_checkpoint import (
 from ember.pi05_source_contract import append_jsonl
 from ember.reward.protocol import RewardProtocolError, RewardTask, SUITE_HORIZONS
 from ember.writer.as_sampling import TeacherVideoSchedule
+from ember.writer.topology import visible_physical_cuda_index
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -285,6 +286,7 @@ def build_contract(
     local = {
         "rank": context.rank,
         "local_rank": context.local_rank,
+        "physical_gpu": visible_physical_cuda_index(context.local_rank),
         "device": str(context.device),
         "numa_node": context.numa_node,
         "cpu_affinity": list(context.cpu_affinity or ()),

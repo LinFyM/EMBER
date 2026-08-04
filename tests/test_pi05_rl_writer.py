@@ -28,6 +28,8 @@ from ember.rl_writer.contract import (
 )
 from ember.rl_writer.training import build_parser
 from ember.writer.as_sampling import TeacherVideoSchedule
+from ember.writer.model import WriterModelError
+from ember.writer.topology import visible_physical_cuda_index
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -111,6 +113,16 @@ def test_random_reset_pool_binds_the_sealed_runtime_assets(
 
     assert pool.assets_root == assets_root.resolve()
     assert observed == [assets_root.resolve()]
+
+
+def test_torchrun_local_rank_maps_to_the_physical_egl_device(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "1,2,3,4,5,7")
+    assert [visible_physical_cuda_index(rank) for rank in range(6)] == [1, 2, 3, 4, 5, 7]
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "GPU-a,GPU-b")
+    with pytest.raises(WriterModelError, match="numeric physical GPU"):
+        visible_physical_cuda_index(0)
 
 
 def test_flow_credit_information_wall_fails_closed(tmp_path: Path) -> None:

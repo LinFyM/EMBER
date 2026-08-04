@@ -61,6 +61,22 @@ def bind_current_process_to_cuda_numa(device: int) -> tuple[int, ...] | None:
     return tuple(sorted(eligible))
 
 
+def visible_physical_cuda_index(local_rank: int) -> int:
+    """Map a torchrun local rank to the host NVIDIA device index."""
+
+    visible = os.environ.get("CUDA_VISIBLE_DEVICES", "").strip()
+    if not visible:
+        if local_rank < 0:
+            raise WriterModelError("CUDA local rank is negative")
+        return local_rank
+    devices = tuple(value.strip() for value in visible.split(","))
+    if not 0 <= local_rank < len(devices) or not devices[local_rank].isdigit():
+        raise WriterModelError(
+            "CUDA_VISIBLE_DEVICES must contain numeric physical GPU indices"
+        )
+    return int(devices[local_rank])
+
+
 def validate_task_complete_topology(
     config: Mapping[str, Any],
     context: DistributedContext,

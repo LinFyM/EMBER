@@ -55,6 +55,7 @@ from ember.writer.as_sampling import TeacherVideoSchedule
 from ember.writer.checkpoint import initialize_writer_phase
 from ember.writer.data import RawTeacherVideoStore, WriterTaskAuthority
 from ember.writer.model import CompleteLoRAWriter
+from ember.writer.topology import visible_physical_cuda_index
 from ember.writer.training import build_writer
 
 
@@ -201,7 +202,9 @@ def _prepare_libero_paths(
     )
     os.environ["MUJOCO_GL"] = "egl"
     os.environ["PYOPENGL_PLATFORM"] = "egl"
-    os.environ["MUJOCO_EGL_DEVICE_ID"] = str(context.local_rank)
+    os.environ["MUJOCO_EGL_DEVICE_ID"] = str(
+        visible_physical_cuda_index(context.local_rank)
+    )
     return values[0]
 
 

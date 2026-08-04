@@ -32,8 +32,9 @@ runner、split、路径或 GPU 权限。
   fresh0→1工程smoke finite且显存通过，但最长仅82帧，已明确不冒充longest105。
 - [x] 根修profile/formal seed切换：磁盘config固定formal seed20260722，profile mode
   自动解析声明的seed172并写入run contract，不再手工改seed；24项聚焦测试通过。
-- [ ] 实时重查`gpu01`/`gpu02`，在最多六张空闲A40上从新root完成longest105、logical
-  B20/B2、fresh0→1/exact-resume1→3 profile。
+- [x] 实时重查后在`gpu02:1,2,3,4,5,7`完成clean seed172 longest105、logical B20/B2、
+  fresh0→1/exact-resume1→3；峰值reserved`43.936GiB`，step2起五主块finite/nonzero，
+  config已恢复formal seed20260722并seal，profile权重不进入正式轨迹。
 - [ ] profile封存后从fresh identity训练0→200、每25保存；严格配对评测
   50/100/150/200 correct400，并以absolute、breadth、gained/lost和层/target几何决定
   是否续到400。

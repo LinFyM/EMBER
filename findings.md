@@ -40,6 +40,10 @@
   config/model/eval focused tests通过。首次六卡formal-seed fresh0→1证明B20/B2与显存
   健康，但最长仅82帧，不能作为longest105 profile或closed-loop证据；mode-specific
   profile seed现由runtime自动解析，避免再次污染formal config。
+- clean`e03e61b`的真正seed172 longest105 profile随后通过：fresh0→1、exact-resume1→3
+  共1,440 queries/72 conditions，峰值reserved`43.936GiB`且无clip/OOM；step2起五个
+  主块全部finite/nonzero。该证据只封存mechanics、显存和gradient lifecycle，不对
+  closed-loop性能作推断；formal必须从fresh identity开始。
 
 ## 2026-08-03 Semantic Direction Store正式负裁决
 

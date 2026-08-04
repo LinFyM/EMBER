@@ -35,8 +35,14 @@ GPU范围和训练步长是当时快照；活动状态只取
   24 conditions均完整。但实际最长只有82帧，故只保留工程证据，不冒充longest105。
 - 根因是profile mode没有消费配置中已声明的profile seed172。canonical runtime现按
   mode在内存中解析有效teacher seed并写入run contract，磁盘formal seed始终保持
-  `20260722`；24项受影响聚焦测试通过。下一步从新root重做真实longest105
-  fresh0→1/exact-resume1→3，profile通过前不启动formal，也不继承任何smoke权重。
+  `20260722`；24项受影响聚焦测试通过并以`e03e61b`push。
+- clean`e03e61b`在`gpu02:1,2,3,4,5,7`完成真实longest105 fresh0→1与同contract
+  exact-resume1→3。三步耗时`34.249/32.273/31.187s`、loss
+  `.150377/.152275/.140054`，峰值allocated/reserved`33.695/43.936GiB`；1,440
+  queries、720个B2 forwards、72 conditions完整，0 clip/OOM/CUDA/NCCL错误、0
+  validation/test action reads。step1只factor非零，step2起五主块finite/nonzero。
+- config已选择B20/B2并seal formal seed`20260722`与fresh0→200；profile/smoke权重不
+  进入正式轨迹。下一步按正式launch gate重查clean code、两节点空卡与storage后启动。
 
 ## 2026-08-03 Semantic Direction Store正式裁决、六卡分析与暂停
 

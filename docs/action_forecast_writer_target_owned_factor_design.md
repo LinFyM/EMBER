@@ -1,6 +1,6 @@
 # Policy-Target-Owned Factor Writer
 
-状态：2026-08-04 BCI fresh architecture authority。本文在 Semantic Direction Store
+状态：2026-08-04 BCI architecture authority与live profile已封存。本文在 Semantic Direction Store
 完成 `129/107/120/129` 的正式负裁决、winner 内部分析闭合，并重新复核两套
 rank-128 Source-SFT 的 effective LoRA 几何后建立。实现必须原位替换 canonical
 Direction Store decoder；历史实现由 Git、frozen config 和正式 artifacts 保存，不能
@@ -139,6 +139,16 @@ BCI A40正式启动前先做CPU合同、fresh schema、最长105-frame真实vide
 fresh0→1和exact-resume1→3。profile若OOM，先减`max_frames_per_encoder_call`；再减
 physical policy microbatch到B1。logical B20、24 tasks、训练examples与optimizer step
 不变。
+
+clean pushed`e03e61b`已在`gpu02:1,2,3,4,5,7`完成上述profile。runtime按mode从磁盘
+formal seed`20260722`自动解析profile seed`172`；fresh首步包含
+`task38/demo36=105` frames，随后从step1 exact-resume到step3，contract始终为
+`bbb8b26c...dca8`。三步耗时`34.249/32.273/31.187s`、loss
+`.150377/.152275/.140054`，峰值allocated/reserved为`33.695/43.936GiB`，无OOM、
+clip或CUDA/NCCL异常。共完成1,440 logical queries、720个B2 physical forwards、72个
+one-video conditions，validation/test action reads均为0；step1只factor非零，step2起
+五个主块全部finite/nonzero。故formal选择B20/B2并从fresh identity启动，profile权重
+不得进入正式轨迹。
 
 ## 6. 预注册判据
 

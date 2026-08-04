@@ -97,8 +97,8 @@ def test_target_owned_factor_config_seals_architecture_and_information_wall() ->
     assert config["information_wall"]["test_video_values_read"] == 0
     assert "state" in config["information_wall"]["writer_forbidden_inputs"]
     assert config["profile_defaults"]["expected_world_size"] == 6
-    assert config["profile_defaults"]["status"] == "pending_bci_live_profile"
-    assert config["profile_evidence"]["status"] == "pending"
+    assert config["profile_defaults"]["status"].startswith("sealed_bci_a40")
+    assert config["profile_evidence"]["status"].startswith("passed_bci_a40")
     assert config["profile_evidence"]["primary_candidate"][
         "per_task_action_batch_size"
     ] == 20
@@ -111,10 +111,19 @@ def test_target_owned_factor_config_seals_architecture_and_information_wall() ->
     assert config["optimization"]["scheduler"]["decay_steps"] == 400
     assert config["data"]["teacher_video_seed"] == 20260722
     assert config["profile_evidence"]["formal_teacher_video_seed_after_profile_seal"] == 20260722
-    assert config["formal_run"]["status"] == "awaiting_profile"
-    assert config["profile_evidence"]["selected"] is None
-    assert config["profile_evidence"]["exact_resume_smoke"] is None
-    assert config["profile_evidence"]["gradient_reachability"] is None
+    assert config["formal_run"]["status"] == "sealed"
+    assert config["formal_run"]["launch_state"].startswith(
+        "bci_owner_authorized_fresh0_to200"
+    )
+    assert config["profile_evidence"]["selected"] == config[
+        "profile_evidence"
+    ]["primary_candidate"]
+    assert config["profile_evidence"]["exact_resume_smoke"]["status"].startswith(
+        "passed_clean_pushed_commit"
+    )
+    assert config["profile_evidence"]["gradient_reachability"][
+        "first_nonzero_full_path_macro"
+    ] == 2
     assert config["formal_run"]["total_steps"] == 400
     assert config["formal_run"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["selected_stop_step"] == 200
@@ -149,7 +158,7 @@ def test_bci_target_owned_profile_preserves_b20_across_six_ranks() -> None:
     assert config["profile_defaults"]["per_rank_batch_size"] == 20
     assert config["formal_run"]["expected_world_size"] == 6
     assert config["formal_run"]["per_rank_batch_size"] == 20
-    assert config["formal_run"]["status"] == "awaiting_profile"
+    assert config["formal_run"]["status"] == "sealed"
     assert config["data"]["teacher_video_seed"] == config[
         "profile_evidence"
     ]["formal_teacher_video_seed_after_profile_seal"]
@@ -166,7 +175,9 @@ def test_bci_target_owned_profile_preserves_b20_across_six_ranks() -> None:
         "per_task_action_batch_size": 20,
         "functional_policy_microbatch_size": 2,
     }
-    assert config["profile_evidence"]["selected"] is None
+    assert config["profile_evidence"]["selected"] == config[
+        "profile_evidence"
+    ]["primary_candidate"]
     context = DistributedContext(
         rank=0,
         local_rank=0,

@@ -15,7 +15,9 @@
   工程smoke finite但最长仅82帧，不能冒充profile。profile必须从新root fresh，先live
   比较`gpu01/gpu02`并使用最多六张空闲卡；保持logical B20、policy B2、full24 raw mean
   与一次AdamW。磁盘config固定formal seed`20260722`，profile runtime自动采用声明的
-  seed172；最长105、fresh0→1及exact-resume1→3全部通过并seal后才可fresh0→200。
+  seed172。clean`e03e61b`的最长105 fresh0→1及exact-resume1→3已全部通过：峰值
+  reserved`43.936GiB`、step2起五主块finite/nonzero；config现已seal fresh0→200。
+  正式run必须使用新root/fresh identity，不能读取profile checkpoint。
 - 新方法不以high rank为目标。direct SFT复核显示有效参考同样低秩，但跨layer/target
   方向与能量稳定异质；新head ownership允许这种专门化自然学习，不加正交/rank/SFT
   distillation，也不依赖当前AS objective，后续reward gradient可复用。
@@ -24,7 +26,7 @@
   tokenizer、checkpoint和output由CLI显式传入；`EMBER_STORAGE_ROOT`、容量上限与
   `EMBER_LIBERO_ASSETS_ROOT`也必须在进程环境显式设置，不能依赖`.env.local`猜测。
 - 当前A40正式候选配置：
-  `configs/pi05_as_writer_semantic_direction_store_full24_decay400_bci_v1.json`，
+  `configs/pi05_as_writer_target_owned_factor_full24_decay400_bci_v1.json`，
   6 ranks×4 tasks、16-frame encoder microbatch、logical B20、policy microbatch2，
   formal teacher-video seed固定`20260722`且loader与sealed profile字段强制一致；
   不固定物理GPU编号。
@@ -50,8 +52,8 @@
   `/data/ymdai`、A100 GPU4--7和“BCI尚未验收”描述仅是历史状态。
 - owner在VR结果后恢复推进：保持one-shot，取消Writer参数量上限，优先重构条件生成
   方向存储/组合并允许配套训练修改。Direction Store rollout与全部分析现已完成，
-  owner最新边界是再次暂停了解现状。仍不使用subagent；效率优先，不重复全量hash或
-  无关旧artifact扫描。
+  owner已再次授权继续推进并要求遇到科学问题自行深入分析。仍不使用subagent；效率
+  优先，不重复全量hash或无关旧artifact扫描。
 
 ## 1. 当前操作状态
 
@@ -66,8 +68,8 @@
 - BCI VR与Semantic Direction Store的正式训练、四点rollout、完整性和内部分析均已
   完成。Direction Store曲线`129/107/120/129`，四点union/intersection=`174/65`、
   envelope gap45，漂移仍在；winner内部有效LoRA stable rank仅`1.000043`，首奇异值
-  能量`.999957`。owner最新要求在rollout和全部分析后暂停；当前不启动下一实验，
-  长期`>150`目标未完成。
+  能量`.999957`。当前Target-Owned Factor最长105 profile及resume已seal，下一操作为
+  fresh0→200与四点paired rollout；长期`>150`目标未完成。
 
 Target-Bound已完成首小时与四点correct400=`75/120/90/110`，不续训；内部反事实证明
 其视频路径到达BA/action，剩余瓶颈定位到shared factor conditional coexistence。

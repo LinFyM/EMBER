@@ -140,8 +140,9 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 - 活动源码/config/schema/internal analysis已原位替换Direction Store，旧实现只由
   Git/frozen artifacts保存。实现commit`20479d3`已push；formal-seed六卡fresh0→1
   工程smoke finite且峰值reserved`38.729GiB`，但最长只有82帧，不能冒充longest105。
-  runtime现按mode自动解析profile seed172且不改磁盘formal seed；下一步必须从新root
-  完成longest105、logical B20/B2、fresh0→1/exact-resume1→3后才可fresh0→200。
+  runtime根修`e03e61b`后，六卡seed172 longest105、logical B20/B2、fresh0→1与
+  exact-resume1→3均通过；峰值reserved`43.936GiB`，step2起五主块finite/nonzero。
+  config已封存formal seed20260722与fresh0→200授权，profile权重不得进入正式轨迹。
 - 正式首段保持full24 raw mean、B20、fast-decay400、每25保存；paired评测
   50/100/150/200。不得从Direction Store checkpoint warm-start，不得强制SFT几何或
   用functional loss选择checkpoint；长期single-checkpoint correct严格超过150仍未完成。

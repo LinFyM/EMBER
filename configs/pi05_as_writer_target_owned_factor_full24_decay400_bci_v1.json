@@ -85,7 +85,7 @@
       "budget_role": "target_owned_factor_bci_a40_logical_b20_policy_microbatch2"
     },
     "profile_defaults": {
-      "status": "pending_bci_live_profile",
+      "status": "sealed_bci_a40_46g_r6_target_owned_factor_b20_microbatch2_profile",
       "expected_world_size": 6,
       "total_steps": 3,
       "per_rank_batch_size": 20,
@@ -93,7 +93,7 @@
       "selected_stop_step": 3
     },
     "profile_evidence": {
-      "status": "pending",
+      "status": "passed_bci_a40_46g_r6_target_owned_factor_b20_microbatch2_profile",
       "fixed_frame_stride": 5,
       "teacher_videos_per_task_visit": 1,
       "tasks_per_rank_per_optimizer_update": 4,
@@ -112,14 +112,51 @@
         "functional_policy_microbatch_size": 1
       },
       "selection_rule": "preserve logical independent B20 and full24 raw mean; reduce only physical frame or policy microbatch on measured OOM",
-      "selected": null,
-      "exact_resume_smoke": null,
-      "gradient_reachability": null,
+      "selected": {
+        "max_frames_per_encoder_call": 16,
+        "per_task_action_batch_size": 20,
+        "functional_policy_microbatch_size": 2
+      },
+      "exact_resume_smoke": {
+        "status": "passed_clean_pushed_commit_fresh0_to1_exact_resume1_to3",
+        "implementation_commit": "e03e61b6828177536f1964acd42bdbb5512a718b",
+        "root": "runs/acceptance/ember_bci_target_owned_factor_b20_micro2_r6_long105_profile_e03e61b_20260804T045419Z/train",
+        "contract_sha256": "bbb8b26c3dab6ecbdc648a398edfec8e0af4323b977cb401c3eb135abad6dca8",
+        "physical_gpu_count": 6,
+        "tasks_per_rank": 4,
+        "global_tasks_per_macro": 24,
+        "logical_batch_size_per_task": 20,
+        "functional_policy_microbatch_size": 2,
+        "global_logical_queries_per_macro": 480,
+        "global_physical_policy_forwards_per_macro": 240,
+        "longest_real_stride5_video_frames": 105,
+        "step_seconds": [34.24946366302902, 32.27338555594906, 31.187229607021436],
+        "step_losses": [0.1503773539637526, 0.15227472130209208, 0.14005384470025697],
+        "peak_cuda_allocated_bytes": 36179551744,
+        "peak_cuda_reserved_bytes": 47175434240,
+        "completed_queries": 1440,
+        "completed_video_conditions": 72,
+        "validation_action_reads": 0,
+        "test_action_reads": 0,
+        "step3_checkpoint_payload_sha256": "b74936fd43a5eb9fc81bf25bb27b05f03ef905ae23039228b711840b2d3ddfd8"
+      },
+      "gradient_reachability": {
+        "status": "sealed_identity_then_finite_nonzero_full_path",
+        "identity_step_nonzero_blocks": ["factor"],
+        "first_nonzero_full_path_macro": 2,
+        "finite_nonzero_blocks": [
+          "semantic_frontend",
+          "core",
+          "program",
+          "compiler",
+          "factor"
+        ]
+      },
       "inference_profile": null
     },
     "formal_run": {
-      "status": "awaiting_profile",
-      "launch_state": "bci_owner_authorized_after_target_owned_design_profile_pending",
+      "status": "sealed",
+      "launch_state": "bci_owner_authorized_fresh0_to200_after_clean_target_owned_factor_profile_seal",
       "expected_world_size": 6,
       "total_steps": 400,
       "per_rank_batch_size": 20,

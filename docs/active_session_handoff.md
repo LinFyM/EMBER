@@ -27,9 +27,14 @@
   formal-seed fresh0→1工程smoke：loss`.150377`、step`32.668s`、峰值CUDA
   allocated/reserved`33.325/38.729GiB`，但最长视频仅82帧，因此不算longest105
   profile，也不继续resume。根因是profile mode未消费已声明seed172；runtime现按mode
-  自动解析有效seed并写入run contract，磁盘formal seed保持`20260722`。下一操作是
-  live重查后从新root完成longest105 fresh0→1/exact-resume1→3；通过后才允许fresh
-  0→200，且不继承任何Direction Store或smoke checkpoint。
+  自动解析有效seed并写入run contract，磁盘formal seed保持`20260722`；该smoke不继承
+  到后续profile/formal，也不加载任何Direction Store checkpoint。
+- clean`e03e61b`的真正profile现已在同六卡完成：seed172首步包含105帧，三步
+  `34.249/32.273/31.187s`、loss`.150377/.152275/.140054`，峰值CUDA
+  allocated/reserved`33.695/43.936GiB`；1,440 queries、72 conditions、0 clip/OOM，
+  step2起五主块finite/nonzero。contract`bbb8b26c...dca8`在fresh/resume间不变。
+  config已seal B20/B2、formal seed20260722和fresh0→200；下一步是正式launch preflight，
+  profile checkpoint绝不作为warm start。
 
 ## 0. BCI运行交接（优先于下文旧A100操作描述）
 

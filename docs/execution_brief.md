@@ -16,10 +16,10 @@
   `34,948,858,880/44,816,138,240` bytes；fresh0→1/resume1→3保持1,440 queries、72
   videos与五主block可达。sealed config为
   `configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json`。
-- fresh AS同一root已完成0→50：50个full24宏步、24,000 queries、1,200 one-shot
-  videos、0 OOM/clip，step50原子checkpoint见第0.1/0.2节。canonical step50 reward
-  profile完成96条pre-update K4 rollout：38 successes、14/24 tasks至少一次成功、10个
-  mixed tasks，coverage仍未过。下一正式动作是从同一AS root exact-resume50→75；不得
+- fresh AS同一root已完成0→75：75个full24宏步、36,000 queries、1,800 one-shot
+  videos、0 OOM/clip，step75原子checkpoint见第0.1/0.2节。canonical step75 reward
+  profile完成96条pre-update K4 rollout：47 successes、18/24 tasks至少一次成功、13个
+  mixed tasks，coverage仍未过。下一正式动作是从同一AS root exact-resume75→100；不得
   把任何RL profile checkpoint当成正式cold start继续训练。
 
 - Policy-Target-Owned Factor本轮已完成并负裁决；此前暂停已由owner解除。其源码不再
@@ -117,7 +117,7 @@ EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-asset
   coverage；正常step25后只允许同合同exact-resume。cold-start选择不看validation/test
   outcome，下一步只读24-train official random-reset K4 pre-update coverage。
 
-### 0.2 step25/50 reward profile裁决与下一段
+### 0.2 step25/50/75 reward profile裁决与下一段
 
 - AS root已完成step25，contract=`ad7ba631...b3d1`，`metrics_rows=25`、
   `global_policy_samples=12000`、`global_writer_video_conditions=600`，最终checkpoint为
@@ -146,7 +146,20 @@ EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-asset
   watchdog，未产生update。`e5bca71`用每epoch独立FileStore ready rendezvous根修；原
   规模重放的96条JSON与失败run逐文件一致，完成两epoch、cycle1 checkpoint和summary，
   0 watchdog。ratio=`[.9905,1.0094]`/`[.8555,1.0559]`，clip均0，grad=
-  `.02872/.02697`，max reserved=`40,342,913,024` bytes。下一段只从AS step50续到75。
+  `.02872/.02697`，max reserved=`40,342,913,024` bytes。
+- AS同root继续exact-resume50→75，累计36,000 queries/1,800 videos、75 finite macros，
+  segment wall=`805.356s`。首次尝试因live选卡形成`4+2` NUMA rank分布、不同于root封存
+  `3+3` topology而在训练前正确fail-close；改用同节点`1,2,3,4,5,7`保持原topology后
+  正常完成，无partial metrics/checkpoint混入。
+- step75 reward profile root为
+  `runs/outputs/pi05_rl_writer_relative_flow_profile_from_v6_macro075_r6_bci_04dbc4d_20260804`，
+  contract=`166cf8b4...e8d5`：96 rollouts、25,223 actions、47 successes、18/24 coverage、
+  13 mixed、5 all-success、6 all-failure。相对step50严格配对gained/lost/retained=
+  `21/12/26`；coverage获得task`9/16/19/25/37`、失去task4。suite coverage=
+  `4/6/5/3`，object已6/6，主要余缺在spatial与libero10。
+- 两epoch ratio=`[.9778,1.0266]`/`[.9117,1.0812]`，positive clip=`0/.000247`，
+  grad=`.03184/.02709`，max reserved=`40,340,815,872` bytes；0 watchdog并封存完整
+  cycle1 checkpoint。coverage仍未过，下一段只从AS step75续到100。
 
 ## 1. 当前操作状态
 

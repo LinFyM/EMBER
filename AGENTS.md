@@ -152,16 +152,20 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   `34,948,858,880/44,816,138,240` bytes，0 OOM/clip。独立fresh0→1再exact-resume1→3
   通过，累计1,440 queries/72 videos，五个主block到step3均可达，source trainable=0。
 - sealed AS config是`configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json`；同一
-  fresh root已exact-resume到macro50，共24,000 queries/1,200 videos。step50的K4
-  pre-update ledger为38/96 successes、14/24 task coverage、10 mixed，较step25严格
-  配对净增13次success与2个coverage task，但仍未过24-task门；下一步只续同一AS root
-  macro50→75，不从历史best或reward-profile checkpoint warm-start。
+  fresh root已exact-resume到macro75，共36,000 queries/1,800 videos。step75的K4
+  pre-update ledger为47/96 successes、18/24 task coverage、13 mixed；相对step50严格
+  配对gained/lost=`21/12`，coverage净增4但task4失去coverage，尚未过24-task门。下一步
+  只续同一AS root macro75→100，不从历史best或reward-profile checkpoint warm-start。
 - step50首次credit阶段因outcome-skewed rank-local反向耗时不均，让0-mixed快rank提前
   enqueue NCCL all-reduce并被480秒watchdog终止；96条pre-update ledger仍完整但没有
   参数更新。`e5bca71`在每轮本地反向后增加独立FileStore all-rank-ready，再统一进入
   NCCL；原六卡/96-rollout/两epoch规模重放完成，96/96 rollout JSON字节级不变，38
   successes、两轮finite update、完整cycle1 checkpoint、0 watchdog，峰值reserved
   `40,342,913,024` bytes。该修复只改变collective入场时序，不改变科学数据或credit。
+- AS50→75首次resume因所选物理卡对应rank形成`4+2` NUMA分布，而root已封存`3+3`
+  topology，被resume contract在模型训练前正确拒绝；无metrics或checkpoint写入。随后在
+  同一节点改用满足原`3+3` rank topology的六张空闲卡，原命令完成step75。正式
+  exact-resume必须保存sealed rank/NUMA topology；live选卡只能在该边界内更换空闲物理卡。
 - 长期目标仍是同一single checkpoint strict correct`>150/400`且越高越好；未完成前
   不因loss、训练reward、内部几何或单一screen停止。当前GPU无EMBER进程；每次launch
   仍实时比较`gpu01/gpu02`并只用最多6张空闲卡。

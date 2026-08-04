@@ -3325,3 +3325,16 @@ GPU范围和训练步长是当时快照；活动状态只取
 - 原六卡、96 rollout、两epoch规模retry完成；96/96 rollout JSON与失败run字节级一致，
   两epoch finite、完整cycle1 checkpoint、0 watchdog/traceback。wall`1465.939s`、
   peak reserved`40,342,913,024` bytes。六卡自然释放；下一步只续AS step50→75。
+
+## Task-Relative Flow-Credit AS75与reward profile（2026-08-04）
+
+- 同一正式AS root从step50 exact-resume到75，累计75 rows、36,000 queries、1,800
+  videos；segment wall=`805.356s`，step75 checkpoint完整，0 OOM/clip。首次resume因live
+  选卡形成`4+2` NUMA rank分布而与root sealed`3+3`不符，在训练前被合同正确拒绝；
+  改用同节点`1,2,3,4,5,7`保持原topology后完成。
+- step75 K4完成96条pre-update ledger：47 successes、18/24 coverage、13 mixed、5
+  all-success、6 all-failure。相对step50严格配对gained/lost/retained/both-fail=
+  `21/12/26/37`，coverage`14→18`；task`9/16/19/25/37`获得、task4失去coverage。
+- 两epoch ratio为`[.97777,1.02659]`/`[.91171,1.08119]`，positive clip=`0/.000247`、
+  grad=`.03184/.02709`；rank mixed=`3/1/4/1/3/1`，0 watchdog并保存完整cycle1
+  checkpoint，peak reserved=`40,340,815,872` bytes。下一步只续AS step75→100。

@@ -6,6 +6,25 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-04 Task-Relative Flow-Credit AS75与breadth积累
+
+- 同一fresh v6 AS cold-start root从step50 exact-resume到75，累计36,000 logical
+  queries、1,800 one-video conditions和75个finite full24 updates；step75 checkpoint
+  完整，source冻结，validation/test action reads均0，第三段wall=`805.356s`。
+- 96条official-random-reset K4 rollout得到47 successes、18/24 task coverage、13 mixed、
+  5 all-success、6 all-failure；suite success spatial/object/goal/libero10=`12/17/12/6`，
+  coverage=`4/6/5/3`。相对step50严格配对gained/lost/retained/both-fail=
+  `21/12/26/37`，success`38→47`、coverage`14→18`。
+- 新获得coverage为task`9/16/19/25/37`，task4失去；剩余全失败为
+  `4/5/29/36/38/39`。这比25→50有更强breadth净积累，尤其object达到6/6，但仍有12次
+  paired能力丢失和task换手，所以继续预注册cold-start轴，不把aggregate上升写成漂移解决。
+- 两epoch ratio/grad有限，positive clip仅`0/.000247`；mixed按rank为`3/1/4/1/3/1`，
+  FileStore barrier再次在真实不均衡负载下完成两轮update和完整checkpoint，0 watchdog。
+  峰值reserved=`40,340,815,872` bytes。
+- 首次AS50→75 resume因选卡对应`4+2` NUMA rank拓扑，与root封存的`3+3`不同，被合同在
+  训练前正确拦截，无metrics/checkpoint；保持原`3+3`拓扑后原命令完成。这是可信的
+  fail-close，不是科学失败或需要放宽resume合同的bug。
+
 ## 2026-08-04 Task-Relative Flow-Credit AS50与collective根修
 
 - 同一fresh v6 AS cold-start root从step25 exact-resume到50，累计24,000 logical

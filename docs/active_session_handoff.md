@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：step50 coverage仍未过门，AS准备exact-resume到75
+## 0.0 当前状态：step75 coverage升至18/24，AS准备exact-resume到100
 
 - owner已恢复持续推进并要求科学/工程问题自行深入分析。当前唯一活动方法为
   `docs/action_forecast_writer_relative_flow_credit_design.md`：恢复v6条件生成路径做
@@ -29,9 +29,9 @@
   `gpu02:1,2,3,4,5,7`已自然回到10--11MiB；0和6始终属于其他用户且未触碰。
 - 正式AS root
   `runs/outputs/pi05_as_writer_v6_relative_flow_coldstart_formal_r6_b20_seed7_b75cb19_20260804`
-  已完成fresh0→25并exact-resume25→50：累计24,000 queries、1,200 videos、50个finite
-  macros、0 OOM/clip，两个segment wall=`810.991/816.191s`，完整checkpoint=
-  `checkpoints/step_00000050`。这是独立v6 cold start，不含profile或历史权重。
+  已完成fresh0→25并两次exact-resume到75：累计36,000 queries、1,800 videos、75个finite
+  macros、0 OOM/clip，三个segment wall=`810.991/816.191/805.356s`，完整checkpoint=
+  `checkpoints/step_00000075`。这是独立v6 cold start，不含profile或历史权重。
 - 有效reward profile root为
   `runs/outputs/pi05_rl_writer_relative_flow_profile_from_v6_macro025_r6_bci_retry2_6ff7599_20260804`：
   96条K4 ledgers、28,085 actions、25 successes、12/24 task success coverage、9 mixed、
@@ -52,7 +52,21 @@
   cycle1 checkpoint，0 watchdog/traceback。两epoch ratio范围=`[.9905,1.0094]`和
   `[.8555,1.0559]`，clip=`0/0`，grad norm=`.02872/.02697`，峰值reserved
   `40,342,913,024` bytes。
-- 下一步只从上述AS step50 exact-resume同root到step75，再以新的pre-update K4 cycle
+- step75 reward profile root为
+  `runs/outputs/pi05_rl_writer_relative_flow_profile_from_v6_macro075_r6_bci_04dbc4d_20260804`：
+  96条K4 ledgers、25,223 actions、47 successes、18/24 task coverage、13 mixed、5
+  all-success、6 all-failure；suite success spatial/object/goal/libero10=`12/17/12/6`，
+  coverage=`4/6/5/3`。相对step50严格配对gained/lost/retained/both-fail=
+  `21/12/26/37`，新获得coverage为task`9/16/19/25/37`、失去task4。success
+  `38→47`与coverage`14→18`证明净积累，但换手仍在，不能宣称漂移已解决。
+- step75两epoch ratio范围=`[.97777,1.02659]`与`[.91171,1.08119]`，positive clip=
+  `0/.000247`，grad norm=`.03184/.02709`，峰值reserved=`40,340,815,872` bytes；13个
+  mixed tasks按rank为`3/1/4/1/3/1`，FileStore barrier在第二个真实不均衡分布上完成
+  两轮finite update、完整cycle1 checkpoint和0 watchdog。
+- AS50→75首次resume选择的物理卡形成`4+2` NUMA rank分布，与root封存的`3+3`不符，
+  因而在训练前被resume contract正确fail-close，没有metrics/checkpoint。改用同节点
+  `1,2,3,4,5,7`保持原`3+3` topology后完成；这不是科学负结果或代码故障。
+- 下一步只从上述AS step75 exact-resume同root到step100，再以新的pre-update K4 cycle
   重做coverage。不得借历史macro400/best或reward checkpoint，也不得按outcome改变task
   或seed合同。
 - 本轮根修RL环境池未绑定sealed asset cache，以及非连续选卡时把local rank误当物理EGL

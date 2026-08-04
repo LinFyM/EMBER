@@ -33,7 +33,10 @@ runner、split、路径或 GPU 权限。
 - [x] 根修outcome-skewed local credit使快rank提前进入NCCL的问题：每epoch先用独立
   FileStore all-rank-ready。原六卡96-rollout两epoch重放，96/96 ledger字节级一致、
   finite更新/完整checkpoint/0 watchdog。
-- [ ] exact-resume同一AS root 50→75，再用新K4 pre-update ledger重做24-task coverage；
+- [x] exact-resume同一AS root 50→75；累计36,000 queries/1,800 videos、75 finite macros。
+- [x] step75 K4严格配对得到47/96 success、18/24 coverage、13 mixed；相对step50
+  gained/lost=`21/12`，coverage净增4但task4换出，门仍未过。两epoch profile完整且0 watchdog。
+- [ ] exact-resume同一AS root 75→100，再用新K4 pre-update ledger重做24-task coverage；
   通过后冻结coldstart并永久关闭action data。
 - [ ] coverage通过并seal正式recipe后做两个outer cycles与paired
   screen/correct400，持续以single checkpoint strict`>150/400`为最低成功门。

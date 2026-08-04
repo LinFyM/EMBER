@@ -247,3 +247,24 @@ source overfitting；correct升但wrong同升属于video identifiability。四�
   `[.9905,1.0094]`/`[.8555,1.0559]`、positive clip均0、grad norm
   `.02872/.02697`。coverage仍失败，因此该checkpoint仍只作profile，下一段只从AS
   step50 exact-resume到75。
+
+## 12. step75 reward profile裁决（2026-08-04）
+
+- 同一fresh AS root exact-resume50→75后累计36,000 queries与1,800 one-video
+  conditions，75个full24 macro均finite，0 OOM/clip。K4 pre-update得到47/96
+  successes、18/24 task coverage、13 mixed、5 all-success、6 all-failure，仍未达到
+  第6节24-task exit gate。
+- 与step50严格共享96个task/cursor、env seed、初态、policy seed、teacher demo及共同
+  noise prefix；gained/lost/retained/both-fail=`21/12/26/37`，success`38→47`、coverage
+  `14→18`。task`9/16/19/25/37`获得coverage而task4失去；这是比step50更强的净积累，
+  但12次能力丢失和单task换手仍禁止“task drift已解决”的结论。
+- suite success spatial/object/goal/libero10=`12/17/12/6`，coverage=`4/6/5/3`；object
+  已全覆盖，剩余6个全失败task为`4/5/29/36/38/39`。因此不改变K、Nmc、batch或exit
+  gate，只沿同一AS轴继续到100。
+- 两epoch ratio范围=`[.97777,1.02659]`/`[.91171,1.08119]`，positive clip=
+  `0/.000247`，grad norm=`.03184/.02709`，peak reserved=`40,340,815,872` bytes；rank-local
+  mixed分布`3/1/4/1/3/1`下完成两轮finite update、完整cycle1 checkpoint和0 watchdog，
+  为FileStore collective入场合同提供第二个原规模实证。
+- AS resume首次因物理选卡产生`4+2` NUMA rank分布而与root封存的`3+3` topology不符，
+  在训练前被合同正确拒绝；保持原`3+3` rank topology后完成。该事件不改变科研样本，
+  也不构成重启或放宽合同的理由。下一段只从AS step75 exact-resume到100。

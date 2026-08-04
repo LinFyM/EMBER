@@ -16,10 +16,11 @@
   `34,948,858,880/44,816,138,240` bytes；fresh0→1/resume1→3保持1,440 queries、72
   videos与五主block可达。sealed config为
   `configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json`。
-- 下一正式动作是clean pushed origin/main上的fresh AS 0→25；随后以canonical reward
-  cycle的pre-update K4 ledger检查24 train tasks random-reset coverage，并同时完成最长
-  failure、Nmc4、两learning-epoch RL profile。GPU启动前重新比较两节点；当前无EMBER
-  GPU进程，gpu02物理0/6的他人进程从未触碰。
+- fresh AS 0→25已在clean pushed commit上完成：25个full24宏步、12,000 queries、600
+  one-shot videos、wall`810.991s`、0 OOM/clip，原子checkpoint见第0.1节。canonical
+  reward profile也已完成96条pre-update K4 rollout：25 successes，但只有12/24 tasks至少
+  一次成功、9个mixed tasks，coverage未过。下一正式动作是从同一AS root exact-resume
+  25→50；不得把本次RL profile checkpoint当成正式cold start继续训练。
 
 - Policy-Target-Owned Factor本轮已完成并负裁决；此前暂停已由owner解除。其源码不再
   是canonical活动路径，历史结果只由Git、artifact与design authority保留；不能resume
@@ -112,6 +113,25 @@ EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-asset
   source trainable=0和写入边界。无step25完整checkpoint的partial root不得resume或用于
   coverage；正常step25后只允许同合同exact-resume。cold-start选择不看validation/test
   outcome，下一步只读24-train official random-reset K4 pre-update coverage。
+
+### 0.2 step25 reward profile裁决与下一段
+
+- AS root已完成step25，contract=`ad7ba631...b3d1`，`metrics_rows=25`、
+  `global_policy_samples=12000`、`global_writer_video_conditions=600`，最终checkpoint为
+  `checkpoints/step_00000025`。续到50必须传该checkpoint、同一output root、
+  `--stop-after-step 50`和`--allow-contract-compatible-code-resume`；后者只容许AS科研
+  contract不变而运行代码commit前进。
+- 有效reward profile为
+  `runs/outputs/pi05_rl_writer_relative_flow_profile_from_v6_macro025_r6_bci_retry2_6ff7599_20260804`，
+  contract=`f0425002...b112`。96/96 official random-reset ledgers、28,085 actions、25
+  successes；12/24 tasks有success，9 mixed、3 all-success、12 all-failure。suite success为
+  spatial/object/goal/libero10=`7/7/10/1`，覆盖task数=`4/4/3/1`，故step25 coverage失败。
+- 两epoch ratio范围=`[.9860,1.0174]`和`[.8902,1.0629]`，positive clip fraction=
+  `0/.001781`，grad norm=`.04016/.03035`；机制非零且未被clip吞没。wall=`1066.374s`，
+  max CUDA reserved=`45,183,139,840` bytes，A40可运行但不再扩大K、Nmc或replay batch。
+- 启动时修复了两个真实多卡runtime缺口：RL环境池必须绑定sealed LIBERO asset cache；
+  `MUJOCO_EGL_DEVICE_ID`必须取`CUDA_VISIBLE_DEVICES[LOCAL_RANK]`的物理卡号。前两个失败/
+  中止root没有参数更新，只作工程诊断；后者的15条ledger不得进入科研比较。
 
 ## 1. 当前操作状态
 

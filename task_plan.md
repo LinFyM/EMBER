@@ -21,10 +21,15 @@ runner、split、路径或 GPU 权限。
   allocated/reserved`34,948,858,880/44,816,138,240` bytes，三步finite、0 OOM/clip。
 - [x] 独立fresh0→1/exact-resume1→3通过；1,440 queries、72 videos、五主block到step3
   可达、source policy trainable=0；AS config已seal。
-- [ ] clean commit/push至origin main，从fresh identity运行AS 0→25。
-- [ ] 用canonical reward cycle的pre-update K4 ledger做24 train task coverage；不过则只
-  exact-resume同一AS root到下一25-step边界，通过则冻结coldstart并永久关闭action data。
-- [ ] 完成最长failure、Nmc4、两epoch RL profile；机制通过后做两个outer cycles与paired
+- [x] clean commit/push至origin main，从fresh identity完成AS 0→25：12,000 queries、
+  600 videos、wall810.991s、0 OOM/clip并保存完整step25 checkpoint。
+- [x] 用canonical reward cycle完成pre-update K4 coverage：96 rollouts、25 success，但仅
+  12/24 tasks有success，coverage未过；9 mixed tasks提供非零credit。
+- [x] 完成最长failure、Nmc4、两epoch RL profile；ratio/clip/grad健康，峰值reserved
+  45,183,139,840 bytes。修复asset runtime binding和physical EGL card mapping。
+- [ ] exact-resume同一AS root 25→50，再用新K4 pre-update ledger重做24-task coverage；
+  通过后冻结coldstart并永久关闭action data。
+- [ ] coverage通过并seal正式recipe后做两个outer cycles与paired
   screen/correct400，持续以single checkpoint strict`>150/400`为最低成功门。
 
 ## 历史BCI Policy-Target-Owned Factor推进（2026-08-04）

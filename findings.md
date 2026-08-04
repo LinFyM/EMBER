@@ -4203,3 +4203,22 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - step1只有factor梯度不是上游断路，而是template-A/zero-B的预期staging；step2开始
   semantic/Core/compiler可达，step3 Program也非零。后续若reward梯度近零，必须结合
   nonzero-advantage task数和ratio证据判断，不能把AS step1现象误诊为结构断路。
+
+## Task-Relative Flow-Credit step25 coverage与真实runtime根因（2026-08-04）
+
+- 独立v6 AS fresh0→25完整通过，12,000 queries/600 videos、wall`810.991s`、0 clip/OOM。
+  functional loss下降只证明优化健康，不用于预测reward或closed-loop。
+- canonical pre-update K4得到96条完整official random-reset ledger、28,085环境动作、25
+  successes。只有12/24 tasks至少一次成功；9 mixed task、3 all-success、12 all-failure。
+  suite success/24 rollouts为spatial7、object7、goal10、libero10仅1。step25的主要门失败
+  是exploration/cold-start breadth，而不是ratio梯度整体消失。
+- 9个mixed task给出7,012个ratio samples/epoch。epoch0/1 ratio范围分别
+  `[.9860,1.0174]`与`[.8902,1.0629]`，clip fraction`0/.001781`，grad norm
+  `.04016/.03035`；task-relative credit可微、非零且仍在窄trust region内。这是机制通过，
+  不是性能有效性结论。
+- 真实environment vertical path发现两处此前静态测试未覆盖的根因：`hf-libero`
+  `get_assets_path()`不读取config.yaml，必须每rank绑定runtime asset cache；torchrun
+  local rank不能直接作为physical EGL ID。修复后task37与其他long-horizon task同样在
+  520步落盘，run contract记录正确物理卡`1,2,3,4,5,7`。
+- max CUDA reserved=`45,183,139,840` bytes，K4/Nmc4/two-epoch可在A40运行但余量有限；
+  不扩大K、MC或replay batch。下一证伪严格是同一AS root 25→50后的新K4 coverage。

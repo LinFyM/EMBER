@@ -212,3 +212,16 @@ source overfitting；correct升但wrong同升属于video identifiability。四�
   避免再造第二套random-reset probe。若24 tasks未全部至少一次success，该reward run
   仅作候选probe，AS只从同一formal root exact-resume到下一25-step边界；若全过，同一
   cycle继续提供最长failure/Nmc4/two-epoch机制profile证据。
+
+## 10. step25 reward profile裁决（2026-08-04）
+
+- AS fresh0→25完成且健康，但pre-update K4仅12/24 tasks至少一次成功；25/96总成功、
+  9 mixed、3 all-success、12 all-failure，因此按第6节预注册门不得冻结step25 cold start。
+- 9 mixed tasks产生稳定非零credit：两epoch ratio范围`[.9860,1.0174]`与
+  `[.8902,1.0629]`，positive clip fraction`0/.001781`，grad norm`.04016/.03035`。
+  这支持estimator和正负credit实现可运行，不支持当前checkpoint已提升closed-loop。
+- A40峰值reserved`45,183,139,840` bytes，现有K4/Nmc4/B2为资源上限附近的sealed
+  profile；后续不增加K、Nmc或batch，只通过同一AS训练轴改善cold-start coverage。
+- runtime根修不改变算法：每rank显式绑定sealed LIBERO assets，并把torchrun local rank
+  映射到真实physical EGL device。有效run的24×4 ledger、failure retention、信息墙和
+  physical GPU topology均完整。下一段为同一AS root exact-resume25→50。

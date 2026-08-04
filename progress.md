@@ -3298,3 +3298,16 @@ GPU范围和训练步长是当时快照；活动状态只取
 - config已seal为fresh0→400、every25、首段stop25；profile checkpoint禁止warm-start。
   下一步是clean commit/push后正式fresh0→25，再用canonical reward cycle的pre-update
   K4 ledger做24-task coverage与最长failure/two-epoch profile。
+
+## Task-Relative Flow-Credit AS25与reward profile（2026-08-04）
+
+- clean pushed commit上的正式AS fresh0→25完成：25个full24宏步、12,000 queries、600
+  videos、wall`810.991s`、0 OOM/clip，step25完整checkpoint原子发布。
+- 首次reward初始化发现RL环境池没有绑定sealed LIBERO runtime asset cache，停止在rollout
+  前并由`c1029a5`根修；retry1又发现非连续CUDA选卡时EGL错误使用local rank，15条诊断
+  ledger后在参数更新前停止，由`6ff7599`根修并写入`AGENTS.md`。两个root均不作科研结果。
+- retry2完成96/96 K4 rollouts和两epoch Nmc4 PPO/SPO：25 successes、12/24 tasks有
+  success、9 mixed，coverage失败；28,085环境动作，wall`1066.374s`，峰值reserved
+  `45,183,139,840` bytes。ratio/clip/grad机制健康，完整cycle1 checkpoint仅作profile。
+- 六卡自然释放。下一步从同一AS root和step25 checkpoint exact-resume到step50，再用
+  新的pre-update K4 ledger裁决coverage。

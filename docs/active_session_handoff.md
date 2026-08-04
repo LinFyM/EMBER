@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：Task-Relative Flow-Credit进入正式cold-start前封存
+## 0.0 当前状态：step25 reward coverage失败，AS准备exact-resume到50
 
 - owner已恢复持续推进并要求科学/工程问题自行深入分析。当前唯一活动方法为
   `docs/action_forecast_writer_relative_flow_credit_design.md`：恢复v6条件生成路径做
@@ -27,10 +27,21 @@
   0→1再exact-resume1→3，合同`1d2290ea...d457a87`不变，metrics严格1/2/3、累计
   1,440 queries与72 one-shot videos，source policy trainable=0。profile结束后
   `gpu02:1,2,3,4,5,7`已自然回到10--11MiB；0和6始终属于其他用户且未触碰。
-- AS config已seal为fresh 0→400、every25、首段stop25；下一步在clean pushed
-  origin/main上fresh 0→25。随后用canonical reward cycle的pre-update K4 ledger同时做
-  24-train-task coverage和最长failure/two-epoch RL profile；若coverage未全过，只从同一
-  AS root exact-resume到下一个25-step边界，不借历史macro400或任何best checkpoint。
+- 正式AS root
+  `runs/outputs/pi05_as_writer_v6_relative_flow_coldstart_formal_r6_b20_seed7_b75cb19_20260804`
+  已完成fresh0→25：12,000 queries、600 videos、wall`810.991s`、0 OOM/clip，完整
+  checkpoint=`checkpoints/step_00000025`。这是独立v6 cold start，不含profile或历史权重。
+- 有效reward profile root为
+  `runs/outputs/pi05_rl_writer_relative_flow_profile_from_v6_macro025_r6_bci_retry2_6ff7599_20260804`：
+  96条K4 ledgers、28,085 actions、25 successes、12/24 task success coverage、9 mixed、
+  3 all-success、12 all-failure；coverage失败。两epoch ratio/clip/grad健康，峰值reserved
+  `45,183,139,840` bytes，说明机制与A40负载通过，但其cycle1 checkpoint禁止作为正式
+  reward cold start继续。
+- 下一步只从上述AS step25 exact-resume同root到step50，再以新的pre-update K4 cycle
+  重做coverage。不得借历史macro400/best，也不得按本次outcome改变task或seed合同。
+- 本轮根修RL环境池未绑定sealed asset cache，以及非连续选卡时把local rank误当物理EGL
+  card的问题；有效run contract已记录physical GPU=`1,2,3,4,5,7`。相关长期规则已写入
+  `AGENTS.md`，诊断root不进入科研结论。
 
 ## 0.0a 历史裁决：Policy-Target-Owned Factor已负裁决
 

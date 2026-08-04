@@ -3354,3 +3354,7 @@ GPU范围和训练步长是当时快照；活动状态只取
   `scripts/analyze_relative_flow_coldstart.py`：24 train tasks×demo0--4×AS四点测真BA谱、
   rank-coordinate energy与video variance；按split结构固定8-task面板测固定action传递，
   0 target-action/validation/test reads。先做真实profile，封存后再据结果裁决下一方法。
+- clean`2b775f0`正式四点审计完成96 rows，wall291.333s、peak reserved19.308GB。
+  norm持续增大但stable rank仍约1；same-video energy从step50起约`.13%`平台，失败tasks
+  的video BA差异反而更大；reversed/shuffled到fixed action路径有效。正式拒绝把rank、
+  scale或更多store作为下一小改，下一段按coverage合同只续AS100→125。

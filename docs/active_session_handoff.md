@@ -84,6 +84,26 @@
   结构固定的8-task面板上测固定观测、固定policy noise的action传递；不读target action，
   不用functional loss选点。审计后才裁决续AS、正式Relative-Flow RL、v5.2同credit
   对照或条件生成重构；不得借历史best或reward checkpoint warm-start。
+- 该审计已由clean/pushed`2b775f0`在`gpu01:0--5`完成，root为
+  `runs/outputs/pi05_as_writer_v6_relative_flow_coldstart_internal_audit_step025_100_r6_2b775f0_20260805`：
+  4 checkpoints×24 tasks=96 rows，wall`291.333s`，peak reserved
+  `19,308,478,464` bytes，0 target-action/validation/test reads。step25/50/75/100的
+  norm中位=`53.40/80.37/93.17/99.18`，stable rank中位=
+  `1.000028/1.000055/1.000153/1.000176`，top-singular share=
+  `.999972/.999945/.999848/.999825`。这是对历史v6 near-rank1的当前复核，不是重新把
+  rank宣布为根因；direct SFT约1.52与Target-Spectral correct34仍禁止强制谱/正交。
+- 五条same-task video centered/sample energy中位=`.0813%/.1309%/.1333%/.1300%`，
+  demo0→demo1 BA relative-L2中位=`.0380/.0506/.0499/.0475`，从step50起没有继续增强；
+  fixed-action same-video仅`.0081/.0071/.0094/.0101`。相反reversed/shuffled fixed-action
+  从`.0299/.0216`升到step100`.0498/.0474`，说明v6时序链有效但video-instance方向弱。
+- step100有success与全失败tasks的norm中位=`99.13/102.37`、video variance=
+  `.1290%/.1311%`、demo1 BA差异=`.0405/.0634`；失败组并不缺LoRA幅度或视频变化。
+  相邻checkpoint BA/action churn中位从step50`1.116/.187`降到step100`.608/.142`，仍
+  足以造成能力换手。最早可行动接口仍是reward对condition-to-policy方向的credit，
+  不是rank、scale或更多store。
+- 因正式RL的24-task coverage门尚未过，下一步按sealed cold-start合同只从AS step100
+  exact-resume到125并重做K4；该段只为获得全task reward support，不代表AS surrogate
+  已解决方向质量。不得继承任何profile cycle1 update。
 - 本轮根修RL环境池未绑定sealed asset cache，以及非连续选卡时把local rank误当物理EGL
   card的问题；有效run contract已记录physical GPU=`1,2,3,4,5,7`。相关长期规则已写入
   `AGENTS.md`，诊断root不进入科研结论。

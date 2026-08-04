@@ -293,3 +293,30 @@ source overfitting；correct升但wrong同升属于video identifiability。四�
   换手，可续同一AS轴；若有mixed reward却条件方向仍落不进action有效子空间，才进入
   Relative-Flow RL；若v6仍保持近rank1、高B-column相似与弱video传递，则优先v5.2同credit
   对照或重构condition-to-policy存储/组合。禁止仅凭aggregate52或健康ratio选择RL。
+
+## 14. 四点LoRA/视频到action审计与下一裁决（2026-08-04）
+
+- clean/pushed`2b775f0`在6 ranks上完成step25/50/75/100×24 train tasks的96-row正式
+  审计，wall`291.333s`、peak reserved`19,308,478,464` bytes，0 target action与0
+  validation/test reads。全部task固定demo0--4；fixed-action面板严格为每suite首/尾
+  train task，不按outcome选task。
+- 四点effective norm中位=`53.40/80.37/93.17/99.18`；stable rank=
+  `1.000028/1.000055/1.000153/1.000176`，top singular share=
+  `.999972/.999945/.999848/.999825`，q/v B-column cosine始终约`.999`。这复现历史v6
+  rank collapse，但不是新根因：direct SFT stable rank约1.52仍偏低，Target-Spectral
+  强制升到3.32却correct34，禁止再次以谱/正交作为优化目标。
+- same-task五video centered/sample energy中位=`.0813%/.1309%/.1333%/.1300%`，demo1
+  BA relative-L2=`.0380/.0506/.0499/.0475`；step50后均平台。fixed action的same-video
+  relative-L2=`.0081/.0071/.0094/.0101`，而reversed=`.0299/.0508/.0606/.0498`、
+  shuffled=`.0216/.0325/.0351/.0474`。因此Visual Transition/Procedure/order路径真实
+  工作，最弱的是video instance条件差异的闭环方向，不是整个video入口断路。
+- step100 covered与all-failure tasks的norm中位=`99.13/102.37`、centered video energy=
+  `.1290%/.1311%`、demo1 BA差异=`.0405/.0634`；Spearman与success分别约
+  `-.09/-.22/-.22`。失败task的LoRA更大、video变化也更大，直接否定“加scale、增rank
+  或扩大条件差异即可成功”。相邻checkpoint BA/action churn中位从step50
+  `1.116/.187`降至step100`.608/.142`，但仍远未稳定。
+- 当前结构已具有可用的task主写入与时序因果链，却没有closed-loop reward来区分有用与
+  无用条件方向；这正是Relative-Flow credit要检验的接口。由于step100仍有7个all-fail
+  tasks，task-local LOO在它们上没有credit，不能违规跳过coverage门。下一段只续同一AS
+  100→125后重做K4；若coverage支持则进入正式reward，若继续停滞再裁决v5.2同credit或
+  更根本的credit/exploration重构，而不是另做rank/scale/store小改版。

@@ -169,8 +169,11 @@ EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-asset
   `14/9/38/35`，task20失去coverage且没有新coverage；suite coverage=`4/6/4/3`。
 - step100两epochratio=`[.98452,1.00771]`/`[.88801,1.06045]`，clip均0、grad=
   `.02535/.02563`、max reserved=`45,183,139,840` bytes，完整cycle1、0 watchdog/OOM。
-  当前先跑step25/50/75/100 LoRA真谱、能量、跨video方向与固定action传递审计；审计前
-  不续AS、不启正式RL。
+  step25/50/75/100 LoRA真谱、能量、跨video方向与固定action传递审计已完成：96 rows、
+  wall291.333s、peak reserved19.308GB、0 target-action/validation/test reads。norm中位
+  `53.40/80.37/93.17/99.18`但stable rank仍约1；same-video energy在step50后约`.13%`
+  平台，失败tasks的video差异不更小；reversed/shuffled可传到action。下一正式动作只
+  resume同一AS 100→125并重做K4，coverage过门前不启正式RL。
 
 ## 1. 当前操作状态
 

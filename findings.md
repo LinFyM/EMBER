@@ -6,6 +6,31 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-04 v6 cold-start四点LoRA与video-to-action审计
+
+- clean`2b775f0`完成step25/50/75/100×24 train tasks正式内部审计，96/96 rows、
+  wall`291.333s`、peak reserved`19,308,478,464` bytes；固定demo0--4和按split结构预定
+  8-task action面板，0 target-action与0 validation/test reads。root为
+  `runs/outputs/pi05_as_writer_v6_relative_flow_coldstart_internal_audit_step025_100_r6_2b775f0_20260805`。
+- norm中位随AS从`53.40→80.37→93.17→99.18`，但stable rank仅
+  `1.000028→1.000055→1.000153→1.000176`，top singular share仍从`.999972`到
+  `.999825`；q/v B-column cosine约`.999`。这是历史v6 macro50--600 rank collapse在
+  当前cold-start的复核，不得忽略direct SFT stable rank1.505--1.517和Target-Spectral
+  correct34而重新把强制高rank当解法。
+- q能量中位从`84.86%`降到`80.97%`，v从`15.10%`升到`19.02%`，action target始终低于
+  `.013%`；same-task五video centered/sample energy在`.0813%/.1309%/.1333%/.1300%`，
+  step50后平台。demo1 BA差异中位`.0380/.0506/.0499/.0475`，fixed-action差异仅
+  `.0081/.0071/.0094/.0101`。
+- reversed/shuffled的BA差异到step100为`.1845/.1523`，fixed action为`.0498/.0474`，
+  证明v6 Visual Transition→Procedure→LoRA→action顺序链工作；条件入口不是断路。
+  但相邻checkpoint BA/action churn中位仍为step50`1.116/.187`、75`.758/.178`、
+  100`.608/.142`，能力方向只是在缓慢稳定。
+- step100 covered/all-failure tasks的norm中位=`99.13/102.37`、video energy=
+  `.1290%/.1311%`、demo1 BA差异=`.0405/.0634`；三者与K4 success Spearman约
+  `-.09/-.22/-.22`。失败tasks并不缺幅度或video sensitivity，问题是条件变化落入什么
+  policy方向。当前最早有意义实验仍是闭环reward credit，但7个all-fail tasks使LOO
+  advantage为零，所以先续同一AS到125获得reward support，不违规提前启动formal RL。
+
 ## 2026-08-04 Task-Relative Flow-Credit AS100：aggregate升、breadth回落
 
 - 同一fresh v6 AS cold-start root从step75 exact-resume到100，累计48,000 logical

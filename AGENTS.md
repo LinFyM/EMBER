@@ -160,6 +160,16 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   task drift或条件写出质量已解决。下一步先完成同一v6 cold-start四点LoRA真`BA`谱、
   能量、同task跨video方向和固定action传递审计，再结合K4 coverage决定续AS、正式
   Relative-Flow RL、v5.2同credit对照或条件生成架构重构；不以functional loss裁决。
+- 上述四点内部审计已在clean`2b775f0`完成96/96 Cartesian rows：effective LoRA norm
+  中位数=`53.40/80.37/93.17/99.18`，stable rank=`1.000028/1.000055/1.000153/
+  1.000176`，same-task五video centered/sample energy=`.0813%/.1309%/.1333%/.1300%`。
+  rank塌缩只是历史v6结论的当前复核；direct SFT约1.52和Target-Spectral负结果仍禁止
+  强制升rank。step100全失败tasks的same-video BA差异中位数反而高于有success tasks
+  (`.0634>.0405`)，排除“只需放大视频差异”；reversed/shuffled到fixed action中位
+  relative-L2=`.0498/.0474`又证明时序路径未断。
+- AS checkpoint BA/action相邻中位churn从50的`1.116/.187`降至100的`.608/.142`，仍有
+  大量能力轮换。正式RL继续受24-task coverage门约束；下一步只续同一AS root
+  macro100→125并重做严格K4，不从profile update继承，也不先造rank/scale/store trick。
 - step50首次credit阶段因outcome-skewed rank-local反向耗时不均，让0-mixed快rank提前
   enqueue NCCL all-reduce并被480秒watchdog终止；96条pre-update ledger仍完整但没有
   参数更新。`e5bca71`在每轮本地反向后增加独立FileStore all-rank-ready，再统一进入

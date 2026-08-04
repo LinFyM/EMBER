@@ -39,9 +39,11 @@ runner、split、路径或 GPU 权限。
 - [x] exact-resume同一AS root 75→100；累计48,000 queries/2,400 videos。step100 K4为
   52/96 success、17/24 coverage、11 mixed，相对step75 gained/lost=`14/9`且task20换出；
   aggregate上升但breadth回落，正式RL不启动。
-- [ ] 对AS step25/50/75/100做24-task真实BA谱、rank/能量、同task跨video方向审计，并在
-  split结构预定8-task面板测固定action传递；结合K4裁决续AS、正式RL、v5.2 credit对照
-  或condition-to-policy架构重构。
+- [x] 完成AS step25/50/75/100的96-row真实BA谱、rank/能量、same-video与固定action
+  审计：near-rank1为历史复核，video能量约`.13%`平台且失败tasks变化不更小；order到
+  action路径有效。拒绝rank/scale/store小改，正式RL仍受coverage门约束。
+- [ ] exact-resume同一AS root 100→125并重做严格K4；只在24-task reward support过门后
+  seal正式Relative-Flow recipe，否则继续裁决cold-start/credit而不继承profile update。
 - [ ] coverage与内部条件写出证据支持后seal正式recipe，做两个outer cycles与paired
   screen/correct400，持续以single checkpoint strict`>150/400`为最低成功门。
 

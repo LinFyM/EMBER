@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：内容型credit只读门通过，fresh Writer-update profile已授权
+## 0.0 当前状态：内容型credit profile通过，formal fresh0→1已封存
 
 - 同一fresh v6 AS root已从step100 exact-resume到125：累计60,000 logical queries、
   3,000 one-video conditions和125个finite full24 macros；本段wall`806.928s`，0
@@ -50,10 +50,20 @@
   wrong/shuffled/reversed胜率=`1/.88/1`、margin中位=`.4889/.3557/1.6208`；all-failure
   utility与pixel-change Spearman=`.5564`。这只证明observer可作credit，不证明LoRA性能
   已提高。
-- canonical实现现允许一个从AS125 fresh复制、不可续训的full24 K4/Nmc4/two-epoch
-  Writer-update profile。mixed binary逐项不变、all-success为0、仅all-failure做semantic
-  LOO；observer/source永久冻结。profile需通过至少4个all-failure task finite gradient、
-  五下游主block、ratio/NCCL与A40显存门；formal仍fail-close。
+- clean`84d856c`的fresh profile root为
+  `runs/outputs/pi05_task_grounded_progress_credit_writer_profile_as125_r6_84d856c_20260805`：
+  96 rollouts/24,593 actions、50 successes、14 mixed、5 all-success、5 all-failure；
+  two-epoch wall`2129.187s`、peak reserved`19,455,279,104` bytes，完整cycle1 checkpoint、
+  0 OOM/clip/watchdog。5/5 all-failure task都有nonzero generated-LoRA gradient，五个
+  downstream blocks两epoch均可达，observer grad=0；ratio=`[.99077,1.02504]`与
+  `[.74545,1.09294]`，grad=`.03715/.05521`。
+- 相对只读诊断95/96 rollout完整一致；唯一task28/cursor1在相同初态/seed/LoRA/outcome
+  下提前一个chunk成功，少7 actions。五个all-failure task的20条utility排序不变，最大/
+  平均绝对差`.01622/.00318`，不改变credit owner。该差异封存为success termination
+  边界微扰，不以重复profile追求字节一致。
+- formal从AS125重新fresh，6 ranks、K4/Nmc4、two epochs、总上限8 cycles，checkpoints
+  `1/2/4/8`；首段只跑0→1。之后严格配对AS125 baseline与cycle1 correct400再决定是否
+  resume。profile权重不得进入，rollout/progress-credit双ledger必须绑定checkpoint。
 
 ### 已封存的step0--100证据链
 

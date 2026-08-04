@@ -256,6 +256,8 @@ def save_rl_writer_checkpoint(
         or int(ledger_summary.get("rollout_cursor", -1)) != cursors.rollout
         or int(ledger_summary.get("environment_action_cursor", -1))
         != cursors.environment_actions
+        or int(ledger_summary.get("progress_credit_cursor", -1))
+        != next_cycle * per_rank_tasks
     ):
         raise RewardProtocolError("Flow-Credit checkpoint cursors are inconsistent")
     consumed = schedule_summary(

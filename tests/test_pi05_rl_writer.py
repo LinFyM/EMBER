@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 import torch
 
+from ember.rl_writer import contract as rl_contract
 from ember.rl_writer import loop as rl_loop
 from ember.pi05_source_checkpoint import DistributedContext, canonical_hash, sha256_file
 from ember.pi05_source_contract import reconcile_metrics
@@ -58,7 +59,8 @@ def test_flow_credit_config_closes_actions_and_keeps_both_outcomes() -> None:
     assert config["parallel"]["credit_collective_readiness"].startswith(
         "shared_filestore_all_rank_ready"
     )
-    assert config["formal_run"]["status"].startswith("blocked")
+    assert config["formal_run"]["status"] == "sealed"
+    assert config["formal_run"]["checkpoint_cycles"] == [1, 2, 4, 8]
 
 
 def test_full24_schedule_is_exact_and_horizon_balanced_for_bci_topologies() -> None:
@@ -182,7 +184,9 @@ def test_flow_credit_information_wall_fails_closed(tmp_path: Path) -> None:
         load_rl_writer_config(path)
 
 
-def test_diagnostic_is_read_only_profile_is_sealed_and_formal_stays_blocked() -> None:
+def test_diagnostic_profile_and_fresh_formal_runtime_seals(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     config = load_rl_writer_config(CONFIG)
     context = DistributedContext(0, 0, 6, torch.device("cpu"), 0, (0,))
     args = Namespace(
@@ -203,9 +207,13 @@ def test_diagnostic_is_read_only_profile_is_sealed_and_formal_stays_blocked() ->
     args.stop_after_cycle = None
     assert resolve_runtime(args, config, context) == (1, (1,), 2)
     args.mode = "formal"
-    args.stop_after_cycle = None
-    with pytest.raises(RewardProtocolError, match="awaits the live profile seal"):
-        resolve_runtime(args, config, context)
+    args.stop_after_cycle = 1
+    monkeypatch.setattr(
+        rl_contract,
+        "git_state",
+        lambda _root: {"dirty_paths": [], "commit": "a", "origin_main": "a"},
+    )
+    assert resolve_runtime(args, config, context) == (8, (1, 2, 4, 8), 2)
 
 
 def test_semantic_progress_projection_and_binary_precedence() -> None:
@@ -409,6 +417,8 @@ def test_checkpoint_roundtrip_binds_full24_ledger_before_pickle(tmp_path: Path) 
         "successes": 3,
         "reward_sum": 3.0,
         "ledger_prefix_sha256": "b" * 64,
+        "progress_credit_cursor": 24,
+        "progress_credit_prefix_sha256": "c" * 64,
     }
     contract = {"schema_version": "test", "method": "flow-credit"}
     expected = {name: value.detach().clone() for name, value in writer.state_dict().items()}

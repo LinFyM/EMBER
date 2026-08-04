@@ -148,11 +148,13 @@ def _prepare_progress_optimizer(
 
 def rank_ledger_summary(runtime: RLWriterRuntime, next_cycle: int) -> dict[str, Any]:
     digest = hashlib.sha256()
+    credit_digest = hashlib.sha256()
     actions = 0
     successes = 0
     reward_sum = 0.0
     rollouts = int(runtime.config["algorithm"]["rollouts_per_task_condition"])
     local_rollouts = 0
+    local_credits = 0
     for cycle in range(next_cycle):
         assigned = cycle_assignments(
             runtime.tasks,
@@ -193,12 +195,35 @@ def rank_ledger_summary(runtime: RLWriterRuntime, next_cycle: int) -> dict[str, 
                 successes += int(bool(row["success"]))
                 reward_sum += float(row["reward_sum"])
                 local_rollouts += 1
+            credit_path = (
+                runtime.args.output_dir
+                / "progress_credit"
+                / f"cycle_{cycle:08d}"
+                / f"task_{task.global_task_id:03d}.json"
+            )
+            if not credit_path.is_file():
+                raise RewardProtocolError(
+                    f"progress-credit ledger prefix gap: {task.global_task_id}/{cycle}"
+                )
+            credit = read_json(credit_path)
+            observed_credit = (
+                int(credit.get("producer_rank", -1)),
+                int(credit.get("outer_cycle", -1)),
+                int(credit.get("global_task_id", -1)),
+            )
+            expected_credit = (runtime.context.rank, cycle, task.global_task_id)
+            if observed_credit != expected_credit:
+                raise RewardProtocolError("progress-credit ledger schedule changed")
+            credit_digest.update(bytes.fromhex(sha256_file(credit_path)))
+            local_credits += 1
     return {
         "rollout_cursor": local_rollouts,
         "environment_action_cursor": actions,
         "successes": successes,
         "reward_sum": reward_sum,
         "ledger_prefix_sha256": digest.hexdigest(),
+        "progress_credit_cursor": local_credits,
+        "progress_credit_prefix_sha256": credit_digest.hexdigest(),
     }
 
 

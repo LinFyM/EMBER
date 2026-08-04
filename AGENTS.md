@@ -192,11 +192,15 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   shuffled/reversed比例=`1/.88/1`，对应margin中位=`.4889/.3557/1.6208`；all-failure
   utility与pixel-change Spearman=`.5564`。96/96旧profile身份与outcome严格一致，0
   optimizer/backward/checkpoint，不能把该证据冒充Writer性能改善。
-- canonical profile现只授权一个从AS125 fresh复制、不可续训的full24 K4/Nmc4/two-epoch
-  Writer-update工程profile。AS125 semantic encoder与source policy永久冻结；mixed逐项
-  保持旧binary LOO、all-success零梯度、仅all-failure用bounded semantic LOO。profile
-  必须验证至少4个all-failure task产生finite gradient、五个Writer下游主block可达、
-  ratio/NCCL/A40显存健康；通过后才封存formal预算，formal仍为fail-close。
+- clean`84d856c`的fresh Writer-update profile已通过：96 rollouts/24,593 actions、50
+  successes、14 mixed、5 all-success、5 all-failure；5/5 all-failure task均有nonzero
+  generated-LoRA gradient，五个Writer下游block两epoch均可达，observer gradient=0。
+  ratio=`[.99077,1.02504]`/`[.74545,1.09294]`、grad=`.03715/.05521`、clip0、peak
+  reserved`19,455,279,104` bytes，0 watchdog/OOM。profile checkpoint永久禁止续训。
+- formal现封存为从AS125 fresh进入的6-rank、K4/Nmc4、two-epoch、最多8 cycles，checkpoint
+  `1/2/4/8`；首段只跑0→1，然后在同一strict panel比较AS125 baseline与cycle1 paired
+  correct400再决定续段。checkpoint必须同时绑定每rank rollout与progress-credit ledger；
+  mixed binary/all-success/all-failure优先级、冻结observer及3+3 topology不得改变。
 - step50首次credit阶段因outcome-skewed rank-local反向耗时不均，让0-mixed快rank提前
   enqueue NCCL all-reduce并被480秒watchdog终止；96条pre-update ledger仍完整但没有
   参数更新。`e5bca71`在每轮本地反向后增加独立FileStore all-rank-ready，再统一进入

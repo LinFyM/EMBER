@@ -8,6 +8,16 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-05 Task-Grounded Semantic Progress Writer profile通过
+
+- clean`84d856c`在`gpu01:1,2,3,4,5,7`完成AS125-fresh profile：96 rollout、24,593
+  actions、50 successes，two-epoch wall`2129.187s`、peak reserved`19.455GB`。两轮
+  deferred FileStore→NCCL均按实际负载完成，0 watchdog/OOM/clip，GPU自然释放。
+- 5/5 all-failure task有nonzero generated-LoRA gradient，五下游block两轮均非零，
+  observer gradient tensors=0；19 active tasks严格等于14 mixed+5 semantic failure。
+- formal配置seal为fresh AS125、6 ranks、two epochs、total8、checkpoint1/2/4/8；首段
+  0→1后先比较AS125 baseline与cycle1 strict correct400。profile checkpoint禁止续训。
+
 ## 2026-08-05 Task-Grounded Semantic Progress只读门通过
 
 - clean`c483497`在live空闲`gpu01:1,2,3,4,5,7`完成AS125严格配对只读诊断；96

@@ -1,6 +1,6 @@
 # Task-Grounded Semantic Progress Credit Writer 设计
 
-状态：**2026-08-05只读机制门已全部通过；授权一个fresh Writer-update profile，正式训练仍未授权。**
+状态：**2026-08-05只读与Writer-update profile门均通过；正式run已封存为fresh AS125、首段stop1。**
 
 本设计接续`docs/action_forecast_writer_relative_flow_credit_design.md`的binary-only负裁决。
 它不把RL当作绕过LoRA质量问题的替代路线，而是专门修复已经定位到的最早接口：
@@ -278,3 +278,31 @@ rollout上correct优于wrong/shuffled/reversed比例=`1/.88/1`，margin中位
 progress credit”，不接受“Writer LoRA已经改善”。现在只授权一个从AS125 fresh进入的
 full24、K4、Nmc4、two-epoch profile；profile checkpoint禁止续训。profile通过冻结、
 梯度覆盖、ratio、NCCL与A40显存门后，才新增formal seal与训练预算。
+
+## 14. Writer-update profile裁决与formal seal
+
+clean`84d856c`的fresh profile root为
+`runs/outputs/pi05_task_grounded_progress_credit_writer_profile_as125_r6_84d856c_20260805`。
+它完成96 rollout、24,593 actions、50 successes、14 mixed、5 all-success与5
+all-failure；两epoch wall`2129.187s`，peak reserved`19,455,279,104` bytes，0 OOM、
+clip、watchdog与observer gradient。19个active credit tasks严格由14 mixed binary加5
+all-failure semantic组成，五个all-failure task在两epoch均有finite nonzero
+generated-LoRA gradient。
+
+五个Writer下游block在两epoch均可达。epoch0/1梯度范数分别为：semantic core
+`.00218/.00350`、visual transition`2.76e-5/4.33e-5`、procedure`.000240/.000429`、
+compiler`.00457/.00734`、factor heads`.03680/.05461`；总grad norm`.03715/.05521`。
+ratio范围=`[.99077,1.02504]`与`[.74545,1.09294]`、mean近1且positive clip均0。
+两轮都按真实负载不均完成FileStore ready再NCCL sum。
+
+相对只读诊断，95/96 rollout的完整steps/noise prefix一致；唯一task28/cursor1保持相同
+初态、LoRA、seed和成功outcome，但在第16而非17个replan chunk终止，少7 actions。五个
+all-failure task的20条utility相对诊断保持全部task内排序，最大/平均绝对差
+=`.01622/.00318`。该差异裁决为成功边界的环境终止时刻微扰，不改变outcome group、
+credit owner或机制门。
+
+formal固定从AS125重新fresh，6 ranks、K4、Nmc4、two epochs，总上限8 cycles，checkpoint
+=`1/2/4/8`。首段只跑0→1；随后在同一strict panel上比较AS125 baseline与formal cycle1
+的paired correct400、breadth和task gained/lost，再决定是否exact-resume到2/4/8。
+profile checkpoint永久禁止续训或评测。formal checkpoint另绑定每rank rollout与
+progress-credit双ledger前缀；任何续段不得改变两epoch、task/video schedule或拓扑。

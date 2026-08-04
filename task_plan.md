@@ -60,9 +60,12 @@ runner、split、路径或 GPU 权限。
 - [x] 完成AS125严格配对六卡只读机制裁决：50/96 outcomes逐项复现，mixed agreement
   `13/14`、pair AUC`.8913`，五个all-failure task均有非退化utility，三种视频反事实和
   pixel nuisance门全部通过；0 optimizer/backward/checkpoint。
-- [ ] 从AS125 fresh运行一个不可续训的full24 K4/Nmc4 two-epoch Writer-update profile，
-  验证冻结前端、all-failure finite梯度覆盖、五下游主block、ratio/NCCL/A40显存；通过后
-  才seal formal预算并进入paired correct400，长期single-checkpoint strict`>150/400`不变。
+- [x] 完成AS125-fresh、不可续训的two-epoch Writer-update profile：5/5 all-failure
+  task非零LoRA梯度、五block可达、observer grad0、ratio/NCCL/A40全部健康；95/96完整
+  rollout配对，唯一成功终止时刻少7 actions不改变outcome/credit。
+- [ ] formal fresh0→1后，在同一strict panel完成AS125 baseline与cycle1 paired
+  correct400；根据absolute、breadth和gained/lost决定是否exact-resume到2/4/8，长期
+  single-checkpoint strict`>150/400`不变。
 
 ## 历史BCI Policy-Target-Owned Factor推进（2026-08-04）
 

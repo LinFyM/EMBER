@@ -6,6 +6,18 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-05 Task-Grounded Semantic Progress Writer profile
+
+- clean`84d856c`从AS125 fresh完成一个full24 K4/Nmc4 two-epoch profile：50/96 successes、
+  14 mixed、5 all-success、5 all-failure；5/5全失败task产生nonzero LoRA gradient，五个
+  Writer下游block均可达，observer grad0。ratio范围`.99077--1.02504`与
+  `.74545--1.09294`，0 clip/OOM/watchdog，peak reserved`19.455GB`。
+- 相对只读诊断95/96 rollout完全一致；task28/cursor1同样成功但少一个replan chunk，
+  总action少7。all-failure utility排序全部不变，最大/平均绝对差`.01622/.00318`。
+  这是终止边界微扰，不构成重跑profile或改变credit的依据。
+- profile只通过工程/机制门，不是性能结果。formal已按log-spaced剂量封存为fresh AS125、
+  cycle`1/2/4/8`；先裁决cycle1 paired correct400再续。
+
 ## 2026-08-05 Task-Grounded Semantic Progress只读机制裁决
 
 - clean`c483497`六卡只读诊断严格复现AS125的50/96 successes、14 mixed、5

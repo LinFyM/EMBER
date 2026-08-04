@@ -34,9 +34,12 @@
   分组，mixed agreement=`13/14`、pair AUC=`.8913`，五个all-failure utility range均
   `>.12`；correct对wrong/shuffled/reversed胜率=`1/.88/1`，pixel Spearman=`.5564`。
   96/96 rollout身份逐项一致，0 optimizer/backward/checkpoint，全部预注册门通过。
-- canonical profile现在只开放一个从AS125 fresh进入的full24 K4/Nmc4 two-epoch工程
-  profile，验证冻结observer、语义all-failure梯度覆盖、ratio/NCCL与A40显存；profile
-  权重禁止续训。formal仍fail-close，必须等profile证据封存后再定预算。
+- clean`84d856c`的fresh Writer-update profile已通过：5/5 all-failure task非零LoRA
+  gradient、五下游block可达、observer grad=0；两epoch ratio健康、peak reserved仅
+  `19,455,279,104` bytes，0 OOM/watchdog。profile权重永久禁止续训。
+- formal配置已seal为AS125 fresh、world6、K4/Nmc4、two epochs、最多8 cycles与
+  checkpoints`1/2/4/8`；首段只跑0→1。完成后先做AS125 baseline/cycle1严格配对
+  correct400再决定续2/4/8，不能按train reward或functional objective直接续。
 
 - Policy-Target-Owned Factor本轮已完成并负裁决；此前暂停已由owner解除。其源码不再
   是canonical活动路径，历史结果只由Git、artifact与design authority保留；不能resume

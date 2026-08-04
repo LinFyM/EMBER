@@ -189,13 +189,17 @@
     "learning_epochs": 2
   },
   "formal_run": {
-    "status": "blocked_until_read_only_and_writer_update_profiles_pass",
-    "launch_state": "blocked_until_task_grounded_progress_credit_profile_seal",
+    "status": "sealed",
+    "launch_state": "fresh_as125_stop1_then_paired_correct400",
+    "expected_world_size": 6,
+    "total_cycles": 8,
+    "checkpoint_cycles": [1, 2, 4, 8],
+    "learning_epochs": 2,
     "selection_rule": "single-checkpoint paired correct400 only after diagnostic and fresh writer-update profile"
   },
   "checkpointing": {
     "atomic_publish": true,
     "checkpoint_only_after_complete_full24_outer_cycle": true,
-    "retained_state": "Writer, optimizer, scheduler, per-rank RNG, task/video schedule, rollout/environment-action/optimizer cursors, success+failure ledger prefix, metrics cursor and hashes"
+    "retained_state": "Writer, optimizer, scheduler, per-rank RNG, task/video schedule, rollout/progress-credit/environment-action/optimizer cursors, success+failure and semantic-credit ledger prefixes, metrics cursor and hashes"
   }
 }

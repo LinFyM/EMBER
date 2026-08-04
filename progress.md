@@ -8,6 +8,17 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-05 Progress-Credit formal首次失败与ready根修
+
+- clean`bc4ff60`在`gpu01:1,2,3,4,5,7`启动AS125-fresh formal0→1。96 rollout和24
+  progress-credit均完整，但第一轮gradient sum只有rank0/1/2/5进入seq18，rank3/4停在
+  seq17；600秒watchdog终止，0 update/metrics/checkpoint，失败root禁止resume/评测。
+- 根因收敛为旧`FileStore` ready没有显式等待本rank CUDA完成，且临时store不能在高度
+  错峰下可靠提供一次性all-rank barrier；不是OOM、transport、task ownership或科学负结果。
+- canonical代码已改成CUDA synchronize→本次torchrun唯一session/cycle/epoch原子rank
+  markers→NCCL。相同输出目录连续两次真实六卡新session探针均6/6 markers、sum21，
+  旧session marker没有污染重启。待聚焦测试、clean commit/push后用全新root重放原规模。
+
 ## 2026-08-05 Task-Grounded Semantic Progress Writer profile通过
 
 - clean`84d856c`在`gpu01:1,2,3,4,5,7`完成AS125-fresh profile：96 rollout、24,593

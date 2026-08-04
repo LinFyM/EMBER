@@ -66,6 +66,12 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   rank提前enqueue NCCL collective。每个collective阶段必须先用非NCCL all-rank ready
   rendezvous确认本地计算全部结束，再让所有rank按同序进入collective；不得用增大或关闭
   watchdog heartbeat掩盖负载不均造成的提前入场。
+- credit反向的“本地计算完成”必须包含本rank显式CUDA synchronize，不能只表示Python已
+  enqueue kernel。不得再用一个会被不同rank独立构造/清理的临时`FileStore`文件作这种
+  outcome-skewed barrier；canonical合同是先CUDA完成，再以本次torchrun唯一session、
+  cycle、epoch和rank写原子marker，观察实际world-size的全部marker后才进入NCCL。marker
+  在本次run内保留，新launch必须用新session隔离失败重试，不能靠删除共享ready文件消除
+  stale state。
 - 多卡任务分配和结果封存必须显式读取本次实际`world_size`并为每个rank生成ownership
   记录，不得保留4卡/8卡等历史默认值后再由launcher要求另一拓扑。整任务LPT或动态
   队列必须覆盖全部rank与全部task，最终聚合必须按实际ownership推导每rank行数；卡数
@@ -197,16 +203,19 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   generated-LoRA gradient，五个Writer下游block两epoch均可达，observer gradient=0。
   ratio=`[.99077,1.02504]`/`[.74545,1.09294]`、grad=`.03715/.05521`、clip0、peak
   reserved`19,455,279,104` bytes，0 watchdog/OOM。profile checkpoint永久禁止续训。
-- formal现封存为从AS125 fresh进入的6-rank、K4/Nmc4、two-epoch、最多8 cycles，checkpoint
+- formal仍封存为从AS125 fresh进入的6-rank、K4/Nmc4、two-epoch、最多8 cycles，checkpoint
   `1/2/4/8`；首段只跑0→1，然后在同一strict panel比较AS125 baseline与cycle1 paired
-  correct400再决定续段。checkpoint必须同时绑定每rank rollout与progress-credit ledger；
-  mixed binary/all-success/all-failure优先级、冻结observer及3+3 topology不得改变。
-- step50首次credit阶段因outcome-skewed rank-local反向耗时不均，让0-mixed快rank提前
-  enqueue NCCL all-reduce并被480秒watchdog终止；96条pre-update ledger仍完整但没有
-  参数更新。`e5bca71`在每轮本地反向后增加独立FileStore all-rank-ready，再统一进入
-  NCCL；原六卡/96-rollout/两epoch规模重放完成，96/96 rollout JSON字节级不变，38
-  successes、两轮finite update、完整cycle1 checkpoint、0 watchdog，峰值reserved
-  `40,342,913,024` bytes。该修复只改变collective入场时序，不改变科学数据或credit。
+  correct400再决定续段。首次fresh0→1完整产生96 rollout和24 task credit，但旧
+  `FileStore` barrier在第一轮gradient sum发生rank序列分裂：rank0/1/2/5进入seq18，
+  rank3/4停在seq17，600秒watchdog终止；没有update、metrics或checkpoint，失败root禁止
+  resume/评测。根因不是NCCL transport、OOM或科学结果，而是ready只覆盖CPU enqueue且
+  临时FileStore生命周期不能可靠证明所有rank的CUDA工作已结束。
+- canonical修复改为每rank先CUDA synchronize，再按本次torchrun唯一session/cycle/epoch
+  写原子rank marker，6/6可见后才进入NCCL；marker不在run内竞态删除。相同输出目录连续
+  两个新torchrun session的六卡真实探针都完成6/6 marker和all-reduce sum21，旧session
+  marker没有污染重启。仍须从clean/pushed commit与全新root重放原96-rollout/two-epoch
+  失败规模，并以finite update、完整checkpoint和exact-resume作最终工程裁决；不得用
+  timeout、少卡或减少K/Nmc替代该重放。
 - AS50→75首次resume因所选物理卡对应rank形成`4+2` NUMA分布，而root已封存`3+3`
   topology，被resume contract在模型训练前正确拒绝；无metrics或checkpoint写入。随后在
   同一节点改用满足原`3+3` rank topology的六张空闲卡，原命令完成step75。正式

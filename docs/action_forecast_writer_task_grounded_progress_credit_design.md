@@ -258,6 +258,21 @@ novelty只有在机制门和正式结果成立后才能主张。
 6. 全部门通过后才实现/运行一个全新Writer-update profile；
 7. profile再决定formal训练预算和paired correct400评测。
 
+## 13. Formal首次启动暴露的collective入场根因
+
+首次AS125-fresh formal0→1完整产生96 rollout与24 task progress-credit，但第一轮
+gradient sum中rank0/1/2/5进入NCCL seq18，rank3/4停在seq17，600秒watchdog终止；没有
+optimizer update、metrics或checkpoint。task ownership、outcome分组与profile完全一致，
+排除科学数据变化；旧`FileStore` barrier只覆盖Python enqueue且其临时文件生命周期在
+高度错峰时不能可靠证明所有rank的CUDA工作已结束。
+
+canonical工程合同因此升级为：每rank先显式CUDA synchronize，再按本次torchrun唯一
+session、cycle、epoch和rank写原子marker；只有实际world-size全部marker可见后才进入
+NCCL。marker在run内保留，新launch使用新session隔离旧状态。相同输出目录连续两个真实
+六卡session已分别完成6/6 marker和all-reduce sum21。该修改不改变rollout、semantic/
+binary credit、K4/Nmc4、task等权或optimizer；正式接受仍要求全新root重放原96-rollout、
+two-epoch规模并产生finite update、双ledger checkpoint和exact-resume证据。
+
 ## 13. 只读机制裁决与profile授权
 
 clean`c483497`上的六卡只读root为

@@ -9,6 +9,7 @@ import torch
 
 from ember.rl_writer import contract as rl_contract
 from ember.rl_writer import loop as rl_loop
+from ember.rl_writer import rendezvous as rl_rendezvous
 from ember.pi05_source_checkpoint import DistributedContext, canonical_hash, sha256_file
 from ember.pi05_source_contract import reconcile_metrics
 from ember.reward import rollout as reward_rollout
@@ -56,8 +57,9 @@ def test_flow_credit_config_closes_actions_and_keeps_both_outcomes() -> None:
     assert config["algorithm"]["semantic_encoder_frozen_after_coldstart"] is True
     assert config["information_wall"]["teacher_action_reads_after_coldstart"] == 0
     assert config["parallel"]["maximum_world_size"] == 6
-    assert config["parallel"]["credit_collective_readiness"].startswith(
-        "shared_filestore_all_rank_ready"
+    assert config["parallel"]["credit_collective_readiness"] == (
+        "launch_unique_atomic_rank_markers_after_cuda_complete_"
+        "before_each_nccl_gradient_sum"
     )
     assert config["formal_run"]["status"] == "sealed"
     assert config["formal_run"]["checkpoint_cycles"] == [1, 2, 4, 8]
@@ -144,15 +146,31 @@ def test_credit_collective_waits_for_rank_local_backward(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     events: list[str] = []
-
-    class Store:
-        def set(self, key: str, value: bytes) -> None:
-            events.append(f"set:{key}")
-
-        def wait(self, keys: list[str], timeout: object) -> None:
-            events.append("wait:" + ",".join(keys))
-
-    monkeypatch.setattr(rl_loop.dist, "FileStore", lambda *_: Store())
+    monkeypatch.setenv("TORCHELASTIC_RUN_ID", "unit-credit-rendezvous")
+    monkeypatch.setenv("TORCHELASTIC_RESTART_COUNT", "0")
+    session = rl_rendezvous._credit_rendezvous_session()
+    ready = (
+        tmp_path
+        / ".rank-local-credit-ready"
+        / session
+        / "cycle-00000003-epoch-0001"
+    )
+    ready.mkdir(parents=True)
+    (ready / "rank-01.json").write_text("{}\n", encoding="utf-8")
+    original_write = rl_rendezvous.write_json_atomic
+    monkeypatch.setattr(
+        rl_rendezvous.torch.cuda,
+        "synchronize",
+        lambda *_args, **_kwargs: events.append("cuda_synchronize"),
+    )
+    monkeypatch.setattr(
+        rl_rendezvous,
+        "write_json_atomic",
+        lambda path, value: (
+            events.append(f"marker:{path.name}"),
+            original_write(path, value),
+        )[-1],
+    )
     monkeypatch.setattr(
         rl_loop.dist,
         "all_reduce",
@@ -165,13 +183,14 @@ def test_credit_collective_waits_for_rank_local_backward(
     writer.bias.grad = None
     runtime = Namespace(
         args=Namespace(output_dir=tmp_path),
-        context=DistributedContext(0, 0, 2, torch.device("cpu")),
+        context=DistributedContext(0, 0, 2, torch.device("cuda:0")),
         writer=writer,
     )
 
     rl_loop._all_reduce_writer_gradients(runtime, cycle=3, epoch=1)
 
-    assert events == ["set:rank-0", "wait:rank-0,rank-1", "all_reduce"]
+    assert events == ["cuda_synchronize", "marker:rank-00.json", "all_reduce"]
+    assert (ready / "rank-00.json").is_file()
     assert writer.bias.grad is None
 
 

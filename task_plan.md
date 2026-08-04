@@ -63,9 +63,14 @@ runner、split、路径或 GPU 权限。
 - [x] 完成AS125-fresh、不可续训的two-epoch Writer-update profile：5/5 all-failure
   task非零LoRA梯度、五block可达、observer grad0、ratio/NCCL/A40全部健康；95/96完整
   rollout配对，唯一成功终止时刻少7 actions不改变outcome/credit。
-- [ ] formal fresh0→1后，在同一strict panel完成AS125 baseline与cycle1 paired
-  correct400；根据absolute、breadth和gained/lost决定是否exact-resume到2/4/8，长期
-  single-checkpoint strict`>150/400`不变。
+- [x] formal首次fresh0→1完整收集96 rollout与24 task credit后，在第一轮gradient sum
+  暴露旧`FileStore` ready的rank seq18/17分裂；600秒watchdog终止，0 update/metrics/
+  checkpoint。定位为CUDA完成语义和临时store生命周期竞态，不以timeout或少卡绕过。
+- [x] 根修为CUDA synchronize→launch-unique/cycle/epoch原子rank markers→NCCL；同一输出
+  目录连续两个新torchrun session的真实六卡探针均6/6 markers、sum21，旧marker不污染。
+- [ ] clean commit/push后用全新root原96-rollout/two-epoch规模重放formal fresh0→1；
+  完成双ledger checkpoint后，在同一strict panel评测AS125 baseline与cycle1 correct400，
+  再按absolute、breadth和gained/lost决定是否resume2/4/8。长期strict`>150/400`不变。
 
 ## 历史BCI Policy-Target-Owned Factor推进（2026-08-04）
 

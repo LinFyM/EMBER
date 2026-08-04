@@ -115,7 +115,7 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         "replan": 5,
         "max_world": 6,
         "global_tasks": 24,
-        "credit_ready": "shared_filestore_all_rank_ready_after_local_backward_before_each_nccl_gradient_sum",
+        "credit_ready": "launch_unique_atomic_rank_markers_after_cuda_complete_before_each_nccl_gradient_sum",
     }
     zero_reads = (
         "teacher_action_reads_after_coldstart",

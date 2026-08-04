@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：内容型credit profile通过，formal fresh0→1已封存
+## 0.0 当前状态：内容型credit profile通过，formal首次启动暴露ready竞态
 
 - 同一fresh v6 AS root已从step100 exact-resume到125：累计60,000 logical queries、
   3,000 one-video conditions和125个finite full24 macros；本段wall`806.928s`，0
@@ -61,9 +61,20 @@
   下提前一个chunk成功，少7 actions。五个all-failure task的20条utility排序不变，最大/
   平均绝对差`.01622/.00318`，不改变credit owner。该差异封存为success termination
   边界微扰，不以重复profile追求字节一致。
-- formal从AS125重新fresh，6 ranks、K4/Nmc4、two epochs、总上限8 cycles，checkpoints
-  `1/2/4/8`；首段只跑0→1。之后严格配对AS125 baseline与cycle1 correct400再决定是否
-  resume。profile权重不得进入，rollout/progress-credit双ledger必须绑定checkpoint。
+- formal首次从AS125 fresh启动的root为
+  `runs/outputs/pi05_task_grounded_progress_credit_writer_formal_as125_r6_k4_nmc4_e2_c8_bc4ff60_20260805`。
+  96 rollout与24 task progress-credit均完整且outcome分组仍为14 mixed、5 all-success、
+  5 all-failure，但第一轮gradient sum发生collective序列分裂：rank0/1/2/5进入seq18，
+  rank3/4停在seq17，600秒watchdog终止。该root没有optimizer update、metrics或checkpoint，
+  禁止resume/评测；GPU已自然释放。
+- 旧`FileStore` ready只证明Python走到barrier，不能证明rank-local CUDA backlog结束，且
+  临时store生命周期在高度错峰时不能可靠提供一次性all-rank barrier。canonical修复现为
+  每rank先CUDA synchronize，再以torchrun唯一session/cycle/epoch写原子rank marker，
+  6/6 marker可见后才进入NCCL；marker不在run内删除。相同root连续两个新session的真实
+  六卡探针均得到6/6 marker和all-reduce sum21，旧session未污染重启。
+- 下一步只从clean/pushed修复commit与全新formal root原规模重放fresh0→1；必须先得到
+  两轮finite update、完整双ledger checkpoint与0 watchdog，再做AS125 baseline/cycle1
+  strict correct400。profile checkpoint仍永久禁止进入formal。
 
 ### 已封存的step0--100证据链
 

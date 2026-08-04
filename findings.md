@@ -6,6 +6,20 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-05 Progress-Credit formal ready竞态与根修
+
+- 首次AS125-fresh formal0→1完整生成96 rollout和24 task credit，14 mixed、5
+  all-success、5 all-failure与profile一致；但旧`FileStore` ready后rank0/1/2/5进入
+  NCCL seq18，rank3/4仍停在seq17，600秒watchdog终止。0 update/metrics/checkpoint，
+  因此没有科学性能结果，失败root禁止resume/评测。
+- 早先profile通过不能证明旧barrier正确：它只表示Python已enqueue本地反向，并用有
+  生命周期的临时store文件作一次性barrier；高度错峰下不能可靠证明所有rank CUDA工作
+  真正结束。增大timeout只会延迟同一序列错误。
+- 根修是每rank先CUDA synchronize，再按torchrun唯一session/cycle/epoch写原子marker，
+  观察实际world-size的全部marker后才进入NCCL；marker在run内保留，新launch天然隔离。
+  相同输出目录连续两个六卡新session探针都得到6/6 marker与sum21。该证据仍只是最小
+  collective门，必须用原96-rollout/two-epoch规模和完整checkpoint/exact-resume裁决。
+
 ## 2026-08-05 Task-Grounded Semantic Progress Writer profile
 
 - clean`84d856c`从AS125 fresh完成一个full24 K4/Nmc4 two-epoch profile：50/96 successes、

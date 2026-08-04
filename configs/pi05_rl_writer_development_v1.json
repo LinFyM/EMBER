@@ -170,7 +170,7 @@
     "maximum_world_size": 6,
     "allowed_world_sizes": [1, 2, 3, 4, 6],
     "global_tasks_per_outer_cycle": 24,
-    "credit_collective_readiness": "shared_filestore_all_rank_ready_after_local_backward_before_each_nccl_gradient_sum",
+    "credit_collective_readiness": "launch_unique_atomic_rank_markers_after_cuda_complete_before_each_nccl_gradient_sum",
     "policy_processes_per_gpu": 1,
     "persistent_policy": true,
     "persistent_task_environment_pool": true,

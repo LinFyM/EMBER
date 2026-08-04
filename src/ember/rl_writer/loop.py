@@ -7,7 +7,6 @@ import json
 import math
 import time
 from dataclasses import dataclass
-from datetime import timedelta
 from typing import Any, Mapping, Sequence
 
 import torch
@@ -37,6 +36,7 @@ from ember.rl_writer.progress_credit import (
     write_task_progress_credit_once,
 )
 from ember.rl_writer.progress_observer import observe_correct_teacher_progress
+from ember.rl_writer.rendezvous import rank_local_credit_ready
 from ember.rl_writer.runtime import RLWriterRuntime, rank_ledger_summary
 
 
@@ -70,23 +70,6 @@ class CollectedTaskTrajectories:
     trajectories: list[RewardTrajectory]
 
 
-def _rank_local_credit_ready(
-    runtime: RLWriterRuntime, *, cycle: int, epoch: int
-) -> tuple[Any, Any] | tuple[None, None]:
-    if runtime.context.world_size <= 1:
-        return None, None
-    path = runtime.args.output_dir / (
-        f".rank-local-credit-ready-cycle-{cycle:08d}-epoch-{epoch:04d}"
-    )
-    store = dist.FileStore(str(path), runtime.context.world_size)
-    store.set(f"rank-{runtime.context.rank}", b"ready")
-    store.wait(
-        [f"rank-{rank}" for rank in range(runtime.context.world_size)],
-        timedelta(minutes=30),
-    )
-    return store, path
-
-
 def _all_reduce_writer_gradients(
     runtime: RLWriterRuntime, *, cycle: int, epoch: int
 ) -> None:
@@ -98,14 +81,9 @@ def _all_reduce_writer_gradients(
             parameter.grad = torch.zeros_like(parameter)
         gradients.append(parameter.grad)
     flat = torch.cat([gradient.reshape(-1) for gradient in gradients])
-    ready_store, ready_path = _rank_local_credit_ready(
-        runtime, cycle=cycle, epoch=epoch
-    )
+    rank_local_credit_ready(runtime, cycle=cycle, epoch=epoch)
     if runtime.context.world_size > 1:
         dist.all_reduce(flat, op=dist.ReduceOp.SUM)
-    del ready_store
-    if runtime.context.is_main and ready_path is not None:
-        ready_path.unlink(missing_ok=True)
     offset = 0
     for gradient in gradients:
         count = gradient.numel()

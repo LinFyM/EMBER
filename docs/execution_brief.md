@@ -38,8 +38,11 @@
   gradient、五下游block可达、observer grad=0；两epoch ratio健康、peak reserved仅
   `19,455,279,104` bytes，0 OOM/watchdog。profile权重永久禁止续训。
 - formal配置已seal为AS125 fresh、world6、K4/Nmc4、two epochs、最多8 cycles与
-  checkpoints`1/2/4/8`；首段只跑0→1。完成后先做AS125 baseline/cycle1严格配对
-  correct400再决定续2/4/8，不能按train reward或functional objective直接续。
+  checkpoints`1/2/4/8`。首次fresh0→1在完整96 rollout后因旧`FileStore` ready无法可靠
+  隔离CUDA长尾而形成rank seq18/17分裂，600秒watchdog终止；0 update/metrics/checkpoint，
+  失败root禁止resume/评测。新合同为每rank先CUDA synchronize，再写launch-unique原子
+  marker，6/6可见后才进NCCL；两次真实六卡新session探针均完成sum21。须在clean/pushed
+  commit和全新root原规模重放成功后，才做AS125 baseline/cycle1 strict correct400。
 
 - Policy-Target-Owned Factor本轮已完成并负裁决；此前暂停已由owner解除。其源码不再
   是canonical活动路径，历史结果只由Git、artifact与design authority保留；不能resume
@@ -65,9 +68,10 @@
 - BCI A40/NCCL2.28必须由launcher显式设置`NCCL_P2P_DISABLE=1`走SHM，并由代码
   fail-fast，不能依赖`.env.local`。rank-local CUDA构造完成非NCCL ready rendezvous后
   才建立process group；六卡collective、fresh训练和exact resume均已实跑通过。
-- reward credit的outcome-dependent本地反向结束后也必须先经独立FileStore all-rank-ready，
-  再统一进入NCCL gradient sum。`e5bca71`已在原六卡96-rollout两epoch失败规模上重放：
-  rollout 96/96字节级不变、两轮finite update、完整cycle1 checkpoint且0 watchdog。
+- reward credit的outcome-dependent本地反向必须先显式完成本rank CUDA工作，再以本次
+  torchrun唯一session的per-rank原子marker做非NCCL rendezvous；实际world-size全部marker
+  可见后才统一进入gradient sum。不得恢复临时`FileStore`单文件barrier、增大watchdog或
+  减少科学batch。当前最小六卡探针已过，原96-rollout/two-epoch正式规模仍待重放裁决。
 - 多卡analysis的任务ownership和最终result sealing必须读取实际`world_size`；
   `f82c7cd`/`a115b06`已消除历史4-rank默认，并在6 ranks、8 tasks、5 conditions真实
   规模通过。不得通过少用卡绕开缺失rank。

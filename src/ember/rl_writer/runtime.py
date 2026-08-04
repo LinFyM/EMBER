@@ -501,7 +501,9 @@ def build_runtime(
         metrics_path=args.output_dir / "metrics.jsonl",
         metrics_rows=0,
         env_pool=RandomResetEnvironmentPool(
-            bddl_root=Path(paths["bddl_files"]), render_resolution=256
+            bddl_root=Path(paths["bddl_files"]),
+            assets_root=Path(paths["assets"]),
+            render_resolution=256,
         ),
     )
     return _restore_runtime(runtime, initial)

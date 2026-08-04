@@ -11,6 +11,7 @@ import numpy as np
 import torch
 from lerobot.utils.constants import ACTION
 
+from ember.pi05_assets import configure_libero_runtime_assets
 from ember.pi05_processing import libero_policy_input
 from ember.pi05_source_checkpoint import sha256_file
 from ember.reward.protocol import RewardProtocolError, RewardTask, policy_noise_seed
@@ -74,10 +75,18 @@ def _flow_noise(
 class RandomResetEnvironmentPool:
     """Lazily retain one raw LIBERO environment per task without init-state access."""
 
-    def __init__(self, *, bddl_root: Path, render_resolution: int) -> None:
-        if not bddl_root.is_dir() or render_resolution != 256:
+    def __init__(
+        self, *, bddl_root: Path, assets_root: Path, render_resolution: int
+    ) -> None:
+        if (
+            not bddl_root.is_dir()
+            or not assets_root.is_dir()
+            or render_resolution != 256
+        ):
             raise RewardProtocolError("invalid PI05 random-reset environment authority")
+        configure_libero_runtime_assets(assets_root)
         self.bddl_root = bddl_root.resolve()
+        self.assets_root = assets_root.resolve()
         self.render_resolution = render_resolution
         self._envs: dict[int, Any] = {}
 

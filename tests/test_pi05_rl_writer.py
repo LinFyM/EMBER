@@ -9,6 +9,7 @@ import torch
 
 from ember.pi05_source_checkpoint import DistributedContext, canonical_hash, sha256_file
 from ember.pi05_source_contract import reconcile_metrics
+from ember.reward import rollout as reward_rollout
 from ember.reward.ledger import InteractionCursors
 from ember.reward.protocol import RewardProtocolError
 from ember.rl_writer.checkpoint import (
@@ -86,6 +87,30 @@ def test_flow_credit_parser_requires_coldstart_and_raw_video_data() -> None:
     assert "data_root" in destinations
     assert "feature_cache" not in destinations
     assert "branch" not in destinations
+
+
+def test_random_reset_pool_binds_the_sealed_runtime_assets(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    bddl_root = tmp_path / "bddl"
+    assets_root = tmp_path / "assets"
+    bddl_root.mkdir()
+    assets_root.mkdir()
+    observed: list[Path] = []
+    monkeypatch.setattr(
+        reward_rollout,
+        "configure_libero_runtime_assets",
+        lambda path: observed.append(path.resolve()),
+    )
+
+    pool = reward_rollout.RandomResetEnvironmentPool(
+        bddl_root=bddl_root,
+        assets_root=assets_root,
+        render_resolution=256,
+    )
+
+    assert pool.assets_root == assets_root.resolve()
+    assert observed == [assets_root.resolve()]
 
 
 def test_flow_credit_information_wall_fails_closed(tmp_path: Path) -> None:

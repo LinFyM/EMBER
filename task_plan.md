@@ -50,6 +50,20 @@ runner、split、路径或 GPU 权限。
   `19,308,478,464/19,331,547,136` bytes，cycle1/2 checkpoint各9文件，0错误。formal已seal，
   profile checkpoint永不warm-start。
 
+### Antithetic Program-Credit formal cycle1合同（2026-08-05）
+
+- seal commit=`219ab4e`并已push branch/main；fresh root=
+  `runs/outputs/pi05_antithetic_program_credit_formal_as125_r6_crn_v2_219ab4e_20260805`，log同名
+  位于`runs/logs/`，tmux=`ember_program_credit_formal_crn_v2`。唯一cold start仍是sealed
+  fresh-AS125 checkpoint，禁止载入任一profile/reward/历史best权重。
+- live比较两节点后选择全空闲`gpu01:0,1,2|4,5,6`，14--90MiB、0% util、无compute
+  process并保持已验证`3+3 NUMA`；`gpu02:0,5,6`仍有他人进程，不使用。沿用本阶段已核验的
+  /data1 quota，formal cycle1新增远小于1GiB。
+- 只运行formal cycle0→1：24 train tasks×K4、48 lockstep CRN pairs、一次full24 equal-task
+  direct-program update，world6且显式`NCCL_P2P_DISABLE=1`。完成后先封存并释放GPU，再用既有
+  strict panel评AS125与cycle1；仅当cycle1严格`>150`，或相对AS125 net+10、breadth不降且
+  至少两suite改善时，才exact-resume cycle2。
+
 ## 已完成Policy-Lane Coupled Hyperdecoder推进（2026-08-05）
 
 - [x] 完成PWAD fresh0→200、四点strict correct400与24×4内部分析；曲线

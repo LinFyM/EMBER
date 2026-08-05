@@ -18,6 +18,10 @@
 - 下一步先live比较`gpu01/gpu02`并在最多6张空闲A40、3+3 NUMA、显式
   `NCCL_P2P_DISABLE=1`下做longest105 K4/B20/B2 fresh0→1与exact-resume1→3 profile；profile
   权重弃用。profile通过才建立fresh formal0→200 launch contract。
+- `runs/outputs/pi05_as_writer_k4_layer_trace_m2p_profile_r6_b20_89f5384_20260806`只作失败
+  diagnostic：启动时未在step1停下，且axis FFN pre-LN导致step2/3 loss爆到58.93/96.82。
+  clean`ed4f46e`已移除dynamic value-path normalization；禁止resume该root，必须新root从
+  identity重做fresh0→1→exact-resume1→3。
 
 ## 0.1 已完成：K4 Writer四点与内部裁决
 

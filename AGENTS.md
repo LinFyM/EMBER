@@ -176,6 +176,9 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   Git与frozen artifacts保存，不得resume或warm-start。全仓BCI assets下`190 passed`；下一步
   只做live A40 longest105、K4/B20/B2、fresh0→1与exact-resume1→3 profile，profile通过前
   formal保持blocked。
+- 首个`89f5384`一次性0→3 diagnostic不是正式profile，并因axis FFN pre-LayerNorm放大极小
+  bootstrap memory而在step2/3 loss爆炸；该root禁止resume。clean`ed4f46e`已改为raw-value
+  FFN并通过zero邻域幅度合同与全仓`191 passed`；必须从新root严格fresh0→1再resume1→3。
 - Few-Shot Invariant-Program M2P已完成fresh0→200、四点strict rollout与macro200全部内部
   分析：correct=`70/94/99/108`、breadth=`6/6/6/7`。K4置换、zero-video identity、
   same-task/LOO/wrong/order到Program→BA→action路径和高增益LoRA均成立，证明它没有忽略视频；

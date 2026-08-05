@@ -16,6 +16,9 @@ GPU范围和训练步长是当时快照；活动状态只取
   action-expert layer traces、K4×16 temporal tokens、`20×68×1024`双轴M2P直接reshape完整
   rank16 LoRA。clean`a2c6d94`已原位实现并退休旧K4 config/family；全仓BCI assets下
   `190 passed`、compileall和config/schema real load通过。尚未启动GPU，下一步live profile。
+- `89f5384`首个三步diagnostic没有按step1分段，且在step2暴露axis FFN pre-LN幅度爆炸；root
+  禁止resume。clean`ed4f46e`已根修为raw-value FFN，全仓`191 passed`。下一步从新root严格
+  fresh0→1再exact-resume1→3。
 
 ## 2026-08-06 K4四点strict correct400与内部分析完成
 

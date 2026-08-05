@@ -25,6 +25,10 @@
   `configs/pi05_as_writer_k4_layer_trace_m2p_bci_v1.json`，旧config/family已退休；全仓BCI
   assets下`190 passed`，compileall与config/schema real load闭合。下一步是live A40 profile，
   profile通过后才可打开fresh formal与预注册四点裁决。
+- 首个`89f5384`三步diagnostic未按fresh0→1再resume1→3分段，本就不是可封存profile；它暴露
+  axis FFN pre-LayerNorm把step1极小memory放大到O(1)，loss`.1504→58.93→96.82`、三步clip。
+  peak reserved约20.48GB且无OOM，故不是A40容量问题。该root禁止resume。clean`ed4f46e`已
+  根修value-path幅度连续性并通过全仓`191 passed`；下一launch必须从新root严格分段profile。
 
 ## 0.1 已完成：K4 Invariant-Program M2P四点与内部裁决
 

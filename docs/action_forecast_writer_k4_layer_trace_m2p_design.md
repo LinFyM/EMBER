@@ -162,3 +162,12 @@ single-checkpoint strict correct400 `>150`。若失败，只根据上述最早�
 - 聚焦合同与全仓在BCI assets下`190 passed`，compileall、config/schema/family real load及
   diff check通过；step0、zero-video、K4 permutation、DCT order、direct tensor shape、自然
   step1→step2梯度可达、完整参数ownership和旧family拒载均闭合。ruff未安装，不作为项目门。
+- 首个clean`89f5384`三步diagnostic错误地一次跑0→3，故本就不属于预注册profile；它进一步
+  暴露真实parameterization bug：step1 group-output bootstrap后，axis FFN对极小memory做
+  pre-LayerNorm，把任意非零幅度归一到O(1)，使loss从`.1504`跳到`58.93/96.82`，三步均clip，
+  grad norm=`7.38e3/2.29e9/4.88e8`。显存和时间本身安全：peak reserved约20.48GB、每步
+  34.38--34.76秒；该root只作诊断，永不resume或进入正式证据。
+- clean`ed4f46e`根修不是调scale：axis attention仍可在Q/K使用normalized content与coordinate
+  route，但FFN改为直接作用raw dynamic value，保证zero附近连续、幅度随video memory线性
+  缩放。新增小幅度2×输入约2×输出合同，全仓更新为`191 passed`。下一次profile必须另起fresh
+  root，严格fresh0→1后再exact-resume1→3。

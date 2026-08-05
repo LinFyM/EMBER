@@ -18,6 +18,10 @@
   public LoRA。训练objective、信息墙与未来reward接口不变，不引入监督专用auxiliary loss。
 - 暂不直接复制8个完整experts，因为这会把同一未对齐输入分桶并引入约2.5亿fresh参数；若
   layer-aligned方法仍在group-wise梯度上接近1/24抵消，再以该证据设计稀疏共享。
+- 首个A40 diagnostic定位到实现级幅度不连续，而非科学负结果：direct memory后axis FFN使用
+  pre-LayerNorm，step1任意小的nonzero bootstrap在step2被归一到O(1)，functional loss从
+  `.1504`跃升`58.93/96.82`。显存仅20.48GB、步时约34.7秒；根因与容量、视频trace、NCCL或
+  full24无关。`ed4f46e`让FFN直接处理raw value并用小幅度2×合同验证zero邻域连续。
 
 ## 2026-08-06 K4四点与内部裁决：视频共同程序成立，shared credit仍近正交抵消
 

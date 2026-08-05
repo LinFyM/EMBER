@@ -22,6 +22,10 @@ runner、split、路径或 GPU 权限。
   梯度可达和完整参数ownership闭合。
 - [ ] 完成聚焦CPU合同与A40 longest105 K4/B20/B2 fresh0→1、exact-resume1→3 profile；只在
   live最多6张空闲卡、3+3 NUMA、显式`NCCL_P2P_DISABLE=1`下运行，profile权重永久弃用。
+  - [x] 首个`89f5384` diagnostic因一次跑0→3不满足resume程序，并暴露axis FFN pre-LN把
+    极小bootstrap memory放大到O(1)：loss`.150→58.93→96.82`且三步clip；root禁止resume。
+  - [x] clean`ed4f46e`移除FFN value-path normalization，保留route只进Q/K，新增zero邻域
+    2×幅度合同；全仓`191 passed`。下一次另起fresh root执行正式profile程序。
 - [ ] 从functional identity fresh0→200，strict correct400固定评50/100/150/200；按
   layer trace、reader、axis M2P、BA/action leverage、task-gradient coexistence与闭环换手的
   最早失效接口分析并继续迭代，single checkpoint必须严格`>150`且继续尽可能提高。

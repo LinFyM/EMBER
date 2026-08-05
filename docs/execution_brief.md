@@ -4,21 +4,20 @@
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
-## 0.0 最新执行覆盖：K4 Writer待clean seal与live profile
+## 0.0 最新执行覆盖：K4 Writer profile已seal，待fresh formal
 
 - 当前唯一活动config为`configs/pi05_as_writer_k4_invariant_m2p_bci_v1.json`，authority为
   `docs/action_forecast_writer_fewshot_invariant_m2p_design.md`。它必须从functional identity
   fresh启动；`--initialize-writer-checkpoint`被canonical runtime明确拒绝。任何旧AS/RL/
   Condition-Kernel checkpoint均不得加载。
-- CPU实现和全仓`188 passed`已闭合；formal config仍为
-  `blocked_until_live_profile_and_exact_resume`。下一步先commit/push clean代码，再live比较
-  `gpu01/gpu02`，选择满足3+3 NUMA的最多6张空闲A40，核验storage后启动profile。
-- profile固定world6、logical B20、policy B2、16-frame encoder chunk、K4、full24，先新root
-  fresh0→1，再同root checkpoint1 exact-resume1→3；必须显式
-  `NCCL_P2P_DISABLE=1`。不缩减B20，不复用profile权重，不共享或干扰他人GPU。
-- 通过门为0 OOM/nonfinite/clip、真实longest105、step2起invariant-program/M2P shared/A/B
-  heads按zero-B阶段开放、source trainable=0、每步24 task×4 videos、六rank ready/NCCL与
-  optimizer/scheduler/RNG/sampler exact-resume完整。通过后才把formal状态seal并另起fresh root。
+- CPU实现和全仓`188 passed`已闭合。clean`8807ae0`在`gpu01:0,1,2|4,5,7`完成正式
+  200-step scheduler clock下的fresh0→1和exact-resume1→3；三步约34秒，peak reserved
+  `19,690,160,128` bytes，0 OOM/clip/nonfinite，step2起四block全可达。formal config已seal。
+- sealed profile固定world6、logical B20、policy B2、16-frame encoder chunk、K4、full24，
+  显式`NCCL_P2P_DISABLE=1`；profile权重永久弃用。首次压缩三步scheduler的诊断root不封存，
+  因其step1错误使用peak LR，不能代表formal早期优化语义。
+- 上述门已通过：真实longest105、source trainable=0、累计1,440 queries/288 videos、六rank
+  ready/NCCL与optimizer/scheduler/RNG/sampler exact-resume完整。下一launch必须另起fresh root。
 - formal固定0→200/every25，严格评50/100/150/200；训练或held functional loss不挑点。
   single winner必须做五臂、另K4 set、leave-one-out、谱/能量、Program→BA→fixed-action和
   task drift分析。最低目标仍是同一checkpoint strict correct400严格`>150`并继续提高。

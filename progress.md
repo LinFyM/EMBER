@@ -23,6 +23,14 @@ GPU范围和训练步长是当时快照；活动状态只取
 - 聚焦合同与完整项目测试现为`188 passed in 19.68s`；compileall和`git diff --check`通过。
   真实A40容量、三步梯度开放、NCCL、finite与exact-resume尚待live profile，当前没有据此
   宣称闭环性能改善。
+- 首个clean profile用`total_steps=3`压缩了scheduler：显存与resume虽通过，但step1直接使用
+  peak LR、step3触发clip，不代表formal前3步，因此不予seal。根修把profile总轴固定为正式
+  200步并只early-stop到3；新clean`8807ae0` root完成fresh0→1与exact-resume1→3，三步
+  `34.055/33.955/33.831s`，peak allocated/reserved=`17,142,612,480/19,690,160,128` bytes，
+  formal LR=`1.154e-5/2.308e-5/3.462e-5`，0 OOM/clip/nonfinite，step2起四block全可达。
+- sealed profile累计1,440 action queries、288 teacher videos，source trainable=0，六rank
+  optimizer/scheduler/RNG/sampler/checkpoint连续；GPU自然释放。profile权重弃用，formal config
+  已开放独立functional-identity fresh0→200。
 
 ## 2026-08-06 Condition-Kernel formal、四点rollout与内部分析全部完成
 

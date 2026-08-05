@@ -22,9 +22,12 @@ runner、split、路径或 GPU 权限。
   lanes、target-owned A/B、完整四block梯度ownership、B20 action/video episode排斥、实际
   world-size full24、hashless checkpoint/evaluation和旧family拒载。项目全仓`188 passed`，
   compileall与diff check通过。
-- [ ] clean commit/push后live比较`gpu01/gpu02`，只在满足3+3 NUMA的最多6张空闲A40上做
+- [x] clean commit/push后live比较`gpu01/gpu02`，只在满足3+3 NUMA的最多6张空闲A40上做
   longest105、logical B20/B2、16-frame chunk的fresh0→1和同root exact-resume1→3 profile；
-  显式`NCCL_P2P_DISABLE=1`，profile权重永久弃用。
+  显式`NCCL_P2P_DISABLE=1`，profile权重永久弃用。sealed root为
+  `runs/outputs/pi05_as_writer_k4_invariant_m2p_profile_r6_b20_8807ae0_20260806`：正式200-step
+  scheduler clock下三步`34.055/33.955/33.831s`，peak reserved`19,690,160,128` bytes，
+  0 OOM/clip/nonfinite，step2起四block全部可达，fresh0→1→exact-resume1→3闭合。
 - [ ] profile通过后从functional identity新root正式训练0→200、每25保存；固定50/100/150/200
   strict correct400，并对single winner完成correct/same/wrong/shuffled/reversed、另K4 set、
   leave-one-video-out、LoRA谱/能量、Program→BA→fixed-action和task漂移分析。

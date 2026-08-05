@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0. 最新覆盖：K4 Invariant-Program M2P实现完成，待A40 profile
+## 0. 最新覆盖：K4 Invariant-Program M2P profile封存，待fresh formal
 
 - owner已解除讨论暂停、恢复自主持续推进，并明确EMBER不能忽略视频；允许few-shot。
   当前唯一活动authority为
@@ -18,10 +18,15 @@
 - canonical model/AS/checkpoint/K4 schedule/live+cached evaluation已原位替换；已退役的
   Condition-Kernel、online functional validation和method-specific analysis runtime删除。
   B20、full24等权、source freeze、rank16/38 targets、信息墙与single-checkpoint裁决不变。
-- CPU全仓`188 passed`，compileall和diff check通过。下一状态边界是clean commit/push后的
-  live双节点预检与六卡A40 fresh0→1、exact-resume1→3 profile；formal仍blocked，尚无K4
-  rollout性能结论。profile权重不得进入正式训练。
-- 下一正式证据固定为fresh identity 0→200、50/100/150/200 strict correct400和winner五臂/
+- CPU全仓`188 passed`，compileall和diff check通过。clean`8807ae0`在
+  `gpu01:0,1,2|4,5,7`六张空闲A40、3+3 NUMA、显式`NCCL_P2P_DISABLE=1`完成fresh0→1和
+  同root exact-resume1→3；三步`34.055/33.955/33.831s`，peak allocated/reserved=
+  `17,142,612,480/19,690,160,128` bytes，0 OOM/clip/nonfinite，step2起四个声明block全可达。
+- profile总scheduler轴固定为正式200步，仅在step3 early-stop；对应LR=
+  `1.154e-5/2.308e-5/3.462e-5`。更早三步压缩scheduler的诊断root因首步误用peak LR而不封存、
+  不进入正式证据。sealed root累计1,440 queries、288 videos，source trainable=0，六rank
+  exact-resume完整，GPU已自然释放；任何profile权重不得进入正式训练。
+- formal config现已seal；下一正式证据固定为独立fresh identity 0→200、50/100/150/200 strict correct400和winner五臂/
   K4-specific内部分析。任何修改必须由descriptor→invariant slots→M2P→effective BA→
   closed-loop credit中的最早失效接口决定；长期single-checkpoint correct严格`>150`不变。
 - 当前Writer-specific新artifact只用路径/schema/size/shape/real-load证据，不生成或复核

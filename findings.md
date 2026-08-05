@@ -25,6 +25,10 @@
   condition→Program→M2P接口；不读取held validation actions，不用functional loss选择
   checkpoint。CPU全仓`188 passed`确认身份、video-zero、set invariance、梯度、schedule、
   checkpoint和evaluation合同；性能结论必须等待fresh A40 formal与strict rollout。
+- live A40 profile还发现了一个必须区分的优化时钟问题：若把profile的total axis压成3步，
+  warmup会被压缩并让首步直接使用peak LR，step3 clip不能代表formal。改为正式200-step
+  scheduler、仅early-stop到3后，LR为`1.154e-5/2.308e-5/3.462e-5`，三步0 clip且step2起
+  invariant-program/M2P shared/A/B全部可达；因此最终seal的是新root，不使用早期诊断权重。
 
 ## 2026-08-06 Condition-Kernel formal负裁决：credit隔离成立但decoder增益坍缩
 

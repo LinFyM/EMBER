@@ -11,9 +11,7 @@ import torch
 from ember.writer.model import CompleteLoRAWriter
 
 
-def state_row(
-    state: Mapping[str, torch.Tensor], row: int
-) -> dict[str, torch.Tensor]:
+def state_row(state: Mapping[str, torch.Tensor], row: int) -> dict[str, torch.Tensor]:
     return {
         name: value[row].detach().to(device="cpu", dtype=torch.float32)
         for name, value in state.items()
@@ -59,12 +57,39 @@ def effective_metrics(
     right = effective_inner(pairs, candidate, candidate)
     dot = effective_inner(pairs, reference, candidate)
     return {
-        "relative_l2": math.sqrt(
-            max(left + right - 2.0 * dot, 0.0) / max(left, 1e-24)
-        ),
+        "relative_l2": math.sqrt(max(left + right - 2.0 * dot, 0.0) / max(left, 1e-24)),
         "cosine": dot / max(math.sqrt(left * right), 1e-24),
         "reference_l2": math.sqrt(max(left, 0.0)),
         "candidate_l2": math.sqrt(max(right, 0.0)),
+    }
+
+
+def effective_delta_metrics(
+    pairs: Mapping[str, Mapping[str, str]],
+    reference: Mapping[str, torch.Tensor],
+    target: Mapping[str, torch.Tensor],
+    candidate: Mapping[str, torch.Tensor],
+) -> dict[str, float]:
+    """Compare a candidate effective-BA update with a target update."""
+
+    rr = effective_inner(pairs, reference, reference)
+    tt = effective_inner(pairs, target, target)
+    cc = effective_inner(pairs, candidate, candidate)
+    rt = effective_inner(pairs, reference, target)
+    rc = effective_inner(pairs, reference, candidate)
+    tc = effective_inner(pairs, target, candidate)
+    target_sq = max(tt + rr - 2.0 * rt, 0.0)
+    candidate_sq = max(cc + rr - 2.0 * rc, 0.0)
+    delta_dot = tc - rt - rc + rr
+    residual_sq = max(tt + cc - 2.0 * tc, 0.0)
+    return {
+        "target_delta_l2": math.sqrt(target_sq),
+        "candidate_delta_l2": math.sqrt(candidate_sq),
+        "candidate_over_target_delta_l2": math.sqrt(
+            candidate_sq / max(target_sq, 1e-24)
+        ),
+        "delta_cosine": delta_dot / max(math.sqrt(target_sq * candidate_sq), 1e-24),
+        "residual_over_target_delta_l2": math.sqrt(residual_sq / max(target_sq, 1e-24)),
     }
 
 
@@ -225,6 +250,31 @@ def tensor_metrics(
         "cosine": dot / max(math.sqrt(left_sq * right_sq), 1e-24),
         "reference_l2": math.sqrt(left_sq),
         "candidate_l2": math.sqrt(right_sq),
+    }
+
+
+def tensor_delta_metrics(
+    reference: torch.Tensor,
+    target: torch.Tensor,
+    candidate: torch.Tensor,
+) -> dict[str, float]:
+    """Compare a candidate tensor update with a target tensor update."""
+
+    reference = reference.detach().double().reshape(-1)
+    target_delta = target.detach().double().reshape(-1) - reference
+    candidate_delta = candidate.detach().double().reshape(-1) - reference
+    target_sq = float(target_delta.square().sum())
+    candidate_sq = float(candidate_delta.square().sum())
+    dot = float((target_delta * candidate_delta).sum())
+    residual_sq = float((target_delta - candidate_delta).square().sum())
+    return {
+        "target_delta_l2": math.sqrt(target_sq),
+        "candidate_delta_l2": math.sqrt(candidate_sq),
+        "candidate_over_target_delta_l2": math.sqrt(
+            candidate_sq / max(target_sq, 1e-24)
+        ),
+        "delta_cosine": dot / max(math.sqrt(target_sq * candidate_sq), 1e-24),
+        "residual_over_target_delta_l2": math.sqrt(residual_sq / max(target_sq, 1e-24)),
     }
 
 

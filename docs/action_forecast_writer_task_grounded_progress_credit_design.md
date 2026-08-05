@@ -390,3 +390,31 @@ panel的参数hybrid因果分解。
 先把AS125→cycle2变化分解为factor output basis与上游condition composition的独立/组合
 贡献，再决定是冻结监督阶段学得的policy tangent basis、增加全task policy-distance
 约束，还是重构显式basis/coefficients接口。不能同时修改这些变量。
+
+## 17. 预注册参数hybrid因果分解
+
+本分析只读固定AS125与cycle2权重，不训练、不rollout、不读target action。四个参数臂为：
+
+1. 完整AS125；
+2. 完整cycle2；
+3. 仅把8个`factor_heads.*.network.2.weight`从AS125替换为cycle2，代表factor-output
+   policy basis变化；
+4. cycle2除上述8个权重恢复为AS125，代表upstream composition与factor-input变化。
+
+固定panel覆盖全部24 train tasks、每task demo0--4以及demo0 reversed/shuffled；8个
+两端suite task另在同一个demo0 frame0 observation、同一个policy noise上测fixed action。
+每个hybrid相对AS125的更新都以完整cycle2更新为target，分别报告effective BA和action
+delta的norm recovery、delta cosine与residual/full-delta；同时报告四臂same-task video
+variance与顺序效应。task ID只用于外部调度，不进入Writer，validation/test和teacher
+action读数均为0。
+
+预注册解释顺序：若某一臂在effective BA与action两层都显著降低相对完整更新的残差，且
+另一臂不具备同样性质，才把主要因果贡献归给前者；若BA与action结论冲突，以action层为
+准并判为condition-to-policy映射错位；若两臂都不能单独恢复完整更新，则判为强交互，
+不得直接冻结任一整块。same-task variance与顺序效应只解释贡献是否保留视频因果性，
+不能覆盖action层裁决。
+
+唯一实现owner是`src/ember/writer/progress_credit_hybrid_analysis.py`，它复用现有模型构造、
+condition panel和fixed-action probe，不提供训练、评测或新Writer分支。正式结果封存并据此
+选定下一个结构变量后，下一次实现提交即删除该可执行分析入口；历史复现由本commit与正式
+artifact保留，不能把它扩展成第二套通用分析框架。

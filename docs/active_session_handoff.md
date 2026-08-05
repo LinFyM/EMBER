@@ -4,7 +4,41 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：Condition-Kernel实现、地址审计与A40 profile已封存
+## 0.0 当前状态：Condition-Kernel完整负裁决，暂停新launch等待owner讨论
+
+- Factorized Condition-Kernel Program Memory已完成fresh AS0→200、50/100/150/200四点strict
+  correct400和全部预注册内部分析；当前没有EMBER GPU进程，不实现/启动reward或下一方法。
+  formal root为
+  `runs/outputs/pi05_as_writer_condition_kernel_memory_formal_fresh0_200_r6_4038960_20260805`：
+  200 finite macros、96,000 queries、4,800 videos、wall=`3951.928s`、peak reserved=
+  `19,344,130,048` bytes，0 clip/OOM和0 validation/test action reads。
+- 四点correct/breadth=`46/3,46/3,45/3,49/3`；相邻gained/lost=`5/5,4/5,6/2`，四点
+  success union/intersection=`55/40`。macro200的49 successes中Goal-6占42、Object-1占5、
+  Long-1占2，其余5 tasks全0。AS200未过预注册`correct≥120 && breadth≥6`，所以direct
+  reward阶段按authority禁止；不得挑历史点、延长bootstrap或用RL补救。
+- 四点state、video ordinal、env/policy seed和实际执行长度的policy-noise common prefix均
+  0 mismatch。表面换手少不是task drift得到解决：40个四点共同success中Goal-6占37、
+  Object-1占3，Writer只是停在接近source identity的低增益平台，没有形成多task共同累积。
+- 显式kernel机制本身通过：200步Gram均rank24、condition number=`5.139--7.750`、cap scale
+  始终1；macro50/100/150/200 predicted/observed Program update relative RMS=
+  `.002184/.001731/.001718/.001304`，macro51--200 FactorHeads freeze violation为0。raw
+  cotangent与observed task delta的cosine/negative/retention保持对应，旧共享condition-map
+  把credit重新压成公共方向的问题在该接口确实被消除。
+- 六卡内部分析完成96/96 rows与6/6 payload，wall=`273.968s`、peak reserved=
+  `19,277,021,184` bytes，0 target-action/validation/test reads；root为
+  `runs/outputs/pi05_as_writer_condition_kernel_memory_internal_all4_r6_2972f8f_20260806`。
+  same-task demo1 fixed-feature/Program/BA relative-L2中位约`.786/.784/.775→.767`，
+  reversed/shuffled BA约`1.39/1.36`，说明视频与顺序差异真实穿过完整LoRA写出。
+- 决定性失败是绝对policy leverage：LoRA norm中位仅`.1761→.1779`，比corrected direct
+  SFT的`35.7362`小约200倍；虽然stable rank=`3.794→3.724`、top singular energy约`.28`、
+  q/v B-column cosine约`.19/.205`，fixed action的same/reversed/shuffled与identity效应都只有
+  约`.19--.24%`。显式kernel修复了存储和credit混合，却被macro50冻结的fresh、low-gain
+  Program→LoRA decoder锁在无闭环效用的tangent中。
+- same-task checkpoint update的task-mean energy fraction在Program为
+  `.730/.718/.672`、BA为`.784/.781/.727`，比旧Program-Credit的`.830/.916`改善但仍偏
+  task-common。最早失效接口正式定位为zero-B fresh decoder在固定50步内没有bootstrap出
+  足够增益、policy-effective的写出基底，而不是address、kernel solve、rank或多卡工程。
+  精确汇总为internal root的`experiment_analysis.json`；design第11节给出完整裁决。
 
 - Antithetic Program-Credit formal cycle1与strict correct400已完成：96 rollouts、48个
   valid CRN pairs、54 successes、6个binary-discordant pairs和一次finite full24 update；
@@ -54,9 +88,8 @@
   `1.9684e-7/3.5240e-7`且全局cap均未触发，Gram rank24、condition=`6.632/6.023`。累计
   1,440 queries/72 videos，scheduler/sampler/RNG/六rank checkpoint连续，validation/test
   action reads=0；profile root=`runs/outputs/pi05_as_writer_condition_kernel_memory_profile_r6_b20_seed7_20260805`。
-- 当前下一步只是在clean pushed commit与新live preflight后，从独立fresh identity root训练
-  AS0→200并严格评测50/100/150/200；profile权重永久弃用。AS200未达correct120且breadth6
-  则不进入reward。
+- profile权重永久弃用；独立fresh identity AS0→200、四点strict rollout和内部分析已经按
+  上述结果结束。当前只做结果讨论，不续reward、不启动下一架构。
 - implementation/config seal=`4038960`已push branch/main，全仓`198 passed`。正式launch
   现场选择全空闲`gpu01:0,1,2|4,5,6`，保持3+3 NUMA；`gpu02:5/6`有他人进程不使用。
   `/data1` quota=`310,538,532/1,073,741,824 KiB`，预计新增小于2GiB。fresh formal root、

@@ -6,16 +6,23 @@
 
 ## 0. 当前BCI运行事实（覆盖下文旧A100操作细节）
 
-- 当前唯一活动方法是Factorized Condition-Kernel Program Memory，authority为
-  `docs/action_forecast_writer_factorized_condition_kernel_memory_design.md`。它从generic
-  source与functional identity全新训练，不加载任何历史Writer：冻结foundation
-  task descriptor与policy-aware video innovation形成32×32的fixed RFF product feature，
-  线性读取完整`1024×320×256`Program Value Memory，再由fresh FactorHeads生成唯一rank16
-  LoRA。没有learned router、task ID、multi-video、checkpoint融合或static LoRA bypass。
-- full24对24个condition收集program cotangent后，唯一memory owner显式计算
-  `K=Phi Phi^T`与`Delta M=-eta Phi^T(K+.01I)^-1G`；current-condition update因此可逐元素
-  预测。FactorHeads只在fresh AS macro0→50 bootstrap，固定50后永久冻结；macro50→200的
-  AS和之后direct reward都只更新M。AS200是预注册reward边界，不从50/100/150/200挑best。
+- 当前按owner要求暂停新launch。Factorized Condition-Kernel Program Memory已经完成全部
+  formal AS、四点strict rollout和内部分析并负裁决；没有EMBER GPU进程。直到owner讨论并
+  明确恢复前，不实现/启动reward，不profile下一架构。authority与完整结果取
+  `docs/action_forecast_writer_factorized_condition_kernel_memory_design.md`第11节。
+- fresh AS0→200为200 finite macros、96,000 queries、4,800 videos、wall=`3951.928s`、
+  peak reserved=`19,344,130,048` bytes。50/100/150/200 correct=`46/46/45/49`，breadth
+  始终3，adjacent gained/lost=`5/5,4/5,6/2`，union/intersection=`55/40`。AS200未过
+  `correct≥120 && breadth≥6`，预注册direct reward门关闭。
+- explicit kernel的200步Gram全rank24、condition=`5.139--7.750`，cap scale始终1，
+  predicted/observed update relative RMS在macro200降到`.001304`，macro50后的decoder
+  freeze violation为0。same-task feature→Program→BA relative-L2约`.786→.783→.767`，
+  reversed/shuffled BA约`1.39/1.36`；条件存储与credit独立化机制真实工作。
+- 最早失败是macro50冻结的fresh Program→LoRA decoder增益。LoRA norm只有
+  `.1761→.1779`，约比direct SFT小200倍；stable rank约3.7、B-column已去同向，但fixed
+  action的identity、same-video和order效应都只有`.19--.24%`。四点低换手是接近source
+  identity的静止，不是task drift解决。精确汇总位于internal root的
+  `experiment_analysis.json`。
 - Program-Credit已正式负裁决：cycle1=`106/400`相对AS125=`97`净`+9`，breadth5且三suite
   改善，但未过净`+10`门，禁止cycle2/4/8。内部48-row分析root已完整结束并释放GPU：exact
   task cotangent pair cosine mean/median=`.000107/0`、retention=`.041874`，共享Writer更新后
@@ -30,9 +37,9 @@
 - `gpu01:0,1,2|4,5,6`的fresh0→1→exact-resume1→3已通过：三步
   `20.713/19.842/19.448s`，峰值allocated/reserved=`16,556,672,000/19,344,130,048` bytes，
   longest105、logical B20/B2、0 OOM/clip；step2/3首次非零Program update有限且未触发cap，
-  六rank checkpoint/scheduler/RNG闭合。profile权重弃用。下一执行顺序是clean commit/push
-  →live双节点preflight→独立fresh AS0→200→四点strict rollout与内部分析。任何GPU工作仍
-  最多6张实时空闲卡、显式`NCCL_P2P_DISABLE=1`且不干扰他人。
+  六rank checkpoint/scheduler/RNG闭合。profile权重弃用，后续formal与分析均已完成并释放
+  GPU。若owner之后恢复推进，任何新GPU工作仍须live比较双节点、最多6张实时空闲卡、显式
+  `NCCL_P2P_DISABLE=1`且不干扰他人。
 - PWAD fresh0→200与四点strict correct400已完成并负裁决：`77/71/80/80`、breadth=
   `5/6/5/5`、union/intersection=`115/44`。64 atoms广泛active，但mixing row stable rank
   约`1.000002`、effective LoRA约`1.0000002`、q/v B-column cosine约`.999998`；禁止resume

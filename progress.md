@@ -8,6 +8,25 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-06 Condition-Kernel formal、四点rollout与内部分析全部完成
+
+- fresh formal AS0→200自然完成：200 metrics、96,000 queries、4,800 videos、四个完整
+  checkpoints，wall=`3951.928s`、peak reserved=`19,344,130,048` bytes，0 OOM/clip和0
+  validation/test action reads。50/100/150/200 correct=`46/46/45/49`、breadth全3，
+  reward gate失败。
+- 四点各400 rows、42 shards、9 worker exit0、每task 50个无放回videos；paired
+  gained/lost=`5/5,4/5,6/2`、union/intersection=`55/40`，共同controls和policy-noise prefix
+  0 mismatch。成功几乎全部集中Goal-6，不能把低换手写成task drift已解。
+- clean`2972f8f`六卡内部分析完成96/96 rows、6/6 payload，wall=`273.968s`、peak reserved=
+  `19,277,021,184` bytes、0 target-action/validation/test reads。feature→Program→BA视频/
+  order差异保持，但LoRA norm仅`.176→.178`，fixed action效应只有`.19--.24%`。
+- 结合200步rank24 kernel、predicted/observed equality和macro50后严格freeze，正式定位最早
+  失败为fresh zero-B decoder未在固定50步内建立足够增益、policy-effective的Program→LoRA
+  basis；condition credit隔离成立但AS substrate严重失败。精确汇总已写入internal root的
+  `experiment_analysis.json`，design第11节及handoff/brief/findings同步。
+- 预注册direct reward禁止；所有训练、rollout和analysis进程自然结束，GPU释放。按owner
+  要求停止推进等待讨论；长期single-checkpoint `>150/400`仍未完成。
+
 ## 2026-08-05 Condition-Kernel实现与profile封存
 
 - 完成train24×50、validation8×50 action-hidden address audit：50组schedule Gram全rank24，

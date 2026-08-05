@@ -1,7 +1,8 @@
 # Factorized Condition-Kernel Program Memory Writer
 
-状态：2026-08-05 设计authority、canonical AS实现、action-hidden address audit与A40
-profile均已封存；fresh formal AS尚未启动，reward实现仍按AS200门延后。本文建立在
+状态：2026-08-06（BCI local）设计、实现、address audit、A40 profile、fresh AS0→200、
+四点strict correct400与全部内部分析均已完成，并作正式负裁决；AS200未过预注册门，
+reward阶段禁止实现或启动，当前暂停新实验等待owner讨论。本文建立在
 Antithetic Program-Credit cycle1正式训练、strict correct400、train24内部机制分析和
 400个held LoRA逐条复核全部完成之后；它不是对旧v6 checkpoint续训，也不恢复Direction
 Store、Policy-Lane或任何历史并行Writer。
@@ -346,3 +347,83 @@ credit；历史实现和artifact由Git与design保留，canonical runtime原位�
   reads为0。root为
   `runs/outputs/pi05_as_writer_condition_kernel_memory_profile_r6_b20_seed7_20260805`，profile
   权重永久弃用。
+
+## 11. Formal AS、四点rollout与机制负裁决
+
+### 11.1 训练与显式kernel合同成立
+
+clean implementation seal `4038960`从generic source与functional identity完成fresh
+AS0→200：200 macros、96,000 logical queries、4,800 one-video conditions、四个完整
+checkpoint，wall=`3951.928s`、峰值reserved=`19,344,130,048` bytes，0 clip/OOM、0
+validation/test action reads。root为
+`runs/outputs/pi05_as_writer_condition_kernel_memory_formal_fresh0_200_r6_4038960_20260805`。
+
+显式memory机制没有工程或数值失效：200步condition Gram均rank24，condition number范围
+`5.139--7.750`，global cap scale始终1；predicted/observed Program update relative RMS在
+macro50/100/150/200为`.002184/.001731/.001718/.001304`。raw cotangent与observed task
+delta的pair cosine、负pair和full24 energy retention逐步对应；macro200 observed median
+pair cosine=`.08298`、negative fraction=`.22826`、mean/average task energy=`.09350`。
+macro51--200的FactorHeads freeze violation严格为0。因此后续失败不能归因于kernel solve、
+共享condition Jacobian重新同向化、freeze/resume或多卡实现错误。
+
+### 11.2 四点closed-loop失败且reward门关闭
+
+50/100/150/200的strict paired correct400为：
+
+| macro | correct | breadth |
+| ---: | ---: | ---: |
+| 50 | 46 | 3 |
+| 100 | 46 | 3 |
+| 150 | 45 | 3 |
+| 200 | 49 | 3 |
+
+四点共同state、video ordinal、env/policy seed与实际执行长度的policy-noise common prefix均
+0 mismatch。相邻gained/lost=`5/5,4/5,6/2`，四点success union/intersection=`55/40`。
+40个四点共同成功中Goal-6占37、Object-1占3；macro200的49个成功中Goal-6占42，另外仅
+Long-1为2、Object-1为5，其余5个validation tasks全为0。曲线看似比历史Writer稳定，但这是低增益、
+接近source identity的能力平台，不是多task共同累积或task drift得到解决。
+
+AS200=`49`且breadth3，远低于预注册`correct≥120 && breadth≥6`。因此第7.3节direct reward
+阶段按原合同禁止实现/启动；不得从macro50--200挑best、延长bootstrap或用reward掩盖AS
+substrate失败。四点root统一为
+`runs/outputs/pi05_as_writer_condition_kernel_memory_bci_correct400_noreplacement_seed7_macro{0050,0100,0150,0200}_4b04c90_20260806`。
+
+### 11.3 地址与LoRA方向成立，绝对policy leverage失效
+
+六卡内部分析完整覆盖24 train tasks×4 checkpoints=96 rows、6/6 rank payload，wall=
+`273.968s`、峰值reserved=`19,277,021,184` bytes，0 target-action/validation/test reads；
+root为
+`runs/outputs/pi05_as_writer_condition_kernel_memory_internal_all4_r6_2972f8f_20260806`。
+
+条件差异没有在上游被抹平。四点same-task demo0→1 relative-L2中位稳定为：fixed feature
+`.78616`，Program约`.7839→.7833`，effective BA约`.7753→.7673`；reversed/shuffled BA
+约`1.396→1.391/1.374→1.363`。same-task Program centered/sample energy约`.347`，所以
+fixed task×video address、memory read和Program→BA方向传递都真实工作。
+
+LoRA也不再是历史v6的伪rank1：macro50→200 effective norm中位仅`.17614→.17791`，但
+stable rank=`3.794→3.724`、top singular energy=`.280→.284`、q/v B-column cosine约
+`.186--.205`，16个coordinates全活跃。这个norm比corrected direct SFT的`35.7362`小约
+`200×`，而高stable rank没有转化为增益。same/reversed/shuffled条件虽然产生相对完全不同的
+tiny BA，fixed-policy action relative-L2始终只有约`.19--.24%`；identity→demo0也只有
+`.20--.22%`。相邻checkpoint BA churn中位仅`.0169/.0189/.0225`，到action仍约`.20%`。
+
+同task五video的checkpoint update中，task-mean energy fraction在Program为
+`.7304/.7181/.6716`，BA为`.7839/.7807/.7268`。它确实低于旧Program-Credit的
+`.82990/.91623`，说明显式condition kernel部分修复了credit同向化；但更新仍以task-common
+为主，更重要的是全部更新被锁在极弱的policy tangent中。
+
+### 11.4 最早失效接口与退役决定
+
+fresh template-A/zero-B使macro1 Program cotangent严格为0；FactorHeads只在0→50用
+functional AS bootstrap，到freeze时public A/B RMS中位约`.01829/.000369`，形成的LoRA
+norm仅`.176`。macro50后kernel memory可以准确、彼此独立地移动Program，却只能通过已经
+冻结的低增益decoder Jacobian影响policy。也就是说，本方法解决了condition之间“如何存”
+和“如何避免共享参数重新混合credit”，却没有先建立一个具有足够绝对增益和policy-effective
+方向的Program→LoRA写出基底。
+
+因此正式拒绝“只要把condition credit换成显式独立kernel，fresh decoder会自行形成健康
+policy program”这一联合假设。该结论不等同于fixed kernel本身无效，也不支持调global scale、
+强制rank、延长同一bootstrap、增加RFF维度或改seed。下一方法若恢复推进，必须从低增益
+decoder cold-start这一最早接口重做policy-grounded写出基底/训练耦合；在owner讨论前不实现、
+不profile、不launch。配对、训练与内部汇总封存于internal root的
+`experiment_analysis.json`。

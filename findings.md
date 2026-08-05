@@ -6,6 +6,38 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-06 Condition-Kernel formal负裁决：credit隔离成立但decoder增益坍缩
+
+- clean `4038960`从functional identity完成fresh AS0→200：200 macros、96,000 queries、
+  4,800 videos、wall=`3951.928s`、peak reserved=`19,344,130,048` bytes，0 clip/OOM和
+  0 validation/test action reads。200步Gram全rank24、condition=`5.139--7.750`、cap scale
+  始终1；predicted/observed Program update relative RMS在50/100/150/200为
+  `.002184/.001731/.001718/.001304`，macro50后FactorHeads freeze violation为0。
+- strict correct400曲线=`46/46/45/49`，breadth=`3/3/3/3`；adjacent gained/lost=
+  `5/5,4/5,6/2`，四点union/intersection=`55/40`。共同state/video/env/policy seeds和
+  policy-noise common prefix均严格配对。40个四点共同success中Goal-6占37、Object-1占3；
+  macro200的49个success中Goal-6占42、Object-1占5、Long-1占2，其余5 tasks全0。低换手是接近source
+  identity的静止，不是task漂移得到解决或多task能力单调累积。
+- 六卡内部分析完整96 rows/6 payload，wall=`273.968s`、peak reserved=
+  `19,277,021,184` bytes，0 action-wall reads。same-task demo1的fixed feature/Program/BA
+  relative-L2约`.786/.784/.775→.767`，reversed/shuffled BA约`1.39/1.36`，Program
+  centered/sample energy约`.347`；fixed地址、memory和方向传递没有抹掉视频内容或顺序。
+- 真正坍缩在绝对policy leverage：LoRA norm中位仅`.1761→.1779`，比corrected direct SFT
+  `35.7362`小约200倍。它的stable rank约`3.79→3.72`、top singular energy约`.28`、q/v
+  B-column cosine约`.19/.205`，说明高rank和异质方向都真实存在；但identity、same-demo、
+  reversed、shuffled的fixed-action效应一律只有约`.19--.24%`。漂亮LoRA几何再次不是充分条件。
+- checkpoint update的task-mean energy fraction在Program为`.730/.718/.672`、BA为
+  `.784/.781/.727`，低于旧Program-Credit `.830/.916`但仍占主导。explicit kernel确实
+  部分解决condition credit的共享同向化，却不能弥补Program→LoRA basis本身的低增益。
+- fresh zero-B使macro1 Program cotangent严格0；FactorHeads仅在0→50训练，freeze时public
+  A/B RMS约`.01829/.000369`。之后M能按不同condition准确更新，但全部变化只能经过这一
+  已冻结的弱decoder Jacobian。最早失败接口因此是policy-effective decoder cold start，
+  而不是address、kernel、rank、scale或functional loss选择checkpoint。
+- AS200未过预注册`correct≥120 && breadth≥6`，direct reward禁止实现/启动；不能延长同一
+  bootstrap、调RFF seed/维度、挑checkpoint或用RL救活。精确汇总在
+  `runs/outputs/pi05_as_writer_condition_kernel_memory_internal_all4_r6_2972f8f_20260806/experiment_analysis.json`。
+  当前按owner要求暂停新实验并讨论。
+
 ## 2026-08-05 Condition-Kernel地址审计、实现与A40 profile
 
 - action-hidden audit覆盖train24×50 videos及validation8×50 apply-only。固定1024维

@@ -29,6 +29,9 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 不得resume cycle2。`142`是v6 Writer warm-start继承结果，不是fresh架构成绩。下一阶段
 必须回到functional identity fresh Writer的condition-to-policy根因设计；RL可在同一
 健康架构上作后续校准，但不得继续用v6 warm-start替代LoRA generator重构。
+2026-08-06（BCI local）owner要求当前Factorized Condition-Kernel实验与全部分析完成后
+停止推进并讨论。该实验现已完整负裁决、GPU释放；在owner明确恢复前只允许只读解释、
+结果核对和文档封存，不得启动reward、下一架构、profile、训练、rollout或GPU分析。
 
 ## Efficiency and validation boundary
 
@@ -154,26 +157,22 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 
 ## Current focused task
 
-- 当前唯一活动方法是Factorized Condition-Kernel Program Memory Writer，authority为
-  `docs/action_forecast_writer_factorized_condition_kernel_memory_design.md`。它从generic
-  source与functional identity全新训练，不加载任何历史Writer checkpoint；冻结foundation
-  task descriptor与policy-aware video innovation形成固定32×32 RFF product feature，线性
-  读取完整`1024×320×256`Program Value Memory，再由fresh FactorHeads生成exactly one
-  complete rank-16 LoRA。不得恢复learned router、task ID、static LoRA bypass、多video或
-  checkpoint融合。
-- full24每次收集24个condition的program cotangent后，唯一memory owner显式计算
-  `K=Phi Phi^T`与regularized kernel-corrected value update；M不用Adam/momentum/逐坐标
-  preconditioner。FactorHeads只在fresh AS macro0→50 bootstrap，固定50后永久冻结；
-  macro50→200 AS与之后direct reward都只更新M。AS200是预注册reward边界，不能从四个held
-  点选择历史best来warm-start。
-- canonical AS实现、action-hidden地址审计和BCI六卡profile已完成。train24×50的50组
-  no-replacement condition Gram全部rank24，最坏regularized condition=`7.5471`；same-task
-  video与reversed/shuffled feature均显著非零，validation8只apply且action/reward reads全0。
-  fresh0→1→exact-resume1→3三步wall=`20.713/19.842/19.448s`，峰值reserved
-  `19,344,130,048` bytes，0 OOM/clip；step2/3 Program cotangent与predicted update有限且
-  未触发cap，六rank checkpoint/scheduler/RNG闭合。profile权重永久弃用，下一步只从独立
-  fresh identity训练AS0→200并评测50/100/150/200；AS200低于correct120或breadth6不得进入
-  reward。
+- 当前按owner要求暂停新实验并讨论结果，没有EMBER GPU进程；不得实现/启动reward、下一
+  Writer或任何profile，直至owner明确恢复推进。最近唯一authority仍是
+  `docs/action_forecast_writer_factorized_condition_kernel_memory_design.md`，但该方法已完成
+  全部formal/rollout/internal并作负裁决，不再是可续训活动root。
+- Factorized Condition-Kernel从generic source与functional identity fresh完成AS0→200：
+  50/100/150/200 strict correct=`46/46/45/49`、breadth始终3，union/intersection=`55/40`，
+  macro200未过预注册`correct≥120 && breadth≥6`；因此direct reward阶段禁止。不得挑best、
+  延长FactorHeads bootstrap、resume400、调RFF seed/维度或用global scale救活。
+- explicit kernel机制本身成立：200步Gram全rank24、condition=`5.139--7.750`、cap scale=1，
+  macro200 predicted/observed update relative RMS=`.001304`且macro50后freeze violation=0。
+  same-task feature/Program/BA差异约`.786/.783/.767`，reversed/shuffled BA约`1.39/1.36`；
+  但LoRA norm仅`.176→.178`（比direct SFT小约200倍），即使stable rank约3.7、q/v B-column
+  已去同向，fixed action效应仍只有`.19--.24%`。四点低换手是low-gain identity-like稳定，
+  不能写成解决task drift。最早失败接口是fresh zero-B decoder在固定macro50前没有形成
+  足够增益、policy-effective的Program→LoRA写出基底。精确结果取design第11节、handoff顶部
+  与internal root的`experiment_analysis.json`。
 - Policy-Lane已完成fresh0→200、四点strict correct400与全部内部分析并正式负裁决：correct=
   `70/63/37/61`、breadth=`6/4/6/6`、union/intersection=`117/14`。它真实形成约10个有效
   output lanes、stable rank`1.34--1.54`和direct-SFT量级跨层专门化，但same-task video

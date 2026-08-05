@@ -64,6 +64,14 @@ runner、split、路径或 GPU 权限。
   `runs/outputs/pi05_as_writer_condition_kernel_memory_internal_all4_r6_2972f8f_20260806`、
   同名`runs/logs/*.log`与`ember_ck_internal_r6_2972f8f`。分析覆盖24 train tasks×4 checkpoints、
   demos0--4、reversed/shuffled及8-task fixed-action panel，target/validation/test action reads均为0。
+- [x] 内部分析完整结束：96/96 rows、6/6 payload、wall=`273.968s`、peak reserved=
+  `19,277,021,184` bytes。same-task feature/Program/BA差异约`.786/.783/.767`且order反事实
+  BA约`1.36--1.39`，但LoRA norm仅`.176→.178`、fixed-action效应仅`.19--.24%`。explicit
+  kernel修复credit混合，却被macro50冻结的low-gain fresh decoder锁在接近identity的policy
+  tangent；完整负裁决见design第11节与internal `experiment_analysis.json`。
+- [x] 全部GPU自然释放。按owner要求暂停新推进；在owner讨论并明确恢复前，不设计/实现/
+  profile/launch下一方法，也不启动本方法reward。长期single-checkpoint `>150/400`仍未完成，
+  不是Goal完成。
 
 ## 已完成Antithetic Program-Credit推进（2026-08-05）
 

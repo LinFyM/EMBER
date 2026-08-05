@@ -24,7 +24,6 @@ from ember.writer.as_contract import (
 from ember.writer.checkpoint import (
     AS_WRITER_CHECKPOINT_SCHEMA,
     _state_schemas,
-    _validate_cycle_normalized_optimizer_resume,
     validate_writer_checkpoint_files,
 )
 from ember.writer.checkpoint_schema import (
@@ -41,10 +40,6 @@ AS_CONFIG = (
     ROOT
     / "configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json"
 )
-POLICY_LANE_CONFIG = (
-    ROOT
-    / "configs/pi05_as_writer_policy_lane_hyperdecoder_bci_v1.json"
-)
 
 
 def test_v6_relative_flow_coldstart_uses_fresh_incompatible_checkpoint_family() -> None:
@@ -56,32 +51,6 @@ def test_v6_relative_flow_coldstart_uses_fresh_incompatible_checkpoint_family() 
     )
     with pytest.raises(WriterModelError, match="unsupported"):
         _state_schemas(1, "cvadr_task_query_keyed_rawfull24_v1")
-
-
-def test_policy_lane_checkpoint_family_restores_rawfull24_optimizer() -> None:
-    config = load_writer_config(POLICY_LANE_CONFIG)
-    family = checkpoint_state_family(config)
-    assert family == "policy_lane_task_query_keyed_rawfull24_v1"
-
-    parameter = torch.nn.Parameter(torch.ones(()))
-    optimizer = torch.optim.AdamW(
-        [parameter],
-        lr=3e-4,
-        betas=(0.9, 0.95),
-        eps=1e-8,
-        weight_decay=1e-4,
-    )
-    parameter.grad = torch.ones_like(parameter)
-    optimizer.step()
-    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda _: 1.0)
-
-    _validate_cycle_normalized_optimizer_resume(
-        optimizer,
-        scheduler,
-        next_step=1,
-        task_cycle_phase=0,
-        checkpoint_state_family=family,
-    )
 
 
 def _checkpoint(tmp_path: Path, contract_sha256: str) -> Path:

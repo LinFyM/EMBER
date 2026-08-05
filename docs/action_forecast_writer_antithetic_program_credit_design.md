@@ -231,3 +231,16 @@ exactly one LoRA，没有交互、随机探索、critic或额外视频。
 `scripts/train_rl_writer.py`。恢复v6时删除Policy-Lane executable module/config family；
 旧Policy-Lane、PWAD、Tangent-Basis和CFM-ratio实现只由Git、design与frozen artifacts保存。
 不得保留第二套active model、trainer、checkpoint loader或evaluation adapter。
+
+## 12. 实现与CPU合同状态（2026-08-05）
+
+- canonical v6已原位恢复，`forward`严格组合显式program encode/decode；Policy-Lane、旧
+  Flow-Credit和progress diagnostic executable families已删除。
+- direct program-credit runtime、pair ledger、actual-world-size checkpoint与evaluation
+  authority已经接通；semantic encoder、完整FactorHeads与source policy由optimizer owner
+  fail-closed冻结。
+- 69项聚焦合同与项目正式activation下全仓220项全部通过，另有py_compile和diff check；
+  AS125 manifest定向确认来自fresh identity、125 full24 macros、60,000 queries和3,000
+  one-video conditions。
+- 以上只seal A40 profile，不构成GPU机制或closed-loop性能证据。formal继续blocked，必须
+  先完成独立cycle0→1及exact-resume1→2 profile并按第8.2节裁决。

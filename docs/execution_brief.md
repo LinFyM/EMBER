@@ -15,7 +15,10 @@
 - 唯一cold start是fresh v6 AS125阶段边界，不使用v6-fast macro400 best、Policy-Lane、旧RL
   或profile权重。AS125后冻结FactorHeads、semantic encoder、source policy和normalization；
   每cycle只对Core、Visual Transition、Procedure和compiler做一次full24 equal-task update。
-  当前尚未实现或launch，必须先完成canonical原位替换、聚焦合同与独立六卡A40 profile。
+  canonical原位替换和220项全仓CPU合同已完成：`forward`等价、pair seed/randomness、direct
+  cotangent、冻结ownership、full24 assignment、NCCL ready和exact-resume均通过；旧
+  Policy-Lane/CFM/progress-diagnostic executable family已删除。profile status现已seal，
+  formal仍blocked；下一操作是clean/pushed commit上的独立六卡A40 cycle0→1/resume1→2。
 - PWAD fresh0→200与四点strict correct400已完成并负裁决：`77/71/80/80`、breadth=
   `5/6/5/5`、union/intersection=`115/44`。64 atoms广泛active，但mixing row stable rank
   约`1.000002`、effective LoRA约`1.0000002`、q/v B-column cosine约`.999998`；禁止resume

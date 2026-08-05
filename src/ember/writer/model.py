@@ -15,11 +15,8 @@ from ember.writer.architecture import (
 from ember.writer.temporal import (
     CausalProcedureEncoder,
     LanguageSemanticCore,
+    SlotNormalizedCoreProcedureCompiler,
     TaskGroundedVisualTransitionFusion,
-)
-from ember.writer.policy_lane import (
-    PolicyLaneComposer,
-    PolicyLaneHyperdecoder,
 )
 from ember.writer.video_program import Pi05LanguageAxialEncoder
 
@@ -39,6 +36,26 @@ class LoraTensorSpec:
     rank: int
     width: int
     transpose_output: bool
+
+
+class FactorHead(torch.nn.Module):
+    """Decode one video-conditioned rank-slot state into one LoRA row."""
+
+    def __init__(self, input_width: int, hidden_width: int, output_width: int) -> None:
+        super().__init__()
+        if min(input_width, hidden_width, output_width) <= 0:
+            raise WriterModelError("invalid LoRA factor-head dimensions")
+        self.network = torch.nn.Sequential(
+            torch.nn.Linear(input_width, hidden_width, bias=False),
+            torch.nn.GELU(),
+            torch.nn.Linear(hidden_width, output_width, bias=False),
+        )
+        torch.nn.init.zeros_(self.network[-1].weight)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        if value.ndim < 3:
+            raise WriterModelError("factor head lost its rank-slot dimension")
+        return self.network(value)
 
 
 def build_lora_tensor_specs(
@@ -102,6 +119,7 @@ class CompleteLoRAWriter(torch.nn.Module):
 
     EXPERT_LAYERS = 18
     PUBLIC_LORA_RANK = 16
+    PROGRAM_SLOTS = (EXPERT_LAYERS + 2) * PUBLIC_LORA_RANK
     _EXPERT_MODULE = re.compile(
         r".*gemma_expert\.model\.layers\.([0-9]+)\.self_attn\.(q_proj|v_proj)$"
     )
@@ -138,8 +156,8 @@ class CompleteLoRAWriter(torch.nn.Module):
         procedure_heads: int,
         procedure_blocks: int,
         visual_transition_heads: int,
-        policy_coordinate_heads: int,
-        policy_lane_hidden_width: int,
+        fusion_heads: int,
+        factor_hidden_width: int,
         initialization_seed: int,
         activation_checkpointing: bool,
     ) -> None:
@@ -202,37 +220,18 @@ class CompleteLoRAWriter(torch.nn.Module):
             heads=procedure_heads,
             blocks=procedure_blocks,
         )
-        self.composer = PolicyLaneComposer(
+        self.compiler = SlotNormalizedCoreProcedureCompiler(
             width=program_width,
-            heads=policy_coordinate_heads,
-            rank=self.PUBLIC_LORA_RANK,
+            heads=fusion_heads,
             initialization_seed=initialization_seed + 1,
         )
-        self.hyperdecoder = PolicyLaneHyperdecoder(
-            target_widths=self._target_widths(tensor_specs),
-            rank=self.PUBLIC_LORA_RANK,
-            condition_width=program_width,
-            hidden_width=policy_lane_hidden_width,
-            initialization_seed=initialization_seed + 2,
+        self.factor_heads = torch.nn.ModuleDict(
+            {
+                name: FactorHead(program_width, factor_hidden_width, width)
+                for name, width in self.FACTOR_WIDTHS.items()
+            }
         )
         self._register_template_state(tensor_specs, template_state)
-
-    @staticmethod
-    def _target_widths(
-        tensor_specs: tuple[LoraTensorSpec, ...],
-    ) -> tuple[tuple[int, int], ...]:
-        by_module: dict[int, dict[int, int]] = {}
-        for item in tensor_specs:
-            by_module.setdefault(item.module_index, {})[item.factor_index] = item.width
-        if (
-            set(by_module) != set(range(len(by_module)))
-            or any(set(value) != {0, 1} for value in by_module.values())
-        ):
-            raise WriterModelError("policy-lane targets changed topology")
-        return tuple(
-            (by_module[index][0], by_module[index][1])
-            for index in range(len(by_module))
-        )
 
     def _register_template_state(
         self,
@@ -240,6 +239,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         template_state: Mapping[str, torch.Tensor],
     ) -> None:
         self._template_buffers: dict[str, str] = {}
+        self._decoding: dict[str, tuple[str, int | None]] = {}
         observed_heads: dict[str, int] = {}
         observed_layers: set[int] = set()
         for index, item in enumerate(tensor_specs):
@@ -253,6 +253,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             buffer_name = f"template_{index:03d}"
             self.register_buffer(buffer_name, value, persistent=True)
             self._template_buffers[item.name] = buffer_name
+            self._decoding[item.name] = (key, layer)
         if (
             observed_heads != self.FACTOR_WIDTHS
             or observed_layers != set(range(self.EXPERT_LAYERS))
@@ -465,7 +466,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             frame_attention,
         )
 
-    def forward(
+    def encode_program(
         self,
         frames: torch.Tensor,
         frame_indices: torch.Tensor,
@@ -475,12 +476,12 @@ class CompleteLoRAWriter(torch.nn.Module):
         task_span_mask: torch.Tensor,
         *,
         policy: torch.nn.Module,
-    ) -> dict[str, torch.Tensor]:
+    ) -> torch.Tensor:
         (
             core_memory,
             valid_core,
             procedure_memory,
-            _positions,
+            positions,
             valid_frames,
             _,
         ) = self.encode_task(
@@ -492,19 +493,78 @@ class CompleteLoRAWriter(torch.nn.Module):
             language_mask,
             task_span_mask,
         )
-        lanes = self.composer(
+        expert, action_in, action_out = self.compiler(
             core_memory,
             valid_core,
             procedure_memory,
+            positions,
             valid_frames,
         )
-        lane_states = self.hyperdecoder(lanes)
+        program = torch.cat(
+            (
+                expert.flatten(1, 2),
+                action_in,
+                action_out,
+            ),
+            dim=1,
+        )
+        if program.shape != (
+            core_memory.shape[0],
+            self.PROGRAM_SLOTS,
+            self.program_width,
+        ) or not bool(torch.isfinite(program).all()):
+            raise WriterModelError("Writer policy program changed shape or became non-finite")
+        return program
+
+    def decode_program(self, program: torch.Tensor) -> dict[str, torch.Tensor]:
+        """Decode one differentiable policy program into the complete public LoRA."""
+
+        if program.ndim != 3 or program.shape[1:] != (
+            self.PROGRAM_SLOTS,
+            self.program_width,
+        ) or not bool(torch.isfinite(program).all()):
+            raise WriterModelError("invalid Writer policy program")
+        expert_stop = self.EXPERT_LAYERS * self.PUBLIC_LORA_RANK
+        action_in_stop = expert_stop + self.PUBLIC_LORA_RANK
         result: dict[str, torch.Tensor] = {}
         for item in self.tensor_specs:
-            generated = lane_states[item.module_index][item.factor_index]
+            key, layer = self._decoding[item.name]
+            if key.startswith("action_in_"):
+                source = program[:, expert_stop:action_in_stop]
+            elif key.startswith("action_out_"):
+                source = program[:, action_in_stop:]
+            else:
+                if layer is None:
+                    raise WriterModelError("expert LoRA output lost its layer")
+                left = layer * self.PUBLIC_LORA_RANK
+                source = program[:, left : left + self.PUBLIC_LORA_RANK]
+            rows = self.factor_heads[key](source)
+            generated = rows.transpose(-1, -2) if item.transpose_output else rows
             template = getattr(self, self._template_buffers[item.name])
             if generated.shape[1:] != template.shape:
-                raise WriterModelError("policy-lane output changed public LoRA shape")
+                raise WriterModelError("factor output changed public LoRA shape")
             value = generated.to(dtype=template.dtype) + template[None]
-            result[item.name] = value[0] if core_memory.shape[0] == 1 else value
+            result[item.name] = value[0] if program.shape[0] == 1 else value
         return result
+
+    def forward(
+        self,
+        frames: torch.Tensor,
+        frame_indices: torch.Tensor,
+        video_offsets: torch.Tensor,
+        language_tokens: torch.Tensor,
+        language_mask: torch.Tensor,
+        task_span_mask: torch.Tensor,
+        *,
+        policy: torch.nn.Module,
+    ) -> dict[str, torch.Tensor]:
+        program = self.encode_program(
+            frames,
+            frame_indices,
+            video_offsets,
+            language_tokens,
+            language_mask,
+            task_span_mask,
+            policy=policy,
+        )
+        return self.decode_program(program)

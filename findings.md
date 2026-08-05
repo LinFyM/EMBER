@@ -22,9 +22,12 @@
 - 唯一cold start为同一fresh v6 AS125，不是historical v6-fast best或reward checkpoint；
   FactorHeads、semantic encoder、source policy和normalization冻结。该选择把完整方法定义为
   generic source→fixed AS stage→direct program reward，并保持IL/RL都可用的根接口。
-- 设计authority为`docs/action_forecast_writer_antithetic_program_credit_design.md`；当前尚无
-  GPU结果。实现必须原位恢复v6并删除Policy-Lane/旧CFM executable family，先完成聚焦合同
-  与独立A40 profile，不能把设计合理性写成性能改善。
+- canonical实现已经原位恢复v6并删除Policy-Lane/旧CFM executable family。确定性forward
+  与encode/decode逐tensor等价；pair方向/credit、artifact/randomness cursor、四上游block
+  ownership、冻结decoder/observer、full24多卡与checkpoint roundtrip均有聚焦合同。项目正式
+  activation下全仓`220 passed`，py_compile/diff check通过；AS125 checkpoint身份定向成立。
+- 这些只证明mechanism和工程合同，尚无本方法GPU或性能结果。下一步仍是独立A40
+  cycle0→1/resume1→2 profile，不能把CPU通过或设计合理性写成性能改善。
 
 ## 2026-08-05 PWAD正式负裁决与Policy-Lane Coupled Hyperdecoder决策
 

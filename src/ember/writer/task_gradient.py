@@ -35,8 +35,8 @@ def _parameter_block(name: str) -> str:
         ("semantic_core.", "core"),
         ("visual_transition.", "program"),
         ("procedure.", "program"),
-        ("composer.", "composer"),
-        ("hyperdecoder.", "policy_lane"),
+        ("compiler.", "compiler"),
+        ("factor_heads.", "factor"),
     ):
         if name.startswith(prefix):
             return block
@@ -68,8 +68,8 @@ def parameter_layout(writer: torch.nn.Module) -> tuple[FlatParameter, ...]:
         "semantic_frontend",
         "core",
         "program",
-        "composer",
-        "policy_lane",
+        "compiler",
+        "factor",
     }:
         raise TaskGradientError("Writer parameter ownership changed")
     return tuple(result)

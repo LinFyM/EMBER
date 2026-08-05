@@ -1,4 +1,4 @@
-"""Sealed contracts and full-24 schedules for task-relative Flow-Credit Writer."""
+"""Sealed contracts and full-24 schedules for antithetic Program-Credit Writer."""
 
 from __future__ import annotations
 
@@ -30,8 +30,8 @@ from ember.writer.topology import visible_physical_cuda_index
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RL_WRITER_CONFIG_SCHEMA = "ember_pi05_sft_anchored_tangent_basis_writer_v1"
-RL_WRITER_LAUNCH_SCHEMA = "ember_pi05_sft_anchored_tangent_basis_launch_v1"
+RL_WRITER_CONFIG_SCHEMA = "ember_pi05_antithetic_program_credit_writer_v1"
+RL_WRITER_LAUNCH_SCHEMA = "ember_pi05_antithetic_program_credit_launch_v1"
 _SCHEDULE_TAG = 0xF10C0ED
 
 
@@ -64,11 +64,11 @@ def _validate_authorities(config: Mapping[str, Any]) -> None:
         "tokenizer_manifest",
     }
     if set(config.get("authorities", {})) != expected:
-        raise RewardProtocolError("Flow-Credit authority set changed")
+        raise RewardProtocolError("Program-Credit authority set changed")
     for name, authority in config["authorities"].items():
         path = REPO_ROOT / str(authority.get("path", ""))
         if not path.is_file() or sha256_file(path) != authority.get("sha256"):
-            raise RewardProtocolError(f"Flow-Credit authority changed: {name}")
+            raise RewardProtocolError(f"Program-Credit authority changed: {name}")
 
 
 def _validate_information_wall(config: Mapping[str, Any]) -> None:
@@ -85,18 +85,21 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         "observer_input": wall.get("progress_observer_input"),
         "algorithm": algorithm.get("name"),
         "rollouts": int(algorithm.get("rollouts_per_task_condition", -1)),
-        "flow_mc": int(algorithm.get("flow_mc_samples", -1)),
-        "advantage": algorithm.get("task_advantage"),
+        "pairs": int(algorithm.get("antithetic_pairs_per_task", -1)),
+        "program_shape": algorithm.get("program_shape"),
+        "program_sigma": float(algorithm.get("program_sigma", -1)),
+        "pair_credit": algorithm.get("pair_credit"),
         "rollout_schema": algorithm.get("rollout_schema"),
         "freeze_observer": algorithm.get("semantic_encoder_frozen_after_coldstart"),
-        "freeze_policy_basis": algorithm.get(
-            "factor_output_basis_frozen_after_coldstart"
+        "freeze_decoder": algorithm.get(
+            "factor_head_decoder_frozen_after_coldstart"
         ),
         "coldstart_frame_chunk": config.get("coldstart_writer_runtime", {}).get(
             "max_frames_per_encoder_call"
         ),
-        "retain_both": algorithm.get("retain_success_and_failure_prefixes"),
-        "executed_only": algorithm.get("executed_action_prefix_only"),
+        "source_backward": algorithm.get("source_policy_backward"),
+        "functional_loss": algorithm.get("functional_action_loss"),
+        "replay": algorithm.get("executed_action_replay"),
         "gradient_sync": algorithm.get("gradient_synchronization"),
         "teacher_actions": algorithm.get("teacher_actions", True),
         "critic": algorithm.get("critic", True),
@@ -117,17 +120,20 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         "reward_roles": ["train"],
         "video_roles": ["train"],
         "observer_input": "pure task language plus teacher and rollout agentview RGB only",
-        "algorithm": "sft_anchored_tangent_basis_progress_fpo_writer_v1",
+        "algorithm": "antithetic_program_credit_writer_v1",
         "rollouts": 4,
-        "flow_mc": 4,
-        "advantage": "binary_loo_mixed_zero_all_success_semantic_loo_all_failure",
-        "rollout_schema": "ember_pi05_task_grounded_progress_credit_rollout_v1",
+        "pairs": 2,
+        "program_shape": [320, 256],
+        "program_sigma": 0.05,
+        "pair_credit": "binary_discordant_sign_paired_success_zero_paired_failure_half_semantic_difference",
+        "rollout_schema": "ember_pi05_antithetic_program_credit_rollout_v1",
         "freeze_observer": True,
-        "freeze_policy_basis": True,
-        "coldstart_frame_chunk": 32,
-        "retain_both": True,
-        "executed_only": True,
-        "gradient_sync": "full24_equal_task_manual_sum_after_local_backward",
+        "freeze_decoder": True,
+        "coldstart_frame_chunk": 16,
+        "source_backward": False,
+        "functional_loss": False,
+        "replay": False,
+        "gradient_sync": "full24_equal_task_manual_sum_after_local_program_backward",
         "teacher_actions": False,
         "critic": False,
         "random_reset": True,
@@ -150,13 +156,13 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         "fixed_pruned_init_reads",
     )
     if observed != expected or any(int(wall.get(name, -1)) != 0 for name in zero_reads):
-        raise RewardProtocolError("Flow-Credit information or execution wall changed")
+        raise RewardProtocolError("Program-Credit information or execution wall changed")
 
 
 def load_rl_writer_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if config.get("schema_version") != RL_WRITER_CONFIG_SCHEMA:
-        raise RewardProtocolError("unsupported task-relative Flow-Credit config")
+        raise RewardProtocolError("unsupported antithetic Program-Credit config")
     _validate_authorities(config)
     _validate_information_wall(config)
     load_coldstart_writer_config(config)
@@ -172,7 +178,7 @@ def load_rl_writer_config(path: Path) -> dict[str, Any]:
         != "teacher_change_energy_weighted_cosine_times_clipped_relative_magnitude"
         or progress.get("episode_utility")
         != "terminal_start_relative_content_projection"
-        or progress.get("counterfactuals") != ["wrong", "shuffled", "reversed"]
+        or progress.get("usage") != "paired_failure_tie_break_only"
         or min(
             float(progress.get("normalization_epsilon", 0)),
             float(progress.get("projection_epsilon", 0)),
@@ -182,7 +188,7 @@ def load_rl_writer_config(path: Path) -> dict[str, Any]:
         raise RewardProtocolError("task-grounded progress credit contract changed")
     tasks = reward_tasks(config)
     if len(tasks) != 24 or {task.split_role for task in tasks} != {"train"}:
-        raise RewardProtocolError("Flow-Credit development task split changed")
+        raise RewardProtocolError("Program-Credit development task split changed")
     return config
 
 
@@ -209,7 +215,7 @@ def reward_tasks(config: Mapping[str, Any]) -> tuple[RewardTask, ...]:
         )
     tasks.sort(key=lambda task: task.global_task_id)
     if len(tasks) != 24 or len(set(tasks)) != 24:
-        raise RewardProtocolError("Flow-Credit requires the sealed train24 split")
+        raise RewardProtocolError("Program-Credit requires the sealed train24 split")
     return tuple(tasks)
 
 
@@ -226,7 +232,7 @@ def cycle_assignments(
         or cycle < 0
         or seed < 0
     ):
-        raise RewardProtocolError("invalid Flow-Credit full-24 topology")
+        raise RewardProtocolError("invalid Program-Credit full-24 topology")
     capacity = len(tasks) // world_size
     permutation = np.random.default_rng(
         np.random.SeedSequence([seed, cycle, _SCHEDULE_TAG])
@@ -245,7 +251,7 @@ def cycle_assignments(
     result = tuple(tuple(values) for values in bins)
     flattened = [task.global_task_id for values in result for task in values]
     if len(flattened) != 24 or len(set(flattened)) != 24:
-        raise RewardProtocolError("Flow-Credit assignment lost a task")
+        raise RewardProtocolError("Program-Credit assignment lost a task")
     return result
 
 
@@ -259,7 +265,7 @@ def schedule_summary(
     video_schedule: TeacherVideoSchedule,
 ) -> dict[str, Any]:
     if next_cycle < 0 or rollouts_per_task <= 0:
-        raise RewardProtocolError("invalid Flow-Credit coverage cursor")
+        raise RewardProtocolError("invalid Program-Credit coverage cursor")
     counts = {task.global_task_id: 0 for task in tasks}
     videos = {task.global_task_id: set() for task in tasks}
     rows = []
@@ -293,9 +299,9 @@ def _checkpoint_cycles(value: str | Sequence[int], total: int) -> tuple[int, ...
     try:
         result = tuple(sorted({int(item) for item in raw}))
     except (TypeError, ValueError) as error:
-        raise RewardProtocolError("invalid Flow-Credit checkpoint cycles") from error
+        raise RewardProtocolError("invalid Program-Credit checkpoint cycles") from error
     if not result or result[-1] != total or any(item <= 0 for item in result):
-        raise RewardProtocolError("Flow-Credit checkpoints must end at total cycles")
+        raise RewardProtocolError("Program-Credit checkpoints must end at total cycles")
     return result
 
 
@@ -305,21 +311,16 @@ def resolve_runtime(
     context: DistributedContext,
 ) -> tuple[int, tuple[int, ...], int]:
     if args.stage != "development":
-        raise RewardProtocolError("only development Flow-Credit is authorized")
+        raise RewardProtocolError("only development Program-Credit is authorized")
     if context.world_size not in {1, 2, 3, 4, 6}:
-        raise RewardProtocolError("Flow-Credit world size must divide train24 and be <=6")
-    sources = {
-        "diagnostic": config["diagnostic_defaults"],
-        "profile": config["profile_defaults"],
-        "formal": config["formal_run"],
-    }
+        raise RewardProtocolError("Program-Credit world size must divide train24 and be <=6")
+    sources = {"profile": config["profile_defaults"], "formal": config["formal_run"]}
     source = sources[args.mode]
-    expected_status = "sealed_read_only" if args.mode == "diagnostic" else "sealed"
-    if source.get("status") != expected_status:
+    if source.get("status") != "sealed":
         message = (
-            "progress-credit profile awaits the read-only gate"
+            "Program-Credit profile awaits focused CPU contracts"
             if args.mode == "profile"
-            else "formal Flow-Credit awaits the live profile seal"
+            else "formal Program-Credit awaits the live profile seal"
         )
         raise RewardProtocolError(message)
     total = int(args.total_cycles or source["total_cycles"])
@@ -328,9 +329,8 @@ def resolve_runtime(
     )
     stop = int(args.stop_after_cycle or total)
     epochs = int(args.learning_epochs or source["learning_epochs"])
-    valid_epochs = epochs == 0 if args.mode == "diagnostic" else 1 <= epochs <= 4
-    if not 0 < stop <= total or stop not in checkpoints or not valid_epochs:
-        raise RewardProtocolError("invalid Flow-Credit segment or learning epochs")
+    if not 0 < stop <= total or stop not in checkpoints or epochs != 1:
+        raise RewardProtocolError("invalid Program-Credit segment or update count")
     if args.mode == "formal":
         expected = (
             int(source["expected_world_size"]),
@@ -339,14 +339,14 @@ def resolve_runtime(
             int(source["learning_epochs"]),
         )
         if expected != (context.world_size, total, checkpoints, epochs):
-            raise RewardProtocolError("formal Flow-Credit launch differs from its seal")
+            raise RewardProtocolError("formal Program-Credit launch differs from its seal")
         state = git_state(REPO_ROOT)
         if state["dirty_paths"]:
-            raise RewardProtocolError("formal Flow-Credit requires a clean worktree")
+            raise RewardProtocolError("formal Program-Credit requires a clean worktree")
         if args.resume is None and state["commit"] != state["origin_main"]:
-            raise RewardProtocolError("fresh formal Flow-Credit must already be pushed")
+            raise RewardProtocolError("fresh formal Program-Credit must already be pushed")
         if context.numa_node is None or not context.cpu_affinity:
-            raise RewardProtocolError("formal Flow-Credit requires GPU-local NUMA affinity")
+            raise RewardProtocolError("formal Program-Credit requires GPU-local NUMA affinity")
     args.stop_after_cycle = stop
     return total, checkpoints, epochs
 
@@ -418,9 +418,12 @@ def build_contract(
             "rollouts_per_task_condition": int(
                 config["algorithm"]["rollouts_per_task_condition"]
             ),
-            "flow_mc_samples": int(config["algorithm"]["flow_mc_samples"]),
-            "explicit_keyed_flow_samples": True,
-            "executed_prefix_mask": True,
+            "antithetic_pairs_per_task": 2,
+            "program_shape": [320, 256],
+            "program_sigma": float(config["algorithm"]["program_sigma"]),
+            "optimizer_updates_per_cycle": 1,
+            "source_policy_backward_calls": 0,
+            "functional_action_loss_calls": 0,
         },
         "libero_paths": dict(libero_paths),
         "software": {
@@ -452,16 +455,16 @@ def publish_contract(
     if context.is_main:
         try:
             if len(set(digests)) != 1:
-                raise RewardProtocolError("Flow-Credit rank launch contracts differ")
+                raise RewardProtocolError("Program-Credit rank launch contracts differ")
             path = output_dir / "run_contract.json"
             if resume is not None:
                 if not path.is_file() or canonical_hash(read_json(path)) != digest:
-                    raise RewardProtocolError("Flow-Credit resume contract changed")
+                    raise RewardProtocolError("Program-Credit resume contract changed")
             else:
                 existing = set(output_dir.iterdir()) if output_dir.exists() else set()
                 allowed = {output_dir / "libero_config"}
                 if existing - allowed:
-                    raise RewardProtocolError("fresh Flow-Credit output is not empty")
+                    raise RewardProtocolError("fresh Program-Credit output is not empty")
                 output_dir.mkdir(parents=True, exist_ok=True)
                 write_json_atomic(path, dict(contract))
             append_jsonl(

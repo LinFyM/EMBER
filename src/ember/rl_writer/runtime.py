@@ -1,9 +1,10 @@
-"""Construction and exact-resume state for task-relative Flow-Credit Writer."""
+"""Construction and exact-resume state for antithetic Program-Credit Writer."""
 
 from __future__ import annotations
 
 import argparse
 import hashlib
+import math
 import os
 import re
 from dataclasses import dataclass
@@ -50,6 +51,7 @@ from ember.rl_writer.contract import (
     resolve_runtime,
     reward_tasks,
 )
+from ember.rl_writer.program_credit import program_direction_seed
 from ember.writer.as_config import writer_stage
 from ember.writer.as_contract import inspect_video_data
 from ember.writer.as_sampling import TeacherVideoSchedule
@@ -114,7 +116,7 @@ def _resume_cycle(path: Path | None) -> int:
         return 0
     match = _CHECKPOINT_NAME.fullmatch(path.name)
     if match is None:
-        raise RewardProtocolError("Flow-Credit resume path is not a cycle checkpoint")
+        raise RewardProtocolError("Program-Credit resume path is not a cycle checkpoint")
     return int(match.group(1))
 
 
@@ -124,7 +126,7 @@ def _optimizer(
     values = config["optimization"]["optimizer"]
     parameters = [value for value in writer.parameters() if value.requires_grad]
     if not parameters:
-        raise RewardProtocolError("progress-credit Writer has no trainable downstream")
+        raise RewardProtocolError("Program-Credit Writer has no trainable upstream")
     return torch.optim.AdamW(
         parameters,
         lr=float(config["optimization"]["learning_rate"]),
@@ -134,22 +136,29 @@ def _optimizer(
     )
 
 
-def _prepare_progress_optimizer(
+def _prepare_program_optimizer(
     writer: CompleteLoRAWriter,
     coldstart: Mapping[str, Any],
     config: Mapping[str, Any],
 ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LRScheduler]:
     if coldstart.get("mode") != "writer_weight_warm_start":
-        raise RewardProtocolError("Flow-Credit requires a sealed SFT Writer cold start")
+        raise RewardProtocolError("Program-Credit requires a sealed AS Writer cold start")
     for parameter in writer.semantic_encoder.parameters():
         parameter.requires_grad_(False)
-    basis_names = []
-    for name, parameter in writer.named_parameters():
-        if name.startswith("factor_heads.") and name.endswith(".network.2.weight"):
-            parameter.requires_grad_(False)
-            basis_names.append(name)
-    if len(basis_names) != len(writer.FACTOR_WIDTHS):
-        raise RewardProtocolError("SFT policy-tangent basis selector changed")
+    for parameter in writer.factor_heads.parameters():
+        parameter.requires_grad_(False)
+    trainable_prefixes = {
+        name.split(".", 1)[0]
+        for name, parameter in writer.named_parameters()
+        if parameter.requires_grad
+    }
+    if trainable_prefixes != {
+        "semantic_core",
+        "visual_transition",
+        "procedure",
+        "compiler",
+    }:
+        raise RewardProtocolError("Program-Credit trainable block ownership changed")
     optimizer = _optimizer(writer, config)
     return optimizer, torch.optim.lr_scheduler.LambdaLR(optimizer, lambda _: 1.0)
 
@@ -171,6 +180,7 @@ def rank_ledger_summary(runtime: RLWriterRuntime, next_cycle: int) -> dict[str, 
             seed=int(runtime.config["data"]["task_schedule_seed"]),
         )[runtime.context.rank]
         for task in assigned:
+            task_rollouts = []
             for offset in range(rollouts):
                 cursor = cycle * rollouts + offset
                 path = (
@@ -181,7 +191,7 @@ def rank_ledger_summary(runtime: RLWriterRuntime, next_cycle: int) -> dict[str, 
                 )
                 if not path.is_file():
                     raise RewardProtocolError(
-                        f"Flow-Credit ledger prefix gap: {task.global_task_id}/{cursor}"
+                        f"Program-Credit ledger prefix gap: {task.global_task_id}/{cursor}"
                     )
                 row = read_json(path)
                 expected = (
@@ -196,8 +206,27 @@ def rank_ledger_summary(runtime: RLWriterRuntime, next_cycle: int) -> dict[str, 
                     int(row.get("global_task_id", -1)),
                     int(row.get("rollout_cursor", -1)),
                 )
-                if observed != expected:
-                    raise RewardProtocolError("Flow-Credit ledger schedule changed")
+                pair_index = offset // 2
+                direction_seed = program_direction_seed(
+                    int(runtime.config["rng"]["program_direction_seed_root"]),
+                    cycle=cycle,
+                    global_task_id=task.global_task_id,
+                    pair_index=pair_index,
+                )
+                if observed != expected or (
+                    row.get("schema_version")
+                    != runtime.config["algorithm"]["rollout_schema"]
+                    or int(row.get("program_pair_index", -1)) != pair_index
+                    or int(row.get("program_sign", 0))
+                    != (1 if offset % 2 == 0 else -1)
+                    or int(row.get("program_direction_seed", -1)) != direction_seed
+                    or int(row.get("randomness_cursor", -1))
+                    != cycle * 2 + pair_index
+                    or float(row.get("program_sigma", -1))
+                    != float(runtime.config["algorithm"]["program_sigma"])
+                ):
+                    raise RewardProtocolError("Program-Credit ledger schedule changed")
+                task_rollouts.append(row)
                 digest.update(bytes.fromhex(sha256_file(path)))
                 actions += int(row["steps"])
                 successes += int(bool(row["success"]))
@@ -205,13 +234,13 @@ def rank_ledger_summary(runtime: RLWriterRuntime, next_cycle: int) -> dict[str, 
                 local_rollouts += 1
             credit_path = (
                 runtime.args.output_dir
-                / "progress_credit"
+                / "program_credit"
                 / f"cycle_{cycle:08d}"
                 / f"task_{task.global_task_id:03d}.json"
             )
             if not credit_path.is_file():
                 raise RewardProtocolError(
-                    f"progress-credit ledger prefix gap: {task.global_task_id}/{cycle}"
+                    f"program-credit ledger prefix gap: {task.global_task_id}/{cycle}"
                 )
             credit = read_json(credit_path)
             observed_credit = (
@@ -220,8 +249,58 @@ def rank_ledger_summary(runtime: RLWriterRuntime, next_cycle: int) -> dict[str, 
                 int(credit.get("global_task_id", -1)),
             )
             expected_credit = (runtime.context.rank, cycle, task.global_task_id)
-            if observed_credit != expected_credit:
-                raise RewardProtocolError("progress-credit ledger schedule changed")
+            pairs = credit.get("pairs", [])
+            expected_demo = runtime.video_schedule.demo_for_task_visit(
+                task.global_task_id, cycle
+            )
+            if (
+                observed_credit != expected_credit
+                or credit.get("schema_version")
+                != "ember_pi05_antithetic_program_credit_task_v1"
+                or int(credit.get("teacher_demo_index", -1)) != expected_demo
+                or credit.get("program_shape") != [320, 256]
+                or float(credit.get("program_sigma", -1))
+                != float(runtime.config["algorithm"]["program_sigma"])
+                or not math.isfinite(float(credit.get("cotangent_norm", math.nan)))
+                or not isinstance(pairs, list)
+                or len(pairs) != 2
+            ):
+                raise RewardProtocolError("program-credit ledger schedule changed")
+            for pair_index, pair in enumerate(pairs):
+                plus = task_rollouts[2 * pair_index]
+                minus = task_rollouts[2 * pair_index + 1]
+                expected_seed = program_direction_seed(
+                    int(runtime.config["rng"]["program_direction_seed_root"]),
+                    cycle=cycle,
+                    global_task_id=task.global_task_id,
+                    pair_index=pair_index,
+                )
+                if (
+                    int(pair.get("pair_index", -1)) != pair_index
+                    or int(pair.get("direction_seed", -1)) != expected_seed
+                    or int(pair.get("randomness_cursor", -1))
+                    != cycle * 2 + pair_index
+                    or int(pair.get("plus_rollout_cursor", -1))
+                    != int(plus["rollout_cursor"])
+                    or int(pair.get("minus_rollout_cursor", -1))
+                    != int(minus["rollout_cursor"])
+                    or pair.get("plus_lora_sha256")
+                    != plus.get("writer_lora_sha256")
+                    or pair.get("minus_lora_sha256")
+                    != minus.get("writer_lora_sha256")
+                    or bool(pair.get("plus_success")) != bool(plus["success"])
+                    or bool(pair.get("minus_success")) != bool(minus["success"])
+                    or not math.isfinite(float(pair.get("credit", math.nan)))
+                    or pair.get("credit_mode")
+                    not in {
+                        "binary_discordant",
+                        "paired_success_zero",
+                        "paired_failure_semantic",
+                    }
+                ):
+                    raise RewardProtocolError(
+                        "program-credit ledger pair identity changed"
+                    )
             credit_digest.update(bytes.fromhex(sha256_file(credit_path)))
             local_credits += 1
     return {
@@ -230,8 +309,8 @@ def rank_ledger_summary(runtime: RLWriterRuntime, next_cycle: int) -> dict[str, 
         "successes": successes,
         "reward_sum": reward_sum,
         "ledger_prefix_sha256": digest.hexdigest(),
-        "progress_credit_cursor": local_credits,
-        "progress_credit_prefix_sha256": credit_digest.hexdigest(),
+        "program_credit_cursor": local_credits,
+        "program_credit_prefix_sha256": credit_digest.hexdigest(),
     }
 
 
@@ -284,7 +363,7 @@ def _task_authorities(
         task_id = int(row["global_task_id"])
         path = (data_root / str(row["hdf5"]["relative_path"])).resolve()
         if not path.is_relative_to(data_root):
-            raise RewardProtocolError("Flow-Credit video path escaped data root")
+            raise RewardProtocolError("Program-Credit video path escaped data root")
         result[task_id] = WriterTaskAuthority(
             task_id=task_id,
             language=str(row["language"]),
@@ -292,7 +371,7 @@ def _task_authorities(
             expected_bytes=int(row["hdf5"]["bytes"]),
         )
     if len(result) != 24:
-        raise RewardProtocolError("Flow-Credit video authorities changed")
+        raise RewardProtocolError("Program-Credit video authorities changed")
     return result
 
 
@@ -364,7 +443,7 @@ def _load_local_writer_models(
     tokenizer_record = inspect_tokenizer(authorities, args.tokenizer_path)
     as_config = load_coldstart_writer_config(config)
     if writer_stage(as_config) != "development":
-        raise RewardProtocolError("Flow-Credit cold start is not development AS")
+        raise RewardProtocolError("Program-Credit cold start is not development AS")
     policy = load_policy(
         Path(source["model_path"]), authorities.source_base_config, context.device
     )
@@ -405,30 +484,34 @@ def _publish_runtime_contract(
         for name, value in models.writer.semantic_encoder.named_parameters()
         if not value.requires_grad
     )
-    frozen_basis_names = sorted(
+    frozen_decoder_names = sorted(
         name
         for name, value in models.writer.named_parameters()
         if name.startswith("factor_heads.")
-        and name.endswith(".network.2.weight")
         and not value.requires_grad
     )
-    if len(frozen_basis_names) != len(models.writer.FACTOR_WIDTHS):
-        raise RewardProtocolError("SFT policy-tangent basis is not fully frozen")
-    frozen_basis_set = set(frozen_basis_names)
+    all_decoder_names = sorted(
+        name
+        for name, _ in models.writer.named_parameters()
+        if name.startswith("factor_heads.")
+    )
+    if frozen_decoder_names != all_decoder_names or len(frozen_decoder_names) != 16:
+        raise RewardProtocolError("AS LoRA decoder is not fully frozen")
+    frozen_decoder_set = set(frozen_decoder_names)
     trainable = {
         **models.trainable,
-        "object": "sft_anchored_tangent_basis_writer_coefficients_only",
+        "object": "antithetic_program_credit_writer_upstream_only",
         "coldstart_teacher_action_phase_closed": True,
         "semantic_encoder_frozen": True,
-        "factor_output_basis_frozen": True,
-        "factor_output_basis_parameter_name_count": len(frozen_basis_names),
-        "factor_output_basis_parameter_count": sum(
+        "factor_head_decoder_frozen": True,
+        "factor_head_decoder_parameter_name_count": len(frozen_decoder_names),
+        "factor_head_decoder_parameter_count": sum(
             value.numel()
             for name, value in models.writer.named_parameters()
-            if name in frozen_basis_set
+            if name in frozen_decoder_set
         ),
-        "factor_output_basis_parameter_names_sha256": canonical_hash(
-            frozen_basis_names
+        "factor_head_decoder_parameter_names_sha256": canonical_hash(
+            frozen_decoder_names
         ),
         "rl_trainable_parameter_count": sum(
             value.numel() for value in models.writer.parameters() if value.requires_grad
@@ -485,7 +568,7 @@ def build_runtime(
     total, checkpoints, learning_epochs = resolve_runtime(args, config, context)
     initial = _resume_cycle(args.resume)
     if not 0 <= initial < args.stop_after_cycle:
-        raise RewardProtocolError("Flow-Credit resume cursor is outside this segment")
+        raise RewardProtocolError("Program-Credit resume cursor is outside this segment")
     seed_everything(int(config["optimization"]["seed"]), context)
     models = _load_local_writer_models(args, context, config)
     initialize_deferred_process_group(
@@ -501,7 +584,7 @@ def build_runtime(
         models.writer,
         str(models.trainable["lora_contract_sha256"]),
     )
-    optimizer, scheduler = _prepare_progress_optimizer(
+    optimizer, scheduler = _prepare_program_optimizer(
         models.writer, coldstart, config
     )
     paths = _prepare_libero_paths(args, context)

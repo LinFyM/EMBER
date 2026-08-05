@@ -174,17 +174,15 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   64 atoms广泛使用但A/B mixing row stable rank约`1.000002`，effective LoRA约
   `1.0000002`且q/v B-column cosine约`.999998`。禁止resume到400、增加K、调scale或用
   rank/正交loss救活。
-- 新方法canonical原位实现已完成：完整Writer=`49,041,664`参数，旧PWAD module/config/
-  checkpoint family已从活动runtime删除，聚焦Writer合同`84 passed`且architecture guard
-  无hard/parallel family。clean pushed`2aeb22a`已完成46GB六卡longest105/logical-B20
-  三步profile与独立fresh0→1→exact-resume1→3：峰值allocated/reserved=
-  `36,168,858,624/47,053,799,424` bytes，0 OOM/clip，step2起五个主块可达，完整恢复状态
-  闭合。首轮仍保持AS full24 raw mean、每task一条video、logical B20/policy microbatch2、
-  fast-decay400。clean/pushed`244b677`的独立fresh root现已完成0→200：200 finite
-  macros、96,000 queries、4,800 one-video conditions、8个checkpoint，0 OOM/clip/
-  nonfinite，validation/test action reads=0；下一步严格评测50/100/150/200。RL只可在
-  fresh架构证明absolute、retention和视频传递健康后作为同一生成器的后续闭环校准，不能
-  替代AS机制门。
+- Program-Credit canonical原位实现已完成：恢复v6唯一Writer并显式拆出
+  `encode_program/decode_program`；删除Policy-Lane model/config/checkpoint family、旧
+  Flow-Credit数学owner和progress diagnostic。runtime只保留两对antithetic program扰动、
+  binary-first pair credit与每cycle一次direct program backward；ledger/exact-resume绑定
+  actual world size、direction seed、四个artifact cursor、pair randomness和credit identity。
+  项目正式activation下全仓`220 passed`，py_compile/diff check通过，architecture gate无
+  hard或parallel active path。profile config已由CPU合同seal，formal仍blocked；下一步只在
+  clean/pushed代码上live选择最多6张空闲A40做独立cycle0→1和exact-resume1→2，profile权重
+  永久弃用。
 - SFT-Anchored Policy Tangent-Basis authority
   `docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`已完成formal cycle1并负
   裁决：历史v6-fast macro400=`143` warm-start经固定8个factor-output basis的reward更新后

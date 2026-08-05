@@ -17,10 +17,10 @@ runner、split、路径或 GPU 权限。
   `320×256` compiler program作为高层动作；K4做两组同随机性antithetic扰动；binary-first
   pair差直接反传program，不再使用CFM action surrogate。cold start固定为fresh AS125，
   冻结semantic encoder、完整FactorHeads、source policy和normalization。
-- [ ] 原位恢复唯一v6 Writer和显式`encode_program/decode_program`接口，删除Policy-Lane
+- [x] 原位恢复唯一v6 Writer和显式`encode_program/decode_program`接口，删除Policy-Lane
   executable family；原位重写`src/ember/rl_writer/`的schema、loop、checkpoint与evaluation
   adapter，不保留旧CFM/Tangent并行路径。
-- [ ] 完成forward等价、antithetic seed/配对、binary-first credit、freeze/gradient ownership、
+- [x] 完成forward等价、antithetic seed/配对、binary-first credit、freeze/gradient ownership、
   checkpoint/resume与实际world-size的聚焦合同；运行architecture gate并保持单一owner。
 - [ ] live比较`gpu01/gpu02`后完成AS125-fresh独立六卡one-cycle A40 profile及fresh0→1→
   resume1→2；K4/24 tasks、pair randomness、finite cotangent、四个block可达、0 frozen grad、

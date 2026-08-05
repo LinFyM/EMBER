@@ -1,4 +1,4 @@
-"""Task-relative on-policy Flow-Credit Writer training."""
+"""Direct antithetic Program-Credit Writer training."""
 
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ import torch.distributed as dist
 from ember.pi05_source_setup import initialize_distributed
 from ember.rl_writer.contract import REPO_ROOT
 from ember.rl_writer.loop import run_cycles
-from ember.rl_writer.progress_diagnostic import run_progress_diagnostic
 from ember.rl_writer.runtime import RLWriterRuntime, build_runtime
 
 
@@ -37,10 +36,7 @@ def train(args: argparse.Namespace) -> None:
                 ),
                 flush=True,
             )
-        if args.mode == "diagnostic":
-            run_progress_diagnostic(runtime)
-        else:
-            run_cycles(runtime)
+        run_cycles(runtime)
     finally:
         if runtime is not None:
             runtime.env_pool.close()
@@ -57,7 +53,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=REPO_ROOT / "configs/pi05_rl_writer_development_v1.json",
     )
     parser.add_argument(
-        "--mode", choices=("diagnostic", "profile", "formal"), required=True
+        "--mode", choices=("profile", "formal"), required=True
     )
     parser.add_argument("--stage", choices=("development",), required=True)
     parser.add_argument("--source-run", type=Path, required=True)

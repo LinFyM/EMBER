@@ -8,6 +8,19 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-05 Antithetic Program-Credit实现与CPU seal
+
+- canonical Writer已原位恢复v6，并把确定性函数显式拆为`encode_program(320×256)`和
+  `decode_program(complete LoRA)`；Policy-Lane module/config/checkpoint family已删除，旧
+  Flow-Credit、PPO/SPO、executed replay与progress diagnostic不再有活动实现。
+- canonical RL runtime现只保留两对共享随机性的program扰动、binary-first pair credit、
+  direct program cotangent与每cycle一次full24 update。semantic encoder、8个FactorHeads、
+  source policy全部冻结；pair ledger绑定方向seed、±cursor、randomness、LoRA hash与outcome。
+- 69项聚焦合同和项目正式activation下全仓220项均通过；py_compile和`git diff --check`
+  通过。AS125 cold-start manifest定向确认是fresh identity训练125 full24 macros、60,000
+  queries、3,000 one-video conditions的v6 family。profile config已seal，formal仍blocked；
+  当前尚未启动GPU，下一步只做clean/pushed代码上的六卡cycle0→1/resume1→2 profile。
+
 ## 2026-08-05 Antithetic Program-Credit设计封存
 
 - Policy-Lane内部分析后完成下一单变量设计：恢复v6 compiler的`320×256` policy program

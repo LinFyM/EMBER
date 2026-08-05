@@ -344,8 +344,9 @@ def collect_randomized_reward_trajectory(
     action_execution_horizon: int,
     num_inference_steps: int,
     retain_failure_replay: bool = False,
+    randomness_cursor: int | None = None,
 ) -> RewardTrajectory:
-    """Collect one seeded BDDL-reset trajectory with optional failure replay."""
+    """Collect one seeded trajectory, optionally decoupling RNG from row identity."""
 
     dummy = _validate_rollout_contract(
         policy=policy,
@@ -361,6 +362,9 @@ def collect_randomized_reward_trajectory(
         num_inference_steps=num_inference_steps,
         dummy_action=dummy_action,
     )
+    seed_cursor = rollout_cursor if randomness_cursor is None else randomness_cursor
+    if seed_cursor < 0:
+        raise RewardProtocolError("PI05 reward randomness cursor must be non-negative")
     observation = _random_reset_with_settling(
         env,
         env_seed=env_seed,
@@ -390,7 +394,7 @@ def collect_randomized_reward_trajectory(
             suite=suite,
             task_id=task_id,
             adaptation_seed=adaptation_seed,
-            rollout_cursor=rollout_cursor,
+            rollout_cursor=seed_cursor,
             replan_index=len(noise_seeds),
             device=device,
             num_inference_steps=num_inference_steps,

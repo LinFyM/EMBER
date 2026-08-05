@@ -18,12 +18,6 @@ V6_RELATIVE_FLOW_CONFIG_SCHEMA = (
 V6_RELATIVE_FLOW_CONFIG_OVERLAY_SCHEMA = (
     "ember_pi05_v6_relative_flow_coldstart_recipe_overlay_v1"
 )
-POLICY_LANE_CONFIG_SCHEMA = (
-    "ember_pi05_policy_lane_coupled_hyperdecoder_as_writer_v1"
-)
-POLICY_LANE_CONFIG_OVERLAY_SCHEMA = (
-    "ember_pi05_policy_lane_coupled_hyperdecoder_recipe_overlay_v1"
-)
 AS_WRITER_CONFIG_SCHEMA = "ember_pi05_contextual_value_dual_read_full24_as_writer_v1"
 AS_WRITER_CONFIG_OVERLAY_SCHEMA = (
     "ember_pi05_contextual_value_dual_read_full24_as_writer_recipe_overlay_v1"
@@ -42,7 +36,6 @@ AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA = (
 )
 AS_WRITER_CONFIG_SCHEMAS = (
     V6_RELATIVE_FLOW_CONFIG_SCHEMA,
-    POLICY_LANE_CONFIG_SCHEMA,
     AS_WRITER_CONFIG_SCHEMA,
     AS_WRITER_SERIAL4_CONFIG_SCHEMA,
     AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA,
@@ -488,17 +481,8 @@ def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
     )
     serial4 = _serial4_conditioning(legacy_common)
     randomized_group4 = _randomized_group4_conditioning(task_query_common)
-    if config.get("schema_version") in {
-        V6_RELATIVE_FLOW_CONFIG_SCHEMA,
-        POLICY_LANE_CONFIG_SCHEMA,
-    }:
+    if config.get("schema_version") == V6_RELATIVE_FLOW_CONFIG_SCHEMA:
         expected = target_owned_raw
-        if config.get("schema_version") == POLICY_LANE_CONFIG_SCHEMA:
-            expected = dict(expected)
-            expected["single_video_gradient_direction_diagnostic"] = (
-                "fixed_countsketch_32_per_task_per_semantic_frontend_core_"
-                "program_composer_policy_lane_block"
-            )
     elif config.get("schema_version") == AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA:
         expected = (
             randomized_group4
@@ -531,7 +515,6 @@ def _validate_cycle_normalized_optimization(config: Mapping[str, Any]) -> None:
         not in {
             AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA,
             V6_RELATIVE_FLOW_CONFIG_SCHEMA,
-            POLICY_LANE_CONFIG_SCHEMA,
         }
         or "cycle_normalization" not in config.get("optimization", {})
     ):
@@ -682,7 +665,6 @@ def _load_recipe_overlay(
     }
     if overlay_schema in {
         V6_RELATIVE_FLOW_CONFIG_OVERLAY_SCHEMA,
-        POLICY_LANE_CONFIG_OVERLAY_SCHEMA,
     }:
         allowed_replacements.add("writer")
     base_path = (REPO_ROOT / str(config.get("base_config", ""))).resolve()
@@ -703,8 +685,6 @@ def _load_recipe_overlay(
         base["schema_version"] = AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA
     elif overlay_schema == V6_RELATIVE_FLOW_CONFIG_OVERLAY_SCHEMA:
         base["schema_version"] = V6_RELATIVE_FLOW_CONFIG_SCHEMA
-    elif overlay_schema == POLICY_LANE_CONFIG_OVERLAY_SCHEMA:
-        base["schema_version"] = POLICY_LANE_CONFIG_SCHEMA
     base["_config_derivation"] = {
         "overlay_schema": overlay_schema,
         "base_config": str(base_path.relative_to(REPO_ROOT)),
@@ -712,7 +692,6 @@ def _load_recipe_overlay(
     }
     if overlay_schema in {
         V6_RELATIVE_FLOW_CONFIG_OVERLAY_SCHEMA,
-        POLICY_LANE_CONFIG_OVERLAY_SCHEMA,
     }:
         writer = dict(base.get("writer", {}))
         if set(writer) != {
@@ -725,7 +704,7 @@ def _load_recipe_overlay(
             "pi05_task_grounded_semantic_set_visual_transition_"
             "causal_procedure_slot_fusion_v6"
             if overlay_schema == V6_RELATIVE_FLOW_CONFIG_OVERLAY_SCHEMA
-            else "pi05_policy_lane_coupled_hyperdecoder_writer_v1"
+            else None
         )
         if writer.get("architecture") != expected_architecture:
             raise WriterModelError("invalid Writer architecture overlay")
@@ -746,7 +725,6 @@ def load_writer_config(path: Path) -> dict[str, Any]:
     schema = config.get("schema_version")
     if schema in {
         V6_RELATIVE_FLOW_CONFIG_OVERLAY_SCHEMA,
-        POLICY_LANE_CONFIG_OVERLAY_SCHEMA,
         AS_WRITER_CONFIG_OVERLAY_SCHEMA,
         AS_WRITER_SERIAL4_CONFIG_OVERLAY_SCHEMA,
         AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA,

@@ -172,6 +172,40 @@ def test_random_reset_rollout_settles_then_executes_five_step_replans() -> None:
     assert trajectory.ledger_row()["dummy_settling_steps"] == 10
 
 
+def test_randomness_cursor_decouples_antithetic_rng_from_artifact_identity() -> None:
+    trajectories = []
+    policies = []
+    for rollout_cursor in (8, 9):
+        policy = _FakePolicy()
+        policies.append(policy)
+        trajectories.append(
+            collect_randomized_reward_trajectory(
+                env=_FakeEnvironment(success_after_policy_steps=1),
+                policy=policy,
+                preprocess=_preprocess,
+                postprocess=lambda value: value,
+                suite="libero_spatial",
+                task_id=6,
+                global_task_id=6,
+                language="put the bowl on the tray",
+                adaptation_seed=23,
+                rollout_cursor=rollout_cursor,
+                randomness_cursor=4,
+                env_seed=29,
+                policy_seed_root=31,
+                device=torch.device("cpu"),
+                max_horizon=220,
+                dummy_settling_steps=10,
+                dummy_action=[0, 0, 0, 0, 0, 0, -1],
+                action_execution_horizon=5,
+                num_inference_steps=10,
+            )
+        )
+    assert [value.rollout_cursor for value in trajectories] == [8, 9]
+    assert trajectories[0].policy_noise_seeds == trajectories[1].policy_noise_seeds
+    assert torch.equal(policies[0].noises[0], policies[1].noises[0])
+
+
 def _trajectory(valid: tuple[int, ...], *, success: bool = True) -> RewardTrajectory:
     observations = tuple(
         {

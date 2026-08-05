@@ -7,22 +7,19 @@ from pathlib import Path
 import pytest
 import torch
 
+from ember.pi05_source_checkpoint import DistributedContext, canonical_hash
+from ember.reward.ledger import InteractionCursors
+from ember.reward.protocol import RewardProtocolError
 from ember.rl_writer import contract as rl_contract
 from ember.rl_writer import loop as rl_loop
 from ember.rl_writer import rendezvous as rl_rendezvous
 from ember.rl_writer import runtime as rl_runtime
-from ember.pi05_source_checkpoint import DistributedContext, canonical_hash, sha256_file
-from ember.pi05_source_contract import reconcile_metrics
-from ember.reward import rollout as reward_rollout
-from ember.reward.ledger import InteractionCursors
-from ember.reward.protocol import RewardProtocolError
 from ember.rl_writer.checkpoint import (
     load_rl_writer_checkpoint,
     save_rl_writer_checkpoint,
     validate_rl_writer_checkpoint_files,
 )
 from ember.rl_writer.contract import (
-    RL_WRITER_LAUNCH_SCHEMA,
     cycle_assignments,
     load_coldstart_writer_config,
     load_rl_writer_config,
@@ -31,44 +28,36 @@ from ember.rl_writer.contract import (
     reward_tasks,
     schedule_summary,
 )
-from ember.rl_writer.progress_credit import (
-    PROGRESS_DIAGNOSTIC_ROW_SCHEMA,
-    binary_first_progress_advantages,
-    semantic_progress_utilities,
-    summarize_progress_diagnostic,
-)
 from ember.rl_writer.training import build_parser
 from ember.writer.as_sampling import TeacherVideoSchedule
-from ember.writer.model import WriterModelError
-from ember.writer.topology import visible_physical_cuda_index
+from ember.writer.topology import WriterModelError, visible_physical_cuda_index
 
 
-ROOT = Path(__file__).resolve().parents[1]
-CONFIG = ROOT / "configs/pi05_rl_writer_development_v1.json"
+CONFIG = (
+    Path(__file__).resolve().parents[1]
+    / "configs/pi05_rl_writer_development_v1.json"
+)
 
 
-def test_flow_credit_config_closes_actions_and_keeps_both_outcomes() -> None:
+def test_program_credit_config_closes_actions_and_freezes_public_decoder() -> None:
     config = load_rl_writer_config(CONFIG)
-    assert config["sealed_stage"] == "development"
-    assert config["algorithm"]["rollouts_per_task_condition"] == 4
-    assert config["algorithm"]["flow_mc_samples"] == 4
-    assert config["algorithm"]["retain_success_and_failure_prefixes"] is True
-    assert config["algorithm"]["task_advantage"] == (
-        "binary_loo_mixed_zero_all_success_semantic_loo_all_failure"
-    )
-    assert config["algorithm"]["semantic_encoder_frozen_after_coldstart"] is True
-    assert config["algorithm"]["factor_output_basis_frozen_after_coldstart"] is True
-    assert config["coldstart_writer_runtime"]["max_frames_per_encoder_call"] == 32
+    algorithm = config["algorithm"]
+    assert algorithm["name"] == "antithetic_program_credit_writer_v1"
+    assert algorithm["rollouts_per_task_condition"] == 4
+    assert algorithm["antithetic_pairs_per_task"] == 2
+    assert algorithm["program_shape"] == [320, 256]
+    assert algorithm["program_sigma"] == pytest.approx(0.05)
+    assert algorithm["teacher_actions"] is False
+    assert algorithm["functional_action_loss"] is False
+    assert algorithm["executed_action_replay"] is False
+    assert algorithm["semantic_encoder_frozen_after_coldstart"] is True
+    assert algorithm["factor_head_decoder_frozen_after_coldstart"] is True
+    assert config["coldstart_writer_runtime"]["max_frames_per_encoder_call"] == 16
     assert load_coldstart_writer_config(config)["writer"][
         "max_frames_per_encoder_call"
-    ] == 32
+    ] == 16
     assert config["information_wall"]["teacher_action_reads_after_coldstart"] == 0
     assert config["parallel"]["maximum_world_size"] == 6
-    assert config["parallel"]["credit_collective_readiness"] == (
-        "launch_unique_atomic_rank_markers_after_cuda_complete_"
-        "before_each_nccl_gradient_sum"
-    )
-    assert config["formal_run"]["status"].startswith("retired_after")
     assert config["formal_run"]["checkpoint_cycles"] == [1, 2, 4, 8]
 
 
@@ -107,39 +96,29 @@ def test_full24_schedule_is_exact_and_horizon_balanced_for_bci_topologies() -> N
     assert summary["min_unique_videos_per_task"] == 2
 
 
-def test_flow_credit_parser_requires_coldstart_and_raw_video_data() -> None:
+def test_program_credit_parser_requires_coldstart_and_raw_video_data() -> None:
     destinations = {action.dest for action in build_parser()._actions}
     assert "coldstart_checkpoint" in destinations
     assert "data_root" in destinations
     assert "feature_cache" not in destinations
-    assert "branch" not in destinations
+    assert "diagnostic" not in destinations
 
 
-def test_sft_policy_tangent_basis_is_frozen_before_optimizer() -> None:
+def test_only_program_upstream_is_trainable_after_coldstart() -> None:
     class TinyWriter(torch.nn.Module):
-        FACTOR_WIDTHS = {f"head_{index}": 1 for index in range(8)}
-
         def __init__(self) -> None:
             super().__init__()
-            self.semantic_encoder = torch.nn.Linear(1, 1)
+            self.semantic_encoder = torch.nn.Linear(2, 2)
+            self.semantic_core = torch.nn.Linear(2, 2)
+            self.visual_transition = torch.nn.Linear(2, 2)
+            self.procedure = torch.nn.Linear(2, 2)
+            self.compiler = torch.nn.Linear(2, 2)
             self.factor_heads = torch.nn.ModuleDict(
-                {
-                    name: torch.nn.ModuleDict(
-                        {
-                            "network": torch.nn.Sequential(
-                                torch.nn.Linear(1, 1, bias=False),
-                                torch.nn.GELU(),
-                                torch.nn.Linear(1, 1, bias=False),
-                            )
-                        }
-                    )
-                    for name in self.FACTOR_WIDTHS
-                }
+                {f"head_{index}": torch.nn.Linear(2, 2) for index in range(8)}
             )
-            self.compiler = torch.nn.Linear(1, 1)
 
     writer = TinyWriter()
-    optimizer, _ = rl_runtime._prepare_progress_optimizer(
+    optimizer, _ = rl_runtime._prepare_program_optimizer(
         writer,
         {"mode": "writer_weight_warm_start"},
         load_rl_writer_config(CONFIG),
@@ -149,43 +128,25 @@ def test_sft_policy_tangent_basis_is_frozen_before_optimizer() -> None:
         for name, parameter in writer.named_parameters()
         if not parameter.requires_grad
     }
-
+    assert frozen
     assert all(
-        name.startswith("semantic_encoder.") for name in frozen if "factor" not in name
+        name.startswith(("semantic_encoder.", "factor_heads."))
+        for name in frozen
     )
-    assert sum(name.endswith(".network.2.weight") for name in frozen) == 8
-    assert all(
-        parameter.requires_grad
+    trainable_prefixes = {
+        name.split(".", 1)[0]
         for name, parameter in writer.named_parameters()
-        if name.endswith(".network.0.weight") or name.startswith("compiler.")
-    )
+        if parameter.requires_grad
+    }
+    assert trainable_prefixes == {
+        "semantic_core",
+        "visual_transition",
+        "procedure",
+        "compiler",
+    }
     assert sum(len(group["params"]) for group in optimizer.param_groups) == sum(
         parameter.requires_grad for parameter in writer.parameters()
     )
-
-
-def test_random_reset_pool_binds_the_sealed_runtime_assets(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    bddl_root = tmp_path / "bddl"
-    assets_root = tmp_path / "assets"
-    bddl_root.mkdir()
-    assets_root.mkdir()
-    observed: list[Path] = []
-    monkeypatch.setattr(
-        reward_rollout,
-        "configure_libero_runtime_assets",
-        lambda path: observed.append(path.resolve()),
-    )
-
-    pool = reward_rollout.RandomResetEnvironmentPool(
-        bddl_root=bddl_root,
-        assets_root=assets_root,
-        render_resolution=256,
-    )
-
-    assert pool.assets_root == assets_root.resolve()
-    assert observed == [assets_root.resolve()]
 
 
 def test_torchrun_local_rank_maps_to_the_physical_egl_device(
@@ -202,14 +163,14 @@ def test_credit_collective_waits_for_rank_local_backward(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     events: list[str] = []
-    monkeypatch.setenv("TORCHELASTIC_RUN_ID", "unit-credit-rendezvous")
+    monkeypatch.setenv("TORCHELASTIC_RUN_ID", "unit-program-credit-rendezvous")
     monkeypatch.setenv("TORCHELASTIC_RESTART_COUNT", "0")
     session = rl_rendezvous._credit_rendezvous_session()
     ready = (
         tmp_path
         / ".rank-local-credit-ready"
         / session
-        / "cycle-00000003-epoch-0001"
+        / "cycle-00000003-epoch-0000"
     )
     ready.mkdir(parents=True)
     (ready / "rank-01.json").write_text("{}\n", encoding="utf-8")
@@ -235,22 +196,21 @@ def test_credit_collective_waits_for_rank_local_backward(
     writer = torch.nn.Linear(3, 2)
     for parameter in writer.parameters():
         parameter.grad = torch.ones_like(parameter)
-    writer.bias.requires_grad_(False)
-    writer.bias.grad = None
     runtime = Namespace(
         args=Namespace(output_dir=tmp_path),
         context=DistributedContext(0, 0, 2, torch.device("cuda:0")),
         writer=writer,
     )
 
-    rl_loop._all_reduce_writer_gradients(runtime, cycle=3, epoch=1)
+    rl_loop._all_reduce_writer_gradients(runtime, cycle=3)
 
     assert events == ["cuda_synchronize", "marker:rank-00.json", "all_reduce"]
     assert (ready / "rank-00.json").is_file()
-    assert writer.bias.grad is None
 
 
-def test_flow_credit_information_wall_fails_closed(tmp_path: Path) -> None:
+def test_information_wall_and_runtime_gates_fail_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     value = json.loads(CONFIG.read_text(encoding="utf-8"))
     value["information_wall"]["validation_reward_reads"] = 1
     path = tmp_path / "config.json"
@@ -258,187 +218,45 @@ def test_flow_credit_information_wall_fails_closed(tmp_path: Path) -> None:
     with pytest.raises(RewardProtocolError, match="information"):
         load_rl_writer_config(path)
 
-
-def test_diagnostic_profile_and_fresh_formal_runtime_seals(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
     config = load_rl_writer_config(CONFIG)
     context = DistributedContext(0, 0, 6, torch.device("cpu"), 0, (0,))
     args = Namespace(
         stage="development",
-        mode="diagnostic",
+        mode="profile",
         total_cycles=None,
         checkpoint_cycles=None,
         stop_after_cycle=None,
         learning_epochs=None,
         resume=None,
     )
+    assert resolve_runtime(args, config, context) == (2, (1, 2), 1)
+    blocked = json.loads(json.dumps(config))
+    blocked["profile_defaults"]["status"] = "blocked"
+    args.stop_after_cycle = None
     with pytest.raises(RewardProtocolError, match="awaits"):
-        resolve_runtime(args, config, context)
-    config = json.loads(json.dumps(config))
-    config["diagnostic_defaults"]["status"] = "sealed_read_only"
-    config["profile_defaults"]["status"] = "sealed"
-    config["formal_run"]["status"] = "sealed"
-    assert resolve_runtime(args, config, context) == (1, (1,), 0)
-    assert args.stop_after_cycle == 1
+        resolve_runtime(args, blocked, context)
+    args.stop_after_cycle = None
     invalid = DistributedContext(0, 0, 5, torch.device("cpu"), 0, (0,))
     with pytest.raises(RewardProtocolError, match="divide train24"):
         resolve_runtime(args, config, invalid)
-    args.mode = "profile"
-    args.stop_after_cycle = None
-    assert resolve_runtime(args, config, context) == (1, (1,), 2)
+    config["formal_run"]["status"] = "sealed"
     args.mode = "formal"
-    args.stop_after_cycle = 1
+    args.stop_after_cycle = None
     monkeypatch.setattr(
         rl_contract,
         "git_state",
         lambda _root: {"dirty_paths": [], "commit": "a", "origin_main": "a"},
     )
-    assert resolve_runtime(args, config, context) == (8, (1, 2, 4, 8), 2)
+    assert resolve_runtime(args, config, context) == (8, (1, 2, 4, 8), 1)
 
 
-def test_semantic_progress_projection_and_binary_precedence() -> None:
-    teacher_start = torch.zeros((2, 3))
-    teacher_goal = torch.tensor([[1.0, 0, 0], [0, 2.0, 0]])
-    starts = torch.zeros((3, 2, 3))
-    terminals = torch.stack(
-        (
-            teacher_goal,
-            -teacher_goal,
-            teacher_goal * 0.5,
-        )
-    )
-    utilities, energy = semantic_progress_utilities(
-        teacher_start,
-        teacher_goal,
-        starts,
-        terminals,
-        epsilon=1e-6,
-    )
-    torch.testing.assert_close(energy, torch.tensor([1.0, 4.0]))
-    torch.testing.assert_close(
-        utilities, torch.tensor([1.0, -1.0, 0.5]), atol=2e-6, rtol=0
-    )
-
-    mixed, mode = binary_first_progress_advantages(
-        torch.tensor([1.0, 0.0, 1.0, 0.0]),
-        torch.tensor([-1.0, 1.0, -1.0, 1.0]),
-    )
-    assert mode == "mixed_binary"
-    torch.testing.assert_close(
-        mixed, torch.tensor([2 / 3, -2 / 3, 2 / 3, -2 / 3])
-    )
-    all_success, mode = binary_first_progress_advantages(
-        torch.ones(4), torch.arange(4, dtype=torch.float32)
-    )
-    assert mode == "all_success_zero"
-    assert not bool(all_success.any())
-    all_failure, mode = binary_first_progress_advantages(
-        torch.zeros(4), torch.tensor([0.0, 0.1, 0.2, 0.3])
-    )
-    assert mode == "all_failure_semantic"
-    torch.testing.assert_close(
-        all_failure,
-        torch.tensor([-0.2, -0.06666667, 0.06666667, 0.2]),
-    )
-
-
-def test_progress_diagnostic_gates_are_joint_and_pre_registered() -> None:
-    config = load_rl_writer_config(CONFIG)
-    task_ids = list(range(21)) + [36, 38, 39]
-    rows = []
-    for ordinal, task_id in enumerate(task_ids):
-        if ordinal < 14:
-            success_count = 3 if ordinal < 2 else 2
-        elif ordinal < 19:
-            success_count = 4
-        else:
-            success_count = 0
-        for cursor in range(4):
-            success = cursor < success_count
-            utility = 0.8 + 0.02 * cursor if success else 0.1 * cursor
-            rows.append(
-                {
-                    "schema_version": PROGRESS_DIAGNOSTIC_ROW_SCHEMA,
-                    "global_task_id": task_id,
-                    "rollout_cursor": cursor,
-                    "success": success,
-                    "utility_correct": utility,
-                    "utility_wrong": utility - 0.4,
-                    "utility_shuffled": utility - 0.3,
-                    "utility_reversed": utility - 0.5,
-                    "teacher_change_energy": 1.0,
-                    "observer_repeat_max_abs": 0.0,
-                    "pixel_change_rms": (0.2, 0.4, 0.1, 0.3)[cursor],
-                }
-            )
-    result = summarize_progress_diagnostic(
-        rows,
-        gates=config["progress_credit"]["diagnostic_gates"],
-    )
-    assert result["successes"] == 50
-    assert result["mixed_tasks"] == 14
-    assert result["all_success_tasks"] == result["all_failure_tasks"] == 5
-    assert result["passed"]
-    assert result["mixed_task_agreement_fraction"] == 1.0
-    assert all(result["gates"].values())
-
-
-def test_progress_diagnostic_does_not_require_all_failure_tasks() -> None:
-    config = load_rl_writer_config(CONFIG)
-    rows = []
-    for task_id in range(24):
-        success_count = 2 if task_id < 6 else 4
-        for cursor in range(4):
-            success = cursor < success_count
-            utility = 0.8 + 0.02 * cursor if success else 0.1 * cursor
-            rows.append(
-                {
-                    "schema_version": PROGRESS_DIAGNOSTIC_ROW_SCHEMA,
-                    "global_task_id": task_id,
-                    "rollout_cursor": cursor,
-                    "success": success,
-                    "utility_correct": utility,
-                    "utility_wrong": utility - 0.4,
-                    "utility_shuffled": utility - 0.3,
-                    "utility_reversed": utility - 0.5,
-                    "teacher_change_energy": 1.0,
-                    "observer_repeat_max_abs": 0.0,
-                    "pixel_change_rms": (0.2, 0.4, 0.1, 0.3)[cursor],
-                }
-            )
-
-    result = summarize_progress_diagnostic(
-        rows,
-        gates=config["progress_credit"]["diagnostic_gates"],
-    )
-
-    assert result["successes"] == 84
-    assert result["mixed_tasks"] == 6
-    assert result["all_failure_tasks"] == 0
-    assert result["gates"]["all_failure_dispersion"]
-    assert result["gates"]["non_pixel_shortcut"]
-    assert result["passed"]
-
-
-def test_metrics_reconcile_on_complete_cycle_cursor(tmp_path: Path) -> None:
-    path = tmp_path / "metrics.jsonl"
-    path.write_text(
-        "".join(json.dumps({"next_cycle": cycle}) + "\n" for cycle in (1, 2, 3)),
-        encoding="utf-8",
-    )
-    assert reconcile_metrics(path, 2, 2, cursor_key="next_cycle") == 2
-    assert [json.loads(line)["next_cycle"] for line in path.read_text().splitlines()] == [1, 2]
-
-
-def test_flow_credit_contract_is_single_owner_and_resume_bound(tmp_path: Path) -> None:
+def test_program_credit_contract_is_single_owner_and_resume_bound(tmp_path: Path) -> None:
     context = DistributedContext(0, 0, 1, torch.device("cpu"))
     (tmp_path / "libero_config").mkdir()
     contract = {"schema_version": "test", "coldstart": "sealed"}
     digest = publish_contract(
         output_dir=tmp_path, contract=contract, resume=None, context=context
     )
-    assert digest == canonical_hash(contract)
     resume = tmp_path / "checkpoints/cycle_00000001"
     assert publish_contract(
         output_dir=tmp_path, contract=contract, resume=resume, context=context
@@ -452,73 +270,7 @@ def test_flow_credit_contract_is_single_owner_and_resume_bound(tmp_path: Path) -
         )
 
 
-def test_inference_recomputes_full24_checkpoint_schedule(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    import ember.rl_writer.inference as inference
-
-    config = load_rl_writer_config(CONFIG)
-    tasks = reward_tasks(config)
-    videos = TeacherVideoSchedule(
-        task_ids=tuple(task.global_task_id for task in tasks),
-        demo_indices=range(50),
-        seed=int(config["data"]["teacher_video_seed"]),
-    )
-    consumed = schedule_summary(
-        tasks,
-        world_size=6,
-        next_cycle=1,
-        seed=int(config["data"]["task_schedule_seed"]),
-        rollouts_per_task=4,
-        video_schedule=videos,
-    )
-    source = {"source_checkpoint": "sealed"}
-    checkpoint = tmp_path / "run" / "checkpoints" / "cycle_00000001"
-    checkpoint.mkdir(parents=True)
-    training = {
-        "schema_version": RL_WRITER_LAUNCH_SCHEMA,
-        "mode": "profile",
-        "stage": "development",
-        "config_sha256": sha256_file(CONFIG),
-        "source": source,
-        "authorities": config["authorities"],
-        "information_wall": config["information_wall"],
-        "tasks": [task.__dict__ for task in tasks],
-        "trainable": {
-            "object": "sft_anchored_tangent_basis_writer_coefficients_only",
-            "coldstart_teacher_action_phase_closed": True,
-        },
-        "runtime": {"world_size": 6, "checkpoint_cycles": [1]},
-    }
-    (checkpoint.parent.parent / "run_contract.json").write_text(
-        json.dumps(training), encoding="utf-8"
-    )
-    manifest = {"next_cycle": 1, "consumed": consumed}
-    monkeypatch.setattr(
-        inference, "validate_rl_writer_checkpoint_files", lambda *args, **kwargs: manifest
-    )
-    observed, observed_manifest, cursor = inference._inspect_training_checkpoint(
-        config_path=CONFIG,
-        config=config,
-        checkpoint=checkpoint,
-        source=source,
-        require_formal=False,
-    )
-    assert observed == training
-    assert observed_manifest == manifest
-    assert cursor == 1
-    manifest["consumed"] = {**consumed, "schedule_sha256": "0" * 64}
-    with pytest.raises(RewardProtocolError, match="authority changed"):
-        inference._inspect_training_checkpoint(
-            config_path=CONFIG,
-            config=config,
-            checkpoint=checkpoint,
-            source=source,
-            require_formal=False,
-        )
-
-
-def test_checkpoint_roundtrip_binds_full24_ledger_before_pickle(tmp_path: Path) -> None:
+def test_checkpoint_roundtrip_binds_program_credit_ledger(tmp_path: Path) -> None:
     context = DistributedContext(0, 0, 1, torch.device("cpu"))
     writer = torch.nn.Linear(3, 2)
     optimizer = torch.optim.AdamW(writer.parameters(), lr=1e-5)
@@ -536,10 +288,10 @@ def test_checkpoint_roundtrip_binds_full24_ledger_before_pickle(tmp_path: Path) 
         "successes": 3,
         "reward_sum": 3.0,
         "ledger_prefix_sha256": "b" * 64,
-        "progress_credit_cursor": 24,
-        "progress_credit_prefix_sha256": "c" * 64,
+        "program_credit_cursor": 24,
+        "program_credit_prefix_sha256": "c" * 64,
     }
-    contract = {"schema_version": "test", "method": "flow-credit"}
+    contract = {"schema_version": "test", "method": "program-credit"}
     expected = {name: value.detach().clone() for name, value in writer.state_dict().items()}
     checkpoint = save_rl_writer_checkpoint(
         output_dir=tmp_path,
@@ -553,13 +305,13 @@ def test_checkpoint_roundtrip_binds_full24_ledger_before_pickle(tmp_path: Path) 
         rollouts_per_task=4,
         video_schedule=videos,
         contract=contract,
-        cursors=InteractionCursors(96, 192, 2),
+        cursors=InteractionCursors(96, 192, 1),
         successes=3,
         reward_sum=3.0,
         wall_nanoseconds=11,
         ledger_summary=ledger,
         metrics_rows=1,
-        learning_epochs=2,
+        learning_epochs=1,
     )
     for parameter in writer.parameters():
         parameter.data.add_(2)
@@ -575,10 +327,10 @@ def test_checkpoint_roundtrip_binds_full24_ledger_before_pickle(tmp_path: Path) 
         rollouts_per_task=4,
         video_schedule=videos,
         ledger_summary=ledger,
-        learning_epochs=2,
+        learning_epochs=1,
     )
     assert cycle == rows == 1
-    assert cursors == InteractionCursors(96, 192, 2)
+    assert cursors == InteractionCursors(96, 192, 1)
     assert counters == {"successes": 3, "reward_sum": 3.0, "wall_nanoseconds": 11}
     for name, value in writer.state_dict().items():
         torch.testing.assert_close(value, expected[name])

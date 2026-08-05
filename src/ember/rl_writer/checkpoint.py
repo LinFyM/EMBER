@@ -1,4 +1,4 @@
-"""Atomic exact-resume checkpoints for task-relative Flow-Credit Writer."""
+"""Atomic exact-resume checkpoints for antithetic Program-Credit Writer."""
 
 from __future__ import annotations
 
@@ -28,9 +28,9 @@ from ember.writer.as_sampling import TeacherVideoSchedule
 from ember.writer.model import CompleteLoRAWriter
 
 
-RL_WRITER_CHECKPOINT_SCHEMA = "ember_pi05_task_grounded_progress_credit_checkpoint_v1"
-RL_WRITER_TRAINER_SCHEMA = "ember_pi05_task_grounded_progress_credit_trainer_state_v1"
-RL_WRITER_RANK_SCHEMA = "ember_pi05_task_grounded_progress_credit_rank_state_v1"
+RL_WRITER_CHECKPOINT_SCHEMA = "ember_pi05_antithetic_program_credit_checkpoint_v1"
+RL_WRITER_TRAINER_SCHEMA = "ember_pi05_antithetic_program_credit_trainer_state_v1"
+RL_WRITER_RANK_SCHEMA = "ember_pi05_antithetic_program_credit_rank_state_v1"
 
 
 def _rng_state(context: DistributedContext) -> dict[str, Any]:
@@ -81,7 +81,7 @@ def _distributed_error(
     observed = [f"rank {rank}: {value}" for rank, value in enumerate(failures) if value]
     if observed:
         raise RewardProtocolError(
-            f"Flow-Credit checkpoint {phase} failed; " + "; ".join(observed)
+            f"Program-Credit checkpoint {phase} failed; " + "; ".join(observed)
         )
 
 
@@ -126,7 +126,7 @@ def validate_rl_writer_checkpoint_files(
             and list(map(dict, rank_ledgers)) != manifest.get("rank_ledgers")
         )
     ):
-        raise RewardProtocolError("Flow-Credit checkpoint manifest changed")
+        raise RewardProtocolError("Program-Credit checkpoint manifest changed")
     for relative, record in files.items():
         path = checkpoint / relative
         if (
@@ -134,7 +134,7 @@ def validate_rl_writer_checkpoint_files(
             or path.stat().st_size != int(record.get("bytes", -1))
             or sha256_file(path) != record.get("sha256")
         ):
-            raise RewardProtocolError(f"Flow-Credit checkpoint file changed: {relative}")
+            raise RewardProtocolError(f"Program-Credit checkpoint file changed: {relative}")
     return manifest
 
 
@@ -214,7 +214,7 @@ def _publish_checkpoint(
     write_json_atomic(
         output_dir / "latest_checkpoint.json",
         {
-            "schema_version": "ember_pi05_task_grounded_progress_credit_latest_v1",
+            "schema_version": "ember_pi05_antithetic_program_credit_latest_v1",
             "next_cycle": next_cycle,
             "path": str(final),
             "checkpoint_manifest_sha256": sha256_file(
@@ -256,10 +256,10 @@ def save_rl_writer_checkpoint(
         or int(ledger_summary.get("rollout_cursor", -1)) != cursors.rollout
         or int(ledger_summary.get("environment_action_cursor", -1))
         != cursors.environment_actions
-        or int(ledger_summary.get("progress_credit_cursor", -1))
+        or int(ledger_summary.get("program_credit_cursor", -1))
         != next_cycle * per_rank_tasks
     ):
-        raise RewardProtocolError("Flow-Credit checkpoint cursors are inconsistent")
+        raise RewardProtocolError("Program-Credit checkpoint cursors are inconsistent")
     consumed = schedule_summary(
         tasks,
         world_size=context.world_size,
@@ -281,7 +281,7 @@ def save_rl_writer_checkpoint(
     try:
         if context.is_main:
             if final.exists():
-                raise RewardProtocolError(f"Flow-Credit checkpoint exists: {final}")
+                raise RewardProtocolError(f"Program-Credit checkpoint exists: {final}")
             temporary.mkdir(parents=True)
     except Exception as caught:
         error = caught
@@ -376,7 +376,7 @@ def load_rl_writer_checkpoint(
         video_schedule=video_schedule,
     )
     if manifest.get("consumed") != expected_consumed:
-        raise RewardProtocolError("Flow-Credit resume schedule changed")
+        raise RewardProtocolError("Program-Credit resume schedule changed")
     trainer = torch.load(
         checkpoint / "trainer_state.pt", map_location=context.device, weights_only=False
     )
@@ -396,7 +396,7 @@ def load_rl_writer_checkpoint(
         or rank_state.get("ledger_summary") != dict(ledger_summary)
         or checkpoint.name != f"cycle_{next_cycle:08d}"
     ):
-        raise RewardProtocolError("Flow-Credit resume state changed")
+        raise RewardProtocolError("Program-Credit resume state changed")
     values = rank_state["cursors"]
     cursors = InteractionCursors(
         rollout=int(values["rollout_cursor"]),
@@ -411,7 +411,7 @@ def load_rl_writer_checkpoint(
         != int(trainer.get("optimizer_update_cursor", -1))
         or int(trainer.get("metrics_rows", -1)) < 0
     ):
-        raise RewardProtocolError("Flow-Credit resume cursors changed")
+        raise RewardProtocolError("Program-Credit resume cursors changed")
     writer.load_state_dict(
         load_file(str(checkpoint / "writer.safetensors"), device=str(context.device)),
         strict=True,

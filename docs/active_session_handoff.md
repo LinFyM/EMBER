@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：Antithetic Program-Credit设计已封存，尚未实现或launch
+## 0.0 当前状态：Antithetic Program-Credit实现与CPU合同完成，等待A40 profile
 
 - 当前唯一活动authority为
   `docs/action_forecast_writer_antithetic_program_credit_design.md`。Policy-Lane已经证明
@@ -18,9 +18,19 @@
 - 唯一cold start是fresh v6 AS125，而不是v6-fast macro400、Policy-Lane、reward或profile
   权重。formal定义为同一从identity AS125阶段后的直接program-credit阶段；首点cycle1只在
   strict correct400相对AS125净增至少10、breadth不降且至少两suite净增时才可续cycle2。
-- 当前worktree尚未实现该方法，也没有EMBER GPU进程。下一步是恢复v6唯一canonical
-  program/decode接口、原位替换退役RL schema/runtime、完成聚焦CPU合同和独立A40六卡
-  one-cycle profile；profile通过前禁止formal。
+- canonical实现已原位完成：恢复v6唯一Writer并显式拆出`encode_program/decode_program`，
+  删除Policy-Lane model/config/checkpoint family、旧Flow-Credit数学owner和progress
+  diagnostic；canonical RL loop现在只产生两对program扰动、binary-first pair credit和
+  一次direct program backward。ledger/exact-resume绑定实际world size、四个rollout
+  cursor、pair randomness、direction seed与credit identity。
+- 220项带项目正式activation环境的全仓测试全部通过；其中聚焦合同覆盖forward逐tensor
+  等价、seed/credit数学、artifact/randomness cursor分离、上游四block ownership、冻结
+  semantic encoder/FactorHeads、full24多卡分配、NCCL前FileStore ready和完整checkpoint
+  roundtrip。`git diff --check`与py_compile通过，AS125 checkpoint family/60,000 queries/
+  3,000 videos身份已定向确认；尚无本方法GPU结果，也没有EMBER GPU进程。
+- profile config已仅因上述CPU合同seal；formal仍保持blocked。下一步是clean commit/push后
+  live比较`gpu01/gpu02`，选择最多6张空闲A40做独立cycle0→1再resume1→2；profile权重永久
+  弃用，profile通过前禁止formal。
 
 ## 0.1 Policy-Lane正式负裁决
 

@@ -1,4 +1,4 @@
-"""Frozen task-relative Flow-Credit Writer evaluation authority."""
+"""Frozen antithetic Program-Credit Writer evaluation authority."""
 
 from __future__ import annotations
 
@@ -41,7 +41,9 @@ def _inspect_training_checkpoint(
     require_formal: bool,
 ) -> tuple[dict[str, Any], dict[str, Any], int]:
     if checkpoint.parent.name != "checkpoints":
-        raise RewardProtocolError("Flow-Credit checkpoint is outside a training run")
+        raise RewardProtocolError(
+            "Program-Credit checkpoint is outside a training run"
+        )
     training = read_json(checkpoint.parent.parent / "run_contract.json")
     contract_sha = canonical_hash(training)
     world_size = int(training.get("runtime", {}).get("world_size", -1))
@@ -76,7 +78,7 @@ def _inspect_training_checkpoint(
         and [int(row["global_task_id"]) for row in training.get("tasks", [])]
         == task_ids
         and training.get("trainable", {}).get("object")
-        == "sft_anchored_tangent_basis_writer_coefficients_only"
+        == "antithetic_program_credit_writer_upstream_only"
         and training.get("trainable", {}).get("coldstart_teacher_action_phase_closed")
         is True
         and world_size in {1, 2, 3, 4, 6}
@@ -94,7 +96,7 @@ def _inspect_training_checkpoint(
     elif training.get("mode") not in {"profile", "formal"}:
         valid = False
     if not valid:
-        raise RewardProtocolError("Flow-Credit training checkpoint authority changed")
+        raise RewardProtocolError("Program-Credit training checkpoint authority changed")
     return training, manifest, cursor
 
 
@@ -124,7 +126,7 @@ def inspect_rl_writer_evaluation(
     }
     normalized_keys = tuple((str(suite), int(task_id)) for suite, task_id in task_keys)
     if set(normalized_keys) - set(target_by_key):
-        raise RewardProtocolError("Flow-Credit evaluation task is outside target40")
+        raise RewardProtocolError("Program-Credit evaluation task is outside target40")
     roles = {key: str(target_by_key[key]["split_role"]) for key in normalized_keys}
     mapping = task_video_mapping(normalized_keys, roles, video_condition)
     needed = tuple(
@@ -144,7 +146,7 @@ def inspect_rl_writer_evaluation(
         video_data_root, as_config, needed, verify_hashes=False
     )
     if training.get("video_data", {}).get("dataset") != video_data.get("dataset"):
-        raise RewardProtocolError("Flow-Credit checkpoint and video data disagree")
+        raise RewardProtocolError("Program-Credit checkpoint and video data disagree")
     lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
     return build_writer_evaluation_adapter(
         schema_version=RL_WRITER_ADAPTER_SCHEMA,

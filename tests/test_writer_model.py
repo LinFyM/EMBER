@@ -7,13 +7,10 @@ import torch
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer.as_contract import writer_trainable_contract
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
-from ember.writer.policy_lane import (
-    PolicyLaneComposer,
-    PolicyLaneHyperdecoder,
-)
 from ember.writer.temporal import (
     CausalProcedureEncoder,
     LanguageSemanticCore,
+    SlotNormalizedCoreProcedureCompiler,
     TaskGroundedVisualTransitionFusion,
     TaskSelectedSemanticSetFusion,
 )
@@ -148,8 +145,8 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         procedure_heads=8,
         procedure_blocks=2,
         visual_transition_heads=8,
-        policy_coordinate_heads=8,
-        policy_lane_hidden_width=32,
+        fusion_heads=8,
+        factor_hidden_width=256,
         initialization_seed=7,
         activation_checkpointing=True,
     )
@@ -179,9 +176,9 @@ def _inputs() -> tuple[torch.Tensor, ...]:
     return frames, frame_indices, offsets, tokens, masks, task_spans
 
 
-def test_policy_lane_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
+def test_v6_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
     model, _ = _model()
-    assert sum(parameter.numel() for parameter in model.parameters()) == 49_041_664
+    assert sum(parameter.numel() for parameter in model.parameters()) == 10_775_296
     contract = writer_trainable_contract(
         model,
         torch.nn.Identity(),
@@ -189,7 +186,7 @@ def test_policy_lane_writer_parameter_budget_and_fixed_probe_noise_are_exact() -
             Path(__file__).resolve().parents[1] / "configs/pi05_lora_v1.json"
         ),
     )
-    assert contract["parameter_count"] == 49_041_664
+    assert contract["parameter_count"] == 10_775_296
     assert contract["source_policy_trainable_parameter_count"] == 0
     expected = {
         "text_meta_lora": (model.semantic_encoder.text_meta_lora, 921_600),
@@ -214,8 +211,8 @@ def test_policy_lane_writer_parameter_budget_and_fixed_probe_noise_are_exact() -
         ),
         "visual_transition": (model.visual_transition, 197_120),
         "procedure": (model.procedure, 1_573_888),
-        "composer": (model.composer, 660_224),
-        "hyperdecoder": (model.hyperdecoder, 41_320_448),
+        "compiler": (model.compiler, 1_535_232),
+        "factor_heads": (model.factor_heads, 2_179_072),
     }
     assert {
         name: sum(parameter.numel() for parameter in module.parameters())
@@ -226,7 +223,7 @@ def test_policy_lane_writer_parameter_budget_and_fixed_probe_noise_are_exact() -
     assert not model.semantic_encoder.fixed_suffix_noise.requires_grad
 
 
-def test_policy_lane_writer_starts_at_exact_identity_template() -> None:
+def test_v6_writer_starts_at_exact_identity_template() -> None:
     model, template = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     output = model(*_inputs(), policy=torch.nn.Identity())
@@ -237,26 +234,26 @@ def test_policy_lane_writer_starts_at_exact_identity_template() -> None:
         assert torch.equal(value[1], template[name])
 
 
-def test_policy_lane_writer_becomes_video_conditioned_after_b_output_opens() -> None:
+def test_program_encode_decode_is_exact_forward_composition() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
-    torch.nn.init.normal_(model.hyperdecoder.b_output, std=0.01)
+    inputs = _inputs()
+    program = model.encode_program(*inputs, policy=torch.nn.Identity())
+    direct = model.decode_program(program)
+    composed = model(*inputs, policy=torch.nn.Identity())
+    assert program.shape == (2, 320, 256)
+    assert direct.keys() == composed.keys()
+    assert all(torch.equal(direct[name], composed[name]) for name in direct)
+
+
+def test_v6_writer_becomes_video_conditioned_after_heads_open() -> None:
+    model, _ = _model()
+    model.semantic_encoder = _FakeSemanticEncoder()
+    for head in model.factor_heads.values():
+        torch.nn.init.normal_(head.network[-1].weight, std=0.01)
     output = model(*_inputs(), policy=torch.nn.Identity())
     assert any(not torch.equal(value[0], value[1]) for value in output.values())
     assert not hasattr(model, "shared_lora")
-
-
-def _functional_ba_loss(output: dict[str, torch.Tensor]) -> torch.Tensor:
-    result = torch.zeros((), dtype=torch.float32)
-    for name, value_a in output.items():
-        if not name.endswith(".lora_A.default.weight"):
-            continue
-        name_b = name.replace(".lora_A.default.weight", ".lora_B.default.weight")
-        result = result + torch.matmul(
-            output[name_b].to(torch.float32),
-            value_a.to(torch.float32),
-        ).sum()
-    return result
 
 
 def _has_nonzero_gradient(module: torch.nn.Module) -> bool:
@@ -266,62 +263,39 @@ def _has_nonzero_gradient(module: torch.nn.Module) -> bool:
     )
 
 
-def test_policy_lane_functional_gradient_staging_opens_intended_paths() -> None:
+def test_v6_gradient_staging_opens_only_intended_paths() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
 
     first = model(*_inputs(), policy=torch.nn.Identity())
-    _functional_ba_loss(first).backward()
-    assert model.hyperdecoder.b_output.grad is not None
-    assert bool(torch.count_nonzero(model.hyperdecoder.b_output.grad))
-    assert model.hyperdecoder.a_output.grad is None or not bool(
-        torch.count_nonzero(model.hyperdecoder.a_output.grad)
+    sum(value.to(torch.float32).sum() for value in first.values()).backward()
+    assert all(
+        head.network[-1].weight.grad is not None
+        and bool(torch.count_nonzero(head.network[-1].weight.grad))
+        for head in model.factor_heads.values()
     )
-    assert model.hyperdecoder.lane_input.grad is None or not bool(
-        torch.count_nonzero(model.hyperdecoder.lane_input.grad)
+    assert all(
+        parameter.grad is None or not bool(torch.count_nonzero(parameter.grad))
+        for parameter in model.semantic_core.parameters()
     )
-    assert not _has_nonzero_gradient(model.composer)
-    assert not _has_nonzero_gradient(model.semantic_core)
 
     model.zero_grad(set_to_none=True)
-    torch.nn.init.normal_(model.hyperdecoder.b_output, std=0.01)
+    for head in model.factor_heads.values():
+        torch.nn.init.normal_(head.network[-1].weight, std=0.01)
     second = model(*_inputs(), policy=torch.nn.Identity())
-    _functional_ba_loss(second).backward()
-    assert _has_nonzero_gradient(model.composer)
+    sum(value.to(torch.float32).sum() for value in second.values()).backward()
+    assert model.compiler.modulation.weight.grad is not None
+    assert bool(torch.count_nonzero(model.compiler.modulation.weight.grad))
     assert _has_nonzero_gradient(model.semantic_core)
+    assert not _has_nonzero_gradient(model.procedure)
+    assert not _has_nonzero_gradient(model.visual_transition)
+
+    model.zero_grad(set_to_none=True)
+    torch.nn.init.normal_(model.compiler.modulation.weight, std=0.01)
+    third = model(*_inputs(), policy=torch.nn.Identity())
+    sum(value.to(torch.float32).sum() for value in third.values()).backward()
     assert _has_nonzero_gradient(model.procedure)
     assert _has_nonzero_gradient(model.visual_transition)
-    assert model.hyperdecoder.a_output.grad is not None
-    assert bool(torch.count_nonzero(model.hyperdecoder.a_output.grad))
-    assert model.hyperdecoder.lane_input.grad is not None
-    assert bool(torch.count_nonzero(model.hyperdecoder.lane_input.grad))
-
-    model.zero_grad(set_to_none=True)
-    torch.nn.init.normal_(model.hyperdecoder.a_output, std=0.01)
-    third = model(*_inputs(), policy=torch.nn.Identity())
-    _functional_ba_loss(third).backward()
-    assert model.composer.lane_queries.grad is not None
-    assert bool(torch.count_nonzero(model.composer.lane_queries.grad))
-
-
-def test_policy_lane_hyperdecoder_slices_all_target_shapes() -> None:
-    decoder = PolicyLaneHyperdecoder(
-        target_widths=((5, 7), (3, 11)),
-        rank=2,
-        condition_width=6,
-        hidden_width=4,
-        initialization_seed=7,
-    )
-    with torch.no_grad():
-        torch.nn.init.normal_(decoder.a_output)
-        torch.nn.init.normal_(decoder.b_output)
-    states = decoder(torch.randn(3, 2, 6))
-    assert [tuple(value.shape) for pair in states for value in pair] == [
-        (3, 2, 5),
-        (3, 7, 2),
-        (3, 2, 3),
-        (3, 11, 2),
-    ]
 
 
 def test_task_queried_patch_grounding_uses_patch_content_without_order_geometry() -> None:
@@ -459,19 +433,56 @@ def test_causal_procedure_preserves_prefix_and_uses_order() -> None:
     assert not torch.allclose(baseline, reverse)
 
 
-def test_policy_lane_composer_is_conditioned_and_finite() -> None:
-    torch.manual_seed(29)
-    composer = PolicyLaneComposer(
+def test_routing_and_positions_cannot_create_lora_content_from_zero_values() -> None:
+    compiler = SlotNormalizedCoreProcedureCompiler(
         width=32,
         heads=4,
-        rank=4,
         initialization_seed=7,
     )
-    core = torch.randn(2, 9, 32)
-    procedure = torch.randn(2, 5, 32)
-    valid_core = torch.ones(2, 9, dtype=torch.bool)
+    core = torch.zeros(2, 7, 32)
+    procedure = torch.zeros(2, 5, 32)
+    valid_core = torch.ones(2, 7, dtype=torch.bool)
     valid_procedure = torch.ones(2, 5, dtype=torch.bool)
-    lanes = composer(core, valid_core, procedure, valid_procedure)
-    assert lanes.shape == (2, 4, 32)
-    assert torch.isfinite(lanes).all()
-    assert not torch.equal(lanes[0], lanes[1])
+    positions = torch.tensor([[0, 5, 10, 15, 20], [0, 3, 8, 13, 21]])
+    output = compiler(
+        core,
+        valid_core,
+        procedure,
+        positions,
+        valid_procedure,
+    )
+    assert all(torch.count_nonzero(value) == 0 for value in output)
+
+
+def test_procedure_modulation_is_zero_at_init_then_order_sensitive_when_opened() -> None:
+    torch.manual_seed(29)
+    compiler = SlotNormalizedCoreProcedureCompiler(
+        width=32,
+        heads=4,
+        initialization_seed=7,
+    )
+    core = torch.randn(1, 9, 32)
+    valid_core = torch.ones(1, 9, dtype=torch.bool)
+    procedure = torch.randn(1, 5, 32)
+    positions = torch.arange(5)[None]
+    valid_procedure = torch.ones(1, 5, dtype=torch.bool)
+    baseline = compiler(
+        core, valid_core, procedure, positions, valid_procedure
+    )
+    reversed_at_init = compiler(
+        core, valid_core, procedure.flip(1), positions, valid_procedure
+    )
+    assert all(
+        torch.equal(left, right)
+        for left, right in zip(baseline, reversed_at_init, strict=True)
+    )
+
+    torch.nn.init.normal_(compiler.modulation.weight, std=0.01)
+    normal = compiler(core, valid_core, procedure, positions, valid_procedure)
+    reverse = compiler(
+        core, valid_core, procedure.flip(1), positions, valid_procedure
+    )
+    assert any(
+        not torch.allclose(left, right)
+        for left, right in zip(normal, reverse, strict=True)
+    )

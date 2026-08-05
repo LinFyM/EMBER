@@ -1,4 +1,4 @@
-"""Frozen AS125 semantic observer shared by diagnostic and Writer credit."""
+"""Frozen AS125 semantic observer for Program-Credit failure-pair ties."""
 
 from __future__ import annotations
 

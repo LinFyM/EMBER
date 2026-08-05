@@ -19,9 +19,10 @@ runner、split、路径或 GPU 权限。
 - [x] live比较`gpu01/gpu02`后用`gpu01:1,2,3,4,5,7`的3+3 NUMA六卡完成最长105-frame、
   logical B20、microbatch2三步profile；独立fresh0→1→exact-resume1→3在补齐新family的
   optimizer restore ownership后通过，1,440 queries/72 videos、六rank状态与五block可达。
-- [ ] profile证据已seal；待当前修复/authority clean commit/push后，从独立fresh root完成0→200；strict correct400
-  评测50/100/150/200并做winner内部condition→atom→BA/action与视频特异性分析，再裁决
-  是否exact-resume200→400。
+- [x] profile证据seal后从独立fresh root完成0→200：200 macros、96,000 queries、4,800
+  one-video conditions、every25共8个完整checkpoint；0 OOM/clip/nonfinite，validation/test
+  action reads均为0。下一步strict correct400评测50/100/150/200并做winner内部
+  condition→atom→BA/action与视频特异性分析，再裁决是否exact-resume200→400。
 
 ### fresh0→200 formal launch contract
 
@@ -43,6 +44,18 @@ runner、split、路径或 GPU 权限。
 ```bash
 env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1,2,3,4,5,7 NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_as_writer.py --config configs/pi05_as_writer_policy_wide_atom_dictionary_bci_v1.json --mode formal --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir runs/outputs/pi05_as_writer_policy_wide_atom_dictionary_formal_fresh0_200_r6_20260805 --stop-after-step 200 --num-workers 0 --log-every 1 --skip-data-sha
 ```
+
+### correct400 rollout launch contract
+
+- 固定四点`50/100/150/200`，不得按中途结果替换；每点8 validation tasks × 50 sealed
+  init states，correct video without-replacement，state/video ordinal/policy RNG严格配对。
+- live preflight选择`gpu01:0,1,2`与`gpu01:3,4,5`两组三卡；`gpu01:6`为他人进程，
+  不接触。第一波并行50/100，完成释放后第二波并行150/200，跨节点总使用始终为6卡。
+- evaluator固定formal、50 states、3 replicas/GPU、3 Writer generators/GPU、generation
+  batch4；source policy/tokenizer/data/config与训练contract一致。结果选择只认single
+  checkpoint correct、breadth和严格配对换手，不用functional loss。
+- output roots统一为
+  `runs/outputs/pi05_as_writer_policy_wide_atom_dictionary_bci_correct400_noreplacement_seed7_macro{0050,0100,0150,0200}_69563a0_20260805`。
 
 ## 已完成的SFT-Anchored Policy Tangent-Basis消融（2026-08-05）
 

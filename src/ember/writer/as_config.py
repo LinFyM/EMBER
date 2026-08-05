@@ -137,7 +137,8 @@ def _validate_data(config: Mapping[str, Any]) -> None:
             "deterministic within-stratum jitter"
         ),
         "video_action_pairing": (
-            "four teacher episodes excluded from the complete task-local action batch"
+            "action batch fixed first then four teacher episodes selected from "
+            "its exact complement"
         ),
         "writer_generation_reuse": (
             "generate one joint K4 LoRA once then reuse it across the complete "

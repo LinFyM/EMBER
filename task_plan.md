@@ -8,7 +8,23 @@
 `docs/a100_to_bci_migration_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
 runner、split、路径或 GPU 权限。
 
-## 当前Few-Shot Invariant-Program M2P推进（2026-08-06）
+## 当前K4 Policy-Layer Trace M2P推进（2026-08-06）
+
+- [x] 按K4内部证据与SHINE/Doc-to-LoRA的结构原则封存
+  `docs/action_forecast_writer_k4_layer_trace_m2p_design.md`。保持四条action-hidden视频联合
+  生成一套LoRA，改为读取冻结PI05 action expert的20组all-layer video innovation，以
+  layer×parameter-slot双轴M2P直接生成完整public LoRA；不走language-only value旁路，
+  不在未解决policy拓扑对齐前直接复制多expert。
+- [ ] 原位替换旧final-layer随机128维descriptor、32×256 invariant program和608-token
+  通用decoder；同步唯一architecture/config/checkpoint/task-gradient/test owner，删除活动
+  executable旧K4 path并拒载旧family。
+- [ ] 完成聚焦CPU合同与A40 longest105 K4/B20/B2 fresh0→1、exact-resume1→3 profile；只在
+  live最多6张空闲卡、3+3 NUMA、显式`NCCL_P2P_DISABLE=1`下运行，profile权重永久弃用。
+- [ ] 从functional identity fresh0→200，strict correct400固定评50/100/150/200；按
+  layer trace、reader、axis M2P、BA/action leverage、task-gradient coexistence与闭环换手的
+  最早失效接口分析并继续迭代，single checkpoint必须严格`>150`且继续尽可能提高。
+
+## 已完成的Few-Shot Invariant-Program M2P（2026-08-06）
 
 - [x] owner明确指出EMBER不能忽略视频，并允许在根因需要时从one-shot切换few-shot。完成
   `docs/action_forecast_writer_fewshot_invariant_m2p_design.md`：exact language + K4条
@@ -40,10 +56,9 @@ runner、split、路径或 GPU 权限。
 - [x] 按最早接口裁决K4：descriptor/invariant/M2P/policy leverage均通过，剩余失败定位为
   condition-specific credit在共享Writer参数中的coexistence；禁止续同一schedule、warm-start、
   loss挑点或退回one-shot/video忽略。
-- [ ] 下一轮只保留K4 video-owned single-LoRA合同，并从condition-specific parameter
-  coexistence重构；不得默认增加K、
-  rank、scale、store或训练时长。single-checkpoint strict correct400必须严格`>150`，达到后
-  继续尽可能提高absolute、breadth、稳定积累与视频因果性。
+- [x] 下一轮保留K4 video-owned single-LoRA合同，并先修复frozen policy layer与public LoRA
+  topology未对齐的更早接口；只有layer-aligned结果仍显示分组task-gradient抵消时，才依据
+  证据打开稀疏共享或experts。
 
 ### K4 M2P fresh formal0→200 launch合同（2026-08-06）
 

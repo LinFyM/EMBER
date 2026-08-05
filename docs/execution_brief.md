@@ -4,7 +4,20 @@
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
-## 0.0 最新执行覆盖：K4 Writer四点与内部裁决完成
+## 0.0 最新执行覆盖：K4 Policy-Layer Trace M2P待原位实现
+
+- 当前唯一活动authority为
+  `docs/action_forecast_writer_k4_layer_trace_m2p_design.md`。新canonical必须保留exact language
+  + K4 action-hidden videos联合生成一套LoRA，但用冻结PI05的20组all-layer traces与
+  `20×68×1024` layer/parameter-slot M2P取代旧final-layer随机128维descriptor和通用608-token
+  decoder；zero-video必须严格identity，禁止language-only value bypass。
+- 旧K4 config/checkpoint只作历史证据，不得resume或warm-start。实现必须原位替换唯一model、
+  config、checkpoint family与task-gradient owner，不保留并行expert/旧K4 executable path。
+- 实现通过聚焦CPU合同后，先live比较`gpu01/gpu02`并在最多6张空闲A40、3+3 NUMA、显式
+  `NCCL_P2P_DISABLE=1`下做longest105 K4/B20/B2 fresh0→1与exact-resume1→3 profile；profile
+  权重弃用。profile通过才建立fresh formal0→200 launch contract。
+
+## 0.1 已完成：K4 Writer四点与内部裁决
 
 - 当前唯一活动config为`configs/pi05_as_writer_k4_invariant_m2p_bci_v1.json`，authority为
   `docs/action_forecast_writer_fewshot_invariant_m2p_design.md`。它必须从functional identity

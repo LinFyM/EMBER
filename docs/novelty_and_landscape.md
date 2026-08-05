@@ -1,5 +1,18 @@
 # Novelty and Baseline Landscape
 
+## 2026-08-06 当前layer-aligned hypernetwork定位
+
+当前活动Writer保持exact task language + K4 action-hidden videos联合生成一套LoRA。它借鉴
+SHINE从冻结backbone全部layer memory进行layer/token交替M2P，以及Doc-to-LoRA显式组织
+layer/module/rank输出的原则，但不复制document reconstruction、文本任务或监督专用loss。
+EMBER的差异在于：输入仍是机器人teacher videos，video trace来自冻结PI05 action expert的
+真实层级；输出是38个public targets的完整rank16 LoRA；训练先使用同一PI05 functional
+cotangent，未来可原样替换为rollout reward credit。
+
+该设计不是为了做漂亮的LoRA谱。它检验semantic-to-parameter alignment是否是K4表示已经
+有效、但24-task共享梯度仍近正交抵消的最早结构接口。若失败，只有在layer/group级证据仍
+显示coexistence冲突时才打开sparse experts，而不是预先用大容量掩盖未对齐表示。
+
 ## EMBER 的核心问题
 
 直接target action-SFT很强，但要求目标机器人轨迹。EMBER研究的是：一个在独立source corpus上获得基本embodiment能力的VLA，能否在held task只看一条action-hidden teaching video，就生成比无视频source adaptation更有用的task LoRA；如果环境practice继续放大差异，再增加reward-adaptation claim。

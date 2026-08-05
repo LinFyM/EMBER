@@ -6,6 +6,19 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-06 从final-layer通用M2P转向policy-layer trace M2P
+
+- K4上一轮已经证明video-common representation、顺序反事实和高增益LoRA有效，因此下一版
+  不能忽略视频或退回language-only route。新的根因假设更早：旧descriptor把PI05 final
+  hidden固定随机压到128维，再让24 tasks上fresh的256维M2P重建38-target policy topology，
+  condition credit的共享抵消可能部分来自semantic-to-parameter alignment缺失。
+- 参考SHINE的all-layer memory与layer/token交替M2P、Doc-to-LoRA的显式layer/module/rank输出
+  组织，新设计直接提取冻结PI05 action expert 20组baseline-subtracted video traces，以K4×16
+  temporal tokens读取`20×68×1024`memory，并按layer/parameter slot双轴通信后直接reshape
+  public LoRA。训练objective、信息墙与未来reward接口不变，不引入监督专用auxiliary loss。
+- 暂不直接复制8个完整experts，因为这会把同一未对齐输入分桶并引入约2.5亿fresh参数；若
+  layer-aligned方法仍在group-wise梯度上接近1/24抵消，再以该证据设计稀疏共享。
+
 ## 2026-08-06 K4四点与内部裁决：视频共同程序成立，shared credit仍近正交抵消
 
 - strict correct400曲线=`70/94/99/108`、breadth=`6/6/6/7`；相邻gained/lost=

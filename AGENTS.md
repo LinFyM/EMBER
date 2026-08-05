@@ -146,12 +146,13 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 36. `docs/action_forecast_writer_antithetic_program_credit_design.md`
 37. `docs/action_forecast_writer_factorized_condition_kernel_memory_design.md`
 38. `docs/action_forecast_writer_fewshot_invariant_m2p_design.md`
-39. `task_plan.md`
-40. `findings.md`
-41. `progress.md`
-42. `docs/concept.md`
-43. `docs/decisions_and_open_questions.md`
-44. `docs/novelty_and_landscape.md`
+39. `docs/action_forecast_writer_k4_layer_trace_m2p_design.md`
+40. `task_plan.md`
+41. `findings.md`
+42. `progress.md`
+43. `docs/concept.md`
+44. `docs/decisions_and_open_questions.md`
+45. `docs/novelty_and_landscape.md`
 
 本post-seal分支已完成Target-Bound裁决并打开Semantic Factor-Basis；修改或运行前
 仍必须完整阅读Target-Bound与Semantic Factor-Basis两份design。历史CV/Target-Bound
@@ -162,14 +163,19 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 
 ## Current focused task
 
-- 2026-08-06 owner已恢复持续推进并明确允许从one-shot切换到few-shot。当前唯一活动方法为
-  `docs/action_forecast_writer_fewshot_invariant_m2p_design.md`：每个task visit联合读取
-  K=4条action-hidden same-task videos，以video-value-only跨视频invariant program和
-  608个target/layer/rank tokens的policy-wide M2P生成一套完整rank16 LoRA。禁止逐视频
-  LoRA平均/挑选、language-only value bypass、generic-language contrast、旧store/kernel/
-  atom/head路径或历史checkpoint warm-start。上一轮Condition-Kernel及更早方法均只保留为
-  负结果。实现、profile、fresh formal、strict rollout和内部分析完成前不得把few-shot
-  写成有效；长期single-checkpoint strict correct400 `>150`目标不变。
+- 2026-08-06当前唯一活动方法为
+  `docs/action_forecast_writer_k4_layer_trace_m2p_design.md`：保持exact task language与K=4条
+  action-hidden same-task videos联合生成一套LoRA，但不再把PI05 final hidden随机压到128维
+  后让fresh通用M2P猜policy拓扑。新方法读取冻结PI05 action expert的20组all-layer trace，
+  对每组形成K4×16 temporal tokens，再以layer/parameter-slot双轴M2P直接reshape完整rank16
+  public LoRA。禁止language-only value bypass、逐视频LoRA平均/挑选、历史Writer warm-start、
+  未经证据直接复制多expert或恢复旧store/kernel/atom/head路径；长期single-checkpoint
+  strict correct400 `>150`目标不变。
+- Few-Shot Invariant-Program M2P已完成fresh0→200、四点strict rollout与macro200全部内部
+  分析：correct=`70/94/99/108`、breadth=`6/6/6/7`。K4置换、zero-video identity、
+  same-task/LOO/wrong/order到Program→BA→action路径和高增益LoRA均成立，证明它没有忽略视频；
+  但最后50步full24 gradient retention仅`.04326`，共享Writer credit近1/24正交抵消。
+  旧K4不续训、不warm-start、不用loss挑点；其正机制作为新layer-trace方法必须保留的合同。
 - 先前“讨论期间暂停新实验”的边界已由上述owner授权解除。Condition-Kernel已经完成
   全部formal/rollout/internal并作负裁决，不再是可续训活动root；其结果只作为few-shot
   设计的低增益decoder与condition-credit证据。

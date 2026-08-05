@@ -4,7 +4,26 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0. 最新覆盖：K4 Invariant-Program M2P四点与内部裁决完成
+## 0. 最新覆盖：K4 Policy-Layer Trace M2P设计打开
+
+- 当前唯一活动authority为
+  `docs/action_forecast_writer_k4_layer_trace_m2p_design.md`。它保留exact task language与K4
+  action-hidden same-task videos联合生成一套LoRA，不忽略视频；但用冻结PI05 action expert的
+  action-in、18层pre-q/v normalized hidden和action-out共20组video innovation取代旧final
+  hidden固定随机128维压缩。
+- 每条视频在每个policy group形成16个DCT-II temporal tokens，K4为每组64 tokens；20组
+  layer-matched reader输出`20×68×1024`memory，再用两次column/row交替M2P直接reshape 38个
+  public targets的完整rank16 A/B。Q/K可用group/slot/temporal address，V只来自减去no-image
+  baseline的视频trace；zero video必须严格回到identity。
+- 选择该设计而不是立即复制8个完整experts：旧K4先把3072维最终层信号随机压到128维，再让
+  仅在24 tasks上fresh训练的256维decoder猜PI05层级拓扑。直接专家化会分桶同一未对齐表示并
+  扩大到约2.5亿fresh参数。只有layer-aligned版本仍实证group-wise credit抵消，才打开稀疏
+  共享/experts。
+- 新方法从functional identity fresh训练，保持24×B20 full24 equal、信息墙、source freeze、
+  K4部署接口和未来RL兼容；不加SFT reconstruction/rank/contrastive auxiliary loss，不加载
+  历史Writer。下一步是原位实现、聚焦CPU合同、A40 profile、fresh formal与预注册四点裁决。
+
+## 0.1 已完成：K4 Invariant-Program M2P四点与内部裁决
 
 - owner已解除讨论暂停、恢复自主持续推进，并明确EMBER不能忽略视频；允许few-shot。
   当前唯一活动authority为

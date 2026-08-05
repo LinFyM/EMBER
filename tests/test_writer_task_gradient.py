@@ -19,11 +19,11 @@ from ember.writer.task_gradient import (
 def _layout(parameter: torch.nn.Parameter) -> tuple[FlatParameter, ...]:
     return (
         FlatParameter(
-            name="policy_atoms.test",
+            name="hyperdecoder.test",
             parameter=parameter,
             start=0,
             stop=parameter.numel(),
-            block="policy_atom",
+            block="policy_lane",
         ),
     )
 
@@ -44,14 +44,14 @@ def test_parameter_layout_owns_exact_cvadr_blocks() -> None:
     writer.visual_transition = torch.nn.Linear(1, 1)
     writer.procedure = torch.nn.Linear(1, 1)
     writer.composer = torch.nn.Linear(1, 1)
-    writer.policy_atoms = torch.nn.Linear(1, 1)
+    writer.hyperdecoder = torch.nn.Linear(1, 1)
     layout = parameter_layout(writer)
     assert {item.block for item in layout} == {
         "semantic_frontend",
         "core",
         "program",
         "composer",
-        "policy_atom",
+        "policy_lane",
     }
 
 
@@ -91,17 +91,17 @@ def test_gradient_direction_sketch_is_fixed_and_sign_sensitive() -> None:
         gradients,
         _layout(parameter),
         dimensions=8,
-    )["policy_atom"]
+    )["policy_lane"]
     second = gradient_direction_sketches(
         gradients,
         _layout(parameter),
         dimensions=8,
-    )["policy_atom"]
+    )["policy_lane"]
     reversed_direction = gradient_direction_sketches(
         -gradients,
         _layout(parameter),
         dimensions=8,
-    )["policy_atom"]
+    )["policy_lane"]
     assert torch.equal(first, second)
     assert torch.equal(reversed_direction, -first)
     assert first.shape == (2, 8)

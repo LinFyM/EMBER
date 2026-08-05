@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 
-POLICY_WIDE_ATOM_WRITER_PARAMETER_COUNT = 13_033_728
+POLICY_LANE_WRITER_PARAMETER_COUNT = 49_041_664
 
 LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
     {
@@ -25,7 +25,7 @@ LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
         "procedure_blocks",
         "visual_transition_heads",
         "policy_coordinate_heads",
-        "policy_atom_count",
+        "policy_lane_hidden_width",
         "initialization_seed",
         "activation_checkpointing",
     }
@@ -47,7 +47,7 @@ WRITER_DIMENSION_CONTRACT = {
     "procedure_blocks": 2,
     "visual_transition_heads": 8,
     "policy_coordinate_heads": 8,
-    "policy_atom_count": 64,
+    "policy_lane_hidden_width": 32,
 }
 
 _STATIC_WRITER_CONTRACT: dict[str, Any] = {
@@ -170,33 +170,29 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "initialization_seed": 7,
 }
 
-_POLICY_WIDE_ATOM_WRITER_CONTRACT = {
+_POLICY_LANE_WRITER_CONTRACT = {
     **_STATIC_WRITER_CONTRACT,
-    "architecture": "pi05_policy_wide_atom_dictionary_writer_v1",
-    "policy_coordinate_count": 16,
-    "policy_atom_count": 64,
-    "policy_atom_scope": (
-        "one_shared_atom_index_spans_all_38_policy_targets"
-    ),
-    "policy_atom_storage": (
-        "target_private_a_and_b_vectors_with_shared_policy_atom_index"
-    ),
+    "architecture": "pi05_policy_lane_coupled_hyperdecoder_writer_v1",
+    "policy_lane_count": 16,
+    "policy_lane_hidden_width": 32,
     "policy_coordinate_core_read": (
-        "16_queries_read_raw_semantic_core_with_independent_attention"
+        "16_lane_queries_read_raw_semantic_core_with_independent_attention"
     ),
     "policy_coordinate_procedure_read": (
-        "core_conditioned_queries_read_raw_causal_procedure_with_independent_attention"
+        "core_conditioned_lane_queries_read_raw_causal_procedure"
     ),
-    "policy_atom_mixing": (
-        "separate_signed_rank16_by_atom64_a_and_b_dot_product_matrices"
+    "policy_lane_storage": (
+        "each_public_lane_owns_one_condition_to_complete_38_target_a_b_decoder"
     ),
-    "public_lora_a": "sealed_template_plus_m_a_times_zero_initialized_a_atoms",
-    "public_lora_b": "zero_initialized_b_atoms_times_m_b_transpose",
+    "policy_lane_coupling": (
+        "one_shared_hidden_per_lane_drives_both_a_and_b_across_all_targets"
+    ),
+    "public_lora_a": "sealed_template_plus_zero_initialized_lane_a_output",
+    "public_lora_b": "zero_initialized_lane_b_output",
     "policy_coordinate_heads": 8,
-    "dictionary_softmax": False,
-    "dictionary_top_k": False,
-    "dictionary_task_ids": False,
-    "dictionary_initialization": "all_a_and_b_atoms_exact_zero",
+    "policy_lane_task_ids": False,
+    "policy_lane_scalar_gate": False,
+    "policy_lane_output_initialization": "all_a_and_b_final_outputs_exact_zero",
 }
 for _retired_key in (
     "query_count",
@@ -211,7 +207,7 @@ for _retired_key in (
     "factor_head_bias",
     "factor_hidden_width",
 ):
-    _POLICY_WIDE_ATOM_WRITER_CONTRACT.pop(_retired_key)
+    _POLICY_LANE_WRITER_CONTRACT.pop(_retired_key)
 
 
 def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
@@ -220,8 +216,8 @@ def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
     architecture = writer.get("architecture")
     if architecture == _STATIC_WRITER_CONTRACT["architecture"]:
         static = _STATIC_WRITER_CONTRACT
-    elif architecture == _POLICY_WIDE_ATOM_WRITER_CONTRACT["architecture"]:
-        static = _POLICY_WIDE_ATOM_WRITER_CONTRACT
+    elif architecture == _POLICY_LANE_WRITER_CONTRACT["architecture"]:
+        static = _POLICY_LANE_WRITER_CONTRACT
     else:
         raise ValueError(f"unsupported EMBER Writer architecture: {architecture}")
 

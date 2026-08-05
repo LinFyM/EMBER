@@ -41,9 +41,9 @@ AS_CONFIG = (
     ROOT
     / "configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json"
 )
-POLICY_WIDE_ATOM_CONFIG = (
+POLICY_LANE_CONFIG = (
     ROOT
-    / "configs/pi05_as_writer_policy_wide_atom_dictionary_bci_v1.json"
+    / "configs/pi05_as_writer_policy_lane_hyperdecoder_bci_v1.json"
 )
 
 
@@ -58,10 +58,10 @@ def test_v6_relative_flow_coldstart_uses_fresh_incompatible_checkpoint_family() 
         _state_schemas(1, "cvadr_task_query_keyed_rawfull24_v1")
 
 
-def test_policy_wide_atom_checkpoint_family_restores_rawfull24_optimizer() -> None:
-    config = load_writer_config(POLICY_WIDE_ATOM_CONFIG)
+def test_policy_lane_checkpoint_family_restores_rawfull24_optimizer() -> None:
+    config = load_writer_config(POLICY_LANE_CONFIG)
     family = checkpoint_state_family(config)
-    assert family == "policy_wide_atom_task_query_keyed_rawfull24_v1"
+    assert family == "policy_lane_task_query_keyed_rawfull24_v1"
 
     parameter = torch.nn.Parameter(torch.ones(()))
     optimizer = torch.optim.AdamW(

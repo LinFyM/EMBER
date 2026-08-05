@@ -15,10 +15,12 @@
   约`1.000002`、effective LoRA约`1.0000002`、q/v B-column cosine约`.999998`；禁止resume
   400、增加K、调scale或用谱loss救活。精确formal/eval/internal roots取handoff顶部与PWAD
   design第11节。
-- 新architecture当前只完成design authority，尚未实现、profile或启动GPU。下一操作是原位
-  替换canonical runtime、建立新config/checkpoint family、完成聚焦CPU合同，然后live
-  preflight并跑六卡longest105/logical-B20三步profile与独立exact-resume。profile通过前
-  formal必须blocked，任何PWAD/profile/smoke权重不得进入新方法。
+- 新architecture已原位实现：删除旧`policy_dictionary.py`，新增`policy_lane.py`并切换
+  model/config/launch/checkpoint/task-gradient/internal-analysis owners。完整Writer参数
+  `49,041,664`，聚焦Writer合同`84 passed`，architecture guard无hard或parallel family。
+  尚未profile或启动GPU；下一操作是live preflight并跑六卡longest105/logical-B20三步
+  profile与独立exact-resume。profile通过前formal必须blocked，任何PWAD/profile/smoke
+  权重不得进入新方法。
 - SFT-Anchored Tangent-Basis正式消融已结束并负裁决，不再是活动训练轴。clean`059d40f`
   从历史v6-fast macro400=`143/400` warm-start完成formal cycle0→1与strict correct400；
   cycle1=`142`、breadth`7`，相对baseline gained/lost=`20/21`、intersection/union=

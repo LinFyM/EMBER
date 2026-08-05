@@ -167,3 +167,21 @@ effective BA谱、B-column关系、same-task video与fixed-action传递。
 - 若输出仍由task/common condition主导且视频差异继续衰减，下一步重做condition
   composer的语义拥有权，而不是增加lane hidden width；
 - 若曲线未超过PWAD且能力继续换手，fresh0→200即负裁决，不续400。
+
+## 9. 当前实现状态（2026-08-05）
+
+canonical PWAD runtime已原位替换：`policy_dictionary.py`删除，新增凝聚的
+`policy_lane.py`；model、architecture、config、launch/checkpoint family、task-gradient
+ownership与内部analysis均切换到新方法，旧PWAD checkpoint/config不再被活动loader接受。
+没有保留双路Writer。
+
+真实38-target topology给出每lane A/B总输出宽度`37,920/42,528`。16 lanes×hidden32的
+hyperdecoder为`41,320,448`参数，composer为`660,224`，完整Writer为`49,041,664`；参数增长
+全部对应policy-lane condition-to-output容量，没有新增loss、输入或训练分支。
+
+聚焦Writer合同`84 passed`，覆盖完整参数枚举、source freeze、38-target slicing、step0
+exact identity、condition写出、真实BA梯度阶段、新config/launch/checkpoint family、task
+gradient ownership与lane analysis summary。py_compile与diff check通过；architecture guard
+无hard violation、无parallel version/function family。formal config保持
+`blocked_until_live_profile`，下一边界是live双节点preflight后的六卡A40 profile与独立
+exact-resume，当前没有GPU结果。

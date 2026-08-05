@@ -1,10 +1,10 @@
 {
-  "schema_version": "ember_pi05_policy_wide_atom_dictionary_recipe_overlay_v1",
+  "schema_version": "ember_pi05_policy_lane_coupled_hyperdecoder_recipe_overlay_v1",
   "base_config": "configs/pi05_as_writer_semantic_factor_basis_full24_decay400_bci_a40_v1.json",
   "base_sha256": "4648192c1c9709556cd475ed1692759cddc1e174cd568506f2cee5878c69fddd",
   "replace": {
     "writer": {
-      "architecture": "pi05_policy_wide_atom_dictionary_writer_v1",
+      "architecture": "pi05_policy_lane_coupled_hyperdecoder_writer_v1",
       "frame_stride": 5,
       "max_frames_per_encoder_call": 16
     },
@@ -42,13 +42,13 @@
       "task_loss_scale_before_backward": "per_task_unscaled_then_exact_raw_full24_mean",
       "ddp_gradient_sync": "none_during_task_gradients_then_bounded_parameter_chunk_allgathers_for_exact_raw_full24_mean_and_read_only_grams",
       "gradient_composition": "exact_raw_equal_weight_full24_mean_without_projection",
-      "single_video_gradient_direction_diagnostic": "fixed_countsketch_32_per_task_per_semantic_frontend_core_program_composer_policy_atom_block",
+      "single_video_gradient_direction_diagnostic": "fixed_countsketch_32_per_task_per_semantic_frontend_core_program_composer_policy_lane_block",
       "optimizer_steps_per_macro_update": 1,
       "checkpoint_boundary": "complete_macro_optimizer_update_only",
       "normal_loss_weight": 1
     },
     "optimization": {
-      "method": "functional_pi05_policy_wide_atom_dictionary_raw_full24_positive_only",
+      "method": "functional_pi05_policy_lane_coupled_hyperdecoder_raw_full24_positive_only",
       "seed": 7,
       "precision": "bfloat16",
       "source_policy": "final formal frozen raw policy",
@@ -82,10 +82,10 @@
       "optimizer_diagnostics": "per_owned_block_moment_parameter_and_actual_update_l2",
       "functional_policy_microbatch_size": 2,
       "maximum_formal_wall_clock_minutes": 190,
-      "budget_role": "fresh_policy_wide_atom_dictionary_full24_bci_a40_logical_b20_policy_microbatch2"
+      "budget_role": "fresh_policy_lane_coupled_hyperdecoder_full24_bci_a40_logical_b20_policy_microbatch2"
     },
     "profile_defaults": {
-      "status": "sealed_bci_a40_46g_r6_policy_wide_atom_dictionary_profile",
+      "status": "pending_live_bci_a40_46g_r6_policy_lane_profile",
       "expected_world_size": 6,
       "total_steps": 3,
       "per_rank_batch_size": 20,
@@ -93,7 +93,7 @@
       "selected_stop_step": 3
     },
     "profile_evidence": {
-      "status": "sealed_live_bci_a40_46g_r6_policy_wide_atom_dictionary_profile",
+      "status": "pending_live_bci_a40_46g_r6_policy_lane_profile",
       "fixed_frame_stride": 5,
       "teacher_videos_per_task_visit": 1,
       "tasks_per_rank_per_optimizer_update": 4,
@@ -112,57 +112,18 @@
         "functional_policy_microbatch_size": 1
       },
       "selection_rule": "preserve logical independent B20 and full24 raw mean; reduce only physical frame or policy microbatch on measured OOM",
-      "selected": {
-        "max_frames_per_encoder_call": 16,
-        "per_task_action_batch_size": 20,
-        "functional_policy_microbatch_size": 2,
-        "world_size": 6,
-        "profile_root": "runs/outputs/pi05_as_writer_policy_wide_atom_dictionary_profile_r6_60e45f8_20260805",
-        "contract_sha256": "e59003d6ee5595ad898de7f1bc47bd4b03927733cb9c46c7b69273621e605ca6",
-        "step_seconds_max": [32.860186869002064, 30.4177686740004, 30.40400270200189],
-        "peak_allocated_bytes": 35024829440,
-        "peak_reserved_bytes": 44883247104,
-        "longest_sampled_video_frames": 105,
-        "oom": false,
-        "gradient_clip_triggered": false
-      },
-      "exact_resume_smoke": {
-        "status": "passed_fresh_0_to_1_exact_resume_1_to_3_after_fail_closed_family_registration_fix",
-        "root": "runs/outputs/pi05_as_writer_policy_wide_atom_dictionary_resume_smoke_r6_60e45f8_20260805",
-        "contract_sha256": "e59003d6ee5595ad898de7f1bc47bd4b03927733cb9c46c7b69273621e605ca6",
-        "metrics_steps": [1, 2, 3],
-        "global_policy_samples": 1440,
-        "global_writer_video_conditions": 72,
-        "checkpoint_state_family": "policy_wide_atom_task_query_keyed_rawfull24_v1",
-        "rank_state_files": 6,
-        "validation_action_reads": 0,
-        "test_action_reads": 0
-      },
-      "gradient_reachability": {
-        "status": "passed",
-        "identity_step_policy_atoms_b_only": true,
-        "all_five_declared_blocks_nonzero_by_step": 2,
-        "declared_blocks": [
-          "semantic_frontend",
-          "core",
-          "program",
-          "composer",
-          "policy_atom"
-        ],
-        "source_policy_trainable_parameter_count": 0
-      },
       "inference_profile": "deferred_until_absolute_and_internal_path_gate"
     },
     "formal_run": {
-      "status": "sealed",
-      "launch_state": "ready_after_clean_pushed_origin_main_commit_and_live_preflight",
+      "status": "blocked_until_live_profile",
+      "launch_state": "blocked_until_longest105_finite_and_exact_resume_profile_sealed",
       "expected_world_size": 6,
       "total_steps": 400,
       "per_rank_batch_size": 20,
       "checkpoint_steps": "every:25",
       "selected_stop_step": 200,
       "stage_stop_steps": [200, 400],
-      "segment_definition": "fresh_policy_wide_atom_dictionary_identity_macro0_to200_then_evidence_gated_exact_resume200_to400",
+      "segment_definition": "fresh_policy_lane_coupled_hyperdecoder_identity_macro0_to200_then_evidence_gated_exact_resume200_to400",
       "data_integrity_check": "sealed_manifest_plus_exact_file_size_and_hdf5_schema_without_runtime_full_data_sha",
       "continuation_gate": "resume_to400_only_when_correct400_absolute_breadth_retention_trend_and_internal_path_justify_continuation"
     }

@@ -17,9 +17,9 @@ from ember.writer.temporal import (
     LanguageSemanticCore,
     TaskGroundedVisualTransitionFusion,
 )
-from ember.writer.policy_dictionary import (
-    PolicyCoordinateComposer,
-    PolicyWideAtomDictionary,
+from ember.writer.policy_lane import (
+    PolicyLaneComposer,
+    PolicyLaneHyperdecoder,
 )
 from ember.writer.video_program import Pi05LanguageAxialEncoder
 
@@ -139,7 +139,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         procedure_blocks: int,
         visual_transition_heads: int,
         policy_coordinate_heads: int,
-        policy_atom_count: int,
+        policy_lane_hidden_width: int,
         initialization_seed: int,
         activation_checkpointing: bool,
     ) -> None:
@@ -202,17 +202,18 @@ class CompleteLoRAWriter(torch.nn.Module):
             heads=procedure_heads,
             blocks=procedure_blocks,
         )
-        self.composer = PolicyCoordinateComposer(
+        self.composer = PolicyLaneComposer(
             width=program_width,
             heads=policy_coordinate_heads,
             rank=self.PUBLIC_LORA_RANK,
-            atom_count=policy_atom_count,
             initialization_seed=initialization_seed + 1,
         )
-        self.policy_atoms = PolicyWideAtomDictionary(
+        self.hyperdecoder = PolicyLaneHyperdecoder(
             target_widths=self._target_widths(tensor_specs),
             rank=self.PUBLIC_LORA_RANK,
-            atom_count=policy_atom_count,
+            condition_width=program_width,
+            hidden_width=policy_lane_hidden_width,
+            initialization_seed=initialization_seed + 2,
         )
         self._register_template_state(tensor_specs, template_state)
 
@@ -227,7 +228,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             set(by_module) != set(range(len(by_module)))
             or any(set(value) != {0, 1} for value in by_module.values())
         ):
-            raise WriterModelError("policy atom targets changed topology")
+            raise WriterModelError("policy-lane targets changed topology")
         return tuple(
             (by_module[index][0], by_module[index][1])
             for index in range(len(by_module))
@@ -491,19 +492,19 @@ class CompleteLoRAWriter(torch.nn.Module):
             language_mask,
             task_span_mask,
         )
-        mix_a, mix_b = self.composer(
+        lanes = self.composer(
             core_memory,
             valid_core,
             procedure_memory,
             valid_frames,
         )
-        atom_states = self.policy_atoms(mix_a, mix_b)
+        lane_states = self.hyperdecoder(lanes)
         result: dict[str, torch.Tensor] = {}
         for item in self.tensor_specs:
-            generated = atom_states[item.module_index][item.factor_index]
+            generated = lane_states[item.module_index][item.factor_index]
             template = getattr(self, self._template_buffers[item.name])
             if generated.shape[1:] != template.shape:
-                raise WriterModelError("policy atom output changed public LoRA shape")
+                raise WriterModelError("policy-lane output changed public LoRA shape")
             value = generated.to(dtype=template.dtype) + template[None]
             result[item.name] = value[0] if core_memory.shape[0] == 1 else value
         return result

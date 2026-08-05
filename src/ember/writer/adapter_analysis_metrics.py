@@ -10,7 +10,7 @@ import numpy as np
 import torch
 
 from ember.writer.model import CompleteLoRAWriter
-from ember.writer.policy_dictionary import PolicyCoordinateComposer
+from ember.writer.policy_lane import PolicyLaneComposer, PolicyLaneHyperdecoder
 
 
 def state_row(state: Mapping[str, torch.Tensor], row: int) -> dict[str, torch.Tensor]:
@@ -228,38 +228,45 @@ def adapter_geometry(
 
 
 @contextmanager
-def capture_policy_dictionary_mixing(
-    writer: CompleteLoRAWriter,
-) -> Any:
-    """Capture the one conditioned atom-mixing batch without changing Writer output."""
+def capture_policy_lane_states(writer: CompleteLoRAWriter) -> Any:
+    """Capture condition lanes and generated lane energy without changing output."""
 
     record: dict[str, torch.Tensor] = {}
-    if not isinstance(writer.composer, PolicyCoordinateComposer):
+    if not isinstance(writer.composer, PolicyLaneComposer) or not isinstance(
+        writer.hyperdecoder, PolicyLaneHyperdecoder
+    ):
         yield record
         return
 
     def hook(
-        _module: torch.nn.Module,
-        _inputs: tuple[torch.Tensor, ...],
-        output: tuple[torch.Tensor, torch.Tensor],
+        module: PolicyLaneHyperdecoder,
+        inputs: tuple[torch.Tensor, ...],
+        output: tuple[tuple[torch.Tensor, torch.Tensor], ...],
     ) -> None:
-        mix_a, mix_b = output
-        record["mix_a"] = mix_a.detach().to(device="cpu", dtype=torch.float32)
-        record["mix_b"] = mix_b.detach().to(device="cpu", dtype=torch.float32)
+        lanes = inputs[0]
+        hidden = module.hidden_states(lanes)
+        a_energy = torch.zeros(
+            lanes.shape[:2], dtype=torch.float64, device=lanes.device
+        )
+        b_energy = torch.zeros_like(a_energy)
+        for value_a, value_b in output:
+            a_energy += value_a.detach().double().square().sum(dim=2)
+            b_energy += value_b.detach().double().square().sum(dim=1)
+        record["lanes"] = lanes.detach().to(device="cpu", dtype=torch.float32)
+        record["hidden"] = hidden.detach().to(device="cpu", dtype=torch.float32)
+        record["a_energy"] = a_energy.cpu()
+        record["b_energy"] = b_energy.cpu()
 
-    handle = writer.composer.register_forward_hook(hook)
+    handle = writer.hyperdecoder.register_forward_hook(hook)
     try:
         yield record
     finally:
         handle.remove()
 
 
-def _mixing_matrix_metrics(value: torch.Tensor) -> dict[str, Any]:
-    value = value.detach().double()
-    singular_energy = torch.linalg.svdvals(value).square()
-    atom_energy = value.square().sum(dim=0)
+def _row_geometry(value: torch.Tensor) -> dict[str, float]:
+    singular_energy = torch.linalg.svdvals(value.detach().double()).square()
     return {
-        **_energy_profile(atom_energy, label="atoms"),
         "stable_row_rank": float(
             singular_energy.sum() / singular_energy[0].clamp_min(1e-30)
         ),
@@ -269,62 +276,64 @@ def _mixing_matrix_metrics(value: torch.Tensor) -> dict[str, Any]:
     }
 
 
-def _dictionary_atom_energy(
-    writer: CompleteLoRAWriter,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    a_energy = torch.stack(
-        [value.detach().double().square().sum(dim=1).cpu() for value in writer.policy_atoms.a_atoms]
-    ).sum(dim=0)
-    b_energy = torch.stack(
-        [value.detach().double().square().sum(dim=0).cpu() for value in writer.policy_atoms.b_atoms]
-    ).sum(dim=0)
-    return a_energy, b_energy
-
-
-def policy_dictionary_batch_records(
+def policy_lane_batch_records(
     writer: CompleteLoRAWriter,
     capture: Mapping[str, torch.Tensor],
     names: Sequence[str],
 ) -> dict[str, Any] | None:
-    """Serialize raw mixing and storage-aware participation for one condition batch."""
+    """Serialize lane condition states, output use, and storage ownership."""
 
-    if "mix_a" not in capture or "mix_b" not in capture:
+    required = {"lanes", "hidden", "a_energy", "b_energy"}
+    if not required.issubset(capture):
         return None
-    mix_a, mix_b = capture["mix_a"], capture["mix_b"]
-    if mix_a.shape != mix_b.shape or mix_a.shape[0] != len(names):
-        raise ValueError("captured policy dictionary mixing batch changed shape")
-    a_storage, b_storage = _dictionary_atom_energy(writer)
-    dictionary = {
-        "a": _energy_profile(a_storage, label="atoms"),
-        "b": _energy_profile(b_storage, label="atoms"),
-        "combined": _energy_profile(a_storage + b_storage, label="atoms"),
-    }
+    lanes = capture["lanes"]
+    hidden = capture["hidden"]
+    a_energy = capture["a_energy"]
+    b_energy = capture["b_energy"]
+    if (
+        lanes.shape[:2] != hidden.shape[:2]
+        or a_energy.shape != lanes.shape[:2]
+        or b_energy.shape != a_energy.shape
+        or lanes.shape[0] != len(names)
+    ):
+        raise ValueError("captured policy-lane batch changed shape")
+    storage_a = (
+        writer.hyperdecoder.a_output.detach().double().square().sum((1, 2)).cpu()
+    )
+    storage_b = (
+        writer.hyperdecoder.b_output.detach().double().square().sum((1, 2)).cpu()
+    )
     conditions = {}
     for index, name in enumerate(names):
-        current_a, current_b = mix_a[index], mix_b[index]
-        a_energy = current_a.double().square().sum(dim=0)
-        b_energy = current_b.double().square().sum(dim=0)
+        current_lanes = lanes[index]
+        current_hidden = hidden[index]
+        current_a = a_energy[index]
+        current_b = b_energy[index]
         conditions[name] = {
-            "mix_a": current_a.tolist(),
-            "mix_b": current_b.tolist(),
-            "a": _mixing_matrix_metrics(current_a),
-            "b": _mixing_matrix_metrics(current_b),
-            "combined": _energy_profile(a_energy + b_energy, label="atoms"),
-            "storage_norm_weighted": _energy_profile(
-                a_energy * a_storage + b_energy * b_storage,
-                label="atoms",
+            "lanes": current_lanes.tolist(),
+            "hidden": current_hidden.tolist(),
+            "hidden_row_geometry": _row_geometry(current_hidden),
+            "hidden_lane_participation": _energy_profile(
+                current_hidden.double().square().sum(dim=1), label="lanes"
+            ),
+            "a_output_lane_participation": _energy_profile(current_a, label="lanes"),
+            "b_output_lane_participation": _energy_profile(current_b, label="lanes"),
+            "combined_output_lane_participation": _energy_profile(
+                current_a + current_b, label="lanes"
             ),
         }
-    return {"dictionary_storage": dictionary, "conditions": conditions}
+    return {
+        "lane_storage": {
+            "a": _energy_profile(storage_a, label="lanes"),
+            "b": _energy_profile(storage_b, label="lanes"),
+            "combined": _energy_profile(storage_a + storage_b, label="lanes"),
+        },
+        "conditions": conditions,
+    }
 
 
-def _mixing_vector(condition: Mapping[str, Any]) -> torch.Tensor:
-    return torch.cat(
-        (
-            torch.tensor(condition["mix_a"], dtype=torch.float64).reshape(-1),
-            torch.tensor(condition["mix_b"], dtype=torch.float64).reshape(-1),
-        )
-    )
+def _lane_vector(condition: Mapping[str, Any]) -> torch.Tensor:
+    return torch.tensor(condition["hidden"], dtype=torch.float64).reshape(-1)
 
 
 def _vector_set_metrics(values: Sequence[torch.Tensor]) -> dict[str, float]:
@@ -345,7 +354,7 @@ def _vector_set_metrics(values: Sequence[torch.Tensor]) -> dict[str, float]:
     }
 
 
-def _same_task_video_mixing_summary(
+def _same_task_video_lane_summary(
     records: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
     video_names = ("demo_0", "demo_1", "demo_2", "demo_3", "demo_4")
@@ -356,7 +365,7 @@ def _same_task_video_mixing_summary(
     )
     metrics = [
         _vector_set_metrics(
-            [_mixing_vector(record["conditions"][name]) for name in video_names]
+            [_lane_vector(record["conditions"][name]) for name in video_names]
         )
         for record in records
     ]
@@ -374,8 +383,8 @@ def _condition_relative_l2_summary(
         result[name] = distribution(
             [
                 tensor_metrics(
-                    _mixing_vector(record["conditions"]["demo_0"]),
-                    _mixing_vector(record["conditions"][name]),
+                    _lane_vector(record["conditions"]["demo_0"]),
+                    _lane_vector(record["conditions"][name]),
                 )["relative_l2"]
                 for record in selected
             ]
@@ -383,42 +392,46 @@ def _condition_relative_l2_summary(
     return result
 
 
-def policy_dictionary_checkpoint_summary(
+def policy_lane_checkpoint_summary(
     rows: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any] | None:
-    """Summarize atom use across tasks and same-task video conditions."""
+    """Summarize lane use across tasks and same-task video conditions."""
 
-    records = [row.get("policy_dictionary") for row in rows]
+    records = [row.get("policy_lane") for row in rows]
     records = [record for record in records if record is not None]
     if not records:
         return None
     demo_zero = [record["conditions"]["demo_0"] for record in records]
     scalar_keys = (
-        "effective_atoms",
-        "top4_atoms_energy_fraction",
-        "max_atoms_energy_fraction",
+        "effective_lanes",
+        "top4_lanes_energy_fraction",
+        "max_lanes_energy_fraction",
     )
     result: dict[str, Any] = {
-        "dictionary_storage": records[0]["dictionary_storage"],
-        "demo_0_atom_participation": {
+        "lane_storage": records[0]["lane_storage"],
+        "demo_0_lane_participation": {
             group: {
-                key: distribution([float(value[group][key]) for value in demo_zero])
+                key: distribution(
+                    [
+                        float(value[f"{group}_lane_participation"][key])
+                        for value in demo_zero
+                    ]
+                )
                 for key in scalar_keys
             }
-            for group in ("a", "b", "combined", "storage_norm_weighted")
+            for group in ("hidden", "a_output", "b_output", "combined_output")
         },
-        "demo_0_mixing_row_geometry": {
-            group: {
-                key: distribution([float(value[group][key]) for value in demo_zero])
-                for key in ("stable_row_rank", "top_singular_energy_fraction")
-            }
-            for group in ("a", "b")
+        "demo_0_hidden_row_geometry": {
+            key: distribution(
+                [float(value["hidden_row_geometry"][key]) for value in demo_zero]
+            )
+            for key in ("stable_row_rank", "top_singular_energy_fraction")
         },
-        "cross_task_demo_0_mixing": _vector_set_metrics(
-            [_mixing_vector(value) for value in demo_zero]
+        "cross_task_demo_0_hidden": _vector_set_metrics(
+            [_lane_vector(value) for value in demo_zero]
         ),
     }
-    result["same_task_video_mixing"] = _same_task_video_mixing_summary(records)
+    result["same_task_video_hidden"] = _same_task_video_lane_summary(records)
     result["demo_0_condition_relative_l2"] = _condition_relative_l2_summary(records)
     return result
 

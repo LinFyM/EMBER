@@ -32,6 +32,10 @@
   coefficient system；不强迫正交/高rank，也不复制SFT权重。AS与RL可对同一LoRA端到端
   提供credit，完整authority见
   `docs/action_forecast_writer_policy_lane_hyperdecoder_design.md`。
+- canonical实现现已删除PWAD executable module/config family并原位切换到policy-lane。
+  真实每lane A/B输出宽度=`37,920/42,528`，hyperdecoder=`41,320,448`参数，完整Writer=
+  `49,041,664`。84项聚焦Writer合同确认identity、condition写出、BA梯度阶段、source
+  freeze、checkpoint拒载和lane分析；没有借参数增长加入新输入、loss或并行runtime。
 
 ## 2026-08-05 Policy-Wide Atom Dictionary架构决策与CPU合同
 

@@ -31,10 +31,14 @@
   policy-wide协调，lane间拥有独立输出参数，取消PWAD的A/B独立mixing和atom cross-product。
   它仍从functional identity fresh训练，Writer输入、信息墙、rank16 public LoRA与AS/RL
   兼容性不变。
-- 下一步是原位替换canonical PWAD runtime、建立不兼容launch/checkpoint/config family，
-  完成聚焦CPU合同后live比较`gpu01/gpu02`并做六卡longest105、logical-B20三步profile与
-  独立fresh0→1→exact-resume1→3。当前没有EMBER GPU进程；任何launch仍只用实时空闲卡、
-  跨节点最多6张并显式`NCCL_P2P_DISABLE=1`。长期single-checkpoint严格`>150/400`不变。
+- canonical实现已原位替换：删除`policy_dictionary.py`并新增`policy_lane.py`；旧PWAD
+  config/checkpoint family不再被活动loader接受。完整Writer参数`49,041,664`，其中
+  hyperdecoder=`41,320,448`、composer=`660,224`；38-target每lane A/B输出宽度=
+  `37,920/42,528`。聚焦Writer合同`84 passed`，py_compile/diff check通过，architecture
+  guard无hard与parallel family；formal config仍为`blocked_until_live_profile`。
+- 下一步live比较`gpu01/gpu02`并做六卡longest105、logical-B20三步profile与独立
+  fresh0→1→exact-resume1→3。当前没有EMBER GPU进程；任何launch仍只用实时空闲卡、跨
+  节点最多6张并显式`NCCL_P2P_DISABLE=1`。长期single-checkpoint严格`>150/400`不变。
 
 ## 0.1 Tangent-Basis正式消融负裁决
 

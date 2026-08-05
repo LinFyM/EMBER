@@ -11,7 +11,7 @@ import torch
 from ember.pi05_source_checkpoint import DistributedContext, write_json_atomic
 from ember.writer.as_config import _validate_formal_schedule, resolve_mode_config
 from ember.writer.as_contract import (
-    POLICY_WIDE_ATOM_LAUNCH_SCHEMA,
+    POLICY_LANE_LAUNCH_SCHEMA,
     build_contract,
     load_writer_config,
     parse_checkpoint_steps,
@@ -31,9 +31,9 @@ CONFIG = (
     REPO_ROOT
     / "configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json"
 )
-POLICY_WIDE_ATOM_CONFIG = (
+POLICY_LANE_CONFIG = (
     REPO_ROOT
-    / "configs/pi05_as_writer_policy_wide_atom_dictionary_bci_v1.json"
+    / "configs/pi05_as_writer_policy_lane_hyperdecoder_bci_v1.json"
 )
 OLD_RECIPE_CONFIG = (
     REPO_ROOT
@@ -127,23 +127,21 @@ def test_v6_relative_flow_coldstart_config_seals_architecture_and_information_wa
     ]
 
 
-def test_policy_wide_atom_config_is_fresh_profile_sealed_and_not_v6() -> None:
-    config = load_writer_config(POLICY_WIDE_ATOM_CONFIG)
+def test_policy_lane_config_is_fresh_profile_blocked_and_not_v6() -> None:
+    config = load_writer_config(POLICY_LANE_CONFIG)
     writer = config["writer"]
-    assert writer["architecture"] == "pi05_policy_wide_atom_dictionary_writer_v1"
-    assert writer["policy_coordinate_count"] == 16
-    assert writer["policy_atom_count"] == 64
-    assert writer["dictionary_softmax"] is False
-    assert writer["dictionary_task_ids"] is False
+    assert writer["architecture"] == "pi05_policy_lane_coupled_hyperdecoder_writer_v1"
+    assert writer["policy_lane_count"] == 16
+    assert writer["policy_lane_hidden_width"] == 32
+    assert writer["policy_lane_task_ids"] is False
+    assert writer["policy_lane_scalar_gate"] is False
     assert "slot_fusion" not in writer
     assert "factor_hidden_width" not in writer
     assert config["profile_defaults"]["expected_world_size"] == 6
     assert config["profile_defaults"]["per_rank_batch_size"] == 20
-    assert config["profile_evidence"]["status"].startswith("sealed_live_")
-    assert config["profile_evidence"]["exact_resume_smoke"][
-        "metrics_steps"
-    ] == [1, 2, 3]
-    assert config["formal_run"]["status"] == "sealed"
+    assert config["profile_evidence"]["status"].startswith("pending_live_")
+    assert "exact_resume_smoke" not in config["profile_evidence"]
+    assert config["formal_run"]["status"] == "blocked_until_live_profile"
     assert config["formal_run"]["selected_stop_step"] == 200
 
 
@@ -451,10 +449,10 @@ def test_v6_launch_records_raw_mean_collectives_not_ddp_accumulation(
     assert runtime["ddp_gradient_synchronizations_per_macro"] == 0
 
 
-def test_policy_wide_atom_launch_has_distinct_schema_and_checkpoint_family(
+def test_policy_lane_launch_has_distinct_schema_and_checkpoint_family(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    config = load_writer_config(POLICY_WIDE_ATOM_CONFIG)
+    config = load_writer_config(POLICY_LANE_CONFIG)
     context = DistributedContext(
         rank=0,
         local_rank=0,
@@ -472,7 +470,7 @@ def test_policy_wide_atom_launch_has_distinct_schema_and_checkpoint_family(
         lambda output, local: output.__setitem__(slice(None), [local] * 6),
     )
     args = argparse.Namespace(
-        mode="profile", config=POLICY_WIDE_ATOM_CONFIG, num_workers=2
+        mode="profile", config=POLICY_LANE_CONFIG, num_workers=2
     )
     contract = build_contract(
         args=args,
@@ -490,9 +488,9 @@ def test_policy_wide_atom_launch_has_distinct_schema_and_checkpoint_family(
         checkpoint_steps=(1, 2, 3),
         initialization={},
     )
-    assert contract["schema_version"] == POLICY_WIDE_ATOM_LAUNCH_SCHEMA
+    assert contract["schema_version"] == POLICY_LANE_LAUNCH_SCHEMA
     assert contract["runtime"]["checkpoint_state_family"] == (
-        "policy_wide_atom_task_query_keyed_rawfull24_v1"
+        "policy_lane_task_query_keyed_rawfull24_v1"
     )
 
 
@@ -695,11 +693,11 @@ def test_raw_full_task_step_collects_task_gradients_and_updates_once(
         writer=writer,
         gradient_layout=(
             FlatParameter(
-                name="policy_atoms.weight",
+                name="hyperdecoder.weight",
                 parameter=writer.weight,
                 start=0,
                 stop=1,
-                block="policy_atom",
+                block="policy_lane",
             ),
         ),
         policy=torch.nn.Identity(),

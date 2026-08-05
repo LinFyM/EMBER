@@ -25,9 +25,9 @@ from ember.pi05_source_checkpoint import (
     write_json_atomic,
 )
 from ember.pi05_source_contract import append_jsonl
-from ember.writer.architecture import POLICY_WIDE_ATOM_WRITER_PARAMETER_COUNT
+from ember.writer.architecture import POLICY_LANE_WRITER_PARAMETER_COUNT
 from ember.writer.as_config import (
-    POLICY_WIDE_ATOM_CONFIG_SCHEMA,
+    POLICY_LANE_CONFIG_SCHEMA,
     REPO_ROOT,
     authority_path,
     load_writer_config,
@@ -41,11 +41,11 @@ from ember.writer.update_contract import build_update_runtime_contract
 
 
 AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_v6_relative_flow_coldstart_launch_v1"
-POLICY_WIDE_ATOM_LAUNCH_SCHEMA = (
-    "ember_pi05_policy_wide_atom_dictionary_launch_v1"
+POLICY_LANE_LAUNCH_SCHEMA = (
+    "ember_pi05_policy_lane_coupled_hyperdecoder_launch_v1"
 )
 SUPPORTED_AS_WRITER_LAUNCH_SCHEMAS = frozenset(
-    {AS_WRITER_LAUNCH_SCHEMA, POLICY_WIDE_ATOM_LAUNCH_SCHEMA}
+    {AS_WRITER_LAUNCH_SCHEMA, POLICY_LANE_LAUNCH_SCHEMA}
 )
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
@@ -395,7 +395,7 @@ def writer_trainable_contract(
     parameter_count = sum(value.numel() for value in writer.parameters())
     if (
         not names
-        or parameter_count != POLICY_WIDE_ATOM_WRITER_PARAMETER_COUNT
+        or parameter_count != POLICY_LANE_WRITER_PARAMETER_COUNT
         or any(parameter.requires_grad for parameter in policy.parameters())
     ):
         raise WriterModelError("AS-Writer freeze boundary changed")
@@ -461,8 +461,8 @@ def build_contract(
         topology[0] = local
     return {
         "schema_version": (
-            POLICY_WIDE_ATOM_LAUNCH_SCHEMA
-            if config.get("schema_version") == POLICY_WIDE_ATOM_CONFIG_SCHEMA
+            POLICY_LANE_LAUNCH_SCHEMA
+            if config.get("schema_version") == POLICY_LANE_CONFIG_SCHEMA
             else AS_WRITER_LAUNCH_SCHEMA
         ),
         "mode": args.mode,

@@ -163,8 +163,10 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   64 atoms广泛使用但A/B mixing row stable rank约`1.000002`，effective LoRA约
   `1.0000002`且q/v B-column cosine约`.999998`。禁止resume到400、增加K、调scale或用
   rank/正交loss救活。
-- 新方法首轮仍保持AS full24 raw mean、每task一条video、logical B20/policy microbatch2、
-  fast-decay400；先完成canonical原位实现、46GB六卡profile与fresh exact-resume，再从独立
+- 新方法canonical原位实现已完成：完整Writer=`49,041,664`参数，旧PWAD module/config/
+  checkpoint family已从活动runtime删除，聚焦Writer合同`84 passed`且architecture guard
+  无hard/parallel family。首轮仍保持AS full24 raw mean、每task一条video、logical B20/
+  policy microbatch2、fast-decay400；先完成46GB六卡profile与fresh exact-resume，再从独立
   fresh root训练0→200并严格评测50/100/150/200。RL只可在fresh架构证明absolute、retention
   和视频传递健康后作为同一生成器的后续闭环校准，不能替代AS机制门。
 - SFT-Anchored Policy Tangent-Basis authority

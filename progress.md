@@ -21,7 +21,9 @@ GPU范围和训练步长是当时快照；活动状态只取
   禁止resume、warm-start或扩大K。
 - 新design authority为`docs/action_forecast_writer_policy_lane_hyperdecoder_design.md`：
   每个public lane用同一个32维condition hidden生成全policy A/B，取消PWAD独立mixing。
-  当前尚未实现或启动GPU；下一步先原位代码替换与聚焦CPU合同，再live profile。
+  canonical原位实现已完成：旧module/config family删除，新Writer=`49,041,664`参数，聚焦
+  Writer合同`84 passed`且architecture无hard/parallel family。尚未启动GPU；formal保持
+  blocked，下一步live profile与独立exact-resume。
 
 ## 2026-08-05 Policy-Wide Atom Dictionary profile/resume封存
 

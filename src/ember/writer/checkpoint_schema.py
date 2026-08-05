@@ -95,14 +95,14 @@ V6_RELATIVE_FLOW_COLDSTART_TASK_QUERY_RAW_TRAINER_STATE_SCHEMA = (
 V6_RELATIVE_FLOW_COLDSTART_TASK_QUERY_RAW_RANK_STATE_SCHEMA = (
     "ember_pi05_v6_relative_flow_coldstart_task_query_rawfull24_rank_state_v1"
 )
-POLICY_WIDE_ATOM_TASK_QUERY_RAW_CHECKPOINT_SCHEMA = (
-    "ember_pi05_policy_wide_atom_dictionary_task_query_rawfull24_checkpoint_v1"
+POLICY_LANE_TASK_QUERY_RAW_CHECKPOINT_SCHEMA = (
+    "ember_pi05_policy_lane_coupled_hyperdecoder_task_query_rawfull24_checkpoint_v1"
 )
-POLICY_WIDE_ATOM_TASK_QUERY_RAW_TRAINER_STATE_SCHEMA = (
-    "ember_pi05_policy_wide_atom_dictionary_task_query_rawfull24_trainer_state_v1"
+POLICY_LANE_TASK_QUERY_RAW_TRAINER_STATE_SCHEMA = (
+    "ember_pi05_policy_lane_coupled_hyperdecoder_task_query_rawfull24_trainer_state_v1"
 )
-POLICY_WIDE_ATOM_TASK_QUERY_RAW_RANK_STATE_SCHEMA = (
-    "ember_pi05_policy_wide_atom_dictionary_task_query_rawfull24_rank_state_v1"
+POLICY_LANE_TASK_QUERY_RAW_RANK_STATE_SCHEMA = (
+    "ember_pi05_policy_lane_coupled_hyperdecoder_task_query_rawfull24_rank_state_v1"
 )
 HISTORICAL_V6_LAUNCH_SCHEMA = "ember_pi05_language_axial_as_writer_launch_v6"
 HISTORICAL_V6_CHECKPOINT_SCHEMA = "ember_pi05_language_axial_writer_checkpoint_v6"
@@ -169,11 +169,11 @@ _FAMILIES = {
         V6_RELATIVE_FLOW_COLDSTART_TASK_QUERY_RAW_TRAINER_STATE_SCHEMA,
         V6_RELATIVE_FLOW_COLDSTART_TASK_QUERY_RAW_RANK_STATE_SCHEMA,
     ),
-    "policy_wide_atom_task_query_keyed_rawfull24_v1": (
+    "policy_lane_task_query_keyed_rawfull24_v1": (
         1,
-        POLICY_WIDE_ATOM_TASK_QUERY_RAW_CHECKPOINT_SCHEMA,
-        POLICY_WIDE_ATOM_TASK_QUERY_RAW_TRAINER_STATE_SCHEMA,
-        POLICY_WIDE_ATOM_TASK_QUERY_RAW_RANK_STATE_SCHEMA,
+        POLICY_LANE_TASK_QUERY_RAW_CHECKPOINT_SCHEMA,
+        POLICY_LANE_TASK_QUERY_RAW_TRAINER_STATE_SCHEMA,
+        POLICY_LANE_TASK_QUERY_RAW_RANK_STATE_SCHEMA,
     ),
 }
 

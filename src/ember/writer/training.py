@@ -721,7 +721,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=(
             REPO_ROOT
-            / "configs/pi05_as_writer_policy_wide_atom_dictionary_bci_v1.json"
+            / "configs/pi05_as_writer_policy_lane_hyperdecoder_bci_v1.json"
         ),
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

@@ -5,8 +5,8 @@ import torch
 
 from ember.writer.adapter_analysis_metrics import (
     effective_delta_metrics,
-    policy_dictionary_batch_records,
-    policy_dictionary_checkpoint_summary,
+    policy_lane_batch_records,
+    policy_lane_checkpoint_summary,
     tensor_delta_metrics,
 )
 
@@ -61,47 +61,43 @@ def test_tensor_delta_metrics_use_the_same_update_geometry() -> None:
     assert metrics["residual_over_target_delta_l2"] == pytest.approx(0.5)
 
 
-def test_policy_dictionary_records_measure_atom_participation() -> None:
+def test_policy_lane_records_measure_storage_and_output_participation() -> None:
     writer = SimpleNamespace(
-        policy_atoms=SimpleNamespace(
-            a_atoms=torch.nn.ParameterList(
-                [torch.nn.Parameter(torch.ones(4, 2))]
-            ),
-            b_atoms=torch.nn.ParameterList(
-                [torch.nn.Parameter(torch.ones(2, 4))]
-            ),
+        hyperdecoder=SimpleNamespace(
+            a_output=torch.nn.Parameter(torch.ones(2, 5, 3)),
+            b_output=torch.nn.Parameter(torch.ones(2, 7, 3)),
         )
     )
-    mix_a = torch.tensor(
+    hidden = torch.tensor(
         [
-            [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0]],
-            [[0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]],
+            [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
+            [[0.0, 0.0, 1.0], [1.0, 0.0, 0.0]],
         ]
     )
-    records = policy_dictionary_batch_records(
+    records = policy_lane_batch_records(
         writer,
-        {"mix_a": mix_a, "mix_b": mix_a.clone()},
+        {
+            "lanes": torch.ones(2, 2, 4),
+            "hidden": hidden,
+            "a_energy": torch.ones(2, 2),
+            "b_energy": torch.ones(2, 2),
+        },
         ("demo_0", "demo_1"),
     )
 
     assert records is not None
-    assert records["dictionary_storage"]["combined"]["effective_atoms"] == pytest.approx(4.0)
+    assert records["lane_storage"]["combined"]["effective_lanes"] == pytest.approx(2.0)
     demo = records["conditions"]["demo_0"]
-    assert demo["combined"]["active_atoms"] == 2
-    assert demo["combined"]["effective_atoms"] == pytest.approx(2.0)
-    assert demo["storage_norm_weighted"]["effective_atoms"] == pytest.approx(2.0)
-    assert demo["a"]["stable_row_rank"] == pytest.approx(2.0)
+    assert demo["combined_output_lane_participation"]["active_lanes"] == 2
+    assert demo["combined_output_lane_participation"]["effective_lanes"] == pytest.approx(2.0)
+    assert demo["hidden_row_geometry"]["stable_row_rank"] == pytest.approx(2.0)
 
 
-def test_policy_dictionary_summary_allows_action_panel_only_conditions() -> None:
+def test_policy_lane_summary_allows_action_panel_only_conditions() -> None:
     writer = SimpleNamespace(
-        policy_atoms=SimpleNamespace(
-            a_atoms=torch.nn.ParameterList(
-                [torch.nn.Parameter(torch.ones(4, 2))]
-            ),
-            b_atoms=torch.nn.ParameterList(
-                [torch.nn.Parameter(torch.ones(2, 4))]
-            ),
+        hyperdecoder=SimpleNamespace(
+            a_output=torch.nn.Parameter(torch.ones(2, 5, 3)),
+            b_output=torch.nn.Parameter(torch.ones(2, 7, 3)),
         )
     )
     names = (
@@ -113,18 +109,25 @@ def test_policy_dictionary_summary_allows_action_panel_only_conditions() -> None
         "reversed_0",
         "shuffled_0",
     )
-    mixing = torch.arange(7 * 2 * 4, dtype=torch.float32).reshape(7, 2, 4) + 1
-    full = policy_dictionary_batch_records(
-        writer, {"mix_a": mixing, "mix_b": mixing}, names
+    lanes = torch.arange(7 * 2 * 4, dtype=torch.float32).reshape(7, 2, 4) + 1
+    hidden = torch.arange(7 * 2 * 3, dtype=torch.float32).reshape(7, 2, 3) + 1
+    capture = {
+        "lanes": lanes,
+        "hidden": hidden,
+        "a_energy": torch.ones(7, 2),
+        "b_energy": torch.ones(7, 2),
+    }
+    full = policy_lane_batch_records(
+        writer, capture, names
     )
-    partial = policy_dictionary_batch_records(
+    partial = policy_lane_batch_records(
         writer,
-        {"mix_a": mixing[:5], "mix_b": mixing[:5]},
+        {key: value[:5] for key, value in capture.items()},
         names[:5],
     )
 
-    summary = policy_dictionary_checkpoint_summary(
-        [{"policy_dictionary": partial}, {"policy_dictionary": full}]
+    summary = policy_lane_checkpoint_summary(
+        [{"policy_lane": partial}, {"policy_lane": full}]
     )
 
     assert summary is not None

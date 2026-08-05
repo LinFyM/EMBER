@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import math
+from contextlib import contextmanager
 from typing import Any, Mapping, Sequence
 
 import numpy as np
 import torch
 
 from ember.writer.model import CompleteLoRAWriter
+from ember.writer.policy_dictionary import PolicyCoordinateComposer
 
 
 def state_row(state: Mapping[str, torch.Tensor], row: int) -> dict[str, torch.Tensor]:
@@ -115,6 +117,21 @@ def _component_summary(gram: torch.Tensor) -> dict[str, float | int]:
     }
 
 
+def _energy_profile(energy: torch.Tensor, *, label: str) -> dict[str, float | int]:
+    energy = energy.detach().double().clamp_min(0).reshape(-1)
+    total = float(energy.sum())
+    probability = energy / max(total, 1e-30)
+    return {
+        f"active_{label}": int((energy > max(total, 1e-30) * 1e-10).sum()),
+        f"effective_{label}": float(1.0 / probability.square().sum().clamp_min(1e-30)),
+        f"top4_{label}_energy_fraction": float(
+            probability.topk(min(4, probability.numel())).values.sum()
+        ),
+        f"max_{label}_energy_fraction": float(probability.max()),
+        "energy": total,
+    }
+
+
 def adapter_geometry(
     writer: CompleteLoRAWriter,
     pairs: Mapping[str, Mapping[str, str]],
@@ -167,6 +184,9 @@ def adapter_geometry(
         b_count += b.numel()
 
     total_energy = sum(row["energy"] for row in spectra)
+    target_energy = torch.tensor(
+        [row["energy"] for row in spectra], dtype=torch.float64
+    )
 
     def aggregate(rows: Sequence[Mapping[str, float]]) -> dict[str, float]:
         return {
@@ -190,6 +210,7 @@ def adapter_geometry(
         ),
         "rank90_mean": float(np.mean([row["rank90"] for row in spectra])),
         "rank99_mean": float(np.mean([row["rank99"] for row in spectra])),
+        "target_energy_profile": _energy_profile(target_energy, label="targets"),
         "public_a_rms": math.sqrt(a_sq / a_count),
         "public_b_rms": math.sqrt(b_sq / b_count),
         "rank_coordinate_geometry_gauge_dependent": {
@@ -204,6 +225,190 @@ def adapter_geometry(
         },
         "by_kind": {name: aggregate(rows) for name, rows in by_kind.items()},
     }
+
+
+@contextmanager
+def capture_policy_dictionary_mixing(
+    writer: CompleteLoRAWriter,
+) -> Any:
+    """Capture the one conditioned atom-mixing batch without changing Writer output."""
+
+    record: dict[str, torch.Tensor] = {}
+    if not isinstance(writer.composer, PolicyCoordinateComposer):
+        yield record
+        return
+
+    def hook(
+        _module: torch.nn.Module,
+        _inputs: tuple[torch.Tensor, ...],
+        output: tuple[torch.Tensor, torch.Tensor],
+    ) -> None:
+        mix_a, mix_b = output
+        record["mix_a"] = mix_a.detach().to(device="cpu", dtype=torch.float32)
+        record["mix_b"] = mix_b.detach().to(device="cpu", dtype=torch.float32)
+
+    handle = writer.composer.register_forward_hook(hook)
+    try:
+        yield record
+    finally:
+        handle.remove()
+
+
+def _mixing_matrix_metrics(value: torch.Tensor) -> dict[str, Any]:
+    value = value.detach().double()
+    singular_energy = torch.linalg.svdvals(value).square()
+    atom_energy = value.square().sum(dim=0)
+    return {
+        **_energy_profile(atom_energy, label="atoms"),
+        "stable_row_rank": float(
+            singular_energy.sum() / singular_energy[0].clamp_min(1e-30)
+        ),
+        "top_singular_energy_fraction": float(
+            singular_energy[0] / singular_energy.sum().clamp_min(1e-30)
+        ),
+    }
+
+
+def _dictionary_atom_energy(
+    writer: CompleteLoRAWriter,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    a_energy = torch.stack(
+        [value.detach().double().square().sum(dim=1).cpu() for value in writer.policy_atoms.a_atoms]
+    ).sum(dim=0)
+    b_energy = torch.stack(
+        [value.detach().double().square().sum(dim=0).cpu() for value in writer.policy_atoms.b_atoms]
+    ).sum(dim=0)
+    return a_energy, b_energy
+
+
+def policy_dictionary_batch_records(
+    writer: CompleteLoRAWriter,
+    capture: Mapping[str, torch.Tensor],
+    names: Sequence[str],
+) -> dict[str, Any] | None:
+    """Serialize raw mixing and storage-aware participation for one condition batch."""
+
+    if "mix_a" not in capture or "mix_b" not in capture:
+        return None
+    mix_a, mix_b = capture["mix_a"], capture["mix_b"]
+    if mix_a.shape != mix_b.shape or mix_a.shape[0] != len(names):
+        raise ValueError("captured policy dictionary mixing batch changed shape")
+    a_storage, b_storage = _dictionary_atom_energy(writer)
+    dictionary = {
+        "a": _energy_profile(a_storage, label="atoms"),
+        "b": _energy_profile(b_storage, label="atoms"),
+        "combined": _energy_profile(a_storage + b_storage, label="atoms"),
+    }
+    conditions = {}
+    for index, name in enumerate(names):
+        current_a, current_b = mix_a[index], mix_b[index]
+        a_energy = current_a.double().square().sum(dim=0)
+        b_energy = current_b.double().square().sum(dim=0)
+        conditions[name] = {
+            "mix_a": current_a.tolist(),
+            "mix_b": current_b.tolist(),
+            "a": _mixing_matrix_metrics(current_a),
+            "b": _mixing_matrix_metrics(current_b),
+            "combined": _energy_profile(a_energy + b_energy, label="atoms"),
+            "storage_norm_weighted": _energy_profile(
+                a_energy * a_storage + b_energy * b_storage,
+                label="atoms",
+            ),
+        }
+    return {"dictionary_storage": dictionary, "conditions": conditions}
+
+
+def _mixing_vector(condition: Mapping[str, Any]) -> torch.Tensor:
+    return torch.cat(
+        (
+            torch.tensor(condition["mix_a"], dtype=torch.float64).reshape(-1),
+            torch.tensor(condition["mix_b"], dtype=torch.float64).reshape(-1),
+        )
+    )
+
+
+def _vector_set_metrics(values: Sequence[torch.Tensor]) -> dict[str, float]:
+    stacked = torch.stack([value.double().reshape(-1) for value in values])
+    gram = stacked @ stacked.T
+    sample = float(gram.diag().mean())
+    mean = float(gram.mean())
+    diagonal = gram.diag().clamp_min(1e-30)
+    cosine = gram / torch.sqrt(diagonal[:, None] * diagonal[None, :])
+    mask = ~torch.eye(len(values), dtype=torch.bool)
+    return {
+        "sample_energy": sample,
+        "mean_energy": mean,
+        "centered_variance_over_sample_energy": max(sample - mean, 0.0)
+        / max(sample, 1e-30),
+        "mean_pairwise_cosine": float(cosine[mask].mean()),
+        "mean_absolute_pairwise_cosine": float(cosine[mask].abs().mean()),
+    }
+
+
+def policy_dictionary_checkpoint_summary(
+    rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any] | None:
+    """Summarize atom use across tasks and same-task video conditions."""
+
+    records = [row.get("policy_dictionary") for row in rows]
+    records = [record for record in records if record is not None]
+    if not records:
+        return None
+    demo_zero = [record["conditions"]["demo_0"] for record in records]
+    scalar_keys = (
+        "effective_atoms",
+        "top4_atoms_energy_fraction",
+        "max_atoms_energy_fraction",
+    )
+    result: dict[str, Any] = {
+        "dictionary_storage": records[0]["dictionary_storage"],
+        "demo_0_atom_participation": {
+            group: {
+                key: distribution([float(value[group][key]) for value in demo_zero])
+                for key in scalar_keys
+            }
+            for group in ("a", "b", "combined", "storage_norm_weighted")
+        },
+        "demo_0_mixing_row_geometry": {
+            group: {
+                key: distribution([float(value[group][key]) for value in demo_zero])
+                for key in ("stable_row_rank", "top_singular_energy_fraction")
+            }
+            for group in ("a", "b")
+        },
+        "cross_task_demo_0_mixing": _vector_set_metrics(
+            [_mixing_vector(value) for value in demo_zero]
+        ),
+    }
+    video_names = ("demo_0", "demo_1", "demo_2", "demo_3", "demo_4")
+    result["same_task_video_mixing"] = {
+        key: distribution(
+            [
+                _vector_set_metrics(
+                    [_mixing_vector(record["conditions"][name]) for name in video_names]
+                )[key]
+                for record in records
+            ]
+        )
+        for key in (
+            "centered_variance_over_sample_energy",
+            "mean_pairwise_cosine",
+            "mean_absolute_pairwise_cosine",
+        )
+    }
+    result["demo_0_condition_relative_l2"] = {
+        name: distribution(
+            [
+                tensor_metrics(
+                    _mixing_vector(record["conditions"]["demo_0"]),
+                    _mixing_vector(record["conditions"][name]),
+                )["relative_l2"]
+                for record in records
+            ]
+        )
+        for name in ("demo_1", "reversed_0", "shuffled_0")
+    }
+    return result
 
 
 def effective_variance(

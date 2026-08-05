@@ -29,10 +29,13 @@ from ember.pi05_source_setup import load_stats
 from ember.writer.as_contract import REPO_ROOT
 from ember.writer.adapter_analysis_metrics import (
     adapter_geometry,
+    capture_policy_dictionary_mixing,
     distribution,
     effective_metrics,
     effective_variance,
     lora_pairs,
+    policy_dictionary_batch_records,
+    policy_dictionary_checkpoint_summary,
     state_row,
     tensor_metrics,
 )
@@ -454,22 +457,26 @@ def _local_rows(
                     task_id in panel,
                     int(training["writer"]["initialization_seed"]),
                 )
-                with torch.inference_mode(), torch.autocast(
-                    device_type="cuda", dtype=torch.bfloat16
-                ):
-                    batched = writer(
-                        packed["frames"],
-                        packed["indices"],
-                        packed["offsets"],
-                        packed["tokens"],
-                        packed["masks"],
-                        packed["spans"],
-                        policy=policy,
-                    )
+                with capture_policy_dictionary_mixing(writer) as mixing_capture:
+                    with torch.inference_mode(), torch.autocast(
+                        device_type="cuda", dtype=torch.bfloat16
+                    ):
+                        batched = writer(
+                            packed["frames"],
+                            packed["indices"],
+                            packed["offsets"],
+                            packed["tokens"],
+                            packed["masks"],
+                            packed["spans"],
+                            policy=policy,
+                        )
                 states = {
                     name: state_row(batched, index)
                     for index, name in enumerate(names)
                 }
+                policy_dictionary = policy_dictionary_batch_records(
+                    writer, mixing_capture, names
+                )
                 reference = states["demo_0"]
                 churn = None
                 if task_id in previous:
@@ -528,6 +535,7 @@ def _local_rows(
                         "same_task_video_variance": effective_variance(
                             pairs, [states[f"demo_{demo}"] for demo in DEMO_INDICES]
                         ),
+                        "policy_dictionary": policy_dictionary,
                         "effective_ba_from_demo_0": {
                             name: effective_metrics(pairs, reference, states[name])
                             for name in names
@@ -639,6 +647,9 @@ def _summary(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
                 for name in ("demo_1", "reversed_0", "shuffled_0")
             },
         }
+        policy_dictionary = policy_dictionary_checkpoint_summary(selected)
+        if policy_dictionary is not None:
+            result[str(cursor)]["policy_dictionary"] = policy_dictionary
         churn = [row for row in selected if row["checkpoint_churn"] is not None]
         if churn:
             result[str(cursor)]["checkpoint_churn_effective_ba_relative_l2"] = (

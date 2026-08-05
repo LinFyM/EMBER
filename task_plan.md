@@ -19,16 +19,16 @@ runner、split、路径或 GPU 权限。
   task×video RFF address、完整P1024 Program Value Memory、24×24 regularized kernel
   correction、fresh FactorHead bootstrap0→50、memory-only AS50→200与同一memory direct reward。
   方法从generic source全新训练，不加载AS125/v6-fast/Policy-Lane或任何历史Writer。
-- [ ] 删除已满足retirement trigger的Program-Credit method-specific analysis runtime；只有确有
+- [x] 删除已满足retirement trigger的Program-Credit method-specific analysis runtime；只有确有
   当前第二用途的pure gauge-invariant metrics才迁入既有owner。
-- [ ] 原位实现唯一condition-kernel Writer、custom memory update、fresh config/checkpoint
+- [x] 原位实现唯一condition-kernel Writer、custom memory update、fresh config/checkpoint
   family与AS/RL阶段freeze；不保留v6并行model/loader。
-- [ ] 完成action-hidden train24×50 descriptor/Gram audit：seal text/video bandwidth、fixed
+- [x] 完成action-hidden train24×50 descriptor/Gram audit：seal text/video bandwidth、fixed
   seed、Phi/K spectrum、same-task video与reversed/shuffled距离；validation 8 tasks只apply，
   不参与拟合或调参。
-- [ ] 完成identity、fixed address、kernel predicted/observed equality、full24 multi-rank、
+- [x] 完成identity、fixed address、kernel predicted/observed equality、full24 multi-rank、
   macro50 freeze和exact-resume的聚焦CPU合同与architecture gate。
-- [ ] live比较gpu01/gpu02后，在最多6张空闲A40上完成longest105、B20/B2、fresh0→1→
+- [x] live比较gpu01/gpu02后，在最多6张空闲A40上完成longest105、B20/B2、fresh0→1→
   exact-resume1→3 profile；profile权重永久弃用。
 - [ ] 从functional identity正式训练AS0→200，固定评测50/100/150/200；AS200达到
   correct≥120且breadth≥6才进入同pipeline direct reward，否则按最早失败接口负裁决。

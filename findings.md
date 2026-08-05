@@ -6,6 +6,27 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-05 Condition-Kernel地址审计、实现与A40 profile
+
+- action-hidden audit覆盖train24×50 videos及validation8×50 apply-only。固定1024维
+  task×video RFF在全部50个no-replacement task schedules上均为rank24，最坏regularized
+  condition=`7.5471`、最大off-diagonal=`.4270`；same-task video/cross-task demo0 feature
+  距离中位=`.8718/1.4058`，reversed最小/中位=`1.1567/1.4064`。地址没有重复或顺序失活，
+  且train/validation/test action与reward/outcome reads全0，因此按预注册规则固定feature、
+  bandwidth、seed和P1024，不做held驱动的sweep。
+- canonical AS Writer已原位替换为固定descriptor/address→完整83,886,080参数Program Value
+  Memory→2,179,072参数fresh FactorHeads，总参数86,065,152。M不使用Adam，full24唯一owner
+  在24×24 FP64 Gram上求解后做FP32 value write；FactorHeads只在macro0→50训练。旧v6 AS
+  condition path、temporal parallel module与Program-Credit method-specific analysis runtime
+  已删除，历史证据由Git/artifact保留。
+- 六卡fresh0→1与同root exact-resume1→3通过。三步wall=
+  `20.713/19.842/19.448s`，峰值allocated/reserved=`16,556,672,000/19,344,130,048` bytes；
+  step1 Program cotangent为0符合zero-final-layer identity，step2/3变为
+  `1.9946e-7/3.5717e-7`，predicted update RMS=`1.9684e-7/3.5240e-7`且cap scale始终1。
+  Gram rank24、condition持续`7.523→6.632→6.023`，0 OOM/clip，六rank exact-resume、
+  scheduler/sampler/RNG、1,440 queries/72 videos和0 validation/test action reads均闭合。
+  因此46GB容量、固定地址、梯度可达性和resume不是正式AS障碍；profile权重弃用。
+
 ## 2026-08-05 Program-Credit机制负裁决与Condition-Kernel Memory决策
 
 - clean`129cab6`的六卡只读机制分析已完成24 tasks×AS125/cycle1共48 rows、6/6 payload；

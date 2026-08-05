@@ -22,13 +22,12 @@ from ember.writer.as_contract import (
     load_writer_config,
 )
 from ember.writer.checkpoint import (
-    AS_WRITER_CHECKPOINT_SCHEMA,
     _state_schemas,
     validate_writer_checkpoint_files,
 )
 from ember.writer.checkpoint_schema import (
+    CONDITION_KERNEL_PROGRAM_MEMORY_CHECKPOINT_SCHEMA,
     HISTORICAL_V6_CHECKPOINT_SCHEMA,
-    V6_RELATIVE_FLOW_COLDSTART_TASK_QUERY_RAW_CHECKPOINT_SCHEMA,
 )
 from ember.writer.inference import inspect_as_writer_evaluation
 from ember.writer.model import WriterModelError
@@ -38,16 +37,16 @@ from ember.writer.update_contract import checkpoint_state_family
 ROOT = Path(__file__).resolve().parents[1]
 AS_CONFIG = (
     ROOT
-    / "configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json"
+    / "configs/pi05_as_writer_condition_kernel_memory_bci_v1.json"
 )
 
 
-def test_v6_relative_flow_coldstart_uses_fresh_incompatible_checkpoint_family() -> None:
+def test_condition_kernel_uses_fresh_incompatible_checkpoint_family() -> None:
     config = load_writer_config(AS_CONFIG)
     family = checkpoint_state_family(config)
-    assert family == "v6_relative_flow_coldstart_task_query_keyed_rawfull24_v1"
+    assert family == "condition_kernel_program_memory_full24_v1"
     assert _state_schemas(1, family)[0] == (
-        V6_RELATIVE_FLOW_COLDSTART_TASK_QUERY_RAW_CHECKPOINT_SCHEMA
+        CONDITION_KERNEL_PROGRAM_MEMORY_CHECKPOINT_SCHEMA
     )
     with pytest.raises(WriterModelError, match="unsupported"):
         _state_schemas(1, "cvadr_task_query_keyed_rawfull24_v1")
@@ -67,9 +66,13 @@ def _checkpoint(tmp_path: Path, contract_sha256: str) -> Path:
         for path in sorted(checkpoint.iterdir())
     }
     manifest = {
-        "schema_version": AS_WRITER_CHECKPOINT_SCHEMA,
+        "schema_version": CONDITION_KERNEL_PROGRAM_MEMORY_CHECKPOINT_SCHEMA,
         "contract_sha256": contract_sha256,
-        "consumed": {"next_step": 3},
+        "consumed": {
+            "next_step": 3,
+            "optimizer_updates_per_task_cycle": 1,
+            "checkpoint_state_family": "condition_kernel_program_memory_full24_v1"
+        },
         "files": files,
     }
     manifest["canonical_payload_sha256"] = canonical_hash(manifest)
@@ -93,7 +96,7 @@ def test_as_writer_checkpoint_verifies_every_file_before_pickle_load(
         )
 
 
-def test_historical_v6_manifest_is_load_only_warmstart_compatible(
+def test_historical_v6_manifest_is_rejected_by_fresh_condition_kernel_family(
     tmp_path: Path,
 ) -> None:
     contract = "b" * 64
@@ -107,15 +110,11 @@ def test_historical_v6_manifest_is_load_only_warmstart_compatible(
 
     with pytest.raises(WriterModelError, match="manifest changed"):
         validate_writer_checkpoint_files(
-            checkpoint, world_size=1, contract_sha256=contract
+            checkpoint,
+            world_size=1,
+            contract_sha256=contract,
+            allow_historical_v6_warmstart=True,
         )
-    accepted = validate_writer_checkpoint_files(
-        checkpoint,
-        world_size=1,
-        contract_sha256=contract,
-        allow_historical_v6_warmstart=True,
-    )
-    assert accepted["schema_version"] == HISTORICAL_V6_CHECKPOINT_SCHEMA
 
 
 def _tensor_checkpoint(
@@ -138,9 +137,13 @@ def _tensor_checkpoint(
         for path in sorted(checkpoint.iterdir())
     }
     manifest = {
-        "schema_version": AS_WRITER_CHECKPOINT_SCHEMA,
+        "schema_version": CONDITION_KERNEL_PROGRAM_MEMORY_CHECKPOINT_SCHEMA,
         "contract_sha256": canonical_hash(training),
-        "consumed": {"next_step": step},
+        "consumed": {
+            "next_step": step,
+            "optimizer_updates_per_task_cycle": 1,
+            "checkpoint_state_family": "condition_kernel_program_memory_full24_v1"
+        },
         "files": files,
     }
     manifest["canonical_payload_sha256"] = canonical_hash(manifest)
@@ -236,6 +239,7 @@ def _static_as_evaluation_fixture(
         "runtime": {
             "world_size": config["formal_run"]["expected_world_size"],
             "checkpoint_steps": [4, 6],
+            "checkpoint_state_family": "condition_kernel_program_memory_full24_v1",
         },
     }
     write_json_atomic(run / "run_contract.json", training)

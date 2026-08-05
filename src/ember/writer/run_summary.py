@@ -49,7 +49,14 @@ def write_run_summary(runtime: WriterRuntime, *, started: float) -> None:
         ),
         "optimizer_updates_per_task_cycle": updates_per_cycle,
         "completed_task_cycles": stop // updates_per_cycle,
-        "scheduler_logical_updates": stop // updates_per_cycle,
+        "scheduler_logical_updates": min(
+            stop // updates_per_cycle,
+            int(
+                runtime.config["conditioning_training"].get(
+                    "factor_decoder_train_through_macro", stop
+                )
+            ),
+        ),
         "test_action_reads": 0,
         "test_video_value_reads": 0,
     }

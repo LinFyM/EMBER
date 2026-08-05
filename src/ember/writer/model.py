@@ -1,4 +1,4 @@
-"""Canonical Language-Axial Core + Visual-Transition Procedure PI05 Writer."""
+"""Canonical fixed-condition-kernel Program Memory PI05 Writer."""
 
 from __future__ import annotations
 
@@ -8,17 +8,12 @@ from typing import Mapping
 
 import torch
 
-from ember.writer.architecture import (
-    LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS,
-    validate_writer_dimensions,
+from ember.writer.architecture import validate_writer_dimensions
+from ember.writer.condition_kernel import (
+    FactorizedConditionFeature,
+    ProgramValueMemory,
 )
-from ember.writer.temporal import (
-    CausalProcedureEncoder,
-    LanguageSemanticCore,
-    SlotNormalizedCoreProcedureCompiler,
-    TaskGroundedVisualTransitionFusion,
-)
-from ember.writer.video_program import Pi05LanguageAxialEncoder
+from ember.writer.video_program import Pi05FrozenConditionDescriptor
 
 
 class WriterModelError(RuntimeError):
@@ -141,44 +136,41 @@ class CompleteLoRAWriter(torch.nn.Module):
         template_state: Mapping[str, torch.Tensor],
         paligemma_model: torch.nn.Module,
         expert_model: torch.nn.Module,
+        condition_authority: Mapping[str, torch.Tensor],
         image_width: int,
         expert_width: int,
         program_width: int,
-        text_meta_lora_rank: int,
-        vl_meta_lora_rank: int,
-        action_meta_lora_rank: int,
-        patch_grounding_heads: int,
         max_frames_per_encoder_call: int,
         action_horizon: int,
         padded_action_dim: int,
-        semantic_core_heads: int,
-        semantic_core_blocks: int,
-        procedure_heads: int,
-        procedure_blocks: int,
-        visual_transition_heads: int,
-        fusion_heads: int,
         factor_hidden_width: int,
+        condition_task_rff_frequencies: int,
+        condition_video_rff_frequencies: int,
         initialization_seed: int,
-        activation_checkpointing: bool,
     ) -> None:
         super().__init__()
-        constructor_values = locals()
-        dimensions = {
-            name: constructor_values[name]
-            for name in LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
-            if name
-            not in {
-                "max_frames_per_encoder_call",
-                "initialization_seed",
-                "activation_checkpointing",
-            }
-        }
         try:
-            validate_writer_dimensions(dimensions)
+            validate_writer_dimensions(
+                {
+                    "image_width": image_width,
+                    "expert_width": expert_width,
+                    "program_width": program_width,
+                    "action_horizon": action_horizon,
+                    "padded_action_dim": padded_action_dim,
+                    "factor_hidden_width": factor_hidden_width,
+                    "condition_task_rff_frequencies": condition_task_rff_frequencies,
+                    "condition_video_rff_frequencies": condition_video_rff_frequencies,
+                }
+            )
         except ValueError as error:
-            raise WriterModelError("invalid Language-Axial Writer topology") from error
-        if not tensor_specs or max_frames_per_encoder_call <= 0:
-            raise WriterModelError("invalid Language-Axial Writer topology")
+            raise WriterModelError("invalid condition-kernel Writer topology") from error
+        if (
+            not tensor_specs
+            or max_frames_per_encoder_call <= 0
+            or set(condition_authority)
+            != {"task_center", "task_frequencies", "video_frequencies"}
+        ):
+            raise WriterModelError("invalid condition-kernel Writer topology")
         if set(template_state) != {item.name for item in tensor_specs}:
             raise WriterModelError("Writer LoRA template names changed")
         if (
@@ -190,41 +182,41 @@ class CompleteLoRAWriter(torch.nn.Module):
             raise WriterModelError("public Writer LoRA rank changed")
         self.tensor_specs = tensor_specs
         self.program_width = int(program_width)
-        self.semantic_encoder = Pi05LanguageAxialEncoder(
-            paligemma_model=paligemma_model,
-            expert_model=expert_model,
+        self.condition_descriptor = Pi05FrozenConditionDescriptor(
             image_width=image_width,
             expert_width=expert_width,
-            program_width=program_width,
-            text_meta_lora_rank=text_meta_lora_rank,
-            vl_meta_lora_rank=vl_meta_lora_rank,
-            action_meta_lora_rank=action_meta_lora_rank,
-            patch_grounding_heads=patch_grounding_heads,
             max_frames_per_encoder_call=max_frames_per_encoder_call,
             action_horizon=action_horizon,
             padded_action_dim=padded_action_dim,
             initialization_seed=initialization_seed,
-            activation_checkpointing=activation_checkpointing,
         )
-        self.semantic_core = LanguageSemanticCore(
-            width=program_width,
-            heads=semantic_core_heads,
-            blocks=semantic_core_blocks,
+        self.condition_feature = FactorizedConditionFeature(
+            task_center=condition_authority["task_center"],
+            task_frequencies=condition_authority["task_frequencies"],
+            video_frequencies=condition_authority["video_frequencies"],
         )
-        self.visual_transition = TaskGroundedVisualTransitionFusion(
-            width=program_width,
-            heads=visual_transition_heads,
-        )
-        self.procedure = CausalProcedureEncoder(
-            width=program_width,
-            heads=procedure_heads,
-            blocks=procedure_blocks,
-        )
-        self.compiler = SlotNormalizedCoreProcedureCompiler(
-            width=program_width,
-            heads=fusion_heads,
+        if (
+            self.condition_feature.task_frequencies.shape[0]
+            != condition_task_rff_frequencies
+            or self.condition_feature.video_frequencies.shape[0]
+            != condition_video_rff_frequencies
+            or self.condition_descriptor.task_descriptor_width
+            != self.condition_feature.task_center.numel()
+            or self.condition_descriptor.video_descriptor_width
+            != self.condition_feature.video_frequencies.shape[1]
+        ):
+            raise WriterModelError("condition address authority changed dimensions")
+        self.program_memory = ProgramValueMemory(
+            feature_width=self.condition_feature.feature_width,
+            program_slots=self.PROGRAM_SLOTS,
+            program_width=program_width,
             initialization_seed=initialization_seed + 1,
         )
+        # Program Memory has an explicit full-task kernel update.  Keeping it
+        # outside autograd/Adam is the central ownership boundary of this
+        # architecture; AS and reward training both differentiate a detached
+        # Program leaf and then write the resulting cotangent through Phi.
+        self.program_memory.value.requires_grad_(False)
         self.factor_heads = torch.nn.ModuleDict(
             {
                 name: FactorHead(program_width, factor_hidden_width, width)
@@ -295,100 +287,17 @@ class CompleteLoRAWriter(torch.nn.Module):
             raise WriterModelError("PI05 task-LoRA layer is outside Action Expert")
         return f"{match.group(2)[0]}_{factor}", layer
 
-    def _pack_video_program(
+    def encode_condition(
         self,
-        frame_evidence: torch.Tensor,
-        grounded_evidence: torch.Tensor,
-        interactions: torch.Tensor,
-        frame_indices: torch.Tensor,
-        offsets: tuple[int, ...],
-    ) -> tuple[
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-    ]:
-        if (
-            frame_evidence.ndim != 3
-            or grounded_evidence.shape != frame_evidence.shape
-            or interactions.shape
-            != (frame_evidence.shape[0], self.program_width)
-            or frame_indices.shape != (frame_evidence.shape[0],)
-        ):
-            raise WriterModelError("Writer visual-transition evidence changed shape")
-        batch = len(offsets) - 1
-        lengths = tuple(right - left for left, right in zip(offsets, offsets[1:]))
-        maximum = max(lengths)
-        packed_evidence = frame_evidence.new_zeros(
-            batch,
-            maximum,
-            frame_evidence.shape[1],
-            self.program_width,
-        )
-        packed_interactions = interactions.new_zeros(
-            batch,
-            maximum,
-            self.program_width,
-        )
-        packed_grounded = grounded_evidence.new_zeros(
-            batch,
-            maximum,
-            grounded_evidence.shape[1],
-            self.program_width,
-        )
-        positions = torch.zeros(
-            batch,
-            maximum,
-            dtype=torch.long,
-            device=interactions.device,
-        )
-        valid_frames = torch.zeros(
-            batch,
-            maximum,
-            dtype=torch.bool,
-            device=interactions.device,
-        )
-        for row, (left, right) in enumerate(zip(offsets, offsets[1:])):
-            length = right - left
-            active_positions = frame_indices[left:right]
-            if (
-                int(active_positions[0]) != 0
-                or bool((active_positions[1:] <= active_positions[:-1]).any())
-            ):
-                raise WriterModelError(
-                    "sampled frame ordinals must start at zero and increase"
-                )
-            packed_evidence[row, :length] = frame_evidence[left:right]
-            packed_grounded[row, :length] = grounded_evidence[left:right]
-            packed_interactions[row, :length] = interactions[left:right]
-            positions[row, :length] = active_positions
-            valid_frames[row, :length] = True
-        return (
-            packed_evidence,
-            packed_grounded,
-            packed_interactions,
-            positions,
-            valid_frames,
-        )
-
-    def encode_task(
-        self,
-        policy: torch.nn.Module,
         frames: torch.Tensor,
         frame_indices: torch.Tensor,
         video_offsets: torch.Tensor,
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
         task_span_mask: torch.Tensor,
-    ) -> tuple[
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-    ]:
+        *,
+        policy: torch.nn.Module,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         offsets = self._validated_offsets(video_offsets, frames.shape[0])
         conditions = len(offsets) - 1
         if (
@@ -404,6 +313,15 @@ class CompleteLoRAWriter(torch.nn.Module):
             or task_span_mask.dtype != torch.bool
         ):
             raise WriterModelError("Writer frame-language condition batch changed")
+        for left, right in zip(offsets, offsets[1:]):
+            active_positions = frame_indices[left:right]
+            if (
+                int(active_positions[0]) != 0
+                or bool((active_positions[1:] <= active_positions[:-1]).any())
+            ):
+                raise WriterModelError(
+                    "sampled frame ordinals must start at zero and increase"
+                )
         lengths = torch.tensor(
             [right - left for left, right in zip(offsets, offsets[1:])],
             dtype=torch.long,
@@ -413,58 +331,24 @@ class CompleteLoRAWriter(torch.nn.Module):
             torch.arange(conditions, device=frames.device),
             lengths,
         )
-        (
-            text_queries,
-            frame_evidence,
-            grounded_evidence,
-            interactions,
-            valid_task_tokens,
-        ) = self.semantic_encoder(
+        task_descriptor, video_descriptor = self.condition_descriptor(
             policy,
             frames,
             condition_ids,
+            video_offsets,
             language_tokens,
             language_mask,
             task_span_mask,
         )
-        (
-            packed_evidence,
-            packed_grounded,
-            packed_interactions,
-            positions,
-            valid_frames,
-        ) = self._pack_video_program(
-            frame_evidence,
-            grounded_evidence,
-            interactions,
-            frame_indices,
-            offsets,
-        )
-        core_memory, frame_attention = self.semantic_core(
-            text_queries,
-            packed_evidence,
-            valid_frames,
-            valid_task_tokens,
-        )
-        procedure_input, _ = self.visual_transition(
-            packed_interactions,
-            packed_grounded,
-            valid_frames,
-            valid_task_tokens,
-        )
-        procedure_memory = self.procedure(
-            procedure_input,
-            positions,
-            valid_frames,
-        )
-        return (
-            core_memory,
-            valid_task_tokens,
-            procedure_memory,
-            positions,
-            valid_frames,
-            frame_attention,
-        )
+        feature = self.condition_feature(task_descriptor, video_descriptor)
+        program = self.program_memory(feature)
+        if program.shape != (
+            conditions,
+            self.PROGRAM_SLOTS,
+            self.program_width,
+        ):
+            raise WriterModelError("Writer policy program changed shape")
+        return feature, program
 
     def encode_program(
         self,
@@ -477,43 +361,15 @@ class CompleteLoRAWriter(torch.nn.Module):
         *,
         policy: torch.nn.Module,
     ) -> torch.Tensor:
-        (
-            core_memory,
-            valid_core,
-            procedure_memory,
-            positions,
-            valid_frames,
-            _,
-        ) = self.encode_task(
-            policy,
+        _, program = self.encode_condition(
             frames,
             frame_indices,
             video_offsets,
             language_tokens,
             language_mask,
             task_span_mask,
+            policy=policy,
         )
-        expert, action_in, action_out = self.compiler(
-            core_memory,
-            valid_core,
-            procedure_memory,
-            positions,
-            valid_frames,
-        )
-        program = torch.cat(
-            (
-                expert.flatten(1, 2),
-                action_in,
-                action_out,
-            ),
-            dim=1,
-        )
-        if program.shape != (
-            core_memory.shape[0],
-            self.PROGRAM_SLOTS,
-            self.program_width,
-        ) or not bool(torch.isfinite(program).all()):
-            raise WriterModelError("Writer policy program changed shape or became non-finite")
         return program
 
     def decode_program(self, program: torch.Tensor) -> dict[str, torch.Tensor]:

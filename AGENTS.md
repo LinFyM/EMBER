@@ -166,6 +166,14 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   preconditioner。FactorHeads只在fresh AS macro0→50 bootstrap，固定50后永久冻结；
   macro50→200 AS与之后direct reward都只更新M。AS200是预注册reward边界，不能从四个held
   点选择历史best来warm-start。
+- canonical AS实现、action-hidden地址审计和BCI六卡profile已完成。train24×50的50组
+  no-replacement condition Gram全部rank24，最坏regularized condition=`7.5471`；same-task
+  video与reversed/shuffled feature均显著非零，validation8只apply且action/reward reads全0。
+  fresh0→1→exact-resume1→3三步wall=`20.713/19.842/19.448s`，峰值reserved
+  `19,344,130,048` bytes，0 OOM/clip；step2/3 Program cotangent与predicted update有限且
+  未触发cap，六rank checkpoint/scheduler/RNG闭合。profile权重永久弃用，下一步只从独立
+  fresh identity训练AS0→200并评测50/100/150/200；AS200低于correct120或breadth6不得进入
+  reward。
 - Policy-Lane已完成fresh0→200、四点strict correct400与全部内部分析并正式负裁决：correct=
   `70/63/37/61`、breadth=`6/4/6/6`、union/intersection=`117/14`。它真实形成约10个有效
   output lanes、stable rank`1.34--1.54`和direct-SFT量级跨层专门化，但same-task video

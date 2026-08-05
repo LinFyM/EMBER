@@ -44,6 +44,15 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 from ember.writer.update_schedule import cycle_matched_weight_decay
 
 
+def _scheduler_update_cursor(task_cycle: int, checkpoint_state_family: str) -> int:
+    return (
+        min(task_cycle, 50)
+        if checkpoint_state_family
+        == "condition_kernel_program_memory_full24_v1"
+        else task_cycle
+    )
+
+
 def _rng_state(context: DistributedContext) -> dict[str, Any]:
     return {
         "python": random.getstate(),
@@ -99,6 +108,11 @@ def _write_rank_state(
     task_cycle, task_cycle_phase = divmod(
         step, optimizer_updates_per_task_cycle
     )
+    resolved_family = checkpoint_state_family or (
+        "cvadr_legacy_full24_v1"
+        if optimizer_updates_per_task_cycle == 1
+        else "cvadr_legacy_serial4_v1"
+    )
     torch.save(
         {
             "schema_version": rank_state_schema,
@@ -106,7 +120,9 @@ def _write_rank_state(
             "next_data_step": step * tasks_per_rank_per_update,
             "next_task_cycle": task_cycle,
             "next_task_cycle_phase": task_cycle_phase,
-            "scheduler_logical_updates": task_cycle,
+            "scheduler_logical_updates": _scheduler_update_cursor(
+                task_cycle, resolved_family
+            ),
             "rank": context.rank,
             "world_size": context.world_size,
             "per_rank_batch_size": sampler.per_rank_batch_size,
@@ -116,11 +132,7 @@ def _write_rank_state(
             "teacher_videos_per_task_visit": videos_per_task_visit,
             "tasks_per_rank_per_optimizer_update": tasks_per_rank_per_update,
             "optimizer_updates_per_task_cycle": optimizer_updates_per_task_cycle,
-            "checkpoint_state_family": checkpoint_state_family or (
-                "cvadr_legacy_full24_v1"
-                if optimizer_updates_per_task_cycle == 1
-                else "cvadr_legacy_serial4_v1"
-            ),
+            "checkpoint_state_family": resolved_family,
             "rng": saved_rng,
         },
         path,
@@ -164,12 +176,15 @@ def _write_shared_state(
     task_cycle, task_cycle_phase = divmod(
         step, optimizer_updates_per_task_cycle
     )
+    scheduler_cursor = _scheduler_update_cursor(
+        task_cycle, checkpoint_state_family
+    )
     checkpoint_schema, trainer_state_schema, _ = _state_schemas(
         optimizer_updates_per_task_cycle,
         checkpoint_state_family,
     )
     scheduler_state = scheduler.state_dict()
-    if int(scheduler_state.get("last_epoch", -1)) != task_cycle:
+    if int(scheduler_state.get("last_epoch", -1)) != scheduler_cursor:
         raise WriterModelError("AS-Writer scheduler exposure cursor changed")
     data_stop_step = step
     save_file(
@@ -185,7 +200,7 @@ def _write_shared_state(
             "next_step": step,
             "next_task_cycle": task_cycle,
             "next_task_cycle_phase": task_cycle_phase,
-            "scheduler_logical_updates": task_cycle,
+            "scheduler_logical_updates": scheduler_cursor,
             "checkpoint_state_family": checkpoint_state_family,
             "optimizer": optimizer.state_dict(),
             "scheduler": scheduler_state,
@@ -216,7 +231,7 @@ def _write_shared_state(
         "next_data_step": step * tasks_per_rank_per_update,
         "next_task_cycle": task_cycle,
         "next_task_cycle_phase": task_cycle_phase,
-        "scheduler_logical_updates": task_cycle,
+        "scheduler_logical_updates": scheduler_cursor,
         "optimizer_updates_per_task_cycle": optimizer_updates_per_task_cycle,
         "checkpoint_state_family": checkpoint_state_family,
         "teacher_videos_per_task_visit": videos_per_task_visit,
@@ -494,6 +509,9 @@ def _trainer_resume_cursor(
     task_cycle, task_cycle_phase = divmod(
         next_step, optimizer_updates_per_task_cycle
     )
+    scheduler_cursor = _scheduler_update_cursor(
+        task_cycle, checkpoint_state_family
+    )
     serial4 = optimizer_updates_per_task_cycle > 1
     valid = (
         trainer.get("schema_version") == trainer_state_schema
@@ -520,10 +538,10 @@ def _trainer_resume_cursor(
         == task_cycle_phase
         and int(
             trainer.get(
-                "scheduler_logical_updates", -1 if serial4 else task_cycle
+                "scheduler_logical_updates", -1 if serial4 else scheduler_cursor
             )
         )
-        == task_cycle
+        == scheduler_cursor
         and int(manifest.get("consumed", {}).get("next_step", -1))
         == next_step
     )
@@ -552,6 +570,9 @@ def _validate_rank_resume_cursor(
     checkpoint_state_family: str,
 ) -> None:
     serial4 = optimizer_updates_per_task_cycle > 1
+    scheduler_cursor = _scheduler_update_cursor(
+        task_cycle, checkpoint_state_family
+    )
     expected = (
         next_step,
         context.rank,
@@ -564,7 +585,7 @@ def _validate_rank_resume_cursor(
         next_step * tasks_per_rank_per_update,
         task_cycle,
         task_cycle_phase,
-        task_cycle,
+        scheduler_cursor,
         sampler_seed,
         teacher_video_seed,
         checkpoint_state_family,
@@ -626,6 +647,9 @@ def _validate_cycle_normalized_optimizer_resume(
     task_cycle_phase: int,
     checkpoint_state_family: str,
 ) -> None:
+    condition_kernel = (
+        checkpoint_state_family == "condition_kernel_program_memory_full24_v1"
+    )
     if checkpoint_state_family.startswith("cvadr_legacy_") or (
         checkpoint_state_family in {
             "target_bound_role_rawfull24_v1",
@@ -647,6 +671,7 @@ def _validate_cycle_normalized_optimizer_resume(
             "target_bound_role_task_query_keyed_rawfull24_v1",
             "semantic_factor_basis_task_query_keyed_rawfull24_v1",
             "v6_relative_flow_coldstart_task_query_keyed_rawfull24_v1",
+            "condition_kernel_program_memory_full24_v1",
         }
     ):
         raise WriterModelError("unknown cycle-normalized optimizer resume family")
@@ -691,7 +716,8 @@ def _validate_cycle_normalized_optimizer_resume(
         for parameter in group["params"]:
             state = optimizer.state.get(parameter, {})
             step = state.get("step")
-            if step is None or int(step.item()) != next_step:
+            expected_step = min(next_step, 50) if condition_kernel else next_step
+            if step is None or int(step.item()) != expected_step:
                 raise WriterModelError("optimizer resume bias cursor changed")
 
 
@@ -753,7 +779,13 @@ def load_writer_checkpoint(
     )
     optimizer.load_state_dict(trainer["optimizer"])
     scheduler.load_state_dict(trainer["scheduler"])
-    if int(scheduler.state_dict().get("last_epoch", -1)) != task_cycle:
+    expected_scheduler_cursor = (
+        min(task_cycle, 50)
+        if resolved_checkpoint_state_family
+        == "condition_kernel_program_memory_full24_v1"
+        else task_cycle
+    )
+    if int(scheduler.state_dict().get("last_epoch", -1)) != expected_scheduler_cursor:
         raise WriterModelError("Writer scheduler resume cursor changed")
     _validate_cycle_normalized_optimizer_resume(
         optimizer,

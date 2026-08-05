@@ -22,9 +22,16 @@
   program delta却变成`.5801/.6128`、retention=`.55537`且无负pair；same-task update的
   task-mean energy fraction在program/BA为`.82990/.91623`。这把最早故障定位到共享
   condition-map credit kernel，而不是functional loss、LoRA rank或decoder完全失活。
-- 新architecture尚未实现或launch。下一执行顺序是：封存action-hidden address/Gram audit
-  →原位替换canonical Writer与AS/RL memory update→聚焦identity/kernel/freeze/resume合同
-  →live双节点preflight后的A40 profile→fresh AS0→200与四点strict rollout。任何GPU工作仍
+- canonical AS实现、action-hidden address audit和六卡A40 profile已经完成。新Writer为
+  83,886,080参数显式Program Value Memory加2,179,072参数fresh FactorHeads，总参数
+  86,065,152；旧v6 AS condition path与Program-Credit一次性analysis runtime已退休。
+  address audit的50组train24 Gram全部rank24、最坏condition7.547；same-task video与
+  reversed feature均显著非零，所有action/reward reads为0。
+- `gpu01:0,1,2|4,5,6`的fresh0→1→exact-resume1→3已通过：三步
+  `20.713/19.842/19.448s`，峰值allocated/reserved=`16,556,672,000/19,344,130,048` bytes，
+  longest105、logical B20/B2、0 OOM/clip；step2/3首次非零Program update有限且未触发cap，
+  六rank checkpoint/scheduler/RNG闭合。profile权重弃用。下一执行顺序是clean commit/push
+  →live双节点preflight→独立fresh AS0→200→四点strict rollout与内部分析。任何GPU工作仍
   最多6张实时空闲卡、显式`NCCL_P2P_DISABLE=1`且不干扰他人。
 - PWAD fresh0→200与四点strict correct400已完成并负裁决：`77/71/80/80`、breadth=
   `5/6/5/5`、union/intersection=`115/44`。64 atoms广泛active，但mixing row stable rank

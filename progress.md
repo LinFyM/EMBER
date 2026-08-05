@@ -8,6 +8,19 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-05 Condition-Kernel实现与profile封存
+
+- 完成train24×50、validation8×50 action-hidden address audit：50组schedule Gram全rank24，
+  最坏condition7.547；same-task video与reversed/shuffled feature均非零，所有action/reward
+  reads为0。固定authority SHA=`7a49226e...0f86`，不做feature/seed sweep。
+- canonical AS路径原位替换为固定condition feature、83.9M Program Value Memory和fresh
+  FactorHeads；旧Program-Credit一次性analysis runtime及v6 AS condition path已退休。23项
+  condition/model/training/checkpoint聚焦合同通过，compileall与diff check闭合。
+- `gpu01:0,1,2|4,5,6`完成fresh0→1与exact-resume1→3：三步约
+  `20.71/19.84/19.45s`，峰值reserved19.34GB，0 OOM/clip。step2/3 Program cotangent和
+  value update有限、cap未触发，六rank checkpoint/scheduler/RNG连续；进程自然结束、GPU
+  已释放。profile权重弃用，下一步是clean pushed commit后的fresh AS0→200。
+
 ## 2026-08-05 Program-Credit内部分析完成并封存Condition-Kernel Memory设计
 
 - six-rank只读内部分析root

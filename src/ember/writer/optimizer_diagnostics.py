@@ -57,7 +57,9 @@ def optimizer_state_metrics(
     }
     counts = {block: 0 for block in (*blocks, "all")}
     steps = {block: [] for block in (*blocks, "all")}
-    eps = float(runtime.config["optimization"]["optimizer"]["eps"])
+    eps = float(
+        runtime.config["optimization"]["factor_decoder_optimizer"]["eps"]
+    )
     for item, previous in zip(runtime.gradient_layout, before, strict=True):
         parameter = item.parameter.detach().float()
         update = parameter - previous.float()

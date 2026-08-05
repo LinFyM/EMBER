@@ -25,7 +25,7 @@ from ember.pi05_source_checkpoint import (
     write_json_atomic,
 )
 from ember.pi05_source_contract import append_jsonl
-from ember.writer.architecture import V6_WRITER_PARAMETER_COUNT
+from ember.writer.architecture import CONDITION_KERNEL_WRITER_PARAMETER_COUNT
 from ember.writer.as_config import (
     REPO_ROOT,
     authority_path,
@@ -39,7 +39,7 @@ from ember.writer.topology import validate_task_complete_topology
 from ember.writer.update_contract import build_update_runtime_contract
 
 
-AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_v6_relative_flow_coldstart_launch_v1"
+AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_factorized_condition_kernel_launch_v1"
 SUPPORTED_AS_WRITER_LAUNCH_SCHEMAS = frozenset({AS_WRITER_LAUNCH_SCHEMA})
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
@@ -387,15 +387,27 @@ def writer_trainable_contract(
 ) -> dict[str, Any]:
     names = sorted(name for name, value in writer.named_parameters() if value.requires_grad)
     parameter_count = sum(value.numel() for value in writer.parameters())
+    trainable_parameter_count = sum(
+        value.numel() for value in writer.parameters() if value.requires_grad
+    )
+    memory_parameter_count = writer.program_memory.value.numel()
     if (
         not names
-        or parameter_count != V6_WRITER_PARAMETER_COUNT
+        or parameter_count != CONDITION_KERNEL_WRITER_PARAMETER_COUNT
+        or trainable_parameter_count != 2_179_072
+        or memory_parameter_count != 83_886_080
+        or any(not name.startswith("factor_heads.") for name in names)
         or any(parameter.requires_grad for parameter in policy.parameters())
     ):
         raise WriterModelError("AS-Writer freeze boundary changed")
     return {
         "object": "shared_action_supervised_writer_only",
         "parameter_count": parameter_count,
+        "trainable_parameter_count": trainable_parameter_count,
+        "factor_decoder_parameter_count": trainable_parameter_count,
+        "program_memory_parameter_count": memory_parameter_count,
+        "program_memory_update_owner": "explicit_condition_kernel_no_optimizer",
+        "factor_decoder_optimizer_stop_macro": 50,
         "parameter_name_count": len(names),
         "parameter_names_sha256": canonical_hash(names),
         "generated_lora_parameter_count": lora.parameter_count,

@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：Program-Credit正式负裁决，Factorized Condition-Kernel Memory设计已封存
+## 0.0 当前状态：Condition-Kernel实现、地址审计与A40 profile已封存
 
 - Antithetic Program-Credit formal cycle1与strict correct400已完成：96 rollouts、48个
   valid CRN pairs、54 successes、6个binary-discordant pairs和一次finite full24 update；
@@ -37,8 +37,26 @@
   穿过可漂移condition encoder。fresh FactorHeads只bootstrap到固定macro50，随后永久冻结；
   AS与direct reward都只向同一memory value提供program cotangent。
 - 新方法不加载AS125、v6-fast、Policy-Lane或任何历史Writer权重，不恢复Direction Store或
-  learned router。当前尚未修改canonical model/config，也未启动新GPU工作；下一步依次为
-  address/Gram只读audit、原位实现、聚焦CPU合同、A40 profile和fresh formal AS。
+  learned router。canonical AS路径已经原位替换：旧Program-Credit一次性analysis runtime和
+  v6 trainable condition path已删除；当前Writer只有冻结descriptor/address、83,886,080参数
+  Program Value Memory和2,179,072参数fresh FactorHeads，完整参数86,065,152。M不进入Adam，
+  每个full24宏步只接受显式kernel-corrected Program cotangent；FactorHeads在macro50后由
+  scheduler/checkpoint/resume合同永久冻结。
+- action-hidden地址审计已在train24×50与validation8×50 apply-only完成：50个no-replacement
+  schedule的Gram全部rank24，最坏regularized condition=`7.5471`、最大off-diagonal=`.4270`；
+  same-task video/cross-task demo0 feature距离中位=`.8718/1.4058`，reversed最小/中位=
+  `1.1567/1.4064`。train/validation/test action与reward reads全0，authority SHA为
+  `7a49226e...0f86`，root=`runs/outputs/condition_kernel_address_audit_r6_seed2026080501_20260805`。
+- `gpu01:0,1,2|4,5,6`六卡fresh0→1再exact-resume1→3 profile已完成并释放GPU。三步wall=
+  `20.713/19.842/19.448s`，峰值allocated/reserved=`16,556,672,000/19,344,130,048` bytes，
+  longest105、logical B20/B2、0 OOM/clip。step1因zero final layer使Program cotangent严格0；
+  step2/3 cotangent RMS=`1.9946e-7/3.5717e-7`，predicted update RMS=
+  `1.9684e-7/3.5240e-7`且全局cap均未触发，Gram rank24、condition=`6.632/6.023`。累计
+  1,440 queries/72 videos，scheduler/sampler/RNG/六rank checkpoint连续，validation/test
+  action reads=0；profile root=`runs/outputs/pi05_as_writer_condition_kernel_memory_profile_r6_b20_seed7_20260805`。
+- 当前下一步只是在clean pushed commit与新live preflight后，从独立fresh identity root训练
+  AS0→200并严格评测50/100/150/200；profile权重永久弃用。AS200未达correct120且breadth6
+  则不进入reward。
 - Program-Credit只读analysis owner的retirement trigger现已满足；新design落地时删除其
   method-specific runtime/authority，纯gauge-invariant metrics只有出现当前第二用途才迁入
   既有analysis owner。历史可复现性由Git与上述artifact保留。

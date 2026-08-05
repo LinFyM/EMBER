@@ -29,22 +29,17 @@ class FlatParameter:
 
 
 def _parameter_block(name: str) -> str:
-    if name.startswith("semantic_encoder."):
-        return "semantic_frontend"
-    for prefix, block in (
-        ("semantic_core.", "core"),
-        ("visual_transition.", "program"),
-        ("procedure.", "program"),
-        ("compiler.", "compiler"),
-        ("factor_heads.", "factor"),
-    ):
-        if name.startswith(prefix):
-            return block
+    if name.startswith("factor_heads."):
+        return "factor"
     raise TaskGradientError(f"unowned Writer parameter: {name}")
 
 
 def parameter_layout(writer: torch.nn.Module) -> tuple[FlatParameter, ...]:
-    """Build a stable flat layout for every trainable Writer parameter."""
+    """Build the Adam-owned FactorHead layout.
+
+    Program Memory is deliberately absent: it is updated by the explicit
+    condition-kernel solve and must never silently enter an optimizer.
+    """
 
     result = []
     cursor = 0
@@ -64,13 +59,7 @@ def parameter_layout(writer: torch.nn.Module) -> tuple[FlatParameter, ...]:
         cursor = stop
     if not result or len({item.name for item in result}) != len(result):
         raise TaskGradientError("invalid Writer parameter layout")
-    if {item.block for item in result} != {
-        "semantic_frontend",
-        "core",
-        "program",
-        "compiler",
-        "factor",
-    }:
+    if {item.block for item in result} != {"factor"}:
         raise TaskGradientError("Writer parameter ownership changed")
     return tuple(result)
 

@@ -1,4 +1,4 @@
-"""Sealed configuration loading and validation for PI05 AS-Writer."""
+"""Sealed configuration loading for the canonical condition-kernel Writer."""
 
 from __future__ import annotations
 
@@ -12,33 +12,8 @@ from ember.writer.model import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-V6_RELATIVE_FLOW_CONFIG_SCHEMA = (
-    "ember_pi05_v6_relative_flow_coldstart_as_writer_v1"
-)
-V6_RELATIVE_FLOW_CONFIG_OVERLAY_SCHEMA = (
-    "ember_pi05_v6_relative_flow_coldstart_recipe_overlay_v1"
-)
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_contextual_value_dual_read_full24_as_writer_v1"
-AS_WRITER_CONFIG_OVERLAY_SCHEMA = (
-    "ember_pi05_contextual_value_dual_read_full24_as_writer_recipe_overlay_v1"
-)
-AS_WRITER_SERIAL4_CONFIG_SCHEMA = (
-    "ember_pi05_contextual_value_dual_read_serial4_exposurematched_as_writer_v1"
-)
-AS_WRITER_SERIAL4_CONFIG_OVERLAY_SCHEMA = (
-    "ember_pi05_contextual_value_dual_read_serial4_exposurematched_recipe_overlay_v1"
-)
-AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA = (
-    "ember_pi05_contextual_value_dual_read_cycle_normalized_as_writer_v2"
-)
-AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA = (
-    "ember_pi05_contextual_value_dual_read_cycle_normalized_recipe_overlay_v2"
-)
-AS_WRITER_CONFIG_SCHEMAS = (
-    V6_RELATIVE_FLOW_CONFIG_SCHEMA,
-    AS_WRITER_CONFIG_SCHEMA,
-    AS_WRITER_SERIAL4_CONFIG_SCHEMA,
-    AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA,
+CONDITION_KERNEL_CONFIG_SCHEMA = (
+    "ember_pi05_factorized_condition_kernel_program_memory_as_writer_v1"
 )
 AS_WRITER_STAGES = ("development", "final")
 
@@ -48,8 +23,6 @@ def authority_path(config: Mapping[str, Any], name: str) -> Path:
 
 
 def writer_stage(config: Mapping[str, Any]) -> str:
-    """Return the sealed data stage, preserving old development artifacts."""
-
     stage = str(config.get("sealed_stage", "development"))
     if stage not in AS_WRITER_STAGES:
         raise WriterModelError("unsupported PI05 AS-Writer stage")
@@ -57,16 +30,15 @@ def writer_stage(config: Mapping[str, Any]) -> str:
 
 
 def writer_split_roles(config: Mapping[str, Any]) -> tuple[str, ...]:
-    if writer_stage(config) == "development":
-        return ("train",)
-    return ("train", "validation")
+    return ("train",) if writer_stage(config) == "development" else (
+        "train",
+        "validation",
+    )
 
 
 def resolve_mode_config(
     config: Mapping[str, Any], mode: str
 ) -> dict[str, Any]:
-    """Resolve the declared profile seed without mutating the formal config."""
-
     if mode not in {"profile", "formal"}:
         raise WriterModelError("unsupported PI05 AS-Writer runtime mode")
     resolved = dict(config)
@@ -88,9 +60,10 @@ def _validate_authorities(config: Mapping[str, Any]) -> None:
         "lora_contract",
         "source_base_config",
         "tokenizer_manifest",
+        "condition_address",
     }
     if set(authorities) != required:
-        raise WriterModelError("AS-Writer authority set changed")
+        raise WriterModelError("condition-kernel authority set changed")
     for name, authority in authorities.items():
         artifact = REPO_ROOT / str(authority.get("path", ""))
         if (
@@ -98,7 +71,7 @@ def _validate_authorities(config: Mapping[str, Any]) -> None:
             or sha256_file(artifact) != authority.get("sha256")
         ):
             raise WriterModelError(
-                f"sealed AS-Writer authority changed: {name}"
+                f"sealed condition-kernel authority changed: {name}"
             )
 
 
@@ -110,44 +83,25 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
         != "ember_pi05_target_data_manifest_v1"
         or int(target.get("summary", {}).get("tasks", -1)) != 40
         or int(target.get("summary", {}).get("episodes", -1)) != 2000
-        or {
-            name: len(roles.get(name, []))
-            for name in ("train", "validation", "test")
-        }
+        or {name: len(roles.get(name, [])) for name in ("train", "validation", "test")}
         != {"train": 24, "validation": 8, "test": 8}
     ):
-        raise WriterModelError(
-            "AS-Writer target-data authority is not sealed 24/8/8"
-        )
+        raise WriterModelError("condition-kernel split authority changed")
     lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
     if (
         lora.source_base_config_sha256
         != config["authorities"]["source_base_config"]["sha256"]
     ):
-        raise WriterModelError(
-            "AS-Writer LoRA and source-base authorities disagree"
-        )
+        raise WriterModelError("condition-kernel source and LoRA disagree")
     writer = config.get("writer", {})
     if (
         writer.get("frame_stride") != 5
         or int(writer.get("max_frames_per_encoder_call", 0)) <= 0
     ):
-        raise WriterModelError(
-            "sealed target-bound-role Writer dimensions changed"
-        )
+        raise WriterModelError("condition-kernel frame contract changed")
     expected = expected_writer_contract(writer)
     if writer != expected:
-        missing = sorted(set(expected) - set(writer))
-        extra = sorted(set(writer) - set(expected))
-        changed = sorted(
-            key
-            for key in set(writer) & set(expected)
-            if writer[key] != expected[key]
-        )
-        raise WriterModelError(
-            "target-bound-role AS-Writer architecture changed; "
-            f"missing={missing}, extra={extra}, changed={changed}"
-        )
+        raise WriterModelError("condition-kernel Writer architecture changed")
 
 
 def _validate_information_wall(config: Mapping[str, Any]) -> None:
@@ -171,8 +125,8 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         "test_actions_read": 0,
         "test_video_values_read": 0,
     }
-    if writer_stage(config) == "development":
-        expected = {
+    expected = (
+        {
             **common,
             "development_action_split_roles": ["train"],
             "development_video_split_roles": ["train"],
@@ -180,36 +134,27 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
             "validation_action_queries_per_checkpoint_monitor": 512,
             "validation_action_gradient": False,
         }
-    else:
-        expected = {
+        if writer_stage(config) == "development"
+        else {
             **common,
             "final_action_split_roles": ["train", "validation"],
             "final_video_split_roles": ["train", "validation"],
         }
+    )
     if config.get("information_wall") != expected:
-        raise WriterModelError("AS-Writer information wall changed")
+        raise WriterModelError("condition-kernel information wall changed")
 
+
+def _validate_data(config: Mapping[str, Any]) -> None:
     data = config.get("data", {})
-    update_topology = str(
-        config.get("conditioning_training", {}).get("update_topology", "")
-    )
-    teacher_video_sampling = (
-        "per_task_cycle_visit_deterministic_single_same_task_video_in_"
-        "no_replacement_cycles"
-        if update_topology in {
-            "serial4_exposure_matched_six_phase_task_cycle",
-            "cycle_normalized_randomized_group4_six_phase_task_cycle",
-        }
-        else (
-            "per_task_macro_visit_deterministic_single_same_task_video_in_"
-            "no_replacement_cycles"
-        )
-    )
     required = {
         "task_count": 24 if writer_stage(config) == "development" else 32,
-        "demo_indices": [0, 49],
         "episodes_per_task": 50,
-        "teacher_video_sampling": teacher_video_sampling,
+        "demo_indices": [0, 49],
+        "teacher_video_sampling": (
+            "per_task_macro_visit_deterministic_single_same_task_video_in_"
+            "no_replacement_cycles"
+        ),
         "action_query_sampling": (
             "task-balanced deterministic no-replacement episode cycles with "
             "per-visit exact normalized-progress strata permutation and "
@@ -224,519 +169,103 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         ),
     }
     if any(data.get(name) != value for name, value in required.items()):
-        raise WriterModelError("AS-Writer sampling contract changed")
+        raise WriterModelError("condition-kernel data schedule changed")
 
 
-def _conditioning_common(*, task_query_keyed: bool) -> dict[str, Any]:
-    common: dict[str, Any] = {
-        "writer_language_contract": (
-            "correct_task_language_state_free_teacher_action_suffix"
+def _validate_training(config: Mapping[str, Any]) -> None:
+    training = config.get("conditioning_training", {})
+    profile_world = int(config.get("profile_defaults", {}).get("expected_world_size", 0))
+    formal_world = int(config.get("formal_run", {}).get("expected_world_size", 0))
+    tasks_per_rank = 24 // formal_world if formal_world in {4, 6} else -1
+    required = {
+        "method": (
+            "factorized_condition_kernel_program_memory_task_query_keyed_"
+            "independent_b20_functional_cotangent"
         ),
-        "policy_language_contract": "correct_action_query_task_language",
-        "teacher_videos_per_task_visit": 1,
-        "action_video_assignment": "all_actions_share_single_video_lora",
-        "logical_pair_batch": "per_task_action_batch",
-        "policy_noise_contract": (
-            "one independent policy flow noise and time draw per action query"
-        ),
-        "single_video_gradient_direction_diagnostic": (
-            "fixed_countsketch_32_per_task_per_semantic_frontend_core_program_"
-            "compiler_factor_block"
-        ),
-        "normal_loss_weight": 1.0,
-    }
-    if task_query_keyed:
-        common["policy_noise_contract"] = (
-            "one task-query-keyed stateless policy flow noise and time draw "
-            "per action query"
-        )
-        common["policy_randomness_scheme"] = (
-            "task_query_keyed_stateless_policy_cpu_cuda_v2"
-        )
-    return common
-
-
-def _variance_reduced_conditioning_common() -> dict[str, Any]:
-    common = _conditioning_common(task_query_keyed=True)
-    common.update(
-        {
-            "policy_noise_contract": (
-                "task-query-keyed randomized Latin exact Beta time strata "
-                "and randomized antithetic exact Gaussian flow noise within "
-                "each even task action batch"
-            ),
-            "policy_flow_time_sampling_scheme": (
-                "task_query_keyed_randomized_latin_beta15_time_v1"
-            ),
-            "policy_flow_noise_sampling_scheme": (
-                "task_query_keyed_randomized_antithetic_gaussian_v1"
-            ),
-        }
-    )
-    return common
-
-
-def _independent_microbatched_conditioning_common() -> dict[str, Any]:
-    """Keep ordinary independent B20 draws invariant under physical slicing."""
-
-    common = _conditioning_common(task_query_keyed=True)
-    common.update(
-        {
-            "policy_noise_contract": (
-                "task-query-keyed independent exact Beta time and independent "
-                "Gaussian flow noise generated for logical B20 then sliced "
-                "without replacement into physical microbatches"
-            ),
-            "policy_flow_time_sampling_scheme": (
-                "task_query_keyed_independent_beta15_time_v1"
-            ),
-            "policy_flow_noise_sampling_scheme": (
-                "task_query_keyed_independent_gaussian_v1"
-            ),
-        }
-    )
-    return common
-
-
-def _full24_conditioning(
-    common: Mapping[str, Any],
-    *,
-    method: str,
-    tasks_per_rank: int = 6,
-) -> dict[str, Any]:
-    task_words = {4: "four", 6: "six"}
-    if tasks_per_rank not in task_words:
-        raise WriterModelError("unsupported full24 tasks-per-rank topology")
-    task_word = task_words[tasks_per_rank]
-    return {
-        "method": method,
         "update_topology": "task_complete_all_tasks",
-        "action_query_batch_owner": (
-            f"{task_word} sequential task-pure physical action batches per "
-            "rank per macro optimizer update"
-        ),
-        "task_assignment": (
-            "every macro optimizer update covers all 24 tasks exactly once "
-            f"globally with {task_word} cost-balanced long-first tasks per rank"
-        ),
         "tasks_per_rank_per_optimizer_update": tasks_per_rank,
         "global_tasks_per_optimizer_update": 24,
-        "pair_loss_reduction": (
-            "mean_within_task_then_equal_mean_over_24_tasks"
+        "teacher_videos_per_task_visit": 1,
+        "action_video_assignment": "all_actions_share_single_video_lora",
+        "pair_loss_reduction": "mean_within_task_then_equal_mean_over_24_tasks",
+        "program_memory_update": (
+            "full24_regularized_condition_gram_solve_relative_damping_0.01"
         ),
-        "task_loss_scale_before_backward": (
-            "per_task_unscaled_then_exact_raw_full24_mean"
-        ),
-        "ddp_gradient_sync": (
-            "none_during_task_gradients_then_bounded_parameter_chunk_"
-            "allgathers_for_exact_raw_full24_mean_and_read_only_grams"
-        ),
-        "gradient_composition": (
-            "exact_raw_equal_weight_full24_mean_without_projection"
-        ),
-        "optimizer_steps_per_macro_update": 1,
-        "checkpoint_boundary": "complete_macro_optimizer_update_only",
-        **common,
+        "program_memory_optimizer": "none",
+        "factor_decoder_train_through_macro": 50,
+        "factor_decoder_frozen_after_macro": 50,
+        "policy_randomness_scheme": "task_query_keyed_stateless_policy_cpu_cuda_v2",
+        "policy_flow_time_sampling_scheme": "task_query_keyed_independent_beta15_time_v1",
+        "policy_flow_noise_sampling_scheme": "task_query_keyed_independent_gaussian_v1",
+        "checkpoint_boundary": "complete_full24_kernel_update_only",
+        "normal_loss_weight": 1,
     }
-
-
-def _serial4_conditioning(common: Mapping[str, Any]) -> dict[str, Any]:
-    return {
-        "method": (
-            "raw_serial4_exposure_matched_single_video_multi_action_"
-            "positive_functional_loss"
-        ),
-        "update_topology": "serial4_exposure_matched_six_phase_task_cycle",
-        "action_query_batch_owner": (
-            "one task-pure physical action batch per rank per optimizer update"
-        ),
-        "task_assignment": (
-            "six optimizer phases reuse one full24 cost-balanced rank rotation; "
-            "each phase selects one long-first task per rank and all six phases "
-            "cover every task exactly once"
-        ),
-        "tasks_per_rank_per_optimizer_update": 1,
-        "global_tasks_per_optimizer_update": 4,
-        "optimizer_updates_per_task_cycle": 6,
-        "scheduler_updates_per_task_cycle": 1,
-        "task_visit_axis": "zero_based_task_cycle_floor_optimizer_update_div_6",
-        "pair_loss_reduction": (
-            "mean_within_task_then_equal_raw_mean_over_selected_4_tasks"
-        ),
-        "task_loss_scale_before_backward": (
-            "per_task_unscaled_then_exact_raw_selected4_mean"
-        ),
-        "ddp_gradient_sync": (
-            "none_during_task_gradients_then_bounded_parameter_chunk_"
-            "allgathers_for_exact_raw_selected4_mean_and_read_only_4x4_grams"
-        ),
-        "gradient_composition": (
-            "exact_raw_equal_weight_selected4_mean_without_projection"
-        ),
-        "optimizer_steps_per_task_cycle": 6,
-        "scheduler_step_cadence": (
-            "once_after_each_six_optimizer_update_task_cycle"
-        ),
-        "checkpoint_boundary": "complete_optimizer_update_only",
-        **common,
-    }
-
-
-def _randomized_group4_conditioning(
-    common: Mapping[str, Any],
-) -> dict[str, Any]:
-    return {
-        "method": (
-            "cycle_normalized_randomized_group4_single_video_multi_action_"
-            "positive_functional_loss"
-        ),
-        "update_topology": (
-            "cycle_normalized_randomized_group4_six_phase_task_cycle"
-        ),
-        "action_query_batch_owner": (
-            "one task-pure physical action batch per rank per optimizer update"
-        ),
-        "task_assignment": (
-            "six randomized Latin phases each select four tasks without cost "
-            "input; every task appears once per cycle and phase-balanced over "
-            "six-cycle superblocks with sealed complementary tail"
-        ),
-        "tasks_per_rank_per_optimizer_update": 1,
-        "global_tasks_per_optimizer_update": 4,
-        "optimizer_updates_per_task_cycle": 6,
-        "scheduler_updates_per_task_cycle": 1,
-        "task_visit_axis": "zero_based_task_cycle_floor_optimizer_update_div_6",
-        "pair_loss_reduction": (
-            "mean_within_task_then_equal_raw_mean_over_selected_4_tasks"
-        ),
-        "task_loss_scale_before_backward": (
-            "per_task_unscaled_then_exact_raw_selected4_mean"
-        ),
-        "ddp_gradient_sync": (
-            "none_during_task_gradients_then_bounded_parameter_chunk_"
-            "allgathers_for_exact_raw_selected4_mean_and_read_only_4x4_grams"
-        ),
-        "gradient_composition": (
-            "exact_raw_equal_weight_selected4_mean_without_projection"
-        ),
-        "optimizer_steps_per_task_cycle": 6,
-        "scheduler_step_cadence": (
-            "once_after_each_six_optimizer_update_task_cycle"
-        ),
-        "checkpoint_boundary": "complete_optimizer_update_only",
-        **common,
-    }
-
-
-def _validate_conditioning_training(config: Mapping[str, Any]) -> None:
-    value = config.get("conditioning_training", {})
-    profile_world_size = int(
-        config.get("profile_defaults", {}).get("expected_world_size", 4)
-    )
-    formal_world_size = int(
-        config.get("formal_run", {}).get(
-            "expected_world_size", profile_world_size
-        )
-    )
     if (
-        profile_world_size != formal_world_size
-        or formal_world_size not in {4, 6}
-        or 24 % formal_world_size
+        profile_world != formal_world
+        or tasks_per_rank <= 0
+        or any(training.get(name) != value for name, value in required.items())
     ):
-        raise WriterModelError("unsupported full24 world-size topology")
-    tasks_per_rank = 24 // formal_world_size
-    legacy_common = _conditioning_common(task_query_keyed=False)
-    task_query_common = _conditioning_common(task_query_keyed=True)
-    full24 = _full24_conditioning(
-        legacy_common,
-        method=(
-            "raw_task_complete_single_video_multi_action_"
-            "positive_functional_loss"
-        ),
-        tasks_per_rank=tasks_per_rank,
-    )
-    task_query_raw = _full24_conditioning(
-        task_query_common,
-        method=(
-            "task_query_keyed_raw_task_complete_single_video_multi_action_"
-            "positive_functional_loss"
-        ),
-        tasks_per_rank=tasks_per_rank,
-    )
-    variance_reduced_raw = _full24_conditioning(
-        _variance_reduced_conditioning_common(),
-        method=(
-            "variance_reduced_task_query_keyed_raw_task_complete_single_"
-            "video_multi_action_positive_functional_loss"
-        ),
-        tasks_per_rank=tasks_per_rank,
-    )
-    target_owned_raw = _full24_conditioning(
-        _independent_microbatched_conditioning_common(),
-        method=(
-            "task_query_keyed_independent_microbatched_raw_task_complete_"
-            "single_video_multi_action_positive_functional_loss"
-        ),
-        tasks_per_rank=tasks_per_rank,
-    )
-    serial4 = _serial4_conditioning(legacy_common)
-    randomized_group4 = _randomized_group4_conditioning(task_query_common)
-    if config.get("schema_version") == V6_RELATIVE_FLOW_CONFIG_SCHEMA:
-        expected = target_owned_raw
-    elif config.get("schema_version") == AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA:
-        expected = (
-            randomized_group4
-            if value.get("update_topology")
-            == "cycle_normalized_randomized_group4_six_phase_task_cycle"
-            else (
-                variance_reduced_raw
-                if value.get("policy_flow_noise_sampling_scheme")
-                == "task_query_keyed_randomized_antithetic_gaussian_v1"
-                else full24
-                if value.get("policy_randomness_scheme")
-                != "task_query_keyed_stateless_policy_cpu_cuda_v2"
-                else task_query_raw
-            )
-        )
-    else:
-        expected = (
-            serial4
-            if value.get("update_topology")
-            == "serial4_exposure_matched_six_phase_task_cycle"
-            else full24
-        )
-    if value != expected:
-        raise WriterModelError("AS-Writer conditioning contract changed")
+        raise WriterModelError("condition-kernel training contract changed")
 
 
-def _validate_cycle_normalized_optimization(config: Mapping[str, Any]) -> None:
+def _validate_optimization(config: Mapping[str, Any]) -> None:
+    optimization = config.get("optimization", {})
+    decoder = optimization.get("factor_decoder_optimizer", {})
+    memory = optimization.get("program_memory_update", {})
+    scheduler = optimization.get("scheduler", {})
     if (
-        config.get("schema_version")
-        not in {
-            AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA,
-            V6_RELATIVE_FLOW_CONFIG_SCHEMA,
+        decoder
+        != {
+            "name": "AdamW",
+            "betas": [0.9, 0.95],
+            "eps": 1e-8,
+            "weight_decay": 0.0001,
+            "gradient_clip_norm": 1,
         }
-        or "cycle_normalization" not in config.get("optimization", {})
+        or memory.get("relative_damping") != 0.01
+        or float(memory.get("step_size", 0)) <= 0
+        or float(memory.get("induced_program_rms_cap", 0)) <= 0
+        or scheduler.get("kind") != "cosine_decay_with_warmup"
+        or scheduler.get("step_axis") != "completed_full24_task_cycle"
+        or int(optimization.get("functional_policy_microbatch_size", 0)) <= 0
     ):
-        return
-    training = config["conditioning_training"]
-    optimizer = config.get("optimization", {}).get("optimizer", {})
-    scheduler = config.get("optimization", {}).get("scheduler", {})
-    normalization = config.get("optimization", {}).get("cycle_normalization", {})
-    group4 = (
-        training.get("update_topology")
-        == "cycle_normalized_randomized_group4_six_phase_task_cycle"
-    )
-    expected_divisor = 6 if group4 else 1
-    expected_betas = (
-        [0.9825931938526898, 0.9914875553891529]
-        if group4
-        else [0.9, 0.95]
-    )
-    expected_mode = (
-        "cycle_normalized_randomized_group4"
-        if group4
-        else "task_query_keyed_raw_reference"
-    )
-    formal_batch_size = int(
-        config.get("formal_run", {}).get("per_rank_batch_size", 0)
-    )
-    policy_microbatch_size = int(
-        config.get("optimization", {}).get(
-            "functional_policy_microbatch_size", formal_batch_size
-        )
-    )
-    microbatching = policy_microbatch_size < formal_batch_size
-    invalid = (
-        optimizer.get("name") != "AdamW"
-        or optimizer.get("betas") != expected_betas
-        or optimizer.get("eps") != 1e-8
-        or optimizer.get("weight_decay") != 1e-4
-        or optimizer.get("gradient_clip_norm") != 1.0
-        or normalization.get("mode") != expected_mode
-        or normalization.get("optimizer_updates_per_task_cycle")
-        != expected_divisor
-        or normalization.get("lr_divisor") != expected_divisor
-        or normalization.get("reference_betas") != [0.9, 0.95]
-        or normalization.get("applied_betas") != expected_betas
-        or normalization.get("reference_weight_decay") != 1e-4
-        or normalization.get("scheduler_updates_per_task_cycle") != 1
-        or scheduler.get("optimizer_updates_per_scheduler_step")
-        != expected_divisor
-        or config.get("optimization", {}).get("optimizer_diagnostics")
-        != "per_owned_block_moment_parameter_and_actual_update_l2"
-        or not 0 < policy_microbatch_size <= formal_batch_size
-        or (
-            microbatching
-            and (
-                training.get("policy_flow_time_sampling_scheme"),
-                training.get("policy_flow_noise_sampling_scheme"),
-            )
-            not in {
-                (
-                    "task_query_keyed_randomized_latin_beta15_time_v1",
-                    "task_query_keyed_randomized_antithetic_gaussian_v1",
-                ),
-                (
-                    "task_query_keyed_independent_beta15_time_v1",
-                    "task_query_keyed_independent_gaussian_v1",
-                ),
-            }
-        )
-    )
-    if invalid:
-        raise WriterModelError("cycle-normalized optimizer contract changed")
+        raise WriterModelError("condition-kernel optimization contract changed")
 
 
-def _validate_formal_schedule(config: Mapping[str, Any]) -> None:
-    """Reject formal runs that would silently compress the sealed LR schedule."""
-
+def _validate_schedule(config: Mapping[str, Any]) -> None:
     formal = config.get("formal_run", {})
-    profile = config.get("profile_evidence", {})
-    sealed_teacher_seed = profile.get(
+    profile = config.get("profile_defaults", {})
+    if (
+        int(formal.get("total_steps", 0)) != 200
+        or formal.get("checkpoint_steps") != [50, 100, 150, 200]
+        or formal.get("stage_stop_steps") != [50, 100, 150, 200]
+        or int(formal.get("selected_stop_step", 0)) != 200
+        or int(profile.get("total_steps", 0)) != 3
+        or profile.get("checkpoint_steps") != [1, 2, 3]
+    ):
+        raise WriterModelError("condition-kernel formal schedule changed")
+    formal_seed = config.get("profile_evidence", {}).get(
         "formal_teacher_video_seed_after_profile_seal"
     )
     if (
         formal.get("status") == "sealed"
-        and sealed_teacher_seed is not None
+        and formal_seed is not None
         and int(config.get("data", {}).get("teacher_video_seed", -1))
-        != int(sealed_teacher_seed)
+        != int(formal_seed)
     ):
-        raise WriterModelError(
-            "formal AS-Writer retained its profile teacher-video seed"
-        )
-    scheduler = config.get("optimization", {}).get("scheduler", {})
-    training = config.get("conditioning_training", {})
-    updates_per_cycle = int(
-        training.get("optimizer_updates_per_task_cycle", 1)
-    )
-    total_updates = int(formal.get("total_steps", 0))
-    selected_stop = int(formal.get("selected_stop_step", 0))
-    decay_steps = int(scheduler.get("decay_steps", 0))
-    try:
-        stage_stops = tuple(int(value) for value in formal["stage_stop_steps"])
-    except (KeyError, TypeError, ValueError) as error:
-        raise WriterModelError(
-            "formal AS-Writer runtime would auto-scale or truncate its "
-            "sealed scheduler"
-        ) from error
-    if (
-        updates_per_cycle <= 0
-        or total_updates <= 0
-        or total_updates % updates_per_cycle
-        or total_updates // updates_per_cycle < decay_steps
-        or selected_stop <= 0
-        or selected_stop > total_updates
-        or selected_stop % updates_per_cycle
-        or not stage_stops
-        or stage_stops != tuple(sorted(set(stage_stops)))
-        or stage_stops[-1] != total_updates
-        or selected_stop not in stage_stops
-        or any(
-            stop <= 0
-            or stop > total_updates
-            or stop % updates_per_cycle
-            for stop in stage_stops
-        )
-    ):
-        raise WriterModelError(
-            "formal AS-Writer runtime would auto-scale or truncate its "
-            "sealed scheduler"
-        )
-
-
-def _load_recipe_overlay(
-    config: Mapping[str, Any], *, overlay_schema: str
-) -> dict[str, Any]:
-    required = {
-        "schema_version",
-        "base_config",
-        "base_sha256",
-        "replace",
-    }
-    replacements = config.get("replace")
-    allowed_replacements = {
-        "data",
-        "conditioning_training",
-        "optimization",
-        "profile_defaults",
-        "profile_evidence",
-        "formal_run",
-    }
-    if overlay_schema in {
-        V6_RELATIVE_FLOW_CONFIG_OVERLAY_SCHEMA,
-    }:
-        allowed_replacements.add("writer")
-    base_path = (REPO_ROOT / str(config.get("base_config", ""))).resolve()
-    if (
-        set(config) != required
-        or not isinstance(replacements, dict)
-        or not set(replacements).issubset(allowed_replacements)
-        or not base_path.is_relative_to(REPO_ROOT.resolve())
-        or not base_path.is_file()
-        or sha256_file(base_path) != config.get("base_sha256")
-    ):
-        raise WriterModelError("invalid AS-Writer recipe overlay")
-    base = read_json(base_path)
-    base.update({name: value for name, value in replacements.items()})
-    if overlay_schema == AS_WRITER_SERIAL4_CONFIG_OVERLAY_SCHEMA:
-        base["schema_version"] = AS_WRITER_SERIAL4_CONFIG_SCHEMA
-    elif overlay_schema == AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA:
-        base["schema_version"] = AS_WRITER_CYCLE_NORMALIZED_CONFIG_SCHEMA
-    elif overlay_schema == V6_RELATIVE_FLOW_CONFIG_OVERLAY_SCHEMA:
-        base["schema_version"] = V6_RELATIVE_FLOW_CONFIG_SCHEMA
-    base["_config_derivation"] = {
-        "overlay_schema": overlay_schema,
-        "base_config": str(base_path.relative_to(REPO_ROOT)),
-        "base_sha256": config["base_sha256"],
-    }
-    if overlay_schema in {
-        V6_RELATIVE_FLOW_CONFIG_OVERLAY_SCHEMA,
-    }:
-        writer = dict(base.get("writer", {}))
-        if set(writer) != {
-            "architecture",
-            "frame_stride",
-            "max_frames_per_encoder_call",
-        }:
-            raise WriterModelError("invalid Writer architecture overlay surface")
-        expected_architecture = (
-            "pi05_task_grounded_semantic_set_visual_transition_"
-            "causal_procedure_slot_fusion_v6"
-            if overlay_schema == V6_RELATIVE_FLOW_CONFIG_OVERLAY_SCHEMA
-            else None
-        )
-        if writer.get("architecture") != expected_architecture:
-            raise WriterModelError("invalid Writer architecture overlay")
-        base["writer"] = expected_writer_contract(
-            {
-                "architecture": expected_architecture,
-                "frame_stride": writer["frame_stride"],
-                "max_frames_per_encoder_call": writer[
-                    "max_frames_per_encoder_call"
-                ],
-            }
-        )
-    return base
+        raise WriterModelError("formal config retained its profile video seed")
 
 
 def load_writer_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
-    schema = config.get("schema_version")
-    if schema in {
-        V6_RELATIVE_FLOW_CONFIG_OVERLAY_SCHEMA,
-        AS_WRITER_CONFIG_OVERLAY_SCHEMA,
-        AS_WRITER_SERIAL4_CONFIG_OVERLAY_SCHEMA,
-        AS_WRITER_CYCLE_NORMALIZED_CONFIG_OVERLAY_SCHEMA,
-    }:
-        config = _load_recipe_overlay(config, overlay_schema=str(schema))
-    if config.get("schema_version") not in AS_WRITER_CONFIG_SCHEMAS:
+    if config.get("schema_version") != CONDITION_KERNEL_CONFIG_SCHEMA:
         raise WriterModelError("unsupported PI05 AS-Writer config schema")
     writer_stage(config)
     _validate_authorities(config)
     _validate_protocol(config)
     _validate_information_wall(config)
-    _validate_conditioning_training(config)
-    _validate_cycle_normalized_optimization(config)
-    _validate_formal_schedule(config)
+    _validate_data(config)
+    _validate_training(config)
+    _validate_optimization(config)
+    _validate_schedule(config)
     return config

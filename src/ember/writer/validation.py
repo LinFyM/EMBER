@@ -50,7 +50,8 @@ from ember.writer.data import (
     WriterTaskAuthority,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
-from ember.writer.architecture import LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
+from ember.writer.architecture import CONDITION_KERNEL_WRITER_CONSTRUCTOR_KEYS
+from ember.writer.condition_kernel import load_condition_authority
 from ember.writer.model import (
     CompleteLoRAWriter,
     WriterModelError,
@@ -193,7 +194,7 @@ def _build_models(
     writer_values = {
         key: value
         for key, value in training["writer"].items()
-        if key in LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
+        if key in CONDITION_KERNEL_WRITER_CONSTRUCTOR_KEYS
     }
     bridge = policy.model.paligemma_with_expert
     writer = CompleteLoRAWriter(
@@ -201,6 +202,9 @@ def _build_models(
         template_state=identity,
         paligemma_model=bridge.paligemma.model.language_model,
         expert_model=bridge.gemma_expert.model,
+        condition_authority=load_condition_authority(
+            str(REPO_ROOT / training["authorities"]["condition_address"]["path"])
+        ),
         **writer_values,
     ).to(context.device)
     writer.eval()

@@ -171,6 +171,10 @@ def load_rl_writer_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if config.get("schema_version") != RL_WRITER_CONFIG_SCHEMA:
         raise RewardProtocolError("unsupported antithetic Program-Credit config")
+    if config.get("status") == "retired_negative_cycle1_continuation_gate_failed":
+        raise RewardProtocolError(
+            "antithetic Program-Credit is retired after its cycle1 gate failed"
+        )
     _validate_authorities(config)
     _validate_information_wall(config)
     load_coldstart_writer_config(config)

@@ -37,22 +37,14 @@ def _task_gradients() -> dict[int, torch.Tensor]:
     }
 
 
-def test_parameter_layout_owns_exact_v6_blocks() -> None:
+def test_parameter_layout_owns_only_factor_decoder_parameters() -> None:
     writer = torch.nn.Module()
-    writer.semantic_encoder = torch.nn.Linear(1, 1)
-    writer.semantic_core = torch.nn.Linear(1, 1)
-    writer.visual_transition = torch.nn.Linear(1, 1)
-    writer.procedure = torch.nn.Linear(1, 1)
-    writer.compiler = torch.nn.Linear(1, 1)
+    writer.program_memory = torch.nn.Linear(1, 1, bias=False)
+    writer.program_memory.weight.requires_grad_(False)
     writer.factor_heads = torch.nn.Linear(1, 1)
     layout = parameter_layout(writer)
-    assert {item.block for item in layout} == {
-        "semantic_frontend",
-        "core",
-        "program",
-        "compiler",
-        "factor",
-    }
+    assert {item.block for item in layout} == {"factor"}
+    assert all(item.name.startswith("factor_heads.") for item in layout)
 
 
 def test_raw_mean_is_exact_under_task_order_permutation_and_assignable() -> None:

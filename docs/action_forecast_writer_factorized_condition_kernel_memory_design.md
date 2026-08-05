@@ -1,6 +1,7 @@
 # Factorized Condition-Kernel Program Memory Writer
 
-状态：2026-08-05 设计authority已封存，canonical实现与GPU工作尚未启动。本文建立在
+状态：2026-08-05 设计authority、canonical AS实现、action-hidden address audit与A40
+profile均已封存；fresh formal AS尚未启动，reward实现仍按AS200门延后。本文建立在
 Antithetic Program-Credit cycle1正式训练、strict correct400、train24内部机制分析和
 400个held LoRA逐条复核全部完成之后；它不是对旧v6 checkpoint续训，也不恢复Direction
 Store、Policy-Lane或任何历史并行Writer。
@@ -166,8 +167,8 @@ H(c) = sum_m phi_m(c) M_m
 [Linear Transformers Are Secretly Fast Weight Programmers](https://proceedings.mlr.press/v139/schlag21a.html)；本方法的memory是跨训练持久参数而非序列内临时state。
 
 只保留PI05已验证的320 program-slot public topology和八个fresh hidden256 FactorHeads，
-不加载任何v6权重。FactorHeads约`3,751,936`参数；预计完整trainable Writer约
-`87,638,016`，实现后以真实enumeration为准。原v6的Meta-LoRA、Semantic Core、Visual
+不加载任何v6权重。真实enumeration为FactorHeads `2,179,072`参数、Program Memory
+`83,886,080`个显式更新values，完整Writer共`86,065,152`参数。原v6的Meta-LoRA、Semantic Core、Visual
 Transition、Procedure和compiler全部退出trainable condition map；冻结foundation probe
 没有optimizer owner。
 
@@ -319,3 +320,29 @@ video仍相同，说明当前credit本身没有分辨这些variation。
 加入contrast/order auxiliary、one-task experts、multi-video、LoRA平均或旧checkpoint。下一步
 只能根据最早失败接口重做foundation condition representation、program decoder或interaction
 credit；历史实现和artifact由Git与design保留，canonical runtime原位退休。
+
+## 10. 实现、地址审计与profile封存结果
+
+- canonical AS路径已按第8节原位替换。Writer实际参数为Program Value Memory
+  `83,886,080`加8个FactorHeads `2,179,072`，总计`86,065,152`；M的`requires_grad=false`
+  且不进入Adam，唯一更新owner是full24 condition Gram correction。FactorHeads在macro50
+  之后的optimizer、scheduler、checkpoint与resume cursor均冻结。旧v6 trainable condition
+  path、独立temporal module和Program-Credit一次性analysis runtime已删除。
+- address authority为`configs/pi05_condition_kernel_address_v1.safetensors`，SHA256=
+  `7a49226e89529321f6764170247ce3b926ea6773aa9920cc5a3633f0e8cf0f86`。六卡只读audit覆盖
+  train24×50与validation8×50 apply-only；50个no-replacement schedule的Gram全部rank24，
+  最坏`K+.01I` condition=`7.547092`、最大off-diagonal=`.426992`。same-task video与
+  cross-task demo0 feature距离中位=`.871805/1.405841`，reversed最小/中位=
+  `1.156730/1.406382`；全部action/reward/outcome reads为0。机械门通过后按规则固定
+  bandwidth、seed、P1024，不做held sweep。root为
+  `runs/outputs/condition_kernel_address_audit_r6_seed2026080501_20260805`。
+- `gpu01:0,1,2|4,5,6`的fresh0→1再同root exact-resume1→3通过。三步wall=
+  `20.7128/19.8416/19.4484s`，峰值allocated/reserved=
+  `16,556,672,000/19,344,130,048` bytes，longest105、logical B20/B2、0 OOM/clip。
+  step1因zero FactorHead final layer使Program cotangent/update严格0；step2/3 cotangent RMS=
+  `1.99464e-7/3.57174e-7`，predicted update RMS=`1.96840e-7/3.52395e-7`，global cap
+  scale均1。三步Gram rank24、condition=`7.52338/6.63205/6.02257`；累计1,440 queries、
+  72 videos，六rank state、sampler/RNG/scheduler exact-resume闭合，validation/test action
+  reads为0。root为
+  `runs/outputs/pi05_as_writer_condition_kernel_memory_profile_r6_b20_seed7_20260805`，profile
+  权重永久弃用。

@@ -71,7 +71,8 @@ from ember.writer.data import (
     WriterTaskAuthority,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
-from ember.writer.architecture import LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
+from ember.writer.architecture import CONDITION_KERNEL_WRITER_CONSTRUCTOR_KEYS
+from ember.writer.condition_kernel import load_condition_authority
 from ember.writer.model import (
     CompleteLoRAWriter,
     WriterModelError,
@@ -161,7 +162,7 @@ def build_writer(
     writer_config = {
         key: value
         for key, value in config["writer"].items()
-        if key in LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
+        if key in CONDITION_KERNEL_WRITER_CONSTRUCTOR_KEYS
     }
     bridge = policy.model.paligemma_with_expert
     writer = CompleteLoRAWriter(
@@ -169,6 +170,9 @@ def build_writer(
         template_state=template,
         paligemma_model=bridge.paligemma.model.language_model,
         expert_model=bridge.gemma_expert.model,
+        condition_authority=load_condition_authority(
+            str(authority_path(config, "condition_address"))
+        ),
         **writer_config,
     )
     return (
@@ -198,18 +202,26 @@ def _build_trainable_models(
     policy = load_policy(Path(source["model_path"]), source_config, context.device)
     writer, lora, trainable, identity = build_writer(config, policy)
     writer.to(context.device)
-    optimizer_config = config["optimization"]["optimizer"]
+    optimizer_config = config["optimization"]["factor_decoder_optimizer"]
     optimizer = torch.optim.AdamW(
-        writer.parameters(),
+        writer.factor_heads.parameters(),
         lr=float(config["optimization"]["scheduler"]["peak_lr"]),
         betas=tuple(optimizer_config["betas"]),
         eps=float(optimizer_config["eps"]),
         weight_decay=float(optimizer_config["weight_decay"]),
     )
+    decoder_steps = min(
+        total_steps,
+        int(
+            config["conditioning_training"][
+                "factor_decoder_train_through_macro"
+            ]
+        ),
+    )
     scheduler = build_exposure_scheduler(
         optimizer,
         config["optimization"]["scheduler"],
-        logical_task_cycle_steps(config, total_steps),
+        logical_task_cycle_steps(config, decoder_steps),
     )
     return policy, writer, lora, optimizer, scheduler, trainable, identity
 
@@ -721,7 +733,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=(
             REPO_ROOT
-            / "configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json"
+            / "configs/pi05_as_writer_condition_kernel_memory_bci_v1.json"
         ),
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

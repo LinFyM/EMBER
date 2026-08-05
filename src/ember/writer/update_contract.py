@@ -105,6 +105,12 @@ def checkpoint_state_family(config: Mapping[str, Any]) -> str:
 
     training = config["conditioning_training"]
     topology = str(training["update_topology"])
+    if (
+        config.get("writer", {}).get("architecture")
+        == "pi05_factorized_condition_kernel_program_memory_v1"
+        and topology == "task_complete_all_tasks"
+    ):
+        return "condition_kernel_program_memory_full24_v1"
     v6_relative_flow = (
         config.get("writer", {}).get("architecture")
         == (
@@ -144,6 +150,41 @@ def _update_topology_contract(
 ) -> tuple[bool, dict[str, Any]]:
     training = config["conditioning_training"]
     update_topology = str(training["update_topology"])
+    if (
+        config.get("writer", {}).get("architecture")
+        == "pi05_factorized_condition_kernel_program_memory_v1"
+    ):
+        if update_topology != "task_complete_all_tasks":
+            raise WriterModelError("condition-kernel topology changed")
+        distributed = context.world_size > 1
+        return False, {
+            "macro_step_axis": "full24_condition_kernel_program_update",
+            "tasks_per_rank_per_optimizer_update": tasks_per_rank,
+            "global_tasks_per_optimizer_update": global_tasks,
+            "task_assignment": (
+                "selected_video_frame_cost_balanced_groups_rotated_across_"
+                "physical_ranks_longest_task_first_within_each_rank"
+            ),
+            "loss_reduction": (
+                "mean_within_each_task_then_equal_full24_program_cotangents"
+            ),
+            "program_credit_collection": (
+                f"{tasks_per_rank}_rank_local_fixed_feature_and_program_"
+                "cotangent_pairs"
+            ),
+            "program_credit_allgathers_per_macro": 3 if distributed else 0,
+            "program_memory_update": (
+                "exact_full24_regularized_condition_gram_solve_then_one_"
+                "global_value_write"
+            ),
+            "program_memory_optimizer": "none",
+            "factor_decoder_gradient_composition": (
+                "exact_raw_equal_weight_full24_mean_macro1_through_50_only"
+            ),
+            "factor_decoder_optimizer_updates": min(total_steps, 50),
+            "factor_decoder_frozen_after_macro": 50,
+            "checkpoint_axis": "completed_full24_program_update",
+        }
     serial4 = update_topology in {
         "serial4_exposure_matched_six_phase_task_cycle",
         "cycle_normalized_randomized_group4_six_phase_task_cycle",

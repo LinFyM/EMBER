@@ -4,13 +4,13 @@
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
-## 0.0 最新执行覆盖：K4 Writer profile已seal，待fresh formal
+## 0.0 最新执行覆盖：K4 Writer formal完成，四点rollout进行中
 
 - 当前唯一活动config为`configs/pi05_as_writer_k4_invariant_m2p_bci_v1.json`，authority为
   `docs/action_forecast_writer_fewshot_invariant_m2p_design.md`。它必须从functional identity
   fresh启动；`--initialize-writer-checkpoint`被canonical runtime明确拒绝。任何旧AS/RL/
   Condition-Kernel checkpoint均不得加载。
-- CPU实现和全仓`188 passed`已闭合。clean`8807ae0`在`gpu01:0,1,2|4,5,7`完成正式
+- CPU实现和全仓`189 passed`已闭合。clean`8807ae0`在`gpu01:0,1,2|4,5,7`完成正式
   200-step scheduler clock下的fresh0→1和exact-resume1→3；三步约34秒，peak reserved
   `19,690,160,128` bytes，0 OOM/clip/nonfinite，step2起四block全可达。formal config已seal。
 - sealed profile固定world6、logical B20、policy B2、16-frame encoder chunk、K4、full24，
@@ -18,13 +18,15 @@
   因其step1错误使用peak LR，不能代表formal早期优化语义。
 - 上述门已通过：真实longest105、source trainable=0、累计1,440 queries/288 videos、六rank
   ready/NCCL与optimizer/scheduler/RNG/sampler exact-resume完整。下一launch必须另起fresh root。
-- formal固定0→200/every25，严格评50/100/150/200；训练或held functional loss不挑点。
+- fresh formal已完成0→200/every25：200 finite macros、96,000 queries、19,200 videos、
+  wall`6879.816s`，0 clip/OOM/nonfinite且信息墙读取正确。50/100 strict correct400=
+  `70/94`、breadth=`6/6`；还需评150/200，训练或held functional loss不挑点。
   single winner必须做五臂、另K4 set、leave-one-out、谱/能量、Program→BA→fixed-action和
   task drift分析。最低目标仍是同一checkpoint strict correct400严格`>150`并继续提高。
-- 当前formal launch root/session固定为
+- formal root固定为
   `pi05_as_writer_k4_invariant_m2p_formal_fresh0_200_r6_dd3b854_20260806`与
-  `ember_k4_m2p_formal_dd3b854`；精确环境、命令、GPU、quota、scale和resume policy只取
-  `task_plan.md`顶部K4 launch合同，不在此重复另一套命令。
+  8个完整checkpoints；训练session已自然结束并释放GPU。macro50/100 roots与后续精确
+  rollout状态只取`docs/active_session_handoff.md`和`task_plan.md`，不在此重复另一套命令。
 - 新Writer-specific运行与封存不得生成或复核SHA-256/MD5等内容hash，只保留必要路径、schema、
   size、shape、load、行数和runtime证据；不使用subagent。
 

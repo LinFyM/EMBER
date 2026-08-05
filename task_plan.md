@@ -31,6 +31,10 @@ runner、split、路径或 GPU 权限。
 - [ ] profile通过后从functional identity新root正式训练0→200、每25保存；固定50/100/150/200
   strict correct400，并对single winner完成correct/same/wrong/shuffled/reversed、另K4 set、
   leave-one-video-out、LoRA谱/能量、Program→BA→fixed-action和task漂移分析。
+  - [x] fresh formal0→200自然完成：200 finite macros、96,000 queries、19,200 videos、8个
+    checkpoints、0 clip/OOM/nonfinite、0 validation/test action reads。
+  - [x] macro50/100 strict correct400完成：`70/94`、breadth=`6/6`；K4 sets/state/RNG严格配对。
+  - [ ] macro150/200 strict correct400、四点single winner裁决与winner全分析。
 - [ ] 每轮只按最早失效接口修改descriptor、invariant program、M2P或credit；不得默认增加K、
   rank、scale、store或训练时长。single-checkpoint strict correct400必须严格`>150`，达到后
   继续尽可能提高absolute、breadth、稳定积累与视频因果性。

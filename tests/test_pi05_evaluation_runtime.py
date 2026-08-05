@@ -26,7 +26,7 @@ from ember.pi05_evaluation import (
     rollout_shard,
     validate_shard_result,
 )
-from ember.pi05_eval_results import aggregate_run
+from ember.pi05_eval_results import _per_task_rows, aggregate_run
 from ember.pi05_source_checkpoint import canonical_hash
 from ember.libero_evaluation import sha256_file
 from ember.writer.inference import (
@@ -100,6 +100,37 @@ def _payload(contract: dict, shard: EvaluationShard) -> dict:
         "finished_unix": 12.0,
         "rows": _rows(),
     }
+
+
+def test_per_task_rows_summarizes_k4_teacher_video_sets() -> None:
+    rows = _rows()
+    for row, demos in zip(rows, ([0, 1, 2, 3], [1, 2, 3, 4]), strict=True):
+        row["writer"] = {
+            "condition": "correct",
+            "teacher_demo_indices": demos,
+            "writer_generation_seconds": 0.25,
+        }
+    tasks = {
+        ("libero_spatial", 0): {
+            "split_role": "train",
+            "language": "task zero",
+        }
+    }
+
+    writer = _per_task_rows(rows, tasks)[0]["writer"]
+
+    assert writer["videos_per_condition"] == 4
+    assert writer["unique_teacher_videos"] == 5
+    assert writer["teacher_demo_counts"] == {
+        "0": 1,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 1,
+    }
+    assert writer["unique_teacher_video_sets"] == 2
+    assert writer["teacher_demo_set_counts"] == {"0,1,2,3": 1, "1,2,3,4": 1}
+    assert writer["generation_wall_seconds"] == 0.5
 
 
 def _writer_adapter(condition: str = "correct", method: str = "as_writer") -> dict:

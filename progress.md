@@ -8,6 +8,20 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-06 K4 fresh formal与首批strict correct400完成
+
+- clean`500294c`在`gpu01:0,1,2|4,5,7`从functional identity完成macro0→200：200 rows、
+  96,000 action queries、19,200 K4 teacher videos、wall`6879.816s`、peak reserved
+  `19,690,160,128` bytes，0 clip/OOM/nonfinite，source trainable=0，validation/test action
+  reads=0；25--200共8个checkpoints完整，tmux自然结束并释放GPU。
+- live双节点检查后用`gpu01:0,1,2`与`3,4,5`并行完成macro50/100 strict correct400；
+  每root 400 rows、42 shards、9 workers和400个K4 caches完整。结果=`70/94`、breadth=`6/6`，
+  50→100 gained/lost=`42/18`、union/intersection=`112/52`。
+- 两个launcher只在最终CPU aggregate触发旧K1字段`teacher_demo_index` KeyError；已在唯一
+  `pi05_eval_results` owner改为汇总K4 `teacher_demo_indices`与video-set counts，聚焦复现和
+  全仓`189 passed`通过，并直接从既有shards生成results，未重复GPU rollout。
+- 下一步在clean提交上评macro150/200；四点完成前不按loss或当前94分改架构。
+
 ## 2026-08-06 K4 Invariant-Program M2P设计与CPU实现封存
 
 - owner恢复持续推进并允许few-shot，同时明确EMBER不得绕开video。封存新authority

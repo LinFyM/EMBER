@@ -158,3 +158,14 @@ loss下降或多checkpoint union都不能替代该门。
 
 只有证据定位到相应接口才允许修改。不得再以增加K、head、rank、scale、训练时长或store
 数量作为默认修补。
+
+## 11. 当前执行证据（2026-08-06）
+
+- fresh formal0→200已自然完成：200 finite macros、96,000 action queries、19,200 K4
+  teacher videos、8个every25 checkpoints、0 clip/OOM/nonfinite，source policy保持冻结，
+  validation/test action reads均为0。
+- macro50/100 strict correct400=`70/94`、breadth=`6/6`；50→100 gained/lost=`42/18`、
+  union/intersection=`112/52`。两个checkpoint的state、四条teacher demo indices、env seed与
+  policy RNG严格相同，每task 50个sets覆盖50条unique teacher videos。
+- 当前只是四点曲线的前半段，既没有过`>150`行为门，也已有18个success丢失；不得写成
+  漂移已解或据此选择macro100。下一步固定评macro150/200后再选single winner做第9节分析。

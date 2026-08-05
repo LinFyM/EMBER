@@ -273,9 +273,18 @@ def _per_task_rows(
         writer_rows = [row["writer"] for row in selected if row.get("writer") is not None]
         if writer_rows:
             demo_counts: dict[str, int] = {}
+            demo_set_counts: dict[str, int] = {}
             for writer in writer_rows:
-                demo = str(int(writer["teacher_demo_index"]))
-                demo_counts[demo] = demo_counts.get(demo, 0) + 1
+                demos = (
+                    tuple(int(demo) for demo in writer["teacher_demo_indices"])
+                    if "teacher_demo_indices" in writer
+                    else (int(writer["teacher_demo_index"]),)
+                )
+                for demo in demos:
+                    key = str(demo)
+                    demo_counts[key] = demo_counts.get(key, 0) + 1
+                set_key = ",".join(str(demo) for demo in demos)
+                demo_set_counts[set_key] = demo_set_counts.get(set_key, 0) + 1
             value["writer"] = {
                 "condition": writer_rows[0]["condition"],
                 "unique_teacher_videos": len(demo_counts),
@@ -284,6 +293,14 @@ def _per_task_rows(
                     float(writer["writer_generation_seconds"]) for writer in writer_rows
                 ),
             }
+            if "teacher_demo_indices" in writer_rows[0]:
+                value["writer"].update(
+                    {
+                        "videos_per_condition": len(writer_rows[0]["teacher_demo_indices"]),
+                        "unique_teacher_video_sets": len(demo_set_counts),
+                        "teacher_demo_set_counts": dict(sorted(demo_set_counts.items())),
+                    }
+                )
         values.append(value)
     return values
 

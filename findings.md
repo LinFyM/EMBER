@@ -6,6 +6,19 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-06 K4 formal与前两点rollout：早期acquisition回升但尚未过门
+
+- fresh K4 M2P formal完整跑到macro200，训练规模为96,000 action queries与19,200条
+  action-hidden teacher videos，0 clip/OOM/nonfinite；四视频联合条件不是训练期augmentation，
+  每次task visit只生成一套完整LoRA并复用于B20。
+- macro50/100 strict correct400为`70/94`、breadth均6；50→100 gained/lost=`42/18`，说明
+  acquisition净增但已有明显能力换手。Goal-3与Spatial-1两task仍为0，当前证据不能宣称
+  task drift解决，也不能以训练loss外推macro150/200。
+- 每task的50个paired K4 sets覆盖全部50条teacher videos，每条set含4条且两个checkpoint
+  使用相同set/state/env/policy RNG。聚合器最初只认识K1字段而在全部rollout完成后报错；
+  根因是结果摘要层未迁移`teacher_demo_indices`，修复后直接聚合既有immutable shards，
+  科学rollout、LoRA cache与success rows均未改变。
+
 ## 2026-08-06 从one-shot不可辨识性切换K4 video-owned invariant program
 
 - owner明确纠正了任何“忽略视频”的错误方向：EMBER的任务就是从action-hidden teacher

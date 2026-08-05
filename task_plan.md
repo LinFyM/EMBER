@@ -35,6 +35,32 @@ runner、split、路径或 GPU 权限。
   rank、scale、store或训练时长。single-checkpoint strict correct400必须严格`>150`，达到后
   继续尽可能提高absolute、breadth、稳定积累与视频因果性。
 
+### K4 M2P fresh formal0→200 launch合同（2026-08-06）
+
+- implementation/config/profile seal=`dd3b854`且已push branch/main；launch-record后续只改文档，
+  真实Git commit由run contract记录。启动必须clean且`HEAD==origin/main`，不传`--resume`或
+  `--initialize-writer-checkpoint`，不加载任何profile、Condition-Kernel或历史Writer权重。
+- fresh output/log/tmux为
+  `runs/outputs/pi05_as_writer_k4_invariant_m2p_formal_fresh0_200_r6_dd3b854_20260806`、
+  `runs/logs/pi05_as_writer_k4_invariant_m2p_formal_fresh0_200_r6_dd3b854_20260806.log`、
+  `ember_k4_m2p_formal_dd3b854`。scale=`200×24×B20=96,000` action queries、
+  `200×24×K4=19,200` teacher videos、8个checkpoint；profile约34秒/macro，预计主体约114分钟。
+- live双节点检查后`gpu01`八卡全空，`gpu02:5/6`为他人进程；选择
+  `gpu01:0,1,2|4,5,7`六卡、3+3 NUMA、single-node DDP，显式`NCCL_P2P_DISABLE=1`。最终启动
+  前仍即时复查；任一卡变忙则不共享、不干扰，改选同node仍满足3+3的空闲卡或延后。
+- `/data1` live quota=`316,176,688/1,073,741,824 KiB`；Writer+trainer单checkpoint约
+  `377.6MiB`，8点加原子临时副本、metrics/log预计峰值新增低于4GiB，余量充分。source、
+  tokenizer、train24 data与LIBERO assets沿用sealed路径并由real load验证，不做内容hash。
+- 只在25倍数保存，50/100/150/200完成后才启动strict correct400。训练loss、梯度几何或
+  中途单task reward不选择checkpoint；任何异常只从同一完整checkpoint exact-resume，不能
+  从profile或历史best替代。
+
+精确命令：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,7 NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_as_writer.py --config configs/pi05_as_writer_k4_invariant_m2p_bci_v1.json --mode formal --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir runs/outputs/pi05_as_writer_k4_invariant_m2p_formal_fresh0_200_r6_dd3b854_20260806 --stop-after-step 200 --num-workers 0 --log-every 1 --skip-data-sha
+```
+
 ## 当前Factorized Condition-Kernel Program Memory推进（2026-08-05）
 
 - [x] 完成Program-Credit train24内部分析与400-held LoRA复核，正式定位最早失效接口：

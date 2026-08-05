@@ -21,6 +21,10 @@
 - formal固定0→200/every25，严格评50/100/150/200；训练或held functional loss不挑点。
   single winner必须做五臂、另K4 set、leave-one-out、谱/能量、Program→BA→fixed-action和
   task drift分析。最低目标仍是同一checkpoint strict correct400严格`>150`并继续提高。
+- 当前formal launch root/session固定为
+  `pi05_as_writer_k4_invariant_m2p_formal_fresh0_200_r6_dd3b854_20260806`与
+  `ember_k4_m2p_formal_dd3b854`；精确环境、命令、GPU、quota、scale和resume policy只取
+  `task_plan.md`顶部K4 launch合同，不在此重复另一套命令。
 - 新Writer-specific运行与封存不得生成或复核SHA-256/MD5等内容hash，只保留必要路径、schema、
   size、shape、load、行数和runtime证据；不使用subagent。
 

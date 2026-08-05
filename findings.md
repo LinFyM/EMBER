@@ -8,6 +8,17 @@
 
 ## 2026-08-05 Antithetic Program-Credit架构与训练决策
 
+- fresh formal cycle1与strict correct400已完成：cycle1=`106`、breadth5，相对AS125=`97/5`
+  gained/lost=`18/9`、union/intersection=`115/88`、paired p=`.12208`。Long/Goal/Object净
+  `+1/+1/+7`，Spatial总数不变但唯一成功从task1换到task3。它是真实但尚弱的共同改善，
+  仍包含能力换手；因预注册续训门要求净增至少10，正式禁止resume cycle2。
+- 400 rows、8×50、50条无放回videos、18/18 worker exit0且0 retry/error；state/env/video和
+  共同policy-noise prefix严格配对。故`+9`不是漏行或面板不一致，也不能因“只差一条”改门。
+- 一次full24 direct-program update使四个上游block参数relative-L2约
+  `.000231/.000151/.000245/.000204`（Core/Visual/Procedure/compiler）；532个冻结Writer
+  tensors逐元素不变。接下来只读机制分析要判断小幅held改善是video-program credit还是
+  task-level校准，不能仅凭aggregate或train 54/96写成根因已解。
+
 - clean`318b6f6`首次六卡原规模profile在68/96 rollout、任何update/checkpoint之前由共同
   随机数检查终止。task38两组pair的env seed与各104个policy-noise seed完全相同，但首帧
   hash不同；排除了Writer、LoRA、policy noise、NCCL和显存层。

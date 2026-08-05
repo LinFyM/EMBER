@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：Program-Credit双lane A40 profile与exact-resume通过，formal cycle1待启动
+## 0.0 当前状态：Program-Credit cycle1续训门未过，内部机制分析待启动
 
 - 当前唯一活动authority为
   `docs/action_forecast_writer_antithetic_program_credit_design.md`。Policy-Lane已经证明
@@ -44,9 +44,22 @@
   successes，分别6/2个binary-discordant pairs，四个上游block两轮均非零，冻结三组梯度
   均为0。wall=`431.709/431.367s`，peak reserved=`19,308,478,464/19,331,547,136` bytes，
   0 OOM/watchdog/traceback；六rank ready、两次update和cycle1/2 checkpoint完整，GPU自然释放。
-- profile权重永久弃用；formal config已按预注册边界seal。下一步只从同一AS125阶段进入全新
-  formal root运行cycle0→1，然后立即在既有AS125 strict panel上做paired correct400；只有
-  `correct>150`，或相对AS125净增至少10、breadth不降且至少两suite改善，才续cycle2。
+- profile权重永久弃用。fresh formal root已从同一AS125阶段完成cycle0→1：96/96 rollout、
+  48/48 CRN pairs、54 successes、6 binary-discordant pairs、一次finite update，四上游block
+  可达且冻结梯度0；wall`418.692s`、peak reserved`19,308,478,464` bytes，完整cycle1
+  checkpoint、0错误，GPU已释放。
+- cycle1 strict correct400=`106`、breadth5；相对AS125=`97/5`的逐条配对为
+  gained/lost/retained/both-fail=`18/9/88/285`，union/intersection=`115/88`、exact paired
+  p=`.12208`。Long/Goal/Object净`+1/+1/+7`，Spatial总数不变但唯一成功task从1换到3。
+  400 rows、8×50、50 unique无放回video、18/18 workers exit0且0 retry/error，所有静态、video
+  与共同policy-noise prefix控制一致。
+- 该点breadth不降、三suite改善且gained>lost，但只净增9，未达到预注册净增10门；禁止因
+  “只差一条”resume cycle2/4/8。当前不启动新训练，只做一次AS125→cycle1的train24
+  program/effective-BA/fixed-action/video-counterfactual与exact cotangent内部分析；结果封存后
+  从最早失败接口设计下一fresh方法。
+- canonical只读analysis owner按authority/runtime/pure metrics三层拆分，无第二套Writer或
+  training path；聚焦12项、带BCI assets全仓223项、py_compile/diff check通过，architecture
+  guard无hard/parallel family。该入口在本次artifact与下一design封存后删除，历史由Git保留。
 
 ## 0.1 Policy-Lane正式负裁决
 

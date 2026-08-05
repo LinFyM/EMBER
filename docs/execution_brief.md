@@ -25,7 +25,10 @@
   失败root禁止resume。clean`f3f6b15`的全新v2 root已完成原六卡cycle0→1和
   exact-resume1→2：两轮各96 rollout/24 credits/48 valid CRN pairs/54 successes，一次finite
   update，四上游block可达、冻结梯度0；wall约431.7/431.4秒，峰值19.31/19.33GB，0错误。
-  formal现已seal；下一步从AS125阶段进入全新formal root只跑cycle1并立即strict correct400。
+  fresh formal cycle1随后完成96 rollout、54 successes、6 binary-discordant pairs和一次finite
+  update；strict correct400=`106`、breadth5，相对AS125=`97/5` gained/lost=`18/9`、
+  union/intersection=`115/88`。Long/Goal/Object改善但Spatial task1→task3换手；净增9未达到
+  预注册净增10门，正式禁止resume cycle2。当前只运行AS125→cycle1内部机制分析，不启动训练。
 - PWAD fresh0→200与四点strict correct400已完成并负裁决：`77/71/80/80`、breadth=
   `5/6/5/5`、union/intersection=`115/44`。64 atoms广泛active，但mixing row stable rank
   约`1.000002`、effective LoRA约`1.0000002`、q/v B-column cosine约`.999998`；禁止resume

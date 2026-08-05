@@ -1,7 +1,7 @@
 # Antithetic Program-Credit Writer 设计
 
-状态：**2026-08-05 pre-implementation authority；任何GPU训练须先完成canonical原位实现、
-聚焦合同与独立A40 profile。**
+状态：**2026-08-05 cycle1正式训练与strict correct400已完成，预注册续训门未过；禁止
+resume cycle2。正在完成AS125→cycle1内部机制分析，之后从最早失败接口设计下一fresh方法。**
 
 ## 1. 这次只解决哪个接口
 
@@ -238,9 +238,33 @@ exactly one LoRA，没有交互、随机探索、critic或额外视频。
 唯一实现owner继续是`src/ember/writer/`与`src/ember/rl_writer/`，launcher仍为
 `scripts/train_rl_writer.py`。恢复v6时删除Policy-Lane executable module/config family；
 旧Policy-Lane、PWAD、Tangent-Basis和CFM-ratio实现只由Git、design与frozen artifacts保存。
+
+## 12. cycle1正式裁决与内部分析边界（2026-08-05）
+
+- fresh formal从sealed AS125阶段只运行cycle0→1：96/96 rollouts、24/24 task credits、
+  48/48 valid CRN pairs、54 successes、6 binary-discordant pairs；一次finite full24 update，
+  四个上游block非零、532个冻结Writer tensors逐元素不变，0 OOM/watchdog/nonfinite。
+- strict correct400=`106`、breadth=`5`，相对AS125=`97/5`的逐条配对为
+  gained/lost/retained-success/retained-failure=`18/9/88/285`，union/intersection=
+  `115/88`，exact two-sided paired p=`.12208`。Long、Goal、Object分别净`+1/+1/+7`，
+  Spatial总数不变但唯一成功从task1换到task3。
+- static state/env/language、teacher video选择和共同policy-noise prefix均0 mismatch；80条
+  完整noise长度不同只来自trajectory分岔后的episode长度变化。400 rows、8×50、50条
+  无放回video、18/18 workers exit0且0 retry/error，机械合同完整。
+- 本结果满足breadth不降、至少两suite改善且gained>lost，但相对AS125只净`+9`，未达到
+  预注册`+10`门；也远未严格超过150。因此禁止因为“只差一条”resume cycle2，不补做
+  same/wrong/shuffled/reversed来为未过门checkpoint扩大证据开销。
+- 必做内部机制分析仍执行一次：比较AS125/cycle1的program、effective BA、fixed action、
+  五video与wrong/reversed/shuffled传递，重建24-task exact program cotangent与binary/
+  semantic贡献，并结合held gained/lost的cached LoRA变化裁决最早失败接口。
+- 这项只读分析有一个canonical owner，按authority、GPU runtime、pure metrics三个故障边界
+  分为`program_credit_analysis.py`、`program_credit_analysis_runtime.py`和
+  `program_credit_analysis_metrics.py`；不新增Writer或训练路径。architecture guard无hard/
+  parallel family。其删除触发是本次cycle1机制artifact和下一方法设计封存完成；之后由Git
+  保存复现历史，不让被拒绝方法的分析入口长期成为活动surface。
 不得保留第二套active model、trainer、checkpoint loader或evaluation adapter。
 
-## 12. 实现与CPU合同状态（2026-08-05）
+## 13. 实现与CPU合同状态（2026-08-05）
 
 - canonical v6已原位恢复，`forward`严格组合显式program encode/decode；Policy-Lane、旧
   Flow-Credit和progress diagnostic executable families已删除。

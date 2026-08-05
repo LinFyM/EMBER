@@ -29,8 +29,9 @@ runner、split、路径或 GPU 权限。
 - [x] live比较`gpu01/gpu02`后完成AS125-fresh独立六卡one-cycle A40 profile及fresh0→1→
   resume1→2；K4/24 tasks、pair randomness、finite cotangent、四个block可达、0 frozen grad、
   NCCL ready和原子checkpoint全部通过后才seal formal。
-- [ ] formal从AS125阶段边界fresh0→1并立即做与AS125严格配对correct400；只有净增至少10、
-  breadth不降且至少两suite净增，或直接严格`>150`，才允许续cycle2/4/8。
+- [x] formal从AS125阶段边界fresh0→1并完成与AS125严格配对correct400；cycle1=`106/400`、
+  breadth5，相对AS125净`+9`、breadth不降且三suite改善，但未达到预注册净`+10`门，故禁止
+  resume cycle2/4/8，先完成内部机制分析再设计下一fresh方法。
 
 ### 双lane v2 A40重放合同（2026-08-05）
 
@@ -79,6 +80,23 @@ runner、split、路径或 GPU 权限。
   init states、correct same-task video、without-replacement seed7、3 replicas/GPU、完整400 rows。
   输出预计约1.04GiB，适用/data1 quota已在本阶段核验。结束后按task/state/video/env seed和
   policy-noise prefix与AS125严格配对，报告correct、breadth、suite/task、gained/lost和继续门。
+- strict panel已完整结束：400 rows、8 tasks×50、18/18 worker exit0、0 retry/error、每task
+  50 unique无放回videos。cycle1 correct/breadth=`106/5`，相对AS125=`97/5`的
+  gained/lost/retained/both-fail=`18/9/88/285`，union/intersection=`115/88`，paired
+  p=`.12208`。per-task AS125→cycle1为Long`10/0→11/0`、Goal`0/43→0/44`、Object
+  `24/19→27/23`、Spatial`1/0→0/1`；三suite净增但Spatial内部换手，净增只为9，续训门失败。
+
+### Program-Credit cycle1内部分析合同（2026-08-05）
+
+- 唯一只读analysis owner按authority/runtime/pure metrics拆为三个模块；复用canonical Writer、
+  source policy和既有gauge-invariant指标，不增加训练/模型路径。architecture guard无hard或
+  parallel family；review仅为一次性正式analysis体量，删除触发是artifact与下一design封存。
+- 分析固定比较sealed AS125与formal cycle1，train24每task读取demo0--4及cross-suite wrong、
+  reversed、shuffled；8-task panel做相同fixed-action probe。另从24份credit ledger重建exact
+  `320×256` cotangent，报告task-pair cosine、负pair、full24 retention和binary/semantic能量。
+- source/target action reads为0，validation/test reads为0；532个semantic encoder、FactorHeads
+  与template tensors必须逐元素不变。聚焦`12 passed`，带BCI assets的全仓`223 passed`、
+  py_compile/diff check通过。正式launch仍须clean pushed代码、live双节点GPU检查和空root。
 
 ## 已完成Policy-Lane Coupled Hyperdecoder推进（2026-08-05）
 

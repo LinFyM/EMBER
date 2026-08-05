@@ -10,6 +10,16 @@ GPU范围和训练步长是当时快照；活动状态只取
 
 ## 2026-08-05 Program-Credit environment CRN根修
 
+- AS125-fresh formal cycle0→1已完成96 rollout、48 valid CRN pairs、54 successes、6个
+  binary-discordant pairs、一次finite update和完整cycle1 checkpoint；wall`418.692s`、
+  peak reserved`19,308,478,464` bytes，0错误，GPU已释放。
+- 随后的strict correct400完整结束：cycle1=`106`、breadth5，相对AS125=`97/5`的严格
+  gained/lost=`18/9`，union/intersection=`115/88`；三suite改善但Spatial task1→task3换手，
+  净增9未过预注册净增10门，故禁止resume cycle2。
+- canonical只读内部分析入口已实现并拆为authority/runtime/metrics三个owner；聚焦12项及带
+  BCI assets全仓223项通过，architecture guard无hard/parallel family。下一步只在clean
+  pushed代码上运行AS125→cycle1的train24 program/BA/action/credit分析，不启动新训练。
+
 - clean`318b6f6`首次原六卡profile完成68/96 rollout后，在0 update/0 checkpoint处由pair
   初态hash合同终止；task38 env/policy seeds一致而首帧不同，失败root仅保留诊断用途。
 - 单GPU真实复现确认LIBERO默认hard reset的environment-local placement history不由再次

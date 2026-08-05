@@ -1,7 +1,7 @@
 # Policy-Lane Coupled Hyperdecoder Writer 设计
 
 状态：2026-08-05 fresh architecture authority；canonical实现、BCI A40六卡最长视频
-profile与独立exact-resume均已通过，正式fresh0→200已开放但尚未启动。本文在 Policy-Wide Atom Dictionary
+profile、独立exact-resume与正式fresh0→200均已完成，四点strict correct400待运行。本文在 Policy-Wide Atom Dictionary
 完成 fresh0→200、四点 strict correct400 和全部内部分析并正式负裁决后建立。新方法从
 functional identity fresh训练，不加载PWAD、v6或任何历史Writer checkpoint；PWAD只由
 Git、本文引用的formal artifacts和原design保留。
@@ -197,3 +197,15 @@ Policy-Lane五个主块全部非零，source policy保持冻结。
 runtime恢复合同验证，最终仍为1,440 queries/72 conditions/3 scheduler updates。profile与
 resume合同SHA为`f0f3ec32...55261`。profile/smoke权重永久不进入正式轨迹；sealed config
 已开放clean/pushed代码上的独立functional-identity fresh0→200。
+
+## 10. 正式fresh0→200完成
+
+clean/pushed launch commit`244b677`在`gpu01:0,1,2,4,5,7`以同一未恢复进程完成200
+finite macros：96,000 logical action queries、4,800 one-video conditions、每25共8个完整
+checkpoint，wall=`6651.965s`。最终峰值allocated/reserved=`36,174,262,272/
+42,150,658,048` bytes，200步均0 OOM/clip/nonfinite/collective stall；source policy
+trainable=0，validation/test action reads均为0。run contract SHA为`a8ce75f2...00f6`，root为
+`runs/outputs/pi05_as_writer_policy_lane_hyperdecoder_formal_fresh0_200_r6_fbc320a_20260805`。
+
+训练完整性只开放预注册四点50/100/150/200 strict correct400，不构成性能通过。不得依据
+functional loss约`.1504→.0941`选择checkpoint，也不得在rollout前resume400或加入新trick。

@@ -6,6 +6,15 @@
 
 ## 0.0 当前状态：Policy-Lane profile/resume通过，正式fresh0→200已开放
 
+- Policy-Lane正式fresh0→200已在同一未恢复进程完成：200 finite macros、96,000 logical
+  queries、4,800 one-video conditions、8个完整checkpoint，wall=`6651.965s`，峰值
+  allocated/reserved=`36,174,262,272/42,150,658,048` bytes，0 OOM/clip/nonfinite/
+  collective stall，validation/test action reads=0。contract=`a8ce75f2...00f6`，root为
+  `runs/outputs/pi05_as_writer_policy_lane_hyperdecoder_formal_fresh0_200_r6_fbc320a_20260805`。
+- 下一唯一操作是固定50/100/150/200四点strict correct400；live选择`gpu01:0,1,2`与
+  `3,4,5`两组三卡，先并行50/100，完成后并行150/200，总设备始终为6。不得按中途分数
+  替换点位、提前resume400或用functional loss选点。
+
 - clean pushed`2aeb22a`的Policy-Lane canonical实现已在`gpu01`完成六卡longest105、
   logical-B20/full24三步profile：step max wall=`33.457/31.024/31.007s`，峰值
   allocated/reserved=`36,168,858,624/47,053,799,424` bytes，0 OOM/clip/nonfinite，累计
@@ -15,9 +24,8 @@
   六rank state连续，合同SHA=`f0f3ec32...55261`。fresh段结束后物理GPU0被他人占用，恢复段
   自主切到`gpu01:1,2,3,4,5,7`，仍严格保持sealed `3+3 NUMA`；未共享或干扰他人进程。
   profile/smoke权重禁止进入正式轨迹。
-- config现已seal为16-frame encoder chunk、logical B20、policy microbatch2、six ranks、
-  fresh0→200/every25。正式launch contract已写入`task_plan.md`：live选择
-  `gpu01:0,1,2,4,5,7`的`3+3 NUMA`，fresh root与精确命令均已封存；长期
+- config已seal并完成16-frame encoder chunk、logical B20、policy microbatch2、six ranks、
+  fresh0→200/every25。训练与rollout精确launch contract均写入`task_plan.md`；长期
   single-checkpoint严格`>150/400`不变。
 
 - Policy-Wide Atom Dictionary已完成clean`69563a0` fresh0→200：200 macros、96,000

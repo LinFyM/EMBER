@@ -14,6 +14,10 @@
   声明主块全部非零；独立fresh0→1→exact-resume1→3也闭合optimizer/scheduler/RNG/
   sampler/六rank state。由此排除46GB容量、梯度路径与resume机械性障碍，但尚不构成
   closed-loop性能证据。
+- Policy-Lane正式fresh0→200随后在clean pushed`244b677`完整结束：200 finite macros、
+  96,000 queries、4,800 one-video conditions、8个checkpoint、0 OOM/clip/nonfinite/stall，
+  validation/test action reads=0。该证据证明49M Writer能在46GB A40合同内稳定端到端训练，
+  但不把functional loss下降写成闭环改善；性能结论等待固定四点rollout。
 
 - PWAD fresh0→200训练健康完成，strict correct400=`77/71/80/80`、breadth=`5/6/5/5`；
   相邻gained/lost=`19/25,21/12,16/16`，四点union/intersection=`115/44`、single

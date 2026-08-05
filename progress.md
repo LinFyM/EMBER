@@ -10,6 +10,12 @@ GPU范围和训练步长是当时快照；活动状态只取
 
 ## 2026-08-05 Policy-Lane Coupled Hyperdecoder profile/resume封存
 
+- 同一方法的clean/pushed`244b677`正式fresh0→200已自然完成：200 finite macros、96,000
+  logical queries、4,800 one-video conditions、every25共8个完整checkpoint，wall
+  `6651.965s`，最终峰值allocated/reserved=`36,174,262,272/42,150,658,048` bytes。
+- 200步累计0 OOM/clip/nonfinite/collective stall，source policy trainable=0，validation/test
+  action reads=0；contract=`a8ce75f2...00f6`。GPU已释放，下一步固定四点strict correct400。
+
 - clean pushed`2aeb22a`在`gpu01`空闲六卡完成longest105、logical B20、full24三步profile：
   step max wall=`33.457/31.024/31.007s`，峰值allocated/reserved=`36,168,858,624/
   47,053,799,424` bytes，0 OOM/clip/nonfinite，累计1,440 queries/72 one-video conditions。

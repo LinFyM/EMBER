@@ -28,6 +28,10 @@
   six-rank、`3+3 NUMA`、显式`NCCL_P2P_DISABLE=1`；output/log/tmux分别为
   `pi05_as_writer_policy_lane_hyperdecoder_formal_fresh0_200_r6_fbc320a_20260805`、同名log和
   `ember_policy_lane_formal_r6_fbc320a`。只能从functional identity启动。
+- 上述正式run已自然完成：200 finite macros、96,000 queries、4,800 one-video conditions、
+  8个checkpoint、wall=`6651.965s`，峰值allocated/reserved=`36,174,262,272/
+  42,150,658,048` bytes，0 OOM/clip/nonfinite/stall。当前切换为固定50/100/150/200四点
+  strict correct400；先用`gpu01:0,1,2|3,4,5`并行50/100，再同样两组并行150/200。
 - SFT-Anchored Tangent-Basis正式消融已结束并负裁决，不再是活动训练轴。clean`059d40f`
   从历史v6-fast macro400=`143/400` warm-start完成formal cycle0→1与strict correct400；
   cycle1=`142`、breadth`7`，相对baseline gained/lost=`20/21`、intersection/union=

@@ -24,8 +24,10 @@ runner、split、路径或 GPU 权限。
 - [x] live比较`gpu01/gpu02`，在6张空闲A40上完成longest105/logical-B20三步profile与
   独立fresh0→1→exact-resume1→3；0 OOM/clip，step2起五个主块全部可达，完整训练与
   resume状态闭合，formal config已seal。
-- [ ] 从clean/pushed代码的独立fresh root训练0→200，strict评测50/100/150/200；只按
-  single-checkpoint absolute、breadth、换手、视频传递和policy-lane内部证据决定是否续400。
+- [x] 从clean/pushed代码的独立fresh root训练0→200：200 finite macros、96,000 queries、
+  4,800 one-video conditions、8个checkpoint，0 OOM/clip/nonfinite/stall。
+- [ ] strict评测50/100/150/200；只按single-checkpoint absolute、breadth、换手、视频传递
+  和policy-lane内部证据决定是否续400。
 
 ### Policy-Lane fresh0→200 formal launch contract
 
@@ -49,6 +51,22 @@ runner、split、路径或 GPU 权限。
 ```bash
 env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,7 NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_as_writer.py --config configs/pi05_as_writer_policy_lane_hyperdecoder_bci_v1.json --mode formal --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir runs/outputs/pi05_as_writer_policy_lane_hyperdecoder_formal_fresh0_200_r6_fbc320a_20260805 --stop-after-step 200 --num-workers 0 --log-every 1 --skip-data-sha
 ```
+
+### Policy-Lane four-point strict correct400 launch contract
+
+- 固定四点`50/100/150/200`，每点8 validation tasks×50 sealed states，correct video
+  without-replacement；四点共享task/state/video ordinal/env seed/policy seed与policy noise，
+  不得按中途结果替换checkpoint。
+- live 2026-08-05快照选择`gpu01:0,1,2`与`gpu01:3,4,5`两组三卡；第一波并行50/100，
+  全部结束释放后第二波并行150/200。每点3 replicas/GPU、3 generators/GPU、generation
+  batch4；跨节点总占用始终不超过6卡。
+- output统一为
+  `runs/outputs/pi05_as_writer_policy_lane_hyperdecoder_bci_correct400_noreplacement_seed7_macro{0050,0100,0150,0200}_244b677_20260805`。
+  source/config/tokenizer/data与训练合同一致，结果只认single-checkpoint correct、breadth与
+  严格配对gained/lost；functional loss不参与选择。
+- live quota使用`303,808,444KiB/1TiB`，每root预计LoRA cache与results低于1.1GiB，四点
+  峰值新增低于5GiB。prepare后用canonical`evaluate_pi05.py start`启动，失败只按同root
+  `resume`恢复，不重建面板。
 
 ## 已封存的Policy-Wide Atom Dictionary推进（2026-08-05）
 

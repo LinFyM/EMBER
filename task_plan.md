@@ -23,6 +23,27 @@ runner、split、路径或 GPU 权限。
   评测50/100/150/200并做winner内部condition→atom→BA/action与视频特异性分析，再裁决
   是否exact-resume200→400。
 
+### fresh0→200 formal launch contract
+
+- 功能代码/config authority=`a924477`；branch=`codex/bci-continuation`，启动时必须clean且
+  与`origin/main`一致，最终docs-only launch-record commit由runtime `run_contract.json`
+  精确记录。
+- output=`runs/outputs/pi05_as_writer_policy_wide_atom_dictionary_formal_fresh0_200_r6_20260805`；
+  log=`runs/logs/pi05_as_writer_policy_wide_atom_dictionary_formal_fresh0_200_r6_20260805.log`；
+  root必须全新，不传`--resume`或`--initialize-writer-checkpoint`，失败root不作warm-start。
+- scale=`200 macros × 24 tasks × B20 = 96,000` logical queries、`4,800` one-video conditions，
+  every25共8个checkpoint；profile估时约100分钟，预计peak新增storage小于2GiB。
+- device=`gpu01:1,2,3,4,5,7`、单节点six-rank torchrun、3+3 NUMA、显式
+  `NCCL_P2P_DISABLE=1`；启动前仍须live确认双节点ownership/显存及`/data1` quota。
+- 后续只以50/100/150/200 strict paired correct400、breadth/换手、视频因果与
+  condition→atom→effective BA→action内部路径裁决；functional loss不选择checkpoint。
+
+精确命令：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1,2,3,4,5,7 NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_as_writer.py --config configs/pi05_as_writer_policy_wide_atom_dictionary_bci_v1.json --mode formal --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir runs/outputs/pi05_as_writer_policy_wide_atom_dictionary_formal_fresh0_200_r6_20260805 --stop-after-step 200 --num-workers 0 --log-every 1 --skip-data-sha
+```
+
 ## 已完成的SFT-Anchored Policy Tangent-Basis消融（2026-08-05）
 
 - [x] 完成AS125→cycle2固定参数hybrid：BA层upstream贡献较大、action层factor-output贡献

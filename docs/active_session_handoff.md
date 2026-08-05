@@ -4,67 +4,44 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：Program-Credit cycle1续训门未过，内部机制分析待启动
+## 0.0 当前状态：Program-Credit正式负裁决，Factorized Condition-Kernel Memory设计已封存
 
-- 当前唯一活动authority为
-  `docs/action_forecast_writer_antithetic_program_credit_design.md`。Policy-Lane已经证明
-  LoRA stable rank、lane参与和跨层专门化都可被结构性修复而闭环仍更差，因此下一单变量
-  是把v6 compiler输出的`320×256` policy program作为高层动作，K4组成两组共享env/policy
-  randomness的`+/-`扰动，直接由binary-first closed-loop pair差估计program cotangent。
-- 新方法永久删除旧executed-action CFM ratio、PPO/SPO和two-epoch replay；FactorHeads、
-  semantic encoder、source policy与normalization冻结，只对Core、Visual Transition、
-  Procedure和compiler做每cycle一次full24 equal-task update。部署仍是确定性one-shot和
-  一套完整rank-16 LoRA，information wall不变。
-- 唯一cold start是fresh v6 AS125，而不是v6-fast macro400、Policy-Lane、reward或profile
-  权重。formal定义为同一从identity AS125阶段后的直接program-credit阶段；首点cycle1只在
-  strict correct400相对AS125净增至少10、breadth不降且至少两suite净增时才可续cycle2。
-- canonical实现已原位完成：恢复v6唯一Writer并显式拆出`encode_program/decode_program`，
-  删除Policy-Lane model/config/checkpoint family、旧Flow-Credit数学owner和progress
-  diagnostic；canonical RL loop现在只产生两对program扰动、binary-first pair credit和
-  一次direct program backward。ledger/exact-resume绑定实际world size、四个rollout
-  cursor、pair randomness、direction seed与credit identity。
-- clean pushed`318b6f6`上的首次六卡原规模cycle0→1已完成68/96 rollout后fail-fast，尚未
-  发生参数更新或checkpoint。失败不是Writer/LoRA/NCCL/OOM：task38两组pair的env seed和
-  全部104个policy-noise seeds均完全一致，但首帧哈希不同。实机最小复现证明同一LIBERO
-  hard-reset env的内部placement history不会被`env.seed`清空，同seed重复reset可使物体位置
-  相差约3--4cm、MuJoCo XML也不同。
-- 根修不读取或恢复固定init state：每task建立两条persistent environment lanes，plus固定
-  lane0、minus固定lane1，两条lane从构造起保持相同reset次数和seed。两lane在经历不同动作后
-  连续三次实机验证XML、47维sim state和双相机像素逐字节一致；rollout/program-credit v2
-  ledger和exact-resume显式绑定lane identity。失败root只作诊断，禁止resume或混入证据；修复
-  必须在全新root重放原6-rank、24×K4规模。
-- 原实现的220项带项目正式activation环境的全仓测试全部通过；其中聚焦合同覆盖forward逐tensor
-  等价、seed/credit数学、artifact/randomness cursor分离、上游四block ownership、冻结
-  semantic encoder/FactorHeads、full24多卡分配、NCCL前FileStore ready和完整checkpoint
-  roundtrip。`git diff --check`与py_compile通过，AS125 checkpoint family/60,000 queries/
-  3,000 videos身份已定向确认；尚无本方法GPU结果，也没有EMBER GPU进程。
-- clean`f3f6b15`的双lane v2六卡profile已从AS125 fresh完成cycle0→1，再从完整cycle1
-  checkpoint exact-resume1→2。两轮各96 rollout、24 task credit、48 CRN pairs，全部
-  pair均满足lane0/1、env seed、首帧hash和共同policy-noise prefix严格一致；每轮54
-  successes，分别6/2个binary-discordant pairs，四个上游block两轮均非零，冻结三组梯度
-  均为0。wall=`431.709/431.367s`，peak reserved=`19,308,478,464/19,331,547,136` bytes，
-  0 OOM/watchdog/traceback；六rank ready、两次update和cycle1/2 checkpoint完整，GPU自然释放。
-- profile权重永久弃用。fresh formal root已从同一AS125阶段完成cycle0→1：96/96 rollout、
-  48/48 CRN pairs、54 successes、6 binary-discordant pairs、一次finite update，四上游block
-  可达且冻结梯度0；wall`418.692s`、peak reserved`19,308,478,464` bytes，完整cycle1
-  checkpoint、0错误，GPU已释放。
-- cycle1 strict correct400=`106`、breadth5；相对AS125=`97/5`的逐条配对为
-  gained/lost/retained/both-fail=`18/9/88/285`，union/intersection=`115/88`、exact paired
-  p=`.12208`。Long/Goal/Object净`+1/+1/+7`，Spatial总数不变但唯一成功task从1换到3。
-  400 rows、8×50、50 unique无放回video、18/18 workers exit0且0 retry/error，所有静态、video
-  与共同policy-noise prefix控制一致。
-- 该点breadth不降、三suite改善且gained>lost，但只净增9，未达到预注册净增10门；禁止因
-  “只差一条”resume cycle2/4/8。当前不启动新训练，只做一次AS125→cycle1的train24
-  program/effective-BA/fixed-action/video-counterfactual与exact cotangent内部分析；结果封存后
-  从最早失败接口设计下一fresh方法。
-- canonical只读analysis owner按authority/runtime/pure metrics三层拆分，无第二套Writer或
-  training path；聚焦12项、带BCI assets全仓223项、py_compile/diff check通过，architecture
-  guard无hard/parallel family。该入口在本次artifact与下一design封存后删除，历史由Git保留。
-- clean pushed`129cab6`的formal analysis contract固定使用`gpu02:0,1,2,3,4,7`六张实时
-  空闲A40，root为
-  `runs/outputs/pi05_antithetic_program_credit_internal_as125_cycle1_r6_129cab6_20260805`。
-  六rank只读比较24 tasks×AS125/cycle1，不建立训练process group、不做optimizer/backward；
-  仍显式传`NCCL_P2P_DISABLE=1`并要求最终现场复查后才启动。
+- Antithetic Program-Credit formal cycle1与strict correct400已完成：96 rollouts、48个
+  valid CRN pairs、54 successes、6个binary-discordant pairs和一次finite full24 update；
+  cycle1=`106/400`、breadth5，相对AS125=`97/5`的gained/lost=`18/9`。它是真实`+9`，但未过
+  预注册净`+10`门，故cycle2/4/8永久禁止；不能因“只差一条”修改门。
+- 六卡只读内部分析已经完成24 tasks×AS125/cycle1共48 rows、6/6 ownership，wall=
+  `272.876s`、peak reserved=`19,304,284,160` bytes，target-action与validation/test reads均0；
+  root为
+  `runs/outputs/pi05_antithetic_program_credit_internal_as125_cycle1_r6_129cab6_20260805`，
+  GPU已自然释放。
+- 532个冻结tensors逐元素不变；四个上游block relative-L2为
+  `.000231/.000151/.000245/.000204`。AS125→cycle1的program/BA/fixed-action变化中位=
+  `.006782/.004713/.002279`，说明decoder传递非零，但same-task video centered/sample energy
+  在program仅`.002153→.002149`、BA仅`.001154→.001178`，视频因果性没有改善。
+- exact train24 program cotangent本来近正交：pair cosine mean/median=`.000107/0`、负pair
+  `.2464`、full24 energy retention=`.041874`；经过共享Writer参数更新后，24-task program
+  delta却变成pair cosine mean/median=`.5801/.6128`、负pair0、retention=`.55537`。同task
+  五video更新的task-mean energy fraction在program/BA为`.82990/.91623`。最早失效接口由此
+  定位为不同closed-loop credit经过共享condition-map Jacobian后被压成task-common、
+  video-insensitive更新。
+- binary/semantic cotangent energy=`.00261635/.00003600`，binary约`72.7×`主导；因此裁决
+  不是functional surrogate或LIBERO semantic tie-break的产物。400个held LoRA的BA变化
+  中位`.005519`，gained/lost=`.004726/.004742`，stable rank/top1/B-column几乎不变；禁止
+  回到rank、scale、head/store扩容或续旧RL。
+- 当前唯一活动authority切换为
+  `docs/action_forecast_writer_factorized_condition_kernel_memory_design.md`。新方法从generic
+  source和functional identity全新训练：冻结foundation task/video descriptor形成固定
+  task×video RFF feature，线性读取完整`1024×320×256`Program Value Memory；full24在
+  24×24 condition Gram上做显式regularized kernel correction，使program更新可预测而不再
+  穿过可漂移condition encoder。fresh FactorHeads只bootstrap到固定macro50，随后永久冻结；
+  AS与direct reward都只向同一memory value提供program cotangent。
+- 新方法不加载AS125、v6-fast、Policy-Lane或任何历史Writer权重，不恢复Direction Store或
+  learned router。当前尚未修改canonical model/config，也未启动新GPU工作；下一步依次为
+  address/Gram只读audit、原位实现、聚焦CPU合同、A40 profile和fresh formal AS。
+- Program-Credit只读analysis owner的retirement trigger现已满足；新design落地时删除其
+  method-specific runtime/authority，纯gauge-invariant metrics只有出现当前第二用途才迁入
+  既有analysis owner。历史可复现性由Git与上述artifact保留。
 
 ## 0.1 Policy-Lane正式负裁决
 
@@ -130,7 +107,7 @@
 - PWAD独立`M_A/M_B`使真实effective update包含全部`B_j A_k`交叉项，所以所谓完整atom
   并不是实际存储单位；public lane差异完全依赖两张已经塌缩的shared mixing matrix。
   该结果禁止增加K、调scale或加rank/正交loss。
-- 当前唯一活动authority切换为
+- 当时authority切换为
   `docs/action_forecast_writer_policy_lane_hyperdecoder_design.md`。新架构让16个public lanes
   各自以同一个32维condition hidden共同生成全部38 targets的A/B向量；lane内保持
   policy-wide协调，lane间拥有独立输出参数，取消PWAD的A/B独立mixing和atom cross-product。

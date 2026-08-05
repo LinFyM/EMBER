@@ -8,6 +8,22 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-05 Program-Credit内部分析完成并封存Condition-Kernel Memory设计
+
+- six-rank只读内部分析root
+  `runs/outputs/pi05_antithetic_program_credit_internal_as125_cycle1_r6_129cab6_20260805`
+  已完整结束：48 rows、24 tasks、2 checkpoints、6/6 payload，wall=`272.876s`、peak
+  reserved=`19,304,284,160` bytes，0 target-action/validation/test reads，GPU全部释放。
+- exact task cotangent由近正交`.000107/0`、retention`.041874`经过共享Writer更新变成
+  task-mean program delta`.5801/.6128`、retention`.55537`且无负pair；same-task更新
+  program/BA task-mean energy fraction=`.82990/.91623`。held gained/lost LoRA变化不可区分，
+  视频/顺序传递与LoRA spectrum基本不变。Program-Credit正式负裁决，不续cycle2/4/8。
+- 新authority
+  `docs/action_forecast_writer_factorized_condition_kernel_memory_design.md`已封存：固定
+  task×video RFF condition feature、P1024完整Program Value Memory、24×24显式kernel
+  correction、fresh decoder bootstrap0→50、memory-only AS50→200与同一memory direct reward。
+  尚未修改canonical实现或启动GPU；下一步是退休旧analysis runtime并原位实现新Writer。
+
 ## 2026-08-05 Program-Credit environment CRN根修
 
 - AS125-fresh formal cycle0→1已完成96 rollout、48 valid CRN pairs、54 successes、6个

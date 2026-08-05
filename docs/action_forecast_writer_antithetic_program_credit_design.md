@@ -254,14 +254,28 @@ exactly one LoRA，没有交互、随机探索、critic或额外视频。
 - 本结果满足breadth不降、至少两suite改善且gained>lost，但相对AS125只净`+9`，未达到
   预注册`+10`门；也远未严格超过150。因此禁止因为“只差一条”resume cycle2，不补做
   same/wrong/shuffled/reversed来为未过门checkpoint扩大证据开销。
-- 必做内部机制分析仍执行一次：比较AS125/cycle1的program、effective BA、fixed action、
-  五video与wrong/reversed/shuffled传递，重建24-task exact program cotangent与binary/
-  semantic贡献，并结合held gained/lost的cached LoRA变化裁决最早失败接口。
+- 必做内部机制分析已完整结束：48/48 rows、6/6 payload、wall=`272.876s`、peak reserved=
+  `19,304,284,160` bytes，0 target-action/validation/test reads。532个冻结tensors逐元素不变；
+  program→BA→fixed-action更新relative-L2中位=`.006782/.004713/.002279`，decoder传递非零。
+- exact train24 task cotangent pair cosine mean/median=`.000107/0`、negative fraction=
+  `.2464`、full24 retention=`.041874`；共享Writer更新后的task-mean program delta却为
+  `.5801/.6128`、negative fraction0、retention=`.55537`。same-task五video更新的task-mean
+  energy fraction在program/BA为`.82990/.91623`，最早失败是共享condition map把不同credit
+  压成task-common、video-insensitive更新。
+- AS125→cycle1的same-task video centered/sample energy在program=`.002153→.002149`、BA=
+  `.001154→.001178`；wrong/reversed/shuffled到program/BA/action几乎不变。400个held LoRA
+  的BA变化中位`.005519`，gained/lost=`.004726/.004742`，stable rank/top1/B-column不变。
+  binary/semantic cotangent energy=`.00261635/.00003600`，前者约`72.7×`，故负裁决不是
+  semantic tie-break或functional surrogate造成。
 - 这项只读分析有一个canonical owner，按authority、GPU runtime、pure metrics三个故障边界
   分为`program_credit_analysis.py`、`program_credit_analysis_runtime.py`和
   `program_credit_analysis_metrics.py`；不新增Writer或训练路径。architecture guard无hard/
-  parallel family。其删除触发是本次cycle1机制artifact和下一方法设计封存完成；之后由Git
-  保存复现历史，不让被拒绝方法的分析入口长期成为活动surface。
+  parallel family。本次artifact与下一方法design均已封存，删除触发已经满足；新实现阶段
+  删除method-specific runtime/authority，只有出现当前第二用途的pure metrics才迁入既有owner。
+- 下一authority为
+  `docs/action_forecast_writer_factorized_condition_kernel_memory_design.md`：从generic source
+  全新训练fixed task×video condition kernel与完整Program Value Memory，不加载本方法或
+  任一历史checkpoint。Program-Credit cycle2/4/8与全部旧root保持禁止resume。
 不得保留第二套active model、trainer、checkpoint loader或evaluation adapter。
 
 ## 13. 实现与CPU合同状态（2026-08-05）

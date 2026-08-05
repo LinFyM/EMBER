@@ -8,7 +8,34 @@
 `docs/a100_to_bci_migration_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
 runner、split、路径或 GPU 权限。
 
-## 当前Antithetic Program-Credit推进（2026-08-05）
+## 当前Factorized Condition-Kernel Program Memory推进（2026-08-05）
+
+- [x] 完成Program-Credit train24内部分析与400-held LoRA复核，正式定位最早失效接口：
+  exact task cotangent近正交而共享Writer参数更新后的condition program delta高度同向，
+  same-task更新又由task mean主导；不是functional surrogate、semantic tie-break、LoRA rank或
+  decoder完全无响应。
+- [x] 封存
+  `docs/action_forecast_writer_factorized_condition_kernel_memory_design.md`：固定foundation
+  task×video RFF address、完整P1024 Program Value Memory、24×24 regularized kernel
+  correction、fresh FactorHead bootstrap0→50、memory-only AS50→200与同一memory direct reward。
+  方法从generic source全新训练，不加载AS125/v6-fast/Policy-Lane或任何历史Writer。
+- [ ] 删除已满足retirement trigger的Program-Credit method-specific analysis runtime；只有确有
+  当前第二用途的pure gauge-invariant metrics才迁入既有owner。
+- [ ] 原位实现唯一condition-kernel Writer、custom memory update、fresh config/checkpoint
+  family与AS/RL阶段freeze；不保留v6并行model/loader。
+- [ ] 完成action-hidden train24×50 descriptor/Gram audit：seal text/video bandwidth、fixed
+  seed、Phi/K spectrum、same-task video与reversed/shuffled距离；validation 8 tasks只apply，
+  不参与拟合或调参。
+- [ ] 完成identity、fixed address、kernel predicted/observed equality、full24 multi-rank、
+  macro50 freeze和exact-resume的聚焦CPU合同与architecture gate。
+- [ ] live比较gpu01/gpu02后，在最多6张空闲A40上完成longest105、B20/B2、fresh0→1→
+  exact-resume1→3 profile；profile权重永久弃用。
+- [ ] 从functional identity正式训练AS0→200，固定评测50/100/150/200；AS200达到
+  correct≥120且breadth≥6才进入同pipeline direct reward，否则按最早失败接口负裁决。
+- [ ] reward先只跑cycle1并严格配对AS200；只有`>150`，或净增≥10、breadth不降且至少两suite
+  改善才续cycle2。长期single-checkpoint严格`>150`且尽可能更高不变。
+
+## 已完成Antithetic Program-Credit推进（2026-08-05）
 
 - [x] 完成Policy-Lane fresh0→200、四点strict correct400与全部内部分析；虽然LoRA stable
   rank、lane参与和跨层专门化真实改善，correct仍为`70/63/37/61`且same-task video
@@ -103,6 +130,11 @@ runner、split、路径或 GPU 权限。
   六张实时空闲卡，`torchrun --nproc-per-node=6`、显式`NCCL_P2P_DISABLE=1`。24 tasks×2
   checkpoints必须形成48 rows与6份ownership；formal artifact预计远小于1GiB，沿用本阶段
   已核验的/data1 quota。任一卡在最终复查时被占用则不启动并重新选卡，不共享或干扰他人进程。
+- 内部分析已完整结束：48/48 rows、6/6 payload、wall=`272.876s`、peak reserved=
+  `19,304,284,160` bytes、0 action-wall/validation/test reads，GPU已释放。task cotangent
+  pair cosine mean/median=`.000107/0`、retention=`.041874`，post-update task-mean program
+  delta=`.5801/.6128`、retention=`.55537`且无负pair；same-task update的task-mean energy
+  fraction在program/BA=`.82990/.91623`。Program-Credit正式负裁决，旧cycle2/4/8禁止。
 
 ## 已完成Policy-Lane Coupled Hyperdecoder推进（2026-08-05）
 

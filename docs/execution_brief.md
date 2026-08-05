@@ -6,47 +6,40 @@
 
 ## 0. 当前BCI运行事实（覆盖下文旧A100操作细节）
 
-- 当前唯一活动方法是Antithetic Program-Credit Writer，authority为
-  `docs/action_forecast_writer_antithetic_program_credit_design.md`。它恢复v6唯一canonical
-  Writer并显式拆成`encode_program(320×256)`与`decode_program(complete rank16 LoRA)`；
-  K4变为两组共享env/policy randomness的`+/-`program扰动，由official binary优先、双失败
-  semantic progress tie-break的pair差直接产生program cotangent。旧CFM ratio、PPO/SPO、
-  Nmc4和two-epoch replay全部退役。
-- 唯一cold start是fresh v6 AS125阶段边界，不使用v6-fast macro400 best、Policy-Lane、旧RL
-  或profile权重。AS125后冻结FactorHeads、semantic encoder、source policy和normalization；
-  每cycle只对Core、Visual Transition、Procedure和compiler做一次full24 equal-task update。
-  canonical原位替换和220项全仓CPU合同已完成：`forward`等价、pair seed/randomness、direct
-  cotangent、冻结ownership、full24 assignment、NCCL ready和exact-resume均通过；旧
-  Policy-Lane/CFM/progress-diagnostic executable family已删除。首次clean`318b6f6`六卡
-  profile在68/96 rollout、参数更新前发现LIBERO同一hard-reset env无法仅靠相同seed复现
-  同一随机初态。canonical修复为每task两条lockstep persistent environment lanes，plus/minus
-  分lane且共享seed/reset index/policy noise；不读固定init state。修复已通过真实双lane连续
-  三次XML/state/双相机逐字节复现；修复后全仓`221 passed`，compileall/diff check通过。
-  失败root禁止resume。clean`f3f6b15`的全新v2 root已完成原六卡cycle0→1和
-  exact-resume1→2：两轮各96 rollout/24 credits/48 valid CRN pairs/54 successes，一次finite
-  update，四上游block可达、冻结梯度0；wall约431.7/431.4秒，峰值19.31/19.33GB，0错误。
-  fresh formal cycle1随后完成96 rollout、54 successes、6 binary-discordant pairs和一次finite
-  update；strict correct400=`106`、breadth5，相对AS125=`97/5` gained/lost=`18/9`、
-  union/intersection=`115/88`。Long/Goal/Object改善但Spatial task1→task3换手；净增9未达到
-  预注册净增10门，正式禁止resume cycle2。当前只运行AS125→cycle1内部机制分析，不启动训练。
-  分析clean commit=`129cab6`，root为
-  `runs/outputs/pi05_antithetic_program_credit_internal_as125_cycle1_r6_129cab6_20260805`，
-  live合同是`gpu02:0,1,2,3,4,7`六张空闲卡、48 Cartesian rows、0 action-wall/validation/test reads。
+- 当前唯一活动方法是Factorized Condition-Kernel Program Memory，authority为
+  `docs/action_forecast_writer_factorized_condition_kernel_memory_design.md`。它从generic
+  source与functional identity全新训练，不加载任何历史Writer：冻结foundation
+  task descriptor与policy-aware video innovation形成32×32的fixed RFF product feature，
+  线性读取完整`1024×320×256`Program Value Memory，再由fresh FactorHeads生成唯一rank16
+  LoRA。没有learned router、task ID、multi-video、checkpoint融合或static LoRA bypass。
+- full24对24个condition收集program cotangent后，唯一memory owner显式计算
+  `K=Phi Phi^T`与`Delta M=-eta Phi^T(K+.01I)^-1G`；current-condition update因此可逐元素
+  预测。FactorHeads只在fresh AS macro0→50 bootstrap，固定50后永久冻结；macro50→200的
+  AS和之后direct reward都只更新M。AS200是预注册reward边界，不从50/100/150/200挑best。
+- Program-Credit已正式负裁决：cycle1=`106/400`相对AS125=`97`净`+9`，breadth5且三suite
+  改善，但未过净`+10`门，禁止cycle2/4/8。内部48-row分析root已完整结束并释放GPU：exact
+  task cotangent pair cosine mean/median=`.000107/0`、retention=`.041874`，共享Writer更新后
+  program delta却变成`.5801/.6128`、retention=`.55537`且无负pair；same-task update的
+  task-mean energy fraction在program/BA为`.82990/.91623`。这把最早故障定位到共享
+  condition-map credit kernel，而不是functional loss、LoRA rank或decoder完全失活。
+- 新architecture尚未实现或launch。下一执行顺序是：封存action-hidden address/Gram audit
+  →原位替换canonical Writer与AS/RL memory update→聚焦identity/kernel/freeze/resume合同
+  →live双节点preflight后的A40 profile→fresh AS0→200与四点strict rollout。任何GPU工作仍
+  最多6张实时空闲卡、显式`NCCL_P2P_DISABLE=1`且不干扰他人。
 - PWAD fresh0→200与四点strict correct400已完成并负裁决：`77/71/80/80`、breadth=
   `5/6/5/5`、union/intersection=`115/44`。64 atoms广泛active，但mixing row stable rank
   约`1.000002`、effective LoRA约`1.0000002`、q/v B-column cosine约`.999998`；禁止resume
   400、增加K、调scale或用谱loss救活。精确formal/eval/internal roots取handoff顶部与PWAD
   design第11节。
-- 新architecture已原位实现：删除旧`policy_dictionary.py`，新增`policy_lane.py`并切换
+- Policy-Lane当时已原位实现：删除旧`policy_dictionary.py`，新增`policy_lane.py`并切换
   model/config/launch/checkpoint/task-gradient/internal-analysis owners。完整Writer参数
   `49,041,664`，聚焦Writer合同`84 passed`，architecture guard无hard或parallel family。
   clean pushed`2aeb22a`的六卡longest105/logical-B20三步profile与独立
   fresh0→1→exact-resume1→3均已通过；step wall=`33.457/31.024/31.007s`，峰值
   allocated/reserved=`36,168,858,624/47,053,799,424` bytes，0 OOM/clip，step2起五个
-  主块全部可达，合同SHA=`f0f3ec32...55261`。formal config已seal；下一操作是clean/pushed
-  authority与live设备/存储复核后从全新identity root训练0→200，任何PWAD/profile/smoke
-  权重均不得进入。
-- fresh0→200 launch contract已写入`task_plan.md`：live选择`gpu01:0,1,2,4,5,7`，single-node
+  主块全部可达，合同SHA=`f0f3ec32...55261`。该方法随后已按下文正式负裁决，历史PWAD/
+  profile/smoke权重均不得进入当前方法。
+- Policy-Lane fresh0→200历史launch contract使用`gpu01:0,1,2,4,5,7`，single-node
   six-rank、`3+3 NUMA`、显式`NCCL_P2P_DISABLE=1`；output/log/tmux分别为
   `pi05_as_writer_policy_lane_hyperdecoder_formal_fresh0_200_r6_fbc320a_20260805`、同名log和
   `ember_policy_lane_formal_r6_fbc320a`。只能从functional identity启动。

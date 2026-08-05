@@ -6,6 +6,38 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-05 Program-Credit机制负裁决与Condition-Kernel Memory决策
+
+- clean`129cab6`的六卡只读机制分析已完成24 tasks×AS125/cycle1共48 rows、6/6 payload；
+  wall=`272.876s`、peak reserved=`19,304,284,160` bytes，target-action与validation/test
+  reads均0，全部GPU自然释放。532个冻结tensors逐元素不变，四个上游block确有微小更新，
+  所以下述结果不是checkpoint、freeze或空梯度错误。
+- train24 exact program cotangent在共享参数更新之前pair cosine mean/median=`.000107/0`、
+  negative fraction=`.2464`、full24 energy retention=`.041874`，说明不同task的closed-loop
+  credit本来几乎正交；一次共享Writer更新后的task-mean program delta却为
+  `.5801/.6128`、negative fraction=`0`、retention=`.55537`。最早故障是condition-map
+  Jacobian把不同credit压成公共更新，而不是raw task credit本身同向。
+- same-task五video更新的task-mean energy fraction在program/BA中位=`.82990/.91623`，pair
+  cosine=`.78826/.89916`；AS125→cycle1的same-task video centered/sample energy在program
+  `.002153→.002149`、BA`.001154→.001178`。demo1/wrong/reversed/shuffled到program、BA、
+  action的相对差异几乎没变，direct reward没有增加视频特异性。
+- program→BA→fixed-action update relative-L2中位=`.006782/.004713/.002279`，decoder并非
+  完全失活；400个held LoRA的BA变化中位`.005519`，gained/lost=`.004726/.004742`，
+  retained failures反而`.005705`。stable rank`1.0000160→1.0000163`、top1与B-column也
+  几乎不动，故不能再用rank/scale/decoder完全无响应解释。
+- binary/semantic cotangent energy=`.00261635/.00003600`、cosine`.00184`，binary约
+  `72.7×`主导。Program-Credit真实`+9`不是functional action loss或semantic tie-break造成，
+  但共享condition map无法把它累积为task/video-specific policy方向，因此正式禁止cycle2。
+- 下一唯一architecture为Factorized Condition-Kernel Program Memory：冻结foundation
+  task hidden与policy-aware temporal video innovation，形成32×32 fixed RFF product feature；
+  P1024每个coordinate拥有完整320×256 program value。full24用24×24 regularized Gram solve
+  直接把program cotangent写入memory，使induced condition update可预测。fresh FactorHeads
+  固定bootstrap到macro50后冻结，AS与reward都只更新同一M；这是objective-agnostic credit
+  storage，不是监督auxiliary loss或LIBERO outcome trick。
+- Direction Store只用language top2选择8个factor stores，video仍穿过共享trainable value
+  path；新方法的地址显式含video，完整program value线性读取，且condition共享由固定kernel
+  唯一决定。它不恢复历史store/router，也不加载任何旧Writer checkpoint。
+
 ## 2026-08-05 Antithetic Program-Credit架构与训练决策
 
 - fresh formal cycle1与strict correct400已完成：cycle1=`106`、breadth5，相对AS125=`97/5`

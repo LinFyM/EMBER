@@ -137,12 +137,13 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 34. `docs/action_forecast_writer_policy_wide_atom_dictionary_design.md`
 35. `docs/action_forecast_writer_policy_lane_hyperdecoder_design.md`
 36. `docs/action_forecast_writer_antithetic_program_credit_design.md`
-37. `task_plan.md`
-38. `findings.md`
-39. `progress.md`
-40. `docs/concept.md`
-41. `docs/decisions_and_open_questions.md`
-42. `docs/novelty_and_landscape.md`
+37. `docs/action_forecast_writer_factorized_condition_kernel_memory_design.md`
+38. `task_plan.md`
+39. `findings.md`
+40. `progress.md`
+41. `docs/concept.md`
+42. `docs/decisions_and_open_questions.md`
+43. `docs/novelty_and_landscape.md`
 
 本post-seal分支已完成Target-Bound裁决并打开Semantic Factor-Basis；修改或运行前
 仍必须完整阅读Target-Bound与Semantic Factor-Basis两份design。历史CV/Target-Bound
@@ -153,17 +154,18 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 
 ## Current focused task
 
-- 当前唯一活动方法是Antithetic Program-Credit Writer，authority为
-  `docs/action_forecast_writer_antithetic_program_credit_design.md`。它把v6 compiler产生的
-  `320×256` policy program作为episode-level高层动作，以K4的两组`+/-`同随机性配对扰动
-  直接估计closed-loop program cotangent，再反传到Core/Procedure/compiler；不再经过
-  executed-action CFM loss、PPO/SPO ratio或teacher action。AS125之后冻结完整FactorHeads
-  LoRA decoder、semantic encoder、source policy与normalization，部署仍是确定性one-shot
-  program和exactly one complete rank-16 LoRA。
-- 唯一cold start是同一fresh v6 AS root的macro125，不是历史v6-fast best、reward或profile
-  checkpoint。它从functional identity完成125个full24 macros、60,000 queries和3,000条
-  one-video conditions；正式方法定义为generic source→同一AS125阶段→关闭action后的直接
-  program credit。复用已封存AS125只跳过相同计算，formal仍必须从该阶段边界进入全新root。
+- 当前唯一活动方法是Factorized Condition-Kernel Program Memory Writer，authority为
+  `docs/action_forecast_writer_factorized_condition_kernel_memory_design.md`。它从generic
+  source与functional identity全新训练，不加载任何历史Writer checkpoint；冻结foundation
+  task descriptor与policy-aware video innovation形成固定32×32 RFF product feature，线性
+  读取完整`1024×320×256`Program Value Memory，再由fresh FactorHeads生成exactly one
+  complete rank-16 LoRA。不得恢复learned router、task ID、static LoRA bypass、多video或
+  checkpoint融合。
+- full24每次收集24个condition的program cotangent后，唯一memory owner显式计算
+  `K=Phi Phi^T`与regularized kernel-corrected value update；M不用Adam/momentum/逐坐标
+  preconditioner。FactorHeads只在fresh AS macro0→50 bootstrap，固定50后永久冻结；
+  macro50→200 AS与之后direct reward都只更新M。AS200是预注册reward边界，不能从四个held
+  点选择历史best来warm-start。
 - Policy-Lane已完成fresh0→200、四点strict correct400与全部内部分析并正式负裁决：correct=
   `70/63/37/61`、breadth=`6/4/6/6`、union/intersection=`117/14`。它真实形成约10个有效
   output lanes、stable rank`1.34--1.54`和direct-SFT量级跨层专门化，但same-task video
@@ -189,7 +191,13 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   cycle1已完成96 rollout、54 successes、6 binary-discordant pairs和一次finite update；strict
   correct400=`106`、breadth5，相对AS125=`97/5` gained/lost=`18/9`、union/intersection=
   `115/88`。三suite改善但Spatial task1→task3换手，净增9未过预注册净增10门；禁止resume
-  cycle2/4/8。当前只做AS125→cycle1内部program/BA/action/credit分析，不启动新训练。
+  cycle2/4/8。内部分析随后已完成48/48 rows：exact task cotangent pair cosine mean/median=
+  `.000107/0`、full24 retention=`.041874`，共享Writer更新后的program delta却变成
+  `.5801/.6128`、retention=`.55537`且0负pair；same-task program/BA更新task-mean energy
+  fraction=`.82990/.91623`。binary cotangent energy约为semantic tie-break的`72.7×`，held
+  gained/lost LoRA变化不可区分。Program-Credit由此正式负裁决，旧root禁止resume，当前
+  最早接口是共享condition-map把不同closed-loop credit压成task-common/video-insensitive
+  更新；不得用rank、scale、head/store扩容或续旧RL回避。
 - SFT-Anchored Policy Tangent-Basis authority
   `docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`已完成formal cycle1并负
   裁决：历史v6-fast macro400=`143` warm-start经固定8个factor-output basis的reward更新后

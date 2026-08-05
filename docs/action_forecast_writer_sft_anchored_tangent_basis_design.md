@@ -56,10 +56,12 @@ policy basis，而不是要求reward从弱起点重新学五十多个成功。
 authority验证的model layout重绑定；authorities、Writer config、LoRA contract和checkpoint
 manifest仍须一致，不改写历史contract、不复制或派生假checkpoint。
 
-该checkpoint绑定原v6 fast config的32-frame encoder chunk。A40不能假定可用；正式前必须
-以最长105-frame真实任务完成diagnostic与one-cycle writer-update profile。若46GB OOM，
-不得通过伪造checkpoint authority改成16-frame；应先给warm-start contract增加仅限
-non-parameter encoder chunk的显式runtime override并重新profile，不能暗改科学权重。
+历史v6 schema已退役，不恢复为活动loader。canonical RL config引用当前受支持的v6
+cold-start config，并显式封存non-parameter runtime override，把encoder chunk从该config的
+16恢复为checkpoint原始32；解析后的authorities与完整Writer字段逐项等于macro400 run
+contract。A40不能假定32可用；正式前必须以最长105-frame真实任务完成diagnostic与
+one-cycle writer-update profile。若46GB OOM，才允许把该显式runtime override改成16并
+重新profile，不能暗改科学权重或伪造checkpoint authority。
 
 ## 4. Reward与信息墙
 

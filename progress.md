@@ -22,6 +22,11 @@ GPU范围和训练步长是当时快照；活动状态只取
   机制门；旧A100 source路径通过已有source identity跨host匹配，不改历史contract。
   一次性hybrid分析入口已删除。聚焦回归`24 passed`，pycompile、JSON与diff check通过；
   architecture guard无hard violation且净删除563行。尚未启动macro400 diagnostic。
+- clean`a2d3f8d`首次macro400 diagnostic在所有rank加载AS config时立即被退役历史v6 schema
+  拒绝，未构造模型、未做rollout/checkpoint，六卡回到idle。没有恢复旧schema；canonical
+  config改回当前受支持v6 owner，并在RL contract中显式封存macro400原始32-frame
+  non-parameter runtime override，runtime/evaluator统一解析。effective authorities/Writer
+  与旧run contract逐项相等，聚焦回归`21 passed`；等待clean push后重新live preflight。
 
 ## 2026-08-05 Progress-Credit cycle2训练、rollout与续训轴停止
 

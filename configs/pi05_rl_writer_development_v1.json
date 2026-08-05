@@ -11,8 +11,8 @@
       "sha256": "5bb0a5ca4604f126cc4bcdd29c9a7a4d17403a8f3ee7161d8afdfeccbb2c488c"
     },
     "as_writer_config": {
-      "path": "configs/pi05_as_writer_language_axial_v6_decay400_v1.json",
-      "sha256": "6051b53065211c8af494f12064dff6d08404e1159931a12ab23797808d836b1e"
+      "path": "configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json",
+      "sha256": "c9aebb9fdaf79706b0c6bb2359479820a7df14b284e61ff476f42833e898eb1a"
     },
     "lora_contract": {
       "path": "configs/pi05_lora_v1.json",
@@ -26,6 +26,9 @@
       "path": "configs/libero_24_8_8_v1/pi05_tokenizer_manifest.json",
       "sha256": "948bf1ec1f2768833bead66b2e829154e3304c1c09fe9c48813a79f06e47426c"
     }
+  },
+  "coldstart_writer_runtime": {
+    "max_frames_per_encoder_call": 32
   },
   "information_wall": {
     "writer_input": "pure task language plus exactly one action-hidden teacher video",

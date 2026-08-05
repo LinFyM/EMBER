@@ -44,13 +44,14 @@ from ember.rl_writer.contract import (
     authority_path,
     build_contract,
     cycle_assignments,
+    load_coldstart_writer_config,
     load_rl_writer_config,
     publish_contract,
     resolve_runtime,
     reward_tasks,
 )
 from ember.writer.as_config import writer_stage
-from ember.writer.as_contract import inspect_video_data, load_writer_config
+from ember.writer.as_contract import inspect_video_data
 from ember.writer.as_sampling import TeacherVideoSchedule
 from ember.writer.checkpoint import initialize_writer_phase
 from ember.writer.data import RawTeacherVideoStore, WriterTaskAuthority
@@ -361,7 +362,7 @@ def _load_local_writer_models(
         authorities, args.source_run, args.checkpoint, evaluation_mode="formal"
     )
     tokenizer_record = inspect_tokenizer(authorities, args.tokenizer_path)
-    as_config = load_writer_config(authority_path(config, "as_writer_config"))
+    as_config = load_coldstart_writer_config(config)
     if writer_stage(as_config) != "development":
         raise RewardProtocolError("Flow-Credit cold start is not development AS")
     policy = load_policy(

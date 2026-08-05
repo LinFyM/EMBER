@@ -24,6 +24,7 @@ from ember.pi05_source_checkpoint import (
 )
 from ember.pi05_source_contract import append_jsonl
 from ember.reward.protocol import RewardProtocolError, RewardTask, SUITE_HORIZONS
+from ember.writer.as_contract import load_writer_config
 from ember.writer.as_sampling import TeacherVideoSchedule
 from ember.writer.topology import visible_physical_cuda_index
 
@@ -36,6 +37,21 @@ _SCHEDULE_TAG = 0xF10C0ED
 
 def authority_path(config: Mapping[str, Any], name: str) -> Path:
     return REPO_ROOT / str(config["authorities"][name]["path"])
+
+
+def load_coldstart_writer_config(config: Mapping[str, Any]) -> dict[str, Any]:
+    """Resolve the sealed non-parameter Writer runtime used by RL and evaluation."""
+
+    resolved = load_writer_config(authority_path(config, "as_writer_config"))
+    override = config.get("coldstart_writer_runtime", {})
+    if set(override) != {"max_frames_per_encoder_call"}:
+        raise RewardProtocolError("cold-start Writer runtime override changed")
+    resolved = dict(resolved)
+    resolved["writer"] = dict(resolved["writer"])
+    resolved["writer"]["max_frames_per_encoder_call"] = int(
+        override["max_frames_per_encoder_call"]
+    )
+    return resolved
 
 
 def _validate_authorities(config: Mapping[str, Any]) -> None:
@@ -76,6 +92,9 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         "freeze_policy_basis": algorithm.get(
             "factor_output_basis_frozen_after_coldstart"
         ),
+        "coldstart_frame_chunk": config.get("coldstart_writer_runtime", {}).get(
+            "max_frames_per_encoder_call"
+        ),
         "retain_both": algorithm.get("retain_success_and_failure_prefixes"),
         "executed_only": algorithm.get("executed_action_prefix_only"),
         "gradient_sync": algorithm.get("gradient_synchronization"),
@@ -105,6 +124,7 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         "rollout_schema": "ember_pi05_task_grounded_progress_credit_rollout_v1",
         "freeze_observer": True,
         "freeze_policy_basis": True,
+        "coldstart_frame_chunk": 32,
         "retain_both": True,
         "executed_only": True,
         "gradient_sync": "full24_equal_task_manual_sum_after_local_backward",
@@ -139,6 +159,7 @@ def load_rl_writer_config(path: Path) -> dict[str, Any]:
         raise RewardProtocolError("unsupported task-relative Flow-Credit config")
     _validate_authorities(config)
     _validate_information_wall(config)
+    load_coldstart_writer_config(config)
     progress = config.get("progress_credit", {})
     if (
         progress.get("observer")

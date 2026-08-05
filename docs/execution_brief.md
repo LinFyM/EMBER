@@ -11,6 +11,9 @@
   macro400=`143/400`启动，冻结semantic encoder与8个factor-output policy basis，只让
   reward更新condition coefficients。canonical config已原位升级；下一命令只能是macro400
   六卡只读diagnostic，门过后才profile/formal。
+- 首次diagnostic因旧v6 raw config schema已退役而在模型构造前fail-fast；0 rollout/checkpoint。
+  不恢复历史loader，改由当前受支持v6 config加RL-sealed 32-frame non-parameter runtime
+  override重建与macro400逐项相同的effective Writer；训练与评测共用这一解析owner。
 - 参数hybrid root
   `runs/outputs/pi05_progress_credit_parameter_hybrid_as125_cycle2_r6_67b245a_20260805`
   已完整结束并释放GPU：BA层upstream贡献更大，action层factor-output贡献更大，且Long与

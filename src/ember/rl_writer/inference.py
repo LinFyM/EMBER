@@ -18,11 +18,12 @@ from ember.rl_writer.checkpoint import validate_rl_writer_checkpoint_files
 from ember.rl_writer.contract import (
     RL_WRITER_LAUNCH_SCHEMA,
     authority_path,
+    load_coldstart_writer_config,
     load_rl_writer_config,
     reward_tasks,
     schedule_summary,
 )
-from ember.writer.as_contract import inspect_video_data, load_writer_config
+from ember.writer.as_contract import inspect_video_data
 from ember.writer.as_sampling import TeacherVideoSchedule
 from ember.writer.inference import (
     RL_WRITER_ADAPTER_SCHEMA,
@@ -115,7 +116,7 @@ def inspect_rl_writer_evaluation(
     checkpoint = checkpoint.resolve()
     video_data_root = video_data_root.resolve()
     config = load_rl_writer_config(config_path)
-    as_config = load_writer_config(authority_path(config, "as_writer_config"))
+    as_config = load_coldstart_writer_config(config)
     target_manifest = read_json(authority_path(config, "target_data_manifest"))
     target_by_key = {
         (str(row["suite"]), int(row["task_id"])): row

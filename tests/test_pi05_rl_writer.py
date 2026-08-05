@@ -24,6 +24,7 @@ from ember.rl_writer.checkpoint import (
 from ember.rl_writer.contract import (
     RL_WRITER_LAUNCH_SCHEMA,
     cycle_assignments,
+    load_coldstart_writer_config,
     load_rl_writer_config,
     publish_contract,
     resolve_runtime,
@@ -57,6 +58,10 @@ def test_flow_credit_config_closes_actions_and_keeps_both_outcomes() -> None:
     )
     assert config["algorithm"]["semantic_encoder_frozen_after_coldstart"] is True
     assert config["algorithm"]["factor_output_basis_frozen_after_coldstart"] is True
+    assert config["coldstart_writer_runtime"]["max_frames_per_encoder_call"] == 32
+    assert load_coldstart_writer_config(config)["writer"][
+        "max_frames_per_encoder_call"
+    ] == 32
     assert config["information_wall"]["teacher_action_reads_after_coldstart"] == 0
     assert config["parallel"]["maximum_world_size"] == 6
     assert config["parallel"]["credit_collective_readiness"] == (

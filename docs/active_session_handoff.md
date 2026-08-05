@@ -19,10 +19,12 @@
   8个`factor_heads.*.network.2.weight` policy basis，只训练上游和factor-input
   coefficients；reward/K4/Nmc4/LR/two epochs不变。参数hybrid一次性入口已按retirement
   trigger删除。
-- macro400保留旧A100绝对路径；warm-start现在使用既有`source_reference_matches`按已验证
-  source identity跨host重绑定，不改历史run contract。原v6 config为32-frame encoder
-  chunk，当前A40尚未profile；下一步只能先在最多6张live空闲卡做只读progress diagnostic，
-  门过后做独立one-cycle profile，之后才允许fresh formal0→1。
+- macro400保留旧A100绝对路径；warm-start使用既有`source_reference_matches`按已验证
+  source identity跨host重绑定，不改历史run contract。首次diagnostic在GPU分配后、模型
+  构造前被退役旧v6 schema拒绝，0 rollout/checkpoint且GPU已释放；根修为继续引用当前受支持
+  v6 config，并由RL config显式把non-parameter encoder chunk恢复为macro400原始32。解析后
+  authorities与Writer字段逐项匹配旧run contract，聚焦回归21 passed。A40尚未profile；
+  下一步仍只重跑六卡只读diagnostic，门过后才做one-cycle profile与fresh formal0→1。
 - 当前GPU已全部释放，无EMBER进程。最近live检查时`gpu01`八卡空闲、`gpu02:6`属于其他
   用户；任何新launch仍须重新比较两节点且最多6张。
 

@@ -30,10 +30,10 @@ runner、split、路径或 GPU 权限。
   macro50 freeze和exact-resume的聚焦CPU合同与architecture gate。
 - [x] live比较gpu01/gpu02后，在最多6张空闲A40上完成longest105、B20/B2、fresh0→1→
   exact-resume1→3 profile；profile权重永久弃用。
-- [ ] 从functional identity正式训练AS0→200，固定评测50/100/150/200；AS200达到
-  correct≥120且breadth≥6才进入同pipeline direct reward，否则按最早失败接口负裁决。
-- [ ] reward先只跑cycle1并严格配对AS200；只有`>150`，或净增≥10、breadth不降且至少两suite
-  改善才续cycle2。长期single-checkpoint严格`>150`且尽可能更高不变。
+- [x] 从functional identity完成正式AS0→200与固定50/100/150/200 strict correct400；曲线
+  为`46/46/45/49`、breadth始终`3`，macro200未过`correct≥120且breadth≥6`门。
+- [x] 按预注册合同禁止进入direct reward cycle1；当前实验只完成全部内部分析后负裁决，
+  不用RL掩盖AS substrate失败。长期single-checkpoint严格`>150`且尽可能更高不变。
 
 ### Condition-Kernel fresh AS0→200正式launch合同（2026-08-05）
 
@@ -48,6 +48,22 @@ runner、split、路径或 GPU 权限。
   B2、full24、显式`NCCL_P2P_DISABLE=1`；checkpoint只在50/100/150/200完整边界保存。
 - exact command为
   `PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,6 NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 .venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_as_writer.py --config configs/pi05_as_writer_condition_kernel_memory_bci_v1.json --mode formal --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir runs/outputs/pi05_as_writer_condition_kernel_memory_formal_fresh0_200_r6_4038960_20260805 --stop-after-step 200 --num-workers 0 --log-every 1 --skip-data-sha`。
+
+### Condition-Kernel四点rollout与内部分析合同（2026-08-06）
+
+- formal自然完成200 macros、96,000 queries、4,800 videos、四个checkpoint与200 metrics；
+  wall=`3951.928s`、峰值reserved=`19,344,130,048` bytes、0 validation/test action reads。
+- 四点strict correct400 roots统一为
+  `runs/outputs/pi05_as_writer_condition_kernel_memory_bci_correct400_noreplacement_seed7_macro{0050,0100,0150,0200}_4b04c90_20260806`；
+  每点400 rows、42 shards、9 workers、400个无放回video、一次启动且全worker exit0。逐task
+  结果只集中在Goal-6、Object-1和Long-1，四点breadth均为3，reward gate已失败。
+- internal analysis owner由clean/pushed`2972f8f`补充same-task五video相邻checkpoint的Program
+  与exact effective-BA update task-mean能量占比；全仓`200 passed`、compile与diff check通过。
+  live比较后`gpu01`八卡全空，`gpu02:5/6`有他人进程，选择`gpu01:0,1,2,3,4,5`六卡；
+  output/log/tmux为
+  `runs/outputs/pi05_as_writer_condition_kernel_memory_internal_all4_r6_2972f8f_20260806`、
+  同名`runs/logs/*.log`与`ember_ck_internal_r6_2972f8f`。分析覆盖24 train tasks×4 checkpoints、
+  demos0--4、reversed/shuffled及8-task fixed-action panel，target/validation/test action reads均为0。
 
 ## 已完成Antithetic Program-Credit推进（2026-08-05）
 

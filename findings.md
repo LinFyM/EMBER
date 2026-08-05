@@ -17,7 +17,16 @@
 - Policy-Lane正式fresh0→200随后在clean pushed`244b677`完整结束：200 finite macros、
   96,000 queries、4,800 one-video conditions、8个checkpoint、0 OOM/clip/nonfinite/stall，
   validation/test action reads=0。该证据证明49M Writer能在46GB A40合同内稳定端到端训练，
-  但不把functional loss下降写成闭环改善；性能结论等待固定四点rollout。
+  但不把functional loss下降写成闭环改善。
+- 固定四点strict correct400=`70/63/37/61`、breadth=`6/4/6/6`；相邻gained/lost=
+  `17/24,14/40,40/16`，union/intersection=`117/14`、single envelope gap=`47`。四点
+  机械合同完整且严格配对，故低absolute与macro150崩落不是漏行、视频重用或worker故障。
+  macro50 single winner仅70，正式禁止续400。
+- 训练ledger的same-task相邻32维CountSketch方向在151--200段显示：Policy-Lane block
+  mean/median cosine=`.0416/.0462`、negative fraction=`.4350`；PWAD policy-atom为
+  `.0907/.0976/.3567`，历史v6 factor在76--125为`.1134/.1244/.3317`。该跨架构比较受
+  block维度与sketch方差限制，只作为“扩大独立输出后credit复现可能更差”的待验证信号；
+  必须由真实lane state、effective BA与fixed-action内部分析确认后再决定下一方法。
 
 - PWAD fresh0→200训练健康完成，strict correct400=`77/71/80/80`、breadth=`5/6/5/5`；
   相邻gained/lost=`19/25,21/12,16/16`，四点union/intersection=`115/44`、single

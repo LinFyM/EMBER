@@ -4,16 +4,20 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：Policy-Lane profile/resume通过，正式fresh0→200已开放
+## 0.0 当前状态：Policy-Lane正式负结果，四点内部分析待运行
 
 - Policy-Lane正式fresh0→200已在同一未恢复进程完成：200 finite macros、96,000 logical
   queries、4,800 one-video conditions、8个完整checkpoint，wall=`6651.965s`，峰值
   allocated/reserved=`36,174,262,272/42,150,658,048` bytes，0 OOM/clip/nonfinite/
   collective stall，validation/test action reads=0。contract=`a8ce75f2...00f6`，root为
   `runs/outputs/pi05_as_writer_policy_lane_hyperdecoder_formal_fresh0_200_r6_fbc320a_20260805`。
-- 下一唯一操作是固定50/100/150/200四点strict correct400；live选择`gpu01:0,1,2`与
-  `3,4,5`两组三卡，先并行50/100，完成后并行150/200，总设备始终为6。不得按中途分数
-  替换点位、提前resume400或用functional loss选点。
+- 固定50/100/150/200 strict correct400已完成：correct=`70/63/37/61`、breadth=
+  `6/4/6/6`，相邻gained/lost=`17/24,14/40,40/16`，四点union/intersection=
+  `117/14`、single envelope gap=`47`。四root均400 rows、42 shards、一次启动、全部
+  worker exit0、每task 50 unique无放回视频且共同noise prefix严格配对。
+- macro50 single winner=`70`，低于PWAD80、v6-fast143与严格门151；macro150崩到37后
+  macro200又回61，说明能力仍大幅轮换。禁止resume400、warm-start或按functional loss
+  选择点位。下一唯一操作是`task_plan.md`已封存的四checkpoint六卡内部分析。
 
 - clean pushed`2aeb22a`的Policy-Lane canonical实现已在`gpu01`完成六卡longest105、
   logical-B20/full24三步profile：step max wall=`33.457/31.024/31.007s`，峰值

@@ -30,8 +30,13 @@
   `ember_policy_lane_formal_r6_fbc320a`。只能从functional identity启动。
 - 上述正式run已自然完成：200 finite macros、96,000 queries、4,800 one-video conditions、
   8个checkpoint、wall=`6651.965s`，峰值allocated/reserved=`36,174,262,272/
-  42,150,658,048` bytes，0 OOM/clip/nonfinite/stall。当前切换为固定50/100/150/200四点
-  strict correct400；先用`gpu01:0,1,2|3,4,5`并行50/100，再同样两组并行150/200。
+  42,150,658,048` bytes，0 OOM/clip/nonfinite/stall。固定50/100/150/200 strict correct400
+  也已完整结束：`70/63/37/61`、breadth=`6/4/6/6`，相邻gained/lost=
+  `17/24,14/40,40/16`，union/intersection=`117/14`。macro50 single winner仅`70`，
+  Policy-Lane明显低于PWAD80、v6-fast143与严格门，禁止续400。
+- 当前唯一操作是既有六卡cold-start owner的四checkpoint内部分析：定位lane hidden、
+  lane output、effective BA与fixed-action之间的最早失效接口。精确命令与root在
+  `task_plan.md`；分析完成前不启动下一架构或训练。
 - SFT-Anchored Tangent-Basis正式消融已结束并负裁决，不再是活动训练轴。clean`059d40f`
   从历史v6-fast macro400=`143/400` warm-start完成formal cycle0→1与strict correct400；
   cycle1=`142`、breadth`7`，相对baseline gained/lost=`20/21`、intersection/union=

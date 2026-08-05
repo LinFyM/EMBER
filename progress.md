@@ -8,6 +8,17 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-05 Policy-Lane四点strict rollout完成
+
+- 50/100/150/200四个formal correct400 roots全部自然结束并释放GPU：每点400 rows、
+  42 shards、一次launcher、9/9 worker exit0、400 LoRA cache、每task 50 unique无放回视频，
+  0 error/retry。
+- correct=`70/63/37/61`、breadth=`6/4/6/6`；相邻gained/lost=
+  `17/24,14/40,40/16`，union/intersection=`117/14`。macro50是single winner但远低于
+  PWAD80、v6-fast143和严格门，禁止resume400。
+- 下一步仅运行已封存命令的50/100/150/200六卡内部分析；完成真实lane→BA→action证据前
+  不实现或启动下一方法。
+
 ## 2026-08-05 Policy-Lane Coupled Hyperdecoder profile/resume封存
 
 - 同一方法的clean/pushed`244b677`正式fresh0→200已自然完成：200 finite macros、96,000

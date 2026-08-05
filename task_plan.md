@@ -26,8 +26,12 @@ runner、split、路径或 GPU 权限。
   resume状态闭合，formal config已seal。
 - [x] 从clean/pushed代码的独立fresh root训练0→200：200 finite macros、96,000 queries、
   4,800 one-video conditions、8个checkpoint，0 OOM/clip/nonfinite/stall。
-- [ ] strict评测50/100/150/200；只按single-checkpoint absolute、breadth、换手、视频传递
-  和policy-lane内部证据决定是否续400。
+- [x] strict评测50/100/150/200完整结束：correct=`70/63/37/61`、breadth=
+  `6/4/6/6`，相邻gained/lost=`17/24,14/40,40/16`，四点union/intersection=
+  `117/14`、single envelope gap=`47`。四点均400 rows、42 shards、一次启动、全部
+  worker exit0、每task 50个无放回视频；macro50 single winner=`70`，正式禁止续400。
+- [ ] 用既有cold-start analysis owner完成50/100/150/200四点内部分析，裁决lane hidden、
+  lane output、effective BA与fixed-action的最早失效接口；完成前不设计或启动下一架构。
 
 ### Policy-Lane fresh0→200 formal launch contract
 
@@ -67,6 +71,24 @@ env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,
 - live quota使用`303,808,444KiB/1TiB`，每root预计LoRA cache与results低于1.1GiB，四点
   峰值新增低于5GiB。prepare后用canonical`evaluate_pi05.py start`启动，失败只按同root
   `resume`恢复，不重建面板。
+
+### Policy-Lane four-checkpoint internal analysis launch contract
+
+- 使用clean/pushed canonical analysis owner，同时读取正式50/100/150/200 checkpoint；覆盖
+  24 train tasks、same-task demos0--4、每suite两task fixed-action panel及
+  reversed/shuffled。只读task language与action-hidden teacher video，固定action probe不读
+  target action，validation/test reads必须为0。
+- 必须报告lane hidden跨task/same-task-video差异、16-lane storage/output participation、
+  effective BA谱与视频方差、checkpoint churn及fixed-action传递；结合训练ledger中后段
+  same-task相邻梯度复现，而不是用functional loss选择checkpoint。
+- output固定为
+  `runs/outputs/pi05_as_writer_policy_lane_hyperdecoder_internal_all4_r6_20260805`；预计96 cells、
+  新增小于0.1GiB，参考同owner既有规模峰值低于20GiB/卡。启动前仍需live确认六张空闲卡、
+  `/data1`独立quota与output root不存在；显式`NCCL_P2P_DISABLE=1`。
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=8 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/torchrun --standalone --nproc-per-node=6 scripts/analyze_relative_flow_coldstart.py --mode formal --training-run runs/outputs/pi05_as_writer_policy_lane_hyperdecoder_formal_fresh0_200_r6_fbc320a_20260805 --checkpoints runs/outputs/pi05_as_writer_policy_lane_hyperdecoder_formal_fresh0_200_r6_fbc320a_20260805/checkpoints/step_00000050 runs/outputs/pi05_as_writer_policy_lane_hyperdecoder_formal_fresh0_200_r6_fbc320a_20260805/checkpoints/step_00000100 runs/outputs/pi05_as_writer_policy_lane_hyperdecoder_formal_fresh0_200_r6_fbc320a_20260805/checkpoints/step_00000150 runs/outputs/pi05_as_writer_policy_lane_hyperdecoder_formal_fresh0_200_r6_fbc320a_20260805/checkpoints/step_00000200 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir runs/outputs/pi05_as_writer_policy_lane_hyperdecoder_internal_all4_r6_20260805
+```
 
 ## 已封存的Policy-Wide Atom Dictionary推进（2026-08-05）
 

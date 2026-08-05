@@ -209,3 +209,20 @@ trainable=0，validation/test action reads均为0。run contract SHA为`a8ce75f2
 
 训练完整性只开放预注册四点50/100/150/200 strict correct400，不构成性能通过。不得依据
 functional loss约`.1504→.0941`选择checkpoint，也不得在rollout前resume400或加入新trick。
+
+## 11. 四点strict correct400正式负结果
+
+50/100/150/200四点correct=`70/63/37/61`、breadth=`6/4/6/6`；逐点均为400 rows、
+42 shards、一次launcher、全部worker exit0、每task 50 unique无放回视频。相邻严格配对
+gained/lost=`17/24,14/40,40/16`，四点union/intersection=`117/14`、single envelope
+gap=`47`，共同policy-noise prefix全部一致。
+
+macro50 single winner仅70，低于PWAD80、v6-fast143和严格门151；macro150降到37后
+macro200恢复到61，既没有共同累积，也没有缓解task drift。按第8节预注册门正式禁止
+resume400、增加hidden width、调scale或从任一checkpoint warm-start。
+
+当前只开放同一clean canonical owner的四checkpoint内部分析，报告lane hidden、lane
+output participation、effective BA谱/视频方差、checkpoint churn和fixed-action传递。
+训练ledger的后段same-task相邻CountSketch已给出Policy-Lane输出方向复现偏低的初步信号，
+但该信号受block维度与sketch方差影响，不能替代真实LoRA/action证据。完整分析前不裁决
+下一architecture。

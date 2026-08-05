@@ -184,7 +184,7 @@ def _write_shared_state(
         checkpoint_state_family,
     )
     scheduler_state = scheduler.state_dict()
-    hashless = checkpoint_state_family == "k4_invariant_program_policy_m2p_full24_v1"
+    hashless = checkpoint_state_family == "k4_policy_layer_trace_m2p_full24_v1"
     if int(scheduler_state.get("last_epoch", -1)) != scheduler_cursor:
         raise WriterModelError("AS-Writer scheduler exposure cursor changed")
     data_stop_step = step
@@ -389,7 +389,7 @@ def validate_writer_checkpoint_files(
     checkpoint_state_family = manifest.get("consumed", {}).get(
         "checkpoint_state_family"
     )
-    hashless = checkpoint_state_family == "k4_invariant_program_policy_m2p_full24_v1"
+    hashless = checkpoint_state_family == "k4_policy_layer_trace_m2p_full24_v1"
     schema_matches = checkpoint_schema_matches(
         manifest.get("schema_version"),
         updates_per_cycle,
@@ -434,7 +434,7 @@ def inspect_writer_checkpoint(
     contract_sha256 = (
         str(contract["schema_version"])
         if contract.get("runtime", {}).get("checkpoint_state_family")
-        == "k4_invariant_program_policy_m2p_full24_v1"
+        == "k4_policy_layer_trace_m2p_full24_v1"
         else canonical_hash(contract)
     )
     world_size = int(contract.get("runtime", {}).get("world_size", -1))
@@ -691,7 +691,7 @@ def _validate_cycle_normalized_optimizer_resume(
             "semantic_factor_basis_task_query_keyed_rawfull24_v1",
             "v6_relative_flow_coldstart_task_query_keyed_rawfull24_v1",
             "condition_kernel_program_memory_full24_v1",
-            "k4_invariant_program_policy_m2p_full24_v1",
+            "k4_policy_layer_trace_m2p_full24_v1",
         }
     ):
         raise WriterModelError("unknown cycle-normalized optimizer resume family")

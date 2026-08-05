@@ -37,20 +37,13 @@ def _task_gradients() -> dict[int, torch.Tensor]:
     }
 
 
-def test_parameter_layout_owns_all_k4_program_and_m2p_parameters() -> None:
+def test_parameter_layout_owns_all_k4_layer_reader_and_axis_parameters() -> None:
     writer = torch.nn.Module()
-    writer.invariant_program = torch.nn.Linear(1, 1)
-    writer.m2p = torch.nn.Module()
-    writer.m2p.shared = torch.nn.Linear(1, 1)
-    writer.m2p.a_heads = torch.nn.ModuleDict({"target": torch.nn.Linear(1, 1)})
-    writer.m2p.b_heads = torch.nn.ModuleDict({"target": torch.nn.Linear(1, 1)})
+    writer.layer_m2p = torch.nn.Module()
+    writer.layer_m2p.reader = torch.nn.Linear(1, 1)
+    writer.layer_m2p.axis_blocks = torch.nn.ModuleList([torch.nn.Linear(1, 1)])
     layout = parameter_layout(writer)
-    assert {item.block for item in layout} == {
-        "invariant_program",
-        "m2p_shared",
-        "m2p_a_heads",
-        "m2p_b_heads",
-    }
+    assert {item.block for item in layout} == {"policy_layer_reader", "axis_m2p"}
 
 
 def test_raw_mean_is_exact_under_task_order_permutation_and_assignable() -> None:

@@ -1,4 +1,4 @@
-"""Canonical K4 video-value invariant-program M2P PI05 Writer."""
+"""Canonical K4 policy-layer trace M2P PI05 Writer."""
 
 from __future__ import annotations
 
@@ -10,8 +10,8 @@ import torch
 
 from ember.writer.architecture import validate_writer_dimensions
 from ember.writer.fewshot_m2p import (
-    InvariantProgramEncoder,
-    PolicyM2PDecoder,
+    PolicyLayerTraceM2P,
+    build_policy_layer_groups,
     build_policy_target_specs,
 )
 from ember.writer.video_program import Pi05FrozenConditionDescriptor
@@ -95,7 +95,7 @@ class CompleteLoRAWriter(torch.nn.Module):
     EXPERT_LAYERS = 18
     POLICY_TARGETS = 38
     PUBLIC_LORA_RANK = 16
-    M2P_TOKENS = POLICY_TARGETS * PUBLIC_LORA_RANK
+    POLICY_GROUPS = EXPERT_LAYERS + 2
     _EXPERT_MODULE = re.compile(
         r".*gemma_expert\.model\.layers\.([0-9]+)\.self_attn\.(q_proj|v_proj)$"
     )
@@ -109,13 +109,13 @@ class CompleteLoRAWriter(torch.nn.Module):
         expert_model: torch.nn.Module,
         image_width: int,
         expert_width: int,
-        program_width: int,
-        program_slots: int,
-        program_heads: int,
-        program_blocks: int,
+        policy_groups: int,
+        trace_temporal_terms: int,
+        memory_slots: int,
+        m2p_width: int,
         m2p_heads: int,
         m2p_blocks: int,
-        factor_hidden_width: int,
+        m2p_ffn_expansion: int,
         max_frames_per_encoder_call: int,
         action_horizon: int,
         padded_action_dim: int,
@@ -130,13 +130,13 @@ class CompleteLoRAWriter(torch.nn.Module):
             in {
                 "image_width",
                 "expert_width",
-                "program_width",
-                "program_slots",
-                "program_heads",
-                "program_blocks",
+                "policy_groups",
+                "trace_temporal_terms",
+                "memory_slots",
+                "m2p_width",
                 "m2p_heads",
                 "m2p_blocks",
-                "factor_hidden_width",
+                "m2p_ffn_expansion",
                 "action_horizon",
                 "padded_action_dim",
                 "videos_per_condition",
@@ -145,9 +145,9 @@ class CompleteLoRAWriter(torch.nn.Module):
         try:
             validate_writer_dimensions(observed)
         except ValueError as error:
-            raise WriterModelError("invalid K4 invariant M2P Writer topology") from error
+            raise WriterModelError("invalid K4 layer-trace M2P Writer topology") from error
         if not tensor_specs or max_frames_per_encoder_call <= 0:
-            raise WriterModelError("invalid K4 invariant M2P Writer topology")
+            raise WriterModelError("invalid K4 layer-trace M2P Writer topology")
         if set(template_state) != {item.name for item in tensor_specs}:
             raise WriterModelError("Writer LoRA template names changed")
         if (
@@ -158,8 +158,9 @@ class CompleteLoRAWriter(torch.nn.Module):
             raise WriterModelError("frozen PI05 public topology changed")
         self._validate_policy_targets(tensor_specs)
         self.tensor_specs = tensor_specs
-        self.program_width = int(program_width)
-        self.program_slots = int(program_slots)
+        self.program_width = int(m2p_width)
+        self.program_groups = int(policy_groups)
+        self.program_slots = int(memory_slots)
         self.videos_per_condition = int(videos_per_condition)
         self.condition_descriptor = Pi05FrozenConditionDescriptor(
             image_width=image_width,
@@ -169,26 +170,25 @@ class CompleteLoRAWriter(torch.nn.Module):
             padded_action_dim=padded_action_dim,
             initialization_seed=initialization_seed,
         )
-        self.invariant_program = InvariantProgramEncoder(
-            task_width=image_width,
-            video_width=self.condition_descriptor.FRAME_DESCRIPTOR_WIDTH,
-            program_width=program_width,
-            program_slots=program_slots,
-            heads=program_heads,
-            blocks=program_blocks,
-            initialization_seed=initialization_seed + 1,
-        )
         targets = build_policy_target_specs(tensor_specs)
         if len(targets) != self.POLICY_TARGETS:
             raise WriterModelError("PI05 public policy target count changed")
-        self.m2p = PolicyM2PDecoder(
+        groups = build_policy_layer_groups(
             targets,
+            expert_layers=self.EXPERT_LAYERS,
+        )
+        if len(groups) != self.POLICY_GROUPS:
+            raise WriterModelError("PI05 policy-layer group count changed")
+        self.layer_m2p = PolicyLayerTraceM2P(
+            groups,
             template_state=template_state,
-            program_width=program_width,
+            width=m2p_width,
+            memory_slots=memory_slots,
+            temporal_terms=trace_temporal_terms,
             heads=m2p_heads,
             blocks=m2p_blocks,
-            head_hidden_width=factor_hidden_width,
-            initialization_seed=initialization_seed + 2,
+            ffn_expansion=m2p_ffn_expansion,
+            initialization_seed=initialization_seed + 1,
         )
 
     def _validate_policy_targets(
@@ -295,7 +295,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         video_condition_ids = torch.repeat_interleave(
             torch.arange(conditions, device=frames.device), condition_lengths
         )
-        task_descriptor, video_tokens = self.condition_descriptor(
+        video_traces = self.condition_descriptor(
             policy,
             frames,
             frame_video_ids,
@@ -304,26 +304,27 @@ class CompleteLoRAWriter(torch.nn.Module):
             language_mask.index_select(0, video_condition_ids),
             task_span_mask.index_select(0, video_condition_ids),
         )
-        program = self.invariant_program(
-            task_descriptor,
-            video_tokens,
+        program = self.layer_m2p.encode(
+            video_traces,
             condition_video_offsets,
         )
         if program.shape != (
             conditions,
+            self.program_groups,
             self.program_slots,
             self.program_width,
         ) or not bool(torch.isfinite(program).all()):
-            raise WriterModelError("Writer invariant program changed shape")
+            raise WriterModelError("Writer policy-layer memory changed shape")
         return program
 
     def decode_program(self, program: torch.Tensor) -> dict[str, torch.Tensor]:
-        if program.ndim != 3 or program.shape[1:] != (
+        if program.ndim != 4 or program.shape[1:] != (
+            self.program_groups,
             self.program_slots,
             self.program_width,
         ) or not bool(torch.isfinite(program).all()):
-            raise WriterModelError("invalid Writer invariant program")
-        result = self.m2p(program)
+            raise WriterModelError("invalid Writer policy-layer memory")
+        result = self.layer_m2p.decode(program)
         if program.shape[0] == 1:
             return {name: value[0] for name, value in result.items()}
         return result

@@ -35,7 +35,7 @@ from ember.writer.topology import validate_task_complete_topology
 from ember.writer.update_contract import build_update_runtime_contract
 
 
-AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_k4_invariant_program_m2p_launch_v1"
+AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_k4_policy_layer_trace_m2p_launch_v1"
 SUPPORTED_AS_WRITER_LAUNCH_SCHEMAS = frozenset({AS_WRITER_LAUNCH_SCHEMA})
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
@@ -378,26 +378,29 @@ def writer_trainable_contract(
     if (
         not names
         or parameter_count != trainable_parameter_count
-        or any(
-            not name.startswith(("invariant_program.", "m2p."))
-            for name in names
-        )
+        or any(not name.startswith("layer_m2p.") for name in names)
         or any(parameter.requires_grad for parameter in policy.parameters())
     ):
         raise WriterModelError("AS-Writer freeze boundary changed")
-    program_parameters = sum(
-        value.numel() for value in writer.invariant_program.parameters()
+    reader_parameters = sum(
+        value.numel()
+        for name, value in writer.layer_m2p.named_parameters()
+        if not name.startswith("axis_blocks.")
     )
-    m2p_parameters = sum(value.numel() for value in writer.m2p.parameters())
+    axis_parameters = sum(
+        value.numel()
+        for name, value in writer.layer_m2p.named_parameters()
+        if name.startswith("axis_blocks.")
+    )
     return {
         "object": "shared_action_supervised_writer_only",
         "parameter_count": parameter_count,
         "trainable_parameter_count": trainable_parameter_count,
-        "invariant_program_parameter_count": program_parameters,
-        "policy_m2p_parameter_count": m2p_parameters,
+        "policy_layer_reader_parameter_count": reader_parameters,
+        "axis_m2p_parameter_count": axis_parameters,
         "optimizer_owner": "single_end_to_end_adamw_full_horizon",
         "parameter_name_count": len(names),
-        "parameter_name_prefixes": ["invariant_program", "m2p"],
+        "parameter_name_prefixes": ["layer_m2p"],
         "generated_lora_parameter_count": lora.parameter_count,
         "generated_lora_tensor_count": lora.state_tensor_count,
         "source_policy_trainable_parameter_count": 0,

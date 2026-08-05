@@ -7,20 +7,20 @@ import pytest
 from ember.pi05_source_checkpoint import write_json_atomic
 from ember.writer.as_config import load_writer_config
 from ember.writer.checkpoint import _state_schemas, validate_writer_checkpoint_files
-from ember.writer.checkpoint_schema import K4_INVARIANT_M2P_CHECKPOINT_SCHEMA
+from ember.writer.checkpoint_schema import K4_LAYER_TRACE_M2P_CHECKPOINT_SCHEMA
 from ember.writer.model import WriterModelError
 from ember.writer.update_contract import checkpoint_state_family
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONFIG = ROOT / "configs/pi05_as_writer_k4_invariant_m2p_bci_v1.json"
-FAMILY = "k4_invariant_program_policy_m2p_full24_v1"
+CONFIG = ROOT / "configs/pi05_as_writer_k4_layer_trace_m2p_bci_v1.json"
+FAMILY = "k4_policy_layer_trace_m2p_full24_v1"
 
 
 def test_k4_uses_fresh_incompatible_checkpoint_family() -> None:
     config = load_writer_config(CONFIG)
     assert checkpoint_state_family(config) == FAMILY
-    assert _state_schemas(1, FAMILY)[0] == K4_INVARIANT_M2P_CHECKPOINT_SCHEMA
+    assert _state_schemas(1, FAMILY)[0] == K4_LAYER_TRACE_M2P_CHECKPOINT_SCHEMA
     with pytest.raises(WriterModelError, match="unsupported"):
         _state_schemas(1, "cvadr_task_query_keyed_rawfull24_v1")
 
@@ -41,7 +41,7 @@ def _checkpoint(tmp_path: Path, contract_reference: str) -> Path:
     write_json_atomic(
         checkpoint / "checkpoint_manifest.json",
         {
-            "schema_version": K4_INVARIANT_M2P_CHECKPOINT_SCHEMA,
+            "schema_version": K4_LAYER_TRACE_M2P_CHECKPOINT_SCHEMA,
             "contract_reference": contract_reference,
             "consumed": {
                 "next_step": 3,
@@ -55,7 +55,7 @@ def _checkpoint(tmp_path: Path, contract_reference: str) -> Path:
 
 
 def test_k4_checkpoint_uses_schema_and_sizes_without_content_hashing(tmp_path: Path) -> None:
-    reference = "ember_pi05_k4_invariant_program_m2p_launch_v1"
+    reference = "ember_pi05_k4_policy_layer_trace_m2p_launch_v1"
     checkpoint = _checkpoint(tmp_path, reference)
     manifest = validate_writer_checkpoint_files(
         checkpoint, world_size=1, contract_sha256=reference
@@ -70,7 +70,7 @@ def test_k4_checkpoint_uses_schema_and_sizes_without_content_hashing(tmp_path: P
 
 
 def test_historical_checkpoint_schema_is_rejected_for_k4(tmp_path: Path) -> None:
-    reference = "ember_pi05_k4_invariant_program_m2p_launch_v1"
+    reference = "ember_pi05_k4_policy_layer_trace_m2p_launch_v1"
     checkpoint = _checkpoint(tmp_path, reference)
     manifest_path = checkpoint / "checkpoint_manifest.json"
     manifest = __import__("json").loads(manifest_path.read_text())

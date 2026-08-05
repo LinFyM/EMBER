@@ -1,4 +1,4 @@
-"""Configuration loading for the canonical K4 invariant-program M2P Writer."""
+"""Configuration loading for the canonical K4 policy-layer trace M2P Writer."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from ember.writer.model import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-FEWSHOT_M2P_CONFIG_SCHEMA = "ember_pi05_k4_invariant_program_m2p_as_writer_v1"
+FEWSHOT_M2P_CONFIG_SCHEMA = "ember_pi05_k4_policy_layer_trace_m2p_as_writer_v1"
 AS_WRITER_STAGES = ("development", "final")
 
 
@@ -156,7 +156,7 @@ def _validate_training(config: Mapping[str, Any]) -> None:
     formal_world = int(config.get("formal_run", {}).get("expected_world_size", 0))
     tasks_per_rank = 24 // formal_world if formal_world in {4, 6} else -1
     required = {
-        "method": "k4_video_value_invariant_program_policy_m2p_rawfull24",
+        "method": "k4_policy_layer_trace_axis_m2p_rawfull24",
         "update_topology": "task_complete_all_tasks",
         "tasks_per_rank_per_optimizer_update": tasks_per_rank,
         "global_tasks_per_optimizer_update": 24,

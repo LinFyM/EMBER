@@ -6,9 +6,14 @@ import torch
 
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer.as_contract import writer_trainable_contract
-from ember.writer.fewshot_m2p import InvariantProgramEncoder
+from ember.writer.fewshot_m2p import (
+    PolicyLayerGroup,
+    PolicyLayerTraceM2P,
+    PolicyTargetSpec,
+)
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
 from ember.writer.task_gradient import parameter_layout
+from ember.writer.video_program import temporal_trace_tokens
 
 
 class _Projection(torch.nn.Module):
@@ -33,8 +38,6 @@ class _Backbone(torch.nn.Module):
 
 
 class _FakeConditionDescriptor(torch.nn.Module):
-    FRAME_DESCRIPTOR_WIDTH = 128
-
     def forward(
         self,
         _policy: torch.nn.Module,
@@ -44,18 +47,17 @@ class _FakeConditionDescriptor(torch.nn.Module):
         language_tokens: torch.Tensor,
         _language_mask: torch.Tensor,
         _task_span_mask: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    ) -> torch.Tensor:
         videos = language_tokens.shape[0]
-        task_seed = language_tokens.to(torch.float32).sum(dim=1)
-        task = task_seed[:, None] + torch.arange(2048, dtype=torch.float32)[None]
         frame_seed = frames.to(torch.float32).mean(dim=(1, 2, 3))
         pooled = torch.zeros(videos, dtype=torch.float32)
         pooled.index_add_(0, frame_video_ids, frame_seed)
         counts = video_offsets.diff().to(torch.float32)
         pooled = pooled / counts
-        temporal = torch.arange(4, dtype=torch.float32)[None, :, None]
-        width = torch.arange(128, dtype=torch.float32)[None, None]
-        return task, pooled[:, None, None] + temporal + width
+        group = torch.arange(20, dtype=torch.float32)[None, :, None, None]
+        temporal = torch.arange(16, dtype=torch.float32)[None, None, :, None]
+        width = torch.arange(1024, dtype=torch.float32)[None, None, None]
+        return pooled[:, None, None, None] + group + temporal + width
 
 
 def _backbones() -> tuple[_Backbone, _Backbone]:
@@ -115,13 +117,13 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         expert_model=expert,
         image_width=2048,
         expert_width=1024,
-        program_width=256,
-        program_slots=32,
-        program_heads=8,
-        program_blocks=2,
+        policy_groups=20,
+        trace_temporal_terms=16,
+        memory_slots=68,
+        m2p_width=1024,
         m2p_heads=8,
-        m2p_blocks=3,
-        factor_hidden_width=256,
+        m2p_blocks=4,
+        m2p_ffn_expansion=2,
         max_frames_per_encoder_call=4,
         action_horizon=50,
         padded_action_dim=32,
@@ -156,17 +158,26 @@ def _inputs() -> tuple[torch.Tensor, ...]:
     )
 
 
+def test_policy_trace_dct_is_zero_preserving_and_order_sensitive() -> None:
+    frames = torch.arange(2 * 16 * 3 * 5, dtype=torch.float32).reshape(32, 3, 5)
+    offsets = torch.tensor([0, 16, 32], dtype=torch.long)
+    expected = temporal_trace_tokens(frames, offsets, terms=16)
+    assert expected.shape == (2, 3, 16, 5)
+    assert torch.equal(
+        temporal_trace_tokens(torch.zeros_like(frames), offsets, terms=16),
+        torch.zeros_like(expected),
+    )
+    reversed_frames = torch.cat((frames[:16].flip(0), frames[16:].flip(0)))
+    observed = temporal_trace_tokens(reversed_frames, offsets, terms=16)
+    assert not torch.allclose(observed, expected)
+
+
 def test_k4_writer_parameter_ownership_is_end_to_end_and_exact() -> None:
     model, _ = _model()
     layout = parameter_layout(model)
-    assert {row.block for row in layout} == {
-        "invariant_program",
-        "m2p_shared",
-        "m2p_a_heads",
-        "m2p_b_heads",
-    }
+    assert {row.block for row in layout} == {"policy_layer_reader", "axis_m2p"}
     assert layout[-1].stop == sum(value.numel() for value in model.parameters())
-    assert model.m2p._routing().shape == (608, 256)
+    assert model.layer_m2p.group_output_weight.shape == (20, 1024, 1024)
     assert model.condition_descriptor.fixed_suffix_noise.shape == (50, 32)
     contract = writer_trainable_contract(
         model,
@@ -189,33 +200,71 @@ def test_fresh_k4_writer_is_exact_functional_identity() -> None:
         assert torch.equal(value[1], template[name])
 
 
-def test_invariant_program_is_video_owned_and_shot_permutation_invariant() -> None:
-    encoder = InvariantProgramEncoder(
-        task_width=8,
-        video_width=6,
-        program_width=16,
-        program_slots=3,
+def _tiny_layer_m2p() -> PolicyLayerTraceM2P:
+    targets = tuple(
+        PolicyTargetSpec(
+            module_index=index,
+            module=f"module_{index}",
+            a_name=f"target_{index}.A",
+            b_name=f"target_{index}.B",
+            rank=2,
+            input_width=2,
+            output_width=2,
+        )
+        for index in range(3)
+    )
+    groups = tuple(
+        PolicyLayerGroup(f"group_{index}", (target,))
+        for index, target in enumerate(targets)
+    )
+    template = {
+        name: torch.randn(2, 2) if name.endswith(".A") else torch.zeros(2, 2)
+        for target in targets
+        for name in (target.a_name, target.b_name)
+    }
+    return PolicyLayerTraceM2P(
+        groups,
+        template_state=template,
+        width=16,
+        memory_slots=2,
+        temporal_terms=4,
         heads=4,
-        blocks=1,
+        blocks=4,
+        ffn_expansion=2,
         initialization_seed=3,
     )
-    task = torch.randn(8, 8)
-    video = torch.randn(8, 4, 6)
+
+
+def test_layer_trace_reader_is_video_owned_and_shot_permutation_invariant() -> None:
+    decoder = _tiny_layer_m2p()
+    video = torch.randn(8, 3, 4, 16)
     offsets = torch.tensor([0, 4, 8], dtype=torch.long)
-    expected = encoder(task, video, offsets)
+    expected = decoder.encode(video, offsets)
     permutation = torch.tensor([2, 0, 3, 1, 7, 5, 4, 6])
-    observed = encoder(task[permutation], video[permutation], offsets)
+    observed = decoder.encode(video[permutation], offsets)
     assert torch.allclose(observed, expected, atol=2e-6, rtol=2e-6)
-    assert torch.equal(encoder(task, torch.zeros_like(video), offsets), torch.zeros_like(expected))
+    assert torch.equal(
+        decoder.encode(torch.zeros_like(video), offsets),
+        torch.zeros_like(expected),
+    )
 
 
-def test_program_reaches_lora_after_zero_final_bootstrap_is_opened() -> None:
-    model, _ = _model()
-    head = model.m2p.b_heads["target_000"].output
-    head.weight.data.normal_(std=0.01)
-    program = torch.randn(1, 32, 256, requires_grad=True)
-    output = model.decode_program(program)
-    loss = output[model.m2p.targets[0].b_name].square().sum()
+def test_group_output_bootstrap_then_opens_reader_and_axis_m2p() -> None:
+    decoder = _tiny_layer_m2p()
+    video = torch.randn(4, 3, 4, 16)
+    offsets = torch.tensor([0, 4], dtype=torch.long)
+    output = decoder(video, offsets)
+    loss = output["target_0.B"].sum()
     loss.backward()
-    assert program.grad is not None and float(program.grad.norm()) > 0
-    assert model.invariant_program.latent_route.requires_grad
+    assert float(decoder.group_output_weight.grad.norm()) > 0
+    assert decoder.query.weight.grad is not None
+    assert float(decoder.query.weight.grad.norm()) == 0
+    assert decoder.axis_blocks[0].query.weight.grad is not None
+    assert float(decoder.axis_blocks[0].query.weight.grad.norm()) == 0
+
+    decoder.zero_grad(set_to_none=True)
+    decoder.group_output_weight.data.normal_(std=0.01)
+    output = decoder(video, offsets)
+    output["target_0.B"].sum().backward()
+    assert float(decoder.query.weight.grad.norm()) > 0
+    assert float(decoder.axis_blocks[0].query.weight.grad.norm()) > 0

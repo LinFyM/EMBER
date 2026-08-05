@@ -104,14 +104,14 @@ CONDITION_KERNEL_PROGRAM_MEMORY_TRAINER_STATE_SCHEMA = (
 CONDITION_KERNEL_PROGRAM_MEMORY_RANK_STATE_SCHEMA = (
     "ember_pi05_condition_kernel_program_memory_rank_state_v1"
 )
-K4_INVARIANT_M2P_CHECKPOINT_SCHEMA = (
-    "ember_pi05_k4_invariant_program_policy_m2p_checkpoint_v1"
+K4_LAYER_TRACE_M2P_CHECKPOINT_SCHEMA = (
+    "ember_pi05_k4_policy_layer_trace_m2p_checkpoint_v1"
 )
-K4_INVARIANT_M2P_TRAINER_STATE_SCHEMA = (
-    "ember_pi05_k4_invariant_program_policy_m2p_trainer_state_v1"
+K4_LAYER_TRACE_M2P_TRAINER_STATE_SCHEMA = (
+    "ember_pi05_k4_policy_layer_trace_m2p_trainer_state_v1"
 )
-K4_INVARIANT_M2P_RANK_STATE_SCHEMA = (
-    "ember_pi05_k4_invariant_program_policy_m2p_rank_state_v1"
+K4_LAYER_TRACE_M2P_RANK_STATE_SCHEMA = (
+    "ember_pi05_k4_policy_layer_trace_m2p_rank_state_v1"
 )
 HISTORICAL_V6_LAUNCH_SCHEMA = "ember_pi05_language_axial_as_writer_launch_v6"
 HISTORICAL_V6_CHECKPOINT_SCHEMA = "ember_pi05_language_axial_writer_checkpoint_v6"
@@ -184,11 +184,11 @@ _FAMILIES = {
         CONDITION_KERNEL_PROGRAM_MEMORY_TRAINER_STATE_SCHEMA,
         CONDITION_KERNEL_PROGRAM_MEMORY_RANK_STATE_SCHEMA,
     ),
-    "k4_invariant_program_policy_m2p_full24_v1": (
+    "k4_policy_layer_trace_m2p_full24_v1": (
         1,
-        K4_INVARIANT_M2P_CHECKPOINT_SCHEMA,
-        K4_INVARIANT_M2P_TRAINER_STATE_SCHEMA,
-        K4_INVARIANT_M2P_RANK_STATE_SCHEMA,
+        K4_LAYER_TRACE_M2P_CHECKPOINT_SCHEMA,
+        K4_LAYER_TRACE_M2P_TRAINER_STATE_SCHEMA,
+        K4_LAYER_TRACE_M2P_RANK_STATE_SCHEMA,
     ),
 }
 

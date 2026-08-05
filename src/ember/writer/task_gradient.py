@@ -29,14 +29,10 @@ class FlatParameter:
 
 
 def _parameter_block(name: str) -> str:
-    if name.startswith("invariant_program."):
-        return "invariant_program"
-    if name.startswith("m2p.a_heads."):
-        return "m2p_a_heads"
-    if name.startswith("m2p.b_heads."):
-        return "m2p_b_heads"
-    if name.startswith("m2p."):
-        return "m2p_shared"
+    if name.startswith("layer_m2p.axis_blocks."):
+        return "axis_m2p"
+    if name.startswith("layer_m2p."):
+        return "policy_layer_reader"
     raise TaskGradientError(f"unowned Writer parameter: {name}")
 
 
@@ -61,12 +57,7 @@ def parameter_layout(writer: torch.nn.Module) -> tuple[FlatParameter, ...]:
         cursor = stop
     if not result or len({item.name for item in result}) != len(result):
         raise TaskGradientError("invalid Writer parameter layout")
-    if {item.block for item in result} != {
-        "invariant_program",
-        "m2p_shared",
-        "m2p_a_heads",
-        "m2p_b_heads",
-    }:
+    if {item.block for item in result} != {"policy_layer_reader", "axis_m2p"}:
         raise TaskGradientError("Writer parameter ownership changed")
     return tuple(result)
 

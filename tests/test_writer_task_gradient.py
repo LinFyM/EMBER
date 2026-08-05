@@ -37,14 +37,20 @@ def _task_gradients() -> dict[int, torch.Tensor]:
     }
 
 
-def test_parameter_layout_owns_only_factor_decoder_parameters() -> None:
+def test_parameter_layout_owns_all_k4_program_and_m2p_parameters() -> None:
     writer = torch.nn.Module()
-    writer.program_memory = torch.nn.Linear(1, 1, bias=False)
-    writer.program_memory.weight.requires_grad_(False)
-    writer.factor_heads = torch.nn.Linear(1, 1)
+    writer.invariant_program = torch.nn.Linear(1, 1)
+    writer.m2p = torch.nn.Module()
+    writer.m2p.shared = torch.nn.Linear(1, 1)
+    writer.m2p.a_heads = torch.nn.ModuleDict({"target": torch.nn.Linear(1, 1)})
+    writer.m2p.b_heads = torch.nn.ModuleDict({"target": torch.nn.Linear(1, 1)})
     layout = parameter_layout(writer)
-    assert {item.block for item in layout} == {"factor"}
-    assert all(item.name.startswith("factor_heads.") for item in layout)
+    assert {item.block for item in layout} == {
+        "invariant_program",
+        "m2p_shared",
+        "m2p_a_heads",
+        "m2p_b_heads",
+    }
 
 
 def test_raw_mean_is_exact_under_task_order_permutation_and_assignable() -> None:

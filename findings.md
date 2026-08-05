@@ -6,6 +6,26 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-06 从one-shot不可辨识性切换K4 video-owned invariant program
+
+- owner明确纠正了任何“忽略视频”的错误方向：EMBER的任务就是从action-hidden teacher
+  video提取可泛化的高层任务信息并生成LoRA；language只能ground和route，不能成为动态
+  LoRA value的旁路。owner允许few-shot，因此当前方法不是削弱视频，而是增加跨演示统计轴。
+- 历史one-shot把任务共同程序、单次初态、轨迹速度和偶然视觉细节绑在同一条video里；模型
+  无法观测哪些变化应跨demo保持。K4让四条独立same-task videos在一次forward内共同决定
+  一套LoRA，且不允许逐视频LoRA平均、挑选或ensemble。
+- 新`InvariantProgramEncoder`把每条video的policy-aware时序descriptor保留为4个value
+  tokens；首次cross read没有query residual，全部video values为零时Program与动态LoRA严格
+  为零。task language只形成attention address，因此无法退化成language-only task adapter。
+- 新M2P以38 policy targets×16 public rank lanes共608 tokens联合读32个invariant slots，
+  在完整policy范围self-attend后由target-owned A/B heads写出。该设计直接针对此前
+  Program差异到public BA/action被压低或碎片化的问题，不用SFT重建、rank/正交loss、scale
+  trick或LIBERO outcome特化。
+- 训练仍是24 tasks×B20的原full24 functional credit，但部署、AS与未来reward统一使用K4
+  condition→Program→M2P接口；不读取held validation actions，不用functional loss选择
+  checkpoint。CPU全仓`188 passed`确认身份、video-zero、set invariance、梯度、schedule、
+  checkpoint和evaluation合同；性能结论必须等待fresh A40 formal与strict rollout。
+
 ## 2026-08-06 Condition-Kernel formal负裁决：credit隔离成立但decoder增益坍缩
 
 - clean `4038960`从functional identity完成fresh AS0→200：200 macros、96,000 queries、
@@ -36,7 +56,7 @@
 - AS200未过预注册`correct≥120 && breadth≥6`，direct reward禁止实现/启动；不能延长同一
   bootstrap、调RFF seed/维度、挑checkpoint或用RL救活。精确汇总在
   `runs/outputs/pi05_as_writer_condition_kernel_memory_internal_all4_r6_2972f8f_20260806/experiment_analysis.json`。
-  当前按owner要求暂停新实验并讨论。
+  当时按owner要求暂停讨论；该暂停已于2026-08-06解除，结果现只作为K4设计证据。
 
 ## 2026-08-05 Condition-Kernel地址审计、实现与A40 profile
 

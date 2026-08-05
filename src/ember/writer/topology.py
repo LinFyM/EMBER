@@ -103,7 +103,8 @@ def validate_task_complete_topology(
         training.get("optimizer_updates_per_task_cycle", 1)
     )
     invalid_common = (
-        int(training["teacher_videos_per_task_visit"]) != 1
+        int(training["teacher_videos_per_task_visit"])
+        != int(config["writer"]["videos_per_condition"])
         or tasks_per_rank * context.world_size != global_tasks
         or global_tasks * updates_per_cycle != task_count
     )

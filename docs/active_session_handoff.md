@@ -1,10 +1,34 @@
 # EMBER Active Session Handoff
 
-更新时间：2026-08-05 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
+更新时间：2026-08-06 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：Condition-Kernel完整负裁决，暂停新launch等待owner讨论
+## 0. 最新覆盖：K4 Invariant-Program M2P实现完成，待A40 profile
+
+- owner已解除讨论暂停、恢复自主持续推进，并明确EMBER不能忽略视频；允许few-shot。
+  当前唯一活动authority为
+  `docs/action_forecast_writer_fewshot_invariant_m2p_design.md`。每个task condition联合读取
+  四条action-hidden same-task videos，生成一个video-owned invariant program，再由
+  38 targets×16 ranks的608-token policy-wide M2P生成一套完整rank16 LoRA。
+- task language只ground视频并作为attention address；首次program read和M2P read均没有
+  routing-query residual，video values全零时动态LoRA严格回到functional identity。禁止
+  language-only value bypass、逐视频LoRA平均/挑选、generic-language contrast、SFT重建、
+  static store、scale/rank trick和历史Writer warm-start。
+- canonical model/AS/checkpoint/K4 schedule/live+cached evaluation已原位替换；已退役的
+  Condition-Kernel、online functional validation和method-specific analysis runtime删除。
+  B20、full24等权、source freeze、rank16/38 targets、信息墙与single-checkpoint裁决不变。
+- CPU全仓`188 passed`，compileall和diff check通过。下一状态边界是clean commit/push后的
+  live双节点预检与六卡A40 fresh0→1、exact-resume1→3 profile；formal仍blocked，尚无K4
+  rollout性能结论。profile权重不得进入正式训练。
+- 下一正式证据固定为fresh identity 0→200、50/100/150/200 strict correct400和winner五臂/
+  K4-specific内部分析。任何修改必须由descriptor→invariant slots→M2P→effective BA→
+  closed-loop credit中的最早失效接口决定；长期single-checkpoint correct严格`>150`不变。
+- 当前Writer-specific新artifact只用路径/schema/size/shape/real-load证据，不生成或复核
+  SHA-256/MD5等文件内容hash。GPU仍只可live选择`gpu01/gpu02`最多6张空闲卡，显式
+  `NCCL_P2P_DISABLE=1`并保持formal resume的3+3 NUMA topology；当前仍不使用subagent。
+
+## 0.0 历史状态：Condition-Kernel完整负裁决（讨论暂停已解除）
 
 - Factorized Condition-Kernel Program Memory已完成fresh AS0→200、50/100/150/200四点strict
   correct400和全部预注册内部分析；当前没有EMBER GPU进程，不实现/启动reward或下一方法。

@@ -1,12 +1,36 @@
 # EMBER Task Plan
 
-最后更新：2026-08-05 UTC。
+最后更新：2026-08-06 UTC。
 
 本文件只保存尚未完成的长期闭环与当前执行顺序。历史实验过程见
 `findings.md`、`progress.md` 和 Git；实时进程见
 `docs/active_session_handoff.md`；迁移状态见
 `docs/a100_to_bci_migration_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
 runner、split、路径或 GPU 权限。
+
+## 当前Few-Shot Invariant-Program M2P推进（2026-08-06）
+
+- [x] owner明确指出EMBER不能忽略视频，并允许在根因需要时从one-shot切换few-shot。完成
+  `docs/action_forecast_writer_fewshot_invariant_m2p_design.md`：exact language + K4条
+  action-hidden same-task videos联合形成一个video-value-only invariant program，再由
+  608个target/layer/rank tokens的policy-wide M2P生成一套完整rank16 LoRA。
+- [x] 原位替换canonical Writer、full24 AS、checkpoint、K4 schedule、live/cached evaluation
+  与paired evidence；删除已退役Condition-Kernel及其method-specific validation/analysis
+  executable paths。新架构禁止language-only value bypass、逐视频LoRA平均/挑选、历史
+  Writer warm-start和held validation functional-loss选点。
+- [x] CPU合同完成：step0与zero-video identity、K4 set permutation equality、38 targets×16
+  lanes、target-owned A/B、完整四block梯度ownership、B20 action/video episode排斥、实际
+  world-size full24、hashless checkpoint/evaluation和旧family拒载。项目全仓`188 passed`，
+  compileall与diff check通过。
+- [ ] clean commit/push后live比较`gpu01/gpu02`，只在满足3+3 NUMA的最多6张空闲A40上做
+  longest105、logical B20/B2、16-frame chunk的fresh0→1和同root exact-resume1→3 profile；
+  显式`NCCL_P2P_DISABLE=1`，profile权重永久弃用。
+- [ ] profile通过后从functional identity新root正式训练0→200、每25保存；固定50/100/150/200
+  strict correct400，并对single winner完成correct/same/wrong/shuffled/reversed、另K4 set、
+  leave-one-video-out、LoRA谱/能量、Program→BA→fixed-action和task漂移分析。
+- [ ] 每轮只按最早失效接口修改descriptor、invariant program、M2P或credit；不得默认增加K、
+  rank、scale、store或训练时长。single-checkpoint strict correct400必须严格`>150`，达到后
+  继续尽可能提高absolute、breadth、稳定积累与视频因果性。
 
 ## 当前Factorized Condition-Kernel Program Memory推进（2026-08-05）
 
@@ -69,9 +93,9 @@ runner、split、路径或 GPU 权限。
   BA约`1.36--1.39`，但LoRA norm仅`.176→.178`、fixed-action效应仅`.19--.24%`。explicit
   kernel修复credit混合，却被macro50冻结的low-gain fresh decoder锁在接近identity的policy
   tangent；完整负裁决见design第11节与internal `experiment_analysis.json`。
-- [x] 全部GPU自然释放。按owner要求暂停新推进；在owner讨论并明确恢复前，不设计/实现/
-  profile/launch下一方法，也不启动本方法reward。长期single-checkpoint `>150/400`仍未完成，
-  不是Goal完成。
+- [x] 全部GPU自然释放。当时的讨论暂停已由owner在2026-08-06解除；Condition-Kernel保持
+  负裁决且禁止reward/resume，当前执行顺序只取上方K4方法。长期single-checkpoint
+  `>150/400`仍未完成，不是Goal完成。
 
 ## 已完成Antithetic Program-Credit推进（2026-08-05）
 

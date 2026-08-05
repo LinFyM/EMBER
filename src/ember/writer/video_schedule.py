@@ -1,25 +1,25 @@
-"""Deterministic teacher-video pairing schedules for Writer evaluation."""
+"""Deterministic balanced K4 teacher-video schedules for Writer evaluation."""
 
 from __future__ import annotations
 
-import hashlib
-import json
 from typing import Any
 
-from ember.pi05_target_data import SUITE_ORDER, target_global_task_id
-from ember.writer.as_sampling import TeacherVideoSchedule
+import numpy as np
+
+from ember.pi05_target_data import SUITE_ORDER
 from ember.writer.model import WriterModelError
 
 
 SAME_TASK_OTHER_DEMO_OFFSET = 17
+VIDEOS_PER_CONDITION = 4
+K4_POSITION_OFFSETS = (0, 13, 27, 39)
 WRITER_VIDEO_SAMPLING_MODES = {"with_replacement", "without_replacement"}
 WRITER_VIDEO_SCHEDULE_WITH_REPLACEMENT = (
-    "sha256 first 63 bits of canonical JSON "
-    "[ember_pi05_writer_video_v1,seed,suite,task_id,init_state_id] modulo 50"
+    "numeric_seeded_independent_k4_without_replacement_per_rollout"
 )
 WRITER_VIDEO_SCHEDULE_WITHOUT_REPLACEMENT = (
-    "TeacherVideoSchedule(seed, target_global_task_id, demos 0..49): each "
-    "consecutive demo_count init-state block is a seeded no-replacement permutation"
+    "numeric_seeded_task_permutation_with_offsets_0_13_27_39; each demo appears "
+    "once per shot lane in every 50-state block"
 )
 
 
@@ -29,8 +29,10 @@ def writer_video_selection_seed(
     task_id: int,
     init_state_id: int,
     *,
-    sampling_mode: str = "with_replacement",
+    sampling_mode: str = "without_replacement",
 ) -> int:
+    """Return a stable numeric RNG seed without content hashing."""
+
     if (
         root_seed < 0
         or suite not in SUITE_ORDER
@@ -38,34 +40,29 @@ def writer_video_selection_seed(
         or sampling_mode not in WRITER_VIDEO_SAMPLING_MODES
         or init_state_id < 0
     ):
-        raise WriterModelError("invalid AS-Writer evaluation video seed key")
-    namespace = (
-        "ember_pi05_writer_video_v1"
-        if sampling_mode == "with_replacement"
-        else "ember_pi05_writer_video_permutation_v1"
-    )
-    encoded = json.dumps(
-        [namespace, root_seed, suite, task_id, init_state_id],
-        separators=(",", ":"),
-    ).encode("utf-8")
-    return int.from_bytes(hashlib.sha256(encoded).digest()[:8], "big") & ((1 << 63) - 1)
+        raise WriterModelError("invalid K4 evaluation video seed key")
+    mode_tag = 1 if sampling_mode == "with_replacement" else 2
+    state = np.random.SeedSequence(
+        [root_seed, SUITE_ORDER.index(suite), task_id, init_state_id, mode_tag, 0x4B34]
+    ).generate_state(2, dtype=np.uint32)
+    return (int(state[0]) << 31 | int(state[1])) & ((1 << 63) - 1)
 
 
-def writer_video_demo_index(
+def writer_video_demo_indices(
     root_seed: int,
     suite: str,
     task_id: int,
     init_state_id: int,
     *,
     demo_count: int = 50,
-    sampling_mode: str = "with_replacement",
-) -> int:
-    """Choose one demo independently of queue and worker execution order."""
+    sampling_mode: str = "without_replacement",
+) -> tuple[int, ...]:
+    """Choose four unique demos with balanced no-replacement shot lanes."""
 
-    if demo_count <= 0 or sampling_mode not in WRITER_VIDEO_SAMPLING_MODES:
-        raise WriterModelError("invalid AS-Writer evaluation video count")
+    if demo_count < VIDEOS_PER_CONDITION:
+        raise WriterModelError("K4 evaluation has too few teacher demos")
     if sampling_mode == "with_replacement":
-        return (
+        rng = np.random.default_rng(
             writer_video_selection_seed(
                 root_seed,
                 suite,
@@ -73,17 +70,32 @@ def writer_video_demo_index(
                 init_state_id,
                 sampling_mode=sampling_mode,
             )
-            % demo_count
         )
-    global_task_id = target_global_task_id(suite, task_id)
-    return TeacherVideoSchedule(
-        task_ids=(global_task_id,),
-        demo_indices=range(demo_count),
-        seed=root_seed,
-    ).demo_for_task_visit(global_task_id, init_state_id)
+        return tuple(
+            int(value)
+            for value in rng.choice(
+                demo_count, size=VIDEOS_PER_CONDITION, replace=False
+            )
+        )
+    if sampling_mode != "without_replacement":
+        raise WriterModelError("invalid K4 evaluation sampling mode")
+    block, position = divmod(init_state_id, demo_count)
+    rng = np.random.default_rng(
+        np.random.SeedSequence(
+            [root_seed, SUITE_ORDER.index(suite), task_id, block, 0x4B34]
+        )
+    )
+    permutation = rng.permutation(demo_count)
+    result = tuple(
+        int(permutation[(position + offset) % demo_count])
+        for offset in K4_POSITION_OFFSETS
+    )
+    if len(set(result)) != VIDEOS_PER_CONDITION:
+        raise WriterModelError("K4 evaluation set contains duplicate videos")
+    return result
 
 
-def writer_condition_demo_index(
+def writer_condition_demo_indices(
     root_seed: int,
     suite: str,
     task_id: int,
@@ -92,13 +104,13 @@ def writer_condition_demo_index(
     condition: str,
     valid_conditions: set[str],
     demo_count: int = 50,
-    sampling_mode: str = "with_replacement",
-) -> int:
-    """Apply a deterministic condition-only transform to the paired demo."""
+    sampling_mode: str = "without_replacement",
+) -> tuple[int, ...]:
+    """Apply a paired condition-only transform to the complete K4 set."""
 
     if condition not in valid_conditions:
-        raise WriterModelError("invalid AS-Writer evaluation video condition")
-    reference = writer_video_demo_index(
+        raise WriterModelError("invalid K4 evaluation video condition")
+    reference = writer_video_demo_indices(
         root_seed,
         suite,
         task_id,
@@ -107,7 +119,13 @@ def writer_condition_demo_index(
         sampling_mode=sampling_mode,
     )
     if condition == "same_task_other":
-        return (reference + SAME_TASK_OTHER_DEMO_OFFSET) % demo_count
+        shifted = tuple(
+            (value + SAME_TASK_OTHER_DEMO_OFFSET) % demo_count
+            for value in reference
+        )
+        if len(set(shifted)) != VIDEOS_PER_CONDITION:
+            raise WriterModelError("same-task K4 control contains duplicates")
+        return shifted
     return reference
 
 
@@ -117,29 +135,26 @@ def writer_video_schedule_contract(
     seed: int,
     demo_count: int,
 ) -> tuple[dict[str, Any], str, str]:
-    """Build a backward-compatible sealed schedule and pairing schema."""
+    """Build the one canonical K4 schedule contract."""
 
-    legacy = sampling_mode is None
-    effective = sampling_mode or "with_replacement"
-    if effective not in WRITER_VIDEO_SAMPLING_MODES:
-        raise WriterModelError("invalid PI05 Writer video sampling mode")
+    effective = sampling_mode or "without_replacement"
+    if effective not in WRITER_VIDEO_SAMPLING_MODES or demo_count != 50:
+        raise WriterModelError("invalid K4 Writer video schedule")
     algorithm = (
         WRITER_VIDEO_SCHEDULE_WITH_REPLACEMENT
         if effective == "with_replacement"
         else WRITER_VIDEO_SCHEDULE_WITHOUT_REPLACEMENT
     )
-    schedule = {
-        "algorithm": algorithm,
-        "seed": seed,
-        "demo_count": demo_count,
-        "queue_order_independent": True,
-        "paired_between_correct_and_wrong": True,
-    }
-    if not legacy:
-        schedule["sampling_mode"] = effective
-    pairing_schema = (
-        "ember_pi05_writer_eval_pairing_v2"
-        if legacy
-        else "ember_pi05_writer_eval_pairing_v3"
+    return (
+        {
+            "algorithm": algorithm,
+            "seed": int(seed),
+            "demo_count": int(demo_count),
+            "videos_per_condition": VIDEOS_PER_CONDITION,
+            "sampling_mode": effective,
+            "queue_order_independent": True,
+            "paired_between_all_video_conditions": True,
+        },
+        "ember_pi05_k4_writer_eval_pairing_v1",
+        effective,
     )
-    return schedule, pairing_schema, effective

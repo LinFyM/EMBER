@@ -76,9 +76,9 @@ def paired_writer_identity(adapter: Mapping[str, Any]) -> dict[str, Any]:
         "training_run",
         "checkpoint",
         data_key,
-        "lora_contract_sha256",
+        "lora_contract",
         "video_schedule",
-        "pairing_sha256",
+        "pairing_reference",
     )
     return {key: adapter[key] for key in keys}
 

@@ -12,11 +12,11 @@ class VideoProgramError(RuntimeError):
     """Raised when the sealed teacher-video semantic interface changes."""
 
 
-def temporal_video_descriptor(
+def temporal_video_tokens(
     frame_values: torch.Tensor,
     video_offsets: torch.Tensor,
 ) -> torch.Tensor:
-    """Apply the fixed four-term temporal kernel to projected frame values."""
+    """Apply the fixed four-term temporal kernel and retain its four value tokens."""
 
     if (
         frame_values.ndim != 2
@@ -59,11 +59,21 @@ def temporal_video_descriptor(
         )
         denominator = basis.square().sum(dim=1, keepdim=True).sqrt().clamp_min(1e-12)
         pooled = (basis @ selected) / denominator
-        rows.append(F.normalize(pooled.flatten(), dim=0, eps=1e-12))
+        rows.append(F.normalize(pooled, dim=-1, eps=1e-12))
     result = torch.stack(rows)
     if not bool(torch.isfinite(result).all()):
         raise VideoProgramError("temporal condition descriptor became non-finite")
     return result
+
+
+def temporal_video_descriptor(
+    frame_values: torch.Tensor,
+    video_offsets: torch.Tensor,
+) -> torch.Tensor:
+    """Compatibility view of the four temporal tokens as one flat descriptor."""
+
+    tokens = temporal_video_tokens(frame_values, video_offsets)
+    return F.normalize(tokens.flatten(1), dim=-1, eps=1e-12)
 
 
 class Pi05FrozenConditionDescriptor(torch.nn.Module):
@@ -366,10 +376,15 @@ class Pi05FrozenConditionDescriptor(torch.nn.Module):
             combined = torch.cat((innovation, action), dim=-1)
             frame_rows.append(F.linear(combined, self.frame_projection))
         frame_descriptor = torch.cat(frame_rows, dim=0)
-        video_descriptor = temporal_video_descriptor(frame_descriptor, video_offsets)
+        video_descriptor = temporal_video_tokens(frame_descriptor, video_offsets)
         if (
             task_descriptor.shape != (conditions, self.task_descriptor_width)
-            or video_descriptor.shape != (conditions, self.video_descriptor_width)
+            or video_descriptor.shape
+            != (
+                conditions,
+                self.TEMPORAL_TERMS,
+                self.FRAME_DESCRIPTOR_WIDTH,
+            )
         ):
             raise VideoProgramError("frozen condition descriptors changed shape")
         return task_descriptor, video_descriptor

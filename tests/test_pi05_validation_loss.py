@@ -5,14 +5,13 @@ from types import SimpleNamespace
 
 import pytest
 
-from ember.pi05_source_checkpoint import read_json, write_json_atomic
+from ember.pi05_source_checkpoint import write_json_atomic
 from ember.source_sft.contract import Pi05SourceSFTError
 from ember.source_sft.online_validation import (
     OnlineSourceSFTValidation,
     _summary as source_sft_online_summary,
 )
 from ember.source_sft.validation import finalize_args as finalize_source_sft_args
-from ember.writer.online_validation import OnlineWriterValidation, _online_summary
 from ember.writer.validation_panel import (
     build_validation_loss_manifest,
     load_validation_loss_panel,
@@ -127,45 +126,6 @@ def test_source_sft_validation_panel_cannot_be_truncated_formally() -> None:
                 max_groups_per_task=9,
             )
         )
-
-
-def test_online_validation_summary_records_checkpoint_slope(
-    tmp_path: Path,
-) -> None:
-    validation = OnlineWriterValidation(
-        panel={},
-        manifest={},
-        tasks=(),
-        dataset=SimpleNamespace(),  # type: ignore[arg-type]
-        store=SimpleNamespace(),  # type: ignore[arg-type]
-        tokenizer=SimpleNamespace(),  # type: ignore[arg-type]
-        output_dir=tmp_path,
-        local_keys=(),
-    )
-    for cursor, loss in ((100, 2.0), (200, 1.5)):
-        step = tmp_path / f"step_{cursor:08d}"
-        step.mkdir()
-        write_json_atomic(
-            step / "rank_00_rows.json",
-            {
-                "rows": [
-                    {
-                        "ordinal": 0,
-                        "checkpoint_cursor": cursor,
-                        "global_task_id": 1,
-                        "teacher_demo_index": 3,
-                        "loss": loss,
-                    }
-                ]
-            },
-        )
-        summary = _online_summary(validation, cursor, 1, 0.0)
-
-    assert summary["previous_checkpoint_cursor"] == 100
-    assert summary["loss_delta_from_previous"] == -0.5
-    assert read_json(tmp_path / "step_00000200/summary.json") == summary
-
-
 def test_source_sft_online_validation_never_reads_video(
     tmp_path: Path,
 ) -> None:

@@ -6,15 +6,8 @@ from pathlib import Path
 import pytest
 import torch
 
-from ember.lora import (
-    LoRATarget,
-    SmolVLALoRAContract,
-    canonical_contract_sha256,
-    lora_state_sha256,
-)
-from ember.pi05_source_checkpoint import canonical_hash
+from ember.lora import LoRATarget, SmolVLALoRAContract
 from ember.writer.evaluation_cache import (
-    WRITER_LORA_REQUEST_ORDER,
     assigned_writer_cache_requests,
     build_writer_lora_cache_descriptor,
     finalize_writer_cache,
@@ -28,12 +21,8 @@ from ember.writer.evaluation_cache import (
 )
 from ember.writer.inference import (
     WRITER_ADAPTER_SCHEMA,
-    WRITER_EPISODE_EVIDENCE_CV,
-    WRITER_EPISODE_EVIDENCE_WITH_REPLACEMENT,
     expected_writer_episode_evidence,
-    validate_writer_episode_evidence,
 )
-from ember.writer.evaluation_runtime import FrozenCachedWriterTaskAdapter
 from ember.writer.model import WriterModelError
 
 
@@ -47,8 +36,20 @@ def _lora_contract() -> SmolVLALoRAContract:
     )
 
 
-def _contract(root: Path, *, replicas: int = 2) -> dict:
+def _contract(root: Path, *, replicas: int = 2, state_count: int = 3) -> dict:
     lora = _lora_contract()
+    mapping = [
+        {
+            "suite": "libero_spatial",
+            "task_id": 1,
+            "language_global_task_id": 1,
+            "language_split_role": "validation",
+            "video_suite": "libero_spatial",
+            "video_task_id": 1,
+            "video_global_task_id": 1,
+            "video_split_role": "validation",
+        }
+    ]
     contract = {
         "adapter": {
             "schema_version": WRITER_ADAPTER_SCHEMA,
@@ -56,42 +57,30 @@ def _contract(root: Path, *, replicas: int = 2) -> dict:
             "writer_method": "as_writer",
             "arm": "as_writer_correct_video",
             "video_condition": "correct",
-            "checkpoint": {
-                "cursor": 300,
-                "manifest_file_sha256": "3" * 64,
-                "writer_state_sha256": "4" * 64,
+            "checkpoint": {"cursor": 300, "reference": "run:300"},
+            "lora_contract": {"reference": "test:2tensors:14parameters"},
+            "video_schedule": {
+                "seed": 7,
+                "demo_count": 50,
+                "videos_per_condition": 4,
+                "sampling_mode": "without_replacement",
             },
-            "lora_contract_sha256": canonical_contract_sha256(lora),
-            "video_schedule": {"seed": 7, "demo_count": 50},
-            "task_video_mapping_sha256": "5" * 64,
-            "task_video_mapping": [
-                {
-                    "suite": "libero_spatial",
-                    "task_id": 1,
-                    "language_global_task_id": 1,
-                    "video_suite": "libero_spatial",
-                    "video_task_id": 1,
-                    "video_global_task_id": 1,
-                    "video_split_role": "validation",
-                }
-            ],
-            "pairing_sha256": "6" * 64,
+            "task_video_mapping_reference": "identity_v1",
+            "task_video_mapping": mapping,
+            "pairing_reference": "paired_k4_v1",
         },
-        "model": {"checkpoint_manifest_sha256": "1" * 64},
-        "tokenizer": {"sha256": "2" * 64},
+        "model": {"optimizer_step": 1000},
+        "tokenizer": {"path": "/tokenizer.model"},
         "tasks": [
             {
                 "suite": "libero_spatial",
                 "task_id": 1,
-                "init_state_ids": [0, 1, 2],
+                "init_state_ids": list(range(state_count)),
             }
         ],
         "policy": {"num_inference_steps": 10},
         "rng": {"inference_seed": 7},
-        "parallel": {
-            "physical_gpu_count": 1,
-            "replicas_per_gpu": replicas,
-        },
+        "parallel": {"physical_gpu_count": 1, "replicas_per_gpu": replicas},
     }
     contract["writer_lora_cache"] = build_writer_lora_cache_descriptor(
         contract,
@@ -106,254 +95,68 @@ def _contract(root: Path, *, replicas: int = 2) -> dict:
 
 def _state(value: float) -> dict[str, torch.Tensor]:
     return {
-        "layer.lora_A.default.weight": torch.full(
-            (2, 3), value, dtype=torch.bfloat16
-        ),
-        "layer.lora_B.default.weight": torch.full(
-            (4, 2), value + 1, dtype=torch.bfloat16
-        ),
+        "layer.lora_A.default.weight": torch.full((2, 3), value, dtype=torch.bfloat16),
+        "layer.lora_B.default.weight": torch.full((4, 2), value + 1, dtype=torch.bfloat16),
     }
 
 
-def _populate_writer_cache(
-    contract: dict,
-    lora: SmolVLALoRAContract,
-) -> None:
+def _populate(contract: dict, lora: SmolVLALoRAContract) -> None:
     for request in writer_cache_requests(contract):
-        state = _state(float(request.ordinal))
         evidence = expected_writer_episode_evidence(
             contract["adapter"],
             suite=request.suite,
             task_id=request.task_id,
             init_state_id=request.init_state_id,
-            lora_sha256=lora_state_sha256(state),
+            lora_reference=f"run:300:{request.entry_id}",
         )
         evidence["writer_generation_seconds"] = 0.1
         write_writer_cache_entry(
             contract,
             request,
-            state=state,
+            state=_state(float(request.ordinal)),
             evidence=evidence,
             generation={"generator_worker_id": "0-r0"},
             lora_contract=lora,
         )
-    invocation_id = "b" * 32
+    invocation = "b" * 32
     write_generator_marker(
         contract,
-        invocation_id=invocation_id,
+        invocation_id=invocation,
         worker_id="0-r0",
         generator_index=0,
-        summary={
-            "source_policy_reused_for_rollout": True,
-            "writer_modules_released": True,
-        },
+        summary={"source_policy_reused_for_rollout": True, "writer_modules_released": True},
     )
-    finalize_writer_cache(
-        contract,
-        invocation_id=invocation_id,
-        worker_ids=("0-r0",),
-    )
+    finalize_writer_cache(contract, invocation_id=invocation, worker_ids=("0-r0",))
 
 
-def test_cache_identity_decouples_rollout_replicas(tmp_path: Path) -> None:
+def test_cache_identity_ignores_rollout_replica_count(tmp_path: Path) -> None:
     first = _contract(tmp_path / "first", replicas=2)
     second = _contract(tmp_path / "second", replicas=6)
-    assert first["writer_lora_cache"]["identity"]["generation_recipe"][
-        "episode_evidence_schema"
-    ] == WRITER_EPISODE_EVIDENCE_CV
-    assert (
-        first["writer_lora_cache"]["identity_sha256"]
-        == second["writer_lora_cache"]["identity_sha256"]
-    )
-    assert first["parallel"]["replicas_per_gpu"] != second["parallel"]["replicas_per_gpu"]
+    assert first["writer_lora_cache"]["identity"] == second["writer_lora_cache"]["identity"]
 
 
-def test_writer_cache_deduplicates_repeated_visible_videos(tmp_path: Path) -> None:
-    contract = _contract(tmp_path / "cache")
-    contract["tasks"][0]["init_state_ids"] = list(range(50))
-    lora = _lora_contract()
-    contract["writer_lora_cache"] = build_writer_lora_cache_descriptor(
-        contract,
-        root=tmp_path / "cache",
-        generators_per_gpu=1,
-        generation_batch_size=100,
-        lora_parameter_count=lora.parameter_count,
-        lora_tensor_count=lora.state_tensor_count,
-    )
-    requests = writer_cache_requests(contract)
-    episode_requests = writer_cache_episode_request_map(contract)
-    assert len(requests) == 32
-    assert len(episode_requests) == 50
-    assert episode_requests[("libero_spatial", 1, 1)] is episode_requests[
-        ("libero_spatial", 1, 18)
-    ]
-    assert all(request.is_video_keyed for request in requests)
+def test_k4_cache_retains_one_entry_per_episode(tmp_path: Path) -> None:
+    contract = _contract(tmp_path / "cache", state_count=50)
+    assert len(writer_cache_requests(contract)) == 50
+    assert len(writer_cache_episode_request_map(contract)) == 50
+    assert len({request.entry_id for request in writer_cache_requests(contract)}) == 50
 
 
-def test_legacy_per_state_cache_descriptor_remains_loadable(tmp_path: Path) -> None:
-    contract = _contract(tmp_path / "legacy")
-    descriptor = contract["writer_lora_cache"]
-    recipe = descriptor["generation_recipe"]
-    recipe.pop("cache_key_algorithm")
-    recipe.pop("episode_evidence_schema")
-    recipe["request_order"] = WRITER_LORA_REQUEST_ORDER
-    descriptor["identity"]["generation_recipe"] = copy.deepcopy(recipe)
-    descriptor["identity_sha256"] = canonical_hash(descriptor["identity"])
-    requests = writer_cache_requests(contract)
-    assert [request.entry_id for request in requests] == [
-        "libero_spatial_task_01_state_000",
-        "libero_spatial_task_01_state_001",
-        "libero_spatial_task_01_state_002",
-    ]
-
-
-def test_writer_generation_order_randomness_is_video_keyed(
-    tmp_path: Path,
-) -> None:
-    adapter = _contract(tmp_path / "cache")["adapter"]
-    first = expected_writer_episode_evidence(
-        adapter,
-        suite="libero_spatial",
-        task_id=1,
-        init_state_id=1,
-        lora_sha256="7" * 64,
-    )
-    repeated = expected_writer_episode_evidence(
-        adapter,
-        suite="libero_spatial",
-        task_id=1,
-        init_state_id=18,
-        lora_sha256="7" * 64,
-    )
-    assert first["schema_version"] == WRITER_EPISODE_EVIDENCE_WITH_REPLACEMENT
-    assert first["teacher_demo_index"] == repeated["teacher_demo_index"]
-    assert first["teacher_video_selection_seed"] != repeated[
-        "teacher_video_selection_seed"
-    ]
-    assert first["teacher_video_order_seed"] == repeated[
-        "teacher_video_order_seed"
-    ]
-    first["writer_generation_seconds"] = 0.1
-    assert validate_writer_episode_evidence(
-        adapter,
-        first,
-        suite="libero_spatial",
-        task_id=1,
-        init_state_id=1,
-    )
-
-
-def test_cached_runtime_reuses_one_lora_for_duplicate_video_aliases(
-    tmp_path: Path,
-) -> None:
-    contract = _contract(tmp_path / "cache")
-    contract["writer_lora_execution"] = {"b_scale": 1.5}
-    contract["tasks"][0]["init_state_ids"] = list(range(50))
-    lora = _lora_contract()
-    contract["writer_lora_cache"] = build_writer_lora_cache_descriptor(
-        contract,
-        root=tmp_path / "cache",
-        generators_per_gpu=1,
-        generation_batch_size=100,
-        lora_parameter_count=lora.parameter_count,
-        lora_tensor_count=lora.state_tensor_count,
-    )
-    _populate_writer_cache(contract, lora)
-    runtime = FrozenCachedWriterTaskAdapter.__new__(FrozenCachedWriterTaskAdapter)
-    runtime.lora_contract = lora
-    runtime.device = torch.device("cpu")
-    runtime.evaluation_adapter = contract["adapter"]
-    runtime._initialize_cache(contract)
-    runtime.activate_cache()
-    first = runtime.prepare_episode(
-        suite="libero_spatial", task_id=1, init_state_id=1
-    )
-    repeated = runtime.prepare_episode(
-        suite="libero_spatial", task_id=1, init_state_id=18
-    )
-    request = writer_cache_episode_request_map(contract)[
-        ("libero_spatial", 1, 1)
-    ]
-    original, _ = load_writer_cache_entry(
-        contract,
-        request,
-        lora_contract=lora,
-        device=torch.device("cpu"),
-    )
-    assert first.state is repeated.state
-    assert torch.equal(
-        first.state["layer.lora_A.default.weight"],
-        original["layer.lora_A.default.weight"],
-    )
-    assert torch.equal(
-        first.state["layer.lora_B.default.weight"],
-        original["layer.lora_B.default.weight"] * 1.5,
-    )
-    assert first.evidence["lora_sha256"] == repeated.evidence["lora_sha256"]
-    assert first.evidence["teacher_video_selection_seed"] != repeated.evidence[
-        "teacher_video_selection_seed"
-    ]
-    assert len(runtime._state_cache) == 1
-
-
-def test_writer_cache_is_atomic_complete_and_loadable(tmp_path: Path) -> None:
+def test_writer_cache_is_atomic_complete_and_loadable_without_hashes(tmp_path: Path) -> None:
     contract = _contract(tmp_path / "cache")
     lora = _lora_contract()
+    _populate(contract, lora)
     requests = writer_cache_requests(contract)
-    for request in requests:
-        state = _state(float(request.ordinal))
-        evidence = expected_writer_episode_evidence(
-            contract["adapter"],
-            suite=request.suite,
-            task_id=request.task_id,
-            init_state_id=request.init_state_id,
-            lora_sha256=lora_state_sha256(state),
-        )
-        evidence["writer_generation_seconds"] = 0.1
-        write_writer_cache_entry(
-            contract,
-            request,
-            state=state,
-            evidence=evidence,
-            generation={
-                "generator_worker_id": "0-r0",
-                "batch_ordinal": request.ordinal // 2,
-            },
-            lora_contract=lora,
-        )
-    assigned = assigned_writer_cache_requests(contract, generator_index=0)
-    assert assigned == requests
-    invocation_id = "a" * 32
-    write_generator_marker(
-        contract,
-        invocation_id=invocation_id,
-        worker_id="0-r0",
-        generator_index=0,
-        summary={
-            "source_policy_reused_for_rollout": True,
-            "writer_modules_released": True,
-        },
-    )
-    assert not writer_cache_manifest_is_ready(contract)
-    finalize_writer_cache(
-        contract,
-        invocation_id=invocation_id,
-        worker_ids=("0-r0",),
-    )
+    assert assigned_writer_cache_requests(contract, generator_index=0) == requests
     assert writer_cache_manifest_is_ready(contract)
-    assert (
-        validate_writer_cache_manifest(contract, verify_entry_files=True)[
-            "entry_ids"
-        ]
-        == [request.entry_id for request in requests]
-    )
+    manifest = validate_writer_cache_manifest(contract, verify_entry_files=True)
+    assert manifest["entry_ids"] == [request.entry_id for request in requests]
     state, evidence = load_writer_cache_entry(
-        contract,
-        requests[1],
-        lora_contract=lora,
-        device=torch.device("cpu"),
+        contract, requests[1], lora_contract=lora, device=torch.device("cpu")
     )
-    assert lora_state_sha256(state) == evidence["lora_sha256"]
+    assert state["layer.lora_A.default.weight"].shape == (2, 3)
+    assert evidence["lora_reference"].endswith(requests[1].entry_id)
+    assert "sha256" not in str(manifest).lower()
 
 
 def test_writer_cache_rejects_descriptor_drift(tmp_path: Path) -> None:
@@ -361,5 +164,4 @@ def test_writer_cache_rejects_descriptor_drift(tmp_path: Path) -> None:
     changed = copy.deepcopy(contract)
     changed["tasks"][0]["init_state_ids"] = [0, 2]
     with pytest.raises(WriterModelError, match="descriptor changed"):
-        writer_cache_requests(changed)
         assigned_writer_cache_requests(changed, generator_index=0)

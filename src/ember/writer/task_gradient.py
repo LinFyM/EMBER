@@ -29,17 +29,19 @@ class FlatParameter:
 
 
 def _parameter_block(name: str) -> str:
-    if name.startswith("factor_heads."):
-        return "factor"
+    if name.startswith("invariant_program."):
+        return "invariant_program"
+    if name.startswith("m2p.a_heads."):
+        return "m2p_a_heads"
+    if name.startswith("m2p.b_heads."):
+        return "m2p_b_heads"
+    if name.startswith("m2p."):
+        return "m2p_shared"
     raise TaskGradientError(f"unowned Writer parameter: {name}")
 
 
 def parameter_layout(writer: torch.nn.Module) -> tuple[FlatParameter, ...]:
-    """Build the Adam-owned FactorHead layout.
-
-    Program Memory is deliberately absent: it is updated by the explicit
-    condition-kernel solve and must never silently enter an optimizer.
-    """
+    """Build the complete end-to-end K4 Writer parameter layout."""
 
     result = []
     cursor = 0
@@ -59,7 +61,12 @@ def parameter_layout(writer: torch.nn.Module) -> tuple[FlatParameter, ...]:
         cursor = stop
     if not result or len({item.name for item in result}) != len(result):
         raise TaskGradientError("invalid Writer parameter layout")
-    if {item.block for item in result} != {"factor"}:
+    if {item.block for item in result} != {
+        "invariant_program",
+        "m2p_shared",
+        "m2p_a_heads",
+        "m2p_b_heads",
+    }:
         raise TaskGradientError("Writer parameter ownership changed")
     return tuple(result)
 

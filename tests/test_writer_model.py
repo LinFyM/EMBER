@@ -6,7 +6,9 @@ import torch
 
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer.as_contract import writer_trainable_contract
+from ember.writer.fewshot_m2p import InvariantProgramEncoder
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
+from ember.writer.task_gradient import parameter_layout
 
 
 class _Projection(torch.nn.Module):
@@ -31,26 +33,29 @@ class _Backbone(torch.nn.Module):
 
 
 class _FakeConditionDescriptor(torch.nn.Module):
-    task_descriptor_width = 2048
-    video_descriptor_width = 512
+    FRAME_DESCRIPTOR_WIDTH = 128
 
     def forward(
         self,
         _policy: torch.nn.Module,
         frames: torch.Tensor,
-        frame_condition_ids: torch.Tensor,
-        _video_offsets: torch.Tensor,
+        frame_video_ids: torch.Tensor,
+        video_offsets: torch.Tensor,
         language_tokens: torch.Tensor,
         _language_mask: torch.Tensor,
         _task_span_mask: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        count = language_tokens.shape[0]
+        videos = language_tokens.shape[0]
         task_seed = language_tokens.to(torch.float32).sum(dim=1)
         task = task_seed[:, None] + torch.arange(2048, dtype=torch.float32)[None]
         frame_seed = frames.to(torch.float32).mean(dim=(1, 2, 3))
-        video = torch.zeros(count, 512, dtype=torch.float32)
-        video.index_add_(0, frame_condition_ids, frame_seed[:, None].expand(-1, 512))
-        return task, video + torch.arange(512, dtype=torch.float32)[None]
+        pooled = torch.zeros(videos, dtype=torch.float32)
+        pooled.index_add_(0, frame_video_ids, frame_seed)
+        counts = video_offsets.diff().to(torch.float32)
+        pooled = pooled / counts
+        temporal = torch.arange(4, dtype=torch.float32)[None, :, None]
+        width = torch.arange(128, dtype=torch.float32)[None, None]
+        return task, pooled[:, None, None] + temporal + width
 
 
 def _backbones() -> tuple[_Backbone, _Backbone]:
@@ -100,15 +105,6 @@ def _template() -> dict[str, torch.Tensor]:
     return state
 
 
-def _authority() -> dict[str, torch.Tensor]:
-    generator = torch.Generator(device="cpu").manual_seed(19)
-    return {
-        "task_center": torch.zeros(2048),
-        "task_frequencies": torch.randn(16, 2048, generator=generator),
-        "video_frequencies": torch.randn(16, 512, generator=generator),
-    }
-
-
 def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
     template = _template()
     pali, expert = _backbones()
@@ -117,27 +113,33 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         template_state=template,
         paligemma_model=pali,
         expert_model=expert,
-        condition_authority=_authority(),
         image_width=2048,
         expert_width=1024,
         program_width=256,
+        program_slots=32,
+        program_heads=8,
+        program_blocks=2,
+        m2p_heads=8,
+        m2p_blocks=3,
+        factor_hidden_width=256,
         max_frames_per_encoder_call=4,
         action_horizon=50,
         padded_action_dim=32,
-        factor_hidden_width=256,
-        condition_task_rff_frequencies=16,
-        condition_video_rff_frequencies=16,
+        videos_per_condition=4,
         initialization_seed=7,
     )
     return model, template
 
 
 def _inputs() -> tuple[torch.Tensor, ...]:
-    frames = torch.arange(5 * 3 * 4 * 4, dtype=torch.uint8).reshape(5, 3, 4, 4)
+    frames = torch.arange(16 * 3 * 4 * 4, dtype=torch.int32).remainder(256).to(
+        torch.uint8
+    ).reshape(16, 3, 4, 4)
     return (
         frames,
-        torch.tensor([0, 5, 0, 5, 10], dtype=torch.long),
-        torch.tensor([0, 2, 5], dtype=torch.long),
+        torch.tensor([0, 5] * 8, dtype=torch.long),
+        torch.arange(0, 17, 2, dtype=torch.long),
+        torch.tensor([0, 4, 8], dtype=torch.long),
         torch.tensor(
             [[1, 10, 11, 12, 13, 0], [1, 20, 21, 22, 23, 24]],
             dtype=torch.long,
@@ -154,13 +156,17 @@ def _inputs() -> tuple[torch.Tensor, ...]:
     )
 
 
-def test_condition_kernel_writer_parameter_ownership_is_exact() -> None:
+def test_k4_writer_parameter_ownership_is_end_to_end_and_exact() -> None:
     model, _ = _model()
-    assert sum(parameter.numel() for parameter in model.parameters()) == 86_065_152
-    assert model.program_memory.value.numel() == 83_886_080
-    assert not model.program_memory.value.requires_grad
-    assert sum(parameter.numel() for parameter in model.factor_heads.parameters()) == 2_179_072
-    assert all(parameter.requires_grad for parameter in model.factor_heads.parameters())
+    layout = parameter_layout(model)
+    assert {row.block for row in layout} == {
+        "invariant_program",
+        "m2p_shared",
+        "m2p_a_heads",
+        "m2p_b_heads",
+    }
+    assert layout[-1].stop == sum(value.numel() for value in model.parameters())
+    assert model.m2p._routing().shape == (608, 256)
     assert model.condition_descriptor.fixed_suffix_noise.shape == (50, 32)
     contract = writer_trainable_contract(
         model,
@@ -169,14 +175,12 @@ def test_condition_kernel_writer_parameter_ownership_is_exact() -> None:
             Path(__file__).resolve().parents[1] / "configs/pi05_lora_v1.json"
         ),
     )
-    assert contract["parameter_count"] == 86_065_152
-    assert contract["trainable_parameter_count"] == 2_179_072
+    assert contract["parameter_count"] == contract["trainable_parameter_count"]
     assert contract["source_policy_trainable_parameter_count"] == 0
 
 
-def test_fresh_writer_is_exact_identity_despite_nonzero_memory() -> None:
+def test_fresh_k4_writer_is_exact_functional_identity() -> None:
     model, template = _model()
-    assert torch.count_nonzero(model.program_memory.value)
     model.condition_descriptor = _FakeConditionDescriptor()
     output = model(*_inputs(), policy=torch.nn.Identity())
     for name, value in output.items():
@@ -185,14 +189,33 @@ def test_fresh_writer_is_exact_identity_despite_nonzero_memory() -> None:
         assert torch.equal(value[1], template[name])
 
 
-def test_encode_condition_and_decode_are_exact_forward_composition() -> None:
+def test_invariant_program_is_video_owned_and_shot_permutation_invariant() -> None:
+    encoder = InvariantProgramEncoder(
+        task_width=8,
+        video_width=6,
+        program_width=16,
+        program_slots=3,
+        heads=4,
+        blocks=1,
+        initialization_seed=3,
+    )
+    task = torch.randn(8, 8)
+    video = torch.randn(8, 4, 6)
+    offsets = torch.tensor([0, 4, 8], dtype=torch.long)
+    expected = encoder(task, video, offsets)
+    permutation = torch.tensor([2, 0, 3, 1, 7, 5, 4, 6])
+    observed = encoder(task[permutation], video[permutation], offsets)
+    assert torch.allclose(observed, expected, atol=2e-6, rtol=2e-6)
+    assert torch.equal(encoder(task, torch.zeros_like(video), offsets), torch.zeros_like(expected))
+
+
+def test_program_reaches_lora_after_zero_final_bootstrap_is_opened() -> None:
     model, _ = _model()
-    model.condition_descriptor = _FakeConditionDescriptor()
-    inputs = _inputs()
-    feature, program = model.encode_condition(*inputs, policy=torch.nn.Identity())
-    direct = model(*inputs, policy=torch.nn.Identity())
-    decoded = model.decode_program(program)
-    assert feature.shape == (2, 1024)
-    assert program.shape == (2, 320, 256)
-    assert torch.allclose(feature.norm(dim=1), torch.ones(2))
-    assert all(torch.equal(direct[name], decoded[name]) for name in direct)
+    head = model.m2p.b_heads["target_000"].output
+    head.weight.data.normal_(std=0.01)
+    program = torch.randn(1, 32, 256, requires_grad=True)
+    output = model.decode_program(program)
+    loss = output[model.m2p.targets[0].b_name].square().sum()
+    loss.backward()
+    assert program.grad is not None and float(program.grad.norm()) > 0
+    assert model.invariant_program.latent_route.requires_grad

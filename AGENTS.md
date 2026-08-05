@@ -35,11 +35,15 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 
 ## Efficiency and validation boundary
 
-- 本项目默认效率优先。不得把大量防御性校验、重复hash、全仓/全个人目录扫描、历史
-  artifact复核或与当前假设无关的测试当作推进前置仪式。
-- 同一不可变输入或同一实验阶段已经核验过的事实不重复核验；优先读取现成manifest、
-  run contract和定向指标。只有authority首次建立/改变、正式checkpoint封存或实际
-  发现身份冲突时才补做对应hash。
+- 2026-08-06 owner明确覆盖此前规则：后续EMBER研究、实现、profile、训练、评测、分析、
+  checkpoint封存和交接均不得生成、重算、比较或门禁SHA-256、MD5或其他文件内容hash；
+  即使authority改变、正式checkpoint封存或出现身份疑问也不做hash校验。历史文档中已经
+  记录的hash只保留为历史原文，不复核、不扩展。Git正常commit/object ID不视为内容hash
+  校验，但不得为验证身份额外计算Git blob/tree hash。
+- 本项目默认效率优先。不得把大量防御性校验、全仓/全个人目录扫描、历史artifact复核或
+  与当前假设无关的测试当作推进前置仪式。同一不可变输入或同一实验阶段已经核验过的事实
+  不重复核验；优先读取现成manifest、run contract和定向指标，并以路径、schema、shape、
+  配置字段、checkpoint可加载性、行数和真实运行结果建立必要身份与完整性证据。
 - 代码验证只覆盖本次改动的shape、identity/freeze、信息墙、梯度可达性、随机样本等价、
   OOM/finite和resume等真实合同；不为弱指标、科学负结果或纯理论风险新增大而泛的
   fallback、test harness或旁路实现。
@@ -141,12 +145,13 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 35. `docs/action_forecast_writer_policy_lane_hyperdecoder_design.md`
 36. `docs/action_forecast_writer_antithetic_program_credit_design.md`
 37. `docs/action_forecast_writer_factorized_condition_kernel_memory_design.md`
-38. `task_plan.md`
-39. `findings.md`
-40. `progress.md`
-41. `docs/concept.md`
-42. `docs/decisions_and_open_questions.md`
-43. `docs/novelty_and_landscape.md`
+38. `docs/action_forecast_writer_fewshot_invariant_m2p_design.md`
+39. `task_plan.md`
+40. `findings.md`
+41. `progress.md`
+42. `docs/concept.md`
+43. `docs/decisions_and_open_questions.md`
+44. `docs/novelty_and_landscape.md`
 
 本post-seal分支已完成Target-Bound裁决并打开Semantic Factor-Basis；修改或运行前
 仍必须完整阅读Target-Bound与Semantic Factor-Basis两份design。历史CV/Target-Bound
@@ -157,10 +162,17 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 
 ## Current focused task
 
-- 当前按owner要求暂停新实验并讨论结果，没有EMBER GPU进程；不得实现/启动reward、下一
-  Writer或任何profile，直至owner明确恢复推进。最近唯一authority仍是
-  `docs/action_forecast_writer_factorized_condition_kernel_memory_design.md`，但该方法已完成
-  全部formal/rollout/internal并作负裁决，不再是可续训活动root。
+- 2026-08-06 owner已恢复持续推进并明确允许从one-shot切换到few-shot。当前唯一活动方法为
+  `docs/action_forecast_writer_fewshot_invariant_m2p_design.md`：每个task visit联合读取
+  K=4条action-hidden same-task videos，以video-value-only跨视频invariant program和
+  608个target/layer/rank tokens的policy-wide M2P生成一套完整rank16 LoRA。禁止逐视频
+  LoRA平均/挑选、language-only value bypass、generic-language contrast、旧store/kernel/
+  atom/head路径或历史checkpoint warm-start。上一轮Condition-Kernel及更早方法均只保留为
+  负结果。实现、profile、fresh formal、strict rollout和内部分析完成前不得把few-shot
+  写成有效；长期single-checkpoint strict correct400 `>150`目标不变。
+- 先前“讨论期间暂停新实验”的边界已由上述owner授权解除。Condition-Kernel已经完成
+  全部formal/rollout/internal并作负裁决，不再是可续训活动root；其结果只作为few-shot
+  设计的低增益decoder与condition-credit证据。
 - Factorized Condition-Kernel从generic source与functional identity fresh完成AS0→200：
   50/100/150/200 strict correct=`46/46/45/49`、breadth始终3，union/intersection=`55/40`，
   macro200未过预注册`correct≥120 && breadth≥6`；因此direct reward阶段禁止。不得挑best、

@@ -36,10 +36,10 @@ def _raw_full24_gradient_contract(
         "gradient_gram_chunk_cuda_synchronizations_per_macro": (
             "one_per_runtime_enumerated_chunk_allgather" if distributed else 0
         ),
-        "single_video_gradient_direction_sketch": (
-            "fixed_countsketch_32_per_task_per_parameter_block"
+        "condition_gradient_unit": (
+            "one_joint_k4_video_set_to_one_lora_per_task"
         ),
-        "diagnostic_tensor_allgathers_per_macro": 1 if distributed else 0,
+        "diagnostic_tensor_allgathers_per_macro": 0,
         "ddp_no_sync_microtasks_per_macro": 0,
         "ddp_gradient_synchronizations_per_macro": 0,
     }
@@ -107,6 +107,12 @@ def checkpoint_state_family(config: Mapping[str, Any]) -> str:
     topology = str(training["update_topology"])
     if (
         config.get("writer", {}).get("architecture")
+        == "pi05_k4_video_value_invariant_program_policy_m2p_v1"
+        and topology == "task_complete_all_tasks"
+    ):
+        return "k4_invariant_program_policy_m2p_full24_v1"
+    if (
+        config.get("writer", {}).get("architecture")
         == "pi05_factorized_condition_kernel_program_memory_v1"
         and topology == "task_complete_all_tasks"
     ):
@@ -150,6 +156,29 @@ def _update_topology_contract(
 ) -> tuple[bool, dict[str, Any]]:
     training = config["conditioning_training"]
     update_topology = str(training["update_topology"])
+    if (
+        config.get("writer", {}).get("architecture")
+        == "pi05_k4_video_value_invariant_program_policy_m2p_v1"
+    ):
+        if update_topology != "task_complete_all_tasks":
+            raise WriterModelError("K4 M2P topology changed")
+        return False, {
+            "macro_step_axis": "full24_end_to_end_k4_m2p_update",
+            "tasks_per_rank_per_optimizer_update": tasks_per_rank,
+            "global_tasks_per_optimizer_update": global_tasks,
+            "task_assignment": (
+                "k4_total_frame_cost_balanced_groups_rotated_across_ranks_"
+                "longest_task_first_within_rank"
+            ),
+            **_raw_full24_gradient_contract(
+                context=context,
+                tasks_per_rank=tasks_per_rank,
+                global_tasks=global_tasks,
+            ),
+            "adamw_updates_per_macro": 1,
+            "scheduler_updates_per_macro": 1,
+            "checkpoint_axis": "completed_full24_end_to_end_update",
+        }
     if (
         config.get("writer", {}).get("architecture")
         == "pi05_factorized_condition_kernel_program_memory_v1"
@@ -316,7 +345,9 @@ def build_update_runtime_contract(
         "ddp_object": "rank_synchronized_shared_writer_without_ddp_backward",
         "checkpoint_state_family": checkpoint_state_family(config),
         **topology,
-        "task_video_cost_sha256": video_data["sampled_frame_cost_sha256"],
+        "task_video_cost_task_count": len(
+            video_data["sampled_frame_counts_by_task"]
+        ),
         "action_query_batch_size_per_task": batch_size,
         **_policy_microbatch_contract(config, batch_size),
         _axis_key(serial4, "action_query_batch_size_per_rank"): (
@@ -327,8 +358,8 @@ def build_update_runtime_contract(
         _axis_key(serial4, "writer_video_conditions_per_rank"): (
             tasks_per_rank * videos_per_visit
         ),
-        "actions_per_video_condition": batch_size,
-        "action_video_assignment": "all_actions_share_single_video_lora",
+        "actions_per_video_set": batch_size,
+        "action_video_assignment": "all_actions_share_one_joint_k4_lora",
         _axis_key(serial4, "logical_pairs_per_rank"): tasks_per_rank * batch_size,
         _axis_key(serial4, "global_policy_samples"): global_tasks * batch_size,
         _axis_key(serial4, "local_policy_functional_forwards"): tasks_per_rank,

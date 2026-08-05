@@ -184,6 +184,7 @@ def _write_shared_state(
         checkpoint_state_family,
     )
     scheduler_state = scheduler.state_dict()
+    hashless = checkpoint_state_family == "k4_invariant_program_policy_m2p_full24_v1"
     if int(scheduler_state.get("last_epoch", -1)) != scheduler_cursor:
         raise WriterModelError("AS-Writer scheduler exposure cursor changed")
     data_stop_step = step
@@ -205,7 +206,11 @@ def _write_shared_state(
             "optimizer": optimizer.state_dict(),
             "scheduler": scheduler_state,
             "amp_scaler": {"enabled": False, "state": {}},
-            "contract_sha256": canonical_hash(contract),
+            "contract_reference": (
+                str(contract["schema_version"])
+                if hashless
+                else canonical_hash(contract)
+            ),
             "metrics_rows": metrics_rows,
         },
         temporary / "trainer_state.pt",
@@ -237,19 +242,23 @@ def _write_shared_state(
         "teacher_videos_per_task_visit": videos_per_task_visit,
     }
     files = {
-        str(path.relative_to(temporary)): {
-            "bytes": path.stat().st_size,
-            "sha256": sha256_file(path),
-        }
+        str(path.relative_to(temporary)): {"bytes": path.stat().st_size}
         for path in sorted(value for value in temporary.rglob("*") if value.is_file())
     }
     manifest = {
         "schema_version": checkpoint_schema,
-        "contract_sha256": canonical_hash(contract),
+        "contract_reference": (
+            str(contract["schema_version"])
+            if hashless
+            else canonical_hash(contract)
+        ),
         "consumed": consumed,
         "files": files,
     }
-    manifest["canonical_payload_sha256"] = canonical_hash(manifest)
+    if not hashless:
+        manifest["canonical_payload_sha256"] = canonical_hash(manifest)
+        for relative, record in files.items():
+            record["sha256"] = sha256_file(temporary / relative)
     write_json_atomic(temporary / "checkpoint_manifest.json", manifest)
     os.replace(temporary, final)
     write_json_atomic(output_dir / "latest_checkpoint.json", {"path": str(final), "step": step})
@@ -368,8 +377,6 @@ def validate_writer_checkpoint_files(
     """Verify every checkpoint file before any pickle payload is loaded."""
 
     manifest = read_json(checkpoint / "checkpoint_manifest.json")
-    payload = dict(manifest)
-    digest = payload.pop("canonical_payload_sha256", None)
     expected_files = {
         "writer.safetensors",
         "trainer_state.pt",
@@ -382,6 +389,7 @@ def validate_writer_checkpoint_files(
     checkpoint_state_family = manifest.get("consumed", {}).get(
         "checkpoint_state_family"
     )
+    hashless = checkpoint_state_family == "k4_invariant_program_policy_m2p_full24_v1"
     schema_matches = checkpoint_schema_matches(
         manifest.get("schema_version"),
         updates_per_cycle,
@@ -390,8 +398,9 @@ def validate_writer_checkpoint_files(
     )
     if (
         not schema_matches
-        or manifest.get("contract_sha256") != contract_sha256
-        or canonical_hash(payload) != digest
+        or manifest.get(
+            "contract_reference", manifest.get("contract_sha256")
+        ) != contract_sha256
         or not isinstance(files, dict)
         or set(files) != expected_files
     ):
@@ -401,7 +410,10 @@ def validate_writer_checkpoint_files(
         if (
             not path.is_file()
             or path.stat().st_size != int(record.get("bytes", -1))
-            or sha256_file(path) != record.get("sha256")
+            or (
+                not hashless
+                and sha256_file(path) != record.get("sha256")
+            )
         ):
             raise WriterModelError(f"AS-Writer checkpoint file changed: {relative}")
     return manifest
@@ -419,7 +431,12 @@ def inspect_writer_checkpoint(
     if not contract_path.is_file():
         raise WriterModelError("AS-Writer initialization lost its run contract")
     contract = read_json(contract_path)
-    contract_sha256 = canonical_hash(contract)
+    contract_sha256 = (
+        str(contract["schema_version"])
+        if contract.get("runtime", {}).get("checkpoint_state_family")
+        == "k4_invariant_program_policy_m2p_full24_v1"
+        else canonical_hash(contract)
+    )
     world_size = int(contract.get("runtime", {}).get("world_size", -1))
     if world_size <= 0:
         raise WriterModelError("AS-Writer initialization topology is invalid")
@@ -524,7 +541,9 @@ def _trainer_resume_cursor(
             ),
         )
         == checkpoint_state_family
-        and trainer.get("contract_sha256") == contract_sha256
+        and trainer.get(
+            "contract_reference", trainer.get("contract_sha256")
+        ) == contract_sha256
         and int(trainer.get("metrics_rows", -1)) >= 0
         and int(
             trainer.get("next_task_cycle", -1 if serial4 else task_cycle)
@@ -672,6 +691,7 @@ def _validate_cycle_normalized_optimizer_resume(
             "semantic_factor_basis_task_query_keyed_rawfull24_v1",
             "v6_relative_flow_coldstart_task_query_keyed_rawfull24_v1",
             "condition_kernel_program_memory_full24_v1",
+            "k4_invariant_program_policy_m2p_full24_v1",
         }
     ):
         raise WriterModelError("unknown cycle-normalized optimizer resume family")

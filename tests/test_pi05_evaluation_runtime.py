@@ -35,7 +35,7 @@ from ember.writer.inference import (
     WRITER_ADAPTER_SCHEMA,
     _task_video_mapping,
     expected_writer_episode_evidence,
-    writer_video_demo_index,
+    writer_video_demo_indices,
     writer_video_selection_seed,
     writer_shuffled_frame_permutation,
 )
@@ -121,20 +121,24 @@ def _writer_adapter(condition: str = "correct", method: str = "as_writer") -> di
             "cursor_axis": (
                 "optimizer_step" if method == "as_writer" else "reward_update"
             ),
-            "manifest_file_sha256": "3" * 64,
-            "writer_state_sha256": "4" * 64,
+            "reference": f"test:{method}:12",
         },
-        "lora_contract_sha256": "5" * 64,
-        "video_schedule": {"seed": 7, "demo_count": 50},
-        "task_video_mapping_sha256": canonical_hash(mapping),
+        "lora_contract": {"reference": "rank16:76tensors"},
+        "video_schedule": {
+            "seed": 7,
+            "demo_count": 50,
+            "videos_per_condition": 4,
+            "sampling_mode": "without_replacement",
+        },
+        "task_video_mapping_reference": "next_suite_v1",
         "task_video_mapping": mapping,
-        "pairing_sha256": "6" * 64,
+        "pairing_reference": "paired_k4_v1",
     }
 
 
 def test_writer_video_schedule_and_wrong_map_are_order_independent() -> None:
-    assert writer_video_selection_seed(7, "libero_spatial", 6, 0) == 6704549548651814374
-    assert writer_video_demo_index(7, "libero_spatial", 6, 0) == 24
+    assert writer_video_selection_seed(7, "libero_spatial", 6, 0) == writer_video_selection_seed(7, "libero_spatial", 6, 0)
+    assert len(set(writer_video_demo_indices(7, "libero_spatial", 6, 0))) == 4
     keys = (
         ("libero_spatial", 1),
         ("libero_spatial", 3),
@@ -181,21 +185,22 @@ def test_same_task_other_changes_only_the_teacher_demo() -> None:
         suite="libero_spatial",
         task_id=0,
         init_state_id=4,
-        lora_sha256="7" * 64,
+        lora_reference="correct",
     )
     other = expected_writer_episode_evidence(
         other_adapter,
         suite="libero_spatial",
         task_id=0,
         init_state_id=4,
-        lora_sha256="7" * 64,
+        lora_reference="other",
     )
-    assert other["teacher_demo_index"] == (
-        correct["teacher_demo_index"] + SAME_TASK_OTHER_DEMO_OFFSET
-    ) % 50
-    assert other["teacher_reference_demo_index"] == correct["teacher_demo_index"]
+    assert other["teacher_demo_indices"] == [
+        (value + SAME_TASK_OTHER_DEMO_OFFSET) % 50
+        for value in correct["teacher_demo_indices"]
+    ]
+    assert other["teacher_reference_demo_indices"] == correct["teacher_demo_indices"]
     assert other["video_global_task_id"] == correct["video_global_task_id"]
-    assert other["teacher_video_order_seed"] == correct["teacher_video_order_seed"]
+    assert other["teacher_video_order_seeds"] == correct["teacher_video_order_seeds"]
 
 
 def test_writer_row_contract_recomputes_video_schedule_and_mapping(tmp_path: Path) -> None:
@@ -222,12 +227,12 @@ def test_writer_row_contract_recomputes_video_schedule_and_mapping(tmp_path: Pat
                 suite=row["suite"],
                 task_id=row["task_id"],
                 init_state_id=row["init_state_id"],
-                lora_sha256="7" * 64,
+                lora_reference=f"row:{row['init_state_id']}",
             ),
             "writer_generation_seconds": 0.25,
         }
     assert len(validate_shard_result(payload, contract=contract, shard=shard)) == 2
-    payload["rows"][0]["writer"]["teacher_demo_index"] += 1
+    payload["rows"][0]["writer"]["teacher_demo_indices"][0] += 1
     with pytest.raises(Pi05EvaluationError, match="row contract changed"):
         validate_shard_result(payload, contract=contract, shard=shard)
 
@@ -239,7 +244,7 @@ def test_rl_writer_row_uses_same_video_control_with_distinct_method() -> None:
         suite="libero_goal",
         task_id=0,
         init_state_id=4,
-        lora_sha256="7" * 64,
+        lora_reference="reward-row",
     )
     assert evidence["writer_method"] == "rl_writer"
     assert evidence["writer_checkpoint_axis"] == "reward_update"

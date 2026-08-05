@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import os
 from collections import OrderedDict
 from dataclasses import dataclass
@@ -35,25 +34,12 @@ class RawTeacherVideo:
     raw_frame_count: int
 
 
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(16 * 1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
 def verify_authority(authority: WriterTaskAuthority) -> None:
     if (
         not authority.path.is_file()
         or authority.path.stat().st_size != authority.expected_bytes
     ):
         raise WriterModelError(f"task authority changed: {authority.task_id}")
-    if (
-        authority.expected_sha256 is not None
-        and _sha256(authority.path) != authority.expected_sha256
-    ):
-        raise WriterModelError(f"task SHA256 changed: {authority.task_id}")
 
 
 def _camera(value: np.ndarray) -> np.ndarray:

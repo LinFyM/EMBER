@@ -7,23 +7,19 @@ import json
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Iterator, Mapping
 
 import torch
 import torch.distributed as dist
 from torch.utils.data import DataLoader
 
-from ember.pi05_eval_contract import (
-    inspect_source_checkpoint,
-    inspect_tokenizer,
-    load_evaluation_authorities,
-)
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_processing import Pi05LiberoProcessor, Pi05TeacherPrefixTokenizer
 from ember.pi05_source_checkpoint import (
     DistributedContext,
     barrier,
-    canonical_hash,
+    read_json,
     restore_rng,
 )
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
@@ -71,17 +67,11 @@ from ember.writer.data import (
     WriterTaskAuthority,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
-from ember.writer.architecture import CONDITION_KERNEL_WRITER_CONSTRUCTOR_KEYS
-from ember.writer.condition_kernel import load_condition_authority
+from ember.writer.architecture import FEWSHOT_M2P_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.model import (
     CompleteLoRAWriter,
     WriterModelError,
     build_lora_tensor_specs,
-)
-from ember.writer.online_validation import (
-    OnlineWriterValidation,
-    evaluate_online_writer_checkpoint,
-    prepare_online_writer_validation,
 )
 from ember.writer.update_schedule import (
     build_exposure_scheduler,
@@ -105,7 +95,7 @@ class WriterRuntime:
     video_store: RawTeacherVideoStore
     language_tokens: dict[
         int,
-        tuple[torch.Tensor, torch.Tensor],
+        tuple[torch.Tensor, torch.Tensor, torch.Tensor],
     ]
     processor: Pi05LiberoProcessor
     policy: torch.nn.Module
@@ -124,7 +114,6 @@ class WriterRuntime:
     resume_step: int
     metrics_path: Path
     metrics_rows: int
-    checkpoint_validation: OnlineWriterValidation | None
     gradient_layout: tuple[FlatParameter, ...]
 
 
@@ -162,7 +151,7 @@ def build_writer(
     writer_config = {
         key: value
         for key, value in config["writer"].items()
-        if key in CONDITION_KERNEL_WRITER_CONSTRUCTOR_KEYS
+        if key in FEWSHOT_M2P_WRITER_CONSTRUCTOR_KEYS
     }
     bridge = policy.model.paligemma_with_expert
     writer = CompleteLoRAWriter(
@@ -170,9 +159,6 @@ def build_writer(
         template_state=template,
         paligemma_model=bridge.paligemma.model.language_model,
         expert_model=bridge.gemma_expert.model,
-        condition_authority=load_condition_authority(
-            str(authority_path(config, "condition_address"))
-        ),
         **writer_config,
     )
     return (
@@ -202,26 +188,18 @@ def _build_trainable_models(
     policy = load_policy(Path(source["model_path"]), source_config, context.device)
     writer, lora, trainable, identity = build_writer(config, policy)
     writer.to(context.device)
-    optimizer_config = config["optimization"]["factor_decoder_optimizer"]
+    optimizer_config = config["optimization"]["optimizer"]
     optimizer = torch.optim.AdamW(
-        writer.factor_heads.parameters(),
+        writer.parameters(),
         lr=float(config["optimization"]["scheduler"]["peak_lr"]),
         betas=tuple(optimizer_config["betas"]),
         eps=float(optimizer_config["eps"]),
         weight_decay=float(optimizer_config["weight_decay"]),
     )
-    decoder_steps = min(
-        total_steps,
-        int(
-            config["conditioning_training"][
-                "factor_decoder_train_through_macro"
-            ]
-        ),
-    )
     scheduler = build_exposure_scheduler(
         optimizer,
         config["optimization"]["scheduler"],
-        logical_task_cycle_steps(config, decoder_steps),
+        logical_task_cycle_steps(config, total_steps),
     )
     return policy, writer, lora, optimizer, scheduler, trainable, identity
 
@@ -286,6 +264,9 @@ def _build_sampler_and_loader(
         task_ids=task_ids,
         demo_indices=range(first_demo, last_demo + 1),
         seed=int(config["data"]["teacher_video_seed"]),
+        videos_per_visit=int(
+            config["conditioning_training"]["teacher_videos_per_task_visit"]
+        ),
     )
     task_video_costs = {
         int(task_id): {
@@ -395,19 +376,46 @@ def _load_run_authorities(
     task_ids: tuple[int, ...],
     context: DistributedContext,
 ) -> tuple[Any, dict[str, Any], dict[str, Any], dict[str, Any]]:
-    authorities = load_evaluation_authorities(
-        authority_path(config, "evaluation_config"),
-        REPO_ROOT,
-    )
-    source = inspect_source_checkpoint(
-        authorities,
-        args.source_run,
-        args.checkpoint,
-        evaluation_mode="formal",
-    )
-    tokenizer = inspect_tokenizer(authorities, args.tokenizer_path)
-    # Training data already has requested size/schema and optional SHA checks;
-    # this second inspection only records video identity and frame-cost metadata.
+    source_run = args.source_run.resolve()
+    checkpoint = args.checkpoint.resolve()
+    if (
+        checkpoint.parent.parent != source_run
+        or checkpoint.parent.name != "checkpoints"
+        or not (source_run / "run_contract.json").is_file()
+        or not (checkpoint / "trainer_state.json").is_file()
+        or not (checkpoint / "checkpoint_manifest.json").is_file()
+    ):
+        raise WriterModelError("source checkpoint ownership or schema files changed")
+    model_path = checkpoint / "policy"
+    model_files = {
+        name: (model_path / name).stat().st_size
+        for name in ("config.json", "model.safetensors")
+        if (model_path / name).is_file()
+    }
+    if set(model_files) != {"config.json", "model.safetensors"}:
+        raise WriterModelError("source checkpoint policy files are incomplete")
+    source_config = read_json(authority_path(config, "source_base_config"))
+    authorities = SimpleNamespace(source_base_config=source_config)
+    trainer = read_json(checkpoint / "trainer_state.json")
+    optimizer_step = int(trainer.get("optimizer_step", -1))
+    if optimizer_step != 1000:
+        raise WriterModelError("source checkpoint is not frozen step1000")
+    source = {
+        "source_run": str(source_run),
+        "checkpoint": str(checkpoint),
+        "optimizer_step": optimizer_step,
+        "model_path": str(model_path),
+        "model_files": model_files,
+        "identity_evidence": "owned_path_schema_file_sizes_and_real_model_load",
+    }
+    tokenizer_path = args.tokenizer_path.resolve()
+    if not tokenizer_path.is_file():
+        raise WriterModelError("tokenizer file is missing")
+    tokenizer = {
+        "path": str(tokenizer_path),
+        "bytes": tokenizer_path.stat().st_size,
+        "identity_evidence": "path_size_and_sentencepiece_load",
+    }
     video_data = _broadcast_validation(
         context,
         lambda: inspect_video_data(
@@ -460,7 +468,7 @@ def _prepare_setup(
     initialization = initialize_writer_phase(
         args.initialize_writer_checkpoint, context, writer_stage(config), source,
         config["authorities"], config["writer"], writer,
-        str(trainable["lora_contract_sha256"]),
+        "fresh_identity_only",
     )
     candidate = build_contract(
         args=args,
@@ -479,7 +487,7 @@ def _prepare_setup(
         initialization=initialization,
     )
     contract = reconcile_resume_contract(args, candidate)
-    contract_sha256 = canonical_hash(contract)
+    contract_sha256 = str(contract["schema_version"])
     publish_contract(args, context, contract, contract_sha256)
     return WriterSetup(
         dataset=dataset,
@@ -504,6 +512,11 @@ def prepare_runtime(
     config = resolve_mode_config(
         load_writer_config(args.config.resolve()), args.mode
     )
+    if args.initialize_writer_checkpoint is not None:
+        raise WriterModelError(
+            "K4 invariant-program M2P Writer requires a fresh functional-identity "
+            "start; Writer warm-start is forbidden"
+        )
     total_steps, batch_size, checkpoint_steps = resolve_runtime(args, config, context)
     batch_cycle = (batch_size,)
     tasks_per_rank_per_update = int(
@@ -569,17 +582,6 @@ def prepare_runtime(
         initial_step=initial_step,
         expected_rows=expected_metrics_rows,
     )
-    checkpoint_validation = (
-        prepare_online_writer_validation(
-            training=setup.contract,
-            data_root=args.data_root,
-            tokenizer_path=args.tokenizer_path,
-            context=context,
-            output_dir=args.output_dir,
-        )
-        if args.mode == "formal" and writer_stage(config) == "development"
-        else None
-    )
     torch.cuda.reset_peak_memory_stats(context.device)
     barrier(context)
     if resume_rng is not None:
@@ -613,50 +615,12 @@ def prepare_runtime(
         resume_step=initial_step,
         metrics_path=metrics_path,
         metrics_rows=metrics_rows,
-        checkpoint_validation=checkpoint_validation,
         gradient_layout=parameter_layout(setup.writer),
     )
 
 
-def _run_checkpoint_validation(
-    runtime: WriterRuntime,
-    checkpoint_cursor: int,
-) -> None:
-    if runtime.checkpoint_validation is None:
-        return
-    checkpoint_dir = (
-        runtime.args.output_dir
-        / "checkpoints"
-        / f"step_{checkpoint_cursor:08d}"
-    )
-    summary = evaluate_online_writer_checkpoint(
-        validation=runtime.checkpoint_validation,
-        context=runtime.context,
-        checkpoint_cursor=checkpoint_cursor,
-        checkpoint_dir=checkpoint_dir,
-        policy=runtime.policy,
-        writer=runtime.writer,
-        identity=runtime.identity_state,
-        lora=runtime.lora_contract,
-        processor=runtime.processor,
-    )
-    if runtime.context.is_main:
-        print(
-            json.dumps(
-                {
-                    "event": "validation_functional_loss",
-                    **summary,
-                },
-                sort_keys=True,
-            ),
-            flush=True,
-        )
-
-
 def run_steps(runtime: WriterRuntime) -> None:
     started = time.monotonic()
-    if runtime.resume_step in runtime.checkpoint_steps:
-        _run_checkpoint_validation(runtime, runtime.resume_step)
     for step in range(runtime.resume_step, runtime.args.stop_after_step):
         row = run_writer_step(runtime, step, started)
         completed = int(row["optimizer_step"])
@@ -679,7 +643,6 @@ def run_steps(runtime: WriterRuntime) -> None:
                 mode=runtime.args.mode,
                 metrics_rows=runtime.metrics_rows,
             )
-            _run_checkpoint_validation(runtime, completed)
     barrier(runtime.context)
     if runtime.context.is_main:
         write_run_summary(runtime, started=started)
@@ -699,7 +662,7 @@ def train(args: argparse.Namespace) -> None:
                     {
                         "event": "start",
                         "mode": args.mode,
-                        "contract_sha256": runtime.contract_sha256,
+                        "contract_reference": runtime.contract_sha256,
                         "resume_step": runtime.resume_step,
                         "stop_after_step": args.stop_after_step,
                         "teacher_videos_per_task_visit": (
@@ -720,8 +683,6 @@ def train(args: argparse.Namespace) -> None:
         if runtime is not None:
             runtime.dataset.close()
             runtime.video_store.close()
-            if runtime.checkpoint_validation is not None:
-                runtime.checkpoint_validation.close()
         if dist.is_available() and dist.is_initialized():
             dist.destroy_process_group()
 
@@ -733,7 +694,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=(
             REPO_ROOT
-            / "configs/pi05_as_writer_condition_kernel_memory_bci_v1.json"
+            / "configs/pi05_as_writer_k4_invariant_m2p_bci_v1.json"
         ),
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

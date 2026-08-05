@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from ember.lora import canonical_contract_sha256
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import (
     canonical_hash,
@@ -158,7 +157,10 @@ def inspect_rl_writer_evaluation(
         cursor=cursor,
         cursor_axis="outer_cycle",
         video_data=video_data,
-        lora_contract_sha256=canonical_contract_sha256(lora),
+        lora_contract_reference=(
+            f"{config['authorities']['lora_contract']['path']}:"
+            f"{lora.state_tensor_count}tensors:{lora.parameter_count}parameters"
+        ),
         mapping=mapping,
         task_keys=normalized_keys,
         source=source,

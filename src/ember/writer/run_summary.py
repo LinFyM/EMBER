@@ -17,7 +17,7 @@ def write_run_summary(runtime: WriterRuntime, *, started: float) -> None:
     updates_per_cycle = runtime.sampler.optimizer_updates_per_task_cycle
     summary: dict[str, Any] = {
         "schema_version": "ember_pi05_as_writer_run_summary_v1",
-        "contract_sha256": runtime.contract_sha256,
+        "contract_reference": runtime.contract_sha256,
         "completed_optimizer_steps": stop,
         "requested_optimizer_steps": runtime.total_steps,
         "stopped_early_for_profile": (

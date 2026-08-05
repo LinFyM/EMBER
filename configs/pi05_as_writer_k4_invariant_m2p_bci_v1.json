@@ -1,0 +1,155 @@
+{
+  "schema_version": "ember_pi05_k4_invariant_program_m2p_as_writer_v1",
+  "sealed_stage": "development",
+  "authorities": {
+    "target_data_manifest": {"path": "configs/pi05_target_data_v1/manifest.json"},
+    "evaluation_config": {"path": "configs/pi05_target_evaluation_v1.json"},
+    "lora_contract": {"path": "configs/pi05_lora_v1.json"},
+    "source_base_config": {"path": "configs/pi05_source_base_v1.json"},
+    "tokenizer_manifest": {"path": "configs/libero_24_8_8_v1/pi05_tokenizer_manifest.json"}
+  },
+  "information_wall": {
+    "writer_input": "task language plus exactly four raw action-hidden same-task teacher videos jointly generating one LoRA",
+    "writer_forbidden_inputs": [
+      "action", "proprio", "state", "reward", "terminal", "task_id",
+      "filename", "hidden_normalization", "policy_outcome"
+    ],
+    "action_owner": "frozen functional behavior loss only",
+    "development_action_split_roles": ["train"],
+    "development_video_split_roles": ["train"],
+    "validation_actions_read_by_training_optimizer": 0,
+    "validation_action_queries_per_checkpoint_monitor": 0,
+    "validation_action_gradient": false,
+    "test_actions_read": 0,
+    "test_video_values_read": 0
+  },
+  "writer": {
+    "architecture": "pi05_k4_video_value_invariant_program_policy_m2p_v1",
+    "generated_adapter": "one_complete_pi05_task_specific_rank16_lora",
+    "camera_dataset": "obs/agentview_rgb",
+    "camera_transform": "libero_opengl_rotate_180_chw_uint8",
+    "include_final_frame": true,
+    "teacher_prompt": "Task: {cleaned_task};\nAction: ",
+    "teacher_state_input": false,
+    "videos_per_condition": 4,
+    "video_set_order": "permutation_invariant_without_shot_identity",
+    "per_video_temporal_values": "one_tau_cospi_sinpi_four_tokens",
+    "condition_descriptor": "frozen_source_text_vl_innovation_and_fixed_suffix_action_expert",
+    "condition_descriptor_gradient": "none",
+    "language_role": "video_grounding_and_attention_address_only",
+    "language_value_bypass": false,
+    "video_value_width": 128,
+    "video_value_tokens_per_condition": 16,
+    "program_slots": 32,
+    "program_width": 256,
+    "program_heads": 8,
+    "program_blocks": 2,
+    "program_first_read": "query_no_residual_video_values_only",
+    "policy_targets": 38,
+    "public_rank": 16,
+    "m2p_tokens": 608,
+    "m2p_heads": 8,
+    "m2p_blocks": 3,
+    "m2p_topology": "program_cross_attention_then_policy_token_self_attention",
+    "target_heads": "target_owned_paired_complete_A_B_bias_free",
+    "decoder_freeze": "none",
+    "factor_hidden_width": 256,
+    "step0_identity": "template_A_plus_zero_residual_and_physical_zero_B",
+    "video_zero_identity": true,
+    "image_width": 2048,
+    "expert_width": 1024,
+    "frame_batching_contract": "four_videos_serial_memory_safety_chunks",
+    "action_horizon": 50,
+    "padded_action_dim": 32,
+    "initialization_seed": 7,
+    "frame_stride": 5,
+    "max_frames_per_encoder_call": 16
+  },
+  "data": {
+    "task_count": 24,
+    "episodes_per_task": 50,
+    "demo_indices": [0, 49],
+    "action_chunk_size": 50,
+    "sampler_seed": 20260721,
+    "teacher_video_seed": 20260722,
+    "teacher_video_sampling": "per_task_macro_visit_deterministic_four_unique_same_task_videos",
+    "action_query_sampling": "task-balanced deterministic no-replacement episode cycles with per-visit exact normalized-progress strata permutation and deterministic within-stratum jitter",
+    "video_action_pairing": "action batch fixed first then four teacher episodes selected from its exact complement",
+    "writer_generation_reuse": "generate one joint K4 LoRA once then reuse it across the complete task-local action batch",
+    "max_open_files_per_worker": 8,
+    "video_open_files_per_rank": 2
+  },
+  "conditioning_training": {
+    "method": "k4_video_value_invariant_program_policy_m2p_rawfull24",
+    "update_topology": "task_complete_all_tasks",
+    "tasks_per_rank_per_optimizer_update": 4,
+    "global_tasks_per_optimizer_update": 24,
+    "teacher_videos_per_task_visit": 4,
+    "action_video_assignment": "all_actions_share_one_joint_k4_lora",
+    "pair_loss_reduction": "mean_within_task_then_equal_mean_over_24_tasks",
+    "policy_randomness_scheme": "task_query_keyed_stateless_policy_cpu_cuda_v2",
+    "policy_flow_time_sampling_scheme": "task_query_keyed_independent_beta15_time_v1",
+    "policy_flow_noise_sampling_scheme": "task_query_keyed_independent_gaussian_v1",
+    "checkpoint_boundary": "complete_full24_end_to_end_update_only",
+    "normal_loss_weight": 1
+  },
+  "optimization": {
+    "method": "end_to_end_k4_invariant_program_policy_m2p",
+    "seed": 7,
+    "precision": "bfloat16",
+    "source_policy": "final formal frozen raw policy",
+    "normalization": "frozen filtered-LIBERO-90 source normalization",
+    "optimizer": {
+      "name": "AdamW",
+      "betas": [0.9, 0.95],
+      "eps": 1e-8,
+      "weight_decay": 0.0001,
+      "gradient_clip_norm": 1
+    },
+    "scheduler": {
+      "kind": "cosine_decay_with_warmup",
+      "step_axis": "completed_full24_task_cycle",
+      "peak_lr": 0.0003,
+      "warmup_steps": 25,
+      "decay_steps": 200,
+      "decay_lr": 0.00001
+    },
+    "functional_policy_microbatch_size": 2,
+    "optimizer_diagnostics": "per_owned_block_moment_parameter_and_actual_update_l2"
+  },
+  "loader": {"num_workers_per_rank": 0, "prefetch_factor": 2},
+  "profile_defaults": {
+    "status": "ready_for_live_bci_a40_k4_profile",
+    "expected_world_size": 6,
+    "total_steps": 3,
+    "per_rank_batch_size": 20,
+    "checkpoint_steps": [1, 2, 3],
+    "selected_stop_step": 3
+  },
+  "profile_evidence": {
+    "status": "pending_live_bci_a40_profile",
+    "profile_teacher_video_seed": 173,
+    "primary_candidate": {
+      "max_frames_per_encoder_call": 16,
+      "per_task_action_batch_size": 20,
+      "functional_policy_microbatch_size": 2
+    },
+    "oom_fallback_only": {
+      "max_frames_per_encoder_call": 8,
+      "per_task_action_batch_size": 20,
+      "functional_policy_microbatch_size": 1
+    }
+  },
+  "formal_run": {
+    "status": "blocked_until_live_profile_and_exact_resume",
+    "launch_state": "blocked_until_live_profile_and_exact_resume",
+    "expected_world_size": 6,
+    "total_steps": 200,
+    "per_rank_batch_size": 20,
+    "checkpoint_steps": [25, 50, 75, 100, 125, 150, 175, 200],
+    "selected_stop_step": 200,
+    "stage_stop_steps": [50, 100, 150, 200],
+    "segment_definition": "fresh_identity_k4_invariant_program_m2p_macro0_to200",
+    "data_integrity_check": "manifest_paths_sizes_hdf5_schema_and_real_load_only_no_content_hash"
+  }
+}

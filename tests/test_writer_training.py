@@ -7,22 +7,15 @@ import pytest
 import torch
 
 from ember.pi05_source_checkpoint import DistributedContext
-from ember.writer.as_config import (
-    load_writer_config,
-    resolve_mode_config,
-    writer_split_roles,
-)
+from ember.writer.as_config import load_writer_config, resolve_mode_config, writer_split_roles
 from ember.writer.as_contract import resolve_runtime
-from ember.writer.condition_kernel import load_condition_authority
 from ember.writer.model import WriterModelError
-from ember.writer.update_contract import (
-    build_update_runtime_contract,
-    checkpoint_state_family,
-)
+from ember.writer.training import prepare_runtime
+from ember.writer.update_contract import build_update_runtime_contract, checkpoint_state_family
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-CONFIG = REPO_ROOT / "configs/pi05_as_writer_condition_kernel_memory_bci_v1.json"
+ROOT = Path(__file__).resolve().parents[1]
+CONFIG = ROOT / "configs/pi05_as_writer_k4_invariant_m2p_bci_v1.json"
 
 
 def _context() -> DistributedContext:
@@ -36,26 +29,20 @@ def _context() -> DistributedContext:
     )
 
 
-def test_condition_kernel_config_seals_fresh_identity_and_full24_update() -> None:
+def test_k4_m2p_config_seals_video_owned_joint_generation() -> None:
     config = load_writer_config(CONFIG)
     assert writer_split_roles(config) == ("train",)
     assert config["writer"]["architecture"] == (
-        "pi05_factorized_condition_kernel_program_memory_v1"
+        "pi05_k4_video_value_invariant_program_policy_m2p_v1"
     )
-    assert config["writer"]["condition_feature_width"] == 1024
-    assert config["writer"]["program_memory_parameter_count"] == 83_886_080
+    assert config["writer"]["videos_per_condition"] == 4
+    assert config["writer"]["language_value_bypass"] is False
+    assert config["writer"]["m2p_tokens"] == 608
     assert config["conditioning_training"]["global_tasks_per_optimizer_update"] == 24
-    assert config["conditioning_training"]["factor_decoder_train_through_macro"] == 50
-    assert config["conditioning_training"]["program_memory_optimizer"] == "none"
-    assert config["formal_run"]["checkpoint_steps"] == [50, 100, 150, 200]
-    authority = load_condition_authority(
-        str(REPO_ROOT / config["authorities"]["condition_address"]["path"])
-    )
-    assert authority["task_frequencies"].shape == (16, 2048)
-    assert authority["video_frequencies"].shape == (16, 512)
+    assert config["formal_run"]["checkpoint_steps"] == [25, 50, 75, 100, 125, 150, 175, 200]
 
 
-def test_profile_uses_its_own_video_seed_without_mutating_formal_config() -> None:
+def test_profile_uses_independent_video_seed_without_mutating_formal_config() -> None:
     config = load_writer_config(CONFIG)
     profile = resolve_mode_config(config, "profile")
     assert profile["data"]["teacher_video_seed"] == 173
@@ -67,16 +54,11 @@ def test_profile_uses_its_own_video_seed_without_mutating_formal_config() -> Non
         checkpoint_steps=None,
         stop_after_step=None,
     )
-    total, batch, checkpoints = resolve_runtime(args, profile, _context())
-    assert (total, batch, checkpoints, args.stop_after_step) == (
-        3,
-        20,
-        (1, 2, 3),
-        3,
-    )
+    assert resolve_runtime(args, profile, _context()) == (3, 20, (1, 2, 3))
+    assert args.stop_after_step == 3
 
 
-def test_sealed_formal_launch_requires_a_clean_worktree() -> None:
+def test_formal_is_blocked_until_live_a40_profile_and_resume() -> None:
     config = load_writer_config(CONFIG)
     args = argparse.Namespace(
         mode="formal",
@@ -85,21 +67,31 @@ def test_sealed_formal_launch_requires_a_clean_worktree() -> None:
         checkpoint_steps=None,
         stop_after_step=None,
     )
-    with pytest.raises(WriterModelError, match="clean worktree"):
+    with pytest.raises(WriterModelError, match="not sealed"):
         resolve_runtime(args, config, _context())
 
 
-def test_runtime_contract_has_one_program_owner_and_frozen_decoder_boundary() -> None:
+def test_k4_m2p_rejects_writer_warm_start_before_runtime_construction() -> None:
+    args = argparse.Namespace(
+        config=CONFIG,
+        mode="profile",
+        initialize_writer_checkpoint=ROOT / "historical_writer",
+    )
+    with pytest.raises(WriterModelError, match="warm-start is forbidden"):
+        prepare_runtime(args, _context())
+
+
+def test_runtime_contract_owns_one_joint_k4_full24_update() -> None:
     config = load_writer_config(CONFIG)
     runtime = build_update_runtime_contract(
         config=config,
         context=_context(),
-        video_data={"sampled_frame_cost_sha256": "frames"},
+        video_data={"sampled_frame_counts_by_task": {str(i): {} for i in range(24)}},
         total_steps=200,
         stop_step=200,
         batch_size=20,
         batch_cycle=(20,),
-        checkpoint_steps=(50, 100, 150, 200),
+        checkpoint_steps=(25, 50, 75, 100, 125, 150, 175, 200),
         num_workers=0,
         rank_topology=tuple(
             {
@@ -113,9 +105,9 @@ def test_runtime_contract_has_one_program_owner_and_frozen_decoder_boundary() ->
         ),
     )
     assert runtime["checkpoint_state_family"] == (
-        "condition_kernel_program_memory_full24_v1"
+        "k4_invariant_program_policy_m2p_full24_v1"
     )
-    assert runtime["program_memory_optimizer"] == "none"
-    assert runtime["factor_decoder_optimizer_updates"] == 50
-    assert runtime["program_credit_allgathers_per_macro"] == 3
+    assert runtime["macro_step_axis"] == "full24_end_to_end_k4_m2p_update"
+    assert runtime["condition_gradient_unit"] == "one_joint_k4_video_set_to_one_lora_per_task"
+    assert runtime["teacher_videos_per_task_visit"] == 4
     assert checkpoint_state_family(config) == runtime["checkpoint_state_family"]

@@ -13,14 +13,12 @@ from safetensors.torch import load_file
 
 from ember.lora import (
     copy_task_lora_state_,
-    lora_state_sha256,
     validate_lora_state,
 )
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_processing import Pi05TeacherPrefixTokenizer
 from ember.pi05_source_checkpoint import read_json
-from ember.writer.architecture import CONDITION_KERNEL_WRITER_CONSTRUCTOR_KEYS
-from ember.writer.condition_kernel import load_condition_authority
+from ember.writer.architecture import FEWSHOT_M2P_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.as_contract import REPO_ROOT, load_writer_config
 from ember.writer.data import RawTeacherVideoStore, WriterTaskAuthority
 from ember.writer.functional import prepare_frozen_writer_policy
@@ -94,7 +92,7 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
         writer_values = {
             key: value
             for key, value in config["writer"].items()
-            if key in CONDITION_KERNEL_WRITER_CONSTRUCTOR_KEYS
+            if key in FEWSHOT_M2P_WRITER_CONSTRUCTOR_KEYS
         }
         bridge = policy.model.paligemma_with_expert
         writer = CompleteLoRAWriter(
@@ -102,9 +100,6 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
             template_state=template,
             paligemma_model=bridge.paligemma.model.language_model,
             expert_model=bridge.gemma_expert.model,
-            condition_authority=load_condition_authority(
-                str(REPO_ROOT / config["authorities"]["condition_address"]["path"])
-            ),
             **writer_values,
         ).to(device)
         writer.load_state_dict(
@@ -168,37 +163,53 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
 
     def _episode_inputs(
         self, *, suite: str, task_id: int, init_state_id: int
-    ) -> tuple[dict[str, Any], torch.Tensor, torch.Tensor, str]:
-        placeholder = "0" * 64
+    ) -> tuple[
+        dict[str, Any],
+        tuple[torch.Tensor, ...],
+        tuple[torch.Tensor, ...],
+        str,
+    ]:
+        reference = (
+            f"{self.evaluation_adapter['checkpoint']['reference']}:"
+            f"{suite}:{task_id}:{init_state_id}"
+        )
         row = expected_writer_episode_evidence(
             self.evaluation_adapter,
             suite=suite,
             task_id=task_id,
             init_state_id=init_state_id,
-            lora_sha256=placeholder,
-        )
-        teacher = self.store.load(
-            int(row["video_global_task_id"]),
-            int(row["teacher_demo_index"]),
+            lora_reference=reference,
         )
         writer_language = self.language_by_id[int(row["language_global_task_id"])]
-        frames = torch.from_numpy(teacher.frames).to(
-            self.device, non_blocking=True
-        )
-        frame_indices = torch.from_numpy(teacher.frame_indices).to(
-            self.device, non_blocking=True
-        )
+        frame_batches = []
+        index_batches = []
         condition = str(self.evaluation_adapter["video_condition"])
-        if condition == "reversed":
-            frames = frames.flip(0)
-        elif condition in {"shuffled", "shuffled_keep_first"}:
-            permutation = writer_shuffled_frame_permutation(
-                frames.shape[0],
-                int(row["teacher_video_order_seed"]),
-                keep_first=condition == "shuffled_keep_first",
-            ).to(self.device)
-            frames = frames.index_select(0, permutation)
-        return row, frames, frame_indices, writer_language
+        for demo_index, order_seed in zip(
+            row["teacher_demo_indices"],
+            row["teacher_video_order_seeds"],
+            strict=True,
+        ):
+            teacher = self.store.load(
+                int(row["video_global_task_id"]), int(demo_index)
+            )
+            frames = torch.from_numpy(teacher.frames).to(
+                self.device, non_blocking=True
+            )
+            indices = torch.from_numpy(teacher.frame_indices).to(
+                self.device, non_blocking=True
+            )
+            if condition == "reversed":
+                frames = frames.flip(0)
+            elif condition in {"shuffled", "shuffled_keep_first"}:
+                permutation = writer_shuffled_frame_permutation(
+                    frames.shape[0],
+                    int(order_seed),
+                    keep_first=condition == "shuffled_keep_first",
+                ).to(self.device)
+                frames = frames.index_select(0, permutation)
+            frame_batches.append(frames)
+            index_batches.append(indices)
+        return row, tuple(frame_batches), tuple(index_batches), writer_language
 
     @torch.inference_mode()
     def prepare_episodes(
@@ -214,14 +225,23 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
             )
             for identity in identities
         ]
-        rows, frame_batches, index_batches, languages = zip(*inputs, strict=True)
+        rows, episode_frames, episode_indices, languages = zip(*inputs, strict=True)
         language_tokens, language_mask, task_span_mask = self.tokenizer(list(languages))
+        frame_batches = tuple(batch for episode in episode_frames for batch in episode)
+        index_batches = tuple(batch for episode in episode_indices for batch in episode)
         frames = torch.cat(frame_batches, dim=0)
         frame_indices = torch.cat(index_batches, dim=0)
         offsets = [0]
         for batch in frame_batches:
             offsets.append(offsets[-1] + int(batch.shape[0]))
         video_offsets = torch.tensor(offsets, dtype=torch.long, device=self.device)
+        condition_video_offsets = torch.arange(
+            0,
+            4 * (len(identities) + 1),
+            4,
+            dtype=torch.long,
+            device=self.device,
+        )
         started = time.monotonic()
         copy_task_lora_state_(self.policy, self.identity_state, self.lora_contract)
         self._physical_lora_is_identity = True
@@ -234,6 +254,7 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
                 frames,
                 frame_indices,
                 video_offsets,
+                condition_video_offsets,
                 language_tokens,
                 language_mask,
                 task_span_mask,
@@ -260,7 +281,6 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
             validate_lora_state(state, self.lora_contract)
             evidence = {
                 **row,
-                "lora_sha256": lora_state_sha256(state),
                 "writer_generation_seconds": elapsed / batch_size,
             }
             prepared.append(PreparedWriterLoRA(state=state, evidence=evidence))

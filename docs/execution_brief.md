@@ -1,15 +1,35 @@
 # EMBER Current Execution Brief
 
-更新时间：2026-08-05 UTC。本文是操作层authority；科研结果取
+更新时间：2026-08-06 UTC。本文是操作层authority；科研结果取
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
+## 0.0 最新执行覆盖：K4 Writer待clean seal与live profile
+
+- 当前唯一活动config为`configs/pi05_as_writer_k4_invariant_m2p_bci_v1.json`，authority为
+  `docs/action_forecast_writer_fewshot_invariant_m2p_design.md`。它必须从functional identity
+  fresh启动；`--initialize-writer-checkpoint`被canonical runtime明确拒绝。任何旧AS/RL/
+  Condition-Kernel checkpoint均不得加载。
+- CPU实现和全仓`188 passed`已闭合；formal config仍为
+  `blocked_until_live_profile_and_exact_resume`。下一步先commit/push clean代码，再live比较
+  `gpu01/gpu02`，选择满足3+3 NUMA的最多6张空闲A40，核验storage后启动profile。
+- profile固定world6、logical B20、policy B2、16-frame encoder chunk、K4、full24，先新root
+  fresh0→1，再同root checkpoint1 exact-resume1→3；必须显式
+  `NCCL_P2P_DISABLE=1`。不缩减B20，不复用profile权重，不共享或干扰他人GPU。
+- 通过门为0 OOM/nonfinite/clip、真实longest105、step2起invariant-program/M2P shared/A/B
+  heads按zero-B阶段开放、source trainable=0、每步24 task×4 videos、六rank ready/NCCL与
+  optimizer/scheduler/RNG/sampler exact-resume完整。通过后才把formal状态seal并另起fresh root。
+- formal固定0→200/every25，严格评50/100/150/200；训练或held functional loss不挑点。
+  single winner必须做五臂、另K4 set、leave-one-out、谱/能量、Program→BA→fixed-action和
+  task drift分析。最低目标仍是同一checkpoint strict correct400严格`>150`并继续提高。
+- 新Writer-specific运行与封存不得生成或复核SHA-256/MD5等内容hash，只保留必要路径、schema、
+  size、shape、load、行数和runtime证据；不使用subagent。
+
 ## 0. 当前BCI运行事实（覆盖下文旧A100操作细节）
 
-- 当前按owner要求暂停新launch。Factorized Condition-Kernel Program Memory已经完成全部
-  formal AS、四点strict rollout和内部分析并负裁决；没有EMBER GPU进程。直到owner讨论并
-  明确恢复前，不实现/启动reward，不profile下一架构。authority与完整结果取
-  `docs/action_forecast_writer_factorized_condition_kernel_memory_design.md`第11节。
+- 下述Condition-Kernel讨论暂停是历史状态，已由owner在2026-08-06解除；该方法仍保持
+  formal AS、四点strict rollout和内部分析后的负裁决，不得reward/resume。当前执行只取
+  上方K4覆盖和`docs/action_forecast_writer_fewshot_invariant_m2p_design.md`。
 - fresh AS0→200为200 finite macros、96,000 queries、4,800 videos、wall=`3951.928s`、
   peak reserved=`19,344,130,048` bytes。50/100/150/200 correct=`46/46/45/49`，breadth
   始终3，adjacent gained/lost=`5/5,4/5,6/2`，union/intersection=`55/40`。AS200未过

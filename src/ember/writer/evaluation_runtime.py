@@ -199,7 +199,7 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
                 suite=suite,
                 task_id=task_id,
                 init_state_id=init_state_id,
-                lora_sha256=str(cached_evidence["lora_sha256"]),
+                lora_reference=str(cached_evidence["lora_reference"]),
                 evidence_schema=str(cached_evidence["schema_version"]),
             )
             evidence["writer_generation_seconds"] = float(

@@ -1,12 +1,28 @@
 # EMBER Progress Ledger
 
-最后更新：2026-08-05。
+最后更新：2026-08-06。
 
 阅读规则：本文按时间顺序保留真实执行状态。早期段落中的“当前”“下一步”、
 GPU范围和训练步长是当时快照；活动状态只取
 `docs/a100_to_bci_migration_handoff.md`、`docs/active_session_handoff.md`和本文顶部
 最新段落，
 不能用旧快照覆盖后续owner决定。
+
+## 2026-08-06 K4 Invariant-Program M2P设计与CPU实现封存
+
+- owner恢复持续推进并允许few-shot，同时明确EMBER不得绕开video。封存新authority
+  `docs/action_forecast_writer_fewshot_invariant_m2p_design.md`：每个task condition联合
+  K4 action-hidden videos，以video-value-only invariant slots和policy-wide M2P生成一套LoRA。
+- canonical实现已原位替换Condition-Kernel：新增`fewshot_m2p.py`，更新frozen temporal
+  descriptor、CompleteLoRAWriter、full24 end-to-end AS、K4无重合schedule、fresh-only
+  checkpoint family与live/cached rollout。旧kernel、online validation和method-specific
+  cold-start analysis executable paths删除，历史仍由Git/artifact保留。
+- Writer-specific authority/checkpoint/evaluation不再生成或比较文件内容hash；只保留路径、
+  schema、size、shape、real load和真实runtime证据。新架构显式拒绝任何历史Writer
+  warm-start，profile与formal都必须从functional identity fresh开始。
+- 聚焦合同与完整项目测试现为`188 passed in 19.68s`；compileall和`git diff --check`通过。
+  真实A40容量、三步梯度开放、NCCL、finite与exact-resume尚待live profile，当前没有据此
+  宣称闭环性能改善。
 
 ## 2026-08-06 Condition-Kernel formal、四点rollout与内部分析全部完成
 
@@ -24,8 +40,8 @@ GPU范围和训练步长是当时快照；活动状态只取
   失败为fresh zero-B decoder未在固定50步内建立足够增益、policy-effective的Program→LoRA
   basis；condition credit隔离成立但AS substrate严重失败。精确汇总已写入internal root的
   `experiment_analysis.json`，design第11节及handoff/brief/findings同步。
-- 预注册direct reward禁止；所有训练、rollout和analysis进程自然结束，GPU释放。按owner
-  要求停止推进等待讨论；长期single-checkpoint `>150/400`仍未完成。
+- 预注册direct reward禁止；所有训练、rollout和analysis进程自然结束，GPU释放。当时的
+  讨论暂停已由owner解除；长期single-checkpoint `>150/400`仍未完成。
 
 ## 2026-08-05 Condition-Kernel实现与profile封存
 

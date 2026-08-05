@@ -190,6 +190,7 @@ def test_run_contract_hash_detects_tampering(tmp_path: Path) -> None:
         libero_config_dir=tmp_path / "libero_config",
     )
     model = {
+        "optimizer_step": 1000,
         "source_authority_hashes": {
             name: authorities.hashes[name]
             for name in ("normalization", "overlap_audit", "source_manifest")
@@ -200,7 +201,7 @@ def test_run_contract_hash_detects_tampering(tmp_path: Path) -> None:
         tasks=tasks,
         libero_paths=paths,
         model=model,
-        tokenizer={"sha256": "a" * 64},
+        tokenizer={"path": "/tokenizer.model"},
         output_dir=tmp_path,
         role="test",
         mode="smoke",
@@ -243,6 +244,7 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
         libero_config_dir=tmp_path / "libero_config",
     )
     model = {
+        "optimizer_step": 1000,
         "source_authority_hashes": {
             name: authorities.hashes[name]
             for name in ("normalization", "overlap_audit", "source_manifest")
@@ -255,26 +257,29 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
         "schema_version": WRITER_ADAPTER_SCHEMA,
         "kind": "as_writer",
         "writer_method": "as_writer",
-        "execution_backend": "two_stage_cached_per_sample_lora_batched_replan",
+        "execution_backend": "two_stage_cached_per_sample_k4_lora_batched_replan",
         "config": {
             "path": str(
                 ROOT
-                / "configs/pi05_as_writer_condition_kernel_memory_bci_v1.json"
+                / "configs/pi05_as_writer_k4_invariant_m2p_bci_v1.json"
             ),
-            "sha256": "b" * 64,
         },
-        "training_run": {"run_contract_sha256": "c" * 64},
+        "training_run": {"schema_version": "k4-launch", "mode": "formal"},
         "checkpoint": {
             "cursor": 12,
-            "manifest_file_sha256": "d" * 64,
-            "writer_state_sha256": "f" * 64,
+            "reference": "k4-launch:12",
         },
-        "video_data": {"target_data_manifest_file_sha256": "e" * 64},
-        "lora_contract_sha256": (
-            "da14fb2cdfc6ca575f97ba5d70fd2d0a70efb0a243b5028b6fd728d19b097d87"
-        ),
-        "video_schedule": {"seed": 7, "demo_count": 50},
-        "pairing_sha256": "1" * 64,
+        "video_data": {"schema_version": "raw-video-v1"},
+        "lora_contract": {
+            "reference": "configs/pi05_lora_v1.json:76tensors:1287168parameters"
+        },
+        "video_schedule": {
+            "seed": 7,
+            "demo_count": 50,
+            "videos_per_condition": 4,
+            "sampling_mode": "without_replacement",
+        },
+        "pairing_reference": "paired-k4-v1",
     }
     return (
         authorities,
@@ -301,7 +306,7 @@ def _build_writer_contract(
         tasks=tasks,
         libero_paths=paths,
         model=model,
-        tokenizer={"sha256": "a" * 64},
+        tokenizer={"path": "/tokenizer.model"},
         output_dir=output_dir,
         role="test",
         mode="smoke",
@@ -312,7 +317,7 @@ def _build_writer_contract(
             **shared_writer,
             "arm": arm,
             "video_condition": condition,
-            "task_video_mapping_sha256": canonical_hash(mapping),
+            "task_video_mapping_reference": "next-suite-v1",
             "task_video_mapping": mapping,
         },
     )

@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ember.eval_adapters import paired_writer_identity
-from ember.lora import canonical_contract_sha256
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_source_checkpoint import canonical_hash
 from ember.pi05_eval_contract import (
@@ -108,7 +107,11 @@ def _writer_lora_contract(
         config = load_rl_writer_config(Path(adapter["config"]["path"]))
         path = authority_path(config, "lora_contract")
     result = load_pi05_lora_contract(path)
-    if canonical_contract_sha256(result) != adapter["lora_contract_sha256"]:
+    expected_reference = (
+        f"{path.relative_to(authorities.repo_root)}:"
+        f"{result.state_tensor_count}tensors:{result.parameter_count}parameters"
+    )
+    if adapter.get("lora_contract", {}).get("reference") != expected_reference:
         raise Pi05EvaluationError("Writer cache LoRA authority changed")
     return result
 

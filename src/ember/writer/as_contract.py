@@ -15,17 +15,13 @@ import h5py
 import torch
 import torch.distributed as dist
 
-from ember.lora import canonical_contract_sha256
 from ember.pi05_eval_contract import git_state
 from ember.pi05_source_checkpoint import (
     DistributedContext,
-    canonical_hash,
     read_json,
-    sha256_file,
     write_json_atomic,
 )
 from ember.pi05_source_contract import append_jsonl
-from ember.writer.architecture import CONDITION_KERNEL_WRITER_PARAMETER_COUNT
 from ember.writer.as_config import (
     REPO_ROOT,
     authority_path,
@@ -39,7 +35,7 @@ from ember.writer.topology import validate_task_complete_topology
 from ember.writer.update_contract import build_update_runtime_contract
 
 
-AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_factorized_condition_kernel_launch_v1"
+AS_WRITER_LAUNCH_SCHEMA = "ember_pi05_k4_invariant_program_m2p_launch_v1"
 SUPPORTED_AS_WRITER_LAUNCH_SCHEMAS = frozenset({AS_WRITER_LAUNCH_SCHEMA})
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
 
@@ -219,22 +215,15 @@ def _broadcast_validation(
 def _validate_target_files(
     tasks: Sequence[WriterTaskAuthority], verify_hashes: bool
 ) -> dict[str, Any]:
+    del verify_hashes
     for task in tasks:
         path = task.path
         if not path.is_file() or path.stat().st_size != task.expected_bytes:
             raise WriterModelError(f"AS-Writer train HDF5 size changed: {task.task_id}")
-        if verify_hashes and sha256_file(path) != task.expected_sha256:
-            raise WriterModelError(f"AS-Writer train HDF5 hash changed: {task.task_id}")
     return {
         "tasks_checked": len(tasks),
         "bytes_checked": sum(task.expected_bytes for task in tasks),
-        "full_sha256_verified": verify_hashes,
-        "hdf5_identity_sha256": canonical_hash(
-            [
-                [task.task_id, task.expected_bytes, task.expected_sha256]
-                for task in tasks
-            ]
-        ),
+        "identity_evidence": "path_size_and_hdf5_schema",
     }
 
 
@@ -302,6 +291,7 @@ def inspect_video_data(
     *,
     verify_hashes: bool,
 ) -> dict[str, Any]:
+    del verify_hashes
     root = root.resolve()
     target_path = authority_path(config, "target_data_manifest")
     target = read_json(target_path)
@@ -319,16 +309,14 @@ def inspect_video_data(
         row = by_id[task_id]
         path = (root / str(row["hdf5"]["relative_path"])).resolve()
         expected_bytes = int(row["hdf5"]["bytes"])
-        expected_sha256 = str(row["hdf5"]["sha256"])
         if (
             not path.is_relative_to(root)
             or not path.is_file()
             or path.stat().st_size != expected_bytes
-            or (verify_hashes and sha256_file(path) != expected_sha256)
         ):
             raise WriterModelError(f"Writer video HDF5 changed: {task_id}")
         records.append(
-            [task_id, str(row["hdf5"]["relative_path"]), expected_bytes, expected_sha256]
+            [task_id, str(row["hdf5"]["relative_path"]), expected_bytes]
         )
         demo_counts: dict[str, int] = {}
         with h5py.File(path, "r") as handle:
@@ -354,21 +342,18 @@ def inspect_video_data(
     return {
         "root": str(root.resolve()),
         "schema_version": "ember_pi05_raw_teacher_video_data_v1",
-        "target_data_manifest_file_sha256": sha256_file(target_path),
-        "target_data_manifest_payload_sha256": target["canonical_payload_sha256"],
         "dataset": dict(target["dataset"]),
         "task_ids": list(selected_ids),
         "task_count": len(selected_ids),
         "episode_count": 50 * len(selected_ids),
-        "hdf5_identity_sha256": canonical_hash(records),
+        "hdf5_identity_records": records,
         "sampled_frame_counts_by_task": sampled_frame_counts,
-        "sampled_frame_cost_sha256": canonical_hash(sampled_frame_counts),
         "max_sampled_frames": max(
             value
             for task in sampled_frame_counts.values()
             for value in task.values()
         ),
-        "full_sha256_verified": verify_hashes,
+        "identity_evidence": "path_size_hdf5_schema_and_frame_counts",
         "test_video_values_read": 0,
     }
 
@@ -390,29 +375,31 @@ def writer_trainable_contract(
     trainable_parameter_count = sum(
         value.numel() for value in writer.parameters() if value.requires_grad
     )
-    memory_parameter_count = writer.program_memory.value.numel()
     if (
         not names
-        or parameter_count != CONDITION_KERNEL_WRITER_PARAMETER_COUNT
-        or trainable_parameter_count != 2_179_072
-        or memory_parameter_count != 83_886_080
-        or any(not name.startswith("factor_heads.") for name in names)
+        or parameter_count != trainable_parameter_count
+        or any(
+            not name.startswith(("invariant_program.", "m2p."))
+            for name in names
+        )
         or any(parameter.requires_grad for parameter in policy.parameters())
     ):
         raise WriterModelError("AS-Writer freeze boundary changed")
+    program_parameters = sum(
+        value.numel() for value in writer.invariant_program.parameters()
+    )
+    m2p_parameters = sum(value.numel() for value in writer.m2p.parameters())
     return {
         "object": "shared_action_supervised_writer_only",
         "parameter_count": parameter_count,
         "trainable_parameter_count": trainable_parameter_count,
-        "factor_decoder_parameter_count": trainable_parameter_count,
-        "program_memory_parameter_count": memory_parameter_count,
-        "program_memory_update_owner": "explicit_condition_kernel_no_optimizer",
-        "factor_decoder_optimizer_stop_macro": 50,
+        "invariant_program_parameter_count": program_parameters,
+        "policy_m2p_parameter_count": m2p_parameters,
+        "optimizer_owner": "single_end_to_end_adamw_full_horizon",
         "parameter_name_count": len(names),
-        "parameter_names_sha256": canonical_hash(names),
+        "parameter_name_prefixes": ["invariant_program", "m2p"],
         "generated_lora_parameter_count": lora.parameter_count,
         "generated_lora_tensor_count": lora.state_tensor_count,
-        "lora_contract_sha256": canonical_contract_sha256(lora),
         "source_policy_trainable_parameter_count": 0,
     }
 
@@ -470,7 +457,7 @@ def build_contract(
         "mode": args.mode,
         "stage": writer_stage(config),
         "git": {key: value for key, value in git_state(REPO_ROOT).items() if key in {"branch", "commit"}},
-        "config_sha256": sha256_file(args.config.resolve()),
+        "config_path": str(args.config.resolve()),
         **(
             {"config_derivation": dict(config["_config_derivation"])}
             if "_config_derivation" in config
@@ -521,7 +508,7 @@ def publish_contract(
         args.output_dir.mkdir(parents=True, exist_ok=True)
         contract_path = args.output_dir / "run_contract.json"
         if args.resume is not None:
-            if not contract_path.is_file() or canonical_hash(read_json(contract_path)) != contract_sha256:
+            if not contract_path.is_file() or read_json(contract_path) != dict(contract):
                 raise WriterModelError("AS-Writer resume launch contract changed")
         else:
             write_json_atomic(contract_path, dict(contract))

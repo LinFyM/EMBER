@@ -20,10 +20,12 @@ runner、split、路径或 GPU 权限。
   cold-start按既有source identity跨host匹配；删除一次性hybrid分析入口。
 - [x] live preflight后完成macro400六卡只读progress diagnostic；通用内容、binary、
   all-failure、counterfactual与non-pixel门全过才进入profile。
-- [ ] 完成独立one-cycle A40 profile，验证32-frame最长视频显存、8 basis grad/optimizer=0、
-  五个可训练block finite、完整checkpoint与resume；profile权重丢弃。
+- [x] 完成独立one-cycle A40 profile：96 rollout/two finite updates、五block全可达、
+  8 basis与440 semantic tensors完全不变、76个预注册系数张量全部改变，peak
+  reserved`19.48GB`、0 OOM/watchdog，cycle1 checkpoint完整；profile权重弃用。
 - [ ] fresh formal macro400→cycle1后立即strict correct400；只有多task净增且breadth不降或
-  已严格超过150才续cycle2，否则停止。长期single-checkpoint`>150/400`不变。
+  已严格超过150才续cycle2，否则停止；若续训，cycle1→2同时做真实原规模
+  exact-resume。长期single-checkpoint`>150/400`不变。
 
 ## 已封存的Progress-Credit裁决与condition-to-policy分解（2026-08-05）
 

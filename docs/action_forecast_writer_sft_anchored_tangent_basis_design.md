@@ -1,6 +1,6 @@
 # SFT-Anchored Policy Tangent-Basis Writer 设计
 
-状态：**2026-08-05参数hybrid与实现已完成；diagnostic/profile前authority。**
+状态：**2026-08-05 diagnostic与独立one-cycle A40 profile已通过；formal0→1前authority。**
 
 ## 1. 目标与根因
 
@@ -153,3 +153,29 @@ range有`4/5`≥`.05`且中位`.27273`；pixel Spearman`.48421`。successful rol
 runtime override重建effective Writer；旧manifest/launch schema只在IL→RL load-only
 warm-start入口接受，exact-resume和AS evaluator继续拒绝。真实macro400 manifest、owning
 contract与逐文件身份已一次核验通过。
+
+## 9. One-cycle A40 profile结果
+
+clean`2f934bd`在live空闲`gpu01:1,2,3,4,5,7`完成独立fresh profile，root为
+`runs/outputs/pi05_sft_anchored_tangent_basis_profile_macro400_r6_2f934bd_20260805`。
+24 tasks×K4全覆盖，61/96 successes、11 mixed、5 all-failure semantic；两轮学习均为
+finite，ratio范围为`.98433--1.01762`/`.98100--1.05652`，clip fraction为
+`0/.000143`，grad norm为`.004373/.003961`。五个主block在两轮均有非零
+gradient，5/5 all-failure tasks都有非零generated-LoRA gradient，progress observer
+gradient tensor始终为0。
+
+wall max`2033.38s`，peak CUDA reserved`19,478,347,776` bytes，0 OOM/watchdog；
+teacher/validation/test action/reward reads全为0。两轮都先收齐6/6 CUDA-complete
+rank marker再对称进入NCCL，原子cycle1 checkpoint包含6份实rank state、trainer state、
+Writer及完整24-task/K4 consumed schedule。
+
+对macro400与profile cycle1的Writer做逐张量比较：8个basis张量和440个
+semantic-encoder张量逐元素完全不变；恰好只有76个预注册系数侧张量改变，
+且semantic core/visual/procedure/compiler/factor-input分别`22/5/16/25/8`张量
+全部改变。这同时封存了optimizer ownership、真冻结和可达性，profile权重永久弃用。
+
+该profile contract封存`total_cycles=1`，不得为了形式resume将已完run改成
+`total=2`，也不新增只服务验证的resume-load旁路。正式合同从一开始就封存
+`total=8`并先停cycle1；若held结果过续训门，同checkpoint cycle1→2将在原
+96-rollout/two-epoch规模提供真实exact-resume证据。因此当前唯一下一步是
+clean/pushed commit上的fresh formal0→1，随后立即做与macro400配对的strict correct400。

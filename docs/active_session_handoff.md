@@ -4,7 +4,21 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：macro400诊断全门通过，下一步one-cycle A40 profile
+## 0.0 当前状态：Tangent-Basis profile通过，下一步fresh formal0→1
+
+- clean`2f934bd`六卡profile root为
+  `runs/outputs/pi05_sft_anchored_tangent_basis_profile_macro400_r6_2f934bd_20260805`：
+  96 rollout、61 successes、11 mixed、5 all-failure，two finite epochs，两轮五个
+  trainable block全可达，observer grad0，0 action-wall read/OOM/watchdog。wall
+  `2033.38s`，peak reserved`19,478,347,776` bytes；两轮均在6/6 CUDA-ready后再进
+  NCCL，cycle1完整checkpoint已原子封存，GPU全部释放。
+- 逐张量比较证明8 basis + 440 semantic-encoder tensors完全不变，恰好76个
+  预注册系数侧tensors改变，五个主block的`22/5/16/25/8`张量全部改变。
+  profile权重永久弃用。不改写已封存`total=1` profile也不新增验证旁路；若
+  cycle1 held过门，formal的cycle1→2将做真实原规模exact-resume。
+- 当前允许动作升级为在重新live preflight后启动唯一fresh formal macro400→cycle1，
+  紧接strict paired correct400；只有多task共同净增且breadth不降或已严格`>150`
+  才可resume cycle2。
 
 - clean`303e714`六卡只读diagnostic root为
   `runs/outputs/pi05_sft_anchored_tangent_basis_diagnostic_macro400_r6_303e714_20260805`：
@@ -13,10 +27,6 @@
   reversed=`1.0/.90164/1.0`，margin中位`.55919/.37889/1.53747`，pixel Spearman `.48421`；
   六个联合门全过。wall`388.80s`、peak reserved`19,289,604,096` bytes，0 optimizer/
   backward/checkpoint/action-wall reads，GPU已释放。
-- 当前允许动作升级为独立fresh one-cycle A40 profile：仍用macro400、32-frame、K4/Nmc4、
-  two epochs和最多6张live空闲卡，必须验证8 basis无grad/optimizer ownership、五个可训练
-  block finite、完整checkpoint与exact-resume。profile权重永久丢弃；通过后才formal0→1。
-
 - clean`67b245a`的AS125→cycle2参数hybrid正式root为
   `runs/outputs/pi05_progress_credit_parameter_hybrid_as125_cycle2_r6_67b245a_20260805`：
   24 tasks×7 conditions×4 arms、8-task fixed action全部完成，wall`333.52s`、peak
@@ -37,8 +47,8 @@
   authorities与Writer字段逐项匹配旧run contract。第二次到达checkpoint后由旧manifest
   schema fail-fast；0 rollout/checkpoint且GPU释放。根修只在`initialize_writer_phase`接受
   该manifest/launch schema作load-only warm start，逐文件/contract验证不变，exact-resume
-  与AS evaluator仍拒绝。真实macro400单进程检查全部通过，聚焦回归22 passed。下一步仍只
-  重跑六卡只读diagnostic，门过后才做one-cycle profile与fresh formal0→1。
+  与AS evaluator仍拒绝。真实macro400单进程检查全部通过，聚焦回归22 passed；
+  后续diagnostic与profile均已按上述结果完成。
 - 当前GPU已全部释放，无EMBER进程。最近live检查时`gpu01`八卡空闲、`gpu02:6`属于其他
   用户；任何新launch仍须重新比较两节点且最多6张。
 

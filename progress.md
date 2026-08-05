@@ -8,6 +8,18 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-05 SFT-Anchored Tangent-Basis profile完成
+
+- clean`2f934bd`在`gpu01:1,2,3,4,5,7`完成独立fresh one-cycle profile：96 rollout、
+  61 successes、11 mixed、5 all-failure、two finite updates，wall`2033.38s`，peak reserved
+  `19,478,347,776` bytes，0 OOM/watchdog/action-wall reads。
+- 两轮都完成6/6 CUDA-ready marker后再做NCCL gradient sum；五个可训练block全可达，
+  5/5 failure-only tasks有LoRA gradient，observer grad0。cycle1 Writer/trainer/6-rank state与完整
+  consumed schedule已原子封存，tmux自然退出，六卡全部释放。
+- CPU逐张量比较证明8 basis + 440 semantic tensors完全不变，恰好76个预注册
+  coefficients tensors全部改变。profile权重永久弃用；当前下一步是clean/pushed
+  formal0→1后strict paired correct400。
+
 ## 2026-08-05 SFT-Anchored macro400 diagnostic通过
 
 - clean`303e714`在`gpu01:1,2,3,4,5,7`完成96/96 read-only rollouts：61 successes、

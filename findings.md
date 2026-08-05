@@ -6,6 +6,18 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-05 SFT-Anchored Tangent-Basis profile通过
+
+- clean`2f934bd`的24×K4 profile完成61/96 successes、11 mixed、5 all-failure；两轮
+  full24 update的grad norm为`.004373/.003961`，ratio有限且clip近零。五个预注册
+  trainable block两轮均可达，observer grad0，5/5 all-failure tasks均产生LoRA gradient。
+- macro400→profile cycle1逐张量比较：8个policy basis和440个semantic-encoder tensors
+  完全不变，恰好只有76个系数侧tensors变化，五block内所有这些张量都变化。
+  因此IL dictionary/RL coefficients分界已在真实optimizer step层面成立，不是只有合同标签。
+- wall`2033.38s`、peak reserved`19.48GB`、0 OOM/watchdog/action-wall reads；两轮都先
+  6/6 CUDA-ready再进NCCL，cycle1全状态checkpoint完整。该证据只说明可训、可封存，
+  不说明held closed-loop提升；下一裁决必须来自fresh formal cycle1的strict correct400。
+
 ## 2026-08-05 SFT-Anchored macro400进度信号通过机制门
 
 - 24×K4只读diagnostic得到61/96 successes、11 mixed、8 all-success、5 all-failure；

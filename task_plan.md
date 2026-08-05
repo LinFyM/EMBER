@@ -35,6 +35,20 @@ runner、split、路径或 GPU 权限。
 - [ ] reward先只跑cycle1并严格配对AS200；只有`>150`，或净增≥10、breadth不降且至少两suite
   改善才续cycle2。长期single-checkpoint严格`>150`且尽可能更高不变。
 
+### Condition-Kernel fresh AS0→200正式launch合同（2026-08-05）
+
+- code/config seal=`4038960`，已push branch/main；全仓带BCI LIBERO assets为`198 passed`，
+  compileall与diff check通过。profile root和任何历史Writer checkpoint均不得用于初始化。
+- live比较两节点后选择全空闲`gpu01:0,1,2|4,5,6`，六卡14--90MiB、0% util且无compute
+  process，保持profile的3+3 NUMA；`gpu02:5/6`有他人进程，不使用。`/data1` quota为
+  `310,538,532/1,073,741,824 KiB`，formal预计新增小于2GiB。
+- fresh root=
+  `runs/outputs/pi05_as_writer_condition_kernel_memory_formal_fresh0_200_r6_4038960_20260805`，
+  log同名位于`runs/logs/`，tmux=`ember_ck_formal_r6_4038960`。world6、logical B20、policy
+  B2、full24、显式`NCCL_P2P_DISABLE=1`；checkpoint只在50/100/150/200完整边界保存。
+- exact command为
+  `PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,6 NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 .venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_as_writer.py --config configs/pi05_as_writer_condition_kernel_memory_bci_v1.json --mode formal --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir runs/outputs/pi05_as_writer_condition_kernel_memory_formal_fresh0_200_r6_4038960_20260805 --stop-after-step 200 --num-workers 0 --log-every 1 --skip-data-sha`。
+
 ## 已完成Antithetic Program-Credit推进（2026-08-05）
 
 - [x] 完成Policy-Lane fresh0→200、四点strict correct400与全部内部分析；虽然LoRA stable

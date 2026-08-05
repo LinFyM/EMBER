@@ -57,6 +57,10 @@
 - 当前下一步只是在clean pushed commit与新live preflight后，从独立fresh identity root训练
   AS0→200并严格评测50/100/150/200；profile权重永久弃用。AS200未达correct120且breadth6
   则不进入reward。
+- implementation/config seal=`4038960`已push branch/main，全仓`198 passed`。正式launch
+  现场选择全空闲`gpu01:0,1,2|4,5,6`，保持3+3 NUMA；`gpu02:5/6`有他人进程不使用。
+  `/data1` quota=`310,538,532/1,073,741,824 KiB`，预计新增小于2GiB。fresh formal root、
+  tmux与exact command取`task_plan.md`顶部launch合同。
 - Program-Credit只读analysis owner的retirement trigger现已满足；新design落地时删除其
   method-specific runtime/authority，纯gauge-invariant metrics只有出现当前第二用途才迁入
   既有analysis owner。历史可复现性由Git与上述artifact保留。

@@ -117,7 +117,9 @@ functional cotangent直接穿过完整LoRA、M2P、invariant program和video des
 1. CPU合同：K4 schedule、set permutation equality、step0 identity、video-zero identity、
    608-token shape、target-owned heads、freeze/gradient ownership、checkpoint拒载旧family。
 2. 六卡A40 profile：16-frame encoder chunk、policy microbatch2、logical B20、full24；
-   fresh0->1和独立exact-resume1->3。K4视频顺序串行编码以控制峰值，不能缩减B20。
+   fresh0->1和独立exact-resume1->3。profile scheduler总轴固定为正式200步、只在step3
+   early-stop，不能用三步压缩scheduler冒充正式早期优化语义。K4视频顺序串行编码以控制
+   峰值，不能缩减B20。
 3. fresh formal0->200，每25保存；strict correct400预注册50/100/150/200。
 4. 若200点absolute/breadth/趋势仍有可信上升且没有机制硬失败，exact-resume到400；否则
    根据最早失败接口设计下一方法，不能用loss挑点。

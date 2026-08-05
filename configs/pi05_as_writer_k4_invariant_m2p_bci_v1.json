@@ -121,10 +121,11 @@
   "profile_defaults": {
     "status": "ready_for_live_bci_a40_k4_profile",
     "expected_world_size": 6,
-    "total_steps": 3,
+    "total_steps": 200,
     "per_rank_batch_size": 20,
-    "checkpoint_steps": [1, 2, 3],
-    "selected_stop_step": 3
+    "checkpoint_steps": [1, 2, 3, 200],
+    "selected_stop_step": 3,
+    "optimizer_clock": "formal_200_step_scheduler_with_early_stop_at_3"
   },
   "profile_evidence": {
     "status": "pending_live_bci_a40_profile",

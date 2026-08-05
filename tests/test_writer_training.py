@@ -54,7 +54,7 @@ def test_profile_uses_independent_video_seed_without_mutating_formal_config() ->
         checkpoint_steps=None,
         stop_after_step=None,
     )
-    assert resolve_runtime(args, profile, _context()) == (3, 20, (1, 2, 3))
+    assert resolve_runtime(args, profile, _context()) == (200, 20, (1, 2, 3, 200))
     assert args.stop_after_step == 3
 
 

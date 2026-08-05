@@ -205,8 +205,10 @@ def _validate_schedule(config: Mapping[str, Any]) -> None:
         or formal.get("checkpoint_steps") != [25, 50, 75, 100, 125, 150, 175, 200]
         or formal.get("stage_stop_steps") != [50, 100, 150, 200]
         or int(formal.get("selected_stop_step", 0)) != 200
-        or int(profile.get("total_steps", 0)) != 3
-        or profile.get("checkpoint_steps") != [1, 2, 3]
+        or int(profile.get("total_steps", 0)) != 200
+        or profile.get("checkpoint_steps") != [1, 2, 3, 200]
+        or profile.get("optimizer_clock")
+        != "formal_200_step_scheduler_with_early_stop_at_3"
     ):
         raise WriterModelError("K4 M2P schedule changed")
 

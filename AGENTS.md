@@ -24,6 +24,11 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 要求暂停；2026-08-04 owner已明确恢复长期推进，并要求后续科学问题自行深入分析，
 无需为中间判断请求确认。该授权允许继续设计、实现、profile、正式训练、严格配对评测
 和内部分析，但不改变上述设备、信息墙、single-checkpoint、不使用subagent与安全边界。
+2026-08-05 SFT-Anchored Tangent-Basis已完成formal cycle1与strict correct400；owner确认
+理解其为消融后恢复自主推进。该轴`143→142`且gained/lost=`20/21`，未过预注册续训门，
+不得resume cycle2。`142`是v6 Writer warm-start继承结果，不是fresh架构成绩。下一阶段
+必须回到functional identity fresh Writer的condition-to-policy根因设计；RL可在同一
+健康架构上作后续校准，但不得继续用v6 warm-start替代LoRA generator重构。
 
 ## Efficiency and validation boundary
 
@@ -145,16 +150,15 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 
 ## Current focused task
 
-- 当前唯一活动方法为SFT-Anchored Policy Tangent-Basis Writer，authority为
-  `docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`。它以历史strict
-  correct143的v6-fast macro400完整IL Writer为cold start，冻结semantic encoder与恰好
-  8个`factor_heads.*.network.2.weight` policy basis，只让reward更新上游条件组合与
-  factor-input coefficients。macro400六卡只读progress diagnostic与独立one-cycle A40 profile均已通过；
-  profile的8 basis + 440 semantic tensors完全不变，恰好76个预注册系数tensors变化，
-  two finite updates、五block可达、peak reserved`19.48GB`且完整cycle1 checkpoint通过。
-  当前只允许fresh formal0→1与paired correct400；只有多task净增且breadth不降或已
-  严格`>150`才可resume cycle2，并以cycle1→2完成原规模exact-resume。
-  不得同时加入policy anchor、多store/router、额外head、scale或rank/energy loss。
+- 当前没有可继续训练的活动checkpoint轴。SFT-Anchored Policy Tangent-Basis authority
+  `docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`已完成formal cycle1并负
+  裁决：历史v6-fast macro400=`143` warm-start经固定8个factor-output basis的reward更新后
+  为`142`，breadth`6→7`但gained/lost=`20/21`、union/intersection=`163/122`。因此禁止
+  resume cycle2，也不补跑五臂把消融包装成主方法。
+- 当前唯一研究任务是从functional identity重新设计并fresh训练policy-coordinated
+  condition-to-LoRA generator；必须利用direct SFT已知的跨target组织、v5.2视频传递、
+  v6高absolute及Target-Spectral/SFB/Direction Store/Target-Owned负结果，不加载历史
+  Writer权重。先以AS建立健康的表示和闭环能力；RL只可在同一架构上作为后续校准。
 - AS125 Task-Grounded Semantic Progress Credit已完成同一formal root cycle1/2及两轮strict
   correct400。AS125/cycle1/cycle2=`97/104/102`，breadth=`5/4/4`；cycle1→2
   gained/lost=`15/17`，Object-1`31→26`、Object-3`19→22`且无新task coverage，

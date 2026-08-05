@@ -4,21 +4,39 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：Tangent-Basis profile通过，下一步fresh formal0→1
+## 0.0 当前状态：Tangent-Basis正式消融负裁决，转回fresh Writer根因设计
+
+- clean`059d40f`的fresh formal root为
+  `runs/outputs/pi05_sft_anchored_tangent_basis_writer_formal_macro400_r6_k4_nmc4_e2_c8_059d40f_20260805`。
+  它从历史v6-fast macro400 Writer warm-start完成cycle0→1：96 rollout、61 successes、
+  11 mixed、5 all-failure、two finite updates，五个系数侧block全可达，8个factor-output
+  basis与semantic encoder冻结，0 action-wall read/OOM/watchdog。wall`2046.03s`、peak
+  reserved`19,478,347,776` bytes，cycle1 checkpoint与6 rank状态完整。
+- cycle1 strict correct400 root为
+  `runs/outputs/pi05_sft_anchored_tangent_basis_cycle001_bci_correct400_noreplacement_seed7_059d40f_20260805`：
+  400 rows、0 error/retry、correct=`142`、breadth=`7`；v6-fast macro400 baseline为
+  `143`、breadth`6`。严格paired gained/lost/retained/both-fail=`20/21/122/237`，
+  exact two-sided`p=1.0`，union/intersection=`163/122`。Spatial由`3→6`并打开
+  Spatial-1，但Long/Goal/Object分别净`-1/-1/-2`；aggregate稳定仍由能力换手组成。
+- 完整配对裁决位于该eval root的`paired_to_macro400_analysis.json`。静态row、task、
+  state、video、env/policy seed与共同policy-noise prefix全部严格一致；完整noise list仅
+  298/400相同是因episode长度/replan次数不同，不是配对破坏。
+- 预注册续训门未过，禁止resume cycle2。`142`是继承`143`的v6 Writer经一次保守RL后
+  的结果，不是fresh新架构从identity训练到142；本实验只否定“factor-output basis旋转
+  是task drift主要根因”，不得写成LoRA生成质量、视频特异性或新主路线已成立。
+- 当前无EMBER GPU进程。下一阶段先利用已有direct SFT/v5.2/v6与全部负裁决，设计一套
+  从functional identity fresh训练的condition-to-policy架构；RL只可作为同一健康架构的
+  后续闭环校准，不能继续在v6 warm-start上承担修复LoRA generator的职责。
+
+### Tangent-Basis profile与diagnostic前置证据
 
 - clean`2f934bd`六卡profile root为
   `runs/outputs/pi05_sft_anchored_tangent_basis_profile_macro400_r6_2f934bd_20260805`：
   96 rollout、61 successes、11 mixed、5 all-failure，two finite epochs，两轮五个
   trainable block全可达，observer grad0，0 action-wall read/OOM/watchdog。wall
   `2033.38s`，peak reserved`19,478,347,776` bytes；两轮均在6/6 CUDA-ready后再进
-  NCCL，cycle1完整checkpoint已原子封存，GPU全部释放。
-- 逐张量比较证明8 basis + 440 semantic-encoder tensors完全不变，恰好76个
-  预注册系数侧tensors改变，五个主block的`22/5/16/25/8`张量全部改变。
-  profile权重永久弃用。不改写已封存`total=1` profile也不新增验证旁路；若
-  cycle1 held过门，formal的cycle1→2将做真实原规模exact-resume。
-- 当前允许动作升级为在重新live preflight后启动唯一fresh formal macro400→cycle1，
-  紧接strict paired correct400；只有多task共同净增且breadth不降或已严格`>150`
-  才可resume cycle2。
+  NCCL，cycle1完整checkpoint已原子封存，GPU全部释放。逐张量比较证明8 basis +
+  440 semantic-encoder tensors完全不变，恰好76个系数侧tensors改变。
 
 - clean`303e714`六卡只读diagnostic root为
   `runs/outputs/pi05_sft_anchored_tangent_basis_diagnostic_macro400_r6_303e714_20260805`：

@@ -6,11 +6,15 @@
 
 ## 0. 当前BCI运行事实（覆盖下文旧A100操作细节）
 
-- 当前唯一活动方法为SFT-Anchored Tangent-Basis，操作authority为
-  `docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`。它从历史v6-fast
-  macro400=`143/400`启动，冻结semantic encoder与8个factor-output policy basis，只让
-  reward更新condition coefficients。macro400六卡只读diagnostic已96/96完成并通过全部
-  联合门；独立one-cycle profile也已通过，下一命令只能是fresh formal0→1。
+- SFT-Anchored Tangent-Basis正式消融已结束并负裁决，不再是活动训练轴。clean`059d40f`
+  从历史v6-fast macro400=`143/400` warm-start完成formal cycle0→1与strict correct400；
+  cycle1=`142`、breadth`7`，相对baseline gained/lost=`20/21`、intersection/union=
+  `122/163`、`p=1.0`。它只证明固定factor-output basis不会立即摧毁aggregate，同时证明
+  coefficient/composer侧仍会产生能力换手；禁止resume cycle2。
+- `142`不得表述为新Writer从identity训练所得，也没有cycle1五臂证据。当前设计边界是
+  回到fresh Writer的condition-to-policy架构：先用AS从零建立健康、policy-coordinated
+  LoRA generator，再决定是否在同一架构上做reward校准；不得把v6 warm-start继续包装
+  成主路线。正式roots与paired JSON取`docs/active_session_handoff.md`顶部。
 - 首次diagnostic因旧v6 raw config schema已退役而在模型构造前fail-fast；0 rollout/checkpoint。
   不恢复历史loader，改由当前受支持v6 config加RL-sealed 32-frame non-parameter runtime
   override重建与macro400逐项相同的effective Writer；训练与评测共用这一解析owner。
@@ -19,11 +23,10 @@
   exact-resume或AS evaluator不接受。真实macro400最短验证链已通过后才允许再次diagnostic。
 - 成功diagnostic结果为61/96、11 mixed、AUC`.91429`；correct胜wrong/shuffled/reversed
   `1.0/.90164/1.0`，六门全过，peak reserved`19.29GB`，0 backward/checkpoint/action reads。
-- clean`2f934bd`六卡profile完成96 rollout与两轮finite update，五个可训练block全可达，
+- 历史clean`2f934bd`六卡profile完成96 rollout与两轮finite update，五个可训练block全可达，
   8 basis和440 semantic tensors逐元素不变，恰好76个预注册张量改变。peak
   reserved`19.48GB`，0 OOM/watchdog/action-wall reads，cycle1 checkpoint完整，GPU已释放。
-  profile权重弃用；formal封存total8先停cycle1，若held过门则cycle1→2完成真实
-  exact-resume。
+  profile权重弃用；后续formal held门已失败，不能再续cycle1→2。
 - 参数hybrid root
   `runs/outputs/pi05_progress_credit_parameter_hybrid_as125_cycle2_r6_67b245a_20260805`
   已完整结束并释放GPU：BA层upstream贡献更大，action层factor-output贡献更大，且Long与

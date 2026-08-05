@@ -3513,3 +3513,17 @@ GPU范围和训练步长是当时快照；活动状态只取
   norm持续增大但stable rank仍约1；same-video energy从step50起约`.13%`平台，失败tasks
   的video BA差异反而更大；reversed/shuffled到fixed action路径有效。正式拒绝把rank、
   scale或更多store作为下一小改，下一段按coverage合同只续AS100→125。
+
+## SFT-Anchored Tangent-Basis formal与strict裁决（2026-08-05）
+
+- clean`059d40f`在`gpu01:1,2,3|4,5,7`完成fresh formal cycle0→1：96 rollout、61
+  successes、11 mixed、5 all-failure、two finite updates，wall`2046.03s`、peak
+  reserved`19,478,347,776` bytes、0 OOM/watchdog/action-wall reads；完整cycle1与6 rank
+  状态原子封存，设备自然释放。
+- 同checkpoint strict correct400完成400 rows、0 error/retry，结果142；历史v6-fast
+  macro400同panel为143。严格配对gained/lost/retained/both-fail=`20/21/122/237`、
+  breadth`6→7`、union/intersection=`163/122`、`p=1.0`。配对artifact写入eval root的
+  `paired_to_macro400_analysis.json`。
+- 预注册cycle2门失败，当前root禁止resume。该实验只作为固定factor-output basis的消融：
+  aggregate未崩但能力仍换手，不能把142写成fresh架构成绩或LoRA/video问题已解决。
+  下一阶段回到fresh identity的policy-coordinated LoRA generator设计。

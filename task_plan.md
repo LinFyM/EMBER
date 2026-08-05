@@ -23,9 +23,14 @@ runner、split、路径或 GPU 权限。
 - [x] 完成独立one-cycle A40 profile：96 rollout/two finite updates、五block全可达、
   8 basis与440 semantic tensors完全不变、76个预注册系数张量全部改变，peak
   reserved`19.48GB`、0 OOM/watchdog，cycle1 checkpoint完整；profile权重弃用。
-- [ ] fresh formal macro400→cycle1后立即strict correct400；只有多task净增且breadth不降或
-  已严格超过150才续cycle2，否则停止；若续训，cycle1→2同时做真实原规模
-  exact-resume。长期single-checkpoint`>150/400`不变。
+- [x] fresh formal macro400→cycle1与strict correct400完成：`143→142`、breadth`6→7`、
+  gained/lost=`20/21`、intersection/union=`122/163`、`p=1.0`。Spatial净增3但其余
+  三suite净降；预注册门失败，禁止resume cycle2。
+- [x] 将`142`明确封存为v6强SFT warm-start上的factor-basis冻结消融，而非fresh新Writer
+  成绩；它否定basis旋转为唯一/主要漂移根因，不证明LoRA质量或视频特异性改善。
+- [ ] 结合已有direct SFT、v5.2/v6、Target-Spectral、SFB、Direction Store、Target-Owned
+  和本次消融，设计从functional identity fresh训练的policy-coordinated条件LoRA架构；
+  不加载任何历史Writer权重，首阶段以AS学出表示，RL只作为后续可选校准。
 
 ## 已封存的Progress-Credit裁决与condition-to-policy分解（2026-08-05）
 

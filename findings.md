@@ -6,6 +6,21 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-05 SFT-Anchored Tangent-Basis formal负裁决
+
+- clean`059d40f`从v6-fast macro400 warm-start完成独立formal cycle0→1：96 rollout、
+  61 successes、11 mixed、5 all-failure，two finite updates，五个系数侧block可达，
+  basis/semantic encoder冻结，wall`2046.03s`、peak reserved`19.478GB`、0 OOM/watchdog。
+- strict correct400为`142`，baseline v6 macro400为`143`；严格paired gained/lost/
+  retained/both-fail=`20/21/122/237`，`p=1.0`，breadth`6→7`，union/intersection=
+  `163/122`。Spatial由`3→6`并打开Spatial-1，但Long/Goal/Object分别净`-1/-1/-2`。
+- aggregate只净降1掩盖了41个state换手。固定8个factor-output basis不能阻止能力轮换，
+  因而basis旋转不是task drift的充分解释；更早问题仍在共享condition coefficient/composer
+  的credit分配，或固定dictionary本身的policy覆盖。
+- 该分数继承自143分的历史v6 SFT Writer，不能与fresh架构0→142混写；cycle1只有correct
+  arm，不能声称视频特异性改善。预注册续训门未过，禁止cycle2与补跑一个暖启动主线。
+  下一设计必须从functional identity fresh训练LoRA generator，RL只作后续闭环校准。
+
 ## 2026-08-05 SFT-Anchored Tangent-Basis profile通过
 
 - clean`2f934bd`的24×K4 profile完成61/96 successes、11 mixed、5 all-failure；两轮

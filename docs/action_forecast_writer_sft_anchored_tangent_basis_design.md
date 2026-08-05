@@ -179,3 +179,23 @@ semantic-encoder张量逐元素完全不变；恰好只有76个预注册系数�
 `total=8`并先停cycle1；若held结果过续训门，同checkpoint cycle1→2将在原
 96-rollout/two-epoch规模提供真实exact-resume证据。因此当前唯一下一步是
 clean/pushed commit上的fresh formal0→1，随后立即做与macro400配对的strict correct400。
+
+## 10. Formal cycle1与最终裁决
+
+clean`059d40f`的formal root为
+`runs/outputs/pi05_sft_anchored_tangent_basis_writer_formal_macro400_r6_k4_nmc4_e2_c8_059d40f_20260805`。
+它完成96 rollout、61 successes、11 mixed、5 all-failure和two finite updates；两轮
+grad norm为`.00437259/.00396134`，ratio范围`.98433--1.01762`与
+`.98100--1.05652`，peak reserved`19,478,347,776` bytes，完整cycle1 checkpoint已封存。
+
+strict paired correct400 root为
+`runs/outputs/pi05_sft_anchored_tangent_basis_cycle001_bci_correct400_noreplacement_seed7_059d40f_20260805`。
+cycle1/baseline=`142/143`，breadth=`7/6`，gained/lost/retained/both-fail=
+`20/21/122/237`，exact two-sided`p=1.0`，success union/intersection=`163/122`。
+Spatial净增3并打开Spatial-1，但Long、Goal、Object分别净`-1/-1/-2`。完整裁决为同root
+`paired_to_macro400_analysis.json`。
+
+预注册的“多task共同净增或严格超过150”门没有通过，禁止resume cycle2。固定basis后
+aggregate保持只说明强SFT能力没有立即崩塌；41个state仍换手，正式否定“factor-output
+basis旋转是task drift主要根因”的充分性。本方法是warm-start消融，不是fresh LoRA
+generator，不得用142声称新架构有效、视频特异性提高或v6固有生成问题已解决。

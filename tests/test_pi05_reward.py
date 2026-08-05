@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
 import torch
 from lerobot.utils.constants import ACTION, OBS_LANGUAGE_ATTENTION_MASK, OBS_LANGUAGE_TOKENS
 
@@ -24,6 +26,8 @@ from ember.reward.ledger import (
     write_rollout_once,
 )
 from ember.reward.protocol import (
+    RewardProtocolError,
+    RewardTask,
     environment_seed,
     policy_noise_seed,
     task_local_video_demo,
@@ -31,10 +35,64 @@ from ember.reward.protocol import (
 )
 from ember.reward.rollout import (
     complete_trajectory_batch,
+    RandomResetEnvironmentPool,
     RewardTrajectory,
     collect_randomized_reward_trajectory,
     successful_trajectory_batch,
 )
+
+
+def test_random_reset_pool_keeps_counterfactual_lanes_independent(
+    tmp_path, monkeypatch
+) -> None:
+    payload = b"(define (problem paired-lanes))\n"
+    task_root = tmp_path / "libero_spatial"
+    task_root.mkdir()
+    path = task_root / "paired_lanes.bddl"
+    path.write_bytes(payload)
+    task = RewardTask(
+        suite="libero_spatial",
+        task_id=0,
+        global_task_id=0,
+        split_role="train",
+        language="put the bowl on the tray",
+        problem_folder="libero_spatial",
+        bddl_file=path.name,
+        bddl_bytes=len(payload),
+        bddl_sha256=hashlib.sha256(payload).hexdigest(),
+        horizon=220,
+    )
+
+    class FakeEnvironment:
+        def __init__(self) -> None:
+            self.closed = False
+
+        def close(self) -> None:
+            self.closed = True
+
+    pool = object.__new__(RandomResetEnvironmentPool)
+    pool.bddl_root = tmp_path
+    pool.render_resolution = 256
+    pool._envs = {}
+    pool._validated_tasks = set()
+    created: list[FakeEnvironment] = []
+
+    def create(_path):
+        value = FakeEnvironment()
+        created.append(value)
+        return value
+
+    monkeypatch.setattr(pool, "_new_environment", create)
+    plus = pool.get(task, lane=0)
+    minus = pool.get(task, lane=1)
+    assert plus is pool.get(task, lane=0)
+    assert minus is pool.get(task, lane=1)
+    assert plus is not minus
+    assert len(created) == 2
+    with pytest.raises(RewardProtocolError, match="lane"):
+        pool.get(task, lane=2)
+    pool.close()
+    assert all(value.closed for value in created)
 
 
 def _observation(marker: int = 0) -> dict[str, np.ndarray]:

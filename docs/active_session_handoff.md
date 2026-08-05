@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：Antithetic Program-Credit实现与CPU合同完成，等待A40 profile
+## 0.0 当前状态：Program-Credit首轮profile发现environment CRN根因，双lane修复待原规模重放
 
 - 当前唯一活动authority为
   `docs/action_forecast_writer_antithetic_program_credit_design.md`。Policy-Lane已经证明
@@ -23,14 +23,25 @@
   diagnostic；canonical RL loop现在只产生两对program扰动、binary-first pair credit和
   一次direct program backward。ledger/exact-resume绑定实际world size、四个rollout
   cursor、pair randomness、direction seed与credit identity。
-- 220项带项目正式activation环境的全仓测试全部通过；其中聚焦合同覆盖forward逐tensor
+- clean pushed`318b6f6`上的首次六卡原规模cycle0→1已完成68/96 rollout后fail-fast，尚未
+  发生参数更新或checkpoint。失败不是Writer/LoRA/NCCL/OOM：task38两组pair的env seed和
+  全部104个policy-noise seeds均完全一致，但首帧哈希不同。实机最小复现证明同一LIBERO
+  hard-reset env的内部placement history不会被`env.seed`清空，同seed重复reset可使物体位置
+  相差约3--4cm、MuJoCo XML也不同。
+- 根修不读取或恢复固定init state：每task建立两条persistent environment lanes，plus固定
+  lane0、minus固定lane1，两条lane从构造起保持相同reset次数和seed。两lane在经历不同动作后
+  连续三次实机验证XML、47维sim state和双相机像素逐字节一致；rollout/program-credit v2
+  ledger和exact-resume显式绑定lane identity。失败root只作诊断，禁止resume或混入证据；修复
+  必须在全新root重放原6-rank、24×K4规模。
+- 原实现的220项带项目正式activation环境的全仓测试全部通过；其中聚焦合同覆盖forward逐tensor
   等价、seed/credit数学、artifact/randomness cursor分离、上游四block ownership、冻结
   semantic encoder/FactorHeads、full24多卡分配、NCCL前FileStore ready和完整checkpoint
   roundtrip。`git diff --check`与py_compile通过，AS125 checkpoint family/60,000 queries/
   3,000 videos身份已定向确认；尚无本方法GPU结果，也没有EMBER GPU进程。
-- profile config已仅因上述CPU合同seal；formal仍保持blocked。下一步是clean commit/push后
-  live比较`gpu01/gpu02`，选择最多6张空闲A40做独立cycle0→1再resume1→2；profile权重永久
-  弃用，profile通过前禁止formal。
+- 双lane修复后项目正式activation下全仓`221 passed`，compileall与`git diff --check`通过；
+  formal仍保持blocked。下一步是clean commit/push，重新live比较`gpu01/gpu02`并用全新
+  root做原6-rank cycle0→1，再
+  exact-resume1→2；profile权重永久弃用，profile通过前禁止formal。
 
 ## 0.1 Policy-Lane正式负裁决
 

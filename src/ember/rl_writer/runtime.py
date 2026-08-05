@@ -222,6 +222,7 @@ def rank_ledger_summary(runtime: RLWriterRuntime, next_cycle: int) -> dict[str, 
                     or int(row.get("program_direction_seed", -1)) != direction_seed
                     or int(row.get("randomness_cursor", -1))
                     != cycle * 2 + pair_index
+                    or int(row.get("environment_lane", -1)) != offset % 2
                     or float(row.get("program_sigma", -1))
                     != float(runtime.config["algorithm"]["program_sigma"])
                 ):
@@ -256,7 +257,7 @@ def rank_ledger_summary(runtime: RLWriterRuntime, next_cycle: int) -> dict[str, 
             if (
                 observed_credit != expected_credit
                 or credit.get("schema_version")
-                != "ember_pi05_antithetic_program_credit_task_v1"
+                != "ember_pi05_antithetic_program_credit_task_v2"
                 or int(credit.get("teacher_demo_index", -1)) != expected_demo
                 or credit.get("program_shape") != [320, 256]
                 or float(credit.get("program_sigma", -1))
@@ -280,6 +281,8 @@ def rank_ledger_summary(runtime: RLWriterRuntime, next_cycle: int) -> dict[str, 
                     or int(pair.get("direction_seed", -1)) != expected_seed
                     or int(pair.get("randomness_cursor", -1))
                     != cycle * 2 + pair_index
+                    or int(pair.get("plus_environment_lane", -1)) != 0
+                    or int(pair.get("minus_environment_lane", -1)) != 1
                     or int(pair.get("plus_rollout_cursor", -1))
                     != int(plus["rollout_cursor"])
                     or int(pair.get("minus_rollout_cursor", -1))

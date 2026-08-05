@@ -47,6 +47,8 @@ def test_program_credit_config_closes_actions_and_freezes_public_decoder() -> No
     assert algorithm["antithetic_pairs_per_task"] == 2
     assert algorithm["program_shape"] == [320, 256]
     assert algorithm["program_sigma"] == pytest.approx(0.05)
+    assert algorithm["rollout_schema"].endswith("_v2")
+    assert "lockstep_persistent_environment_lanes" in algorithm["pair_randomness"]
     assert algorithm["teacher_actions"] is False
     assert algorithm["functional_action_loss"] is False
     assert algorithm["executed_action_replay"] is False
@@ -57,6 +59,11 @@ def test_program_credit_config_closes_actions_and_freezes_public_decoder() -> No
         "max_frames_per_encoder_call"
     ] == 16
     assert config["information_wall"]["teacher_action_reads_after_coldstart"] == 0
+    assert config["environment"]["paired_persistent_environment_lanes"] == 2
+    assert (
+        config["environment"]["pair_reset_semantics"]
+        == "independent_lane_same_seed_same_reset_index"
+    )
     assert config["parallel"]["maximum_world_size"] == 6
     assert config["formal_run"]["checkpoint_cycles"] == [1, 2, 4, 8]
 

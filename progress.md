@@ -8,6 +8,19 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-05 Program-Credit environment CRN根修
+
+- clean`318b6f6`首次原六卡profile完成68/96 rollout后，在0 update/0 checkpoint处由pair
+  初态hash合同终止；task38 env/policy seeds一致而首帧不同，失败root仅保留诊断用途。
+- 单GPU真实复现确认LIBERO默认hard reset的environment-local placement history不由再次
+  `env.seed`清空；同env同seed可得到不同XML和3--4cm物体位移。两个独立persistent env保持
+  相同reset index/seed时，即使中间动作不同，连续三轮XML、47维state和双相机像素均逐字节
+  相同。
+- canonical runtime已改为每task两条lockstep lanes，plus固定lane0、minus固定lane1；rollout
+  与program-credit schema升为v2并绑定lane，仍使用official random reset且从不调用
+  `set_init_state`。聚焦20项及全仓221项合同通过，compileall/diff check通过；待clean
+  commit/push后用全新root原规模重放。
+
 ## 2026-08-05 Antithetic Program-Credit实现与CPU seal
 
 - canonical Writer已原位恢复v6，并把确定性函数显式拆为`encode_program(320×256)`和

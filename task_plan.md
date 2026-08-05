@@ -22,6 +22,10 @@ runner、split、路径或 GPU 权限。
   adapter，不保留旧CFM/Tangent并行路径。
 - [x] 完成forward等价、antithetic seed/配对、binary-first credit、freeze/gradient ownership、
   checkpoint/resume与实际world-size的聚焦合同；运行architecture gate并保持单一owner。
+- [x] 首次原六卡profile在68/96 rollout、0 update处fail-fast并定位真实CRN根因：LIBERO同一
+  hard-reset env的placement history不被重复seed清空。实现每task两条lockstep persistent
+  lanes，plus/minus固定分lane；实机连续三次验证XML/state/双相机逐字节一致，v2 ledger绑定
+  environment lane，且不调用`set_init_state`。失败root仅作诊断并永久禁止resume。
 - [ ] live比较`gpu01/gpu02`后完成AS125-fresh独立六卡one-cycle A40 profile及fresh0→1→
   resume1→2；K4/24 tasks、pair randomness、finite cotangent、四个block可达、0 frozen grad、
   NCCL ready和原子checkpoint全部通过后才seal formal。

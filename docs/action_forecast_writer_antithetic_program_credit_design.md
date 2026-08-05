@@ -89,10 +89,18 @@ program coordinate的5%扰动，不依赖task或LoRA norm。不得按reward扫�
 nonfinite或四个扰动LoRA逐元素相同，属于机制失败，须在formal前重新封存authority，不能
 边看结果边调。
 
-同一pair的`+/-`必须共享environment reset seed和完整policy-noise seed stream，只有program
-符号不同；两个pair使用不同随机性。ledger cursor仍各自唯一，因此runtime显式分离artifact
-cursor与randomness cursor，不能靠重用row ID伪造配对。方向seed不含rank、worker、queue
-顺序或outcome，resume可精确再生；ledger只保存seed、符号和方向摘要，不保存大tensor。
+同一pair的`+/-`必须共享environment reset seed、相同的environment-local reset index和完整
+policy-noise seed stream，只有program符号不同；两个pair使用不同随机性。BCI真实profile发现
+LIBERO默认hard reset虽再次调用`env.seed(seed)`，同一env的内部placement history仍会使模型
+XML和物体初态改变。因此canonical runtime为每个task保留两条独立、同步推进的persistent
+environment lanes：`+`固定使用lane0，`-`固定使用lane1；二者从各自构造起始终执行相同次数的
+official random reset，并在每个pair使用同一seed。实机在两lane经历不同动作后连续三次验证
+XML、sim state和双相机像素逐字节相同。不得把`+/-`顺序放在同一个env里，也不得用
+`set_init_state`、固定benchmark init state或挑选reset来伪造配对。
+
+ledger cursor仍各自唯一，因此runtime显式分离artifact cursor、randomness cursor与
+environment lane，不能靠重用row ID伪造配对。方向seed不含rank、worker、queue顺序或
+outcome，resume可精确再生；ledger只保存seed、lane、符号和方向摘要，不保存大tensor。
 
 ## 5. Binary-first pair credit
 

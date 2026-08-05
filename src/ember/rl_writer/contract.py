@@ -30,7 +30,7 @@ from ember.writer.topology import visible_physical_cuda_index
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RL_WRITER_CONFIG_SCHEMA = "ember_pi05_antithetic_program_credit_writer_v1"
+RL_WRITER_CONFIG_SCHEMA = "ember_pi05_antithetic_program_credit_writer_v2"
 RL_WRITER_LAUNCH_SCHEMA = "ember_pi05_antithetic_program_credit_launch_v1"
 _SCHEDULE_TAG = 0xF10C0ED
 
@@ -90,6 +90,7 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         "program_sigma": float(algorithm.get("program_sigma", -1)),
         "pair_credit": algorithm.get("pair_credit"),
         "rollout_schema": algorithm.get("rollout_schema"),
+        "pair_randomness": algorithm.get("pair_randomness"),
         "freeze_observer": algorithm.get("semantic_encoder_frozen_after_coldstart"),
         "freeze_decoder": algorithm.get(
             "factor_head_decoder_frozen_after_coldstart"
@@ -105,6 +106,10 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         "critic": algorithm.get("critic", True),
         "random_reset": environment.get("official_random_bddl_reset"),
         "fixed_states": environment.get("fixed_pruned_init_states"),
+        "environment_lanes": int(
+            environment.get("paired_persistent_environment_lanes", -1)
+        ),
+        "pair_reset": environment.get("pair_reset_semantics"),
         "settling": int(environment.get("dummy_settling_steps", -1)),
         "horizons": environment.get("horizons"),
         "chunk": int(policy.get("chunk_size", -1)),
@@ -126,7 +131,8 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         "program_shape": [320, 256],
         "program_sigma": 0.05,
         "pair_credit": "binary_discordant_sign_paired_success_zero_paired_failure_half_semantic_difference",
-        "rollout_schema": "ember_pi05_antithetic_program_credit_rollout_v1",
+        "rollout_schema": "ember_pi05_antithetic_program_credit_rollout_v2",
+        "pair_randomness": "plus_minus_use_lockstep_persistent_environment_lanes_and_share_environment_seed_and_policy_noise_prefix",
         "freeze_observer": True,
         "freeze_decoder": True,
         "coldstart_frame_chunk": 16,
@@ -138,6 +144,8 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         "critic": False,
         "random_reset": True,
         "fixed_states": False,
+        "environment_lanes": 2,
+        "pair_reset": "independent_lane_same_seed_same_reset_index",
         "settling": 10,
         "horizons": SUITE_HORIZONS,
         "chunk": 50,
@@ -413,6 +421,9 @@ def build_contract(
             "topology": topology,
             "persistent_policy": True,
             "persistent_task_environment_pool": True,
+            "persistent_environment_lanes_per_task": int(
+                config["environment"]["paired_persistent_environment_lanes"]
+            ),
             "total_cycles": total_cycles,
             "checkpoint_cycles": list(checkpoint_cycles),
             "rollouts_per_task_condition": int(

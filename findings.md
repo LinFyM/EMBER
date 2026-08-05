@@ -8,6 +8,16 @@
 
 ## 2026-08-05 Antithetic Program-Credit架构与训练决策
 
+- clean`318b6f6`首次六卡原规模profile在68/96 rollout、任何update/checkpoint之前由共同
+  随机数检查终止。task38两组pair的env seed与各104个policy-noise seed完全相同，但首帧
+  hash不同；排除了Writer、LoRA、policy noise、NCCL和显存层。
+- 真实LIBERO最小复现显示：同一默认hard-reset env重复`seed+reset`的MuJoCo XML不同，物体
+  位置最大差约3--4cm；仅恢复47维sim state也不能逐像素恢复旧模型。两个独立persistent
+  env若从构造起保持相同reset count/seed，即使中间执行不同动作，连续三次reset的XML、state、
+  agent/wrist pixels都逐字节一致。因此根修是per-task plus/minus lockstep lanes，而不是放宽
+  equality gate、容忍图像误差、固定init state或换成监督proxy。
+- 双lanev2实现后项目正式activation全仓`221 passed`，compileall与diff check通过；失败
+  root仍无参数更新，下一科学证据只能来自clean commit上的全新原规模重放。
 - Policy-Lane完整负证据把最早失败从LoRA容量/几何推进到conditional credit：约10个有效
   output lanes、stable rank`1.34--1.54`、direct-SFT量级跨层能量都没有带来闭环，same-task
   video在hidden/BA却仍只有`.05%/.02%`。因此下一方法不增加结构容量，而直接对生成LoRA
@@ -26,8 +36,8 @@
   与encode/decode逐tensor等价；pair方向/credit、artifact/randomness cursor、四上游block
   ownership、冻结decoder/observer、full24多卡与checkpoint roundtrip均有聚焦合同。项目正式
   activation下全仓`220 passed`，py_compile/diff check通过；AS125 checkpoint身份定向成立。
-- 这些只证明mechanism和工程合同，尚无本方法GPU或性能结果。下一步仍是独立A40
-  cycle0→1/resume1→2 profile，不能把CPU通过或设计合理性写成性能改善。
+- 失败run只证明旧单env配对合同无效，没有产生本方法性能结果。双lane v2修复后仍必须在
+  全新root重放独立A40 cycle0→1/resume1→2，不能复用68条旧ledger或把修复写成性能改善。
 
 ## 2026-08-05 PWAD正式负裁决与Policy-Lane Coupled Hyperdecoder决策
 

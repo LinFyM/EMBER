@@ -129,7 +129,7 @@ def write_program_credit_once(
     write_json_atomic(
         path,
         {
-            "schema_version": "ember_pi05_antithetic_program_credit_task_v1",
+            "schema_version": "ember_pi05_antithetic_program_credit_task_v2",
             "producer_rank": producer_rank,
             "outer_cycle": cycle,
             "global_task_id": global_task_id,

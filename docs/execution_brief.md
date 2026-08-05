@@ -17,8 +17,13 @@
   每cycle只对Core、Visual Transition、Procedure和compiler做一次full24 equal-task update。
   canonical原位替换和220项全仓CPU合同已完成：`forward`等价、pair seed/randomness、direct
   cotangent、冻结ownership、full24 assignment、NCCL ready和exact-resume均通过；旧
-  Policy-Lane/CFM/progress-diagnostic executable family已删除。profile status现已seal，
-  formal仍blocked；下一操作是clean/pushed commit上的独立六卡A40 cycle0→1/resume1→2。
+  Policy-Lane/CFM/progress-diagnostic executable family已删除。首次clean`318b6f6`六卡
+  profile在68/96 rollout、参数更新前发现LIBERO同一hard-reset env无法仅靠相同seed复现
+  同一随机初态。canonical修复为每task两条lockstep persistent environment lanes，plus/minus
+  分lane且共享seed/reset index/policy noise；不读固定init state。修复已通过真实双lane连续
+  三次XML/state/双相机逐字节复现；修复后全仓`221 passed`，compileall/diff check通过。
+  失败root禁止resume；下一操作是clean push后用全新root重放原六卡cycle0→1/resume1→2，
+  formal仍blocked。
 - PWAD fresh0→200与四点strict correct400已完成并负裁决：`77/71/80/80`、breadth=
   `5/6/5/5`、union/intersection=`115/44`。64 atoms广泛active，但mixing row stable rank
   约`1.000002`、effective LoRA约`1.0000002`、q/v B-column cosine约`.999998`；禁止resume

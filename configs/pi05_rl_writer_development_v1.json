@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_antithetic_program_credit_writer_v1",
+  "schema_version": "ember_pi05_antithetic_program_credit_writer_v2",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {
@@ -55,13 +55,13 @@
   "algorithm": {
     "name": "antithetic_program_credit_writer_v1",
     "reward": "official_binary_first_then_frozen_semantic_paired_failure_tie_break",
-    "rollout_schema": "ember_pi05_antithetic_program_credit_rollout_v1",
+    "rollout_schema": "ember_pi05_antithetic_program_credit_rollout_v2",
     "rollouts_per_task_condition": 4,
     "antithetic_pairs_per_task": 2,
     "program_shape": [320, 256],
     "program_sigma": 0.05,
     "program_direction": "task_cycle_pair_keyed_iid_rademacher",
-    "pair_randomness": "plus_minus_share_environment_and_policy_noise_prefix",
+    "pair_randomness": "plus_minus_use_lockstep_persistent_environment_lanes_and_share_environment_seed_and_policy_noise_prefix",
     "pair_credit": "binary_discordant_sign_paired_success_zero_paired_failure_half_semantic_difference",
     "program_cotangent": "sum_pair_credit_times_direction_over_two_sqrt_program_dimension",
     "gradient_synchronization": "full24_equal_task_manual_sum_after_local_program_backward",
@@ -78,6 +78,8 @@
   "environment": {
     "official_random_bddl_reset": true,
     "fixed_pruned_init_states": false,
+    "paired_persistent_environment_lanes": 2,
+    "pair_reset_semantics": "independent_lane_same_seed_same_reset_index",
     "dummy_settling_steps": 10,
     "dummy_action": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0],
     "render_resolution": 256,

@@ -84,7 +84,13 @@ def _agentview_uint8(observation: Mapping[str, Any]) -> torch.Tensor:
 
 
 class RandomResetEnvironmentPool:
-    """Lazily retain one raw LIBERO environment per task without init-state access."""
+    """Retain independent persistent LIBERO lanes for each task.
+
+    A lane has its own environment-local randomization history.  Antithetic
+    callers keep the two signs on separate lanes so equal seeds and reset
+    indices reproduce the same official random reset without reading fixed
+    benchmark init states.
+    """
 
     def __init__(
         self, *, bddl_root: Path, assets_root: Path, render_resolution: int
@@ -99,34 +105,44 @@ class RandomResetEnvironmentPool:
         self.bddl_root = bddl_root.resolve()
         self.assets_root = assets_root.resolve()
         self.render_resolution = render_resolution
-        self._envs: dict[int, Any] = {}
+        self._envs: dict[tuple[int, int], Any] = {}
+        self._validated_tasks: set[int] = set()
 
-    def get(self, task: RewardTask) -> Any:
-        if task.global_task_id in self._envs:
-            return self._envs[task.global_task_id]
-        path = self.bddl_root / task.problem_folder / task.bddl_file
-        if (
-            not path.is_file()
-            or path.stat().st_size != task.bddl_bytes
-            or sha256_file(path) != task.bddl_sha256
-        ):
-            raise RewardProtocolError(
-                f"installed reward BDDL changed: {task.suite}/{task.task_id}"
-            )
+    def _new_environment(self, path: Path) -> Any:
         from libero.libero.envs import OffScreenRenderEnv
 
-        env = OffScreenRenderEnv(
+        return OffScreenRenderEnv(
             bddl_file_name=path,
             camera_heights=self.render_resolution,
             camera_widths=self.render_resolution,
         )
-        self._envs[task.global_task_id] = env
+
+    def get(self, task: RewardTask, *, lane: int = 0) -> Any:
+        if lane not in {0, 1}:
+            raise RewardProtocolError("random-reset environment lane must be 0 or 1")
+        key = (task.global_task_id, lane)
+        if key in self._envs:
+            return self._envs[key]
+        path = self.bddl_root / task.problem_folder / task.bddl_file
+        if task.global_task_id not in self._validated_tasks:
+            if (
+                not path.is_file()
+                or path.stat().st_size != task.bddl_bytes
+                or sha256_file(path) != task.bddl_sha256
+            ):
+                raise RewardProtocolError(
+                    f"installed reward BDDL changed: {task.suite}/{task.task_id}"
+                )
+            self._validated_tasks.add(task.global_task_id)
+        env = self._new_environment(path)
+        self._envs[key] = env
         return env
 
     def close(self) -> None:
         for env in self._envs.values():
             env.close()
         self._envs.clear()
+        self._validated_tasks.clear()
 
     def __enter__(self) -> "RandomResetEnvironmentPool":
         return self

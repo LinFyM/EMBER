@@ -174,6 +174,7 @@ def _collect_task(runtime: RLWriterRuntime, task: RewardTask, cycle: int) -> Tas
         adapter_sha = lora_state_sha256(state)
         artifact_cursor = cycle * 4 + offset
         randomness_cursor = _pair_randomness_cursor(cycle, pair_index)
+        environment_lane = offset % 2
         env_seed = environment_seed(
             int(runtime.config["rng"]["environment_seed_root"]),
             task.suite,
@@ -182,7 +183,7 @@ def _collect_task(runtime: RLWriterRuntime, task: RewardTask, cycle: int) -> Tas
             randomness_cursor,
         )
         trajectory = collect_randomized_reward_trajectory(
-            env=runtime.env_pool.get(task),
+            env=runtime.env_pool.get(task, lane=environment_lane),
             policy=runtime.policy,
             preprocess=runtime.processor,
             postprocess=runtime.processor.unnormalize_action,
@@ -215,6 +216,7 @@ def _collect_task(runtime: RLWriterRuntime, task: RewardTask, cycle: int) -> Tas
             "program_sigma": sigma,
             "program_direction_seed": direction_seeds[pair_index],
             "randomness_cursor": randomness_cursor,
+            "environment_lane": environment_lane,
             "writer_lora_sha256": adapter_sha,
         }
         write_rollout_once(
@@ -277,6 +279,8 @@ def _collect_task(runtime: RLWriterRuntime, task: RewardTask, cycle: int) -> Tas
                 "pair_index": pair_index,
                 "direction_seed": direction_seeds[pair_index],
                 "randomness_cursor": _pair_randomness_cursor(cycle, pair_index),
+                "plus_environment_lane": 0,
+                "minus_environment_lane": 1,
                 "plus_rollout_cursor": plus.rollout_cursor,
                 "minus_rollout_cursor": minus.rollout_cursor,
                 "plus_lora_sha256": adapter_shas[2 * pair_index],

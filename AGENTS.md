@@ -179,10 +179,12 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   Flow-Credit数学owner和progress diagnostic。runtime只保留两对antithetic program扰动、
   binary-first pair credit与每cycle一次direct program backward；ledger/exact-resume绑定
   actual world size、direction seed、四个artifact cursor、pair randomness和credit identity。
-  项目正式activation下全仓`220 passed`，py_compile/diff check通过，architecture gate无
-  hard或parallel active path。profile config已由CPU合同seal，formal仍blocked；下一步只在
-  clean/pushed代码上live选择最多6张空闲A40做独立cycle0→1和exact-resume1→2，profile权重
-  永久弃用。
+  首次clean`318b6f6`六卡profile在68/96 rollout、0 update处发现LIBERO同一hard-reset env
+  无法仅凭同seed恢复同一随机初态。canonical根修是每task两条lockstep persistent lanes：
+  plus固定lane0、minus固定lane1，两lane共享reset index/seed/policy noise且从不读取固定init
+  state；真实三轮XML/state/双相机逐字节复现已通过，v2 ledger绑定lane identity。失败root
+  禁止resume。formal仍blocked；下一步只在修复后的clean/pushed代码上用全新root重放原
+  六卡cycle0→1和exact-resume1→2，profile权重永久弃用。
 - SFT-Anchored Policy Tangent-Basis authority
   `docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`已完成formal cycle1并负
   裁决：历史v6-fast macro400=`143` warm-start经固定8个factor-output basis的reward更新后

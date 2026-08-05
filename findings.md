@@ -6,6 +6,19 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-05 SFT-Anchored macro400进度信号通过机制门
+
+- 24×K4只读diagnostic得到61/96 successes、11 mixed、8 all-success、5 all-failure；
+  Spatial/Object/Goal/Long分别`17/17/16/11`，不是单suite成功造成的门通过。
+- mixed task的success utility更高`11/11`，success/failure pair AUC`.91429`；all-failure
+  utility range `4/5`≥`.05`、中位`.27273`，说明冻结observer同时覆盖binary ordering与
+  failure-only credit，并非只复制outcome身份常量。
+- correct视频对wrong/shuffled/reversed胜率`1.0/.90164/1.0`，margin中位
+  `.55919/.37889/1.53747`；all-failure utility与pixel RMS Spearman`.48421<.8`。这比AS125
+  observer提供更强的视频内容/顺序特异性，但只裁决credit可用，不能推断RL更新有效。
+- 32-frame推理peak reserved`19.29GB`，0 optimizer/backward/checkpoint/action reads；因此
+  打开one-cycle gradient profile以裁决46GB训练显存与冻结basis后的梯度可达性。
+
 ## 2026-08-05 参数hybrid因果分解与SFT-Anchored Basis决策
 
 - clean`67b245a`六卡只读分析覆盖24 train tasks、demo0--4、reversed/shuffled、四参数臂

@@ -4,7 +4,18 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：SFT-Anchored Tangent-Basis实现完成，下一步macro400诊断
+## 0.0 当前状态：macro400诊断全门通过，下一步one-cycle A40 profile
+
+- clean`303e714`六卡只读diagnostic root为
+  `runs/outputs/pi05_sft_anchored_tangent_basis_diagnostic_macro400_r6_303e714_20260805`：
+  96/96、61 successes、11 mixed、8 all-success、5 all-failure；mixed agreement=`1.0`、
+  AUC=`.91429`，all-failure range `4/5`过`.05`且中位`.27273`。correct胜wrong/shuffled/
+  reversed=`1.0/.90164/1.0`，margin中位`.55919/.37889/1.53747`，pixel Spearman `.48421`；
+  六个联合门全过。wall`388.80s`、peak reserved`19,289,604,096` bytes，0 optimizer/
+  backward/checkpoint/action-wall reads，GPU已释放。
+- 当前允许动作升级为独立fresh one-cycle A40 profile：仍用macro400、32-frame、K4/Nmc4、
+  two epochs和最多6张live空闲卡，必须验证8 basis无grad/optimizer ownership、五个可训练
+  block finite、完整checkpoint与exact-resume。profile权重永久丢弃；通过后才formal0→1。
 
 - clean`67b245a`的AS125→cycle2参数hybrid正式root为
   `runs/outputs/pi05_progress_credit_parameter_hybrid_as125_cycle2_r6_67b245a_20260805`：

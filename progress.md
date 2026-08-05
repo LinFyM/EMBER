@@ -8,6 +8,17 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-05 SFT-Anchored macro400 diagnostic通过
+
+- clean`303e714`在`gpu01:1,2,3,4,5,7`完成96/96 read-only rollouts：61 successes、
+  11 mixed、8 all-success、5 all-failure，六个预注册机制门全部通过。wrong/shuffled/
+  reversed counterfactual、binary AUC、failure dispersion和non-pixel门精确数值取design第8节。
+- wall max`388.797s`、peak reserved`19,289,604,096` bytes；0 optimizer update、Writer
+  backward、checkpoint、teacher/validation/test action read。tmux自然退出，六卡回到14MiB。
+- 首两次启动分别在旧raw config schema和旧manifest schema fail-fast，均0 rollout；根修与
+  load-only边界已提交`314948c`/`303e714`。当前下一步为clean/pushed commit上的独立
+  one-cycle profile，不能把诊断61/96当作训练提升。
+
 ## 2026-08-05 参数hybrid完成与SFT-Anchored Basis实现
 
 - live空闲`gpu01:1,2,3,4,5,7`完成正式参数hybrid：24 tasks×7 conditions×4 arms、

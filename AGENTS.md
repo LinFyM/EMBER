@@ -149,8 +149,8 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   `docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`。它以历史strict
   correct143的v6-fast macro400完整IL Writer为cold start，冻结semantic encoder与恰好
   8个`factor_heads.*.network.2.weight` policy basis，只让reward更新上游条件组合与
-  factor-input coefficients。当前只允许先做macro400六卡只读progress diagnostic，门过
-  后才做独立one-cycle A40 profile；profile过后才可fresh formal0→1与paired correct400。
+  factor-input coefficients。macro400六卡只读progress diagnostic已通过全部预注册门；
+  当前只允许做独立one-cycle A40 profile，profile过后才可fresh formal0→1与paired correct400。
   不得同时加入policy anchor、多store/router、额外head、scale或rank/energy loss。
 - AS125 Task-Grounded Semantic Progress Credit已完成同一formal root cycle1/2及两轮strict
   correct400。AS125/cycle1/cycle2=`97/104/102`，breadth=`5/4/4`；cycle1→2

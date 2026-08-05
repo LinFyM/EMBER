@@ -18,7 +18,7 @@ runner、split、路径或 GPU 权限。
   factor-input coefficients；不同时加anchor/store/router/rank loss。
 - [x] 原位升级canonical RL config/runtime/checkpoint/evaluator ownership，并让历史A100
   cold-start按既有source identity跨host匹配；删除一次性hybrid分析入口。
-- [ ] live preflight后完成macro400六卡只读progress diagnostic；只有通用内容、binary、
+- [x] live preflight后完成macro400六卡只读progress diagnostic；通用内容、binary、
   all-failure、counterfactual与non-pixel门全过才进入profile。
 - [ ] 完成独立one-cycle A40 profile，验证32-frame最长视频显存、8 basis grad/optimizer=0、
   五个可训练block finite、完整checkpoint与resume；profile权重丢弃。

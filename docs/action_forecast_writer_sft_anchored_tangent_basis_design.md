@@ -132,3 +132,24 @@ loss、训练reward与几何不选checkpoint。
 runner。`runtime.py`负责freeze与optimizer ownership，`contract.py`负责schema，现有
 checkpoint/evaluator原位升级。参数hybrid一次性分析入口已删除，artifact与commit
 `67b245a`保留历史复现。
+
+## 8. Macro400只读diagnostic结果
+
+clean`303e714`在live空闲`gpu01:1,2,3,4,5,7`完成24×K4全量诊断，正式root为
+`runs/outputs/pi05_sft_anchored_tangent_basis_diagnostic_macro400_r6_303e714_20260805`。
+96/96 rows、61 successes、11 mixed、8 all-success、5 all-failure；suite successes为
+Spatial/Object/Goal/Long=`17/17/16/11`。wall max`388.80s`，peak CUDA reserved
+`19,289,604,096` bytes；0 optimizer update、Writer backward、checkpoint和teacher/
+validation/test action read，六卡结束后全部释放。
+
+全部预注册机制门通过：mixed success utility更高`11/11`，pair AUC`.91429`；all-failure
+range有`4/5`≥`.05`且中位`.27273`；pixel Spearman`.48421`。successful rollouts上correct
+胜wrong/shuffled/reversed比例=`1.0/.90164/1.0`，margin中位=`.55919/.37889/1.53747`。
+因此当前progress observer不仅对binary outcome有序，而且明显读取正确视频内容与时序，
+允许进入第5节独立one-cycle profile；这仍不证明一次RL更新会改善closed-loop。
+
+首次launch在旧raw v6 config schema处、第二次在旧manifest schema处分别fail-fast，均为
+0 rollout/checkpoint并释放GPU。根修不恢复历史训练loader：当前v6 config加显式32-frame
+runtime override重建effective Writer；旧manifest/launch schema只在IL→RL load-only
+warm-start入口接受，exact-resume和AS evaluator继续拒绝。真实macro400 manifest、owning
+contract与逐文件身份已一次核验通过。

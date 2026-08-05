@@ -20,9 +20,10 @@ runner、split、路径或 GPU 权限。
 - [x] 原位替换canonical PWAD runtime与analysis owner，建立fresh incompatible
   launch/checkpoint/config family；完成真实38-target shape、identity、lane ownership、
   condition写出和BA梯度阶段的聚焦CPU合同。完整Writer=`49,041,664`参数，聚焦Writer
-  合同`84 passed`，architecture guard无hard/parallel family；formal保持blocked。
-- [ ] live比较`gpu01/gpu02`，在最多6张空闲A40上完成longest105/logical-B20三步profile与
-  独立fresh0→1→exact-resume1→3；profile通过前formal保持blocked。
+  合同`84 passed`，architecture guard无hard/parallel family；formal已在live profile后seal。
+- [x] live比较`gpu01/gpu02`，在6张空闲A40上完成longest105/logical-B20三步profile与
+  独立fresh0→1→exact-resume1→3；0 OOM/clip，step2起五个主块全部可达，完整训练与
+  resume状态闭合，formal config已seal。
 - [ ] 从clean/pushed代码的独立fresh root训练0→200，strict评测50/100/150/200；只按
   single-checkpoint absolute、breadth、换手、视频传递和policy-lane内部证据决定是否续400。
 

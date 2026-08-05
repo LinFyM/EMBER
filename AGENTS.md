@@ -165,10 +165,13 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   rank/正交loss救活。
 - 新方法canonical原位实现已完成：完整Writer=`49,041,664`参数，旧PWAD module/config/
   checkpoint family已从活动runtime删除，聚焦Writer合同`84 passed`且architecture guard
-  无hard/parallel family。首轮仍保持AS full24 raw mean、每task一条video、logical B20/
-  policy microbatch2、fast-decay400；先完成46GB六卡profile与fresh exact-resume，再从独立
-  fresh root训练0→200并严格评测50/100/150/200。RL只可在fresh架构证明absolute、retention
-  和视频传递健康后作为同一生成器的后续闭环校准，不能替代AS机制门。
+  无hard/parallel family。clean pushed`2aeb22a`已完成46GB六卡longest105/logical-B20
+  三步profile与独立fresh0→1→exact-resume1→3：峰值allocated/reserved=
+  `36,168,858,624/47,053,799,424` bytes，0 OOM/clip，step2起五个主块可达，完整恢复状态
+  闭合。首轮仍保持AS full24 raw mean、每task一条video、logical B20/policy microbatch2、
+  fast-decay400；下一步从独立fresh root训练0→200并严格评测50/100/150/200。RL只可在
+  fresh架构证明absolute、retention和视频传递健康后作为同一生成器的后续闭环校准，不能
+  替代AS机制门。
 - SFT-Anchored Policy Tangent-Basis authority
   `docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`已完成formal cycle1并负
   裁决：历史v6-fast macro400=`143` warm-start经固定8个factor-output basis的reward更新后

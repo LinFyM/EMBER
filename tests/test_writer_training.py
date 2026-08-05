@@ -127,7 +127,7 @@ def test_v6_relative_flow_coldstart_config_seals_architecture_and_information_wa
     ]
 
 
-def test_policy_lane_config_is_fresh_profile_blocked_and_not_v6() -> None:
+def test_policy_lane_config_is_fresh_profile_sealed_and_not_v6() -> None:
     config = load_writer_config(POLICY_LANE_CONFIG)
     writer = config["writer"]
     assert writer["architecture"] == "pi05_policy_lane_coupled_hyperdecoder_writer_v1"
@@ -139,9 +139,17 @@ def test_policy_lane_config_is_fresh_profile_blocked_and_not_v6() -> None:
     assert "factor_hidden_width" not in writer
     assert config["profile_defaults"]["expected_world_size"] == 6
     assert config["profile_defaults"]["per_rank_batch_size"] == 20
-    assert config["profile_evidence"]["status"].startswith("pending_live_")
-    assert "exact_resume_smoke" not in config["profile_evidence"]
-    assert config["formal_run"]["status"] == "blocked_until_live_profile"
+    assert config["profile_evidence"]["status"].startswith("sealed_live_")
+    assert config["profile_evidence"]["selected"]["world_size"] == 6
+    assert config["profile_evidence"]["selected"]["longest_sampled_video_frames"] == 105
+    assert config["profile_evidence"]["exact_resume_smoke"]["status"].startswith(
+        "passed_fresh"
+    )
+    assert config["profile_evidence"]["gradient_reachability"][
+        "all_five_declared_blocks_nonzero_by_step"
+    ] == 2
+    assert config["formal_run"]["status"] == "sealed"
+    assert config["formal_run"]["launch_state"].startswith("ready_after_clean")
     assert config["formal_run"]["selected_stop_step"] == 200
 
 

@@ -4,7 +4,20 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：PWAD正式负裁决，打开Policy-Lane Coupled Hyperdecoder
+## 0.0 当前状态：Policy-Lane profile/resume通过，正式fresh0→200已开放
+
+- clean pushed`2aeb22a`的Policy-Lane canonical实现已在`gpu01`完成六卡longest105、
+  logical-B20/full24三步profile：step max wall=`33.457/31.024/31.007s`，峰值
+  allocated/reserved=`36,168,858,624/47,053,799,424` bytes，0 OOM/clip/nonfinite，累计
+  1,440 queries/72 one-video conditions。step1只有Policy-Lane梯度符合zero-B阶段；step2
+  起Semantic Frontend、Core、Program、Composer、Policy-Lane五个主块全部可达。
+- 独立fresh0→1→exact-resume1→3也已通过，optimizer/scheduler/sampler/RNG/task-cycle与
+  六rank state连续，合同SHA=`f0f3ec32...55261`。fresh段结束后物理GPU0被他人占用，恢复段
+  自主切到`gpu01:1,2,3,4,5,7`，仍严格保持sealed `3+3 NUMA`；未共享或干扰他人进程。
+  profile/smoke权重禁止进入正式轨迹。
+- config现已seal为16-frame encoder chunk、logical B20、policy microbatch2、six ranks、
+  fresh0→200/every25。下一步是在本次authority记录clean commit/push与live双节点/存储复核
+  后，从全新root正式训练；长期single-checkpoint严格`>150/400`不变。
 
 - Policy-Wide Atom Dictionary已完成clean`69563a0` fresh0→200：200 macros、96,000
   logical queries、4,800 one-video conditions、8个checkpoint，0 OOM/clip/nonfinite且
@@ -35,10 +48,9 @@
   config/checkpoint family不再被活动loader接受。完整Writer参数`49,041,664`，其中
   hyperdecoder=`41,320,448`、composer=`660,224`；38-target每lane A/B输出宽度=
   `37,920/42,528`。聚焦Writer合同`84 passed`，py_compile/diff check通过，architecture
-  guard无hard与parallel family；formal config仍为`blocked_until_live_profile`。
-- 下一步live比较`gpu01/gpu02`并做六卡longest105、logical-B20三步profile与独立
-  fresh0→1→exact-resume1→3。当前没有EMBER GPU进程；任何launch仍只用实时空闲卡、跨
-  节点最多6张并显式`NCCL_P2P_DISABLE=1`。长期single-checkpoint严格`>150/400`不变。
+  guard无hard与parallel family；formal config已由上述live profile与resume证据seal。
+- 当前profile与resume进程均已自然结束并释放GPU；任何新launch仍须live比较双节点，
+  只用最多6张实时空闲卡并显式`NCCL_P2P_DISABLE=1`。
 
 ## 0.1 Tangent-Basis正式消融负裁决
 

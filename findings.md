@@ -8,6 +8,13 @@
 
 ## 2026-08-05 PWAD正式负裁决与Policy-Lane Coupled Hyperdecoder决策
 
+- Policy-Lane在clean pushed`2aeb22a`完成BCI六卡longest105/logical-B20/full24 profile：
+  三步`33.457/31.024/31.007s`，峰值allocated/reserved=`36,168,858,624/
+  47,053,799,424` bytes，0 OOM/clip/nonfinite。step1只有Policy-Lane梯度，step2起五个
+  声明主块全部非零；独立fresh0→1→exact-resume1→3也闭合optimizer/scheduler/RNG/
+  sampler/六rank state。由此排除46GB容量、梯度路径与resume机械性障碍，但尚不构成
+  closed-loop性能证据。
+
 - PWAD fresh0→200训练健康完成，strict correct400=`77/71/80/80`、breadth=`5/6/5/5`；
   相邻gained/lost=`19/25,21/12,16/16`，四点union/intersection=`115/44`、single
   envelope gap=`35`。它既没有接近v6-fast143，也没有形成单调或共同累积能力，禁止

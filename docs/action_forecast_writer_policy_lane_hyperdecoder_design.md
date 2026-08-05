@@ -1,6 +1,7 @@
 # Policy-Lane Coupled Hyperdecoder Writer 设计
 
-状态：2026-08-05 fresh architecture authority。本文在 Policy-Wide Atom Dictionary
+状态：2026-08-05 fresh architecture authority；canonical实现、BCI A40六卡最长视频
+profile与独立exact-resume均已通过，正式fresh0→200已开放但尚未启动。本文在 Policy-Wide Atom Dictionary
 完成 fresh0→200、四点 strict correct400 和全部内部分析并正式负裁决后建立。新方法从
 functional identity fresh训练，不加载PWAD、v6或任何历史Writer checkpoint；PWAD只由
 Git、本文引用的formal artifacts和原design保留。
@@ -121,8 +122,8 @@ policy-coordinated的跨target组织。
 ## 6. 参数、训练与A40合同
 
 首版固定16 lanes、hidden width32。输出宽度由真实38-target topology唯一计算，不写死旧
-layer数或tensor长度。预计decoder约`16 × 32 × 80,448 ≈ 41.2M`参数，加上lane input和
-既有semantic frontend后仍应在单卡46GB内，但只能由longest105真实profile裁决。
+layer数或tensor长度。真实decoder为`41,320,448`参数，完整Writer为`49,041,664`；下文
+longest105 profile已确认它可以在BCI单卡约46GB边界内维持logical B20/full24。
 
 训练recipe保持PWAD单变量对照：
 
@@ -168,7 +169,7 @@ effective BA谱、B-column关系、same-task video与fixed-action传递。
   composer的语义拥有权，而不是增加lane hidden width；
 - 若曲线未超过PWAD且能力继续换手，fresh0→200即负裁决，不续400。
 
-## 9. 当前实现状态（2026-08-05）
+## 9. 当前实现与A40 profile状态（2026-08-05）
 
 canonical PWAD runtime已原位替换：`policy_dictionary.py`删除，新增凝聚的
 `policy_lane.py`；model、architecture、config、launch/checkpoint family、task-gradient
@@ -182,6 +183,17 @@ hyperdecoder为`41,320,448`参数，composer为`660,224`，完整Writer为`49,04
 聚焦Writer合同`84 passed`，覆盖完整参数枚举、source freeze、38-target slicing、step0
 exact identity、condition写出、真实BA梯度阶段、新config/launch/checkpoint family、task
 gradient ownership与lane analysis summary。py_compile与diff check通过；architecture guard
-无hard violation、无parallel version/function family。formal config保持
-`blocked_until_live_profile`，下一边界是live双节点preflight后的六卡A40 profile与独立
-exact-resume，当前没有GPU结果。
+无hard violation、无parallel version/function family。
+
+clean pushed implementation`2aeb22a`在`gpu01`六张空闲A40上完成longest105、logical
+B20、full24三步profile。rank/NUMA为`3+3`，显式`NCCL_P2P_DISABLE=1`；step max wall=
+`33.457/31.024/31.007s`，峰值allocated/reserved=`36,168,858,624/47,053,799,424`
+bytes，0 OOM/clip/nonfinite。三步累计1,440 logical queries与72 one-video conditions；
+step1按zero-B阶段只有policy-lane梯度，step2起Semantic Frontend、Core、Program、Composer、
+Policy-Lane五个主块全部非零，source policy保持冻结。
+
+独立root又完成fresh0→1，再在不共享他人进程且保持同一`3+3 NUMA`合同的另一组空闲物理卡
+上exact-resume1→3；optimizer、scheduler、sampler、RNG、task-cycle与六rank state均由
+runtime恢复合同验证，最终仍为1,440 queries/72 conditions/3 scheduler updates。profile与
+resume合同SHA为`f0f3ec32...55261`。profile/smoke权重永久不进入正式轨迹；sealed config
+已开放clean/pushed代码上的独立functional-identity fresh0→200。

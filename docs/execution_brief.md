@@ -18,9 +18,12 @@
 - 新architecture已原位实现：删除旧`policy_dictionary.py`，新增`policy_lane.py`并切换
   model/config/launch/checkpoint/task-gradient/internal-analysis owners。完整Writer参数
   `49,041,664`，聚焦Writer合同`84 passed`，architecture guard无hard或parallel family。
-  尚未profile或启动GPU；下一操作是live preflight并跑六卡longest105/logical-B20三步
-  profile与独立exact-resume。profile通过前formal必须blocked，任何PWAD/profile/smoke
-  权重不得进入新方法。
+  clean pushed`2aeb22a`的六卡longest105/logical-B20三步profile与独立
+  fresh0→1→exact-resume1→3均已通过；step wall=`33.457/31.024/31.007s`，峰值
+  allocated/reserved=`36,168,858,624/47,053,799,424` bytes，0 OOM/clip，step2起五个
+  主块全部可达，合同SHA=`f0f3ec32...55261`。formal config已seal；下一操作是clean/pushed
+  authority与live设备/存储复核后从全新identity root训练0→200，任何PWAD/profile/smoke
+  权重均不得进入。
 - SFT-Anchored Tangent-Basis正式消融已结束并负裁决，不再是活动训练轴。clean`059d40f`
   从历史v6-fast macro400=`143/400` warm-start完成formal cycle0→1与strict correct400；
   cycle1=`142`、breadth`7`，相对baseline gained/lost=`20/21`、intersection/union=

@@ -8,6 +8,18 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-05 Policy-Lane Coupled Hyperdecoder profile/resume封存
+
+- clean pushed`2aeb22a`在`gpu01`空闲六卡完成longest105、logical B20、full24三步profile：
+  step max wall=`33.457/31.024/31.007s`，峰值allocated/reserved=`36,168,858,624/
+  47,053,799,424` bytes，0 OOM/clip/nonfinite，累计1,440 queries/72 one-video conditions。
+- step1只有Policy-Lane梯度符合zero-B阶段；step2起Semantic Frontend、Core、Program、
+  Composer、Policy-Lane五个主块全部可达。独立fresh0→1→exact-resume1→3通过，合同
+  `f0f3ec32...55261`，optimizer/scheduler/RNG/sampler/task-cycle与六rank state完整连续。
+- fresh段后物理GPU0被他人占用，resume自主改用`gpu01:1,2,3,4,5,7`，仍保持sealed
+  `3+3 NUMA`且未共享他人GPU。profile/smoke权重永久弃用；formal config现已seal，下一步
+  clean commit/push并从全新functional-identity root训练0→200。
+
 ## 2026-08-05 PWAD训练/评测/内部分析完成并切换Policy-Lane设计
 
 - clean`69563a0`独立fresh0→200完成200 macros、96,000 queries、4,800 videos、8个

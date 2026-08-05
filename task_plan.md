@@ -15,9 +15,11 @@ runner、split、路径或 GPU 权限。
   生成一套LoRA，改为读取冻结PI05 action expert的20组all-layer video innovation，以
   layer×parameter-slot双轴M2P直接生成完整public LoRA；不走language-only value旁路，
   不在未解决policy拓扑对齐前直接复制多expert。
-- [ ] 原位替换旧final-layer随机128维descriptor、32×256 invariant program和608-token
+- [x] clean`a2c6d94`原位替换旧final-layer随机128维descriptor、32×256 invariant program和608-token
   通用decoder；同步唯一architecture/config/checkpoint/task-gradient/test owner，删除活动
-  executable旧K4 path并拒载旧family。
+  executable旧K4 path并拒载旧family。全仓BCI assets下`190 passed`、compileall与diff check
+  通过；20×64 trace、K4 permutation、zero-video identity、68-slot slicing、step1→step2
+  梯度可达和完整参数ownership闭合。
 - [ ] 完成聚焦CPU合同与A40 longest105 K4/B20/B2 fresh0→1、exact-resume1→3 profile；只在
   live最多6张空闲卡、3+3 NUMA、显式`NCCL_P2P_DISABLE=1`下运行，profile权重永久弃用。
 - [ ] 从functional identity fresh0→200，strict correct400固定评50/100/150/200；按

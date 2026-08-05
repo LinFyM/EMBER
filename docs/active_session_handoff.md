@@ -21,7 +21,10 @@
   共享/experts。
 - 新方法从functional identity fresh训练，保持24×B20 full24 equal、信息墙、source freeze、
   K4部署接口和未来RL兼容；不加SFT reconstruction/rank/contrastive auxiliary loss，不加载
-  历史Writer。下一步是原位实现、聚焦CPU合同、A40 profile、fresh formal与预注册四点裁决。
+  历史Writer。clean`a2c6d94`已完成原位实现：唯一活动config为
+  `configs/pi05_as_writer_k4_layer_trace_m2p_bci_v1.json`，旧config/family已退休；全仓BCI
+  assets下`190 passed`，compileall与config/schema real load闭合。下一步是live A40 profile，
+  profile通过后才可打开fresh formal与预注册四点裁决。
 
 ## 0.1 已完成：K4 Invariant-Program M2P四点与内部裁决
 

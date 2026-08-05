@@ -1,6 +1,6 @@
 # K4 Policy-Layer Trace M2P Writer
 
-状态：2026-08-06 设计封存，等待原位实现、A40 profile与fresh正式裁决。本文覆盖
+状态：2026-08-06 canonical原位实现与CPU合同完成，等待A40 profile与fresh正式裁决。本文覆盖
 Few-Shot Invariant-Program M2P的活动地位；旧方法及其checkpoint只保留为历史证据。
 
 ## 1. 决策
@@ -146,3 +146,19 @@ profile只验证finite/OOM/grad/resume，不作为性能证据。
 
 漂亮的layer geometry、LoRA rank、functional loss或多checkpoint envelope都不能替代
 single-checkpoint strict correct400 `>150`。若失败，只根据上述最早失败接口设计下一轮。
+
+## 11. 当前实现证据
+
+- clean`a2c6d94`原位替换旧descriptor、invariant program、608-token decoder、config、
+  checkpoint family与task-gradient owner；旧K4 executable config已退休，历史只在Git与
+  frozen artifacts中保留。
+- frozen descriptor逐帧捕获action-in、18层pre-q/v input-normalized suffix和final-normalized
+  suffix，再减同language/suffix的zero-image baseline；16项DCT-II保持video内部顺序。
+  action-in与最早层innovation允许为零，column M2P通过只进入Q/K的group/slot routes从后续
+  video-aware layers向这些public targets传递value，route本身不能产生动态LoRA。
+- `PolicyLayerTraceM2P`的reader Q/K使用group/slot/temporal address，V只用video trace；20个
+  group output matrices物理零初始化。四个axis blocks同样仅在Q/K加入coordinate route，
+  V/residual/FFN严格video-owned；direct slice覆盖全部38 targets的76个A/B tensors。
+- 聚焦合同与全仓在BCI assets下`190 passed`，compileall、config/schema/family real load及
+  diff check通过；step0、zero-video、K4 permutation、DCT order、direct tensor shape、自然
+  step1→step2梯度可达、完整参数ownership和旧family拒载均闭合。ruff未安装，不作为项目门。

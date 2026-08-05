@@ -171,6 +171,11 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   public LoRA。禁止language-only value bypass、逐视频LoRA平均/挑选、历史Writer warm-start、
   未经证据直接复制多expert或恢复旧store/kernel/atom/head路径；长期single-checkpoint
   strict correct400 `>150`目标不变。
+- clean`a2c6d94`已原位实现上述layer-trace Writer；唯一活动config为
+  `configs/pi05_as_writer_k4_layer_trace_m2p_bci_v1.json`，旧K4 config/checkpoint family只由
+  Git与frozen artifacts保存，不得resume或warm-start。全仓BCI assets下`190 passed`；下一步
+  只做live A40 longest105、K4/B20/B2、fresh0→1与exact-resume1→3 profile，profile通过前
+  formal保持blocked。
 - Few-Shot Invariant-Program M2P已完成fresh0→200、四点strict rollout与macro200全部内部
   分析：correct=`70/94/99/108`、breadth=`6/6/6/7`。K4置换、zero-video identity、
   same-task/LOO/wrong/order到Program→BA→action路径和高增益LoRA均成立，证明它没有忽略视频；

@@ -14,7 +14,8 @@ GPU范围和训练步长是当时快照；活动状态只取
   随机128维压缩与public policy topology不对齐这一更早接口。
 - 新authority为`docs/action_forecast_writer_k4_layer_trace_m2p_design.md`：冻结PI05的20组
   action-expert layer traces、K4×16 temporal tokens、`20×68×1024`双轴M2P直接reshape完整
-  rank16 LoRA。下一步原位实现与聚焦合同，尚未启动GPU。
+  rank16 LoRA。clean`a2c6d94`已原位实现并退休旧K4 config/family；全仓BCI assets下
+  `190 passed`、compileall和config/schema real load通过。尚未启动GPU，下一步live profile。
 
 ## 2026-08-06 K4四点strict correct400与内部分析完成
 

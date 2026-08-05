@@ -1,9 +1,9 @@
 # Policy-Wide Atom Dictionary Writer 设计
 
-状态：2026-08-05 fresh architecture authority。本文在SFT-Anchored Tangent-Basis
-`143→142`且gained/lost=`20/21`的负消融后建立。新Writer必须从functional identity
-fresh训练，不加载v6或任何历史Writer checkpoint；旧方法只由Git、design与formal
-artifact保留。
+状态：2026-08-05完成fresh0→200、四点strict correct400与全部内部分析后正式负裁决。
+本文在SFT-Anchored Tangent-Basis `143→142`且gained/lost=`20/21`的负消融后建立；
+历史实现只由Git、design与formal artifact保留，不得resume到400或恢复为活动Writer。
+下一authority为`docs/action_forecast_writer_policy_lane_hyperdecoder_design.md`。
 
 ## 1. 结论先行
 
@@ -169,3 +169,33 @@ bytes，0 OOM/clip；1,440 queries、72 one-shot videos，step1仅policy atom，
 restore合法集合而fail-fast，0新增metric/checkpoint；最小修复后原六卡step1→3重放通过，
 六rank state与optimizer/scheduler/RNG/data cursor闭合。formal config现已seal，下一边界是
 clean/push与live preflight后的独立fresh0→200；任何profile/smoke权重均不得进入。
+
+## 11. 正式结果与负裁决（2026-08-05）
+
+clean`69563a0`的独立fresh root完成0→200：200 macros、96,000 logical queries、4,800
+one-video conditions、every25共8个checkpoint；0 OOM/clip/nonfinite，validation/test
+action reads均为0。50/100/150/200 strict paired correct400=`77/71/80/80`，breadth=
+`5/6/5/5`。相邻gained/lost=`19/25,21/12,16/16`，四点union/intersection=`115/44`、
+single envelope gap=`35`；能力继续换手且远低于v6-fast143与严格门，禁止resume到400。
+
+clean`941c5e3`的all-four内部分析覆盖24 tasks×4 checkpoints。首次GPU aggregation只因
+non-action rows没有`reversed_0`可选字段而在summary阶段失败；96个科学cells和6份rank
+payload均已完整封存。clean`c08d985`只过滤可选action panel并从既有payload在CPU重建
+results/completion，`rank_payloads_reused=true`，没有GPU重跑或数据变化。
+
+字典本身广泛使用：64/64 storage atoms active，storage effective count=`63.62→63.93`；
+condition combined effective participation=`50.50→54.19`，storage-weighted=
+`47.67→53.49`。但A/B mixing的mean stable row rank始终约`1.000002`，public effective
+LoRA stable rank约`1.0000002`、top singular energy约`.9999998`，q/v B-column cosine约
+`.999998`。condition只把宽字典读成一个重复lane方向。
+
+同task video mixing和effective-BA centered/sample variance仅约`.022--.054%`与
+`.022--.047%`；identity→demo0 fixed-action效应随训练增强，demo1/reversed/shuffled差异
+整体缩小。q约占`88--89%`能量，action share从`.1197%`降至`.0136%`。这与direct SFT
+“target内低秩但跨target组织稳定”不同：PWAD形成的是越来越强的task/common q-dominant
+adapter，而不是视频条件policy program。
+
+更早的结构错误是A/B atom并未保持成完整rank-one direction：独立`M_A/M_B`令真实BA
+包含所有`B_j A_k`交叉项，public lane差异又完全依赖两张已塌缩的mixing matrix。因此
+不增加K、不调scale、不加rank/正交loss；下一版改为每个public lane用同一condition hidden
+直接生成跨全部targets联动的完整A/B方向。

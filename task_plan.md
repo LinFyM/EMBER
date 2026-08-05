@@ -8,7 +8,24 @@
 `docs/a100_to_bci_migration_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
 runner、split、路径或 GPU 权限。
 
-## 当前Policy-Wide Atom Dictionary推进（2026-08-05）
+## 当前Policy-Lane Coupled Hyperdecoder推进（2026-08-05）
+
+- [x] 完成PWAD fresh0→200、四点strict correct400与24×4内部分析；曲线
+  `77/71/80/80`、breadth=`5/6/5/5`、union/intersection=`115/44`。64 atoms广泛使用但
+  A/B mixing row stable rank约`1.000002`，正式负裁决并禁止resume到400。
+- [x] 结合direct SFT复核与PWAD数学接口封存
+  `docs/action_forecast_writer_policy_lane_hyperdecoder_design.md`：取消独立A/B atom
+  mixing，让16个public lanes各自用一个32维condition hidden共同生成全部38 targets的
+  A/B向量；不强制高rank/正交，不加入监督或LIBERO专属loss。
+- [ ] 原位替换canonical PWAD runtime与analysis owner，建立fresh incompatible
+  launch/checkpoint/config family；完成真实38-target shape、identity、lane ownership、
+  condition写出和BA三阶段梯度的聚焦CPU合同。
+- [ ] live比较`gpu01/gpu02`，在最多6张空闲A40上完成longest105/logical-B20三步profile与
+  独立fresh0→1→exact-resume1→3；profile通过前formal保持blocked。
+- [ ] 从clean/pushed代码的独立fresh root训练0→200，strict评测50/100/150/200；只按
+  single-checkpoint absolute、breadth、换手、视频传递和policy-lane内部证据决定是否续400。
+
+## 已封存的Policy-Wide Atom Dictionary推进（2026-08-05）
 
 - [x] 基于direct SFT的跨target组织、v5.2视频传递、v6 absolute及全部负裁决，封存
   `docs/action_forecast_writer_policy_wide_atom_dictionary_design.md`：K64 policy-wide
@@ -22,8 +39,8 @@ runner、split、路径或 GPU 权限。
 - [x] profile证据seal后从独立fresh root完成0→200：200 macros、96,000 queries、4,800
   one-video conditions、every25共8个完整checkpoint；0 OOM/clip/nonfinite，validation/test
   action reads均为0。strict correct400曲线为`77/71/80/80`、breadth=`5/6/5/5`；明显
-  低于v6-fast143和严格门，不续200→400。四点配对换手与内部condition→atom→BA/action
-  及视频特异性分析继续完成后再作根因裁决。
+  低于v6-fast143和严格门，不续200→400。四点配对与内部condition→atom→BA/action
+  分析已全部完成：字典广泛active但mixing/public LoRA塌成单一lane方向，正式负裁决。
 
 ### fresh0→200 formal launch contract
 

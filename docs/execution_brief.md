@@ -6,21 +6,19 @@
 
 ## 0. 当前BCI运行事实（覆盖下文旧A100操作细节）
 
-- 当前唯一活动方法是Policy-Wide Atom Dictionary Writer：fresh identity、K64跨38 targets
-  对齐atoms、condition共享rank16 mixing；旧320-slot compiler/factor heads已从canonical
-  Writer删除。authority为`docs/action_forecast_writer_policy_wide_atom_dictionary_design.md`，
-  sealed config为
-  `configs/pi05_as_writer_policy_wide_atom_dictionary_bci_v1.json`。
-- CPU聚焦合同已通过：参数13,033,728、38-target shapes、exact identity、conditioned LoRA
-  及真实BA loss的D_B→全路径→D_A/A-mixing梯度阶段。新launch/checkpoint schema不接受
-  v6 warm-start。clean`60e45f8`的longest105、logical-B20六卡三步profile已通过：峰值
-  allocated/reserved=`35,024,829,440/44,883,247,104` bytes，三步均finite、0 OOM/clip，
-  step2起五block全可达。独立fresh0→1/exact-resume1→3也已通过，累计1,440 queries/
-  72 videos、6 rank states、0 validation/test action reads。
-- exact-resume首次在训练前由optimizer restore family白名单fail-fast；根因是新增PWAD family
-  已接入save/schema但漏接restore validator。只补该合法family并加聚焦回归后，原失败规模
-  重放通过；不得删除fail-fast日志或把修复解释为训练变化。下一操作是clean/push后live
-  preflight，再从独立全新root fresh0→200，profile/smoke权重不得进入。
+- 当前唯一活动方法是Policy-Lane Coupled Hyperdecoder Writer，authority为
+  `docs/action_forecast_writer_policy_lane_hyperdecoder_design.md`。16个public LoRA lanes
+  各自用同一个condition hidden共同生成全部38 policy targets的A/B向量，取代PWAD的独立
+  A/B atom mixing；fresh identity、one-shot输入、信息墙和rank16 public输出不变。
+- PWAD fresh0→200与四点strict correct400已完成并负裁决：`77/71/80/80`、breadth=
+  `5/6/5/5`、union/intersection=`115/44`。64 atoms广泛active，但mixing row stable rank
+  约`1.000002`、effective LoRA约`1.0000002`、q/v B-column cosine约`.999998`；禁止resume
+  400、增加K、调scale或用谱loss救活。精确formal/eval/internal roots取handoff顶部与PWAD
+  design第11节。
+- 新architecture当前只完成design authority，尚未实现、profile或启动GPU。下一操作是原位
+  替换canonical runtime、建立新config/checkpoint family、完成聚焦CPU合同，然后live
+  preflight并跑六卡longest105/logical-B20三步profile与独立exact-resume。profile通过前
+  formal必须blocked，任何PWAD/profile/smoke权重不得进入新方法。
 - SFT-Anchored Tangent-Basis正式消融已结束并负裁决，不再是活动训练轴。clean`059d40f`
   从历史v6-fast macro400=`143/400` warm-start完成formal cycle0→1与strict correct400；
   cycle1=`142`、breadth`7`，相对baseline gained/lost=`20/21`、intersection/union=

@@ -8,6 +8,21 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-05 PWAD训练/评测/内部分析完成并切换Policy-Lane设计
+
+- clean`69563a0`独立fresh0→200完成200 macros、96,000 queries、4,800 videos、8个
+  checkpoint，0 OOM/clip/nonfinite。四个strict correct400 roots均400 rows/42 shards/
+  0 error，结果=`77/71/80/80`、breadth=`5/6/5/5`；全部评测GPU已释放，不续400。
+- clean`941c5e3`六卡内部分析完成24 tasks×4 checkpoints全部96 cells与6份rank payload。
+  首次聚合只因non-action rows缺少可选`reversed_0`失败；clean`c08d985`从sealed payload
+  CPU恢复results/completion，0 GPU重跑、`rank_payloads_reused=true`。GPU均已释放。
+- 分析证明64 atoms广泛使用，但condition mixing的16行及public B列近乎完全同向；视频
+  差异弱且随训练没有增强，action层能量继续下降。PWAD正式负裁决，旧training/eval root
+  禁止resume、warm-start或扩大K。
+- 新design authority为`docs/action_forecast_writer_policy_lane_hyperdecoder_design.md`：
+  每个public lane用同一个32维condition hidden生成全policy A/B，取消PWAD独立mixing。
+  当前尚未实现或启动GPU；下一步先原位代码替换与聚焦CPU合同，再live profile。
+
 ## 2026-08-05 Policy-Wide Atom Dictionary profile/resume封存
 
 - live比较双节点后选择`gpu01:1,2,3,4,5,7`的3+3 NUMA六卡；clean`60e45f8`完成longest105、

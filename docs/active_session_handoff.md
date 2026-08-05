@@ -4,35 +4,37 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：Policy-Wide Atom Dictionary profile/resume已通过，待fresh formal
+## 0.0 当前状态：PWAD正式负裁决，打开Policy-Lane Coupled Hyperdecoder
 
-- 当前唯一活动method authority为
-  `docs/action_forecast_writer_policy_wide_atom_dictionary_design.md`。它从functional identity
-  fresh训练，保留v6 semantic frontend/Core/visual transition/causal Procedure，删除
-  320-slot compiler与8个factor heads；语言+一条action-hidden视频生成rank16×K64的A/B
-  mixing，共同组合跨全部38 policy targets对齐的policy-wide atoms。没有task ID、softmax/
-  top-k route、rank/orthogonal辅助loss或历史Writer warm-start。
-- canonical实现位于`src/ember/writer/policy_dictionary.py`与原位替换后的
-  `src/ember/writer/model.py`；旧compiler只由Git保留。新Writer参数量13,033,728，独立
-  launch/checkpoint family拒绝v6权重。聚焦CPU合同已覆盖38-target shapes、exact identity、
-  condition-dependent写出及真实BA functional loss下三阶段梯度开启；当前聚焦回归
-  `41 passed`。
-- sealed config为
-  `configs/pi05_as_writer_policy_wide_atom_dictionary_bci_v1.json`：six ranks、logical B20、
-  policy microbatch2、16-frame encoder chunk、fresh0→200首段。clean`60e45f8`六卡
-  longest105三步profile完成，step seconds=`32.860/30.418/30.404`，峰值allocated/
-  reserved=`35,024,829,440/44,883,247,104` bytes，0 OOM/clip；1,440 queries、72 videos，
-  step1仅D_B侧policy atoms可达，step2起五个声明block全可达，source trainable=0。
-- 独立root fresh0→1后首次resume被新checkpoint family未登记到optimizer restore白名单
-  fail-fast；0新增metric/checkpoint。根因修复只补family ownership，聚焦回归通过；原六卡
-  step1→3重放随后完成，六份rank state、optimizer/scheduler/RNG/data cursor、累计1,440
-  queries/72 videos全部闭合，validation/test action reads=0。失败日志保留，不把schema
-  修复写成科学变化。
-- config profile evidence现已seal；下一步只在修复与authority clean commit/push、live双节点
-  preflight后，从全新root、不传resume或Writer初始化权重地fresh0→200。
-- 当前没有EMBER GPU进程；旧Tangent-Basis、AS125 Progress-Credit及v6 AS roots均禁止
-  resume。新方法正式训练仍以strict single-checkpoint correct400裁决，
-  长期目标严格`>150/400`不变。
+- Policy-Wide Atom Dictionary已完成clean`69563a0` fresh0→200：200 macros、96,000
+  logical queries、4,800 one-video conditions、8个checkpoint，0 OOM/clip/nonfinite且
+  validation/test action reads=0。50/100/150/200 strict correct400=`77/71/80/80`，
+  breadth=`5/6/5/5`；相邻gained/lost=`19/25,21/12,16/16`，四点union/intersection=
+  `115/44`、single envelope gap=`35`。远低于v6-fast143与严格门，禁止resume到400。
+- clean`941c5e3`的24 tasks×4 checkpoints内部GPU分析完成96/96 cells和6份rank payload。
+  首次summary只因non-action rows没有可选`reversed_0`字段失败；clean`c08d985`在CPU从既有
+  payload重建results/completion，`rank_payloads_reused=true`，没有GPU重跑或科学数据改变。
+  root为
+  `runs/outputs/pi05_as_writer_policy_wide_atom_dictionary_internal_all4_r6_941c5e3_20260805`。
+- 64/64 atoms全部active，storage effective count=`63.62→63.93`，condition combined
+  effective participation=`50.50→54.19`；字典容量不是最早故障。A/B mixing mean stable
+  row rank却始终约`1.000002`，effective LoRA约`1.0000002`、q/v B-column cosine约
+  `.999998`。same-task video mixing/BA centered energy只有约`.022--.054%/.022--.047%`，
+  action energy share又从`.1197%`降至`.0136%`：模型形成强task/common q-dominant写入，
+  没有形成视频条件policy program。
+- PWAD独立`M_A/M_B`使真实effective update包含全部`B_j A_k`交叉项，所以所谓完整atom
+  并不是实际存储单位；public lane差异完全依赖两张已经塌缩的shared mixing matrix。
+  该结果禁止增加K、调scale或加rank/正交loss。
+- 当前唯一活动authority切换为
+  `docs/action_forecast_writer_policy_lane_hyperdecoder_design.md`。新架构让16个public lanes
+  各自以同一个32维condition hidden共同生成全部38 targets的A/B向量；lane内保持
+  policy-wide协调，lane间拥有独立输出参数，取消PWAD的A/B独立mixing和atom cross-product。
+  它仍从functional identity fresh训练，Writer输入、信息墙、rank16 public LoRA与AS/RL
+  兼容性不变。
+- 下一步是原位替换canonical PWAD runtime、建立不兼容launch/checkpoint/config family，
+  完成聚焦CPU合同后live比较`gpu01/gpu02`并做六卡longest105、logical-B20三步profile与
+  独立fresh0→1→exact-resume1→3。当前没有EMBER GPU进程；任何launch仍只用实时空闲卡、
+  跨节点最多6张并显式`NCCL_P2P_DISABLE=1`。长期single-checkpoint严格`>150/400`不变。
 
 ## 0.1 Tangent-Basis正式消融负裁决
 

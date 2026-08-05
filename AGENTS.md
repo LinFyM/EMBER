@@ -135,12 +135,13 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 32. `docs/action_forecast_writer_task_grounded_progress_credit_design.md`
 33. `docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`
 34. `docs/action_forecast_writer_policy_wide_atom_dictionary_design.md`
-35. `task_plan.md`
-36. `findings.md`
-37. `progress.md`
-38. `docs/concept.md`
-39. `docs/decisions_and_open_questions.md`
-40. `docs/novelty_and_landscape.md`
+35. `docs/action_forecast_writer_policy_lane_hyperdecoder_design.md`
+36. `task_plan.md`
+37. `findings.md`
+38. `progress.md`
+39. `docs/concept.md`
+40. `docs/decisions_and_open_questions.md`
+41. `docs/novelty_and_landscape.md`
 
 本post-seal分支已完成Target-Bound裁决并打开Semantic Factor-Basis；修改或运行前
 仍必须完整阅读Target-Bound与Semantic Factor-Basis两份design。历史CV/Target-Bound
@@ -151,23 +152,21 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 
 ## Current focused task
 
-- 当前唯一活动方法是Policy-Wide Atom Dictionary Writer，authority为
-  `docs/action_forecast_writer_policy_wide_atom_dictionary_design.md`。它从functional
-  identity fresh训练，不加载任何历史Writer checkpoint；保留v6已验证的Semantic Core、
-  task-grounded visual transition与causal Procedure，删除320-slot compiler和8个局部
-  factor heads，改由16个condition坐标共同组合K64个跨全部38 policy targets对齐的
-  policy-wide atoms。公开输出仍是exactly one complete rank-16 LoRA，Writer输入和信息墙
-  不变。
-- canonical源码、独立launch/checkpoint schema与pending-profile配置已完成；CPU聚焦合同
-  已证明13,033,728参数、38-target shape、exact identity、conditioned写出及真实BA loss下
-  D_B→composer/Core/Procedure/D_A→A-mixing的梯度阶段。正式config为
-  `configs/pi05_as_writer_policy_wide_atom_dictionary_bci_v1.json`，当前formal状态必须保持
-  blocked，直到六卡A40 longest105/logical-B20 profile与fresh exact-resume门完成并把实测
-  证据seal回config。
-- 首次正式轴保持AS full24 raw mean、每task一条video、logical B20/policy microbatch2、
-  fast-decay400；fresh0→200后严格评测50/100/150/200，再由absolute、breadth、success-set
-  retention、趋势和内部condition→atom→BA/action传递共同决定是否续200→400。RL只可在
-  该fresh架构证明健康后作为同一生成器的后续闭环校准，不能替代AS机制门。
+- 当前唯一活动方法是Policy-Lane Coupled Hyperdecoder Writer，authority为
+  `docs/action_forecast_writer_policy_lane_hyperdecoder_design.md`。它从functional identity
+  fresh训练，不加载任何历史Writer checkpoint；16个public LoRA lanes各自用同一个
+  condition hidden共同生成全部38 policy targets的A/B向量。它保留policy-wide协调，取消
+  PWAD独立A/B mixing造成的atom交叉项与rank-lane共享读出。公开输出仍是exactly one
+  complete rank-16 LoRA，Writer输入和信息墙不变。
+- Policy-Wide Atom Dictionary已完成fresh0→200、四点strict correct400与all-four内部分析并
+  负裁决：correct=`77/71/80/80`、breadth=`5/6/5/5`、union/intersection=`115/44`；
+  64 atoms广泛使用但A/B mixing row stable rank约`1.000002`，effective LoRA约
+  `1.0000002`且q/v B-column cosine约`.999998`。禁止resume到400、增加K、调scale或用
+  rank/正交loss救活。
+- 新方法首轮仍保持AS full24 raw mean、每task一条video、logical B20/policy microbatch2、
+  fast-decay400；先完成canonical原位实现、46GB六卡profile与fresh exact-resume，再从独立
+  fresh root训练0→200并严格评测50/100/150/200。RL只可在fresh架构证明absolute、retention
+  和视频传递健康后作为同一生成器的后续闭环校准，不能替代AS机制门。
 - SFT-Anchored Policy Tangent-Basis authority
   `docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`已完成formal cycle1并负
   裁决：历史v6-fast macro400=`143` warm-start经固定8个factor-output basis的reward更新后

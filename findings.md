@@ -6,6 +6,33 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-05 PWAD正式负裁决与Policy-Lane Coupled Hyperdecoder决策
+
+- PWAD fresh0→200训练健康完成，strict correct400=`77/71/80/80`、breadth=`5/6/5/5`；
+  相邻gained/lost=`19/25,21/12,16/16`，四点union/intersection=`115/44`、single
+  envelope gap=`35`。它既没有接近v6-fast143，也没有形成单调或共同累积能力，禁止
+  resume400。
+- 64/64 storage atoms active，storage effective count=`63.62→63.93`；condition combined
+  effective participation=`50.50→54.19`，storage-weighted=`47.67→53.49`。因此负结果
+  不能归因于dead atoms或K64容量没有使用。
+- A/B mixing mean stable row rank四点约`1.000002`、top singular energy约
+  `.999997--.999998`；public effective LoRA stable rank约`1.0000002`、top energy约
+  `.9999998`、q/v B-column cosine约`.999998`。macro200 coordinate-query本身stable rank
+  `10.73`，A/B key projection rank99=`58/59`，说明参数有容量，但condition readout把16个
+  public lanes压成同一方向。
+- same-task video mixing与effective BA centered/sample variance仅约`.022--.054%`与
+  `.022--.047%`。identity→demo0 fixed-action从`.366`增至`.510`，demo1/reversed/shuffled
+  则整体缩小；action energy share从`.1197%`降到`.0136%`，q始终约`88--89%`。PWAD
+  学到强task/common q-dominant adapter，而不是视频条件program。
+- direct SFT的mean target stable rank也只有`1.505/1.517`，所以不把near-rank1本身写成
+  根因。区别是SFT跨layer方向与能量组织稳定；PWAD的A/B atom又经独立mixing，使真实BA
+  包含所有`B_j A_k`交叉项，完整policy direction从未成为实际存储单位。
+- 下一architecture让16个public lanes分别以同一32维condition hidden共同生成全部38
+  targets的A/B向量。它保留lane内policy-wide协调、给lane独立输出ownership，并取消两套
+  coefficient system；不强迫正交/高rank，也不复制SFT权重。AS与RL可对同一LoRA端到端
+  提供credit，完整authority见
+  `docs/action_forecast_writer_policy_lane_hyperdecoder_design.md`。
+
 ## 2026-08-05 Policy-Wide Atom Dictionary架构决策与CPU合同
 
 - direct SFT表明单target LoRA可以低rank但跨layer/target能量组织稳定；Target-Spectral说明

@@ -1,4 +1,4 @@
-"""Read-only AS125 task-grounded semantic progress diagnostic."""
+"""Read-only cold-start task-grounded semantic progress diagnostic."""
 
 from __future__ import annotations
 

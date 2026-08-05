@@ -4,7 +4,29 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：cycle2负裁决，停止4/8并先做参数hybrid因果分解
+## 0.0 当前状态：SFT-Anchored Tangent-Basis实现完成，下一步macro400诊断
+
+- clean`67b245a`的AS125→cycle2参数hybrid正式root为
+  `runs/outputs/pi05_progress_credit_parameter_hybrid_as125_cycle2_r6_67b245a_20260805`：
+  24 tasks×7 conditions×4 arms、8-task fixed action全部完成，wall`333.52s`、peak
+  reserved`19,365,101,568` bytes、0 target-action/validation/test reads。effective BA
+  中upstream residual中位`.611`优于factor-output`.727`，fixed action却由
+  factor-output`.489`优于upstream`.668`；policy leverage随suite反转，证实共享
+  decoder重定向而非单纯参数位移或LoRA rank问题。
+- 当前authority为
+  `docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`。canonical RL config
+  已原位升级：cold start改为历史v6-fast macro400（strict143），冻结semantic encoder与
+  8个`factor_heads.*.network.2.weight` policy basis，只训练上游和factor-input
+  coefficients；reward/K4/Nmc4/LR/two epochs不变。参数hybrid一次性入口已按retirement
+  trigger删除。
+- macro400保留旧A100绝对路径；warm-start现在使用既有`source_reference_matches`按已验证
+  source identity跨host重绑定，不改历史run contract。原v6 config为32-frame encoder
+  chunk，当前A40尚未profile；下一步只能先在最多6张live空闲卡做只读progress diagnostic，
+  门过后做独立one-cycle profile，之后才允许fresh formal0→1。
+- 当前GPU已全部释放，无EMBER进程。最近live检查时`gpu01`八卡空闲、`gpu02:6`属于其他
+  用户；任何新launch仍须重新比较两节点且最多6张。
+
+### 已封存的AS125 cycle2负裁决
 
 - formal root
   `runs/outputs/pi05_task_grounded_progress_credit_writer_formal_as125_r6_k4_nmc4_e2_c8_retry1_30977b5_20260805`

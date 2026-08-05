@@ -8,6 +8,21 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-05 参数hybrid完成与SFT-Anchored Basis实现
+
+- live空闲`gpu01:1,2,3,4,5,7`完成正式参数hybrid：24 tasks×7 conditions×4 arms、
+  8-task fixed action全部封存，wall`333.523s`、peak reserved`19,365,101,568` bytes；
+  6 rank payload、results/completion完整，0 target-action/validation/test reads。结束后六卡
+  均回到14MiB，tmux自然退出。
+- 结果显示BA层upstream residual`.611<.727`，action层却factor-output
+  `.489<.668`，且Long-39反向；据此选择SFT-Anchored Tangent-Basis，不做全factor冻结、
+  scale/rank或多store修补。
+- canonical RL config/schema/contract已原位升级，以v6-fast macro400 cold start并冻结
+  semantic encoder与8个factor-output basis。progress diagnostic改为checkpoint无关的
+  机制门；旧A100 source路径通过已有source identity跨host匹配，不改历史contract。
+  一次性hybrid分析入口已删除。聚焦回归`24 passed`，pycompile、JSON与diff check通过；
+  architecture guard无hard violation且净删除563行。尚未启动macro400 diagnostic。
+
 ## 2026-08-05 Progress-Credit cycle2训练、rollout与续训轴停止
 
 - 在live空闲`gpu01:1,2,3,4,5,7`、原sealed 3+3 NUMA topology上从同一formal

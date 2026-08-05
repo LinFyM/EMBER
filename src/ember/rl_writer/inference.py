@@ -75,7 +75,7 @@ def _inspect_training_checkpoint(
         and [int(row["global_task_id"]) for row in training.get("tasks", [])]
         == task_ids
         and training.get("trainable", {}).get("object")
-        == "shared_task_grounded_progress_credit_writer_downstream_only"
+        == "sft_anchored_tangent_basis_writer_coefficients_only"
         and training.get("trainable", {}).get("coldstart_teacher_action_phase_closed")
         is True
         and world_size in {1, 2, 3, 4, 6}

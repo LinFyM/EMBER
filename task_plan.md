@@ -8,7 +8,24 @@
 `docs/a100_to_bci_migration_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
 runner、split、路径或 GPU 权限。
 
-## 当前Progress-Credit裁决与condition-to-policy分解（2026-08-05）
+## 当前SFT-Anchored Policy Tangent-Basis推进（2026-08-05）
+
+- [x] 完成AS125→cycle2固定参数hybrid：BA层upstream贡献较大、action层factor-output贡献
+  较大且随suite反转；24×7×4与8-task action panel完整，0信息墙读取。
+- [x] 封存
+  `docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`：从v6-fast macro400=
+  143启动，冻结semantic encoder和8个factor-output policy basis，只用reward训练上游/
+  factor-input coefficients；不同时加anchor/store/router/rank loss。
+- [x] 原位升级canonical RL config/runtime/checkpoint/evaluator ownership，并让历史A100
+  cold-start按既有source identity跨host匹配；删除一次性hybrid分析入口。
+- [ ] live preflight后完成macro400六卡只读progress diagnostic；只有通用内容、binary、
+  all-failure、counterfactual与non-pixel门全过才进入profile。
+- [ ] 完成独立one-cycle A40 profile，验证32-frame最长视频显存、8 basis grad/optimizer=0、
+  五个可训练block finite、完整checkpoint与resume；profile权重丢弃。
+- [ ] fresh formal macro400→cycle1后立即strict correct400；只有多task净增且breadth不降或
+  已严格超过150才续cycle2，否则停止。长期single-checkpoint`>150/400`不变。
+
+## 已封存的Progress-Credit裁决与condition-to-policy分解（2026-08-05）
 
 - [x] 复核历史RL：确认旧PI05 Writer-RL只是success-filtered executed-prefix BC，没有
   failure、advantage、old/current ratio或trust region；不得恢复或改名复用。
@@ -80,7 +97,7 @@ runner、split、路径或 GPU 权限。
 - [x] 同一strict correct400完成cycle2=`102`、breadth4；相对cycle1 gained/lost=
   `15/17`，Object-1`31→26`、Object-3`19→22`且无新task coverage。按预注册门停止
   cycle4/8，同recipe续训轴负裁决。
-- [ ] 在固定train-task/video/action panel上做AS125/cycle2参数hybrid因果分解，区分
+- [x] 在固定train-task/video/action panel上完成AS125/cycle2参数hybrid因果分解，区分
   factor-output policy basis与上游condition composition对effective BA/action更新的贡献；
   先裁决再选择冻结basis、全task policy-distance anchor或新basis/coefficients接口，
   不同时改多个变量。长期single-checkpoint strict`>150/400`不变。

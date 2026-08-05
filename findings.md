@@ -6,6 +6,27 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-05 参数hybrid因果分解与SFT-Anchored Basis决策
+
+- clean`67b245a`六卡只读分析覆盖24 train tasks、demo0--4、reversed/shuffled、四参数臂
+  与8-task fixed action；24/24和8/8完整，wall`333.52s`、peak reserved`19.365GB`、
+  0 target-action/validation/test reads。
+- AS125→cycle2完整BA变化中位`.02713`。factor-output-only与upstream-only相对完整更新的
+  `recovery/cosine/residual`中位为`.614/.692/.727`与`.725/.795/.611`，BA层看似
+  upstream更重要；但action变化中位`.00805`时两臂变为`.691/.893/.489`与
+  `.494/.795/.668`，共享factor-output的较小BA变化反而更进入policy敏感方向。
+- action贡献并不跨task一致：Spatial/Object和Goal-29由factor-output明显主导，Long-39
+  upstream残差更低，Goal-20两臂都很差。该suite-dependent leverage与held能力换手一致，
+  说明问题是共享decoder与condition composition交互，不是factor raw gradient或位移单独
+  过大。
+- same-task video variance仅从`.0013992`变`.0013899`；factor-only几乎等于AS125，
+  upstream-only几乎等于cycle2，order到BA/action效应也基本不变。RL没有增加视频因果性，
+  主要重定向共享policy输出basis。
+- 下一单变量方法选择v6-fast macro400=`143`作强IL起点，冻结8个factor-output矩阵为
+  policy tangent dictionary，只用RL学习上游/factor-input coefficients。显式多store、
+  policy anchor和新loss暂缓；完整设计见
+  `docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`。
+
 ## 2026-08-05 Progress-Credit cycle2负裁决与参数位移重解释
 
 - 同一formal root从cycle1 exact-resume到2，第二cycle得到49/96 train successes、16

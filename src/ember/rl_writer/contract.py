@@ -29,8 +29,8 @@ from ember.writer.topology import visible_physical_cuda_index
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RL_WRITER_CONFIG_SCHEMA = "ember_pi05_task_grounded_progress_credit_writer_v1"
-RL_WRITER_LAUNCH_SCHEMA = "ember_pi05_task_grounded_progress_credit_launch_v1"
+RL_WRITER_CONFIG_SCHEMA = "ember_pi05_sft_anchored_tangent_basis_writer_v1"
+RL_WRITER_LAUNCH_SCHEMA = "ember_pi05_sft_anchored_tangent_basis_launch_v1"
 _SCHEDULE_TAG = 0xF10C0ED
 
 
@@ -73,6 +73,9 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         "advantage": algorithm.get("task_advantage"),
         "rollout_schema": algorithm.get("rollout_schema"),
         "freeze_observer": algorithm.get("semantic_encoder_frozen_after_coldstart"),
+        "freeze_policy_basis": algorithm.get(
+            "factor_output_basis_frozen_after_coldstart"
+        ),
         "retain_both": algorithm.get("retain_success_and_failure_prefixes"),
         "executed_only": algorithm.get("executed_action_prefix_only"),
         "gradient_sync": algorithm.get("gradient_synchronization"),
@@ -95,12 +98,13 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         "reward_roles": ["train"],
         "video_roles": ["train"],
         "observer_input": "pure task language plus teacher and rollout agentview RGB only",
-        "algorithm": "task_grounded_semantic_progress_fpo_plus_writer_v1",
+        "algorithm": "sft_anchored_tangent_basis_progress_fpo_writer_v1",
         "rollouts": 4,
         "flow_mc": 4,
         "advantage": "binary_loo_mixed_zero_all_success_semantic_loo_all_failure",
         "rollout_schema": "ember_pi05_task_grounded_progress_credit_rollout_v1",
         "freeze_observer": True,
+        "freeze_policy_basis": True,
         "retain_both": True,
         "executed_only": True,
         "gradient_sync": "full24_equal_task_manual_sum_after_local_backward",
@@ -138,7 +142,7 @@ def load_rl_writer_config(path: Path) -> dict[str, Any]:
     progress = config.get("progress_credit", {})
     if (
         progress.get("observer")
-        != "as125_frozen_writer_semantic_encoder_task_patch_plus_fixed_action_expert_interaction"
+        != "coldstart_frozen_writer_semantic_encoder_task_patch_plus_fixed_action_expert_interaction"
         or progress.get("teacher_frames") != "real_first_and_real_last"
         or progress.get("rollout_frames")
         != "post_settling_start_and_true_terminal"

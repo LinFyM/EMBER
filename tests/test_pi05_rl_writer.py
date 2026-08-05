@@ -10,6 +10,7 @@ import torch
 from ember.rl_writer import contract as rl_contract
 from ember.rl_writer import loop as rl_loop
 from ember.rl_writer import rendezvous as rl_rendezvous
+from ember.rl_writer import runtime as rl_runtime
 from ember.pi05_source_checkpoint import DistributedContext, canonical_hash, sha256_file
 from ember.pi05_source_contract import reconcile_metrics
 from ember.reward import rollout as reward_rollout
@@ -55,6 +56,7 @@ def test_flow_credit_config_closes_actions_and_keeps_both_outcomes() -> None:
         "binary_loo_mixed_zero_all_success_semantic_loo_all_failure"
     )
     assert config["algorithm"]["semantic_encoder_frozen_after_coldstart"] is True
+    assert config["algorithm"]["factor_output_basis_frozen_after_coldstart"] is True
     assert config["information_wall"]["teacher_action_reads_after_coldstart"] == 0
     assert config["parallel"]["maximum_world_size"] == 6
     assert config["parallel"]["credit_collective_readiness"] == (
@@ -106,6 +108,55 @@ def test_flow_credit_parser_requires_coldstart_and_raw_video_data() -> None:
     assert "data_root" in destinations
     assert "feature_cache" not in destinations
     assert "branch" not in destinations
+
+
+def test_sft_policy_tangent_basis_is_frozen_before_optimizer() -> None:
+    class TinyWriter(torch.nn.Module):
+        FACTOR_WIDTHS = {f"head_{index}": 1 for index in range(8)}
+
+        def __init__(self) -> None:
+            super().__init__()
+            self.semantic_encoder = torch.nn.Linear(1, 1)
+            self.factor_heads = torch.nn.ModuleDict(
+                {
+                    name: torch.nn.ModuleDict(
+                        {
+                            "network": torch.nn.Sequential(
+                                torch.nn.Linear(1, 1, bias=False),
+                                torch.nn.GELU(),
+                                torch.nn.Linear(1, 1, bias=False),
+                            )
+                        }
+                    )
+                    for name in self.FACTOR_WIDTHS
+                }
+            )
+            self.compiler = torch.nn.Linear(1, 1)
+
+    writer = TinyWriter()
+    optimizer, _ = rl_runtime._prepare_progress_optimizer(
+        writer,
+        {"mode": "writer_weight_warm_start"},
+        load_rl_writer_config(CONFIG),
+    )
+    frozen = {
+        name
+        for name, parameter in writer.named_parameters()
+        if not parameter.requires_grad
+    }
+
+    assert all(
+        name.startswith("semantic_encoder.") for name in frozen if "factor" not in name
+    )
+    assert sum(name.endswith(".network.2.weight") for name in frozen) == 8
+    assert all(
+        parameter.requires_grad
+        for name, parameter in writer.named_parameters()
+        if name.endswith(".network.0.weight") or name.startswith("compiler.")
+    )
+    assert sum(len(group["params"]) for group in optimizer.param_groups) == sum(
+        parameter.requires_grad for parameter in writer.parameters()
+    )
 
 
 def test_random_reset_pool_binds_the_sealed_runtime_assets(
@@ -318,7 +369,45 @@ def test_progress_diagnostic_gates_are_joint_and_pre_registered() -> None:
     assert result["mixed_tasks"] == 14
     assert result["all_success_tasks"] == result["all_failure_tasks"] == 5
     assert result["passed"]
+    assert result["mixed_task_agreement_fraction"] == 1.0
     assert all(result["gates"].values())
+
+
+def test_progress_diagnostic_does_not_require_all_failure_tasks() -> None:
+    config = load_rl_writer_config(CONFIG)
+    rows = []
+    for task_id in range(24):
+        success_count = 2 if task_id < 6 else 4
+        for cursor in range(4):
+            success = cursor < success_count
+            utility = 0.8 + 0.02 * cursor if success else 0.1 * cursor
+            rows.append(
+                {
+                    "schema_version": PROGRESS_DIAGNOSTIC_ROW_SCHEMA,
+                    "global_task_id": task_id,
+                    "rollout_cursor": cursor,
+                    "success": success,
+                    "utility_correct": utility,
+                    "utility_wrong": utility - 0.4,
+                    "utility_shuffled": utility - 0.3,
+                    "utility_reversed": utility - 0.5,
+                    "teacher_change_energy": 1.0,
+                    "observer_repeat_max_abs": 0.0,
+                    "pixel_change_rms": (0.2, 0.4, 0.1, 0.3)[cursor],
+                }
+            )
+
+    result = summarize_progress_diagnostic(
+        rows,
+        gates=config["progress_credit"]["diagnostic_gates"],
+    )
+
+    assert result["successes"] == 84
+    assert result["mixed_tasks"] == 6
+    assert result["all_failure_tasks"] == 0
+    assert result["gates"]["all_failure_dispersion"]
+    assert result["gates"]["non_pixel_shortcut"]
+    assert result["passed"]
 
 
 def test_metrics_reconcile_on_complete_cycle_cursor(tmp_path: Path) -> None:
@@ -385,7 +474,7 @@ def test_inference_recomputes_full24_checkpoint_schedule(
         "information_wall": config["information_wall"],
         "tasks": [task.__dict__ for task in tasks],
         "trainable": {
-            "object": "shared_task_grounded_progress_credit_writer_downstream_only",
+            "object": "sft_anchored_tangent_basis_writer_coefficients_only",
             "coldstart_teacher_action_phase_closed": True,
         },
         "runtime": {"world_size": 6, "checkpoint_cycles": [1]},

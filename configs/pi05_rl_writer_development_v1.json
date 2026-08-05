@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_task_grounded_progress_credit_writer_v1",
+  "schema_version": "ember_pi05_sft_anchored_tangent_basis_writer_v1",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {
@@ -11,8 +11,8 @@
       "sha256": "5bb0a5ca4604f126cc4bcdd29c9a7a4d17403a8f3ee7161d8afdfeccbb2c488c"
     },
     "as_writer_config": {
-      "path": "configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json",
-      "sha256": "c9aebb9fdaf79706b0c6bb2359479820a7df14b284e61ff476f42833e898eb1a"
+      "path": "configs/pi05_as_writer_language_axial_v6_decay400_v1.json",
+      "sha256": "6051b53065211c8af494f12064dff6d08404e1159931a12ab23797808d836b1e"
     },
     "lora_contract": {
       "path": "configs/pi05_lora_v1.json",
@@ -50,7 +50,7 @@
     "fixed_pruned_init_reads": 0
   },
   "algorithm": {
-    "name": "task_grounded_semantic_progress_fpo_plus_writer_v1",
+    "name": "sft_anchored_tangent_basis_progress_fpo_writer_v1",
     "reward": "official_binary_first_then_frozen_semantic_all_failure_tie_break",
     "rollout_schema": "ember_pi05_task_grounded_progress_credit_rollout_v1",
     "rollouts_per_task_condition": 4,
@@ -69,6 +69,7 @@
     "teacher_actions": false,
     "critic": false,
     "semantic_encoder_frozen_after_coldstart": true,
+    "factor_output_basis_frozen_after_coldstart": true,
     "pose_or_progress_shaping": false,
     "generated_lora_in_place_updates": false
   },
@@ -124,7 +125,7 @@
     "schedule_excludes": ["rank", "worker", "queue_order", "outcome"]
   },
   "progress_credit": {
-    "observer": "as125_frozen_writer_semantic_encoder_task_patch_plus_fixed_action_expert_interaction",
+    "observer": "coldstart_frozen_writer_semantic_encoder_task_patch_plus_fixed_action_expert_interaction",
     "teacher_frames": "real_first_and_real_last",
     "rollout_frames": "post_settling_start_and_true_terminal",
     "normalization": "per_component_rms",
@@ -149,19 +150,16 @@
     "diagnostic_gates": {
       "task_count": 24,
       "rollouts_per_task": 4,
-      "expected_successes": 50,
-      "expected_mixed_tasks": 14,
-      "expected_all_success_tasks": 5,
-      "expected_all_failure_tasks": 5,
+      "minimum_successes": 8,
+      "maximum_successes": 88,
+      "minimum_mixed_tasks": 6,
       "minimum_teacher_change_energy": 1e-06,
       "maximum_repeat_abs": 1e-05,
-      "minimum_mixed_task_agreements": 10,
+      "minimum_mixed_task_agreement_fraction": 0.6,
       "minimum_success_failure_auc": 0.6,
       "minimum_all_failure_range": 0.05,
-      "minimum_all_failure_tasks_with_range": 4,
-      "minimum_all_failure_median_range": 0.1,
-      "persistent_all_failure_task_ids": [36, 38, 39],
-      "minimum_persistent_tasks_with_range": 2,
+      "minimum_all_failure_fraction_with_range": 0.5,
+      "minimum_all_failure_median_range": 0.05,
       "minimum_counterfactual_win_fraction": 0.65,
       "maximum_abs_pixel_spearman": 0.8
     }
@@ -190,7 +188,7 @@
   },
   "formal_run": {
     "status": "sealed",
-    "launch_state": "fresh_as125_stop1_then_paired_correct400",
+    "launch_state": "fresh_v6_fast_macro400_frozen_policy_basis_stop1_then_paired_correct400",
     "expected_world_size": 6,
     "total_cycles": 8,
     "checkpoint_cycles": [1, 2, 4, 8],

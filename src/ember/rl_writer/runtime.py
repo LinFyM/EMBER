@@ -139,9 +139,16 @@ def _prepare_progress_optimizer(
     config: Mapping[str, Any],
 ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LRScheduler]:
     if coldstart.get("mode") != "writer_weight_warm_start":
-        raise RewardProtocolError("Flow-Credit requires an independent AS cold start")
+        raise RewardProtocolError("Flow-Credit requires a sealed SFT Writer cold start")
     for parameter in writer.semantic_encoder.parameters():
         parameter.requires_grad_(False)
+    basis_names = []
+    for name, parameter in writer.named_parameters():
+        if name.startswith("factor_heads.") and name.endswith(".network.2.weight"):
+            parameter.requires_grad_(False)
+            basis_names.append(name)
+    if len(basis_names) != len(writer.FACTOR_WIDTHS):
+        raise RewardProtocolError("SFT policy-tangent basis selector changed")
     optimizer = _optimizer(writer, config)
     return optimizer, torch.optim.lr_scheduler.LambdaLR(optimizer, lambda _: 1.0)
 
@@ -397,11 +404,31 @@ def _publish_runtime_contract(
         for name, value in models.writer.semantic_encoder.named_parameters()
         if not value.requires_grad
     )
+    frozen_basis_names = sorted(
+        name
+        for name, value in models.writer.named_parameters()
+        if name.startswith("factor_heads.")
+        and name.endswith(".network.2.weight")
+        and not value.requires_grad
+    )
+    if len(frozen_basis_names) != len(models.writer.FACTOR_WIDTHS):
+        raise RewardProtocolError("SFT policy-tangent basis is not fully frozen")
+    frozen_basis_set = set(frozen_basis_names)
     trainable = {
         **models.trainable,
-        "object": "shared_task_grounded_progress_credit_writer_downstream_only",
+        "object": "sft_anchored_tangent_basis_writer_coefficients_only",
         "coldstart_teacher_action_phase_closed": True,
         "semantic_encoder_frozen": True,
+        "factor_output_basis_frozen": True,
+        "factor_output_basis_parameter_name_count": len(frozen_basis_names),
+        "factor_output_basis_parameter_count": sum(
+            value.numel()
+            for name, value in models.writer.named_parameters()
+            if name in frozen_basis_set
+        ),
+        "factor_output_basis_parameter_names_sha256": canonical_hash(
+            frozen_basis_names
+        ),
         "rl_trainable_parameter_count": sum(
             value.numel() for value in models.writer.parameters() if value.requires_grad
         ),

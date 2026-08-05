@@ -21,6 +21,7 @@ from ember.pi05_source_checkpoint import (
     read_json,
     restore_rng,
     sha256_file,
+    source_reference_matches,
     write_json_atomic,
 )
 from ember.writer.as_sampling import (
@@ -442,7 +443,7 @@ def initialize_writer_phase(
             if (
                 training.get("schema_version") != AS_WRITER_LAUNCH_SCHEMA
                 or training.get("stage", "development") != stage
-                or training.get("source") != dict(source)
+                or not source_reference_matches(training.get("source"), source)
                 or training.get("authorities") != dict(authorities)
                 or training.get("writer") != dict(writer_config)
                 or training.get("trainable", {}).get("lora_contract_sha256")

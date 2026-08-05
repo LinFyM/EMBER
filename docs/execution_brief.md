@@ -6,6 +6,16 @@
 
 ## 0. 当前BCI运行事实（覆盖下文旧A100操作细节）
 
+- 当前唯一活动方法为SFT-Anchored Tangent-Basis，操作authority为
+  `docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`。它从历史v6-fast
+  macro400=`143/400`启动，冻结semantic encoder与8个factor-output policy basis，只让
+  reward更新condition coefficients。canonical config已原位升级；下一命令只能是macro400
+  六卡只读diagnostic，门过后才profile/formal。
+- 参数hybrid root
+  `runs/outputs/pi05_progress_credit_parameter_hybrid_as125_cycle2_r6_67b245a_20260805`
+  已完整结束并释放GPU：BA层upstream贡献更大，action层factor-output贡献更大，且Long与
+  其他suite相反。该证据否定直接冻结整个decoder，也选择了稳定IL policy basis这一单变量
+  路线；一次性分析入口已删除。
 - Task-Grounded Progress formal已exact-resume到cycle2并完成第二轮strict correct400。
   cycle2 train为49/96 successes、21 active-credit tasks、two finite epochs、完整checkpoint/
   双ledger与0 watchdog/OOM；held correct=`102`、breadth4，低于cycle1=`104`。cycle1→2
@@ -14,8 +24,8 @@
 - cycle2 paired/LoRA/参数分块分析位于
   `runs/outputs/pi05_task_grounded_progress_credit_cycle002_bci_correct400_noreplacement_seed7_56a167d_20260805/paired_to_cycle1_and_as125_analysis.json`。
   gained/lost的LoRA变化幅度与norm增长不可区分、stable rank不变；但Adam后factor每参数
-  位移只约visual的2倍，不能仅凭raw gradient直接冻结decoder。下一动作是固定panel参数
-  hybrid因果分解；结果前不实现basis freeze、policy anchor或新composer。
+  位移只约visual的2倍，不能仅凭raw gradient直接冻结decoder。后续hybrid已按上条完成，
+  该旧续训root禁止恢复。
 
 - Task-Relative Flow-Credit Writer的binary-only阶段已完成并负裁决。AS侧恢复唯一v6
   Writer做fresh独立cold start；reward侧保留成功和失败executed prefixes，以同task K4
@@ -56,8 +66,8 @@
   two-epoch重放、2次finite update、完整cycle1 checkpoint和0 watchdog/OOM。
 - 同一strict correct400已完成：AS125/cycle1=`97/104`，gained/lost=`22/15`，breadth=
   `5/4`；净增集中Object-1且Spatial-1失去唯一成功。effective BA变化中位`.01677`、
-  cosine`.999860`，stable rank和B-column coherence基本不变。当前只允许同一root按sealed
-  3+3 topology exact-resume `cycle1→2`，随后重跑同一correct400；不得因+7直接跳到4/8。
+  cosine`.999860`，stable rank和B-column coherence基本不变。历史上只允许同一root按
+  sealed 3+3 topology exact-resume `cycle1→2`；该动作已完成并负裁决，旧root不得再续。
 
 - Policy-Target-Owned Factor本轮已完成并负裁决；此前暂停已由owner解除。其源码不再
   是canonical活动路径，历史结果只由Git、artifact与design authority保留；不能resume

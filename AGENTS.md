@@ -128,12 +128,13 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 30. `docs/action_forecast_writer_target_owned_factor_design.md`
 31. `docs/action_forecast_writer_relative_flow_credit_design.md`
 32. `docs/action_forecast_writer_task_grounded_progress_credit_design.md`
-33. `task_plan.md`
-34. `findings.md`
-35. `progress.md`
-36. `docs/concept.md`
-37. `docs/decisions_and_open_questions.md`
-38. `docs/novelty_and_landscape.md`
+33. `docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`
+34. `task_plan.md`
+35. `findings.md`
+36. `progress.md`
+37. `docs/concept.md`
+38. `docs/decisions_and_open_questions.md`
+39. `docs/novelty_and_landscape.md`
 
 本post-seal分支已完成Target-Bound裁决并打开Semantic Factor-Basis；修改或运行前
 仍必须完整阅读Target-Bound与Semantic Factor-Basis两份design。历史CV/Target-Bound
@@ -144,14 +145,21 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 
 ## Current focused task
 
-- Task-Grounded Semantic Progress Credit已完成同一formal root cycle1/2及两轮strict
+- 当前唯一活动方法为SFT-Anchored Policy Tangent-Basis Writer，authority为
+  `docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`。它以历史strict
+  correct143的v6-fast macro400完整IL Writer为cold start，冻结semantic encoder与恰好
+  8个`factor_heads.*.network.2.weight` policy basis，只让reward更新上游条件组合与
+  factor-input coefficients。当前只允许先做macro400六卡只读progress diagnostic，门过
+  后才做独立one-cycle A40 profile；profile过后才可fresh formal0→1与paired correct400。
+  不得同时加入policy anchor、多store/router、额外head、scale或rank/energy loss。
+- AS125 Task-Grounded Semantic Progress Credit已完成同一formal root cycle1/2及两轮strict
   correct400。AS125/cycle1/cycle2=`97/104/102`，breadth=`5/4/4`；cycle1→2
   gained/lost=`15/17`，Object-1`31→26`、Object-3`19→22`且无新task coverage，
   因而同recipe续训轴正式负裁决，禁止resume cycle4/8。完整结果取
   `docs/action_forecast_writer_task_grounded_progress_credit_design.md`第16节与cycle2
-  eval root的`paired_to_cycle1_and_as125_analysis.json`。当前唯一允许的下一科学动作是
-  固定train-task/video/action panel参数hybrid因果分解；结果前不得直接冻结decoder、
-  加policy anchor或实现新basis/coefficients composer，更不得同时修改这些变量。
+  eval root的`paired_to_cycle1_and_as125_analysis.json`。随后固定参数hybrid已完成：
+  effective BA由upstream贡献更多，但fixed action由factor-output贡献更多，且随suite反转；
+  完整证据取同design第18节。该结果已打开上条新方法，旧root仍禁止resume cycle4/8。
 - Task-Relative Flow-Credit Writer的binary-only阶段已按
   `docs/action_forecast_writer_relative_flow_credit_design.md`完成并负裁决：它恢复历史
   single-checkpoint最强且时序路径已验证的v6 Writer做独立AS cold start，随后永久关闭
@@ -211,7 +219,7 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   generated-LoRA gradient，五个Writer下游block两epoch均可达，observer gradient=0。
   ratio=`[.99077,1.02504]`/`[.74545,1.09294]`、grad=`.03715/.05521`、clip0、peak
   reserved`19,455,279,104` bytes，0 watchdog/OOM。profile checkpoint永久禁止续训。
-- formal仍封存为从AS125 fresh进入的6-rank、K4/Nmc4、two-epoch、最多8 cycles，checkpoint
+- 历史Task-Grounded formal曾封存为从AS125 fresh进入的6-rank、K4/Nmc4、two-epoch、最多8 cycles，checkpoint
   `1/2/4/8`；首段只跑0→1，然后在同一strict panel比较AS125 baseline与cycle1 paired
   correct400再决定续段。首次fresh0→1完整产生96 rollout和24 task credit，但旧
   `FileStore` barrier在第一轮gradient sum发生rank序列分裂：rank0/1/2/5进入seq18，

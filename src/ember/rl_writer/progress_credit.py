@@ -268,19 +268,14 @@ def _dispersion_summary(
     all_failure: Sequence[Mapping[str, Any]], gates: Mapping[str, Any]
 ) -> tuple[list[float], int, bool]:
     ranges = [float(row["utility_range"]) for row in all_failure]
-    persistent = set(int(value) for value in gates["persistent_all_failure_task_ids"])
+    if not ranges:
+        return ranges, 0, True
     minimum = float(gates["minimum_all_failure_range"])
-    persistent_passes = sum(
-        row["global_task_id"] in persistent and row["utility_range"] >= minimum
-        for row in all_failure
-    )
-    passed = (
-        sum(value >= minimum for value in ranges)
-        >= int(gates["minimum_all_failure_tasks_with_range"])
-        and float(np.median(ranges)) >= float(gates["minimum_all_failure_median_range"])
-        and persistent_passes >= int(gates["minimum_persistent_tasks_with_range"])
-    )
-    return ranges, persistent_passes, passed
+    range_passes = sum(value >= minimum for value in ranges)
+    passed = range_passes / len(ranges) >= float(
+        gates["minimum_all_failure_fraction_with_range"]
+    ) and float(np.median(ranges)) >= float(gates["minimum_all_failure_median_range"])
+    return ranges, range_passes, passed
 
 
 def _counterfactual_summary(
@@ -322,12 +317,9 @@ def summarize_progress_diagnostic(
     all_success = outcome["all_success"]
     successes = sum(bool(row["success"]) for row in rows)
 
-    identity_gate = (
-        successes == int(gates["expected_successes"])
-        and len(mixed) == int(gates["expected_mixed_tasks"])
-        and len(all_success) == int(gates["expected_all_success_tasks"])
-        and len(all_failure) == int(gates["expected_all_failure_tasks"])
-    )
+    identity_gate = int(gates["minimum_successes"]) <= successes <= int(
+        gates["maximum_successes"]
+    ) and len(mixed) >= int(gates["minimum_mixed_tasks"])
     content_gate = all(
         row["teacher_change_energy"] > float(gates["minimum_teacher_change_energy"])
         and row["observer_repeat_max_abs"] <= float(gates["maximum_repeat_abs"])
@@ -335,22 +327,24 @@ def summarize_progress_diagnostic(
     )
     auc = float(outcome["auc"])
     mixed_agree = int(outcome["mixed_agree"])
-    binary_gate = (
-        mixed_agree >= int(gates["minimum_mixed_task_agreements"])
-        and auc >= float(gates["minimum_success_failure_auc"])
-    )
-    ranges, persistent_passes, dispersion_gate = _dispersion_summary(
-        all_failure, gates
-    )
+    mixed_agreement_fraction = mixed_agree / len(mixed) if mixed else 0.0
+    binary_gate = mixed_agreement_fraction >= float(
+        gates["minimum_mixed_task_agreement_fraction"]
+    ) and auc >= float(gates["minimum_success_failure_auc"])
+    ranges, range_passes, dispersion_gate = _dispersion_summary(all_failure, gates)
     counterfactuals, counterfactual_gate = _counterfactual_summary(rows, gates)
 
     all_failure_task_ids = {int(row["global_task_id"]) for row in all_failure}
     failure_rows = [
         row for row in rows if int(row["global_task_id"]) in all_failure_task_ids
     ]
-    pixel_spearman = _spearman(
-        [float(row["utility_correct"]) for row in failure_rows],
-        [float(row["pixel_change_rms"]) for row in failure_rows],
+    pixel_spearman = (
+        _spearman(
+            [float(row["utility_correct"]) for row in failure_rows],
+            [float(row["pixel_change_rms"]) for row in failure_rows],
+        )
+        if failure_rows
+        else 0.0
     )
     nuisance_gate = abs(pixel_spearman) < float(gates["maximum_abs_pixel_spearman"])
     gate_rows = {
@@ -370,9 +364,10 @@ def summarize_progress_diagnostic(
         "all_success_tasks": len(all_success),
         "all_failure_tasks": len(all_failure),
         "mixed_task_success_mean_higher": mixed_agree,
+        "mixed_task_agreement_fraction": mixed_agreement_fraction,
         "success_failure_pair_auc": auc,
         "all_failure_ranges": ranges,
-        "persistent_all_failure_range_passes": persistent_passes,
+        "all_failure_range_passes": range_passes,
         "counterfactuals": counterfactuals,
         "failure_utility_pixel_spearman": pixel_spearman,
         "gates": gate_rows,

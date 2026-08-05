@@ -418,3 +418,44 @@ action读数均为0。
 condition panel和fixed-action probe，不提供训练、评测或新Writer分支。正式结果封存并据此
 选定下一个结构变量后，下一次实现提交即删除该可执行分析入口；历史复现由本commit与正式
 artifact保留，不能把它扩展成第二套通用分析框架。
+
+## 18. 参数hybrid结果与后续裁决
+
+clean`67b245a`在BCI六卡完成24 train tasks、7 conditions、4 parameter arms和8-task
+fixed-action panel；24/24 rows、8/8 action tasks、0 target-action/validation/test reads，
+wall`333.52s`、peak reserved`19,365,101,568` bytes。正式root为
+`runs/outputs/pi05_progress_credit_parameter_hybrid_as125_cycle2_r6_67b245a_20260805`。
+
+AS125→cycle2完整更新的effective BA relative-L2中位`.02713`。两个hybrid相对完整
+BA更新的`norm recovery / delta cosine / residual`中位分别为：
+
+```text
+factor-output-only        .614 / .692 / .727
+upstream-composition-only .725 / .795 / .611
+```
+
+但fixed action层的贡献次序反转；完整action变化中位`.00805`，两个hybrid为：
+
+```text
+factor-output-only        .691 / .893 / .489
+upstream-composition-only .494 / .795 / .668
+```
+
+即upstream改变更多BA Frobenius方向，8个共享factor-output权重的较小BA贡献却更容易落入
+source policy敏感方向。该反转并非所有task相同：Spatial/Object与Goal-29由factor-output
+明显主导action，Long-39则upstream残差更小，Goal-20两臂都不能稳定恢复完整更新。这种
+task-dependent policy leverage与cycle1/2能力换手一致，不能再写成单一block“更新过大”。
+
+same-task video variance从AS125`.0013992`到cycle2`.0013899`几乎不变；factor-only与
+AS125一致、upstream-only与cycle2一致。reversed/shuffled的BA与action效应同样基本不变。
+因此RL没有学到更多视频区分；它主要重新定向了共享policy decoder，而已有视频变化继续
+由upstream产生。按第17节预注册规则，BA/action结论冲突时以action为准，并判为
+condition-to-policy映射错位；两臂残差又都不够小，禁止直接冻结整个factor block或整个
+upstream。
+
+后续选择为`docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`：把v6-fast
+macro400监督阶段学得的8个factor-output矩阵固定为policy tangent dictionary，RL只更新
+其上游与factor-input系数生成。它不是把当前坏更新硬拆成两半，而是用强IL checkpoint
+`143/400`作起点，阻止reward梯度再次旋转共享policy basis。显式多store/router与额外
+policy anchor均暂缓，避免同时改变capacity和objective。按第17节retirement trigger，
+hybrid分析可执行入口已在下一实现提交删除；正式artifact与Git历史保留复现能力。

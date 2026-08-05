@@ -60,6 +60,11 @@
 - canonical只读analysis owner按authority/runtime/pure metrics三层拆分，无第二套Writer或
   training path；聚焦12项、带BCI assets全仓223项、py_compile/diff check通过，architecture
   guard无hard/parallel family。该入口在本次artifact与下一design封存后删除，历史由Git保留。
+- clean pushed`129cab6`的formal analysis contract固定使用`gpu02:0,1,2,3,4,7`六张实时
+  空闲A40，root为
+  `runs/outputs/pi05_antithetic_program_credit_internal_as125_cycle1_r6_129cab6_20260805`。
+  六rank只读比较24 tasks×AS125/cycle1，不建立训练process group、不做optimizer/backward；
+  仍显式传`NCCL_P2P_DISABLE=1`并要求最终现场复查后才启动。
 
 ## 0.1 Policy-Lane正式负裁决
 

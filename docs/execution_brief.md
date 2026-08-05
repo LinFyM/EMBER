@@ -29,6 +29,9 @@
   update；strict correct400=`106`、breadth5，相对AS125=`97/5` gained/lost=`18/9`、
   union/intersection=`115/88`。Long/Goal/Object改善但Spatial task1→task3换手；净增9未达到
   预注册净增10门，正式禁止resume cycle2。当前只运行AS125→cycle1内部机制分析，不启动训练。
+  分析clean commit=`129cab6`，root为
+  `runs/outputs/pi05_antithetic_program_credit_internal_as125_cycle1_r6_129cab6_20260805`，
+  live合同是`gpu02:0,1,2,3,4,7`六张空闲卡、48 Cartesian rows、0 action-wall/validation/test reads。
 - PWAD fresh0→200与四点strict correct400已完成并负裁决：`77/71/80/80`、breadth=
   `5/6/5/5`、union/intersection=`115/44`。64 atoms广泛active，但mixing row stable rank
   约`1.000002`、effective LoRA约`1.0000002`、q/v B-column cosine约`.999998`；禁止resume

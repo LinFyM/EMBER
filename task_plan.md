@@ -97,6 +97,12 @@ runner、split、路径或 GPU 权限。
 - source/target action reads为0，validation/test reads为0；532个semantic encoder、FactorHeads
   与template tensors必须逐元素不变。聚焦`12 passed`，带BCI assets的全仓`223 passed`、
   py_compile/diff check通过。正式launch仍须clean pushed代码、live双节点GPU检查和空root。
+- clean implementation/authority commit=`129cab6`并已push branch/main。正式root/log/tmux固定为
+  `runs/outputs/pi05_antithetic_program_credit_internal_as125_cycle1_r6_129cab6_20260805`、
+  同名`runs/logs/*.log`和`ember_program_credit_internal_r6_129cab6`；只用`gpu02:0,1,2,3,4,7`
+  六张实时空闲卡，`torchrun --nproc-per-node=6`、显式`NCCL_P2P_DISABLE=1`。24 tasks×2
+  checkpoints必须形成48 rows与6份ownership；formal artifact预计远小于1GiB，沿用本阶段
+  已核验的/data1 quota。任一卡在最终复查时被占用则不启动并重新选卡，不共享或干扰他人进程。
 
 ## 已完成Policy-Lane Coupled Hyperdecoder推进（2026-08-05）
 

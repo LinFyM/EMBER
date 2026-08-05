@@ -236,8 +236,8 @@ def effective_variance(
             gram[left, right] = gram[right, left] = effective_inner(
                 pairs, states[left], states[right]
             )
-    sample = float(np.diag(gram).mean())
-    mean = float(gram.mean())
+    sample = max(float(np.diag(gram).mean()), 0.0)
+    mean = max(float(gram.mean()), 0.0)
     centered = max(sample - mean, 0.0)
     row_mean = gram.mean(axis=1)
     delta_energy = np.diag(gram) - 2.0 * row_mean + mean
@@ -251,6 +251,68 @@ def effective_variance(
         "scale_like_video_variance_fraction": scale_like / max(centered, 1e-24),
         "orthogonal_direction_video_variance_fraction": orthogonal
         / max(centered, 1e-24),
+    }
+
+
+def effective_update_variance(
+    pairs: Mapping[str, Mapping[str, str]],
+    previous: Sequence[Mapping[str, torch.Tensor]],
+    current: Sequence[Mapping[str, torch.Tensor]],
+) -> dict[str, float]:
+    """Measure condition variance of exact effective-BA checkpoint updates."""
+
+    if len(previous) != len(current) or not previous:
+        raise ValueError("effective update variance requires paired non-empty states")
+    size = len(previous)
+    gram = np.empty((size, size), dtype=np.float64)
+    for left in range(size):
+        for right in range(left, size):
+            value = (
+                effective_inner(pairs, current[left], current[right])
+                - effective_inner(pairs, current[left], previous[right])
+                - effective_inner(pairs, previous[left], current[right])
+                + effective_inner(pairs, previous[left], previous[right])
+            )
+            gram[left, right] = gram[right, left] = value
+    return _variance_from_gram(gram)
+
+
+def tensor_variance(values: Sequence[torch.Tensor]) -> dict[str, float]:
+    """Measure condition variance for ordinary tensors."""
+
+    if not values:
+        raise ValueError("tensor variance requires non-empty values")
+    flattened = [value.detach().double().reshape(-1) for value in values]
+    if any(value.shape != flattened[0].shape for value in flattened[1:]):
+        raise ValueError("tensor variance values changed shape")
+    stacked = torch.stack(flattened)
+    return _variance_from_gram((stacked @ stacked.T).cpu().numpy())
+
+
+def tensor_update_variance(
+    previous: Sequence[torch.Tensor],
+    current: Sequence[torch.Tensor],
+) -> dict[str, float]:
+    """Measure condition variance of paired tensor checkpoint updates."""
+
+    if len(previous) != len(current) or not previous:
+        raise ValueError("tensor update variance requires paired non-empty values")
+    return tensor_variance(
+        [right.detach() - left.detach() for left, right in zip(previous, current)]
+    )
+
+
+def _variance_from_gram(gram: np.ndarray) -> dict[str, float]:
+    if gram.ndim != 2 or gram.shape[0] == 0 or gram.shape[0] != gram.shape[1]:
+        raise ValueError("variance Gram must be non-empty and square")
+    sample = float(np.diag(gram).mean())
+    mean = float(gram.mean())
+    centered = max(sample - mean, 0.0)
+    return {
+        "sample_energy": sample,
+        "task_mean_energy": mean,
+        "task_mean_energy_over_sample_energy": mean / max(sample, 1e-24),
+        "centered_variance_over_sample_energy": centered / max(sample, 1e-24),
     }
 
 

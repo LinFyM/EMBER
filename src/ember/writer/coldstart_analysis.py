@@ -1,4 +1,4 @@
-"""Focused internal audit for the v6 task-relative-flow cold-start trajectory."""
+"""Focused internal audit for the canonical Condition-Kernel Writer trajectory."""
 
 from __future__ import annotations
 
@@ -31,10 +31,13 @@ from ember.writer.adapter_analysis_metrics import (
     adapter_geometry,
     distribution,
     effective_metrics,
+    effective_update_variance,
     effective_variance,
     lora_pairs,
     state_row,
     tensor_metrics,
+    tensor_update_variance,
+    tensor_variance,
 )
 from ember.writer.data import RawTeacherVideoStore, WriterTaskAuthority, _camera
 from ember.writer.inference import writer_generation_seed, writer_shuffled_frame_permutation
@@ -46,8 +49,8 @@ from ember.writer.model import WriterModelError
 from ember.writer.validation import _build_models
 
 
-RUN_SCHEMA = "ember_pi05_v6_relative_flow_coldstart_internal_audit_run_v1"
-RESULT_SCHEMA = "ember_pi05_v6_relative_flow_coldstart_internal_audit_v1"
+RUN_SCHEMA = "ember_pi05_condition_kernel_internal_audit_run_v1"
+RESULT_SCHEMA = "ember_pi05_condition_kernel_internal_audit_v1"
 DEMO_INDICES = (0, 1, 2, 3, 4)
 ACTION_PANEL_CONDITIONS = ("demo_0", "demo_1", "reversed_0", "shuffled_0")
 
@@ -433,7 +436,15 @@ def _local_rows(
         )
         for task_id in fixed_queries
     }
-    previous: dict[int, tuple[int, dict[str, torch.Tensor]]] = {}
+    previous: dict[
+        int,
+        tuple[
+            int,
+            dict[str, torch.Tensor],
+            list[dict[str, torch.Tensor]],
+            list[torch.Tensor],
+        ],
+    ] = {}
     previous_actions: dict[int, tuple[int, torch.Tensor]] = {}
     rows = []
     try:
@@ -462,7 +473,7 @@ def _local_rows(
                 with torch.inference_mode(), torch.autocast(
                     device_type="cuda", dtype=torch.bfloat16
                 ):
-                    batched = writer(
+                    features, programs = writer.encode_condition(
                         packed["frames"],
                         packed["indices"],
                         packed["offsets"],
@@ -471,19 +482,49 @@ def _local_rows(
                         packed["spans"],
                         policy=policy,
                     )
+                    batched = writer.decode_program(programs)
                 states = {
                     name: state_row(batched, index)
                     for index, name in enumerate(names)
                 }
+                feature_rows = {
+                    name: features[index].detach().to(device="cpu", dtype=torch.float32)
+                    for index, name in enumerate(names)
+                }
+                program_rows = {
+                    name: programs[index].detach().to(device="cpu", dtype=torch.float32)
+                    for index, name in enumerate(names)
+                }
                 reference = states["demo_0"]
                 churn = None
+                program_update_variance = None
+                effective_ba_update_variance = None
                 if task_id in previous:
-                    old_cursor, old_state = previous[task_id]
+                    old_cursor, old_state, old_video_states, old_video_programs = previous[
+                        task_id
+                    ]
                     churn = {
                         "from_cursor": old_cursor,
                         **effective_metrics(pairs, old_state, reference),
                     }
-                previous[task_id] = (int(record["cursor"]), reference)
+                    current_video_states = [
+                        states[f"demo_{demo}"] for demo in DEMO_INDICES
+                    ]
+                    current_video_programs = [
+                        program_rows[f"demo_{demo}"] for demo in DEMO_INDICES
+                    ]
+                    program_update_variance = tensor_update_variance(
+                        old_video_programs, current_video_programs
+                    )
+                    effective_ba_update_variance = effective_update_variance(
+                        pairs, old_video_states, current_video_states
+                    )
+                previous[task_id] = (
+                    int(record["cursor"]),
+                    reference,
+                    [states[f"demo_{demo}"] for demo in DEMO_INDICES],
+                    [program_rows[f"demo_{demo}"] for demo in DEMO_INDICES],
+                )
                 action = None
                 action_churn = None
                 if task_id in panel:
@@ -533,6 +574,23 @@ def _local_rows(
                         "same_task_video_variance": effective_variance(
                             pairs, [states[f"demo_{demo}"] for demo in DEMO_INDICES]
                         ),
+                        "same_task_program_variance": tensor_variance(
+                            [program_rows[f"demo_{demo}"] for demo in DEMO_INDICES]
+                        ),
+                        "same_task_program_update_variance": program_update_variance,
+                        "same_task_effective_ba_update_variance": (
+                            effective_ba_update_variance
+                        ),
+                        "condition_feature_from_demo_0": {
+                            name: tensor_metrics(feature_rows["demo_0"], feature_rows[name])
+                            for name in names
+                            if name != "demo_0"
+                        },
+                        "program_from_demo_0": {
+                            name: tensor_metrics(program_rows["demo_0"], program_rows[name])
+                            for name in names
+                            if name != "demo_0"
+                        },
                         "effective_ba_from_demo_0": {
                             name: effective_metrics(pairs, reference, states[name])
                             for name in names
@@ -614,6 +672,33 @@ def _summary(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
                     for row in selected
                 ]
             ),
+            "same_task_program_centered_variance_over_sample_energy": distribution(
+                [
+                    float(
+                        row["same_task_program_variance"]
+                        ["centered_variance_over_sample_energy"]
+                    )
+                    for row in selected
+                ]
+            ),
+            "same_task_condition_feature_relative_l2": {
+                name: distribution(
+                    [
+                        float(row["condition_feature_from_demo_0"][name]["relative_l2"])
+                        for row in selected
+                    ]
+                )
+                for name in video_names
+            },
+            "same_task_program_relative_l2": {
+                name: distribution(
+                    [
+                        float(row["program_from_demo_0"][name]["relative_l2"])
+                        for row in selected
+                    ]
+                )
+                for name in video_names
+            },
             "same_task_video_effective_ba_relative_l2": {
                 name: distribution(
                     [
@@ -649,6 +734,28 @@ def _summary(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
             result[str(cursor)]["checkpoint_churn_effective_ba_relative_l2"] = (
                 distribution(
                     [float(row["checkpoint_churn"]["relative_l2"]) for row in churn]
+                )
+            )
+            result[str(cursor)]["same_task_program_update_task_mean_energy_fraction"] = (
+                distribution(
+                    [
+                        float(
+                            row["same_task_program_update_variance"]
+                            ["task_mean_energy_over_sample_energy"]
+                        )
+                        for row in churn
+                    ]
+                )
+            )
+            result[str(cursor)]["same_task_effective_ba_update_task_mean_energy_fraction"] = (
+                distribution(
+                    [
+                        float(
+                            row["same_task_effective_ba_update_variance"]
+                            ["task_mean_energy_over_sample_energy"]
+                        )
+                        for row in churn
+                    ]
                 )
             )
         action_churn = [

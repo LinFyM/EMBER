@@ -8,7 +8,21 @@
 `docs/a100_to_bci_migration_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
 runner、split、路径或 GPU 权限。
 
-## 当前SFT-Anchored Policy Tangent-Basis推进（2026-08-05）
+## 当前Policy-Wide Atom Dictionary推进（2026-08-05）
+
+- [x] 基于direct SFT的跨target组织、v5.2视频传递、v6 absolute及全部负裁决，封存
+  `docs/action_forecast_writer_policy_wide_atom_dictionary_design.md`：K64 policy-wide
+  atoms + condition-dependent rank16 A/B mixing，fresh identity，不加载历史Writer。
+- [x] 原位替换canonical Writer，删除旧320-slot compiler/factor decoder；新增独立config、
+  launch/checkpoint schema和五block ownership。聚焦CPU合同确认13,033,728参数、38-target
+  shapes、identity、条件写出与真实BA loss的三阶段梯度开启；formal保持profile前blocked。
+- [ ] live比较`gpu01/gpu02`，只取最多6张符合ownership/NUMA合同的空闲A40，完成最长
+  105-frame、logical B20、microbatch2三步profile，并做独立fresh0→1→exact-resume1→3。
+- [ ] profile证据seal、clean commit/push后，从独立fresh root完成0→200；strict correct400
+  评测50/100/150/200并做winner内部condition→atom→BA/action与视频特异性分析，再裁决
+  是否exact-resume200→400。
+
+## 已完成的SFT-Anchored Policy Tangent-Basis消融（2026-08-05）
 
 - [x] 完成AS125→cycle2固定参数hybrid：BA层upstream贡献较大、action层factor-output贡献
   较大且随suite反转；24×7×4与8-task action panel完整，0信息墙读取。
@@ -28,9 +42,8 @@ runner、split、路径或 GPU 权限。
   三suite净降；预注册门失败，禁止resume cycle2。
 - [x] 将`142`明确封存为v6强SFT warm-start上的factor-basis冻结消融，而非fresh新Writer
   成绩；它否定basis旋转为唯一/主要漂移根因，不证明LoRA质量或视频特异性改善。
-- [ ] 结合已有direct SFT、v5.2/v6、Target-Spectral、SFB、Direction Store、Target-Owned
-  和本次消融，设计从functional identity fresh训练的policy-coordinated条件LoRA架构；
-  不加载任何历史Writer权重，首阶段以AS学出表示，RL只作为后续可选校准。
+- [x] 由全部证据设计fresh policy-coordinated条件LoRA架构；结果为上节Policy-Wide Atom
+  Dictionary，首阶段以AS学习，RL只作为后续可选校准。
 
 ## 已封存的Progress-Credit裁决与condition-to-policy分解（2026-08-05）
 

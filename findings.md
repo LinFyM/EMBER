@@ -6,6 +6,21 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-05 Policy-Wide Atom Dictionary架构决策与CPU合同
+
+- direct SFT表明单target LoRA可以低rank但跨layer/target能量组织稳定；Target-Spectral说明
+  强制升rank会破坏有效方向，Direction Store/Target-Owned说明分开task或target存储也不会
+  自动形成闭环协调。Tangent-Basis又否定局部basis旋转为主要漂移根因。因此最早未检验
+  接口是：以完整policy方向为存储单位，并让一个condition坐标共同组合全部targets。
+- 新Writer学习K64个跨38 targets共享索引的rank-one atoms；condition从Core/Procedure生成
+  rank16×K64的signed A/B mixing。每个target保留自己的A/B向量，但同一atom index与mixing
+  横跨q0--q17、v0--v17及action projections，兼顾target-specific内容与policy-wide协调。
+- D_A/D_B exact-zero保证fresh public A=template、B=0。真实BA functional loss聚焦测试
+  验证第一步只有D_B，B打开后composer/Core/Procedure与D_A可达，A atoms打开后A-side
+  mixing可达；不是通过辅助loss或手工非零初始化制造路径。
+- canonical参数量13,033,728；新launch/checkpoint family和pending-profile config已闭合，
+  v6 checkpoint不能误载。formal必须等live A40 profile与exact-resume smoke后再seal。
+
 ## 2026-08-05 SFT-Anchored Tangent-Basis formal负裁决
 
 - clean`059d40f`从v6-fast macro400 warm-start完成独立formal cycle0→1：96 rollout、

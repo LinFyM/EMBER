@@ -112,11 +112,17 @@ def checkpoint_state_family(config: Mapping[str, Any]) -> str:
             "causal_procedure_slot_fusion_v6"
         )
     )
+    policy_wide_atom = (
+        config.get("writer", {}).get("architecture")
+        == "pi05_policy_wide_atom_dictionary_writer_v1"
+    )
     task_query_keyed = (
         training.get("policy_randomness_scheme")
         == "task_query_keyed_stateless_policy_cpu_cuda_v2"
     )
     if topology == "task_complete_all_tasks":
+        if policy_wide_atom and task_query_keyed:
+            return "policy_wide_atom_task_query_keyed_rawfull24_v1"
         if v6_relative_flow and task_query_keyed:
             return "v6_relative_flow_coldstart_task_query_keyed_rawfull24_v1"
         return (

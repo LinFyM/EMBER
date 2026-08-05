@@ -178,20 +178,20 @@
     "task_schedule": "every outer cycle covers every train task exactly once"
   },
   "diagnostic_defaults": {
-    "status": "sealed_read_only",
+    "status": "retired_after_cycle1_correct142_negative",
     "total_cycles": 1,
     "checkpoint_cycles": [1],
     "learning_epochs": 0
   },
   "profile_defaults": {
-    "status": "sealed",
+    "status": "retired_after_cycle1_correct142_negative",
     "total_cycles": 1,
     "checkpoint_cycles": [1],
     "learning_epochs": 2
   },
   "formal_run": {
-    "status": "sealed",
-    "launch_state": "fresh_v6_fast_macro400_frozen_policy_basis_stop1_then_paired_correct400",
+    "status": "retired_after_cycle1_correct142_negative",
+    "launch_state": "forbidden_to_resume_or_relaunch_after_paired_negative_result",
     "expected_world_size": 6,
     "total_cycles": 8,
     "checkpoint_cycles": [1, 2, 4, 8],

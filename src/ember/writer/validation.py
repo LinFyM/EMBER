@@ -39,7 +39,10 @@ from ember.writer.validation_panel import (
     load_validation_loss_panel,
     summarize_validation_losses,
 )
-from ember.writer.as_contract import AS_WRITER_LAUNCH_SCHEMA, REPO_ROOT
+from ember.writer.as_contract import (
+    REPO_ROOT,
+    SUPPORTED_AS_WRITER_LAUNCH_SCHEMAS,
+)
 from ember.writer.checkpoint import validate_writer_checkpoint_files
 from ember.writer.data import (
     FunctionalQueryDataset,
@@ -67,7 +70,7 @@ def _checkpoint_records(
     contract_sha256 = canonical_hash(training)
     world_size = int(training.get("runtime", {}).get("world_size", -1))
     if (
-        training.get("schema_version") != AS_WRITER_LAUNCH_SCHEMA
+        training.get("schema_version") not in SUPPORTED_AS_WRITER_LAUNCH_SCHEMAS
         or training.get("mode") != "formal"
         or world_size <= 0
         or not checkpoints

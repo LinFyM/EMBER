@@ -19,11 +19,11 @@ from ember.writer.task_gradient import (
 def _layout(parameter: torch.nn.Parameter) -> tuple[FlatParameter, ...]:
     return (
         FlatParameter(
-            name="factor_heads.test",
+            name="policy_atoms.test",
             parameter=parameter,
             start=0,
             stop=parameter.numel(),
-            block="factor",
+            block="policy_atom",
         ),
     )
 
@@ -43,15 +43,15 @@ def test_parameter_layout_owns_exact_cvadr_blocks() -> None:
     writer.semantic_core = torch.nn.Linear(1, 1)
     writer.visual_transition = torch.nn.Linear(1, 1)
     writer.procedure = torch.nn.Linear(1, 1)
-    writer.compiler = torch.nn.Linear(1, 1)
-    writer.factor_heads = torch.nn.Linear(1, 1)
+    writer.composer = torch.nn.Linear(1, 1)
+    writer.policy_atoms = torch.nn.Linear(1, 1)
     layout = parameter_layout(writer)
     assert {item.block for item in layout} == {
         "semantic_frontend",
         "core",
         "program",
-        "compiler",
-        "factor",
+        "composer",
+        "policy_atom",
     }
 
 
@@ -91,17 +91,17 @@ def test_gradient_direction_sketch_is_fixed_and_sign_sensitive() -> None:
         gradients,
         _layout(parameter),
         dimensions=8,
-    )["factor"]
+    )["policy_atom"]
     second = gradient_direction_sketches(
         gradients,
         _layout(parameter),
         dimensions=8,
-    )["factor"]
+    )["policy_atom"]
     reversed_direction = gradient_direction_sketches(
         -gradients,
         _layout(parameter),
         dimensions=8,
-    )["factor"]
+    )["policy_atom"]
     assert torch.equal(first, second)
     assert torch.equal(reversed_direction, -first)
     assert first.shape == (2, 8)

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 
-V6_WRITER_PARAMETER_COUNT = 10_775_296
+POLICY_WIDE_ATOM_WRITER_PARAMETER_COUNT = 13_033_728
 
 LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
     {
@@ -24,8 +24,8 @@ LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
         "procedure_heads",
         "procedure_blocks",
         "visual_transition_heads",
-        "fusion_heads",
-        "factor_hidden_width",
+        "policy_coordinate_heads",
+        "policy_atom_count",
         "initialization_seed",
         "activation_checkpointing",
     }
@@ -46,8 +46,8 @@ WRITER_DIMENSION_CONTRACT = {
     "procedure_heads": 8,
     "procedure_blocks": 2,
     "visual_transition_heads": 8,
-    "fusion_heads": 8,
-    "factor_hidden_width": 256,
+    "policy_coordinate_heads": 8,
+    "policy_atom_count": 64,
 }
 
 _STATIC_WRITER_CONTRACT: dict[str, Any] = {
@@ -170,19 +170,70 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "initialization_seed": 7,
 }
 
+_POLICY_WIDE_ATOM_WRITER_CONTRACT = {
+    **_STATIC_WRITER_CONTRACT,
+    "architecture": "pi05_policy_wide_atom_dictionary_writer_v1",
+    "policy_coordinate_count": 16,
+    "policy_atom_count": 64,
+    "policy_atom_scope": (
+        "one_shared_atom_index_spans_all_38_policy_targets"
+    ),
+    "policy_atom_storage": (
+        "target_private_a_and_b_vectors_with_shared_policy_atom_index"
+    ),
+    "policy_coordinate_core_read": (
+        "16_queries_read_raw_semantic_core_with_independent_attention"
+    ),
+    "policy_coordinate_procedure_read": (
+        "core_conditioned_queries_read_raw_causal_procedure_with_independent_attention"
+    ),
+    "policy_atom_mixing": (
+        "separate_signed_rank16_by_atom64_a_and_b_dot_product_matrices"
+    ),
+    "public_lora_a": "sealed_template_plus_m_a_times_zero_initialized_a_atoms",
+    "public_lora_b": "zero_initialized_b_atoms_times_m_b_transpose",
+    "policy_coordinate_heads": 8,
+    "dictionary_softmax": False,
+    "dictionary_top_k": False,
+    "dictionary_task_ids": False,
+    "dictionary_initialization": "all_a_and_b_atoms_exact_zero",
+}
+for _retired_key in (
+    "query_count",
+    "routing_identity",
+    "core_slot_reader",
+    "procedure_slot_reader",
+    "slot_fusion",
+    "fusion_heads",
+    "procedure_value_centering",
+    "modulation_projection",
+    "post_fusion_blocks",
+    "factor_head_bias",
+    "factor_hidden_width",
+):
+    _POLICY_WIDE_ATOM_WRITER_CONTRACT.pop(_retired_key)
+
 
 def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
-    """Return the exact v6 config payload, preserving profiled frame chunking."""
+    """Return the exact architecture payload, preserving profiled chunking."""
+
+    architecture = writer.get("architecture")
+    if architecture == _STATIC_WRITER_CONTRACT["architecture"]:
+        static = _STATIC_WRITER_CONTRACT
+    elif architecture == _POLICY_WIDE_ATOM_WRITER_CONTRACT["architecture"]:
+        static = _POLICY_WIDE_ATOM_WRITER_CONTRACT
+    else:
+        raise ValueError(f"unsupported EMBER Writer architecture: {architecture}")
 
     return {
-        **_STATIC_WRITER_CONTRACT,
+        **static,
         "frame_stride": writer["frame_stride"],
         "max_frames_per_encoder_call": writer["max_frames_per_encoder_call"],
     }
 
 
 def validate_writer_dimensions(observed: Mapping[str, Any]) -> None:
-    """Reject constructor values outside the one canonical v6 topology."""
+    """Reject constructor values outside the canonical Writer topology."""
 
     changed = {
         name: (WRITER_DIMENSION_CONTRACT[name], observed.get(name))

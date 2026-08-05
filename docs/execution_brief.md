@@ -6,11 +6,22 @@
 
 ## 0. 当前BCI运行事实（覆盖下文旧A100操作细节）
 
+- 当前唯一活动方法是Policy-Wide Atom Dictionary Writer：fresh identity、K64跨38 targets
+  对齐atoms、condition共享rank16 mixing；旧320-slot compiler/factor heads已从canonical
+  Writer删除。authority为`docs/action_forecast_writer_policy_wide_atom_dictionary_design.md`，
+  pending-profile config为
+  `configs/pi05_as_writer_policy_wide_atom_dictionary_bci_v1.json`。
+- CPU聚焦合同已通过：参数13,033,728、38-target shapes、exact identity、conditioned LoRA
+  及真实BA loss的D_B→全路径→D_A/A-mixing梯度阶段。新launch/checkpoint schema不接受
+  v6 warm-start。formal仍是`blocked_until_live_profile`；下一操作只是在live空闲六卡内做
+  longest105、logical-B20三步profile与独立exact-resume smoke，seal后才可fresh0→200。
 - SFT-Anchored Tangent-Basis正式消融已结束并负裁决，不再是活动训练轴。clean`059d40f`
   从历史v6-fast macro400=`143/400` warm-start完成formal cycle0→1与strict correct400；
   cycle1=`142`、breadth`7`，相对baseline gained/lost=`20/21`、intersection/union=
   `122/163`、`p=1.0`。它只证明固定factor-output basis不会立即摧毁aggregate，同时证明
   coefficient/composer侧仍会产生能力换手；禁止resume cycle2。
+- 对应`configs/pi05_rl_writer_development_v1.json`的diagnostic/profile/formal状态已全部
+  标为retired negative，canonical launcher会fail-fast；历史实现和artifact仅作证据。
 - `142`不得表述为新Writer从identity训练所得，也没有cycle1五臂证据。当前设计边界是
   回到fresh Writer的condition-to-policy架构：先用AS从零建立健康、policy-coordinated
   LoRA generator，再决定是否在同一架构上做reward校准；不得把v6 warm-start继续包装

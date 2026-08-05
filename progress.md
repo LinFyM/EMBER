@@ -8,6 +8,18 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-05 Policy-Wide Atom Dictionary实现与CPU合同完成
+
+- 封存fresh architecture authority：16个condition policy coordinates共同组合K64个
+  跨38 targets对齐的A/B atoms；旧320-slot compiler与8 factor heads已从canonical Writer
+  原位删除，不加载v6或任何历史Writer checkpoint。
+- 新实现、config、launch/checkpoint family、五block gradient ownership与inference/
+  validation schema兼容已完成。参数量13,033,728；formal config保持
+  `blocked_until_live_profile`。
+- 41项聚焦回归通过，覆盖config/schema、38-target shape、step0 exact identity、conditioned
+  写出、BA functional三阶段梯度、checkpoint family与既有训练合同；py_compile和diff
+  check通过。尚未启动GPU；下一步是live双节点preflight与六卡longest105 profile。
+
 ## 2026-08-05 SFT-Anchored Tangent-Basis profile完成
 
 - clean`2f934bd`在`gpu01:1,2,3,4,5,7`完成独立fresh one-cycle profile：96 rollout、

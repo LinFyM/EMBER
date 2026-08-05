@@ -134,12 +134,13 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 31. `docs/action_forecast_writer_relative_flow_credit_design.md`
 32. `docs/action_forecast_writer_task_grounded_progress_credit_design.md`
 33. `docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`
-34. `task_plan.md`
-35. `findings.md`
-36. `progress.md`
-37. `docs/concept.md`
-38. `docs/decisions_and_open_questions.md`
-39. `docs/novelty_and_landscape.md`
+34. `docs/action_forecast_writer_policy_wide_atom_dictionary_design.md`
+35. `task_plan.md`
+36. `findings.md`
+37. `progress.md`
+38. `docs/concept.md`
+39. `docs/decisions_and_open_questions.md`
+40. `docs/novelty_and_landscape.md`
 
 本post-seal分支已完成Target-Bound裁决并打开Semantic Factor-Basis；修改或运行前
 仍必须完整阅读Target-Bound与Semantic Factor-Basis两份design。历史CV/Target-Bound
@@ -150,15 +151,28 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 
 ## Current focused task
 
-- 当前没有可继续训练的活动checkpoint轴。SFT-Anchored Policy Tangent-Basis authority
+- 当前唯一活动方法是Policy-Wide Atom Dictionary Writer，authority为
+  `docs/action_forecast_writer_policy_wide_atom_dictionary_design.md`。它从functional
+  identity fresh训练，不加载任何历史Writer checkpoint；保留v6已验证的Semantic Core、
+  task-grounded visual transition与causal Procedure，删除320-slot compiler和8个局部
+  factor heads，改由16个condition坐标共同组合K64个跨全部38 policy targets对齐的
+  policy-wide atoms。公开输出仍是exactly one complete rank-16 LoRA，Writer输入和信息墙
+  不变。
+- canonical源码、独立launch/checkpoint schema与pending-profile配置已完成；CPU聚焦合同
+  已证明13,033,728参数、38-target shape、exact identity、conditioned写出及真实BA loss下
+  D_B→composer/Core/Procedure/D_A→A-mixing的梯度阶段。正式config为
+  `configs/pi05_as_writer_policy_wide_atom_dictionary_bci_v1.json`，当前formal状态必须保持
+  blocked，直到六卡A40 longest105/logical-B20 profile与fresh exact-resume门完成并把实测
+  证据seal回config。
+- 首次正式轴保持AS full24 raw mean、每task一条video、logical B20/policy microbatch2、
+  fast-decay400；fresh0→200后严格评测50/100/150/200，再由absolute、breadth、success-set
+  retention、趋势和内部condition→atom→BA/action传递共同决定是否续200→400。RL只可在
+  该fresh架构证明健康后作为同一生成器的后续闭环校准，不能替代AS机制门。
+- SFT-Anchored Policy Tangent-Basis authority
   `docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`已完成formal cycle1并负
   裁决：历史v6-fast macro400=`143` warm-start经固定8个factor-output basis的reward更新后
   为`142`，breadth`6→7`但gained/lost=`20/21`、union/intersection=`163/122`。因此禁止
   resume cycle2，也不补跑五臂把消融包装成主方法。
-- 当前唯一研究任务是从functional identity重新设计并fresh训练policy-coordinated
-  condition-to-LoRA generator；必须利用direct SFT已知的跨target组织、v5.2视频传递、
-  v6高absolute及Target-Spectral/SFB/Direction Store/Target-Owned负结果，不加载历史
-  Writer权重。先以AS建立健康的表示和闭环能力；RL只可在同一架构上作为后续校准。
 - AS125 Task-Grounded Semantic Progress Credit已完成同一formal root cycle1/2及两轮strict
   correct400。AS125/cycle1/cycle2=`97/104/102`，breadth=`5/4/4`；cycle1→2
   gained/lost=`15/17`，Object-1`31→26`、Object-3`19→22`且无新task coverage，

@@ -15,8 +15,11 @@ from ember.writer.architecture import (
 from ember.writer.temporal import (
     CausalProcedureEncoder,
     LanguageSemanticCore,
-    SlotNormalizedCoreProcedureCompiler,
     TaskGroundedVisualTransitionFusion,
+)
+from ember.writer.policy_dictionary import (
+    PolicyCoordinateComposer,
+    PolicyWideAtomDictionary,
 )
 from ember.writer.video_program import Pi05LanguageAxialEncoder
 
@@ -94,26 +97,6 @@ def build_lora_tensor_specs(
     return tuple(result)
 
 
-class FactorHead(torch.nn.Module):
-    """Decode one video-conditioned rank-slot state into one LoRA row."""
-
-    def __init__(self, input_width: int, hidden_width: int, output_width: int) -> None:
-        super().__init__()
-        if min(input_width, hidden_width, output_width) <= 0:
-            raise WriterModelError("invalid LoRA factor-head dimensions")
-        self.network = torch.nn.Sequential(
-            torch.nn.Linear(input_width, hidden_width, bias=False),
-            torch.nn.GELU(),
-            torch.nn.Linear(hidden_width, output_width, bias=False),
-        )
-        torch.nn.init.zeros_(self.network[-1].weight)
-
-    def forward(self, value: torch.Tensor) -> torch.Tensor:
-        if value.ndim < 3:
-            raise WriterModelError("factor head lost its rank-slot dimension")
-        return self.network(value)
-
-
 class CompleteLoRAWriter(torch.nn.Module):
     """Map task language and one raw video to the sealed rank-16 task LoRA."""
 
@@ -155,8 +138,8 @@ class CompleteLoRAWriter(torch.nn.Module):
         procedure_heads: int,
         procedure_blocks: int,
         visual_transition_heads: int,
-        fusion_heads: int,
-        factor_hidden_width: int,
+        policy_coordinate_heads: int,
+        policy_atom_count: int,
         initialization_seed: int,
         activation_checkpointing: bool,
     ) -> None:
@@ -219,22 +202,36 @@ class CompleteLoRAWriter(torch.nn.Module):
             heads=procedure_heads,
             blocks=procedure_blocks,
         )
-        self.compiler = SlotNormalizedCoreProcedureCompiler(
+        self.composer = PolicyCoordinateComposer(
             width=program_width,
-            heads=fusion_heads,
+            heads=policy_coordinate_heads,
+            rank=self.PUBLIC_LORA_RANK,
+            atom_count=policy_atom_count,
             initialization_seed=initialization_seed + 1,
         )
-        self.factor_heads = torch.nn.ModuleDict(
-            {
-                name: FactorHead(
-                    program_width,
-                    factor_hidden_width,
-                    width,
-                )
-                for name, width in self.FACTOR_WIDTHS.items()
-            }
+        self.policy_atoms = PolicyWideAtomDictionary(
+            target_widths=self._target_widths(tensor_specs),
+            rank=self.PUBLIC_LORA_RANK,
+            atom_count=policy_atom_count,
         )
         self._register_template_state(tensor_specs, template_state)
+
+    @staticmethod
+    def _target_widths(
+        tensor_specs: tuple[LoraTensorSpec, ...],
+    ) -> tuple[tuple[int, int], ...]:
+        by_module: dict[int, dict[int, int]] = {}
+        for item in tensor_specs:
+            by_module.setdefault(item.module_index, {})[item.factor_index] = item.width
+        if (
+            set(by_module) != set(range(len(by_module)))
+            or any(set(value) != {0, 1} for value in by_module.values())
+        ):
+            raise WriterModelError("policy atom targets changed topology")
+        return tuple(
+            (by_module[index][0], by_module[index][1])
+            for index in range(len(by_module))
+        )
 
     def _register_template_state(
         self,
@@ -242,7 +239,6 @@ class CompleteLoRAWriter(torch.nn.Module):
         template_state: Mapping[str, torch.Tensor],
     ) -> None:
         self._template_buffers: dict[str, str] = {}
-        self._decoding: dict[str, tuple[str, int | None]] = {}
         observed_heads: dict[str, int] = {}
         observed_layers: set[int] = set()
         for index, item in enumerate(tensor_specs):
@@ -256,7 +252,6 @@ class CompleteLoRAWriter(torch.nn.Module):
             buffer_name = f"template_{index:03d}"
             self.register_buffer(buffer_name, value, persistent=True)
             self._template_buffers[item.name] = buffer_name
-            self._decoding[item.name] = (key, layer)
         if (
             observed_heads != self.FACTOR_WIDTHS
             or observed_layers != set(range(self.EXPERT_LAYERS))
@@ -484,7 +479,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             core_memory,
             valid_core,
             procedure_memory,
-            positions,
+            _positions,
             valid_frames,
             _,
         ) = self.encode_task(
@@ -496,27 +491,19 @@ class CompleteLoRAWriter(torch.nn.Module):
             language_mask,
             task_span_mask,
         )
-        expert, action_in, action_out = self.compiler(
+        mix_a, mix_b = self.composer(
             core_memory,
             valid_core,
             procedure_memory,
-            positions,
             valid_frames,
         )
+        atom_states = self.policy_atoms(mix_a, mix_b)
         result: dict[str, torch.Tensor] = {}
         for item in self.tensor_specs:
-            key, layer = self._decoding[item.name]
-            if key.startswith("action_in_"):
-                source = action_in
-            elif key.startswith("action_out_"):
-                source = action_out
-            else:
-                if layer is None:
-                    raise WriterModelError("expert LoRA output lost its layer")
-                source = expert[:, layer]
-            rows = self.factor_heads[key](source)
-            generated = rows.transpose(-1, -2) if item.transpose_output else rows
+            generated = atom_states[item.module_index][item.factor_index]
             template = getattr(self, self._template_buffers[item.name])
+            if generated.shape[1:] != template.shape:
+                raise WriterModelError("policy atom output changed public LoRA shape")
             value = generated.to(dtype=template.dtype) + template[None]
             result[item.name] = value[0] if core_memory.shape[0] == 1 else value
         return result

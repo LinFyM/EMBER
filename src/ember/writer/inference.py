@@ -21,7 +21,7 @@ from ember.pi05_source_checkpoint import (
 )
 from ember.pi05_target_data import SUITE_ORDER, target_global_task_id
 from ember.writer.as_contract import (
-    AS_WRITER_LAUNCH_SCHEMA,
+    SUPPORTED_AS_WRITER_LAUNCH_SCHEMAS,
     REPO_ROOT,
     inspect_video_data,
     load_writer_config,
@@ -352,7 +352,7 @@ def _inspect_training_checkpoint(
     )
     source_matches = source_reference_matches(training.get("source"), source)
     valid = (
-        training.get("schema_version") == AS_WRITER_LAUNCH_SCHEMA
+        training.get("schema_version") in SUPPORTED_AS_WRITER_LAUNCH_SCHEMAS
         and training.get("stage", "development") == writer_stage(config)
         and training.get("config_sha256") == sha256_file(config_path)
         and source_matches

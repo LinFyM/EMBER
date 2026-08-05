@@ -11,6 +11,7 @@ import torch
 from ember.pi05_source_checkpoint import DistributedContext, write_json_atomic
 from ember.writer.as_config import _validate_formal_schedule, resolve_mode_config
 from ember.writer.as_contract import (
+    POLICY_WIDE_ATOM_LAUNCH_SCHEMA,
     build_contract,
     load_writer_config,
     parse_checkpoint_steps,
@@ -29,6 +30,10 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = (
     REPO_ROOT
     / "configs/pi05_as_writer_v6_relative_flow_coldstart_bci_v1.json"
+)
+POLICY_WIDE_ATOM_CONFIG = (
+    REPO_ROOT
+    / "configs/pi05_as_writer_policy_wide_atom_dictionary_bci_v1.json"
 )
 OLD_RECIPE_CONFIG = (
     REPO_ROOT
@@ -120,6 +125,22 @@ def test_v6_relative_flow_coldstart_config_seals_architecture_and_information_wa
     assert "without_runtime_full_data_sha" in config["formal_run"][
         "data_integrity_check"
     ]
+
+
+def test_policy_wide_atom_config_is_fresh_pending_profile_and_not_v6() -> None:
+    config = load_writer_config(POLICY_WIDE_ATOM_CONFIG)
+    writer = config["writer"]
+    assert writer["architecture"] == "pi05_policy_wide_atom_dictionary_writer_v1"
+    assert writer["policy_coordinate_count"] == 16
+    assert writer["policy_atom_count"] == 64
+    assert writer["dictionary_softmax"] is False
+    assert writer["dictionary_task_ids"] is False
+    assert "slot_fusion" not in writer
+    assert "factor_hidden_width" not in writer
+    assert config["profile_defaults"]["expected_world_size"] == 6
+    assert config["profile_defaults"]["per_rank_batch_size"] == 20
+    assert config["formal_run"]["status"] == "blocked_until_live_profile"
+    assert config["formal_run"]["selected_stop_step"] == 200
 
 
 def test_v6_coldstart_keeps_raw_full24_with_sliceable_independent_b20() -> None:
@@ -426,6 +447,51 @@ def test_v6_launch_records_raw_mean_collectives_not_ddp_accumulation(
     assert runtime["ddp_gradient_synchronizations_per_macro"] == 0
 
 
+def test_policy_wide_atom_launch_has_distinct_schema_and_checkpoint_family(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = load_writer_config(POLICY_WIDE_ATOM_CONFIG)
+    context = DistributedContext(
+        rank=0,
+        local_rank=0,
+        world_size=6,
+        device=torch.device("cuda:0"),
+        numa_node=1,
+        cpu_affinity=(48,),
+    )
+    monkeypatch.setattr(
+        "ember.writer.as_contract.git_state",
+        lambda _root: {"branch": "main", "commit": "a" * 40},
+    )
+    monkeypatch.setattr(
+        "ember.writer.as_contract.dist.all_gather_object",
+        lambda output, local: output.__setitem__(slice(None), [local] * 6),
+    )
+    args = argparse.Namespace(
+        mode="profile", config=POLICY_WIDE_ATOM_CONFIG, num_workers=2
+    )
+    contract = build_contract(
+        args=args,
+        config=config,
+        context=context,
+        source={},
+        tokenizer={},
+        video_data={"sampled_frame_cost_sha256": "b" * 64},
+        data_validation={},
+        task_ids=tuple(range(24)),
+        trainable={},
+        total_steps=3,
+        batch_size=20,
+        batch_cycle=(20,),
+        checkpoint_steps=(1, 2, 3),
+        initialization={},
+    )
+    assert contract["schema_version"] == POLICY_WIDE_ATOM_LAUNCH_SCHEMA
+    assert contract["runtime"]["checkpoint_state_family"] == (
+        "policy_wide_atom_task_query_keyed_rawfull24_v1"
+    )
+
+
 def test_single_video_schedule_is_reproducible_and_cycle_complete() -> None:
     schedule = TeacherVideoSchedule(
         task_ids=(3, 7),
@@ -625,11 +691,11 @@ def test_raw_full_task_step_collects_task_gradients_and_updates_once(
         writer=writer,
         gradient_layout=(
             FlatParameter(
-                name="factor_heads.weight",
+                name="policy_atoms.weight",
                 parameter=writer.weight,
                 start=0,
                 stop=1,
-                block="factor",
+                block="policy_atom",
             ),
         ),
         policy=torch.nn.Identity(),

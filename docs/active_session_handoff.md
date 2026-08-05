@@ -4,7 +4,29 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：Tangent-Basis正式消融负裁决，转回fresh Writer根因设计
+## 0.0 当前状态：Policy-Wide Atom Dictionary已实现，等待live A40 profile
+
+- 当前唯一活动method authority为
+  `docs/action_forecast_writer_policy_wide_atom_dictionary_design.md`。它从functional identity
+  fresh训练，保留v6 semantic frontend/Core/visual transition/causal Procedure，删除
+  320-slot compiler与8个factor heads；语言+一条action-hidden视频生成rank16×K64的A/B
+  mixing，共同组合跨全部38 policy targets对齐的policy-wide atoms。没有task ID、softmax/
+  top-k route、rank/orthogonal辅助loss或历史Writer warm-start。
+- canonical实现位于`src/ember/writer/policy_dictionary.py`与原位替换后的
+  `src/ember/writer/model.py`；旧compiler只由Git保留。新Writer参数量13,033,728，独立
+  launch/checkpoint family拒绝v6权重。聚焦CPU合同已覆盖38-target shapes、exact identity、
+  condition-dependent写出及真实BA functional loss下三阶段梯度开启；当前聚焦回归
+  `41 passed`。
+- pending-profile config为
+  `configs/pi05_as_writer_policy_wide_atom_dictionary_bci_v1.json`：six ranks、logical B20、
+  policy microbatch2、16-frame encoder chunk、fresh0→200首段。formal明确blocked，下一步
+  先live比较`gpu01/gpu02`并在最多6张合规空闲卡上完成longest105三步profile与独立
+  fresh0→1→exact-resume1→3；实测证据seal并clean/push后才允许正式训练。
+- 当前没有EMBER GPU进程；旧Tangent-Basis、AS125 Progress-Credit及v6 AS roots均禁止
+  resume。新方法若通过profile，正式训练仍以strict single-checkpoint correct400裁决，
+  长期目标严格`>150/400`不变。
+
+## 0.1 Tangent-Basis正式消融负裁决
 
 - clean`059d40f`的fresh formal root为
   `runs/outputs/pi05_sft_anchored_tangent_basis_writer_formal_macro400_r6_k4_nmc4_e2_c8_059d40f_20260805`。
@@ -24,9 +46,8 @@
 - 预注册续训门未过，禁止resume cycle2。`142`是继承`143`的v6 Writer经一次保守RL后
   的结果，不是fresh新架构从identity训练到142；本实验只否定“factor-output basis旋转
   是task drift主要根因”，不得写成LoRA生成质量、视频特异性或新主路线已成立。
-- 当前无EMBER GPU进程。下一阶段先利用已有direct SFT/v5.2/v6与全部负裁决，设计一套
-  从functional identity fresh训练的condition-to-policy架构；RL只可作为同一健康架构的
-  后续闭环校准，不能继续在v6 warm-start上承担修复LoRA generator的职责。
+- 该负裁决已经导向上节fresh Policy-Wide Atom Dictionary；RL不能继续在v6 warm-start上
+  承担修复LoRA generator的职责。
 
 ### Tangent-Basis profile与diagnostic前置证据
 

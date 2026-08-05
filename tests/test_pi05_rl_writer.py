@@ -68,7 +68,7 @@ def test_flow_credit_config_closes_actions_and_keeps_both_outcomes() -> None:
         "launch_unique_atomic_rank_markers_after_cuda_complete_"
         "before_each_nccl_gradient_sum"
     )
-    assert config["formal_run"]["status"] == "sealed"
+    assert config["formal_run"]["status"].startswith("retired_after")
     assert config["formal_run"]["checkpoint_cycles"] == [1, 2, 4, 8]
 
 
@@ -273,6 +273,12 @@ def test_diagnostic_profile_and_fresh_formal_runtime_seals(
         learning_epochs=None,
         resume=None,
     )
+    with pytest.raises(RewardProtocolError, match="awaits"):
+        resolve_runtime(args, config, context)
+    config = json.loads(json.dumps(config))
+    config["diagnostic_defaults"]["status"] = "sealed_read_only"
+    config["profile_defaults"]["status"] = "sealed"
+    config["formal_run"]["status"] = "sealed"
     assert resolve_runtime(args, config, context) == (1, (1,), 0)
     assert args.stop_after_cycle == 1
     invalid = DistributedContext(0, 0, 5, torch.device("cpu"), 0, (0,))

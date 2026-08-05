@@ -64,6 +64,21 @@ runner、split、路径或 GPU 权限。
   direct-program update，world6且显式`NCCL_P2P_DISABLE=1`。完成后先封存并释放GPU，再用既有
   strict panel评AS125与cycle1；仅当cycle1严格`>150`，或相对AS125 net+10、breadth不降且
   至少两suite改善时，才exact-resume cycle2。
+- formal cycle0→1已完成：96/96 rollouts、24/24 credits、48/48 valid CRN pairs、54
+  successes、6 binary-discordant pairs，一次finite update；四上游block非零、冻结梯度0，
+  wall=`418.692s`、peak reserved=`19,308,478,464` bytes，完整cycle1 checkpoint、0错误。
+
+### Program-Credit cycle1 strict correct400合同（2026-08-05）
+
+- AS125 baseline直接复用已经封存且同一state/video/env/policy-noise panel的
+  `runs/outputs/pi05_as_writer_v6_coldstart_as125_bci_correct400_noreplacement_seed7_df413de_20260805`
+  （400 rows、correct97）；不重复消耗GPU。cycle1新root为
+  `runs/outputs/pi05_antithetic_program_credit_cycle001_bci_correct400_noreplacement_seed7_219ab4e_20260805`，
+  log同名位于`runs/logs/`，tmux=`ember_program_credit_cycle1_correct400`。
+- live选最多6张空闲卡并由evaluation launcher再次检查；使用validation 8 tasks×50 sealed
+  init states、correct same-task video、without-replacement seed7、3 replicas/GPU、完整400 rows。
+  输出预计约1.04GiB，适用/data1 quota已在本阶段核验。结束后按task/state/video/env seed和
+  policy-noise prefix与AS125严格配对，报告correct、breadth、suite/task、gained/lost和继续门。
 
 ## 已完成Policy-Lane Coupled Hyperdecoder推进（2026-08-05）
 

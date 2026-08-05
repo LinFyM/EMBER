@@ -32,6 +32,20 @@ runner、split、路径或 GPU 权限。
 - [ ] formal从AS125阶段边界fresh0→1并立即做与AS125严格配对correct400；只有净增至少10、
   breadth不降且至少两suite净增，或直接严格`>150`，才允许续cycle2/4/8。
 
+### 双lane v2 A40重放合同（2026-08-05）
+
+- clean implementation commit=`5ad9db5`且已push branch/main；全仓`221 passed`、compileall和
+  diff check通过。失败的v1 root禁止resume，新root为
+  `runs/outputs/pi05_antithetic_program_credit_profile_as125_r6_crn_v2_20260805`，log同名位于
+  `runs/logs/`，tmux=`ember_program_credit_profile_crn_v2`。
+- live比较后选`gpu01:0,1,2|4,5,6`，六卡均无compute process、18--93MiB、0% util，保持
+  `3+3 NUMA`；`gpu01:7`及`gpu02:0,5,6`已有他人进程，不使用。沿用本阶段已核验的/data1
+  独立quota（约294GiB used/1TiB），新增仅ledger与Writer checkpoint，预计远小于1GiB。
+- fresh段只运行profile cycle0→1：world6、24 tasks×K4、每task两条lockstep env lanes、一次
+  full24 update，显式`NCCL_P2P_DISABLE=1`。必须96/96 rollout、24 credit、pair初态/noise一致、
+  finite cotangent/梯度、0 frozen grad/OOM/watchdog并原子保存cycle1；通过后同root仅以
+  cycle1 checkpoint exact-resume到cycle2，任何合同变化都改用新root。
+
 ## 已完成Policy-Lane Coupled Hyperdecoder推进（2026-08-05）
 
 - [x] 完成PWAD fresh0→200、四点strict correct400与24×4内部分析；曲线

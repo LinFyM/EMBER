@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：Program-Credit首轮profile发现environment CRN根因，双lane修复待原规模重放
+## 0.0 当前状态：Program-Credit双lane A40 profile与exact-resume通过，formal cycle1待启动
 
 - 当前唯一活动authority为
   `docs/action_forecast_writer_antithetic_program_credit_design.md`。Policy-Lane已经证明
@@ -38,10 +38,15 @@
   semantic encoder/FactorHeads、full24多卡分配、NCCL前FileStore ready和完整checkpoint
   roundtrip。`git diff --check`与py_compile通过，AS125 checkpoint family/60,000 queries/
   3,000 videos身份已定向确认；尚无本方法GPU结果，也没有EMBER GPU进程。
-- 双lane修复后项目正式activation下全仓`221 passed`，compileall与`git diff --check`通过；
-  formal仍保持blocked。下一步是clean commit/push，重新live比较`gpu01/gpu02`并用全新
-  root做原6-rank cycle0→1，再
-  exact-resume1→2；profile权重永久弃用，profile通过前禁止formal。
+- clean`f3f6b15`的双lane v2六卡profile已从AS125 fresh完成cycle0→1，再从完整cycle1
+  checkpoint exact-resume1→2。两轮各96 rollout、24 task credit、48 CRN pairs，全部
+  pair均满足lane0/1、env seed、首帧hash和共同policy-noise prefix严格一致；每轮54
+  successes，分别6/2个binary-discordant pairs，四个上游block两轮均非零，冻结三组梯度
+  均为0。wall=`431.709/431.367s`，peak reserved=`19,308,478,464/19,331,547,136` bytes，
+  0 OOM/watchdog/traceback；六rank ready、两次update和cycle1/2 checkpoint完整，GPU自然释放。
+- profile权重永久弃用；formal config已按预注册边界seal。下一步只从同一AS125阶段进入全新
+  formal root运行cycle0→1，然后立即在既有AS125 strict panel上做paired correct400；只有
+  `correct>150`，或相对AS125净增至少10、breadth不降且至少两suite改善，才续cycle2。
 
 ## 0.1 Policy-Lane正式负裁决
 

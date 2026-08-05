@@ -16,8 +16,14 @@
   env若从构造起保持相同reset count/seed，即使中间执行不同动作，连续三次reset的XML、state、
   agent/wrist pixels都逐字节一致。因此根修是per-task plus/minus lockstep lanes，而不是放宽
   equality gate、容忍图像误差、固定init state或换成监督proxy。
-- 双lanev2实现后项目正式activation全仓`221 passed`，compileall与diff check通过；失败
+- 双lane v2实现后项目正式activation全仓`221 passed`，compileall与diff check通过；失败
   root仍无参数更新，下一科学证据只能来自clean commit上的全新原规模重放。
+- clean`f3f6b15`全新六卡v2 profile及exact-resume完整通过：cycle0/1各96 rollouts、24 task
+  credits、48 CRN pairs且0 mismatch、54 successes；binary-discordant pairs=`6/2`，非零credit
+  pairs=`24/22`。四个上游block两轮梯度都非零，冻结semantic encoder/FactorHeads/source
+  policy均0；wall=`431.709/431.367s`，peak reserved约`19.31/19.33GB`，0错误。由此接受
+  common-random reset、A40容量、direct-program梯度、all-rank ready和exact-resume机制，
+  仍不把profile reward或权重当性能证据。
 - Policy-Lane完整负证据把最早失败从LoRA容量/几何推进到conditional credit：约10个有效
   output lanes、stable rank`1.34--1.54`、direct-SFT量级跨层能量都没有带来闭环，same-task
   video在hidden/BA却仍只有`.05%/.02%`。因此下一方法不增加结构容量，而直接对生成LoRA

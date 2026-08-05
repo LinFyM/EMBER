@@ -183,8 +183,10 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   无法仅凭同seed恢复同一随机初态。canonical根修是每task两条lockstep persistent lanes：
   plus固定lane0、minus固定lane1，两lane共享reset index/seed/policy noise且从不读取固定init
   state；真实三轮XML/state/双相机逐字节复现已通过，v2 ledger绑定lane identity。失败root
-  禁止resume。formal仍blocked；下一步只在修复后的clean/pushed代码上用全新root重放原
-  六卡cycle0→1和exact-resume1→2，profile权重永久弃用。
+  禁止resume。clean`f3f6b15`全新六卡v2 profile已完成cycle0→1及exact-resume1→2：两轮
+  各96 rollout/24 credits/48 valid CRN pairs/54 successes，一次finite update，四上游block
+  可达且冻结梯度0，wall约431秒、峰值约19.33GB、0错误。formal已seal；下一步从AS125阶段
+  进入全新formal root只跑cycle1并立即strict correct400，profile权重永久弃用。
 - SFT-Anchored Policy Tangent-Basis authority
   `docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`已完成formal cycle1并负
   裁决：历史v6-fast macro400=`143` warm-start经固定8个factor-output basis的reward更新后

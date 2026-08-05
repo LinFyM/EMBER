@@ -26,7 +26,7 @@ runner、split、路径或 GPU 权限。
   hard-reset env的placement history不被重复seed清空。实现每task两条lockstep persistent
   lanes，plus/minus固定分lane；实机连续三次验证XML/state/双相机逐字节一致，v2 ledger绑定
   environment lane，且不调用`set_init_state`。失败root仅作诊断并永久禁止resume。
-- [ ] live比较`gpu01/gpu02`后完成AS125-fresh独立六卡one-cycle A40 profile及fresh0→1→
+- [x] live比较`gpu01/gpu02`后完成AS125-fresh独立六卡one-cycle A40 profile及fresh0→1→
   resume1→2；K4/24 tasks、pair randomness、finite cotangent、四个block可达、0 frozen grad、
   NCCL ready和原子checkpoint全部通过后才seal formal。
 - [ ] formal从AS125阶段边界fresh0→1并立即做与AS125严格配对correct400；只有净增至少10、
@@ -45,6 +45,10 @@ runner、split、路径或 GPU 权限。
   full24 update，显式`NCCL_P2P_DISABLE=1`。必须96/96 rollout、24 credit、pair初态/noise一致、
   finite cotangent/梯度、0 frozen grad/OOM/watchdog并原子保存cycle1；通过后同root仅以
   cycle1 checkpoint exact-resume到cycle2，任何合同变化都改用新root。
+- 上述两段均已完成：每轮96/96 rollout、24/24 credits、48/48 CRN pairs、54 successes，
+  四上游block非零且冻结梯度0；wall=`431.709/431.367s`、peak reserved=
+  `19,308,478,464/19,331,547,136` bytes，cycle1/2 checkpoint各9文件，0错误。formal已seal，
+  profile checkpoint永不warm-start。
 
 ## 已完成Policy-Lane Coupled Hyperdecoder推进（2026-08-05）
 

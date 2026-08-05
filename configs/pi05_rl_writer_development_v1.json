@@ -170,8 +170,8 @@
     "learning_epochs": 1
   },
   "formal_run": {
-    "status": "blocked_until_program_credit_a40_profile",
-    "launch_state": "forbidden_until_profile_seal",
+    "status": "sealed",
+    "launch_state": "ready_after_crn_v2_a40_profile",
     "expected_world_size": 6,
     "total_cycles": 8,
     "checkpoint_cycles": [1, 2, 4, 8],

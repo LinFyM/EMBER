@@ -20,6 +20,10 @@ GPU范围和训练步长是当时快照；活动状态只取
   与program-credit schema升为v2并绑定lane，仍使用official random reset且从不调用
   `set_init_state`。聚焦20项及全仓221项合同通过，compileall/diff check通过；待clean
   commit/push后用全新root原规模重放。
+- clean`f3f6b15`全新root随后完成六卡cycle0→1及exact-resume1→2：累计192 rollout、48
+  task-credit rows、96 CRN pairs、2次finite full24 update和完整cycle1/2 checkpoints；两轮
+  各54 successes，四上游block可达、冻结梯度0，wall约431秒/轮、峰值19.33GB，0错误，GPU
+  自然释放。formal config已seal，profile权重禁止使用；下一步为AS125-fresh formal cycle1。
 
 ## 2026-08-05 Antithetic Program-Credit实现与CPU seal
 

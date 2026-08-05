@@ -4,7 +4,7 @@
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
-## 0.0 最新执行覆盖：K4 Writer formal完成，四点rollout进行中
+## 0.0 最新执行覆盖：K4 Writer四点与内部裁决完成
 
 - 当前唯一活动config为`configs/pi05_as_writer_k4_invariant_m2p_bci_v1.json`，authority为
   `docs/action_forecast_writer_fewshot_invariant_m2p_design.md`。它必须从functional identity
@@ -19,14 +19,19 @@
 - 上述门已通过：真实longest105、source trainable=0、累计1,440 queries/288 videos、六rank
   ready/NCCL与optimizer/scheduler/RNG/sampler exact-resume完整。下一launch必须另起fresh root。
 - fresh formal已完成0→200/every25：200 finite macros、96,000 queries、19,200 videos、
-  wall`6879.816s`，0 clip/OOM/nonfinite且信息墙读取正确。50/100 strict correct400=
-  `70/94`、breadth=`6/6`；还需评150/200，训练或held functional loss不挑点。
-  single winner必须做五臂、另K4 set、leave-one-out、谱/能量、Program→BA→fixed-action和
-  task drift分析。最低目标仍是同一checkpoint strict correct400严格`>150`并继续提高。
+  wall`6879.816s`，0 clip/OOM/nonfinite且信息墙读取正确。50/100/150/200 strict correct400=
+  `70/94/99/108`、breadth=`6/6/6/7`，相邻gained/lost=`42/18,30/25,25/16`，
+  union/intersection=`150/42`。single winner仍远未过`>150`。
+- macro200内部证据确认K4 set permutation、zero-video identity、same-task alternate/LOO共同轴、
+  wrong与order反事实到Program→M2P→BA→fixed-action全部工作；LoRA norm中位27.59且
+  identity action效应.2543，不是视频忽略或low-gain decoder。最后50步full24 task-gradient
+  retention却仅`.04326`、pair cosine`.000376`、negative pair`.49275`，四个Writer block
+  都接近1/24正交抵消。故K4作为表示改造部分成立、行为整体负裁决；不续同一schedule或
+  warm-start，下一架构必须保留K4并重构condition-specific credit coexistence。
 - formal root固定为
   `pi05_as_writer_k4_invariant_m2p_formal_fresh0_200_r6_dd3b854_20260806`与
-  8个完整checkpoints；训练session已自然结束并释放GPU。macro50/100 roots与后续精确
-  rollout状态只取`docs/active_session_handoff.md`和`task_plan.md`，不在此重复另一套命令。
+  8个完整checkpoints；训练、四点rollout与内部probe均自然结束并释放GPU。精确roots与
+  机制数值只取`docs/active_session_handoff.md`、K4 design和internal artifact。
 - 新Writer-specific运行与封存不得生成或复核SHA-256/MD5等内容hash，只保留必要路径、schema、
   size、shape、load、行数和runtime证据；不使用subagent。
 

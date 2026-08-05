@@ -8,6 +8,20 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-06 K4四点strict correct400与内部分析完成
+
+- macro150/200各自完成400 rows、42 shards、9 worker exit0；与50/100共同曲线为
+  `70/94/99/108`、breadth=`6/6/6/7`，adjacent gained/lost=`42/18,30/25,25/16`，
+  union/intersection=`150/42`。全部K4 sets/state/env/policy RNG严格配对，GPU自然释放。
+- 六张空闲`gpu01`卡运行8-task refs1内部probe，无NCCL、无rollout、无target/held action read；
+  durable root为
+  `runs/outputs/pi05_as_writer_k4_invariant_m2p_macro0200_internal_refs1_r6_4951d4e_20260806`。
+  K4置换、zero-video identity、alternate set、LOO、wrong/shuffle/reverse、LoRA geometry与
+  fixed-action路径均封存。
+- 结果确认video-common representation和约28 norm的高增益LoRA成立；共享Writer最后50步
+  task-gradient retention仍仅`.04326`且约一半pair为负。K4行为未过门并正式停止同一配置
+  续训；下一设计只从condition-specific shared-parameter coexistence继续。
+
 ## 2026-08-06 K4 fresh formal与首批strict correct400完成
 
 - clean`500294c`在`gpu01:0,1,2|4,5,7`从functional identity完成macro0→200：200 rows、

@@ -28,14 +28,20 @@ runner、split、路径或 GPU 权限。
   `runs/outputs/pi05_as_writer_k4_invariant_m2p_profile_r6_b20_8807ae0_20260806`：正式200-step
   scheduler clock下三步`34.055/33.955/33.831s`，peak reserved`19,690,160,128` bytes，
   0 OOM/clip/nonfinite，step2起四block全部可达，fresh0→1→exact-resume1→3闭合。
-- [ ] profile通过后从functional identity新root正式训练0→200、每25保存；固定50/100/150/200
+- [x] profile通过后从functional identity新root正式训练0→200、每25保存；固定50/100/150/200
   strict correct400，并对single winner完成correct/same/wrong/shuffled/reversed、另K4 set、
   leave-one-video-out、LoRA谱/能量、Program→BA→fixed-action和task漂移分析。
   - [x] fresh formal0→200自然完成：200 finite macros、96,000 queries、19,200 videos、8个
     checkpoints、0 clip/OOM/nonfinite、0 validation/test action reads。
   - [x] macro50/100 strict correct400完成：`70/94`、breadth=`6/6`；K4 sets/state/RNG严格配对。
-  - [ ] macro150/200 strict correct400、四点single winner裁决与winner全分析。
-- [ ] 每轮只按最早失效接口修改descriptor、invariant program、M2P或credit；不得默认增加K、
+  - [x] macro150/200完成；完整曲线=`70/94/99/108`、breadth=`6/6/6/7`，macro200为single
+    winner但未过门。refs1内部分析确认K4共同program、高增益LoRA与order→action路径成立；
+    最后50步四个Writer block的task-gradient均接近1/24正交抵消。
+- [x] 按最早接口裁决K4：descriptor/invariant/M2P/policy leverage均通过，剩余失败定位为
+  condition-specific credit在共享Writer参数中的coexistence；禁止续同一schedule、warm-start、
+  loss挑点或退回one-shot/video忽略。
+- [ ] 下一轮只保留K4 video-owned single-LoRA合同，并从condition-specific parameter
+  coexistence重构；不得默认增加K、
   rank、scale、store或训练时长。single-checkpoint strict correct400必须严格`>150`，达到后
   继续尽可能提高absolute、breadth、稳定积累与视频因果性。
 

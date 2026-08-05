@@ -6,6 +6,22 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-06 K4四点与内部裁决：视频共同程序成立，shared credit仍近正交抵消
+
+- strict correct400曲线=`70/94/99/108`、breadth=`6/6/6/7`；相邻gained/lost=
+  `42/18,30/25,25/16`，union/intersection=`150/42`。曲线单调且breadth提高，但macro200
+  仍低于v6-fast143和严格门`>150`，Goal-3四点全0，single envelope gap42。
+- macro200 refs1内部分析严格确认不是忽略视频：set permutation与zero-video identity为0；
+  same-task另一K4 set的Program/M2P/BA/action差异中位`.150/.137/.115/.016`，LOO为
+  `.062/.055/.043/.009`，cross-suite wrong为`1.092/.987/.730/.151`，shuffled/reversed
+  又将约`1.28/1.44`的Program变化传为`.253/.274` action变化。
+- effective LoRA norm中位27.59、identity→correct action差异.254，未重演Condition-Kernel
+  的tiny-LoRA；stable rank约1本身也不构成失败，因为direct SFT同样低rank。
+- 最后50步full24 task-gradient retention中位仅`.04326`，pair cosine`.000376`、negative
+  pair`.49275`；Program、M2P shared、A/B heads均接近`1/24`正交极限。K4解决了one-shot
+  视频共同性辨识和高增益写出，剩余最早接口是condition-specific credit在共享Writer参数
+  中无法稳定共存。下一版必须保留K4 video-owned program，不续同一schedule、不warm-start。
+
 ## 2026-08-06 K4 formal与前两点rollout：早期acquisition回升但尚未过门
 
 - fresh K4 M2P formal完整跑到macro200，训练规模为96,000 action queries与19,200条

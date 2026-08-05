@@ -1,6 +1,6 @@
 # Few-Shot Invariant-Program M2P Writer
 
-状态：2026-08-06 implementation authority。本文覆盖上一轮 Factorized
+状态：2026-08-06 正式实验与内部机制裁决完成。本文覆盖上一轮 Factorized
 Condition-Kernel Program Memory 的活动地位；后者的正式负结果继续保留，不能加载其
 checkpoint、Program Memory 或 FactorHeads。
 
@@ -164,8 +164,50 @@ loss下降或多checkpoint union都不能替代该门。
 - fresh formal0→200已自然完成：200 finite macros、96,000 action queries、19,200 K4
   teacher videos、8个every25 checkpoints、0 clip/OOM/nonfinite，source policy保持冻结，
   validation/test action reads均为0。
-- macro50/100 strict correct400=`70/94`、breadth=`6/6`；50→100 gained/lost=`42/18`、
-  union/intersection=`112/52`。两个checkpoint的state、四条teacher demo indices、env seed与
-  policy RNG严格相同，每task 50个sets覆盖50条unique teacher videos。
-- 当前只是四点曲线的前半段，既没有过`>150`行为门，也已有18个success丢失；不得写成
-  漂移已解或据此选择macro100。下一步固定评macro150/200后再选single winner做第9节分析。
+- macro50/100/150/200 strict correct400=`70/94/99/108`、breadth=`6/6/6/7`；逐task依次为
+  `[1,1,0,32,32,1,0,3]`、`[9,1,0,38,34,6,0,6]`、
+  `[3,1,0,35,45,13,0,2]`、`[5,2,0,36,42,17,2,4]`。相邻gained/lost=
+  `42/18,30/25,25/16`，四点union/intersection=`150/42`。曲线虽单调上升且breadth最终为7，
+  但single winner macro200仍低于v6-fast143和严格门`>150`，Goal-3四点始终为0。
+- 四点均为400 rows、42 shards、9 workers；state、K4 teacher indices、env seed与policy RNG
+  严格配对，每task 50个K4 sets覆盖50条unique teacher videos。旧K1聚合字段遗漏只在GPU
+  rollout结束后的CPU aggregation触发；唯一results owner兼容K4后直接重聚已有sealed shards，
+  没有重跑或改变rollout。
+
+### 11.1 K4确实学会了视频共同程序
+
+macro200的8 validation tasks×refs1内部probe只读取action-hidden videos和observation-only
+fixed policy query，0 rollout、0 target/validation/test action read；durable root为
+`runs/outputs/pi05_as_writer_k4_invariant_m2p_macro0200_internal_refs1_r6_4951d4e_20260806`。
+机制最低门全部通过：K4 set permutation的Program与effective BA relative-L2均严格为0；
+zero-video Program和identity误差均严格为0。
+
+同task另一K4 set的Program/M2P/effective-BA/fixed-action relative-L2中位为
+`.15045/.13655/.11480/.01641`，leave-one-out K3为
+`.06151/.05498/.04297/.00944`；cross-suite wrong为
+`1.09192/.98709/.73025/.15067`。shuffled与reversed又分别把Program差异
+`1.28283/1.43628`传到BA`1.07073/1.18981`和action`.252996/.27378`。因此当前Writer
+没有忽略视频：K4共同轴抑制单条轨迹nuisance，同时错误任务和时序反事实能穿过完整
+Program→M2P→LoRA→action路径。
+
+LoRA增益也没有重演Condition-Kernel低增益平台：effective norm均值/中位=
+`28.12/27.59`，范围`24.96--33.09`，接近direct SFT的`35.736`；identity→correct fixed-action
+relative-L2中位`.25430`。stable rank仍约`1.000002`、首奇异值能量约`.999998`，但两套
+direct SFT也以低effective rank工作，故该几何不是当前根因。q/v/action能量均值约
+`.73909/.26082/.0000897`，38 targets的top4能量占`.39894`。
+
+### 11.2 最早剩余失效接口与裁决
+
+200步task-gradient直接指向共享Writer中的credit coexistence。全200与最后50步的full24
+mean-gradient energy retention中位分别`.04518/.04326`，最后50步24-task median pair
+cosine仅`.000376`、negative pair fraction`.49275`，几乎等于24个正交随机方向的
+`1/24=.04167`。该现象贯穿invariant program、M2P shared、A heads和B heads；最后50步
+各block retention中位分别`.04253/.04320/.04201/.04258`，不是某一个末端head单独吞掉
+credit。checkpoint能力仍有实质换手，single envelope gap为42。
+
+因此K4的科学裁决是“条件表示和高增益写出成立，但行为目标未过门”。它解决了one-shot
+不可辨识性，不支持退回忽略视频、增加K/rank/scale、延长同一200-step schedule或按
+functional loss挑点；也不能写成task drift已解。下一方法必须保留K4 video-owned program
+与single-LoRA接口，直接重构不同video-condition credit如何在共享Writer参数中稳定共存和
+组合，并保持AS与未来reward训练共用同一架构。当前K4 checkpoint不得作为下一方法
+warm-start。

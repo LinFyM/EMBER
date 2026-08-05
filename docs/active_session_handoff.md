@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0. 最新覆盖：K4 Invariant-Program M2P formal完成，四点rollout进行中
+## 0. 最新覆盖：K4 Invariant-Program M2P四点与内部裁决完成
 
 - owner已解除讨论暂停、恢复自主持续推进，并明确EMBER不能忽略视频；允许few-shot。
   当前唯一活动authority为
@@ -30,15 +30,24 @@
   queries、19,200 action-hidden teacher videos、wall=`6879.816s`、peak reserved=
   `19,690,160,128` bytes，0 OOM/clip/nonfinite，source trainable=0，validation/test action
   reads均为0；8个every25 checkpoints完整，GPU自然释放。
-- macro50/100首批并行strict correct400已完成全部400 rows/42 shards/9 workers，correct=
-  `70/94`、breadth=`6/6`，逐task为`[1,1,0,32,32,1,0,3]`与
-  `[9,1,0,38,34,6,0,6]`，50→100 gained/lost=`42/18`、union/intersection=`112/52`。
+- macro50/100/150/200 strict correct400已全部完成，correct=`70/94/99/108`、breadth=
+  `6/6/6/7`，逐task为`[1,1,0,32,32,1,0,3]`、`[9,1,0,38,34,6,0,6]`、
+  `[3,1,0,35,45,13,0,2]`、`[5,2,0,36,42,17,2,4]`。相邻gained/lost=
+  `42/18,30/25,25/16`，union/intersection=`150/42`。每点400 rows/42 shards/9 workers，
   每task 50个K4 sets覆盖50条unique videos且checkpoint间K4 set/state/RNG严格配对。
   GPU rollout完成后聚合器暴露旧K1字段遗漏；唯一`pi05_eval_results` owner已兼容K4
   `teacher_demo_indices`并从既有sealed shards完成CPU聚合，未重跑或改变任何rollout。
-- 下一正式证据固定为macro150/200 strict correct400和single winner五臂/
-  K4-specific内部分析。任何修改必须由descriptor→invariant slots→M2P→effective BA→
-  closed-loop credit中的最早失效接口决定；长期single-checkpoint correct严格`>150`不变。
+- macro200内部root为
+  `runs/outputs/pi05_as_writer_k4_invariant_m2p_macro0200_internal_refs1_r6_4951d4e_20260806`：
+  K4置换与zero-video identity严格成立；same-task另一set与leave-one-out的Program→BA→action
+  变化有界且显著小于wrong，shuffled/reversed又强穿透到action。LoRA norm中位27.59、
+  identity→correct action差异中位.2543，证明当前方法没有忽略视频且不缺policy leverage。
+- 决定性剩余失败是共享参数中的condition credit cancellation：最后50步full24 gradient
+  retention中位`.04326`、pair cosine`.000376`、negative pair`.49275`，Program、M2P、A/B
+  heads各层都接近1/24正交极限。K4曲线单调但macro200仍仅108、Goal-3为0、envelope gap42，
+  因此不续同一schedule、不warm-start、不用loss挑点；下一架构必须保留K4 video-owned
+  program并从condition-specific parameter coexistence重构。长期single-checkpoint correct
+  严格`>150`不变。
 - 当前Writer-specific新artifact只用路径/schema/size/shape/real-load证据，不生成或复核
   SHA-256/MD5等文件内容hash。GPU仍只可live选择`gpu01/gpu02`最多6张空闲卡，显式
   `NCCL_P2P_DISABLE=1`并保持formal resume的3+3 NUMA topology；当前仍不使用subagent。

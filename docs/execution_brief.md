@@ -24,6 +24,10 @@
   主块全部可达，合同SHA=`f0f3ec32...55261`。formal config已seal；下一操作是clean/pushed
   authority与live设备/存储复核后从全新identity root训练0→200，任何PWAD/profile/smoke
   权重均不得进入。
+- fresh0→200 launch contract已写入`task_plan.md`：live选择`gpu01:0,1,2,4,5,7`，single-node
+  six-rank、`3+3 NUMA`、显式`NCCL_P2P_DISABLE=1`；output/log/tmux分别为
+  `pi05_as_writer_policy_lane_hyperdecoder_formal_fresh0_200_r6_fbc320a_20260805`、同名log和
+  `ember_policy_lane_formal_r6_fbc320a`。只能从functional identity启动。
 - SFT-Anchored Tangent-Basis正式消融已结束并负裁决，不再是活动训练轴。clean`059d40f`
   从历史v6-fast macro400=`143/400` warm-start完成formal cycle0→1与strict correct400；
   cycle1=`142`、breadth`7`，相对baseline gained/lost=`20/21`、intersection/union=

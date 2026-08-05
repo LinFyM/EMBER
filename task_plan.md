@@ -27,6 +27,29 @@ runner、split、路径或 GPU 权限。
 - [ ] 从clean/pushed代码的独立fresh root训练0→200，strict评测50/100/150/200；只按
   single-checkpoint absolute、breadth、换手、视频传递和policy-lane内部证据决定是否续400。
 
+### Policy-Lane fresh0→200 formal launch contract
+
+- 功能实现与profile seal=`fbc320a`；本段launch-record为docs-only delta，实际启动commit
+  由`run_contract.json`记录。启动时worktree必须clean且等于`origin/main`；不传`--resume`
+  或`--initialize-writer-checkpoint`，不加载PWAD、v6、profile或resume-smoke Writer权重。
+- output=`runs/outputs/pi05_as_writer_policy_lane_hyperdecoder_formal_fresh0_200_r6_fbc320a_20260805`；
+  log=`runs/logs/pi05_as_writer_policy_lane_hyperdecoder_formal_fresh0_200_r6_fbc320a_20260805.log`；
+  tmux=`ember_policy_lane_formal_r6_fbc320a`。root已核验不存在。
+- scale=`200 macros × 24 tasks × B20 = 96,000` logical queries、4,800 one-video conditions，
+  every25共8个checkpoint；profile三步稳态约31秒，预计主体约105分钟，正式wall上限190分钟。
+- live 2026-08-05启动快照：`gpu01`八卡无compute process，`gpu02`只有4张空闲；选择
+  `gpu01:0,1,2,4,5,7`、single-node six-rank、`3+3 NUMA`，显式
+  `NCCL_P2P_DISABLE=1`。`/data1` quota使用`299,102,944KiB/1TiB`，单checkpoint实测
+  约565MiB，含8个保留点与原子临时副本预计峰值新增低于6GiB。
+- 只在50/100/150/200 checkpoint完成后启动strict paired correct400；训练loss不选择
+  checkpoint。0→200完成前不续400，也不对中间weak metric增加trick或旁路。
+
+精确命令：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,7 NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_as_writer.py --config configs/pi05_as_writer_policy_lane_hyperdecoder_bci_v1.json --mode formal --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir runs/outputs/pi05_as_writer_policy_lane_hyperdecoder_formal_fresh0_200_r6_fbc320a_20260805 --stop-after-step 200 --num-workers 0 --log-every 1 --skip-data-sha
+```
+
 ## 已封存的Policy-Wide Atom Dictionary推进（2026-08-05）
 
 - [x] 基于direct SFT的跨target组织、v5.2视频传递、v6 absolute及全部负裁决，封存

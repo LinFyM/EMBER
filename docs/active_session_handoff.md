@@ -16,8 +16,9 @@
   自主切到`gpu01:1,2,3,4,5,7`，仍严格保持sealed `3+3 NUMA`；未共享或干扰他人进程。
   profile/smoke权重禁止进入正式轨迹。
 - config现已seal为16-frame encoder chunk、logical B20、policy microbatch2、six ranks、
-  fresh0→200/every25。下一步是在本次authority记录clean commit/push与live双节点/存储复核
-  后，从全新root正式训练；长期single-checkpoint严格`>150/400`不变。
+  fresh0→200/every25。正式launch contract已写入`task_plan.md`：live选择
+  `gpu01:0,1,2,4,5,7`的`3+3 NUMA`，fresh root与精确命令均已封存；长期
+  single-checkpoint严格`>150/400`不变。
 
 - Policy-Wide Atom Dictionary已完成clean`69563a0` fresh0→200：200 macros、96,000
   logical queries、4,800 one-video conditions、8个checkpoint，0 OOM/clip/nonfinite且

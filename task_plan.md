@@ -21,8 +21,9 @@ runner、split、路径或 GPU 权限。
   optimizer restore ownership后通过，1,440 queries/72 videos、六rank状态与五block可达。
 - [x] profile证据seal后从独立fresh root完成0→200：200 macros、96,000 queries、4,800
   one-video conditions、every25共8个完整checkpoint；0 OOM/clip/nonfinite，validation/test
-  action reads均为0。下一步strict correct400评测50/100/150/200并做winner内部
-  condition→atom→BA/action与视频特异性分析，再裁决是否exact-resume200→400。
+  action reads均为0。strict correct400曲线为`77/71/80/80`、breadth=`5/6/5/5`；明显
+  低于v6-fast143和严格门，不续200→400。四点配对换手与内部condition→atom→BA/action
+  及视频特异性分析继续完成后再作根因裁决。
 
 ### fresh0→200 formal launch contract
 
@@ -56,6 +57,21 @@ env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1,2,3,
   checkpoint correct、breadth和严格配对换手，不用functional loss。
 - output roots统一为
   `runs/outputs/pi05_as_writer_policy_wide_atom_dictionary_bci_correct400_noreplacement_seed7_macro{0050,0100,0150,0200}_69563a0_20260805`。
+
+### four-checkpoint internal analysis launch contract
+
+- analysis code=`941c5e3`，只扩展既有cold-start analysis owner；同时读取50/100/150/200，
+  覆盖24 train tasks、same-task demos0--4、reversed/shuffled与每suite两task fixed-action panel。
+- 新增PWAD专属证据为raw A/B mixing、atom与storage-weighted participation、mixing row rank、
+  跨task和same-task-video mixing variance及public target energy profile；已有effective BA谱、
+  checkpoint churn和fixed-action传递保持不变，target/validation/test action reads均为0。
+- live preflight选择`gpu01:0,1,2,3,4,5`六张空卡；output=
+  `runs/outputs/pi05_as_writer_policy_wide_atom_dictionary_internal_all4_r6_941c5e3_20260805`，
+  预计新增小于0.1GiB。启动前`/data1` quota用量约282GiB/1TiB。
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=8 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/torchrun --standalone --nproc-per-node=6 scripts/analyze_relative_flow_coldstart.py --mode formal --training-run runs/outputs/pi05_as_writer_policy_wide_atom_dictionary_formal_fresh0_200_r6_20260805 --checkpoints runs/outputs/pi05_as_writer_policy_wide_atom_dictionary_formal_fresh0_200_r6_20260805/checkpoints/step_00000050 runs/outputs/pi05_as_writer_policy_wide_atom_dictionary_formal_fresh0_200_r6_20260805/checkpoints/step_00000100 runs/outputs/pi05_as_writer_policy_wide_atom_dictionary_formal_fresh0_200_r6_20260805/checkpoints/step_00000150 runs/outputs/pi05_as_writer_policy_wide_atom_dictionary_formal_fresh0_200_r6_20260805/checkpoints/step_00000200 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir runs/outputs/pi05_as_writer_policy_wide_atom_dictionary_internal_all4_r6_941c5e3_20260805
+```
 
 ## 已完成的SFT-Anchored Policy Tangent-Basis消融（2026-08-05）
 

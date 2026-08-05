@@ -18,8 +18,14 @@
 - D_A/D_B exact-zero保证fresh public A=template、B=0。真实BA functional loss聚焦测试
   验证第一步只有D_B，B打开后composer/Core/Procedure与D_A可达，A atoms打开后A-side
   mixing可达；不是通过辅助loss或手工非零初始化制造路径。
-- canonical参数量13,033,728；新launch/checkpoint family和pending-profile config已闭合，
-  v6 checkpoint不能误载。formal必须等live A40 profile与exact-resume smoke后再seal。
+- canonical参数量13,033,728；新launch/checkpoint family拒绝v6 checkpoint。clean`60e45f8`
+  live六卡longest105 profile三步均finite，峰值allocated/reserved=`35,024,829,440/
+  44,883,247,104` bytes，0 OOM/clip；step1只有policy atom，step2起semantic/Core/Program/
+  composer/policy atom五block全部非零，source policy trainable=0。
+- 独立fresh0→1后首次resume由restore validator fail-fast，因为family已在save/schema owner中
+  建立但漏入cycle-normalized optimizer合法集合；0新增训练行。补齐唯一白名单并加回归后，
+  同一六卡step1→3成功，累计1,440 queries、72 videos、六rank state与scheduler/RNG/data
+  cursor完整。该问题是checkpoint schema ownership缺口，不改变PWAD科学机制。
 
 ## 2026-08-05 SFT-Anchored Tangent-Basis formal负裁决
 

@@ -85,7 +85,7 @@
       "budget_role": "fresh_policy_wide_atom_dictionary_full24_bci_a40_logical_b20_policy_microbatch2"
     },
     "profile_defaults": {
-      "status": "pending_live_bci_a40_46g_r6_policy_wide_atom_dictionary",
+      "status": "sealed_bci_a40_46g_r6_policy_wide_atom_dictionary_profile",
       "expected_world_size": 6,
       "total_steps": 3,
       "per_rank_batch_size": 20,
@@ -93,7 +93,7 @@
       "selected_stop_step": 3
     },
     "profile_evidence": {
-      "status": "pending_live_bci_a40_46g_r6_policy_wide_atom_dictionary",
+      "status": "sealed_live_bci_a40_46g_r6_policy_wide_atom_dictionary_profile",
       "fixed_frame_stride": 5,
       "teacher_videos_per_task_visit": 1,
       "tasks_per_rank_per_optimizer_update": 4,
@@ -112,12 +112,36 @@
         "functional_policy_microbatch_size": 1
       },
       "selection_rule": "preserve logical independent B20 and full24 raw mean; reduce only physical frame or policy microbatch on measured OOM",
-      "selected": null,
-      "exact_resume_smoke": null,
+      "selected": {
+        "max_frames_per_encoder_call": 16,
+        "per_task_action_batch_size": 20,
+        "functional_policy_microbatch_size": 2,
+        "world_size": 6,
+        "profile_root": "runs/outputs/pi05_as_writer_policy_wide_atom_dictionary_profile_r6_60e45f8_20260805",
+        "contract_sha256": "e59003d6ee5595ad898de7f1bc47bd4b03927733cb9c46c7b69273621e605ca6",
+        "step_seconds_max": [32.860186869002064, 30.4177686740004, 30.40400270200189],
+        "peak_allocated_bytes": 35024829440,
+        "peak_reserved_bytes": 44883247104,
+        "longest_sampled_video_frames": 105,
+        "oom": false,
+        "gradient_clip_triggered": false
+      },
+      "exact_resume_smoke": {
+        "status": "passed_fresh_0_to_1_exact_resume_1_to_3_after_fail_closed_family_registration_fix",
+        "root": "runs/outputs/pi05_as_writer_policy_wide_atom_dictionary_resume_smoke_r6_60e45f8_20260805",
+        "contract_sha256": "e59003d6ee5595ad898de7f1bc47bd4b03927733cb9c46c7b69273621e605ca6",
+        "metrics_steps": [1, 2, 3],
+        "global_policy_samples": 1440,
+        "global_writer_video_conditions": 72,
+        "checkpoint_state_family": "policy_wide_atom_task_query_keyed_rawfull24_v1",
+        "rank_state_files": 6,
+        "validation_action_reads": 0,
+        "test_action_reads": 0
+      },
       "gradient_reachability": {
-        "status": "pending_live_profile",
+        "status": "passed",
         "identity_step_policy_atoms_b_only": true,
-        "all_five_declared_blocks_nonzero_by_step": null,
+        "all_five_declared_blocks_nonzero_by_step": 2,
         "declared_blocks": [
           "semantic_frontend",
           "core",
@@ -130,8 +154,8 @@
       "inference_profile": "deferred_until_absolute_and_internal_path_gate"
     },
     "formal_run": {
-      "status": "blocked_until_live_profile",
-      "launch_state": "requires_clean_pushed_code_and_sealed_live_profile",
+      "status": "sealed",
+      "launch_state": "ready_after_clean_pushed_origin_main_commit_and_live_preflight",
       "expected_world_size": 6,
       "total_steps": 400,
       "per_rank_batch_size": 20,

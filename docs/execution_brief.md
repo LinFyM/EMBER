@@ -9,12 +9,18 @@
 - 当前唯一活动方法是Policy-Wide Atom Dictionary Writer：fresh identity、K64跨38 targets
   对齐atoms、condition共享rank16 mixing；旧320-slot compiler/factor heads已从canonical
   Writer删除。authority为`docs/action_forecast_writer_policy_wide_atom_dictionary_design.md`，
-  pending-profile config为
+  sealed config为
   `configs/pi05_as_writer_policy_wide_atom_dictionary_bci_v1.json`。
 - CPU聚焦合同已通过：参数13,033,728、38-target shapes、exact identity、conditioned LoRA
   及真实BA loss的D_B→全路径→D_A/A-mixing梯度阶段。新launch/checkpoint schema不接受
-  v6 warm-start。formal仍是`blocked_until_live_profile`；下一操作只是在live空闲六卡内做
-  longest105、logical-B20三步profile与独立exact-resume smoke，seal后才可fresh0→200。
+  v6 warm-start。clean`60e45f8`的longest105、logical-B20六卡三步profile已通过：峰值
+  allocated/reserved=`35,024,829,440/44,883,247,104` bytes，三步均finite、0 OOM/clip，
+  step2起五block全可达。独立fresh0→1/exact-resume1→3也已通过，累计1,440 queries/
+  72 videos、6 rank states、0 validation/test action reads。
+- exact-resume首次在训练前由optimizer restore family白名单fail-fast；根因是新增PWAD family
+  已接入save/schema但漏接restore validator。只补该合法family并加聚焦回归后，原失败规模
+  重放通过；不得删除fail-fast日志或把修复解释为训练变化。下一操作是clean/push后live
+  preflight，再从独立全新root fresh0→200，profile/smoke权重不得进入。
 - SFT-Anchored Tangent-Basis正式消融已结束并负裁决，不再是活动训练轴。clean`059d40f`
   从历史v6-fast macro400=`143/400` warm-start完成formal cycle0→1与strict correct400；
   cycle1=`142`、breadth`7`，相对baseline gained/lost=`20/21`、intersection/union=

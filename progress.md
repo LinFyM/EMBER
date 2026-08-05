@@ -8,6 +8,19 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-05 Policy-Wide Atom Dictionary profile/resume封存
+
+- live比较双节点后选择`gpu01:1,2,3,4,5,7`的3+3 NUMA六卡；clean`60e45f8`完成longest105、
+  logical B20/B2三步profile，step seconds=`32.860/30.418/30.404`，峰值allocated/reserved=
+  `35,024,829,440/44,883,247,104` bytes，0 OOM/clip/nonfinite。1,440 queries、72 one-shot
+  videos，step2起五个声明block均可达，source policy trainable=0。
+- 独立fresh0→1 checkpoint完整。首次resume在进入step2前由optimizer restore family
+  validator fail-fast，0新增metric/checkpoint；新增family的save/schema已闭合但restore
+  allowlist漏接。最小修复与聚焦回归通过后，原六卡step1→3重放成功，六rank状态、
+  optimizer/scheduler/RNG/data cursor与累计1,440 queries/72 videos闭合，GPU释放。
+- profile evidence与formal config已seal；下一步是修复/authority clean commit/push后的live
+  preflight及全新identity root 0→200，不复用任何profile/smoke Writer权重。
+
 ## 2026-08-05 Policy-Wide Atom Dictionary实现与CPU合同完成
 
 - 封存fresh architecture authority：16个condition policy coordinates共同组合K64个

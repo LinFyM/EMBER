@@ -160,6 +160,12 @@ fixed-query action传递，但不为这些指标设置人工“越高越好”�
 
 canonical实现、新config与独立launch/checkpoint family已完成；旧320-slot compiler/factor
 decoder已从活动Writer源码删除。CPU聚焦合同通过41项，确认13,033,728参数、全部38 targets
-形状、fresh identity、conditioned LoRA以及真实BA functional loss的梯度阶段。formal config
-仍为`blocked_until_live_profile`，当前没有启动GPU；下一边界是BCI六卡longest105/logical-B20
-profile与独立exact-resume smoke，证据seal后才能开始fresh formal。
+形状、fresh identity、conditioned LoRA以及真实BA functional loss的梯度阶段。
+
+clean`60e45f8`已完成BCI六卡longest105/logical-B20三步profile：step seconds=
+`32.860/30.418/30.404`，峰值allocated/reserved=`35,024,829,440/44,883,247,104`
+bytes，0 OOM/clip；1,440 queries、72 one-shot videos，step1仅policy atom，step2起五个
+声明block全可达，source trainable=0。独立fresh0→1后首次resume因新family漏入optimizer
+restore合法集合而fail-fast，0新增metric/checkpoint；最小修复后原六卡step1→3重放通过，
+六rank state与optimizer/scheduler/RNG/data cursor闭合。formal config现已seal，下一边界是
+clean/push与live preflight后的独立fresh0→200；任何profile/smoke权重均不得进入。

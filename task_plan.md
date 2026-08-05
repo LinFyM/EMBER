@@ -16,9 +16,10 @@ runner、split、路径或 GPU 权限。
 - [x] 原位替换canonical Writer，删除旧320-slot compiler/factor decoder；新增独立config、
   launch/checkpoint schema和五block ownership。聚焦CPU合同确认13,033,728参数、38-target
   shapes、identity、条件写出与真实BA loss的三阶段梯度开启；formal保持profile前blocked。
-- [ ] live比较`gpu01/gpu02`，只取最多6张符合ownership/NUMA合同的空闲A40，完成最长
-  105-frame、logical B20、microbatch2三步profile，并做独立fresh0→1→exact-resume1→3。
-- [ ] profile证据seal、clean commit/push后，从独立fresh root完成0→200；strict correct400
+- [x] live比较`gpu01/gpu02`后用`gpu01:1,2,3,4,5,7`的3+3 NUMA六卡完成最长105-frame、
+  logical B20、microbatch2三步profile；独立fresh0→1→exact-resume1→3在补齐新family的
+  optimizer restore ownership后通过，1,440 queries/72 videos、六rank状态与五block可达。
+- [ ] profile证据已seal；待当前修复/authority clean commit/push后，从独立fresh root完成0→200；strict correct400
   评测50/100/150/200并做winner内部condition→atom→BA/action与视频特异性分析，再裁决
   是否exact-resume200→400。
 

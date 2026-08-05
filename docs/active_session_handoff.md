@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：Policy-Wide Atom Dictionary已实现，等待live A40 profile
+## 0.0 当前状态：Policy-Wide Atom Dictionary profile/resume已通过，待fresh formal
 
 - 当前唯一活动method authority为
   `docs/action_forecast_writer_policy_wide_atom_dictionary_design.md`。它从functional identity
@@ -17,13 +17,21 @@
   launch/checkpoint family拒绝v6权重。聚焦CPU合同已覆盖38-target shapes、exact identity、
   condition-dependent写出及真实BA functional loss下三阶段梯度开启；当前聚焦回归
   `41 passed`。
-- pending-profile config为
+- sealed config为
   `configs/pi05_as_writer_policy_wide_atom_dictionary_bci_v1.json`：six ranks、logical B20、
-  policy microbatch2、16-frame encoder chunk、fresh0→200首段。formal明确blocked，下一步
-  先live比较`gpu01/gpu02`并在最多6张合规空闲卡上完成longest105三步profile与独立
-  fresh0→1→exact-resume1→3；实测证据seal并clean/push后才允许正式训练。
+  policy microbatch2、16-frame encoder chunk、fresh0→200首段。clean`60e45f8`六卡
+  longest105三步profile完成，step seconds=`32.860/30.418/30.404`，峰值allocated/
+  reserved=`35,024,829,440/44,883,247,104` bytes，0 OOM/clip；1,440 queries、72 videos，
+  step1仅D_B侧policy atoms可达，step2起五个声明block全可达，source trainable=0。
+- 独立root fresh0→1后首次resume被新checkpoint family未登记到optimizer restore白名单
+  fail-fast；0新增metric/checkpoint。根因修复只补family ownership，聚焦回归通过；原六卡
+  step1→3重放随后完成，六份rank state、optimizer/scheduler/RNG/data cursor、累计1,440
+  queries/72 videos全部闭合，validation/test action reads=0。失败日志保留，不把schema
+  修复写成科学变化。
+- config profile evidence现已seal；下一步只在修复与authority clean commit/push、live双节点
+  preflight后，从全新root、不传resume或Writer初始化权重地fresh0→200。
 - 当前没有EMBER GPU进程；旧Tangent-Basis、AS125 Progress-Credit及v6 AS roots均禁止
-  resume。新方法若通过profile，正式训练仍以strict single-checkpoint correct400裁决，
+  resume。新方法正式训练仍以strict single-checkpoint correct400裁决，
   长期目标严格`>150/400`不变。
 
 ## 0.1 Tangent-Basis正式消融负裁决

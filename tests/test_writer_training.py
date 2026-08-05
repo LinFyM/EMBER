@@ -127,7 +127,7 @@ def test_v6_relative_flow_coldstart_config_seals_architecture_and_information_wa
     ]
 
 
-def test_policy_wide_atom_config_is_fresh_pending_profile_and_not_v6() -> None:
+def test_policy_wide_atom_config_is_fresh_profile_sealed_and_not_v6() -> None:
     config = load_writer_config(POLICY_WIDE_ATOM_CONFIG)
     writer = config["writer"]
     assert writer["architecture"] == "pi05_policy_wide_atom_dictionary_writer_v1"
@@ -139,7 +139,11 @@ def test_policy_wide_atom_config_is_fresh_pending_profile_and_not_v6() -> None:
     assert "factor_hidden_width" not in writer
     assert config["profile_defaults"]["expected_world_size"] == 6
     assert config["profile_defaults"]["per_rank_batch_size"] == 20
-    assert config["formal_run"]["status"] == "blocked_until_live_profile"
+    assert config["profile_evidence"]["status"].startswith("sealed_live_")
+    assert config["profile_evidence"]["exact_resume_smoke"][
+        "metrics_steps"
+    ] == [1, 2, 3]
+    assert config["formal_run"]["status"] == "sealed"
     assert config["formal_run"]["selected_stop_step"] == 200
 
 

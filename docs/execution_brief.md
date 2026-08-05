@@ -6,10 +6,16 @@
 
 ## 0. 当前BCI运行事实（覆盖下文旧A100操作细节）
 
-- 当前唯一活动方法是Policy-Lane Coupled Hyperdecoder Writer，authority为
-  `docs/action_forecast_writer_policy_lane_hyperdecoder_design.md`。16个public LoRA lanes
-  各自用同一个condition hidden共同生成全部38 policy targets的A/B向量，取代PWAD的独立
-  A/B atom mixing；fresh identity、one-shot输入、信息墙和rank16 public输出不变。
+- 当前唯一活动方法是Antithetic Program-Credit Writer，authority为
+  `docs/action_forecast_writer_antithetic_program_credit_design.md`。它恢复v6唯一canonical
+  Writer并显式拆成`encode_program(320×256)`与`decode_program(complete rank16 LoRA)`；
+  K4变为两组共享env/policy randomness的`+/-`program扰动，由official binary优先、双失败
+  semantic progress tie-break的pair差直接产生program cotangent。旧CFM ratio、PPO/SPO、
+  Nmc4和two-epoch replay全部退役。
+- 唯一cold start是fresh v6 AS125阶段边界，不使用v6-fast macro400 best、Policy-Lane、旧RL
+  或profile权重。AS125后冻结FactorHeads、semantic encoder、source policy和normalization；
+  每cycle只对Core、Visual Transition、Procedure和compiler做一次full24 equal-task update。
+  当前尚未实现或launch，必须先完成canonical原位替换、聚焦合同与独立六卡A40 profile。
 - PWAD fresh0→200与四点strict correct400已完成并负裁决：`77/71/80/80`、breadth=
   `5/6/5/5`、union/intersection=`115/44`。64 atoms广泛active，但mixing row stable rank
   约`1.000002`、effective LoRA约`1.0000002`、q/v B-column cosine约`.999998`；禁止resume
@@ -39,7 +45,7 @@
   effective count约`15.96--15.97`，condition output effective lanes约`9.57--10.85`；
   effective stable rank=`1.336/1.409/1.507/1.542`，q/v跨layer方向近零相关、能量CV与
   top-4分布均达到direct SFT量级。结构容量和层专门化确实被修复，却没有转化为闭环能力。
-- 最早失败现上移到conditional credit：cross-task hidden差异持续扩大，但same-task video
+- Policy-Lane现为正式负结果而非活动方法。最早失败上移到conditional credit：cross-task hidden差异持续扩大，但same-task video
   hidden/BA centered energy仅约`.05%/.02%`，固定action的demo/order差异也弱；checkpoint
   BA churn逐步变小仍伴随大规模success换手。下一方法必须直接改Writer/LoRA生成层的闭环
   credit transport；禁止继续增加lane/store/rank、调scale、强制SFT几何或续Policy-Lane。

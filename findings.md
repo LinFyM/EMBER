@@ -6,6 +6,26 @@
 最新段落为准；
 不得从早期段落恢复旧runner、旧架构或旧训练合同。
 
+## 2026-08-05 Antithetic Program-Credit架构与训练决策
+
+- Policy-Lane完整负证据把最早失败从LoRA容量/几何推进到conditional credit：约10个有效
+  output lanes、stable rank`1.34--1.54`、direct-SFT量级跨层能量都没有带来闭环，same-task
+  video在hidden/BA却仍只有`.05%/.02%`。因此下一方法不增加结构容量，而直接对生成LoRA
+  之前的policy program分配closed-loop credit。
+- 选择v6 compiler的`320×256`输出作为高层动作：它按18 layers×16 ranks加action-in/out
+  组织，并共同驱动q/v/action的A/B FactorHeads，比raw LoRA或某个factor tensor更接近完整
+  policy decision。确定性`forward`只拆成等价的encode/decode接口，不改变AS函数。
+- K4改为两组共享environment/policy randomness的`+/-`Rademacher program扰动；success
+  不同时用严格二值差、双成功为0、双失败才用冻结action-free semantic progress差。由pair
+  差直接构造program cotangent并反传Core/Procedure/compiler，不再经过executed-action
+  CFM ratio、PPO/SPO或teacher action。
+- 唯一cold start为同一fresh v6 AS125，不是historical v6-fast best或reward checkpoint；
+  FactorHeads、semantic encoder、source policy和normalization冻结。该选择把完整方法定义为
+  generic source→fixed AS stage→direct program reward，并保持IL/RL都可用的根接口。
+- 设计authority为`docs/action_forecast_writer_antithetic_program_credit_design.md`；当前尚无
+  GPU结果。实现必须原位恢复v6并删除Policy-Lane/旧CFM executable family，先完成聚焦合同
+  与独立A40 profile，不能把设计合理性写成性能改善。
+
 ## 2026-08-05 PWAD正式负裁决与Policy-Lane Coupled Hyperdecoder决策
 
 - Policy-Lane在clean pushed`2aeb22a`完成BCI六卡longest105/logical-B20/full24 profile：

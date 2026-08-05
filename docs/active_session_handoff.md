@@ -4,7 +4,25 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：Policy-Lane正式负裁决，下一credit方法待封存
+## 0.0 当前状态：Antithetic Program-Credit设计已封存，尚未实现或launch
+
+- 当前唯一活动authority为
+  `docs/action_forecast_writer_antithetic_program_credit_design.md`。Policy-Lane已经证明
+  LoRA stable rank、lane参与和跨层专门化都可被结构性修复而闭环仍更差，因此下一单变量
+  是把v6 compiler输出的`320×256` policy program作为高层动作，K4组成两组共享env/policy
+  randomness的`+/-`扰动，直接由binary-first closed-loop pair差估计program cotangent。
+- 新方法永久删除旧executed-action CFM ratio、PPO/SPO和two-epoch replay；FactorHeads、
+  semantic encoder、source policy与normalization冻结，只对Core、Visual Transition、
+  Procedure和compiler做每cycle一次full24 equal-task update。部署仍是确定性one-shot和
+  一套完整rank-16 LoRA，information wall不变。
+- 唯一cold start是fresh v6 AS125，而不是v6-fast macro400、Policy-Lane、reward或profile
+  权重。formal定义为同一从identity AS125阶段后的直接program-credit阶段；首点cycle1只在
+  strict correct400相对AS125净增至少10、breadth不降且至少两suite净增时才可续cycle2。
+- 当前worktree尚未实现该方法，也没有EMBER GPU进程。下一步是恢复v6唯一canonical
+  program/decode接口、原位替换退役RL schema/runtime、完成聚焦CPU合同和独立A40六卡
+  one-cycle profile；profile通过前禁止formal。
+
+## 0.1 Policy-Lane正式负裁决
 
 - Policy-Lane正式fresh0→200已在同一未恢复进程完成：200 finite macros、96,000 logical
   queries、4,800 one-video conditions、8个完整checkpoint，wall=`6651.965s`，峰值
@@ -82,7 +100,7 @@
 - 当前profile与resume进程均已自然结束并释放GPU；任何新launch仍须live比较双节点，
   只用最多6张实时空闲卡并显式`NCCL_P2P_DISABLE=1`。
 
-## 0.1 Tangent-Basis正式消融负裁决
+## 0.2 Tangent-Basis正式消融负裁决
 
 - clean`059d40f`的fresh formal root为
   `runs/outputs/pi05_sft_anchored_tangent_basis_writer_formal_macro400_r6_k4_nmc4_e2_c8_059d40f_20260805`。

@@ -8,7 +8,27 @@
 `docs/a100_to_bci_migration_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
 runner、split、路径或 GPU 权限。
 
-## 当前Policy-Lane Coupled Hyperdecoder推进（2026-08-05）
+## 当前Antithetic Program-Credit推进（2026-08-05）
+
+- [x] 完成Policy-Lane fresh0→200、四点strict correct400与全部内部分析；虽然LoRA stable
+  rank、lane参与和跨层专门化真实改善，correct仍为`70/63/37/61`且same-task video
+  hidden/BA能量仅约`.05%/.02%`，正式否定继续加容量/几何为主路线。
+- [x] 封存`docs/action_forecast_writer_antithetic_program_credit_design.md`：恢复v6的
+  `320×256` compiler program作为高层动作；K4做两组同随机性antithetic扰动；binary-first
+  pair差直接反传program，不再使用CFM action surrogate。cold start固定为fresh AS125，
+  冻结semantic encoder、完整FactorHeads、source policy和normalization。
+- [ ] 原位恢复唯一v6 Writer和显式`encode_program/decode_program`接口，删除Policy-Lane
+  executable family；原位重写`src/ember/rl_writer/`的schema、loop、checkpoint与evaluation
+  adapter，不保留旧CFM/Tangent并行路径。
+- [ ] 完成forward等价、antithetic seed/配对、binary-first credit、freeze/gradient ownership、
+  checkpoint/resume与实际world-size的聚焦合同；运行architecture gate并保持单一owner。
+- [ ] live比较`gpu01/gpu02`后完成AS125-fresh独立六卡one-cycle A40 profile及fresh0→1→
+  resume1→2；K4/24 tasks、pair randomness、finite cotangent、四个block可达、0 frozen grad、
+  NCCL ready和原子checkpoint全部通过后才seal formal。
+- [ ] formal从AS125阶段边界fresh0→1并立即做与AS125严格配对correct400；只有净增至少10、
+  breadth不降且至少两suite净增，或直接严格`>150`，才允许续cycle2/4/8。
+
+## 已完成Policy-Lane Coupled Hyperdecoder推进（2026-08-05）
 
 - [x] 完成PWAD fresh0→200、四点strict correct400与24×4内部分析；曲线
   `77/71/80/80`、breadth=`5/6/5/5`、union/intersection=`115/44`。64 atoms广泛使用但
@@ -34,7 +54,7 @@ runner、split、路径或 GPU 权限。
   6/6 payload、0 target-action/validation/test reads。Policy-Lane确实形成约10个有效输出
   lanes、stable rank `1.34→1.54`及与direct SFT相同量级的跨layer专门化，但same-task
   video hidden/BA能量仅约`.05%/.02%`，且上述漂亮结构与`70/63/37/61`闭环负结果错位。
-- [ ] 基于完整负证据封存下一credit方法：必须直接在Writer/LoRA生成层获得闭环相对信用，
+- [x] 基于完整负证据封存下一credit方法：必须直接在Writer/LoRA生成层获得闭环相对信用，
   不再增加lane/store/rank、强制SFT几何或用functional loss选点；design authority完成前
   不实现或launch。
 

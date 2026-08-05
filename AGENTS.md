@@ -136,12 +136,13 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 33. `docs/action_forecast_writer_sft_anchored_tangent_basis_design.md`
 34. `docs/action_forecast_writer_policy_wide_atom_dictionary_design.md`
 35. `docs/action_forecast_writer_policy_lane_hyperdecoder_design.md`
-36. `task_plan.md`
-37. `findings.md`
-38. `progress.md`
-39. `docs/concept.md`
-40. `docs/decisions_and_open_questions.md`
-41. `docs/novelty_and_landscape.md`
+36. `docs/action_forecast_writer_antithetic_program_credit_design.md`
+37. `task_plan.md`
+38. `findings.md`
+39. `progress.md`
+40. `docs/concept.md`
+41. `docs/decisions_and_open_questions.md`
+42. `docs/novelty_and_landscape.md`
 
 本post-seal分支已完成Target-Bound裁决并打开Semantic Factor-Basis；修改或运行前
 仍必须完整阅读Target-Bound与Semantic Factor-Basis两份design。历史CV/Target-Bound
@@ -152,12 +153,22 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 
 ## Current focused task
 
-- 当前唯一活动方法是Policy-Lane Coupled Hyperdecoder Writer，authority为
-  `docs/action_forecast_writer_policy_lane_hyperdecoder_design.md`。它从functional identity
-  fresh训练，不加载任何历史Writer checkpoint；16个public LoRA lanes各自用同一个
-  condition hidden共同生成全部38 policy targets的A/B向量。它保留policy-wide协调，取消
-  PWAD独立A/B mixing造成的atom交叉项与rank-lane共享读出。公开输出仍是exactly one
-  complete rank-16 LoRA，Writer输入和信息墙不变。
+- 当前唯一活动方法是Antithetic Program-Credit Writer，authority为
+  `docs/action_forecast_writer_antithetic_program_credit_design.md`。它把v6 compiler产生的
+  `320×256` policy program作为episode-level高层动作，以K4的两组`+/-`同随机性配对扰动
+  直接估计closed-loop program cotangent，再反传到Core/Procedure/compiler；不再经过
+  executed-action CFM loss、PPO/SPO ratio或teacher action。AS125之后冻结完整FactorHeads
+  LoRA decoder、semantic encoder、source policy与normalization，部署仍是确定性one-shot
+  program和exactly one complete rank-16 LoRA。
+- 唯一cold start是同一fresh v6 AS root的macro125，不是历史v6-fast best、reward或profile
+  checkpoint。它从functional identity完成125个full24 macros、60,000 queries和3,000条
+  one-video conditions；正式方法定义为generic source→同一AS125阶段→关闭action后的直接
+  program credit。复用已封存AS125只跳过相同计算，formal仍必须从该阶段边界进入全新root。
+- Policy-Lane已完成fresh0→200、四点strict correct400与全部内部分析并正式负裁决：correct=
+  `70/63/37/61`、breadth=`6/4/6/6`、union/intersection=`117/14`。它真实形成约10个有效
+  output lanes、stable rank`1.34--1.54`和direct-SFT量级跨层专门化，但same-task video
+  hidden/BA能量只有约`.05%/.02%`，证明几何/容量不是充分条件。禁止resume400、warm-start、
+  增加lane/store/rank、调scale或强制SFT几何。
 - Policy-Wide Atom Dictionary已完成fresh0→200、四点strict correct400与all-four内部分析并
   负裁决：correct=`77/71/80/80`、breadth=`5/6/5/5`、union/intersection=`115/44`；
   64 atoms广泛使用但A/B mixing row stable rank约`1.000002`，effective LoRA约

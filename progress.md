@@ -8,6 +8,18 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-05 Antithetic Program-Credit设计封存
+
+- Policy-Lane内部分析后完成下一单变量设计：恢复v6 compiler的`320×256` policy program
+  作为episode-level高层动作，K4组成两组严格同randomness的`+/-`扰动，以binary-first
+  pair差直接估计program cotangent并反传条件网络。
+- 唯一cold start为fresh AS125阶段边界；semantic encoder、完整FactorHeads、source policy
+  与normalization冻结。旧action CFM ratio、PPO/SPO、Nmc4与two-epoch replay不再进入新
+  方法，部署仍是一条video、一套确定性rank16 LoRA。
+- authority已写入`docs/action_forecast_writer_antithetic_program_credit_design.md`并同步
+  handoff/execution brief/task plan/AGENTS。尚未修改代码或启动GPU；下一步是canonical原位
+  实现、聚焦合同和独立六卡A40 one-cycle profile。
+
 ## 2026-08-05 Policy-Lane四点strict rollout完成
 
 - 50/100/150/200四个formal correct400 roots全部自然结束并释放GPU：每点400 rows、

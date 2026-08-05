@@ -28,7 +28,6 @@ class RoutedZeroPreservingBlock(torch.nn.Module):
         self.key = torch.nn.Linear(width, width, bias=False)
         self.value = torch.nn.Linear(width, width, bias=False)
         self.output = torch.nn.Linear(width, width, bias=False)
-        self.norm_ffn = torch.nn.LayerNorm(width, elementwise_affine=False)
         self.ffn = torch.nn.Sequential(
             torch.nn.Linear(width, expansion * width, bias=False),
             torch.nn.GELU(),
@@ -57,7 +56,7 @@ class RoutedZeroPreservingBlock(torch.nn.Module):
             is_causal=False,
         ).transpose(1, 2).reshape(batch, tokens, width)
         value = value + self.output(attended)
-        return value + self.ffn(self.norm_ffn(value))
+        return value + self.ffn(value)
 
 
 @dataclass(frozen=True)

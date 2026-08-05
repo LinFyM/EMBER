@@ -268,3 +268,13 @@ def test_group_output_bootstrap_then_opens_reader_and_axis_m2p() -> None:
     output["target_0.B"].sum().backward()
     assert float(decoder.query.weight.grad.norm()) > 0
     assert float(decoder.axis_blocks[0].query.weight.grad.norm()) > 0
+
+
+def test_axis_m2p_preserves_small_dynamic_amplitude() -> None:
+    decoder = _tiny_layer_m2p()
+    generator = torch.Generator(device="cpu").manual_seed(17)
+    memory = torch.randn(1, 3, 2, 16, generator=generator) * 1e-4
+    first = decoder._axis_m2p(memory)
+    second = decoder._axis_m2p(2 * memory)
+    ratio = float((second.norm() / first.norm()).detach())
+    assert 1.8 < ratio < 2.2

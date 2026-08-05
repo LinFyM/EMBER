@@ -23,8 +23,11 @@
   source identity跨host重绑定，不改历史run contract。首次diagnostic在GPU分配后、模型
   构造前被退役旧v6 schema拒绝，0 rollout/checkpoint且GPU已释放；根修为继续引用当前受支持
   v6 config，并由RL config显式把non-parameter encoder chunk恢复为macro400原始32。解析后
-  authorities与Writer字段逐项匹配旧run contract，聚焦回归21 passed。A40尚未profile；
-  下一步仍只重跑六卡只读diagnostic，门过后才做one-cycle profile与fresh formal0→1。
+  authorities与Writer字段逐项匹配旧run contract。第二次到达checkpoint后由旧manifest
+  schema fail-fast；0 rollout/checkpoint且GPU释放。根修只在`initialize_writer_phase`接受
+  该manifest/launch schema作load-only warm start，逐文件/contract验证不变，exact-resume
+  与AS evaluator仍拒绝。真实macro400单进程检查全部通过，聚焦回归22 passed。下一步仍只
+  重跑六卡只读diagnostic，门过后才做one-cycle profile与fresh formal0→1。
 - 当前GPU已全部释放，无EMBER进程。最近live检查时`gpu01`八卡空闲、`gpu02:6`属于其他
   用户；任何新launch仍须重新比较两节点且最多6张。
 

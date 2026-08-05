@@ -27,6 +27,7 @@ from ember.writer.checkpoint import (
     validate_writer_checkpoint_files,
 )
 from ember.writer.checkpoint_schema import (
+    HISTORICAL_V6_CHECKPOINT_SCHEMA,
     V6_RELATIVE_FLOW_COLDSTART_TASK_QUERY_RAW_CHECKPOINT_SCHEMA,
 )
 from ember.writer.inference import inspect_as_writer_evaluation
@@ -90,6 +91,31 @@ def test_as_writer_checkpoint_verifies_every_file_before_pickle_load(
         validate_writer_checkpoint_files(
             checkpoint, world_size=1, contract_sha256=contract
         )
+
+
+def test_historical_v6_manifest_is_load_only_warmstart_compatible(
+    tmp_path: Path,
+) -> None:
+    contract = "b" * 64
+    checkpoint = _checkpoint(tmp_path, contract)
+    manifest_path = checkpoint / "checkpoint_manifest.json"
+    manifest = read_json(manifest_path)
+    manifest["schema_version"] = HISTORICAL_V6_CHECKPOINT_SCHEMA
+    manifest.pop("canonical_payload_sha256")
+    manifest["canonical_payload_sha256"] = canonical_hash(manifest)
+    write_json_atomic(manifest_path, manifest)
+
+    with pytest.raises(WriterModelError, match="manifest changed"):
+        validate_writer_checkpoint_files(
+            checkpoint, world_size=1, contract_sha256=contract
+        )
+    accepted = validate_writer_checkpoint_files(
+        checkpoint,
+        world_size=1,
+        contract_sha256=contract,
+        allow_historical_v6_warmstart=True,
+    )
+    assert accepted["schema_version"] == HISTORICAL_V6_CHECKPOINT_SCHEMA
 
 
 def _tensor_checkpoint(

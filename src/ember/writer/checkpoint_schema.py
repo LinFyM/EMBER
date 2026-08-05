@@ -95,6 +95,8 @@ V6_RELATIVE_FLOW_COLDSTART_TASK_QUERY_RAW_TRAINER_STATE_SCHEMA = (
 V6_RELATIVE_FLOW_COLDSTART_TASK_QUERY_RAW_RANK_STATE_SCHEMA = (
     "ember_pi05_v6_relative_flow_coldstart_task_query_rawfull24_rank_state_v1"
 )
+HISTORICAL_V6_LAUNCH_SCHEMA = "ember_pi05_language_axial_as_writer_launch_v6"
+HISTORICAL_V6_CHECKPOINT_SCHEMA = "ember_pi05_language_axial_writer_checkpoint_v6"
 
 
 _FAMILIES = {
@@ -177,3 +179,21 @@ def state_schemas(
     ):
         raise WriterModelError("unsupported AS-Writer checkpoint task cycle")
     return registered[1:]
+
+
+def checkpoint_schema_matches(
+    observed: object,
+    optimizer_updates_per_task_cycle: int,
+    checkpoint_state_family: str | None,
+    *,
+    allow_historical_v6_warmstart: bool,
+) -> bool:
+    current = state_schemas(
+        optimizer_updates_per_task_cycle, checkpoint_state_family
+    )[0]
+    return observed == current or (
+        allow_historical_v6_warmstart
+        and checkpoint_state_family is None
+        and optimizer_updates_per_task_cycle == 1
+        and observed == HISTORICAL_V6_CHECKPOINT_SCHEMA
+    )

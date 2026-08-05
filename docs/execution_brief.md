@@ -14,6 +14,9 @@
 - 首次diagnostic因旧v6 raw config schema已退役而在模型构造前fail-fast；0 rollout/checkpoint。
   不恢复历史loader，改由当前受支持v6 config加RL-sealed 32-frame non-parameter runtime
   override重建与macro400逐项相同的effective Writer；训练与评测共用这一解析owner。
+- 第二次diagnostic在模型构造后由旧manifest schema fail-fast；同样0 rollout/checkpoint。
+  现只在IL→RL权重warm-start入口接受该精确历史schema并继续全文件/contract验证，任何
+  exact-resume或AS evaluator不接受。真实macro400最短验证链已通过后才允许再次diagnostic。
 - 参数hybrid root
   `runs/outputs/pi05_progress_credit_parameter_hybrid_as125_cycle2_r6_67b245a_20260805`
   已完整结束并释放GPU：BA层upstream贡献更大，action层factor-output贡献更大，且Long与

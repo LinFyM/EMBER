@@ -27,6 +27,12 @@ GPU范围和训练步长是当时快照；活动状态只取
   config改回当前受支持v6 owner，并在RL contract中显式封存macro400原始32-frame
   non-parameter runtime override，runtime/evaluator统一解析。effective authorities/Writer
   与旧run contract逐项相等，聚焦回归`21 passed`；等待clean push后重新live preflight。
+- 第二次diagnostic完成六份模型构造后在真实macro400 manifest处fail-fast：旧checkpoint
+  schema不在现行exact-resume注册表，仍为0 rollout/checkpoint且GPU全部释放。兼容逻辑已
+  归入`checkpoint_schema.py`，仅由IL→RL `initialize_writer_phase`显式开启；default验证、
+  exact-resume与AS evaluator均保持拒绝。真实artifact的manifest canonical payload、owning
+  contract、逐文件size/hash、launch schema、authorities、Writer、cursor与writer SHA已一次
+  性通过；聚焦回归`22 passed`、architecture guard无hard violation。
 
 ## 2026-08-05 Progress-Credit cycle2训练、rollout与续训轴停止
 

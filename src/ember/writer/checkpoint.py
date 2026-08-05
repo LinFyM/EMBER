@@ -36,6 +36,8 @@ from ember.writer.checkpoint_schema import (
     AS_WRITER_RANK_STATE_SCHEMA,
     AS_WRITER_SERIAL4_CHECKPOINT_SCHEMA,
     AS_WRITER_SERIAL4_RANK_STATE_SCHEMA,
+    HISTORICAL_V6_LAUNCH_SCHEMA,
+    checkpoint_schema_matches,
     state_schemas as _state_schemas,
 )
 from ember.writer.model import CompleteLoRAWriter, WriterModelError
@@ -346,6 +348,7 @@ def validate_writer_checkpoint_files(
     *,
     world_size: int,
     contract_sha256: str,
+    allow_historical_v6_warmstart: bool = False,
 ) -> dict[str, Any]:
     """Verify every checkpoint file before any pickle payload is loaded."""
 
@@ -364,16 +367,14 @@ def validate_writer_checkpoint_files(
     checkpoint_state_family = manifest.get("consumed", {}).get(
         "checkpoint_state_family"
     )
-    checkpoint_schema, _, _ = _state_schemas(
+    schema_matches = checkpoint_schema_matches(
+        manifest.get("schema_version"),
         updates_per_cycle,
-        (
-            str(checkpoint_state_family)
-            if checkpoint_state_family is not None
-            else None
-        ),
+        str(checkpoint_state_family) if checkpoint_state_family is not None else None,
+        allow_historical_v6_warmstart=allow_historical_v6_warmstart,
     )
     if (
-        manifest.get("schema_version") != checkpoint_schema
+        not schema_matches
         or manifest.get("contract_sha256") != contract_sha256
         or canonical_hash(payload) != digest
         or not isinstance(files, dict)
@@ -411,6 +412,7 @@ def inspect_writer_checkpoint(
         checkpoint,
         world_size=world_size,
         contract_sha256=contract_sha256,
+        allow_historical_v6_warmstart=True,
     )
     return contract, manifest, contract_sha256
 
@@ -441,7 +443,8 @@ def initialize_writer_phase(
             cursor = int(manifest.get("consumed", {}).get("next_step", -1))
             writer_record = manifest.get("files", {}).get("writer.safetensors", {})
             if (
-                training.get("schema_version") != AS_WRITER_LAUNCH_SCHEMA
+                training.get("schema_version")
+                not in {AS_WRITER_LAUNCH_SCHEMA, HISTORICAL_V6_LAUNCH_SCHEMA}
                 or training.get("stage", "development") != stage
                 or not source_reference_matches(training.get("source"), source)
                 or training.get("authorities") != dict(authorities)

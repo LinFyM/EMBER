@@ -63,6 +63,11 @@ contract。A40不能假定32可用；正式前必须以最长105-frame真实任�
 one-cycle writer-update profile。若46GB OOM，才允许把该显式runtime override改成16并
 重新profile，不能暗改科学权重或伪造checkpoint authority。
 
+历史macro400 manifest/launch schema只在`initialize_writer_phase`的load-only warm-start
+入口接受；仍逐文件验证size/hash、manifest canonical payload、owning run contract、完整
+Writer字段和LoRA contract。exact-resume、正式AS evaluator及新checkpoint写入不接受该旧
+schema，因此这不是恢复历史训练路径。
+
 ## 4. Reward与信息墙
 
 保持现有Task-Grounded Progress Credit：

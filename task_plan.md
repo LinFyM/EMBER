@@ -30,8 +30,13 @@ runner、split、路径或 GPU 权限。
   `6/4/6/6`，相邻gained/lost=`17/24,14/40,40/16`，四点union/intersection=
   `117/14`、single envelope gap=`47`。四点均400 rows、42 shards、一次启动、全部
   worker exit0、每task 50个无放回视频；macro50 single winner=`70`，正式禁止续400。
-- [ ] 用既有cold-start analysis owner完成50/100/150/200四点内部分析，裁决lane hidden、
-  lane output、effective BA与fixed-action的最早失效接口；完成前不设计或启动下一架构。
+- [x] 用既有cold-start analysis owner完成50/100/150/200四点内部分析：96/96 cells、
+  6/6 payload、0 target-action/validation/test reads。Policy-Lane确实形成约10个有效输出
+  lanes、stable rank `1.34→1.54`及与direct SFT相同量级的跨layer专门化，但same-task
+  video hidden/BA能量仅约`.05%/.02%`，且上述漂亮结构与`70/63/37/61`闭环负结果错位。
+- [ ] 基于完整负证据封存下一credit方法：必须直接在Writer/LoRA生成层获得闭环相对信用，
+  不再增加lane/store/rank、强制SFT几何或用functional loss选点；design authority完成前
+  不实现或launch。
 
 ### Policy-Lane fresh0→200 formal launch contract
 

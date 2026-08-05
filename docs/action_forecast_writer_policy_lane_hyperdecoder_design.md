@@ -226,3 +226,31 @@ output participation、effective BA谱/视频方差、checkpoint churn和fixed-a
 训练ledger的后段same-task相邻CountSketch已给出Policy-Lane输出方向复现偏低的初步信号，
 但该信号受block维度与sketch方差影响，不能替代真实LoRA/action证据。完整分析前不裁决
 下一architecture。
+
+## 12. 内部分析与最终负裁决
+
+clean`3869d20`六卡formal analysis完整生成96/96 task×checkpoint cells及6/6 rank
+payload，wall=`318.446s`、peak reserved=`19,295,895,552` bytes；target action、
+validation/test reads均为0。root为
+`runs/outputs/pi05_as_writer_policy_lane_hyperdecoder_internal_all4_r6_20260805`。
+
+Policy-Lane没有重演PWAD的假容量：四点storage effective lanes约`15.96--15.97`，
+demo0 hidden/output effective lanes约`11.64--12.50/9.57--10.85`，hidden row stable
+rank约`4.15--4.41`。effective LoRA stable rank=`1.336/1.409/1.507/1.542`、top
+singular energy=`.809/.766/.727/.707`。对四点各400个held LoRA cache的精确
+gauge-invariant复核又给出q/v跨layer signed cosine约0、energy CV约
+`.75--.83/1.03--1.15`、top4 energy约`47--52%/58--61%`，已经达到direct SFT的层
+专门化量级。
+
+但condition ownership朝错误方向发展：cross-task demo0 hidden centered/sample energy
+从`.503`升到`.660`、pair cosine从`.488`降到`.313`；same-task video hidden/BA centered
+energy却始终只有`.046--.059%/.017--.023%`。macro50的demo1/reversed/shuffled差异到
+effective BA为`.0176/.0281/.0133`，到fixed action仅`.00577/.00977/.00597`。
+模型能区分train task并产生多lane、跨layer专门化LoRA，却没有从单条视频获得闭环可累积
+的内容信用。
+
+因此第8节第二种失败分支成立：lane参数确实产生不同policy方向，但absolute、retention和
+task drift全部更差。正式裁决不是继续加width、lane、store、rank或SFT几何约束，而是把
+最早失效接口上移到AS functional target对condition的不可辨识性及其与closed-loop有效
+方向的错位。Policy-Lane禁止resume400、warm-start或局部修补；下一方法必须直接改变
+Writer/LoRA生成层获得闭环相对credit的方式，同时保持one-shot信息墙和IL/RL通用性。

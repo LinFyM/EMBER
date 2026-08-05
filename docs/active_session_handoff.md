@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0.0 当前状态：Policy-Lane正式负结果，四点内部分析待运行
+## 0.0 当前状态：Policy-Lane正式负裁决，下一credit方法待封存
 
 - Policy-Lane正式fresh0→200已在同一未恢复进程完成：200 finite macros、96,000 logical
   queries、4,800 one-video conditions、8个完整checkpoint，wall=`6651.965s`，峰值
@@ -17,7 +17,24 @@
   worker exit0、每task 50 unique无放回视频且共同noise prefix严格配对。
 - macro50 single winner=`70`，低于PWAD80、v6-fast143与严格门151；macro150崩到37后
   macro200又回61，说明能力仍大幅轮换。禁止resume400、warm-start或按functional loss
-  选择点位。下一唯一操作是`task_plan.md`已封存的四checkpoint六卡内部分析。
+  选择点位。
+- clean`3869d20`的四checkpoint内部分析已完成96/96 cells、6/6 payload，wall=
+  `318.446s`、peak reserved=`19,295,895,552` bytes，target-action/validation/test reads=0；
+  root为`runs/outputs/pi05_as_writer_policy_lane_hyperdecoder_internal_all4_r6_20260805`。
+- lane storage effective count约`15.96--15.97`，demo0 hidden/output effective lanes约
+  `11.64--12.50/9.57--10.85`；LoRA norm=`10.77→22.21`、stable rank=
+  `1.336→1.542`、top singular energy=`.809→.707`，没有PWAD的伪rank/单lane塌缩。
+  400个held LoRA/cache的精确gauge-invariant复核进一步给出q/v跨layer signed cosine约0、
+  energy CV约`.75--.83/1.03--1.15`、top4约`47--52%/58--61%`，与direct SFT层专门化
+  量级一致。因此漂亮的rank/层组织不是充分条件，也不是当前性能上限的最早根因。
+- cross-task demo0 hidden centered/sample energy从`.503→.660`、pair cosine从`.488→.313`，
+  而same-task video hidden/BA centered energy始终仅约`.046--.059%/.017--.023%`；macro50
+  demo1/reversed/shuffled到BA为`.0176/.0281/.0133`，到fixed action仅
+  `.00577/.00977/.00597`。模型越来越区分train task，却几乎不从单条视频获得可累积
+  policy credit。
+- 下一方法边界不是再改LoRA外观或存储容量，而是让Writer/LoRA生成本身直接获得闭环相对
+  credit，避免继续依赖与行为错位的functional surrogate。新design authority封存前不
+  实现或launch；Policy-Lane、PWAD和历史store/head扩容均保持负裁决。
 
 - clean pushed`2aeb22a`的Policy-Lane canonical实现已在`gpu01`完成六卡longest105、
   logical-B20/full24三步profile：step max wall=`33.457/31.024/31.007s`，峰值

@@ -16,8 +16,11 @@ GPU范围和训练步长是当时快照；活动状态只取
 - correct=`70/63/37/61`、breadth=`6/4/6/6`；相邻gained/lost=
   `17/24,14/40,40/16`，union/intersection=`117/14`。macro50是single winner但远低于
   PWAD80、v6-fast143和严格门，禁止resume400。
-- 下一步仅运行已封存命令的50/100/150/200六卡内部分析；完成真实lane→BA→action证据前
-  不实现或启动下一方法。
+- clean`3869d20`的50/100/150/200六卡内部分析随后完成：96/96 cells、6/6 rank
+  payload、wall`318.446s`、peak reserved`19,295,895,552` bytes，0信息墙读取，GPU自然释放。
+- 分析证明约10个输出lanes、stable rank1.34--1.54与SFT量级跨layer专门化均真实成立，
+  但same-task video hidden/BA能量仅约`.05%/.02%`，结构改善与闭环严重错位。下一步仅
+  封存直接closed-loop Writer/LoRA credit的新design，不续Policy-Lane或加容量。
 
 ## 2026-08-05 Policy-Lane Coupled Hyperdecoder profile/resume封存
 

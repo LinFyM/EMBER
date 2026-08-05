@@ -26,7 +26,26 @@
   mean/median cosine=`.0416/.0462`、negative fraction=`.4350`；PWAD policy-atom为
   `.0907/.0976/.3567`，历史v6 factor在76--125为`.1134/.1244/.3317`。该跨架构比较受
   block维度与sketch方差限制，只作为“扩大独立输出后credit复现可能更差”的待验证信号；
-  必须由真实lane state、effective BA与fixed-action内部分析确认后再决定下一方法。
+  后续真实内部分析确认输出容量打开，但不把CountSketch差异单独当因果量。
+- clean`3869d20`四checkpoint内部分析完整封存96 rows、24 tasks、6 ranks，wall
+  `318.446s`、peak reserved=`19,295,895,552` bytes，0 target-action/validation/test reads。
+  storage effective lanes约`15.96--15.97`，condition output effective lanes=
+  `10.85/9.87/9.57/9.80`，hidden row stable rank约`4.15--4.41`；容量没有失活。
+- effective LoRA stable rank=`1.336/1.409/1.507/1.542`、top singular energy=
+  `.809/.766/.727/.707`。四点400个held LoRA的精确跨layer复核给出q/v signed cosine约0、
+  energy CV=`.75--.83/1.03--1.15`、top4 energy=`47--52%/58--61%`，与两套direct SFT
+  `.705--.937/.707--1.052`及`46--59%`处于同一量级。Policy-Lane真实修复了PWAD/v6的
+  层同向与伪rank问题，closed-loop却更低，故这些几何不是性能充分条件。
+- cross-task hidden centered/sample energy从`.503→.660`，pair cosine从`.488→.313`；
+  same-task video hidden/BA centered energy却只有`.046--.059%/.017--.023%`。macro50
+  demo1/reversed/shuffled的BA relative-L2=`.0176/.0281/.0133`，fixed-action=
+  `.00577/.00977/.00597`。任务分离增强而视频credit不增强，符合functional目标在正确
+  policy language与同task独立query下可由task/common adapter满足的不可辨识捷径。
+- Policy-Lane到corrected Source-SFT的effective-BA cosine overall为
+  `.328/.328/.311/.307`、action为`.254/.281/.286/.287`；PWAD则overall从`.278`升到
+  `.432`但correct只`77→80`。SFT方向相似度、rank、层能量外观与闭环均不单调对应。
+  正式关闭继续增加lane/store/rank、调scale、强制SFT profile或续训的方向；下一方法必须
+  直接重做Writer/LoRA生成层的closed-loop credit transport。
 
 - PWAD fresh0→200训练健康完成，strict correct400=`77/71/80/80`、breadth=`5/6/5/5`；
   相邻gained/lost=`19/25,21/12,16/16`，四点union/intersection=`115/44`、single

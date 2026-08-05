@@ -34,9 +34,15 @@
   也已完整结束：`70/63/37/61`、breadth=`6/4/6/6`，相邻gained/lost=
   `17/24,14/40,40/16`，union/intersection=`117/14`。macro50 single winner仅`70`，
   Policy-Lane明显低于PWAD80、v6-fast143与严格门，禁止续400。
-- 当前唯一操作是既有六卡cold-start owner的四checkpoint内部分析：定位lane hidden、
-  lane output、effective BA与fixed-action之间的最早失效接口。精确命令与root在
-  `task_plan.md`；分析完成前不启动下一架构或训练。
+- 四checkpoint内部分析已经完成96/96 cells、6/6 rank payload，wall=`318.446s`、峰值
+  reserved=`19,295,895,552` bytes，0 target-action/validation/test reads。16-lane storage
+  effective count约`15.96--15.97`，condition output effective lanes约`9.57--10.85`；
+  effective stable rank=`1.336/1.409/1.507/1.542`，q/v跨layer方向近零相关、能量CV与
+  top-4分布均达到direct SFT量级。结构容量和层专门化确实被修复，却没有转化为闭环能力。
+- 最早失败现上移到conditional credit：cross-task hidden差异持续扩大，但same-task video
+  hidden/BA centered energy仅约`.05%/.02%`，固定action的demo/order差异也弱；checkpoint
+  BA churn逐步变小仍伴随大规模success换手。下一方法必须直接改Writer/LoRA生成层的闭环
+  credit transport；禁止继续增加lane/store/rank、调scale、强制SFT几何或续Policy-Lane。
 - SFT-Anchored Tangent-Basis正式消融已结束并负裁决，不再是活动训练轴。clean`059d40f`
   从历史v6-fast macro400=`143/400` warm-start完成formal cycle0→1与strict correct400；
   cycle1=`142`、breadth`7`，相对baseline gained/lost=`20/21`、intersection/union=

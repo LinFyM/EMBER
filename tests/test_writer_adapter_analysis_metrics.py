@@ -6,6 +6,7 @@ import torch
 from ember.writer.adapter_analysis_metrics import (
     effective_delta_metrics,
     policy_dictionary_batch_records,
+    policy_dictionary_checkpoint_summary,
     tensor_delta_metrics,
 )
 
@@ -90,3 +91,42 @@ def test_policy_dictionary_records_measure_atom_participation() -> None:
     assert demo["combined"]["effective_atoms"] == pytest.approx(2.0)
     assert demo["storage_norm_weighted"]["effective_atoms"] == pytest.approx(2.0)
     assert demo["a"]["stable_row_rank"] == pytest.approx(2.0)
+
+
+def test_policy_dictionary_summary_allows_action_panel_only_conditions() -> None:
+    writer = SimpleNamespace(
+        policy_atoms=SimpleNamespace(
+            a_atoms=torch.nn.ParameterList(
+                [torch.nn.Parameter(torch.ones(4, 2))]
+            ),
+            b_atoms=torch.nn.ParameterList(
+                [torch.nn.Parameter(torch.ones(2, 4))]
+            ),
+        )
+    )
+    names = (
+        "demo_0",
+        "demo_1",
+        "demo_2",
+        "demo_3",
+        "demo_4",
+        "reversed_0",
+        "shuffled_0",
+    )
+    mixing = torch.arange(7 * 2 * 4, dtype=torch.float32).reshape(7, 2, 4) + 1
+    full = policy_dictionary_batch_records(
+        writer, {"mix_a": mixing, "mix_b": mixing}, names
+    )
+    partial = policy_dictionary_batch_records(
+        writer,
+        {"mix_a": mixing[:5], "mix_b": mixing[:5]},
+        names[:5],
+    )
+
+    summary = policy_dictionary_checkpoint_summary(
+        [{"policy_dictionary": partial}, {"policy_dictionary": full}]
+    )
+
+    assert summary is not None
+    assert "reversed_0" in summary["demo_0_condition_relative_l2"]
+    assert summary["demo_0_condition_relative_l2"]["reversed_0"]["mean"] > 0

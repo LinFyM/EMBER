@@ -345,6 +345,44 @@ def _vector_set_metrics(values: Sequence[torch.Tensor]) -> dict[str, float]:
     }
 
 
+def _same_task_video_mixing_summary(
+    records: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    video_names = ("demo_0", "demo_1", "demo_2", "demo_3", "demo_4")
+    keys = (
+        "centered_variance_over_sample_energy",
+        "mean_pairwise_cosine",
+        "mean_absolute_pairwise_cosine",
+    )
+    metrics = [
+        _vector_set_metrics(
+            [_mixing_vector(record["conditions"][name]) for name in video_names]
+        )
+        for record in records
+    ]
+    return {
+        key: distribution([float(value[key]) for value in metrics]) for key in keys
+    }
+
+
+def _condition_relative_l2_summary(
+    records: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    result = {}
+    for name in ("demo_1", "reversed_0", "shuffled_0"):
+        selected = [record for record in records if name in record["conditions"]]
+        result[name] = distribution(
+            [
+                tensor_metrics(
+                    _mixing_vector(record["conditions"]["demo_0"]),
+                    _mixing_vector(record["conditions"][name]),
+                )["relative_l2"]
+                for record in selected
+            ]
+        )
+    return result
+
+
 def policy_dictionary_checkpoint_summary(
     rows: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any] | None:
@@ -380,34 +418,8 @@ def policy_dictionary_checkpoint_summary(
             [_mixing_vector(value) for value in demo_zero]
         ),
     }
-    video_names = ("demo_0", "demo_1", "demo_2", "demo_3", "demo_4")
-    result["same_task_video_mixing"] = {
-        key: distribution(
-            [
-                _vector_set_metrics(
-                    [_mixing_vector(record["conditions"][name]) for name in video_names]
-                )[key]
-                for record in records
-            ]
-        )
-        for key in (
-            "centered_variance_over_sample_energy",
-            "mean_pairwise_cosine",
-            "mean_absolute_pairwise_cosine",
-        )
-    }
-    result["demo_0_condition_relative_l2"] = {
-        name: distribution(
-            [
-                tensor_metrics(
-                    _mixing_vector(record["conditions"]["demo_0"]),
-                    _mixing_vector(record["conditions"][name]),
-                )["relative_l2"]
-                for record in records
-            ]
-        )
-        for name in ("demo_1", "reversed_0", "shuffled_0")
-    }
+    result["same_task_video_mixing"] = _same_task_video_mixing_summary(records)
+    result["demo_0_condition_relative_l2"] = _condition_relative_l2_summary(records)
     return result
 
 

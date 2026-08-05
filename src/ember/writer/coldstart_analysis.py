@@ -41,6 +41,10 @@ from ember.writer.adapter_analysis_metrics import (
 )
 from ember.writer.data import RawTeacherVideoStore, WriterTaskAuthority, _camera
 from ember.writer.inference import writer_generation_seed, writer_shuffled_frame_permutation
+from ember.writer.internal_analysis_sealing import (
+    finalize_internal_analysis,
+    recover_internal_analysis_aggregation,
+)
 from ember.writer.model import WriterModelError
 from ember.writer.validation import _build_models
 
@@ -59,6 +63,7 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--tokenizer-path", type=Path, required=True)
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--aggregate-existing", action="store_true")
     return parser.parse_args()
 
 
@@ -679,6 +684,14 @@ def main() -> None:
     for name in ("training_run", "tokenizer_path", "data_root", "output_dir"):
         setattr(args, name, getattr(args, name).resolve())
     args.checkpoints = tuple(path.resolve() for path in args.checkpoints)
+    if args.aggregate_existing:
+        recover_internal_analysis_aggregation(
+            args,
+            repo_root=REPO_ROOT,
+            result_schema=RESULT_SCHEMA,
+            summary_function=_summary,
+        )
+        return
     context = _distributed_context()
     training = read_json(args.training_run / "run_contract.json")
     _publish_contract(args, context, training)
@@ -695,49 +708,11 @@ def main() -> None:
     )
     if context.rank != 0:
         return
-    paths = [
-        args.output_dir / f"rank_{rank:02d}_rows.json"
-        for rank in range(context.world_size)
-    ]
-    deadline = time.monotonic() + 3600
-    while not all(path.is_file() for path in paths):
-        if time.monotonic() >= deadline:
-            raise WriterModelError("analysis rank sealing timed out")
-        time.sleep(1)
-    combined = []
-    rank_payloads = []
-    for path in paths:
-        payload = read_json(path)
-        rank_payloads.append(payload)
-        combined.extend(payload["rows"])
-    combined.sort(
-        key=lambda row: (int(row["checkpoint_cursor"]), int(row["global_task_id"]))
+    finalize_internal_analysis(
+        args.output_dir,
+        contract,
+        result_schema=RESULT_SCHEMA,
+        summary_function=_summary,
+        started=started,
+        wait_for_ranks=True,
     )
-    expected = len(contract["checkpoints"]) * len(contract["tasks"])
-    if len(combined) != expected:
-        raise WriterModelError("analysis Cartesian result coverage changed")
-    result = {
-        "schema_version": RESULT_SCHEMA,
-        "run_contract_sha256": canonical_hash(contract),
-        "rows": combined,
-        "summary": _summary(combined),
-        "completion": {
-            "rows": len(combined),
-            "tasks": len(contract["tasks"]),
-            "checkpoints": len(contract["checkpoints"]),
-            "world_size": context.world_size,
-            "wall_seconds": time.monotonic() - started,
-            "max_cuda_reserved_bytes": max(
-                int(payload["max_cuda_reserved_bytes"])
-                for payload in rank_payloads
-            ),
-            "target_action_reads": 0,
-            "validation_or_test_reads": 0,
-        },
-    }
-    write_json_atomic(args.output_dir / "results.json", result)
-    write_json_atomic(
-        args.output_dir / "completion.json",
-        {**result["completion"], "results_payload_sha256": canonical_hash(result)},
-    )
-    print(json.dumps(result["summary"], sort_keys=True), flush=True)

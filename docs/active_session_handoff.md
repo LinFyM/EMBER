@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0. 最新覆盖：Sparse Semantic-Expert route根修，等待fresh reprofile
+## 0. 最新覆盖：Sparse Semantic-Expert route根修与reprofile已seal
 
 - 当前唯一活动authority为
   `docs/action_forecast_writer_sparse_semantic_expert_trace_design.md`。它保留exact task language、
@@ -39,8 +39,11 @@
 - clean`bf1aae6`上的六卡profile已完成fresh0→1与same-root exact-resume1→3：三步
   `48.051/48.732/48.535s`，0 clip/OOM/nonfinite，peak reserved`45,589,987,328` bytes；step2
   起全部8 experts×Reader/axis 16 blocks可达，累计1,440 queries/288 videos，source trainable=0。
-  该profile绑定旧route buffer，现已作废；下一步从修复后的clean pushed commit用新root重做
-  fresh0→1与same-root exact-resume1→3，再seal并从identity fresh启动formal0→200。所有旧profile/
+  该profile绑定旧route buffer，现已作废。修复后的clean`bbe5cf2`已用新root
+  `runs/outputs/pi05_as_writer_k4_sparse_semantic_expert_trace_m2p_profile_routefix_r6_b20_bbe5cf2_20260807`
+  重做fresh0→1与same-root exact-resume1→3：三步`42.299/43.074/42.275s`，0 clip/OOM/nonfinite，
+  peak reserved`45,592,084,480` bytes；step1真实route与authority逐expert完全一致，step2起16
+  blocks全可达。config已重新seal；下一步另起identity-fresh formal0→200。所有旧profile/
   中断formal/历史Writer权重禁止加载。
 
 ## 0.0 已完成并负裁决：Evidence-Factorized Policy-Layer Trace M2P

@@ -9,6 +9,9 @@
 - task anchor现对每条exact language独立forward，route generator以singleton anchors拟合并
   复核co-batch调用；最大anchor差`1.49e-8`且top2完全相同。新primary usage=
   `5/7/6/1/1/2/1/1`，top2 usage=`7/11/6/5/4/4/3/8`，无expert空置。
+- clean`bbe5cf2`六卡新profile完成fresh0→1与exact-resume1→3；step1从真实Gram反推的八组
+  active task sets与route artifact逐项一致。三步finite、0 clip/OOM，step2起16 blocks全可达，
+  peak reserved`45,592,084,480` bytes；fixed-route工程合同重新闭合，但仍不提前说明closed-loop。
 - 八个完整Reader+axis owners真实enumeration为`487,415,808` trainable：Reader
   `218,980,352`、axis M2P `268,435,456`。language route只选owner，K4 trace仍是全部动态value；
   top2 memory在decode前组合成一套LoRA。

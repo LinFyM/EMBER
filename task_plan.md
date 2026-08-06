@@ -29,8 +29,9 @@ runner、split、路径或 GPU 权限。
   失败误当科学结果。
 - [x] 根修task anchor的co-batch shape依赖：逐exact language独立forward，以singleton anchors
   重生成route，实测最大anchor差`1.49e-8`且co-batch/singleton top2完全一致。
-- [ ] clean/push后live比较`gpu01/gpu02`，只用最多6张空闲A40以新root重做longest105、K4/B20/B2、
-  fresh0→1和same-root exact-resume1→3 profile；旧profile与中断formal权重永久弃用。
+- [x] clean`bbe5cf2`、live比较`gpu01/gpu02`后，以gpu01六张3+3 NUMA空闲A40和新root重做
+  longest105、K4/B20/B2、fresh0→1及same-root exact-resume1→3；真实route与authority一致，
+  0 clip/OOM，step2起16 blocks全可达，profile重新seal。旧profile/中断formal权重永久弃用。
 - [ ] profile seal后从functional identity正式fresh0→200、每25 checkpoint；严格评
   50/100/150/200 correct400，single winner再做五臂和内部expert-local gradient/path分析。
 - [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高；未过门时只按最早失败

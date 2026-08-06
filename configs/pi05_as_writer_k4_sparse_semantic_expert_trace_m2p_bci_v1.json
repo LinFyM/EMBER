@@ -138,8 +138,8 @@
     "optimizer_clock": "formal_200_step_scheduler_with_early_stop_at_3"
   },
   "profile_evidence": {
-    "status": "invalidated_by_language_cobatch_route_fix_requires_fresh_reprofile",
-    "invalidated_reason": "the original route centers were generated with a 24-language BF16 text batch while formal training addressed each task alone; task 9 changed its secondary owner, so the frozen-route contract was not exact",
+    "status": "sealed_live_bci_a40_route_stable_fresh_and_exact_resume",
+    "supersedes_invalid_profile_root": "runs/outputs/pi05_as_writer_k4_sparse_semantic_expert_trace_m2p_profile_r6_b20_bf1aae6_20260807",
     "profile_teacher_video_seed": 174,
     "primary_candidate": {
       "max_frames_per_encoder_call": 16,
@@ -157,9 +157,9 @@
       "GPU-21b5514a-82f0-4d24-21ea-1f8198d20915"
     ],
     "rank_numa_topology": [0, 0, 0, 1, 1, 1],
-    "implementation_commit": "bf1aae6",
-    "launch_commit": "bf1aae6",
-    "root": "runs/outputs/pi05_as_writer_k4_sparse_semantic_expert_trace_m2p_profile_r6_b20_bf1aae6_20260807",
+    "implementation_commit": "bbe5cf2",
+    "launch_commit": "bbe5cf2",
+    "root": "runs/outputs/pi05_as_writer_k4_sparse_semantic_expert_trace_m2p_profile_routefix_r6_b20_bbe5cf2_20260807",
     "segments": ["fresh_0_to_1", "exact_resume_1_to_3"],
     "optimizer_clock": "formal_200_step_scheduler_with_early_stop_at_3",
     "applied_lrs": [
@@ -168,27 +168,28 @@
       3.461538461538459e-5
     ],
     "step_seconds_max": [
-      48.05140448300517,
-      48.731822389992885,
-      48.53467946499586
+      42.29928542801645,
+      43.074107255990384,
+      42.274540273007005
     ],
     "mean_functional_action_loss": [
       0.1503773539637526,
-      0.15281870619704327,
-      0.14850330104430517
+      0.15282015999158224,
+      0.14850863752265772
     ],
     "max_cuda_allocated_bytes": 36709104128,
-    "max_cuda_reserved_bytes": 45589987328,
+    "max_cuda_reserved_bytes": 45592084480,
     "gradient_norm_before_clip_max": [
-      0.00028961384668946266,
-      0.0003027593484148383,
-      0.00027901475550606847
+      0.00028811811353079975,
+      0.00030228792456910014,
+      0.000277279264992103
     ],
     "gradient_clip_count": 0,
     "oom_count": 0,
     "nonfinite_count": 0,
     "step2_all_sixteen_expert_blocks_reachable": true,
     "step2_all_eight_selected_experts_reachable": true,
+    "runtime_train24_route_matches_authority": true,
     "source_policy_trainable_parameter_count": 0,
     "completed_policy_queries": 1440,
     "completed_teacher_videos": 288,
@@ -203,8 +204,8 @@
     }
   },
   "formal_run": {
-    "status": "blocked_pending_route_stability_reprofile",
-    "launch_state": "fresh_formal_forbidden_until_new_profile_seal",
+    "status": "sealed",
+    "launch_state": "ready_for_fresh_formal_launch",
     "expected_world_size": 6,
     "total_steps": 200,
     "per_rank_batch_size": 20,

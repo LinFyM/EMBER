@@ -4,8 +4,8 @@
 route artifact已完成。首次formal在macro28主动终止：训练时发现原route生成使用24-language
 BF16 batch，而runtime逐task寻址，task9 secondary owner从7变成1，违反fixed-route合同。
 task anchor现已改为逐语言独立forward，route重新生成并验证co-batch route不变；旧profile与
-中断formal均作废，必须fresh reprofile后再从identity启动formal。任何旧Writer checkpoint均
-不兼容且不得加载。
+中断formal均作废。修复后六卡fresh0→1与same-root exact-resume1→3已重新通过并seal；下一次
+formal必须另起identity-fresh root。任何旧Writer checkpoint均不兼容且不得加载。
 
 ## 1. 决策
 
@@ -170,7 +170,12 @@ trainable=0，累计1,440 queries/288 videos。峰值allocated/reserved=
 不得扩大batch/K或额外保留activation。随后首次formal到macro28暴露上述route batch-shape
 不一致；虽然显存与梯度证据仍成立，但该profile checkpoint绑定旧route buffer，不能证明新
 authority的fresh/exact-resume，已永久作废。修复后必须用新root重做fresh0→1与resume1→3，
-再seal formal。
+再seal formal。该重做已在clean`bbe5cf2`完成：新root为
+`runs/outputs/pi05_as_writer_k4_sparse_semantic_expert_trace_m2p_profile_routefix_r6_b20_bbe5cf2_20260807`，
+三步wall=`42.299/43.074/42.275s`、loss=`.150377/.152820/.148509`、grad norm=
+`.0002881/.0003023/.0002773`，0 clip/OOM/nonfinite，step2起16 blocks全部可达；peak
+allocated/reserved=`36,709,104,128/45,592,084,480` bytes。step1实际train24 expert ownership与
+新route artifact八组逐task完全相同，profile权重永久弃用，formal现已seal。
 
 ## 9. 禁调项
 

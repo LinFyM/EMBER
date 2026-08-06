@@ -16,7 +16,9 @@
   clean`bf1aae6`六卡longest105 profile随后完成fresh0→1、exact-resume1→3。三步约48.1--48.7s，
   loss/gradient finite、0 clip/OOM，step2起全部16 expert-local blocks可达，peak reserved45.59GB；
   累计1,440 queries/288 videos且source trainable=0。由于它绑定旧route buffer，profile现已作废；
-  下一步只重做fresh0→1/exact-resume1→3后重新seal formal。
+  clean`bbe5cf2`随后以新root重做fresh0→1/exact-resume1→3：三步`42.299/43.074/42.275s`，
+  0 clip/OOM/nonfinite，peak reserved`45,592,084,480` bytes，step2起16 blocks全部可达，step1
+  train24 route逐expert与authority完全一致。新profile已seal；下一步另起identity-fresh formal。
 
 ## 2026-08-07 Evidence-Factorized完整裁决并开启Sparse Semantic Experts
 

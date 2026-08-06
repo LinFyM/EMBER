@@ -188,8 +188,10 @@ single-checkpoint、无hash、不使用subagent与安全边界。
   随后首次formal在macro28发现旧artifact的task9 route声明`2/7`、runtime实际`2/1`：route生成的
   24-language BF16 batch与逐task runtime不一致。该formal与旧profile已否决；task anchor现逐
   exact language独立forward，singleton route重新生成并验证co-batch top2不变，新primary/top2
-  usage=`5/7/6/1/1/2/1/1`与`7/11/6/5/4/4/3/8`。下一步只从修复后的clean pushed commit新root
-  重做fresh/exact-resume profile，再fresh formal0→200。不得加载任何旧Writer/profile权重、恢复
+  usage=`5/7/6/1/1/2/1/1`与`7/11/6/5/4/4/3/8`。clean`bbe5cf2`新root已重做
+  fresh0→1/exact-resume1→3：0 clip/OOM、step2起16 blocks可达、peak reserved45.59GB，真实
+  train24 route逐expert与authority一致。config已重新seal；下一步另起identity-fresh formal0→200。
+  不得加载任何旧Writer/profile权重、恢复
   只隔离final heads的Direction Store、使用learned/outcome router或改K4/B20/full24/rank/objective。
 - 上一活动方法为
   `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`。上一版K4 layer-trace五臂已完成：

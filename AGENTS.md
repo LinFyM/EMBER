@@ -153,12 +153,13 @@ single-checkpoint、无hash、不使用subagent与安全边界。
 39. `docs/action_forecast_writer_k4_layer_trace_m2p_design.md`
 40. `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`
 41. `docs/action_forecast_writer_evidence_factorized_trace_design.md`
-42. `task_plan.md`
-43. `findings.md`
-44. `progress.md`
-45. `docs/concept.md`
-46. `docs/decisions_and_open_questions.md`
-47. `docs/novelty_and_landscape.md`
+42. `docs/action_forecast_writer_sparse_semantic_expert_trace_design.md`
+43. `task_plan.md`
+44. `findings.md`
+45. `progress.md`
+46. `docs/concept.md`
+47. `docs/decisions_and_open_questions.md`
+48. `docs/novelty_and_landscape.md`
 
 本post-seal分支已完成Target-Bound裁决并打开Semantic Factor-Basis；修改或运行前
 仍必须完整阅读Target-Bound与Semantic Factor-Basis两份design。历史CV/Target-Bound
@@ -169,24 +170,20 @@ single-checkpoint、无hash、不使用subagent与安全边界。
 
 ## Current focused task
 
-- 2026-08-06当前唯一活动方法为
-  `docs/action_forecast_writer_evidence_factorized_trace_design.md`。它保留exact language、K4
-  action-hidden videos、20 policy groups、DCT16和single rank16 LoRA，将raw coefficient显式
-  分解为normalized direction、physical value与energy/K4-consensus evidence。evidence只进key，
-  shared attention读取双vector values并bias-free fusion后进入原四block axis M2P。
-- 新方法是unit-only与raw-only两个正式反事实后的根因设计，不是scalar/band/power-law插值；
-  AS与未来RL使用同一video→LoRA图。必须fresh incompatible architecture/config/checkpoint，
-  不加载任何旧Writer，不先开sparse experts。
-- canonical实现已原位替换完成，新唯一config为
-  `configs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_bci_v1.json`；Writer参数精确
-  `60,926,976`，全仓`192 passed`。live A40 fresh0→1、exact-resume1→3 profile已通过：
-  0 clip/OOM/nonfinite，step2起全部新Reader/axis模块可达，peak reserved20.47GB；profile权重
-  已弃用。独立functional-identity formal0→200也已自然完成：200 finite macros、96,000
-  queries、19,200 K4 action-hidden videos、8 checkpoints、0 clip，peak reserved20.30GB；
-  source trainable=0且validation/test action reads=0。macro50/100/150/200 strict paired
-  correct400已完成为`74/59/65/84`、breadth=`6/6/5/5`；macro200固定single winner但低于
-  unit-only99、K4 invariant108与v6-fast143。当前只对macro200做其余四个video arms和全部
-  内部分析；不续训、不按loss换点、不恢复旧Writer。
+- 2026-08-07当前唯一活动方法为
+  `docs/action_forecast_writer_sparse_semantic_expert_trace_design.md`。它保留exact language、K4
+  action-hidden videos、20 policy groups、DCT16 direction/physical/evidence和single rank16
+  LoRA；冻结train24-only semantic route固定选top2，两个完整独立Reader+axis M2P memories等权
+  形成一套LoRA。language只寻址，video trace仍是唯一动态value，zero-video严格identity。
+- Evidence-Factorized已完成fresh0→200、四点、winner五臂和全部内部分析并负裁决：四点
+  `74/59/65/84`，五臂`84/85/66/83/78`。correct-wrong显著证明视频未被忽略；trace→双value
+  →Reader→axis→BA→action也闭合，LoRA norm/stable-rank/top-energy=`60.31/1.291/.847`。
+  最早剩余故障是shared Reader/axis最后50步full24 retention仅`.05527/.04650`，因此现在才
+  打开完整parameter ownership隔离，而不是继续改频谱、scale、rank或loss。
+- 下一步只生成route authority、原位实现fresh incompatible architecture/config/checkpoint、
+  跑聚焦合同并做A40 profile；预计8 experts共`487,415,808` trainable、top2 conditional
+  execution。不得加载任何旧Writer、恢复只隔离final heads的Direction Store、使用learned/
+  outcome router或改K4/B20/full24/rank/objective。profile seal前不得启动formal。
 - 上一活动方法为
   `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`。上一版K4 layer-trace五臂已完成：
   `correct/same/wrong/shuffled/reversed=99/92/57/94/105`；correct相对wrong明显更好，证明

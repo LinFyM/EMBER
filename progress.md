@@ -1,5 +1,19 @@
 # EMBER Progress Ledger
 
+## 2026-08-07 Evidence-Factorized完整裁决并开启Sparse Semantic Experts
+
+- macro200四个追加control和六卡8-task内部probe已自然完成，五臂=
+  `84/85/66/83/78`；internal root为
+  `runs/outputs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_macro0200_internal_refs1_r6_8c8b502_20260807`。
+  6份ownership、8 tasks、11 conditions/counterfactuals、K4/zero/set、trace branches、BA、
+  fixed action、LoRA geometry及训练gradient完整，held action reads=0，GPU自然释放。
+- 视频task identity、direction/physical/evidence与LoRA leverage均闭合；最后50步shared Reader/
+  axis仍近1/24抵消。Evidence-Factorized正式负裁决，不续训、不warm-start。
+- 新authority为
+  `docs/action_forecast_writer_sparse_semantic_expert_trace_design.md`：固定train24 language top2
+  route，两个完整独立Reader+axis experts等权生成一套video-owned LoRA；下一步生成route
+  authority、原位实现、聚焦验证和A40 profile。
+
 ## 2026-08-06 Evidence-Factorized Trace formal0→200完成
 
 - clean/pushed launch commit`7e3559f`在`gpu01:0,1,2|4,5,7`自然完成identity-fresh

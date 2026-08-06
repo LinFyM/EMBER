@@ -1,12 +1,35 @@
 # EMBER Task Plan
 
-最后更新：2026-08-06 UTC。
+最后更新：2026-08-07 UTC。
 
 本文件只保存尚未完成的长期闭环与当前执行顺序。历史实验过程见
 `findings.md`、`progress.md` 和 Git；实时进程见
 `docs/active_session_handoff.md`；迁移状态见
 `docs/a100_to_bci_migration_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
 runner、split、路径或 GPU 权限。
+
+## 当前Sparse Semantic-Expert Trace推进（2026-08-07）
+
+- [x] 完成Evidence-Factorized macro200五臂与8-task refs1内部分析：五臂=
+  `84/85/66/83/78`，correct-wrong gained/lost=`36/18,p=.01983`；视频task identity已到closed
+  loop，same/order仍无有效margin。
+- [x] 闭合`physical/direction/evidence→attention→dual values→Reader→axis→BA→fixed action`；
+  两value branch都material，LoRA norm/stable-rank/top-energy=`60.31/1.291/.847`。最早故障定位
+  为shared Reader/axis最后50步近1/24 credit cancellation，不再改频谱、scalar、rank或loss。
+- [x] 封存
+  `docs/action_forecast_writer_sparse_semantic_expert_trace_design.md`：train24-only frozen semantic
+  top2 route选择两个完整独立Reader+axis experts，video trace仍是唯一动态value，top2 memory只
+  生成一套LoRA；AS/RL共用同一图。
+- [ ] 生成route authority并审计8 experts的primary/top2 train usage；不得读取held action、
+  validation/test input或rollout选择route。
+- [ ] 原位实现唯一canonical sparse-expert Writer、fresh config/schema/checkpoint/task-gradient
+  owner，退休single-expert executable path；完成聚焦合同、全仓回归、compileall与real load。
+- [ ] clean/push后live比较`gpu01/gpu02`，只用最多6张空闲A40完成longest105、K4/B20/B2、
+  fresh0→1和same-root exact-resume1→3 profile；profile权重弃用。
+- [ ] profile seal后从functional identity正式fresh0→200、每25 checkpoint；严格评
+  50/100/150/200 correct400，single winner再做五臂和内部expert-local gradient/path分析。
+- [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高；未过门时只按最早失败
+  接口继续迭代，不用旧best、checkpoint融合、挑video或延长同一失败schedule救点。
 
 ## 当前K4 Energy-Preserving Policy-Layer Trace M2P推进（2026-08-06）
 

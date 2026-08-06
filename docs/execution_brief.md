@@ -1,27 +1,25 @@
 # EMBER Current Execution Brief
 
-更新时间：2026-08-06 UTC。本文是操作层authority；科研结果取
+更新时间：2026-08-07 UTC。本文是操作层authority；科研结果取
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
-## 0.0 最新执行覆盖：Evidence-Factorized Policy-Layer Trace M2P
+## 0.0 最新执行覆盖：Sparse Semantic-Expert Trace
 
 - 当前唯一活动authority为
-  `docs/action_forecast_writer_evidence_factorized_trace_design.md`。从现有raw DCT同时构造
-  normalized direction、physical value与energy/K4-consensus key evidence；single attention
-  读取双vector values并fusion后沿用四block axis M2P。
-- canonical Reader与全套fresh schema/config/checkpoint family已原位替换；新唯一config为
-  `configs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_bci_v1.json`，Writer参数
-  `60,926,976`，全仓`192 passed`、compileall、real config load和diff check通过。live
-  `gpu01:0,1,2|4,5,7`六卡fresh0→1、exact-resume1→3 profile已通过：0 clip/OOM/nonfinite，
-  step2起全部新Reader/axis模块可达，peak reserved20.47GB；权重弃用。按`task_plan.md`顶部
-  合同启动的identity-fresh formal0→200已自然完成：200 finite macros、96,000 queries、
-  19,200 K4 videos、8 checkpoints、0 clip，wall`7272.774s`、peak allocated/reserved=
-  `18,203,289,600/20,304,625,664` bytes，source trainable=0且validation/test action reads=0。
-  四点strict correct400=`74/59/65/84`、breadth=`6/6/5/5`，macro200固定single winner；
-  当前按`task_plan.md`的`b1d3156`合同只做macro200其余四臂和内部分析，不续训练。
-- 不做power-law/band sweep、scalar gate、SFT-only auxiliary、sparse experts或旧checkpoint
-  warm-start。
+  `docs/action_forecast_writer_sparse_semantic_expert_trace_design.md`。Evidence-Factorized的训练、
+  四点、macro200五臂和六卡内部分析已全部完成并负裁决；GPU已释放，不续训、不warm-start。
+- 五臂=`84/85/66/83/78`且correct-wrong显著，视频task identity没有被忽略。trace、dual values、
+  evidence、Reader、axis、BA与action均闭合；真正剩余接口是shared Reader/axis最后50步分别只有
+  `.05527/.04650` full24 gradient retention。
+- 新设计冻结train24-only language top2 route，让每个condition只进入两个完整独立的
+  Evidence-Factorized Reader+axis experts；两个memory等权组成一套LoRA。route不生成value，
+  correct/same/wrong/shuffle/reverse同language必须同route，zero-video必须identity。
+- 当前只允许：生成hashless route authority；原位实现fresh architecture/config/checkpoint family；
+  跑聚焦route/shape/identity/selected-gradient合同；clean/push后再live选最多6张空闲A40做
+  fresh0→1、exact-resume1→3 profile。正式训练必须等profile seal，不加载任何旧Writer。
+- 预计8 experts共`487,415,808` trainable，top2执行。profile若OOM先减frozen descriptor chunk或
+  做optimizer state分片，不改K4、B20、full24、rank、objective、LR或checkpoint schedule。
 
 ## 0.1 已完成并负裁决：Energy-Preserving Policy-Layer Trace M2P
 

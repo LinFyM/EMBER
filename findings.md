@@ -1,5 +1,26 @@
 # EMBER Findings
 
+## 2026-08-07 Evidence-Factorized五臂/内部裁决与完整expert门
+
+- macro200五臂=`84/85/66/83/78`；correct相对wrong gained/lost=
+  `36/18,p=.0198343`。视频task identity真实影响closed loop，same与order controls却不降；
+  结论是“视频有效但任务程序未对齐”，不是视频被忽略。
+- 8-task内部root为
+  `runs/outputs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_macro0200_internal_refs1_r6_8c8b502_20260807`。
+  same/wrong/shuffle/reverse的`physical→direction→attention→Reader→BA→action`中位分别为
+  `.135/.995/.477/.134/.197/.050`、`.310/1.319/.647/.432/.620/.155`、
+  `.251/1.375/.700/.406/.511/.122`、`.335/1.414/.650/.337/.443/.180`。
+- direction/physical Reader分支能量中位`14.65/27.52`、cosine`.510`、合并能量ratio`1.484`；
+  direction-only与physical-only相对full的BA变化`.838/.659`，两支均material。no-evidence的
+  BA/action变化`.066/.020`，说明evidence参与但不是单独瓶颈。
+- LoRA norm/stable-rank/top-energy=`60.31/1.291/.847`，identity action effect`.373`；高增益和
+  视频差异已到policy。最后50步Reader/axis retention却只有`.05527/.04650`、cosine
+  `.00954/.00266`、负pair`.47464/.48007`。最早剩余故障是完整共享condition→policy map的
+  multi-task parameter ownership，不是继续改表示、放大LoRA或训练更久。
+- 新authority因此打开固定semantic top2的完整Reader+axis experts，而不是恢复只隔离final
+  heads的Direction Store。language只寻址，K4 traces仍是唯一动态value；该结构对AS与未来RL
+  同样适用。
+
 ## 2026-08-06 Evidence-Factorized Trace fresh formal训练证据
 
 - identity-fresh formal0→200自然完成：200 finite macros、96,000 action queries、19,200 K4

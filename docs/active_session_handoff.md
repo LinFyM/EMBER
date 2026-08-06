@@ -1,41 +1,41 @@
 # EMBER Active Session Handoff
 
-更新时间：2026-08-06 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
+更新时间：2026-08-07 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0. 最新覆盖：Evidence-Factorized Policy-Layer Trace M2P已开启
+## 0. 最新覆盖：Sparse Semantic-Expert Trace设计已开启
 
 - 当前唯一活动authority为
-  `docs/action_forecast_writer_evidence_factorized_trace_design.md`。它保留exact task language与
-  K4 action-hidden videos，不再在per-token unit direction和global raw amplitude之间二选一。
-- 每个raw DCT token显式分解为normalized direction`u`、physical coefficient`p`及
-  group/frequency energy share + K4 leave-one-out direction consensus`phi`。`phi`只进入key；
-  shared attention分别读取direction/physical vector values，再bias-free vector fusion进入现有
-  layer/parameter-axis M2P。
-- 该设计直接对应本轮证据：unit-only有task specificity但order噪声过强，raw-only改善早期
-  gradient却丢失task direction。它不使用SFT-only loss或outcome，AS与未来RL共用同一接口。
-- canonical Reader与fresh incompatible schemas/config/checkpoint family已原位实现；新唯一config为
-  `configs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_bci_v1.json`，Writer参数精确
-  `60,926,976`。BCI assets下全仓`192 passed`、compileall、real config load和diff check闭合。
-- live`gpu01:0,1,2|4,5,7`六卡profile已严格fresh0→1、exact-resume1→3完成；三步
-  loss=`.150377/.152820/.148508`，0 clip/OOM/nonfinite，step2起evidence key、direction/
-  physical values、vector fusion、Reader与axis均finite可达；peak allocated/reserved=
-  `18,218,217,984/20,470,300,672` bytes，累计1,440 queries/288 action-hidden videos。
-  profile权重弃用；不加载任何旧Writer，不续Energy-Preserving，不先开sparse experts。
-- identity-fresh formal0→200已按sealed合同自然完成，root为
-  `runs/outputs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_formal_fresh0_200_r6_692ab5e_20260806`：
-  200 finite macros、96,000 queries、19,200 K4 action-hidden videos、8 checkpoints、0 clip，
-  wall=`7272.774s`、peak allocated/reserved=`18,203,289,600/20,304,625,664` bytes，source
-  trainable=0且validation/test action reads=0。四个50步窗口的full24 gradient
-  retention/cosine/negative-pair中位为`.10601/.06078/.36957`、`.08578/.05152/.38949`、
-  `.06065/.02493/.44746`、`.05227/.00727/.47645`；前半段共存改善但晚期仍向抵消退化，
-  只作机制证据。GPU已自然释放。
-- 50/100/150/200 strict paired correct400已完成：`74/59/65/84`、breadth=`6/6/5/5`，
-  相邻gained/lost=`19/34,23/17,29/10`，union/intersection=`122/32`；全部K4 set、state、
-  env seed、teacher order和policy-noise common prefix为0 mismatch。macro200固定single
-  winner=84，但低于raw-only85、unit-only99、K4 invariant108与v6-fast143；当前按
-  `task_plan.md`的`b1d3156`合同只做macro200五臂和内部分析，不续训练。
+  `docs/action_forecast_writer_sparse_semantic_expert_trace_design.md`。它保留exact task language、
+  K4 action-hidden videos、20-group DCT16 direction/physical/evidence trace和single-LoRA部署，
+  只重构冻结descriptor之后的trainable parameter ownership。
+- Evidence-Factorized fresh0→200、四点、五臂与全部内部分析已经结束并负裁决：correct曲线
+  `74/59/65/84`、breadth=`6/6/5/5`，macro200五臂=`84/85/66/83/78`。correct相对wrong的
+  gained/lost=`36/18,p=.01983`证明video task identity真实进入closed loop；same/order无margin，
+  不能写成视频被忽略或顺序问题已解。
+- internal root为
+  `runs/outputs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_macro0200_internal_refs1_r6_8c8b502_20260807`。
+  wrong的`physical/direction/attention/Reader/BA/action`差异中位为
+  `.310/1.319/.647/.432/.620/.155`；direction/physical两支均工作，LoRA norm/stable-rank/
+  top-energy=`60.31/1.291/.847`，identity action effect`.373`。最早故障不再是视频表示、
+  Reader、增益或完全rank collapse。
+- 最后50步shared Reader/axis的full24 retention只有`.05527/.04650`、pair cosine=
+  `.00954/.00266`、负pair=`.47464/.48007`，满足预注册的sparse-expert开启门。新设计用只由
+  train24 language生成并冻结的semantic top2 route，选择两个完整独立Reader+axis M2P experts；
+  route只寻址，video trace仍是唯一动态value，zero-video仍严格identity。
+- 下一步先生成route authority并完成canonical原位实现、聚焦合同与A40 profile。新架构预计
+  8×`60,926,976`=`487,415,808` trainable；参数量已无owner上限，但必须profile 46GB显存、
+  checkpoint峰值和top2 conditional execution。所有旧Writer权重禁止加载，GPU当前无EMBER进程。
+
+## 0.0 已完成并负裁决：Evidence-Factorized Policy-Layer Trace M2P
+
+- 正式训练root为
+  `runs/outputs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_formal_fresh0_200_r6_692ab5e_20260806`；
+  200 finite macros、96,000 queries、19,200 K4 videos、8 checkpoints、0 clip，wall
+  `7272.774s`、peak reserved20.30GB，source trainable=0且held action reads=0。
+- 四点与五臂均按strict paired panel完成；Evidence-Factorized不得续训、warm-start或恢复为
+  active parallel path。精确branch、attention、LoRA和gradient数值只取对应design与internal root。
 
 ## 0.1 已完成并负裁决：Energy-Preserving Policy-Layer Trace M2P
 

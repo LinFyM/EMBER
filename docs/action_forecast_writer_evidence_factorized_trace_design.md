@@ -1,8 +1,8 @@
 # K4 Evidence-Factorized Policy-Layer Trace M2P Writer
 
-状态：2026-08-06设计、canonical原位实现与live A40 profile已封存，formal可从identity启动。本文覆盖
-`action_forecast_writer_energy_preserving_layer_trace_design.md`的活动地位；旧方法只由Git与
-sealed artifacts保存。
+状态：2026-08-07已完成fresh0→200、四点strict rollout、winner五臂及全部内部分析，并作正式
+负裁决。活动authority已切换为`action_forecast_writer_sparse_semantic_expert_trace_design.md`；
+本方法不得续训、warm-start或恢复为并行runtime，历史只由Git与sealed artifacts保存。
 
 ## 1. 决策
 
@@ -194,3 +194,42 @@ evidence→Reader→fusion/axis→BA/action内部分析，不续训练或按loss
 不加power-law sweep、手工band scale、scalar gate、global scale、rank/contrastive/
 reconstruction loss、reward、outcome、multi-LoRA或checkpoint融合。失败后只按上述最早接口
 决定下一结构。
+
+## 11. 五臂、内部路径与正式裁决
+
+macro200五臂为`correct/same/wrong/shuffled/reversed=84/85/66/83/78`。correct相对wrong严格
+配对gained/lost=`36/18`、exact`p=.0198343`，说明K4 action-hidden视频中的task identity已经
+通过Writer进入closed loop；same、shuffle和reverse却均未显著低于correct，时序线索仍没有
+转化为更好的任务程序。该结果不能写成“视频被忽略”，也不能写成order causality已经解决。
+
+六卡8-task refs1内部root为
+`runs/outputs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_macro0200_internal_refs1_r6_8c8b502_20260807`。
+correct相对same/wrong/shuffle/reverse的`physical→direction→attention→Reader→effective BA→fixed
+action` relative-L2中位分别为：
+
+```text
+same      .1354 -> .9947 -> .4773 -> .1342 -> .1972 -> .0503
+wrong     .3103 -> 1.3189 -> .6475 -> .4319 -> .6199 -> .1552
+shuffle   .2515 -> 1.3751 -> .6997 -> .4059 -> .5110 -> .1224
+reverse   .3354 -> 1.4142 -> .6499 -> .3374 -> .4426 -> .1796
+```
+
+因此direction、physical support和order变化均真实穿过Reader、四个axis blocks、BA与policy
+action；最早故障不再是表示或Reader把video抹掉。Reader中direction/physical分支能量中位为
+`14.65/27.52`，分支cosine`.5103`，合并能量相对两支能量和为`1.4843`，不是一路吞掉另一路。
+去掉evidence key使BA/action变化中位`.0664/.0204`，direction-only与physical-only相对完整
+输出的BA/action变化分别为`.8383/.3430`与`.6594/.2374`；三种职责均在工作，但没有形成行为
+互补。K4 leave-one-out的BA变化中位`.0723`，set permutation最大BA误差`.00271`，zero-video
+仍严格identity。
+
+完整LoRA norm中位`60.31`、stable rank`1.291`、top singular energy`.8468`、correct相对
+identity fixed-action变化`.3726`。LoRA仍偏低stable-rank，但已有高增益、全rank非零且视频
+差异可到action，不能再通过scale、rank loss或继续训练解释84分。更关键的是最后50步Reader/
+axis的full24 gradient retention中位只有`.05527/.04650`，pair cosine`.00954/.00266`，负pair
+比例`.47464/.48007`；全部trainable condition→policy参数仍由24-task共享，closed representation
+之后的credit再次接近独立方向平均抵消。
+
+该证据满足第8节预注册的sparse-expert开启条件。下一方法只在当前已闭合的冻结layer trace之后
+重构trainable parameter ownership：固定language semantic top2 route选择两个完整独立Reader+
+axis experts，video trace仍是唯一动态value；不改K4、AS objective、rank、DCT、B20或checkpoint
+schedule。Evidence-Factorized方法正式停止，不能从macro200 warm-start下一方法。

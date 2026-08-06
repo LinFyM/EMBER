@@ -25,6 +25,10 @@ GPU范围和训练步长是当时快照；活动状态只取
 - clean/pushed`d3f568d`已seal正式config和profile evidence；fresh0→200的唯一root、scale、
   storage预算、六卡3+3 NUMA边界、exact command及50/100/150/200严格裁决已写入
   `task_plan.md`。启动不加载任何profile或历史Writer权重。
+- launch commit`1b868ed`的fresh formal0→200自然完成：200 finite macros、96,000 action
+  queries、19,200 videos、8个checkpoints、wall`7350.114s`、peak reserved20.48GB、0 clip/
+  OOM/nonfinite，GPU自然释放。最后50步task-gradient retention中位`.04573`，早期层对齐优势
+  到晚期已明显衰减；下一步按预注册合同完成四点strict correct400，不用loss挑点。
 
 ## 2026-08-06 K4四点strict correct400与内部分析完成
 

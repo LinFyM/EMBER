@@ -37,6 +37,15 @@
 - implementation/config/profile seal已更新到clean/pushed`d3f568d`；正式fresh0→200的唯一
   output、scale、设备边界、storage预算、exact command和后续四点裁决取`task_plan.md`顶部
   launch合同。正式run不得从任一profile或历史Writer resume/warm-start。
+- launch commit`1b868ed`的独立fresh formal已自然完成0→200：200 metrics、96,000 action
+  queries、19,200 K4 videos、8个every25 checkpoints、wall=`7350.114s`、peak allocated/
+  reserved=`18,096,154,112/20,478,689,280` bytes，0 clip/OOM/nonfinite，source trainable=0，
+  validation/test action reads均为0。formal root为
+  `runs/outputs/pi05_as_writer_k4_layer_trace_m2p_formal_fresh0_200_r6_d3f568d_20260806`；GPU已自然释放。
+- 训练期task-gradient coexistence相对旧K4只形成早期改善，最后50步full24 retention/
+  median cosine/negative-pair中位=`.04573/.00400/.47464`，仅略高于旧K4
+  `.04326/.00038/.49275`，不能写成task drift已解。下一步只做预注册50/100/150/200 strict
+  correct400；四点完成前不按step200 functional loss`.10194`或该梯度证据挑点。
 
 ## 0.1 已完成：K4 Invariant-Program M2P四点与内部裁决
 

@@ -1,5 +1,17 @@
 # EMBER Findings
 
+## 2026-08-06 K4 Policy-Layer Trace fresh formal训练证据
+
+- 独立fresh0→200自然完成且工程合同闭合：200 finite macros、96,000 action queries、19,200
+  action-hidden K4 videos、8个完整checkpoints、0 clip/OOM/nonfinite；source trainable=0且没有
+  validation/test action读取。wall=`7350.114s`，peak reserved=`20,478,689,280` bytes。
+- full24 raw gradient coexistence在训练前半段相对旧K4有实质但非持续的改善：四个50步窗口的
+  retention中位依次`.07229/.06074/.05466/.04573`，median cosine依次
+  `.03067/.01741/.01100/.00400`；最后50步已经接近旧K4的`.04326/.00038`正交抵消极限。
+- 这不能提前证明层对齐行为无效，也不能写成task drift已解。step200 functional loss为
+  `.10194`，但项目既有证据已否定用functional loss选择closed-loop checkpoint；必须完成
+  50/100/150/200同panel strict correct400后再结合LoRA/path与视频因果性定位最早接口。
+
 阅读规则：本文是按日期追加的证据账本。历史段落里的“当前”“下一步”和GPU
 权限只描述其日期当时的状态，不覆盖后续owner决定。活动状态以
 `docs/a100_to_bci_migration_handoff.md`、`docs/active_session_handoff.md`和本文顶部

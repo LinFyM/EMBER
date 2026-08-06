@@ -32,6 +32,11 @@ runner、split、路径或 GPU 权限。
 - [ ] 从functional identity fresh0→200，strict correct400固定评50/100/150/200；按
   layer trace、reader、axis M2P、BA/action leverage、task-gradient coexistence与闭环换手的
   最早失效接口分析并继续迭代，single checkpoint必须严格`>150`且继续尽可能提高。
+  - [x] fresh formal0→200自然完成：200 finite macros、96,000 action queries、19,200
+    action-hidden videos、8个every25 checkpoints、0 clip/OOM/nonfinite，source trainable=0且
+    validation/test action reads=0。wall=`7350.114s`，peak reserved=`20,478,689,280` bytes。
+  - [ ] 用同一paired K4/state/RNG panel完成macro50/100/150/200 strict correct400；行为结果
+    出来前不按functional loss或内部梯度选择checkpoint。
 
 ### K4 Policy-Layer Trace M2P fresh formal0→200 launch合同（2026-08-06）
 
@@ -58,6 +63,11 @@ runner、split、路径或 GPU 权限。
   `70/94/99/108`、v6-fast`143`和严格门`>150`比较；functional loss或内部几何不用于选点。
   single winner再做五臂、另K4 set/leave-one-out及layer trace→reader→M2P→BA→action和
   task-gradient coexistence分析；失败只按最早失效接口重构。
+- 上述fresh formal已由launch commit`1b868ed`自然完成。训练期full24 gradient
+  retention/cosine/negative-pair按50步段中位为
+  `.07229/.03067/.4112 → .06074/.01741/.4094 → .05466/.01100/.4457 →
+  .04573/.00400/.4746`；层对齐带来的早期coexistence优势在晚期明显衰减，行为四点仍是
+  必须完成的裁决，不能仅凭该内部量提前判负。
 
 精确命令：
 

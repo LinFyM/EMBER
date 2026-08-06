@@ -177,3 +177,9 @@ single-checkpoint strict correct400 `>150`。若失败，只根据上述最早�
   update。步时`34.708/34.655/34.609s`，peak allocated/reserved=
   `18,112,406,528/20,375,928,832` bytes。累计1,440 queries/288 videos，source trainable=0，
   六rank/3+3 NUMA/checkpoint/RNG/sampler/scheduler exact-resume闭合。profile权重永久弃用。
+- launch commit`1b868ed`的独立fresh formal root已自然完成0→200：200 finite macros、96,000
+  queries、19,200 K4 videos、8个every25 checkpoints、0 clip/OOM/nonfinite，wall=`7350.114s`，
+  peak allocated/reserved=`18,096,154,112/20,478,689,280` bytes，validation/test action reads=0。
+  最后50步full24 gradient retention/cosine/negative-pair中位为`.04573/.00400/.47464`，相对
+  旧K4的`.04326/.00038/.49275`只有小幅改善；该证据只说明晚期共享credit cancellation仍可能
+  是瓶颈，正式裁决必须等待50/100/150/200 strict correct400与winner内部路径分析。

@@ -18,6 +18,10 @@
 - sealed profile已经通过，formal launch合同取`task_plan.md`顶部。下一步在live比较
   `gpu01/gpu02`后，只用最多6张空闲A40、3+3 NUMA、显式`NCCL_P2P_DISABLE=1`，从functional
   identity启动独立fresh0→200；两个profile root都永久弃用。
+- 上述fresh formal已在launch commit`1b868ed`自然完成并释放GPU：200 finite macros、96,000
+  queries、19,200 K4 videos、8个checkpoints、0 clip/OOM/nonfinite，wall`7350.114s`、peak
+  reserved20.48GB。当前唯一下一步是live重查后并行完成macro50/100，再完成150/200的strict
+  paired correct400；禁止按functional loss或内部梯度提前选择checkpoint。
 - `runs/outputs/pi05_as_writer_k4_layer_trace_m2p_profile_r6_b20_89f5384_20260806`只作失败
   diagnostic：启动时未在step1停下，且axis FFN pre-LN导致step2/3 loss爆到58.93/96.82。
   clean`ed4f46e`已移除dynamic value-path normalization；禁止resume该root，必须新root从

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
+import re
 import subprocess
 from pathlib import Path
 from typing import Any, Mapping
@@ -172,69 +172,89 @@ def _capture_task(
         tokenizer_path=Path(correct["tokenizer"]["path"]),
         require_formal=True,
     )
-    frames_by_condition = []
-    indices_by_condition = []
-    languages = []
     evidence = {}
+    physical_rows = []
+    direction_rows = []
+    trace_evidence_rows = []
+    readers = []
+    programs = []
+    states = []
+    routes = []
+    route_weights_rows = []
+    writer = adapter.writer
+    local_offsets = torch.tensor([0, 4], dtype=torch.long, device=device)
     for condition in CONDITIONS:
         adapter.evaluation_adapter = dict(contracts[condition]["adapter"])
-        row, frames, indices, language = adapter._episode_inputs(
-            suite=suite, task_id=task_id, init_state_id=0
+        cache_root = (
+            REPO_ROOT
+            / "runs/outputs"
+            / ROOTS[condition]
+            / "writer_lora_cache/entries"
         )
-        evidence[condition] = row
-        frames_by_condition.append(frames)
-        indices_by_condition.append(indices)
-        languages.append(language)
-
-    frame_batches = tuple(
-        batch for condition in frames_by_condition for batch in condition
-    )
-    index_batches = tuple(
-        batch for condition in indices_by_condition for batch in condition
-    )
-    frames = torch.cat(frame_batches)
-    frame_indices = torch.cat(index_batches)
-    offsets = [0]
-    for batch in frame_batches:
-        offsets.append(offsets[-1] + int(batch.shape[0]))
-    video_offsets = torch.tensor(offsets, dtype=torch.long, device=device)
-    condition_offsets = torch.arange(
-        0, 4 * (len(CONDITIONS) + 1), 4, dtype=torch.long, device=device
-    )
-    tokens, masks, spans = adapter.tokenizer(languages)
-    lengths = video_offsets[1:] - video_offsets[:-1]
-    frame_video_ids = torch.repeat_interleave(
-        torch.arange(len(frame_batches), device=device), lengths
-    )
-    video_condition_ids = torch.repeat_interleave(
-        torch.arange(len(CONDITIONS), device=device),
-        torch.full((len(CONDITIONS),), 4, dtype=torch.long, device=device),
-    )
-    writer = adapter.writer
-    copy_task_lora_state_(policy, adapter.identity_state, adapter.lora_contract)
-    with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-        task_anchor = writer.condition_descriptor.task_anchor(
-            policy, tokens, masks, spans
+        target_entry = f"{suite}_task_{task_id:02d}_state_000"
+        target_record = read_json(cache_root / target_entry / "entry.json")
+        batch_entry_ids = tuple(target_record["generation"]["batch_entry_ids"])
+        requests = []
+        target_position = -1
+        for position, entry_id in enumerate(batch_entry_ids):
+            request = read_json(cache_root / entry_id / "entry.json")["request"]
+            requests.append(request)
+            if entry_id == target_entry:
+                target_position = position
+        if target_position < 0 or any(
+            re.fullmatch(r"[a-z0-9_]+", entry_id) is None
+            for entry_id in batch_entry_ids
+        ):
+            raise RuntimeError("production Writer generation batch changed")
+        inputs = [
+            adapter._episode_inputs(
+                suite=str(request["suite"]),
+                task_id=int(request["task_id"]),
+                init_state_id=int(request["init_state_id"]),
+            )
+            for request in requests
+        ]
+        rows, episode_frames, _, languages = zip(*inputs, strict=True)
+        evidence[condition] = rows[target_position]
+        frame_batches = tuple(
+            batch for episode in episode_frames for batch in episode
         )
-        video_traces = writer.condition_descriptor(
-            policy,
-            frames,
-            frame_video_ids,
-            video_offsets,
-            tokens.index_select(0, video_condition_ids),
-            masks.index_select(0, video_condition_ids),
-            spans.index_select(0, video_condition_ids),
+        frames = torch.cat(frame_batches)
+        offsets = [0]
+        for batch in frame_batches:
+            offsets.append(offsets[-1] + int(batch.shape[0]))
+        video_offsets = torch.tensor(offsets, dtype=torch.long, device=device)
+        tokens, masks, spans = adapter.tokenizer(list(languages))
+        lengths = video_offsets[1:] - video_offsets[:-1]
+        frame_video_ids = torch.repeat_interleave(
+            torch.arange(len(frame_batches), device=device), lengths
         )
-        physical = video_traces.reshape(
-            len(CONDITIONS), 4, 20, 16, 1024
+        video_condition_ids = torch.repeat_interleave(
+            torch.arange(len(requests), device=device),
+            torch.full(
+                (len(requests),), 4, dtype=torch.long, device=device
+            ),
         )
-        direction, trace_evidence = factorize_trace_evidence(physical)
-        route_indices, route_weights = writer.layer_m2p.route(task_anchor)
-        readers = []
-        programs = []
-        states = []
-        local_offsets = torch.tensor([0, 4], dtype=torch.long, device=device)
-        for condition_index in range(len(CONDITIONS)):
+        copy_task_lora_state_(
+            policy, adapter.identity_state, adapter.lora_contract
+        )
+        with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+            task_anchor = writer.condition_descriptor.task_anchor(
+                policy, tokens, masks, spans
+            )
+            video_traces = writer.condition_descriptor(
+                policy,
+                frames,
+                frame_video_ids,
+                video_offsets,
+                tokens.index_select(0, video_condition_ids),
+                masks.index_select(0, video_condition_ids),
+                spans.index_select(0, video_condition_ids),
+            )
+            physical = video_traces.reshape(len(requests), 4, 20, 16, 1024)
+            direction, trace_evidence = factorize_trace_evidence(physical)
+            route_indices, route_weights = writer.layer_m2p.route(task_anchor)
+            condition_index = target_position
             reader = None
             program = None
             for route_slot in range(route_indices.shape[1]):
@@ -251,6 +271,11 @@ def _capture_task(
                 reader = local_reader * weight if reader is None else reader + local_reader * weight
                 program = local_program * weight if program is None else program + local_program * weight
             assert reader is not None and program is not None
+            physical_rows.append(physical[condition_index].detach().float().cpu())
+            direction_rows.append(direction[condition_index].detach().float().cpu())
+            trace_evidence_rows.append(
+                trace_evidence[condition_index].detach().float().cpu()
+            )
             readers.append(reader.detach().float().cpu())
             programs.append(program.detach().float().cpu())
             states.append(
@@ -258,6 +283,10 @@ def _capture_task(
                     name: value.detach().float().cpu()
                     for name, value in writer.decode_program(program).items()
                 }
+            )
+            routes.append(route_indices[condition_index].detach().cpu().tolist())
+            route_weights_rows.append(
+                route_weights[condition_index].detach().cpu().tolist()
             )
 
     prepared, global_task_id = _fixed_query(
@@ -277,10 +306,12 @@ def _capture_task(
     comparisons = {}
     for index, condition in enumerate(CONDITIONS):
         comparisons[condition] = {
-            "physical_trace": tensor_metrics(physical[0], physical[index]),
-            "direction": tensor_metrics(direction[0], direction[index]),
+            "physical_trace": tensor_metrics(
+                physical_rows[0], physical_rows[index]
+            ),
+            "direction": tensor_metrics(direction_rows[0], direction_rows[index]),
             "trace_evidence": tensor_metrics(
-                trace_evidence[0], trace_evidence[index]
+                trace_evidence_rows[0], trace_evidence_rows[index]
             ),
             "reader": tensor_metrics(readers[0], readers[index]),
             "program": tensor_metrics(programs[0], programs[index]),
@@ -303,8 +334,8 @@ def _capture_task(
         "suite": suite,
         "task_id": task_id,
         "conditions": list(CONDITIONS),
-        "route_indices": route_indices.cpu().tolist(),
-        "route_weights": route_weights.cpu().tolist(),
+        "route_indices": routes,
+        "route_weights": route_weights_rows,
         "evidence": evidence,
         "comparisons_to_correct": comparisons,
         "correct_geometry": adapter_geometry(writer, pairs, states[0], 1.0),

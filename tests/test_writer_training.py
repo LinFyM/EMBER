@@ -62,15 +62,16 @@ def test_profile_uses_independent_video_seed_without_mutating_formal_config() ->
     assert args.stop_after_step == 3
 
 
-def test_formal_is_blocked_before_fresh_energy_preserving_profile() -> None:
+def test_formal_is_sealed_only_by_fresh_energy_preserving_profile() -> None:
     config = load_writer_config(CONFIG)
-    assert config["formal_run"]["status"] == "blocked_pending_live_profile"
-    assert config["formal_run"]["launch_state"] == (
-        "blocked_until_fresh_and_exact_resume_profile"
-    )
+    assert config["formal_run"]["status"] == "sealed"
+    assert config["formal_run"]["launch_state"] == "ready_for_fresh_formal_launch"
     evidence = config["profile_evidence"]
-    assert evidence["status"] == "unsealed_pending_live_bci_a40_profile"
-    assert "segments" not in evidence
+    assert evidence["status"] == "sealed_live_bci_a40_fresh_and_exact_resume"
+    assert evidence["segments"] == ["fresh_0_to_1", "exact_resume_1_to_3"]
+    assert evidence["gradient_clip_count"] == 0
+    assert evidence["step2_all_declared_blocks_reachable"] is True
+    assert evidence["profile_weights_reusable_for_formal"] is False
 
 
 def test_k4_m2p_rejects_writer_warm_start_before_runtime_construction() -> None:

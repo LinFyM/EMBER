@@ -32,6 +32,10 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 2026-08-06（BCI local）owner要求当前Factorized Condition-Kernel实验与全部分析完成后
 停止推进并讨论。该实验现已完整负裁决、GPU释放；在owner明确恢复前只允许只读解释、
 结果核对和文档封存，不得启动reward、下一架构、profile、训练、rollout或GPU分析。
+随后owner已明确恢复长期Goal推进，并要求Goal完成前不汇报中间结果；当前允许按本文件
+边界持续设计、实现、profile、formal训练、严格rollout与内部分析，且必须保留视频条件，
+few-shot现已获准并采用K4。该恢复覆盖上一句的阶段性暂停，但不改变设备、信息墙、
+single-checkpoint、无hash、不使用subagent与安全边界。
 
 ## Efficiency and validation boundary
 
@@ -177,7 +181,10 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   `configs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_bci_v1.json`；Writer参数精确
   `60,926,976`，全仓`192 passed`。live A40 fresh0→1、exact-resume1→3 profile已通过：
   0 clip/OOM/nonfinite，step2起全部新Reader/axis模块可达，peak reserved20.47GB；profile权重
-  已弃用，formal已seal，下一步只从functional identity独立fresh0→200。
+  已弃用。独立functional-identity formal0→200也已自然完成：200 finite macros、96,000
+  queries、19,200 K4 action-hidden videos、8 checkpoints、0 clip，peak reserved20.30GB；
+  source trainable=0且validation/test action reads=0。当前只执行macro50/100/150/200 strict
+  paired correct400，再按single winner做五臂与内部分析。
 - 上一活动方法为
   `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`。上一版K4 layer-trace五臂已完成：
   `correct/same/wrong/shuffled/reversed=99/92/57/94/105`；correct相对wrong明显更好，证明

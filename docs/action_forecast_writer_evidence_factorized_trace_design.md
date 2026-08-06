@@ -175,6 +175,13 @@ values、vector fusion、Reader和axis blocks均有finite更新。峰值allocate
 source trainable=0，validation/test action reads=0。profile权重永久弃用，formal只允许从新的
 functional identity root启动。
 
+identity-fresh formal0→200随后已自然完成：200 finite macros、96,000 action queries、19,200
+K4 action-hidden video conditions、8 checkpoints、0 clip，wall=`7272.774s`、peak
+allocated/reserved=`18,203,289,600/20,304,625,664` bytes；source trainable=0且validation/test
+action reads=0。四个50步窗口的full24 gradient retention/cosine/negative-pair中位为
+`.10601/.06078/.36957`、`.08578/.05152/.38949`、`.06065/.02493/.44746`、
+`.05227/.00727/.47645`。该曲线只作机制证据，正式裁决仍固定为四点strict correct400。
+
 ## 9. 禁调项
 
 本轮不改K、DCT16、rank、LR、B20、axis blocks、training objective或checkpoint schedule；

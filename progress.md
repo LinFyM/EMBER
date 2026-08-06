@@ -1,5 +1,14 @@
 # EMBER Progress Ledger
 
+## 2026-08-06 Evidence-Factorized Trace formal0→200完成
+
+- clean/pushed launch commit`7e3559f`在`gpu01:0,1,2|4,5,7`自然完成identity-fresh
+  formal0→200；root为
+  `runs/outputs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_formal_fresh0_200_r6_692ab5e_20260806`。
+- 共200 finite macros、96,000 queries、19,200 K4 action-hidden videos、8 checkpoints、0 clip，
+  wall`7272.774s`、peak reserved20.30GB；source trainable=0、validation/test action reads=0，
+  六张A40已自然释放。下一步按预注册只评50/100/150/200 strict correct400。
+
 最后更新：2026-08-06。
 
 阅读规则：本文按时间顺序保留真实执行状态。早期段落中的“当前”“下一步”、

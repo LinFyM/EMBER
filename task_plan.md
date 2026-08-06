@@ -165,8 +165,9 @@ support，不能在逐token单位化和全局raw amplitude两个破坏性极端�
   fresh0→1、exact-resume1→3 profile，权重弃用。三步loss=`.150377/.152820/.148508`，
   0 clip/OOM/nonfinite，step2起evidence key、双value、vector fusion、Reader与axis均finite可达；
   peak allocated/reserved=`18,218,217,984/20,470,300,672` bytes。
-- [ ] 从identity formal0→200，strict correct400固定评50/100/150/200；single checkpoint严格
-  `>150`且继续提高。
+- [x] 从identity formal0→200：200 finite macros、96,000 queries、19,200 K4 videos、
+  8 checkpoints、0 clip，GPU自然释放。
+- [ ] strict correct400固定评50/100/150/200；single checkpoint严格`>150`且继续提高。
 
 ### Evidence-Factorized Trace formal0→200 launch合同（2026-08-06）
 
@@ -192,6 +193,12 @@ support，不能在逐token单位化和全局raw amplitude两个破坏性极端�
 ```bash
 env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,7 NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_as_writer.py --config configs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_bci_v1.json --mode formal --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir runs/outputs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_formal_fresh0_200_r6_692ab5e_20260806 --stop-after-step 200 --num-workers 0 --log-every 1 --skip-data-sha
 ```
+
+上述formal已从clean/pushed launch commit`7e3559f`自然完成。wall=`7272.774s`，peak
+allocated/reserved=`18,203,289,600/20,304,625,664` bytes；source trainable=0，validation/test
+action reads=0。四个50步窗口的full24 gradient retention/cosine/negative-pair中位依次为
+`.10601/.06078/.36957`、`.08578/.05152/.38949`、`.06065/.02493/.44746`、
+`.05227/.00727/.47645`；不得用该机制曲线或functional loss挑checkpoint。
 
 ## 已完成K4 Policy-Layer Trace M2P（2026-08-06）
 

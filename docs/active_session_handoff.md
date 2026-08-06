@@ -22,9 +22,15 @@
   loss=`.150377/.152820/.148508`，0 clip/OOM/nonfinite，step2起evidence key、direction/
   physical values、vector fusion、Reader与axis均finite可达；peak allocated/reserved=
   `18,218,217,984/20,470,300,672` bytes，累计1,440 queries/288 action-hidden videos。
-  profile权重弃用，formal已seal。下一步只从functional identity独立fresh0→200；不加载任何
-  旧Writer，不续Energy-Preserving，不先开sparse experts。精确root、规模、storage、设备边界和
-  命令取`task_plan.md`顶部sealed config`692ab5e` launch合同。
+  profile权重弃用；不加载任何旧Writer，不续Energy-Preserving，不先开sparse experts。
+- identity-fresh formal0→200已按sealed合同自然完成，root为
+  `runs/outputs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_formal_fresh0_200_r6_692ab5e_20260806`：
+  200 finite macros、96,000 queries、19,200 K4 action-hidden videos、8 checkpoints、0 clip，
+  wall=`7272.774s`、peak allocated/reserved=`18,203,289,600/20,304,625,664` bytes，source
+  trainable=0且validation/test action reads=0。四个50步窗口的full24 gradient
+  retention/cosine/negative-pair中位为`.10601/.06078/.36957`、`.08578/.05152/.38949`、
+  `.06065/.02493/.44746`、`.05227/.00727/.47645`；前半段共存改善但晚期仍向抵消退化，
+  只作机制证据。GPU已自然释放；下一步固定评50/100/150/200 strict paired correct400。
 
 ## 0.1 已完成并负裁决：Energy-Preserving Policy-Layer Trace M2P
 

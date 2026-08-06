@@ -14,8 +14,11 @@
   `configs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_bci_v1.json`，Writer参数
   `60,926,976`，全仓`192 passed`、compileall、real config load和diff check通过。live
   `gpu01:0,1,2|4,5,7`六卡fresh0→1、exact-resume1→3 profile已通过：0 clip/OOM/nonfinite，
-  step2起全部新Reader/axis模块可达，peak reserved20.47GB；权重弃用，formal已seal。下一执行
-  顺序是按`task_plan.md`顶部`692ab5e` launch合同独立functional-identity fresh0→200。
+  step2起全部新Reader/axis模块可达，peak reserved20.47GB；权重弃用。按`task_plan.md`顶部
+  合同启动的identity-fresh formal0→200已自然完成：200 finite macros、96,000 queries、
+  19,200 K4 videos、8 checkpoints、0 clip，wall`7272.774s`、peak allocated/reserved=
+  `18,203,289,600/20,304,625,664` bytes，source trainable=0且validation/test action reads=0。
+  下一顺序只评macro50/100/150/200 strict paired correct400，再固定single winner做五臂和内部分析。
 - 不做power-law/band sweep、scalar gate、SFT-only auxiliary、sparse experts或旧checkpoint
   warm-start。
 

@@ -1,5 +1,18 @@
 # EMBER Findings
 
+## 2026-08-06 Evidence-Factorized Trace fresh formal训练证据
+
+- identity-fresh formal0→200自然完成：200 finite macros、96,000 action queries、19,200 K4
+  action-hidden video conditions、8 checkpoints、0 clip，source trainable=0且validation/test
+  action reads=0；wall=`7272.774s`，peak allocated/reserved=
+  `18,203,289,600/20,304,625,664` bytes。
+- 四个50步窗口的full24 raw gradient retention/cosine/negative-pair中位为
+  `.10601/.06078/.36957`、`.08578/.05152/.38949`、`.06065/.02493/.44746`、
+  `.05227/.00727/.47645`。双value/evidence Reader在前半段保持了比raw-only稍好的共存，
+  但晚期仍接近正交抵消；它不能提前证明closed-loop有效或选择checkpoint。
+- 当前固定裁决仍是macro50/100/150/200同panel strict correct400；只有四点行为、breadth、
+  换手和single-winner五臂/内部传递能判断direction与physical evidence是否真正互补。
+
 ## 2026-08-06 从destructive normalization转向Evidence-Factorized Trace
 
 - 两个同topology fresh反事实形成闭环：unit direction保留task specificity但将low-energy

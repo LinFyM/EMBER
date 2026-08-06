@@ -33,6 +33,38 @@ runner、split、路径或 GPU 权限。
   layer trace、reader、axis M2P、BA/action leverage、task-gradient coexistence与闭环换手的
   最早失效接口分析并继续迭代，single checkpoint必须严格`>150`且继续尽可能提高。
 
+### K4 Policy-Layer Trace M2P fresh formal0→200 launch合同（2026-08-06）
+
+- implementation/config/profile seal=`d3f568d`，已push branch/main；正式启动前必须保持clean且
+  `HEAD==origin/main`。只从functional identity fresh启动，不传`--resume`或
+  `--initialize-writer-checkpoint`，不加载两个profile root、旧K4或任何历史Writer权重。
+- fresh output/log/tmux固定为
+  `runs/outputs/pi05_as_writer_k4_layer_trace_m2p_formal_fresh0_200_r6_d3f568d_20260806`、
+  `runs/logs/pi05_as_writer_k4_layer_trace_m2p_formal_fresh0_200_r6_d3f568d_20260806.log`、
+  `ember_k4_trace_formal_d3f568d`。scale=`200×24×B20=96,000` action queries、
+  `200×24×K4=19,200` action-hidden videos、8个every25 checkpoints；sealed profile约
+  `34.6s/macro`，预计训练主体约115分钟。
+- source checkpoint、tokenizer、train24 dataset、normalization与LIBERO assets沿用sealed
+  canonical路径；world6、logical B20、policy B2、16-frame encoder chunk、full24等权和
+  `NCCL_P2P_DISABLE=1`不变。upstream为generic frozen source step1000，不使用held action、
+  reward或历史Writer初始化。
+- profile单checkpoint约686MiB；8点checkpoint、原子临时副本、metrics/log预计峰值新增低于
+  8GiB。2026-08-06同日live quota观测约`316,176,688/1,073,741,824 KiB`，本次重查
+  `xfs_quota`被权限拒绝；共享`/data1`仍有充足容量。该已知权限限制不触发重复扫描或hash。
+- live GPU选择仍须在启动前即时比较`gpu01/gpu02`；优先使用与profile一致且满足3+3 NUMA的
+  `gpu01:0,1,2|4,5,7`，仅当六卡均空闲才启动。任一卡出现他人进程、显存或利用率占用即
+  延后或改用同一node满足3+3的六张空闲卡，跨节点合计始终不超过6张。
+- 训练结束后固定评macro50/100/150/200 strict paired correct400，与旧K4
+  `70/94/99/108`、v6-fast`143`和严格门`>150`比较；functional loss或内部几何不用于选点。
+  single winner再做五臂、另K4 set/leave-one-out及layer trace→reader→M2P→BA→action和
+  task-gradient coexistence分析；失败只按最早失效接口重构。
+
+精确命令：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,7 NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_as_writer.py --config configs/pi05_as_writer_k4_layer_trace_m2p_bci_v1.json --mode formal --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir runs/outputs/pi05_as_writer_k4_layer_trace_m2p_formal_fresh0_200_r6_d3f568d_20260806 --stop-after-step 200 --num-workers 0 --log-every 1 --skip-data-sha
+```
+
 ## 已完成的Few-Shot Invariant-Program M2P（2026-08-06）
 
 - [x] owner明确指出EMBER不能忽略视频，并允许在根因需要时从one-shot切换few-shot。完成

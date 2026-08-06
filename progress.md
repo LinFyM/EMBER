@@ -22,6 +22,9 @@ GPU范围和训练步长是当时快照；活动状态只取
 - clean`44e248b`新root严格完成fresh0→1→exact-resume1→3：三步loss稳定、0 clip/OOM/
   nonfinite，step2起reader/axis均finite update，peak reserved20.38GB、每步约34.6秒。profile
   权重弃用，GPU自然释放；formal从fresh identity启动条件成立。
+- clean/pushed`d3f568d`已seal正式config和profile evidence；fresh0→200的唯一root、scale、
+  storage预算、六卡3+3 NUMA边界、exact command及50/100/150/200严格裁决已写入
+  `task_plan.md`。启动不加载任何profile或历史Writer权重。
 
 ## 2026-08-06 K4四点strict correct400与内部分析完成
 

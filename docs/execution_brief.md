@@ -4,7 +4,7 @@
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
-## 0.0 最新执行覆盖：K4 Policy-Layer Trace M2P待原位实现
+## 0.0 最新执行覆盖：K4 Policy-Layer Trace M2P待fresh formal裁决
 
 - 当前唯一活动authority为
   `docs/action_forecast_writer_k4_layer_trace_m2p_design.md`。新canonical必须保留exact language
@@ -15,9 +15,9 @@
   config为`configs/pi05_as_writer_k4_layer_trace_m2p_bci_v1.json`，旧K4 config/checkpoint只作
   历史证据且不得resume/warm-start。BCI assets下全仓`190 passed`、compileall、config/schema
   real load与diff check通过。
-- 下一步先live比较`gpu01/gpu02`并在最多6张空闲A40、3+3 NUMA、显式
-  `NCCL_P2P_DISABLE=1`下做longest105 K4/B20/B2 fresh0→1与exact-resume1→3 profile；profile
-  权重弃用。profile通过才建立fresh formal0→200 launch contract。
+- sealed profile已经通过，formal launch合同取`task_plan.md`顶部。下一步在live比较
+  `gpu01/gpu02`后，只用最多6张空闲A40、3+3 NUMA、显式`NCCL_P2P_DISABLE=1`，从functional
+  identity启动独立fresh0→200；两个profile root都永久弃用。
 - `runs/outputs/pi05_as_writer_k4_layer_trace_m2p_profile_r6_b20_89f5384_20260806`只作失败
   diagnostic：启动时未在step1停下，且axis FFN pre-LN导致step2/3 loss爆到58.93/96.82。
   clean`ed4f46e`已移除dynamic value-path normalization；禁止resume该root，必须新root从

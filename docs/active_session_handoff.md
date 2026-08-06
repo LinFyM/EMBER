@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0. 最新覆盖：K4 Policy-Layer Trace M2P设计打开
+## 0. 最新覆盖：K4 Policy-Layer Trace M2P等待fresh formal裁决
 
 - 当前唯一活动authority为
   `docs/action_forecast_writer_k4_layer_trace_m2p_design.md`。它保留exact task language与K4
@@ -34,6 +34,9 @@
   axis M2P都finite可达。步时约34.6--34.7秒，peak allocated/reserved=
   `18,112,406,528/20,375,928,832` bytes，累计1,440 queries/288 videos、source trainable=0，
   六rank/3+3 NUMA与完整resume闭合。profile权重永久弃用；formal现已可从identity新root启动。
+- implementation/config/profile seal已更新到clean/pushed`d3f568d`；正式fresh0→200的唯一
+  output、scale、设备边界、storage预算、exact command和后续四点裁决取`task_plan.md`顶部
+  launch合同。正式run不得从任一profile或历史Writer resume/warm-start。
 
 ## 0.1 已完成：K4 Invariant-Program M2P四点与内部裁决
 

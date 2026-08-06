@@ -1,6 +1,6 @@
 # K4 Policy-Layer Trace M2P Writer
 
-状态：2026-08-06 canonical原位实现与CPU合同完成，等待A40 profile与fresh正式裁决。本文覆盖
+状态：2026-08-06 canonical原位实现、CPU合同与A40 profile完成，等待fresh正式裁决。本文覆盖
 Few-Shot Invariant-Program M2P的活动地位；旧方法及其checkpoint只保留为历史证据。
 
 ## 1. 决策

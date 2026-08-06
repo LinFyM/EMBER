@@ -1,7 +1,7 @@
 # K4 Energy-Preserving Policy-Layer Trace M2P Writer
 
-状态：2026-08-06设计authority已封存，clean`22234c4`已原位实现并push，
-尚未启动live A40 profile。本文覆盖
+状态：2026-08-06设计authority已封存，clean`22234c4`已原位实现并push；
+live A40 fresh/exact-resume profile已通过，config seal=`3b7eb4a`，等待formal fresh0→200。本文覆盖
 `action_forecast_writer_k4_layer_trace_m2p_design.md`的活动地位；旧方法由Git和sealed artifacts保存。
 
 ## 1. 决策
@@ -107,3 +107,7 @@ reward或outcome选择频谱。若失败，只根据fresh行为与task-gradient�
   config/launch/checkpoint schemas与family均严格拒载旧layer-trace checkpoint。
 - 聚焦测试、全仓`191 passed`、compileall、real config load和diff check通过。CPU合同直接
   检查输出frequency-energy fractions与raw DCT一致，同时每视频总能量与旧输入一致。
+- `gpu01:0,1,2|4,5,7`六卡profile已严格fresh0→1、exact-resume1→3通过；三步
+  loss=`.150377/.152822/.148504`，grad norm=`.000589/.000636/.000639`，0 clip/OOM/
+  nonfinite，step2起reader和axis均有finite update。peak reserved=`20,375,928,832` bytes，
+  三步约`36.98/36.91/36.70s`，权重永久弃用。

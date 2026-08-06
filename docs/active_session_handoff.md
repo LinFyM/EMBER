@@ -29,7 +29,14 @@
 - clean`22234c4`已原位实现：新唯一config为
   `configs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_bci_v1.json`，旧config/family已退休且
   不得resume。聚焦合同、全仓`191 passed`、compileall、real config load和diff check通过；
-  formal仍被config显式blocked，必须先按`task_plan.md`顶部合同完成live profile。
+  formal原先被config显式blocked，只能先完成live profile。
+- live`gpu01:0,1,2|4,5,7`六卡profile已严格fresh0→1、exact-resume1→3完成；三步
+  loss=`.150377/.152822/.148504`、grad norm=`.000589/.000636/.000639`，0 clip/OOM/
+  nonfinite，step2起reader/axis均finite可达。步时约36.7--37.0s，peak allocated/reserved=
+  `18,113,258,496/20,375,928,832` bytes，累计1,440 queries/288 videos，source trainable=0，
+  六rank/3+3 NUMA/exact-resume闭合。profile权重弃用，config seal=`3b7eb4a`已push。
+- 当前只从identity启动新formal0→200；唯一root、设备/容量边界和exact command取
+  `task_plan.md`顶部formal launch合同。不得resume profile或上一版macro100。
 
 ## 0.1 已完成并负裁决：K4 Policy-Layer Trace M2P
 

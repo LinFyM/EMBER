@@ -21,8 +21,10 @@
   如频谱修复后仍接近1/24 task-gradient抵消，才打开语义路由的sparse value experts。
 - clean/pushed`22234c4`已完成实现与旧path retirement；新config为
   `configs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_bci_v1.json`，全仓`191 passed`及
-  compileall/real load/diff check通过。formal仍blocked；当前只执行`task_plan.md`顶部预注册的
-  six-A40 fresh0→1、exact-resume1→3 profile。
+  compileall/real load/diff check通过。six-A40 fresh0→1、exact-resume1→3 profile已通过：
+  0 clip/OOM/nonfinite，step2起两block可达，peak reserved20.38GB，约36.9s/macro。
+  config seal=`3b7eb4a`已push，profile权重弃用。当前只执行`task_plan.md`顶部的formal
+  fresh0→200 launch合同，不加载任何旧Writer。
 
 ## 0.1 已完成并负裁决：K4 Policy-Layer Trace M2P
 

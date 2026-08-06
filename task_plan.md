@@ -23,8 +23,9 @@ runner、split、路径或 GPU 权限。
   一个全局scalar匹配旧总trace energy，完整保留group/frequency间原始相对能量和符号。
 - [x] 原位替换canonical trace normalization，建立新architecture/config/checkpoint family并严格
   拒载旧checkpoint；完成聚焦CPU合同、全仓回归与real config load。
-- [ ] clean/push后live比较`gpu01/gpu02`，只用最多6张空闲A40完成fresh0→1与
-  exact-resume1→3 profile；通过后从functional identity fresh0→200，严格评50/100/150/200。
+- [x] clean/push后live比较`gpu01/gpu02`，只用最多6张空闲A40完成fresh0→1与
+  exact-resume1→3 profile；权重弃用，config已seal。
+- [ ] 从functional identity formal fresh0→200，严格评50/100/150/200。
 - [ ] 按single-checkpoint correct、breadth、video causality与task-gradient证据继续迭代；最低严格
   `>150/400`，达到后仍继续提高。若频谱修复后credit仍接近1/24抵消，才打开
   frozen-semantic routing驱动的condition-specific sparse value experts。
@@ -46,6 +47,36 @@ runner、split、路径或 GPU 权限。
   checkpoint、原子临时副本与log预计峰值新增低于4GiB，距离独立配额充足。
 - profile只裁决finite/OOM、zero/identity、source freeze、reader/axis可达、多卡和exact-resume；
   不用三步loss做科研结论。通过后回写config封存证据，才允许formal。
+
+profile已按上述合同自然完成：三步loss=`.150377/.152822/.148504`，grad norm=
+`.000589/.000636/.000639`，0 clip/OOM/nonfinite；step2起reader/axis update L2均非零，
+peak allocated/reserved=`18,113,258,496/20,375,928,832` bytes，累计1,440 queries/288 videos，
+source trainable=0，六rank、3+3 NUMA和exact-resume闭合。config seal=`3b7eb4a`，profile权重弃用。
+
+### Energy-Preserving Layer-Trace formal0→200 launch合同（2026-08-06）
+
+- sealed config commit=`3b7eb4a`，已push branch/main；启动前必须clean且`HEAD==origin/main`。
+  只从functional identity fresh启动，不传`--resume`或`--initialize-writer-checkpoint`，不加载
+  任何profile、macro100或历史Writer。
+- formal root/log/tmux固定为
+  `runs/outputs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_formal_fresh0_200_r6_3b7eb4a_20260806`、
+  `runs/logs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_formal_fresh0_200_r6_3b7eb4a_20260806.log`、
+  `ember_k4_energy_trace_formal_3b7eb4a`。scale=`200×24×B20=96,000` action queries、
+  `200×24×K4=19,200` action-hidden videos、8个every25 checkpoints。
+- profile实测约36.9s/macro，训练主体预计约123分钟；单checkpoint约664MiB，8点、原子
+  临时副本、metrics/log预计峰值新增低于8GiB。`/data1` quota为
+  `343,430,876/1,073,741,824 KiB`，容量足够。
+- world6、logical B20、policy B2、16-frame encoder chunk、full24等权、source freeze、K4和
+  `NCCL_P2P_DISABLE=1`不变。启动前live比较双节点，只用同一node满足3+3 NUMA的
+  6张空闲A40；任一卡变忙即更换合法组合或延后，不共享、不干扰。
+- 自然完成后才并行两波评macro50/100/150/200 strict paired correct400；不用functional
+  loss、训练期gradient或中途任务结果挑checkpoint。single winner再做五臂和内部分析。
+
+精确命令：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,7 NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_as_writer.py --config configs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_bci_v1.json --mode formal --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir runs/outputs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_formal_fresh0_200_r6_3b7eb4a_20260806 --stop-after-step 200 --num-workers 0 --log-every 1 --skip-data-sha
+```
 
 ## 已完成K4 Policy-Layer Trace M2P（2026-08-06）
 

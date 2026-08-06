@@ -25,7 +25,10 @@ GPU范围和训练步长是当时快照；活动状态只取
 - clean`22234c4`已完成上述原位替换并push branch/main；旧config退休，新schema/family拒载
   旧checkpoint。全仓`191 passed`，compileall、real config load和diff check通过，formal仍blocked。
 - 新profile的root、scale、storage、fresh/resume分段和GPU边界已预注册在`task_plan.md`顶部；
-  尚未启动GPU。
+  `gpu01:0,1,2|4,5,7`已严格fresh0→1再exact-resume1→3完成。三步loss稳定、0 clip/
+  OOM/nonfinite，step2起reader/axis均可达，peak reserved20.38GB，GPU自然释放。
+- config seal=`3b7eb4a`已回写profile证据并push branch/main，profile权重弃用。formal0→200的
+  root、scale、storage、GPU和exact command已预注册在`task_plan.md`顶部，尚未启动。
 
 ## 2026-08-06 K4 Policy-Layer Trace四点strict correct400完成
 

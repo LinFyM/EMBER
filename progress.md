@@ -8,6 +8,17 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-06 K4 Policy-Layer Trace四点strict correct400完成
+
+- 两波macro50/100与150/200均自然完成；每root 400 rows、42 shards、9 workers exit0，GPU
+  自然释放。完整correct=`69/99/88/94`、breadth=`5/6/6/6`，相邻gained/lost=
+  `42/12,28/39,28/22`，union/intersection=`145/37`，全部paired K4/state/RNG字段闭合。
+- macro100固定为single winner=99；150/200回落，layer-aligned新方法只在macro100比旧K4高5，
+  没有超过旧K4 winner108或v6-fast143。当前不续训、不warm-start、不按loss另挑checkpoint。
+- `task_plan.md`已预注册macro100其余四个video-control arms与hashless内部分析。下一步live选择
+  最多6张空闲A40分两波运行same-task-other/wrong/shuffled/reversed，再按最早失败接口裁决
+  sparse condition-specific parameter sharing，而不是直接堆参数。
+
 ## 2026-08-06 K4 Policy-Layer Trace M2P设计封存
 
 - 复核K4内部机制后，没有把视频旁路掉，也没有直接堆多experts；定位到旧final-layer固定

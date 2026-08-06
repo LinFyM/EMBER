@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0. 最新覆盖：K4 Policy-Layer Trace M2P等待fresh formal裁决
+## 0. 最新覆盖：K4 Policy-Layer Trace M2P四点完成，等待winner五臂与内部裁决
 
 - 当前唯一活动authority为
   `docs/action_forecast_writer_k4_layer_trace_m2p_design.md`。它保留exact task language与K4
@@ -23,8 +23,8 @@
   K4部署接口和未来RL兼容；不加SFT reconstruction/rank/contrastive auxiliary loss，不加载
   历史Writer。clean`a2c6d94`已完成原位实现：唯一活动config为
   `configs/pi05_as_writer_k4_layer_trace_m2p_bci_v1.json`，旧config/family已退休；全仓BCI
-  assets下`190 passed`，compileall与config/schema real load闭合。下一步是live A40 profile，
-  profile通过后才可打开fresh formal与预注册四点裁决。
+  assets下`190 passed`，compileall与config/schema real load闭合。后续A40 profile、fresh
+  formal与预注册四点裁决均已按下文完成。
 - 首个`89f5384`三步diagnostic未按fresh0→1再resume1→3分段，本就不是可封存profile；它暴露
   axis FFN pre-LayerNorm把step1极小memory放大到O(1)，loss`.1504→58.93→96.82`、三步clip。
   peak reserved约20.48GB且无OOM，故不是A40容量问题。该root禁止resume。clean`ed4f46e`已
@@ -44,11 +44,17 @@
   `runs/outputs/pi05_as_writer_k4_layer_trace_m2p_formal_fresh0_200_r6_d3f568d_20260806`；GPU已自然释放。
 - 训练期task-gradient coexistence相对旧K4只形成早期改善，最后50步full24 retention/
   median cosine/negative-pair中位=`.04573/.00400/.47464`，仅略高于旧K4
-  `.04326/.00038/.49275`，不能写成task drift已解。下一步只做预注册50/100/150/200 strict
-  correct400；四点完成前不按step200 functional loss`.10194`或该梯度证据挑点。
-- 四点strict correct400的唯一roots、两波3+3 GPU拓扑、storage预算、exact command模板与
-  completion gate已封存在`task_plan.md`顶部。live preflight后先并行macro50/100，自然释放
-  后再并行150/200；不复用旧K4 cache，不在四点间改变paired panel。
+  `.04326/.00038/.49275`，不能写成task drift已解。四点完成前没有按step200 functional
+  loss`.10194`或该梯度证据挑点。
+- 四点strict correct400已全部自然完成，每点400 rows、42 shards、9 workers exit0；
+  correct=`69/99/88/94`、breadth=`5/6/6/6`，逐task为
+  `[4,0,0,33,29,2,0,1]`、`[5,3,0,34,41,12,0,4]`、
+  `[12,1,0,34,26,13,0,2]`、`[15,1,0,34,27,11,0,6]`。相邻gained/lost=
+  `42/12,28/39,28/22`，union/intersection=`145/37`，K4 set/state/env/policy RNG严格配对。
+- single winner固定macro100=`99`，仍低于旧K4 winner108、v6-fast143和严格门`>150`；
+  layer alignment只改善旧K4同点94，未形成持续共同累积。当前只对macro100完成其余四个
+  video-control arms与预注册内部分析；不续训、不warm-start、不按loss另挑点。精确launch合同
+  取`task_plan.md`顶部。
 
 ## 0.1 已完成：K4 Invariant-Program M2P四点与内部裁决
 

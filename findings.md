@@ -1,5 +1,20 @@
 # EMBER Findings
 
+## 2026-08-06 K4 Policy-Layer Trace四点：层对齐只有局部增益，task换手未解
+
+- macro50/100/150/200 strict correct400=`69/99/88/94`、breadth=`5/6/6/6`；每点均为
+  400 rows、42 shards、9 workers exit0。相邻gained/lost=`42/12,28/39,28/22`，四点
+  union/intersection=`145/37`，K4 set、state、env seed与policy-noise common prefix为0 mismatch。
+- 逐task为`4/0/0/33/29/2/0/1`、`5/3/0/34/41/12/0/4`、
+  `12/1/0/34/26/13/0/2`、`15/1/0/34/27/11/0/6`；Goal-3与Spatial-1四点始终0，
+  macro100→150净失11且150→200只恢复6。single winner macro100=99不是单调/双曲成熟曲线。
+- 相对旧K4同点`70/94/99/108`，新layer alignment为`-1/+5/-11/-14`。它没有把错误的视频
+  表示方向变成可共同累积的policy更新；结合最后50步retention`.04573`、pair cosine`.00400`
+  与negative pair`.47464`，共享condition credit cancellation仍是必须检验的最早接口。
+- 不能仅凭行为提前等同为“视频无效”：当前macro100还必须完成same-task/wrong/order控制和
+  raw trace→reader→axis M2P→BA→action内部分析。只有这些接口闭合后才能按预注册证据打开
+  sparse sharing/experts，不能用loss、续训或checkpoint挑选修补99分。
+
 ## 2026-08-06 K4 Policy-Layer Trace fresh formal训练证据
 
 - 独立fresh0→200自然完成且工程合同闭合：200 finite macros、96,000 action queries、19,200

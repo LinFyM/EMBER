@@ -1,6 +1,6 @@
 # K4 Policy-Layer Trace M2P Writer
 
-状态：2026-08-06 canonical原位实现、CPU合同与A40 profile完成，等待fresh正式裁决。本文覆盖
+状态：2026-08-06 fresh0→200与四点strict correct400完成，等待single winner五臂及内部裁决。本文覆盖
 Few-Shot Invariant-Program M2P的活动地位；旧方法及其checkpoint只保留为历史证据。
 
 ## 1. 决策
@@ -182,4 +182,8 @@ single-checkpoint strict correct400 `>150`。若失败，只根据上述最早�
   peak allocated/reserved=`18,096,154,112/20,478,689,280` bytes，validation/test action reads=0。
   最后50步full24 gradient retention/cosine/negative-pair中位为`.04573/.00400/.47464`，相对
   旧K4的`.04326/.00038/.49275`只有小幅改善；该证据只说明晚期共享credit cancellation仍可能
-  是瓶颈，正式裁决必须等待50/100/150/200 strict correct400与winner内部路径分析。
+  是瓶颈。
+- 50/100/150/200 strict correct400=`69/99/88/94`、breadth=`5/6/6/6`；相邻
+  gained/lost=`42/12,28/39,28/22`，union/intersection=`145/37`。macro100为single winner，
+  但只比旧K4同点94提高5，低于旧K4最终108与v6-fast143；150/200回落且继续换手。下一步固定
+  macro100完成五臂与本节预注册内部接口分析，不能续训、warm-start或按loss改选checkpoint。

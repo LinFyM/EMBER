@@ -35,8 +35,12 @@ runner、split、路径或 GPU 权限。
   - [x] fresh formal0→200自然完成：200 finite macros、96,000 action queries、19,200
     action-hidden videos、8个every25 checkpoints、0 clip/OOM/nonfinite，source trainable=0且
     validation/test action reads=0。wall=`7350.114s`，peak reserved=`20,478,689,280` bytes。
-  - [ ] 用同一paired K4/state/RNG panel完成macro50/100/150/200 strict correct400；行为结果
-    出来前不按functional loss或内部梯度选择checkpoint。
+  - [x] 用同一paired K4/state/RNG panel完成macro50/100/150/200 strict correct400：
+    correct=`69/99/88/94`、breadth=`5/6/6/6`，single winner为macro100。四点完成前没有按
+    functional loss或内部梯度选择checkpoint。
+  - [ ] 对macro100完成same-task-other/wrong/shuffled/reversed四个paired full400，并完成
+    layer trace→reader→axis M2P→BA→fixed-action、LoRA谱/能量与task-gradient内部分析；只按
+    最早失败接口决定下一架构。
 
 ### K4 Policy-Layer Trace四点strict correct400 launch合同（2026-08-06）
 
@@ -61,6 +65,30 @@ runner、split、路径或 GPU 权限。
 ```bash
 env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --role validation --mode formal --state-count 50 --replicas-per-gpu 3 --writer-generators-per-gpu 3 --writer-generation-batch-size 4 --as-writer-config configs/pi05_as_writer_k4_layer_trace_m2p_bci_v1.json --writer-video-data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --writer-video-condition correct --writer-video-sampling without_replacement --gpu-indices GPUS --as-writer-checkpoint runs/outputs/pi05_as_writer_k4_layer_trace_m2p_formal_fresh0_200_r6_d3f568d_20260806/checkpoints/step_STEP --output-dir OUT
 ```
+
+四点已自然完成并满足上述完整性门。逐task顺序为Long-1/2、Goal-3/6、Object-1/3、
+Spatial-1/3：macro50=`4/0/0/33/29/2/0/1`、macro100=`5/3/0/34/41/12/0/4`、
+macro150=`12/1/0/34/26/13/0/2`、macro200=`15/1/0/34/27/11/0/6`。相邻
+gained/lost=`42/12,28/39,28/22`，四点union/intersection=`145/37`；跨checkpoint的
+K4 set、state、env seed与policy-noise common prefix为0 mismatch。layer alignment只把旧K4
+macro100的94提高到99，之后下降并换手；不续同一schedule或挑其他checkpoint。
+
+### K4 Policy-Layer Trace macro100五臂与内部分析合同（2026-08-06）
+
+- winner固定为同一fresh root的`step_00000100`；correct arm沿用已封存的99/400 root，不重跑。
+  其余四臂只改变`--writer-video-condition`，保持validation、state-count50、formal、
+  without-replacement、K4 schedule、state/env/policy RNG、3 replicas/GPU、3 generators/GPU与
+  generation batch4不变。
+- 两波各并行两个独立root、每root 3张空闲A40：第一波`same_task_other`与
+  `cross_suite_wrong`，第二波`shuffled`与`reversed`。每波启动前live比较`gpu01/gpu02`，总计
+  不超过6张；每root仍必须400 rows、42 shards、9 workers exit0。
+- 四root固定为
+  `runs/outputs/pi05_as_writer_k4_layer_trace_m2p_bci_{same_task_other,cross_suite_wrong,shuffled,reversed}400_noreplacement_seed7_macro0100_535123a_20260806`；log同名位于
+  `runs/logs/`。不复用correct cache，因为不同condition的实际Writer输入必须独立完整forward。
+- 行为五臂完成后，8 validation tasks各取一个paired K4 condition做hashless内部probe：至少覆盖
+  correct/alternate-set/wrong/shuffle/reverse/leave-one-out/zero、raw pre-normalization DCT
+  layer×frequency能量、reader/axis memory、effective BA谱与固定action。训练期task-gradient
+  直接读取既有200步sealed metrics，不重算functional panel。
 
 ### K4 Policy-Layer Trace M2P fresh formal0→200 launch合同（2026-08-06）
 

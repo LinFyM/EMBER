@@ -23,7 +23,8 @@
   physical values、vector fusion、Reader与axis均finite可达；peak allocated/reserved=
   `18,218,217,984/20,470,300,672` bytes，累计1,440 queries/288 action-hidden videos。
   profile权重弃用，formal已seal。下一步只从functional identity独立fresh0→200；不加载任何
-  旧Writer，不续Energy-Preserving，不先开sparse experts。
+  旧Writer，不续Energy-Preserving，不先开sparse experts。精确root、规模、storage、设备边界和
+  命令取`task_plan.md`顶部sealed config`692ab5e` launch合同。
 
 ## 0.1 已完成并负裁决：Energy-Preserving Policy-Layer Trace M2P
 

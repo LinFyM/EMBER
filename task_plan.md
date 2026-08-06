@@ -168,6 +168,31 @@ support，不能在逐token单位化和全局raw amplitude两个破坏性极端�
 - [ ] 从identity formal0→200，strict correct400固定评50/100/150/200；single checkpoint严格
   `>150`且继续提高。
 
+### Evidence-Factorized Trace formal0→200 launch合同（2026-08-06）
+
+- sealed config commit=`692ab5e`；启动前必须clean、已push且`HEAD==origin/main`。只从functional
+  identity fresh启动，不传`--resume`或`--initialize-writer-checkpoint`，不得加载任何profile或
+  历史Writer。
+- formal root/log/tmux固定为
+  `runs/outputs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_formal_fresh0_200_r6_692ab5e_20260806`、
+  `runs/logs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_formal_fresh0_200_r6_692ab5e_20260806.log`、
+  `ember_k4_evidence_trace_formal_692ab5e`。scale=`200×24×B20=96,000` action queries、
+  `200×24×K4=19,200` action-hidden videos和8个every25 checkpoints。
+- profile实测39.1--41.4s/macro，主体预计约135分钟；峰值reserved20.47GB。新Writer的8个
+  checkpoint、原子临时副本、metrics/log预计峰值新增低于9GiB；`/data1` live quota为
+  `359,273,924/1,073,741,824 KiB`，容量充足。
+- world6、logical B20、policy B2、16-frame encoder chunk、full24等权、source freeze、K4、
+  3+3 NUMA和显式`NCCL_P2P_DISABLE=1`不变。启动前重新live比较双节点；只用同node满足3+3
+  NUMA的6张空闲卡，任一卡变忙就更换合法组合或延后，不共享、不干扰。
+- 自然完成后固定评50/100/150/200 strict paired correct400；不用functional loss、训练期
+  gradient或中途task结果挑checkpoint。四点完成后按single winner做五臂与全部内部分析。
+
+精确命令：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,7 NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_as_writer.py --config configs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_bci_v1.json --mode formal --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir runs/outputs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_formal_fresh0_200_r6_692ab5e_20260806 --stop-after-step 200 --num-workers 0 --log-every 1 --skip-data-sha
+```
+
 ## 已完成K4 Policy-Layer Trace M2P（2026-08-06）
 
 - [x] 按K4内部证据与SHINE/Doc-to-LoRA的结构原则封存

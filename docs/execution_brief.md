@@ -15,7 +15,7 @@
   `60,926,976`，全仓`192 passed`、compileall、real config load和diff check通过。live
   `gpu01:0,1,2|4,5,7`六卡fresh0→1、exact-resume1→3 profile已通过：0 clip/OOM/nonfinite，
   step2起全部新Reader/axis模块可达，peak reserved20.47GB；权重弃用，formal已seal。下一执行
-  顺序是独立functional-identity fresh0→200。
+  顺序是按`task_plan.md`顶部`692ab5e` launch合同独立functional-identity fresh0→200。
 - 不做power-law/band sweep、scalar gate、SFT-only auxiliary、sparse experts或旧checkpoint
   warm-start。
 

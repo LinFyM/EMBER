@@ -18,7 +18,7 @@
   `runs/outputs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_formal_fresh0_200_r6_3b7eb4a_20260806`：
   200 finite macros、96,000 queries、19,200 K4 videos、8 checkpoints，0 clip，peak
   reserved20.48GB，六张A40已释放。四点strict correct400已完成为`67/83/74/85`，
-  macro200固定single winner；下一执行顺序仅为winner四个video controls和内部分析。
+  macro200固定single winner；winner五臂/内部分析也已完成并作负裁决。
 - 不加载任何旧Writer，不改LR/K/DCT/rank/optimizer/objective，不加SFT-only auxiliary loss。
   如频谱修复后仍接近1/24 task-gradient抵消，才打开语义路由的sparse value experts。
 - clean/pushed`22234c4`已完成实现与旧path retirement；新config为
@@ -26,7 +26,9 @@
   compileall/real load/diff check通过。six-A40 fresh0→1、exact-resume1→3 profile已通过：
   0 clip/OOM/nonfinite，step2起两block可达，peak reserved20.38GB，约36.9s/macro。
   config seal=`3b7eb4a`已push，profile权重弃用。formal launch commit`d833961`已自然完成；
-  当前只执行`task_plan.md`顶部的macro200五臂/内部分析合同，不加载任何旧Writer。
+  五臂=`85/85/80/74/87`，raw amplitude导致video task specificity和policy-group diversity
+  消失。下一步先封存direction/energy/K4-consistency因子化新设计，再原位替换canonical；
+  不续当前Writer、不加载旧Writer、不先开sparse experts。
 
 ## 0.1 已完成并负裁决：K4 Policy-Layer Trace M2P
 

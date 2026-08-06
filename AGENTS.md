@@ -182,8 +182,10 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   launch commit`d833961`已从functional identity完成formal0→200：200 finite macros、96,000
   queries、19,200 K4 videos、8 checkpoints、0 clip，peak reserved20.48GB。当前只评
   macro50/100/150/200 strict paired correct400已完成为`67/83/74/85`、breadth=`5/6/7/7`；
-  macro200固定single winner但明显低于上一版与v6-fast。当前只补winner四个video controls和
-  内部path/LoRA/gradient分析，不得resume任何历史Writer或按loss换点。
+  macro200固定single winner但明显低于上一版与v6-fast。winner五臂/内部分析已完成：
+  `85/85/80/74/87`，raw amplitude使video specificity与policy-group diversity消失，
+  LoRA gain/rank仍充足。该方法正式负裁决，不得resume或按loss换点；下一设计必须因子化
+  normalized direction、physical energy与K4 consistency，暂不打开更晚的sparse experts。
 - 新方法与functional AS及未来reward credit共用同一video→LoRA接口，不引入监督专用
   auxiliary loss。若频谱修复后full24 task gradients仍接近1/24抵消且行为不升，才打开
   frozen-semantic routing驱动的condition-specific sparse value experts。

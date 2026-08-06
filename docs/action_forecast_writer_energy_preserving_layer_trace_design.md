@@ -1,7 +1,7 @@
 # K4 Energy-Preserving Policy-Layer Trace M2P Writer
 
 状态：2026-08-06设计authority已封存，clean`22234c4`已原位实现并push；
-live A40 profile、formal fresh0→200与四点strict rollout均已完成，macro200五臂/内部分析待完成。本文覆盖
+live A40 profile、formal、四点、macro200五臂与内部分析均已完成并负裁决。本文覆盖
 `action_forecast_writer_k4_layer_trace_m2p_design.md`的活动地位；旧方法由Git和sealed artifacts保存。
 
 ## 1. 决策
@@ -124,3 +124,13 @@ reward或outcome选择频谱。若失败，只根据fresh行为与task-gradient�
   明显低于上一版99和v6-fast143；频谱修复改善task-gradient却没有改善closed loop。
 - 当前只对macro200补齐same/wrong/shuffled/reversed与内部path分析，判断逐频率单位化究竟是
   噪声放大，还是同时提供了Reader所需的弱但有判别力的非DC线索；不续训、不调scale。
+- 五臂最终为`correct/same/wrong/shuffled/reversed=85/85/80/74/87`；correct相对wrong
+  gained/lost=`25/30,p=.590`，视频task specificity消失。relative-L2从correct到wrong在
+  trace/Reader/BA/action的中位仅`.310/.297/.478/.146`，显著低于上一版
+  `1.319/.547/.715/.244`；shuffle/reverse路径也被大幅压弱。
+- LoRA norm/stable-rank/top-energy中位`58.71/1.410/.793`，identity action effect`.581`，
+  不是gain或rank不足。Reader effective policy groups从上一版约13.97降至10.63，证明
+  global raw amplitude同时压缩temporal与policy-group evidence diversity。
+- 正式裁决：不能把低能高频整体视为噪声。逐token单位化过度放大它，全局raw amplitude又
+  淹没其中真实task direction；下一架构必须显式分解direction、physical energy和K4跨视频
+  支持度，并让Reader学习组合，不能续训、调scalar或先做sparse experts。

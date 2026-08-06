@@ -47,6 +47,15 @@
   gained/lost=`28/12,18/27,28/17`，union/intersection=`122/40`。macro200以最高correct/
   并列最高breadth成为single winner，但远低于上一版99与v6-fast143，频谱修复目前是行为负结果。
 - 当前只按`task_plan.md`顶部合同完成macro200其余四臂与内部分析；不续200、不按loss挑点。
+- macro200五臂与8-task内部分析现已全部完成：`85/85/80/74/87`。correct相对wrong
+  gained/lost=`25/30,p=.590`，视频task identity的行为margin已经消失；reverse仍高于correct。
+- raw amplitude把same/wrong/shuffle/reverse的trace差异中位压到`.135/.310/.251/.335`，
+  Reader/BA对应只剩`.030/.297/.060/.079`与`.049/.478/.092/.117`；上一版分别远高。
+  Reader effective groups也从约13.97降到10.63。
+- LoRA norm/stable-rank/top-energy中位`58.71/1.410/.793`，identity action effect`.581`，
+  排除low-gain/rank bottleneck。Energy-Preserving正式负裁决，不续训；下一活动设计必须将
+  normalized direction、raw physical support与K4 consistency显式分解后联合读取，暂不打开
+  更晚的sparse experts。
 
 ## 0.1 已完成并负裁决：K4 Policy-Layer Trace M2P
 

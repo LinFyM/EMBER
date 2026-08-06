@@ -33,6 +33,10 @@ GPU范围和训练步长是当时快照；活动状态只取
 - 训练期四个50步gradient retention为`.12497/.08564/.08050/.05079`；频谱修复明显改善
   前150步共存，末段仍回落。两波四点strict correct400随后自然完成并释放GPU：
   `67/83/74/85`、breadth=`5/6/7/7`，macro200固定single winner。五臂/内部分析已预注册。
+- macro200四个追加control与六卡8-task内部probe随后全部自然完成并释放GPU。五臂=
+  `85/85/80/74/87`，correct-wrong不显著；trace/Reader/BA的video差异和effective groups均被
+  raw幅度显著压缩，而LoRA gain/rank充足。当前方法负裁决，下一步转向direction/energy/
+  K4-consistency因子化读取，不续训、不先开experts。
 
 ## 2026-08-06 K4 Policy-Layer Trace四点strict correct400完成
 

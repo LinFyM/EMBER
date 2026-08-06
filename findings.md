@@ -17,6 +17,15 @@
   closed-loop反而全线低于上一版对应`69/99/88/94`，故“弱高频只是应压低的噪声”不成立。
 - 当前尚不能断言旧逐频率单位化正确：它可能同时放大噪声和提供Reader所需的弱判别方向。
   macro200五臂与内部幅度/path分析将区分视频身份、顺序线索和policy leverage何处衰减。
+- 五臂最终`85/85/80/74/87`；correct相对wrong只有gained/lost=`25/30,p=.590`。上一版
+  correct/wrong=`99/57`的task specificity被全局raw amplitude消除，而不是转化为更稳的能力。
+- same/wrong/shuffle/reverse从trace到Reader到BA的中位差异为
+  `.135/.030/.049`、`.310/.297/.478`、`.251/.060/.092`、`.335/.079/.117`；旧版为
+  `.995/.135/.167`、`1.319/.547/.715`、`1.375/.406/.450`、`1.414/.342/.452`。
+  物理幅度保留把弱的task/order direction在最早输入处就压低，M2P没有恢复它。
+- LoRA norm58.71、stable rank1.410、top singular energy.793、identity action effect.581，
+  且effective group memory只有10.63（旧版13.97）。失败是direction/evidence support被破坏性
+  绑定，不是LoRA质量仅表现为低rank、低能量或共享Writer参数量不足。
 
 ## 2026-08-06 K4 Layer-Trace五臂与内部裁决：视频有效，频谱幅度被破坏
 

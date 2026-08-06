@@ -31,8 +31,9 @@ runner、split、路径或 GPU 权限。
   allocated/reserved=`18,096,449,024/20,478,689,280` bytes。
 - [x] 严格评macro50/100/150/200 paired correct400：correct=`67/83/74/85`、breadth=
   `5/6/7/7`，single winner固定macro200=85；固定panel无mismatch。
-- [ ] 对macro200完成same-task-other/cross-suite-wrong/shuffled/reversed四个paired
-  correct400和内部trace→Reader/M2P→BA→action分析。
+- [x] 对macro200完成same-task-other/cross-suite-wrong/shuffled/reversed四个paired
+  correct400和内部trace→Reader/M2P→BA→action分析；五臂=`85/85/80/74/87`，视频task
+  specificity消失，energy-preserving方法正式负裁决。
 - [ ] 按single-checkpoint correct、breadth、video causality与task-gradient证据继续迭代；最低严格
   `>150/400`，达到后仍继续提高。若频谱修复后credit仍接近1/24抵消，才打开
   frozen-semantic routing驱动的condition-specific sparse value experts。
@@ -129,6 +130,21 @@ macro200以最高correct和并列最高breadth成为single winner，但85远低�
 - 五臂后在winner上复用既有hashless refs1内部probe，比较raw trace、Reader、axis、effective
   BA、fixed action、LoRA谱/能量和task-gradient；若真实幅度保留改善gradient却损害closed-loop，
   判断频谱幅度本身是否包含不可简单衰减的任务线索，再决定下一架构。
+
+上述合同已全部完成。correct相对same/wrong/shuffled/reversed的control gained/correct lost=
+`16/16,25/30,12/23,18/16`，exact p=`1,.590,.0895,.864`；没有一个control形成可信
+视频因果margin。相对旧逐频率单位化，same/wrong/shuffled/reversed的trace relative-L2中位从
+`.995/1.319/1.375/1.414`降到`.135/.310/.251/.335`，Reader从
+`.135/.547/.406/.342`降到`.030/.297/.060/.079`，effective BA从
+`.167/.715/.450/.452`降到`.049/.478/.092/.117`。Reader effective groups也从约13.97
+降到10.63。
+
+新LoRA并未低增益或重新rank collapse：norm中位`58.71`、stable rank`1.410`、top singular
+energy`.793`，identity→correct fixed-action差异中位`.581`。因此最早失效明确是raw
+amplitude让DC和高能policy groups淹没弱但task-discriminative的direction，而不是Writer容量、
+LoRA leverage或先前预注册的shared expert credit。下一方法必须同时保留direction与physical
+support，不能在逐token单位化和全局raw amplitude两个破坏性极端之间二选一；暂不打开sparse
+experts。
 
 ## 已完成K4 Policy-Layer Trace M2P（2026-08-06）
 

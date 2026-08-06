@@ -174,6 +174,10 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   full24 B20和单套rank16 LoRA，只用每视频一个全局scalar匹配旧总trace energy，完整
   保留group/frequency间原始相对能量、零项和符号。必须fresh architecture/config/
   checkpoint family，不加载macro100或任何历史Writer。
+- clean`22234c4`已原位实现新canonical，唯一活动config为
+  `configs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_bci_v1.json`；旧layer-trace config/
+  checkpoint family只由Git与frozen artifacts保存，不得resume或warm-start。全仓`191 passed`；
+  formal在live A40 fresh0→1、exact-resume1→3 profile封存前保持blocked。
 - 新方法与functional AS及未来reward credit共用同一video→LoRA接口，不引入监督专用
   auxiliary loss。若频谱修复后full24 task gradients仍接近1/24抵消且行为不升，才打开
   frozen-semantic routing驱动的condition-specific sparse value experts。

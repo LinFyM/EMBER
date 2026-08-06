@@ -1,6 +1,7 @@
 # K4 Energy-Preserving Policy-Layer Trace M2P Writer
 
-状态：2026-08-06设计authority已封存，尚未实现或启动GPU。本文覆盖
+状态：2026-08-06设计authority已封存，clean`22234c4`已原位实现并push，
+尚未启动live A40 profile。本文覆盖
 `action_forecast_writer_k4_layer_trace_m2p_design.md`的活动地位；旧方法由Git和sealed artifacts保存。
 
 ## 1. 决策
@@ -96,3 +97,13 @@ fresh0→1与exact-resume1→3。通过后才从identity fresh0→200，并严�
 本轮不改K、DCT项数、LR、warmup、B20、rank、global scale、axis blocks或训练objective；不加
 rank/contrastive/reconstruction auxiliary loss，不做多LoRA/多checkpoint平均，不用held actions、
 reward或outcome选择频谱。若失败，只根据fresh行为与task-gradient证据决定是否进入sparse experts。
+
+## 8. 实现封存
+
+- clean`22234c4`将`temporal_trace_tokens`的per-token L2 normalize替换为每视频一个
+  total-energy matched scalar；旧normalization不保留可执行旁路。
+- 新唯一config为
+  `configs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_bci_v1.json`；新architecture、
+  config/launch/checkpoint schemas与family均严格拒载旧layer-trace checkpoint。
+- 聚焦测试、全仓`191 passed`、compileall、real config load和diff check通过。CPU合同直接
+  检查输出frequency-energy fractions与raw DCT一致，同时每视频总能量与旧输入一致。

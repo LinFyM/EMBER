@@ -22,6 +22,10 @@ GPU范围和训练步长是当时快照；活动状态只取
   warm-start。
 - 下一步原位实现每视频全局能量匹配、fresh identity/config/checkpoint family；聚焦
   CPU合同与全仓回归后，live选最多6张空闲A40重新profile与formal。
+- clean`22234c4`已完成上述原位替换并push branch/main；旧config退休，新schema/family拒载
+  旧checkpoint。全仓`191 passed`，compileall、real config load和diff check通过，formal仍blocked。
+- 新profile的root、scale、storage、fresh/resume分段和GPU边界已预注册在`task_plan.md`顶部；
+  尚未启动GPU。
 
 ## 2026-08-06 K4 Policy-Layer Trace四点strict correct400完成
 

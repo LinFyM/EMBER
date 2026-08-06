@@ -26,6 +26,10 @@
 - 新方法必须fresh architecture/config/checkpoint family，不加载macro100或任何历史Writer。
   实现和CPU合同通过后，才live选择`gpu01/gpu02`最多6张空闲A40做fresh0→1、
   exact-resume1→3 profile，再从identity formal0→200与严格四点评测。
+- clean`22234c4`已原位实现：新唯一config为
+  `configs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_bci_v1.json`，旧config/family已退休且
+  不得resume。聚焦合同、全仓`191 passed`、compileall、real config load和diff check通过；
+  formal仍被config显式blocked，必须先按`task_plan.md`顶部合同完成live profile。
 
 ## 0.1 已完成并负裁决：K4 Policy-Layer Trace M2P
 

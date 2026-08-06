@@ -21,13 +21,31 @@ runner、split、路径或 GPU 权限。
   `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`：保留exact language、K4
   action-hidden videos、20 groups、DCT16、Reader/M2P、rank16与full24 B20，只用每视频
   一个全局scalar匹配旧总trace energy，完整保留group/frequency间原始相对能量和符号。
-- [ ] 原位替换canonical trace normalization，建立新architecture/config/checkpoint family并严格
+- [x] 原位替换canonical trace normalization，建立新architecture/config/checkpoint family并严格
   拒载旧checkpoint；完成聚焦CPU合同、全仓回归与real config load。
 - [ ] clean/push后live比较`gpu01/gpu02`，只用最多6张空闲A40完成fresh0→1与
   exact-resume1→3 profile；通过后从functional identity fresh0→200，严格评50/100/150/200。
 - [ ] 按single-checkpoint correct、breadth、video causality与task-gradient证据继续迭代；最低严格
   `>150/400`，达到后仍继续提高。若频谱修复后credit仍接近1/24抵消，才打开
   frozen-semantic routing驱动的condition-specific sparse value experts。
+
+### Energy-Preserving Layer-Trace A40 profile launch合同（2026-08-06）
+
+- implementation/config seal=`22234c4`，已push branch/main；启动时必须clean且新root不存在。
+  不传`--initialize-writer-checkpoint`，首段不传`--resume`，禁止加载上一版macro100或任何
+  profile/formal Writer。
+- 唯一config为
+  `configs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_bci_v1.json`；profile root/log/tmux固定为
+  `runs/outputs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_profile_r6_b20_22234c4_20260806`、
+  `runs/logs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_profile_r6_b20_22234c4_20260806.log`、
+  `ember_k4_energy_trace_profile_22234c4`。
+- 启动前live比较`gpu01/gpu02`，只用同一node满足3+3 NUMA的6张空闲A40，显式
+  `NCCL_P2P_DISABLE=1`。longest105、K4/B20/B2、16-frame chunk先fresh0→1，再从同root
+  `step_00000001` exact-resume1→3；profile权重永久弃用。
+- `/data1`当前quota为`343,430,876/1,073,741,824 KiB`；参数拓扑与上版相同，三个
+  checkpoint、原子临时副本与log预计峰值新增低于4GiB，距离独立配额充足。
+- profile只裁决finite/OOM、zero/identity、source freeze、reader/axis可达、多卡和exact-resume；
+  不用三步loss做科研结论。通过后回写config封存证据，才允许formal。
 
 ## 已完成K4 Policy-Layer Trace M2P（2026-08-06）
 

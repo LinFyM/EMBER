@@ -19,6 +19,10 @@
   exact-resume1→3 profile；通过后才fresh formal0→200与50/100/150/200 strict correct400。
 - 不加载任何旧Writer，不改LR/K/DCT/rank/optimizer/objective，不加SFT-only auxiliary loss。
   如频谱修复后仍接近1/24 task-gradient抵消，才打开语义路由的sparse value experts。
+- clean/pushed`22234c4`已完成实现与旧path retirement；新config为
+  `configs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_bci_v1.json`，全仓`191 passed`及
+  compileall/real load/diff check通过。formal仍blocked；当前只执行`task_plan.md`顶部预注册的
+  six-A40 fresh0→1、exact-resume1→3 profile。
 
 ## 0.1 已完成并负裁决：K4 Policy-Layer Trace M2P
 

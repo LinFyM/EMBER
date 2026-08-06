@@ -1,8 +1,11 @@
 # K4 Sparse Semantic-Expert Policy-Layer Trace Writer
 
-状态：2026-08-07设计与实现authority。canonical实现、fresh schema/checkpoint family、独立
-route artifact、聚焦CPU合同及A40 fresh/exact-resume profile已完成；formal launch尚未开始。
-任何旧Writer checkpoint均不兼容且不得加载。
+状态：2026-08-07设计与实现authority。canonical实现、fresh schema/checkpoint family与独立
+route artifact已完成。首次formal在macro28主动终止：训练时发现原route生成使用24-language
+BF16 batch，而runtime逐task寻址，task9 secondary owner从7变成1，违反fixed-route合同。
+task anchor现已改为逐语言独立forward，route重新生成并验证co-batch route不变；旧profile与
+中断formal均作废，必须fresh reprofile后再从identity启动formal。任何旧Writer checkpoint均
+不兼容且不得加载。
 
 ## 1. 决策
 
@@ -106,8 +109,10 @@ A/B tensors。没有expert LoRA ensemble、逐video LoRA平均或第二套policy
 
 实际实现enumeration封存为`487,415,808` trainable，其中完整Reader owners合计
 `218,980,352`、四轴M2P owners合计`268,435,456`，共272个parameter tensors。独立生成的
-`configs/pi05_sparse_semantic_expert_route_v1.json`与同一冻结source/train24原则的历史审计数值
-逐元素一致；primary usage=`5/7/6/1/2/1/1/1`，top2 usage=`7/11/6/4/4/5/3/8`，没有expert塌缩。
+`configs/pi05_sparse_semantic_expert_route_v1.json`现在强制每条exact language独立运行冻结text
+backbone，再以singleton anchors拟合；同一24-language call与24次singleton call的anchor最大
+差仅`1.49e-8`且top2 route完全一致。新primary usage=`5/7/6/1/1/2/1/1`，top2 usage=
+`7/11/6/5/4/4/3/8`，没有expert塌缩。
 
 ## 6. AS、未来RL与信息墙
 
@@ -156,13 +161,16 @@ fixed action；functional loss不选点。
 reward credit，不能用旧best warm-start、增加训练步数、挑video、调route或融合checkpoint救点。
 最低目标仍是同一single checkpoint strict correct`>150/400`，达到后继续提高。
 
-六卡A40 profile已按上述合同完成。`gpu01:0,1,2|4,5,7`、3+3 NUMA下fresh0→1再
+首次六卡A40 profile曾按上述资源合同完成。`gpu01:0,1,2|4,5,7`、3+3 NUMA下fresh0→1再
 same-root exact-resume1→3；三步wall=`48.051/48.732/48.535s`，loss=
 `.150377/.152819/.148503`，grad norm=`.0002896/.0003028/.0002790`，0 clip/OOM/nonfinite。
 step1八个Reader owners均可达，step2起八个experts的Reader/axis共16 blocks全部非零；source
 trainable=0，累计1,440 queries/288 videos。峰值allocated/reserved=
 `36,709,104,128/45,589,987,328` bytes，B20/B2/K4/16-frame chunk可运行但显存余量有限，formal
-不得扩大batch/K或额外保留activation。profile checkpoints永久弃用。
+不得扩大batch/K或额外保留activation。随后首次formal到macro28暴露上述route batch-shape
+不一致；虽然显存与梯度证据仍成立，但该profile checkpoint绑定旧route buffer，不能证明新
+authority的fresh/exact-resume，已永久作废。修复后必须用新root重做fresh0→1与resume1→3，
+再seal formal。
 
 ## 9. 禁调项
 

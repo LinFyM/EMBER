@@ -182,36 +182,41 @@ class Pi05FrozenConditionDescriptor(torch.nn.Module):
         ):
             raise VideoProgramError("invalid frozen semantic-route language batch")
         core = policy.model
-        text_embeds, mask, positions, valid = self._prepare_text_branch(
-            core,
-            language_tokens,
-            task_span_mask,
-        )
         bridge = core.paligemma_with_expert
         language_model = bridge.paligemma.model.language_model
         target_dtype = language_model.layers[0].self_attn.q_proj.weight.dtype
-        (hidden, suffix), _ = bridge.forward(
-            attention_mask=mask,
-            position_ids=positions,
-            past_key_values=None,
-            inputs_embeds=[text_embeds.to(target_dtype), None],
-            use_cache=False,
-            adarms_cond=[None, None],
-        )
-        if suffix is not None or hidden.shape != (
-            valid.shape[0],
-            valid.shape[1] + 1,
-            self.image_width,
-        ):
-            raise VideoProgramError("PI05 frozen semantic anchor layout changed")
-        anchor = (
-            hidden[:, 1:]
-            .to(torch.float32)
-            .masked_fill(~valid[..., None], 0.0)
-            .sum(dim=1)
-            .div(valid.sum(dim=1, keepdim=True).to(torch.float32))
-        )
-        result = F.normalize(anchor, dim=-1)
+        anchors = []
+        # Route ownership is a property of each exact task string.  Running the
+        # frozen text backbone one row at a time keeps that address independent
+        # of unrelated co-batched language lengths and BF16 kernel shapes.
+        for row in range(language_tokens.shape[0]):
+            text_embeds, mask, positions, valid = self._prepare_text_branch(
+                core,
+                language_tokens[row : row + 1],
+                task_span_mask[row : row + 1],
+            )
+            (hidden, suffix), _ = bridge.forward(
+                attention_mask=mask,
+                position_ids=positions,
+                past_key_values=None,
+                inputs_embeds=[text_embeds.to(target_dtype), None],
+                use_cache=False,
+                adarms_cond=[None, None],
+            )
+            if suffix is not None or hidden.shape != (
+                1,
+                valid.shape[1] + 1,
+                self.image_width,
+            ):
+                raise VideoProgramError("PI05 frozen semantic anchor layout changed")
+            anchors.append(
+                hidden[:, 1:]
+                .to(torch.float32)
+                .masked_fill(~valid[..., None], 0.0)
+                .sum(dim=1)
+                .div(valid.sum(dim=1, keepdim=True).to(torch.float32))
+            )
+        result = F.normalize(torch.cat(anchors, dim=0), dim=-1)
         if result.shape != (language_tokens.shape[0], self.image_width) or not bool(
             torch.isfinite(result).all()
         ):

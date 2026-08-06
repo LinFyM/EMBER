@@ -1,17 +1,22 @@
 # EMBER Progress Ledger
 
-## 2026-08-07 Sparse Semantic-Expert Trace实现完成
+## 2026-08-07 Sparse Semantic-Expert route稳定性根修
 
 - 新canonical已接通冻结task anchor、fixed top2 router、8套完整独立Trace Reader+axis M2P、
   memory-level等权组合和single-LoRA decode；fresh config/launch/checkpoint family与live evaluator
   同步切换，旧checkpoint严格不兼容。
-- 当前source/train24独立生成route artifact，primary/top2 usage=`5/7/6/1/2/1/1/1`和
-  `7/11/6/4/4/5/3/8`；mean/centers与历史同原则结果逐元素一致。真实参数
-  `487,415,808`，272 tensors。
+- 首次formal在macro28主动停止。训练gradient ownership显示task9同时进入experts1/2，而旧
+  route artifact声明2/7；根因是route生成以24-language BF16 batch取anchor，runtime逐task
+  forward，secondary近邻发生batch-shape数值翻转。该root与旧profile都不得resume或作为formal
+  证据。
+- task anchor现逐exact language独立forward，generator同时比较co-batch与singleton路径；最大
+  anchor差`1.49e-8`且top2完全一致。新primary/top2 usage=`5/7/6/1/1/2/1/1`和
+  `7/11/6/5/4/4/3/8`。真实参数仍为`487,415,808`、272 tensors，video value路径未改。
 - 聚焦route/dense equivalence/zero identity/unselected-gradient/config/checkpoint/model合同通过；
   clean`bf1aae6`六卡longest105 profile随后完成fresh0→1、exact-resume1→3。三步约48.1--48.7s，
   loss/gradient finite、0 clip/OOM，step2起全部16 expert-local blocks可达，peak reserved45.59GB；
-  累计1,440 queries/288 videos且source trainable=0。profile权重弃用，config已seal等待formal。
+  累计1,440 queries/288 videos且source trainable=0。由于它绑定旧route buffer，profile现已作废；
+  下一步只重做fresh0→1/exact-resume1→3后重新seal formal。
 
 ## 2026-08-07 Evidence-Factorized完整裁决并开启Sparse Semantic Experts
 

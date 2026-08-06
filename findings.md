@@ -2,8 +2,13 @@
 
 ## 2026-08-07 Sparse Semantic-Expert实现与route审计
 
-- 当前冻结source/train24重新生成8-center top2 route；anchor mean/centers与历史同原则审计值
-  逐元素一致。primary usage=`5/7/6/1/2/1/1/1`，top2 usage=`7/11/6/4/4/5/3/8`，无expert空置。
+- 首次formal到macro28时，expert-local Gram给出可复现的route contract冲突：task9在expert1有
+  material梯度、expert7为零，而旧artifact声明secondary=7。不是训练漂移，而是冻结text
+  backbone在24-language BF16 co-batch与逐task runtime之间产生足以翻转secondary近邻的数值差。
+  该formal/root与旧profile均已主动否决，不resume。
+- task anchor现对每条exact language独立forward，route generator以singleton anchors拟合并
+  复核co-batch调用；最大anchor差`1.49e-8`且top2完全相同。新primary usage=
+  `5/7/6/1/1/2/1/1`，top2 usage=`7/11/6/5/4/4/3/8`，无expert空置。
 - 八个完整Reader+axis owners真实enumeration为`487,415,808` trainable：Reader
   `218,980,352`、axis M2P `268,435,456`。language route只选owner，K4 trace仍是全部动态value；
   top2 memory在decode前组合成一套LoRA。

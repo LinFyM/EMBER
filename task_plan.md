@@ -24,8 +24,13 @@ runner、split、路径或 GPU 权限。
   validation/test input或rollout选择route。
 - [x] 原位实现唯一canonical sparse-expert Writer、fresh config/schema/checkpoint/task-gradient
   owner，退休single-expert executable path；完成聚焦合同、全仓回归、compileall与real load。
-- [x] clean/push后live比较`gpu01/gpu02`，只用最多6张空闲A40完成longest105、K4/B20/B2、
-  fresh0→1和same-root exact-resume1→3 profile；profile权重弃用。
+- [x] 首次profile完成后启动formal，并在macro28由expert-local Gram发现task9 runtime secondary
+  owner与route artifact不一致；精确停止本项目进程，否决旧profile与中断formal，不把工程合同
+  失败误当科学结果。
+- [x] 根修task anchor的co-batch shape依赖：逐exact language独立forward，以singleton anchors
+  重生成route，实测最大anchor差`1.49e-8`且co-batch/singleton top2完全一致。
+- [ ] clean/push后live比较`gpu01/gpu02`，只用最多6张空闲A40以新root重做longest105、K4/B20/B2、
+  fresh0→1和same-root exact-resume1→3 profile；旧profile与中断formal权重永久弃用。
 - [ ] profile seal后从functional identity正式fresh0→200、每25 checkpoint；严格评
   50/100/150/200 correct400，single winner再做五臂和内部expert-local gradient/path分析。
 - [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高；未过门时只按最早失败

@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0. 最新覆盖：Sparse Semantic-Expert Trace profile已seal，等待formal fresh0→200
+## 0. 最新覆盖：Sparse Semantic-Expert route根修，等待fresh reprofile
 
 - 当前唯一活动authority为
   `docs/action_forecast_writer_sparse_semantic_expert_trace_design.md`。它保留exact task language、
@@ -27,15 +27,21 @@
 - canonical实现现已完成：冻结PI05 task anchor、fixed top2 router、八套完整独立Reader+axis
   experts、memory级等权组合和single decode均在唯一runtime中；fresh config/schema/checkpoint
   family与expert-local gradient ownership已接通。真实trainable=`487,415,808`。
-- 独立route authority由当前冻结source与train24 language重新生成，centers/mean与历史同原则
-  artifact逐元素一致；primary/top2 usage=`5/7/6/1/2/1/1/1`与`7/11/6/4/4/5/3/8`，无塌缩。
-  聚焦route、dense-reference、zero-video、未选expert零梯度、identity、schema与checkpoint合同
-  已通过。
+- 首次formal在macro28主动停止：expert-local Gram证明task9实际route为`2/1`，旧artifact却声明
+  `2/7`。根因是旧route以24-language BF16 batch生成anchor，而训练逐task forward；这是fixed
+  semantic owner的工程合同失败，不是科学负结果。中断root
+  `runs/outputs/pi05_as_writer_k4_sparse_semantic_expert_trace_m2p_formal_fresh0_200_r6_ec2375e_20260807`
+  与旧profile均不得resume、评测或作为formal证据。
+- 根修后task anchor逐exact language独立forward，route generator以singleton anchors拟合并
+  复核co-batch路径；最大anchor差`1.49e-8`且top2完全一致。新primary/top2 usage=
+  `5/7/6/1/1/2/1/1`与`7/11/6/5/4/4/3/8`，无塌缩。video trace、top2 memory和single-LoRA
+  scientific graph未变。
 - clean`bf1aae6`上的六卡profile已完成fresh0→1与same-root exact-resume1→3：三步
   `48.051/48.732/48.535s`，0 clip/OOM/nonfinite，peak reserved`45,589,987,328` bytes；step2
   起全部8 experts×Reader/axis 16 blocks可达，累计1,440 queries/288 videos，source trainable=0。
-  config现已seal；下一步从新clean pushed seal commit做identity-fresh formal0→200，profile权重
-  永久弃用，旧Writer权重禁止加载。
+  该profile绑定旧route buffer，现已作废；下一步从修复后的clean pushed commit用新root重做
+  fresh0→1与same-root exact-resume1→3，再seal并从identity fresh启动formal0→200。所有旧profile/
+  中断formal/历史Writer权重禁止加载。
 
 ## 0.0 已完成并负裁决：Evidence-Factorized Policy-Layer Trace M2P
 

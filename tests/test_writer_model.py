@@ -17,7 +17,10 @@ from ember.writer.fewshot_m2p import (
 )
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
 from ember.writer.task_gradient import parameter_layout
-from ember.writer.video_program import temporal_trace_tokens
+from ember.writer.video_program import (
+    Pi05FrozenConditionDescriptor,
+    temporal_trace_tokens,
+)
 
 
 class _Projection(torch.nn.Module):
@@ -74,6 +77,60 @@ class _FakeConditionDescriptor(torch.nn.Module):
         temporal = torch.arange(16, dtype=torch.float32)[None, None, :, None]
         width = torch.arange(1024, dtype=torch.float32)[None, None, None]
         return pooled[:, None, None, None] + group + temporal + width
+
+
+class _ShapeSensitiveTextBridge(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        projection = torch.nn.Linear(1, 1, bias=False)
+        layer = torch.nn.Module()
+        layer.self_attn = torch.nn.Module()
+        layer.self_attn.q_proj = projection
+        language_model = torch.nn.Module()
+        language_model.layers = torch.nn.ModuleList([layer])
+        model = torch.nn.Module()
+        model.language_model = language_model
+        self.paligemma = torch.nn.Module()
+        self.paligemma.model = model
+
+    def forward(self, *, inputs_embeds, **_kwargs):
+        hidden = inputs_embeds[0].clone()
+        hidden[..., 2] += hidden.shape[1] * 0.01
+        return (hidden, None), None
+
+
+class _AnchorCore(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.paligemma_with_expert = _ShapeSensitiveTextBridge()
+
+
+class _AnchorPolicy(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.model = _AnchorCore()
+
+
+class _AnchorDescriptor(Pi05FrozenConditionDescriptor):
+    @staticmethod
+    def _prepare_text_branch(
+        _core: torch.nn.Module,
+        language_tokens: torch.Tensor,
+        task_span_mask: torch.Tensor,
+    ):
+        maximum = int(task_span_mask.sum(dim=1).max())
+        embeds = torch.zeros(language_tokens.shape[0], maximum + 1, 2048)
+        valid = torch.zeros(language_tokens.shape[0], maximum, dtype=torch.bool)
+        embeds[:, 0, 0] = 1.0
+        for row in range(language_tokens.shape[0]):
+            selected = language_tokens[row, task_span_mask[row]].to(torch.float32)
+            embeds[row, 1 : selected.numel() + 1, 0] = selected
+            embeds[row, 1 : selected.numel() + 1, 1] = torch.arange(
+                1, selected.numel() + 1, dtype=torch.float32
+            )
+            valid[row, : selected.numel()] = True
+        positions = torch.arange(maximum + 1)[None].expand(language_tokens.shape[0], -1)
+        return embeds, torch.zeros(1), positions, valid
 
 
 def _backbones() -> tuple[_Backbone, _Backbone]:
@@ -431,3 +488,35 @@ def test_sparse_route_is_frozen_and_unselected_expert_gets_no_gradient() -> None
     assert any(parameter.grad is not None for parameter in decoder.experts[0].parameters())
     assert any(parameter.grad is not None for parameter in decoder.experts[1].parameters())
     assert all(parameter.grad is None for parameter in decoder.experts[2].parameters())
+
+
+def test_frozen_task_anchor_is_independent_of_language_cobatching() -> None:
+    descriptor = _AnchorDescriptor(
+        image_width=2048,
+        expert_width=1024,
+        max_frames_per_encoder_call=16,
+        action_horizon=50,
+        padded_action_dim=32,
+        initialization_seed=7,
+    )
+    policy = _AnchorPolicy()
+    tokens = torch.tensor([[1, 3, 4, 0], [1, 5, 0, 0]], dtype=torch.long)
+    mask = torch.tensor(
+        [[True, True, True, False], [True, True, False, False]]
+    )
+    task_span = torch.tensor(
+        [[False, True, True, False], [False, True, False, False]]
+    )
+    batched = descriptor.task_anchor(policy, tokens, mask, task_span)
+    singleton = torch.cat(
+        [
+            descriptor.task_anchor(
+                policy,
+                tokens[row : row + 1],
+                mask[row : row + 1],
+                task_span[row : row + 1],
+            )
+            for row in range(tokens.shape[0])
+        ]
+    )
+    assert torch.equal(batched, singleton)

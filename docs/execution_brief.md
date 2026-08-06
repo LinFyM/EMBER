@@ -17,11 +17,14 @@
   correct/same/wrong/shuffle/reverse同language必须同route，zero-video必须identity。
 - hashless route authority、fresh architecture/config/checkpoint family、top2完整expert
   gather/scatter和expert-local task-gradient owner均已实现；真实参数为`487,415,808`，route
-  usage无塌缩，聚焦CPU合同已通过。clean`bf1aae6`的六卡A40 profile也已完成fresh0→1、
+  usage无塌缩，聚焦CPU合同已通过。clean`bf1aae6`的六卡A40 profile曾完成fresh0→1、
   exact-resume1→3：约48.1--48.7s/macro，0 clip/OOM/nonfinite，全部16个expert-local blocks从
   step2可达，peak allocated/reserved=`36.71/45.59GB`。profile权重弃用。
-- config已seal，下一步从新clean pushed seal commit做identity-fresh formal0→200。不得加载旧
-  Writer或profile权重；显存余量有限，不扩大K4、B20、full24、rank或额外activation。
+- 首次formal在macro28主动停止：旧route artifact由24-language BF16 batch生成，但runtime逐task
+  寻址，task9 secondary owner从7翻到1。现已根修为逐exact-language独立forward，以singleton
+  anchors重生成route并验证co-batch top2不变；新usage=`5/7/6/1/1/2/1/1`和
+  `7/11/6/5/4/4/3/8`。旧profile与中断formal均作废，config暂时blocked；下一步先新root重做
+  fresh0→1/exact-resume1→3再seal。不得加载旧Writer/profile或扩大K4、B20、full24、rank。
 
 ## 0.1 已完成并负裁决：Energy-Preserving Policy-Layer Trace M2P
 

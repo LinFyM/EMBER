@@ -183,11 +183,14 @@ single-checkpoint、无hash、不使用subagent与安全边界。
 - route authority与canonical fresh architecture/config/checkpoint已完成：8 experts真实
   `487,415,808` trainable、top2 conditional execution，primary/top2 train usage无塌缩；冻结
   route、dense-reference、zero identity、未选expert零梯度与expert-local gradient ownership合同
-  已通过。clean`bf1aae6`上的六卡A40 fresh0→1、same-root exact-resume1→3 profile也已通过：
+  已通过。clean`bf1aae6`上的六卡A40 fresh0→1、same-root exact-resume1→3 profile曾通过：
   0 clip/OOM/nonfinite、step2起16个expert-local blocks全部可达，peak reserved45.59GB。config
-  已seal，下一步只从新clean pushed seal commit做identity-fresh formal0→200。不得加载任何旧Writer
-  或profile权重、恢复只隔离final heads的Direction Store、使用learned/outcome router或改
-  K4/B20/full24/rank/objective。
+  随后首次formal在macro28发现旧artifact的task9 route声明`2/7`、runtime实际`2/1`：route生成的
+  24-language BF16 batch与逐task runtime不一致。该formal与旧profile已否决；task anchor现逐
+  exact language独立forward，singleton route重新生成并验证co-batch top2不变，新primary/top2
+  usage=`5/7/6/1/1/2/1/1`与`7/11/6/5/4/4/3/8`。下一步只从修复后的clean pushed commit新root
+  重做fresh/exact-resume profile，再fresh formal0→200。不得加载任何旧Writer/profile权重、恢复
+  只隔离final heads的Direction Store、使用learned/outcome router或改K4/B20/full24/rank/objective。
 - 上一活动方法为
   `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`。上一版K4 layer-trace五臂已完成：
   `correct/same/wrong/shuffled/reversed=99/92/57/94/105`；correct相对wrong明显更好，证明

@@ -1,10 +1,11 @@
 # EMBER
 
-EMBER研究能否把一条没有目标机器人action标注的教学视频，一次性编译成能让
-frozen VLA完成对应任务的完整task-specific LoRA：
+EMBER研究能否把没有目标机器人action标注的教学视频，一次性编译成能让
+frozen VLA完成对应任务的完整task-specific LoRA。当前活动版本使用同task的K4 few-shot
+videos共同生成一套LoRA：
 
 ```text
-task language + exactly one action-hidden teaching video
+task language + exactly four action-hidden teaching videos
                     -> shared Writer
                     -> sealed rank-16 task LoRA
                     -> frozen π0.5-LIBERO source policy

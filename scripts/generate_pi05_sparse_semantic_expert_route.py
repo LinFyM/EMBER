@@ -118,7 +118,25 @@ def main() -> None:
         enabled=device.type == "cuda",
     ):
         anchors = descriptor.task_anchor(policy, tokens, mask, task_span)
-    anchors = anchors.float().cpu()
+        singleton_anchors = []
+        for row in rows:
+            single_tokens, single_mask, single_task_span = tokenizer(
+                [str(row["language"])]
+            )
+            singleton_anchors.append(
+                descriptor.task_anchor(
+                    policy,
+                    single_tokens,
+                    single_mask,
+                    single_task_span,
+                )
+            )
+        singleton_anchors = torch.cat(singleton_anchors)
+    cobatch_max_abs = float((anchors - singleton_anchors).abs().max())
+    if cobatch_max_abs > 1e-3:
+        raise RuntimeError("semantic anchor materially changed with language co-batching")
+    batched_anchors = anchors.float().cpu()
+    anchors = singleton_anchors.float().cpu()
     anchor_mean = anchors.mean(dim=0)
     centered = F.normalize(anchors - anchor_mean, dim=-1)
     centers, initial_indices, iterations = _spherical_kmeans(
@@ -129,6 +147,14 @@ def main() -> None:
     )
     similarities = centered @ centers.T
     values, indices = torch.topk(similarities, k=2, dim=1, sorted=True)
+    batched_indices = torch.topk(
+        F.normalize(batched_anchors - anchor_mean, dim=-1) @ centers.T,
+        k=2,
+        dim=1,
+        sorted=True,
+    ).indices
+    if not torch.equal(indices, batched_indices):
+        raise RuntimeError("semantic route changed with language co-batching")
     primary_counts = torch.bincount(indices[:, 0], minlength=8)
     top2_counts = torch.bincount(indices.flatten(), minlength=8)
     if int(primary_counts.min()) <= 0 or int(top2_counts.min()) <= 0:
@@ -173,6 +199,8 @@ def main() -> None:
                 "primary_expert_counts": primary_counts.tolist(),
                 "top2_expert_counts": top2_counts.tolist(),
                 "top2_usage_limit": 12,
+                "exact_language_cobatch_invariant": True,
+                "anchor_cobatch_max_abs": cobatch_max_abs,
             },
             "anchor_mean": anchor_mean.tolist(),
             "centers": centers.tolist(),

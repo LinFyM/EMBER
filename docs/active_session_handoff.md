@@ -46,6 +46,9 @@
   median cosine/negative-pair中位=`.04573/.00400/.47464`，仅略高于旧K4
   `.04326/.00038/.49275`，不能写成task drift已解。下一步只做预注册50/100/150/200 strict
   correct400；四点完成前不按step200 functional loss`.10194`或该梯度证据挑点。
+- 四点strict correct400的唯一roots、两波3+3 GPU拓扑、storage预算、exact command模板与
+  completion gate已封存在`task_plan.md`顶部。live preflight后先并行macro50/100，自然释放
+  后再并行150/200；不复用旧K4 cache，不在四点间改变paired panel。
 
 ## 0.1 已完成：K4 Invariant-Program M2P四点与内部裁决
 

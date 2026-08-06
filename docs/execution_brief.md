@@ -22,6 +22,9 @@
   queries、19,200 K4 videos、8个checkpoints、0 clip/OOM/nonfinite，wall`7350.114s`、peak
   reserved20.48GB。当前唯一下一步是live重查后并行完成macro50/100，再完成150/200的strict
   paired correct400；禁止按functional loss或内部梯度提前选择checkpoint。
+- 四点formal evaluation合同已封存在`task_plan.md`顶部：第一波50/100各占3张空闲卡并行，
+  第二波150/200同样运行，始终总计最多6张；每root必须400 rows、42 shards、9 workers exit0
+  且K4/state/RNG严格配对。
 - `runs/outputs/pi05_as_writer_k4_layer_trace_m2p_profile_r6_b20_89f5384_20260806`只作失败
   diagnostic：启动时未在step1停下，且axis FFN pre-LN导致step2/3 loss爆到58.93/96.82。
   clean`ed4f46e`已移除dynamic value-path normalization；禁止resume该root，必须新root从

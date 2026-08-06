@@ -38,6 +38,30 @@ runner、split、路径或 GPU 权限。
   - [ ] 用同一paired K4/state/RNG panel完成macro50/100/150/200 strict correct400；行为结果
     出来前不按functional loss或内部梯度选择checkpoint。
 
+### K4 Policy-Layer Trace四点strict correct400 launch合同（2026-08-06）
+
+- formal training seal=`535123a`且已push branch/main；四个checkpoint必须来自同一fresh root
+  `runs/outputs/pi05_as_writer_k4_layer_trace_m2p_formal_fresh0_200_r6_d3f568d_20260806`。
+  role=`validation`、state-count50、formal、correct、without-replacement、K4 set/state/env/policy
+  RNG完全配对；不能改变video、挑状态或复用旧K4 LoRA cache。
+- 两波各并行两个独立root，每root使用3张物理GPU、3 replicas/GPU、3 Writer generators/GPU、
+  generation batch4。第一波macro50使用`gpu01:0,1,2`、macro100使用`gpu01:4,5,7`；自然结束
+  并确认释放后，第二波同样拓扑运行macro150/200。跨节点合计始终最多6张，启动前仍live
+  比较双节点；任一卡变忙就更换为同node三张空闲卡或延后，不共享、不干扰。
+- 四root依次为
+  `runs/outputs/pi05_as_writer_k4_layer_trace_m2p_bci_correct400_noreplacement_seed7_macro{0050,0100,0150,0200}_535123a_20260806`；
+  log同名位于`runs/logs/`，tmux同step命名为`ember_k4_trace_eval{0050,0100,0150,0200}_535123a`。
+  既有K4 correct400每root约1.07GB，四点加原子临时cache预计峰值新增低于6GB，当前quota余量充分。
+- 每root必须封存400 rows、42 shards、9 workers exit0、400个unique K4 sets及完整results/
+  completion；聚合报告correct、breadth、per-task、gained/lost、union/intersection。任何launcher
+  故障只在同root按canonical resume恢复，不能用另一checkpoint或减少panel冒充。
+
+每点命令模板（替换`STEP`、`GPUS`与`OUT`）：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --role validation --mode formal --state-count 50 --replicas-per-gpu 3 --writer-generators-per-gpu 3 --writer-generation-batch-size 4 --as-writer-config configs/pi05_as_writer_k4_layer_trace_m2p_bci_v1.json --writer-video-data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --writer-video-condition correct --writer-video-sampling without_replacement --gpu-indices GPUS --as-writer-checkpoint runs/outputs/pi05_as_writer_k4_layer_trace_m2p_formal_fresh0_200_r6_d3f568d_20260806/checkpoints/step_STEP --output-dir OUT
+```
+
 ### K4 Policy-Layer Trace M2P fresh formal0→200 launch合同（2026-08-06）
 
 - implementation/config/profile seal=`d3f568d`，已push branch/main；正式启动前必须保持clean且

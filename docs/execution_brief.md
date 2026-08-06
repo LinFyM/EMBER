@@ -18,7 +18,8 @@
   合同启动的identity-fresh formal0→200已自然完成：200 finite macros、96,000 queries、
   19,200 K4 videos、8 checkpoints、0 clip，wall`7272.774s`、peak allocated/reserved=
   `18,203,289,600/20,304,625,664` bytes，source trainable=0且validation/test action reads=0。
-  下一顺序只评macro50/100/150/200 strict paired correct400，再固定single winner做五臂和内部分析。
+  下一顺序只按`task_plan.md`的`c23195d`合同评macro50/100/150/200 strict paired correct400，
+  再固定single winner做五臂和内部分析。
 - 不做power-law/band sweep、scalar gate、SFT-only auxiliary、sparse experts或旧checkpoint
   warm-start。
 

@@ -200,6 +200,28 @@ action reads=0。四个50步窗口的full24 gradient retention/cosine/negative-p
 `.10601/.06078/.36957`、`.08578/.05152/.38949`、`.06065/.02493/.44746`、
 `.05227/.00727/.47645`；不得用该机制曲线或functional loss挑checkpoint。
 
+### Evidence-Factorized Trace四点strict correct400 launch合同（2026-08-06）
+
+- 唯一训练root固定为
+  `runs/outputs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_formal_fresh0_200_r6_692ab5e_20260806`；
+  只评`step_00000050/100/150/200`，不得替换checkpoint或加载其他Writer。
+- 每点为validation 8 tasks×50 sealed states、formal、correct K4 action-hidden videos、
+  without-replacement；state/env/policy RNG、K4 set、source checkpoint、tokenizer、video dataset
+  与历史strict400 panel不变。每root 3 GPUs、3 replicas/GPU、3 Writer generators/GPU、generation
+  batch4；两点并行一波，总计最多6张live空闲卡，第二波前重新检查双节点。
+- 四个root固定为
+  `runs/outputs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_bci_correct400_noreplacement_seed7_macro{0050,0100,0150,0200}_c23195d_20260806`；
+  log同名位于`runs/logs/`，tmux为`ember_k4_evidence_eval{0050,0100,0150,0200}_c23195d`。
+  每root完成门为400 unique rows、42 shards、9 workers exit0和paired panel mismatch=0。
+- 四点完成后只按single-checkpoint correct、breadth、per-task与换手选winner；winner之后才追加
+  same-task-other/wrong/shuffled/reversed与内部direction/physical/evidence→Reader→axis→BA/action分析。
+
+命令模板：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --role validation --mode formal --state-count 50 --replicas-per-gpu 3 --writer-generators-per-gpu 3 --writer-generation-batch-size 4 --as-writer-config configs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_bci_v1.json --writer-video-data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --writer-video-condition correct --writer-video-sampling without_replacement --gpu-indices GPUS --as-writer-checkpoint runs/outputs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_formal_fresh0_200_r6_692ab5e_20260806/checkpoints/step_STEP --output-dir OUT
+```
+
 ## 已完成K4 Policy-Layer Trace M2P（2026-08-06）
 
 - [x] 按K4内部证据与SHINE/Doc-to-LoRA的结构原则封存

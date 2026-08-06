@@ -30,7 +30,8 @@
   trainable=0且validation/test action reads=0。四个50步窗口的full24 gradient
   retention/cosine/negative-pair中位为`.10601/.06078/.36957`、`.08578/.05152/.38949`、
   `.06065/.02493/.44746`、`.05227/.00727/.47645`；前半段共存改善但晚期仍向抵消退化，
-  只作机制证据。GPU已自然释放；下一步固定评50/100/150/200 strict paired correct400。
+  只作机制证据。GPU已自然释放；下一步按`task_plan.md`的`c23195d`合同固定评
+  50/100/150/200 strict paired correct400。
 
 ## 0.1 已完成并负裁决：Energy-Preserving Policy-Layer Trace M2P
 

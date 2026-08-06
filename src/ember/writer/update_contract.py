@@ -107,10 +107,10 @@ def checkpoint_state_family(config: Mapping[str, Any]) -> str:
     topology = str(training["update_topology"])
     if (
         config.get("writer", {}).get("architecture")
-        == "pi05_k4_energy_preserving_policy_layer_trace_axis_m2p_v1"
+        == "pi05_k4_evidence_factorized_policy_layer_trace_axis_m2p_v1"
         and topology == "task_complete_all_tasks"
     ):
-        return "k4_energy_preserving_policy_layer_trace_m2p_full24_v1"
+        return "k4_evidence_factorized_policy_layer_trace_m2p_full24_v1"
     if (
         config.get("writer", {}).get("architecture")
         == "pi05_factorized_condition_kernel_program_memory_v1"
@@ -158,13 +158,13 @@ def _update_topology_contract(
     update_topology = str(training["update_topology"])
     if (
         config.get("writer", {}).get("architecture")
-        == "pi05_k4_energy_preserving_policy_layer_trace_axis_m2p_v1"
+        == "pi05_k4_evidence_factorized_policy_layer_trace_axis_m2p_v1"
     ):
         if update_topology != "task_complete_all_tasks":
             raise WriterModelError("K4 M2P topology changed")
         return False, {
             "macro_step_axis": (
-                "full24_end_to_end_k4_energy_preserving_layer_trace_m2p_update"
+                "full24_end_to_end_k4_evidence_factorized_layer_trace_m2p_update"
             ),
             "tasks_per_rank_per_optimizer_update": tasks_per_rank,
             "global_tasks_per_optimizer_update": global_tasks,

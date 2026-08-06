@@ -15,8 +15,11 @@
   layer/parameter-axis M2P。
 - 该设计直接对应本轮证据：unit-only有task specificity但order噪声过强，raw-only改善早期
   gradient却丢失task direction。它不使用SFT-only loss或outcome，AS与未来RL共用同一接口。
-- 下一步只做原位实现、fresh incompatible schemas/config、CPU合同与A40 profile；不加载任何
-  旧Writer，不续Energy-Preserving，不先开sparse experts。
+- canonical Reader与fresh incompatible schemas/config/checkpoint family已原位实现；新唯一config为
+  `configs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_bci_v1.json`，Writer参数精确
+  `60,926,976`。BCI assets下全仓`192 passed`、compileall、real config load和diff check闭合；
+  formal仍fail-close，尚未启动GPU。下一步clean/push后只做fresh0→1、resume1→3 A40 profile；
+  不加载任何旧Writer，不续Energy-Preserving，不先开sparse experts。
 
 ## 0.1 已完成并负裁决：Energy-Preserving Policy-Layer Trace M2P
 

@@ -1,4 +1,4 @@
-"""Declarative contract for the energy-preserving K4 layer-trace Writer."""
+"""Declarative contract for the evidence-factorized K4 trace Writer."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ WRITER_DIMENSION_CONTRACT = {
 }
 
 _STATIC_WRITER_CONTRACT: dict[str, Any] = {
-    "architecture": "pi05_k4_energy_preserving_policy_layer_trace_axis_m2p_v1",
+    "architecture": "pi05_k4_evidence_factorized_policy_layer_trace_axis_m2p_v1",
     "generated_adapter": "one_complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -58,6 +58,8 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "trace_temporal_terms": 16,
     "trace_width": 1024,
     "trace_normalization": "per_video_global_total_energy_match_preserving_raw_group_frequency_spectrum",
+    "trace_representation": "normalized_direction_plus_global_energy_matched_physical_value",
+    "trace_evidence": "bounded_log_group_and_frequency_energy_share_plus_leave_one_out_k4_direction_consensus_in_keys_only",
     "trace_tokens_per_group_per_condition": 64,
     "memory_slots": 68,
     "m2p_width": 1024,
@@ -65,7 +67,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "m2p_blocks": 4,
     "m2p_ffn_expansion": 2,
     "m2p_topology": "alternating_policy_group_column_and_parameter_slot_row",
-    "reader_value_owner": "baseline_subtracted_video_trace_only",
+    "reader_value_owner": "shared_attention_direction_and_physical_video_values_with_bias_free_vector_fusion",
     "reader_group_outputs": "twenty_independent_exact_zero_initialized_matrices",
     "policy_targets": 38,
     "public_rank": 16,
@@ -83,7 +85,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
 
 
 def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
-    """Return the exact energy-preserving layer-trace Writer payload."""
+    """Return the exact evidence-factorized layer-trace Writer payload."""
 
     if writer.get("architecture") != _STATIC_WRITER_CONTRACT["architecture"]:
         raise ValueError(f"unsupported EMBER Writer architecture: {writer.get('architecture')}")

@@ -10,8 +10,10 @@
   `docs/action_forecast_writer_evidence_factorized_trace_design.md`。从现有raw DCT同时构造
   normalized direction、physical value与energy/K4-consensus key evidence；single attention
   读取双vector values并fusion后沿用四block axis M2P。
-- 下一执行顺序：原位替换Reader与全套fresh schema/config，完成聚焦CPU和全仓回归；clean
-  commit/push后live比较双节点，只用最多6张空闲A40做fresh0→1、resume1→3 profile。
+- canonical Reader与全套fresh schema/config/checkpoint family已原位替换；新唯一config为
+  `configs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_bci_v1.json`，Writer参数
+  `60,926,976`，全仓`192 passed`、compileall、real config load和diff check通过。下一执行
+  顺序是clean commit/push后live比较双节点，只用最多6张空闲A40做fresh0→1、resume1→3 profile。
 - 不做power-law/band sweep、scalar gate、SFT-only auxiliary、sparse experts或旧checkpoint
   warm-start。profile通过前formal blocked。
 

@@ -16,8 +16,10 @@ GPU范围和训练步长是当时快照；活动状态只取
 - 新authority为`docs/action_forecast_writer_evidence_factorized_trace_design.md`：保留K4视频、
   20-group DCT16和axis M2P，从raw token同时形成normalized direction、physical value及
   energy/K4-consensus key evidence，用shared attention和bias-free vector fusion组合。
-- 当前尚未改代码或启动GPU；下一步原位替换唯一Reader、fresh schemas/config、聚焦CPU合同与
-  A40 profile。不加载旧Writer、不用subagent、不做hash检查或scalar/band sweep。
+- canonical Reader、fresh schemas/config/checkpoint family已原位替换完成；Writer参数精确
+  `60,926,976`，全仓`192 passed`、compileall、real config load和diff check闭合。新config
+  formal保持blocked，尚未启动GPU；下一步clean/push后live A40 fresh0→1、resume1→3 profile。
+  不加载旧Writer、不用subagent、不做hash检查或scalar/band sweep。
 
 ## 2026-08-06 K4 Layer-Trace五臂/内部裁决完成，开启Energy-Preserving Trace
 

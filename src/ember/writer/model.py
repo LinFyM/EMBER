@@ -1,4 +1,4 @@
-"""Canonical K4 policy-layer trace M2P PI05 Writer."""
+"""Canonical evidence-factorized K4 policy-layer trace M2P PI05 Writer."""
 
 from __future__ import annotations
 

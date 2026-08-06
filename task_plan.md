@@ -157,8 +157,10 @@ support，不能在逐token单位化和全局raw amplitude两个破坏性极端�
   保留normalized direction与physical coefficient，以group/frequency energy share和K4
   leave-one-out direction consensus只作key evidence，再用shared-attention dual vector values
   和bias-free fusion进入原axis M2P。
-- [ ] 原位实现新唯一architecture/config/checkpoint family，退休Energy-Preserving活动path；
-  完成聚焦CPU合同、全仓回归、real config load和architecture gate。
+- [x] 原位实现新唯一architecture/config/checkpoint family，退休Energy-Preserving活动path；
+  normalized direction、raw physical value和3维evidence按同一K4 token顺序进入single-attention
+  dual-value Reader。Writer参数=`60,926,976`；BCI assets下全仓`192 passed`、compileall、real
+  config load、fresh family和diff check闭合，formal仍blocked。
 - [ ] clean/push后live比较双节点，在最多6张空闲A40上完成longest105 B20 fresh0→1、
   exact-resume1→3 profile，权重弃用。
 - [ ] 从identity formal0→200，strict correct400固定评50/100/150/200；single checkpoint严格

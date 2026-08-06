@@ -36,7 +36,7 @@ from ember.writer.update_contract import build_update_runtime_contract
 
 
 AS_WRITER_LAUNCH_SCHEMA = (
-    "ember_pi05_k4_energy_preserving_policy_layer_trace_m2p_launch_v1"
+    "ember_pi05_k4_evidence_factorized_policy_layer_trace_m2p_launch_v1"
 )
 SUPPORTED_AS_WRITER_LAUNCH_SCHEMAS = frozenset({AS_WRITER_LAUNCH_SCHEMA})
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")

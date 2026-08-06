@@ -1,4 +1,4 @@
-"""Policy-layer trace reader and axis-aligned PI05 LoRA hyperdecoder."""
+"""Evidence-factorized policy-layer reader and PI05 LoRA hyperdecoder."""
 
 from __future__ import annotations
 
@@ -12,6 +12,62 @@ import torch.nn.functional as F
 
 class FewShotM2PError(RuntimeError):
     """Raised when the K4 trace or public PI05 topology changes."""
+
+
+_EVIDENCE_FLOOR = 1e-8
+
+
+def factorize_trace_evidence(
+    physical_traces: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Separate trace direction from bounded energy and K-shot consensus evidence."""
+
+    if physical_traces.ndim != 5 or physical_traces.shape[1] <= 1:
+        raise FewShotM2PError("trace evidence requires [condition,K,group,term,width]")
+    working = physical_traces.float()
+    direction = F.normalize(working, dim=-1, eps=1e-12)
+    token_energy = working.square().sum(dim=-1)
+    group_energy = token_energy.sum(dim=-1)
+    video_energy = group_energy.sum(dim=-1)
+    group_share = torch.where(
+        video_energy[..., None] > 0,
+        group_energy / video_energy[..., None].clamp_min(_EVIDENCE_FLOOR),
+        torch.zeros_like(group_energy),
+    )
+    frequency_share = torch.where(
+        group_energy[..., None] > 0,
+        token_energy / group_energy[..., None].clamp_min(_EVIDENCE_FLOOR),
+        torch.zeros_like(token_energy),
+    )
+
+    log_scale = -torch.log(
+        torch.tensor(
+            _EVIDENCE_FLOOR,
+            dtype=working.dtype,
+            device=working.device,
+        )
+    )
+
+    def bounded_log_share(value: torch.Tensor) -> torch.Tensor:
+        return torch.log(
+            value.clamp(min=_EVIDENCE_FLOOR, max=1.0)
+        ) / log_scale
+
+    other_direction = F.normalize(
+        direction.sum(dim=1, keepdim=True) - direction,
+        dim=-1,
+        eps=1e-12,
+    )
+    consensus = (direction * other_direction).sum(dim=-1).clamp(-1.0, 1.0)
+    evidence = torch.stack(
+        (
+            bounded_log_share(group_share)[..., None].expand_as(token_energy),
+            bounded_log_share(frequency_share),
+            consensus,
+        ),
+        dim=-1,
+    )
+    return direction.to(physical_traces.dtype), evidence.to(physical_traces.dtype)
 
 
 class RoutedZeroPreservingBlock(torch.nn.Module):
@@ -155,7 +211,7 @@ def build_policy_layer_groups(
 
 
 class PolicyLayerTraceM2P(torch.nn.Module):
-    """Read unordered K4 policy traces and directly emit the public PI05 LoRA."""
+    """Read factorized unordered K4 traces and emit the public PI05 LoRA."""
 
     def __init__(
         self,
@@ -199,7 +255,10 @@ class PolicyLayerTraceM2P(torch.nn.Module):
         self.trace_norm = torch.nn.LayerNorm(width, elementwise_affine=False)
         self.query = torch.nn.Linear(width, width, bias=False)
         self.key = torch.nn.Linear(width, width, bias=False)
-        self.value = torch.nn.Linear(width, width, bias=False)
+        self.evidence_key = torch.nn.Linear(3, width, bias=False)
+        self.direction_value = torch.nn.Linear(width, width, bias=False)
+        self.physical_value = torch.nn.Linear(width, width, bias=False)
+        self.value_fusion = torch.nn.Linear(2 * width, width, bias=False)
         self.group_output_weight = torch.nn.Parameter(
             torch.zeros(len(groups), width, width)
         )
@@ -260,16 +319,24 @@ class PolicyLayerTraceM2P(torch.nn.Module):
             raise FewShotM2PError("layer-trace M2P requires one fixed K greater than one")
         shots = next(iter(shot_counts))
         conditions = len(offsets) - 1
-        traces = video_traces.reshape(
+        physical = video_traces.reshape(
             conditions,
             shots,
             len(self.groups),
             self.temporal_terms,
             self.width,
-        ).permute(0, 2, 1, 3, 4).reshape(
+        )
+        direction, evidence = factorize_trace_evidence(physical)
+        traces = physical.permute(0, 2, 1, 3, 4).reshape(
             conditions * len(self.groups),
             shots * self.temporal_terms,
             self.width,
+        )
+        directions = direction.permute(0, 2, 1, 3, 4).reshape_as(traces)
+        evidence = evidence.permute(0, 2, 1, 3, 4).reshape(
+            conditions * len(self.groups),
+            shots * self.temporal_terms,
+            3,
         )
         group_route = self.group_route[:, None]
         query_route = group_route + self.slot_route[None]
@@ -285,19 +352,28 @@ class PolicyLayerTraceM2P(torch.nn.Module):
         q = self.query(self.query_norm(query_route)).reshape(
             conditions * len(self.groups), self.memory_slots, self.heads, self.head_width
         ).transpose(1, 2)
-        normalized_traces = self.trace_norm(traces)
-        k = self.key(normalized_traces + key_route).reshape(
+        normalized_directions = self.trace_norm(directions)
+        k = self.key(
+            normalized_directions + key_route + self.evidence_key(evidence)
+        ).reshape(
             conditions * len(self.groups),
             shots * self.temporal_terms,
             self.heads,
             self.head_width,
         ).transpose(1, 2)
-        v = self.value(traces).reshape(
+        direction_v = self.direction_value(directions).reshape(
             conditions * len(self.groups),
             shots * self.temporal_terms,
             self.heads,
             self.head_width,
         ).transpose(1, 2)
+        physical_v = self.physical_value(traces).reshape(
+            conditions * len(self.groups),
+            shots * self.temporal_terms,
+            self.heads,
+            self.head_width,
+        ).transpose(1, 2)
+        v = torch.cat((direction_v, physical_v), dim=-1)
         attended = F.scaled_dot_product_attention(
             q,
             k,
@@ -305,6 +381,11 @@ class PolicyLayerTraceM2P(torch.nn.Module):
             dropout_p=0.0,
             is_causal=False,
         ).transpose(1, 2).reshape(
+            conditions * len(self.groups),
+            self.memory_slots,
+            2 * self.width,
+        )
+        attended = self.value_fusion(attended).reshape(
             conditions,
             len(self.groups),
             self.memory_slots,

@@ -1,6 +1,6 @@
 # K4 Evidence-Factorized Policy-Layer Trace M2P Writer
 
-状态：2026-08-06设计authority已封存，等待原位实现。本文覆盖
+状态：2026-08-06设计authority与canonical原位实现已封存，等待live A40 profile。本文覆盖
 `action_forecast_writer_energy_preserving_layer_trace_design.md`的活动地位；旧方法只由Git与
 sealed artifacts保存。
 
@@ -154,6 +154,18 @@ identity formal0→200并固定评50/100/150/200。
 single checkpoint路线；若Reader仍丢失direction，最早接口仍在evidence read；只有表示与
 Reader都闭合而full24 credit再次接近1/24抵消时，才打开condition-specific sparse experts。
 最低目标仍严格`>150/400`，达到后继续提高。
+
+## 10. 实现封存
+
+canonical Reader现已原位实现上述factorization和single-attention dual-value read：旧active
+config已退休，新唯一config为
+`configs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_bci_v1.json`。fresh architecture、
+launch与checkpoint family均与Energy-Preserving不兼容；formal在profile完成前fail-close。
+
+实现后Writer精确trainable参数为`60,926,976`。聚焦合同覆盖unit/zero direction、有界energy
+evidence、leave-one-out K4 permutation equivariance、amplitude/content分离、zero-video
+identity、step1/step2梯度生命周期与hashless size/schema checkpoint；BCI assets下全仓
+`192 passed`，compileall、real config load和diff check通过。尚未启动GPU或产生profile权重。
 
 ## 9. 禁调项
 

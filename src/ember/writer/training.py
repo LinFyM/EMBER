@@ -694,7 +694,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=(
             REPO_ROOT
-            / "configs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_bci_v1.json"
+            / "configs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_bci_v1.json"
         ),
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

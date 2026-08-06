@@ -12,6 +12,7 @@ from ember.writer.fewshot_m2p import (
     PolicyLayerGroup,
     PolicyLayerTraceM2P,
     PolicyTargetSpec,
+    factorize_trace_evidence,
 )
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
 from ember.writer.task_gradient import parameter_layout
@@ -272,6 +273,40 @@ def test_layer_trace_reader_is_video_owned_and_shot_permutation_invariant() -> N
         decoder.encode(torch.zeros_like(video), offsets),
         torch.zeros_like(expected),
     )
+
+
+def test_trace_factorization_separates_direction_energy_and_consensus() -> None:
+    generator = torch.Generator(device="cpu").manual_seed(29)
+    physical = torch.randn(1, 4, 3, 4, 16, generator=generator)
+    physical[:, :, 2, 3] = 0
+    direction, evidence = factorize_trace_evidence(physical)
+    nonzero = physical.norm(dim=-1) > 0
+    assert torch.allclose(
+        direction.norm(dim=-1)[nonzero],
+        torch.ones_like(direction.norm(dim=-1)[nonzero]),
+        atol=1e-6,
+        rtol=1e-6,
+    )
+    assert torch.equal(direction[~nonzero], torch.zeros_like(direction[~nonzero]))
+    assert bool(torch.isfinite(evidence).all())
+    assert float(evidence[..., :2].min()) >= -1
+    assert float(evidence[..., :2].max()) <= 0
+    assert float(evidence[..., 2].min()) >= -1
+    assert float(evidence[..., 2].max()) <= 1
+
+    permutation = torch.tensor([2, 0, 3, 1])
+    permuted_direction, permuted_evidence = factorize_trace_evidence(
+        physical[:, permutation]
+    )
+    assert torch.allclose(permuted_direction, direction[:, permutation])
+    assert torch.allclose(permuted_evidence, evidence[:, permutation], atol=1e-6)
+
+    rescaled = physical.clone()
+    rescaled[:, 0, 0, 1] *= 4
+    rescaled_direction, rescaled_evidence = factorize_trace_evidence(rescaled)
+    assert torch.allclose(rescaled_direction[:, 0, 0, 1], direction[:, 0, 0, 1])
+    assert not torch.equal(rescaled[:, 0, 0, 1], physical[:, 0, 0, 1])
+    assert not torch.equal(rescaled_evidence[:, 0, 0, 1, :2], evidence[:, 0, 0, 1, :2])
 
 
 def test_group_output_bootstrap_then_opens_reader_and_axis_m2p() -> None:

@@ -113,6 +113,15 @@ K4_ENERGY_PRESERVING_LAYER_TRACE_M2P_TRAINER_STATE_SCHEMA = (
 K4_ENERGY_PRESERVING_LAYER_TRACE_M2P_RANK_STATE_SCHEMA = (
     "ember_pi05_k4_energy_preserving_policy_layer_trace_m2p_rank_state_v1"
 )
+K4_EVIDENCE_FACTORIZED_LAYER_TRACE_M2P_CHECKPOINT_SCHEMA = (
+    "ember_pi05_k4_evidence_factorized_policy_layer_trace_m2p_checkpoint_v1"
+)
+K4_EVIDENCE_FACTORIZED_LAYER_TRACE_M2P_TRAINER_STATE_SCHEMA = (
+    "ember_pi05_k4_evidence_factorized_policy_layer_trace_m2p_trainer_state_v1"
+)
+K4_EVIDENCE_FACTORIZED_LAYER_TRACE_M2P_RANK_STATE_SCHEMA = (
+    "ember_pi05_k4_evidence_factorized_policy_layer_trace_m2p_rank_state_v1"
+)
 HISTORICAL_V6_LAUNCH_SCHEMA = "ember_pi05_language_axial_as_writer_launch_v6"
 HISTORICAL_V6_CHECKPOINT_SCHEMA = "ember_pi05_language_axial_writer_checkpoint_v6"
 
@@ -189,6 +198,12 @@ _FAMILIES = {
         K4_ENERGY_PRESERVING_LAYER_TRACE_M2P_CHECKPOINT_SCHEMA,
         K4_ENERGY_PRESERVING_LAYER_TRACE_M2P_TRAINER_STATE_SCHEMA,
         K4_ENERGY_PRESERVING_LAYER_TRACE_M2P_RANK_STATE_SCHEMA,
+    ),
+    "k4_evidence_factorized_policy_layer_trace_m2p_full24_v1": (
+        1,
+        K4_EVIDENCE_FACTORIZED_LAYER_TRACE_M2P_CHECKPOINT_SCHEMA,
+        K4_EVIDENCE_FACTORIZED_LAYER_TRACE_M2P_TRAINER_STATE_SCHEMA,
+        K4_EVIDENCE_FACTORIZED_LAYER_TRACE_M2P_RANK_STATE_SCHEMA,
     ),
 }
 

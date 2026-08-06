@@ -173,6 +173,10 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 - 新方法是unit-only与raw-only两个正式反事实后的根因设计，不是scalar/band/power-law插值；
   AS与未来RL使用同一video→LoRA图。必须fresh incompatible architecture/config/checkpoint，
   不加载任何旧Writer，不先开sparse experts。
+- canonical实现已原位替换完成，新唯一config为
+  `configs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_bci_v1.json`；Writer参数精确
+  `60,926,976`，全仓`192 passed`。formal当前被config阻塞，下一步只做live A40
+  fresh0→1、exact-resume1→3 profile，权重弃用后再seal formal。
 - 上一活动方法为
   `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`。上一版K4 layer-trace五臂已完成：
   `correct/same/wrong/shuffled/reversed=99/92/57/94/105`；correct相对wrong明显更好，证明

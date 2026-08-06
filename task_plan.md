@@ -167,7 +167,10 @@ support，不能在逐token单位化和全局raw amplitude两个破坏性极端�
   peak allocated/reserved=`18,218,217,984/20,470,300,672` bytes。
 - [x] 从identity formal0→200：200 finite macros、96,000 queries、19,200 K4 videos、
   8 checkpoints、0 clip，GPU自然释放。
-- [ ] strict correct400固定评50/100/150/200；single checkpoint严格`>150`且继续提高。
+- [x] strict correct400固定评50/100/150/200：`74/59/65/84`，breadth=`6/6/5/5`；
+  macro200固定single winner但未过严格门。
+- [ ] 对macro200完成五臂和全部内部分析；按最早失败接口继续迭代，single checkpoint严格
+  `>150`且继续提高。
 
 ### Evidence-Factorized Trace formal0→200 launch合同（2026-08-06）
 
@@ -221,6 +224,25 @@ action reads=0。四个50步窗口的full24 gradient retention/cosine/negative-p
 ```bash
 env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --role validation --mode formal --state-count 50 --replicas-per-gpu 3 --writer-generators-per-gpu 3 --writer-generation-batch-size 4 --as-writer-config configs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_bci_v1.json --writer-video-data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --writer-video-condition correct --writer-video-sampling without_replacement --gpu-indices GPUS --as-writer-checkpoint runs/outputs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_formal_fresh0_200_r6_692ab5e_20260806/checkpoints/step_STEP --output-dir OUT
 ```
+
+四点已自然完成：每root 400 rows、42 shards、9 workers exit0。按Long-1/2、Goal-3/6、
+Object-1/3、Spatial-1/3顺序，逐task为`5/0/1/39/26/0/2/1`、
+`3/1/0/27/22/3/0/3`、`6/1/0/32/25/0/0/1`、`9/2/0/36/34/0/0/3`；相邻
+gained/lost=`19/34,23/17,29/10`，union/intersection=`122/32`。K4 set、state、env seed、
+teacher order和policy-noise common prefix跨四点均0 mismatch。macro200以最高correct固定为
+single winner=84，但低于raw-only85、unit-only99、K4 invariant108与v6-fast143；不续训练。
+
+### Evidence-Factorized Trace macro200五臂与内部分析合同（2026-08-06）
+
+- correct=84沿用既有macro200 root，不重跑。其余只改变`--writer-video-condition`为
+  `same_task_other`、`cross_suite_wrong`、`shuffled`、`reversed`；保持同一400 state/env/policy
+  RNG panel、K4 without-replacement、source与macro200 checkpoint。
+- 两臂一波，每root 3 GPUs、3 replicas/GPU、3 generators/GPU、generation batch4；每波启动前
+  live比较`gpu01/gpu02`，最多使用6张空闲卡。四root固定为
+  `runs/outputs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_bci_{same_task_other,cross_suite_wrong,shuffled,reversed}400_noreplacement_seed7_macro0200_b1d3156_20260806`。
+- 五臂后只对同一macro200做8-task refs1内部probe：必须分别量化raw physical/direction/evidence、
+  direction/physical value read、attention/effective groups、fusion/axis、effective BA、fixed action、
+  LoRA谱/能量及identity/leave-one-out/alternate-set；训练期gradient直接用sealed metrics。
 
 ## 已完成K4 Policy-Layer Trace M2P（2026-08-06）
 

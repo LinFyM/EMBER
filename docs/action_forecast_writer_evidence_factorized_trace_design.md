@@ -182,6 +182,12 @@ action reads=0。四个50步窗口的full24 gradient retention/cosine/negative-p
 `.10601/.06078/.36957`、`.08578/.05152/.38949`、`.06065/.02493/.44746`、
 `.05227/.00727/.47645`。该曲线只作机制证据，正式裁决仍固定为四点strict correct400。
 
+四点strict correct400现已完成：`74/59/65/84`、breadth=`6/6/5/5`，相邻
+gained/lost=`19/34,23/17,29/10`，union/intersection=`122/32`。macro200固定single
+winner=84，但低于raw-only85、unit-only99、K4 invariant108与v6-fast143。不能仅由absolute
+提前判断两个value branch谁失效；按预注册只对macro200完成五臂及direction/physical/
+evidence→Reader→fusion/axis→BA/action内部分析，不续训练或按loss换点。
+
 ## 9. 禁调项
 
 本轮不改K、DCT16、rank、LR、B20、axis blocks、training objective或checkpoint schedule；

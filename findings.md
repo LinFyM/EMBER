@@ -12,6 +12,10 @@
   但晚期仍接近正交抵消；它不能提前证明closed-loop有效或选择checkpoint。
 - 当前固定裁决仍是macro50/100/150/200同panel strict correct400；只有四点行为、breadth、
   换手和single-winner五臂/内部传递能判断direction与physical evidence是否真正互补。
+- 四点随后完成为`74/59/65/84`、breadth=`6/6/5/5`，相邻gained/lost=
+  `19/34,23/17,29/10`，union/intersection=`122/32`。双证据没有形成unit/raw两个端点的
+  闭环互补，macro200虽后段回升仍低于raw-only85与unit-only99；需用winner五臂和内部
+  branch/readout分析定位是shared attention、fusion还是更晚的shared credit最先失败。
 
 ## 2026-08-06 从destructive normalization转向Evidence-Factorized Trace
 

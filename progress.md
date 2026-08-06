@@ -8,6 +8,8 @@
 - 共200 finite macros、96,000 queries、19,200 K4 action-hidden videos、8 checkpoints、0 clip，
   wall`7272.774s`、peak reserved20.30GB；source trainable=0、validation/test action reads=0，
   六张A40已自然释放。下一步按预注册只评50/100/150/200 strict correct400。
+- 四点strict correct400已完成为`74/59/65/84`、breadth=`6/6/5/5`；macro200固定single
+  winner。下一步只做macro200其余四个video arms与全部内部分析，不续训练。
 
 最后更新：2026-08-06。
 

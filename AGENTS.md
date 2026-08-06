@@ -183,8 +183,10 @@ single-checkpoint、无hash、不使用subagent与安全边界。
   0 clip/OOM/nonfinite，step2起全部新Reader/axis模块可达，peak reserved20.47GB；profile权重
   已弃用。独立functional-identity formal0→200也已自然完成：200 finite macros、96,000
   queries、19,200 K4 action-hidden videos、8 checkpoints、0 clip，peak reserved20.30GB；
-  source trainable=0且validation/test action reads=0。当前只执行macro50/100/150/200 strict
-  paired correct400，再按single winner做五臂与内部分析。
+  source trainable=0且validation/test action reads=0。macro50/100/150/200 strict paired
+  correct400已完成为`74/59/65/84`、breadth=`6/6/5/5`；macro200固定single winner但低于
+  unit-only99、K4 invariant108与v6-fast143。当前只对macro200做其余四个video arms和全部
+  内部分析；不续训、不按loss换点、不恢复旧Writer。
 - 上一活动方法为
   `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`。上一版K4 layer-trace五臂已完成：
   `correct/same/wrong/shuffled/reversed=99/92/57/94/105`；correct相对wrong明显更好，证明

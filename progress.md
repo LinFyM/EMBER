@@ -27,8 +27,11 @@ GPU范围和训练步长是当时快照；活动状态只取
 - 新profile的root、scale、storage、fresh/resume分段和GPU边界已预注册在`task_plan.md`顶部；
   `gpu01:0,1,2|4,5,7`已严格fresh0→1再exact-resume1→3完成。三步loss稳定、0 clip/
   OOM/nonfinite，step2起reader/axis均可达，peak reserved20.38GB，GPU自然释放。
-- config seal=`3b7eb4a`已回写profile证据并push branch/main，profile权重弃用。formal0→200的
-  root、scale、storage、GPU和exact command已预注册在`task_plan.md`顶部，尚未启动。
+- config seal=`3b7eb4a`已回写profile证据并push branch/main，profile权重弃用。launch
+  commit`d833961`随后从identity完成formal0→200：200 finite macros、96,000 queries、19,200
+  K4 videos、8 checkpoints、wall`7373.955s`、0 clip，peak reserved20.48GB，GPU自然释放。
+- 训练期四个50步gradient retention为`.12497/.08564/.08050/.05079`；频谱修复明显改善
+  前150步共存，末段仍回落。四点strict correct400已在`task_plan.md`预注册，尚未启动。
 
 ## 2026-08-06 K4 Policy-Layer Trace四点strict correct400完成
 

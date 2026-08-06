@@ -178,8 +178,10 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
   `configs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_bci_v1.json`；旧layer-trace config/
   checkpoint family只由Git与frozen artifacts保存，不得resume或warm-start。全仓`191 passed`；
   live A40 fresh0→1、exact-resume1→3 profile已通过：三步0 clip/OOM/nonfinite，step2起
-  reader/axis可达，peak reserved20.38GB，profile权重弃用。config seal=`3b7eb4a`；下一步只从
-  functional identity formal0→200，不得resume任何历史Writer。
+  reader/axis可达，peak reserved20.38GB，profile权重弃用。config seal=`3b7eb4a`。
+  launch commit`d833961`已从functional identity完成formal0→200：200 finite macros、96,000
+  queries、19,200 K4 videos、8 checkpoints、0 clip，peak reserved20.48GB。当前只评
+  macro50/100/150/200 strict paired correct400，不得resume任何历史Writer。
 - 新方法与functional AS及未来reward credit共用同一video→LoRA接口，不引入监督专用
   auxiliary loss。若频谱修复后full24 task gradients仍接近1/24抵消且行为不升，才打开
   frozen-semantic routing驱动的condition-specific sparse value experts。

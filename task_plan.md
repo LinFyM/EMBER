@@ -25,7 +25,12 @@ runner、split、路径或 GPU 权限。
   拒载旧checkpoint；完成聚焦CPU合同、全仓回归与real config load。
 - [x] clean/push后live比较`gpu01/gpu02`，只用最多6张空闲A40完成fresh0→1与
   exact-resume1→3 profile；权重弃用，config已seal。
-- [ ] 从functional identity formal fresh0→200，严格评50/100/150/200。
+- [x] 从functional identity完成formal fresh0→200：200 finite macros、96,000 action
+  queries、19,200 K4 action-hidden video conditions、8个every25 checkpoints、0 clip，
+  source trainable=0且validation/test action reads=0。wall=`7373.955s`，peak
+  allocated/reserved=`18,096,449,024/20,478,689,280` bytes。
+- [ ] 严格评macro50/100/150/200 paired correct400；固定四点，不用functional loss或
+  训练期gradient挑点。
 - [ ] 按single-checkpoint correct、breadth、video causality与task-gradient证据继续迭代；最低严格
   `>150/400`，达到后仍继续提高。若频谱修复后credit仍接近1/24抵消，才打开
   frozen-semantic routing驱动的condition-specific sparse value experts。
@@ -76,6 +81,33 @@ source trainable=0，六rank、3+3 NUMA和exact-resume闭合。config seal=`3b7e
 
 ```bash
 env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,7 NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_as_writer.py --config configs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_bci_v1.json --mode formal --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir runs/outputs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_formal_fresh0_200_r6_3b7eb4a_20260806 --stop-after-step 200 --num-workers 0 --log-every 1 --skip-data-sha
+```
+
+上述formal已从clean/pushed launch commit`d833961`自然完成，六张A40已释放。四个50步
+窗口的full24 gradient retention/cosine/negative-pair中位依次为
+`.12497/.07199/.35870`、`.08564/.04393/.42391`、`.08050/.02884/.44022`、
+`.05079/.00555/.48007`；频谱修复使前150步coexistence明显优于上一版，但最后50步再次
+接近抵消，只作机制证据。
+
+### Energy-Preserving Layer-Trace strict correct400 launch合同（2026-08-06）
+
+- 唯一训练root为
+  `runs/outputs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_formal_fresh0_200_r6_3b7eb4a_20260806`；
+  固定评`step_00000050/100/150/200`，不替换候选、不加载其他Writer。
+- 每点固定validation 8 tasks×50 sealed states、formal、correct video、K4
+  without-replacement；source checkpoint/tokenizer/video dataset和state/env/policy RNG panel
+  与历史strict400相同。每root 3 GPUs、3 replicas/GPU、3 Writer generators/GPU、generation
+  batch4；两点并行一波，跨两点总计6张空闲卡，第二波前重新live检查。
+- 输出root固定为
+  `runs/outputs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_bci_correct400_noreplacement_seed7_macro{0050,0100,0150,0200}_d833961_20260806`；
+  完成合同为每root 400 unique rows、42 shards、9 workers exit0和paired panel mismatch=0。
+- 四点只按single-checkpoint correct、breadth、per-task与换手选择winner；winner之后才做
+  same-task-other/wrong/shuffled/reversed和内部trace→Reader/M2P→BA→action分析。
+
+命令模板：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --role validation --mode formal --state-count 50 --replicas-per-gpu 3 --writer-generators-per-gpu 3 --writer-generation-batch-size 4 --as-writer-config configs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_bci_v1.json --writer-video-data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --writer-video-condition correct --writer-video-sampling without_replacement --gpu-indices GPUS --as-writer-checkpoint runs/outputs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_formal_fresh0_200_r6_3b7eb4a_20260806/checkpoints/step_STEP --output-dir OUT
 ```
 
 ## 已完成K4 Policy-Layer Trace M2P（2026-08-06）

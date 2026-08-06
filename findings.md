@@ -1,5 +1,18 @@
 # EMBER Findings
 
+## 2026-08-06 Energy-Preserving Trace fresh formal训练证据
+
+- identity-fresh formal0→200自然完成：200 finite macros、96,000 action queries、19,200 K4
+  action-hidden video conditions、8个checkpoints、0 clip，source trainable=0且validation/test
+  action reads=0；wall=`7373.955s`，peak allocated/reserved=
+  `18,096,449,024/20,478,689,280` bytes。
+- 四个50步窗口的full24 raw gradient retention/cosine/negative-pair中位为
+  `.12497/.07199/.35870`、`.08564/.04393/.42391`、`.08050/.02884/.44022`、
+  `.05079/.00555/.48007`。相对上一版，保留真实频谱能量显著改善前150步的task-gradient
+  coexistence；最后50步仍向近正交抵消退化。
+- 这是representation修复有效的机制证据，不是closed-loop结论。functional loss从约`.15`
+  降至`.10511`也不得用于checkpoint选择；四点strict correct400仍是下一裁决。
+
 ## 2026-08-06 K4 Layer-Trace五臂与内部裁决：视频有效，频谱幅度被破坏
 
 - macro100五臂`correct/same/wrong/shuffled/reversed=99/92/57/94/105`；correct相对wrong

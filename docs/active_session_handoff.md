@@ -35,8 +35,14 @@
   nonfinite，step2起reader/axis均finite可达。步时约36.7--37.0s，peak allocated/reserved=
   `18,113,258,496/20,375,928,832` bytes，累计1,440 queries/288 videos，source trainable=0，
   六rank/3+3 NUMA/exact-resume闭合。profile权重弃用，config seal=`3b7eb4a`已push。
-- 当前只从identity启动新formal0→200；唯一root、设备/容量边界和exact command取
-  `task_plan.md`顶部formal launch合同。不得resume profile或上一版macro100。
+- launch commit`d833961`的identity-fresh formal0→200已自然完成：200 finite macros、
+  96,000 queries、19,200 K4 action-hidden video conditions、8个checkpoints、0 clip，
+  source trainable=0且validation/test action reads=0；wall=`7373.955s`、peak reserved=
+  `20,478,689,280` bytes。六张A40已自然释放。
+- 前三个50步窗口的full24 gradient retention为`.12497/.08564/.08050`，明显高于上一版；
+  最后窗口回落到`.05079`且pair cosine`.00555`，说明频谱修复改善早中期共存但尚不能写成
+  解决漂移。当前只执行`task_plan.md`顶部macro50/100/150/200 strict correct400合同，
+  不用functional loss或gradient挑点。
 
 ## 0.1 已完成并负裁决：K4 Policy-Layer Trace M2P
 

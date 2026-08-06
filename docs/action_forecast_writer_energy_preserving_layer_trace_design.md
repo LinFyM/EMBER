@@ -1,7 +1,7 @@
 # K4 Energy-Preserving Policy-Layer Trace M2P Writer
 
 状态：2026-08-06设计authority已封存，clean`22234c4`已原位实现并push；
-live A40 fresh/exact-resume profile已通过，config seal=`3b7eb4a`，等待formal fresh0→200。本文覆盖
+live A40 fresh/exact-resume profile与formal fresh0→200均已完成，等待预注册四点strict rollout。本文覆盖
 `action_forecast_writer_k4_layer_trace_m2p_design.md`的活动地位；旧方法由Git和sealed artifacts保存。
 
 ## 1. 决策
@@ -111,3 +111,11 @@ reward或outcome选择频谱。若失败，只根据fresh行为与task-gradient�
   loss=`.150377/.152822/.148504`，grad norm=`.000589/.000636/.000639`，0 clip/OOM/
   nonfinite，step2起reader和axis均有finite update。peak reserved=`20,375,928,832` bytes，
   三步约`36.98/36.91/36.70s`，权重永久弃用。
+- launch commit`d833961`从functional identity完成独立formal0→200：200 finite macros、
+  96,000 queries、19,200 K4 video conditions、8个完整checkpoints，0 clip，source
+  trainable=0且validation/test action reads=0；wall=`7373.955s`，peak reserved=
+  `20,478,689,280` bytes。
+- 四个50步窗口的full24 retention/cosine/negative-pair中位依次为
+  `.12497/.07199/.35870`、`.08564/.04393/.42391`、`.08050/.02884/.44022`、
+  `.05079/.00555/.48007`。前150步相对上一版明显改善，但末段再次接近共享credit抵消；
+  不据此选checkpoint，下一步仍严格评50/100/150/200 correct400。

@@ -4,7 +4,23 @@
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
-## 0.0 最新执行覆盖：K4 Policy-Layer Trace M2P winner五臂与内部裁决
+## 0.0 最新执行覆盖：Energy-Preserving Policy-Layer Trace M2P
+
+- 当前唯一活动authority为
+  `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`。旧layer-trace macro100五臂和
+  8-task内部probe已完成；`correct/same/wrong/shuffled/reversed=99/92/57/94/105`证明
+  视频task identity有效，但order信号未对齐closed-loop任务程序。
+- 最早故障是每`group × frequency`单独L2 normalize：它把原始总能量仅`.359%`的
+  高频8项相对放大约140倍。新canonical只以每视频一个scalar匹配旧总trace scale，
+  保留原始group/frequency相对能量和符号；K4、20 groups、DCT16、Reader/M2P、
+  rank16、full24 B20与信息墙不变。
+- 下一执行顺序：原位实现新schema/config/checkpoint family、完成聚焦CPU与全仓回归、
+  clean commit/push；live比较`gpu01/gpu02`后在最多6张空闲A40上完成fresh0→1和
+  exact-resume1→3 profile；通过后才fresh formal0→200与50/100/150/200 strict correct400。
+- 不加载任何旧Writer，不改LR/K/DCT/rank/optimizer/objective，不加SFT-only auxiliary loss。
+  如频谱修复后仍接近1/24 task-gradient抵消，才打开语义路由的sparse value experts。
+
+## 0.1 已完成并负裁决：K4 Policy-Layer Trace M2P
 
 - 当前唯一活动authority为
   `docs/action_forecast_writer_k4_layer_trace_m2p_design.md`。新canonical必须保留exact language
@@ -22,10 +38,8 @@
   queries、19,200 K4 videos、8个checkpoints、0 clip/OOM/nonfinite，wall`7350.114s`、peak
   reserved20.48GB。四点strict paired correct400也已完成：`69/99/88/94`、breadth=
   `5/6/6/6`，相邻gained/lost=`42/12,28/39,28/22`，union/intersection=`145/37`。
-- single winner固定macro100=99，未过v6-fast143或严格门；不续同一schedule。当前唯一GPU工作是
-  按`task_plan.md`顶部合同分两波完成macro100的same-task-other/wrong/shuffled/reversed，随后
-  做hashless内部path/trace/LoRA分析。每root仍需400 rows、42 shards、9 workers exit0，
-  每波live选最多6张空闲卡。
+- single winner固定macro100=99，未过v6-fast143或严格门；不续同一schedule。macro100的
+  same-task-other/wrong/shuffled/reversed与hashless内部path/trace/LoRA分析均已完成，GPU已释放。
 - `runs/outputs/pi05_as_writer_k4_layer_trace_m2p_profile_r6_b20_89f5384_20260806`只作失败
   diagnostic：启动时未在step1停下，且axis FFN pre-LN导致step2/3 loss爆到58.93/96.82。
   clean`ed4f46e`已移除dynamic value-path normalization；禁止resume该root，必须新root从
@@ -37,7 +51,7 @@
   0 clip/OOM/nonfinite，peak reserved20.38GB，step2起两个声明block可达。profile权重弃用；
   下一launch必须另起formal fresh root，不得resume任一profile。
 
-## 0.1 已完成：K4 Writer四点与内部裁决
+## 0.2 已完成：K4 Writer四点与内部裁决
 
 - 本节历史实验当时的sealed config为`configs/pi05_as_writer_k4_invariant_m2p_bci_v1.json`，authority为
   `docs/action_forecast_writer_fewshot_invariant_m2p_design.md`。它必须从functional identity

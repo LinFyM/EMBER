@@ -8,6 +8,21 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-06 K4 Layer-Trace五臂/内部裁决完成，开启Energy-Preserving Trace
+
+- macro100四个追加control全部自然完成并释放GPU；五臂为
+  `99/92/57/94/105`。correct相对wrong明显更好，证明视频任务语义有效；顺序
+  controls不降，说明时序差异未对齐任务程序。
+- 六卡8-task内部probe已完成，持久root为
+  `runs/outputs/pi05_as_writer_k4_layer_trace_m2p_macro0100_internal_refs1_r6_cd78d47_20260806`；
+  6份ownership、8 tasks、5 conditions/refs、trace→LoRA→action与频谱证据完整，无held action read。
+- 最早结构故障定位到每`group × frequency`单独L2 normalize把原始仅`.359%`
+  的high8能量相对放大约140倍。已封存
+  `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`，旧layer-trace不续训、不
+  warm-start。
+- 下一步原位实现每视频全局能量匹配、fresh identity/config/checkpoint family；聚焦
+  CPU合同与全仓回归后，live选最多6张空闲A40重新profile与formal。
+
 ## 2026-08-06 K4 Policy-Layer Trace四点strict correct400完成
 
 - 两波macro50/100与150/200均自然完成；每root 400 rows、42 shards、9 workers exit0，GPU

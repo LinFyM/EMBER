@@ -164,6 +164,23 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 ## Current focused task
 
 - 2026-08-06当前唯一活动方法为
+  `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`。上一版K4 layer-trace五臂已完成：
+  `correct/same/wrong/shuffled/reversed=99/92/57/94/105`；correct相对wrong明显更好，证明
+  action-hidden video task identity真实进入LoRA和closed loop，不得恢复language-only或忽略视频。
+- 最早故障已定位为`temporal_trace_tokens`对每个`group × DCT frequency`独立单位化：
+  原始DC energy fraction中位`.95664`，high8仅`.003592`，旧表示却把所有非零频率
+  放到等norm，使高频相对放大约140倍。强reversal操纵因此未形成有效closed-loop顺序语义。
+- 新canonical保留exact language、K4 action-hidden videos、20 all-layer groups、DCT16、Reader/M2P、
+  full24 B20和单套rank16 LoRA，只用每视频一个全局scalar匹配旧总trace energy，完整
+  保留group/frequency间原始相对能量、零项和符号。必须fresh architecture/config/
+  checkpoint family，不加载macro100或任何历史Writer。
+- 新方法与functional AS及未来reward credit共用同一video→LoRA接口，不引入监督专用
+  auxiliary loss。若频谱修复后full24 task gradients仍接近1/24抵消且行为不升，才打开
+  frozen-semantic routing驱动的condition-specific sparse value experts。
+- 原K4 Policy-Layer Trace M2P已完成fresh0→200、四点strict rollout、winner五臂和全部
+  内部分析；single winner macro100=`99`，低于v6-fast143与严格门`>150`，不续训、
+  不warm-start、不恢复其per-frequency normalization。
+- 2026-08-06已完成并负裁决的上一方法为
   `docs/action_forecast_writer_k4_layer_trace_m2p_design.md`：保持exact task language与K=4条
   action-hidden same-task videos联合生成一套LoRA，但不再把PI05 final hidden随机压到128维
   后让fresh通用M2P猜policy拓扑。新方法读取冻结PI05 action expert的20组all-layer trace，

@@ -1,5 +1,9 @@
 # K4 Policy-Layer Trace M2P Writer
 
+状态：2026-08-06已完成fresh0→200、四点strict rollout、winner五臂与全部内部分析，正式负裁决。
+活动authority已切换为`action_forecast_writer_energy_preserving_layer_trace_design.md`；本方法
+不得续训、warm-start或恢复逐`group × frequency`单位化的trace路径。
+
 状态：2026-08-06 fresh0→200与四点strict correct400完成，等待single winner五臂及内部裁决。本文覆盖
 Few-Shot Invariant-Program M2P的活动地位；旧方法及其checkpoint只保留为历史证据。
 

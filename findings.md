@@ -1,5 +1,23 @@
 # EMBER Findings
 
+## 2026-08-06 K4 Layer-Trace五臂与内部裁决：视频有效，频谱幅度被破坏
+
+- macro100五臂`correct/same/wrong/shuffled/reversed=99/92/57/94/105`；correct相对wrong
+  paired gained/lost=`61/19,p=2.73e-6`，证明video task identity已进入LoRA与closed loop。
+  same、shuffled、reversed却与correct同档，顺序差异未成为有效任务程序。
+- trace→reader→axis4→effective BA→fixed-action的same条件relative-L2中位约
+  `.995/.135/.112/.167/.040`，wrong约`1.319/.547/.528/.715/.244`；LoRA norm中位
+  `48.28`、stable rank`1.34`、top singular energy`.836`。因此不是忽略视频、低增益或
+  layer/group collapse。
+- 原始DCT trace的DC energy fraction中位`.95664`，high8总fraction仅`.003592`，
+  effective frequencies仅`1.092`。旧实现对每频向量独立单位化，使high8占约一半
+  token energy，相对放大约140倍；最弱频幅度相对最强频放大约73倍。
+- reversal只翻转奇DCT项符号，却因上述单位化将normalized trace推到近正交
+  relative-L2`1.414`，形成强BA/action操纵而closed-loop不受损。所以最早故障是
+  temporal spectrum amplitude semantics，不是立即增加experts。
+- 下一方法保留K4与完整video→LoRA链路，只用每视频一个全局scalar匹配旧总
+  trace energy，保留原始group/frequency间相对能量与符号。这一接口对AS和未来RL相同。
+
 ## 2026-08-06 K4 Policy-Layer Trace四点：层对齐只有局部增益，task换手未解
 
 - macro50/100/150/200 strict correct400=`69/99/88/94`、breadth=`5/6/6/6`；每点均为

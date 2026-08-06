@@ -8,7 +8,28 @@
 `docs/a100_to_bci_migration_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
 runner、split、路径或 GPU 权限。
 
-## 当前K4 Policy-Layer Trace M2P推进（2026-08-06）
+## 当前K4 Energy-Preserving Policy-Layer Trace M2P推进（2026-08-06）
+
+- [x] 完成上一版macro100五臂与8-task内部probe：
+  `correct/same/wrong/shuffled/reversed=99/92/57/94/105`，correct相对wrong的paired
+  gained/lost=`61/19,p=2.73e-6`，证明video task identity真实进入LoRA与closed loop；
+  但shuffled/reversed不低于correct，时序差异未对齐任务程序。
+- [x] 定位最早失效接口：原始DCT trace的DC能量占比中位`.95664`，高频8项
+  总占比仅`.003592`；旧实现却把每个`group × frequency`独立归一为单位norm，
+  将高频相对放大约140倍。这会制造强reversal操纵却不产生有效closed-loop顺序语义。
+- [x] 封存
+  `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`：保留exact language、K4
+  action-hidden videos、20 groups、DCT16、Reader/M2P、rank16与full24 B20，只用每视频
+  一个全局scalar匹配旧总trace energy，完整保留group/frequency间原始相对能量和符号。
+- [ ] 原位替换canonical trace normalization，建立新architecture/config/checkpoint family并严格
+  拒载旧checkpoint；完成聚焦CPU合同、全仓回归与real config load。
+- [ ] clean/push后live比较`gpu01/gpu02`，只用最多6张空闲A40完成fresh0→1与
+  exact-resume1→3 profile；通过后从functional identity fresh0→200，严格评50/100/150/200。
+- [ ] 按single-checkpoint correct、breadth、video causality与task-gradient证据继续迭代；最低严格
+  `>150/400`，达到后仍继续提高。若频谱修复后credit仍接近1/24抵消，才打开
+  frozen-semantic routing驱动的condition-specific sparse value experts。
+
+## 已完成K4 Policy-Layer Trace M2P（2026-08-06）
 
 - [x] 按K4内部证据与SHINE/Doc-to-LoRA的结构原则封存
   `docs/action_forecast_writer_k4_layer_trace_m2p_design.md`。保持四条action-hidden视频联合
@@ -29,7 +50,7 @@ runner、split、路径或 GPU 权限。
   - [x] clean`44e248b`在`gpu01:0,1,2|4,5,7`严格分段通过：loss稳定约`.148--.153`、
     grad norm约`.001`、0 clip/OOM/nonfinite，step2起两个block均可达；三步约34.6--34.7秒，
     peak reserved20.38GB，六rank exact-resume闭合，profile权重弃用。
-- [ ] 从functional identity fresh0→200，strict correct400固定评50/100/150/200；按
+- [x] 从functional identity fresh0→200，strict correct400固定评50/100/150/200；按
   layer trace、reader、axis M2P、BA/action leverage、task-gradient coexistence与闭环换手的
   最早失效接口分析并继续迭代，single checkpoint必须严格`>150`且继续尽可能提高。
   - [x] fresh formal0→200自然完成：200 finite macros、96,000 action queries、19,200
@@ -38,7 +59,7 @@ runner、split、路径或 GPU 权限。
   - [x] 用同一paired K4/state/RNG panel完成macro50/100/150/200 strict correct400：
     correct=`69/99/88/94`、breadth=`5/6/6/6`，single winner为macro100。四点完成前没有按
     functional loss或内部梯度选择checkpoint。
-  - [ ] 对macro100完成same-task-other/wrong/shuffled/reversed四个paired full400，并完成
+  - [x] 对macro100完成same-task-other/wrong/shuffled/reversed四个paired full400，并完成
     layer trace→reader→axis M2P→BA→fixed-action、LoRA谱/能量与task-gradient内部分析；只按
     最早失败接口决定下一架构。
 

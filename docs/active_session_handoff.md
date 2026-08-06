@@ -4,7 +4,30 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0. 最新覆盖：K4 Policy-Layer Trace M2P四点完成，等待winner五臂与内部裁决
+## 0. 最新覆盖：Energy-Preserving Policy-Layer Trace M2P已开启
+
+- 当前唯一活动authority为
+  `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`。它保留exact task language与
+  K=4条action-hidden same-task videos共同生成一套LoRA，保留冻结PI05的20组all-layer
+  innovations、DCT16、Reader/M2P、rank16与full24 B20，不忽略视频。
+- 上一版macro100五臂已完成：`correct/same/wrong/shuffled/reversed=99/92/57/94/105`。
+  correct相对wrong的paired gained/lost=`61/19,p=2.73e-6`，证明video task identity真实传到
+  LoRA与closed loop；但order controls不降，顺序语义仍未对齐任务程序。
+- 8-task内部probe确认trace→reader→axis→BA→fixed-action链路非零，LoRA norm中位
+  `48.28`、stable rank`1.34`、top singular energy`.836`，reader/axis覆盖约12--14个policy groups；
+  因此不是视频被旁路、LoRA无杆杆或layer/group坍缩。
+- 已定位更早的表示故障：原始DCT中DC energy占比中位`.95664`，高频8项仅
+  `.003592`，而旧`temporal_trace_tokens`对每个`group × frequency`独立L2单位化，
+  将低能量高频相对放大约140倍。reversal因奇频符号翻转产生强BA/action操纵，却没有
+  形成更好closed-loop任务顺序，这比先增加experts更早。
+- 新方法只用每视频一个全局scalar将raw pooled trace总能量匹配旧输入总scale，同时保留
+  group/frequency间原始相对能量、零项和符号。它对functional AS与未来reward credit使用
+  同一接口，不是监督学习trick。
+- 新方法必须fresh architecture/config/checkpoint family，不加载macro100或任何历史Writer。
+  实现和CPU合同通过后，才live选择`gpu01/gpu02`最多6张空闲A40做fresh0→1、
+  exact-resume1→3 profile，再从identity formal0→200与严格四点评测。
+
+## 0.1 已完成并负裁决：K4 Policy-Layer Trace M2P
 
 - 当前唯一活动authority为
   `docs/action_forecast_writer_k4_layer_trace_m2p_design.md`。它保留exact task language与K4
@@ -52,11 +75,10 @@
   `[12,1,0,34,26,13,0,2]`、`[15,1,0,34,27,11,0,6]`。相邻gained/lost=
   `42/12,28/39,28/22`，union/intersection=`145/37`，K4 set/state/env/policy RNG严格配对。
 - single winner固定macro100=`99`，仍低于旧K4 winner108、v6-fast143和严格门`>150`；
-  layer alignment只改善旧K4同点94，未形成持续共同累积。当前只对macro100完成其余四个
-  video-control arms与预注册内部分析；不续训、不warm-start、不按loss另挑点。精确launch合同
-  取`task_plan.md`顶部。
+  layer alignment只改善旧K4同点94，未形成持续共同累积。macro100其余四个
+  video-control arms与预注册内部分析均已完成；本方法不续训、不warm-start、不按loss另挑点。
 
-## 0.1 已完成：K4 Invariant-Program M2P四点与内部裁决
+## 0.2 已完成：K4 Invariant-Program M2P四点与内部裁决
 
 - owner已解除讨论暂停、恢复自主持续推进，并明确EMBER不能忽略视频；允许few-shot。
   当前唯一活动authority为

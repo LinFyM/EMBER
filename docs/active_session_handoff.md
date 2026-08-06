@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0. 最新覆盖：Sparse Semantic-Expert Trace实现完成，等待A40 profile
+## 0. 最新覆盖：Sparse Semantic-Expert Trace profile已seal，等待formal fresh0→200
 
 - 当前唯一活动authority为
   `docs/action_forecast_writer_sparse_semantic_expert_trace_design.md`。它保留exact task language、
@@ -30,7 +30,12 @@
 - 独立route authority由当前冻结source与train24 language重新生成，centers/mean与历史同原则
   artifact逐元素一致；primary/top2 usage=`5/7/6/1/2/1/1/1`与`7/11/6/4/4/5/3/8`，无塌缩。
   聚焦route、dense-reference、zero-video、未选expert零梯度、identity、schema与checkpoint合同
-  已通过。下一步clean/push后做A40 fresh0→1、exact-resume1→3 profile；旧Writer权重禁止加载。
+  已通过。
+- clean`bf1aae6`上的六卡profile已完成fresh0→1与same-root exact-resume1→3：三步
+  `48.051/48.732/48.535s`，0 clip/OOM/nonfinite，peak reserved`45,589,987,328` bytes；step2
+  起全部8 experts×Reader/axis 16 blocks可达，累计1,440 queries/288 videos，source trainable=0。
+  config现已seal；下一步从新clean pushed seal commit做identity-fresh formal0→200，profile权重
+  永久弃用，旧Writer权重禁止加载。
 
 ## 0.0 已完成并负裁决：Evidence-Factorized Policy-Layer Trace M2P
 

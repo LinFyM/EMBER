@@ -17,10 +17,11 @@
   correct/same/wrong/shuffle/reverse同language必须同route，zero-video必须identity。
 - hashless route authority、fresh architecture/config/checkpoint family、top2完整expert
   gather/scatter和expert-local task-gradient owner均已实现；真实参数为`487,415,808`，route
-  usage无塌缩，聚焦CPU合同已通过。clean/push后再live选最多6张空闲A40做fresh0→1、
-  exact-resume1→3 profile。正式训练必须等profile seal，不加载任何旧Writer。
-- profile若OOM先减frozen descriptor chunk或
-  做optimizer state分片，不改K4、B20、full24、rank、objective、LR或checkpoint schedule。
+  usage无塌缩，聚焦CPU合同已通过。clean`bf1aae6`的六卡A40 profile也已完成fresh0→1、
+  exact-resume1→3：约48.1--48.7s/macro，0 clip/OOM/nonfinite，全部16个expert-local blocks从
+  step2可达，peak allocated/reserved=`36.71/45.59GB`。profile权重弃用。
+- config已seal，下一步从新clean pushed seal commit做identity-fresh formal0→200。不得加载旧
+  Writer或profile权重；显存余量有限，不扩大K4、B20、full24、rank或额外activation。
 
 ## 0.1 已完成并负裁决：Energy-Preserving Policy-Layer Trace M2P
 

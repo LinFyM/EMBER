@@ -10,6 +10,9 @@
 - tiny dense-reference与conditional gather/scatter数值一致；zero trace严格zero memory，未选expert
   无梯度，selected experts在zero-output bootstrap拥有预期梯度入口。下一证据必须来自A40真实
   fresh/exact-resume profile，不能由参数隔离本身宣称性能改善。
+- 六卡A40真实profile已通过：fresh0→1、exact-resume1→3的三步均finite，0 clip/OOM；step1
+  八个Reader owners可达，step2起16个Reader/axis blocks全部非零。峰值reserved`45.59GB`，说明
+  top2 activation确实适配46GB卡但余量有限；这只证明工程/梯度合同，不证明closed-loop提升。
 
 ## 2026-08-07 Evidence-Factorized五臂/内部裁决与完整expert门
 

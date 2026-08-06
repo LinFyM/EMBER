@@ -24,7 +24,7 @@ runner、split、路径或 GPU 权限。
   validation/test input或rollout选择route。
 - [x] 原位实现唯一canonical sparse-expert Writer、fresh config/schema/checkpoint/task-gradient
   owner，退休single-expert executable path；完成聚焦合同、全仓回归、compileall与real load。
-- [ ] clean/push后live比较`gpu01/gpu02`，只用最多6张空闲A40完成longest105、K4/B20/B2、
+- [x] clean/push后live比较`gpu01/gpu02`，只用最多6张空闲A40完成longest105、K4/B20/B2、
   fresh0→1和same-root exact-resume1→3 profile；profile权重弃用。
 - [ ] profile seal后从functional identity正式fresh0→200、每25 checkpoint；严格评
   50/100/150/200 correct400，single winner再做五臂和内部expert-local gradient/path分析。

@@ -1,8 +1,8 @@
 # K4 Sparse Semantic-Expert Policy-Layer Trace Writer
 
 状态：2026-08-07设计与实现authority。canonical实现、fresh schema/checkpoint family、独立
-route artifact和聚焦CPU合同已完成；A40 profile与formal launch尚未开始。任何旧Writer
-checkpoint均不兼容且不得加载。
+route artifact、聚焦CPU合同及A40 fresh/exact-resume profile已完成；formal launch尚未开始。
+任何旧Writer checkpoint均不兼容且不得加载。
 
 ## 1. 决策
 
@@ -155,6 +155,14 @@ fixed action；functional loss不选点。
 若所有接口闭合但行为仍低，下一步才根据expert-local credit与closed-loop结果决定route粒度或
 reward credit，不能用旧best warm-start、增加训练步数、挑video、调route或融合checkpoint救点。
 最低目标仍是同一single checkpoint strict correct`>150/400`，达到后继续提高。
+
+六卡A40 profile已按上述合同完成。`gpu01:0,1,2|4,5,7`、3+3 NUMA下fresh0→1再
+same-root exact-resume1→3；三步wall=`48.051/48.732/48.535s`，loss=
+`.150377/.152819/.148503`，grad norm=`.0002896/.0003028/.0002790`，0 clip/OOM/nonfinite。
+step1八个Reader owners均可达，step2起八个experts的Reader/axis共16 blocks全部非零；source
+trainable=0，累计1,440 queries/288 videos。峰值allocated/reserved=
+`36,709,104,128/45,589,987,328` bytes，B20/B2/K4/16-frame chunk可运行但显存余量有限，formal
+不得扩大batch/K或额外保留activation。profile checkpoints永久弃用。
 
 ## 9. 禁调项
 

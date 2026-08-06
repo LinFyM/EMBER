@@ -183,9 +183,11 @@ single-checkpoint、无hash、不使用subagent与安全边界。
 - route authority与canonical fresh architecture/config/checkpoint已完成：8 experts真实
   `487,415,808` trainable、top2 conditional execution，primary/top2 train usage无塌缩；冻结
   route、dense-reference、zero identity、未选expert零梯度与expert-local gradient ownership合同
-  已通过。下一步只从clean pushed commit做A40 fresh0→1、same-root exact-resume1→3 profile。
-  不得加载任何旧Writer、恢复只隔离final heads的Direction Store、使用learned/outcome router或
-  改K4/B20/full24/rank/objective。profile seal前不得启动formal。
+  已通过。clean`bf1aae6`上的六卡A40 fresh0→1、same-root exact-resume1→3 profile也已通过：
+  0 clip/OOM/nonfinite、step2起16个expert-local blocks全部可达，peak reserved45.59GB。config
+  已seal，下一步只从新clean pushed seal commit做identity-fresh formal0→200。不得加载任何旧Writer
+  或profile权重、恢复只隔离final heads的Direction Store、使用learned/outcome router或改
+  K4/B20/full24/rank/objective。
 - 上一活动方法为
   `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`。上一版K4 layer-trace五臂已完成：
   `correct/same/wrong/shuffled/reversed=99/92/57/94/105`；correct相对wrong明显更好，证明

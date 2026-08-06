@@ -9,7 +9,9 @@
   `7/11/6/4/4/5/3/8`；mean/centers与历史同原则结果逐元素一致。真实参数
   `487,415,808`，272 tensors。
 - 聚焦route/dense equivalence/zero identity/unselected-gradient/config/checkpoint/model合同通过；
-  当前只差clean commit/push后的六卡longest105 fresh0→1、exact-resume1→3 profile，formal仍blocked。
+  clean`bf1aae6`六卡longest105 profile随后完成fresh0→1、exact-resume1→3。三步约48.1--48.7s，
+  loss/gradient finite、0 clip/OOM，step2起全部16 expert-local blocks可达，peak reserved45.59GB；
+  累计1,440 queries/288 videos且source trainable=0。profile权重弃用，config已seal等待formal。
 
 ## 2026-08-07 Evidence-Factorized完整裁决并开启Sparse Semantic Experts
 

@@ -138,14 +138,61 @@
     "optimizer_clock": "formal_200_step_scheduler_with_early_stop_at_3"
   },
   "profile_evidence": {
-    "status": "pending_live_bci_a40_profile",
+    "status": "sealed_live_bci_a40_fresh_and_exact_resume",
     "profile_teacher_video_seed": 174,
     "primary_candidate": {
       "max_frames_per_encoder_call": 16,
       "per_task_action_batch_size": 20,
       "functional_policy_microbatch_size": 2
     },
+    "selected_node": "gpu01",
+    "selected_physical_devices": [0, 1, 2, 4, 5, 7],
+    "selected_device_uuids": [
+      "GPU-3e9b04dd-0cf4-b7f3-4c03-175aa9ee6270",
+      "GPU-658b6043-6454-1228-bffc-0e2fe22e5013",
+      "GPU-845a7b73-38e2-8a13-12ab-4be97474ef13",
+      "GPU-e59426ed-ed41-cb75-2190-f50841cff288",
+      "GPU-2d30f244-9a07-c9d4-8753-525d098dbe3b",
+      "GPU-21b5514a-82f0-4d24-21ea-1f8198d20915"
+    ],
+    "rank_numa_topology": [0, 0, 0, 1, 1, 1],
+    "implementation_commit": "bf1aae6",
+    "launch_commit": "bf1aae6",
+    "root": "runs/outputs/pi05_as_writer_k4_sparse_semantic_expert_trace_m2p_profile_r6_b20_bf1aae6_20260807",
+    "segments": ["fresh_0_to_1", "exact_resume_1_to_3"],
     "optimizer_clock": "formal_200_step_scheduler_with_early_stop_at_3",
+    "applied_lrs": [
+      1.1538461538461538e-5,
+      2.3076923076923093e-5,
+      3.461538461538459e-5
+    ],
+    "step_seconds_max": [
+      48.05140448300517,
+      48.731822389992885,
+      48.53467946499586
+    ],
+    "mean_functional_action_loss": [
+      0.1503773539637526,
+      0.15281870619704327,
+      0.14850330104430517
+    ],
+    "max_cuda_allocated_bytes": 36709104128,
+    "max_cuda_reserved_bytes": 45589987328,
+    "gradient_norm_before_clip_max": [
+      0.00028961384668946266,
+      0.0003027593484148383,
+      0.00027901475550606847
+    ],
+    "gradient_clip_count": 0,
+    "oom_count": 0,
+    "nonfinite_count": 0,
+    "step2_all_sixteen_expert_blocks_reachable": true,
+    "step2_all_eight_selected_experts_reachable": true,
+    "source_policy_trainable_parameter_count": 0,
+    "completed_policy_queries": 1440,
+    "completed_teacher_videos": 288,
+    "exact_resume_checkpoint": "checkpoints/step_00000001",
+    "final_profile_checkpoint": "checkpoints/step_00000003",
     "profile_weights_reusable_for_formal": false,
     "oom_fallback_only": {
       "max_frames_per_encoder_call": 8,
@@ -155,8 +202,8 @@
     }
   },
   "formal_run": {
-    "status": "blocked_pending_live_profile",
-    "launch_state": "must_seal_fresh_and_exact_resume_profile_first",
+    "status": "sealed",
+    "launch_state": "ready_for_fresh_formal_launch",
     "expected_world_size": 6,
     "total_steps": 200,
     "per_rank_batch_size": 20,

@@ -161,8 +161,10 @@ support，不能在逐token单位化和全局raw amplitude两个破坏性极端�
   normalized direction、raw physical value和3维evidence按同一K4 token顺序进入single-attention
   dual-value Reader。Writer参数=`60,926,976`；BCI assets下全仓`192 passed`、compileall、real
   config load、fresh family和diff check闭合，formal仍blocked。
-- [ ] clean/push后live比较双节点，在最多6张空闲A40上完成longest105 B20 fresh0→1、
-  exact-resume1→3 profile，权重弃用。
+- [x] clean/push后live比较双节点，在`gpu01:0,1,2|4,5,7`六张空闲A40完成longest105 B20
+  fresh0→1、exact-resume1→3 profile，权重弃用。三步loss=`.150377/.152820/.148508`，
+  0 clip/OOM/nonfinite，step2起evidence key、双value、vector fusion、Reader与axis均finite可达；
+  peak allocated/reserved=`18,218,217,984/20,470,300,672` bytes。
 - [ ] 从identity formal0→200，strict correct400固定评50/100/150/200；single checkpoint严格
   `>150`且继续提高。
 

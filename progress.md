@@ -17,8 +17,10 @@ GPU范围和训练步长是当时快照；活动状态只取
   20-group DCT16和axis M2P，从raw token同时形成normalized direction、physical value及
   energy/K4-consensus key evidence，用shared attention和bias-free vector fusion组合。
 - canonical Reader、fresh schemas/config/checkpoint family已原位替换完成；Writer参数精确
-  `60,926,976`，全仓`192 passed`、compileall、real config load和diff check闭合。新config
-  formal保持blocked，尚未启动GPU；下一步clean/push后live A40 fresh0→1、resume1→3 profile。
+  `60,926,976`，全仓`192 passed`、compileall、real config load和diff check闭合。
+- live`gpu01:0,1,2|4,5,7`六卡fresh0→1、exact-resume1→3 profile已通过并自然释放GPU：
+  三步loss=`.150377/.152820/.148508`，0 clip/OOM/nonfinite，step2起全部新Reader与axis可达，
+  peak reserved20.47GB。profile权重弃用，formal已seal；下一步identity-fresh0→200。
   不加载旧Writer、不用subagent、不做hash检查或scalar/band sweep。
 
 ## 2026-08-06 K4 Layer-Trace五臂/内部裁决完成，开启Energy-Preserving Trace

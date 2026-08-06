@@ -1,6 +1,6 @@
 # K4 Evidence-Factorized Policy-Layer Trace M2P Writer
 
-状态：2026-08-06设计authority与canonical原位实现已封存，等待live A40 profile。本文覆盖
+状态：2026-08-06设计、canonical原位实现与live A40 profile已封存，formal可从identity启动。本文覆盖
 `action_forecast_writer_energy_preserving_layer_trace_design.md`的活动地位；旧方法只由Git与
 sealed artifacts保存。
 
@@ -165,7 +165,15 @@ launch与checkpoint family均与Energy-Preserving不兼容；formal在profile完
 实现后Writer精确trainable参数为`60,926,976`。聚焦合同覆盖unit/zero direction、有界energy
 evidence、leave-one-out K4 permutation equivariance、amplitude/content分离、zero-video
 identity、step1/step2梯度生命周期与hashless size/schema checkpoint；BCI assets下全仓
-`192 passed`，compileall、real config load和diff check通过。尚未启动GPU或产生profile权重。
+`192 passed`，compileall、real config load和diff check通过。
+
+live`gpu01:0,1,2|4,5,7`六卡以B20/B2、16-frame chunk严格完成fresh0→1和same-root
+exact-resume1→3。三步loss=`.150377/.152820/.148508`、grad norm=
+`.000473/.000502/.000489`，0 clip/OOM/nonfinite；step2起evidence key、direction/physical
+values、vector fusion、Reader和axis blocks均有finite更新。峰值allocated/reserved=
+`18,218,217,984/20,470,300,672` bytes，累计1,440 action queries和288 action-hidden videos；
+source trainable=0，validation/test action reads=0。profile权重永久弃用，formal只允许从新的
+functional identity root启动。
 
 ## 9. 禁调项
 

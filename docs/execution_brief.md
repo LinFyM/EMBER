@@ -12,10 +12,12 @@
   读取双vector values并fusion后沿用四block axis M2P。
 - canonical Reader与全套fresh schema/config/checkpoint family已原位替换；新唯一config为
   `configs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_bci_v1.json`，Writer参数
-  `60,926,976`，全仓`192 passed`、compileall、real config load和diff check通过。下一执行
-  顺序是clean commit/push后live比较双节点，只用最多6张空闲A40做fresh0→1、resume1→3 profile。
+  `60,926,976`，全仓`192 passed`、compileall、real config load和diff check通过。live
+  `gpu01:0,1,2|4,5,7`六卡fresh0→1、exact-resume1→3 profile已通过：0 clip/OOM/nonfinite，
+  step2起全部新Reader/axis模块可达，peak reserved20.47GB；权重弃用，formal已seal。下一执行
+  顺序是独立functional-identity fresh0→200。
 - 不做power-law/band sweep、scalar gate、SFT-only auxiliary、sparse experts或旧checkpoint
-  warm-start。profile通过前formal blocked。
+  warm-start。
 
 ## 0.1 已完成并负裁决：Energy-Preserving Policy-Layer Trace M2P
 

@@ -17,9 +17,13 @@
   gradient却丢失task direction。它不使用SFT-only loss或outcome，AS与未来RL共用同一接口。
 - canonical Reader与fresh incompatible schemas/config/checkpoint family已原位实现；新唯一config为
   `configs/pi05_as_writer_k4_evidence_factorized_layer_trace_m2p_bci_v1.json`，Writer参数精确
-  `60,926,976`。BCI assets下全仓`192 passed`、compileall、real config load和diff check闭合；
-  formal仍fail-close，尚未启动GPU。下一步clean/push后只做fresh0→1、resume1→3 A40 profile；
-  不加载任何旧Writer，不续Energy-Preserving，不先开sparse experts。
+  `60,926,976`。BCI assets下全仓`192 passed`、compileall、real config load和diff check闭合。
+- live`gpu01:0,1,2|4,5,7`六卡profile已严格fresh0→1、exact-resume1→3完成；三步
+  loss=`.150377/.152820/.148508`，0 clip/OOM/nonfinite，step2起evidence key、direction/
+  physical values、vector fusion、Reader与axis均finite可达；peak allocated/reserved=
+  `18,218,217,984/20,470,300,672` bytes，累计1,440 queries/288 action-hidden videos。
+  profile权重弃用，formal已seal。下一步只从functional identity独立fresh0→200；不加载任何
+  旧Writer，不续Energy-Preserving，不先开sparse experts。
 
 ## 0.1 已完成并负裁决：Energy-Preserving Policy-Layer Trace M2P
 

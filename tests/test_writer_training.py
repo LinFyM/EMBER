@@ -63,12 +63,16 @@ def test_profile_uses_independent_video_seed_without_mutating_formal_config() ->
     assert args.stop_after_step == 3
 
 
-def test_formal_remains_blocked_until_fresh_evidence_factorized_profile() -> None:
+def test_formal_is_sealed_only_by_fresh_evidence_factorized_profile() -> None:
     config = load_writer_config(CONFIG)
-    assert config["formal_run"]["status"] == "pending_profile"
-    assert config["formal_run"]["launch_state"] == "blocked_until_live_profile"
+    assert config["formal_run"]["status"] == "sealed"
+    assert config["formal_run"]["launch_state"] == "ready_for_fresh_formal_launch"
     evidence = config["profile_evidence"]
-    assert evidence["status"] == "pending_live_bci_a40_fresh_and_exact_resume"
+    assert evidence["status"] == "sealed_live_bci_a40_fresh_and_exact_resume"
+    assert evidence["segments"] == ["fresh_0_to_1", "exact_resume_1_to_3"]
+    assert evidence["gradient_clip_count"] == 0
+    assert evidence["step2_all_declared_blocks_reachable"] is True
+    assert evidence["step2_evidence_key_direction_physical_and_vector_fusion_reachable"] is True
     assert evidence["profile_weights_reusable_for_formal"] is False
 
 

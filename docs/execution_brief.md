@@ -4,7 +4,18 @@
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
-## 0.0 最新执行覆盖：Energy-Preserving Policy-Layer Trace M2P
+## 0.0 最新执行覆盖：Evidence-Factorized Policy-Layer Trace M2P
+
+- 当前唯一活动authority为
+  `docs/action_forecast_writer_evidence_factorized_trace_design.md`。从现有raw DCT同时构造
+  normalized direction、physical value与energy/K4-consensus key evidence；single attention
+  读取双vector values并fusion后沿用四block axis M2P。
+- 下一执行顺序：原位替换Reader与全套fresh schema/config，完成聚焦CPU和全仓回归；clean
+  commit/push后live比较双节点，只用最多6张空闲A40做fresh0→1、resume1→3 profile。
+- 不做power-law/band sweep、scalar gate、SFT-only auxiliary、sparse experts或旧checkpoint
+  warm-start。profile通过前formal blocked。
+
+## 0.1 已完成并负裁决：Energy-Preserving Policy-Layer Trace M2P
 
 - 当前唯一活动authority为
   `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`。旧layer-trace macro100五臂和

@@ -4,7 +4,21 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0. 最新覆盖：Energy-Preserving Policy-Layer Trace M2P已开启
+## 0. 最新覆盖：Evidence-Factorized Policy-Layer Trace M2P已开启
+
+- 当前唯一活动authority为
+  `docs/action_forecast_writer_evidence_factorized_trace_design.md`。它保留exact task language与
+  K4 action-hidden videos，不再在per-token unit direction和global raw amplitude之间二选一。
+- 每个raw DCT token显式分解为normalized direction`u`、physical coefficient`p`及
+  group/frequency energy share + K4 leave-one-out direction consensus`phi`。`phi`只进入key；
+  shared attention分别读取direction/physical vector values，再bias-free vector fusion进入现有
+  layer/parameter-axis M2P。
+- 该设计直接对应本轮证据：unit-only有task specificity但order噪声过强，raw-only改善早期
+  gradient却丢失task direction。它不使用SFT-only loss或outcome，AS与未来RL共用同一接口。
+- 下一步只做原位实现、fresh incompatible schemas/config、CPU合同与A40 profile；不加载任何
+  旧Writer，不续Energy-Preserving，不先开sparse experts。
+
+## 0.1 已完成并负裁决：Energy-Preserving Policy-Layer Trace M2P
 
 - 当前唯一活动authority为
   `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`。它保留exact task language与

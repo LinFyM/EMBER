@@ -147,12 +147,14 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 37. `docs/action_forecast_writer_factorized_condition_kernel_memory_design.md`
 38. `docs/action_forecast_writer_fewshot_invariant_m2p_design.md`
 39. `docs/action_forecast_writer_k4_layer_trace_m2p_design.md`
-40. `task_plan.md`
-41. `findings.md`
-42. `progress.md`
-43. `docs/concept.md`
-44. `docs/decisions_and_open_questions.md`
-45. `docs/novelty_and_landscape.md`
+40. `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`
+41. `docs/action_forecast_writer_evidence_factorized_trace_design.md`
+42. `task_plan.md`
+43. `findings.md`
+44. `progress.md`
+45. `docs/concept.md`
+46. `docs/decisions_and_open_questions.md`
+47. `docs/novelty_and_landscape.md`
 
 本post-seal分支已完成Target-Bound裁决并打开Semantic Factor-Basis；修改或运行前
 仍必须完整阅读Target-Bound与Semantic Factor-Basis两份design。历史CV/Target-Bound
@@ -164,6 +166,14 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 ## Current focused task
 
 - 2026-08-06当前唯一活动方法为
+  `docs/action_forecast_writer_evidence_factorized_trace_design.md`。它保留exact language、K4
+  action-hidden videos、20 policy groups、DCT16和single rank16 LoRA，将raw coefficient显式
+  分解为normalized direction、physical value与energy/K4-consensus evidence。evidence只进key，
+  shared attention读取双vector values并bias-free fusion后进入原四block axis M2P。
+- 新方法是unit-only与raw-only两个正式反事实后的根因设计，不是scalar/band/power-law插值；
+  AS与未来RL使用同一video→LoRA图。必须fresh incompatible architecture/config/checkpoint，
+  不加载任何旧Writer，不先开sparse experts。
+- 上一活动方法为
   `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`。上一版K4 layer-trace五臂已完成：
   `correct/same/wrong/shuffled/reversed=99/92/57/94/105`；correct相对wrong明显更好，证明
   action-hidden video task identity真实进入LoRA和closed loop，不得恢复language-only或忽略视频。

@@ -8,6 +8,17 @@ GPU范围和训练步长是当时快照；活动状态只取
 最新段落，
 不能用旧快照覆盖后续owner决定。
 
+## 2026-08-06 Evidence-Factorized Trace设计开启
+
+- Energy-Preserving的四点、五臂与全部内部分析已封存并释放GPU；method行为负裁决，但与
+  unit-direction前版共同明确了direction/content和physical reliability不能用一次破坏性
+  normalization绑定。
+- 新authority为`docs/action_forecast_writer_evidence_factorized_trace_design.md`：保留K4视频、
+  20-group DCT16和axis M2P，从raw token同时形成normalized direction、physical value及
+  energy/K4-consensus key evidence，用shared attention和bias-free vector fusion组合。
+- 当前尚未改代码或启动GPU；下一步原位替换唯一Reader、fresh schemas/config、聚焦CPU合同与
+  A40 profile。不加载旧Writer、不用subagent、不做hash检查或scalar/band sweep。
+
 ## 2026-08-06 K4 Layer-Trace五臂/内部裁决完成，开启Energy-Preserving Trace
 
 - macro100四个追加control全部自然完成并释放GPU；五臂为

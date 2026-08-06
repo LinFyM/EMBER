@@ -10,6 +10,8 @@ runner、split、路径或 GPU 权限。
 
 ## 当前K4 Energy-Preserving Policy-Layer Trace M2P推进（2026-08-06）
 
+> 本节方法已完成并负裁决；当前活动设计见下一节。
+
 - [x] 完成上一版macro100五臂与8-task内部probe：
   `correct/same/wrong/shuffled/reversed=99/92/57/94/105`，correct相对wrong的paired
   gained/lost=`61/19,p=2.73e-6`，证明video task identity真实进入LoRA与closed loop；
@@ -144,7 +146,23 @@ energy`.793`，identity→correct fixed-action差异中位`.581`。因此最早�
 amplitude让DC和高能policy groups淹没弱但task-discriminative的direction，而不是Writer容量、
 LoRA leverage或先前预注册的shared expert credit。下一方法必须同时保留direction与physical
 support，不能在逐token单位化和全局raw amplitude两个破坏性极端之间二选一；暂不打开sparse
-experts。
+  experts。
+
+## 当前K4 Evidence-Factorized Policy-Layer Trace M2P推进（2026-08-06）
+
+- [x] 用逐频率单位化与raw-amplitude两个严格反事实定位破坏性二选一：前者保留video
+  direction但放大低能order噪声，后者改善早期gradient coexistence却消除video task
+  specificity与policy-group diversity。
+- [x] 封存`docs/action_forecast_writer_evidence_factorized_trace_design.md`：从同一raw DCT同时
+  保留normalized direction与physical coefficient，以group/frequency energy share和K4
+  leave-one-out direction consensus只作key evidence，再用shared-attention dual vector values
+  和bias-free fusion进入原axis M2P。
+- [ ] 原位实现新唯一architecture/config/checkpoint family，退休Energy-Preserving活动path；
+  完成聚焦CPU合同、全仓回归、real config load和architecture gate。
+- [ ] clean/push后live比较双节点，在最多6张空闲A40上完成longest105 B20 fresh0→1、
+  exact-resume1→3 profile，权重弃用。
+- [ ] 从identity formal0→200，strict correct400固定评50/100/150/200；single checkpoint严格
+  `>150`且继续提高。
 
 ## 已完成K4 Policy-Layer Trace M2P（2026-08-06）
 

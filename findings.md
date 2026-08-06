@@ -1,5 +1,17 @@
 # EMBER Findings
 
+## 2026-08-06 从destructive normalization转向Evidence-Factorized Trace
+
+- 两个同topology fresh反事实形成闭环：unit direction保留task specificity但将low-energy
+  order modes放大约140倍；global raw amplitude使前150步task-gradient更共存，却把
+  correct/wrong从`99/57`压成`85/80`并把Reader effective groups从13.97压到10.63。
+- 两者都能产生高增益、非纯rank1 LoRA，故不能再把direction与evidence reliability折成一个
+  scalar amplitude。下一设计从同一raw DCT显式保留normalized direction与physical value，
+  用group/frequency energy share及K4 leave-one-out direction consensus只作key evidence，
+  shared attention后用vector fusion组合两路content。
+- 该表示不依赖AS loss或LIBERO outcome，未来reward/RL使用同一video→LoRA图；只有新Reader
+  闭合而shared credit再次近1/24抵消时才打开sparse experts。
+
 ## 2026-08-06 Energy-Preserving Trace fresh formal训练证据
 
 - identity-fresh formal0→200自然完成：200 finite macros、96,000 action queries、19,200 K4

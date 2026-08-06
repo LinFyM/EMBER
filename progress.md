@@ -31,7 +31,8 @@ GPU范围和训练步长是当时快照；活动状态只取
   commit`d833961`随后从identity完成formal0→200：200 finite macros、96,000 queries、19,200
   K4 videos、8 checkpoints、wall`7373.955s`、0 clip，peak reserved20.48GB，GPU自然释放。
 - 训练期四个50步gradient retention为`.12497/.08564/.08050/.05079`；频谱修复明显改善
-  前150步共存，末段仍回落。四点strict correct400已在`task_plan.md`预注册，尚未启动。
+  前150步共存，末段仍回落。两波四点strict correct400随后自然完成并释放GPU：
+  `67/83/74/85`、breadth=`5/6/7/7`，macro200固定single winner。五臂/内部分析已预注册。
 
 ## 2026-08-06 K4 Policy-Layer Trace四点strict correct400完成
 

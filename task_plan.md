@@ -29,8 +29,10 @@ runner、split、路径或 GPU 权限。
   queries、19,200 K4 action-hidden video conditions、8个every25 checkpoints、0 clip，
   source trainable=0且validation/test action reads=0。wall=`7373.955s`，peak
   allocated/reserved=`18,096,449,024/20,478,689,280` bytes。
-- [ ] 严格评macro50/100/150/200 paired correct400；固定四点，不用functional loss或
-  训练期gradient挑点。
+- [x] 严格评macro50/100/150/200 paired correct400：correct=`67/83/74/85`、breadth=
+  `5/6/7/7`，single winner固定macro200=85；固定panel无mismatch。
+- [ ] 对macro200完成same-task-other/cross-suite-wrong/shuffled/reversed四个paired
+  correct400和内部trace→Reader/M2P→BA→action分析。
 - [ ] 按single-checkpoint correct、breadth、video causality与task-gradient证据继续迭代；最低严格
   `>150/400`，达到后仍继续提高。若频谱修复后credit仍接近1/24抵消，才打开
   frozen-semantic routing驱动的condition-specific sparse value experts。
@@ -109,6 +111,24 @@ env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,
 ```bash
 env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --role validation --mode formal --state-count 50 --replicas-per-gpu 3 --writer-generators-per-gpu 3 --writer-generation-batch-size 4 --as-writer-config configs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_bci_v1.json --writer-video-data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --writer-video-condition correct --writer-video-sampling without_replacement --gpu-indices GPUS --as-writer-checkpoint runs/outputs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_formal_fresh0_200_r6_3b7eb4a_20260806/checkpoints/step_STEP --output-dir OUT
 ```
+
+四点已自然完成：每root 400 rows、42 shards、9 workers exit0。逐task顺序为
+Long-1/2、Goal-3/6、Object-1/3、Spatial-1/3：`3/0/0/29/33/0/1/1`、
+`1/0/2/38/37/0/2/3`、`4/3/3/32/28/0/2/2`、`6/1/3/37/34/0/3/1`；相邻
+gained/lost=`28/12,18/27,28/17`，union/intersection=`122/40`，envelope gap37。
+macro200以最高correct和并列最高breadth成为single winner，但85远低于上一版99、v6-fast143
+与严格门151；不得续训或用更低loss选点。
+
+### Energy-Preserving macro200五臂/内部分析合同（2026-08-06）
+
+- correct=85已封存，只对同一macro200 checkpoint追加`same_task_other`、
+  `cross_suite_wrong`、`shuffled`、`reversed`。四臂保持同一400 state/env/policy RNG panel、
+  K4 without-replacement与其各自canonical video mapping/order；不挑video或checkpoint。
+- 两臂一波，每root 3 GPUs，总计最多6张live空闲卡；输出root分别为
+  `runs/outputs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_bci_{same_task_other,cross_suite_wrong,shuffled,reversed}400_noreplacement_seed7_macro0200_69bb0f0_20260806`。
+- 五臂后在winner上复用既有hashless refs1内部probe，比较raw trace、Reader、axis、effective
+  BA、fixed action、LoRA谱/能量和task-gradient；若真实幅度保留改善gradient却损害closed-loop，
+  判断频谱幅度本身是否包含不可简单衰减的任务线索，再决定下一架构。
 
 ## 已完成K4 Policy-Layer Trace M2P（2026-08-06）
 

@@ -1,7 +1,7 @@
 # K4 Energy-Preserving Policy-Layer Trace M2P Writer
 
 状态：2026-08-06设计authority已封存，clean`22234c4`已原位实现并push；
-live A40 fresh/exact-resume profile与formal fresh0→200均已完成，等待预注册四点strict rollout。本文覆盖
+live A40 profile、formal fresh0→200与四点strict rollout均已完成，macro200五臂/内部分析待完成。本文覆盖
 `action_forecast_writer_k4_layer_trace_m2p_design.md`的活动地位；旧方法由Git和sealed artifacts保存。
 
 ## 1. 决策
@@ -119,3 +119,8 @@ reward或outcome选择频谱。若失败，只根据fresh行为与task-gradient�
   `.12497/.07199/.35870`、`.08564/.04393/.42391`、`.08050/.02884/.44022`、
   `.05079/.00555/.48007`。前150步相对上一版明显改善，但末段再次接近共享credit抵消；
   不据此选checkpoint，下一步仍严格评50/100/150/200 correct400。
+- 四点strict correct400=`67/83/74/85`、breadth=`5/6/7/7`，相邻gained/lost=
+  `28/12,18/27,28/17`，union/intersection=`122/40`。macro200固定为single winner，但
+  明显低于上一版99和v6-fast143；频谱修复改善task-gradient却没有改善closed loop。
+- 当前只对macro200补齐same/wrong/shuffled/reversed与内部path分析，判断逐频率单位化究竟是
+  噪声放大，还是同时提供了Reader所需的弱但有判别力的非DC线索；不续训、不调scale。

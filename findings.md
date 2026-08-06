@@ -12,6 +12,11 @@
   coexistence；最后50步仍向近正交抵消退化。
 - 这是representation修复有效的机制证据，不是closed-loop结论。functional loss从约`.15`
   降至`.10511`也不得用于checkpoint选择；四点strict correct400仍是下一裁决。
+- 四点随后完成为`67/83/74/85`、breadth=`5/6/7/7`；相邻gained/lost=
+  `28/12,18/27,28/17`，union/intersection=`122/40`。虽然前150步gradient coexistence改善，
+  closed-loop反而全线低于上一版对应`69/99/88/94`，故“弱高频只是应压低的噪声”不成立。
+- 当前尚不能断言旧逐频率单位化正确：它可能同时放大噪声和提供Reader所需的弱判别方向。
+  macro200五臂与内部幅度/path分析将区分视频身份、顺序线索和policy leverage何处衰减。
 
 ## 2026-08-06 K4 Layer-Trace五臂与内部裁决：视频有效，频谱幅度被破坏
 

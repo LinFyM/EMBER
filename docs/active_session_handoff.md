@@ -43,6 +43,10 @@
   最后窗口回落到`.05079`且pair cosine`.00555`，说明频谱修复改善早中期共存但尚不能写成
   解决漂移。当前只执行`task_plan.md`顶部macro50/100/150/200 strict correct400合同，
   不用functional loss或gradient挑点。
+- 四点strict correct400已自然完成：`67/83/74/85`、breadth=`5/6/7/7`，相邻
+  gained/lost=`28/12,18/27,28/17`，union/intersection=`122/40`。macro200以最高correct/
+  并列最高breadth成为single winner，但远低于上一版99与v6-fast143，频谱修复目前是行为负结果。
+- 当前只按`task_plan.md`顶部合同完成macro200其余四臂与内部分析；不续200、不按loss挑点。
 
 ## 0.1 已完成并负裁决：K4 Policy-Layer Trace M2P
 

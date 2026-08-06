@@ -29,6 +29,11 @@
   axis FFN pre-LayerNorm把step1极小memory放大到O(1)，loss`.1504→58.93→96.82`、三步clip。
   peak reserved约20.48GB且无OOM，故不是A40容量问题。该root禁止resume。clean`ed4f46e`已
   根修value-path幅度连续性并通过全仓`191 passed`；下一launch必须从新root严格分段profile。
+- clean`44e248b`已在live空闲`gpu01:0,1,2|4,5,7`完成fresh0→1与exact-resume1→3：三步
+  loss=`.150377/.152815/.148507`、grad norm约`.001`，0 clip/OOM/nonfinite；step2起reader/
+  axis M2P都finite可达。步时约34.6--34.7秒，peak allocated/reserved=
+  `18,112,406,528/20,375,928,832` bytes，累计1,440 queries/288 videos、source trainable=0，
+  六rank/3+3 NUMA与完整resume闭合。profile权重永久弃用；formal现已可从identity新root启动。
 
 ## 0.1 已完成：K4 Invariant-Program M2P四点与内部裁决
 

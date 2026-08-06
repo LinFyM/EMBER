@@ -128,14 +128,43 @@
     "optimizer_clock": "formal_200_step_scheduler_with_early_stop_at_3"
   },
   "profile_evidence": {
-    "status": "not_run_for_layer_trace_architecture",
+    "status": "sealed_live_bci_a40_fresh_and_exact_resume",
     "profile_teacher_video_seed": 173,
-    "planned_candidate": {
+    "primary_candidate": {
       "max_frames_per_encoder_call": 16,
       "per_task_action_batch_size": 20,
       "functional_policy_microbatch_size": 2
     },
+    "selected_node": "gpu01",
+    "selected_physical_devices": [0, 1, 2, 4, 5, 7],
+    "selected_device_uuids": [
+      "GPU-3e9b04dd-0cf4-b7f3-4c03-175aa9ee6270",
+      "GPU-658b6043-6454-1228-bffc-0e2fe22e5013",
+      "GPU-845a7b73-38e2-8a13-12ab-4be97474ef13",
+      "GPU-e59426ed-ed41-cb75-2190-f50841cff288",
+      "GPU-2d30f244-9a07-c9d4-8753-525d098dbe3b",
+      "GPU-21b5514a-82f0-4d24-21ea-1f8198d20915"
+    ],
+    "rank_numa_topology": [0, 0, 0, 1, 1, 1],
+    "implementation_commit": "44e248b",
+    "root": "runs/outputs/pi05_as_writer_k4_layer_trace_m2p_profile_r6_b20_44e248b_20260806",
+    "segments": ["fresh_0_to_1", "exact_resume_1_to_3"],
     "optimizer_clock": "formal_200_step_scheduler_with_early_stop_at_3",
+    "applied_lrs": [1.1538461538461538e-5, 2.3076923076923093e-5, 3.461538461538459e-5],
+    "step_seconds_max": [34.708057548996294, 34.65485974900366, 34.609310187996016],
+    "mean_functional_action_loss": [0.1503773539637526, 0.15281512991835675, 0.1485069446886579],
+    "max_cuda_allocated_bytes": 18112406528,
+    "max_cuda_reserved_bytes": 20375928832,
+    "gradient_norm_before_clip_max": [0.0010122295934706926, 0.000993572873994708, 0.0010124859400093555],
+    "gradient_clip_count": 0,
+    "oom_count": 0,
+    "nonfinite_count": 0,
+    "step2_all_declared_blocks_reachable": true,
+    "source_policy_trainable_parameter_count": 0,
+    "completed_policy_queries": 1440,
+    "completed_teacher_videos": 288,
+    "exact_resume_checkpoint": "checkpoints/step_00000001",
+    "final_profile_checkpoint": "checkpoints/step_00000003",
     "profile_weights_reusable_for_formal": false,
     "oom_fallback_only": {
       "max_frames_per_encoder_call": 8,
@@ -145,8 +174,8 @@
     }
   },
   "formal_run": {
-    "status": "blocked_on_live_profile",
-    "launch_state": "not_ready_before_layer_trace_profile",
+    "status": "sealed",
+    "launch_state": "ready_for_fresh_formal_launch",
     "expected_world_size": 6,
     "total_steps": 200,
     "per_rank_batch_size": 20,

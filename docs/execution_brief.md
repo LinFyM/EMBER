@@ -22,6 +22,12 @@
   diagnostic：启动时未在step1停下，且axis FFN pre-LN导致step2/3 loss爆到58.93/96.82。
   clean`ed4f46e`已移除dynamic value-path normalization；禁止resume该root，必须新root从
   identity重做fresh0→1→exact-resume1→3。
+- sealed profile root为
+  `runs/outputs/pi05_as_writer_k4_layer_trace_m2p_profile_r6_b20_44e248b_20260806`：
+  clean`44e248b`、world6、`gpu01:0,1,2|4,5,7`、3+3 NUMA、K4/B20/B2、16-frame chunk、
+  显式P2P disable。fresh0→1再resume1→3完成，loss约`.148--.153`、grad norm约`.001`、
+  0 clip/OOM/nonfinite，peak reserved20.38GB，step2起两个声明block可达。profile权重弃用；
+  下一launch必须另起formal fresh root，不得resume任一profile。
 
 ## 0.1 已完成：K4 Writer四点与内部裁决
 

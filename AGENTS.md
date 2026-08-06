@@ -179,6 +179,10 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 - 首个`89f5384`一次性0→3 diagnostic不是正式profile，并因axis FFN pre-LayerNorm放大极小
   bootstrap memory而在step2/3 loss爆炸；该root禁止resume。clean`ed4f46e`已改为raw-value
   FFN并通过zero邻域幅度合同与全仓`191 passed`；必须从新root严格fresh0→1再resume1→3。
+- clean`44e248b`的六卡A40正式profile已严格fresh0→1再exact-resume1→3：三步loss约
+  `.148--.153`、grad norm约`.001`、0 clip/OOM/nonfinite，step2起reader与axis M2P均可达，
+  peak reserved20.38GB、步时约34.6秒。profile权重弃用；下一步只从identity新root formal
+  0→200，不得resume任何profile或旧K4 checkpoint。
 - Few-Shot Invariant-Program M2P已完成fresh0→200、四点strict rollout与macro200全部内部
   分析：correct=`70/94/99/108`、breadth=`6/6/6/7`。K4置换、zero-video identity、
   same-task/LOO/wrong/order到Program→BA→action路径和高增益LoRA均成立，证明它没有忽略视频；

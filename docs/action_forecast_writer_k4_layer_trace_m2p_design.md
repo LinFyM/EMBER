@@ -171,3 +171,9 @@ single-checkpoint strict correct400 `>150`。若失败，只根据上述最早�
   route，但FFN改为直接作用raw dynamic value，保证zero附近连续、幅度随video memory线性
   缩放。新增小幅度2×输入约2×输出合同，全仓更新为`191 passed`。下一次profile必须另起fresh
   root，严格fresh0→1后再exact-resume1→3。
+- clean`44e248b`在live空闲`gpu01:0,1,2|4,5,7`完成严格fresh0→1与同root
+  exact-resume1→3。三步loss=`.150377/.152815/.148507`，grad norm=
+  `.001012/.000994/.001012`，0 clip/OOM/nonfinite；step2起reader与axis M2P都出现finite实际
+  update。步时`34.708/34.655/34.609s`，peak allocated/reserved=
+  `18,112,406,528/20,375,928,832` bytes。累计1,440 queries/288 videos，source trainable=0，
+  六rank/3+3 NUMA/checkpoint/RNG/sampler/scheduler exact-resume闭合。profile权重永久弃用。

@@ -1,4 +1,4 @@
-"""Declarative contract for the K4 policy-layer trace M2P Writer."""
+"""Declarative contract for the energy-preserving K4 layer-trace Writer."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ WRITER_DIMENSION_CONTRACT = {
 }
 
 _STATIC_WRITER_CONTRACT: dict[str, Any] = {
-    "architecture": "pi05_k4_policy_layer_trace_axis_m2p_v1",
+    "architecture": "pi05_k4_energy_preserving_policy_layer_trace_axis_m2p_v1",
     "generated_adapter": "one_complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -57,6 +57,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "policy_groups": 20,
     "trace_temporal_terms": 16,
     "trace_width": 1024,
+    "trace_normalization": "per_video_global_total_energy_match_preserving_raw_group_frequency_spectrum",
     "trace_tokens_per_group_per_condition": 64,
     "memory_slots": 68,
     "m2p_width": 1024,
@@ -82,7 +83,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
 
 
 def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
-    """Return the exact layer-trace M2P payload with profiled frame chunking."""
+    """Return the exact energy-preserving layer-trace Writer payload."""
 
     if writer.get("architecture") != _STATIC_WRITER_CONTRACT["architecture"]:
         raise ValueError(f"unsupported EMBER Writer architecture: {writer.get('architecture')}")

@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_k4_policy_layer_trace_m2p_as_writer_v1",
+  "schema_version": "ember_pi05_k4_energy_preserving_policy_layer_trace_m2p_as_writer_v1",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {"path": "configs/pi05_target_data_v1/manifest.json"},
@@ -24,7 +24,7 @@
     "test_video_values_read": 0
   },
   "writer": {
-    "architecture": "pi05_k4_policy_layer_trace_axis_m2p_v1",
+    "architecture": "pi05_k4_energy_preserving_policy_layer_trace_axis_m2p_v1",
     "generated_adapter": "one_complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -41,6 +41,7 @@
     "policy_groups": 20,
     "trace_temporal_terms": 16,
     "trace_width": 1024,
+    "trace_normalization": "per_video_global_total_energy_match_preserving_raw_group_frequency_spectrum",
     "trace_tokens_per_group_per_condition": 64,
     "memory_slots": 68,
     "m2p_width": 1024,
@@ -80,7 +81,7 @@
     "video_open_files_per_rank": 2
   },
   "conditioning_training": {
-    "method": "k4_policy_layer_trace_axis_m2p_rawfull24",
+    "method": "k4_energy_preserving_policy_layer_trace_axis_m2p_rawfull24",
     "update_topology": "task_complete_all_tasks",
     "tasks_per_rank_per_optimizer_update": 4,
     "global_tasks_per_optimizer_update": 24,
@@ -94,7 +95,7 @@
     "normal_loss_weight": 1
   },
   "optimization": {
-    "method": "end_to_end_k4_policy_layer_trace_axis_m2p",
+    "method": "end_to_end_k4_energy_preserving_policy_layer_trace_axis_m2p",
     "seed": 7,
     "precision": "bfloat16",
     "source_policy": "final formal frozen raw policy",
@@ -119,7 +120,7 @@
   },
   "loader": {"num_workers_per_rank": 0, "prefetch_factor": 2},
   "profile_defaults": {
-    "status": "ready_for_live_bci_a40_k4_layer_trace_profile",
+    "status": "ready_for_live_bci_a40_k4_energy_preserving_layer_trace_profile",
     "expected_world_size": 6,
     "total_steps": 200,
     "per_rank_batch_size": 20,
@@ -128,44 +129,13 @@
     "optimizer_clock": "formal_200_step_scheduler_with_early_stop_at_3"
   },
   "profile_evidence": {
-    "status": "sealed_live_bci_a40_fresh_and_exact_resume",
+    "status": "unsealed_pending_live_bci_a40_profile",
     "profile_teacher_video_seed": 173,
     "primary_candidate": {
       "max_frames_per_encoder_call": 16,
       "per_task_action_batch_size": 20,
       "functional_policy_microbatch_size": 2
     },
-    "selected_node": "gpu01",
-    "selected_physical_devices": [0, 1, 2, 4, 5, 7],
-    "selected_device_uuids": [
-      "GPU-3e9b04dd-0cf4-b7f3-4c03-175aa9ee6270",
-      "GPU-658b6043-6454-1228-bffc-0e2fe22e5013",
-      "GPU-845a7b73-38e2-8a13-12ab-4be97474ef13",
-      "GPU-e59426ed-ed41-cb75-2190-f50841cff288",
-      "GPU-2d30f244-9a07-c9d4-8753-525d098dbe3b",
-      "GPU-21b5514a-82f0-4d24-21ea-1f8198d20915"
-    ],
-    "rank_numa_topology": [0, 0, 0, 1, 1, 1],
-    "implementation_commit": "44e248b",
-    "root": "runs/outputs/pi05_as_writer_k4_layer_trace_m2p_profile_r6_b20_44e248b_20260806",
-    "segments": ["fresh_0_to_1", "exact_resume_1_to_3"],
-    "optimizer_clock": "formal_200_step_scheduler_with_early_stop_at_3",
-    "applied_lrs": [1.1538461538461538e-5, 2.3076923076923093e-5, 3.461538461538459e-5],
-    "step_seconds_max": [34.708057548996294, 34.65485974900366, 34.609310187996016],
-    "mean_functional_action_loss": [0.1503773539637526, 0.15281512991835675, 0.1485069446886579],
-    "max_cuda_allocated_bytes": 18112406528,
-    "max_cuda_reserved_bytes": 20375928832,
-    "gradient_norm_before_clip_max": [0.0010122295934706926, 0.000993572873994708, 0.0010124859400093555],
-    "gradient_clip_count": 0,
-    "oom_count": 0,
-    "nonfinite_count": 0,
-    "step2_all_declared_blocks_reachable": true,
-    "source_policy_trainable_parameter_count": 0,
-    "completed_policy_queries": 1440,
-    "completed_teacher_videos": 288,
-    "exact_resume_checkpoint": "checkpoints/step_00000001",
-    "final_profile_checkpoint": "checkpoints/step_00000003",
-    "profile_weights_reusable_for_formal": false,
     "oom_fallback_only": {
       "max_frames_per_encoder_call": 8,
       "per_task_action_batch_size": 20,
@@ -174,15 +144,15 @@
     }
   },
   "formal_run": {
-    "status": "sealed",
-    "launch_state": "ready_for_fresh_formal_launch",
+    "status": "blocked_pending_live_profile",
+    "launch_state": "blocked_until_fresh_and_exact_resume_profile",
     "expected_world_size": 6,
     "total_steps": 200,
     "per_rank_batch_size": 20,
     "checkpoint_steps": [25, 50, 75, 100, 125, 150, 175, 200],
     "selected_stop_step": 200,
     "stage_stop_steps": [50, 100, 150, 200],
-    "segment_definition": "fresh_identity_k4_policy_layer_trace_m2p_macro0_to200",
+    "segment_definition": "fresh_identity_k4_energy_preserving_policy_layer_trace_m2p_macro0_to200",
     "data_integrity_check": "manifest_paths_sizes_hdf5_schema_and_real_load_only_no_content_hash"
   }
 }

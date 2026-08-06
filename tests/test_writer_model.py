@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 import torch
+import torch.nn.functional as F
 
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer.as_contract import writer_trainable_contract
@@ -163,6 +165,29 @@ def test_policy_trace_dct_is_zero_preserving_and_order_sensitive() -> None:
     offsets = torch.tensor([0, 16, 32], dtype=torch.long)
     expected = temporal_trace_tokens(frames, offsets, terms=16)
     assert expected.shape == (2, 3, 16, 5)
+    time = torch.arange(16, dtype=torch.float32)
+    frequency = torch.arange(16, dtype=torch.float32)
+    basis = torch.cos(math.pi * frequency[:, None] * (time[None] + 0.5) / 16)
+    basis[0].mul_(math.sqrt(0.5))
+    basis.mul_(math.sqrt(2.0 / 16))
+    for video, selected in enumerate((frames[:16], frames[16:])):
+        raw = torch.einsum("tf,fgh->gth", basis, selected)
+        historical = F.normalize(raw, dim=-1, eps=1e-12)
+        assert torch.allclose(
+            expected[video].square().sum(),
+            historical.square().sum(),
+            rtol=1e-6,
+            atol=1e-5,
+        )
+        raw_frequency = raw.square().sum(dim=(0, 2))
+        observed_frequency = expected[video].square().sum(dim=(0, 2))
+        assert torch.allclose(
+            observed_frequency / observed_frequency.sum(),
+            raw_frequency / raw_frequency.sum(),
+            rtol=1e-5,
+            atol=1e-7,
+        )
+        assert observed_frequency[0] > observed_frequency[8:].sum()
     assert torch.equal(
         temporal_trace_tokens(torch.zeros_like(frames), offsets, terms=16),
         torch.zeros_like(expected),

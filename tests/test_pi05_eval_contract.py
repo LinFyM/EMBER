@@ -261,7 +261,7 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
         "config": {
             "path": str(
                 ROOT
-                / "configs/pi05_as_writer_k4_layer_trace_m2p_bci_v1.json"
+                / "configs/pi05_as_writer_k4_energy_preserving_layer_trace_m2p_bci_v1.json"
             ),
         },
         "training_run": {"schema_version": "k4-launch", "mode": "formal"},

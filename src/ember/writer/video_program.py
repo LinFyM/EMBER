@@ -1,11 +1,10 @@
-"""Frozen PI05 policy-layer traces for the canonical K4 Writer."""
+"""Energy-preserving frozen PI05 policy-layer traces for the K4 Writer."""
 
 from __future__ import annotations
 
 import math
 
 import torch
-import torch.nn.functional as F
 
 
 class VideoProgramError(RuntimeError):
@@ -48,7 +47,15 @@ def temporal_trace_tokens(
         basis[0].mul_(math.sqrt(0.5))
         basis = basis * math.sqrt(2.0 / float(count))
         pooled = torch.einsum("tf,fgh->gth", basis, selected)
-        rows.append(F.normalize(pooled, dim=-1, eps=1e-12))
+        token_energy = pooled.square().sum(dim=-1)
+        historical_total_energy = (
+            token_energy / token_energy.clamp_min(1e-24)
+        ).sum()
+        raw_total_energy = token_energy.sum()
+        matched_scale = torch.sqrt(
+            historical_total_energy / raw_total_energy.clamp_min(1e-30)
+        )
+        rows.append(pooled * matched_scale)
     result = torch.stack(rows)
     if not bool(torch.isfinite(result).all()):
         raise VideoProgramError("temporal policy trace became non-finite")

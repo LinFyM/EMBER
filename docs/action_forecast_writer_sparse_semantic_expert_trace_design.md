@@ -1,6 +1,7 @@
 # K4 Sparse Semantic-Expert Policy-Layer Trace Writer
 
-状态：2026-08-07设计authority。实现、A40 profile和formal launch尚未开始；任何旧Writer
+状态：2026-08-07设计与实现authority。canonical实现、fresh schema/checkpoint family、独立
+route artifact和聚焦CPU合同已完成；A40 profile与formal launch尚未开始。任何旧Writer
 checkpoint均不兼容且不得加载。
 
 ## 1. 决策
@@ -102,6 +103,11 @@ A/B tensors。没有expert LoRA ensemble、逐video LoRA平均或第二套policy
 封存。Writer参数量已无owner上限。top2 conditional execution只产生两路activation；未选expert
 对该condition梯度严格为零。每expert group outputs仍exact-zero，step0和zero-video identity
 不变；step1先打开所选group outputs，step2起其Reader/axis自然可达。
+
+实际实现enumeration封存为`487,415,808` trainable，其中完整Reader owners合计
+`218,980,352`、四轴M2P owners合计`268,435,456`，共272个parameter tensors。独立生成的
+`configs/pi05_sparse_semantic_expert_route_v1.json`与同一冻结source/train24原则的历史审计数值
+逐元素一致；primary usage=`5/7/6/1/2/1/1/1`，top2 usage=`7/11/6/4/4/5/3/8`，没有expert塌缩。
 
 ## 6. AS、未来RL与信息墙
 

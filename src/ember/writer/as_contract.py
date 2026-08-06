@@ -36,7 +36,7 @@ from ember.writer.update_contract import build_update_runtime_contract
 
 
 AS_WRITER_LAUNCH_SCHEMA = (
-    "ember_pi05_k4_evidence_factorized_policy_layer_trace_m2p_launch_v1"
+    "ember_pi05_k4_sparse_semantic_expert_policy_layer_trace_m2p_launch_v1"
 )
 SUPPORTED_AS_WRITER_LAUNCH_SCHEMAS = frozenset({AS_WRITER_LAUNCH_SCHEMA})
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
@@ -387,19 +387,21 @@ def writer_trainable_contract(
     reader_parameters = sum(
         value.numel()
         for name, value in writer.layer_m2p.named_parameters()
-        if not name.startswith("axis_blocks.")
+        if ".axis_blocks." not in name
     )
     axis_parameters = sum(
         value.numel()
         for name, value in writer.layer_m2p.named_parameters()
-        if name.startswith("axis_blocks.")
+        if ".axis_blocks." in name
     )
     return {
-        "object": "shared_action_supervised_writer_only",
+        "object": "sparse_semantic_expert_action_supervised_writer_only",
         "parameter_count": parameter_count,
         "trainable_parameter_count": trainable_parameter_count,
         "policy_layer_reader_parameter_count": reader_parameters,
         "axis_m2p_parameter_count": axis_parameters,
+        "semantic_expert_count": writer.layer_m2p.expert_count,
+        "semantic_expert_top_k": writer.layer_m2p.top_k,
         "optimizer_owner": "single_end_to_end_adamw_full_horizon",
         "parameter_name_count": len(names),
         "parameter_name_prefixes": ["layer_m2p"],

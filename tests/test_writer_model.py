@@ -12,6 +12,7 @@ from ember.writer.fewshot_m2p import (
     PolicyLayerGroup,
     PolicyLayerTraceM2P,
     PolicyTargetSpec,
+    SparseSemanticPolicyLayerTraceM2P,
     factorize_trace_evidence,
 )
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
@@ -41,6 +42,18 @@ class _Backbone(torch.nn.Module):
 
 
 class _FakeConditionDescriptor(torch.nn.Module):
+    def task_anchor(
+        self,
+        _policy: torch.nn.Module,
+        language_tokens: torch.Tensor,
+        _language_mask: torch.Tensor,
+        _task_span_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        result = torch.zeros(language_tokens.shape[0], 2048)
+        result[:, 0] = 1
+        result[:, 1] = torch.arange(language_tokens.shape[0])
+        return F.normalize(result, dim=-1)
+
     def forward(
         self,
         _policy: torch.nn.Module,
@@ -113,6 +126,7 @@ def _template() -> dict[str, torch.Tensor]:
 def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
     template = _template()
     pali, expert = _backbones()
+    route_centers = torch.eye(8, 2048)
     model = CompleteLoRAWriter(
         build_lora_tensor_specs(template),
         template_state=template,
@@ -131,6 +145,10 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         action_horizon=50,
         padded_action_dim=32,
         videos_per_condition=4,
+        semantic_expert_count=8,
+        semantic_expert_top_k=2,
+        route_centers=route_centers,
+        route_anchor_mean=torch.zeros(2048),
         initialization_seed=7,
     )
     return model, template
@@ -201,9 +219,13 @@ def test_policy_trace_dct_is_zero_preserving_and_order_sensitive() -> None:
 def test_k4_writer_parameter_ownership_is_end_to_end_and_exact() -> None:
     model, _ = _model()
     layout = parameter_layout(model)
-    assert {row.block for row in layout} == {"policy_layer_reader", "axis_m2p"}
+    assert {row.block for row in layout} == {
+        f"expert_{expert:02d}_{owner}"
+        for expert in range(8)
+        for owner in ("reader", "axis_m2p")
+    }
     assert layout[-1].stop == sum(value.numel() for value in model.parameters())
-    assert model.layer_m2p.group_output_weight.shape == (20, 1024, 1024)
+    assert model.layer_m2p.experts[0].group_output_weight.shape == (20, 1024, 1024)
     assert model.condition_descriptor.fixed_suffix_noise.shape == (50, 32)
     contract = writer_trainable_contract(
         model,
@@ -258,6 +280,34 @@ def _tiny_layer_m2p() -> PolicyLayerTraceM2P:
         blocks=4,
         ffn_expansion=2,
         initialization_seed=3,
+    )
+
+
+def _tiny_sparse_m2p() -> SparseSemanticPolicyLayerTraceM2P:
+    base = _tiny_layer_m2p()
+    template = {
+        name: getattr(base, base._template_names[name]).clone()
+        for names in base._group_tensor_names
+        for name in names
+    }
+    centers = torch.zeros(3, 16)
+    centers[0, 0] = 1
+    centers[1, :2] = torch.tensor([0.5, 3**0.5 / 2])
+    centers[2, 0] = -1
+    return SparseSemanticPolicyLayerTraceM2P(
+        base.groups,
+        template_state=template,
+        route_centers=centers,
+        route_anchor_mean=torch.zeros(16),
+        expert_count=3,
+        top_k=2,
+        width=16,
+        memory_slots=2,
+        temporal_terms=4,
+        heads=4,
+        blocks=4,
+        ffn_expansion=2,
+        initialization_seed=11,
     )
 
 
@@ -338,3 +388,46 @@ def test_axis_m2p_preserves_small_dynamic_amplitude() -> None:
     second = decoder._axis_m2p(2 * memory)
     ratio = float((second.norm() / first.norm()).detach())
     assert 1.8 < ratio < 2.2
+
+
+def test_sparse_semantic_experts_match_dense_reference_and_keep_video_identity() -> None:
+    decoder = _tiny_sparse_m2p()
+    video = torch.randn(8, 3, 4, 16)
+    offsets = torch.tensor([0, 4, 8], dtype=torch.long)
+    anchors = torch.zeros(2, 16)
+    anchors[0, :2] = torch.tensor([1.0, 0.1])
+    anchors[1, :2] = torch.tensor([-0.2, 1.0])
+    route_indices, route_weights = decoder.route(anchors)
+    observed = decoder.encode(video, offsets, anchors)
+    expected = torch.zeros_like(observed)
+    for condition in range(2):
+        for route_slot in range(2):
+            expert = decoder.experts[int(route_indices[condition, route_slot])]
+            local = expert.encode(
+                video[condition * 4 : (condition + 1) * 4],
+                torch.tensor([0, 4], dtype=torch.long),
+            )
+            expected[condition].add_(
+                local[0] * route_weights[condition, route_slot]
+            )
+    assert torch.allclose(observed, expected, atol=2e-6, rtol=2e-6)
+    assert torch.equal(
+        decoder.encode(torch.zeros_like(video), offsets, anchors),
+        torch.zeros_like(observed),
+    )
+
+
+def test_sparse_route_is_frozen_and_unselected_expert_gets_no_gradient() -> None:
+    decoder = _tiny_sparse_m2p()
+    video = torch.randn(4, 3, 4, 16)
+    offsets = torch.tensor([0, 4], dtype=torch.long)
+    anchor = torch.zeros(1, 16)
+    anchor[0, :2] = torch.tensor([1.0, 0.1])
+    indices, weights = decoder.route(anchor)
+    assert indices.tolist() == [[0, 1]]
+    assert torch.equal(weights, torch.full((1, 2), 0.5))
+    assert not any(parameter.requires_grad for parameter in decoder.router.parameters())
+    decoder.encode(video, offsets, anchor).sum().backward()
+    assert any(parameter.grad is not None for parameter in decoder.experts[0].parameters())
+    assert any(parameter.grad is not None for parameter in decoder.experts[1].parameters())
+    assert all(parameter.grad is None for parameter in decoder.experts[2].parameters())

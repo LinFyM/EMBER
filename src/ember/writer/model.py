@@ -10,7 +10,7 @@ import torch
 
 from ember.writer.architecture import validate_writer_dimensions
 from ember.writer.fewshot_m2p import (
-    PolicyLayerTraceM2P,
+    SparseSemanticPolicyLayerTraceM2P,
     build_policy_layer_groups,
     build_policy_target_specs,
 )
@@ -120,6 +120,10 @@ class CompleteLoRAWriter(torch.nn.Module):
         action_horizon: int,
         padded_action_dim: int,
         videos_per_condition: int,
+        semantic_expert_count: int,
+        semantic_expert_top_k: int,
+        route_centers: torch.Tensor,
+        route_anchor_mean: torch.Tensor,
         initialization_seed: int,
     ) -> None:
         super().__init__()
@@ -140,6 +144,8 @@ class CompleteLoRAWriter(torch.nn.Module):
                 "action_horizon",
                 "padded_action_dim",
                 "videos_per_condition",
+                "semantic_expert_count",
+                "semantic_expert_top_k",
             }
         }
         try:
@@ -179,9 +185,13 @@ class CompleteLoRAWriter(torch.nn.Module):
         )
         if len(groups) != self.POLICY_GROUPS:
             raise WriterModelError("PI05 policy-layer group count changed")
-        self.layer_m2p = PolicyLayerTraceM2P(
+        self.layer_m2p = SparseSemanticPolicyLayerTraceM2P(
             groups,
             template_state=template_state,
+            route_centers=route_centers,
+            route_anchor_mean=route_anchor_mean,
+            expert_count=semantic_expert_count,
+            top_k=semantic_expert_top_k,
             width=m2p_width,
             memory_slots=memory_slots,
             temporal_terms=trace_temporal_terms,
@@ -295,6 +305,12 @@ class CompleteLoRAWriter(torch.nn.Module):
         video_condition_ids = torch.repeat_interleave(
             torch.arange(conditions, device=frames.device), condition_lengths
         )
+        task_anchor = self.condition_descriptor.task_anchor(
+            policy,
+            language_tokens,
+            language_mask,
+            task_span_mask,
+        )
         video_traces = self.condition_descriptor(
             policy,
             frames,
@@ -307,6 +323,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         program = self.layer_m2p.encode(
             video_traces,
             condition_video_offsets,
+            task_anchor,
         )
         if program.shape != (
             conditions,

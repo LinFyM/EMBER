@@ -1,5 +1,16 @@
 # EMBER Progress Ledger
 
+## 2026-08-07 Sparse Semantic-Expert Trace实现完成
+
+- 新canonical已接通冻结task anchor、fixed top2 router、8套完整独立Trace Reader+axis M2P、
+  memory-level等权组合和single-LoRA decode；fresh config/launch/checkpoint family与live evaluator
+  同步切换，旧checkpoint严格不兼容。
+- 当前source/train24独立生成route artifact，primary/top2 usage=`5/7/6/1/2/1/1/1`和
+  `7/11/6/4/4/5/3/8`；mean/centers与历史同原则结果逐元素一致。真实参数
+  `487,415,808`，272 tensors。
+- 聚焦route/dense equivalence/zero identity/unselected-gradient/config/checkpoint/model合同通过；
+  当前只差clean commit/push后的六卡longest105 fresh0→1、exact-resume1→3 profile，formal仍blocked。
+
 ## 2026-08-07 Evidence-Factorized完整裁决并开启Sparse Semantic Experts
 
 - macro200四个追加control和六卡8-task内部probe已自然完成，五臂=

@@ -4,7 +4,7 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0. 最新覆盖：Sparse Semantic-Expert Trace设计已开启
+## 0. 最新覆盖：Sparse Semantic-Expert Trace实现完成，等待A40 profile
 
 - 当前唯一活动authority为
   `docs/action_forecast_writer_sparse_semantic_expert_trace_design.md`。它保留exact task language、
@@ -24,9 +24,13 @@
   `.00954/.00266`、负pair=`.47464/.48007`，满足预注册的sparse-expert开启门。新设计用只由
   train24 language生成并冻结的semantic top2 route，选择两个完整独立Reader+axis M2P experts；
   route只寻址，video trace仍是唯一动态value，zero-video仍严格identity。
-- 下一步先生成route authority并完成canonical原位实现、聚焦合同与A40 profile。新架构预计
-  8×`60,926,976`=`487,415,808` trainable；参数量已无owner上限，但必须profile 46GB显存、
-  checkpoint峰值和top2 conditional execution。所有旧Writer权重禁止加载，GPU当前无EMBER进程。
+- canonical实现现已完成：冻结PI05 task anchor、fixed top2 router、八套完整独立Reader+axis
+  experts、memory级等权组合和single decode均在唯一runtime中；fresh config/schema/checkpoint
+  family与expert-local gradient ownership已接通。真实trainable=`487,415,808`。
+- 独立route authority由当前冻结source与train24 language重新生成，centers/mean与历史同原则
+  artifact逐元素一致；primary/top2 usage=`5/7/6/1/2/1/1/1`与`7/11/6/4/4/5/3/8`，无塌缩。
+  聚焦route、dense-reference、zero-video、未选expert零梯度、identity、schema与checkpoint合同
+  已通过。下一步clean/push后做A40 fresh0→1、exact-resume1→3 profile；旧Writer权重禁止加载。
 
 ## 0.0 已完成并负裁决：Evidence-Factorized Policy-Layer Trace M2P
 

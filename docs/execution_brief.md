@@ -15,10 +15,11 @@
 - 新设计冻结train24-only language top2 route，让每个condition只进入两个完整独立的
   Evidence-Factorized Reader+axis experts；两个memory等权组成一套LoRA。route不生成value，
   correct/same/wrong/shuffle/reverse同language必须同route，zero-video必须identity。
-- 当前只允许：生成hashless route authority；原位实现fresh architecture/config/checkpoint family；
-  跑聚焦route/shape/identity/selected-gradient合同；clean/push后再live选最多6张空闲A40做
-  fresh0→1、exact-resume1→3 profile。正式训练必须等profile seal，不加载任何旧Writer。
-- 预计8 experts共`487,415,808` trainable，top2执行。profile若OOM先减frozen descriptor chunk或
+- hashless route authority、fresh architecture/config/checkpoint family、top2完整expert
+  gather/scatter和expert-local task-gradient owner均已实现；真实参数为`487,415,808`，route
+  usage无塌缩，聚焦CPU合同已通过。clean/push后再live选最多6张空闲A40做fresh0→1、
+  exact-resume1→3 profile。正式训练必须等profile seal，不加载任何旧Writer。
+- profile若OOM先减frozen descriptor chunk或
   做optimizer state分片，不改K4、B20、full24、rank、objective、LR或checkpoint schedule。
 
 ## 0.1 已完成并负裁决：Energy-Preserving Policy-Layer Trace M2P

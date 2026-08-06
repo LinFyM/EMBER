@@ -180,10 +180,12 @@ single-checkpoint、无hash、不使用subagent与安全边界。
   →Reader→axis→BA→action也闭合，LoRA norm/stable-rank/top-energy=`60.31/1.291/.847`。
   最早剩余故障是shared Reader/axis最后50步full24 retention仅`.05527/.04650`，因此现在才
   打开完整parameter ownership隔离，而不是继续改频谱、scale、rank或loss。
-- 下一步只生成route authority、原位实现fresh incompatible architecture/config/checkpoint、
-  跑聚焦合同并做A40 profile；预计8 experts共`487,415,808` trainable、top2 conditional
-  execution。不得加载任何旧Writer、恢复只隔离final heads的Direction Store、使用learned/
-  outcome router或改K4/B20/full24/rank/objective。profile seal前不得启动formal。
+- route authority与canonical fresh architecture/config/checkpoint已完成：8 experts真实
+  `487,415,808` trainable、top2 conditional execution，primary/top2 train usage无塌缩；冻结
+  route、dense-reference、zero identity、未选expert零梯度与expert-local gradient ownership合同
+  已通过。下一步只从clean pushed commit做A40 fresh0→1、same-root exact-resume1→3 profile。
+  不得加载任何旧Writer、恢复只隔离final heads的Direction Store、使用learned/outcome router或
+  改K4/B20/full24/rank/objective。profile seal前不得启动formal。
 - 上一活动方法为
   `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`。上一版K4 layer-trace五臂已完成：
   `correct/same/wrong/shuffled/reversed=99/92/57/94/105`；correct相对wrong明显更好，证明

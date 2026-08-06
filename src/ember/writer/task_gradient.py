@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import dataclass
 from typing import Any, Iterable, Sequence
 
@@ -29,10 +30,11 @@ class FlatParameter:
 
 
 def _parameter_block(name: str) -> str:
-    if name.startswith("layer_m2p.axis_blocks."):
-        return "axis_m2p"
-    if name.startswith("layer_m2p."):
-        return "policy_layer_reader"
+    match = re.match(r"layer_m2p\.experts\.([0-9]+)\.(.*)", name)
+    if match is not None:
+        expert = int(match.group(1))
+        owner = "axis_m2p" if match.group(2).startswith("axis_blocks.") else "reader"
+        return f"expert_{expert:02d}_{owner}"
     raise TaskGradientError(f"unowned Writer parameter: {name}")
 
 
@@ -57,7 +59,13 @@ def parameter_layout(writer: torch.nn.Module) -> tuple[FlatParameter, ...]:
         cursor = stop
     if not result or len({item.name for item in result}) != len(result):
         raise TaskGradientError("invalid Writer parameter layout")
-    if {item.block for item in result} != {"policy_layer_reader", "axis_m2p"}:
+    blocks = {item.block for item in result}
+    expected = {
+        f"expert_{expert:02d}_{owner}"
+        for expert in range(8)
+        for owner in ("reader", "axis_m2p")
+    }
+    if blocks != expected:
         raise TaskGradientError("Writer parameter ownership changed")
     return tuple(result)
 

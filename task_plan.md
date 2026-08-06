@@ -20,9 +20,9 @@ runner、split、路径或 GPU 权限。
   `docs/action_forecast_writer_sparse_semantic_expert_trace_design.md`：train24-only frozen semantic
   top2 route选择两个完整独立Reader+axis experts，video trace仍是唯一动态value，top2 memory只
   生成一套LoRA；AS/RL共用同一图。
-- [ ] 生成route authority并审计8 experts的primary/top2 train usage；不得读取held action、
+- [x] 生成route authority并审计8 experts的primary/top2 train usage；不得读取held action、
   validation/test input或rollout选择route。
-- [ ] 原位实现唯一canonical sparse-expert Writer、fresh config/schema/checkpoint/task-gradient
+- [x] 原位实现唯一canonical sparse-expert Writer、fresh config/schema/checkpoint/task-gradient
   owner，退休single-expert executable path；完成聚焦合同、全仓回归、compileall与real load。
 - [ ] clean/push后live比较`gpu01/gpu02`，只用最多6张空闲A40完成longest105、K4/B20/B2、
   fresh0→1和same-root exact-resume1→3 profile；profile权重弃用。

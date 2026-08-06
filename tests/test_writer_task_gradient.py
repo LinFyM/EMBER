@@ -40,10 +40,18 @@ def _task_gradients() -> dict[int, torch.Tensor]:
 def test_parameter_layout_owns_all_k4_layer_reader_and_axis_parameters() -> None:
     writer = torch.nn.Module()
     writer.layer_m2p = torch.nn.Module()
-    writer.layer_m2p.reader = torch.nn.Linear(1, 1)
-    writer.layer_m2p.axis_blocks = torch.nn.ModuleList([torch.nn.Linear(1, 1)])
+    writer.layer_m2p.experts = torch.nn.ModuleList()
+    for _ in range(8):
+        expert = torch.nn.Module()
+        expert.reader = torch.nn.Linear(1, 1)
+        expert.axis_blocks = torch.nn.ModuleList([torch.nn.Linear(1, 1)])
+        writer.layer_m2p.experts.append(expert)
     layout = parameter_layout(writer)
-    assert {item.block for item in layout} == {"policy_layer_reader", "axis_m2p"}
+    assert {item.block for item in layout} == {
+        f"expert_{expert:02d}_{owner}"
+        for expert in range(8)
+        for owner in ("reader", "axis_m2p")
+    }
 
 
 def test_raw_mean_is_exact_under_task_order_permutation_and_assignable() -> None:

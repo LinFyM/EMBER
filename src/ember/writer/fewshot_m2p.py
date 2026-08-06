@@ -466,6 +466,221 @@ class PolicyLayerTraceM2P(torch.nn.Module):
         return self.decode(self.encode(video_traces, condition_video_offsets))
 
 
+class FixedSemanticExpertRouter(torch.nn.Module):
+    """Select fixed top-k parameter owners from a frozen PI05 language anchor."""
+
+    def __init__(
+        self,
+        centers: torch.Tensor,
+        *,
+        anchor_mean: torch.Tensor,
+        top_k: int,
+    ) -> None:
+        super().__init__()
+        if (
+            centers.ndim != 2
+            or min(centers.shape) <= 0
+            or top_k <= 0
+            or top_k >= centers.shape[0]
+            or anchor_mean.shape != (centers.shape[1],)
+            or not bool(torch.isfinite(centers).all())
+            or not bool(torch.isfinite(anchor_mean).all())
+        ):
+            raise FewShotM2PError("invalid fixed semantic expert route")
+        self.expert_count = int(centers.shape[0])
+        self.anchor_width = int(centers.shape[1])
+        self.top_k = int(top_k)
+        self.register_buffer(
+            "centers",
+            F.normalize(centers.to(torch.float32), dim=-1).contiguous(),
+            persistent=True,
+        )
+        self.register_buffer(
+            "anchor_mean",
+            anchor_mean.to(torch.float32).contiguous(),
+            persistent=True,
+        )
+
+    def forward(self, anchor: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        if anchor.ndim != 2 or anchor.shape[-1] != self.anchor_width:
+            raise FewShotM2PError("fixed semantic route lost task anchor")
+        normalized = F.normalize(
+            anchor.to(torch.float32) - self.anchor_mean,
+            dim=-1,
+        )
+        indices = torch.topk(
+            normalized @ self.centers.transpose(0, 1),
+            k=self.top_k,
+            dim=-1,
+            largest=True,
+            sorted=True,
+        ).indices
+        weights = torch.full(
+            indices.shape,
+            1.0 / self.top_k,
+            dtype=torch.float32,
+            device=anchor.device,
+        )
+        return indices, weights
+
+
+class SparseSemanticPolicyLayerTraceM2P(torch.nn.Module):
+    """Combine top-k complete video-trace experts before one LoRA decode."""
+
+    def __init__(
+        self,
+        groups: tuple[PolicyLayerGroup, ...],
+        *,
+        template_state: Mapping[str, torch.Tensor],
+        route_centers: torch.Tensor,
+        route_anchor_mean: torch.Tensor,
+        expert_count: int,
+        top_k: int,
+        width: int,
+        memory_slots: int,
+        temporal_terms: int,
+        heads: int,
+        blocks: int,
+        ffn_expansion: int,
+        initialization_seed: int,
+    ) -> None:
+        super().__init__()
+        if route_centers.shape[0] != expert_count:
+            raise FewShotM2PError("semantic expert count changed")
+        self.groups = groups
+        self.width = int(width)
+        self.memory_slots = int(memory_slots)
+        self.temporal_terms = int(temporal_terms)
+        self.expert_count = int(expert_count)
+        self.top_k = int(top_k)
+        self.router = FixedSemanticExpertRouter(
+            route_centers,
+            anchor_mean=route_anchor_mean,
+            top_k=top_k,
+        )
+        self.experts = torch.nn.ModuleList(
+            PolicyLayerTraceM2P(
+                groups,
+                template_state=template_state,
+                width=width,
+                memory_slots=memory_slots,
+                temporal_terms=temporal_terms,
+                heads=heads,
+                blocks=blocks,
+                ffn_expansion=ffn_expansion,
+                initialization_seed=initialization_seed + expert_index,
+            )
+            for expert_index in range(expert_count)
+        )
+
+    def route(self, task_anchor: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        return self.router(task_anchor)
+
+    def encode(
+        self,
+        video_traces: torch.Tensor,
+        condition_video_offsets: torch.Tensor,
+        task_anchor: torch.Tensor,
+    ) -> torch.Tensor:
+        if (
+            condition_video_offsets.ndim != 1
+            or condition_video_offsets.dtype != torch.long
+            or condition_video_offsets.numel() < 2
+        ):
+            raise FewShotM2PError("invalid sparse-expert condition offsets")
+        conditions = condition_video_offsets.numel() - 1
+        offsets = condition_video_offsets.detach().cpu()
+        shot_counts = offsets[1:] - offsets[:-1]
+        if (
+            int(offsets[0]) != 0
+            or int(offsets[-1]) != video_traces.shape[0]
+            or not bool((shot_counts == shot_counts[0]).all())
+            or int(shot_counts[0]) <= 1
+            or task_anchor.shape != (conditions, self.router.anchor_width)
+        ):
+            raise FewShotM2PError("sparse semantic expert batch changed")
+        shots = int(shot_counts[0])
+        expected_trace_shape = (
+            conditions,
+            shots,
+            len(self.groups),
+            self.temporal_terms,
+            self.width,
+        )
+        if video_traces.shape != (
+            conditions * shots,
+            len(self.groups),
+            self.temporal_terms,
+            self.width,
+        ):
+            raise FewShotM2PError("sparse semantic expert traces changed shape")
+        physical = video_traces.reshape(expected_trace_shape)
+        route_indices, route_weights = self.route(task_anchor)
+        memory: torch.Tensor | None = None
+        for expert_index, expert in enumerate(self.experts):
+            selected = torch.nonzero(
+                route_indices == expert_index,
+                as_tuple=False,
+            )
+            if selected.numel() == 0:
+                continue
+            condition_ids = selected[:, 0]
+            route_slots = selected[:, 1]
+            local_traces = physical.index_select(0, condition_ids).reshape(
+                -1,
+                len(self.groups),
+                self.temporal_terms,
+                self.width,
+            )
+            local_offsets = torch.arange(
+                0,
+                (condition_ids.numel() + 1) * shots,
+                shots,
+                dtype=torch.long,
+                device=video_traces.device,
+            )
+            local_memory = expert.encode(local_traces, local_offsets)
+            local_weights = route_weights[condition_ids, route_slots].to(
+                dtype=local_memory.dtype
+            ).reshape(-1, 1, 1, 1)
+            if memory is None:
+                memory = local_memory.new_zeros(
+                    conditions,
+                    len(self.groups),
+                    self.memory_slots,
+                    self.width,
+                )
+            memory = memory.index_add(
+                0,
+                condition_ids,
+                local_memory * local_weights,
+            )
+        expected_memory_shape = (
+            conditions,
+            len(self.groups),
+            self.memory_slots,
+            self.width,
+        )
+        if memory is None or memory.shape != expected_memory_shape or not bool(
+            torch.isfinite(memory).all()
+        ):
+            raise FewShotM2PError("sparse semantic expert memory changed shape")
+        return memory
+
+    def decode(self, memory: torch.Tensor) -> dict[str, torch.Tensor]:
+        return self.experts[0].decode(memory)
+
+    def forward(
+        self,
+        video_traces: torch.Tensor,
+        condition_video_offsets: torch.Tensor,
+        task_anchor: torch.Tensor,
+    ) -> dict[str, torch.Tensor]:
+        return self.decode(
+            self.encode(video_traces, condition_video_offsets, task_anchor)
+        )
+
+
 def count_parameters(module: torch.nn.Module) -> int:
     """Return trainable parameter count for the architecture contract."""
 

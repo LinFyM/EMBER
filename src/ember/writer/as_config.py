@@ -1,9 +1,11 @@
-"""Configuration for the evidence-factorized K4 policy-layer trace Writer."""
+"""Configuration for the sparse semantic-expert K4 policy-layer trace Writer."""
 
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Mapping
+
+import torch
 
 from ember.pi05_source_checkpoint import read_json
 from ember.writer.architecture import expected_writer_contract
@@ -11,8 +13,8 @@ from ember.writer.model import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-K4_EVIDENCE_FACTORIZED_CONFIG_SCHEMA = (
-    "ember_pi05_k4_evidence_factorized_policy_layer_trace_m2p_as_writer_v1"
+K4_SPARSE_SEMANTIC_EXPERT_CONFIG_SCHEMA = (
+    "ember_pi05_k4_sparse_semantic_expert_policy_layer_trace_m2p_as_writer_v1"
 )
 AS_WRITER_STAGES = ("development", "final")
 
@@ -55,13 +57,57 @@ def _validate_authorities(config: Mapping[str, Any]) -> None:
         "lora_contract",
         "source_base_config",
         "tokenizer_manifest",
+        "sparse_expert_route",
     }
     if set(authorities) != required:
-        raise WriterModelError("K4 M2P authority set changed")
+        raise WriterModelError("sparse semantic-expert authority set changed")
     for name, authority in authorities.items():
         artifact = REPO_ROOT / str(authority.get("path", ""))
         if not artifact.is_file():
-            raise WriterModelError(f"missing K4 M2P authority: {name}")
+            raise WriterModelError(f"missing sparse semantic-expert authority: {name}")
+
+
+def load_sparse_expert_route(
+    config: Mapping[str, Any],
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Load the frozen train24 language route used by training and rollout."""
+
+    route = read_json(authority_path(config, "sparse_expert_route"))
+    writer = config.get("writer", {})
+    expert_count = int(writer.get("semantic_expert_count", 0))
+    top_k = int(writer.get("semantic_expert_top_k", 0))
+    centers = torch.tensor(route.get("centers", []), dtype=torch.float32)
+    anchor_mean = torch.tensor(route.get("anchor_mean", []), dtype=torch.float32)
+    fit = route.get("fit", {})
+    audit = route.get("audit", {})
+    task_routes = route.get("task_routes", [])
+    if (
+        route.get("schema_version")
+        != "ember_pi05_sparse_semantic_expert_route_v1"
+        or fit
+        != {
+            "task_roles": ["train"],
+            "task_count": 24,
+            "seed": 7,
+            "method": "spherical_kmeans",
+            "expert_count": 8,
+            "top_k": 2,
+            "anchor": "train24_mean_centered_frozen_base_text_task_span_mean_l2",
+        }
+        or expert_count != 8
+        or top_k != 2
+        or centers.shape != (expert_count, 2048)
+        or anchor_mean.shape != (2048,)
+        or len(task_routes) != 24
+        or len(audit.get("primary_expert_counts", [])) != expert_count
+        or len(audit.get("top2_expert_counts", [])) != expert_count
+        or min(audit["primary_expert_counts"]) <= 0
+        or min(audit["top2_expert_counts"]) <= 0
+        or not bool(torch.isfinite(centers).all())
+        or not bool(torch.isfinite(anchor_mean).all())
+    ):
+        raise WriterModelError("sparse semantic-expert route authority changed")
+    return centers, anchor_mean
 
 
 def _validate_protocol(config: Mapping[str, Any]) -> None:
@@ -158,7 +204,7 @@ def _validate_training(config: Mapping[str, Any]) -> None:
     formal_world = int(config.get("formal_run", {}).get("expected_world_size", 0))
     tasks_per_rank = 24 // formal_world if formal_world in {4, 6} else -1
     required = {
-        "method": "k4_evidence_factorized_policy_layer_trace_axis_m2p_rawfull24",
+        "method": "k4_sparse_semantic_expert_policy_layer_trace_axis_m2p_rawfull24",
         "update_topology": "task_complete_all_tasks",
         "tasks_per_rank_per_optimizer_update": tasks_per_rank,
         "global_tasks_per_optimizer_update": 24,
@@ -217,11 +263,12 @@ def _validate_schedule(config: Mapping[str, Any]) -> None:
 
 def load_writer_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
-    if config.get("schema_version") != K4_EVIDENCE_FACTORIZED_CONFIG_SCHEMA:
+    if config.get("schema_version") != K4_SPARSE_SEMANTIC_EXPERT_CONFIG_SCHEMA:
         raise WriterModelError("unsupported PI05 AS-Writer config schema")
     writer_stage(config)
     _validate_authorities(config)
     _validate_protocol(config)
+    load_sparse_expert_route(config)
     _validate_information_wall(config)
     _validate_data(config)
     _validate_training(config)

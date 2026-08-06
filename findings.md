@@ -1,5 +1,16 @@
 # EMBER Findings
 
+## 2026-08-07 Sparse Semantic-Expert实现与route审计
+
+- 当前冻结source/train24重新生成8-center top2 route；anchor mean/centers与历史同原则审计值
+  逐元素一致。primary usage=`5/7/6/1/2/1/1/1`，top2 usage=`7/11/6/4/4/5/3/8`，无expert空置。
+- 八个完整Reader+axis owners真实enumeration为`487,415,808` trainable：Reader
+  `218,980,352`、axis M2P `268,435,456`。language route只选owner，K4 trace仍是全部动态value；
+  top2 memory在decode前组合成一套LoRA。
+- tiny dense-reference与conditional gather/scatter数值一致；zero trace严格zero memory，未选expert
+  无梯度，selected experts在zero-output bootstrap拥有预期梯度入口。下一证据必须来自A40真实
+  fresh/exact-resume profile，不能由参数隔离本身宣称性能改善。
+
 ## 2026-08-07 Evidence-Factorized五臂/内部裁决与完整expert门
 
 - macro200五臂=`84/85/66/83/78`；correct相对wrong gained/lost=

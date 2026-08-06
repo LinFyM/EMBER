@@ -1,4 +1,4 @@
-"""Declarative contract for the evidence-factorized K4 trace Writer."""
+"""Declarative contract for the sparse semantic-expert K4 trace Writer."""
 
 from __future__ import annotations
 
@@ -20,6 +20,8 @@ FEWSHOT_M2P_WRITER_CONSTRUCTOR_KEYS = frozenset(
         "action_horizon",
         "padded_action_dim",
         "videos_per_condition",
+        "semantic_expert_count",
+        "semantic_expert_top_k",
         "initialization_seed",
     }
 )
@@ -37,10 +39,12 @@ WRITER_DIMENSION_CONTRACT = {
     "action_horizon": 50,
     "padded_action_dim": 32,
     "videos_per_condition": 4,
+    "semantic_expert_count": 8,
+    "semantic_expert_top_k": 2,
 }
 
 _STATIC_WRITER_CONTRACT: dict[str, Any] = {
-    "architecture": "pi05_k4_evidence_factorized_policy_layer_trace_axis_m2p_v1",
+    "architecture": "pi05_k4_sparse_semantic_expert_policy_layer_trace_axis_m2p_v1",
     "generated_adapter": "one_complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -52,8 +56,14 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "condition_descriptor": "frozen_pi05_all_action_expert_layer_video_innovation",
     "condition_descriptor_gradient": "none",
     "condition_baseline": "same_language_same_suffix_zero_image_tokens_per_policy_group",
-    "language_role": "video_grounding_inside_frozen_pi05_only",
+    "language_role": "video_grounding_inside_frozen_pi05_plus_fixed_semantic_parameter_ownership",
     "language_value_bypass": False,
+    "semantic_route": "frozen_train24_mean_centered_pi05_task_anchor_top2_cosine",
+    "semantic_route_value": False,
+    "semantic_expert_count": 8,
+    "semantic_expert_top_k": 2,
+    "semantic_expert_weights": "fixed_equal_half_half",
+    "semantic_expert_owner": "complete_independent_trace_reader_and_four_axis_m2p",
     "policy_groups": 20,
     "trace_temporal_terms": 16,
     "trace_width": 1024,
@@ -67,8 +77,8 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "m2p_blocks": 4,
     "m2p_ffn_expansion": 2,
     "m2p_topology": "alternating_policy_group_column_and_parameter_slot_row",
-    "reader_value_owner": "shared_attention_direction_and_physical_video_values_with_bias_free_vector_fusion",
-    "reader_group_outputs": "twenty_independent_exact_zero_initialized_matrices",
+    "reader_value_owner": "top2_complete_expert_attention_direction_and_physical_video_values_with_bias_free_vector_fusion",
+    "reader_group_outputs": "per_expert_twenty_independent_exact_zero_initialized_matrices",
     "policy_targets": 38,
     "public_rank": 16,
     "parameterization": "direct_group_memory_slice_and_reshape_without_target_mlp",
@@ -85,7 +95,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
 
 
 def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
-    """Return the exact evidence-factorized layer-trace Writer payload."""
+    """Return the exact sparse semantic-expert layer-trace Writer payload."""
 
     if writer.get("architecture") != _STATIC_WRITER_CONTRACT["architecture"]:
         raise ValueError(f"unsupported EMBER Writer architecture: {writer.get('architecture')}")

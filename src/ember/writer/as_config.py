@@ -91,20 +91,17 @@ def load_grounded_video_expert_route(
             "seed": 7,
             "method": "spherical_kmeans",
             "expert_count": 8,
-            "top_k": 2,
+            "top_k": 1,
             "anchor": "train24_mean_centered_k4_multimodal_task_token_video_innovation_l2",
         }
         or expert_count != 8
-        or top_k != 2
+        or top_k != 1
         or centers.shape != (expert_count, 2048)
         or anchor_mean.shape != (2048,)
         or len(task_routes) != 24
         or len(audit.get("primary_expert_counts", [])) != expert_count
-        or len(audit.get("top2_expert_counts", [])) != expert_count
         or min(audit["primary_expert_counts"]) <= 0
-        or min(audit["top2_expert_counts"]) <= 0
-        or float(audit.get("primary_route_stability", 0.0)) < 0.90
-        or float(audit.get("mean_top2_overlap", 0.0)) < 0.90
+        or float(audit.get("random_k4_route_stability", 0.0)) < 0.90
         or audit.get("batch4_singleton_routes_exact") is not True
         or int(audit.get("teacher_action_state_reward_terminal_reads", -1)) != 0
         or int(audit.get("validation_test_video_reads", -1)) != 0

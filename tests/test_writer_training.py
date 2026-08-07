@@ -40,7 +40,7 @@ def test_grounded_video_expert_trace_config_seals_joint_video_generation() -> No
     assert config["writer"]["videos_per_condition"] == 4
     assert config["writer"]["language_value_bypass"] is False
     assert config["writer"]["semantic_expert_count"] == 8
-    assert config["writer"]["semantic_expert_top_k"] == 2
+    assert config["writer"]["semantic_expert_top_k"] == 1
     assert config["writer"]["policy_groups"] == 20
     assert config["writer"]["trace_tokens_per_group_per_condition"] == 64
     assert config["writer"]["memory_slots"] == 68

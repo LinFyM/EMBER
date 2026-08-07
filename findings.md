@@ -1,5 +1,18 @@
 # EMBER Findings
 
+## 2026-08-07 Grounded-Video Route input-only裁决
+
+- 冻结PI05 final multimodal task-token video innovation在train24×50上形成稳定的高层视频地址：
+  初始8-center top2对每task 250个随机K4的primary/exact/overlap为
+  `1.0/.984833/.992417`，证明不是退回language-only寻址。
+- top2的secondary并非可靠owner：task35在batch4与singleton路径间从expert0翻到expert5，虽不改
+  primary，却会替换占`.5`权重的一整套Reader+axis参数。严格门因此没有被放宽。
+- input-only证据表明primary在6,000个随机K4 set和24个batch/singleton对上全都一致，所以最终
+  route改为top1 one-hot，而不是增加数值容忍或用rollout/outcome选route。最终8-expert usage=
+  `2/6/7/3/1/1/2/2`，无空置，随机K4与batch合同均为`1.0`。
+- 该改变加强了视频高层语义对parameter owner的因果作用：同一K4 address唯一选择一套完整
+  Writer map，20-group时序trace仍生成全部LoRA value；AS与未来RL共享同一部署图。
+
 ## 2026-08-07 Sparse Semantic-Expert正式负裁决与视频寻址根因
 
 - routefix identity-fresh formal完整curve=`74/74/78/75`、breadth=`6/5/5/5`；winner

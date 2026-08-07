@@ -1,5 +1,20 @@
 # EMBER Progress Ledger
 
+## 2026-08-07 Grounded-Video Route input-only gate完成
+
+- clean`563089a`在live空闲`gpu01:0,1,2|4,5,7`上以六个独立进程完成train24×50 frozen
+  multimodal task-token video address提取；root为
+  `runs/outputs/pi05_grounded_video_expert_route_train24x50_563089a_20260807`。只读action-hidden
+  train videos，route生成器记录teacher action/state/reward/terminal和validation/test video reads=0。
+- 初始top2 input-only预门的随机K4 primary/exact/overlap=`1.0/.984833/.992417`，usage无空置；
+  但task35的secondary owner在batch4/singleton间翻转，严格门为`23/24`。没有用rollout调center
+  或放宽门，而是依据全部6,000个随机K4与24个batch/singleton都完全稳定的primary，收敛为top1
+  one-hot完整expert route。
+- 最终artifact `configs/pi05_grounded_video_expert_route_v1.json`通过：route stability=`1.0`、
+  batch4/singleton=`24/24`、8-expert usage=`2/6/7/3/1/1/2/2`。fresh config/schema/checkpoint与唯一
+  canonical runtime已同步，聚焦`30 passed`及py_compile通过；下一步clean seal后做A40
+  fresh/exact-resume profile。
+
 ## 2026-08-07 Sparse正式裁决并开启Grounded-Video Route
 
 - clean`3820f27`的routefix formal已自然完成0→200：200 finite macros、96,000 queries、

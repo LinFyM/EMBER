@@ -141,7 +141,7 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         padded_action_dim=32,
         videos_per_condition=4,
         semantic_expert_count=8,
-        semantic_expert_top_k=2,
+        semantic_expert_top_k=1,
         route_centers=route_centers,
         route_anchor_mean=torch.zeros(2048),
         initialization_seed=7,

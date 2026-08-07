@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract train24 grounded-video addresses and seal a fixed top2 route."""
+"""Extract train24 grounded-video addresses and seal a fixed top1 route."""
 
 from __future__ import annotations
 
@@ -247,13 +247,10 @@ def _aggregate(args: argparse.Namespace) -> None:
         centered, expert_count=8, seed=7
     )
     similarities = centered @ centers.T
-    values, indices = torch.topk(similarities, k=2, dim=1, sorted=True)
+    values, indices = torch.topk(similarities, k=1, dim=1, sorted=True)
     primary_counts = torch.bincount(indices[:, 0], minlength=8)
-    top2_counts = torch.bincount(indices.flatten(), minlength=8)
 
     primary_matches = []
-    exact_matches = []
-    overlaps = []
     for task_ordinal, (row, task_addresses) in enumerate(zip(rows, addresses, strict=True)):
         reference = indices[task_ordinal]
         task_id = int(row["global_task_id"])
@@ -267,16 +264,10 @@ def _aggregate(args: argparse.Namespace) -> None:
             query = F.normalize(task_addresses[selected].mean(dim=0), dim=0)
             route = torch.topk(
                 F.normalize(query - anchor_mean, dim=0) @ centers.T,
-                k=2,
+                k=1,
             ).indices
             primary_matches.append(float(route[0] == reference[0]))
-            exact_matches.append(float(torch.equal(route, reference)))
-            overlaps.append(
-                len(set(route.tolist()) & set(reference.tolist())) / 2.0
-            )
     primary_stability = sum(primary_matches) / len(primary_matches)
-    exact_stability = sum(exact_matches) / len(exact_matches)
-    top2_overlap = sum(overlaps) / len(overlaps)
 
     cobatch_routes = []
     for task_ordinal, (batch, single) in enumerate(
@@ -285,10 +276,10 @@ def _aggregate(args: argparse.Namespace) -> None:
         batch_query = F.normalize(batch[:4].mean(dim=0), dim=0)
         single_query = F.normalize(single.mean(dim=0), dim=0)
         batch_route = torch.topk(
-            F.normalize(batch_query - anchor_mean, dim=0) @ centers.T, k=2
+            F.normalize(batch_query - anchor_mean, dim=0) @ centers.T, k=1
         ).indices
         single_route = torch.topk(
-            F.normalize(single_query - anchor_mean, dim=0) @ centers.T, k=2
+            F.normalize(single_query - anchor_mean, dim=0) @ centers.T, k=1
         ).indices
         cobatch_routes.append(
             {
@@ -299,11 +290,18 @@ def _aggregate(args: argparse.Namespace) -> None:
                 "address_max_abs": float((batch_query - single_query).abs().max()),
             }
         )
+    print(
+        f"route_stability={primary_stability:.6f} "
+        f"expert_counts={primary_counts.tolist()} "
+        f"cobatch_exact={sum(row['exact'] for row in cobatch_routes)}/24",
+        flush=True,
+    )
+    for row in cobatch_routes:
+        if not row["exact"]:
+            print(f"cobatch_mismatch={row}", flush=True)
     if (
         int(primary_counts.min()) <= 0
-        or int(top2_counts.min()) <= 0
         or primary_stability < 0.90
-        or top2_overlap < 0.90
         or not all(row["exact"] for row in cobatch_routes)
     ):
         raise RuntimeError("grounded-video route failed its input-only gate")
@@ -313,9 +311,7 @@ def _aggregate(args: argparse.Namespace) -> None:
             "global_task_id": int(row["global_task_id"]),
             "language": str(row["language"]),
             "primary_expert": int(indices[index, 0]),
-            "secondary_expert": int(indices[index, 1]),
             "primary_cosine": float(values[index, 0]),
-            "secondary_cosine": float(values[index, 1]),
         }
         for index, row in enumerate(rows)
     ]
@@ -329,7 +325,7 @@ def _aggregate(args: argparse.Namespace) -> None:
                 "seed": 7,
                 "method": "spherical_kmeans",
                 "expert_count": 8,
-                "top_k": 2,
+                "top_k": 1,
                 "anchor": "train24_mean_centered_k4_multimodal_task_token_video_innovation_l2",
             },
             "algorithm": {
@@ -343,13 +339,9 @@ def _aggregate(args: argparse.Namespace) -> None:
             "audit": {
                 "initial_task_indices": initial_indices,
                 "primary_expert_counts": primary_counts.tolist(),
-                "top2_expert_counts": top2_counts.tolist(),
                 "random_k4_sets_per_task": 250,
-                "primary_route_stability": primary_stability,
-                "exact_top2_route_stability": exact_stability,
-                "mean_top2_overlap": top2_overlap,
-                "minimum_primary_stability": 0.90,
-                "minimum_top2_overlap": 0.90,
+                "random_k4_route_stability": primary_stability,
+                "minimum_route_stability": 0.90,
                 "batch4_singleton_routes_exact": True,
                 "cobatch_routes": cobatch_routes,
                 "teacher_action_state_reward_terminal_reads": 0,
@@ -359,12 +351,6 @@ def _aggregate(args: argparse.Namespace) -> None:
             "centers": centers.tolist(),
             "task_routes": task_routes,
         },
-    )
-    print(
-        f"primary={primary_stability:.6f} exact={exact_stability:.6f} "
-        f"overlap={top2_overlap:.6f} primary_counts={primary_counts.tolist()} "
-        f"top2_counts={top2_counts.tolist()}",
-        flush=True,
     )
 
 

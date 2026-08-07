@@ -22,10 +22,17 @@
   `.309/.194/.209/.279/.050`，reversed=`.335/.197/.205/.278/.044`；correct LoRA
   norm/stable-rank/top-energy=`44.79/1.412/.791`。视频没有被忽略且LoRA有真实杠杆，失败是
   language route让五臂固定同一parameter map，高层视频语义没有参与owner寻址。
-- 下一实现从冻结PI05 final multimodal task-token hidden减去same-language zero-image baseline，
-  对每video及K4聚合成2048维grounded video address；只用train24×50 action-hidden input拟合8-center
-  top2 route。先过input-only stability/usage门，再原位实现fresh schema/config、A40 profile和
-  identity-fresh formal0→200。旧sparse checkpoint与language route不得resume或warm-start。
+- clean`563089a`已在live空闲`gpu01:0,1,2|4,5,7`完成train24×50 grounded address提取；root=
+  `runs/outputs/pi05_grounded_video_expert_route_train24x50_563089a_20260807`，teacher action/state/
+  reward/terminal与validation/test video reads均为0。初始top2随机K4 primary/exact/overlap=
+  `1.0/.984833/.992417`，但task35 secondary导致batch4/singleton只有`23/24` exact，不能作为占
+  `.5`完整参数的稳定owner。
+- 最终authority基于同一input-only evidence收敛为top1 one-hot：随机K4 route稳定率`1.0`、
+  batch4/singleton=`24/24` exact、8-expert usage=`2/6/7/3/1/1/2/2`。artifact为
+  `configs/pi05_grounded_video_expert_route_v1.json`；fresh config/schema/checkpoint、唯一canonical
+  runtime与聚焦`30 passed`已闭合。下一步clean/push后只做A40 fresh0→1、same-root
+  exact-resume1→3 profile；通过才允许identity-fresh formal0→200。旧sparse checkpoint与language
+  route不得resume或warm-start。
 
 ## 0.1 已完成并负裁决：Sparse Semantic-Expert route
 

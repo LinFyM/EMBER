@@ -12,8 +12,8 @@ task-language-only改成冻结source policy内部的task-grounded video semantic
 ```text
 exact task language + K4 action-hidden same-task videos
   -> frozen PI05 multimodal task-token video innovations
-  -> K4 semantic address -> frozen train24 video-derived top2 route
-  -> two complete independently-owned Trace Reader + axis-M2P experts
+  -> K4 semantic address -> frozen train24 video-derived top1 route
+  -> one complete independently-owned Trace Reader + axis-M2P expert
 
 same exact inputs
   -> frozen PI05 20-group DCT16 direction/physical/evidence traces
@@ -21,7 +21,7 @@ same exact inputs
   -> one complete public rank-16 LoRA.
 ```
 
-Router和Reader读取的是同一组K4视频的不同冻结视图。route只决定哪两个完整parameter maps接收
+Router和Reader读取的是同一组K4视频的不同冻结视图。route只决定哪个完整parameter map接收
 credit；LoRA的全部动态value仍来自20-group traces。不是language直接生成LoRA、raw task ID分桶、
 逐视频LoRA挑选或多LoRA ensemble。
 
@@ -94,17 +94,23 @@ outcome或validation/test input：
 2. 每task平均50条address得到task prototype；
 3. 对24 prototypes取global mean，中心化并L2 normalize；
 4. seed7 deterministic farthest initialization + spherical k-means生成8 centers；
-5. runtime对K4 address作同一mean-center-normalize，固定取top2 centers，权重`.5/.5`。
+5. runtime对K4 address作同一mean-center-normalize，固定取top1 center，权重`1.0`。
 
-训练前input-only gate要求：8 experts无空置；train task K4随机set的primary稳定率与top2 overlap均
-不低于`.90`；batch shape不得改变top2。若该门失败，先改冻结address本身，不得用rollout、action、
-outcome或validation performance调center、expert数、top-k或权重。
+初始top2预门在不读action/outcome/validation input的前提下得到primary稳定率`1.0`、top2 exact
+`.984833`、overlap`.992417`，8 experts均有primary owner；但batch4/singleton只有`23/24` exact，
+task35的secondary owner在两个近邻间跳变。secondary仍占`.5`完整Writer参数，不能把这个差异当作
+数值噪声放过。由于primary在全部6,000个随机K4 set及24个batch/singleton对上都严格稳定，本authority
+在正式训练前把route收敛为top1 one-hot；这是input-only gate作出的结构裁决，不使用rollout结果调参。
+
+最终训练前gate要求：8 experts均有primary task；train task随机K4 route稳定率不低于`.90`；
+batch4/singleton top1严格一致。若该门失败，不得用rollout、action、outcome或validation performance
+调center、expert数或route。
 
 ## 6. Reader、LoRA与信息墙
 
 - 八套完整independent Trace Reader+四轴M2P、20 groups、DCT16、direction/physical/evidence、
   memory68×1024、38 targets与public rank16保持不变；
-- 每condition只执行route选中的两个experts，两个memory先等权组合，再decode一次；
+- 每condition只执行route选中的一个完整expert，再decode一次；
 - Writer输入仍只有exact task language + exactly four action-hidden videos；不得读取teacher action、
   proprio、reward、terminal、task ID、filename、object pose、normalization或policy outcome；
 - 每task每episode只产生一套LoRA，不能逐video生成后平均、挑选或ensemble；
@@ -128,7 +134,7 @@ rank/order auxiliary、success gate或环境heuristic，因此不是监督学习
    decode与optimizer语义不变；
 4. architecture/config/checkpoint schema fresh incompatible，旧sparse checkpoint拒载；
 5. 聚焦合同覆盖address baseline、K4 permutation、order-invariant route、wrong-video route变化、
-   top2 stability、zero identity、unselected gradient、source freeze、actual-world-size ownership和resume。
+   top1 stability、zero identity、unselected gradient、source freeze、actual-world-size ownership和resume。
 
 不得增加learned router、language residual route、task-ID fallback、load-balance/contrastive loss或
 outcome-selected centers。真实vertical path足以给证据时不扩展大而泛的test harness。
@@ -147,6 +153,6 @@ wrong且video-derived route在same/wrong/order arms符合预注册语义；funct
 
 ## 10. 禁调项
 
-本轮不改K4、DCT/evidence、expert数/top2/equal weights、rank、LR、B20、full24、AS objective、
+本轮不改K4、DCT/evidence、expert数/top1/one-hot weight、rank、LR、B20、full24、AS objective、
 optimizer、checkpoint schedule或source policy；不加reward、SFT-only auxiliary、scalar/global
 scale、multi-LoRA、checkpoint融合、挑video、延长同一失败schedule或从任何历史best warm-start。

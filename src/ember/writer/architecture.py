@@ -40,7 +40,7 @@ WRITER_DIMENSION_CONTRACT = {
     "padded_action_dim": 32,
     "videos_per_condition": 4,
     "semantic_expert_count": 8,
-    "semantic_expert_top_k": 2,
+    "semantic_expert_top_k": 1,
 }
 
 _STATIC_WRITER_CONTRACT: dict[str, Any] = {
@@ -58,11 +58,11 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "condition_baseline": "same_language_same_suffix_zero_image_tokens_per_policy_group",
     "language_role": "video_grounding_inside_frozen_pi05_without_language_only_parameter_ownership",
     "language_value_bypass": False,
-    "semantic_route": "frozen_train24_mean_centered_k4_multimodal_task_token_video_innovation_top2_cosine",
+    "semantic_route": "frozen_train24_mean_centered_k4_multimodal_task_token_video_innovation_top1_cosine",
     "semantic_route_value": False,
     "semantic_expert_count": 8,
-    "semantic_expert_top_k": 2,
-    "semantic_expert_weights": "fixed_equal_half_half",
+    "semantic_expert_top_k": 1,
+    "semantic_expert_weights": "fixed_one_hot",
     "semantic_expert_owner": "complete_independent_trace_reader_and_four_axis_m2p",
     "policy_groups": 20,
     "trace_temporal_terms": 16,
@@ -77,7 +77,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "m2p_blocks": 4,
     "m2p_ffn_expansion": 2,
     "m2p_topology": "alternating_policy_group_column_and_parameter_slot_row",
-    "reader_value_owner": "top2_complete_expert_attention_direction_and_physical_video_values_with_bias_free_vector_fusion",
+    "reader_value_owner": "one_grounded_video_selected_complete_expert_attention_direction_and_physical_video_values_with_bias_free_vector_fusion",
     "reader_group_outputs": "per_expert_twenty_independent_exact_zero_initialized_matrices",
     "policy_targets": 38,
     "public_rank": 16,

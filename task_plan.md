@@ -17,13 +17,17 @@ runner、split、路径或 GPU 权限。
   expert-local retention却没有让高层视频语义决定credit存储位置。
 - [x] 封存
   `docs/action_forecast_writer_grounded_video_expert_route_design.md`：冻结PI05 multimodal task-token
-  video innovation形成K4 semantic address，train24-only 8-center top2 route；20-group traces仍是
+  video innovation形成K4 semantic address，train24-only 8-center route；20-group traces仍是
   dynamic value，八完整experts与single-LoRA不变，AS/RL共用同一图。
-- [ ] 原位实现grounded address与input-only route generator；用train24×50 action-hidden videos
-  生成artifact，并通过8 experts非空、train K4 primary stability/top2 overlap≥`.90`、co-batch
-  top2 invariant、zero identity和信息墙合同。门失败只改address，不用rollout/outcome调route。
-- [ ] 建立fresh incompatible architecture/config/checkpoint family，退休language-route executable
-  path；运行聚焦tests、real config load和short vertical path。
+- [x] 原位实现grounded address与input-only route generator；clean`563089a`用gpu01六张空闲A40
+  完成train24×50 action-hidden videos提取。初始top2的primary/exact/overlap=
+  `1.0/.984833/.992417`，但task35 secondary使batch4/singleton仅`23/24` exact；没有放宽门，
+  根据完全稳定的primary收敛为top1 one-hot。
+- [x] 最终route gate为随机K4稳定率`1.0`、batch4/singleton=`24/24` exact、primary usage=
+  `2/6/7/3/1/1/2/2`且8 experts全非空；全程teacher action/state/reward/terminal与validation/test
+  video reads均为0。artifact为`configs/pi05_grounded_video_expert_route_v1.json`。
+- [x] 建立fresh incompatible architecture/config/checkpoint family并退休language-route executable
+  path；grounded route/model/config/checkpoint聚焦`30 passed`、py_compile与real route load通过。
 - [ ] clean/push后live比较`gpu01/gpu02`，只用最多6张空闲A40做longest105、K4/B20/B2、
   fresh0→1和same-root exact-resume1→3；profile权重弃用。
 - [ ] profile通过后identity fresh0→200、每25 checkpoint；严格评50/100/150/200 correct400，

@@ -13,14 +13,14 @@
   `78/85/90/83/92`，correct最低。expert-local retention明显改善但behavior未改善；wrong/order
   LoRA仍产生`.25--.28`量级BA变化并传入action，证明视频未被忽略。问题是language-only route
   对五臂固定同两个owners，视频高层语义不参与parameter ownership。
-- 下一步先实现/生成train24×50 input-only grounded-video route authority：冻结PI05 final
-  multimodal task-token hidden减zero-image baseline，每video与K4聚合，8 centers/top2 equal。
-  只过usage、train K4 stability、batch invariance与信息墙门，不读held input/action/outcome或
-  rollout调route。
-- route门通过后原位替换canonical router并建立fresh incompatible schema/config；聚焦CPU合同后
-  live比较`gpu01/gpu02`，只用最多6张空闲A40做fresh0→1/exact-resume1→3 profile。通过才允许
-  identity formal0→200与严格50/100/150/200 correct400、winner五臂/internal。
-- 保持K4、20-group trace、八完整experts、single LoRA、B20/full24/rank16/LR/objective不变；不加
+- train24×50 input-only grounded-video route已在clean`563089a`生成。初始top2虽有
+  primary/exact/overlap=`1.0/.984833/.992417`，但secondary batch不稳定；最终依据完全稳定的
+  primary收敛为top1 one-hot，未读取held input/action/outcome或rollout调route。最终随机K4
+  stability=`1.0`、batch4/singleton=`24/24`、usage=`2/6/7/3/1/1/2/2`。
+- artifact、canonical router与fresh incompatible schema/config已闭合，聚焦`30 passed`。下一步
+  clean/push后live比较`gpu01/gpu02`，只用最多6张空闲A40做fresh0→1/exact-resume1→3 profile。
+  通过才允许identity formal0→200与严格50/100/150/200 correct400、winner五臂/internal。
+- 保持K4、20-group trace、八完整experts、top1 one-hot owner、single LoRA、B20/full24/rank16/LR/objective不变；不加
   learned/language residual router、task-ID fallback、SFT-only auxiliary、reward、scale、挑video、
   checkpoint融合或历史warm-start。
 

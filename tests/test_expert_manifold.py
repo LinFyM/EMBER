@@ -40,11 +40,23 @@ def test_profile_runtime_supports_fresh_then_exact_resume_boundary() -> None:
     assert resolve_runtime(resumed, config) == (3, 16, (1, 3), 3)
 
 
-def test_formal_experts_remain_blocked_until_live_profile() -> None:
+def test_formal_experts_use_the_sealed_live_profile(monkeypatch: pytest.MonkeyPatch) -> None:
     config = load_expert_manifold_config(CONFIG)
+    monkeypatch.setattr(
+        "ember.expert_manifold.contract.git_state",
+        lambda _root: {
+            "dirty_paths": [],
+            "commit": "sealed",
+            "upstream_commit": "sealed",
+        },
+    )
     args = Namespace(mode="formal", batch_size=None, stop_after_step=1000, resume=None)
-    with pytest.raises(ExpertManifoldError, match="not sealed"):
-        resolve_runtime(args, config)
+    assert resolve_runtime(args, config) == (
+        2000,
+        16,
+        (250, 500, 1000, 1500, 2000),
+        1000,
+    )
 
 
 def test_task_local_sampler_is_step_exact_across_epoch_boundary() -> None:

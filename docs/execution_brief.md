@@ -17,10 +17,14 @@ one-shot，视频是唯一dynamic value：exact language只用来query frozen π
 hidden，减matched text/no-image baseline并保留phase16时序；禁止language-only LoRA
 bypass，zero innovation精确回identity。
 
-下一执行阶段先建立24套train-task rank-16 policy experts。六个independent单卡进程每个
-常驻一个frozen policy并串行自己的4个tasks；不用DDP/NCCL聚合不同experts。实现后
-先用live空闲单卡A40做fresh0→1/exact-resume1→3 profile，再按clean/pushed formal
-contract训全24 experts。expert global checkpoints用development-train official rollout选一个统一step，
+24套train-task rank-16 policy expert的builder与A40 profile已经完成。clean`174d292`
+在`gpu01:0`、B16完成fresh0→1、same-root exact-resume1→3和独立contiguous0→3；三步
+loss=`.221725/.283785/.259915`，峰值allocated/reserved=
+`15,082,000,384/21,313,355,776` bytes，续训科学metrics和step3 adapter与contiguous逐字节
+一致，0 OOM/nonfinite。formal config现已seal。
+
+下一执行阶段用六个independent单卡进程，每个常驻一个frozen policy并串行4个tasks；
+不用DDP/NCCL聚合不同experts。先统一训到step1000。expert global checkpoints用development-train official rollout选一个统一step，
 不训或读任何held expert/action。
 
 专家门通过后才提取action-hidden frozen video features，实现168个`[16,512]`

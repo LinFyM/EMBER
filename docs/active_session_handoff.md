@@ -26,8 +26,13 @@
   memory直接输出delta-A/B，同时学direction和scale，不经过窄factor head或atom mixing。
   真实inference hook枚举456个active Linear；若当前38 targets的task experts证明拓扑上限，
   再依该枚举扩大，首轮不混入第二个大变量。
-- 下一执行顺序：实现独立task-expert builder和evaluator→单卡A40 profile→六卡训24 experts
-  并用development-train closed loop封存同一global step→提取action-hidden frozen features→
+- task-expert builder、独立checkpoint/stage-resume和单卡A40 profile已完成。clean`174d292`
+  在`gpu01:0`以B16完成fresh0→1、same-root resume1→3和独立contiguous0→3；三步loss=
+  `.221725/.283785/.259915`、gradient norm=`.029505/.032996/.035243`，峰值allocated/reserved=
+  `15,082,000,384/21,313,355,776` bytes。resume与contiguous的科学metrics及step3 adapter
+  逐字节一致，0 OOM/nonfinite；formal config已seal。
+- 下一执行顺序：六卡独立workers训24 experts到统一step1000→development-train closed loop
+  封存统一global step并决定是否续2000→提取action-hidden frozen features→
   实现/profile/训练meta-Writer→strict validation曲线与五臂。未过`>150/400`前按最早
   失效接口继续迭代。
 

@@ -1,5 +1,17 @@
 # EMBER Progress Ledger
 
+## 2026-08-07 Video Expert-Manifold task-expert builder与profile seal
+
+- 建立hashless task-expert formal config、task-local deterministic sampler、adapter+optimizer+
+  scheduler+RNG checkpoint、all-task stage resume与单GPU多task串行worker；formal固定6 workers×4 tasks，
+  不建DDP/NCCL，不共享task参数或optimizer。
+- profile先后暴露并修复三步诊断误缩formal scheduler horizon、trainer反序列化把CPU RNG搬到CUDA
+  两个真实合同问题；失败run均未越过对应边界，也未作为科研证据。
+- clean`174d292`最终在`gpu01:0`以B16通过fresh0→1、same-root resume1→3和独立contiguous0→3。
+  三步finite，loss=`.221725/.283785/.259915`，峰值allocated/reserved=
+  `15,082,000,384/21,313,355,776` bytes，0 OOM/nonfinite；resume和contiguous的科学metrics、
+  step3 adapter逐字节一致。config已seal，下一步正式训练24 experts到统一step1000。
+
 ## 2026-08-07 K4 Phase-Aligned全部封存并切换Expert-Manifold
 
 - clean`2356d33`的K4 Phase-Aligned formal root完成200 finite macros、96,000 queries、

@@ -225,3 +225,17 @@ resume在加载trainer时发现`map_location=cuda`把CPU RNG state也搬到GPU�
 续训step前由PyTorch拒绝。checkpoint内容本身完整；loader现统一在CPU反序列化trainer，
 optimizer再按参数设备恢复，CPU/CUDA RNG分别从CPU ByteTensor恢复。该修复后必须用新
 commit和新root重做完整fresh/resume证据，不能沿用旧run contract冒充通过。
+
+## 14. A40 profile seal与formal边界
+
+clean`174d292`最终在live空闲`gpu01:0`完成三条证据链：fresh0→1、同root
+exact-resume1→3，以及独立root contiguous0→3。physical B16、rank16、38 targets、完整action
+query与formal 2000-step scheduler前缀均未降低。三步loss=
+`.221725/.283785/.259915`、gradient norm=`.029505/.032996/.035243`；峰值
+allocated/reserved=`15,082,000,384/21,313,355,776` bytes，0 OOM/nonfinite，base policy没有
+梯度。resume与contiguous的科学metrics完全一致，step3 adapter逐字节一致，不使用内容hash。
+
+因此`configs/pi05_video_expert_manifold_v1.json`已seal formal：6个independent单卡workers，
+每worker严格4 tasks，每task B16，统一先训到step1000并保存250/500/1000；不同task不做
+collective。只有development-train official closed loop和LoRA内部组织可以裁决是否在同一root
+exact-resume到2000；不得按单task结果选择不同step或训练held experts。

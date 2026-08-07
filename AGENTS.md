@@ -186,8 +186,12 @@ single-checkpoint、无hash、不使用subagent与安全边界。
   交替全局交换，直接输出delta-A/B并显式学习direction/scale，不经过窄factor
   head、atom mixing、scalar gate或language residual。同一图后续必须能直接接收functional或
   reward cotangent，不建监督专用的deployment分支。
-- 下一执行顺序是：task-expert builder/evaluator实现→单卡A40 fresh/exact-resume profile→
-  六卡独立workers训24 experts→development-train closed-loop统一checkpoint裁决→action-hidden
+- task-expert builder、task-local sampler/checkpoint与单卡A40 profile已完成。clean`174d292`
+  在`gpu01:0`以B16完成fresh0→1、same-root exact-resume1→3和独立contiguous0→3；三步loss=
+  `.221725/.283785/.259915`，峰值allocated/reserved=`15,082,000,384/21,313,355,776` bytes，
+  resume与contiguous的科学metrics及step3 adapter逐字节一致，0 OOM/nonfinite。formal config已seal。
+- 下一执行顺序是：六卡独立workers训24 experts到统一step1000→development-train closed-loop
+  统一checkpoint裁决→必要时同root exact-resume到2000→action-hidden
   frozen feature cache→meta-Writer实现/profile/formal/strict validation。independent expert workers不建
   NCCL process group；每卡常驻一个policy并串行自己的task子集。
 - 2026-08-07 K4 Phase-Aligned已完成并负裁决：correct curve=`88/108/80/99`，

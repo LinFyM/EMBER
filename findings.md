@@ -1,5 +1,17 @@
 # EMBER Findings
 
+## 2026-08-07 Video Expert-Manifold task-expert A40 profile
+
+- 独立task expert不是新的部署输入或task-ID route：teacher action只用于train24各自的policy-effective
+  LoRA坐标，后续Writer仍只能从language+action-hidden video生成LoRA。
+- clean`174d292`在`gpu01:0`以B16完成fresh0→1、same-root resume1→3和独立contiguous0→3。
+  三步loss=`.221725/.283785/.259915`、gradient norm=`.029505/.032996/.035243`，峰值
+  allocated/reserved=`15,082,000,384/21,313,355,776` bytes，说明46GB A40有充分余量且
+  不需改变task data、batch或LoRA topology。
+- resume与contiguous的loss/grad/LR/query cursor完全一致，step3 adapter逐字节一致；checkpoint
+  loader的CPU/CUDA RNG设备语义已在真实失败中根修。现在可在六张实时空闲卡上启动24-task
+  expert bank的统一step1000 formal，不需DDP/NCCL。
+
 ## 2026-08-07 K4 Phase-Aligned最终根因与Expert-Manifold方向
 
 - K4 Phase-Aligned的strict curve=`88/108/80/99`，union/intersection=`157/36`；恢复历史

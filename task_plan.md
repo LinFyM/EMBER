@@ -10,8 +10,11 @@
   `docs/action_forecast_writer_video_expert_manifold_design.md`：视频是唯一dynamic value，
   用frozen π0.5 joint-video innovation到phase16；先训24套policy-effective task experts，再用
   168个`16×512`topological chunks和交替chunk/rank axial decoder重建完整LoRA。
-- [ ] 实现并profile六卡独立task-expert builder；在同一global checkpoints上训24个rank-16
-  experts，用development-train official rollout和LoRA组织裁决专家质量。不读任何held action。
+- [x] 实现task-local sampler/checkpoint、六worker ownership与单卡多task builder；clean`174d292`
+  在A40 B16完成fresh0→1、resume1→3和contiguous0→3，科学metrics及step3 adapter精确一致，
+  峰值reserved`21,313,355,776` bytes，formal config已seal。
+- [ ] 用六个independent workers在同一global checkpoints上训24个rank-16 experts；先到step1000，
+  用development-train official rollout和LoRA组织裁决统一expert step。不读任何held action。
 - [ ] 提取仅含action-hidden video innovation的frozen feature cache，实现bottleneck-free
   topological Writer、完整checkpoint/inference/evaluator，原位退役K4 executable path。
 - [ ] 完成A40 profile、identity-fresh meta训练、strict paired correct400曲线、五臂视频因果、

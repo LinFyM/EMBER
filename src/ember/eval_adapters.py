@@ -9,6 +9,7 @@ from ember.pi05_assets import Pi05EvaluationError
 
 
 STATIC_SOURCE_SFT_KIND = "shared_source_sft_lora"
+STATIC_TASK_EXPERT_KIND = "task_local_expert_bank"
 
 
 def _all_or_none(values: Sequence[Any], label: str) -> bool:
@@ -49,13 +50,33 @@ def source_sft_requested(args: Any) -> bool:
     )
 
 
+def task_expert_requested(args: Any) -> bool:
+    return _all_or_none(
+        (
+            getattr(args, "task_expert_config", None),
+            getattr(args, "task_expert_bank_root", None),
+            getattr(args, "task_expert_step", None),
+        ),
+        "Task-Expert",
+    )
+
+
 def adapter_requests(args: Any) -> tuple[str | None, bool]:
     as_requested = as_writer_requested(args)
     rl_requested = rl_writer_requested(args)
     sft_requested = source_sft_requested(args)
-    if sum((as_requested, rl_requested, sft_requested)) > 1:
+    expert_requested = task_expert_requested(args)
+    if sum((as_requested, rl_requested, sft_requested, expert_requested)) > 1:
         raise Pi05EvaluationError("PI05 evaluation adapters are mutually exclusive")
-    kind = "as_writer" if as_requested else "rl_writer" if rl_requested else None
+    kind = (
+        "as_writer"
+        if as_requested
+        else "rl_writer"
+        if rl_requested
+        else "task_expert"
+        if expert_requested
+        else None
+    )
     return kind, sft_requested
 
 
@@ -168,6 +189,33 @@ def inspect_source_sft_adapter(
     )
 
 
+def inspect_task_expert_adapter(
+    *,
+    config_path: Path,
+    bank_root: Path,
+    step: int,
+    source: Mapping[str, Any],
+    tasks: Sequence[Any],
+    evaluation_role: str,
+    require_formal: bool,
+) -> dict[str, Any]:
+    from ember.expert_manifold.contract import ExpertManifoldError
+    from ember.expert_manifold.evaluation import inspect_task_expert_bank
+
+    try:
+        return inspect_task_expert_bank(
+            config_path=config_path,
+            bank_root=bank_root,
+            step=step,
+            source=source,
+            task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
+            evaluation_role=evaluation_role,
+            require_formal=require_formal,
+        )
+    except ExpertManifoldError as error:
+        raise Pi05EvaluationError(str(error)) from error
+
+
 def load_evaluation_adapter(
     policy: Any,
     contract: Mapping[str, Any],
@@ -194,6 +242,10 @@ def load_evaluation_adapter(
 
         FrozenSourceSFTAdapter(**common)
         return None
+    if adapter.get("kind") == STATIC_TASK_EXPERT_KIND:
+        from ember.expert_manifold.evaluation import FrozenTaskExpertAdapter
+
+        return FrozenTaskExpertAdapter(**common)
     from ember.writer.evaluation_runtime import FrozenCachedWriterTaskAdapter
     from ember.writer.live_adapter import FrozenWriterTaskAdapter
 
@@ -208,6 +260,8 @@ def episode_adapter_fields(
     contract: Mapping[str, Any], task_adapter: Any | None, prepared: Any | None
 ) -> dict[str, Any]:
     if task_adapter is not None:
+        if contract.get("adapter", {}).get("kind") == STATIC_TASK_EXPERT_KIND:
+            return {"task_expert": dict(prepared.evidence)}
         return {"writer": dict(prepared.evidence)}
     adapter = contract.get("adapter")
     if adapter is not None and adapter.get("kind") == STATIC_SOURCE_SFT_KIND:
@@ -229,6 +283,20 @@ def validate_episode_adapter_fields(
         return (
             row.get("writer") is None
             and row.get("policy_adapter_sha256") == adapter.get("lora_state_sha256")
+        )
+    if adapter.get("kind") == STATIC_TASK_EXPERT_KIND:
+        from ember.expert_manifold.evaluation import validate_task_expert_episode
+
+        return (
+            row.get("writer") is None
+            and row.get("policy_adapter_sha256") is None
+            and validate_task_expert_episode(
+                adapter,
+                row.get("task_expert"),
+                suite=suite,
+                task_id=task_id,
+                init_state_id=init_state_id,
+            )
         )
     from ember.writer.inference import validate_writer_episode_evidence
 

@@ -161,6 +161,9 @@ def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
         rl_writer_video_condition=None,
         source_sft_config=None,
         source_sft_checkpoint=None,
+        task_expert_config=None,
+        task_expert_bank_root=None,
+        task_expert_step=None,
     )
     assert module._adapter_requests(empty) == (None, False)
     partial = argparse.Namespace(**vars(empty))
@@ -193,6 +196,16 @@ def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
     as_and_rl.rl_writer_video_condition = "correct"
     with pytest.raises(Pi05EvaluationError, match="mutually exclusive"):
         module._adapter_requests(as_and_rl)
+
+    expert = argparse.Namespace(**vars(empty))
+    expert.task_expert_config = Path("expert.json")
+    expert.task_expert_bank_root = Path("bank")
+    expert.task_expert_step = 1000
+    assert module._adapter_requests(expert) == ("task_expert", False)
+    expert.source_sft_config = Path("source_sft.json")
+    expert.source_sft_checkpoint = Path("source-sft-step")
+    with pytest.raises(Pi05EvaluationError, match="mutually exclusive"):
+        module._adapter_requests(expert)
 
 
 def test_completed_queue_without_launcher_evidence_fails_closed(

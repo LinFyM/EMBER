@@ -15,6 +15,14 @@ from ember.expert_manifold.contract import (
 )
 from ember.writer.data import WriterTaskAuthority
 from ember.expert_manifold.expert_training import _scheduler
+from ember.expert_manifold.evaluation import (
+    TASK_EXPERT_ADAPTER_KIND,
+    TASK_EXPERT_EPISODE_SCHEMA,
+    inspect_task_expert_bank,
+    validate_task_expert_episode,
+)
+from ember.pi05_lora import load_pi05_lora_contract
+from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.expert_manifold.sampler import TaskLocalEpochSampler
 
 
@@ -143,3 +151,145 @@ def test_worker_stage_resume_requires_complete_same_step_bank(tmp_path: Path) ->
         },
     )
     assert worker_stage_resume_step(tmp_path, tmp_path, tasks) == 1000
+
+
+def test_task_expert_episode_evidence_is_task_and_state_exact() -> None:
+    record = {
+        "suite": "libero_goal",
+        "task_id": 2,
+        "ordinal": 7,
+        "global_task_id": 22,
+        "language": "perform task",
+        "step": 1000,
+        "checkpoint": "/bank/task/checkpoints/step_00001000",
+        "manifest_bytes": 300,
+        "adapter_bytes": 2_654_208,
+    }
+    adapter = {"kind": TASK_EXPERT_ADAPTER_KIND, "tasks": [record]}
+    evidence = {
+        "schema_version": TASK_EXPERT_EPISODE_SCHEMA,
+        **record,
+        "init_state_id": 4,
+    }
+    assert validate_task_expert_episode(
+        adapter,
+        evidence,
+        suite="libero_goal",
+        task_id=2,
+        init_state_id=4,
+    )
+    assert not validate_task_expert_episode(
+        adapter,
+        evidence,
+        suite="libero_goal",
+        task_id=2,
+        init_state_id=5,
+    )
+
+
+def test_complete_hashless_task_expert_bank_is_inspectable(tmp_path: Path) -> None:
+    config = load_expert_manifold_config(CONFIG)
+    manifest = read_json(REPO_ROOT / config["authorities"]["target_data_manifest"]["path"])
+    rows = sorted(
+        (row for row in manifest["tasks"] if row["split_role"] == "train"),
+        key=lambda row: int(row["global_task_id"]),
+    )
+    lora = load_pi05_lora_contract(
+        REPO_ROOT / config["authorities"]["lora_contract"]["path"]
+    )
+    source = {
+        "source_run": str(tmp_path / "source"),
+        "checkpoint": str(tmp_path / "source/checkpoints/step_00001000"),
+        "model_path": str(tmp_path / "source/checkpoints/step_00001000/policy"),
+    }
+    assignments = tuple(tuple(range(worker, 24, 6)) for worker in range(6))
+    for worker, ordinals in enumerate(assignments):
+        worker_dir = tmp_path / "bank" / f"worker_{worker}"
+        task_rows = []
+        summary_rows = []
+        for ordinal in ordinals:
+            row = rows[ordinal]
+            global_task_id = int(row["global_task_id"])
+            task_rows.append(
+                {
+                    "ordinal": ordinal,
+                    "global_task_id": global_task_id,
+                    "suite": row["suite"],
+                    "task_id": int(row["task_id"]),
+                    "split_role": "train",
+                    "language": row["language"],
+                }
+            )
+            summary_rows.append(
+                {
+                    "task_ordinal": ordinal,
+                    "global_task_id": global_task_id,
+                    "completed_steps": 1000,
+                }
+            )
+            checkpoint = (
+                worker_dir
+                / f"task_{ordinal:02d}_global_{global_task_id:02d}"
+                / "checkpoints/step_00001000"
+            )
+            checkpoint.mkdir(parents=True)
+            (checkpoint / "adapter.safetensors").write_bytes(b"a")
+            (checkpoint / "trainer.pt").write_bytes(b"t")
+            write_json_atomic(
+                checkpoint / "manifest.json",
+                {
+                    "schema_version": "ember_pi05_task_expert_checkpoint_v1",
+                    "step": 1000,
+                    "task_ordinal": ordinal,
+                    "global_task_id": global_task_id,
+                    "state_tensor_count": lora.state_tensor_count,
+                    "state_parameter_count": lora.parameter_count,
+                    "files": {"adapter.safetensors": 1, "trainer.pt": 1},
+                    "content_hash_policy": "disabled_by_owner",
+                },
+            )
+        write_json_atomic(
+            worker_dir / "run_contract.json",
+            {
+                "schema_version": "ember_pi05_task_expert_worker_launch_v1",
+                "mode": "formal",
+                "git": {"commit": "training-commit"},
+                "config": {"path": str(CONFIG), "schema": config["schema_version"]},
+                "source": {
+                    "run": source["source_run"],
+                    "checkpoint": source["checkpoint"],
+                    "model_path": source["model_path"],
+                },
+                "tasks": task_rows,
+                "runtime": {
+                    "per_task_batch_size": 16,
+                    "task_parameter_sharing": "none",
+                    "host": "gpu01",
+                    "cuda_visible_device": str(worker),
+                    "device_name": "NVIDIA A40",
+                },
+                "content_hash_policy": "disabled_by_owner",
+            },
+        )
+        write_json_atomic(
+            worker_dir / "worker_summary.json",
+            {
+                "schema_version": "ember_pi05_task_expert_worker_summary_v1",
+                "tasks": summary_rows,
+                "completed_task_count": 4,
+                "selected_stop_step": 1000,
+            },
+        )
+    observed = inspect_task_expert_bank(
+        config_path=CONFIG,
+        bank_root=tmp_path / "bank",
+        step=1000,
+        source=source,
+        task_keys=tuple((str(row["suite"]), int(row["task_id"])) for row in rows),
+        evaluation_role="development_train",
+        require_formal=True,
+    )
+    assert observed["kind"] == TASK_EXPERT_ADAPTER_KIND
+    assert observed["training_commit"] == "training-commit"
+    assert len(observed["tasks"]) == 24
+    assert observed["information_wall"]["validation_actions_read"] == 0

@@ -26,6 +26,7 @@ from ember.eval_adapters import (
     inspect_as_writer_adapter as _inspect_writer_adapter,
     inspect_rl_writer_adapter as _inspect_rl_writer_adapter,
     inspect_source_sft_adapter as _inspect_source_sft_adapter,
+    inspect_task_expert_adapter as _inspect_task_expert_adapter,
     rl_writer_requested as _rl_writer_requested,
     source_sft_requested as _source_sft_requested,
 )
@@ -174,6 +175,9 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--source-sft-config", type=Path)
     parser.add_argument("--source-sft-checkpoint", type=Path)
+    parser.add_argument("--task-expert-config", type=Path)
+    parser.add_argument("--task-expert-bank-root", type=Path)
+    parser.add_argument("--task-expert-step", type=_positive_int)
 
 
 def parse_args() -> argparse.Namespace:
@@ -294,6 +298,16 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
         adapter = _inspect_source_sft_adapter(
             config_path=args.source_sft_config.resolve(),
             checkpoint=args.source_sft_checkpoint.resolve(),
+            source=model,
+            tasks=tasks,
+            evaluation_role=args.role,
+            require_formal=args.mode != "smoke",
+        )
+    elif writer_kind == "task_expert":
+        adapter = _inspect_task_expert_adapter(
+            config_path=args.task_expert_config.resolve(),
+            bank_root=args.task_expert_bank_root.resolve(),
+            step=int(args.task_expert_step),
             source=model,
             tasks=tasks,
             evaluation_role=args.role,
@@ -438,6 +452,16 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
                 )
                 if "sampling_mode" in adapter["video_schedule"]
                 else "without_replacement",
+                require_formal=contract["mode"] != "smoke",
+            )
+        elif adapter.get("kind") == "task_local_expert_bank":
+            observed = _inspect_task_expert_adapter(
+                config_path=Path(adapter["config"]["path"]),
+                bank_root=Path(adapter["bank_root"]),
+                step=int(adapter["step"]),
+                source=model,
+                tasks=tasks,
+                evaluation_role=str(contract["role"]),
                 require_formal=contract["mode"] != "smoke",
             )
         else:

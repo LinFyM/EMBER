@@ -162,7 +162,14 @@ def _train_one_task(
     else:
         initial_step = -1
         metrics_rows = -1
-    optimizer, scheduler = _optimizer_and_scheduler(policy, config, total_steps)
+    schedule_total_steps = int(
+        config["task_experts"]["profile_defaults"].get(
+            "scheduler_total_steps", total_steps
+        )
+    )
+    optimizer, scheduler = _optimizer_and_scheduler(
+        policy, config, schedule_total_steps
+    )
     if resume is not None:
         initial_step, metrics_rows = load_task_expert_checkpoint(
             checkpoint=resume,

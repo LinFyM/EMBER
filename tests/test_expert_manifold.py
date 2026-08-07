@@ -29,6 +29,7 @@ def test_video_expert_manifold_config_keeps_video_as_dynamic_value() -> None:
     assert config["topological_writer"]["chunk_count"] == 168
     assert config["topological_writer"]["valid_values"] == 1_287_168
     assert config["information_wall"]["validation_actions_read"] == 0
+    assert config["task_experts"]["profile_defaults"]["scheduler_total_steps"] == 2000
 
 
 def test_profile_runtime_supports_fresh_then_exact_resume_boundary() -> None:

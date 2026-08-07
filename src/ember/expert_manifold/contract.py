@@ -59,6 +59,8 @@ def load_expert_manifold_config(path: Path) -> dict[str, Any]:
         or int(experts.get("task_count", -1)) != 24
         or int(experts.get("episodes_per_task", -1)) != 50
         or experts.get("task_parameter_sharing") != "none"
+        or int(experts.get("profile_defaults", {}).get("scheduler_total_steps", -1))
+        != int(experts.get("formal_run", {}).get("total_steps", -2))
         or config.get("content_hash_policy") != "disabled_by_owner"
     ):
         raise ExpertManifoldError("expert-manifold scientific boundary changed")

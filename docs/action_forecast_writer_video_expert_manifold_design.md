@@ -214,3 +214,8 @@ RNG状态，也不建立DDP/NCCL。formal拓扑固定为6 workers × 4 tasks，�
 LoRA identity工具，共14项通过。下一边界是同一task root在live A40完成fresh0→1与
 exact-resume1→3，实测finite、OOM、冻结参数、峰值显存和续训等价性；通过后才解除
 formal阻塞并训练完整expert bank。
+
+首次profile在模型加载后由scheduler contract正确拒绝：三步profile horizon被误当成
+formal cosine horizon，因而小于25步warmup；没有完成optimizer step或写checkpoint。
+修复后profile仍只执行三步，但复用formal 2000-step scheduler的前3步，避免用缩短的
+诊断horizon悄悄改变真实学习率语义。

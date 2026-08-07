@@ -95,6 +95,13 @@ def inspect_feature_cache(
         }
         and manifest.get("content_hash_policy") == "disabled_by_owner"
     )
+    tokenizer = manifest.get("tokenizer", {})
+    tokenizer_path = Path(str(tokenizer.get("path", "")))
+    valid = (
+        valid
+        and tokenizer_path.is_file()
+        and tokenizer_path.stat().st_size == int(tokenizer.get("bytes", -1))
+    )
     tasks = manifest.get("tasks", ())
     if not valid or len(tasks) != 24:
         raise ExpertManifoldError("video feature cache manifest changed")
@@ -163,6 +170,10 @@ def _worker_contract(
             "source_run": source["source_run"],
             "checkpoint": source["checkpoint"],
             "model_path": source["model_path"],
+        },
+        "tokenizer": {
+            "path": str(tokenizer_path.resolve()),
+            "bytes": tokenizer_path.stat().st_size,
         },
         "tasks": [
             {
@@ -418,6 +429,7 @@ def seal_feature_cache(config_path: Path, cache_root: Path) -> dict[str, Any]:
     tasks: dict[int, dict[str, Any]] = {}
     commits = set()
     sources: dict[tuple[str, str, str], dict[str, str]] = {}
+    tokenizers: dict[tuple[str, int], dict[str, Any]] = {}
     for worker in workers:
         contract = read_json(worker / "run_contract.json")
         summary = read_json(worker / "worker_summary.json")
@@ -429,6 +441,20 @@ def seal_feature_cache(config_path: Path, cache_root: Path) -> dict[str, Any]:
             "model_path": str(Path(str(declared_source.get("model_path", ""))).resolve()),
         }
         sources[tuple(source_record.values())] = source_record
+        tokenizer = contract.get("tokenizer", {})
+        tokenizer_record = {
+            "path": str(Path(str(tokenizer.get("path", ""))).resolve()),
+            "bytes": int(tokenizer.get("bytes", -1)),
+        }
+        tokenizer_path = Path(tokenizer_record["path"])
+        if (
+            not tokenizer_path.is_file()
+            or tokenizer_path.stat().st_size != tokenizer_record["bytes"]
+        ):
+            raise ExpertManifoldError("feature cache tokenizer changed")
+        tokenizers[(tokenizer_record["path"], tokenizer_record["bytes"])] = (
+            tokenizer_record
+        )
         if (
             contract.get("schema_version") != CACHE_WORKER_SCHEMA
             or contract.get("mode") != "formal"
@@ -464,6 +490,7 @@ def seal_feature_cache(config_path: Path, cache_root: Path) -> dict[str, Any]:
         or len(commits) != 1
         or "" in commits
         or len(sources) != 1
+        or len(tokenizers) != 1
         or any(not value for value in next(iter(sources.values())).values())
     ):
         raise ExpertManifoldError("feature cache does not cover train24 exactly")
@@ -477,6 +504,7 @@ def seal_feature_cache(config_path: Path, cache_root: Path) -> dict[str, Any]:
         "cache_root": str(cache_root),
         "training_commit": next(iter(commits)),
         "source": next(iter(sources.values())),
+        "tokenizer": next(iter(tokenizers.values())),
         "task_count": 24,
         "demo_count": int(formal["demo_count"]),
         "phase_slots": int(config["video_features"]["phase_slots"]),

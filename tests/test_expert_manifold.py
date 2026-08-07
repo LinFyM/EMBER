@@ -295,7 +295,12 @@ def test_complete_hashless_task_expert_bank_is_inspectable(tmp_path: Path) -> No
                 "schema_version": "ember_pi05_task_expert_worker_launch_v1",
                 "mode": "formal",
                 "git": {"commit": "training-commit"},
-                "config": {"path": str(CONFIG), "schema": config["schema_version"]},
+                "config": {
+                    "path": str(
+                        Path("/frozen/formal-worktree/configs") / CONFIG.name
+                    ),
+                    "schema": config["schema_version"],
+                },
                 "source": {
                     "run": source["source_run"],
                     "checkpoint": source["checkpoint"],

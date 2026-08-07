@@ -117,6 +117,9 @@ def _step_analysis(
         raise ValueError("task-expert states changed LoRA topology")
     writer = SimpleNamespace(PUBLIC_LORA_RANK=rank)
     geometry = [adapter_geometry(writer, pairs, state, 1.0) for state in states]
+    coordinates = [
+        row["rank_coordinate_geometry_gauge_dependent"] for row in geometry
+    ]
     return (
         {
             "step": int(adapter["step"]),
@@ -142,6 +145,36 @@ def _step_analysis(
                     for row in geometry
                 ]
             ),
+            "public_a_rms": _quantiles(
+                [float(row["public_a_rms"]) for row in geometry]
+            ),
+            "public_b_rms": _quantiles(
+                [float(row["public_b_rms"]) for row in geometry]
+            ),
+            "active_rank_coordinates": _quantiles(
+                [float(row["all"]["active_coordinates"]) for row in coordinates]
+            ),
+            "top4_rank_coordinate_energy_fraction": _quantiles(
+                [
+                    float(row["all"]["top4_coordinate_energy_fraction"])
+                    for row in coordinates
+                ]
+            ),
+            "mean_absolute_rank_component_cosine": _quantiles(
+                [
+                    float(row["all"]["mean_absolute_offdiagonal_component_cosine"])
+                    for row in coordinates
+                ]
+            ),
+            "mean_absolute_b_column_cosine": {
+                kind: _quantiles(
+                    [
+                        float(row[kind]["mean_absolute_b_column_cosine"])
+                        for row in coordinates
+                    ]
+                )
+                for kind in ("q", "v", "action")
+            },
             "q_energy_fraction": _quantiles(
                 [float(row["by_kind"]["q"]["energy_fraction"]) for row in geometry]
             ),

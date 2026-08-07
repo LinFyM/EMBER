@@ -1,4 +1,5 @@
 from argparse import Namespace
+import math
 from pathlib import Path
 
 import pytest
@@ -24,6 +25,13 @@ from ember.expert_manifold.evaluation import (
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.expert_manifold.sampler import TaskLocalEpochSampler
+from ember.expert_manifold.model import (
+    TopologicalLoRAChunkLayout,
+    VideoConditionedTopologicalWriter,
+    topological_reconstruction_loss,
+)
+from ember.expert_manifold.video_features import phase_resample
+from ember.lora import expected_lora_state_shapes
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -293,3 +301,72 @@ def test_complete_hashless_task_expert_bank_is_inspectable(tmp_path: Path) -> No
     assert observed["training_commit"] == "training-commit"
     assert len(observed["tasks"]) == 24
     assert observed["information_wall"]["validation_actions_read"] == 0
+
+
+def _synthetic_lora_states():
+    contract = load_pi05_lora_contract(REPO_ROOT / "configs/pi05_lora_v1.json")
+    template = {}
+    target = {}
+    for ordinal, (name, shape) in enumerate(expected_lora_state_shapes(contract).items()):
+        base = torch.arange(math.prod(shape), dtype=torch.float32).reshape(shape)
+        base = base.mul(1e-7 * (ordinal + 1))
+        if name.endswith(".lora_B.default.weight"):
+            base.zero_()
+        template[name] = base
+        target[name] = base + torch.full_like(base, 0.001 * (ordinal + 1))
+    return contract, template, target
+
+
+def test_topological_lora_layout_round_trips_full_rank16_state() -> None:
+    contract, template, target = _synthetic_lora_states()
+    layout = TopologicalLoRAChunkLayout(contract, chunk_width=512)
+    assert layout.chunk_count == 168
+    assert layout.valid_values == 1_287_168
+    assert layout.padded_values == 1_376_256
+    values = layout.tokenize(target, template)
+    recovered = layout.detokenize(values, template)
+    assert all(torch.equal(recovered[name], value) for name, value in target.items())
+
+
+def test_topological_writer_zero_video_is_identity_after_parameter_changes() -> None:
+    contract, template, _ = _synthetic_lora_states()
+    writer = VideoConditionedTopologicalWriter(
+        contract=contract,
+        template_state=template,
+        phase_slots=4,
+        feature_width=8,
+        memory_width=16,
+        attention_heads=4,
+        axial_blocks=1,
+        chunk_width=512,
+    )
+    with torch.no_grad():
+        for parameter in writer.parameters():
+            parameter.uniform_(-0.02, 0.02)
+    generated = writer(torch.zeros(1, 4, 8))
+    assert all(torch.equal(generated[name][0], value) for name, value in template.items())
+
+
+def test_topological_reconstruction_loss_is_zero_for_exact_target() -> None:
+    predicted = torch.randn(2, 3, 4, 5)
+    mask = torch.tensor(
+        [[True, True, True, True, True], [True, True, False, False, False], [True] * 5]
+    )
+    total, metrics = topological_reconstruction_loss(
+        predicted,
+        predicted.clone(),
+        mask,
+        cosine_weight=0.1,
+        log_scale_weight=0.1,
+    )
+    assert float(total) == pytest.approx(0.0, abs=1e-7)
+    assert all(float(value) == pytest.approx(0.0, abs=1e-7) for value in metrics.values())
+
+
+def test_phase_resample_preserves_video_endpoints_and_zero() -> None:
+    value = torch.tensor([[0.0, 1.0], [2.0, 3.0], [4.0, 5.0]])
+    aligned = phase_resample(value, 5)
+    assert aligned.shape == (5, 2)
+    assert torch.equal(aligned[0], value[0])
+    assert torch.equal(aligned[-1], value[-1])
+    assert torch.count_nonzero(phase_resample(torch.zeros_like(value), 5)) == 0

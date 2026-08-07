@@ -154,12 +154,13 @@ single-checkpoint、无hash、不使用subagent与安全边界。
 40. `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`
 41. `docs/action_forecast_writer_evidence_factorized_trace_design.md`
 42. `docs/action_forecast_writer_sparse_semantic_expert_trace_design.md`
-43. `task_plan.md`
-44. `findings.md`
-45. `progress.md`
-46. `docs/concept.md`
-47. `docs/decisions_and_open_questions.md`
-48. `docs/novelty_and_landscape.md`
+43. `docs/action_forecast_writer_grounded_video_expert_route_design.md`
+44. `task_plan.md`
+45. `findings.md`
+46. `progress.md`
+47. `docs/concept.md`
+48. `docs/decisions_and_open_questions.md`
+49. `docs/novelty_and_landscape.md`
 
 本post-seal分支已完成Target-Bound裁决并打开Semantic Factor-Basis；修改或运行前
 仍必须完整阅读Target-Bound与Semantic Factor-Basis两份design。历史CV/Target-Bound
@@ -171,6 +172,26 @@ single-checkpoint、无hash、不使用subagent与安全边界。
 ## Current focused task
 
 - 2026-08-07当前唯一活动方法为
+  `docs/action_forecast_writer_grounded_video_expert_route_design.md`。它保留exact language、K4
+  action-hidden videos、20-group DCT16 direction/physical/evidence、八个完整Reader+axis experts和
+  single rank16 LoRA，只把parameter owner地址从language-only改为冻结source policy内部的
+  task-grounded video semantic address：最后层multimodal task-token hidden减去同language zero-image
+  baseline，按video与K4聚合后固定选择train24 video-derived top2 experts。video同时拥有route与
+  dynamic value，language不能单独固定expert；route对同frames的shuffle/reverse保持不变。
+- 上一Sparse Semantic-Expert已从identity完成200步、四点、winner五臂与内部分析并负裁决：
+  correct曲线=`74/74/78/75`、breadth=`6/5/5/5`，winner macro150五臂=
+  `78/85/90/83/92`，correct最低。expert-local Reader/axis retention最终仍有`.205/.196`，说明
+  参数隔离material减少了shared credit cancellation；但language route在五臂固定同两个owners。
+  wrong/order依然把LoRA有效BA改变约`.25--.28`并传入action，却比correct更成功。最早故障是
+  high-level video semantics没有参与policy-parameter ownership，不是视频被忽略、LoRA低增益/rank、
+  expert参数量或训练时长不足。旧sparse root不得resume、warm-start或恢复language-only route。
+- 新方法必须先从train24×50 action-hidden videos生成input-only route artifact并通过8 experts非空、
+  train K4 primary稳定率/top2 overlap均不低于`.90`和batch-invariant门；不得读取action、outcome、
+  validation/test input或用rollout调route。随后建立fresh incompatible schema/config，live选择
+  `gpu01/gpu02`最多6张空闲A40做fresh0→1/exact-resume1→3，再identity formal0→200和严格四点/
+  五臂/internal裁决。K4/B20/full24/rank/LR/objective不变，不加learned router、language residual、
+  task-ID fallback、SFT-only auxiliary、reward、scale或checkpoint融合。
+- 2026-08-07已完成并负裁决的方法为
   `docs/action_forecast_writer_sparse_semantic_expert_trace_design.md`。它保留exact language、K4
   action-hidden videos、20 policy groups、DCT16 direction/physical/evidence和single rank16
   LoRA；冻结train24-only semantic route固定选top2，两个完整独立Reader+axis M2P memories等权
@@ -190,7 +211,7 @@ single-checkpoint、无hash、不使用subagent与安全边界。
   exact language独立forward，singleton route重新生成并验证co-batch top2不变，新primary/top2
   usage=`5/7/6/1/1/2/1/1`与`7/11/6/5/4/4/3/8`。clean`bbe5cf2`新root已重做
   fresh0→1/exact-resume1→3：0 clip/OOM、step2起16 blocks可达、peak reserved45.59GB，真实
-  train24 route逐expert与authority一致。config已重新seal；下一步另起identity-fresh formal0→200。
+  train24 route逐expert与authority一致。随后formal0→200与全部裁决已按上文完成并为负；
   不得加载任何旧Writer/profile权重、恢复
   只隔离final heads的Direction Store、使用learned/outcome router或改K4/B20/full24/rank/objective。
 - 上一活动方法为

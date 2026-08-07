@@ -8,7 +8,30 @@
 `docs/a100_to_bci_migration_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
 runner、split、路径或 GPU 权限。
 
-## 当前Sparse Semantic-Expert Trace推进（2026-08-07）
+## 当前Grounded-Video Semantic-Expert Route推进（2026-08-07）
+
+- [x] 完成Sparse routefix identity-fresh0→200、四点、winner五臂与production-batch内部分析；
+  correct=`74/74/78/75`，winner五臂=`78/85/90/83/92`，correct最低。确认视频trace真实改变
+  Reader→program→BA→action，LoRA gain/rank充足；拒绝“视频被忽略”与“继续加参数/步数”。
+- [x] 定位最早接口：language-only route让同task五臂固定同两个owners，parameter isolation改善
+  expert-local retention却没有让高层视频语义决定credit存储位置。
+- [x] 封存
+  `docs/action_forecast_writer_grounded_video_expert_route_design.md`：冻结PI05 multimodal task-token
+  video innovation形成K4 semantic address，train24-only 8-center top2 route；20-group traces仍是
+  dynamic value，八完整experts与single-LoRA不变，AS/RL共用同一图。
+- [ ] 原位实现grounded address与input-only route generator；用train24×50 action-hidden videos
+  生成artifact，并通过8 experts非空、train K4 primary stability/top2 overlap≥`.90`、co-batch
+  top2 invariant、zero identity和信息墙合同。门失败只改address，不用rollout/outcome调route。
+- [ ] 建立fresh incompatible architecture/config/checkpoint family，退休language-route executable
+  path；运行聚焦tests、real config load和short vertical path。
+- [ ] clean/push后live比较`gpu01/gpu02`，只用最多6张空闲A40做longest105、K4/B20/B2、
+  fresh0→1和same-root exact-resume1→3；profile权重弃用。
+- [ ] profile通过后identity fresh0→200、每25 checkpoint；严格评50/100/150/200 correct400，
+  single winner再做五臂和内部route/path/gradient分析。
+- [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高；未过门时只根据最早失败
+  接口继续迭代，不用旧best、checkpoint融合、挑video或延长失败schedule救点。
+
+## 已完成并负裁决：Sparse Semantic-Expert Trace（2026-08-07）
 
 - [x] 完成Evidence-Factorized macro200五臂与8-task refs1内部分析：五臂=
   `84/85/66/83/78`，correct-wrong gained/lost=`36/18,p=.01983`；视频task identity已到closed
@@ -32,10 +55,11 @@ runner、split、路径或 GPU 权限。
 - [x] clean`bbe5cf2`、live比较`gpu01/gpu02`后，以gpu01六张3+3 NUMA空闲A40和新root重做
   longest105、K4/B20/B2、fresh0→1及same-root exact-resume1→3；真实route与authority一致，
   0 clip/OOM，step2起16 blocks全可达，profile重新seal。旧profile/中断formal权重永久弃用。
-- [ ] profile seal后从functional identity正式fresh0→200、每25 checkpoint；严格评
-  50/100/150/200 correct400，single winner再做五臂和内部expert-local gradient/path分析。
-- [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高；未过门时只按最早失败
-  接口继续迭代，不用旧best、checkpoint融合、挑video或延长同一失败schedule救点。
+- [x] clean`3820f27`从functional identity完成fresh0→200与50/100/150/200 correct400：
+  `74/74/78/75`、breadth=`6/5/5/5`；single winner macro150=78，不续400。
+- [x] 完成winner五臂和production-batch内部分析：五臂=`78/85/90/83/92`，correct最低；
+  video path与LoRA leverage成立，但language route无法让视频语义决定owner。Sparse方法正式负裁决，
+  不resume、不warm-start、不恢复language-only route。
 
 ## 当前K4 Energy-Preserving Policy-Layer Trace M2P推进（2026-08-06）
 

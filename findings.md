@@ -1,5 +1,28 @@
 # EMBER Findings
 
+## 2026-08-07 Sparse Semantic-Expert正式负裁决与视频寻址根因
+
+- routefix identity-fresh formal完整curve=`74/74/78/75`、breadth=`6/5/5/5`；winner
+  macro150五臂=`78/85/90/83/92`，correct最低。wrong/reversed相对correct gained/lost=
+  `20/8`、`26/12`，五臂union/intersection=`123/55`。完整parameter isolation没有形成absolute
+  或correct-video margin。
+- 这不是视频被忽略。production-batch内部root为
+  `runs/outputs/pi05_as_writer_k4_sparse_semantic_expert_trace_m2p_routefix_internal_macro0150_507ae6e_20260807`；
+  wrong与reversed的`physical/Reader/program/BA/action`relative-L2中位分别=
+  `.309/.194/.209/.279/.050`与`.335/.197/.205/.278/.044`。correct LoRA
+  norm/stable-rank/top-singular-energy=`44.79/1.412/.791`，top4 target energy`.489`。
+- parameter ownership机制本身有效：Reader四窗full-task local retention=
+  `.2847/.2542/.2187/.2053`，axis=`.2419/.2146/.2034/.1959`，远高于shared版末窗约`.05`。
+  但route完全由target language决定，所以同一task的correct/same/wrong/shuffle/reverse始终进入
+  同两个parameter maps；wrong/order较大扰动反而偶然增强source policy已有能力。
+- 最早接口因此从“是否隔离完整experts”前移为“高层视频语义是否拥有parameter address”。下一
+  authority用冻结PI05 multimodal task-token video innovation产生K4 route，同时保留现有trace
+  dynamic value。不能再通过加expert、加步数、调rank/scale或直接reward绕过。
+- 旧raw visual feature cache的input-only CPU先验支持K4视频寻址可稳定：对train24 task-mean中心化
+  frozen vision descriptors做8-center route，250个K4 sets/task的primary/exact/top2-overlap约
+  `1.000/.982/.991`；这只证明视频地址可行，不作为新grounded multimodal route的效果或最终
+  artifact，新route仍必须由train24×50当前descriptor重新生成并过门。
+
 ## 2026-08-07 Sparse Semantic-Expert实现与route审计
 
 - 首次formal到macro28时，expert-local Gram给出可复现的route contract冲突：task9在expert1有

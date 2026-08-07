@@ -4,9 +4,29 @@
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
-## 0.0 最新执行覆盖：Sparse Semantic-Expert Trace
+## 0.0 最新执行覆盖：Grounded-Video Semantic-Expert Route
 
 - 当前唯一活动authority为
+  `docs/action_forecast_writer_grounded_video_expert_route_design.md`。Sparse routefix正式训练、四点、
+  macro150五臂与内部分析均已完成，GPU已释放；该root不续训、不warm-start。
+- Sparse correct曲线=`74/74/78/75`、breadth=`6/5/5/5`，winner五臂=
+  `78/85/90/83/92`，correct最低。expert-local retention明显改善但behavior未改善；wrong/order
+  LoRA仍产生`.25--.28`量级BA变化并传入action，证明视频未被忽略。问题是language-only route
+  对五臂固定同两个owners，视频高层语义不参与parameter ownership。
+- 下一步先实现/生成train24×50 input-only grounded-video route authority：冻结PI05 final
+  multimodal task-token hidden减zero-image baseline，每video与K4聚合，8 centers/top2 equal。
+  只过usage、train K4 stability、batch invariance与信息墙门，不读held input/action/outcome或
+  rollout调route。
+- route门通过后原位替换canonical router并建立fresh incompatible schema/config；聚焦CPU合同后
+  live比较`gpu01/gpu02`，只用最多6张空闲A40做fresh0→1/exact-resume1→3 profile。通过才允许
+  identity formal0→200与严格50/100/150/200 correct400、winner五臂/internal。
+- 保持K4、20-group trace、八完整experts、single LoRA、B20/full24/rank16/LR/objective不变；不加
+  learned/language residual router、task-ID fallback、SFT-only auxiliary、reward、scale、挑video、
+  checkpoint融合或历史warm-start。
+
+## 0.1 已完成并负裁决：Sparse Semantic-Expert Trace
+
+- 该阶段authority为
   `docs/action_forecast_writer_sparse_semantic_expert_trace_design.md`。Evidence-Factorized的训练、
   四点、macro200五臂和六卡内部分析已全部完成并负裁决；GPU已释放，不续训、不warm-start。
 - 五臂=`84/85/66/83/78`且correct-wrong显著，视频task identity没有被忽略。trace、dual values、
@@ -25,7 +45,7 @@
   anchors重生成route并验证co-batch top2不变；新usage=`5/7/6/1/1/2/1/1`和
   `7/11/6/5/4/4/3/8`。旧profile与中断formal均作废。clean`bbe5cf2`新root已重做
   fresh0→1/exact-resume1→3，三步约42.3--43.1s、0 clip/OOM、peak reserved45.59GB，真实route
-  与authority一致；config重新seal。下一步另起identity-fresh formal0→200，不得加载旧Writer/
+  与authority一致；config重新seal。随后formal0→200及全部裁决已完成并负裁决，不得加载旧Writer/
   profile或扩大K4、B20、full24、rank。
 
 ## 0.1 已完成并负裁决：Energy-Preserving Policy-Layer Trace M2P

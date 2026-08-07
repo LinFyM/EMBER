@@ -182,3 +182,31 @@ allocated/reserved=`36,709,104,128/45,592,084,480` bytes。step1实际train24 ex
 本轮不改K、DCT、evidence公式、rank、LR、B20、AS objective、checkpoint schedule或source policy；
 不加learned router、task-ID experts、one-task-one-expert、load-balance/contrast/rank/order loss、
 scalar gate、global scale、reward、multi-LoRA、checkpoint融合或outcome-based route search。
+
+## 10. 正式结果与负裁决
+
+routefix formal在clean`3820f27`从functional identity完成0→200。root为
+`runs/outputs/pi05_as_writer_k4_sparse_semantic_expert_trace_m2p_formal_routefix_fresh0_200_r6_3820f27_20260807`；
+200 finite macros、96,000 logical queries、19,200 K4 videos、8 checkpoints、0 clip/OOM/
+nonfinite，wall=`8979s`，peak reserved=`42,857,398,272` bytes。expert-local Reader四窗
+retention=`.2847/.2542/.2187/.2053`，axis=`.2419/.2146/.2034/.1959`，证明完整owner隔离
+material改善了shared版本约`.05`的局部credit coexistence。
+
+四点strict correct400=`74/74/78/75`、breadth=`6/5/5/5`，相邻gained/lost=
+`18/18,18/14,17/20`，union/intersection=`111/43`。single winner macro150=`78`，远低于
+v6-fast143与严格门`>150`。因此不续400、不按functional loss另挑点、不从任一checkpoint
+warm-start。
+
+winner五臂=`78/85/90/83/92`；correct是五臂最低，wrong相对correct gained/lost=`20/8`，
+reversed=`26/12`，五臂union/intersection=`123/55`。内部production-batch replay root为
+`runs/outputs/pi05_as_writer_k4_sparse_semantic_expert_trace_m2p_routefix_internal_macro0150_507ae6e_20260807`，
+same/wrong/shuffle/reverse的`physical→Reader→program→BA→fixed action`relative-L2中位为
+`.135/.053/.051/.065/.010`、`.309/.194/.209/.279/.050`、
+`.251/.191/.183/.254/.035`、`.335/.197/.205/.278/.044`。LoRA norm/stable-rank/
+top-singular-energy=`44.79/1.412/.791`，top4 target energy`.489`。
+
+所以视频没有被忽略，LoRA质量也不是低增益或完全rank collapse；失败是language-only route对
+五臂固定同一parameter map，无法用高层视频内容决定credit owner。wrong/order视频产生更大的
+有效LoRA扰动，却偶然改善source policy。该方法正式负裁决，唯一下一authority切换为
+`docs/action_forecast_writer_grounded_video_expert_route_design.md`；旧language route、checkpoint
+与experts只由Git/frozen artifacts保存，不得恢复为活动路径。

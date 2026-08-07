@@ -4,9 +4,32 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0. 最新覆盖：Sparse Semantic-Expert route根修与reprofile已seal
+## 0. 最新覆盖：Grounded-Video Semantic-Expert Route
 
 - 当前唯一活动authority为
+  `docs/action_forecast_writer_grounded_video_expert_route_design.md`。继续使用exact task language+
+  K4 action-hidden videos，且让视频同时拥有high-level parameter route与20-group trace dynamic
+  value；不是忽略视频或退回language-only LoRA。
+- Sparse Semantic-Expert routefix formal已完成200/200 macros：96,000 queries、19,200 K4 videos、
+  0 clip/OOM/nonfinite，peak reserved`42,857,398,272` bytes。四点correct=
+  `74/74/78/75`、breadth=`6/5/5/5`；single winner macro150=78，不续400。
+- winner五臂=`78/85/90/83/92`，correct最低；wrong/reversed相对correct gained/lost=
+  `20/8`与`26/12`。五臂union/intersection=`123/55`。parameter isolation虽把expert-local
+  Reader/axis最后窗retention提升到约`.205/.196`，却没有形成absolute或video semantic margin。
+- 内部production-batch root为
+  `runs/outputs/pi05_as_writer_k4_sparse_semantic_expert_trace_m2p_routefix_internal_macro0150_507ae6e_20260807`。
+  wrong的`physical/Reader/program/BA/action` relative-L2中位=
+  `.309/.194/.209/.279/.050`，reversed=`.335/.197/.205/.278/.044`；correct LoRA
+  norm/stable-rank/top-energy=`44.79/1.412/.791`。视频没有被忽略且LoRA有真实杠杆，失败是
+  language route让五臂固定同一parameter map，高层视频语义没有参与owner寻址。
+- 下一实现从冻结PI05 final multimodal task-token hidden减去same-language zero-image baseline，
+  对每video及K4聚合成2048维grounded video address；只用train24×50 action-hidden input拟合8-center
+  top2 route。先过input-only stability/usage门，再原位实现fresh schema/config、A40 profile和
+  identity-fresh formal0→200。旧sparse checkpoint与language route不得resume或warm-start。
+
+## 0.1 已完成并负裁决：Sparse Semantic-Expert route
+
+- 该阶段authority为
   `docs/action_forecast_writer_sparse_semantic_expert_trace_design.md`。它保留exact task language、
   K4 action-hidden videos、20-group DCT16 direction/physical/evidence trace和single-LoRA部署，
   只重构冻结descriptor之后的trainable parameter ownership。
@@ -43,7 +66,7 @@
   `runs/outputs/pi05_as_writer_k4_sparse_semantic_expert_trace_m2p_profile_routefix_r6_b20_bbe5cf2_20260807`
   重做fresh0→1与same-root exact-resume1→3：三步`42.299/43.074/42.275s`，0 clip/OOM/nonfinite，
   peak reserved`45,592,084,480` bytes；step1真实route与authority逐expert完全一致，step2起16
-  blocks全可达。config已重新seal；下一步另起identity-fresh formal0→200。所有旧profile/
+  blocks全可达。随后routefix formal、四点、五臂与内部分析已按上文完成并负裁决。所有旧profile/
   中断formal/历史Writer权重禁止加载。
 
 ## 0.0 已完成并负裁决：Evidence-Factorized Policy-Layer Trace M2P

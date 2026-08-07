@@ -1,5 +1,19 @@
 # EMBER Progress Ledger
 
+## 2026-08-07 Sparse正式裁决并开启Grounded-Video Route
+
+- clean`3820f27`的routefix formal已自然完成0→200：200 finite macros、96,000 queries、
+  19,200 K4 videos、8 checkpoints、0 clip/OOM/nonfinite，peak reserved42.86GB。四点=
+  `74/74/78/75`、breadth=`6/5/5/5`，winner macro150=78。
+- winner same/wrong/shuffled/reversed四臂全部完成并释放GPU；五臂=
+  `78/85/90/83/92`，correct最低。随后clean`507ae6e`用六张空闲gpu01 A40按production cache
+  batch完成8-task trace→expert Reader→program→BA→fixed-action分析，0 target-action reads；视频
+  路径、LoRA gain/rank均成立，language-only route被定位为最早失败接口。
+- 当前唯一authority切换为
+  `docs/action_forecast_writer_grounded_video_expert_route_design.md`。下一步原位增加冻结multimodal
+  task-token video address并流式生成train24×50 route artifact；先过input-only stability/usage门，
+  再fresh schema/config、A40 profile与identity formal。旧sparse checkpoint不resume/warm-start。
+
 ## 2026-08-07 Sparse Semantic-Expert route稳定性根修
 
 - 新canonical已接通冻结task anchor、fixed top2 router、8套完整独立Trace Reader+axis M2P、

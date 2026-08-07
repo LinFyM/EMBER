@@ -348,6 +348,49 @@ def test_topological_writer_zero_video_is_identity_after_parameter_changes() -> 
     assert all(torch.equal(generated[name][0], value) for name, value in template.items())
 
 
+def test_topological_writer_exposes_chunk_scale_without_collapsing_direction() -> None:
+    contract, template, _ = _synthetic_lora_states()
+    writer = VideoConditionedTopologicalWriter(
+        contract=contract,
+        template_state=template,
+        phase_slots=4,
+        feature_width=8,
+        memory_width=16,
+        attention_heads=4,
+        axial_blocks=1,
+        chunk_width=512,
+    )
+    with torch.no_grad():
+        writer.output_projection.weight.normal_(std=0.01)
+    values, log_scale = writer.forward_values_with_scale(torch.randn(2, 4, 8))
+    mask = writer.valid_value_mask[None, :, None, :].to(values.dtype)
+    count = mask.sum(dim=(-2, -1)) * contract.rank
+    rms = torch.sqrt((values.square() * mask).sum(dim=(-2, -1)) / count)
+    assert log_scale.shape == (2, writer.layout.chunk_count)
+    assert torch.allclose(rms, log_scale.exp(), atol=2e-4, rtol=2e-4)
+
+
+def test_topological_reconstruction_loss_accepts_explicit_chunk_scale() -> None:
+    target = torch.randn(2, 3, 4, 5)
+    mask = torch.tensor(
+        [[True, True, True, True, True], [True, True, False, False, False], [True] * 5]
+    )
+    count = mask[None, :, None, :].sum(dim=(-2, -1)) * target.shape[2]
+    target_log_scale = torch.sqrt(
+        (target.square() * mask[None, :, None, :]).sum(dim=(-2, -1)) / count
+    ).log()
+    total, metrics = topological_reconstruction_loss(
+        target,
+        target.clone(),
+        mask,
+        cosine_weight=0.1,
+        log_scale_weight=0.1,
+        predicted_log_scale=target_log_scale,
+    )
+    assert float(total) == pytest.approx(0.0, abs=1e-7)
+    assert all(float(value) == pytest.approx(0.0, abs=1e-7) for value in metrics.values())
+
+
 def test_topological_reconstruction_loss_is_zero_for_exact_target() -> None:
     predicted = torch.randn(2, 3, 4, 5)
     mask = torch.tensor(

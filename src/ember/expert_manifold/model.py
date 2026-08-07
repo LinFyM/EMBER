@@ -245,7 +245,9 @@ class VideoConditionedTopologicalWriter(torch.nn.Module):
             [self.layout.tokenize(state, self.template_state()) for state in states]
         )
 
-    def forward_values(self, video_innovation: torch.Tensor) -> torch.Tensor:
+    def forward_values_with_scale(
+        self, video_innovation: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         if video_innovation.shape[1:] != (self.phase_slots, self.feature_width):
             raise ExpertManifoldError("video innovation changed phase/feature shape")
         memory = self.input_projection(video_innovation)
@@ -263,11 +265,22 @@ class VideoConditionedTopologicalWriter(torch.nn.Module):
         for block in self.blocks:
             value = block(value)
         normalized_output = self.output_norm(value)
-        direction = self.output_projection(normalized_output)
+        raw_direction = self.output_projection(normalized_output)
         chunk_state = value.mean(dim=2)
-        scale = self.chunk_log_scale(chunk_state).clamp(-8.0, 8.0).exp()
-        output = direction * scale[:, :, None, :]
-        return output.masked_fill(~self.valid_value_mask[None, :, None, :], 0.0)
+        log_scale = self.chunk_log_scale(chunk_state).squeeze(-1).clamp(-12.0, 8.0)
+        mask = self.valid_value_mask[None, :, None, :].to(raw_direction.dtype)
+        valid_count = mask.sum(dim=(-2, -1)).clamp_min(1.0) * self.layout.rank
+        direction_rms = torch.sqrt(
+            (raw_direction.square() * mask).sum(dim=(-2, -1)) / valid_count + 1e-6
+        )
+        direction = raw_direction / direction_rms[:, :, None, None]
+        output = direction * log_scale.exp()[:, :, None, None]
+        output = output.masked_fill(~self.valid_value_mask[None, :, None, :], 0.0)
+        return output, log_scale
+
+    def forward_values(self, video_innovation: torch.Tensor) -> torch.Tensor:
+        values, _ = self.forward_values_with_scale(video_innovation)
+        return values
 
     def forward(self, video_innovation: torch.Tensor) -> dict[str, torch.Tensor]:
         values = self.forward_values(video_innovation)
@@ -281,6 +294,7 @@ def topological_reconstruction_loss(
     *,
     cosine_weight: float,
     log_scale_weight: float,
+    predicted_log_scale: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
     """Balance raw values, direction, and magnitude without artificial rank targets."""
 
@@ -301,9 +315,20 @@ def topological_reconstruction_loss(
     cosine = F.cosine_similarity(left, right, dim=-1, eps=1e-12)
     active = target_norm > 1e-12
     direction = (1.0 - cosine[active]).mean() if bool(active.any()) else raw.new_zeros(())
-    predicted_rms = torch.sqrt((predicted.square() * mask).sum(dim=-1) / count + 1e-24)
-    target_rms = torch.sqrt((target.square() * mask).sum(dim=-1) / count + 1e-24)
-    log_scale = (predicted_rms.log() - target_rms.log()).square().mean()
+    target_count = count.squeeze(-1) * predicted.shape[2]
+    target_rms = torch.sqrt(
+        (target.square() * mask).sum(dim=(-2, -1)) / target_count + 1e-24
+    )
+    if predicted_log_scale is None:
+        predicted_rms = torch.sqrt(
+            (predicted.square() * mask).sum(dim=(-2, -1)) / target_count + 1e-24
+        )
+        scale_prediction = predicted_rms.log()
+    else:
+        if predicted_log_scale.shape != target_rms.shape:
+            raise ExpertManifoldError("predicted topological scale changed shape")
+        scale_prediction = predicted_log_scale
+    log_scale = (scale_prediction - target_rms.log()).square().mean()
     total = raw + cosine_weight * direction + log_scale_weight * log_scale
     return total, {
         "raw_reconstruction": raw.detach(),

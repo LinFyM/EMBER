@@ -208,7 +208,7 @@ def inspect_task_expert_bank(
         },
         "lora_contract": {
             "reference": (
-                f"{authority_path(config, 'lora_contract').relative_to(config_path.parents[1])}:"
+                f"{config['authorities']['lora_contract']['path']}:"
                 f"{lora.state_tensor_count}tensors:{lora.parameter_count}parameters"
             ),
             "rank": lora.rank,

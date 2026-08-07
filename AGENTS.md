@@ -156,12 +156,13 @@ single-checkpoint、无hash、不使用subagent与安全边界。
 42. `docs/action_forecast_writer_sparse_semantic_expert_trace_design.md`
 43. `docs/action_forecast_writer_grounded_video_expert_route_design.md`
 44. `docs/action_forecast_writer_k4_phase_aligned_v6_design.md`
-45. `task_plan.md`
-46. `findings.md`
-47. `progress.md`
-48. `docs/concept.md`
-49. `docs/decisions_and_open_questions.md`
-50. `docs/novelty_and_landscape.md`
+45. `docs/action_forecast_writer_video_expert_manifold_design.md`
+46. `task_plan.md`
+47. `findings.md`
+48. `progress.md`
+49. `docs/concept.md`
+50. `docs/decisions_and_open_questions.md`
+51. `docs/novelty_and_landscape.md`
 
 本post-seal分支已完成Target-Bound裁决并打开Semantic Factor-Basis；修改或运行前
 仍必须完整阅读Target-Bound与Semantic Factor-Basis两份design。历史CV/Target-Bound
@@ -173,25 +174,40 @@ single-checkpoint、无hash、不使用subagent与安全边界。
 ## Current focused task
 
 - 2026-08-07当前唯一活动方法为
-  `docs/action_forecast_writer_k4_phase_aligned_v6_design.md`。它从functional identity fresh训练，输入
-  exact language + exactly four action-hidden same-task videos；每帧恢复历史v6 trainable PI05
-  language/multimodal/action high-level encoder，每条video独立线性对齐到16个normalized phase slots。
-  Semantic Core读取4×16无序联合证据，visual transition与causal Procedure严格逐video计算后按
-  phase等权组合，再经历史v6 exact 320-slot compiler只生成一套rank16 LoRA。K4 set无shot identity、
-  不平均LoRA，AS与未来RL共享同一部署图。
+  `docs/action_forecast_writer_video_expert_manifold_design.md`。它保持one-shot，视频是唯一
+  dynamic value：frozen π0.5对exact language+frame的joint high-level hidden减matched text/no-image
+  baseline，并保留phase16时序。language只作为video query/context，不得单独输出LoRA；
+  zero innovation必须精确回到template-A/B-zero identity。
+- 方法先用train24各自teacher actions在同一frozen source、rank16 identity上训24套task-local
+  policy experts，再让Writer仅从language+action-hidden video重建expert LoRA。Writer不读teacher
+  action，validation/test action在expert和Writer两阶段均不得读取；不训held expert。正式专家
+  必须使用同一global step，不按单task outcome选不同训练长度。
+- 当前38-target LoRA唯一导出168个`[16,512]`topological chunks。Writer在chunk轴和rank轴
+  交替全局交换，直接输出delta-A/B并显式学习direction/scale，不经过窄factor
+  head、atom mixing、scalar gate或language residual。同一图后续必须能直接接收functional或
+  reward cotangent，不建监督专用的deployment分支。
+- 下一执行顺序是：task-expert builder/evaluator实现→单卡A40 fresh/exact-resume profile→
+  六卡独立workers训24 experts→development-train closed-loop统一checkpoint裁决→action-hidden
+  frozen feature cache→meta-Writer实现/profile/formal/strict validation。independent expert workers不建
+  NCCL process group；每卡常驻一个policy并串行自己的task子集。
+- 2026-08-07 K4 Phase-Aligned已完成并负裁决：correct curve=`88/108/80/99`，
+  breadth>=5=`4/4/3/4`，union/intersection=`157/36`；winner五臂=`108/115/94/101/121`。
+  wrong更差且BA/action差异material，证明视频没有被忽略；但reversed更高、
+  LoRA norm/stable-rank/top-energy中位=`91.12/1.00021/.99979`，最后50步factor/program
+  retention=`.04634/.04363`。不resume400、warm-start或恢复K4 active path。
 - Grounded-Video Expert已完成四点、winner五臂和refs1内部分析并正式负裁决：correct=
   `76/88/77/82`、breadth>=5=`3/4/3/3`，winner五臂=`88/87/82/86/86`。wrong/shuffled/reversed
   能material改变Reader、BA和action，LoRA stable-rank/top-energy=`1.463/.773`，expert-local
   gradient retention约`.45--.60`；因此不是视频被忽略、rank坍缩或parameter isolation未生效。
   hard route切断跨task共享语义却没有产生correct-video margin，task轮换仍在。旧Grounded方法不得
   resume/warm-start或恢复active route/experts。
-- canonical源已原位切换并删除旧`fewshot_m2p.py`活动实现；fresh config为
+- K4 canonical源当时已原位切换并删除旧`fewshot_m2p.py`活动实现；fresh config为
   `configs/pi05_as_writer_k4_phase_aligned_v6_bci_v1.json`，fresh checkpoint family为
   `k4_phase_aligned_language_axial_rawfull24_v1`。clean`e1d0b62`已在gpu01六卡、3+3 NUMA、显式
   `NCCL_P2P_DISABLE=1`完成K4/B20/B2/phase16 fresh0→1与same-root exact-resume1→3；三步约
   `86.20/87.52/87.47s`，0 clip/OOM，peak reserved`47,016,050,688` bytes，step3五个owner全可达。
-  profile权重弃用，formal config已seal；下一步从identity formal0→200并评50/100/150/200，只有曲线
-  仍有可信潜力才续同一root到400。
+  profile权重弃用。clean`2356d33`随后完成formal0→200、四点与全部分析并作负结果
+  封存；profile/formal权重都不得进入新方法。
 - 2026-08-07已完成并负裁决的方法为
   `docs/action_forecast_writer_grounded_video_expert_route_design.md`。它保留exact language、K4
   action-hidden videos、20-group DCT16 direction/physical/evidence、八个完整Reader+axis experts和

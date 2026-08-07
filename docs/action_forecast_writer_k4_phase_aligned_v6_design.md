@@ -1,7 +1,8 @@
 # K4 Phase-Aligned Language-Axial Semantic-Procedure Writer
 
-状态：2026-08-07建立的当前唯一活动设计authority。它从functional identity重新训练，不加载任一
-历史Writer checkpoint；旧Grounded-Video Expert只保留Git、正式artifact和负裁决文档。
+状态：2026-08-07已完成identity-fresh正式训练、四点strict rollout、winner五臂和全部
+内部分析，并作为负结果封存。本方法不得resume、warm-start或恢复为活动路径；
+当时从functional identity重新训练，没有加载任一历史Writer checkpoint。
 
 ## 1. 证据链与最早接口
 
@@ -94,3 +95,45 @@ allocated/reserved=`34,968,286,720/47,016,050,688` bytes，0 clip/OOM/nonfinite�
 可达，step2 Semantic Frontend/Core/Compiler可达，step3五个参数owner全部可达；累计1,440 queries/
 288 videos，source trainable=0且held reads=0。logical K4/B20/B2/full24/phase16没有降低，profile权重
 弃用。该证据已seal formal fresh0→200，不提供任何性能结论。
+
+## 9. 正式训练与strict correct曲线
+
+clean/pushed `2356d33`从functional identity完成fresh0→200：200个finite macros、
+96,000 logical action queries、19,200 K4 action-hidden videos、8个every25 checkpoints，
+0 clip/OOM/nonfinite。wall=`16,228.904s`，peak reserved=`39,187,382,272` bytes；source
+trainable=0，validation/test action reads均为0。唯一训练root为
+`runs/outputs/pi05_as_writer_k4_phase_aligned_v6_formal_fresh0_200_r6_2356d33_20260807`。
+
+50/100/150/200的strict paired correct400为`88/108/80/99`，breadth>=5=`4/4/3/4`。
+相邻gained/lost=`40/20,27/55,47/28`，四点union/intersection=`157/36`，
+single envelope gap=`49`。macro100是single winner，但仅`108/400`，且它之后先失去55个
+成功state再回获47个；能力仍在checkpoint间大幅轮换。因此不resume到400，也不使用
+functional loss选点。
+
+## 10. winner五臂和视频因果性
+
+macro100五臂`correct/same-task-other/cross-suite-wrong/shuffled/reversed`=
+`108/115/94/101/121`，全部400 rows与state/env/policy RNG字段配对一致。correct相对
+wrong的gained/lost=`28/14`，exact McNemar `p=.04356`，说明视频任务identity没有被
+完全忽略；但same高7、reversed高13，shuffled只低7，没有形成正确时序应优于
+反转/打乱的closed-loop语义。五臂union/intersection=`162/66`。
+
+## 11. 内部机制与最终负裁决
+
+8-task refs1的正式内部root为
+`runs/outputs/pi05_as_writer_k4_phase_aligned_v6_macro0100_internal_refs1_r6_2356d33_20260807`。
+wrong从`Core/Procedure/Program/effective-BA/fixed-action`的relative-L2中位依次为
+`.3283/.1912/.3181/.3296/.0765`；shuffled/reversed的BA中位为`.1880/.1653`。因此视频
+和时序变化能够material改变Program、LoRA和policy action，不能把失败写成“视频被
+旁路”。
+
+但correct LoRA norm中位已达`91.12`，mean-target stable rank只有`1.00021`，首奇异值
+能量中位`.99979`；K4集合置换对BA仅有`.00141`的数值差，符合集合合同。
+最后50步full24 factor/program gradient retention仅`.04634/.04363`，pair cosine约
+`.00337/-.00118`，负pair约`.452/.503`。即使恢复v6高层视频图并用K4对齐，
+functional action surrogate仍把一个高增益、近单方向的LoRA在24 tasks间来回旋转。
+
+因此本方法的最早剩余接口是：如何让视频中的高层任务/程序信息直接对应
+到policy-effective的参数流形，而不是继续改K、phase、scalar、rank loss或延长同一
+functional recipe。下一方法必须保持视频为central dynamic value，不允许language-only
+LoRA bypass。

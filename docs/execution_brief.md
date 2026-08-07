@@ -4,19 +4,46 @@
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
-## 0.0 最新执行覆盖：K4 Phase-Aligned v6
+## 0.0 最新执行覆盖：Video-Conditioned Expert-Manifold
+
+K4 Phase-Aligned已完成训练、四点、winner五臂和全部内部分析：correct=
+`88/108/80/99`，winner五臂=`108/115/94/101/121`。wrong的显著下降和BA/action
+差异证明视频没有被忽略；但reversed更高，四点union/intersection=`157/36`，
+LoRA norm/stable-rank/top-energy中位=`91.12/1.00021/.99979`，最后50步gradient
+retention约`.04`。该方法已负裁决，不resume、warm-start或恢复为active path。
+
+当前唯一authority为`docs/action_forecast_writer_video_expert_manifold_design.md`。保持
+one-shot，视频是唯一dynamic value：exact language只用来query frozen π0.5的joint frame
+hidden，减matched text/no-image baseline并保留phase16时序；禁止language-only LoRA
+bypass，zero innovation精确回identity。
+
+下一执行阶段先建立24套train-task rank-16 policy experts。六个independent单卡进程每个
+常驻一个frozen policy并串行自己的4个tasks；不用DDP/NCCL聚合不同experts。实现后
+先用live空闲单卡A40做fresh0→1/exact-resume1→3 profile，再按clean/pushed formal
+contract训全24 experts。expert global checkpoints用development-train official rollout选一个统一step，
+不训或读任何held expert/action。
+
+专家门通过后才提取action-hidden frozen video features，实现168个`[16,512]`
+topological chunks的chunk/rank axial Writer。meta-Writer正式profile通过后，原位退役K4
+model/training/checkpoint/live-generation executable path，只保留一个canonical Writer。
+
+GPU工作每次仍先live比较`gpu01/gpu02`，只用实时空闲卡，总数最多6；不干扰
+他人进程。多卡BCI A40 launcher必须显式`NCCL_P2P_DISABLE=1`；independent expert
+workers不建NCCL process group。不运行SHA-256/MD5内容校验或大量防御扫描。
+
+## 0.0.1 已完成并负裁决：K4 Phase-Aligned v6
 
 Grounded-Video Expert已完成四点、winner五臂与内部分析并负裁决：correct curve=
 `76/88/77/82`，winner five arms=`88/87/82/86/86`。视频能material改变LoRA且expert隔离机制工作，
 但correct无视频margin、task轮换未解；不得resume/warm-start或恢复该active path。
 
-当前唯一方法与authority是`docs/action_forecast_writer_k4_phase_aligned_v6_design.md`。exact language+
+当时唯一方法与authority是`docs/action_forecast_writer_k4_phase_aligned_v6_design.md`。exact language+
 K4 action-hidden videos通过trainable v6 high-level encoder；四条视频独立phase16对齐，Semantic Core
 聚合无序联合证据，Procedure逐video causal后按phase组合，exact v6 compiler只写一套LoRA。fresh
 config为`configs/pi05_as_writer_k4_phase_aligned_v6_bci_v1.json`。先做live A40 fresh/exact-resume
 profile已在clean`e1d0b62`通过并seal：三步约`86.20/87.52/87.47s`、0 clip/OOM、peak reserved
-`47,016,050,688` bytes、step3五个owner全可达。下一步clean push后从identity formal0→200；
-strict correct single-checkpoint必须`>150/400`，profile权重禁止复用。
+`47,016,050,688` bytes、step3五个owner全可达。clean`2356d33`随后完成formal0→200、
+四点与winner分析并作为负结果封存；profile与formal权重都禁止复用到新方法。
 
 ## 0.1 已完成并负裁决：Grounded-Video Semantic-Expert Route
 

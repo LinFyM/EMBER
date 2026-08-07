@@ -4,7 +4,34 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0. 当前活动：K4 Phase-Aligned Language-Axial Semantic-Procedure Writer
+## 0. 当前活动：Video-Conditioned Expert-Manifold Topological Writer
+
+- K4 Phase-Aligned已完成identity-fresh formal0→200、四点、winner五臂与全部内部分析；
+  correct=`88/108/80/99`，breadth>=5=`4/4/3/4`，union/intersection=`157/36`，明显
+  checkpoint能力换手。winner macro100五臂=`108/115/94/101/121`；correct相对wrong
+  gained/lost=`28/14,p=.04356`，证明视频task identity未被忽略，但reversed反而更高。
+- refs1的wrong到Core/Procedure/Program/BA/action relative-L2中位=
+  `.328/.191/.318/.330/.0765`，shuffled/reversed BA=`.188/.165`；视频可以material改变
+  LoRA和action。但correct LoRA norm/stable-rank/top-energy中位=
+  `91.12/1.00021/.99979`，最后50步factor/program full24 retention=`.04634/.04363`；
+  高增益近单方向LoRA仍在24 tasks间旋转。K4 Phase-Aligned负裁决，不resume/warm-start。
+- 当前唯一方法authority为
+  `docs/action_forecast_writer_video_expert_manifold_design.md`。它保持one-shot，且把视频设为
+  唯一dynamic value：frozen π0.5的joint prompt+frame high-level hidden减matched text/no-image
+  baseline，再保留phase16时序。不允许language-only LoRA bypass；zero innovation必须identity。
+- 先用train24各自teacher actions从同一source/identity训24套task-local rank-16 experts，
+  用它们建立policy-effective parameter manifold；Writer阶段只看language+action-hidden video
+  并重建expert LoRA，不读teacher actions。validation/test actions两阶段均不得读取。
+- LoRA按真实38-target topology分为168个`[16,512]`chunks，交替chunk/rank axial
+  memory直接输出delta-A/B，同时学direction和scale，不经过窄factor head或atom mixing。
+  真实inference hook枚举456个active Linear；若当前38 targets的task experts证明拓扑上限，
+  再依该枚举扩大，首轮不混入第二个大变量。
+- 下一执行顺序：实现独立task-expert builder和evaluator→单卡A40 profile→六卡训24 experts
+  并用development-train closed loop封存同一global step→提取action-hidden frozen features→
+  实现/profile/训练meta-Writer→strict validation曲线与五臂。未过`>150/400`前按最早
+  失效接口继续迭代。
+
+## 0.0 已完成并负裁决：K4 Phase-Aligned Language-Axial Semantic-Procedure Writer
 
 - Grounded-Video Expert正式四点已完成并负裁决：correct=`76/88/77/82`、breadth>=5=
   `3/4/3/3`、union/intersection=`125/40`；winner macro100五臂=
@@ -15,7 +42,7 @@
   `1.463/.773`。完整expert隔离也把局部gradient retention保持在约`.45--.60`。因此正式拒绝
   hard video-route/parameter isolation作为漂移根修；失败是共享高层video program与可迁移policy
   write没有被同时保留。
-- 当前唯一authority切换为
+- 当时唯一authority切换为
   `docs/action_forecast_writer_k4_phase_aligned_v6_design.md`：exact language+K4四条action-hidden
   videos逐帧走历史v6 trainable PI05 high-level encoder；每条视频独立可微重采样到phase16，Semantic
   Core读取4×16无序联合证据，causal Procedure逐video计算后按phase等权组合，再由历史v6 exact
@@ -29,12 +56,14 @@
   `34,968,286,720/47,016,050,688` bytes；step3五个owner全可达，累计1,440 queries/288 videos，
   source trainable=0且held reads=0。K4/B20/B2/full24/phase16未降低，profile权重弃用。config现已seal；
   config与profile seal已由clean pushed`ac812a5`封存，profile权重不得进入formal。
-- 首次formal命令在创建output root、模型构造和GPU计算前被provenance guard拒绝：guard把
-  `origin/main`误当成唯一push authority，而当前明确的工作分支upstream是
-  `origin/codex/bci-continuation`。这不是科学run，失败log保留且不得评测。canonical guard现改为
-  要求HEAD等于当前分支配置的upstream commit；不放宽clean/pushed要求，也不改变任何科学图。
-  修复commit clean/push后只从identity启动新formal0→200 root，不得resume任何Grounded/历史v6/
-  profile checkpoint。
+- provenance guard的upstream判定已由`2356d33`根修；随后同一clean/pushed commit从
+  identity自然完成formal0→200。唯一root为
+  `runs/outputs/pi05_as_writer_k4_phase_aligned_v6_formal_fresh0_200_r6_2356d33_20260807`；
+  200 finite macros、96,000 queries、19,200 K4 videos、8 checkpoints，wall=`16,228.904s`，
+  peak reserved=`39,187,382,272` bytes，source trainable=0且held action reads=0。
+- 四点correct=`88/108/80/99`，winner五臂=`108/115/94/101/121`。八task内部分析已完成，
+  证明视频传递material但LoRA几乎单方向、task credit仍抵消；本方法负裁决。精确
+  数值与root取对应design第9--11节。
 
 ## 0.1 已完成并负裁决：Grounded-Video Semantic-Expert Route
 

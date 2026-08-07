@@ -1,5 +1,21 @@
 # EMBER Progress Ledger
 
+## 2026-08-07 K4 Phase-Aligned全部封存并切换Expert-Manifold
+
+- clean`2356d33`的K4 Phase-Aligned formal root完成200 finite macros、96,000 queries、
+  19,200 K4 videos和8 checkpoints；wall=`16,228.904s`，peak reserved=
+  `39,187,382,272` bytes，source trainable=0且held action reads=0。
+- strict correct50/100/150/200=`88/108/80/99`，breadth>=5=`4/4/3/4`，相邻
+  gained/lost=`40/20,27/55,47/28`，union/intersection=`157/36`。macro100为winner，不resume400。
+- macro100五臂=`108/115/94/101/121`，全部paired mismatch=0。correct相对wrong
+  gained/lost=`28/14,p=.04356`；correct相对same/shuffled/reversed分别为`13/20,23/16,20/33`。
+- 8-task refs1 root完成Core→Procedure→Program→BA→fixed-action五臂分析。correct
+  LoRA norm/stable-rank/top-energy中位=`91.12/1.00021/.99979`；wrong的BA/action中位
+  relative-L2=`.330/.0765`。视频路径material，但LoRA近单方向且task更新仍抵消。
+- 新authority为`docs/action_forecast_writer_video_expert_manifold_design.md`。已完成真实
+  38-target topological round-trip原型：168个`[16,512]`chunks、1,287,168 valid values、
+  两个axial blocks约7.70M参数、zero-output identity。下一工程步骤为task-expert builder。
+
 ## 2026-08-07 Grounded-Video负裁决并切换K4 Phase-Aligned v6
 
 - Grounded formal四点strict correct=`76/88/77/82`、breadth>=5=`3/4/3/3`，相邻

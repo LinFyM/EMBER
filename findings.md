@@ -1,5 +1,22 @@
 # EMBER Findings
 
+## 2026-08-07 K4 Phase-Aligned最终根因与Expert-Manifold方向
+
+- K4 Phase-Aligned的strict curve=`88/108/80/99`，union/intersection=`157/36`；恢复历史
+  v6高层semantic/procedure图并增加K4对齐仍没有解决checkpoint能力轮换。
+- winner五臂=`108/115/94/101/121`：correct显著优于wrong，但不优于same且低于
+  reversed。内部wrong/shuffled/reversed对BA的relative-L2约`.330/.188/.165`，所以
+  视频已真实改变LoRA与closed loop；不能用“视频被忽略”解释失败。
+- 最早失败是视频条件到policy-effective parameter manifold的对齐。LoRA norm中位
+  `91.12`但stable rank=`1.00021`、top energy=`.99979`；后50步factor/program retention
+  仅`.0463/.0436`。functional credit学到高增益方向，却不能稳定组织多task参数。
+- 新方向保持视频为唯一dynamic value：frozen π0.5 joint-video hidden减text/no-image
+  baseline，不设language-only output path。先以24套task-local rank-16 experts建立可闭环验证的
+  参数流形，再用168个topological chunks与chunk/rank axial memory从one-shot video重建。
+- 真实policy inference实测调用456个Linear，若全部rank16则为37,812,736个LoRA参数；
+  首轮仍保留已达143的38-target/1,287,168-parameter拓扑，用task-expert closed loop
+  先分离“credit target”与“topology范围”，不一次混入两个大变量。
+
 ## 2026-08-07 Grounded-Video最终根因与K4 Phase-Aligned v6假设
 
 - Grounded-Video Expert的负结果排除了三个常见解释：视频没有被完全旁路，LoRA不再严格rank1，

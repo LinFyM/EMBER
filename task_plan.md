@@ -1,6 +1,25 @@
 # EMBER Task Plan
 
-## 当前K4 Phase-Aligned v6推进（2026-08-07）
+## 当前Video-Conditioned Expert-Manifold推进（2026-08-07）
+
+- [x] 完成K4 Phase-Aligned正式训练、四点、winner五臂与8-task refs1：correct=
+  `88/108/80/99`，winner五臂=`108/115/94/101/121`。wrong显著更差且BA/action变化
+  material，证明视频未被旁路；但reversed更高、LoRA stable rank约`1.00021`、最后
+  50步gradient retention约`.04`，task轮换未解。本方法负裁决，不resume/warm-start。
+- [x] 封存
+  `docs/action_forecast_writer_video_expert_manifold_design.md`：视频是唯一dynamic value，
+  用frozen π0.5 joint-video innovation到phase16；先训24套policy-effective task experts，再用
+  168个`16×512`topological chunks和交替chunk/rank axial decoder重建完整LoRA。
+- [ ] 实现并profile六卡独立task-expert builder；在同一global checkpoints上训24个rank-16
+  experts，用development-train official rollout和LoRA组织裁决专家质量。不读任何held action。
+- [ ] 提取仅含action-hidden video innovation的frozen feature cache，实现bottleneck-free
+  topological Writer、完整checkpoint/inference/evaluator，原位退役K4 executable path。
+- [ ] 完成A40 profile、identity-fresh meta训练、strict paired correct400曲线、五臂视频因果、
+  task drift和expert→generated LoRA→action机制分析；根据最早失效接口迭代。
+- [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高absolute、breadth、
+  稳定积累与视频特异性。
+
+## 已完成并负裁决：K4 Phase-Aligned v6（2026-08-07）
 
 - [x] 完成Grounded-Video Expert四点、winner五臂与8-task refs1内部分析：correct=
   `76/88/77/82`、breadth>=5=`3/4/3/3`，winner五臂=`88/87/82/86/86`。视频与时序能material
@@ -15,10 +34,11 @@
 - [x] clean`e1d0b62`在live空闲gpu01六卡、3+3 NUMA、显式`NCCL_P2P_DISABLE=1`完成
   longest105 K4/B20/B2 fresh0→1与same-root exact-resume1→3：0 clip/OOM，peak reserved
   `47,016,050,688` bytes，step3五个owner全可达；profile权重弃用，formal config已seal。
-- [ ] profile seal后从identity formal0→200，严格评50/100/150/200 correct400；若曲线有可信积累再
-  exact-resume同一root到400。single winner做五臂、task churn和Core→Procedure→BA→action分析。
-- [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高absolute、breadth、稳定积累与
-  视频因果性；未过门时按最早失败接口继续重构，不用loss、旧best、融合或挑video救点。
+- [x] clean`2356d33`从identity完成formal0→200与50/100/150/200 correct400=
+  `88/108/80/99`；union/intersection=`157/36`，single winner=macro100=108，不resume400。
+- [x] winner五臂=`108/115/94/101/121`；correct相对wrong gained/lost=`28/14,p=.04356`，
+  视频task identity进入closed loop，但order不对齐。LoRA norm/stable-rank/top-energy中位=
+  `91.12/1.00021/.99979`，最后50步factor/program retention=`.04634/.04363`；负裁决。
 
 最后更新：2026-08-07 UTC。
 

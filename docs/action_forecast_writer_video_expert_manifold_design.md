@@ -198,3 +198,19 @@ closed-loop选择，以及为了A40降低logical data/task coverage。
 所需teacher与读取已封存结果。当新meta-Writer完成profile后，K4 model/training/checkpoint/
 live-generation executable path必须原位退役；历史由Git和formal artifacts保存，仓库只留一个
 canonical active Writer。
+
+## 13. Task-expert builder实现状态
+
+首个retained实现已建立sealed config、task-local deterministic sampler、独立checkpoint与
+单GPU多task串行worker。每个worker只加载一份frozen source policy，各task开始前把
+public rank-16 LoRA重置到严格identity；不同task不共享optimizer、scheduler、sampler或
+RNG状态，也不建立DDP/NCCL。formal拓扑固定为6 workers × 4 tasks，保持24 tasks全覆盖。
+
+每个task checkpoint保存adapter、optimizer、scheduler、sampler cursor、CPU/CUDA RNG和
+截至该步的metrics；run contract只记录路径、schema和文件大小，不新增SHA-256、MD5等
+内容校验。formal当前仍由config显式阻塞，不能在A40 profile完成前启动。
+
+聚焦CPU验证覆盖config/topology、exact sampler与stage-resume ownership、scheduler和
+LoRA identity工具，共14项通过。下一边界是同一task root在live A40完成fresh0→1与
+exact-resume1→3，实测finite、OOM、冻结参数、峰值显存和续训等价性；通过后才解除
+formal阻塞并训练完整expert bank。

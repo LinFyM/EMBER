@@ -14,12 +14,12 @@ from ember.pi05_eval_queue import (
     completed_jobs,
     publish_json_exclusive,
     queue_summary,
-    read_json_with_sha256,
+    read_json_with_size,
 )
 from ember.pi05_evaluation import task_lookup, validate_shard_result
 
 
-AGGREGATE_SCHEMA = "ember_pi05_target_eval_results_v1"
+AGGREGATE_SCHEMA = "ember_pi05_target_eval_results_v2"
 
 
 def _expected_worker_ids(contract: Mapping[str, Any]) -> tuple[str, ...]:
@@ -61,7 +61,7 @@ def _worker_lifecycle(
         or set(by_event) != expected_events
         or any(
             row.get("worker_id") != worker_id
-            or row.get("contract_sha256") != contract["contract_sha256"]
+            or row.get("contract_reference") != contract["contract_reference"]
             for row in selected
         )
     ):
@@ -226,9 +226,9 @@ def _load_shard_records(
             path.resolve().relative_to(output_dir)
         except ValueError as error:
             raise Pi05EvaluationError("evaluation shard path escaped output root") from error
-        payload, digest = read_json_with_sha256(path)
-        if digest != job["rows_sha256"]:
-            raise Pi05EvaluationError(f"raw evaluation shard hash changed: {shard.job_id}")
+        payload, artifact_bytes = read_json_with_size(path)
+        if artifact_bytes != int(job["rows_bytes"]):
+            raise Pi05EvaluationError(f"raw evaluation shard size changed: {shard.job_id}")
         shard_rows = validate_shard_result(payload, contract=contract, shard=shard)
         raw_successes = sum(bool(row["success"]) for row in shard_rows)
         if int(job["row_count"]) != len(shard_rows) or int(job["successes"]) != raw_successes:
@@ -243,7 +243,7 @@ def _load_shard_records(
                 "task_id": shard.task_id,
                 "state_count": len(shard.init_state_ids),
                 "rows_path": relative.as_posix(),
-                "rows_sha256": digest,
+                "rows_bytes": artifact_bytes,
                 "producer_worker_id": payload["producer"]["worker_id"],
                 "completing_worker_id": job["worker_id"],
                 "attempt": int(job["attempt"]),
@@ -332,10 +332,10 @@ def aggregate_run(output_dir: Path) -> dict[str, Any]:
     launcher_attempts: dict[str, Any] | None = None
     workers: list[dict[str, Any]] = []
     if contract.get("parallel", {}).get("worker_count"):
-        launcher, _ = read_json_with_sha256(output_dir / "launcher_completion.json")
+        launcher, _ = read_json_with_size(output_dir / "launcher_completion.json")
         if (
             launcher.get("schema_version") != "ember_pi05_eval_launcher_completion_v1"
-            or launcher.get("contract_sha256") != contract["contract_sha256"]
+            or launcher.get("contract_reference") != contract["contract_reference"]
         ):
             raise Pi05EvaluationError("launcher completion evidence changed")
         workers = _validated_worker_lifecycles(output_dir, contract, launcher)
@@ -359,9 +359,9 @@ def aggregate_run(output_dir: Path) -> dict[str, Any]:
     successes = sum(bool(row["success"]) for row in rows)
     result = {
         "schema_version": AGGREGATE_SCHEMA,
-        "contract_sha256": contract["contract_sha256"],
+        "contract_reference": contract["contract_reference"],
         "arm": contract["arm"],
-        "paired_control_sha256": contract.get("paired_control_sha256"),
+        "paired_control": contract.get("paired_control"),
         "role": contract["role"],
         "mode": contract["mode"],
         "model": contract["model"],
@@ -401,7 +401,7 @@ def aggregate_run(output_dir: Path) -> dict[str, Any]:
     }
     path = output_dir / "results.json"
     if path.exists():
-        observed, _ = read_json_with_sha256(path)
+        observed, _ = read_json_with_size(path)
         if observed != result:
             raise Pi05EvaluationError("existing aggregate differs from immutable raw shards")
     else:

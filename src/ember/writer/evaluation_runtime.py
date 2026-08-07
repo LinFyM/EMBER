@@ -251,7 +251,7 @@ def _finish_generation_handoff(
             "worker_id": runtime.worker_id,
             "pid": os.getpid(),
             "invocation_id": invocation_id,
-            "contract_sha256": runtime.contract["contract_sha256"],
+            "contract_reference": runtime.contract["contract_reference"],
             **summary,
         },
     )
@@ -267,7 +267,7 @@ def _finish_generation_handoff(
             "pid": os.getpid(),
             "invocation_id": invocation_id,
             "source_policy_reloaded": False,
-            "contract_sha256": runtime.contract["contract_sha256"],
+            "contract_reference": runtime.contract["contract_reference"],
         },
     )
     return summary

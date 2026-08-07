@@ -176,7 +176,7 @@ single-checkpoint、无hash、不使用subagent与安全边界。
   action-hidden videos、20-group DCT16 direction/physical/evidence、八个完整Reader+axis experts和
   single rank16 LoRA，只把parameter owner地址从language-only改为冻结source policy内部的
   task-grounded video semantic address：最后层multimodal task-token hidden减去同language zero-image
-  baseline，按video与K4聚合后固定选择train24 video-derived top2 experts。video同时拥有route与
+  baseline，按video与K4聚合后固定选择train24 video-derived top1 expert。video同时拥有route与
   dynamic value，language不能单独固定expert；route对同frames的shuffle/reverse保持不变。
 - 上一Sparse Semantic-Expert已从identity完成200步、四点、winner五臂与内部分析并负裁决：
   correct曲线=`74/74/78/75`、breadth=`6/5/5/5`，winner macro150五臂=
@@ -185,12 +185,15 @@ single-checkpoint、无hash、不使用subagent与安全边界。
   wrong/order依然把LoRA有效BA改变约`.25--.28`并传入action，却比correct更成功。最早故障是
   high-level video semantics没有参与policy-parameter ownership，不是视频被忽略、LoRA低增益/rank、
   expert参数量或训练时长不足。旧sparse root不得resume、warm-start或恢复language-only route。
-- 新方法必须先从train24×50 action-hidden videos生成input-only route artifact并通过8 experts非空、
-  train K4 primary稳定率/top2 overlap均不低于`.90`和batch-invariant门；不得读取action、outcome、
-  validation/test input或用rollout调route。随后建立fresh incompatible schema/config，live选择
-  `gpu01/gpu02`最多6张空闲A40做fresh0→1/exact-resume1→3，再identity formal0→200和严格四点/
-  五臂/internal裁决。K4/B20/full24/rank/LR/objective不变，不加learned router、language residual、
-  task-ID fallback、SFT-only auxiliary、reward、scale或checkpoint融合。
+- train24×50 input-only route artifact已从action-hidden videos生成。初始top2的secondary在task35
+  不满足batch-invariant门，未用rollout或outcome放宽；稳定primary收敛为top1 one-hot后，随机K4
+  route稳定率=`1.0`、batch4/singleton=`24/24`、usage=`2/6/7/3/1/1/2/2`，8 experts全非空。
+  clean`0be3627`六卡A40 profile通过；clean`a758bba`随后从identity自然完成formal0→200：200 finite
+  macros、96,000 queries、19,200 K4 videos、8 checkpoints、0 clip/OOM/nonfinite，wall
+  `8828.911s`、peak reserved`42,727,374,848` bytes，held reads=0。当前只评50/100/150/200
+  strict paired correct400，再由single winner做五臂/internal；K4/B20/full24/rank/LR/objective不变，
+  不加learned router、language residual、task-ID fallback、SFT-only auxiliary、reward、scale或
+  checkpoint融合。canonical evaluator必须使用hashless launch v2，不得恢复artifact内容hash链。
 - 2026-08-07已完成并负裁决的方法为
   `docs/action_forecast_writer_sparse_semantic_expert_trace_design.md`。它保留exact language、K4
   action-hidden videos、20 policy groups、DCT16 direction/physical/evidence和single rank16

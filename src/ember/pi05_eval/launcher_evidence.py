@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ember.pi05_assets import Pi05EvaluationError
-from ember.pi05_eval_queue import read_json_with_sha256
+from ember.pi05_eval_queue import read_json_with_size
 
 
 def _read_invocation_events(path: Path) -> list[dict[str, Any]]:
@@ -31,7 +31,7 @@ def _validate_start(
     launcher: Mapping[str, Any],
 ) -> None:
     if (
-        row.get("contract_sha256") != contract["contract_sha256"]
+        row.get("contract_reference") != contract["contract_reference"]
         or tuple(row.get("worker_ids", ()))
         != tuple(launcher.get("worker_ids", ()))
     ):
@@ -122,7 +122,7 @@ def _load_failures(
 ) -> dict[str, tuple[dict[str, Any], Path]]:
     failures: dict[str, tuple[dict[str, Any], Path]] = {}
     for path in sorted((output_dir / "failures").glob("launcher_*.json")):
-        failure, _ = read_json_with_sha256(path)
+        failure, _ = read_json_with_size(path)
         invocation_id = str(failure.get("invocation_id", ""))
         if (
             failure.get("schema_version") != "ember_pi05_eval_launcher_failure_v1"

@@ -1,5 +1,21 @@
 # EMBER Findings
 
+## 2026-08-07 Grounded-Video formal训练机制证据
+
+- grounded-video top1 route的identity-fresh formal完整完成200步，没有工程或数值失败；因此后续
+  四点rollout可以直接裁决“高层视频寻址+独立完整expert”是否改善single-checkpoint行为，而不再
+  混入warm-start、batch缩减或训练中断。
+- 487,415,808参数并未在46GB A40上迫使改变scientific batch：logical B20、K4、full24一次Adam、
+  policy B2与16-frame chunk保持不变，最大reserved`42.73GB`。这确认参数增加本身不是A40适配
+  障碍。
+- 冻结route的局部共存机制达到预期：按每个expert实际拥有的task数归一后，Reader/axis八个25步
+  窗口retention中位为Reader `.580/.598/.558/.531/.511/.483/.516/.453`，axis
+  `.518/.532/.509/.489/.499/.493/.499/.486`。末窗仍接近`.5`，不再是shared map约1/24的
+  credit cancellation；global padded值下降只反映八个互斥owner blocks的零梯度占位。
+- functional loss从`.15038`降到`.10098`只证明AS目标可优化，不用于选checkpoint或推断rollout。
+  接下来仍必须用50/100/150/200 strict paired correct400、breadth、换手和winner五臂决定视频
+  route是否把正确高层语义组织到closed-loop有效方向。
+
 ## 2026-08-07 Grounded-Video Route input-only裁决
 
 - 冻结PI05 final multimodal task-token video innovation在train24×50上形成稳定的高层视频地址：

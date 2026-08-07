@@ -17,7 +17,7 @@ from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval_contract import RUNTIME_REPLICA_PROFILES
 
 
-QUEUE_SCHEMA = "ember_pi05_eval_queue_v3"
+QUEUE_SCHEMA = "ember_pi05_eval_queue_v4"
 
 
 @dataclass(frozen=True)
@@ -243,12 +243,11 @@ def _shard_payload(shard: EvaluationShard) -> str:
     return json.dumps(asdict(shard), sort_keys=True, separators=(",", ":"))
 
 
-def publish_json_exclusive(path: Path, value: Any) -> str:
+def publish_json_exclusive(path: Path, value: Any) -> int:
     """Durably publish immutable JSON without replacing an earlier attempt."""
 
     path.parent.mkdir(parents=True, exist_ok=True)
     encoded = (json.dumps(value, indent=2, sort_keys=True) + "\n").encode("utf-8")
-    digest = hashlib.sha256(encoded).hexdigest()
     temporary = path.with_name(f".{path.name}.{os.getpid()}.{uuid.uuid4().hex}.partial")
     try:
         with temporary.open("xb") as handle:
@@ -269,10 +268,10 @@ def publish_json_exclusive(path: Path, value: Any) -> str:
     finally:
         if temporary.exists():
             temporary.unlink()
-    return digest
+    return len(encoded)
 
 
-def read_json_with_sha256(path: Path) -> tuple[dict[str, Any], str]:
+def read_json_with_size(path: Path) -> tuple[dict[str, Any], int]:
     try:
         encoded = path.read_bytes()
         value = json.loads(encoded)
@@ -280,20 +279,20 @@ def read_json_with_sha256(path: Path) -> tuple[dict[str, Any], str]:
         raise Pi05EvaluationError(f"invalid evaluation shard JSON: {path}") from error
     if not isinstance(value, dict):
         raise Pi05EvaluationError(f"evaluation shard is not a JSON object: {path}")
-    return value, hashlib.sha256(encoded).hexdigest()
+    return value, len(encoded)
 
 
 def initialize_queue(
     path: Path,
     shards: Sequence[EvaluationShard],
     *,
-    contract_sha256: str,
+    contract_reference: str,
     recover_claims: bool = False,
     retry_failed: bool = False,
 ) -> None:
     """Create or validate a queue; optionally recover claims after all workers exit."""
 
-    if len(contract_sha256) != 64 or not shards:
+    if not contract_reference or not shards:
         raise Pi05EvaluationError("invalid evaluation queue contract")
     path.parent.mkdir(parents=True, exist_ok=True)
     expected = {
@@ -323,7 +322,7 @@ def initialize_queue(
                     payload TEXT NOT NULL,
                     status TEXT NOT NULL, worker_id TEXT, claimed_unix REAL,
                     claim_token TEXT, attempt INTEGER NOT NULL DEFAULT 0,
-                    finished_unix REAL, rows_path TEXT, rows_sha256 TEXT, row_count INTEGER,
+                    finished_unix REAL, rows_path TEXT, rows_bytes INTEGER, row_count INTEGER,
                     successes INTEGER, error TEXT
                 )"""
             )
@@ -331,7 +330,7 @@ def initialize_queue(
             if not metadata:
                 connection.executemany(
                     "INSERT INTO metadata(key, value) VALUES (?, ?)",
-                    (("schema_version", QUEUE_SCHEMA), ("contract_sha256", contract_sha256)),
+                    (("schema_version", QUEUE_SCHEMA), ("contract_reference", contract_reference)),
                 )
                 connection.executemany(
                         """INSERT INTO jobs(
@@ -354,7 +353,7 @@ def initialize_queue(
             else:
                 if metadata != {
                     "schema_version": QUEUE_SCHEMA,
-                    "contract_sha256": contract_sha256,
+                    "contract_reference": contract_reference,
                 }:
                     raise Pi05EvaluationError("evaluation queue belongs to another contract")
                 observed = {
@@ -385,7 +384,7 @@ def initialize_queue(
                     connection.execute(
                         """UPDATE jobs SET status='pending', worker_id=NULL, claimed_unix=NULL,
                         claim_token=NULL, finished_unix=NULL, rows_path=NULL,
-                        rows_sha256=NULL, row_count=NULL, successes=NULL, error=NULL
+                        rows_bytes=NULL, row_count=NULL, successes=NULL, error=NULL
                         WHERE status='failed'"""
                     )
             connection.commit()
@@ -488,7 +487,7 @@ def complete_job(
     worker_id: str,
     claim_token: str,
     rows_path: str,
-    rows_sha256: str,
+    rows_bytes: int,
     row_count: int,
     successes: int,
 ) -> None:
@@ -499,7 +498,7 @@ def complete_job(
         or not rows_path.startswith("shards/")
         or Path(rows_path).is_absolute()
         or ".." in Path(rows_path).parts
-        or len(rows_sha256) != 64
+        or rows_bytes <= 0
         or row_count <= 0
         or not 0 <= successes <= row_count
     ):
@@ -521,13 +520,13 @@ def complete_job(
                 f"completed shard row count differs: expected={expected_rows} actual={row_count}"
             )
         changed = connection.execute(
-            """UPDATE jobs SET status='complete', finished_unix=?, rows_path=?, rows_sha256=?,
+            """UPDATE jobs SET status='complete', finished_unix=?, rows_path=?, rows_bytes=?,
             row_count=?, successes=? WHERE job_id=? AND status='claimed' AND worker_id=?
             AND claim_token=?""",
             (
                 time.time(),
                 rows_path,
-                rows_sha256,
+                rows_bytes,
                 row_count,
                 successes,
                 job_id,
@@ -578,7 +577,7 @@ def completed_jobs(path: Path) -> tuple[dict[str, Any], ...]:
         return tuple(
             dict(row)
             for row in connection.execute(
-                """SELECT job_id, ordinal, suite, task_id, payload, rows_sha256,
+                """SELECT job_id, ordinal, suite, task_id, payload, rows_bytes,
                 rows_path, row_count, successes, worker_id, attempt
                 FROM jobs WHERE status='complete'
                 ORDER BY ordinal"""

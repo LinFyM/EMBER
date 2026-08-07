@@ -1,5 +1,25 @@
 # EMBER Progress Ledger
 
+## 2026-08-07 Grounded-Video formal0→200与hashless evaluator完成
+
+- clean`a758bba`在`gpu01:0,1,2|4,5,7`、world6、3+3 NUMA、显式
+  `NCCL_P2P_DISABLE=1`下自然完成identity-fresh0→200；root为
+  `runs/outputs/pi05_as_writer_k4_grounded_video_expert_trace_m2p_formal_fresh0_200_r6_a758bba_20260807`。
+  共200 finite macros、96,000 action queries、19,200 K4 video conditions、8个every25完整
+  checkpoints，0 clip/OOM/nonfinite，wall=`8828.911s`，peak allocated/reserved=
+  `36,708,964,864/42,727,374,848` bytes；source trainable=0且held action/video value reads=0。
+- 八个grounded-route experts全程获得其冻结owner tasks的梯度。按expert真实task数消除24-task
+  zero-padding后，Reader/axis的25步窗口retention中位从首窗`.580/.518`到末窗`.453/.486`，
+  明显保持在约半能量而非shared 1/24抵消区；global padded retention仍从`.0679`降到`.0455`。
+  这只说明parameter coexistence合同工作，不能替代closed-loop选点。
+- evaluator canonical launch schema已切到`ember_pi05_target_eval_launch_v2`：不再计算或比较source
+  checkpoint、authority、normalization、tokenizer、task asset、raw shard、aggregate或completion的
+  内容hash；以path/schema/size、真实解析/加载、direct pairing字段和显式UUID run reference替代。
+  policy-noise RNG及deterministic job ID仍保持原科学配对算法，不属于artifact完整性校验。
+- evaluator聚焦`55 passed`、全部改动模块py_compile、diff check通过；真实validation Writer
+  `prepare` vertical path生成hashless v2 contract和8-task queue，递归检查无SHA/MD5字段。下一步
+  clean commit/push后只按预注册四点correct400合同启动rollout。
+
 ## 2026-08-07 Grounded-Video Route input-only gate完成
 
 - clean`563089a`在live空闲`gpu01:0,1,2|4,5,7`上以六个独立进程完成train24×50 frozen

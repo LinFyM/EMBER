@@ -199,7 +199,7 @@ def test_completed_queue_without_launcher_evidence_fails_closed(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     module = _launcher_module()
-    contract = {"contract_sha256": "a" * 64}
+    contract = {"contract_reference": "contract-a"}
     monkeypatch.setattr(module, "_active_worker_pids", lambda output_dir: [])
     monkeypatch.setattr(module, "load_run_contract", lambda path: contract)
     monkeypatch.setattr(module, "_validate_resume_inputs", lambda value: None)

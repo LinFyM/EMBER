@@ -4,21 +4,20 @@ import json
 from pathlib import Path
 
 from ember.pi05_eval_results import _worker_lifecycle
-from ember.pi05_source_checkpoint import canonical_hash
-
-
 def test_writer_generator_lifecycle_proves_resident_policy_handoff(
     tmp_path: Path,
 ) -> None:
-    contract = {"parallel": {"replicas_per_gpu": 1, "physical_gpu_ids": [0]}}
-    contract["contract_sha256"] = canonical_hash(contract)
+    contract = {
+        "parallel": {"replicas_per_gpu": 1, "physical_gpu_ids": [0]},
+        "contract_reference": "ember_pi05_target_eval_launch_v2:test",
+    }
     worker_id = "0-r0"
     invocation_id = "b" * 32
     common = {
         "worker_id": worker_id,
         "pid": 123,
         "invocation_id": invocation_id,
-        "contract_sha256": contract["contract_sha256"],
+        "contract_reference": contract["contract_reference"],
     }
     events = (
         {"event": "process_started", "unix": 1.0, **common},

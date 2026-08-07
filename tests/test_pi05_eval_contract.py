@@ -24,8 +24,6 @@ from ember.pi05_eval_contract import (
     resolve_role_task_keys,
     _validate_recipe,
 )
-from ember.libero_evaluation import sha256_file
-from ember.pi05_source_checkpoint import canonical_hash
 from ember.writer.inference import WRITER_ADAPTER_SCHEMA, task_video_mapping
 
 
@@ -112,7 +110,7 @@ def test_installed_target_contract_seals_bddl_and_fixed_states(tmp_path: Path) -
     assert len(tasks) == 8
     assert sum(len(task.init_state_ids) for task in tasks) == 24
     assert all(task.installed_init_state_count >= 50 for task in tasks)
-    assert all(len(task.bddl_sha256) == len(task.init_states_sha256) == 64 for task in tasks)
+    assert all(task.bddl_bytes > 0 and task.init_states_bytes > 0 for task in tasks)
     assert Path(paths["init_states"]).is_dir()
     protocol_by_key = {
         (row["suite"], int(row["task_id"])): row
@@ -121,17 +119,16 @@ def test_installed_target_contract_seals_bddl_and_fixed_states(tmp_path: Path) -
     for task in tasks:
         sealed = protocol_by_key[(task.suite, task.task_id)]
         assert task.init_states_file == sealed["init_states_file"]
-        assert task.init_states_sha256 == sealed["init_states_sha256"]
 
 
-def test_installed_target_contract_rejects_changed_sealed_test_hash(
+def test_installed_target_contract_rejects_changed_sealed_test_file(
     tmp_path: Path,
 ) -> None:
     authorities = load_evaluation_authorities(CONFIG, ROOT)
     protocol = copy.deepcopy(authorities.protocol)
-    protocol["test_tasks"][0]["init_states_sha256"] = "0" * 64
+    protocol["test_tasks"][0]["init_states_file"] = "wrong.pruned_init"
     changed = replace(authorities, protocol=protocol)
-    with pytest.raises(Pi05EvaluationError, match="test fixed-state hash differs"):
+    with pytest.raises(Pi05EvaluationError, match="test fixed-state file differs"):
         inspect_installed_target_tasks(
             changed,
             role="test",
@@ -181,7 +178,7 @@ def test_policy_noise_seed_is_per_rollout_and_replan() -> None:
     assert forward[("libero_spatial", 0, 0, 0)] == 6161069403093503947
 
 
-def test_run_contract_hash_detects_tampering(tmp_path: Path) -> None:
+def test_run_contract_uses_explicit_reference_and_owned_root(tmp_path: Path) -> None:
     authorities = load_evaluation_authorities(CONFIG, ROOT)
     tasks, paths = inspect_installed_target_tasks(
         authorities,
@@ -189,13 +186,7 @@ def test_run_contract_hash_detects_tampering(tmp_path: Path) -> None:
         state_count=1,
         libero_config_dir=tmp_path / "libero_config",
     )
-    model = {
-        "optimizer_step": 1000,
-        "source_authority_hashes": {
-            name: authorities.hashes[name]
-            for name in ("normalization", "overlap_audit", "source_manifest")
-        }
-    }
+    model = {"optimizer_step": 1000}
     contract = build_run_contract(
         authorities=authorities,
         tasks=tasks,
@@ -210,13 +201,13 @@ def test_run_contract_hash_detects_tampering(tmp_path: Path) -> None:
     )
     path = tmp_path / "run_contract.json"
     path.write_text(json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    assert load_run_contract(path)["contract_sha256"] == contract["contract_sha256"]
+    assert load_run_contract(path)["contract_reference"] == contract["contract_reference"]
     subset = build_run_contract(
         authorities=authorities,
         tasks=tasks,
         libero_paths=paths,
         model=model,
-        tokenizer={"sha256": "a" * 64},
+        tokenizer={"path": "/tokenizer.model"},
         output_dir=tmp_path / "subset",
         role="test",
         mode="smoke",
@@ -229,9 +220,9 @@ def test_run_contract_hash_detects_tampering(tmp_path: Path) -> None:
     assert subset["parallel"]["worker_count"] == 10
     assert subset["parallel"]["omp_threads_per_worker"]["5"] == 1
     assert subset["parallel"]["omp_threads_per_worker"]["6"] == 1
-    contract["tasks"][0]["init_state_ids"] = [49]
+    contract["output_dir"] = str(tmp_path / "elsewhere")
     path.write_text(json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    with pytest.raises(Pi05EvaluationError, match="hash changed"):
+    with pytest.raises(Pi05EvaluationError, match="contract changed"):
         load_run_contract(path)
 
 
@@ -243,13 +234,7 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
         state_count=1,
         libero_config_dir=tmp_path / "libero_config",
     )
-    model = {
-        "optimizer_step": 1000,
-        "source_authority_hashes": {
-            name: authorities.hashes[name]
-            for name in ("normalization", "overlap_audit", "source_manifest")
-        }
-    }
+    model = {"optimizer_step": 1000}
     task_keys = tuple((task.suite, task.task_id) for task in tasks)
     task_roles = {key: task.split_role for key, task in zip(task_keys, tasks)}
     correct_mapping = list(task_video_mapping(task_keys, task_roles, "correct"))
@@ -353,11 +338,11 @@ def test_writer_pairing_and_lora_scale_are_sealed(tmp_path: Path) -> None:
         mapping=correct_mapping,
         b_scale=1.5,
     )
-    assert correct["paired_control_sha256"] == wrong["paired_control_sha256"]
-    assert correct["contract_sha256"] != wrong["contract_sha256"]
+    assert correct["paired_control"] == wrong["paired_control"]
+    assert correct["contract_reference"] != wrong["contract_reference"]
     assert correct["writer_lora_execution"]["b_scale"] == 1.0
     assert scaled["writer_lora_execution"]["b_scale"] == 1.5
-    assert scaled["paired_control_sha256"] != correct["paired_control_sha256"]
+    assert scaled["paired_control"] != correct["paired_control"]
 
 
 def test_source_checkpoint_inspection_requires_generic_base_and_raw_policy_contract(
@@ -402,7 +387,6 @@ def test_source_checkpoint_inspection_requires_generic_base_and_raw_policy_contr
     source_contract = {
         "schema_version": "ember_pi05_source_launch_v1",
         "mode": "smoke",
-        "config_sha256": authorities.hashes["source_base_config"],
         "models": authorities.source_base_config["models"],
         "features": authorities.source_base_config["features"],
         "optimization": authorities.source_base_config["optimization"],
@@ -413,10 +397,8 @@ def test_source_checkpoint_inspection_requires_generic_base_and_raw_policy_contr
     (source_run / "run_contract.json").write_text(
         json.dumps(source_contract, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
-    contract_sha = canonical_hash(source_contract)
     trainer = {
         "schema_version": "ember_pi05_source_trainer_state_v1",
-        "contract_sha256": contract_sha,
         "optimizer_step": 1,
         "micro_step": 1,
         "ema_enabled": True,
@@ -428,17 +410,14 @@ def test_source_checkpoint_inspection_requires_generic_base_and_raw_policy_contr
         {
             "path": str(path.relative_to(checkpoint)),
             "bytes": path.stat().st_size,
-            "sha256": sha256_file(path),
         }
         for path in sorted((model / "config.json", model / "model.safetensors", checkpoint / "trainer_state.json"))
     ]
     manifest = {
         "schema_version": "ember_pi05_source_checkpoint_v1",
-        "contract_sha256": contract_sha,
         "optimizer_step": 1,
         "micro_step": 1,
         "files": files,
-        "aggregate_sha256": canonical_hash(files),
     }
     (checkpoint / "checkpoint_manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"

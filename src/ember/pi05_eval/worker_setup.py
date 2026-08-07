@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
-from ember.libero_evaluation import sha256_file
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_processing import Pi05LiberoProcessor
 
@@ -58,7 +57,11 @@ def validate_worker_assets(
     contract: Mapping[str, Any],
 ) -> tuple[Path, dict[str, Any], Path]:
     normalization_path = Path(contract["normalization"]["path"])
-    if sha256_file(normalization_path) != contract["normalization"]["sha256"]:
+    if (
+        not normalization_path.is_file()
+        or normalization_path.stat().st_size
+        != int(contract["normalization"]["bytes"])
+    ):
         raise Pi05EvaluationError("source-only normalization changed after queue creation")
     normalization = json.loads(normalization_path.read_text(encoding="utf-8"))
     model_path = Path(contract["model"]["model_path"])
@@ -71,7 +74,6 @@ def validate_worker_assets(
         if (
             not path.is_file()
             or path.stat().st_size != int(record["bytes"])
-            or sha256_file(path) != record["sha256"]
         ):
             raise Pi05EvaluationError(
                 f"PI05 model file changed after queue creation: {path}"
@@ -80,7 +82,6 @@ def validate_worker_assets(
     if (
         not tokenizer_path.is_file()
         or tokenizer_path.stat().st_size != int(contract["tokenizer"]["bytes"])
-        or sha256_file(tokenizer_path) != contract["tokenizer"]["sha256"]
     ):
         raise Pi05EvaluationError("OpenPI tokenizer changed after queue creation")
     return model_path, normalization, tokenizer_path

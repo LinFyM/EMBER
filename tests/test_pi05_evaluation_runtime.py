@@ -27,8 +27,6 @@ from ember.pi05_evaluation import (
     validate_shard_result,
 )
 from ember.pi05_eval_results import _per_task_rows, aggregate_run
-from ember.pi05_source_checkpoint import canonical_hash
-from ember.libero_evaluation import sha256_file
 from ember.writer.inference import (
     RL_WRITER_ADAPTER_SCHEMA,
     SAME_TASK_OTHER_DEMO_OFFSET,
@@ -48,9 +46,10 @@ def _contract(output_dir: Path) -> dict:
         "arm": "frozen_pi05_source_base",
         "role": "test",
         "output_dir": str(output_dir),
+        "content_hash_policy": "disabled_by_owner",
         "model": {"optimizer_step": 1},
-        "normalization": {"sha256": "1" * 64},
-        "tokenizer": {"sha256": "2" * 64},
+        "normalization": {"bytes": 1},
+        "tokenizer": {"bytes": 1},
         "rng": {"inference_seed": 7},
         "policy": {"replan_steps": 5},
         "tasks": [
@@ -63,7 +62,7 @@ def _contract(output_dir: Path) -> dict:
             }
         ],
     }
-    contract["contract_sha256"] = canonical_hash(contract)
+    contract["contract_reference"] = f"{RUN_CONTRACT_SCHEMA}:test-contract"
     return contract
 
 
@@ -92,7 +91,7 @@ def _rows() -> list[dict]:
 def _payload(contract: dict, shard: EvaluationShard) -> dict:
     return {
         "schema_version": SHARD_RESULT_SCHEMA,
-        "contract_sha256": contract["contract_sha256"],
+        "contract_reference": contract["contract_reference"],
         "job_id": shard.job_id,
         "shard": asdict(shard),
         "producer": {"worker_id": "0-r0", "claim_token": "a" * 32, "attempt": 1},
@@ -238,9 +237,6 @@ def test_writer_row_contract_recomputes_video_schedule_and_mapping(tmp_path: Pat
     contract = _contract(tmp_path)
     contract["adapter"] = _writer_adapter()
     contract["arm"] = contract["adapter"]["arm"]
-    contract["contract_sha256"] = canonical_hash(
-        {key: value for key, value in contract.items() if key != "contract_sha256"}
-    )
     shard = EvaluationShard(
         job_id="job",
         ordinal=0,
@@ -292,9 +288,6 @@ def test_static_source_sft_rows_remain_batched_without_writer_evidence(
         "lora_state_sha256": "8" * 64,
     }
     contract["arm"] = "source_sft"
-    contract["contract_sha256"] = canonical_hash(
-        {key: value for key, value in contract.items() if key != "contract_sha256"}
-    )
     shard = EvaluationShard(
         job_id="source-sft-job",
         ordinal=0,
@@ -348,7 +341,7 @@ def test_static_source_sft_adapter_is_installed_once_not_returned_per_rollout(
     )
 
 
-def test_worker_asset_validation_rehashes_model_and_tokenizer(tmp_path: Path) -> None:
+def test_worker_asset_validation_uses_paths_and_sizes(tmp_path: Path) -> None:
     normalization = tmp_path / "normalization.json"
     normalization.write_text(json.dumps({"stats": {}}) + "\n", encoding="utf-8")
     model_path = tmp_path / "policy"
@@ -360,7 +353,7 @@ def test_worker_asset_validation_rehashes_model_and_tokenizer(tmp_path: Path) ->
     contract = {
         "normalization": {
             "path": str(normalization),
-            "sha256": sha256_file(normalization),
+            "bytes": normalization.stat().st_size,
         },
         "model": {
             "model_path": str(model_path),
@@ -369,22 +362,20 @@ def test_worker_asset_validation_rehashes_model_and_tokenizer(tmp_path: Path) ->
                 {
                     "path": "policy/model.safetensors",
                     "bytes": model.stat().st_size,
-                    "sha256": sha256_file(model),
                 }
             ],
         },
         "tokenizer": {
             "path": str(tokenizer),
             "bytes": tokenizer.stat().st_size,
-            "sha256": sha256_file(tokenizer),
         },
     }
     assert _validate_worker_assets(contract)[0] == model_path
-    model.write_bytes(b"model-b")
+    model.write_bytes(b"model-longer")
     with pytest.raises(Pi05EvaluationError, match="model file changed"):
         _validate_worker_assets(contract)
     model.write_bytes(b"model-a")
-    tokenizer.write_bytes(b"token-b")
+    tokenizer.write_bytes(b"token-longer")
     with pytest.raises(Pi05EvaluationError, match="tokenizer changed"):
         _validate_worker_assets(contract)
 
@@ -638,7 +629,7 @@ def test_shard_validation_rejects_wrong_policy_schedule(tmp_path: Path) -> None:
         validate_shard_result(payload, contract=contract, shard=shard)
 
 
-def test_aggregate_requires_queue_hash_and_exact_contract(tmp_path: Path) -> None:
+def test_aggregate_requires_queue_size_and_exact_contract(tmp_path: Path) -> None:
     contract = _contract(tmp_path)
     (tmp_path / "run_contract.json").write_text(
         json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8"
@@ -653,18 +644,18 @@ def test_aggregate_requires_queue_hash_and_exact_contract(tmp_path: Path) -> Non
         estimated_cost=440,
     )
     queue = tmp_path / "queue.sqlite3"
-    initialize_queue(queue, (shard,), contract_sha256=contract["contract_sha256"])
+    initialize_queue(queue, (shard,), contract_reference=contract["contract_reference"])
     claim = claim_next(queue, worker_id="0-r0")
     assert claim is not None
     relative = Path("shards/job.json")
-    digest = publish_json_exclusive(tmp_path / relative, _payload(contract, shard))
+    artifact_bytes = publish_json_exclusive(tmp_path / relative, _payload(contract, shard))
     complete_job(
         queue,
         job_id=shard.job_id,
         worker_id="0-r0",
         claim_token=claim.claim_token,
         rows_path=relative.as_posix(),
-        rows_sha256=digest,
+        rows_bytes=artifact_bytes,
         row_count=2,
         successes=1,
     )
@@ -690,18 +681,18 @@ def test_aggregate_rejects_queue_counts_that_differ_from_raw_rows(
         estimated_cost=440,
     )
     queue = tmp_path / "queue.sqlite3"
-    initialize_queue(queue, (shard,), contract_sha256=contract["contract_sha256"])
+    initialize_queue(queue, (shard,), contract_reference=contract["contract_reference"])
     claim = claim_next(queue, worker_id="0-r0")
     assert claim is not None
     relative = Path("shards/job.json")
-    digest = publish_json_exclusive(tmp_path / relative, _payload(contract, shard))
+    artifact_bytes = publish_json_exclusive(tmp_path / relative, _payload(contract, shard))
     complete_job(
         queue,
         job_id=shard.job_id,
         worker_id="0-r0",
         claim_token=claim.claim_token,
         rows_path=relative.as_posix(),
-        rows_sha256=digest,
+        rows_bytes=artifact_bytes,
         row_count=2,
         successes=0,
     )
@@ -714,9 +705,6 @@ def test_aggregate_uses_full_launcher_window_and_validates_worker_topology(
 ) -> None:
     contract = _contract(tmp_path)
     contract["parallel"] = {"replicas_per_gpu": 1, "worker_count": 8}
-    contract["contract_sha256"] = canonical_hash(
-        {key: value for key, value in contract.items() if key != "contract_sha256"}
-    )
     (tmp_path / "run_contract.json").write_text(
         json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
@@ -730,7 +718,7 @@ def test_aggregate_uses_full_launcher_window_and_validates_worker_topology(
         estimated_cost=440,
     )
     queue = tmp_path / "queue.sqlite3"
-    initialize_queue(queue, (shard,), contract_sha256=contract["contract_sha256"])
+    initialize_queue(queue, (shard,), contract_reference=contract["contract_reference"])
     claim = claim_next(queue, worker_id="0-r0")
     assert claim is not None
     payload = _payload(contract, shard)
@@ -740,14 +728,14 @@ def test_aggregate_uses_full_launcher_window_and_validates_worker_topology(
         "attempt": claim.attempt,
     }
     relative = Path("shards/job.json")
-    digest = publish_json_exclusive(tmp_path / relative, payload)
+    artifact_bytes = publish_json_exclusive(tmp_path / relative, payload)
     complete_job(
         queue,
         job_id=shard.job_id,
         worker_id="0-r0",
         claim_token=claim.claim_token,
         rows_path=relative.as_posix(),
-        rows_sha256=digest,
+        rows_bytes=artifact_bytes,
         row_count=2,
         successes=1,
     )
@@ -755,7 +743,7 @@ def test_aggregate_uses_full_launcher_window_and_validates_worker_topology(
     worker_ids = [f"{gpu}-r0" for gpu in range(8)]
     completion = {
         "schema_version": "ember_pi05_eval_launcher_completion_v1",
-        "contract_sha256": contract["contract_sha256"],
+        "contract_reference": contract["contract_reference"],
         "invocation_id": invocation_id,
         "started_unix": 1.0,
         "finished_unix": 21.0,
@@ -774,7 +762,7 @@ def test_aggregate_uses_full_launcher_window_and_validates_worker_topology(
                 "worker_id": worker_id,
                 "pid": 1000 + gpu,
                 "invocation_id": invocation_id,
-                "contract_sha256": contract["contract_sha256"],
+                "contract_reference": contract["contract_reference"],
             },
             {
                 "event": "ready",
@@ -788,7 +776,7 @@ def test_aggregate_uses_full_launcher_window_and_validates_worker_topology(
                 "numa_node": 0 if gpu < 4 else 1,
                 "cpu_affinity": [gpu],
                 "model_load_seconds": 3.0,
-                "contract_sha256": contract["contract_sha256"],
+                "contract_reference": contract["contract_reference"],
             },
             {
                 "event": "finished",
@@ -798,7 +786,7 @@ def test_aggregate_uses_full_launcher_window_and_validates_worker_topology(
                 "invocation_id": invocation_id,
                 "completed_shards": int(gpu == 0),
                 "adopted_shards": 0,
-                "contract_sha256": contract["contract_sha256"],
+                "contract_reference": contract["contract_reference"],
             },
         )
         path.write_text(
@@ -823,7 +811,7 @@ def test_recovery_adopts_durable_orphan_from_previous_claim(tmp_path: Path) -> N
         estimated_cost=440,
     )
     queue = tmp_path / "queue.sqlite3"
-    initialize_queue(queue, (shard,), contract_sha256=contract["contract_sha256"])
+    initialize_queue(queue, (shard,), contract_reference=contract["contract_reference"])
     old = claim_next(queue, worker_id="0-r0")
     assert old is not None
     payload = _payload(contract, shard)
@@ -837,7 +825,7 @@ def test_recovery_adopts_durable_orphan_from_previous_claim(tmp_path: Path) -> N
     initialize_queue(
         queue,
         (shard,),
-        contract_sha256=contract["contract_sha256"],
+        contract_reference=contract["contract_reference"],
         recover_claims=True,
     )
     current = claim_next(queue, worker_id="0-r0")
@@ -852,7 +840,7 @@ def test_recovery_adopts_durable_orphan_from_previous_claim(tmp_path: Path) -> N
     assert adopted is not None and len(adopted) == 2
 
 
-def test_aggregate_rejects_raw_file_hash_tampering(tmp_path: Path) -> None:
+def test_aggregate_rejects_raw_file_size_change(tmp_path: Path) -> None:
     contract = _contract(tmp_path)
     (tmp_path / "run_contract.json").write_text(
         json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8"
@@ -867,21 +855,21 @@ def test_aggregate_rejects_raw_file_hash_tampering(tmp_path: Path) -> None:
         estimated_cost=440,
     )
     queue = tmp_path / "queue.sqlite3"
-    initialize_queue(queue, (shard,), contract_sha256=contract["contract_sha256"])
+    initialize_queue(queue, (shard,), contract_reference=contract["contract_reference"])
     claim = claim_next(queue, worker_id="0-r0")
     assert claim is not None
     relative = Path("shards/job.json")
-    digest = publish_json_exclusive(tmp_path / relative, _payload(contract, shard))
+    artifact_bytes = publish_json_exclusive(tmp_path / relative, _payload(contract, shard))
     complete_job(
         queue,
         job_id=shard.job_id,
         worker_id="0-r0",
         claim_token=claim.claim_token,
         rows_path=relative.as_posix(),
-        rows_sha256=digest,
+        rows_bytes=artifact_bytes,
         row_count=2,
         successes=1,
     )
     (tmp_path / relative).write_text("{}\n", encoding="utf-8")
-    with pytest.raises(Pi05EvaluationError, match="hash changed"):
+    with pytest.raises(Pi05EvaluationError, match="size changed"):
         aggregate_run(tmp_path)

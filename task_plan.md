@@ -32,8 +32,15 @@ runner、split、路径或 GPU 权限。
   longest105、K4/B20/B2 fresh0→1和same-root exact-resume1→3。三步约
   `42.63/41.72/41.20s`，0 clip/OOM/nonfinite，peak reserved`45,237,665,792` bytes；step2起
   16 blocks全可达且train24真实route与authority完全一致。profile权重弃用。
-- [ ] profile通过后identity fresh0→200、每25 checkpoint；严格评50/100/150/200 correct400，
-  single winner再做五臂和内部route/path/gradient分析。
+- [x] clean`a758bba`按sealed B20/world6合同从identity自然完成fresh0→200、每25 checkpoint：
+  200 finite macros、96,000 queries、19,200 K4 action-hidden video conditions、8个完整checkpoint、
+  0 clip/OOM/nonfinite，wall=`8828.911s`，peak allocated/reserved=
+  `36,708,964,864/42,727,374,848` bytes，source trainable=0且validation/test action reads=0。
+- [x] canonical evaluator去除checkpoint/authority/shard/result的SHA-256/MD5内容校验：launch v2只保留
+  显式run UUID reference、path/schema/size/direct paired identity；policy-noise RNG与deterministic job ID
+  的既有小型SHA算法保持科学配对不变。聚焦`55 passed`、py_compile、hashless prepare vertical path通过。
+- [ ] 严格评50/100/150/200 correct400，single winner再做五臂和内部route/path/gradient分析；评测
+  contract必须使用新的hashless v2且保持四点direct paired-control字段逐项相同。
 - [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高；未过门时只根据最早失败
   接口继续迭代，不用旧best、checkpoint融合、挑video或延长失败schedule救点。
 

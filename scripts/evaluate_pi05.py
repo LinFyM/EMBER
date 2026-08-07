@@ -14,7 +14,6 @@ import uuid
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from ember.libero_evaluation import sha256_file
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval.launcher import (
     gpu_preflight as _gpu_preflight,
@@ -48,7 +47,7 @@ from ember.pi05_eval_queue import (
     initialize_queue,
     publish_json_exclusive,
     queue_summary,
-    read_json_with_sha256,
+    read_json_with_size,
     validate_worker_layout,
 )
 
@@ -323,11 +322,11 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
     initialize_queue(
         output_dir / "queue.sqlite3",
         shards,
-        contract_sha256=contract["contract_sha256"],
+        contract_reference=contract["contract_reference"],
     )
     summary = {
         "event": "prepared",
-        "contract_sha256": contract["contract_sha256"],
+        "contract_reference": contract["contract_reference"],
         "tasks": len(tasks),
         "states": sum(len(task.init_state_ids) for task in tasks),
         "shards": len(shards),
@@ -374,7 +373,7 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
     if contract.get("role") == "seen_panel":
         expected_role_authority = {
             "path": str(REPO_ROOT / SEEN_PANEL_RELATIVE_PATH),
-            "sha256": authorities.hashes["seen_panel"],
+            "bytes": (REPO_ROOT / SEEN_PANEL_RELATIVE_PATH).stat().st_size,
             "schema_version": authorities.seen_panel.get("schema_version"),
         }
     if contract.get("role_authority") != expected_role_authority:
@@ -389,7 +388,10 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
     if model != contract["model"] or tokenizer != contract["tokenizer"]:
         raise Pi05EvaluationError("evaluation model or tokenizer changed after prepare")
     normalization = Path(contract["normalization"]["path"])
-    if sha256_file(normalization) != contract["normalization"]["sha256"]:
+    if (
+        not normalization.is_file()
+        or normalization.stat().st_size != int(contract["normalization"]["bytes"])
+    ):
         raise Pi05EvaluationError("evaluation normalization changed after prepare")
     adapter = contract.get("adapter")
     if adapter is not None:
@@ -475,7 +477,6 @@ def _record_launcher_failure(
             {
                 "path": str(path.relative_to(output_dir)),
                 "bytes": path.stat().st_size,
-                "sha256": sha256_file(path),
             }
         )
     path = output_dir / "failures" / f"launcher_{time.time_ns()}.json"
@@ -500,15 +501,15 @@ def _finalize_aggregate(output_dir: Path) -> dict[str, Any]:
     from ember.pi05_eval_results import aggregate_run
 
     result = aggregate_run(output_dir)
-    completion, completion_sha256 = read_json_with_sha256(
+    completion, completion_bytes = read_json_with_size(
         output_dir / "launcher_completion.json"
     )
-    _, results_sha256 = read_json_with_sha256(output_dir / "results.json")
+    _, results_bytes = read_json_with_size(output_dir / "results.json")
     summary = {
         "schema_version": "ember_pi05_eval_run_summary_v1",
-        "contract_sha256": result["contract_sha256"],
-        "launcher_completion_sha256": completion_sha256,
-        "results_sha256": results_sha256,
+        "contract_reference": result["contract_reference"],
+        "launcher_completion_bytes": completion_bytes,
+        "results_bytes": results_bytes,
         "invocation_id": completion["invocation_id"],
         "launcher_started_unix": completion["started_unix"],
         "completed_unix": completion["finished_unix"],
@@ -521,7 +522,7 @@ def _finalize_aggregate(output_dir: Path) -> dict[str, Any]:
     }
     summary_path = output_dir / "run_summary.json"
     if summary_path.exists():
-        observed, _ = read_json_with_sha256(summary_path)
+        observed, _ = read_json_with_size(summary_path)
         if observed != summary:
             raise Pi05EvaluationError("existing evaluator run summary differs")
     else:
@@ -559,7 +560,7 @@ def _recover_locked_queue(
     initialize_queue(
         output_dir / "queue.sqlite3",
         shards,
-        contract_sha256=contract["contract_sha256"],
+        contract_reference=contract["contract_reference"],
         recover_claims=resume,
         retry_failed=resume,
     )
@@ -630,7 +631,7 @@ def _publish_launcher_completion(
     finished_unix = time.time()
     completion = {
         "schema_version": "ember_pi05_eval_launcher_completion_v1",
-        "contract_sha256": contract["contract_sha256"],
+        "contract_reference": contract["contract_reference"],
         "invocation_id": invocation_id,
         "started_unix": started_unix,
         "finished_unix": finished_unix,
@@ -688,7 +689,7 @@ def _start_workers_locked(output_dir: Path, *, resume: bool) -> dict[str, Any]:
             "unix": started_unix,
             "invocation_id": invocation_id,
             "argv": sys.argv,
-            "contract_sha256": contract["contract_sha256"],
+            "contract_reference": contract["contract_reference"],
             "worker_ids": worker_ids,
             "preflight": preflight,
         },

@@ -30,7 +30,7 @@ from ember.pi05_eval_queue import (
     fail_job,
     publish_json_exclusive,
     queue_summary,
-    read_json_with_sha256,
+    read_json_with_size,
 )
 from ember.pi05_eval.worker_setup import load_policy, validate_worker_assets
 from ember.pi05_processing import libero_policy_input
@@ -303,7 +303,7 @@ def _validate_shard_header(
         observed_shard["init_state_ids"] = tuple(observed_shard["init_state_ids"])
     if (
         payload.get("schema_version") != SHARD_RESULT_SCHEMA
-        or payload.get("contract_sha256") != contract["contract_sha256"]
+        or payload.get("contract_reference") != contract["contract_reference"]
         or payload.get("job_id") != shard.job_id
         or observed_shard != asdict(shard)
     ):
@@ -374,7 +374,7 @@ def _complete_published_shard(
     path = output_dir / relative
     if not path.exists():
         return None
-    payload, digest = read_json_with_sha256(path)
+    payload, artifact_bytes = read_json_with_size(path)
     rows = validate_shard_result(payload, contract=contract, shard=claim.shard)
     complete_job(
         queue_path,
@@ -382,7 +382,7 @@ def _complete_published_shard(
         worker_id=worker_id,
         claim_token=claim.claim_token,
         rows_path=relative.as_posix(),
-        rows_sha256=digest,
+        rows_bytes=artifact_bytes,
         row_count=len(rows),
         successes=sum(bool(row["success"]) for row in rows),
     )
@@ -519,7 +519,7 @@ def _publish_claim_result(
 ) -> bool:
     payload = {
         "schema_version": SHARD_RESULT_SCHEMA,
-        "contract_sha256": runtime.contract["contract_sha256"],
+        "contract_reference": runtime.contract["contract_reference"],
         "job_id": claim.shard.job_id,
         "shard": asdict(claim.shard),
         "producer": {
@@ -534,7 +534,7 @@ def _publish_claim_result(
     validate_shard_result(payload, contract=runtime.contract, shard=claim.shard)
     relative = Path("shards") / f"{claim.shard.job_id}.json"
     try:
-        digest = publish_json_exclusive(runtime.output_dir / relative, payload)
+        artifact_bytes = publish_json_exclusive(runtime.output_dir / relative, payload)
     except Pi05EvaluationError:
         adopted = _complete_published_shard(
             output_dir=runtime.output_dir,
@@ -552,7 +552,7 @@ def _publish_claim_result(
         worker_id=runtime.worker_id,
         claim_token=claim.claim_token,
         rows_path=relative.as_posix(),
-        rows_sha256=digest,
+        rows_bytes=artifact_bytes,
         row_count=len(rows),
         successes=sum(bool(row["success"]) for row in rows),
     )
@@ -609,7 +609,7 @@ def run_worker(
             "worker_id": worker_id,
             "pid": os.getpid(),
             "invocation_id": invocation_id,
-            "contract_sha256": contract["contract_sha256"],
+            "contract_reference": contract["contract_reference"],
         },
     )
     runtime: WorkerRuntime | None = None
@@ -637,7 +637,7 @@ def run_worker(
                 "numa_node": runtime.numa_node,
                 "cpu_affinity": list(runtime.cpu_affinity),
                 "model_load_seconds": ready_unix - process_started_unix,
-                "contract_sha256": runtime.contract["contract_sha256"],
+                "contract_reference": runtime.contract["contract_reference"],
                 "writer_generator": writer_generator,
             },
         )
@@ -677,7 +677,7 @@ def run_worker(
                 "worker_id": worker_id,
                 "pid": os.getpid(),
                 "invocation_id": invocation_id,
-                "contract_sha256": contract["contract_sha256"],
+                "contract_reference": contract["contract_reference"],
                 "error": repr(error),
             },
         )
@@ -691,7 +691,7 @@ def run_worker(
         "worker_id": worker_id,
         "pid": os.getpid(),
         "invocation_id": invocation_id,
-        "contract_sha256": contract["contract_sha256"],
+        "contract_reference": contract["contract_reference"],
         "completed_shards": completed,
         "adopted_shards": adopted,
         "wall_seconds": time.time() - process_started_unix,

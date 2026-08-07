@@ -1,4 +1,4 @@
-"""Construction and hashing of one immutable PI05 evaluation run."""
+"""Construction of one immutable PI05 evaluation run without content hashes."""
 
 from __future__ import annotations
 
@@ -7,13 +7,13 @@ import json
 import math
 import socket
 import time
+import uuid
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ember.eval_adapters import paired_writer_identity
 from ember.pi05_assets import Pi05EvaluationError
-from ember.pi05_source_checkpoint import canonical_hash
 from ember.pi05_eval_contract import (
     RUNTIME_OMP_THREADS,
     RUNTIME_REPLICA_PROFILES,
@@ -178,11 +178,6 @@ def _validate_build_request(
         raise Pi05EvaluationError("screen/formal PI05 evaluation requires a clean worktree")
     if replicas_per_gpu not in RUNTIME_REPLICA_PROFILES or not tasks:
         raise Pi05EvaluationError("PI05 evaluation runtime profile or task panel is invalid")
-    source_hashes = model.get("source_authority_hashes", {})
-    for name in ("normalization", "overlap_audit", "source_manifest"):
-        expected = authorities.hashes.get(name)
-        if expected is not None and source_hashes.get(name) != expected:
-            raise Pi05EvaluationError(f"source checkpoint uses another {name} authority")
     writer_adapter = adapter is not None and adapter.get("kind") in {
         "as_writer",
         "rl_writer",
@@ -218,10 +213,10 @@ def _writer_lora_execution_contract(
     }
 
 
-def _paired_control_hash(
+def _paired_control_contract(
     contract: Mapping[str, Any],
     adapter: Mapping[str, Any],
-) -> str:
+) -> dict[str, Any]:
     paired_keys = (
         "mode",
         "role",
@@ -236,13 +231,11 @@ def _paired_control_hash(
         "parallel",
         "writer_lora_execution",
     )
-    return canonical_hash(
-        {
-            "schema_version": "ember_pi05_writer_paired_control_v1",
-            **{key: contract[key] for key in paired_keys},
-            "writer": paired_writer_identity(adapter),
-        }
-    )
+    return {
+        "schema_version": "ember_pi05_writer_paired_control_v2",
+        **{key: contract[key] for key in paired_keys},
+        "writer": paired_writer_identity(adapter),
+    }
 
 
 def build_run_contract(
@@ -292,13 +285,14 @@ def build_run_contract(
         "host": socket.gethostname(),
         "command": list(command),
         "git": git,
+        "content_hash_policy": "disabled_by_owner",
         "authorities": {
             "config_path": str(authorities.config_path),
-            "hashes": authorities.hashes,
+            "paths": authorities.paths,
         },
         "role_authority": {
             "path": str(authorities.repo_root / SEEN_PANEL_RELATIVE_PATH),
-            "sha256": authorities.hashes["seen_panel"],
+            "bytes": (authorities.repo_root / SEEN_PANEL_RELATIVE_PATH).stat().st_size,
             "schema_version": authorities.seen_panel.get("schema_version"),
         }
         if role == "seen_panel"
@@ -310,7 +304,10 @@ def build_run_contract(
                 authorities.repo_root
                 / authorities.config["authorities"]["normalization"]["path"]
             ),
-            "sha256": authorities.hashes["normalization"],
+            "bytes": (
+                authorities.repo_root
+                / authorities.config["authorities"]["normalization"]["path"]
+            ).stat().st_size,
             "source_only_numeric_reads": True,
             "validation_or_test_numeric_reads": 0,
         },
@@ -338,20 +335,24 @@ def build_run_contract(
         writer_generators_per_gpu=writer_generators_per_gpu,
         writer_generation_batch_size=writer_generation_batch_size,
     )
-    contract["paired_control_sha256"] = None
+    contract["paired_control"] = None
     if writer_adapter:
-        contract["paired_control_sha256"] = _paired_control_hash(contract, adapter)
-    contract["contract_sha256"] = canonical_hash(contract)
+        contract["paired_control"] = _paired_control_contract(contract, adapter)
+    contract["contract_reference"] = f"{RUN_CONTRACT_SCHEMA}:{uuid.uuid4().hex}"
     return contract
 
 
 def load_run_contract(path: Path) -> dict[str, Any]:
     contract = _read_object(path)
-    expected = contract.pop("contract_sha256", None)
-    observed = canonical_hash(contract)
-    contract["contract_sha256"] = expected
-    if contract.get("schema_version") != RUN_CONTRACT_SCHEMA or expected != observed:
-        raise Pi05EvaluationError("PI05 evaluation run contract hash changed")
+    reference = contract.get("contract_reference")
+    if (
+        contract.get("schema_version") != RUN_CONTRACT_SCHEMA
+        or contract.get("content_hash_policy") != "disabled_by_owner"
+        or not isinstance(reference, str)
+        or not reference.startswith(f"{RUN_CONTRACT_SCHEMA}:")
+        or Path(str(contract.get("output_dir", ""))).resolve() != path.resolve().parent
+    ):
+        raise Pi05EvaluationError("PI05 evaluation run contract changed")
     return contract
 
 

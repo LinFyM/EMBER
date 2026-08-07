@@ -7,7 +7,6 @@ import os
 from pathlib import Path
 from typing import Any, Mapping
 
-from ember.libero_evaluation import sha256_file
 from ember.pi05_assets import Pi05EvaluationError, configure_libero_runtime_assets
 
 
@@ -62,10 +61,10 @@ class PersistentTaskEnvironmentPool:
             / task["init_states_file"]
         )
         if (
-            bddl.stat().st_size != int(task["bddl_bytes"])
-            or sha256_file(bddl) != task["bddl_sha256"]
+            not bddl.is_file()
+            or bddl.stat().st_size != int(task["bddl_bytes"])
+            or not init_path.is_file()
             or init_path.stat().st_size != int(task["init_states_bytes"])
-            or sha256_file(init_path) != task["init_states_sha256"]
         ):
             raise Pi05EvaluationError(f"installed task assets changed: {key}")
         suite = self.suites[task["suite"]]

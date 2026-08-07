@@ -17,11 +17,18 @@
   primary/exact/overlap=`1.0/.984833/.992417`，但secondary batch不稳定；最终依据完全稳定的
   primary收敛为top1 one-hot，未读取held input/action/outcome或rollout调route。最终随机K4
   stability=`1.0`、batch4/singleton=`24/24`、usage=`2/6/7/3/1/1/2/2`。
-- artifact、canonical router与fresh incompatible schema/config已闭合，聚焦`30 passed`。下一步
-  clean`0be3627`已在`gpu01:0,1,2|4,5,7`通过fresh0→1/exact-resume1→3 profile：三步约
+- artifact、canonical router与fresh incompatible schema/config已闭合。clean`0be3627`已在
+  `gpu01:0,1,2|4,5,7`通过fresh0→1/exact-resume1→3 profile：三步约
   `42.63/41.72/41.20s`、0 clip/OOM，peak reserved45.24GB，step2起16 blocks全可达且route
-  与authority一致。profile权重弃用，formal现已seal；下一步另起identity-fresh0→200，再严格
-  评50/100/150/200 correct400、winner五臂/internal。
+  与authority一致。profile权重弃用。
+- clean`a758bba`的identity-fresh formal0→200已自然完成并释放GPU；root为
+  `runs/outputs/pi05_as_writer_k4_grounded_video_expert_trace_m2p_formal_fresh0_200_r6_a758bba_20260807`。
+  200 finite macros、96,000 queries、19,200 K4 videos、8 checkpoints、0 clip/OOM/nonfinite，
+  wall=`8828.911s`，peak reserved42.73GB，source trainable=0且held reads=0。现在只评
+  macro50/100/150/200 strict correct400，再由single winner决定五臂/internal。
+- evaluator必须使用hashless launch v2：不对checkpoint/authority/shard/result计算或比较内容hash，
+  只封存path/schema/size/direct paired identity与UUID reference；不得恢复旧v1 hash链。既有
+  policy-noise RNG算法保持不变，确保与历史strict panel配对。
 - 保持K4、20-group trace、八完整experts、top1 one-hot owner、single LoRA、B20/full24/rank16/LR/objective不变；不加
   learned/language residual router、task-ID fallback、SFT-only auxiliary、reward、scale、挑video、
   checkpoint融合或历史warm-start。

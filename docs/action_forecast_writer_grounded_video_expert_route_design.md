@@ -156,3 +156,23 @@ wrong且video-derived route在same/wrong/order arms符合预注册语义；funct
 本轮不改K4、DCT/evidence、expert数/top1/one-hot weight、rank、LR、B20、full24、AS objective、
 optimizer、checkpoint schedule或source policy；不加reward、SFT-only auxiliary、scalar/global
 scale、multi-LoRA、checkpoint融合、挑video、延长同一失败schedule或从任何历史best warm-start。
+
+## 11. Formal训练完成与当前裁决边界
+
+clean`a758bba`已按第9节合同从functional identity自然完成macro0→200；root为
+`runs/outputs/pi05_as_writer_k4_grounded_video_expert_trace_m2p_formal_fresh0_200_r6_a758bba_20260807`。
+200行metrics均finite，共96,000 action queries、19,200 K4 action-hidden video conditions和8个
+every25 checkpoints；0 clip/OOM/nonfinite，source trainable=0，validation/test action和video
+value reads均为0。wall=`8828.911s`，peak allocated/reserved=
+`36,708,964,864/42,727,374,848` bytes，未降低B20或改变任何scientific contract。
+
+按expert实际owner task数消除互斥block的zero padding后，Reader与axis-M2P在八个25步窗口的
+gradient-energy retention中位始终约`.45--.60`与`.49--.53`；grounded top1 ownership确实避免了
+shared map的1/24抵消。但该机制证据不选择checkpoint，functional loss也不作行为结论。下一步仍只
+严格评macro50/100/150/200 correct400，再由single-checkpoint absolute、breadth、churn选择winner
+并做五臂与内部route/path分析。
+
+本轮rollout启用canonical evaluator hashless launch v2：不生成或复核checkpoint、authority、raw
+shard、aggregate与completion内容hash；用path/schema/size、真实解析/加载、显式UUID run reference
+与direct paired-control字段保持身份和配对。policy-noise RNG算法保持原sealed schedule，以便和历史
+fixed panel严格配对。

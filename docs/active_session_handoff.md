@@ -35,8 +35,17 @@
   loss=`.150377/.152826/.148513`、step time=`42.63/41.72/41.20s`，0 clip/OOM/nonfinite，peak
   allocated/reserved=`36,709,136,896/45,237,665,792` bytes；step1八Reader可达，step2起16 blocks
   全可达，train24真实route逐expert与authority一致。累计1,440 queries/288 videos、source
-  trainable=0，六卡已释放；profile权重弃用。formal config已seal，下一步只从functional identity
-  新root启动0→200。旧sparse checkpoint与language route不得resume或warm-start。
+  trainable=0，六卡已释放；profile权重弃用。
+- clean`a758bba`随后从functional identity自然完成formal0→200；唯一正式root为
+  `runs/outputs/pi05_as_writer_k4_grounded_video_expert_trace_m2p_formal_fresh0_200_r6_a758bba_20260807`。
+  200 finite macros、96,000 queries、19,200 K4 videos、8 checkpoints、0 clip/OOM/nonfinite，
+  wall=`8828.911s`，peak allocated/reserved=`36,708,964,864/42,727,374,848` bytes，source
+  trainable=0且validation/test action/video reads=0。六卡已自然释放；旧sparse checkpoint、profile
+  权重与language route不得resume或warm-start。
+- 当前唯一下一步是评正式root的macro50/100/150/200 strict paired correct400。canonical evaluator
+  已切到hashless launch v2：artifact/authority不计算SHA-256或MD5，只以path/schema/size、真实加载、
+  explicit run UUID与direct paired-control字段封存；policy-noise RNG保持既有科学配对算法。聚焦
+  `55 passed`与validation Writer prepare vertical path通过，尚未看到任何四点rollout结果。
 
 ## 0.1 已完成并负裁决：Sparse Semantic-Expert route
 

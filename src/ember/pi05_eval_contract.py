@@ -8,17 +8,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from ember.libero_evaluation import sha256_file
 from ember.pi05_assets import (
     Pi05EvaluationError,
     load_protocol,
     prepare_libero_config,
 )
-from ember.pi05_source_checkpoint import canonical_hash
 
 
 EVALUATION_CONFIG_SCHEMA = "ember_pi05_target_evaluation_v1"
-RUN_CONTRACT_SCHEMA = "ember_pi05_target_eval_launch_v1"
+RUN_CONTRACT_SCHEMA = "ember_pi05_target_eval_launch_v2"
 SUITE_ORDER = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
 ROLE_NAMES = {
     "all_targets",
@@ -29,7 +27,6 @@ ROLE_NAMES = {
 }
 DERIVED_ROLE_NAMES = {"seen_panel"}
 SEEN_PANEL_RELATIVE_PATH = Path("configs/pi05_seen_panel_v1.json")
-SEEN_PANEL_CHECKSUM_RELATIVE_PATH = Path("configs/pi05_seen_panel_v1.sha256")
 FROZEN_SOURCE_POLICY_SUBDIR = "policy"
 RUNTIME_REPLICA_PROFILES = (1, 2, 3, 4, 5, 6)
 RUNTIME_OMP_THREADS = {"1": 8, "2": 4, "3": 2, "4": 1, "5": 1, "6": 1}
@@ -46,7 +43,7 @@ class EvaluationAuthorities:
     source_base_config: dict[str, Any]
     tokenizer_manifest: dict[str, Any]
     seen_panel: dict[str, Any]
-    hashes: dict[str, str]
+    paths: dict[str, str]
 
 
 @dataclass(frozen=True)
@@ -58,10 +55,8 @@ class TargetTaskContract:
     problem_folder: str
     bddl_file: str
     bddl_bytes: int
-    bddl_sha256: str
     init_states_file: str
     init_states_bytes: int
-    init_states_sha256: str
     installed_init_state_count: int
     horizon: int
     init_state_ids: tuple[int, ...]
@@ -160,14 +155,13 @@ def load_evaluation_authorities(
     if config.get("schema_version") != EVALUATION_CONFIG_SCHEMA:
         raise Pi05EvaluationError("unsupported PI05 target evaluation config")
     values: dict[str, dict[str, Any]] = {}
-    hashes: dict[str, str] = {"evaluation_config": sha256_file(config_path)}
+    paths: dict[str, str] = {"evaluation_config": str(config_path)}
     for name, reference in config.get("authorities", {}).items():
         path = repo_root / reference["path"]
-        observed = sha256_file(path)
-        if observed != reference["sha256"]:
-            raise Pi05EvaluationError(f"sealed evaluation authority changed: {name}")
+        if not path.is_file():
+            raise Pi05EvaluationError(f"missing evaluation authority: {name}")
         values[name] = _read_object(path)
-        hashes[name] = observed
+        paths[name] = str(path.resolve())
     required = {
         "protocol",
         "overlap_audit",
@@ -179,25 +173,12 @@ def load_evaluation_authorities(
     if set(values) != required:
         raise Pi05EvaluationError("PI05 evaluation authority set changed")
     seen_panel_path = repo_root / SEEN_PANEL_RELATIVE_PATH
-    seen_panel_sha256 = sha256_file(seen_panel_path)
-    try:
-        checksum_fields = (
-            repo_root / SEEN_PANEL_CHECKSUM_RELATIVE_PATH
-        ).read_text(encoding="utf-8").split()
-    except OSError as error:
-        raise Pi05EvaluationError("missing sealed seen-panel checksum") from error
-    if checksum_fields != [seen_panel_sha256, seen_panel_path.name]:
-        raise Pi05EvaluationError("sealed seen-panel checksum changed")
     seen_panel = _read_object(seen_panel_path)
     panel_authority = seen_panel.get("authority", {})
     panel_manifest = repo_root / str(panel_authority.get("target_data_manifest", ""))
-    if (
-        not panel_manifest.is_file()
-        or sha256_file(panel_manifest)
-        != panel_authority.get("target_data_manifest_sha256")
-    ):
+    if not panel_manifest.is_file():
         raise Pi05EvaluationError("seen panel target-data authority changed")
-    hashes["seen_panel"] = seen_panel_sha256
+    paths["seen_panel"] = str(seen_panel_path.resolve())
     protocol = load_protocol(repo_root / config["authorities"]["protocol"]["path"])
     audit = values["overlap_audit"]
     targets = audit.get("target_tasks", [])
@@ -209,13 +190,6 @@ def load_evaluation_authorities(
     ):
         raise Pi05EvaluationError("overlap audit is not the complete target-40 authority")
     _validate_source_normalization(values["normalization"], values["source_base_config"])
-    if (
-        values["normalization"].get("source_manifest_sha256")
-        != hashes["source_manifest"]
-        or values["normalization"].get("overlap_audit_sha256")
-        != hashes["overlap_audit"]
-    ):
-        raise Pi05EvaluationError("source normalization provenance hashes changed")
     _validate_recipe(config, protocol)
     return EvaluationAuthorities(
         repo_root=repo_root,
@@ -227,7 +201,7 @@ def load_evaluation_authorities(
         source_base_config=values["source_base_config"],
         tokenizer_manifest=values["tokenizer_manifest"],
         seen_panel=seen_panel,
-        hashes=hashes,
+        paths=paths,
     )
 
 
@@ -351,22 +325,19 @@ def inspect_installed_target_tasks(
         if (
             not bddl_path.is_file()
             or bddl_path.stat().st_size != int(sealed["bddl_bytes"])
-            or sha256_file(bddl_path) != sealed["bddl_sha256"]
         ):
-            raise Pi05EvaluationError(f"installed BDDL hash differs: {suite_name}/{task_id}")
+            raise Pi05EvaluationError(f"installed BDDL size differs: {suite_name}/{task_id}")
         init_states = suite.get_task_init_states(task_id)
         if not init_path.is_file() or len(init_states) < formal_count:
             raise Pi05EvaluationError(f"installed fixed states incomplete: {suite_name}/{task_id}")
-        init_sha256 = sha256_file(init_path)
         if split_role(authorities.protocol, suite_name, task_id) == "test":
             sealed_test = sealed_test_by_key.get((suite_name, task_id))
             if (
                 sealed_test is None
                 or init_path.name != sealed_test.get("init_states_file")
-                or init_sha256 != sealed_test.get("init_states_sha256")
             ):
                 raise Pi05EvaluationError(
-                    f"installed test fixed-state hash differs: {suite_name}/{task_id}"
+                    f"installed test fixed-state file differs: {suite_name}/{task_id}"
                 )
         result.append(
             TargetTaskContract(
@@ -377,10 +348,8 @@ def inspect_installed_target_tasks(
                 problem_folder=task.problem_folder,
                 bddl_file=task.bddl_file,
                 bddl_bytes=bddl_path.stat().st_size,
-                bddl_sha256=sealed["bddl_sha256"],
                 init_states_file=init_path.name,
                 init_states_bytes=init_path.stat().st_size,
-                init_states_sha256=init_sha256,
                 installed_init_state_count=len(init_states),
                 horizon=int(horizons[suite_name]),
                 init_state_ids=tuple(range(state_count)),
@@ -412,21 +381,16 @@ def _validate_source_checkpoint_provenance(
     run_contract: Mapping[str, Any],
     manifest: Mapping[str, Any],
     trainer: Mapping[str, Any],
-    run_contract_sha: str,
 ) -> None:
     source_config = authorities.source_base_config
     observed = {
         "run_schema": run_contract.get("schema_version"),
-        "config_sha256": run_contract.get("config_sha256"),
-        "authorities": run_contract.get("authorities"),
         "models": run_contract.get("models"),
         "features": run_contract.get("features"),
         "optimization": run_contract.get("optimization"),
         "task_ids": run_contract.get("task_ids"),
         "manifest_schema": manifest.get("schema_version"),
         "trainer_schema": trainer.get("schema_version"),
-        "manifest_contract": manifest.get("contract_sha256"),
-        "trainer_contract": trainer.get("contract_sha256"),
         "manifest_step": manifest.get("optimizer_step"),
         "trainer_step": trainer.get("optimizer_step"),
         "manifest_micro_step": manifest.get("micro_step"),
@@ -435,16 +399,12 @@ def _validate_source_checkpoint_provenance(
     }
     expected = {
         "run_schema": "ember_pi05_source_launch_v1",
-        "config_sha256": authorities.hashes["source_base_config"],
-        "authorities": source_config["authorities"],
         "models": source_config["models"],
         "features": source_config["features"],
         "optimization": source_config["optimization"],
         "task_ids": source_config["data"]["active_task_ids"],
         "manifest_schema": "ember_pi05_source_checkpoint_v1",
         "trainer_schema": "ember_pi05_source_trainer_state_v1",
-        "manifest_contract": run_contract_sha,
-        "trainer_contract": run_contract_sha,
         "manifest_step": trainer.get("optimizer_step"),
         "trainer_step": trainer.get("optimizer_step"),
         "manifest_micro_step": trainer.get("micro_step"),
@@ -459,8 +419,8 @@ def _verified_model_files(
     checkpoint: Path, manifest: Mapping[str, Any]
 ) -> tuple[Path, list[dict[str, Any]]]:
     files = manifest.get("files", [])
-    if not isinstance(files, list) or canonical_hash(files) != manifest.get("aggregate_sha256"):
-        raise Pi05EvaluationError("source checkpoint manifest aggregate changed")
+    if not isinstance(files, list):
+        raise Pi05EvaluationError("source checkpoint manifest files changed")
     expected = {row["path"]: row for row in files}
     if len(expected) != len(files):
         raise Pi05EvaluationError("source checkpoint manifest contains duplicate paths")
@@ -477,12 +437,13 @@ def _verified_model_files(
             record is not None
             and path.is_file()
             and path.stat().st_size == int(record["bytes"])
-            and sha256_file(path) == record["sha256"]
         )
         if not valid:
             raise Pi05EvaluationError(f"source checkpoint model file changed: {relative}")
         if relative.startswith(f"{FROZEN_SOURCE_POLICY_SUBDIR}/"):
-            observed_files.append(dict(record))
+            observed_files.append(
+                {"path": str(record["path"]), "bytes": int(record["bytes"])}
+            )
     return model_path, observed_files
 
 
@@ -527,8 +488,7 @@ def _validate_final_source_policy(
     checkpoint: Path,
     run_contract: Mapping[str, Any],
     trainer: Mapping[str, Any],
-    run_contract_sha: str,
-) -> str:
+) -> dict[str, Any]:
     summary_path = source_run / "run_summary.json"
     summary = _read_object(summary_path)
     source_config = authorities.source_base_config
@@ -543,35 +503,15 @@ def _validate_final_source_policy(
         "checkpoint_interval": formal["checkpoint_interval"],
         "ema_enabled": True,
         "task_limit": None,
-        "data_sha256_verified": True,
     }
     observed_runtime = {key: runtime.get(key) for key in expected_runtime}
-    foundation = source_config["models"]["foundation"]
-    tokenizer = source_config["models"]["tokenizer"]
-    asset_validation = run_contract.get("asset_validation", {})
-    expected_assets = {
-        "full_weight_hash_verified": True,
-        "foundation_config_sha256": foundation["config_sha256"],
-        "foundation_weights_sha256": foundation["weights_sha256"],
-        "tokenizer_sha256": tokenizer["sha256"],
-    }
-    observed_assets = {key: asset_validation.get(key) for key in expected_assets}
-    source_corpus = asset_validation.get("source_corpus", {})
-    source_manifest_summary = _read_object(
-        authorities.repo_root
-        / source_config["authorities"]["source_manifest"]["path"]
-    )["summary"]
+    source_corpus = run_contract.get("asset_validation", {}).get("source_corpus", {})
     expected_corpus = {
-        "full_sha256_verified": True,
         "tasks_checked": len(source_config["data"]["active_task_ids"]),
-        "manifest_hdf5_aggregate_sha256": source_manifest_summary[
-            "hdf5_aggregate_sha256"
-        ],
     }
     observed_corpus = {key: source_corpus.get(key) for key in expected_corpus}
     expected_summary = {
         "schema_version": "ember_pi05_source_run_summary_v1",
-        "contract_sha256": run_contract_sha,
         "completed_optimizer_steps": final_step,
         "requested_optimizer_steps": final_step,
         "stopped_early_for_resume_smoke": False,
@@ -582,7 +522,6 @@ def _validate_final_source_policy(
     valid = (
         run_contract.get("mode") == "formal"
         and observed_runtime == expected_runtime
-        and observed_assets == expected_assets
         and observed_corpus == expected_corpus
         and int(trainer.get("optimizer_step", -1)) == final_step
         and int(trainer.get("micro_step", -1)) == expected_micro_step
@@ -595,7 +534,11 @@ def _validate_final_source_policy(
         raise Pi05EvaluationError(
             "screen/formal evaluation requires the selected final formal source policy"
         )
-    return sha256_file(summary_path)
+    return {
+        "path": str(summary_path.resolve()),
+        "bytes": summary_path.stat().st_size,
+        "schema_version": str(summary["schema_version"]),
+    }
 
 
 def inspect_source_checkpoint(
@@ -614,36 +557,36 @@ def inspect_source_checkpoint(
     run_contract = _read_object(source_run / "run_contract.json")
     manifest = _read_object(checkpoint / "checkpoint_manifest.json")
     trainer = _read_object(checkpoint / "trainer_state.json")
-    run_contract_sha = canonical_hash(run_contract)
     _validate_source_checkpoint_provenance(
-        authorities, run_contract, manifest, trainer, run_contract_sha
+        authorities, run_contract, manifest, trainer
     )
     model_path, observed_files = _verified_model_files(checkpoint, manifest)
     _validate_model_config(model_path)
-    summary_sha256 = None
+    summary_record = None
     if evaluation_mode in {"screen", "formal"}:
-        summary_sha256 = _validate_final_source_policy(
+        summary_record = _validate_final_source_policy(
             authorities,
             source_run,
             checkpoint,
             run_contract,
             trainer,
-            run_contract_sha,
         )
     return {
         "source_run": str(source_run),
-        "source_run_contract_file_sha256": sha256_file(source_run / "run_contract.json"),
-        "source_run_contract_sha256": run_contract_sha,
-        "source_training_commit": run_contract["git"]["commit"],
-        "source_base_config_sha256": authorities.hashes["source_base_config"],
-        "source_authority_hashes": {
-            name: value["sha256"]
-            for name, value in run_contract["authorities"].items()
+        "source_run_contract": {
+            "path": str((source_run / "run_contract.json").resolve()),
+            "bytes": (source_run / "run_contract.json").stat().st_size,
+            "schema_version": str(run_contract["schema_version"]),
         },
+        "source_training_commit": run_contract["git"]["commit"],
         "checkpoint": str(checkpoint),
-        "checkpoint_manifest_sha256": sha256_file(checkpoint / "checkpoint_manifest.json"),
+        "checkpoint_manifest": {
+            "path": str((checkpoint / "checkpoint_manifest.json").resolve()),
+            "bytes": (checkpoint / "checkpoint_manifest.json").stat().st_size,
+            "schema_version": str(manifest["schema_version"]),
+        },
         "optimizer_step": int(trainer["optimizer_step"]),
-        "source_run_summary_sha256": summary_sha256,
+        "source_run_summary": summary_record,
         "frozen_policy_subdir": FROZEN_SOURCE_POLICY_SUBDIR,
         "model_path": str(model_path),
         "model_files": observed_files,
@@ -656,14 +599,12 @@ def inspect_tokenizer(authorities: EvaluationAuthorities, tokenizer_path: Path) 
     if (
         not tokenizer_path.is_file()
         or tokenizer_path.stat().st_size != int(manifest["bytes"])
-        or sha256_file(tokenizer_path) != manifest["sha256"]
     ):
         raise Pi05EvaluationError("OpenPI tokenizer differs from the sealed authority")
     return {
         "path": str(tokenizer_path),
         "bytes": tokenizer_path.stat().st_size,
-        "sha256": manifest["sha256"],
-        "manifest_sha256": authorities.hashes["tokenizer_manifest"],
+        "manifest_path": authorities.paths["tokenizer_manifest"],
     }
 
 

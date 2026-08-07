@@ -9,7 +9,7 @@ from ember.pi05_eval_queue import publish_json_exclusive
 
 def _invocation_events(
     *,
-    contract_sha256: str,
+    contract_reference: str,
     worker_ids: list[str],
     failed_id: str,
     completed_id: str,
@@ -20,7 +20,7 @@ def _invocation_events(
             "event": "started",
             "unix": 1.0,
             "invocation_id": failed_id,
-            "contract_sha256": contract_sha256,
+            "contract_reference": contract_reference,
             "worker_ids": worker_ids,
         },
         {
@@ -34,7 +34,7 @@ def _invocation_events(
             "event": "resume_started",
             "unix": 10.0,
             "invocation_id": completed_id,
-            "contract_sha256": contract_sha256,
+            "contract_reference": contract_reference,
             "worker_ids": worker_ids,
         },
         {
@@ -48,13 +48,13 @@ def _invocation_events(
 
 
 def test_launcher_attempt_summary_counts_shards_across_resume(tmp_path: Path) -> None:
-    contract = {"mode": "formal", "contract_sha256": "a" * 64}
+    contract = {"mode": "formal", "contract_reference": "contract-a"}
     worker_ids = ["4-r0", "4-r1"]
     failed_id = "b" * 32
     completed_id = "c" * 32
     failed_codes = {"4-r0": -15, "4-r1": 1}
     events = _invocation_events(
-        contract_sha256=contract["contract_sha256"],
+        contract_reference=contract["contract_reference"],
         worker_ids=worker_ids,
         failed_id=failed_id,
         completed_id=completed_id,

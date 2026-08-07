@@ -32,7 +32,8 @@ from ember.expert_manifold.model import (
 )
 from ember.expert_manifold.video_features import phase_resample
 from ember.expert_manifold.feature_cache import _feature_runtime
-from ember.lora import expected_lora_state_shapes
+from ember.expert_manifold.writer_training import _runtime as _writer_runtime
+from ember.lora import expected_lora_state_shapes, identity_lora_state
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -47,6 +48,22 @@ def test_video_expert_manifold_config_keeps_video_as_dynamic_value() -> None:
     assert config["topological_writer"]["valid_values"] == 1_287_168
     assert config["information_wall"]["validation_actions_read"] == 0
     assert config["task_experts"]["profile_defaults"]["scheduler_total_steps"] == 2000
+
+
+def test_topological_writer_profile_preserves_formal_task_complete_schedule() -> None:
+    config = load_expert_manifold_config(CONFIG)
+    args = Namespace(
+        mode="profile",
+        microbatch=None,
+        stop_after_macro=1,
+        expert_step=250,
+    )
+    assert _writer_runtime(args, config, Namespace(world_size=6)) == (
+        800,
+        1,
+        (1, 3),
+        1,
+    )
 
 
 def test_profile_runtime_supports_fresh_then_exact_resume_boundary() -> None:
@@ -327,6 +344,22 @@ def test_topological_lora_layout_round_trips_full_rank16_state() -> None:
     values = layout.tokenize(target, template)
     recovered = layout.detokenize(values, template)
     assert all(torch.equal(recovered[name], value) for name, value in target.items())
+
+
+def test_identity_lora_state_matches_template_a_zero_b_contract() -> None:
+    contract, template, _ = _synthetic_lora_states()
+    identity = identity_lora_state(contract)
+    assert set(identity) == set(template)
+    assert all(
+        torch.count_nonzero(value) == 0
+        for name, value in identity.items()
+        if name.endswith(".lora_B.default.weight")
+    )
+    assert all(
+        torch.count_nonzero(value) > 0
+        for name, value in identity.items()
+        if name.endswith(".lora_A.default.weight")
+    )
 
 
 def test_topological_writer_zero_video_is_identity_after_parameter_changes() -> None:

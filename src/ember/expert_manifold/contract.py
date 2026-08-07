@@ -46,6 +46,9 @@ def load_expert_manifold_config(path: Path) -> dict[str, Any]:
         raise ExpertManifoldError("unsupported expert-manifold config schema")
     method = config.get("method", {})
     experts = config.get("task_experts", {})
+    video = config.get("video_features", {})
+    writer = config.get("topological_writer", {})
+    meta = config.get("meta_training", {})
     information = config.get("information_wall", {})
     if (
         method.get("name")
@@ -59,6 +62,20 @@ def load_expert_manifold_config(path: Path) -> dict[str, Any]:
         or int(experts.get("task_count", -1)) != 24
         or int(experts.get("episodes_per_task", -1)) != 50
         or experts.get("task_parameter_sharing") != "none"
+        or int(video.get("shots", -1)) != 1
+        or int(video.get("phase_slots", -1)) != 16
+        or int(video.get("feature_width", -1)) != 2048
+        or video.get("cache_contains_actions_or_state") is not False
+        or int(writer.get("chunk_count", -1)) != 168
+        or int(writer.get("public_rank", -1)) != 16
+        or int(writer.get("valid_values", -1)) != 1_287_168
+        or int(meta.get("task_count", -1)) != 24
+        or int(meta.get("videos_per_task_per_macro", -1)) != 1
+        or meta.get("task_aggregation")
+        != "each_task_mean_then_train24_equal_mean"
+        or meta.get("objective", {}).get("effective_ba_monitor_only") is not True
+        or float(meta.get("objective", {}).get("raw_reconstruction_weight", -1))
+        != 1.0
         or int(experts.get("profile_defaults", {}).get("scheduler_total_steps", -1))
         != int(experts.get("formal_run", {}).get("total_steps", -2))
         or config.get("content_hash_policy") != "disabled_by_owner"

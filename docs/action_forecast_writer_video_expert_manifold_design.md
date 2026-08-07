@@ -239,3 +239,24 @@ allocated/reserved=`15,082,000,384/21,313,355,776` bytes，0 OOM/nonfinite，bas
 每worker严格4 tasks，每task B16，统一先训到step1000并保存250/500/1000；不同task不做
 collective。只有development-train official closed loop和LoRA内部组织可以裁决是否在同一root
 exact-resume到2000；不得按单task结果选择不同step或训练held experts。
+
+## 15. Expert评测、视频cache与meta-Writer实现边界
+
+task-expert正式训练运行期间，后续实现放在独立worktree，避免修改formal checkout。当前已完成：
+
+- canonical evaluator可直接安装完整train24 task-expert bank，并按task切换对应rank-16 LoRA；
+  只允许`development_train`，统一global step由250/500/1000 official closed loop裁决；
+- expert几何分析按统一step测effective LoRA谱、target/layer能量、跨task方向与checkpoint位移；
+- frozen feature cache只读取action-hidden视频帧，保存每task 50条`[16,2048]`BF16 innovation；
+  sealed manifest记录source、path/schema/size和零action/state/reward/terminal reads，不做内容hash；
+- topological decoder严格覆盖168个`[16,512]`chunks，direction先按每chunk有效坐标归一，量纲由
+  同一video-conditioned state的动态scale和训练expert导出的静态per-chunk scale prior共同表达；
+  静态prior自身没有direction，zero video仍精确identity；
+- meta训练每macro覆盖train24，每rank固定4 tasks，六rank DDP只在最后local microbatch同步，因而
+  DDP平均严格等于24-task等权mean。模型、optimizer、scheduler、每rank RNG和macro cursor原子
+  checkpoint；模型与cache完成local CUDA构造后才建立NCCL，BCI仍显式要求
+  `NCCL_P2P_DISABLE=1`。
+
+以上只完成CPU合同与代码，不构成A40 profile或性能证据。feature extraction与meta训练formal仍由
+config阻塞；必须先完成live profile、fresh0→1、exact-resume1→3和原始六rank规模验证。K4旧
+executable只在新meta-Writer通过profile后按第12节退役。

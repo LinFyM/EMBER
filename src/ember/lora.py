@@ -172,6 +172,28 @@ def _stable_tensor_seed(seed: int, name: str) -> int:
     return int.from_bytes(digest[:8], "big") % (2**63 - 1)
 
 
+def identity_lora_state(
+    contract: LoRAContract,
+    *,
+    dtype: torch.dtype = torch.float32,
+    device: torch.device | str = "cpu",
+) -> dict[str, torch.Tensor]:
+    """Materialize the contract's deterministic template-A / zero-B identity."""
+
+    result: dict[str, torch.Tensor] = {}
+    for name, shape in expected_lora_state_shapes(contract).items():
+        value = torch.zeros(shape, dtype=torch.float32, device="cpu")
+        if name.endswith(LORA_A_SUFFIX):
+            generator = torch.Generator(device="cpu")
+            generator.manual_seed(_stable_tensor_seed(contract.identity_seed, name))
+            torch.nn.init.kaiming_uniform_(
+                value, a=math.sqrt(5), generator=generator
+            )
+        result[name] = value.to(device=device, dtype=dtype)
+    validate_lora_state(result, contract)
+    return result
+
+
 @torch.no_grad()
 def initialize_identity_lora_(
     policy: torch.nn.Module, contract: LoRAContract
@@ -180,15 +202,9 @@ def initialize_identity_lora_(
 
     state = task_lora_state_dict(policy)
     validate_lora_state(state, contract)
+    identity = identity_lora_state(contract)
     for name, value in state.items():
-        if name.endswith(LORA_B_SUFFIX):
-            value.zero_()
-            continue
-        generator = torch.Generator(device="cpu")
-        generator.manual_seed(_stable_tensor_seed(contract.identity_seed, name))
-        initialized = torch.empty(value.shape, dtype=torch.float32, device="cpu")
-        torch.nn.init.kaiming_uniform_(initialized, a=math.sqrt(5), generator=generator)
-        value.copy_(initialized.to(device=value.device, dtype=value.dtype))
+        value.copy_(identity[name].to(device=value.device, dtype=value.dtype))
 
 
 def inject_task_lora(

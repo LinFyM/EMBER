@@ -1,5 +1,19 @@
 # EMBER Progress Ledger
 
+## 2026-08-08 Expert-Manifold后续实现（formal experts并行运行）
+
+- main clean`81101fe`保持冻结并运行6个independent A40 workers；后续源码在隔离worktree实现，
+  没有改变在跑expert的config、进程或checkpoint合同。
+- 新增完整train24 task-expert bank evaluator和统一step LoRA几何分析；evaluation只开放
+  `development_train`且按实际task安装对应expert，不引入task-ID部署输入或held expert。
+- 新增action-hidden frozen PI0.5 video innovation cache：exact language只query joint frame hidden，
+  再减matched no-image baseline；每条video保留phase16，cache不含action/state/reward/terminal。
+- canonical 168-chunk rank16 decoder与六rank task-complete DDP meta trainer已闭合；direct output不经
+  窄factor head，direction/scale分离，zero video恒为identity。checkpoint保留Writer/optimizer/
+  scheduler/每rank RNG和macro cursor，BCI deferred-NCCL及P2P-disable合同沿用。
+- 聚焦CPU回归53项通过，py_compile/CLI/diff检查通过。该实现尚无GPU或性能结论；feature cache与
+  meta formal均保持blocked，下一步先完成expert bank及其统一step裁决。
+
 ## 2026-08-07 Video Expert-Manifold task-expert builder与profile seal
 
 - 建立hashless task-expert formal config、task-local deterministic sampler、adapter+optimizer+

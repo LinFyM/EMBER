@@ -37,6 +37,67 @@ CACHE_TASK_SCHEMA = "ember_pi05_expert_manifold_feature_task_v1"
 CACHE_MANIFEST_SCHEMA = "ember_pi05_expert_manifold_feature_cache_v1"
 
 
+def inspect_feature_cache(
+    config_path: Path,
+    cache_root: Path,
+    *,
+    source: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Validate the sealed train24 feature cache by authority, path, and size."""
+
+    config_path = config_path.resolve()
+    cache_root = cache_root.resolve()
+    config = load_expert_manifold_config(config_path)
+    manifest_path = cache_root / "cache_manifest.json"
+    manifest = read_json(manifest_path)
+    expected_source = {
+        "source_run": str(Path(str(source["source_run"])).resolve()),
+        "checkpoint": str(Path(str(source["checkpoint"])).resolve()),
+        "model_path": str(Path(str(source["model_path"])).resolve()),
+    }
+    valid = (
+        manifest.get("schema_version") == CACHE_MANIFEST_SCHEMA
+        and Path(str(manifest.get("config", {}).get("path", ""))).resolve()
+        == config_path
+        and manifest.get("config", {}).get("schema") == config["schema_version"]
+        and int(manifest.get("config", {}).get("bytes", -1))
+        == config_path.stat().st_size
+        and Path(str(manifest.get("cache_root", ""))).resolve() == cache_root
+        and manifest.get("source") == expected_source
+        and int(manifest.get("task_count", -1)) == 24
+        and int(manifest.get("demo_count", -1)) == 50
+        and int(manifest.get("phase_slots", -1))
+        == int(config["video_features"]["phase_slots"])
+        and int(manifest.get("feature_width", -1))
+        == int(config["video_features"]["feature_width"])
+        and manifest.get("information_wall")
+        == {
+            "teacher_action_reads": 0,
+            "teacher_state_reads": 0,
+            "reward_reads": 0,
+            "terminal_reads": 0,
+            "validation_video_reads": 0,
+            "test_video_reads": 0,
+        }
+        and manifest.get("content_hash_policy") == "disabled_by_owner"
+    )
+    tasks = manifest.get("tasks", ())
+    if not valid or len(tasks) != 24:
+        raise ExpertManifoldError("video feature cache manifest changed")
+    for ordinal, row in enumerate(tasks):
+        path = Path(str(row.get("features", {}).get("path", "")))
+        if (
+            int(row.get("task_ordinal", -1)) != ordinal
+            or row.get("split_role") != "train"
+            or row.get("feature_shape") != [50, 16, 2048]
+            or row.get("feature_dtype") != "bfloat16"
+            or not path.is_file()
+            or path.stat().st_size != int(row.get("features", {}).get("bytes", -1))
+        ):
+            raise ExpertManifoldError("video feature cache task changed")
+    return manifest
+
+
 def _feature_runtime(
     config: Mapping[str, Any], mode: str
 ) -> tuple[int, int, tuple[int, ...]]:
@@ -336,10 +397,18 @@ def seal_feature_cache(config_path: Path, cache_root: Path) -> dict[str, Any]:
         raise ExpertManifoldError("feature cache worker count is incomplete")
     tasks: dict[int, dict[str, Any]] = {}
     commits = set()
+    sources: dict[tuple[str, str, str], dict[str, str]] = {}
     for worker in workers:
         contract = read_json(worker / "run_contract.json")
         summary = read_json(worker / "worker_summary.json")
         commits.add(str(contract.get("git", {}).get("commit", "")))
+        declared_source = contract.get("source", {})
+        source_record = {
+            "source_run": str(Path(str(declared_source.get("source_run", ""))).resolve()),
+            "checkpoint": str(Path(str(declared_source.get("checkpoint", ""))).resolve()),
+            "model_path": str(Path(str(declared_source.get("model_path", ""))).resolve()),
+        }
+        sources[tuple(source_record.values())] = source_record
         if (
             contract.get("schema_version") != CACHE_WORKER_SCHEMA
             or contract.get("mode") != "formal"
@@ -370,7 +439,13 @@ def seal_feature_cache(config_path: Path, cache_root: Path) -> dict[str, Any]:
             ):
                 raise ExpertManifoldError("feature cache task record changed")
             tasks[ordinal] = dict(row)
-    if set(tasks) != set(range(24)) or len(commits) != 1 or "" in commits:
+    if (
+        set(tasks) != set(range(24))
+        or len(commits) != 1
+        or "" in commits
+        or len(sources) != 1
+        or any(not value for value in next(iter(sources.values())).values())
+    ):
         raise ExpertManifoldError("feature cache does not cover train24 exactly")
     manifest = {
         "schema_version": CACHE_MANIFEST_SCHEMA,
@@ -381,6 +456,7 @@ def seal_feature_cache(config_path: Path, cache_root: Path) -> dict[str, Any]:
         },
         "cache_root": str(cache_root),
         "training_commit": next(iter(commits)),
+        "source": next(iter(sources.values())),
         "task_count": 24,
         "demo_count": int(formal["demo_count"]),
         "phase_slots": int(config["video_features"]["phase_slots"]),

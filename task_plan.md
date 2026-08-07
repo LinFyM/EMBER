@@ -15,8 +15,14 @@
   峰值reserved`21,313,355,776` bytes，formal config已seal。
 - [ ] 用六个independent workers在同一global checkpoints上训24个rank-16 experts；先到step1000，
   用development-train official rollout和LoRA组织裁决统一expert step。不读任何held action。
-- [ ] 提取仅含action-hidden video innovation的frozen feature cache，实现bottleneck-free
-  topological Writer、完整checkpoint/inference/evaluator，原位退役K4 executable path。
+- [x] 实现task-expert bank canonical evaluator与统一step几何分析；实现只含action-hidden
+  phase16 video innovation的hashless feature cache、168-chunk axial decoder、direction/scale
+  reconstruction和六rank task-complete exact-resume meta trainer。当前尚未作A40 profile，formal
+  cache/meta仍由config阻塞；K4 executable待新Writer profile通过后才退役。
+- [ ] 完成expert bank统一step250/500/1000 official development-train rollout与几何裁决；若曲线仍
+  有充分上升依据，保持main`81101fe`原合同统一resume到2000，再选择唯一expert step。
+- [ ] live profile并封存train24×50 frozen feature cache；完成meta-Writer六卡fresh0→1、
+  exact-resume1→3、finite/OOM/梯度与任务等权合同后才seal formal。
 - [ ] 完成A40 profile、identity-fresh meta训练、strict paired correct400曲线、五臂视频因果、
   task drift和expert→generated LoRA→action机制分析；根据最早失效接口迭代。
 - [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高absolute、breadth、

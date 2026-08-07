@@ -327,7 +327,7 @@ def _inspect_training_checkpoint(
         and training.get("data") == config["data"]
         and training.get("task_ids") == source_ids
         and training.get("trainable", {}).get("object")
-        == "grounded_video_expert_action_supervised_writer_only"
+        == "k4_phase_aligned_language_axial_action_supervised_writer_only"
         and world_size == int(config["formal_run"]["expected_world_size"])
         and cursor > 0
         and cursor in training.get("runtime", {}).get("checkpoint_steps", [])

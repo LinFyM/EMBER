@@ -4,7 +4,31 @@
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0. 最新覆盖：Grounded-Video Semantic-Expert Route
+## 0. 当前活动：K4 Phase-Aligned Language-Axial Semantic-Procedure Writer
+
+- Grounded-Video Expert正式四点已完成并负裁决：correct=`76/88/77/82`、breadth>=5=
+  `3/4/3/3`、union/intersection=`125/40`；winner macro100五臂=
+  `88/87/82/86/86`。全部pairing mismatch为0，correct对任一视频control都没有material margin，
+  checkpoint换手仍明显。
+- refs1内部证据证明视频并未被旁路：wrong到Reader/BA/action的relative-L2中位约
+  `.293/.433/.099`，shuffled/reversed到BA约`.426/.435`；correct LoRA stable-rank/top-energy=
+  `1.463/.773`。完整expert隔离也把局部gradient retention保持在约`.45--.60`。因此正式拒绝
+  hard video-route/parameter isolation作为漂移根修；失败是共享高层video program与可迁移policy
+  write没有被同时保留。
+- 当前唯一authority切换为
+  `docs/action_forecast_writer_k4_phase_aligned_v6_design.md`：exact language+K4四条action-hidden
+  videos逐帧走历史v6 trainable PI05 high-level encoder；每条视频独立可微重采样到phase16，Semantic
+  Core读取4×16无序联合证据，causal Procedure逐video计算后按phase等权组合，再由历史v6 exact
+  compiler只生成一套LoRA。AS与未来RL共用同一部署图。
+- canonical源已原位切换，Grounded-Video `fewshot_m2p.py`活动实现已退休；fresh config为
+  `configs/pi05_as_writer_k4_phase_aligned_v6_bci_v1.json`，fresh checkpoint family为
+  `k4_phase_aligned_language_axial_rawfull24_v1`。全仓CPU回归`190 passed`，参数量保持历史v6的
+  `10,775,296`，step0 identity、K4 set permutation、phase/procedure因果和五个梯度owner合同通过。
+- 当前正式run仍被config阻止。下一步只先clean commit/push，再live比较gpu01/gpu02，以最多6张
+  空闲A40完成K4/B20/B2、16-frame chunk、longest105的fresh0→1与same-root exact-resume1→3；
+  profile通过并seal后才允许identity-fresh formal0→200。不得resume任何Grounded/历史v6 checkpoint。
+
+## 0.1 已完成并负裁决：Grounded-Video Semantic-Expert Route
 
 - 当前唯一活动authority为
   `docs/action_forecast_writer_grounded_video_expert_route_design.md`。继续使用exact task language+

@@ -131,6 +131,15 @@ K4_GROUNDED_VIDEO_EXPERT_LAYER_TRACE_M2P_TRAINER_STATE_SCHEMA = (
 K4_GROUNDED_VIDEO_EXPERT_LAYER_TRACE_M2P_RANK_STATE_SCHEMA = (
     "ember_pi05_k4_grounded_video_expert_policy_layer_trace_m2p_rank_state_v1"
 )
+K4_PHASE_ALIGNED_LANGUAGE_AXIAL_CHECKPOINT_SCHEMA = (
+    "ember_pi05_k4_phase_aligned_language_axial_checkpoint_v1"
+)
+K4_PHASE_ALIGNED_LANGUAGE_AXIAL_TRAINER_STATE_SCHEMA = (
+    "ember_pi05_k4_phase_aligned_language_axial_trainer_state_v1"
+)
+K4_PHASE_ALIGNED_LANGUAGE_AXIAL_RANK_STATE_SCHEMA = (
+    "ember_pi05_k4_phase_aligned_language_axial_rank_state_v1"
+)
 HISTORICAL_V6_LAUNCH_SCHEMA = "ember_pi05_language_axial_as_writer_launch_v6"
 HISTORICAL_V6_CHECKPOINT_SCHEMA = "ember_pi05_language_axial_writer_checkpoint_v6"
 
@@ -219,6 +228,12 @@ _FAMILIES = {
         K4_GROUNDED_VIDEO_EXPERT_LAYER_TRACE_M2P_CHECKPOINT_SCHEMA,
         K4_GROUNDED_VIDEO_EXPERT_LAYER_TRACE_M2P_TRAINER_STATE_SCHEMA,
         K4_GROUNDED_VIDEO_EXPERT_LAYER_TRACE_M2P_RANK_STATE_SCHEMA,
+    ),
+    "k4_phase_aligned_language_axial_rawfull24_v1": (
+        1,
+        K4_PHASE_ALIGNED_LANGUAGE_AXIAL_CHECKPOINT_SCHEMA,
+        K4_PHASE_ALIGNED_LANGUAGE_AXIAL_TRAINER_STATE_SCHEMA,
+        K4_PHASE_ALIGNED_LANGUAGE_AXIAL_RANK_STATE_SCHEMA,
     ),
 }
 

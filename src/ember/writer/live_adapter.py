@@ -18,8 +18,7 @@ from ember.lora import (
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_processing import Pi05TeacherPrefixTokenizer
 from ember.pi05_source_checkpoint import read_json
-from ember.writer.architecture import FEWSHOT_M2P_WRITER_CONSTRUCTOR_KEYS
-from ember.writer.as_config import load_grounded_video_expert_route
+from ember.writer.architecture import LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.as_contract import REPO_ROOT, load_writer_config
 from ember.writer.data import RawTeacherVideoStore, WriterTaskAuthority
 from ember.writer.functional import prepare_frozen_writer_policy
@@ -93,17 +92,14 @@ class FrozenWriterTaskAdapter(WriterLoRARolloutAdapter):
         writer_values = {
             key: value
             for key, value in config["writer"].items()
-            if key in FEWSHOT_M2P_WRITER_CONSTRUCTOR_KEYS
+            if key in LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
         }
-        route_centers, route_anchor_mean = load_grounded_video_expert_route(config)
         bridge = policy.model.paligemma_with_expert
         writer = CompleteLoRAWriter(
             build_lora_tensor_specs(template),
             template_state=template,
             paligemma_model=bridge.paligemma.model.language_model,
             expert_model=bridge.gemma_expert.model,
-            route_centers=route_centers,
-            route_anchor_mean=route_anchor_mean,
             **writer_values,
         ).to(device)
         writer.load_state_dict(

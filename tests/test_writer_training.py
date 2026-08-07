@@ -16,7 +16,7 @@ from ember.writer.update_contract import build_update_runtime_contract, checkpoi
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = (
-    ROOT / "configs/pi05_as_writer_k4_grounded_video_expert_trace_m2p_bci_v1.json"
+    ROOT / "configs/pi05_as_writer_k4_phase_aligned_v6_bci_v1.json"
 )
 
 
@@ -31,28 +31,24 @@ def _context() -> DistributedContext:
     )
 
 
-def test_grounded_video_expert_trace_config_seals_joint_video_generation() -> None:
+def test_phase_aligned_config_seals_joint_video_generation() -> None:
     config = load_writer_config(CONFIG)
     assert writer_split_roles(config) == ("train",)
     assert config["writer"]["architecture"] == (
-        "pi05_k4_grounded_video_expert_policy_layer_trace_axis_m2p_v1"
+        "pi05_k4_phase_aligned_language_axial_semantic_procedure_v1"
     )
     assert config["writer"]["videos_per_condition"] == 4
-    assert config["writer"]["language_value_bypass"] is False
-    assert config["writer"]["semantic_expert_count"] == 8
-    assert config["writer"]["semantic_expert_top_k"] == 1
-    assert config["writer"]["policy_groups"] == 20
-    assert config["writer"]["trace_tokens_per_group_per_condition"] == 64
-    assert config["writer"]["memory_slots"] == 68
-    assert config["writer"]["trace_evidence"].endswith("in_keys_only")
+    assert config["writer"]["phase_slots"] == 16
+    assert config["writer"]["procedure_attention"].startswith("per_video_global_causal")
+    assert config["writer"]["semantic_set_order_contract"].startswith("strict_video_set")
     assert config["conditioning_training"]["global_tasks_per_optimizer_update"] == 24
-    assert config["formal_run"]["checkpoint_steps"] == [25, 50, 75, 100, 125, 150, 175, 200]
+    assert config["formal_run"]["checkpoint_steps"] == "every:25"
 
 
 def test_profile_uses_independent_video_seed_without_mutating_formal_config() -> None:
     config = load_writer_config(CONFIG)
     profile = resolve_mode_config(config, "profile")
-    assert profile["data"]["teacher_video_seed"] == 175
+    assert profile["data"]["teacher_video_seed"] == 176
     assert config["data"]["teacher_video_seed"] == 20260722
     args = argparse.Namespace(
         mode="profile",
@@ -61,23 +57,17 @@ def test_profile_uses_independent_video_seed_without_mutating_formal_config() ->
         checkpoint_steps=None,
         stop_after_step=None,
     )
-    assert resolve_runtime(args, profile, _context()) == (200, 20, (1, 2, 3, 200))
+    assert resolve_runtime(args, profile, _context()) == (400, 20, (1, 2, 3, 400))
     assert args.stop_after_step == 3
 
 
-def test_formal_is_sealed_only_by_grounded_video_expert_live_profile() -> None:
+def test_formal_waits_for_live_phase_aligned_profile() -> None:
     config = load_writer_config(CONFIG)
-    assert config["formal_run"]["status"] == "sealed"
-    assert config["formal_run"]["launch_state"] == "ready_for_fresh_formal_launch"
+    assert config["formal_run"]["status"] == "draft_pending_profile"
+    assert config["formal_run"]["launch_state"] == "blocked_until_live_profile_and_exact_resume_pass"
     evidence = config["profile_evidence"]
-    assert evidence["status"] == (
-        "sealed_live_bci_a40_grounded_top1_fresh_and_exact_resume"
-    )
-    assert evidence["segments"] == ["fresh_0_to_1", "exact_resume_1_to_3"]
-    assert evidence["gradient_clip_count"] == 0
-    assert evidence["step2_all_sixteen_expert_blocks_reachable"] is True
-    assert evidence["runtime_train24_route_matches_authority"] is True
-    assert evidence["profile_weights_reusable_for_formal"] is False
+    assert evidence["status"] == "pending_live_bci_a40_profile"
+    assert "preserve K4" in evidence["selection_rule"]
 
 
 def test_k4_m2p_rejects_writer_warm_start_before_runtime_construction() -> None:
@@ -96,11 +86,11 @@ def test_runtime_contract_owns_one_joint_k4_full24_update() -> None:
         config=config,
         context=_context(),
         video_data={"sampled_frame_counts_by_task": {str(i): {} for i in range(24)}},
-        total_steps=200,
+        total_steps=400,
         stop_step=200,
         batch_size=20,
         batch_cycle=(20,),
-        checkpoint_steps=(25, 50, 75, 100, 125, 150, 175, 200),
+        checkpoint_steps=tuple(range(25, 401, 25)),
         num_workers=0,
         rank_topology=tuple(
             {
@@ -114,10 +104,10 @@ def test_runtime_contract_owns_one_joint_k4_full24_update() -> None:
         ),
     )
     assert runtime["checkpoint_state_family"] == (
-        "k4_grounded_video_expert_policy_layer_trace_m2p_full24_v1"
+        "k4_phase_aligned_language_axial_rawfull24_v1"
     )
     assert runtime["macro_step_axis"] == (
-        "full24_end_to_end_k4_grounded_video_expert_layer_trace_m2p_update"
+        "full24_end_to_end_k4_phase_aligned_language_axial_update"
     )
     assert runtime["condition_gradient_unit"] == "one_joint_k4_video_set_to_one_lora_per_task"
     assert runtime["teacher_videos_per_task_visit"] == 4

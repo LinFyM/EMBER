@@ -4,7 +4,19 @@
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
-## 0.0 最新执行覆盖：Grounded-Video Semantic-Expert Route
+## 0.0 最新执行覆盖：K4 Phase-Aligned v6
+
+Grounded-Video Expert已完成四点、winner五臂与内部分析并负裁决：correct curve=
+`76/88/77/82`，winner five arms=`88/87/82/86/86`。视频能material改变LoRA且expert隔离机制工作，
+但correct无视频margin、task轮换未解；不得resume/warm-start或恢复该active path。
+
+当前唯一方法与authority是`docs/action_forecast_writer_k4_phase_aligned_v6_design.md`。exact language+
+K4 action-hidden videos通过trainable v6 high-level encoder；四条视频独立phase16对齐，Semantic Core
+聚合无序联合证据，Procedure逐video causal后按phase组合，exact v6 compiler只写一套LoRA。fresh
+config为`configs/pi05_as_writer_k4_phase_aligned_v6_bci_v1.json`。先做live A40 fresh/exact-resume
+profile并seal，再从identity formal0→200；strict correct single-checkpoint必须`>150/400`。
+
+## 0.1 已完成并负裁决：Grounded-Video Semantic-Expert Route
 
 - 当前唯一活动authority为
   `docs/action_forecast_writer_grounded_video_expert_route_design.md`。Sparse routefix正式训练、四点、

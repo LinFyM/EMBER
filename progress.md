@@ -1,5 +1,19 @@
 # EMBER Progress Ledger
 
+## 2026-08-07 Grounded-Video负裁决并切换K4 Phase-Aligned v6
+
+- Grounded formal四点strict correct=`76/88/77/82`、breadth>=5=`3/4/3/3`，相邻
+  gained/lost=`27/15,17/28,25/20`，union/intersection=`125/40`；winner macro100五臂=
+  `88/87/82/86/86`，direct pairing均0 mismatch。
+- 8-task refs1显示wrong到Reader/BA/action中位relative-L2约`.293/.433/.099`，shuffled/reversed
+  到BA约`.426/.435`，LoRA stable-rank/top-energy=`1.463/.773`。视频、时序和高层route都能改变
+  一套真实LoRA，但correct没有行为优势；完整expert隔离与约`.5`局部retention也未解决漂移。
+- 当前authority切到`docs/action_forecast_writer_k4_phase_aligned_v6_design.md`。canonical实现已恢复
+  v6 trainable high-level encoder/Core/Procedure/compiler，并加入K4逐video phase16对齐与公共程序组合；
+  旧`fewshot_m2p.py`已退休，fresh config/checkpoint family建立。
+- 全仓CPU回归`190 passed`，Writer参数`10,775,296`，step0 identity与K4 set permutation成立。
+  formal config保持blocked，下一步只先clean commit/push和live A40 fresh/exact-resume profile。
+
 ## 2026-08-07 Grounded-Video formal0→200与hashless evaluator完成
 
 - clean`a758bba`在`gpu01:0,1,2|4,5,7`、world6、3+3 NUMA、显式

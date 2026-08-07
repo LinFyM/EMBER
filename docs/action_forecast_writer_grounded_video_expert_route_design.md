@@ -176,3 +176,27 @@ shared map的1/24抵消。但该机制证据不选择checkpoint，functional los
 shard、aggregate与completion内容hash；用path/schema/size、真实解析/加载、显式UUID run reference
 与direct paired-control字段保持身份和配对。policy-noise RNG算法保持原sealed schedule，以便和历史
 fixed panel严格配对。
+
+## 12. Formal rollout、内部机制与最终负裁决
+
+四点strict paired correct400已经全部完成：macro50/100/150/200分别为
+`76/88/77/82`，breadth>=5为`3/4/3/3`，success union/intersection=`125/40`；相邻
+gained/lost=`27/15,17/28,25/20`。single winner是macro100=`88`，明显低于v6-fast`143`
+和严格门`>150`，并且100→150发生净退化，task轮换没有解决。
+
+winner五臂为`correct/same/wrong/shuffled/reversed=88/87/82/86/86`，五臂
+union/intersection=`129/48`。相对correct的gained/lost分别为`15/16,16/22,17/19,17/19`，
+全部direct paired-control字段为0 mismatch，任一视频对照都没有形成material closed-loop margin。
+
+8-task refs1内部分析证明失败并非“视频完全被忽略”：wrong从grounded address到
+`physical/direction/Reader/effective-BA/fixed-action`的relative-L2中位为
+`.168/.310/1.319/.293/.433/.099`，并使2/8 tasks切换完整expert；shuffled与reversed保持route
+不变但到BA仍分别为`.426/.435`，说明时序输入能实质改变LoRA。same-task另一K4 set到BA/action
+仍有`.087/.0217`差异，leave-one-video-out到BA/action为`.0379/.00642`，四条视频都有非零影响。
+
+生成LoRA也不再是严格rank1坍缩：stable-rank均值`1.463`、首奇异能量`.773`、90%/99%能量
+平均需要`4.78/12.20`维。然而这些更丰富且视频敏感的LoRA没有形成正确视频的行为优势。结合
+expert-local约`.45--.60`的gradient retention，正式拒绝“只要让视频地址选择完整独立parameter
+owner即可解决漂移”的假设。hard top1把优化冲突隔离掉，也切断了v6曾有用的跨task共享语义迁移；
+当前最早缺口是共享高层video program的形成与组合，而不是继续调route、expert数、rank、scale或
+训练时长。本方法不得resume、warm-start或恢复为活动路径。

@@ -48,7 +48,7 @@ _HASHLESS_CHECKPOINT_FAMILIES = frozenset(
     {
         "k4_energy_preserving_policy_layer_trace_m2p_full24_v1",
         "k4_evidence_factorized_policy_layer_trace_m2p_full24_v1",
-        "k4_grounded_video_expert_policy_layer_trace_m2p_full24_v1",
+        "k4_phase_aligned_language_axial_rawfull24_v1",
     }
 )
 
@@ -702,7 +702,7 @@ def _validate_cycle_normalized_optimizer_resume(
             "condition_kernel_program_memory_full24_v1",
             "k4_energy_preserving_policy_layer_trace_m2p_full24_v1",
             "k4_evidence_factorized_policy_layer_trace_m2p_full24_v1",
-            "k4_grounded_video_expert_policy_layer_trace_m2p_full24_v1",
+            "k4_phase_aligned_language_axial_rawfull24_v1",
         }
     ):
         raise WriterModelError("unknown cycle-normalized optimizer resume family")

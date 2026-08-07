@@ -1,5 +1,24 @@
 # EMBER Task Plan
 
+## 当前K4 Phase-Aligned v6推进（2026-08-07）
+
+- [x] 完成Grounded-Video Expert四点、winner五臂与8-task refs1内部分析：correct=
+  `76/88/77/82`、breadth>=5=`3/4/3/3`，winner五臂=`88/87/82/86/86`。视频与时序能material
+  改变LoRA/BA/action且expert-local retention约`.5`，但correct无视频margin、task轮换未解；hard
+  route/expert isolation正式负裁决，不resume、不warm-start。
+- [x] 封存`docs/action_forecast_writer_k4_phase_aligned_v6_design.md`：恢复v6 trainable PI05高层
+  semantic/procedure图；K4逐video phase16对齐，Core读取联合无序证据，Procedure逐video causal后
+  按phase组合，exact v6 compiler只生成一套LoRA；AS与未来RL共用同一图。
+- [x] 原位切换唯一canonical Writer，删除Grounded `fewshot_m2p.py`活动实现，建立fresh config/
+  launch/checkpoint family；step0 identity、K4 set permutation、phase causal、source freeze和五个
+  gradient owner合同闭合，全仓`190 passed`。
+- [ ] clean commit/push；live比较gpu01/gpu02并只用最多6张空闲A40，以3+3 NUMA、显式
+  `NCCL_P2P_DISABLE=1`完成longest105 K4/B20/B2 fresh0→1与same-root exact-resume1→3 profile。
+- [ ] profile seal后从identity formal0→200，严格评50/100/150/200 correct400；若曲线有可信积累再
+  exact-resume同一root到400。single winner做五臂、task churn和Core→Procedure→BA→action分析。
+- [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高absolute、breadth、稳定积累与
+  视频因果性；未过门时按最早失败接口继续重构，不用loss、旧best、融合或挑video救点。
+
 最后更新：2026-08-07 UTC。
 
 本文件只保存尚未完成的长期闭环与当前执行顺序。历史实验过程见

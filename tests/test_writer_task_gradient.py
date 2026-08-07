@@ -37,20 +37,21 @@ def _task_gradients() -> dict[int, torch.Tensor]:
     }
 
 
-def test_parameter_layout_owns_all_k4_layer_reader_and_axis_parameters() -> None:
+def test_parameter_layout_owns_all_phase_aligned_writer_parameters() -> None:
     writer = torch.nn.Module()
-    writer.layer_m2p = torch.nn.Module()
-    writer.layer_m2p.experts = torch.nn.ModuleList()
-    for _ in range(8):
-        expert = torch.nn.Module()
-        expert.reader = torch.nn.Linear(1, 1)
-        expert.axis_blocks = torch.nn.ModuleList([torch.nn.Linear(1, 1)])
-        writer.layer_m2p.experts.append(expert)
+    writer.semantic_encoder = torch.nn.Linear(1, 1)
+    writer.semantic_core = torch.nn.Linear(1, 1)
+    writer.visual_transition = torch.nn.Linear(1, 1)
+    writer.procedure = torch.nn.Linear(1, 1)
+    writer.compiler = torch.nn.Linear(1, 1)
+    writer.factor_heads = torch.nn.Linear(1, 1)
     layout = parameter_layout(writer)
     assert {item.block for item in layout} == {
-        f"expert_{expert:02d}_{owner}"
-        for expert in range(8)
-        for owner in ("reader", "axis_m2p")
+        "semantic_frontend",
+        "core",
+        "program",
+        "compiler",
+        "factor",
     }
 
 

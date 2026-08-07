@@ -1,5 +1,20 @@
 # EMBER Findings
 
+## 2026-08-07 Grounded-Video最终根因与K4 Phase-Aligned v6假设
+
+- Grounded-Video Expert的负结果排除了三个常见解释：视频没有被完全旁路，LoRA不再严格rank1，
+  完整parameter isolation也确实显著提高局部gradient retention。尽管如此，correct曲线最高仅88且
+  五臂无margin，说明“视频决定hard parameter owner”不是condition-to-policy credit的充分结构。
+- hard top1 route把同一task的credit收进一个完整expert，却同时切断v6中跨task可共享的高层语义与
+  compiler迁移。该方法既没有稳定积累，也没有让wrong/order扰动与正确程序方向对齐；继续加expert、
+  rank、scale或训练步数没有证据基础。
+- 历史v6-fast的143仍证明trainable PI05 high-level encoder、task-grounded transition、causal
+  Procedure和320-slot compiler组合具有当前最强closed-loop杆杆。此前K4各版都替换了其中至少一段，
+  所以新的最小有据重构是保留完整v6语义写出，只在多演示组合接口解决one-shot歧义。
+- K4 Phase-Aligned设计让每条video独立对齐到phase16；Core在四条等权语义集合上提取共同内容，
+  Procedure只在video内保持因果、再按phase平均。它在program空间组合演示而不是平均LoRA，避免跨
+  video假transition，同时保持AS/RL同一部署图。下一证据必须是A40真实profile和fresh闭环曲线。
+
 ## 2026-08-07 Grounded-Video formal训练机制证据
 
 - grounded-video top1 route的identity-fresh formal完整完成200步，没有工程或数值失败；因此后续

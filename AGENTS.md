@@ -155,12 +155,13 @@ single-checkpoint、无hash、不使用subagent与安全边界。
 41. `docs/action_forecast_writer_evidence_factorized_trace_design.md`
 42. `docs/action_forecast_writer_sparse_semantic_expert_trace_design.md`
 43. `docs/action_forecast_writer_grounded_video_expert_route_design.md`
-44. `task_plan.md`
-45. `findings.md`
-46. `progress.md`
-47. `docs/concept.md`
-48. `docs/decisions_and_open_questions.md`
-49. `docs/novelty_and_landscape.md`
+44. `docs/action_forecast_writer_k4_phase_aligned_v6_design.md`
+45. `task_plan.md`
+46. `findings.md`
+47. `progress.md`
+48. `docs/concept.md`
+49. `docs/decisions_and_open_questions.md`
+50. `docs/novelty_and_landscape.md`
 
 本post-seal分支已完成Target-Bound裁决并打开Semantic Factor-Basis；修改或运行前
 仍必须完整阅读Target-Bound与Semantic Factor-Basis两份design。历史CV/Target-Bound
@@ -172,6 +173,25 @@ single-checkpoint、无hash、不使用subagent与安全边界。
 ## Current focused task
 
 - 2026-08-07当前唯一活动方法为
+  `docs/action_forecast_writer_k4_phase_aligned_v6_design.md`。它从functional identity fresh训练，输入
+  exact language + exactly four action-hidden same-task videos；每帧恢复历史v6 trainable PI05
+  language/multimodal/action high-level encoder，每条video独立线性对齐到16个normalized phase slots。
+  Semantic Core读取4×16无序联合证据，visual transition与causal Procedure严格逐video计算后按
+  phase等权组合，再经历史v6 exact 320-slot compiler只生成一套rank16 LoRA。K4 set无shot identity、
+  不平均LoRA，AS与未来RL共享同一部署图。
+- Grounded-Video Expert已完成四点、winner五臂和refs1内部分析并正式负裁决：correct=
+  `76/88/77/82`、breadth>=5=`3/4/3/3`，winner五臂=`88/87/82/86/86`。wrong/shuffled/reversed
+  能material改变Reader、BA和action，LoRA stable-rank/top-energy=`1.463/.773`，expert-local
+  gradient retention约`.45--.60`；因此不是视频被忽略、rank坍缩或parameter isolation未生效。
+  hard route切断跨task共享语义却没有产生correct-video margin，task轮换仍在。旧Grounded方法不得
+  resume/warm-start或恢复active route/experts。
+- canonical源已原位切换并删除旧`fewshot_m2p.py`活动实现；fresh config为
+  `configs/pi05_as_writer_k4_phase_aligned_v6_bci_v1.json`，fresh checkpoint family为
+  `k4_phase_aligned_language_axial_rawfull24_v1`。先clean commit/push，再live比较gpu01/gpu02，以
+  最多6张空闲A40和显式`NCCL_P2P_DISABLE=1`完成K4/B20/B2、phase16、16-frame chunk的
+  fresh0→1与same-root exact-resume1→3 profile；profile seal前formal必须保持blocked。之后从identity
+  formal0→200并评50/100/150/200，只有曲线仍有可信潜力才续同一root到400。
+- 2026-08-07已完成并负裁决的方法为
   `docs/action_forecast_writer_grounded_video_expert_route_design.md`。它保留exact language、K4
   action-hidden videos、20-group DCT16 direction/physical/evidence、八个完整Reader+axis experts和
   single rank16 LoRA，只把parameter owner地址从language-only改为冻结source policy内部的

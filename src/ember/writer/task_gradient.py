@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import math
-import re
 from dataclasses import dataclass
 from typing import Any, Iterable, Sequence
 
@@ -30,11 +29,17 @@ class FlatParameter:
 
 
 def _parameter_block(name: str) -> str:
-    match = re.match(r"layer_m2p\.experts\.([0-9]+)\.(.*)", name)
-    if match is not None:
-        expert = int(match.group(1))
-        owner = "axis_m2p" if match.group(2).startswith("axis_blocks.") else "reader"
-        return f"expert_{expert:02d}_{owner}"
+    if name.startswith("semantic_encoder."):
+        return "semantic_frontend"
+    for prefix, block in (
+        ("semantic_core.", "core"),
+        ("visual_transition.", "program"),
+        ("procedure.", "program"),
+        ("compiler.", "compiler"),
+        ("factor_heads.", "factor"),
+    ):
+        if name.startswith(prefix):
+            return block
     raise TaskGradientError(f"unowned Writer parameter: {name}")
 
 
@@ -59,13 +64,13 @@ def parameter_layout(writer: torch.nn.Module) -> tuple[FlatParameter, ...]:
         cursor = stop
     if not result or len({item.name for item in result}) != len(result):
         raise TaskGradientError("invalid Writer parameter layout")
-    blocks = {item.block for item in result}
-    expected = {
-        f"expert_{expert:02d}_{owner}"
-        for expert in range(8)
-        for owner in ("reader", "axis_m2p")
-    }
-    if blocks != expected:
+    if {item.block for item in result} != {
+        "semantic_frontend",
+        "core",
+        "program",
+        "compiler",
+        "factor",
+    }:
         raise TaskGradientError("Writer parameter ownership changed")
     return tuple(result)
 

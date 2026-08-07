@@ -94,7 +94,7 @@ def inspect_task_expert_bank(
     task_records: dict[tuple[str, int], dict[str, Any]] = {}
     training_commits: set[str] = set()
     physical_devices: list[dict[str, Any]] = []
-    expected_config_path = config_path.resolve()
+    expected_config_suffix = config_path.parts[-2:]
 
     for worker in workers:
         contract_path = worker / "run_contract.json"
@@ -107,8 +107,8 @@ def inspect_task_expert_bank(
             contract.get("schema_version") != "ember_pi05_task_expert_worker_launch_v1"
             or contract.get("mode") != "formal"
             or contract.get("content_hash_policy") != "disabled_by_owner"
-            or Path(str(contract.get("config", {}).get("path", ""))).resolve()
-            != expected_config_path
+            or Path(str(contract.get("config", {}).get("path", ""))).parts[-2:]
+            != expected_config_suffix
             or contract.get("config", {}).get("schema") != CONFIG_SCHEMA
             or not _source_paths_match(contract.get("source", {}), source)
             or len(worker_tasks) != int(formal["tasks_per_worker"])

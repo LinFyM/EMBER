@@ -246,6 +246,8 @@ task-expert正式训练运行期间，后续实现放在独立worktree，避免�
 
 - canonical evaluator可直接安装完整train24 task-expert bank，并按task切换对应rank-16 LoRA；
   只允许`development_train`，统一global step由250/500/1000 official closed loop裁决；
+  bank身份绑定同一config相对authority、schema、sealed task-expert runtime与source，而不绑定某个
+  worktree绝对前缀，因此formal main可保持冻结、评测从clean隔离worktree读取同一bank；
 - expert几何分析按统一step测effective LoRA谱、target/layer能量、跨task方向与checkpoint位移；
 - frozen feature cache只读取action-hidden视频帧，保存每task 50条`[16,2048]`BF16 innovation；
   sealed manifest记录source、path/schema/size和零action/state/reward/terminal reads，不做内容hash；

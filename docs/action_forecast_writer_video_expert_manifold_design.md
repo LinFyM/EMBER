@@ -219,3 +219,9 @@ formal阻塞并训练完整expert bank。
 formal cosine horizon，因而小于25步warmup；没有完成optimizer step或写checkpoint。
 修复后profile仍只执行三步，但复用formal 2000-step scheduler的前3步，避免用缩短的
 诊断horizon悄悄改变真实学习率语义。
+
+修复后的fresh0→1已完成finite step并写出adapter/trainer/RNG完整checkpoint；首次
+resume在加载trainer时发现`map_location=cuda`把CPU RNG state也搬到GPU，因而在任何
+续训step前由PyTorch拒绝。checkpoint内容本身完整；loader现统一在CPU反序列化trainer，
+optimizer再按参数设备恢复，CPU/CUDA RNG分别从CPU ByteTensor恢复。该修复后必须用新
+commit和新root重做完整fresh/resume证据，不能沿用旧run contract冒充通过。

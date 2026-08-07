@@ -37,8 +37,8 @@ def _rng_state() -> dict[str, Any]:
 def _restore_rng(state: Mapping[str, Any]) -> None:
     random.setstate(state["python"])
     np.random.set_state(state["numpy"])
-    torch.set_rng_state(state["torch_cpu"])
-    torch.cuda.set_rng_state(state["torch_cuda"])
+    torch.set_rng_state(state["torch_cpu"].cpu())
+    torch.cuda.set_rng_state(state["torch_cuda"].cpu())
 
 
 def save_task_expert_checkpoint(
@@ -110,7 +110,6 @@ def load_task_expert_checkpoint(
     lora_contract: LoRAContract,
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler,
-    device: torch.device,
 ) -> tuple[int, int]:
     manifest = read_json(checkpoint / "manifest.json")
     if (
@@ -127,7 +126,7 @@ def load_task_expert_checkpoint(
     state = load_file(str(checkpoint / "adapter.safetensors"), device="cpu")
     validate_lora_state(state, lora_contract)
     copy_task_lora_state_(policy, state, lora_contract)
-    trainer = torch.load(checkpoint / "trainer.pt", map_location=device, weights_only=False)
+    trainer = torch.load(checkpoint / "trainer.pt", map_location="cpu", weights_only=False)
     if (
         trainer.get("schema_version") != TRAINER_SCHEMA
         or int(trainer.get("task_ordinal", -1)) != task.ordinal

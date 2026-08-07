@@ -178,7 +178,6 @@ def _train_one_task(
             lora_contract=lora_contract,
             optimizer=optimizer,
             scheduler=scheduler,
-            device=torch.device("cuda:0"),
         )
         if _metric_rows(metrics_path) != metrics_rows:
             raise ExpertManifoldError("task-expert metrics cursor changed during resume")

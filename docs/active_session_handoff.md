@@ -28,7 +28,13 @@
   `86.20/87.52/87.47s`，0 clip/OOM/nonfinite，peak allocated/reserved=
   `34,968,286,720/47,016,050,688` bytes；step3五个owner全可达，累计1,440 queries/288 videos，
   source trainable=0且held reads=0。K4/B20/B2/full24/phase16未降低，profile权重弃用。config现已seal；
-  下一步clean commit/push后从identity formal0→200，不得resume任何Grounded/历史v6/profile checkpoint。
+  config与profile seal已由clean pushed`ac812a5`封存，profile权重不得进入formal。
+- 首次formal命令在创建output root、模型构造和GPU计算前被provenance guard拒绝：guard把
+  `origin/main`误当成唯一push authority，而当前明确的工作分支upstream是
+  `origin/codex/bci-continuation`。这不是科学run，失败log保留且不得评测。canonical guard现改为
+  要求HEAD等于当前分支配置的upstream commit；不放宽clean/pushed要求，也不改变任何科学图。
+  修复commit clean/push后只从identity启动新formal0→200 root，不得resume任何Grounded/历史v6/
+  profile checkpoint。
 
 ## 0.1 已完成并负裁决：Grounded-Video Semantic-Expert Route
 

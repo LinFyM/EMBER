@@ -146,7 +146,7 @@ def _validate_formal_runtime(
     state = git_state(REPO_ROOT)
     if state["dirty_paths"]:
         raise WriterModelError("formal AS-Writer launch requires a clean worktree")
-    if args.resume is None and state["commit"] != state["origin_main"]:
+    if args.resume is None and state["commit"] != state["upstream_commit"]:
         raise WriterModelError("fresh formal AS-Writer launch must be pushed")
     if context.numa_node is None or not context.cpu_affinity:
         raise WriterModelError(

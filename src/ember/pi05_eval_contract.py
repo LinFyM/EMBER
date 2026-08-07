@@ -368,10 +368,13 @@ def git_state(repo_root: Path) -> dict[str, Any]:
             capture_output=True,
         ).stdout.strip()
 
+    upstream = run("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}")
     return {
         "branch": run("branch", "--show-current"),
         "commit": run("rev-parse", "HEAD"),
         "origin_main": run("rev-parse", "origin/main"),
+        "upstream": upstream,
+        "upstream_commit": run("rev-parse", upstream),
         "dirty_paths": run("status", "--porcelain").splitlines(),
     }
 

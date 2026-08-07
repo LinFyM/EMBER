@@ -5010,3 +5010,10 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
   520步落盘，run contract记录正确物理卡`1,2,3,4,5,7`。
 - max CUDA reserved=`45,183,139,840` bytes，K4/Nmc4/two-epoch可在A40运行但余量有限；
   不扩大K、MC或replay batch。下一证伪严格是同一AS root 25→50后的新K4 coverage。
+# Phase-Aligned K4 formal启动前工程裁决（2026-08-07）
+
+- `fresh formal AS-Writer launch must be pushed`并非未push：当前分支HEAD与其configured upstream
+  `origin/codex/bci-continuation`一致，只是旧guard错误地把`origin/main`作为所有分支的唯一比较对象。
+- 拒绝发生在output root创建、模型构造和GPU工作前，没有可解释的训练或科研结果。修复只把
+  pushed判断绑定到当前分支upstream，保留clean worktree与exact commit约束，不能作为跳过formal
+  provenance检查的先例。

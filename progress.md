@@ -3945,3 +3945,11 @@ GPU范围和训练步长是当时快照；活动状态只取
 - 预注册cycle2门失败，当前root禁止resume。该实验只作为固定factor-output basis的消融：
   aggregate未崩但能力仍换手，不能把142写成fresh架构成绩或LoRA/video问题已解决。
   下一阶段回到fresh identity的policy-coordinated LoRA generator设计。
+# Phase-Aligned K4 formal launch provenance guard（2026-08-07）
+
+- sealed profile后的第一次formal launch在任何output root、checkpoint、metrics或GPU计算产生前停止。
+  原因是fresh formal guard硬编码比较`origin/main`，而本项目当前clean pushed write authority明确为
+  `origin/codex/bci-continuation`；HEAD实际上已与branch upstream一致。
+- canonical `git_state`现在显式记录configured upstream及其commit，fresh formal继续要求clean
+  worktree且HEAD必须等于该upstream commit。聚焦contract回归18项通过；该修复只校正launch
+  provenance，不改变K4视频输入、Writer图、优化器、数据或checkpoint语义。

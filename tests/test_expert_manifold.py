@@ -31,6 +31,7 @@ from ember.expert_manifold.model import (
     topological_reconstruction_loss,
 )
 from ember.expert_manifold.video_features import phase_resample
+from ember.expert_manifold.feature_cache import _feature_runtime
 from ember.lora import expected_lora_state_shapes
 
 
@@ -370,3 +371,12 @@ def test_phase_resample_preserves_video_endpoints_and_zero() -> None:
     assert torch.equal(aligned[0], value[0])
     assert torch.equal(aligned[-1], value[-1])
     assert torch.count_nonzero(phase_resample(torch.zeros_like(value), 5)) == 0
+
+
+def test_video_feature_profile_keeps_formal_input_semantics() -> None:
+    config = load_expert_manifold_config(CONFIG)
+    assert _feature_runtime(config, "profile") == (4, 4, (0, 1, 2, 3))
+    assert config["video_features"]["formal_run"]["status"] == (
+        "blocked_until_live_a40_profile"
+    )
+    assert config["video_features"]["formal_run"]["demo_count"] == 50

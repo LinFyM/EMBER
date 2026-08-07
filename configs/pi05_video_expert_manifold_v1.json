@@ -150,7 +150,29 @@
     "phase_slots": 16,
     "feature_width": 2048,
     "source_policy_trainable": false,
-    "cache_contains_actions_or_state": false
+    "cache_contains_actions_or_state": false,
+    "extraction": {
+      "max_frames_per_encoder_call": 16,
+      "videos_per_batch": 4,
+      "initialization_seed": 20260807,
+      "action_horizon": 50,
+      "padded_action_dim": 32,
+      "storage_dtype": "bfloat16",
+      "demo_indices": [
+        0,
+        49
+      ]
+    },
+    "profile_defaults": {
+      "task_count": 1,
+      "demo_count": 4
+    },
+    "formal_run": {
+      "status": "blocked_until_live_a40_profile",
+      "allowed_worker_count": 6,
+      "tasks_per_worker": 4,
+      "demo_count": 50
+    }
   },
   "topological_writer": {
     "chunk_width": 512,

@@ -6,8 +6,9 @@
   没有改变在跑expert的config、进程或checkpoint合同。
 - 新增完整train24 task-expert bank evaluator和统一step LoRA几何分析；evaluation只开放
   `development_train`且按实际task安装对应expert，不引入task-ID部署输入或held expert。
-- 新增action-hidden frozen PI0.5 video innovation cache：exact language只query joint frame hidden，
-  再减matched no-image baseline；每条video保留phase16，cache不含action/state/reward/terminal。
+- 新增action-hidden frozen PI0.5 video innovation cache：exact language query每帧的2048维joint
+  task-span hidden与1024维Action-Expert suffix hidden，拼成3072维后统一减matched no-image
+  baseline；每条video保留phase16，cache不含action/state/reward/terminal。
 - canonical 168-chunk rank16 decoder与六rank task-complete DDP meta trainer已闭合；direct output不经
   窄factor head，direction/scale分离，zero video恒为identity。checkpoint保留Writer/optimizer/
   scheduler/每rank RNG和macro cursor，BCI deferred-NCCL及P2P-disable合同沿用。

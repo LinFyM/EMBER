@@ -33,6 +33,7 @@ class FrozenPi05VideoInnovationEncoder(torch.nn.Module):
         self,
         *,
         image_width: int,
+        expert_width: int,
         feature_width: int,
         phase_slots: int,
         max_frames_per_encoder_call: int,
@@ -43,7 +44,8 @@ class FrozenPi05VideoInnovationEncoder(torch.nn.Module):
         super().__init__()
         if (
             image_width != 2048
-            or feature_width != image_width
+            or expert_width != 1024
+            or feature_width != image_width + expert_width
             or phase_slots <= 1
             or max_frames_per_encoder_call <= 0
             or action_horizon != 50
@@ -52,6 +54,7 @@ class FrozenPi05VideoInnovationEncoder(torch.nn.Module):
         ):
             raise ExpertManifoldError("invalid frozen video-innovation topology")
         self.image_width = int(image_width)
+        self.expert_width = int(expert_width)
         self.feature_width = int(feature_width)
         self.phase_slots = int(phase_slots)
         self.max_frames_per_encoder_call = int(max_frames_per_encoder_call)
@@ -147,13 +150,19 @@ class FrozenPi05VideoInnovationEncoder(torch.nn.Module):
         count = task_span_mask.sum(dim=1, keepdim=True).to(torch.float32)
         grounded = language_hidden.masked_fill(~task_span_mask[..., None], 0.0).sum(dim=1)
         grounded = grounded / count
-        if (
-            suffix_hidden is None
-            or grounded.shape != (batch, self.feature_width)
-            or not bool(torch.isfinite(grounded).all())
+        if suffix_hidden is None or suffix_hidden.shape != (
+            batch,
+            self.action_horizon,
+            self.expert_width,
         ):
             raise ExpertManifoldError("PI0.5 high-level video hidden changed")
-        return grounded
+        expert_grounded = suffix_hidden.to(torch.float32).mean(dim=1)
+        result = torch.cat((grounded, expert_grounded), dim=-1)
+        if result.shape != (batch, self.feature_width) or not bool(
+            torch.isfinite(result).all()
+        ):
+            raise ExpertManifoldError("PI0.5 grounded video feature changed")
+        return result
 
     @torch.inference_mode()
     def forward(

@@ -89,7 +89,12 @@ def inspect_feature_cache(
         if (
             int(row.get("task_ordinal", -1)) != ordinal
             or row.get("split_role") != "train"
-            or row.get("feature_shape") != [50, 16, 2048]
+            or row.get("feature_shape")
+            != [
+                50,
+                int(config["video_features"]["phase_slots"]),
+                int(config["video_features"]["feature_width"]),
+            ]
             or row.get("feature_dtype") != "bfloat16"
             or not path.is_file()
             or path.stat().st_size != int(row.get("features", {}).get("bytes", -1))
@@ -346,7 +351,8 @@ def run_feature_worker(
     video = config["video_features"]
     extraction = video["extraction"]
     encoder = FrozenPi05VideoInnovationEncoder(
-        image_width=int(video["feature_width"]),
+        image_width=int(video["image_hidden_width"]),
+        expert_width=int(video["expert_hidden_width"]),
         feature_width=int(video["feature_width"]),
         phase_slots=int(video["phase_slots"]),
         max_frames_per_encoder_call=int(extraction["max_frames_per_encoder_call"]),

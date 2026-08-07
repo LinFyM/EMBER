@@ -204,7 +204,11 @@ def _build_model_and_data(
         targets.append(writer.layout.tokenize(state, template))
         feature_state = load_file(str(cache_row["features"]["path"]), device="cpu")
         value = feature_state["video_innovation"]
-        if value.shape != (50, 16, 2048) or value.dtype != torch.bfloat16:
+        if value.shape != (
+            50,
+            int(config["video_features"]["phase_slots"]),
+            int(config["video_features"]["feature_width"]),
+        ) or value.dtype != torch.bfloat16:
             raise ExpertManifoldError("cached video innovation changed")
         features.append(value)
         global_task_id = int(expert_row["global_task_id"])

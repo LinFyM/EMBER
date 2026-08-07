@@ -111,7 +111,9 @@ expert layer0→17和q/v排列。A保持`rank × input`，B转置成`rank × out
 
 ## 7. Bottleneck-free axial hyperdecoder
 
-视频条件为`16 phase × 2048`。将它投影到512后，与168个chunk identities和16个
+视频条件为`16 phase × 3072`：每帧包含2048维joint multimodal task-span hidden与
+1024维Action-Expert suffix hidden的时间均值，两者都减去matched no-image baseline。将它投影到
+512后，与168个chunk identities和16个
 public-rank identities相加，得到`[batch,168,16,512]`memory。多个block在两轴交替：
 
 1. 固定rank、跨168 topological chunks的全局交换；
@@ -249,7 +251,7 @@ task-expert正式训练运行期间，后续实现放在独立worktree，避免�
   bank身份绑定同一config相对authority、schema、sealed task-expert runtime与source，而不绑定某个
   worktree绝对前缀，因此formal main可保持冻结、评测从clean隔离worktree读取同一bank；
 - expert几何分析按统一step测effective LoRA谱、target/layer能量、跨task方向与checkpoint位移；
-- frozen feature cache只读取action-hidden视频帧，保存每task 50条`[16,2048]`BF16 innovation；
+- frozen feature cache只读取action-hidden视频帧，保存每task 50条`[16,3072]`BF16 innovation；
   sealed manifest记录source、path/schema/size和零action/state/reward/terminal reads，不做内容hash；
 - topological decoder严格覆盖168个`[16,512]`chunks，direction先按每chunk有效坐标归一，量纲由
   同一video-conditioned state的动态scale和训练expert导出的静态per-chunk scale prior共同表达；

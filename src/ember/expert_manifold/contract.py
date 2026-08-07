@@ -66,7 +66,9 @@ def load_expert_manifold_config(path: Path) -> dict[str, Any]:
         or experts.get("task_parameter_sharing") != "none"
         or int(video.get("shots", -1)) != 1
         or int(video.get("phase_slots", -1)) != 16
-        or int(video.get("feature_width", -1)) != 2048
+        or int(video.get("image_hidden_width", -1)) != 2048
+        or int(video.get("expert_hidden_width", -1)) != 1024
+        or int(video.get("feature_width", -1)) != 3072
         or video.get("cache_contains_actions_or_state") is not False
         or int(writer.get("chunk_count", -1)) != 168
         or int(writer.get("public_rank", -1)) != 16

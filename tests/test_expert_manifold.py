@@ -30,7 +30,10 @@ from ember.expert_manifold.model import (
     VideoConditionedTopologicalWriter,
     topological_reconstruction_loss,
 )
-from ember.expert_manifold.video_features import phase_resample
+from ember.expert_manifold.video_features import (
+    FrozenPi05VideoInnovationEncoder,
+    phase_resample,
+)
 from ember.expert_manifold.feature_cache import _feature_runtime
 from ember.expert_manifold.writer_training import _runtime as _writer_runtime
 from ember.expert_manifold.video_schedule import (
@@ -56,6 +59,8 @@ def test_video_expert_manifold_config_keeps_video_as_dynamic_value() -> None:
     assert config["video_features"]["shots"] == 1
     assert config["topological_writer"]["chunk_count"] == 168
     assert config["topological_writer"]["valid_values"] == 1_287_168
+    assert config["video_features"]["feature_width"] == 3072
+    assert config["video_features"]["expert_hidden_width"] == 1024
     assert config["information_wall"]["validation_actions_read"] == 0
     assert config["information_wall"]["writer_video_split_roles"] == [
         "train",
@@ -467,6 +472,22 @@ def test_phase_resample_preserves_video_endpoints_and_zero() -> None:
     assert torch.equal(aligned[0], value[0])
     assert torch.equal(aligned[-1], value[-1])
     assert torch.count_nonzero(phase_resample(torch.zeros_like(value), 5)) == 0
+
+
+def test_video_encoder_retains_task_span_and_action_expert_widths() -> None:
+    encoder = FrozenPi05VideoInnovationEncoder(
+        image_width=2048,
+        expert_width=1024,
+        feature_width=3072,
+        phase_slots=16,
+        max_frames_per_encoder_call=4,
+        action_horizon=50,
+        padded_action_dim=32,
+        initialization_seed=7,
+    )
+    assert encoder.image_width == 2048
+    assert encoder.expert_width == 1024
+    assert encoder.feature_width == 3072
 
 
 def test_one_shot_video_schedule_covers_fifty_states_without_replacement() -> None:

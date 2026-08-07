@@ -88,7 +88,8 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
         video = config["video_features"]
         extraction = video["extraction"]
         encoder = FrozenPi05VideoInnovationEncoder(
-            image_width=int(video["feature_width"]),
+            image_width=int(video["image_hidden_width"]),
+            expert_width=int(video["expert_hidden_width"]),
             feature_width=int(video["feature_width"]),
             phase_slots=int(video["phase_slots"]),
             max_frames_per_encoder_call=int(extraction["max_frames_per_encoder_call"]),

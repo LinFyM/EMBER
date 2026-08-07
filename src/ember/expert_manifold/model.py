@@ -325,9 +325,10 @@ def topological_reconstruction_loss(
     raw = squared.mean()
     left = (predicted * mask).reshape(*predicted.shape[:-1], -1)
     right = (target * mask).reshape(*target.shape[:-1], -1)
+    predicted_norm = torch.linalg.vector_norm(left, dim=-1)
     target_norm = torch.linalg.vector_norm(right, dim=-1)
-    cosine = F.cosine_similarity(left, right, dim=-1, eps=1e-12)
-    active = target_norm > 1e-12
+    cosine = F.cosine_similarity(left, right, dim=-1, eps=1e-8)
+    active = (target_norm > 1e-12) & (predicted_norm > 1e-8)
     direction = (1.0 - cosine[active]).mean() if bool(active.any()) else raw.new_zeros(())
     target_count = count.squeeze(-1) * predicted.shape[2]
     target_rms = torch.sqrt(

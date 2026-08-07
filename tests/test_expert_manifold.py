@@ -449,6 +449,23 @@ def test_topological_reconstruction_loss_accepts_explicit_chunk_scale() -> None:
     assert all(float(value) == pytest.approx(0.0, abs=1e-7) for value in metrics.values())
 
 
+def test_topological_direction_loss_is_inactive_at_exact_identity() -> None:
+    predicted = torch.zeros(1, 2, 3, 4, requires_grad=True)
+    target = torch.randn_like(predicted)
+    mask = torch.ones(2, 4, dtype=torch.bool)
+    total, metrics = topological_reconstruction_loss(
+        predicted,
+        target,
+        mask,
+        cosine_weight=0.1,
+        log_scale_weight=0.1,
+        predicted_log_scale=torch.zeros(1, 2),
+    )
+    total.backward()
+    assert float(metrics["direction"]) == 0.0
+    assert bool(torch.isfinite(predicted.grad).all())
+
+
 def test_topological_reconstruction_loss_is_zero_for_exact_target() -> None:
     predicted = torch.randn(2, 3, 4, 5)
     mask = torch.tensor(

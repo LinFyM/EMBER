@@ -37,6 +37,24 @@ CACHE_TASK_SCHEMA = "ember_pi05_expert_manifold_feature_task_v1"
 CACHE_MANIFEST_SCHEMA = "ember_pi05_expert_manifold_feature_cache_v1"
 
 
+def _feature_contract(config: Mapping[str, Any]) -> dict[str, Any]:
+    """Return only the authority that can change extracted video features."""
+
+    return {
+        "schema_version": config["schema_version"],
+        "video_features": dict(config["video_features"]),
+        "information_wall": dict(config["information_wall"]),
+        "authorities": {
+            name: dict(config["authorities"][name])
+            for name in (
+                "evaluation_config",
+                "source_base_config",
+                "target_data_manifest",
+            )
+        },
+    }
+
+
 def inspect_feature_cache(
     config_path: Path,
     cache_root: Path,
@@ -57,11 +75,7 @@ def inspect_feature_cache(
     }
     valid = (
         manifest.get("schema_version") == CACHE_MANIFEST_SCHEMA
-        and Path(str(manifest.get("config", {}).get("path", ""))).resolve()
-        == config_path
-        and manifest.get("config", {}).get("schema") == config["schema_version"]
-        and int(manifest.get("config", {}).get("bytes", -1))
-        == config_path.stat().st_size
+        and manifest.get("feature_contract") == _feature_contract(config)
         and Path(str(manifest.get("cache_root", ""))).resolve() == cache_root
         and manifest.get("source") == expected_source
         and int(manifest.get("task_count", -1)) == 24
@@ -458,8 +472,8 @@ def seal_feature_cache(config_path: Path, cache_root: Path) -> dict[str, Any]:
         "config": {
             "path": str(config_path),
             "schema": config["schema_version"],
-            "bytes": config_path.stat().st_size,
         },
+        "feature_contract": _feature_contract(config),
         "cache_root": str(cache_root),
         "training_commit": next(iter(commits)),
         "source": next(iter(sources.values())),

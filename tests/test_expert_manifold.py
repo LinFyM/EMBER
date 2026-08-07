@@ -1,4 +1,5 @@
 from argparse import Namespace
+import copy
 import math
 from pathlib import Path
 
@@ -34,7 +35,7 @@ from ember.expert_manifold.video_features import (
     FrozenPi05VideoInnovationEncoder,
     phase_resample,
 )
-from ember.expert_manifold.feature_cache import _feature_runtime
+from ember.expert_manifold.feature_cache import _feature_contract, _feature_runtime
 from ember.expert_manifold.writer_training import _runtime as _writer_runtime
 from ember.expert_manifold.video_schedule import (
     condition_demo_index,
@@ -584,3 +585,14 @@ def test_video_feature_profile_keeps_formal_input_semantics() -> None:
         "blocked_until_live_a40_profile"
     )
     assert config["video_features"]["formal_run"]["demo_count"] == 50
+
+
+def test_video_feature_contract_ignores_writer_only_sealing() -> None:
+    config = load_expert_manifold_config(CONFIG)
+    changed = copy.deepcopy(config)
+    changed["meta_training"]["formal_run"]["selected_expert_step"] = 500
+    changed["meta_training"]["formal_run"]["status"] = "sealed"
+    assert _feature_contract(changed) == _feature_contract(config)
+
+    changed["video_features"]["phase_slots"] += 1
+    assert _feature_contract(changed) != _feature_contract(config)

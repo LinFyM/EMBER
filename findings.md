@@ -13,7 +13,8 @@
   所以新的最小有据重构是保留完整v6语义写出，只在多演示组合接口解决one-shot歧义。
 - K4 Phase-Aligned设计让每条video独立对齐到phase16；Core在四条等权语义集合上提取共同内容，
   Procedure只在video内保持因果、再按phase平均。它在program空间组合演示而不是平均LoRA，避免跨
-  video假transition，同时保持AS/RL同一部署图。下一证据必须是A40真实profile和fresh闭环曲线。
+  video假transition，同时保持AS/RL同一部署图。A40真实profile已保持K4/B20/B2/full24并exact-resume，
+  peak reserved`47.02GB`、step3五个owner全可达；下一证据必须是fresh闭环曲线。
 
 ## 2026-08-07 Grounded-Video formal训练机制证据
 

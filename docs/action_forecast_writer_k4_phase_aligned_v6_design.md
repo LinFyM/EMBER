@@ -85,3 +85,12 @@ finite证据，不选择checkpoint。最低门仍是同一single checkpoint corr
 
 禁调项：不加scalar/global scale、rank/diversity loss、task-ID route、success filtering、SFT-only
 reconstruction、multi-video LoRA平均、checkpoint融合、挑video或held-out outcome调参。
+
+## 8. A40 profile seal
+
+clean`e1d0b62`在live空闲`gpu01:0,1,2|4,5,7`完成fresh0→1及same-root exact-resume1→3。
+三步loss=`.150377/.152774/.147865`、step time=`86.20/87.52/87.47s`，峰值
+allocated/reserved=`34,968,286,720/47,016,050,688` bytes，0 clip/OOM/nonfinite。step1 Factor
+可达，step2 Semantic Frontend/Core/Compiler可达，step3五个参数owner全部可达；累计1,440 queries/
+288 videos，source trainable=0且held reads=0。logical K4/B20/B2/full24/phase16没有降低，profile权重
+弃用。该证据已seal formal fresh0→200，不提供任何性能结论。

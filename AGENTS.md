@@ -187,10 +187,11 @@ single-checkpoint、无hash、不使用subagent与安全边界。
   resume/warm-start或恢复active route/experts。
 - canonical源已原位切换并删除旧`fewshot_m2p.py`活动实现；fresh config为
   `configs/pi05_as_writer_k4_phase_aligned_v6_bci_v1.json`，fresh checkpoint family为
-  `k4_phase_aligned_language_axial_rawfull24_v1`。先clean commit/push，再live比较gpu01/gpu02，以
-  最多6张空闲A40和显式`NCCL_P2P_DISABLE=1`完成K4/B20/B2、phase16、16-frame chunk的
-  fresh0→1与same-root exact-resume1→3 profile；profile seal前formal必须保持blocked。之后从identity
-  formal0→200并评50/100/150/200，只有曲线仍有可信潜力才续同一root到400。
+  `k4_phase_aligned_language_axial_rawfull24_v1`。clean`e1d0b62`已在gpu01六卡、3+3 NUMA、显式
+  `NCCL_P2P_DISABLE=1`完成K4/B20/B2/phase16 fresh0→1与same-root exact-resume1→3；三步约
+  `86.20/87.52/87.47s`，0 clip/OOM，peak reserved`47,016,050,688` bytes，step3五个owner全可达。
+  profile权重弃用，formal config已seal；下一步从identity formal0→200并评50/100/150/200，只有曲线
+  仍有可信潜力才续同一root到400。
 - 2026-08-07已完成并负裁决的方法为
   `docs/action_forecast_writer_grounded_video_expert_route_design.md`。它保留exact language、K4
   action-hidden videos、20-group DCT16 direction/physical/evidence、八个完整Reader+axis experts和

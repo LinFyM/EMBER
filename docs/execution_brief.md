@@ -14,7 +14,9 @@ Grounded-Video Expert已完成四点、winner五臂与内部分析并负裁决�
 K4 action-hidden videos通过trainable v6 high-level encoder；四条视频独立phase16对齐，Semantic Core
 聚合无序联合证据，Procedure逐video causal后按phase组合，exact v6 compiler只写一套LoRA。fresh
 config为`configs/pi05_as_writer_k4_phase_aligned_v6_bci_v1.json`。先做live A40 fresh/exact-resume
-profile并seal，再从identity formal0→200；strict correct single-checkpoint必须`>150/400`。
+profile已在clean`e1d0b62`通过并seal：三步约`86.20/87.52/87.47s`、0 clip/OOM、peak reserved
+`47,016,050,688` bytes、step3五个owner全可达。下一步clean push后从identity formal0→200；
+strict correct single-checkpoint必须`>150/400`，profile权重禁止复用。
 
 ## 0.1 已完成并负裁决：Grounded-Video Semantic-Expert Route
 

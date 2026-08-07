@@ -12,7 +12,9 @@
   v6 trainable high-level encoder/Core/Procedure/compiler，并加入K4逐video phase16对齐与公共程序组合；
   旧`fewshot_m2p.py`已退休，fresh config/checkpoint family建立。
 - 全仓CPU回归`190 passed`，Writer参数`10,775,296`，step0 identity与K4 set permutation成立。
-  formal config保持blocked，下一步只先clean commit/push和live A40 fresh/exact-resume profile。
+  clean`e1d0b62`随后在gpu01六张空闲A40完成fresh0→1及same-root exact-resume1→3；三步
+  `86.20/87.52/87.47s`，0 clip/OOM/nonfinite，peak reserved`47,016,050,688` bytes，step3五个
+  owner全可达。K4/B20/B2/full24/phase16保持，profile权重弃用，formal现已seal。
 
 ## 2026-08-07 Grounded-Video formal0→200与hashless evaluator完成
 

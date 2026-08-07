@@ -12,8 +12,9 @@
 - [x] 原位切换唯一canonical Writer，删除Grounded `fewshot_m2p.py`活动实现，建立fresh config/
   launch/checkpoint family；step0 identity、K4 set permutation、phase causal、source freeze和五个
   gradient owner合同闭合，全仓`190 passed`。
-- [ ] clean commit/push；live比较gpu01/gpu02并只用最多6张空闲A40，以3+3 NUMA、显式
-  `NCCL_P2P_DISABLE=1`完成longest105 K4/B20/B2 fresh0→1与same-root exact-resume1→3 profile。
+- [x] clean`e1d0b62`在live空闲gpu01六卡、3+3 NUMA、显式`NCCL_P2P_DISABLE=1`完成
+  longest105 K4/B20/B2 fresh0→1与same-root exact-resume1→3：0 clip/OOM，peak reserved
+  `47,016,050,688` bytes，step3五个owner全可达；profile权重弃用，formal config已seal。
 - [ ] profile seal后从identity formal0→200，严格评50/100/150/200 correct400；若曲线有可信积累再
   exact-resume同一root到400。single winner做五臂、task churn和Core→Procedure→BA→action分析。
 - [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高absolute、breadth、稳定积累与

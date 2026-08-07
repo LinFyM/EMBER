@@ -24,9 +24,11 @@
   `configs/pi05_as_writer_k4_phase_aligned_v6_bci_v1.json`，fresh checkpoint family为
   `k4_phase_aligned_language_axial_rawfull24_v1`。全仓CPU回归`190 passed`，参数量保持历史v6的
   `10,775,296`，step0 identity、K4 set permutation、phase/procedure因果和五个梯度owner合同通过。
-- 当前正式run仍被config阻止。下一步只先clean commit/push，再live比较gpu01/gpu02，以最多6张
-  空闲A40完成K4/B20/B2、16-frame chunk、longest105的fresh0→1与same-root exact-resume1→3；
-  profile通过并seal后才允许identity-fresh formal0→200。不得resume任何Grounded/历史v6 checkpoint。
+- clean`e1d0b62`已在`gpu01:0,1,2|4,5,7`完成fresh0→1与same-root exact-resume1→3：三步
+  `86.20/87.52/87.47s`，0 clip/OOM/nonfinite，peak allocated/reserved=
+  `34,968,286,720/47,016,050,688` bytes；step3五个owner全可达，累计1,440 queries/288 videos，
+  source trainable=0且held reads=0。K4/B20/B2/full24/phase16未降低，profile权重弃用。config现已seal；
+  下一步clean commit/push后从identity formal0→200，不得resume任何Grounded/历史v6/profile checkpoint。
 
 ## 0.1 已完成并负裁决：Grounded-Video Semantic-Expert Route
 

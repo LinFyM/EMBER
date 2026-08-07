@@ -31,7 +31,7 @@ from ember.pi05_source_setup import (
     seed_everything,
 )
 from ember.writer.as_step import run_writer_step
-from ember.writer.as_config import load_sparse_expert_route, resolve_mode_config
+from ember.writer.as_config import load_grounded_video_expert_route, resolve_mode_config
 from ember.writer.checkpoint import (
     initialize_writer_phase,
     load_writer_checkpoint,
@@ -153,7 +153,7 @@ def build_writer(
         for key, value in config["writer"].items()
         if key in FEWSHOT_M2P_WRITER_CONSTRUCTOR_KEYS
     }
-    route_centers, route_anchor_mean = load_sparse_expert_route(config)
+    route_centers, route_anchor_mean = load_grounded_video_expert_route(config)
     bridge = policy.model.paligemma_with_expert
     writer = CompleteLoRAWriter(
         build_lora_tensor_specs(template),
@@ -697,7 +697,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=(
             REPO_ROOT
-            / "configs/pi05_as_writer_k4_sparse_semantic_expert_trace_m2p_bci_v1.json"
+            / "configs/pi05_as_writer_k4_grounded_video_expert_trace_m2p_bci_v1.json"
         ),
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

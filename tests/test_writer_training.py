@@ -16,7 +16,7 @@ from ember.writer.update_contract import build_update_runtime_contract, checkpoi
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = (
-    ROOT / "configs/pi05_as_writer_k4_sparse_semantic_expert_trace_m2p_bci_v1.json"
+    ROOT / "configs/pi05_as_writer_k4_grounded_video_expert_trace_m2p_bci_v1.json"
 )
 
 
@@ -31,11 +31,11 @@ def _context() -> DistributedContext:
     )
 
 
-def test_sparse_semantic_expert_trace_config_seals_video_owned_joint_generation() -> None:
+def test_grounded_video_expert_trace_config_seals_joint_video_generation() -> None:
     config = load_writer_config(CONFIG)
     assert writer_split_roles(config) == ("train",)
     assert config["writer"]["architecture"] == (
-        "pi05_k4_sparse_semantic_expert_policy_layer_trace_axis_m2p_v1"
+        "pi05_k4_grounded_video_expert_policy_layer_trace_axis_m2p_v1"
     )
     assert config["writer"]["videos_per_condition"] == 4
     assert config["writer"]["language_value_bypass"] is False
@@ -52,7 +52,7 @@ def test_sparse_semantic_expert_trace_config_seals_video_owned_joint_generation(
 def test_profile_uses_independent_video_seed_without_mutating_formal_config() -> None:
     config = load_writer_config(CONFIG)
     profile = resolve_mode_config(config, "profile")
-    assert profile["data"]["teacher_video_seed"] == 174
+    assert profile["data"]["teacher_video_seed"] == 175
     assert config["data"]["teacher_video_seed"] == 20260722
     args = argparse.Namespace(
         mode="profile",
@@ -65,18 +65,13 @@ def test_profile_uses_independent_video_seed_without_mutating_formal_config() ->
     assert args.stop_after_step == 3
 
 
-def test_formal_is_sealed_only_by_route_stable_sparse_expert_profile() -> None:
+def test_formal_waits_for_grounded_video_expert_live_profile() -> None:
     config = load_writer_config(CONFIG)
-    assert config["formal_run"]["status"] == "sealed"
-    assert config["formal_run"]["launch_state"] == "ready_for_fresh_formal_launch"
+    assert config["formal_run"]["status"] == "blocked_pending_live_profile"
+    assert config["formal_run"]["launch_state"] == "blocked_pending_live_profile"
     evidence = config["profile_evidence"]
-    assert evidence["status"] == (
-        "sealed_live_bci_a40_route_stable_fresh_and_exact_resume"
-    )
-    assert evidence["segments"] == ["fresh_0_to_1", "exact_resume_1_to_3"]
-    assert evidence["gradient_clip_count"] == 0
-    assert evidence["step2_all_sixteen_expert_blocks_reachable"] is True
-    assert evidence["runtime_train24_route_matches_authority"] is True
+    assert evidence["status"] == "pending_live_bci_a40_fresh_and_exact_resume"
+    assert "segments" not in evidence
     assert evidence["profile_weights_reusable_for_formal"] is False
 
 
@@ -114,10 +109,10 @@ def test_runtime_contract_owns_one_joint_k4_full24_update() -> None:
         ),
     )
     assert runtime["checkpoint_state_family"] == (
-        "k4_sparse_semantic_expert_policy_layer_trace_m2p_full24_v1"
+        "k4_grounded_video_expert_policy_layer_trace_m2p_full24_v1"
     )
     assert runtime["macro_step_axis"] == (
-        "full24_end_to_end_k4_sparse_semantic_expert_layer_trace_m2p_update"
+        "full24_end_to_end_k4_grounded_video_expert_layer_trace_m2p_update"
     )
     assert runtime["condition_gradient_unit"] == "one_joint_k4_video_set_to_one_lora_per_task"
     assert runtime["teacher_videos_per_task_visit"] == 4

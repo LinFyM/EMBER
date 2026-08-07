@@ -1,4 +1,4 @@
-"""Declarative contract for the sparse semantic-expert K4 trace Writer."""
+"""Declarative contract for the grounded-video expert K4 trace Writer."""
 
 from __future__ import annotations
 
@@ -44,7 +44,7 @@ WRITER_DIMENSION_CONTRACT = {
 }
 
 _STATIC_WRITER_CONTRACT: dict[str, Any] = {
-    "architecture": "pi05_k4_sparse_semantic_expert_policy_layer_trace_axis_m2p_v1",
+    "architecture": "pi05_k4_grounded_video_expert_policy_layer_trace_axis_m2p_v1",
     "generated_adapter": "one_complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -53,12 +53,12 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "teacher_state_input": False,
     "videos_per_condition": 4,
     "video_set_order": "permutation_invariant_without_shot_identity",
-    "condition_descriptor": "frozen_pi05_all_action_expert_layer_video_innovation",
+    "condition_descriptor": "frozen_pi05_all_action_expert_layer_video_innovation_plus_multimodal_task_token_address",
     "condition_descriptor_gradient": "none",
     "condition_baseline": "same_language_same_suffix_zero_image_tokens_per_policy_group",
-    "language_role": "video_grounding_inside_frozen_pi05_plus_fixed_semantic_parameter_ownership",
+    "language_role": "video_grounding_inside_frozen_pi05_without_language_only_parameter_ownership",
     "language_value_bypass": False,
-    "semantic_route": "frozen_train24_mean_centered_pi05_task_anchor_top2_cosine",
+    "semantic_route": "frozen_train24_mean_centered_k4_multimodal_task_token_video_innovation_top2_cosine",
     "semantic_route_value": False,
     "semantic_expert_count": 8,
     "semantic_expert_top_k": 2,
@@ -95,7 +95,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
 
 
 def expected_writer_contract(writer: Mapping[str, Any]) -> dict[str, Any]:
-    """Return the exact sparse semantic-expert layer-trace Writer payload."""
+    """Return the exact grounded-video expert layer-trace Writer payload."""
 
     if writer.get("architecture") != _STATIC_WRITER_CONTRACT["architecture"]:
         raise ValueError(f"unsupported EMBER Writer architecture: {writer.get('architecture')}")

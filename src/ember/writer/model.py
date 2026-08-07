@@ -7,10 +7,11 @@ from dataclasses import dataclass
 from typing import Mapping
 
 import torch
+import torch.nn.functional as F
 
 from ember.writer.architecture import validate_writer_dimensions
 from ember.writer.fewshot_m2p import (
-    SparseSemanticPolicyLayerTraceM2P,
+    GroundedVideoPolicyLayerTraceM2P,
     build_policy_layer_groups,
     build_policy_target_specs,
 )
@@ -185,7 +186,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         )
         if len(groups) != self.POLICY_GROUPS:
             raise WriterModelError("PI05 policy-layer group count changed")
-        self.layer_m2p = SparseSemanticPolicyLayerTraceM2P(
+        self.layer_m2p = GroundedVideoPolicyLayerTraceM2P(
             groups,
             template_state=template_state,
             route_centers=route_centers,
@@ -305,13 +306,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         video_condition_ids = torch.repeat_interleave(
             torch.arange(conditions, device=frames.device), condition_lengths
         )
-        task_anchor = self.condition_descriptor.task_anchor(
-            policy,
-            language_tokens,
-            language_mask,
-            task_span_mask,
-        )
-        video_traces = self.condition_descriptor(
+        video_traces, video_grounded = self.condition_descriptor(
             policy,
             frames,
             frame_video_ids,
@@ -320,10 +315,19 @@ class CompleteLoRAWriter(torch.nn.Module):
             language_mask.index_select(0, video_condition_ids),
             task_span_mask.index_select(0, video_condition_ids),
         )
+        grounded_address = F.normalize(
+            video_grounded.reshape(
+                conditions,
+                self.videos_per_condition,
+                video_grounded.shape[-1],
+            ).mean(dim=1),
+            dim=-1,
+            eps=1e-12,
+        )
         program = self.layer_m2p.encode(
             video_traces,
             condition_video_offsets,
-            task_anchor,
+            grounded_address,
         )
         if program.shape != (
             conditions,

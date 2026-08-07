@@ -124,105 +124,6 @@ class Pi05FrozenConditionDescriptor(torch.nn.Module):
         value = resize_with_pad_torch(value, 224, 224)
         return (value * 2.0 - 1.0).permute(0, 3, 1, 2)
 
-    @staticmethod
-    def _prepare_text_branch(
-        core: torch.nn.Module,
-        language_tokens: torch.Tensor,
-        task_span_mask: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Build the frozen task-only PI05 text branch used for routing."""
-
-        from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks
-
-        maximum_task_tokens = int(task_span_mask.sum(dim=1).max())
-        if maximum_task_tokens <= 0:
-            raise VideoProgramError("frozen semantic route lost task tokens")
-        batch = language_tokens.shape[0]
-        text_tokens = torch.zeros(
-            batch,
-            maximum_task_tokens + 1,
-            dtype=language_tokens.dtype,
-            device=language_tokens.device,
-        )
-        text_padding = torch.zeros_like(text_tokens, dtype=torch.bool)
-        text_tokens[:, 0] = language_tokens[:, 0]
-        text_padding[:, 0] = True
-        for row in range(batch):
-            selected = language_tokens[row, task_span_mask[row]]
-            text_tokens[row, 1 : selected.numel() + 1] = selected
-            text_padding[row, 1 : selected.numel() + 1] = True
-        bridge = core.paligemma_with_expert
-        text_embeds = bridge.embed_language_tokens(text_tokens)
-        text_attention = torch.zeros_like(text_padding)
-        mask = core._prepare_attention_masks_4d(
-            make_att_2d_masks(text_padding, text_attention)
-        )
-        positions = torch.cumsum(text_padding, dim=1) - 1
-        return text_embeds, mask, positions, text_padding[:, 1:]
-
-    @torch.no_grad()
-    def task_anchor(
-        self,
-        policy: torch.nn.Module,
-        language_tokens: torch.Tensor,
-        language_mask: torch.Tensor,
-        task_span_mask: torch.Tensor,
-    ) -> torch.Tensor:
-        """Return one checkpoint-invariant semantic address per exact task text."""
-
-        if (
-            language_tokens.ndim != 2
-            or language_tokens.shape[0] <= 0
-            or language_mask.shape != language_tokens.shape
-            or language_mask.dtype != torch.bool
-            or task_span_mask.shape != language_tokens.shape
-            or task_span_mask.dtype != torch.bool
-            or bool((task_span_mask & ~language_mask).any())
-            or not bool(task_span_mask.any(dim=1).all())
-        ):
-            raise VideoProgramError("invalid frozen semantic-route language batch")
-        core = policy.model
-        bridge = core.paligemma_with_expert
-        language_model = bridge.paligemma.model.language_model
-        target_dtype = language_model.layers[0].self_attn.q_proj.weight.dtype
-        anchors = []
-        # Route ownership is a property of each exact task string.  Running the
-        # frozen text backbone one row at a time keeps that address independent
-        # of unrelated co-batched language lengths and BF16 kernel shapes.
-        for row in range(language_tokens.shape[0]):
-            text_embeds, mask, positions, valid = self._prepare_text_branch(
-                core,
-                language_tokens[row : row + 1],
-                task_span_mask[row : row + 1],
-            )
-            (hidden, suffix), _ = bridge.forward(
-                attention_mask=mask,
-                position_ids=positions,
-                past_key_values=None,
-                inputs_embeds=[text_embeds.to(target_dtype), None],
-                use_cache=False,
-                adarms_cond=[None, None],
-            )
-            if suffix is not None or hidden.shape != (
-                1,
-                valid.shape[1] + 1,
-                self.image_width,
-            ):
-                raise VideoProgramError("PI05 frozen semantic anchor layout changed")
-            anchors.append(
-                hidden[:, 1:]
-                .to(torch.float32)
-                .masked_fill(~valid[..., None], 0.0)
-                .sum(dim=1)
-                .div(valid.sum(dim=1, keepdim=True).to(torch.float32))
-            )
-        result = F.normalize(torch.cat(anchors, dim=0), dim=-1)
-        if result.shape != (language_tokens.shape[0], self.image_width) or not bool(
-            torch.isfinite(result).all()
-        ):
-            raise VideoProgramError("PI05 frozen semantic anchor changed shape")
-        return result
-
     @torch.no_grad()
     def _encode_layer_traces(
         self,
@@ -230,7 +131,8 @@ class Pi05FrozenConditionDescriptor(torch.nn.Module):
         frames: torch.Tensor | None,
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
-    ) -> torch.Tensor:
+        task_span_mask: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         from lerobot.policies.pi05.modeling_pi05 import (
             compute_layer_complete,
             layernorm_forward,
@@ -307,9 +209,23 @@ class Pi05FrozenConditionDescriptor(torch.nn.Module):
         )
         traces.append(final.to(torch.float32).mean(dim=1))
         result = torch.stack(traces, dim=1)
-        if result.shape != (batch, self.POLICY_GROUPS, self.TRACE_WIDTH):
+        grounded, _ = layernorm_forward(
+            bridge.paligemma.model.language_model.norm,
+            hidden[0],
+            None,
+        )
+        grounded = grounded[:, self.NATIVE_IMAGE_TOKENS :].to(torch.float32)
+        grounded = grounded.masked_fill(~task_span_mask[..., None], 0.0).sum(dim=1)
+        grounded = grounded.div(
+            task_span_mask.sum(dim=1, keepdim=True).to(torch.float32)
+        )
+        if (
+            result.shape != (batch, self.POLICY_GROUPS, self.TRACE_WIDTH)
+            or grounded.shape != (batch, self.image_width)
+            or not bool(torch.isfinite(grounded).all())
+        ):
             raise VideoProgramError("frozen policy-layer trace layout changed")
-        return result
+        return result, grounded
 
     @torch.no_grad()
     def forward(
@@ -321,7 +237,7 @@ class Pi05FrozenConditionDescriptor(torch.nn.Module):
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
         task_span_mask: torch.Tensor,
-    ) -> torch.Tensor:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         videos = language_tokens.shape[0]
         if (
             frames.ndim != 4
@@ -361,34 +277,54 @@ class Pi05FrozenConditionDescriptor(torch.nn.Module):
             or int(core.config.max_action_dim) != self.padded_action_dim
         ):
             raise VideoProgramError("PI05 source policy topology changed")
-        baseline = self._encode_layer_traces(
+        baseline, baseline_grounded = self._encode_layer_traces(
             core,
             None,
             language_tokens,
             language_mask,
+            task_span_mask,
         )
         frame_rows = []
+        grounded_rows = []
         for start in range(0, frames.shape[0], self.max_frames_per_encoder_call):
             stop = min(start + self.max_frames_per_encoder_call, frames.shape[0])
             selected = frame_video_ids[start:stop]
-            actual = self._encode_layer_traces(
+            actual, grounded = self._encode_layer_traces(
                 core,
                 frames[start:stop],
                 language_tokens.index_select(0, selected),
                 language_mask.index_select(0, selected),
+                task_span_mask.index_select(0, selected),
             )
             frame_rows.append(actual - baseline.index_select(0, selected))
+            grounded_rows.append(
+                grounded - baseline_grounded.index_select(0, selected)
+            )
         frame_innovation = torch.cat(frame_rows, dim=0)
+        grounded_innovation = torch.cat(grounded_rows, dim=0)
         video_traces = temporal_trace_tokens(
             frame_innovation,
             video_offsets,
             terms=self.TEMPORAL_TERMS,
         )
+        video_grounded = torch.stack(
+            [
+                grounded_innovation[left:right].mean(dim=0)
+                for left, right in zip(
+                    expected_offsets[:-1].tolist(),
+                    expected_offsets[1:].tolist(),
+                    strict=True,
+                )
+            ]
+        )
+        video_grounded = F.normalize(video_grounded, dim=-1, eps=1e-12)
         if video_traces.shape != (
             videos,
             self.POLICY_GROUPS,
             self.TEMPORAL_TERMS,
             self.TRACE_WIDTH,
+        ) or video_grounded.shape != (videos, self.image_width) or not bool(
+            torch.isfinite(video_grounded).all()
         ):
             raise VideoProgramError("frozen video policy traces changed shape")
-        return video_traces
+        return video_traces, video_grounded

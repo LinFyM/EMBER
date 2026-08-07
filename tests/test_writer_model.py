@@ -9,10 +9,10 @@ import torch.nn.functional as F
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer.as_contract import writer_trainable_contract
 from ember.writer.fewshot_m2p import (
+    GroundedVideoPolicyLayerTraceM2P,
     PolicyLayerGroup,
     PolicyLayerTraceM2P,
     PolicyTargetSpec,
-    SparseSemanticPolicyLayerTraceM2P,
     factorize_trace_evidence,
 )
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
@@ -45,18 +45,6 @@ class _Backbone(torch.nn.Module):
 
 
 class _FakeConditionDescriptor(torch.nn.Module):
-    def task_anchor(
-        self,
-        _policy: torch.nn.Module,
-        language_tokens: torch.Tensor,
-        _language_mask: torch.Tensor,
-        _task_span_mask: torch.Tensor,
-    ) -> torch.Tensor:
-        result = torch.zeros(language_tokens.shape[0], 2048)
-        result[:, 0] = 1
-        result[:, 1] = torch.arange(language_tokens.shape[0])
-        return F.normalize(result, dim=-1)
-
     def forward(
         self,
         _policy: torch.nn.Module,
@@ -66,7 +54,7 @@ class _FakeConditionDescriptor(torch.nn.Module):
         language_tokens: torch.Tensor,
         _language_mask: torch.Tensor,
         _task_span_mask: torch.Tensor,
-    ) -> torch.Tensor:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         videos = language_tokens.shape[0]
         frame_seed = frames.to(torch.float32).mean(dim=(1, 2, 3))
         pooled = torch.zeros(videos, dtype=torch.float32)
@@ -76,61 +64,11 @@ class _FakeConditionDescriptor(torch.nn.Module):
         group = torch.arange(20, dtype=torch.float32)[None, :, None, None]
         temporal = torch.arange(16, dtype=torch.float32)[None, None, :, None]
         width = torch.arange(1024, dtype=torch.float32)[None, None, None]
-        return pooled[:, None, None, None] + group + temporal + width
-
-
-class _ShapeSensitiveTextBridge(torch.nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        projection = torch.nn.Linear(1, 1, bias=False)
-        layer = torch.nn.Module()
-        layer.self_attn = torch.nn.Module()
-        layer.self_attn.q_proj = projection
-        language_model = torch.nn.Module()
-        language_model.layers = torch.nn.ModuleList([layer])
-        model = torch.nn.Module()
-        model.language_model = language_model
-        self.paligemma = torch.nn.Module()
-        self.paligemma.model = model
-
-    def forward(self, *, inputs_embeds, **_kwargs):
-        hidden = inputs_embeds[0].clone()
-        hidden[..., 2] += hidden.shape[1] * 0.01
-        return (hidden, None), None
-
-
-class _AnchorCore(torch.nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        self.paligemma_with_expert = _ShapeSensitiveTextBridge()
-
-
-class _AnchorPolicy(torch.nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        self.model = _AnchorCore()
-
-
-class _AnchorDescriptor(Pi05FrozenConditionDescriptor):
-    @staticmethod
-    def _prepare_text_branch(
-        _core: torch.nn.Module,
-        language_tokens: torch.Tensor,
-        task_span_mask: torch.Tensor,
-    ):
-        maximum = int(task_span_mask.sum(dim=1).max())
-        embeds = torch.zeros(language_tokens.shape[0], maximum + 1, 2048)
-        valid = torch.zeros(language_tokens.shape[0], maximum, dtype=torch.bool)
-        embeds[:, 0, 0] = 1.0
-        for row in range(language_tokens.shape[0]):
-            selected = language_tokens[row, task_span_mask[row]].to(torch.float32)
-            embeds[row, 1 : selected.numel() + 1, 0] = selected
-            embeds[row, 1 : selected.numel() + 1, 1] = torch.arange(
-                1, selected.numel() + 1, dtype=torch.float32
-            )
-            valid[row, : selected.numel()] = True
-        positions = torch.arange(maximum + 1)[None].expand(language_tokens.shape[0], -1)
-        return embeds, torch.zeros(1), positions, valid
+        traces = pooled[:, None, None, None] + group + temporal + width
+        grounded = torch.zeros(videos, 2048, dtype=torch.float32)
+        grounded[:, 0] = 1
+        grounded[:, 1] = language_tokens[:, 1].to(torch.float32)
+        return traces, F.normalize(grounded, dim=-1)
 
 
 def _backbones() -> tuple[_Backbone, _Backbone]:
@@ -340,7 +278,7 @@ def _tiny_layer_m2p() -> PolicyLayerTraceM2P:
     )
 
 
-def _tiny_sparse_m2p() -> SparseSemanticPolicyLayerTraceM2P:
+def _tiny_grounded_m2p() -> GroundedVideoPolicyLayerTraceM2P:
     base = _tiny_layer_m2p()
     template = {
         name: getattr(base, base._template_names[name]).clone()
@@ -351,7 +289,7 @@ def _tiny_sparse_m2p() -> SparseSemanticPolicyLayerTraceM2P:
     centers[0, 0] = 1
     centers[1, :2] = torch.tensor([0.5, 3**0.5 / 2])
     centers[2, 0] = -1
-    return SparseSemanticPolicyLayerTraceM2P(
+    return GroundedVideoPolicyLayerTraceM2P(
         base.groups,
         template_state=template,
         route_centers=centers,
@@ -447,8 +385,8 @@ def test_axis_m2p_preserves_small_dynamic_amplitude() -> None:
     assert 1.8 < ratio < 2.2
 
 
-def test_sparse_semantic_experts_match_dense_reference_and_keep_video_identity() -> None:
-    decoder = _tiny_sparse_m2p()
+def test_grounded_video_experts_match_dense_reference_and_keep_video_identity() -> None:
+    decoder = _tiny_grounded_m2p()
     video = torch.randn(8, 3, 4, 16)
     offsets = torch.tensor([0, 4, 8], dtype=torch.long)
     anchors = torch.zeros(2, 16)
@@ -474,8 +412,8 @@ def test_sparse_semantic_experts_match_dense_reference_and_keep_video_identity()
     )
 
 
-def test_sparse_route_is_frozen_and_unselected_expert_gets_no_gradient() -> None:
-    decoder = _tiny_sparse_m2p()
+def test_grounded_route_is_frozen_and_unselected_expert_gets_no_gradient() -> None:
+    decoder = _tiny_grounded_m2p()
     video = torch.randn(4, 3, 4, 16)
     offsets = torch.tensor([0, 4], dtype=torch.long)
     anchor = torch.zeros(1, 16)
@@ -488,35 +426,3 @@ def test_sparse_route_is_frozen_and_unselected_expert_gets_no_gradient() -> None
     assert any(parameter.grad is not None for parameter in decoder.experts[0].parameters())
     assert any(parameter.grad is not None for parameter in decoder.experts[1].parameters())
     assert all(parameter.grad is None for parameter in decoder.experts[2].parameters())
-
-
-def test_frozen_task_anchor_is_independent_of_language_cobatching() -> None:
-    descriptor = _AnchorDescriptor(
-        image_width=2048,
-        expert_width=1024,
-        max_frames_per_encoder_call=16,
-        action_horizon=50,
-        padded_action_dim=32,
-        initialization_seed=7,
-    )
-    policy = _AnchorPolicy()
-    tokens = torch.tensor([[1, 3, 4, 0], [1, 5, 0, 0]], dtype=torch.long)
-    mask = torch.tensor(
-        [[True, True, True, False], [True, True, False, False]]
-    )
-    task_span = torch.tensor(
-        [[False, True, True, False], [False, True, False, False]]
-    )
-    batched = descriptor.task_anchor(policy, tokens, mask, task_span)
-    singleton = torch.cat(
-        [
-            descriptor.task_anchor(
-                policy,
-                tokens[row : row + 1],
-                mask[row : row + 1],
-                task_span[row : row + 1],
-            )
-            for row in range(tokens.shape[0])
-        ]
-    )
-    assert torch.equal(batched, singleton)

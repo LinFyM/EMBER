@@ -1,4 +1,4 @@
-"""Configuration for the sparse semantic-expert K4 policy-layer trace Writer."""
+"""Configuration for the grounded-video expert K4 policy-layer trace Writer."""
 
 from __future__ import annotations
 
@@ -13,8 +13,8 @@ from ember.writer.model import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-K4_SPARSE_SEMANTIC_EXPERT_CONFIG_SCHEMA = (
-    "ember_pi05_k4_sparse_semantic_expert_policy_layer_trace_m2p_as_writer_v1"
+K4_GROUNDED_VIDEO_EXPERT_CONFIG_SCHEMA = (
+    "ember_pi05_k4_grounded_video_expert_policy_layer_trace_m2p_as_writer_v1"
 )
 AS_WRITER_STAGES = ("development", "final")
 
@@ -57,22 +57,22 @@ def _validate_authorities(config: Mapping[str, Any]) -> None:
         "lora_contract",
         "source_base_config",
         "tokenizer_manifest",
-        "sparse_expert_route",
+        "grounded_video_expert_route",
     }
     if set(authorities) != required:
-        raise WriterModelError("sparse semantic-expert authority set changed")
+        raise WriterModelError("grounded-video expert authority set changed")
     for name, authority in authorities.items():
         artifact = REPO_ROOT / str(authority.get("path", ""))
         if not artifact.is_file():
-            raise WriterModelError(f"missing sparse semantic-expert authority: {name}")
+            raise WriterModelError(f"missing grounded-video expert authority: {name}")
 
 
-def load_sparse_expert_route(
+def load_grounded_video_expert_route(
     config: Mapping[str, Any],
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Load the frozen train24 language route used by training and rollout."""
+    """Load the frozen train24 grounded-video route used by all runtimes."""
 
-    route = read_json(authority_path(config, "sparse_expert_route"))
+    route = read_json(authority_path(config, "grounded_video_expert_route"))
     writer = config.get("writer", {})
     expert_count = int(writer.get("semantic_expert_count", 0))
     top_k = int(writer.get("semantic_expert_top_k", 0))
@@ -83,7 +83,7 @@ def load_sparse_expert_route(
     task_routes = route.get("task_routes", [])
     if (
         route.get("schema_version")
-        != "ember_pi05_sparse_semantic_expert_route_v1"
+        != "ember_pi05_grounded_video_expert_route_v1"
         or fit
         != {
             "task_roles": ["train"],
@@ -92,7 +92,7 @@ def load_sparse_expert_route(
             "method": "spherical_kmeans",
             "expert_count": 8,
             "top_k": 2,
-            "anchor": "train24_mean_centered_frozen_base_text_task_span_mean_l2",
+            "anchor": "train24_mean_centered_k4_multimodal_task_token_video_innovation_l2",
         }
         or expert_count != 8
         or top_k != 2
@@ -103,10 +103,15 @@ def load_sparse_expert_route(
         or len(audit.get("top2_expert_counts", [])) != expert_count
         or min(audit["primary_expert_counts"]) <= 0
         or min(audit["top2_expert_counts"]) <= 0
+        or float(audit.get("primary_route_stability", 0.0)) < 0.90
+        or float(audit.get("mean_top2_overlap", 0.0)) < 0.90
+        or audit.get("batch4_singleton_routes_exact") is not True
+        or int(audit.get("teacher_action_state_reward_terminal_reads", -1)) != 0
+        or int(audit.get("validation_test_video_reads", -1)) != 0
         or not bool(torch.isfinite(centers).all())
         or not bool(torch.isfinite(anchor_mean).all())
     ):
-        raise WriterModelError("sparse semantic-expert route authority changed")
+        raise WriterModelError("grounded-video expert route authority changed")
     return centers, anchor_mean
 
 
@@ -204,7 +209,7 @@ def _validate_training(config: Mapping[str, Any]) -> None:
     formal_world = int(config.get("formal_run", {}).get("expected_world_size", 0))
     tasks_per_rank = 24 // formal_world if formal_world in {4, 6} else -1
     required = {
-        "method": "k4_sparse_semantic_expert_policy_layer_trace_axis_m2p_rawfull24",
+        "method": "k4_grounded_video_expert_policy_layer_trace_axis_m2p_rawfull24",
         "update_topology": "task_complete_all_tasks",
         "tasks_per_rank_per_optimizer_update": tasks_per_rank,
         "global_tasks_per_optimizer_update": 24,
@@ -263,12 +268,12 @@ def _validate_schedule(config: Mapping[str, Any]) -> None:
 
 def load_writer_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
-    if config.get("schema_version") != K4_SPARSE_SEMANTIC_EXPERT_CONFIG_SCHEMA:
+    if config.get("schema_version") != K4_GROUNDED_VIDEO_EXPERT_CONFIG_SCHEMA:
         raise WriterModelError("unsupported PI05 AS-Writer config schema")
     writer_stage(config)
     _validate_authorities(config)
     _validate_protocol(config)
-    load_sparse_expert_route(config)
+    load_grounded_video_expert_route(config)
     _validate_information_wall(config)
     _validate_data(config)
     _validate_training(config)

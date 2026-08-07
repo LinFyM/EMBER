@@ -467,7 +467,7 @@ class PolicyLayerTraceM2P(torch.nn.Module):
 
 
 class FixedSemanticExpertRouter(torch.nn.Module):
-    """Select fixed top-k parameter owners from a frozen PI05 language anchor."""
+    """Select fixed top-k parameter owners from a frozen semantic address."""
 
     def __init__(
         self,
@@ -524,8 +524,8 @@ class FixedSemanticExpertRouter(torch.nn.Module):
         return indices, weights
 
 
-class SparseSemanticPolicyLayerTraceM2P(torch.nn.Module):
-    """Combine top-k complete video-trace experts before one LoRA decode."""
+class GroundedVideoPolicyLayerTraceM2P(torch.nn.Module):
+    """Route grounded K4 video semantics into complete trace experts."""
 
     def __init__(
         self,
@@ -573,21 +573,21 @@ class SparseSemanticPolicyLayerTraceM2P(torch.nn.Module):
             for expert_index in range(expert_count)
         )
 
-    def route(self, task_anchor: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        return self.router(task_anchor)
+    def route(self, grounded_address: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        return self.router(grounded_address)
 
     def encode(
         self,
         video_traces: torch.Tensor,
         condition_video_offsets: torch.Tensor,
-        task_anchor: torch.Tensor,
+        grounded_address: torch.Tensor,
     ) -> torch.Tensor:
         if (
             condition_video_offsets.ndim != 1
             or condition_video_offsets.dtype != torch.long
             or condition_video_offsets.numel() < 2
         ):
-            raise FewShotM2PError("invalid sparse-expert condition offsets")
+            raise FewShotM2PError("invalid grounded-video expert condition offsets")
         conditions = condition_video_offsets.numel() - 1
         offsets = condition_video_offsets.detach().cpu()
         shot_counts = offsets[1:] - offsets[:-1]
@@ -596,9 +596,9 @@ class SparseSemanticPolicyLayerTraceM2P(torch.nn.Module):
             or int(offsets[-1]) != video_traces.shape[0]
             or not bool((shot_counts == shot_counts[0]).all())
             or int(shot_counts[0]) <= 1
-            or task_anchor.shape != (conditions, self.router.anchor_width)
+            or grounded_address.shape != (conditions, self.router.anchor_width)
         ):
-            raise FewShotM2PError("sparse semantic expert batch changed")
+            raise FewShotM2PError("grounded-video expert batch changed")
         shots = int(shot_counts[0])
         expected_trace_shape = (
             conditions,
@@ -613,9 +613,9 @@ class SparseSemanticPolicyLayerTraceM2P(torch.nn.Module):
             self.temporal_terms,
             self.width,
         ):
-            raise FewShotM2PError("sparse semantic expert traces changed shape")
+            raise FewShotM2PError("grounded-video expert traces changed shape")
         physical = video_traces.reshape(expected_trace_shape)
-        route_indices, route_weights = self.route(task_anchor)
+        route_indices, route_weights = self.route(grounded_address)
         memory: torch.Tensor | None = None
         for expert_index, expert in enumerate(self.experts):
             selected = torch.nonzero(
@@ -664,7 +664,7 @@ class SparseSemanticPolicyLayerTraceM2P(torch.nn.Module):
         if memory is None or memory.shape != expected_memory_shape or not bool(
             torch.isfinite(memory).all()
         ):
-            raise FewShotM2PError("sparse semantic expert memory changed shape")
+            raise FewShotM2PError("grounded-video expert memory changed shape")
         return memory
 
     def decode(self, memory: torch.Tensor) -> dict[str, torch.Tensor]:
@@ -674,10 +674,10 @@ class SparseSemanticPolicyLayerTraceM2P(torch.nn.Module):
         self,
         video_traces: torch.Tensor,
         condition_video_offsets: torch.Tensor,
-        task_anchor: torch.Tensor,
+        grounded_address: torch.Tensor,
     ) -> dict[str, torch.Tensor]:
         return self.decode(
-            self.encode(video_traces, condition_video_offsets, task_anchor)
+            self.encode(video_traces, condition_video_offsets, grounded_address)
         )
 
 

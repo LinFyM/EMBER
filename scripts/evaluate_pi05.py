@@ -27,6 +27,7 @@ from ember.eval_adapters import (
     inspect_rl_writer_adapter as _inspect_rl_writer_adapter,
     inspect_source_sft_adapter as _inspect_source_sft_adapter,
     inspect_task_expert_adapter as _inspect_task_expert_adapter,
+    inspect_expert_manifold_writer_adapter as _inspect_expert_manifold_writer_adapter,
     rl_writer_requested as _rl_writer_requested,
     source_sft_requested as _source_sft_requested,
 )
@@ -178,6 +179,25 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--task-expert-config", type=Path)
     parser.add_argument("--task-expert-bank-root", type=Path)
     parser.add_argument("--task-expert-step", type=_positive_int)
+    parser.add_argument("--expert-manifold-config", type=Path)
+    parser.add_argument("--expert-manifold-checkpoint", type=Path)
+    parser.add_argument("--expert-manifold-video-data-root", type=Path)
+    parser.add_argument(
+        "--expert-manifold-video-condition",
+        choices=(
+            "correct",
+            "same_task_other",
+            "cross_suite_wrong",
+            "shuffled",
+            "shuffled_keep_first",
+            "reversed",
+        ),
+    )
+    parser.add_argument(
+        "--expert-manifold-video-sampling",
+        choices=("with_replacement", "without_replacement"),
+        default="without_replacement",
+    )
 
 
 def parse_args() -> argparse.Namespace:
@@ -311,6 +331,18 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
             source=model,
             tasks=tasks,
             evaluation_role=args.role,
+            require_formal=args.mode != "smoke",
+        )
+    elif writer_kind == "expert_manifold_writer":
+        adapter = _inspect_expert_manifold_writer_adapter(
+            config_path=args.expert_manifold_config.resolve(),
+            checkpoint=args.expert_manifold_checkpoint.resolve(),
+            video_data_root=args.expert_manifold_video_data_root.resolve(),
+            source=model,
+            tasks=tasks,
+            video_condition=str(args.expert_manifold_video_condition),
+            video_seed=int(authorities.config["rng"]["inference_seed"]),
+            video_sampling_mode=str(args.expert_manifold_video_sampling),
             require_formal=args.mode != "smoke",
         )
     contract = build_run_contract(
@@ -462,6 +494,18 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
                 source=model,
                 tasks=tasks,
                 evaluation_role=str(contract["role"]),
+                require_formal=contract["mode"] != "smoke",
+            )
+        elif adapter.get("kind") == "expert_manifold_writer":
+            observed = _inspect_expert_manifold_writer_adapter(
+                config_path=Path(adapter["config"]["path"]),
+                checkpoint=Path(adapter["checkpoint"]["path"]),
+                video_data_root=Path(adapter["video_data"]["root"]),
+                source=model,
+                tasks=tasks,
+                video_condition=str(adapter["video_condition"]),
+                video_seed=int(adapter["video_schedule"]["seed"]),
+                video_sampling_mode=str(adapter["video_schedule"]["sampling_mode"]),
                 require_formal=contract["mode"] != "smoke",
             )
         else:

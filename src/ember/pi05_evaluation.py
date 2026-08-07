@@ -15,6 +15,7 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 
 from ember.eval_adapters import (
+    WRITER_ADAPTER_KINDS,
     episode_adapter_fields,
     load_evaluation_adapter as _load_evaluation_adapter,
     validate_episode_adapter_fields,
@@ -453,7 +454,7 @@ def _initialize_worker(
         generators = int(contract["parallel"].get("writer_generators_per_gpu", 0))
         if (
             not isinstance(adapter, Mapping)
-            or adapter.get("kind") not in {"as_writer", "rl_writer"}
+            or adapter.get("kind") not in WRITER_ADAPTER_KINDS
             or not 0 <= replica < generators
         ):
             raise Pi05EvaluationError("invalid Writer generator worker assignment")

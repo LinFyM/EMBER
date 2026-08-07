@@ -10,6 +10,8 @@ from ember.pi05_assets import Pi05EvaluationError
 
 STATIC_SOURCE_SFT_KIND = "shared_source_sft_lora"
 STATIC_TASK_EXPERT_KIND = "task_local_expert_bank"
+EXPERT_MANIFOLD_WRITER_KIND = "expert_manifold_writer"
+WRITER_ADAPTER_KINDS = frozenset({"as_writer", "rl_writer", EXPERT_MANIFOLD_WRITER_KIND})
 
 
 def _all_or_none(values: Sequence[Any], label: str) -> bool:
@@ -61,12 +63,27 @@ def task_expert_requested(args: Any) -> bool:
     )
 
 
+def expert_manifold_writer_requested(args: Any) -> bool:
+    return _all_or_none(
+        (
+            getattr(args, "expert_manifold_config", None),
+            getattr(args, "expert_manifold_checkpoint", None),
+            getattr(args, "expert_manifold_video_data_root", None),
+            getattr(args, "expert_manifold_video_condition", None),
+        ),
+        "Expert-Manifold Writer",
+    )
+
+
 def adapter_requests(args: Any) -> tuple[str | None, bool]:
     as_requested = as_writer_requested(args)
     rl_requested = rl_writer_requested(args)
     sft_requested = source_sft_requested(args)
     expert_requested = task_expert_requested(args)
-    if sum((as_requested, rl_requested, sft_requested, expert_requested)) > 1:
+    manifold_requested = expert_manifold_writer_requested(args)
+    if sum(
+        (as_requested, rl_requested, sft_requested, expert_requested, manifold_requested)
+    ) > 1:
         raise Pi05EvaluationError("PI05 evaluation adapters are mutually exclusive")
     kind = (
         "as_writer"
@@ -75,6 +92,8 @@ def adapter_requests(args: Any) -> tuple[str | None, bool]:
         if rl_requested
         else "task_expert"
         if expert_requested
+        else "expert_manifold_writer"
+        if manifold_requested
         else None
     )
     return kind, sft_requested
@@ -86,6 +105,7 @@ def paired_writer_identity(adapter: Mapping[str, Any]) -> dict[str, Any]:
     data_key = {
         "as_writer": "video_data",
         "rl_writer": "video_data",
+        EXPERT_MANIFOLD_WRITER_KIND: "video_data",
     }.get(str(adapter.get("kind")))
     if data_key is None or data_key not in adapter:
         raise Pi05EvaluationError(
@@ -216,6 +236,111 @@ def inspect_task_expert_adapter(
         raise Pi05EvaluationError(str(error)) from error
 
 
+def inspect_expert_manifold_writer_adapter(
+    *,
+    config_path: Path,
+    checkpoint: Path,
+    video_data_root: Path,
+    source: Mapping[str, Any],
+    tasks: Sequence[Any],
+    video_condition: str,
+    video_seed: int,
+    video_sampling_mode: str,
+    require_formal: bool,
+) -> dict[str, Any]:
+    from ember.expert_manifold.contract import ExpertManifoldError
+    from ember.expert_manifold.inference import (
+        inspect_expert_manifold_writer_evaluation,
+    )
+
+    try:
+        return inspect_expert_manifold_writer_evaluation(
+            config_path=config_path,
+            checkpoint=checkpoint,
+            video_data_root=video_data_root,
+            source=source,
+            task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
+            video_condition=video_condition,
+            video_seed=video_seed,
+            video_sampling_mode=video_sampling_mode,
+            require_formal=require_formal,
+        )
+    except ExpertManifoldError as error:
+        raise Pi05EvaluationError(str(error)) from error
+
+
+def expected_writer_episode(
+    adapter: Mapping[str, Any],
+    *,
+    suite: str,
+    task_id: int,
+    init_state_id: int,
+    lora_reference: str,
+) -> dict[str, Any]:
+    if adapter.get("kind") == EXPERT_MANIFOLD_WRITER_KIND:
+        from ember.expert_manifold.inference import (
+            expected_expert_manifold_episode_evidence,
+        )
+
+        return expected_expert_manifold_episode_evidence(
+            adapter,
+            suite=suite,
+            task_id=task_id,
+            init_state_id=init_state_id,
+            lora_reference=lora_reference,
+        )
+    from ember.writer.inference import expected_writer_episode_evidence
+
+    return expected_writer_episode_evidence(
+        adapter,
+        suite=suite,
+        task_id=task_id,
+        init_state_id=init_state_id,
+        lora_reference=lora_reference,
+    )
+
+
+def validate_writer_episode(
+    adapter: Mapping[str, Any],
+    row: Any,
+    *,
+    suite: str,
+    task_id: int,
+    init_state_id: int,
+) -> bool:
+    if adapter.get("kind") == EXPERT_MANIFOLD_WRITER_KIND:
+        from ember.expert_manifold.inference import (
+            validate_expert_manifold_episode_evidence,
+        )
+
+        return validate_expert_manifold_episode_evidence(
+            adapter,
+            row,
+            suite=suite,
+            task_id=task_id,
+            init_state_id=init_state_id,
+        )
+    from ember.writer.inference import validate_writer_episode_evidence
+
+    return validate_writer_episode_evidence(
+        adapter,
+        row,
+        suite=suite,
+        task_id=task_id,
+        init_state_id=init_state_id,
+    )
+
+
+def writer_episode_schema(adapter: Mapping[str, Any]) -> str:
+    if adapter.get("kind") == EXPERT_MANIFOLD_WRITER_KIND:
+        from ember.expert_manifold.inference import EXPERT_MANIFOLD_EPISODE_SCHEMA
+
+        return EXPERT_MANIFOLD_EPISODE_SCHEMA
+    from ember.writer.inference import WRITER_EPISODE_EVIDENCE
+
+    return WRITER_EPISODE_EVIDENCE
+
+
 def load_evaluation_adapter(
     policy: Any,
     contract: Mapping[str, Any],
@@ -246,6 +371,11 @@ def load_evaluation_adapter(
         from ember.expert_manifold.evaluation import FrozenTaskExpertAdapter
 
         return FrozenTaskExpertAdapter(**common)
+    if adapter.get("kind") == EXPERT_MANIFOLD_WRITER_KIND and writer_generation:
+        from ember.expert_manifold.live_adapter import FrozenExpertManifoldTaskAdapter
+
+        common["tokenizer_path"] = Path(contract["tokenizer"]["path"])
+        return FrozenExpertManifoldTaskAdapter(**common)
     from ember.writer.evaluation_runtime import FrozenCachedWriterTaskAdapter
     from ember.writer.live_adapter import FrozenWriterTaskAdapter
 
@@ -298,9 +428,7 @@ def validate_episode_adapter_fields(
                 init_state_id=init_state_id,
             )
         )
-    from ember.writer.inference import validate_writer_episode_evidence
-
-    return row.get("policy_adapter_sha256") is None and validate_writer_episode_evidence(
+    return row.get("policy_adapter_sha256") is None and validate_writer_episode(
         adapter,
         row.get("writer"),
         suite=suite,

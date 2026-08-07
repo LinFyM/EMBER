@@ -13,9 +13,14 @@ from typing import Any, Mapping, Sequence
 import torch
 from safetensors.torch import load_file, save_file
 
+from ember.eval_adapters import (
+    EXPERT_MANIFOLD_WRITER_KIND,
+    WRITER_ADAPTER_KINDS,
+    validate_writer_episode,
+    writer_episode_schema,
+)
 from ember.lora import LoRAContract, validate_lora_state
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
-from ember.writer.inference import WRITER_EPISODE_EVIDENCE
 from ember.writer.model import WriterModelError
 
 
@@ -52,7 +57,7 @@ class WriterCacheRequest:
 
 
 def is_writer_adapter(adapter: Mapping[str, Any] | None) -> bool:
-    return adapter is not None and adapter.get("kind") in {"as_writer", "rl_writer"}
+    return adapter is not None and adapter.get("kind") in WRITER_ADAPTER_KINDS
 
 
 def _writer_cache_layout(
@@ -129,12 +134,17 @@ def build_writer_lora_cache_descriptor(
         or min(lora_parameter_count, lora_tensor_count) <= 0
     ):
         raise WriterModelError("Writer cache generation topology is invalid")
+    adapter = contract["adapter"]
     recipe = {
         "generators_per_gpu": generators_per_gpu,
         "generator_worker_count": worker_count,
         "generation_batch_size": generation_batch_size,
-        "cache_key_algorithm": WRITER_LORA_VIDEO_KEY_ALGORITHM,
-        "episode_evidence_schema": WRITER_EPISODE_EVIDENCE,
+        "cache_key_algorithm": (
+            "one_entry_per_episode_one_shot_video_v1"
+            if adapter.get("kind") == EXPERT_MANIFOLD_WRITER_KIND
+            else WRITER_LORA_VIDEO_KEY_ALGORITHM
+        ),
+        "episode_evidence_schema": writer_episode_schema(adapter),
         "request_order": WRITER_LORA_VIDEO_REQUEST_ORDER,
         "assignment": WRITER_LORA_ASSIGNMENT,
         "precision": "bfloat16",
@@ -245,12 +255,10 @@ def write_writer_cache_entry(
     generation: Mapping[str, Any],
     lora_contract: LoRAContract,
 ) -> dict[str, Any]:
-    from ember.writer.inference import validate_writer_episode_evidence
-
     descriptor = _descriptor(contract)
     _validate_lora_contract(descriptor, lora_contract)
     validate_lora_state(state, lora_contract)
-    if not validate_writer_episode_evidence(
+    if not validate_writer_episode(
         contract["adapter"], evidence,
         suite=request.suite, task_id=request.task_id, init_state_id=request.init_state_id,
     ):

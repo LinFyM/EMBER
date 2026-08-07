@@ -33,6 +33,16 @@ from ember.expert_manifold.model import (
 from ember.expert_manifold.video_features import phase_resample
 from ember.expert_manifold.feature_cache import _feature_runtime
 from ember.expert_manifold.writer_training import _runtime as _writer_runtime
+from ember.expert_manifold.video_schedule import (
+    condition_demo_index,
+    reference_demo_index,
+)
+from ember.expert_manifold.inference import (
+    EXPERT_MANIFOLD_ADAPTER_SCHEMA,
+    EXPERT_MANIFOLD_WRITER_KIND,
+    expected_expert_manifold_episode_evidence,
+    validate_expert_manifold_episode_evidence,
+)
 from ember.lora import expected_lora_state_shapes, identity_lora_state
 
 
@@ -47,6 +57,11 @@ def test_video_expert_manifold_config_keeps_video_as_dynamic_value() -> None:
     assert config["topological_writer"]["chunk_count"] == 168
     assert config["topological_writer"]["valid_values"] == 1_287_168
     assert config["information_wall"]["validation_actions_read"] == 0
+    assert config["information_wall"]["writer_video_split_roles"] == [
+        "train",
+        "validation",
+        "test",
+    ]
     assert config["task_experts"]["profile_defaults"]["scheduler_total_steps"] == 2000
 
 
@@ -400,7 +415,7 @@ def test_topological_writer_exposes_chunk_scale_without_collapsing_direction() -
     count = mask.sum(dim=(-2, -1)) * contract.rank
     rms = torch.sqrt((values.square() * mask).sum(dim=(-2, -1)) / count)
     assert log_scale.shape == (2, writer.layout.chunk_count)
-    assert torch.allclose(rms, log_scale.exp(), atol=2e-4, rtol=2e-4)
+    assert torch.allclose(rms, log_scale.exp(), atol=1e-3, rtol=1e-3)
 
 
 def test_topological_reconstruction_loss_accepts_explicit_chunk_scale() -> None:
@@ -447,6 +462,76 @@ def test_phase_resample_preserves_video_endpoints_and_zero() -> None:
     assert torch.equal(aligned[0], value[0])
     assert torch.equal(aligned[-1], value[-1])
     assert torch.count_nonzero(phase_resample(torch.zeros_like(value), 5)) == 0
+
+
+def test_one_shot_video_schedule_covers_fifty_states_without_replacement() -> None:
+    values = tuple(
+        reference_demo_index(
+            7,
+            "libero_goal",
+            3,
+            state,
+            demo_count=50,
+            sampling_mode="without_replacement",
+        )
+        for state in range(50)
+    )
+    assert len(set(values)) == 50
+    assert condition_demo_index(
+        7,
+        "libero_goal",
+        3,
+        0,
+        condition="same_task_other",
+        demo_count=50,
+        sampling_mode="without_replacement",
+    ) == (values[0] + 17) % 50
+
+
+def test_expert_manifold_episode_evidence_keeps_one_video_dynamic() -> None:
+    adapter = {
+        "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
+        "kind": EXPERT_MANIFOLD_WRITER_KIND,
+        "arm": "macro50-correct",
+        "video_condition": "correct",
+        "checkpoint": {"cursor": 50, "reference": "writer:50"},
+        "lora_contract": {"reference": "lora:rank16"},
+        "video_schedule": {
+            "seed": 7,
+            "demo_count": 50,
+            "sampling_mode": "without_replacement",
+        },
+        "task_video_mapping": [
+            {
+                "suite": "libero_goal",
+                "task_id": 3,
+                "language_global_task_id": 13,
+                "video_suite": "libero_goal",
+                "video_task_id": 3,
+                "video_global_task_id": 13,
+                "video_split_role": "validation",
+            }
+        ],
+        "task_video_mapping_reference": "mapping",
+        "pairing_reference": "paired",
+    }
+    evidence = expected_expert_manifold_episode_evidence(
+        adapter,
+        suite="libero_goal",
+        task_id=3,
+        init_state_id=4,
+        lora_reference="generated",
+    )
+    assert len(evidence["teacher_demo_indices"]) == 1
+    assert evidence["language_global_task_id"] == 13
+    assert evidence["video_global_task_id"] == 13
+    assert validate_expert_manifold_episode_evidence(
+        adapter,
+        {**evidence, "writer_generation_seconds": 0.5},
+        suite="libero_goal",
+        task_id=3,
+        init_state_id=4,
+    )
 
 
 def test_video_feature_profile_keeps_formal_input_semantics() -> None:

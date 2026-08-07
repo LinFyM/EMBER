@@ -256,6 +256,11 @@ task-expert正式训练运行期间，后续实现放在独立worktree，避免�
   DDP平均严格等于24-task等权mean。模型、optimizer、scheduler、每rank RNG和macro cursor原子
   checkpoint；模型与cache完成local CUDA构造后才建立NCCL，BCI仍显式要求
   `NCCL_P2P_DISABLE=1`。
+- canonical evaluator新增独立Expert-Manifold adapter：每个rollout按50-state无放回schedule只取一条
+  action-hidden video，correct/same/wrong/shuffled/reversed共享state、policy RNG、video ordinal与
+  frame-order seed；online frozen encoder和topological Writer先生成episode LoRA cache，随后释放
+  Writer并复用同一source policy做cost-balanced rollout。validation/test只开放video，不开放expert
+  或action。
 
 以上只完成CPU合同与代码，不构成A40 profile或性能证据。feature extraction与meta训练formal仍由
 config阻塞；必须先完成live profile、fresh0→1、exact-resume1→3和原始六rank规模验证。K4旧

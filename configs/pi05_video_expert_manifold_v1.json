@@ -31,7 +31,9 @@
       "train"
     ],
     "writer_video_split_roles": [
-      "train"
+      "train",
+      "validation",
+      "test"
     ],
     "writer_forbidden_inputs": [
       "action",

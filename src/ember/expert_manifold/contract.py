@@ -55,6 +55,8 @@ def load_expert_manifold_config(path: Path) -> dict[str, Any]:
         != "video_conditioned_expert_manifold_topological_writer"
         or method.get("language_only_lora_path") is not False
         or information.get("expert_action_split_roles") != ["train"]
+        or information.get("writer_video_split_roles")
+        != ["train", "validation", "test"]
         or int(information.get("validation_experts_trained", -1)) != 0
         or int(information.get("test_experts_trained", -1)) != 0
         or int(information.get("validation_actions_read", -1)) != 0

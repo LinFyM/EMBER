@@ -164,6 +164,10 @@ def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
         task_expert_config=None,
         task_expert_bank_root=None,
         task_expert_step=None,
+        expert_manifold_config=None,
+        expert_manifold_checkpoint=None,
+        expert_manifold_video_data_root=None,
+        expert_manifold_video_condition=None,
     )
     assert module._adapter_requests(empty) == (None, False)
     partial = argparse.Namespace(**vars(empty))
@@ -206,6 +210,13 @@ def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
     expert.source_sft_checkpoint = Path("source-sft-step")
     with pytest.raises(Pi05EvaluationError, match="mutually exclusive"):
         module._adapter_requests(expert)
+
+    manifold = argparse.Namespace(**vars(empty))
+    manifold.expert_manifold_config = Path("expert-manifold.json")
+    manifold.expert_manifold_checkpoint = Path("macro50")
+    manifold.expert_manifold_video_data_root = Path("videos")
+    manifold.expert_manifold_video_condition = "correct"
+    assert module._adapter_requests(manifold) == ("expert_manifold_writer", False)
 
 
 def test_completed_queue_without_launcher_evidence_fails_closed(

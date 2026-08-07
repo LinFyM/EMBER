@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
 from ember.pi05_assets import Pi05EvaluationError
+from ember.eval_adapters import WRITER_ADAPTER_KINDS
 
 
 def _storage_root() -> Path:
@@ -219,7 +220,7 @@ def _stage_writer_generators(
     adapter = contract.get("adapter")
     if not (
         isinstance(adapter, Mapping)
-        and adapter.get("kind") in {"as_writer", "rl_writer"}
+        and adapter.get("kind") in WRITER_ADAPTER_KINDS
     ):
         return ()
     from ember.writer.evaluation_cache import (

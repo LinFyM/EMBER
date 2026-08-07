@@ -10,6 +10,11 @@ from typing import Any, Callable, Mapping, Sequence
 
 import torch
 
+from ember.eval_adapters import (
+    EXPERT_MANIFOLD_WRITER_KIND,
+    expected_writer_episode,
+    validate_writer_episode,
+)
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer.as_contract import REPO_ROOT, load_writer_config
 from ember.writer.evaluation_cache import (
@@ -23,11 +28,7 @@ from ember.writer.evaluation_cache import (
     writer_cache_manifest_path,
 )
 from ember.writer.functional import prepare_frozen_writer_policy
-from ember.writer.inference import (
-    expected_writer_episode_evidence,
-    inspect_as_writer_evaluation,
-    validate_writer_episode_evidence,
-)
+from ember.writer.inference import inspect_as_writer_evaluation
 from ember.writer.live_adapter import FrozenWriterTaskAdapter, PreparedWriterLoRA
 from ember.writer.lora_rollout import WriterLoRARolloutAdapter
 from ember.writer.model import WriterModelError
@@ -94,6 +95,14 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
             observed = inspect_rl_writer_evaluation(**common)
             rl_config = load_rl_writer_config(Path(observed["config"]["path"]))
             config = load_writer_config(authority_path(rl_config, "as_writer_config"))
+        elif kind == EXPERT_MANIFOLD_WRITER_KIND:
+            from ember.expert_manifold.contract import load_expert_manifold_config
+            from ember.expert_manifold.inference import (
+                inspect_expert_manifold_writer_evaluation,
+            )
+
+            observed = inspect_expert_manifold_writer_evaluation(**common)
+            config = load_expert_manifold_config(Path(observed["config"]["path"]))
         else:
             raise WriterModelError("cached rollout requires a canonical Writer adapter")
         if observed != dict(evaluation_adapter):
@@ -184,7 +193,7 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
                     _scaled_public_lora_b(cached[0], self.lora_b_scale),
                     cached[1],
                 )
-                if not validate_writer_episode_evidence(
+                if not validate_writer_episode(
                     self.evaluation_adapter,
                     cached[1],
                     suite=request.suite,
@@ -194,7 +203,7 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
                     raise WriterModelError("cached Writer source evidence changed")
                 self._state_cache[request.entry_id] = cached
             state, cached_evidence = cached
-            evidence = expected_writer_episode_evidence(
+            evidence = expected_writer_episode(
                 self.evaluation_adapter,
                 suite=suite,
                 task_id=task_id,
@@ -205,7 +214,7 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
             evidence["writer_generation_seconds"] = float(
                 cached_evidence["writer_generation_seconds"]
             )
-            if not validate_writer_episode_evidence(
+            if not validate_writer_episode(
                 self.evaluation_adapter,
                 evidence,
                 suite=suite,

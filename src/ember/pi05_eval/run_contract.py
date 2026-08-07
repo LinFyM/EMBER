@@ -12,7 +12,11 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from ember.eval_adapters import paired_writer_identity
+from ember.eval_adapters import (
+    EXPERT_MANIFOLD_WRITER_KIND,
+    WRITER_ADAPTER_KINDS,
+    paired_writer_identity,
+)
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval_contract import (
     RUNTIME_OMP_THREADS,
@@ -103,9 +107,19 @@ def _writer_lora_contract(
         path = authorities.repo_root / str(
             config["authorities"]["lora_contract"]["path"]
         )
-    else:
+    elif adapter["kind"] == "rl_writer":
         config = load_rl_writer_config(Path(adapter["config"]["path"]))
         path = authority_path(config, "lora_contract")
+    elif adapter["kind"] == EXPERT_MANIFOLD_WRITER_KIND:
+        from ember.expert_manifold.contract import (
+            authority_path as expert_authority_path,
+            load_expert_manifold_config,
+        )
+
+        config = load_expert_manifold_config(Path(adapter["config"]["path"]))
+        path = expert_authority_path(config, "lora_contract")
+    else:
+        raise Pi05EvaluationError("unknown Writer LoRA authority")
     result = load_pi05_lora_contract(path)
     expected_reference = (
         f"{path.relative_to(authorities.repo_root)}:"
@@ -127,7 +141,7 @@ def _attach_writer_cache(
     writer_generation_batch_size: int,
 ) -> None:
     contract["writer_lora_cache"] = None
-    if adapter is None or adapter.get("kind") not in {"as_writer", "rl_writer"}:
+    if adapter is None or adapter.get("kind") not in WRITER_ADAPTER_KINDS:
         return
     from ember.writer.evaluation_cache import build_writer_lora_cache_descriptor
 
@@ -178,10 +192,7 @@ def _validate_build_request(
         raise Pi05EvaluationError("screen/formal PI05 evaluation requires a clean worktree")
     if replicas_per_gpu not in RUNTIME_REPLICA_PROFILES or not tasks:
         raise Pi05EvaluationError("PI05 evaluation runtime profile or task panel is invalid")
-    writer_adapter = adapter is not None and adapter.get("kind") in {
-        "as_writer",
-        "rl_writer",
-    }
+    writer_adapter = adapter is not None and adapter.get("kind") in WRITER_ADAPTER_KINDS
     _validate_writer_execution_scale(
         writer_adapter=writer_adapter,
         b_scale=writer_lora_b_scale,

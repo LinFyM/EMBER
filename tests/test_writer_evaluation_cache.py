@@ -24,6 +24,11 @@ from ember.writer.inference import (
     expected_writer_episode_evidence,
 )
 from ember.writer.model import WriterModelError
+from ember.expert_manifold.inference import (
+    EXPERT_MANIFOLD_ADAPTER_SCHEMA,
+    EXPERT_MANIFOLD_EPISODE_SCHEMA,
+    EXPERT_MANIFOLD_WRITER_KIND,
+)
 
 
 def _lora_contract() -> SmolVLALoRAContract:
@@ -140,6 +145,28 @@ def test_k4_cache_retains_one_entry_per_episode(tmp_path: Path) -> None:
     assert len(writer_cache_requests(contract)) == 50
     assert len(writer_cache_episode_request_map(contract)) == 50
     assert len({request.entry_id for request in writer_cache_requests(contract)}) == 50
+
+
+def test_expert_manifold_cache_declares_one_shot_episode_evidence(tmp_path: Path) -> None:
+    contract = _contract(tmp_path / "cache")
+    contract["adapter"]["kind"] = EXPERT_MANIFOLD_WRITER_KIND
+    contract["adapter"]["schema_version"] = EXPERT_MANIFOLD_ADAPTER_SCHEMA
+    contract["adapter"]["video_schedule"]["videos_per_condition"] = 1
+    lora = _lora_contract()
+    descriptor = build_writer_lora_cache_descriptor(
+        contract,
+        root=tmp_path / "manifold-cache",
+        generators_per_gpu=1,
+        generation_batch_size=2,
+        lora_parameter_count=lora.parameter_count,
+        lora_tensor_count=lora.state_tensor_count,
+    )
+    assert descriptor["generation_recipe"]["episode_evidence_schema"] == (
+        EXPERT_MANIFOLD_EPISODE_SCHEMA
+    )
+    assert descriptor["generation_recipe"]["cache_key_algorithm"] == (
+        "one_entry_per_episode_one_shot_video_v1"
+    )
 
 
 def test_writer_cache_is_atomic_complete_and_loadable_without_hashes(tmp_path: Path) -> None:

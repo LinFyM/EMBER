@@ -11,7 +11,10 @@
 - canonical 168-chunk rank16 decoder与六rank task-complete DDP meta trainer已闭合；direct output不经
   窄factor head，direction/scale分离，zero video恒为identity。checkpoint保留Writer/optimizer/
   scheduler/每rank RNG和macro cursor，BCI deferred-NCCL及P2P-disable合同沿用。
-- 聚焦CPU回归53项通过，py_compile/CLI/diff检查通过。该实现尚无GPU或性能结论；feature cache与
+- one-shot evaluator为每个episode只选一条action-hidden video，50 states无放回覆盖50 demos；五臂
+  共享paired schedule，online生成LoRA cache后释放Writer并复用source policy rollout。held split只读
+  video，validation/test expert与action reads保持0。
+- 聚焦CPU回归60项通过，py_compile/CLI/diff检查通过。该实现尚无GPU或性能结论；feature cache与
   meta formal均保持blocked，下一步先完成expert bank及其统一step裁决。
 
 ## 2026-08-07 Video Expert-Manifold task-expert builder与profile seal

@@ -28,8 +28,10 @@ runner、split、路径或 GPU 权限。
   video reads均为0。artifact为`configs/pi05_grounded_video_expert_route_v1.json`。
 - [x] 建立fresh incompatible architecture/config/checkpoint family并退休language-route executable
   path；grounded route/model/config/checkpoint聚焦`30 passed`、py_compile与real route load通过。
-- [ ] clean/push后live比较`gpu01/gpu02`，只用最多6张空闲A40做longest105、K4/B20/B2、
-  fresh0→1和same-root exact-resume1→3；profile权重弃用。
+- [x] clean`0be3627`、live比较`gpu01/gpu02`后，以`gpu01:0,1,2|4,5,7`六张空闲A40完成
+  longest105、K4/B20/B2 fresh0→1和same-root exact-resume1→3。三步约
+  `42.63/41.72/41.20s`，0 clip/OOM/nonfinite，peak reserved`45,237,665,792` bytes；step2起
+  16 blocks全可达且train24真实route与authority完全一致。profile权重弃用。
 - [ ] profile通过后identity fresh0→200、每25 checkpoint；严格评50/100/150/200 correct400，
   single winner再做五臂和内部route/path/gradient分析。
 - [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高；未过门时只根据最早失败

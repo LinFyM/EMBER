@@ -12,6 +12,10 @@
   `2/6/7/3/1/1/2/2`，无空置，随机K4与batch合同均为`1.0`。
 - 该改变加强了视频高层语义对parameter owner的因果作用：同一K4 address唯一选择一套完整
   Writer map，20-group时序trace仍生成全部LoRA value；AS与未来RL共享同一部署图。
+- 六卡A40 profile确认该图在真实longest105、K4/B20/B2下可训练并exact-resume：三步均finite、
+  0 clip/OOM，step2起8 experts的Reader和axis共16 blocks全部有实际更新；训练期每个expert的
+  非零task-gradient集合与input-only route artifact逐项一致。peak reserved`45.24GB`，没有通过
+  减batch或关闭科学路径适配46GB显卡。
 
 ## 2026-08-07 Sparse Semantic-Expert正式负裁决与视频寻址根因
 

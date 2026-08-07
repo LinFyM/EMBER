@@ -12,8 +12,12 @@
   one-hot完整expert route。
 - 最终artifact `configs/pi05_grounded_video_expert_route_v1.json`通过：route stability=`1.0`、
   batch4/singleton=`24/24`、8-expert usage=`2/6/7/3/1/1/2/2`。fresh config/schema/checkpoint与唯一
-  canonical runtime已同步，聚焦`30 passed`及py_compile通过；下一步clean seal后做A40
-  fresh/exact-resume profile。
+  canonical runtime已同步，聚焦`30 passed`及py_compile通过。
+- clean`0be3627`随后在`gpu01:0,1,2|4,5,7`完成fresh0→1和same-root exact-resume1→3 profile。
+  三步loss=`.150377/.152826/.148513`、step time=`42.63/41.72/41.20s`，0 clip/OOM/nonfinite，
+  peak allocated/reserved=`36,709,136,896/45,237,665,792` bytes；step1八Reader可达、step2起
+  16 Reader/axis blocks全可达，train24真实route逐expert与artifact一致。累计1,440 queries/288
+  videos，source trainable=0；profile权重弃用，formal config已seal。
 
 ## 2026-08-07 Sparse正式裁决并开启Grounded-Video Route
 

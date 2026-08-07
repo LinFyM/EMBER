@@ -30,9 +30,13 @@
 - 最终authority基于同一input-only evidence收敛为top1 one-hot：随机K4 route稳定率`1.0`、
   batch4/singleton=`24/24` exact、8-expert usage=`2/6/7/3/1/1/2/2`。artifact为
   `configs/pi05_grounded_video_expert_route_v1.json`；fresh config/schema/checkpoint、唯一canonical
-  runtime与聚焦`30 passed`已闭合。下一步clean/push后只做A40 fresh0→1、same-root
-  exact-resume1→3 profile；通过才允许identity-fresh formal0→200。旧sparse checkpoint与language
-  route不得resume或warm-start。
+  runtime与聚焦`30 passed`已闭合。
+- clean`0be3627`在`gpu01:0,1,2|4,5,7`完成fresh0→1与same-root exact-resume1→3 profile：
+  loss=`.150377/.152826/.148513`、step time=`42.63/41.72/41.20s`，0 clip/OOM/nonfinite，peak
+  allocated/reserved=`36,709,136,896/45,237,665,792` bytes；step1八Reader可达，step2起16 blocks
+  全可达，train24真实route逐expert与authority一致。累计1,440 queries/288 videos、source
+  trainable=0，六卡已释放；profile权重弃用。formal config已seal，下一步只从functional identity
+  新root启动0→200。旧sparse checkpoint与language route不得resume或warm-start。
 
 ## 0.1 已完成并负裁决：Sparse Semantic-Expert route
 

@@ -18,8 +18,10 @@
   primary收敛为top1 one-hot，未读取held input/action/outcome或rollout调route。最终随机K4
   stability=`1.0`、batch4/singleton=`24/24`、usage=`2/6/7/3/1/1/2/2`。
 - artifact、canonical router与fresh incompatible schema/config已闭合，聚焦`30 passed`。下一步
-  clean/push后live比较`gpu01/gpu02`，只用最多6张空闲A40做fresh0→1/exact-resume1→3 profile。
-  通过才允许identity formal0→200与严格50/100/150/200 correct400、winner五臂/internal。
+  clean`0be3627`已在`gpu01:0,1,2|4,5,7`通过fresh0→1/exact-resume1→3 profile：三步约
+  `42.63/41.72/41.20s`、0 clip/OOM，peak reserved45.24GB，step2起16 blocks全可达且route
+  与authority一致。profile权重弃用，formal现已seal；下一步另起identity-fresh0→200，再严格
+  评50/100/150/200 correct400、winner五臂/internal。
 - 保持K4、20-group trace、八完整experts、top1 one-hot owner、single LoRA、B20/full24/rank16/LR/objective不变；不加
   learned/language residual router、task-ID fallback、SFT-only auxiliary、reward、scale、挑video、
   checkpoint融合或历史warm-start。

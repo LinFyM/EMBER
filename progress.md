@@ -1,5 +1,17 @@
 # EMBER Progress Ledger
 
+## 2026-08-08 Expert-Manifold持续执行恢复
+
+- owner在完成当前状况与方法讨论后明确恢复持续自主执行，并设定长期Goal：同一single checkpoint
+  strict paired correct严格超过`150/400`，同时要求correct真实依赖有序teacher video、
+  same-task跨video鲁棒、较高task breadth和低checkpoint漂移；只有实质性阻塞才回报。
+- 唯一工作checkout已从滞后的local `main@15014eb`切换到clean、已推送且与upstream一致的
+  `codex/bci-continuation@3592b41`；没有创建额外branch/worktree，也没有删除迁移后的runtime、
+  cache或历史artifact。
+- 当前证据顺序不变：先做full24 expert geometry与development-train expert closed-loop统一比较
+  step250/500/1000；只在step1000仍有明确closed-loop上升证据时，从frozen`81101fe`沿原root
+  统一resume2000；随后再做feature cache与meta-Writer的A40 profile/formal和strict五臂。
+
 ## 2026-08-08 Expert-Manifold实现整合与task-expert bank封存
 
 - clean`81101fe`的6个independent A40 workers已自然完成24/24 task experts统一step1000；root=

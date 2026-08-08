@@ -28,9 +28,11 @@
   三checkpoint正式裁决，不能用它跳过full-bank分析。
 - 当前没有EMBER进程，GPU均已释放；没有新的strict closed-loop分数。已验证single-checkpoint
   最好仍是v6-fast`143/400`，长期严格门仍是`>150/400`，尚未完成。
-- owner要求本session只整理并交接；新session必须先与owner讨论，不得自动启动训练、rollout或
-  GPU分析。讨论后的合理证据顺序是：full24 expert geometry与development-train closed-loop评
-  250/500/1000→若1000仍有明确上升证据则统一resume2000→否则/随后做feature profile/cache、
+- owner已在本session完成讨论后明确恢复持续自主执行，并设定长期Goal：同一single checkpoint的
+  strict paired correct必须严格超过`150/400`，同时保持真实视频时序因果性、same-task鲁棒性、
+  task breadth和低checkpoint漂移；只有实质性阻塞才回报owner。当前证据顺序固定为：先做full24
+  expert geometry与development-train closed-loop统一评250/500/1000；只有step1000仍有明确
+  closed-loop上升证据时才从frozen`81101fe`沿原root统一resume2000；随后做feature profile/cache、
   meta-Writer A40 profile/formal和strict validation五臂。不得按单task挑不同expert step。
 - 旧K4 executable只作为临时兼容路径保留，owner是当前Expert-Manifold迁移；按设计第12节，只有
   新meta-Writer通过A40 profile后才删除，避免在其替代路径尚未实证前制造不可运行仓库。

@@ -30,8 +30,9 @@
   task drift和expert→generated LoRA→action机制分析；根据最早失效接口迭代。
 - [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高absolute、breadth、
   稳定积累与视频特异性。
-- [ ] 当前暂停执行：新session先与owner讨论上述证据和顺序；在owner给出新指示前，不启动训练、
-  rollout、GPU profile或GPU内部分析。
+- [x] owner已完成讨论并恢复持续自主执行；长期Goal为同一single checkpoint strict correct
+  严格超过`150/400`，同时保持真实视频时序因果性、same-task鲁棒性、breadth与低checkpoint
+  漂移。只有实质性阻塞才回报owner，GPU工作仍逐次执行live空闲卡与BCI多卡合同。
 
 ## 已完成并负裁决：K4 Phase-Aligned v6（2026-08-07）
 

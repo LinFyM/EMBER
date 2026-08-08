@@ -4,7 +4,7 @@
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
-## 0.0 最新执行覆盖：仓库封存并等待新session讨论
+## 0.0 最新执行覆盖：Expert-Manifold证据优先持续推进
 
 当前唯一authority为`docs/action_forecast_writer_video_expert_manifold_design.md`。保持one-shot，
 视频是唯一dynamic value；Writer部署输入仍只有exact task language和恰好一条action-hidden video。
@@ -21,10 +21,13 @@ checkpoint exact-resume和one-shot strict five-arm evaluator均已闭合。尚�
 feature cache、meta训练或任何新strict rollout，因此不能报告新模型成绩；历史single-checkpoint最好
 仍为v6-fast`143/400`，严格目标`>150/400`未完成。
 
-当前没有EMBER进程。owner要求新session先讨论再决定方向，所以本brief不授权自动launch。讨论后
-按以下顺序恢复：full24 expert geometry与development-train closed-loop统一评250/500/1000；只在
-step1000仍有明确上升证据时统一resume2000；随后profile/cache/meta训练/strict五臂。旧K4 executable
-只保留到新meta-Writer A40 profile通过，届时按design removal trigger原位退役。
+owner已在本session完成讨论后明确恢复持续自主执行，并授权围绕长期Goal自行设计、实现、训练、
+评测和迭代；只有实质性阻塞才回报。执行顺序为：full24 expert geometry与development-train
+closed-loop统一评250/500/1000；只在step1000仍有明确closed-loop上升证据时，从frozen`81101fe`
+沿原root统一resume2000；随后profile/cache/meta训练/strict五臂。旧K4 executable只保留到新
+meta-Writer A40 profile通过，届时按design removal trigger原位退役。当前长期门是同一single
+checkpoint strict correct严格超过`150/400`，同时保持视频时序因果性、same-task鲁棒性、breadth
+与低checkpoint漂移。
 
 未来任何GPU工作仍须live比较`gpu01/gpu02`，只用实时空闲卡、跨节点最多6张；不干扰他人进程。
 BCI多卡launcher显式`NCCL_P2P_DISABLE=1`，不运行SHA-256/MD5内容校验或大量防御扫描。

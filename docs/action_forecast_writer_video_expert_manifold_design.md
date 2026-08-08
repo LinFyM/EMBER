@@ -526,3 +526,15 @@ live adapter现在只由Expert-Manifold拥有。统一evaluator同时保留静�
 接受旧AS/RL动态adapter或rollout全局B-scale。CPU-only全仓`186/186`与compileall/diff通过，architecture
 guard无hard violation或parallel family。该收口不改变模型数学、sealed config、训练target或任何科研结果；
 formal仍必须从identity fresh开始。
+
+## 24. Identity-fresh formal分段边界
+
+首个formal轨迹从zero-output identity fresh启动，统一step2000 expert target、train24×50 frozen video
+cache、one-shot sampler、world6 task ownership、single-flat Ring/Simple mean、AdamW与800-macro scheduler
+全部保持sealed。首段只用`--stop-after-macro 50`形成第一个正式checkpoint，不压缩scheduler、不读取
+held actions、不加载任何profile或历史Writer权重；每macro仍是24-task等权和24条独立teacher videos。
+
+macro50必须先通过formal completion/finite/NUMA/NCCL/checkpoint合同，再做validation strict paired
+correct400和expert→generated LoRA→fixed action传递分析。reconstruction loss、task-expert proximity和
+LoRA几何只能定位接口，不能代替closed-loop结果决定续到100；后续exact resume仍须保持同一root、
+commit科学合同、3+3 NUMA topology、sampler/RNG和scheduler cursor。

@@ -1,5 +1,14 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Expert-Manifold formal0→50预注册
+
+- clean pushed`fcaf733`完成canonical退役后，预注册唯一identity-fresh formal root、frozen branch/
+  worktree、exact world6命令和macro50门；不加载profile权重，不改变sealed模型、target或optimizer。
+- 01:47 CST live比较选择`gpu01:0,1,2|4,5,7`六张空闲A40，3+3 NUMA；GPU3他人VLLM和gpu02:6/7
+  他人进程均不触碰。启动前仍须再次复核。
+- `/data1` quota=`556,052,656/1,073,741,824 KiB`，首段预计新增低于300MiB。训练只先到macro50，
+  随后做strict correct400和内部传递分析，不以reconstruction loss代替闭环裁决。
+
 ## 2026-08-09 Expert-Manifold成为唯一canonical Writer
 
 - 在formal启动前完成design第12节的原位退役：旧K4/AS/RL executable、入口、配置和专属测试已删除，

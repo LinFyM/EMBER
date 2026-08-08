@@ -140,6 +140,11 @@
 - 旧K4/AS/RL executable已完成原位退役，通用data/topology/functional/evaluation owner保留并收敛到
   Expert-Manifold唯一canonical Writer。CPU-only全仓`186/186`、compileall与diff check通过；architecture
   guard无hard violation或parallel family。下一步从clean pushed identity fresh启动分段formal。
+- identity-fresh formal首段现已预注册为0→50：科学/退役seal=`fcaf733`，唯一fresh root为
+  `runs/outputs/pi05_expert_manifold_writer_formal_fresh0_800_r6_step2000_fcaf733_20260809`，scheduler仍按
+  800宏步、warmup25运行且绝不加载profile checkpoint。01:47 CST live比较后预选
+  `gpu01:0,1,2|4,5,7`六张空闲A40，保持3+3 NUMA并避开物理3他人VLLM；精确frozen worktree、命令、
+  quota与macro50验收门取`task_plan.md`顶部。实际启动前仍须再次live复核。
 
 ## 0.0 已完成并负裁决：K4 Phase-Aligned Language-Axial Semantic-Procedure Writer
 

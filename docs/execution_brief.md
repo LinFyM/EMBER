@@ -136,6 +136,12 @@ online smoke与旧K4/AS/RL原位退役均已完成；当前顺序为identity-fre
 checkpoint strict correct严格超过`150/400`，同时保持视频时序因果性、same-task鲁棒性、breadth
 与低checkpoint漂移。
 
+identity-fresh formal首段已预注册为0→50，科学/退役seal=`fcaf733`，fresh root为
+`runs/outputs/pi05_expert_manifold_writer_formal_fresh0_800_r6_step2000_fcaf733_20260809`；不传resume，
+scheduler仍为总长800/warmup25。01:47 CST live比较预选`gpu01:0,1,2|4,5,7`六张空闲A40并保持
+3+3 NUMA，物理3他人VLLM不触碰；`/data1` quota=`556,052,656/1,073,741,824 KiB`。实际launch必须
+来自clean pushed frozen branch并在启动前复核设备；exact command和macro50裁决门取`task_plan.md`顶部。
+
 未来任何GPU工作仍须live比较`gpu01/gpu02`，只用实时空闲卡、跨节点最多6张；不干扰他人进程。
 BCI多卡launcher显式`NCCL_P2P_DISABLE=1`，不运行SHA-256/MD5内容校验或大量防御扫描。
 

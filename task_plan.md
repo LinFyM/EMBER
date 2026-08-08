@@ -79,6 +79,35 @@
 > 配置已由Git保存但不再存在于当前工作树，禁止复制历史命令恢复并行Writer。当前训练入口只有
 > `scripts/train_expert_manifold_writer.py`，当前动态Writer评测参数只有`--expert-manifold-*`。
 
+### Expert-Manifold identity-fresh formal0→50 launch合同（2026-08-09）
+
+- 科学/退役seal为clean pushed`fcaf733`；实际run必须来自包含本段launch record、已push且有
+  upstream的frozen branch`codex/expert-manifold-formal-20260809`，固定worktree=
+  `/data1/user/ymdai/worktrees/EMBER-expert-manifold-formal-20260809`。profile macro1/3和所有历史
+  Writer权重永久禁止加载；本段不传`--resume`，从zero-output identity fresh开始。
+- 01:47 CST同时live检查两节点：选择`gpu01:0,1,2|4,5,7`六张14MiB、0%空闲A40，保持3+3
+  NUMA；物理3上他人41.6GiB VLLM不触碰。`gpu02:0--5`虽空闲但为4+2 NUMA，6/7有他人进程，
+  本段不用。gpu01 available host memory约480GiB；每次真正启动前仍复核六张目标卡，任一卡变忙
+  就不启动。
+- `/data1`用户quota现场为`556,052,656/1,073,741,824 KiB`。macro3完整checkpoint约184MiB；
+  本段只新增macro50一个checkpoint、metrics/log/contract，保守低于300MiB；即使同root以后保留
+  6个正式checkpoint也保守低于1.5GiB，远低于剩余额度。fresh output/log/tmux固定为
+  `runs/outputs/pi05_expert_manifold_writer_formal_fresh0_800_r6_step2000_fcaf733_20260809`、
+  `runs/logs/pi05_expert_manifold_writer_formal_fresh0_800_r6_step2000_fcaf733_20260809.log`和
+  `ember_expert_manifold_formal_fcaf733`；启动登记时root与tmux必须都不存在。
+- exact training command（从上述frozen worktree执行）：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,7 NCCL_P2P_DISABLE=1 NCCL_ALGO=Ring NCCL_PROTO=Simple OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_expert_manifold_writer.py --config configs/pi05_video_expert_manifold_v1.json --mode formal --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-step 2000 --feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_formal_fresh0_800_r6_step2000_fcaf733_20260809 --stop-after-macro 50
+```
+
+- 规模固定为world6、每rank 4 tasks、microbatch1；每macro为24-task等权、24条独立one-shot视频，
+  本段共1,200个video→完整LoRA reconstruction pairs。scheduler总长仍为800，warmup25，不因分段
+  压缩。验收要求50/50 finite metrics、macro50完整Writer/trainer/六rank RNG checkpoint、0 OOM/
+  nonfinite、run contract中的commit/upstream、physical/local/NUMA、deferred NCCL、P2P-disable、
+  Ring/Simple和single-flat mean全部吻合。随后先做macro50 strict paired correct400与内部传递分析；
+  不因reconstruction loss好看自动resume到100。
+
 ### Expert-Manifold meta-Writer flat-reduction reprofile launch合同（2026-08-09）
 
 - implementation/config seal为clean pushed`c33a16b`：不再使用DDP model wrapper；每rank保持

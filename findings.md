@@ -1,5 +1,15 @@
 # EMBER Findings
 
+## 2026-08-09 Formal首段资源与证据顺序
+
+- flat-reduction profile的稳态macro wall约`.13--.19s`，完整checkpoint约184MiB、峰值reserved低于
+  `.9GB`；因此meta训练本体不是当前成本瓶颈，macro50后strict closed-loop才是主要证据成本。
+- 首段保持formal scheduler总长800和warmup25，仅用`--stop-after-macro 50`分段；不会把50步重新解释
+  为完整schedule，也不会加载profile权重。每macro仍覆盖24 tasks×1独立视频，0→50共1,200个
+  video-conditioned full-LoRA reconstruction pairs。
+- 选择macro50先评correct400，是为了尽早测量surrogate→policy闭环接口；reconstruction loss、expert
+  proximity或健康LoRA几何都只作机制证据，不能触发续训或宣告性能。
+
 ## 2026-08-09 旧K4/AS/RL executable原位退役
 
 - design第12节触发后的canonical cleanup已完成：删除旧K4/AS/RL model、training、checkpoint、

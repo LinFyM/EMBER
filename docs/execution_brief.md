@@ -6,6 +6,27 @@
 
 ## 0.0 最新执行覆盖：Expert-Manifold证据优先持续推进
 
+**最新操作覆盖（2026-08-09，覆盖本节全部后续旧“当前/下一步”）**：Causal Barycentric
+correct400已经完成为`63/400`、breadth=`5/8`，不是待启动状态。唯一有效root=
+`runs/outputs/pi05_expert_manifold_causal_barycentric_correct400_noreplacement_seed7_0397be6_20260809`；
+72/72 jobs、400 rows/unique LoRAs、18 workers attempt1/exit0，0 retry/error/OOM/nonfinite/forbidden
+reads，六卡自然释放。strict same-video source/addressless对照gained/lost=`46/31`、`p=.1100`，不达
+absolute门；不运行same/wrong/shuffled/reversed/no-video。
+
+正式审计artifact为同root的`strict_panel_and_paired_audit_v1.json`与
+`generated_lora_geometry_and_coefficients_full400_v1.json`。当前LoRA能量、stable rank、top singular
+energy、active coordinates和q/v/action列几何均已进入expert-like区间；失败不是工程故障或低能量。
+400个坐标平均混合约13个experts，raw factor重构又在`B(c)A(c)`中产生`k!=j`交叉项，导致健康factor
+并不等价于合法的expert effective update。下一操作严格限定为CPU-only：度量共享joint rank-16
+effective-BA basis对24 experts的captured energy/cosine，以及任意coefficient mixture的policy-update
+fidelity。当前不启动GPU、不改正式run状态。
+
+CPU门若成立，才在唯一canonical runtime中原位把compiler替换为Policy-Effective Barycentric；视频
+representation、ridge coefficients、one-shot输入、expert2000、feature cache、public 38-target rank-16
+topology和zero/no-video identity全部不变。先完成设计authority、实现、CPU合同与clean commit/push；
+之后才重新做live GPU/quota preflight和单卡online smoke。contrastive/rectified coefficient reader、
+few-shot、RL、恢复v6或新增order loss均不是本轮变量。
+
 **最新操作覆盖（2026-08-09，覆盖本节后续旧“当前/下一步”）**：address-binding macro50的
 strict correct400已经完成为`75/400`，breadth=`4/8`，不是待启动状态。正式root=
 `runs/outputs/pi05_expert_manifold_writer_addressbind_correct400_noreplacement_seed7_macro0050_925e7b1_20260809`；

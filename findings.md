@@ -1,5 +1,30 @@
 # EMBER Findings
 
+## 2026-08-09 Causal Barycentric strict负裁决与policy-effective compiler根因
+
+- 正式correct400=`63/400`、breadth=`5/8`，逐task为Spatial`0/6`、Object`38/0`、Goal`0/17`、
+  Long`1/1`。400 states/videos/LoRAs、72 jobs、18 workers和信息墙全部有效；相对same-video
+  source/addressless的gained/lost=`46/31`、exact `p=.1100`，相对address-binding=`27/39`、
+  `p=.1753`。这是有效科研non-pass，不是运行故障；不做其余五臂。
+- 400套LoRA的norm/stable-rank/top-energy=`3.958/1.155/.894`、16/16 coordinates active、top4
+  energy=`.271`，q/v/action B-column cosine=`.712/.744/.351`，已接近task experts的健康形态。
+  因此“继续解决能量”不是当前方向。每条query却平均有效使用约13个experts，same-task/cross-task/
+  task-mean cosine=`.988/.685/.697`，远未恢复expert bank跨task中位约`.100`的分离。
+- 最早的数学错误是把policy-effective manifold误实现在factor manifold：分别加权A和B得到
+  `B(c)A(c)=sum_{k,j}c_kc_jB_kA_j`，除期望的同expert项外还有大量`k!=j`交叉项；chunk-wise方向/
+  log-scale归一化又使这一关系更非线性。因而one-hot exact、健康谱和语义合理coefficients都不能保证
+  affine组合对应任何expert策略。
+- task expert bank本身已用development-train random-reset闭环证明step2000=`658/1200`且24/24 breadth；
+  它解决“监督目标是否是policy-effective更新”，不解决held task是否可由train experts组合、对象/
+  场景变化是否可迁移，也不解决视频时序因果。Object-1与最邻近train Object-8语义对应且得`38/50`，
+  Object-3与最邻近train Object-5同样语义对应却得`0/50`，正说明语义近邻不是闭环可组合性的充分条件。
+- coefficient-reader反事实把两个接口拆开：contrastive reader能把correct/reversed/shuffled目标方向变为
+  约`.394/-.392/-.008`，但held update norm ratio仅`.106`；rectified prototype可让reversed近identity，
+  correct target cosine仍约`.381`且幅度偏低。视频顺序可辨识，不等于能生成足够强且可迁移的策略更新。
+- 下一单变量是只修compiler：在有效`BA`空间先做`sum_k c_k B_kA_k`，再投回同一public rank-16；
+  保持视频representation和coefficients不变。先用CPU比较shared joint subspace与per-query exact low-rank
+  compression的投影保真，避免用另一个GPU实验猜测。
+
 ## 2026-08-09 Causal Barycentric online smoke与LoRA几何
 
 - live双节点检查后只使用空闲`gpu02:0`完成validation8×1-state纵向链路；8套唯一FP32 LoRA、8 cache

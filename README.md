@@ -31,10 +31,12 @@ EMBER已经迁回BCI。多卡训练、exact resume、动态队列评测、NUMA�
   canonical cache root为
   `runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808`。
 - learned address-binding Writer的strict correct仅`75/400`且输出跨task cosine约`.942`，已负裁决。
-  当前canonical是无可训练参数的Causal Barycentric Topological Writer。它已在空闲A40上完成
-  validation8×1-state online生成/cache/release/rollout smoke并重新seal formal；8套LoRA的
-  cross-task cosine中位`.693`、nearest-expert cosine中位`.656`，但`1/8` success只作工程证据，
-  尚无该方法的新strict correct400成绩。
+  后继Causal Barycentric Topological Writer的正式strict correct400也已完成并负裁决：`63/400`、
+  breadth=`5/8`，相对source/addressless同video panel为gained/lost=`46/31`，但改善不显著且远低于
+  v6-fast `143/400`。其400套LoRA已有expert-like能量、秩和rank-coordinate形态；失败不再是
+  “LoRA能量不足”，而是每条视频平均混合约13个experts，same-task/cross-task effective cosine中位
+  `.988/.685`。当前先做CPU-only的Policy-Effective Barycentric门：保持同一视频表示与coefficients，
+  只把重构从raw A/B factor混合改为在有效更新`BA`空间线性组合后投回public rank-16；尚未启动GPU。
 - 当前科研结论、下一实验边界看
   [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 - A100清理、Git/SSH/重下载分流、BCI路径映射和新Codex接手步骤看
@@ -62,11 +64,13 @@ EMBER已经迁回BCI。多卡训练、exact resume、动态队列评测、NUMA�
   task漂移；matched梯度分析显示video主效应约`.1%`，query/flow噪声主导，functional
   surrogate继续改善时closed-loop会退化。
 - 当前Expert-Manifold先用真实task-local SFT LoRA定义policy-effective参数流形，再把一条视频的
-  phase-centered、sqrt-normalized causal-prefix表示投影为24个expert的ridge-affine barycentric
-  coefficients。168个chunk分别混合expert direction与log-scale，重构完整38-target rank-16 LoRA；
-  zero或phase-constant表示严格返回source identity，language没有独立LoRA value路径。task experts只定义
-  train-task参数基，不是部署输入或held oracle，也不能自行证明时序因果性；最终仍由
-  correct/same/wrong/shuffled/reversed及no-video反事实严格配对裁决。
+  phase-centered、sqrt-normalized causal-prefix表示投影为24个expert coefficients。已拒绝的首版按
+  168 chunks分别混合expert raw-factor direction与log-scale；由于`(sum B_k)(sum A_k)`会产生
+  `k!=j`的交叉项，它并不等价于想要的`sum c_k B_k A_k`策略更新。下一单变量候选保持视频表示、
+  coefficients、38-target topology和rank-16部署合同不变，只修正这一编译接口。zero/no-video仍须严格
+  返回source identity，language没有独立LoRA value路径。task experts只定义train-task参数基，不是
+  部署输入或held oracle，也不能自行证明时序因果性；最终仍由correct/same/wrong/shuffled/reversed及
+  no-video反事实严格配对裁决。
 
 ## 不变合同
 

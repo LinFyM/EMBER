@@ -1,5 +1,23 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Causal Barycentric correct400完成、负裁决与compiler诊断
+
+- clean frozen eval自然完成，root=
+  `runs/outputs/pi05_expert_manifold_causal_barycentric_correct400_noreplacement_seed7_0397be6_20260809`。
+  72/72 jobs、400 unique rows/LoRAs、18 workers attempt1/exit0、0 retry/error/OOM/nonfinite，四类
+  forbidden reads为0；GPU自然释放。score=`63/400`、breadth=`5/8`，未过absolute门，未启动五臂。
+- `strict_panel_and_paired_audit_v1.json`封存same-video对照：相对source/addressless gained/lost=
+  `46/31`、`p=.1100`，相对address-binding=`27/39`、`p=.1753`。能力从Goal-6迁到Object-1，仍是
+  turnover而非共同积累。
+- `generated_lora_geometry_and_coefficients_full400_v1.json`覆盖400 LoRAs并用48个exact pair校准
+  effective-BA sketch；inversion output-token relative-L2中位`.000884`。LoRA norm/stable/top=
+  `3.958/1.155/.894`，same/cross/task-mean cosine=`.988/.685/.697`，coefficients abs support中位`13.75`。
+- CPU反事实新增`contrastive_coefficient_reader_loo_v1.json`和
+  `rectified_prototype_reader_loo_v1.json`。它们证明order discrimination可改善，但held policy-update
+  direction/amplitude仍不足，故不在下一轮同时改reader。
+- 当前只做Policy-Effective Barycentric CPU feasibility：比较shared joint rank-16 projection和
+  per-query exact mixture compression。没有启动GPU、训练或新长期实验。
+
 ## 2026-08-09 Causal Barycentric strict correct400预注册
 
 - 05:10 CST live比较两节点后预选`gpu01:0,1,2|4,5,7`六张14MiB/0%空闲A40，保持NUMA0/1各三张；

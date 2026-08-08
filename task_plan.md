@@ -29,6 +29,14 @@
   `.38302/.09900/.18539`；correct norm/stable-rank/top-energy=`3.84385/1.15056/.89540`。
   artifact：
   `runs/outputs/pi05_expert_manifold_causal_barycentric_loo_step2000_cpu_20260809/analysis.json`。
+- [x] Causal Barycentric strict correct400完成并负裁决：`63/400`、breadth=`5/8`，72/72 jobs、
+  400 unique rows/LoRAs、18 workers attempt1/exit0、0 retry/error/OOM/nonfinite/forbidden reads。
+  strict same-video source/addressless对照gained/lost=`46/31`、exact `p=.1100`；未达到可信absolute门，
+  不做其余五臂。root=
+  `runs/outputs/pi05_expert_manifold_causal_barycentric_correct400_noreplacement_seed7_0397be6_20260809`。
+- [x] full400几何排除低能量/低秩：norm/stable/top=`3.958/1.155/.894`、16 coordinates active；
+  同时定位raw factor compiler风险：coefficients abs support中位`13.75`，same/cross/task-mean cosine=
+  `.988/.685/.697`。分别混合A/B会引入`k!=j` cross-expert effective-update项。
 
 ## 当前唯一canonical实现
 
@@ -56,12 +64,17 @@
    `runs/outputs/pi05_expert_manifold_causal_barycentric_online_smoke_gpu02_3c8ce25_20260809`。
 3. [x] 精确smoke evidence已写回config并seal；真实formal inspector与全仓180 tests通过。authority
    commit/push完成后只从其clean frozen worktree继续。
-4. [ ] 从clean pushed frozen worktree做全新strict paired correct400；不复用learned Writer root或
-   checkpoint。同步审计400 unique rows/LoRAs、完整task/suite breadth和generated-LoRA task separation。
-5. [ ] correct400若同时改善absolute、breadth与task separation，再做same/wrong/shuffled/reversed和
-   no-video严格配对；否则先定位video representation、coefficient solve、expert support或LoRA
-   reconstruction中最早失效接口，再做单变量修订。
-6. [ ] 若one-shot的same-task视频方差成为经证据定位的最早限制，再评估固定K的few-shot set/sequence
+4. [x] strict paired correct400与400-LoRA审计完成；absolute失败，已停止五臂并定位到raw-factor
+   reconstruction的policy-effective语义不守恒。
+5. [ ] CPU-only验证shared joint rank-16 effective-BA basis：逐target报告24 experts的captured energy、
+   exact cosine与worst task；并对真实400组coefficients比较`sum c_k B_kA_k`和编译后rank-16 update的
+   relative error/cosine。shared basis不够保真时，比较QR+small-core的per-query exact rank-16 compression。
+6. [ ] 只有CPU门明确通过，才写设计authority并在唯一runtime原位替换compiler；保持video reader、
+   coefficients、expert/cache、38 targets、rank16、one-shot与zero identity不变，完成CPU合同后再申请
+   A40 online smoke证据。
+7. [ ] 新compiler闭环先做预注册小panel筛选；只有absolute/breadth明确支持才做formal correct400，
+   过门后再做same/wrong/shuffled/reversed/no-video严格配对。
+8. [ ] 若one-shot的same-task视频方差成为经证据定位的最早限制，再评估固定K的few-shot set/sequence
    aggregation；不能把few-shot当作掩盖task identity或视频时序失败的捷径。
 
 ## Causal Barycentric strict correct400 launch合同（2026-08-09）

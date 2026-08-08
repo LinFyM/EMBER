@@ -6,6 +6,35 @@
 
 ## 0. 当前交接边界：Video-Conditioned Expert-Manifold Topological Writer
 
+**最新覆盖（2026-08-09，优先于本节全部后续历史条目）**：Causal Barycentric正式strict
+correct400已经自然完成并负裁决。唯一root为
+`runs/outputs/pi05_expert_manifold_causal_barycentric_correct400_noreplacement_seed7_0397be6_20260809`；
+结果=`63/400`、breadth=`5/8`，逐task按Spatial/Object/Goal/Long为`[0,6]/[38,0]/[0,17]/[1,1]`。
+72/72 jobs、400 unique rows、400 unique action-hidden-video LoRAs和18 workers均attempt1/exit0，
+0 retry/error/OOM/nonfinite，四类forbidden reads为0，GPU已释放。相对strict same-video source/
+addressless panel均为gained/lost=`46/31`、exact `p=.1100`；相对address-binding `75`为`27/39`、
+`p=.1753`。它没有可靠提高aggregate，也把Goal-6能力从`47`降到`17`，故不做其余五臂。
+
+full400 coefficient inversion与gauge-invariant几何位于同root的
+`generated_lora_geometry_and_coefficients_full400_v1.json`。LoRA norm/stable-rank/top-energy中位=
+`3.958/1.155/.894`、16/16 rank coordinates active、top4 energy=`.271`，q/v/action B-column cosine=
+`.712/.744/.351`；这些已接近step2000 expert形态，明确排除“能量不足、近rank1或rank-coordinate
+塌缩”为当前首因。真正异常是每条视频的24维坐标effective abs support中位`13.75`、negative mass
+`.162`，same-task不同video/cross-task/task-mean cosine=`.988/.685/.697`，而真实experts跨task中位约
+`.100`。语义近邻有时有效（Object-1=`38/50`），同样合理的近邻也可完全失败（Object-3=`0/50`）；
+task-local expert质量并不保证跨物体、跨场景或组合迁移。
+
+最早结构断点现定位为**raw A/B factor barycentric compiler**。对coefficients `c`分别混合factor会
+形成`B(c)A(c)=sum_{k,j} c_k c_j B_k A_j`，引入大量没有任何task expert监督的cross-expert项；
+想表达的policy update却是`sum_k c_k B_k A_k`。因此“系数语义合理 + raw LoRA谱健康”仍可产生错误的
+策略更新。下一唯一候选为**Policy-Effective Barycentric Topological Writer**：先保持完全相同的
+one-shot causal representation与coefficient rule，只在有效`BA`空间组合，再用共享joint rank-16
+subspace或exact mixture compression编译回同一public LoRA。先做CPU投影能量/cosine与mixture fidelity
+门；未通过不实现，当前没有GPU工作。系数reader的CPU反事实已表明时序识别与有效更新幅度是两个接口：
+contrastive reader可使correct/reversed/shuffled方向约`.394/-.392/-.008`，但held norm ratio仅`.106`；
+rectified prototype可令reversed近identity并保留correct cosine约`.381`，但仍不能解决跨task expert
+transfer。故本轮不同时更换reader，不用时序margin掩盖compiler因果。
+
 **最新覆盖（2026-08-09，优先于本节后续历史条目）**：address-binding learned Writer的
 macro50 strict correct400已完整结束并正式负裁决。唯一有效root为
 `runs/outputs/pi05_expert_manifold_writer_addressbind_correct400_noreplacement_seed7_macro0050_925e7b1_20260809`，

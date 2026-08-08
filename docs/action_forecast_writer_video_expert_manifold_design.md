@@ -792,3 +792,71 @@ expert manifold上的held LoRA；但8 rows不能证明absolute、breadth或视�
 task separation不成立，不运行其余五臂，而先定位representation、coordinate solve、expert support或
 topological reconstruction的最早断点。正式branch/worktree/root、设备与exact command已预注册在
 `task_plan.md`的Causal Barycentric strict correct400 launch合同。
+
+## 30. Causal Barycentric负裁决与Policy-Effective编译接口（2026-08-09）
+
+### 30.1 正式结果与排除项
+
+29.7解封的strict correct400已完整结束为`63/400`、breadth=`5/8`；逐task按Spatial/Object/Goal/Long
+为`[0,6]/[38,0]/[0,17]/[1,1]`。400 unique state/video/LoRA rows、72 jobs、18 workers、forbidden-read
+和资源释放合同全部成立。相对same-video source/addressless panel的gained/lost=`46/31`、exact
+`p=.1100`，不构成可靠提升；相对address-binding `75`为`27/39`。因此该candidate正式停止，不运行
+其余五臂，也不通过结果选择某个task expert或video。
+
+full400 LoRA norm/stable-rank/top-energy中位=`3.95796/1.15488/.89374`，16/16 coordinates active，
+top4 coordinate energy=`.27061`，q/v/action B-column cosine=`.71200/.74440/.35062`。这些与step2000
+experts的`4.21249/1.12877/.90846`及rank-coordinate形态同档，故当前失败不是低能量、近rank1、
+inactive rank或全列共线。坐标反演误差足够小，可从400个生成LoRA可靠恢复其24维barycentric状态。
+
+### 30.2 factor manifold并不保持policy update
+
+29节要求对每个chunk分别混合expert A/B factor的unit direction和log scale。即使暂时忽略该
+normalization，分别线性组合两因子也满足：
+
+```text
+A(c) = sum_k c_k A_k
+B(c) = sum_k c_k B_k
+B(c) A(c) = sum_k c_k^2 B_k A_k + sum_{k != j} c_k c_j B_k A_j
+```
+
+目标expert manifold真正有意义的对象却是：
+
+```text
+DeltaW_target(c) = sum_k c_k (B_k A_k)
+```
+
+两者连同同expert项的权重都不同；chunk direction归一化和log-scale插值只会增加非线性。one-hot时
+交叉项消失，所以one-hot exact regression没有测到此错误。部署400个query的effective abs support中位
+`13.75`、negative coefficient count中位`6`，正是交叉项最严重的区域。最终same-task不同video、
+cross-task、task-mean effective cosine中位=`.98808/.68514/.69685`，仍远高于真实experts跨task
+`.09996`。因此最早剩余断点不是“video能否区分顺序”，而是
+`expert coefficients -> policy-effective rank-16 update`没有语义守恒。
+
+### 30.3 下一单变量：Policy-Effective Barycentric Topological Writer
+
+保留29.2的phase-centered causal video representation、ridge `.3` coefficient rule、step2000 expert
+bank、train24×50 cache、one-shot输入、38 targets和public rank-16。唯一变化是每个target先构造：
+
+```text
+DeltaW(c) = sum_k c_k B_k A_k
+```
+
+再把该effective matrix压回一套rank-16 factors。首选CPU门是为每个target从24 experts的left/right
+covariance求共享`U[out,16]`与`V[in,16]`，保存`C_k = U^T B_k A_k V`；online只混合16×16 core并
+分解为A/B。zero coefficient必须显式返回既有template-A/zero-B identity；非零输出只改变factor gauge，
+policy接口和rank不变。若shared subspace不能保留每个expert与真实400 mixtures，则比较由24个rank-16
+factors组成的QR+small-core SVD，对每个query做exact rank-16 compression，不物化巨大dense矩阵。
+
+CPU门必须报告逐target/逐expertcaptured Frobenius energy、effective cosine、relative error及worst cases，
+并对真实400组coefficients比较目标mixture与编译结果。只有证据证明编译误差显著小于当前task/
+video差异后才实现canonical runtime。实现仍原位替换29节compiler，不保留并行可执行family。
+
+### 30.4 与时序reader、few-shot和v6的顺序关系
+
+现有correct/reversed/shuffled feature proxy已证明时序信号存在。新增CPU reader反事实进一步显示：
+contrastive coefficient reader可令held target direction约`.394/-.392/-.008`，但correct norm ratio仅
+`.106`；rectified prototype reader几乎把reversed置零，却仍不能提高held direction或解决迁移。
+所以时序识别与生成足够强、可泛化的policy update是两个接口。本轮只修后者；同时改reader会使闭环
+结果无法归因。只有effective compiler闭环absolute过门，才在同一compiler上引入order-negative credit并
+跑raw-frame five-arm/no-video。few-shot仍等待one-shot same-task方差成为最早限制；恢复v6只在该单变量
+候选失败后作为后续初始化/先验选择讨论，不在本轮混入。

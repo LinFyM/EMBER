@@ -181,9 +181,9 @@ single checkpoint的strict paired correct严格超过`150/400`并尽可能继续
 - 当前唯一活动方法是Video-Conditioned Expert-Manifold Topological Writer，authority为
   `docs/action_forecast_writer_video_expert_manifold_design.md`。保持one-shot；Writer部署输入仍为
   exact task language + exactly one action-hidden teacher video，视频是唯一dynamic value，
-  language不能单独输出LoRA。full projected video innovation只参与phase key/routing，只有
-  phase-centered projected dynamics可作为LoRA value；zero或phase-constant innovation必须精确
-  回到source identity。
+  language不能单独输出LoRA。full projected video innovation只参与phase key/routing，LoRA value固定为
+  phase-centered projected dynamics的sqrt-normalized causal-prefix integral；zero或phase-constant
+  innovation必须精确回到source identity，即使learned phase key被忽略也不得恢复frame-set旁路。
 - 24套train-task rank-16 experts已在clean`81101fe`完成统一step1000。唯一正式root为
   `runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`：6 workers、24/24 tasks、
   72个step250/500/1000 checkpoints、约562MiB。最后50步24-task等权mean action loss=
@@ -205,8 +205,9 @@ single checkpoint的strict paired correct严格超过`150/400`并尽可能继续
 - full24×50 frozen feature的CPU审计显示phase-DC能量中位`.98057`，temporal residual仅`.01943`，
   但ordered temporal template cosine中位`.88284`、reversed=`-.32402`、phase-shuffled=`-.02194`；
   temporal geometry与expert B geometry的Spearman=`.45087`。因此第一次meta profile前已决定收紧
-  canonical decoder的dynamic value，不允许约50倍的静态DC成为LoRA content；few-shot 3/5只给出
-  `.39051/.39290`对one-shot`.38607`的小幅proxy增益，当前不切换shot数。
+  canonical decoder的dynamic value，不允许约50倍的静态DC或忽略phase key的unordered-frame set成为
+  LoRA content。固定causal-prefix uniform-pool proxy的correct/reversed/shuffled=
+  `.38820/.06042/.19110`，3/5-shot只升到`.39379/.39558`，当前不切换shot数。
 - 全24 experts的原合同exact-resume1000→2000已于2026-08-08从clean`81101fe`沿同一root启动：
   6个独立workers只使用`gpu01:0,1,2,4,5,7`，每worker依次处理原有4 tasks并保存统一1500/2000。
   GPU3上的他人进程与空闲GPU6均未触碰。运行完成前的partial checkpoint不得写成正式结果；之后必须

@@ -58,7 +58,7 @@ def _topological_writer_matches(writer: Mapping[str, Any]) -> bool:
         and int(writer.get("public_rank", -1)) == 16
         and int(writer.get("valid_values", -1)) == 1_287_168
         and writer.get("video_value_path")
-        == "phase_centered_projected_video_innovation_only"
+        == "phase_centered_projected_video_sqrt_normalized_causal_prefix_integral_only"
         and writer.get("routing_key_path")
         == "full_projected_video_innovation_plus_phase_keys"
     )

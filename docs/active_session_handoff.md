@@ -10,8 +10,9 @@
   `docs/action_forecast_writer_video_expert_manifold_design.md`。它保持one-shot，视频是唯一dynamic
   value：frozen π0.5逐帧提取2048维joint multimodal hidden与1024维Action-Expert suffix hidden，
   均减matched no-image baseline并保留phase16；language只能参与query/context，不能单独生成LoRA。
-  第一次meta profile前已进一步封住静态捷径：full projected innovation只生成phase keys，只有
-  phase-centered projected dynamics作为attention value；zero或phase-constant输入精确生成identity。
+  第一次meta profile前已进一步封住静态与unordered-set捷径：full projected innovation只生成phase
+  keys，attention value固定为phase-centered dynamics的sqrt-normalized causal-prefix integral；
+  zero/phase-constant输入精确identity，即使learned phase key被忽略也没有原始frame-set value路径。
 - 24套train-task rank-16 policy experts已从同一source/identity完成统一step1000正式训练。唯一root为
   `runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`：6个独立workers各4 tasks，
   24/24 completion、72个统一step250/500/1000 checkpoints、总量约562MiB。正式运行基线是
@@ -27,12 +28,13 @@
   profile，也没有生成新Writer checkpoint。
 - full24×50 cache的CPU审计表明phase-DC能量中位`.98057`、temporal residual中位`.01943`，但
   ordered/reversed/phase-shuffled temporal-template cosine中位=`.88284/-.32402/-.02194`；时序
-  task geometry与expert B target geometry Spearman=`.45087`。linear leave-one-task B proxy中，
-  phase-centered one-shot correct/reversed/shuffled=`.38607/.20667/.26386`，而3/5-shot correct只到
-  `.39051/.39290`。这支持先消除静态LoRA value捷径、保持one-shot，而不是先增加视频数量。
-- phase-centered canonical实现与第六个`no_video`反事实已在隔离分支闭合：no-video保留paired
+  task geometry与expert B target geometry Spearman=`.45087`。固定causal-prefix uniform-pool的
+  template correct/reversed/shuffled=`.96263/-.94287/-.04463`，linear B proxy=
+  `.38820/.06042/.19110`，3/5-shot correct只到`.39379/.39558`。这支持先强制顺序绑定并保持one-shot。
+- phase-centered causal-prefix canonical实现与第六个`no_video`反事实已在隔离分支闭合：no-video保留paired
   task/state/RNG/demo ordinal与exact language但不读frames，以zero innovation完整运行Writer并必须
-  生成identity。架构门无hard violation，聚焦测试25/25、全仓217/217通过；尚无GPU profile或性能结果。
+  生成identity。架构门无hard violation，相关聚焦36/36、全仓218/218 CPU测试通过；尚无GPU
+  profile或性能结果。
 - full24统一step250/500/1000正式geometry已完成，artifact为
   `runs/outputs/pi05_task_expert_bank_geometry_full24_steps0250_0500_1000_05d4868_20260808/analysis.json`。
   effective-LoRA norm中位=`2.792/3.652/4.170`，stable rank中位=`1.126/1.129/1.129`，

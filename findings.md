@@ -1,6 +1,6 @@
 # EMBER Findings
 
-## 2026-08-08 Expert-Manifold feature dynamics与phase-centered value裁决
+## 2026-08-08 Expert-Manifold feature dynamics与causal-prefix value裁决
 
 - full24×50 sealed cache的phase-DC能量占比中位`.98057`，temporal residual仅`.01943`；原decoder
   将完整projected memory同时作为key/value，会让同task恒定expert target通过约50倍更强的静态
@@ -11,12 +11,19 @@
 - leave-one-task linear B proxy的phase-centered one-shot correct/reversed/shuffled中位=
   `.38607/.20667/.26386`，而DC-only correct=`.39500`且对反转/乱序完全不变。3/5-shot correct=
   `.39051/.39290`，边际很小；当前主要瓶颈是静态value捷径而非shot数量。
-- 因此canonical decoder改为`K=RMSNorm(Wx)+phase_key`、`V=Wx-mean_phase(Wx)`。joint与Action-
-  Expert完整特征仍控制phase routing，但只有有序动态能写LoRA content；zero或任意phase-constant输入
-  精确identity。no-video反事实保留严格paired元数据但不读frame，以zero innovation完整运行Writer。
+- 仅做phase centering仍不充分：若learned phase key被模型忽略，cross-attention对原始centered
+  key/value仍是frame-set permutation invariant。CPU最小反例把phase key置零后，ordered/reversed
+  只剩浮点求和级绝对差异；恒定task target没有目标函数压力替我们避免这条旁路。
+- canonical value因此固定为`c_t=Wx_t-mean(Wx)`、`V_t=sum_{s<=t}c_s/sqrt(t+1)`，key仍为
+  `RMSNorm(Wx_t)+phase_key_t`。causal-prefix uniform-pool template correct/reversed/shuffled=
+  `.96263/-.94287/-.04463`，B proxy=`.38820/.06042/.19110`，相对简单centered proxy保持correct
+  可预测性并把order margins从`.17940/.12221`提高到`.32778/.19709`；四suite margin均为正。
+- joint与Action-Expert完整特征仍控制phase routing，但只有固定顺序绑定的动态prefix能写LoRA content；
+  zero或任意phase-constant输入精确identity。no-video保留严格paired元数据但不读frame，以zero
+  innovation完整运行Writer。3/5-shot causal proxy只到`.39379/.39558`，仍不足以先切few-shot。
 - CPU retained证据覆盖constant/zero identity、ordered≠reversed、zero-output第一步打开output head且
   第二步梯度到达input projection/cross-attention/phase keys；architecture gate无hard violation，
-  聚焦25/25及全仓217/217通过。这只证明机制可运行，不是GPU profile、重建或closed-loop成绩。
+  相关聚焦36/36和全仓218/218通过。这只证明机制可运行，不是GPU profile、重建或closed-loop成绩。
 
 ## 2026-08-08 Expert-Manifold train24×50 formal feature cache
 

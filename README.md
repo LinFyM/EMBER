@@ -59,7 +59,8 @@ EMBER已经迁回BCI。多卡训练、exact resume、动态队列评测、NUMA�
   surrogate继续改善时closed-loop会退化。
 - 当前Expert-Manifold先用真实task-local SFT LoRA定义policy-effective参数流形，再让视频条件的
   168-chunk rank-axial decoder生成完整38-target LoRA。完整视频特征只负责phase routing，只有
-  phase-centered动态能成为LoRA value，因此静态单帧或no-video不能触发写入。task experts只提供训练target，不是部署输入，
+  phase-centered、sqrt-normalized causal-prefix动态能成为LoRA value，因此静态单帧或no-video不能触发写入，
+  即使忽略learned phase key也不存在原始frame-set value旁路。task experts只提供训练target，不是部署输入，
   也不能自行证明视频时序因果性；最终仍由correct/same/wrong/shuffled/reversed及no-video反事实严格配对裁决。
 
 ## 不变合同

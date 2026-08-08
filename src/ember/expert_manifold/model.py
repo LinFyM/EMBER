@@ -19,6 +19,20 @@ from ember.lora import (
 from ember.writer.temporal import RMSNorm
 
 
+def phase_centered_causal_memory(memory: torch.Tensor) -> torch.Tensor:
+    """Bind dynamic values to ordered prefixes while removing phase-constant DC."""
+
+    if memory.ndim < 2 or memory.shape[-2] < 2:
+        raise ExpertManifoldError("causal video memory requires multiple phases")
+    centered = memory - memory.mean(dim=-2, keepdim=True)
+    phase_count = memory.shape[-2]
+    scale = torch.arange(
+        1, phase_count + 1, dtype=memory.dtype, device=memory.device
+    ).sqrt()
+    shape = (1,) * (memory.ndim - 2) + (phase_count, 1)
+    return centered.cumsum(dim=-2) / scale.reshape(shape)
+
+
 @dataclass(frozen=True)
 class LoRAChunk:
     tensor_name: str
@@ -255,7 +269,7 @@ class VideoConditionedTopologicalWriter(torch.nn.Module):
         if video_innovation.shape[1:] != (self.phase_slots, self.feature_width):
             raise ExpertManifoldError("video innovation changed phase/feature shape")
         routing_memory = self.input_projection(video_innovation)
-        dynamic_memory = routing_memory - routing_memory.mean(dim=1, keepdim=True)
+        dynamic_memory = phase_centered_causal_memory(routing_memory)
         normalized = self.memory_norm(routing_memory)
         keys = normalized + self.phase_keys[None]
         batch = routing_memory.shape[0]

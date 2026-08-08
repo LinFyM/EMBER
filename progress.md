@@ -1,13 +1,15 @@
 # EMBER Progress Ledger
 
-## 2026-08-08 phase-centered Expert-Manifold实现与expert2000续训启动
+## 2026-08-08 causal-prefix Expert-Manifold实现与expert2000续训启动
 
 - 对sealed train24×50 cache和full24 step1000 experts完成可复现CPU dynamics审计，确认静态phase-DC
   能量主导但ordered temporal residual稳定且能迁移到expert B方向；3/5-shot proxy无足够增益，保持
   one-shot。分析入口为`scripts/analyze_expert_manifold_feature_dynamics.py`。
-- 在隔离分支原位修改唯一topological Writer：full projected video用于key/routing，phase-centered
-  dynamics用于value；增加严格paired且不读frame的no-video counterfactual。没有保留第二套Writer、
-  language-only bypass或scalar gate。architecture guard无hard violation；聚焦25项和全仓217项通过。
+- 初版phase-centered value仍存在“忽略learned phase key后退化为unordered frame set”的精确结构
+  风险。CPU反例确认后，在隔离分支把唯一Writer value改成sqrt-normalized causal-prefix integral；
+  full projected video仍用于key/routing。增加严格paired且不读frame的no-video counterfactual；没有
+  第二套Writer、language-only bypass或scalar gate。architecture gate无hard violation；相关聚焦
+  36/36和全仓218/218 CPU测试通过。
 - 2026-08-08 17:38 CST从clean`81101fe`沿原正式root启动24 experts统一exact-resume1000→2000：
   六个独立tmux workers固定`gpu01:0,1,2,4,5,7`及对应NUMA，每worker续原4 tasks，显式
   `NCCL_P2P_DISABLE=1`。GPU3他人进程和GPU6均未使用；1500 partial checkpoints不作科研结论。

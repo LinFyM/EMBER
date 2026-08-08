@@ -20,7 +20,10 @@ from ember.expert_manifold.contract import (
 )
 from ember.expert_manifold.evaluation import inspect_task_expert_bank
 from ember.expert_manifold.feature_cache import inspect_feature_cache
-from ember.expert_manifold.model import TopologicalLoRAChunkLayout
+from ember.expert_manifold.model import (
+    TopologicalLoRAChunkLayout,
+    phase_centered_causal_memory,
+)
 from ember.lora import identity_lora_state
 from ember.pi05_eval_contract import (
     inspect_source_checkpoint,
@@ -97,6 +100,8 @@ def _representation(features: torch.Tensor, kind: str) -> torch.Tensor:
         return centered.flatten(2)
     if kind == "difference":
         return (features[:, :, 1:] - features[:, :, :-1]).flatten(2)
+    if kind == "causal_uniform_pool":
+        return phase_centered_causal_memory(features).mean(dim=2)
     raise ValueError(f"unsupported feature representation: {kind}")
 
 
@@ -339,7 +344,7 @@ def _representation_results(
     shuffled_features = _phase_shuffle(features)
     result = {}
     b_gram = (b_target @ b_target.T).double().numpy()
-    for kind in ("dc", "temporal", "difference"):
+    for kind in ("dc", "temporal", "difference", "causal_uniform_pool"):
         normal = _representation(features, kind)
         reversed_value = _representation(features.flip(2), kind)
         shuffled = _representation(shuffled_features, kind)

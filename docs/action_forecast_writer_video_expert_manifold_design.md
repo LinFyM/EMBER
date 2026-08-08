@@ -331,7 +331,7 @@ reads合计0，worker logs无error。仓库seal入口已生成canonical `cache_m
 training commit为`222d3ac72591bf44fa46ff436ace22d8cd5afa35`，information-wall计数全0。该cache
 只是冻结的action-hidden Writer输入，不是新Writer性能或视频因果证据。
 
-## 19. Phase-centered dynamic value与no-video裁决
+## 19. Phase-centered causal-prefix dynamic value与no-video裁决
 
 正式cache完成后，对全部24 tasks×50 videos=`1,200`条`[16,3072]`innovation做了只读CPU
 分析。每条视频的phase-DC能量占比中位`.98057`，真正temporal residual只有`.01943`；然而
@@ -347,18 +347,28 @@ phase-shuffled分别降到`.20667/.26386`。同一proxy改为3-shot/5-shot只升
 当前首要限制不是shot数量，而是允许静态DC直接成为LoRA value。shuffle数字只属于sealed phase
 cache上的诊断proxy；正式评测仍须先重排raw sampled frames再完整encoder forward。
 
+phase centering单独仍有一个严格结构缺口：如果训练学会忽略learned phase keys，attention对成对置换的
+centered keys/values仍是frame-set permutation invariant，而同task恒定target不会惩罚这条解。CPU
+最小反例把phase keys置零后，ordered/reversed输出只剩浮点求和级绝对差异。固定的sqrt-normalized
+causal-prefix transform消除此原始set path；其uniform-pool template correct/reversed/shuffled=
+`.96263/-.94287/-.04463`，B-target proxy=`.38820/.06042/.19110`，correct几乎不损失，order
+margin由`.17940/.12221`提高到`.32778/.19709`，且四suite均为正。3/5-shot causal correct只到
+`.39379/.39558`，仍不支持当前切换few-shot。
+
 据此，在第一次meta GPU profile前原位收紧唯一canonical decoder，不保留旧可执行分支：
 
 ```text
 routing_memory_t = W(video_innovation_t)
 K_t = RMSNorm(routing_memory_t) + phase_key_t
-V_t = routing_memory_t - Mean_phase(routing_memory)
+centered_t = routing_memory_t - Mean_phase(routing_memory)
+V_t = Sum_{s<=t}(centered_s) / sqrt(t + 1)
 LoRA = topological_axial_decode(Q_chunk,rank, K, V)
 ```
 
-完整joint+Action-Expert特征仍参与phase key/routing，但只有phase-centered video dynamics能提供
-content value。任意zero innovation或所有phase完全相同的非零输入都必须精确输出template-A/
-zero-B identity；正常ordered输入仍能通过phase keys改变完整LoRA。CPU原型和retained tests验证了
+完整joint+Action-Expert特征仍参与phase key/routing，但只有phase-centered、固定causal-bound的
+video dynamics能提供content value。任意zero innovation或所有phase完全相同的非零输入都必须精确
+输出template-A/zero-B identity；即使模型忽略phase keys，reversal/shuffle也不再只是value的集合
+置换。CPU原型和retained tests验证了
 constant/zero identity、ordered-vs-reversed差异，以及fresh第一步打开output/scale、第二步梯度到达
 input projection、cross-attention和phase keys。这个变化不增加language-only route、scalar gate、
 第二套LoRA或额外输入，也不改变已封存feature cache。

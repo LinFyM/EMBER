@@ -29,6 +29,7 @@ from ember.expert_manifold.sampler import TaskLocalEpochSampler
 from ember.expert_manifold.model import (
     TopologicalLoRAChunkLayout,
     VideoConditionedTopologicalWriter,
+    phase_centered_causal_memory,
     topological_reconstruction_loss,
 )
 from ember.expert_manifold.video_features import (
@@ -61,7 +62,7 @@ def test_video_expert_manifold_config_keeps_video_as_dynamic_value() -> None:
     assert config["topological_writer"]["chunk_count"] == 168
     assert config["topological_writer"]["valid_values"] == 1_287_168
     assert config["topological_writer"]["video_value_path"] == (
-        "phase_centered_projected_video_innovation_only"
+        "phase_centered_projected_video_sqrt_normalized_causal_prefix_integral_only"
     )
     assert config["video_features"]["feature_width"] == 3072
     assert config["video_features"]["expert_hidden_width"] == 1024
@@ -425,13 +426,24 @@ def test_topological_writer_only_phase_dynamics_supply_values() -> None:
     with torch.no_grad():
         for parameter in writer.parameters():
             parameter.uniform_(-0.02, 0.02)
+        writer.phase_keys.zero_()
     constant = torch.randn(1, 1, 8).expand(1, 4, 8).clone()
     generated = writer(constant)
     assert all(torch.equal(generated[name][0], value) for name, value in template.items())
     ordered = torch.randn(1, 4, 8)
     forward = writer.forward_values(ordered)
     reversed_value = writer.forward_values(ordered.flip(1))
-    assert not torch.equal(forward, reversed_value)
+    assert not torch.allclose(forward, reversed_value, atol=1e-10, rtol=1e-4)
+
+
+def test_causal_memory_forces_order_binding_without_static_value() -> None:
+    constant = torch.randn(2, 1, 8).expand(2, 4, 8).clone()
+    assert torch.count_nonzero(phase_centered_causal_memory(constant)) == 0
+    ordered = torch.randn(2, 4, 8)
+    forward = phase_centered_causal_memory(ordered)
+    reverse = phase_centered_causal_memory(ordered.flip(1))
+    assert not torch.allclose(forward, reverse)
+    assert not torch.allclose(forward.mean(dim=1), reverse.mean(dim=1))
 
 
 def test_phase_centered_writer_opens_upstream_after_zero_output_step() -> None:

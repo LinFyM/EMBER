@@ -8,8 +8,9 @@
 
 当前唯一authority为`docs/action_forecast_writer_video_expert_manifold_design.md`。保持one-shot，
 视频是唯一dynamic value；Writer部署输入仍只有exact task language和恰好一条action-hidden video。
-第一次meta profile前的canonical decoder已收紧为full projected video只参与phase key/routing、只有
-phase-centered projected dynamics提供LoRA value；zero/phase-constant输入精确回到identity。
+第一次meta profile前的canonical decoder已收紧为full projected video只参与phase key/routing、LoRA
+value固定使用phase-centered dynamics的sqrt-normalized causal-prefix integral；zero/phase-constant
+输入精确identity，即使learned phase key被忽略也没有原始frame-set value旁路。
 
 24套train-task rank-16 policy experts已在clean`81101fe`完成统一step1000：
 `runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`包含6份worker summary、
@@ -44,9 +45,10 @@ canonical manifest已seal。r6高并发因主机内存、r4因A40 inference acti
 
 full24×50 cache只读CPU审计显示phase-DC/temporal能量中位=`.98057/.01943`，但ordered temporal
 template cosine中位`.88284`，reversed/phase-shuffled=`-.32402/-.02194`；temporal geometry与
-expert B geometry Spearman=`.45087`。phase-centered one-shot B proxy correct/reversed/shuffled=
-`.38607/.20667/.26386`，3/5-shot correct仅`.39051/.39290`，故当前保持one-shot并先封静态value捷径。
-对应实现已通过architecture hard gate、聚焦25项和全仓217项CPU测试，尚未profile或训练。
+expert B geometry Spearman=`.45087`。固定causal-prefix uniform-pool的template
+correct/reversed/shuffled=`.96263/-.94287/-.04463`，B proxy=`.38820/.06042/.19110`；3/5-shot
+correct仅`.39379/.39558`，故当前保持one-shot并同时封住静态DC与unordered-set value捷径。
+对应实现architecture gate无hard violation、相关聚焦36/36与全仓218/218 CPU测试通过；尚未profile或训练。
 
 全24 experts的exact-resume1000→2000已于2026-08-08 17:38 CST从clean`81101fe`沿原root启动。
 6 workers固定`gpu01:0,1,2,4,5,7`与NUMA，显式`NCCL_P2P_DISABLE=1`；每worker依次续原4 tasks，

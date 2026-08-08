@@ -625,3 +625,24 @@ optimizer/scheduler语义、`address_norm`梯度、NUMA/physical-local/deferred-
 一致；trainer语义一致但容器raw bytes不同。`address_norm`具有非零finite Adam状态并在macro1→3
 发生`1.62e-5`最大权重变化；两root峰值reserved均低于`.9GB`，0 OOM/nonfinite，六卡已释放。
 profile权重继续弃用，config仍blocked；下一门只做8-row online generation/cache/release/rollout smoke。
+
+## 27. Address-binding execution seal与fresh formal门（2026-08-09）
+
+单卡online generation/cache/release/rollout smoke已在clean pushed`eb32f3f`自然完成：8个validation
+tasks各一行、8套唯一完整FP32 LoRA、2个batch4、3 workers attempt1/exit0、0 retry/failure/OOM/
+nonfinite。Writer/encoder释放后复用同一source policy且没有reload；每行teacher frames used，teacher
+action/state/reward/terminal reads均为0。generation wall=`9.731s`，peak allocated/reserved=
+`10,576,056,320/11,182,014,464` bytes。`1/8` success只作执行证据。
+
+8套macro3 LoRA的CPU只读审计给出0 nonfinite、effective norm中位`.70069`、stable rank中位
+`1.98260`、top singular energy中位`.51202`、16/16 coordinates active、top4 coordinate energy中位
+`.31274`。这说明新address-value接口在训练早期已避免旧图的必然近rank1输出，但不把高stable rank
+当作目标，也不声称macro3已接近experts；不同task pairwise effective cosine中位`.54184`仍表明方向
+分离尚未成熟。
+
+六卡profile与单卡smoke evidence现共同绑定
+`normalized_dynamic_times_normalized_chunk_plus_rank_address`，config formal状态重新seal。唯一被解封的
+科研动作是从identity fresh训练到macro50；profile权重永久弃用，旧macro50也因schema不兼容且已负
+裁决而禁止加载。macro50后先看strict correct400、train24 expert proximity、chunk/rank retention和
+完整LoRA谱；只有absolute/breadth与内部传递共同支持时才resume。若absolute提高而顺序五臂仍失败，
+下一单变量候选才讨论显式order-negative credit；本段不提前混入few-shot、RL或新的target。

@@ -6,23 +6,24 @@
 
 ## 0.0 最新执行覆盖：Expert-Manifold证据优先持续推进
 
-**当前操作覆盖（2026-08-09）**：clean pushed`cd95281`已原位实现
-`RMSNorm(dynamic video latent) × RMSNorm(chunk+rank address)`后再共享写出；address不能独立生成
-LoRA，zero/phase-constant输入仍精确identity。旧decoder的六卡profile/online-smoke evidence已撤销，
-meta formal现在重新blocked。CPU聚焦47/47、全仓192/192和compileall通过，architecture guard无hard
-violation；尚未启动新GPU。下一步只允许从clean/pushed launch-record与全新roots重做六卡
-fresh/resume/contiguous exact-resume profile，再做macro3 online smoke，两门通过前不得formal。
+**当前操作覆盖（2026-08-09）**：clean pushed`cd95281`的
+`RMSNorm(dynamic video latent) × RMSNorm(chunk+rank address)`新图已经通过fresh/resume/contiguous
+六卡profile与单卡online generation/cache/release/rollout smoke。profile三步科学指标精确一致，
+Writer/RNG byte-exact且optimizer/scheduler语义一致；`address_norm`有finite非零Adam状态。smoke完成
+8/8唯一rows、8套唯一LoRA、2个batch4和3个attempt1/exit0 workers，0 retry/failure/OOM/nonfinite，
+teacher action/state/reward/terminal reads全0。config中的两组evidence均绑定新topology identity，
+meta formal现已seal。
 
-02:52 CST live比较已预选`gpu01:0,1,2|4,5,7`空闲六卡的3+3 NUMA；物理3他人VLLM不触碰。
-`gpu02:0--5`虽空闲但为4+2 NUMA，6/7有他人进程，本轮不用。`/data1`个人用量532.4GiB/1TiB；
-新两root均不存在且合计预算低于1GiB。三条exact命令和验收门取`task_plan.md`顶部；先clean push并
-创建frozen worktree，启动前再次live看卡。
+smoke root为
+`runs/outputs/pi05_expert_manifold_writer_addressbind_macro0003_online_smoke_gpu02_cd95281_20260809`；
+generation wall=`9.731s`，peak allocated/reserved=`10,576,056,320/11,182,014,464` bytes，释放Writer后
+source policy原位复用且没有reload。`1/8` success只表示纵向链路可执行。对8套FP32 LoRA的CPU只读
+检查为0 nonfinite、norm/stable-rank/top-energy中位=`.7007/1.983/.512`、16/16 coordinates active；
+这支持地址绑定已打破旧single-lane几何，但不是正式性能证据。
 
-core profile已经由clean pushed`a3666ba`通过：resume/contiguous三步科学指标、macro1全部文件、
-macro3 Writer/RNG精确一致，trainer optimizer/scheduler语义相同；`address_norm`非零finite更新，
-两root峰值reserved低于`.9GB`，六卡已释放。03:01 CST重新live选定空闲`gpu02:0`做唯一8-row
-online generation/cache/release/rollout smoke；root/log不存在，命令与门取`task_plan.md`。smoke通过并
-写回两组新evidence前，formal保持blocked。
+下一步从新的clean pushed launch-record/frozen worktree做identity-fresh formal0→50；绝不使用profile
+权重或旧macro50 checkpoint。正式启动前重新live比较`gpu01/gpu02`，只选最多6张空闲A40，保持
+`NCCL_P2P_DISABLE=1`、3+3 NUMA/physical-local映射和deferred NCCL，并复核quota与fresh root。
 
 当前唯一authority为`docs/action_forecast_writer_video_expert_manifold_design.md`。保持one-shot，
 视频是唯一dynamic value；Writer部署输入仍只有exact task language和恰好一条action-hidden video。

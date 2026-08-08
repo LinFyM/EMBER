@@ -1,5 +1,19 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Address-binding online smoke通过并重新seal formal
+
+- clean pushed`eb32f3f`在live空闲`gpu02:0`完成8-task×1-state correct/without-replacement smoke；
+  8/8 unique rows、8 unique LoRA references、8 cache entries和3 workers均首次完成，0 retry/failure/
+  OOM/nonfinite。GPU自然释放，物理6/7他人进程及gpu01物理3他人VLLM均未触碰。
+- 一个generator以2个batch4生成8套FP32 LoRA，generation wall=`9.731s`；peak allocated/reserved=
+  `10,576,056,320/11,182,014,464` bytes，释放Writer后为
+  `9,391,467,520/9,651,093,504` bytes。source policy原位复用、无reload，四类forbidden reads为0。
+- CPU只读检查8套LoRA共608 tensors全finite；norm/stable-rank/top-energy中位=
+  `.70069/1.98260/.51202`，16个rank coordinates全active。`1/8` success只作execution smoke。
+- 新profile/smoke evidence已写入`configs/pi05_video_expert_manifold_v1.json`并共同绑定address-binding
+  identity，meta formal重新seal。下一步在clean pushed launch-record/frozen worktree从identity fresh
+  只跑0→50，不加载profile权重，随后先做strict correct400与内部几何/target传递裁决。
+
 ## 2026-08-09 Address-binding core profile通过与online smoke预注册
 
 - clean pushed`a3666ba`的fresh0→1/resume1→3与独立contiguous0→3均自然完成并释放六卡。

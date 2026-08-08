@@ -6,20 +6,22 @@
 
 ## 0. 当前交接边界：Video-Conditioned Expert-Manifold Topological Writer
 
-- **最新覆盖（2026-08-09）**：macro50地址塌缩的单变量根修已由clean pushed`cd95281`实现。
-  动态video latent在共享output projection前与`chunk_query+rank_query`的normalized静态地址逐元素相乘；
-  address没有独立value路，zero/phase-constant video仍精确identity。旧flat-reduction profile与online
-  smoke只属于已负裁决decoder，现已从config移除；meta formal重新blocked，必须用全新roots重做六卡
-  exact-resume profile和macro3 online smoke后才能fresh formal。聚焦47/47、全仓192/192与compileall
-  通过，architecture guard无hard violation；本修订尚未启动GPU。
-- 02:52 CST最新live preflight选择`gpu01:0,1,2|4,5,7`六张空闲A40并保持3+3 NUMA；物理3他人
-  VLLM不触碰。gpu02的0--5虽空闲但为4+2 NUMA，6/7有他人进程，故本轮不用。`/data1`个人用量
-  532.4GiB/1TiB，两个新profile roots均不存在、合计预计低于1GiB。exact命令与门已预注册到
-  `task_plan.md`；必须先clean push/frozen worktree并在启动前再次live复核，当前仍无新GPU进程。
-- 上述core profile现已由clean pushed`a3666ba`通过：resume/contiguous科学指标、macro1全文件、
-  macro3 Writer/RNG精确一致；trainer语义一致。`address_norm`已有非零finite Adam状态，峰值reserved
-  低于`.9GB`，六卡自然释放。03:01 CST重新live选择空闲`gpu02:0`做8-row online smoke；物理6/7
-  他人进程不触碰，fresh root/log不存在。exact命令已预注册，当前formal仍blocked且尚未启动smoke。
+- **最新覆盖（2026-08-09）**：macro50地址塌缩的单变量根修已由clean pushed`cd95281`实现并完成
+  两道新图专属A40工程门。六卡fresh0→1/resume1→3与独立contiguous0→3科学指标、Writer/RNG及
+  optimizer/scheduler语义一致；单卡online smoke又完成8/8唯一task/state rows、8套唯一FP32 LoRA、
+  cache/release/source-policy复用与3-worker rollout，0 retry/failure/OOM/nonfinite，信息墙四类读取均为0。
+  两组evidence均显式绑定
+  `normalized_dynamic_times_normalized_chunk_plus_rank_address`，meta formal config现已重新seal。
+- smoke root为
+  `runs/outputs/pi05_expert_manifold_writer_addressbind_macro0003_online_smoke_gpu02_cd95281_20260809`：
+  generation为8 entries/2个batch4、`9.731s`，peak allocated/reserved=
+  `10,576,056,320/11,182,014,464` bytes；Writer/encoder释放后source policy原位复用且没有reload。
+  8行中`1/8` success只作执行证据，不作性能结论。8套macro3 LoRA全finite，初步几何为norm中位
+  `.7007`、stable rank中位`1.983`、top singular energy中位`.512`、16/16 coordinates active；它只说明
+  已消除旧decoder的结构性单lane塌缩，尚不能证明expert proximity或closed-loop性能。
+- profile与smoke设备均已自然释放，profile权重永久弃用。下一正式动作必须从含新seal与launch record的
+  clean pushed frozen worktree做identity-fresh 0→50；不加载旧macro50或任何profile checkpoint。启动前
+  仍实时比较`gpu01/gpu02`、最多使用6张空闲A40，并重新核验quota、3+3 NUMA与输出root不存在。
 - 当前唯一方法authority仍是
   `docs/action_forecast_writer_video_expert_manifold_design.md`。它保持one-shot，视频是唯一dynamic
   value：frozen π0.5逐帧提取2048维joint multimodal hidden与1024维Action-Expert suffix hidden，

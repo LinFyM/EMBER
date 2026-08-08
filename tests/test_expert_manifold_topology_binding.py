@@ -26,13 +26,18 @@ def _writer() -> VideoConditionedTopologicalWriter:
     )
 
 
-def test_address_binding_config_requires_fresh_execution_evidence() -> None:
+def test_address_binding_config_records_fresh_execution_evidence() -> None:
     config = load_expert_manifold_config(CONFIG)
     assert config["topological_writer"]["topology_address_binding"] == (
         "normalized_dynamic_times_normalized_chunk_plus_rank_address"
     )
-    assert config["meta_training"]["formal_run"]["status"] == (
-        "blocked_until_live_a40_profile_and_online_generation_smoke"
+    formal = config["meta_training"]["formal_run"]
+    assert formal["status"] == "sealed"
+    assert formal["profile_evidence"]["topology_address_binding"] == (
+        config["topological_writer"]["topology_address_binding"]
+    )
+    assert formal["online_smoke_evidence"]["topology_address_binding"] == (
+        config["topological_writer"]["topology_address_binding"]
     )
 
 

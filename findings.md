@@ -1,5 +1,21 @@
 # EMBER Findings
 
+## 2026-08-09 Address-binding online smoke与早期LoRA几何结论
+
+- 新图的纵向链路已经闭合：8个validation task/state各生成一套唯一完整rank-16 FP32 LoRA，随后释放
+  Writer/encoder并原位复用同一source policy；3 workers首次完成全部8行，0 retry/failure/OOM/nonfinite。
+  每行恰好一条correct action-hidden视频，teacher action/state/reward/terminal reads均为0。
+- 对8套macro3 LoRA逐tensor检查没有nonfinite。effective norm中位`.70069`尚处于early-profile幅度，
+  但stable rank中位`1.98260`、top singular energy中位`.51202`、16/16 rank coordinates active、top4
+  coordinate energy中位`.31274`。相较旧macro50的stable rank`1.0000014`/top energy`.9999986`，
+  地址绑定在仅3 macros时已打破结构性单lane塌缩；这不是“stable rank越高越好”的性能门。
+- 八套不同task LoRA的pairwise effective cosine中位`.54184`，说明macro3尚未充分分离task方向；而且
+  smoke只有8 tasks×1 state，不能估计same-task video variance、expert proximity或closed-loop能力。
+  因此正确证据顺序仍是identity-fresh macro50后同时看strict correct400、train24 target cosine、
+  rank/chunk retention和LoRA谱，再决定是否resume或进入时序五臂。
+- `1/8` rollout success只证明执行链可运行，不进入性能比较。profile/smoke权重均弃用；config seal只
+  解封fresh formal，不授权从工程checkpoint warm-start。
+
 ## 2026-08-09 Address-binding exact-resume profile结论
 
 - 新乘性地址图没有破坏stateless flat-reduction的可恢复性：resume与contiguous在三步loss/raw/

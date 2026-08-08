@@ -88,7 +88,11 @@
   精确一致，trainer optimizer/scheduler语义全等；`address_norm` Adam一阶矩最大值`8.21e-7`、
   macro1→3权重最大变化`1.62e-5`且finite。峰值reserved为`.898/.837GB`，0 OOM/nonfinite；
   仅trainer容器raw bytes不同，不误写成byte-exact。profile权重弃用。
-- [ ] 用上述profile macro3完成单卡online-generation/cached-rollout smoke；通过前不启动formal。
+- [x] 用上述profile macro3完成单卡online-generation/cached-rollout smoke：8/8 unique rows、8套
+  唯一LoRA、2个batch4、3 workers attempt1/exit0、0 retry/failure/OOM/nonfinite；Writer释放后复用
+  source policy，forbidden reads全0。8套LoRA 0 nonfinite，norm/stable-rank/top-energy中位=
+  `.7007/1.983/.512`且16 coordinates全active。`1/8`只作execution smoke；两组新evidence已写回
+  config并seal formal。
 - [ ] 工程门通过后从identity fresh分段训练，先做macro50 strict correct与内部expert proximity/
   rank-chunk retention；有可信absolute/breadth趋势才继续，并对候选single checkpoint做完整时序五臂。
   本轮不同时混入few-shot或新的loss recipe。
@@ -160,6 +164,13 @@ env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZE
   8 assigned/generated entries、2个batch4、`writer_modules_released=true`、source policy原位复用；
   cache/episode evidence有效，teacher frames used且action/state/reward/terminal reads全0；实际cache
   descriptor按FP32 state预算。通过后才把两组新evidence写入config并seal formal。
+- 验收结果：clean pushed`eb32f3f`的replacement自然完成。8/8 shards与rows均唯一，8个LoRA references
+  和cache entries唯一；generator生成2个batch4、wall=`9.731s`，peak allocated/reserved=
+  `10,576,056,320/11,182,014,464` bytes。Writer模块释放、source policy复用且无reload；三个workers
+  完成`5/1/2` shards并全为attempt1/exit0，0 retry/failure/OOM/nonfinite，四类forbidden reads为0。
+  8套FP32 LoRA的CPU有限性与几何只读审计为0 nonfinite、norm/stable-rank/top-energy中位=
+  `.7007/1.983/.512`、16/16 coordinates active。success=`1/8`不作性能证据；profile权重弃用，
+  formal config现已seal。
 
 ### Expert-Manifold identity-fresh formal0→50 launch合同（2026-08-09）
 

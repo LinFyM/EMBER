@@ -76,9 +76,12 @@
    captured-energy中位`.99523`。artifact=`policy_effective_compiler_feasibility_full400_rank128_v2.json`。
 6. [x] 已在唯一runtime原位替换compiler；保持video reader、coefficients、expert/cache、38 targets、
    rank16、one-shot与zero identity不变，CPU合同与真实资产检查全部通过。
-7. [ ] 专属单卡A40 online generation/cache/release/rollout smoke已通过并seal；下一步闭环只做预注册
-   小panel筛选。只有absolute/breadth明确支持才做formal correct400，过门后再做same/wrong/shuffled/
-   reversed/no-video严格配对。
+7. [ ] 专属单卡A40 online generation/cache/release/rollout smoke已通过并seal；下一步闭环固定为
+   validation8×前10 states=`80`条correct screen。历史相同前缀为source/addressless/address-binding/
+   raw-barycentric/v6-fast=`9/10/13/12/28`，breadth=`2/3/2/3/5`。强通过门为score`>=28/80`、
+   breadth`>=5`且相对raw-barycentric paired `gained-lost>=10`；随后才做formal correct400。score
+   `22--27`且breadth`>=4`只扩到预注册160-row消歧；更低或breadth`<=3`则拒绝当前compiler并回到
+   最早失效接口。correct400过门后才做same/wrong/shuffled/reversed/no-video严格配对。
 8. [ ] 若one-shot的same-task视频方差成为经证据定位的最早限制，再评估固定K的few-shot set/sequence
    aggregation；不能把few-shot当作掩盖task identity或视频时序失败的捷径。
 
@@ -109,6 +112,31 @@ env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZE
   nonfinite；teacher action/state/reward/terminal reads全0；Writer modules在cache后释放且source policy原进程
   复用于rollout。**已全部通过**：8/8 rows/LoRAs/cache、3/3 exit0、0异常/forbidden reads，generation=
   `11.070s`、peak allocated=`10,576,896,000` bytes；GPU已释放，专属evidence已写回并seal。
+
+## Policy-Effective strict correct80 screen launch合同（2026-08-09）
+
+- scientific code seal=`ffed252`。实际run只允许来自包含本段launch record、clean pushed、以
+  `origin/codex/bci-continuation`为upstream的冻结分支`codex/policy-effective-screen80-20260809`，worktree=
+  `/data1/user/ymdai/worktrees/EMBER-policy-effective-screen80-20260809`。fresh root/log/tmux固定为
+  `runs/outputs/pi05_expert_manifold_policy_effective_correct80_screen_noreplacement_seed7_ffed252_20260809`、
+  `runs/logs/pi05_expert_manifold_policy_effective_correct80_screen_noreplacement_seed7_ffed252_20260809.log`和
+  `ember_policy_effective_screen80_ffed252`；登记时branch/worktree/root/log/tmux均不存在。
+- 06:51 CST live比较双节点后只选`gpu02:0,1,2`三张0 MiB、0% A40，严格physical0/1/2→local0/1/2、
+  同属NUMA0；`gpu02:6/7`及`gpu01:3`他人进程明确不触碰。gpu02 available host memory=`480GiB`，
+  三卡×3 replicas的历史峰值低于120GiB host RAM。启动前必须再次live复核三卡，任一卡变忙即不启动。
+- `/data1`个人quota blocks=`563,425,168/1,073,741,824 KiB`。80套FP32 LoRA约`411,893,760` bytes，
+  连同results/queue/log保守新增低于1GiB。panel固定8 validation tasks各state0--9、correct one-shot、seed7、
+  每task 10条teacher video无放回；与addressless/address-binding/raw-barycentric逐row严格同state/video/
+  env/policy RNG配对，source只同state/env/policy RNG，v6-fast因历史video schedule不同只作same-state参考。
+- exact command（从上述frozen worktree在`gpu02`执行）：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 numactl --cpunodebind=0 --membind=0 /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_policy_effective_correct80_screen_noreplacement_seed7_ffed252_20260809 --role validation --mode screen --state-count 10 --replicas-per-gpu 3 --writer-generators-per-gpu 1 --writer-generation-batch-size 4 --gpu-indices 0,1,2 --expert-manifold-config configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json --expert-manifold-expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-manifold-feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --expert-manifold-video-data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --expert-manifold-video-condition correct --expert-manifold-video-sampling without_replacement
+```
+
+- 工程验收为80 unique rows/LoRAs/cache entries、所有builder生成的jobs与9 workers自然exit0、0 retry/
+  failure/OOM/nonfinite、四类forbidden reads全0、每行恰好一条correct frames-used video、Writer release和
+  source-policy reuse闭合。科研门严格使用本节预注册的score/breadth/paired gained-lost，不因结果改阈值。
 
 ## 退役边界
 

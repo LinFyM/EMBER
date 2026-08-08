@@ -1,5 +1,16 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Meta profile exact-resume失败与DDP static-graph候选修复
+
+- clean`ac56ab8`首轮六卡fresh/resume/contiguous均自然完成、NUMA与资源合同健康，但macro3 Writer
+  byte comparison失败；macro1完整checkpoint跨roots逐字节一致，macro3最大tensor差约`1.30e-5`。
+  按门否决该profile，未启动online smoke/formal。
+- 两组临时诊断依次启用deterministic algorithms+cuBLAS workspace、再强制math-SDPA，仍稳定复现
+  resume/contiguous双轨，排除checkpoint state和随机kernel。诊断weights永久弃用。
+- canonical meta DDP现对齐仓库既有训练器：`static_graph=True`、`broadcast_buffers=False`、
+  `find_unused_parameters=False`，run contract显式封存static/buffer语义。下一步CPU回归、clean/push后
+  从全新roots重做fresh/resume/contiguous，不沿用失败root。
+
 ## 2026-08-09 Task-expert五点封存、step2000 target与meta profile preflight
 
 - step1500/2000两组正式评测在23:59 CST自然完成：各1200 unique rows、126/126 jobs、9/9 workers

@@ -345,6 +345,8 @@ def _contract(
             "logical_tasks_per_macro": 24,
             "nccl_p2p_disable": os.environ.get("NCCL_P2P_DISABLE"),
             "deferred_process_group": True,
+            "ddp_static_graph": True,
+            "ddp_broadcast_buffers": False,
         },
         "content_hash_policy": "disabled_by_owner",
     }
@@ -421,7 +423,9 @@ def train(args: argparse.Namespace) -> None:
         writer,
         device_ids=[context.local_rank],
         output_device=context.local_rank,
-        broadcast_buffers=True,
+        broadcast_buffers=False,
+        find_unused_parameters=False,
+        static_graph=True,
     )
     optimizer, scheduler = _optimizer_and_scheduler(writer, config, scheduler_total)
     contract = _contract(

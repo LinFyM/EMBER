@@ -98,6 +98,12 @@
 - 统一target与config已由clean pushed`d96f0fb`封存；六卡profile的两个固定roots、三条exact command
   与fresh/resume/contiguous验收门已写入`task_plan.md`顶部。实际运行必须来自含launch record的
   clean/pushed checkout，formal状态仍未seal。
+- clean`ac56ab8`首轮六卡profile在finite/NUMA/显存上通过，但macro3 exact byte parity失败；macro1
+  Writer、optimizer/scheduler和六rank RNG跨roots完全一致。deterministic/cuBLAS/math-SDPA probes仍
+  复现系统性双轨；当前working root cause是meta DDP遗漏既有`static_graph=True`、导致重启后首次
+  reducer生命周期不同。canonical已按source-base/Source-SFT模式修复并写入run contract，但仍须新
+  profile逐字节确认；旧profile/probe权重弃用，
+  formal继续blocked，必须从新clean/pushed commit和新roots重做。
 - 旧K4 executable只作为临时兼容路径保留，owner是当前Expert-Manifold迁移；按设计第12节，只有
   新meta-Writer通过A40 profile后才删除，避免在其替代路径尚未实证前制造不可运行仓库。
 

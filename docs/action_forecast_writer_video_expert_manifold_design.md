@@ -442,3 +442,19 @@ cached policy rollout纵向smoke，profile权重永久不得进入formal。
 
 科学config/target seal为clean pushed`d96f0fb`，profile exact roots、三条命令和验收门只取
 `task_plan.md`顶部合同。root后缀标识该科学seal，实际运行commit由run contract记录且必须clean/pushed。
+
+首次真实六卡profile的fresh0→1与resume1→3均finite、NUMA正确、峰值reserved低于1GiB；独立
+contiguous0→3的macro1 checkpoint与resume root逐字节完全一致，optimizer/scheduler及六rank RNG也
+完全一致。但macro3有45个Writer tensors分叉，最大绝对差约`1.30e-5`，因此profile按预注册exact门
+否决，未进入online smoke或formal。deterministic algorithms、cuBLAS deterministic workspace及
+math-SDPA诊断仍复现“resume路径A/contiguous路径B”，排除漏存state和随机CUDA kernel；分叉始终在
+恢复后的首个optimizer update之后出现。
+
+当前唯一有代码差异支持的working root cause是：新meta trainer的DDP构造遗漏了仓库
+source-base/Source-SFT已有的`static_graph=True`合同，并
+反向保留了无必要的buffer broadcast。DDP reducer的首次迭代自适应状态不在checkpoint中，重启后的
+macro2与连续run的macro2处于不同reducer生命周期。canonical修复只让固定训练图使用
+`static_graph=True`、`broadcast_buffers=False`、`find_unused_parameters=False`并把前两项写入run
+contract；模型、数据、loss、optimizer、task平均、RNG和LoRA topology均不变。这个解释仍必须由
+新profile的逐字节parity证伪或确认；必须从新clean/pushed
+commit和全新roots重做完整profile，旧profile/probe权重全部弃用。

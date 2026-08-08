@@ -1,5 +1,20 @@
 # EMBER Findings
 
+## 2026-08-09 Meta exact-resume DDP reducer working root cause
+
+- 首轮六卡fresh0→1/resume1→3与独立contiguous0→3都finite且资源健康；两个macro1 Writer、trainer、
+  optimizer/scheduler和六份RNG逐字节一致。但macro3有45个Writer tensors、约681万值不同，最大绝对
+  差约`1.30e-5`，所以不能用“数值很小”放宽exact-resume门。
+- 启用PyTorch deterministic algorithms加cuBLAS deterministic workspace后分叉不变；再强制math-SDPA
+  后仍稳定复现resume路径A/contiguous路径B。分叉不是checkpoint漏存、随机kernel或flash attention，
+  而是在恢复后的首个optimizer update后系统性产生。
+- 与已验证source-base/Source-SFT DDP对照后，唯一有代码差异支持的候选是meta trainer没有
+  `static_graph=True`且仍
+  broadcast immutable buffers。重启会重建“首次迭代”reducer，而连续run已经过该生命周期；reducer
+  自适应状态没有checkpoint。修复沿仓库既有模式固定static graph、关闭buffer broadcast和unused
+  parameter search，并将DDP语义写入run contract。新profile必须以逐字节parity确认或否决该解释；
+  旧profile与两个diagnostic probes均不得复用。
+
 ## 2026-08-09 Task-expert五点闭环终态与统一step2000选择
 
 - clean pushed`1362d15`的step1500/2000 roots均自然完成1200 unique rows。本轮每点3 GPUs×3

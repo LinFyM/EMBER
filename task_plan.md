@@ -52,6 +52,10 @@
 - [ ] 完成meta-Writer六卡fresh0→1、exact-resume1→3、finite/OOM/梯度与任务等权合同；随后用
   profile macro3做不进入性能证据的online encoder/Writer generation smoke，验证每卡generator与
   rollout replicas并存、cache和显存释放后才seal formal。profile/formal checkpoint集合严格隔离。
+  首轮clean`ac56ab8`虽finite但macro3 byte parity失败；deterministic/cuBLAS/math-SDPA probes均未修复，
+  working root cause收敛到DDP首次迭代reducer生命周期未封存。canonical现对齐既有trainer使用
+  static graph并关闭immutable buffer broadcast；须从新commit和新roots重做，以byte parity确认或
+  否决，旧profile/probe权重弃用。
 - [ ] 完成A40 profile、identity-fresh meta训练、strict paired correct400曲线、五臂视频因果、
   task drift和expert→generated LoRA→action机制分析；根据最早失效接口迭代。
 - [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高absolute、breadth、

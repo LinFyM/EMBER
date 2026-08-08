@@ -82,6 +82,14 @@ contiguous0→3与macro3 online-generation/cached-rollout smoke；profile checkp
 统一target/config seal为clean pushed`d96f0fb`；本轮两个固定roots、三条exact command和验收门取
 `task_plan.md`顶部，实际run commit必须clean/pushed并由run contract登记。
 
+首轮clean`ac56ab8` profile并未seal：fresh/resume/contiguous均finite且macro1全部checkpoint state
+一致，但macro3 Writer byte parity失败，最大绝对tensor差约`1.30e-5`。deterministic/cuBLAS和
+math-SDPA probes仍复现双轨，说明不是随机kernel；working root cause是meta DDP遗漏仓库既有
+static-graph合同，
+重启后的首次reducer生命周期不同。canonical已改为static graph、关闭immutable buffer broadcast并
+写入run contract；旧roots禁止复用，formal保持blocked，下一步从新clean/pushed commit重做profile
+并以逐字节parity确认或否决该解释。
+
 owner已在本session完成讨论后明确恢复持续自主执行，并授权围绕长期Goal自行设计、实现、训练、
 评测和迭代；只有实质性阻塞才回报。执行顺序为：full24 expert geometry与development-train
 closed-loop统一评250/500/1000、formal cache、expert2000和统一step2000选择已经完成；当前顺序为

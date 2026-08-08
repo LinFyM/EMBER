@@ -146,6 +146,8 @@ def test_topological_writer_contract_seals_physical_numa_mapping(
     assert contract["runtime"]["runtime_metrics_reduction"] == (
         "max_across_all_ranks"
     )
+    assert contract["runtime"]["ddp_static_graph"] is True
+    assert contract["runtime"]["ddp_broadcast_buffers"] is False
 
 
 def test_smoke_evaluation_accepts_declared_profile_checkpoint(tmp_path: Path) -> None:

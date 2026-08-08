@@ -24,7 +24,11 @@ from ember.expert_manifold.evaluation import (
     validate_task_expert_episode,
 )
 from ember.pi05_lora import load_pi05_lora_contract
-from ember.pi05_source_checkpoint import read_json, write_json_atomic
+from ember.pi05_source_checkpoint import (
+    DistributedContext,
+    read_json,
+    write_json_atomic,
+)
 from ember.expert_manifold.sampler import TaskLocalEpochSampler
 from ember.expert_manifold.model import (
     TopologicalLoRAChunkLayout,
@@ -37,7 +41,10 @@ from ember.expert_manifold.video_features import (
     phase_resample,
 )
 from ember.expert_manifold.feature_cache import _feature_contract, _feature_runtime
-from ember.expert_manifold.writer_training import _runtime as _writer_runtime
+from ember.expert_manifold.writer_training import (
+    _contract as _writer_contract,
+    _runtime as _writer_runtime,
+)
 from ember.expert_manifold.video_schedule import (
     condition_demo_index,
     reference_demo_index,
@@ -89,6 +96,47 @@ def test_topological_writer_profile_preserves_formal_task_complete_schedule() ->
         (1, 3),
         1,
     )
+
+
+def test_topological_writer_contract_seals_physical_numa_mapping(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "cache_manifest.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(
+        "ember.expert_manifold.writer_training.git_state",
+        lambda _: {"branch": "branch", "commit": "commit"},
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.writer_training.visible_physical_cuda_index",
+        lambda _: 4,
+    )
+    contract = _writer_contract(
+        args=Namespace(mode="profile", config=CONFIG, feature_cache_root=tmp_path),
+        config=load_expert_manifold_config(CONFIG),
+        context=DistributedContext(0, 0, 1, torch.device("cuda", 0), 1, (48, 49)),
+        source={},
+        expert={},
+        cache={
+            "schema_version": "cache",
+            "training_commit": "cache-commit",
+            "task_count": 24,
+            "demo_count": 50,
+            "source": {},
+        },
+        scheduler_total=800,
+        microbatch=1,
+        checkpoints=(1, 3),
+    )
+    assert contract["runtime"]["rank_topology"] == [
+        {
+            "rank": 0,
+            "local_rank": 0,
+            "physical_gpu": 4,
+            "device": "cuda:0",
+            "numa_node": 1,
+            "cpu_affinity": [48, 49],
+        }
+    ]
 
 
 def test_profile_runtime_supports_fresh_then_exact_resume_boundary() -> None:

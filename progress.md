@@ -8,8 +8,11 @@
 - 初版phase-centered value仍存在“忽略learned phase key后退化为unordered frame set”的精确结构
   风险。CPU反例确认后，在隔离分支把唯一Writer value改成sqrt-normalized causal-prefix integral；
   full projected video仍用于key/routing。增加严格paired且不读frame的no-video counterfactual；没有
-  第二套Writer、language-only bypass或scalar gate。architecture gate无hard violation；相关聚焦
-  36/36和全仓218/218 CPU测试通过。
+  第二套Writer、language-only bypass或scalar gate。
+- profile前复核发现meta入口虽实际调用GPU-local NUMA binder，却允许绑定失败且run contract不记录
+  逐rank topology；已改为fail-fast，并记录local/physical GPU、NUMA node和CPU affinity。该修复不改
+  模型、task batch、DDP平均、优化器或feature/expert输入。architecture gate无hard violation，
+  聚焦27/27和全仓219/219 CPU测试通过。
 - 2026-08-08 17:38 CST从clean`81101fe`沿原正式root启动24 experts统一exact-resume1000→2000：
   六个独立tmux workers固定`gpu01:0,1,2,4,5,7`及对应NUMA，每worker续原4 tasks，显式
   `NCCL_P2P_DISABLE=1`。GPU3他人进程和GPU6均未使用；1500 partial checkpoints不作科研结论。

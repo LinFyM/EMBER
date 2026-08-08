@@ -33,8 +33,9 @@
   `.38820/.06042/.19110`，3/5-shot correct只到`.39379/.39558`。这支持先强制顺序绑定并保持one-shot。
 - phase-centered causal-prefix canonical实现与第六个`no_video`反事实已在隔离分支闭合：no-video保留paired
   task/state/RNG/demo ordinal与exact language但不读frames，以zero innovation完整运行Writer并必须
-  生成identity。架构门无hard violation，相关聚焦36/36、全仓218/218 CPU测试通过；尚无GPU
-  profile或性能结果。
+  生成identity。meta六卡入口也已补齐GPU-local NUMA fail-fast及逐rank physical/local/NUMA/affinity
+  run-contract记录；architecture gate无hard violation，聚焦27/27与全仓219/219 CPU测试通过；
+  尚无GPU profile或性能结果。
 - full24统一step250/500/1000正式geometry已完成，artifact为
   `runs/outputs/pi05_task_expert_bank_geometry_full24_steps0250_0500_1000_05d4868_20260808/analysis.json`。
   effective-LoRA norm中位=`2.792/3.652/4.170`，stable rank中位=`1.126/1.129/1.129`，

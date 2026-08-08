@@ -259,7 +259,8 @@ task-expert正式训练运行期间，后续实现放在独立worktree，避免�
 - meta训练每macro覆盖train24，每rank固定4 tasks，六rank DDP只在最后local microbatch同步，因而
   DDP平均严格等于24-task等权mean。模型、optimizer、scheduler、每rank RNG和macro cursor原子
   checkpoint；模型与cache完成local CUDA构造后才建立NCCL，BCI仍显式要求
-  `NCCL_P2P_DISABLE=1`。
+  `NCCL_P2P_DISABLE=1`。profile/formal均fail-fast要求GPU-local NUMA affinity，run contract逐rank
+  记录local/physical GPU、NUMA node与CPU affinity，不能只记录`CUDA_VISIBLE_DEVICES`字符串。
 - canonical evaluator新增独立Expert-Manifold adapter：每个rollout按50-state无放回schedule只取一条
   action-hidden video，correct/same/wrong/shuffled/reversed共享state、policy RNG、video ordinal与
   frame-order seed；online frozen encoder和topological Writer先生成episode LoRA cache，随后释放

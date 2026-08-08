@@ -49,6 +49,7 @@ from ember.pi05_source_setup import (
     initialize_distributed,
     seed_everything,
 )
+from ember.writer.topology import visible_physical_cuda_index
 
 
 WRITER_RUN_SCHEMA = "ember_pi05_expert_manifold_writer_launch_v1"
@@ -290,6 +291,19 @@ def _contract(
     checkpoints: Sequence[int],
 ) -> dict[str, Any]:
     state = git_state(REPO_ROOT)
+    local_topology = {
+        "rank": context.rank,
+        "local_rank": context.local_rank,
+        "physical_gpu": visible_physical_cuda_index(context.local_rank),
+        "device": str(context.device),
+        "numa_node": context.numa_node,
+        "cpu_affinity": list(context.cpu_affinity or ()),
+    }
+    rank_topology: list[Any] = [None] * context.world_size
+    if context.world_size > 1:
+        dist.all_gather_object(rank_topology, local_topology)
+    else:
+        rank_topology[0] = local_topology
     return {
         "schema_version": WRITER_RUN_SCHEMA,
         "mode": args.mode,
@@ -323,6 +337,7 @@ def _contract(
                 list(range(rank, 24, context.world_size))
                 for rank in range(context.world_size)
             ],
+            "rank_topology": rank_topology,
             "scheduler_total_macros": scheduler_total,
             "physical_microbatch_per_rank": microbatch,
             "checkpoint_macros": list(checkpoints),
@@ -368,7 +383,7 @@ def _metric_rows(path: Path) -> int:
 
 
 def train(args: argparse.Namespace) -> None:
-    context = initialize_distributed(require_numa=False, defer_process_group=True)
+    context = initialize_distributed(require_numa=True, defer_process_group=True)
     config = load_expert_manifold_config(args.config)
     scheduler_total, microbatch, checkpoints, stop_macro = _runtime(
         args, config, context

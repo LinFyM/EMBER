@@ -48,7 +48,8 @@ template cosine中位`.88284`，reversed/phase-shuffled=`-.32402/-.02194`；temp
 expert B geometry Spearman=`.45087`。固定causal-prefix uniform-pool的template
 correct/reversed/shuffled=`.96263/-.94287/-.04463`，B proxy=`.38820/.06042/.19110`；3/5-shot
 correct仅`.39379/.39558`，故当前保持one-shot并同时封住静态DC与unordered-set value捷径。
-对应实现architecture gate无hard violation、相关聚焦36/36与全仓218/218 CPU测试通过；尚未profile或训练。
+对应六卡入口fail-fast要求GPU-local NUMA，并逐rank记录physical/local GPU、NUMA与CPU affinity；
+architecture gate无hard violation，聚焦27/27与全仓219/219 CPU测试通过；尚未profile或训练。
 
 全24 experts的exact-resume1000→2000已于2026-08-08 17:38 CST从clean`81101fe`沿原root启动。
 6 workers固定`gpu01:0,1,2,4,5,7`与NUMA，显式`NCCL_P2P_DISABLE=1`；每worker依次续原4 tasks，

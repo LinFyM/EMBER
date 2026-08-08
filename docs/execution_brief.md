@@ -30,6 +30,16 @@ source policy原位复用且没有reload。`1/8` success只表示纵向链路可
 fresh root/log与frozen worktree/branch/tmux均不存在，预计新增低于300MiB。scientific seal=
 `448f760`，唯一root、命令和验收门取`task_plan.md`的address-binding formal段；启动前再复核设备。
 
+该fresh formal已由实际run commit`925e7b1`完成0→50：50 finite metrics、1,200 train24 one-shot
+conditions、完整macro50 checkpoint，body=`10.204s`，peak reserved=`836,763,648` bytes，0 OOM/
+nonfinite且六卡释放。内部train24 demo0诊断显示addressed/output chunk-rank energy=
+`.493/.477`与`.467/.616`、own-expert cosine中位`.1342`、LoRA norm/stable-rank/top-energy=
+`3.360/1.349/.757`；但跨task generated cosine仍`.8686`，不能据此resume。
+
+当前只启动macro50 strict correct400：fresh eval branch/worktree/root、正确视频无放回400-row panel、
+6卡×3 replicas与每卡3 generators/batch4的exact command及信息墙门均在`task_plan.md`。评测前再次live
+比较两节点；correct不过可信absolute/breadth门则不做五臂、不续训。
+
 当前唯一authority为`docs/action_forecast_writer_video_expert_manifold_design.md`。保持one-shot，
 视频是唯一dynamic value；Writer部署输入仍只有exact task language和恰好一条action-hidden video。
 第一次meta profile前的canonical decoder已收紧为full projected video只参与phase key/routing、LoRA

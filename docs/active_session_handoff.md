@@ -26,6 +26,17 @@
   `gpu02:6/7`他人进程均不触碰。个人quota为533.2GiB/1TiB，fresh formal root/log/worktree/branch/tmux
   全部不存在，预计新增低于300MiB。scientific seal=`448f760`，唯一exact command与验收门已登记在
   `task_plan.md`的“Address-binding identity-fresh formal0→50”段；真正启动前仍须再live复核。
+- fresh formal已由clean pushed launch-record`925e7b1`自然完成0→50：50/50 finite、1,200 one-shot
+  conditions、完整Writer/trainer/六rank RNG checkpoint、0 OOM/nonfinite；body=`10.204s`，peak
+  reserved=`836,763,648` bytes，六卡已释放。profile/旧macro50权重均未加载。
+- train24 demo0内部artifact显示最早接口已按预期改变：axial后chunk/rank centered energy中位仍只有
+  `5.64e-6/6.14e-6`，乘性address后恢复到`.493/.477`，最终output为`.467/.616`；own-expert
+  effective cosine中位由旧图约`.0108`升到`.1342`，LoRA norm/stable-rank/top-energy=
+  `3.360/1.349/.757`且16 coordinates active。风险也很清楚：24个generated task LoRA两两effective
+  cosine中位仍`.8686`、仅8/24最近expert是本task，因此不能用内部改善宣告成功或直接resume。
+- 下一唯一科研裁决是该macro50的strict correct400。evaluation frozen branch/worktree、fresh root、
+  6卡×3 replicas/3 generators、batch4 exact command与72-job/400-row信息墙门已登记在`task_plan.md`；
+  启动前重新live看卡。只有closed-loop absolute/breadth共同支持才进入resume和五臂。
 - 当前唯一方法authority仍是
   `docs/action_forecast_writer_video_expert_manifold_design.md`。它保持one-shot，视频是唯一dynamic
   value：frozen π0.5逐帧提取2048维joint multimodal hidden与1024维Action-Expert suffix hidden，

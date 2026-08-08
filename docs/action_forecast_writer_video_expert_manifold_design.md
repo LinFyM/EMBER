@@ -646,3 +646,25 @@ action/state/reward/terminal reads均为0。generation wall=`9.731s`，peak allo
 裁决而禁止加载。macro50后先看strict correct400、train24 expert proximity、chunk/rank retention和
 完整LoRA谱；只有absolute/breadth与内部传递共同支持时才resume。若absolute提高而顺序五臂仍失败，
 下一单变量候选才讨论显式order-negative credit；本段不提前混入few-shot、RL或新的target。
+
+## 28. Address-binding macro50内部证据与closed-loop裁决门（2026-08-09）
+
+clean pushed launch-record`925e7b1`已从identity fresh完成0→50：50/50 finite、1,200 train24 one-shot
+conditions、完整Writer/trainer/六rank RNG checkpoint、0 OOM/nonfinite；训练body=`10.204s`，peak
+reserved=`836,763,648` bytes。末步复合loss/raw reconstruction=`.083826/6.903e-5`仍只作surrogate。
+
+同checkpoint的train24 demo0纵向证据精确分离了“上游动态地址”与“显式绑定”的作用。cross与axial
+chunk/rank centered energy中位分别只有`4.60e-6/4.47e-6`和`5.64e-6/6.14e-6`；乘性address后跃迁为
+`.4930/.4765`，final output为`.4669/.6159`，target为`.9936/.9364`。这说明结构修复确实位于旧图最早
+断点，并没有假称cross-attention自己学会了topology。
+
+raw token与own-expert effective cosine中位=`.1177/.1342`，相较旧图train24 demo0约
+`.0233/.0108`形成material改善；nearest expert cosine=`.1393`且8/24 own-nearest。generated LoRA
+norm/stable-rank/top-energy中位=`3.360/1.349/.757`、16 coordinates active，故旧“同能量但近rank1且
+近正交expert”的失败形态已改变。
+
+新风险是高task共线：24个generated LoRA两两effective cosine中位`.8686`，远高于expert bank约`.100`；
+top4 coordinate energy也为`.8694`。因此新图可能学到一个较健康但过于公共的方向，仍不足以稳定承载
+24个task。唯一下一裁决是macro50 strict correct400：不过absolute/breadth门就不resume；若通过才继续
+训练，并用same/wrong/shuffled/reversed/no-video区分task公共方向与真实视频时序知识。本阶段不因内部
+几何漂亮而改变one-shot、target或loss。

@@ -93,9 +93,12 @@
   source policy，forbidden reads全0。8套LoRA 0 nonfinite，norm/stable-rank/top-energy中位=
   `.7007/1.983/.512`且16 coordinates全active。`1/8`只作execution smoke；两组新evidence已写回
   config并seal formal。
-- [ ] 工程门通过后从identity fresh分段训练，先做macro50 strict correct与内部expert proximity/
-  rank-chunk retention；有可信absolute/breadth趋势才继续，并对候选single checkpoint做完整时序五臂。
-  本轮不同时混入few-shot或新的loss recipe。
+- [x] 工程门通过后从identity fresh完成0→50与train24 demo0内部诊断：50/50 finite、完整checkpoint、
+  1,200 one-shot conditions；地址绑定把axial后的chunk/rank centered energy从约`5.64e-6/6.14e-6`
+  恢复到addressed `.493/.477`和output `.467/.616`。own-expert effective cosine中位由旧图约`.0108`
+  提高到`.1342`，但跨task generated LoRA cosine仍高达`.8686`，不能据此resume。
+- [ ] 完成macro50 strict correct400；有可信absolute/breadth趋势才继续，并对候选single checkpoint做
+  完整时序五臂。本轮不同时混入few-shot或新的loss recipe。
 - [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高absolute、breadth、
   稳定积累与视频特异性。
 - [x] owner已完成讨论并恢复持续自主执行；长期Goal为同一single checkpoint strict correct
@@ -202,6 +205,44 @@ env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,
   deferred NCCL、P2P-disable、Ring/Simple、无DDP wrapper与single-flat mean全部吻合。完成后先做
   macro50 train24 target/LoRA/address-retention内部诊断和strict paired correct400；不因loss或漂亮几何
   直接resume。只有absolute、breadth和内部传递共同支持才续到100并进入完整视频时序五臂。
+- 训练验收：clean pushed launch-record`925e7b1`自然完成。50/50 metrics连续finite，累计1,200 tasks/
+  videos，checkpoint含Writer、trainer与六rank RNG；body=`10.204s`，peak allocated/reserved=
+  `761,802,752/836,763,648` bytes，0 OOM/nonfinite，GPU自然释放。末步loss/raw/direction/log-scale=
+  `.083826/6.903e-5/.81893/.01864`，只作surrogate证据。
+- internal artifact=
+  `runs/outputs/pi05_expert_manifold_writer_addressbind_formal_fresh0_800_r6_step2000_448f760_20260809/internal_train24_demo000_diagnostic_v1.json`。
+  cross→axial→addressed→output的chunk/rank centered energy中位为
+  `4.60e-6/4.47e-6 → 5.64e-6/6.14e-6 → .493/.477 → .467/.616`，target=`.994/.936`。
+  raw/own-effective target cosine中位=`.1177/.1342`，nearest expert=`.1393`且8/24 own-nearest；LoRA
+  norm/stable-rank/top-energy=`3.360/1.349/.757`、16 coordinates active。结构断点已修，但generated
+  task-pair cosine仍`.8686`，strict closed loop仍是唯一续训门。
+
+### Address-binding macro50 strict correct400 launch合同（2026-08-09）
+
+- training checkpoint只取上述formal root的`macro_00000050`，训练commit=`925e7b1`。evaluation必须来自
+  含本段launch record、clean且与upstream一致的frozen branch
+  `codex/expert-manifold-addressbind-m050-eval-20260809`，worktree固定为
+  `/data1/user/ymdai/worktrees/EMBER-expert-manifold-addressbind-m050-eval-20260809`；不修改checkpoint，
+  不加载profile权重，不挑video或state。
+- 03:26 CST live比较仍选择`gpu01:0,1,2|4,5,7`六张14MiB/0%空闲A40的3+3 NUMA；物理3他人
+  41.6GiB VLLM、物理6和`gpu02:6/7`他人进程不触碰。启动前再次live复核，任一卡变忙即不启动。
+  个人quota约533.2GiB/1TiB；400套FP32 LoRA约2.064GB，加results/log保守新增低于2.5GiB。
+- fresh output/log/tmux固定为
+  `runs/outputs/pi05_expert_manifold_writer_addressbind_correct400_noreplacement_seed7_macro0050_925e7b1_20260809`、
+  `runs/logs/pi05_expert_manifold_writer_addressbind_correct400_noreplacement_seed7_macro0050_925e7b1_20260809.log`和
+  `ember_expert_manifold_addressbind_m050_eval_925e7b1`；登记时均不存在。
+- exact command（从上述frozen evaluation worktree执行）：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_addressbind_correct400_noreplacement_seed7_macro0050_925e7b1_20260809 --role validation --mode formal --state-count 50 --replicas-per-gpu 3 --writer-generators-per-gpu 3 --writer-generation-batch-size 4 --gpu-indices 0,1,2,4,5,7 --expert-manifold-config configs/pi05_video_expert_manifold_v1.json --expert-manifold-checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_addressbind_formal_fresh0_800_r6_step2000_448f760_20260809/checkpoints/macro_00000050 --expert-manifold-video-data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --expert-manifold-video-condition correct --expert-manifold-video-sampling without_replacement
+```
+
+- 科学panel固定8 validation tasks×50 states，correct one-shot、每task50 teacher videos无放回；state、
+  env/policy RNG与历史source/v6 panel严格可配对。dynamic long-first queue、6卡×3 replicas、每卡3
+  generators、batch4；Writer完整forward后缓存一套LoRA/row并释放生成模块。
+- 验收要求400 unique rows、400 unique LoRA references、72/72 jobs、18 workers exit0、0 retry/failure/
+  OOM/nonfinite；teacher frames used且action/state/reward/terminal reads全0，pairing字段完整。报告aggregate、
+  per-task/suite、breadth以及相对source/旧v6 gained/lost。correct先裁决；不过可信门不做五臂、不resume。
 
 ### Expert-Manifold identity-fresh formal0→50 launch合同（2026-08-09）
 

@@ -1,5 +1,17 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Address-binding formal0→50与strict correct400预注册
+
+- clean pushed launch-record`925e7b1`从identity fresh完成50/50 finite macros、1,200 train24 one-shot
+  conditions及完整macro50 checkpoint；body=`10.204s`，peak allocated/reserved=
+  `761,802,752/836,763,648` bytes，0 OOM/nonfinite，六卡自然释放。
+- 在live空闲`gpu02:0`完成train24 demo0内部诊断后卡已释放。cross/axial的chunk-rank energy仍约
+  `1e-6`，addressed恢复到`.493/.477`，output为`.467/.616`；raw/own-effective target cosine中位=
+  `.1177/.1342`。LoRA norm/stable-rank/top-energy=`3.360/1.349/.757`且16 coordinates active。
+- generated task-pair cosine仍`.8686`且只有8/24 own-nearest，故不凭内部信号resume。macro50 strict
+  correct400的新frozen eval branch/worktree/root、6卡r3/generator3/batch4命令与400-row/72-job门已写入
+  `task_plan.md`；启动前重新live复核。
+
 ## 2026-08-09 Address-binding formal0→50预注册
 
 - 新图profile/smoke evidence seal已由clean`448f760`通过193项全仓CPU回归并push；config正式状态为

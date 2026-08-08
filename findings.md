@@ -1,5 +1,25 @@
 # EMBER Findings
 
+## 2026-08-09 Address-binding macro50内部裁决
+
+- fresh formal0→50本身工程健康，但最重要的结论来自同一train24 demo0纵向对照。cross-attention和
+  axial输出的chunk/rank centered energy中位仍只有`4.60e-6/4.47e-6`与`5.64e-6/6.14e-6`；这证明
+  上游动态值本身没有学会坐标身份，也确认旧根因诊断没有被推翻。
+- 新乘性接口恰好在最早断点处恢复地址：addressed latent两轴energy=`.4930/.4765`，最终LoRA token
+  output=`.4669/.6159`，而expert target=`.9936/.9364`。因此地址信息不再被permutation-equivariant
+  decoder不可逆抹掉，且不是靠静态address单独输出。
+- train24 raw-token/own-effective expert cosine中位由旧图约`.0233/.0108`提高到`.1177/.1342`；nearest
+  expert cosine`.1393`，8/24 tasks最近的是自己。LoRA norm中位`3.360`接近expert`4.212`，stable rank
+  `1.349`、top singular energy`.757`、16 coordinates active。结构修复带来真实target方向改善，不只是
+  抬高谱或能量。
+- 仍然最危险的结构风险是task分离：24套generated LoRA的pairwise effective cosine中位`.8686`，而
+  step2000 experts约`.100`；top4 coordinate energy也高达`.8694`。Writer可能把所有视频写成一个
+  高rank但公共的平均方向，只在其上做小幅task变化。这可以比旧近rank1随机方向好，却仍可能导致
+  task rotation或有限closed-loop增益。
+- 因此macro50 strict correct400是必要且充分的下一证据。若absolute没有material上升，不能因内部
+  cosine提高而resume；若absolute上升但task集中或时序margin失败，下一接口才转向condition/task
+  direction separation或显式order credit，而不是继续放大norm。
+
 ## 2026-08-09 Address-binding online smoke与早期LoRA几何结论
 
 - 新图的纵向链路已经闭合：8个validation task/state各生成一套唯一完整rank-16 FP32 LoRA，随后释放

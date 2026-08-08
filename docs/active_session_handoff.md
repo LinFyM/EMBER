@@ -26,7 +26,7 @@
   feature cache profile与formal已完成；六卡meta A40 exact-resume core profile和单卡macro3 online-
   generation/cached-rollout smoke也已通过，meta formal config现已seal。旧K4/AS/RL executable、入口、
   配置和专属测试已按design第12节原位退役，当前dynamic Writer只有Expert-Manifold；identity-fresh
-  formal0→50已完成并产生唯一macro50 checkpoint，但尚无新strict rollout。
+  formal0→50与macro50 strict correct400均已完成；该checkpoint正式负裁决，不得resume100。
 - full24×50 cache的CPU审计表明phase-DC能量中位`.98057`、temporal residual中位`.01943`，但
   ordered/reversed/phase-shuffled temporal-template cosine中位=`.88284/-.32402/-.02194`；时序
   task geometry与expert B target geometry Spearman=`.45087`。固定causal-prefix uniform-pool的
@@ -75,16 +75,22 @@
   `0--23`，50 demo ordinals恰好覆盖`0--49`，cache约113MiB。peak allocated/reserved=
   `10,504,039,936/19,232,980,992` bytes，teacher action/state/reward/terminal reads合计0；
   canonical `cache_manifest.json`已由仓库seal入口生成，无worker error。
-- 当前已有唯一formal macro50 Expert-Manifold Writer checkpoint；profile macro1/3仍永久禁止warm-start，
-  尚无held strict rollout。已验证single-checkpoint最好仍是v6-fast`143/400`，长期严格门
-  仍是`>150/400`，尚未完成。
+- 当前唯一formal macro50 Expert-Manifold Writer的strict correct=`48/400`，与严格配对source base
+  同分且gained/lost=`5/5`；per-task为Spatial=`0/0`、Object=`4/0`、Goal=`0/42`、Long=`2/0`。
+  72/72 jobs、400 unique rows、18 workers exit0且forbidden reads全0，因此这是有效科研non-pass。
+  已验证single-checkpoint最好仍是v6-fast`143/400`，长期严格门`>150/400`尚未完成。
+- 全400生成LoRA norm中位`4.549`并不低，但stable rank=`1.0000014`、top energy=`.9999986`、
+  nearest train-expert cosine中位仅`.00797`。train24 demo0 effective target cosine也只有`.01081`；
+  rank/chunk地址在cross-attention后centered energy约`1e-6`，axial输出进一步到`1e-8/1e-10`，
+  对比expert target约`.936/.994`。最早失效是video dynamics没有保留topological address，而非
+  validation泛化或LoRA能量；原轨迹不续训，下一版只加入zero-preserving video×address乘性绑定。
 - owner已在本session完成讨论后明确恢复持续自主执行，并设定长期Goal：同一single checkpoint的
   strict paired correct必须严格超过`150/400`，同时保持真实视频时序因果性、same-task鲁棒性、
   task breadth和低checkpoint漂移；只有实质性阻塞才回报owner。当前证据顺序固定为：先做full24
   expert geometry、development-train closed-loop统一评250/500/1000、train24×50 feature cache和
   全24 experts统一resume2000、1500/2000闭环和唯一step2000 target选择、meta-Writer六卡core
-  profile已经通过；现只做macro3 online-generation/cached-rollout smoke，随后才seal formal和strict
-  validation五臂。
+  profile、online-generation/cached-rollout smoke、formal0→50和macro50 correct400均已完成；当前按
+  已定位的topology-address接口做单一结构修复，再fresh profile/train/strict评测。
   不得按单task挑不同expert step。
 - 统一expert continuation已于2026-08-08 22:39 CST自然完成：24/24 completion、6/6 summaries、
   24个1500和24个2000 checkpoints、0 error/OOM/nonfinite；GPU3他人进程和GPU6全程未触碰。

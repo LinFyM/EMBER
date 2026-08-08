@@ -70,8 +70,16 @@
 - [x] clean pushed launch-record`446cd42`从identity fresh完成formal0→50：50/50 finite macros、
   macro50完整Writer/trainer/六rank RNG checkpoint、0 OOM/nonfinite；训练body=`10.239s`，peak
   allocated/reserved=`737,273,344/815,792,128` bytes，3+3 NUMA与全部collective合同通过。
-- [ ] 从identity fresh启动分段formal meta训练，做strict paired correct400曲线、五臂视频因果、
-  task drift和expert→generated LoRA→action机制分析；根据最早失效接口迭代。
+- [x] 完成macro50 strict correct400与最早失效接口分析：正式成绩=`48/400`，与严格配对source
+  base同分且只有`5/5` gained/lost；8-task breadth只有3个task非零。生成LoRA norm中位`4.549`
+  虽与expert同量级，但stable rank=`1.0000014`、top singular energy=`.9999986`、q/v/action
+  B-column cosine均约`.99999`，到任一train expert的最近effective cosine中位仅`.00797`。
+  train24自身demo0也只有raw/effective target cosine中位`.02326/.01081`。地址在cross-attention后
+  rank/chunk centered energy由约`.48/.49`降到`1.04e-6/1.08e-6`，axial输出进一步降到
+  `2.51e-8/4.67e-10`，而target为`.936/.994`；因此拒绝原样resume50→100。
+- [ ] 在唯一Expert-Manifold路径原位加入zero-preserving video×topology address binding，先恢复
+  chunk/rank可区分写出，再做CPU合同、六卡profile、identity-fresh训练、strict correct与时序五臂；
+  不同时混入few-shot或新的loss recipe。
 - [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高absolute、breadth、
   稳定积累与视频特异性。
 - [x] owner已完成讨论并恢复持续自主执行；长期Goal为同一single checkpoint strict correct
@@ -158,6 +166,17 @@ env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZE
 ```bash
 env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_bci_correct400_noreplacement_seed7_macro0050_r2_d59841e_20260809 --role validation --mode formal --state-count 50 --replicas-per-gpu 3 --writer-generators-per-gpu 3 --writer-generation-batch-size 4 --gpu-indices 0,1,2,4,5,7 --expert-manifold-config configs/pi05_video_expert_manifold_v1.json --expert-manifold-checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_formal_fresh0_800_r6_step2000_fcaf733_20260809/checkpoints/macro_00000050 --expert-manifold-video-data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --expert-manifold-video-condition correct --expert-manifold-video-sampling without_replacement
 ```
+
+- replacement自然完成：72/72 jobs、400 unique rows、18 workers attempt1/exit0、0 retry/error/
+  OOM/nonfinite，400个唯一correct one-shot LoRA cache及forbidden-read零计数均闭合。成绩=`48/400`，
+  per-task按Spatial1/3、Object1/3、Goal3/6、Long1/2为`0/0,4/0,0/42,2/0`；与source base
+  逐state/RNG严格配对后both-success/source-only/writer-only/both-fail=`43/5/5/347`。
+- cache实际为400套FP32 LoRA、`2,064,364,800` tensor bytes，而descriptor曾按BF16估算
+  `1,029,734,400` bytes；容量仍远低于quota，但后续预算必须按实际dtype修正。
+- 内部诊断artifact为同root的`internal_lora_diagnostic_v0.json`。它证明macro50不是低能量，
+  而是video-conditioned topology address在进入decoder时已近乎完全消失；当前checkpoint正式负裁决，
+  不跑五臂、不resume100。下一版只修zero-preserving address binding，控制变量保持one-shot、expert2000、
+  feature cache、target、objective、optimizer与strict panel不变。
 
 ### Expert-Manifold meta-Writer flat-reduction reprofile launch合同（2026-08-09）
 

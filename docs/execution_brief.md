@@ -21,9 +21,16 @@ Expert-Manifold retained实现已并入唯一主工作分支`codex/bci-continuat
 geometry、phase16×3072 action-hidden cache、168-chunk axial decoder、六rank task-complete meta trainer、
 checkpoint exact-resume和one-shot strict five-arm加no-video反事实evaluator均已闭合，正式feature cache也已完成并seal。
 六卡A40 meta core profile和单卡macro3 online-generation/cached-rollout smoke均已通过，meta formal
-config现已seal；identity-fresh formal0→50已完成并产生唯一macro50 checkpoint，但仍无任何新strict
-rollout，因此不能报告新模型成绩。历史single-checkpoint最好
+config现已seal；identity-fresh formal0→50和macro50 strict correct400均已完成。新成绩仅`48/400`，
+与strict paired source base同分、gained/lost=`5/5`，故该checkpoint正式负裁决且不resume100。历史single-checkpoint最好
 仍为v6-fast`143/400`，严格目标`>150/400`未完成。
+
+macro50 evaluator完整通过72/72 jobs、400 unique rows、18 workers attempt1/exit0与0 forbidden reads。
+生成LoRA norm中位`4.549`虽健康，但stable rank=`1.0000014`、nearest expert cosine=`.00797`；
+train24自身effective target cosine也只有`.01081`。纵向probe显示rank/chunk centered energy在
+cross-attention后已由query约`.48/.49`塌到`~1e-6`，axial输出再到`~1e-8/~1e-10`，而target约
+`.936/.994`。当前执行方向不是追加原训练步数或先跑五臂，而是在唯一model中加入zero-preserving
+video×topology address binding，保持one-shot、expert2000、cache、loss与optimizer不变后重新profile。
 
 full24统一五点geometry已完成：effective-LoRA norm中位=`2.792/3.652/4.170/4.212/4.212`，
 stable rank与跨task cosine从1000后均基本不变；1500→2000 effective update energy已接近零。
@@ -155,6 +162,12 @@ inspector、聚焦36/36和全仓189/189均通过；修复clean push前不创建r
 根修已clean push为`d59841e`。replacement使用新的frozen eval branch/worktree与r2 output/log/tmux；
 科学panel、macro50 checkpoint、6卡×r3、每卡3 generators和batch4不变，exact command取`task_plan.md`
 顶部。启动前必须重新live比较两节点且旧失败root永久不得resume。
+
+replacement已由clean pushed`9406802`自然完成并释放六卡。正式`48/400`、per-task=
+`0/0,4/0,0/42,2/0`；与source base逐row paired后both-success/source-only/writer-only/both-fail=
+`43/5/5/347`。400个FP32 LoRA实际tensor bytes=`2,064,364,800`，后续预算不得沿用BF16估算。
+内部root-cause artifact为同root的`internal_lora_diagnostic_v0.json`。原轨迹禁止resume；下一阶段先
+完成address-binding设计、CPU合同、clean push和新profile，尚未授权任何旧checkpoint warm-start。
 
 未来任何GPU工作仍须live比较`gpu01/gpu02`，只用实时空闲卡、跨节点最多6张；不干扰他人进程。
 BCI多卡launcher显式`NCCL_P2P_DISABLE=1`，不运行SHA-256/MD5内容校验或大量防御扫描。

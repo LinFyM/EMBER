@@ -1,5 +1,31 @@
 # EMBER Findings
 
+## 2026-08-09 Expert-Manifold macro50 strict负裁决与topology-address根因
+
+- replacement correct400完整自然结束：`48/400`，8-task依次为Spatial=`0/0`、Object=`4/0`、
+  Goal=`0/42`、Long=`2/0`。72/72 jobs、400 unique rows、18 workers attempt1/exit0、0 retry/error/
+  OOM/nonfinite；每条只读exact language加一条correct action-hidden video，400套LoRA与forbidden-read
+  零计数闭合。这是有效科研non-pass，不是运行故障。
+- 它与旧source-base同一400-state panel的aggregate恰同为`48`；逐state的env seed、policy seed与
+  noise prefix全部匹配，both-success/source-only/writer-only/both-fail=`43/5/5/347`。Writer没有
+  建立共同新能力，不能因Goal-6的42次成功把source原有能力误记为meta学习。
+- 全400生成LoRA的effective norm中位=`4.54899`，与step2000 expert中位`4.21249`同量级；失败不是
+  能量不足。相反stable rank中位=`1.00000144`、top singular energy=`.99999856`，q/v/action
+  B-column cosine各task均约`.99999`。nearest-of-24 train-expert effective cosine中位只有
+  `.007974`，说明高幅LoRA方向没有落在policy-effective expert manifold上。
+- train24自身demo0复算也得到raw token/effective-BA target cosine中位仅`.02326/.01081`，排除
+  “只在validation泛化失败”。rank/chunk address centered energy从静态query的约`.481/.486`，在
+  cross-attention后降到中位`1.04e-6/1.08e-6`，经过四个axial blocks与共享output projection后降到
+  `2.51e-8/4.67e-10`；expert target中位却为`.936/.994`。cross-attention只把query当权重、没有保留
+  zero-preserving address value；一旦16-phase动态value近同，后续无位置编码的permutation-equivariant
+  axial blocks无法重新创造chunk/rank身份，并进一步强化共同方向。
+- 因此最早失效接口是`video dynamics → topology-addressed latent`，不是video encoder、expert能量、
+  closed-loop evaluator或训练时长。原轨迹拒绝resume50→100；先在唯一路径加入“动态video latent ×
+  静态chunk/rank address”的乘性零保持绑定，保证zero/phase-constant video仍精确identity，再fresh
+  profile/train。order-negative loss与few-shot暂不同时加入，避免掩盖该单一结构因果。
+- 400套cache实际保存FP32，共`2,064,364,800` tensor bytes；原descriptor按BF16估算约1.03GB。
+  这不影响数值结论或quota安全，但后续资源预算必须按实际cache dtype计算。
+
 ## 2026-08-09 Formal checkpoint跨worktree身份根因
 
 - 失败谓词精确位于`expert_manifold/inference.py::_training_checkpoint`：run contract中的training config

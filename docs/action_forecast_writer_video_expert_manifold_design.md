@@ -550,3 +550,37 @@ meta training、source与checkpoint manifest；不得把机器上的worktree绝�
 basename放宽。首次macro50评测暴露并根修了该工程冲突，失败发生在0 CUDA worker/0 row，不构成科研结果。
 根修已由clean pushed`d59841e`封存；replacement只能使用全新root，并保持原macro50 correct400的全部
 scientific pairing和资源边界。
+
+## 25. Macro50负裁决与zero-preserving topology-address修订门（2026-08-09）
+
+replacement formal correct400已自然完成：`48/400`，72/72 jobs、400 unique rows、18 workers
+attempt1/exit0、0 retry/error/OOM/nonfinite，teacher frame与信息墙证据完整。它与source base在同一
+task/state/env/policy-RNG panel上同分，paired gained/lost=`5/5`，所以不能把Goal-6的42次成功解释为
+Writer新能力。原macro50 checkpoint永久停止，不exact-resume到100，也不warm-start新结构。
+
+失败不是“LoRA能量仍太小”。400套generated LoRA effective norm中位=`4.54899`，已接近step2000
+expert的`4.21249`；但stable rank=`1.00000144`、top singular energy=`.99999856`，q/v/action
+B-column cosine全部约`.99999`，nearest-of-24 expert effective cosine中位仅`.007974`。train24
+自身demo0的raw/effective target cosine中位也只有`.02326/.01081`，因此最早故障发生在训练域内。
+
+纵向结构probe给出精确机制：学习到的chunk/rank query仍有约`.486/.481` centered energy，但query只
+作为cross-attention权重，不进入value或residual。16-phase causal dynamic values输出到2,688个query后，
+rank/chunk centered energy中位只剩`1.04e-6/1.08e-6`；四个无位置地址的共享axial blocks及output
+projection后进一步为`2.51e-8/4.67e-10`，而expert target为`.936/.994`。一旦cross output近同，后续
+permutation-equivariant算子没有信息可重建topology identity；这比closed-loop、scale或video encoder
+更早失效。
+
+下一canonical修订只允许在现有唯一Writer内加入乘性地址绑定：dynamic video latent与静态
+`chunk_query + rank_query`逐元素结合后再写出，使地址参与value但没有独立静态输出。绑定必须满足：
+
+1. zero或任意phase-constant video innovation仍逐tensor精确identity；
+2. exact language不能单独生成LoRA，video仍是唯一dynamic value；
+3. 非常量ordered video在output owner前保留material chunk与rank centered energy；
+4. 完整rank16、168 chunks、expert2000 target、train24×50 cache、one-shot sampler、objective、
+   optimizer、world6 task-complete mean与strict evaluator全部不变；
+5. fresh schema/checkpoint family，旧macro50不得加载；先CPU shape/identity/gradient/address-retention，
+   再六卡fresh/exact-resume profile，最后identity-fresh formal。
+
+本轮不同时加入few-shot、reversed/shuffled negative loss、RL、scale gate或新的expert target。这样若
+target cosine、SFT-like几何和closed-loop改善，可以归因于最早地址接口；视频时序五臂若随后仍不通过，
+再单独裁决是否增加显式order-negative训练。

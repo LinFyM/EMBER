@@ -1,5 +1,21 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Macro50 correct400完成、负裁决与地址塌缩定位
+
+- clean pushed`9406802`的r2评测自然完成并释放GPU：72/72 jobs、400 rows、18 workers全exit0且
+  attempt1，0 retry/error/OOM/nonfinite；400个one-shot correct LoRA、teacher frame used与四类
+  forbidden reads零计数全部闭合。正式score=`48/400`，只有3/8 tasks非零。
+- 与source-base旧formal结果严格按task/state/env/policy RNG配对，aggregate同为48，gained/lost=
+  `5/5`；因此当前checkpoint等价于没有共同闭环增益。实际cache为FP32 `2,064,364,800` tensor bytes，
+  已更正此前低于1.5GiB的估算。
+- CPU内部诊断覆盖400 generated LoRA与24个step2000 experts：norm中位`4.549`，但stable rank=
+  `1.0000014`、nearest-expert cosine中位`.00797`。train24 demo0 effective target cosine同样只有
+  `.01081`；不是held-task泛化单点失败。
+- 纵向probe把根因定位到cross-attention：rank/chunk centered energy从query约`.48/.49`降到
+  `~1e-6`，axial输出再降到`~1e-8/~1e-10`，而expert target约`.936/.994`。原轨迹不resume100，
+  下一动作是在唯一Expert-Manifold model原位设计zero-preserving video×topology address binding；
+  先走architecture gate与CPU合同，不立即启动新GPU实验。
+
 ## 2026-08-09 Macro50 correct400 CPU prepare失败与worktree-path根修
 
 - 首次formal correct400在adapter inspection阶段停止：0 CUDA worker、0 LoRA cache、0 scientific row，

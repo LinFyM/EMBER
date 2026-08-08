@@ -1,4 +1,4 @@
-"""Formal evaluation authority for the causal barycentric Expert-Manifold Writer."""
+"""Formal authority for the policy-effective Expert-Manifold Writer."""
 
 from __future__ import annotations
 
@@ -31,10 +31,10 @@ from ember.pi05_source_checkpoint import read_json
 
 EXPERT_MANIFOLD_WRITER_KIND = "expert_manifold_writer"
 EXPERT_MANIFOLD_ADAPTER_SCHEMA = (
-    "ember_pi05_expert_manifold_causal_barycentric_eval_adapter_v2"
+    "ember_pi05_expert_manifold_policy_effective_eval_adapter_v3"
 )
 EXPERT_MANIFOLD_EPISODE_SCHEMA = (
-    "ember_pi05_expert_manifold_causal_barycentric_episode_v2"
+    "ember_pi05_expert_manifold_policy_effective_episode_v3"
 )
 
 
@@ -110,8 +110,7 @@ def _validate_asset_linkage(
         valid = valid and (
             int(expert_row["ordinal"]) == ordinal
             and int(cache_row["task_ordinal"]) == ordinal
-            and int(expert_row["global_task_id"])
-            == int(cache_row["global_task_id"])
+            and int(expert_row["global_task_id"]) == int(cache_row["global_task_id"])
             and expert_row["suite"] == cache_row["suite"]
             and int(expert_row["task_id"]) == int(cache_row["task_id"])
             and expert_row["language"] == cache_row["language"]
@@ -173,8 +172,10 @@ def _evaluation_video_contract(
     rows = _target_rows(config)
     by_key = {(row["suite"], int(row["task_id"])): row for row in rows.values()}
     normalized = tuple((str(suite), int(task_id)) for suite, task_id in task_keys)
-    if not normalized or len(set(normalized)) != len(normalized) or any(
-        key not in by_key for key in normalized
+    if (
+        not normalized
+        or len(set(normalized)) != len(normalized)
+        or any(key not in by_key for key in normalized)
     ):
         raise ExpertManifoldError("Expert-Manifold evaluation task panel changed")
     roles = {key: str(by_key[key]["split_role"]) for key in normalized}
@@ -183,9 +184,9 @@ def _evaluation_video_contract(
         roles,
         "correct" if video_condition == "no_video" else video_condition,
     )
-    needed = {
-        int(row["language_global_task_id"]) for row in mapping
-    } | {int(row["video_global_task_id"]) for row in mapping}
+    needed = {int(row["language_global_task_id"]) for row in mapping} | {
+        int(row["video_global_task_id"]) for row in mapping
+    }
     video_data = _video_data(
         config=config,
         root=video_data_root,
@@ -209,10 +210,12 @@ def _fixed_asset_records(
     expert: Mapping[str, Any],
     cache: Mapping[str, Any],
 ) -> dict[str, Any]:
-    ridge = float(config["barycentric_writer"]["ridge"])
+    writer = config["barycentric_writer"]
+    ridge = float(writer["ridge"])
     asset_reference = (
         f"{BARYCENTRIC_CONFIG_SCHEMA}:step{int(expert['step'])}:"
-        f"24experts:50centroids:ridge{ridge:g}"
+        f"24experts:50centroids:ridge{ridge:g}:effectiveBA:"
+        f"subspace{int(writer['effective_basis_rank'])}:rank16"
     )
     cache_manifest_path = feature_cache_root.resolve() / "cache_manifest.json"
     return {
@@ -228,7 +231,8 @@ def _fixed_asset_records(
             "expert_count": len(expert["tasks"]),
             "centroid_videos_per_task": int(cache["demo_count"]),
             "ridge": ridge,
-            "reconstruction": config["barycentric_writer"]["reconstruction"],
+            "reconstruction": writer["reconstruction"],
+            "effective_basis_rank": int(writer["effective_basis_rank"]),
         },
         "expert_basis": {
             "root": str(expert_bank_root.resolve()),
@@ -271,7 +275,7 @@ def inspect_expert_manifold_writer_evaluation(
     status = str(config["evaluation"]["formal_status"])
     if require_formal and status != "sealed":
         raise ExpertManifoldError(
-            "formal barycentric evaluation requires live A40 smoke evidence"
+            "formal policy-effective evaluation requires live A40 smoke evidence"
         )
     asset_config_path, expert, cache = _inspect_fixed_assets(
         config,
@@ -300,16 +304,20 @@ def inspect_expert_manifold_writer_evaluation(
     return {
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "arm": f"expert_manifold_causal_barycentric_{video_condition}",
+        "arm": f"expert_manifold_policy_effective_{video_condition}",
         "execution_backend": (
-            "online_frozen_pi05_video_innovation_then_causal_barycentric_lora_cache"
+            "online_frozen_pi05_video_innovation_then_policy_effective_lora_cache"
         ),
         **assets,
         "evaluation_authority": {
             "formal_status": status,
-            "cpu_leave_one_task_out": dict(
-                config["evaluation"]["cpu_leave_one_task_out"]
+            "cpu_coefficient_evidence": dict(
+                config["evaluation"]["cpu_coefficient_evidence"]
             ),
+            "cpu_policy_effective_compiler": dict(
+                config["evaluation"]["cpu_policy_effective_compiler"]
+            ),
+            "cpu_runtime_evidence": dict(config["evaluation"]["cpu_runtime_evidence"]),
         },
         "video_data": video_data,
         "video_condition": video_condition,

@@ -33,8 +33,14 @@ one-shot causal representation与coefficient rule，在每个policy target的有
 CPU门已经通过：24 experts的rank96 captured-energy中位/最小=`.99677/.99331`；真实400 queries经
 public rank16后的target cosine中位/最小=`.99682/.99532`，effective norm相对expert中位=`.986`。
 pure affine `sum c_k B_kA_k`虽语义正确，但norm ratio只有`.527`，已拒绝。artifact为同root
-`policy_effective_compiler_feasibility_full400_rank128_v2.json`。现在进入唯一canonical原位实现与CPU
-合同，当前仍没有GPU工作。系数reader的CPU反事实已表明时序识别与有效更新幅度是两个接口：
+`policy_effective_compiler_feasibility_full400_rank128_v2.json`。唯一canonical原位实现与CPU合同现已
+完成：config=`configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json`，旧raw-factor
+config和compiler均删除；全仓`182/182` tests与真实asset inspector通过。runtime为0 parameters、
+68,863,192 buffer bytes，zero identity exact，one-hot expert/demo0 intended-target cosine中位=
+`.99838/.99836`；demo0 norm/stable/top=`4.179/1.125/.910`、A/B RMS=`.01891/.00846`、q/v/action列余弦=
+`.815/.813/.455`且16 coordinates active。train24 demo0 cross-task cosine中位`.203`，说明新compiler没有
+把expert方向压回公共LoRA。formal故意blocked，下一步只能从clean pushed commit做专属A40 online smoke，
+当前仍没有GPU工作。系数reader的CPU反事实已表明时序识别与有效更新幅度是两个接口：
 contrastive reader可使correct/reversed/shuffled方向约`.394/-.392/-.008`，但held norm ratio仅`.106`；
 rectified prototype可令reversed近identity并保留correct cosine约`.381`，但仍不能解决跨task expert
 transfer。故本轮不同时更换reader，不用时序margin掩盖compiler因果。

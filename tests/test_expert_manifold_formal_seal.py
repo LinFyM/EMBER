@@ -13,7 +13,7 @@ from ember.expert_manifold.contract import (
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = (
     REPO_ROOT
-    / "configs/pi05_video_expert_manifold_causal_barycentric_v1.json"
+    / "configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json"
 )
 
 
@@ -46,12 +46,14 @@ def _smoke_evidence() -> dict:
     }
 
 
-def test_formal_barycentric_evaluation_is_sealed_by_live_smoke() -> None:
+def test_policy_effective_evaluation_is_blocked_until_its_own_live_smoke() -> None:
     evaluation = load_barycentric_writer_config(CONFIG)["evaluation"]
-    assert evaluation["formal_status"] == "sealed"
-    assert evaluation["online_smoke_evidence"]["device"] == "NVIDIA A40"
-    assert evaluation["online_smoke_evidence"]["scientific_rows"] == 8
-    assert evaluation["online_smoke_evidence"]["source_policy_reloaded"] is False
+    assert evaluation["formal_status"] == "blocked_until_live_a40_online_smoke"
+    assert "online_smoke_evidence" not in evaluation
+    assert (
+        evaluation["cpu_policy_effective_compiler"]["selected_effective_basis_rank"]
+        == 96
+    )
 
 
 def test_formal_seal_accepts_only_complete_live_smoke_evidence(
@@ -62,7 +64,9 @@ def test_formal_seal_accepts_only_complete_live_smoke_evidence(
     config["evaluation"]["online_smoke_evidence"] = _smoke_evidence()
     path = tmp_path / "sealed.json"
     path.write_text(json.dumps(config), encoding="utf-8")
-    assert load_barycentric_writer_config(path)["evaluation"]["formal_status"] == "sealed"
+    assert (
+        load_barycentric_writer_config(path)["evaluation"]["formal_status"] == "sealed"
+    )
 
     del config["evaluation"]["online_smoke_evidence"]["writer_modules_released"]
     path.write_text(json.dumps(config), encoding="utf-8")

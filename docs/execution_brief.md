@@ -22,11 +22,12 @@ energy、active coordinates和q/v/action列几何均已进入expert-like区间�
 rank96再截public rank16后，400 targets的global cosine中位/最小=`.99682/.99532`，24 experts
 captured-energy中位/最小=`.99677/.99331`，通过实现门。当前仍未启动GPU或新正式run。
 
-现在在唯一canonical runtime中原位把compiler替换为Policy-Effective Barycentric；视频
+唯一canonical runtime已原位替换为Policy-Effective Barycentric；视频
 representation、ridge coefficients、one-shot输入、expert2000、feature cache、public 38-target rank-16
 topology和zero/no-video identity全部不变。内部effective subspace固定rank96；factor gauge只固定A/B
-表示而不改变`BA`。先完成实现、CPU合同与clean commit/push；
-之后才重新做live GPU/quota preflight和单卡online smoke。contrastive/rectified coefficient reader、
+表示而不改变`BA`。`182/182` tests与真实asset CPU inspector通过：0 parameters、zero exact、
+one-hot/demo0 target cosine=`.99838/.99836`，LoRA谱与A/B gauge均为expert-like。formal现为blocked；
+先clean commit/push，之后才重新做live GPU/quota preflight和单卡online smoke。contrastive/rectified coefficient reader、
 few-shot、RL、恢复v6或新增order loss均不是本轮变量。
 
 **最新操作覆盖（2026-08-09，覆盖本节后续旧“当前/下一步”）**：address-binding macro50的

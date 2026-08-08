@@ -120,7 +120,7 @@ scripts/train_task_experts.py
 scripts/evaluate_pi05.py
 ```
 
-当前Causal Barycentric Writer没有训练入口或learned Writer checkpoint；评测入口显式接收统一
+当前Policy-Effective Barycentric Writer没有训练入口或learned Writer checkpoint；评测入口显式接收统一
 step2000 expert bank、train24×50 feature cache和一条在线teacher video。旧learned
 Expert-Manifold、AS/RL/K4 Writer入口与实现均已原位退役；历史命令只作provenance，不能执行。
 

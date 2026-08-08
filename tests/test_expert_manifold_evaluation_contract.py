@@ -61,10 +61,10 @@ def _writer_adapter(condition: str = "correct") -> dict:
     return {
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "arm": f"expert_manifold_causal_barycentric_{condition}",
+        "arm": f"expert_manifold_policy_effective_{condition}",
         "video_condition": condition,
         "writer_asset": {
-            "reference": "test:causal-barycentric:step2000",
+            "reference": "test:policy-effective:step2000:subspace96",
             "learned_parameter_count": 0,
             "expert_step": 2000,
             "expert_count": 24,
@@ -107,11 +107,15 @@ def test_writer_video_schedule_and_wrong_map_are_order_independent() -> None:
     assert video_selection_seed(
         *request, sampling_mode="without_replacement"
     ) == video_selection_seed(*request, sampling_mode="without_replacement")
-    assert 0 <= reference_demo_index(
-        *request,
-        demo_count=50,
-        sampling_mode="without_replacement",
-    ) < 50
+    assert (
+        0
+        <= reference_demo_index(
+            *request,
+            demo_count=50,
+            sampling_mode="without_replacement",
+        )
+        < 50
+    )
     keys = (
         ("libero_spatial", 1),
         ("libero_spatial", 3),
@@ -134,9 +138,7 @@ def test_writer_video_schedule_and_wrong_map_are_order_independent() -> None:
     assert all(row["suite"] == row["video_suite"] for row in shuffled)
     assert len({row["video_global_task_id"] for row in forward}) == len(keys)
     assert all(row["suite"] != row["video_suite"] for row in forward)
-    assert all(
-        row["language_split_role"] == row["video_split_role"] for row in forward
-    )
+    assert all(row["language_split_role"] == row["video_split_role"] for row in forward)
     by_key = {(row["suite"], row["task_id"]): row for row in forward}
     assert (
         by_key[("libero_spatial", 1)]["video_suite"],
@@ -188,7 +190,7 @@ def test_writer_row_contract_recomputes_video_schedule_and_mapping(
     contract = {
         "schema_version": RUN_CONTRACT_SCHEMA,
         "mode": "smoke",
-        "arm": "expert_manifold_causal_barycentric_correct",
+        "arm": "expert_manifold_policy_effective_correct",
         "role": "test",
         "output_dir": str(tmp_path),
         "content_hash_policy": "disabled_by_owner",

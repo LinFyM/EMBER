@@ -1,4 +1,4 @@
-"""Closed-form causal expert-manifold generation for complete LoRA states."""
+"""Closed-form causal expert-manifold generation in policy-effective space."""
 
 from __future__ import annotations
 
@@ -43,7 +43,7 @@ class LoRAChunk:
 
 
 class TopologicalLoRAChunkLayout:
-    """Expose full LoRA tensors as chunk × rank × width without compression."""
+    """Analysis-only exact chunk view of the sealed public LoRA topology."""
 
     def __init__(self, contract: LoRAContract, *, chunk_width: int) -> None:
         if contract.rank <= 0 or chunk_width <= 0:
@@ -59,11 +59,9 @@ class TopologicalLoRAChunkLayout:
         ]
         policy = [name for name in indexed if name not in action]
         ordered = (*action, *policy)
-        if len(ordered) != len(contract.targets) or len(set(ordered)) != len(
-            ordered
-        ):
+        if len(ordered) != len(contract.targets) or len(set(ordered)) != len(ordered):
             raise ExpertManifoldError("LoRA target ordering is incomplete")
-        chunks: list[LoRAChunk] = []
+        chunks = []
         for target_ordinal, target_name in enumerate(ordered):
             target = indexed[target_name]
             for factor, width, suffix in (
@@ -71,8 +69,7 @@ class TopologicalLoRAChunkLayout:
                 ("b", target.out_features, LORA_B_SUFFIX),
             ):
                 tensor_name = target_name + suffix
-                count = math.ceil(width / self.chunk_width)
-                for factor_chunk in range(count):
+                for factor_chunk in range(math.ceil(width / self.chunk_width)):
                     start = factor_chunk * self.chunk_width
                     chunks.append(
                         LoRAChunk(
@@ -104,10 +101,7 @@ class TopologicalLoRAChunkLayout:
         for chunk in self.chunks:
             value = state[chunk.tensor_name]
             baseline = template[chunk.tensor_name]
-            if chunk.factor == "a":
-                rank_first = value - baseline
-            else:
-                rank_first = value
+            rank_first = value - baseline if chunk.factor == "a" else value
             if chunk.factor == "b":
                 rank_first = rank_first.transpose(0, 1)
             start = chunk.factor_chunk * self.chunk_width
@@ -143,18 +137,58 @@ class TopologicalLoRAChunkLayout:
             if factors[name] == "a":
                 value = value + baseline.reshape(*(1 for _ in leading), *baseline.shape)
             result[name] = value
-        expected_leading = tuple(leading)
         for name, value in result.items():
-            expected = (*expected_leading, *template[name].shape)
-            if tuple(value.shape) != expected:
+            if tuple(value.shape) != (*leading, *template[name].shape):
                 raise ExpertManifoldError(
                     "topological LoRA reconstruction changed shape"
                 )
         return result
 
 
-class CausalBarycentricTopologicalWriter(torch.nn.Module):
-    """Map one ordered video to one full LoRA through a frozen expert basis."""
+def _psd_sqrt(value: torch.Tensor) -> torch.Tensor:
+    symmetric = (value + value.T) * 0.5
+    eigenvalues, eigenvectors = torch.linalg.eigh(symmetric)
+    return (eigenvectors * eigenvalues.clamp_min(0).sqrt()[None]) @ eigenvectors.T
+
+
+def _effective_gram(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+    """Exact Gram of the expert matrices B_k A_k without materializing them."""
+
+    left = torch.einsum("kor,los->klrs", b, b)
+    right = torch.einsum("kri,lsi->klrs", a, a)
+    gram = (left * right).sum(dim=(-2, -1))
+    return (gram + gram.T) * 0.5
+
+
+def _energy_subspaces(
+    a: torch.Tensor, b: torch.Tensor, basis_rank: int
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Optimal independent left/right energy subspaces of all expert updates."""
+
+    left = torch.cat(
+        tuple(
+            expert_b @ _psd_sqrt(expert_a @ expert_a.T)
+            for expert_a, expert_b in zip(a, b, strict=True)
+        ),
+        dim=1,
+    )
+    right = torch.cat(
+        tuple(
+            _psd_sqrt(expert_b.T @ expert_b) @ expert_a
+            for expert_a, expert_b in zip(a, b, strict=True)
+        ),
+        dim=0,
+    )
+    left_u, _, _ = torch.linalg.svd(left, full_matrices=False)
+    _, _, right_vh = torch.linalg.svd(right, full_matrices=False)
+    return (
+        left_u[:, : min(basis_rank, left_u.shape[1])],
+        right_vh[: min(basis_rank, right_vh.shape[0])].T,
+    )
+
+
+class PolicyEffectiveBarycentricWriter(torch.nn.Module):
+    """Map one ordered video to one LoRA through effective expert updates."""
 
     def __init__(
         self,
@@ -165,8 +199,8 @@ class CausalBarycentricTopologicalWriter(torch.nn.Module):
         task_centroids: torch.Tensor,
         phase_slots: int,
         feature_width: int,
-        chunk_width: int,
         ridge: float,
+        effective_basis_rank: int,
         identity_epsilon: float = 1e-12,
     ) -> None:
         super().__init__()
@@ -174,26 +208,29 @@ class CausalBarycentricTopologicalWriter(torch.nn.Module):
             len(expert_states) < 2
             or phase_slots < 2
             or feature_width <= 0
-            or chunk_width <= 0
             or ridge <= 0
+            or effective_basis_rank < contract.rank
             or identity_epsilon <= 0
             or task_centroids.shape != (len(expert_states), feature_width)
         ):
-            raise ExpertManifoldError("invalid causal barycentric Writer")
+            raise ExpertManifoldError("invalid policy-effective barycentric Writer")
         validate_lora_state(template_state, contract)
         if any(
             name.endswith(LORA_B_SUFFIX) and bool(torch.count_nonzero(value))
             for name, value in template_state.items()
         ):
-            raise ExpertManifoldError("barycentric Writer template LoRA-B must be zero")
+            raise ExpertManifoldError(
+                "policy-effective Writer template LoRA-B must be zero"
+            )
         for state in expert_states:
             validate_lora_state(state, contract)
 
-        self.layout = TopologicalLoRAChunkLayout(contract, chunk_width=chunk_width)
+        self.contract = contract
         self.phase_slots = int(phase_slots)
         self.feature_width = int(feature_width)
         self.basis_count = len(expert_states)
         self.ridge = float(ridge)
+        self.effective_basis_rank = int(effective_basis_rank)
         self.identity_epsilon = float(identity_epsilon)
         self._template_buffers: dict[str, str] = {}
         for ordinal, (name, value) in enumerate(template_state.items()):
@@ -205,68 +242,82 @@ class CausalBarycentricTopologicalWriter(torch.nn.Module):
             )
             self._template_buffers[name] = buffer
 
-        template = self.template_state()
-        tokens = torch.stack(
-            [
-                self.layout.tokenize(
-                    {
-                        name: value.detach().to(device="cpu", dtype=torch.float32)
-                        for name, value in state.items()
-                    },
-                    template,
-                )
-                for state in expert_states
-            ]
-        )
-        valid_mask = self.layout.valid_mask()
-        mask = valid_mask[None, :, None, :].to(tokens.dtype)
-        valid_count = (
-            valid_mask.sum(dim=1).to(tokens.dtype)[None] * self.layout.rank
-        ).clamp_min(1.0)
-        scales = torch.sqrt(
-            (tokens.square() * mask).sum(dim=(-2, -1)) / valid_count + 1e-24
-        )
-        directions = torch.where(
-            scales[:, :, None, None] > self.identity_epsilon,
-            tokens / scales[:, :, None, None].clamp_min(self.identity_epsilon),
-            torch.zeros_like(tokens),
-        )
-
-        centroids = task_centroids.detach().to(dtype=torch.float32)
+        centroids = task_centroids.detach().to(device="cpu", dtype=torch.float32)
         centroid_norm = torch.linalg.vector_norm(centroids, dim=1, keepdim=True)
         if bool((centroid_norm <= self.identity_epsilon).any()):
-            raise ExpertManifoldError("barycentric task centroid is zero")
+            raise ExpertManifoldError("policy-effective task centroid is zero")
         centroids = centroids / centroid_norm
         centroid_mean = centroids.mean(dim=0)
         centered = centroids - centroid_mean[None]
         kernel = centered @ centered.T
         kernel.diagonal().add_(self.ridge)
         projection = torch.linalg.solve(kernel, centered)
-        if not all(
-            bool(torch.isfinite(value).all())
-            for value in (directions, scales, centroid_mean, projection)
-        ):
-            raise ExpertManifoldError("barycentric Writer basis is nonfinite")
-
-        self.register_buffer("valid_value_mask", valid_mask, persistent=True)
-        self.register_buffer("expert_directions", directions, persistent=True)
-        self.register_buffer(
-            "expert_log_scales",
-            scales.clamp_min(self.identity_epsilon).log(),
-            persistent=True,
-        )
-        self.register_buffer(
-            "chunk_log_scale_min",
-            self.expert_log_scales.min(dim=0).values,
-            persistent=True,
-        )
-        self.register_buffer(
-            "chunk_log_scale_max",
-            self.expert_log_scales.max(dim=0).values,
-            persistent=True,
-        )
         self.register_buffer("centroid_mean", centroid_mean, persistent=True)
         self.register_buffer("coefficient_projection", projection, persistent=True)
+
+        target_records: list[dict[str, Any]] = []
+        for ordinal, target in enumerate(contract.targets):
+            a_name = target.name + LORA_A_SUFFIX
+            b_name = target.name + LORA_B_SUFFIX
+            a = torch.stack(
+                [
+                    state[a_name].detach().to(device="cpu", dtype=torch.float32)
+                    for state in expert_states
+                ]
+            )
+            b = torch.stack(
+                [
+                    state[b_name].detach().to(device="cpu", dtype=torch.float32)
+                    for state in expert_states
+                ]
+            )
+            gram = _effective_gram(a, b)
+            norms = gram.diag().clamp_min(0).sqrt()
+            if bool((norms <= self.identity_epsilon).any()):
+                raise ExpertManifoldError("policy expert effective target is zero")
+            left, right = _energy_subspaces(a, b, self.effective_basis_rank)
+            cores = torch.stack(
+                [
+                    (left.T @ expert_b) @ (expert_a @ right)
+                    for expert_a, expert_b in zip(a, b, strict=True)
+                ]
+            )
+            expert_a_rms = a.square().mean(dim=(-2, -1)).sqrt()
+            gauge_a_rms = (
+                expert_a_rms.clamp_min(self.identity_epsilon).log().mean().exp()
+            )
+            values = (gram, norms, left, right, cores, gauge_a_rms)
+            if not all(bool(torch.isfinite(value).all()) for value in values):
+                raise ExpertManifoldError("policy-effective basis is nonfinite")
+            buffers = {}
+            for label, value in (
+                ("gram", gram),
+                ("norms", norms),
+                ("left", left),
+                ("right", right),
+                ("cores", cores),
+                ("gauge_a_rms", gauge_a_rms),
+            ):
+                name = f"target_{ordinal:03d}_{label}"
+                self.register_buffer(name, value, persistent=True)
+                buffers[label] = name
+            target_records.append(
+                {
+                    "target_name": target.name,
+                    "a_name": a_name,
+                    "b_name": b_name,
+                    "in_features": int(target.in_features),
+                    "out_features": int(target.out_features),
+                    **buffers,
+                }
+            )
+        self._target_records = tuple(target_records)
+
+        if not all(
+            bool(torch.isfinite(value).all())
+            for value in (self.centroid_mean, self.coefficient_projection)
+        ):
+            raise ExpertManifoldError("policy-effective Writer basis is nonfinite")
 
     def template_state(self) -> dict[str, torch.Tensor]:
         return {
@@ -289,9 +340,9 @@ class CausalBarycentricTopologicalWriter(torch.nn.Module):
             norm = torch.linalg.vector_norm(representation, dim=1, keepdim=True)
             query = representation / norm.clamp_min(self.identity_epsilon)
             weights = (query - self.centroid_mean[None]) @ self.coefficient_projection.T
-            affine = weights + (
-                1.0 - weights.sum(dim=1, keepdim=True)
-            ) / self.basis_count
+            affine = (
+                weights + (1.0 - weights.sum(dim=1, keepdim=True)) / self.basis_count
+            )
             return torch.where(
                 norm <= self.identity_epsilon, torch.zeros_like(affine), affine
             )
@@ -305,55 +356,80 @@ class CausalBarycentricTopologicalWriter(torch.nn.Module):
             raise ExpertManifoldError("barycentric coefficients are nonfinite")
         return result
 
-    def values_from_coefficients(self, coefficients: torch.Tensor) -> torch.Tensor:
+    def states_from_coefficients(
+        self, coefficients: torch.Tensor
+    ) -> dict[str, torch.Tensor]:
         if coefficients.ndim != 2 or coefficients.shape[1] != self.basis_count:
             raise ExpertManifoldError("barycentric coefficient shape changed")
         coefficients = coefficients.to(
-            device=self.expert_directions.device, dtype=torch.float32
+            device=self.centroid_mean.device, dtype=torch.float32
         )
 
-        def reconstruct() -> torch.Tensor:
-            direction = torch.einsum(
-                "bk,kcrw->bcrw", coefficients, self.expert_directions
+        def compile_states() -> dict[str, torch.Tensor]:
+            nonzero = (
+                torch.linalg.vector_norm(coefficients, dim=1) > self.identity_epsilon
             )
-            mask = self.valid_value_mask[None, :, None, :].to(direction.dtype)
-            valid_count = (
-                self.valid_value_mask.sum(dim=1).to(direction.dtype)[None]
-                * self.layout.rank
-            ).clamp_min(1.0)
-            rms = torch.sqrt(
-                (direction.square() * mask).sum(dim=(-2, -1))
-                / valid_count
-                + 1e-24
-            )
-            direction = torch.where(
-                rms[:, :, None, None] > self.identity_epsilon,
-                direction / rms[:, :, None, None].clamp_min(self.identity_epsilon),
-                torch.zeros_like(direction),
-            )
-            log_scale = coefficients @ self.expert_log_scales
-            log_scale = torch.maximum(
-                torch.minimum(log_scale, self.chunk_log_scale_max),
-                self.chunk_log_scale_min,
-            )
-            values = direction * log_scale.exp()[:, :, None, None]
-            return values.masked_fill(
-                ~self.valid_value_mask[None, :, None, :], 0.0
-            )
+            result: dict[str, torch.Tensor] = {}
+            for record in self._target_records:
+                gram = getattr(self, record["gram"])
+                norms = getattr(self, record["norms"])
+                left = getattr(self, record["left"])
+                right = getattr(self, record["right"])
+                cores = getattr(self, record["cores"])
+                gauge_a_rms = getattr(self, record["gauge_a_rms"])
+                direction_weights = coefficients / norms[None]
+                direction_norm = (
+                    torch.einsum(
+                        "bk,kl,bl->b", direction_weights, gram, direction_weights
+                    )
+                    .clamp_min(0)
+                    .sqrt()
+                )
+                if bool((nonzero & (direction_norm <= self.identity_epsilon)).any()):
+                    raise ExpertManifoldError(
+                        "nonzero coefficients cancelled the effective direction"
+                    )
+                log_scale = coefficients @ norms.log()
+                log_scale = log_scale.clamp(norms.log().min(), norms.log().max())
+                effective_weights = (
+                    direction_weights
+                    * (
+                        log_scale.exp()
+                        / direction_norm.clamp_min(self.identity_epsilon)
+                    )[:, None]
+                )
+                core = torch.einsum("bk,kmn->bmn", effective_weights, cores)
+                core_u, singular, core_vh = torch.linalg.svd(core, full_matrices=False)
+                public_rank = self.contract.rank
+                singular = singular[:, :public_rank]
+                column_basis = left[None] @ core_u[:, :, :public_rank]
+                row_basis = core_vh[:, :public_rank] @ right.T[None]
+
+                template_a = getattr(self, self._template_buffers[record["a_name"]])
+                anchor = template_a[None] @ row_basis.transpose(-2, -1)
+                anchor_u, _, anchor_vh = torch.linalg.svd(anchor, full_matrices=False)
+                orientation = anchor_u @ anchor_vh
+                gauge = gauge_a_rms * math.sqrt(record["in_features"])
+                a = gauge * (orientation @ row_basis)
+                b = (
+                    (column_basis * singular[:, None]) @ orientation.transpose(-2, -1)
+                ) / gauge
+
+                template_b = getattr(self, self._template_buffers[record["b_name"]])
+                a = torch.where(nonzero[:, None, None], a, template_a[None])
+                b = torch.where(nonzero[:, None, None], b, template_b[None])
+                result[record["a_name"]] = a
+                result[record["b_name"]] = b
+            return result
 
         if coefficients.device.type == "cuda":
             with torch.autocast(device_type="cuda", enabled=False):
-                values = reconstruct()
+                result = compile_states()
         else:
-            values = reconstruct()
-        if not bool(torch.isfinite(values).all()):
-            raise ExpertManifoldError("barycentric LoRA values are nonfinite")
-        return values
-
-    def forward_values(self, video_innovation: torch.Tensor) -> torch.Tensor:
-        return self.values_from_coefficients(self.coefficients(video_innovation))
+            result = compile_states()
+        if not all(bool(torch.isfinite(value).all()) for value in result.values()):
+            raise ExpertManifoldError("policy-effective LoRA state is nonfinite")
+        return result
 
     def forward(self, video_innovation: torch.Tensor) -> dict[str, torch.Tensor]:
-        return self.layout.detokenize(
-            self.forward_values(video_innovation), self.template_state()
-        )
+        return self.states_from_coefficients(self.coefficients(video_innovation))

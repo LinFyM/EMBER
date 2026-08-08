@@ -871,3 +871,26 @@ contrastive coefficient reader可令held target direction约`.394/-.392/-.008`�
 结果无法归因。只有effective compiler闭环absolute过门，才在同一compiler上引入order-negative credit并
 跑raw-frame five-arm/no-video。few-shot仍等待one-shot same-task方差成为最早限制；恢复v6只在该单变量
 候选失败后作为后续初始化/先验选择讨论，不在本轮混入。
+
+## 31. Policy-Effective canonical实现与CPU运行门（2026-08-09）
+
+30节选定的compiler已在唯一Writer owner内原位实现。旧
+`configs/pi05_video_expert_manifold_causal_barycentric_v1.json`及raw-factor deployment compiler删除，
+新authority为`configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json`；旧方法只由Git和
+formal artifacts保留。每个target预计算rank96 left/right energy subspaces、24个effective cores、exact
+expert Gram与norm；online以同一coefficients混合direction/log-norm，core SVD截rank16，再用template-A
+row-space Procrustes与train-expert geometric-mean A-RMS选择纯gauge。该gauge不改变`BA`，zero coefficients
+显式覆盖为template-A/zero-B。
+
+全仓`182/182` CPU tests与真实资产inspector通过。artifact=
+`runs/outputs/pi05_expert_manifold_policy_effective_cpu_real_assets_20260809/analysis.json`：Writer 0 learned
+parameters、persistent buffers=`68,863,192` bytes，CPU build=`2.33s`、batch24 compile=`.85s`，zero identity
+逐tensor exact。24 one-hot experts的effective cosine中位/最小=`.99838/.99665`；train24 demo0对未压缩
+intended target为`.99836/.99657`，ordered/reversed coefficient L2最小`1.268`。
+
+因子健康度也闭合：demo0 norm/stable-rank/top-energy中位=`4.179/1.125/.910`，A/B RMS=
+`.01891/.00846`，q/v/action B-column cosine=`.815/.813/.455`，16/16 coordinates active。train24 demo0
+不同task effective cosine中位`.203`，不再是旧learned/raw-factor Writer的公共方向。这里仍只是CPU机制
+证据，不是validation closed loop；formal状态故意为`blocked_until_live_a40_online_smoke`。下一步必须从
+clean pushed commit只用一张live空闲A40完成validation8×1-state feature→LoRA cache→release→rollout
+smoke，写回专属evidence后才可做预注册小panel。

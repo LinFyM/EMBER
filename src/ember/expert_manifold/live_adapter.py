@@ -20,7 +20,7 @@ from ember.expert_manifold.inference import (
     inspect_expert_manifold_writer_evaluation,
 )
 from ember.expert_manifold.model import (
-    CausalBarycentricTopologicalWriter,
+    PolicyEffectiveBarycentricWriter,
     phase_centered_causal_memory,
 )
 from ember.expert_manifold.video_schedule import shuffled_frame_permutation
@@ -41,7 +41,7 @@ def _build_barycentric_writer(
     lora: Any,
     template: Mapping[str, torch.Tensor],
     device: torch.device,
-) -> CausalBarycentricTopologicalWriter:
+) -> PolicyEffectiveBarycentricWriter:
     template_cpu = {
         name: value.detach().to(device="cpu", dtype=torch.float32)
         for name, value in template.items()
@@ -73,24 +73,24 @@ def _build_barycentric_writer(
         )
         validate_lora_state(state, lora)
         expert_states.append(state)
-        features = load_file(
-            str(cache_row["features"]["path"]), device="cpu"
-        )["video_innovation"].float()
+        features = load_file(str(cache_row["features"]["path"]), device="cpu")[
+            "video_innovation"
+        ].float()
         if tuple(features.shape) != expected_shape:
             raise ExpertManifoldError("barycentric centroid feature shape changed")
         task_centroids.append(
             phase_centered_causal_memory(features).mean(dim=1).mean(dim=0)
         )
     topology = config["barycentric_writer"]
-    writer = CausalBarycentricTopologicalWriter(
+    writer = PolicyEffectiveBarycentricWriter(
         contract=lora,
         template_state=template_cpu,
         expert_states=expert_states,
         task_centroids=torch.stack(task_centroids),
         phase_slots=int(config["video_features"]["phase_slots"]),
         feature_width=int(config["video_features"]["feature_width"]),
-        chunk_width=int(topology["chunk_width"]),
         ridge=float(topology["ridge"]),
+        effective_basis_rank=int(topology["effective_basis_rank"]),
         identity_epsilon=float(topology["identity_epsilon"]),
     ).to(device)
     writer.eval()
@@ -113,16 +113,20 @@ def _build_video_runtime(
 ]:
     video = config["video_features"]
     extraction = video["extraction"]
-    encoder = FrozenPi05VideoInnovationEncoder(
-        image_width=int(video["image_hidden_width"]),
-        expert_width=int(video["expert_hidden_width"]),
-        feature_width=int(video["feature_width"]),
-        phase_slots=int(video["phase_slots"]),
-        max_frames_per_encoder_call=int(extraction["max_frames_per_encoder_call"]),
-        action_horizon=int(extraction["action_horizon"]),
-        padded_action_dim=int(extraction["padded_action_dim"]),
-        initialization_seed=int(extraction["initialization_seed"]),
-    ).to(device).eval()
+    encoder = (
+        FrozenPi05VideoInnovationEncoder(
+            image_width=int(video["image_hidden_width"]),
+            expert_width=int(video["expert_hidden_width"]),
+            feature_width=int(video["feature_width"]),
+            phase_slots=int(video["phase_slots"]),
+            max_frames_per_encoder_call=int(extraction["max_frames_per_encoder_call"]),
+            action_horizon=int(extraction["action_horizon"]),
+            padded_action_dim=int(extraction["padded_action_dim"]),
+            initialization_seed=int(extraction["initialization_seed"]),
+        )
+        .to(device)
+        .eval()
+    )
     root = Path(observed["video_data"]["root"])
     authorities = [
         WriterTaskAuthority(
@@ -136,9 +140,7 @@ def _build_video_runtime(
     store = RawTeacherVideoStore(
         authorities, frame_stride=int(video["frame_stride"]), max_open_files=2
     )
-    languages = {
-        authority.task_id: authority.language for authority in authorities
-    }
+    languages = {authority.task_id: authority.language for authority in authorities}
     source_config = read_json(authority_path(config, "source_base_config"))
     tokenizer = Pi05TeacherPrefixTokenizer(
         tokenizer_path,
@@ -307,9 +309,7 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
             raise ExpertManifoldError("Expert-Manifold generation timing changed")
         result = []
         for index, row in enumerate(rows):
-            state = {
-                name: value[index].detach() for name, value in generated.items()
-            }
+            state = {name: value[index].detach() for name, value in generated.items()}
             validate_lora_state(state, self.lora_contract)
             result.append(
                 PreparedWriterLoRA(

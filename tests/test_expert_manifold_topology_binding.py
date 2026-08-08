@@ -9,19 +9,24 @@ from ember.expert_manifold.contract import (
     ExpertManifoldError,
     load_barycentric_writer_config,
 )
-from ember.expert_manifold.model import CausalBarycentricTopologicalWriter
-from ember.lora import LoRAContract, LoRATarget, SmolVLALoRAContract, identity_lora_state
+from ember.expert_manifold.model import PolicyEffectiveBarycentricWriter
+from ember.lora import (
+    LoRAContract,
+    LoRATarget,
+    SmolVLALoRAContract,
+    identity_lora_state,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = (
     REPO_ROOT
-    / "configs/pi05_video_expert_manifold_causal_barycentric_v1.json"
+    / "configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json"
 )
 
 
 def _writer() -> tuple[
-    CausalBarycentricTopologicalWriter,
+    PolicyEffectiveBarycentricWriter,
     LoRAContract,
     dict[str, torch.Tensor],
     tuple[dict[str, torch.Tensor], ...],
@@ -63,17 +68,27 @@ def _writer() -> tuple[
             [0.0, 0.0, 1.0, 0.0],
         ]
     )
-    writer = CausalBarycentricTopologicalWriter(
+    writer = PolicyEffectiveBarycentricWriter(
         contract=contract,
         template_state=template,
         expert_states=experts,
         task_centroids=centroids,
         phase_slots=4,
         feature_width=4,
-        chunk_width=2,
         ridge=0.3,
+        effective_basis_rank=4,
     )
     return writer, contract, template, tuple(experts)
+
+
+def _effective(
+    state: dict[str, torch.Tensor], index: int | None = None
+) -> torch.Tensor:
+    a = state["layer.lora_A.default.weight"]
+    b = state["layer.lora_B.default.weight"]
+    if index is not None:
+        a, b = a[index], b[index]
+    return b @ a
 
 
 def test_barycentric_config_has_no_learned_or_language_only_value_path() -> None:
@@ -83,15 +98,19 @@ def test_barycentric_config_has_no_learned_or_language_only_value_path() -> None
     assert config["video_features"]["shots"] == 1
     assert config["expert_basis"]["expert_step"] == 2000
     assert config["barycentric_writer"]["ridge"] == 0.3
-    assert config["evaluation"]["formal_status"] == "sealed"
-    assert config["evaluation"]["online_smoke_evidence"][
-        "writer_modules_released"
-    ] is True
+    assert config["barycentric_writer"]["effective_basis_rank"] == 96
+    assert config["evaluation"]["formal_status"] == (
+        "blocked_until_live_a40_online_smoke"
+    )
 
 
 @pytest.mark.parametrize(
     ("field", "value"),
-    (("ridge", 0.4), ("language_only_lora_path", True)),
+    (
+        ("ridge", 0.4),
+        ("language_only_lora_path", True),
+        ("effective_basis_rank", 64),
+    ),
 )
 def test_barycentric_config_fails_closed_on_method_drift(
     tmp_path: Path, field: str, value: object
@@ -130,18 +149,15 @@ def test_zero_and_phase_constant_video_are_exact_source_identity() -> None:
         )
 
 
-def test_one_hot_coefficients_reconstruct_each_complete_expert() -> None:
+def test_one_hot_coefficients_reconstruct_each_expert_effective_update() -> None:
     writer, _, _, experts = _writer()
-    generated = writer.layout.detokenize(
-        writer.values_from_coefficients(torch.eye(3)), writer.template_state()
-    )
+    generated = writer.states_from_coefficients(torch.eye(3))
     for expert_index, expert in enumerate(experts):
-        assert set(generated) == set(expert)
-        assert all(
-            torch.allclose(
-                generated[name][expert_index], value, atol=2e-6, rtol=2e-6
-            )
-            for name, value in expert.items()
+        assert torch.allclose(
+            _effective(generated, expert_index),
+            _effective(expert),
+            atol=2e-5,
+            rtol=2e-5,
         )
 
 
@@ -163,31 +179,56 @@ def test_nonzero_video_coefficients_are_deterministic_affine_and_ordered() -> No
     assert torch.allclose(reversed_value.sum(dim=1), torch.ones(1), atol=1e-6)
     assert not torch.allclose(first, reversed_value)
     assert not torch.allclose(
-        writer.forward_values(video), writer.forward_values(video.flip(1))
+        _effective(writer(video), 0), _effective(writer(video.flip(1)), 0)
     )
 
 
-def test_chunk_scales_stay_inside_expert_envelope_and_shapes_are_finite() -> None:
-    writer, contract, _, _ = _writer()
+def test_effective_direction_log_norm_matches_best_public_rank_projection() -> None:
+    writer, contract, _, experts = _writer()
     coefficients = torch.tensor([[1.4, -0.6, 0.2], [-0.5, 0.75, 0.75]])
-    values = writer.values_from_coefficients(coefficients)
-    mask = writer.valid_value_mask[None, :, None, :].to(values.dtype)
-    count = writer.valid_value_mask.sum(dim=1)[None].to(values.dtype) * contract.rank
-    scale = torch.sqrt(
-        (values.square() * mask).sum(dim=(-2, -1)) / count.clamp_min(1.0)
+    generated = writer.states_from_coefficients(coefficients)
+    expert_updates = torch.stack([_effective(expert) for expert in experts])
+    expert_norms = expert_updates.flatten(1).norm(dim=1)
+    for batch, coefficient in enumerate(coefficients):
+        direction = torch.einsum(
+            "k,koi->oi", coefficient / expert_norms, expert_updates
+        )
+        scale = (
+            (coefficient @ expert_norms.log())
+            .clamp(expert_norms.log().min(), expert_norms.log().max())
+            .exp()
+        )
+        target = direction / direction.norm() * scale
+        u, singular, vh = torch.linalg.svd(target, full_matrices=False)
+        expected = (u[:, : contract.rank] * singular[: contract.rank]) @ vh[
+            : contract.rank
+        ]
+        assert torch.allclose(
+            _effective(generated, batch), expected, atol=3e-5, rtol=3e-5
+        )
+
+
+def test_factor_gauge_and_shapes_are_finite_and_expert_scaled() -> None:
+    writer, contract, _, experts = _writer()
+    coefficients = torch.tensor([[1.4, -0.6, 0.2], [-0.5, 0.75, 0.75]])
+    generated = writer.states_from_coefficients(coefficients)
+    a = generated["layer.lora_A.default.weight"]
+    b = generated["layer.lora_B.default.weight"]
+    expected_a_rms = (
+        torch.stack(
+            [
+                expert["layer.lora_A.default.weight"].square().mean().sqrt()
+                for expert in experts
+            ]
+        )
+        .log()
+        .mean()
+        .exp()
     )
-    assert values.shape == (2, writer.layout.chunk_count, contract.rank, 2)
-    assert bool(torch.isfinite(values).all())
-    assert bool(
-        (
-            scale.log()
-            >= writer.chunk_log_scale_min[None] - 2e-6
-        ).all()
-    )
-    assert bool(
-        (
-            scale.log()
-            <= writer.chunk_log_scale_max[None] + 2e-6
-        ).all()
+    assert a.shape == (2, contract.rank, 3)
+    assert b.shape == (2, 4, contract.rank)
+    assert bool(torch.isfinite(a).all() and torch.isfinite(b).all())
+    assert torch.allclose(
+        a.square().mean(dim=(-2, -1)).sqrt(), expected_a_rms.expand(2), atol=2e-6
     )
     assert tuple(writer.parameters()) == ()

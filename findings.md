@@ -31,6 +31,11 @@
   对真实400 queries的global captured-energy/cosine中位=`.99365/.99682`、最小=`.99065/.99532`；
   对24 one-hot experts captured-energy中位/最小=`.99677/.99331`。rank128只把query cosine中位从
   `.99682`提高到`.99712`，不值得额外basis/runtime成本。rank96是当前证据支持的最小充分内部容量。
+- 真实资产实现确认CPU预测没有因factorization落空：one-hot expert/demo0 intended effective cosine中位=
+  `.99838/.99836`，zero identity exact。template-A Procrustes gauge给出norm/stable/top=
+  `4.179/1.125/.910`、A/B RMS=`.01891/.00846`、q/v/action B-column cosine=`.815/.813/.455`、16 active，
+  与正常experts同量级；不是另一种低能量、单rank或99%列共线LoRA。train24 demo0跨task cosine中位
+  `.203`，显著接近expert bank`.100`而非旧Writer公共方向。
 
 ## 2026-08-09 Causal Barycentric online smoke与LoRA几何
 

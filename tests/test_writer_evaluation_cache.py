@@ -56,10 +56,10 @@ def _contract(root: Path, *, replicas: int = 2, state_count: int = 3) -> dict:
         "adapter": {
             "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
             "kind": EXPERT_MANIFOLD_WRITER_KIND,
-            "arm": "expert_manifold_causal_barycentric_correct",
+            "arm": "expert_manifold_policy_effective_correct",
             "video_condition": "correct",
             "writer_asset": {
-                "reference": "causal-barycentric:step2000",
+                "reference": "policy-effective:step2000:subspace96",
                 "learned_parameter_count": 0,
                 "expert_step": 2000,
                 "expert_count": 24,
@@ -102,7 +102,9 @@ def _contract(root: Path, *, replicas: int = 2, state_count: int = 3) -> dict:
 def _state(value: float) -> dict[str, torch.Tensor]:
     return {
         "layer.lora_A.default.weight": torch.full((2, 3), value, dtype=torch.bfloat16),
-        "layer.lora_B.default.weight": torch.full((4, 2), value + 1, dtype=torch.bfloat16),
+        "layer.lora_B.default.weight": torch.full(
+            (4, 2), value + 1, dtype=torch.bfloat16
+        ),
     }
 
 
@@ -130,7 +132,10 @@ def _populate(contract: dict, lora: SmolVLALoRAContract) -> None:
         invocation_id=invocation,
         worker_id="0-r0",
         generator_index=0,
-        summary={"source_policy_reused_for_rollout": True, "writer_modules_released": True},
+        summary={
+            "source_policy_reused_for_rollout": True,
+            "writer_modules_released": True,
+        },
     )
     finalize_writer_cache(contract, invocation_id=invocation, worker_ids=("0-r0",))
 
@@ -138,7 +143,10 @@ def _populate(contract: dict, lora: SmolVLALoRAContract) -> None:
 def test_cache_identity_ignores_rollout_replica_count(tmp_path: Path) -> None:
     first = _contract(tmp_path / "first", replicas=2)
     second = _contract(tmp_path / "second", replicas=6)
-    assert first["writer_lora_cache"]["identity"] == second["writer_lora_cache"]["identity"]
+    assert (
+        first["writer_lora_cache"]["identity"]
+        == second["writer_lora_cache"]["identity"]
+    )
 
 
 def test_one_shot_cache_retains_one_entry_per_episode(tmp_path: Path) -> None:
@@ -148,7 +156,9 @@ def test_one_shot_cache_retains_one_entry_per_episode(tmp_path: Path) -> None:
     assert len({request.entry_id for request in writer_cache_requests(contract)}) == 50
 
 
-def test_expert_manifold_cache_declares_one_shot_episode_evidence(tmp_path: Path) -> None:
+def test_expert_manifold_cache_declares_one_shot_episode_evidence(
+    tmp_path: Path,
+) -> None:
     contract = _contract(tmp_path / "cache")
     lora = _lora_contract()
     descriptor = build_writer_lora_cache_descriptor(
@@ -173,7 +183,9 @@ def test_expert_manifold_cache_declares_one_shot_episode_evidence(tmp_path: Path
     )
 
 
-def test_writer_cache_is_atomic_complete_and_loadable_without_hashes(tmp_path: Path) -> None:
+def test_writer_cache_is_atomic_complete_and_loadable_without_hashes(
+    tmp_path: Path,
+) -> None:
     contract = _contract(tmp_path / "cache")
     lora = _lora_contract()
     _populate(contract, lora)

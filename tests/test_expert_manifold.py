@@ -81,12 +81,16 @@ def test_video_expert_manifold_config_keeps_video_as_dynamic_value() -> None:
 def test_profile_runtime_supports_fresh_then_exact_resume_boundary() -> None:
     config = load_expert_manifold_config(CONFIG)
     fresh = Namespace(mode="profile", batch_size=None, stop_after_step=1, resume=None)
-    resumed = Namespace(mode="profile", batch_size=None, stop_after_step=3, resume=Path("x"))
+    resumed = Namespace(
+        mode="profile", batch_size=None, stop_after_step=3, resume=Path("x")
+    )
     assert resolve_runtime(fresh, config) == (3, 16, (1, 3), 1)
     assert resolve_runtime(resumed, config) == (3, 16, (1, 3), 3)
 
 
-def test_formal_experts_use_the_sealed_live_profile(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_formal_experts_use_the_sealed_live_profile(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     config = load_expert_manifold_config(CONFIG)
     monkeypatch.setattr(
         "ember.expert_manifold.contract.git_state",
@@ -107,8 +111,12 @@ def test_formal_experts_use_the_sealed_live_profile(monkeypatch: pytest.MonkeyPa
 
 def test_task_local_sampler_is_step_exact_across_epoch_boundary() -> None:
     sampler = TaskLocalEpochSampler(range(11), task_id=7, batch_size=4, seed=19)
-    uninterrupted = tuple(value for step in range(9) for value in sampler.batch_for_step(step))
-    resumed = tuple(value for step in range(3, 9) for value in sampler.batch_for_step(step))
+    uninterrupted = tuple(
+        value for step in range(9) for value in sampler.batch_for_step(step)
+    )
+    resumed = tuple(
+        value for step in range(3, 9) for value in sampler.batch_for_step(step)
+    )
     assert resumed == uninterrupted[12:]
     assert len(set(uninterrupted[:11])) == 11
     assert len(set(uninterrupted[11:22])) == 11
@@ -227,7 +235,9 @@ def test_task_expert_episode_evidence_is_task_and_state_exact() -> None:
 
 def test_complete_hashless_task_expert_bank_is_inspectable(tmp_path: Path) -> None:
     config = load_expert_manifold_config(CONFIG)
-    manifest = read_json(REPO_ROOT / config["authorities"]["target_data_manifest"]["path"])
+    manifest = read_json(
+        REPO_ROOT / config["authorities"]["target_data_manifest"]["path"]
+    )
     rows = sorted(
         (row for row in manifest["tasks"] if row["split_role"] == "train"),
         key=lambda row: int(row["global_task_id"]),
@@ -293,9 +303,7 @@ def test_complete_hashless_task_expert_bank_is_inspectable(tmp_path: Path) -> No
                 "mode": "formal",
                 "git": {"commit": "training-commit"},
                 "config": {
-                    "path": str(
-                        Path("/frozen/formal-worktree/configs") / CONFIG.name
-                    ),
+                    "path": str(Path("/frozen/formal-worktree/configs") / CONFIG.name),
                     "schema": config["schema_version"],
                 },
                 "source": {
@@ -342,7 +350,9 @@ def _synthetic_lora_states():
     contract = load_pi05_lora_contract(REPO_ROOT / "configs/pi05_lora_v1.json")
     template = {}
     target = {}
-    for ordinal, (name, shape) in enumerate(expected_lora_state_shapes(contract).items()):
+    for ordinal, (name, shape) in enumerate(
+        expected_lora_state_shapes(contract).items()
+    ):
         base = torch.arange(math.prod(shape), dtype=torch.float32).reshape(shape)
         base = base.mul(1e-7 * (ordinal + 1))
         if name.endswith(".lora_B.default.weight"):
@@ -427,34 +437,40 @@ def test_one_shot_video_schedule_covers_fifty_states_without_replacement() -> No
         for state in range(50)
     )
     assert len(set(values)) == 50
-    assert condition_demo_index(
-        7,
-        "libero_goal",
-        3,
-        0,
-        condition="same_task_other",
-        demo_count=50,
-        sampling_mode="without_replacement",
-    ) == (values[0] + 17) % 50
-    assert condition_demo_index(
-        7,
-        "libero_goal",
-        3,
-        0,
-        condition="no_video",
-        demo_count=50,
-        sampling_mode="without_replacement",
-    ) == values[0]
+    assert (
+        condition_demo_index(
+            7,
+            "libero_goal",
+            3,
+            0,
+            condition="same_task_other",
+            demo_count=50,
+            sampling_mode="without_replacement",
+        )
+        == (values[0] + 17) % 50
+    )
+    assert (
+        condition_demo_index(
+            7,
+            "libero_goal",
+            3,
+            0,
+            condition="no_video",
+            demo_count=50,
+            sampling_mode="without_replacement",
+        )
+        == values[0]
+    )
 
 
 def test_expert_manifold_episode_evidence_keeps_one_video_dynamic() -> None:
     adapter = {
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "arm": "causal-barycentric-correct",
+        "arm": "policy-effective-correct",
         "video_condition": "correct",
         "writer_asset": {
-            "reference": "barycentric:step2000",
+            "reference": "policy-effective:step2000:subspace96",
             "learned_parameter_count": 0,
             "expert_step": 2000,
             "expert_count": 24,
@@ -486,14 +502,17 @@ def test_expert_manifold_episode_evidence_keeps_one_video_dynamic() -> None:
         init_state_id=4,
         lora_reference="generated",
     )
-    assert expected_writer_episode(
-        adapter,
-        suite="libero_goal",
-        task_id=3,
-        init_state_id=4,
-        lora_reference="generated",
-        evidence_schema=EXPERT_MANIFOLD_EPISODE_SCHEMA,
-    ) == evidence
+    assert (
+        expected_writer_episode(
+            adapter,
+            suite="libero_goal",
+            task_id=3,
+            init_state_id=4,
+            lora_reference="generated",
+            evidence_schema=EXPERT_MANIFOLD_EPISODE_SCHEMA,
+        )
+        == evidence
+    )
     with pytest.raises(Pi05EvaluationError, match="evidence schema changed"):
         expected_writer_episode(
             adapter,
@@ -521,9 +540,9 @@ def test_expert_manifold_episode_evidence_keeps_one_video_dynamic() -> None:
         init_state_id=4,
         lora_reference="identity",
     )
-    assert no_video["teacher_demo_indices"] == no_video[
-        "teacher_reference_demo_indices"
-    ]
+    assert (
+        no_video["teacher_demo_indices"] == no_video["teacher_reference_demo_indices"]
+    )
     assert no_video["teacher_video_frames_used"] is False
 
 

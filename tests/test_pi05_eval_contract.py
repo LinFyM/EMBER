@@ -76,7 +76,9 @@ def test_evaluation_authorities_and_roles_are_sealed() -> None:
         ("libero_10", 9),
         ("libero_10", 7),
     )
-    assert authorities.normalization["authority"]["validation_or_test_numeric_reads"] == 0
+    assert (
+        authorities.normalization["authority"]["validation_or_test_numeric_reads"] == 0
+    )
 
 
 def test_libero_config_accepts_a_host_local_assets_root(
@@ -207,8 +209,12 @@ def test_run_contract_uses_explicit_reference_and_owned_root(tmp_path: Path) -> 
         command=("evaluate_pi05.py", "prepare"),
     )
     path = tmp_path / "run_contract.json"
-    path.write_text(json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    assert load_run_contract(path)["contract_reference"] == contract["contract_reference"]
+    path.write_text(
+        json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    assert (
+        load_run_contract(path)["contract_reference"] == contract["contract_reference"]
+    )
     subset = build_run_contract(
         authorities=authorities,
         tasks=tasks,
@@ -228,7 +234,9 @@ def test_run_contract_uses_explicit_reference_and_owned_root(tmp_path: Path) -> 
     assert subset["parallel"]["omp_threads_per_worker"]["5"] == 1
     assert subset["parallel"]["omp_threads_per_worker"]["6"] == 1
     contract["output_dir"] = str(tmp_path / "elsewhere")
-    path.write_text(json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     with pytest.raises(Pi05EvaluationError, match="contract changed"):
         load_run_contract(path)
 
@@ -254,16 +262,16 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
         "execution_backend": (
-            "online_frozen_pi05_video_innovation_then_causal_barycentric_lora_cache"
+            "online_frozen_pi05_video_innovation_then_policy_effective_lora_cache"
         ),
         "config": {
             "path": str(
                 ROOT
-                / "configs/pi05_video_expert_manifold_causal_barycentric_v1.json"
+                / "configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json"
             ),
         },
         "writer_asset": {
-            "reference": "causal-barycentric:step2000",
+            "reference": "policy-effective:step2000:subspace96:rank16",
             "learned_parameter_count": 0,
         },
         "expert_basis": {"root": "/experts", "step": 2000},
@@ -321,20 +329,18 @@ def test_expert_manifold_writer_pairing_is_sealed(tmp_path: Path) -> None:
     _, tasks, _, _, _, correct_mapping = inputs
     task_keys = tuple((task.suite, task.task_id) for task in tasks)
     task_roles = {key: task.split_role for key, task in zip(task_keys, tasks)}
-    wrong_mapping = list(
-        task_video_mapping(task_keys, task_roles, "cross_suite_wrong")
-    )
+    wrong_mapping = list(task_video_mapping(task_keys, task_roles, "cross_suite_wrong"))
     correct = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "correct",
-        arm="expert_manifold_causal_barycentric_correct",
+        arm="expert_manifold_policy_effective_correct",
         condition="correct",
         mapping=correct_mapping,
     )
     wrong = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "wrong",
-        arm="expert_manifold_causal_barycentric_cross_suite_wrong",
+        arm="expert_manifold_policy_effective_cross_suite_wrong",
         condition="cross_suite_wrong",
         mapping=wrong_mapping,
     )
@@ -409,7 +415,13 @@ def test_source_checkpoint_inspection_requires_generic_base_and_raw_policy_contr
             "path": str(path.relative_to(checkpoint)),
             "bytes": path.stat().st_size,
         }
-        for path in sorted((model / "config.json", model / "model.safetensors", checkpoint / "trainer_state.json"))
+        for path in sorted(
+            (
+                model / "config.json",
+                model / "model.safetensors",
+                checkpoint / "trainer_state.json",
+            )
+        )
     ]
     manifest = {
         "schema_version": "ember_pi05_source_checkpoint_v1",

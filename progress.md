@@ -1,5 +1,21 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Policy-Effective canonical实现与CPU真实资产封存
+
+- raw-factor Writer/config已原位替换为唯一Policy-Effective Barycentric runtime；旧实现只由Git与formal
+  artifacts保留。新config=
+  `configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json`，formal故意blocked等待专属
+  A40 online smoke；adapter/episode schema升为v3，旧cache不能冒充。
+- 全仓`182/182` tests、compile和真实fixed-asset inspector通过。CPU artifact=
+  `runs/outputs/pi05_expert_manifold_policy_effective_cpu_real_assets_20260809/analysis.json`：0 parameters、
+  68,863,192 buffer bytes、build`2.33s`、batch24 compile`.85s`、zero identity exact。
+- one-hot expert/demo0 intended effective cosine中位=`.99838/.99836`；ordered/reversed coefficient L2最小
+  `1.268`。demo0 generated cross-task cosine中位`.203`，norm/stable/top=`4.179/1.125/.910`，A/B RMS=
+  `.01891/.00846`，q/v/action B-column cosine=`.815/.813/.455`，16 rank coordinates全active。
+- architecture gate无parallel Writer family：保留的`TopologicalLoRAChunkLayout`仅供现有expert/cache
+  分析脚本做exact layout inspection，不参与deployment；active source/config总行数没有扩张。下一步先
+  clean commit/push，再live选一张空闲A40做8-row纵向smoke。
+
 ## 2026-08-09 Causal Barycentric correct400完成、负裁决与compiler诊断
 
 - clean frozen eval自然完成，root=

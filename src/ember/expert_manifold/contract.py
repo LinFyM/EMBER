@@ -23,12 +23,10 @@ from ember.writer.data import FunctionalQueryDataset, WriterTaskAuthority
 REPO_ROOT = Path(__file__).resolve().parents[3]
 CONFIG_SCHEMA = "ember_pi05_video_expert_manifold_v1"
 BARYCENTRIC_CONFIG_SCHEMA = (
-    "ember_pi05_video_expert_manifold_causal_barycentric_v1"
+    "ember_pi05_video_expert_manifold_policy_effective_barycentric_v1"
 )
 WORKER_CONTRACT_SCHEMA = "ember_pi05_task_expert_worker_launch_v1"
-TOPOLOGY_ADDRESS_BINDING = (
-    "normalized_dynamic_times_normalized_chunk_plus_rank_address"
-)
+TOPOLOGY_ADDRESS_BINDING = "normalized_dynamic_times_normalized_chunk_plus_rank_address"
 
 
 class ExpertManifoldError(RuntimeError):
@@ -99,7 +97,9 @@ def _integer_fields_match(
     observed: Mapping[str, Any], expected: Mapping[str, int]
 ) -> bool:
     try:
-        return all(int(observed.get(name, -1)) == value for name, value in expected.items())
+        return all(
+            int(observed.get(name, -1)) == value for name, value in expected.items()
+        )
     except (TypeError, ValueError):
         return False
 
@@ -193,13 +193,10 @@ def load_expert_manifold_config(path: Path) -> dict[str, Any]:
     video = config.get("video_features", {})
     writer = config.get("topological_writer", {})
     meta = config.get("meta_training", {})
-    reduction = meta.get("optimization", {}).get(
-        "distributed_gradient_reduction", {}
-    )
+    reduction = meta.get("optimization", {}).get("distributed_gradient_reduction", {})
     information = config.get("information_wall", {})
     if (
-        method.get("name")
-        != "video_conditioned_expert_manifold_topological_writer"
+        method.get("name") != "video_conditioned_expert_manifold_topological_writer"
         or method.get("language_only_lora_path") is not False
         or not _information_wall_matches(information)
         or int(experts.get("task_count", -1)) != 24
@@ -214,16 +211,14 @@ def load_expert_manifold_config(path: Path) -> dict[str, Any]:
         or not _topological_writer_matches(writer)
         or int(meta.get("task_count", -1)) != 24
         or int(meta.get("videos_per_task_per_macro", -1)) != 1
-        or meta.get("task_aggregation")
-        != "each_task_mean_then_train24_equal_mean"
+        or meta.get("task_aggregation") != "each_task_mean_then_train24_equal_mean"
         or meta.get("objective", {}).get("effective_ba_monitor_only") is not True
         or reduction.get("kind")
         != "single_flat_parameter_ordered_allreduce_mean_after_local_task_mean"
         or reduction.get("nccl_algo") != "Ring"
         or reduction.get("nccl_proto") != "Simple"
         or not _meta_formal_seal_matches(meta)
-        or float(meta.get("objective", {}).get("raw_reconstruction_weight", -1))
-        != 1.0
+        or float(meta.get("objective", {}).get("raw_reconstruction_weight", -1)) != 1.0
         or int(experts.get("profile_defaults", {}).get("scheduler_total_steps", -1))
         != int(experts.get("formal_run", {}).get("total_steps", -2))
         or config.get("content_hash_policy") != "disabled_by_owner"
@@ -233,32 +228,44 @@ def load_expert_manifold_config(path: Path) -> dict[str, Any]:
 
 
 def _barycentric_writer_matches(writer: Mapping[str, Any]) -> bool:
-    return _exact_fields_match(
-        writer,
-        {
-            "causal_representation": (
-                "phase_centered_sqrt_normalized_causal_prefix_mean"
-            ),
-            "centroid_normalization": "unit_l2_after_train50_mean",
-            "coefficient_rule": "centered_kernel_affine_barycentric",
-            "affine_coefficient_sum": 1.0,
-            "zero_representation_coefficients": 0.0,
-            "reconstruction": "chunk_unit_rms_direction_plus_affine_log_rms",
-            "scale_envelope": "per_chunk_train24_expert_min_max",
-            "identity": "template-A plus zero-B",
-            "language_only_lora_path": False,
-        },
-    ) and _integer_fields_match(
-        writer,
-        {
-            "chunk_width": 512,
-            "chunk_count": 168,
-            "public_rank": 16,
-            "valid_values": 1_287_168,
-        },
-    ) and float(writer.get("ridge", -1)) == 0.3 and float(
-        writer.get("identity_epsilon", -1)
-    ) == 1e-12
+    return (
+        _exact_fields_match(
+            writer,
+            {
+                "causal_representation": (
+                    "phase_centered_sqrt_normalized_causal_prefix_mean"
+                ),
+                "centroid_normalization": "unit_l2_after_train50_mean",
+                "coefficient_rule": "centered_kernel_affine_barycentric",
+                "affine_coefficient_sum": 1.0,
+                "zero_representation_coefficients": 0.0,
+                "reconstruction": (
+                    "per_target_unit_effective_ba_direction_plus_affine_log_frobenius"
+                ),
+                "scale_envelope": "per_target_train24_expert_frobenius_min_max",
+                "effective_subspace": (
+                    "independent_left_right_train24_energy_subspaces"
+                ),
+                "public_compression": "best_rank16_svd_inside_effective_subspace",
+                "factor_gauge": (
+                    "template_a_rowspace_procrustes_train_expert_geomean_a_rms"
+                ),
+                "identity": "template-A plus zero-B",
+                "language_only_lora_path": False,
+            },
+        )
+        and _integer_fields_match(
+            writer,
+            {
+                "target_count": 38,
+                "effective_basis_rank": 96,
+                "public_rank": 16,
+                "valid_values": 1_287_168,
+            },
+        )
+        and float(writer.get("ridge", -1)) == 0.3
+        and float(writer.get("identity_epsilon", -1)) == 1e-12
+    )
 
 
 def _barycentric_smoke_evidence_matches(smoke: Mapping[str, Any]) -> bool:
@@ -299,7 +306,7 @@ def _barycentric_method_matches(method: Mapping[str, Any]) -> bool:
         {
             "name": (
                 "video_conditioned_expert_manifold_causal_barycentric_"
-                "topological_writer"
+                "policy_effective_writer"
             ),
             "writer_input": (
                 "exact task language plus exactly one action-hidden teacher video"
@@ -367,6 +374,73 @@ def _barycentric_loo_matches(loo: Mapping[str, Any]) -> bool:
     )
 
 
+def _policy_effective_cpu_matches(evidence: Mapping[str, Any]) -> bool:
+    return _exact_fields_match(
+        evidence,
+        {
+            "artifact": (
+                "runs/outputs/pi05_expert_manifold_causal_barycentric_"
+                "correct400_noreplacement_seed7_0397be6_20260809/"
+                "policy_effective_compiler_feasibility_full400_rank128_v2.json"
+            ),
+            "selected_reconstruction": "target_direction_log_norm",
+            "pure_affine_norm_ratio_median": 0.5270653149687972,
+            "selected_norm_ratio_median": 0.9864298623341197,
+            "expert_captured_energy_median": 0.9967681395626802,
+            "expert_captured_energy_min": 0.9933073976311083,
+            "query_public_rank16_cosine_median": 0.9968194419163929,
+            "query_public_rank16_cosine_min": 0.9953158395197425,
+            "full_span_rank16_captured_energy_median": 0.9952348167613152,
+            "cpu_only": True,
+        },
+    ) and _integer_fields_match(
+        evidence,
+        {
+            "query_count": 400,
+            "expert_count": 24,
+            "target_count": 38,
+            "selected_effective_basis_rank": 96,
+            "full_span_sample_count": 8,
+        },
+    )
+
+
+def _policy_effective_runtime_cpu_matches(evidence: Mapping[str, Any]) -> bool:
+    return _exact_fields_match(
+        evidence,
+        {
+            "artifact": (
+                "runs/outputs/pi05_expert_manifold_policy_effective_"
+                "cpu_real_assets_20260809/analysis.json"
+            ),
+            "cpu_only": True,
+            "zero_identity_exact": True,
+            "one_hot_expert_effective_cosine_median": 0.9983824844705533,
+            "one_hot_expert_effective_cosine_min": 0.99664776353756,
+            "demo0_intended_effective_target_cosine_median": 0.9983581845956992,
+            "demo0_intended_effective_target_cosine_min": 0.9965721256367002,
+            "ordered_reversed_coefficient_l2_min": 1.267863154411316,
+            "demo0_cross_task_effective_cosine_median": 0.20255048083808294,
+            "effective_lora_norm_median": 4.178999080650666,
+            "stable_rank_median": 1.1254902621629606,
+            "top_singular_energy_median": 0.9098611587469674,
+            "public_a_rms_median": 0.01890874241400617,
+            "public_b_rms_median": 0.008463979638103976,
+            "q_b_column_cosine_median": 0.8145590998464618,
+            "v_b_column_cosine_median": 0.8130396358999055,
+            "action_b_column_cosine_median": 0.454599646424095,
+        },
+    ) and _integer_fields_match(
+        evidence,
+        {
+            "expert_count": 24,
+            "learned_parameter_count": 0,
+            "persistent_buffer_bytes": 68_863_192,
+            "active_rank_coordinates_min": 16,
+        },
+    )
+
+
 def _barycentric_evaluation_matches(evaluation: Mapping[str, Any]) -> bool:
     status = evaluation.get("formal_status")
     smoke = evaluation.get("online_smoke_evidence")
@@ -402,7 +476,13 @@ def load_barycentric_writer_config(path: Path) -> dict[str, Any]:
             _barycentric_basis_matches(config.get("expert_basis", {})),
             _barycentric_writer_matches(config.get("barycentric_writer", {})),
             _barycentric_evaluation_matches(evaluation),
-            _barycentric_loo_matches(evaluation.get("cpu_leave_one_task_out", {})),
+            _barycentric_loo_matches(evaluation.get("cpu_coefficient_evidence", {})),
+            _policy_effective_cpu_matches(
+                evaluation.get("cpu_policy_effective_compiler", {})
+            ),
+            _policy_effective_runtime_cpu_matches(
+                evaluation.get("cpu_runtime_evidence", {})
+            ),
             config.get("content_hash_policy") == "disabled_by_owner",
         )
     )
@@ -423,7 +503,9 @@ def load_train_tasks(
     config: Mapping[str, Any], data_root: Path
 ) -> tuple[ExpertTask, ...]:
     manifest = read_json(authority_path(config, "target_data_manifest"))
-    selected = [row for row in manifest.get("tasks", []) if row.get("split_role") == "train"]
+    selected = [
+        row for row in manifest.get("tasks", []) if row.get("split_role") == "train"
+    ]
     selected.sort(key=lambda row: int(row["global_task_id"]))
     if len(selected) != int(config["task_experts"]["task_count"]):
         raise ExpertManifoldError("expert target manifest did not resolve train24")
@@ -461,14 +543,18 @@ def parse_task_indices(value: str, task_count: int) -> tuple[int, ...]:
     try:
         result = tuple(int(item) for item in value.split(","))
     except ValueError as error:
-        raise ExpertManifoldError("task indices must be comma-separated integers") from error
+        raise ExpertManifoldError(
+            "task indices must be comma-separated integers"
+        ) from error
     if (
         not result
         or len(set(result)) != len(result)
         or tuple(sorted(result)) != result
         or any(not 0 <= item < task_count for item in result)
     ):
-        raise ExpertManifoldError("task indices are duplicated, unsorted, or out of range")
+        raise ExpertManifoldError(
+            "task indices are duplicated, unsorted, or out of range"
+        )
     return result
 
 
@@ -488,24 +574,36 @@ def resolve_runtime(
     args: argparse.Namespace, config: Mapping[str, Any]
 ) -> tuple[int, int, tuple[int, ...], int]:
     experts = config["task_experts"]
-    source = experts["formal_run"] if args.mode == "formal" else experts["profile_defaults"]
+    source = (
+        experts["formal_run"] if args.mode == "formal" else experts["profile_defaults"]
+    )
     if args.mode == "formal" and source.get("status") != "sealed":
-        raise ExpertManifoldError("formal task-expert config is not sealed by an A40 profile")
+        raise ExpertManifoldError(
+            "formal task-expert config is not sealed by an A40 profile"
+        )
     total_steps = int(source["total_steps"])
     batch_size = int(args.batch_size or source["per_task_batch_size"])
     checkpoints = _checkpoint_steps(source["checkpoint_steps"], total_steps)
     default_stop = int(source.get("selected_stop_step", total_steps))
     stop_step = int(args.stop_after_step or default_stop)
-    allowed_stops = set(int(value) for value in source.get("stage_stop_steps", checkpoints))
+    allowed_stops = set(
+        int(value) for value in source.get("stage_stop_steps", checkpoints)
+    )
     allowed_stops.update(checkpoints)
     if batch_size <= 0 or stop_step not in allowed_stops or stop_step > total_steps:
-        raise ExpertManifoldError("task-expert runtime differs from an allowed stage boundary")
+        raise ExpertManifoldError(
+            "task-expert runtime differs from an allowed stage boundary"
+        )
     if args.mode == "formal":
         if batch_size != int(source["per_task_batch_size"]):
-            raise ExpertManifoldError("formal task-expert batch differs from its profile seal")
+            raise ExpertManifoldError(
+                "formal task-expert batch differs from its profile seal"
+            )
         state = git_state(REPO_ROOT)
         if state["dirty_paths"]:
-            raise ExpertManifoldError("formal task-expert launch requires a clean worktree")
+            raise ExpertManifoldError(
+                "formal task-expert launch requires a clean worktree"
+            )
         if args.resume is None and state["commit"] != state["upstream_commit"]:
             raise ExpertManifoldError("fresh formal task-expert launch must be pushed")
     return total_steps, batch_size, checkpoints, stop_step
@@ -596,9 +694,13 @@ def publish_worker_contract(
             raise ExpertManifoldError("task-expert resume worker contract changed")
         resume = args.resume.resolve()
         worker_resume = resume == args.output_dir.resolve()
-        checkpoint_resume = len(resume.parents) >= 3 and resume.parents[2] == args.output_dir.resolve()
+        checkpoint_resume = (
+            len(resume.parents) >= 3 and resume.parents[2] == args.output_dir.resolve()
+        )
         if not worker_resume and not checkpoint_resume:
-            raise ExpertManifoldError("task-expert resume checkpoint crossed worker ownership")
+            raise ExpertManifoldError(
+                "task-expert resume checkpoint crossed worker ownership"
+            )
     append_jsonl(
         args.output_dir / "invocations.jsonl",
         {
@@ -657,14 +759,14 @@ def worker_stage_resume_step(
     step = int(summary.get("selected_stop_step", -1))
     if step <= 0:
         raise ExpertManifoldError("task-expert worker stage cursor is invalid")
-    rows = {
-        int(row.get("task_ordinal", -1)): row for row in summary.get("tasks", [])
-    }
+    rows = {int(row.get("task_ordinal", -1)): row for row in summary.get("tasks", [])}
     if set(rows) != {task.ordinal for task in tasks}:
         raise ExpertManifoldError("task-expert worker stage ownership changed")
     for task in tasks:
         row = rows[task.ordinal]
-        checkpoint = task_directory(output_dir, task) / "checkpoints" / f"step_{step:08d}"
+        checkpoint = (
+            task_directory(output_dir, task) / "checkpoints" / f"step_{step:08d}"
+        )
         if (
             int(row.get("global_task_id", -1)) != task.global_task_id
             or int(row.get("completed_steps", -1)) != step

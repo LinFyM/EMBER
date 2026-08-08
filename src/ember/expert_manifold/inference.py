@@ -77,6 +77,24 @@ def _declared_checkpoint_macros(
     return tuple(int(value) for value in authority["checkpoint_macros"])
 
 
+def _same_repository_relative_config_path(
+    recorded_path: object, current_path: Path
+) -> bool:
+    """Match one config across clean Git worktrees without trusting its prefix."""
+
+    try:
+        relative = current_path.resolve().relative_to(REPO_ROOT.resolve())
+    except ValueError:
+        return False
+    recorded_parts = Path(str(recorded_path)).parts
+    relative_parts = relative.parts
+    return (
+        bool(relative_parts)
+        and len(recorded_parts) >= len(relative_parts)
+        and recorded_parts[-len(relative_parts) :] == relative_parts
+    )
+
+
 def _training_mode_is_valid(
     *,
     training_mode: str,
@@ -116,11 +134,15 @@ def _training_checkpoint(
     formal = config["meta_training"]["formal_run"]
     training_mode = str(training.get("mode", ""))
     training_expert_step = int(training.get("expert_bank", {}).get("step", -1))
+    training_config = training.get("config", {})
     valid = (
         training.get("schema_version") == WRITER_RUN_SCHEMA
-        and Path(str(training.get("config", {}).get("path", ""))).resolve()
-        == config_path
-        and training.get("config", {}).get("schema") == config["schema_version"]
+        and isinstance(training_config, Mapping)
+        and _same_repository_relative_config_path(
+            training_config.get("path"), config_path
+        )
+        and training_config.get("schema") == config["schema_version"]
+        and int(training_config.get("bytes", -1)) == config_path.stat().st_size
         and _training_source_matches_evaluation(training.get("source", {}), source)
         and training.get("method") == config["method"]
         and training.get("information_wall") == config["information_wall"]

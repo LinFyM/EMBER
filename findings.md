@@ -1,5 +1,16 @@
 # EMBER Findings
 
+## 2026-08-09 Formal checkpoint跨worktree身份根因
+
+- 失败谓词精确位于`expert_manifold/inference.py::_training_checkpoint`：run contract中的training config
+  absolute path必须等于当前evaluation config path。两个clean frozen worktree必然有不同前缀，因此
+  该门与仓库自己的formal isolation规则冲突。
+- 合法身份不是“绝对目录相同”，而是同一仓库相对authority、相同schema/bytes，以及run contract中
+  method、information wall、topological writer、meta training、source和checkpoint manifest全部相同。
+  修复只替换这一条路径表示，并额外补上此前未检查的config bytes；没有放宽科学配置或模型身份。
+- 真实macro50 artifact在修复后通过，错relative path和错bytes均fail-close。首次评测没有GPU或结果，
+  不能计为模型失败，也不能复用其root。
+
 ## 2026-08-09 Macro50 formal训练观察
 
 - formal0→50与profile前三步完全相同的identity初始化语义起步；macro1 loss低是direction项在zero output

@@ -8,8 +8,15 @@ import pytest
 from ember.expert_manifold.inference import (
     EXPERT_MANIFOLD_ADAPTER_SCHEMA,
     EXPERT_MANIFOLD_WRITER_KIND,
+    _training_checkpoint,
     expected_expert_manifold_episode_evidence,
 )
+from ember.expert_manifold.contract import (
+    ExpertManifoldError,
+    load_expert_manifold_config,
+)
+from ember.expert_manifold.writer_checkpoint import WRITER_CHECKPOINT_SCHEMA
+from ember.expert_manifold.writer_training import WRITER_RUN_SCHEMA
 from ember.expert_manifold.video_schedule import (
     SAME_TASK_OTHER_OFFSET,
     reference_demo_index,
@@ -23,6 +30,100 @@ from ember.pi05_eval_contract import RUN_CONTRACT_SCHEMA, policy_noise_seed
 from ember.pi05_eval_queue import EvaluationShard
 from ember.pi05_eval_results import _per_task_rows
 from ember.pi05_evaluation import SHARD_RESULT_SCHEMA, validate_shard_result
+from ember.pi05_source_checkpoint import write_json_atomic
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+CONFIG = REPO_ROOT / "configs/pi05_video_expert_manifold_v1.json"
+
+
+def _formal_training_checkpoint(
+    tmp_path: Path, *, config_path: Path, config_bytes: int
+) -> tuple[Path, dict, dict]:
+    config = load_expert_manifold_config(CONFIG)
+    source = {
+        "source_run": "source",
+        "checkpoint": "checkpoint",
+        "model_path": "policy",
+    }
+    run_root = tmp_path / "run"
+    checkpoint = run_root / "checkpoints" / "macro_00000050"
+    checkpoint.mkdir(parents=True)
+    write_json_atomic(
+        run_root / "run_contract.json",
+        {
+            "schema_version": WRITER_RUN_SCHEMA,
+            "mode": "formal",
+            "config": {
+                "path": str(config_path),
+                "schema": config["schema_version"],
+                "bytes": config_bytes,
+            },
+            "source": source,
+            "method": config["method"],
+            "information_wall": config["information_wall"],
+            "topological_writer": config["topological_writer"],
+            "meta_training": config["meta_training"],
+            "expert_bank": {"step": 2000},
+            "runtime": {"world_size": 6},
+        },
+    )
+    write_json_atomic(
+        checkpoint / "manifest.json",
+        {
+            "schema_version": WRITER_CHECKPOINT_SCHEMA,
+            "next_macro": 50,
+            "world_size": 6,
+            "files": {},
+            "content_hash_policy": "disabled_by_owner",
+        },
+    )
+    return checkpoint, config, source
+
+
+def test_formal_checkpoint_accepts_same_config_from_another_worktree(
+    tmp_path: Path,
+) -> None:
+    recorded = tmp_path / "training-worktree" / "configs" / CONFIG.name
+    checkpoint, config, source = _formal_training_checkpoint(
+        tmp_path,
+        config_path=recorded,
+        config_bytes=CONFIG.stat().st_size,
+    )
+
+    _, _, cursor = _training_checkpoint(
+        config_path=CONFIG.resolve(),
+        config=config,
+        checkpoint=checkpoint,
+        source=source,
+        require_formal=True,
+    )
+
+    assert cursor == 50
+
+
+@pytest.mark.parametrize("changed", ("relative_path", "bytes"))
+def test_formal_checkpoint_rejects_changed_config_identity(
+    tmp_path: Path, changed: str
+) -> None:
+    recorded = tmp_path / "training-worktree" / "configs" / CONFIG.name
+    if changed == "relative_path":
+        recorded = tmp_path / "training-worktree" / "other" / CONFIG.name
+    config_bytes = CONFIG.stat().st_size - (changed == "bytes")
+    checkpoint, config, source = _formal_training_checkpoint(
+        tmp_path,
+        config_path=recorded,
+        config_bytes=config_bytes,
+    )
+
+    with pytest.raises(ExpertManifoldError, match="training authority changed"):
+        _training_checkpoint(
+            config_path=CONFIG.resolve(),
+            config=config,
+            checkpoint=checkpoint,
+            source=source,
+            require_formal=True,
+        )
 
 
 def _rows() -> list[dict]:

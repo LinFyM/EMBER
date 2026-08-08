@@ -543,3 +543,8 @@ clean pushed launch-record`446cd42`已按该边界自然完成0→50：50/50 fin
 Writer/trainer/六rank RNG checkpoint、0 OOM/nonfinite；训练body=`10.239s`，peak allocated/reserved=
 `737,273,344/815,792,128` bytes，3+3 NUMA与全部collective字段通过。该结果只解封macro50 strict
 correct400，不构成性能门通过，也不自动授权resume到100。
+
+formal checkpoint的config身份必须允许training和evaluation处于不同clean frozen worktree：比较同一
+仓库相对authority路径、schema和bytes，并继续逐项比较method、information wall、topological writer、
+meta training、source与checkpoint manifest；不得把机器上的worktree绝对前缀当作科学身份，也不得只按
+basename放宽。首次macro50评测暴露并根修了该工程冲突，失败发生在0 CUDA worker/0 row，不构成科研结果。

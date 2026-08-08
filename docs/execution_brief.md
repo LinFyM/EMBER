@@ -147,6 +147,11 @@ launch-record`446cd42`已自然完成0→50：50 finite macros、完整Writer/tr
 3+3 NUMA与single-flat collective合同通过且GPU已释放。下一动作固定为macro50 validation strict
 correct400；唯一output、18-worker r3/batch4 exact command和验收门取`task_plan.md`顶部，不先resume100。
 
+首次correct400在CPU-only prepare、任何CUDA worker/scientific row之前fail-close：formal training和
+evaluation使用两个合法frozen worktree，旧inspector却比较config绝对路径。失败root已ABORTED；canonical
+现要求同一仓库相对路径和相同bytes/schema，并继续比较完整科学合同。错path/bytes回归、真实macro50
+inspector、聚焦36/36和全仓189/189均通过；修复clean push前不创建replacement root。
+
 未来任何GPU工作仍须live比较`gpu01/gpu02`，只用实时空闲卡、跨节点最多6张；不干扰他人进程。
 BCI多卡launcher显式`NCCL_P2P_DISABLE=1`，不运行SHA-256/MD5内容校验或大量防御扫描。
 

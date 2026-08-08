@@ -1,5 +1,15 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Macro50 correct400 CPU prepare失败与worktree-path根修
+
+- 首次formal correct400在adapter inspection阶段停止：0 CUDA worker、0 LoRA cache、0 scientific row，
+  六张目标GPU始终空闲；root仅有LIBERO临时配置并已写`ABORTED.md`，永久不得resume。
+- 根因是training/evaluation各自使用合法clean frozen worktree，而inspector把同一config的绝对路径前缀
+  当作科学身份。canonical改为仓库相对路径相等，并新增bytes相等；schema、method、information wall、
+  topology、meta、source、checkpoint manifest等既有门全部保留。
+- 同worktree、跨worktree、错relative path、错bytes回归闭合；聚焦36/36、真实macro50 formal inspector、
+  全仓189/189与compileall/diff check通过。下一步clean push后使用全新replacement root。
+
 ## 2026-08-09 Expert-Manifold formal0→50完成并预注册correct400
 
 - clean pushed`446cd42`在`gpu01:0,1,2|4,5,7`从identity fresh自然完成50/50 finite macros；

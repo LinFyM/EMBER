@@ -159,7 +159,11 @@ def test_smoke_evaluation_accepts_declared_profile_checkpoint(tmp_path: Path) ->
         {
             "schema_version": WRITER_RUN_SCHEMA,
             "mode": "profile",
-            "config": {"path": str(CONFIG.resolve()), "schema": config["schema_version"]},
+            "config": {
+                "path": str(CONFIG.resolve()),
+                "schema": config["schema_version"],
+                "bytes": CONFIG.stat().st_size,
+            },
             "source": source,
             "method": config["method"],
             "information_wall": config["information_wall"],

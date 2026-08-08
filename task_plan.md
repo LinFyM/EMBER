@@ -141,6 +141,12 @@ env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZE
   reward/terminal reads为0。报告aggregate、8-task breadth、per-task/per-suite。只有closed-loop和内部
   传递共同支持时才exact-resume50→100；无论absolute高低，后续control必须复用paired task/state/RNG/
   video ordinal/frame-order合同。
+- 首次root在CPU-only prepare、0 CUDA worker/0 scientific row时fail-close并已标记`ABORTED.md`：
+  training/evaluation按规则位于不同frozen worktree，旧inspector却要求config绝对路径相等。两者仓库
+  相对路径、schema、bytes及完整method/meta/source/checkpoint合同均相同，故这是worktree portability
+  工程缺陷，不是科研负结果。canonical现只把路径比较改为同一仓库相对路径，同时新增bytes门并保留
+  所有既有语义逐项相等；错relative path或错bytes仍拒绝。聚焦36/36、真实macro50 inspector和全仓
+  189/189通过。旧root不得resume，replacement必须等该修复clean push后另起新root。
 
 ### Expert-Manifold meta-Writer flat-reduction reprofile launch合同（2026-08-09）
 

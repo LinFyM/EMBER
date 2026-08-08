@@ -150,6 +150,11 @@
   `737,273,344/815,792,128` bytes；3+3 NUMA、physical/local rank、deferred NCCL、P2P-disable和
   Ring/Simple single-flat mean全部通过，GPU已释放。macro50 correct400的唯一root、frozen worktree、
   18-worker r3/batch4 exact command与门已写入`task_plan.md`顶部。
+- 首次macro50 correct400在CPU-only prepare、0 CUDA worker/0 row时被旧inspector拒绝：training与
+  evaluation来自两个合法frozen worktree，但config绝对前缀不同。失败root已ABORTED且不得resume。
+  scoped修复改为同一仓库相对路径+bytes/schema，并继续逐项比较完整method/meta/source/checkpoint；
+  错路径/bytes回归仍拒绝。聚焦36/36、真实macro50 inspector与全仓189/189通过，等待clean push后
+  用replacement fresh root重新live启动。
 
 ## 0.0 已完成并负裁决：K4 Phase-Aligned Language-Axial Semantic-Procedure Writer
 

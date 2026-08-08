@@ -615,3 +615,8 @@ architecture guard为REVIEW但无hard violation、无parallel family。
 exact-resume profile；再用profile macro3做单卡online generation/cache/release/rollout smoke；两门均过后
 才允许identity-fresh formal。feature cache、step2000 expert target、one-shot schedule、reconstruction
 loss、optimizer、world6 task mean与strict evaluator保持不变。当前尚未启动新GPU工作。
+
+本修订的A40工程门已预注册：只使用启动前live空闲的`gpu01:0,1,2|4,5,7`，依次执行fresh0→1、
+同root exact-resume1→3和独立contiguous0→3。验收同时要求scientific metrics、Writer/RNG bytes、
+optimizer/scheduler语义、`address_norm`梯度、NUMA/physical-local/deferred-NCCL与0 OOM/nonfinite；命令和
+全新roots取`task_plan.md`顶部。profile权重不进入formal，当前仍未启动GPU。

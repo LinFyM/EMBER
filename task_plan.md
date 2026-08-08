@@ -98,6 +98,36 @@
 > 配置已由Git保存但不再存在于当前工作树，禁止复制历史命令恢复并行Writer。当前训练入口只有
 > `scripts/train_expert_manifold_writer.py`，当前动态Writer评测参数只有`--expert-manifold-*`。
 
+### Address-binding meta-Writer A40 reprofile launch合同（2026-08-09）
+
+- implementation seal=`cd95281`，authority snapshot=`4218886`。实际run必须来自包含本段记录的
+  clean/pushed branch`codex/expert-manifold-addressbind-profile-20260809`与frozen worktree
+  `/data1/user/ymdai/worktrees/EMBER-expert-manifold-addressbind-profile-20260809`；run contract登记实际
+  commit/upstream。旧macro50、旧flat-reduction profile和旧online-smoke checkpoint全部禁止加载。
+- 02:52 CST同时live检查：`gpu01:0,1,2|4,5,7`为14MiB、0%空闲A40并保持3+3 NUMA；物理3为
+  `nlge`的41.6GiB VLLM，绝不触碰。`gpu02:0--5`虽空闲但为4+2 NUMA，6/7均有他人进程，本轮不用。
+  gpu01 available host memory约480GiB。`/data1`个人quota用量532.4GiB/1TiB；旧两root各367MiB，
+  新两root峰值保守低于1GiB。每次启动前必须再次live复核六张卡，任一卡变忙即不启动。
+- fresh/resume与独立contiguous roots固定为
+  `runs/outputs/pi05_expert_manifold_writer_addressbind_profile_r6_step2000_cd95281_20260809`和
+  `runs/outputs/pi05_expert_manifold_writer_addressbind_profile_contiguous_r6_step2000_cd95281_20260809`；
+  logs同basename放在`runs/logs/`。启动登记时四个路径均不存在，不覆盖或复用任何root。
+- exact commands（从上述frozen worktree执行，三条顺序运行）：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,7 NCCL_P2P_DISABLE=1 NCCL_ALGO=Ring NCCL_PROTO=Simple OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_expert_manifold_writer.py --config configs/pi05_video_expert_manifold_v1.json --mode profile --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-step 2000 --feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_addressbind_profile_r6_step2000_cd95281_20260809 --stop-after-macro 1
+
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,7 NCCL_P2P_DISABLE=1 NCCL_ALGO=Ring NCCL_PROTO=Simple OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_expert_manifold_writer.py --config configs/pi05_video_expert_manifold_v1.json --mode profile --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-step 2000 --feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_addressbind_profile_r6_step2000_cd95281_20260809 --stop-after-macro 3 --resume /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_addressbind_profile_r6_step2000_cd95281_20260809/checkpoints/macro_00000001
+
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,7 NCCL_P2P_DISABLE=1 NCCL_ALGO=Ring NCCL_PROTO=Simple OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_expert_manifold_writer.py --config configs/pi05_video_expert_manifold_v1.json --mode profile --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-step 2000 --feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_addressbind_profile_contiguous_r6_step2000_cd95281_20260809 --stop-after-macro 3
+```
+
+- 验收门：三步scientific metrics逐值一致；macro1全部checkpoint files、macro3 Writer和六份rank RNG
+  逐字节一致；optimizer/scheduler反序列化逐项相等；`address_norm`存在且新owner梯度finite/nonzero；
+  run contract逐rank physical/local/NUMA/affinity、deferred NCCL、P2P-disable、Ring/Simple、无DDP wrapper
+  与single-flat mean全部正确；0 OOM/nonfinite。失败不放宽门。通过后profile权重仍永久弃用，只解封
+  macro3 online-generation/cached-rollout smoke，meta formal继续blocked。
+
 ### Expert-Manifold identity-fresh formal0→50 launch合同（2026-08-09）
 
 - 科学/退役seal为clean pushed`fcaf733`；实际run必须来自包含本段launch record、已push且有

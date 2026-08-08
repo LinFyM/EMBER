@@ -1,5 +1,13 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Address-binding A40 reprofile预注册
+
+- 02:52 CST live比较选择`gpu01:0,1,2|4,5,7`六张空闲A40，保持3+3 NUMA；物理3他人VLLM、
+  `gpu02:6/7`他人进程均不触碰。gpu02空闲0--5为4+2 NUMA，故不用。
+- `/data1`个人用量532.4GiB/1TiB，新fresh/resume与contiguous roots均不存在，预计合计低于1GiB。
+  exact三条命令和byte/semantic/NUMA门已登记到`task_plan.md`顶部；先提交推送并创建frozen worktree，
+  真正启动前再次live看卡。尚未启动GPU。
+
 ## 2026-08-09 Zero-preserving topology-address binding实现与CPU封存
 
 - clean pushed`cd95281`已在唯一`VideoConditionedTopologicalWriter`内完成单变量修订：

@@ -13,6 +13,11 @@ meta formal现在重新blocked。CPU聚焦47/47、全仓192/192和compileall通�
 violation；尚未启动新GPU。下一步只允许从clean/pushed launch-record与全新roots重做六卡
 fresh/resume/contiguous exact-resume profile，再做macro3 online smoke，两门通过前不得formal。
 
+02:52 CST live比较已预选`gpu01:0,1,2|4,5,7`空闲六卡的3+3 NUMA；物理3他人VLLM不触碰。
+`gpu02:0--5`虽空闲但为4+2 NUMA，6/7有他人进程，本轮不用。`/data1`个人用量532.4GiB/1TiB；
+新两root均不存在且合计预算低于1GiB。三条exact命令和验收门取`task_plan.md`顶部；先clean push并
+创建frozen worktree，启动前再次live看卡。
+
 当前唯一authority为`docs/action_forecast_writer_video_expert_manifold_design.md`。保持one-shot，
 视频是唯一dynamic value；Writer部署输入仍只有exact task language和恰好一条action-hidden video。
 第一次meta profile前的canonical decoder已收紧为full projected video只参与phase key/routing、LoRA

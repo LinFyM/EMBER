@@ -12,6 +12,10 @@
   smoke只属于已负裁决decoder，现已从config移除；meta formal重新blocked，必须用全新roots重做六卡
   exact-resume profile和macro3 online smoke后才能fresh formal。聚焦47/47、全仓192/192与compileall
   通过，architecture guard无hard violation；本修订尚未启动GPU。
+- 02:52 CST最新live preflight选择`gpu01:0,1,2|4,5,7`六张空闲A40并保持3+3 NUMA；物理3他人
+  VLLM不触碰。gpu02的0--5虽空闲但为4+2 NUMA，6/7有他人进程，故本轮不用。`/data1`个人用量
+  532.4GiB/1TiB，两个新profile roots均不存在、合计预计低于1GiB。exact命令与门已预注册到
+  `task_plan.md`；必须先clean push/frozen worktree并在启动前再次live复核，当前仍无新GPU进程。
 - 当前唯一方法authority仍是
   `docs/action_forecast_writer_video_expert_manifold_design.md`。它保持one-shot，视频是唯一dynamic
   value：frozen π0.5逐帧提取2048维joint multimodal hidden与1024维Action-Expert suffix hidden，

@@ -1,5 +1,14 @@
 # EMBER Findings
 
+## 2026-08-09 Address-binding reprofile证据边界
+
+- 旧profile不能验证新forward图，但既有flat ordered all-reduce数学与资源结果仍给出规模上界；因此
+  本轮只重做三步工程等价性，不改变world6、24-task mean、optimizer或scheduler，也不把profile权重
+  用作warm-start。
+- 预注册将“恢复后结果一致”拆成scientific metrics、Writer/RNG逐字节和optimizer/scheduler语义三层；
+  同时要求新`address_norm`确实存在并收到finite/nonzero梯度。任何一层不通过都先定位工程合同，不能
+  用容差把新结构封成formal。
+
 ## 2026-08-09 Topology-address修订的结构结论
 
 - 根修不是增加LoRA全局能量，而是恢复“动态视频值写到哪个LoRA坐标”的可辨识性。canonical公式为

@@ -106,9 +106,13 @@ export EMBER_LIBERO_ASSETS_ROOT=/path/to/libero-assets/revision
 训练与评测入口继续要求显式资产路径：
 
 ```text
-scripts/train_as_writer.py
+scripts/train_task_experts.py
+scripts/train_expert_manifold_writer.py
 scripts/evaluate_pi05.py
 ```
+
+旧AS/RL/K4 Writer入口、实现和配置已在Expert-Manifold完成profile与online smoke后原位
+退役；历史命令仅存在于Git、历史文档和formal artifacts中，不能作为当前可执行入口。
 
 完整BCI映射和恢复校验在迁移handoff中。
 

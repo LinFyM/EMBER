@@ -1,5 +1,15 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Expert-Manifold成为唯一canonical Writer
+
+- 在formal启动前完成design第12节的原位退役：旧K4/AS/RL executable、入口、配置和专属测试已删除，
+  历史只由Git、文档与formal artifacts保存；未启动GPU、未改实验root或checkpoint。
+- 通用data、functional LoRA、topology、evaluation cache/runtime继续保留并收紧为Expert-Manifold
+  one-shot schema；动态rollout不再有旧adapter分派或全局LoRA-B scale入口。
+- CPU-only全仓`186 passed`，compileall与diff check通过；architecture guard为review但hard violations和
+  parallel families均为空，active source净删约13k行。下一阶段是从clean pushed identity fresh formal
+  分段训练，不使用任何profile权重。
+
 ## 2026-08-09 Online smoke通过、formal seal与K4退役触发
 
 - replacement root

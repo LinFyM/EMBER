@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any, Mapping, Sequence
 
 import numpy as np
@@ -115,8 +114,7 @@ def _step_analysis(
     pairs = _pairs(states[0])
     if any(_pairs(state) != pairs for state in states[1:]):
         raise ValueError("task-expert states changed LoRA topology")
-    writer = SimpleNamespace(PUBLIC_LORA_RANK=rank)
-    geometry = [adapter_geometry(writer, pairs, state, 1.0) for state in states]
+    geometry = [adapter_geometry(rank, pairs, state, 1.0) for state in states]
     coordinates = [
         row["rank_coordinate_geometry_gauge_dependent"] for row in geometry
     ]

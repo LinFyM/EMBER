@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 import os
 import time
 from pathlib import Path
@@ -15,8 +14,11 @@ from ember.eval_adapters import (
     expected_writer_episode,
     validate_writer_episode,
 )
+from ember.expert_manifold.contract import authority_path, load_expert_manifold_config
+from ember.expert_manifold.inference import (
+    inspect_expert_manifold_writer_evaluation,
+)
 from ember.pi05_lora import load_pi05_lora_contract
-from ember.writer.as_contract import REPO_ROOT, load_writer_config
 from ember.writer.evaluation_cache import (
     assigned_writer_cache_requests,
     load_writer_cache_entry,
@@ -27,30 +29,9 @@ from ember.writer.evaluation_cache import (
     writer_cache_episode_request_map,
     writer_cache_manifest_path,
 )
+from ember.writer.errors import WriterModelError
 from ember.writer.functional import prepare_frozen_writer_policy
-from ember.writer.inference import inspect_as_writer_evaluation
-from ember.writer.live_adapter import FrozenWriterTaskAdapter, PreparedWriterLoRA
-from ember.writer.lora_rollout import WriterLoRARolloutAdapter
-from ember.writer.model import WriterModelError
-
-
-def _scaled_public_lora_b(
-    state: Mapping[str, torch.Tensor],
-    scale: float,
-) -> Mapping[str, torch.Tensor]:
-    if scale == 1.0:
-        return state
-    result = {}
-    b_factors = 0
-    for name, value in state.items():
-        if ".lora_B." in name:
-            result[name] = value * scale
-            b_factors += 1
-        else:
-            result[name] = value
-    if b_factors <= 0 or b_factors * 2 != len(result):
-        raise WriterModelError("generated public LoRA A/B topology changed")
-    return result
+from ember.writer.lora_rollout import PreparedWriterLoRA, WriterLoRARolloutAdapter
 
 
 class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
@@ -69,7 +50,10 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
         cache_contract: Mapping[str, Any],
     ) -> None:
         del tokenizer_path
-        kind = str(evaluation_adapter.get("kind", "as_writer"))
+        if evaluation_adapter.get("kind") != EXPERT_MANIFOLD_WRITER_KIND:
+            raise WriterModelError(
+                "cached rollout requires the canonical Expert-Manifold Writer"
+            )
         common = {
             "config_path": Path(evaluation_adapter["config"]["path"]),
             "checkpoint": Path(evaluation_adapter["checkpoint"]["path"]),
@@ -78,38 +62,16 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
             "task_keys": task_keys,
             "video_condition": str(evaluation_adapter["video_condition"]),
             "video_seed": int(evaluation_adapter["video_schedule"]["seed"]),
-            "video_sampling_mode": (
-                str(evaluation_adapter["video_schedule"]["sampling_mode"])
-                if "sampling_mode" in evaluation_adapter["video_schedule"]
-                else None
+            "video_sampling_mode": str(
+                evaluation_adapter["video_schedule"]["sampling_mode"]
             ),
             "require_formal": require_formal,
         }
-        if kind == "as_writer":
-            observed = inspect_as_writer_evaluation(**common)
-            config = load_writer_config(Path(observed["config"]["path"]))
-        elif kind == "rl_writer":
-            from ember.rl_writer.contract import authority_path, load_rl_writer_config
-            from ember.rl_writer.inference import inspect_rl_writer_evaluation
-
-            observed = inspect_rl_writer_evaluation(**common)
-            rl_config = load_rl_writer_config(Path(observed["config"]["path"]))
-            config = load_writer_config(authority_path(rl_config, "as_writer_config"))
-        elif kind == EXPERT_MANIFOLD_WRITER_KIND:
-            from ember.expert_manifold.contract import load_expert_manifold_config
-            from ember.expert_manifold.inference import (
-                inspect_expert_manifold_writer_evaluation,
-            )
-
-            observed = inspect_expert_manifold_writer_evaluation(**common)
-            config = load_expert_manifold_config(Path(observed["config"]["path"]))
-        else:
-            raise WriterModelError("cached rollout requires a canonical Writer adapter")
+        observed = inspect_expert_manifold_writer_evaluation(**common)
+        config = load_expert_manifold_config(Path(observed["config"]["path"]))
         if observed != dict(evaluation_adapter):
             raise WriterModelError("PI05 Writer evaluation artifacts changed after prepare")
-        lora = load_pi05_lora_contract(
-            REPO_ROOT / str(config["authorities"]["lora_contract"]["path"])
-        )
+        lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
         template = prepare_frozen_writer_policy(policy, lora)
         self._initialize_rollout(
             policy=policy,
@@ -124,7 +86,7 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
     @classmethod
     def from_live(
         cls,
-        generator: FrozenWriterTaskAdapter,
+        generator: WriterLoRARolloutAdapter,
         *,
         cache_contract: Mapping[str, Any],
     ) -> FrozenCachedWriterTaskAdapter:
@@ -141,21 +103,7 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
 
     def _initialize_cache(self, cache_contract: Mapping[str, Any]) -> None:
         self.cache_contract = dict(cache_contract)
-        execution = cache_contract.get("writer_lora_execution")
-        self.lora_b_scale = float(
-            execution.get("b_scale", 1.0)
-            if isinstance(execution, Mapping)
-            else 1.0
-        )
-        if (
-            not math.isfinite(self.lora_b_scale)
-            or self.lora_b_scale <= 0
-            or self.lora_b_scale > 4
-        ):
-            raise WriterModelError("cached Writer LoRA B scale is invalid")
-        self._request_by_key = writer_cache_episode_request_map(
-            self.cache_contract
-        )
+        self._request_by_key = writer_cache_episode_request_map(self.cache_contract)
         self._state_cache: dict[
             str, tuple[Mapping[str, torch.Tensor], dict[str, Any]]
         ] = {}
@@ -188,10 +136,6 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
                     request,
                     lora_contract=self.lora_contract,
                     device=self.device,
-                )
-                cached = (
-                    _scaled_public_lora_b(cached[0], self.lora_b_scale),
-                    cached[1],
                 )
                 if not validate_writer_episode(
                     self.evaluation_adapter,

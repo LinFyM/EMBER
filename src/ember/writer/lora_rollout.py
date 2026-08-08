@@ -2,13 +2,20 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
 import torch
 
 from ember.batched_lora import BatchedLoRAInference
 from ember.lora import copy_task_lora_state_, validate_lora_state
-from ember.writer.model import WriterModelError
+from ember.writer.errors import WriterModelError
+
+
+@dataclass(frozen=True)
+class PreparedWriterLoRA:
+    state: Mapping[str, torch.Tensor]
+    evidence: dict[str, Any]
 
 
 class WriterLoRARolloutAdapter:

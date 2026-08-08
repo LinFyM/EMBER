@@ -8,23 +8,12 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 import torch
 
-from ember.writer.model import CompleteLoRAWriter
-
 
 def state_row(state: Mapping[str, torch.Tensor], row: int) -> dict[str, torch.Tensor]:
     return {
         name: value[row].detach().to(device="cpu", dtype=torch.float32)
         for name, value in state.items()
     }
-
-
-def lora_pairs(writer: CompleteLoRAWriter) -> dict[str, dict[str, str]]:
-    result: dict[str, dict[str, str]] = {}
-    for spec in writer.tensor_specs:
-        result.setdefault(spec.module, {})[
-            "a" if spec.factor_index == 0 else "b"
-        ] = spec.name
-    return result
 
 
 def _kind(module: str) -> str:
@@ -131,16 +120,16 @@ def _energy_profile(energy: torch.Tensor, *, label: str) -> dict[str, float | in
 
 
 def adapter_geometry(
-    writer: CompleteLoRAWriter,
+    public_rank: int,
     pairs: Mapping[str, Mapping[str, str]],
     state: Mapping[str, torch.Tensor],
     scale: float,
 ) -> dict[str, Any]:
     spectra = []
     by_kind: dict[str, list[dict[str, float]]] = {"q": [], "v": [], "action": []}
-    component = torch.zeros(
-        writer.PUBLIC_LORA_RANK, writer.PUBLIC_LORA_RANK, dtype=torch.float64
-    )
+    if public_rank <= 0:
+        raise ValueError("public LoRA rank must be positive")
+    component = torch.zeros(public_rank, public_rank, dtype=torch.float64)
     component_by_kind = {name: torch.zeros_like(component) for name in by_kind}
     b_cosines: dict[str, list[float]] = {name: [] for name in by_kind}
     a_sq = b_sq = a_count = b_count = 0.0

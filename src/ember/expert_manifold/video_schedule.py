@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Mapping, Sequence
 
 import numpy as np
+import torch
 
 from ember.expert_manifold.contract import ExpertManifoldError
-from ember.pi05_target_data import SUITE_ORDER
+from ember.pi05_target_data import SUITE_ORDER, target_global_task_id
 
 
 SAME_TASK_OTHER_OFFSET = 17
@@ -21,6 +22,85 @@ VIDEO_CONDITIONS = {
     "no_video",
 }
 SAMPLING_MODES = {"with_replacement", "without_replacement"}
+
+
+def shuffled_frame_permutation(
+    frame_count: int,
+    order_seed: int,
+    *,
+    keep_first: bool,
+) -> torch.Tensor:
+    if frame_count <= 0 or order_seed < 0:
+        raise ExpertManifoldError("invalid one-shot frame permutation request")
+    generator = torch.Generator(device="cpu").manual_seed(order_seed)
+    permutation = torch.randperm(frame_count, generator=generator)
+    if keep_first:
+        permutation = torch.cat(
+            (torch.zeros(1, dtype=permutation.dtype), permutation[permutation != 0])
+        )
+    return permutation
+
+
+def task_video_mapping(
+    task_keys: Sequence[tuple[str, int]],
+    task_roles: Mapping[tuple[str, int], str],
+    condition: str,
+) -> tuple[dict[str, Any], ...]:
+    if condition not in VIDEO_CONDITIONS or not task_keys:
+        raise ExpertManifoldError("invalid Expert-Manifold video mapping")
+    normalized = tuple((str(suite), int(task_id)) for suite, task_id in task_keys)
+    if len(set(normalized)) != len(normalized):
+        raise ExpertManifoldError("Expert-Manifold evaluation tasks are duplicated")
+    selected = set(normalized)
+    roles = sorted({str(task_roles.get(key, "")) for key in normalized})
+    if not roles or "" in roles or set(task_roles) != selected:
+        raise ExpertManifoldError("Expert-Manifold split-role mapping changed")
+    result: list[dict[str, Any]] = []
+    for role in roles:
+        by_suite = {
+            suite: tuple(
+                sorted(
+                    task_id
+                    for name, task_id in normalized
+                    if name == suite and task_roles[(name, task_id)] == role
+                )
+            )
+            for suite in SUITE_ORDER
+        }
+        if any(not values for values in by_suite.values()) or len(
+            {len(values) for values in by_suite.values()}
+        ) != 1:
+            raise ExpertManifoldError("cross-suite video control panel is unbalanced")
+        for suite in SUITE_ORDER:
+            for ordinal, task_id in enumerate(by_suite[suite]):
+                video_suite, video_task_id = suite, task_id
+                if condition == "cross_suite_wrong":
+                    video_suite = SUITE_ORDER[
+                        (SUITE_ORDER.index(suite) + 1) % len(SUITE_ORDER)
+                    ]
+                    video_task_id = by_suite[video_suite][ordinal]
+                result.append(
+                    {
+                        "suite": suite,
+                        "task_id": task_id,
+                        "language_global_task_id": target_global_task_id(
+                            suite, task_id
+                        ),
+                        "language_split_role": role,
+                        "video_suite": video_suite,
+                        "video_task_id": video_task_id,
+                        "video_global_task_id": target_global_task_id(
+                            video_suite, video_task_id
+                        ),
+                        "video_split_role": role,
+                    }
+                )
+    return tuple(
+        sorted(
+            result,
+            key=lambda row: (SUITE_ORDER.index(row["suite"]), row["task_id"]),
+        )
+    )
 
 
 def video_selection_seed(

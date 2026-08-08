@@ -9,7 +9,7 @@ from typing import Any, Mapping
 import torch
 
 from ember.pi05_source_checkpoint import DistributedContext
-from ember.writer.model import WriterModelError
+from ember.writer.errors import WriterModelError
 
 
 def _expand_cpu_list(value: str) -> set[int]:

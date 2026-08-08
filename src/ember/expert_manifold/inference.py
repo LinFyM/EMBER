@@ -18,6 +18,7 @@ from ember.expert_manifold.video_schedule import (
     condition_demo_index,
     frame_order_seed,
     reference_demo_index,
+    task_video_mapping,
     video_schedule_contract,
     video_selection_seed,
 )
@@ -25,7 +26,6 @@ from ember.expert_manifold.writer_checkpoint import WRITER_CHECKPOINT_SCHEMA
 from ember.expert_manifold.writer_training import WRITER_RUN_SCHEMA
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import read_json
-from ember.writer.inference import task_video_mapping
 
 
 EXPERT_MANIFOLD_WRITER_KIND = "expert_manifold_writer"

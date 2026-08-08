@@ -5,7 +5,12 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from ember.lora import LoRATarget, SmolVLALoRAContract, lora_state_sha256
+from ember.lora import (
+    LoRATarget,
+    SmolVLALoRAContract,
+    functional_lora_call,
+    lora_state_sha256,
+)
 from ember.writer.functional import (
     ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME,
     INDEPENDENT_BETA_TIME_SAMPLING_SCHEME,
@@ -16,10 +21,8 @@ from ember.writer.functional import (
     scoped_policy_flow_noise_sampling,
     scoped_policy_flow_time_sampling,
     scoped_policy_randomness,
-    writer_functional_action_loss,
-    writer_success_weighted_flow_loss,
 )
-from ember.writer.model import WriterModelError
+from ember.writer.errors import WriterModelError
 
 
 class _FlowModel(torch.nn.Module):
@@ -221,14 +224,11 @@ def test_functional_action_loss_only_backpropagates_into_writer() -> None:
     template = prepare_frozen_writer_policy(policy, _contract())
     writer = _writer(template)
 
-    loss, details = writer_functional_action_loss(
-        writer,
-        policy,
-        _contract(),
-        language_features=torch.randn(3, 5),
-        video_features=torch.randn(9, 4, 7),
-        episode_offsets=torch.tensor([0, 9]),
-        batch={"value": torch.ones(6, 3)},
+    state = writer(
+        torch.randn(3, 5), torch.randn(9, 4, 7), torch.tensor([0, 9])
+    )
+    loss, details = functional_lora_call(
+        policy, state, _contract(), {"value": torch.ones(6, 3)}
     )
     loss.backward()
 
@@ -262,14 +262,9 @@ def test_detached_lora_gradient_bridge_backpropagates_exact_writer_gradient() ->
     video = torch.randn(9, 4, 7)
     offsets = torch.tensor([0, 9])
     batch = {"value": torch.ones(6, 3)}
-    direct_loss, _ = writer_functional_action_loss(
-        writer,
-        policy,
-        _contract(),
-        language_features=language,
-        video_features=video,
-        episode_offsets=offsets,
-        batch=batch,
+    direct_state = writer(language, video, offsets)
+    direct_loss, _ = functional_lora_call(
+        policy, direct_state, _contract(), batch
     )
     direct_gradient = torch.autograd.grad(direct_loss, writer.scale)[0]
     state = writer(language, video, offsets)
@@ -368,29 +363,3 @@ def test_functional_gradient_rejects_zero_microbatch() -> None:
             flow_noise_sampling_scheme=ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME,
             policy_microbatch_size=0,
         )
-
-
-def test_success_weighted_flow_loss_weights_episodes_equally() -> None:
-    policy = _LossPolicy()
-    template = prepare_frozen_writer_policy(policy, _contract())
-    writer = _writer(template)
-    loss, details = writer_success_weighted_flow_loss(
-        writer,
-        policy,
-        _contract(),
-        language_features=torch.randn(3, 5),
-        video_features=torch.randn(9, 4, 7),
-        episode_offsets=torch.tensor([0, 9]),
-        batch={
-            "value": torch.tensor(
-                [[1.0, 1.0, 1.0], [3.0, 3.0, 3.0], [2.0, 2.0, 2.0]]
-            )
-        },
-        rollout_episode_ids=torch.tensor([0, 0, 1]),
-    )
-    loss.backward()
-    assert details["successful_episodes"] == 2
-    assert details["successful_chunks"] == 3
-    assert bool(torch.isfinite(loss))
-    assert all(parameter.grad is None for parameter in policy.parameters())
-    assert any(parameter.grad is not None for parameter in writer.parameters())

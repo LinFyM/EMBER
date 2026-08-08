@@ -11,7 +11,7 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 
 from ember.pi05_source_checkpoint import canonical_hash, read_json, sha256_file
-from ember.writer.model import WriterModelError
+from ember.writer.errors import WriterModelError
 
 
 PANEL_SCHEMA = "ember_pi05_validation_functional_loss_panel_v1"

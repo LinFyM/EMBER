@@ -516,3 +516,13 @@ OOM/nonfinite。peak allocated/reserved=`10,576,054,272/11,182,014,464` bytes，
 全部满足。`configs/pi05_video_expert_manifold_v1.json`现以两组精确evidence seal meta formal；profile
 checkpoint继续永久禁止warm-start。第12节K4 executable移除触发已经满足，必须在identity-fresh formal
 前原位退役旧model/training/checkpoint/live-generation路径，历史只由Git、文档和formal artifacts保存。
+
+## 23. Canonical退役完成边界
+
+2026-08-09已按第12节完成原位退役：旧K4/AS/RL model、training、checkpoint、live-generation、CLI与
+专属配置/测试从当前工作树删除；Git和formal artifacts保留历史。共享数据读取、functional LoRA、public
+topology、evaluation cache/runtime仍保留，但动态Writer dispatch、one-shot schedule、episode evidence和
+live adapter现在只由Expert-Manifold拥有。统一evaluator同时保留静态Source-SFT和task-expert对照，不再
+接受旧AS/RL动态adapter或rollout全局B-scale。CPU-only全仓`186/186`与compileall/diff通过，architecture
+guard无hard violation或parallel family。该收口不改变模型数学、sealed config、训练target或任何科研结果；
+formal仍必须从identity fresh开始。

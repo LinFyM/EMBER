@@ -41,6 +41,11 @@ single-checkpoint、无hash、不使用subagent与安全边界。
 single checkpoint的strict paired correct严格超过`150/400`并尽可能继续提高，同时保持真实
 视频时序因果性、same-task鲁棒性、task breadth与低checkpoint漂移；只有实质性阻塞才回报。
 该恢复不改变设备、信息墙、single-checkpoint、无hash与不使用subagent边界。
+2026-08-09，Video-Conditioned Expert-Manifold的六卡exact-resume profile与单卡online
+generation/cache/release/rollout smoke均已通过，formal config已seal；旧K4/AS/RL executable、
+入口、配置和专属测试已按design第12节原位退役。当前唯一dynamic Writer是one-shot
+Expert-Manifold，正式训练必须从identity fresh开始，profile权重不得warm-start。历史K4/AS/RL
+命令只作provenance，不得据此恢复并行实现或旧adapter分派。
 
 ## Efficiency and validation boundary
 

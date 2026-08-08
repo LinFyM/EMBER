@@ -63,9 +63,8 @@ smoke evaluator按profile checkpoint集合验收macro1/3，formal仍只认sealed
 
 profile前的cached-rollout纵向审计又发现统一adapter wrapper在Expert-Manifold分派中漏传现有
 `evidence_schema`：generation可完成，但Writer释放后的episode evidence构造会在任何scientific row前
-报`TypeError`。隔离分支现已为旧Writer与Expert-Manifold共同保留该参数，并让后者对schema mismatch
-fail-close；聚焦62/62、全仓220/220及`py_compile`通过。该工程修复不改变Writer数值或实验合同，必须
-并入后才允许online profile smoke。
+报`TypeError`。当时的scoped修复让Expert-Manifold对schema mismatch fail-close；旧Writer兼容分派现已
+随canonical退役删除。该工程修复不改变Writer数值或实验合同。
 
 全24 experts的exact-resume1000→2000已于2026-08-08 22:39 CST自然完成：24/24 completion、
 6/6 summaries、24个1500与24个2000 checkpoints、0 error/OOM/nonfinite；GPU3他人进程与GPU6
@@ -125,13 +124,15 @@ replacement已由clean pushed`31d41d8`自然完成：8/8 unique rows、8个唯�
 generator生成8 entries/2个batch4，三个workers均attempt1/exit0、0 retry/failure/OOM/nonfinite。
 generation wall=`12.634s`，peak allocated/reserved=`10,576,054,272/11,182,014,464` bytes；释放
 Writer/encoder后原source policy直接复用且没有reload，forbidden reads全0。`1/8` success只作execution
-smoke，不作performance证据。config已封存profile与online evidence并把meta formal置为sealed；正式
-identity-fresh启动前先按design第12节原位退役旧K4 executable。
+smoke，不作performance证据。config已封存profile与online evidence并把meta formal置为sealed。随后
+已按design第12节原位退役旧K4/AS/RL executable、入口、配置和专属测试；CPU-only全仓`186/186`通过，
+architecture guard无hard violation或parallel family。
 
 owner已在本session完成讨论后明确恢复持续自主执行，并授权围绕长期Goal自行设计、实现、训练、
 评测和迭代；只有实质性阻塞才回报。执行顺序为：full24 expert geometry与development-train
 closed-loop统一评250/500/1000、formal cache、expert2000、统一step2000选择、六卡profile和纵向
-online smoke均已完成；当前顺序为旧K4原位退役→identity-fresh训练→strict五臂。当前长期门是同一single
+online smoke与旧K4/AS/RL原位退役均已完成；当前顺序为identity-fresh训练→strict五臂→按最早失效接口
+迭代。当前长期门是同一single
 checkpoint strict correct严格超过`150/400`，同时保持视频时序因果性、same-task鲁棒性、breadth
 与低checkpoint漂移。
 

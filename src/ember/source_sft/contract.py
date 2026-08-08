@@ -26,7 +26,7 @@ from ember.pi05_source_checkpoint import (
 )
 from ember.pi05_source_contract import append_jsonl
 from ember.writer.data import FunctionalQueryDataset, WriterTaskAuthority
-from ember.writer.model import WriterModelError
+from ember.writer.errors import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]

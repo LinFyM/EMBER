@@ -1,4 +1,4 @@
-"""Atomic per-episode K4 Writer-LoRA caches without content hashing."""
+"""Atomic per-episode Expert-Manifold Writer-LoRA caches."""
 
 from __future__ import annotations
 
@@ -14,22 +14,27 @@ import torch
 from safetensors.torch import load_file, save_file
 
 from ember.eval_adapters import (
-    EXPERT_MANIFOLD_WRITER_KIND,
     WRITER_ADAPTER_KINDS,
     validate_writer_episode,
     writer_episode_schema,
 )
 from ember.lora import LoRAContract, validate_lora_state
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
-from ember.writer.model import WriterModelError
+from ember.writer.errors import WriterModelError
 
 
-WRITER_LORA_CACHE_SCHEMA = "ember_pi05_k4_writer_lora_cache_v1"
-WRITER_LORA_CACHE_ENTRY_SCHEMA = "ember_pi05_k4_writer_lora_cache_entry_v1"
-WRITER_LORA_CACHE_MANIFEST_SCHEMA = "ember_pi05_k4_writer_lora_cache_manifest_v1"
-WRITER_LORA_GENERATOR_MARKER_SCHEMA = "ember_pi05_k4_writer_lora_generator_marker_v1"
+WRITER_LORA_CACHE_SCHEMA = "ember_pi05_expert_manifold_writer_lora_cache_v1"
+WRITER_LORA_CACHE_ENTRY_SCHEMA = (
+    "ember_pi05_expert_manifold_writer_lora_cache_entry_v1"
+)
+WRITER_LORA_CACHE_MANIFEST_SCHEMA = (
+    "ember_pi05_expert_manifold_writer_lora_cache_manifest_v1"
+)
+WRITER_LORA_GENERATOR_MARKER_SCHEMA = (
+    "ember_pi05_expert_manifold_writer_lora_generator_marker_v1"
+)
 WRITER_LORA_REQUEST_ORDER = "sealed suite/task order then ascending init_state_id"
-WRITER_LORA_VIDEO_KEY_ALGORITHM = "one_entry_per_episode_k4_set_v1"
+WRITER_LORA_VIDEO_KEY_ALGORITHM = "one_entry_per_episode_one_shot_video_v1"
 WRITER_LORA_VIDEO_REQUEST_ORDER = WRITER_LORA_REQUEST_ORDER
 WRITER_LORA_ASSIGNMENT = "request ordinal modulo generator worker count"
 
@@ -139,11 +144,7 @@ def build_writer_lora_cache_descriptor(
         "generators_per_gpu": generators_per_gpu,
         "generator_worker_count": worker_count,
         "generation_batch_size": generation_batch_size,
-        "cache_key_algorithm": (
-            "one_entry_per_episode_one_shot_video_v1"
-            if adapter.get("kind") == EXPERT_MANIFOLD_WRITER_KIND
-            else WRITER_LORA_VIDEO_KEY_ALGORITHM
-        ),
+        "cache_key_algorithm": WRITER_LORA_VIDEO_KEY_ALGORITHM,
         "episode_evidence_schema": writer_episode_schema(adapter),
         "request_order": WRITER_LORA_VIDEO_REQUEST_ORDER,
         "assignment": WRITER_LORA_ASSIGNMENT,

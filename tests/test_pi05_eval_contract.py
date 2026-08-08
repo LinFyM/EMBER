@@ -24,7 +24,14 @@ from ember.pi05_eval_contract import (
     resolve_role_task_keys,
     _validate_recipe,
 )
-from ember.writer.inference import WRITER_ADAPTER_SCHEMA, task_video_mapping
+from ember.expert_manifold.inference import (
+    EXPERT_MANIFOLD_ADAPTER_SCHEMA,
+    EXPERT_MANIFOLD_WRITER_KIND,
+)
+from ember.expert_manifold.video_schedule import (
+    task_video_mapping,
+    video_schedule_contract,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -238,33 +245,33 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
     task_keys = tuple((task.suite, task.task_id) for task in tasks)
     task_roles = {key: task.split_role for key, task in zip(task_keys, tasks)}
     correct_mapping = list(task_video_mapping(task_keys, task_roles, "correct"))
+    schedule, pairing = video_schedule_contract(
+        seed=7,
+        demo_count=50,
+        sampling_mode="without_replacement",
+    )
     shared_writer = {
-        "schema_version": WRITER_ADAPTER_SCHEMA,
-        "kind": "as_writer",
-        "writer_method": "as_writer",
-        "execution_backend": "two_stage_cached_per_sample_k4_lora_batched_replan",
+        "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
+        "kind": EXPERT_MANIFOLD_WRITER_KIND,
+        "execution_backend": (
+            "online_frozen_pi05_video_innovation_then_cached_topological_lora"
+        ),
         "config": {
             "path": str(
-                ROOT
-                / "configs/pi05_as_writer_k4_phase_aligned_v6_bci_v1.json"
+                ROOT / "configs/pi05_video_expert_manifold_v1.json"
             ),
         },
-        "training_run": {"schema_version": "k4-launch", "mode": "formal"},
+        "training_run": {"schema_version": "expert-manifold-launch", "mode": "formal"},
         "checkpoint": {
             "cursor": 12,
-            "reference": "k4-launch:12",
+            "reference": "expert-manifold-launch:12",
         },
         "video_data": {"schema_version": "raw-video-v1"},
         "lora_contract": {
             "reference": "configs/pi05_lora_v1.json:76tensors:1287168parameters"
         },
-        "video_schedule": {
-            "seed": 7,
-            "demo_count": 50,
-            "videos_per_condition": 4,
-            "sampling_mode": "without_replacement",
-        },
-        "pairing_reference": "paired-k4-v1",
+        "video_schedule": schedule,
+        "pairing_reference": pairing,
     }
     return (
         authorities,
@@ -283,7 +290,6 @@ def _build_writer_contract(
     arm: str,
     condition: str,
     mapping: list,
-    b_scale: float = 1.0,
 ) -> dict:
     authorities, tasks, paths, model, shared_writer, _ = inputs
     return build_run_contract(
@@ -297,7 +303,6 @@ def _build_writer_contract(
         mode="smoke",
         replicas_per_gpu=1,
         command=("evaluate_pi05.py", "prepare"),
-        writer_lora_b_scale=b_scale,
         adapter={
             **shared_writer,
             "arm": arm,
@@ -308,7 +313,7 @@ def _build_writer_contract(
     )
 
 
-def test_writer_pairing_and_lora_scale_are_sealed(tmp_path: Path) -> None:
+def test_expert_manifold_writer_pairing_is_sealed(tmp_path: Path) -> None:
     inputs = _writer_contract_inputs(tmp_path)
     _, tasks, _, _, _, correct_mapping = inputs
     task_keys = tuple((task.suite, task.task_id) for task in tasks)
@@ -319,30 +324,20 @@ def test_writer_pairing_and_lora_scale_are_sealed(tmp_path: Path) -> None:
     correct = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "correct",
-        arm="as_writer_correct_video",
+        arm="expert_manifold_macro_12_correct",
         condition="correct",
         mapping=correct_mapping,
     )
     wrong = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "wrong",
-        arm="as_writer_cross_suite_wrong_video",
+        arm="expert_manifold_macro_12_cross_suite_wrong",
         condition="cross_suite_wrong",
         mapping=wrong_mapping,
     )
-    scaled = _build_writer_contract(
-        inputs=inputs,
-        output_dir=tmp_path / "scaled",
-        arm="as_writer_correct_video",
-        condition="correct",
-        mapping=correct_mapping,
-        b_scale=1.5,
-    )
     assert correct["paired_control"] == wrong["paired_control"]
     assert correct["contract_reference"] != wrong["contract_reference"]
-    assert correct["writer_lora_execution"]["b_scale"] == 1.0
-    assert scaled["writer_lora_execution"]["b_scale"] == 1.5
-    assert scaled["paired_control"] != correct["paired_control"]
+    assert "writer_lora_execution" not in correct
 
 
 def test_source_checkpoint_inspection_requires_generic_base_and_raw_policy_contract(

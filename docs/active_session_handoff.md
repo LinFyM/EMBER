@@ -24,7 +24,9 @@
   geometry、action-hidden phase16×3072 feature cache、168个`[16,512]`chunk/rank axial decoder、
   六rank task-complete exact-resume meta trainer，以及one-shot五臂严格配对evaluator均已存在。
   feature cache profile与formal已完成；六卡meta A40 exact-resume core profile和单卡macro3 online-
-  generation/cached-rollout smoke也已通过，meta formal config现已seal；尚无formal Writer checkpoint。
+  generation/cached-rollout smoke也已通过，meta formal config现已seal。旧K4/AS/RL executable、入口、
+  配置和专属测试已按design第12节原位退役，当前dynamic Writer只有Expert-Manifold；尚无formal Writer
+  checkpoint。
 - full24×50 cache的CPU审计表明phase-DC能量中位`.98057`、temporal residual中位`.01943`，但
   ordered/reversed/phase-shuffled temporal-template cosine中位=`.88284/-.32402/-.02194`；时序
   task geometry与expert B target geometry Spearman=`.45087`。固定causal-prefix uniform-pool的
@@ -39,9 +41,9 @@
   聚焦49/49与全仓223/223 CPU测试通过。六卡core profile已有GPU工程结论，但尚无meta训练或性能结果。
 - profile前的cached-rollout纵向审计发现统一adapter wrapper新增Expert-Manifold dispatch时漏传了既有
   `evidence_schema`参数：LoRA cache可正常生成，但释放Writer后进入scale-out episode evidence构造会
-  `TypeError`，所以任何由此产生的profile都不能成立。隔离分支已让old/Expert-Manifold两类adapter都
-  保留该参数，并对Expert-Manifold schema显式fail-close；聚焦62/62、全仓220/220与`py_compile`
-  通过。该修复不改变模型、输入、LoRA、训练或rollout数值，尚无GPU或科研结论。
+  `TypeError`，所以任何由此产生的profile都不能成立。当时的scoped修复让Expert-Manifold schema
+  显式fail-close；旧Writer兼容分派现已随canonical退役删除。该修复不改变模型、输入、LoRA、训练或
+  rollout数值。
 - full24统一五点正式geometry已完成，artifact为
   `runs/outputs/pi05_task_expert_bank_geometry_full24_steps0250_0500_1000_1500_2000_1362d15_20260808/analysis.json`。
   effective-LoRA norm中位=`2.792/3.652/4.170/4.212/4.212`，stable rank中位均约`1.129`，
@@ -135,9 +137,9 @@
   retry/failure/OOM/nonfinite。peak allocated/reserved=`10,576,054,272/11,182,014,464` bytes；
   Writer/encoder释放后source policy原位复用且没有reload，forbidden reads全0。`1/8` success只作
   execution smoke，不作性能证据。profile与online evidence已封入config，meta formal现已seal。
-- 旧K4 executable的design removal trigger已经满足；当前在正式identity-fresh启动前原位退役其model/
-  training/checkpoint/live-generation路径，通用data/topology/functional/evaluation owner保留并收敛到
-  Expert-Manifold唯一canonical Writer。
+- 旧K4/AS/RL executable已完成原位退役，通用data/topology/functional/evaluation owner保留并收敛到
+  Expert-Manifold唯一canonical Writer。CPU-only全仓`186/186`、compileall与diff check通过；architecture
+  guard无hard violation或parallel family。下一步从clean pushed identity fresh启动分段formal。
 
 ## 0.0 已完成并负裁决：K4 Phase-Aligned Language-Axial Semantic-Procedure Writer
 

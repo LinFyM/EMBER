@@ -23,13 +23,9 @@ from ember.pi05_eval.launcher import (
 )
 from ember.eval_adapters import (
     adapter_requests as _adapter_requests,
-    as_writer_requested as _writer_requested,
-    inspect_as_writer_adapter as _inspect_writer_adapter,
-    inspect_rl_writer_adapter as _inspect_rl_writer_adapter,
     inspect_source_sft_adapter as _inspect_source_sft_adapter,
     inspect_task_expert_adapter as _inspect_task_expert_adapter,
     inspect_expert_manifold_writer_adapter as _inspect_expert_manifold_writer_adapter,
-    rl_writer_requested as _rl_writer_requested,
     source_sft_requested as _source_sft_requested,
 )
 from ember.pi05_eval_contract import (
@@ -91,15 +87,6 @@ def _add_writer_runtime_arguments(parser: argparse.ArgumentParser) -> None:
         type=Path,
         help="Optional reusable cache root shared by rollout-topology profiles.",
     )
-    parser.add_argument(
-        "--writer-lora-b-scale",
-        type=float,
-        default=1.0,
-        help=(
-            "Multiply generated public LoRA B factors at rollout while keeping "
-            "their generated A factors fixed; the default 1.0 is unchanged."
-        ),
-    )
 
 
 def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
@@ -132,48 +119,6 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--gpu-indices",
         help="Comma-separated physical GPU indices; defaults to every configured GPU.",
-    )
-    parser.add_argument("--as-writer-config", type=Path)
-    parser.add_argument("--as-writer-checkpoint", type=Path)
-    parser.add_argument("--writer-video-data-root", type=Path)
-    parser.add_argument(
-        "--writer-video-condition",
-        choices=(
-            "correct",
-            "same_task_other",
-            "cross_suite_wrong",
-            "shuffled",
-            "shuffled_keep_first",
-            "reversed",
-        ),
-    )
-    parser.add_argument(
-        "--writer-video-sampling",
-        choices=("with_replacement", "without_replacement"),
-        default="with_replacement",
-        help=(
-            "Teacher-video pairing schedule for AS-Writer evaluation. Formal "
-            "no-replacement panels should select without_replacement explicitly."
-        ),
-    )
-    parser.add_argument("--rl-writer-config", type=Path)
-    parser.add_argument("--rl-writer-checkpoint", type=Path)
-    parser.add_argument("--rl-writer-video-data-root", type=Path)
-    parser.add_argument(
-        "--rl-writer-video-condition",
-        choices=(
-            "correct",
-            "same_task_other",
-            "cross_suite_wrong",
-            "shuffled",
-            "shuffled_keep_first",
-            "reversed",
-        ),
-    )
-    parser.add_argument(
-        "--rl-writer-video-sampling",
-        choices=("with_replacement", "without_replacement"),
-        default="without_replacement",
     )
     parser.add_argument("--source-sft-config", type=Path)
     parser.add_argument("--source-sft-checkpoint", type=Path)
@@ -284,31 +229,7 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
     )
     tokenizer = inspect_tokenizer(authorities, args.tokenizer_path)
     adapter = None
-    if writer_kind == "as_writer":
-        adapter = _inspect_writer_adapter(
-            config_path=args.as_writer_config.resolve(),
-            checkpoint=args.as_writer_checkpoint.resolve(),
-            video_data_root=args.writer_video_data_root.resolve(),
-            source=model,
-            tasks=tasks,
-            video_condition=str(args.writer_video_condition),
-            video_seed=int(authorities.config["rng"]["inference_seed"]),
-            video_sampling_mode=str(args.writer_video_sampling),
-            require_formal=args.mode != "smoke",
-        )
-    elif writer_kind == "rl_writer":
-        adapter = _inspect_rl_writer_adapter(
-            config_path=args.rl_writer_config.resolve(),
-            checkpoint=args.rl_writer_checkpoint.resolve(),
-            video_data_root=args.rl_writer_video_data_root.resolve(),
-            source=model,
-            tasks=tasks,
-            video_condition=str(args.rl_writer_video_condition),
-            video_seed=int(authorities.config["rng"]["inference_seed"]),
-            video_sampling_mode=str(args.rl_writer_video_sampling),
-            require_formal=args.mode != "smoke",
-        )
-    elif source_sft_requested:
+    if source_sft_requested:
         adapter = _inspect_source_sft_adapter(
             config_path=args.source_sft_config.resolve(),
             checkpoint=args.source_sft_checkpoint.resolve(),
@@ -355,7 +276,6 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
         writer_generators_per_gpu=args.writer_generators_per_gpu,
         writer_generation_batch_size=args.writer_generation_batch_size,
         writer_cache_root=args.writer_lora_cache_root,
-        writer_lora_b_scale=args.writer_lora_b_scale,
     )
     publish_json_exclusive(output_dir / "run_contract.json", contract)
     shards = _shards_from_contract(contract)
@@ -378,7 +298,6 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
             "writer_generation_batch_size"
         ],
         "writer_lora_cache": contract["writer_lora_cache"],
-        "writer_lora_execution": contract["writer_lora_execution"],
         "physical_gpu_ids": contract["parallel"]["physical_gpu_ids"],
         "arm": contract["arm"],
         "output_dir": str(output_dir),
@@ -446,38 +365,6 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
                 source=model,
                 tasks=tasks,
                 evaluation_role=str(adapter["evaluation_role"]),
-                require_formal=contract["mode"] != "smoke",
-            )
-        elif adapter.get("kind") == "as_writer":
-            observed = _inspect_writer_adapter(
-                config_path=Path(adapter["config"]["path"]),
-                checkpoint=Path(adapter["checkpoint"]["path"]),
-                video_data_root=Path(adapter["video_data"]["root"]),
-                source=model,
-                tasks=tasks,
-                video_condition=str(adapter["video_condition"]),
-                video_seed=int(adapter["video_schedule"]["seed"]),
-                video_sampling_mode=str(
-                    adapter["video_schedule"]["sampling_mode"]
-                )
-                if "sampling_mode" in adapter["video_schedule"]
-                else None,
-                require_formal=contract["mode"] != "smoke",
-            )
-        elif adapter.get("kind") == "rl_writer":
-            observed = _inspect_rl_writer_adapter(
-                config_path=Path(adapter["config"]["path"]),
-                checkpoint=Path(adapter["checkpoint"]["path"]),
-                video_data_root=Path(adapter["video_data"]["root"]),
-                source=model,
-                tasks=tasks,
-                video_condition=str(adapter["video_condition"]),
-                video_seed=int(adapter["video_schedule"]["seed"]),
-                video_sampling_mode=str(
-                    adapter["video_schedule"]["sampling_mode"]
-                )
-                if "sampling_mode" in adapter["video_schedule"]
-                else "without_replacement",
                 require_formal=contract["mode"] != "smoke",
             )
         elif adapter.get("kind") == "task_local_expert_bank":

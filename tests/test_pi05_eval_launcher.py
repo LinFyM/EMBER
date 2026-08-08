@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import argparse
 import fcntl
 import importlib.util
-import argparse
 from pathlib import Path
 import subprocess
 import sys
@@ -61,8 +61,6 @@ def test_no_video_control_is_scoped_to_expert_manifold() -> None:
     parser = argparse.ArgumentParser()
     module._add_prepare_arguments(parser)
     choices = {action.dest: action.choices for action in parser._actions}
-    assert "no_video" not in choices["writer_video_condition"]
-    assert "no_video" not in choices["rl_writer_video_condition"]
     assert "no_video" in choices["expert_manifold_video_condition"]
 
 
@@ -127,48 +125,30 @@ def test_partial_launch_cleanup_stops_only_owned_processes() -> None:
             process.wait()
 
 
-def test_writer_prepare_arguments_are_all_or_none() -> None:
+def test_expert_manifold_prepare_arguments_are_all_or_none() -> None:
     module = _launcher_module()
     empty = argparse.Namespace(
-        as_writer_config=None,
-        as_writer_checkpoint=None,
-        writer_video_data_root=None,
-        writer_video_condition=None,
+        source_sft_config=None,
+        source_sft_checkpoint=None,
+        task_expert_config=None,
+        task_expert_bank_root=None,
+        task_expert_step=None,
+        expert_manifold_config=None,
+        expert_manifold_checkpoint=None,
+        expert_manifold_video_data_root=None,
+        expert_manifold_video_condition=None,
     )
-    assert module._writer_requested(empty) is False
-    partial = argparse.Namespace(
-        as_writer_config=Path("config.json"),
-        as_writer_checkpoint=None,
-        writer_video_data_root=None,
-        writer_video_condition="correct",
-    )
+    assert module._adapter_requests(empty) == (None, False)
+    partial = argparse.Namespace(**vars(empty))
+    partial.expert_manifold_config = Path("config.json")
+    partial.expert_manifold_video_condition = "correct"
     with pytest.raises(Pi05EvaluationError, match="requires all declared assets"):
-        module._writer_requested(partial)
-
-    rl_empty = argparse.Namespace(
-        rl_writer_config=None,
-        rl_writer_checkpoint=None,
-        rl_writer_video_data_root=None,
-        rl_writer_video_condition=None,
-    )
-    assert module._rl_writer_requested(rl_empty) is False
-    rl_partial = argparse.Namespace(**vars(rl_empty))
-    rl_partial.rl_writer_config = Path("rl.json")
-    with pytest.raises(Pi05EvaluationError, match="requires all declared assets"):
-        module._rl_writer_requested(rl_partial)
+        module._adapter_requests(partial)
 
 
 def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
     module = _launcher_module()
     empty = argparse.Namespace(
-        as_writer_config=None,
-        as_writer_checkpoint=None,
-        writer_video_data_root=None,
-        writer_video_condition=None,
-        rl_writer_config=None,
-        rl_writer_checkpoint=None,
-        rl_writer_video_data_root=None,
-        rl_writer_video_condition=None,
         source_sft_config=None,
         source_sft_checkpoint=None,
         task_expert_config=None,
@@ -185,31 +165,18 @@ def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
     with pytest.raises(Pi05EvaluationError, match="requires all declared assets"):
         module._adapter_requests(partial)
     both = argparse.Namespace(
-        as_writer_config=Path("as.json"),
-        as_writer_checkpoint=Path("as-step"),
-        writer_video_data_root=Path("target-data"),
-        writer_video_condition="correct",
-        rl_writer_config=None,
-        rl_writer_checkpoint=None,
-        rl_writer_video_data_root=None,
-        rl_writer_video_condition=None,
         source_sft_config=Path("source_sft.json"),
         source_sft_checkpoint=Path("source-sft-step"),
+        task_expert_config=None,
+        task_expert_bank_root=None,
+        task_expert_step=None,
+        expert_manifold_config=Path("expert-manifold.json"),
+        expert_manifold_checkpoint=Path("macro50"),
+        expert_manifold_video_data_root=Path("videos"),
+        expert_manifold_video_condition="correct",
     )
     with pytest.raises(Pi05EvaluationError, match="mutually exclusive"):
         module._adapter_requests(both)
-
-    as_and_rl = argparse.Namespace(**vars(empty))
-    as_and_rl.as_writer_config = Path("as.json")
-    as_and_rl.as_writer_checkpoint = Path("as-step")
-    as_and_rl.writer_video_data_root = Path("target-data")
-    as_and_rl.writer_video_condition = "correct"
-    as_and_rl.rl_writer_config = Path("rl.json")
-    as_and_rl.rl_writer_checkpoint = Path("rl-update")
-    as_and_rl.rl_writer_video_data_root = Path("videos")
-    as_and_rl.rl_writer_video_condition = "correct"
-    with pytest.raises(Pi05EvaluationError, match="mutually exclusive"):
-        module._adapter_requests(as_and_rl)
 
     expert = argparse.Namespace(**vars(empty))
     expert.task_expert_config = Path("expert.json")

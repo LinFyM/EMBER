@@ -11,7 +11,7 @@ from typing import Any, Iterator, Sequence
 import h5py
 import numpy as np
 
-from ember.writer.model import WriterModelError
+from ember.writer.errors import WriterModelError
 
 
 @dataclass(frozen=True)

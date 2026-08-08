@@ -11,7 +11,7 @@ import numpy as np
 from torch.utils.data import Sampler
 
 from ember.writer.data import FunctionalQueryDataset
-from ember.writer.model import WriterModelError
+from ember.writer.errors import WriterModelError
 
 
 class CyclicSubsetMixedBatchSampler(Sampler[list[int]]):

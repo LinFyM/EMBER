@@ -19,16 +19,13 @@ from ember.writer.evaluation_cache import (
     writer_cache_manifest_is_ready,
     writer_cache_requests,
 )
-from ember.writer.inference import (
-    WRITER_ADAPTER_SCHEMA,
-    expected_writer_episode_evidence,
-)
-from ember.writer.model import WriterModelError
 from ember.expert_manifold.inference import (
     EXPERT_MANIFOLD_ADAPTER_SCHEMA,
     EXPERT_MANIFOLD_EPISODE_SCHEMA,
     EXPERT_MANIFOLD_WRITER_KIND,
+    expected_expert_manifold_episode_evidence,
 )
+from ember.writer.errors import WriterModelError
 
 
 def _lora_contract() -> SmolVLALoRAContract:
@@ -57,22 +54,21 @@ def _contract(root: Path, *, replicas: int = 2, state_count: int = 3) -> dict:
     ]
     contract = {
         "adapter": {
-            "schema_version": WRITER_ADAPTER_SCHEMA,
-            "kind": "as_writer",
-            "writer_method": "as_writer",
-            "arm": "as_writer_correct_video",
+            "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
+            "kind": EXPERT_MANIFOLD_WRITER_KIND,
+            "arm": "expert_manifold_macro_300_correct",
             "video_condition": "correct",
             "checkpoint": {"cursor": 300, "reference": "run:300"},
             "lora_contract": {"reference": "test:2tensors:14parameters"},
             "video_schedule": {
                 "seed": 7,
                 "demo_count": 50,
-                "videos_per_condition": 4,
+                "videos_per_condition": 1,
                 "sampling_mode": "without_replacement",
             },
             "task_video_mapping_reference": "identity_v1",
             "task_video_mapping": mapping,
-            "pairing_reference": "paired_k4_v1",
+            "pairing_reference": "ember_pi05_expert_manifold_one_shot_pairing_v1",
         },
         "model": {"optimizer_step": 1000},
         "tokenizer": {"path": "/tokenizer.model"},
@@ -107,7 +103,7 @@ def _state(value: float) -> dict[str, torch.Tensor]:
 
 def _populate(contract: dict, lora: SmolVLALoRAContract) -> None:
     for request in writer_cache_requests(contract):
-        evidence = expected_writer_episode_evidence(
+        evidence = expected_expert_manifold_episode_evidence(
             contract["adapter"],
             suite=request.suite,
             task_id=request.task_id,
@@ -140,7 +136,7 @@ def test_cache_identity_ignores_rollout_replica_count(tmp_path: Path) -> None:
     assert first["writer_lora_cache"]["identity"] == second["writer_lora_cache"]["identity"]
 
 
-def test_k4_cache_retains_one_entry_per_episode(tmp_path: Path) -> None:
+def test_one_shot_cache_retains_one_entry_per_episode(tmp_path: Path) -> None:
     contract = _contract(tmp_path / "cache", state_count=50)
     assert len(writer_cache_requests(contract)) == 50
     assert len(writer_cache_episode_request_map(contract)) == 50
@@ -149,9 +145,6 @@ def test_k4_cache_retains_one_entry_per_episode(tmp_path: Path) -> None:
 
 def test_expert_manifold_cache_declares_one_shot_episode_evidence(tmp_path: Path) -> None:
     contract = _contract(tmp_path / "cache")
-    contract["adapter"]["kind"] = EXPERT_MANIFOLD_WRITER_KIND
-    contract["adapter"]["schema_version"] = EXPERT_MANIFOLD_ADAPTER_SCHEMA
-    contract["adapter"]["video_schedule"]["videos_per_condition"] = 1
     lora = _lora_contract()
     descriptor = build_writer_lora_cache_descriptor(
         contract,

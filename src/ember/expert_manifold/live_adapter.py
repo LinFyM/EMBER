@@ -20,6 +20,7 @@ from ember.expert_manifold.inference import (
     inspect_expert_manifold_writer_evaluation,
 )
 from ember.expert_manifold.model import VideoConditionedTopologicalWriter
+from ember.expert_manifold.video_schedule import shuffled_frame_permutation
 from ember.expert_manifold.video_features import FrozenPi05VideoInnovationEncoder
 from ember.lora import copy_task_lora_state_, validate_lora_state
 from ember.pi05_lora import load_pi05_lora_contract
@@ -27,9 +28,7 @@ from ember.pi05_processing import Pi05TeacherPrefixTokenizer
 from ember.pi05_source_checkpoint import read_json
 from ember.writer.data import RawTeacherVideoStore, WriterTaskAuthority
 from ember.writer.functional import prepare_frozen_writer_policy
-from ember.writer.inference import writer_shuffled_frame_permutation
-from ember.writer.live_adapter import PreparedWriterLoRA
-from ember.writer.lora_rollout import WriterLoRARolloutAdapter
+from ember.writer.lora_rollout import PreparedWriterLoRA, WriterLoRARolloutAdapter
 
 
 class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
@@ -157,7 +156,7 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
         if condition == "reversed":
             frames = frames.flip(0)
         elif condition in {"shuffled", "shuffled_keep_first"}:
-            permutation = writer_shuffled_frame_permutation(
+            permutation = shuffled_frame_permutation(
                 frames.shape[0],
                 int(row["teacher_video_order_seeds"][0]),
                 keep_first=condition == "shuffled_keep_first",

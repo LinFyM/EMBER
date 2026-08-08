@@ -366,7 +366,6 @@ def aggregate_run(output_dir: Path) -> dict[str, Any]:
         "mode": contract["mode"],
         "model": contract["model"],
         "adapter": contract.get("adapter"),
-        "writer_lora_execution": contract.get("writer_lora_execution"),
         "normalization": contract["normalization"],
         "tokenizer": contract["tokenizer"],
         "overall": {

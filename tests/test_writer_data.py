@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import pytest
 
 from ember.writer.as_sampling import MixedTaskBatchSampler, TeacherVideoSchedule
-from ember.writer.model import WriterModelError
+from ember.writer.errors import WriterModelError
 
 
 @dataclass

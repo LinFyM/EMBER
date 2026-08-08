@@ -113,9 +113,9 @@ def test_topological_writer_contract_seals_physical_numa_mapping(
         lambda _: {"branch": "branch", "commit": "commit"},
     )
     monkeypatch.setattr(
-        "ember.expert_manifold.writer_training.visible_physical_cuda_index",
-        lambda _: 4,
+        "ember.expert_manifold.writer_training.visible_physical_cuda_index", lambda _: 4
     )
+    monkeypatch.setattr(torch.cuda, "get_device_name", lambda _: "NVIDIA A40")
     contract = _writer_contract(
         args=Namespace(mode="profile", config=CONFIG, feature_cache_root=tmp_path),
         config=load_expert_manifold_config(CONFIG),

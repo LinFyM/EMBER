@@ -8,7 +8,7 @@ import pytest
 from ember.source_sft.sampler import (
     CyclicSubsetMixedBatchSampler,
 )
-from ember.writer.model import WriterModelError
+from ember.writer.errors import WriterModelError
 
 
 @dataclass

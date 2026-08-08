@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import math
 import socket
 import time
 import uuid
@@ -98,28 +97,16 @@ def _writer_lora_contract(
     authorities: EvaluationAuthorities,
     adapter: Mapping[str, Any],
 ) -> Any:
+    from ember.expert_manifold.contract import (
+        authority_path as expert_authority_path,
+        load_expert_manifold_config,
+    )
     from ember.pi05_lora import load_pi05_lora_contract
-    from ember.rl_writer.contract import authority_path, load_rl_writer_config
-    from ember.writer.as_contract import load_writer_config
 
-    if adapter["kind"] == "as_writer":
-        config = load_writer_config(Path(adapter["config"]["path"]))
-        path = authorities.repo_root / str(
-            config["authorities"]["lora_contract"]["path"]
-        )
-    elif adapter["kind"] == "rl_writer":
-        config = load_rl_writer_config(Path(adapter["config"]["path"]))
-        path = authority_path(config, "lora_contract")
-    elif adapter["kind"] == EXPERT_MANIFOLD_WRITER_KIND:
-        from ember.expert_manifold.contract import (
-            authority_path as expert_authority_path,
-            load_expert_manifold_config,
-        )
-
-        config = load_expert_manifold_config(Path(adapter["config"]["path"]))
-        path = expert_authority_path(config, "lora_contract")
-    else:
+    if adapter["kind"] != EXPERT_MANIFOLD_WRITER_KIND:
         raise Pi05EvaluationError("unknown Writer LoRA authority")
+    config = load_expert_manifold_config(Path(adapter["config"]["path"]))
+    path = expert_authority_path(config, "lora_contract")
     result = load_pi05_lora_contract(path)
     expected_reference = (
         f"{path.relative_to(authorities.repo_root)}:"
@@ -161,17 +148,6 @@ def _attach_writer_cache(
     )
 
 
-def _validate_writer_execution_scale(
-    *,
-    writer_adapter: bool,
-    b_scale: float,
-) -> None:
-    invalid_scale = not math.isfinite(b_scale) or not 0 < b_scale <= 4
-    non_writer_override = not writer_adapter and b_scale != 1.0
-    if invalid_scale or non_writer_override:
-        raise Pi05EvaluationError("Writer LoRA B scale is invalid")
-
-
 def _validate_build_request(
     authorities: EvaluationAuthorities,
     *,
@@ -183,7 +159,6 @@ def _validate_build_request(
     writer_generators_per_gpu: int,
     writer_generation_batch_size: int,
     writer_cache_root: Path | None,
-    writer_lora_b_scale: float,
 ) -> tuple[dict[str, Any], bool]:
     if mode not in {"smoke", "screen", "formal"}:
         raise Pi05EvaluationError(f"unsupported PI05 evaluation mode: {mode}")
@@ -193,10 +168,6 @@ def _validate_build_request(
     if replicas_per_gpu not in RUNTIME_REPLICA_PROFILES or not tasks:
         raise Pi05EvaluationError("PI05 evaluation runtime profile or task panel is invalid")
     writer_adapter = adapter is not None and adapter.get("kind") in WRITER_ADAPTER_KINDS
-    _validate_writer_execution_scale(
-        writer_adapter=writer_adapter,
-        b_scale=writer_lora_b_scale,
-    )
     valid_writer_topology = (
         0 < writer_generators_per_gpu <= replicas_per_gpu
         and writer_generation_batch_size > 0
@@ -206,22 +177,6 @@ def _validate_build_request(
     if not writer_adapter and writer_cache_root is not None:
         raise Pi05EvaluationError("a Writer LoRA cache was supplied without a Writer")
     return git, writer_adapter
-
-
-def _writer_lora_execution_contract(
-    *,
-    writer_adapter: bool,
-    b_scale: float,
-) -> dict[str, Any] | None:
-    if not writer_adapter:
-        return None
-    return {
-        "b_scale": float(b_scale),
-        "effective_delta_contract": (
-            "multiply every generated public LoRA B factor at rollout; "
-            "keep its generated A factor unchanged"
-        ),
-    }
 
 
 def _paired_control_contract(
@@ -240,7 +195,6 @@ def _paired_control_contract(
         "policy",
         "rng",
         "parallel",
-        "writer_lora_execution",
     )
     return {
         "schema_version": "ember_pi05_writer_paired_control_v2",
@@ -266,7 +220,6 @@ def build_run_contract(
     writer_generators_per_gpu: int = 1,
     writer_generation_batch_size: int = 1,
     writer_cache_root: Path | None = None,
-    writer_lora_b_scale: float = 1.0,
 ) -> dict[str, Any]:
     git, writer_adapter = _validate_build_request(
         authorities,
@@ -278,7 +231,6 @@ def build_run_contract(
         writer_generators_per_gpu=writer_generators_per_gpu,
         writer_generation_batch_size=writer_generation_batch_size,
         writer_cache_root=writer_cache_root,
-        writer_lora_b_scale=float(writer_lora_b_scale),
     )
     gpu_ids = _resolve_gpu_ids(authorities, physical_gpu_ids)
     contract = {
@@ -286,10 +238,6 @@ def build_run_contract(
         "mode": mode,
         "arm": str(adapter["arm"]) if adapter else authorities.config["policy"]["arm"],
         "adapter": dict(adapter) if adapter else None,
-        "writer_lora_execution": _writer_lora_execution_contract(
-            writer_adapter=writer_adapter,
-            b_scale=writer_lora_b_scale,
-        ),
         "role": role,
         "output_dir": str(output_dir.resolve()),
         "prepared_unix": time.time(),

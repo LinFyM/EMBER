@@ -16,7 +16,23 @@ from ember.lora import (
     LoRAContract,
     validate_lora_state,
 )
-from ember.writer.temporal import RMSNorm
+
+
+class RMSNorm(torch.nn.Module):
+    """RMS normalization owned by the active topological Writer."""
+
+    def __init__(self, width: int, eps: float = 1e-6) -> None:
+        super().__init__()
+        if width <= 0:
+            raise ExpertManifoldError("RMSNorm width must be positive")
+        self.weight = torch.nn.Parameter(torch.ones(width))
+        self.eps = float(eps)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        scale = torch.rsqrt(
+            value.to(torch.float32).square().mean(dim=-1, keepdim=True) + self.eps
+        ).to(value.dtype)
+        return value * scale * self.weight
 
 
 def phase_centered_causal_memory(memory: torch.Tensor) -> torch.Tensor:

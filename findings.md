@@ -1,5 +1,18 @@
 # EMBER Findings
 
+## 2026-08-09 旧K4/AS/RL executable原位退役
+
+- design第12节触发后的canonical cleanup已完成：删除旧K4/AS/RL model、training、checkpoint、
+  live-generation模块和4个旧入口，并移除29份旧Writer配置/校验文件及8份专属测试；Git和formal
+  artifacts继续保存历史，没有创建archive目录或兼容分支。
+- 共享`writer/data.py`、`as_sampling.py`、`functional.py`、topology、LoRA rollout、cache与evaluation
+  runtime保留；错误类型和prepared-LoRA schema被提升到两个最小共享owner。统一evaluator只接受
+  Expert-Manifold动态Writer、静态Source-SFT或task expert，不再接受旧AS/RL adapter或rollout B-scale。
+- active one-shot video mapping、shuffle/reverse和evidence owner已移到`expert_manifold`；新聚焦测试文件
+  避免继续扩张既有超长runtime测试。`CUDA_VISIBLE_DEVICES=''`加正式LIBERO assets的全仓回归为
+  `186/186`，compileall/diff check通过；architecture guard无hard violation、无parallel family，active
+  source additions/deletions/net约`525/13,592/-13,067`。这只是架构收口，不是性能证据。
+
 ## 2026-08-09 Online generation/cached rollout通过并seal formal
 
 - clean pushed`31d41d8`的replacement root完整产生8/8 unique validation rows和8个唯一rank-16 LoRA

@@ -63,8 +63,10 @@
   unique rows、8套完整LoRA、2个batch4、3 workers attempt1/exit0、0 retry/failure/OOM/nonfinite；
   Writer/encoder释放后复用同一source policy，forbidden reads全0。`1/8`只作execution smoke，
   不作performance证据。
-- [ ] 按design removal trigger原位退役旧K4 model/training/checkpoint/live-generation executable，
-  让Expert-Manifold成为仓库唯一canonical Writer；完成CPU回归、architecture guard与clean push。
+- [x] 按design removal trigger原位退役旧K4/AS/RL model、training、checkpoint、live-generation
+  executable及其专属配置/测试；共享data/topology/functional/cache/evaluator保留并只接
+  Expert-Manifold。全仓在`CUDA_VISIBLE_DEVICES=''`下`186/186`通过，compileall与diff check通过；
+  architecture guard无hard violation、无parallel family，active source净删约13k行。
 - [ ] 从identity fresh启动分段formal meta训练，做strict paired correct400曲线、五臂视频因果、
   task drift和expert→generated LoRA→action机制分析；根据最早失效接口迭代。
 - [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高absolute、breadth、
@@ -72,6 +74,10 @@
 - [x] owner已完成讨论并恢复持续自主执行；长期Goal为同一single checkpoint strict correct
   严格超过`150/400`，同时保持真实视频时序因果性、same-task鲁棒性、breadth与低checkpoint
   漂移。只有实质性阻塞才回报owner，GPU工作仍逐次执行live空闲卡与BCI多卡合同。
+
+> 2026-08-09退役边界：本文后续旧K4/AS/RL命令与路径只记录历史provenance；其入口、模块和
+> 配置已由Git保存但不再存在于当前工作树，禁止复制历史命令恢复并行Writer。当前训练入口只有
+> `scripts/train_expert_manifold_writer.py`，当前动态Writer评测参数只有`--expert-manifold-*`。
 
 ### Expert-Manifold meta-Writer flat-reduction reprofile launch合同（2026-08-09）
 

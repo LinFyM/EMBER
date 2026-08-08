@@ -9,7 +9,7 @@ from typing import Any, Iterator, Mapping, Sequence
 import numpy as np
 
 from ember.writer.data import FunctionalQueryDataset
-from ember.writer.model import WriterModelError
+from ember.writer.errors import WriterModelError
 
 
 def _task_complete_batch_cycle(

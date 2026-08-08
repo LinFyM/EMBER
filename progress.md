@@ -1,5 +1,21 @@
 # EMBER Progress Ledger
 
+## 2026-08-08 Task-expert闭环完成并触发统一2000 continuation
+
+- clean pushed`1362d15`的三组有效r3 evaluation自然完成：step250/500/1000=
+  `432/557/624` of 1200，全部108 shards attempt1、6 workers exit0、0 failure/retry且配对通过。
+  四suite依次为Spatial=`123/147/170`、Object=`125/191/208`、Goal=`142/163/164`、
+  Long=`42/56/82`；500→1000为143 gains/76 losses、18/4/2 tasks升/降/平、breadth=`23→24`。
+- 初始总36 workers在0 rows前触及主机内存边界，第二次总24 workers因每卡4 replicas的37.7GB
+  静态占用在首个inference OOM；均停止且标记ABORTED。最终每卡3 replicas、总18 workers在
+  `gpu02:0,1|2,3|4,7`稳定运行，每卡约30.3GB。没有覆盖或resume无效root。
+- full result审计通过schema v2、1200 unique keys、task/state/RNG公共前缀、24×50 coverage、
+  108 shard manifests与worker exit。三点union/intersection=`731/332`，per-task oracle=`636`，
+  只比step1000多12；正式决定从`81101fe`沿原root把全部24 experts统一resume到2000并评1500/2000。
+- 同时在已释放的`gpu02:4`完成phase16×3072 feature cache profile：task0×4 videos wall=`4.372s`，
+  peak reserved=`19.23GB`、0 forbidden reads/OOM/nonfinite；profile root=
+  `runs/outputs/pi05_expert_manifold_feature_profile_task00_1362d15_20260808`，formal cache已seal。
+
 ## 2026-08-08 Expert-Manifold持续执行恢复
 
 - owner在完成当前状况与方法讨论后明确恢复持续自主执行，并设定长期Goal：同一single checkpoint

@@ -26,10 +26,22 @@ full24统一step250/500/1000正式geometry已完成：effective-LoRA norm中位=
 `.108/.095/.100`。16个rank coordinates均active，但q/v B-column仍高度同向；该结果不能替代
 closed-loop统一选点。
 
+development-train direct-expert正式三点也已完成：有效r3 roots每点均为1200 rows、108/108 shards、
+6 workers exit0、0 retry/failure及严格task/state/RNG配对，step250/500/1000=`432/557/624`。
+四suite从500到1000为Spatial `147→170`、Object `191→208`、Goal `163→164`、Long `56→82`；
+paired gains/losses=`143/76`，18/4/2 tasks升/降/平，breadth `23→24`。因此已经正式决定全部24
+experts从`81101fe`沿同一root统一exact-resume到2000，并评1500/2000后选唯一target。
+
+feature cache profile已在`gpu02:4`通过：clean`1362d15`、task0×4 videos、wall=`4.372s`、peak
+allocated/reserved=`10.47/19.23GB`、输出`[4,16,3072]` BF16且forbidden reads全0；formal cache
+config已seal。先用六个独立workers完成train24×50 cache，再切换canonical路径执行旧expert exact
+resume。r6高并发因主机内存、r4因A40 inference activation OOM而在有效结果前终止，均不得resume；
+唯一有效评测是每卡3 replicas的r3 roots。
+
 owner已在本session完成讨论后明确恢复持续自主执行，并授权围绕长期Goal自行设计、实现、训练、
 评测和迭代；只有实质性阻塞才回报。执行顺序为：full24 expert geometry与development-train
-closed-loop统一评250/500/1000；只在step1000仍有明确closed-loop上升证据时，从frozen`81101fe`
-沿原root统一resume2000；随后profile/cache/meta训练/strict五臂。旧K4 executable只保留到新
+closed-loop统一评250/500/1000已经完成并触发resume；当前顺序为formal cache→frozen`81101fe`
+沿原root统一resume2000与1500/2000闭环→meta训练/strict五臂。旧K4 executable只保留到新
 meta-Writer A40 profile通过，届时按design removal trigger原位退役。当前长期门是同一single
 checkpoint strict correct严格超过`150/400`，同时保持视频时序因果性、same-task鲁棒性、breadth
 与低checkpoint漂移。

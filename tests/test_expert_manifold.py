@@ -578,13 +578,28 @@ def test_expert_manifold_episode_evidence_keeps_one_video_dynamic() -> None:
     )
 
 
-def test_video_feature_profile_keeps_formal_input_semantics() -> None:
+def test_video_feature_profile_seal_keeps_formal_input_semantics() -> None:
     config = load_expert_manifold_config(CONFIG)
     assert _feature_runtime(config, "profile") == (4, 4, (0, 1, 2, 3))
-    assert config["video_features"]["formal_run"]["status"] == (
-        "blocked_until_live_a40_profile"
+    formal = config["video_features"]["formal_run"]
+    assert formal["status"] == "sealed"
+    assert formal["demo_count"] == 50
+    evidence = formal["profile_evidence"]
+    assert evidence["device"] == "NVIDIA A40"
+    assert evidence["demo_count"] == 4
+    assert evidence["feature_shape"] == [4, 16, 3072]
+    assert evidence["peak_reserved_bytes"] < 46_068 * 1024**2
+    assert all(
+        evidence[name] == 0
+        for name in (
+            "teacher_action_reads",
+            "teacher_state_reads",
+            "reward_reads",
+            "terminal_reads",
+            "oom_count",
+            "nonfinite_count",
+        )
     )
-    assert config["video_features"]["formal_run"]["demo_count"] == 50
 
 
 def test_video_feature_contract_ignores_writer_only_sealing() -> None:

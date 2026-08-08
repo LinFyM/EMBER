@@ -1,5 +1,27 @@
 # EMBER Findings
 
+## 2026-08-08 Task-expert三点闭环、漂移根因与feature profile
+
+- 唯一有效development-train roots为
+  `runs/outputs/pi05_task_expert_bank_devtrain24x50_step{0250,0500,1000}_formal_r3_1362d15_20260808`。
+  每点1200 rows、24×50覆盖、108/108 shards、6 workers exit0、attempt1且task/state/env/policy-noise
+  公共前缀严格配对。结果=`432/557/624`，即400-scale=`144/185.7/208`；四suite从250到500到1000
+  为Spatial=`123/147/170`、Object=`125/191/208`、Goal=`142/163/164`、Long=`42/56/82`。
+- 250→500与500→1000 paired gains/losses=`189/64`与`143/76`；task升/降/平分别=
+  `19/1/4`与`18/4/2`。非零breadth=`21/23/24`，成功至少25次的task=`8/11/14`。三点state
+  union/intersection=`731/332`，per-task checkpoint oracle=`636`，只比统一step1000的624高12；
+  因此step1000是强而广的统一中间点，并正式触发全部24 experts exact-resume到2000，而不是混点。
+- 独立experts仍有state turnover：Goal在500→1000总分`163→164`但gains/losses=`21/20`。
+  这证明漂移不全来自shared Writer跨task梯度；action surrogate继续优化时，单task policy闭环边界
+  本身也会换状态。last50 action-loss变化与success变化的Spearman仅`.034/.094`，LoRA norm变化与
+  success变化也仅`.161/-.108`；loss和几何不能替代1500/2000闭环。
+- 首批每点12 workers造成gpu02主机内存不安全，0 rows终止；每点8 workers时每卡4 replicas静态约
+  37.7GB，首个inference activation OOM，0 complete shards终止。有效r3每卡3 replicas约30.3GB，
+  总18 workers稳定完成；失败roots只保留`ABORTED.md` provenance，不得resume。
+- feature cache profile在clean`1362d15`、`gpu02:4`完成task0×4 videos，task extraction wall=
+  `4.372s`、peak allocated/reserved=`10.47/19.23GB`，feature=`[4,16,3072]` BF16，action/state/
+  reward/terminal reads全0。formal六worker cache可按原24-task覆盖seal，不需降低batch或视频数。
+
 ## 2026-08-08 Task-expert full24三checkpoint geometry
 
 - canonical CPU artifact为

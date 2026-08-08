@@ -190,11 +190,17 @@ single checkpoint的strict paired correct严格超过`150/400`并尽可能继续
 - retained Expert-Manifold实现已并入`codex/bci-continuation`：完整bank evaluator与geometry、
   phase16×3072 action-hidden feature cache、168个`[16,512]`chunk/rank axial decoder、六rank
   task-complete exact-resume meta trainer和one-shot strict five-arm evaluator均已实现。full24
-  step250/500/1000正式geometry已完成；尚未完成expert closed-loop、A40 meta profile、formal
-  cache/meta训练或新strict rollout。
-- 当前没有EMBER进程，GPU已释放；历史single-checkpoint最好仍是v6-fast`143/400`，严格目标
-  `>150/400`尚未完成。当前执行顺序取`docs/active_session_handoff.md`，不得从下方历史ledger
-  恢复旧“当前”“下一步”。
+  geometry与development-train direct-expert闭环三点均已完成：step250/500/1000=
+  `432/557/624` of 1200（400-scale=`144/185.7/208`），500→1000为`143/76` paired
+  gains/losses、24/24 tasks非零，四suite均不回退。因此必须从clean`81101fe`沿原root把全部
+  24 experts统一exact-resume到2000，并正式比较1500/2000；不得直接把loss或step1000写成最终选择。
+- action-hidden phase16×3072 feature cache已在clean`1362d15`完成A40 profile：task0四条视频
+  extraction wall=`4.372s`，peak allocated/reserved=`10.47/19.23GB`，0 forbidden reads/OOM/
+  nonfinite，formal cache config已seal。下一操作为六worker train24×50正式提取，再进入expert
+  continuation、meta profile/formal和strict rollout。
+- 尚无新的Expert-Manifold Writer checkpoint或held strict rollout；历史single-checkpoint最好仍是
+  v6-fast`143/400`，严格目标`>150/400`尚未完成。当前执行顺序取
+  `docs/active_session_handoff.md`，不得从下方历史ledger恢复旧“当前”“下一步”。
 - 旧K4 executable是有明确owner和removal trigger的临时兼容路径：只有Expert-Manifold meta-Writer
   A40 profile通过后才原位删除；在此之前不得将其误写成活动科研方法，也不得提前删掉唯一已验证的
   live fallback。

@@ -172,10 +172,38 @@
       "demo_count": 4
     },
     "formal_run": {
-      "status": "blocked_until_live_a40_profile",
+      "status": "sealed",
       "allowed_worker_count": 6,
       "tasks_per_worker": 4,
-      "demo_count": 50
+      "demo_count": 50,
+      "profile_evidence": {
+        "commit": "1362d15",
+        "host": "gpu02",
+        "physical_gpu": 4,
+        "device": "NVIDIA A40",
+        "profile_root": "runs/outputs/pi05_expert_manifold_feature_profile_task00_1362d15_20260808",
+        "task_ordinal": 0,
+        "demo_count": 4,
+        "videos_per_batch": 4,
+        "feature_shape": [
+          4,
+          16,
+          3072
+        ],
+        "task_wall_seconds": 4.372062814072706,
+        "raw_frame_count_min": 84,
+        "raw_frame_count_max": 98,
+        "sampled_frame_count_min": 18,
+        "sampled_frame_count_max": 21,
+        "peak_allocated_bytes": 10468548096,
+        "peak_reserved_bytes": 19232980992,
+        "teacher_action_reads": 0,
+        "teacher_state_reads": 0,
+        "reward_reads": 0,
+        "terminal_reads": 0,
+        "oom_count": 0,
+        "nonfinite_count": 0
+      }
     }
   },
   "topological_writer": {

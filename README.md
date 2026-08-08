@@ -1,11 +1,11 @@
 # EMBER
 
 EMBER研究能否把没有目标机器人action标注的教学视频，一次性编译成能让
-frozen VLA完成对应任务的完整task-specific LoRA。当前活动版本使用同task的K4 few-shot
-videos共同生成一套LoRA：
+frozen VLA完成对应任务的完整task-specific LoRA。当前唯一活动方法是one-shot
+Video-Conditioned Expert-Manifold Topological Writer：
 
 ```text
-task language + exactly four action-hidden teaching videos
+exact task language + exactly one action-hidden teaching video
                     -> shared Writer
                     -> sealed rank-16 task LoRA
                     -> frozen π0.5-LIBERO source policy
@@ -17,14 +17,18 @@ normalization。
 
 ## 当前状态
 
-EMBER已经迁回BCI。四卡collective、Writer fresh训练、exact resume和多卡评测入口
-已完成迁移验收；随后六张A40上保持逻辑B20、以policy microbatch2完成了VR Writer
-的未冻结工程profile与exact-resume。正式研究必须从本项目目录、clean pushed commit
-和fresh identity启动，并遵守`AGENTS.md`和当前owner授权。
+EMBER已经迁回BCI。多卡训练、exact resume、动态队列评测、NUMA与deferred-NCCL入口均已完成
+迁移验收；当前A40边界是每次live核对`gpu01/gpu02`、只用空闲卡、合计最多6张并显式设置
+`NCCL_P2P_DISABLE=1`。正式研究必须从本项目目录、clean pushed commit和fresh identity启动，
+并遵守`AGENTS.md`和当前owner授权。
 
 - `main`保留迁移封存历史；当前BCI写分支为`codex/bci-continuation`。
-- Target-Bound和Semantic Factor-Basis正式结果已经封存；SFB完整correct400曲线为
-  `69/91/118/127/117/81/126/120`，single winner仍为macro200=`127`，未解决task漂移。
+- 旧Target-Bound、Semantic Factor-Basis及K4路线均已封存并负裁决；不得从历史“下一步”恢复。
+- 24套train-task rank-16 task experts已在clean`81101fe`完成统一step1000。正式
+  development-train闭环step250/500/1000=`432/557/624` of 1200；step1000在四suite均不低于
+  step500且24/24 tasks非零，因此下一阶段是沿原root统一exact-resume到2000并评1500/2000。
+- full24 expert几何与phase16×3072 action-hidden feature profile均已完成；feature formal cache已
+  seal。当前还没有Expert-Manifold Writer checkpoint或新held strict成绩。
 - 当前科研结论、下一实验边界看
   [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 - A100清理、Git/SSH/重下载分流、BCI路径映射和新Codex接手步骤看
@@ -51,9 +55,9 @@ EMBER已经迁回BCI。四卡collective、Writer fresh训练、exact resume和�
   `76/111/99/117/77/69/80/82`，normalized GROUP4为`82/77/73/110`。两者均未解决
   task漂移；matched梯度分析显示video主效应约`.1%`，query/flow噪声主导，functional
   surrogate继续改善时closed-loop会退化。
-- Target-Bound的下一目标是在真实38-target拓扑中保留Core semantic carrier和
-  private Action/Effect/Change causal channels，同时不破坏coherent高增益LoRA几何。
-  它仍是假设，不是已验证结果。
+- 当前Expert-Manifold先用真实task-local SFT LoRA定义policy-effective参数流形，再让视频条件的
+  168-chunk rank-axial decoder生成完整38-target LoRA。task experts只提供训练target，不是部署输入，
+  也不能自行证明视频时序因果性；最终仍由correct/same/wrong/shuffled/reversed严格配对裁决。
 
 ## 不变合同
 

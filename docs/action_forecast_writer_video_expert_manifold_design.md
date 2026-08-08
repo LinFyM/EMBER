@@ -292,3 +292,30 @@ root把全部24 tasks统一exact-resume到2000；当前分支新增的meta/evalu
 合同。若不续训，则选择一个统一expert step后再进入feature profile/cache与meta profile/formal。
 owner已在新session完成讨论后恢复持续自主执行。K4 executable的removal trigger仍是新meta-Writer
 A40 profile通过，不因代码已实现而提前触发。
+
+## 17. Direct-expert闭环裁决与feature-cache profile seal
+
+clean pushed`1362d15`的唯一有效development-train三点roots均使用每卡3 replicas、每点6 workers。
+每点覆盖24 tasks×50 fixed states，108/108 shards attempt1、worker exit0、0 retry/failure，三点的
+task/state/env seed/policy seed与执行到共同长度的noise序列严格配对。step250/500/1000=
+`432/557/624`，四suite依次为Spatial=`123/147/170`、Object=`125/191/208`、Goal=
+`142/163/164`、Long=`42/56/82`。500→1000是`143/76` paired gains/losses，18/4/2 tasks
+升/降/平；nonzero breadth=`23→24`、成功至少25次的task=`11→14`。
+
+三点state union/intersection=`731/332`，逐task任选最优checkpoint的privileged oracle=`636`，只比
+统一step1000高12。这既拒绝按task挑checkpoint，也说明step1000是强而广的统一中间点。与此同时，
+Goal在500→1000为`163→164`却有`21/20` gains/losses；last50 loss变化与success变化Spearman仅
+`.094`，LoRA norm变化与success变化为`-.108`。独立expert内部也存在surrogate-to-closed-loop
+边界轮换，因此正式决定沿原root把全部24 tasks统一exact-resume到2000，并用1500/2000 closed loop
+选择target，不用更低loss或更大norm自动选择。
+
+并发边界也已实测：初始总36 replicas在0 scientific rows前使gpu02主机内存不安全；总24 replicas
+时每卡约37.7GB静态占用并在首个inference activation OOM；两批roots均标记ABORTED且不得resume。
+有效总18 replicas约30.3GB/卡，主机与A40均稳定。这个结果只修正评测资源合同，不改变1200-state
+科学覆盖。
+
+feature cache profile在同一clean`1362d15`、`gpu02:4`完成task0的4条action-hidden videos：
+task extraction wall=`4.372s`，raw/sampled frame count=`84--98/18--21`，输出
+`[4,16,3072]` BF16；peak allocated/reserved=`10,468,548,096/19,232,980,992` bytes，
+teacher action/state/reward/terminal reads、OOM与nonfinite均为0。由此正式seal六worker×4 tasks×
+50 videos cache，不降低`videos_per_batch=4`、frame stride5、phase16或feature width3072。

@@ -28,13 +28,26 @@
   top singular energy=`.903/.907/.909`，跨task effective cosine中位=`.108/.095/.100`。
   16个rank coordinates全部active、top4 coordinate energy约`.262/.260/.258`，但q/v B-column
   cosine仍高且随训练不降；这说明完整bank具备task差异，却不能据几何选择closed-loop checkpoint。
-- 当前没有EMBER进程，GPU均已释放；没有新的strict closed-loop分数。已验证single-checkpoint
-  最好仍是v6-fast`143/400`，长期严格门仍是`>150/400`，尚未完成。
+- development-train direct-expert三点正式闭环已在clean`1362d15`完成。有效roots统一使用
+  `...step0250/0500/1000_formal_r3_1362d15_20260808`，每点1200 rows、108/108 shards、6 workers
+  exit0、0 retry/failure且task/state/RNG严格配对；结果=`432/557/624`，四suite依次为
+  Spatial=`123/147/170`、Object=`125/191/208`、Goal=`142/163/164`、Long=`42/56/82`。
+  500→1000为`143/76` gains/losses、18/4/2 tasks升/降/平、非零breadth=`23→24`；该分布式
+  改善正式触发全部24 experts统一exact-resume1000→2000，并在1500/2000再次闭环选择。
+- 首次每点12 workers（总36）在0 scientific rows前耗尽gpu02安全主机内存；第二次每点8 workers
+  （每卡4 replicas）在首个inference因每卡约37.7GB静态占用而A40 OOM。两批roots均有
+  `ABORTED.md`且不得resume；有效r3使用每卡3 replicas、总18 workers，约30.3GB/卡。
+- feature cache最小A40 profile也已在clean`1362d15`完成：root=
+  `runs/outputs/pi05_expert_manifold_feature_profile_task00_1362d15_20260808`，4条视频的task wall=
+  `4.372s`，peak allocated/reserved=`10,468,548,096/19,232,980,992` bytes，输出
+  `[4,16,3072]` BF16且action/state/reward/terminal reads全0；formal cache config已seal。
+- 当前没有新Expert-Manifold Writer checkpoint或held strict rollout。已验证single-checkpoint最好仍是
+  v6-fast`143/400`，长期严格门仍是`>150/400`，尚未完成。
 - owner已在本session完成讨论后明确恢复持续自主执行，并设定长期Goal：同一single checkpoint的
   strict paired correct必须严格超过`150/400`，同时保持真实视频时序因果性、same-task鲁棒性、
   task breadth和低checkpoint漂移；只有实质性阻塞才回报owner。当前证据顺序固定为：先做full24
-  expert geometry与development-train closed-loop统一评250/500/1000；只有step1000仍有明确
-  closed-loop上升证据时才从frozen`81101fe`沿原root统一resume2000；随后做feature profile/cache、
+  expert geometry与development-train closed-loop统一评250/500/1000已经通过；先完成已seal的
+  train24×50 feature cache，再从frozen`81101fe`沿原root统一resume2000、评1500/2000，随后做
   meta-Writer A40 profile/formal和strict validation五臂。不得按单task挑不同expert step。
 - 旧K4 executable只作为临时兼容路径保留，owner是当前Expert-Manifold迁移；按设计第12节，只有
   新meta-Writer通过A40 profile后才删除，避免在其替代路径尚未实证前制造不可运行仓库。

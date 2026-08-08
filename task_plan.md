@@ -24,10 +24,12 @@
 - [x] 完成expert bank统一step250/500/1000 full24 geometry：norm中位
   `2.792/3.652/4.170`，stable rank中位`1.126/1.129/1.129`，跨task cosine中位
   `.108/.095/.100`；16 coordinates均active但q/v B-column仍高度同向，几何不能单独选点。
-- [ ] 完成统一step250/500/1000 official development-train rollout；若曲线仍有充分closed-loop
-  上升依据，从clean`81101fe`的frozen worktree沿原root统一resume到2000，再选择唯一expert
-  step；不得按task挑不同checkpoint。
-- [ ] live profile并封存train24×50 frozen feature cache；完成meta-Writer六卡fresh0→1、
+- [x] 完成统一step250/500/1000 official development-train rollout：`432/557/624` of 1200，
+  500→1000=`143/76` gains/losses、18/4/2 tasks升/降/平、breadth=`23→24`，四suite均不回退。
+  该证据触发从clean`81101fe`沿原root把全部24 experts统一resume到2000；不得按task挑点。
+- [x] live profile并seal frozen feature cache：task0×4 videos wall=`4.372s`，peak reserved
+  `19.23GB`且0 forbidden reads/OOM/nonfinite。正式train24×50提取仍待完成。
+- [ ] 完成train24×50正式feature cache；完成meta-Writer六卡fresh0→1、
   exact-resume1→3、finite/OOM/梯度与任务等权合同后才seal formal。
 - [ ] 完成A40 profile、identity-fresh meta训练、strict paired correct400曲线、五臂视频因果、
   task drift和expert→generated LoRA→action机制分析；根据最早失效接口迭代。
@@ -50,7 +52,9 @@
   gained/lost、union/intersection与相邻checkpoint能力换手；不得用training loss替代。
 - 2026-08-08 launch前初次live snapshot：`gpu02:0,1,2,3,4,7`均为空闲A40；`gpu02:5/6`
   分别有`yqzhang/yfwang`进程，禁止使用；`gpu01:3`有`nlge`进程且同样禁止使用。计划把
-  step250/500/1000分别绑定`gpu02:0,1`、`2,3`、`4,7`，每卡6个独立persistent workers；
+  step250/500/1000分别绑定`gpu02:0,1`、`2,3`、`4,7`。初始每卡6 replicas导致36 workers
+  耗尽安全主机内存；改为每卡4 replicas后静态占用约37.7GB并在首个inference activation OOM。
+  唯一有效合同为每卡3 replicas、每点6 workers、总18 workers；
   worker自行按暴露的physical GPU解析EGL local mapping并绑定GPU-local NUMA。评测无DDP/NCCL
   collective，但launcher仍显式设置`NCCL_P2P_DISABLE=1`。启动前必须再做一次live preflight。
 - `/data1` live quota=`551,689,536/1,073,741,824 KiB`，共享filesystem可用约`85T`；bank为
@@ -59,14 +63,18 @@
 - exact evaluator commands如下；外层各用一个普通detached tmux并将stdout/stderr写入同名log：
 
 ```bash
-env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --output-dir runs/outputs/pi05_task_expert_bank_devtrain24x50_step0250_formal_20260808 --role development_train --mode formal --state-count 50 --replicas-per-gpu 6 --gpu-indices 0,1 --task-expert-config configs/pi05_video_expert_manifold_v1.json --task-expert-bank-root runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --task-expert-step 250
-env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --output-dir runs/outputs/pi05_task_expert_bank_devtrain24x50_step0500_formal_20260808 --role development_train --mode formal --state-count 50 --replicas-per-gpu 6 --gpu-indices 2,3 --task-expert-config configs/pi05_video_expert_manifold_v1.json --task-expert-bank-root runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --task-expert-step 500
-env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --output-dir runs/outputs/pi05_task_expert_bank_devtrain24x50_step1000_formal_20260808 --role development_train --mode formal --state-count 50 --replicas-per-gpu 6 --gpu-indices 4,7 --task-expert-config configs/pi05_video_expert_manifold_v1.json --task-expert-bank-root runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --task-expert-step 1000
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --output-dir runs/outputs/pi05_task_expert_bank_devtrain24x50_step0250_formal_r3_1362d15_20260808 --role development_train --mode formal --state-count 50 --replicas-per-gpu 3 --gpu-indices 0,1 --task-expert-config configs/pi05_video_expert_manifold_v1.json --task-expert-bank-root runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --task-expert-step 250
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --output-dir runs/outputs/pi05_task_expert_bank_devtrain24x50_step0500_formal_r3_1362d15_20260808 --role development_train --mode formal --state-count 50 --replicas-per-gpu 3 --gpu-indices 2,3 --task-expert-config configs/pi05_video_expert_manifold_v1.json --task-expert-bank-root runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --task-expert-step 500
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --output-dir runs/outputs/pi05_task_expert_bank_devtrain24x50_step1000_formal_r3_1362d15_20260808 --role development_train --mode formal --state-count 50 --replicas-per-gpu 3 --gpu-indices 4,7 --task-expert-config configs/pi05_video_expert_manifold_v1.json --task-expert-bank-root runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --task-expert-step 1000
 ```
 
 - 三点均须1200 unique rows、全部queue shards完成、worker exit0、task/state coverage一致后才进入
   科学比较。partial root只按canonical evaluator resume；在0 scientific rows前的fail-close可保留
   failure provenance后用新root重启，不覆盖有效rows。
+- 终态已满足上述合同：三点=`432/557/624`，suite顺序Spatial/Object/Goal/Long分别为
+  `123/125/142/42`、`147/191/163/56`、`170/208/164/82`；250→500=`189/64`、
+  500→1000=`143/76` gains/losses。三点row union/intersection=`731/332`，per-task oracle=`636`，
+  只比统一step1000高12，故不按task混合checkpoint并统一续训到2000。
 
 ## 已完成并负裁决：K4 Phase-Aligned v6（2026-08-07）
 

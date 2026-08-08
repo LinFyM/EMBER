@@ -95,6 +95,7 @@
   },
   "evaluation": {
     "formal_status": "blocked_until_live_a40_online_smoke",
+    "implementation_commit": "469e033213cd323a1b0b5106d35a435ceef922f6",
     "cpu_coefficient_evidence": {
       "artifact": "runs/outputs/pi05_expert_manifold_causal_barycentric_loo_step2000_cpu_20260809/analysis.json",
       "held_out_task_count": 24,

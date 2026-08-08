@@ -35,7 +35,7 @@ public rank16后的target cosine中位/最小=`.99682/.99532`，effective norm�
 pure affine `sum c_k B_kA_k`虽语义正确，但norm ratio只有`.527`，已拒绝。artifact为同root
 `policy_effective_compiler_feasibility_full400_rank128_v2.json`。唯一canonical原位实现与CPU合同现已
 完成：config=`configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json`，旧raw-factor
-config和compiler均删除；全仓`182/182` tests与真实asset inspector通过。runtime为0 parameters、
+config和compiler均删除；实现提交=`469e033`且已push。全仓`182/182` tests与真实asset inspector通过。runtime为0 parameters、
 68,863,192 buffer bytes，zero identity exact，one-hot expert/demo0 intended-target cosine中位=
 `.99838/.99836`；demo0 norm/stable/top=`4.179/1.125/.910`、A/B RMS=`.01891/.00846`、q/v/action列余弦=
 `.815/.813/.455`且16 coordinates active。train24 demo0 cross-task cosine中位`.203`，说明新compiler没有

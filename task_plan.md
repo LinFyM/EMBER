@@ -42,7 +42,8 @@
 
 - [x] 唯一config现为
   `configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json`；formal状态故意保持
-  `blocked_until_live_a40_online_smoke`，旧raw-factor config已删除且只由Git/artifact保留。
+  `blocked_until_live_a40_online_smoke`，旧raw-factor config已删除且只由Git/artifact保留；实现提交=
+  `469e033`且已push。
 - [x] 一条视频先形成`mean_phase(phase_centered_causal_memory(video_innovation))`；train24×50
   centroids单位化后，用ridge `.3` centered-kernel affine solve产生24个coefficients。
 - [x] 每个38 policy targets分别在effective`BA`空间混合24个expert的unit-Frobenius direction与

@@ -5,7 +5,7 @@
 - raw-factor Writer/config已原位替换为唯一Policy-Effective Barycentric runtime；旧实现只由Git与formal
   artifacts保留。新config=
   `configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json`，formal故意blocked等待专属
-  A40 online smoke；adapter/episode schema升为v3，旧cache不能冒充。
+  A40 online smoke；adapter/episode schema升为v3，旧cache不能冒充。实现提交=`469e033`且已push。
 - 全仓`182/182` tests、compile和真实fixed-asset inspector通过。CPU artifact=
   `runs/outputs/pi05_expert_manifold_policy_effective_cpu_real_assets_20260809/analysis.json`：0 parameters、
   68,863,192 buffer bytes、build`2.33s`、batch24 compile`.85s`、zero identity exact。

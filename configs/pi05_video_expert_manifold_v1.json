@@ -269,7 +269,12 @@
         "warmup_macros": 25,
         "decay_lr": 1e-07
       },
-      "seed": 20260808
+      "seed": 20260808,
+      "distributed_gradient_reduction": {
+        "kind": "single_flat_parameter_ordered_allreduce_mean_after_local_task_mean",
+        "nccl_algo": "Ring",
+        "nccl_proto": "Simple"
+      }
     },
     "profile_defaults": {
       "total_macros": 3,

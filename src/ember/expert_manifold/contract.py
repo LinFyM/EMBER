@@ -73,6 +73,9 @@ def load_expert_manifold_config(path: Path) -> dict[str, Any]:
     video = config.get("video_features", {})
     writer = config.get("topological_writer", {})
     meta = config.get("meta_training", {})
+    reduction = meta.get("optimization", {}).get(
+        "distributed_gradient_reduction", {}
+    )
     information = config.get("information_wall", {})
     if (
         method.get("name")
@@ -94,6 +97,10 @@ def load_expert_manifold_config(path: Path) -> dict[str, Any]:
         or meta.get("task_aggregation")
         != "each_task_mean_then_train24_equal_mean"
         or meta.get("objective", {}).get("effective_ba_monitor_only") is not True
+        or reduction.get("kind")
+        != "single_flat_parameter_ordered_allreduce_mean_after_local_task_mean"
+        or reduction.get("nccl_algo") != "Ring"
+        or reduction.get("nccl_proto") != "Simple"
         or float(meta.get("objective", {}).get("raw_reconstruction_weight", -1))
         != 1.0
         or int(experts.get("profile_defaults", {}).get("scheduler_total_steps", -1))

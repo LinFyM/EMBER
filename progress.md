@@ -12,6 +12,13 @@
   从全新roots重做fresh/resume/contiguous，不沿用失败root。
 - 候选修复已作为clean pushed`12727b8`通过聚焦46/46；新static-graph reprofile roots、commands与
   exact byte gate已登记，等待live六卡复核后启动。
+- 该reprofile在macro1的多次`no_sync` backward触发PyTorch reducer内部断言，0 optimizer step、无
+  checkpoint，root不得resume。随后临时dynamic/no-buffer probe完整跑通，但resume/contiguous仍按
+  原A/B分叉，否决buffer和static-graph两个候选。
+- canonical正在替换为显式、无历史的单flat-gradient Ring/Simple all-reduce mean；local microbatch1、
+  每rank4 tasks、24-task等权、loss/optimizer/RNG均不变。需CPU合同和新clean GPU profile确认。
+- retained实现与config合同已闭合：聚焦49/49、全仓223/223通过；architecture guard无hard violation或
+  parallel family，新collective tests独立放入聚焦文件，既有>800行测试文件只缩不增。尚无GPU通过。
 
 ## 2026-08-09 Task-expert五点封存、step2000 target与meta profile preflight
 

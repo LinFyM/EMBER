@@ -256,8 +256,9 @@ task-expert正式训练运行期间，后续实现放在独立worktree，避免�
 - topological decoder严格覆盖168个`[16,512]`chunks，direction先按每chunk有效坐标归一，量纲由
   同一video-conditioned state的动态scale和训练expert导出的静态per-chunk scale prior共同表达；
   静态prior自身没有direction，zero video仍精确identity；
-- meta训练每macro覆盖train24，每rank固定4 tasks，六rank DDP只在最后local microbatch同步，因而
-  DDP平均严格等于24-task等权mean。模型、optimizer、scheduler、每rank RNG和macro cursor原子
+- meta训练每macro覆盖train24，每rank固定4 tasks并先形成local task mean；随后按固定参数顺序拼接
+  单一flat gradient，以固定Ring/Simple NCCL做一次六rank all-reduce mean，因而严格等于24-task
+  等权mean且没有未封存的DDP reducer状态。模型、optimizer、scheduler、每rank RNG和macro cursor原子
   checkpoint；模型与cache完成local CUDA构造后才建立NCCL，BCI仍显式要求
   `NCCL_P2P_DISABLE=1`。profile/formal均fail-fast要求GPU-local NUMA affinity，run contract逐rank
   记录local/physical GPU、NUMA node与CPU affinity，不能只记录`CUDA_VISIBLE_DEVICES`字符串；
@@ -462,3 +463,19 @@ commit和全新roots重做完整profile，旧profile/probe权重全部弃用。
 候选修复已由clean pushed`12727b8`封存；新static-graph reprofile的固定roots、三条exact command和
 不放宽的byte-parity门取`task_plan.md`顶部。旧`ac56ab8` roots及deterministic/math-SDPA probes均只作
 失败证据。
+
+真实reprofile在第一个macro、0 optimizer step处触发PyTorch 2.11 DDP
+`expect_autograd_hooks_`内部断言，证明static graph与当前四次`no_sync` backward不兼容；随后只关闭
+buffer broadcast的dynamic-graph probe仍精确复现原A/B分叉。因此buffer不是根因，static graph也不是
+可用修复；`12727b8` root不得resume。
+
+根因结论收紧为“DDP reducer生命周期是未checkpoint的隐藏训练状态”，而不是某个buffer或attention
+kernel。canonical现删除DDP wrapper：各rank仍以physical microbatch1顺序反传4个task loss形成local
+task mean，再按parameter registration order拼成一个flat gradient，以显式固定
+`NCCL_ALGO=Ring/NCCL_PROTO=Simple`做一次all-reduce mean；随后六rank执行相同clip与AdamW step。这个
+算子严格保持原24-task等权梯度期望、模型/loss/optimizer/RNG不变，同时把跨resume分布式状态缩减为
+一个无历史collective。run contract记录无model wrapper、reduction语义及NCCL算法。必须从新commit/
+新roots重做byte parity；此前所有profile/probe权重弃用。
+
+retained CPU合同现为聚焦49/49、全仓223/223；architecture guard无hard violation和parallel family。
+这些只证明接口与结构闭合，不代替六卡exact-resume profile。

@@ -8,7 +8,6 @@ import math
 import os
 import socket
 import time
-from contextlib import nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -16,7 +15,6 @@ from typing import Any, Mapping, Sequence
 import torch
 import torch.distributed as dist
 from safetensors.torch import load_file
-from torch.nn.parallel import DistributedDataParallel
 
 from ember.expert_manifold.contract import (
     REPO_ROOT,
@@ -344,9 +342,11 @@ def _contract(
             "checkpoint_macros": list(checkpoints),
             "logical_tasks_per_macro": 24,
             "nccl_p2p_disable": os.environ.get("NCCL_P2P_DISABLE"),
+            "nccl_algo": os.environ.get("NCCL_ALGO"),
+            "nccl_proto": os.environ.get("NCCL_PROTO"),
             "deferred_process_group": True,
-            "ddp_static_graph": True,
-            "ddp_broadcast_buffers": False,
+            "distributed_model_wrapper": "none",
+            "gradient_reduction": "single_flat_parameter_ordered_allreduce_mean_after_local_task_mean",
         },
         "content_hash_policy": "disabled_by_owner",
     }
@@ -403,6 +403,51 @@ def _runtime_maximums(
     return float(values[0]), int(values[1]), int(values[2])
 
 
+def _validate_collective_environment(context: DistributedContext) -> None:
+    if context.world_size <= 1:
+        return
+    expected = {
+        "NCCL_P2P_DISABLE": "1",
+        "NCCL_ALGO": "Ring",
+        "NCCL_PROTO": "Simple",
+    }
+    observed = {name: os.environ.get(name) for name in expected}
+    if observed != expected:
+        raise ExpertManifoldError(
+            "topological Writer collective environment differs from its sealed contract"
+        )
+
+
+def _synchronize_writer_state(
+    writer: torch.nn.Module, context: DistributedContext
+) -> None:
+    if context.world_size <= 1:
+        return
+    with torch.no_grad():
+        for value in (*writer.parameters(), *writer.buffers()):
+            dist.broadcast(value, src=0)
+
+
+def _mean_writer_gradients(
+    writer: torch.nn.Module, context: DistributedContext
+) -> None:
+    parameters = tuple(writer.parameters())
+    if not parameters or any(parameter.grad is None for parameter in parameters):
+        raise ExpertManifoldError("topological Writer gradient ownership changed")
+    flat = torch.cat([parameter.grad.reshape(-1) for parameter in parameters])
+    if context.world_size > 1:
+        dist.all_reduce(flat, op=dist.ReduceOp.SUM)
+        flat.div_(context.world_size)
+    offset = 0
+    with torch.no_grad():
+        for parameter in parameters:
+            count = parameter.numel()
+            parameter.grad.copy_(flat[offset : offset + count].view_as(parameter))
+            offset += count
+    if offset != flat.numel():
+        raise ExpertManifoldError("topological Writer flat gradient layout changed")
+
+
 def train(args: argparse.Namespace) -> None:
     context = initialize_distributed(require_numa=True, defer_process_group=True)
     config = load_expert_manifold_config(args.config)
@@ -417,16 +462,10 @@ def train(args: argparse.Namespace) -> None:
         context=context,
         source=source,
     )
+    _validate_collective_environment(context)
     initialize_deferred_process_group(context, rendezvous_root=args.output_dir.parent)
     _initialize_scale_prior(writer, local.targets, context)
-    writer = DistributedDataParallel(
-        writer,
-        device_ids=[context.local_rank],
-        output_device=context.local_rank,
-        broadcast_buffers=False,
-        find_unused_parameters=False,
-        static_graph=True,
-    )
+    _synchronize_writer_state(writer, context)
     optimizer, scheduler = _optimizer_and_scheduler(writer, config, scheduler_total)
     contract = _contract(
         args=args,
@@ -477,18 +516,14 @@ def train(args: argparse.Namespace) -> None:
             )
             features = local.features[selected, demos]
             targets = local.targets[selected]
-            final_microbatch = right == local_count
-            synchronization = nullcontext() if final_microbatch else writer.no_sync()
-            with synchronization, torch.autocast(
-                device_type="cuda", dtype=torch.bfloat16
-            ):
+            with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
                 predicted, predicted_log_scale = writer(
                     features, return_values_with_scale=True
                 )
                 loss, loss_metrics = topological_reconstruction_loss(
                     predicted.float(),
                     targets,
-                    writer.module.valid_value_mask,
+                    writer.valid_value_mask,
                     cosine_weight=float(
                         objective["chunk_rank_direction_cosine_weight"]
                     ),
@@ -506,6 +541,7 @@ def train(args: argparse.Namespace) -> None:
                     loss_metrics["log_scale"].double(),
                 )
             ) * batch_weight
+        _mean_writer_gradients(writer, context)
         grad_norm = torch.nn.utils.clip_grad_norm_(
             writer.parameters(), float(optimizer_config["gradient_clip_norm"])
         )

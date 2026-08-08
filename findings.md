@@ -16,6 +16,12 @@
   旧profile与两个diagnostic probes均不得复用。
 - 候选修复已由clean pushed`12727b8`封存并通过46/46聚焦CPU合同；新的fresh/resume/contiguous roots
   与exact门已预注册，但尚无GPU结论。
+- 真实static-graph root在macro1、0 optimizer step触发PyTorch 2.11 reducer
+  `expect_autograd_hooks_`内部断言；dynamic graph只关闭buffer broadcast后仍复现完全相同A/B分叉。
+  这否决了两个候选并把结论收紧为DDP reducer生命周期本身是未checkpoint隐藏状态。
+- canonical replacement不再使用DDP wrapper：每rank顺序累积4-task local mean，按固定parameter order
+  拼一个flat gradient，以固定Ring/Simple NCCL做一次all-reduce mean，再共同clip/AdamW。它与原24-task
+  等权梯度数学等价，但去除reducer历史；新profile仍须证明byte parity，尚无GPU通过结论。
 
 ## 2026-08-09 Task-expert五点闭环终态与统一step2000选择
 

@@ -107,6 +107,11 @@
 - 候选修复已由clean pushed`12727b8`封存，聚焦CPU合同46/46；新static-graph roots、三条exact
   commands及byte-parity验收门已登记在`task_plan.md`顶部。它尚未通过GPU reprofile，不能写成根因
   已确认或formal已seal。
+- static-graph真实reprofile在macro1、0 optimizer step触发PyTorch 2.11 reducer内部断言；只关闭
+  buffer broadcast的dynamic probe仍复现A/B分叉，因此`12727b8` root不得resume，两个候选均否决。
+  current canonical已删除DDP hidden reducer，改为每rank local 4-task mean后单一flat ordered
+  Ring/Simple NCCL all-reduce mean；数学上仍是train24等权梯度。它尚须新commit/new roots byte parity，
+  formal继续blocked。
 - 旧K4 executable只作为临时兼容路径保留，owner是当前Expert-Manifold迁移；按设计第12节，只有
   新meta-Writer通过A40 profile后才删除，避免在其替代路径尚未实证前制造不可运行仓库。
 

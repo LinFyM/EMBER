@@ -112,6 +112,8 @@
   current canonical已删除DDP hidden reducer，改为每rank local 4-task mean后单一flat ordered
   Ring/Simple NCCL all-reduce mean；数学上仍是train24等权梯度。它尚须新commit/new roots byte parity，
   formal继续blocked。
+- stateless flat-reduction实现/config已由clean pushed`c33a16b`封存，聚焦49/49、全仓223/223且
+  architecture无hard/parallel family。新roots与exact commands在`task_plan.md`顶部；GPU尚未通过。
 - 旧K4 executable只作为临时兼容路径保留，owner是当前Expert-Manifold迁移；按设计第12节，只有
   新meta-Writer通过A40 profile后才删除，避免在其替代路径尚未实证前制造不可运行仓库。
 

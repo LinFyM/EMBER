@@ -97,6 +97,8 @@ broadcast的dynamic probe也仍复现原A/B分叉，故两个候选均否决且r
 删除DDP hidden reducer：每rank保持microbatch1顺序累积4-task local mean，随后用一个固定parameter
 order的flat gradient做Ring/Simple NCCL all-reduce mean，再共同clip/AdamW；24-task等权数学合同不变。
 新实现尚未clean profile，formal仍blocked。
+retained seal为clean pushed`c33a16b`，聚焦49/49、全仓223/223；新flat-reduction roots与exact
+Ring/Simple commands取`task_plan.md`顶部。GPU reprofile尚未执行。
 
 owner已在本session完成讨论后明确恢复持续自主执行，并授权围绕长期Goal自行设计、实现、训练、
 评测和迭代；只有实质性阻塞才回报。执行顺序为：full24 expert geometry与development-train

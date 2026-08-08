@@ -65,7 +65,32 @@
   严格超过`150/400`，同时保持真实视频时序因果性、same-task鲁棒性、breadth与低checkpoint
   漂移。只有实质性阻塞才回报owner，GPU工作仍逐次执行live空闲卡与BCI多卡合同。
 
-### Expert-Manifold meta-Writer static-graph reprofile launch合同（2026-08-09）
+### Expert-Manifold meta-Writer flat-reduction reprofile launch合同（2026-08-09）
+
+- implementation/config seal为clean pushed`c33a16b`：不再使用DDP model wrapper；每rank保持
+  microbatch1与4-task local mean，再按固定parameter order做一个flat-gradient Ring/Simple NCCL
+  all-reduce mean。聚焦49/49、全仓223/223，architecture guard无hard/parallel family。formal仍blocked。
+- 设备仍为启动前live空闲`gpu01:0,1,2|4,5,7`的3+3 NUMA。fresh/resume与contiguous roots固定为
+  `runs/outputs/pi05_expert_manifold_writer_flatreduce_profile_r6_step2000_c33a16b_20260809`和
+  `runs/outputs/pi05_expert_manifold_writer_flatreduce_profile_contiguous_r6_step2000_c33a16b_20260809`；
+  logs同basename位于`runs/logs/`，tmux为`ember_expert_manifold_flatreduce_profile_c33a16b`与
+  `ember_expert_manifold_flatreduce_contiguous_c33a16b`。全部启动前不存在，旧roots不得resume。
+- exact commands：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,7 NCCL_P2P_DISABLE=1 NCCL_ALGO=Ring NCCL_PROTO=Simple OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_expert_manifold_writer.py --config configs/pi05_video_expert_manifold_v1.json --mode profile --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-step 2000 --feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_flatreduce_profile_r6_step2000_c33a16b_20260809 --stop-after-macro 1
+
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,7 NCCL_P2P_DISABLE=1 NCCL_ALGO=Ring NCCL_PROTO=Simple OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_expert_manifold_writer.py --config configs/pi05_video_expert_manifold_v1.json --mode profile --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-step 2000 --feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_flatreduce_profile_r6_step2000_c33a16b_20260809 --stop-after-macro 3 --resume /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_flatreduce_profile_r6_step2000_c33a16b_20260809/checkpoints/macro_00000001
+
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,7 NCCL_P2P_DISABLE=1 NCCL_ALGO=Ring NCCL_PROTO=Simple OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_expert_manifold_writer.py --config configs/pi05_video_expert_manifold_v1.json --mode profile --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-step 2000 --feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_flatreduce_profile_contiguous_r6_step2000_c33a16b_20260809 --stop-after-macro 3
+```
+
+- exact门：三步scientific metrics逐值相同，macro1全部checkpoint state与macro3 Writer逐字节一致；
+  run contract要求`distributed_model_wrapper=none`、single-flat reduction、Ring/Simple、P2P disable及
+  正确physical/local/NUMA；0 OOM/nonfinite。通过后才允许macro3 online-generation/cached-rollout
+  smoke；失败则不放宽byte门。
+
+### Expert-Manifold meta-Writer static-graph reprofile launch合同（已否决，2026-08-09）
 
 - working-root-cause修复seal为clean pushed`12727b8`：唯一数值变化是DDP固定
   `static_graph=True`、关闭immutable buffer broadcast及unused-parameter search；run contract新增

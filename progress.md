@@ -19,6 +19,8 @@
   每rank4 tasks、24-task等权、loss/optimizer/RNG均不变。需CPU合同和新clean GPU profile确认。
 - retained实现与config合同已闭合：聚焦49/49、全仓223/223通过；architecture guard无hard violation或
   parallel family，新collective tests独立放入聚焦文件，既有>800行测试文件只缩不增。尚无GPU通过。
+- clean pushed`c33a16b`现为stateless flat-reduction seal；新roots、固定Ring/Simple commands与
+  fresh/resume/contiguous exact门已登记，旧DDP/static/probe roots全部禁止复用。
 
 ## 2026-08-09 Task-expert五点封存、step2000 target与meta profile preflight
 

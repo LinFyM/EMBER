@@ -479,3 +479,6 @@ task mean，再按parameter registration order拼成一个flat gradient，以显
 
 retained CPU合同现为聚焦49/49、全仓223/223；architecture guard无hard violation和parallel family。
 这些只证明接口与结构闭合，不代替六卡exact-resume profile。
+
+implementation/config seal为clean pushed`c33a16b`；新flat-reduction roots、带Ring/Simple的三条exact
+command及byte门取`task_plan.md`顶部。实际run commit必须clean/pushed并由run contract登记。

@@ -22,6 +22,8 @@
 - canonical replacement不再使用DDP wrapper：每rank顺序累积4-task local mean，按固定parameter order
   拼一个flat gradient，以固定Ring/Simple NCCL做一次all-reduce mean，再共同clip/AdamW。它与原24-task
   等权梯度数学等价，但去除reducer历史；新profile仍须证明byte parity，尚无GPU通过结论。
+- retained seal为clean pushed`c33a16b`；新flat-reduction roots、Ring/Simple exact commands及byte门
+  已预注册。CPU为49/49聚焦、223/223全仓，仍不构成GPU或性能结论。
 
 ## 2026-08-09 Task-expert五点闭环终态与统一step2000选择
 

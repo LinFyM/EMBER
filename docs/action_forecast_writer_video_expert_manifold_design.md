@@ -391,3 +391,16 @@ source policy逐row一致。正式方法输入仍是恰好一条action-hidden vi
 可复现CPU入口为`scripts/analyze_expert_manifold_feature_dynamics.py`。在full24 step1500/2000完成后，
 同一脚本将复算target evolution；统一expert step仍以development-train closed-loop为主证据，若晚期
 增益进入平台而B-target可迁移性继续下降，则优先较早的near-max统一step，不按task混合checkpoint。
+
+## 20. Cached-rollout evidence schema纵向合同
+
+profile前对`online generation → release Writer → cached policy rollout`做静态纵向审计时，发现统一
+`expected_writer_episode` adapter wrapper在接入Expert-Manifold dispatch后没有暴露和转发调用方既有的
+`evidence_schema`关键字。结果不是数值偏差，而是LoRA cache生成成功后、第一条scale-out episode
+evidence构造即`TypeError`；因此不能用只测generation的smoke替代完整vertical smoke。
+
+canonical wrapper现在对旧Writer继续原样转发该schema，对Expert-Manifold则生成expected evidence后
+显式比较`schema_version`并在不一致时fail-close。回归同时覆盖正确schema等价与错误schema拒绝；聚焦
+62/62、全仓220/220及changed-file `py_compile`通过。这个修复不改变视频读取、Writer forward、LoRA
+cache内容、source policy或任何训练/rollout随机数，只清除profile前的工程阻塞；仍须真实A40 online
+generation和cached rollout共同通过后才能seal formal。

@@ -1,5 +1,18 @@
 # EMBER Findings
 
+## 2026-08-08 Expert-Manifold cached-rollout schema接口根因
+
+- 静态纵向追踪`evaluation_runtime → expected_writer_episode`发现，Expert-Manifold接入统一adapter
+  dispatch时wrapper仍只有旧签名，没有接受调用方一直传入的`evidence_schema`。这会让昂贵的online
+  LoRA generation先成功，随后在Writer释放、rollout scale-out开始前因unexpected keyword
+  `TypeError`失败；单测generation或LoRA cache本身无法发现它。
+- 根修让统一wrapper接受schema：旧Writer继续传给原evidence owner，Expert-Manifold生成canonical
+  evidence后显式验证`schema_version`，不匹配就fail-close。正确schema等价和错误schema拒绝均有
+  regression；聚焦62/62、全仓220/220及`py_compile`通过。
+- 这是可复现工程合同缺口，不是scientific non-pass；它不改变teacher video、Writer输出、LoRA cache、
+  source policy或随机数，也没有产生GPU/闭环性能证据。后续profile必须覆盖generation和cached rollout
+  两段共存/释放边界，不能只证明模型forward。
+
 ## 2026-08-08 Expert-Manifold feature dynamics与causal-prefix value裁决
 
 - full24×50 sealed cache的phase-DC能量占比中位`.98057`，temporal residual仅`.01943`；原decoder

@@ -54,6 +54,12 @@ smoke evaluator按profile checkpoint集合验收macro1/3，formal仍只认sealed
 必须先实测online encoder/Writer generation并释放到rollout cache。architecture gate无hard violation，
 聚焦28/28与全仓220/220 CPU测试通过；尚未profile或训练。
 
+profile前的cached-rollout纵向审计又发现统一adapter wrapper在Expert-Manifold分派中漏传现有
+`evidence_schema`：generation可完成，但Writer释放后的episode evidence构造会在任何scientific row前
+报`TypeError`。隔离分支现已为旧Writer与Expert-Manifold共同保留该参数，并让后者对schema mismatch
+fail-close；聚焦62/62、全仓220/220及`py_compile`通过。该工程修复不改变Writer数值或实验合同，必须
+并入后才允许online profile smoke。
+
 全24 experts的exact-resume1000→2000已于2026-08-08 17:38 CST从clean`81101fe`沿原root启动。
 6 workers固定`gpu01:0,1,2,4,5,7`与NUMA，显式`NCCL_P2P_DISABLE=1`；每worker依次续原4 tasks，
 保存1500/2000。GPU3他人进程与GPU6未触碰。partial checkpoint不作结论；全部完成后评1500/2000。

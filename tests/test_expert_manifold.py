@@ -53,11 +53,14 @@ from ember.expert_manifold.video_schedule import (
 )
 from ember.expert_manifold.inference import (
     EXPERT_MANIFOLD_ADAPTER_SCHEMA,
+    EXPERT_MANIFOLD_EPISODE_SCHEMA,
     EXPERT_MANIFOLD_WRITER_KIND,
     _training_checkpoint,
     expected_expert_manifold_episode_evidence,
     validate_expert_manifold_episode_evidence,
 )
+from ember.eval_adapters import expected_writer_episode
+from ember.pi05_assets import Pi05EvaluationError
 from ember.lora import expected_lora_state_shapes, identity_lora_state
 
 
@@ -739,6 +742,23 @@ def test_expert_manifold_episode_evidence_keeps_one_video_dynamic() -> None:
         init_state_id=4,
         lora_reference="generated",
     )
+    assert expected_writer_episode(
+        adapter,
+        suite="libero_goal",
+        task_id=3,
+        init_state_id=4,
+        lora_reference="generated",
+        evidence_schema=EXPERT_MANIFOLD_EPISODE_SCHEMA,
+    ) == evidence
+    with pytest.raises(Pi05EvaluationError, match="evidence schema changed"):
+        expected_writer_episode(
+            adapter,
+            suite="libero_goal",
+            task_id=3,
+            init_state_id=4,
+            lora_reference="generated",
+            evidence_schema="wrong_schema",
+        )
     assert len(evidence["teacher_demo_indices"]) == 1
     assert evidence["language_global_task_id"] == 13
     assert evidence["video_global_task_id"] == 13

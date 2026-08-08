@@ -39,6 +39,11 @@
   因而可在正式训练前实测online generation拓扑。architecture gate无hard violation，聚焦28/28与
   全仓220/220 CPU测试通过；
   尚无GPU profile或性能结果。
+- profile前的cached-rollout纵向审计发现统一adapter wrapper新增Expert-Manifold dispatch时漏传了既有
+  `evidence_schema`参数：LoRA cache可正常生成，但释放Writer后进入scale-out episode evidence构造会
+  `TypeError`，所以任何由此产生的profile都不能成立。隔离分支已让old/Expert-Manifold两类adapter都
+  保留该参数，并对Expert-Manifold schema显式fail-close；聚焦62/62、全仓220/220与`py_compile`
+  通过。该修复不改变模型、输入、LoRA、训练或rollout数值，尚无GPU或科研结论。
 - full24统一step250/500/1000正式geometry已完成，artifact为
   `runs/outputs/pi05_task_expert_bank_geometry_full24_steps0250_0500_1000_05d4868_20260808/analysis.json`。
   effective-LoRA norm中位=`2.792/3.652/4.170`，stable rank中位=`1.126/1.129/1.129`，

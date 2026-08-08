@@ -1,5 +1,16 @@
 # EMBER Progress Ledger
 
+## 2026-08-08 Expert-Manifold cached-rollout schema根修
+
+- profile前只读追踪完整`online generation → release Writer → cached rollout`路径，定位统一adapter
+  wrapper漏传`evidence_schema`；原状态会在LoRA cache成功生成后、第一条scientific row前报
+  unexpected-keyword `TypeError`。
+- 隔离分支已为old/Expert-Manifold adapter共同保留schema合同，并让Expert-Manifold mismatch
+  fail-close；新增正确/错误schema regression。`PYTHONPATH=src`下聚焦62/62、全仓220/220以及
+  changed-file `py_compile`通过。
+- 未启动额外GPU工作，未改变正在运行的expert2000 root、Writer数值、实验配置或artifact。该修复
+  并入后仍按原顺序等待expert完成，再做完整online-generation/cached-rollout A40 profile smoke。
+
 ## 2026-08-08 causal-prefix Expert-Manifold实现与expert2000续训启动
 
 - 对sealed train24×50 cache和full24 step1000 experts完成可复现CPU dynamics审计，确认静态phase-DC

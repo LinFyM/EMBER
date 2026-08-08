@@ -40,6 +40,9 @@
   捷径，并增加不读frames、精确identity的paired no-video反事实。meta入口已补齐NUMA fail-fast和
   逐rank physical/local topology seal；profile step wall与显存峰值均跨六rank取`MAX`；architecture
   gate无hard violation，聚焦28/28、全仓220/220 CPU测试通过；尚无GPU或性能结论。
+- [x] 完成profile前cached rollout纵向审计：修复统一adapter dispatch漏传`evidence_schema`、导致
+  generation后scale-out首row前`TypeError`的问题；old/Expert-Manifold两类schema均保持或fail-close，
+  聚焦62/62、全仓220/220与`py_compile`通过。无模型、输入、LoRA或实验数值变化。
 - [ ] 等待clean`81101fe`原root的全24 experts exact-resume1000→2000自然完成；当前6 workers使用
   `gpu01:0,1,2,4,5,7`并保存统一1500/2000。完成后复算geometry并做两个1200-row closed-loop，
   只选一个全task共享target step。

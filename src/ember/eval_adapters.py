@@ -276,19 +276,23 @@ def expected_writer_episode(
     task_id: int,
     init_state_id: int,
     lora_reference: str,
+    evidence_schema: str | None = None,
 ) -> dict[str, Any]:
     if adapter.get("kind") == EXPERT_MANIFOLD_WRITER_KIND:
         from ember.expert_manifold.inference import (
             expected_expert_manifold_episode_evidence,
         )
 
-        return expected_expert_manifold_episode_evidence(
+        result = expected_expert_manifold_episode_evidence(
             adapter,
             suite=suite,
             task_id=task_id,
             init_state_id=init_state_id,
             lora_reference=lora_reference,
         )
+        if evidence_schema is not None and result["schema_version"] != evidence_schema:
+            raise Pi05EvaluationError("Writer episode evidence schema changed")
+        return result
     from ember.writer.inference import expected_writer_episode_evidence
 
     return expected_writer_episode_evidence(
@@ -297,6 +301,7 @@ def expected_writer_episode(
         task_id=task_id,
         init_state_id=init_state_id,
         lora_reference=lora_reference,
+        evidence_schema=evidence_schema,
     )
 
 

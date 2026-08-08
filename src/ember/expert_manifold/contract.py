@@ -512,19 +512,48 @@ def _hard_route_cpu_matches(evidence: Mapping[str, Any]) -> bool:
     )
 
 
+def _hard_route_online_audit_matches(evidence: Mapping[str, Any]) -> bool:
+    return _exact_fields_match(
+        evidence,
+        {
+            "artifact": (
+                "runs/outputs/pi05_expert_manifold_hard_routed_"
+                "online_smoke_gpu02_14495d9_20260809/"
+                "hard_route_online_smoke_route_audit_v1.json"
+            ),
+            "cpu_only_posthoc": True,
+            "all_online_loras_match_one_hot_expert": True,
+            "nearest_one_hot_effective_cosine_min": 0.9999997991655326,
+            "nearest_one_hot_factor_relative_l2_max": 0.09622279383750876,
+            "nearest_vs_second_relative_l2_gap_min": 0.3893612167170143,
+            "rollout_outcomes_used_for_route": False,
+        },
+    ) and _integer_fields_match(
+        evidence,
+        {
+            "row_count": 8,
+            "unique_selected_experts": 7,
+            "prior_soft_argmax_match_count": 7,
+            "validation_action_reads": 0,
+        },
+    )
+
+
 def _barycentric_evaluation_matches(evaluation: Mapping[str, Any]) -> bool:
     status = evaluation.get("formal_status")
     smoke = evaluation.get("online_smoke_evidence")
     hard_route = evaluation.get("cpu_hard_route_evidence")
+    online_audit = evaluation.get("online_route_audit_evidence")
     if not _soft_mixture_screen_matches(
         evaluation.get("soft_mixture_screen_evidence", {})
     ):
         return False
     if status == "blocked_until_cpu_hard_route_evidence":
-        return smoke is None and hard_route is None
+        return smoke is None and hard_route is None and online_audit is None
     if status == "blocked_until_live_a40_online_smoke":
         return (
             smoke is None
+            and online_audit is None
             and isinstance(hard_route, Mapping)
             and _hard_route_cpu_matches(hard_route)
         )
@@ -532,7 +561,9 @@ def _barycentric_evaluation_matches(evaluation: Mapping[str, Any]) -> bool:
         status == "sealed"
         and isinstance(smoke, Mapping)
         and isinstance(hard_route, Mapping)
+        and isinstance(online_audit, Mapping)
         and _hard_route_cpu_matches(hard_route)
+        and _hard_route_online_audit_matches(online_audit)
         and _barycentric_smoke_evidence_matches(smoke)
     )
 

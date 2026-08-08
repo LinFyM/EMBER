@@ -48,8 +48,8 @@
 
 - [x] 唯一config现为
   `configs/pi05_video_expert_manifold_hard_routed_policy_effective_v2.json`；formal状态现为
-  `blocked_until_live_a40_online_smoke`。旧soft config已删除且只由Git/artifact保留；实现提交=`1619631`
-  已push，尚无本hard-route专属GPU smoke或closed-loop成绩。
+  `sealed`。旧soft config已删除且只由Git/artifact保留；实现提交=`1619631`已push，专属online smoke
+  root=`pi05_expert_manifold_hard_routed_online_smoke_gpu02_14495d9_20260809`；尚无hard-route strict成绩。
 - [x] 一条视频先形成`mean_phase(phase_centered_causal_memory(video_innovation))`；train24×50
   centroids单位化后，用ridge `.3` centered-kernel affine solve产生24个scores；部署固定取signed argmax
   one-hot，support1，soft scores只作审计。
@@ -94,11 +94,12 @@
 9. [x] video-routed hard-one-hot expert已在唯一runtime实现并通过真实资产CPU门；artifact=
    `runs/outputs/pi05_expert_manifold_hard_routed_cpu_real_assets_20260809/analysis.json`。不把train self-route
    或旧correct80 implied routes当成validation闭环结果。
-10. [ ] 从当前clean pushed authority做live GPU/quota preflight，只选一张空闲A40，完成validation8×1
-    state correct/without-replacement online generation→cache→release→source-policy reuse smoke；成功后
-    才写回evidence并seal。
+10. [x] live GPU/quota preflight后只用空闲`gpu02:0`完成validation8×1 state online smoke：8 unique
+    rows/generated/cache、3 workers exit0、0异常/forbidden reads，release/reuse闭合；8/8 online LoRA精确
+    匹配one-hot expert，formal evidence已写回并seal。`0/8`只作工程结果。
 11. [ ] seal后从新frozen worktree只跑与旧candidate完全相同的validation8×states0--9 correct80 panel。
-    若未实质超过`15/80`并保持/提高breadth，停止expert-mixture内调参，转向v6先验的可迁移Writer。
+    strong门=`>=28/80`、breadth`>=5`、相对soft15 paired净增`>=10`；`22--27`且breadth`>=5`只扩到
+    160-row消歧；`<=21`或breadth`<=4`则停止expert-mixture内调参，转向v6先验的可迁移Writer。
 
 ## Hard-routed online smoke launch合同（2026-08-09）
 
@@ -123,7 +124,9 @@ env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZE
 
 - 工程验收：8 unique rows/generated/cache entries、3 workers自然exit0、0 retry/failure/OOM/nonfinite，
   teacher action/state/reward/terminal reads全0，v4/hard1 evidence逐行成立，Writer/encoder释放后同一source
-  policy原进程复用于rollout且不reload。通过后才写回smoke evidence并seal；失败则停在该工程接口。
+  policy原进程复用于rollout且不reload。**已全部通过**；generation=`10.497s`、peak allocated=
+  `10,576,896,000` bytes，总wall=`315.902s`，GPU已释放。posthoc route audit确认8/8 LoRA hard one-hot；
+  7/8与旧soft argmax一致，Long-2 state0因旧margin`.000664`发生12→13翻转。evidence已写回并seal。
 
 ## 退役边界
 

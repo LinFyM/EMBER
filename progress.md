@@ -1,5 +1,17 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Hard-routed online smoke通过并seal
+
+- clean pushed launch=`12c8d1e`在live空闲`gpu02:0`完成validation8×1-state correct smoke；root=
+  `runs/outputs/pi05_expert_manifold_hard_routed_online_smoke_gpu02_14495d9_20260809`。8 rows/generated/cache、
+  3 workers exit0、attempt1、0 error/retry/OOM/nonfinite/forbidden reads；GPU已回到0MiB/P8。
+- model load=`117.475s`，generation 2×batch4=`10.497s`，peak allocated/reserved=
+  `10,576,896,000/11,238,637,568` bytes；Writer release、source-policy reuse/no-reload成立。总wall=
+  `315.902s`，`0/8`只作execution smoke。
+- posthoc artifact=`hard_route_online_smoke_route_audit_v1.json`：8/8 LoRA精确匹配one-hot expert，effective
+  cosine最小`.999999799`，覆盖7 experts；7/8与旧soft argmax一致，Long-2 state0在旧margin`.000664`处
+  从ordinal12翻到13。精确smoke/audit evidence写回后formal=`sealed`；下一步为固定correct80。
+
 ## 2026-08-09 Hard-routed canonical实现与真实资产CPU门
 
 - 原soft policy-effective config/runtime已由Git保存并从canonical删除；新config=

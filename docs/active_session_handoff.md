@@ -19,9 +19,15 @@ affine score，但正常非零视频固定使用signed-argmax one-hot、support=
 1,200/1,200改变，固定phase-shuffle改变699/1,200=`58.25%`。zero/phase-constant逐tensor exact identity，
 全部coefficients/states finite，24 one-hot×38 targets的effective cosine中位/最小=`.998982/.961962`。
 已有validation correct80的原soft系数会硬选11个不同experts，top1-top2 margin中位仅`.0193`，所以新
-screen会实质改变LoRA且不是静态单expert。formal现有意停在`blocked_until_live_a40_online_smoke`；下一步
-必须先clean authority push、实时比较`gpu01/gpu02`和quota，再只用一张空闲A40跑8-row在线工程smoke，
-通过后才允许与旧screen完全相同的strict correct80。当前没有GPU工作。
+screen会实质改变LoRA且不是静态单expert。专属online smoke已从clean pushed`12c8d1e`在live空闲
+`gpu02:0`自然完成，root=
+`runs/outputs/pi05_expert_manifold_hard_routed_online_smoke_gpu02_14495d9_20260809`：8 rows/generated/cache、
+3 workers exit0、0 retry/failure/OOM/nonfinite/forbidden reads；generation=`10.497s`、peak allocated=
+`10,576,896,000` bytes，Writer释放/source-policy原位复用闭合，GPU已回到0MiB。`0/8`只作工程smoke。
+posthoc route audit证明8个online LoRA都精确落到one-hot expert（effective cosine最小`.999999799`），覆盖
+7个experts；7/8与旧soft argmax相同，Long-2 state0因旧top1 margin仅`.000664`从ordinal12翻到13，暴露
+held近边界路由的数值稳定风险。精确evidence写回后formal=`sealed`；下一步是clean push seal并预注册
+同一strict correct80，当前没有GPU工作。
 
 **最新覆盖（2026-08-09，优先于本节全部后续历史条目）**：Policy-Effective Barycentric的
 预注册strict correct80筛选已经自然完成并负裁决。唯一root为

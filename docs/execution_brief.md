@@ -16,9 +16,13 @@ support，不把CPU路由正确率冒充validation性能。
 CPU artifact=`runs/outputs/pi05_expert_manifold_hard_routed_cpu_real_assets_20260809/analysis.json`：train24
 centroid与全部1,200 videos均self-route，24 experts全覆盖；ordered/reversed选择改变率=`100%`，固定
 phase-shuffle改变率=`58.25%`；zero identity、finite、support/sum合同全部成立。已有correct80系数将选择
-11个experts。config formal现为`blocked_until_live_a40_online_smoke`，没有GPU任务。下一执行单元必须先
-clean push本CPU authority，随后live检查两节点GPU、进程、telemetry、NUMA和`/data1`quota，只在一张
-空闲A40做validation8×1-state correct smoke；smoke通过并seal后才建立同一80-row screen的frozen合同。
+11个experts。live preflight后只用`gpu02:0`完成专属validation8×1-state online smoke，root=
+`runs/outputs/pi05_expert_manifold_hard_routed_online_smoke_gpu02_14495d9_20260809`。8 rows/generated/cache、
+3 workers、v4/hard1、forbidden reads、release/reuse合同全部通过；generation=`10.497s`、peak allocated=
+`10,576,896,000` bytes，GPU已释放。`0/8`不是性能证据。offline route audit确认8/8 LoRA与某个one-hot
+expert effective update cosine至少`.999999799`，覆盖7 experts；其中1条因旧soft top1 margin仅`.000664`
+发生12→13翻转，必须作为held route稳定性风险报告。config formal现为`sealed`。下一执行单元是clean
+push seal、重新live preflight，并从新frozen worktree运行固定80-row correct screen；当前没有GPU任务。
 
 **最新操作覆盖（2026-08-09，覆盖本节全部后续旧“当前/下一步”）**：Policy-Effective
 Barycentric的预注册correct80 screen已完整结束为`15/80`、breadth=`5/8`，不是待扩跑状态。正式root=

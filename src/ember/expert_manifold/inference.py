@@ -325,6 +325,12 @@ def inspect_expert_manifold_writer_evaluation(
             "cpu_hard_route_evidence": dict(
                 config["evaluation"].get("cpu_hard_route_evidence", {})
             ),
+            "online_smoke_evidence": dict(
+                config["evaluation"].get("online_smoke_evidence", {})
+            ),
+            "online_route_audit_evidence": dict(
+                config["evaluation"].get("online_route_audit_evidence", {})
+            ),
         },
         "video_data": video_data,
         "video_condition": video_condition,

@@ -967,3 +967,25 @@ top1-top2 margin中位`.01932`，远小于train videos，量化了held represent
 `blocked_until_live_a40_online_smoke`：只允许下一步先在clean pushed/frozen authority上做一张空闲A40的
 validation8×1-state correct纵向smoke。只有generation/cache/release/source-policy reuse和信息墙全部
 成立后才seal，并运行与32.1完全一致的80-row panel；不得在看到结果前加入其他变量。
+
+### 32.5 Online smoke、真实hard-route确认与held边界风险（2026-08-09）
+
+clean pushed launch`12c8d1e`在live空闲`gpu02:0`完成validation8×1-state correct/without-replacement
+工程smoke，root=
+`runs/outputs/pi05_expert_manifold_hard_routed_online_smoke_gpu02_14495d9_20260809`。8个唯一video各生成一套
+唯一LoRA/cache，3 workers全部attempt1/exit0，0 retry/failure/OOM/nonfinite，四类forbidden reads为0。
+Writer/encoder在cache后释放，resident source policy原位复用且没有reload；generation wall=`10.497s`、
+peak allocated/reserved=`10,576,896,000/11,238,637,568` bytes，结束后GPU为0MiB/P8。`0/8`不能解释性能。
+
+为了验证线上确实走hard path而非仅schema改名，CPU posthoc把8个cache LoRA与同一compiler的24个one-hot
+输出逐一比较。artifact=`hard_route_online_smoke_route_audit_v1.json`。8/8 nearest one-hot effective cosine
+最小`.999999799`，nearest与second的factor-relative-L2 gap最小`.38936`，因此选择无歧义；共覆盖7个
+experts。7/8选择与旧soft correct80保存的argmax一致。唯一不一致是Long-2 state0：旧ordinal12/13 score=
+`.136743/.136079`，margin仅`.000664`，live选择13。这不是soft混合残留，而是held representation位于
+argmax边界、微小跨run数值差异可翻转专家的直接证据。
+
+formal现已由CPU门的blocked状态切到`sealed`。下一correct80仍只改变soft→hard这一变量，panel、video
+schedule、state/env/policy RNG与32.1一致。判据预注册为：score`>=28`、breadth`>=5`且相对soft15的paired
+net gain至少10为strong，通过后进入correct400；score`22--27`且breadth`>=5`只扩到states0--19的160-row
+消歧；score`<=21`或breadth`<=4`则判24-expert support不足，停止top-k/temperature/scale/rank修补并转向
+v6先验的可迁移Writer。任何route flip都作为稳定性证据报告，不新增confidence/abstention gate。

@@ -100,13 +100,14 @@ def test_hard_routed_config_has_no_learned_or_language_only_value_path() -> None
     assert config["barycentric_writer"]["ridge"] == 0.3
     assert config["barycentric_writer"]["effective_basis_rank"] == 96
     assert config["barycentric_writer"]["deployed_coefficient_support"] == 1
-    assert config["evaluation"]["formal_status"] == (
-        "blocked_until_live_a40_online_smoke"
-    )
+    assert config["evaluation"]["formal_status"] == "sealed"
     assert config["evaluation"]["cpu_hard_route_evidence"][
         "train_video_self_route_count"
     ] == 1200
-    assert "online_smoke_evidence" not in config["evaluation"]
+    assert config["evaluation"]["online_smoke_evidence"]["scientific_rows"] == 8
+    assert config["evaluation"]["online_route_audit_evidence"][
+        "all_online_loras_match_one_hot_expert"
+    ] is True
 
 
 @pytest.mark.parametrize(

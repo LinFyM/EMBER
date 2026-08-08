@@ -16,6 +16,11 @@
   margin中位仅`.0193`，所以hard screen是高干预、可归因的support试验，而不是对soft LoRA的小扰动。
 - 下一步仍只能先做单卡online smoke；若同一80-row hard screen没有实质高于`15/80`并保住breadth，
   证据将直接否定“soft dilution是主因”，停止在24-expert mixture内调参并转向v6先验的可迁移Writer。
+- 单卡online smoke的工程链路完整通过，且8个live生成LoRA的nearest one-hot effective cosine最小
+  `.999999799`、nearest-vs-second factor-distance gap最小`.389`，排除“代码声称hard但在线仍在soft混合”。
+  8条覆盖7 experts；只有Long-2 state0与旧soft implied argmax不一致，因为旧ordinal12/13 margin仅
+  `.000664`，live为13。hard argmax在held边界附近可能受微小encoder/数值扰动翻转，这是下一screen必须
+  记录的稳定性风险，不通过confidence gate或temperature事后修补。
 
 ## 2026-08-09 Policy-Effective correct80负裁决与下一判别
 

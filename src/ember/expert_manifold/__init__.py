@@ -1,13 +1,15 @@
-"""Video-conditioned task-expert manifold training primitives."""
+"""Video-conditioned expert-manifold assets and canonical Writer primitives."""
 
 from ember.expert_manifold.contract import (
     ExpertManifoldError,
     ExpertTask,
+    load_barycentric_writer_config,
     load_expert_manifold_config,
 )
 
 __all__ = [
     "ExpertManifoldError",
     "ExpertTask",
+    "load_barycentric_writer_config",
     "load_expert_manifold_config",
 ]

@@ -1,4 +1,4 @@
-"""Bottleneck-free video-conditioned topological decoder for complete LoRA states."""
+"""Closed-form causal expert-manifold generation for complete LoRA states."""
 
 from __future__ import annotations
 
@@ -16,23 +16,6 @@ from ember.lora import (
     LoRAContract,
     validate_lora_state,
 )
-
-
-class RMSNorm(torch.nn.Module):
-    """RMS normalization owned by the active topological Writer."""
-
-    def __init__(self, width: int, eps: float = 1e-6) -> None:
-        super().__init__()
-        if width <= 0:
-            raise ExpertManifoldError("RMSNorm width must be positive")
-        self.weight = torch.nn.Parameter(torch.ones(width))
-        self.eps = float(eps)
-
-    def forward(self, value: torch.Tensor) -> torch.Tensor:
-        scale = torch.rsqrt(
-            value.to(torch.float32).square().mean(dim=-1, keepdim=True) + self.eps
-        ).to(value.dtype)
-        return value * scale * self.weight
 
 
 def phase_centered_causal_memory(memory: torch.Tensor) -> torch.Tensor:
@@ -69,10 +52,16 @@ class TopologicalLoRAChunkLayout:
         self.rank = int(contract.rank)
         self.chunk_width = int(chunk_width)
         indexed = {target.name: target for target in contract.targets}
-        action = [name for name in indexed if name.endswith(("action_in_proj", "action_out_proj"))]
+        action = [
+            name
+            for name in indexed
+            if name.endswith(("action_in_proj", "action_out_proj"))
+        ]
         policy = [name for name in indexed if name not in action]
         ordered = (*action, *policy)
-        if len(ordered) != len(contract.targets) or len(set(ordered)) != len(ordered):
+        if len(ordered) != len(contract.targets) or len(set(ordered)) != len(
+            ordered
+        ):
             raise ExpertManifoldError("LoRA target ordering is incomplete")
         chunks: list[LoRAChunk] = []
         for target_ordinal, target_name in enumerate(ordered):
@@ -142,7 +131,9 @@ class TopologicalLoRAChunkLayout:
         factors: dict[str, str] = {}
         for ordinal, chunk in enumerate(self.chunks):
             selected = values[..., ordinal, :, : chunk.valid_width]
-            grouped.setdefault(chunk.tensor_name, []).append((chunk.factor_chunk, selected))
+            grouped.setdefault(chunk.tensor_name, []).append(
+                (chunk.factor_chunk, selected)
+            )
             factors[chunk.tensor_name] = chunk.factor
         result = {}
         for name, pieces in grouped.items():
@@ -156,257 +147,213 @@ class TopologicalLoRAChunkLayout:
         for name, value in result.items():
             expected = (*expected_leading, *template[name].shape)
             if tuple(value.shape) != expected:
-                raise ExpertManifoldError("topological LoRA reconstruction changed shape")
+                raise ExpertManifoldError(
+                    "topological LoRA reconstruction changed shape"
+                )
         return result
 
 
-class ChunkRankAxialBlock(torch.nn.Module):
-    """Exchange information globally over chunks, then over public rank coordinates."""
-
-    def __init__(self, width: int, heads: int, expansion: int) -> None:
-        super().__init__()
-        if min(width, heads, expansion) <= 0 or width % heads:
-            raise ExpertManifoldError("invalid chunk-rank axial block")
-        self.chunk_norm = RMSNorm(width)
-        self.chunk_attention = torch.nn.MultiheadAttention(
-            width, heads, batch_first=True, bias=False
-        )
-        self.rank_norm = RMSNorm(width)
-        self.rank_attention = torch.nn.MultiheadAttention(
-            width, heads, batch_first=True, bias=False
-        )
-        self.mlp_norm = RMSNorm(width)
-        self.mlp = torch.nn.Sequential(
-            torch.nn.Linear(width, width * expansion, bias=False),
-            torch.nn.GELU(),
-            torch.nn.Linear(width * expansion, width, bias=False),
-        )
-
-    def forward(self, value: torch.Tensor) -> torch.Tensor:
-        batch, chunks, rank, width = value.shape
-        chunk_rows = self.chunk_norm(value).permute(0, 2, 1, 3).reshape(
-            batch * rank, chunks, width
-        )
-        attended, _ = self.chunk_attention(
-            chunk_rows, chunk_rows, chunk_rows, need_weights=False
-        )
-        value = value + attended.reshape(batch, rank, chunks, width).permute(0, 2, 1, 3)
-        rank_rows = self.rank_norm(value).reshape(batch * chunks, rank, width)
-        attended, _ = self.rank_attention(
-            rank_rows, rank_rows, rank_rows, need_weights=False
-        )
-        value = value + attended.reshape(batch, chunks, rank, width)
-        return value + self.mlp(self.mlp_norm(value))
-
-
-class VideoConditionedTopologicalWriter(torch.nn.Module):
-    """Map phase-preserving video innovation directly to one complete LoRA."""
+class CausalBarycentricTopologicalWriter(torch.nn.Module):
+    """Map one ordered video to one full LoRA through a frozen expert basis."""
 
     def __init__(
         self,
         *,
         contract: LoRAContract,
         template_state: Mapping[str, torch.Tensor],
+        expert_states: Sequence[Mapping[str, torch.Tensor]],
+        task_centroids: torch.Tensor,
         phase_slots: int,
         feature_width: int,
-        memory_width: int,
-        attention_heads: int,
-        axial_blocks: int,
         chunk_width: int,
-        mlp_expansion: int = 2,
+        ridge: float,
+        identity_epsilon: float = 1e-12,
     ) -> None:
         super().__init__()
-        dimensions = (
-            phase_slots,
-            feature_width,
-            memory_width,
-            attention_heads,
-            axial_blocks,
-            chunk_width,
-            mlp_expansion,
-        )
-        if any(value <= 0 for value in dimensions) or memory_width % attention_heads:
-            raise ExpertManifoldError("invalid video-conditioned topological Writer")
+        if (
+            len(expert_states) < 2
+            or phase_slots < 2
+            or feature_width <= 0
+            or chunk_width <= 0
+            or ridge <= 0
+            or identity_epsilon <= 0
+            or task_centroids.shape != (len(expert_states), feature_width)
+        ):
+            raise ExpertManifoldError("invalid causal barycentric Writer")
         validate_lora_state(template_state, contract)
         if any(
             name.endswith(LORA_B_SUFFIX) and bool(torch.count_nonzero(value))
             for name, value in template_state.items()
         ):
-            raise ExpertManifoldError("topological Writer template LoRA-B must be zero")
+            raise ExpertManifoldError("barycentric Writer template LoRA-B must be zero")
+        for state in expert_states:
+            validate_lora_state(state, contract)
+
         self.layout = TopologicalLoRAChunkLayout(contract, chunk_width=chunk_width)
         self.phase_slots = int(phase_slots)
         self.feature_width = int(feature_width)
-        self.memory_width = int(memory_width)
-        self.input_projection = torch.nn.Linear(feature_width, memory_width, bias=False)
-        self.memory_norm = RMSNorm(memory_width)
-        self.phase_keys = torch.nn.Parameter(torch.empty(phase_slots, memory_width))
-        self.chunk_queries = torch.nn.Parameter(
-            torch.empty(self.layout.chunk_count, memory_width)
-        )
-        self.rank_queries = torch.nn.Parameter(torch.empty(contract.rank, memory_width))
-        self.cross_attention = torch.nn.MultiheadAttention(
-            memory_width, attention_heads, batch_first=True, bias=False
-        )
-        self.blocks = torch.nn.ModuleList(
-            ChunkRankAxialBlock(memory_width, attention_heads, mlp_expansion)
-            for _ in range(axial_blocks)
-        )
-        self.output_norm = RMSNorm(memory_width)
-        self.address_norm = RMSNorm(memory_width)
-        self.output_projection = torch.nn.Linear(memory_width, chunk_width, bias=False)
-        self.chunk_log_scale = torch.nn.Linear(memory_width, 1, bias=False)
-        self.chunk_log_scale_offset = torch.nn.Parameter(
-            torch.zeros(self.layout.chunk_count)
-        )
-        torch.nn.init.normal_(self.phase_keys, std=memory_width**-0.5)
-        torch.nn.init.normal_(self.chunk_queries, std=memory_width**-0.5)
-        torch.nn.init.normal_(self.rank_queries, std=memory_width**-0.5)
-        torch.nn.init.zeros_(self.output_projection.weight)
-        torch.nn.init.zeros_(self.chunk_log_scale.weight)
+        self.basis_count = len(expert_states)
+        self.ridge = float(ridge)
+        self.identity_epsilon = float(identity_epsilon)
         self._template_buffers: dict[str, str] = {}
         for ordinal, (name, value) in enumerate(template_state.items()):
             buffer = f"template_{ordinal:03d}"
-            self.register_buffer(buffer, value.detach().clone(), persistent=True)
+            self.register_buffer(
+                buffer,
+                value.detach().to(device="cpu", dtype=torch.float32).clone(),
+                persistent=True,
+            )
             self._template_buffers[name] = buffer
-        self.register_buffer("valid_value_mask", self.layout.valid_mask(), persistent=True)
+
+        template = self.template_state()
+        tokens = torch.stack(
+            [
+                self.layout.tokenize(
+                    {
+                        name: value.detach().to(device="cpu", dtype=torch.float32)
+                        for name, value in state.items()
+                    },
+                    template,
+                )
+                for state in expert_states
+            ]
+        )
+        valid_mask = self.layout.valid_mask()
+        mask = valid_mask[None, :, None, :].to(tokens.dtype)
+        valid_count = (
+            valid_mask.sum(dim=1).to(tokens.dtype)[None] * self.layout.rank
+        ).clamp_min(1.0)
+        scales = torch.sqrt(
+            (tokens.square() * mask).sum(dim=(-2, -1)) / valid_count + 1e-24
+        )
+        directions = torch.where(
+            scales[:, :, None, None] > self.identity_epsilon,
+            tokens / scales[:, :, None, None].clamp_min(self.identity_epsilon),
+            torch.zeros_like(tokens),
+        )
+
+        centroids = task_centroids.detach().to(dtype=torch.float32)
+        centroid_norm = torch.linalg.vector_norm(centroids, dim=1, keepdim=True)
+        if bool((centroid_norm <= self.identity_epsilon).any()):
+            raise ExpertManifoldError("barycentric task centroid is zero")
+        centroids = centroids / centroid_norm
+        centroid_mean = centroids.mean(dim=0)
+        centered = centroids - centroid_mean[None]
+        kernel = centered @ centered.T
+        kernel.diagonal().add_(self.ridge)
+        projection = torch.linalg.solve(kernel, centered)
+        if not all(
+            bool(torch.isfinite(value).all())
+            for value in (directions, scales, centroid_mean, projection)
+        ):
+            raise ExpertManifoldError("barycentric Writer basis is nonfinite")
+
+        self.register_buffer("valid_value_mask", valid_mask, persistent=True)
+        self.register_buffer("expert_directions", directions, persistent=True)
+        self.register_buffer(
+            "expert_log_scales",
+            scales.clamp_min(self.identity_epsilon).log(),
+            persistent=True,
+        )
+        self.register_buffer(
+            "chunk_log_scale_min",
+            self.expert_log_scales.min(dim=0).values,
+            persistent=True,
+        )
+        self.register_buffer(
+            "chunk_log_scale_max",
+            self.expert_log_scales.max(dim=0).values,
+            persistent=True,
+        )
+        self.register_buffer("centroid_mean", centroid_mean, persistent=True)
+        self.register_buffer("coefficient_projection", projection, persistent=True)
 
     def template_state(self) -> dict[str, torch.Tensor]:
-        return {name: getattr(self, buffer) for name, buffer in self._template_buffers.items()}
+        return {
+            name: getattr(self, buffer)
+            for name, buffer in self._template_buffers.items()
+        }
 
-    def tokenize_targets(self, states: Sequence[Mapping[str, torch.Tensor]]) -> torch.Tensor:
-        if not states:
-            raise ExpertManifoldError("topological Writer target batch is empty")
-        return torch.stack(
-            [self.layout.tokenize(state, self.template_state()) for state in states]
-        )
-
-    def forward_values_with_scale(
-        self, video_innovation: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        if video_innovation.shape[1:] != (self.phase_slots, self.feature_width):
-            raise ExpertManifoldError("video innovation changed phase/feature shape")
-        routing_memory = self.input_projection(video_innovation)
-        dynamic_memory = phase_centered_causal_memory(routing_memory)
-        normalized = self.memory_norm(routing_memory)
-        keys = normalized + self.phase_keys[None]
-        batch = routing_memory.shape[0]
-        topology_address = (
-            self.chunk_queries[:, None, :] + self.rank_queries[None, :, :]
-        )
-        query = topology_address.reshape(
-            1, self.layout.chunk_count * self.layout.rank, self.memory_width
-        ).expand(batch, -1, -1)
-        value, _ = self.cross_attention(
-            query, keys, dynamic_memory, need_weights=False
-        )
-        value = value.reshape(
-            batch, self.layout.chunk_count, self.layout.rank, self.memory_width
-        )
-        for block in self.blocks:
-            value = block(value)
-        addressed_value = self.bind_topology_address(value, topology_address)
-        raw_direction = self.output_projection(addressed_value)
-        chunk_state = value.mean(dim=2)
-        log_scale = (
-            self.chunk_log_scale(chunk_state).squeeze(-1)
-            + self.chunk_log_scale_offset[None]
-        ).clamp(-12.0, 8.0)
-        mask = self.valid_value_mask[None, :, None, :].to(raw_direction.dtype)
-        valid_count = mask.sum(dim=(-2, -1)).clamp_min(1.0) * self.layout.rank
-        direction_rms = torch.sqrt(
-            (raw_direction.square() * mask).sum(dim=(-2, -1)) / valid_count + 1e-6
-        )
-        direction = raw_direction / direction_rms[:, :, None, None]
-        output = direction * log_scale.exp()[:, :, None, None]
-        output = output.masked_fill(~self.valid_value_mask[None, :, None, :], 0.0)
-        return output, log_scale
-
-    def bind_topology_address(
-        self, dynamic_value: torch.Tensor, topology_address: torch.Tensor
-    ) -> torch.Tensor:
-        """Bind static LoRA coordinates to video values without a static output path."""
-
-        expected_dynamic = (
-            self.layout.chunk_count,
-            self.layout.rank,
-            self.memory_width,
-        )
-        if dynamic_value.shape[-3:] != expected_dynamic or topology_address.shape != (
-            *expected_dynamic[:2],
-            self.memory_width,
+    def causal_representation(self, video_innovation: torch.Tensor) -> torch.Tensor:
+        if video_innovation.ndim != 3 or video_innovation.shape[1:] != (
+            self.phase_slots,
+            self.feature_width,
         ):
-            raise ExpertManifoldError("topological address binding changed shape")
-        return self.output_norm(dynamic_value) * self.address_norm(topology_address)[None]
+            raise ExpertManifoldError("video innovation changed phase/feature shape")
+        return phase_centered_causal_memory(video_innovation).mean(dim=1)
 
-    def forward_values(self, video_innovation: torch.Tensor) -> torch.Tensor:
-        values, _ = self.forward_values_with_scale(video_innovation)
+    def coefficients(self, video_innovation: torch.Tensor) -> torch.Tensor:
+        representation = self.causal_representation(video_innovation).float()
+
+        def solve() -> torch.Tensor:
+            norm = torch.linalg.vector_norm(representation, dim=1, keepdim=True)
+            query = representation / norm.clamp_min(self.identity_epsilon)
+            weights = (query - self.centroid_mean[None]) @ self.coefficient_projection.T
+            affine = weights + (
+                1.0 - weights.sum(dim=1, keepdim=True)
+            ) / self.basis_count
+            return torch.where(
+                norm <= self.identity_epsilon, torch.zeros_like(affine), affine
+            )
+
+        if representation.device.type == "cuda":
+            with torch.autocast(device_type="cuda", enabled=False):
+                result = solve()
+        else:
+            result = solve()
+        if not bool(torch.isfinite(result).all()):
+            raise ExpertManifoldError("barycentric coefficients are nonfinite")
+        return result
+
+    def values_from_coefficients(self, coefficients: torch.Tensor) -> torch.Tensor:
+        if coefficients.ndim != 2 or coefficients.shape[1] != self.basis_count:
+            raise ExpertManifoldError("barycentric coefficient shape changed")
+        coefficients = coefficients.to(
+            device=self.expert_directions.device, dtype=torch.float32
+        )
+
+        def reconstruct() -> torch.Tensor:
+            direction = torch.einsum(
+                "bk,kcrw->bcrw", coefficients, self.expert_directions
+            )
+            mask = self.valid_value_mask[None, :, None, :].to(direction.dtype)
+            valid_count = (
+                self.valid_value_mask.sum(dim=1).to(direction.dtype)[None]
+                * self.layout.rank
+            ).clamp_min(1.0)
+            rms = torch.sqrt(
+                (direction.square() * mask).sum(dim=(-2, -1))
+                / valid_count
+                + 1e-24
+            )
+            direction = torch.where(
+                rms[:, :, None, None] > self.identity_epsilon,
+                direction / rms[:, :, None, None].clamp_min(self.identity_epsilon),
+                torch.zeros_like(direction),
+            )
+            log_scale = coefficients @ self.expert_log_scales
+            log_scale = torch.maximum(
+                torch.minimum(log_scale, self.chunk_log_scale_max),
+                self.chunk_log_scale_min,
+            )
+            values = direction * log_scale.exp()[:, :, None, None]
+            return values.masked_fill(
+                ~self.valid_value_mask[None, :, None, :], 0.0
+            )
+
+        if coefficients.device.type == "cuda":
+            with torch.autocast(device_type="cuda", enabled=False):
+                values = reconstruct()
+        else:
+            values = reconstruct()
+        if not bool(torch.isfinite(values).all()):
+            raise ExpertManifoldError("barycentric LoRA values are nonfinite")
         return values
 
-    def forward(
-        self,
-        video_innovation: torch.Tensor,
-        *,
-        return_values_with_scale: bool = False,
-    ) -> dict[str, torch.Tensor] | tuple[torch.Tensor, torch.Tensor]:
-        values, log_scale = self.forward_values_with_scale(video_innovation)
-        if return_values_with_scale:
-            return values, log_scale
-        return self.layout.detokenize(values, self.template_state())
+    def forward_values(self, video_innovation: torch.Tensor) -> torch.Tensor:
+        return self.values_from_coefficients(self.coefficients(video_innovation))
 
-
-def topological_reconstruction_loss(
-    predicted: torch.Tensor,
-    target: torch.Tensor,
-    valid_mask: torch.Tensor,
-    *,
-    cosine_weight: float,
-    log_scale_weight: float,
-    predicted_log_scale: torch.Tensor | None = None,
-) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
-    """Balance raw values, direction, and magnitude without artificial rank targets."""
-
-    if (
-        predicted.shape != target.shape
-        or predicted.ndim != 4
-        or valid_mask.shape != (predicted.shape[1], predicted.shape[3])
-        or min(cosine_weight, log_scale_weight) < 0
-    ):
-        raise ExpertManifoldError("invalid topological reconstruction loss batch")
-    mask = valid_mask[None, :, None, :].to(predicted.dtype)
-    count = mask.sum(dim=-1).clamp_min(1.0)
-    squared = ((predicted - target) * mask).square().sum(dim=-1) / count
-    raw = squared.mean()
-    left = (predicted * mask).reshape(*predicted.shape[:-1], -1)
-    right = (target * mask).reshape(*target.shape[:-1], -1)
-    predicted_norm = torch.linalg.vector_norm(left, dim=-1)
-    target_norm = torch.linalg.vector_norm(right, dim=-1)
-    cosine = F.cosine_similarity(left, right, dim=-1, eps=1e-8)
-    active = (target_norm > 1e-12) & (predicted_norm > 1e-8)
-    direction = (1.0 - cosine[active]).mean() if bool(active.any()) else raw.new_zeros(())
-    target_count = count.squeeze(-1) * predicted.shape[2]
-    target_rms = torch.sqrt(
-        (target.square() * mask).sum(dim=(-2, -1)) / target_count + 1e-24
-    )
-    if predicted_log_scale is None:
-        predicted_rms = torch.sqrt(
-            (predicted.square() * mask).sum(dim=(-2, -1)) / target_count + 1e-24
+    def forward(self, video_innovation: torch.Tensor) -> dict[str, torch.Tensor]:
+        return self.layout.detokenize(
+            self.forward_values(video_innovation), self.template_state()
         )
-        scale_prediction = predicted_rms.log()
-    else:
-        if predicted_log_scale.shape != target_rms.shape:
-            raise ExpertManifoldError("predicted topological scale changed shape")
-        scale_prediction = predicted_log_scale
-    scale_active = target_rms > 1e-12
-    log_scale = (
-        (scale_prediction[scale_active] - target_rms[scale_active].log())
-        .square()
-        .mean()
-        if bool(scale_active.any())
-        else raw.new_zeros(())
-    )
-    total = raw + cosine_weight * direction + log_scale_weight * log_scale
-    return total, {
-        "raw_reconstruction": raw.detach(),
-        "direction": direction.detach(),
-        "log_scale": log_scale.detach(),
-    }

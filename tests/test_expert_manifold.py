@@ -25,28 +25,19 @@ from ember.expert_manifold.evaluation import (
 )
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import (
-    DistributedContext,
     read_json,
     write_json_atomic,
 )
 from ember.expert_manifold.sampler import TaskLocalEpochSampler
 from ember.expert_manifold.model import (
     TopologicalLoRAChunkLayout,
-    VideoConditionedTopologicalWriter,
     phase_centered_causal_memory,
-    topological_reconstruction_loss,
 )
 from ember.expert_manifold.video_features import (
     FrozenPi05VideoInnovationEncoder,
     phase_resample,
 )
 from ember.expert_manifold.feature_cache import _feature_contract, _feature_runtime
-from ember.expert_manifold.writer_training import (
-    WRITER_RUN_SCHEMA,
-    _contract as _writer_contract,
-    _runtime as _writer_runtime,
-)
-from ember.expert_manifold.writer_checkpoint import WRITER_CHECKPOINT_SCHEMA
 from ember.expert_manifold.video_schedule import (
     condition_demo_index,
     reference_demo_index,
@@ -55,7 +46,6 @@ from ember.expert_manifold.inference import (
     EXPERT_MANIFOLD_ADAPTER_SCHEMA,
     EXPERT_MANIFOLD_EPISODE_SCHEMA,
     EXPERT_MANIFOLD_WRITER_KIND,
-    _training_checkpoint,
     expected_expert_manifold_episode_evidence,
     validate_expert_manifold_episode_evidence,
 )
@@ -86,112 +76,6 @@ def test_video_expert_manifold_config_keeps_video_as_dynamic_value() -> None:
         "test",
     ]
     assert config["task_experts"]["profile_defaults"]["scheduler_total_steps"] == 2000
-
-
-def test_topological_writer_profile_preserves_formal_task_complete_schedule() -> None:
-    config = load_expert_manifold_config(CONFIG)
-    args = Namespace(
-        mode="profile",
-        microbatch=None,
-        stop_after_macro=1,
-        expert_step=250,
-    )
-    assert _writer_runtime(args, config, Namespace(world_size=6)) == (
-        800,
-        1,
-        (1, 3),
-        1,
-    )
-
-
-def test_topological_writer_contract_seals_physical_numa_mapping(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    (tmp_path / "cache_manifest.json").write_text("{}", encoding="utf-8")
-    monkeypatch.setattr(
-        "ember.expert_manifold.writer_training.git_state",
-        lambda _: {"branch": "branch", "commit": "commit"},
-    )
-    monkeypatch.setattr(
-        "ember.expert_manifold.writer_training.visible_physical_cuda_index", lambda _: 4
-    )
-    monkeypatch.setattr(torch.cuda, "get_device_name", lambda _: "NVIDIA A40")
-    contract = _writer_contract(
-        args=Namespace(mode="profile", config=CONFIG, feature_cache_root=tmp_path),
-        config=load_expert_manifold_config(CONFIG),
-        context=DistributedContext(0, 0, 1, torch.device("cuda", 0), 1, (48, 49)),
-        source={},
-        expert={},
-        cache={
-            "schema_version": "cache",
-            "training_commit": "cache-commit",
-            "task_count": 24,
-            "demo_count": 50,
-            "source": {},
-        },
-        scheduler_total=800,
-        microbatch=1,
-        checkpoints=(1, 3),
-    )
-    assert contract["runtime"]["rank_topology"] == [
-        {
-            "rank": 0,
-            "local_rank": 0,
-            "physical_gpu": 4,
-            "device": "cuda:0",
-            "numa_node": 1,
-            "cpu_affinity": [48, 49],
-        }
-    ]
-    assert contract["runtime"]["runtime_metrics_reduction"] == (
-        "max_across_all_ranks"
-    )
-
-
-def test_smoke_evaluation_accepts_declared_profile_checkpoint(tmp_path: Path) -> None:
-    config = load_expert_manifold_config(CONFIG)
-    source = {"source_run": "source", "checkpoint": "checkpoint", "model_path": "policy"}
-    run_root = tmp_path / "run"
-    checkpoint = run_root / "checkpoints" / "macro_00000003"
-    checkpoint.mkdir(parents=True)
-    write_json_atomic(
-        run_root / "run_contract.json",
-        {
-            "schema_version": WRITER_RUN_SCHEMA,
-            "mode": "profile",
-            "config": {
-                "path": str(CONFIG.resolve()),
-                "schema": config["schema_version"],
-                "bytes": CONFIG.stat().st_size,
-            },
-            "source": source,
-            "method": config["method"],
-            "information_wall": config["information_wall"],
-            "topological_writer": config["topological_writer"],
-            "meta_training": config["meta_training"],
-            "expert_bank": {"step": 1000},
-            "runtime": {"world_size": 6},
-        },
-    )
-    write_json_atomic(
-        checkpoint / "manifest.json",
-        {
-            "schema_version": WRITER_CHECKPOINT_SCHEMA,
-            "next_macro": 3,
-            "world_size": 6,
-            "files": {},
-            "content_hash_policy": "disabled_by_owner",
-        },
-    )
-
-    _, _, cursor = _training_checkpoint(
-        config_path=CONFIG.resolve(),
-        config=config,
-        checkpoint=checkpoint,
-        source=source,
-        require_formal=False,
-    )
-    assert cursor == 3
 
 
 def test_profile_runtime_supports_fresh_then_exact_resume_boundary() -> None:
@@ -495,50 +379,6 @@ def test_identity_lora_state_matches_template_a_zero_b_contract() -> None:
     )
 
 
-def test_topological_writer_zero_video_is_identity_after_parameter_changes() -> None:
-    contract, template, _ = _synthetic_lora_states()
-    writer = VideoConditionedTopologicalWriter(
-        contract=contract,
-        template_state=template,
-        phase_slots=4,
-        feature_width=8,
-        memory_width=16,
-        attention_heads=4,
-        axial_blocks=1,
-        chunk_width=512,
-    )
-    with torch.no_grad():
-        for parameter in writer.parameters():
-            parameter.uniform_(-0.02, 0.02)
-    generated = writer(torch.zeros(1, 4, 8))
-    assert all(torch.equal(generated[name][0], value) for name, value in template.items())
-
-
-def test_topological_writer_only_phase_dynamics_supply_values() -> None:
-    contract, template, _ = _synthetic_lora_states()
-    writer = VideoConditionedTopologicalWriter(
-        contract=contract,
-        template_state=template,
-        phase_slots=4,
-        feature_width=8,
-        memory_width=16,
-        attention_heads=4,
-        axial_blocks=1,
-        chunk_width=512,
-    )
-    with torch.no_grad():
-        for parameter in writer.parameters():
-            parameter.uniform_(-0.02, 0.02)
-        writer.phase_keys.zero_()
-    constant = torch.randn(1, 1, 8).expand(1, 4, 8).clone()
-    generated = writer(constant)
-    assert all(torch.equal(generated[name][0], value) for name, value in template.items())
-    ordered = torch.randn(1, 4, 8)
-    forward = writer.forward_values(ordered)
-    reversed_value = writer.forward_values(ordered.flip(1))
-    assert not torch.allclose(forward, reversed_value, atol=1e-10, rtol=1e-4)
-
-
 def test_causal_memory_forces_order_binding_without_static_value() -> None:
     constant = torch.randn(2, 1, 8).expand(2, 4, 8).clone()
     assert torch.count_nonzero(phase_centered_causal_memory(constant)) == 0
@@ -547,111 +387,6 @@ def test_causal_memory_forces_order_binding_without_static_value() -> None:
     reverse = phase_centered_causal_memory(ordered.flip(1))
     assert not torch.allclose(forward, reverse)
     assert not torch.allclose(forward.mean(dim=1), reverse.mean(dim=1))
-
-
-def test_phase_centered_writer_opens_upstream_after_zero_output_step() -> None:
-    torch.manual_seed(20260808)
-    contract, template, _ = _synthetic_lora_states()
-    writer = VideoConditionedTopologicalWriter(
-        contract=contract,
-        template_state=template,
-        phase_slots=4,
-        feature_width=8,
-        memory_width=16,
-        attention_heads=4,
-        axial_blocks=1,
-        chunk_width=512,
-    )
-    video = torch.randn(1, 4, 8)
-    target = torch.randn_like(writer.forward_values(video))
-    optimizer = torch.optim.SGD(writer.parameters(), lr=1e-2)
-    for step in range(2):
-        optimizer.zero_grad(set_to_none=True)
-        predicted, log_scale = writer.forward_values_with_scale(video)
-        loss = (predicted - target).square().mean() + log_scale.square().mean()
-        loss.backward()
-        if step == 0:
-            assert bool(torch.count_nonzero(writer.output_projection.weight.grad))
-        optimizer.step()
-    assert bool(torch.count_nonzero(writer.input_projection.weight.grad))
-    assert bool(torch.count_nonzero(writer.cross_attention.in_proj_weight.grad))
-    assert bool(torch.count_nonzero(writer.phase_keys.grad))
-
-
-def test_topological_writer_exposes_chunk_scale_without_collapsing_direction() -> None:
-    contract, template, _ = _synthetic_lora_states()
-    writer = VideoConditionedTopologicalWriter(
-        contract=contract,
-        template_state=template,
-        phase_slots=4,
-        feature_width=8,
-        memory_width=16,
-        attention_heads=4,
-        axial_blocks=1,
-        chunk_width=512,
-    )
-    with torch.no_grad():
-        writer.output_projection.weight.normal_(std=0.01)
-    values, log_scale = writer.forward_values_with_scale(torch.randn(2, 4, 8))
-    mask = writer.valid_value_mask[None, :, None, :].to(values.dtype)
-    count = mask.sum(dim=(-2, -1)) * contract.rank
-    rms = torch.sqrt((values.square() * mask).sum(dim=(-2, -1)) / count)
-    assert log_scale.shape == (2, writer.layout.chunk_count)
-    assert torch.allclose(rms, log_scale.exp(), atol=1e-3, rtol=1e-3)
-
-
-def test_topological_reconstruction_loss_accepts_explicit_chunk_scale() -> None:
-    target = torch.randn(2, 3, 4, 5)
-    mask = torch.tensor(
-        [[True, True, True, True, True], [True, True, False, False, False], [True] * 5]
-    )
-    count = mask[None, :, None, :].sum(dim=(-2, -1)) * target.shape[2]
-    target_log_scale = torch.sqrt(
-        (target.square() * mask[None, :, None, :]).sum(dim=(-2, -1)) / count
-    ).log()
-    total, metrics = topological_reconstruction_loss(
-        target,
-        target.clone(),
-        mask,
-        cosine_weight=0.1,
-        log_scale_weight=0.1,
-        predicted_log_scale=target_log_scale,
-    )
-    assert float(total) == pytest.approx(0.0, abs=1e-7)
-    assert all(float(value) == pytest.approx(0.0, abs=1e-7) for value in metrics.values())
-
-
-def test_topological_direction_loss_is_inactive_at_exact_identity() -> None:
-    predicted = torch.zeros(1, 2, 3, 4, requires_grad=True)
-    target = torch.randn_like(predicted)
-    mask = torch.ones(2, 4, dtype=torch.bool)
-    total, metrics = topological_reconstruction_loss(
-        predicted,
-        target,
-        mask,
-        cosine_weight=0.1,
-        log_scale_weight=0.1,
-        predicted_log_scale=torch.zeros(1, 2),
-    )
-    total.backward()
-    assert float(metrics["direction"]) == 0.0
-    assert bool(torch.isfinite(predicted.grad).all())
-
-
-def test_topological_reconstruction_loss_is_zero_for_exact_target() -> None:
-    predicted = torch.randn(2, 3, 4, 5)
-    mask = torch.tensor(
-        [[True, True, True, True, True], [True, True, False, False, False], [True] * 5]
-    )
-    total, metrics = topological_reconstruction_loss(
-        predicted,
-        predicted.clone(),
-        mask,
-        cosine_weight=0.1,
-        log_scale_weight=0.1,
-    )
-    assert float(total) == pytest.approx(0.0, abs=1e-7)
-    assert all(float(value) == pytest.approx(0.0, abs=1e-7) for value in metrics.values())
 
 
 def test_phase_resample_preserves_video_endpoints_and_zero() -> None:
@@ -716,9 +451,14 @@ def test_expert_manifold_episode_evidence_keeps_one_video_dynamic() -> None:
     adapter = {
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "arm": "macro50-correct",
+        "arm": "causal-barycentric-correct",
         "video_condition": "correct",
-        "checkpoint": {"cursor": 50, "reference": "writer:50"},
+        "writer_asset": {
+            "reference": "barycentric:step2000",
+            "learned_parameter_count": 0,
+            "expert_step": 2000,
+            "expert_count": 24,
+        },
         "lora_contract": {"reference": "lora:rank16"},
         "video_schedule": {
             "seed": 7,

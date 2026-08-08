@@ -23,15 +23,15 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.writer.errors import WriterModelError
 
 
-WRITER_LORA_CACHE_SCHEMA = "ember_pi05_expert_manifold_writer_lora_cache_v1"
+WRITER_LORA_CACHE_SCHEMA = "ember_pi05_expert_manifold_writer_lora_cache_v2"
 WRITER_LORA_CACHE_ENTRY_SCHEMA = (
-    "ember_pi05_expert_manifold_writer_lora_cache_entry_v1"
+    "ember_pi05_expert_manifold_writer_lora_cache_entry_v2"
 )
 WRITER_LORA_CACHE_MANIFEST_SCHEMA = (
-    "ember_pi05_expert_manifold_writer_lora_cache_manifest_v1"
+    "ember_pi05_expert_manifold_writer_lora_cache_manifest_v2"
 )
 WRITER_LORA_GENERATOR_MARKER_SCHEMA = (
-    "ember_pi05_expert_manifold_writer_lora_generator_marker_v1"
+    "ember_pi05_expert_manifold_writer_lora_generator_marker_v2"
 )
 WRITER_LORA_REQUEST_ORDER = "sealed suite/task order then ascending init_state_id"
 WRITER_LORA_VIDEO_KEY_ALGORITHM = "one_entry_per_episode_one_shot_video_v1"
@@ -157,7 +157,7 @@ def build_writer_lora_cache_descriptor(
         "schema_version": WRITER_LORA_CACHE_SCHEMA,
         "root": str(root.resolve()),
         "reference": (
-            f"{contract['adapter']['checkpoint']['reference']}:"
+            f"{contract['adapter']['writer_asset']['reference']}:"
             f"{entry_count}episodes:{contract['rng']['inference_seed']}"
         ),
         "identity": identity,

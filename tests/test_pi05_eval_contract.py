@@ -254,18 +254,21 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
         "execution_backend": (
-            "online_frozen_pi05_video_innovation_then_cached_topological_lora"
+            "online_frozen_pi05_video_innovation_then_causal_barycentric_lora_cache"
         ),
         "config": {
             "path": str(
-                ROOT / "configs/pi05_video_expert_manifold_v1.json"
+                ROOT
+                / "configs/pi05_video_expert_manifold_causal_barycentric_v1.json"
             ),
         },
-        "training_run": {"schema_version": "expert-manifold-launch", "mode": "formal"},
-        "checkpoint": {
-            "cursor": 12,
-            "reference": "expert-manifold-launch:12",
+        "writer_asset": {
+            "reference": "causal-barycentric:step2000",
+            "learned_parameter_count": 0,
         },
+        "expert_basis": {"root": "/experts", "step": 2000},
+        "feature_cache": {"root": "/features", "demo_count": 50},
+        "evaluation_authority": {"formal_status": "sealed"},
         "video_data": {"schema_version": "raw-video-v1"},
         "lora_contract": {
             "reference": "configs/pi05_lora_v1.json:76tensors:1287168parameters"
@@ -324,14 +327,14 @@ def test_expert_manifold_writer_pairing_is_sealed(tmp_path: Path) -> None:
     correct = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "correct",
-        arm="expert_manifold_macro_12_correct",
+        arm="expert_manifold_causal_barycentric_correct",
         condition="correct",
         mapping=correct_mapping,
     )
     wrong = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "wrong",
-        arm="expert_manifold_macro_12_cross_suite_wrong",
+        arm="expert_manifold_causal_barycentric_cross_suite_wrong",
         condition="cross_suite_wrong",
         mapping=wrong_mapping,
     )

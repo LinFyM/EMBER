@@ -134,7 +134,8 @@ def test_expert_manifold_prepare_arguments_are_all_or_none() -> None:
         task_expert_bank_root=None,
         task_expert_step=None,
         expert_manifold_config=None,
-        expert_manifold_checkpoint=None,
+        expert_manifold_expert_bank_root=None,
+        expert_manifold_feature_cache_root=None,
         expert_manifold_video_data_root=None,
         expert_manifold_video_condition=None,
     )
@@ -155,7 +156,8 @@ def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
         task_expert_bank_root=None,
         task_expert_step=None,
         expert_manifold_config=None,
-        expert_manifold_checkpoint=None,
+        expert_manifold_expert_bank_root=None,
+        expert_manifold_feature_cache_root=None,
         expert_manifold_video_data_root=None,
         expert_manifold_video_condition=None,
     )
@@ -171,7 +173,8 @@ def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
         task_expert_bank_root=None,
         task_expert_step=None,
         expert_manifold_config=Path("expert-manifold.json"),
-        expert_manifold_checkpoint=Path("macro50"),
+        expert_manifold_expert_bank_root=Path("experts"),
+        expert_manifold_feature_cache_root=Path("features"),
         expert_manifold_video_data_root=Path("videos"),
         expert_manifold_video_condition="correct",
     )
@@ -190,7 +193,8 @@ def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
 
     manifold = argparse.Namespace(**vars(empty))
     manifold.expert_manifold_config = Path("expert-manifold.json")
-    manifold.expert_manifold_checkpoint = Path("macro50")
+    manifold.expert_manifold_expert_bank_root = Path("experts")
+    manifold.expert_manifold_feature_cache_root = Path("features")
     manifold.expert_manifold_video_data_root = Path("videos")
     manifold.expert_manifold_video_condition = "correct"
     assert module._adapter_requests(manifold) == ("expert_manifold_writer", False)

@@ -1,4 +1,4 @@
-"""Formal evaluation authority for the video-conditioned topological Writer."""
+"""Formal evaluation authority for the causal barycentric Expert-Manifold Writer."""
 
 from __future__ import annotations
 
@@ -7,11 +7,14 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ember.expert_manifold.contract import (
-    REPO_ROOT,
+    BARYCENTRIC_CONFIG_SCHEMA,
     ExpertManifoldError,
     authority_path,
+    load_barycentric_writer_config,
     load_expert_manifold_config,
 )
+from ember.expert_manifold.evaluation import inspect_task_expert_bank
+from ember.expert_manifold.feature_cache import inspect_feature_cache
 from ember.expert_manifold.video_schedule import (
     SAME_TASK_OTHER_OFFSET,
     VIDEO_CONDITIONS,
@@ -22,161 +25,35 @@ from ember.expert_manifold.video_schedule import (
     video_schedule_contract,
     video_selection_seed,
 )
-from ember.expert_manifold.writer_checkpoint import WRITER_CHECKPOINT_SCHEMA
-from ember.expert_manifold.writer_training import WRITER_RUN_SCHEMA
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import read_json
 
 
 EXPERT_MANIFOLD_WRITER_KIND = "expert_manifold_writer"
-EXPERT_MANIFOLD_ADAPTER_SCHEMA = "ember_pi05_expert_manifold_writer_eval_adapter_v1"
-EXPERT_MANIFOLD_EPISODE_SCHEMA = "ember_pi05_expert_manifold_writer_episode_v1"
-
-
-def _training_source_matches_evaluation(
-    training_source: Mapping[str, Any], evaluation_source: Mapping[str, Any]
-) -> bool:
-    """Match one source policy across formal training and smoke inspection."""
-
-    if not isinstance(training_source, Mapping) or not isinstance(
-        evaluation_source, Mapping
-    ):
-        return False
-    if dict(training_source) == dict(evaluation_source):
-        return True
-    summary = training_source.get("source_run_summary")
-    if evaluation_source.get("source_run_summary") is not None or not isinstance(
-        summary, Mapping
-    ):
-        return False
-    path = Path(str(summary.get("path", "")))
-    normalized = dict(evaluation_source)
-    normalized["source_run_summary"] = dict(summary)
-    try:
-        expected_bytes = int(summary.get("bytes", -1))
-    except (TypeError, ValueError):
-        return False
-    return (
-        dict(training_source) == normalized
-        and summary.get("schema_version") == "ember_pi05_source_run_summary_v1"
-        and path.is_file()
-        and path.stat().st_size == expected_bytes
-    )
-
-
-def _declared_checkpoint_macros(
-    config: Mapping[str, Any], training_mode: str
-) -> tuple[int, ...]:
-    meta = config["meta_training"]
-    if training_mode == "profile":
-        authority = meta["profile_defaults"]
-    elif training_mode == "formal":
-        authority = meta["formal_run"]
-    else:
-        return ()
-    return tuple(int(value) for value in authority["checkpoint_macros"])
-
-
-def _same_repository_relative_config_path(
-    recorded_path: object, current_path: Path
-) -> bool:
-    """Match one config across clean Git worktrees without trusting its prefix."""
-
-    try:
-        relative = current_path.resolve().relative_to(REPO_ROOT.resolve())
-    except ValueError:
-        return False
-    recorded_parts = Path(str(recorded_path)).parts
-    relative_parts = relative.parts
-    return (
-        bool(relative_parts)
-        and len(recorded_parts) >= len(relative_parts)
-        and recorded_parts[-len(relative_parts) :] == relative_parts
-    )
-
-
-def _training_mode_is_valid(
-    *,
-    training_mode: str,
-    formal: Mapping[str, Any],
-    training_expert_step: int,
-    require_formal: bool,
-) -> bool:
-    if not require_formal:
-        return training_mode in {"profile", "formal"}
-    selected_expert_step = formal.get("selected_expert_step")
-    return (
-        training_mode == "formal"
-        and formal.get("status") == "sealed"
-        and selected_expert_step is not None
-        and training_expert_step == int(selected_expert_step)
-    )
-
-
-def _training_checkpoint(
-    *,
-    config_path: Path,
-    config: Mapping[str, Any],
-    checkpoint: Path,
-    source: Mapping[str, Any],
-    require_formal: bool,
-) -> tuple[dict[str, Any], dict[str, Any], int]:
-    checkpoint = checkpoint.resolve()
-    if checkpoint.parent.name != "checkpoints" or not checkpoint.name.startswith(
-        "macro_"
-    ):
-        raise ExpertManifoldError("topological Writer checkpoint is outside its run")
-    run_root = checkpoint.parent.parent
-    training = read_json(run_root / "run_contract.json")
-    manifest_path = checkpoint / "manifest.json"
-    manifest = read_json(manifest_path)
-    cursor = int(manifest.get("next_macro", -1))
-    formal = config["meta_training"]["formal_run"]
-    training_mode = str(training.get("mode", ""))
-    training_expert_step = int(training.get("expert_bank", {}).get("step", -1))
-    training_config = training.get("config", {})
-    valid = (
-        training.get("schema_version") == WRITER_RUN_SCHEMA
-        and isinstance(training_config, Mapping)
-        and _same_repository_relative_config_path(
-            training_config.get("path"), config_path
-        )
-        and training_config.get("schema") == config["schema_version"]
-        and int(training_config.get("bytes", -1)) == config_path.stat().st_size
-        and _training_source_matches_evaluation(training.get("source", {}), source)
-        and training.get("method") == config["method"]
-        and training.get("information_wall") == config["information_wall"]
-        and training.get("topological_writer") == config["topological_writer"]
-        and training.get("meta_training") == config["meta_training"]
-        and training_expert_step > 0
-        and int(training.get("runtime", {}).get("world_size", -1))
-        == int(formal["expected_world_size"])
-        and manifest.get("schema_version") == WRITER_CHECKPOINT_SCHEMA
-        and manifest.get("content_hash_policy") == "disabled_by_owner"
-        and int(manifest.get("world_size", -1)) == int(formal["expected_world_size"])
-        and cursor in _declared_checkpoint_macros(config, training_mode)
-        and checkpoint.name == f"macro_{cursor:08d}"
-        and _training_mode_is_valid(
-            training_mode=training_mode,
-            formal=formal,
-            training_expert_step=training_expert_step,
-            require_formal=require_formal,
-        )
-    )
-    for name, expected_bytes in manifest.get("files", {}).items():
-        path = checkpoint / name
-        valid = valid and path.is_file() and path.stat().st_size == int(expected_bytes)
-    if not valid:
-        raise ExpertManifoldError("topological Writer training authority changed")
-    return training, manifest, cursor
+EXPERT_MANIFOLD_ADAPTER_SCHEMA = (
+    "ember_pi05_expert_manifold_causal_barycentric_eval_adapter_v2"
+)
+EXPERT_MANIFOLD_EPISODE_SCHEMA = (
+    "ember_pi05_expert_manifold_causal_barycentric_episode_v2"
+)
 
 
 def _target_rows(config: Mapping[str, Any]) -> dict[int, dict[str, Any]]:
     manifest = read_json(authority_path(config, "target_data_manifest"))
     rows = {int(row["global_task_id"]): dict(row) for row in manifest["tasks"]}
     if len(rows) != 40:
-        raise ExpertManifoldError("topological Writer target manifest changed")
+        raise ExpertManifoldError("barycentric Writer target manifest changed")
     return rows
+
+
+def _train_task_keys(config: Mapping[str, Any]) -> tuple[tuple[str, int], ...]:
+    rows = [
+        row for row in _target_rows(config).values() if row["split_role"] == "train"
+    ]
+    rows.sort(key=lambda row: int(row["global_task_id"]))
+    if len(rows) != 24:
+        raise ExpertManifoldError("barycentric Writer did not resolve train24")
+    return tuple((str(row["suite"]), int(row["task_id"])) for row in rows)
 
 
 def _video_data(
@@ -218,29 +95,81 @@ def _video_data(
     }
 
 
-def inspect_expert_manifold_writer_evaluation(
+def _validate_asset_linkage(
     *,
-    config_path: Path,
-    checkpoint: Path,
-    video_data_root: Path,
+    config: Mapping[str, Any],
+    expert: Mapping[str, Any],
+    cache: Mapping[str, Any],
+) -> None:
+    expert_rows = sorted(expert["tasks"], key=lambda row: int(row["ordinal"]))
+    cache_rows = sorted(cache["tasks"], key=lambda row: int(row["task_ordinal"]))
+    valid = len(expert_rows) == len(cache_rows) == 24
+    for ordinal, (expert_row, cache_row) in enumerate(
+        zip(expert_rows, cache_rows, strict=True)
+    ):
+        valid = valid and (
+            int(expert_row["ordinal"]) == ordinal
+            and int(cache_row["task_ordinal"]) == ordinal
+            and int(expert_row["global_task_id"])
+            == int(cache_row["global_task_id"])
+            and expert_row["suite"] == cache_row["suite"]
+            and int(expert_row["task_id"]) == int(cache_row["task_id"])
+            and expert_row["language"] == cache_row["language"]
+        )
+    if (
+        not valid
+        or int(expert["step"]) != int(config["expert_basis"]["expert_step"])
+        or int(cache["demo_count"])
+        != int(config["expert_basis"]["centroid_videos_per_task"])
+    ):
+        raise ExpertManifoldError("expert basis and video centroids are misaligned")
+
+
+def _inspect_fixed_assets(
+    config: Mapping[str, Any],
+    *,
+    expert_bank_root: Path,
+    feature_cache_root: Path,
     source: Mapping[str, Any],
+) -> tuple[Path, dict[str, Any], dict[str, Any]]:
+    asset_config_path = authority_path(config, "asset_config").resolve()
+    asset_config = load_expert_manifold_config(asset_config_path)
+    for name in (
+        "target_data_manifest",
+        "evaluation_config",
+        "lora_contract",
+        "source_base_config",
+    ):
+        if config["authorities"][name] != asset_config["authorities"][name]:
+            raise ExpertManifoldError("barycentric asset authority changed")
+
+    expert = inspect_task_expert_bank(
+        config_path=asset_config_path,
+        bank_root=expert_bank_root.resolve(),
+        step=int(config["expert_basis"]["expert_step"]),
+        source=source,
+        task_keys=_train_task_keys(config),
+        evaluation_role="development_train",
+        require_formal=True,
+    )
+    cache = inspect_feature_cache(
+        asset_config_path,
+        feature_cache_root.resolve(),
+        source=source,
+    )
+    _validate_asset_linkage(config=config, expert=expert, cache=cache)
+    return asset_config_path, expert, cache
+
+
+def _evaluation_video_contract(
+    config: Mapping[str, Any],
+    *,
     task_keys: Sequence[tuple[str, int]],
     video_condition: str,
+    video_data_root: Path,
     video_seed: int,
     video_sampling_mode: str,
-    require_formal: bool,
-) -> dict[str, Any]:
-    config_path = config_path.resolve()
-    config = load_expert_manifold_config(config_path)
-    if video_condition not in VIDEO_CONDITIONS:
-        raise ExpertManifoldError("unsupported Expert-Manifold video condition")
-    training, manifest, cursor = _training_checkpoint(
-        config_path=config_path,
-        config=config,
-        checkpoint=checkpoint,
-        source=source,
-        require_formal=require_formal,
-    )
+) -> tuple[tuple[dict[str, Any], ...], dict[str, Any], dict[str, Any], str]:
     rows = _target_rows(config)
     by_key = {(row["suite"], int(row["task_id"])): row for row in rows.values()}
     normalized = tuple((str(suite), int(task_id)) for suite, task_id in task_keys)
@@ -267,33 +196,119 @@ def inspect_expert_manifold_writer_evaluation(
         demo_count=50,
         sampling_mode=video_sampling_mode,
     )
-    lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
-    checkpoint = checkpoint.resolve()
+    return mapping, video_data, schedule, pairing
+
+
+def _fixed_asset_records(
+    *,
+    config_path: Path,
+    config: Mapping[str, Any],
+    asset_config_path: Path,
+    expert_bank_root: Path,
+    feature_cache_root: Path,
+    expert: Mapping[str, Any],
+    cache: Mapping[str, Any],
+) -> dict[str, Any]:
+    ridge = float(config["barycentric_writer"]["ridge"])
+    asset_reference = (
+        f"{BARYCENTRIC_CONFIG_SCHEMA}:step{int(expert['step'])}:"
+        f"24experts:50centroids:ridge{ridge:g}"
+    )
+    cache_manifest_path = feature_cache_root.resolve() / "cache_manifest.json"
     return {
-        "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
-        "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "arm": f"expert_manifold_macro_{cursor}_{video_condition}",
-        "execution_backend": "online_frozen_pi05_video_innovation_then_cached_topological_lora",
         "config": {
             "path": str(config_path),
             "bytes": config_path.stat().st_size,
             "schema": config["schema_version"],
         },
-        "training_run": {
-            "path": str(checkpoint.parent.parent / "run_contract.json"),
-            "bytes": (checkpoint.parent.parent / "run_contract.json").stat().st_size,
-            "schema": training["schema_version"],
-            "commit": training["git"]["commit"],
+        "writer_asset": {
+            "reference": asset_reference,
+            "learned_parameter_count": 0,
+            "expert_step": int(expert["step"]),
+            "expert_count": len(expert["tasks"]),
+            "centroid_videos_per_task": int(cache["demo_count"]),
+            "ridge": ridge,
+            "reconstruction": config["barycentric_writer"]["reconstruction"],
         },
-        "checkpoint": {
-            "path": str(checkpoint),
-            "cursor": cursor,
-            "cursor_axis": "macro",
-            "manifest_bytes": (checkpoint / "manifest.json").stat().st_size,
-            "writer_bytes": int(manifest["files"]["writer.safetensors"]),
-            "reference": (
-                f"{WRITER_CHECKPOINT_SCHEMA}:macro{cursor}:"
-                f"{int(manifest['files']['writer.safetensors'])}bytes"
+        "expert_basis": {
+            "root": str(expert_bank_root.resolve()),
+            "asset_config": str(asset_config_path),
+            "training_commit": expert["training_commit"],
+            "step": int(expert["step"]),
+            "task_count": len(expert["tasks"]),
+            "tasks": [dict(row) for row in expert["tasks"]],
+        },
+        "feature_cache": {
+            "root": str(feature_cache_root.resolve()),
+            "manifest_path": str(cache_manifest_path),
+            "manifest_bytes": cache_manifest_path.stat().st_size,
+            "schema": cache["schema_version"],
+            "training_commit": cache["training_commit"],
+            "task_count": int(cache["task_count"]),
+            "demo_count": int(cache["demo_count"]),
+            "tasks": [dict(row) for row in cache["tasks"]],
+        },
+    }
+
+
+def inspect_expert_manifold_writer_evaluation(
+    *,
+    config_path: Path,
+    expert_bank_root: Path,
+    feature_cache_root: Path,
+    video_data_root: Path,
+    source: Mapping[str, Any],
+    task_keys: Sequence[tuple[str, int]],
+    video_condition: str,
+    video_seed: int,
+    video_sampling_mode: str,
+    require_formal: bool,
+) -> dict[str, Any]:
+    config_path = config_path.resolve()
+    config = load_barycentric_writer_config(config_path)
+    if video_condition not in VIDEO_CONDITIONS:
+        raise ExpertManifoldError("unsupported Expert-Manifold video condition")
+    status = str(config["evaluation"]["formal_status"])
+    if require_formal and status != "sealed":
+        raise ExpertManifoldError(
+            "formal barycentric evaluation requires live A40 smoke evidence"
+        )
+    asset_config_path, expert, cache = _inspect_fixed_assets(
+        config,
+        expert_bank_root=expert_bank_root,
+        feature_cache_root=feature_cache_root,
+        source=source,
+    )
+    mapping, video_data, schedule, pairing = _evaluation_video_contract(
+        config,
+        task_keys=task_keys,
+        video_condition=video_condition,
+        video_data_root=video_data_root,
+        video_seed=video_seed,
+        video_sampling_mode=video_sampling_mode,
+    )
+    lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
+    assets = _fixed_asset_records(
+        config_path=config_path,
+        config=config,
+        asset_config_path=asset_config_path,
+        expert_bank_root=expert_bank_root,
+        feature_cache_root=feature_cache_root,
+        expert=expert,
+        cache=cache,
+    )
+    return {
+        "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
+        "kind": EXPERT_MANIFOLD_WRITER_KIND,
+        "arm": f"expert_manifold_causal_barycentric_{video_condition}",
+        "execution_backend": (
+            "online_frozen_pi05_video_innovation_then_causal_barycentric_lora_cache"
+        ),
+        **assets,
+        "evaluation_authority": {
+            "formal_status": status,
+            "cpu_leave_one_task_out": dict(
+                config["evaluation"]["cpu_leave_one_task_out"]
             ),
         },
         "video_data": video_data,
@@ -379,9 +394,12 @@ def expected_expert_manifold_episode_evidence(
         "writer_method": EXPERT_MANIFOLD_WRITER_KIND,
         "method_arm": adapter["arm"],
         "condition": adapter["video_condition"],
-        "writer_checkpoint_axis": "macro",
-        "writer_checkpoint_cursor": int(adapter["checkpoint"]["cursor"]),
-        "writer_checkpoint_reference": adapter["checkpoint"]["reference"],
+        "writer_asset_reference": adapter["writer_asset"]["reference"],
+        "writer_learned_parameter_count": int(
+            adapter["writer_asset"]["learned_parameter_count"]
+        ),
+        "expert_basis_step": int(adapter["writer_asset"]["expert_step"]),
+        "expert_basis_task_count": int(adapter["writer_asset"]["expert_count"]),
         "lora_contract_reference": adapter["lora_contract"]["reference"],
         "lora_reference": lora_reference,
         "language_global_task_id": int(mapping["language_global_task_id"]),
@@ -404,7 +422,9 @@ def expected_expert_manifold_episode_evidence(
         "teacher_reference_demo_indices": [reference],
         "task_video_mapping_reference": adapter["task_video_mapping_reference"],
         "pairing_reference": adapter["pairing_reference"],
-        "writer_generation_seed_schedule": "numeric_seedsequence_one_shot_frame_order_v1",
+        "writer_generation_seed_schedule": (
+            "numeric_seedsequence_one_shot_frame_order_v1"
+        ),
         "teacher_video_order_seeds": [
             frame_order_seed(seed, suite, task_id, reference)
         ],

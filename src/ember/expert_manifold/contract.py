@@ -22,6 +22,9 @@ from ember.writer.data import FunctionalQueryDataset, WriterTaskAuthority
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 CONFIG_SCHEMA = "ember_pi05_video_expert_manifold_v1"
+BARYCENTRIC_CONFIG_SCHEMA = (
+    "ember_pi05_video_expert_manifold_causal_barycentric_v1"
+)
 WORKER_CONTRACT_SCHEMA = "ember_pi05_task_expert_worker_launch_v1"
 TOPOLOGY_ADDRESS_BINDING = (
     "normalized_dynamic_times_normalized_chunk_plus_rank_address"
@@ -48,6 +51,19 @@ def _information_wall_matches(information: Mapping[str, Any]) -> bool:
         information.get("expert_action_split_roles") == ["train"]
         and information.get("writer_video_split_roles")
         == ["train", "validation", "test"]
+        and information.get("writer_forbidden_inputs")
+        == [
+            "action",
+            "proprio",
+            "state",
+            "reward",
+            "terminal",
+            "task_id",
+            "filename",
+            "object_pose",
+            "hidden_normalization",
+            "policy_outcome",
+        ]
         and int(information.get("validation_experts_trained", -1)) == 0
         and int(information.get("test_experts_trained", -1)) == 0
         and int(information.get("validation_actions_read", -1)) == 0
@@ -213,6 +229,185 @@ def load_expert_manifold_config(path: Path) -> dict[str, Any]:
         or config.get("content_hash_policy") != "disabled_by_owner"
     ):
         raise ExpertManifoldError("expert-manifold scientific boundary changed")
+    return config
+
+
+def _barycentric_writer_matches(writer: Mapping[str, Any]) -> bool:
+    return _exact_fields_match(
+        writer,
+        {
+            "causal_representation": (
+                "phase_centered_sqrt_normalized_causal_prefix_mean"
+            ),
+            "centroid_normalization": "unit_l2_after_train50_mean",
+            "coefficient_rule": "centered_kernel_affine_barycentric",
+            "affine_coefficient_sum": 1.0,
+            "zero_representation_coefficients": 0.0,
+            "reconstruction": "chunk_unit_rms_direction_plus_affine_log_rms",
+            "scale_envelope": "per_chunk_train24_expert_min_max",
+            "identity": "template-A plus zero-B",
+            "language_only_lora_path": False,
+        },
+    ) and _integer_fields_match(
+        writer,
+        {
+            "chunk_width": 512,
+            "chunk_count": 168,
+            "public_rank": 16,
+            "valid_values": 1_287_168,
+        },
+    ) and float(writer.get("ridge", -1)) == 0.3 and float(
+        writer.get("identity_epsilon", -1)
+    ) == 1e-12
+
+
+def _barycentric_smoke_evidence_matches(smoke: Mapping[str, Any]) -> bool:
+    return _exact_fields_match(
+        smoke,
+        {
+            "device": "NVIDIA A40",
+            "video_condition": "correct",
+            "video_sampling": "without_replacement",
+            "writer_modules_released": True,
+            "source_policy_reused_for_rollout": True,
+            "source_policy_reloaded": False,
+            "success_interpretation": "execution_smoke_only_not_performance_evidence",
+        },
+    ) and _integer_fields_match(
+        smoke,
+        {
+            "validation_task_count": 8,
+            "state_count": 1,
+            "scientific_rows": 8,
+            "generated_entries": 8,
+            "cache_entries": 8,
+            "retry_count": 0,
+            "failure_count": 0,
+            "teacher_action_reads": 0,
+            "teacher_state_reads": 0,
+            "reward_reads": 0,
+            "terminal_reads": 0,
+            "oom_count": 0,
+            "nonfinite_count": 0,
+        },
+    )
+
+
+def _barycentric_method_matches(method: Mapping[str, Any]) -> bool:
+    return _exact_fields_match(
+        method,
+        {
+            "name": (
+                "video_conditioned_expert_manifold_causal_barycentric_"
+                "topological_writer"
+            ),
+            "writer_input": (
+                "exact task language plus exactly one action-hidden teacher video"
+            ),
+            "dynamic_value": "one_video_phase_centered_causal_representation_only",
+            "language_only_lora_path": False,
+            "deployment_output": "one complete rank16 public LoRA",
+            "learned_writer_parameter_count": 0,
+        },
+    )
+
+
+def _barycentric_video_matches(video: Mapping[str, Any]) -> bool:
+    return _exact_fields_match(
+        video,
+        {
+            "shots": 1,
+            "frame_stride": 5,
+            "phase_slots": 16,
+            "image_hidden_width": 2048,
+            "expert_hidden_width": 1024,
+            "feature_width": 3072,
+            "source_policy_trainable": False,
+            "cache_contains_actions_or_state": False,
+        },
+    ) and _integer_fields_match(
+        video.get("extraction", {}),
+        {
+            "max_frames_per_encoder_call": 16,
+            "initialization_seed": 20260807,
+            "action_horizon": 50,
+            "padded_action_dim": 32,
+        },
+    )
+
+
+def _barycentric_basis_matches(basis: Mapping[str, Any]) -> bool:
+    return _exact_fields_match(
+        basis,
+        {
+            "checkpoint_selection": (
+                "one_uniform_step_for_all_24_tasks_no_task_specific_mixing"
+            )
+        },
+    ) and _integer_fields_match(
+        basis,
+        {"task_count": 24, "expert_step": 2000, "centroid_videos_per_task": 50},
+    )
+
+
+def _barycentric_loo_matches(loo: Mapping[str, Any]) -> bool:
+    return _exact_fields_match(
+        loo,
+        {
+            "selected_ridge": 0.3,
+            "selected_reconstruction": "topological_direction_log_scale",
+        },
+    ) and _integer_fields_match(
+        loo,
+        {
+            "held_out_task_count": 24,
+            "available_basis_per_fold": 23,
+            "full_lora_rows": 7200,
+        },
+    )
+
+
+def _barycentric_evaluation_matches(evaluation: Mapping[str, Any]) -> bool:
+    status = evaluation.get("formal_status")
+    smoke = evaluation.get("online_smoke_evidence")
+    if status == "blocked_until_live_a40_online_smoke":
+        return smoke is None
+    return (
+        status == "sealed"
+        and isinstance(smoke, Mapping)
+        and _barycentric_smoke_evidence_matches(smoke)
+    )
+
+
+def load_barycentric_writer_config(path: Path) -> dict[str, Any]:
+    """Load the one active closed-form Writer contract; old configs are assets only."""
+
+    config = read_json(path)
+    authorities = config.get("authorities", {})
+    required_authorities = {
+        "asset_config",
+        "target_data_manifest",
+        "evaluation_config",
+        "lora_contract",
+        "source_base_config",
+    }
+    evaluation = config.get("evaluation", {})
+    valid = all(
+        (
+            config.get("schema_version") == BARYCENTRIC_CONFIG_SCHEMA,
+            set(authorities) == required_authorities,
+            _barycentric_method_matches(config.get("method", {})),
+            _information_wall_matches(config.get("information_wall", {})),
+            _barycentric_video_matches(config.get("video_features", {})),
+            _barycentric_basis_matches(config.get("expert_basis", {})),
+            _barycentric_writer_matches(config.get("barycentric_writer", {})),
+            _barycentric_evaluation_matches(evaluation),
+            _barycentric_loo_matches(evaluation.get("cpu_leave_one_task_out", {})),
+            config.get("content_hash_policy") == "disabled_by_owner",
+        )
+    )
+    if not valid:
+        raise ExpertManifoldError("barycentric Writer scientific boundary changed")
     return config
 
 

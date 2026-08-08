@@ -24,13 +24,15 @@ EMBER已经迁回BCI。多卡训练、exact resume、动态队列评测、NUMA�
 
 - `main`保留迁移封存历史；当前BCI写分支为`codex/bci-continuation`。
 - 旧Target-Bound、Semantic Factor-Basis及K4路线均已封存并负裁决；不得从历史“下一步”恢复。
-- 24套train-task rank-16 task experts已在clean`81101fe`完成统一step1000。正式
-  development-train闭环step250/500/1000=`432/557/624` of 1200；step1000在四suite均不低于
-  step500且24/24 tasks非零，因此下一阶段是沿原root统一exact-resume到2000并评1500/2000。
-- full24 expert几何、phase16×3072 action-hidden feature profile与train24×50正式cache均已
-  完成；canonical cache root为
-  `runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808`。当前还没有
-  Expert-Manifold Writer checkpoint或新held strict成绩。
+- 24套train-task rank-16 task experts已沿clean`81101fe`原合同统一完成step2000；五个统一
+  checkpoint的development-train闭环为`432/557/624/638/658` of 1200，正式选择step2000，
+  不按task混点。它们是privileged train-task目标，不是held Writer成绩。
+- full24 expert几何、phase16×3072 action-hidden feature profile与train24×50正式cache均已完成；
+  canonical cache root为
+  `runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808`。
+- learned address-binding Writer的strict correct仅`75/400`且输出跨task cosine约`.942`，已负裁决。
+  当前canonical是无可训练参数的Causal Barycentric Topological Writer；其formal closed-loop仍被
+  live A40 online smoke门阻塞，所以尚无新strict成绩。
 - 当前科研结论、下一实验边界看
   [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 - A100清理、Git/SSH/重下载分流、BCI路径映射和新Codex接手步骤看
@@ -57,11 +59,12 @@ EMBER已经迁回BCI。多卡训练、exact resume、动态队列评测、NUMA�
   `76/111/99/117/77/69/80/82`，normalized GROUP4为`82/77/73/110`。两者均未解决
   task漂移；matched梯度分析显示video主效应约`.1%`，query/flow噪声主导，functional
   surrogate继续改善时closed-loop会退化。
-- 当前Expert-Manifold先用真实task-local SFT LoRA定义policy-effective参数流形，再让视频条件的
-  168-chunk rank-axial decoder生成完整38-target LoRA。完整视频特征只负责phase routing，只有
-  phase-centered、sqrt-normalized causal-prefix动态能成为LoRA value，因此静态单帧或no-video不能触发写入，
-  即使忽略learned phase key也不存在原始frame-set value旁路。task experts只提供训练target，不是部署输入，
-  也不能自行证明视频时序因果性；最终仍由correct/same/wrong/shuffled/reversed及no-video反事实严格配对裁决。
+- 当前Expert-Manifold先用真实task-local SFT LoRA定义policy-effective参数流形，再把一条视频的
+  phase-centered、sqrt-normalized causal-prefix表示投影为24个expert的ridge-affine barycentric
+  coefficients。168个chunk分别混合expert direction与log-scale，重构完整38-target rank-16 LoRA；
+  zero或phase-constant表示严格返回source identity，language没有独立LoRA value路径。task experts只定义
+  train-task参数基，不是部署输入或held oracle，也不能自行证明时序因果性；最终仍由
+  correct/same/wrong/shuffled/reversed及no-video反事实严格配对裁决。
 
 ## 不变合同
 
@@ -107,12 +110,12 @@ export EMBER_LIBERO_ASSETS_ROOT=/path/to/libero-assets/revision
 
 ```text
 scripts/train_task_experts.py
-scripts/train_expert_manifold_writer.py
 scripts/evaluate_pi05.py
 ```
 
-旧AS/RL/K4 Writer入口、实现和配置已在Expert-Manifold完成profile与online smoke后原位
-退役；历史命令仅存在于Git、历史文档和formal artifacts中，不能作为当前可执行入口。
+当前Causal Barycentric Writer没有训练入口或learned Writer checkpoint；评测入口显式接收统一
+step2000 expert bank、train24×50 feature cache和一条在线teacher video。旧learned
+Expert-Manifold、AS/RL/K4 Writer入口与实现均已原位退役；历史命令只作provenance，不能执行。
 
 完整BCI映射和恢复校验在迁移handoff中。
 

@@ -1,0 +1,111 @@
+{
+  "schema_version": "ember_pi05_video_expert_manifold_causal_barycentric_v1",
+  "authorities": {
+    "asset_config": {
+      "path": "configs/pi05_video_expert_manifold_v1.json"
+    },
+    "target_data_manifest": {
+      "path": "configs/pi05_target_data_v1/manifest.json"
+    },
+    "evaluation_config": {
+      "path": "configs/pi05_target_evaluation_v1.json"
+    },
+    "lora_contract": {
+      "path": "configs/pi05_lora_v1.json"
+    },
+    "source_base_config": {
+      "path": "configs/pi05_source_base_v1.json"
+    }
+  },
+  "method": {
+    "name": "video_conditioned_expert_manifold_causal_barycentric_topological_writer",
+    "writer_input": "exact task language plus exactly one action-hidden teacher video",
+    "dynamic_value": "one_video_phase_centered_causal_representation_only",
+    "language_only_lora_path": false,
+    "deployment_output": "one complete rank16 public LoRA",
+    "learned_writer_parameter_count": 0
+  },
+  "information_wall": {
+    "expert_action_split_roles": [
+      "train"
+    ],
+    "writer_video_split_roles": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "writer_forbidden_inputs": [
+      "action",
+      "proprio",
+      "state",
+      "reward",
+      "terminal",
+      "task_id",
+      "filename",
+      "object_pose",
+      "hidden_normalization",
+      "policy_outcome"
+    ],
+    "validation_experts_trained": 0,
+    "test_experts_trained": 0,
+    "validation_actions_read": 0,
+    "test_actions_read": 0
+  },
+  "video_features": {
+    "shots": 1,
+    "frame_stride": 5,
+    "phase_slots": 16,
+    "image_hidden_width": 2048,
+    "expert_hidden_width": 1024,
+    "feature_width": 3072,
+    "source_policy_trainable": false,
+    "cache_contains_actions_or_state": false,
+    "extraction": {
+      "max_frames_per_encoder_call": 16,
+      "initialization_seed": 20260807,
+      "action_horizon": 50,
+      "padded_action_dim": 32
+    }
+  },
+  "expert_basis": {
+    "task_count": 24,
+    "expert_step": 2000,
+    "centroid_videos_per_task": 50,
+    "checkpoint_selection": "one_uniform_step_for_all_24_tasks_no_task_specific_mixing"
+  },
+  "barycentric_writer": {
+    "causal_representation": "phase_centered_sqrt_normalized_causal_prefix_mean",
+    "centroid_normalization": "unit_l2_after_train50_mean",
+    "coefficient_rule": "centered_kernel_affine_barycentric",
+    "ridge": 0.3,
+    "affine_coefficient_sum": 1.0,
+    "zero_representation_coefficients": 0.0,
+    "identity_epsilon": 1e-12,
+    "chunk_width": 512,
+    "chunk_count": 168,
+    "public_rank": 16,
+    "valid_values": 1287168,
+    "reconstruction": "chunk_unit_rms_direction_plus_affine_log_rms",
+    "scale_envelope": "per_chunk_train24_expert_min_max",
+    "identity": "template-A plus zero-B",
+    "language_only_lora_path": false
+  },
+  "evaluation": {
+    "formal_status": "blocked_until_live_a40_online_smoke",
+    "online_smoke_evidence": null,
+    "cpu_leave_one_task_out": {
+      "artifact": "runs/outputs/pi05_expert_manifold_causal_barycentric_loo_step2000_cpu_20260809/analysis.json",
+      "held_out_task_count": 24,
+      "available_basis_per_fold": 23,
+      "full_lora_rows": 7200,
+      "selected_ridge": 0.3,
+      "selected_reconstruction": "topological_direction_log_scale",
+      "correct_effective_target_cosine_median": 0.3830207866393645,
+      "reversed_effective_target_cosine_median": 0.09899502852633119,
+      "phase_shuffled_effective_target_cosine_median": 0.18539450802932803,
+      "correct_effective_lora_norm_median": 3.8438477352276064,
+      "formal_raw_frame_shuffle": false
+    }
+  },
+  "content_hash_policy": "disabled_by_owner"
+}

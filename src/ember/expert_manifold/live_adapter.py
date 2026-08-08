@@ -13,13 +13,16 @@ from safetensors.torch import load_file
 from ember.expert_manifold.contract import (
     ExpertManifoldError,
     authority_path,
-    load_expert_manifold_config,
+    load_barycentric_writer_config,
 )
 from ember.expert_manifold.inference import (
     expected_expert_manifold_episode_evidence,
     inspect_expert_manifold_writer_evaluation,
 )
-from ember.expert_manifold.model import VideoConditionedTopologicalWriter
+from ember.expert_manifold.model import (
+    CausalBarycentricTopologicalWriter,
+    phase_centered_causal_memory,
+)
 from ember.expert_manifold.video_schedule import shuffled_frame_permutation
 from ember.expert_manifold.video_features import FrozenPi05VideoInnovationEncoder
 from ember.lora import copy_task_lora_state_, validate_lora_state
@@ -29,6 +32,120 @@ from ember.pi05_source_checkpoint import read_json
 from ember.writer.data import RawTeacherVideoStore, WriterTaskAuthority
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.lora_rollout import PreparedWriterLoRA, WriterLoRARolloutAdapter
+
+
+def _build_barycentric_writer(
+    *,
+    config: Mapping[str, Any],
+    observed: Mapping[str, Any],
+    lora: Any,
+    template: Mapping[str, torch.Tensor],
+    device: torch.device,
+) -> CausalBarycentricTopologicalWriter:
+    template_cpu = {
+        name: value.detach().to(device="cpu", dtype=torch.float32)
+        for name, value in template.items()
+    }
+    expert_rows = sorted(
+        observed["expert_basis"]["tasks"], key=lambda row: int(row["ordinal"])
+    )
+    cache_rows = sorted(
+        observed["feature_cache"]["tasks"],
+        key=lambda row: int(row["task_ordinal"]),
+    )
+    expert_states = []
+    task_centroids = []
+    expected_shape = (
+        int(config["expert_basis"]["centroid_videos_per_task"]),
+        int(config["video_features"]["phase_slots"]),
+        int(config["video_features"]["feature_width"]),
+    )
+    for ordinal, (expert_row, cache_row) in enumerate(
+        zip(expert_rows, cache_rows, strict=True)
+    ):
+        if (
+            int(expert_row["ordinal"]) != ordinal
+            or int(cache_row["task_ordinal"]) != ordinal
+        ):
+            raise ExpertManifoldError("barycentric basis ordering changed")
+        state = load_file(
+            str(Path(expert_row["checkpoint"]) / "adapter.safetensors"), device="cpu"
+        )
+        validate_lora_state(state, lora)
+        expert_states.append(state)
+        features = load_file(
+            str(cache_row["features"]["path"]), device="cpu"
+        )["video_innovation"].float()
+        if tuple(features.shape) != expected_shape:
+            raise ExpertManifoldError("barycentric centroid feature shape changed")
+        task_centroids.append(
+            phase_centered_causal_memory(features).mean(dim=1).mean(dim=0)
+        )
+    topology = config["barycentric_writer"]
+    writer = CausalBarycentricTopologicalWriter(
+        contract=lora,
+        template_state=template_cpu,
+        expert_states=expert_states,
+        task_centroids=torch.stack(task_centroids),
+        phase_slots=int(config["video_features"]["phase_slots"]),
+        feature_width=int(config["video_features"]["feature_width"]),
+        chunk_width=int(topology["chunk_width"]),
+        ridge=float(topology["ridge"]),
+        identity_epsilon=float(topology["identity_epsilon"]),
+    ).to(device)
+    writer.eval()
+    if tuple(writer.parameters()):
+        raise ExpertManifoldError("closed-form barycentric Writer became trainable")
+    return writer
+
+
+def _build_video_runtime(
+    *,
+    config: Mapping[str, Any],
+    observed: Mapping[str, Any],
+    tokenizer_path: Path,
+    device: torch.device,
+) -> tuple[
+    FrozenPi05VideoInnovationEncoder,
+    RawTeacherVideoStore,
+    dict[int, str],
+    Pi05TeacherPrefixTokenizer,
+]:
+    video = config["video_features"]
+    extraction = video["extraction"]
+    encoder = FrozenPi05VideoInnovationEncoder(
+        image_width=int(video["image_hidden_width"]),
+        expert_width=int(video["expert_hidden_width"]),
+        feature_width=int(video["feature_width"]),
+        phase_slots=int(video["phase_slots"]),
+        max_frames_per_encoder_call=int(extraction["max_frames_per_encoder_call"]),
+        action_horizon=int(extraction["action_horizon"]),
+        padded_action_dim=int(extraction["padded_action_dim"]),
+        initialization_seed=int(extraction["initialization_seed"]),
+    ).to(device).eval()
+    root = Path(observed["video_data"]["root"])
+    authorities = [
+        WriterTaskAuthority(
+            task_id=int(row["global_task_id"]),
+            language=str(row["language"]),
+            path=root / str(row["relative_path"]),
+            expected_bytes=int(row["bytes"]),
+        )
+        for row in observed["video_data"]["tasks"]
+    ]
+    store = RawTeacherVideoStore(
+        authorities, frame_stride=int(video["frame_stride"]), max_open_files=2
+    )
+    languages = {
+        authority.task_id: authority.language for authority in authorities
+    }
+    source_config = read_json(authority_path(config, "source_base_config"))
+    tokenizer = Pi05TeacherPrefixTokenizer(
+        tokenizer_path,
+        int(source_config["features"]["tokenizer_max_length"]),
+        str(device),
+    )
+    return encoder, store, languages, tokenizer
 
 
 class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
@@ -47,7 +164,8 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
     ) -> None:
         observed = inspect_expert_manifold_writer_evaluation(
             config_path=Path(str(evaluation_adapter["config"]["path"])),
-            checkpoint=Path(str(evaluation_adapter["checkpoint"]["path"])),
+            expert_bank_root=Path(str(evaluation_adapter["expert_basis"]["root"])),
+            feature_cache_root=Path(str(evaluation_adapter["feature_cache"]["root"])),
             video_data_root=Path(str(evaluation_adapter["video_data"]["root"])),
             source=source,
             task_keys=task_keys,
@@ -60,69 +178,27 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
         )
         if observed != dict(evaluation_adapter):
             raise ExpertManifoldError("Expert-Manifold evaluation assets changed")
-        config = load_expert_manifold_config(Path(observed["config"]["path"]))
+        config = load_barycentric_writer_config(Path(observed["config"]["path"]))
         lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
         template = prepare_frozen_writer_policy(policy, lora)
-        topology = config["topological_writer"]
-        writer = VideoConditionedTopologicalWriter(
-            contract=lora,
-            template_state=template,
-            phase_slots=int(config["video_features"]["phase_slots"]),
-            feature_width=int(config["video_features"]["feature_width"]),
-            memory_width=int(topology["memory_width"]),
-            attention_heads=int(topology["attention_heads"]),
-            axial_blocks=int(topology["axial_blocks"]),
-            chunk_width=int(topology["chunk_width"]),
-        ).to(device)
-        writer.load_state_dict(
-            load_file(
-                str(Path(observed["checkpoint"]["path"]) / "writer.safetensors"),
-                device=str(device),
-            ),
-            strict=True,
+        self.writer = _build_barycentric_writer(
+            config=config,
+            observed=observed,
+            lora=lora,
+            template=template,
+            device=device,
         )
-        writer.eval()
-        for parameter in writer.parameters():
-            parameter.requires_grad_(False)
-        video = config["video_features"]
-        extraction = video["extraction"]
-        encoder = FrozenPi05VideoInnovationEncoder(
-            image_width=int(video["image_hidden_width"]),
-            expert_width=int(video["expert_hidden_width"]),
-            feature_width=int(video["feature_width"]),
-            phase_slots=int(video["phase_slots"]),
-            max_frames_per_encoder_call=int(extraction["max_frames_per_encoder_call"]),
-            action_horizon=int(extraction["action_horizon"]),
-            padded_action_dim=int(extraction["padded_action_dim"]),
-            initialization_seed=int(extraction["initialization_seed"]),
-        ).to(device).eval()
-        records = observed["video_data"]["tasks"]
-        root = Path(observed["video_data"]["root"])
-        authorities = [
-            WriterTaskAuthority(
-                task_id=int(row["global_task_id"]),
-                language=str(row["language"]),
-                path=root / str(row["relative_path"]),
-                expected_bytes=int(row["bytes"]),
-            )
-            for row in records
-        ]
-        self.store = RawTeacherVideoStore(
-            authorities,
-            frame_stride=int(video["frame_stride"]),
-            max_open_files=2,
+        (
+            self.encoder,
+            self.store,
+            self.language_by_id,
+            self.tokenizer,
+        ) = _build_video_runtime(
+            config=config,
+            observed=observed,
+            tokenizer_path=tokenizer_path,
+            device=device,
         )
-        self.language_by_id = {
-            authority.task_id: authority.language for authority in authorities
-        }
-        source_config = read_json(authority_path(config, "source_base_config"))
-        self.tokenizer = Pi05TeacherPrefixTokenizer(
-            tokenizer_path,
-            int(source_config["features"]["tokenizer_max_length"]),
-            str(device),
-        )
-        self.writer = writer
-        self.encoder = encoder
         self._initialize_rollout(
             policy=policy,
             lora_contract=lora,
@@ -135,7 +211,7 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
         self, *, suite: str, task_id: int, init_state_id: int
     ) -> tuple[dict[str, Any], torch.Tensor | None, str]:
         reference = (
-            f"{self.evaluation_adapter['checkpoint']['reference']}:"
+            f"{self.evaluation_adapter['writer_asset']['reference']}:"
             f"{suite}:{task_id}:{init_state_id}"
         )
         row = expected_expert_manifold_episode_evidence(

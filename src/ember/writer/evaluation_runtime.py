@@ -14,7 +14,10 @@ from ember.eval_adapters import (
     expected_writer_episode,
     validate_writer_episode,
 )
-from ember.expert_manifold.contract import authority_path, load_expert_manifold_config
+from ember.expert_manifold.contract import (
+    authority_path,
+    load_barycentric_writer_config,
+)
 from ember.expert_manifold.inference import (
     inspect_expert_manifold_writer_evaluation,
 )
@@ -56,7 +59,8 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
             )
         common = {
             "config_path": Path(evaluation_adapter["config"]["path"]),
-            "checkpoint": Path(evaluation_adapter["checkpoint"]["path"]),
+            "expert_bank_root": Path(evaluation_adapter["expert_basis"]["root"]),
+            "feature_cache_root": Path(evaluation_adapter["feature_cache"]["root"]),
             "video_data_root": Path(evaluation_adapter["video_data"]["root"]),
             "source": source,
             "task_keys": task_keys,
@@ -68,7 +72,7 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
             "require_formal": require_formal,
         }
         observed = inspect_expert_manifold_writer_evaluation(**common)
-        config = load_expert_manifold_config(Path(observed["config"]["path"]))
+        config = load_barycentric_writer_config(Path(observed["config"]["path"]))
         if observed != dict(evaluation_adapter):
             raise WriterModelError("PI05 Writer evaluation artifacts changed after prepare")
         lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))

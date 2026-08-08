@@ -89,6 +89,8 @@ static-graph合同，
 重启后的首次reducer生命周期不同。canonical已改为static graph、关闭immutable buffer broadcast并
 写入run contract；旧roots禁止复用，formal保持blocked，下一步从新clean/pushed commit重做profile
 并以逐字节parity确认或否决该解释。
+候选修复seal为clean pushed`12727b8`、聚焦CPU合同46/46；新roots和exact commands取`task_plan.md`
+顶部。GPU reprofile尚未执行，formal状态没有改变。
 
 owner已在本session完成讨论后明确恢复持续自主执行，并授权围绕长期Goal自行设计、实现、训练、
 评测和迭代；只有实质性阻塞才回报。执行顺序为：full24 expert geometry与development-train

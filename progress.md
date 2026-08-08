@@ -10,6 +10,8 @@
 - canonical meta DDP现对齐仓库既有训练器：`static_graph=True`、`broadcast_buffers=False`、
   `find_unused_parameters=False`，run contract显式封存static/buffer语义。下一步CPU回归、clean/push后
   从全新roots重做fresh/resume/contiguous，不沿用失败root。
+- 候选修复已作为clean pushed`12727b8`通过聚焦46/46；新static-graph reprofile roots、commands与
+  exact byte gate已登记，等待live六卡复核后启动。
 
 ## 2026-08-09 Task-expert五点封存、step2000 target与meta profile preflight
 

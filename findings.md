@@ -14,6 +14,8 @@
   自适应状态没有checkpoint。修复沿仓库既有模式固定static graph、关闭buffer broadcast和unused
   parameter search，并将DDP语义写入run contract。新profile必须以逐字节parity确认或否决该解释；
   旧profile与两个diagnostic probes均不得复用。
+- 候选修复已由clean pushed`12727b8`封存并通过46/46聚焦CPU合同；新的fresh/resume/contiguous roots
+  与exact门已预注册，但尚无GPU结论。
 
 ## 2026-08-09 Task-expert五点闭环终态与统一step2000选择
 

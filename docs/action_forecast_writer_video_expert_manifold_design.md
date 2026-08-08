@@ -458,3 +458,7 @@ macro2与连续run的macro2处于不同reducer生命周期。canonical修复只�
 contract；模型、数据、loss、optimizer、task平均、RNG和LoRA topology均不变。这个解释仍必须由
 新profile的逐字节parity证伪或确认；必须从新clean/pushed
 commit和全新roots重做完整profile，旧profile/probe权重全部弃用。
+
+候选修复已由clean pushed`12727b8`封存；新static-graph reprofile的固定roots、三条exact command和
+不放宽的byte-parity门取`task_plan.md`顶部。旧`ac56ab8` roots及deterministic/math-SDPA probes均只作
+失败证据。

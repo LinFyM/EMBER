@@ -104,6 +104,9 @@
   reducer生命周期不同。canonical已按source-base/Source-SFT模式修复并写入run contract，但仍须新
   profile逐字节确认；旧profile/probe权重弃用，
   formal继续blocked，必须从新clean/pushed commit和新roots重做。
+- 候选修复已由clean pushed`12727b8`封存，聚焦CPU合同46/46；新static-graph roots、三条exact
+  commands及byte-parity验收门已登记在`task_plan.md`顶部。它尚未通过GPU reprofile，不能写成根因
+  已确认或formal已seal。
 - 旧K4 executable只作为临时兼容路径保留，owner是当前Expert-Manifold迁移；按设计第12节，只有
   新meta-Writer通过A40 profile后才删除，避免在其替代路径尚未实证前制造不可运行仓库。
 

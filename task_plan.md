@@ -32,8 +32,8 @@
 
 ## 当前唯一canonical实现
 
-- [x] `configs/pi05_video_expert_manifold_causal_barycentric_v1.json`封存方法合同；formal状态在live
-  A40 smoke前为`blocked_until_live_a40_online_smoke`。
+- [x] `configs/pi05_video_expert_manifold_causal_barycentric_v1.json`封存方法合同；live A40 online
+  smoke证据已写回，formal状态现为`sealed`。
 - [x] 一条视频先形成`mean_phase(phase_centered_causal_memory(video_innovation))`；train24×50
   centroids单位化后，用ridge `.3` centered-kernel affine solve产生24个coefficients。
 - [x] 168 chunks分别混合24个expert的unit-RMS direction和log-RMS，scale限制在该chunk的train24
@@ -49,11 +49,13 @@
 ## 下一证据门
 
 1. [x] 当前实现已clean commit/push为`1d9d030`；后续工作从该提交或其纯authority后继提交执行。
-2. [ ] 按live GPU与quota preflight选择一张空闲A40，做validation8×1-state online smoke：
+2. [x] 按live GPU与quota preflight选择空闲`gpu02:0`完成validation8×1-state online smoke：
    feature→coefficients→full LoRA cache→release Writer/encoder→复用同一source policy rollout。
-   必须8 rows/8 generated/8 cache entries、0 retry/failure/OOM/nonfinite/forbidden reads；success只作
-   execution smoke，不作性能证据。
-3. [ ] smoke通过后把精确evidence写回barycentric config并seal，CPU回归、clean commit/push。
+   实得8 rows/8 generated/8 cache entries、3 workers exit0、0 retry/failure/OOM/nonfinite/forbidden
+   reads；`1/8` success只作execution smoke。root=
+   `runs/outputs/pi05_expert_manifold_causal_barycentric_online_smoke_gpu02_3c8ce25_20260809`。
+3. [x] 精确smoke evidence已写回config并seal；真实formal inspector与全仓180 tests通过。authority
+   commit/push完成后只从其clean frozen worktree继续。
 4. [ ] 从clean pushed frozen worktree做全新strict paired correct400；不复用learned Writer root或
    checkpoint。同步审计400 unique rows/LoRAs、完整task/suite breadth和generated-LoRA task separation。
 5. [ ] correct400若同时改善absolute、breadth与task separation，再做same/wrong/shuffled/reversed和

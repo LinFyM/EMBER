@@ -769,5 +769,25 @@ CPU合同为全仓`180/180`通过，另对真实24-basis逐项只读：24个one-
 绝对重建误差`2.235e-8`，zero representation逐tensor exact identity，affine coefficient sum最大误差
 `1.192e-7`，24/24 demo0 ordered/reversed coefficients不同，所有完整LoRA finite，Writer parameter数为0。
 architecture guard无hard violation或parallel family，active source相对前一canonical净删941行。
-当前formal状态有意保持`blocked_until_live_a40_online_smoke`；这些CPU证据只解封单卡在线工程smoke，
-不构成validation性能或视频因果性成绩。
+本29.6 CPU封存时formal状态有意保持`blocked_until_live_a40_online_smoke`；这些CPU证据只解封单卡在线
+工程smoke，不构成validation性能或视频因果性成绩。后续状态由29.7覆盖。
+
+### 29.7 Online工程门与formal seal（2026-08-09）
+
+implementation commit`3c8ce25`已在live空闲`gpu02:0`完成validation8×1-state纵向smoke，唯一root为
+`runs/outputs/pi05_expert_manifold_causal_barycentric_online_smoke_gpu02_3c8ce25_20260809`。输入为correct/
+without-replacement的一条action-hidden video；8套唯一FP32 LoRA、8 cache entries、2个batch4和3个
+rollout workers均首次完成，0 retry/failure/OOM/nonfinite，teacher action/state/reward/terminal reads均
+为0。Writer/encoder随后释放，source policy原位复用且没有reload；GPU自然释放。`1/8` success只证明
+execution，不进入性能比较。
+
+8套LoRA全finite，norm/stable-rank/top-energy中位=`3.9802/1.1555/.89243`，16/16 coordinates active，
+top4 coordinate energy=`.27103`，cross-task effective cosine中位=`.69277`，nearest step2000 expert
+cosine中位=`.65624`。相对已拒绝learned Writer的`.94197/.12734`，闭式重构确实产生更分离且更落在
+expert manifold上的held LoRA；但8 rows不能证明absolute、breadth或视频因果性。
+
+精确smoke evidence现已写入canonical config，formal状态由29.6的临时blocked门切为`sealed`；对真实
+24-basis、train24×50 cache、canonical video data和validation8 panel的`require_formal=True`检查通过。
+下一门严格保持29.5：从clean pushed frozen worktree做fresh correct400；若absolute、breadth或400-LoRA
+task separation不成立，不运行其余五臂，而先定位representation、coordinate solve、expert support或
+topological reconstruction的最早断点。

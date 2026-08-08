@@ -25,11 +25,19 @@ norm=`3.84385`。learned Writer训练/checkpoint路径和旧CLI参数已删除�
 checkpoint。全仓180 tests、compile/diff及architecture hard/parallel门通过，真实24-basis CPU检查的
 one-hot最大误差=`2.235e-8`、zero identity exact、0 parameters、24/24 ordered/reversed不同。
 
-当前唯一动作是重新live检查`gpu01/gpu02`和quota，只用一张空闲A40做validation8×1-state online
-feature→LoRA cache→release→source-policy rollout smoke。config formal状态仍为
-`blocked_until_live_a40_online_smoke`；smoke通过、证据写回并clean push前禁止formal rollout或长期实验。
-`task_plan.md`已删除旧架构的可误执行命令副本；后续历史段若引用旧plan命令，只能从Git provenance读取。
-当前无GPU工作在运行。
+该online门已经在live空闲`gpu02:0`通过，root为
+`runs/outputs/pi05_expert_manifold_causal_barycentric_online_smoke_gpu02_3c8ce25_20260809`。validation8×1
+state、correct/without-replacement得到8套唯一FP32 LoRA、8 cache entries、2个batch4，3 workers均
+exit0，0 retry/failure/OOM/nonfinite/forbidden reads；Writer/encoder释放后source policy原位复用且没有
+reload。generation wall=`9.895s`，peak allocated/reserved=`10,645,668,864/11,305,746,432` bytes。
+`1/8` success只作execution smoke。8套LoRA的cross-task/nearest-expert cosine中位=`.69277/.65624`，
+norm/stable-rank/top-energy=`3.9802/1.1555/.89243`且16/16 coordinates active。
+
+精确evidence已写回config，formal状态现为`sealed`；真实固定资产与validation panel的
+`require_formal=True` inspector及全仓180 tests通过。下一唯一动作是先clean commit/push本seal，再从
+新的frozen worktree和fresh root启动strict correct400。启动前必须重新live比较`gpu01/gpu02`、复核
+quota/root不存在，只使用最多6张空闲A40；当前无GPU工作在运行。`task_plan.md`已删除旧架构的可误执行
+命令副本，后续历史段若引用旧plan命令只能从Git provenance读取。
 
 **当前操作覆盖（2026-08-09）**：clean pushed`cd95281`的
 `RMSNorm(dynamic video latent) × RMSNorm(chunk+rank address)`新图已经通过fresh/resume/contiguous

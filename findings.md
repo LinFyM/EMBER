@@ -1,5 +1,18 @@
 # EMBER Findings
 
+## 2026-08-09 Causal Barycentric online smoke与LoRA几何
+
+- live双节点检查后只使用空闲`gpu02:0`完成validation8×1-state纵向链路；8套唯一FP32 LoRA、8 cache
+  entries、2个batch4及3个rollout workers全部首次完成，0 retry/failure/OOM/nonfinite，四类forbidden
+  reads均为0。Writer/encoder释放后同一source policy原位复用且没有reload，GPU随后完全释放。
+- 8套held LoRA的norm/stable-rank/top-energy中位=`3.9802/1.1555/.89243`，16/16 rank coordinates
+  active、top4 coordinate energy=`.27103`。cross-task effective cosine中位`.69277`、nearest step2000
+  expert cosine中位`.65624`；这比learned address-binding Writer full400的`.94197/.12734`同时更分离且
+  更靠近真实task-expert方向，说明闭式坐标并未在线退化成公共LoRA。
+- 该结论只有8个task各一条video，不能估计same-task video方差，也不能从`1/8` smoke success推断
+  closed-loop性能。它只解除工程门；config现为`sealed`，下一证据必须是400-state strict correct与
+  400-LoRA task separation，之后才有资格运行same/wrong/shuffled/reversed/no-video。
+
 ## 2026-08-09 Causal Barycentric canonical实现结论
 
 - clean pushed`1d9d030`把闭式流形坐标原位接入唯一evaluation runtime，并删除learned Writer
@@ -12,7 +25,8 @@
   正确expert convex/affine邻域，也不证明重构LoRA闭环有效。下一门必须是在线A40 smoke后strict
   correct400，而不是把CPU LOO或one-hot exactness当作性能结果。
 - 全仓180 tests与结构门通过；无hard violation、无parallel implementation family，当前变更净删
-  941 active lines。config仍故意blocked，确保旧address-binding smoke不能给新图冒充execution seal。
+  941 active lines。config曾故意blocked以防旧address-binding smoke冒充新图证据，现已由上面的专属
+  online smoke精确解封。
 
 ## 2026-08-09 Address-binding 75/400与Causal Barycentric设计裁决
 

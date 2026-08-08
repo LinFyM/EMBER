@@ -46,9 +46,21 @@ learned Writer trainer/checkpoint/model可执行路径及旧CLI参数已原位�
 全仓`180/180` CPU测试、`py_compile`、diff check通过；architecture guard无hard violation、无parallel
 family，active diff净删941行。真实24-basis只读检查得到0 learned parameters、1,287,168 valid values、
 24个one-hot expert最大重建误差`2.235e-8`、zero identity逐tensor exact、coefficient sum误差
-`1.192e-7`、24/24 demo0 ordered/reversed coefficients不同，四类forbidden reads均为0。formal状态仍是
-`blocked_until_live_a40_online_smoke`；下一步只做一次live空闲A40的validation8×1-state在线链路smoke，
-通过并重新seal后才启动新strict correct400。当前没有GPU进程或实验在跑。
+`1.192e-7`、24/24 demo0 ordered/reversed coefficients不同，四类forbidden reads均为0。
+
+online链路已在implementation commit`3c8ce25`上用live空闲`gpu02:0`完成。唯一smoke root为
+`runs/outputs/pi05_expert_manifold_causal_barycentric_online_smoke_gpu02_3c8ce25_20260809`：validation
+8 tasks×1 state、correct/without-replacement、8套唯一FP32 LoRA、2个batch4、3 workers全部exit0，
+0 retry/failure/OOM/nonfinite，四类forbidden reads均为0；generation wall=`9.895s`，peak allocated/
+reserved=`10,645,668,864/11,305,746,432` bytes，Writer/encoder释放后source policy原位复用且未reload。
+GPU随后回到0MiB/0%且无进程。`1/8` success只作execution smoke，不作性能结论。
+
+8套生成LoRA的norm/stable-rank/top-energy中位=`3.9802/1.1555/.89243`，16/16 coordinates active，
+top4 coordinate energy=`.27103`；cross-task effective cosine中位=`.69277`，nearest step2000 expert
+cosine中位=`.65624`。这相对learned address-binding Writer的`.94197/.12734`同时改善task separation与
+expert-manifold落点，但样本仅8，不能替代closed-loop。精确evidence已写回新config并将formal状态设为
+`sealed`；真实24-basis、validation8 panel的`require_formal=True` inspector也已通过。下一唯一科研
+裁决是从clean pushed frozen worktree启动全新strict correct400并同步审计400套LoRA；当前没有GPU进程。
 
 - **最新覆盖（2026-08-09）**：macro50地址塌缩的单变量根修已由clean pushed`cd95281`实现并完成
   两道新图专属A40工程门。六卡fresh0→1/resume1→3与独立contiguous0→3科学指标、Writer/RNG及

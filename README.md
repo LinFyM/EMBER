@@ -31,8 +31,10 @@ EMBER已经迁回BCI。多卡训练、exact resume、动态队列评测、NUMA�
   canonical cache root为
   `runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808`。
 - learned address-binding Writer的strict correct仅`75/400`且输出跨task cosine约`.942`，已负裁决。
-  当前canonical是无可训练参数的Causal Barycentric Topological Writer；其formal closed-loop仍被
-  live A40 online smoke门阻塞，所以尚无新strict成绩。
+  当前canonical是无可训练参数的Causal Barycentric Topological Writer。它已在空闲A40上完成
+  validation8×1-state online生成/cache/release/rollout smoke并重新seal formal；8套LoRA的
+  cross-task cosine中位`.693`、nearest-expert cosine中位`.656`，但`1/8` success只作工程证据，
+  尚无该方法的新strict correct400成绩。
 - 当前科研结论、下一实验边界看
   [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 - A100清理、Git/SSH/重下载分流、BCI路径映射和新Codex接手步骤看

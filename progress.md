@@ -1,5 +1,19 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Causal Barycentric online smoke通过并seal formal
+
+- 在live比较`gpu01/gpu02`后只使用空闲`gpu02:0`完成validation8×1-state correct/
+  without-replacement纵向smoke；忙碌的`gpu02:6/7`及`gpu01:3`均未触碰。root=
+  `runs/outputs/pi05_expert_manifold_causal_barycentric_online_smoke_gpu02_3c8ce25_20260809`，8 rows、
+  8 unique LoRAs/cache entries、2个batch4、3 workers exit0，0 retry/failure/OOM/nonfinite/forbidden
+  reads；Writer模块释放后source policy原位复用且没有reload，GPU自然释放。
+- generation wall=`9.895s`，peak allocated/reserved=`10,645,668,864/11,305,746,432` bytes；8套LoRA
+  norm/stable-rank/top-energy中位=`3.9802/1.1555/.89243`，cross-task/nearest-expert cosine中位=
+  `.69277/.65624`，16/16 coordinates active。`1/8` success只登记为execution smoke。
+- 精确evidence已写回canonical config并切为`sealed`；真实24-basis/validation panel的
+  `require_formal=True` inspector和全仓180/180测试通过。下一步是clean commit/push、建立新的frozen
+  worktree并预注册strict correct400；启动前再次live检查设备、quota和fresh root。
+
 ## 2026-08-09 Causal Barycentric canonical实现与CPU封存
 
 - clean pushed`1d9d030`新增

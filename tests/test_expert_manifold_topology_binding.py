@@ -83,9 +83,10 @@ def test_barycentric_config_has_no_learned_or_language_only_value_path() -> None
     assert config["video_features"]["shots"] == 1
     assert config["expert_basis"]["expert_step"] == 2000
     assert config["barycentric_writer"]["ridge"] == 0.3
-    assert config["evaluation"]["formal_status"] == (
-        "blocked_until_live_a40_online_smoke"
-    )
+    assert config["evaluation"]["formal_status"] == "sealed"
+    assert config["evaluation"]["online_smoke_evidence"][
+        "writer_modules_released"
+    ] is True
 
 
 @pytest.mark.parametrize(

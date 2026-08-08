@@ -33,6 +33,37 @@ EXPERT_MANIFOLD_ADAPTER_SCHEMA = "ember_pi05_expert_manifold_writer_eval_adapter
 EXPERT_MANIFOLD_EPISODE_SCHEMA = "ember_pi05_expert_manifold_writer_episode_v1"
 
 
+def _training_source_matches_evaluation(
+    training_source: Mapping[str, Any], evaluation_source: Mapping[str, Any]
+) -> bool:
+    """Match one source policy across formal training and smoke inspection."""
+
+    if not isinstance(training_source, Mapping) or not isinstance(
+        evaluation_source, Mapping
+    ):
+        return False
+    if dict(training_source) == dict(evaluation_source):
+        return True
+    summary = training_source.get("source_run_summary")
+    if evaluation_source.get("source_run_summary") is not None or not isinstance(
+        summary, Mapping
+    ):
+        return False
+    path = Path(str(summary.get("path", "")))
+    normalized = dict(evaluation_source)
+    normalized["source_run_summary"] = dict(summary)
+    try:
+        expected_bytes = int(summary.get("bytes", -1))
+    except (TypeError, ValueError):
+        return False
+    return (
+        dict(training_source) == normalized
+        and summary.get("schema_version") == "ember_pi05_source_run_summary_v1"
+        and path.is_file()
+        and path.stat().st_size == expected_bytes
+    )
+
+
 def _declared_checkpoint_macros(
     config: Mapping[str, Any], training_mode: str
 ) -> tuple[int, ...]:
@@ -90,7 +121,7 @@ def _training_checkpoint(
         and Path(str(training.get("config", {}).get("path", ""))).resolve()
         == config_path
         and training.get("config", {}).get("schema") == config["schema_version"]
-        and training.get("source") == dict(source)
+        and _training_source_matches_evaluation(training.get("source", {}), source)
         and training.get("method") == config["method"]
         and training.get("information_wall") == config["information_wall"]
         and training.get("topological_writer") == config["topological_writer"]

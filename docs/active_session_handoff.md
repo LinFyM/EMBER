@@ -124,6 +124,12 @@
   `gpu01:3`他人进程均不触碰。smoke固定validation 8 tasks×1 state、1 generator、batch4、3 rollout
   replicas、correct/without-replacement；只验在线视频编码、完整LoRA cache、释放Writer/encoder后复用
   source policy及episode evidence，不把8-row success当科研成绩。exact command和验收门取`task_plan.md`。
+- 首次online smoke在CPU-only prepare、任何CUDA worker和scientific row之前fail-close：profile training
+  source按formal检查含`source_run_summary`，而同一final source checkpoint的smoke inspector将该模式相关
+  字段表示为`null`，其余source字段逐项相同。失败root已写`ABORTED.md`且不得resume。canonical只允许
+  smoke缺省这一项，同时重新验证training contract记录的summary path/bytes/schema；任何其他source差异
+  仍拒绝。真实profile smoke authority已通过，聚焦58/58、正式assets环境全仓224/224；replacement
+  fresh root与命令取`task_plan.md`，formal状态不变。
 - 旧K4 executable只作为临时兼容路径保留，owner是当前Expert-Manifold迁移；按设计第12节，只有
   新meta-Writer通过A40 profile和online smoke后才删除，避免在其替代路径尚未纵向实证前制造不可运行仓库。
 

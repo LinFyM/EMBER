@@ -1,5 +1,15 @@
 # EMBER Findings
 
+## 2026-08-09 Online smoke source-descriptor fail-close根因
+
+- 首次macro3 online smoke在CPU prepare、0 CUDA worker/0 scientific row时停止。训练profile通过formal
+  source inspector记录非空`source_run_summary`；evaluation smoke对完全相同的final source checkpoint
+  把这一模式相关字段表示为`null`。其余source字段逐项相同，故不是模型、checkpoint或数据漂移。
+- scoped repair仅接受这一项缺省，并要求training contract中的summary descriptor仍指向存在且path/bytes/
+  schema匹配的文件；其他任一source字段变化仍失败。真实macro3 profile authority现可被smoke接受。
+- 首次root已ABORTED、不得resume。聚焦58/58、正式assets环境全仓224/224；replacement必须是新root、
+  clean pushed commit并重新live看卡。该修复没有GPU或科研结论，也不改变Writer输出。
+
 ## 2026-08-09 Flat-reduction exact-resume core profile通过
 
 - clean pushed launch-record`b00024b`的fresh0→1/resume1→3与独立contiguous0→3三步科学metrics逐值

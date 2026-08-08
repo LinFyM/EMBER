@@ -1,5 +1,16 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Online smoke CPU-only首次失败与scoped repair
+
+- 首次macro3 smoke在prepare时被authority拒绝，尚未产生run contract、CUDA worker或scientific row；
+  root只含LIBERO config和`ABORTED.md`，不得resume。GPU0始终0MiB。
+- 根因是同一final source checkpoint在formal training descriptor含`source_run_summary`、smoke inspection
+  将其写为`null`，其余字段完全相同。canonical仅为这一模式差异做归一化，并现场验证training summary
+  path/bytes/schema；没有放宽checkpoint/model identity。
+- 新regression同时覆盖合法缺省、不同checkpoint拒绝、summary bytes变化拒绝；聚焦58/58、正式assets
+  全仓224/224，真实macro3 authority smoke inspection通过。已登记replacement fresh root，等待clean push
+  后重新live preflight。
+
 ## 2026-08-09 Flat-reduction core profile通过并封存online smoke
 
 - clean pushed`b00024b`的flat-reduction fresh0→1/resume1→3与独立contiguous0→3自然完成；三步科学

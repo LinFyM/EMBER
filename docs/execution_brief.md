@@ -114,6 +114,12 @@ profile checkpoint只作工程证据，不得warm-start formal。
 1TiB，新增低于1GiB。只验纵向执行、显存、cache/evidence和worker完整性，success不作科研结论；exact
 command与验收门取`task_plan.md`。
 
+首次smoke在prepare阶段、0 CUDA worker/0 scientific row时被source authority拒绝：训练profile的formal
+source descriptor含`source_run_summary`，同一final source在smoke inspector中仅该字段为`null`。失败root
+已标`ABORTED.md`且不得resume。scoped repair只在其余source逐项一致时补回并现场校验训练合同中的summary
+path/bytes/schema，任何真实source变化仍fail-close；真实macro3 authority现可由smoke检查。聚焦58/58、
+全仓224/224通过。replacement必须使用新root和包含修复/launch record的clean pushed commit，formal仍blocked。
+
 owner已在本session完成讨论后明确恢复持续自主执行，并授权围绕长期Goal自行设计、实现、训练、
 评测和迭代；只有实质性阻塞才回报。执行顺序为：full24 expert geometry与development-train
 closed-loop统一评250/500/1000、formal cache、expert2000和统一step2000选择已经完成；当前顺序为

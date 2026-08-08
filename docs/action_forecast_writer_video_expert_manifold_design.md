@@ -497,3 +497,10 @@ batch4 Writer generation→8套完整LoRA cache→释放Writer/encoder→保留s
 validation 8 tasks×1 state smoke。它只验证部署纵向路径、显存和evidence，不用8-row success判断方法。
 2026-08-09 00:48 CST live选择`gpu02:0`，忙碌的`gpu02:6/7`和`gpu01:3`不触碰；exact command与验收
 门写入`task_plan.md`。通过前formal仍blocked，旧K4 executable也暂不删除。
+
+首次纵向smoke没有启动CUDA：prepare比较profile training source与evaluation source时，把formal检查记录的
+非空`source_run_summary`和smoke模式对同一final checkpoint给出的`null`误判为source policy变化；除此
+以外所有source字段相同。修复没有放宽模型身份，只在这一模式相关字段缺省时，从training contract补回该
+descriptor并重新检查summary文件path/bytes/schema；checkpoint、model files、run contract等任一真实差异
+仍拒绝。失败root标记ABORTED且不可resume；聚焦58/58、正式assets环境全仓224/224和真实macro3 smoke
+authority检查通过。replacement fresh root写入`task_plan.md`，仍须重新live看卡。

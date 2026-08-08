@@ -64,6 +64,62 @@ def _topological_writer_matches(writer: Mapping[str, Any]) -> bool:
     )
 
 
+def _meta_formal_seal_matches(meta: Mapping[str, Any]) -> bool:
+    formal = meta.get("formal_run", {})
+    if formal.get("status") != "sealed":
+        return formal.get("status") == (
+            "blocked_until_live_a40_profile_and_online_generation_smoke"
+        )
+    profile = formal.get("profile_evidence", {})
+    smoke = formal.get("online_smoke_evidence", {})
+    return (
+        int(formal.get("selected_expert_step", -1)) == 2000
+        and int(formal.get("total_macros", -1)) == 800
+        and int(formal.get("physical_microbatch_per_rank", -1)) == 1
+        and int(formal.get("expected_world_size", -1)) == 6
+        and int(formal.get("tasks_per_rank", -1)) == 4
+        and formal.get("checkpoint_macros") == [50, 100, 200, 400, 600, 800]
+        and profile.get("device") == "NVIDIA A40"
+        and int(profile.get("world_size", -1)) == 6
+        and profile.get("distributed_model_wrapper") == "none"
+        and profile.get("gradient_reduction")
+        == "single_flat_parameter_ordered_allreduce_mean_after_local_task_mean"
+        and profile.get("nccl_p2p_disable") == "1"
+        and profile.get("nccl_algo") == "Ring"
+        and profile.get("nccl_proto") == "Simple"
+        and profile.get("exact_resume_scientific_metrics_equal") is True
+        and profile.get("exact_resume_writer_bytes_equal") is True
+        and profile.get("exact_resume_rng_bytes_equal") is True
+        and profile.get("exact_resume_optimizer_scheduler_semantic_equal") is True
+        and int(profile.get("oom_count", -1)) == 0
+        and int(profile.get("nonfinite_count", -1)) == 0
+        and smoke.get("device") == "NVIDIA A40"
+        and smoke.get("checkpoint_mode") == "profile"
+        and int(smoke.get("checkpoint_macro", -1)) == 3
+        and int(smoke.get("validation_task_count", -1)) == 8
+        and int(smoke.get("scientific_rows", -1)) == 8
+        and smoke.get("video_condition") == "correct"
+        and smoke.get("video_sampling") == "without_replacement"
+        and int(smoke.get("generated_entries", -1)) == 8
+        and int(smoke.get("generated_batches", -1)) == 2
+        and int(smoke.get("generation_batch_size", -1)) == 4
+        and int(smoke.get("cache_entries", -1)) == 8
+        and smoke.get("writer_modules_released") is True
+        and smoke.get("source_policy_reused_for_rollout") is True
+        and smoke.get("worker_return_codes") == [0, 0, 0]
+        and int(smoke.get("retry_count", -1)) == 0
+        and int(smoke.get("failure_count", -1)) == 0
+        and int(smoke.get("teacher_action_reads", -1)) == 0
+        and int(smoke.get("teacher_state_reads", -1)) == 0
+        and int(smoke.get("reward_reads", -1)) == 0
+        and int(smoke.get("terminal_reads", -1)) == 0
+        and smoke.get("success_interpretation")
+        == "execution_smoke_only_not_performance_evidence"
+        and int(smoke.get("oom_count", -1)) == 0
+        and int(smoke.get("nonfinite_count", -1)) == 0
+    )
+
+
 def load_expert_manifold_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if config.get("schema_version") != CONFIG_SCHEMA:
@@ -101,6 +157,7 @@ def load_expert_manifold_config(path: Path) -> dict[str, Any]:
         != "single_flat_parameter_ordered_allreduce_mean_after_local_task_mean"
         or reduction.get("nccl_algo") != "Ring"
         or reduction.get("nccl_proto") != "Simple"
+        or not _meta_formal_seal_matches(meta)
         or float(meta.get("objective", {}).get("raw_reconstruction_weight", -1))
         != 1.0
         or int(experts.get("profile_defaults", {}).get("scheduler_total_steps", -1))

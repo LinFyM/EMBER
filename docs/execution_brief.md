@@ -20,7 +20,8 @@ mean action loss为`.115355/.107207/.105372/.103881/.103526`；这仍不是close
 Expert-Manifold retained实现已并入唯一主工作分支`codex/bci-continuation`：完整expert-bank evaluator/
 geometry、phase16×3072 action-hidden cache、168-chunk axial decoder、六rank task-complete meta trainer、
 checkpoint exact-resume和one-shot strict five-arm加no-video反事实evaluator均已闭合，正式feature cache也已完成并seal。
-六卡A40 meta core profile已通过，尚待macro3 online-generation/cached-rollout smoke；仍未开始meta训练或
+六卡A40 meta core profile和单卡macro3 online-generation/cached-rollout smoke均已通过，meta formal
+config现已seal；仍未开始meta训练或
 任何新strict rollout，因此不能报告新模型成绩。历史single-checkpoint最好
 仍为v6-fast`143/400`，严格目标`>150/400`未完成。
 
@@ -120,11 +121,17 @@ source descriptor含`source_run_summary`，同一final source在smoke inspector�
 path/bytes/schema，任何真实source变化仍fail-close；真实macro3 authority现可由smoke检查。聚焦58/58、
 全仓224/224通过。replacement必须使用新root和包含修复/launch record的clean pushed commit，formal仍blocked。
 
+replacement已由clean pushed`31d41d8`自然完成：8/8 unique rows、8个唯一LoRA references、一个
+generator生成8 entries/2个batch4，三个workers均attempt1/exit0、0 retry/failure/OOM/nonfinite。
+generation wall=`12.634s`，peak allocated/reserved=`10,576,054,272/11,182,014,464` bytes；释放
+Writer/encoder后原source policy直接复用且没有reload，forbidden reads全0。`1/8` success只作execution
+smoke，不作performance证据。config已封存profile与online evidence并把meta formal置为sealed；正式
+identity-fresh启动前先按design第12节原位退役旧K4 executable。
+
 owner已在本session完成讨论后明确恢复持续自主执行，并授权围绕长期Goal自行设计、实现、训练、
 评测和迭代；只有实质性阻塞才回报。执行顺序为：full24 expert geometry与development-train
-closed-loop统一评250/500/1000、formal cache、expert2000和统一step2000选择已经完成；当前顺序为
-纵向online smoke→seal后identity-fresh训练→strict五臂。旧K4 executable只保留到新
-meta-Writer A40 profile与online smoke均通过，届时按design removal trigger原位退役。当前长期门是同一single
+closed-loop统一评250/500/1000、formal cache、expert2000、统一step2000选择、六卡profile和纵向
+online smoke均已完成；当前顺序为旧K4原位退役→identity-fresh训练→strict五臂。当前长期门是同一single
 checkpoint strict correct严格超过`150/400`，同时保持视频时序因果性、same-task鲁棒性、breadth
 与低checkpoint漂移。
 

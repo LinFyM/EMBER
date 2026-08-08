@@ -1,5 +1,19 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Online smoke通过、formal seal与K4退役触发
+
+- replacement root
+  `runs/outputs/pi05_expert_manifold_writer_macro0003_online_smoke_r2_gpu02_c33a16b_20260809`已自然完成：
+  8/8 unique rows、8个唯一LoRA references、8 entries/2个batch4，3 workers均attempt1/exit0，0
+  retry/failure/OOM/nonfinite；总wall=`318.488s`。
+- generation wall=`12.634s`，peak allocated/reserved=`10,576,054,272/11,182,014,464` bytes；
+  Writer/encoder释放后source policy原位复用，cache/evidence有效，forbidden reads全0。GPU自然释放。
+- `1/8` success只登记为execution smoke，不进入任何性能比较。profile与online smoke证据已写入
+  `configs/pi05_video_expert_manifold_v1.json`，meta `formal_run.status=sealed`；新增配置回归拒绝缺失或
+  被篡改的seal evidence。
+- design第12节的旧K4 executable移除触发现已满足。下一步不启动GPU，先原位删除旧model/training/
+  checkpoint/live-generation路径并保留通用data/topology/functional/evaluation组件，完成CPU回归和push。
+
 ## 2026-08-09 Online smoke CPU-only首次失败与scoped repair
 
 - 首次macro3 smoke在prepare时被authority拒绝，尚未产生run contract、CUDA worker或scientific row；

@@ -1,5 +1,18 @@
 # EMBER Findings
 
+## 2026-08-09 Online generation/cached rollout通过并seal formal
+
+- clean pushed`31d41d8`的replacement root完整产生8/8 unique validation rows和8个唯一rank-16 LoRA
+  references。一个generator以两个batch4生成8套LoRA，generation wall=`12.634s`；三个rollout workers
+  各完成`5/1/2` shards，全部attempt1/exit0，0 retry/failure/OOM/nonfinite。
+- online阶段peak allocated/reserved=`10,576,054,272/11,182,014,464` bytes；释放Writer/encoder后为
+  `9,391,467,520/9,651,093,504` bytes。`writer_modules_released=true`，已加载source policy直接复用于
+  rollout且没有reload；cache manifest、episode evidence与8个唯一LoRA引用闭合。
+- 每个episode只读exact language与一条correct action-hidden teacher video，teacher action/state/reward/
+  terminal reads全0。smoke的`1/8` success只说明整条执行链可运行，不是方法性能证据。
+- 六卡stateless flat-reduction profile与单卡online smoke两道门均已通过，meta formal config现已seal。
+  旧K4 executable的设计移除触发已满足；正式identity-fresh训练前先原位退役旧路径并跑完整CPU回归。
+
 ## 2026-08-09 Online smoke source-descriptor fail-close根因
 
 - 首次macro3 online smoke在CPU prepare、0 CUDA worker/0 scientific row时停止。训练profile通过formal

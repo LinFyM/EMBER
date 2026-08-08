@@ -19,8 +19,8 @@
 - [x] 实现task-expert bank canonical evaluator与统一step几何分析；实现只含action-hidden
   phase16×3072 task-span+Action-Expert video innovation的hashless feature cache、168-chunk axial decoder、direction/scale
   reconstruction、六rank task-complete exact-resume meta trainer和one-shot strict paired evaluator。
-  retained实现已并入`codex/bci-continuation`；feature profile/cache已完成，meta A40 profile/formal
-  仍由config阻塞；K4 executable待新Writer profile通过后才退役。
+  retained实现已并入`codex/bci-continuation`；feature profile/cache、meta A40 exact-resume profile与
+  online generation/cached-rollout smoke均已完成，formal config现已seal。
 - [x] 完成expert bank统一step250/500/1000 full24 geometry：norm中位
   `2.792/3.652/4.170`，stable rank中位`1.126/1.129/1.129`，跨task cosine中位
   `.108/.095/.100`；16 coordinates均active但q/v B-column仍高度同向，几何不能单独选点。
@@ -59,8 +59,13 @@
   mean；clean`b00024b`新roots的三步metrics、macro1/macro3 Writer和六份macro3 RNG已精确一致，0
   OOM/nonfinite。trainer容器仅序列化bytes不同，反序列化optimizer/scheduler 0差异；旧profile/probe
   权重全部弃用。
-- [ ] 完成macro3 online-generation/cached-rollout A40 smoke，通过后seal formal；再做identity-fresh
-  meta训练、strict paired correct400曲线、五臂视频因果、
+- [x] 完成macro3 online-generation/cached-rollout A40 smoke并seal formal：replacement root有8/8
+  unique rows、8套完整LoRA、2个batch4、3 workers attempt1/exit0、0 retry/failure/OOM/nonfinite；
+  Writer/encoder释放后复用同一source policy，forbidden reads全0。`1/8`只作execution smoke，
+  不作performance证据。
+- [ ] 按design removal trigger原位退役旧K4 model/training/checkpoint/live-generation executable，
+  让Expert-Manifold成为仓库唯一canonical Writer；完成CPU回归、architecture guard与clean push。
+- [ ] 从identity fresh启动分段formal meta训练，做strict paired correct400曲线、五臂视频因果、
   task drift和expert→generated LoRA→action机制分析；根据最早失效接口迭代。
 - [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高absolute、breadth、
   稳定积累与视频特异性。
@@ -122,6 +127,13 @@ env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZE
   记录8 assigned/generated entries、2个batch4、`writer_modules_released=true`、source policy复用与
   `rollout_ready_with_retained_policy`；cache manifest/evidence schema有效且teacher frame used、forbidden
   reads为0。success只记作smoke，不作performance证据。通过后才seal formal并删除旧K4 executable。
+- 验收结果：clean pushed`31d41d8` replacement自然完成。8/8 unique task/state rows与8个唯一LoRA
+  references齐全；generator生成8 entries/2 batches、wall=`12.634s`，peak allocated/reserved=
+  `10,576,054,272/11,182,014,464` bytes，release后为`9,391,467,520/9,651,093,504` bytes；
+  `writer_modules_released=true`、source policy复用且无reload。三个workers完成`5/1/2` shards、全为
+  attempt1/exit0，0 retry/failure/OOM/nonfinite，teacher action/state/reward/terminal reads全0。
+  总wall=`318.488s`，success=`1/8`仅证明纵向执行，不作性能证据。formal config已seal；下一步先按
+  removal trigger退役旧K4 executable，再从identity fresh启动formal。
 
 ### Expert-Manifold meta-Writer static-graph reprofile launch合同（已否决，2026-08-09）
 

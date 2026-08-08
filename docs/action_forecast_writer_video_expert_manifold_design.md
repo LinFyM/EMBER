@@ -504,3 +504,15 @@ validation 8 tasks×1 state smoke。它只验证部署纵向路径、显存和ev
 descriptor并重新检查summary文件path/bytes/schema；checkpoint、model files、run contract等任一真实差异
 仍拒绝。失败root标记ABORTED且不可resume；聚焦58/58、正式assets环境全仓224/224和真实macro3 smoke
 authority检查通过。replacement fresh root写入`task_plan.md`，仍须重新live看卡。
+
+replacement随后从clean pushed`31d41d8`在live空闲`gpu02:0`自然完成。一个generator按两个batch4生成
+8套完整rank-16 LoRA并写入8个唯一cache entries，generation wall=`12.634s`；Writer/encoder随后释放，
+已加载source policy不重载地由3个workers完成8/8 unique rows，全部attempt1/exit0、0 retry/failure/
+OOM/nonfinite。peak allocated/reserved=`10,576,054,272/11,182,014,464` bytes，release后为
+`9,391,467,520/9,651,093,504` bytes；teacher action/state/reward/terminal reads全0。`1/8` success
+只记作纵向execution smoke，不解释模型质量。
+
+由此六卡stateless flat-reduction exact-resume和单卡online generation/cache/release/rollout两道工程门
+全部满足。`configs/pi05_video_expert_manifold_v1.json`现以两组精确evidence seal meta formal；profile
+checkpoint继续永久禁止warm-start。第12节K4 executable移除触发已经满足，必须在identity-fresh formal
+前原位退役旧model/training/checkpoint/live-generation路径，历史只由Git、文档和formal artifacts保存。

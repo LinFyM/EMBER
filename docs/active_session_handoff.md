@@ -23,8 +23,8 @@
 - Expert-Manifold完整实现现已并入`codex/bci-continuation`：train24 bank evaluator、全bank LoRA
   geometry、action-hidden phase16×3072 feature cache、168个`[16,512]`chunk/rank axial decoder、
   六rank task-complete exact-resume meta trainer，以及one-shot五臂严格配对evaluator均已存在。
-  feature cache profile与formal已完成；六卡meta A40 exact-resume core profile也已通过。meta formal
-  仍由config阻塞，尚待macro3 online-generation/cached-rollout smoke，且没有formal Writer checkpoint。
+  feature cache profile与formal已完成；六卡meta A40 exact-resume core profile和单卡macro3 online-
+  generation/cached-rollout smoke也已通过，meta formal config现已seal；尚无formal Writer checkpoint。
 - full24×50 cache的CPU审计表明phase-DC能量中位`.98057`、temporal residual中位`.01943`，但
   ordered/reversed/phase-shuffled temporal-template cosine中位=`.88284/-.32402/-.02194`；时序
   task geometry与expert B target geometry Spearman=`.45087`。固定causal-prefix uniform-pool的
@@ -129,9 +129,15 @@
   字段表示为`null`，其余source字段逐项相同。失败root已写`ABORTED.md`且不得resume。canonical只允许
   smoke缺省这一项，同时重新验证training contract记录的summary path/bytes/schema；任何其他source差异
   仍拒绝。真实profile smoke authority已通过，聚焦58/58、正式assets环境全仓224/224；replacement
-  fresh root与命令取`task_plan.md`，formal状态不变。
-- 旧K4 executable只作为临时兼容路径保留，owner是当前Expert-Manifold迁移；按设计第12节，只有
-  新meta-Writer通过A40 profile和online smoke后才删除，避免在其替代路径尚未纵向实证前制造不可运行仓库。
+  fresh root与命令取`task_plan.md`。
+- replacement root由clean pushed`31d41d8`自然完成：8/8 unique rows和8个唯一LoRA references，
+  一个generator生成8 entries/2个batch4、wall=`12.634s`，3 workers均attempt1/exit0、0
+  retry/failure/OOM/nonfinite。peak allocated/reserved=`10,576,054,272/11,182,014,464` bytes；
+  Writer/encoder释放后source policy原位复用且没有reload，forbidden reads全0。`1/8` success只作
+  execution smoke，不作性能证据。profile与online evidence已封入config，meta formal现已seal。
+- 旧K4 executable的design removal trigger已经满足；当前在正式identity-fresh启动前原位退役其model/
+  training/checkpoint/live-generation路径，通用data/topology/functional/evaluation owner保留并收敛到
+  Expert-Manifold唯一canonical Writer。
 
 ## 0.0 已完成并负裁决：K4 Phase-Aligned Language-Axial Semantic-Procedure Writer
 

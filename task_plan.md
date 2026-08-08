@@ -99,64 +99,34 @@
     才写回evidence并seal。
 11. [ ] seal后从新frozen worktree只跑与旧candidate完全相同的validation8×states0--9 correct80 panel。
     若未实质超过`15/80`并保持/提高breadth，停止expert-mixture内调参，转向v6先验的可迁移Writer。
-   若不能实质超过15并提高breadth，则24-expert support不足，停止继续修soft compiler；若显著提高，
-   才研究可微稀疏routing和order-negative credit。任何GPU前重新live preflight并另行封存launch合同。
 
-## Policy-Effective online smoke launch合同（2026-08-09）
+## Hard-routed online smoke launch合同（2026-08-09）
 
-- scientific code seal=`fb5b367`；有效retry只允许来自包含本段launch record、clean pushed、以
-  `origin/codex/bci-continuation`为upstream的冻结分支`codex/policy-effective-smoke-20260809`，worktree=
-  `/data1/user/ymdai/worktrees/EMBER-policy-effective-smoke-20260809`。fresh retry1 root/log/tmux固定为
-  `runs/outputs/pi05_expert_manifold_policy_effective_online_smoke_retry1_gpu02_fb5b367_20260809`、
-  `runs/logs/pi05_expert_manifold_policy_effective_online_smoke_retry1_gpu02_fb5b367_20260809.log`和
-  `ember_policy_effective_smoke_r1_fb5b367`；登记时三者均不存在。
-- 06:36 CST attempt0在GPU加载前被`git_state()`拒绝：detached worktree没有`@{upstream}`。物理0始终
-  0 MiB、0%，未创建run contract/cache/worker或scientific row；只留下含`libero_config`的35-byte
-  partial root和2,006-byte错误日志，二者保留为工程失败证据，不复用、不计重试或性能结果。
-- 06:33 CST live比较：只选`gpu02`物理0（UUID `GPU-2f8ac922-...`）这一张0 MiB、0% A40，固定
-  physical0→local0、NUMA0；`gpu02:6/7`及`gpu01:3`的他人进程明确不触碰。gpu02 available host memory=
-  `480GiB`。启动前必须再检查物理0仍为空闲，否则不启动。
-- `/data1`个人quota现场blocks=`563,383,492/1,073,741,824 KiB`；8套FP32 rank16 LoRA约41.3MB，连同
-  queue/results/log保守峰值低于1GiB，远低于剩余预算。只跑validation8 tasks×1 state的correct/
-  without-replacement工程smoke；成功或失败都不是性能证据，不扩展到训练或长期run。
+- scientific code/evidence seal=`14495d9`，已clean push。实际run只允许来自包含本段launch record、以
+  `origin/codex/bci-continuation`为upstream的冻结分支`codex/hard-route-smoke-20260809`，worktree=
+  `/data1/user/ymdai/worktrees/EMBER-hard-route-smoke-20260809`。fresh root/log/tmux固定为
+  `runs/outputs/pi05_expert_manifold_hard_routed_online_smoke_gpu02_14495d9_20260809`、
+  `runs/logs/pi05_expert_manifold_hard_routed_online_smoke_gpu02_14495d9_20260809.log`和
+  `ember_hard_route_smoke_14495d9`；登记时branch/worktree/root/log/tmux均不存在。
+- 07:38 CST live比较：`gpu01:3`为nlge的41,649MiB VLLM，`gpu02:6/7`分别为yfwang/yqzhang的
+  4,593/16,193MiB任务，全部不触碰。只选`gpu02`物理0（UUID=`GPU-2f8ac922-...`）这一张0MiB、0%、
+  P8 A40，固定physical0→local0、NUMA0；gpu02 host available memory=`480GiB`。真正启动前必须再确认
+  物理0仍为0MiB、0%且无compute process，否则不启动。
+- `/data1`个人quota blocks=`563,764,660/1,073,741,824 KiB`，limit=`1,084,227,584 KiB`；CPU artifact=
+  32KiB，expert bank/cache=`939/113MiB`。8套FP32 LoRA加queue/results/log保守峰值低于1GiB，远低于
+  剩余预算。只跑validation8 tasks×1 state、correct/without-replacement工程smoke；结果不是性能证据。
 - exact command（在上述frozen worktree、`gpu02`执行）：
 
 ```bash
-env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 numactl --cpunodebind=0 --membind=0 /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_policy_effective_online_smoke_retry1_gpu02_fb5b367_20260809 --role validation --mode smoke --state-count 1 --replicas-per-gpu 3 --writer-generators-per-gpu 1 --writer-generation-batch-size 4 --gpu-indices 0 --expert-manifold-config configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json --expert-manifold-expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-manifold-feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --expert-manifold-video-data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --expert-manifold-video-condition correct --expert-manifold-video-sampling without_replacement
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 numactl --cpunodebind=0 --membind=0 /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_hard_routed_online_smoke_gpu02_14495d9_20260809 --role validation --mode smoke --state-count 1 --replicas-per-gpu 3 --writer-generators-per-gpu 1 --writer-generation-batch-size 4 --gpu-indices 0 --expert-manifold-config configs/pi05_video_expert_manifold_hard_routed_policy_effective_v2.json --expert-manifold-expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-manifold-feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --expert-manifold-video-data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --expert-manifold-video-condition correct --expert-manifold-video-sampling without_replacement
 ```
 
-- 验收门：8 unique rows、8 unique generated/cache entries、3 workers自然exit0、0 retry/failure/OOM/
-  nonfinite；teacher action/state/reward/terminal reads全0；Writer modules在cache后释放且source policy原进程
-  复用于rollout。**已全部通过**：8/8 rows/LoRAs/cache、3/3 exit0、0异常/forbidden reads，generation=
-  `11.070s`、peak allocated=`10,576,896,000` bytes；GPU已释放，专属evidence已写回并seal。
-
-## Policy-Effective strict correct80 screen launch合同（2026-08-09）
-
-- scientific code seal=`ffed252`。实际run只允许来自包含本段launch record、clean pushed、以
-  `origin/codex/bci-continuation`为upstream的冻结分支`codex/policy-effective-screen80-20260809`，worktree=
-  `/data1/user/ymdai/worktrees/EMBER-policy-effective-screen80-20260809`。fresh root/log/tmux固定为
-  `runs/outputs/pi05_expert_manifold_policy_effective_correct80_screen_noreplacement_seed7_ffed252_20260809`、
-  `runs/logs/pi05_expert_manifold_policy_effective_correct80_screen_noreplacement_seed7_ffed252_20260809.log`和
-  `ember_policy_effective_screen80_ffed252`；登记时branch/worktree/root/log/tmux均不存在。
-- 06:51 CST live比较双节点后只选`gpu02:0,1,2`三张0 MiB、0% A40，严格physical0/1/2→local0/1/2、
-  同属NUMA0；`gpu02:6/7`及`gpu01:3`他人进程明确不触碰。gpu02 available host memory=`480GiB`，
-  三卡×3 replicas的历史峰值低于120GiB host RAM。启动前必须再次live复核三卡，任一卡变忙即不启动。
-- `/data1`个人quota blocks=`563,425,168/1,073,741,824 KiB`。80套FP32 LoRA约`411,893,760` bytes，
-  连同results/queue/log保守新增低于1GiB。panel固定8 validation tasks各state0--9、correct one-shot、seed7、
-  每task 10条teacher video无放回；与addressless/address-binding/raw-barycentric逐row严格同state/video/
-  env/policy RNG配对，source只同state/env/policy RNG，v6-fast因历史video schedule不同只作same-state参考。
-- exact command（从上述frozen worktree在`gpu02`执行）：
-
-```bash
-env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 numactl --cpunodebind=0 --membind=0 /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_policy_effective_correct80_screen_noreplacement_seed7_ffed252_20260809 --role validation --mode screen --state-count 10 --replicas-per-gpu 3 --writer-generators-per-gpu 1 --writer-generation-batch-size 4 --gpu-indices 0,1,2 --expert-manifold-config configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json --expert-manifold-expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-manifold-feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --expert-manifold-video-data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --expert-manifold-video-condition correct --expert-manifold-video-sampling without_replacement
-```
-
-- 工程验收为80 unique rows/LoRAs/cache entries、所有builder生成的jobs与9 workers自然exit0、0 retry/
-  failure/OOM/nonfinite、四类forbidden reads全0、每行恰好一条correct frames-used video、Writer release和
-  source-policy reuse闭合。科研门严格使用本节预注册的score/breadth/paired gained-lost，不因结果改阈值。
+- 工程验收：8 unique rows/generated/cache entries、3 workers自然exit0、0 retry/failure/OOM/nonfinite，
+  teacher action/state/reward/terminal reads全0，v4/hard1 evidence逐行成立，Writer/encoder释放后同一source
+  policy原进程复用于rollout且不reload。通过后才写回smoke evidence并seal；失败则停在该工程接口。
 
 ## 退役边界
 
 `scripts/train_expert_manifold_writer.py`、learned Writer training/checkpoint模块及旧
-`--expert-manifold-checkpoint`参数均已退役。当前动态Writer只有Policy-Effective Barycentric路径；任何历史
+`--expert-manifold-checkpoint`参数均已退役。当前动态Writer只有Hard-Routed Policy-Effective路径；任何历史
 learned-Writer命令都只作provenance，不得从本文或旧记录复制恢复为并行实现。

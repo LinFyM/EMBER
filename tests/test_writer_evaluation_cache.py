@@ -56,13 +56,14 @@ def _contract(root: Path, *, replicas: int = 2, state_count: int = 3) -> dict:
         "adapter": {
             "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
             "kind": EXPERT_MANIFOLD_WRITER_KIND,
-            "arm": "expert_manifold_policy_effective_correct",
+            "arm": "expert_manifold_hard_routed_correct",
             "video_condition": "correct",
             "writer_asset": {
-                "reference": "policy-effective:step2000:subspace96",
+                "reference": "policy-effective:step2000:subspace96:hard1",
                 "learned_parameter_count": 0,
                 "expert_step": 2000,
                 "expert_count": 24,
+                "deployed_coefficient_support": 1,
             },
             "lora_contract": {"reference": "test:2tensors:14parameters"},
             "video_schedule": {

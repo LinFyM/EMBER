@@ -61,13 +61,14 @@ def _writer_adapter(condition: str = "correct") -> dict:
     return {
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "arm": f"expert_manifold_policy_effective_{condition}",
+        "arm": f"expert_manifold_hard_routed_{condition}",
         "video_condition": condition,
         "writer_asset": {
-            "reference": "test:policy-effective:step2000:subspace96",
+            "reference": "test:policy-effective:step2000:subspace96:hard1",
             "learned_parameter_count": 0,
             "expert_step": 2000,
             "expert_count": 24,
+            "deployed_coefficient_support": 1,
         },
         "lora_contract": {"reference": "rank16:76tensors"},
         "video_schedule": schedule,
@@ -190,7 +191,7 @@ def test_writer_row_contract_recomputes_video_schedule_and_mapping(
     contract = {
         "schema_version": RUN_CONTRACT_SCHEMA,
         "mode": "smoke",
-        "arm": "expert_manifold_policy_effective_correct",
+        "arm": "expert_manifold_hard_routed_correct",
         "role": "test",
         "output_dir": str(tmp_path),
         "content_hash_policy": "disabled_by_owner",

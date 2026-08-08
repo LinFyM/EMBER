@@ -20,7 +20,7 @@ from ember.expert_manifold.inference import (
     inspect_expert_manifold_writer_evaluation,
 )
 from ember.expert_manifold.model import (
-    PolicyEffectiveBarycentricWriter,
+    HardRoutedPolicyEffectiveWriter,
     phase_centered_causal_memory,
 )
 from ember.expert_manifold.video_schedule import shuffled_frame_permutation
@@ -34,14 +34,14 @@ from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.lora_rollout import PreparedWriterLoRA, WriterLoRARolloutAdapter
 
 
-def _build_barycentric_writer(
+def _build_hard_routed_writer(
     *,
     config: Mapping[str, Any],
     observed: Mapping[str, Any],
     lora: Any,
     template: Mapping[str, torch.Tensor],
     device: torch.device,
-) -> PolicyEffectiveBarycentricWriter:
+) -> HardRoutedPolicyEffectiveWriter:
     template_cpu = {
         name: value.detach().to(device="cpu", dtype=torch.float32)
         for name, value in template.items()
@@ -82,7 +82,7 @@ def _build_barycentric_writer(
             phase_centered_causal_memory(features).mean(dim=1).mean(dim=0)
         )
     topology = config["barycentric_writer"]
-    writer = PolicyEffectiveBarycentricWriter(
+    writer = HardRoutedPolicyEffectiveWriter(
         contract=lora,
         template_state=template_cpu,
         expert_states=expert_states,
@@ -95,7 +95,7 @@ def _build_barycentric_writer(
     ).to(device)
     writer.eval()
     if tuple(writer.parameters()):
-        raise ExpertManifoldError("closed-form barycentric Writer became trainable")
+        raise ExpertManifoldError("closed-form hard-routed Writer became trainable")
     return writer
 
 
@@ -183,7 +183,7 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
         config = load_barycentric_writer_config(Path(observed["config"]["path"]))
         lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
         template = prepare_frozen_writer_policy(policy, lora)
-        self.writer = _build_barycentric_writer(
+        self.writer = _build_hard_routed_writer(
             config=config,
             observed=observed,
             lora=lora,

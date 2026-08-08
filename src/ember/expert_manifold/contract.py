@@ -23,7 +23,7 @@ from ember.writer.data import FunctionalQueryDataset, WriterTaskAuthority
 REPO_ROOT = Path(__file__).resolve().parents[3]
 CONFIG_SCHEMA = "ember_pi05_video_expert_manifold_v1"
 BARYCENTRIC_CONFIG_SCHEMA = (
-    "ember_pi05_video_expert_manifold_policy_effective_barycentric_v1"
+    "ember_pi05_video_expert_manifold_hard_routed_policy_effective_v2"
 )
 WORKER_CONTRACT_SCHEMA = "ember_pi05_task_expert_worker_launch_v1"
 TOPOLOGY_ADDRESS_BINDING = "normalized_dynamic_times_normalized_chunk_plus_rank_address"
@@ -236,8 +236,12 @@ def _barycentric_writer_matches(writer: Mapping[str, Any]) -> bool:
                     "phase_centered_sqrt_normalized_causal_prefix_mean"
                 ),
                 "centroid_normalization": "unit_l2_after_train50_mean",
-                "coefficient_rule": "centered_kernel_affine_barycentric",
-                "affine_coefficient_sum": 1.0,
+                "affine_score_rule": "centered_kernel_affine_barycentric",
+                "deployed_coefficient_rule": (
+                    "deterministic_signed_argmax_one_hot"
+                ),
+                "argmax_tie_break": "lowest_expert_ordinal",
+                "affine_score_sum": 1.0,
                 "zero_representation_coefficients": 0.0,
                 "reconstruction": (
                     "per_target_unit_effective_ba_direction_plus_affine_log_frobenius"
@@ -261,6 +265,7 @@ def _barycentric_writer_matches(writer: Mapping[str, Any]) -> bool:
                 "effective_basis_rank": 96,
                 "public_rank": 16,
                 "valid_values": 1_287_168,
+                "deployed_coefficient_support": 1,
             },
         )
         and float(writer.get("ridge", -1)) == 0.3
@@ -305,7 +310,7 @@ def _barycentric_method_matches(method: Mapping[str, Any]) -> bool:
         method,
         {
             "name": (
-                "video_conditioned_expert_manifold_causal_barycentric_"
+                "video_conditioned_expert_manifold_hard_routed_"
                 "policy_effective_writer"
             ),
             "writer_input": (
@@ -441,20 +446,99 @@ def _policy_effective_runtime_cpu_matches(evidence: Mapping[str, Any]) -> bool:
     )
 
 
+def _soft_mixture_screen_matches(evidence: Mapping[str, Any]) -> bool:
+    return _exact_fields_match(
+        evidence,
+        {
+            "root": (
+                "runs/outputs/pi05_expert_manifold_policy_effective_"
+                "correct80_screen_noreplacement_seed7_ffed252_20260809"
+            ),
+            "artifact": (
+                "runs/outputs/pi05_expert_manifold_policy_effective_"
+                "correct80_screen_noreplacement_seed7_ffed252_20260809/"
+                "strict_screen_and_paired_audit_v1.json"
+            ),
+            "exact_state_policy_rng_teacher_schedule": True,
+            "interpretation": (
+                "soft_policy_effective_mixture_did_not_justify_full400"
+            ),
+        },
+    ) and _integer_fields_match(
+        evidence,
+        {
+            "row_count": 80,
+            "task_count": 8,
+            "successes": 15,
+            "breadth": 5,
+            "raw_barycentric_reference_successes": 12,
+            "raw_barycentric_gained": 6,
+            "raw_barycentric_lost": 3,
+        },
+    )
+
+
+def _hard_route_cpu_matches(evidence: Mapping[str, Any]) -> bool:
+    return _exact_fields_match(
+        evidence,
+        {
+            "artifact": (
+                "runs/outputs/pi05_expert_manifold_hard_routed_"
+                "cpu_real_assets_20260809/analysis.json"
+            ),
+            "cpu_only": True,
+            "deployed_coefficient_rule": (
+                "deterministic_signed_argmax_one_hot"
+            ),
+            "argmax_tie_break": "lowest_expert_ordinal",
+            "zero_identity_exact": True,
+            "all_nonzero_support_one": True,
+            "all_nonzero_sum_one": True,
+            "all_coefficients_finite": True,
+            "all_states_finite": True,
+            "train_centroid_self_route_all_tasks": True,
+            "ordered_reversed_selection_changed": True,
+        },
+    ) and _integer_fields_match(
+        evidence,
+        {
+            "expert_count": 24,
+            "train_centroid_count": 24,
+            "train_centroid_self_route_count": 24,
+            "train_video_count": 1200,
+            "deployed_support_min": 1,
+            "deployed_support_max": 1,
+        },
+    )
+
+
 def _barycentric_evaluation_matches(evaluation: Mapping[str, Any]) -> bool:
     status = evaluation.get("formal_status")
     smoke = evaluation.get("online_smoke_evidence")
+    hard_route = evaluation.get("cpu_hard_route_evidence")
+    if not _soft_mixture_screen_matches(
+        evaluation.get("soft_mixture_screen_evidence", {})
+    ):
+        return False
+    if status == "blocked_until_cpu_hard_route_evidence":
+        return smoke is None and hard_route is None
     if status == "blocked_until_live_a40_online_smoke":
-        return smoke is None
+        return (
+            smoke is None
+            and isinstance(hard_route, Mapping)
+            and _hard_route_cpu_matches(hard_route)
+        )
     return (
         status == "sealed"
         and isinstance(smoke, Mapping)
+        and isinstance(hard_route, Mapping)
+        and _hard_route_cpu_matches(hard_route)
         and _barycentric_smoke_evidence_matches(smoke)
     )
 
 
 def load_barycentric_writer_config(path: Path) -> dict[str, Any]:
-    """Load the one active closed-form Writer contract; old configs are assets only."""
+    """Load the one active hard-routed Writer contract; old configs are assets only."""
 
     config = read_json(path)
     authorities = config.get("authorities", {})
@@ -487,7 +571,7 @@ def load_barycentric_writer_config(path: Path) -> dict[str, Any]:
         )
     )
     if not valid:
-        raise ExpertManifoldError("barycentric Writer scientific boundary changed")
+        raise ExpertManifoldError("hard-routed Writer scientific boundary changed")
     return config
 
 

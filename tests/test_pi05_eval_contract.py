@@ -262,17 +262,19 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
         "execution_backend": (
-            "online_frozen_pi05_video_innovation_then_policy_effective_lora_cache"
+            "online_frozen_pi05_video_innovation_then_hard_routed_"
+            "policy_effective_lora_cache"
         ),
         "config": {
             "path": str(
                 ROOT
-                / "configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json"
+                / "configs/pi05_video_expert_manifold_hard_routed_policy_effective_v2.json"
             ),
         },
         "writer_asset": {
-            "reference": "policy-effective:step2000:subspace96:rank16",
+            "reference": "policy-effective:step2000:subspace96:hard1:rank16",
             "learned_parameter_count": 0,
+            "deployed_coefficient_support": 1,
         },
         "expert_basis": {"root": "/experts", "step": 2000},
         "feature_cache": {"root": "/features", "demo_count": 50},
@@ -333,14 +335,14 @@ def test_expert_manifold_writer_pairing_is_sealed(tmp_path: Path) -> None:
     correct = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "correct",
-        arm="expert_manifold_policy_effective_correct",
+        arm="expert_manifold_hard_routed_correct",
         condition="correct",
         mapping=correct_mapping,
     )
     wrong = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "wrong",
-        arm="expert_manifold_policy_effective_cross_suite_wrong",
+        arm="expert_manifold_hard_routed_cross_suite_wrong",
         condition="cross_suite_wrong",
         mapping=wrong_mapping,
     )

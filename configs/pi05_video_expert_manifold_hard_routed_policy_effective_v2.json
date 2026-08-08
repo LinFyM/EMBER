@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_video_expert_manifold_policy_effective_barycentric_v1",
+  "schema_version": "ember_pi05_video_expert_manifold_hard_routed_policy_effective_v2",
   "authorities": {
     "asset_config": {
       "path": "configs/pi05_video_expert_manifold_v1.json"
@@ -18,7 +18,7 @@
     }
   },
   "method": {
-    "name": "video_conditioned_expert_manifold_causal_barycentric_policy_effective_writer",
+    "name": "video_conditioned_expert_manifold_hard_routed_policy_effective_writer",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
     "dynamic_value": "one_video_phase_centered_causal_representation_only",
     "language_only_lora_path": false,
@@ -76,9 +76,12 @@
   "barycentric_writer": {
     "causal_representation": "phase_centered_sqrt_normalized_causal_prefix_mean",
     "centroid_normalization": "unit_l2_after_train50_mean",
-    "coefficient_rule": "centered_kernel_affine_barycentric",
+    "affine_score_rule": "centered_kernel_affine_barycentric",
+    "deployed_coefficient_rule": "deterministic_signed_argmax_one_hot",
+    "deployed_coefficient_support": 1,
+    "argmax_tie_break": "lowest_expert_ordinal",
     "ridge": 0.3,
-    "affine_coefficient_sum": 1.0,
+    "affine_score_sum": 1.0,
     "zero_representation_coefficients": 0.0,
     "identity_epsilon": 1e-12,
     "target_count": 38,
@@ -94,39 +97,20 @@
     "language_only_lora_path": false
   },
   "evaluation": {
-    "formal_status": "sealed",
-    "implementation_commit": "469e033213cd323a1b0b5106d35a435ceef922f6",
-    "online_smoke_evidence": {
-      "commit": "321bded0e9f484c65179505d26c88b31021b1b29",
-      "host": "gpu02",
-      "physical_gpu": 0,
-      "gpu_uuid": "GPU-2f8ac922-88b6-5c94-af12-70b67ddbdde8",
-      "device": "NVIDIA A40",
-      "root": "runs/outputs/pi05_expert_manifold_policy_effective_online_smoke_retry1_gpu02_fb5b367_20260809",
-      "validation_task_count": 8,
-      "state_count": 1,
-      "scientific_rows": 8,
-      "video_condition": "correct",
-      "video_sampling": "without_replacement",
-      "generated_entries": 8,
-      "cache_entries": 8,
-      "writer_modules_released": true,
-      "source_policy_reused_for_rollout": true,
-      "source_policy_reloaded": false,
-      "worker_count": 3,
-      "worker_exit_zero_count": 3,
-      "retry_count": 0,
-      "failure_count": 0,
-      "teacher_action_reads": 0,
-      "teacher_state_reads": 0,
-      "reward_reads": 0,
-      "terminal_reads": 0,
-      "oom_count": 0,
-      "nonfinite_count": 0,
-      "peak_allocated_bytes": 10576896000,
-      "wall_seconds": 310.714879989624,
-      "successes": 1,
-      "success_interpretation": "execution_smoke_only_not_performance_evidence"
+    "formal_status": "blocked_until_cpu_hard_route_evidence",
+    "implementation_commit": "pending_clean_pushed_commit",
+    "soft_mixture_screen_evidence": {
+      "root": "runs/outputs/pi05_expert_manifold_policy_effective_correct80_screen_noreplacement_seed7_ffed252_20260809",
+      "artifact": "runs/outputs/pi05_expert_manifold_policy_effective_correct80_screen_noreplacement_seed7_ffed252_20260809/strict_screen_and_paired_audit_v1.json",
+      "row_count": 80,
+      "task_count": 8,
+      "successes": 15,
+      "breadth": 5,
+      "raw_barycentric_reference_successes": 12,
+      "raw_barycentric_gained": 6,
+      "raw_barycentric_lost": 3,
+      "exact_state_policy_rng_teacher_schedule": true,
+      "interpretation": "soft_policy_effective_mixture_did_not_justify_full400"
     },
     "cpu_coefficient_evidence": {
       "artifact": "runs/outputs/pi05_expert_manifold_causal_barycentric_loo_step2000_cpu_20260809/analysis.json",

@@ -13,7 +13,7 @@ from ember.expert_manifold.contract import (
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = (
     REPO_ROOT
-    / "configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json"
+    / "configs/pi05_video_expert_manifold_hard_routed_policy_effective_v2.json"
 )
 
 
@@ -46,12 +46,36 @@ def _smoke_evidence() -> dict:
     }
 
 
-def test_policy_effective_evaluation_is_sealed_by_its_own_live_smoke() -> None:
+def _hard_route_evidence() -> dict:
+    return {
+        "artifact": (
+            "runs/outputs/pi05_expert_manifold_hard_routed_"
+            "cpu_real_assets_20260809/analysis.json"
+        ),
+        "cpu_only": True,
+        "deployed_coefficient_rule": "deterministic_signed_argmax_one_hot",
+        "argmax_tie_break": "lowest_expert_ordinal",
+        "zero_identity_exact": True,
+        "all_nonzero_support_one": True,
+        "all_nonzero_sum_one": True,
+        "all_coefficients_finite": True,
+        "all_states_finite": True,
+        "train_centroid_self_route_all_tasks": True,
+        "ordered_reversed_selection_changed": True,
+        "expert_count": 24,
+        "train_centroid_count": 24,
+        "train_centroid_self_route_count": 24,
+        "train_video_count": 1200,
+        "deployed_support_min": 1,
+        "deployed_support_max": 1,
+    }
+
+
+def test_hard_routed_evaluation_starts_blocked_before_cpu_evidence() -> None:
     evaluation = load_barycentric_writer_config(CONFIG)["evaluation"]
-    assert evaluation["formal_status"] == "sealed"
-    assert evaluation["online_smoke_evidence"]["device"] == "NVIDIA A40"
-    assert evaluation["online_smoke_evidence"]["scientific_rows"] == 8
-    assert evaluation["online_smoke_evidence"]["source_policy_reloaded"] is False
+    assert evaluation["formal_status"] == "blocked_until_cpu_hard_route_evidence"
+    assert "cpu_hard_route_evidence" not in evaluation
+    assert "online_smoke_evidence" not in evaluation
     assert (
         evaluation["cpu_policy_effective_compiler"]["selected_effective_basis_rank"]
         == 96
@@ -63,6 +87,7 @@ def test_formal_seal_accepts_only_complete_live_smoke_evidence(
 ) -> None:
     config = copy.deepcopy(json.loads(CONFIG.read_text(encoding="utf-8")))
     config["evaluation"]["formal_status"] = "sealed"
+    config["evaluation"]["cpu_hard_route_evidence"] = _hard_route_evidence()
     config["evaluation"]["online_smoke_evidence"] = _smoke_evidence()
     path = tmp_path / "sealed.json"
     path.write_text(json.dumps(config), encoding="utf-8")

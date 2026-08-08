@@ -1,4 +1,4 @@
-"""Formal authority for the policy-effective Expert-Manifold Writer."""
+"""Formal authority for the hard-routed policy-effective Expert-Manifold Writer."""
 
 from __future__ import annotations
 
@@ -31,10 +31,10 @@ from ember.pi05_source_checkpoint import read_json
 
 EXPERT_MANIFOLD_WRITER_KIND = "expert_manifold_writer"
 EXPERT_MANIFOLD_ADAPTER_SCHEMA = (
-    "ember_pi05_expert_manifold_policy_effective_eval_adapter_v3"
+    "ember_pi05_expert_manifold_hard_routed_eval_adapter_v4"
 )
 EXPERT_MANIFOLD_EPISODE_SCHEMA = (
-    "ember_pi05_expert_manifold_policy_effective_episode_v3"
+    "ember_pi05_expert_manifold_hard_routed_episode_v4"
 )
 
 
@@ -215,7 +215,7 @@ def _fixed_asset_records(
     asset_reference = (
         f"{BARYCENTRIC_CONFIG_SCHEMA}:step{int(expert['step'])}:"
         f"24experts:50centroids:ridge{ridge:g}:effectiveBA:"
-        f"subspace{int(writer['effective_basis_rank'])}:rank16"
+        f"subspace{int(writer['effective_basis_rank'])}:hard1:rank16"
     )
     cache_manifest_path = feature_cache_root.resolve() / "cache_manifest.json"
     return {
@@ -233,6 +233,9 @@ def _fixed_asset_records(
             "ridge": ridge,
             "reconstruction": writer["reconstruction"],
             "effective_basis_rank": int(writer["effective_basis_rank"]),
+            "deployed_coefficient_support": int(
+                writer["deployed_coefficient_support"]
+            ),
         },
         "expert_basis": {
             "root": str(expert_bank_root.resolve()),
@@ -275,7 +278,7 @@ def inspect_expert_manifold_writer_evaluation(
     status = str(config["evaluation"]["formal_status"])
     if require_formal and status != "sealed":
         raise ExpertManifoldError(
-            "formal policy-effective evaluation requires live A40 smoke evidence"
+            "formal hard-routed evaluation requires live A40 smoke evidence"
         )
     asset_config_path, expert, cache = _inspect_fixed_assets(
         config,
@@ -304,9 +307,10 @@ def inspect_expert_manifold_writer_evaluation(
     return {
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "arm": f"expert_manifold_policy_effective_{video_condition}",
+        "arm": f"expert_manifold_hard_routed_{video_condition}",
         "execution_backend": (
-            "online_frozen_pi05_video_innovation_then_policy_effective_lora_cache"
+            "online_frozen_pi05_video_innovation_then_hard_routed_"
+            "policy_effective_lora_cache"
         ),
         **assets,
         "evaluation_authority": {
@@ -318,6 +322,9 @@ def inspect_expert_manifold_writer_evaluation(
                 config["evaluation"]["cpu_policy_effective_compiler"]
             ),
             "cpu_runtime_evidence": dict(config["evaluation"]["cpu_runtime_evidence"]),
+            "cpu_hard_route_evidence": dict(
+                config["evaluation"].get("cpu_hard_route_evidence", {})
+            ),
         },
         "video_data": video_data,
         "video_condition": video_condition,
@@ -408,6 +415,9 @@ def expected_expert_manifold_episode_evidence(
         ),
         "expert_basis_step": int(adapter["writer_asset"]["expert_step"]),
         "expert_basis_task_count": int(adapter["writer_asset"]["expert_count"]),
+        "deployed_coefficient_support": int(
+            adapter["writer_asset"]["deployed_coefficient_support"]
+        ),
         "lora_contract_reference": adapter["lora_contract"]["reference"],
         "lora_reference": lora_reference,
         "language_global_task_id": int(mapping["language_global_task_id"]),

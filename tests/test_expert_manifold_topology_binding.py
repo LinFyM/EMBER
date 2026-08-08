@@ -9,7 +9,7 @@ from ember.expert_manifold.contract import (
     ExpertManifoldError,
     load_barycentric_writer_config,
 )
-from ember.expert_manifold.model import PolicyEffectiveBarycentricWriter
+from ember.expert_manifold.model import HardRoutedPolicyEffectiveWriter
 from ember.lora import (
     LoRAContract,
     LoRATarget,
@@ -21,12 +21,12 @@ from ember.lora import (
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = (
     REPO_ROOT
-    / "configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json"
+    / "configs/pi05_video_expert_manifold_hard_routed_policy_effective_v2.json"
 )
 
 
 def _writer() -> tuple[
-    PolicyEffectiveBarycentricWriter,
+    HardRoutedPolicyEffectiveWriter,
     LoRAContract,
     dict[str, torch.Tensor],
     tuple[dict[str, torch.Tensor], ...],
@@ -68,7 +68,7 @@ def _writer() -> tuple[
             [0.0, 0.0, 1.0, 0.0],
         ]
     )
-    writer = PolicyEffectiveBarycentricWriter(
+    writer = HardRoutedPolicyEffectiveWriter(
         contract=contract,
         template_state=template,
         expert_states=experts,
@@ -91,7 +91,7 @@ def _effective(
     return b @ a
 
 
-def test_barycentric_config_has_no_learned_or_language_only_value_path() -> None:
+def test_hard_routed_config_has_no_learned_or_language_only_value_path() -> None:
     config = load_barycentric_writer_config(CONFIG)
     assert config["method"]["learned_writer_parameter_count"] == 0
     assert config["method"]["language_only_lora_path"] is False
@@ -99,8 +99,11 @@ def test_barycentric_config_has_no_learned_or_language_only_value_path() -> None
     assert config["expert_basis"]["expert_step"] == 2000
     assert config["barycentric_writer"]["ridge"] == 0.3
     assert config["barycentric_writer"]["effective_basis_rank"] == 96
-    assert config["evaluation"]["formal_status"] == "sealed"
-    assert config["evaluation"]["online_smoke_evidence"]["generated_entries"] == 8
+    assert config["barycentric_writer"]["deployed_coefficient_support"] == 1
+    assert config["evaluation"]["formal_status"] == (
+        "blocked_until_cpu_hard_route_evidence"
+    )
+    assert "online_smoke_evidence" not in config["evaluation"]
 
 
 @pytest.mark.parametrize(
@@ -160,7 +163,7 @@ def test_one_hot_coefficients_reconstruct_each_expert_effective_update() -> None
         )
 
 
-def test_nonzero_video_coefficients_are_deterministic_affine_and_ordered() -> None:
+def test_nonzero_video_routes_are_deterministic_one_hot_and_ordered() -> None:
     writer, _, _, _ = _writer()
     video = torch.tensor(
         [
@@ -170,12 +173,20 @@ def test_nonzero_video_coefficients_are_deterministic_affine_and_ordered() -> No
             [0.0, 0.0, 0.0, 1.0],
         ]
     )[None]
+    affine = writer.affine_coefficients(video)
+    reversed_affine = writer.affine_coefficients(video.flip(1))
     first = writer.coefficients(video)
     second = writer.coefficients(video.clone())
     reversed_value = writer.coefficients(video.flip(1))
     assert torch.equal(first, second)
+    assert torch.allclose(affine.sum(dim=1), torch.ones(1), atol=1e-6)
+    assert torch.allclose(reversed_affine.sum(dim=1), torch.ones(1), atol=1e-6)
     assert torch.allclose(first.sum(dim=1), torch.ones(1), atol=1e-6)
     assert torch.allclose(reversed_value.sum(dim=1), torch.ones(1), atol=1e-6)
+    assert torch.count_nonzero(first) == 1
+    assert torch.count_nonzero(reversed_value) == 1
+    assert first.argmax(dim=1).item() == affine.argmax(dim=1).item()
+    assert reversed_value.argmax(dim=1).item() == reversed_affine.argmax(dim=1).item()
     assert not torch.allclose(first, reversed_value)
     assert not torch.allclose(
         _effective(writer(video), 0), _effective(writer(video.flip(1)), 0)

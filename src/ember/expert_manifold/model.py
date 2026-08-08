@@ -187,8 +187,8 @@ def _energy_subspaces(
     )
 
 
-class PolicyEffectiveBarycentricWriter(torch.nn.Module):
-    """Map one ordered video to one LoRA through effective expert updates."""
+class HardRoutedPolicyEffectiveWriter(torch.nn.Module):
+    """Route one ordered video to one policy-effective expert LoRA."""
 
     def __init__(
         self,
@@ -213,14 +213,14 @@ class PolicyEffectiveBarycentricWriter(torch.nn.Module):
             or identity_epsilon <= 0
             or task_centroids.shape != (len(expert_states), feature_width)
         ):
-            raise ExpertManifoldError("invalid policy-effective barycentric Writer")
+            raise ExpertManifoldError("invalid hard-routed policy-effective Writer")
         validate_lora_state(template_state, contract)
         if any(
             name.endswith(LORA_B_SUFFIX) and bool(torch.count_nonzero(value))
             for name, value in template_state.items()
         ):
             raise ExpertManifoldError(
-                "policy-effective Writer template LoRA-B must be zero"
+                "hard-routed policy-effective Writer template LoRA-B must be zero"
             )
         for state in expert_states:
             validate_lora_state(state, contract)
@@ -317,7 +317,7 @@ class PolicyEffectiveBarycentricWriter(torch.nn.Module):
             bool(torch.isfinite(value).all())
             for value in (self.centroid_mean, self.coefficient_projection)
         ):
-            raise ExpertManifoldError("policy-effective Writer basis is nonfinite")
+            raise ExpertManifoldError("hard-routed policy-effective basis is nonfinite")
 
     def template_state(self) -> dict[str, torch.Tensor]:
         return {
@@ -333,7 +333,9 @@ class PolicyEffectiveBarycentricWriter(torch.nn.Module):
             raise ExpertManifoldError("video innovation changed phase/feature shape")
         return phase_centered_causal_memory(video_innovation).mean(dim=1)
 
-    def coefficients(self, video_innovation: torch.Tensor) -> torch.Tensor:
+    def affine_coefficients(self, video_innovation: torch.Tensor) -> torch.Tensor:
+        """Return the sealed affine routing scores for audit, not deployment."""
+
         representation = self.causal_representation(video_innovation).float()
 
         def solve() -> torch.Tensor:
@@ -353,7 +355,19 @@ class PolicyEffectiveBarycentricWriter(torch.nn.Module):
         else:
             result = solve()
         if not bool(torch.isfinite(result).all()):
-            raise ExpertManifoldError("barycentric coefficients are nonfinite")
+            raise ExpertManifoldError("hard-route affine scores are nonfinite")
+        return result
+
+    def coefficients(self, video_innovation: torch.Tensor) -> torch.Tensor:
+        """Return deterministic signed-argmax one-hot deployment coefficients."""
+
+        affine = self.affine_coefficients(video_innovation)
+        active = affine.abs().sum(dim=1, keepdim=True) > self.identity_epsilon
+        selected = affine.argmax(dim=1, keepdim=True)
+        hard = torch.zeros_like(affine).scatter_(1, selected, 1.0)
+        result = torch.where(active, hard, torch.zeros_like(hard))
+        if not bool(torch.isfinite(result).all()):
+            raise ExpertManifoldError("hard-routed coefficients are nonfinite")
         return result
 
     def states_from_coefficients(

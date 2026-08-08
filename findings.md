@@ -1,5 +1,15 @@
 # EMBER Findings
 
+## 2026-08-09 Address-binding exact-resume profile结论
+
+- 新乘性地址图没有破坏stateless flat-reduction的可恢复性：resume与contiguous在三步loss/raw/
+  direction/log-scale/gradient/LR逐值一致，macro1全文件及macro3 Writer/RNG byte-exact；trainer只存在
+  PyTorch容器serialization bytes差异，载入后的optimizer/scheduler/scaler逐项相等。
+- 新owner不是形式参数：`address_norm`到macro3已有非零finite Adam状态，且权重从macro1到3发生
+  `1.62e-5`最大绝对变化。这个结论只证明梯度和resume工程可达，不代表地址已学到expert geometry。
+- 峰值reserved仍低于`.9GB`，所以结构修订没有引入A40训练内存风险。下一唯一工程不确定性是在线
+  frozen video encoder→Writer→FP32 LoRA cache→释放模块→source-policy rollout的纵向兼容性。
+
 ## 2026-08-09 Address-binding reprofile证据边界
 
 - 旧profile不能验证新forward图，但既有flat ordered all-reduce数学与资源结果仍给出规模上界；因此

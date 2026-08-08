@@ -620,3 +620,8 @@ loss、optimizer、world6 task mean与strict evaluator保持不变。当前尚�
 同root exact-resume1→3和独立contiguous0→3。验收同时要求scientific metrics、Writer/RNG bytes、
 optimizer/scheduler语义、`address_norm`梯度、NUMA/physical-local/deferred-NCCL与0 OOM/nonfinite；命令和
 全新roots取`task_plan.md`顶部。profile权重不进入formal，当前仍未启动GPU。
+
+该工程门随后由clean pushed`a3666ba`通过：三步科学指标、macro1全文件、macro3 Writer/RNG精确
+一致；trainer语义一致但容器raw bytes不同。`address_norm`具有非零finite Adam状态并在macro1→3
+发生`1.62e-5`最大权重变化；两root峰值reserved均低于`.9GB`，0 OOM/nonfinite，六卡已释放。
+profile权重继续弃用，config仍blocked；下一门只做8-row online generation/cache/release/rollout smoke。

@@ -18,6 +18,12 @@ fresh/resume/contiguous exact-resume profile，再做macro3 online smoke，两�
 新两root均不存在且合计预算低于1GiB。三条exact命令和验收门取`task_plan.md`顶部；先clean push并
 创建frozen worktree，启动前再次live看卡。
 
+core profile已经由clean pushed`a3666ba`通过：resume/contiguous三步科学指标、macro1全部文件、
+macro3 Writer/RNG精确一致，trainer optimizer/scheduler语义相同；`address_norm`非零finite更新，
+两root峰值reserved低于`.9GB`，六卡已释放。03:01 CST重新live选定空闲`gpu02:0`做唯一8-row
+online generation/cache/release/rollout smoke；root/log不存在，命令与门取`task_plan.md`。smoke通过并
+写回两组新evidence前，formal保持blocked。
+
 当前唯一authority为`docs/action_forecast_writer_video_expert_manifold_design.md`。保持one-shot，
 视频是唯一dynamic value；Writer部署输入仍只有exact task language和恰好一条action-hidden video。
 第一次meta profile前的canonical decoder已收紧为full projected video只参与phase key/routing、LoRA

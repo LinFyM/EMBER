@@ -16,6 +16,10 @@
   VLLM不触碰。gpu02的0--5虽空闲但为4+2 NUMA，6/7有他人进程，故本轮不用。`/data1`个人用量
   532.4GiB/1TiB，两个新profile roots均不存在、合计预计低于1GiB。exact命令与门已预注册到
   `task_plan.md`；必须先clean push/frozen worktree并在启动前再次live复核，当前仍无新GPU进程。
+- 上述core profile现已由clean pushed`a3666ba`通过：resume/contiguous科学指标、macro1全文件、
+  macro3 Writer/RNG精确一致；trainer语义一致。`address_norm`已有非零finite Adam状态，峰值reserved
+  低于`.9GB`，六卡自然释放。03:01 CST重新live选择空闲`gpu02:0`做8-row online smoke；物理6/7
+  他人进程不触碰，fresh root/log不存在。exact命令已预注册，当前formal仍blocked且尚未启动smoke。
 - 当前唯一方法authority仍是
   `docs/action_forecast_writer_video_expert_manifold_design.md`。它保持one-shot，视频是唯一dynamic
   value：frozen π0.5逐帧提取2048维joint multimodal hidden与1024维Action-Expert suffix hidden，

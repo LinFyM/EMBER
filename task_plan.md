@@ -83,8 +83,12 @@
   无独立静态value路。zero/phase-constant identity、ordered/reversed差异、两轴address retention与
   新参数梯度合同均通过；聚焦47/47、全仓192/192、compileall/diff和architecture guard无hard
   violation。旧profile/smoke evidence已撤销，formal重新blocked。
-- [ ] 从`cd95281`后的clean/pushed launch-record和全新roots完成六卡fresh0→1、exact-resume1→3、
-  独立contiguous0→3及macro3 online-generation/cached-rollout smoke；通过前不启动formal。
+- [x] clean pushed launch-record`a3666ba`在`gpu01:0,1,2|4,5,7`完成六卡fresh0→1、
+  exact-resume1→3与独立contiguous0→3：三步科学指标、macro1全部文件、macro3 Writer/六rank RNG
+  精确一致，trainer optimizer/scheduler语义全等；`address_norm` Adam一阶矩最大值`8.21e-7`、
+  macro1→3权重最大变化`1.62e-5`且finite。峰值reserved为`.898/.837GB`，0 OOM/nonfinite；
+  仅trainer容器raw bytes不同，不误写成byte-exact。profile权重弃用。
+- [ ] 用上述profile macro3完成单卡online-generation/cached-rollout smoke；通过前不启动formal。
 - [ ] 工程门通过后从identity fresh分段训练，先做macro50 strict correct与内部expert proximity/
   rank-chunk retention；有可信absolute/breadth趋势才继续，并对候选single checkpoint做完整时序五臂。
   本轮不同时混入few-shot或新的loss recipe。
@@ -127,6 +131,35 @@ env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,
   run contract逐rank physical/local/NUMA/affinity、deferred NCCL、P2P-disable、Ring/Simple、无DDP wrapper
   与single-flat mean全部正确；0 OOM/nonfinite。失败不放宽门。通过后profile权重仍永久弃用，只解封
   macro3 online-generation/cached-rollout smoke，meta formal继续blocked。
+- 验收结果：clean pushed launch-record`a3666ba`通过。resume/contiguous三步的loss/raw/direction/
+  log-scale/gradient/LR逐值相同；macro1 manifest/Writer/trainer/六rank RNG全部逐字节一致，macro3
+  Writer和六rank RNG也逐字节一致。macro3 trainer raw serialization不同，但反序列化后的optimizer/
+  scheduler/scaler逐项精确相同。`address_norm` optimizer step=3，一阶矩最大绝对值=`8.213e-7`、
+  二阶矩=`3.737e-14`，macro1→3权重最大变化=`1.621e-5`且全部finite。resume/contiguous峰值
+  allocated/reserved=`758,026,240/897,581,056`与`761,802,752/836,763,648` bytes；run contract
+  全部门通过，六卡自然释放。profile权重永久弃用，formal仍blocked。
+
+### Address-binding macro3 online-generation/cached-rollout smoke合同（2026-08-09）
+
+- 03:01 CST重新live比较两节点后选择`gpu02:0`单张0MiB、0%空闲A40；gpu02物理6/7的`yfwang`/
+  `yqzhang`进程和gpu01物理3的`nlge` VLLM均不触碰。gpu02 available host memory约480GiB；
+  `/data1`个人用量533.1GiB/1TiB。fresh root/log固定为
+  `runs/outputs/pi05_expert_manifold_writer_addressbind_macro0003_online_smoke_gpu02_cd95281_20260809`与
+  `runs/logs/pi05_expert_manifold_writer_addressbind_macro0003_online_smoke_gpu02_cd95281_20260809.log`，
+  启动登记时均不存在；启动前再次live复核物理0。
+- 输入固定为profile macro3、validation 8 tasks×1 state、correct video、without-replacement；一个
+  generator按batch4生成8套完整FP32 LoRA，释放Writer/encoder后保留source policy，以3 replicas完成
+  cached rollout。success只作execution smoke，不进入性能比较；profile checkpoint不得warm-start。
+- exact command（从含本段记录的clean/pushed frozen worktree执行）：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_addressbind_macro0003_online_smoke_gpu02_cd95281_20260809 --role validation --mode smoke --state-count 1 --replicas-per-gpu 3 --writer-generators-per-gpu 1 --writer-generation-batch-size 4 --gpu-indices 0 --expert-manifold-config configs/pi05_video_expert_manifold_v1.json --expert-manifold-checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_addressbind_profile_r6_step2000_cd95281_20260809/checkpoints/macro_00000003 --expert-manifold-video-data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --expert-manifold-video-condition correct --expert-manifold-video-sampling without_replacement
+```
+
+- 门：8/8 unique rows与jobs一次完成，3 workers exit0、0 retry/failure/OOM/nonfinite；generator记录
+  8 assigned/generated entries、2个batch4、`writer_modules_released=true`、source policy原位复用；
+  cache/episode evidence有效，teacher frames used且action/state/reward/terminal reads全0；实际cache
+  descriptor按FP32 state预算。通过后才把两组新evidence写入config并seal formal。
 
 ### Expert-Manifold identity-fresh formal0→50 launch合同（2026-08-09）
 

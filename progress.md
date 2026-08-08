@@ -1,5 +1,16 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Address-binding core profile通过与online smoke预注册
+
+- clean pushed`a3666ba`的fresh0→1/resume1→3与独立contiguous0→3均自然完成并释放六卡。
+  三步科学指标逐值一致；macro1全部checkpoint files、macro3 Writer和六份rank RNG逐字节一致，
+  trainer optimizer/scheduler语义精确相同。仅trainer容器raw serialization不同。
+- `address_norm`在macro3的Adam一阶/二阶矩最大值=`8.213e-7/3.737e-14`，macro1→3权重最大变化
+  `1.621e-5`且finite。resume/contiguous峰值reserved=`897,581,056/836,763,648` bytes，全部
+  physical/local/NUMA/deferred-NCCL合同正确，0 OOM/nonfinite；profile权重弃用。
+- 03:01 CST重新live选择`gpu02:0`做8-row online generation/cache/release/rollout smoke；物理0空闲，
+  6/7他人进程不触碰。fresh root/log不存在，exact命令与门已登记；先clean push并在启动前复核。
+
 ## 2026-08-09 Address-binding A40 reprofile预注册
 
 - 02:52 CST live比较选择`gpu01:0,1,2|4,5,7`六张空闲A40，保持3+3 NUMA；物理3他人VLLM、

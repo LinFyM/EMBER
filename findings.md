@@ -1,5 +1,25 @@
 # EMBER Findings
 
+## 2026-08-08 Task-expert bank完成与当前证据边界
+
+- clean`81101fe`的正式task-expert bank已完成统一step1000：6个独立workers各4 tasks，24/24
+  completion，step250/500/1000共72个checkpoint，root约562MiB：
+  `runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`。
+- 三个统一checkpoint最后50步的24-task等权mean action loss为
+  `.115355/.107207/.105372`。下降说明task-local AS拟合仍在改善，但此前证据已反复证明action/
+  functional loss不能选择closed-loop checkpoint；它不能独立支持续到2000或选择step1000。
+- 目前只有最早6个experts的探索性几何：LoRA norm median约`4.157`、stable rank约`1.131`、
+  top singular energy约`.916`、16个rank坐标均active、top4 coordinate energy约`.258`；q/v/action
+  B-column cosine约`.860/.874/.395`，跨task effective-LoRA cosine约`.260`。相比旧Writer的近
+  rank-1/跨target同向输出，它初步显示task-local action credit能形成更丰富方向；但样本不完整，
+  尚不能说明24-task expert流形、checkpoint趋势或视频可预测性已经成立。
+- Expert目标对同一task的不同视频恒定，因此它只定义policy-effective task-level manifold，不能
+  自行保证Writer学习时间顺序或same-task video specificity。最终仍必须由one-shot correct/same/
+  wrong/shuffled/reversed严格配对closed loop裁决，而不是只看expert重建误差或几何。
+- 尚无新的strict rollout，历史single-checkpoint最好仍为v6-fast`143/400`；`>150/400`未完成。
+  下一决定应先看full24三checkpoint geometry与development-train expert closed loop，再决定统一
+  resume2000还是进入feature/meta-Writer阶段。
+
 ## 2026-08-07 Video Expert-Manifold task-expert A40 profile
 
 - 独立task expert不是新的部署输入或task-ID route：teacher action只用于train24各自的policy-effective

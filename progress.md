@@ -1,9 +1,12 @@
 # EMBER Progress Ledger
 
-## 2026-08-08 Expert-Manifold后续实现（formal experts并行运行）
+## 2026-08-08 Expert-Manifold实现整合与task-expert bank封存
 
-- main clean`81101fe`保持冻结并运行6个independent A40 workers；后续源码在隔离worktree实现，
-  没有改变在跑expert的config、进程或checkpoint合同。
+- clean`81101fe`的6个independent A40 workers已自然完成24/24 task experts统一step1000；root=
+  `runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`，包含6份worker summary、
+  24份completion、72个step250/500/1000 checkpoints，约562MiB。GPU已释放。
+- 三个统一checkpoint最后50步24-task等权mean action loss=
+  `.115355/.107207/.105372`，只记作拟合趋势，不用它选择closed-loop checkpoint。
 - 新增完整train24 task-expert bank evaluator和统一step LoRA几何分析；evaluation只开放
   `development_train`且按实际task安装对应expert，不引入task-ID部署输入或held expert。
 - 新增action-hidden frozen PI0.5 video innovation cache：exact language query每帧的2048维joint
@@ -15,8 +18,10 @@
 - one-shot evaluator为每个episode只选一条action-hidden video，50 states无放回覆盖50 demos；五臂
   共享paired schedule，online生成LoRA cache后释放Writer并复用source policy rollout。held split只读
   video，validation/test expert与action reads保持0。
-- 聚焦CPU回归60项通过，py_compile/CLI/diff检查通过。该实现尚无GPU或性能结论；feature cache与
-  meta formal均保持blocked，下一步先完成expert bank及其统一step裁决。
+- 隔离worktree的14个retained commits已fast-forward并入`codex/bci-continuation`，不再保留第二个
+  活动实现分支。该实现尚无meta GPU或性能结论；feature cache与meta formal仍blocked。
+- owner要求当前session完成仓库交接后停止执行。新session先讨论，再决定full24 geometry/
+  development-train expert rollout、统一resume2000或meta-Writer profile；当前不自动launch。
 
 ## 2026-08-07 Video Expert-Manifold task-expert builder与profile seal
 

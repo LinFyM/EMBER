@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-## 当前Video-Conditioned Expert-Manifold推进（2026-08-07）
+## 当前交接计划：Video-Conditioned Expert-Manifold（2026-08-08）
 
 - [x] 完成K4 Phase-Aligned正式训练、四点、winner五臂与8-task refs1：correct=
   `88/108/80/99`，winner五臂=`108/115/94/101/121`。wrong显著更差且BA/action变化
@@ -13,21 +13,25 @@
 - [x] 实现task-local sampler/checkpoint、六worker ownership与单卡多task builder；clean`174d292`
   在A40 B16完成fresh0→1、resume1→3和contiguous0→3，科学metrics及step3 adapter精确一致，
   峰值reserved`21,313,355,776` bytes，formal config已seal。
-- [ ] 用六个independent workers在同一global checkpoints上训24个rank-16 experts；先到step1000，
-  用development-train official rollout和LoRA组织裁决统一expert step。不读任何held action。
+- [x] clean`81101fe`用六个independent workers完成24个rank-16 experts统一step1000；正式root=
+  `runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`，24/24 completion、
+  72个step250/500/1000 checkpoints、约562MiB，不读任何held action。
 - [x] 实现task-expert bank canonical evaluator与统一step几何分析；实现只含action-hidden
   phase16×3072 task-span+Action-Expert video innovation的hashless feature cache、168-chunk axial decoder、direction/scale
   reconstruction、六rank task-complete exact-resume meta trainer和one-shot strict paired evaluator。
-  当前尚未作A40 profile，formal cache/meta仍由config阻塞；K4 executable待新Writer profile通过后
-  才退役。
+  retained实现已并入`codex/bci-continuation`；当前尚未作A40 profile，formal cache/meta仍由config
+  阻塞；K4 executable待新Writer profile通过后才退役。
 - [ ] 完成expert bank统一step250/500/1000 official development-train rollout与几何裁决；若曲线仍
-  有充分上升依据，保持main`81101fe`原合同统一resume到2000，再选择唯一expert step。
+  有充分上升依据，从clean`81101fe`的frozen worktree沿原root统一resume到2000，再选择唯一expert
+  step；不得按task挑不同checkpoint。
 - [ ] live profile并封存train24×50 frozen feature cache；完成meta-Writer六卡fresh0→1、
   exact-resume1→3、finite/OOM/梯度与任务等权合同后才seal formal。
 - [ ] 完成A40 profile、identity-fresh meta训练、strict paired correct400曲线、五臂视频因果、
   task drift和expert→generated LoRA→action机制分析；根据最早失效接口迭代。
 - [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高absolute、breadth、
   稳定积累与视频特异性。
+- [ ] 当前暂停执行：新session先与owner讨论上述证据和顺序；在owner给出新指示前，不启动训练、
+  rollout、GPU profile或GPU内部分析。
 
 ## 已完成并负裁决：K4 Phase-Aligned v6（2026-08-07）
 
@@ -58,7 +62,7 @@
 `docs/a100_to_bci_migration_handoff.md`。不得从历史 ledger 中恢复已退役 recipe、
 runner、split、路径或 GPU 权限。
 
-## 当前Grounded-Video Semantic-Expert Route推进（2026-08-07）
+## 已完成并负裁决：Grounded-Video Semantic-Expert Route（2026-08-07）
 
 - [x] 完成Sparse routefix identity-fresh0→200、四点、winner五臂与production-batch内部分析；
   correct=`74/74/78/75`，winner五臂=`78/85/90/83/92`，correct最低。确认视频trace真实改变
@@ -124,7 +128,7 @@ runner、split、路径或 GPU 权限。
   video path与LoRA leverage成立，但language route无法让视频语义决定owner。Sparse方法正式负裁决，
   不resume、不warm-start、不恢复language-only route。
 
-## 当前K4 Energy-Preserving Policy-Layer Trace M2P推进（2026-08-06）
+## 已完成并负裁决：K4 Energy-Preserving Policy-Layer Trace M2P（2026-08-06）
 
 > 本节方法已完成并负裁决；当前活动设计见下一节。
 
@@ -264,7 +268,7 @@ LoRA leverage或先前预注册的shared expert credit。下一方法必须同�
 support，不能在逐token单位化和全局raw amplitude两个破坏性极端之间二选一；暂不打开sparse
   experts。
 
-## 当前K4 Evidence-Factorized Policy-Layer Trace M2P推进（2026-08-06）
+## 已完成并负裁决：K4 Evidence-Factorized Policy-Layer Trace M2P（2026-08-06）
 
 - [x] 用逐频率单位化与raw-amplitude两个严格反事实定位破坏性二选一：前者保留video
   direction但放大低能order噪声，后者改善早期gradient coexistence却消除video task
@@ -541,7 +545,7 @@ env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,
 env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,7 NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_as_writer.py --config configs/pi05_as_writer_k4_invariant_m2p_bci_v1.json --mode formal --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir runs/outputs/pi05_as_writer_k4_invariant_m2p_formal_fresh0_200_r6_dd3b854_20260806 --stop-after-step 200 --num-workers 0 --log-every 1 --skip-data-sha
 ```
 
-## 当前Factorized Condition-Kernel Program Memory推进（2026-08-05）
+## 已完成并负裁决：Factorized Condition-Kernel Program Memory（2026-08-05）
 
 - [x] 完成Program-Credit train24内部分析与400-held LoRA复核，正式定位最早失效接口：
   exact task cotangent近正交而共享Writer参数更新后的condition program delta高度同向，
@@ -999,7 +1003,7 @@ env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,
   闭环有用且可由AS或未来reward共同训练的累积方向，而不是继续加head/gate/scale或
   强制SFT几何。
 
-## 当前BCI Semantic Direction Store推进（2026-08-03）
+## 已完成并负裁决：BCI Semantic Direction Store（2026-08-03）
 
 - [x] owner解除VR结果后的阶段暂停：继续one-shot，取消Writer参数量软上限，优先
   重构条件生成方向的存储/组合，允许配套修改训练；继续禁用subagent并保持效率优先。
@@ -1113,7 +1117,7 @@ env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,
 
 迁移由后续智能体执行。本计划不授权跨机写入或迁移后GPU实验。
 
-## 当前交接顺序（2026-08-02）
+## 历史交接顺序（2026-08-02）
 
 - [x] 恢复exact v5.2 topology到mature task-complete/B20/long-first/
   fast-decay400 config，并完成最长视频profile与exact-resume smoke。
@@ -1349,7 +1353,7 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   Writer per-rollout LoRA、无放回 video schedule 与逐 row paired RNG evidence。
 - [x] v4/v5/v5.1 失败根因和 v5.2 五臂成功证据已封存；旧可执行路径已退役。
 
-## 当前执行：EMBER Core-Program Writer
+## 历史执行：EMBER Core-Program Writer
 
 - [x] 完成Loom首段和内部负证据：macro50/100/150/200 correct400为
   `79/106/105/112`；correspondence/confidence/Teacher–Policy gap缺少可靠
@@ -1741,7 +1745,7 @@ ViVLA-style matched reproduction 和 source-only outer learning 是核心闭环�
   18,853 行、约 3.8 MiB 仓库缓存和 87.49 GB 已完成评测 LoRA 中间 cache；
   活动运行环境、checkpoint、rollout rows/results 和 contract 证据完整保留。
 
-## 当前继续/停止判据
+## 长期继续/停止判据
 
 - absolute 低于可信满意区间或尚未形成充分峰后下降时，继续训练、诊断或 fresh
   架构实验；不能因单点略涨结束。

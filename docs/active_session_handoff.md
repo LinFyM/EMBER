@@ -1,40 +1,39 @@
 # EMBER Active Session Handoff
 
-更新时间：2026-08-07 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
+更新时间：2026-08-08 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
-## 0. 当前活动：Video-Conditioned Expert-Manifold Topological Writer
+## 0. 当前交接边界：Video-Conditioned Expert-Manifold Topological Writer
 
-- K4 Phase-Aligned已完成identity-fresh formal0→200、四点、winner五臂与全部内部分析；
-  correct=`88/108/80/99`，breadth>=5=`4/4/3/4`，union/intersection=`157/36`，明显
-  checkpoint能力换手。winner macro100五臂=`108/115/94/101/121`；correct相对wrong
-  gained/lost=`28/14,p=.04356`，证明视频task identity未被忽略，但reversed反而更高。
-- refs1的wrong到Core/Procedure/Program/BA/action relative-L2中位=
-  `.328/.191/.318/.330/.0765`，shuffled/reversed BA=`.188/.165`；视频可以material改变
-  LoRA和action。但correct LoRA norm/stable-rank/top-energy中位=
-  `91.12/1.00021/.99979`，最后50步factor/program full24 retention=`.04634/.04363`；
-  高增益近单方向LoRA仍在24 tasks间旋转。K4 Phase-Aligned负裁决，不resume/warm-start。
-- 当前唯一方法authority为
-  `docs/action_forecast_writer_video_expert_manifold_design.md`。它保持one-shot，且把视频设为
-  唯一dynamic value：frozen π0.5的joint prompt+frame high-level hidden减matched text/no-image
-  baseline，再保留phase16时序。不允许language-only LoRA bypass；zero innovation必须identity。
-- 先用train24各自teacher actions从同一source/identity训24套task-local rank-16 experts，
-  用它们建立policy-effective parameter manifold；Writer阶段只看language+action-hidden video
-  并重建expert LoRA，不读teacher actions。validation/test actions两阶段均不得读取。
-- LoRA按真实38-target topology分为168个`[16,512]`chunks，交替chunk/rank axial
-  memory直接输出delta-A/B，同时学direction和scale，不经过窄factor head或atom mixing。
-  真实inference hook枚举456个active Linear；若当前38 targets的task experts证明拓扑上限，
-  再依该枚举扩大，首轮不混入第二个大变量。
-- task-expert builder、独立checkpoint/stage-resume和单卡A40 profile已完成。clean`174d292`
-  在`gpu01:0`以B16完成fresh0→1、same-root resume1→3和独立contiguous0→3；三步loss=
-  `.221725/.283785/.259915`、gradient norm=`.029505/.032996/.035243`，峰值allocated/reserved=
-  `15,082,000,384/21,313,355,776` bytes。resume与contiguous的科学metrics及step3 adapter
-  逐字节一致，0 OOM/nonfinite；formal config已seal。
-- 下一执行顺序：六卡独立workers训24 experts到统一step1000→development-train closed loop
-  封存统一global step并决定是否续2000→提取action-hidden frozen features→
-  实现/profile/训练meta-Writer→strict validation曲线与五臂。未过`>150/400`前按最早
-  失效接口继续迭代。
+- 当前唯一方法authority仍是
+  `docs/action_forecast_writer_video_expert_manifold_design.md`。它保持one-shot，视频是唯一dynamic
+  value：frozen π0.5逐帧提取2048维joint multimodal hidden与1024维Action-Expert suffix hidden，
+  均减matched no-image baseline并保留phase16；language只能参与query/context，不能单独生成LoRA。
+- 24套train-task rank-16 policy experts已从同一source/identity完成统一step1000正式训练。唯一root为
+  `runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`：6个独立workers各4 tasks，
+  24/24 completion、72个统一step250/500/1000 checkpoints、总量约562MiB。正式运行基线是
+  clean`81101fe`；若以后统一续到step2000，必须从该commit创建独立frozen worktree并沿同一root
+  exact-resume，不能用当前新代码路径伪装原合同。
+- 三个统一checkpoint最后50步的24-task等权mean action loss依次为
+  step250/500/1000=`.115355/.107207/.105372`。它只说明task-local AS仍在拟合，不能替代
+  development-train closed-loop统一checkpoint裁决，也不能据此声称step1000最优。
+- Expert-Manifold完整实现现已并入`codex/bci-continuation`：train24 bank evaluator、全bank LoRA
+  geometry、action-hidden phase16×3072 feature cache、168个`[16,512]`chunk/rank axial decoder、
+  六rank task-complete exact-resume meta trainer，以及one-shot五臂严格配对evaluator均已存在。
+  cache与meta formal仍由config阻塞，尚未完成A40 profile，也没有生成新Writer checkpoint。
+- 目前只有最早6个experts的探索性几何：LoRA norm median约`4.157`、stable rank约`1.131`、
+  top singular energy约`.916`、16个rank坐标均active、top4 coordinate energy约`.258`；q/v/action
+  B-column cosine约`.860/.874/.395`，跨task effective-LoRA cosine约`.260`。这不是完整24-task或
+  三checkpoint正式裁决，不能用它跳过full-bank分析。
+- 当前没有EMBER进程，GPU均已释放；没有新的strict closed-loop分数。已验证single-checkpoint
+  最好仍是v6-fast`143/400`，长期严格门仍是`>150/400`，尚未完成。
+- owner要求本session只整理并交接；新session必须先与owner讨论，不得自动启动训练、rollout或
+  GPU分析。讨论后的合理证据顺序是：full24 expert geometry与development-train closed-loop评
+  250/500/1000→若1000仍有明确上升证据则统一resume2000→否则/随后做feature profile/cache、
+  meta-Writer A40 profile/formal和strict validation五臂。不得按单task挑不同expert step。
+- 旧K4 executable只作为临时兼容路径保留，owner是当前Expert-Manifold迁移；按设计第12节，只有
+  新meta-Writer通过A40 profile后才删除，避免在其替代路径尚未实证前制造不可运行仓库。
 
 ## 0.0 已完成并负裁决：K4 Phase-Aligned Language-Axial Semantic-Procedure Writer
 

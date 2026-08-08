@@ -1,39 +1,33 @@
 # EMBER Current Execution Brief
 
-更新时间：2026-08-07 UTC。本文是操作层authority；科研结果取
+更新时间：2026-08-08 UTC。本文是操作层authority；科研结果取
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
-## 0.0 最新执行覆盖：Video-Conditioned Expert-Manifold
+## 0.0 最新执行覆盖：仓库封存并等待新session讨论
 
-K4 Phase-Aligned已完成训练、四点、winner五臂和全部内部分析：correct=
-`88/108/80/99`，winner五臂=`108/115/94/101/121`。wrong的显著下降和BA/action
-差异证明视频没有被忽略；但reversed更高，四点union/intersection=`157/36`，
-LoRA norm/stable-rank/top-energy中位=`91.12/1.00021/.99979`，最后50步gradient
-retention约`.04`。该方法已负裁决，不resume、warm-start或恢复为active path。
+当前唯一authority为`docs/action_forecast_writer_video_expert_manifold_design.md`。保持one-shot，
+视频是唯一dynamic value；Writer部署输入仍只有exact task language和恰好一条action-hidden video。
 
-当前唯一authority为`docs/action_forecast_writer_video_expert_manifold_design.md`。保持
-one-shot，视频是唯一dynamic value：exact language只用来query frozen π0.5的joint frame
-hidden，减matched text/no-image baseline并保留phase16时序；禁止language-only LoRA
-bypass，zero innovation精确回identity。
+24套train-task rank-16 policy experts已在clean`81101fe`完成统一step1000：
+`runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`包含6份worker summary、
+24/24 completion和72个step250/500/1000 checkpoints，约562MiB。最后50步24-task等权mean
+action loss为`.115355/.107207/.105372`；这不是closed-loop选点证据。若需统一resume2000，
+必须从`81101fe`创建独立frozen worktree并沿原root exact-resume。
 
-24套train-task rank-16 policy expert的builder与A40 profile已经完成。clean`174d292`
-在`gpu01:0`、B16完成fresh0→1、same-root exact-resume1→3和独立contiguous0→3；三步
-loss=`.221725/.283785/.259915`，峰值allocated/reserved=
-`15,082,000,384/21,313,355,776` bytes，续训科学metrics和step3 adapter与contiguous逐字节
-一致，0 OOM/nonfinite。formal config现已seal。
+Expert-Manifold retained实现已并入唯一主工作分支`codex/bci-continuation`：完整expert-bank evaluator/
+geometry、phase16×3072 action-hidden cache、168-chunk axial decoder、六rank task-complete meta trainer、
+checkpoint exact-resume和one-shot strict five-arm evaluator均已闭合。尚未完成A40 meta profile、正式
+feature cache、meta训练或任何新strict rollout，因此不能报告新模型成绩；历史single-checkpoint最好
+仍为v6-fast`143/400`，严格目标`>150/400`未完成。
 
-下一执行阶段用六个independent单卡进程，每个常驻一个frozen policy并串行4个tasks；
-不用DDP/NCCL聚合不同experts。先统一训到step1000。expert global checkpoints用development-train official rollout选一个统一step，
-不训或读任何held expert/action。
+当前没有EMBER进程。owner要求新session先讨论再决定方向，所以本brief不授权自动launch。讨论后
+按以下顺序恢复：full24 expert geometry与development-train closed-loop统一评250/500/1000；只在
+step1000仍有明确上升证据时统一resume2000；随后profile/cache/meta训练/strict五臂。旧K4 executable
+只保留到新meta-Writer A40 profile通过，届时按design removal trigger原位退役。
 
-专家门通过后才提取action-hidden frozen video features，实现168个`[16,512]`
-topological chunks的chunk/rank axial Writer。meta-Writer正式profile通过后，原位退役K4
-model/training/checkpoint/live-generation executable path，只保留一个canonical Writer。
-
-GPU工作每次仍先live比较`gpu01/gpu02`，只用实时空闲卡，总数最多6；不干扰
-他人进程。多卡BCI A40 launcher必须显式`NCCL_P2P_DISABLE=1`；independent expert
-workers不建NCCL process group。不运行SHA-256/MD5内容校验或大量防御扫描。
+未来任何GPU工作仍须live比较`gpu01/gpu02`，只用实时空闲卡、跨节点最多6张；不干扰他人进程。
+BCI多卡launcher显式`NCCL_P2P_DISABLE=1`，不运行SHA-256/MD5内容校验或大量防御扫描。
 
 ## 0.0.1 已完成并负裁决：K4 Phase-Aligned v6
 

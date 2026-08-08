@@ -269,3 +269,22 @@ task-expert正式训练运行期间，后续实现放在独立worktree，避免�
 以上只完成CPU合同与代码，不构成A40 profile或性能证据。feature extraction与meta训练formal仍由
 config阻塞；必须先完成live profile、fresh0→1、exact-resume1→3和原始六rank规模验证。K4旧
 executable只在新meta-Writer通过profile后按第12节退役。
+
+## 16. Task-expert bank完成与2026-08-08交接边界
+
+clean`81101fe`的正式expert阶段已自然完成统一step1000。唯一root为
+`runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`：6个independent workers、
+24/24 tasks完成，每task均保存step250/500/1000，共72个checkpoint，约562MiB。三个统一点最后
+50步的24-task等权mean action loss为`.115355/.107207/.105372`；它只记录task-local拟合，不能
+代替official development-train closed-loop选择。
+
+第15节列出的retained evaluator/cache/meta-Writer实现已并入`codex/bci-continuation`，不再位于
+第二个活动工作树。但当前仍没有full24三checkpoint正式geometry、expert-bank closed-loop、A40
+meta profile、正式feature cache、meta checkpoint或新strict rollout。最早6个experts的探索性
+geometry只提示方向较旧Writer丰富，不足以封存统一expert step。
+
+若后续证据支持step1000后仍有material上升，必须从`81101fe`创建独立frozen worktree，并沿同一
+root把全部24 tasks统一exact-resume到2000；当前分支新增的meta/evaluator实现不能改变该正式训练
+合同。若不续训，则选择一个统一expert step后再进入feature profile/cache与meta profile/formal。
+owner当前要求新session先讨论，未授权自动launch。K4 executable的removal trigger仍是新meta-Writer
+A40 profile通过，不因代码已实现而提前触发。

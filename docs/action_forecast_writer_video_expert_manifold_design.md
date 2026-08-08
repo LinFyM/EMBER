@@ -273,6 +273,10 @@ task-expert正式训练运行期间，后续实现放在独立worktree，避免�
 config阻塞；必须先完成live profile、fresh0→1、exact-resume1→3和原始六rank规模验证。K4旧
 executable只在新meta-Writer通过profile后按第12节退役。
 
+meta训练profile checkpoint只允许在`smoke`评测中按`profile_defaults.checkpoint_macros`读取，用于
+在formal seal前验证online frozen encoder、Writer generation batch、每卡generator/rollout并存与
+显存释放；formal评测仍只接受sealed `formal_run.checkpoint_macros`。两种mode不能互相冒充。
+
 ## 16. Task-expert bank完成与2026-08-08交接边界
 
 clean`81101fe`的正式expert阶段已自然完成统一step1000。唯一root为

@@ -26,7 +26,9 @@
 - CPU retained证据覆盖constant/zero identity、ordered≠reversed、zero-output第一步打开output head且
   第二步梯度到达input projection/cross-attention/phase keys；六卡入口逐rank封存NUMA/topology，
   profile step wall与累计显存峰值跨全部rank取`MAX`。architecture gate无hard violation，聚焦
-  27/27和全仓219/219通过。这只证明机制可运行，不是GPU profile、重建或closed-loop成绩。
+  28/28和全仓220/220通过。审计还定位并修复了smoke evaluator误用formal checkpoint集合、从而
+  拒绝合法profile macro1/3的问题；formal集合没有放宽。这只证明机制可运行，不是GPU profile、
+  重建或closed-loop成绩。
 
 ## 2026-08-08 Expert-Manifold train24×50 formal feature cache
 

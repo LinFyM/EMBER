@@ -42,9 +42,11 @@ from ember.expert_manifold.video_features import (
 )
 from ember.expert_manifold.feature_cache import _feature_contract, _feature_runtime
 from ember.expert_manifold.writer_training import (
+    WRITER_RUN_SCHEMA,
     _contract as _writer_contract,
     _runtime as _writer_runtime,
 )
+from ember.expert_manifold.writer_checkpoint import WRITER_CHECKPOINT_SCHEMA
 from ember.expert_manifold.video_schedule import (
     condition_demo_index,
     reference_demo_index,
@@ -52,6 +54,7 @@ from ember.expert_manifold.video_schedule import (
 from ember.expert_manifold.inference import (
     EXPERT_MANIFOLD_ADAPTER_SCHEMA,
     EXPERT_MANIFOLD_WRITER_KIND,
+    _training_checkpoint,
     expected_expert_manifold_episode_evidence,
     validate_expert_manifold_episode_evidence,
 )
@@ -140,6 +143,48 @@ def test_topological_writer_contract_seals_physical_numa_mapping(
     assert contract["runtime"]["runtime_metrics_reduction"] == (
         "max_across_all_ranks"
     )
+
+
+def test_smoke_evaluation_accepts_declared_profile_checkpoint(tmp_path: Path) -> None:
+    config = load_expert_manifold_config(CONFIG)
+    source = {"source_run": "source", "checkpoint": "checkpoint", "model_path": "policy"}
+    run_root = tmp_path / "run"
+    checkpoint = run_root / "checkpoints" / "macro_00000003"
+    checkpoint.mkdir(parents=True)
+    write_json_atomic(
+        run_root / "run_contract.json",
+        {
+            "schema_version": WRITER_RUN_SCHEMA,
+            "mode": "profile",
+            "config": {"path": str(CONFIG.resolve()), "schema": config["schema_version"]},
+            "source": source,
+            "method": config["method"],
+            "information_wall": config["information_wall"],
+            "topological_writer": config["topological_writer"],
+            "meta_training": config["meta_training"],
+            "expert_bank": {"step": 1000},
+            "runtime": {"world_size": 6},
+        },
+    )
+    write_json_atomic(
+        checkpoint / "manifest.json",
+        {
+            "schema_version": WRITER_CHECKPOINT_SCHEMA,
+            "next_macro": 3,
+            "world_size": 6,
+            "files": {},
+            "content_hash_policy": "disabled_by_owner",
+        },
+    )
+
+    _, _, cursor = _training_checkpoint(
+        config_path=CONFIG.resolve(),
+        config=config,
+        checkpoint=checkpoint,
+        source=source,
+        require_formal=False,
+    )
+    assert cursor == 3
 
 
 def test_profile_runtime_supports_fresh_then_exact_resume_boundary() -> None:

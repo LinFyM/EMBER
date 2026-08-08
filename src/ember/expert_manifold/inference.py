@@ -33,6 +33,37 @@ EXPERT_MANIFOLD_ADAPTER_SCHEMA = "ember_pi05_expert_manifold_writer_eval_adapter
 EXPERT_MANIFOLD_EPISODE_SCHEMA = "ember_pi05_expert_manifold_writer_episode_v1"
 
 
+def _declared_checkpoint_macros(
+    config: Mapping[str, Any], training_mode: str
+) -> tuple[int, ...]:
+    meta = config["meta_training"]
+    if training_mode == "profile":
+        authority = meta["profile_defaults"]
+    elif training_mode == "formal":
+        authority = meta["formal_run"]
+    else:
+        return ()
+    return tuple(int(value) for value in authority["checkpoint_macros"])
+
+
+def _training_mode_is_valid(
+    *,
+    training_mode: str,
+    formal: Mapping[str, Any],
+    training_expert_step: int,
+    require_formal: bool,
+) -> bool:
+    if not require_formal:
+        return training_mode in {"profile", "formal"}
+    selected_expert_step = formal.get("selected_expert_step")
+    return (
+        training_mode == "formal"
+        and formal.get("status") == "sealed"
+        and selected_expert_step is not None
+        and training_expert_step == int(selected_expert_step)
+    )
+
+
 def _training_checkpoint(
     *,
     config_path: Path,
@@ -52,8 +83,8 @@ def _training_checkpoint(
     manifest = read_json(manifest_path)
     cursor = int(manifest.get("next_macro", -1))
     formal = config["meta_training"]["formal_run"]
+    training_mode = str(training.get("mode", ""))
     training_expert_step = int(training.get("expert_bank", {}).get("step", -1))
-    selected_expert_step = formal.get("selected_expert_step")
     valid = (
         training.get("schema_version") == WRITER_RUN_SCHEMA
         and Path(str(training.get("config", {}).get("path", ""))).resolve()
@@ -70,19 +101,15 @@ def _training_checkpoint(
         and manifest.get("schema_version") == WRITER_CHECKPOINT_SCHEMA
         and manifest.get("content_hash_policy") == "disabled_by_owner"
         and int(manifest.get("world_size", -1)) == int(formal["expected_world_size"])
-        and cursor in tuple(int(value) for value in formal["checkpoint_macros"])
+        and cursor in _declared_checkpoint_macros(config, training_mode)
         and checkpoint.name == f"macro_{cursor:08d}"
-    )
-    if require_formal:
-        valid = (
-            valid
-            and training.get("mode") == "formal"
-            and formal.get("status") == "sealed"
-            and selected_expert_step is not None
-            and training_expert_step == int(selected_expert_step)
+        and _training_mode_is_valid(
+            training_mode=training_mode,
+            formal=formal,
+            training_expert_step=training_expert_step,
+            require_formal=require_formal,
         )
-    else:
-        valid = valid and training.get("mode") in {"profile", "formal"}
+    )
     for name, expected_bytes in manifest.get("files", {}).items():
         path = checkpoint / name
         valid = valid and path.is_file() and path.stat().st_size == int(expected_bytes)

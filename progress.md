@@ -13,7 +13,10 @@
   逐rank topology；已改为fail-fast，并记录local/physical GPU、NUMA node和CPU affinity。该修复不改
   模型、task batch、DDP平均、优化器或feature/expert输入。profile step wall和累计peak allocated/
   reserved显存均跨全部rank取`MAX`，防止rank0局部低估。architecture gate无hard violation，聚焦
-  27/27和全仓219/219 CPU测试通过。
+  28/28和全仓220/220 CPU测试通过。
+- evaluator原先虽允许`smoke`读取profile run，却无条件用formal checkpoint集合验收cursor，合法
+  macro1/3必然失败。现已按training mode分别绑定profile/formal集合；formal仍要求sealed且选定统一
+  expert step。meta profile后可先做online generation显存smoke，再决定formal topology。
 - 2026-08-08 17:38 CST从clean`81101fe`沿原正式root启动24 experts统一exact-resume1000→2000：
   六个独立tmux workers固定`gpu01:0,1,2,4,5,7`及对应NUMA，每worker续原4 tasks，显式
   `NCCL_P2P_DISABLE=1`。GPU3他人进程和GPU6均未使用；1500 partial checkpoints不作科研结论。

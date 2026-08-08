@@ -39,12 +39,13 @@
   sqrt-normalized causal-prefix dynamic value；这同时删除静态DC和忽略phase key的unordered-set value
   捷径，并增加不读frames、精确identity的paired no-video反事实。meta入口已补齐NUMA fail-fast和
   逐rank physical/local topology seal；profile step wall与显存峰值均跨六rank取`MAX`；architecture
-  gate无hard violation，聚焦27/27、全仓219/219 CPU测试通过；尚无GPU或性能结论。
+  gate无hard violation，聚焦28/28、全仓220/220 CPU测试通过；尚无GPU或性能结论。
 - [ ] 等待clean`81101fe`原root的全24 experts exact-resume1000→2000自然完成；当前6 workers使用
   `gpu01:0,1,2,4,5,7`并保存统一1500/2000。完成后复算geometry并做两个1200-row closed-loop，
   只选一个全task共享target step。
-- [ ] 完成meta-Writer六卡fresh0→1、exact-resume1→3、finite/OOM/梯度与任务等权合同
-  后才seal formal。
+- [ ] 完成meta-Writer六卡fresh0→1、exact-resume1→3、finite/OOM/梯度与任务等权合同；随后用
+  profile macro3做不进入性能证据的online encoder/Writer generation smoke，验证每卡generator与
+  rollout replicas并存、cache和显存释放后才seal formal。profile/formal checkpoint集合严格隔离。
 - [ ] 完成A40 profile、identity-fresh meta训练、strict paired correct400曲线、五臂视频因果、
   task drift和expert→generated LoRA→action机制分析；根据最早失效接口迭代。
 - [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高absolute、breadth、

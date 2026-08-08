@@ -48,7 +48,7 @@
 
 ## 下一证据门
 
-1. [ ] 完成当前实现的clean commit/push并从该提交执行后续工作。
+1. [x] 当前实现已clean commit/push为`1d9d030`；后续工作从该提交或其纯authority后继提交执行。
 2. [ ] 按live GPU与quota preflight选择一张空闲A40，做validation8×1-state online smoke：
    feature→coefficients→full LoRA cache→release Writer/encoder→复用同一source policy rollout。
    必须8 rows/8 generated/8 cache entries、0 retry/failure/OOM/nonfinite/forbidden reads；success只作

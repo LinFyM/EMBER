@@ -757,3 +757,17 @@ raw-frame shuffle，Goal/Long若干task margin弱，不能据此宣称达标。
 5. 若闭式坐标方向正确但held interpolation不足，下一单变量才是在同一24-dimensional coordinate target上
    训练小型video coefficient reader；不恢复129万坐标hyperdecoder。few-shot只在one-shot same-task
    方差成为最早限制时加入，现有1/3/5-shot proxy几乎持平，首版继续one-shot。
+
+### 29.6 Canonical实现封存（2026-08-09）
+
+clean pushed`1d9d030`已经完成29.5第1--2项。唯一活动config为
+`configs/pi05_video_expert_manifold_causal_barycentric_v1.json`；evaluation显式接收固定expert bank与
+feature cache，不再接收learned Writer checkpoint。旧trainer、checkpoint和learned decoder owner已删除，
+没有并行可执行版本，也没有meta optimizer、scheduler或可选择的Writer checkpoint。
+
+CPU合同为全仓`180/180`通过，另对真实24-basis逐项只读：24个one-hot coefficient的完整expert最大
+绝对重建误差`2.235e-8`，zero representation逐tensor exact identity，affine coefficient sum最大误差
+`1.192e-7`，24/24 demo0 ordered/reversed coefficients不同，所有完整LoRA finite，Writer parameter数为0。
+architecture guard无hard violation或parallel family，active source相对前一canonical净删941行。
+当前formal状态有意保持`blocked_until_live_a40_online_smoke`；这些CPU证据只解封单卡在线工程smoke，
+不构成validation性能或视频因果性成绩。

@@ -1,5 +1,18 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Causal Barycentric canonical实现与CPU封存
+
+- clean pushed`1d9d030`新增
+  `configs/pi05_video_expert_manifold_causal_barycentric_v1.json`并把evaluation改为固定step2000
+  expert bank + train24×50 feature cache + 在线一条teacher video；learned Writer checkpoint参数退役。
+- 旧`train_expert_manifold_writer.py`、writer training/checkpoint和learned decoder路径及专属测试已删除；
+  `task_plan.md`同时收敛为当前执行计划，旧命令只由Git、ledger与formal artifacts保存。
+- 全仓180/180、py_compile、diff check通过；architecture guard无hard violation、无parallel family，
+  active diff净删941行。真实24-basis CPU只读：0 parameters、168 chunks、1,287,168 valid values、
+  one-hot最大误差`2.235e-8`、zero identity exact、affine sum误差`1.192e-7`、24/24 ordered/reversed不同。
+- config formal状态保持`blocked_until_live_a40_online_smoke`。本阶段未启动GPU；下一步live比较两节点与
+  quota后，只用一张空闲A40完成validation8×1-state online generation/cache/release/rollout smoke。
+
 ## 2026-08-09 Address-binding strict负裁决与barycentric CPU设计门
 
 - clean eval commit`033db91`的address-binding macro50 correct400自然完成并释放六卡：正式root=

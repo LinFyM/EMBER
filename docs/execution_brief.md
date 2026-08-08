@@ -1,6 +1,6 @@
 # EMBER Current Execution Brief
 
-更新时间：2026-08-08 UTC。本文是操作层authority；科研结果取
+更新时间：2026-08-09 UTC。本文是操作层authority；科研结果取
 `docs/active_session_handoff.md`，迁移取`docs/a100_to_bci_migration_handoff.md`，
 长期边界取`AGENTS.md`。
 
@@ -17,13 +17,19 @@ root和checkpoint永久停止，不resume100、不做五臂。
 full400精确几何证明输出形态已有健康能量和矩阵秩（norm/stable/top中位=
 `3.201/1.318/.778`），但cross-task effective cosine中位=`.94197`、task-mean=`.94270`，最近
 train expert cosine仅`.12734`。这比macro3跨task`.54184`更同质，故继续原训练会强化公共方向。
-下一动作不是扩训练步数、few-shot或RL，而是实现design第29节的Causal Barycentric Topological
-Writer：固定step2000 expert basis与train24 action-hidden feature centroids，video causal value只生成
+design第29节的Causal Barycentric Topological Writer已经由clean pushed`1d9d030`成为唯一canonical
+runtime：固定step2000 expert basis与train24 action-hidden feature centroids，video causal value只生成
 ridge `.3` barycentric coefficients；168 chunks按expert direction/log-scale分别重构并限制在expert
 scale envelope。LOO23 exact effective cosine correct/reversed/shuffled=`.38302/.09900/.18539`，correct
-norm=`3.84385`，已通过CPU设计门。先完成authority、canonical实现和CPU合同；随后重新live检查
-`gpu01/gpu02`，只用一张空闲A40做online generation/cache/release smoke。smoke通过前禁止新rollout、
-训练或长期实验；当前无GPU工作在运行。
+norm=`3.84385`。learned Writer训练/checkpoint路径和旧CLI参数已删除；当前没有meta训练或Writer
+checkpoint。全仓180 tests、compile/diff及architecture hard/parallel门通过，真实24-basis CPU检查的
+one-hot最大误差=`2.235e-8`、zero identity exact、0 parameters、24/24 ordered/reversed不同。
+
+当前唯一动作是重新live检查`gpu01/gpu02`和quota，只用一张空闲A40做validation8×1-state online
+feature→LoRA cache→release→source-policy rollout smoke。config formal状态仍为
+`blocked_until_live_a40_online_smoke`；smoke通过、证据写回并clean push前禁止formal rollout或长期实验。
+`task_plan.md`已删除旧架构的可误执行命令副本；后续历史段若引用旧plan命令，只能从Git provenance读取。
+当前无GPU工作在运行。
 
 **当前操作覆盖（2026-08-09）**：clean pushed`cd95281`的
 `RMSNorm(dynamic video latent) × RMSNorm(chunk+rank address)`新图已经通过fresh/resume/contiguous

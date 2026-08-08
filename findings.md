@@ -1,5 +1,19 @@
 # EMBER Findings
 
+## 2026-08-09 Causal Barycentric canonical实现结论
+
+- clean pushed`1d9d030`把闭式流形坐标原位接入唯一evaluation runtime，并删除learned Writer
+  trainer/checkpoint/model及旧checkpoint CLI。新方法没有可训练Writer参数，也没有checkpoint选择轴；
+  shared资产是固定step2000 train24 experts、train24×50 action-hidden centroids和同一闭式规则。
+- 真实资产的关键数值合同成立：24个one-hot coordinates逐一重建完整expert的最大误差`2.235e-8`；
+  zero/phase-constant表示逐tensor精确回到source identity；非零query coefficients之和最大误差
+  `1.192e-7`，24/24 demo0 ordered/reversed不同，task-pair coefficient L2中位`.97133`。
+- 这直接避免learned decoder的“所有task向公共方向训练塌缩”，但并不证明held validation video落在
+  正确expert convex/affine邻域，也不证明重构LoRA闭环有效。下一门必须是在线A40 smoke后strict
+  correct400，而不是把CPU LOO或one-hot exactness当作性能结果。
+- 全仓180 tests与结构门通过；无hard violation、无parallel implementation family，当前变更净删
+  941 active lines。config仍故意blocked，确保旧address-binding smoke不能给新图冒充execution seal。
+
 ## 2026-08-09 Address-binding 75/400与Causal Barycentric设计裁决
 
 - address-binding macro50的正式strict correct400=`75/400`、breadth=`4/8`，逐task为Long

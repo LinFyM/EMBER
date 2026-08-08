@@ -1,6 +1,6 @@
 # EMBER Active Session Handoff
 
-更新时间：2026-08-08 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
+更新时间：2026-08-09 UTC。本文只记录迁回 BCI 前后的当前真相。历史执行流水仍在
 `progress.md`，证据与解释仍在`findings.md`及各架构设计文档；不要用其中旧的
 “当前”“下一步”覆盖本文。
 
@@ -37,8 +37,18 @@ log-scale并重构完整rank-16 LoRA；zero/phase-constant representation令全�
 `.38302/.09900/.18539`，correct margins=`.28403/.19763`；correct LoRA
 norm/stable-rank/top-energy=`3.84385/1.15056/.89540`、16 coordinates active，已同时进入expert方向与
 能量形态。它只是train-task LOO机制证据，phase shuffle也是16-slot proxy，不是validation closed-loop
-成绩；Goal/Long若干task margin仍弱。下一步先更新authority并实现唯一canonical路径和CPU合同，之后
-只做一次live A40 online generation smoke；通过才启动新strict correct400。当前没有GPU进程或实验在跑。
+成绩；Goal/Long若干task margin仍弱。
+
+canonical实现已由clean pushed`1d9d030`完成。新config为
+`configs/pi05_video_expert_manifold_causal_barycentric_v1.json`；runtime不再读取learned Writer
+checkpoint，而是显式检查统一step2000 expert bank、train24×50 feature cache和在线一条teacher video。
+learned Writer trainer/checkpoint/model可执行路径及旧CLI参数已原位删除，Git与formal artifacts保留历史。
+全仓`180/180` CPU测试、`py_compile`、diff check通过；architecture guard无hard violation、无parallel
+family，active diff净删941行。真实24-basis只读检查得到0 learned parameters、1,287,168 valid values、
+24个one-hot expert最大重建误差`2.235e-8`、zero identity逐tensor exact、coefficient sum误差
+`1.192e-7`、24/24 demo0 ordered/reversed coefficients不同，四类forbidden reads均为0。formal状态仍是
+`blocked_until_live_a40_online_smoke`；下一步只做一次live空闲A40的validation8×1-state在线链路smoke，
+通过并重新seal后才启动新strict correct400。当前没有GPU进程或实验在跑。
 
 - **最新覆盖（2026-08-09）**：macro50地址塌缩的单变量根修已由clean pushed`cd95281`实现并完成
   两道新图专属A40工程门。六卡fresh0→1/resume1→3与独立contiguous0→3科学指标、Writer/RNG及

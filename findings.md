@@ -18,6 +18,8 @@
   `RMSNorm(Wx_t)+phase_key_t`。causal-prefix uniform-pool template correct/reversed/shuffled=
   `.96263/-.94287/-.04463`，B proxy=`.38820/.06042/.19110`，相对简单centered proxy保持correct
   可预测性并把order margins从`.17940/.12221`提高到`.32778/.19709`；四suite margin均为正。
+  centered/causal-prefix carrier RMS中位=`.14446/.19388`，后者能量约为前者`1.8875×`，但这不
+  等于generated LoRA能量已解决，仍需真实训练后对expert形态和closed loop裁决。
 - joint与Action-Expert完整特征仍控制phase routing，但只有固定顺序绑定的动态prefix能写LoRA content；
   zero或任意phase-constant输入精确identity。no-video保留严格paired元数据但不读frame，以zero
   innovation完整运行Writer。3/5-shot causal proxy只到`.39379/.39558`，仍不足以先切few-shot。

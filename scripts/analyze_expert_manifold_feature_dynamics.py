@@ -318,9 +318,21 @@ def _load_targets(
 
 def _feature_energy(features: torch.Tensor) -> dict[str, Any]:
     total_energy = features.square().sum(dim=(-2, -1))
+    centered = features - features.mean(dim=2, keepdim=True)
+    centered_energy = centered.square().sum(dim=(-2, -1))
+    causal = phase_centered_causal_memory(features)
     dc_energy = features.mean(dim=2).square().sum(dim=-1) * features.shape[2]
     return {
         "rms": _quantiles(features.square().mean(dim=(-2, -1)).sqrt()),
+        "phase_centered_rms": _quantiles(
+            centered.square().mean(dim=(-2, -1)).sqrt()
+        ),
+        "causal_prefix_rms": _quantiles(
+            causal.square().mean(dim=(-2, -1)).sqrt()
+        ),
+        "causal_over_centered_energy": _quantiles(
+            causal.square().sum(dim=(-2, -1)) / centered_energy.clamp_min(1e-30)
+        ),
         "dc_fraction": _quantiles(dc_energy / total_energy),
         "temporal_fraction": _quantiles(1.0 - dc_energy / total_energy),
         "first_difference_over_total": _quantiles(

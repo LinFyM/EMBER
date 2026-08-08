@@ -353,7 +353,9 @@ centered keys/values仍是frame-set permutation invariant，而同task恒定targ
 causal-prefix transform消除此原始set path；其uniform-pool template correct/reversed/shuffled=
 `.96263/-.94287/-.04463`，B-target proxy=`.38820/.06042/.19110`，correct几乎不损失，order
 margin由`.17940/.12221`提高到`.32778/.19709`，且四suite均为正。3/5-shot causal correct只到
-`.39379/.39558`，仍不支持当前切换few-shot。
+`.39379/.39558`，仍不支持当前切换few-shot。carrier RMS中位从简单centered的`.14446`提高到
+causal-prefix的`.19388`，能量比中位`1.8875`；它增强的是无DC的时序carrier，不是生成LoRA能量
+已经健康的结论，后者仍须profile/training geometry验证。
 
 据此，在第一次meta GPU profile前原位收紧唯一canonical decoder，不保留旧可执行分支：
 

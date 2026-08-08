@@ -6,6 +6,38 @@
 
 ## 0. 当前交接边界：Video-Conditioned Expert-Manifold Topological Writer
 
+**最新覆盖（2026-08-09，优先于本节全部后续历史条目）**：Policy-Effective Barycentric的
+预注册strict correct80筛选已经自然完成并负裁决。唯一root为
+`runs/outputs/pi05_expert_manifold_policy_effective_correct80_screen_noreplacement_seed7_ffed252_20260809`；
+结果=`15/80`、breadth=`5/8`，逐task按Long/Goal/Object/Spatial为`[1,0]/[0,2]/[8,0]/[1,3]`。
+36/36 jobs、80 unique rows/LoRAs/cache entries、9 workers均attempt1/exit0，0 retry/error/OOM/
+nonfinite/forbidden reads；Writer释放、source-policy原位复用和GPU释放合同全部闭合。它低于预注册
+strong门`28`和ambiguity门`22`，故不得扩跑160/400，也不做same/wrong/shuffled/reversed/no-video。
+
+严格screen审计位于同root的`strict_screen_and_paired_audit_v1.json`。它与raw barycentric、addressless、
+address-binding在80条state/env/policy RNG及exact teacher video/order上逐行一致；相对raw为gained/lost=
+`6/3`、净`+3`、exact `p=.5078`，相对source为`13/7`、净`+6`、`p=.2632`，均不足以建立可靠收益。
+相对历史v6-fast同state panel为`5/18`、净`-13`、`p=.01062`；v6使用不同teacher schedule，故这里只是
+same-state参考，不冒充same-video比较。
+
+完整80-LoRA有效空间分析位于`policy_effective_geometry_correct80_v1.json`，全部`3,160`个生成LoRA
+pair、`1,920`个generated-to-expert pair及80个matched raw pair都在38 targets的exact effective`BA`
+Frobenius空间计算，没有sketch近似。新compiler输出的norm/stable-rank/top-energy中位=
+`4.148/1.234/.847`，A/B RMS=`.018909/.008413`，16/16 coordinates active，q/v/action B-column cosine=
+`.610/.626/.372`；能量、rank和factor gauge不是失败首因。但它与旧raw-factor输出的effective cosine
+仍高达`.958`，norm只增加`5.5%`，说明cross-term代数错误真实存在却不是63分低性能的主导量。
+same-task不同video/cross-task/task-mean cosine中位=`.989/.703/.712`，最近train expert cosine中位=
+`.641`；每task视频中心化effective variance仅`.56%--2.54%`。语义路由可找到合理近邻，例如
+Object-1→Chocolate-pudding-to-basket、Object-3→Tomato-sauce-to-basket，但前者`8/10`、后者`0/10`；
+因此“进入expert-like方向”本身不保证held object/scene闭环迁移。
+
+当前最早未识别接口已经从compiler压缩转移到**soft expert composition与held-task expert support之间**。
+下一单变量只做video-routed hard-one-hot expert screen：保持同一causal representation、ridge、视频输入、
+expert2000和policy-effective compiler，只把24维soft coefficients确定性取最大值为one-hot。它不是task-ID
+oracle，也不读取outcome；其80-row exact-prefix结果用于判别“混合稀释”还是“train experts本身不能迁移”。
+通过前不训练新reader、不恢复v6、不加order loss，也不引入few-shot。现有same-task cosine与此前3/5-shot
+proxy几乎不变，已表明few-shot尚不是最早瓶颈。
+
 **最新覆盖（2026-08-09，优先于本节全部后续历史条目）**：Causal Barycentric正式strict
 correct400已经自然完成并负裁决。唯一root为
 `runs/outputs/pi05_expert_manifold_causal_barycentric_correct400_noreplacement_seed7_0397be6_20260809`；

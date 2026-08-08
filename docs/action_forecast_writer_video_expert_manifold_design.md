@@ -897,3 +897,48 @@ validation8×1-state的feature→LoRA cache→release→rollout得到8 unique ro
 `10,576,896,000` bytes，Writer释放后source policy原位复用，GPU自然释放。root=
 `runs/outputs/pi05_expert_manifold_policy_effective_online_smoke_retry1_gpu02_fb5b367_20260809`。`1/8` success
 只作execution smoke；精确evidence写回后formal=`sealed`，下一步才是预注册小规模strict correct panel。
+
+## 32. Policy-Effective correct80裁决与hard-route support判别（2026-08-09）
+
+### 32.1 预注册screen结果
+
+31节candidate在validation8×states0--9、correct、seed7、teacher video无放回的固定screen得到
+`15/80`、breadth=`5/8`；逐task Long/Goal/Object/Spatial=`[1,0]/[0,2]/[8,0]/[1,3]`。36 jobs、80
+unique state/video/LoRA rows、9 workers与信息墙均完整，故这是有效的科学负结果。它低于预注册
+strong门`28`和ambiguity门`22`，不得扩跑160/400或五臂。
+
+相对exact-same-video raw-factor compiler为`6 gained/3 lost`，只净增3且`p=.5078`；相对source为
+`13/7`、`p=.2632`。相对v6-fast same-state/different-video为`5/18`、`p=.01062`。因此修复
+effective algebra带来方向正确的小改善，但不能解释当前与143上限之间的巨大差距。
+
+### 32.2 有效空间根因收缩
+
+80套LoRA在38 targets上的exact effective`BA`几何为：norm/stable-rank/top-energy中位=
+`4.148/1.234/.847`，A/B RMS=`.018909/.008413`，16 coordinates active，q/v/action B-column cosine=
+`.610/.626/.372`。它与matched raw-factor输出的cosine中位仍`.958`、relative-L2=`.302`、norm ratio=
+`1.055`。rank96/public-rank16不是瓶颈，cross-term错误也只是次要效应。
+
+same-task不同video/cross-task/task-mean cosine中位=`.989/.703/.712`，最近train expert cosine中位=
+`.641`；每task video-centered effective variance仅`.56%--2.54%`。路由已能找到语义合理expert：
+Object-1最接近chocolate-pudding-to-basket并有`8/10`，Object-3最接近tomato-sauce-to-basket却为`0/10`。
+这把剩余不确定性分成两个可区分解释：
+
+1. broad signed soft mixture稀释了一个本来能跨对象迁移的expert；
+2. 即使语义最近的train expert也不能在held object/scene上执行，24-task bank只定义训练任务局部方向，
+   不构成held-task policy support。
+
+### 32.3 下一唯一单变量
+
+下一candidate保持phase-centered causal representation、ridge`.3`、step2000 bank、train24 cache、
+exact-language+one action-hidden video、38 targets、public rank16、policy-effective compiler和zero identity。
+唯一变化是在正常非零video下把24维affine coefficients确定性变为其最大坐标的one-hot；该one-hot经
+现有compiler近似重建对应expert。选择完全来自视频representation，不读取task ID、validation action、
+rollout outcome或文件身份。
+
+它首先是support判别，同时若闭环通过也可成为稀疏Expert-Manifold起点。必须在CPU验证zero identity、
+24 one-hot重构、finite/full topology、不同ordered/reversed输入可选择不同expert；然后完成单卡online
+generation/cache/release/rollout smoke，最后只跑与32.1完全相同的80-row panel。若没有实质超过15并
+维持/提高breadth，停止在24-expert mixture内部继续调scale、temperature、top-k或rank，转向以历史v6
+高性能表示作初始化、但仍由视频提供唯一dynamic value的可迁移policy-effective Writer。若明显提高，
+才设计可微sparse reader与order-negative训练。few-shot继续后置：当前same-task输出近乎相同，且此前
+3/5-shot proxy对one-shot仅`.39379/.39558`对`.38820`，平均更多视频不能修复当前最早接口。

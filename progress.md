@@ -1,5 +1,19 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Policy-Effective correct80完成、审计与GPU释放
+
+- frozen`ffed252`的validation8×states0--9 correct/without-replacement screen已自然完成：root=
+  `runs/outputs/pi05_expert_manifold_policy_effective_correct80_screen_noreplacement_seed7_ffed252_20260809`，
+  score=`15/80`、breadth=`5/8`；36 jobs、80 rows/cache LoRAs和9 workers全部attempt1/exit0，0异常/
+  forbidden reads，三张A40均已释放。按预注册门不扩跑160/400或五臂。
+- CPU只读写入`strict_screen_and_paired_audit_v1.json`：相对source/addressless/address-binding/raw/v6-fast
+  的gained/lost依次=`13/7,12/7,9/7,6/3,5/18`；前四个identity/RNG严格配对，其中后三个还exact
+  same-video，v6只作different-video same-state参考。
+- CPU exact有效空间写入`policy_effective_geometry_correct80_v1.json`：覆盖全部3,160 generated pair、
+  1,920 generated-expert pair和80 matched raw pair，无sketch近似。norm/stable/top=
+  `4.148/1.234/.847`，current/raw cosine=`.958`，same/cross/task-mean=`.989/.703/.712`，nearest expert=
+  `.641`。下一步只设计video-routed hard-one-hot expert单变量screen，先判别soft mixture与basis support。
+
 ## 2026-08-09 Policy-Effective online smoke通过并seal formal
 
 - attempt0因detached worktree缺少`@{upstream}`在GPU加载前被合同拒绝，物理0始终0 MiB；partial root与

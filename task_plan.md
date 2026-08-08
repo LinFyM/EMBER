@@ -37,6 +37,12 @@
 - [x] full400几何排除低能量/低秩：norm/stable/top=`3.958/1.155/.894`、16 coordinates active；
   同时定位raw factor compiler风险：coefficients abs support中位`13.75`，same/cross/task-mean cosine=
   `.988/.685/.697`。分别混合A/B会引入`k!=j` cross-expert effective-update项。
+- [x] Policy-Effective strict correct80完成并负裁决：`15/80`、breadth=`5/8`，36/36 jobs、80 unique
+  LoRAs、9 workers attempt1/exit0、0 retry/error/OOM/nonfinite/forbidden reads。相对same-video raw
+  gained/lost=`6/3`，未过`22`分消歧门；禁止扩跑160/400和五臂。root同本文件下方launch合同。
+- [x] exact effective`BA`分析覆盖3,160 generated pairs、1,920 generated-expert pairs和80 matched raw
+  pairs：norm/stable/top=`4.148/1.234/.847`，current/raw cosine=`.958`、norm ratio=`1.055`；
+  same/cross/task-mean=`.989/.703/.712`、nearest expert=`.641`。compiler修复真实但不是主导瓶颈。
 
 ## 当前唯一canonical实现
 
@@ -76,14 +82,19 @@
    captured-energy中位`.99523`。artifact=`policy_effective_compiler_feasibility_full400_rank128_v2.json`。
 6. [x] 已在唯一runtime原位替换compiler；保持video reader、coefficients、expert/cache、38 targets、
    rank16、one-shot与zero identity不变，CPU合同与真实资产检查全部通过。
-7. [ ] 专属单卡A40 online generation/cache/release/rollout smoke已通过并seal；下一步闭环固定为
+7. [x] 专属单卡A40 online generation/cache/release/rollout smoke已通过并seal；下一步闭环固定为
    validation8×前10 states=`80`条correct screen。历史相同前缀为source/addressless/address-binding/
    raw-barycentric/v6-fast=`9/10/13/12/28`，breadth=`2/3/2/3/5`。强通过门为score`>=28/80`、
    breadth`>=5`且相对raw-barycentric paired `gained-lost>=10`；随后才做formal correct400。score
    `22--27`且breadth`>=4`只扩到预注册160-row消歧；更低或breadth`<=3`则拒绝当前compiler并回到
-   最早失效接口。correct400过门后才做same/wrong/shuffled/reversed/no-video严格配对。
+   最早失效接口。实际=`15/80`、breadth5、raw paired净`+3`，低于ambiguity门；本candidate停止。
 8. [ ] 若one-shot的same-task视频方差成为经证据定位的最早限制，再评估固定K的few-shot set/sequence
    aggregation；不能把few-shot当作掩盖task identity或视频时序失败的捷径。
+9. [ ] 下一单变量：video-routed hard-one-hot expert。保持representation/ridge/expert2000/compiler和
+   信息墙，只把soft coefficients确定性argmax为one-hot；先CPU验证zero identity、one-hot重构、
+   ordered/reversed选择可变和无task-ID/outcome读取，再做单卡online smoke及同一80-row screen。
+   若不能实质超过15并提高breadth，则24-expert support不足，停止继续修soft compiler；若显著提高，
+   才研究可微稀疏routing和order-negative credit。任何GPU前重新live preflight并另行封存launch合同。
 
 ## Policy-Effective online smoke launch合同（2026-08-09）
 

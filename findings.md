@@ -1,5 +1,29 @@
 # EMBER Findings
 
+## 2026-08-09 Policy-Effective correct80负裁决与下一判别
+
+- 预注册validation8×states0--9 screen自然完成为`15/80`、breadth=`5/8`，逐task Long/Goal/Object/
+  Spatial=`[1,0]/[0,2]/[8,0]/[1,3]`。36/36 jobs、80 unique LoRAs、9 workers、信息墙与释放合同全部
+  有效；这是科学non-pass，不是工程失败。因score低于`22`，不扩跑160/400、不做五臂。
+- exact same-video paired screen相对raw barycentric为gained/lost=`6/3`、`p=.5078`，相对source=
+  `13/7`、`p=.2632`；相对v6-fast same-state/different-video为`5/18`、`p=.01062`。policy-effective
+  compiler有小幅正向效应，但远不足以恢复历史上限。
+- 80个输出的exact effective`BA`几何为norm/stable/top中位=`4.148/1.234/.847`，A/B RMS=
+  `.018909/.008413`，q/v/action B-column cosine=`.610/.626/.372`，16/16 coordinates active。
+  因此当前不是LoRA能量、公共rank、inactive coordinate或rank96压缩故障。
+- 新compiler与同视频raw-factor输出的effective cosine中位仍为`.958`、relative-L2=`.302`、norm ratio=
+  `1.055`。这把30节的cross-term错误重新定量为“真实但次要”：修复后只净增3条，不能继续把主要失败
+  归给factor algebra。
+- same-task不同video/cross-task/task-mean exact cosine中位=`.989/.703/.712`，最近step2000 expert=
+  `.641`；每task视频中心化effective variance仅`.56%--2.54%`。Object-1与Object-3都路由到语义正确的
+  basket-pick experts，闭环却分别`8/10`与`0/10`。最早不确定性是soft composition是否稀释可用expert，
+  还是train expert对held object/scene根本不具备足够迁移支撑。
+- 下一最小判别不是继续调scale/rank、训练大decoder或加入few-shot，而是保持reader不变，把每条视频的
+  coefficients确定性argmax为one-hot并复用同一80-row panel。若hard route明显提高，后续研究
+  video-conditioned sparse routing；若仍低，则停止在24-expert convex/affine support内修compiler，转向
+  以v6强先验或更可迁移policy-effective target训练单一Writer。hard route仍由视频决定，不是task-ID/
+  outcome oracle。
+
 ## 2026-08-09 Causal Barycentric strict负裁决与policy-effective compiler根因
 
 - 正式correct400=`63/400`、breadth=`5/8`，逐task为Spatial`0/6`、Object`38/0`、Goal`0/17`、

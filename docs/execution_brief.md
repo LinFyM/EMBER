@@ -6,6 +6,28 @@
 
 ## 0.0 最新执行覆盖：Expert-Manifold证据优先持续推进
 
+**最新操作覆盖（2026-08-09，覆盖本节全部后续旧“当前/下一步”）**：Policy-Effective
+Barycentric的预注册correct80 screen已完整结束为`15/80`、breadth=`5/8`，不是待扩跑状态。正式root=
+`runs/outputs/pi05_expert_manifold_policy_effective_correct80_screen_noreplacement_seed7_ffed252_20260809`；
+36/36 jobs、80 rows/unique LoRAs/cache entries、9 workers attempt1/exit0，0 retry/error/OOM/nonfinite/
+forbidden reads，GPU已释放。逐task Long/Goal/Object/Spatial=`[1,0]/[0,2]/[8,0]/[1,3]`。它低于预注册
+`22--27`消歧区间，禁止运行160/400或五臂。
+
+同root的`strict_screen_and_paired_audit_v1.json`证明raw/addressless/address-binding均与当前80条使用
+exact state、env、policy RNG、teacher demo和order；当前相对raw为`6 gained/3 lost`，净`+3`，
+`p=.5078`。相对v6-fast same-state panel为`5/18`、`p=.01062`，但teacher schedule不同。exact effective
+`BA`分析`policy_effective_geometry_correct80_v1.json`显示norm/stable/top中位=`4.148/1.234/.847`、
+16 coordinates active；新旧compiler matched cosine仍`.958`、norm ratio=`1.055`。所以policy-effective
+修正确实小幅改善了63分路线，却没有产生足够大的policy方向改变，不能再归因于rank96压缩、低能量或
+factor gauge。
+
+下一执行单元是CPU设计/实现video-routed hard-one-hot expert诊断，随后只用同一个80-row exact-prefix
+screen判别soft mixture与expert support。保持one-shot、video-only dynamic value、ridge reader、统一
+step2000 bank、38 targets、rank16和zero identity；只把soft coefficients取argmax one-hot，不用task ID、
+validation action或outcome。必须先完成唯一canonical替换、CPU one-hot/zero/order合同、clean push、
+单卡online smoke及新的formal launch record；任何GPU动作前重新比较`gpu01/gpu02`、检查quota并只用
+空闲A40。当前没有GPU工作。
+
 **最新操作覆盖（2026-08-09，覆盖本节全部后续旧“当前/下一步”）**：Causal Barycentric
 correct400已经完成为`63/400`、breadth=`5/8`，不是待启动状态。唯一有效root=
 `runs/outputs/pi05_expert_manifold_causal_barycentric_correct400_noreplacement_seed7_0397be6_20260809`；

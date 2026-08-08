@@ -24,6 +24,8 @@
 - `/data1` quota=`552,249,764/1,073,741,824 KiB`；bank约938MiB、cache约113MiB，三条profile
   roots预计新增低于2GiB。profile只验finite/OOM、task等权、梯度、NUMA与exact-resume，再用macro3
   做online generation→释放Writer→cached rollout smoke；权重不进入formal。
+- 统一step2000 config seal为clean pushed`d96f0fb`；exact roots/commands/acceptance已预注册在
+  `task_plan.md`。root suffix指向科学seal，运行时clean/pushed commit另由run contract精确记录。
 
 ## 2026-08-08 Task-expert 2000终态与晚期target平台
 

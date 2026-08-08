@@ -79,6 +79,8 @@ available memory约516.5GB；GPU3的`nlge` VLLM不触碰。`gpu02:6,7`均已有�
 4+2 NUMA，故不用于六rank profile。`/data1` quota现为
 `552,249,764/1,073,741,824 KiB`。meta formal仍blocked，只允许先做fresh0→1、resume1→3、
 contiguous0→3与macro3 online-generation/cached-rollout smoke；profile checkpoint不得warm-start。
+统一target/config seal为clean pushed`d96f0fb`；本轮两个固定roots、三条exact command和验收门取
+`task_plan.md`顶部，实际run commit必须clean/pushed并由run contract登记。
 
 owner已在本session完成讨论后明确恢复持续自主执行，并授权围绕长期Goal自行设计、实现、训练、
 评测和迭代；只有实质性阻塞才回报。执行顺序为：full24 expert geometry与development-train

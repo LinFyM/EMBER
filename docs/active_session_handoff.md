@@ -95,6 +95,9 @@
   本轮DDP。gpu01 available host memory约516.5GB，`/data1` quota=
   `552,249,764/1,073,741,824 KiB`。formal仍blocked；先做fresh/resume/contiguous profile及macro3
   online generation→cached rollout smoke，profile权重不进入正式训练。
+- 统一target与config已由clean pushed`d96f0fb`封存；六卡profile的两个固定roots、三条exact command
+  与fresh/resume/contiguous验收门已写入`task_plan.md`顶部。实际运行必须来自含launch record的
+  clean/pushed checkout，formal状态仍未seal。
 - 旧K4 executable只作为临时兼容路径保留，owner是当前Expert-Manifold迁移；按设计第12节，只有
   新meta-Writer通过A40 profile后才删除，避免在其替代路径尚未实证前制造不可运行仓库。
 

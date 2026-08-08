@@ -60,6 +60,37 @@
   严格超过`150/400`，同时保持真实视频时序因果性、same-task鲁棒性、breadth与低checkpoint
   漂移。只有实质性阻塞才回报owner，GPU工作仍逐次执行live空闲卡与BCI多卡合同。
 
+### Expert-Manifold meta-Writer A40 profile launch合同（2026-08-09）
+
+- 科学config/target seal为clean pushed`d96f0fb`：统一expert step2000、one-shot causal-prefix
+  dynamic value、train24×50 sealed feature cache、formal仍blocked。实际运行checkout必须包含本段
+  launch record且保持clean/pushed；run contract中的完整Git commit是执行provenance，root后缀
+  `d96f0fb`只标识科学config seal。
+- 00:01 CST live比较后固定`gpu01:0,1,2|4,5,7`，六卡均为空闲A40且满足3+3 NUMA；GPU3的
+  `nlge` VLLM不触碰。gpu02物理6/7有他人进程且空闲0--5只能形成4+2，不使用。gpu01 available
+  memory约516.5GB；`/data1` quota=`552,249,764/1,073,741,824 KiB`，三条profile root保守新增
+  低于2GiB。每次启动前仍重看这六卡，任一卡变忙就延后或改用另一个合法3+3组合。
+- fresh/resume root、contiguous root、日志和tmux固定为：
+  `runs/outputs/pi05_expert_manifold_writer_profile_r6_step2000_d96f0fb_20260809`、
+  `runs/outputs/pi05_expert_manifold_writer_profile_contiguous_r6_step2000_d96f0fb_20260809`、
+  对应同basename的`runs/logs/*.log`、`ember_expert_manifold_profile_d96f0fb`与
+  `ember_expert_manifold_profile_contiguous_d96f0fb`。所有root/log启动前必须不存在。
+- 三条exact command均在frozen safety worktree执行，显式保持world6、physical/local映射、
+  `NCCL_P2P_DISABLE=1`和deferred-NCCL：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,7 NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 .venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_expert_manifold_writer.py --config configs/pi05_video_expert_manifold_v1.json --mode profile --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-step 2000 --feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_profile_r6_step2000_d96f0fb_20260809 --stop-after-macro 1
+
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,7 NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 .venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_expert_manifold_writer.py --config configs/pi05_video_expert_manifold_v1.json --mode profile --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-step 2000 --feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_profile_r6_step2000_d96f0fb_20260809 --stop-after-macro 3 --resume /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_profile_r6_step2000_d96f0fb_20260809/checkpoints/macro_00000001
+
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,7 NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 .venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_expert_manifold_writer.py --config configs/pi05_video_expert_manifold_v1.json --mode profile --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-step 2000 --feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_profile_contiguous_r6_step2000_d96f0fb_20260809 --stop-after-macro 3
+```
+
+- 验收要求：三步finite、0 OOM、source trainable=0；run contract逐rank为local0--5→physical
+  `0,1,2,4,5,7`、NUMA=`0,0,0,1,1,1`且affinity非空；fresh/resume与contiguous三步科学metrics精确
+  一致，两个macro3 `writer.safetensors`逐字节一致（只用直接`cmp`，不用内容hash）；完整checkpoint/
+  optimizer/scheduler/RNG/cursor闭合。任何失败都不得把profile权重用于formal。
+
 ### Task-expert 1500/2000正式评测launch合同（2026-08-08）
 
 - evaluation代码固定为独立clean pushed worktree

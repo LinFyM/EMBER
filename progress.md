@@ -10,6 +10,8 @@
 - 00:01 CST live比较后预选空闲`gpu01:0,1,2|4,5,7`做六rank 3+3 NUMA profile；GPU3的`nlge`
   VLLM不触碰。gpu02物理6/7均有他人进程而空闲卡不满足3+3，故不选。gpu01 available memory约
   516.5GB，`/data1` quota=`552,249,764/1,073,741,824 KiB`，profile预计新增低于2GiB。
+- clean pushed`d96f0fb`已封存统一target/config；两个profile roots、fresh/resume/contiguous三条
+  exact command及逐rank NUMA、科学metric、step3 writer byte-equality验收门已写入`task_plan.md`。
 
 ## 2026-08-08 Task-expert 2000完成、CPU分析与1500/2000 launch seal
 

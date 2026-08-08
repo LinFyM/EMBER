@@ -439,3 +439,6 @@ host memory约516.5GB；`/data1` quota=`552,249,764/1,073,741,824 KiB`，profile
 逐rank记录physical/local GPU、NUMA/affinity并比较三步科学metrics与step3 Writer tensors；不使用hash。
 三条证据通过后，profile macro3只用于online frozen encoder→Writer LoRA generation→释放Writer→
 cached policy rollout纵向smoke，profile权重永久不得进入formal。
+
+科学config/target seal为clean pushed`d96f0fb`，profile exact roots、三条命令和验收门只取
+`task_plan.md`顶部合同。root后缀标识该科学seal，实际运行commit由run contract记录且必须clean/pushed。

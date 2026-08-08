@@ -1,5 +1,30 @@
 # EMBER Findings
 
+## 2026-08-08 Task-expert full24三checkpoint geometry
+
+- canonical CPU artifact为
+  `runs/outputs/pi05_task_expert_bank_geometry_full24_steps0250_0500_1000_05d4868_20260808/analysis.json`；
+  它读取24 tasks×step250/500/1000共72个formal adapters，training commit仍为clean`81101fe`，
+  不读取held action/video、环境outcome，也不使用GPU。
+- effective-LoRA norm中位随训练为`2.792/3.652/4.170`，public B RMS中位为
+  `.00386/.00469/.00512`；scale仍增长。stable rank中位却保持
+  `1.126/1.129/1.129`，top singular energy为`.903/.907/.909`，没有随训练形成更多矩阵有效秩。
+- 16个rank coordinates对全部24 experts都active，top4 coordinate energy为
+  `.262/.260/.258`；但mean absolute q/v/action B-column cosine中位从
+  `.828/.843/.460`变为`.861/.853/.413`，rank-component cosine也从`.077`升到`.116`。
+  因此coordinate能量均匀只说明raw factor gauge没有死坐标，不能当成16个policy-effective独立
+  方向；真正BA仍是低stable-rank且q/v列高度同向。
+- effective target count中位`18.79→17.17→17.04`、top4 target energy
+  `.342→.368→.369`；q energy fraction中位`.822→.850→.859`，action projection能量始终只有
+  `.0026/.0024/.0033`量级。写入随训练略向少数targets和q投影集中，但没有历史Writer那种单一
+  target或单一rank-coordinate完全塌缩。
+- 跨task effective cosine中位`.108/.095/.100`，negative pair fraction
+  `.130/.080/.033`；bank含低幅共同方向，但大部分能量仍是task-specific。250→500与500→1000
+  更新的task-mean/sample-energy比仅`.143/.128`，并未显示后期更新收敛成一个共享方向。
+- 科学裁决：full24 geometry支持“task-local action credit确实建立了有差异的policy parameter
+  targets”，但既不能证明step1000闭环更强，也不能证明继续到2000会修复低stable-rank或视频
+  因果性。下一必要证据仍是三个统一step的development-train official closed loop。
+
 ## 2026-08-08 Task-expert bank完成与当前证据边界
 
 - clean`81101fe`的正式task-expert bank已完成统一step1000：6个独立workers各4 tasks，24/24

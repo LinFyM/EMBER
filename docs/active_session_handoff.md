@@ -22,10 +22,12 @@
   geometry、action-hidden phase16×3072 feature cache、168个`[16,512]`chunk/rank axial decoder、
   六rank task-complete exact-resume meta trainer，以及one-shot五臂严格配对evaluator均已存在。
   cache与meta formal仍由config阻塞，尚未完成A40 profile，也没有生成新Writer checkpoint。
-- 目前只有最早6个experts的探索性几何：LoRA norm median约`4.157`、stable rank约`1.131`、
-  top singular energy约`.916`、16个rank坐标均active、top4 coordinate energy约`.258`；q/v/action
-  B-column cosine约`.860/.874/.395`，跨task effective-LoRA cosine约`.260`。这不是完整24-task或
-  三checkpoint正式裁决，不能用它跳过full-bank分析。
+- full24统一step250/500/1000正式geometry已完成，artifact为
+  `runs/outputs/pi05_task_expert_bank_geometry_full24_steps0250_0500_1000_05d4868_20260808/analysis.json`。
+  effective-LoRA norm中位=`2.792/3.652/4.170`，stable rank中位=`1.126/1.129/1.129`，
+  top singular energy=`.903/.907/.909`，跨task effective cosine中位=`.108/.095/.100`。
+  16个rank coordinates全部active、top4 coordinate energy约`.262/.260/.258`，但q/v B-column
+  cosine仍高且随训练不降；这说明完整bank具备task差异，却不能据几何选择closed-loop checkpoint。
 - 当前没有EMBER进程，GPU均已释放；没有新的strict closed-loop分数。已验证single-checkpoint
   最好仍是v6-fast`143/400`，长期严格门仍是`>150/400`，尚未完成。
 - owner已在本session完成讨论后明确恢复持续自主执行，并设定长期Goal：同一single checkpoint的

@@ -279,12 +279,16 @@ clean`81101fe`的正式expert阶段已自然完成统一step1000。唯一root为
 代替official development-train closed-loop选择。
 
 第15节列出的retained evaluator/cache/meta-Writer实现已并入`codex/bci-continuation`，不再位于
-第二个活动工作树。但当前仍没有full24三checkpoint正式geometry、expert-bank closed-loop、A40
-meta profile、正式feature cache、meta checkpoint或新strict rollout。最早6个experts的探索性
-geometry只提示方向较旧Writer丰富，不足以封存统一expert step。
+第二个活动工作树。当前full24三checkpoint正式geometry已完成：step250/500/1000的
+effective-LoRA norm中位为`2.792/3.652/4.170`，stable rank中位为`1.126/1.129/1.129`，
+跨task effective cosine中位为`.108/.095/.100`。16个rank coordinates全部active且top4
+coordinate energy约`.262/.260/.258`，但q/v B-column cosine仍约
+`.828/.843→.861/.853`，所以“坐标都活跃”不能被解释成16个独立有效方向。仍没有
+expert-bank closed-loop、A40 meta profile、正式feature cache、meta checkpoint或新strict
+rollout；geometry不足以封存统一expert step。
 
 若后续证据支持step1000后仍有material上升，必须从`81101fe`创建独立frozen worktree，并沿同一
 root把全部24 tasks统一exact-resume到2000；当前分支新增的meta/evaluator实现不能改变该正式训练
 合同。若不续训，则选择一个统一expert step后再进入feature profile/cache与meta profile/formal。
-owner当前要求新session先讨论，未授权自动launch。K4 executable的removal trigger仍是新meta-Writer
+owner已在新session完成讨论后恢复持续自主执行。K4 executable的removal trigger仍是新meta-Writer
 A40 profile通过，不因代码已实现而提前触发。

@@ -21,8 +21,11 @@
   reconstruction、六rank task-complete exact-resume meta trainer和one-shot strict paired evaluator。
   retained实现已并入`codex/bci-continuation`；当前尚未作A40 profile，formal cache/meta仍由config
   阻塞；K4 executable待新Writer profile通过后才退役。
-- [ ] 完成expert bank统一step250/500/1000 official development-train rollout与几何裁决；若曲线仍
-  有充分上升依据，从clean`81101fe`的frozen worktree沿原root统一resume到2000，再选择唯一expert
+- [x] 完成expert bank统一step250/500/1000 full24 geometry：norm中位
+  `2.792/3.652/4.170`，stable rank中位`1.126/1.129/1.129`，跨task cosine中位
+  `.108/.095/.100`；16 coordinates均active但q/v B-column仍高度同向，几何不能单独选点。
+- [ ] 完成统一step250/500/1000 official development-train rollout；若曲线仍有充分closed-loop
+  上升依据，从clean`81101fe`的frozen worktree沿原root统一resume到2000，再选择唯一expert
   step；不得按task挑不同checkpoint。
 - [ ] live profile并封存train24×50 frozen feature cache；完成meta-Writer六卡fresh0→1、
   exact-resume1→3、finite/OOM/梯度与任务等权合同后才seal formal。
@@ -33,6 +36,37 @@
 - [x] owner已完成讨论并恢复持续自主执行；长期Goal为同一single checkpoint strict correct
   严格超过`150/400`，同时保持真实视频时序因果性、same-task鲁棒性、breadth与低checkpoint
   漂移。只有实质性阻塞才回报owner，GPU工作仍逐次执行live空闲卡与BCI多卡合同。
+
+### Task-expert development-train三点正式评测合同（2026-08-08）
+
+- canonical workspace为`/data1/user/ymdai/projects/EMBER`，branch为
+  `codex/bci-continuation`；只从包含本合同与full24 geometry的clean pushed HEAD运行。source、
+  tokenizer、target authority、expert bank与统一steps分别固定为现有formal路径、
+  `models/tokenizers/openpi/paligemma_tokenizer.model`、`configs/pi05_target_evaluation_v1.json`、
+  `runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`和`250/500/1000`。
+- 每点严格评`development_train` 24 tasks×50 fixed states=`1,200` rollouts；三个run共享task/state、
+  env seed、policy-noise算法与source policy，只改变所有24 experts的统一checkpoint。task expert不读
+  video或held action，也不把task ID加入未来Writer部署输入。比较aggregate、per-task、breadth、
+  gained/lost、union/intersection与相邻checkpoint能力换手；不得用training loss替代。
+- 2026-08-08 launch前初次live snapshot：`gpu02:0,1,2,3,4,7`均为空闲A40；`gpu02:5/6`
+  分别有`yqzhang/yfwang`进程，禁止使用；`gpu01:3`有`nlge`进程且同样禁止使用。计划把
+  step250/500/1000分别绑定`gpu02:0,1`、`2,3`、`4,7`，每卡6个独立persistent workers；
+  worker自行按暴露的physical GPU解析EGL local mapping并绑定GPU-local NUMA。评测无DDP/NCCL
+  collective，但launcher仍显式设置`NCCL_P2P_DISABLE=1`。启动前必须再做一次live preflight。
+- `/data1` live quota=`551,689,536/1,073,741,824 KiB`，共享filesystem可用约`85T`；bank为
+  `562MiB`、geometry为`48KiB`。三点评测只新增raw rows/queue/log/results，保守峰值低于
+  `0.5GiB`，三个output root与log启动前均必须不存在。
+- exact evaluator commands如下；外层各用一个普通detached tmux并将stdout/stderr写入同名log：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --output-dir runs/outputs/pi05_task_expert_bank_devtrain24x50_step0250_formal_20260808 --role development_train --mode formal --state-count 50 --replicas-per-gpu 6 --gpu-indices 0,1 --task-expert-config configs/pi05_video_expert_manifold_v1.json --task-expert-bank-root runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --task-expert-step 250
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --output-dir runs/outputs/pi05_task_expert_bank_devtrain24x50_step0500_formal_20260808 --role development_train --mode formal --state-count 50 --replicas-per-gpu 6 --gpu-indices 2,3 --task-expert-config configs/pi05_video_expert_manifold_v1.json --task-expert-bank-root runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --task-expert-step 500
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=$PWD/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 .venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --output-dir runs/outputs/pi05_task_expert_bank_devtrain24x50_step1000_formal_20260808 --role development_train --mode formal --state-count 50 --replicas-per-gpu 6 --gpu-indices 4,7 --task-expert-config configs/pi05_video_expert_manifold_v1.json --task-expert-bank-root runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --task-expert-step 1000
+```
+
+- 三点均须1200 unique rows、全部queue shards完成、worker exit0、task/state coverage一致后才进入
+  科学比较。partial root只按canonical evaluator resume；在0 scientific rows前的fail-close可保留
+  failure provenance后用新root重启，不覆盖有效rows。
 
 ## 已完成并负裁决：K4 Phase-Aligned v6（2026-08-07）
 

@@ -12,6 +12,17 @@
   step250/500/1000；只在step1000仍有明确closed-loop上升证据时，从frozen`81101fe`沿原root
   统一resume2000；随后再做feature cache与meta-Writer的A40 profile/formal和strict五臂。
 
+## 2026-08-08 Task-expert full24 geometry完成
+
+- CPU canonical analysis已读取24 tasks×step250/500/1000共72个formal adapters并自然完成；artifact=
+  `runs/outputs/pi05_task_expert_bank_geometry_full24_steps0250_0500_1000_05d4868_20260808/analysis.json`。
+  没有GPU、rollout、环境交互或held action/video reads。
+- effective-LoRA norm中位=`2.792/3.652/4.170`，stable rank中位=
+  `1.126/1.129/1.129`，top singular energy=`.903/.907/.909`；跨task effective cosine中位=
+  `.108/.095/.100`。16 coordinates均active且top4 energy约`.26`，但q/v B-column仍高度同向。
+- geometry确认bank具有task-specific policy directions，却不能选择统一checkpoint或支持resume2000；
+  下一动作仍是step250/500/1000 development-train official closed-loop严格比较。
+
 ## 2026-08-08 Expert-Manifold实现整合与task-expert bank封存
 
 - clean`81101fe`的6个independent A40 workers已自然完成24/24 task experts统一step1000；root=

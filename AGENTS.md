@@ -36,10 +36,11 @@ Semantic Direction Store正式训练、四点rollout和winner全部内部分析�
 边界持续设计、实现、profile、formal训练、严格rollout与内部分析，且必须保留视频条件，
 few-shot现已获准并采用K4。该恢复覆盖上一句的阶段性暂停，但不改变设备、信息墙、
 single-checkpoint、无hash、不使用subagent与安全边界。
-2026-08-08 owner要求当前session整理仓库并把后续讨论与推进交给新session。仓库封存后，
-新session必须先与owner讨论当前证据和方向；在owner给出新的推进指示前，不得自动启动训练、
-rollout、GPU profile或GPU内部分析。此暂停只限制新的执行，不改变长期目标、现有artifact、
-设备/信息墙/single-checkpoint/无hash/不使用subagent边界。
+2026-08-08 owner曾要求当前session整理仓库并把后续讨论与推进交给新session；新session现已
+完成强制阅读、只读核对和方法讨论，owner随后明确恢复持续自主执行。当前长期Goal是同一
+single checkpoint的strict paired correct严格超过`150/400`并尽可能继续提高，同时保持真实
+视频时序因果性、same-task鲁棒性、task breadth与低checkpoint漂移；只有实质性阻塞才回报。
+该恢复不改变设备、信息墙、single-checkpoint、无hash与不使用subagent边界。
 
 ## Efficiency and validation boundary
 
@@ -184,16 +185,16 @@ rollout、GPU profile或GPU内部分析。此暂停只限制新的执行，不�
 - 24套train-task rank-16 experts已在clean`81101fe`完成统一step1000。唯一正式root为
   `runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`：6 workers、24/24 tasks、
   72个step250/500/1000 checkpoints、约562MiB。最后50步24-task等权mean action loss=
-  `.115355/.107207/.105372`；它不是closed-loop checkpoint选择依据。若讨论后决定统一resume2000，
+  `.115355/.107207/.105372`；它不是closed-loop checkpoint选择依据。若证据决定统一resume2000，
   必须从`81101fe`建frozen worktree并沿同一root exact-resume，不得按task挑不同step。
 - retained Expert-Manifold实现已并入`codex/bci-continuation`：完整bank evaluator与geometry、
   phase16×3072 action-hidden feature cache、168个`[16,512]`chunk/rank axial decoder、六rank
-  task-complete exact-resume meta trainer和one-shot strict five-arm evaluator均已实现。尚未完成
-  full24/三checkpoint正式geometry、expert closed-loop、A40 meta profile、formal cache/meta训练或
-  新strict rollout。
+  task-complete exact-resume meta trainer和one-shot strict five-arm evaluator均已实现。full24
+  step250/500/1000正式geometry已完成；尚未完成expert closed-loop、A40 meta profile、formal
+  cache/meta训练或新strict rollout。
 - 当前没有EMBER进程，GPU已释放；历史single-checkpoint最好仍是v6-fast`143/400`，严格目标
-  `>150/400`尚未完成。owner当前要求新session先讨论，所以不得自动launch。讨论后的候选顺序取
-  `docs/active_session_handoff.md`，不得从下方历史ledger恢复旧“当前”“下一步”。
+  `>150/400`尚未完成。当前执行顺序取`docs/active_session_handoff.md`，不得从下方历史ledger
+  恢复旧“当前”“下一步”。
 - 旧K4 executable是有明确owner和removal trigger的临时兼容路径：只有Expert-Manifold meta-Writer
   A40 profile通过后才原位删除；在此之前不得将其误写成活动科研方法，也不得提前删掉唯一已验证的
   live fallback。

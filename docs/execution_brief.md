@@ -21,6 +21,11 @@ checkpoint exact-resume和one-shot strict five-arm evaluator均已闭合。尚�
 feature cache、meta训练或任何新strict rollout，因此不能报告新模型成绩；历史single-checkpoint最好
 仍为v6-fast`143/400`，严格目标`>150/400`未完成。
 
+full24统一step250/500/1000正式geometry已完成：effective-LoRA norm中位=
+`2.792/3.652/4.170`，stable rank中位=`1.126/1.129/1.129`，跨task effective cosine中位=
+`.108/.095/.100`。16个rank coordinates均active，但q/v B-column仍高度同向；该结果不能替代
+closed-loop统一选点。
+
 owner已在本session完成讨论后明确恢复持续自主执行，并授权围绕长期Goal自行设计、实现、训练、
 评测和迭代；只有实质性阻塞才回报。执行顺序为：full24 expert geometry与development-train
 closed-loop统一评250/500/1000；只在step1000仍有明确closed-loop上升证据时，从frozen`81101fe`

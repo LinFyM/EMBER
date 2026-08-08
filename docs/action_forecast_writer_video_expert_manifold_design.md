@@ -538,3 +538,8 @@ macro50必须先通过formal completion/finite/NUMA/NCCL/checkpoint合同，再�
 correct400和expert→generated LoRA→fixed action传递分析。reconstruction loss、task-expert proximity和
 LoRA几何只能定位接口，不能代替closed-loop结果决定续到100；后续exact resume仍须保持同一root、
 commit科学合同、3+3 NUMA topology、sampler/RNG和scheduler cursor。
+
+clean pushed launch-record`446cd42`已按该边界自然完成0→50：50/50 finite metrics、macro50完整
+Writer/trainer/六rank RNG checkpoint、0 OOM/nonfinite；训练body=`10.239s`，peak allocated/reserved=
+`737,273,344/815,792,128` bytes，3+3 NUMA与全部collective字段通过。该结果只解封macro50 strict
+correct400，不构成性能门通过，也不自动授权resume到100。

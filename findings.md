@@ -1,5 +1,16 @@
 # EMBER Findings
 
+## 2026-08-09 Macro50 formal训练观察
+
+- formal0→50与profile前三步完全相同的identity初始化语义起步；macro1 loss低是direction项在zero output
+  尚未定义为惩罚，macro2以后direction约`.986`并到macro50缓降为`.9764`，不能把总loss的跳升误判为
+  训练发散。
+- raw reconstruction从macro1`4.0655e-5`到macro50`7.8499e-5`并非单调下降，但log-scale项从
+  `.03030`降到`.01855`，梯度始终finite且末步`.01526`。这表明当前复合目标主要先学习scale/非零
+  direction，单看raw MSE不支持“已接近expert”或“应继续训练”的结论。
+- 训练本体仅约10秒而strict correct400约1GiB cache和400条环境轨迹，科学瓶颈明确在
+  generated-LoRA→closed-loop接口。下一证据必须是macro50 correct400和内部LoRA/action传递。
+
 ## 2026-08-09 Formal首段资源与证据顺序
 
 - flat-reduction profile的稳态macro wall约`.13--.19s`，完整checkpoint约184MiB、峰值reserved低于

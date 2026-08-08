@@ -1,5 +1,16 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Expert-Manifold formal0→50完成并预注册correct400
+
+- clean pushed`446cd42`在`gpu01:0,1,2|4,5,7`从identity fresh自然完成50/50 finite macros；
+  macro50 checkpoint含Writer、trainer、manifest和六份rank RNG，日志无异常，GPU自然释放。
+- 训练body=`10.239s`，peak allocated/reserved=`737,273,344/815,792,128` bytes；run contract的
+  branch/commit/upstream、3+3 NUMA、physical/local rank、deferred NCCL、P2P-disable、Ring/Simple和
+  single-flat mean逐项通过。last loss/raw/direction/log-scale=`.099576/7.8499e-5/.97642/.018554`，
+  只作surrogate证据。
+- macro50 correct400已固定fresh root、frozen eval branch/worktree、6卡×3 replicas、每卡3 generators、
+  batch4和400-row验收门。先闭环和内部分析，不因loss直接resume到100。
+
 ## 2026-08-09 Expert-Manifold formal0→50预注册
 
 - clean pushed`fcaf733`完成canonical退役后，预注册唯一identity-fresh formal root、frozen branch/

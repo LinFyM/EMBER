@@ -67,6 +67,9 @@
   executable及其专属配置/测试；共享data/topology/functional/cache/evaluator保留并只接
   Expert-Manifold。全仓在`CUDA_VISIBLE_DEVICES=''`下`186/186`通过，compileall与diff check通过；
   architecture guard无hard violation、无parallel family，active source净删约13k行。
+- [x] clean pushed launch-record`446cd42`从identity fresh完成formal0→50：50/50 finite macros、
+  macro50完整Writer/trainer/六rank RNG checkpoint、0 OOM/nonfinite；训练body=`10.239s`，peak
+  allocated/reserved=`737,273,344/815,792,128` bytes，3+3 NUMA与全部collective合同通过。
 - [ ] 从identity fresh启动分段formal meta训练，做strict paired correct400曲线、五臂视频因果、
   task drift和expert→generated LoRA→action机制分析；根据最早失效接口迭代。
 - [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高absolute、breadth、
@@ -107,6 +110,37 @@ env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,
   nonfinite、run contract中的commit/upstream、physical/local/NUMA、deferred NCCL、P2P-disable、
   Ring/Simple和single-flat mean全部吻合。随后先做macro50 strict paired correct400与内部传递分析；
   不因reconstruction loss好看自动resume到100。
+- 验收结果：clean pushed launch-record`446cd42`在预注册六卡上自然完成。50/50 metrics均finite，
+  first→last raw reconstruction=`4.0655e-5→7.8499e-5`、last direction/log-scale=
+  `.97642/.018554`；训练body=`10.239s`，peak allocated/reserved=
+  `737,273,344/815,792,128` bytes。macro50 checkpoint含Writer、trainer、manifest和六份rank RNG，
+  run contract逐项通过，日志无异常；六张GPU已释放。这是surrogate/工程证据，不是性能成绩。
+
+### Expert-Manifold macro50 strict correct400 launch合同（2026-08-09）
+
+- evaluator必须来自包含本段launch record、clean pushed且有upstream的frozen branch
+  `codex/expert-manifold-m050-eval-20260809`，固定worktree=
+  `/data1/user/ymdai/worktrees/EMBER-expert-manifold-m050-eval-20260809`。checkpoint只取上述唯一formal
+  root的`checkpoints/macro_00000050`；role=`validation`、50 fixed states/task、correct、
+  without-replacement，禁止挑video或读取held actions/outcomes。
+- 资源拓扑固定为live仍空闲时的`gpu01:0,1,2|4,5,7`；每卡3 rollout replicas和3 Writer generators、
+  generation batch4，总18 workers。online smoke已证明单generator batch4峰值约11.18GB；r3 rollout
+  已证明每卡3个source policies约30.3GB稳定，三generator并发保守低于A40 46GB。400个episode LoRA
+  cache加结果/log预计低于1.5GiB，当前quota余量充分。任一目标卡变忙则不启动。
+- fresh output/log/tmux固定为
+  `runs/outputs/pi05_expert_manifold_writer_bci_correct400_noreplacement_seed7_macro0050_446cd42_20260809`、
+  `runs/logs/pi05_expert_manifold_writer_bci_correct400_noreplacement_seed7_macro0050_446cd42_20260809.log`和
+  `ember_expert_manifold_m050_correct_446cd42`；启动前三者必须不存在。exact command：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_bci_correct400_noreplacement_seed7_macro0050_446cd42_20260809 --role validation --mode formal --state-count 50 --replicas-per-gpu 3 --writer-generators-per-gpu 3 --writer-generation-batch-size 4 --gpu-indices 0,1,2,4,5,7 --expert-manifold-config configs/pi05_video_expert_manifold_v1.json --expert-manifold-checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_formal_fresh0_800_r6_step2000_fcaf733_20260809/checkpoints/macro_00000050 --expert-manifold-video-data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --expert-manifold-video-condition correct --expert-manifold-video-sampling without_replacement
+```
+
+- 验收门为400 unique task/state rows、全部queue jobs complete、18 workers attempt1/exit0、0
+  retry/failure/OOM/nonfinite；400个唯一LoRA cache references、每episode teacher frame used且action/state/
+  reward/terminal reads为0。报告aggregate、8-task breadth、per-task/per-suite。只有closed-loop和内部
+  传递共同支持时才exact-resume50→100；无论absolute高低，后续control必须复用paired task/state/RNG/
+  video ordinal/frame-order合同。
 
 ### Expert-Manifold meta-Writer flat-reduction reprofile launch合同（2026-08-09）
 

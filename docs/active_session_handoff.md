@@ -25,8 +25,8 @@
   六rank task-complete exact-resume meta trainer，以及one-shot五臂严格配对evaluator均已存在。
   feature cache profile与formal已完成；六卡meta A40 exact-resume core profile和单卡macro3 online-
   generation/cached-rollout smoke也已通过，meta formal config现已seal。旧K4/AS/RL executable、入口、
-  配置和专属测试已按design第12节原位退役，当前dynamic Writer只有Expert-Manifold；尚无formal Writer
-  checkpoint。
+  配置和专属测试已按design第12节原位退役，当前dynamic Writer只有Expert-Manifold；identity-fresh
+  formal0→50已完成并产生唯一macro50 checkpoint，但尚无新strict rollout。
 - full24×50 cache的CPU审计表明phase-DC能量中位`.98057`、temporal residual中位`.01943`，但
   ordered/reversed/phase-shuffled temporal-template cosine中位=`.88284/-.32402/-.02194`；时序
   task geometry与expert B target geometry Spearman=`.45087`。固定causal-prefix uniform-pool的
@@ -75,8 +75,8 @@
   `0--23`，50 demo ordinals恰好覆盖`0--49`，cache约113MiB。peak allocated/reserved=
   `10,504,039,936/19,232,980,992` bytes，teacher action/state/reward/terminal reads合计0；
   canonical `cache_manifest.json`已由仓库seal入口生成，无worker error。
-- 当前只有永久禁止warm-start的profile macro1/3 checkpoints，没有formal Expert-Manifold Writer
-  checkpoint或held strict rollout。已验证single-checkpoint最好仍是v6-fast`143/400`，长期严格门
+- 当前已有唯一formal macro50 Expert-Manifold Writer checkpoint；profile macro1/3仍永久禁止warm-start，
+  尚无held strict rollout。已验证single-checkpoint最好仍是v6-fast`143/400`，长期严格门
   仍是`>150/400`，尚未完成。
 - owner已在本session完成讨论后明确恢复持续自主执行，并设定长期Goal：同一single checkpoint的
   strict paired correct必须严格超过`150/400`，同时保持真实视频时序因果性、same-task鲁棒性、
@@ -145,6 +145,11 @@
   800宏步、warmup25运行且绝不加载profile checkpoint。01:47 CST live比较后预选
   `gpu01:0,1,2|4,5,7`六张空闲A40，保持3+3 NUMA并避开物理3他人VLLM；精确frozen worktree、命令、
   quota与macro50验收门取`task_plan.md`顶部。实际启动前仍须再次live复核。
+- clean pushed launch-record`446cd42`已在该root自然完成0→50：50/50 finite、完整macro50
+  checkpoint、0 OOM/nonfinite，训练body=`10.239s`，peak allocated/reserved=
+  `737,273,344/815,792,128` bytes；3+3 NUMA、physical/local rank、deferred NCCL、P2P-disable和
+  Ring/Simple single-flat mean全部通过，GPU已释放。macro50 correct400的唯一root、frozen worktree、
+  18-worker r3/batch4 exact command与门已写入`task_plan.md`顶部。
 
 ## 0.0 已完成并负裁决：K4 Phase-Aligned Language-Axial Semantic-Procedure Writer
 

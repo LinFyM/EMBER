@@ -21,8 +21,8 @@ Expert-Manifold retained实现已并入唯一主工作分支`codex/bci-continuat
 geometry、phase16×3072 action-hidden cache、168-chunk axial decoder、六rank task-complete meta trainer、
 checkpoint exact-resume和one-shot strict five-arm加no-video反事实evaluator均已闭合，正式feature cache也已完成并seal。
 六卡A40 meta core profile和单卡macro3 online-generation/cached-rollout smoke均已通过，meta formal
-config现已seal；仍未开始meta训练或
-任何新strict rollout，因此不能报告新模型成绩。历史single-checkpoint最好
+config现已seal；identity-fresh formal0→50已完成并产生唯一macro50 checkpoint，但仍无任何新strict
+rollout，因此不能报告新模型成绩。历史single-checkpoint最好
 仍为v6-fast`143/400`，严格目标`>150/400`未完成。
 
 full24统一五点geometry已完成：effective-LoRA norm中位=`2.792/3.652/4.170/4.212/4.212`，
@@ -141,6 +141,11 @@ identity-fresh formal首段已预注册为0→50，科学/退役seal=`fcaf733`�
 scheduler仍为总长800/warmup25。01:47 CST live比较预选`gpu01:0,1,2|4,5,7`六张空闲A40并保持
 3+3 NUMA，物理3他人VLLM不触碰；`/data1` quota=`556,052,656/1,073,741,824 KiB`。实际launch必须
 来自clean pushed frozen branch并在启动前复核设备；exact command和macro50裁决门取`task_plan.md`顶部。
+
+launch-record`446cd42`已自然完成0→50：50 finite macros、完整Writer/trainer/六rank RNG checkpoint、
+训练body=`10.239s`，peak allocated/reserved=`737,273,344/815,792,128` bytes，0 OOM/nonfinite，
+3+3 NUMA与single-flat collective合同通过且GPU已释放。下一动作固定为macro50 validation strict
+correct400；唯一output、18-worker r3/batch4 exact command和验收门取`task_plan.md`顶部，不先resume100。
 
 未来任何GPU工作仍须live比较`gpu01/gpu02`，只用实时空闲卡、跨节点最多6张；不干扰他人进程。
 BCI多卡launcher显式`NCCL_P2P_DISABLE=1`，不运行SHA-256/MD5内容校验或大量防御扫描。

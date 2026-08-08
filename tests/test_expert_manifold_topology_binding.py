@@ -101,8 +101,11 @@ def test_hard_routed_config_has_no_learned_or_language_only_value_path() -> None
     assert config["barycentric_writer"]["effective_basis_rank"] == 96
     assert config["barycentric_writer"]["deployed_coefficient_support"] == 1
     assert config["evaluation"]["formal_status"] == (
-        "blocked_until_cpu_hard_route_evidence"
+        "blocked_until_live_a40_online_smoke"
     )
+    assert config["evaluation"]["cpu_hard_route_evidence"][
+        "train_video_self_route_count"
+    ] == 1200
     assert "online_smoke_evidence" not in config["evaluation"]
 
 

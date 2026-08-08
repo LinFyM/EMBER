@@ -6,6 +6,20 @@
 
 ## 0.0 最新执行覆盖：Expert-Manifold证据优先持续推进
 
+**最新操作覆盖（2026-08-09，覆盖本节全部后续旧“当前/下一步”）**：hard-one-hot
+policy-effective Writer的canonical替换和真实资产CPU门已完成。clean pushed implementation=`1619631`，
+唯一config=`configs/pi05_video_expert_manifold_hard_routed_policy_effective_v2.json`；v4 adapter/episode和
+asset reference显式含`hard1`。部署规则固定为同一affine score的signed argmax one-hot，support=1，
+不存在可执行soft/top-k/temperature/scale分支。目标仍是判别soft mixture dilution与train24 expert
+support，不把CPU路由正确率冒充validation性能。
+
+CPU artifact=`runs/outputs/pi05_expert_manifold_hard_routed_cpu_real_assets_20260809/analysis.json`：train24
+centroid与全部1,200 videos均self-route，24 experts全覆盖；ordered/reversed选择改变率=`100%`，固定
+phase-shuffle改变率=`58.25%`；zero identity、finite、support/sum合同全部成立。已有correct80系数将选择
+11个experts。config formal现为`blocked_until_live_a40_online_smoke`，没有GPU任务。下一执行单元必须先
+clean push本CPU authority，随后live检查两节点GPU、进程、telemetry、NUMA和`/data1`quota，只在一张
+空闲A40做validation8×1-state correct smoke；smoke通过并seal后才建立同一80-row screen的frozen合同。
+
 **最新操作覆盖（2026-08-09，覆盖本节全部后续旧“当前/下一步”）**：Policy-Effective
 Barycentric的预注册correct80 screen已完整结束为`15/80`、breadth=`5/8`，不是待扩跑状态。正式root=
 `runs/outputs/pi05_expert_manifold_policy_effective_correct80_screen_noreplacement_seed7_ffed252_20260809`；

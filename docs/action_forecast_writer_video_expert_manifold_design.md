@@ -942,3 +942,28 @@ generation/cache/release/rollout smoke，最后只跑与32.1完全相同的80-ro
 高性能表示作初始化、但仍由视频提供唯一dynamic value的可迁移policy-effective Writer。若明显提高，
 才设计可微sparse reader与order-negative训练。few-shot继续后置：当前same-task输出近乎相同，且此前
 3/5-shot proxy对one-shot仅`.39379/.39558`对`.38820`，平均更多视频不能修复当前最早接口。
+
+### 32.4 Hard-route canonical实现与CPU门（2026-08-09）
+
+32.3已作为唯一runtime原位实现：新authority=
+`configs/pi05_video_expert_manifold_hard_routed_policy_effective_v2.json`，implementation=`1619631`。旧soft
+config不保留为并行可执行family。对任意非零video，先计算原ridge`.3` affine scores，再按最大signed
+score确定性选择一个expert；tie固定最低ordinal。部署coefficients恰有一个1，其余为0。affine scores只
+能由`affine_coefficients()`用于审计，runtime没有soft/top-k/temperature/scale模式。zero或phase-constant
+representation仍显式返回全零coefficients和template-A/zero-B identity。
+
+真实资产CPU artifact为
+`runs/outputs/pi05_expert_manifold_hard_routed_cpu_real_assets_20260809/analysis.json`。24个train centroids与
+每task 50条、共1,200条ordered videos全部self-route，selection histogram严格为每expert 50次；top1-
+top2 affine margin中位`.63037`。全部video反转时1,200条均改变选择；每task固定随机phase permutation时
+699/1,200=`58.25%`改变。故reader在训练支撑上同时具有task识别与强order sensitivity，不是恒定路由。
+
+24 one-hot LoRA经相同rank96/public-rank16 compiler后，912个target级effective cosine中位/最小=
+`.998982/.961962`；0 parameters、persistent buffers=`68,863,192` bytes，zero exact且所有states finite。
+已有correct80 soft run保存的系数表明held panel将选择11个experts，逐task路由不是单一全局expert；其
+top1-top2 margin中位`.01932`，远小于train videos，量化了held representation接近task边界这一风险。
+
+本CPU门满足工程解封条件但不提供closed-loop成功证据。formal状态固定为
+`blocked_until_live_a40_online_smoke`：只允许下一步先在clean pushed/frozen authority上做一张空闲A40的
+validation8×1-state correct纵向smoke。只有generation/cache/release/source-policy reuse和信息墙全部
+成立后才seal，并运行与32.1完全一致的80-row panel；不得在看到结果前加入其他变量。

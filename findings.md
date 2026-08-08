@@ -1,5 +1,22 @@
 # EMBER Findings
 
+## 2026-08-09 Hard-route真实资产CPU判别
+
+- 唯一部署路径已把soft affine composition替换为video-conditioned signed-argmax one-hot；soft scores只
+  留作审计，不存在top-k/temperature/global scale选择。实现`1619631`已push，schema v4和`hard1` asset
+  reference阻止旧soft cache冒充。
+- train24上路由不是薄弱环节：24/24 centroids及1,200/1,200独立videos都选择本task expert，且top1-
+  top2 margin中位`.630`；24 experts各50次，没有静态塌缩。ordered反转后1,200/1,200都换expert，固定
+  phase shuffle后699/1,200换expert，说明现有causal representation确实含有强顺序敏感信号。
+- one-hot compiler保持真实expert policy update：24×38 target effective cosine中位`.998982`，最差
+  `.961962`；zero exact identity，所有state finite。该门只验证机制和runtime输入输出，不说明held
+  expert能闭环执行validation task。
+- correct80旧soft coefficients的argmax会选择11个train experts，各validation task有稳定或双峰路由；
+  Object-1全部选Chocolate-pudding-to-basket，Object-3全部选Tomato-sauce-to-basket。held top1-top2
+  margin中位仅`.0193`，所以hard screen是高干预、可归因的support试验，而不是对soft LoRA的小扰动。
+- 下一步仍只能先做单卡online smoke；若同一80-row hard screen没有实质高于`15/80`并保住breadth，
+  证据将直接否定“soft dilution是主因”，停止在24-expert mixture内调参并转向v6先验的可迁移Writer。
+
 ## 2026-08-09 Policy-Effective correct80负裁决与下一判别
 
 - 预注册validation8×states0--9 screen自然完成为`15/80`、breadth=`5/8`，逐task Long/Goal/Object/

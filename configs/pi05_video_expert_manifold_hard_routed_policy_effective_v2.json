@@ -97,8 +97,8 @@
     "language_only_lora_path": false
   },
   "evaluation": {
-    "formal_status": "blocked_until_cpu_hard_route_evidence",
-    "implementation_commit": "pending_clean_pushed_commit",
+    "formal_status": "blocked_until_live_a40_online_smoke",
+    "implementation_commit": "1619631dec8a3a25ff6ef0ee7344da6cd2e3141d",
     "soft_mixture_screen_evidence": {
       "root": "runs/outputs/pi05_expert_manifold_policy_effective_correct80_screen_noreplacement_seed7_ffed252_20260809",
       "artifact": "runs/outputs/pi05_expert_manifold_policy_effective_correct80_screen_noreplacement_seed7_ffed252_20260809/strict_screen_and_paired_audit_v1.json",
@@ -111,6 +111,37 @@
       "raw_barycentric_lost": 3,
       "exact_state_policy_rng_teacher_schedule": true,
       "interpretation": "soft_policy_effective_mixture_did_not_justify_full400"
+    },
+    "cpu_hard_route_evidence": {
+      "artifact": "runs/outputs/pi05_expert_manifold_hard_routed_cpu_real_assets_20260809/analysis.json",
+      "cpu_only": true,
+      "deployed_coefficient_rule": "deterministic_signed_argmax_one_hot",
+      "argmax_tie_break": "lowest_expert_ordinal",
+      "expert_count": 24,
+      "train_centroid_count": 24,
+      "train_centroid_self_route_count": 24,
+      "train_centroid_self_route_all_tasks": true,
+      "train_video_count": 1200,
+      "train_video_self_route_count": 1200,
+      "train_video_self_route_rate": 1.0,
+      "deployed_support_min": 1,
+      "deployed_support_max": 1,
+      "all_nonzero_support_one": true,
+      "all_nonzero_sum_one": true,
+      "all_coefficients_finite": true,
+      "all_states_finite": true,
+      "zero_identity_exact": true,
+      "ordered_reversed_selection_change_count": 1200,
+      "ordered_reversed_selection_change_rate": 1.0,
+      "ordered_reversed_selection_changed": true,
+      "ordered_shuffled_selection_change_count": 699,
+      "ordered_shuffled_selection_change_rate": 0.5825,
+      "ordered_unique_selected_experts": 24,
+      "one_hot_compiler_effective_target_cosine_median": 0.9989824295043945,
+      "one_hot_compiler_effective_target_cosine_min": 0.9619618654251099,
+      "held_correct80_unique_selected_experts": 11,
+      "learned_parameter_count": 0,
+      "persistent_buffer_bytes": 68863192
     },
     "cpu_coefficient_evidence": {
       "artifact": "runs/outputs/pi05_expert_manifold_causal_barycentric_loo_step2000_cpu_20260809/analysis.json",

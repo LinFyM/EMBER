@@ -6,6 +6,23 @@
 
 ## 0. 当前交接边界：Video-Conditioned Expert-Manifold Topological Writer
 
+**最新覆盖（2026-08-09，优先于本节全部后续历史条目）**：video-routed hard-one-hot
+policy-effective Writer已经完成唯一canonical实现和真实固定资产CPU门。实现提交=`1619631`且已push；
+新authority为`configs/pi05_video_expert_manifold_hard_routed_policy_effective_v2.json`，旧soft配置只由Git/
+formal artifacts保留，adapter/episode schema升为v4，旧cache不能冒充。部署仍先计算同一个ridge `.3`
+affine score，但正常非零视频固定使用signed-argmax one-hot、support=`1`；affine mixture只作为审计值，
+没有top-k、temperature、scale或task-ID开关。
+
+真实24-expert、train24×50 cache的CPU artifact为
+`runs/outputs/pi05_expert_manifold_hard_routed_cpu_real_assets_20260809/analysis.json`。24/24 task centroids和
+1,200/1,200 ordered train videos都选择本task expert，24个experts各被选择50次；ordered→reversed选择
+1,200/1,200改变，固定phase-shuffle改变699/1,200=`58.25%`。zero/phase-constant逐tensor exact identity，
+全部coefficients/states finite，24 one-hot×38 targets的effective cosine中位/最小=`.998982/.961962`。
+已有validation correct80的原soft系数会硬选11个不同experts，top1-top2 margin中位仅`.0193`，所以新
+screen会实质改变LoRA且不是静态单expert。formal现有意停在`blocked_until_live_a40_online_smoke`；下一步
+必须先clean authority push、实时比较`gpu01/gpu02`和quota，再只用一张空闲A40跑8-row在线工程smoke，
+通过后才允许与旧screen完全相同的strict correct80。当前没有GPU工作。
+
 **最新覆盖（2026-08-09，优先于本节全部后续历史条目）**：Policy-Effective Barycentric的
 预注册strict correct80筛选已经自然完成并负裁决。唯一root为
 `runs/outputs/pi05_expert_manifold_policy_effective_correct80_screen_noreplacement_seed7_ffed252_20260809`；

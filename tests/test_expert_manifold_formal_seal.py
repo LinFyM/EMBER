@@ -71,10 +71,15 @@ def _hard_route_evidence() -> dict:
     }
 
 
-def test_hard_routed_evaluation_starts_blocked_before_cpu_evidence() -> None:
+def test_hard_routed_evaluation_is_blocked_only_on_live_smoke() -> None:
     evaluation = load_barycentric_writer_config(CONFIG)["evaluation"]
-    assert evaluation["formal_status"] == "blocked_until_cpu_hard_route_evidence"
-    assert "cpu_hard_route_evidence" not in evaluation
+    assert evaluation["formal_status"] == "blocked_until_live_a40_online_smoke"
+    assert evaluation["cpu_hard_route_evidence"][
+        "train_centroid_self_route_count"
+    ] == 24
+    assert evaluation["cpu_hard_route_evidence"][
+        "ordered_reversed_selection_change_count"
+    ] == 1200
     assert "online_smoke_evidence" not in evaluation
     assert (
         evaluation["cpu_policy_effective_compiler"]["selected_effective_basis_rank"]

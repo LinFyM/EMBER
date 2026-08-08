@@ -1,5 +1,18 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Hard-routed canonical实现与真实资产CPU门
+
+- 原soft policy-effective config/runtime已由Git保存并从canonical删除；新config=
+  `configs/pi05_video_expert_manifold_hard_routed_policy_effective_v2.json`，实现提交`1619631`已push。
+  runtime固定signed-argmax one-hot support1，adapter/episode升v4；全仓182项CPU tests与compile通过。
+- 真实24-expert/train24×50 feature cache只读分析写入
+  `runs/outputs/pi05_expert_manifold_hard_routed_cpu_real_assets_20260809/analysis.json`。24/24 centroids和
+  1,200/1,200 videos self-route；ordered/reversed、ordered/fixed-shuffle selection changes=
+  `1200/1200`、`699/1200`，24 experts全部覆盖。
+- zero identity、one-hot support/sum、finite state均成立；24×38 effective target cosine中位/最小=
+  `.998982/.961962`。旧correct80系数的hard argmax覆盖11 experts。formal只推进到
+  `blocked_until_live_a40_online_smoke`，尚未启动GPU或新闭环实验。
+
 ## 2026-08-09 Policy-Effective correct80完成、审计与GPU释放
 
 - frozen`ffed252`的validation8×states0--9 correct/without-replacement screen已自然完成：root=

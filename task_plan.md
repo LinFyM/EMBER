@@ -47,22 +47,23 @@
 ## 当前唯一canonical实现
 
 - [x] 唯一config现为
-  `configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json`；formal状态现为
-  `sealed`，旧raw-factor config已删除且只由Git/artifact保留；实现提交=`469e033`且已push，专属A40
-  smoke commit/root=`321bded`/`pi05_expert_manifold_policy_effective_online_smoke_retry1_gpu02_fb5b367_20260809`。
+  `configs/pi05_video_expert_manifold_hard_routed_policy_effective_v2.json`；formal状态现为
+  `blocked_until_live_a40_online_smoke`。旧soft config已删除且只由Git/artifact保留；实现提交=`1619631`
+  已push，尚无本hard-route专属GPU smoke或closed-loop成绩。
 - [x] 一条视频先形成`mean_phase(phase_centered_causal_memory(video_innovation))`；train24×50
-  centroids单位化后，用ridge `.3` centered-kernel affine solve产生24个coefficients。
+  centroids单位化后，用ridge `.3` centered-kernel affine solve产生24个scores；部署固定取signed argmax
+  one-hot，support1，soft scores只作审计。
 - [x] 每个38 policy targets分别在effective`BA`空间混合24个expert的unit-Frobenius direction与
   envelope内log norm；shared rank96 left/right basis内做best-rank16 SVD。template-A Procrustes gauge
   只固定因子表示，不改变policy update。
 - [x] zero/phase-constant表示逐tensor精确返回template-A/zero-B identity；Writer无Parameter，language
   没有独立value通路。真实24-expert one-hot effective cosine中位/最小=`.99838/.99665`。
 - [x] evaluator只接受新config + 统一expert bank + feature cache + video data，不再接受learned Writer
-  checkpoint。adapter/episode schema已升为policy-effective v3，旧trainer/checkpoint/model/compiler
+  checkpoint。adapter/episode schema已升为hard-routed v4，旧trainer/checkpoint/model/compiler
   executable均不保留。
-- [x] 全仓`182/182` CPU tests、compile、real fixed-asset inspector通过。真实资产runtime为0 parameters、
-  68,863,192 persistent buffer bytes、build=`2.33s`、CPU batch24 compile=`.85s`；demo0 target cosine
-  `.99836`，norm/stable/top=`4.179/1.125/.910`，A/B RMS=`.01891/.00846`，16 coordinates active。
+- [x] hard-route全仓`182/182` CPU tests、compile及真实fixed-asset门通过。24/24 centroids与1,200/1,200
+  videos self-route；ordered/reversed与fixed-shuffle选择改变=`1200/1200`、`699/1200`；24 experts全覆盖。
+  zero exact，912个one-hot target effective cosine中位/最小=`.998982/.961962`。
 
 ## 下一证据门
 
@@ -90,9 +91,14 @@
    最早失效接口。实际=`15/80`、breadth5、raw paired净`+3`，低于ambiguity门；本candidate停止。
 8. [ ] 若one-shot的same-task视频方差成为经证据定位的最早限制，再评估固定K的few-shot set/sequence
    aggregation；不能把few-shot当作掩盖task identity或视频时序失败的捷径。
-9. [ ] 下一单变量：video-routed hard-one-hot expert。保持representation/ridge/expert2000/compiler和
-   信息墙，只把soft coefficients确定性argmax为one-hot；先CPU验证zero identity、one-hot重构、
-   ordered/reversed选择可变和无task-ID/outcome读取，再做单卡online smoke及同一80-row screen。
+9. [x] video-routed hard-one-hot expert已在唯一runtime实现并通过真实资产CPU门；artifact=
+   `runs/outputs/pi05_expert_manifold_hard_routed_cpu_real_assets_20260809/analysis.json`。不把train self-route
+   或旧correct80 implied routes当成validation闭环结果。
+10. [ ] 从当前clean pushed authority做live GPU/quota preflight，只选一张空闲A40，完成validation8×1
+    state correct/without-replacement online generation→cache→release→source-policy reuse smoke；成功后
+    才写回evidence并seal。
+11. [ ] seal后从新frozen worktree只跑与旧candidate完全相同的validation8×states0--9 correct80 panel。
+    若未实质超过`15/80`并保持/提高breadth，停止expert-mixture内调参，转向v6先验的可迁移Writer。
    若不能实质超过15并提高breadth，则24-expert support不足，停止继续修soft compiler；若显著提高，
    才研究可微稀疏routing和order-negative credit。任何GPU前重新live preflight并另行封存launch合同。
 

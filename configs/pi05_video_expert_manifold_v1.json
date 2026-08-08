@@ -112,11 +112,31 @@
       ],
       "allowed_worker_count": 6,
       "tasks_per_worker": 4,
-      "selected_stop_step": 1000,
+      "selected_stop_step": 2000,
       "stage_stop_steps": [
         1000,
         2000
       ],
+      "checkpoint_selection_evidence": {
+        "evaluator_commit": "1362d15",
+        "panel": "development_train_24_tasks_x_50_strict_paired_states",
+        "steps": [
+          250,
+          500,
+          1000,
+          1500,
+          2000
+        ],
+        "successes": [
+          432,
+          557,
+          624,
+          638,
+          658
+        ],
+        "selected_step": 2000,
+        "selection": "one_uniform_step_for_all_24_tasks_no_task_specific_mixing"
+      },
       "profile_evidence": {
         "commit": "174d292",
         "host": "gpu01",
@@ -261,8 +281,8 @@
       ]
     },
     "formal_run": {
-      "status": "blocked_until_expert_step_feature_cache_and_live_a40_profile",
-      "selected_expert_step": null,
+      "status": "blocked_until_live_a40_profile_and_online_generation_smoke",
+      "selected_expert_step": 2000,
       "total_macros": 800,
       "physical_microbatch_per_rank": 1,
       "expected_world_size": 6,

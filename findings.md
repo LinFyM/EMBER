@@ -1,5 +1,30 @@
 # EMBER Findings
 
+## 2026-08-09 Task-expert五点闭环终态与统一step2000选择
+
+- clean pushed`1362d15`的step1500/2000 roots均自然完成1200 unique rows。本轮每点3 GPUs×3
+  replicas，动态分片为126 jobs和9 workers；均126/126 complete、attempt1、exit0、0 retry/failure。
+  五点task/state/env seed/policy seed与共同长度policy-noise prefix逐row一致，pairing mismatch=0。
+- 五点success=`432/557/624/638/658`；suite顺序Spatial/Object/Goal/Long在1500→2000为
+  `178→181/216→228/164→166/80→83`。paired gained/lost=`77/57`，24 tasks中17升、5降、2平；
+  2000相对1000为`91/57`，净增34。五点state union/intersection=`801/312`，per-task oracle=`684`，
+  只比统一2000多26。
+- breadth并非单调：nonzero tasks=`21/23/24/23/23`，成功至少25次=`8/11/14/16/15`；task9在
+  1500/2000仍为0，且1500→2000虽然parameter update energy仅`.000312`，仍有134个discordant states。
+  这证明expert自身的policy boundary也高度敏感，task drift没有被task-local训练自动解决。
+- 选择规则以direct closed-loop为主。2000虽然不改善target proxy且breadth比1000少1，却取得最高
+  absolute、四suite全净增且多数task改善；因此统一选择step2000作为meta reconstruction target，不做
+  task-specific混点。658/1200是privileged train-task expert target质量，不是Writer成绩。
+
+## 2026-08-09 Meta profile live资源边界
+
+- 00:01 CST实时比较：gpu01物理`0,1,2|4,5,7`均为空闲A40并满足3+3 NUMA，host available memory
+  约516.5GB；物理3为`nlge` VLLM，明确不触碰。gpu02物理6、7有他人进程，空闲0--5只能形成4+2
+  NUMA，故不用于六rank DDP。
+- `/data1` quota=`552,249,764/1,073,741,824 KiB`；bank约938MiB、cache约113MiB，三条profile
+  roots预计新增低于2GiB。profile只验finite/OOM、task等权、梯度、NUMA与exact-resume，再用macro3
+  做online generation→释放Writer→cached rollout smoke；权重不进入formal。
+
 ## 2026-08-08 Task-expert 2000终态与晚期target平台
 
 - clean`81101fe`原root exact-resume1000→2000已自然完成：24/24 tasks、6/6 summaries、

@@ -416,6 +416,26 @@ energy接近零。
 视频到target的CPU proxy也没有随晚期训练改善。causal-prefix one-shot B correct=
 `.38820/.38685/.38678`，reversed=`.06042/.06399/.06425`，phase-shuffled=
 `.19110/.19195/.19199`；raw centered effective rank与B跨taskcosine基本不变。因此不能因2000的loss
-更低就选2000，也不能只因1000更易预测就跳过真实行为。最终统一step仍由同一1200-state panel上的
-1500/2000 direct closed loop与既有250/500/1000严格配对裁决；不按task混点。若晚期行为没有material
-absolute/breadth收益且能力换手明显，选择较早near-max target，随后只对该统一target做meta profile。
+更低就选2000，也不能只因1000更易预测就跳过真实行为。
+
+clean pushed`1362d15`上的1500/2000 direct closed loop现已自然完成。两点各覆盖1200 unique rows，
+因本轮每点3 GPUs×3 replicas而各为126个queue jobs、9 workers；全部attempt1、exit0、0 retry/failure。
+它们与既有250/500/1000在task/state/env seed/policy seed及共同长度noise prefix上逐row严格配对。五点
+success=`432/557/624/638/658`，四suite在1500→2000依次为Spatial=`178→181`、Object=`216→228`、
+Goal=`164→166`、Long=`80→83`；paired gains/losses=`77/57`，24 tasks为17升/5降/2平。step2000相对
+step1000为`91/57` gains/losses、净增34。尽管nonzero breadth从step1000的24变为晚期23，且
+1500→2000的微小parameter位移仍引发明显state turnover，2000同时取得最高absolute、四suite全净增和
+多数task改善，已达到预注册的material behavior证据。因此统一target正式选择step2000；不得按task
+混点。该658/1200是privileged development-train direct-expert target质量证据，不是Writer validation
+成绩，也不计入`>150/400`长期门。
+
+## 22. Meta-Writer profile前边界
+
+config现只封存统一expert step2000，formal状态仍blocked，不能因此启动正式训练。2026-08-09 00:01
+CST实时比较两节点：gpu01的物理`0,1,2|4,5,7`为空闲A40且构成3+3 NUMA，物理3有`nlge` VLLM不触碰；
+gpu02物理6、7已有他人进程，空闲0--5只能形成4+2 NUMA，故不用于六rank DDP profile。gpu01 available
+host memory约516.5GB；`/data1` quota=`552,249,764/1,073,741,824 KiB`，profile新增保守低于2GiB。
+下一步必须从clean pushed seal执行六rank fresh0→1、同root exact-resume1→3及独立contiguous0→3，
+逐rank记录physical/local GPU、NUMA/affinity并比较三步科学metrics与step3 Writer tensors；不使用hash。
+三条证据通过后，profile macro3只用于online frozen encoder→Writer LoRA generation→释放Writer→
+cached policy rollout纵向smoke，profile权重永久不得进入formal。

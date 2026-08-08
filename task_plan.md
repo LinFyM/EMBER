@@ -46,8 +46,9 @@
 - [x] clean`81101fe`原root的全24 experts exact-resume1000→2000自然完成：24/24 completion、
   6/6 summaries、24个1500与24个2000 checkpoints、0 error/OOM/nonfinite；五点geometry和
   1000/1500/2000 causal target分析均已完成。
-- [ ] 用clean pushed`1362d15`和已验证r3拓扑完成1500/2000两个1200-row strict closed loop，
-  与250/500/1000同panel比较后只选一个全task共享target step。
+- [x] 用clean pushed`1362d15`完成1500/2000两个1200-row strict closed loop：`638/658`；
+  本轮每点126 jobs、9 workers、attempt1/exit0/0 failure，跨五点pairing闭合。统一选择step2000，
+  不按task混点；658/1200只属于privileged development-train expert target，不是Writer成绩。
 - [ ] 完成meta-Writer六卡fresh0→1、exact-resume1→3、finite/OOM/梯度与任务等权合同；随后用
   profile macro3做不进入性能证据的online encoder/Writer generation smoke，验证每卡generator与
   rollout replicas并存、cache和显存释放后才seal formal。profile/formal checkpoint集合严格隔离。
@@ -77,9 +78,15 @@ env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZE
 env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_devtrain24x50_step2000_formal_r3_1362d15_20260808 --role development_train --mode formal --state-count 50 --replicas-per-gpu 3 --gpu-indices 3,4,5 --task-expert-config configs/pi05_video_expert_manifold_v1.json --task-expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --task-expert-step 2000
 ```
 
-- 只在每点1200 unique rows、108/108 shards、所有workers exit0且跨五点pairing闭合后选择target；
+- 只在每点1200 unique rows、全部queue jobs、所有workers exit0且跨五点pairing闭合后选择target；
   direct closed-loop为主证据。若晚期aggregate/breadth没有material改善而target causal proxy与geometry
   已平台，则优先较早的near-max统一step；不得按task混点。
+
+该合同已自然完成。与旧两卡×3 replicas roots的108 jobs不同，本轮每点3卡×3 replicas由动态分片器
+生成126个唯一jobs；两点均126/126 complete、9/9 workers exit0、attempt1、1200/1200 unique rows、
+0 retry/failure，跨五点pairing mismatch=0。step1500/2000=`638/658`；1500→2000四suite=
+`178→181/216→228/164→166/80→83`，gained/lost=`77/57`、tasks升/降/平=`17/5/2`。
+统一target选择step2000。
 
 ### Task-expert development-train三点正式评测合同（2026-08-08）
 

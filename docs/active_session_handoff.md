@@ -56,6 +56,11 @@
   Spatial=`123/147/170`、Object=`125/191/208`、Goal=`142/163/164`、Long=`42/56/82`。
   500→1000为`143/76` gains/losses、18/4/2 tasks升/降/平、非零breadth=`23→24`；该分布式
   改善正式触发全部24 experts统一exact-resume1000→2000，并在1500/2000再次闭环选择。
+- 1500/2000两点现已从同一clean evaluator自然完成，分别=`638/658`。本轮每点因3卡×3 replicas
+  生成126个唯一queue jobs与9 workers，均126/126、attempt1、exit0、1200 unique rows、0
+  retry/failure；跨五点task/state/env/policy-noise公共前缀pairing mismatch=0。1500→2000四suite
+  为Spatial=`178→181`、Object=`216→228`、Goal=`164→166`、Long=`80→83`，paired
+  gained/lost=`77/57`、tasks升/降/平=`17/5/2`。统一target已选择step2000；不按task混点。
 - 首次每点12 workers（总36）在0 scientific rows前耗尽gpu02安全主机内存；第二次每点8 workers
   （每卡4 replicas）在首个inference因每卡约37.7GB静态占用而A40 OOM。两批roots均有
   `ABORTED.md`且不得resume；有效r3使用每卡3 replicas、总18 workers，约30.3GB/卡。
@@ -75,8 +80,9 @@
   strict paired correct必须严格超过`150/400`，同时保持真实视频时序因果性、same-task鲁棒性、
   task breadth和低checkpoint漂移；只有实质性阻塞才回报owner。当前证据顺序固定为：先做full24
   expert geometry、development-train closed-loop统一评250/500/1000、train24×50 feature cache和
-  全24 experts统一resume2000已经通过；现评1500/2000并选唯一target，随后做
-  meta-Writer A40 profile/formal和strict validation五臂。不得按单task挑不同expert step。
+  全24 experts统一resume2000、1500/2000闭环和唯一step2000 target选择已经通过；现做
+  meta-Writer A40 profile与online-generation smoke，随后才seal formal和strict validation五臂。
+  不得按单task挑不同expert step。
 - 统一expert continuation已于2026-08-08 22:39 CST自然完成：24/24 completion、6/6 summaries、
   24个1500和24个2000 checkpoints、0 error/OOM/nonfinite；GPU3他人进程和GPU6全程未触碰。
   causal B-transfer proxy在1000/1500/2000为`.38820/.38685/.38678`，reversed=
@@ -84,6 +90,11 @@
 - 2026-08-08 22:41 CST live比较两节点后，正式1500/2000闭环固定在host memory更空闲的
   `gpu02:0,1,2`与`3,4,5`并发，每卡3 replicas；GPU6的`yfwang`进程和空闲GPU7均不使用，gpu01:3
   的`nlge`进程也不触碰。两个run仍由clean pushed`1362d15` evaluator产生，各1200严格paired rows。
+- 2026-08-09 00:01 CST新的profile preflight选择gpu01物理`0,1,2|4,5,7`六张空闲A40，满足3+3
+  NUMA；物理3的`nlge` VLLM不触碰。gpu02物理6/7有他人进程，空闲0--5只能形成4+2 NUMA，故不用于
+  本轮DDP。gpu01 available host memory约516.5GB，`/data1` quota=
+  `552,249,764/1,073,741,824 KiB`。formal仍blocked；先做fresh/resume/contiguous profile及macro3
+  online generation→cached rollout smoke，profile权重不进入正式训练。
 - 旧K4 executable只作为临时兼容路径保留，owner是当前Expert-Manifold迁移；按设计第12节，只有
   新meta-Writer通过A40 profile后才删除，避免在其替代路径尚未实证前制造不可运行仓库。
 

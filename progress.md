@@ -1,5 +1,16 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Task-expert五点封存、step2000 target与meta profile preflight
+
+- step1500/2000两组正式评测在23:59 CST自然完成：各1200 unique rows、126/126 jobs、9/9 workers
+  exit0、attempt1、0 retry/failure；跨五点task/state/RNG公共前缀pairing mismatch=0。旧合同中的108
+  是6-worker roots的分片数，本轮9-worker动态队列正确值为126，已更正。
+- step1500/2000=`638/658`；1500→2000四suite全净增，gained/lost=`77/57`、tasks升/降/平=
+  `17/5/2`。配置已选择统一step2000，不按task混点；meta formal仍blocked。
+- 00:01 CST live比较后预选空闲`gpu01:0,1,2|4,5,7`做六rank 3+3 NUMA profile；GPU3的`nlge`
+  VLLM不触碰。gpu02物理6/7均有他人进程而空闲卡不满足3+3，故不选。gpu01 available memory约
+  516.5GB，`/data1` quota=`552,249,764/1,073,741,824 KiB`，profile预计新增低于2GiB。
+
 ## 2026-08-08 Task-expert 2000完成、CPU分析与1500/2000 launch seal
 
 - 22:39 CST，clean`81101fe`原root的6个workers全部自然完成：24/24 completion、6/6 summaries、

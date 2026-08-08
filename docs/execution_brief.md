@@ -26,13 +26,19 @@ checkpoint exact-resume和one-shot strict five-arm加no-video反事实evaluator�
 full24统一五点geometry已完成：effective-LoRA norm中位=`2.792/3.652/4.170/4.212/4.212`，
 stable rank与跨task cosine从1000后均基本不变；1500→2000 effective update energy已接近零。
 causal-prefix B proxy correct从`.38820`微降到`.38685/.38678`，order margins也微降；晚期没有
-获得更易由视频预测的target，仍须1500/2000 closed loop选择。
+获得更易由视频预测的target，因此统一step最终由真实closed loop而不是proxy选择。
 
 development-train direct-expert正式三点也已完成：有效r3 roots每点均为1200 rows、108/108 shards、
 6 workers exit0、0 retry/failure及严格task/state/RNG配对，step250/500/1000=`432/557/624`。
 四suite从500到1000为Spatial `147→170`、Object `191→208`、Goal `163→164`、Long `56→82`；
 paired gains/losses=`143/76`，18/4/2 tasks升/降/平，breadth `23→24`。因此已经正式决定全部24
 experts从`81101fe`沿同一root统一exact-resume到2000，并评1500/2000后选唯一target。
+
+1500/2000正式结果已完成并通过跨五点逐row配对：`638/658`。本轮每点为126个动态queue jobs、
+9 workers、1200 unique rows、attempt1/exit0/0 retry/failure；不要误沿用前面6-worker roots的108
+jobs。1500→2000四suite=`178→181/216→228/164→166/80→83`，gained/lost=`77/57`，17/5/2
+tasks升/降/平。step2000为最高absolute且四suite全净增，统一target已封存为2000；其658/1200是
+privileged direct-expert证据，不是Writer strict validation分数。
 
 feature cache profile已在`gpu02:4`通过：clean`1362d15`、task0×4 videos、wall=`4.372s`、peak
 allocated/reserved=`10.47/19.23GB`、输出`[4,16,3072]` BF16且forbidden reads全0；formal cache
@@ -68,10 +74,16 @@ fail-close；聚焦62/62、全仓220/220及`py_compile`通过。该工程修复�
 development-train评测从clean pushed`1362d15`分别绑定`gpu02:0,1,2`与`3,4,5`，每卡3 replicas、
 各1200 rows；`/data1` quota=`552,236,168/1,073,741,824 KiB`，两个新root均不存在。
 
+00:01 CST下一阶段live preflight选择`gpu01:0,1,2|4,5,7`：六卡空闲且满足3+3 NUMA，host
+available memory约516.5GB；GPU3的`nlge` VLLM不触碰。`gpu02:6,7`均已有他人进程，空闲0--5为
+4+2 NUMA，故不用于六rank profile。`/data1` quota现为
+`552,249,764/1,073,741,824 KiB`。meta formal仍blocked，只允许先做fresh0→1、resume1→3、
+contiguous0→3与macro3 online-generation/cached-rollout smoke；profile checkpoint不得warm-start。
+
 owner已在本session完成讨论后明确恢复持续自主执行，并授权围绕长期Goal自行设计、实现、训练、
 评测和迭代；只有实质性阻塞才回报。执行顺序为：full24 expert geometry与development-train
-closed-loop统一评250/500/1000、formal cache与expert2000已经完成；当前顺序为
-1500/2000闭环统一选点→meta profile/训练/strict五臂。旧K4 executable只保留到新
+closed-loop统一评250/500/1000、formal cache、expert2000和统一step2000选择已经完成；当前顺序为
+meta profile与纵向smoke→seal后fresh训练→strict五臂。旧K4 executable只保留到新
 meta-Writer A40 profile通过，届时按design removal trigger原位退役。当前长期门是同一single
 checkpoint strict correct严格超过`150/400`，同时保持视频时序因果性、same-task鲁棒性、breadth
 与低checkpoint漂移。
